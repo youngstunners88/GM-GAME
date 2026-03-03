@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.ai-env
+
+# IDE
+.claude/
+.obsidian/
+
+# Build outputs
+dist/
+build/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Archives
+*.zip
+*.tar.gz
+*.tgz
+
+# Large generated files
+ALL-SKILLS-COPY-PASTE.md
+
+# Trash
+Trash/
+
+# Agent internals
+.agents/
+.z/
+agent-lightning-memory
+
+# Temp files
+*.tmp
+*.swp
