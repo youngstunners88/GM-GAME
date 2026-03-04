@@ -41,3 +41,5 @@ agent-lightning-memory
 # Temp files
 *.tmp
 *.swp
+models/*.gguf
+models/*.bin
