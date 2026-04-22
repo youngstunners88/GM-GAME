@@ -41,6 +41,9 @@ coverage/
 .parcel-cache/
 .vite/
 *.local
+__pycache__/
+*.pyc
+.pytest_cache/
 
 # Misc
 *.log
