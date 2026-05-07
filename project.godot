@@ -12,6 +12,7 @@ boot_splash/bg_color=Color(0.101961, 0.301961, 0.2, 1)
 GameManager="*res://autoload/game_manager.gd"
 SceneTransition="*res://autoload/scene_transition.tscn"
 AudioManager="*res://autoload/audio_manager.gd"
+ScreenShake="*res://autoload/screen_shake.gd"
 
 [display]
 window/size/viewport_width=1280
