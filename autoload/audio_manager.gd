@@ -2,6 +2,7 @@ extends Node
 
 var music_bus: int = 0
 var sfx_bus: int = 0
+var current_music_player: AudioStreamPlayer = null
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
@@ -18,14 +19,18 @@ func _ready() -> void:
         sfx_bus = AudioServer.get_bus_index("SFX")
 
 func play_music(path: String) -> void:
-    var player := AudioStreamPlayer.new()
-    player.bus = "Music"
+    if current_music_player and is_instance_valid(current_music_player):
+        current_music_player.stop()
+        current_music_player.queue_free()
+        current_music_player = null
     var stream := load(path)
-    if stream:
-        player.stream = stream
-        player.autoplay = true
-        add_child(player)
-        player.finished.connect(player.queue_free)
+    if not stream:
+        return
+    current_music_player = AudioStreamPlayer.new()
+    current_music_player.bus = "Music"
+    current_music_player.stream = stream
+    add_child(current_music_player)
+    current_music_player.play()
 
 func play_sfx(name: String) -> void:
     var path := "res://assets/sounds/" + name + ".ogg"

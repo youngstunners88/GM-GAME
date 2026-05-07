@@ -4,6 +4,7 @@ extends EnemyBase
 @export var amplitude: float = 30.0
 @export var frequency: float = 3.0
 
+var start_x: float = 0.0
 var start_y: float = 0.0
 var time: float = 0.0
 var fly_direction: float = 1.0
@@ -12,6 +13,7 @@ func _ready() -> void:
     super._ready()
     health = 3
     score_value = 100
+    start_x = global_position.x
     start_y = global_position.y
     sprite.color = Color(0.2, 0.2, 0.2, 1.0) # Dark gray
     sprite.size = Vector2(24, 24)
@@ -28,9 +30,9 @@ func _physics_process(delta: float) -> void:
     move_and_slide()
 
     # Turn at limits
-    if global_position.x > start_y + 300 and fly_direction > 0:
+    if global_position.x > start_x + 300 and fly_direction > 0:
         fly_direction = -1.0
         sprite.scale.x = -1.0
-    elif global_position.x < start_y - 300 and fly_direction < 0:
+    elif global_position.x < start_x - 300 and fly_direction < 0:
         fly_direction = 1.0
         sprite.scale.x = 1.0

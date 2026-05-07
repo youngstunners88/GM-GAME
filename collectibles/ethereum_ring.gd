@@ -18,9 +18,9 @@ func _on_body_entered(body: Node2D) -> void:
 func collect() -> void:
     GameManager.add_ethereum_ring()
     AudioManager.play_sfx("ring")
+    set_deferred("monitoring", false)
     var tween := create_tween()
     tween.tween_property(self, "scale", Vector2(2.0, 2.0), 0.15)
     tween.parallel().tween_property(self, "position:y", position.y - 30, 0.3)
     tween.parallel().tween_property(self, "modulate:a", 0.0, 0.3)
-    await tween.finished
-    queue_free()
+    tween.finished.connect(queue_free)

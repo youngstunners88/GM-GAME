@@ -30,17 +30,16 @@ func flash() -> void:
     tween.tween_property(sprite, "modulate", Color(1, 1, 1, 1), 0.05)
     tween.tween_property(sprite, "modulate", Color(10, 10, 10, 1), 0.05)
     tween.tween_property(sprite, "modulate", Color(1, 1, 1, 1), 0.05)
-    await tween.finished
-    is_flashing = false
+    tween.finished.connect(func() -> void: is_flashing = false)
 
 func die() -> void:
     is_dead = true
+    set_physics_process(false)
     GameManager.add_score(score_value)
     var tween := create_tween()
     tween.tween_property(self, "scale", Vector2.ZERO, 0.3)
     tween.tween_property(self, "modulate:a", 0.0, 0.3)
-    await tween.finished
-    queue_free()
+    tween.finished.connect(queue_free)
 
 func deal_damage(target: Node2D) -> void:
     if target.has_method("take_damage"):

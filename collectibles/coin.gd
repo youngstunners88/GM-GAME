@@ -18,9 +18,9 @@ func _on_body_entered(body: Node2D) -> void:
 func collect() -> void:
     GameManager.add_coin()
     AudioManager.play_sfx("coin")
+    set_deferred("monitoring", false)
     var tween := create_tween()
     tween.tween_property(self, "scale", Vector2(1.5, 1.5), 0.1)
     tween.tween_property(self, "position:y", position.y - 20, 0.2)
     tween.parallel().tween_property(self, "modulate:a", 0.0, 0.2)
-    await tween.finished
-    queue_free()
+    tween.finished.connect(queue_free)

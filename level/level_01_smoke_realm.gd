@@ -10,6 +10,7 @@ var boss_spawned: bool = false
 
 func _ready() -> void:
     boss_trigger.body_entered.connect(_on_boss_trigger)
+    _setup_parallax_background()
     spawn_player()
     setup_platforms()
     setup_enemies()
@@ -18,18 +19,49 @@ func _ready() -> void:
     setup_breakable_blocks()
     setup_checkpoints()
     setup_smoke_platforms()
-
-    # Background music
+    setup_health_pickups()
+    _setup_pause_menu()
     AudioManager.play_music("res://assets/music/level01_theme.ogg")
+
+func _setup_parallax_background() -> void:
+    var bg := ParallaxBackground.new()
+    add_child(bg)
+    move_child(bg, 0)
+
+    # Layer data: [scroll_scale, color, height, y_pos]
+    var layers := [
+        [0.1, Color(0.05, 0.15, 0.1, 1.0), 720.0, 0.0],   # Far haze
+        [0.4, Color(0.1, 0.3, 0.15, 1.0), 400.0, 320.0],  # Mid trees
+        [0.7, Color(0.15, 0.4, 0.2, 1.0), 200.0, 520.0],  # Near leaves
+    ]
+    for layer_data in layers:
+        var layer := ParallaxLayer.new()
+        layer.motion_scale = Vector2(layer_data[0], 0.0)
+        layer.motion_mirroring = Vector2(4000.0, 0.0)
+        var rect := ColorRect.new()
+        rect.color = layer_data[1]
+        rect.size = Vector2(4000.0, layer_data[2])
+        rect.position = Vector2(0.0, layer_data[3])
+        layer.add_child(rect)
+        bg.add_child(layer)
+
+func _setup_pause_menu() -> void:
+    var pm := preload("res://ui/pause_menu.tscn").instantiate()
+    add_child(pm)
+    # Wire buttons after scene is ready
+    pm.get_node("VBox/ResumeBtn").pressed.connect(pm._on_resume_pressed)
+    pm.get_node("VBox/RestartBtn").pressed.connect(pm._on_restart_pressed)
+    pm.get_node("VBox/QuitBtn").pressed.connect(pm._on_quit_pressed)
 
 func spawn_player() -> void:
     var player := preload("res://player/player.tscn").instantiate()
     var checkpoint := GameManager.get_checkpoint(1)
     if checkpoint != Vector2.ZERO:
-        player.global_position = checkpoint
+        player.global_position = checkpoint + Vector2(0, -50)
     else:
         player.global_position = player_spawn.global_position
     add_child(player)
+    _setup_kill_zone(player)
 
 func setup_platforms() -> void:
     # Ground segments
@@ -133,6 +165,13 @@ func setup_collectibles() -> void:
         ring.global_position = pos
         add_child(ring)
 
+func setup_health_pickups() -> void:
+    var positions := [Vector2(700, 580), Vector2(1650, 580), Vector2(2550, 580)]
+    for pos in positions:
+        var hp := preload("res://collectibles/health_pickup.tscn").instantiate()
+        hp.global_position = pos
+        add_child(hp)
+
 func setup_powerups() -> void:
     var leaf := preload("res://powerups/weed_leaf.tscn").instantiate()
     leaf.global_position = Vector2(400, 550)
@@ -182,11 +221,47 @@ func setup_smoke_platforms() -> void:
         plat.vertical = data.vert
         add_child(plat)
 
+func _setup_kill_zone(player: Node2D) -> void:
+    var kill_zone := Area2D.new()
+    kill_zone.add_to_group("hazard")
+    var col := CollisionShape2D.new()
+    var shape := RectangleShape2D.new()
+    shape.size = Vector2(4000, 50)
+    col.shape = shape
+    kill_zone.add_child(col)
+    kill_zone.position = Vector2(2000, 800)
+    kill_zone.body_entered.connect(func(body: Node2D) -> void:
+        if body.is_in_group("player") and body.has_method("die"):
+            body.die()
+    )
+    add_child(kill_zone)
+
 func _on_boss_trigger(body: Node2D) -> void:
     if body.is_in_group("player") and not boss_spawned:
         boss_spawned = true
+        _setup_boss_arena_walls()
         var boss := preload("res://boss/auditor.tscn").instantiate()
         boss.global_position = boss_spawn.global_position
         add_child(boss)
-        # Trigger boss music
         AudioManager.play_music("res://assets/music/boss_theme.ogg")
+
+func _setup_boss_arena_walls() -> void:
+    # Left wall — seals player inside arena
+    var left_wall := StaticBody2D.new()
+    left_wall.position = Vector2(2800, 400)
+    var lc := CollisionShape2D.new()
+    var ls := RectangleShape2D.new()
+    ls.size = Vector2(20, 600)
+    lc.shape = ls
+    left_wall.add_child(lc)
+    add_child(left_wall)
+
+    # Right wall
+    var right_wall := StaticBody2D.new()
+    right_wall.position = Vector2(3400, 400)
+    var rc := CollisionShape2D.new()
+    var rs := RectangleShape2D.new()
+    rs.size = Vector2(20, 600)
+    rc.shape = rs
+    right_wall.add_child(rc)
+    add_child(right_wall)

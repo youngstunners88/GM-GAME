@@ -13,18 +13,25 @@ var facing_right: bool = true
 var is_dead: bool = false
 var blaze_smoke_timer: float = 0.0
 var invincible_timer: float = 0.0
+var coyote_timer: float = 0.0
+var jump_buffer_timer: float = 0.0
+const COYOTE_TIME: float = 0.08
+const JUMP_BUFFER: float = 0.08
 
 @onready var sprite: ColorRect = $ColorRect
 @onready var collision: CollisionShape2D = $CollisionShape2D
 @onready var camera: Camera2D = $Camera2D
 @onready var smoke_spawn: Marker2D = $SmokeSpawn
 @onready var hurtbox: Area2D = $Hurtbox
+@onready var aura: Area2D = $Aura
 
 func _ready() -> void:
     add_to_group("player")
     GameManager.reset_level()
     hurtbox.area_entered.connect(_on_hurtbox_area_entered)
     hurtbox.body_entered.connect(_on_hurtbox_body_entered)
+    aura.body_entered.connect(_on_aura_body_entered)
+    ScreenShake.register_camera(camera)
 
 func _physics_process(delta: float) -> void:
     if is_dead:
@@ -52,11 +59,29 @@ func _physics_process(delta: float) -> void:
     else:
         scale = Vector2(1.0, 1.0)
 
+    # Coyote time and jump buffer timers
+    if coyote_timer > 0:
+        coyote_timer -= delta
+    if jump_buffer_timer > 0:
+        jump_buffer_timer -= delta
+
     # Gravity
     if not is_on_floor():
         velocity.y += gravity * delta
+        if coyote_timer <= 0 and velocity.y > 0:
+            can_double_jump = true
     else:
         can_double_jump = true
+        coyote_timer = COYOTE_TIME
+        # Consume buffered jump on landing
+        if jump_buffer_timer > 0:
+            jump_buffer_timer = 0.0
+            velocity.y = jump_force * jump_mult
+            AudioManager.play_sfx("jump")
+
+    # Variable jump height — release early to cut jump arc
+    if Input.is_action_just_released("jump") and velocity.y < 0:
+        velocity.y *= 0.5
 
     # Movement
     var direction := Input.get_axis("move_left", "move_right")
@@ -70,14 +95,17 @@ func _physics_process(delta: float) -> void:
 
     # Jump
     if Input.is_action_just_pressed("jump"):
-        if is_on_floor():
+        if is_on_floor() or coyote_timer > 0:
             velocity.y = jump_force * jump_mult
+            coyote_timer = 0.0
             can_double_jump = true
             AudioManager.play_sfx("jump")
         elif can_double_jump and not GameManager.has_power_up("big"):
             velocity.y = double_jump_force * jump_mult
             can_double_jump = false
             AudioManager.play_sfx("double_jump")
+        else:
+            jump_buffer_timer = JUMP_BUFFER
 
     # Visual tint based on power-up
     if GameManager.has_power_up("diamond"):
@@ -91,26 +119,23 @@ func _physics_process(delta: float) -> void:
 
     move_and_slide()
 
-    # Diamond aura damage
-    if GameManager.has_power_up("diamond"):
-        for i in range(get_slide_collision_count()):
-            var col := get_slide_collision(i)
-            var collider := col.get_collider()
-            if collider and collider.is_in_group("enemy") and collider.has_method("take_damage"):
-                collider.take_damage(1)
+    # Enable/disable aura Area2D based on diamond mode
+    aura.monitoring = GameManager.has_power_up("diamond")
 
     GameManager.player_position = global_position
 
 func emit_blaze_smoke() -> void:
     var puff := preload("res://effects/smoke_puff.tscn").instantiate()
     puff.global_position = smoke_spawn.global_position
-    puff.direction = Vector2.RIGHT if facing_right else Vector2.LEFT
+    var base_dir := Vector2.RIGHT if facing_right else Vector2.LEFT
+    puff.direction = base_dir + Vector2(velocity.x * 0.3 / walk_speed, 0.0)
     get_tree().current_scene.add_child(puff)
 
 func take_damage(amount: int) -> void:
     if is_dead or invincible_timer > 0:
         return
     GameManager.take_damage(amount)
+    ScreenShake.shake(0.2, 5.0)
     if GameManager.player_health <= 0:
         die()
     else:
@@ -149,3 +174,7 @@ func _on_hurtbox_body_entered(body: Node2D) -> void:
         body.deal_damage(self)
     elif body.is_in_group("hazard"):
         take_damage(1)
+
+func _on_aura_body_entered(body: Node2D) -> void:
+    if body.is_in_group("enemy") and body.has_method("take_damage"):
+        body.take_damage(1)

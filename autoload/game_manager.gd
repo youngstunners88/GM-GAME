@@ -74,9 +74,15 @@ func reset_level() -> void:
     player_health = max_health
     current_power_up = ""
     power_up_timer = 0.0
+
+func reset_session() -> void:
+    player_health = max_health
+    current_power_up = ""
+    power_up_timer = 0.0
     total_score = 0
     coins_collected = 0
     ethereum_rings_collected = 0
+    level_checkpoints.clear()
 
 func save_checkpoint(level: int, checkpoint_id: int, pos: Vector2) -> void:
     level_checkpoints[level] = {"id": checkpoint_id, "pos": pos}

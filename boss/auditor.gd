@@ -99,6 +99,7 @@ func take_damage(amount: int) -> void:
 func die() -> void:
     is_dead = true
     GameManager.add_score(500)
+    ScreenShake.shake(0.5, 8.0)
     hitbox.monitorable = false
     hitbox.monitoring = false
     var tween := create_tween()

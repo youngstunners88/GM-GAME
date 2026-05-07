@@ -11,11 +11,13 @@ func _ready() -> void:
 
 func break_block() -> void:
     AudioManager.play_sfx("damage")
+    ScreenShake.shake(0.15, 3.0)
     var tween := create_tween()
     tween.tween_property(self, "scale", Vector2(1.2, 1.2), 0.05)
     tween.tween_property(self, "scale", Vector2.ZERO, 0.2)
     tween.parallel().tween_property(self, "modulate:a", 0.0, 0.2)
     tween.parallel().tween_property(self, "rotation", randf() * PI, 0.2)
-    await tween.finished
-    GameManager.add_score(20)
-    queue_free()
+    tween.finished.connect(func() -> void:
+        GameManager.add_score(20)
+        queue_free()
+    )

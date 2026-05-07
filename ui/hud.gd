@@ -10,6 +10,8 @@ extends CanvasLayer
 var heart_full: String = "❤"
 var heart_empty: String = "♡"
 
+var heart_labels: Array[Label] = []
+
 func _ready() -> void:
     GameManager.score_changed.connect(_on_score_changed)
     GameManager.health_changed.connect(_on_health_changed)
@@ -17,6 +19,14 @@ func _ready() -> void:
     GameManager.rings_changed.connect(_on_rings_changed)
     GameManager.power_up_changed.connect(_on_power_up_changed)
     GameManager.player_died.connect(_on_player_died)
+
+    # Pre-build heart labels once
+    for i in range(GameManager.max_health):
+        var heart := Label.new()
+        heart.text = heart_full
+        heart.add_theme_font_size_override("font_size", 32)
+        health_container.add_child(heart)
+        heart_labels.append(heart)
 
     _on_score_changed(GameManager.total_score)
     _on_health_changed(GameManager.player_health)
@@ -36,14 +46,8 @@ func _on_score_changed(new_score: int) -> void:
     score_label.text = "SCORE: %06d" % new_score
 
 func _on_health_changed(new_health: int) -> void:
-    # Clear and rebuild hearts
-    for child in health_container.get_children():
-        child.queue_free()
-    for i in range(GameManager.max_health):
-        var heart := Label.new()
-        heart.text = heart_full if i < new_health else heart_empty
-        heart.add_theme_font_size_override("font_size", 32)
-        health_container.add_child(heart)
+    for i in range(heart_labels.size()):
+        heart_labels[i].text = heart_full if i < new_health else heart_empty
 
 func _on_coins_changed(new_count: int) -> void:
     coin_label.text = "🪙 %d" % new_count
