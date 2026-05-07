@@ -1,0 +1,21 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://enemies/tax_collector.gd" id="1_tax"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_tax"]
+size = Vector2(32, 32)
+
+[node name="TaxCollector" type="CharacterBody2D"]
+collision_layer = 4
+collision_mask = 15
+script = ExtResource("1_tax")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+anchors_preset = 0
+offset_right = 32.0
+offset_bottom = 32.0
+color = Color(0.3, 0.2, 0.13, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(16, 16)
+shape = SubResource("RectangleShape2D_tax")

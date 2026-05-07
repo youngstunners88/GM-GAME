@@ -1,0 +1,21 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://powerups/weed_leaf.gd" id="1_leaf"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_leaf"]
+size = Vector2(24, 24)
+
+[node name="WeedLeaf" type="Area2D"]
+collision_layer = 16
+collision_mask = 2
+script = ExtResource("1_leaf")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+anchors_preset = 0
+offset_right = 24.0
+offset_bottom = 24.0
+color = Color(0, 1, 0, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(12, 12)
+shape = SubResource("RectangleShape2D_leaf")
