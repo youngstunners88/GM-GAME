@@ -103,6 +103,8 @@ func die() -> void:
     hitbox.monitoring = false
     StateMachine.change_state(StateMachine.State.LEVEL_COMPLETE)
     GameManager.save_session()
+    if Web3Manager.is_connected:
+        Web3Manager.submit_score(GameManager.total_score)
     var tween := create_tween()
     tween.tween_property(self, "scale", Vector2.ZERO, 1.0)
     tween.parallel().tween_property(self, "rotation", PI * 4, 1.0)
