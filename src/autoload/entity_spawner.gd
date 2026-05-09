@@ -14,6 +14,10 @@ var entity_scenes: Dictionary = {
 	"breakable_block": preload("res://src/level/breakable_block.tscn"),
 	"checkpoint": preload("res://src/level/checkpoint.tscn"),
 	"smoke_cloud_platform": preload("res://src/level/smoke_cloud_platform.tscn"),
+	"mine_cart": preload("res://src/level/mine_cart.tscn"),
+	"timed_door": preload("res://src/level/timed_door.tscn"),
+	"pressure_plate": preload("res://src/level/pressure_plate.tscn"),
+	"wbtc": preload("res://src/collectibles/wbtc.tscn"),
 }
 
 func spawn(type: String, pos: Vector2, parent: Node) -> Node:
