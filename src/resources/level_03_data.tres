@@ -1,0 +1,130 @@
+[gd_resource type="LevelData" script_class="LevelData" load_steps=1 format=3]
+
+[resource]
+level_name = "GoldMine Rush"
+bounds = Vector2(4400, 720)
+kill_zone_y = 850.0
+parallax_layers = [
+	{
+		"speed": 0.1,
+		"color": Color(0.15, 0.1, 0.08, 1.0),
+		"height": 720.0,
+		"y": 0.0
+	},
+	{
+		"speed": 0.4,
+		"color": Color(0.25, 0.18, 0.12, 1.0),
+		"height": 400.0,
+		"y": 320.0
+	}
+]
+ground_segments = [
+	Vector4(0, 650, 400, 70),
+	Vector4(500, 650, 300, 70),
+	Vector4(900, 650, 500, 70),
+	Vector4(1500, 650, 400, 70),
+	Vector4(2000, 650, 400, 70),
+	Vector4(2500, 650, 500, 70),
+	Vector4(3100, 650, 400, 70),
+	Vector4(3700, 650, 700, 70)
+]
+platforms = [
+	Vector4(300, 500, 100, 20),
+	Vector4(600, 400, 120, 20),
+	Vector4(900, 350, 100, 20),
+	Vector4(1200, 450, 120, 20),
+	Vector4(1500, 300, 100, 20),
+	Vector4(1900, 400, 150, 20),
+	Vector4(2300, 250, 100, 20),
+	Vector4(2700, 400, 120, 20),
+	Vector4(3100, 300, 100, 20),
+	Vector4(3450, 450, 100, 20)
+]
+enemy_spawns = [
+	{
+		"type": "tax_collector",
+		"pos": Vector2(700, 600)
+	},
+	{
+		"type": "tax_collector",
+		"pos": Vector2(1500, 600)
+	},
+	{
+		"type": "tax_collector",
+		"pos": Vector2(2400, 600)
+	},
+	{
+		"type": "tax_collector",
+		"pos": Vector2(3200, 600)
+	},
+	{
+		"type": "fly_swarm",
+		"pos": Vector2(550, 280)
+	},
+	{
+		"type": "fly_swarm",
+		"pos": Vector2(1300, 250)
+	},
+	{
+		"type": "fly_swarm",
+		"pos": Vector2(2100, 200)
+	},
+	{
+		"type": "fly_swarm",
+		"pos": Vector2(2900, 280)
+	}
+]
+collectible_spawns = [
+	{
+		"type": "coin",
+		"pos": Vector2(320, 600)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(520, 350)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(920, 300)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(1520, 250)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(2020, 600)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(2720, 350)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(3120, 250)
+	},
+	{
+		"type": "wbtc",
+		"pos": Vector2(2300, 180)
+	}
+]
+powerup_spawns = [
+	{
+		"type": "weed_leaf",
+		"pos": Vector2(450, 540)
+	},
+	{
+		"type": "magic_mushroom",
+		"pos": Vector2(1450, 540)
+	},
+	{
+		"type": "diamond_shard",
+		"pos": Vector2(2450, 540)
+	}
+]
+breakable_blocks = []
+boss_arena = {
+	"start_x": 3700,
+	"end_x": 4400,
+	"spawn": Vector2(4050, 500)
+}
