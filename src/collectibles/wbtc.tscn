@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/collectibles/wbtc.gd" id="1_wbtc"]
+
+[node name="WBTC" type="Area2D"]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_wbtc")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = CircleShape2D.new()
