@@ -15,3 +15,13 @@ func transition_to_scene(path: String) -> void:
         push_error("Failed to load scene: " + path)
     tween = create_tween()
     tween.tween_property(fade_rect, "color:a", 0.0, 0.4)
+
+func fade_out(duration: float = 0.3) -> void:
+    var tween := create_tween()
+    tween.tween_property(fade_rect, "color:a", 1.0, duration)
+    await tween.finished
+
+func fade_in(duration: float = 0.3) -> void:
+    var tween := create_tween()
+    tween.tween_property(fade_rect, "color:a", 0.0, duration)
+    await tween.finished
