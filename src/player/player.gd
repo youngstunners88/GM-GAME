@@ -1,6 +1,8 @@
 class_name Player
 extends CharacterBody2D
 
+enum Outfit { DEFAULT, MINER, CRYSTAL }
+
 signal died
 
 @export var walk_speed: float = 200.0
@@ -8,6 +10,7 @@ signal died
 @export var gravity: float = 980.0
 @export var double_jump_force: float = -350.0
 
+var current_outfit: Outfit = Outfit.DEFAULT
 var can_double_jump: bool = false
 var facing_right: bool = true
 var blaze_smoke_timer: float = 0.0
@@ -182,3 +185,13 @@ func _on_hurtbox_body_entered(body: Node2D) -> void:
 func _on_aura_body_entered(body: Node2D) -> void:
     if body.is_in_group("enemy") and body.has_method("take_damage"):
         body.take_damage(1)
+
+func set_outfit(outfit: Outfit) -> void:
+    current_outfit = outfit
+    match outfit:
+        Outfit.DEFAULT:
+            sprite.color = Color(0.2, 0.8, 0.3, 1.0)
+        Outfit.MINER:
+            sprite.color = Color(0.6, 0.5, 0.2, 1.0)
+        Outfit.CRYSTAL:
+            sprite.color = Color(0.3, 0.6, 0.9, 1.0)
