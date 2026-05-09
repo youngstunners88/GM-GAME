@@ -4,15 +4,17 @@
 [application]
 config/name="Lil Blunt: The Smoke Realm"
 config/description="2D platformer starring Lil Blunt. Promo game for SmokeRing, DIAMONDS, and GoldMine crypto protocols."
-run/main_scene="res://ui/main_menu.tscn"
+run/main_scene="res://src/ui/main_menu.tscn"
 config/features=PackedStringArray("4.3", "Forward Plus")
 boot_splash/bg_color=Color(0.101961, 0.301961, 0.2, 1)
 
 [autoload]
-GameManager="*res://autoload/game_manager.gd"
-SceneTransition="*res://autoload/scene_transition.tscn"
-AudioManager="*res://autoload/audio_manager.gd"
-ScreenShake="*res://autoload/screen_shake.gd"
+GameManager="*res://src/autoload/game_manager.gd"
+SceneTransition="*res://src/autoload/scene_transition.tscn"
+AudioManager="*res://src/autoload/audio_manager.gd"
+ScreenShake="*res://src/autoload/screen_shake.gd"
+StateMachine="*res://src/autoload/state_machine.gd"
+SceneRouter="*res://src/autoload/scene_router.gd"
 
 [display]
 window/size/viewport_width=1280
