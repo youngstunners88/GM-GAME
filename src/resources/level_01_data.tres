@@ -1,0 +1,215 @@
+[gd_resource type="LevelData" script_class="LevelData" load_steps=1 format=3]
+
+[resource]
+level_name = "The Smoke Realm"
+bounds = Vector2(3400, 720)
+kill_zone_y = 800.0
+parallax_layers = [
+	{
+		"speed": 0.1,
+		"color": Color(0.05, 0.15, 0.1, 1.0),
+		"height": 720.0,
+		"y": 0.0
+	},
+	{
+		"speed": 0.4,
+		"color": Color(0.1, 0.3, 0.15, 1.0),
+		"height": 400.0,
+		"y": 320.0
+	},
+	{
+		"speed": 0.7,
+		"color": Color(0.15, 0.4, 0.2, 1.0),
+		"height": 200.0,
+		"y": 520.0
+	}
+]
+ground_segments = [
+	Vector4(0, 650, 400, 70),
+	Vector4(500, 650, 300, 70),
+	Vector4(900, 650, 400, 70),
+	Vector4(1400, 650, 400, 70),
+	Vector4(1900, 650, 300, 70),
+	Vector4(2300, 650, 500, 70),
+	Vector4(2800, 650, 600, 70)
+]
+platforms = [
+	Vector4(300, 500, 100, 20),
+	Vector4(500, 400, 100, 20),
+	Vector4(750, 350, 120, 20),
+	Vector4(1100, 450, 100, 20),
+	Vector4(1400, 350, 100, 20),
+	Vector4(1700, 400, 150, 20),
+	Vector4(2100, 300, 100, 20),
+	Vector4(2400, 450, 120, 20),
+	Vector4(2600, 350, 100, 20),
+	Vector4(2850, 500, 100, 20),
+	Vector4(3150, 500, 100, 20),
+	Vector4(3000, 400, 80, 20)
+]
+enemy_spawns = [
+	{
+		"type": "tax_collector",
+		"pos": Vector2(600, 600)
+	},
+	{
+		"type": "tax_collector",
+		"pos": Vector2(1100, 600)
+	},
+	{
+		"type": "tax_collector",
+		"pos": Vector2(1600, 600)
+	},
+	{
+		"type": "tax_collector",
+		"pos": Vector2(2200, 600)
+	},
+	{
+		"type": "fly_swarm",
+		"pos": Vector2(450, 300)
+	},
+	{
+		"type": "fly_swarm",
+		"pos": Vector2(1200, 300)
+	},
+	{
+		"type": "fly_swarm",
+		"pos": Vector2(1800, 250)
+	},
+	{
+		"type": "hostile_vine",
+		"pos": Vector2(800, 600)
+	},
+	{
+		"type": "hostile_vine",
+		"pos": Vector2(1500, 600)
+	},
+	{
+		"type": "hostile_vine",
+		"pos": Vector2(2000, 600)
+	},
+	{
+		"type": "rolling_boulder",
+		"pos": Vector2(1300, 200)
+	},
+	{
+		"type": "rolling_boulder",
+		"pos": Vector2(2500, 200)
+	}
+]
+collectible_spawns = [
+	{
+		"type": "coin",
+		"pos": Vector2(320, 450)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(520, 350)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(770, 300)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(1120, 400)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(1420, 300)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(1720, 350)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(2120, 250)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(2420, 400)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(2620, 300)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(100, 600)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(550, 600)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(950, 600)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(1450, 600)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(1950, 600)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(2350, 600)
+	},
+	{
+		"type": "ethereum_ring",
+		"pos": Vector2(500, 250)
+	},
+	{
+		"type": "ethereum_ring",
+		"pos": Vector2(1400, 250)
+	},
+	{
+		"type": "ethereum_ring",
+		"pos": Vector2(2400, 200)
+	},
+	{
+		"type": "health_pickup",
+		"pos": Vector2(700, 580)
+	},
+	{
+		"type": "health_pickup",
+		"pos": Vector2(1650, 580)
+	},
+	{
+		"type": "health_pickup",
+		"pos": Vector2(2550, 580)
+	}
+]
+powerup_spawns = [
+	{
+		"type": "weed_leaf",
+		"pos": Vector2(400, 550)
+	},
+	{
+		"type": "magic_mushroom",
+		"pos": Vector2(1000, 550)
+	},
+	{
+		"type": "diamond_shard",
+		"pos": Vector2(1800, 550)
+	},
+	{
+		"type": "diamond_shard",
+		"pos": Vector2(2100, 200)
+	}
+]
+breakable_blocks = [
+	Vector2(850, 500),
+	Vector2(950, 500),
+	Vector2(1350, 500),
+	Vector2(1750, 500),
+	Vector2(1850, 500)
+]
+boss_arena = {
+	"start_x": 2800,
+	"end_x": 3400,
+	"spawn": Vector2(3100, 500)
+}
