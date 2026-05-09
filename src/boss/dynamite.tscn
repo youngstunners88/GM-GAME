@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/boss/dynamite.gd" id="1_dynamite"]
+
+[node name="Dynamite" type="Area2D"]
+script = ExtResource("1_dynamite")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = CircleShape2D.new()
