@@ -16,6 +16,7 @@ ScreenShake="*res://src/autoload/screen_shake.gd"
 StateMachine="*res://src/autoload/state_machine.gd"
 SceneRouter="*res://src/autoload/scene_router.gd"
 EntitySpawner="*res://src/autoload/entity_spawner.gd"
+Web3Manager="*res://src/autoload/web3_manager.gd"
 
 [display]
 window/size/viewport_width=1280

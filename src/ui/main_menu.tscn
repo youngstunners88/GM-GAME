@@ -54,6 +54,19 @@ size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 28
 text = "PLAY LEVEL 1"
 
+[node name="ContinueButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 28
+text = "CONTINUE"
+visible = false
+
+[node name="ConnectWalletButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 28
+text = "CONNECT WALLET"
+
 [node name="QuitButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 4
