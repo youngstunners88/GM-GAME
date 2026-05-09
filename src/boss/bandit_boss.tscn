@@ -1,0 +1,31 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/boss/bandit_boss.gd" id="1_bandit"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
+size = Vector2(96, 96)
+
+[node name="BanditBoss" type="CharacterBody2D"]
+collision_layer = 4
+collision_mask = 15
+script = ExtResource("1_bandit")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+anchors_preset = 0
+offset_right = 96.0
+offset_bottom = 96.0
+color = Color(0.5, 0.3, 0.1, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(48, 48)
+shape = SubResource("RectangleShape2D_1")
+
+[node name="Hitbox" type="Area2D" parent="."]
+collision_layer = 4
+collision_mask = 70
+monitoring = false
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+position = Vector2(48, 48)
+shape = SubResource("RectangleShape2D_1")
