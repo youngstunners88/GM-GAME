@@ -82,23 +82,34 @@ func _physics_process(delta: float) -> void:
 			velocity.y = jump_force * jump_mult
 			input_handler.reset_coyote()
 			input_handler.can_double_jump = true
+			input_handler.can_air_dash = true
 			_play_jump_stretch()
 			AudioManager.play_sfx("jump")
 		elif input_handler.is_wall_sliding:
-			# Wall jump: kick away from wall
 			var wall_dir := -1.0 if input_handler.facing_right else 1.0
-			velocity.x = wall_dir * input_handler.wall_jump_force.x
+			velocity.x = wall_dir * input_handler.wall_jump_force.x * 1.2
 			velocity.y = input_handler.wall_jump_force.y
 			input_handler.is_wall_sliding = false
 			input_handler.can_double_jump = true
+			input_handler.can_air_dash = true
 			_play_jump_stretch()
 			AudioManager.play_sfx("jump")
 		elif input_handler.consume_double_jump() and not GameManager.has_power_up("big"):
 			velocity.y = double_jump_force * jump_mult
+			input_handler.can_air_dash = true
 			_play_jump_stretch()
 			AudioManager.play_sfx("double_jump")
 		else:
 			input_handler.buffer_jump()
+
+	# Air dash (Tier 2 Skill 1) — horizontal dash in mid-air
+	if Input.is_action_just_pressed("dash") and input_handler.is_air_dash_available():
+		var dash_dir := input_handler.get_movement_direction()
+		if dash_dir == 0:
+			dash_dir = 1.0 if input_handler.facing_right else -1.0
+		velocity.x = dash_dir * InputHandler.AIR_DASH_SPEED
+		input_handler.consume_air_dash()
+		AudioManager.play_sfx("dash")
 
 	_update_sprite_color()
 	move_and_slide()
