@@ -20,6 +20,8 @@ var current_outfit: Outfit = Outfit.DEFAULT
 @onready var aura: Area2D = $Aura
 @onready var power_up_handler: PowerUpHandler = $PowerUpHandler
 @onready var input_handler: InputHandler = $InputHandler
+@onready var wall_sparks: CPUParticles2D = $WallSparks
+@onready var sprint_dust: CPUParticles2D = $SprintDust
 
 func _ready() -> void:
 	add_to_group("player")
@@ -35,39 +37,65 @@ func _physics_process(delta: float) -> void:
 
 	var speed_mult: float = power_up_handler.speed_multiplier
 	var jump_mult: float = power_up_handler.jump_multiplier
+	var sprint_mult: float = input_handler.get_sprint_multiplier()
 
-	# Gravity + floor state
+	# Gravity — wall slide uses reduced gravity while pressing into the wall
 	if not is_on_floor():
-		velocity.y += gravity * delta
+		var pressing_wall := is_on_wall() and input_handler.get_movement_direction() != 0
+		if pressing_wall and velocity.y > 0:
+			input_handler.is_wall_sliding = true
+			velocity.y += InputHandler.WALL_SLIDE_GRAVITY * delta
+			wall_sparks.emitting = true
+		else:
+			input_handler.is_wall_sliding = false
+			velocity.y += gravity * delta
+			wall_sparks.emitting = false
 		input_handler.on_left_ground()
 	else:
+		input_handler.is_wall_sliding = false
+		wall_sparks.emitting = false
 		var had_buffer := input_handler.jump_buffer_timer > 0
 		input_handler.on_landed()
 		if had_buffer:
 			velocity.y = jump_force * jump_mult
+			_play_jump_stretch()
 			AudioManager.play_sfx("jump")
 
-	# Variable jump height — release early to cut arc
+	# Variable jump height — release early to cut arc (Skill 3)
 	if input_handler.is_jump_released() and velocity.y < 0:
 		velocity.y *= 0.5
 
-	# Movement
+	# Movement + sprint
 	var direction := input_handler.get_movement_direction()
 	if direction != 0:
-		velocity.x = direction * walk_speed * speed_mult
+		velocity.x = direction * walk_speed * speed_mult * sprint_mult
 		input_handler.handle_facing_direction(direction)
 	else:
 		velocity.x = move_toward(velocity.x, 0.0, walk_speed * speed_mult)
 
-	# Jump
+	# Sprint dust — only when running fast on ground
+	sprint_dust.emitting = is_on_floor() and direction != 0 and sprint_mult > 1.0
+
+	# Jump — floor/coyote, wall jump, double jump
 	if input_handler.is_jump_pressed():
 		if is_on_floor() or input_handler.coyote_timer > 0:
 			velocity.y = jump_force * jump_mult
 			input_handler.reset_coyote()
 			input_handler.can_double_jump = true
+			_play_jump_stretch()
+			AudioManager.play_sfx("jump")
+		elif input_handler.is_wall_sliding:
+			# Wall jump: kick away from wall
+			var wall_dir := -1.0 if input_handler.facing_right else 1.0
+			velocity.x = wall_dir * input_handler.wall_jump_force.x
+			velocity.y = input_handler.wall_jump_force.y
+			input_handler.is_wall_sliding = false
+			input_handler.can_double_jump = true
+			_play_jump_stretch()
 			AudioManager.play_sfx("jump")
 		elif input_handler.consume_double_jump() and not GameManager.has_power_up("big"):
 			velocity.y = double_jump_force * jump_mult
+			_play_jump_stretch()
 			AudioManager.play_sfx("double_jump")
 		else:
 			input_handler.buffer_jump()
@@ -86,6 +114,22 @@ func _update_sprite_color() -> void:
 		sprite.color = Color(1.0, 0.4, 0.4, 0.9)
 	else:
 		sprite.color = Color(0.2, 0.8, 0.2, 1.0)
+
+## Stretch on launch, snap back — skipped in big mode to avoid fighting PowerUpHandler.
+func _play_jump_stretch() -> void:
+	if GameManager.has_power_up("big"):
+		return
+	var tween := create_tween()
+	tween.tween_property(self, "scale", Vector2(0.7, 1.4), 0.06)
+	tween.tween_property(self, "scale", Vector2.ONE, 0.14)
+
+## Squash on land.
+func _play_land_squash() -> void:
+	if GameManager.has_power_up("big"):
+		return
+	var tween := create_tween()
+	tween.tween_property(self, "scale", Vector2(1.4, 0.7), 0.05)
+	tween.tween_property(self, "scale", Vector2.ONE, 0.12)
 
 func emit_blaze_smoke() -> void:
 	var puff := preload("res://src/effects/smoke_puff.tscn").instantiate()
