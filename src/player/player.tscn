@@ -1,6 +1,8 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://src/player/player.gd" id="1_abcd"]
+[ext_resource type="Script" path="res://src/player/power_up_handler.gd" id="2_puh"]
+[ext_resource type="Script" path="res://src/player/input_handler.gd" id="3_ih"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_abcd"]
 size = Vector2(32, 32)
@@ -55,3 +57,9 @@ monitoring = false
 [node name="AuraShape" type="CollisionShape2D" parent="Aura"]
 position = Vector2(16, 16)
 shape = SubResource("CircleShape2D_aura")
+
+[node name="PowerUpHandler" type="Node" parent="."]
+script = ExtResource("2_puh")
+
+[node name="InputHandler" type="Node" parent="."]
+script = ExtResource("3_ih")

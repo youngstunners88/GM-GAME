@@ -1,14 +1,11 @@
-extends CharacterBody2D
+extends BossBase
 
-enum State { PATROL, THROW, VULNERABLE, DEFEATED }
+enum State { PATROL, THROW, VULNERABLE }
 
-@export var max_health: int = 6
 @export var patrol_speed: float = 100.0
 @export var throw_cooldown: float = 1.5
 
 var current_state: State = State.PATROL
-var health: int = 6
-var phase: int = 1
 var throw_timer: float = 0.0
 var direction: float = 1.0
 
@@ -18,9 +15,9 @@ var direction: float = 1.0
 @onready var hitbox_shape: CollisionShape2D = $Hitbox/CollisionShape2D
 
 func _ready() -> void:
+	max_health = 6
+	phase_thresholds = [4, 2]
 	add_to_group("enemy")
-	add_to_group("boss")
-	health = max_health
 	sprite.color = Color(0.6, 0.4, 0.2, 1.0)
 	sprite.size = Vector2(80, 80)
 	collision.position = Vector2(40, 40)
@@ -28,9 +25,10 @@ func _ready() -> void:
 	hitbox_shape.shape = collision.shape
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
+	_setup_health_bar()
 
 func _physics_process(delta: float) -> void:
-	if current_state == State.DEFEATED:
+	if is_dead:
 		return
 
 	throw_timer -= delta
@@ -57,38 +55,34 @@ func _physics_process(delta: float) -> void:
 			move_and_slide()
 			sprite.modulate = Color(1.0, 0.3, 0.3, 1.0) if fmod(throw_timer, 0.2) < 0.1 else Color(1.0, 0.1, 0.1, 1.0)
 
+## Accelerate patrol on phase transition.
+func _on_phase_changed() -> void:
+	if current_phase >= 2:
+		patrol_speed = 150.0
+
 func _throw_dynamite() -> void:
 	throw_timer = throw_cooldown
-	var dyn_scene = preload("res://src/boss/dynamite.tscn")
-	if dyn_scene == null:
-		var dyn = preload("res://src/boss/dynamite.gd").new()
-		dyn.position = global_position + Vector2(0, -50)
-		get_parent().add_child(dyn)
-	else:
-		var dyn = dyn_scene.instantiate()
-		dyn.position = global_position + Vector2(0, -50)
-		get_parent().add_child(dyn)
+	var dyn := preload("res://src/boss/dynamite.tscn").instantiate()
+	dyn.position = global_position + Vector2(0, -50)
+	get_parent().add_child(dyn)
 
 func take_damage(amount: int) -> void:
-	if current_state == State.DEFEATED:
+	if is_dead:
 		return
 	health -= amount
 	AudioManager.play_sfx("damage")
 	var tween := create_tween()
 	tween.tween_property(sprite, "modulate", Color(10, 10, 10, 1), 0.05)
 	tween.tween_property(sprite, "modulate", Color(1, 1, 1, 1), 0.05)
+	_update_health_bar()
 	if health <= 0:
 		die()
 	else:
-		_update_phase()
-
-func _update_phase() -> void:
-	phase = 3 - (health / 2)
-	if phase >= 2:
-		patrol_speed = 150.0
+		_check_phase_change()
 
 func die() -> void:
-	current_state = State.DEFEATED
+	is_dead = true
+	set_physics_process(false)
 	GameManager.add_score(750)
 	ScreenShake.shake(0.6, 10.0)
 	hitbox.monitorable = false
@@ -97,6 +91,8 @@ func die() -> void:
 	GameManager.save_session()
 	if Web3Manager.is_connected:
 		Web3Manager.submit_score(GameManager.total_score)
+	if health_bar:
+		health_bar.queue_free()
 	var tween := create_tween()
 	tween.tween_property(self, "scale", Vector2.ZERO, 1.0)
 	tween.parallel().tween_property(self, "rotation", PI * 4, 1.0)
