@@ -5,8 +5,12 @@ const COYOTE_TIME: float = 0.08
 const JUMP_BUFFER: float = 0.08
 const WALL_SLIDE_GRAVITY: float = 200.0
 const SPRINT_MULTIPLIER: float = 1.2
+const AIR_DASH_COOLDOWN: float = 0.5
+const AIR_DASH_SPEED: float = 300.0
 
 var wall_jump_force: Vector2 = Vector2(250.0, -350.0)
+var air_dash_timer: float = 0.0
+var can_air_dash: bool = false
 
 var coyote_timer: float = 0.0
 var jump_buffer_timer: float = 0.0
@@ -27,6 +31,8 @@ func _update_timers(delta: float) -> void:
 		coyote_timer -= delta
 	if jump_buffer_timer > 0:
 		jump_buffer_timer -= delta
+	if air_dash_timer > 0:
+		air_dash_timer -= delta
 
 func get_movement_direction() -> float:
 	return Input.get_axis("move_left", "move_right")
@@ -51,6 +57,7 @@ func handle_facing_direction(direction: float) -> void:
 func on_landed() -> void:
 	is_wall_sliding = false
 	can_double_jump = true
+	can_air_dash = true
 	coyote_timer = COYOTE_TIME
 	if jump_buffer_timer > 0:
 		jump_buffer_timer = 0.0
@@ -58,6 +65,7 @@ func on_landed() -> void:
 func on_left_ground() -> void:
 	if coyote_timer <= 0:
 		can_double_jump = true
+		can_air_dash = true
 
 func buffer_jump() -> void:
 	jump_buffer_timer = JUMP_BUFFER
@@ -76,3 +84,13 @@ func consume_double_jump() -> bool:
 
 func reset_coyote() -> void:
 	coyote_timer = 0.0
+
+func is_air_dash_available() -> bool:
+	return can_air_dash and air_dash_timer <= 0
+
+func consume_air_dash() -> bool:
+	if can_air_dash and air_dash_timer <= 0:
+		can_air_dash = false
+		air_dash_timer = AIR_DASH_COOLDOWN
+		return true
+	return false

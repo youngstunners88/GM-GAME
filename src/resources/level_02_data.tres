@@ -72,6 +72,30 @@ enemy_spawns = [
 	{
 		"type": "fly_swarm",
 		"pos": Vector2(2900, 280)
+	},
+	{
+		"type": "vine_enemy",
+		"pos": Vector2(800, 350)
+	},
+	{
+		"type": "vine_enemy",
+		"pos": Vector2(1800, 300)
+	},
+	{
+		"type": "vine_enemy",
+		"pos": Vector2(2900, 350)
+	},
+	{
+		"type": "rolling_boulder",
+		"pos": Vector2(1200, 550)
+	},
+	{
+		"type": "rolling_boulder",
+		"pos": Vector2(2200, 500)
+	},
+	{
+		"type": "rolling_boulder",
+		"pos": Vector2(3300, 550)
 	}
 ]
 collectible_spawns = [
