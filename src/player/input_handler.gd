@@ -1,12 +1,18 @@
 class_name InputHandler
 extends Node
 
+const COYOTE_TIME: float = 0.08
+const JUMP_BUFFER: float = 0.08
+const WALL_SLIDE_GRAVITY: float = 200.0
+const SPRINT_MULTIPLIER: float = 1.2
+
+var wall_jump_force: Vector2 = Vector2(250.0, -350.0)
+
 var coyote_timer: float = 0.0
 var jump_buffer_timer: float = 0.0
 var can_double_jump: bool = false
 var facing_right: bool = true
-const COYOTE_TIME: float = 0.08
-const JUMP_BUFFER: float = 0.08
+var is_wall_sliding: bool = false
 
 var player: Node2D
 
@@ -31,12 +37,19 @@ func is_jump_pressed() -> bool:
 func is_jump_released() -> bool:
 	return Input.is_action_just_released("jump")
 
+## Returns 1.2 when sprint held, 1.0 otherwise.
+func get_sprint_multiplier() -> float:
+	if Input.is_action_pressed("sprint"):
+		return SPRINT_MULTIPLIER
+	return 1.0
+
 func handle_facing_direction(direction: float) -> void:
 	if direction != 0:
 		facing_right = direction > 0
 		player.sprite.scale.x = 1.0 if facing_right else -1.0
 
 func on_landed() -> void:
+	is_wall_sliding = false
 	can_double_jump = true
 	coyote_timer = COYOTE_TIME
 	if jump_buffer_timer > 0:
