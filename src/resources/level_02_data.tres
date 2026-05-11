@@ -74,15 +74,15 @@ enemy_spawns = [
 		"pos": Vector2(2900, 280)
 	},
 	{
-		"type": "vine_enemy",
+		"type": "hostile_vine",
 		"pos": Vector2(800, 350)
 	},
 	{
-		"type": "vine_enemy",
+		"type": "hostile_vine",
 		"pos": Vector2(1800, 300)
 	},
 	{
-		"type": "vine_enemy",
+		"type": "hostile_vine",
 		"pos": Vector2(2900, 350)
 	},
 	{
