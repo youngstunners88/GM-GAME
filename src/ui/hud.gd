@@ -4,6 +4,10 @@ extends CanvasLayer
 @onready var health_container: HBoxContainer = $MarginContainer/VBoxContainer/HealthContainer
 @onready var coin_label: Label = $MarginContainer/VBoxContainer/CoinLabel
 @onready var ring_label: Label = $MarginContainer/VBoxContainer/RingLabel
+@onready var gold_label: Label = $MarginContainer/VBoxContainer/GoldLabel
+@onready var wbtc_label: Label = $MarginContainer/VBoxContainer/WbtcLabel
+@onready var xaut_label: Label = $MarginContainer/VBoxContainer/XautLabel
+@onready var diamond_label: Label = $MarginContainer/VBoxContainer/DiamondLabel
 @onready var powerup_label: Label = $MarginContainer/VBoxContainer/PowerUpLabel
 @onready var powerup_bar: ProgressBar = $MarginContainer/VBoxContainer/PowerUpBar
 
@@ -19,6 +23,12 @@ func _ready() -> void:
     GameManager.rings_changed.connect(_on_rings_changed)
     GameManager.power_up_changed.connect(_on_power_up_changed)
     GameManager.player_died.connect(_on_player_died)
+    GoldMineSystem.gold_changed.connect(_on_gold_changed)
+    GoldMineSystem.wbtc_changed.connect(_on_wbtc_changed)
+    GoldMineSystem.xaut_changed.connect(_on_xaut_changed)
+    GoldMineSystem.diamonds_changed.connect(_on_diamonds_changed)
+    GoldMineSystem.auction_complete.connect(_on_auction_complete)
+    GoldMineSystem.certificate_earned.connect(_on_certificate_earned)
 
     # Pre-build heart labels once
     for i in range(GameManager.max_health):
@@ -32,6 +42,10 @@ func _ready() -> void:
     _on_health_changed(GameManager.player_health)
     _on_coins_changed(GameManager.coins_collected)
     _on_rings_changed(GameManager.ethereum_rings_collected)
+    _on_gold_changed(GoldMineSystem.gold_balance)
+    _on_wbtc_changed(GoldMineSystem.wbtc_balance)
+    _on_xaut_changed(GoldMineSystem.xaut_balance)
+    _on_diamonds_changed(GoldMineSystem.diamonds_balance)
     powerup_label.text = ""
     powerup_bar.visible = false
 
@@ -74,3 +88,41 @@ func _on_player_died() -> void:
     add_child(game_over)
     await get_tree().create_timer(1.5).timeout
     game_over.queue_free()
+
+func _on_gold_changed(new_amount: int) -> void:
+    gold_label.text = "GOLD %d" % new_amount
+
+func _on_wbtc_changed(new_amount: int) -> void:
+    wbtc_label.text = "wBTC %d" % new_amount
+
+func _on_xaut_changed(new_amount: int) -> void:
+    xaut_label.text = "XAUT %d" % new_amount
+
+func _on_diamonds_changed(new_amount: int) -> void:
+    diamond_label.text = "💎 %d" % new_amount
+
+func _on_auction_complete(xaut_won: int, multiplier: float) -> void:
+    var toast := Label.new()
+    toast.text = "GOLD RUSH AUCTION\n+%d XAUT (%.1f%% share)" % [xaut_won, multiplier * 100.0]
+    toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    toast.position = Vector2(get_viewport().size.x / 2 - 150, 120)
+    toast.add_theme_font_size_override("font_size", 28)
+    toast.modulate = Color(1.0, 0.84, 0.0, 1.0)
+    add_child(toast)
+    var tween := create_tween()
+    tween.tween_interval(2.5)
+    tween.tween_property(toast, "modulate:a", 0.0, 0.4)
+    tween.finished.connect(toast.queue_free)
+
+func _on_certificate_earned(count: int) -> void:
+    var toast := Label.new()
+    toast.text = "GOLD CLAIM CERTIFICATE x%d" % count
+    toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    toast.position = Vector2(get_viewport().size.x / 2 - 150, 180)
+    toast.add_theme_font_size_override("font_size", 24)
+    toast.modulate = Color(0.0, 1.0, 0.8, 1.0)
+    add_child(toast)
+    var tween := create_tween()
+    tween.tween_interval(3.0)
+    tween.tween_property(toast, "modulate:a", 0.0, 0.4)
+    tween.finished.connect(toast.queue_free)

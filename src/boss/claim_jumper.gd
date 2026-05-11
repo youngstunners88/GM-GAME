@@ -88,6 +88,16 @@ func die() -> void:
 	hitbox.monitorable = false
 	hitbox.monitoring = false
 	StateMachine.change_state(StateMachine.State.LEVEL_COMPLETE)
+	# Gold Rush Auction settlement — whitepaper specifies pro-rata XAUT payout
+	# at week end. Player contributes their GOLD pool, settles vs. enemy reserve.
+	var player_contribution := GoldMineSystem.gold_balance + GoldMineSystem.auction_gold_pool
+	var enemy_reserve := 50  # Strategic Reserve baseline contribution
+	var total_pool := player_contribution + enemy_reserve
+	GoldMineSystem.forfeit_to_auction(GoldMineSystem.gold_balance)
+	var xaut_won := GoldMineSystem.settle_auction(player_contribution, total_pool)
+	# Treasury revenue distribution from boss "operations" — 50/20/20/10 split
+	var treasury_payout := 100
+	GoldMineSystem.distribute_treasury_revenue(treasury_payout)
 	GameManager.save_session()
 	if Web3Manager.is_connected:
 		Web3Manager.submit_score(GameManager.total_score)
@@ -99,13 +109,13 @@ func die() -> void:
 	tween.parallel().tween_property(self, "modulate:a", 0.0, 1.0)
 	await tween.finished
 	var victory := Label.new()
-	victory.text = "LEVEL COMPLETE!\nGoldMine conquered!"
+	victory.text = "GOLD RUSH WON!\nXAUT payout: %d\nFort Knox shares: %d" % [xaut_won, GoldMineSystem.fort_knox_shares]
 	victory.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	victory.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	victory.position = global_position - Vector2(100, 50)
-	victory.add_theme_font_size_override("font_size", 32)
+	victory.position = global_position - Vector2(150, 75)
+	victory.add_theme_font_size_override("font_size", 28)
 	get_tree().current_scene.add_child(victory)
-	await get_tree().create_timer(3.0).timeout
+	await get_tree().create_timer(3.5).timeout
 	SceneRouter.load_scene("res://src/ui/main_menu.tscn", SceneRouter.Transition.FADE)
 	queue_free()
 

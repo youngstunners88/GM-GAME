@@ -48,6 +48,7 @@ func take_damage(amount: int) -> void:
         player_health = 0
     health_changed.emit(player_health)
     if player_health <= 0:
+        GoldMineSystem.on_player_death()
         player_died.emit()
         StateMachine.change_state(StateMachine.State.GAME_OVER)
 
@@ -88,6 +89,7 @@ func reset_session() -> void:
     coins_collected = 0
     ethereum_rings_collected = 0
     level_checkpoints.clear()
+    GoldMineSystem.reset_session()
 
 func save_checkpoint(level: int, checkpoint_id: int, pos: Vector2) -> void:
     level_checkpoints[level] = {"id": checkpoint_id, "pos": pos}
@@ -106,6 +108,7 @@ func save_session() -> bool:
         "max_health": max_health,
         "current_level": current_level,
         "checkpoints": _serialize_checkpoints(),
+        "goldmine": GoldMineSystem.get_save_data(),
     }
     var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if f == null:
@@ -134,6 +137,8 @@ func load_session() -> bool:
     max_health = int(data.get("max_health", 3))
     current_level = int(data.get("current_level", 1))
     _deserialize_checkpoints(data.get("checkpoints", {}))
+    if data.has("goldmine"):
+        GoldMineSystem.load_save_data(data.get("goldmine", {}))
     return true
 
 func _serialize_checkpoints() -> Dictionary:
