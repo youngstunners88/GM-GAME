@@ -76,36 +76,60 @@ enemy_spawns = [
 ]
 collectible_spawns = [
 	{
-		"type": "coin",
+		"type": "gold_token",
 		"pos": Vector2(320, 600)
 	},
 	{
-		"type": "coin",
-		"pos": Vector2(520, 350)
+		"type": "gold_token",
+		"pos": Vector2(620, 350)
 	},
 	{
-		"type": "coin",
+		"type": "gold_token",
 		"pos": Vector2(920, 300)
 	},
 	{
-		"type": "coin",
+		"type": "gold_token",
+		"pos": Vector2(1220, 400)
+	},
+	{
+		"type": "gold_token",
 		"pos": Vector2(1520, 250)
+	},
+	{
+		"type": "gold_token",
+		"pos": Vector2(1920, 350)
+	},
+	{
+		"type": "gold_token",
+		"pos": Vector2(2320, 200)
+	},
+	{
+		"type": "gold_token",
+		"pos": Vector2(2720, 350)
+	},
+	{
+		"type": "gold_token",
+		"pos": Vector2(3120, 250)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(420, 600)
 	},
 	{
 		"type": "coin",
 		"pos": Vector2(2020, 600)
 	},
 	{
-		"type": "coin",
-		"pos": Vector2(2720, 350)
-	},
-	{
-		"type": "coin",
-		"pos": Vector2(3120, 250)
+		"type": "ethereum_ring",
+		"pos": Vector2(1620, 200)
 	},
 	{
 		"type": "wbtc",
-		"pos": Vector2(2300, 180)
+		"pos": Vector2(2400, 180)
+	},
+	{
+		"type": "wbtc",
+		"pos": Vector2(3300, 250)
 	}
 ]
 powerup_spawns = [

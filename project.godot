@@ -9,6 +9,7 @@ config/features=PackedStringArray("4.3", "Forward Plus")
 boot_splash/bg_color=Color(0.101961, 0.301961, 0.2, 1)
 
 [autoload]
+GoldMineSystem="*res://src/autoload/goldmine_system.gd"
 GameManager="*res://src/autoload/game_manager.gd"
 SceneTransition="*res://src/autoload/scene_transition.tscn"
 AudioManager="*res://src/autoload/audio_manager.gd"
@@ -16,6 +17,7 @@ ScreenShake="*res://src/autoload/screen_shake.gd"
 StateMachine="*res://src/autoload/state_machine.gd"
 SceneRouter="*res://src/autoload/scene_router.gd"
 EntitySpawner="*res://src/autoload/entity_spawner.gd"
+DevCoordinator="*res://src/autoload/dev_coordinator.gd"
 Web3Manager="*res://src/autoload/web3_manager.gd"
 
 [display]
