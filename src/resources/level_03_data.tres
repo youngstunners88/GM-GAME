@@ -77,59 +77,115 @@ enemy_spawns = [
 collectible_spawns = [
 	{
 		"type": "gold_token",
-		"pos": Vector2(320, 600)
+		"pos": Vector2(200, 600)
 	},
 	{
 		"type": "gold_token",
-		"pos": Vector2(620, 350)
+		"pos": Vector2(450, 400)
 	},
 	{
 		"type": "gold_token",
-		"pos": Vector2(920, 300)
+		"pos": Vector2(700, 350)
 	},
 	{
 		"type": "gold_token",
-		"pos": Vector2(1220, 400)
+		"pos": Vector2(950, 400)
 	},
 	{
 		"type": "gold_token",
-		"pos": Vector2(1520, 250)
+		"pos": Vector2(1200, 300)
 	},
 	{
 		"type": "gold_token",
-		"pos": Vector2(1920, 350)
+		"pos": Vector2(1500, 350)
 	},
 	{
 		"type": "gold_token",
-		"pos": Vector2(2320, 200)
+		"pos": Vector2(1800, 250)
 	},
 	{
 		"type": "gold_token",
-		"pos": Vector2(2720, 350)
+		"pos": Vector2(2200, 350)
 	},
 	{
 		"type": "gold_token",
-		"pos": Vector2(3120, 250)
+		"pos": Vector2(2600, 300)
 	},
 	{
-		"type": "coin",
-		"pos": Vector2(420, 600)
+		"type": "gold_token",
+		"pos": Vector2(3000, 350)
 	},
 	{
-		"type": "coin",
-		"pos": Vector2(2020, 600)
+		"type": "gold_token",
+		"pos": Vector2(3400, 250)
+	},
+	{
+		"type": "gold_token",
+		"pos": Vector2(3700, 400)
+	},
+	{
+		"type": "gold_token",
+		"pos": Vector2(3200, 600)
+	},
+	{
+		"type": "gold_token",
+		"pos": Vector2(2800, 600)
+	},
+	{
+		"type": "gold_token",
+		"pos": Vector2(2300, 600)
+	},
+	{
+		"type": "wbtc",
+		"pos": Vector2(800, 300)
+	},
+	{
+		"type": "wbtc",
+		"pos": Vector2(1600, 300)
+	},
+	{
+		"type": "wbtc",
+		"pos": Vector2(2400, 250)
+	},
+	{
+		"type": "wbtc",
+		"pos": Vector2(3100, 280)
+	},
+	{
+		"type": "wbtc",
+		"pos": Vector2(3500, 350)
+	},
+	{
+		"type": "wbtc",
+		"pos": Vector2(1000, 600)
+	},
+	{
+		"type": "wbtc",
+		"pos": Vector2(1800, 600)
+	},
+	{
+		"type": "wbtc",
+		"pos": Vector2(2600, 600)
 	},
 	{
 		"type": "ethereum_ring",
-		"pos": Vector2(1620, 200)
+		"pos": Vector2(1400, 200)
 	},
 	{
-		"type": "wbtc",
-		"pos": Vector2(2400, 180)
+		"type": "ethereum_ring",
+		"pos": Vector2(2900, 200)
 	},
 	{
-		"type": "wbtc",
-		"pos": Vector2(3300, 250)
+		"type": "coin",
+		"pos": Vector2(500, 600)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(2000, 600)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(3300, 600)
 	}
 ]
 powerup_spawns = [
@@ -147,6 +203,52 @@ powerup_spawns = [
 	}
 ]
 breakable_blocks = []
+melt_forges = [
+	{
+		"pos": Vector2(350, 500)
+	},
+	{
+		"pos": Vector2(800, 450)
+	},
+	{
+		"pos": Vector2(1400, 500)
+	},
+	{
+		"pos": Vector2(2000, 450)
+	},
+	{
+		"pos": Vector2(2800, 500)
+	}
+]
+mine_carts_fast = [
+	{
+		"pos": Vector2(500, 300),
+		"move_distance": 400,
+		"destination_wbtc": 10
+	},
+	{
+		"pos": Vector2(1600, 300),
+		"move_distance": 400,
+		"destination_wbtc": 10
+	},
+	{
+		"pos": Vector2(2600, 300),
+		"move_distance": 400,
+		"destination_wbtc": 10
+	}
+]
+mine_carts_slow = [
+	{
+		"pos": Vector2(600, 280),
+		"move_distance": 600,
+		"destination_wbtc": 50
+	},
+	{
+		"pos": Vector2(1700, 280),
+		"move_distance": 600,
+		"destination_wbtc": 50
+	}
+]
 boss_arena = {
 	"start_x": 3700,
 	"end_x": 4400,

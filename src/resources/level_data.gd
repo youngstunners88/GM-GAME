@@ -12,4 +12,7 @@ extends Resource
 @export var powerup_spawns: Array[Dictionary] = []
 @export var breakable_blocks: Array[Vector2] = []
 @export var checkpoints: Array[Vector2] = []
+@export var melt_forges: Array[Dictionary] = []
+@export var mine_carts_fast: Array[Dictionary] = []
+@export var mine_carts_slow: Array[Dictionary] = []
 @export var boss_arena: Dictionary = {"start_x": 0, "end_x": 0, "spawn": Vector2.ZERO}
