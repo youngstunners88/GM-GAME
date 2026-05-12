@@ -69,3 +69,9 @@ visible = false
 layout_mode = 2
 max_value = 100.0
 value = 100.0
+
+[node name="VestingBar" type="ProgressBar" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+max_value = 100.0
+value = 0.0
+script = SubResource("VestingBarScript")
