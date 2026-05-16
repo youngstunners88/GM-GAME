@@ -34,7 +34,6 @@ func _show_toast(message: String) -> void:
 	get_tree().root.add_child(toast)
 	var tween := create_tween()
 	tween.tween_property(toast, "modulate:a", 1.0, 0.3)
-	tween.tween_callback(func() -> void: await get_tree().create_timer(2.0).timeout)
+	tween.tween_interval(2.0)
 	tween.tween_property(toast, "modulate:a", 0.0, 0.3)
-	await tween.finished
-	toast.queue_free()
+	tween.finished.connect(toast.queue_free)

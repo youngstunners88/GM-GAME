@@ -95,6 +95,19 @@ func _setup_entities() -> void:
 	# Spawn breakable blocks
 	for block_pos in level_data.breakable_blocks:
 		var entity := EntitySpawner.spawn("breakable_block", block_pos, self)
+	# Spawn melt forges (Level 3 whitepaper mechanic)
+	for forge_data in level_data.melt_forges:
+		var entity := EntitySpawner.spawn("melt_forge", forge_data.get("pos", Vector2.ZERO), self)
+	# Spawn fast mine carts (day 88 short pool)
+	for cart_data in level_data.mine_carts_fast:
+		var entity := EntitySpawner.spawn("mine_cart", cart_data.get("pos", Vector2.ZERO), self)
+		if entity and entity.has_meta("set_cart_type"):
+			entity.set("cart_type", 0)  # CartType.FAST
+	# Spawn slow mine carts (day 288 long pool)
+	for cart_data in level_data.mine_carts_slow:
+		var entity := EntitySpawner.spawn("mine_cart", cart_data.get("pos", Vector2.ZERO), self)
+		if entity and entity.has_meta("set_cart_type"):
+			entity.set("cart_type", 1)  # CartType.SLOW
 
 func _setup_boss_arena() -> void:
 	if level_data.boss_arena.is_empty():
