@@ -22,6 +22,8 @@ func _ready() -> void:
 	add_to_group("interact")
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
+	if MobileInputHandler:
+		MobileInputHandler.touch_interact.connect(_on_mobile_interact)
 	_setup_visual()
 
 func _process(delta: float) -> void:
@@ -44,6 +46,10 @@ func _on_body_exited(body: Node2D) -> void:
 	if body == player_ref:
 		player_in_forge = false
 		player_ref = null
+
+func _on_mobile_interact() -> void:
+	if player_in_forge:
+		_activate_melt()
 
 func _activate_melt() -> void:
 	if melt_active or not player_ref:
