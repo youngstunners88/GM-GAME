@@ -8,6 +8,7 @@ class_name MobileInputHandler
 signal touch_move(direction: float)  # -1 = left, 0 = neutral, 1 = right
 signal touch_jump
 signal touch_sprint
+signal touch_sprint_released
 signal touch_dash
 signal touch_interact
 
@@ -119,8 +120,9 @@ func _handle_action_button(touch_pos: Vector2) -> void:
 					touch_dash.emit()
 
 func _release_action_button(touch_pos: Vector2) -> void:
-	# Release sprint on touch end
-	button_states["sprint"] = false
+	if button_states["sprint"]:
+		button_states["sprint"] = false
+		touch_sprint_released.emit()
 
 func get_movement_input() -> float:
 	return current_movement

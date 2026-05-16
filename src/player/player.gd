@@ -31,6 +31,10 @@ func _ready() -> void:
 	aura.body_entered.connect(_on_aura_body_entered)
 	ScreenShake.register_camera(camera)
 
+	if MobileInputHandler:
+		MobileInputHandler.touch_jump.connect(_on_mobile_jump)
+		MobileInputHandler.touch_dash.connect(_on_mobile_dash)
+
 func _physics_process(delta: float) -> void:
 	if not StateMachine.is_playing():
 		return
@@ -217,3 +221,15 @@ func set_outfit(outfit: Outfit) -> void:
 			sprite.color = Color(0.6, 0.5, 0.2, 1.0)
 		Outfit.CRYSTAL:
 			sprite.color = Color(0.3, 0.6, 0.9, 1.0)
+
+func _on_mobile_jump() -> void:
+	input_handler.buffer_jump()
+
+func _on_mobile_dash() -> void:
+	if input_handler.is_air_dash_available():
+		var dash_dir := input_handler.get_movement_direction()
+		if dash_dir == 0:
+			dash_dir = 1.0 if input_handler.facing_right else -1.0
+		velocity.x = dash_dir * InputHandler.AIR_DASH_SPEED
+		input_handler.consume_air_dash()
+		AudioManager.play_sfx("dash")
