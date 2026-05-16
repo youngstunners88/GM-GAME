@@ -30,6 +30,7 @@ func _ready() -> void:
 	if MobileInputHandler:
 		MobileInputHandler.touch_jump.connect(_on_jump_pressed)
 		MobileInputHandler.touch_sprint.connect(_on_sprint_pressed)
+		MobileInputHandler.touch_sprint_released.connect(_on_sprint_released)
 		MobileInputHandler.touch_dash.connect(_on_dash_pressed)
 		MobileInputHandler.touch_interact.connect(_on_interact_pressed)
 
@@ -122,6 +123,10 @@ func _on_sprint_pressed() -> void:
 	if sprint_button:
 		sprint_button.modulate = Color(1.0, 0.8, 0.5, 1.0)
 
+func _on_sprint_released() -> void:
+	if sprint_button:
+		sprint_button.modulate = Color(1.0, 0.6, 0.3, 0.8)
+
 func _on_dash_pressed() -> void:
 	if dash_button:
 		dash_button.modulate = Color(1.0, 0.5, 1.0, 1.0)
@@ -130,7 +135,7 @@ func _on_dash_pressed() -> void:
 
 func _on_interact_pressed() -> void:
 	if interact_button:
-		interact_button.modulate = Color(1.0, 1.0, 0.5, 1.0)
+		interact_button.modulate = Color(1.0, 1.0, 0.7, 1.0)
 		await get_tree().create_timer(0.1).timeout
 		interact_button.modulate = Color(0.8, 0.8, 0.3, 0.8)
 

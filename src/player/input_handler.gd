@@ -45,7 +45,9 @@ func is_jump_released() -> bool:
 
 ## Returns 1.2 when sprint held, 1.0 otherwise.
 func get_sprint_multiplier() -> float:
-	if Input.is_action_pressed("sprint"):
+	var keyboard_sprint := Input.is_action_pressed("sprint")
+	var mobile_sprint := MobileInputHandler and MobileInputHandler.is_sprint_active()
+	if keyboard_sprint or mobile_sprint:
 		return SPRINT_MULTIPLIER
 	return 1.0
 
