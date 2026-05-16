@@ -51,11 +51,6 @@ func _setup_joystick() -> void:
 	joystick_stick.position = Vector2(viewport_size.x * 0.2 - 30, viewport_size.y / 2 - 30)
 	add_child(joystick_stick)
 
-	# Visual: draw circle using modulate
-	var circle_panel := PanelContainer.new()
-	circle_panel.add_theme_stylebox_override("panel", _create_circle_style())
-	joystick_bg.add_child(circle_panel)
-
 func _setup_buttons() -> void:
 	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
 	var button_x: float = viewport_size.x - button_size - 20
@@ -63,7 +58,7 @@ func _setup_buttons() -> void:
 	# Jump button (top)
 	jump_button = Button.new()
 	jump_button.text = "JUMP"
-	jump_button.size = Vector2(button_size, button_size)
+	jump_button.custom_minimum_size = Vector2(button_size, button_size)
 	jump_button.position = Vector2(button_x, 20)
 	jump_button.modulate = Color(0.3, 0.8, 1.0, 0.8)
 	jump_button.pressed.connect(_on_jump_button)
@@ -72,7 +67,7 @@ func _setup_buttons() -> void:
 	# Sprint button (middle)
 	sprint_button = Button.new()
 	sprint_button.text = "SPRINT"
-	sprint_button.size = Vector2(button_size, button_size)
+	sprint_button.custom_minimum_size = Vector2(button_size, button_size)
 	sprint_button.position = Vector2(button_x, 20 + button_spacing)
 	sprint_button.modulate = Color(1.0, 0.6, 0.3, 0.8)
 	sprint_button.pressed.connect(_on_sprint_button)
@@ -81,7 +76,7 @@ func _setup_buttons() -> void:
 	# Dash button (lower)
 	dash_button = Button.new()
 	dash_button.text = "DASH"
-	dash_button.size = Vector2(button_size, button_size)
+	dash_button.custom_minimum_size = Vector2(button_size, button_size)
 	dash_button.position = Vector2(button_x, 20 + button_spacing * 2)
 	dash_button.modulate = Color(0.8, 0.3, 1.0, 0.8)
 	dash_button.pressed.connect(_on_dash_button)
@@ -90,7 +85,7 @@ func _setup_buttons() -> void:
 	# Interact button (bottom)
 	interact_button = Button.new()
 	interact_button.text = "E"
-	interact_button.size = Vector2(button_size, button_size)
+	interact_button.custom_minimum_size = Vector2(button_size, button_size)
 	interact_button.position = Vector2(button_x, viewport_size.y - button_size - 20)
 	interact_button.modulate = Color(0.8, 0.8, 0.3, 0.8)
 	interact_button.pressed.connect(_on_interact_button)
@@ -138,9 +133,3 @@ func _on_interact_pressed() -> void:
 		interact_button.modulate = Color(1.0, 1.0, 0.7, 1.0)
 		await get_tree().create_timer(0.1).timeout
 		interact_button.modulate = Color(0.8, 0.8, 0.3, 0.8)
-
-func _create_circle_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.4, 0.4, 0.4, 0.6)
-	style.set_corner_radius_all(30)
-	return style
