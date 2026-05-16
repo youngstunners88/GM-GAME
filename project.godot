@@ -18,6 +18,7 @@ StateMachine="*res://src/autoload/state_machine.gd"
 SceneRouter="*res://src/autoload/scene_router.gd"
 EntitySpawner="*res://src/autoload/entity_spawner.gd"
 DevCoordinator="*res://src/autoload/dev_coordinator.gd"
+MobileInputHandler="*res://src/autoload/mobile_input_handler.gd"
 Web3Manager="*res://src/autoload/web3_manager.gd"
 
 [display]

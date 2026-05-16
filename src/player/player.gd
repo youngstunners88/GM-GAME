@@ -39,9 +39,14 @@ func _physics_process(delta: float) -> void:
 	var jump_mult: float = power_up_handler.jump_multiplier
 	var sprint_mult: float = input_handler.get_sprint_multiplier()
 
+	# Get movement input from keyboard OR mobile
+	var movement_direction: float = input_handler.get_movement_direction()
+	if MobileInputHandler:
+		movement_direction = MobileInputHandler.get_movement_input()
+
 	# Gravity — wall slide uses reduced gravity while pressing into the wall
 	if not is_on_floor():
-		var pressing_wall := is_on_wall() and input_handler.get_movement_direction() != 0
+		var pressing_wall := is_on_wall() and movement_direction != 0
 		if pressing_wall and velocity.y > 0:
 			input_handler.is_wall_sliding = true
 			velocity.y += InputHandler.WALL_SLIDE_GRAVITY * delta
