@@ -95,9 +95,10 @@ func _update_joystick(touch_pos: Vector2) -> void:
 
 func _handle_action_button(touch_pos: Vector2) -> void:
 	var button_y_positions: Array = [
-		screen_size.y / 4,      # Jump
-		screen_size.y / 2,      # Sprint
-		3 * screen_size.y / 4,  # Dash
+		screen_size.y / 4,          # Jump
+		screen_size.y / 2,          # Sprint
+		3 * screen_size.y / 4,      # Dash
+		screen_size.y - BUTTON_SIZE - 20,  # Interact
 	]
 	var button_center_x: float = screen_size.x - BUTTON_SIZE
 
@@ -118,6 +119,8 @@ func _handle_action_button(touch_pos: Vector2) -> void:
 					touch_sprint.emit()
 				2:
 					touch_dash.emit()
+				3:
+					touch_interact.emit()
 
 func _release_action_button(touch_pos: Vector2) -> void:
 	if button_states["sprint"]:
