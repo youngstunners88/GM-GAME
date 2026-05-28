@@ -162,6 +162,7 @@ func take_damage(amount: int) -> void:
 	if StateMachine.is_dead() or power_up_handler.invincible_timer > 0:
 		return
 	GameManager.take_damage(amount)
+	ComboSystem.break_combo()
 	ScreenShake.shake(0.2, 5.0)
 	if GameManager.player_health <= 0:
 		die()

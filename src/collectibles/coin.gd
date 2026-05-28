@@ -17,6 +17,7 @@ func _on_body_entered(body: Node2D) -> void:
 
 func collect() -> void:
     GameManager.add_coin()
+    ComboSystem.add_score(10)
     AudioManager.play_sfx("coin")
     set_deferred("monitoring", false)
     var tween := create_tween()

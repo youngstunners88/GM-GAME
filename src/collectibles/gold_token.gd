@@ -37,5 +37,6 @@ func _setup_visual() -> void:
 func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
 		GoldMineSystem.mine_gold(gold_amount)
+		ComboSystem.add_score(25 * gold_amount)
 		AudioManager.play_sfx("coin")
 		queue_free()
