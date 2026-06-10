@@ -95,14 +95,7 @@ jobs:
           git config --global user.email "claude@anthropic.com"
           git add -f web/game/
           if ! git diff --cached --quiet; then
-            git commit -m "build: export Godot 4.3 game to web
-
-- Godot headless export completed
-- WASM build with threading support
-- All engine and game assets included
-- Ready for Vercel/Netlify deployment
-
-[skip ci]"
+            git commit -m "build: export Godot 4.3 game to web (automated CI export)"
             git push -u origin HEAD 2>&1 || echo "Push failed - artifacts may be available"
           else
             echo "No changes to commit"
