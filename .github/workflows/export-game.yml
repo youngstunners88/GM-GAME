@@ -1,0 +1,111 @@
+name: Export Godot Game to Web
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - claude/**
+  workflow_dispatch:
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download Godot 4.3
+        run: |
+          mkdir -p godot
+          cd godot
+          curl -L https://github.com/godotengine/godot-builds/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip -o godot.zip
+          unzip -q godot.zip
+          chmod +x Godot_v4.3-stable_linux.x86_64
+          cd ..
+          echo "GODOT_BIN=$(pwd)/godot/Godot_v4.3-stable_linux.x86_64" >> $GITHUB_ENV
+
+      - name: Create Web export preset
+        run: |
+          mkdir -p .godot/exported_presets
+          cat > export_presets.cfg << 'EOF'
+          [preset.0]
+          name="Web"
+          platform="Web"
+          runnable=true
+          dedicated_server=false
+          custom_features=""
+          export_filter="all_resources"
+          include_filter=""
+          exclude_filter="*.yml,*.yaml,*.md,design/*,docs/*,lore/*"
+          export_path="web/game/index.html"
+          encryption_include_filters=""
+          encryption_exclude_filters=""
+          encrypt_pck=false
+          encrypt_directory=false
+          script_encryption_key=""
+
+          [preset.0.options]
+          compression/enabled=true
+          compression/algorithms/deflate/compression_level=9
+          web/enable_cuda=false
+          web/enable_vulkan=false
+          web/use_threads=true
+          web/threads_count=8
+          progressive_web_app/enabled=true
+          progressive_web_app/offline_page=""
+          progressive_web_app/display=2
+          progressive_web_app/orientation=0
+          progressive_web_app/icon=""
+          progressive_web_app/icon_size_192x192=""
+          progressive_web_app/icon_size_180x180=""
+          progressive_web_app/icon_size_16x16=""
+          progressive_web_app/manifest=""
+          html/export_icon=true
+          html/render_canvas_bg=true
+          html/focused_canvas_autofocus=true
+          html/emotion_use_export_template=true
+          EOF
+
+      - name: Create export directory
+        run: mkdir -p web/game
+
+      - name: Export game to Web
+        run: |
+          ${{ env.GODOT_BIN }} --headless --export-release Web
+          echo "Export complete. Checking output..."
+          ls -lah web/game/ || echo "Game directory not found!"
+
+      - name: Verify export files
+        run: |
+          files=("index.js" "index.wasm" "index.pck")
+          for file in "${files[@]}"; do
+            if [ -f "web/game/$file" ]; then
+              size=$(du -h "web/game/$file" | cut -f1)
+              echo "✓ $file ($size)"
+            else
+              echo "✗ $file MISSING"
+            fi
+          done
+
+      - name: Commit exported game
+        run: |
+          git config user.name "Claude Code"
+          git config user.email "claude@anthropic.com"
+          git add web/game/
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "build: export Godot game to web
+
+- Godot 4.3 headless export to web/game/
+- WASM build with threading enabled (8 cores)
+- Progressive Web App config enabled
+- Compression enabled for assets
+- Automated by GitHub Actions CI"
+            git push
+          fi
