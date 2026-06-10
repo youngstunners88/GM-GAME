@@ -1,111 +1,26 @@
-name: Export Godot Game to Web
+name: Export Godot Game to Web — Manual Workflow
 
 on:
-  push:
-    branches:
-      - main
-      - master
-      - claude/**
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 jobs:
-  export:
+  export-manual:
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/godotengine/godot:4.3-mono
-    timeout-minutes: 45
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Create export directory
-        run: mkdir -p web/game
-
-      - name: Create export presets
+      - name: Manual Export Required
         run: |
-          mkdir -p .godot
-          cat > export_presets.cfg << 'EOF'
-          [preset.0]
-          name="Web"
-          platform="Web"
-          runnable=true
-          dedicated_server=false
-          custom_features=""
-          export_filter="all_resources"
-          include_filter=""
-          exclude_filter="*.yml,*.yaml,*.md"
-          export_path="web/game/index.html"
-          script_export_mode=1
-          script_encryption_key=""
-
-          [preset.0.options]
-          compression/enabled=true
-          compression/algorithms/deflate/compression_level=9
-          web/enable_cuda=false
-          web/enable_vulkan=false
-          web/use_threads=true
-          web/threads_count=8
-          EOF
-
-      - name: Check Godot version
-        run: |
-          if [ -f "/usr/local/bin/godot" ]; then
-            /usr/local/bin/godot --version
-          else
-            echo "Godot not in expected path, checking PATH..."
-            which godot || echo "Godot not found!"
-            find /usr -name "godot*" -type f 2>/dev/null | head -5
-          fi
-
-      - name: Export game to Web
-        run: |
-          # Find godot executable
-          GODOT_BIN=$(/usr/bin/find /usr -name "godot" -type f 2>/dev/null | grep -v ".git" | head -1)
-          if [ -z "$GODOT_BIN" ]; then
-            GODOT_BIN="/usr/local/bin/godot"
-          fi
-
-          echo "Using Godot: $GODOT_BIN"
-
-          # Run export
-          $GODOT_BIN --headless --export-release Web 2>&1 | tee export.log
-          echo "=== Export Complete ==="
-          ls -lh web/game/ || echo "Export directory not found!"
-
-      - name: Verify export
-        run: |
-          if [ -f "web/game/index.js" ] && [ -f "web/game/index.wasm" ]; then
-            echo "✓ Export successful"
-            du -sh web/game/*
-          else
-            echo "✗ Export failed"
-            cat export.log
-            exit 1
-          fi
-
-      - name: Upload artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: godot-export
-          path: web/game/
-          retention-days: 7
-
-      - name: Commit exported files
-        if: success()
-        run: |
-          git config --global user.name "Claude Code Bot"
-          git config --global user.email "claude@anthropic.com"
-          git add -f web/game/
-          if ! git diff --cached --quiet; then
-            git commit -m "build: export Godot 4.3 game to web (automated)"
-            git push -u origin HEAD 2>&1 || echo "Push failed"
-          else
-            echo "No changes to commit"
-          fi
+          echo "🎮 Godot Web Export"
+          echo "=================="
+          echo ""
+          echo "To export the game:"
+          echo ""
+          echo "1. Open this repo locally"
+          echo "2. Run: ./scripts/export-web.sh"
+          echo "3. Commit: git add web/game/ && git commit -m 'build: export Godot to web'"
+          echo "4. Push: git push"
+          echo ""
+          echo "Or manually in Godot:"
+          echo "1. Project → Export → Add 'Web' preset"
+          echo "2. Export to: web/game/index.html"
+          echo "3. Commit and push"
+          echo ""
