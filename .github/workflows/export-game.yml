@@ -8,10 +8,13 @@ on:
       - claude/**
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   export:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Checkout code
@@ -19,19 +22,24 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download Godot 4.3
+      - name: Download Godot 4.3.2
         run: |
           mkdir -p godot
           cd godot
-          curl -L https://github.com/godotengine/godot-builds/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip -o godot.zip
-          unzip -q godot.zip
-          chmod +x Godot_v4.3-stable_linux.x86_64
+          wget -q https://github.com/godotengine/godot-builds/releases/download/4.3.2-stable/Godot_v4.3.2-stable_linux.x86_64.zip
+          unzip -q Godot_v4.3.2-stable_linux.x86_64.zip
+          chmod +x Godot_v4.3.2-stable_linux.x86_64
+          ls -la
           cd ..
-          echo "GODOT_BIN=$(pwd)/godot/Godot_v4.3-stable_linux.x86_64" >> $GITHUB_ENV
+          echo "GODOT_BIN=$(pwd)/godot/Godot_v4.3.2-stable_linux.x86_64" >> $GITHUB_ENV
 
-      - name: Create Web export preset
+      - name: Create export directory and templates
         run: |
-          mkdir -p .godot/exported_presets
+          mkdir -p web/game
+          mkdir -p .godot/export_templates/4.3.2.stable
+
+      - name: Create export presets
+        run: |
           cat > export_presets.cfg << 'EOF'
           [preset.0]
           name="Web"
@@ -41,12 +49,9 @@ jobs:
           custom_features=""
           export_filter="all_resources"
           include_filter=""
-          exclude_filter="*.yml,*.yaml,*.md,design/*,docs/*,lore/*"
+          exclude_filter="*.yml,*.yaml,*.md"
           export_path="web/game/index.html"
-          encryption_include_filters=""
-          encryption_exclude_filters=""
-          encrypt_pck=false
-          encrypt_directory=false
+          script_export_mode=1
           script_encryption_key=""
 
           [preset.0.options]
@@ -56,56 +61,50 @@ jobs:
           web/enable_vulkan=false
           web/use_threads=true
           web/threads_count=8
-          progressive_web_app/enabled=true
-          progressive_web_app/offline_page=""
-          progressive_web_app/display=2
-          progressive_web_app/orientation=0
-          progressive_web_app/icon=""
-          progressive_web_app/icon_size_192x192=""
-          progressive_web_app/icon_size_180x180=""
-          progressive_web_app/icon_size_16x16=""
-          progressive_web_app/manifest=""
-          html/export_icon=true
-          html/render_canvas_bg=true
-          html/focused_canvas_autofocus=true
-          html/emotion_use_export_template=true
           EOF
-
-      - name: Create export directory
-        run: mkdir -p web/game
 
       - name: Export game to Web
         run: |
-          ${{ env.GODOT_BIN }} --headless --export-release Web
-          echo "Export complete. Checking output..."
-          ls -lah web/game/ || echo "Game directory not found!"
+          $GODOT_BIN --headless --export-release Web 2>&1 | tee export.log
+          echo "=== Export Complete ==="
+          ls -lh web/game/
 
-      - name: Verify export files
+      - name: Check export output
         run: |
-          files=("index.js" "index.wasm" "index.pck")
-          for file in "${files[@]}"; do
-            if [ -f "web/game/$file" ]; then
-              size=$(du -h "web/game/$file" | cut -f1)
-              echo "✓ $file ($size)"
-            else
-              echo "✗ $file MISSING"
-            fi
-          done
-
-      - name: Commit exported game
-        run: |
-          git config user.name "Claude Code"
-          git config user.email "claude@anthropic.com"
-          git add web/game/
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
+          if [ -f "web/game/index.js" ] && [ -f "web/game/index.wasm" ]; then
+            echo "✓ Web export successful"
+            du -sh web/game/
           else
-            git commit -m "build: export Godot game to web
-
-- Godot 4.3 headless export to web/game/
-- WASM build with threading enabled (8 cores)
-- Progressive Web App config enabled
-- Compression enabled for assets
-- Automated by GitHub Actions CI"
-            git push
+            echo "✗ Export failed - missing files"
+            cat export.log
+            exit 1
           fi
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: godot-export
+          path: web/game/
+          retention-days: 7
+
+      - name: Commit exported files
+        if: success()
+        run: |
+          git config --global user.name "Claude Code Bot"
+          git config --global user.email "claude@anthropic.com"
+          git add -f web/game/
+          if ! git diff --cached --quiet; then
+            git commit -m "build: export Godot 4.3 game to web
+
+- Godot headless export completed
+- WASM build with threading support
+- All engine and game assets included
+- Ready for Vercel/Netlify deployment
+
+[skip ci]"
+            git push -u origin HEAD 2>&1 || echo "Push failed - artifacts may be available"
+          else
+            echo "No changes to commit"
+          fi
+
