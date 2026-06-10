@@ -1,8 +1,6 @@
 {
-  "buildCommand": "echo 'Static site — no build needed'",
   "outputDirectory": "web",
   "framework": null,
-  "env": {},
   "headers": [
     {
       "source": "/(.*)",
@@ -40,7 +38,7 @@
       ]
     },
     {
-      "source": "/game/(.*)\\.js$",
+      "source": "/game/(.*\\.js)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -49,7 +47,7 @@
       ]
     },
     {
-      "source": "/game/(.*)\\.wasm$",
+      "source": "/game/(.*\\.wasm)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -62,7 +60,7 @@
       ]
     },
     {
-      "source": "/game/(.*)\\.pck$",
+      "source": "/game/(.*\\.pck)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -70,17 +68,5 @@
         }
       ]
     }
-  ],
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ],
-  "regions": ["sfo1"],
-  "git": {
-    "deploymentEnabled": {
-      "main": true
-    }
-  }
+  ]
 }

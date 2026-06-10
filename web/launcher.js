@@ -333,8 +333,12 @@ async function launchGame() {
 
 async function checkGodotFiles() {
 	try {
-		const res = await fetch('game/index.js', { method: 'HEAD' });
-		return res.ok;
+		const res = await fetch('game/index.js', { method: 'HEAD', cache: 'no-store' });
+		if (!res.ok) return false;
+		// Hosts with SPA fallbacks return index.html (200) for missing paths —
+		// only treat the game as present if the response is actually JavaScript.
+		const type = res.headers.get('content-type') || '';
+		return !type.includes('text/html');
 	} catch {
 		return false;
 	}
@@ -357,9 +361,7 @@ function startGodotGame() {
 		};
 		if (window.Engine) {
 			const engine = new Engine(config);
-			engine.startGame({
-				args: ['--main-pack', 'game/index.pck']
-			});
+			engine.startGame();
 		}
 	};
 	document.body.appendChild(script);
