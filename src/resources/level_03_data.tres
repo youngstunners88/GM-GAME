@@ -1,10 +1,13 @@
-[gd_resource type="LevelData" script_class="LevelData" load_steps=1 format=3]
+[gd_resource type="Resource" script_class="LevelData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/level_data.gd" id="1_ld"]
 
 [resource]
+script = ExtResource("1_ld")
 level_name = "GoldMine Rush"
 bounds = Vector2(4400, 720)
 kill_zone_y = 850.0
-parallax_layers = [
+parallax_layers = Array[Dictionary]([
 	{
 		"speed": 0.1,
 		"color": Color(0.15, 0.1, 0.08, 1.0),
@@ -17,8 +20,8 @@ parallax_layers = [
 		"height": 400.0,
 		"y": 320.0
 	}
-]
-ground_segments = [
+])
+ground_segments = Array[Vector4]([
 	Vector4(0, 650, 400, 70),
 	Vector4(500, 650, 300, 70),
 	Vector4(900, 650, 500, 70),
@@ -27,8 +30,8 @@ ground_segments = [
 	Vector4(2500, 650, 500, 70),
 	Vector4(3100, 650, 400, 70),
 	Vector4(3700, 650, 700, 70)
-]
-platforms = [
+])
+platforms = Array[Vector4]([
 	Vector4(300, 500, 100, 20),
 	Vector4(600, 400, 120, 20),
 	Vector4(900, 350, 100, 20),
@@ -39,8 +42,8 @@ platforms = [
 	Vector4(2700, 400, 120, 20),
 	Vector4(3100, 300, 100, 20),
 	Vector4(3450, 450, 100, 20)
-]
-enemy_spawns = [
+])
+enemy_spawns = Array[Dictionary]([
 	{
 		"type": "tax_collector",
 		"pos": Vector2(700, 600)
@@ -73,8 +76,8 @@ enemy_spawns = [
 		"type": "fly_swarm",
 		"pos": Vector2(2900, 280)
 	}
-]
-collectible_spawns = [
+])
+collectible_spawns = Array[Dictionary]([
 	{
 		"type": "gold_token",
 		"pos": Vector2(200, 600)
@@ -187,8 +190,8 @@ collectible_spawns = [
 		"type": "coin",
 		"pos": Vector2(3300, 600)
 	}
-]
-powerup_spawns = [
+])
+powerup_spawns = Array[Dictionary]([
 	{
 		"type": "weed_leaf",
 		"pos": Vector2(450, 540)
@@ -201,9 +204,9 @@ powerup_spawns = [
 		"type": "diamond_shard",
 		"pos": Vector2(2450, 540)
 	}
-]
+])
 breakable_blocks = []
-melt_forges = [
+melt_forges = Array[Dictionary]([
 	{
 		"pos": Vector2(350, 500)
 	},
@@ -219,8 +222,8 @@ melt_forges = [
 	{
 		"pos": Vector2(2800, 500)
 	}
-]
-mine_carts_fast = [
+])
+mine_carts_fast = Array[Dictionary]([
 	{
 		"pos": Vector2(500, 300),
 		"move_distance": 400,
@@ -236,8 +239,8 @@ mine_carts_fast = [
 		"move_distance": 400,
 		"destination_wbtc": 10
 	}
-]
-mine_carts_slow = [
+])
+mine_carts_slow = Array[Dictionary]([
 	{
 		"pos": Vector2(600, 280),
 		"move_distance": 600,
@@ -248,7 +251,7 @@ mine_carts_slow = [
 		"move_distance": 600,
 		"destination_wbtc": 50
 	}
-]
+])
 boss_arena = {
 	"start_x": 3700,
 	"end_x": 4400,
