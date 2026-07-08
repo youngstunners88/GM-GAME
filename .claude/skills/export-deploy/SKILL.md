@@ -46,3 +46,10 @@ every trap already hit and fixed. Do not re-derive it.
   shell). Never hand-construct `new Engine(...)` in launcher.js.
 - Local git pushes: if the default remote 403s, set
   `origin` to `https://youngstunners88:${GITHUB_API_KEY}@github.com/youngstunners88/GM-GAME.git`.
+- project.godot values must be valid Variant literals — a bare identifier
+  (e.g. `orientation=screen_sensor` instead of `=6`) makes Godot abort parsing
+  AT THAT LINE and silently export a pck missing every later section (this is
+  how all [input] actions once vanished). The import CI step now greps its log
+  and hard-fails on "Error parsing project.godot".
+- After any export, sanity-check the pck directly:
+  `strings web/game/index.pck | grep -c "input/move_left"` → must be ≥ 1.

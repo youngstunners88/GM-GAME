@@ -69,7 +69,9 @@ await page.waitForTimeout(20000);
 // Any Godot script/parse error is an automatic failure — these are the
 // silent killers that made the game "not work" while the menu still rendered.
 const scriptErrors = () =>
-  logs.filter((l) => /USER SCRIPT ERROR|Parse Error|Failed to instantiate an autoload/.test(l));
+  logs.filter((l) =>
+    /USER SCRIPT ERROR|Parse Error|Failed to instantiate an autoload|The InputMap action/.test(l)
+  );
 
 const frame = page.frames().find((f) => f.url().includes('game/index.html'));
 if (!frame) {
