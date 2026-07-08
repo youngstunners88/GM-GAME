@@ -32,6 +32,23 @@ func load_scene(path: String, transition_type: Transition = Transition.FADE) -> 
         SceneTransition.fade_out()
         await get_tree().create_timer(0.3).timeout
 
+    # Web export: ResourceLoader's threaded path can stall forever (the load
+    # starts but never reaches LOADED), leaving the fade overlay on screen.
+    # The pck is already in memory on web, so load synchronously instead.
+    if OS.has_feature("web"):
+        var scene_path := _loading_path
+        _loading_path = ""
+        var err_web := get_tree().change_scene_to_file(scene_path)
+        if err_web != OK:
+            push_error("SceneRouter: change_scene_to_file failed for %s (err %d)" % [scene_path, err_web])
+            return
+        await get_tree().process_frame
+        if _transition_type == Transition.FADE and SceneTransition.has_method("fade_in"):
+            SceneTransition.fade_in()
+        print("[SceneRouter] Loaded %s (sync web path)" % scene_path)
+        load_finished.emit(scene_path)
+        return
+
     var err := ResourceLoader.load_threaded_request(path)
     if err != OK:
         push_error("SceneRouter: load_threaded_request failed for %s (err %d)" % [path, err])
