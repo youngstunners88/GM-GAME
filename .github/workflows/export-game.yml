@@ -94,9 +94,15 @@ jobs:
           progressive_web_app/enabled=false
           EOF
 
+      - name: Import project (first pass)
+        run: |
+          # Exporting before the initial resource import settles can fail with a
+          # blank "configuration errors" message — import in a separate pass first.
+          timeout 300 "$GODOT_BIN" --headless --editor --quit 2>&1 | tail -20 || true
+
       - name: Export game to Web
         run: |
-          "$GODOT_BIN" --headless --export-release "Web" web/game/index.html 2>&1 | tee export.log
+          "$GODOT_BIN" --headless --verbose --export-release "Web" web/game/index.html 2>&1 | tee export.log | tail -60
           echo "=== web/game/ contents ==="
           ls -lh web/game/ || true
 
