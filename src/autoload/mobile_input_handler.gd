@@ -3,7 +3,8 @@ extends Node
 ## Virtual joystick (left side) for movement, buttons (right side) for actions.
 ## Designed for portrait and landscape orientation detection.
 
-class_name MobileInputHandler
+# (no class_name: this script IS the MobileInputHandler autoload; a
+# class_name matching an autoload name is a parse error in Godot 4)
 
 signal touch_move(direction: float)  # -1 = left, 0 = neutral, 1 = right
 signal touch_jump

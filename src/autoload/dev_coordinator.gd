@@ -2,7 +2,8 @@ extends Node
 ## Autonomous development coordinator that monitors game state and proposes tool-driven optimizations
 ## Usage: Call dev_coordinator.analyze_system(system_name) to get analysis and recommendations
 
-class_name DevCoordinator
+# (no class_name: this script IS the DevCoordinator autoload; a
+# class_name matching an autoload name is a parse error in Godot 4)
 
 signal analysis_complete(system_name: String, findings: Dictionary)
 signal optimization_proposed(suggestion: Dictionary)

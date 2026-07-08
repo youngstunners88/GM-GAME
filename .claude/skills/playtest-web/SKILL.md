@@ -5,22 +5,28 @@ description: Serve the web launcher+game locally and run the smoke checklist. Us
 
 # Playtest (Web) — Local Smoke Run
 
-## Serve
+## The real gate: headless-browser boot test
 
 ```bash
-npx -y serve -l 8765 web   # from repo root; Ctrl-C to stop
+node scripts/serve-web.mjs 8899 web &   # prod-faithful server (COOP/COEP + MIME)
+CHROMIUM_BIN=/opt/pw-browsers/chromium-1194/chrome-linux/chrome \
+  node scripts/verify-web.mjs http://localhost:8899/ /tmp/claude-0/shot.png
 ```
 
-Note: `serve` does not send COOP/COEP headers, so the threaded Godot build
-may refuse to boot the engine locally. Launcher UI, asset presence, and
-content-type checks still validate fine; full engine boot is verified on
-Vercel (headers configured there).
+What it does: opens the launcher in Chromium, presses PLAY, captures EVERY
+console/page error from launcher AND game iframe, probes crossOriginIsolated
++ WebGL2, clicks "PLAY LEVEL 1" in-canvas, screenshots menu and level.
+**Exit 1 if the engine fails to boot OR any Godot script/parse/autoload error
+appears.** Always Read the screenshots — verify with eyes, not just exit codes.
 
-## Endpoint checks
+Caveat: web/game/*.pck comes from the last CI export. GDScript changes need a
+push → CI export → pull cycle before they show up locally (/export-deploy).
+
+## Endpoint checks (quick, no browser)
 
 ```bash
-curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8765/                    # 200
-curl -s -o /dev/null -w "%{http_code} %{content_type}\n" http://localhost:8765/game/index.js
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8899/                    # 200
+curl -s -o /dev/null -w "%{http_code} %{content_type}\n" http://localhost:8899/game/index.js
 # 200 + application/javascript when the game is exported; 404 when not.
 # The launcher treats a text/html response as "not exported" (SPA-fallback guard).
 ```

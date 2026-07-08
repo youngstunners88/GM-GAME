@@ -1,6 +1,9 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://src/collectibles/gold_token.gd" id="1_gold"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_1"]
+radius = 12.0
 
 [node name="GoldToken" type="Area2D"]
 collision_layer = 0
@@ -8,4 +11,4 @@ collision_mask = 2
 script = ExtResource("1_gold")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-shape = CircleShape2D.new()
+shape = SubResource("CircleShape2D_1")
