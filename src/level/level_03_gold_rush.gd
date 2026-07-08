@@ -5,6 +5,7 @@ var _boss_arena_active: bool = false
 func _ready() -> void:
 	level_data = preload("res://src/resources/level_03_data.tres")
 	super()
+	_setup_blaze_portal(Vector2(2600, 300), 4000, 3)
 	AudioManager.play_music("res://src/assets/music/level03_theme.ogg")
 
 func _on_boss_trigger(body: Node2D) -> void:

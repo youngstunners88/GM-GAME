@@ -6,6 +6,7 @@ func _ready() -> void:
     level_data = preload("res://src/resources/level_01_data.tres")
     super()
     _setup_smoke_platforms()
+    _setup_blaze_portal(Vector2(1450, 250), 1500, 1)
     AudioManager.play_music("res://src/assets/music/level01_theme.ogg")
 
 func _setup_background() -> void:
