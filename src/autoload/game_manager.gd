@@ -5,12 +5,17 @@ signal health_changed(new_health: int)
 signal power_up_changed(type: String, duration: float)
 signal coins_changed(new_count: int)
 signal rings_changed(new_count: int)
+signal smoke_changed(new_count: int)
 signal player_died
 
 # Persistent player data only — no state booleans (those live in StateMachine).
 var total_score: int = 0
 var coins_collected: int = 0
 var ethereum_rings_collected: int = 0
+var smoke_collected: int = 0
+# Blaze Rush (secret dash mode) bookkeeping.
+var blaze_rush_completed: Dictionary = {}   # level_index -> true once one-time bonuses paid
+var dash_return: Dictionary = {}            # transient: scene_path/position/level_index for the return trip
 var player_health: int = 3
 var max_health: int = 3
 var current_power_up: String = ""
@@ -38,6 +43,13 @@ func add_ethereum_ring() -> void:
     ethereum_rings_collected += 1
     rings_changed.emit(ethereum_rings_collected)
     add_score(50)
+
+## Bank $SMOKE tokens earned in Blaze Rush runs.
+func add_smoke(amount: int) -> void:
+    if amount <= 0:
+        return
+    smoke_collected += amount
+    smoke_changed.emit(smoke_collected)
 
 func take_damage(amount: int) -> void:
     if current_power_up == "diamond":
@@ -88,6 +100,10 @@ func reset_session() -> void:
     total_score = 0
     coins_collected = 0
     ethereum_rings_collected = 0
+    smoke_collected = 0
+    smoke_changed.emit(0)
+    blaze_rush_completed.clear()
+    dash_return = {}
     level_checkpoints.clear()
     GoldMineSystem.reset_session()
 
@@ -104,6 +120,8 @@ func save_session() -> bool:
         "total_score": total_score,
         "coins": coins_collected,
         "rings": ethereum_rings_collected,
+        "smoke": smoke_collected,
+        "blaze_rush": _serialize_blaze_completions(),
         "health": player_health,
         "max_health": max_health,
         "current_level": current_level,
@@ -133,6 +151,8 @@ func load_session() -> bool:
     total_score = int(data.get("total_score", 0))
     coins_collected = int(data.get("coins", 0))
     ethereum_rings_collected = int(data.get("rings", 0))
+    smoke_collected = int(data.get("smoke", 0))
+    _deserialize_blaze_completions(data.get("blaze_rush", {}))
     player_health = int(data.get("health", max_health))
     max_health = int(data.get("max_health", 3))
     current_level = int(data.get("current_level", 1))
@@ -151,6 +171,17 @@ func _serialize_checkpoints() -> Dictionary:
             "y": cp.pos.y,
         }
     return out
+
+func _serialize_blaze_completions() -> Dictionary:
+    var out: Dictionary = {}
+    for level in blaze_rush_completed.keys():
+        out[str(level)] = bool(blaze_rush_completed[level])
+    return out
+
+func _deserialize_blaze_completions(raw: Dictionary) -> void:
+    blaze_rush_completed.clear()
+    for k in raw.keys():
+        blaze_rush_completed[int(k)] = bool(raw[k])
 
 func _deserialize_checkpoints(raw: Dictionary) -> void:
     level_checkpoints.clear()

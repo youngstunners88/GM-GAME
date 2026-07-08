@@ -8,6 +8,7 @@ extends CanvasLayer
 @onready var wbtc_label: Label = $MarginContainer/VBoxContainer/WbtcLabel
 @onready var xaut_label: Label = $MarginContainer/VBoxContainer/XautLabel
 @onready var diamond_label: Label = $MarginContainer/VBoxContainer/DiamondLabel
+@onready var smoke_label: Label = $MarginContainer/VBoxContainer/SmokeLabel
 @onready var powerup_label: Label = $MarginContainer/VBoxContainer/PowerUpLabel
 @onready var powerup_bar: ProgressBar = $MarginContainer/VBoxContainer/PowerUpBar
 
@@ -21,6 +22,7 @@ func _ready() -> void:
     GameManager.health_changed.connect(_on_health_changed)
     GameManager.coins_changed.connect(_on_coins_changed)
     GameManager.rings_changed.connect(_on_rings_changed)
+    GameManager.smoke_changed.connect(_on_smoke_changed)
     GameManager.power_up_changed.connect(_on_power_up_changed)
     GameManager.player_died.connect(_on_player_died)
     GoldMineSystem.gold_changed.connect(_on_gold_changed)
@@ -42,6 +44,7 @@ func _ready() -> void:
     _on_health_changed(GameManager.player_health)
     _on_coins_changed(GameManager.coins_collected)
     _on_rings_changed(GameManager.ethereum_rings_collected)
+    _on_smoke_changed(GameManager.smoke_collected)
     _on_gold_changed(GoldMineSystem.gold_balance)
     _on_wbtc_changed(GoldMineSystem.wbtc_balance)
     _on_xaut_changed(GoldMineSystem.xaut_balance)
@@ -68,6 +71,9 @@ func _on_coins_changed(new_count: int) -> void:
 
 func _on_rings_changed(new_count: int) -> void:
     ring_label.text = "💍 %d" % new_count
+
+func _on_smoke_changed(new_count: int) -> void:
+    smoke_label.text = "💨 %d" % new_count
 
 func _on_power_up_changed(type: String, _duration: float) -> void:
     if type == "":

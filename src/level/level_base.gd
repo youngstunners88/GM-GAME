@@ -141,6 +141,15 @@ func _spawn_player() -> void:
 		player.global_position = Vector2(100, 500)
 	add_child(player)
 
+## Place this level's hidden Blaze Portal (Geometry-Dash secret run entrance).
+## Locked until the player's accumulated score reaches `threshold`.
+func _setup_blaze_portal(pos: Vector2, threshold: int, level_index: int) -> void:
+	var portal := preload("res://src/dashmode/blaze_portal.tscn").instantiate()
+	portal.global_position = pos
+	portal.unlock_threshold = threshold
+	portal.level_index = level_index
+	add_child(portal)
+
 func _setup_hud() -> void:
 	var pm := preload("res://src/ui/pause_menu.tscn").instantiate()
 	add_child(pm)
