@@ -558,13 +558,12 @@ body {
 	justify-content: center;
 }
 
-#canvas {
-	display: block;
+#gameFrame {
+	position: absolute;
+	inset: 0;
 	width: 100%;
 	height: 100%;
-	max-width: 100vw;
-	max-height: 100vh;
-	object-fit: contain;
+	border: 0;
 	background: #000;
 }
 
