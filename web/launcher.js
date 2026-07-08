@@ -345,26 +345,23 @@ async function checkGodotFiles() {
 }
 
 function startGodotGame() {
-	document.getElementById('gameContainer').style.display = 'flex';
+	const container = document.getElementById('gameContainer');
+	container.style.display = 'flex';
 	state.gameRunning = true;
 
-	// Load the Godot game
-	const script = document.createElement('script');
-	script.src = 'game/index.js';
-	script.onload = () => {
-		const config = {
-			args: [],
-			canvas: document.getElementById('canvas'),
-			executable: 'game/index',
-			mainPack: 'game/index.pck',
-			focusCanvas: true
-		};
-		if (window.Engine) {
-			const engine = new Engine(config);
-			engine.startGame();
-		}
-	};
-	document.body.appendChild(script);
+	// Load Godot's own generated boot page in a same-origin iframe — it owns
+	// engine startup, canvas sizing, workers, and audio. Rebuilding that boot
+	// by hand is how the old PLAY button broke.
+	let frame = document.getElementById('gameFrame');
+	if (!frame) {
+		frame = document.createElement('iframe');
+		frame.id = 'gameFrame';
+		frame.allow = 'autoplay; fullscreen; gamepad';
+		frame.setAttribute('tabindex', '0');
+		container.insertBefore(frame, container.firstChild);
+	}
+	frame.src = 'game/index.html';
+	frame.addEventListener('load', () => frame.focus(), { once: true });
 
 	requestFullscreen();
 	startComboSystem();

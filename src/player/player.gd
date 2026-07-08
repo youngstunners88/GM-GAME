@@ -12,7 +12,7 @@ signal died
 
 var current_outfit: Outfit = Outfit.DEFAULT
 
-@onready var sprite: ColorRect = $ColorRect
+@onready var sprite: LilBluntVisual = $Visual
 @onready var collision: CollisionShape2D = $CollisionShape2D
 @onready var camera: Camera2D = $Camera2D
 @onready var smoke_spawn: Marker2D = $SmokeSpawn
@@ -121,6 +121,7 @@ func _physics_process(delta: float) -> void:
 		AudioManager.play_sfx("dash")
 
 	_update_sprite_color()
+	sprite.facing_right = input_handler.facing_right
 	move_and_slide()
 	aura.monitoring = GameManager.has_power_up("diamond")
 	GameManager.player_position = global_position
