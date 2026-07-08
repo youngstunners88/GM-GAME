@@ -30,7 +30,7 @@ window/size/viewport_height=720
 window/size/resizable=true
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
-window/handheld/orientation=screen_sensor
+window/handheld/orientation=6
 
 [input]
 move_left={
