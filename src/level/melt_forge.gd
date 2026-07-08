@@ -71,8 +71,8 @@ func _activate_melt() -> void:
 	var particles := CPUParticles2D.new()
 	particles.amount = 16
 	particles.lifetime = boost_duration
-	particles.emission_shape = CPUParticles2D.EMISSION_SHAPE_CIRCLE
-	particles.emission_radius = 30
+	particles.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
+	particles.emission_sphere_radius = 30.0
 	particles.initial_velocity_min = 50
 	particles.initial_velocity_max = 100
 	particles.color = Color(1.0, 0.2, 0.2, 0.8)
