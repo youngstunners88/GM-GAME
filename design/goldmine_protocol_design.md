@@ -4,6 +4,12 @@
 **Game Module**: `src/autoload/goldmine_system.gd`  
 **Status**: Implemented (Phase 1 — core token economy)
 
+> ⚠️ **Before changing anything below**, check
+> `design/client_protocol_updates.md` for the latest routing adjustments
+> Rich has made on top of this whitepaper (Smoke Lounge NFT routing, Diamonds
+> NFT / 420 NFT split, Phase 2 freeze). That file is the living source of
+> truth for what's actually changing; this doc describes what's implemented.
+
 ---
 
 ## Translation Philosophy
