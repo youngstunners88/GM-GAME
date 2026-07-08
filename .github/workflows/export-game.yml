@@ -1,26 +1,139 @@
-name: Export Godot Game to Web — Manual Workflow
+name: Export Godot Game to Web
 
 on:
+  push:
+    branches:
+      - main
+      - master
+      - claude/**
+    paths:
+      - 'src/**'
+      - 'project.godot'
+      - '.github/workflows/export-game.yml'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  export-manual:
+  export:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      GODOT_VERSION: "4.3-stable"
+
     steps:
-      - name: Manual Export Required
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download Godot editor + export templates
         run: |
-          echo "🎮 Godot Web Export"
-          echo "=================="
-          echo ""
-          echo "To export the game:"
-          echo ""
-          echo "1. Open this repo locally"
-          echo "2. Run: ./scripts/export-web.sh"
-          echo "3. Commit: git add web/game/ && git commit -m 'build: export Godot to web'"
-          echo "4. Push: git push"
-          echo ""
-          echo "Or manually in Godot:"
-          echo "1. Project → Export → Add 'Web' preset"
-          echo "2. Export to: web/game/index.html"
-          echo "3. Commit and push"
-          echo ""
+          set -euo pipefail
+          mkdir -p godot
+          cd godot
+
+          EDITOR_URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          TEMPLATES_URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_export_templates.tpz"
+
+          echo "Downloading editor: $EDITOR_URL"
+          curl -fL --retry 3 -o godot-editor.zip "$EDITOR_URL"
+          unzip -q godot-editor.zip
+          EDITOR_BIN=$(find . -maxdepth 1 -name "Godot_v*_linux.x86_64" -type f | head -1)
+          chmod +x "$EDITOR_BIN"
+          echo "GODOT_BIN=$(pwd)/$EDITOR_BIN" >> "$GITHUB_ENV"
+
+          echo "Downloading export templates: $TEMPLATES_URL"
+          curl -fL --retry 3 -o templates.tpz "$TEMPLATES_URL"
+
+          # Templates must live at ~/.local/share/godot/export_templates/<version>/
+          TEMPLATE_DIR="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}"
+          mkdir -p "$TEMPLATE_DIR"
+          unzip -q templates.tpz -d /tmp/templates_extract
+          # The tpz extracts into a "templates/" folder
+          cp -r /tmp/templates_extract/templates/* "$TEMPLATE_DIR/"
+          echo "Templates installed to $TEMPLATE_DIR:"
+          ls "$TEMPLATE_DIR" | head -5
+
+      - name: Verify Godot runs
+        run: |
+          "$GODOT_BIN" --version
+
+      - name: Create export preset
+        run: |
+          mkdir -p web/game
+          cat > export_presets.cfg << 'EOF'
+          [preset.0]
+          name="Web"
+          platform="Web"
+          runnable=true
+          dedicated_server=false
+          custom_features=""
+          export_filter="all_resources"
+          include_filter=""
+          exclude_filter="*.yml,*.yaml,*.md"
+          export_path="web/game/index.html"
+          script_export_mode=1
+          script_encryption_key=""
+
+          [preset.0.options]
+          custom_template/debug=""
+          custom_template/release=""
+          variant/extensions_support=false
+          vram_texture_compression/for_desktop=true
+          vram_texture_compression/for_mobile=true
+          html/export_icon=true
+          html/custom_html_shell=""
+          html/head_include=""
+          html/canvas_resize_policy=2
+          html/focus_canvas_on_start=true
+          html/experimental_virtual_keyboard=false
+          progressive_web_app/enabled=false
+          compression/enabled=true
+          compression/algorithms/deflate/compression_level=9
+          web/enable_cuda=false
+          web/enable_vulkan=false
+          web/use_threads=true
+          web/threads_count=8
+          EOF
+
+      - name: Export game to Web
+        run: |
+          "$GODOT_BIN" --headless --export-release "Web" web/game/index.html 2>&1 | tee export.log
+          echo "=== web/game/ contents ==="
+          ls -lh web/game/ || true
+
+      - name: Verify export output
+        run: |
+          if [ -f "web/game/index.js" ] && [ -f "web/game/index.wasm" ]; then
+            echo "✓ Export successful"
+            du -sh web/game/*
+          else
+            echo "✗ Export failed — see log below"
+            cat export.log
+            exit 1
+          fi
+
+      - name: Upload artifacts (always, for debugging)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: godot-web-export
+          path: |
+            web/game/
+            export.log
+          retention-days: 7
+
+      - name: Commit exported files
+        if: success()
+        run: |
+          git config --global user.name "Claude Code Bot"
+          git config --global user.email "claude@anthropic.com"
+          git add -f web/game/
+          if ! git diff --cached --quiet; then
+            git commit -m "build: export Godot 4.3 game to web (automated CI)"
+            git push -u origin HEAD
+          else
+            echo "No changes to commit"
+          fi
