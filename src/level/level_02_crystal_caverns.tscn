@@ -1,0 +1,55 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://src/level/level_02_crystal_caverns.gd" id="1_lvl"]
+[ext_resource type="PackedScene" uid="uid://hud001" path="res://src/ui/hud.tscn" id="2_hud"]
+[ext_resource type="PackedScene" uid="uid://touch001" path="res://src/ui/touch_controls.tscn" id="3_touch"]
+[ext_resource type="Resource" path="res://src/resources/level_02_data.tres" id="4_level02_data"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_trigger"]
+size = Vector2(200, 200)
+
+[node name="Level02CrystalCaverns" type="Node2D"]
+script = ExtResource("1_lvl")
+level_data = ExtResource("4_level02_data")
+
+[node name="Background" type="TextureRect" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -2200.0
+offset_top = -360.0
+offset_right = 2200.0
+offset_bottom = 360.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = null
+expand_mode = 2
+stretch_mode = 0
+
+[node name="PlayerSpawn" type="Marker2D" parent="."]
+position = Vector2(100, 500)
+
+[node name="BossTrigger" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="BossTrigger"]
+position = Vector2(3700, 400)
+shape = SubResource("RectangleShape2D_trigger")
+
+[node name="BossSpawn" type="Marker2D" parent="."]
+position = Vector2(4050, 550)
+
+[node name="HUDMask" type="ColorRect" parent="."]
+anchors_preset = 0
+offset_right = 400.0
+offset_bottom = 120.0
+color = Color(0, 0, 0, 1)
+z_index = 10
+
+[node name="HUD" parent="." instance=ExtResource("2_hud")]
+z_index = 11
+
+[node name="TouchControls" parent="." instance=ExtResource("3_touch")]

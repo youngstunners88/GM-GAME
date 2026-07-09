@@ -20,10 +20,34 @@ func _ready() -> void:
 	_setup_hud()
 	StateMachine.change_state(StateMachine.State.PLAYING)
 
+var _backdrop: TextureRect
+
 func _setup_background() -> void:
-	pass  # Override in subclasses for custom background
+	# Painted key-art backdrop, pinned to the screen behind everything.
+	if not level_data or level_data.background_path == "":
+		return
+	var layer := CanvasLayer.new()
+	layer.layer = -20
+	layer.name = "BackdropLayer"
+	add_child(layer)
+	_backdrop = TextureRect.new()
+	_backdrop.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_backdrop.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_backdrop.texture = load(level_data.background_path)
+	# Slight darken so gameplay reads clearly over the busy art.
+	_backdrop.modulate = Color(0.82, 0.82, 0.86, 1.0)
+	layer.add_child(_backdrop)
+
+## Swap the backdrop to the boss key art (called from boss triggers).
+func set_boss_background() -> void:
+	if _backdrop and level_data and level_data.boss_background_path != "":
+		_backdrop.texture = load(level_data.boss_background_path)
 
 func _setup_parallax() -> void:
+	# Skip the flat color bands when a painted backdrop is present.
+	if level_data and level_data.background_path != "":
+		return
 	if not level_data or level_data.parallax_layers.is_empty():
 		return
 	var bg := ParallaxBackground.new()
@@ -41,22 +65,36 @@ func _setup_parallax() -> void:
 		bg.add_child(layer)
 
 func _setup_geometry() -> void:
-	# Create ground segments
+	# Ground + floating platforms get a dark body with a bright lip so they
+	# read as solid ledges over the painted backdrop.
 	for segment in level_data.ground_segments:
-		_create_platform(segment.x, segment.y, segment.z, segment.w, Color(0.2, 0.5, 0.2, 1.0))
-	# Create floating platforms
+		_create_platform(segment.x, segment.y, segment.z, segment.w, Color(0.10, 0.07, 0.14, 0.94), Color(0.45, 0.9, 0.5, 1.0))
 	for platform in level_data.platforms:
-		_create_platform(platform.x, platform.y, platform.z, platform.w, Color(0.3, 0.6, 0.3, 1.0))
+		_create_platform(platform.x, platform.y, platform.z, platform.w, Color(0.12, 0.09, 0.18, 0.92), Color(0.55, 0.95, 0.7, 1.0))
 
-func _create_platform(x: float, y: float, w: float, h: float, color: Color) -> void:
+func _create_platform(x: float, y: float, w: float, h: float, body_color: Color, lip_color: Color = Color(0.5, 0.9, 0.6, 1.0)) -> void:
 	var plat := StaticBody2D.new()
 	plat.position = Vector2(x, y)
 	plat.collision_layer = 1
 
 	var visual := ColorRect.new()
-	visual.color = color
+	visual.color = body_color
 	visual.size = Vector2(w, h)
 	plat.add_child(visual)
+
+	# Bright top lip — the "grass/crystal edge" read.
+	var lip := ColorRect.new()
+	lip.color = lip_color
+	lip.size = Vector2(w, min(6.0, h))
+	plat.add_child(lip)
+
+	# Thin dark outline sides for definition.
+	var outline := ColorRect.new()
+	outline.color = Color(0, 0, 0, 0.35)
+	outline.size = Vector2(w, h)
+	outline.position = Vector2(0, 0)
+	plat.add_child(outline)
+	plat.move_child(outline, 0)
 
 	var col := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
@@ -95,6 +133,19 @@ func _setup_entities() -> void:
 	# Spawn breakable blocks
 	for block_pos in level_data.breakable_blocks:
 		var entity := EntitySpawner.spawn("breakable_block", block_pos, self)
+	# Spawn melt forges (Level 3 whitepaper mechanic)
+	for forge_data in level_data.melt_forges:
+		var entity := EntitySpawner.spawn("melt_forge", forge_data.get("pos", Vector2.ZERO), self)
+	# Spawn fast mine carts (day 88 short pool)
+	for cart_data in level_data.mine_carts_fast:
+		var entity := EntitySpawner.spawn("mine_cart", cart_data.get("pos", Vector2.ZERO), self)
+		if entity and entity.has_meta("set_cart_type"):
+			entity.set("cart_type", 0)  # CartType.FAST
+	# Spawn slow mine carts (day 288 long pool)
+	for cart_data in level_data.mine_carts_slow:
+		var entity := EntitySpawner.spawn("mine_cart", cart_data.get("pos", Vector2.ZERO), self)
+		if entity and entity.has_meta("set_cart_type"):
+			entity.set("cart_type", 1)  # CartType.SLOW
 
 func _setup_boss_arena() -> void:
 	if level_data.boss_arena.is_empty():
@@ -127,6 +178,15 @@ func _spawn_player() -> void:
 	else:
 		player.global_position = Vector2(100, 500)
 	add_child(player)
+
+## Place this level's hidden Blaze Portal (Geometry-Dash secret run entrance).
+## Locked until the player's accumulated score reaches `threshold`.
+func _setup_blaze_portal(pos: Vector2, threshold: int, level_index: int) -> void:
+	var portal := preload("res://src/dashmode/blaze_portal.tscn").instantiate()
+	portal.global_position = pos
+	portal.unlock_threshold = threshold
+	portal.level_index = level_index
+	add_child(portal)
 
 func _setup_hud() -> void:
 	var pm := preload("res://src/ui/pause_menu.tscn").instantiate()

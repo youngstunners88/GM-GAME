@@ -1,0 +1,151 @@
+[gd_resource type="Resource" script_class="LevelData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/level_data.gd" id="1_ld"]
+
+[resource]
+script = ExtResource("1_ld")
+background_path = "res://src/assets/backgrounds/bg_l2_crystal.jpg"
+boss_background_path = "res://src/assets/backgrounds/bg_boss_crystal.jpg"
+level_name = "Crystal Caverns"
+bounds = Vector2(4400, 720)
+kill_zone_y = 850.0
+parallax_layers = Array[Dictionary]([
+	{
+		"speed": 0.1,
+		"color": Color(0.05, 0.05, 0.15, 1.0),
+		"height": 720.0,
+		"y": 0.0
+	},
+	{
+		"speed": 0.4,
+		"color": Color(0.1, 0.15, 0.3, 1.0),
+		"height": 400.0,
+		"y": 320.0
+	}
+])
+ground_segments = Array[Vector4]([
+	Vector4(0, 650, 400, 70),
+	Vector4(500, 650, 300, 70),
+	Vector4(900, 650, 500, 70),
+	Vector4(1500, 650, 400, 70),
+	Vector4(2000, 650, 400, 70),
+	Vector4(2500, 650, 500, 70),
+	Vector4(3100, 650, 400, 70),
+	Vector4(3700, 650, 700, 70)
+])
+platforms = Array[Vector4]([
+	Vector4(300, 500, 100, 20),
+	Vector4(600, 400, 120, 20),
+	Vector4(900, 350, 100, 20),
+	Vector4(1200, 450, 120, 20),
+	Vector4(1500, 300, 100, 20),
+	Vector4(1900, 400, 150, 20),
+	Vector4(2300, 250, 100, 20),
+	Vector4(2700, 400, 120, 20),
+	Vector4(3100, 300, 100, 20),
+	Vector4(3450, 450, 100, 20)
+])
+enemy_spawns = Array[Dictionary]([
+	{
+		"type": "tax_collector",
+		"pos": Vector2(700, 600)
+	},
+	{
+		"type": "tax_collector",
+		"pos": Vector2(1500, 600)
+	},
+	{
+		"type": "tax_collector",
+		"pos": Vector2(2400, 600)
+	},
+	{
+		"type": "tax_collector",
+		"pos": Vector2(3200, 600)
+	},
+	{
+		"type": "fly_swarm",
+		"pos": Vector2(550, 280)
+	},
+	{
+		"type": "fly_swarm",
+		"pos": Vector2(1300, 250)
+	},
+	{
+		"type": "fly_swarm",
+		"pos": Vector2(2100, 200)
+	},
+	{
+		"type": "fly_swarm",
+		"pos": Vector2(2900, 280)
+	},
+	{
+		"type": "hostile_vine",
+		"pos": Vector2(800, 350)
+	},
+	{
+		"type": "hostile_vine",
+		"pos": Vector2(1800, 300)
+	},
+	{
+		"type": "hostile_vine",
+		"pos": Vector2(2900, 350)
+	},
+	{
+		"type": "rolling_boulder",
+		"pos": Vector2(1200, 550)
+	},
+	{
+		"type": "rolling_boulder",
+		"pos": Vector2(2200, 500)
+	},
+	{
+		"type": "rolling_boulder",
+		"pos": Vector2(3300, 550)
+	}
+])
+collectible_spawns = Array[Dictionary]([
+	{
+		"type": "coin",
+		"pos": Vector2(320, 450)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(520, 350)
+	},
+	{
+		"type": "ethereum_ring",
+		"pos": Vector2(640, 350)
+	},
+	{
+		"type": "ethereum_ring",
+		"pos": Vector2(1540, 250)
+	},
+	{
+		"type": "ethereum_ring",
+		"pos": Vector2(2340, 200)
+	},
+	{
+		"type": "ethereum_ring",
+		"pos": Vector2(3450, 400)
+	}
+])
+powerup_spawns = Array[Dictionary]([
+	{
+		"type": "diamond_shard",
+		"pos": Vector2(2450, 540)
+	},
+	{
+		"type": "diamond_shard",
+		"pos": Vector2(2350, 200)
+	},
+	{
+		"type": "diamond_shard",
+		"pos": Vector2(3650, 540)
+	}
+])
+breakable_blocks = []
+boss_arena = {
+	"start_x": 3700,
+	"end_x": 4400,
+	"spawn": Vector2(4050, 500)
+}

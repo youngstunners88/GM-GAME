@@ -1,0 +1,20 @@
+{
+	"name": "Lil Blunt: The Smoke Realm",
+	"short_name": "Lil Blunt",
+	"description": "A chill 2D platformer adventure across smoke, crystal, and gold realms.",
+	"start_url": "./index.html",
+	"display": "fullscreen",
+	"orientation": "any",
+	"background_color": "#0a0515",
+	"theme_color": "#1a0f2e",
+	"categories": ["games", "entertainment"],
+	"icons": [
+		{
+			"src": "icon.svg",
+			"sizes": "any",
+			"type": "image/svg+xml",
+			"purpose": "any maskable"
+		}
+	],
+	"prefer_related_applications": false
+}

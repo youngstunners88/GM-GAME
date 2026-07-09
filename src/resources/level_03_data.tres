@@ -1,10 +1,15 @@
-[gd_resource type="LevelData" script_class="LevelData" load_steps=1 format=3]
+[gd_resource type="Resource" script_class="LevelData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/level_data.gd" id="1_ld"]
 
 [resource]
+script = ExtResource("1_ld")
+background_path = "res://src/assets/backgrounds/bg_l3_goldrush.jpg"
+boss_background_path = "res://src/assets/backgrounds/bg_boss_bandit.jpg"
 level_name = "GoldMine Rush"
 bounds = Vector2(4400, 720)
 kill_zone_y = 850.0
-parallax_layers = [
+parallax_layers = Array[Dictionary]([
 	{
 		"speed": 0.1,
 		"color": Color(0.15, 0.1, 0.08, 1.0),
@@ -17,8 +22,8 @@ parallax_layers = [
 		"height": 400.0,
 		"y": 320.0
 	}
-]
-ground_segments = [
+])
+ground_segments = Array[Vector4]([
 	Vector4(0, 650, 400, 70),
 	Vector4(500, 650, 300, 70),
 	Vector4(900, 650, 500, 70),
@@ -27,8 +32,8 @@ ground_segments = [
 	Vector4(2500, 650, 500, 70),
 	Vector4(3100, 650, 400, 70),
 	Vector4(3700, 650, 700, 70)
-]
-platforms = [
+])
+platforms = Array[Vector4]([
 	Vector4(300, 500, 100, 20),
 	Vector4(600, 400, 120, 20),
 	Vector4(900, 350, 100, 20),
@@ -39,8 +44,8 @@ platforms = [
 	Vector4(2700, 400, 120, 20),
 	Vector4(3100, 300, 100, 20),
 	Vector4(3450, 450, 100, 20)
-]
-enemy_spawns = [
+])
+enemy_spawns = Array[Dictionary]([
 	{
 		"type": "tax_collector",
 		"pos": Vector2(700, 600)
@@ -73,42 +78,122 @@ enemy_spawns = [
 		"type": "fly_swarm",
 		"pos": Vector2(2900, 280)
 	}
-]
-collectible_spawns = [
+])
+collectible_spawns = Array[Dictionary]([
 	{
-		"type": "coin",
-		"pos": Vector2(320, 600)
+		"type": "gold_token",
+		"pos": Vector2(200, 600)
 	},
 	{
-		"type": "coin",
-		"pos": Vector2(520, 350)
+		"type": "gold_token",
+		"pos": Vector2(450, 400)
 	},
 	{
-		"type": "coin",
-		"pos": Vector2(920, 300)
+		"type": "gold_token",
+		"pos": Vector2(700, 350)
 	},
 	{
-		"type": "coin",
-		"pos": Vector2(1520, 250)
+		"type": "gold_token",
+		"pos": Vector2(950, 400)
 	},
 	{
-		"type": "coin",
-		"pos": Vector2(2020, 600)
+		"type": "gold_token",
+		"pos": Vector2(1200, 300)
 	},
 	{
-		"type": "coin",
-		"pos": Vector2(2720, 350)
+		"type": "gold_token",
+		"pos": Vector2(1500, 350)
 	},
 	{
-		"type": "coin",
-		"pos": Vector2(3120, 250)
+		"type": "gold_token",
+		"pos": Vector2(1800, 250)
+	},
+	{
+		"type": "gold_token",
+		"pos": Vector2(2200, 350)
+	},
+	{
+		"type": "gold_token",
+		"pos": Vector2(2600, 300)
+	},
+	{
+		"type": "gold_token",
+		"pos": Vector2(3000, 350)
+	},
+	{
+		"type": "gold_token",
+		"pos": Vector2(3400, 250)
+	},
+	{
+		"type": "gold_token",
+		"pos": Vector2(3700, 400)
+	},
+	{
+		"type": "gold_token",
+		"pos": Vector2(3200, 600)
+	},
+	{
+		"type": "gold_token",
+		"pos": Vector2(2800, 600)
+	},
+	{
+		"type": "gold_token",
+		"pos": Vector2(2300, 600)
 	},
 	{
 		"type": "wbtc",
-		"pos": Vector2(2300, 180)
+		"pos": Vector2(800, 300)
+	},
+	{
+		"type": "wbtc",
+		"pos": Vector2(1600, 300)
+	},
+	{
+		"type": "wbtc",
+		"pos": Vector2(2400, 250)
+	},
+	{
+		"type": "wbtc",
+		"pos": Vector2(3100, 280)
+	},
+	{
+		"type": "wbtc",
+		"pos": Vector2(3500, 350)
+	},
+	{
+		"type": "wbtc",
+		"pos": Vector2(1000, 600)
+	},
+	{
+		"type": "wbtc",
+		"pos": Vector2(1800, 600)
+	},
+	{
+		"type": "wbtc",
+		"pos": Vector2(2600, 600)
+	},
+	{
+		"type": "ethereum_ring",
+		"pos": Vector2(1400, 200)
+	},
+	{
+		"type": "ethereum_ring",
+		"pos": Vector2(2900, 200)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(500, 600)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(2000, 600)
+	},
+	{
+		"type": "coin",
+		"pos": Vector2(3300, 600)
 	}
-]
-powerup_spawns = [
+])
+powerup_spawns = Array[Dictionary]([
 	{
 		"type": "weed_leaf",
 		"pos": Vector2(450, 540)
@@ -121,8 +206,54 @@ powerup_spawns = [
 		"type": "diamond_shard",
 		"pos": Vector2(2450, 540)
 	}
-]
+])
 breakable_blocks = []
+melt_forges = Array[Dictionary]([
+	{
+		"pos": Vector2(350, 500)
+	},
+	{
+		"pos": Vector2(800, 450)
+	},
+	{
+		"pos": Vector2(1400, 500)
+	},
+	{
+		"pos": Vector2(2000, 450)
+	},
+	{
+		"pos": Vector2(2800, 500)
+	}
+])
+mine_carts_fast = Array[Dictionary]([
+	{
+		"pos": Vector2(500, 300),
+		"move_distance": 400,
+		"destination_wbtc": 10
+	},
+	{
+		"pos": Vector2(1600, 300),
+		"move_distance": 400,
+		"destination_wbtc": 10
+	},
+	{
+		"pos": Vector2(2600, 300),
+		"move_distance": 400,
+		"destination_wbtc": 10
+	}
+])
+mine_carts_slow = Array[Dictionary]([
+	{
+		"pos": Vector2(600, 280),
+		"move_distance": 600,
+		"destination_wbtc": 50
+	},
+	{
+		"pos": Vector2(1700, 280),
+		"move_distance": 600,
+		"destination_wbtc": 50
+	}
+])
 boss_arena = {
 	"start_x": 3700,
 	"end_x": 4400,
