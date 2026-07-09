@@ -4,6 +4,8 @@
 
 [resource]
 script = ExtResource("1_ld")
+background_path = "res://src/assets/backgrounds/bg_l2_crystal.jpg"
+boss_background_path = "res://src/assets/backgrounds/bg_boss_crystal.jpg"
 level_name = "Crystal Caverns"
 bounds = Vector2(4400, 720)
 kill_zone_y = 850.0

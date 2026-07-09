@@ -48,3 +48,13 @@ I am building a complete Godot 4.3 2D platformer for my client **Rich**, founder
 - Enemies must NOT be weed-themed. Approved enemy types: Tax Collectors, Fly swarms, Rolling boulders, Hostile vines.
 - Code must be well-commented, modular, and follow Godot 4.3 best practices.
 - The game must feel fun, polished, and true to Lil Blunt's chill personality.
+
+## ⭐ ALWAYS-SHIP RULE (never forget)
+After **every** change to the game, in the same working session:
+1. **Update `STATUS.md`** — the client's living report (what changed, what
+   works, what's next). It is the single page the client checks for progress.
+2. **Commit** with a clear message referencing the change.
+3. **Push** to the designated branch so the client always has something live to
+   look at. Never end a turn with unpushed game changes.
+This is mandatory, not optional — the client relies on always-current state.
+The Stop hook re-checks for uncommitted/unpushed work as a backstop.
