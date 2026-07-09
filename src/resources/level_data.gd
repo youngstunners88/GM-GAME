@@ -4,6 +4,10 @@ extends Resource
 @export var level_name: String = ""
 @export var bounds: Vector2 = Vector2(3400, 720)
 @export var kill_zone_y: float = 800.0
+## Painted full-screen backdrop (client key art). Empty = fall back to color parallax.
+@export var background_path: String = ""
+## Backdrop shown once the boss arena triggers (villain key art). Optional.
+@export var boss_background_path: String = ""
 @export var parallax_layers: Array[Dictionary] = []
 @export var ground_segments: Array[Vector4] = []
 @export var platforms: Array[Vector4] = []

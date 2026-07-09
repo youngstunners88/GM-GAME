@@ -4,6 +4,8 @@
 
 [resource]
 script = ExtResource("1_ld")
+background_path = "res://src/assets/backgrounds/bg_l3_goldrush.jpg"
+boss_background_path = "res://src/assets/backgrounds/bg_boss_bandit.jpg"
 level_name = "GoldMine Rush"
 bounds = Vector2(4400, 720)
 kill_zone_y = 850.0

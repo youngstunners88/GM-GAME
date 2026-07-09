@@ -9,9 +9,6 @@ func _ready() -> void:
     _setup_blaze_portal(Vector2(1450, 250), 1500, 1)
     AudioManager.play_music("res://src/assets/music/level01_theme.ogg")
 
-func _setup_background() -> void:
-    pass  # Use parallax from level_data
-
 func _setup_smoke_platforms() -> void:
     var platform_data := [
         {"pos": Vector2(650, 300), "dist": 80.0, "vert": false},
@@ -28,6 +25,7 @@ func _setup_smoke_platforms() -> void:
 func _on_boss_trigger(body: Node2D) -> void:
     if body.is_in_group("player") and not _boss_arena_active:
         _boss_arena_active = true
+        set_boss_background()
         var boss := preload("res://src/boss/auditor.tscn").instantiate()
         boss.global_position = boss_spawn.global_position
         add_child(boss)
