@@ -53,6 +53,9 @@ art + bugs (all fixed), not hosting.
 - **2026-07-09** — Real painted backdrops from client key art wired into all 3
   levels + boss arenas; platforms restyled to read over art; key art archived
   in `assets/keyart/`. Living STATUS report + always-push rule added.
+  **Browser-verified (GM Forest renders, 0 errors) + deployed to production.**
+  Remaining eyesore now = enemies/coins/character are still small shapes over
+  the art — that's the next sprite pass (needs image-gen key or supplied PNGs).
 - **2026-07-08** — Fixed 5 layered defects that made the game unplayable
   (boot, 8 parse errors, missing input map, black-screen scene load, empty
   level data). Added browser verification harness + `/game-graphics`,
