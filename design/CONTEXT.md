@@ -1,6 +1,10 @@
 # Design Workspace
 This is where game thinking happens. Mechanics, level layouts, balance numbers, and UI/UX rules live here. Claude reads this before designing any game system.
 
+⚠️ Before touching GoldMine/tokenomics-related mechanics, check
+`design/client_protocol_updates.md` — a living log of Rich's protocol/tokenomics
+updates that may supersede or adjust what's in `goldmine_protocol_design.md`.
+
 ## What Happens Here
 - Mechanics design documents
 - Level layout descriptions and flow diagrams

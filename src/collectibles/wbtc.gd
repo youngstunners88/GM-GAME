@@ -1,6 +1,10 @@
 extends Area2D
+## wBTC collectible — represents Fort Knox staking reward from the whitepaper.
+## 35% of BTC mining proceeds become wBTC in the Fort Knox pool;
+## in-game pickups award wBTC to GoldMineSystem on the short-term (day 88, 60%) pool.
 
-@export var points: int = 100
+@export var wbtc_amount: int = 1
+@export var pool: String = "short"  # "short" = day 88 pool, "long" = day 288 pool
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
@@ -8,7 +12,7 @@ func _ready() -> void:
 
 func _setup_visual() -> void:
 	var rect := ColorRect.new()
-	rect.color = Color(1.0, 0.85, 0.0, 1.0)
+	rect.color = Color(1.0, 0.55, 0.0, 1.0)  # Bitcoin orange
 	rect.size = Vector2(30, 15)
 	rect.position = Vector2(-15, -7.5)
 	add_child(rect)
@@ -26,5 +30,6 @@ func _setup_visual() -> void:
 
 func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
-		GameManager.add_score(points)
+		GoldMineSystem.award_wbtc(wbtc_amount, pool)
+		AudioManager.play_sfx("powerup")
 		queue_free()

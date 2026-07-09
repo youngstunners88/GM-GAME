@@ -1,10 +1,15 @@
-[gd_resource type="LevelData" script_class="LevelData" load_steps=1 format=3]
+[gd_resource type="Resource" script_class="LevelData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/resources/level_data.gd" id="1_ld"]
 
 [resource]
+script = ExtResource("1_ld")
+background_path = "res://src/assets/backgrounds/bg_l1_forest.jpg"
+boss_background_path = "res://src/assets/backgrounds/bg_boss_tax.jpg"
 level_name = "The Smoke Realm"
 bounds = Vector2(3400, 720)
 kill_zone_y = 800.0
-parallax_layers = [
+parallax_layers = Array[Dictionary]([
 	{
 		"speed": 0.1,
 		"color": Color(0.05, 0.15, 0.1, 1.0),
@@ -23,8 +28,8 @@ parallax_layers = [
 		"height": 200.0,
 		"y": 520.0
 	}
-]
-ground_segments = [
+])
+ground_segments = Array[Vector4]([
 	Vector4(0, 650, 400, 70),
 	Vector4(500, 650, 300, 70),
 	Vector4(900, 650, 400, 70),
@@ -32,8 +37,8 @@ ground_segments = [
 	Vector4(1900, 650, 300, 70),
 	Vector4(2300, 650, 500, 70),
 	Vector4(2800, 650, 600, 70)
-]
-platforms = [
+])
+platforms = Array[Vector4]([
 	Vector4(300, 500, 100, 20),
 	Vector4(500, 400, 100, 20),
 	Vector4(750, 350, 120, 20),
@@ -46,8 +51,8 @@ platforms = [
 	Vector4(2850, 500, 100, 20),
 	Vector4(3150, 500, 100, 20),
 	Vector4(3000, 400, 80, 20)
-]
-enemy_spawns = [
+])
+enemy_spawns = Array[Dictionary]([
 	{
 		"type": "tax_collector",
 		"pos": Vector2(600, 600)
@@ -96,8 +101,8 @@ enemy_spawns = [
 		"type": "rolling_boulder",
 		"pos": Vector2(2500, 200)
 	}
-]
-collectible_spawns = [
+])
+collectible_spawns = Array[Dictionary]([
 	{
 		"type": "coin",
 		"pos": Vector2(320, 450)
@@ -182,8 +187,8 @@ collectible_spawns = [
 		"type": "health_pickup",
 		"pos": Vector2(2550, 580)
 	}
-]
-powerup_spawns = [
+])
+powerup_spawns = Array[Dictionary]([
 	{
 		"type": "weed_leaf",
 		"pos": Vector2(400, 550)
@@ -200,14 +205,14 @@ powerup_spawns = [
 		"type": "diamond_shard",
 		"pos": Vector2(2100, 200)
 	}
-]
-breakable_blocks = [
+])
+breakable_blocks = Array[Vector2]([
 	Vector2(850, 500),
 	Vector2(950, 500),
 	Vector2(1350, 500),
 	Vector2(1750, 500),
 	Vector2(1850, 500)
-]
+])
 boss_arena = {
 	"start_x": 2800,
 	"end_x": 3400,

@@ -1,7 +1,9 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://src/level/level_03_gold_rush.gd" id="1_level03"]
 [ext_resource type="Resource" path="res://src/resources/level_03_data.tres" id="2_level03_data"]
+[ext_resource type="PackedScene" uid="uid://hud001" path="res://src/ui/hud.tscn" id="3_hud"]
+[ext_resource type="PackedScene" uid="uid://touch001" path="res://src/ui/touch_controls.tscn" id="4_touch"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
 size = Vector2(600, 800)
@@ -9,6 +11,22 @@ size = Vector2(600, 800)
 [node name="Level03GoldRush" type="Node2D"]
 script = ExtResource("1_level03")
 level_data = ExtResource("2_level03_data")
+
+[node name="Background" type="TextureRect" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -2200.0
+offset_top = -360.0
+offset_right = 2200.0
+offset_bottom = 360.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = null
+expand_mode = 2
+stretch_mode = 0
 
 [node name="PlayerSpawn" type="Marker2D" parent="."]
 position = Vector2(100, 500)
@@ -23,3 +41,15 @@ shape = SubResource("RectangleShape2D_1")
 
 [node name="BossSpawn" type="Marker2D" parent="."]
 position = Vector2(4050, 500)
+
+[node name="HUDMask" type="ColorRect" parent="."]
+anchors_preset = 0
+offset_right = 400.0
+offset_bottom = 120.0
+color = Color(0, 0, 0, 1)
+z_index = 10
+
+[node name="HUD" parent="." instance=ExtResource("3_hud")]
+z_index = 11
+
+[node name="TouchControls" parent="." instance=ExtResource("4_touch")]

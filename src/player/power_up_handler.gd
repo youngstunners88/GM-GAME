@@ -35,12 +35,12 @@ func _update_blaze(delta: float) -> void:
 		speed_multiplier = 1.0
 		jump_multiplier = 1.0
 
+## Only push scale to player when the value actually changes — lets juice tweens run.
 func _update_scale() -> void:
-	if GameManager.has_power_up("big"):
-		current_scale = Vector2(1.5, 1.5)
-	else:
-		current_scale = Vector2(1.0, 1.0)
-	player.scale = current_scale
+	var new_scale := Vector2(1.5, 1.5) if GameManager.has_power_up("big") else Vector2.ONE
+	if current_scale != new_scale:
+		current_scale = new_scale
+		player.scale = current_scale
 
 func activate_invincibility(duration: float) -> void:
 	invincible_timer = duration

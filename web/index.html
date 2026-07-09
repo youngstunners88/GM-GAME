@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="theme-color" content="#1a0f2e">
+	<meta name="description" content="Lil Blunt: The Smoke Realm — A chill 2D platformer adventure">
+
+	<title>Lil Blunt: The Smoke Realm</title>
+
+	<link rel="manifest" href="manifest.json">
+	<link rel="apple-touch-icon" href="icon.svg">
+	<link rel="icon" type="image/svg+xml" href="icon.svg">
+
+	<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+	<div id="launcher" class="launcher">
+		<div class="bg-particles" id="bgParticles"></div>
+
+		<div class="launcher-content">
+			<div class="logo-wrap">
+				<div class="logo-glow"></div>
+				<div class="logo-character">
+					<div class="leaf leaf-1"></div>
+					<div class="leaf leaf-2"></div>
+					<div class="leaf leaf-3"></div>
+					<div class="character">
+						<div class="char-body"></div>
+						<div class="char-eye char-eye-left"></div>
+						<div class="char-eye char-eye-right"></div>
+						<div class="char-mouth"></div>
+					</div>
+				</div>
+				<h1 class="game-title">LIL BLUNT</h1>
+				<h2 class="game-subtitle">THE SMOKE REALM</h2>
+			</div>
+
+			<div class="player-stats" id="playerStats">
+				<div class="stat-card">
+					<div class="stat-icon">🏆</div>
+					<div class="stat-info">
+						<div class="stat-label">High Score</div>
+						<div class="stat-value" id="highScore">0</div>
+					</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-icon">🔥</div>
+					<div class="stat-info">
+						<div class="stat-label">Daily Streak</div>
+						<div class="stat-value" id="dailyStreak">0</div>
+					</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-icon">💎</div>
+					<div class="stat-info">
+						<div class="stat-label">Diamonds</div>
+						<div class="stat-value" id="totalDiamonds">0</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="daily-challenge" id="dailyChallenge">
+				<div class="challenge-header">
+					<span class="challenge-tag">DAILY CHALLENGE</span>
+					<span class="challenge-timer" id="challengeTimer">23:59:59</span>
+				</div>
+				<div class="challenge-desc" id="challengeDesc">Collect 50 gold tokens in a single run</div>
+				<div class="challenge-reward">Reward: <span>+500 XP, Bonus Diamond Shard</span></div>
+				<div class="challenge-progress">
+					<div class="challenge-bar" id="challengeBar" style="width: 0%"></div>
+				</div>
+			</div>
+
+			<div class="play-buttons">
+				<button class="btn btn-primary" id="playBtn">
+					<span class="btn-icon">▶</span>
+					<span class="btn-text">PLAY</span>
+				</button>
+				<button class="btn btn-secondary" id="continueBtn" style="display: none;">
+					<span class="btn-icon">⟳</span>
+					<span class="btn-text">CONTINUE</span>
+				</button>
+			</div>
+
+			<div class="quick-actions">
+				<button class="action-btn" id="achievementsBtn" title="Achievements">
+					<span class="action-icon">🎖️</span>
+				</button>
+				<button class="action-btn" id="leaderboardBtn" title="Leaderboard">
+					<span class="action-icon">📊</span>
+				</button>
+				<button class="action-btn" id="settingsBtn" title="Settings">
+					<span class="action-icon">⚙️</span>
+				</button>
+				<button class="action-btn" id="installBtn" title="Install" style="display: none;">
+					<span class="action-icon">⬇️</span>
+				</button>
+			</div>
+
+			<div class="version-tag">v1.0.0 — Mobile Ready</div>
+		</div>
+	</div>
+
+	<div id="loadingScreen" class="loading-screen" style="display: none;">
+		<div class="loading-logo">
+			<div class="loading-character">
+				<div class="char-body pulse"></div>
+			</div>
+		</div>
+		<div class="loading-text" id="loadingText">Entering the Smoke Realm...</div>
+		<div class="loading-bar-wrap">
+			<div class="loading-bar" id="loadingBar"></div>
+		</div>
+		<div class="loading-tip" id="loadingTip"></div>
+	</div>
+
+	<div id="gameContainer" class="game-container" style="display: none;">
+		<!-- Godot's own boot page loads here; it handles engine startup, resize, and audio. -->
+
+		<div class="game-overlay-controls">
+			<button class="overlay-btn" id="pauseBtn" title="Pause">⏸</button>
+			<button class="overlay-btn" id="muteBtn" title="Mute">🔊</button>
+			<button class="overlay-btn" id="fullscreenBtn" title="Fullscreen">⛶</button>
+			<button class="overlay-btn" id="exitBtn" title="Exit">✕</button>
+		</div>
+
+		<div class="combo-indicator" id="comboIndicator">
+			<div class="combo-num" id="comboNum">x1</div>
+			<div class="combo-label">COMBO</div>
+			<div class="combo-bar"><div class="combo-bar-fill" id="comboBarFill"></div></div>
+		</div>
+	</div>
+
+	<div id="achievementToast" class="achievement-toast">
+		<div class="toast-icon">🏆</div>
+		<div class="toast-content">
+			<div class="toast-title" id="toastTitle">Achievement Unlocked</div>
+			<div class="toast-desc" id="toastDesc"></div>
+		</div>
+	</div>
+
+	<div id="modalOverlay" class="modal-overlay" style="display: none;">
+		<div class="modal" id="modal">
+			<button class="modal-close" id="modalClose">✕</button>
+			<div class="modal-content" id="modalContent"></div>
+		</div>
+	</div>
+
+	<div id="orientationLock" class="orientation-lock" style="display: none;">
+		<div class="rotate-icon">📱</div>
+		<div class="rotate-text">Rotate your device for the best experience</div>
+	</div>
+
+	<script src="launcher.js"></script>
+</body>
+</html>

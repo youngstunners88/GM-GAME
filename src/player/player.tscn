@@ -1,6 +1,9 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://src/player/player.gd" id="1_abcd"]
+[ext_resource type="Script" path="res://src/player/power_up_handler.gd" id="2_puh"]
+[ext_resource type="Script" path="res://src/player/input_handler.gd" id="3_ih"]
+[ext_resource type="Script" path="res://src/player/lil_blunt_visual.gd" id="4_lbv"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_abcd"]
 size = Vector2(32, 32)
@@ -16,11 +19,9 @@ collision_layer = 2
 collision_mask = 11
 script = ExtResource("1_abcd")
 
-[node name="ColorRect" type="ColorRect" parent="."]
-anchors_preset = 0
-offset_right = 32.0
-offset_bottom = 32.0
-color = Color(0.2, 0.8, 0.2, 1)
+[node name="Visual" type="Node2D" parent="."]
+position = Vector2(16, 16)
+script = ExtResource("4_lbv")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(16, 16)
@@ -55,3 +56,38 @@ monitoring = false
 [node name="AuraShape" type="CollisionShape2D" parent="Aura"]
 position = Vector2(16, 16)
 shape = SubResource("CircleShape2D_aura")
+
+[node name="PowerUpHandler" type="Node" parent="."]
+script = ExtResource("2_puh")
+
+[node name="InputHandler" type="Node" parent="."]
+script = ExtResource("3_ih")
+
+[node name="WallSparks" type="CPUParticles2D" parent="."]
+emitting = false
+amount = 8
+lifetime = 0.25
+one_shot = false
+explosiveness = 0.6
+randomness = 0.4
+direction = Vector2(1, -0.5)
+spread = 35.0
+gravity = Vector2(0, 150)
+initial_velocity_min = 40.0
+initial_velocity_max = 90.0
+color = Color(1, 0.8, 0.3, 1)
+
+[node name="SprintDust" type="CPUParticles2D" parent="."]
+position = Vector2(16, 32)
+emitting = false
+amount = 6
+lifetime = 0.35
+one_shot = false
+explosiveness = 0.3
+randomness = 0.5
+direction = Vector2(-1, -0.2)
+spread = 20.0
+gravity = Vector2(0, 80)
+initial_velocity_min = 15.0
+initial_velocity_max = 40.0
+color = Color(0.8, 0.7, 0.5, 0.5)

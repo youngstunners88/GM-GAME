@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://src/ui/hud.gd" id="1_hud"]
+[ext_resource type="Script" path="res://src/ui/vesting_bar.gd" id="2_vesting"]
 
 [node name="HUD" type="CanvasLayer"]
 script = ExtResource("1_hud")
@@ -39,6 +40,31 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "💍 0"
 
+[node name="GoldLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "GOLD 0"
+
+[node name="WbtcLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "wBTC 0"
+
+[node name="XautLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "XAUT 0"
+
+[node name="DiamondLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "💎 0"
+
+[node name="SmokeLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "💨 0"
+
 [node name="PowerUpLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
@@ -49,3 +75,9 @@ visible = false
 layout_mode = 2
 max_value = 100.0
 value = 100.0
+
+[node name="VestingBar" type="ProgressBar" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+max_value = 100.0
+value = 0.0
+script = ExtResource("2_vesting")

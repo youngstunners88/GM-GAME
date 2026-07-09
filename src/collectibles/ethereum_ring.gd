@@ -17,6 +17,7 @@ func _on_body_entered(body: Node2D) -> void:
 
 func collect() -> void:
     GameManager.add_ethereum_ring()
+    ComboSystem.add_score(50)
     AudioManager.play_sfx("ring")
     set_deferred("monitoring", false)
     var tween := create_tween()

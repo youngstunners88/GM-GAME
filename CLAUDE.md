@@ -48,3 +48,26 @@ I am building a complete Godot 4.3 2D platformer for my client **Rich**, founder
 - Enemies must NOT be weed-themed. Approved enemy types: Tax Collectors, Fly swarms, Rolling boulders, Hostile vines.
 - Code must be well-commented, modular, and follow Godot 4.3 best practices.
 - The game must feel fun, polished, and true to Lil Blunt's chill personality.
+
+## ⭐ ALWAYS-SHIP RULE (never forget)
+After **every significant** change to the game, in the same working session:
+1. **Update `STATUS.md`** — the client's living report (what changed, what
+   works, what's next). It is the single page the client checks for progress.
+2. **Commit** with a clear message referencing the change.
+3. **Push** to the working branch. Never end a turn with unpushed game changes.
+4. **Keep the repo homepage current**: the client looks at
+   https://github.com/youngstunners88/GM-GAME — that shows the **default
+   branch (master)**. After each verified milestone, merge the working branch
+   into master (merge PR or fast-forward master) so the full codebase is
+   always visible there, not hidden on a feature branch.
+This is mandatory, not optional — the client relies on always-current state.
+The Stop hook re-checks for uncommitted/unpushed work as a backstop.
+
+## ⭐ MODEL-ADVICE RULE
+End **every** response to the client with a one-line recommendation of which
+Claude model to use for the likely next task, with a short reason. Guide:
+- **claude-opus-4-8 (or Fable/Opus tier)** — debugging unknowns, architecture,
+  multi-system integration, art-pipeline work, anything with hidden root causes.
+- **claude-sonnet-5** — well-scoped implementation: new levels from existing
+  patterns, tuning constants, docs, routine asset wiring.
+- **claude-haiku-4-5** — trivial one-file tweaks, copy edits, quick questions.
