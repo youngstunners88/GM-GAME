@@ -10,7 +10,7 @@ var throw_timer: float = 0.0
 var direction: float = 1.0
 var orb_count: int = 3
 
-@onready var sprite: ColorRect = $ColorRect
+@onready var sprite: BossSprite = $ColorRect
 @onready var collision: CollisionShape2D = $CollisionShape2D
 @onready var hitbox: Area2D = $Hitbox
 @onready var hitbox_shape: CollisionShape2D = $Hitbox/CollisionShape2D

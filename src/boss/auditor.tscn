@@ -1,6 +1,7 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://src/boss/auditor.gd" id="1_auditor"]
+[ext_resource type="Script" path="res://src/boss/boss_sprite.gd" id="9_bspr"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_auditor"]
 size = Vector2(96, 96)
@@ -13,11 +14,10 @@ collision_layer = 4
 collision_mask = 15
 script = ExtResource("1_auditor")
 
-[node name="ColorRect" type="ColorRect" parent="."]
-anchors_preset = 0
-offset_right = 96.0
-offset_bottom = 96.0
-color = Color(0.4, 0.25, 0.15, 1)
+[node name="ColorRect" type="Node2D" parent="."]
+script = ExtResource("9_bspr")
+texture_path = "res://src/assets/sprites/sprite_boss_tax-collector.png"
+
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(48, 48)
