@@ -127,14 +127,15 @@ func _physics_process(delta: float) -> void:
 	GameManager.player_position = global_position
 
 func _update_sprite_color() -> void:
+	# Tints over the real sprite art; WHITE = untinted.
 	if GameManager.has_power_up("diamond"):
-		sprite.color = Color(0.0, 1.0, 1.0, 0.9)
+		sprite.color = Color(0.55, 1.0, 1.0, 0.95)
 	elif GameManager.has_power_up("blaze"):
-		sprite.color = Color(0.2, 1.0, 0.2, 0.9)
+		sprite.color = Color(0.7, 1.0, 0.6, 0.95)
 	elif GameManager.has_power_up("big"):
-		sprite.color = Color(1.0, 0.4, 0.4, 0.9)
+		sprite.color = Color(1.0, 0.7, 0.7, 0.95)
 	else:
-		sprite.color = Color(0.2, 0.8, 0.2, 1.0)
+		sprite.color = Color.WHITE
 
 ## Stretch on launch, snap back — skipped in big mode to avoid fighting PowerUpHandler.
 func _play_jump_stretch() -> void:
@@ -216,13 +217,7 @@ func _on_aura_body_entered(body: Node2D) -> void:
 ## Switch player visual outfit by level theme.
 func set_outfit(outfit: Outfit) -> void:
 	current_outfit = outfit
-	match outfit:
-		Outfit.DEFAULT:
-			sprite.color = Color(0.2, 0.8, 0.3, 1.0)
-		Outfit.MINER:
-			sprite.color = Color(0.6, 0.5, 0.2, 1.0)
-		Outfit.CRYSTAL:
-			sprite.color = Color(0.3, 0.6, 0.9, 1.0)
+	sprite.set_outfit(outfit)
 
 func _on_mobile_jump() -> void:
 	input_handler.buffer_jump()

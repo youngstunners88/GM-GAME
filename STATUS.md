@@ -25,21 +25,23 @@
 
 ## 🎨 Art status
 
-- **Backgrounds:** real painted scenes from your key art — DONE this update.
-- **Lil Blunt character:** still a procedurally-drawn placeholder (cowboy shape).
-  Needs a real transparent sprite to match the art. *Blocked on:* AI image-gen
-  quota is disabled on the Gemini key — enable image billing OR provide a
-  transparent character PNG and I'll wire it in immediately.
-- **Enemies / collectibles / platforms:** still simple shapes; next art pass.
+- **Backgrounds:** purpose-made client environments — GM Forest, Crystal
+  Caves, Gold Mine interior, FOMO boss arena. DONE.
+- **Lil Blunt:** REAL pixel-art sprites in-game — cowboy (L1/L3), miner &
+  crystal outfits (L2), auto-swapped per level. DONE this update.
+- **Bosses:** real sprites — IRS Tax Collector, Crystalline Bureaucrat,
+  Bandit mine-cart. DONE this update.
+- **Enemies / collectibles:** still simple shapes; next art pass (need
+  transparent PNGs for Tax Collector minion, fly, boulder, vine, ring, coin).
 
 ## 🔧 Known gaps → next up (priority order)
 
-1. **Real Lil Blunt sprite** (transparent PNG) + walk/jump frames.
-2. **Enemy sprites** (Tax Collector, fly, boulder, vine) from key art.
-3. **Collectible sprites** (ETH ring, GOLD nugget, Diamond) — small, high impact.
-4. **Gameplay feel pass** — tune jump/gravity/coyote-time, camera, enemy pacing.
-5. **Level design depth** — more platforming, secrets, reasons to explore.
-6. **Audio** — real music/SFX (currently silent placeholders).
+1. **Enemy + collectible sprites** (minions, fly, boulder, vine, ETH ring,
+   coin, GOLD nugget, Diamond) — the last placeholder shapes.
+2. **Walk/jump animation frames** for Lil Blunt (currently single pose + flip).
+3. **Gameplay feel pass** — tune jump/gravity/coyote-time, camera, enemy pacing.
+4. **Level design depth** — more platforming, secrets, reasons to explore.
+5. **Audio** — real music/SFX (currently silent placeholders).
 
 ## 🌐 Hosting note
 
@@ -49,6 +51,12 @@ special non-Vercel deploy" advice was mistaken — poor feel was placeholder
 art + bugs (all fixed), not hosting.
 
 ## 🗓 Changelog (newest first)
+
+- **2026-07-09 (later)** — REAL CHARACTER ART IN-GAME: client sprites wired
+  for Lil Blunt (cowboy/miner/crystal outfits, per-level swap, feet-aligned)
+  and all bosses (Tax Collector, Crystalline Bureaucrat, Bandit cart).
+  Purpose-made environments replace cropped backdrops. New /sprite-pipeline
+  skill. Rules added: keep master current + model advice each response.
 
 - **2026-07-09** — Real painted backdrops from client key art wired into all 3
   levels + boss arenas; platforms restyled to read over art; key art archived
