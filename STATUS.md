@@ -52,6 +52,9 @@ art + bugs (all fixed), not hosting.
 
 ## 🗓 Changelog (newest first)
 
+- **2026-07-09 (verified+live)** — Sprite build browser-verified (cowboy Lil
+  Blunt standing on GM Forest platforms, 0 errors), deployed to production,
+  and **merged to master** — the repo homepage now shows the full project.
 - **2026-07-09 (later)** — REAL CHARACTER ART IN-GAME: client sprites wired
   for Lil Blunt (cowboy/miner/crystal outfits, per-level swap, feet-aligned)
   and all bosses (Tax Collector, Crystalline Bureaucrat, Bandit cart).
