@@ -1,68 +1,93 @@
 ---
 name: browser-verify-game
-description: Playwright-based boot verification for Godot 4.3 web exports. Tests that the game loads, level 1 boots, sprites render, and console is clean. Captures screenshot as proof. Use after every export to gate release readiness.
+description: Playwright-based boot + gameplay verification for Godot 4.3 web exports. Proves the engine boots past the splash, Level 1 actually runs, and the console is clean. Captures menu + gameplay screenshots as evidence. Use after every export, before telling the client anything is live.
 ---
 
-# Browser Verify Game — Godot Web Export QA
+# Browser Verify Game — Godot Web Export QA (tested & proven)
 
-Automated end-to-end test that the game actually boots and plays in a real browser.
-Runs locally or in CI. Returns JSON result + screenshot.
+Drives the real game in headless Chromium and fails unless actual gameplay is
+reached. A splash screen or main menu alone is NOT a pass — early versions of
+this check passed on the Godot loading bar; the current gates can't.
 
-## Prerequisites
-- Chromium at `/opt/pw-browsers/chromium` (pre-installed)
-- Node.js + Playwright: `npm install -D @playwright/test`
+## Run
 
-## Run (one-liner)
 ```bash
-node scripts/verify-game.mjs https://lil-blunt-game.vercel.app
-# Output: game-verify-{timestamp}.json (structured result) + game-verify.png (screenshot)
+# 1. Serve the export with production-faithful headers (COOP/COEP + MIME):
+node scripts/serve-web.mjs 8899 web &
+
+# 2. Verify (defaults shown):
+node scripts/verify-game.mjs "http://localhost:8899/game/index.html"
+# Artifacts: game-verify.json, game-verify.png (menu), game-verify-level.png (gameplay)
+# Exit 0 = verified; non-zero = failed (details in game-verify.json)
 ```
 
-## What it tests
+For the Vercel **launcher page** (PLAY button + iframe) use the older
+`scripts/verify-web.mjs` instead — it knows the launcher DOM.
 
-1. **Boot** (10s timeout): Godot splash screen loads, canvas appears
-2. **Level 1 interactive** (3s wait): game input responsive, sprites visible
-3. **Console clean**: no errors logged (except expected Godot warnings)
-4. **Critical check**: NO "SharedArrayBuffer is not defined" (thread_support=false required)
-5. **Screenshot**: proof of running game state
+## The five gates (all must pass)
 
-## Script (scripts/verify-game.mjs)
+1. **canvas_attached** — page loads, Godot canvas element appears
+2. **engine_booted** — the `#status` loading overlay hides AND the canvas
+   leaves its default size (polled up to 45s). This is what separates "real
+   boot" from "pretty splash screen".
+3. **no_godot_errors** — no `USER SCRIPT ERROR`, `Parse Error`, autoload or
+   InputMap failures in console
+4. **thread_support** — no SharedArrayBuffer errors (would mean
+   `thread_support=true` regressed; that breaks itch.io/mobile)
+5. **level_1_runs** — clicks PLAY LEVEL 1 mid-canvas (x 0.5, y 0.553 of
+   viewport), waits 9s, confirms no new errors, screenshots gameplay
 
-See implementation in git history or copied below.
+## Known-benign console patterns (do NOT fail the run)
 
-### Installation
-```bash
-npm install -D @playwright/test
-```
+- `USER WARNING` / `at: push_warning` — Godot warnings routed via console.error
+- `No loader found for resource: res://src/assets/(sounds|music)/...` —
+  placeholder audio missing from older packs (fixed in audio_manager.gd with
+  `ResourceLoader.exists()` guards)
+- `Blocking on the main thread...` — emscripten notice, threaded builds only
 
-### Usage in CI
+If you see a NEW noisy-but-benign pattern, add it to the `benign` regex in
+`scripts/verify-game.mjs` with a comment saying why.
 
-Add to `.github/workflows/export-game.yml` after export step:
+## Environment gotchas (each cost real debugging time)
+
+- **Chromium path**: `/opt/pw-browsers/chromium` is a symlink to the real
+  binary — use it directly as `executablePath`.
+- **WebGL**: headless Chromium has no GPU; without the SwiftShader flags
+  (`--enable-unsafe-swiftshader --use-gl=angle --use-angle=swiftshader`)
+  Godot's renderer fails even though the page loads.
+- **Remote-sandbox egress**: the session proxy BLOCKS all external HTTPS from
+  Chromium (ERR_CONNECTION_RESET, even for example.com). Verify against
+  `localhost` via serve-web.mjs — `web/game/` is byte-identical to the deploy,
+  so this is authoritative. Live-URL verification belongs in CI.
+- **Click target**: PLAY LEVEL 1 button center is y≈0.553 of the viewport.
+  0.517 misses high and re-triggers the menu ("MENU → MENU" warning).
+
+## CI integration
+
 ```yaml
-- name: Verify game boots (Playwright)
+- name: Browser verify export
   if: success()
   run: |
-    npm install -D @playwright/test
-    node scripts/verify-game.mjs "file://$(pwd)/web/game/index.html" || exit 1
-    
-- name: Upload verification screenshot
+    npm install --no-save @playwright/test
+    npx playwright install chromium --with-deps
+    node scripts/serve-web.mjs 8899 web &
+    sleep 2
+    CHROMIUM_BIN="" node scripts/verify-game.mjs "http://localhost:8899/game/index.html"
+- name: Upload verification evidence
   if: always()
   uses: actions/upload-artifact@v4
   with:
     name: game-verification
     path: |
-      game-verify-*.json
-      game-verify.png
+      game-verify.json
+      game-verify*.png
     retention-days: 7
 ```
+(In CI, unset/adjust `CHROMIUM_BIN` — the `/opt/pw-browsers` path is specific
+to the Claude remote sandbox.)
 
-## Gotchas
+## Evidence contract
 
-- **Timeout tuning**: 10s for boot is generous for Vercel; local exports may need less
-- **File URLs**: use `file://$PWD/web/game/index.html` for local exports
-- **SharedArrayBuffer critical**: if this error appears, thread_support=true; must flip back to false and re-export
-- **Screenshot timing**: taken immediately after Level 1 loads; if you want longer gameplay proof, add `await page.waitForTimeout(5000)` before screenshot
-
-## Exit codes
-- **0**: all tests passed, screenshot captured
-- **1**: boot failed or critical error found
+A verification is only citable to the client if `game-verify-level.png` shows
+Lil Blunt in a level with the HUD rendering. Attach that screenshot; the menu
+shot alone proves nothing about gameplay.

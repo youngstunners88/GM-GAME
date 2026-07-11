@@ -12,10 +12,12 @@ extends CanvasLayer
 @onready var powerup_label: Label = $MarginContainer/VBoxContainer/PowerUpLabel
 @onready var powerup_bar: ProgressBar = $MarginContainer/VBoxContainer/PowerUpBar
 
-var heart_full: String = "❤"
-var heart_empty: String = "♡"
+# Heart pips are ColorRects, not glyphs: the web export's default font has no
+# emoji, so ❤/🪙/💎 render as tofu boxes (see 2026-07-11 stress screenshots).
+const HEART_FULL_COLOR := Color(0.95, 0.25, 0.35, 1.0)
+const HEART_EMPTY_COLOR := Color(0.25, 0.22, 0.28, 0.9)
 
-var heart_labels: Array[Label] = []
+var heart_pips: Array[ColorRect] = []
 
 func _ready() -> void:
     GameManager.score_changed.connect(_on_score_changed)
@@ -32,13 +34,14 @@ func _ready() -> void:
     GoldMineSystem.auction_complete.connect(_on_auction_complete)
     GoldMineSystem.certificate_earned.connect(_on_certificate_earned)
 
-    # Pre-build heart labels once
+    # Pre-build heart pips once
     for i in range(GameManager.max_health):
-        var heart := Label.new()
-        heart.text = heart_full
-        heart.add_theme_font_size_override("font_size", 32)
+        var heart := ColorRect.new()
+        heart.color = HEART_FULL_COLOR
+        heart.custom_minimum_size = Vector2(22, 22)
         health_container.add_child(heart)
-        heart_labels.append(heart)
+        heart_pips.append(heart)
+    health_container.add_theme_constant_override("separation", 6)
 
     _on_score_changed(GameManager.total_score)
     _on_health_changed(GameManager.player_health)
@@ -63,24 +66,24 @@ func _on_score_changed(new_score: int) -> void:
     score_label.text = "SCORE: %06d" % new_score
 
 func _on_health_changed(new_health: int) -> void:
-    for i in range(heart_labels.size()):
-        heart_labels[i].text = heart_full if i < new_health else heart_empty
+    for i in range(heart_pips.size()):
+        heart_pips[i].color = HEART_FULL_COLOR if i < new_health else HEART_EMPTY_COLOR
 
 func _on_coins_changed(new_count: int) -> void:
-    coin_label.text = "🪙 %d" % new_count
+    coin_label.text = "COINS %d" % new_count
 
 func _on_rings_changed(new_count: int) -> void:
-    ring_label.text = "💍 %d" % new_count
+    ring_label.text = "RINGS %d" % new_count
 
 func _on_smoke_changed(new_count: int) -> void:
-    smoke_label.text = "💨 %d" % new_count
+    smoke_label.text = "PUFFS %d" % new_count
 
 func _on_power_up_changed(type: String, _duration: float) -> void:
     if type == "":
         powerup_label.text = ""
         powerup_bar.visible = false
         return
-    var names := {"blaze": "🔥 BLAZE MODE", "big": "🍄 BIG MODE", "diamond": "💎 DIAMOND SHIELD"}
+    var names := {"blaze": "BLAZE MODE", "big": "BIG MODE", "diamond": "DIAMOND SHIELD"}
     powerup_label.text = names.get(type, type.to_upper())
     powerup_bar.visible = true
     powerup_bar.value = 100.0
@@ -105,7 +108,7 @@ func _on_xaut_changed(new_amount: int) -> void:
     xaut_label.text = "XAUT %d" % new_amount
 
 func _on_diamonds_changed(new_amount: int) -> void:
-    diamond_label.text = "💎 %d" % new_amount
+    diamond_label.text = "DIAMONDS %d" % new_amount
 
 func _on_auction_complete(xaut_won: int, multiplier: float) -> void:
     var toast := Label.new()

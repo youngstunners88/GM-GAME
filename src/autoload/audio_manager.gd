@@ -23,6 +23,10 @@ func play_music(path: String) -> void:
         current_music_player.stop()
         current_music_player.queue_free()
         current_music_player = null
+    # Audio files are still placeholder — degrade silently instead of
+    # logging "No loader found" errors for tracks that aren't in the pck yet.
+    if not ResourceLoader.exists(path):
+        return
     var stream := load(path)
     if not stream:
         return
@@ -34,6 +38,8 @@ func play_music(path: String) -> void:
 
 func play_sfx(name: String) -> void:
     var path := "res://src/assets/sounds/" + name + ".ogg"
+    if not ResourceLoader.exists(path):
+        return
     var stream := load(path)
     if not stream:
         return

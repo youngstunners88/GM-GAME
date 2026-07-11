@@ -13,7 +13,7 @@ func _ready() -> void:
     connect_wallet_btn.pressed.connect(_on_connect_wallet)
     quit_btn.pressed.connect(_on_quit)
     Web3Manager.wallet_connected.connect(_on_wallet_connected)
-    title.text = "🌿 LIL BLUNT 🌿\nTHE SMOKE REALM"
+    title.text = "LIL BLUNT\nTHE SMOKE REALM"
     # Show continue button only if save file exists
     if FileAccess.file_exists(GameManager.SAVE_PATH):
         continue_btn.show()
@@ -48,10 +48,12 @@ func _on_wallet_connected(address: String) -> void:
     _update_wallet_button()
 
 func _update_wallet_button() -> void:
+    # "DEMO" must stay in both labels — there is no real wallet integration,
+    # and the UI may never imply otherwise (security audit finding #1).
     if Web3Manager.is_connected:
-        connect_wallet_btn.text = "DISCONNECT WALLET"
+        connect_wallet_btn.text = "WALLET DEMO: ON"
     else:
-        connect_wallet_btn.text = "CONNECT WALLET"
+        connect_wallet_btn.text = "WALLET DEMO: OFF"
 
 func _on_quit() -> void:
     get_tree().quit()

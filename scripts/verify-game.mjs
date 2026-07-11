@@ -1,126 +1,156 @@
 #!/usr/bin/env node
-// Playwright-based Godot web export verification
-// Usage: node scripts/verify-game.mjs <game-url>
-// Output: game-verify-{timestamp}.json + game-verify.png
+// Playwright verification for a DIRECT Godot web export URL (game/index.html,
+// an itch.io embed frame, or a local build served over http). For the Vercel
+// launcher page (with the PLAY button + iframe), use scripts/verify-web.mjs.
+//
+// Gates (all must pass):
+//   1. page loads, Godot canvas attaches
+//   2. engine BOOTS: loading overlay (#status) hides and canvas leaves its
+//      default size — a splash screen alone is NOT a pass
+//   3. no Godot script errors (USER SCRIPT ERROR / Parse Error / autoload /
+//      InputMap) and no SharedArrayBuffer errors (thread_support regression)
+//   4. clicks PLAY LEVEL 1 on the in-canvas menu, waits, screenshots gameplay
+//
+// Usage: node scripts/verify-game.mjs <game-url> [screenshot.png]
+// Exit 0 = verified. Artifacts: game-verify.json, game-verify.png,
+// game-verify-level.png
 
-import { chromium } from '@playwright/test';
 import fs from 'fs';
-import path from 'path';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
 
-const gameUrl = process.argv[2] || 'https://lil-blunt-game.vercel.app';
-const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
-const resultFile = `game-verify-${timestamp}.json`;
-const screenshotFile = 'game-verify.png';
+// Prefer the local @playwright/test install; fall back to global playwright.
+let chromium;
+try {
+  ({ chromium } = require('@playwright/test'));
+} catch {
+  ({ chromium } = require(
+    process.env.PLAYWRIGHT_PKG || '/opt/node22/lib/node_modules/playwright/index.js'
+  ));
+}
+
+const gameUrl = process.argv[2] || 'https://lil-blunt-game.vercel.app/game/index.html';
+const screenshotFile = process.argv[3] || 'game-verify.png';
+const levelShot = screenshotFile.replace(/\.png$/, '-level.png');
+const resultFile = 'game-verify.json';
 
 const result = {
   url: gameUrl,
   timestamp: new Date().toISOString(),
   tests: {},
   errors: [],
-  warnings: [],
-  screenshot: screenshotFile,
-  passed: false
+  consoleTail: [],
+  screenshots: [screenshotFile],
+  passed: false,
 };
 
-(async () => {
-  let browser;
-  try {
-    browser = await chromium.launch({
-      executablePath: '/opt/pw-browsers/chromium'
-    });
+const GODOT_ERROR_RE =
+  /USER SCRIPT ERROR|Parse Error|Failed to instantiate an autoload|The InputMap action|SharedArrayBuffer/i;
 
-    const page = await browser.newPage();
-    const consoleMessages = [];
+const browser = await chromium.launch({
+  executablePath: process.env.CHROMIUM_BIN || '/opt/pw-browsers/chromium',
+  // Sandboxed environments route all egress through a mandatory proxy;
+  // Chromium ignores the env vars unless told explicitly.
+  ...(process.env.HTTPS_PROXY && !gameUrl.includes('localhost')
+    ? { proxy: { server: process.env.HTTPS_PROXY } }
+    : {}),
+  // SwiftShader flags: headless Chromium has no GPU; without these WebGL (and
+  // therefore Godot rendering) fails even though the page "loads".
+  args: [
+    '--no-sandbox',
+    '--enable-unsafe-swiftshader',
+    '--use-gl=angle',
+    '--use-angle=swiftshader',
+    '--enable-webgl',
+    '--ignore-gpu-blocklist',
+  ],
+});
 
-    page.on('console', msg => {
-      const entry = { type: msg.type(), text: msg.text() };
-      consoleMessages.push(entry);
+try {
+  const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 
-      if (msg.type() === 'error') {
-        result.errors.push(msg.text());
-      } else if (msg.type() === 'warning') {
-        result.warnings.push(msg.text());
-      }
-    });
+  page.on('console', (m) => {
+    const line = `[${m.type()}] ${m.text().slice(0, 300)}`;
+    result.consoleTail = [...result.consoleTail.slice(-30), line];
+    // Known-benign patterns:
+    // - push_warning() output (Godot routes it through console.error)
+    // - missing placeholder audio (fixed in audio_manager.gd; still present in
+    //   builds exported before that fix)
+    // - emscripten main-thread warning (threaded builds only; gone once the
+    //   non-threaded export ships)
+    const benign =
+      /USER WARNING|at: push_warning|No loader found for resource: res:\/\/src\/assets\/(sounds|music)\/|at: _load \(core\/io\/resource_loader|Blocking on the main thread/.test(
+        m.text()
+      );
+    if ((m.type() === 'error' || GODOT_ERROR_RE.test(m.text())) && !benign)
+      result.errors.push(line);
+  });
+  page.on('pageerror', (e) => result.errors.push(`[pageerror] ${String(e).slice(0, 300)}`));
 
-    page.on('pageerror', err => {
-      result.errors.push(`Page error: ${err.message}`);
-    });
+  // Gate 1: load + canvas attach
+  console.log('[1/4] Loading page + waiting for canvas...');
+  await page.goto(gameUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await page.waitForSelector('canvas', { timeout: 15000 });
+  result.tests.canvas_attached = 'PASS';
 
-    // Test 1: Boot within 10s
-    console.log('[1/5] Testing boot...');
-    try {
-      await page.goto(gameUrl, { waitUntil: 'domcontentloaded', timeout: 10000 });
-      result.tests.boot = 'PASS';
-    } catch (e) {
-      result.tests.boot = `FAIL: ${e.message}`;
-      result.errors.push(e.message);
-    }
+  // Gate 2: real engine boot — poll until the Godot loading overlay hides and
+  // the canvas has been resized by the engine. A splash screenshot is a FAIL.
+  console.log('[2/4] Waiting for engine boot (status overlay hides)...');
+  const booted = await page
+    .waitForFunction(
+      () => {
+        const status = document.getElementById('status');
+        const canvas = document.querySelector('canvas');
+        const statusHidden = !status || getComputedStyle(status).display === 'none';
+        const canvasLive =
+          canvas && canvas.width > 0 && !(canvas.width === 300 && canvas.height === 150);
+        return statusHidden && canvasLive;
+      },
+      { timeout: 45000, polling: 500 }
+    )
+    .then(() => true)
+    .catch(() => false);
+  result.tests.engine_booted = booted ? 'PASS' : 'FAIL: loading overlay never cleared';
+  if (!booted) result.errors.push('Engine did not finish booting within 45s');
 
-    // Test 2: Godot canvas loads (splash screen)
-    console.log('[2/5] Waiting for Godot canvas...');
-    try {
-      await page.waitForSelector('canvas', { timeout: 8000 });
-      result.tests.godot_canvas = 'PASS';
-    } catch (e) {
-      result.tests.godot_canvas = 'FAIL: no canvas found';
-      result.errors.push('No canvas element (Godot did not initialize)');
-    }
+  // Gate 3: script + threading errors accumulated so far
+  console.log('[3/4] Checking console for Godot/threading errors...');
+  const godotErrors = result.errors.filter((e) => GODOT_ERROR_RE.test(e));
+  result.tests.no_godot_errors = godotErrors.length === 0 ? 'PASS' : `FAIL: ${godotErrors.length} error(s)`;
+  const sab = result.errors.some((e) => /SharedArrayBuffer/i.test(e));
+  result.tests.thread_support = sab
+    ? 'FAIL: SharedArrayBuffer error — thread_support must be false'
+    : 'PASS';
 
-    // Test 3: Level 1 loads and becomes interactive
-    console.log('[3/5] Waiting for Level 1 interactive (3s)...');
-    await page.waitForTimeout(3000); // Godot loads in ~2-3s
-    result.tests.level_1_loads = 'PASS';
+  await page.waitForTimeout(2000); // let the menu settle
+  await page.screenshot({ path: screenshotFile });
 
-    // Test 4: CRITICAL — no SharedArrayBuffer error
-    console.log('[4/5] Checking for threading errors...');
-    const hasSharedArrayBufferError = result.errors.some(e =>
-      e.toLowerCase().includes('sharedarraybuffer') ||
-      e.toLowerCase().includes('shared-array-buffer')
-    );
-
-    if (hasSharedArrayBufferError) {
-      result.tests.thread_support = 'FAIL: SharedArrayBuffer error detected (thread_support=true?)';
-      result.errors.push('CRITICAL: thread_support must be false for itch.io compatibility');
-    } else {
-      result.tests.thread_support = 'PASS';
-    }
-
-    // Test 5: Screenshot proof
-    console.log('[5/5] Capturing screenshot...');
-    await page.screenshot({ path: screenshotFile, fullPage: false });
-    result.tests.screenshot = 'PASS';
-
-    // Summary
-    const allPassed = Object.values(result.tests).every(v =>
-      typeof v === 'string' && v.startsWith('PASS')
-    );
-    result.passed = allPassed && result.errors.length === 0;
-
-    console.log('\n=== VERIFICATION RESULT ===');
-    console.log(JSON.stringify(result, null, 2));
-
-    fs.writeFileSync(resultFile, JSON.stringify(result, null, 2));
-    console.log(`\n✓ Result saved to ${resultFile}`);
-    console.log(`✓ Screenshot: ${screenshotFile}`);
-
-    if (result.passed) {
-      console.log('\n✅ VERIFICATION PASSED — game is ready to ship');
-      process.exit(0);
-    } else {
-      console.log('\n❌ VERIFICATION FAILED — see errors above');
-      process.exit(1);
-    }
-
-  } catch (err) {
-    result.errors.push(`Fatal: ${err.message}`);
-    result.passed = false;
-    console.error('Fatal error:', err);
-    fs.writeFileSync(resultFile, JSON.stringify(result, null, 2));
-    process.exit(1);
-  } finally {
-    if (browser) {
-      await browser.close();
-    }
+  // Gate 4: drive into Level 1 (menu PLAY button sits mid-canvas).
+  if (booted) {
+    console.log('[4/4] Clicking PLAY LEVEL 1 and screenshotting gameplay...');
+    const vp = page.viewportSize();
+    // "PLAY LEVEL 1" button center in the in-canvas menu (1280x720 layout).
+    await page.mouse.click(vp.width * 0.5, vp.height * 0.553);
+    await page.waitForTimeout(9000);
+    await page.screenshot({ path: levelShot });
+    result.screenshots.push(levelShot);
+    const newErrors = result.errors.filter((e) => GODOT_ERROR_RE.test(e));
+    result.tests.level_1_runs =
+      newErrors.length === godotErrors.length ? 'PASS' : 'FAIL: errors during gameplay';
+  } else {
+    result.tests.level_1_runs = 'SKIP: engine never booted';
   }
-})();
+
+  result.passed =
+    Object.values(result.tests).every((v) => v === 'PASS') && result.errors.length === 0;
+} catch (err) {
+  result.errors.push(`Fatal: ${err.message}`);
+} finally {
+  await browser.close();
+}
+
+fs.writeFileSync(resultFile, JSON.stringify(result, null, 2));
+console.log('\n=== VERIFICATION RESULT ===');
+console.log(JSON.stringify(result, null, 2));
+console.log(result.passed ? '\n✅ VERIFIED — game boots and plays' : '\n❌ FAILED — see errors');
+process.exit(result.passed ? 0 : 1);

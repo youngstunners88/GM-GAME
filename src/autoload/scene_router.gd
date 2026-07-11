@@ -37,12 +37,15 @@ func load_scene(path: String, transition_type: Transition = Transition.FADE) -> 
     # The pck is already in memory on web, so load synchronously instead.
     if OS.has_feature("web"):
         var scene_path := _loading_path
-        _loading_path = ""
         var err_web := get_tree().change_scene_to_file(scene_path)
         if err_web != OK:
             push_error("SceneRouter: change_scene_to_file failed for %s (err %d)" % [scene_path, err_web])
+            _abort_load()
             return
         await get_tree().process_frame
+        # Keep _loading_path set until here so a second load_scene() call
+        # cannot race this coroutine through the await window.
+        _loading_path = ""
         if _transition_type == Transition.FADE and SceneTransition.has_method("fade_in"):
             SceneTransition.fade_in()
         print("[SceneRouter] Loaded %s (sync web path)" % scene_path)
@@ -52,9 +55,19 @@ func load_scene(path: String, transition_type: Transition = Transition.FADE) -> 
     var err := ResourceLoader.load_threaded_request(path)
     if err != OK:
         push_error("SceneRouter: load_threaded_request failed for %s (err %d)" % [path, err])
-        _loading_path = ""
+        _abort_load()
         return
     set_process(true)
+
+## A load failed and the scene did NOT change: lift the fade overlay and put
+## the StateMachine back where it was, otherwise the session soft-locks in
+## TRANSITIONING with the player frozen and no recovery UI.
+func _abort_load() -> void:
+    _loading_path = ""
+    set_process(false)
+    if SceneTransition.has_method("fade_in"):
+        SceneTransition.fade_in()
+    StateMachine.recover_from_transition()
 
 func _process(_delta: float) -> void:
     if _loading_path == "":
@@ -70,8 +83,7 @@ func _process(_delta: float) -> void:
             _finalise_load()
         ResourceLoader.THREAD_LOAD_FAILED, ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
             push_error("SceneRouter: failed to load %s" % _loading_path)
-            _loading_path = ""
-            set_process(false)
+            _abort_load()
 
 func _finalise_load() -> void:
     var packed: PackedScene = ResourceLoader.load_threaded_get(_loading_path)

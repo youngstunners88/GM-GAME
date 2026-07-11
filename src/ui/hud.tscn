@@ -33,12 +33,12 @@ layout_mode = 2
 [node name="CoinLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
-text = "🪙 0"
+text = "COINS 0"
 
 [node name="RingLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
-text = "💍 0"
+text = "RINGS 0"
 
 [node name="GoldLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
@@ -58,12 +58,12 @@ text = "XAUT 0"
 [node name="DiamondLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
-text = "💎 0"
+text = "DIAMONDS 0"
 
 [node name="SmokeLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
-text = "💨 0"
+text = "PUFFS 0"
 
 [node name="PowerUpLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
