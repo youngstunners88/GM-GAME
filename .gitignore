@@ -144,3 +144,6 @@ $RECYCLE.BIN/
 *.msp
 *.lnk
 .vercel
+game-verify*.json
+game-verify*.png
+node_modules/
