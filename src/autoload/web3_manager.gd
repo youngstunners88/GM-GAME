@@ -1,16 +1,24 @@
 extends Node
+## Demo-mode wallet UX. There is NO real wallet, blockchain, or reward backend
+## in this game — this exists purely so the menu can showcase where a future
+## integration would live. Every user-facing string MUST say "demo" so players
+## can never mistake it for a real on-chain action (see security audit).
+## Do not add a real provider here without a server-authoritative backend.
 
 signal wallet_connected(address: String)
 signal score_submitted(tx_hash: String)
+
+## Obviously-fake placeholder shown in demo mode (not a real account).
+const DEMO_ADDRESS := "0xDEMO...0000"
 
 var wallet_address: String = ""
 var is_connected: bool = false
 
 func connect_wallet() -> void:
-	wallet_address = "0x1234567890abcdef1234567890abcdef12345678"
+	wallet_address = DEMO_ADDRESS
 	is_connected = true
 	wallet_connected.emit(wallet_address)
-	_show_toast("Wallet connected: " + wallet_address.substr(0, 10) + "...")
+	_show_toast("Demo Mode — no real wallet is connected")
 
 func disconnect_wallet() -> void:
 	wallet_address = ""
@@ -20,9 +28,9 @@ func submit_score(score: int) -> void:
 	if not is_connected:
 		push_warning("Web3Manager: Wallet not connected")
 		return
-	var tx_hash = "0x" + str(randi()).substr(0, 16)
-	score_submitted.emit(tx_hash)
-	_show_toast("Score submitted! TX: " + tx_hash.substr(0, 10) + "...")
+	# No fake tx hashes: nothing is submitted anywhere in demo mode.
+	score_submitted.emit("demo")
+	_show_toast("Demo Mode — score saved locally only (%d)" % score)
 
 func _show_toast(message: String) -> void:
 	AudioManager.play_sfx("powerup")

@@ -92,11 +92,16 @@ func reset_level() -> void:
     player_health = max_health
     current_power_up = ""
     power_up_timer = 0.0
+    # The HUD in the incoming level _ready()s BEFORE the player spawns and
+    # reads these values — without this emit it keeps showing the previous
+    # level's damaged heart count until the next hit.
+    health_changed.emit(player_health)
 
 func reset_session() -> void:
     player_health = max_health
     current_power_up = ""
     power_up_timer = 0.0
+    health_changed.emit(player_health)
     total_score = 0
     coins_collected = 0
     ethereum_rings_collected = 0

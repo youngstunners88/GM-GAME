@@ -28,6 +28,17 @@ func can_transition(from: State, to: State) -> bool:
         return false
     return to in _ALLOWED.get(from, [])
 
+## Recovery hatch for failed scene loads ONLY: if we are stuck in
+## TRANSITIONING (the scene never changed), revert to the state we came
+## from so gameplay/menus keep working instead of soft-locking.
+func recover_from_transition() -> void:
+    if _current != State.TRANSITIONING:
+        return
+    var from := _current
+    _current = _previous
+    _apply_side_effects(_current)
+    state_changed.emit(State.keys()[from], State.keys()[_current])
+
 func change_state(new_state: State) -> bool:
     if not can_transition(_current, new_state):
         push_warning("Invalid state transition: %s → %s" % [

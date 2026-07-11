@@ -136,16 +136,15 @@ func _setup_entities() -> void:
 	# Spawn melt forges (Level 3 whitepaper mechanic)
 	for forge_data in level_data.melt_forges:
 		var entity := EntitySpawner.spawn("melt_forge", forge_data.get("pos", Vector2.ZERO), self)
-	# Spawn fast mine carts (day 88 short pool)
+	# Spawn mine carts. cart_type must be passed as a pre-add_child prop —
+	# MineCart._ready() consumes it to set speed/reward/visual, so assigning
+	# it after spawn silently leaves every cart FAST (the old bug).
 	for cart_data in level_data.mine_carts_fast:
-		var entity := EntitySpawner.spawn("mine_cart", cart_data.get("pos", Vector2.ZERO), self)
-		if entity and entity.has_meta("set_cart_type"):
-			entity.set("cart_type", 0)  # CartType.FAST
-	# Spawn slow mine carts (day 288 long pool)
+		EntitySpawner.spawn("mine_cart", cart_data.get("pos", Vector2.ZERO), self,
+			{"cart_type": MineCart.CartType.FAST})
 	for cart_data in level_data.mine_carts_slow:
-		var entity := EntitySpawner.spawn("mine_cart", cart_data.get("pos", Vector2.ZERO), self)
-		if entity and entity.has_meta("set_cart_type"):
-			entity.set("cart_type", 1)  # CartType.SLOW
+		EntitySpawner.spawn("mine_cart", cart_data.get("pos", Vector2.ZERO), self,
+			{"cart_type": MineCart.CartType.SLOW})
 
 func _setup_boss_arena() -> void:
 	if level_data.boss_arena.is_empty():
