@@ -75,6 +75,13 @@ browsers. Fixes shipped:
 
 ## 🗓 Changelog (newest first)
 
+- **2026-07-11** — Verification harness PROVEN against the real game: headless
+  Chromium now boots the build, clicks PLAY LEVEL 1, and screenshots live
+  gameplay (Lil Blunt + HUD + GM Forest — evidence in `game-verify-level.png`).
+  Hardened `scripts/verify-game.mjs` (real boot detection — a splash screen no
+  longer counts as a pass; WebGL/SwiftShader flags; benign-warning filtering).
+  Fixed audio error spam (`audio_manager.gd` now skips missing placeholder
+  tracks). GitHub push still blocked (403) — commits queued locally.
 - **2026-07-10** — itch.io migration: root-caused intermittent boot failures
   (threaded export → SharedArrayBuffer dependency), switched to non-threaded
   export, built full itch.io pipeline (CI butler auto-deploy + itch-ready zip
