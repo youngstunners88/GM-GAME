@@ -49,6 +49,18 @@ I am building a complete Godot 4.3 2D platformer for my client **Rich**, founder
 - Code must be well-commented, modular, and follow Godot 4.3 best practices.
 - The game must feel fun, polished, and true to Lil Blunt's chill personality.
 
+## Deployment (itch.io is primary)
+- **Primary platform: itch.io** — https://youngstunners88.itch.io/lil-blunt-adventure
+  Game-native CDN, no cold starts, discovery + analytics. Vercel is a mirror only.
+- CI (`.github/workflows/export-game.yml`) exports on every push to
+  `master`/`claude/**`, packages an itch-ready zip artifact, and auto-deploys
+  via butler when the `BUTLER_API_KEY` repo secret is set.
+- **Web export MUST stay non-threaded** (`variant/thread_support=false`).
+  Threaded builds need SharedArrayBuffer and silently fail to boot on itch.io,
+  in iframes, and on some mobile browsers. This was the root cause of the
+  "game sometimes doesn't play" bug — never regress it.
+- Full pipeline, page setup, and verification gates: `/itch-deploy` skill.
+
 ## ⭐ ALWAYS-SHIP RULE (never forget)
 After **every significant** change to the game, in the same working session:
 1. **Update `STATUS.md`** — the client's living report (what changed, what
