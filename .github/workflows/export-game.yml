@@ -82,7 +82,9 @@ jobs:
           custom_template/debug=""
           custom_template/release=""
           variant/extensions_support=false
-          variant/thread_support=true
+          # Non-threaded export: no SharedArrayBuffer/COOP/COEP requirement, so the
+          # game boots on itch.io, iframes, and mobile browsers without special headers.
+          variant/thread_support=false
           vram_texture_compression/for_desktop=true
           vram_texture_compression/for_mobile=false
           html/export_icon=true
@@ -133,6 +135,42 @@ jobs:
             web/game/
             export.log
           retention-days: 7
+
+      - name: Package itch.io build (index.html at zip root)
+        if: success()
+        run: |
+          cd web/game
+          zip -r ../../lil-blunt-itch.zip .
+          cd ../..
+          ls -lh lil-blunt-itch.zip
+
+      - name: Upload itch.io-ready zip (manual-upload fallback)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: itch-build
+          path: lil-blunt-itch.zip
+          retention-days: 14
+
+      - name: Deploy to itch.io via butler
+        if: success()
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          # itch.io target: <username>/<game-slug>:<channel>
+          ITCH_TARGET: youngstunners88/lil-blunt-adventure:html5
+        run: |
+          if [ -z "$BUTLER_API_KEY" ]; then
+            echo "::notice::BUTLER_API_KEY secret not set — skipping itch.io deploy."
+            echo "Add it at Settings → Secrets → Actions, key from https://itch.io/user/settings/api-keys"
+            exit 0
+          fi
+          curl -fL --retry 3 -o butler.zip \
+            "https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default"
+          unzip -q butler.zip butler
+          chmod +x butler
+          ./butler push web/game "$ITCH_TARGET" \
+            --userversion "$(git rev-parse --short HEAD)-$(date -u +%Y%m%d%H%M)"
+          echo "::notice::Pushed to https://youngstunners88.itch.io/lil-blunt-adventure"
 
       - name: Commit exported files
         if: success()

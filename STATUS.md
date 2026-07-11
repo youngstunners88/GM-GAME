@@ -1,10 +1,26 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
-**Play it:** https://lil-blunt-game.vercel.app
+**Play it (primary, once page is created):** https://youngstunners88.itch.io/lil-blunt-adventure
+**Mirror:** https://lil-blunt-game.vercel.app
 **Branch:** `claude/setup-game-dev-environment-itWJv` · **PR #2**
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-07-09**.
+> have something current to look at. Last updated: **2026-07-10**.
+
+## 🚨 Action needed from you (5 minutes, one-time)
+
+itch.io is now the primary platform. The full deploy pipeline is built and
+automated — it just needs two things only the account owner can do:
+
+1. **Create the game page**: https://itch.io/game/new → Kind: **HTML**,
+   project URL slug: **lil-blunt-adventure**. Save as Draft.
+2. **Add the deploy key**: copy an API key from
+   https://itch.io/user/settings/api-keys and add it to the GitHub repo as an
+   Actions secret named **`BUTLER_API_KEY`**
+   (repo → Settings → Secrets and variables → Actions → New repository secret).
+
+After that, every green build auto-deploys to itch.io. Until then, the
+`itch-build` zip artifact on each Actions run can be uploaded manually.
 
 ---
 
@@ -43,15 +59,27 @@
 4. **Level design depth** — more platforming, secrets, reasons to explore.
 5. **Audio** — real music/SFX (currently silent placeholders).
 
-## 🌐 Hosting note
+## 🌐 Hosting: moved to itch.io (root cause of "sometimes doesn't play" found)
 
-Vercel is correct for this game. A Godot web export is a **static** bundle
-(HTML/JS/WASM/PCK); static hosting is exactly right. The earlier "needs a
-special non-Vercel deploy" advice was mistaken — poor feel was placeholder
-art + bugs (all fixed), not hosting.
+The intermittent boot failures were traced to the web export's **threaded
+mode**, which requires SharedArrayBuffer — a browser feature that silently
+fails without special server headers, in many iframes, and on some mobile
+browsers. Fixes shipped:
+
+- Export switched to **non-threaded** — boots everywhere, no special headers,
+  no more silent failures.
+- **itch.io is now the primary platform** — game-native CDN (no cold starts),
+  built-in discovery/analytics, and 90M+ players/month. Vercel stays as a mirror.
+- CI now auto-packages an itch-ready zip **and auto-deploys via butler**
+  (itch.io's official CLI) once the `BUTLER_API_KEY` secret is added.
 
 ## 🗓 Changelog (newest first)
 
+- **2026-07-10** — itch.io migration: root-caused intermittent boot failures
+  (threaded export → SharedArrayBuffer dependency), switched to non-threaded
+  export, built full itch.io pipeline (CI butler auto-deploy + itch-ready zip
+  artifact + `scripts/deploy_itch.sh`), new `/itch-deploy` skill. Awaiting
+  owner's itch.io page + `BUTLER_API_KEY` secret to go live.
 - **2026-07-09 (verified+live)** — Sprite build browser-verified (cowboy Lil
   Blunt standing on GM Forest platforms, 0 errors), deployed to production,
   and **merged to master** — the repo homepage now shows the full project.
