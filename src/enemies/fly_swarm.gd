@@ -15,9 +15,6 @@ func _ready() -> void:
     score_value = 100
     start_x = global_position.x
     start_y = global_position.y
-    sprite.color = Color(0.2, 0.2, 0.2, 1.0) # Dark gray
-    sprite.size = Vector2(24, 24)
-    $CollisionShape2D.position = Vector2(12, 12)
 
 func _physics_process(delta: float) -> void:
     if is_dead:

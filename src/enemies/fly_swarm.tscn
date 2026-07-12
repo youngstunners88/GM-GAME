@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://src/enemies/fly_swarm.gd" id="1_fly"]
+[ext_resource type="Texture2D" path="res://src/assets/sprites/sprite_enemy_fly.png" id="2_fly"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_fly"]
 size = Vector2(24, 24)
@@ -10,11 +11,9 @@ collision_layer = 4
 collision_mask = 15
 script = ExtResource("1_fly")
 
-[node name="ColorRect" type="ColorRect" parent="."]
-anchors_preset = 0
-offset_right = 24.0
-offset_bottom = 24.0
-color = Color(0.2, 0.2, 0.2, 1)
+[node name="Sprite" type="Sprite2D" parent="."]
+position = Vector2(12, 12)
+texture = ExtResource("2_fly")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(12, 12)

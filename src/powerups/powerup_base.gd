@@ -9,7 +9,9 @@ extends Area2D
 var start_y: float = 0.0
 var time: float = 0.0
 
-@onready var sprite: ColorRect = $ColorRect
+# Untyped on purpose: real-art pickups use a Sprite2D named "Sprite", legacy
+# placeholder pickups still use a ColorRect (different property surfaces).
+@onready var sprite = get_node_or_null("Sprite") if has_node("Sprite") else get_node_or_null("ColorRect")
 @onready var collision: CollisionShape2D = $CollisionShape2D
 
 func _ready() -> void:

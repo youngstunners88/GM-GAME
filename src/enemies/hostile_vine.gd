@@ -7,14 +7,13 @@ extends Node2D
 var is_extended: bool = false
 var timer: float = 0.0
 
-@onready var vine_body: ColorRect = $VineBody
+@onready var vine_body: Sprite2D = $VineBody
 @onready var hitbox: Area2D = $Hitbox
 @onready var hitbox_shape: CollisionShape2D = $Hitbox/CollisionShape2D
 
 func _ready() -> void:
     add_to_group("enemy")
     add_to_group("hazard")
-    vine_body.color = Color(0.0, 0.8, 0.0, 1.0)
     hitbox.body_entered.connect(_on_hitbox_body_entered)
     retract()
 
@@ -28,9 +27,10 @@ func _process(delta: float) -> void:
 func extend() -> void:
     is_extended = true
     timer = 0.0
-    var tween := create_tween()
-    tween.tween_property(vine_body, "size:y", 80.0, 0.3)
-    tween.tween_property(vine_body, "position:y", -80.0, 0.3)
+    # Sprite grows to full size and rises so its base stays planted at the origin.
+    var tween := create_tween().set_parallel()
+    tween.tween_property(vine_body, "scale", Vector2(1.0, 1.0), 0.3)
+    tween.tween_property(vine_body, "position:y", -23.0, 0.3)
     hitbox_shape.disabled = false
     hitbox.monitorable = true
     hitbox.monitoring = true
@@ -38,9 +38,9 @@ func extend() -> void:
 func retract() -> void:
     is_extended = false
     timer = 0.0
-    var tween := create_tween()
-    tween.tween_property(vine_body, "size:y", 16.0, 0.3)
-    tween.tween_property(vine_body, "position:y", 0.0, 0.3)
+    var tween := create_tween().set_parallel()
+    tween.tween_property(vine_body, "scale", Vector2(0.35, 0.35), 0.3)
+    tween.tween_property(vine_body, "position:y", -8.0, 0.3)
     hitbox_shape.disabled = true
     hitbox.monitorable = false
     hitbox.monitoring = false

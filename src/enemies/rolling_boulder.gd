@@ -5,14 +5,10 @@ extends CharacterBody2D
 
 var direction: float = 1.0
 
-@onready var sprite: ColorRect = $ColorRect
+@onready var sprite: Sprite2D = $Sprite
 
 func _ready() -> void:
     add_to_group("hazard")
-    sprite.color = Color(0.5, 0.5, 0.5, 1.0)
-    sprite.size = Vector2(48, 48)
-    $CollisionShape2D.shape.radius = 24.0
-    $CollisionShape2D.position = Vector2(24, 24)
 
 func _physics_process(delta: float) -> void:
     velocity.x = roll_speed * direction
@@ -30,3 +26,15 @@ func _physics_process(delta: float) -> void:
 func _on_body_entered(body: Node2D) -> void:
     if body.is_in_group("player") and body.has_method("take_damage"):
         body.take_damage(2)
+
+## Pickaxe tool shatters boulders instead of the player taking damage.
+func smash() -> void:
+    set_physics_process(false)
+    GameManager.add_score(75)
+    AudioManager.play_sfx("damage")
+    ScreenShake.shake(0.15, 4.0)
+    var tween := create_tween()
+    tween.tween_property(self, "scale", Vector2(1.2, 1.2), 0.05)
+    tween.tween_property(self, "scale", Vector2.ZERO, 0.2)
+    tween.parallel().tween_property(self, "modulate:a", 0.0, 0.2)
+    tween.finished.connect(queue_free)

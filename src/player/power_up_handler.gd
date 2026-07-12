@@ -24,7 +24,16 @@ func _update_invincibility(delta: float) -> void:
 		player.sprite.visible = true
 
 func _update_blaze(delta: float) -> void:
-	if GameManager.has_power_up("blaze"):
+	# Purple Weed is the flagship strain: everything Blaze does, but stronger
+	# and with a faster auto-puff cadence.
+	if GameManager.has_power_up("purple"):
+		speed_multiplier = 1.6
+		jump_multiplier = 1.45
+		blaze_smoke_timer -= delta
+		if blaze_smoke_timer <= 0:
+			player.emit_blaze_smoke()
+			blaze_smoke_timer = 1.2
+	elif GameManager.has_power_up("blaze"):
 		speed_multiplier = 1.4
 		jump_multiplier = 1.3
 		blaze_smoke_timer -= delta

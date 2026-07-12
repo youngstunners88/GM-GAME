@@ -57,7 +57,8 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
     if GameManager.power_up_timer > 0 and GameManager.current_power_up != "":
-        var max_time := 12.0 if GameManager.current_power_up == "blaze" else (10.0 if GameManager.current_power_up == "big" else 8.0)
+        var durations := {"blaze": 12.0, "big": 10.0, "diamond": 8.0, "purple": 15.0, "pickaxe": 20.0, "torch": 20.0}
+        var max_time: float = durations.get(GameManager.current_power_up, 8.0)
         powerup_bar.value = (GameManager.power_up_timer / max_time) * 100.0
     else:
         powerup_bar.visible = false
@@ -83,7 +84,7 @@ func _on_power_up_changed(type: String, _duration: float) -> void:
         powerup_label.text = ""
         powerup_bar.visible = false
         return
-    var names := {"blaze": "BLAZE MODE", "big": "BIG MODE", "diamond": "DIAMOND SHIELD"}
+    var names := {"blaze": "BLAZE MODE", "big": "BIG MODE", "diamond": "DIAMOND SHIELD", "purple": "PURPLE POWER", "pickaxe": "PICKAXE", "torch": "TORCH"}
     powerup_label.text = names.get(type, type.to_upper())
     powerup_bar.visible = true
     powerup_bar.value = 100.0

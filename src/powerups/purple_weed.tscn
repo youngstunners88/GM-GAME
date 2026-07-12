@@ -1,0 +1,20 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/powerups/purple_weed.gd" id="1_purple"]
+[ext_resource type="Texture2D" path="res://src/assets/sprites/sprite_item_purple-weed.png" id="2_purple"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_purple"]
+size = Vector2(28, 40)
+
+[node name="PurpleWeed" type="Area2D"]
+collision_layer = 16
+collision_mask = 2
+script = ExtResource("1_purple")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+position = Vector2(14, 20)
+texture = ExtResource("2_purple")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(14, 20)
+shape = SubResource("RectangleShape2D_purple")

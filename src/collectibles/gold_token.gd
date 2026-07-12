@@ -9,19 +9,9 @@ func _ready() -> void:
 	_setup_visual()
 
 func _setup_visual() -> void:
-	# Bright gold nugget — round, slightly off-square to suggest natural mineral form.
-	var nugget := ColorRect.new()
-	nugget.color = Color(1.0, 0.84, 0.0, 1.0)
-	nugget.size = Vector2(20, 18)
-	nugget.position = Vector2(-10, -9)
+	var nugget := Sprite2D.new()
+	nugget.texture = load("res://src/assets/sprites/sprite_item_gold-nugget.png")
 	add_child(nugget)
-
-	# Inner highlight to suggest polish/3D
-	var highlight := ColorRect.new()
-	highlight.color = Color(1.0, 0.95, 0.5, 0.8)
-	highlight.size = Vector2(8, 4)
-	highlight.position = Vector2(-6, -7)
-	add_child(highlight)
 
 	var col := CollisionShape2D.new()
 	var shape := CircleShape2D.new()
@@ -39,7 +29,9 @@ func _on_body_entered(body: Node2D) -> void:
 		# Stop monitoring first — queue_free only lands at end of frame, and a
 		# physics hitch can fire body_entered twice (double-award exploit).
 		set_deferred("monitoring", false)
-		GoldMineSystem.mine_gold(gold_amount)
-		ComboSystem.add_score(25 * gold_amount)
+		# Pickaxe tool doubles mining yield — the miner's edge.
+		var mult: int = 2 if GameManager.has_power_up("pickaxe") else 1
+		GoldMineSystem.mine_gold(gold_amount * mult)
+		ComboSystem.add_score(25 * gold_amount * mult)
 		AudioManager.play_sfx("coin")
 		queue_free()
