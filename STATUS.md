@@ -7,29 +7,24 @@
 > This report is updated, committed, and pushed on every change so you always
 > have something current to look at. Last updated: **2026-07-12**.
 
-## 🚨 One last itch.io gate — and it's on itch's side, not ours
+## 🎉 BUILD IS ON ITCH.IO — one click left: hit Publish
 
-Everything our pipeline controls now passes: secret scan ✅ (git history
-scrubbed clean), Godot export ✅, butler authenticated and reached itch.io ✅.
-itch.io itself blocks the upload with one server-side message:
+The full pipeline went **green end-to-end** (2026-07-12): secret scan ✅,
+Godot export ✅, browser-verified ✅, **butler upload to itch.io ✅** — the
+current build (feel pass + combat) is sitting on your project's `html5`
+channel right now.
 
-> **"Please verify your account's email address before uploading a build."**
+The public page still shows 404 because the project is saved as **Draft** —
+itch.io hides drafts from everyone except you. Final step, ~10 seconds:
 
-You mentioned you already verified earlier — but itch.io's API still reports
-the **account** email as unverified, which is different from confirming a login
-link. Please check, in this order:
-1. Open https://itch.io/user/settings — if there's a yellow "confirm your
-   email" banner at the top, click its resend link and confirm from the email.
-2. Make sure the address shown there is one you can actually receive mail at
-   (the *primary* account email is the one that gates uploads).
-3. If it already shows verified, log out and back in once — the upload gate can
-   lag a stale session.
+1. Open your project → **Edit game**
+2. Under **Uploads**, confirm the butler build is there and check
+   **"This file will be played in the browser"** if it isn't already
+3. Set **Visibility → Public** and Save
 
-The instant itch shows the account verified, tell me — the build is already
-made; I just re-run the deploy and it goes live. **Zero-wait fallback:** on the
-latest Actions run, the `itch-build` artifact is the exact playable zip — you
-can drag it onto the project's Edit → Uploads page and it's live immediately,
-no email gate.
+Then https://youngstunners88.itch.io/lil-blunt-adventure is live for the
+world. Every future push to the branch auto-deploys — no more manual steps,
+ever.
 
 ---
 
@@ -100,6 +95,16 @@ browsers. Fixes shipped:
   (itch.io's official CLI) once the `BUTLER_API_KEY` secret is added.
 
 ## 🗓 Changelog (newest first)
+
+- **2026-07-12 (SHIPPED TO ITCH.IO)** — first successful butler deploy: the
+  email gate cleared, the pinned-fingerprint secret-scan false positives were
+  resolved, and run 29201398665 pushed the browser-verified build (feel pass +
+  combat + PR-review fixes) to the `html5` channel. Awaiting one owner click
+  (Draft → Public). Also merged the external PR #4 review: web/mobile touch
+  detection fixed for the Web export (touch controls + ATK button now appear on
+  itch mobile), vines are hittable by axe & fire breath, the CI export-commit
+  now lands before the deploy step (stale-mirror bug), and a checksum-fallback
+  shell bug was fixed.
 
 - **2026-07-12 (combat + cleanup)** — LIL BLUNT CAN FIGHT BACK:
   - **Axe throw** is the new base attack — press `J`/`Enter` (or the mobile
