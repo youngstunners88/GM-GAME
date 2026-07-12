@@ -211,6 +211,9 @@ jobs:
           git add -f web/game/
           if ! git diff --cached --quiet; then
             git commit -m "build: export Godot 4.3 game to web (automated CI)"
+            # The branch may have moved while this job ran (e.g. a dev push) —
+            # rebase our export commit on top instead of failing the run.
+            git pull --rebase origin "${GITHUB_REF_NAME}" || true
             git push -u origin HEAD
           else
             echo "No changes to commit"

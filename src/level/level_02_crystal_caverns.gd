@@ -10,7 +10,7 @@ func _ready() -> void:
 	if p:
 		p.set_outfit(Player.Outfit.MINER)
 	_setup_blaze_portal(Vector2(2100, 280), 2500, 2)
-	AudioManager.play_music("res://src/assets/music/level02_theme.ogg")
+	AudioManager.play_playlist(["res://src/assets/music/level02_theme.ogg", "res://src/assets/music/level02_theme_alt.ogg"])
 
 func _on_boss_trigger(body: Node2D) -> void:
 	if body.is_in_group("player") and not _boss_arena_active:
@@ -19,4 +19,4 @@ func _on_boss_trigger(body: Node2D) -> void:
 		var boss := preload("res://src/boss/distributor.tscn").instantiate()
 		boss.global_position = boss_spawn.global_position
 		add_child(boss)
-		AudioManager.play_music("res://src/assets/music/boss02_theme.ogg")
+		AudioManager.play_playlist(["res://src/assets/music/boss02_theme.ogg", "res://src/assets/music/boss02_theme_alt.ogg"])

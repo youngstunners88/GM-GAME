@@ -60,7 +60,7 @@ After that, every green build auto-deploys to itch.io. Until then, the
    jump stretch ships now; hand-drawn frames still welcome).
 2. **Gameplay feel pass** — tune jump/gravity/coyote-time, camera, enemy pacing.
 3. **Level design depth** — more platforming, secrets, reasons to explore.
-4. **Audio** — real music/SFX (currently silent placeholders).
+4. **SFX pass** — music is IN (12 tracks); jump/coin/damage sounds still placeholder.
 5. **Weed Leaf + Magic Mushroom sprites** (the last two placeholder squares).
 
 ## 🌐 Hosting: moved to itch.io (root cause of "sometimes doesn't play" found)
@@ -79,6 +79,12 @@ browsers. Fixes shipped:
 
 ## 🗓 Changelog (newest first)
 
+- **2026-07-12 (music)** — REAL MUSIC IN-GAME: your 12 tracks wired with a
+  shuffle system — every stage cycles its two songs at random (never the same
+  one twice in a row), every boss fight has its own two-song rotation, and
+  the final boss (Bandit, Level 3) gets its dedicated pair. Blaze/Purple
+  power-ups now hit with the fresh-boost jingle. Also hardened CI against a
+  push race that failed one export run.
 - **2026-07-12 (later)** — ART PASS + TOOLS & PURPLE POWER (GitHub access
   restored — all queued work is pushed):
   - **11 real sprites generated** (Muapi/Flux, 16-bit style, transparent,
