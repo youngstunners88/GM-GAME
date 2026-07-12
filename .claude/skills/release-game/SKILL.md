@@ -16,13 +16,19 @@ Outputs: `release-{timestamp}.json` (structured result) + `game-verify.png` (scr
 
 ## What it does (fully automated)
 
-1. **Push branch** — `git push -u origin <branch>` with 4x retry (2s, 4s, 8s, 16s backoff)
-2. **Poll CI** — GitHub Actions API every 10s until `export-game` workflow completes (5 min max)
-3. **Verify export** — downloads artifact, checks for index.html / index.wasm / index.pck
-4. **Browser test** — runs `scripts/verify-game.mjs` on Vercel build (screenshot + console check)
-5. **Update STATUS.md** — adds changelog entry with commit, verification timestamp, screenshot reference
-6. **Commit docs** — commits STATUS.md back to branch (ensures docs are always current)
-7. **Report** — JSON summary: pass/fail, screenshot path, console errors (if any), next steps
+1. **Security quick-audit** — checks `docs/security/GAME_SECURITY_CHECKLIST.md`'s
+   4 fast, script-checkable items: no leaked-secret patterns in shipped
+   paths, no hardcoded wallet/contract addresses, web export still
+   non-threaded, `web3_manager.gd` still DEMO-labeled. Blocks the release
+   on any failure — this is the "runs autonomously, never needs to be
+   asked for" gate from CLAUDE.md's SECURITY-GATE RULE.
+2. **Push branch** — `git push -u origin <branch>` with 4x retry (2s, 4s, 8s, 16s backoff)
+3. **Poll CI** — GitHub Actions API every 10s until `export-game` workflow completes (5 min max)
+4. **Verify export** — downloads artifact, checks for index.html / index.wasm / index.pck
+5. **Browser test** — runs `scripts/verify-game.mjs` on Vercel build (screenshot + console check)
+6. **Update STATUS.md** — adds changelog entry with commit, verification timestamp, screenshot reference
+7. **Commit docs** — commits STATUS.md back to branch (ensures docs are always current)
+8. **Report** — JSON summary: pass/fail, screenshot path, console errors (if any), next steps
 
 ## Exit codes
 - **0**: release succeeded, game verified live, docs updated
@@ -30,6 +36,8 @@ Outputs: `release-{timestamp}.json` (structured result) + `game-verify.png` (scr
 - **2**: CI failed (export errored, see workflow log)
 - **3**: browser verification failed (game won't boot or threading error)
 - **4**: fatal error (missing files, git config broken)
+- **5**: security quick-audit failed — see console output for which check,
+  fix it, then re-run (do not bypass; see `docs/security/GAME_SECURITY_CHECKLIST.md`)
 
 ## Usage
 

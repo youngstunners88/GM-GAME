@@ -15,8 +15,25 @@ risks, and denial-of-service potential. This skill systematically audits the
 codebase for the most common game security failures and produces a prioritised
 remediation plan.
 
+**Also run `docs/security/GAME_SECURITY_CHECKLIST.md`'s quick-audit command
+block as part of every `full` or `quick` pass.** That document is the
+project-specific adaptation of a broader web-app security checklist (bundle
+secrets, CI secret-scanning, deploy headers, DEMO-mode wallet labeling,
+non-threaded export regression, postMessage origin checks) — items this
+skill's 6 categories below don't cover because they're about the *build and
+deploy pipeline*, not the game code itself. Append results to
+`docs/security/audit-log.md` in the same run. If the checklist doc's
+architecture-assumption section (client-only, no backend) stops matching
+reality — a real leaderboard, wallet integration, or backend ships — flag
+that explicitly; several items there are marked N/A *because* there's no
+backend today, and that status must be re-audited the moment one exists.
+
 **Run this skill:**
 - Before any public release (required for the Polish → Release gate)
+- **Automatically as part of `/release-game`** — no need to invoke separately
+  for a routine ship; the release pipeline gates on the `quick` mode of this
+  checklist. Invoke manually with `full` before major milestones or when a
+  new system touches save data, network, or secrets.
 - Before enabling any online/multiplayer feature
 - After implementing any system that reads from disk or network
 - When a security-related bug is reported

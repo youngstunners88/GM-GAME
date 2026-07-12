@@ -36,8 +36,38 @@ echo "Commit: $COMMIT"
 echo "Timestamp: $TIMESTAMP"
 echo ""
 
-# Step 1: Push with retries
-echo "[1/5] Pushing branch..."
+# Step 1: Quick security gate (docs/security/GAME_SECURITY_CHECKLIST.md)
+# Blocks the release on real findings (leaked secrets, real wallet/contract
+# addresses, threaded-export regression). Does NOT re-litigate the doc's N/A
+# items (no backend/DB/auth exists) or the known Vercel-header gap tracked in
+# docs/security/audit-log.md — those need a human/redeploy, not a release block.
+echo "[1/6] Security quick-audit..."
+SECURITY_FAIL=0
+SECRET_PATTERN="sk_live|sk_test|AKIA|pk_live"
+if grep -rE "$SECRET_PATTERN" web/game src scripts --exclude="release-game.sh" 2>/dev/null; then
+  echo "✗ Secret-looking string found in shipped paths"
+  SECURITY_FAIL=1
+fi
+if grep -rEq "0x[a-fA-F0-9]{40}" src/ 2>/dev/null; then
+  echo "✗ Hardcoded-looking wallet/contract address found in src/ (CLAUDE.md Global Rules forbid this)"
+  SECURITY_FAIL=1
+fi
+if ! grep -q "thread_support=false" .github/workflows/export-game.yml 2>/dev/null; then
+  echo "✗ Web export is not non-threaded — this regresses the itch.io/iframe/mobile boot fix"
+  SECURITY_FAIL=1
+fi
+if ! grep -q "DEMO" src/autoload/web3_manager.gd 2>/dev/null; then
+  echo "✗ web3_manager.gd lost its DEMO-mode labeling — wallet UI would imply real functionality"
+  SECURITY_FAIL=1
+fi
+if [ "$SECURITY_FAIL" -ne 0 ]; then
+  write_result "FAIL" "Security quick-audit failed. See docs/security/GAME_SECURITY_CHECKLIST.md and fix before releasing."
+  exit 5
+fi
+echo "✓ Security quick-audit passed"
+
+# Step 2: Push with retries
+echo "[2/6] Pushing branch..."
 for attempt in 1 2 3 4; do
   if git push -u origin "$BRANCH" 2>&1; then
     echo "✓ Push succeeded (attempt $attempt)"
@@ -55,7 +85,7 @@ for attempt in 1 2 3 4; do
 done
 
 # Step 2: Poll CI export
-echo "[2/5] Polling GitHub Actions for export workflow..."
+echo "[3/6] Polling GitHub Actions for export workflow..."
 max_attempts=30  # 30 * 10s = 5 min timeout
 attempt=0
 workflow_id=""
@@ -96,7 +126,7 @@ if [ $attempt -ge $max_attempts ]; then
 fi
 
 # Step 3: Verify export files exist
-echo "[3/5] Verifying export files..."
+echo "[4/6] Verifying export files..."
 if [ ! -f "web/game/index.html" ] || [ ! -f "web/game/index.wasm" ] || [ ! -f "web/game/index.pck" ]; then
   write_result "FAIL" "Export files missing. Check web/game/ directory."
   exit 2
@@ -104,7 +134,7 @@ fi
 echo "✓ Export files present (index.html, index.wasm, index.pck)"
 
 # Step 4: Browser verification (Playwright)
-echo "[4/5] Running browser verification..."
+echo "[5/6] Running browser verification..."
 if ! npm list @playwright/test > /dev/null 2>&1; then
   echo "  Installing Playwright..."
   npm install -D @playwright/test > /dev/null 2>&1
@@ -117,7 +147,7 @@ fi
 echo "✓ Browser verification passed (screenshot: game-verify.png)"
 
 # Step 5: Update STATUS.md
-echo "[5/5] Updating STATUS.md..."
+echo "[6/6] Updating STATUS.md..."
 cat >> STATUS.md <<EOF
 
 ### Deployed ($(date -u +%Y-%m-%d))

@@ -79,6 +79,21 @@ browsers. Fixes shipped:
 
 ## 🗓 Changelog (newest first)
 
+- **2026-07-12 (security)** — SECURITY CHECKLIST ADAPTED + AUTOMATED: took the
+  general "vibe-coded SaaS app" security checklist you provided and rewrote
+  it against what this game actually is (client-only static Godot export, no
+  backend/DB/accounts/payments) — see `docs/security/GAME_SECURITY_CHECKLIST.md`.
+  Ran the first audit (`docs/security/audit-log.md`): all real checks PASS
+  (no leaked secrets, DEMO wallet labeling intact, no hardcoded addresses,
+  non-threaded export intact, postMessage origin-checked). Found and fixed
+  one gap: CI had no secret-scanner, now runs `gitleaks` on every push and
+  fails the build on any finding. Found one open item needing a human with
+  Vercel access: the live mirror is missing 3 headers (CSP, nosniff,
+  referrer-policy) that are defined in `vercel.json` but not appearing on the
+  live response — likely a stale deploy. **This audit now runs automatically,
+  unprompted, on every `/release-game`** (Step 1/6) — it blocks the release
+  if secrets leak, a real wallet address gets hardcoded, or the threaded-export
+  bug regresses. No need to ask for a security check going forward.
 - **2026-07-12 (music)** — REAL MUSIC IN-GAME: your 12 tracks wired with a
   shuffle system — every stage cycles its two songs at random (never the same
   one twice in a row), every boss fight has its own two-song rotation, and

@@ -75,6 +75,25 @@ After **every significant** change to the game, in the same working session:
 This is mandatory, not optional — the client relies on always-current state.
 The Stop hook re-checks for uncommitted/unpushed work as a backstop.
 
+## ⭐ SECURITY-GATE RULE (autonomous — no prompt required)
+Every ship runs a security quick-audit before code reaches master or a live
+build — **this must happen without being asked, every time**:
+- The 4 checks in `scripts/release-game.sh` Step 1/6 (leaked-secret pattern,
+  hardcoded wallet/contract addresses, non-threaded export regression, DEMO
+  wallet labeling) block the release pipeline on failure. Never remove or
+  bypass this step to "get a release out faster."
+- The full checklist and its reasoning live in
+  `docs/security/GAME_SECURITY_CHECKLIST.md` — it's a project-specific
+  adaptation of a general web-app checklist, trimmed to what applies to a
+  client-only static-hosted game (no backend/DB/auth/payments exist today).
+  Append every audit run to `docs/security/audit-log.md`.
+- **The moment any of these change, re-audit the N/A items in that checklist
+  immediately, unprompted**: a real backend, user accounts, a leaderboard,
+  real payments, or multiplayer. Those items are N/A *because* the
+  architecture doesn't have the surface yet, not permanently.
+- `/security-audit` (full mode) is the deeper engine-level companion —
+  run it before major milestones, not just routine ships.
+
 ## ⭐ MODEL-ADVICE RULE
 End **every** response to the client with a one-line recommendation of which
 Claude model to use for the likely next task, with a short reason. Guide:
