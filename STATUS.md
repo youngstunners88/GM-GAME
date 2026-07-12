@@ -75,6 +75,24 @@ browsers. Fixes shipped:
 
 ## 🗓 Changelog (newest first)
 
+- **2026-07-12** — SECURITY + STABILITY SWEEP (specialist audit, bug hunt,
+  stress test):
+  - **Stress test built & passed** (`scripts/stress-game.mjs`): 45s random
+    input mashing, 40 rapid pause toggles, 45s travel soak — zero crashes,
+    zero errors, memory flat at ~45MB (no leaks).
+  - **Security audit (10 findings, all addressed or accepted)**: fake
+    "wallet connected / TX submitted" flow relabeled to explicit DEMO mode
+    (no fake tx hashes — real-brand trust risk); postMessage origin checks
+    both directions (launcher + game); CI supply chain pinned (butler 15.28.0
+    + SHA-256, Godot verified against official SHA-512 sums); CSP +
+    nosniff + referrer headers added to the mirror.
+  - **5 gameplay bugs fixed** (from crash-hunt): HUD showing stale hearts
+    after every level change; player death during boss victory soft-locking
+    the game to main menu; scene-load failure permanently freezing the
+    session (now recovers); wBTC/GOLD double-collection exploit; mine cart
+    fast/slow types never applying (day-88/day-288 economy was dead code).
+  - **HUD glyph fix**: emoji icons (tofu boxes on web) replaced with real
+    heart pips + text labels — HUD is finally readable in production.
 - **2026-07-11** — Verification harness PROVEN against the real game: headless
   Chromium now boots the build, clicks PLAY LEVEL 1, and screenshots live
   gameplay (Lil Blunt + HUD + GM Forest — evidence in `game-verify-level.png`).

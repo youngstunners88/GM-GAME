@@ -37,8 +37,33 @@ jobs:
           EDITOR_URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
           TEMPLATES_URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_export_templates.tpz"
 
+          SUMS_URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/SHA512-SUMS.txt"
+
           echo "Downloading editor: $EDITOR_URL"
           curl -fL --retry 3 -o godot-editor.zip "$EDITOR_URL"
+
+          # Supply-chain gate: verify both Godot downloads against the release's
+          # official SHA512 sums before executing anything (audit finding #6).
+          # Missing sums file = warn (release layout changed); MISMATCH = fail.
+          if ! curl -fL --retry 3 -o SHA512-SUMS.txt "$SUMS_URL"; then
+            echo "::warning::SHA512-SUMS.txt not found on release — skipping Godot checksum gate"
+            echo "SUMS_MISSING=1" >> "$GITHUB_ENV"
+          fi
+          verify() {
+            [ "${SUMS_MISSING:-0}" = "1" ] && return 0
+            local file=$1 name=$2
+            local expected actual
+            expected=$(grep " ${name}\$" SHA512-SUMS.txt | awk '{print $1}')
+            if [ -z "$expected" ]; then
+              echo "::error::No checksum for $name in SHA512-SUMS.txt"; exit 1
+            fi
+            actual=$(sha512sum "$file" | awk '{print $1}')
+            if [ "$expected" != "$actual" ]; then
+              echo "::error::Checksum mismatch for $name"; exit 1
+            fi
+            echo "✓ checksum OK: $name"
+          }
+          verify godot-editor.zip "Godot_v${GODOT_VERSION}_linux.x86_64.zip"
           unzip -q godot-editor.zip
           EDITOR_BIN=$(find . -maxdepth 1 -name "Godot_v*_linux.x86_64" -type f | head -1)
           chmod +x "$EDITOR_BIN"
@@ -46,6 +71,7 @@ jobs:
 
           echo "Downloading export templates: $TEMPLATES_URL"
           curl -fL --retry 3 -o templates.tpz "$TEMPLATES_URL"
+          verify templates.tpz "Godot_v${GODOT_VERSION}_export_templates.tpz"
 
           # Templates must live at ~/.local/share/godot/export_templates/<version>/
           # NOTE: Godot names the dir "4.3.stable" (dot), not the release tag "4.3-stable".
@@ -164,8 +190,13 @@ jobs:
             echo "Add it at Settings → Secrets → Actions, key from https://itch.io/user/settings/api-keys"
             exit 0
           fi
+          # Pinned butler + checksum: this step holds BUTLER_API_KEY, so never
+          # execute an unpinned "LATEST" binary here (audit finding #6).
+          BUTLER_VERSION="15.28.0"
+          BUTLER_SHA256="746de1eb9e0b8aba2b8aa766d3cfeacd92d69bcf06acf571a5b9a0faf28e3733"
           curl -fL --retry 3 -o butler.zip \
-            "https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default"
+            "https://broth.itch.zone/butler/linux-amd64/${BUTLER_VERSION}/archive/default"
+          echo "${BUTLER_SHA256}  butler.zip" | sha256sum -c -
           unzip -q butler.zip butler
           chmod +x butler
           ./butler push web/game "$ITCH_TARGET" \

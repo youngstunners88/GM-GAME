@@ -76,15 +76,20 @@ func reset_session() -> void:
 	milestones_hit.clear()
 
 ## Post a structured event to the JS launcher overlay if running in browser.
-## The game runs inside the launcher's iframe, so events go to window.parent
-## (parent === window when running standalone, so this is safe either way).
+## The launcher iframe is same-origin, so target location.origin instead of
+## '*' — a cross-origin embedder (e.g. itch.io framing us directly) has no
+## launcher and must not receive game telemetry (security audit finding #3).
 func _post_to_launcher(event_type: String, value: Variant) -> void:
 	if OS.has_feature("web"):
 		var payload := JSON.stringify({"type": event_type, "value": value})
-		JavaScriptBridge.eval("window.parent.postMessage(%s, '*')" % payload)
+		JavaScriptBridge.eval(
+			"try { window.parent.postMessage(%s, window.location.origin); } catch (e) {}" % payload
+		)
 
 ## Notify launcher of an achievement unlock by id.
 func unlock_achievement(id: String) -> void:
 	if OS.has_feature("web"):
 		var payload := JSON.stringify({"type": "achievement", "id": id})
-		JavaScriptBridge.eval("window.parent.postMessage(%s, '*')" % payload)
+		JavaScriptBridge.eval(
+			"try { window.parent.postMessage(%s, window.location.origin); } catch (e) {}" % payload
+		)

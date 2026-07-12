@@ -334,7 +334,7 @@ func _reset_player() -> void:
 	_player_visual.rotation = 0.0
 
 func _update_hud() -> void:
-	_smoke_label.text = "💨 %d" % _smoke_this_attempt
+	_smoke_label.text = "PUFFS %d" % _smoke_this_attempt
 	_attempt_label.text = "ATTEMPT %d " % _attempts
 
 # --- finish / exit -----------------------------------------------------------
@@ -349,13 +349,13 @@ func _finish_run() -> void:
 	ComboSystem.add_score_no_combo(_smoke_this_attempt * SCORE_PER_SMOKE)
 
 	var first_clear: bool = not GameManager.blaze_rush_completed.get(_level_index, false)
-	var toast_lines: Array[String] = ["BLAZE RUSH CLEAR!", "💨 +%d SMOKE" % _smoke_this_attempt]
+	var toast_lines: Array[String] = ["BLAZE RUSH CLEAR!", "+%d SMOKE" % _smoke_this_attempt]
 	if first_clear:
 		GoldMineSystem.mine_gold(COMPLETION_GOLD)
 		toast_lines.append("+%d GOLD" % COMPLETION_GOLD)
 		if _attempts == 1:
 			var kept := GoldMineSystem.collect_diamonds(FLAWLESS_DIAMONDS)
-			toast_lines.append("FLAWLESS! +%d 💎 (1 burned)" % kept)
+			toast_lines.append("FLAWLESS! +%d DIAMONDS (1 burned)" % kept)
 		GameManager.blaze_rush_completed[_level_index] = true
 
 	AudioManager.play_sfx("powerup")

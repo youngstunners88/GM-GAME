@@ -22,10 +22,15 @@ var entity_scenes: Dictionary = {
 	"melt_forge": preload("res://src/level/melt_forge.tscn"),
 }
 
-func spawn(type: String, pos: Vector2, parent: Node) -> Node:
+## Spawn an entity by type name. `props` are set on the instance BEFORE it
+## enters the tree — required for exports that _ready() consumes (e.g.
+## MineCart.cart_type); setting them after add_child would be too late.
+func spawn(type: String, pos: Vector2, parent: Node, props: Dictionary = {}) -> Node:
 	if type in entity_scenes:
 		var inst = entity_scenes[type].instantiate()
 		inst.global_position = pos
+		for key in props:
+			inst.set(key, props[key])
 		parent.add_child(inst)
 		return inst
 	push_error("EntitySpawner: Unknown entity type: " + type)

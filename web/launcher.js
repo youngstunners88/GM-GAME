@@ -391,6 +391,9 @@ function startComboSystem() {
 
 	// Listen for Godot postMessage events (game will send these)
 	window.addEventListener('message', (e) => {
+		// Only the same-origin game iframe may drive state — reject forged
+		// events from any other window (security audit finding #3).
+		if (e.origin !== window.location.origin) return;
 		if (e.data?.type === 'combo') {
 			handleCombo(e.data.value);
 		} else if (e.data?.type === 'score') {
