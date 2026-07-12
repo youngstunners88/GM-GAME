@@ -7,13 +7,22 @@
 > This report is updated, committed, and pushed on every change so you always
 > have something current to look at. Last updated: **2026-07-12**.
 
-## ✅ itch.io setup complete on your side — deploy in flight
+## 🚨 One last itch.io step: verify your account email (1 minute)
 
-You created the page and added `BUTLER_API_KEY` — both verified. The first
-automated deploy attempt (manual trigger) was stopped by the secret scanner
-doing its job (see security notice below — findings were in old git history,
-not the game). The current push redeploys automatically; the game page goes
-live with this build.
+The full pipeline now works end-to-end — secret scan ✅, Godot export ✅,
+butler authenticated and reached itch.io ✅ — and itch.io refused the upload
+with exactly one complaint:
+
+> **"Please verify your account's email address before uploading a build."**
+
+Check the inbox for your itch.io account email for a verification link (or
+resend it from https://itch.io/user/settings → email). The moment it's
+verified, tell me — I re-run the already-built deploy and the game goes live
+at https://youngstunners88.itch.io/lil-blunt-adventure. No rebuild needed.
+
+Fallback while you wait: the ready-to-upload zip from this exact build is the
+`itch-build` artifact on the Actions run — it can also be uploaded by hand on
+the project's Edit page.
 
 ---
 
