@@ -1,9 +1,11 @@
-# Fingerprint allowlist for gitleaks — one specific historical false positive.
+# Fingerprint allowlist for gitleaks — specific historical false positives.
 #
-# The combat ADR originally contained the line
-#   "Uses only stable APIs: `Area2D.body_entered`"
-# which trips the generic-api-key heuristic (API-word + colon + high-entropy
-# backticked identifier). The line was reworded in 395a6d2, but the original
-# wording lives forever in commit b244bd3, which full-history scans keep
-# flagging. This pins that single commit+file+rule+line — nothing else.
+# 1) The combat ADR originally described engine calls using the word "APIs"
+#    followed by a colon and a backticked engine identifier, which trips the
+#    generic-api-key heuristic. Reworded in 395a6d2, but the original wording
+#    lives forever in commit b244bd3.
+# 2) The first version of THIS file quoted that line verbatim in a comment,
+#    recreating the pattern in commit ef2866e. Comment reworded; fingerprint
+#    pins the historical occurrence.
 b244bd3fb53cc744d0eb4886894bdfcfee15dd8b:docs/architecture/adr-combat-system.md:generic-api-key:69
+ef2866e62207a8c3c6789a00d839fc5143bd7934:.gitleaksignore:generic-api-key:4
