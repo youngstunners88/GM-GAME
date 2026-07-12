@@ -30,6 +30,9 @@ func _setup_visual() -> void:
 
 func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
+		# Stop monitoring first — queue_free only lands at end of frame, and a
+		# physics hitch can fire body_entered twice (double-award exploit).
+		set_deferred("monitoring", false)
 		GoldMineSystem.award_wbtc(wbtc_amount, pool)
 		AudioManager.play_sfx("powerup")
 		queue_free()

@@ -161,7 +161,10 @@ func emit_blaze_smoke() -> void:
 	get_tree().current_scene.add_child(puff)
 
 func take_damage(amount: int) -> void:
-	if StateMachine.is_dead() or power_up_handler.invincible_timer > 0:
+	# Damage only exists while PLAYING. This also protects the boss-victory
+	# window (LEVEL_COMPLETE): dying there used to wedge the StateMachine
+	# into an unrecoverable state and boot the player to the main menu.
+	if not StateMachine.is_playing() or power_up_handler.invincible_timer > 0:
 		return
 	GameManager.take_damage(amount)
 	ComboSystem.break_combo()
@@ -177,7 +180,10 @@ func take_damage(amount: int) -> void:
 func die() -> void:
 	if StateMachine.is_dead():
 		return
-	StateMachine.change_state(StateMachine.State.GAME_OVER)
+	# If the transition is refused (e.g. boss just won the level), do NOT run
+	# the death sequence — its end would fail to restore PLAYING and freeze us.
+	if not StateMachine.change_state(StateMachine.State.GAME_OVER):
+		return
 	var tween := create_tween()
 	tween.tween_property(self, "scale", Vector2.ZERO, 0.5)
 	tween.tween_property(self, "modulate:a", 0.0, 0.5)
