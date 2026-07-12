@@ -1,0 +1,22 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/effects/one_shot_effect.gd" id="1_fx"]
+
+[sub_resource type="Gradient" id="Gradient_boom"]
+colors = PackedColorArray(1, 0.85, 0.3, 1, 1, 0.35, 0.1, 0.9, 0.35, 0.1, 0.05, 0)
+
+[node name="Explosion" type="CPUParticles2D"]
+emitting = false
+amount = 32
+lifetime = 0.5
+one_shot = true
+explosiveness = 1.0
+direction = Vector2(0, 0)
+spread = 180.0
+gravity = Vector2(0, 60)
+initial_velocity_min = 140.0
+initial_velocity_max = 320.0
+scale_amount_min = 3.0
+scale_amount_max = 7.0
+color_ramp = SubResource("Gradient_boom")
+script = ExtResource("1_fx")

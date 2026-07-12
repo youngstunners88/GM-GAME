@@ -20,29 +20,60 @@ func _ready() -> void:
 	_setup_hud()
 	StateMachine.change_state(StateMachine.State.PLAYING)
 
-var _backdrop: TextureRect
+# The three parallax sprites (far/mid/near) all sample the level's key art;
+# kept as an array so the boss-arena swap can retexture every depth at once.
+var _backdrop_sprites: Array[Sprite2D] = []
 
 func _setup_background() -> void:
-	# Painted key-art backdrop, pinned to the screen behind everything.
+	# Painted key-art backdrop split into three parallax depths. The art is
+	# viewport-sized (1280×720), so scale 1 and mirror at texture width.
 	if not level_data or level_data.background_path == "":
 		return
-	var layer := CanvasLayer.new()
-	layer.layer = -20
-	layer.name = "BackdropLayer"
-	add_child(layer)
-	_backdrop = TextureRect.new()
-	_backdrop.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_backdrop.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	_backdrop.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_backdrop.texture = load(level_data.background_path)
-	# Slight darken so gameplay reads clearly over the busy art.
-	_backdrop.modulate = Color(0.82, 0.82, 0.86, 1.0)
-	layer.add_child(_backdrop)
+	var tex: Texture2D = load(level_data.background_path)
+	if tex == null:
+		return
+	var pbg := ParallaxBackground.new()
+	pbg.name = "BackdropParallax"
+	pbg.layer = -20
+	add_child(pbg)
+	# far: whole painting, slow + cooled down — reads as distance
+	_add_parallax_layer(pbg, tex, 0.2, Color(0.55, 0.55, 0.68, 1.0), Rect2())
+	# mid: the main read of the art, standard darken from the old backdrop
+	_add_parallax_layer(pbg, tex, 0.5, Color(0.82, 0.82, 0.86, 0.8), Rect2())
+	# near: bottom strip of the same painting drifting faster — foreground
+	# silhouettes (grass edges / rocks) without needing extracted art
+	var h := float(tex.get_height())
+	_add_parallax_layer(pbg, tex, 0.8, Color(0.65, 0.7, 0.72, 0.55),
+			Rect2(0.0, h * 0.72, float(tex.get_width()), h * 0.28))
+
+func _add_parallax_layer(pbg: ParallaxBackground, tex: Texture2D, speed: float,
+		mod: Color, region: Rect2) -> void:
+	var layer := ParallaxLayer.new()
+	layer.motion_scale = Vector2(speed, 1.0)
+	layer.motion_mirroring = Vector2(float(tex.get_width()), 0.0)
+	var spr := Sprite2D.new()
+	spr.texture = tex
+	spr.centered = false
+	spr.modulate = mod
+	if region.size != Vector2.ZERO:
+		spr.region_enabled = true
+		spr.region_rect = region
+		spr.position = Vector2(0.0, 720.0 - region.size.y)
+	layer.add_child(spr)
+	pbg.add_child(layer)
+	_backdrop_sprites.append(spr)
 
 ## Swap the backdrop to the boss key art (called from boss triggers).
+## All three parallax depths swap together so the arena reads as one place.
 func set_boss_background() -> void:
-	if _backdrop and level_data and level_data.boss_background_path != "":
-		_backdrop.texture = load(level_data.boss_background_path)
+	if level_data == null or level_data.boss_background_path == "":
+		return
+	var tex: Texture2D = load(level_data.boss_background_path)
+	if tex == null:
+		return
+	for spr in _backdrop_sprites:
+		if is_instance_valid(spr):
+			spr.texture = tex
 
 func _setup_parallax() -> void:
 	# Skip the flat color bands when a painted backdrop is present.

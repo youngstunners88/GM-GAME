@@ -15,7 +15,9 @@ func _on_body_entered(body: Node2D) -> void:
 func collect() -> void:
     GameManager.add_coin()
     ComboSystem.add_score(10)
-    AudioManager.play_sfx("coin")
+    AudioManager.play_sfx_at("coin", global_position)
+    EffectSpawner.burst("coin_sparkle", global_position)
+    ScreenShake.light()
     set_deferred("monitoring", false)
     var tween := create_tween()
     tween.tween_property(self, "scale", Vector2(1.5, 1.5), 0.1)

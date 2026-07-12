@@ -149,6 +149,7 @@ func _physics_process(delta: float) -> void:
 	_update_tool_visual()
 	sprite.facing_right = input_handler.facing_right
 	sprite.moving = is_on_floor() and absf(velocity.x) > 10.0
+	sprite.play_animation(_pick_animation())
 	move_and_slide()
 	# Torch heat shares the diamond damage aura — both burn enemies on contact.
 	aura.monitoring = GameManager.has_power_up("diamond") or GameManager.has_power_up("torch")
@@ -188,6 +189,13 @@ func _update_sprite_color() -> void:
 	else:
 		sprite.color = Color.WHITE
 
+## Movement-state → animation name; one-shots (attack/hurt/death) are played
+## directly at their trigger sites and hold via LilBluntVisual.
+func _pick_animation() -> String:
+	if not is_on_floor():
+		return "jump_up" if velocity.y < 0.0 else "jump_down"
+	return "run" if absf(velocity.x) > 10.0 else "idle"
+
 ## Stretch on launch, snap back — skipped in big mode to avoid fighting PowerUpHandler.
 func _play_jump_stretch() -> void:
 	if GameManager.has_power_up("big"):
@@ -224,6 +232,7 @@ func take_damage(amount: int) -> void:
 		die()
 	else:
 		_hitstop()
+		sprite.play_animation("hurt")
 		velocity.y = -260.0
 		velocity.x = -240.0 if input_handler.facing_right else 240.0
 		power_up_handler.activate_invincibility(1.0)
@@ -307,4 +316,5 @@ func _try_air_dash() -> void:
 	velocity.x = dash_dir * InputHandler.AIR_DASH_SPEED
 	velocity.y = 0.0
 	input_handler.consume_air_dash()
+	EffectSpawner.burst("dash_trail", global_position)
 	AudioManager.play_sfx("dash")

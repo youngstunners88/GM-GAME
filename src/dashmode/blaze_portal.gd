@@ -95,4 +95,4 @@ func _on_body_entered(body: Node2D) -> void:
 		"position": global_position,
 		"level_index": level_index,
 	}
-	SceneRouter.load_scene("res://src/dashmode/blaze_rush.tscn")
+	SceneRouter.load_scene("res://src/dashmode/blaze_rush.tscn", SceneRouter.Transition.SMOKE)

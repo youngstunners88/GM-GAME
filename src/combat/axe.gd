@@ -53,7 +53,7 @@ func _hit(node: Node) -> bool:
 	return false
 
 func _impact() -> void:
-	AudioManager.play_sfx("hit")
+	AudioManager.play_sfx_at("hit", global_position)
 	_despawn()
 
 func _despawn() -> void:

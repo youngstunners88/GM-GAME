@@ -88,6 +88,8 @@ func die() -> void:
 	hitbox.monitorable = false
 	hitbox.monitoring = false
 	StateMachine.change_state(StateMachine.State.LEVEL_COMPLETE)
+	ScreenShake.zoom_to(1.0, 0.6)
+	ScreenShake.heavy()
 	# Gold Rush Auction settlement — whitepaper specifies pro-rata XAUT payout
 	# at week end. Player contributes their GOLD pool, settles vs. enemy reserve.
 	var player_contribution := GoldMineSystem.gold_balance + GoldMineSystem.auction_gold_pool
@@ -114,7 +116,7 @@ func die() -> void:
 	victory.add_theme_font_size_override("font_size", 28)
 	get_tree().current_scene.add_child(victory)
 	await get_tree().create_timer(3.5).timeout
-	SceneRouter.load_scene("res://src/ui/main_menu.tscn", SceneRouter.Transition.FADE)
+	SceneRouter.load_scene("res://src/ui/main_menu.tscn", SceneRouter.Transition.DIAMOND)
 	queue_free()
 
 func _on_hitbox_body_entered(body: Node2D) -> void:

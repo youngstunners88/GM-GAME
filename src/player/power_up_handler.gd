@@ -11,10 +11,26 @@ var player: Node2D
 func _ready() -> void:
 	player = get_parent()
 
+const DIAMOND_AURA_SCENE := preload("res://src/effects/diamond_aura.tscn")
+var _aura_fx: CPUParticles2D
+
 func _physics_process(delta: float) -> void:
 	_update_invincibility(delta)
 	_update_blaze(delta)
 	_update_scale()
+	_update_aura_fx()
+
+## Orbiting cyan particles while the Diamond shield is up — attach once on
+## activation, free on expiry.
+func _update_aura_fx() -> void:
+	var want := GameManager.has_power_up("diamond")
+	if want and _aura_fx == null:
+		_aura_fx = DIAMOND_AURA_SCENE.instantiate()
+		player.add_child(_aura_fx)
+		_aura_fx.position = Vector2(16, 16)
+	elif not want and _aura_fx != null:
+		_aura_fx.queue_free()
+		_aura_fx = null
 
 func _update_invincibility(delta: float) -> void:
 	if invincible_timer > 0:

@@ -31,6 +31,8 @@ var facing_right: bool = true:
 		facing_right = value
 		if _spr:
 			_spr.flip_h = not value
+		if _anim:
+			_anim.flip_h = not value
 		if _tool:
 			_tool.flip_h = not value
 			_tool.position.x = TOOL_HAND_X if value else -TOOL_HAND_X
@@ -46,10 +48,41 @@ var _tool: Sprite2D
 var _tool_path: String = ""
 var _bob_time: float = 0.0
 
+## Frame-animation layer. When a SpriteFrames resource ships for an outfit
+## (res://src/assets/sprites/frames_lil-blunt_<outfit>.tres — see
+## ASSET_MANIFEST.md for exact sheet specs), it drives an AnimatedSprite2D and
+## the static sprite hides. Until then, play_animation() records state and the
+## existing procedural moves (run-bob, jump stretch, damage flicker) carry the
+## read — so wiring is live today with zero art regression.
+const OUTFIT_FRAMES := {
+	Player.Outfit.DEFAULT: "res://src/assets/sprites/frames_lil-blunt_cowboy.tres",
+	Player.Outfit.MINER: "res://src/assets/sprites/frames_lil-blunt_miner.tres",
+	Player.Outfit.CRYSTAL: "res://src/assets/sprites/frames_lil-blunt_crystal.tres",
+}
+## One-shots hold until finished instead of being overwritten by state anims.
+const ONESHOT_ANIMS := ["attack", "hurt", "death"]
+var _anim: AnimatedSprite2D
+var _current_anim: String = ""
+
 func _ready() -> void:
 	_spr = Sprite2D.new()
 	add_child(_spr)
 	set_outfit(Player.Outfit.DEFAULT)
+
+## Drive the named animation ("idle", "run", "jump_up", "jump_down", "attack",
+## "hurt", "death"). Safe to call every frame; no-ops gracefully until a
+## SpriteFrames resource exists for the current outfit.
+func play_animation(anim: String) -> void:
+	if _anim == null or _anim.sprite_frames == null:
+		_current_anim = anim
+		return
+	if _current_anim in ONESHOT_ANIMS and _anim.is_playing() and not anim in ONESHOT_ANIMS:
+		return
+	if not _anim.sprite_frames.has_animation(anim):
+		return
+	if _current_anim != anim or anim in ONESHOT_ANIMS:
+		_current_anim = anim
+		_anim.play(anim)
 
 func _process(delta: float) -> void:
 	if moving:
@@ -90,3 +123,23 @@ func set_outfit(outfit: int) -> void:
 	_spr.position = Vector2(0.0, FEET_LOCAL_Y - _spr.texture.get_height() / 2.0)
 	_spr.flip_h = not facing_right
 	_spr.self_modulate = color
+	_setup_frames_for_outfit(outfit)
+
+## If a frame-sheet resource exists for this outfit, switch to animated mode.
+func _setup_frames_for_outfit(outfit: int) -> void:
+	var frames_path: String = OUTFIT_FRAMES.get(outfit, "")
+	if frames_path == "" or not ResourceLoader.exists(frames_path):
+		if _anim:
+			_anim.visible = false
+		_spr.visible = true
+		return
+	if _anim == null:
+		_anim = AnimatedSprite2D.new()
+		add_child(_anim)
+	_anim.sprite_frames = load(frames_path)
+	# Feet-anchor using the 64×64 frame spec from ASSET_MANIFEST.md.
+	_anim.position = Vector2(0.0, FEET_LOCAL_Y - 32.0)
+	_anim.visible = true
+	_spr.visible = false
+	if _current_anim != "":
+		play_animation(_current_anim)
