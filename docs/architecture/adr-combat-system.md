@@ -66,9 +66,10 @@ enemy-hit hitstop is a candidate follow-up.
 
 ## Engine Compatibility
 
-Godot 4.3 (pinned). Uses only stable APIs: `Area2D.body_entered` /
-`get_overlapping_bodies()`, `SceneTree.create_timer`, `CPUParticles2D`,
-`ConvexPolygonShape2D.points`, `Input.is_action_just_pressed/pressed`.
+Godot 4.3 (pinned). Uses only stable engine calls — Area2D's body_entered
+signal and get_overlapping_bodies, SceneTree create_timer, CPUParticles2D,
+ConvexPolygonShape2D points, and the Input is_action_just_pressed / pressed
+polling.
 
 ## GDD Requirements Addressed
 
