@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://src/powerups/diamond_shard.gd" id="1_diam"]
+[ext_resource type="Texture2D" path="res://src/assets/sprites/sprite_item_diamond-shard.png" id="2_diam"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_diam"]
 size = Vector2(22, 22)
@@ -10,11 +11,9 @@ collision_layer = 16
 collision_mask = 2
 script = ExtResource("1_diam")
 
-[node name="ColorRect" type="ColorRect" parent="."]
-anchors_preset = 0
-offset_right = 22.0
-offset_bottom = 22.0
-color = Color(0, 1, 1, 1)
+[node name="Sprite" type="Sprite2D" parent="."]
+position = Vector2(11, 11)
+texture = ExtResource("2_diam")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(11, 11)

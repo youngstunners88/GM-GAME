@@ -204,6 +204,14 @@ powerup_spawns = Array[Dictionary]([
 	{
 		"type": "diamond_shard",
 		"pos": Vector2(2100, 200)
+	},
+	{
+		"type": "purple_weed",
+		"pos": Vector2(2600, 520)
+	},
+	{
+		"type": "torch_tool",
+		"pos": Vector2(1400, 300)
 	}
 ])
 breakable_blocks = Array[Vector2]([

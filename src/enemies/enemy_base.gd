@@ -8,7 +8,7 @@ extends CharacterBody2D
 var is_dead: bool = false
 var is_flashing: bool = false
 
-@onready var sprite: ColorRect = $ColorRect
+@onready var sprite: Sprite2D = $Sprite
 
 func _ready() -> void:
     add_to_group("enemy")

@@ -31,11 +31,54 @@ var facing_right: bool = true:
 		facing_right = value
 		if _spr:
 			_spr.flip_h = not value
+		if _tool:
+			_tool.flip_h = not value
+			_tool.position.x = TOOL_HAND_X if value else -TOOL_HAND_X
+
+## Ground-movement flag driven by the player each physics frame; while true
+## the sprite gets a light run-bob (rotation + hop) so walking reads as
+## animation even with single-pose art.
+var moving: bool = false
+
+## Held tool (pickaxe/torch power-ups). Offset from node centre to the hand.
+const TOOL_HAND_X: float = 14.0
+var _tool: Sprite2D
+var _tool_path: String = ""
+var _bob_time: float = 0.0
 
 func _ready() -> void:
 	_spr = Sprite2D.new()
 	add_child(_spr)
 	set_outfit(Player.Outfit.DEFAULT)
+
+func _process(delta: float) -> void:
+	if moving:
+		_bob_time += delta
+		_spr.rotation = sin(_bob_time * 14.0) * 0.07
+		_spr.position.y = FEET_LOCAL_Y - _spr.texture.get_height() / 2.0 - absf(sin(_bob_time * 14.0)) * 3.0
+	elif _bob_time != 0.0:
+		_bob_time = 0.0
+		_spr.rotation = 0.0
+		_spr.position.y = FEET_LOCAL_Y - _spr.texture.get_height() / 2.0
+
+## Show/hide the held tool. Pass "" to clear. Path is cached so calling
+## every frame is free.
+func set_tool(path: String) -> void:
+	if path == _tool_path:
+		return
+	_tool_path = path
+	if path == "":
+		if _tool:
+			_tool.queue_free()
+			_tool = null
+		return
+	if _tool == null:
+		_tool = Sprite2D.new()
+		_tool.position = Vector2(TOOL_HAND_X if facing_right else -TOOL_HAND_X, 2.0)
+		_tool.rotation = 0.35
+		add_child(_tool)
+	_tool.texture = load(path)
+	_tool.flip_h = not facing_right
 
 ## Swap outfit art (cowboy for Forest/Gold Rush, miner/crystal for Caves).
 func set_outfit(outfit: int) -> void:

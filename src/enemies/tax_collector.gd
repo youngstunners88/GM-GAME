@@ -9,7 +9,6 @@ var moving_right: bool = true
 func _ready() -> void:
     super._ready()
     start_x = global_position.x
-    sprite.color = Color(0.3, 0.2, 0.13, 1.0) # Brown
 
 func _physics_process(delta: float) -> void:
     if is_dead:

@@ -5,7 +5,7 @@
 **Branch:** `claude/setup-game-dev-environment-itWJv` · **PR #2**
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-07-10**.
+> have something current to look at. Last updated: **2026-07-12**.
 
 ## 🚨 Action needed from you (5 minutes, one-time)
 
@@ -47,17 +47,21 @@ After that, every green build auto-deploys to itch.io. Until then, the
   crystal outfits (L2), auto-swapped per level. DONE this update.
 - **Bosses:** real sprites — IRS Tax Collector, Crystalline Bureaucrat,
   Bandit mine-cart. DONE this update.
-- **Enemies / collectibles:** still simple shapes; next art pass (need
-  transparent PNGs for Tax Collector minion, fly, boulder, vine, ring, coin).
+- **Enemies / collectibles:** REAL AI-generated pixel sprites in-game — Tax
+  Collector minion, fly, boulder, hostile vine, coin, ETH ring, GOLD nugget,
+  Diamond shard. DONE this update (generated via Muapi/Flux, bg-removed,
+  downscaled to game size).
+- **New items:** Purple Weed power-up plant, Pickaxe & Torch tools — all with
+  real sprites, placed in all 3 levels.
 
 ## 🔧 Known gaps → next up (priority order)
 
-1. **Enemy + collectible sprites** (minions, fly, boulder, vine, ETH ring,
-   coin, GOLD nugget, Diamond) — the last placeholder shapes.
-2. **Walk/jump animation frames** for Lil Blunt (currently single pose + flip).
-3. **Gameplay feel pass** — tune jump/gravity/coyote-time, camera, enemy pacing.
-4. **Level design depth** — more platforming, secrets, reasons to explore.
-5. **Audio** — real music/SFX (currently silent placeholders).
+1. **Full walk/jump frame animation** for Lil Blunt (a procedural run-bob +
+   jump stretch ships now; hand-drawn frames still welcome).
+2. **Gameplay feel pass** — tune jump/gravity/coyote-time, camera, enemy pacing.
+3. **Level design depth** — more platforming, secrets, reasons to explore.
+4. **Audio** — real music/SFX (currently silent placeholders).
+5. **Weed Leaf + Magic Mushroom sprites** (the last two placeholder squares).
 
 ## 🌐 Hosting: moved to itch.io (root cause of "sometimes doesn't play" found)
 
@@ -75,6 +79,21 @@ browsers. Fixes shipped:
 
 ## 🗓 Changelog (newest first)
 
+- **2026-07-12 (later)** — ART PASS + TOOLS & PURPLE POWER (GitHub access
+  restored — all queued work is pushed):
+  - **11 real sprites generated** (Muapi/Flux, 16-bit style, transparent,
+    game-sized) and wired in: Tax Collector minion, fly, boulder, hostile
+    vine, coin, ETH ring, GOLD nugget, Diamond shard, purple weed plant,
+    pickaxe, torch. Placeholder squares for enemies/collectibles are GONE.
+  - **NEW: Purple Weed power-up** — the flagship strain: faster + higher than
+    Blaze Mode, rapid auto-puffs, royal purple glow (15s). In all 3 levels.
+  - **NEW: Tools Lil Blunt can carry** — Pickaxe (smashes boulders, breaks
+    blocks by walking into them, 2× GOLD mining yield) and Torch (heat aura
+    damages nearby enemies, warm glow — made for Crystal Caverns). Tool shows
+    in his hand while active.
+  - **Run animation** — procedural run-bob + existing jump stretch/land
+    squash; walking finally reads as motion, not a sliding statue.
+  - Vine hitbox now matches its visual (used to hit below while drawn above).
 - **2026-07-12** — SECURITY + STABILITY SWEEP (specialist audit, bug hunt,
   stress test):
   - **Stress test built & passed** (`scripts/stress-game.mjs`): 45s random

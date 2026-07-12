@@ -121,19 +121,45 @@ func _physics_process(delta: float) -> void:
 		AudioManager.play_sfx("dash")
 
 	_update_sprite_color()
+	_update_tool_visual()
 	sprite.facing_right = input_handler.facing_right
+	sprite.moving = is_on_floor() and absf(velocity.x) > 10.0
 	move_and_slide()
-	aura.monitoring = GameManager.has_power_up("diamond")
+	# Torch heat shares the diamond damage aura — both burn enemies on contact.
+	aura.monitoring = GameManager.has_power_up("diamond") or GameManager.has_power_up("torch")
+	_check_pickaxe_breaks()
 	GameManager.player_position = global_position
+
+## With the pickaxe out, walking into a breakable block smashes it.
+func _check_pickaxe_breaks() -> void:
+	if not GameManager.has_power_up("pickaxe"):
+		return
+	for i in range(get_slide_collision_count()):
+		var collider := get_slide_collision(i).get_collider()
+		if collider and collider.is_in_group("breakable") and collider.has_method("break_block"):
+			collider.break_block()
+
+## Show the held tool sprite while a tool power-up is active.
+func _update_tool_visual() -> void:
+	if GameManager.has_power_up("pickaxe"):
+		sprite.set_tool("res://src/assets/sprites/sprite_item_pickaxe.png")
+	elif GameManager.has_power_up("torch"):
+		sprite.set_tool("res://src/assets/sprites/sprite_item_torch.png")
+	else:
+		sprite.set_tool("")
 
 func _update_sprite_color() -> void:
 	# Tints over the real sprite art; WHITE = untinted.
 	if GameManager.has_power_up("diamond"):
 		sprite.color = Color(0.55, 1.0, 1.0, 0.95)
+	elif GameManager.has_power_up("purple"):
+		sprite.color = Color(0.85, 0.6, 1.0, 0.95)
 	elif GameManager.has_power_up("blaze"):
 		sprite.color = Color(0.7, 1.0, 0.6, 0.95)
 	elif GameManager.has_power_up("big"):
 		sprite.color = Color(1.0, 0.7, 0.7, 0.95)
+	elif GameManager.has_power_up("torch"):
+		sprite.color = Color(1.0, 0.85, 0.65, 1.0)
 	else:
 		sprite.color = Color.WHITE
 
@@ -211,6 +237,10 @@ func _on_hurtbox_area_entered(area: Area2D) -> void:
 		area.collect()
 
 func _on_hurtbox_body_entered(body: Node2D) -> void:
+	# Pickaxe shatters boulders instead of them hurting us.
+	if GameManager.has_power_up("pickaxe") and body.has_method("smash"):
+		body.smash()
+		return
 	if body.is_in_group("enemy") and body.has_method("deal_damage"):
 		body.deal_damage(self)
 	elif body.is_in_group("hazard"):

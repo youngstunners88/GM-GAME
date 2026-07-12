@@ -1,0 +1,20 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/powerups/pickaxe_tool.gd" id="1_pick"]
+[ext_resource type="Texture2D" path="res://src/assets/sprites/sprite_item_pickaxe.png" id="2_pick"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pick"]
+size = Vector2(24, 34)
+
+[node name="PickaxeTool" type="Area2D"]
+collision_layer = 16
+collision_mask = 2
+script = ExtResource("1_pick")
+
+[node name="Sprite" type="Sprite2D" parent="."]
+position = Vector2(12, 17)
+texture = ExtResource("2_pick")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(12, 17)
+shape = SubResource("RectangleShape2D_pick")

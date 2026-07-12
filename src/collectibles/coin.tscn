@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://src/collectibles/coin.gd" id="1_coin"]
+[ext_resource type="Texture2D" path="res://src/assets/sprites/sprite_item_coin.png" id="2_coin"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_coin"]
 size = Vector2(16, 16)
@@ -10,11 +11,9 @@ collision_layer = 8
 collision_mask = 2
 script = ExtResource("1_coin")
 
-[node name="ColorRect" type="ColorRect" parent="."]
-anchors_preset = 0
-offset_right = 16.0
-offset_bottom = 16.0
-color = Color(1, 0.85, 0, 1)
+[node name="Sprite" type="Sprite2D" parent="."]
+position = Vector2(8, 8)
+texture = ExtResource("2_coin")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(8, 8)
