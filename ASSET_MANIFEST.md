@@ -2,6 +2,8 @@
 
 ## Status: Sprite Pipeline Ready
 - **Background Images**: 6/6 imported (engine integration complete)
+- **Music Tracks**: 12/12 imported (3 levels + 3 bosses × 2 variants) at `src/assets/music/`
+- **SFX Jingles**: 2/2 imported (Fresh Boost × 2 variants) at `src/assets/sounds/`
 - **Player Sprites**: 0/18 frames (ColorRect placeholder active)
 - **Enemy Sprites**: 0/24 frames (ColorRect placeholders active)
 - **Boss Sprites**: 0/12 frames (ColorRect placeholders active)
