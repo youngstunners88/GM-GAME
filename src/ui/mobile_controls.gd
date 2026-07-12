@@ -16,6 +16,7 @@ var jump_button: Button
 var sprint_button: Button
 var dash_button: Button
 var interact_button: Button
+var attack_button: Button
 
 func _ready() -> void:
 	if not is_mobile:
@@ -91,6 +92,17 @@ func _setup_buttons() -> void:
 	interact_button.pressed.connect(_on_interact_button)
 	add_child(interact_button)
 
+	# Attack button (left of the action stack) — press-and-hold aware so the
+	# purple ETH-flask fire-breath channel works on touch, not just keyboard.
+	attack_button = Button.new()
+	attack_button.text = "ATK"
+	attack_button.custom_minimum_size = Vector2(button_size, button_size)
+	attack_button.position = Vector2(button_x - button_spacing, 20 + button_spacing)
+	attack_button.modulate = Color(1.0, 0.4, 0.4, 0.85)
+	attack_button.button_down.connect(_on_attack_down)
+	attack_button.button_up.connect(_on_attack_up)
+	add_child(attack_button)
+
 func _on_jump_button() -> void:
 	if MobileInputHandler:
 		MobileInputHandler.touch_jump.emit()
@@ -106,6 +118,18 @@ func _on_dash_button() -> void:
 func _on_interact_button() -> void:
 	if MobileInputHandler:
 		MobileInputHandler.touch_interact.emit()
+
+func _on_attack_down() -> void:
+	if attack_button:
+		attack_button.modulate = Color(1.0, 0.6, 0.6, 1.0)
+	if MobileInputHandler:
+		MobileInputHandler.touch_attack.emit()
+
+func _on_attack_up() -> void:
+	if attack_button:
+		attack_button.modulate = Color(1.0, 0.4, 0.4, 0.85)
+	if MobileInputHandler:
+		MobileInputHandler.touch_attack_released.emit()
 
 # Input event handlers (called from MobileInputHandler)
 func _on_jump_pressed() -> void:

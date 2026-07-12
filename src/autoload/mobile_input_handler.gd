@@ -12,6 +12,8 @@ signal touch_sprint
 signal touch_sprint_released
 signal touch_dash
 signal touch_interact
+signal touch_attack
+signal touch_attack_released
 
 var is_mobile: bool = OS.get_name() in ["Android", "iOS"]
 var screen_size: Vector2 = get_viewport().get_visible_rect().size

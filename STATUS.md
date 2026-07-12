@@ -7,22 +7,29 @@
 > This report is updated, committed, and pushed on every change so you always
 > have something current to look at. Last updated: **2026-07-12**.
 
-## 🚨 One last itch.io step: verify your account email (1 minute)
+## 🚨 One last itch.io gate — and it's on itch's side, not ours
 
-The full pipeline now works end-to-end — secret scan ✅, Godot export ✅,
-butler authenticated and reached itch.io ✅ — and itch.io refused the upload
-with exactly one complaint:
+Everything our pipeline controls now passes: secret scan ✅ (git history
+scrubbed clean), Godot export ✅, butler authenticated and reached itch.io ✅.
+itch.io itself blocks the upload with one server-side message:
 
 > **"Please verify your account's email address before uploading a build."**
 
-Check the inbox for your itch.io account email for a verification link (or
-resend it from https://itch.io/user/settings → email). The moment it's
-verified, tell me — I re-run the already-built deploy and the game goes live
-at https://youngstunners88.itch.io/lil-blunt-adventure. No rebuild needed.
+You mentioned you already verified earlier — but itch.io's API still reports
+the **account** email as unverified, which is different from confirming a login
+link. Please check, in this order:
+1. Open https://itch.io/user/settings — if there's a yellow "confirm your
+   email" banner at the top, click its resend link and confirm from the email.
+2. Make sure the address shown there is one you can actually receive mail at
+   (the *primary* account email is the one that gates uploads).
+3. If it already shows verified, log out and back in once — the upload gate can
+   lag a stale session.
 
-Fallback while you wait: the ready-to-upload zip from this exact build is the
-`itch-build` artifact on the Actions run — it can also be uploaded by hand on
-the project's Edit page.
+The instant itch shows the account verified, tell me — the build is already
+made; I just re-run the deploy and it goes live. **Zero-wait fallback:** on the
+latest Actions run, the `itch-build` artifact is the exact playable zip — you
+can drag it onto the project's Edit → Uploads page and it's live immediately,
+no email gate.
 
 ---
 
@@ -32,6 +39,7 @@ the project's Edit page.
 |---|---|
 | Boots & plays on mobile/desktop | ✅ Live |
 | Controls (run / jump / double-jump / sprint / dash) | ✅ In build |
+| **Combat: axe throw + purple 3-axe fan + ETH-flask fire breath** | ✅ **NEW** — key `J`/`Enter`, mobile `ATK` |
 | 3 levels + boss arenas | ✅ Load & spawn |
 | Painted key-art backdrops (your art) | ✅ **NEW** — GM Forest, Crystal Caves, Gold Rush |
 | Boss backdrop swap (Tax Collector / Crystalline Bureaucrat / Bandit) | ✅ **NEW** |
@@ -56,18 +64,18 @@ the project's Edit page.
 - **New items:** Purple Weed power-up plant, Pickaxe & Torch tools — all with
   real sprites, placed in all 3 levels.
 
-## 🚨 SECURITY NOTICE (action needed — 5 minutes, urgent)
+## ✅ SECURITY: leaked-key incident RESOLVED (git history scrubbed)
 
-CI's new secret scanner caught something real: the very first commit of this
-repo (a March "workspace backup", before the game existed) included old
-trading-bot scripts with **two Ethereum private keys** — and this repo is
-**public**. The files were deleted long ago, but git history keeps everything.
-**Treat both wallets as compromised**: if either address still holds funds,
-move them now to a wallet whose key was never in this repo —
-`0x0089...56F0` and `0x3713...4201` (full addresses in
-`docs/security/audit-log.md`). Then tell me and I'll scrub them from git
-history (needs your OK — it rewrites all branches). Day-to-day builds are
-NOT blocked; details in the audit log.
+The secret scanner had caught two Ethereum private keys (plus a pile of API
+keys/JWTs) buried in the repo's very first commit — an old "workspace backup"
+from before the game existed, since public. **Fixed this session:** git history
+was rewritten twice with `git filter-repo` to (1) drop every trading-bot file
+and redact both key strings, then (2) strip the entire non-game workspace
+backup, keeping only the 26 real game paths. Force-pushed to all three branches.
+A full-history secret scan is now **clean** (verified: 0 key occurrences). You
+confirmed the keys were unknown to you and held no funds, so no rotation was
+needed — the scrub is the close-out. Full incident + before/after in
+`docs/security/audit-log.md`.
 
 ## 🔧 Known gaps → next up (priority order)
 
@@ -92,6 +100,24 @@ browsers. Fixes shipped:
   (itch.io's official CLI) once the `BUTLER_API_KEY` secret is added.
 
 ## 🗓 Changelog (newest first)
+
+- **2026-07-12 (combat + cleanup)** — LIL BLUNT CAN FIGHT BACK:
+  - **Axe throw** is the new base attack — press `J`/`Enter` (or the mobile
+    `ATK` button) and Lil Blunt hurls a spinning axe that kills a minion or
+    shatters a boulder. 0.4s between throws.
+  - **Purple Weed now supercharges the attack**, exactly as you asked: a tap
+    throws a **three-axe fan** (mob-clear), and *holding* the button makes him
+    **swig the ETH flask and breathe a cone of fire** that burns everything in
+    front of him. Purple is now a true triple-threat (speed + multi-axe + fire).
+  - Built as a self-contained `CombatHandler` (movement code untouched); full
+    design + numbers in `docs/architecture/adr-combat-system.md`. Follow-ups
+    scoped: ground-slam stomp, spin attack, axe ammo.
+  - **Removed the demo wallet-connect feature entirely** (your call — it was
+    unnecessary): the WALLET DEMO button, the Web3Manager, and the boss
+    score-submit stubs are all gone. Security gate updated so wallet UI can
+    only ever return *with* explicit DEMO labeling.
+  - **Security incident closed** — git history scrubbed clean of the old leaked
+    keys (see security section above).
 
 - **2026-07-12 (feel pass + security incident)** — GAMEPLAY FEEL PASS: the
   game finally *feels* like a 16-bit platformer, not a physics demo.

@@ -1,10 +1,11 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://src/player/player.gd" id="1_abcd"]
 [ext_resource type="Script" path="res://src/player/power_up_handler.gd" id="2_puh"]
 [ext_resource type="Script" path="res://src/player/input_handler.gd" id="3_ih"]
 [ext_resource type="Script" path="res://src/player/lil_blunt_visual.gd" id="4_lbv"]
 [ext_resource type="Script" path="res://src/player/player_camera.gd" id="5_cam"]
+[ext_resource type="Script" path="res://src/player/combat_handler.gd" id="6_cmb"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_abcd"]
 size = Vector2(32, 32)
@@ -64,6 +65,9 @@ script = ExtResource("2_puh")
 
 [node name="InputHandler" type="Node" parent="."]
 script = ExtResource("3_ih")
+
+[node name="CombatHandler" type="Node" parent="."]
+script = ExtResource("6_cmb")
 
 [node name="WallSparks" type="CPUParticles2D" parent="."]
 emitting = false
