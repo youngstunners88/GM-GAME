@@ -104,8 +104,6 @@ func die() -> void:
 	hitbox.monitoring = false
 	StateMachine.change_state(StateMachine.State.LEVEL_COMPLETE)
 	GameManager.save_session()
-	if Web3Manager.is_connected:
-		Web3Manager.submit_score(GameManager.total_score)
 	if health_bar:
 		health_bar.queue_free()
 	var tween := create_tween()

@@ -94,7 +94,7 @@ re-run this section against that specific feature before shipping it.
 
 | ID | Item | Status | Check |
 |----|------|--------|-------|
-| D-C1 | Wallet/crypto UI never implies real functionality | **Check every audit** | `grep -rn "DEMO" src/autoload/web3_manager.gd src/ui/main_menu.gd` — both must say DEMO explicitly. This is a real-brand trust risk: SmokeRing/DIAMONDS/GoldMine are live crypto projects, and a fake "wallet connected / TX submitted" UI reads as a real transaction to a confused player. |
+| D-C1 | Wallet/crypto UI never implies real functionality | **RESOLVED BY REMOVAL (2026-07-12)** | The demo wallet-connect feature was removed entirely at the owner's request — there is no wallet UI at all now. The check inverts: `test -f src/autoload/web3_manager.gd` must FAIL; if wallet UI is ever reintroduced it must carry explicit DEMO labeling (release gate enforces this automatically). Trust-risk context stands: SmokeRing/DIAMONDS/GoldMine are live crypto projects — fake wallet UX reads as real to a confused player. |
 | D-C2 | No real wallet/contract addresses hardcoded | **Check every audit** | `grep -rEn "0x[a-fA-F0-9]{40}"` across `src/` — any hit must be investigated (CLAUDE.md Global Rules already forbid this) |
 | D-C3 | Web export stays non-threaded | **Check every audit** | `grep "thread_support" .github/workflows/export-game.yml` must show `false` — this is the fix for the "game sometimes doesn't play" root cause; regressing it silently breaks itch.io/iframe/mobile boot |
 | D-C4 | postMessage handlers enforce same-origin | **Check every audit** | `grep -n "postMessage\|e.origin" web/launcher.js src/autoload/combo_system.gd` |
@@ -135,7 +135,7 @@ grep -n "^\.env" .gitignore
 grep -n "userversion" scripts/deploy_itch.sh .github/workflows/export-game.yml
 
 # D-C1/D-C2/D-C3/D-C4 — game-specific
-grep -n "DEMO" src/autoload/web3_manager.gd src/ui/main_menu.gd
+test -f src/autoload/web3_manager.gd && echo "WALLET UI EXISTS — must carry DEMO labeling" || echo "no wallet UI (removed 2026-07-12)"
 grep -rEn "0x[a-fA-F0-9]{40}" src/ || echo "no hardcoded addresses"
 grep -n "thread_support" .github/workflows/export-game.yml
 grep -n "e.origin" web/launcher.js src/autoload/combo_system.gd

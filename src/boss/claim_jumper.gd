@@ -99,8 +99,6 @@ func die() -> void:
 	var treasury_payout := 100
 	GoldMineSystem.distribute_treasury_revenue(treasury_payout)
 	GameManager.save_session()
-	if Web3Manager.is_connected:
-		Web3Manager.submit_score(GameManager.total_score)
 	if health_bar:
 		health_bar.queue_free()
 	var tween := create_tween()

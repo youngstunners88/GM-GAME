@@ -61,12 +61,6 @@ theme_override_font_sizes/font_size = 28
 text = "CONTINUE"
 visible = false
 
-[node name="ConnectWalletButton" type="Button" parent="VBoxContainer"]
-layout_mode = 2
-size_flags_horizontal = 4
-theme_override_font_sizes/font_size = 28
-text = "WALLET DEMO: OFF"
-
 [node name="QuitButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 4

@@ -22,7 +22,6 @@ EntitySpawner="*res://src/autoload/entity_spawner.gd"
 DevCoordinator="*res://src/autoload/dev_coordinator.gd"
 MobileInputHandler="*res://src/autoload/mobile_input_handler.gd"
 ComboSystem="*res://src/autoload/combo_system.gd"
-Web3Manager="*res://src/autoload/web3_manager.gd"
 
 [display]
 window/size/viewport_width=1280

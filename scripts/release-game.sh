@@ -56,8 +56,11 @@ if ! grep -q "thread_support=false" .github/workflows/export-game.yml 2>/dev/nul
   echo "✗ Web export is not non-threaded — this regresses the itch.io/iframe/mobile boot fix"
   SECURITY_FAIL=1
 fi
-if ! grep -q "DEMO" src/autoload/web3_manager.gd 2>/dev/null; then
-  echo "✗ web3_manager.gd lost its DEMO-mode labeling — wallet UI would imply real functionality"
+# Wallet-connect demo was REMOVED entirely 2026-07-12 (owner request). If any
+# wallet UI ever returns, it must carry explicit DEMO labeling — so: file
+# absent = pass; file present without DEMO labeling = block.
+if [ -f src/autoload/web3_manager.gd ] && ! grep -q "DEMO" src/autoload/web3_manager.gd; then
+  echo "✗ web3_manager.gd exists without DEMO-mode labeling — wallet UI would imply real functionality"
   SECURITY_FAIL=1
 fi
 if [ "$SECURITY_FAIL" -ne 0 ]; then
