@@ -51,12 +51,17 @@ jobs:
           # Supply-chain gate: verify both Godot downloads against the release's
           # official SHA512 sums before executing anything (audit finding #6).
           # Missing sums file = warn (release layout changed); MISMATCH = fail.
+          # Plain shell var, NOT $GITHUB_ENV: verify() runs in THIS same shell,
+          # and $GITHUB_ENV only propagates to *later* steps — so a missing sums
+          # file must be recorded here or verify() would still grep a nonexistent
+          # file and fail the export instead of skipping the gate as intended.
+          SUMS_MISSING=0
           if ! curl -fL --retry 3 -o SHA512-SUMS.txt "$SUMS_URL"; then
             echo "::warning::SHA512-SUMS.txt not found on release — skipping Godot checksum gate"
-            echo "SUMS_MISSING=1" >> "$GITHUB_ENV"
+            SUMS_MISSING=1
           fi
           verify() {
-            [ "${SUMS_MISSING:-0}" = "1" ] && return 0
+            [ "$SUMS_MISSING" = "1" ] && return 0
             local file=$1 name=$2
             local expected actual
             expected=$(grep " ${name}\$" SHA512-SUMS.txt | awk '{print $1}')
@@ -158,6 +163,29 @@ jobs:
             exit 1
           fi
 
+      # Commit the fresh export BEFORE the itch deploy. The itch.io upload can
+      # fail on external gates (e.g. account-email verification) that have
+      # nothing to do with the build; if the commit ran after butler with
+      # `if: success()` it would be skipped on those failures, leaving the
+      # committed web/game (which the Vercel mirror serves) permanently stale.
+      # web/game/** is not in this workflow's trigger paths, so this commit
+      # does not kick off another run.
+      - name: Commit exported files
+        if: success()
+        run: |
+          git config --global user.name "Claude Code Bot"
+          git config --global user.email "claude@anthropic.com"
+          git add -f web/game/
+          if ! git diff --cached --quiet; then
+            git commit -m "build: export Godot 4.3 game to web (automated CI)"
+            # The branch may have moved while this job ran (e.g. a dev push) —
+            # rebase our export commit on top instead of failing the run.
+            git pull --rebase origin "${GITHUB_REF_NAME}" || true
+            git push -u origin HEAD
+          else
+            echo "No changes to commit"
+          fi
+
       - name: Upload artifacts (always, for debugging)
         if: always()
         uses: actions/upload-artifact@v4
@@ -208,19 +236,3 @@ jobs:
           ./butler push web/game "$ITCH_TARGET" \
             --userversion "$(git rev-parse --short HEAD)-$(date -u +%Y%m%d%H%M)"
           echo "::notice::Pushed to https://youngstunners88.itch.io/lil-blunt-adventure"
-
-      - name: Commit exported files
-        if: success()
-        run: |
-          git config --global user.name "Claude Code Bot"
-          git config --global user.email "claude@anthropic.com"
-          git add -f web/game/
-          if ! git diff --cached --quiet; then
-            git commit -m "build: export Godot 4.3 game to web (automated CI)"
-            # The branch may have moved while this job ran (e.g. a dev push) —
-            # rebase our export commit on top instead of failing the run.
-            git pull --rebase origin "${GITHUB_REF_NAME}" || true
-            git push -u origin HEAD
-          else
-            echo "No changes to commit"
-          fi

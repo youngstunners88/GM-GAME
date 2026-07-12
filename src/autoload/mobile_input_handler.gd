@@ -15,7 +15,11 @@ signal touch_interact
 signal touch_attack
 signal touch_attack_released
 
-var is_mobile: bool = OS.get_name() in ["Android", "iOS"]
+# Native mobile OR any touchscreen device — crucially, the Web export reports
+# OS.get_name() as "Web" (never "Android"/"iOS"), so a mobile browser only
+# reveals itself through DisplayServer.is_touchscreen_available(). Without this,
+# itch.io/mobile-web players get no touch controls at all.
+var is_mobile: bool = OS.get_name() in ["Android", "iOS"] or DisplayServer.is_touchscreen_available()
 var screen_size: Vector2 = get_viewport().get_visible_rect().size
 
 # Virtual joystick zones

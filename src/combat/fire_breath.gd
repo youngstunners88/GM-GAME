@@ -31,8 +31,19 @@ func _physics_process(delta: float) -> void:
 
 func _burn() -> void:
 	for body in get_overlapping_bodies():
-		if body.is_in_group("enemy") and body.has_method("take_damage"):
-			body.take_damage(1)
+		_burn_node(body)
+	# Area2D-hitbox enemies (e.g. HostileVine) surface as overlapping areas,
+	# not bodies — burn their owner too.
+	for area in get_overlapping_areas():
+		if not _burn_node(area):
+			_burn_node(area.get_parent())
+
+## Ticks 1 damage to `node` if it's a takeable enemy; returns whether it hit.
+func _burn_node(node: Node) -> bool:
+	if node and node.is_in_group("enemy") and node.has_method("take_damage"):
+		node.take_damage(1)
+		return true
+	return false
 
 func _despawn() -> void:
 	if is_instance_valid(self):

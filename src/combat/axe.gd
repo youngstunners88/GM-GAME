@@ -19,6 +19,9 @@ var _spin: float = 0.0
 func _ready() -> void:
 	add_to_group("projectile")
 	body_entered.connect(_on_body_entered)
+	# Some enemies (e.g. HostileVine) are a Node2D with an Area2D hitbox rather
+	# than a physics body — those only surface through area_entered.
+	area_entered.connect(_on_area_entered)
 	var t := get_tree().create_timer(lifetime)
 	t.timeout.connect(_despawn)
 
@@ -31,12 +34,23 @@ func _physics_process(delta: float) -> void:
 		sprite.rotation = _spin
 
 func _on_body_entered(body: Node2D) -> void:
-	if body.is_in_group("enemy") and body.has_method("take_damage"):
-		body.take_damage(damage)
+	if _hit(body):
 		_impact()
 	elif body.has_method("smash"):        # rolling boulder
 		body.smash()
 		_impact()
+
+func _on_area_entered(area: Area2D) -> void:
+	# The hitbox Area2D itself usually isn't the enemy — the enemy is its owner.
+	if _hit(area) or _hit(area.get_parent()):
+		_impact()
+
+## Damages `node` if it's a takeable enemy; returns whether a hit landed.
+func _hit(node: Node) -> bool:
+	if node and node.is_in_group("enemy") and node.has_method("take_damage"):
+		node.take_damage(damage)
+		return true
+	return false
 
 func _impact() -> void:
 	AudioManager.play_sfx("hit")

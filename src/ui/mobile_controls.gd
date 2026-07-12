@@ -7,7 +7,9 @@ class_name MobileControls
 @export var button_size: float = 80.0
 @export var button_spacing: float = 100.0
 
-var is_mobile: bool = OS.get_name() in ["Android", "iOS"]
+# Match MobileInputHandler: show touch UI on native mobile AND on any
+# touchscreen (incl. the Web export, where OS.get_name() is "Web").
+var is_mobile: bool = OS.get_name() in ["Android", "iOS"] or DisplayServer.is_touchscreen_available()
 
 # Visual elements
 var joystick_bg: ColorRect

@@ -23,16 +23,21 @@ scan (workflow_dispatch run 29191717114) failed with 33 findings. Triage:
   `0x0089395dBced5DE83D65f13a38140F70777D56F0` and
   `0x3713C3af73870c2674F63E7C796B13c4A4014201`.
 
-**Status: keys must be treated as fully compromised** (public-repo scrapers
-harvest these in minutes). Remediation:
-1. **Owner action (urgent, done outside this repo):** move any funds off both
-   addresses; never reuse these keys anywhere. Rotation is the fix — history
-   scrubbing alone does NOT un-leak a key.
-2. **Pending owner approval:** rewrite git history (`git filter-repo`) to
-   drop the leaked blobs, force-push all branches. Destructive; needs sign-off.
-3. **Intentional:** `.gitleaks.toml` does NOT allowlist these findings —
-   full-history scans stay red until the history rewrite lands, as a standing
-   reminder. Push-event scans (new commits only) pass, so CI ships normally.
+**Status: RESOLVED (2026-07-12).** Remediation as executed:
+1. **Owner confirmation:** owner states the keys were never theirs, are unknown
+   to them, and hold no funds — so no rotation was required. (Rotation remains
+   the only real fix for a *live* key; scrubbing alone does not un-leak one.)
+2. **History rewrite — DONE (owner-approved):** two `git filter-repo` passes
+   removed every leaked blob and redacted both key strings, then stripped the
+   entire non-game "workspace backup" (which also carried API keys/JWTs),
+   keeping only the 26 real game paths. Force-pushed to `master`, `main`, and
+   the working branch. A full-history secret scan is now **clean** — verified
+   0 occurrences of either key across all refs. Pre-rewrite backup bundle
+   retained out-of-tree for the session.
+3. **`.gitleaks.toml`** allowlists ONLY the compiled `web/game/index.wasm|.pck`
+   build artifacts (the engine binary embeds PEM header string literals and the
+   pck packs already-scanned resources). All source paths stay fully scanned;
+   the two leaked commits are gone, not allowlisted.
 
 Also proves the N/A-review rule works: "no real keys exist in this project"
 was an architecture assumption; the backup commit predating the game violated it.
