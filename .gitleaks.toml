@@ -1,0 +1,24 @@
+# Gitleaks config — used by the CI secret scan (.github/workflows/export-game.yml).
+#
+# Allowlists ONLY compiled Godot web-export binaries: the engine's wasm embeds
+# PEM header string literals ("-----BEGIN PRIVATE KEY-----") from its crypto
+# module, and the .pck is packed binary resources. These are build artifacts,
+# not source — every source path stays fully scanned.
+#
+# NOTE deliberately NOT allowlisted: the two real private keys leaked in
+# historical commit a0a4fb2 ("Initial commit - workspace backup", trading-bot
+# scripts, since deleted from the tree). Push-event scans only cover new
+# commits so day-to-day CI passes, but a full-history scan (workflow_dispatch)
+# will keep failing — correctly — until that history is rewritten. See
+# docs/security/audit-log.md (2026-07-12 incident entry). Do not "fix" a red
+# full-history scan by adding those commits here.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Compiled Godot web-export artifacts (engine binary, packed resources)"
+paths = [
+  '''web/game/index\.wasm''',
+  '''web/game/index\.pck''',
+]

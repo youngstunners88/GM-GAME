@@ -1,33 +1,19 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
-**Play it (primary, once page is created):** https://youngstunners88.itch.io/lil-blunt-adventure
+**Play it (primary):** https://youngstunners88.itch.io/lil-blunt-adventure
 **Mirror:** https://lil-blunt-game.vercel.app
 **Branch:** `claude/setup-game-dev-environment-itWJv` · **PR #2**
 
 > This report is updated, committed, and pushed on every change so you always
 > have something current to look at. Last updated: **2026-07-12**.
 
-## 🚨 Action needed from you (2 minutes, one-time — down from 2 steps to 1)
+## ✅ itch.io setup complete on your side — deploy in flight
 
-**Your itch.io API key is verified and working** — I authenticated with it
-directly (`youngstunners88`, developer account confirmed) and attempted a
-live push. It failed with itch.io's `invalid game` error, which just means
-**the project page doesn't exist yet** — itch.io has no API for creating a
-new game page, it's web-UI-only (anti-spam measure), so this is the one step
-that has to be you:
-
-1. **Create the game page**: https://itch.io/game/new → Kind: **HTML**,
-   project URL slug: **lil-blunt-adventure** (must match exactly — the
-   pipeline pushes to `youngstunners88/lil-blunt-adventure:html5`). Save as
-   Draft — you don't need to fill in the store-page content yet, just create
-   it so butler has a target.
-2. **Also add `BUTLER_API_KEY`** as a GitHub Actions secret (repo → Settings
-   → Secrets and variables → Actions) using the same itch.io API key value —
-   this lets CI auto-deploy on every future push, not just this one.
-
-The moment the page exists, tell me and I'll push the current build
-immediately — no need to wait for a new commit. Until then, the `itch-build`
-zip artifact on each Actions run can be uploaded manually as a fallback.
+You created the page and added `BUTLER_API_KEY` — both verified. The first
+automated deploy attempt (manual trigger) was stopped by the secret scanner
+doing its job (see security notice below — findings were in old git history,
+not the game). The current push redeploys automatically; the game page goes
+live with this build.
 
 ---
 
@@ -61,14 +47,26 @@ zip artifact on each Actions run can be uploaded manually as a fallback.
 - **New items:** Purple Weed power-up plant, Pickaxe & Torch tools — all with
   real sprites, placed in all 3 levels.
 
+## 🚨 SECURITY NOTICE (action needed — 5 minutes, urgent)
+
+CI's new secret scanner caught something real: the very first commit of this
+repo (a March "workspace backup", before the game existed) included old
+trading-bot scripts with **two Ethereum private keys** — and this repo is
+**public**. The files were deleted long ago, but git history keeps everything.
+**Treat both wallets as compromised**: if either address still holds funds,
+move them now to a wallet whose key was never in this repo —
+`0x0089...56F0` and `0x3713...4201` (full addresses in
+`docs/security/audit-log.md`). Then tell me and I'll scrub them from git
+history (needs your OK — it rewrites all branches). Day-to-day builds are
+NOT blocked; details in the audit log.
+
 ## 🔧 Known gaps → next up (priority order)
 
 1. **Full walk/jump frame animation** for Lil Blunt (a procedural run-bob +
    jump stretch ships now; hand-drawn frames still welcome).
-2. **Gameplay feel pass** — tune jump/gravity/coyote-time, camera, enemy pacing.
-3. **Level design depth** — more platforming, secrets, reasons to explore.
-4. **SFX pass** — music is IN (12 tracks); jump/coin/damage sounds still placeholder.
-5. **Weed Leaf + Magic Mushroom sprites** (the last two placeholder squares).
+2. **Level design depth** — more platforming, secrets, reasons to explore.
+3. **SFX pass** — music is IN (12 tracks); jump/coin/damage sounds still placeholder.
+4. **Weed Leaf + Magic Mushroom sprites** (the last two placeholder squares).
 
 ## 🌐 Hosting: moved to itch.io (root cause of "sometimes doesn't play" found)
 
@@ -85,6 +83,27 @@ browsers. Fixes shipped:
   (itch.io's official CLI) once the `BUTLER_API_KEY` secret is added.
 
 ## 🗓 Changelog (newest first)
+
+- **2026-07-12 (feel pass + security incident)** — GAMEPLAY FEEL PASS: the
+  game finally *feels* like a 16-bit platformer, not a physics demo.
+  - **Jump arc**: falls 1.65× faster than it rises (same jump height, ~12%
+    less airtime) — the classic snappy arc. Terminal velocity added.
+  - **Run**: proper acceleration ramp (~0.1s to full speed) and crisp stops,
+    replacing instant start/stop. Dash, knockback, and wall-jump momentum now
+    carry and bleed off naturally instead of vanishing after one frame.
+  - **Forgiveness**: coyote time up to 6 frames, jump buffer to 0.12s.
+  - **Camera lookahead**: the view leads the direction you're moving (±56px)
+    and peeks down during fast falls — you see where you're going.
+  - **Impact**: hits now have hitstop (70ms freeze-frame) + stronger
+    knockback; hard landings squash (that animation existed but was never
+    wired); air dash is 2× run speed and flattens your arc — an actual move.
+  - Full numbers + rationale: `docs/architecture/adr-gameplay-feel.md`.
+  - **SECURITY**: gitleaks (added last audit) caught two real Ethereum
+    private keys in pre-game git history from a March workspace-backup
+    commit — repo is public, keys are burned. Owner notified (see notice
+    above), incident logged in `docs/security/audit-log.md`, wasm false
+    positives allowlisted via `.gitleaks.toml`, history scrub pending
+    owner approval.
 
 - **2026-07-12 (itch key)** — itch.io API key added to the environment and
   verified live: authenticated successfully as `youngstunners88`, downloaded

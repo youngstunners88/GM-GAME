@@ -6,11 +6,25 @@ enum Outfit { DEFAULT, MINER, CRYSTAL }
 signal died
 
 @export var walk_speed: float = 200.0
-@export var jump_force: float = -420.0
-@export var gravity: float = 980.0
-@export var double_jump_force: float = -350.0
+@export var jump_force: float = -430.0
+@export var gravity: float = 1000.0
+@export var double_jump_force: float = -370.0
+## Falling pulls harder than rising — same jump height (level gaps unchanged),
+## ~15% less airtime, kills the floaty feel.
+@export var fall_gravity_mult: float = 1.65
+@export var max_fall_speed: float = 720.0
+## px/s² — ~0.1s from standstill to full run on the ground.
+@export var ground_accel: float = 2000.0
+@export var ground_decel: float = 2800.0
+@export var air_accel: float = 1400.0
+@export var air_decel: float = 900.0
+## Friction applied when moving faster than input speed in the same direction —
+## lets dash/knockback/wall-jump momentum bleed off instead of hard-snapping.
+@export var momentum_friction_floor: float = 1200.0
+@export var momentum_friction_air: float = 350.0
 
 var current_outfit: Outfit = Outfit.DEFAULT
+var _last_fall_speed: float = 0.0
 
 @onready var sprite: LilBluntVisual = $Visual
 @onready var collision: CollisionShape2D = $CollisionShape2D
@@ -53,17 +67,24 @@ func _physics_process(delta: float) -> void:
 		var pressing_wall := is_on_wall() and movement_direction != 0
 		if pressing_wall and velocity.y > 0:
 			input_handler.is_wall_sliding = true
-			velocity.y += InputHandler.WALL_SLIDE_GRAVITY * delta
+			velocity.y = minf(velocity.y + InputHandler.WALL_SLIDE_GRAVITY * delta,
+					InputHandler.WALL_SLIDE_MAX_SPEED)
 			wall_sparks.emitting = true
 		else:
 			input_handler.is_wall_sliding = false
-			velocity.y += gravity * delta
+			var g := gravity * (fall_gravity_mult if velocity.y > 0.0 else 1.0)
+			velocity.y = minf(velocity.y + g * delta, max_fall_speed)
 			wall_sparks.emitting = false
+		_last_fall_speed = velocity.y
 		input_handler.on_left_ground()
 	else:
 		input_handler.is_wall_sliding = false
 		wall_sparks.emitting = false
 		var had_buffer := input_handler.jump_buffer_timer > 0
+		# First frame back on the ground after a hard fall → landing squash.
+		if input_handler.coyote_timer <= 0 and _last_fall_speed > 380.0 and not had_buffer:
+			_play_land_squash()
+		_last_fall_speed = 0.0
 		input_handler.on_landed()
 		if had_buffer:
 			velocity.y = jump_force * jump_mult
@@ -74,13 +95,22 @@ func _physics_process(delta: float) -> void:
 	if input_handler.is_jump_released() and velocity.y < 0:
 		velocity.y *= 0.5
 
-	# Movement + sprint
-	var direction := input_handler.get_movement_direction()
+	# Movement + sprint — accelerate toward input speed instead of snapping.
+	# Excess same-direction momentum (dash, knockback, wall jump) bleeds off
+	# through gentler friction so those moves keep their punch.
+	var direction := movement_direction
 	if direction != 0:
-		velocity.x = direction * walk_speed * speed_mult * sprint_mult
 		input_handler.handle_facing_direction(direction)
+		var target_speed := direction * walk_speed * speed_mult * sprint_mult
+		if signf(velocity.x) == signf(target_speed) and absf(velocity.x) > absf(target_speed):
+			var friction := momentum_friction_floor if is_on_floor() else momentum_friction_air
+			velocity.x = move_toward(velocity.x, target_speed, friction * delta)
+		else:
+			var accel := ground_accel if is_on_floor() else air_accel
+			velocity.x = move_toward(velocity.x, target_speed, accel * delta)
 	else:
-		velocity.x = move_toward(velocity.x, 0.0, walk_speed * speed_mult)
+		var decel := ground_decel if is_on_floor() else air_decel
+		velocity.x = move_toward(velocity.x, 0.0, decel * delta)
 
 	# Sprint dust — only when running fast on ground
 	sprint_dust.emitting = is_on_floor() and direction != 0 and sprint_mult > 1.0
@@ -112,13 +142,8 @@ func _physics_process(delta: float) -> void:
 			input_handler.buffer_jump()
 
 	# Air dash (Tier 2 Skill 1) — horizontal dash in mid-air
-	if Input.is_action_just_pressed("dash") and input_handler.is_air_dash_available():
-		var dash_dir := input_handler.get_movement_direction()
-		if dash_dir == 0:
-			dash_dir = 1.0 if input_handler.facing_right else -1.0
-		velocity.x = dash_dir * InputHandler.AIR_DASH_SPEED
-		input_handler.consume_air_dash()
-		AudioManager.play_sfx("dash")
+	if Input.is_action_just_pressed("dash"):
+		_try_air_dash()
 
 	_update_sprite_color()
 	_update_tool_visual()
@@ -198,10 +223,20 @@ func take_damage(amount: int) -> void:
 	if GameManager.player_health <= 0:
 		die()
 	else:
-		velocity.y = -250.0
-		velocity.x = -200.0 if input_handler.facing_right else 200.0
+		_hitstop()
+		velocity.y = -260.0
+		velocity.x = -240.0 if input_handler.facing_right else 240.0
 		power_up_handler.activate_invincibility(1.0)
 		AudioManager.play_sfx("damage")
+
+## Freeze-frame on impact — ~4 frames at 5% speed reads as a hit, not lag.
+## Timer ignores time_scale so the freeze always ends on schedule.
+func _hitstop(duration: float = 0.07) -> void:
+	if Engine.time_scale < 1.0:
+		return
+	Engine.time_scale = 0.05
+	await get_tree().create_timer(duration, true, false, true).timeout
+	Engine.time_scale = 1.0
 
 func die() -> void:
 	if StateMachine.is_dead():
@@ -259,10 +294,17 @@ func _on_mobile_jump() -> void:
 	input_handler.buffer_jump()
 
 func _on_mobile_dash() -> void:
-	if input_handler.is_air_dash_available():
-		var dash_dir := input_handler.get_movement_direction()
-		if dash_dir == 0:
-			dash_dir = 1.0 if input_handler.facing_right else -1.0
-		velocity.x = dash_dir * InputHandler.AIR_DASH_SPEED
-		input_handler.consume_air_dash()
-		AudioManager.play_sfx("dash")
+	_try_air_dash()
+
+## Shared keyboard/mobile air dash: flat horizontal burst — zeroing vertical
+## speed is what makes it read as a punch instead of a nudge mid-fall.
+func _try_air_dash() -> void:
+	if not input_handler.is_air_dash_available():
+		return
+	var dash_dir := input_handler.get_movement_direction()
+	if dash_dir == 0:
+		dash_dir = 1.0 if input_handler.facing_right else -1.0
+	velocity.x = dash_dir * InputHandler.AIR_DASH_SPEED
+	velocity.y = 0.0
+	input_handler.consume_air_dash()
+	AudioManager.play_sfx("dash")

@@ -1,9 +1,10 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://src/player/player.gd" id="1_abcd"]
 [ext_resource type="Script" path="res://src/player/power_up_handler.gd" id="2_puh"]
 [ext_resource type="Script" path="res://src/player/input_handler.gd" id="3_ih"]
 [ext_resource type="Script" path="res://src/player/lil_blunt_visual.gd" id="4_lbv"]
+[ext_resource type="Script" path="res://src/player/player_camera.gd" id="5_cam"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_abcd"]
 size = Vector2(32, 32)
@@ -29,6 +30,7 @@ shape = SubResource("RectangleShape2D_abcd")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(16, 16)
+script = ExtResource("5_cam")
 limit_left = 0
 limit_top = 0
 limit_right = 3400

@@ -1,12 +1,15 @@
 class_name InputHandler
 extends Node
 
-const COYOTE_TIME: float = 0.08
-const JUMP_BUFFER: float = 0.08
+# 0.10s coyote ≈ 6 frames — the classic "I swear I pressed it" forgiveness
+# window; 0.12s buffer lets a slightly-early press still fire on landing.
+const COYOTE_TIME: float = 0.10
+const JUMP_BUFFER: float = 0.12
 const WALL_SLIDE_GRAVITY: float = 200.0
+const WALL_SLIDE_MAX_SPEED: float = 160.0
 const SPRINT_MULTIPLIER: float = 1.2
 const AIR_DASH_COOLDOWN: float = 0.5
-const AIR_DASH_SPEED: float = 300.0
+const AIR_DASH_SPEED: float = 400.0
 
 var wall_jump_force: Vector2 = Vector2(250.0, -350.0)
 var air_dash_timer: float = 0.0
