@@ -73,6 +73,8 @@ func activate_power_up(type: String, duration: float) -> void:
     power_up_timer = duration
     power_up_changed.emit(type, duration)
     AudioManager.play_sfx("powerup")
+    if type == "blaze":
+        AudioManager.play_sfx("fresh_boost")
 
 func deactivate_power_up() -> void:
     current_power_up = ""
