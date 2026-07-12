@@ -29,4 +29,4 @@ func _on_boss_trigger(body: Node2D) -> void:
         var boss := preload("res://src/boss/auditor.tscn").instantiate()
         boss.global_position = boss_spawn.global_position
         add_child(boss)
-        AudioManager.play_music("res://src/assets/music/boss_theme.ogg")
+        AudioManager.play_music("res://src/assets/music/boss01_theme.ogg")
