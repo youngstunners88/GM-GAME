@@ -7,7 +7,7 @@ extends Node
 signal load_progress(progress: float)
 signal load_finished(scene_path: String)
 
-enum Transition { INSTANT, FADE, SLIDE }
+enum Transition { INSTANT, FADE, SLIDE, SMOKE, DIAMOND }
 
 var _loading_path: String = ""
 var _transition_type: Transition = Transition.INSTANT
@@ -28,9 +28,18 @@ func load_scene(path: String, transition_type: Transition = Transition.FADE) -> 
     _node_count_before = _count_nodes()
     print("[SceneRouter] Loading %s (nodes before: %d)" % [path, _node_count_before])
 
-    if transition_type == Transition.FADE and SceneTransition.has_method("fade_out"):
-        SceneTransition.fade_out()
-        await get_tree().create_timer(0.3).timeout
+    match transition_type:
+        Transition.FADE:
+            SceneTransition.fade_out()
+            await get_tree().create_timer(0.3).timeout
+        Transition.SMOKE:
+            SceneTransition.wipe_out("smoke")
+            await get_tree().create_timer(0.45).timeout
+        Transition.DIAMOND:
+            SceneTransition.wipe_out("diamond")
+            await get_tree().create_timer(0.45).timeout
+        _:
+            pass
 
     # Web export: ResourceLoader's threaded path can stall forever (the load
     # starts but never reaches LOADED), leaving the fade overlay on screen.
@@ -46,8 +55,7 @@ func load_scene(path: String, transition_type: Transition = Transition.FADE) -> 
         # Keep _loading_path set until here so a second load_scene() call
         # cannot race this coroutine through the await window.
         _loading_path = ""
-        if _transition_type == Transition.FADE and SceneTransition.has_method("fade_in"):
-            SceneTransition.fade_in()
+        _play_in_transition()
         print("[SceneRouter] Loaded %s (sync web path)" % scene_path)
         load_finished.emit(scene_path)
         return
@@ -65,9 +73,17 @@ func load_scene(path: String, transition_type: Transition = Transition.FADE) -> 
 func _abort_load() -> void:
     _loading_path = ""
     set_process(false)
-    if SceneTransition.has_method("fade_in"):
-        SceneTransition.fade_in()
+    _play_in_transition()
     StateMachine.recover_from_transition()
+
+## Reveal the freshly loaded (or restored) scene with whatever transition
+## covered it — wipes reverse their dissolve, everything else lifts the fade.
+func _play_in_transition() -> void:
+    match _transition_type:
+        Transition.SMOKE, Transition.DIAMOND:
+            SceneTransition.wipe_in()
+        _:
+            SceneTransition.fade_in()
 
 func _process(_delta: float) -> void:
     if _loading_path == "":
@@ -100,8 +116,7 @@ func _finalise_load() -> void:
     get_tree().root.add_child(inst)
     get_tree().current_scene = inst
 
-    if _transition_type == Transition.FADE and SceneTransition.has_method("fade_in"):
-        SceneTransition.fade_in()
+    _play_in_transition()
 
     var nodes_after := _count_nodes()
     print("[SceneRouter] Loaded %s (nodes after: %d, delta: %+d)" % [

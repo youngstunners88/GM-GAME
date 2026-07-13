@@ -1,11 +1,16 @@
 class_name BossBase
 extends EnemyBase
 
+## Fired when a one-shot boss animation ends — state machines can key
+## attack-recovery / death-cleanup transitions off this.
+signal animation_finished(anim: String)
+
 @export var max_health: int = 5
 @export var phase_thresholds: Array[int] = []
 
 var current_phase: int = 1
 var health_bar: ProgressBar
+var _anim_sprite: AnimatedSprite2D
 
 func _ready() -> void:
 	add_to_group("boss")
@@ -44,6 +49,22 @@ func _check_phase_change() -> void:
 
 func _on_phase_changed() -> void:
 	pass  # Override in subclasses for phase-specific behavior
+
+## Plays a named animation once boss art ships as SpriteFrames on an
+## AnimatedSprite2D child named "AnimSprite" (specs in ASSET_MANIFEST.md).
+## No-ops gracefully on today's single-pose sprites, so callers can wire
+## idle/walk/attack/hurt/death states now.
+func play_animation(anim: String) -> void:
+	if _anim_sprite == null:
+		_anim_sprite = get_node_or_null("AnimSprite") as AnimatedSprite2D
+		if _anim_sprite and not _anim_sprite.animation_finished.is_connected(_on_anim_sprite_finished):
+			_anim_sprite.animation_finished.connect(_on_anim_sprite_finished)
+	if _anim_sprite and _anim_sprite.sprite_frames \
+			and _anim_sprite.sprite_frames.has_animation(anim):
+		_anim_sprite.play(anim)
+
+func _on_anim_sprite_finished() -> void:
+	animation_finished.emit(_anim_sprite.animation)
 
 func die() -> void:
 	if health_bar:

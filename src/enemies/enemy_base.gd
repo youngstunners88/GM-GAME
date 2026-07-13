@@ -18,6 +18,8 @@ func take_damage(amount: int) -> void:
         return
     health -= amount
     flash()
+    EffectSpawner.float_text(global_position, "-%d" % amount, Color.WHITE)
+    ScreenShake.medium()
     if health <= 0:
         die()
 
@@ -36,6 +38,7 @@ func die() -> void:
     is_dead = true
     set_physics_process(false)
     GameManager.add_score(score_value)
+    EffectSpawner.burst("explosion", global_position)
     var tween := create_tween()
     tween.tween_property(self, "scale", Vector2.ZERO, 0.3)
     tween.tween_property(self, "modulate:a", 0.0, 0.3)

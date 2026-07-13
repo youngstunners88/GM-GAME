@@ -34,6 +34,9 @@ jobs:
           GITLEAKS_ENABLE_UPLOAD_ARTIFACT: false
           GITLEAKS_ENABLE_SUMMARY: true
 
+      - name: Security Sentinel
+        run: ./scripts/security-sentinel.sh --fail-on=high
+
       - name: Download Godot editor + export templates
         run: |
           set -euo pipefail

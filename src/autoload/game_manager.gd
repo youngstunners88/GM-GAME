@@ -155,14 +155,18 @@ func load_session() -> bool:
     if typeof(parsed) != TYPE_DICTIONARY:
         return false
     var data: Dictionary = parsed
-    total_score = int(data.get("total_score", 0))
-    coins_collected = int(data.get("coins", 0))
-    ethereum_rings_collected = int(data.get("rings", 0))
-    smoke_collected = int(data.get("smoke", 0))
+    # Clamp everything from disk: user://save.json is player-editable, and
+    # unclamped values (9999 health, level 42) corrupt the session state.
+    # max_health loads FIRST so the health clamp uses the loaded ceiling
+    # (the old order clamped against the previous session's value).
+    total_score = maxi(0, int(data.get("total_score", 0)))
+    coins_collected = maxi(0, int(data.get("coins", 0)))
+    ethereum_rings_collected = maxi(0, int(data.get("rings", 0)))
+    smoke_collected = maxi(0, int(data.get("smoke", 0)))
     _deserialize_blaze_completions(data.get("blaze_rush", {}))
-    player_health = int(data.get("health", max_health))
-    max_health = int(data.get("max_health", 3))
-    current_level = int(data.get("current_level", 1))
+    max_health = clampi(int(data.get("max_health", 3)), 1, 10)
+    player_health = clampi(int(data.get("health", max_health)), 1, max_health)
+    current_level = clampi(int(data.get("current_level", 1)), 1, 3)
     _deserialize_checkpoints(data.get("checkpoints", {}))
     if data.has("goldmine"):
         GoldMineSystem.load_save_data(data.get("goldmine", {}))

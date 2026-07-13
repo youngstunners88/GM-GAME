@@ -228,3 +228,38 @@ sprite_lil_blunt_blaze_idle.png
 
 **Last Updated**: 2026-05-09  
 **Project**: Lil Blunt: The Smoke Realm (Godot 4.3)
+
+## Animation frame sheets (wanted from the image generator — system is wired, drop-in ready)
+
+The game now has a full frame-animation pipeline: supplying these SpriteFrames
+sheets lights up real animation with **zero code changes**. Until they exist,
+the shipped single-pose art + procedural motion (run-bob, jump stretch/squash,
+damage flicker) carries the read — do NOT regress to placeholder rectangles.
+
+### Player — 64×64 px per frame, transparent bg, 16-bit style
+One sheet per outfit (`cowboy`, `miner`, `crystal`), imported as
+`res://src/assets/sprites/frames_lil-blunt_<outfit>.tres` (SpriteFrames):
+
+| Animation | Frames | Frame time | Loop |
+|---|---|---|---|
+| idle | 4 | 0.15s | yes |
+| run | 6 | 0.08s | yes |
+| jump_up | 1 | hold | no |
+| jump_down | 1 | hold | no |
+| attack | 3 (windup → strike → recovery) | 0.10s | no |
+| hurt | 2 (white-flash pair) | 0.10s | no |
+| death | 4 | 0.12s | no |
+
+Feet must sit on the frame's bottom edge (code anchors feet at collision floor).
+
+### Bosses — 96×96 px per frame (Auditor, Distributor, Bandit, Claim Jumper)
+Imported as an `AnimatedSprite2D` child named `AnimSprite` on each boss scene
+(`BossBase.play_animation()` + `animation_finished` signal already wired):
+
+| Animation | Frames | Loop |
+|---|---|---|
+| idle | 3 | yes |
+| walk | 4 | yes |
+| attack | 3–4 | no |
+| hurt | 2 | no |
+| death | 5 | no |

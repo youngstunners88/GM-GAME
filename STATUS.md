@@ -6,6 +6,8 @@
 
 > This report is updated, committed, and pushed on every change so you always
 > have something current to look at. Last updated: **2026-07-12**.
+> **State: RELEASE CANDIDATE — awaiting final art assets** (animation frame
+> sheets + Weed Leaf/Mushroom sprites; specs in `ASSET_MANIFEST.md`).
 
 ## 🎉 BUILD IS ON ITCH.IO — one click left: hit Publish
 
@@ -95,6 +97,63 @@ browsers. Fixes shipped:
   (itch.io's official CLI) once the `BUTLER_API_KEY` secret is added.
 
 ## 🗓 Changelog (newest first)
+
+- **2026-07-13 (content completeness + autonomous security sentinel)**
+  - **Content audit found and fixed 2 real gaps**: the checkpoint system
+    (full save/restore code existed) was wired with a hardcoded level index
+    — a Level 2/3 checkpoint would have silently overwritten Level 1's save
+    slot — and **zero checkpoints were ever placed in any level**, so it was
+    dead code end-to-end. Fixed the level-index bug and added 2 mid-level
+    checkpoints to each of the 3 levels. Also found Levels 2 and 3 had **zero
+    health pickups** anywhere — added 2 to each.
+  - **Investigated a 4th boss-looking file** (`bandit_boss.gd/.tscn`) not
+    wired into any level. Conclusion: it's an earlier, simpler draft
+    superseded by `claim_jumper.gd` (Level 3's actual, more complete boss —
+    integrated with the GoldMine Auction/Fort Knox economy). Not a gap;
+    flagged as dead code worth archiving in a future cleanup, left untouched
+    to avoid downgrading the shipped fight.
+  - **New autonomous security layer**: `scripts/security-sentinel.sh` — 18
+    checks (secrets, GDScript-equivalent injection/RCE, deploy integrity,
+    wallet-UI trust, CI hygiene), adapted from an uploaded generic SaaS
+    checklist into this game's actual client-only architecture. Includes a
+    check the *previous* checklist didn't have and genuinely needed: a
+    64-hex private-key scan — the earlier wallet-address regex only matched
+    40-hex addresses and would **not** have caught the private keys that
+    leaked into this repo's history two days ago. Wired into 3 layers so it
+    runs without ever being asked: mid-session (new `game-security-sentinel`
+    skill, self-activates on security-relevant edits), every release
+    (`release-game.sh` Step 1), and every CI push (new workflow step,
+    independent of any chat session). All 18 checks pass clean right now.
+
+- **2026-07-12 (P0–P2 polish pass → RELEASE CANDIDATE)** — the "final 10%"
+  sweep, all in one push:
+  - **Parallax depth**: every level's key art now scrolls in 3 layers (slow
+    cooled far / main mid / fast foreground strip) — the world finally has
+    depth when you run. Boss-arena art swap still works across all layers.
+  - **Animation pipeline**: full state-driven system (idle/run/jump_up/
+    jump_down/attack/hurt/death for Lil Blunt; idle/walk/attack/hurt/death +
+    `animation_finished` for bosses). Wired and live — drop the frame sheets
+    from `ASSET_MANIFEST.md` in and it animates with zero code changes.
+  - **FX pack**: coin sparkles, enemy-death explosions, dash trails, orbiting
+    Diamond aura, victory confetti — all spawned via a new EffectSpawner.
+  - **HUD juice**: floating damage numbers, combo counter that pops and heats
+    white→gold→red, white screen-flash + heart-row shake on damage.
+  - **Menu glow-up**: GM Forest key art behind the title, drifting smoke,
+    floating ETH rings, button hover/focus glow, `v1.0.0 — BLOCK 420` tag.
+  - **Feel extras**: tiered screen shake (pickup/hit/boss), camera zooms to
+    0.85 for boss fights and back on victory, smoke-dissolve and
+    diamond-shatter scene transitions (bosses exit through the diamond wipe).
+  - **Audio**: per-realm reverb (forest/cave/mine/boss), music now
+    duck-crossfades between stage and boss themes instead of hard-cutting,
+    coins/impacts play positionally in 2D space.
+  - **Security audit (12-item, all .gd files)**: 1 real fix — save-file
+    values are now clamped (a hand-edited save could load 9999 health);
+    everything else clean. Full table in `SECURITY_AUDIT.md`.
+  - Deviations from the brief, with reasons: no ColorRect frame placeholders
+    (real sprites already ship — building the system instead of regressing
+    art), and TileMap platform migration deferred (platforms are already
+    data-driven in `.tres` resources; TileSet authoring needs an editor
+    session + art extraction — documented for a follow-up).
 
 - **2026-07-12 (SHIPPED TO ITCH.IO)** — first successful butler deploy: the
   email gate cleared, the pinned-fingerprint secret-scan false positives were

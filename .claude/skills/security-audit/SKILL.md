@@ -15,18 +15,26 @@ risks, and denial-of-service potential. This skill systematically audits the
 codebase for the most common game security failures and produces a prioritised
 remediation plan.
 
-**Also run `docs/security/GAME_SECURITY_CHECKLIST.md`'s quick-audit command
-block as part of every `full` or `quick` pass.** That document is the
-project-specific adaptation of a broader web-app security checklist (bundle
-secrets, CI secret-scanning, deploy headers, DEMO-mode wallet labeling,
-non-threaded export regression, postMessage origin checks) — items this
-skill's 6 categories below don't cover because they're about the *build and
-deploy pipeline*, not the game code itself. Append results to
-`docs/security/audit-log.md` in the same run. If the checklist doc's
-architecture-assumption section (client-only, no backend) stops matching
-reality — a real leaderboard, wallet integration, or backend ships — flag
-that explicitly; several items there are marked N/A *because* there's no
-backend today, and that status must be re-audited the moment one exists.
+**Also run `./scripts/security-sentinel.sh` as part of every `full` or
+`quick` pass** (this is the `game-security-sentinel` skill's script —
+`.claude/skills/game-security-sentinel/SKILL.md`). It's the automated,
+scriptable implementation of `docs/security/GAME_SECURITY_CHECKLIST.md` —
+the project-specific adaptation of a broader web-app security checklist
+(bundle secrets, CI secret-scanning, deploy headers, DEMO-mode wallet
+labeling, non-threaded export regression, postMessage origin checks) — items
+this skill's 6 categories below don't cover because they're about the *build
+and deploy pipeline*, not the game code itself. Use `--log` to append
+results to `docs/security/audit-log.md` in the same run. If the checklist
+doc's architecture-assumption section (client-only, no backend) stops
+matching reality — a real leaderboard, wallet integration, or backend ships
+— flag that explicitly; several items there are marked N/A *because* there's
+no backend today, and that status must be re-audited the moment one exists.
+
+The key difference from this skill: `game-security-sentinel` runs
+**unprompted, mid-session**, the moment security-relevant surface is
+touched — it doesn't wait for `/security-audit` to be invoked. Use this
+skill (`/security-audit full`) for the deeper, human-in-the-loop pass before
+milestones; the sentinel is the fast always-on backstop between those passes.
 
 **Run this skill:**
 - Before any public release (required for the Polish → Release gate)

@@ -6,9 +6,11 @@
 script = ExtResource("1_ld")
 background_path = "res://src/assets/backgrounds/bg_l1_forest.jpg"
 boss_background_path = "res://src/assets/backgrounds/bg_boss_tax.jpg"
+level_index = 1
 level_name = "The Smoke Realm"
 bounds = Vector2(3400, 720)
 kill_zone_y = 800.0
+checkpoints = Array[Vector2]([Vector2(1100, 500), Vector2(2200, 500)])
 parallax_layers = Array[Dictionary]([
 	{
 		"speed": 0.1,

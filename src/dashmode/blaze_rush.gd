@@ -384,4 +384,4 @@ func _exit_to_level() -> void:
 		# LevelBase spawns from checkpoint slot 1 — drop the player back at the portal.
 		GameManager.save_checkpoint(1, 990 + _level_index, portal_pos)
 	GameManager.dash_return = {}
-	SceneRouter.load_scene(return_path)
+	SceneRouter.load_scene(return_path, SceneRouter.Transition.SMOKE)

@@ -18,6 +18,9 @@ const HEART_FULL_COLOR := Color(0.95, 0.25, 0.35, 1.0)
 const HEART_EMPTY_COLOR := Color(0.25, 0.22, 0.28, 0.9)
 
 var heart_pips: Array[ColorRect] = []
+var _prev_health: int = -1
+var _flash_rect: ColorRect
+var _combo_label: Label
 
 func _ready() -> void:
     GameManager.score_changed.connect(_on_score_changed)
@@ -42,6 +45,26 @@ func _ready() -> void:
         health_container.add_child(heart)
         heart_pips.append(heart)
     health_container.add_theme_constant_override("separation", 6)
+
+    ComboSystem.combo_changed.connect(_on_combo_changed)
+    StateMachine.state_changed.connect(_on_state_changed)
+
+    # White damage flash — sits over gameplay, ignores input, starts invisible.
+    _flash_rect = ColorRect.new()
+    _flash_rect.color = Color(1, 1, 1, 0)
+    _flash_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+    _flash_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    add_child(_flash_rect)
+
+    # Combo counter — pops center-top when a streak is running.
+    _combo_label = Label.new()
+    _combo_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    _combo_label.position = Vector2(get_viewport().get_visible_rect().size.x / 2 - 80, 60)
+    _combo_label.add_theme_font_size_override("font_size", 32)
+    _combo_label.add_theme_constant_override("outline_size", 6)
+    _combo_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+    _combo_label.text = ""
+    add_child(_combo_label)
 
     _on_score_changed(GameManager.total_score)
     _on_health_changed(GameManager.player_health)
@@ -69,6 +92,39 @@ func _on_score_changed(new_score: int) -> void:
 func _on_health_changed(new_health: int) -> void:
     for i in range(heart_pips.size()):
         heart_pips[i].color = HEART_FULL_COLOR if i < new_health else HEART_EMPTY_COLOR
+    # Damage feedback: brief white screen flash + heart-row shake — only when
+    # health went DOWN (not on heal/respawn refill).
+    if _prev_health >= 0 and new_health < _prev_health:
+        var flash := create_tween()
+        flash.tween_property(_flash_rect, "color:a", 0.3, 0.03)
+        flash.tween_property(_flash_rect, "color:a", 0.0, 0.1)
+        var base_x := health_container.position.x
+        var shake := create_tween()
+        for offset in [6.0, -5.0, 3.0, 0.0]:
+            shake.tween_property(health_container, "position:x", base_x + offset, 0.04)
+    _prev_health = new_health
+
+## Combo pop: scales with a bounce and heats white → gold → red as it climbs.
+func _on_combo_changed(value: int) -> void:
+    if value < 2:
+        _combo_label.text = ""
+        return
+    _combo_label.text = "COMBO x%d" % value
+    if value >= 8:
+        _combo_label.modulate = Color(1.0, 0.3, 0.25)
+    elif value >= 4:
+        _combo_label.modulate = Color(1.0, 0.84, 0.2)
+    else:
+        _combo_label.modulate = Color.WHITE
+    _combo_label.scale = Vector2.ONE
+    var tween := create_tween()
+    tween.tween_property(_combo_label, "scale", Vector2(1.3, 1.3), 0.08)
+    tween.tween_property(_combo_label, "scale", Vector2.ONE, 0.12)
+
+## Victory confetti the moment the level completes, at the player's position.
+func _on_state_changed(_from: String, to_state: String) -> void:
+    if to_state == "LEVEL_COMPLETE":
+        EffectSpawner.burst("confetti", GameManager.player_position + Vector2(0, -40))
 
 func _on_coins_changed(new_count: int) -> void:
     coin_label.text = "COINS %d" % new_count
