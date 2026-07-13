@@ -98,6 +98,37 @@ browsers. Fixes shipped:
 
 ## 🗓 Changelog (newest first)
 
+- **2026-07-13 (THE GAME HAS A VOICE — full audio pass + branded mirror)**
+  - **Every silent action now has a real sound.** All 12 missing SFX
+    generated via ElevenLabs (your API key) with prompts engineered for the
+    game's chill 16-bit identity: jump, double-jump, coin, ETH-ring shimmer,
+    damage (soft "ouch", never violent), dash, power-up fanfare, axe throw,
+    hit, explosion, fire breath, error blip.
+  - **An announcer.** 9 voiceover lines in one consistent laid-back
+    storyteller voice: title drop on the menu, an intro for each stage
+    ("Level One… The Smoke Realm. Stay chill, Lil Blunt."), a callout for
+    each boss, a victory line, and a game-complete line. Music auto-ducks
+    −8dB while he speaks, then swells back.
+  - **New `game-audio-forge` skill** — the whole pipeline is one command
+    (`python3 scripts/generate_audio.py`), fully data-driven from
+    `assets/audio-manifest.json`, with the SFX prompt-engineering rules
+    written down so future sounds match. Any new `play_sfx()` call
+    triggers regeneration automatically per the skill's activation rules.
+  - **New mirror on YOUR domain (via your Cloudflare)**: a `gh-pages` build
+    branch is pushed and auto-refreshes on every CI export. One click from
+    you and the game is live at **https://mnguniproject.co.za/GM-GAME/** —
+    repo → Settings → Pages → Source: "Deploy from a branch" →
+    `gh-pages` / root → Save. Your Cloudflare proxy (already fronting the
+    domain) gives it HTTPS + CDN caching worldwide. Note: the Cloudflare
+    API token you added is zone-scoped (DNS-level) — I verified it can
+    manage DNS on mnguniproject.co.za but not Pages/Workers/zone-settings;
+    if you ever want me to go further there (redirects, headers at the
+    edge), a token with Pages + Zone-Settings permissions unlocks it.
+  - **Browser-Use key**: noted and reserved — its best use is automated
+    live-page QA on the real itch.io page (checking the actual embed, on
+    real mobile viewports) the moment you flip the page Public. Local
+    pre-deploy testing is already covered by the Playwright harness.
+
 - **2026-07-13 (content completeness + autonomous security sentinel)**
   - **Content audit found and fixed 2 real gaps**: the checkpoint system
     (full save/restore code existed) was wired with a hardcoded level index

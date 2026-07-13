@@ -12,6 +12,7 @@ func _ready() -> void:
 	_setup_blaze_portal(Vector2(2100, 280), 2500, 2)
 	AudioManager.set_reverb_profile("cave")
 	AudioManager.play_playlist(["res://src/assets/music/level02_theme.ogg", "res://src/assets/music/level02_theme_alt.ogg"])
+	AudioManager.play_voice("stage2_intro")
 
 func _on_boss_trigger(body: Node2D) -> void:
 	if body.is_in_group("player") and not _boss_arena_active:
@@ -23,3 +24,4 @@ func _on_boss_trigger(body: Node2D) -> void:
 		boss.global_position = boss_spawn.global_position
 		add_child(boss)
 		AudioManager.play_playlist(["res://src/assets/music/boss02_theme.ogg", "res://src/assets/music/boss02_theme_alt.ogg"])
+		AudioManager.play_voice("boss2_intro")

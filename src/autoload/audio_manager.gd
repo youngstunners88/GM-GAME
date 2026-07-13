@@ -111,9 +111,23 @@ func _on_music_track_finished() -> void:
     if not _playlist.is_empty():
         _play_next_in_playlist()
 
+## Resolve an SFX/VO id to a file: legacy .ogg first, then generated .mp3
+## (the game-audio-forge pipeline outputs mp3 — Godot 4.3 plays it natively).
+func _resolve_audio(base: String) -> String:
+    # NOTE: ext must be explicitly typed — iterating an untyped array yields
+    # Variant, and `base + Variant` breaks := inference under the web
+    # export's compiler (this exact line shipped a build where EVERY script
+    # referencing AudioManager cascade-failed to compile; caught by the
+    # browser harness, not gdparse, which is syntax-only).
+    for ext: String in [".ogg", ".mp3"]:
+        var path: String = base + ext
+        if ResourceLoader.exists(path):
+            return path
+    return ""
+
 func play_sfx(name: String) -> void:
-    var path := "res://src/assets/sounds/" + name + ".ogg"
-    if not ResourceLoader.exists(path):
+    var path := _resolve_audio("res://src/assets/sounds/" + name)
+    if path == "":
         return
     var stream := load(path)
     if not stream:
@@ -125,11 +139,43 @@ func play_sfx(name: String) -> void:
     player.play()
     player.finished.connect(player.queue_free)
 
+## Announcer voiceover (game-audio-forge pipeline). Ducks music −8dB while
+## the line plays so the words always read, then restores. One line at a
+## time: a new call replaces the current one.
+var _voice_player: AudioStreamPlayer
+
+func play_voice(name: String) -> void:
+    var path := _resolve_audio("res://src/assets/sounds/voice/" + name)
+    if path == "":
+        return
+    var stream := load(path)
+    if not stream:
+        return
+    if _voice_player and is_instance_valid(_voice_player):
+        _voice_player.queue_free()
+    _voice_player = AudioStreamPlayer.new()
+    _voice_player.bus = "SFX"
+    _voice_player.stream = stream
+    add_child(_voice_player)
+    if current_music_player and is_instance_valid(current_music_player):
+        var duck := current_music_player.create_tween()
+        duck.tween_property(current_music_player, "volume_db", -8.0, 0.25)
+    _voice_player.play()
+    _voice_player.finished.connect(_on_voice_finished)
+
+func _on_voice_finished() -> void:
+    if _voice_player and is_instance_valid(_voice_player):
+        _voice_player.queue_free()
+    _voice_player = null
+    if current_music_player and is_instance_valid(current_music_player):
+        var restore := current_music_player.create_tween()
+        restore.tween_property(current_music_player, "volume_db", 0.0, 0.5)
+
 ## Positional SFX: plays at a world position so pickups/impacts pan and
 ## attenuate with distance from the player instead of sounding global.
 func play_sfx_at(name: String, pos: Vector2) -> void:
-    var path := "res://src/assets/sounds/" + name + ".ogg"
-    if not ResourceLoader.exists(path):
+    var path := _resolve_audio("res://src/assets/sounds/" + name)
+    if path == "":
         return
     var root := get_tree().current_scene
     if root == null:

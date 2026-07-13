@@ -9,6 +9,7 @@ func _ready() -> void:
     _setup_blaze_portal(Vector2(1450, 250), 1500, 1)
     AudioManager.set_reverb_profile("forest")
     AudioManager.play_playlist(["res://src/assets/music/level01_theme.ogg", "res://src/assets/music/level01_theme_alt.ogg"])
+    AudioManager.play_voice("stage1_intro")
 
 func _setup_smoke_platforms() -> void:
     var platform_data := [
@@ -33,3 +34,4 @@ func _on_boss_trigger(body: Node2D) -> void:
         boss.global_position = boss_spawn.global_position
         add_child(boss)
         AudioManager.play_playlist(["res://src/assets/music/boss01_theme.ogg", "res://src/assets/music/boss01_theme_alt.ogg"])
+        AudioManager.play_voice("boss1_intro")

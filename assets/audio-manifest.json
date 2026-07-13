@@ -1,0 +1,78 @@
+{
+  "version": "1.0.0",
+  "voice_id": "N2lVS1w4EtoT3dr4eOWO",
+  "voice_note": "Callum (ElevenLabs premade) — warm, laid-back, lightly gravelly storyteller. One announcer for the whole game.",
+  "sfx": [
+    {
+      "id": "jump",
+      "prompt": "Retro 16-bit videogame jump sound, soft bouncy spring boing, cute and chill, single short note rising, clean, no reverb tail",
+      "duration_seconds": 0.7
+    },
+    {
+      "id": "double_jump",
+      "prompt": "Retro 16-bit videogame double-jump sound, quick playful boing rising higher in pitch than a normal jump, two fast ascending notes, cute, clean, no reverb",
+      "duration_seconds": 0.7
+    },
+    {
+      "id": "coin",
+      "prompt": "Retro 16-bit videogame coin pickup chime, single bright cheerful ding, short punchy attack, fast decay, clean, no reverb tail",
+      "duration_seconds": 0.5
+    },
+    {
+      "id": "ring",
+      "prompt": "Retro 16-bit videogame magic ring pickup, crystalline sparkling shimmer chime, two quick ascending glassy notes, brighter and more magical than a coin, fast decay",
+      "duration_seconds": 0.7
+    },
+    {
+      "id": "damage",
+      "prompt": "Retro 16-bit videogame player hurt sound, soft cartoonish ouch thud, two-note descending, gentle not violent, muffled bump, fast decay, no distortion",
+      "duration_seconds": 0.6
+    },
+    {
+      "id": "dash",
+      "prompt": "Retro 16-bit videogame dash sound, quick smooth air whoosh sweeping left to right, short breathy swish, clean, fast decay",
+      "duration_seconds": 0.6
+    },
+    {
+      "id": "powerup",
+      "prompt": "Retro 16-bit videogame power-up fanfare, bright happy major arpeggio rising, sparkly and triumphant but chill, warm chiptune tones",
+      "duration_seconds": 1.4
+    },
+    {
+      "id": "throw",
+      "prompt": "Retro 16-bit videogame throw sound, quick light whip whoosh of a small object flying, single fast swish, short, clean, no impact",
+      "duration_seconds": 0.5
+    },
+    {
+      "id": "hit",
+      "prompt": "Retro 16-bit videogame enemy hit, soft satisfying thunk with a tiny bright chime layered on top, punchy attack, fast decay, playful not violent",
+      "duration_seconds": 0.6
+    },
+    {
+      "id": "explosion",
+      "prompt": "Retro 16-bit videogame small explosion, crunchy pixelated boom, round and cartoonish, soft low thump body, quick decay, playful arcade style, no harsh distortion",
+      "duration_seconds": 1.0
+    },
+    {
+      "id": "fire",
+      "prompt": "Retro 16-bit videogame fire breath, short flame burst whoosh with light crackle, warm airy roar, cartoonish dragon puff, fades out quickly",
+      "duration_seconds": 1.2
+    },
+    {
+      "id": "error",
+      "prompt": "Retro 16-bit videogame denied action buzz, soft polite two-tone descending blip, muted, short, gentle negative feedback, not harsh",
+      "duration_seconds": 0.5
+    }
+  ],
+  "voice": [
+    { "id": "menu_title", "text": "Lil Blunt… The Smoke Realm." },
+    { "id": "stage1_intro", "text": "Level One… The Smoke Realm. Stay chill, Lil Blunt." },
+    { "id": "stage2_intro", "text": "Level Two… Crystal Caverns. Diamonds in the deep." },
+    { "id": "stage3_intro", "text": "Level Three… GoldMine Rush. Strike it rich, partner." },
+    { "id": "boss1_intro", "text": "Uh oh… the Tax Auditor wants his cut!" },
+    { "id": "boss2_intro", "text": "The Crystalline Bureaucrat demands your paperwork!" },
+    { "id": "boss3_intro", "text": "The Claim Jumper's after your gold, partner!" },
+    { "id": "victory", "text": "Level complete! Smooth moves, Lil Blunt." },
+    { "id": "game_complete", "text": "Game complete! One chill nugget… one giant win." }
+  ]
+}
