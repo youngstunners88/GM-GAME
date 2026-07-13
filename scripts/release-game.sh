@@ -36,35 +36,17 @@ echo "Commit: $COMMIT"
 echo "Timestamp: $TIMESTAMP"
 echo ""
 
-# Step 1: Quick security gate (docs/security/GAME_SECURITY_CHECKLIST.md)
-# Blocks the release on real findings (leaked secrets, real wallet/contract
-# addresses, threaded-export regression). Does NOT re-litigate the doc's N/A
-# items (no backend/DB/auth exists) or the known Vercel-header gap tracked in
-# docs/security/audit-log.md — those need a human/redeploy, not a release block.
-echo "[1/6] Security quick-audit..."
-SECURITY_FAIL=0
-SECRET_PATTERN="sk_live|sk_test|AKIA|pk_live"
-if grep -rE "$SECRET_PATTERN" web/game src scripts --exclude="release-game.sh" 2>/dev/null; then
-  echo "✗ Secret-looking string found in shipped paths"
-  SECURITY_FAIL=1
-fi
-if grep -rEq "0x[a-fA-F0-9]{40}" src/ 2>/dev/null; then
-  echo "✗ Hardcoded-looking wallet/contract address found in src/ (CLAUDE.md Global Rules forbid this)"
-  SECURITY_FAIL=1
-fi
-if ! grep -q "thread_support=false" .github/workflows/export-game.yml 2>/dev/null; then
-  echo "✗ Web export is not non-threaded — this regresses the itch.io/iframe/mobile boot fix"
-  SECURITY_FAIL=1
-fi
-# Wallet-connect demo was REMOVED entirely 2026-07-12 (owner request). If any
-# wallet UI ever returns, it must carry explicit DEMO labeling — so: file
-# absent = pass; file present without DEMO labeling = block.
-if [ -f src/autoload/web3_manager.gd ] && ! grep -q "DEMO" src/autoload/web3_manager.gd; then
-  echo "✗ web3_manager.gd exists without DEMO-mode labeling — wallet UI would imply real functionality"
-  SECURITY_FAIL=1
-fi
-if [ "$SECURITY_FAIL" -ne 0 ]; then
-  write_result "FAIL" "Security quick-audit failed. See docs/security/GAME_SECURITY_CHECKLIST.md and fix before releasing."
+# Step 1: Security Sentinel gate (scripts/security-sentinel.sh)
+# Single source of truth for the project's automated security checks — this
+# used to be 4 inline greps here; they now live in the sentinel script so CI,
+# this pipeline, and the game-security-sentinel skill all run identical
+# checks instead of three copies that can drift out of sync. Does NOT
+# re-litigate docs/security/GAME_SECURITY_CHECKLIST.md's N/A items (no
+# backend/DB/auth exists) or the known Vercel-header gap in audit-log.md —
+# those need a human/redeploy, not a release block.
+echo "[1/6] Security Sentinel..."
+if ! ./scripts/security-sentinel.sh --log; then
+  write_result "FAIL" "Security Sentinel found blockers. See docs/security/GAME_SECURITY_CHECKLIST.md and fix before releasing."
   exit 5
 fi
 echo "✓ Security quick-audit passed"

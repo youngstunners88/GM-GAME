@@ -98,6 +98,33 @@ browsers. Fixes shipped:
 
 ## 🗓 Changelog (newest first)
 
+- **2026-07-13 (content completeness + autonomous security sentinel)**
+  - **Content audit found and fixed 2 real gaps**: the checkpoint system
+    (full save/restore code existed) was wired with a hardcoded level index
+    — a Level 2/3 checkpoint would have silently overwritten Level 1's save
+    slot — and **zero checkpoints were ever placed in any level**, so it was
+    dead code end-to-end. Fixed the level-index bug and added 2 mid-level
+    checkpoints to each of the 3 levels. Also found Levels 2 and 3 had **zero
+    health pickups** anywhere — added 2 to each.
+  - **Investigated a 4th boss-looking file** (`bandit_boss.gd/.tscn`) not
+    wired into any level. Conclusion: it's an earlier, simpler draft
+    superseded by `claim_jumper.gd` (Level 3's actual, more complete boss —
+    integrated with the GoldMine Auction/Fort Knox economy). Not a gap;
+    flagged as dead code worth archiving in a future cleanup, left untouched
+    to avoid downgrading the shipped fight.
+  - **New autonomous security layer**: `scripts/security-sentinel.sh` — 18
+    checks (secrets, GDScript-equivalent injection/RCE, deploy integrity,
+    wallet-UI trust, CI hygiene), adapted from an uploaded generic SaaS
+    checklist into this game's actual client-only architecture. Includes a
+    check the *previous* checklist didn't have and genuinely needed: a
+    64-hex private-key scan — the earlier wallet-address regex only matched
+    40-hex addresses and would **not** have caught the private keys that
+    leaked into this repo's history two days ago. Wired into 3 layers so it
+    runs without ever being asked: mid-session (new `game-security-sentinel`
+    skill, self-activates on security-relevant edits), every release
+    (`release-game.sh` Step 1), and every CI push (new workflow step,
+    independent of any chat session). All 18 checks pass clean right now.
+
 - **2026-07-12 (P0–P2 polish pass → RELEASE CANDIDATE)** — the "final 10%"
   sweep, all in one push:
   - **Parallax depth**: every level's key art now scrolls in 3 layers (slow

@@ -1,6 +1,9 @@
 class_name LevelData
 extends Resource
 
+## 1-based level number — drives which GameManager checkpoint slot this
+## level reads/writes. Must match the level's position in the game (1, 2, 3).
+@export var level_index: int = 1
 @export var level_name: String = ""
 @export var bounds: Vector2 = Vector2(3400, 720)
 @export var kill_zone_y: float = 800.0

@@ -164,6 +164,11 @@ func _setup_entities() -> void:
 	# Spawn breakable blocks
 	for block_pos in level_data.breakable_blocks:
 		var entity := EntitySpawner.spawn("breakable_block", block_pos, self)
+	# Checkpoints — level_index must be a pre-add_child prop like MineCart's
+	# cart_type: Checkpoint._ready() reads it immediately on body_entered wiring.
+	for i in range(level_data.checkpoints.size()):
+		EntitySpawner.spawn("checkpoint", level_data.checkpoints[i], self,
+			{"checkpoint_id": i, "level_index": level_data.level_index})
 	# Spawn melt forges (Level 3 whitepaper mechanic)
 	for forge_data in level_data.melt_forges:
 		var entity := EntitySpawner.spawn("melt_forge", forge_data.get("pos", Vector2.ZERO), self)
@@ -200,7 +205,7 @@ func _create_wall(x: float, y: float, w: float, h: float) -> void:
 
 func _spawn_player() -> void:
 	var player := preload("res://src/player/player.tscn").instantiate()
-	var checkpoint := GameManager.get_checkpoint(1)
+	var checkpoint := GameManager.get_checkpoint(level_data.level_index)
 	if checkpoint != Vector2.ZERO:
 		player.global_position = checkpoint + Vector2(0, -50)
 	elif player_spawn:

@@ -1,6 +1,11 @@
 extends Area2D
 
 @export var checkpoint_id: int = 0
+## Which level this checkpoint belongs to — set by EntitySpawner as a
+## pre-add_child prop (see level_base.gd) so it's correct before any touch.
+## Was hardcoded to 1 for every level; a Level 2/3 checkpoint silently
+## clobbered Level 1's save slot, and every level's respawn read slot 1 back.
+@export var level_index: int = 1
 
 @onready var sprite: ColorRect = $ColorRect
 
@@ -15,7 +20,7 @@ func _ready() -> void:
 func _on_body_entered(body: Node2D) -> void:
     if body.is_in_group("player") and not activated:
         activated = true
-        GameManager.save_checkpoint(1, checkpoint_id, global_position)
+        GameManager.save_checkpoint(level_index, checkpoint_id, global_position)
         sprite.color = Color(0.2, 1.0, 0.2, 0.8)
         AudioManager.play_sfx("powerup")
         # Flash effect

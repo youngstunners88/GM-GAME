@@ -6,9 +6,11 @@
 script = ExtResource("1_ld")
 background_path = "res://src/assets/backgrounds/bg_l2_crystal.jpg"
 boss_background_path = "res://src/assets/backgrounds/bg_boss_crystal.jpg"
+level_index = 2
 level_name = "Crystal Caverns"
 bounds = Vector2(4400, 720)
 kill_zone_y = 850.0
+checkpoints = Array[Vector2]([Vector2(1400, 500), Vector2(2800, 500)])
 parallax_layers = Array[Dictionary]([
 	{
 		"speed": 0.1,
@@ -104,6 +106,14 @@ enemy_spawns = Array[Dictionary]([
 	}
 ])
 collectible_spawns = Array[Dictionary]([
+	{
+		"type": "health_pickup",
+		"pos": Vector2(1600, 480)
+	},
+	{
+		"type": "health_pickup",
+		"pos": Vector2(3400, 460)
+	},
 	{
 		"type": "coin",
 		"pos": Vector2(320, 450)

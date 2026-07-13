@@ -96,6 +96,7 @@ re-run this section against that specific feature before shipping it.
 |----|------|--------|-------|
 | D-C1 | Wallet/crypto UI never implies real functionality | **RESOLVED BY REMOVAL (2026-07-12)** | The demo wallet-connect feature was removed entirely at the owner's request — there is no wallet UI at all now. The check inverts: `test -f src/autoload/web3_manager.gd` must FAIL; if wallet UI is ever reintroduced it must carry explicit DEMO labeling (release gate enforces this automatically). Trust-risk context stands: SmokeRing/DIAMONDS/GoldMine are live crypto projects — fake wallet UX reads as real to a confused player. |
 | D-C2 | No real wallet/contract addresses hardcoded | **Check every audit** | `grep -rEn "0x[a-fA-F0-9]{40}"` across `src/` — any hit must be investigated (CLAUDE.md Global Rules already forbid this) |
+| D-C5 | No raw private-key-shaped hex literals in tracked source | **Check every audit** — added 2026-07-12 | D-C2's regex only matches **40-hex-char addresses**. The two real Ethereum private keys that leaked into this repo's git history (see audit-log.md incident) were **64-hex-char private keys** — a shape D-C2 never checked. `scripts/security-sentinel.sh` SEC-005 scans for `[a-fA-F0-9]{64}` across all tracked source, excluding known-safe checksum files (Godot/butler SHA256 pins). This is a working-tree scan, not a history scan — gitleaks covers history. |
 | D-C3 | Web export stays non-threaded | **Check every audit** | `grep "thread_support" .github/workflows/export-game.yml` must show `false` — this is the fix for the "game sometimes doesn't play" root cause; regressing it silently breaks itch.io/iframe/mobile boot |
 | D-C4 | postMessage handlers enforce same-origin | **Check every audit** | `grep -n "postMessage\|e.origin" web/launcher.js src/autoload/combo_system.gd` |
 
@@ -115,30 +116,27 @@ re-run this section against that specific feature before shipping it.
 
 ## Quick-audit command block
 
-Run every item marked "Check every audit" with one pass:
+**This is now automated.** Every item below (A1, A4, A8, D5, D-C1–D-C5, plus
+several new checks this hand-written block never covered) runs in one command:
 
 ```bash
-# A1 — no source maps, no secrets in the shipped bundle
-find web/game -name "*.map" 2>/dev/null
-grep -rE "(sk_live|sk_test|AKIA|pk_live)" web/game src scripts 2>/dev/null
+./scripts/security-sentinel.sh
+```
 
-# A4 — CI exists with real gates
-test -f .github/workflows/export-game.yml && echo "CI: present"
+See `.claude/skills/game-security-sentinel/SKILL.md` for when this runs
+autonomously (every release, every CI push, and mid-session whenever the
+agent touches security-relevant surface — no invocation needed) and
+`scripts/security-sentinel.sh` for the check implementations themselves.
 
-# A7/A8 — headers on the live mirror (itch.io sets its own; this checks Vercel)
+The manual commands below are kept for ad-hoc spot-checks / debugging the
+script itself, not as the primary audit path:
+
+```bash
+# A7 — headers on the live mirror (itch.io sets its own; this checks Vercel)
 curl -sI https://lil-blunt-game.vercel.app/ | grep -iE "strict-transport|x-frame|content-security|x-content-type|referrer-policy"
-
-# A8 — .env never committed
-grep -n "^\.env" .gitignore
 
 # D5 — build is versioned (not a mutable unversioned blob)
 grep -n "userversion" scripts/deploy_itch.sh .github/workflows/export-game.yml
-
-# D-C1/D-C2/D-C3/D-C4 — game-specific
-test -f src/autoload/web3_manager.gd && echo "WALLET UI EXISTS — must carry DEMO labeling" || echo "no wallet UI (removed 2026-07-12)"
-grep -rEn "0x[a-fA-F0-9]{40}" src/ || echo "no hardcoded addresses"
-grep -n "thread_support" .github/workflows/export-game.yml
-grep -n "e.origin" web/launcher.js src/autoload/combo_system.gd
 ```
 
 ## Result table format

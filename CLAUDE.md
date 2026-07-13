@@ -76,23 +76,37 @@ This is mandatory, not optional — the client relies on always-current state.
 The Stop hook re-checks for uncommitted/unpushed work as a backstop.
 
 ## ⭐ SECURITY-GATE RULE (autonomous — no prompt required)
-Every ship runs a security quick-audit before code reaches master or a live
-build — **this must happen without being asked, every time**:
-- The 4 checks in `scripts/release-game.sh` Step 1/6 (leaked-secret pattern,
-  hardcoded wallet/contract addresses, non-threaded export regression, DEMO
-  wallet labeling) block the release pipeline on failure. Never remove or
-  bypass this step to "get a release out faster."
-- The full checklist and its reasoning live in
-  `docs/security/GAME_SECURITY_CHECKLIST.md` — it's a project-specific
-  adaptation of a general web-app checklist, trimmed to what applies to a
-  client-only static-hosted game (no backend/DB/auth/payments exist today).
-  Append every audit run to `docs/security/audit-log.md`.
-- **The moment any of these change, re-audit the N/A items in that checklist
-  immediately, unprompted**: a real backend, user accounts, a leaderboard,
-  real payments, or multiplayer. Those items are N/A *because* the
-  architecture doesn't have the surface yet, not permanently.
-- `/security-audit` (full mode) is the deeper engine-level companion —
-  run it before major milestones, not just routine ships.
+Security scanning runs **without being asked, every time**, at three layers:
+1. **Mid-session, proactively**: the `game-security-sentinel` skill
+   (`.claude/skills/game-security-sentinel/SKILL.md`) activates itself the
+   moment you're about to touch secrets, wallet/crypto UI, dynamic execution
+   (`OS.execute`, `Expression`, `JavaScriptBridge.eval`), file I/O, deploy
+   config, or CI — read its "When to activate" section, it is not optional
+   and does not require the user to say "run a security check."
+2. **Every release**: `scripts/release-game.sh` Step 1/6 runs
+   `scripts/security-sentinel.sh` and blocks the pipeline on any
+   critical/high finding. Never remove or bypass this step to "get a release
+   out faster."
+3. **Every CI push**: `.github/workflows/export-game.yml` runs both
+   `gitleaks` (full-history secret scan) and `scripts/security-sentinel.sh`
+   (working-tree checks) independent of any chat session existing at all.
+
+All three layers call the **same script** (`scripts/security-sentinel.sh`) —
+there is exactly one implementation of these checks, not three copies that
+can drift. The full checklist and adaptation reasoning live in
+`docs/security/GAME_SECURITY_CHECKLIST.md` (why most of a general SaaS
+checklist is N/A for a client-only static-hosted game — no backend/DB/auth/
+payments exist today). Append every audit run to `docs/security/audit-log.md`
+(the sentinel's `--log` flag does this automatically).
+
+**The moment any of these change, re-audit the N/A items in that checklist
+immediately, unprompted**: a real backend, user accounts, a leaderboard,
+real payments, or multiplayer. Those items are N/A *because* the
+architecture doesn't have the surface yet, not permanently.
+
+`/security-audit` (full mode) is the deeper engine-level companion — run it
+before major milestones, not just routine ships. See the sentinel skill's
+"Relationship to /security-audit" section for how the two divide labor.
 
 ## ⭐ MODEL-ADVICE RULE
 End **every** response to the client with a one-line recommendation of which
