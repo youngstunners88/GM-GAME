@@ -189,6 +189,25 @@ jobs:
             echo "No changes to commit"
           fi
 
+      # Branded-domain mirror: gh-pages serves the build at
+      # https://mnguniproject.co.za/GM-GAME/ (the owner's Cloudflare-proxied
+      # GitHub Pages domain) once Pages is enabled on this repo. A fresh
+      # single-commit branch each run — it's a generated artifact, history
+      # is meaningless there, and this keeps the repo from bloating.
+      - name: Refresh gh-pages mirror
+        if: success()
+        run: |
+          cd web/game
+          touch .nojekyll
+          git init -qb gh-pages
+          git add -A
+          git -c user.name="Claude Code Bot" -c user.email="claude@anthropic.com" \
+            commit -qm "pages: web build @ ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}" gh-pages
+          rm -rf .git
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
       - name: Upload artifacts (always, for debugging)
         if: always()
         uses: actions/upload-artifact@v4

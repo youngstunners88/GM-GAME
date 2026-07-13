@@ -103,6 +103,7 @@ func die() -> void:
     hitbox.monitoring = false
     StateMachine.change_state(StateMachine.State.LEVEL_COMPLETE)
     ScreenShake.zoom_to(1.0, 0.6)
+    AudioManager.play_voice("victory")
     ScreenShake.heavy()
     GameManager.save_session()
     var tween := create_tween()

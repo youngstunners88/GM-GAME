@@ -89,6 +89,7 @@ func die() -> void:
 	hitbox.monitoring = false
 	StateMachine.change_state(StateMachine.State.LEVEL_COMPLETE)
 	ScreenShake.zoom_to(1.0, 0.6)
+	AudioManager.play_voice("game_complete")
 	ScreenShake.heavy()
 	# Gold Rush Auction settlement — whitepaper specifies pro-rata XAUT payout
 	# at week end. Player contributes their GOLD pool, settles vs. enemy reserve.
