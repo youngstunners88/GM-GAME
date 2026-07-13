@@ -114,8 +114,13 @@ func _on_music_track_finished() -> void:
 ## Resolve an SFX/VO id to a file: legacy .ogg first, then generated .mp3
 ## (the game-audio-forge pipeline outputs mp3 — Godot 4.3 plays it natively).
 func _resolve_audio(base: String) -> String:
-    for ext in [".ogg", ".mp3"]:
-        var path := base + ext
+    # NOTE: ext must be explicitly typed — iterating an untyped array yields
+    # Variant, and `base + Variant` breaks := inference under the web
+    # export's compiler (this exact line shipped a build where EVERY script
+    # referencing AudioManager cascade-failed to compile; caught by the
+    # browser harness, not gdparse, which is syntax-only).
+    for ext: String in [".ogg", ".mp3"]:
+        var path: String = base + ext
         if ResourceLoader.exists(path):
             return path
     return ""

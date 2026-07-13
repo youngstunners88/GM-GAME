@@ -16,7 +16,7 @@ func _ready() -> void:
     AudioManager.play_voice("menu_title")
     _setup_backdrop()
     _setup_ambience()
-    for btn in [play_btn, continue_btn, quit_btn]:
+    for btn: Button in [play_btn, continue_btn, quit_btn]:
         _add_hover_glow(btn)
     # Show continue button only if save file exists
     if FileAccess.file_exists(GameManager.SAVE_PATH):

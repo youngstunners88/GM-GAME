@@ -100,7 +100,7 @@ func _on_health_changed(new_health: int) -> void:
         flash.tween_property(_flash_rect, "color:a", 0.0, 0.1)
         var base_x := health_container.position.x
         var shake := create_tween()
-        for offset in [6.0, -5.0, 3.0, 0.0]:
+        for offset: float in [6.0, -5.0, 3.0, 0.0]:
             shake.tween_property(health_container, "position:x", base_x + offset, 0.04)
     _prev_health = new_health
 
