@@ -22,6 +22,10 @@ signal died
 ## lets dash/knockback/wall-jump momentum bleed off instead of hard-snapping.
 @export var momentum_friction_floor: float = 1200.0
 @export var momentum_friction_air: float = 350.0
+## Bong "fly" power-up: hold jump/up to rise, release to drift down gently.
+## No gravity while active — pure floaty control for the ~10s duration.
+@export var fly_rise_speed: float = 260.0
+@export var fly_sink_speed: float = 90.0
 
 var current_outfit: Outfit = Outfit.DEFAULT
 var _last_fall_speed: float = 0.0
@@ -61,6 +65,13 @@ func _physics_process(delta: float) -> void:
 	var movement_direction: float = input_handler.get_movement_direction()
 	if MobileInputHandler:
 		movement_direction = MobileInputHandler.get_movement_input()
+
+	# Bong flight: hold jump/up to rise, otherwise sink slowly. Overrides all
+	# normal gravity/wall/jump vertical logic for the duration. Trippy green
+	# smoke trail sells the "lifted" fantasy.
+	if GameManager.has_power_up("fly"):
+		_update_fly(delta, movement_direction)
+		return
 
 	# Gravity — wall slide uses reduced gravity while pressing into the wall
 	if not is_on_floor():
@@ -156,6 +167,31 @@ func _physics_process(delta: float) -> void:
 	_check_pickaxe_breaks()
 	GameManager.player_position = global_position
 
+## Bong flight physics: hold jump/up to ascend, otherwise a slow chill sink.
+## Horizontal control stays normal so you can steer to hard-to-reach places.
+func _update_fly(delta: float, direction: float) -> void:
+	var rising := Input.is_action_pressed("jump") or input_handler.jump_buffer_timer > 0.0
+	if MobileInputHandler and MobileInputHandler.get_movement_input() == 0.0:
+		pass  # movement handled below; jump comes through the buffer/signal
+	if rising:
+		velocity.y = -fly_rise_speed
+	else:
+		velocity.y = fly_sink_speed
+	# Horizontal: same accel model as normal air control.
+	if direction != 0:
+		input_handler.handle_facing_direction(direction)
+		var target := direction * walk_speed * power_up_handler.speed_multiplier
+		velocity.x = move_toward(velocity.x, target, air_accel * delta)
+	else:
+		velocity.x = move_toward(velocity.x, 0.0, air_decel * delta)
+	# Puff a smoke trail every few frames for the lifted look.
+	if Engine.get_physics_frames() % 8 == 0:
+		emit_blaze_smoke()
+	sprite.facing_right = input_handler.facing_right
+	sprite.moving = absf(velocity.x) > 10.0
+	move_and_slide()
+	GameManager.player_position = global_position
+
 ## With the pickaxe out, walking into a breakable block smashes it.
 func _check_pickaxe_breaks() -> void:
 	if not GameManager.has_power_up("pickaxe"):
@@ -186,6 +222,8 @@ func _update_sprite_color() -> void:
 		sprite.color = Color(1.0, 0.7, 0.7, 0.95)
 	elif GameManager.has_power_up("torch"):
 		sprite.color = Color(1.0, 0.85, 0.65, 1.0)
+	elif GameManager.has_power_up("fly"):
+		sprite.color = Color(0.6, 1.0, 0.75, 0.95)
 	else:
 		sprite.color = Color.WHITE
 

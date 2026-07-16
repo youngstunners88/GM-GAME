@@ -14,6 +14,7 @@ var entity_scenes: Dictionary = {
 	"purple_weed": preload("res://src/powerups/purple_weed.tscn"),
 	"pickaxe_tool": preload("res://src/powerups/pickaxe_tool.tscn"),
 	"torch_tool": preload("res://src/powerups/torch_tool.tscn"),
+	"bong": preload("res://src/powerups/bong.tscn"),
 	"breakable_block": preload("res://src/level/breakable_block.tscn"),
 	"checkpoint": preload("res://src/level/checkpoint.tscn"),
 	"smoke_cloud_platform": preload("res://src/level/smoke_cloud_platform.tscn"),

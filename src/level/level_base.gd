@@ -139,12 +139,21 @@ func _create_platform(x: float, y: float, w: float, h: float, body_color: Color,
 func _setup_kill_zone() -> void:
 	var kill_zone := Area2D.new()
 	kill_zone.add_to_group("hazard")
+	# CRITICAL: Area2D.new() defaults collision_mask to 1 (World). The player
+	# is on layer 2 (Player), so without this the pit never detected the player
+	# and falling into a ditch did NOTHING (reported 2026-07-14). Mask the
+	# Player layer explicitly so body_entered actually fires.
+	kill_zone.collision_layer = 0
+	kill_zone.collision_mask = 2
+	# Make the pit a tall band, not a 50px sliver — a fast fall (up to
+	# max_fall_speed 720 px/s ≈ 12px/frame) can't tunnel past 400px, and it
+	# also catches a player who clips slightly into level geometry.
 	var col := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
-	shape.size = Vector2(level_data.bounds.x, 50)
+	shape.size = Vector2(level_data.bounds.x, 400)
 	col.shape = shape
 	kill_zone.add_child(col)
-	kill_zone.position = Vector2(level_data.bounds.x / 2, level_data.kill_zone_y)
+	kill_zone.position = Vector2(level_data.bounds.x / 2, level_data.kill_zone_y + 175)
 	kill_zone.body_entered.connect(func(body: Node2D) -> void:
 		if body.is_in_group("player") and body.has_method("die"):
 			body.die()
