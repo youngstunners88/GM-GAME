@@ -46,6 +46,7 @@ func _setup_backdrop() -> void:
 ## Drifting smoke + floating ETH rings — the menu breathes instead of sitting.
 func _setup_ambience() -> void:
     var smoke := CPUParticles2D.new()
+    smoke.texture = load("res://src/assets/sprites/fx_dot.png")
     smoke.amount = 14
     smoke.lifetime = 6.0
     smoke.preprocess = 6.0

@@ -82,6 +82,48 @@
       "regen": true,
       "path": "src/assets/backgrounds/bg_l3_goldrush.jpg",
       "prompt": "16-bit pixel art side-scroller game background, a golden Wild-West gold-mine canyon at sunset, wooden mine rails and gold veins glinting in rock, floating translucent neon-gold blockchain cubes and faint Bitcoin glyphs shimmering in the warm haze, cohesive painterly pixel style, deep parallax layers, no characters, no text"
+    },
+    {
+      "id": "weed_leaf",
+      "sprite": true,
+      "out_size": 40,
+      "width": 512,
+      "height": 512,
+      "key_tol": 60,
+      "path": "src/assets/sprites/sprite_item_weed-leaf.png",
+      "prompt": "16-bit pixel art game item icon, a single cute glowing green cannabis-style power-up leaf with a soft magical shine, friendly rounded, clean crisp pixels, centered, on a solid flat pure magenta #FF00FF background, no shadow, no text"
+    },
+    {
+      "id": "magic_mushroom",
+      "sprite": true,
+      "out_size": 40,
+      "width": 512,
+      "height": 512,
+      "key_tol": 55,
+      "path": "src/assets/sprites/sprite_item_mushroom.png",
+      "prompt": "16-bit pixel art game power-up mushroom, a cute red mushroom cap with white spots and a chunky cream stem, glossy Mario-style, clean crisp pixels, centered, on a solid flat pure magenta #FF00FF background, no shadow, no text"
+    },
+    {
+      "id": "health_pickup",
+      "sprite": true,
+      "out_size": 36,
+      "width": 512,
+      "height": 512,
+      "key_tol": 60,
+      "path": "src/assets/sprites/sprite_item_health.png",
+      "prompt": "16-bit pixel art game health pickup, a glossy bright red heart with a white shine highlight, cute arcade style, clean crisp pixels, centered, on a solid flat pure green #00FF00 background, no shadow, no text",
+      "pink_scrub": false
+    },
+    {
+      "id": "coin_plain",
+      "sprite": true,
+      "out_size": 40,
+      "width": 512,
+      "height": 512,
+      "key_tol": 55,
+      "path": "src/assets/sprites/sprite_item_coin.png",
+      "regen": true,
+      "prompt": "16-bit pixel art game coin, a shiny round gold coin with a smooth beveled rim and a subtle star emboss in the center, glossy highlight, cute arcade style, clean crisp pixels, centered, on a solid flat pure magenta #FF00FF background, no shadow, no text"
     }
   ]
 }

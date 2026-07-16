@@ -68,7 +68,7 @@ def generate(prompt: str, w: int, h: int) -> bytes | None:
     print("  ! timed out polling"); return None
 
 
-def chroma_key(png: bytes, size: int, tol: int = 70) -> Image.Image:
+def chroma_key(png: bytes, size: int, tol: int = 70, pink_scrub: bool = True) -> Image.Image:
     """Remove the background by flood-filling from the 4 corners: whatever
     colour the corners are (Flux renders 'magenta' as a soft pink field, not
     pure #FF00FF), erase contiguous regions within `tol` of it. Far more
@@ -105,14 +105,17 @@ def chroma_key(png: bytes, size: int, tol: int = 70) -> Image.Image:
     # flood-fill can't reach because the subject separates it). Conservative
     # thresholds so cyan/gold/teal/green subjects are never touched — only
     # true magenta (high R, high B, low G) goes.
-    for y in range(h):
-        for x in range(w):
-            r, g, b, a = px[x, y]
-            # Pink/magenta = red AND blue both clearly above green. Relative
-            # test (not fixed g<120) catches desaturated pink shadows too,
-            # while cyan (low R) and gold (low B) subjects never qualify.
-            if a > 0 and r > 165 and b > 135 and g < r - 40 and g < b - 20:
-                px[x, y] = (0, 0, 0, 0)
+    # Skip for red/warm subjects generated on a NON-magenta field (a red heart
+    # on green): the scrub targets pink and would nibble red edges.
+    if pink_scrub:
+        for y in range(h):
+            for x in range(w):
+                r, g, b, a = px[x, y]
+                # Pink/magenta = red AND blue both clearly above green. Relative
+                # test (not fixed g<120) catches desaturated pink shadows too,
+                # while cyan (low R) and gold (low B) subjects never qualify.
+                if a > 0 and r > 165 and b > 135 and g < r - 40 and g < b - 20:
+                    px[x, y] = (0, 0, 0, 0)
 
     bbox = img.getbbox()
     if bbox:
@@ -152,7 +155,8 @@ def main() -> int:
             cache.write_bytes(png)
         out.parent.mkdir(parents=True, exist_ok=True)
         if a.get("sprite"):
-            chroma_key(png, a.get("out_size", 64), a.get("key_tol", 70)).save(out)
+            chroma_key(png, a.get("out_size", 64), a.get("key_tol", 70),
+                       a.get("pink_scrub", True)).save(out)
         else:
             im = Image.open(io.BytesIO(png)).convert("RGB")
             if a.get("out_w") and a.get("out_h"):

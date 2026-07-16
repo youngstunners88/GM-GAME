@@ -1,4 +1,5 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
+[ext_resource type="Texture2D" path="res://src/assets/sprites/fx_dot.png" id="9_dot"]
 
 [ext_resource type="Script" path="res://src/player/player.gd" id="1_abcd"]
 [ext_resource type="Script" path="res://src/player/power_up_handler.gd" id="2_puh"]
@@ -70,6 +71,7 @@ script = ExtResource("3_ih")
 script = ExtResource("6_cmb")
 
 [node name="WallSparks" type="CPUParticles2D" parent="."]
+texture = ExtResource("9_dot")
 emitting = false
 amount = 8
 lifetime = 0.25
@@ -84,6 +86,7 @@ initial_velocity_max = 90.0
 color = Color(1, 0.8, 0.3, 1)
 
 [node name="SprintDust" type="CPUParticles2D" parent="."]
+texture = ExtResource("9_dot")
 position = Vector2(16, 32)
 emitting = false
 amount = 6
