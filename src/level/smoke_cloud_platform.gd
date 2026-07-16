@@ -7,13 +7,11 @@ extends AnimatableBody2D
 var start_pos: Vector2 = Vector2.ZERO
 var moving_forward: bool = true
 
-@onready var sprite: ColorRect = $ColorRect
+@onready var sprite: Sprite2D = $Sprite
 @onready var collision: CollisionShape2D = $CollisionShape2D
 
 func _ready() -> void:
     start_pos = position
-    sprite.color = Color(0.7, 0.8, 0.75, 0.5)
-    sprite.size = Vector2(100, 20)
     collision.position = Vector2(50, 10)
     # One-way collision so player can jump through from below
     collision.one_way_collision = true
