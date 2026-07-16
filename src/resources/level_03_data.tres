@@ -191,15 +191,15 @@ collectible_spawns = Array[Dictionary]([
 		"pos": Vector2(2900, 200)
 	},
 	{
-		"type": "coin",
+		"type": "coin_btc",
 		"pos": Vector2(500, 600)
 	},
 	{
-		"type": "coin",
+		"type": "coin_btc",
 		"pos": Vector2(2000, 600)
 	},
 	{
-		"type": "coin",
+		"type": "coin_btc",
 		"pos": Vector2(3300, 600)
 	}
 ])

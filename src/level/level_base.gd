@@ -25,8 +25,11 @@ func _ready() -> void:
 var _backdrop_sprites: Array[Sprite2D] = []
 
 func _setup_background() -> void:
-	# Painted key-art backdrop split into three parallax depths. The art is
-	# viewport-sized (1280×720), so scale 1 and mirror at texture width.
+	# One crisp full-screen painting on a slow-scroll parallax layer. The art
+	# is cohesive and premium now (Muapi Flux, blockchain-themed per realm), so
+	# it reads best clean — NOT chopped into darkened/cropped duplicate layers,
+	# which is what made the old version look muddy and "incoherent". A gentle
+	# 0.35 motion scale gives depth against the camera without smearing.
 	if not level_data or level_data.background_path == "":
 		return
 	var tex: Texture2D = load(level_data.background_path)
@@ -36,29 +39,15 @@ func _setup_background() -> void:
 	pbg.name = "BackdropParallax"
 	pbg.layer = -20
 	add_child(pbg)
-	# far: whole painting, slow + cooled down — reads as distance
-	_add_parallax_layer(pbg, tex, 0.2, Color(0.55, 0.55, 0.68, 1.0), Rect2())
-	# mid: the main read of the art, standard darken from the old backdrop
-	_add_parallax_layer(pbg, tex, 0.5, Color(0.82, 0.82, 0.86, 0.8), Rect2())
-	# near: bottom strip of the same painting drifting faster — foreground
-	# silhouettes (grass edges / rocks) without needing extracted art
-	var h := float(tex.get_height())
-	_add_parallax_layer(pbg, tex, 0.8, Color(0.65, 0.7, 0.72, 0.55),
-			Rect2(0.0, h * 0.72, float(tex.get_width()), h * 0.28))
-
-func _add_parallax_layer(pbg: ParallaxBackground, tex: Texture2D, speed: float,
-		mod: Color, region: Rect2) -> void:
 	var layer := ParallaxLayer.new()
-	layer.motion_scale = Vector2(speed, 1.0)
+	layer.motion_scale = Vector2(0.35, 0.5)
 	layer.motion_mirroring = Vector2(float(tex.get_width()), 0.0)
 	var spr := Sprite2D.new()
 	spr.texture = tex
 	spr.centered = false
-	spr.modulate = mod
-	if region.size != Vector2.ZERO:
-		spr.region_enabled = true
-		spr.region_rect = region
-		spr.position = Vector2(0.0, 720.0 - region.size.y)
+	# Very slight cool tint keeps foreground gameplay readable over the art
+	# without draining the painting's colour.
+	spr.modulate = Color(0.9, 0.9, 0.94, 1.0)
 	layer.add_child(spr)
 	pbg.add_child(layer)
 	_backdrop_sprites.append(spr)
@@ -103,29 +92,37 @@ func _setup_geometry() -> void:
 	for platform in level_data.platforms:
 		_create_platform(platform.x, platform.y, platform.z, platform.w, Color(0.12, 0.09, 0.18, 0.92), Color(0.55, 0.95, 0.7, 1.0))
 
+const BLOCK_TEX := preload("res://src/assets/sprites/tile_block-chain.png")
+
 func _create_platform(x: float, y: float, w: float, h: float, body_color: Color, lip_color: Color = Color(0.5, 0.9, 0.6, 1.0)) -> void:
 	var plat := StaticBody2D.new()
 	plat.position = Vector2(x, y)
 	plat.collision_layer = 1
 
-	var visual := ColorRect.new()
-	visual.color = body_color
-	visual.size = Vector2(w, h)
-	plat.add_child(visual)
+	# Dark base under the blocks so gaps between tiles read as solid, not
+	# see-through, and the platform still contrasts the painted backdrop.
+	var base := ColorRect.new()
+	base.color = body_color
+	base.size = Vector2(w, h)
+	plat.add_child(base)
 
-	# Bright top lip — the "grass/crystal edge" read.
+	# Blockchain blocks: the tile texture repeated across the platform. This is
+	# the subtle blockchain-tech theme in the level geometry itself — every
+	# ledge is literally a chain of blocks. texture_repeat tiles the 96px cube.
+	var blocks := Sprite2D.new()
+	blocks.texture = BLOCK_TEX
+	blocks.centered = false
+	blocks.region_enabled = true
+	blocks.region_rect = Rect2(0, 0, w, max(h, 24.0))
+	blocks.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	blocks.position = Vector2(0, min(0.0, h - 24.0))
+	plat.add_child(blocks)
+
+	# Bright top lip — a glowing edge so the standable surface is unmistakable.
 	var lip := ColorRect.new()
 	lip.color = lip_color
-	lip.size = Vector2(w, min(6.0, h))
+	lip.size = Vector2(w, min(4.0, h))
 	plat.add_child(lip)
-
-	# Thin dark outline sides for definition.
-	var outline := ColorRect.new()
-	outline.color = Color(0, 0, 0, 0.35)
-	outline.size = Vector2(w, h)
-	outline.position = Vector2(0, 0)
-	plat.add_child(outline)
-	plat.move_child(outline, 0)
 
 	var col := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
