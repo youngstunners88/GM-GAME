@@ -98,6 +98,29 @@ browsers. Fixes shipped:
 
 ## 🗓 Changelog (newest first)
 
+- **2026-07-16 (playability fixes + crypto-visual overhaul)** — acting on
+  your playtest feedback:
+  - **Falling into a ditch now kills + restarts** — this was a real bug: the
+    pit's detector was on the wrong collision layer and never saw the player.
+  - **Attacking is now discoverable** — the axe throw (J / mobile ATK) always
+    worked, but nothing told you; added a control hint at level start. He
+    throws a pickaxe-axe, so it reads as attacking with an item.
+  - **THE BONG** — a rare bonus pickup, hidden high/hard-to-reach in every
+    level. Smoke it → 10 seconds of flight (hold jump to rise). "BONG LIFT-OFF."
+  - **Coins are crypto now** — Ethereum in the Smoke Realm, Solana in Crystal
+    Caverns, Bitcoin in the GoldMine, each worth more than a plain coin.
+  - **Platforms are literal blockchain blocks** — glowing cyan crystal cubes
+    with hash etchings, tiled across every ledge. The theme is in the geometry.
+  - **Backgrounds regenerated** cohesive + premium (Muapi Flux) — each realm
+    its palette with a shared floating-blockchain-cube motif; the muddy
+    3-layer parallax that made them look cheap is gone.
+  - **Every placeholder square eliminated** — real sprites for the weed leaf,
+    magic mushroom, health heart, and a clean gold coin (replacing the smiley);
+    FX sparkles now use a soft dot texture instead of rendering as hard squares.
+  - **New `game-aesthetics-forge` skill** — masters the Muapi art pipeline
+    (API contract, transparent-sprite keying, crypto art-direction rules);
+    self-activates whenever art looks cheap or a new asset needs generating.
+
 - **2026-07-13 (THE GAME HAS A VOICE — full audio pass + branded mirror)**
   - **Every silent action now has a real sound.** All 12 missing SFX
     generated via ElevenLabs (your API key) with prompts engineered for the

@@ -191,19 +191,23 @@ collectible_spawns = Array[Dictionary]([
 		"pos": Vector2(2900, 200)
 	},
 	{
-		"type": "coin",
+		"type": "coin_btc",
 		"pos": Vector2(500, 600)
 	},
 	{
-		"type": "coin",
+		"type": "coin_btc",
 		"pos": Vector2(2000, 600)
 	},
 	{
-		"type": "coin",
+		"type": "coin_btc",
 		"pos": Vector2(3300, 600)
 	}
 ])
 powerup_spawns = Array[Dictionary]([
+	{
+		"type": "bong",
+		"pos": Vector2(2400, 130)
+	},
 	{
 		"type": "weed_leaf",
 		"pos": Vector2(450, 540)

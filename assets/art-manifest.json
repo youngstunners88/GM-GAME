@@ -1,0 +1,129 @@
+{
+  "version": "1.0.0",
+  "note": "Muapi Flux-dev generations. Sprites render on flat magenta (#FF00FF), chroma-keyed to transparency + nearest-downscaled. Backgrounds are opaque, LANCZOS-resized to 1280x720.",
+  "assets": [
+    {
+      "id": "coin_eth",
+      "sprite": true,
+      "out_size": 48,
+      "width": 512,
+      "height": 512,
+      "path": "src/assets/sprites/sprite_item_coin-eth.png",
+      "prompt": "16-bit pixel art game coin icon, a shiny circular silver-blue Ethereum coin with the Ethereum diamond logo embossed in the center, glowing rim light, clean crisp pixels, cute arcade style, centered, on a solid flat pure magenta #FF00FF background, no shadow, no text",
+      "key_tol": 38
+    },
+    {
+      "id": "coin_btc",
+      "sprite": true,
+      "out_size": 48,
+      "width": 512,
+      "height": 512,
+      "path": "src/assets/sprites/sprite_item_coin-btc.png",
+      "prompt": "16-bit pixel art game coin icon, a shiny circular gold Bitcoin coin with the Bitcoin B symbol embossed in the center, glowing orange rim light, clean crisp pixels, cute arcade style, centered, on a solid flat pure magenta #FF00FF background, no shadow, no text",
+      "key_tol": 55
+    },
+    {
+      "id": "coin_sol",
+      "sprite": true,
+      "out_size": 48,
+      "width": 512,
+      "height": 512,
+      "path": "src/assets/sprites/sprite_item_coin-sol.png",
+      "prompt": "16-bit pixel art game coin icon, a shiny circular teal-purple Solana coin with three angled parallel bars logo embossed in the center, glowing gradient rim light, clean crisp pixels, cute arcade style, centered, on a solid flat pure magenta #FF00FF background, no shadow, no text",
+      "key_tol": 52
+    },
+    {
+      "id": "bong",
+      "sprite": true,
+      "out_size": 56,
+      "width": 512,
+      "height": 512,
+      "path": "src/assets/sprites/sprite_item_bong.png",
+      "regen": true,
+      "prompt": "16-bit pixel art game item icon, a cute chill glass water bong with curling green smoke rising from the top and a small green weed leaf, friendly rounded shapes, glowing softly, clean crisp pixels, centered, on a solid flat pure magenta #FF00FF background, no shadow, no text",
+      "key_tol": 70
+    },
+    {
+      "id": "block_chain",
+      "sprite": true,
+      "out_size": 96,
+      "width": 512,
+      "height": 512,
+      "path": "src/assets/sprites/tile_block-chain.png",
+      "prompt": "16-bit pixel art game platform block, a glowing cube-shaped blockchain block made of translucent neon-green and cyan digital crystal, subtle etched hexadecimal hash lines and a small chain-link glyph on the front face, isometric-lit top edge, solid and floatable, clean crisp pixels, centered, on a solid flat pure magenta #FF00FF background, no shadow, no text",
+      "key_tol": 95
+    },
+    {
+      "id": "bg_l1",
+      "width": 1216,
+      "height": 704,
+      "out_w": 1280,
+      "out_h": 720,
+      "regen": true,
+      "path": "src/assets/backgrounds/bg_l1_forest.jpg",
+      "prompt": "16-bit pixel art side-scroller game background, a hazy purple and green trippy smoke-realm forest at dusk, giant glowing mushrooms and leaves, floating translucent neon blockchain cubes drifting in the distance, soft volumetric smoke, subtle Ethereum diamond glyphs glowing faintly in the haze, cohesive painterly pixel style, deep parallax layers, no characters, no text"
+    },
+    {
+      "id": "bg_l2",
+      "width": 1216,
+      "height": 704,
+      "out_w": 1280,
+      "out_h": 720,
+      "regen": true,
+      "path": "src/assets/backgrounds/bg_l2_crystal.jpg",
+      "prompt": "16-bit pixel art side-scroller game background, a glowing blue and purple crystal cavern deep underground, huge diamond crystals and glowing veins, floating translucent neon blockchain data cubes and faint hexagonal ledger grids in the background, soft god rays, cohesive painterly pixel style, deep parallax layers, no characters, no text"
+    },
+    {
+      "id": "bg_l3",
+      "width": 1216,
+      "height": 704,
+      "out_w": 1280,
+      "out_h": 720,
+      "regen": true,
+      "path": "src/assets/backgrounds/bg_l3_goldrush.jpg",
+      "prompt": "16-bit pixel art side-scroller game background, a golden Wild-West gold-mine canyon at sunset, wooden mine rails and gold veins glinting in rock, floating translucent neon-gold blockchain cubes and faint Bitcoin glyphs shimmering in the warm haze, cohesive painterly pixel style, deep parallax layers, no characters, no text"
+    },
+    {
+      "id": "weed_leaf",
+      "sprite": true,
+      "out_size": 40,
+      "width": 512,
+      "height": 512,
+      "key_tol": 60,
+      "path": "src/assets/sprites/sprite_item_weed-leaf.png",
+      "prompt": "16-bit pixel art game item icon, a single cute glowing green cannabis-style power-up leaf with a soft magical shine, friendly rounded, clean crisp pixels, centered, on a solid flat pure magenta #FF00FF background, no shadow, no text"
+    },
+    {
+      "id": "magic_mushroom",
+      "sprite": true,
+      "out_size": 40,
+      "width": 512,
+      "height": 512,
+      "key_tol": 55,
+      "path": "src/assets/sprites/sprite_item_mushroom.png",
+      "prompt": "16-bit pixel art game power-up mushroom, a cute red mushroom cap with white spots and a chunky cream stem, glossy Mario-style, clean crisp pixels, centered, on a solid flat pure magenta #FF00FF background, no shadow, no text"
+    },
+    {
+      "id": "health_pickup",
+      "sprite": true,
+      "out_size": 36,
+      "width": 512,
+      "height": 512,
+      "key_tol": 60,
+      "path": "src/assets/sprites/sprite_item_health.png",
+      "prompt": "16-bit pixel art game health pickup, a glossy bright red heart with a white shine highlight, cute arcade style, clean crisp pixels, centered, on a solid flat pure green #00FF00 background, no shadow, no text",
+      "pink_scrub": false
+    },
+    {
+      "id": "coin_plain",
+      "sprite": true,
+      "out_size": 40,
+      "width": 512,
+      "height": 512,
+      "key_tol": 55,
+      "path": "src/assets/sprites/sprite_item_coin.png",
+      "regen": true,
+      "prompt": "16-bit pixel art game coin, a shiny round gold coin with a smooth beveled rim and a subtle star emboss in the center, glossy highlight, cute arcade style, clean crisp pixels, centered, on a solid flat pure magenta #FF00FF background, no shadow, no text"
+    }
+  ]
+}

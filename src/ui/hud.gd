@@ -66,6 +66,8 @@ func _ready() -> void:
     _combo_label.text = ""
     add_child(_combo_label)
 
+    _show_control_hint()
+
     _on_score_changed(GameManager.total_score)
     _on_health_changed(GameManager.player_health)
     _on_coins_changed(GameManager.coins_collected)
@@ -80,7 +82,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
     if GameManager.power_up_timer > 0 and GameManager.current_power_up != "":
-        var durations := {"blaze": 12.0, "big": 10.0, "diamond": 8.0, "purple": 15.0, "pickaxe": 20.0, "torch": 20.0}
+        var durations := {"blaze": 12.0, "big": 10.0, "diamond": 8.0, "purple": 15.0, "pickaxe": 20.0, "torch": 20.0, "fly": 10.0}
         var max_time: float = durations.get(GameManager.current_power_up, 8.0)
         powerup_bar.value = (GameManager.power_up_timer / max_time) * 100.0
     else:
@@ -103,6 +105,25 @@ func _on_health_changed(new_health: int) -> void:
         for offset: float in [6.0, -5.0, 3.0, 0.0]:
             shake.tween_property(health_container, "position:x", base_x + offset, 0.04)
     _prev_health = new_health
+
+## Bottom-center controls reminder at level start — attacking was
+## undiscoverable (no prompt that J / ATK throws). Fades out after 6s.
+func _show_control_hint() -> void:
+    var hint := Label.new()
+    hint.text = "MOVE  A/D  ·  JUMP  W/Space  ·  ATTACK  J  ·  DASH  K"
+    hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    hint.add_theme_font_size_override("font_size", 18)
+    hint.add_theme_constant_override("outline_size", 5)
+    hint.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+    hint.modulate = Color(1, 1, 1, 0.9)
+    var vw := get_viewport().get_visible_rect().size
+    hint.position = Vector2(vw.x / 2 - 300, vw.y - 48)
+    hint.custom_minimum_size.x = 600
+    add_child(hint)
+    var tween := create_tween()
+    tween.tween_interval(6.0)
+    tween.tween_property(hint, "modulate:a", 0.0, 1.0)
+    tween.finished.connect(hint.queue_free)
 
 ## Combo pop: scales with a bounce and heats white → gold → red as it climbs.
 func _on_combo_changed(value: int) -> void:
@@ -140,7 +161,7 @@ func _on_power_up_changed(type: String, _duration: float) -> void:
         powerup_label.text = ""
         powerup_bar.visible = false
         return
-    var names := {"blaze": "BLAZE MODE", "big": "BIG MODE", "diamond": "DIAMOND SHIELD", "purple": "PURPLE POWER", "pickaxe": "PICKAXE", "torch": "TORCH"}
+    var names := {"blaze": "BLAZE MODE", "big": "BIG MODE", "diamond": "DIAMOND SHIELD", "purple": "PURPLE POWER", "pickaxe": "PICKAXE", "torch": "TORCH", "fly": "BONG LIFT-OFF"}
     powerup_label.text = names.get(type, type.to_upper())
     powerup_bar.visible = true
     powerup_bar.value = 100.0

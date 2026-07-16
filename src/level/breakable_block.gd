@@ -1,12 +1,10 @@
 extends StaticBody2D
 
-@onready var sprite: ColorRect = $ColorRect
+@onready var sprite: Sprite2D = $Sprite
 @onready var collision: CollisionShape2D = $CollisionShape2D
 
 func _ready() -> void:
     add_to_group("breakable")
-    sprite.color = Color(0.55, 0.35, 0.2, 1.0)
-    sprite.size = Vector2(32, 32)
     collision.position = Vector2(16, 16)
 
 func break_block() -> void:

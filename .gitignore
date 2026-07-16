@@ -149,3 +149,7 @@ game-verify*.png
 node_modules/
 stress-report.json
 stress-final.png
+.art-cache/
+gameplay.png
+game-verify*.png
+game-verify*.json

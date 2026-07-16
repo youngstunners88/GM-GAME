@@ -110,7 +110,7 @@ collectible_spawns = Array[Dictionary]([
 		"pos": Vector2(320, 450)
 	},
 	{
-		"type": "coin",
+		"type": "coin_eth",
 		"pos": Vector2(520, 350)
 	},
 	{
@@ -118,7 +118,7 @@ collectible_spawns = Array[Dictionary]([
 		"pos": Vector2(770, 300)
 	},
 	{
-		"type": "coin",
+		"type": "coin_eth",
 		"pos": Vector2(1120, 400)
 	},
 	{
@@ -126,7 +126,7 @@ collectible_spawns = Array[Dictionary]([
 		"pos": Vector2(1420, 300)
 	},
 	{
-		"type": "coin",
+		"type": "coin_eth",
 		"pos": Vector2(1720, 350)
 	},
 	{
@@ -134,7 +134,7 @@ collectible_spawns = Array[Dictionary]([
 		"pos": Vector2(2120, 250)
 	},
 	{
-		"type": "coin",
+		"type": "coin_eth",
 		"pos": Vector2(2420, 400)
 	},
 	{
@@ -142,7 +142,7 @@ collectible_spawns = Array[Dictionary]([
 		"pos": Vector2(2620, 300)
 	},
 	{
-		"type": "coin",
+		"type": "coin_eth",
 		"pos": Vector2(100, 600)
 	},
 	{
@@ -150,7 +150,7 @@ collectible_spawns = Array[Dictionary]([
 		"pos": Vector2(550, 600)
 	},
 	{
-		"type": "coin",
+		"type": "coin_eth",
 		"pos": Vector2(950, 600)
 	},
 	{
@@ -158,7 +158,7 @@ collectible_spawns = Array[Dictionary]([
 		"pos": Vector2(1450, 600)
 	},
 	{
-		"type": "coin",
+		"type": "coin_eth",
 		"pos": Vector2(1950, 600)
 	},
 	{
@@ -191,6 +191,10 @@ collectible_spawns = Array[Dictionary]([
 	}
 ])
 powerup_spawns = Array[Dictionary]([
+	{
+		"type": "bong",
+		"pos": Vector2(1900, 150)
+	},
 	{
 		"type": "weed_leaf",
 		"pos": Vector2(400, 550)
