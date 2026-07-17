@@ -64,9 +64,28 @@ const ONESHOT_ANIMS := ["attack", "hurt", "death"]
 var _anim: AnimatedSprite2D
 var _current_anim: String = ""
 
+## Two small "feet" that shuffle in opposite phase while walking — a literal
+## moving-legs read on top of the single-pose body sprite (real frame sheets
+## replace all of this when they ship, per ASSET_MANIFEST.md).
+var _leg_l: ColorRect
+var _leg_r: ColorRect
+const LEG_COLOR := Color(0.12, 0.10, 0.08, 1.0)
+
 func _ready() -> void:
 	_spr = Sprite2D.new()
 	add_child(_spr)
+	# Feet sit just below the body, behind it (drawn first).
+	for i in 2:
+		var leg := ColorRect.new()
+		leg.color = LEG_COLOR
+		leg.size = Vector2(7, 11)
+		leg.pivot_offset = Vector2(3.5, 0)
+		add_child(leg)
+		move_child(leg, 0)
+		if i == 0:
+			_leg_l = leg
+		else:
+			_leg_r = leg
 	set_outfit(Player.Outfit.DEFAULT)
 
 ## Drive the named animation ("idle", "run", "jump_up", "jump_down", "attack",
@@ -85,14 +104,32 @@ func play_animation(anim: String) -> void:
 		_anim.play(anim)
 
 func _process(delta: float) -> void:
+	var feet_y := FEET_LOCAL_Y - _spr.texture.get_height() / 2.0
+	var dir := 1.0 if facing_right else -1.0
 	if moving:
 		_bob_time += delta
-		_spr.rotation = sin(_bob_time * 14.0) * 0.07
-		_spr.position.y = FEET_LOCAL_Y - _spr.texture.get_height() / 2.0 - absf(sin(_bob_time * 14.0)) * 3.0
-	elif _bob_time != 0.0:
-		_bob_time = 0.0
-		_spr.rotation = 0.0
-		_spr.position.y = FEET_LOCAL_Y - _spr.texture.get_height() / 2.0
+		var stride := _bob_time * 16.0                 # step cadence
+		var lift := absf(sin(stride)) * 4.0            # body rises between steps
+		# Body: bounce + a small lean into the walk (reads as arm/shoulder swing).
+		_spr.position.y = feet_y - lift
+		_spr.rotation = sin(stride) * 0.05 + dir * 0.04
+		# Feet swing forward/back in opposite phase, forward foot lifting — a
+		# clear "legs moving" read. Offset toward the facing direction.
+		var swing := sin(stride) * 7.0
+		_leg_l.visible = true
+		_leg_r.visible = true
+		_leg_l.position = Vector2(-6 + swing * dir, feet_y + _spr.texture.get_height() - 8 - maxf(0.0, swing) * 0.6)
+		_leg_r.position = Vector2(-1 - swing * dir, feet_y + _spr.texture.get_height() - 8 - maxf(0.0, -swing) * 0.6)
+	else:
+		if _bob_time != 0.0:
+			_bob_time = 0.0
+			_spr.rotation = 0.0
+			_spr.position.y = feet_y
+		# Feet planted together under the body while idle.
+		if _leg_l:
+			var by := feet_y + _spr.texture.get_height() - 8
+			_leg_l.position = Vector2(-6, by)
+			_leg_r.position = Vector2(-1, by)
 
 ## Show/hide the held tool. Pass "" to clear. Path is cached so calling
 ## every frame is free.

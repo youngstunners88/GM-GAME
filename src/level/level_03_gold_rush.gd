@@ -7,7 +7,7 @@ func _ready() -> void:
 	super()
 	_setup_blaze_portal(Vector2(2600, 300), 4000, 3)
 	AudioManager.set_reverb_profile("mine")
-	AudioManager.play_playlist(["res://src/assets/music/level03_theme.ogg", "res://src/assets/music/level03_theme_alt.ogg"])
+	AudioManager.play_playlist(["res://src/assets/music/level03_theme.ogg", "res://src/assets/music/level03_theme_alt.ogg", "res://src/assets/music/lil_blunt_theme.mp3"])
 	AudioManager.play_voice("stage3_intro")
 
 func _on_boss_trigger(body: Node2D) -> void:

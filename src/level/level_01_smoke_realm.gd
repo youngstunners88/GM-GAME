@@ -8,7 +8,7 @@ func _ready() -> void:
     _setup_smoke_platforms()
     _setup_blaze_portal(Vector2(1450, 250), 1500, 1)
     AudioManager.set_reverb_profile("forest")
-    AudioManager.play_playlist(["res://src/assets/music/level01_theme.ogg", "res://src/assets/music/level01_theme_alt.ogg"])
+    AudioManager.play_playlist(["res://src/assets/music/level01_theme.ogg", "res://src/assets/music/level01_theme_alt.ogg", "res://src/assets/music/lil_blunt_theme.mp3"])
     AudioManager.play_voice("stage1_intro")
 
 func _setup_smoke_platforms() -> void:

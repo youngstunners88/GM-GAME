@@ -152,7 +152,12 @@ func _setup_kill_zone() -> void:
 	kill_zone.add_child(col)
 	kill_zone.position = Vector2(level_data.bounds.x / 2, level_data.kill_zone_y + 175)
 	kill_zone.body_entered.connect(func(body: Node2D) -> void:
-		if body.is_in_group("player") and body.has_method("die"):
+		# Pit falls are a HARD fail: pit_death() plays the devastating sound and
+		# costs a LIFE (not just health). Falls back to die() only if a custom
+		# player somehow lacks it.
+		if body.is_in_group("player") and body.has_method("pit_death"):
+			body.pit_death()
+		elif body.is_in_group("player") and body.has_method("die"):
 			body.die()
 	)
 	add_child(kill_zone)

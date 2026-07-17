@@ -7,6 +7,7 @@ signal coins_changed(new_count: int)
 signal rings_changed(new_count: int)
 signal smoke_changed(new_count: int)
 signal player_died
+signal lives_changed(new_lives: int)
 
 # Persistent player data only — no state booleans (those live in StateMachine).
 var total_score: int = 0
@@ -18,6 +19,9 @@ var blaze_rush_completed: Dictionary = {}   # level_index -> true once one-time 
 var dash_return: Dictionary = {}            # transient: scene_path/position/level_index for the return trip
 var player_health: int = 3
 var max_health: int = 3
+## Lives — a hard fail (falling into a pit) costs one. Out of lives = game over.
+var lives: int = 3
+var max_lives: int = 3
 var current_power_up: String = ""
 var power_up_timer: float = 0.0
 var current_level: int = 1
@@ -68,6 +72,22 @@ func heal(amount: int) -> void:
     player_health = min(player_health + amount, max_health)
     health_changed.emit(player_health)
 
+## Spend a life (pit fall). Returns true if that was the LAST life (game over).
+## On a surviving loss, health refills so the checkpoint respawn is fair.
+func lose_life() -> bool:
+    lives -= 1
+    if lives < 0:
+        lives = 0
+    lives_changed.emit(lives)
+    if lives <= 0:
+        GoldMineSystem.on_player_death()
+        player_died.emit()
+        StateMachine.change_state(StateMachine.State.GAME_OVER)
+        return true
+    player_health = max_health
+    health_changed.emit(player_health)
+    return false
+
 func activate_power_up(type: String, duration: float) -> void:
     current_power_up = type
     power_up_timer = duration
@@ -101,6 +121,8 @@ func reset_level() -> void:
 
 func reset_session() -> void:
     player_health = max_health
+    lives = max_lives
+    lives_changed.emit(lives)
     current_power_up = ""
     power_up_timer = 0.0
     health_changed.emit(player_health)
