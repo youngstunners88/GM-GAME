@@ -263,3 +263,18 @@ Imported as an `AnimatedSprite2D` child named `AnimSprite` on each boss scene
 | attack | 3–4 | no |
 | hurt | 2 | no |
 | death | 5 | no |
+
+## Boss voice lines (ElevenLabs — GENERATED, in-game)
+
+33 boss taunt lines live in `src/assets/sounds/voice/boss/` as
+`<boss>_<category>_<i>.mp3`, generated from `assets/boss-voices.json` by
+`scripts/gen_boss_voices.py`. Three distinct voices:
+- **tax** (Auditor) — Charlie, condescending bureaucrat
+- **crystal** (Distributor) — Daniel, cold corporate
+- **bandit** (Claim Jumper) — Arnold, gruff wild-west
+
+Categories per boss: intro(1), taunt(3), mock(2), hurt(2), phase50(1),
+phase25(1), death(1). To change a line, edit `boss-voices.json` and re-run the
+generator with `--force`; keep `boss_voice_data.gd` COUNTS in sync if adding
+lines. (Note: some premade ElevenLabs voices are plan-gated — Clyde/Josh/Sam
+returned HTTP 402; the three above are confirmed available on this key.)

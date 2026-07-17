@@ -1,0 +1,45 @@
+{
+  "note": "Boss taunt VO. Generated via ElevenLabs into src/assets/sounds/voice/boss/<boss>_<category>_<i>.mp3. Three distinct plan-available voices. boss_voice_system.gd plays them; boss_voice_data.gd mirrors the per-category counts for the runtime random-picker.",
+  "model_id": "eleven_multilingual_v2",
+  "bosses": {
+    "tax": {
+      "voice_id": "IKne3meq5aSn9XLyUdCD",
+      "voice_note": "Charlie — thin, condescending; reads bureaucratic",
+      "lines": {
+        "intro": ["Lil Blunt! Your gains are MY gains!"],
+        "taunt": ["I'm auditing your soul, green boy!", "Tax Form 420 says you owe... everything!", "F-O-M-O won't save you from the I-R-S!"],
+        "mock": ["That's a penalty for late payment!", "Ha! Filed under: losers!"],
+        "hurt": ["You can't audit ME!", "Ow! That's assault on a federal agent!"],
+        "phase50": ["Fine! We are escalating to a full audit!"],
+        "phase25": ["This is highway robbery! MY robbery!"],
+        "death": ["I'll see you... in tax court..."]
+      }
+    },
+    "crystal": {
+      "voice_id": "onwK4e9ZLuTAKqWW03F9",
+      "voice_note": "Daniel — deep, flat, corporate-cold",
+      "lines": {
+        "intro": ["Your portfolio is... underperforming."],
+        "taunt": ["Liquidating your health. Please hold.", "Resistance is inefficient. Comply.", "Diamond hands? I prefer diamond bones."],
+        "mock": ["Loss recognized. Synergy achieved.", "Downsizing you. Nothing personal."],
+        "hurt": ["Unacceptable variance.", "Recalculating threat level."],
+        "phase50": ["Q3 earnings are... your blood."],
+        "phase25": ["Initiating hostile takeover protocol."],
+        "death": ["System... failure... liquidating..."]
+      }
+    },
+    "bandit": {
+      "voice_id": "VR6AewLTigWG4xSOukaG",
+      "voice_note": "Arnold — gruff, energetic; reads wild-west unhinged",
+      "lines": {
+        "intro": ["Yeehaw, greenhorn! Time for T-N-T!"],
+        "taunt": ["I'm gonna blast you back to seed!", "This minecart's got your name on it!", "Fort Knox? More like Fort Knocked Out!"],
+        "mock": ["Haha! Ya got dusted!", "Eat dynamite, ya little nugget!"],
+        "hurt": ["Why you little—!", "That all ya got, greenhorn?!"],
+        "phase50": ["Now I'm angry! Off the rails we go!"],
+        "phase25": ["Mega bomb time! Tick, tick, tick!"],
+        "death": ["Ya blew it all up... good for you... greenhorn..."]
+      }
+    }
+  }
+}
