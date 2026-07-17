@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "voice_id": "N2lVS1w4EtoT3dr4eOWO",
-  "voice_note": "Callum (ElevenLabs premade) — warm, laid-back, lightly gravelly storyteller. One announcer for the whole game.",
+  "voice_note": "Callum (ElevenLabs premade) \u2014 warm, laid-back, lightly gravelly storyteller. One announcer for the whole game.",
   "sfx": [
     {
       "id": "jump",
@@ -62,17 +62,49 @@
       "id": "error",
       "prompt": "Retro 16-bit videogame denied action buzz, soft polite two-tone descending blip, muted, short, gentle negative feedback, not harsh",
       "duration_seconds": 0.5
+    },
+    {
+      "id": "fall",
+      "prompt": "Devastating cartoon falling sound, a long descending whistle plummeting down then a heavy dramatic thud impact with a sad fail tone, retro arcade game over feel",
+      "duration_seconds": 2.0
     }
   ],
   "voice": [
-    { "id": "menu_title", "text": "Lil Blunt… The Smoke Realm." },
-    { "id": "stage1_intro", "text": "Level One… The Smoke Realm. Stay chill, Lil Blunt." },
-    { "id": "stage2_intro", "text": "Level Two… Crystal Caverns. Diamonds in the deep." },
-    { "id": "stage3_intro", "text": "Level Three… GoldMine Rush. Strike it rich, partner." },
-    { "id": "boss1_intro", "text": "Uh oh… the Tax Auditor wants his cut!" },
-    { "id": "boss2_intro", "text": "The Crystalline Bureaucrat demands your paperwork!" },
-    { "id": "boss3_intro", "text": "The Claim Jumper's after your gold, partner!" },
-    { "id": "victory", "text": "Level complete! Smooth moves, Lil Blunt." },
-    { "id": "game_complete", "text": "Game complete! One chill nugget… one giant win." }
+    {
+      "id": "menu_title",
+      "text": "Lil Blunt\u2026 The Smoke Realm."
+    },
+    {
+      "id": "stage1_intro",
+      "text": "Level One\u2026 The Smoke Realm. Stay chill, Lil Blunt."
+    },
+    {
+      "id": "stage2_intro",
+      "text": "Level Two\u2026 Crystal Caverns. Diamonds in the deep."
+    },
+    {
+      "id": "stage3_intro",
+      "text": "Level Three\u2026 GoldMine Rush. Strike it rich, partner."
+    },
+    {
+      "id": "boss1_intro",
+      "text": "Uh oh\u2026 the Tax Auditor wants his cut!"
+    },
+    {
+      "id": "boss2_intro",
+      "text": "The Crystalline Bureaucrat demands your paperwork!"
+    },
+    {
+      "id": "boss3_intro",
+      "text": "The Claim Jumper's after your gold, partner!"
+    },
+    {
+      "id": "victory",
+      "text": "Level complete! Smooth moves, Lil Blunt."
+    },
+    {
+      "id": "game_complete",
+      "text": "Game complete! One chill nugget\u2026 one giant win."
+    }
   ]
 }

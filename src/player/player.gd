@@ -285,6 +285,36 @@ func _hitstop(duration: float = 0.07) -> void:
 	await get_tree().create_timer(duration, true, false, true).timeout
 	Engine.time_scale = 1.0
 
+## Falling into a pit — a HARD fail. Plays a devastating sound, costs a LIFE
+## (not just health), and respawns at the last checkpoint if lives remain;
+## out of lives ends the run to the main menu. Called by the level kill zone.
+func pit_death() -> void:
+	if StateMachine.is_dead():
+		return
+	AudioManager.play_sfx("fall")
+	ScreenShake.shake(0.5, 10.0)
+	if GameManager.lose_life():
+		# Out of lives — real game over.
+		if StateMachine.change_state(StateMachine.State.GAME_OVER):
+			died.emit()
+			var t := create_tween()
+			t.tween_property(self, "modulate:a", 0.0, 0.5)
+			await get_tree().create_timer(1.6).timeout
+			SceneRouter.load_scene("res://src/ui/main_menu.tscn", SceneRouter.Transition.FADE)
+		return
+	# Lives left — respawn at the level's checkpoint (health already refilled).
+	var checkpoint := GameManager.get_checkpoint(GameManager.current_level)
+	if checkpoint == Vector2.ZERO:
+		checkpoint = GameManager.get_checkpoint(1)
+	if checkpoint != Vector2.ZERO:
+		global_position = checkpoint + Vector2(0, -50)
+	else:
+		global_position = GameManager.player_position + Vector2(0, -260)
+	scale = Vector2.ONE
+	modulate.a = 1.0
+	velocity = Vector2.ZERO
+	power_up_handler.activate_invincibility(1.5)
+
 func die() -> void:
 	if StateMachine.is_dead():
 		return

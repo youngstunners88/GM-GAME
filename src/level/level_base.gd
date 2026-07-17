@@ -152,7 +152,12 @@ func _setup_kill_zone() -> void:
 	kill_zone.add_child(col)
 	kill_zone.position = Vector2(level_data.bounds.x / 2, level_data.kill_zone_y + 175)
 	kill_zone.body_entered.connect(func(body: Node2D) -> void:
-		if body.is_in_group("player") and body.has_method("die"):
+		# Pit falls are a HARD fail: pit_death() plays the devastating sound and
+		# costs a LIFE (not just health). Falls back to die() only if a custom
+		# player somehow lacks it.
+		if body.is_in_group("player") and body.has_method("pit_death"):
+			body.pit_death()
+		elif body.is_in_group("player") and body.has_method("die"):
 			body.die()
 	)
 	add_child(kill_zone)
@@ -211,6 +216,14 @@ func _create_wall(x: float, y: float, w: float, h: float) -> void:
 
 func _spawn_player() -> void:
 	var player := preload("res://src/player/player.tscn").instantiate()
+	# Returning from a secret realm? Drop the player right back at the door they
+	# entered (its saved position), then consume the return record.
+	var sr: Dictionary = GameManager.secret_return
+	if not sr.is_empty() and sr.get("scene_path", "") == scene_file_path:
+		player.global_position = sr.get("position", Vector2(100, 500)) + Vector2(40, -50)
+		GameManager.secret_return = {}
+		add_child(player)
+		return
 	var checkpoint := GameManager.get_checkpoint(level_data.level_index)
 	if checkpoint != Vector2.ZERO:
 		player.global_position = checkpoint + Vector2(0, -50)

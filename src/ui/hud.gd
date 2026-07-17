@@ -21,6 +21,7 @@ var heart_pips: Array[ColorRect] = []
 var _prev_health: int = -1
 var _flash_rect: ColorRect
 var _combo_label: Label
+var _lives_label: Label
 
 func _ready() -> void:
     GameManager.score_changed.connect(_on_score_changed)
@@ -48,6 +49,16 @@ func _ready() -> void:
 
     ComboSystem.combo_changed.connect(_on_combo_changed)
     StateMachine.state_changed.connect(_on_state_changed)
+    GameManager.lives_changed.connect(_on_lives_changed)
+
+    # Lives counter — top-right, so the pit-fall stakes are always visible.
+    _lives_label = Label.new()
+    _lives_label.add_theme_font_size_override("font_size", 22)
+    _lives_label.add_theme_constant_override("outline_size", 5)
+    _lives_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+    _lives_label.position = Vector2(get_viewport().get_visible_rect().size.x - 150, 14)
+    add_child(_lives_label)
+    _on_lives_changed(GameManager.lives)
 
     # White damage flash — sits over gameplay, ignores input, starts invisible.
     _flash_rect = ColorRect.new()
@@ -124,6 +135,17 @@ func _show_control_hint() -> void:
     tween.tween_interval(6.0)
     tween.tween_property(hint, "modulate:a", 0.0, 1.0)
     tween.finished.connect(hint.queue_free)
+
+## Lives counter — pulses red when a life is lost.
+func _on_lives_changed(new_lives: int) -> void:
+    if _lives_label == null:
+        return
+    _lives_label.text = "LIVES  %d" % new_lives
+    _lives_label.modulate = Color(1.0, 0.4, 0.4)
+    var tween := create_tween()
+    tween.tween_property(_lives_label, "scale", Vector2(1.3, 1.3), 0.1)
+    tween.tween_property(_lives_label, "scale", Vector2.ONE, 0.15)
+    tween.parallel().tween_property(_lives_label, "modulate", Color.WHITE, 0.4)
 
 ## Combo pop: scales with a bounce and heats white → gold → red as it climbs.
 func _on_combo_changed(value: int) -> void:

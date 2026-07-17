@@ -1,4 +1,10 @@
 extends BossBase
+## Boss 3 — The Claim Jumper (Bandit). Lobs dynamite that lands ON the player's
+## position (telegraphed danger zones); phase escalation adds more sticks and
+## faster patrol, with increasingly unhinged taunts. Final phase rains dynamite.
+
+const BOSS_ID := "bandit"
+const DYNAMITE := preload("res://src/boss/dynamite.tscn")
 
 enum State { PATROL, THROW, VULNERABLE }
 
@@ -26,6 +32,8 @@ func _ready() -> void:
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
 	_setup_health_bar()
+	BossVoiceSystem.set_active(self, BOSS_ID)
+	BossVoiceSystem.say(self, BOSS_ID, "intro", true)
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
@@ -55,22 +63,37 @@ func _physics_process(delta: float) -> void:
 			move_and_slide()
 			sprite.modulate = Color(1.0, 0.3, 0.3, 1.0) if fmod(throw_timer, 0.2) < 0.1 else Color(1.0, 0.1, 0.1, 1.0)
 
-## Accelerate patrol on phase transition.
+## Accelerate patrol + taunt on phase transition (BossBase calls this).
 func _on_phase_changed() -> void:
 	if current_phase >= 2:
 		patrol_speed = 150.0
+		BossVoiceSystem.say(self, BOSS_ID, "phase50", true)
+	if current_phase >= 3:
+		patrol_speed = 190.0
+		BossVoiceSystem.say(self, BOSS_ID, "phase25", true)
+		ScreenShake.medium()
 
+## Lob dynamite so it lands on the player's position — a telegraphed blast
+## zone. Phase 1: 1 stick. Phase 2: 2. Phase 3: 3 spread around the player.
 func _throw_dynamite() -> void:
-	throw_timer = throw_cooldown
-	var dyn := preload("res://src/boss/dynamite.tscn").instantiate()
-	dyn.position = global_position + Vector2(0, -50)
-	get_parent().add_child(dyn)
+	throw_timer = maxf(0.8, throw_cooldown - 0.3 * (current_phase - 1))
+	var p := get_tree().get_first_node_in_group("player")
+	var target := global_position + Vector2(120 * (1.0 if direction > 0 else -1.0), -60)
+	if p:
+		target = p.global_position + Vector2(0, -80)
+	var count: int = [0, 1, 2, 3][current_phase]
+	for i in range(count):
+		var dyn := DYNAMITE.instantiate()
+		dyn.global_position = target + Vector2((i - float(count - 1) / 2.0) * 70.0, 0)
+		get_parent().add_child(dyn)
+	AudioManager.play_sfx("throw")
 
 func take_damage(amount: int) -> void:
 	if is_dead:
 		return
 	health -= amount
 	AudioManager.play_sfx("damage")
+	BossVoiceSystem.say(self, BOSS_ID, "hurt")
 	var tween := create_tween()
 	tween.tween_property(sprite, "modulate", Color(10, 10, 10, 1), 0.05)
 	tween.tween_property(sprite, "modulate", Color(1, 1, 1, 1), 0.05)
@@ -82,6 +105,8 @@ func take_damage(amount: int) -> void:
 
 func die() -> void:
 	is_dead = true
+	BossVoiceSystem.say(self, BOSS_ID, "death", true)
+	BossVoiceSystem.clear_active()
 	set_physics_process(false)
 	GameManager.add_score(750)
 	ScreenShake.shake(0.6, 10.0)
@@ -123,6 +148,7 @@ func die() -> void:
 func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("take_damage"):
 		body.take_damage(1)
+		BossVoiceSystem.say(self, BOSS_ID, "mock")
 
 func _on_hitbox_area_entered(area: Area2D) -> void:
 	if area.is_in_group("projectile"):
