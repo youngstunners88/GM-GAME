@@ -7,6 +7,10 @@ func _ready() -> void:
     super()
     _setup_smoke_platforms()
     _setup_blaze_portal(Vector2(1450, 250), 1500, 1)
+    # Hidden door to the Chill Lounge, tucked up on a high ledge.
+    var door := preload("res://src/level/secret_door.tscn").instantiate()
+    door.global_position = Vector2(2350, 250)
+    add_child(door)
     AudioManager.set_reverb_profile("forest")
     AudioManager.play_playlist(["res://src/assets/music/level01_theme.ogg", "res://src/assets/music/level01_theme_alt.ogg", "res://src/assets/music/lil_blunt_theme.mp3"])
     AudioManager.play_voice("stage1_intro")

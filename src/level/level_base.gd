@@ -216,6 +216,14 @@ func _create_wall(x: float, y: float, w: float, h: float) -> void:
 
 func _spawn_player() -> void:
 	var player := preload("res://src/player/player.tscn").instantiate()
+	# Returning from a secret realm? Drop the player right back at the door they
+	# entered (its saved position), then consume the return record.
+	var sr: Dictionary = GameManager.secret_return
+	if not sr.is_empty() and sr.get("scene_path", "") == scene_file_path:
+		player.global_position = sr.get("position", Vector2(100, 500)) + Vector2(40, -50)
+		GameManager.secret_return = {}
+		add_child(player)
+		return
 	var checkpoint := GameManager.get_checkpoint(level_data.level_index)
 	if checkpoint != Vector2.ZERO:
 		player.global_position = checkpoint + Vector2(0, -50)

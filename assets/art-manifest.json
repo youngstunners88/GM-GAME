@@ -124,6 +124,24 @@
       "path": "src/assets/sprites/sprite_item_coin.png",
       "regen": true,
       "prompt": "16-bit pixel art game coin, a shiny round gold coin with a smooth beveled rim and a subtle star emboss in the center, glossy highlight, cute arcade style, clean crisp pixels, centered, on a solid flat pure magenta #FF00FF background, no shadow, no text"
+    },
+    {
+      "id": "secret_bg_far",
+      "width": 1216,
+      "height": 704,
+      "out_w": 1280,
+      "out_h": 720,
+      "path": "src/assets/backgrounds/bg_secret_far.jpg",
+      "prompt": "16-bit pixel art game background, a deep cosmic chill-out lounge realm, vast starry purple-and-teal nebula with glowing planets far in the distance, floating neon rings, dreamy hazy depth, cohesive painterly pixel style, no characters, no text"
+    },
+    {
+      "id": "secret_bg_mid",
+      "width": 1216,
+      "height": 704,
+      "out_w": 1280,
+      "out_h": 720,
+      "path": "src/assets/backgrounds/bg_secret_mid.jpg",
+      "prompt": "16-bit pixel art game background layer, a trippy floating lounge, levitating velvet couches and glowing lava lamps and big ornate glass bongs with soft curling green and pink smoke, warm neon disco haze, silhouetted relaxed chill figures lounging in the far background, tasteful and classy, cosmic depth, cohesive painterly pixel style, no text"
     }
   ]
 }

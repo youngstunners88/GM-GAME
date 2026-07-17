@@ -17,6 +17,7 @@ var smoke_collected: int = 0
 # Blaze Rush (secret dash mode) bookkeeping.
 var blaze_rush_completed: Dictionary = {}   # level_index -> true once one-time bonuses paid
 var dash_return: Dictionary = {}            # transient: scene_path/position/level_index for the return trip
+var secret_return: Dictionary = {}          # transient: scene_path/position to return from a secret realm
 var player_health: int = 3
 var max_health: int = 3
 ## Lives — a hard fail (falling into a pit) costs one. Out of lives = game over.
