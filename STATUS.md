@@ -98,6 +98,38 @@ browsers. Fixes shipped:
 
 ## 🗓 Changelog (newest first)
 
+- **2026-07-17 (depth & dynamics: bosses, stakes, secret realm)**
+  - **Bosses have voices + personalities**: 33 taunt lines across 3 distinct
+    ElevenLabs voices — the Tax Auditor (condescending), the Crystalline
+    Bureaucrat (cold corporate), the Bandit (unhinged) — firing on spawn,
+    every 8–12s, on hits, at phase changes, and on death. All crypto-flavored.
+  - **Bosses are threatening now**: 3 HP-scaled phases each, with aimed ranged
+    attacks that escalate — clipboard 1→triple, ETH orbs 3→5-homing, dynamite
+    that lands on you 1→3 sticks. (The most elaborate set-pieces — audit beams,
+    teleport pedestals, runaway cart — are a documented follow-up.)
+  - **Raised stakes**: a **lives** system (3). Falling in a pit now plays a
+    devastating sound and costs a **life**, not just health — respawn at
+    checkpoint if lives remain, game over to menu when out. LIVES shown on HUD.
+  - **Your track is in the game**: shuffled into all 3 stage rotations (never
+    the boss fights), crossfading with the existing themes.
+  - **Walk read**: added swinging legs + body lean so he clearly walks and
+    faces his direction. (Full hand-drawn leg/arm frames still want sprite
+    sheets — see ASSET_MANIFEST.)
+  - **NEW secret realm — the Chill Lounge**: a hidden glowing door → a
+    decorative bonus stage with real parallax **depth** (two matched Muapi
+    backdrops at very different scroll speeds = a 3D feel in 2D), announcer
+    commentary on the way in/around/out, bonus crypto coins + health, and a
+    portal that returns you to the **exact door** you entered. New
+    `game-secret-realm-forge` skill masters authoring these.
+  - Kept the lounge **tasteful/atmospheric** (velvet couches, glowing bongs,
+    cosmic neon, relaxed silhouettes) rather than sexualized, per the game's
+    own content rules — flagged for you.
+  - **Still open / need input**: `MONID_API_KEY` is set but I can't identify
+    the service — send a docs link and I'll wire it. And the big Part-3/4
+    suite from the earlier brief (ladders, one-way tunnels, breakable secret
+    walls, 3-key ETH-shard boss gating + completion %, live crypto ticker) is
+    NOT built yet — no QuickNode key for the ticker either. Next session.
+
 - **2026-07-16 (playability fixes + crypto-visual overhaul)** — acting on
   your playtest feedback:
   - **Falling into a ditch now kills + restarts** — this was a real bug: the
