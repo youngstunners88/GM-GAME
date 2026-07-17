@@ -108,8 +108,8 @@ func _throw_clipboard() -> void:
 	var base := Vector2.RIGHT if patrol_direction > 0 else Vector2.LEFT
 	if p:
 		base = global_position.direction_to(p.global_position)
-	var spreads := [[0.0], [0.0], [-0.18, 0.18], [-0.32, 0.0, 0.32]][phase]
-	for s in spreads:
+	var spreads: Array = [[0.0], [0.0], [-0.18, 0.18], [-0.32, 0.0, 0.32]][phase]
+	for s: float in spreads:
 		var proj := CLIPBOARD.instantiate()
 		proj.direction = base.rotated(s)
 		proj.speed = 240.0 + phase * 40.0

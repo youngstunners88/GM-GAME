@@ -81,7 +81,7 @@ func _throw_dynamite() -> void:
 	var target := global_position + Vector2(120 * (1.0 if direction > 0 else -1.0), -60)
 	if p:
 		target = p.global_position + Vector2(0, -80)
-	var count := [0, 1, 2, 3][current_phase]
+	var count: int = [0, 1, 2, 3][current_phase]
 	for i in range(count):
 		var dyn := DYNAMITE.instantiate()
 		dyn.global_position = target + Vector2((i - float(count - 1) / 2.0) * 70.0, 0)

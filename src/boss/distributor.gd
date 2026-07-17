@@ -76,7 +76,7 @@ func _physics_process(delta: float) -> void:
 func _throw_shards() -> void:
 	throw_timer = maxf(1.0, throw_cooldown - 0.4 * (current_phase - 1))
 	current_phase_state = Phase.SHARD_THROW
-	var count := [0, 3, 5, 5][current_phase]
+	var count: int = [0, 3, 5, 5][current_phase]
 	var p := get_tree().get_first_node_in_group("player")
 	var base := Vector2.DOWN if p == null else global_position.direction_to(p.global_position)
 	for i in range(count):
