@@ -15,6 +15,7 @@ extends Node
 
 signal wallet_connected(address: String)
 signal wallet_failed(reason: String)
+signal balances_refreshed()
 
 var config: Dictionary = {}
 var wallet_address: String = ""
@@ -81,7 +82,7 @@ func connect_wallet() -> void:
 	if addr.begins_with("0x") and addr.length() == 42:
 		wallet_address = addr
 		wallet_connected.emit(addr)
-		_refresh_token_balances()
+		await _refresh_token_balances()
 	else:
 		wallet_failed.emit("Wallet connection was declined or unavailable.")
 
@@ -95,19 +96,40 @@ func short_address(addr: String = "") -> String:
 
 ## Real ERC-20 balanceOf via the browser (eth_call). Populates token_balances.
 ## Falls back to 0 everywhere if unavailable — perks simply don't unlock.
+## eth_call is ASYNC: web3.js kicks the request and caches the result when the
+## promise resolves, so a single synchronous read would return the stale "0".
+## We therefore do it in two phases — kick every call, await the resolve window,
+## then read the now-populated cache — and emit balances_refreshed when done.
+## `await` this before relying on holds() (PR #5 review).
 func _refresh_token_balances() -> void:
 	token_balances = {"smoke": 0.0, "diamonds": 0.0, "goldmine": 0.0}
-	if not is_web3_available() or wallet_address == "":
+	var owner: String = _hex(wallet_address)
+	if not is_web3_available() or owner == "":
+		balances_refreshed.emit()
 		return
 	var contracts: Dictionary = config.get("contracts", {})
+	# Phase 1 — kick each async eth_call (result caches into web3.js on resolve).
 	for key in ["smoke", "diamonds", "goldmine"]:
 		var addr: String = _hex(contracts.get(key + "_erc20", ""))
-		var owner: String = _hex(wallet_address)
-		if addr == "" or owner == "":
+		if addr != "":
+			JavaScriptBridge.eval(
+				"window.LilBluntWeb3.balanceOf('%s','%s')" % [_hex(addr), _hex(owner)], true)
+	# Let the promises resolve before reading the cache back.
+	await get_tree().create_timer(0.8).timeout
+	# Phase 2 — read the now-populated cache (balanceOf returns cached value).
+	for key in ["smoke", "diamonds", "goldmine"]:
+		var addr: String = _hex(contracts.get(key + "_erc20", ""))
+		if addr == "":
 			continue
 		var raw := str(JavaScriptBridge.eval(
 			"window.LilBluntWeb3.balanceOf('%s','%s')" % [_hex(addr), _hex(owner)], true))
 		token_balances[key] = raw.to_float() if raw.is_valid_float() else 0.0
+	balances_refreshed.emit()
+
+## Public re-check: refresh balances for the connected wallet and return when
+## populated. Call (awaited) before a run so perks reflect latest holdings.
+func refresh_balances() -> void:
+	await _refresh_token_balances()
 
 func holds(token: String) -> bool:
 	return token_balances.get(token, 0.0) > 0.0

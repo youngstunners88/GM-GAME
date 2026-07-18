@@ -10,6 +10,11 @@ on:
       - 'src/**'
       - 'project.godot'
       - '.github/workflows/export-game.yml'
+      # Runtime wiring + browser bridge affect the shipped build too — without
+      # these, editing config.json (contracts/backend URL) or web/web3.js would
+      # leave web/game/ and the deployed mirrors stale (PR #5 review).
+      - 'config.json'
+      - 'web/web3.js'
   workflow_dispatch:
 
 permissions:
@@ -185,6 +190,16 @@ jobs:
           fi
           cp web/web3.js web/game/web3.js
           echo "✓ web3.js bundled into web/game/"
+          # Verify head_include ACTUALLY injected the bridge into the generated
+          # HTML — a silent head_include regression would ship a build where
+          # window.LilBluntWeb3 never exists and all wallet features are dead
+          # (PR #5 review). Fail the export if the reference is missing.
+          if ! grep -q 'web3\.js' web/game/index.html; then
+            echo "::error::web3.js not referenced in generated index.html — head_include failed; wallet/NFT features would be dead in the build"
+            echo "--- index.html <head> ---"; sed -n '1,40p' web/game/index.html || true
+            exit 1
+          fi
+          echo "✓ index.html references web3.js (bridge will load)"
 
       # Commit the fresh export BEFORE the itch deploy. The itch.io upload can
       # fail on external gates (e.g. account-email verification) that have

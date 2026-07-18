@@ -7,6 +7,8 @@ extends Control
 
 const VERSION_TAG := "v1.0.0 — BLOCK 420"
 
+var _wallet_btn: Button
+
 func _ready() -> void:
     StateMachine.change_state(StateMachine.State.MENU)
     play_btn.pressed.connect(_on_play)
@@ -40,6 +42,7 @@ func _setup_layer_shift_buttons() -> void:
     row.position = Vector2(24, get_viewport().get_visible_rect().size.y - 210)
     add_child(row)
     var defs := [
+        ["👛 CONNECT WALLET", _on_connect_wallet],
         ["🔮 ASK THE ORACLE", _on_oracle],
         ["🏆 LEADERBOARD", _on_leaderboard],
         ["✍ SUBMIT LORE", _on_submit_lore],
@@ -53,6 +56,27 @@ func _setup_layer_shift_buttons() -> void:
         b.pressed.connect(d[1])
         _add_hover_glow(b)
         row.add_child(b)
+    _wallet_btn = row.get_child(0)
+
+## Connect the wallet from the hub BEFORE playing, so token-gated perks
+## (Movie Layer) read real balances at level start. Refreshing here (awaited)
+## populates Web3Bridge.token_balances so level_base._apply_token_perks() has
+## data by the time L1 loads. Degrades gracefully: no wallet → the button just
+## explains and the game plays perk-free.
+func _on_connect_wallet() -> void:
+    Web3Bridge.track("menu_connect_wallet")
+    if not Web3Bridge.is_web3_available():
+        _wallet_btn.text = "👛 NO WALLET (play web build)"
+        return
+    _wallet_btn.text = "👛 CONNECTING..."
+    if Web3Bridge.wallet_address == "":
+        await Web3Bridge.connect_wallet()
+    else:
+        await Web3Bridge.refresh_balances()
+    if Web3Bridge.wallet_address != "":
+        _wallet_btn.text = "👛 " + Web3Bridge.short_address()
+    else:
+        _wallet_btn.text = "👛 CONNECT WALLET"
 
 func _on_oracle() -> void:
     Web3Bridge.track("menu_oracle")

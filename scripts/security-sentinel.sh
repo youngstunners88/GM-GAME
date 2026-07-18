@@ -221,15 +221,37 @@ fi
 # CATEGORY: Wallet/Crypto UI Trust (game-specific)
 # ---------------------------------------------------------------------------
 
-# TRUST-001 (carries D-C1): no wallet UI without explicit DEMO labeling.
-# Wallet-connect was removed entirely 2026-07-12 — inverted check: absence
-# passes; presence without "DEMO" in the same file fails.
-if [ ! -f src/autoload/web3_manager.gd ]; then
-  record "TRUST-001" "critical" "PASS" "No wallet UI without explicit DEMO labeling" "wallet-connect feature removed"
-elif grep -q "DEMO" src/autoload/web3_manager.gd; then
-  record "TRUST-001" "critical" "PASS" "No wallet UI without explicit DEMO labeling" "web3_manager.gd present and DEMO-labeled"
+# TRUST-001 (carries D-C1, revised 2026-07-18 for Layer Shift / PR #5 review):
+# wallet UI must be either absent, explicitly DEMO-labeled, or REAL — i.e. all
+# on-chain writes are user-signed through the player's own wallet extension
+# (eth_sendTransaction / eth_requestAccounts in web/web3.js), with no
+# private-key handling and no fake "connected" states in game code.
+# The old check only looked at the obsolete web3_manager.gd and passed on its
+# absence — a false pass once web3_bridge.gd landed. Now:
+#   1. legacy web3_manager.gd must stay absent (it was the fake-demo seam);
+#   2. if src/autoload/web3_bridge.gd exists, it must never touch private keys
+#      (no eth_sign/privateKey/secret in the bridge or web3.js) and web3.js
+#      must route txs through window.ethereum (user-signed), not raw RPC.
+trust_fail=""
+if [ -f src/autoload/web3_manager.gd ] && ! grep -q "DEMO" src/autoload/web3_manager.gd; then
+  trust_fail="legacy web3_manager.gd exists WITHOUT DEMO label"
+fi
+if [ -f src/autoload/web3_bridge.gd ]; then
+  if grep -qiE "privateKey|private_key|eth_sign\b|signTransaction" src/autoload/web3_bridge.gd web/web3.js 2>/dev/null; then
+    trust_fail="${trust_fail:+$trust_fail; }wallet seam handles key material (must be user-signed via window.ethereum only)"
+  fi
+  if [ -f web/web3.js ] && grep -q "eth_sendTransaction" web/web3.js && ! grep -q "window.ethereum.request" web/web3.js; then
+    trust_fail="${trust_fail:+$trust_fail; }web3.js sends txs outside window.ethereum.request (not user-signed)"
+  fi
+fi
+if [ -z "$trust_fail" ]; then
+  if [ -f src/autoload/web3_bridge.gd ]; then
+    record "TRUST-001" "critical" "PASS" "Wallet UI is real & user-signed (no key handling, txs via window.ethereum)" "web3_bridge.gd + web3.js inspected"
+  else
+    record "TRUST-001" "critical" "PASS" "Wallet UI is real & user-signed (no key handling, txs via window.ethereum)" "no wallet seam present"
+  fi
 else
-  record "TRUST-001" "critical" "FAIL" "No wallet UI without explicit DEMO labeling" "web3_manager.gd exists WITHOUT DEMO label"
+  record "TRUST-001" "critical" "FAIL" "Wallet UI is real & user-signed (no key handling, txs via window.ethereum)" "$trust_fail"
 fi
 
 # ---------------------------------------------------------------------------

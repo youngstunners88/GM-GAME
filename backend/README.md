@@ -34,20 +34,24 @@ Then put that URL in `../config.json` → `backend_base_url`, rebuild the game.
    SmokeRing/DIAMONDS/GoldMine + Survivor-Badge addresses are filled in.
    Never hardcode them in GDScript (CLAUDE.md Global Rule) — only `config.json`.
 
-## 🔒 Security hardening — do BEFORE production (checklist Section F)
-The Worker ships dev-friendly defaults. Two items are **live P0s the moment you
-deploy** (see `docs/security/GAME_SECURITY_CHECKLIST.md` F2/F3):
-1. **Rate-limit the abuse surfaces (F2).** `/oracle` spends real Mistral credits
-   per call; `/lore` and `/track` are unauthenticated POSTs. Add a Cloudflare
-   WAF rate-limiting rule (or a KV per-IP counter) before going live — e.g.
-   `/oracle` ≤ ~10/min/IP. `/lore` is already length-capped (≤200 chars, client
-   + server) but should also be rate-limited against spam.
-2. **Tighten CORS (F3).** `worker.js` currently returns
-   `Access-Control-Allow-Origin: *` for local dev. Before production, restrict it
-   to the game's real origins (the itch.io CDN host + your Vercel/Pages mirror).
+## 🔒 Security hardening (checklist Section F) — status
+1. **Rate limiting (F2): ✅ implemented in `worker.js`.** Per-IP fixed-window
+   KV counters on every mutating path: `/oracle` 10/min (spends Mistral
+   credits), `/lore` 10/min, `/score` 30/min, `/track` 60/min. Over-limit
+   returns 429. Best-effort (KV is eventually consistent) — you can layer a
+   Cloudflare WAF rate rule on top for hard guarantees.
+2. **CORS (F3): ✅ env-driven.** Defaults to `*` for local dev; set
+   `ALLOWED_ORIGIN` in `wrangler.toml` `[vars]` (comma-separated origins, e.g.
+   the itch.io CDN host + your Vercel/Pages mirror) **before production** and
+   the Worker echoes only allow-listed origins.
+3. **Leaderboard trust model (explicit):** `/score` is client-supplied and
+   unauthenticated — an untrusted, best-effort arcade board by design (gas-free,
+   no signup); the wallet is a pseudonymous label. If it ever needs to be
+   trustworthy, gate submissions behind a wallet signature (SIWE) — noted in
+   `worker.js` at the handler.
 
-The API key is already safe: `MISTRAL_API_KEY` is read only server-side from
-`env` and never returned to the client (F1) — keep it that way.
+The API key is safe by construction: `MISTRAL_API_KEY` is read only server-side
+from `env` and never returned to the client (F1) — keep it that way.
 
 ## Node/Express equivalent
 If you prefer Node over Cloudflare: the same five handlers port 1:1 to an
