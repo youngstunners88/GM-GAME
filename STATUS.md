@@ -5,7 +5,8 @@
 **Branch:** `claude/setup-game-dev-environment-itWJv` · **PR #2**
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-07-18**.
+> have something current to look at. Last updated: **2026-07-18** (Layer Shift
+> + PR #5 review fixes verified: browser boot 5/5 gates, web3 bridge loads).
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
