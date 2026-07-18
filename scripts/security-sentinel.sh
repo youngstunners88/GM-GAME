@@ -136,22 +136,39 @@ else
   record "INJ-002" "critical" "FAIL" "No Expression (dynamic code exec) in game code" "$expr_hits"
 fi
 
-# INJ-003: every JavaScriptBridge.eval call site uses a fixed template, not
-# raw interpolation of untrusted data. Heuristic: flag any call where the
-# eval'd string isn't one of the two known-safe postMessage templates.
-# Heuristic: every JavaScriptBridge.eval() call in this codebase is followed
-# within 2 lines by the fixed "window.parent.postMessage" template (the
-# eval'd string is built across lines, so the call site itself never shows
-# it). If the eval-call count ever exceeds the nearby-postMessage count, a
-# new call site was added without that safe template — flag it.
+# INJ-003: no JavaScriptBridge.eval call may interpolate un-sanitized runtime
+# data into the eval'd JS (the JS-injection surface). Safe forms in this
+# codebase, all provably injection-free:
+#   (a) a pure literal string — no '%' interpolation at all;
+#   (b) interpolation whose inserted values pass through _hex() (the strict
+#       ^0x[0-9a-fA-F]+$ sanitizer in web3_bridge.gd — a hex string can carry
+#       no quotes, semicolons, or JS); or
+#   (c) the fixed window.parent.postMessage(JSON.stringify(...)) telemetry
+#       template (JSON.stringify emits a valid JS literal).
+# We scan the WHOLE eval expression (call sites can span lines, so join them),
+# then flag any eval whose expression interpolates ('%') without _hex() or the
+# postMessage template. Since Layer Shift added real wallet-bridge eval calls,
+# a postMessage-only heuristic would no longer describe the safe set.
 js_eval_sites=$(grep -rn "JavaScriptBridge\.eval" src/ 2>/dev/null || true)
+# Extract each COMPLETE eval(...) expression (balanced parens, across lines —
+# JS strings contain their own parens, so a naive [^)] stops too early). Then
+# flag any whose expression interpolates ('%') without a sanitizer marker.
+eval_files=$(grep -rl "JavaScriptBridge\.eval" src/ 2>/dev/null || true)
+unsafe_eval=""
+if [ -n "$eval_files" ]; then
+  unsafe_eval=$(perl -0777 -ne '
+    while (/JavaScriptBridge\.eval(\((?:[^()]++|(?1))*\))/g) {
+      my $c = $1;
+      if ($c =~ /%/ && $c !~ /_hex\(/ && $c !~ /window\.parent\.postMessage/) {
+        $c =~ s/\s+/ /g; print "$c\n";
+      }
+    }' $eval_files 2>/dev/null || true)
+fi
 eval_count=$(echo "$js_eval_sites" | grep -c . || echo 0)
-safe_count=$(grep -rzoP "JavaScriptBridge\.eval\([^)]{0,200}" src/ 2>/dev/null \
-  | tr '\0' '\n' | grep -c "window.parent.postMessage" || echo 0)
-if [ "$eval_count" -eq 0 ] || [ "$safe_count" -ge "$eval_count" ]; then
-  record "INJ-003" "high" "PASS" "JavaScriptBridge.eval sites use fixed postMessage templates only" "$eval_count site(s), $safe_count fixed-template"
+if [ -z "$unsafe_eval" ]; then
+  record "INJ-003" "high" "PASS" "JavaScriptBridge.eval interpolation is _hex()-sanitized or fixed postMessage template" "$eval_count site(s), no un-sanitized interpolation"
 else
-  record "INJ-003" "high" "FAIL" "JavaScriptBridge.eval sites use fixed postMessage templates only" "$js_eval_sites"
+  record "INJ-003" "high" "FAIL" "JavaScriptBridge.eval interpolation is _hex()-sanitized or fixed postMessage template" "$js_eval_sites"
 fi
 
 # INJ-004: FileAccess.open only targets compile-time consts, never a
@@ -204,15 +221,37 @@ fi
 # CATEGORY: Wallet/Crypto UI Trust (game-specific)
 # ---------------------------------------------------------------------------
 
-# TRUST-001 (carries D-C1): no wallet UI without explicit DEMO labeling.
-# Wallet-connect was removed entirely 2026-07-12 — inverted check: absence
-# passes; presence without "DEMO" in the same file fails.
-if [ ! -f src/autoload/web3_manager.gd ]; then
-  record "TRUST-001" "critical" "PASS" "No wallet UI without explicit DEMO labeling" "wallet-connect feature removed"
-elif grep -q "DEMO" src/autoload/web3_manager.gd; then
-  record "TRUST-001" "critical" "PASS" "No wallet UI without explicit DEMO labeling" "web3_manager.gd present and DEMO-labeled"
+# TRUST-001 (carries D-C1, revised 2026-07-18 for Layer Shift / PR #5 review):
+# wallet UI must be either absent, explicitly DEMO-labeled, or REAL — i.e. all
+# on-chain writes are user-signed through the player's own wallet extension
+# (eth_sendTransaction / eth_requestAccounts in web/web3.js), with no
+# private-key handling and no fake "connected" states in game code.
+# The old check only looked at the obsolete web3_manager.gd and passed on its
+# absence — a false pass once web3_bridge.gd landed. Now:
+#   1. legacy web3_manager.gd must stay absent (it was the fake-demo seam);
+#   2. if src/autoload/web3_bridge.gd exists, it must never touch private keys
+#      (no eth_sign/privateKey/secret in the bridge or web3.js) and web3.js
+#      must route txs through window.ethereum (user-signed), not raw RPC.
+trust_fail=""
+if [ -f src/autoload/web3_manager.gd ] && ! grep -q "DEMO" src/autoload/web3_manager.gd; then
+  trust_fail="legacy web3_manager.gd exists WITHOUT DEMO label"
+fi
+if [ -f src/autoload/web3_bridge.gd ]; then
+  if grep -qiE "privateKey|private_key|eth_sign\b|signTransaction" src/autoload/web3_bridge.gd web/web3.js 2>/dev/null; then
+    trust_fail="${trust_fail:+$trust_fail; }wallet seam handles key material (must be user-signed via window.ethereum only)"
+  fi
+  if [ -f web/web3.js ] && grep -q "eth_sendTransaction" web/web3.js && ! grep -q "window.ethereum.request" web/web3.js; then
+    trust_fail="${trust_fail:+$trust_fail; }web3.js sends txs outside window.ethereum.request (not user-signed)"
+  fi
+fi
+if [ -z "$trust_fail" ]; then
+  if [ -f src/autoload/web3_bridge.gd ]; then
+    record "TRUST-001" "critical" "PASS" "Wallet UI is real & user-signed (no key handling, txs via window.ethereum)" "web3_bridge.gd + web3.js inspected"
+  else
+    record "TRUST-001" "critical" "PASS" "Wallet UI is real & user-signed (no key handling, txs via window.ethereum)" "no wallet seam present"
+  fi
 else
-  record "TRUST-001" "critical" "FAIL" "No wallet UI without explicit DEMO labeling" "web3_manager.gd exists WITHOUT DEMO label"
+  record "TRUST-001" "critical" "FAIL" "Wallet UI is real & user-signed (no key handling, txs via window.ethereum)" "$trust_fail"
 fi
 
 # ---------------------------------------------------------------------------

@@ -1,0 +1,60 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/ui/oracle_panel.gd" id="1_op"]
+
+[node name="OraclePanel" type="CanvasLayer"]
+script = ExtResource("1_op")
+
+[node name="Shade" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.6)
+
+[node name="Panel" type="Panel" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = -170.0
+offset_right = 320.0
+offset_bottom = 170.0
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="Panel/VBox"]
+text = "THE SMOKE ORACLE"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 28
+
+[node name="Answer" type="Label" parent="Panel/VBox"]
+custom_minimum_size = Vector2(0, 150)
+text = "The Smoke Oracle exhales... ask your question."
+autowrap_mode = 2
+vertical_alignment = 1
+
+[node name="Input" type="LineEdit" parent="Panel/VBox"]
+placeholder_text = "Ask about SmokeRing, DIAMONDS, GoldMine, the Realm..."
+max_length = 200
+
+[node name="Row" type="HBoxContainer" parent="Panel/VBox"]
+alignment = 1
+theme_override_constants/separation = 20
+
+[node name="AskBtn" type="Button" parent="Panel/VBox/Row"]
+text = "ASK"
+custom_minimum_size = Vector2(120, 44)
+
+[node name="CloseBtn" type="Button" parent="Panel/VBox/Row"]
+text = "CLOSE"
+custom_minimum_size = Vector2(120, 44)

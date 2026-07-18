@@ -1,0 +1,20 @@
+name = "lil-blunt-backend"
+main = "worker.js"
+compatibility_date = "2024-11-01"
+
+# Bind a KV namespace for leaderboard / lore / funnel analytics.
+# Create it once:  wrangler kv:namespace create GAME_KV
+# then paste the id below.
+[[kv_namespaces]]
+binding = "GAME_KV"
+id = ""
+
+# Secret (do NOT put it here — it's committed): set it out-of-band with
+#   wrangler secret put MISTRAL_API_KEY
+# The Worker reads it as env.MISTRAL_API_KEY.
+
+# CORS allow-list (checklist F3). "*" is the local-dev default baked into the
+# Worker; SET THIS to the game's real origins before production, e.g.:
+#   ALLOWED_ORIGIN = "https://html-classic.itch.zone,https://lil-blunt-game.vercel.app"
+[vars]
+# ALLOWED_ORIGIN = ""

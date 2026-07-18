@@ -1,0 +1,17 @@
+{
+  "_comment": "Layer-Shift config — the ONLY place chain/backend wiring lives. Per CLAUDE.md Global Rules, NO real wallet/contract addresses are hardcoded in GDScript; they live HERE and load at runtime. Fill these in when the contracts + backend are deployed. Until then every feature degrades gracefully (see LAYER_SHIFT.md).",
+  "backend_base_url": "",
+  "chain_id": "0x2105",
+  "chain_name": "Base",
+  "contracts": {
+    "survivor_badge_erc721": "",
+    "smoke_erc20": "",
+    "diamonds_erc20": "",
+    "goldmine_erc20": ""
+  },
+  "explorer_base_url": "https://basescan.org",
+  "social": {
+    "telegram": "https://t.me/smokering",
+    "discord": ""
+  }
+}
