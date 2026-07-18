@@ -5,9 +5,34 @@
 **Branch:** `claude/setup-game-dev-environment-itWJv` · **PR #2**
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-07-12**.
-> **State: RELEASE CANDIDATE — awaiting final art assets** (animation frame
-> sheets + Weed Leaf/Mushroom sprites; specs in `ASSET_MANIFEST.md`).
+> have something current to look at. Last updated: **2026-07-18**.
+> **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
+> top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
+> token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+
+## 🚀 NEW — LAYER SHIFT (your coach's value-stack framework, shipped)
+
+We moved the game up the stack: **📖 Book** (the platformer, unchanged) →
+**🎬 Movie** (baked-in SmokeRing/DIAMONDS/GoldMine context) → **🎮 Video Game**
+(interactive + self-improving from player data). Full mapping in
+**`LAYER_SHIFT.md`**. What was built:
+
+| Feature | Layer | State |
+|---|---|---|
+| Wallet-gated **"SmokeRing Survivor" NFT badge** after the boss | 🎬 Movie | Code complete — needs your ERC-721 address |
+| **Token-tied perks** (SMOKE→Blaze 30s, GoldMine→golden skin, DIAMONDS→Crystal portal) via real `balanceOf` | 🎬 Movie | Code complete — needs your token addresses |
+| **Mistral Oracle NPC** — chill stoner-sage who knows your lore | 🎮 Video Game | Code + backend proxy complete — needs a **working Mistral key** |
+| **On-chain-identity leaderboard** (top 20, `0x1234…5678`) | 🎮 Video Game | Code + backend complete — needs backend deployed |
+| **Community lore submission** → top-voted become loading tips | 🎮 Video Game | Code + backend complete — needs backend deployed |
+| **Funnel**: JOIN THE SMOKERING + VIEW YOUR NFT + anon click tracking | 🎬/🎮 | Telegram link live; rest needs contract/backend |
+
+**Everything degrades gracefully** — with no wallet/backend/contracts the game
+plays exactly as before. Activation is config-only (no code changes): fill
+`config.json` + deploy `backend/`. **3 one-time inputs from you:** a valid
+`MISTRAL_API_KEY`, a deployed backend URL, and your real contract addresses.
+Security re-audit for the new backend/wallet surface: `GAME_SECURITY_CHECKLIST.md`
+**Section F** (all green now; two deploy-time P0s — rate-limiting + CORS — noted
+in `backend/README.md`).
 
 ## 🎉 BUILD IS ON ITCH.IO — one click left: hit Publish
 

@@ -18,6 +18,7 @@ func _ready() -> void:
 	_setup_boss_arena()
 	_spawn_player()
 	_setup_hud()
+	_apply_token_perks()
 	StateMachine.change_state(StateMachine.State.PLAYING)
 
 # The three parallax sprites (far/mid/near) all sample the level's key art;
@@ -232,6 +233,45 @@ func _spawn_player() -> void:
 	else:
 		player.global_position = Vector2(100, 500)
 	add_child(player)
+
+## MOVIE LAYER — token-gated perks. At level start we read the connected
+## wallet's real on-chain holdings (Web3Bridge, populated via ERC-20 balanceOf)
+## and grant additive bonuses. Holders get a richer run; everyone else plays the
+## unchanged Book-Layer level. Zero holdings / no wallet / off-web → no perks,
+## no penalty. Contract addresses live in config.json (never hardcoded).
+##   SMOKE    > 0 -> 30s Blaze Mode head-start
+##   GoldMine > 0 -> golden skin tint (cosmetic flex)
+##   DIAMONDS > 0 -> Crystal Caverns bonus portal appears in Level 1
+func _apply_token_perks() -> void:
+	if not Engine.has_singleton("Web3Bridge") and not has_node("/root/Web3Bridge"):
+		return
+	if Web3Bridge.wallet_address == "":
+		return
+	if Web3Bridge.holds("smoke"):
+		GameManager.activate_power_up("blaze", 30.0)
+		Web3Bridge.track("perk_blaze")
+	if Web3Bridge.holds("goldmine"):
+		var p := get_tree().get_first_node_in_group("player")
+		if p:
+			p.modulate = Color(1.25, 1.12, 0.55, 1.0)  # golden GoldMine flex
+		Web3Bridge.track("perk_golden")
+	if Web3Bridge.holds("diamonds") and level_data and level_data.level_index == 1:
+		_spawn_crystal_caverns_portal()
+		Web3Bridge.track("perk_crystal_portal")
+
+## Diamond-tinted bonus portal (DIAMONDS holders only). Reuses the secret-door
+## warp so the on-chain perk unlocks a real, reachable bonus area rather than a
+## cosmetic-only marker. Placed just past spawn so holders find it immediately.
+func _spawn_crystal_caverns_portal() -> void:
+	if not ResourceLoader.exists("res://src/level/secret_door.tscn"):
+		return
+	var portal := preload("res://src/level/secret_door.tscn").instantiate()
+	var anchor := player_spawn.global_position if player_spawn else Vector2(100, 500)
+	portal.global_position = anchor + Vector2(220, -8)
+	add_child(portal)
+	var spr := portal.get_node_or_null("Sprite")
+	if spr:
+		spr.modulate = Color(0.5, 0.9, 1.4, 1.0)  # crystal cyan
 
 ## Place this level's hidden Blaze Portal (Geometry-Dash secret run entrance).
 ## Locked until the player's accumulated score reaches `threshold`.

@@ -1,0 +1,70 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/ui/lore_panel.gd" id="1_lore"]
+
+[node name="LorePanel" type="CanvasLayer"]
+script = ExtResource("1_lore")
+
+[node name="Shade" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.6)
+
+[node name="Panel" type="Panel" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = -200.0
+offset_right = 320.0
+offset_bottom = 200.0
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Panel/VBox"]
+text = "SUBMIT LORE TO THE REALM"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 26
+
+[node name="Blurb" type="Label" parent="Panel/VBox"]
+text = "Add to the SmokeRing mythos. Top-voted lore becomes a loading-screen tip."
+autowrap_mode = 2
+theme_override_font_sizes/font_size = 15
+
+[node name="Input" type="TextEdit" parent="Panel/VBox"]
+custom_minimum_size = Vector2(0, 140)
+placeholder_text = "e.g. They say Lil Blunt once out-chilled a Tax Collector into early retirement..."
+wrap_mode = 1
+
+[node name="Count" type="Label" parent="Panel/VBox"]
+text = "0 / 200"
+horizontal_alignment = 2
+theme_override_font_sizes/font_size = 14
+
+[node name="Status" type="Label" parent="Panel/VBox"]
+text = ""
+autowrap_mode = 2
+theme_override_font_sizes/font_size = 15
+
+[node name="Row" type="HBoxContainer" parent="Panel/VBox"]
+alignment = 1
+theme_override_constants/separation = 20
+
+[node name="SendBtn" type="Button" parent="Panel/VBox/Row"]
+text = "SEND"
+custom_minimum_size = Vector2(120, 44)
+
+[node name="CloseBtn" type="Button" parent="Panel/VBox/Row"]
+text = "CLOSE"
+custom_minimum_size = Vector2(120, 44)

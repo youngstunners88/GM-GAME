@@ -25,6 +25,19 @@ items in Section D become live P0s and must be re-audited).
 
 Items retain their original IDs for traceability back to the source reels.
 
+> **⚠️ ARCHITECTURE CHANGED — 2026-07-18 (Layer Shift).** The trigger condition
+> above has now fired. The Layer-Shift work added: (1) a **backend proxy**
+> (`backend/worker.js`, Cloudflare Worker), (2) an **on-chain-identity
+> leaderboard**, (3) **community lore submission**, (4) **anonymous funnel
+> telemetry**, and (5) **real wallet integration** (connect / `balanceOf` /
+> `mint`). Several Section-A/C/D items that were N/A "because the architecture
+> has no surface" now have surface. They are re-audited in the new
+> **Section F — Layer Shift** below, and the affected items point there.
+> Everything is code-complete but **the backend is not deployed and no
+> contracts are set** (`backend_base_url` + `contracts.*` empty in
+> `config.json`), so the live surface is currently zero — but the controls are
+> documented now so they gate the moment you deploy.
+
 ---
 
 ## SECTION A — Bundle, CI, hosting, headers (the parts that DO apply)
@@ -81,24 +94,46 @@ re-run this section against that specific feature before shipping it.
 |----|------|--------|------|
 | D1 | Server-authoritative state | **N/A by design** | Single-player, no server. A player editing their own local `save.json` only affects their own save — same threat model as a Mario save-state editor. Not a security bug. |
 | D2 | Client events validated server-side | **N/A** | No server to validate against |
-| D3 | Leaderboard/economy rate-limited | **N/A** | No leaderboard, no real-money economy (GOLD/wBTC/Diamonds are in-game-only, not tradeable, not real crypto — see Global Rules in CLAUDE.md: never hardcode real wallet/contract addresses) |
+| D3 | Leaderboard/economy rate-limited | **RE-OPENED → Section F (F2/F7)** | A real on-chain-identity leaderboard now exists (Layer Shift). Rate-limiting is a live P0 on backend deploy; data model is re-audited in F7. |
 | D4 | Anti-cheat / replay defense | **N/A** | No competitive surface a replay attack could exploit |
 | D5 | Public game assets are integrity-checked | **Check every audit** | Assets ARE fetched by URL (the .pck/.wasm/.js bundle). Godot's .pck is not individually hash-pinned per-file, but the whole bundle is versioned by git-sha (`--userversion` in butler push) and served over HTTPS from itch.io/Vercel's CDN — verify this versioning is intact, not that per-asset hashing exists (that's SaaS-CDN-specific and doesn't fit Godot's export model) |
 | D6 | Social surface moderation (chat, usernames) | **N/A** | No chat, no usernames, no friend requests |
 | D7 | Payments server-validated | **N/A** | No payments |
 | D8 | Server-side matchmaking | **N/A** | No multiplayer |
 | D9 | Signed update mechanism | **N/A** | Updates ship via itch.io/butler and Vercel, both of which serve over HTTPS with the host's own integrity; there is no separate unsigned update channel |
-| D10 | Telemetry respects consent | **Check every audit** | No telemetry currently ships. If any analytics is ever added, this becomes a live P0 — audit for opt-in gating before it ships, not after |
+| D10 | Telemetry respects consent | **RE-OPENED → Section F (F8)** | Anonymous funnel telemetry (`/track`) was added (Layer Shift). Re-audited in F8: event-name-only, no PII, no persistent ID; confirm the page privacy note before backend deploy. |
 
 ### D-custom: items specific to THIS game, not in the original checklist
 
 | ID | Item | Status | Check |
 |----|------|--------|-------|
-| D-C1 | Wallet/crypto UI never implies real functionality | **RESOLVED BY REMOVAL (2026-07-12)** | The demo wallet-connect feature was removed entirely at the owner's request — there is no wallet UI at all now. The check inverts: `test -f src/autoload/web3_manager.gd` must FAIL; if wallet UI is ever reintroduced it must carry explicit DEMO labeling (release gate enforces this automatically). Trust-risk context stands: SmokeRing/DIAMONDS/GoldMine are live crypto projects — fake wallet UX reads as real to a confused player. |
+| D-C1 | Wallet/crypto UI never implies real functionality | **SUPERSEDED → Section F (F4), 2026-07-18** | The 2026-07-12 "resolved by removal" state no longer holds: Layer Shift reintroduced wallet UI, but as **real, user-signed** integration (not a demo). The trust concern is now resolved by honesty of behavior — actions are genuinely user-authorized on-chain and never gate core play — rather than by removal. Full re-audit in F4. The old `web3_manager.gd` demo file remains absent; the new seam is `web3_bridge.gd`. |
 | D-C2 | No real wallet/contract addresses hardcoded | **Check every audit** | `grep -rEn "0x[a-fA-F0-9]{40}"` across `src/` — any hit must be investigated (CLAUDE.md Global Rules already forbid this) |
 | D-C5 | No raw private-key-shaped hex literals in tracked source | **Check every audit** — added 2026-07-12 | D-C2's regex only matches **40-hex-char addresses**. The two real Ethereum private keys that leaked into this repo's git history (see audit-log.md incident) were **64-hex-char private keys** — a shape D-C2 never checked. `scripts/security-sentinel.sh` SEC-005 scans for `[a-fA-F0-9]{64}` across all tracked source, excluding known-safe checksum files (Godot/butler SHA256 pins). This is a working-tree scan, not a history scan — gitleaks covers history. |
 | D-C3 | Web export stays non-threaded | **Check every audit** | `grep "thread_support" .github/workflows/export-game.yml` must show `false` — this is the fix for the "game sometimes doesn't play" root cause; regressing it silently breaks itch.io/iframe/mobile boot |
 | D-C4 | postMessage handlers enforce same-origin | **Check every audit** | `grep -n "postMessage\|e.origin" web/launcher.js src/autoload/combo_system.gd` |
+
+---
+
+## SECTION F — Layer Shift: backend proxy + wallet + leaderboard (added 2026-07-18)
+
+The Layer-Shift features (see `LAYER_SHIFT.md`) added real chain/backend surface.
+This section re-audits the Section-A/C/D items that flipped from N/A, plus new
+Layer-Shift-specific controls. **Live status:** all code-complete; live surface
+is zero until `config.json` (`backend_base_url`, `contracts.*`) is filled and the
+backend is deployed. Each item below marks whether it gates **now** or **on
+deploy**.
+
+| ID | Item | Status | Note |
+|----|------|--------|------|
+| F1 | **API key never reaches the client** | **Check every audit (now)** | `MISTRAL_API_KEY` lives ONLY in the backend (`backend/worker.js` reads `env.MISTRAL_API_KEY`). The client calls `{backend_base_url}/oracle`, never Mistral directly. Verify no key/secret string appears in `src/`, `web/`, or `config.json` (sentinel SEC-001/SEC-004 cover this). The proxy pattern is the whole point — regressing it (client calling Mistral with an embedded key) is a critical leak. |
+| F2 | **Backend abuse rate-limiting** (flips A9/C1/C2) | **LIVE P0 ON DEPLOY** | `/oracle` costs real Mistral credits per call; `/lore` and `/track` are unauthenticated POSTs (spam surface). Before the backend goes live, add per-IP rate limiting (Cloudflare WAF rate rules or KV-counter) and a length/shape cap on `/lore` (already ≤200 chars client + server). Documented as a deploy blocker in `backend/README.md`. **Not yet enforced because nothing is deployed.** |
+| F3 | **CORS scope** | **LIVE P0 ON DEPLOY** | `worker.js` currently sends `Access-Control-Allow-Origin: *` for ease of local dev. Before production, tighten to the game's actual origins (itch.io CDN host + the Vercel/Pages mirror). Tracked in `backend/README.md`. |
+| F4 | **Wallet actions are user-signed, never auto-charged** (revises D-C1) | **Check every audit (now)** | Wallet UI is back, but it is **real, not fake**: `connect`/`balanceOf` are read-only; `mint` is a user-signed `eth_sendTransaction` the player confirms in their own extension. Nothing spends funds without an explicit wallet confirmation, and every path degrades gracefully (no wallet → the game plays on). This resolves the original D-C1 trust concern differently than "removal": the UX is honest because the actions are genuinely user-authorized on-chain, and none are gated in front of core play. |
+| F5 | **No real addresses hardcoded** (reaffirms D-C2) | **Check every audit (now)** | All contract/chain wiring is in `config.json`, loaded at runtime by `Web3Bridge`; `src/` contains zero 40-hex address literals (sentinel SEC-004). |
+| F6 | **eval injection surface** (new) | **Check every audit (now)** | Wallet/contract addresses interpolated into `JavaScriptBridge.eval` are sanitized by `web3_bridge.gd::_hex()` (strict `^0x[0-9a-fA-F]+$`) — a validated hex string carries no quotes/JS. Enforced by sentinel **INJ-003** (updated 2026-07-18 to check the `_hex()`/postMessage invariant instead of the old postMessage-only heuristic). |
+| F7 | **Leaderboard data = pseudonymous wallet, no PII** (revises D3/C4) | **Check every audit (now)** | The leaderboard stores `{wallet_address, score, level, timestamp}` in backend KV. A wallet address is pseudonymous, not PII in the classic sense, and it's already public on-chain; no emails/names are collected. Scores are off-chain (KV) by design — the gas tradeoff is documented in `backend/README.md` and `LAYER_SHIFT.md` (V2). If real PII is ever added (e.g. a display name), C4/D6 re-open. |
+| F8 | **Funnel telemetry consent** (revises D10) | **Review before deploy** | `/track` sends anonymous button-click events (event name only, no PII, no persistent ID). This is minimal, anonymous product analytics rather than user tracking. Before the backend deploys, confirm the itch.io page privacy note mentions anonymous gameplay analytics; keep events PII-free. |
 
 ---
 

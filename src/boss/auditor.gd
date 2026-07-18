@@ -173,15 +173,12 @@ func die() -> void:
 	tween.parallel().tween_property(self, "rotation", PI * 4, 1.0)
 	tween.parallel().tween_property(self, "modulate:a", 0.0, 1.0)
 	await tween.finished
-	var victory := Label.new()
-	victory.text = "LEVEL COMPLETE!\nChill vibes only."
-	victory.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	victory.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	victory.position = global_position - Vector2(100, 50)
-	victory.add_theme_font_size_override("font_size", 32)
+	# Movie/Video-Game Layer: wallet-gated badge claim + on-chain score + NFT
+	# funnel. The level is already won; this screen is purely additive and skips
+	# cleanly with no wallet/backend. See src/ui/victory_screen.gd + LAYER_SHIFT.md.
+	var victory := preload("res://src/ui/victory_screen.tscn").instantiate()
+	victory.setup(GameManager.total_score, 1)
 	get_tree().current_scene.add_child(victory)
-	await get_tree().create_timer(3.0).timeout
-	SceneRouter.load_scene("res://src/ui/main_menu.tscn", SceneRouter.Transition.DIAMOND)
 	queue_free()
 
 func _on_hitbox_body_entered(body: Node2D) -> void:

@@ -136,22 +136,39 @@ else
   record "INJ-002" "critical" "FAIL" "No Expression (dynamic code exec) in game code" "$expr_hits"
 fi
 
-# INJ-003: every JavaScriptBridge.eval call site uses a fixed template, not
-# raw interpolation of untrusted data. Heuristic: flag any call where the
-# eval'd string isn't one of the two known-safe postMessage templates.
-# Heuristic: every JavaScriptBridge.eval() call in this codebase is followed
-# within 2 lines by the fixed "window.parent.postMessage" template (the
-# eval'd string is built across lines, so the call site itself never shows
-# it). If the eval-call count ever exceeds the nearby-postMessage count, a
-# new call site was added without that safe template — flag it.
+# INJ-003: no JavaScriptBridge.eval call may interpolate un-sanitized runtime
+# data into the eval'd JS (the JS-injection surface). Safe forms in this
+# codebase, all provably injection-free:
+#   (a) a pure literal string — no '%' interpolation at all;
+#   (b) interpolation whose inserted values pass through _hex() (the strict
+#       ^0x[0-9a-fA-F]+$ sanitizer in web3_bridge.gd — a hex string can carry
+#       no quotes, semicolons, or JS); or
+#   (c) the fixed window.parent.postMessage(JSON.stringify(...)) telemetry
+#       template (JSON.stringify emits a valid JS literal).
+# We scan the WHOLE eval expression (call sites can span lines, so join them),
+# then flag any eval whose expression interpolates ('%') without _hex() or the
+# postMessage template. Since Layer Shift added real wallet-bridge eval calls,
+# a postMessage-only heuristic would no longer describe the safe set.
 js_eval_sites=$(grep -rn "JavaScriptBridge\.eval" src/ 2>/dev/null || true)
+# Extract each COMPLETE eval(...) expression (balanced parens, across lines —
+# JS strings contain their own parens, so a naive [^)] stops too early). Then
+# flag any whose expression interpolates ('%') without a sanitizer marker.
+eval_files=$(grep -rl "JavaScriptBridge\.eval" src/ 2>/dev/null || true)
+unsafe_eval=""
+if [ -n "$eval_files" ]; then
+  unsafe_eval=$(perl -0777 -ne '
+    while (/JavaScriptBridge\.eval(\((?:[^()]++|(?1))*\))/g) {
+      my $c = $1;
+      if ($c =~ /%/ && $c !~ /_hex\(/ && $c !~ /window\.parent\.postMessage/) {
+        $c =~ s/\s+/ /g; print "$c\n";
+      }
+    }' $eval_files 2>/dev/null || true)
+fi
 eval_count=$(echo "$js_eval_sites" | grep -c . || echo 0)
-safe_count=$(grep -rzoP "JavaScriptBridge\.eval\([^)]{0,200}" src/ 2>/dev/null \
-  | tr '\0' '\n' | grep -c "window.parent.postMessage" || echo 0)
-if [ "$eval_count" -eq 0 ] || [ "$safe_count" -ge "$eval_count" ]; then
-  record "INJ-003" "high" "PASS" "JavaScriptBridge.eval sites use fixed postMessage templates only" "$eval_count site(s), $safe_count fixed-template"
+if [ -z "$unsafe_eval" ]; then
+  record "INJ-003" "high" "PASS" "JavaScriptBridge.eval interpolation is _hex()-sanitized or fixed postMessage template" "$eval_count site(s), no un-sanitized interpolation"
 else
-  record "INJ-003" "high" "FAIL" "JavaScriptBridge.eval sites use fixed postMessage templates only" "$js_eval_sites"
+  record "INJ-003" "high" "FAIL" "JavaScriptBridge.eval interpolation is _hex()-sanitized or fixed postMessage template" "$js_eval_sites"
 fi
 
 # INJ-004: FileAccess.open only targets compile-time consts, never a

@@ -23,10 +23,58 @@ func _ready() -> void:
         continue_btn.show()
     else:
         continue_btn.hide()
+    _setup_layer_shift_buttons()
     # Animate title
     var tween := create_tween().set_loops()
     tween.tween_property(title, "scale", Vector2(1.05, 1.05), 0.8)
     tween.tween_property(title, "scale", Vector2(1.0, 1.0), 0.8)
+
+## Movie/Video-Game-Layer entry points on the hub (main menu): the Oracle,
+## the on-chain leaderboard, community lore, and the community funnel. Each
+## routes through Web3Bridge and degrades gracefully with no backend. Added in
+## code so the base menu scene (Book Layer) stays untouched.
+func _setup_layer_shift_buttons() -> void:
+    var row := VBoxContainer.new()
+    row.add_theme_constant_override("separation", 8)
+    row.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+    row.position = Vector2(24, get_viewport().get_visible_rect().size.y - 210)
+    add_child(row)
+    var defs := [
+        ["🔮 ASK THE ORACLE", _on_oracle],
+        ["🏆 LEADERBOARD", _on_leaderboard],
+        ["✍ SUBMIT LORE", _on_submit_lore],
+        ["🚀 JOIN THE SMOKERING", _on_join],
+    ]
+    for d in defs:
+        var b := Button.new()
+        b.text = d[0]
+        b.custom_minimum_size = Vector2(240, 36)
+        b.modulate = Color(0.85, 1.0, 0.9)
+        b.pressed.connect(d[1])
+        _add_hover_glow(b)
+        row.add_child(b)
+
+func _on_oracle() -> void:
+    Web3Bridge.track("menu_oracle")
+    var panel := preload("res://src/ui/oracle_panel.tscn").instantiate()
+    add_child(panel)
+    panel.open()
+
+func _on_leaderboard() -> void:
+    Web3Bridge.track("menu_leaderboard")
+    SceneRouter.load_scene("res://src/ui/leaderboard.tscn", SceneRouter.Transition.FADE)
+
+func _on_submit_lore() -> void:
+    Web3Bridge.track("menu_lore")
+    var panel := preload("res://src/ui/lore_panel.tscn").instantiate()
+    add_child(panel)
+    panel.open()
+
+func _on_join() -> void:
+    Web3Bridge.track("menu_join")
+    var url: String = Web3Bridge.config.get("social", {}).get("telegram", "")
+    if url != "":
+        OS.shell_open(url)
 
 ## GM Forest key art behind the menu; the existing flat ColorRect becomes a
 ## translucent darkener so buttons and title stay readable over the painting.
