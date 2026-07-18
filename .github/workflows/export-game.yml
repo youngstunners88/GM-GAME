@@ -190,13 +190,20 @@ jobs:
           fi
           cp web/web3.js web/game/web3.js
           echo "✓ web3.js bundled into web/game/"
-          # Verify head_include ACTUALLY injected the bridge into the generated
-          # HTML — a silent head_include regression would ship a build where
-          # window.LilBluntWeb3 never exists and all wallet features are dead
-          # (PR #5 review). Fail the export if the reference is missing.
+          # head_include proved unreliable (the 4a920fa export shipped WITHOUT
+          # the tag — PR #5 review finding #1, confirmed empirically). Inject
+          # deterministically: place the script tag right before </head> if the
+          # export didn't already include it.
           if ! grep -q 'web3\.js' web/game/index.html; then
-            echo "::error::web3.js not referenced in generated index.html — head_include failed; wallet/NFT features would be dead in the build"
-            echo "--- index.html <head> ---"; sed -n '1,40p' web/game/index.html || true
+            sed -i 's|</head>|<script src="web3.js"></script>\n</head>|' web/game/index.html
+            echo "injected <script src=web3.js> via sed fallback"
+          fi
+          # HARD GATE: the generated HTML must reference the bridge, whatever
+          # mechanism got it there — otherwise window.LilBluntWeb3 never exists
+          # and every wallet/NFT feature is silently dead in the shipped build.
+          if ! grep -q 'web3\.js' web/game/index.html; then
+            echo "::error::web3.js not referenced in generated index.html — bridge injection failed; wallet/NFT features would be dead in the build"
+            echo "--- index.html head ---"; sed -n '1,40p' web/game/index.html || true
             exit 1
           fi
           echo "✓ index.html references web3.js (bridge will load)"
