@@ -208,6 +208,57 @@ jobs:
           fi
           echo "✓ index.html references web3.js (bridge will load)"
 
+      # Coach's secure-build-checklist gate (SECURITY_CHECKLIST_INTEGRATION.md).
+      # Runs AFTER the build gates, BEFORE anything deploys. Exit 1 = blocked,
+      # exactly like the web3.js gate. ADDITIVE: the sentinel step above stays.
+      - name: Security audit (secure-build-checklist)
+        id: secaudit
+        if: success()
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          export PATH="$HOME/.bun/bin:$PATH"
+          set +e
+          bun scripts/security-audit.ts --fail-on=high --json > security-report.json
+          CODE=$?
+          set -e
+          # Human-readable summary in the CI log either way.
+          bun scripts/security-audit.ts --fail-on=high || true
+          if [ "$CODE" -ne 0 ]; then
+            echo "::error::secure-build-checklist BLOCKED the ship (critical/high findings) — see security-report.json"
+            exit 1
+          fi
+          echo "::notice::Security audit passed — $(jq -r '"\(.summary.pass) checks, \(.summary.skip) skipped, \(.summary.manual) manual"' security-report.json)"
+
+      - name: Upload security report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: security-report.json
+          retention-days: 30
+
+      # On failure, surface the blockers on the open PR for this branch.
+      - name: Comment blockers on PR
+        if: failure() && steps.secaudit.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR=$(gh pr list --head "${GITHUB_REF_NAME}" --state open --json number --jq '.[0].number' 2>/dev/null || true)
+          if [ -n "$PR" ] && [ "$PR" != "null" ]; then
+            {
+              echo "## 🔒 Security audit blocked this build"
+              echo ""
+              echo "\`scripts/security-audit.ts --fail-on=high\` found blockers:"
+              echo '```'
+              jq -r '.findings[] | select(.status=="fail" and (.severity=="critical" or .severity=="high")) | "[\(.severity|ascii_upcase)] \(.id) \(.title)\n    fix: \(.fix[0:200])"' security-report.json 2>/dev/null || echo "(see security-report.json artifact)"
+              echo '```'
+              echo "Full report: the security-report CI artifact. Deploy is blocked until these clear."
+            } > pr-comment.md
+            gh pr comment "$PR" --body-file pr-comment.md
+          else
+            echo "No open PR for ${GITHUB_REF_NAME}; blockers are in the log + artifact."
+          fi
+
       # Commit the fresh export BEFORE the itch deploy. The itch.io upload can
       # fail on external gates (e.g. account-email verification) that have
       # nothing to do with the build; if the commit ran after butler with

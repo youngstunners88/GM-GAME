@@ -1,0 +1,697 @@
+{
+  "version": "1.3.0+gmgame.1",
+  "last_updated": "2026-07-19",
+  "source": "VibeCoded-App-Security-DeepDive plus RedHook Android Wireless ADB and DeFi smart-contract threat-pattern research (July 2026)",
+  "categories": {
+    "secrets_and_env": {
+      "label": "Secrets & Environment",
+      "weight": 10,
+      "checks": [
+        {
+          "id": "SEC001",
+          "title": "No secrets in code",
+          "pattern": "(api[_-]?key|secret|password|token|bearer|private[_-]?key)\\s*[:=]\\s*['\"][^'\"\\s]{16,}['\"]",
+          "files": [
+            "*.ts",
+            "*.tsx",
+            "*.js",
+            "*.jsx",
+            "*.py",
+            "*.go",
+            "*.rs",
+            "*.env",
+            "*.env.*",
+            "*.json",
+            "*.yaml",
+            "*.yml"
+          ],
+          "exclude": [
+            "node_modules/**",
+            ".next/**",
+            "dist/**",
+            "build/**",
+            "*.lock",
+            "package-lock.json",
+            "yarn.lock",
+            "pnpm-lock.yaml"
+          ],
+          "severity": "critical",
+          "fix": "Move secret to environment variable. Read from process.env at runtime. Add to .env (gitignored) and .env.example (committed, blank values)."
+        },
+        {
+          "id": "SEC002",
+          "title": ".env files gitignored",
+          "pattern": "^\\.env(\\.local|\\.production|\\.development)?$",
+          "mode": "must_be_gitignored",
+          "severity": "critical",
+          "fix": "Add '.env', '.env.local', '.env.*.local' to .gitignore. Keep .env.example with blank values for onboarding."
+        },
+        {
+          "id": "SEC003",
+          "title": "No committed .env files",
+          "command": "git log --all --full-history --diff-filter=A --name-only -- '.env' '.env.local' '.env.production'",
+          "expect_empty": true,
+          "severity": "critical",
+          "fix": "If .env was ever committed, rotate ALL secrets in it immediately. They are public. Use 'git filter-repo' to scrub history or treat as fully compromised."
+        }
+      ]
+    },
+    "dependencies": {
+      "label": "Dependencies & Supply Chain",
+      "weight": 9,
+      "checks": [
+        {
+          "id": "DEP001",
+          "title": "npm/pnpm/bun audit clean",
+          "command": "package_manager_audit",
+          "severity": "high",
+          "fix": "Run 'npm audit fix' or 'pnpm audit --fix' or 'bun audit'. For high/critical CVEs, update the package or pin to a patched version. 847 transitive deps can hide one vulnerable package you never installed directly."
+        },
+        {
+          "id": "DEP002",
+          "title": "Lockfile committed",
+          "file_must_exist": [
+            "package-lock.json",
+            "pnpm-lock.yaml",
+            "yarn.lock",
+            "bun.lockb",
+            "bun.lock"
+          ],
+          "severity": "medium",
+          "fix": "Commit your lockfile so installs are reproducible. Different lockfiles = different trees = surprise CVEs.",
+          "requires_file": "package.json",
+          "context": "GM-GAME: no Node manifest at root; CI installs playwright ad hoc. Check activates the day a package.json lands."
+        },
+        {
+          "id": "DEP003",
+          "title": "No known-malicious packages",
+          "patterns": [
+            "(require|import|from)\\s*['\"](chalk-template|npm-supply-attack|event-stream|flatmap-stream|node-ipc|ua-parser-js@1\\.4\\.|colors@1\\.4\\.|coa|rc@2\\.3\\.|flat@5\\.0\\.|@noble/curves.*0\\.0\\.|crypto-js@4\\.2\\.0).*['\"]"
+          ],
+          "files": [
+            "*.ts",
+            "*.tsx",
+            "*.js",
+            "*.jsx",
+            "package.json"
+          ],
+          "severity": "critical",
+          "fix": "These packages have had confirmed supply-chain compromises. Pin to a known-clean version or replace with a maintained alternative."
+        },
+        {
+          "id": "DEP004",
+          "title": "No HTTP-only dep installs",
+          "command_check": "git remote -v",
+          "expect_https": true,
+          "severity": "medium",
+          "fix": "All remotes must be HTTPS. HTTP remotes can be MITM'd to swap dependencies.",
+          "context": "GM-GAME: loopback sandbox git proxy allowed; GitHub remotes in CI must be https (enforced)."
+        }
+      ]
+    },
+    "auth_and_access": {
+      "label": "Auth, AuthZ & Sessions",
+      "weight": 10,
+      "checks": [
+        {
+          "id": "AUTH001",
+          "title": "Auth required on protected routes",
+          "pattern": "app\\.(get|post|put|delete|patch)\\s*\\(\\s*['\"](?!api/(auth|login|signup|register|webhook|health|public))[^'\"]+['\"]",
+          "file_pattern": "*.ts",
+          "must_contain_any": [
+            "requireAuth",
+            "getServerSession",
+            "auth()",
+            "verifyToken",
+            "withAuth",
+            "currentUser",
+            "getUser"
+          ],
+          "severity": "critical",
+          "fix": "Every non-public route must call an auth helper. Public routes = only login, signup, webhooks (with signature verify), health, public assets."
+        },
+        {
+          "id": "AUTH002",
+          "title": "No client-side auth checks as security",
+          "pattern": "(if|&&)\\s*\\(?\\s*(localStorage|sessionStorage|window\\.|document\\.cookie)",
+          "files": [
+            "*.ts",
+            "*.tsx",
+            "*.js",
+            "*.jsx"
+          ],
+          "context": "auth_check",
+          "severity": "critical",
+          "fix": "Client-side checks (localStorage, cookies read in browser) are for UX only. Every protected action must re-verify on the server with a session/token."
+        },
+        {
+          "id": "AUTH003",
+          "title": "Default-deny on new routes",
+          "policy": "review",
+          "severity": "high",
+          "fix": "When adding a new route/endpoint, default to private/requires-auth. Flip to public only with explicit justification. Public-by-default is the #1 finding from Casco's pentests."
+        },
+        {
+          "id": "AUTH004",
+          "title": "Webhook signature verification",
+          "trigger_pattern": "(stripe|github|shopify|svix|webhook)",
+          "pattern": "(stripe|github|shopify|svix|webhook).*verify",
+          "files": [
+            "*.ts",
+            "*.js"
+          ],
+          "expect_pattern": "constructEvent|verifySignature|webhooks\\.construct|whsec_",
+          "severity": "critical",
+          "fix": "Every webhook handler must verify the provider's signature. Never trust webhook bodies without verification \u2014 anyone can POST to a public URL."
+        }
+      ]
+    },
+    "injection_and_input": {
+      "label": "Injection & Input Validation",
+      "weight": 10,
+      "checks": [
+        {
+          "id": "INJ001",
+          "title": "No raw SQL string concatenation",
+          "pattern": "(query|execute|raw)\\s*\\(\\s*[`'\"].*\\$\\{.*\\}.*[`'\"]",
+          "files": [
+            "*.ts",
+            "*.tsx",
+            "*.js",
+            "*.jsx",
+            "*.py"
+          ],
+          "severity": "critical",
+          "fix": "Use parameterised queries / prepared statements. NEVER build SQL with template strings or concatenation. Prisma: use $queryRaw with tagged template, not $queryRawUnsafe."
+        },
+        {
+          "id": "INJ002",
+          "title": "NoSQL operators blocked from user input",
+          "pattern": "(find|findOne|update|delete)\\s*\\(\\s*\\{[^}]*\\$",
+          "files": [
+            "*.ts",
+            "*.js"
+          ],
+          "must_have_nearby": [
+            "sanitizeKeys",
+            "mongo-sanitize",
+            "ALLOWED_KEYS"
+          ],
+          "severity": "critical",
+          "fix": "Never pass user-controlled objects directly to Mongo queries. Operators like $gt, $ne, $where can bypass auth or exfiltrate data. Sanitise keys or use an allowlist."
+        },
+        {
+          "id": "INJ003",
+          "title": "No unsanitised HTML rendering",
+          "pattern": "(dangerouslySetInnerHTML|innerHTML\\s*=|v-html)",
+          "files": [
+            "*.tsx",
+            "*.jsx",
+            "*.vue"
+          ],
+          "must_have_nearby": [
+            "DOMPurify",
+            "sanitize",
+            "sanitize-html",
+            "escape"
+          ],
+          "severity": "high",
+          "fix": "Sanitise HTML with DOMPurify (or framework equivalent) before injecting. If you must render untrusted HTML, parse and whitelist tags/attrs."
+        },
+        {
+          "id": "INJ004",
+          "title": "Shell commands don't take user input directly",
+          "pattern": "(exec|execSync|spawn|execFile)\\s*\\(\\s*[`'\"].*\\$\\{.*\\}.*[`'\"]",
+          "files": [
+            "*.ts",
+            "*.js",
+            "*.py"
+          ],
+          "severity": "critical",
+          "fix": "Use execFile/spawn with an args array. Never interpolate user input into a shell command. Validate with an allowlist of permitted values."
+        },
+        {
+          "id": "INJ005",
+          "title": "Path traversal blocked",
+          "pattern": "(readFile|writeFile|createReadStream|res\\.sendFile|res\\.download)\\s*\\(\\s*[^,)]*\\+",
+          "files": [
+            "*.ts",
+            "*.js"
+          ],
+          "severity": "high",
+          "fix": "Resolve paths and verify the resolved path starts with the intended base directory. Block '..' and absolute paths from user input."
+        }
+      ]
+    },
+    "ai_and_llm": {
+      "label": "AI-Generated Code Specific Risks",
+      "weight": 9,
+      "checks": [
+        {
+          "id": "AI001",
+          "title": "No eval / dynamic code execution",
+          "pattern": "\\b(eval|new Function|setTimeout\\s*\\(\\s*['\"`]|setInterval\\s*\\(\\s*['\"`]|vm\\.runInThisContext|child_process)",
+          "files": [
+            "*.ts",
+            "*.tsx",
+            "*.js",
+            "*.jsx"
+          ],
+          "severity": "critical",
+          "fix": "AI models frequently emit eval() or new Function(). These are RCE. Replace with explicit logic, lookup tables, or a sandboxed interpreter (e.g. isolated-vm)."
+        },
+        {
+          "id": "AI002",
+          "title": "Supabase RLS enabled on all user tables",
+          "pattern": "create\\s+table|alter\\s+table",
+          "files": [
+            "*.sql",
+            "supabase/migrations/**"
+          ],
+          "expect_in_migration": [
+            "enable row level security",
+            "create policy"
+          ],
+          "severity": "critical",
+          "fix": "Postgres tables default to 'allow all'. RLS must be explicitly enabled AND a policy created. Perly's #1 finding: vibe coders ship Supabase with RLS off \u2192 entire user table public."
+        },
+        {
+          "id": "AI003",
+          "title": "CORS not wide-open wildcard",
+          "pattern": "Access-Control-Allow-Origin['\",]\\s*['\"]?\\*['\"]?",
+          "files": [
+            "*.ts",
+            "*.js"
+          ],
+          "severity": "high",
+          "fix": "Wildcard CORS with credentials is catastrophic. Set explicit origin allowlist per environment. Never '*' on authenticated routes."
+        },
+        {
+          "id": "AI004",
+          "title": "API keys are server-side only",
+          "pattern": "(supabase|firebase|stripe|openai|anthropic|resend|sendgrid|twilio).*(key|secret|token)",
+          "files": [
+            "*.tsx",
+            "*.jsx",
+            "*.html"
+          ],
+          "must_not_match": "process\\.env|VITE_|NEXT_PUBLIC_|REACT_APP_|EXPO_PUBLIC_",
+          "severity": "critical",
+          "fix": "Keys prefixed with VITE_/NEXT_PUBLIC_/REACT_APP_/EXPO_PUBLIC_ are bundled into the client. Any key shipped client-side is public within seconds. Move server-side, proxy through your own API."
+        }
+      ]
+    },
+    "api_and_rate_limit": {
+      "label": "API Hardening",
+      "weight": 8,
+      "checks": [
+        {
+          "id": "API001",
+          "title": "Rate limiting on public endpoints",
+          "pattern": "(app\\.(get|post|put|delete))\\s*\\(\\s*['\"]api/",
+          "files": [
+            "*.ts",
+            "*.js"
+          ],
+          "must_have_in_project": [
+            "@upstash/ratelimit",
+            "express-rate-limit",
+            "next-rate-limit",
+            "rate-limiter-flexible",
+            "rateLimit"
+          ],
+          "severity": "high",
+          "fix": "Every public endpoint needs a rate limit. Default 60 req/min/IP for reads, 10 req/min/IP for writes. Auth endpoints: 5/min."
+        },
+        {
+          "id": "API002",
+          "title": "Bearer auth on write API routes",
+          "policy": "api_routes",
+          "severity": "critical",
+          "fix": "API routes are always public at the network level on most platforms (Vercel, Cloudflare, zo.space). Add Authorization: Bearer checks for any non-public write endpoint."
+        },
+        {
+          "id": "API003",
+          "title": "No verbose error leaks",
+          "pattern": "res\\.(json|send)\\s*\\(\\s*\\{[^}]*stack[^}]*\\}",
+          "files": [
+            "*.ts",
+            "*.js"
+          ],
+          "severity": "medium",
+          "fix": "In production, return generic errors to clients. Log full stack traces server-side only. Stack traces leak file paths, lib versions, internal IPs."
+        }
+      ]
+    },
+    "logging_and_observability": {
+      "label": "Logging, Monitoring & Error Tracking",
+      "weight": 7,
+      "checks": [
+        {
+          "id": "LOG001",
+          "title": "Error tracking configured",
+          "must_have_in_project": [
+            "sentry",
+            "@sentry/nextjs",
+            "@sentry/react-native",
+            "posthog",
+            "logrocket",
+            "bugsnag"
+          ],
+          "severity": "high",
+          "fix": "If you're not capturing errors in prod, you don't know you're hacked. Add Sentry or equivalent BEFORE launch. Vibe coders skip this and discover breaches via Stripe fraud alerts."
+        },
+        {
+          "id": "LOG002",
+          "title": "No PII in logs",
+          "pattern": "console\\.(log|info|error|warn)\\s*\\(.*\\b(email|password|ssn|credit|card|token|secret)",
+          "files": [
+            "*.ts",
+            "*.js",
+            "*.py"
+          ],
+          "severity": "high",
+          "fix": "Redact PII before logging. Use a logger like pino with redact paths, or wrap sensitive fields. PII in logs = GDPR/POPIA breach."
+        },
+        {
+          "id": "LOG003",
+          "title": "Audit log for auth events",
+          "expect_pattern": "(login|logout|signup|password_reset|permission_change|role_change|api_key_create)",
+          "must_have_nearby": [
+            "audit",
+            "log_event",
+            "track"
+          ],
+          "severity": "medium",
+          "fix": "Log every login, logout, password reset, role change, and API key creation with user ID, IP, timestamp. Required to investigate breaches."
+        }
+      ]
+    },
+    "data_and_legal": {
+      "label": "Data Handling & Legal Posture",
+      "weight": 6,
+      "checks": [
+        {
+          "id": "DATA001",
+          "title": "Terms of Service & Privacy Policy present",
+          "file_must_exist": [
+            "terms.md",
+            "terms.html",
+            "privacy.md",
+            "privacy.html",
+            "legal/**"
+          ],
+          "severity": "high",
+          "fix": "Required before charging money or collecting any data. 'Vibe coders are getting sued' \u2014 most haven't realised. Don't collect emails without a ToS/PP."
+        },
+        {
+          "id": "DATA002",
+          "title": "User data export / delete flow exists",
+          "expect_pattern": "(delete.*account|export.*data|gdpr|right.*to.*be.*forgotten)",
+          "files": [
+            "*.ts",
+            "*.md"
+          ],
+          "severity": "high",
+          "fix": "GDPR/POPIA: users can request data export and account deletion. Build the flow or you'll bolt it on after a complaint."
+        },
+        {
+          "id": "DATA003",
+          "title": "No copyrighted assets shipped",
+          "file_must_exist": [
+            "LICENSE",
+            "license",
+            "LICENSE.md"
+          ],
+          "severity": "medium",
+          "fix": "Every dependency, font, image, model must have a license compatible with your use. AI code suggestions sometimes carry over training-data snippets \u2014 check."
+        }
+      ]
+    },
+    "infra_and_deploy": {
+      "label": "Infrastructure & Deployment",
+      "weight": 7,
+      "checks": [
+        {
+          "id": "INFRA001",
+          "title": "HTTPS enforced",
+          "pattern": "(http://(?!localhost|127\\.0\\.0\\.1)|strict-transport-security|upgrade-insecure-requests)",
+          "files": [
+            "*.ts",
+            "*.js",
+            "*.json"
+          ],
+          "severity": "high",
+          "fix": "All production traffic HTTPS. Set HSTS header. Never mix http and https (mixed content blocks features and enables downgrade attacks)."
+        },
+        {
+          "id": "INFRA002",
+          "title": "No debug mode in production",
+          "pattern": "(DEBUG\\s*=\\s*['\"]?true|NODE_ENV\\s*=\\s*['\"]?development|debug\\s*:\\s*true|app\\.use\\(.*logger\\(\\s*['\"]dev)",
+          "files": [
+            "*.ts",
+            "*.js",
+            "*.env*"
+          ],
+          "exclude_files_when_prod": true,
+          "severity": "high",
+          "fix": "NODE_ENV=production disables verbose errors and dev tooling. Set it in your deploy environment, not just your .env."
+        },
+        {
+          "id": "INFRA003",
+          "title": "Backups configured for databases",
+          "policy": "review",
+          "severity": "medium",
+          "fix": "Daily automated backups with at least one offsite copy. Test restore quarterly. Vibecoded apps go down and lose user data because nobody configured backups."
+        }
+      ]
+    },
+    "platform_privilege_and_control": {
+      "label": "Platform Privilege & Control-Plane Abuse",
+      "weight": 10,
+      "checks": [
+        {
+          "id": "PLAT001",
+          "title": "No unreviewed privileged platform interfaces",
+          "policy": "review",
+          "severity": "critical",
+          "fix": "Review accessibility or automation services, overlays, screen capture, device-admin, debug bridges, native shells, IPC, background services, and install/update permissions. Each needs a product justification, least privilege, visible consent, revocation, and abuse-case tests."
+        },
+        {
+          "id": "PLAT002",
+          "title": "No production code that enables or self-pairs debugging bridges",
+          "pattern": "(ADB|wireless[ _-]?debugging|developer[ _-]?options|WRITE_SECURE_SETTINGS|Shizuku|127\\.0\\.0\\.1.*(adb|5037)|adb.*(pair|connect|shell))",
+          "files": [
+            "*.ts",
+            "*.tsx",
+            "*.js",
+            "*.jsx",
+            "*.java",
+            "*.kt",
+            "*.xml",
+            "*.gradle",
+            "*.gd",
+            "*.cs",
+            "*.cpp",
+            "*.h",
+            "*.py",
+            "*.rs"
+          ],
+          "severity": "critical",
+          "fix": "Do not ship release code that enables, pairs with, embeds, or drives a device debugging bridge. If a legitimate developer tool needs it, isolate it from release builds, require explicit opt-in, show a persistent indicator, bind to an allowlisted local peer, and test that release builds cannot invoke it."
+        },
+        {
+          "id": "PLAT003",
+          "title": "Privileged APIs cannot silently grant permissions or run arbitrary commands",
+          "pattern": "(pm\\s+(grant|install|uninstall)|WRITE_SECURE_SETTINGS|Runtime\\.getRuntime\\(\\)\\.exec|ProcessBuilder\\(|shell[ _-]?command)",
+          "files": [
+            "*.ts",
+            "*.tsx",
+            "*.js",
+            "*.jsx",
+            "*.java",
+            "*.kt",
+            "*.xml",
+            "*.gradle",
+            "*.gd",
+            "*.cs",
+            "*.cpp",
+            "*.h",
+            "*.py",
+            "*.rs"
+          ],
+          "severity": "critical",
+          "fix": "Remove arbitrary command execution and silent permission or package management from product paths. Use narrow typed operations with allowlists, server-side authorisation, user-visible confirmation, and an auditable event trail."
+        },
+        {
+          "id": "PLAT004",
+          "title": "Accessibility, overlays and screen capture are treated as high-risk capabilities",
+          "pattern": "(BIND_ACCESSIBILITY_SERVICE|AccessibilityService|SYSTEM_ALERT_WINDOW|TYPE_APPLICATION_OVERLAY|MediaProjection|REQUEST_INSTALL_PACKAGES|MANAGE_EXTERNAL_STORAGE|QUERY_ALL_PACKAGES)",
+          "files": [
+            "*.java",
+            "*.kt",
+            "*.xml",
+            "*.gradle",
+            "*.ts",
+            "*.tsx",
+            "*.js",
+            "*.jsx",
+            "*.gd",
+            "*.cs"
+          ],
+          "severity": "high",
+          "fix": "Document why each capability is essential, request it only when needed, keep use visible, prevent background automation of security settings, provide an obvious disable path, and verify release builds and update flows cannot silently expand privilege."
+        },
+        {
+          "id": "PLAT005",
+          "title": "No hidden persistence or process-resurrection behaviour",
+          "policy": "review",
+          "severity": "high",
+          "fix": "Review boot receivers, auto-start, foreground-service disguises, invisible activities or overlays, cross-process resurrection, silent media, watchdogs, and restart loops. Persistence must be necessary, disclosed, stoppable by the user, and covered by kill, revoke, reboot, and uninstall tests."
+        },
+        {
+          "id": "PLAT006",
+          "title": "Remote control and command channels require strong authentication",
+          "pattern": "(WebSocket|wss?://|socket\\.io|RTMP|MQTT|grpc|command.?and.?control|C2)",
+          "files": [
+            "*.ts",
+            "*.tsx",
+            "*.js",
+            "*.jsx",
+            "*.java",
+            "*.kt",
+            "*.py",
+            "*.go",
+            "*.rs",
+            "*.cs",
+            "*.gd"
+          ],
+          "must_have_nearby": [
+            "Authorization",
+            "Bearer",
+            "verifySignature",
+            "authenticate",
+            "mutual TLS",
+            "allowlist",
+            "nonce",
+            "replay"
+          ],
+          "severity": "critical",
+          "fix": "Every remote command, screen stream, telemetry channel, and update channel needs authenticated peers, scoped capabilities, replay protection, rate limits, TLS, revocation, and server-side authorisation. Encryption alone is not authorisation."
+        },
+        {
+          "id": "PLAT007",
+          "title": "Release artifacts exclude developer bridges and debug flags",
+          "policy": "review",
+          "severity": "high",
+          "fix": "Build and inspect the actual release artifact. Verify debug flags, test endpoints, local admin panels, verbose logs, developer menus, ADB hooks, test certificates, and source maps are absent or inaccessible."
+        }
+      ]
+    },
+    "defi_and_smart_contracts": {
+      "label": "DeFi & Smart-Contract Security",
+      "weight": 12,
+      "activate_when": [
+        "*.sol",
+        "foundry.toml",
+        "hardhat.config.*",
+        "truffle-config.*",
+        "contracts/**",
+        "migrations/**",
+        "deployments/**"
+      ],
+      "checks": [
+        {
+          "id": "DEFI001",
+          "title": "Critical state-changing functions have explicit access control",
+          "policy": "manual",
+          "severity": "critical",
+          "fix": "Review mint, burn, upgrade, initialise, rescue, pause, parameter-change, withdrawal, oracle-update, and governance execution paths. Require explicit roles and test that unauthorised callers fail."
+        },
+        {
+          "id": "DEFI002",
+          "title": "Economic invariants are specified and tested",
+          "policy": "manual",
+          "severity": "critical",
+          "fix": "Write and test invariants for supply, reserves, collateralisation, debt, shares, rewards, fees, and conservation of value across every state transition and cross-contract path."
+        },
+        {
+          "id": "DEFI003",
+          "title": "Oracle inputs resist manipulation and stale data",
+          "policy": "manual",
+          "severity": "critical",
+          "fix": "Do not rely on a single low-liquidity spot pool. Validate source independence, freshness, bounds, decimals, deviation, sequencer status where relevant, and failure behaviour. Test flash-loan and same-block manipulation."
+        },
+        {
+          "id": "DEFI004",
+          "title": "Reentrancy, callbacks, and external calls are controlled",
+          "policy": "manual",
+          "severity": "critical",
+          "fix": "Apply checks-effects-interactions, narrowly scoped reentrancy guards, safe token handling, callback threat modelling, and cross-contract tests."
+        },
+        {
+          "id": "DEFI005",
+          "title": "Flash-loan and same-transaction economic attacks are tested",
+          "policy": "manual",
+          "severity": "critical",
+          "fix": "Test price, liquidity, collateral, reward, liquidation, governance, reserve, and share-accounting logic against atomic manipulation on a local fork or testnet."
+        },
+        {
+          "id": "DEFI006",
+          "title": "Token-standard edge cases are covered",
+          "policy": "manual",
+          "severity": "high",
+          "fix": "Test fee-on-transfer, rebasing, non-standard return values, decimals, approval and permit replay, ERC-777-style hooks, malicious receivers, and zero-value or rounding cases."
+        },
+        {
+          "id": "DEFI007",
+          "title": "Upgrade, admin, emergency, and deployment controls are independently reviewed",
+          "policy": "manual",
+          "severity": "high",
+          "fix": "Review proxy initialisation, implementation upgrades, multisig, timelocks, pause, recovery, chain IDs, compiler settings, linked libraries, constructor arguments, and privileged addresses. Verify deployed source and bytecode."
+        },
+        {
+          "id": "DEFI008",
+          "title": "Static, fuzz, invariant, fork, and runtime monitoring controls exist",
+          "policy": "manual",
+          "severity": "high",
+          "fix": "Run static analysis, dependency checks, unit tests, fuzzing, invariant tests, fork-based integration tests, event monitoring, alert thresholds, pause criteria, bug bounty or responsible disclosure, and incident response before mainnet."
+        }
+      ]
+    }
+  },
+  "pre_launch_ai_audit_prompts": [
+    {
+      "name": "supply-chain-scan",
+      "prompt": "Audit the dependency tree. List every direct dep, the version, when it was last updated, and any open CVEs (>=7.0 CVSS). Flag any package that hasn't been updated in >12 months. Flag any package with <1000 weekly downloads unless it's a well-known foundation lib.",
+      "use_when": "Before any new install or weekly"
+    },
+    {
+      "name": "permission-audit",
+      "prompt": "List every file/database/endpoint in this app. For each, answer: who can access it, how is that verified, what's the blast radius if compromised? Flag any resource where 'anyone on the internet' is currently the answer.",
+      "use_when": "Before any deploy"
+    },
+    {
+      "name": "input-trust-audit",
+      "prompt": "Find every place user input enters the system (request body, query params, headers, file uploads, webhooks). For each, trace where it flows: rendered as HTML? Concatenated into SQL? Interpolated into a shell command? Used as a file path? Used as a Mongo query key? Flag anything not parameterised / sanitised / allowlisted.",
+      "use_when": "Before any new feature ships"
+    },
+    {
+      "name": "secret-leak-scan",
+      "prompt": "Grep the entire codebase (including git history) for: api_key, secret, password, token, bearer, AWS_, sk_live_, sk_test_, whsec_, xoxb-, ghp_, AKIA, BEGIN PRIVATE KEY. Report any matches with file path, line, and whether the value looks like a real credential (>=16 chars, not 'example', not 'xxx').",
+      "use_when": "Daily in CI"
+    }
+  ],
+  "stack_profile": {
+    "name": "gm-game",
+    "stack": "Godot 4.3 HTML5 client + Cloudflare Worker (JS) + Wrangler",
+    "not_present": [
+      "Supabase",
+      "Postgres",
+      "MongoDB",
+      "React/Next",
+      "Vite"
+    ],
+    "note": "Supabase/Mongo/React-specific patterns naturally skip or pass on this stack; DeFi category is MANUAL (external ERC-20/721 interactions, no .sol in repo) \u2014 see DEFI_REVIEW.md. Platform-privilege manual items live in ANDROID_EXPORT_SECURITY.md."
+  }
+}

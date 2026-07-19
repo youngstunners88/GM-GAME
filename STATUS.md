@@ -11,6 +11,32 @@
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
 
+## 🏗 NEW — ICM RESTRUCTURE + COACH'S SECURITY GATE + L2/L3 DEPTH (2026-07-19)
+
+- **ICM Architect structure** (your coach's framework, github.com/RinDig/icm-architect):
+  the repo now opens with `00-welcome.md` → `01-architecture.md` → `02-status.md`,
+  and four track nodes (`godot-client/`, `backend/`, `marketing/`, `docs/`) each
+  carrying context / current-state / next-task / decision-log. A fresh session
+  can walk in cold and know exactly what to do — nothing physically moved, so
+  zero risk to res:// paths or CI.
+- **Coach's secure-build-checklist is now a CI gate**: `scripts/security-audit.ts`
+  (33+ checks, stack-adapted) blocks deploys on critical/high, uploads
+  `security-report.json`, comments blockers on the PR. Its first run caught
+  two REAL gaps — we collected emails with no ToS/Privacy and no data
+  export/delete flow. Both fixed properly: `terms.md` + `privacy.md` written,
+  and real `/data-export` + `/data-delete` endpoints added (linked in every
+  email footer). Gate now green: 28 pass / 0 fail. Manual gates:
+  `DEFI_REVIEW.md` (contract addresses + no-approvals posture) and
+  `ANDROID_EXPORT_SECURITY.md` (pre-committed for a future Android build).
+- **Levels 2 & 3 got the full depth treatment** (`LEVEL_23_EXTEND.md`):
+  Crystal Caverns — mirrored crystal one-way arc, two full-height shaft
+  ladders, 3 secret walls. Gold Rush — pressure-plate TIMED-GATE run onto a
+  golden coin lane, ladder, 3 secret walls, and the token-gated
+  **FORT KNOX VAULT** community room before the boss.
+- **Both Mistral keys validated (HTTP 200)** — the Oracle is fully unblocked
+  the moment the backend deploys. Key #2 wired as automatic failover.
+  Vibe CLI installed (v2.21.0); `vibe --setup` is interactive — yours to run.
+
 ## 🕹 NEW — LEVEL DEPTH AS VIDEO-GAME LAYER (2026-07-19, task #23)
 
 Level 1 got deeper — and every mechanic serves data or marketing, not just

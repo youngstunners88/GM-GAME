@@ -8,6 +8,10 @@ extends Area2D
 ## spectacle, never progression. Data comes from /community-lore and
 ## /hall-of-blaze via Web3Bridge; offline the wall shows the house graffiti.
 
+## Themed reuse (task #23 extension): L1 = "THE HALL OF BLAZE"; L3 places the
+## same room as the Fort Knox vault. Same gate, same community data.
+@export var room_title: String = "— THE HALL OF BLAZE —"
+
 var _opened: bool = false
 
 func _ready() -> void:
@@ -36,7 +40,7 @@ func _on_body_entered(body: Node2D) -> void:
 	Web3Bridge.report_metric("secret_found", {"kind": "hall_of_blaze"})
 	AudioManager.play_sfx("powerup")
 	ScreenShake.shake(0.2, 3.0)
-	_float_label("— THE HALL OF BLAZE —", Vector2(-80, -170), Color(1.0, 0.85, 0.4))
+	_float_label(room_title, Vector2(-80, -170), Color(1.0, 0.85, 0.4))
 	# Graffiti wall: three community lore snippets, sprayed in sequence.
 	if Web3Bridge.has_backend():
 		for i in range(3):

@@ -67,8 +67,13 @@ record() {
 # adds generic key=value secret assignments and PEM private-key headers,
 # excluding this script and known compiled-binary paths.
 SECRET_PATTERN='sk_live|sk_test|AKIA[0-9A-Z]{16}|pk_live|-----BEGIN [A-Z ]*PRIVATE KEY-----|(api[_-]?key|secret|password|token)["'"'"']?\s*[:=]\s*["'"'"'][A-Za-z0-9+/_-]{20,}["'"'"']'
+# security-audit.ts + its checklist JSON are scanner RULE DEFINITIONS — they
+# legitimately name secret prefixes (sk_live_, ghp_, whsec_...) as patterns to
+# hunt for. Excluding them from SEC-001 is excluding the detector, not a leak;
+# gitleaks still scans them for actual secret VALUES in CI.
 hits=$(grep -rEn "$SECRET_PATTERN" web/game src scripts .github 2>/dev/null \
   --exclude="security-sentinel.sh" --exclude="release-game.sh" --exclude-dir=".git" \
+  --exclude="security-audit.ts" --exclude="security-checklist.json" \
   --exclude="*.wasm" --exclude="*.pck" | head -10)
 if [ -n "$hits" ]; then
   record "SEC-001" "critical" "FAIL" "No secret-looking strings in shipped paths" "$hits"
