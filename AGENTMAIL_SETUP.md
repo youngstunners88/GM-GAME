@@ -16,6 +16,7 @@ additive**: wallet connect, the Oracle, CI, and the security model are untouched
    cd backend
    wrangler secret put AGENTMAIL_API_KEY
    wrangler secret put WEBHOOK_SECRET      # any long random string; gates the support webhook + previews
+   wrangler secret put AGENTMAIL_WEBHOOK_SIGNING_KEY  # webhook signing secret from AgentMail (svix-style whsec_...)
    wrangler secret put XAI_API_KEY         # optional: Grok fallback for support triage (Mistral primary)
    ```
 
@@ -101,7 +102,7 @@ review them in the AgentMail dashboard and send manually, or flip back to "0".
 
 | Trigger | What happens |
 |---|---|
-| Player opts in (in-game panel) | `POST /email/signup` → validated (regex + MX via DNS-over-HTTPS) → stored in KV → **Welcome 1** sent immediately |
+| Player opts in (in-game panel) | `POST /email/signup` → validated (regex + MX via DNS-over-HTTPS) → stored in KV → **Welcome 1** sent immediately, carrying the **double-opt-in confirm link** (`/confirm`). Campaign mail (digest, welcome 2/3, milestones) only ever goes to **confirmed** addresses. |
 | Daily cron 09:00 UTC | **Welcome 2** (day 3, only if they haven't played), **Welcome 3** (day 7); referral follow-ups (clicked, no conversion, 48 h) |
 | Monday cron 10:00 UTC | **Weekly digest** to every consenting subscriber (rank, delta, top 3, death stats + tip, CTAs) or the "we missed you" variant; **founder digest** to `ADMIN_EMAIL` |
 | First Auditor kill | `POST /events {boss_defeat}` → milestone email (once ever, idempotent); top-10 entry adds a share draft |
@@ -113,8 +114,17 @@ review them in the AgentMail dashboard and send manually, or flip back to "0".
   (`digest:<week>:<player>`, `welcome1:<pid>`, …) so retries/cron re-runs can't double-send.
 - **Max 1 email per player per day** (welcome sequence exempt, per design).
 - **429 → exponential backoff** (Retry-After honored, 3 attempts).
-- **Opt-in only**: no consent, no email. Unsubscribed addresses are locally
-  suppressed AND pushed to the AgentMail send **block list** (`lists/send/block`).
+- **Opt-in only, double-confirmed**: no consent → 400; campaign mail requires
+  the `/confirm` click from Welcome 1. Unsubscribed addresses are locally
+  suppressed AND pushed to the AgentMail send **block list** (`lists/send/block`) —
+  including referral invitees (their unsubscribe token maps to the referral record).
+- **Abuse quotas** (per-IP fixed windows + per-address gates): signup 5/hr +
+  1/address/day; referral 3/hr + 3/day/player + one invite per address ever;
+  events 120/min. Support webhook: URL secret + svix-style signature
+  (`AGENTMAIL_WEBHOOK_SIGNING_KEY`) + per-event replay dedup (24 h KV gate).
+- **Support auto-send is constrained**: only category `question`, confidence
+  ≥ 0.7, AND a content-checked answer (≤1200 chars, no third-party links, no
+  email addresses) auto-sends; everything else stays a `human_review` draft.
 
 ## 7. Compliance (CAN-SPAM basics — implemented, not aspirational)
 
@@ -151,7 +161,8 @@ review them in the AgentMail dashboard and send manually, or flip back to "0".
 | Method | Path | Purpose |
 |---|---|---|
 | POST | `/email/signup` | Opt-in capture (validates, stores, sends Welcome 1) |
-| GET/POST | `/unsubscribe?token=` | One-click unsubscribe |
+| GET | `/confirm?token=` | Double-opt-in confirmation (from Welcome 1) — unlocks campaign mail |
+| GET/POST | `/unsubscribe?token=` | One-click unsubscribe (players AND referral invitees) |
 | POST | `/events` | Game events: `play_start`, `death`, `boss_defeat`, `wallet_connect` |
 | POST | `/referral` | Send a friend invite |
 | GET | `/ref?token=` | Referral click-through (tracked) → game |

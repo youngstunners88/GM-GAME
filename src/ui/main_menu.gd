@@ -38,8 +38,11 @@ func _ready() -> void:
 func _setup_layer_shift_buttons() -> void:
     var row := VBoxContainer.new()
     row.add_theme_constant_override("separation", 8)
-    row.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-    row.position = Vector2(24, get_viewport().get_visible_rect().size.y - 210)
+    # Anchors stay at the default TOP-LEFT and we position absolutely.
+    # (Bug fix: PRESET_BOTTOM_LEFT + a viewport-height offset double-counted
+    # the bottom edge and pushed the whole column ~500px BELOW the screen —
+    # every layer-shift button was invisible in shipped builds.)
+    row.position = Vector2(24, get_viewport().get_visible_rect().size.y - 300)
     add_child(row)
     var defs := [
         ["👛 CONNECT WALLET", _on_connect_wallet],
@@ -182,7 +185,8 @@ func _setup_ambience() -> void:
     var version := Label.new()
     version.text = VERSION_TAG
     version.modulate = Color(1, 1, 1, 0.5)
-    version.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+    # Default top-left anchors + absolute position (same off-screen bug fix as
+    # the layer-shift button column — bottom anchors double-counted the edge).
     version.position = Vector2(get_viewport().get_visible_rect().size.x - 210,
             get_viewport().get_visible_rect().size.y - 34)
     add_child(version)

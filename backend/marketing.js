@@ -57,6 +57,22 @@ const kvJson = async (env, key, fallback) => {
   catch (e) { return fallback; }
 };
 
+// Per-IP fixed-window rate limiter for the marketing routes (same pattern as
+// worker.js's overRateLimit; duplicated here so worker.js stays untouched).
+// PR #6 review #1: public routes must not be able to drain the AgentMail
+// quota or flood arbitrary recipients.
+async function overLimit(env, request, bucket, limit, windowSec) {
+  try {
+    if (!env.GAME_KV) return false;
+    const ip = request.headers.get("cf-connecting-ip") || "anon";
+    const win = Math.floor(Date.now() / 1000 / windowSec);
+    const key = `rl:mkt:${bucket}:${ip}:${win}`;
+    const n = parseInt((await env.GAME_KV.get(key)) || "0") + 1;
+    await env.GAME_KV.put(key, String(n), { expirationTtl: windowSec * 2 });
+    return n > limit;
+  } catch (e) { return false; }
+}
+
 // Email syntax + MX check (no deps: DNS-over-HTTPS against Cloudflare).
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,255}\.[^\s@]{2,}$/;
 async function validEmail(email) {
@@ -72,15 +88,18 @@ async function validEmail(email) {
   }
 }
 
-// Open-redirect guard for the /go click tracker: only these hosts may be
-// redirect targets, everything else falls back to the game.
-const REDIRECT_HOSTS = ["itch.io", "twitter.com", "x.com", "basescan.org", "t.me"];
+// Open-redirect guard for the /go click tracker (PR #6 review: exact hosts,
+// not whole-registrable-domain wildcards — a trusted-domain redirector is a
+// phishing primitive). Only *.itch.io keeps a suffix match because the game
+// itself is served from itch's CDN subdomains; everything else is exact.
+const REDIRECT_HOSTS_EXACT = ["itch.io", "youngstunners88.itch.io", "twitter.com", "x.com", "basescan.org", "t.me"];
 function safeRedirect(env, to) {
   try {
     const u = new URL(to);
+    if (u.protocol !== "https:") return GAME_URL;
     const host = u.hostname.toLowerCase();
     const backendHost = env.PUBLIC_BACKEND_URL ? new URL(env.PUBLIC_BACKEND_URL).hostname : "";
-    if (host === backendHost || REDIRECT_HOSTS.some((h) => host === h || host.endsWith("." + h)))
+    if (host === backendHost || REDIRECT_HOSTS_EXACT.includes(host) || host.endsWith(".itch.io"))
       return u.toString();
   } catch (e) { /* fallthrough */ }
   return GAME_URL;
@@ -114,16 +133,27 @@ async function addToIndex(env, key, val, cap) {
 export async function handleMarketingRoute(path, request, env, cors) {
   // -- TASK 1: email capture ------------------------------------------------
   if (path === "/email/signup" && request.method === "POST") {
+    // Abuse controls (PR #6 review #1): per-IP quota + one signup email per
+    // address per day. The single immediate email doubles as DOUBLE-OPT-IN:
+    // Welcome 1 carries a "confirm subscription" link, and NO campaign mail
+    // (digest/welcome-2/3/milestones) goes out until /confirm is clicked.
+    if (await overLimit(env, request, "signup", 5, 3600))
+      return json({ ok: false, error: "rate_limited" }, 429, cors);
     const { player_id, email, consent, wallet_address, name } = await request.json();
     const pid = String(player_id || "").slice(0, 64);
     const addr = String(email || "").trim().toLowerCase().slice(0, 254);
     if (!pid || !addr) return json({ ok: false, error: "player_id and email required" }, 400, cors);
     if (consent !== true) return json({ ok: false, error: "consent required" }, 400, cors);
     if (!(await validEmail(addr))) return json({ ok: false, error: "invalid email" }, 400, cors);
+    if (await isSuppressed(env, addr)) return json({ ok: false, error: "address opted out" }, 400, cors);
+    const perAddrKey = "signupaddr:" + addr + ":" + dayStamp();
+    if ((await env.GAME_KV.get(perAddrKey)) !== null)
+      return json({ ok: false, error: "already signed up today" }, 429, cors);
+    await env.GAME_KV.put(perAddrKey, "1", { expirationTtl: 172800 });
     const existing = await getPlayer(env, pid);
     const rec = existing || {
       created_at: now(), welcome_stage: 0, played_at: 0, last_sent_at: 0,
-      unsub_token: token(),
+      unsub_token: token(), confirmed: false,
     };
     rec.email = addr;
     rec.consent = true;
@@ -142,13 +172,30 @@ export async function handleMarketingRoute(path, request, env, cors) {
       }
     }
     // TASK 2B: welcome email 1, immediately (welcome sequence is exempt from
-    // the daily cap by design).
+    // the daily cap by design). Carries the double-opt-in confirm link.
     if (!existing || !rec.welcome_stage) {
-      const msg = T.welcome(env, 1, { name: rec.name, unsubToken: rec.unsub_token });
+      const confirmUrl = `${env.PUBLIC_BACKEND_URL || ""}/confirm?token=${encodeURIComponent(rec.unsub_token)}`;
+      const msg = T.welcome(env, 1, { name: rec.name, unsubToken: rec.unsub_token, confirmUrl });
       const sent = await sendEmail(env, { to: addr, ...msg, labels: ["welcome_sent_1"], key: `welcome1:${pid}` });
       if (sent.ok) { rec.welcome_stage = 1; rec.welcome_1_at = now(); await env.GAME_KV.put("pemail:" + pid, JSON.stringify(rec)); }
     }
     return json({ ok: true }, 200, cors);
+  }
+
+  // Double-opt-in confirmation (clicked from Welcome 1). Campaign sends check
+  // rec.confirmed — only this route sets it, so a spoofed /email/signup POST
+  // alone can never subscribe an address to ongoing mail.
+  if (path === "/confirm" && request.method === "GET") {
+    const tok = new URL(request.url).searchParams.get("token") || "";
+    const pid = await env.GAME_KV.get("unsub:" + String(tok).slice(0, 64));
+    if (pid && !pid.startsWith("ref:")) {
+      const rec = await getPlayer(env, pid);
+      if (rec) { rec.confirmed = true; await env.GAME_KV.put("pemail:" + pid, JSON.stringify(rec)); }
+    }
+    return new Response(
+      "<html><body style='background:#0c1410;color:#e7f5ec;font-family:sans-serif;text-align:center;padding:60px'>" +
+      "<h2>🌿 Subscription confirmed.</h2><p>Weekly Smoke Realm reports incoming. See you Monday.</p></body></html>",
+      { headers: { "Content-Type": "text/html", ...cors } });
   }
 
   // One-click unsubscribe (GET for the mail-client link, POST for API use).
@@ -157,10 +204,21 @@ export async function handleMarketingRoute(path, request, env, cors) {
     if (request.method === "GET") tok = new URL(request.url).searchParams.get("token") || "";
     else tok = ((await request.json()).token) || "";
     const pid = await env.GAME_KV.get("unsub:" + String(tok).slice(0, 64));
-    if (pid) {
+    if (pid && pid.startsWith("ref:")) {
+      // Referral-invitee unsubscribe (PR #6 review #3: this used to be a false
+      // success — the value is a ref record key, NOT a player id). Suppress the
+      // invitee's address directly and mark the referral record.
+      const r = await kvJson(env, pid, null);
+      if (r && r.friend_email) {
+        await suppress(env, r.friend_email, "referral invitee unsubscribed");
+        r.unsubscribed_at = now();
+        await env.GAME_KV.put(pid, JSON.stringify(r));
+      }
+    } else if (pid) {
       const rec = await getPlayer(env, pid);
       if (rec) {
         rec.consent = false;
+        rec.confirmed = false;
         await env.GAME_KV.put("pemail:" + pid, JSON.stringify(rec));
         await suppress(env, rec.email, "one-click unsubscribe");
       }
@@ -174,6 +232,8 @@ export async function handleMarketingRoute(path, request, env, cors) {
 
   // -- game events (deaths / plays / boss defeats / wallet connects) --------
   if (path === "/events" && request.method === "POST") {
+    if (await overLimit(env, request, "events", 120, 60))
+      return json({ ok: false, error: "rate_limited" }, 429, cors);
     const { player_id, event, boss, score, first_time, wallet_address } = await request.json();
     const pid = String(player_id || "anon").slice(0, 64);
     const week = isoWeek();
@@ -196,7 +256,7 @@ export async function handleMarketingRoute(path, request, env, cors) {
       // celebrated in-game).
       const rec = await getPlayer(env, pid);
       const gate = `milestone:${pid}:boss_${boss || "tax"}`;
-      if (rec && rec.consent && (await env.GAME_KV.get(gate)) === null && (await underDailyCap(env, pid))) {
+      if (rec && rec.consent && rec.confirmed && (await env.GAME_KV.get(gate)) === null && (await underDailyCap(env, pid))) {
         const board = await kvJson(env, "leaderboard", []);
         const rank = 1 + board.findIndex((b) => rec.wallet && b.addr === rec.wallet);
         const msg = T.milestoneBossDefeat(env, {
@@ -221,10 +281,22 @@ export async function handleMarketingRoute(path, request, env, cors) {
 
   // -- TASK 5: referral engine ---------------------------------------------
   if (path === "/referral" && request.method === "POST") {
+    // Abuse controls (PR #6 review #1): per-IP quota, per-referrer daily cap,
+    // and ONE invite per friend address ever — this endpoint sends mail to a
+    // third party, so it gets the tightest limits in the file.
+    if (await overLimit(env, request, "referral", 3, 3600))
+      return json({ ok: false, error: "rate_limited" }, 429, cors);
     const { player_id, friend_email, player_name } = await request.json();
     const addr = String(friend_email || "").trim().toLowerCase().slice(0, 254);
     if (!(await validEmail(addr))) return json({ ok: false, error: "invalid email" }, 400, cors);
     if (await isSuppressed(env, addr)) return json({ ok: false, error: "recipient opted out" }, 400, cors);
+    if ((await env.GAME_KV.get("refonce:" + addr)) !== null)
+      return json({ ok: false, error: "already invited" }, 429, cors);
+    const refDayKey = `refday:${String(player_id || "anon").slice(0, 64)}:${dayStamp()}`;
+    const refDayCount = parseInt((await env.GAME_KV.get(refDayKey)) || "0");
+    if (refDayCount >= 3) return json({ ok: false, error: "daily invite limit" }, 429, cors);
+    await env.GAME_KV.put(refDayKey, String(refDayCount + 1), { expirationTtl: 172800 });
+    await env.GAME_KV.put("refonce:" + addr, "1");
     const t = token();
     const rec = {
       referrer: String(player_id || "anon").slice(0, 64),
@@ -265,9 +337,28 @@ export async function handleMarketingRoute(path, request, env, cors) {
     const secret = new URL(request.url).searchParams.get("secret") || "";
     if (!env.WEBHOOK_SECRET || secret !== env.WEBHOOK_SECRET)
       return json({ ok: false, error: "unauthorized" }, 401, cors);
-    const evt = await request.json();
-    if (evt && evt.event_type === "message.received" && evt.message)
+    // Provider signature verification (PR #6 review #2). svix-style HMAC over
+    // "<id>.<timestamp>.<rawBody>" with a stale-timestamp window; enforced
+    // when AGENTMAIL_WEBHOOK_SIGNING_KEY is set (set it — see
+    // AGENTMAIL_SETUP.md), on top of the URL secret.
+    const rawBody = await request.text();
+    if (env.AGENTMAIL_WEBHOOK_SIGNING_KEY) {
+      const ok = await verifyWebhookSignature(env, request, rawBody);
+      if (!ok) return json({ ok: false, error: "bad signature" }, 401, cors);
+    }
+    let evt = null;
+    try { evt = JSON.parse(rawBody); } catch (e) { return json({ ok: false, error: "bad json" }, 400, cors); }
+    if (evt && evt.event_type === "message.received" && evt.message) {
+      // Replay/duplicate gate: one triage per event/message id, 24h TTL.
+      const evtId = String(evt.event_id || evt.message.message_id || evt.message.id || "");
+      if (evtId) {
+        const seenKey = "evt:" + evtId.slice(0, 120);
+        if ((await env.GAME_KV.get(seenKey)) !== null)
+          return json({ ok: true, deduped: true }, 200, cors);
+        await env.GAME_KV.put(seenKey, "1", { expirationTtl: 86400 });
+      }
       return json(await handleSupportEmail(env, evt.message), 200, cors);
+    }
     return json({ ok: true, ignored: true }, 200, cors);
   }
 
@@ -293,6 +384,34 @@ export async function handleMarketingRoute(path, request, env, cors) {
   }
 
   return null; // not ours — worker continues to its existing routes
+}
+
+// svix-style webhook signature check: headers svix-id / svix-timestamp /
+// svix-signature (or webhook-* equivalents), HMAC-SHA256 over
+// "<id>.<timestamp>.<rawBody>" with the base64 signing key, constant-ish
+// compare, ±5 min timestamp window.
+async function verifyWebhookSignature(env, request, rawBody) {
+  try {
+    const h = request.headers;
+    const id = h.get("svix-id") || h.get("webhook-id") || "";
+    const ts = h.get("svix-timestamp") || h.get("webhook-timestamp") || "";
+    const sigHeader = h.get("svix-signature") || h.get("webhook-signature") || "";
+    if (!id || !ts || !sigHeader) return false;
+    if (Math.abs(Date.now() / 1000 - parseInt(ts)) > 300) return false; // stale
+    let keyB64 = env.AGENTMAIL_WEBHOOK_SIGNING_KEY;
+    if (keyB64.startsWith("whsec_")) keyB64 = keyB64.slice(6);
+    const keyBytes = Uint8Array.from(atob(keyB64), (c) => c.charCodeAt(0));
+    const cryptoKey = await crypto.subtle.importKey("raw", keyBytes,
+      { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+    const signed = await crypto.subtle.sign("HMAC", cryptoKey,
+      new TextEncoder().encode(`${id}.${ts}.${rawBody}`));
+    const expected = btoa(String.fromCharCode(...new Uint8Array(signed)));
+    // Header format: "v1,<base64sig>" (possibly several space-separated).
+    return sigHeader.split(" ").some((part) => {
+      const sig = part.includes(",") ? part.split(",")[1] : part;
+      return sig === expected;
+    });
+  } catch (e) { return false; }
 }
 
 // ===========================================================================
@@ -391,13 +510,26 @@ async function handleSupportEmail(env, message) {
     return { ok: true, action: "human_review", reason: "llm unavailable or unparseable" };
   }
 
-  const confident = Number(parsed.confidence) >= 0.7;
+  // Auto-send gate (PR #6 review #4): the email body is attacker-controlled
+  // prompt input, so model confidence alone must not authorize a send. The
+  // reply may auto-send ONLY when ALL hold — otherwise it stays a draft for
+  // human review (reply still only ever goes to the original sender):
+  //   - category is a plain FAQ "question" (bug reports/feature requests and
+  //     anything else always get human eyes),
+  //   - model confidence >= 0.7,
+  //   - the answer passes content checks: bounded length, no links other than
+  //     the game's own URL, no email addresses (blocks exfil/phish payloads).
+  const answer = String(parsed.answer).slice(0, 2000);
+  const strayLinks = (answer.match(/https?:\/\/\S+/gi) || []).filter((u) => !u.startsWith(GAME_URL));
+  const containsEmail = /[^\s@]+@[^\s@]+\.[^\s@]{2,}/.test(answer);
+  const contentSafe = answer.length <= 1200 && strayLinks.length === 0 && !containsEmail;
+  const confident = Number(parsed.confidence) >= 0.7 && parsed.category === "question" && contentSafe;
   const labels = [confident ? "auto_resolved" : "human_review"];
   if (parsed.category === "bug_report") labels.push("bug_report");
   if (parsed.category === "feature_request") labels.push("feature_request");
   if (inboxId && messageId) await labelMessage(env, inboxId, messageId, labels);
 
-  const reply = T.supportReply(env, { subject, body: parsed.answer });
+  const reply = T.supportReply(env, { subject, body: answer });
   const key = "support:" + (messageId || token());
   if (confident) {
     const sent = await draftThenSend(env, { to: fromAddr, ...reply, labels, key, inbox: inboxId });
@@ -431,7 +563,9 @@ async function weeklyDigests(env) {
   const pids = await kvJson(env, "pemail_index", []);
   for (const pid of pids) {
     const rec = await getPlayer(env, pid);
-    if (!rec || !rec.consent || (await isSuppressed(env, rec.email))) continue;
+    // confirmed = double-opt-in via /confirm (PR #6 review #1) — campaign
+    // mail never goes to an address that only ever appeared in a POST body.
+    if (!rec || !rec.consent || !rec.confirmed || (await isSuppressed(env, rec.email))) continue;
     if (!(await underDailyCap(env, pid))) continue;
     const idx = weekly.findIndex((b) => rec.wallet && b.addr === rec.wallet);
     const played = idx >= 0 || (rec.played_at || 0) >= cutoff;
@@ -494,7 +628,8 @@ async function welcomeSequenceTick(env) {
   const pids = await kvJson(env, "pemail_index", []);
   for (const pid of pids) {
     const rec = await getPlayer(env, pid);
-    if (!rec || !rec.consent || (await isSuppressed(env, rec.email))) continue;
+    // Welcome 2/3 are campaign mail → double-opt-in required (see /confirm).
+    if (!rec || !rec.consent || !rec.confirmed || (await isSuppressed(env, rec.email))) continue;
     const age = now() - (rec.created_at || 0);
     // Email 2: 3 days in, ONLY if they haven't played yet.
     if (rec.welcome_stage === 1 && age >= 3 * 86400000) {

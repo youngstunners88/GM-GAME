@@ -49,7 +49,20 @@ func change_state(new_state: State) -> bool:
     _current = new_state
     _apply_side_effects(new_state)
     state_changed.emit(State.keys()[_previous], State.keys()[_current])
+    _announce_state_to_page(State.keys()[_current])
     return true
+
+## Web-only state beacon: posts {type:"state", value:<name>} to the embedding
+## page via the fixed same-origin postMessage template (the sentinel-approved
+## pattern from combo_system). Powers the browser-verify gate's positive
+## "gameplay actually started" check; a no-op off web and for cross-origin
+## embeds (postMessage targets window.location.origin only).
+func _announce_state_to_page(state_name: String) -> void:
+    if OS.has_feature("web"):
+        var payload := JSON.stringify({"type": "state", "value": state_name})
+        JavaScriptBridge.eval(
+            "try { window.parent.postMessage(%s, window.location.origin); } catch (e) {}" % payload
+        )
 
 func _apply_side_effects(state: State) -> void:
     # Centralised tree-pause logic. Game freezes only in PAUSED.

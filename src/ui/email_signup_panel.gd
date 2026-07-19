@@ -26,6 +26,12 @@ func _ready() -> void:
 	_skip.pressed.connect(_on_skip)
 	_email.grab_focus()
 
+## Keyboard path (UI rule: keyboard AND mouse): Escape skips the prompt.
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		get_viewport().set_input_as_handled()
+		_on_skip()
+
 func _on_join() -> void:
 	var email := _email.text.strip_edges()
 	if email == "" or not "@" in email or not "." in email.get_slice("@", 1):

@@ -119,13 +119,20 @@ export function welcome(env, stage, p) {
   const name = esc(p.name || "friend");
   const bodies = {
     1: {
-      subject: "🌿 Welcome to the Smoke Realm",
+      subject: "🌿 Welcome to the Smoke Realm — confirm your spot",
       title: "Welcome in. Stay chill.",
       html: `<p>Yo ${name}, glad you're here.</p>
         <p><b>Your first tip:</b> Blaze Mode stacks with double-jump — grab a
         Weed Leaf, then double-jump to clear gaps that look impossible.</p>
+        ${p.confirmUrl ? `<p><b>One tap to finish:</b> confirm below and the weekly
+        rank report + tips start landing. No confirm, no more emails — simple.</p>
+        <div style="text-align:center;margin:14px 0;">
+          <a href="${esc(p.confirmUrl)}" style="display:inline-block;background:#7ee2a8;color:#0c1410;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold;">✅ Confirm Subscription</a>
+        </div>` : ""}
         <div style="text-align:center;margin:18px 0;">${cta(base, "play_now", GAME_URL, "▶ Play Now")}</div>`,
-      text: `Yo ${p.name || "friend"}, glad you're here.\n\nFirst tip: Blaze Mode stacks with double-jump - grab a Weed Leaf, then double-jump to clear gaps that look impossible.\n\nPlay: ${GAME_URL}`,
+      text: `Yo ${p.name || "friend"}, glad you're here.\n\nFirst tip: Blaze Mode stacks with double-jump - grab a Weed Leaf, then double-jump to clear gaps that look impossible.\n` +
+        (p.confirmUrl ? `\nConfirm your subscription (required for weekly reports): ${p.confirmUrl}\n` : "") +
+        `\nPlay: ${GAME_URL}`,
     },
     2: {
       subject: "The Tax Collector is waiting…",

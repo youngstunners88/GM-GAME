@@ -69,6 +69,18 @@ const browser = await chromium.launch({
 try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 
+  // The game's StateMachine posts {type:"state", value:<STATE>} to the page
+  // (same-origin postMessage) on every transition. Collect them — gate 4 needs
+  // a POSITIVE "PLAYING" signal, not just "no errors after clicking".
+  await page.addInitScript(() => {
+    window.__states = [];
+    window.addEventListener('message', (e) => {
+      try {
+        if (e.data && e.data.type === 'state') window.__states.push(String(e.data.value));
+      } catch (_) { /* ignore */ }
+    });
+  });
+
   page.on('console', (m) => {
     const line = `[${m.type()}] ${m.text().slice(0, 300)}`;
     result.consoleTail = [...result.consoleTail.slice(-30), line];
@@ -125,18 +137,37 @@ try {
   await page.waitForTimeout(2000); // let the menu settle
   await page.screenshot({ path: screenshotFile });
 
-  // Gate 4: drive into Level 1 (menu PLAY button sits mid-canvas).
+  // Gate 4: drive into Level 1 and REQUIRE the game's own PLAYING state
+  // beacon. (The old version only checked "no new errors after clicking" —
+  // a missed click false-passed with a menu screenshot as "gameplay".)
   if (booted) {
-    console.log('[4/4] Clicking PLAY LEVEL 1 and screenshotting gameplay...');
+    console.log('[4/4] Clicking PLAY LEVEL 1 and waiting for PLAYING state...');
     const vp = page.viewportSize();
-    // "PLAY LEVEL 1" button center in the in-canvas menu (1280x720 layout).
-    await page.mouse.click(vp.width * 0.5, vp.height * 0.553);
-    await page.waitForTimeout(9000);
+    // Current menu layout: PLAY button center ≈ y 0.60 (was 0.553 pre-subtitle).
+    await page.mouse.click(vp.width * 0.5, vp.height * 0.6);
+    // First run shows the optional email-signup panel; Escape skips it (the
+    // panel's documented keyboard path). Harmless if no panel appeared.
+    await page.waitForTimeout(2500);
+    await page.keyboard.press('Escape');
+    const playing = await page
+      .waitForFunction(() => window.__states && window.__states.includes('PLAYING'), {
+        timeout: 20000,
+        polling: 500,
+      })
+      .then(() => true)
+      .catch(() => false);
+    await page.waitForTimeout(4000); // let gameplay actually render
     await page.screenshot({ path: levelShot });
     result.screenshots.push(levelShot);
+    result.statesSeen = await page.evaluate(() => window.__states || []);
     const newErrors = result.errors.filter((e) => GODOT_ERROR_RE.test(e));
-    result.tests.level_1_runs =
-      newErrors.length === godotErrors.length ? 'PASS' : 'FAIL: errors during gameplay';
+    if (!playing) {
+      result.tests.level_1_runs = 'FAIL: PLAYING state never reached (click missed or level failed to load)';
+      result.errors.push('Level 1 never reached PLAYING state');
+    } else {
+      result.tests.level_1_runs =
+        newErrors.length === godotErrors.length ? 'PASS' : 'FAIL: errors during gameplay';
+    }
   } else {
     result.tests.level_1_runs = 'SKIP: engine never booted';
   }

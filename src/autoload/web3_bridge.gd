@@ -164,6 +164,10 @@ func _backend(method: String, path: String, body: Dictionary, on_done: Callable)
 		on_done.call({})
 		return
 	var http := HTTPRequest.new()
+	# Bounded: a configured-but-unreachable backend must degrade, never hang UI
+	# that awaits the callback (e.g. the first-play email panel — PR #6 review).
+	# On timeout request_completed still fires (RESULT_TIMEOUT, code 0) → {}.
+	http.timeout = 8.0
 	add_child(http)
 	http.request_completed.connect(func(_r, code, _h, data):
 		var out := {}

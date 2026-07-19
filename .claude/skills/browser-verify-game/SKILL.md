@@ -34,8 +34,15 @@ For the Vercel **launcher page** (PLAY button + iframe) use the older
    InputMap failures in console
 4. **thread_support** — no SharedArrayBuffer errors (would mean
    `thread_support=true` regressed; that breaks itch.io/mobile)
-5. **level_1_runs** — clicks PLAY LEVEL 1 mid-canvas (x 0.5, y 0.553 of
-   viewport), waits 9s, confirms no new errors, screenshots gameplay
+5. **level_1_runs** — clicks PLAY LEVEL 1 mid-canvas (x 0.5, y 0.60 of the
+   viewport — re-measured 2026-07-19 after the menu grew a subtitle; 0.553
+   now misses high), presses Escape ~2.5s later (skips the one-time email
+   signup panel via its keyboard path; harmless otherwise), then REQUIRES the
+   game's own `PLAYING` state beacon within 20s. The StateMachine posts
+   `{type:"state", value:<STATE>}` via same-origin postMessage on every
+   transition — a missed click or a level that fails to load now FAILS this
+   gate instead of false-passing on "no new errors" (which once shipped a
+   menu screenshot as "gameplay evidence").
 
 ## Known-benign console patterns (do NOT fail the run)
 
