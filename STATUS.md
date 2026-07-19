@@ -16,6 +16,11 @@
 The game can now talk to players by email — capture, campaigns, support, and
 your founder digest — via AgentMail, all inside the existing backend. Setup
 guide: **`AGENTMAIL_SETUP.md`**. Additive only; nothing existing changed.
+Hardened after adversarial review (abuse quotas, double opt-in, signed
+webhooks) and **browser-verified end-to-end**: boot 5/5 gates with the new
+stricter check that requires real gameplay, not just a quiet console. Bonus:
+that stricter check exposed and fixed a shipped UI bug — the wallet/Oracle/
+leaderboard menu buttons had been rendering off-screen; they're visible now.
 
 | Feature | Layer | State |
 |---|---|---|
