@@ -322,6 +322,10 @@ func die() -> void:
 	# the death sequence — its end would fail to restore PLAYING and freeze us.
 	if not StateMachine.change_state(StateMachine.State.GAME_OVER):
 		return
+	# AgentMail digest hook: attribute the death to the active boss (if any)
+	# so the weekly email can say "you died to the Tax Collector N times".
+	if BossVoiceSystem._active_boss_id != "":
+		Web3Bridge.report_event("death", {"boss": BossVoiceSystem._active_boss_id})
 	var tween := create_tween()
 	tween.tween_property(self, "scale", Vector2.ZERO, 0.5)
 	tween.tween_property(self, "modulate:a", 0.0, 0.5)

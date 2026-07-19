@@ -138,6 +138,27 @@ deploy**.
 
 ---
 
+## SECTION G — AgentMail marketing engine: email PII (added 2026-07-19)
+
+The AgentMail integration (`backend/agentmail.js`, `marketing.js`,
+`email_templates.js`; see `AGENTMAIL_SETUP.md`) makes the backend store **real
+PII for the first time: player email addresses**. That re-opens C4/C5/D10-class
+items. Live surface remains gated on deployment + AgentMail env being set.
+
+| ID | Item | Status | Note |
+|----|------|--------|------|
+| G1 | **Consent before capture** | **Check every audit (now)** | Signup requires `consent === true` server-side (400 without it); the in-game checkbox is unticked by default and the whole panel is optional + skippable forever (one-time prompt). |
+| G2 | **One-click unsubscribe honored end-to-end** | **Check every audit (now)** | `/unsubscribe?token=` flips consent off, adds the address to local suppression, AND pushes it to AgentMail's send block list. `sendEmail()` refuses suppressed recipients — suppression is enforced at the send seam, not just at campaign selection. |
+| G3 | **PII minimization** (re-opens C4) | **Accepted risk, documented** | Stored per player: email, optional display name (≤40 chars), optional wallet, timestamps, welcome stage. No passwords, no payment data, no addresses. KV is Cloudflare-encrypted at rest; no column-level crypto exists on KV — acceptable for a marketing list, revisit if anything more sensitive is ever stored. |
+| G4 | **Email keys server-side only** (extends F1) | **Check every audit (now)** | `AGENTMAIL_API_KEY`, `WEBHOOK_SECRET`, `XAI_API_KEY` are wrangler secrets read from `env`; nothing email-related ships in the client bundle (the game only calls `/email/signup`, `/referral`, `/events`). |
+| G5 | **Support webhook authenticated** | **Check every audit (now)** | `/agentmail/webhook` (and `/email/preview`) 401 without the `WEBHOOK_SECRET` query param — a spoofed webhook cannot trigger LLM spend or outbound mail. |
+| G6 | **Open-redirect guard on the click tracker** | **Check every audit (now)** | `/go?to=` only redirects to an allow-list (itch.io, twitter/x, basescan, t.me, own backend host); anything else falls back to the game URL. Prevents the mail domain being abused as a phishing redirector. |
+| G7 | **Send-rate + duplicate protection** | **Check every audit (now)** | Idempotency-Key on every send (deterministic per logical email), max 1 email/player/day (welcome exempt by design), 429 exponential backoff. Cron re-runs cannot double-send. |
+| G8 | **Outbound email content** | **Check every audit (now)** | All template interpolations are HTML-escaped (`esc()`), user-supplied text never lands in HTML raw; support replies are LLM plain text wrapped by our template. CAN-SPAM footer (identity + reason + unsubscribe) on every template including referrals to non-subscribers. |
+| G9 | **LLM support triage safety** | **Review before deploy** | Incoming email text (attacker-controlled) is prompt input to Mistral/Grok. Mitigations: reply goes ONLY to the original sender, confidence < 0.7 stays a human-review Draft, labels are fixed strings, no tool use in the triage call. Residual risk: a prompt-injected wrong answer auto-sent to the asker — bounded blast radius; revisit if drafts ever gain send-to-other-recipient ability. |
+
+---
+
 ## SECTION E — Process (human-only, still worth stating)
 
 | ID | Item | Status |

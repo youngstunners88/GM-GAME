@@ -11,7 +11,30 @@
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
 
-## 🚀 NEW — LAYER SHIFT (your coach's value-stack framework, shipped)
+## 📬 NEW — AGENTMAIL MARKETING ENGINE (2026-07-19)
+
+The game can now talk to players by email — capture, campaigns, support, and
+your founder digest — via AgentMail, all inside the existing backend. Setup
+guide: **`AGENTMAIL_SETUP.md`**. Additive only; nothing existing changed.
+
+| Feature | Layer | State |
+|---|---|---|
+| Optional email capture on first play (consent checkbox, skippable forever) | 🎬 | ✅ In game |
+| Welcome sequence (immediate / day-3-if-idle / day-7) | 🎮 | ✅ Code complete |
+| **Monday weekly digest** — personal rank, delta, death stats + boss tips, top 3, CTAs | 🎮 | ✅ Code complete |
+| Milestone emails (first Auditor kill, top-10) | 🎮 | ✅ Code complete |
+| **Founder digest to you every Monday** (players, wallets, CTA clicks, referral conversion, Oracle top questions) | 🎬 | ✅ Code complete |
+| Two-way AI support (support@smokering.game → AI-drafted replies, human-review labels) | 🎮 | ✅ Code complete |
+| Referral engine (invite a friend + 48h follow-up + conversion tracking) | 🎮 | ✅ In game + backend |
+
+**To activate** (one-time, ~20 min): AgentMail API key → verify
+`smokering.game` DNS (SPF/DKIM/DMARC) → create 2 inboxes → set worker vars →
+`wrangler deploy`. Every step is copy-paste in `AGENTMAIL_SETUP.md`.
+Compliance is built-in: consent required, one-click unsubscribe on every email,
+1-email/player/day cap, idempotent sends. Security: checklist **Section G**.
+(Facebook/Instagram/TikTok deliberately excluded for now — reasoning in the doc.)
+
+## 🚀 LAYER SHIFT (your coach's value-stack framework, shipped)
 
 We moved the game up the stack: **📖 Book** (the platformer, unchanged) →
 **🎬 Movie** (baked-in SmokeRing/DIAMONDS/GoldMine context) → **🎮 Video Game**

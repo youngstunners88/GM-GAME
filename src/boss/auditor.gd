@@ -164,6 +164,10 @@ func die() -> void:
 	hitbox.monitorable = false
 	hitbox.monitoring = false
 	StateMachine.change_state(StateMachine.State.LEVEL_COMPLETE)
+	# AgentMail milestone hook: first Auditor kill triggers the victory email
+	# server-side (idempotent there — safe to report every kill).
+	Web3Bridge.report_event("boss_defeat", {
+		"boss": "tax", "score": GameManager.total_score, "first_time": true})
 	ScreenShake.zoom_to(1.0, 0.6)
 	AudioManager.play_voice("victory")
 	ScreenShake.heavy()

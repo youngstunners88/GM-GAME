@@ -18,3 +18,21 @@ id = ""
 #   ALLOWED_ORIGIN = "https://html-classic.itch.zone,https://lil-blunt-game.vercel.app"
 [vars]
 # ALLOWED_ORIGIN = ""
+# --- AgentMail marketing engine (AGENTMAIL_SETUP.md) ---
+# Secrets, set out-of-band (NEVER here):
+#   wrangler secret put AGENTMAIL_API_KEY
+#   wrangler secret put WEBHOOK_SECRET       # gates /agentmail/webhook + /email/preview
+#   wrangler secret put XAI_API_KEY          # optional LLM fallback for support triage
+# Plain vars (fill in after AgentMail setup):
+# AGENTMAIL_DOMAIN = "smokering.game"        # custom sending domain
+# ADMIN_EMAIL = ""                           # founder's inbox for the Monday digest
+# SUPPORT_INBOX_ID = ""                      # AgentMail inbox id for support@
+# SENDER_INBOX_ID = ""                       # AgentMail inbox id for notifications@
+# PUBLIC_BACKEND_URL = ""                    # this worker's public URL (for links)
+# POSTAL_ADDRESS = ""                        # CAN-SPAM physical address for footers
+# DIGEST_DRAFT_ONLY = "0"                    # "1" = pause digests at Draft stage for review
+
+# Email cron: Mondays 10:00 UTC = weekly player digests + founder digest;
+# daily 09:00 UTC = welcome-sequence steps + referral follow-ups.
+[triggers]
+crons = ["0 10 * * 1", "0 9 * * *"]

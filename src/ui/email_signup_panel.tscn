@@ -1,0 +1,72 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/ui/email_signup_panel.gd" id="1_esp"]
+
+[node name="EmailSignupPanel" type="CanvasLayer"]
+layer = 12
+script = ExtResource("1_esp")
+
+[node name="Shade" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.7)
+
+[node name="Panel" type="Panel" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -220.0
+offset_right = 300.0
+offset_bottom = 220.0
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 20.0
+offset_right = -24.0
+offset_bottom = -20.0
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Panel/VBox"]
+text = "🌿 WEEKLY SMOKE REALM UPDATES?"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 24
+
+[node name="Blurb" type="Label" parent="Panel/VBox"]
+text = "Optional: get your weekly rank, tips, and realm news. Skip anytime — the game never needs it."
+autowrap_mode = 2
+theme_override_font_sizes/font_size = 14
+
+[node name="Name" type="LineEdit" parent="Panel/VBox"]
+placeholder_text = "Name or handle (optional)"
+max_length = 40
+
+[node name="Email" type="LineEdit" parent="Panel/VBox"]
+placeholder_text = "you@example.com"
+max_length = 254
+
+[node name="Consent" type="CheckBox" parent="Panel/VBox"]
+text = "I agree to receive game updates and leaderboard notifications"
+
+[node name="Status" type="Label" parent="Panel/VBox"]
+text = ""
+autowrap_mode = 2
+theme_override_font_sizes/font_size = 14
+
+[node name="Row" type="HBoxContainer" parent="Panel/VBox"]
+alignment = 1
+theme_override_constants/separation = 20
+
+[node name="JoinBtn" type="Button" parent="Panel/VBox/Row"]
+text = "JOIN THE LIST"
+custom_minimum_size = Vector2(160, 44)
+
+[node name="SkipBtn" type="Button" parent="Panel/VBox/Row"]
+text = "SKIP"
+custom_minimum_size = Vector2(120, 44)

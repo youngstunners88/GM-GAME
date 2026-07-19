@@ -200,3 +200,53 @@ func track(event: String) -> void:
 	if not has_backend():
 		return
 	_backend("POST", "/track", {"event": event}, func(_x): pass)
+
+# ---- AgentMail marketing engine (ADDITIVE — see AGENTMAIL_SETUP.md) --------
+# A stable pseudonymous player id ties email/deaths/rank together server-side.
+# It is a random UUID stored locally — NOT derived from anything personal.
+
+const PLAYER_ID_PATH := "user://player_id.txt"
+var _player_id: String = ""
+
+## Persistent random player id (created on first call).
+func player_id() -> String:
+	if _player_id != "":
+		return _player_id
+	if FileAccess.file_exists(PLAYER_ID_PATH):
+		var f := FileAccess.open(PLAYER_ID_PATH, FileAccess.READ)
+		if f:
+			_player_id = f.get_as_text().strip_edges()
+	if _player_id == "":
+		_player_id = "p" + str(Time.get_unix_time_from_system()) + str(randi() % 1000000)
+		var w := FileAccess.open(PLAYER_ID_PATH, FileAccess.WRITE)
+		if w:
+			w.store_string(_player_id)
+	return _player_id
+
+## TASK 1: opt-in email signup (consent is explicit; validated server-side too).
+func signup_email(email: String, consent: bool, name: String, on_done: Callable) -> void:
+	_backend("POST", "/email/signup", {
+		"player_id": player_id(),
+		"email": email.strip_edges().substr(0, 254),
+		"consent": consent,
+		"name": name.substr(0, 40),
+		"wallet_address": wallet_address,
+	}, on_done)
+
+## TASK 5: invite a friend by email (referral engine).
+func invite_friend(friend_email: String, on_done: Callable) -> void:
+	_backend("POST", "/referral", {
+		"player_id": player_id(),
+		"friend_email": friend_email.strip_edges().substr(0, 254),
+		"player_name": short_address() if wallet_address != "" else "a Smoke Realm player",
+	}, on_done)
+
+## Game events that power the weekly digest + milestone emails
+## (play_start / death {boss} / boss_defeat {boss, score, first_time} /
+## wallet_connect). Fire-and-forget; no-ops without a backend.
+func report_event(event: String, data: Dictionary = {}) -> void:
+	if not has_backend():
+		return
+	var body := {"player_id": player_id(), "event": event}
+	body.merge(data)
+	_backend("POST", "/events", body, func(_x): pass)

@@ -47,6 +47,7 @@ func _setup_layer_shift_buttons() -> void:
         ["🏆 LEADERBOARD", _on_leaderboard],
         ["✍ SUBMIT LORE", _on_submit_lore],
         ["🚀 JOIN THE SMOKERING", _on_join],
+        ["💌 INVITE A FRIEND", _on_invite_friend],
     ]
     for d in defs:
         var b := Button.new()
@@ -75,6 +76,7 @@ func _on_connect_wallet() -> void:
         await Web3Bridge.refresh_balances()
     if Web3Bridge.wallet_address != "":
         _wallet_btn.text = "👛 " + Web3Bridge.short_address()
+        Web3Bridge.report_event("wallet_connect")
     else:
         _wallet_btn.text = "👛 CONNECT WALLET"
 
@@ -99,6 +101,35 @@ func _on_join() -> void:
     var url: String = Web3Bridge.config.get("social", {}).get("telegram", "")
     if url != "":
         OS.shell_open(url)
+
+## TASK 5 (AgentMail): invite a friend by email. A tiny in-code dialog — the
+## backend sends the branded referral email and tracks click/conversion.
+func _on_invite_friend() -> void:
+    Web3Bridge.track("menu_invite")
+    var dlg := AcceptDialog.new()
+    dlg.title = "Invite a friend to the Smoke Realm"
+    dlg.ok_button_text = "SEND INVITE"
+    var box := VBoxContainer.new()
+    var lbl := Label.new()
+    lbl.text = "Your friend gets ONE invite email with a play link.\nNo spam, one-click unsubscribe."
+    var input := LineEdit.new()
+    input.placeholder_text = "friend@example.com"
+    input.custom_minimum_size = Vector2(320, 36)
+    box.add_child(lbl)
+    box.add_child(input)
+    dlg.add_child(box)
+    add_child(dlg)
+    dlg.confirmed.connect(func():
+        var email := input.text.strip_edges()
+        if email != "" and "@" in email:
+            Web3Bridge.invite_friend(email, func(res: Variant):
+                var ok: bool = typeof(res) == TYPE_DICTIONARY and (res as Dictionary).get("ok", false)
+                var note := AcceptDialog.new()
+                note.dialog_text = "Invite sent! 🌿" if ok else "Couldn't send right now (server offline?)."
+                add_child(note)
+                note.popup_centered())
+        dlg.queue_free())
+    dlg.popup_centered()
 
 ## GM Forest key art behind the menu; the existing flat ColorRect becomes a
 ## translucent darkener so buttons and title stay readable over the painting.
@@ -171,11 +202,21 @@ func _add_hover_glow(btn: Button) -> void:
 
 func _on_play() -> void:
     AudioManager.play_sfx("powerup")
+    # TASK 1 (AgentMail): one-time OPTIONAL email prompt before the first run.
+    # Skipping is one click and it never asks again; the game itself never
+    # requires an email. See src/ui/email_signup_panel.gd.
+    var esp_script := load("res://src/ui/email_signup_panel.gd")
+    if not esp_script.already_shown():
+        var panel := preload("res://src/ui/email_signup_panel.tscn").instantiate()
+        add_child(panel)
+        await panel.closed
+    Web3Bridge.report_event("play_start")
     GameManager.reset_session()
     SceneRouter.load_scene("res://src/level/level_01_smoke_realm.tscn", SceneRouter.Transition.FADE)
 
 func _on_continue() -> void:
     AudioManager.play_sfx("powerup")
+    Web3Bridge.report_event("play_start")
     GameManager.load_session()
     SceneRouter.load_scene("res://src/level/level_01_smoke_realm.tscn", SceneRouter.Transition.FADE)
 

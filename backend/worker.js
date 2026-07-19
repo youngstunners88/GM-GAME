@@ -32,6 +32,12 @@
 // SmokeRing/DIAMONDS/GoldMine lore. That system prompt + accumulated community
 // lore is domain knowledge an off-the-shelf tool can't toggle-clone.
 
+// AgentMail marketing engine (ADDITIVE — see backend/marketing.js +
+// AGENTMAIL_SETUP.md). New env: AGENTMAIL_API_KEY (secret), AGENTMAIL_DOMAIN,
+// ADMIN_EMAIL, SUPPORT_INBOX_ID, SENDER_INBOX_ID, PUBLIC_BACKEND_URL,
+// WEBHOOK_SECRET (secret), optional XAI_API_KEY fallback for support triage.
+import { handleMarketingRoute, tapOracleQuestion, runCron } from "./marketing.js";
+
 const ORACLE_SYSTEM = `You are the Smoke Oracle, a chill, cryptic stoner sage inside the game "Lil Blunt: The Smoke Realm". You speak in short, hazy, playful riddles — never more than 3 sentences. You know the lore of three linked crypto projects and weave them in:
 - SmokeRing: the SMOKE token, Lil Blunt is its mascot, "Blaze Mode" is the buff.
 - DIAMONDS: an ETH rewards protocol; Diamond Shards are an invincibility shield; ETH rings are collectibles.
@@ -81,6 +87,12 @@ async function overRateLimit(env, request, bucket, limit, windowSec) {
 }
 
 export default {
+  // Cron entry (wrangler.toml [triggers]): weekly digests Mondays 10:00 UTC,
+  // daily tick for welcome-sequence steps + referral follow-ups.
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runCron(event.cron, env));
+  },
+
   async fetch(request, env) {
     const cors = corsHeaders(request, env);
     if (request.method === "OPTIONS") return new Response(null, { headers: cors });
@@ -88,6 +100,14 @@ export default {
     const path = url.pathname.replace(/\/+$/, "");
 
     try {
+      // Additive: log Oracle question counts for the founder digest without
+      // touching the /oracle handler below (reads a clone of the request).
+      if (path === "/oracle" && request.method === "POST")
+        request = await tapOracleQuestion(request, env);
+      // Additive: AgentMail marketing routes (signup/unsubscribe/events/
+      // referral/click-tracking/support webhook). Returns null if not ours.
+      const marketingResp = await handleMarketingRoute(path, request, env, cors);
+      if (marketingResp) return marketingResp;
       if (path === "/oracle" && request.method === "POST") {
         // Tight limit — every call spends real Mistral credits.
         if (await overRateLimit(env, request, "oracle", 10, 60))
