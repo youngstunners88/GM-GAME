@@ -13,6 +13,7 @@ func _ready() -> void:
     super._ready()
     health = 3
     score_value = 100
+    analytics_id = "fly"
     start_x = global_position.x
     start_y = global_position.y
 

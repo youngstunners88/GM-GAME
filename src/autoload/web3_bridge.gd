@@ -254,3 +254,28 @@ func report_event(event: String, data: Dictionary = {}) -> void:
 	var body := {"player_id": player_id(), "event": event}
 	body.merge(data)
 	_backend("POST", "/events", body, func(_x): pass)
+
+# ---- Level Depth (task #23): granular analytics + adaptive-difficulty data --
+
+## Granular gameplay metric (Video-Game Layer): death / powerup_used /
+## secret_found / boss_phase_reached / lore_read / share_clicked /
+## referral_code_used / level_complete / retry. Feeds pstats on the backend,
+## which powers dynamic difficulty + the founder digest. Fire-and-forget.
+func report_metric(event_type: String, event_data: Dictionary = {}) -> void:
+	if not has_backend():
+		return
+	_backend("POST", "/event", {
+		"player_id": player_id(), "event_type": event_type, "event_data": event_data,
+	}, func(_x): pass)
+
+## Death heatmap + pacing stats for DifficultyManager.
+func get_player_analytics(on_done: Callable) -> void:
+	_backend("GET", "/player-analytics?player_id=" + player_id().uri_encode(), {}, on_done)
+
+## One fresh community-lore snippet for a broken secret wall.
+func get_community_lore(on_done: Callable) -> void:
+	_backend("GET", "/community-lore", {}, on_done)
+
+## Weekly top-10 silhouettes for the Hall of Blaze easter room.
+func get_hall_of_blaze(on_done: Callable) -> void:
+	_backend("GET", "/hall-of-blaze", {}, on_done)

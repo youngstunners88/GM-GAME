@@ -159,6 +159,21 @@ items. Live surface remains gated on deployment + AgentMail env being set.
 
 ---
 
+## SECTION H — Level-depth analytics pipeline (added 2026-07-19, task #23)
+
+Granular gameplay telemetry now exists (`/event`, `/player-analytics`,
+`/community-lore`, `/hall-of-blaze` — see `LEVEL_DEPTH.md`). Delta-audit on
+top of Sections F/G:
+
+| ID | Item | Status | Note |
+|----|------|--------|------|
+| H1 | **Telemetry stays pseudonymous** | **Check every audit (now)** | Events carry only the client-generated random player id + fixed-vocabulary event types (server-side allowlist rejects unknown types); payload fields are length/range-clamped; `pstats` has a 90-day TTL. No email/wallet joins happen in the analytics path. |
+| H2 | **New routes rate-limited** | **Check every audit (now)** | `/event` 120/min/IP, `/player-analytics` + `/community-lore` + `/hall-of-blaze` 30/min/IP — same `overLimit` KV pattern as Section F/G routes. |
+| H3 | **Adaptive difficulty can't be weaponized** | **Accepted risk, documented** | A player could spoof `/event` deaths to make their own level easier (self-serving only — tuning is per-player-id and only ever REDUCES difficulty within fixed bounds: −15% patrol, a warning puff, a checkpoint, a hint). No leaderboard or economy value derives from tuning, so there's nothing to gain beyond a gentler solo run. |
+| H4 | **Kimi/OpenRouter key server-side only** (extends F1/G4) | **Check every audit (now)** | `OPENROUTER_API_KEY` is a Worker secret read from `env` (`kimi_client.js`); the weekly realm-news blurb is 1 cached call/week; blurb output is length-capped and angle-bracket-stripped before templating (G8 escaping still applies downstream). |
+
+---
+
 ## SECTION E — Process (human-only, still worth stating)
 
 | ID | Item | Status |

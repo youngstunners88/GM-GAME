@@ -26,6 +26,16 @@ var hop_timer: float = 6.0
 var phase: int = 1
 var _base_patrol_speed: float = 90.0
 
+# Token-gated spectacle phases (task #23, Movie Layer). Flags read once at
+# fight start from real wallet holdings (Web3Bridge). No wallet → all false →
+# the fight is EXACTLY the shipped 3-phase version; holders get extra
+# spectacle, never extra difficulty for non-holders.
+var _has_diamonds: bool = false   # Phase "Diamond Surge": reflectable shards
+var _has_gold: bool = false       # Phase "Gold Rush": golden safe platforms
+var _has_smoke: bool = false      # Blaze Mode lasts 2x during the fight
+var _shard_timer: float = 7.0
+var _gold_platforms_spawned: bool = false
+
 @onready var sprite: BossSprite = $ColorRect
 @onready var collision: CollisionShape2D = $CollisionShape2D
 @onready var hitbox: Area2D = $Hitbox
@@ -45,6 +55,14 @@ func _ready() -> void:
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
 	BossVoiceSystem.set_active(self, BOSS_ID)
 	BossVoiceSystem.say(self, BOSS_ID, "intro", true)
+	# Movie-Layer spectacle gates — real balances, read at fight start.
+	_has_diamonds = Web3Bridge.holds("diamonds")
+	_has_gold = Web3Bridge.holds("goldmine")
+	_has_smoke = Web3Bridge.holds("smoke")
+	if _has_smoke:
+		# SMOKE holders: any Blaze grabbed during this fight lasts twice as
+		# long (direct timer write — no re-emit, so no feedback loop).
+		GameManager.power_up_changed.connect(_on_powerup_smoke_bonus)
 
 func _physics_process(delta: float) -> void:
 	if current_state == State.DEFEATED:
@@ -52,6 +70,15 @@ func _physics_process(delta: float) -> void:
 	state_timer -= delta
 	throw_timer -= delta
 	hop_timer -= delta
+
+	# "Diamond Surge" (DIAMONDS holders, phase 2+): the Auditor summons slow
+	# diamond shards — hit one with an attack and it reflects back for damage
+	# that lands even outside his vulnerable window. Spectacle + skill reward.
+	if _has_diamonds and phase >= 2:
+		_shard_timer -= delta
+		if _shard_timer <= 0.0:
+			_shard_timer = 7.0
+			_summon_diamond_shards()
 
 	match current_state:
 		State.PATROL:
@@ -148,12 +175,18 @@ func _update_phase() -> void:
 	if new_phase != phase:
 		phase = new_phase
 		patrol_speed = _base_patrol_speed * (1.0 + 0.25 * (phase - 1))
+		Web3Bridge.report_metric("boss_phase_reached", {"boss": BOSS_ID, "phase": phase})
 		if phase == 2:
 			BossVoiceSystem.say(self, BOSS_ID, "phase50", true)
 		elif phase == 3:
 			patrol_speed = _base_patrol_speed * 1.5
 			BossVoiceSystem.say(self, BOSS_ID, "phase25", true)
 			ScreenShake.medium()
+			# "Gold Rush" (GoldMine holders): golden one-way platforms rise as
+			# safe zones for the endgame — the fight LOOKS different.
+			if _has_gold and not _gold_platforms_spawned:
+				_gold_platforms_spawned = true
+				_spawn_gold_platforms()
 
 func die() -> void:
 	current_state = State.DEFEATED
@@ -168,6 +201,11 @@ func die() -> void:
 	# server-side (idempotent there — safe to report every kill).
 	Web3Bridge.report_event("boss_defeat", {
 		"boss": "tax", "score": GameManager.total_score, "first_time": true})
+	# Pacing metric for adaptive difficulty: level completion time in seconds.
+	var lvl := get_tree().current_scene
+	if lvl != null and "level_start_ms" in lvl:
+		Web3Bridge.report_metric("level_complete", {
+			"seconds": (Time.get_ticks_msec() - int(lvl.level_start_ms)) / 1000})
 	ScreenShake.zoom_to(1.0, 0.6)
 	AudioManager.play_voice("victory")
 	ScreenShake.heavy()
@@ -185,8 +223,114 @@ func die() -> void:
 	get_tree().current_scene.add_child(victory)
 	queue_free()
 
+# ---- Token-gated spectacle helpers (task #23) ----------------------------
+
+## Double any Blaze grabbed mid-fight for SMOKE holders. Direct timer write:
+## power_up_changed is emitted BY activate_power_up, we only extend the clock.
+func _on_powerup_smoke_bonus(type: String, duration: float) -> void:
+	if type == "blaze" and duration > 0.0 and current_state != State.DEFEATED:
+		GameManager.power_up_timer = duration * 2.0
+
+## Two slow cyan shards that drift at the player. An attack projectile
+## touching one reflects it back at the Auditor for out-of-window damage.
+func _summon_diamond_shards() -> void:
+	var p := get_tree().get_first_node_in_group("player")
+	if p == null:
+		return
+	AudioManager.play_sfx("throw")
+	for offset: float in [-40.0, 40.0]:
+		var shard := Area2D.new()
+		shard.collision_layer = 0
+		shard.collision_mask = 2
+		var spr := Sprite2D.new()
+		spr.texture = load("res://src/assets/sprites/sprite_item_eth-ring.png")
+		spr.modulate = Color(0.5, 0.95, 1.6, 1.0)
+		spr.scale = Vector2(0.7, 0.7)
+		shard.add_child(spr)
+		var cs := CollisionShape2D.new()
+		var rect := RectangleShape2D.new()
+		rect.size = Vector2(26, 26)
+		cs.shape = rect
+		shard.add_child(cs)
+		shard.global_position = global_position + Vector2(48, 20 + offset)
+		shard.set_meta("reflected", false)
+		var dir: Vector2 = shard.global_position.direction_to(p.global_position)
+		shard.set_meta("dir", dir)
+		shard.body_entered.connect(_on_shard_body.bind(shard))
+		shard.area_entered.connect(_on_shard_area.bind(shard))
+		shard.set_physics_process(false)
+		get_parent().add_child(shard)
+		_drive_shard(shard)
+
+## Manual drive via tween-less per-frame timer (Area2D has no physics tick of
+## its own here; a 0.016s repeating timer keeps it dependency-free).
+func _drive_shard(shard: Area2D) -> void:
+	var tick := Timer.new()
+	tick.wait_time = 0.016
+	tick.autostart = true
+	shard.add_child(tick)
+	tick.timeout.connect(func() -> void:
+		if not is_instance_valid(shard):
+			tick.stop()
+			return
+		var dir: Vector2 = shard.get_meta("dir")
+		var spd: float = 220.0 if bool(shard.get_meta("reflected")) else 110.0
+		shard.global_position += dir * spd * 0.016
+		if bool(shard.get_meta("reflected")) and is_instance_valid(self) \
+				and shard.global_position.distance_to(global_position + Vector2(48, 48)) < 56.0:
+			_take_reflected_damage()
+			shard.queue_free())
+	get_tree().create_timer(8.0).timeout.connect(func() -> void:
+		if is_instance_valid(shard):
+			shard.queue_free())
+
+func _on_shard_body(body: Node2D, shard: Area2D) -> void:
+	if bool(shard.get_meta("reflected")):
+		return
+	if body.is_in_group("player") and body.has_method("take_damage"):
+		GameManager.last_damage_source = BOSS_ID
+		body.take_damage(1)
+		shard.queue_free()
+
+func _on_shard_area(area: Area2D, shard: Area2D) -> void:
+	# Player attack (axe/fire) reflects the shard back at the Auditor.
+	if area.is_in_group("projectile") and not bool(shard.get_meta("reflected")):
+		shard.set_meta("reflected", true)
+		shard.set_meta("dir", shard.global_position.direction_to(global_position + Vector2(48, 48)))
+		var spr := shard.get_child(0) as Sprite2D
+		if spr:
+			spr.modulate = Color(1.4, 1.6, 2.2, 1.0)
+		AudioManager.play_sfx("powerup")
+
+## Reflected shards damage the Auditor even outside VULNERABLE — the reward
+## for the reflect skill-shot. Never fires once DEFEATED.
+func _take_reflected_damage() -> void:
+	if current_state == State.DEFEATED:
+		return
+	health -= 2
+	AudioManager.play_sfx("damage")
+	BossVoiceSystem.say(self, BOSS_ID, "hurt")
+	EffectSpawner.burst("explosion", global_position + Vector2(48, 48))
+	if health <= 0:
+		die()
+	else:
+		_update_phase()
+
+## Golden safe-zone platforms for the phase-3 endgame (GoldMine holders).
+func _spawn_gold_platforms() -> void:
+	for x_off: float in [-180.0, 180.0]:
+		var plat := preload("res://src/level/one_way_platform.tscn").instantiate()
+		plat.width = 110.0
+		plat.global_position = global_position + Vector2(x_off, -90.0)
+		get_parent().add_child(plat)
+		var deck := plat.get_node_or_null("Deck")
+		if deck:
+			deck.color = Color(0.95, 0.8, 0.3, 1.0)  # gold
+		EffectSpawner.burst("explosion", plat.global_position)
+
 func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("take_damage"):
+		GameManager.last_damage_source = BOSS_ID
 		body.take_damage(1)
 		BossVoiceSystem.say(self, BOSS_ID, "mock")
 
