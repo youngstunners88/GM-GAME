@@ -28,6 +28,10 @@ var power_up_timer: float = 0.0
 var current_level: int = 1
 var level_checkpoints: Dictionary = {}
 var player_position: Vector2 = Vector2.ZERO
+## Analytics attribution (task #23): the last thing that hurt the player
+## ("tax", "boulder", "vine", "fly", "pit", boss ids). Written by enemies/
+## hazards on contact, read by player death reporting. Display-only data.
+var last_damage_source: String = ""
 
 const SAVE_PATH: String = "user://save.json"
 
@@ -96,6 +100,9 @@ func activate_power_up(type: String, duration: float) -> void:
     AudioManager.play_sfx("powerup")
     if type == "blaze":
         AudioManager.play_sfx("fresh_boost")
+    # Analytics (task #23): which power-ups actually get used feeds the
+    # founder digest + future tuning. Fire-and-forget, no-op offline.
+    Web3Bridge.report_metric("powerup_used", {"type": type})
 
 func deactivate_power_up() -> void:
     current_power_up = ""

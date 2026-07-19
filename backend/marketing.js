@@ -28,6 +28,7 @@
 
 import { sendEmail, draftThenSend, createDraft, labelMessage, suppress, isSuppressed } from "./agentmail.js";
 import * as T from "./email_templates.js";
+import { kimiChat } from "./kimi_client.js";
 
 const GAME_URL = "https://youngstunners88.itch.io/lil-blunt-adventure";
 const BOSS_TIPS = {
@@ -383,6 +384,94 @@ export async function handleMarketingRoute(path, request, env, cors) {
     return new Response(m.html, { headers: { "Content-Type": "text/html", ...cors } });
   }
 
+  // ==== LEVEL DEPTH (task #23) — analytics pipeline + adaptive difficulty ==
+
+  // Granular event ingestion (Video-Game Layer). Distinct from the digest's
+  // /events: this feeds per-player stats (pstats:<pid>) that power dynamic
+  // difficulty, the founder digest, and future Oracle context.
+  if (path === "/event" && request.method === "POST") {
+    if (await overLimit(env, request, "gevent", 120, 60))
+      return json({ ok: false, error: "rate_limited" }, 429, cors);
+    const { player_id, event_type, event_data } = await request.json();
+    const pid = String(player_id || "anon").slice(0, 64);
+    const type = String(event_type || "").slice(0, 40);
+    const data = (event_data && typeof event_data === "object") ? event_data : {};
+    const ALLOWED_EVENTS = ["death", "powerup_used", "secret_found", "boss_phase_reached",
+      "lore_read", "share_clicked", "referral_code_used", "level_complete", "retry"];
+    if (!ALLOWED_EVENTS.includes(type)) return json({ ok: false, error: "unknown event_type" }, 400, cors);
+    const st = await kvJson(env, "pstats:" + pid, {
+      deaths_by_enemy: {}, deaths_by_obstacle: {}, session_times: [], retry_count: 0, counters: {},
+    });
+    if (type === "death") {
+      const enemy = String(data.enemy || "").slice(0, 24);
+      const obstacle = String(data.obstacle || "").slice(0, 24);
+      if (enemy) st.deaths_by_enemy[enemy] = (st.deaths_by_enemy[enemy] || 0) + 1;
+      if (obstacle) st.deaths_by_obstacle[obstacle] = (st.deaths_by_obstacle[obstacle] || 0) + 1;
+    } else if (type === "level_complete") {
+      const secs = Math.max(0, Math.min(7200, Number(data.seconds) || 0));
+      if (secs) st.session_times = [...st.session_times, secs].slice(-20);
+    } else if (type === "retry") {
+      st.retry_count = (st.retry_count || 0) + 1;
+    } else {
+      st.counters[type] = (st.counters[type] || 0) + 1;
+    }
+    st.updated_at = now();
+    await env.GAME_KV.put("pstats:" + pid, JSON.stringify(st), { expirationTtl: 7776000 });
+    // Weekly aggregate for the founder digest.
+    const ak = `evtagg:${isoWeek()}:${type}`;
+    await env.GAME_KV.put(ak, String(parseInt((await env.GAME_KV.get(ak)) || "0") + 1), { expirationTtl: 2419200 });
+    return json({ ok: true }, 200, cors);
+  }
+
+  // Death heatmap + pacing stats for the dynamic difficulty system. Read-only,
+  // pseudonymous (client-generated player id), rate-limited.
+  if (path === "/player-analytics" && request.method === "GET") {
+    if (await overLimit(env, request, "panalytics", 30, 60))
+      return json({ ok: false, error: "rate_limited" }, 429, cors);
+    const pid = String(new URL(request.url).searchParams.get("player_id") || "").slice(0, 64);
+    if (!pid) return json({ ok: false, error: "player_id required" }, 400, cors);
+    const st = await kvJson(env, "pstats:" + pid, null);
+    if (!st) return json({ deaths_by_enemy: {}, deaths_by_obstacle: {}, avg_completion_time: 0, retry_count: 0 }, 200, cors);
+    const times = st.session_times || [];
+    const avg = times.length ? times.reduce((a, b) => a + b, 0) / times.length : 0;
+    return json({
+      deaths_by_enemy: st.deaths_by_enemy || {},
+      deaths_by_obstacle: st.deaths_by_obstacle || {},
+      avg_completion_time: Math.round(avg),
+      retry_count: st.retry_count || 0,
+    }, 200, cors);
+  }
+
+  // Community lore for secret walls: serve the least-recently-used approved
+  // snippet and mark it served (so explorers keep finding fresh lore).
+  if (path === "/community-lore" && request.method === "GET") {
+    if (await overLimit(env, request, "clore", 30, 60))
+      return json({ ok: false, error: "rate_limited" }, 429, cors);
+    const lore = await kvJson(env, "lore", []);
+    if (!lore.length) return json({ text: "", empty: true }, 200, cors);
+    // Pick the entry served the fewest times (stable rotation, no Math.random
+    // dependence); votes break ties so top-voted lore surfaces first.
+    let best = 0;
+    for (let i = 1; i < lore.length; i++) {
+      const a = lore[i], b = lore[best];
+      if ((a.served || 0) < (b.served || 0) ||
+          ((a.served || 0) === (b.served || 0) && (a.votes || 0) > (b.votes || 0))) best = i;
+    }
+    lore[best].served = (lore[best].served || 0) + 1;
+    await env.GAME_KV.put("lore", JSON.stringify(lore));
+    return json({ text: lore[best].text, addr: lore[best].addr || "" }, 200, cors);
+  }
+
+  // Hall of Blaze: weekly top-10 silhouettes for the token-gated easter room.
+  if (path === "/hall-of-blaze" && request.method === "GET") {
+    if (await overLimit(env, request, "hall", 30, 60))
+      return json({ ok: false, error: "rate_limited" }, 429, cors);
+    const board = await kvJson(env, "leaderboard", []);
+    return json(board.slice(0, 10).map((b) => ({
+      addr: (b.addr || "").slice(0, 6) + "..." + (b.addr || "").slice(-4), score: b.score,
+    })), 200, cors);
+  }
+
   return null; // not ours — worker continues to its existing routes
 }
 
@@ -448,18 +537,26 @@ const SUPPORT_FAQ = `FAQ:
 - The game is free, browser-based, on itch.io. No install.`;
 
 async function llmChat(env, system, user) {
-  // Primary: Mistral. Fallback: XAI Grok (key may be set as XAI_API_KEY or XAI_API).
+  // Chain: Mistral (primary) → Kimi K3 via OpenRouter (enhancement layer,
+  // Level Depth) → XAI Grok (last resort). Each tier is skipped when its key
+  // is absent and on any failure the next tier is tried.
   const tries = [];
   if (env.MISTRAL_API_KEY) tries.push({
     url: "https://api.mistral.ai/v1/chat/completions",
     key: env.MISTRAL_API_KEY, model: env.MISTRAL_MODEL || "mistral-small-latest",
   });
+  if (env.OPENROUTER_API_KEY) tries.push({ kimi: true });
   const xaiKey = env.XAI_API_KEY || env.XAI_API;
   if (xaiKey) tries.push({
     url: "https://api.x.ai/v1/chat/completions",
     key: xaiKey, model: env.XAI_MODEL || "grok-3-mini",
   });
   for (const t of tries) {
+    if (t.kimi) {
+      const c = await kimiChat(env, system, user, 500);
+      if (c) return c;
+      continue;
+    }
     try {
       const r = await fetch(t.url, {
         method: "POST",
@@ -560,6 +657,21 @@ async function weeklyDigests(env) {
   const cutoff = now() - 7 * 86400000;
   const weekly = board.filter((b) => (b.ts || 0) >= cutoff).sort((a, b) => b.score - a.score);
   const top3 = weekly.slice(0, 3);
+  // Credit-efficiency: ONE Kimi call per week drafts the "realm news" blurb
+  // from aggregate stats, cached in KV and reused in EVERY subscriber's
+  // digest (never per-player LLM calls). Skipped silently without a key.
+  let realmNews = await env.GAME_KV.get("realmnews:" + week);
+  if (realmNews === null) {
+    const evtList = await env.GAME_KV.list({ prefix: `evtagg:${week}:` });
+    const agg = [];
+    for (const k of evtList.keys.slice(0, 12))
+      agg.push(`${k.name.split(":").pop()}=${await env.GAME_KV.get(k.name)}`);
+    const drafted = await kimiChat(env,
+      "You write ONE 2-sentence, chill, playful 'realm news' blurb for a weekly game email (Lil Blunt: The Smoke Realm — a stoner-chill crypto platformer). No hashtags, no links, no financial advice, max 220 chars total. Plain text only.",
+      `This week's aggregate events: ${agg.join(", ") || "quiet week"}. Top score: ${weekly[0]?.score || 0}.`, 300);
+    realmNews = (drafted || "").slice(0, 240).replace(/[<>]/g, "");
+    await env.GAME_KV.put("realmnews:" + week, realmNews, { expirationTtl: 1209600 });
+  }
   const pids = await kvJson(env, "pemail_index", []);
   for (const pid of pids) {
     const rec = await getPlayer(env, pid);
@@ -574,6 +686,7 @@ async function weeklyDigests(env) {
     const prev = await kvJson(env, "digestrank:" + pid, null);
     const msg = T.weeklyDigest(env, {
       name: rec.name, wallet: rec.wallet, unsubToken: rec.unsub_token,
+      realmNews,
       played, rank: idx + 1, score: idx >= 0 ? weekly[idx].score : 0,
       delta: idx >= 0 && prev && prev.score != null ? weekly[idx].score - prev.score : null,
       top3,

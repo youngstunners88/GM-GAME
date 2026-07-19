@@ -88,12 +88,15 @@ export function weeklyDigest(env, p) {
        <b>${esc(p.deaths.boss)}</b> ${esc(p.deaths.count)} time${p.deaths.count === 1 ? "" : "s"}.
        <i>Pro tip: ${esc(p.deaths.tip)}</i></p>` : "";
   const shareText = `I ranked #${p.rank} in Lil Blunt: The Smoke Realm this week 🌿🏆 Come take my spot: ${GAME_URL}`;
+  const newsHtml = p.realmNews
+    ? `<p style="font-style:italic;color:#9fd4b4;">${esc(p.realmNews)}</p>` : "";
   return {
     subject: `🏆 Your Smoke Realm Weekly Report — You ranked #${p.rank}`,
     html: layout(env, {
       title: `You ranked #${esc(p.rank)} this week`,
       unsubToken: p.unsubToken,
       bodyHtml: `<p>Yo ${name},</p>
+        ${newsHtml}
         <p>Your score: <b>${esc(p.score)}</b> ${deltaLine ? "— " + deltaLine : ""}</p>
         ${deathHtml}
         <p style="margin-bottom:6px;"><b>This week's top 3:</b></p>

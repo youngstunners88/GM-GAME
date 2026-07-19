@@ -30,6 +30,12 @@ signal died
 var current_outfit: Outfit = Outfit.DEFAULT
 var _last_fall_speed: float = 0.0
 
+# Ladder climbing state (task #23): zone refcount maintained by ladder.gd via
+# enter/exit_ladder_zone(); _climbing is the CLIMB state flag.
+var _ladder_zones: int = 0
+var _climbing: bool = false
+@export var climb_speed: float = 150.0
+
 @onready var sprite: LilBluntVisual = $Visual
 @onready var collision: CollisionShape2D = $CollisionShape2D
 @onready var camera: Camera2D = $Camera2D
@@ -72,6 +78,18 @@ func _physics_process(delta: float) -> void:
 	if GameManager.has_power_up("fly"):
 		_update_fly(delta, movement_direction)
 		return
+
+	# Ladder climbing (task #23). Enter by pressing up/down inside a ladder
+	# zone; while climbing gravity is off and vertical input drives movement.
+	# Jump exits with a full jump (mid-climb hop-off); leaving the zone exits.
+	if _climbing:
+		_update_climb(delta, movement_direction)
+		return
+	if _ladder_zones > 0 and (Input.is_action_pressed("move_up") or Input.is_action_pressed("move_down")):
+		_climbing = true
+		velocity = Vector2.ZERO
+		input_handler.is_wall_sliding = false
+		wall_sparks.emitting = false
 
 	# Gravity — wall slide uses reduced gravity while pressing into the wall
 	if not is_on_floor():
@@ -285,6 +303,32 @@ func _hitstop(duration: float = 0.07) -> void:
 	await get_tree().create_timer(duration, true, false, true).timeout
 	Engine.time_scale = 1.0
 
+## Ladder zone refcount — called by ladder.gd on Area2D enter/exit.
+func enter_ladder_zone() -> void:
+	_ladder_zones += 1
+
+func exit_ladder_zone() -> void:
+	_ladder_zones = maxi(0, _ladder_zones - 1)
+	if _ladder_zones == 0:
+		_climbing = false
+
+## CLIMB state: vertical movement on the ladder, no gravity. Jump = hop off
+## with a full jump; touching the floor while pushing down also exits.
+func _update_climb(delta: float, movement_direction: float) -> void:
+	var vertical := Input.get_action_strength("move_down") - Input.get_action_strength("move_up")
+	velocity.y = vertical * climb_speed
+	velocity.x = movement_direction * climb_speed * 0.6
+	if input_handler.is_jump_pressed():
+		_climbing = false
+		velocity.y = jump_force * power_up_handler.jump_multiplier
+		_play_jump_stretch()
+		AudioManager.play_sfx("jump")
+		move_and_slide()
+		return
+	move_and_slide()
+	if is_on_floor() and vertical > 0.0:
+		_climbing = false
+
 ## Falling into a pit — a HARD fail. Plays a devastating sound, costs a LIFE
 ## (not just health), and respawns at the last checkpoint if lives remain;
 ## out of lives ends the run to the main menu. Called by the level kill zone.
@@ -293,6 +337,8 @@ func pit_death() -> void:
 		return
 	AudioManager.play_sfx("fall")
 	ScreenShake.shake(0.5, 10.0)
+	# Heatmap: pits are obstacle deaths; surviving ones count as a retry.
+	Web3Bridge.report_metric("death", {"obstacle": "pit"})
 	if GameManager.lose_life():
 		# Out of lives — real game over.
 		if StateMachine.change_state(StateMachine.State.GAME_OVER):
@@ -303,6 +349,7 @@ func pit_death() -> void:
 			SceneRouter.load_scene("res://src/ui/main_menu.tscn", SceneRouter.Transition.FADE)
 		return
 	# Lives left — respawn at the level's checkpoint (health already refilled).
+	Web3Bridge.report_metric("retry", {})
 	var checkpoint := GameManager.get_checkpoint(GameManager.current_level)
 	if checkpoint == Vector2.ZERO:
 		checkpoint = GameManager.get_checkpoint(1)
@@ -326,6 +373,12 @@ func die() -> void:
 	# so the weekly email can say "you died to the Tax Collector N times".
 	if BossVoiceSystem._active_boss_id != "":
 		Web3Bridge.report_event("death", {"boss": BossVoiceSystem._active_boss_id})
+	# Granular heatmap (task #23): enemy attribution feeds dynamic difficulty.
+	var src := BossVoiceSystem._active_boss_id
+	if src == "":
+		src = GameManager.last_damage_source
+	if src != "":
+		Web3Bridge.report_metric("death", {"enemy": src})
 	var tween := create_tween()
 	tween.tween_property(self, "scale", Vector2.ZERO, 0.5)
 	tween.tween_property(self, "modulate:a", 0.0, 0.5)

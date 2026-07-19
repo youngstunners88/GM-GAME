@@ -4,6 +4,9 @@ extends CharacterBody2D
 @export var health: int = 1
 @export var score_value: int = 50
 @export var contact_damage: int = 1
+## Analytics id for the death heatmap ("tax", "fly", "vine"...) — subclasses
+## set it; deal_damage stamps it so player deaths attribute correctly.
+@export var analytics_id: String = "enemy"
 
 var is_dead: bool = false
 var is_flashing: bool = false
@@ -46,4 +49,5 @@ func die() -> void:
 
 func deal_damage(target: Node2D) -> void:
     if target.has_method("take_damage"):
+        GameManager.last_damage_source = analytics_id
         target.take_damage(contact_damage)

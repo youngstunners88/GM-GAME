@@ -9,6 +9,10 @@ var moving_right: bool = true
 func _ready() -> void:
     super._ready()
     start_x = global_position.x
+    analytics_id = "tax"
+    # Invisible adaptive difficulty (task #23): players who die to Tax
+    # Collectors repeatedly get 15% slower patrols. No UI, no announcement.
+    patrol_speed *= DifficultyManager.tax_speed_scale
 
 func _physics_process(delta: float) -> void:
     if is_dead:

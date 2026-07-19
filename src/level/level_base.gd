@@ -7,7 +7,17 @@ extends Node2D
 @onready var boss_trigger: Area2D = $BossTrigger
 @onready var boss_spawn: Marker2D = $BossSpawn
 
+## Wall-clock level start (msec) — auditor.die() reads it to report the
+## level_complete pacing metric for adaptive difficulty (task #23).
+var level_start_ms: int = 0
+
 func _ready() -> void:
+	level_start_ms = Time.get_ticks_msec()
+	# Adaptive difficulty (task #23): pull this player's heatmap BEFORE
+	# entities spawn where possible; late-arriving tuning is applied in
+	# _on_difficulty_ready (checkpoint/hint tweaks are placement-safe anytime).
+	DifficultyManager.refresh()
+	DifficultyManager.tuning_ready.connect(_on_difficulty_ready, CONNECT_ONE_SHOT)
 	if boss_trigger:
 		boss_trigger.body_entered.connect(_on_boss_trigger)
 	_setup_background()
@@ -233,6 +243,71 @@ func _spawn_player() -> void:
 	else:
 		player.global_position = Vector2(100, 500)
 	add_child(player)
+
+## Adaptive-difficulty application (task #23, Video-Game Layer). Runs when the
+## player's analytics arrive (or immediately with neutral defaults offline).
+## Everything here is INVISIBLE: no banner, no toast — the level just adjusts.
+func _on_difficulty_ready() -> void:
+	# 1. Retro-apply Tax Collector slow-down to enemies that spawned before
+	#    the analytics arrived (per-enemy meta guard prevents double-apply).
+	if DifficultyManager.tax_speed_scale != 1.0:
+		for e in get_tree().get_nodes_in_group("enemy"):
+			if "patrol_speed" in e and e.get("analytics_id") == "tax" \
+					and not e.has_meta("dd_scaled"):
+				e.set_meta("dd_scaled", true)
+				e.patrol_speed = e.patrol_speed * DifficultyManager.tax_speed_scale
+	# 2. Slow runners get one extra mid-level checkpoint.
+	if DifficultyManager.extra_checkpoint and level_data and level_data.checkpoints.size() >= 2:
+		var a: Vector2 = level_data.checkpoints[0]
+		var b: Vector2 = level_data.checkpoints[level_data.checkpoints.size() - 1]
+		EntitySpawner.spawn("checkpoint", (a + b) / 2.0 + Vector2(0, -4), self,
+			{"checkpoint_id": 90, "level_index": level_data.level_index})
+	# 3. Heavy retriers get a Hint Leaf: touch it and the route to the next
+	#    checkpoints glows for 5 seconds.
+	if DifficultyManager.hint_leaf:
+		_spawn_hint_leaf()
+
+## Glowing leaf near spawn; on pickup, draws a dotted guide line through the
+## level's checkpoints for 5s. A nudge, not a walkthrough.
+func _spawn_hint_leaf() -> void:
+	if level_data == null or level_data.checkpoints.is_empty():
+		return
+	var leaf := Area2D.new()
+	leaf.collision_layer = 0
+	leaf.collision_mask = 2
+	var spr := Sprite2D.new()
+	spr.texture = load("res://src/assets/sprites/sprite_item_weed-leaf.png") \
+			if ResourceLoader.exists("res://src/assets/sprites/sprite_item_weed-leaf.png") \
+			else load("res://src/assets/sprites/sprite_item_eth-ring.png")
+	spr.modulate = Color(0.7, 1.4, 0.7, 1.0)
+	leaf.add_child(spr)
+	var cs := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(30, 30)
+	cs.shape = rect
+	leaf.add_child(cs)
+	var anchor := player_spawn.global_position if player_spawn else Vector2(120, 500)
+	leaf.global_position = anchor + Vector2(90, -20)
+	leaf.body_entered.connect(func(b: Node2D) -> void:
+		if b.is_in_group("player"):
+			AudioManager.play_sfx("powerup")
+			Web3Bridge.report_metric("powerup_used", {"type": "hint_leaf"})
+			_show_hint_path()
+			leaf.queue_free())
+	add_child(leaf)
+
+func _show_hint_path() -> void:
+	var line := Line2D.new()
+	line.width = 4.0
+	line.default_color = Color(0.65, 1.0, 0.7, 0.65)
+	line.z_index = 40
+	for cp: Vector2 in level_data.checkpoints:
+		line.add_point(cp)
+	add_child(line)
+	var tw := line.create_tween()
+	tw.tween_interval(5.0)
+	tw.tween_property(line, "modulate:a", 0.0, 0.8)
+	tw.finished.connect(line.queue_free)
 
 ## MOVIE LAYER — token-gated perks. At level start we read the connected
 ## wallet's real on-chain holdings (Web3Bridge, populated via ERC-20 balanceOf)

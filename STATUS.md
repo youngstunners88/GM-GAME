@@ -11,6 +11,30 @@
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
 
+## 🕹 NEW — LEVEL DEPTH AS VIDEO-GAME LAYER (2026-07-19, task #23)
+
+Level 1 got deeper — and every mechanic serves data or marketing, not just
+platforming. Full mapping + analytics schema: **`LEVEL_DEPTH.md`**.
+
+- **Invisible adaptive difficulty**: the level reads YOUR death heatmap and
+  quietly adjusts (slower Tax Collectors, boulder warnings, extra checkpoint,
+  a Hint Leaf for heavy retriers). No UI — it just feels right.
+- **Secret walls** (shimmering blocks): community lore, Smoke Tips, referral
+  codes — wallet holders find Diamond Shards 20% of the time.
+- **Three routes per section**: Speedrunner (high one-way chain, coin-rich),
+  Casual (the original), Explorer (secrets + the Hall of Blaze).
+- **Ladders + one-way platforms** with climbing (W/S + arrows), placed as
+  escape routes out of the deadliest pit approaches.
+- **Token-gated boss spectacle**: DIAMONDS → reflectable Diamond Surge shards;
+  GoldMine → golden safe platforms at phase 3; SMOKE → Blaze lasts 2× in the
+  fight. No wallet → the exact standard fight, zero penalty.
+- **Snapshot Moments** at checkpoints (F12/P → pre-filled X share) and the
+  **Hall of Blaze** (token-gated room: community graffiti + weekly top-10).
+- **Kimi K3 via OpenRouter** (key validated ✅): support-triage LLM tier,
+  1-call/week digest blurb, and `scripts/kimi-review.sh` — cheap-token
+  GDScript review. This is now the working LLM layer while the Mistral key
+  is missing.
+
 ## 📬 NEW — AGENTMAIL MARKETING ENGINE (2026-07-19)
 
 The game can now talk to players by email — capture, campaigns, support, and

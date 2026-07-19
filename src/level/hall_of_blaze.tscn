@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/level/hall_of_blaze.gd" id="1_hob"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hob"]
+size = Vector2(130, 110)
+
+[node name="HallOfBlaze" type="Area2D"]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_hob")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -40)
+shape = SubResource("RectangleShape2D_hob")

@@ -23,6 +23,8 @@ id = ""
 #   wrangler secret put AGENTMAIL_API_KEY
 #   wrangler secret put WEBHOOK_SECRET       # gates /agentmail/webhook + /email/preview
 #   wrangler secret put XAI_API_KEY          # optional LLM fallback for support triage
+#   wrangler secret put OPENROUTER_API_KEY   # Kimi K3 tier: support triage fallback +
+#                                            # weekly realm-news blurb (1 call/week)
 # Plain vars (fill in after AgentMail setup):
 # AGENTMAIL_DOMAIN = "smokering.game"        # custom sending domain
 # ADMIN_EMAIL = ""                           # founder's inbox for the Monday digest
