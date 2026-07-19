@@ -64,5 +64,6 @@ func _unhandled_input(event: InputEvent) -> void:
         _snapshot_active = false
         Web3Bridge.report_metric("share_clicked", {"source": "snapshot"})
         Web3Bridge.track("snapshot_share")
-        var text := "Just cleared a section of the Smoke Realm with %d pts. Come take my spot: https://youngstunners88.itch.io/lil-blunt-adventure @SmokeRing #SMOKE" % GameManager.total_score
+        # Confirmed handle (SOCIAL_LINKS.md) + a rotating content-engine tagline.
+        var text := "%s\nJust cleared a section of the Smoke Realm with %d pts. Come take my spot: https://youngstunners88.itch.io/lil-blunt-adventure @smokering25 #SMOKE" % [GameManager.random_tagline(), GameManager.total_score]
         OS.shell_open("https://twitter.com/intent/tweet?text=" + text.uri_encode())

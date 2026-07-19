@@ -13,14 +13,22 @@
 - Kimi K3 client (reasoning-model safe) + weekly cached realm-news blurb.
 
 ## In progress
-- Mistral failover tier (MISTRAL_API_KEY2) in the support LLM chain (this batch).
+- Nothing — track is one credential away from fully live.
 
-## Blocked — deployment is client-gated
-- NOT deployed. Needs (see `README.md`, ~5 min): `wrangler login`, KV
-  namespace id, secrets (MISTRAL_API_KEY ×2 — both keys now validated —
-  AGENTMAIL_API_KEY, WEBHOOK_SECRET, AGENTMAIL_WEBHOOK_SIGNING_KEY,
-  OPENROUTER_API_KEY, optional XAI), `ALLOWED_ORIGIN` + vars, deploy, then
-  paste the URL into `config.json.backend_base_url`.
+## Blocked — ONE missing credential (everything else is done)
+- Deploy attempted 2026-07-19: the `CLOUDFLARE_API_KEY` token is valid but
+  has NO account access (`/accounts` empty, `/memberships` denied) and no
+  `CLOUDFLARE_ACCOUNT_ID` is set — wrangler cannot target an account.
+- **Everything else is pre-staged in `scripts/deploy-backend.sh`** (KV
+  create, all secrets from env incl. both validated Mistral keys + the
+  validated AgentMail key, vars, deploy, redeploy with URL, full E2E curls,
+  config.json update). One command once credentials land.
+- NEW since last update: `/health` + multi-chain `/balances` endpoints;
+  AgentMail infra REAL (sender inbox `smokering-notifications@agentmail.to`
+  created; pipeline proven with a delivered test email; free plan caps:
+  no 2nd inbox, no custom domain — upgrade for support@ + smokering.game).
+- Contracts VERIFIED on-chain and in `config.json` (SMOKE=Base,
+  DIAMONDS+GOLD=Ethereum — hence the `/balances` cross-chain endpoint).
 
 ## Known debt
 - Scores unauthenticated by design (SIWE is the documented upgrade if the

@@ -1,28 +1,19 @@
 # backend — next task
 
-**Single next action (CLIENT):** deploy the Worker. Everything else in this
-track is waiting behind it.
+**Single next action (CLIENT, ~1 minute):** give the deploy script a usable
+Cloudflare credential, then run it.
 
-## Steps (copy-paste, `backend/README.md` has detail)
-```bash
-cd backend && npm i -g wrangler && wrangler login
-wrangler kv:namespace create GAME_KV          # paste id into wrangler.toml
-wrangler secret put MISTRAL_API_KEY           # validated key #1
-wrangler secret put MISTRAL_API_KEY2          # validated key #2 (failover)
-wrangler secret put OPENROUTER_API_KEY        # Kimi K3 tier
-wrangler secret put WEBHOOK_SECRET            # long random string
-# AgentMail secrets when DNS is ready (AGENTMAIL_SETUP.md)
-wrangler deploy                               # copy the printed URL
-```
-Then set `ALLOWED_ORIGIN` + `PUBLIC_BACKEND_URL` in `wrangler.toml` [vars],
-put the URL in `../config.json.backend_base_url`, push (CI rebuilds the game).
+1. dash.cloudflare.com → copy your **Account ID** (right sidebar) → set env
+   `CLOUDFLARE_ACCOUNT_ID=<id>` — OR mint a token with
+   [Workers Scripts:Edit, Workers KV Storage:Edit, Account Settings:Read].
+2. Run: `./scripts/deploy-backend.sh`   (does EVERYTHING: KV, secrets, vars,
+   deploy, E2E curls, config.json update)
 
-## Acceptance criteria
-- [ ] `curl <url>/leaderboard` returns `[]` (not an error)
-- [ ] `curl -X POST <url>/oracle -d '{"question":"what is blaze mode?"}'`
-      returns an in-character answer (proves Mistral key live server-side)
-- [ ] Game menu Oracle answers in the browser build
-- [ ] Rate limit check: 11 rapid /oracle calls → 11th returns 429
+## Acceptance criteria (the script prints these checks)
+- [ ] `/health` returns `{"ok":true}`
+- [ ] `/oracle` answers in character (live Mistral — keys already validated)
+- [ ] `/balances?owner=0x…` returns real multi-chain balances
+- [ ] `config.json.backend_base_url` filled → push → CI rebuilds the game
 
-**Agent-side follow-up after deploy:** re-audit checklist F2/F3 as LIVE, run
-an end-to-end signup→welcome-email test with a real inbox.
+**Then (agent):** "Verify Oracle live" in the browser build, flip checklist
+F2/F3 to LIVE, tighten `ALLOWED_ORIGIN`, register the AgentMail webhook.

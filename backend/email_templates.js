@@ -42,6 +42,8 @@ function layout(env, { title, bodyHtml, unsubToken }) {
       ${bodyHtml}
     </div>
     <div style="font-size:11px;color:#57735f;padding:18px 6px;text-align:center;line-height:1.6;">
+      Join us: <a href="https://t.me/LilBluntdotWin" style="color:#7ee2a8;">t.me/LilBluntdotWin</a> ·
+      X: <a href="https://x.com/smokering25" style="color:#7ee2a8;">@smokering25</a><br>
       You're getting this because you opted in to Smoke Realm updates in-game.<br>
       ${esc(addr)}<br>
       <a href="${unsub}" style="color:#7ee2a8;">Unsubscribe</a> — one click, no questions, gone forever.<br>
@@ -53,7 +55,7 @@ function layout(env, { title, bodyHtml, unsubToken }) {
 
 const textFooter = (env, unsubToken) => {
   const base = env.PUBLIC_BACKEND_URL || "";
-  return `\n\n--\nYou opted in to Smoke Realm updates in-game.\nUnsubscribe (one click): ${base}/unsubscribe?token=${unsubToken || ""}\n`;
+  return `\n\n--\nJoin us: t.me/LilBluntdotWin | X: @smokering25\nYou opted in to Smoke Realm updates in-game.\nUnsubscribe (one click): ${base}/unsubscribe?token=${unsubToken || ""}\nExport my data: ${base}/data-export?token=${unsubToken || ""} | Delete: ${base}/data-delete?token=${unsubToken || ""}\n`;
 };
 
 // ---------------------------------------------------------------------------

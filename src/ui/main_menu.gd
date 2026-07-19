@@ -42,10 +42,11 @@ func _setup_layer_shift_buttons() -> void:
     # (Bug fix: PRESET_BOTTOM_LEFT + a viewport-height offset double-counted
     # the bottom edge and pushed the whole column ~500px BELOW the screen —
     # every layer-shift button was invisible in shipped builds.)
-    row.position = Vector2(24, get_viewport().get_visible_rect().size.y - 300)
+    row.position = Vector2(24, get_viewport().get_visible_rect().size.y - 344)
     add_child(row)
     var defs := [
         ["CONNECT WALLET", _on_connect_wallet],
+        ["NEW TO CRYPTO?", _on_crypto_onboarding],
         ["ASK THE ORACLE", _on_oracle],
         ["LEADERBOARD", _on_leaderboard],
         ["SUBMIT LORE", _on_submit_lore],
@@ -61,6 +62,28 @@ func _setup_layer_shift_buttons() -> void:
         _add_hover_glow(b)
         row.add_child(b)
     _wallet_btn = row.get_child(0)
+    # Offline mode: wallet connect needs the network — disable with a tooltip
+    # rather than letting it fail mysteriously. Re-enables on reconnect.
+    _apply_wallet_online_state(not GameManager.offline_mode)
+    Web3Bridge.connectivity_changed.connect(func(online: bool) -> void:
+        if is_instance_valid(_wallet_btn):
+            _apply_wallet_online_state(online))
+
+func _apply_wallet_online_state(online: bool) -> void:
+    # Only meaningful when a backend is configured; pre-deploy the button
+    # behaves exactly as before.
+    if not Web3Bridge.has_backend():
+        return
+    _wallet_btn.disabled = not online
+    _wallet_btn.tooltip_text = "" if online else "Wallet connect requires internet"
+
+## Movie Layer: gentle, jargon-free crypto explainer for the non-crypto
+## audience (crypto-onboarding skill). Tracks onboarding_viewed.
+func _on_crypto_onboarding() -> void:
+    Web3Bridge.report_metric("onboarding_viewed", {})
+    Web3Bridge.track("menu_onboarding")
+    var panel := preload("res://src/ui/crypto_onboarding.tscn").instantiate()
+    add_child(panel)
 
 ## Connect the wallet from the hub BEFORE playing, so token-gated perks
 ## (Movie Layer) read real balances at level start. Refreshing here (awaited)

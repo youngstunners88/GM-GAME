@@ -491,6 +491,46 @@ export async function handleMarketingRoute(path, request, env, cors) {
     return json({ text: lore[best].text, addr: lore[best].addr || "" }, 200, cors);
   }
 
+  // Multi-chain, read-only token balance check (Movie Layer activation).
+  // WHY THIS EXISTS: on-chain verification (2026-07-19) showed the ecosystem
+  // spans chains — SMOKE lives on Base, DIAMONDS + GOLD on Ethereum mainnet.
+  // A wallet-provider eth_call only sees the wallet's CURRENT chain, so the
+  // client can never read all three at once. This endpoint reads each token
+  // on ITS OWN chain via fixed public RPCs.
+  // PRIVACY BY DESIGN (onboarding copy depends on this): completely stateless
+  // — the owner address is used for the eth_calls and NEVER written to KV or
+  // logs. SSRF-safe: RPC URLs are a fixed server-side map; the client only
+  // supplies the owner address (strict 0x-hex validated).
+  if (path === "/balances" && request.method === "GET") {
+    if (await overLimit(env, request, "balances", 30, 60))
+      return json({ ok: false, error: "rate_limited" }, 429, cors);
+    const owner = String(new URL(request.url).searchParams.get("owner") || "");
+    if (!/^0x[0-9a-fA-F]{40}$/.test(owner))
+      return json({ ok: false, error: "bad owner address" }, 400, cors);
+    const RPC = { base: "https://mainnet.base.org", ethereum: "https://ethereum-rpc.publicnode.com" };
+    // token -> {addr, chain}; addresses verified on-chain (bytecode + symbol)
+    // before entering config — see DEFI_REVIEW.md M-DEFI-1 record.
+    const TOKENS = {
+      smoke: { addr: "0x6FBa5157f650DE083Bf8ca1B19Cb172dc511843d", chain: "base" },
+      diamonds: { addr: "0xd645250EdbE9d57c12fbbB24DEf3153E5F19Df08", chain: "ethereum" },
+      goldmine: { addr: "0xfF5FAB9b60955dA5726A5787b9cbf2B4B298A197", chain: "ethereum" },
+    };
+    const data = "0x70a08231" + owner.slice(2).toLowerCase().padStart(64, "0");
+    const out = {};
+    await Promise.all(Object.entries(TOKENS).map(async ([key, t]) => {
+      try {
+        const r = await fetch(RPC[t.chain], {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_call", params: [{ to: t.addr, data }, "latest"] }),
+        });
+        const j = await r.json();
+        const hex = j && j.result && j.result !== "0x" ? j.result : "0x0";
+        out[key] = BigInt(hex).toString();
+      } catch (e) { out[key] = "0"; }
+    }));
+    return json({ ok: true, balances: out }, 200, cors);
+  }
+
   // Hall of Blaze: weekly top-10 silhouettes for the token-gated easter room.
   if (path === "/hall-of-blaze" && request.method === "GET") {
     if (await overLimit(env, request, "hall", 30, 60))

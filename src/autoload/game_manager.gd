@@ -232,3 +232,72 @@ func _deserialize_checkpoints(raw: Dictionary) -> void:
             "id": int(entry.get("id", 0)),
             "pos": Vector2(float(entry.get("x", 0.0)), float(entry.get("y", 0.0))),
         }
+
+# ---- Offline mode (task: offline-mode skill, Video-Game Layer) -------------
+# The game adapts to network state without breaking: a banner appears when the
+# backend is unreachable, disappears on silent reconnect+sync (Web3Bridge owns
+# probing, queueing, and cache; this owns the player-facing flag + banner).
+
+## Global flag other systems may consult (oracle panel, menu wallet button).
+var offline_mode: bool = false
+var _offline_banner: CanvasLayer
+
+func _enter_tree() -> void:
+    # Deferred: Web3Bridge loads after GameManager in autoload order.
+    call_deferred("_wire_offline_mode")
+
+func _wire_offline_mode() -> void:
+    if not has_node("/root/Web3Bridge"):
+        return
+    Web3Bridge.connectivity_changed.connect(_on_connectivity_changed)
+
+func _on_connectivity_changed(online: bool) -> void:
+    offline_mode = not online
+    if offline_mode:
+        _show_offline_banner()
+    else:
+        _hide_offline_banner()
+
+func _show_offline_banner() -> void:
+    if _offline_banner != null and is_instance_valid(_offline_banner):
+        return
+    _offline_banner = CanvasLayer.new()
+    _offline_banner.layer = 99
+    var lbl := Label.new()
+    lbl.name = "Banner"
+    lbl.text = "OFFLINE MODE — scores saved locally, will sync when reconnected"
+    lbl.add_theme_font_size_override("font_size", 14)
+    lbl.modulate = Color(1.0, 0.85, 0.5, 0.95)
+    lbl.position = Vector2(12, 6)
+    var bg := ColorRect.new()
+    bg.color = Color(0.1, 0.08, 0.02, 0.75)
+    bg.size = Vector2(520, 26)
+    bg.position = Vector2(6, 4)
+    _offline_banner.add_child(bg)
+    _offline_banner.add_child(lbl)
+    get_tree().root.add_child.call_deferred(_offline_banner)
+
+func _hide_offline_banner() -> void:
+    if _offline_banner != null and is_instance_valid(_offline_banner):
+        _offline_banner.queue_free()
+    _offline_banner = null
+
+# ---- Shareable taglines (content engine feeds this list weekly) ------------
+# Rotated into snapshot-moment X shares. Refreshed by
+# backend/content_engine/score_card_taglines.js -> human merge (see that file).
+
+const SHARE_TAGLINES: Array[String] = [
+    "Diamond hands, cloud feet.",
+    "HODL my bong, I'm going in.",
+    "Gas fees can't tax a double-jump.",
+    "Bear market? My vibes are up only.",
+    "Chill is the ultimate utility.",
+    "Rug pulls fear the double-jump.",
+    "Proof of Chill > Proof of Work.",
+    "Staked, baked, and never shaked.",
+    "My portfolio dips, Lil Blunt don't.",
+    "Smoke Realm: where floors are lava, not prices.",
+]
+
+func random_tagline() -> String:
+    return SHARE_TAGLINES[randi() % SHARE_TAGLINES.size()]

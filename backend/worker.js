@@ -100,6 +100,11 @@ export default {
     const path = url.pathname.replace(/\/+$/, "");
 
     try {
+      // Liveness probe (deploy-skill contract): 200 + build info, no state.
+      if (path === "/health" && request.method === "GET") {
+        return json({ ok: true, service: "lil-blunt-backend", ts: Date.now() }, 200, cors);
+      }
+
       // Additive: log Oracle question counts for the founder digest without
       // touching the /oracle handler below (reads a clone of the request).
       if (path === "/oracle" && request.method === "POST")

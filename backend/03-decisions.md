@@ -20,3 +20,16 @@
 - **2026-07-19 · /oracle handler is frozen** (client constraint). Fallback
   tiers wire into marketing/support paths only; touching /oracle needs
   explicit client approval.
+- **2026-07-19 · Cross-chain balance reads are a backend concern.** On-chain
+  verification showed SMOKE on Base but DIAMONDS/GOLD on Ethereum; a wallet
+  provider only reads its current chain. `/balances` reads each token on its
+  own chain via a fixed server-side RPC map — stateless, address never
+  stored/logged (the onboarding privacy copy depends on this), SSRF-safe.
+- **2026-07-19 · Deploy is scripted, not manual.** `scripts/deploy-backend.sh`
+  is the single deploy path (idempotent KV, secrets from env, URL-baked vars,
+  E2E verification). Blocked only on a Cloudflare credential with account
+  access; diagnosis recorded in the script header.
+- **2026-07-19 · One AgentMail inbox for both roles (free-tier reality).**
+  `smokering-notifications@agentmail.to` is sender AND support until the plan
+  upgrade (org inbox cap hit; custom domains need paid tier). Code already
+  falls back SENDER→SUPPORT, so this is config truth, not a code fork.

@@ -16,6 +16,8 @@ extends Node
 signal wallet_connected(address: String)
 signal wallet_failed(reason: String)
 signal balances_refreshed()
+## Offline mode (Video-Game Layer): fires on every online<->offline flip.
+signal connectivity_changed(online: bool)
 
 var config: Dictionary = {}
 var wallet_address: String = ""
@@ -23,10 +25,97 @@ var token_balances: Dictionary = {}   # "smoke"/"diamonds"/"goldmine" -> float
 var _js_ready := false
 var _bridge = null
 
+# ---- Offline mode state (offline-mode skill) ----------------------------
+## True once a health probe has succeeded this session. Starts false and is
+## only meaningful when a backend is configured at all.
+var backend_online: bool = false
+var _health_checked_once: bool = false
+const ANALYTICS_QUEUE_PATH := "user://analytics_queue.json"
+const LEADERBOARD_CACHE_PATH := "user://leaderboard_cache.json"
+const HEALTH_TIMEOUT := 5.0
+const RECONNECT_INTERVAL := 30.0
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_load_config()
 	_init_js()
+	_start_health_loop()
+
+## Boot health check (5s timeout) + 30s reconnect probes while offline.
+## No backend configured -> permanently offline-quiet (no banner nagging:
+## that's the pre-deploy state, not a network failure).
+func _start_health_loop() -> void:
+	if not has_backend():
+		return
+	_probe_health()
+	var t := Timer.new()
+	t.wait_time = RECONNECT_INTERVAL
+	t.autostart = true
+	add_child(t)
+	t.timeout.connect(func() -> void:
+		if not backend_online:
+			_probe_health())
+
+func _probe_health() -> void:
+	var http := HTTPRequest.new()
+	http.timeout = HEALTH_TIMEOUT
+	add_child(http)
+	http.request_completed.connect(func(_r, code, _h, _d) -> void:
+		_on_health_result(code >= 200 and code < 300)
+		http.queue_free())
+	var err := http.request(config["backend_base_url"].rstrip("/") + "/health")
+	if err != OK:
+		_on_health_result(false)
+		http.queue_free()
+
+func _on_health_result(ok: bool) -> void:
+	var was := backend_online
+	backend_online = ok
+	var first := not _health_checked_once
+	_health_checked_once = true
+	if was != ok or first:
+		connectivity_changed.emit(ok)
+	if ok and (first or not was):
+		_flush_analytics_queue()
+
+## True when calls should actually hit the network.
+func is_online() -> bool:
+	return has_backend() and backend_online
+
+# ---- Analytics offline queue ---------------------------------------------
+
+## Queue one analytics payload for later delivery (bounded at 200 entries).
+func _queue_analytics(path: String, body: Dictionary) -> void:
+	var q: Array = []
+	if FileAccess.file_exists(ANALYTICS_QUEUE_PATH):
+		var f := FileAccess.open(ANALYTICS_QUEUE_PATH, FileAccess.READ)
+		if f:
+			var parsed: Variant = JSON.parse_string(f.get_as_text())
+			if typeof(parsed) == TYPE_ARRAY:
+				q = parsed
+	q.append({"path": path, "body": body})
+	if q.size() > 200:
+		q = q.slice(q.size() - 200)
+	var w := FileAccess.open(ANALYTICS_QUEUE_PATH, FileAccess.WRITE)
+	if w:
+		w.store_string(JSON.stringify(q))
+
+## Silent sync on reconnect: replay the queue, then clear it.
+func _flush_analytics_queue() -> void:
+	if not FileAccess.file_exists(ANALYTICS_QUEUE_PATH):
+		return
+	var f := FileAccess.open(ANALYTICS_QUEUE_PATH, FileAccess.READ)
+	if f == null:
+		return
+	var parsed: Variant = JSON.parse_string(f.get_as_text())
+	if typeof(parsed) != TYPE_ARRAY:
+		DirAccess.remove_absolute(ANALYTICS_QUEUE_PATH)
+		return
+	for item in (parsed as Array):
+		if typeof(item) == TYPE_DICTIONARY:
+			_backend("POST", str(item.get("path", "/event")), item.get("body", {}), func(_x): pass)
+	DirAccess.remove_absolute(ANALYTICS_QUEUE_PATH)
+	track("offline_sync_completed")
 
 func _load_config() -> void:
 	if not FileAccess.file_exists("res://config.json"):
@@ -104,7 +193,23 @@ func short_address(addr: String = "") -> String:
 func _refresh_token_balances() -> void:
 	token_balances = {"smoke": 0.0, "diamonds": 0.0, "goldmine": 0.0}
 	var owner: String = _hex(wallet_address)
-	if not is_web3_available() or owner == "":
+	if owner == "":
+		balances_refreshed.emit()
+		return
+	# PREFERRED PATH (cross-chain finding, 2026-07-19): SMOKE lives on Base but
+	# DIAMONDS/GOLD live on Ethereum, and a wallet-provider eth_call only sees
+	# the wallet's current chain. The backend /balances endpoint reads each
+	# token on its own chain (stateless, read-only). Wallet-provider path stays
+	# as the fallback so nothing regresses if the backend is down.
+	if is_online():
+		_backend("GET", "/balances?owner=" + owner, {}, func(res: Variant) -> void:
+			if typeof(res) == TYPE_DICTIONARY and (res as Dictionary).get("ok", false):
+				var b: Dictionary = (res as Dictionary).get("balances", {})
+				for key in ["smoke", "diamonds", "goldmine"]:
+					token_balances[key] = str(b.get(key, "0")).to_float()
+			balances_refreshed.emit())
+		return
+	if not is_web3_available():
 		balances_refreshed.emit()
 		return
 	var contracts: Dictionary = config.get("contracts", {})
@@ -170,7 +275,10 @@ func _backend(method: String, path: String, body: Dictionary, on_done: Callable)
 	http.timeout = 8.0
 	add_child(http)
 	http.request_completed.connect(func(_r, code, _h, data):
-		var out := {}
+		# Variant, NOT `:= {}`: inference would lock this to Dictionary and
+		# CRASH on array responses (/leaderboard, /hall-of-blaze). Latent until
+		# a live backend existed — caught by kimi-review on deploy day.
+		var out: Variant = {}
 		if code >= 200 and code < 300:
 			var parsed: Variant = JSON.parse_string(data.get_string_from_utf8())
 			if typeof(parsed) in [TYPE_DICTIONARY, TYPE_ARRAY]:
@@ -194,14 +302,37 @@ func submit_score(score: int, level: int, on_done: Callable) -> void:
 		"score": score, "level": level, "wallet_address": wallet_address}, on_done)
 
 func get_leaderboard(on_list: Callable) -> void:
-	_backend("GET", "/leaderboard", {}, on_list)
+	# Offline mode: serve the last good board from local cache; online fetches
+	# refresh that cache so the next outage still shows real standings.
+	if has_backend() and _health_checked_once and not backend_online:
+		on_list.call(_read_leaderboard_cache())
+		return
+	_backend("GET", "/leaderboard", {}, func(res: Variant) -> void:
+		if typeof(res) == TYPE_ARRAY and not (res as Array).is_empty():
+			var w := FileAccess.open(LEADERBOARD_CACHE_PATH, FileAccess.WRITE)
+			if w:
+				w.store_string(JSON.stringify(res))
+		on_list.call(res))
+
+func _read_leaderboard_cache() -> Array:
+	if not FileAccess.file_exists(LEADERBOARD_CACHE_PATH):
+		return []
+	var f := FileAccess.open(LEADERBOARD_CACHE_PATH, FileAccess.READ)
+	if f == null:
+		return []
+	var parsed: Variant = JSON.parse_string(f.get_as_text())
+	return (parsed as Array) if typeof(parsed) == TYPE_ARRAY else []
 
 func submit_lore(text: String, on_done: Callable) -> void:
 	_backend("POST", "/lore", {"text": text.substr(0, 200), "wallet_address": wallet_address}, on_done)
 
 ## Fire-and-forget anonymous funnel analytics (which buttons get clicked).
+## Offline: queued to user://analytics_queue.json, flushed on reconnect.
 func track(event: String) -> void:
 	if not has_backend():
+		return
+	if _health_checked_once and not backend_online:
+		_queue_analytics("/track", {"event": event})
 		return
 	_backend("POST", "/track", {"event": event}, func(_x): pass)
 
@@ -253,6 +384,9 @@ func report_event(event: String, data: Dictionary = {}) -> void:
 		return
 	var body := {"player_id": player_id(), "event": event}
 	body.merge(data)
+	if _health_checked_once and not backend_online:
+		_queue_analytics("/events", body)
+		return
 	_backend("POST", "/events", body, func(_x): pass)
 
 # ---- Level Depth (task #23): granular analytics + adaptive-difficulty data --
@@ -264,9 +398,11 @@ func report_event(event: String, data: Dictionary = {}) -> void:
 func report_metric(event_type: String, event_data: Dictionary = {}) -> void:
 	if not has_backend():
 		return
-	_backend("POST", "/event", {
-		"player_id": player_id(), "event_type": event_type, "event_data": event_data,
-	}, func(_x): pass)
+	var body := {"player_id": player_id(), "event_type": event_type, "event_data": event_data}
+	if _health_checked_once and not backend_online:
+		_queue_analytics("/event", body)
+		return
+	_backend("POST", "/event", body, func(_x): pass)
 
 ## Death heatmap + pacing stats for DifficultyManager.
 func get_player_analytics(on_done: Callable) -> void:

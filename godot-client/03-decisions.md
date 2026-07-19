@@ -22,3 +22,10 @@
 - **2026-07-19 · ICM: no physical move to `godot-client/`.** res:// paths,
   CI triggers, and the export pipeline key off `src/`; relocation = pure risk,
   zero function. This folder is the ICM catalog node routing to `src/`.
+- **2026-07-19 · Offline is a mode, not an error.** Backend-configured but
+  unreachable → banner + local leaderboard cache + in-persona static-FAQ
+  Oracle + queued analytics that flush silently on reconnect. No backend
+  configured → quiet (pre-deploy state must not nag players).
+- **2026-07-19 · Onboarding privacy copy is architecture-backed.** "We don't
+  store your address" is enforced by the stateless /balances read; the one
+  opt-in exception (leaderboard submit) is disclosed in the Learn More modal.

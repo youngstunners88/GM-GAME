@@ -16,3 +16,9 @@
   wall referral codes, Hall of Blaze: players share discoveries, not ads.
 - **2026-07-19 · Anonymous funnel only.** Event names, no PII, no persistent
   cross-site IDs; wallet is pseudonymous identity where present (checklist F8).
+- **2026-07-19 · Content engine is draft-only by construction.** Kimi K3
+  generates; humans approve. Newsletter → AgentMail Draft w/ needs_approval;
+  X posts → files a human pastes; taglines → JSON a human merges into
+  GameManager.SHARE_TAGLINES. Scripts never edit game code and never send.
+- **2026-07-19 · Confirmed handles are law.** @smokering25 + t.me/LilBluntdotWin
+  replaced every generic reference; docs/SOCIAL_LINKS.md is the single source.

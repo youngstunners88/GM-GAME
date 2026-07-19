@@ -12,7 +12,11 @@
   (Diamond Surge / Gold Rush / 2× Blaze), snapshot moments, Hall of Blaze.
 
 ## In progress
-- L2/L3 depth extension (this batch — see `../LEVEL_23_EXTEND.md`).
+- Nothing mid-flight. Latest batch (2026-07-19): L2/L3 depth shipped; NEW
+  crypto onboarding screen (exact privacy copy + Learn More modal), OFFLINE
+  MODE (health probe, banner, leaderboard cache, static-FAQ Oracle, wallet
+  button disable, analytics queue + silent reconnect sync), share taglines,
+  @smokering25 share handles, cross-chain balance reads via backend.
 
 ## Blocked / inert until client input
 - Token perks + badge mint + boss spectacle render inert until contract

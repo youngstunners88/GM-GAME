@@ -10,6 +10,21 @@ extends CanvasLayer
 ## backend is configured, it says so in-character instead of breaking.
 
 var _cache: Dictionary = {}   # question -> answer, this session
+
+## Offline-mode static FAQ (offline-mode skill): keyword-matched, in-persona.
+## Served when the backend is configured but unreachable — the Oracle stays a
+## character instead of an error message.
+const OFFLINE_FAQ: Array = [
+	["blaze", "Blaze Mode? Grab a Weed Leaf, little one — faster feet, higher hops. It stacks with your double-jump. *exhales*"],
+	["wallet", "Your wallet is your public name in the Realm, nothing more. I never ask for keys, and I never will. Connect at the menu — or don't; the Realm loves you either way."],
+	["jump", "Tap to hop, tap again in the air to hop the sky. Release early to fall short on purpose — control is chill."],
+	["boss", "The Auditor charges when greedy. Sidestep, then strike while he's dizzy. Patience beats paperwork."],
+	["ladder", "Press up on the vines and climb, friend. Jump off whenever the mood takes you."],
+	["secret", "Walls that shimmer are walls that share. Bring a pickaxe and an open mind."],
+	["token", "SMOKE burns on Base; DIAMONDS and GOLD rest on Ethereum. Holders see a little extra sparkle — never pay-to-win, only pay-to-shine."],
+	["leaderboard", "The board remembers the chillest runs. Submit from the victory screen when the Realm's server wakes."],
+]
+const OFFLINE_FALLBACK := "The Realm's connection drifts like smoke right now... I hold only old wisdom: run, double-jump, stay chill, shimmer-walls share secrets. Ask me again when the winds return."
 @onready var _panel: Control = $Panel
 @onready var _input: LineEdit = $Panel/VBox/Input
 @onready var _answer: Label = $Panel/VBox/Answer
@@ -45,6 +60,15 @@ func _on_ask() -> void:
 		return
 	if not Web3Bridge.has_backend():
 		_answer.text = "...the Oracle sleeps until the Realm's server awakens. (Backend not yet configured — see LAYER_SHIFT.md.)"
+		return
+	# Offline mode: static in-persona FAQ instead of live Mistral.
+	if GameManager.offline_mode:
+		var lower := q.to_lower()
+		for pair in OFFLINE_FAQ:
+			if lower.contains(str(pair[0])):
+				_answer.text = str(pair[1])
+				return
+		_answer.text = OFFLINE_FALLBACK
 		return
 	_answer.text = "*inhales slowly...*"
 	Web3Bridge.ask_oracle(q, func(res: Dictionary) -> void:

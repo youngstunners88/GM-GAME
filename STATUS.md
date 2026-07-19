@@ -11,6 +11,31 @@
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
 
+## ⚡ ACTIVATION SPRINT (2026-07-19 evening) — one credential from fully live
+
+- **Email is REAL now**: created `smokering-notifications@agentmail.to` and
+  sent you a live test email (check your inbox!). A Kimi-drafted weekly
+  newsletter is sitting in AgentMail marked needs_approval — nothing sends
+  without you. Free-tier caps found: no 2nd inbox / no custom domain —
+  a plan upgrade unlocks support@smokering.game.
+- **Your token contracts are verified and wired**: I checked all three
+  ON-CHAIN before touching config — SMOKE is on Base; DIAMONDS + GOLD are on
+  Ethereum (not Base!). Built a cross-chain read endpoint so perks work no
+  matter which chain a player's wallet is on. Privacy preserved: reads are
+  stateless, addresses never stored.
+- **In the game build**: "NEW TO CRYPTO?" onboarding (plain-English, exact
+  safety wording, MetaMask guide), full OFFLINE MODE (banner, cached
+  leaderboard, offline Oracle FAQ, queued analytics that sync on reconnect),
+  @smokering25 + t.me/LilBluntdotWin on every share/button, rotating share
+  taglines (Kimi refreshes weekly, you approve).
+- **Content engine RUNNING**: this week's taglines + 5 X drafts for
+  @smokering25 are in `marketing/assets/` — paste-ready.
+- **Ops budget documented**: `docs/OPERATIONS_BUDGET.md` (~$10–50/mo now).
+- **The one blocker**: the Cloudflare key you provided is valid but has no
+  account access, so I couldn't deploy the Worker. Fix = 1 minute: grab your
+  Account ID from the Cloudflare dashboard sidebar → set CLOUDFLARE_ACCOUNT_ID
+  → I run `./scripts/deploy-backend.sh` (it does literally everything else).
+
 ## 🏗 NEW — ICM RESTRUCTURE + COACH'S SECURITY GATE + L2/L3 DEPTH (2026-07-19)
 
 - **ICM Architect structure** (your coach's framework, github.com/RinDig/icm-architect):

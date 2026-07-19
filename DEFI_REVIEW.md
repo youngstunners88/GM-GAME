@@ -9,15 +9,28 @@ away; a human signs off before contract addresses land in `config.json`.**
 
 ## GM-GAME manual checks (added per integration task #3)
 
-### M-DEFI-1 · Contract addresses are correct and audited — ☐ pending client
-Before filling `config.json.contracts.*`:
-- [ ] Each address copied from the OFFICIAL project channel (not chat/DM),
-      cross-checked on Basescan (verified source, expected name/symbol).
+### M-DEFI-1 · Contract addresses are correct and audited — ◐ verified on-chain 2026-07-19; audit attestation still pending client
+- [x] Addresses supplied by the founder directly (project owner = official
+      channel) and **cross-checked on-chain via direct RPC** (stronger than an
+      explorer page): `eth_getCode` (real bytecode) + `symbol()`:
+      | Token | Address | Chain | Bytecode | symbol() |
+      |---|---|---|---|---|
+      | SMOKE | `0x6FBa5157f650DE083Bf8ca1B19Cb172dc511843d` | **Base** | ✅ 13 KB | `SMOKE` |
+      | DIAMONDS | `0xd645250EdbE9d57c12fbbB24DEf3153E5F19Df08` | **Ethereum** | ✅ 8 KB | `DIAMONDS` |
+      | GoldMine | `0xfF5FAB9b60955dA5726A5787b9cbf2B4B298A197` | **Ethereum** | ✅ 12 KB | `GOLD` |
+      ⚠️ **Cross-chain finding:** DIAMONDS + GOLD have NO code on Base — reads
+      must be chain-aware. Resolved via the stateless backend `/balances`
+      endpoint (fixed RPC map, one chain per token). Only these on-chain-
+      verified addresses are baked into that endpoint's server-side map.
 - [ ] Badge ERC-721 `mint()` (selector `0x1249c58b`) confirmed: mints to
       `msg.sender`, no payment beyond gas, no owner-only revert for players.
+      (No badge contract deployed yet — still empty in config.)
 - [ ] Audit status of each contract recorded here with a link — and per the
       skill's rule: **an audit badge is evidence, not proof**; unverified or
       unaudited contracts get a written risk acceptance from the client.
+      **Client action:** reply with audit links (or "accepted unaudited") for
+      the three tokens above; balances are read-only so the game's exposure is
+      cosmetic-perk gating, not fund risk.
 
 ### M-DEFI-2 · Wallet connect requests no dangerous permissions — ✅ holds by construction (re-verify each change to web3.js)
 - [x] `web/web3.js` uses ONLY `eth_requestAccounts` (connect), `eth_call`

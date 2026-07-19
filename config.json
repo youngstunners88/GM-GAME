@@ -1,17 +1,24 @@
 {
-  "_comment": "Layer-Shift config — the ONLY place chain/backend wiring lives. Per CLAUDE.md Global Rules, NO real wallet/contract addresses are hardcoded in GDScript; they live HERE and load at runtime. Fill these in when the contracts + backend are deployed. Until then every feature degrades gracefully (see LAYER_SHIFT.md).",
+  "_comment": "Layer-Shift config - the ONLY place chain/backend wiring lives. Addresses below were VERIFIED ON-CHAIN 2026-07-19 (bytecode + symbol()) before entry per DEFI_REVIEW.md: SMOKE on Base, DIAMONDS + GOLD on Ethereum mainnet. backend_base_url stays empty until scripts/deploy-backend.sh runs (Cloudflare token needs account access).",
   "backend_base_url": "",
   "chain_id": "0x2105",
   "chain_name": "Base",
   "contracts": {
     "survivor_badge_erc721": "",
-    "smoke_erc20": "",
-    "diamonds_erc20": "",
-    "goldmine_erc20": ""
+    "smoke_erc20": "0x6FBa5157f650DE083Bf8ca1B19Cb172dc511843d",
+    "diamonds_erc20": "0xd645250EdbE9d57c12fbbB24DEf3153E5F19Df08",
+    "goldmine_erc20": "0xfF5FAB9b60955dA5726A5787b9cbf2B4B298A197"
   },
   "explorer_base_url": "https://basescan.org",
   "social": {
-    "telegram": "https://t.me/smokering",
-    "discord": ""
+    "telegram": "https://t.me/LilBluntdotWin",
+    "discord": "",
+    "x": "https://x.com/smokering25"
+  },
+  "contract_chains": {
+    "smoke": "base",
+    "diamonds": "ethereum",
+    "goldmine": "ethereum",
+    "_note": "Cross-chain: wallet-provider eth_call only sees the wallet's current chain, so balance checks go through the backend /balances endpoint (stateless, read-only)."
   }
 }

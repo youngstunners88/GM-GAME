@@ -4,6 +4,19 @@
 > (detail, changelog, evidence). This file is the thin health map + blocker
 > board. Per-track detail: each track's `01-current-state.md`.
 
+## Activation sprint result (2026-07-19, evening)
+
+| Deliverable | State |
+|---|---|
+| Backend | 🟡 **BLOCKED on 1 credential** — Cloudflare token has no account access; `./scripts/deploy-backend.sh` does everything else in one command (KV, secrets, vars, deploy, E2E). All keys validated: Mistral ×2, OpenRouter, AgentMail. |
+| Socials | ✅ **LINKED** — @smokering25 + t.me/LilBluntdotWin wired in-game, emails, shares (`docs/SOCIAL_LINKS.md`) |
+| Onboarding | ✅ **LIVE** in the build — "NEW TO CRYPTO?" menu screen, exact privacy copy, Learn More modal, viewed/clicked/dismissed analytics |
+| Offline mode | ✅ **LIVE** in the build — banner, leaderboard cache, static-FAQ Oracle, wallet disable, analytics queue + silent reconnect sync |
+| Budget | ✅ **DOCUMENTED** — `docs/OPERATIONS_BUDGET.md` (~$10–50/mo launch; $100 @10k, $400 @100k, $200 credit buffer) |
+| Content engine | ✅ **RUNNING** — real Kimi K3 outputs on disk (taglines W29, X drafts) + a real newsletter draft in AgentMail awaiting approval |
+| Email pipeline | ✅ **PROVEN** — `smokering-notifications@agentmail.to` created; test email delivered to the founder |
+| Contracts | ✅ **VERIFIED + IN CONFIG** — SMOKE on Base, DIAMONDS+GOLD on Ethereum (cross-chain finding → new stateless `/balances` endpoint) |
+
 ## Health (2026-07-19)
 
 | Track | State | Evidence |
@@ -15,17 +28,16 @@
 
 ## Blockers (client-input, in order of unlock value)
 
-1. ~~Valid Mistral key~~ → **UNBLOCKED 2026-07-19**: two valid keys in env
-   (`MINSTRAL_API_KEY`, `MINSTRAL_API_KEY2`, both HTTP 200). Deploy step:
-   `wrangler secret put MISTRAL_API_KEY` (paste key 1) and
-   `wrangler secret put MISTRAL_API_KEY2` (key 2, failover tier).
-2. **Backend deploy** (~5 min): `backend/README.md` → gives Oracle,
-   leaderboard, lore, analytics, difficulty their server.
-3. **AgentMail key + smokering.game DNS** (~20 min): `AGENTMAIL_SETUP.md`
-   → email engine goes live.
-4. **Contract addresses** in `config.json` (badge ERC-721 + 3 ERC-20s)
-   → badge mint, token perks, boss spectacle activate. See `DEFI_REVIEW.md`
-   manual checks BEFORE filling these.
+1. **Cloudflare account access (~1 min)** — set `CLOUDFLARE_ACCOUNT_ID` (or a
+   token w/ Workers+KV edit perms), then `./scripts/deploy-backend.sh` does
+   the rest. THIS IS THE ONLY THING between the game and a live Oracle/
+   leaderboard/email/analytics stack.
+2. **AgentMail plan upgrade** — free tier hit its inbox cap + allows no custom
+   domains. Upgrade → support@ inbox + smokering.game DNS flow.
+3. **Badge ERC-721** — still no contract; mint stays inert (token perks now
+   have verified addresses and go live with the backend).
+4. **DEFI_REVIEW M-DEFI-1 audit attestation** — reply with audit links (or
+   written acceptance) for SMOKE/DIAMONDS/GOLD.
 5. **itch.io Publish click** (~10 s): page is uploaded, sitting in Draft.
 
 ## Standing gates (never skip)
