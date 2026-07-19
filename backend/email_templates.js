@@ -44,7 +44,9 @@ function layout(env, { title, bodyHtml, unsubToken }) {
     <div style="font-size:11px;color:#57735f;padding:18px 6px;text-align:center;line-height:1.6;">
       You're getting this because you opted in to Smoke Realm updates in-game.<br>
       ${esc(addr)}<br>
-      <a href="${unsub}" style="color:#7ee2a8;">Unsubscribe</a> — one click, no questions, gone forever.
+      <a href="${unsub}" style="color:#7ee2a8;">Unsubscribe</a> — one click, no questions, gone forever.<br>
+      <a href="${base}/data-export?token=${encodeURIComponent(unsubToken || "")}" style="color:#57735f;">Export my data</a> ·
+      <a href="${base}/data-delete?token=${encodeURIComponent(unsubToken || "")}" style="color:#57735f;">Delete my data</a>
     </div>
   </div></body></html>`;
 }

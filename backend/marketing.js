@@ -183,6 +183,35 @@ export async function handleMarketingRoute(path, request, env, cors) {
     return json({ ok: true }, 200, cors);
   }
 
+  // GDPR-style data rights (privacy.md; audit DATA002). Authenticated by the
+  // per-player unsubscribe token — only reachable from the owner's own email.
+  if (path === "/data-export" && request.method === "GET") {
+    if (await overLimit(env, request, "dexport", 10, 3600))
+      return json({ ok: false, error: "rate_limited" }, 429, cors);
+    const tok = String(new URL(request.url).searchParams.get("token") || "").slice(0, 64);
+    const pid = await env.GAME_KV.get("unsub:" + tok);
+    if (!pid || pid.startsWith("ref:")) return json({ ok: false, error: "unknown token" }, 404, cors);
+    const rec = await getPlayer(env, pid);
+    const stats = await kvJson(env, "pstats:" + pid, {});
+    return json({ exported_at: now(), email_record: rec || {}, gameplay_stats: stats }, 200, cors);
+  }
+  if (path === "/data-delete" && request.method === "GET") {
+    if (await overLimit(env, request, "ddelete", 10, 3600))
+      return json({ ok: false, error: "rate_limited" }, 429, cors);
+    const tok = String(new URL(request.url).searchParams.get("token") || "").slice(0, 64);
+    const pid = await env.GAME_KV.get("unsub:" + tok);
+    if (!pid || pid.startsWith("ref:")) return json({ ok: false, error: "unknown token" }, 404, cors);
+    const rec = await getPlayer(env, pid);
+    if (rec && rec.email) await suppress(env, rec.email, "account deleted (right to be forgotten)");
+    await env.GAME_KV.delete("pemail:" + pid);
+    await env.GAME_KV.delete("pstats:" + pid);
+    await env.GAME_KV.delete("unsub:" + tok);
+    return new Response(
+      "<html><body style='background:#0c1410;color:#e7f5ec;font-family:sans-serif;text-align:center;padding:60px'>" +
+      "<h2>Deleted.</h2><p>Your email record and gameplay stats are gone. The Realm forgets, as requested.</p></body></html>",
+      { headers: { "Content-Type": "text/html", ...cors } });
+  }
+
   // Double-opt-in confirmation (clicked from Welcome 1). Campaign sends check
   // rec.confirmed — only this route sets it, so a spoofed /email/signup POST
   // alone can never subscribe an address to ongoing mail.
@@ -544,6 +573,12 @@ async function llmChat(env, system, user) {
   if (env.MISTRAL_API_KEY) tries.push({
     url: "https://api.mistral.ai/v1/chat/completions",
     key: env.MISTRAL_API_KEY, model: env.MISTRAL_MODEL || "mistral-small-latest",
+  });
+  // Second Mistral key = rate-limit/quota failover (both keys validated
+  // 2026-07-19). Same provider, same quality, different quota bucket.
+  if (env.MISTRAL_API_KEY2) tries.push({
+    url: "https://api.mistral.ai/v1/chat/completions",
+    key: env.MISTRAL_API_KEY2, model: env.MISTRAL_MODEL || "mistral-small-latest",
   });
   if (env.OPENROUTER_API_KEY) tries.push({ kimi: true });
   const xaiKey = env.XAI_API_KEY || env.XAI_API;
