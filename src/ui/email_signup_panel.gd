@@ -27,7 +27,10 @@ func _ready() -> void:
 	_email.grab_focus()
 
 ## Keyboard path (UI rule: keyboard AND mouse): Escape skips the prompt.
-func _unhandled_input(event: InputEvent) -> void:
+## _input (not _unhandled_input): the focused LineEdit consumes Escape as
+## "release focus" before it would ever reach _unhandled_input, which left
+## keyboard users (and the automated verify gate) stuck on the panel.
+func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
 		_on_skip()
@@ -50,7 +53,7 @@ func _on_join() -> void:
 
 func _on_signup_done(res: Variant) -> void:
 	if typeof(res) == TYPE_DICTIONARY and (res as Dictionary).get("ok", false):
-		_status.text = "Welcome in. Check your inbox 🌿"
+		_status.text = "Welcome in. Check your inbox."
 	else:
 		_status.text = "Couldn't sign you up right now — let's just play."
 	await get_tree().create_timer(1.1).timeout

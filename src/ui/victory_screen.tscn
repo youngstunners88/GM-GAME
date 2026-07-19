@@ -47,19 +47,19 @@ alignment = 1
 [node name="ClaimBadge" type="Button" parent="Root/Buttons"]
 layout_mode = 2
 custom_minimum_size = Vector2(360, 48)
-text = "🏅 CLAIM YOUR BADGE"
+text = "CLAIM YOUR BADGE"
 
 [node name="SubmitScore" type="Button" parent="Root/Buttons"]
 layout_mode = 2
 custom_minimum_size = Vector2(360, 48)
-text = "📊 SUBMIT SCORE TO CHAIN"
+text = "SUBMIT SCORE TO CHAIN"
 
 [node name="ViewNFT" type="Button" parent="Root/Buttons"]
 layout_mode = 2
 custom_minimum_size = Vector2(360, 48)
-text = "🔍 VIEW YOUR NFT"
+text = "VIEW YOUR NFT"
 
 [node name="Continue" type="Button" parent="Root/Buttons"]
 layout_mode = 2
 custom_minimum_size = Vector2(360, 48)
-text = "▶ CONTINUE"
+text = "CONTINUE"

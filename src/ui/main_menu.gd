@@ -45,12 +45,12 @@ func _setup_layer_shift_buttons() -> void:
     row.position = Vector2(24, get_viewport().get_visible_rect().size.y - 300)
     add_child(row)
     var defs := [
-        ["👛 CONNECT WALLET", _on_connect_wallet],
-        ["🔮 ASK THE ORACLE", _on_oracle],
-        ["🏆 LEADERBOARD", _on_leaderboard],
-        ["✍ SUBMIT LORE", _on_submit_lore],
-        ["🚀 JOIN THE SMOKERING", _on_join],
-        ["💌 INVITE A FRIEND", _on_invite_friend],
+        ["CONNECT WALLET", _on_connect_wallet],
+        ["ASK THE ORACLE", _on_oracle],
+        ["LEADERBOARD", _on_leaderboard],
+        ["SUBMIT LORE", _on_submit_lore],
+        ["JOIN THE SMOKERING", _on_join],
+        ["INVITE A FRIEND", _on_invite_friend],
     ]
     for d in defs:
         var b := Button.new()
@@ -70,18 +70,18 @@ func _setup_layer_shift_buttons() -> void:
 func _on_connect_wallet() -> void:
     Web3Bridge.track("menu_connect_wallet")
     if not Web3Bridge.is_web3_available():
-        _wallet_btn.text = "👛 NO WALLET (play web build)"
+        _wallet_btn.text = "NO WALLET (play web build)"
         return
-    _wallet_btn.text = "👛 CONNECTING..."
+    _wallet_btn.text = "CONNECTING..."
     if Web3Bridge.wallet_address == "":
         await Web3Bridge.connect_wallet()
     else:
         await Web3Bridge.refresh_balances()
     if Web3Bridge.wallet_address != "":
-        _wallet_btn.text = "👛 " + Web3Bridge.short_address()
+        _wallet_btn.text = "WALLET: " + Web3Bridge.short_address()
         Web3Bridge.report_event("wallet_connect")
     else:
-        _wallet_btn.text = "👛 CONNECT WALLET"
+        _wallet_btn.text = "CONNECT WALLET"
 
 func _on_oracle() -> void:
     Web3Bridge.track("menu_oracle")
@@ -128,7 +128,7 @@ func _on_invite_friend() -> void:
             Web3Bridge.invite_friend(email, func(res: Variant):
                 var ok: bool = typeof(res) == TYPE_DICTIONARY and (res as Dictionary).get("ok", false)
                 var note := AcceptDialog.new()
-                note.dialog_text = "Invite sent! 🌿" if ok else "Couldn't send right now (server offline?)."
+                note.dialog_text = "Invite sent!" if ok else "Couldn't send right now (server offline?)."
                 add_child(note)
                 note.popup_centered())
         dlg.queue_free())
