@@ -90,7 +90,16 @@ try {
     //   builds exported before that fix)
     // - emscripten main-thread warning (threaded builds only; gone once the
     //   non-threaded export ships)
+    // ALLOW_BACKEND_FETCH_ERRORS=1: the Claude remote sandbox's egress proxy
+    // blocks Chromium's external HTTPS (documented skill gotcha), so the
+    // game's calls to its LIVE backend reset — an environment artifact, not a
+    // game bug (the game degrades to offline mode and still reaches PLAYING).
+    // CI runners CAN reach the backend, so CI runs stay strict by default.
+    const sandboxEgress =
+      process.env.ALLOW_BACKEND_FETCH_ERRORS === '1' &&
+      /ERR_CONNECTION_RESET|Failed to fetch|godot_js_fetch/.test(m.text());
     const benign =
+      sandboxEgress ||
       /USER WARNING|at: push_warning|No loader found for resource: res:\/\/src\/assets\/(sounds|music)\/|at: _load \(core\/io\/resource_loader|Blocking on the main thread/.test(
         m.text()
       );
