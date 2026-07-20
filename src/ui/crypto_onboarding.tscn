@@ -51,7 +51,7 @@ theme_override_font_sizes/font_size = 14
 [node name="S3" type="Label" parent="Panel/VBox"]
 text = "HOW DO I GET A WALLET?
 1. Tap GET METAMASK below and install it (phone or browser).
-2. Follow its setup - write your recovery phrase on PAPER, never share it.
+2. Follow MetaMask's setup - it shows a recovery phrase. Write it on PAPER. Never share it, not even with us.
 3. Come back and press CONNECT WALLET at the menu. Done."
 autowrap_mode = 2
 theme_override_font_sizes/font_size = 14

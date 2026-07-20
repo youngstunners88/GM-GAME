@@ -47,5 +47,7 @@ func _drop_through() -> void:
 	shape.set_deferred("disabled", true)
 	deck.modulate = Color(1, 1, 1, 0.45)
 	get_tree().create_timer(DROP_TIME).timeout.connect(func() -> void:
+		if not is_instance_valid(shape):
+			return
 		shape.set_deferred("disabled", false)
 		deck.modulate = Color(1, 1, 1, 1))

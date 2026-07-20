@@ -11,6 +11,29 @@
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
 
+## 🟢 THE STACK IS LIVE (2026-07-20)
+
+**Backend deployed and answering**: https://lil-blunt-backend.teacherchris37.workers.dev
+Ask the Oracle in-game — Mistral answers in character, live. Leaderboard,
+analytics, adaptive difficulty, and the whole email engine (welcome sequence,
+Monday digests, milestones, referrals, AI support triage) are ACTIVE on
+`smokering-notifications@agentmail.to`. You received the first production
+Welcome email as the E2E proof. First Monday digest stops at Drafts for your
+approval (DIGEST_DRAFT_ONLY=1). Cross-chain token perks are live server-side
+(SMOKE on Base + DIAMONDS/GOLD on Ethereum, read correctly no matter the
+wallet's chain).
+
+**Kimi K3 stress-test gate (mandatory, passed)**: 90-file GDScript sweep +
+full architecture review + player-copy review. Real catches fixed same-day —
+incl. a wallet-connect race that made every FIRST connect silently fail, a
+mail-scanner-can-delete-your-data footgun, referral hardening (confirmed
+subscribers only), an Oracle daily cost circuit-breaker, and 5 tagline
+rewrites (the "no rug pulls, promise" line is gone — Kimi was right, that
+reads like a red flag). Full trail: `KIMI_AUDIT_FEEDBACK.md`.
+
+**In the next build (this push)**: 50 reviewed share taglines, FOLLOW ON X
+button, polished onboarding copy, all audit fixes.
+
 ## ⚡ ACTIVATION SPRINT (2026-07-19 evening) — one credential from fully live
 
 - **Email is REAL now**: created `smokering-notifications@agentmail.to` and

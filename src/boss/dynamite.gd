@@ -17,7 +17,12 @@ func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
 		_explode()
 
+var _exploded: bool = false
+
 func _explode() -> void:
+	if _exploded or not is_inside_tree():
+		return
+	_exploded = true
 	var explosion := Area2D.new()
 	explosion.position = global_position
 	get_parent().add_child(explosion)

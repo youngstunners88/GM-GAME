@@ -15,7 +15,19 @@
 ## In progress
 - Nothing — track is one credential away from fully live.
 
-## Blocked — ONE missing credential (everything else is done)
+## 🟢 DEPLOYED (2026-07-20) — LIVE at
+## https://lil-blunt-backend.teacherchris37.workers.dev
+- E2E verified live: /health 200 · /leaderboard [] · /oracle answering
+  in-character via Mistral (3/3 attempts) · /balances real multi-chain reads ·
+  /email/signup delivered Welcome 1 to the founder · /event→/player-analytics
+  loop closed (death heatmap round-trip) · crons registered (Mon 10:00 +
+  daily 09:00) · support webhook ep_3GlLobMdwUvQeXaNRUb5xIo2gdL registered.
+- Kimi K3 architecture audit hardening deployed same day: Oracle daily
+  circuit-breaker + link-stripping, /balances 60s cache, referral
+  confirmed-subscriber gate + 10 lifetime cap, /data-delete POST-confirm,
+  analytics reads gated to CSPRNG ids. Full trail: ../KIMI_AUDIT_FEEDBACK.md.
+
+## Historical: the resolved blocker
 - Deploy attempted 2026-07-19: the `CLOUDFLARE_API_KEY` token is valid but
   has NO account access (`/accounts` empty, `/memberships` denied) and no
   `CLOUDFLARE_ACCOUNT_ID` is set — wrangler cannot target an account.

@@ -53,12 +53,12 @@ func _physics_process(delta: float) -> void:
 				_throw_dynamite()
 
 		State.THROW:
-			velocity.x = move_toward(velocity.x, 0.0, 100.0)
+			velocity.x = move_toward(velocity.x, 0.0, 100.0 * delta * 60.0)
 			velocity.y += 980.0 * delta
 			move_and_slide()
 
 		State.VULNERABLE:
-			velocity.x = move_toward(velocity.x, 0.0, 150.0)
+			velocity.x = move_toward(velocity.x, 0.0, 150.0 * delta * 60.0)
 			velocity.y += 980.0 * delta
 			move_and_slide()
 			sprite.modulate = Color(1.0, 0.3, 0.3, 1.0) if fmod(throw_timer, 0.2) < 0.1 else Color(1.0, 0.1, 0.1, 1.0)

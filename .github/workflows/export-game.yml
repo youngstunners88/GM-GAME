@@ -121,7 +121,7 @@ jobs:
           # reads at runtime via res://config.json — it must be force-included or
           # the Movie/Video-Game Layer wiring (contracts, backend URL) is absent
           # in the exported build.
-          include_filter="config.json"
+          include_filter="config.json,src/autoload/share_taglines.json"
           exclude_filter="*.yml,*.yaml,*.md"
           export_path="web/game/index.html"
           script_export_mode=1

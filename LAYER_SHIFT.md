@@ -181,7 +181,7 @@ with no CSP issues. It's bundled next to `index.html` by CI and loaded via
     "goldmine_erc20": ""             // M2 GoldMine perk
   },
   "explorer_base_url": "https://basescan.org",
-  "social": { "telegram": "https://t.me/smokering", "discord": "" }
+  "social": { "telegram": "https://t.me/LilBluntdotWin", "x": "https://x.com/smokering25", "discord": "" }
 }
 ```
 

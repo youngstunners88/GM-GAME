@@ -396,3 +396,28 @@ fail-on=high | total=18 pass=18 fail=0 blockers=0
 | CI-002 | medium | PASS | Security Sentinel wired into CI |
 | CI-003 | medium | PASS | .gitleaks.toml allowlist stays narrow |
 | CI-004 | low | PASS | .gitleaksignore fingerprint count reasonable |
+
+## 2026-07-20 — Security Sentinel automated run
+
+fail-on=high | total=18 pass=18 fail=0 blockers=0
+
+| ID | Severity | Status | Title |
+|----|----------|--------|-------|
+| SEC-001 | critical | PASS | No secret-looking strings in shipped paths |
+| SEC-002 | critical | PASS | .env gitignored |
+| SEC-003 | critical | PASS | .env never committed |
+| SEC-004 | critical | PASS | No hardcoded wallet/contract addresses (40-hex) |
+| SEC-005 | critical | PASS | No 64-hex private-key-shaped literals in tracked source |
+| INJ-001 | critical | PASS | No OS.execute() in game code |
+| INJ-002 | critical | PASS | No Expression (dynamic code exec) in game code |
+| INJ-003 | high | PASS | JavaScriptBridge.eval interpolation is _hex()-sanitized or fixed postMessage template |
+| INJ-004 | medium | PASS | FileAccess.open never takes a runtime-built path |
+| DEP-001 | critical | PASS | Web export stays non-threaded |
+| DEP-002 | high | PASS | postMessage handlers enforce same-origin |
+| DEP-003 | high | PASS | No source maps in shipped bundle |
+| DEP-004 | medium | PASS | Supply-chain downloads (Godot/butler) are checksum-pinned |
+| TRUST-001 | critical | PASS | Wallet UI is real & user-signed (no key handling, txs via window.ethereum) |
+| CI-001 | high | PASS | Secret-scan (gitleaks) step present in CI |
+| CI-002 | medium | PASS | Security Sentinel wired into CI |
+| CI-003 | medium | PASS | .gitleaks.toml allowlist stays narrow |
+| CI-004 | low | PASS | .gitleaksignore fingerprint count reasonable |

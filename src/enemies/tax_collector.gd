@@ -15,6 +15,9 @@ func _ready() -> void:
     patrol_speed *= DifficultyManager.tax_speed_scale
 
 func _physics_process(delta: float) -> void:
+    # Kimi audit: don't let gravity accumulate unbounded while grounded.
+    if is_on_floor() and velocity.y > 0.0:
+        velocity.y = 0.0
     if is_dead:
         return
 

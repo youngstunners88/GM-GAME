@@ -45,11 +45,10 @@ func _on_claim() -> void:
 		return
 	_status.text = "Connecting wallet..."
 	if Web3Bridge.wallet_address == "":
-		# connect_wallet() emits EITHER wallet_connected OR wallet_failed, so we
-		# can't await one signal (a decline would hang here). It resolves within
-		# ~1.2s internally; kick it and re-check the address.
-		Web3Bridge.connect_wallet()
-		await get_tree().create_timer(1.6).timeout
+		# connect_wallet() is a coroutine that fully resolves (connected,
+		# declined, or 30s timeout) — await it directly. (Kimi audit: the old
+		# fixed 1.6s guess always lost the race against the wallet popup.)
+		await Web3Bridge.connect_wallet()
 	if Web3Bridge.wallet_address == "":
 		_status.text = "Wallet not connected.\n(Your victory still counts!)"
 		return

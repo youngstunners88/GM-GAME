@@ -1,5 +1,15 @@
 # AgentMail Marketing Engine — Setup & Reference
 
+> **PHASE STATUS (2026-07-20): Phase 1 ACTIVE on the default domain.**
+> Sender/support inbox: `smokering-notifications@agentmail.to` (live — welcome
+> sequence, digests, milestones all send from it; support webhook registered
+> against the deployed Worker). The org's free tier is at its inbox cap and
+> allows no custom domains, so the requested `game-noreply@`/`game-support@`
+> split waits with Phase 2. **Phase 2: custom domain `smokering.game`
+> (plan upgrade + DNS pending purchase)** — sections 2–3 below become live
+> steps then; nothing else changes.
+
+
 The game's email layer: player capture, weekly digests, welcome sequences,
 milestone emails, two-way AI support, referrals, and the founder digest — all
 via [AgentMail](https://docs.agentmail.to) (email API built for agents),

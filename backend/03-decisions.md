@@ -33,3 +33,11 @@
   `smokering-notifications@agentmail.to` is sender AND support until the plan
   upgrade (org inbox cap hit; custom domains need paid tier). Code already
   falls back SENDER→SUPPORT, so this is config truth, not a code fork.
+- **2026-07-20 · Deployed.** One-command script worked after two real-world
+  fixes now baked in: `[ x ] &&` set-e landmines -> if/then, and KV-namespace
+  creation via REST (wrangler refuses ALL commands while the toml id is empty
+  — chicken-and-egg). Live URL in config.json; CI rebuilds carry it.
+- **2026-07-20 · Kimi K3 stress-test gate held before itch.** 3 CRITICAL /
+  10 HIGH triaged: fixed the real ones same-day, disproved with evidence
+  (confirmed-gates, idempotency, empirical compile proof) the rest, deferred
+  list documented. Disagreements recorded, not ignored (KIMI_AUDIT_FEEDBACK.md).

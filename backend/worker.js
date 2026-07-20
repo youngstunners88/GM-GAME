@@ -117,6 +117,14 @@ export default {
         // Tight limit — every call spends real Mistral credits.
         if (await overRateLimit(env, request, "oracle", 10, 60))
           return json({ answer: "Whoa, slow down and breathe... ask me again in a moment." }, 429, cors);
+        // Kimi audit: global daily circuit-breaker so rotated IPs can't drain
+        // the Mistral budget — hard stop at ORACLE_DAILY_CAP calls/day
+        // (default 500/day ≈ pennies; raise via var as volume warrants).
+        const dayKey = "spend:oracle:" + new Date().toISOString().slice(0, 10);
+        const spent = parseInt((await env.GAME_KV.get(dayKey)) || "0");
+        if (spent >= parseInt(env.ORACLE_DAILY_CAP || "500"))
+          return json({ answer: "The Oracle has spoken much today and rests. Return tomorrow, traveler." }, 200, cors);
+        await env.GAME_KV.put(dayKey, String(spent + 1), { expirationTtl: 172800 });
         const { question } = await request.json();
         if (!question || typeof question !== "string") return json({ answer: "Ask me something, traveler..." }, 200, cors);
         const r = await fetch("https://api.mistral.ai/v1/chat/completions", {
@@ -133,7 +141,10 @@ export default {
         });
         if (!r.ok) return json({ answer: "The smoke is thick... ask again in a moment." }, 200, cors);
         const data = await r.json();
-        const answer = data?.choices?.[0]?.message?.content?.trim() || "...the haze clouds my sight.";
+        let answer = data?.choices?.[0]?.message?.content?.trim() || "...the haze clouds my sight.";
+        // Kimi audit: never emit links (prompt-injected phishing vector) and
+        // stay within persona length regardless of injection attempts.
+        answer = answer.replace(/https?:\/\/\S+/gi, "[link removed]").slice(0, 600);
         return json({ answer }, 200, cors);
       }
 

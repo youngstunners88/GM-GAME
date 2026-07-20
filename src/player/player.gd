@@ -296,12 +296,17 @@ func take_damage(amount: int) -> void:
 
 ## Freeze-frame on impact — ~4 frames at 5% speed reads as a hit, not lag.
 ## Timer ignores time_scale so the freeze always ends on schedule.
+## Token-guarded restore (Kimi audit): overlapping hitstops used to race — the
+## first timer's restore could stomp a later legitimate time_scale change.
+## Only the MOST RECENT hitstop is allowed to restore.
+var _hitstop_token: int = 0
 func _hitstop(duration: float = 0.07) -> void:
-	if Engine.time_scale < 1.0:
-		return
+	_hitstop_token += 1
+	var my_token := _hitstop_token
 	Engine.time_scale = 0.05
 	await get_tree().create_timer(duration, true, false, true).timeout
-	Engine.time_scale = 1.0
+	if my_token == _hitstop_token:
+		Engine.time_scale = 1.0
 
 ## Ladder zone refcount — called by ladder.gd on Area2D enter/exit.
 func enter_ladder_zone() -> void:

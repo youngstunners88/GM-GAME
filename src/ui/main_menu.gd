@@ -42,7 +42,7 @@ func _setup_layer_shift_buttons() -> void:
     # (Bug fix: PRESET_BOTTOM_LEFT + a viewport-height offset double-counted
     # the bottom edge and pushed the whole column ~500px BELOW the screen —
     # every layer-shift button was invisible in shipped builds.)
-    row.position = Vector2(24, get_viewport().get_visible_rect().size.y - 344)
+    row.position = Vector2(24, get_viewport().get_visible_rect().size.y - 390)
     add_child(row)
     var defs := [
         ["CONNECT WALLET", _on_connect_wallet],
@@ -51,6 +51,7 @@ func _setup_layer_shift_buttons() -> void:
         ["LEADERBOARD", _on_leaderboard],
         ["SUBMIT LORE", _on_submit_lore],
         ["JOIN THE SMOKERING", _on_join],
+        ["FOLLOW ON X", _on_follow_x],
         ["INVITE A FRIEND", _on_invite_friend],
     ]
     for d in defs:
@@ -125,6 +126,13 @@ func _on_submit_lore() -> void:
 func _on_join() -> void:
     Web3Bridge.track("menu_join")
     var url: String = Web3Bridge.config.get("social", {}).get("telegram", "")
+    if url != "":
+        OS.shell_open(url)
+
+## Follow @smokering25 — reads config.social.x (SOCIAL_LINKS.md is the record).
+func _on_follow_x() -> void:
+    Web3Bridge.track("menu_follow_x")
+    var url: String = Web3Bridge.config.get("social", {}).get("x", "")
     if url != "":
         OS.shell_open(url)
 

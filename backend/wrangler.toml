@@ -7,7 +7,7 @@ compatibility_date = "2024-11-01"
 # then paste the id below.
 [[kv_namespaces]]
 binding = "GAME_KV"
-id = ""
+id = "72e338d4f89b4a9d8e3de967f12928d8"
 
 # Secret (do NOT put it here — it's committed): set it out-of-band with
 #   wrangler secret put MISTRAL_API_KEY
@@ -17,6 +17,13 @@ id = ""
 # Worker; SET THIS to the game's real origins before production, e.g.:
 #   ALLOWED_ORIGIN = "https://html-classic.itch.zone,https://lil-blunt-game.vercel.app"
 [vars]
+PUBLIC_BACKEND_URL = "https://lil-blunt-backend.teacherchris37.workers.dev"
+ALLOWED_ORIGIN = "*"
+SENDER_INBOX_ID = "smokering-notifications@agentmail.to"
+SUPPORT_INBOX_ID = "smokering-notifications@agentmail.to"
+ADMIN_EMAIL = "teacherchris37@gmail.com"
+POSTAL_ADDRESS = "SmokeRing - The Smoke Realm (update with mailing address)"
+DIGEST_DRAFT_ONLY = "1"
 # ALLOWED_ORIGIN = ""
 # --- AgentMail marketing engine (AGENTMAIL_SETUP.md) ---
 # Secrets, set out-of-band (NEVER here):

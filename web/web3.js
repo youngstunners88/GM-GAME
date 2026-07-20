@@ -11,14 +11,19 @@
     addr: "",
     _hasEth() { return typeof window.ethereum !== "undefined"; },
 
-    // Request accounts. Writes the first account to W.addr for Godot to poll.
+    // Request accounts. Writes the first account to W.addr for Godot to poll;
+    // declines/timeouts surface via W.connectError (Kimi audit: the game's
+    // old fixed-delay poll had no error channel and silently failed).
+    connectError: "",
     async connect() {
       W.addr = "";
-      if (!W._hasEth()) return "";
+      W.connectError = "";
+      if (!W._hasEth()) { W.connectError = "no-wallet"; return ""; }
       try {
         const accts = await window.ethereum.request({ method: "eth_requestAccounts" });
         W.addr = (accts && accts[0]) ? accts[0] : "";
-      } catch (e) { W.addr = ""; }
+        if (!W.addr) W.connectError = "no-account";
+      } catch (e) { W.addr = ""; W.connectError = "declined"; }
       return W.addr;
     },
 

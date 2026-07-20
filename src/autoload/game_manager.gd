@@ -161,6 +161,7 @@ func save_session() -> bool:
         "blaze_rush": _serialize_blaze_completions(),
         "health": player_health,
         "max_health": max_health,
+        "lives": lives,
         "current_level": current_level,
         "checkpoints": _serialize_checkpoints(),
         "goldmine": GoldMineSystem.get_save_data(),
@@ -196,6 +197,9 @@ func load_session() -> bool:
     _deserialize_blaze_completions(data.get("blaze_rush", {}))
     max_health = clampi(int(data.get("max_health", 3)), 1, 10)
     player_health = clampi(int(data.get("health", max_health)), 1, max_health)
+    # Lives persist too (Kimi audit): reloading mid-run must not refill them.
+    lives = clampi(int(data.get("lives", max_lives)), 0, max_lives)
+    lives_changed.emit(lives)
     current_level = clampi(int(data.get("current_level", 1)), 1, 3)
     _deserialize_checkpoints(data.get("checkpoints", {}))
     if data.has("goldmine"):
@@ -283,8 +287,25 @@ func _hide_offline_banner() -> void:
     _offline_banner = null
 
 # ---- Shareable taglines (content engine feeds this list weekly) ------------
-# Rotated into snapshot-moment X shares. Refreshed by
-# backend/content_engine/score_card_taglines.js -> human merge (see that file).
+# Rotated into snapshot-moment X shares. PRIMARY source: the 50-seed
+# res://src/autoload/share_taglines.json (Kimi K3, human-reviewed, packed into
+# the export). The const below is the guaranteed fallback if the JSON is
+# missing/corrupt. Weekly refreshes: content_engine/score_card_taglines.js.
+
+var _loaded_taglines: Array = []
+
+func _load_share_taglines() -> void:
+    const PATH := "res://src/autoload/share_taglines.json"
+    if not FileAccess.file_exists(PATH):
+        return
+    var f := FileAccess.open(PATH, FileAccess.READ)
+    if f == null:
+        return
+    var parsed: Variant = JSON.parse_string(f.get_as_text())
+    if typeof(parsed) == TYPE_DICTIONARY:
+        var arr: Variant = (parsed as Dictionary).get("taglines", [])
+        if typeof(arr) == TYPE_ARRAY and (arr as Array).size() >= 5:
+            _loaded_taglines = arr
 
 const SHARE_TAGLINES: Array[String] = [
     "Diamond hands, cloud feet.",
@@ -300,4 +321,8 @@ const SHARE_TAGLINES: Array[String] = [
 ]
 
 func random_tagline() -> String:
+    if _loaded_taglines.is_empty():
+        _load_share_taglines()
+    if not _loaded_taglines.is_empty():
+        return str(_loaded_taglines[randi() % _loaded_taglines.size()])
     return SHARE_TAGLINES[randi() % SHARE_TAGLINES.size()]

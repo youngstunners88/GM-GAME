@@ -108,13 +108,17 @@ func _flush_analytics_queue() -> void:
 	if f == null:
 		return
 	var parsed: Variant = JSON.parse_string(f.get_as_text())
+	# Delete-then-replay-from-memory (Kimi audit): deleting AFTER replay let a
+	# concurrent track() append to the old file and lose its event when the
+	# file was removed. Now new events during replay start a fresh queue file;
+	# worst case (quit mid-replay) drops fire-and-forget analytics, never
+	# duplicates them.
+	DirAccess.remove_absolute(ANALYTICS_QUEUE_PATH)
 	if typeof(parsed) != TYPE_ARRAY:
-		DirAccess.remove_absolute(ANALYTICS_QUEUE_PATH)
 		return
 	for item in (parsed as Array):
 		if typeof(item) == TYPE_DICTIONARY:
 			_backend("POST", str(item.get("path", "/event")), item.get("body", {}), func(_x): pass)
-	DirAccess.remove_absolute(ANALYTICS_QUEUE_PATH)
 	track("offline_sync_completed")
 
 func _load_config() -> void:
@@ -164,16 +168,24 @@ func connect_wallet() -> void:
 		wallet_failed.emit("No wallet available (play on the web build with a wallet extension).")
 		return
 	JavaScriptBridge.eval("window.LilBluntWeb3.connect();", true)
-	# web3.js calls back into the game via a hidden signal element it polls;
-	# here we poll the last-known address it wrote to window.LilBluntWeb3.addr.
-	await get_tree().create_timer(1.2).timeout
-	var addr := str(JavaScriptBridge.eval("window.LilBluntWeb3.addr || ''", true))
-	if addr.begins_with("0x") and addr.length() == 42:
-		wallet_address = addr
-		wallet_connected.emit(addr)
-		await _refresh_token_balances()
-	else:
-		wallet_failed.emit("Wallet connection was declined or unavailable.")
+	# Poll until the user finishes the wallet popup (Kimi audit: a fixed 1.2s
+	# guess ALWAYS lost the race against a human clicking "Connect" — every
+	# first attempt silently failed). 30s deadline, 0.25s cadence, explicit
+	# error surface via window.LilBluntWeb3.connectError.
+	var deadline := Time.get_ticks_msec() + 30000
+	while Time.get_ticks_msec() < deadline:
+		var addr := str(JavaScriptBridge.eval("window.LilBluntWeb3.addr || ''", true))
+		if addr.begins_with("0x") and addr.length() == 42:
+			wallet_address = addr
+			wallet_connected.emit(addr)
+			await _refresh_token_balances()
+			return
+		var err := str(JavaScriptBridge.eval("window.LilBluntWeb3.connectError || ''", true))
+		if err != "":
+			wallet_failed.emit("Wallet connection was declined.")
+			return
+		await get_tree().create_timer(0.25).timeout
+	wallet_failed.emit("Wallet connection timed out.")
 
 func short_address(addr: String = "") -> String:
 	var a := addr if addr != "" else wallet_address
@@ -206,7 +218,9 @@ func _refresh_token_balances() -> void:
 			if typeof(res) == TYPE_DICTIONARY and (res as Dictionary).get("ok", false):
 				var b: Dictionary = (res as Dictionary).get("balances", {})
 				for key in ["smoke", "diamonds", "goldmine"]:
-					token_balances[key] = str(b.get(key, "0")).to_float()
+					# String compare, never to_float (Kimi audit): raw wei
+					# integers overflow float precision; holds() only needs >0.
+					token_balances[key] = 1.0 if str(b.get(key, "0")) not in ["0", ""] else 0.0
 			balances_refreshed.emit())
 		return
 	if not is_web3_available():
@@ -352,7 +366,11 @@ func player_id() -> String:
 		if f:
 			_player_id = f.get_as_text().strip_edges()
 	if _player_id == "":
-		_player_id = "p" + str(Time.get_unix_time_from_system()) + str(randi() % 1000000)
+		# CSPRNG id (Kimi audit C1): 128 bits via Crypto — unguessable, so
+		# /player-analytics reads can't be enumerated from timestamps the way
+		# the old "p<unix><randi%1M>" scheme allowed.
+		var crypto := Crypto.new()
+		_player_id = crypto.generate_random_bytes(16).hex_encode()
 		var w := FileAccess.open(PLAYER_ID_PATH, FileAccess.WRITE)
 		if w:
 			w.store_string(_player_id)

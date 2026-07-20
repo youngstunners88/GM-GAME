@@ -142,7 +142,7 @@ export function welcome(env, stage, p) {
         `\nPlay: ${GAME_URL}`,
     },
     2: {
-      subject: "The Tax Collector is waiting…",
+      subject: "The Tax Collector wants a word 🌿",
       title: "He's counting your coins already.",
       html: `<p>Yo ${name},</p>
         <p>You signed up but haven't dropped into the Realm yet. <b>The Tax
@@ -176,7 +176,7 @@ export function milestoneBossDefeat(env, p) {
   const base = env.PUBLIC_BACKEND_URL || "";
   const shareText = `I just SMOKED The Auditor in Lil Blunt: The Smoke Realm 🌿💨 Rank #${p.rank || "?"}. ${GAME_URL}`;
   return {
-    subject: "💨 You SMOKED the Auditor",
+    subject: "💨 You smoked the Auditor",
     html: layout(env, {
       title: "You SMOKED the Auditor.",
       unsubToken: p.unsubToken,

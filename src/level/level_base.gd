@@ -16,8 +16,8 @@ func _ready() -> void:
 	# Adaptive difficulty (task #23): pull this player's heatmap BEFORE
 	# entities spawn where possible; late-arriving tuning is applied in
 	# _on_difficulty_ready (checkpoint/hint tweaks are placement-safe anytime).
-	DifficultyManager.refresh()
 	DifficultyManager.tuning_ready.connect(_on_difficulty_ready, CONNECT_ONE_SHOT)
+	DifficultyManager.refresh()
 	if boss_trigger:
 		boss_trigger.body_entered.connect(_on_boss_trigger)
 	_setup_background()

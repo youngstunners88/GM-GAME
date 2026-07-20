@@ -21,11 +21,16 @@
 - Socials confirmed + wired everywhere: x.com/smokering25, t.me/LilBluntdotWin
   (source of truth: `docs/SOCIAL_LINKS.md`).
 
-## Blocked (in unlock order)
-1. Backend deploy — one Cloudflare credential (backend/02-next-task.md).
-2. AgentMail PLAN UPGRADE (free tier at inbox cap, 0 custom domains) →
-   unlocks support@ + the smokering.game sending domain + DNS flow.
-3. Discord URL still empty in `config.json.social`.
+## 🟢 LIVE (2026-07-20)
+- Backend deployed — welcome sequence, digests, milestones, referrals,
+  support triage all ACTIVE on `smokering-notifications@agentmail.to`
+  (Phase 1 default domain; DIGEST_DRAFT_ONLY=1 for the first Monday).
+- Production signup E2E proven (founder received Welcome 1 w/ confirm link).
+
+## Still waiting on client
+1. AgentMail PLAN UPGRADE → support@ + smokering.game custom domain (Phase 2).
+2. Discord URL still empty in `config.json.social`.
+3. First-Monday digest approval (then flip DIGEST_DRAFT_ONLY to 0).
 
 ## Measurement (once live)
 Founder digest lands every Monday 10:00 UTC; funnel counters in KV

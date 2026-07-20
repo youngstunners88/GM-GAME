@@ -4,7 +4,21 @@
 > (detail, changelog, evidence). This file is the thin health map + blocker
 > board. Per-track detail: each track's `01-current-state.md`.
 
-## Activation sprint result (2026-07-19, evening)
+## 🚀 DEPLOY SPRINT RESULT (2026-07-20) — the stack is LIVE
+
+| Deliverable | State |
+|---|---|
+| Backend | ✅ **DEPLOYED** — https://lil-blunt-backend.teacherchris37.workers.dev · health/oracle/balances/signup/analytics all E2E-verified live · crons + support webhook registered |
+| Socials | ✅ **LINKED** — @smokering25 + t.me/LilBluntdotWin everywhere incl. new FOLLOW ON X menu button (`docs/SOCIAL_LINKS.md`) |
+| Onboarding | ✅ **LIVE** — NEW TO CRYPTO? screen (copy-review-polished), analytics events wired |
+| Offline mode | ✅ **LIVE** — + dedicated blackhole-simulation gate (`scripts/verify-offline-sim.mjs`) |
+| Budget | ✅ **DOCUMENTED** — `docs/OPERATIONS_BUDGET.md` |
+| Content engine | ✅ **RUNNING** — 50 reviewed seed taglines packed into the build, X drafts + newsletter draft (AgentMail, needs_approval) |
+| Email | ✅ **ACTIVE (Phase 1, @agentmail.to)** — welcome/digest/milestone/support flows armed; founder received live Welcome 1; Phase 2 = plan upgrade + smokering.game |
+| Contracts | ✅ **VERIFIED + LIVE** — server-side multi-chain /balances (SMOKE=Base, DIAMONDS+GOLD=Ethereum) |
+| Kimi K3 gate | ✅ **PASSED** — 90-file sweep + architecture + copy reviews; criticals fixed/disproven with evidence; trail in `KIMI_AUDIT_FEEDBACK.md` |
+
+## Previous sprint (2026-07-19, evening)
 
 | Deliverable | State |
 |---|---|

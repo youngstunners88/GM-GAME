@@ -147,8 +147,11 @@ func die() -> void:
 	victory.add_theme_font_size_override("font_size", 32)
 	get_tree().current_scene.add_child(victory)
 	await get_tree().create_timer(3.0).timeout
-	SceneRouter.load_scene("res://src/ui/main_menu.tscn", SceneRouter.Transition.DIAMOND)
+	# Kimi audit: free BEFORE the scene load — the old order ran queue_free()
+	# on an instance the scene change had already torn down.
 	queue_free()
+	SceneRouter.load_scene("res://src/ui/main_menu.tscn", SceneRouter.Transition.DIAMOND)
+
 
 func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("take_damage"):

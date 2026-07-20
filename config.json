@@ -1,6 +1,6 @@
 {
   "_comment": "Layer-Shift config - the ONLY place chain/backend wiring lives. Addresses below were VERIFIED ON-CHAIN 2026-07-19 (bytecode + symbol()) before entry per DEFI_REVIEW.md: SMOKE on Base, DIAMONDS + GOLD on Ethereum mainnet. backend_base_url stays empty until scripts/deploy-backend.sh runs (Cloudflare token needs account access).",
-  "backend_base_url": "",
+  "backend_base_url": "https://lil-blunt-backend.teacherchris37.workers.dev",
   "chain_id": "0x2105",
   "chain_name": "Base",
   "contracts": {

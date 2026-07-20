@@ -70,6 +70,8 @@ func _reveal_payload() -> void:
 			Web3Bridge.report_metric("referral_code_used", {"source": "secret_wall"})
 
 func _on_lore(res: Variant) -> void:
+	if not is_inside_tree():
+		return
 	var text := ""
 	if typeof(res) == TYPE_DICTIONARY:
 		text = str((res as Dictionary).get("text", ""))

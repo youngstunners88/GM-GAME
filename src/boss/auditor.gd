@@ -64,6 +64,13 @@ func _ready() -> void:
 		# long (direct timer write — no re-emit, so no feedback loop).
 		GameManager.power_up_changed.connect(_on_powerup_smoke_bonus)
 
+## Kimi audit: the boss can be freed WITHOUT die() (scene change mid-fight).
+## The autoload signal + BossVoiceSystem ref must not dangle.
+func _exit_tree() -> void:
+	if _has_smoke and GameManager.power_up_changed.is_connected(_on_powerup_smoke_bonus):
+		GameManager.power_up_changed.disconnect(_on_powerup_smoke_bonus)
+	BossVoiceSystem.clear_active()
+
 func _physics_process(delta: float) -> void:
 	if current_state == State.DEFEATED:
 		return

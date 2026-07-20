@@ -34,8 +34,12 @@ func open() -> void:
 	tween.tween_property(self, "scale", Vector2.ZERO, 0.5)
 	tween.parallel().tween_property(_visual, "modulate:a", 0.0, 0.5)
 	await tween.finished
+	if not is_instance_valid(self) or not is_inside_tree():
+		return
 	_collision.disabled = true
 	await get_tree().create_timer(open_duration).timeout
+	if not is_instance_valid(self) or not is_inside_tree():
+		return
 	close()
 
 func close() -> void:

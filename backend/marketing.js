@@ -196,6 +196,17 @@ export async function handleMarketingRoute(path, request, env, cors) {
     return json({ exported_at: now(), email_record: rec || {}, gameplay_stats: stats }, 200, cors);
   }
   if (path === "/data-delete" && request.method === "GET") {
+    // Prefetch-safe (Kimi audit: SafeLinks/scanners follow GET links from
+    // emails): GET only renders a confirmation form; the POST does the work.
+    const tok0 = String(new URL(request.url).searchParams.get("token") || "").slice(0, 64);
+    return new Response(
+      "<html><body style='background:#0c1410;color:#e7f5ec;font-family:sans-serif;text-align:center;padding:60px'>" +
+      "<h2>Delete your Smoke Realm data?</h2><p>Email record + gameplay stats, gone for good. No undo.</p>" +
+      "<form method='POST' action='/data-delete?token=" + encodeURIComponent(tok0) + "'>" +
+      "<button style='background:#c0392b;color:#fff;border:0;padding:12px 26px;border-radius:8px;font-size:16px'>Yes, delete everything</button></form></body></html>",
+      { headers: { "Content-Type": "text/html", ...cors } });
+  }
+  if (path === "/data-delete" && request.method === "POST") {
     if (await overLimit(env, request, "ddelete", 10, 3600))
       return json({ ok: false, error: "rate_limited" }, 429, cors);
     const tok = String(new URL(request.url).searchParams.get("token") || "").slice(0, 64);
@@ -317,6 +328,16 @@ export async function handleMarketingRoute(path, request, env, cors) {
     if (await overLimit(env, request, "referral", 3, 3600))
       return json({ ok: false, error: "rate_limited" }, 429, cors);
     const { player_id, friend_email, player_name } = await request.json();
+    // Kimi audit (unsolicited-email cannon): only CONFIRMED subscribers may
+    // invite (double-opt-in proves a real human with a real mailbox), and
+    // each referrer gets 10 lifetime invites. Kills forged-player_id spam.
+    const refPid = String(player_id || "").slice(0, 64);
+    const refRec = await getPlayer(env, refPid);
+    if (!refRec || !refRec.confirmed)
+      return json({ ok: false, error: "confirm your own email first (check your welcome email)" }, 403, cors);
+    const lifeKey = "reflife:" + refPid;
+    const lifeCount = parseInt((await env.GAME_KV.get(lifeKey)) || "0");
+    if (lifeCount >= 10) return json({ ok: false, error: "lifetime invite limit" }, 429, cors);
     const addr = String(friend_email || "").trim().toLowerCase().slice(0, 254);
     if (!(await validEmail(addr))) return json({ ok: false, error: "invalid email" }, 400, cors);
     if (await isSuppressed(env, addr)) return json({ ok: false, error: "recipient opted out" }, 400, cors);
@@ -327,6 +348,7 @@ export async function handleMarketingRoute(path, request, env, cors) {
     if (refDayCount >= 3) return json({ ok: false, error: "daily invite limit" }, 429, cors);
     await env.GAME_KV.put(refDayKey, String(refDayCount + 1), { expirationTtl: 172800 });
     await env.GAME_KV.put("refonce:" + addr, "1");
+    await env.GAME_KV.put(lifeKey, String(lifeCount + 1));
     const t = token();
     const rec = {
       referrer: String(player_id || "anon").slice(0, 64),
@@ -459,7 +481,11 @@ export async function handleMarketingRoute(path, request, env, cors) {
       return json({ ok: false, error: "rate_limited" }, 429, cors);
     const pid = String(new URL(request.url).searchParams.get("player_id") || "").slice(0, 64);
     if (!pid) return json({ ok: false, error: "player_id required" }, 400, cors);
-    const st = await kvJson(env, "pstats:" + pid, null);
+    // Reads require the CSPRNG id format (32 hex). Legacy timestamp-style ids
+    // stay writable (heatmaps keep accruing) but are not readable — an
+    // enumerator gets an empty default, not another player's patterns.
+    const wellFormed = /^[0-9a-f]{32}$/.test(pid);
+    const st = wellFormed ? await kvJson(env, "pstats:" + pid, null) : null;
     if (!st) return json({ deaths_by_enemy: {}, deaths_by_obstacle: {}, avg_completion_time: 0, retry_count: 0 }, 200, cors);
     const times = st.session_times || [];
     const avg = times.length ? times.reduce((a, b) => a + b, 0) / times.length : 0;
@@ -515,6 +541,11 @@ export async function handleMarketingRoute(path, request, env, cors) {
       diamonds: { addr: "0xd645250EdbE9d57c12fbbB24DEf3153E5F19Df08", chain: "ethereum" },
       goldmine: { addr: "0xfF5FAB9b60955dA5726A5787b9cbf2B4B298A197", chain: "ethereum" },
     };
+    // 60s cache: shared public RPCs rate-limit; without this a player burst
+    // would 429 and silently report everyone as non-holders (Kimi audit).
+    const cacheKey = "balcache:" + owner.toLowerCase();
+    const cached = await env.GAME_KV.get(cacheKey);
+    if (cached !== null) return json({ ok: true, balances: JSON.parse(cached), cached: true }, 200, cors);
     const data = "0x70a08231" + owner.slice(2).toLowerCase().padStart(64, "0");
     const out = {};
     await Promise.all(Object.entries(TOKENS).map(async ([key, t]) => {
@@ -528,6 +559,7 @@ export async function handleMarketingRoute(path, request, env, cors) {
         out[key] = BigInt(hex).toString();
       } catch (e) { out[key] = "0"; }
     }));
+    await env.GAME_KV.put(cacheKey, JSON.stringify(out), { expirationTtl: 60 });
     return json({ ok: true, balances: out }, 200, cors);
   }
 

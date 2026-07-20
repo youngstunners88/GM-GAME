@@ -18,7 +18,12 @@ func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player"):
 		collect()
 
+var _collected: bool = false
+
 func collect() -> void:
+	if _collected:
+		return
+	_collected = true
 	GameManager.add_coin()
 	ComboSystem.add_score(score_value)
 	AudioManager.play_sfx_at("coin", global_position)
