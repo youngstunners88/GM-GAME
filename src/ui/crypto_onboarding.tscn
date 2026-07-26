@@ -50,9 +50,9 @@ theme_override_font_sizes/font_size = 14
 
 [node name="S3" type="Label" parent="Panel/VBox"]
 text = "HOW DO I GET A WALLET?
-1. Tap GET METAMASK below and install it (phone or browser).
-2. Follow MetaMask's setup - it shows a recovery phrase. Write it on PAPER. Never share it, not even with us.
-3. Come back and press CONNECT WALLET at the menu. Done."
+1. Tap GET RABBY below and install it (browser extension or mobile).
+2. Follow Rabby's setup - it shows a recovery phrase. Write it on PAPER. Never share it, not even with us.
+3. Come back and press CONNECT RABBY at the menu. Done."
 autowrap_mode = 2
 theme_override_font_sizes/font_size = 14
 
@@ -67,9 +67,10 @@ modulate = Color(0.75, 1, 0.82, 1)
 alignment = 1
 theme_override_constants/separation = 14
 
-[node name="MetaMaskBtn" type="Button" parent="Panel/VBox/Row"]
-text = "GET METAMASK"
-custom_minimum_size = Vector2(180, 44)
+[node name="RabbyBtn" type="Button" parent="Panel/VBox/Row"]
+text = "GET RABBY"
+custom_minimum_size = Vector2(180, 52)
+theme_override_font_sizes/font_size = 18
 
 [node name="LearnBtn" type="Button" parent="Panel/VBox/Row"]
 text = "LEARN MORE"

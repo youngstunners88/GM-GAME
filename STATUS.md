@@ -47,7 +47,7 @@ button, polished onboarding copy, all audit fixes.
   matter which chain a player's wallet is on. Privacy preserved: reads are
   stateless, addresses never stored.
 - **In the game build**: "NEW TO CRYPTO?" onboarding (plain-English, exact
-  safety wording, MetaMask guide), full OFFLINE MODE (banner, cached
+  safety wording, Rabby guide), full OFFLINE MODE (banner, cached
   leaderboard, offline Oracle FAQ, queued analytics that sync on reconnect),
   @smokering25 + t.me/LilBluntdotWin on every share/button, rotating share
   taglines (Kimi refreshes weekly, you approve).

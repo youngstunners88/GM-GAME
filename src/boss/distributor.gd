@@ -140,17 +140,17 @@ func die() -> void:
 	tween.parallel().tween_property(self, "modulate:a", 0.0, 1.0)
 	await tween.finished
 	var victory := Label.new()
-	victory.text = "LEVEL COMPLETE!\nDiamonds unlocked!"
+	victory.text = "LEVEL COMPLETE!\nOnward to the Gold Rush!"
 	victory.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	victory.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	victory.position = global_position - Vector2(100, 50)
 	victory.add_theme_font_size_override("font_size", 32)
 	get_tree().current_scene.add_child(victory)
 	await get_tree().create_timer(3.0).timeout
-	# Kimi audit: free BEFORE the scene load — the old order ran queue_free()
-	# on an instance the scene change had already torn down.
+	# Kimi audit: free BEFORE the scene load. Brief G: advance to Level 3
+	# (Gold Rush), not the menu — this is Level 2's boss.
 	queue_free()
-	SceneRouter.load_scene("res://src/ui/main_menu.tscn", SceneRouter.Transition.DIAMOND)
+	SceneRouter.load_scene(GameManager.next_level_scene(2), SceneRouter.Transition.DIAMOND)
 
 
 func _on_hitbox_body_entered(body: Node2D) -> void:

@@ -35,6 +35,35 @@ var last_damage_source: String = ""
 
 const SAVE_PATH: String = "user://save.json"
 
+## Level progression registry (brief correction G): the ordered campaign.
+## Beating a level's boss advances to the next; the last completes the game.
+## Single source of truth — bosses/victory screen route through here instead
+## of each hardcoding "back to menu" (which made L2/L3 unreachable).
+const LEVEL_SEQUENCE: Array[String] = [
+    "res://src/level/level_01_smoke_realm.tscn",
+    "res://src/level/level_02_crystal_caverns.tscn",
+    "res://src/level/level_03_gold_rush.tscn",
+]
+const MENU_SCENE := "res://src/ui/main_menu.tscn"
+
+## Scene path to advance to after clearing `level_index` (1-based). Returns the
+## menu when the campaign is complete. Also unlocks the level for continue.
+func next_level_scene(cleared_level_index: int) -> String:
+    var next_idx := cleared_level_index  # 1-based cleared → 0-based next
+    if next_idx >= 0 and next_idx < LEVEL_SEQUENCE.size():
+        highest_unlocked_level = maxi(highest_unlocked_level, next_idx + 1)
+        current_level = next_idx + 1
+        return LEVEL_SEQUENCE[next_idx]
+    return MENU_SCENE
+
+func level_scene(level_index: int) -> String:
+    var i := level_index - 1
+    return LEVEL_SEQUENCE[i] if i >= 0 and i < LEVEL_SEQUENCE.size() else LEVEL_SEQUENCE[0]
+
+## Highest level the player has reached (1-based). Persisted so Continue and a
+## level-select can offer already-unlocked realms.
+var highest_unlocked_level: int = 1
+
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
     load_session()
@@ -93,18 +122,30 @@ func lose_life() -> bool:
     health_changed.emit(player_health)
     return false
 
+## Blaze/Purple own an exclusive music override; token guards its release
+## against stale expiry (brief correction A).
+var _blaze_music_token: int = -1
+
 func activate_power_up(type: String, duration: float) -> void:
     current_power_up = type
     power_up_timer = duration
     power_up_changed.emit(type, duration)
     AudioManager.play_sfx("powerup")
-    if type == "blaze":
-        AudioManager.play_sfx("fresh_boost")
+    # Blaze / Purple Weed: take over the MUSIC exclusively — no more jingle
+    # layered over the level track. Pushing again refreshes the token so a
+    # second pickup can't be stopped by the first's expiry.
+    if type == "blaze" or type == "purple":
+        _blaze_music_token = AudioManager.push_music_override("res://src/assets/sounds/fresh_boost.ogg")
     # Analytics (task #23): which power-ups actually get used feeds the
     # founder digest + future tuning. Fire-and-forget, no-op offline.
     Web3Bridge.report_metric("powerup_used", {"type": type})
 
 func deactivate_power_up() -> void:
+    # Release the Blaze music override (token-guarded — stale releases no-op,
+    # so a scene change or second pickup can't restore an old track).
+    if _blaze_music_token != -1:
+        AudioManager.release_music_override(_blaze_music_token)
+        _blaze_music_token = -1
     current_power_up = ""
     power_up_timer = 0.0
     power_up_changed.emit("", 0.0)
@@ -120,6 +161,7 @@ func _process(delta: float) -> void:
 
 func reset_level() -> void:
     player_health = max_health
+    _clear_blaze_music_override()
     current_power_up = ""
     power_up_timer = 0.0
     # The HUD in the incoming level _ready()s BEFORE the player spawns and
@@ -131,6 +173,7 @@ func reset_session() -> void:
     player_health = max_health
     lives = max_lives
     lives_changed.emit(lives)
+    _clear_blaze_music_override()
     current_power_up = ""
     power_up_timer = 0.0
     health_changed.emit(player_health)
@@ -143,6 +186,13 @@ func reset_session() -> void:
     dash_return = {}
     level_checkpoints.clear()
     GoldMineSystem.reset_session()
+
+## Release a Blaze override if one is live (level reset / new session). The
+## AudioManager token guard makes a double-release harmless.
+func _clear_blaze_music_override() -> void:
+    if _blaze_music_token != -1:
+        AudioManager.release_music_override(_blaze_music_token)
+        _blaze_music_token = -1
 
 func save_checkpoint(level: int, checkpoint_id: int, pos: Vector2) -> void:
     level_checkpoints[level] = {"id": checkpoint_id, "pos": pos}
@@ -163,6 +213,7 @@ func save_session() -> bool:
         "max_health": max_health,
         "lives": lives,
         "current_level": current_level,
+        "highest_unlocked_level": highest_unlocked_level,
         "checkpoints": _serialize_checkpoints(),
         "goldmine": GoldMineSystem.get_save_data(),
     }
@@ -201,6 +252,7 @@ func load_session() -> bool:
     lives = clampi(int(data.get("lives", max_lives)), 0, max_lives)
     lives_changed.emit(lives)
     current_level = clampi(int(data.get("current_level", 1)), 1, 3)
+    highest_unlocked_level = clampi(int(data.get("highest_unlocked_level", 1)), 1, LEVEL_SEQUENCE.size())
     _deserialize_checkpoints(data.get("checkpoints", {}))
     if data.has("goldmine"):
         GoldMineSystem.load_save_data(data.get("goldmine", {}))

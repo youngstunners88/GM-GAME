@@ -6,6 +6,12 @@ extends Area2D
 ## sourced from the player_analytics heatmap.
 
 @export var height: float = 128.0
+## Where the player stands after topping out, RELATIVE to the ladder origin
+## (which is the ladder's top). Data-driven per instance so offset platforms
+## work without hardcoding player coordinates (brief correction E). Default:
+## just above the ladder top, centered. Set y more negative if the platform
+## surface sits higher than the ladder top.
+@export var top_exit_offset: Vector2 = Vector2(0, -20)
 
 @onready var shape: CollisionShape2D = $CollisionShape2D
 @onready var rungs: Node2D = $Rungs
@@ -22,13 +28,25 @@ func _ready() -> void:
 	body_exited.connect(_on_body_exited)
 	_draw_rungs()
 
+## World Y of the ladder top (origin) and bottom, for the climb/top-out logic.
+func top_y() -> float:
+	return global_position.y
+
+func bottom_y() -> float:
+	return global_position.y + height
+
+## Collision-valid standing position when topping out. Never a raw teleport
+## into geometry: the player does a short move_and_collide nudge from here.
+func top_exit_position() -> Vector2:
+	return global_position + top_exit_offset
+
 func _on_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("enter_ladder_zone"):
-		body.enter_ladder_zone()
+		body.enter_ladder_zone(self)
 
 func _on_body_exited(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("exit_ladder_zone"):
-		body.exit_ladder_zone()
+		body.exit_ladder_zone(self)
 
 ## Procedural rungs (vine-wrapped pole look, Smoke Realm palette) — keeps the
 ## ladder readable without a dedicated sprite sheet yet.

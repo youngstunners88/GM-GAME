@@ -9,7 +9,7 @@ extends CanvasLayer
 ## button), onboarding_wallet_clicked, onboarding_dismissed.
 
 @onready var _close: Button = $Panel/VBox/Row/CloseBtn
-@onready var _metamask: Button = $Panel/VBox/Row/MetaMaskBtn
+@onready var _rabby: Button = $Panel/VBox/Row/RabbyBtn
 @onready var _learn: Button = $Panel/VBox/Row/LearnBtn
 
 func _ready() -> void:
@@ -17,7 +17,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	get_tree().paused = true
 	_close.pressed.connect(_dismiss)
-	_metamask.pressed.connect(_on_metamask)
+	_rabby.pressed.connect(_on_rabby)
 	_learn.pressed.connect(_on_learn_more)
 	# Lil Blunt approves: his sprite, gently bobbing beside the title.
 	var spr := Sprite2D.new()
@@ -41,10 +41,11 @@ func _dismiss() -> void:
 	get_tree().paused = false
 	queue_free()
 
-func _on_metamask() -> void:
+## Brief correction C: Rabby is the player-facing wallet association.
+func _on_rabby() -> void:
 	Web3Bridge.report_metric("onboarding_wallet_clicked", {})
-	Web3Bridge.track("onboarding_metamask")
-	OS.shell_open("https://metamask.io/download/")
+	Web3Bridge.track("onboarding_rabby")
+	OS.shell_open("https://rabby.io/")
 
 ## Learn More: the three safety concepts, still jargon-free.
 func _on_learn_more() -> void:

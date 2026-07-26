@@ -135,15 +135,20 @@ func die() -> void:
 	tween.parallel().tween_property(self, "modulate:a", 0.0, 1.0)
 	await tween.finished
 	var victory := Label.new()
-	victory.text = "GOLD RUSH WON!\nXAUT payout: %d\nFort Knox shares: %d" % [xaut_won, GoldMineSystem.fort_knox_shares]
+	# Final boss (brief G): the campaign ends here — back to the menu, which
+	# now offers every unlocked realm via Continue.
+	victory.text = "SMOKE REALM COMPLETE!\nXAUT payout: %d\nFort Knox shares: %d\nYou beat all three realms." % [xaut_won, GoldMineSystem.fort_knox_shares]
 	victory.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	victory.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	victory.position = global_position - Vector2(150, 75)
 	victory.add_theme_font_size_override("font_size", 28)
 	get_tree().current_scene.add_child(victory)
+	# Mark the whole campaign cleared (unlocks all realms for Continue/select).
+	GameManager.highest_unlocked_level = GameManager.LEVEL_SEQUENCE.size()
 	await get_tree().create_timer(3.5).timeout
-	SceneRouter.load_scene("res://src/ui/main_menu.tscn", SceneRouter.Transition.DIAMOND)
+	# Kimi audit ordering: free BEFORE the scene load.
 	queue_free()
+	SceneRouter.load_scene("res://src/ui/main_menu.tscn", SceneRouter.Transition.DIAMOND)
 
 func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("take_damage"):

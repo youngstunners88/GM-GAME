@@ -63,6 +63,8 @@ func play_playlist(paths: Array) -> void:
         # logging "No loader found" errors for files not in the pck yet.
         if ResourceLoader.exists(p):
             found.append(p)
+    # A new base-music request (level/boss/menu) supersedes any Blaze override.
+    _drop_override_for_new_music()
     _duck_out_music()
     _playlist = found
     if _playlist.is_empty():
@@ -108,8 +110,116 @@ func _on_music_track_finished() -> void:
     if current_music_player and is_instance_valid(current_music_player):
         current_music_player.queue_free()
     current_music_player = null
+    # Don't auto-advance the base playlist while a music override (Blaze) owns
+    # the music — the override has its own player. It resumes on release.
+    if _override_active:
+        return
     if not _playlist.is_empty():
         _play_next_in_playlist()
+
+# ---- Music override (Blaze Mode etc.) — brief correction A ----------------
+# One central, race-safe music override. Only ONE override may be audible at a
+# time; the normal track is PAUSED (not layered under), and restored once on
+# release. A monotonic token invalidates stale expiry callbacks so a scene
+# change / death / second pickup can't revive an old track. AudioManager stays
+# the sole owner of every music player — nothing else spawns music.
+
+var _override_active: bool = false
+var _override_token: int = 0
+var _override_player: AudioStreamPlayer = null
+# Saved base-music context to restore on release.
+var _saved_playlist: Array = []
+var _saved_last_track: String = ""
+var _saved_stream: AudioStream = null
+var _saved_position: float = 0.0
+
+## Take over music with an exclusive track (loops). `token` returned must be
+## passed back to release_music_override() so a stale caller can't clobber a
+## newer override. Missing asset → no-op that still returns a token (so the
+## caller's paired release is harmless). SFX/VO are unaffected.
+func push_music_override(path: String) -> int:
+    _override_token += 1
+    var my_token := _override_token
+    var resolved := path
+    if not ResourceLoader.exists(resolved):
+        resolved = _resolve_audio(path.get_basename())
+    if resolved == "" or not ResourceLoader.exists(resolved):
+        # No Blaze track available — leave base music alone, but still claim
+        # the override slot so the game's paired release is well-defined.
+        _override_active = true
+        return my_token
+    var stream := load(resolved)
+    if stream == null:
+        _override_active = true
+        return my_token
+    # Save + PAUSE the base track (position preserved for resume).
+    if current_music_player and is_instance_valid(current_music_player):
+        _saved_stream = current_music_player.stream
+        _saved_position = current_music_player.get_playback_position()
+        _saved_playlist = _playlist.duplicate()
+        _saved_last_track = _last_track
+        current_music_player.stream_paused = true
+    else:
+        _saved_stream = null
+        _saved_playlist = _playlist.duplicate()
+        _saved_last_track = _last_track
+    _override_active = true
+    _clear_override_player()
+    _override_player = AudioStreamPlayer.new()
+    _override_player.bus = "Music"
+    _override_player.stream = stream
+    if stream is AudioStreamOggVorbis:
+        (stream as AudioStreamOggVorbis).loop = true
+    elif stream is AudioStreamMP3:
+        (stream as AudioStreamMP3).loop = true
+    add_child(_override_player)
+    _override_player.volume_db = -8.0
+    var tw := _override_player.create_tween()
+    tw.tween_property(_override_player, "volume_db", 0.0, 0.4)
+    _override_player.play()
+    return my_token
+
+## Release a previously pushed override. Stale tokens are ignored — this is
+## what stops a delayed Blaze-expiry from restoring music after a scene change
+## or a second pickup already took over.
+func release_music_override(token: int) -> void:
+    if token != _override_token or not _override_active:
+        return
+    _override_active = false
+    _clear_override_player()
+    # Resume the base track from where it paused, if it still exists.
+    if current_music_player and is_instance_valid(current_music_player):
+        current_music_player.stream_paused = false
+        return
+    # Base player was freed (scene change, etc.) — rebuild from saved context.
+    _playlist = _saved_playlist
+    _last_track = _saved_last_track
+    if _saved_stream != null:
+        current_music_player = AudioStreamPlayer.new()
+        current_music_player.bus = "Music"
+        current_music_player.stream = _saved_stream
+        add_child(current_music_player)
+        current_music_player.play(_saved_position)
+        current_music_player.finished.connect(_on_music_track_finished)
+    elif not _playlist.is_empty():
+        _play_next_in_playlist(true)
+    _saved_stream = null
+
+func _clear_override_player() -> void:
+    if _override_player and is_instance_valid(_override_player):
+        _override_player.stop()
+        _override_player.queue_free()
+    _override_player = null
+
+## A new base-music call (level load, boss arena) supersedes any override —
+## the override is dropped and the token bumped so its release no-ops.
+func _drop_override_for_new_music() -> void:
+    if _override_active:
+        _override_active = false
+        _override_token += 1
+        _clear_override_player()
+        _saved_stream = null
+        _saved_playlist = []
 
 ## Resolve an SFX/VO id to a file: legacy .ogg first, then generated .mp3
 ## (the game-audio-forge pipeline outputs mp3 — Godot 4.3 plays it natively).

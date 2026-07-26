@@ -34,6 +34,7 @@ var _last_fall_speed: float = 0.0
 # enter/exit_ladder_zone(); _climbing is the CLIMB state flag.
 var _ladder_zones: int = 0
 var _climbing: bool = false
+var _active_ladder: Node2D = null   # the ladder whose zone we're in (top-out)
 @export var climb_speed: float = 150.0
 
 @onready var sprite: LilBluntVisual = $Visual
@@ -162,17 +163,37 @@ func _physics_process(delta: float) -> void:
 			input_handler.can_air_dash = true
 			_play_jump_stretch()
 			AudioManager.play_sfx("jump")
-		elif input_handler.consume_double_jump() and not GameManager.has_power_up("big"):
-			velocity.y = double_jump_force * jump_mult
+		elif input_handler.consume_double_jump():
+			# Big Mode KEEPS its double jump now (brief correction F) — it was
+			# a pure downgrade before. Slightly heavier arc while big to sell
+			# the mass without removing the ability.
+			var dj := double_jump_force * jump_mult
+			if GameManager.has_power_up("big"):
+				dj *= 0.9
+			velocity.y = dj * jump_mult
 			input_handler.can_air_dash = true
 			_play_jump_stretch()
 			AudioManager.play_sfx("double_jump")
 		else:
 			input_handler.buffer_jump()
 
+	# Big Mode ground pound (brief correction F): the real upgrade. Press Down
+	# in the air while big → slam down, break breakable/secret walls below and
+	# stun nearby enemies on impact. This is the advantage that makes the
+	# larger hitbox worth it.
+	if GameManager.has_power_up("big") and not is_on_floor() \
+			and Input.is_action_just_pressed("move_down") and not _ground_pounding:
+		_start_ground_pound()
+
 	# Air dash (Tier 2 Skill 1) — horizontal dash in mid-air
 	if Input.is_action_just_pressed("dash"):
 		_try_air_dash()
+
+	# Ground pound overrides fall velocity while active and resolves on landing.
+	if _ground_pounding:
+		velocity.y = ground_pound_speed
+		if is_on_floor():
+			_resolve_ground_pound()
 
 	_update_sprite_color()
 	_update_tool_visual()
@@ -218,6 +239,37 @@ func _check_pickaxe_breaks() -> void:
 		var collider := get_slide_collision(i).get_collider()
 		if collider and collider.is_in_group("breakable") and collider.has_method("break_block"):
 			collider.break_block()
+
+# ---- Big Mode ground pound (brief correction F) ---------------------------
+var _ground_pounding: bool = false
+@export var ground_pound_speed: float = 900.0
+
+## Slam straight down fast; on landing, break breakables below and stun nearby
+## enemies. Cancels horizontal control for the slam so it reads as committed.
+func _start_ground_pound() -> void:
+	_ground_pounding = true
+	velocity.y = ground_pound_speed
+	velocity.x = 0.0
+	_play_land_squash()
+	AudioManager.play_sfx("jump")
+
+## Called on landing: shatter breakable blocks touching us, stun enemies in a
+## radius, shake the screen. Big Mode's payoff.
+func _resolve_ground_pound() -> void:
+	_ground_pounding = false
+	ScreenShake.shake(0.3, 7.0)
+	AudioManager.play_sfx("damage")
+	# Break any breakable/secret wall we're standing on or beside.
+	for i in range(get_slide_collision_count()):
+		var collider := get_slide_collision(i).get_collider()
+		if collider and collider.is_in_group("breakable") and collider.has_method("break_block"):
+			collider.break_block()
+	# Stun (damage) enemies within a short radius of the impact.
+	for enemy in get_tree().get_nodes_in_group("enemy"):
+		if enemy is Node2D and is_instance_valid(enemy) \
+				and global_position.distance_to(enemy.global_position) < 120.0 \
+				and enemy.has_method("take_damage"):
+			enemy.take_damage(1)
 
 ## Show the held tool sprite while a tool power-up is active.
 func _update_tool_visual() -> void:
@@ -308,19 +360,33 @@ func _hitstop(duration: float = 0.07) -> void:
 	if my_token == _hitstop_token:
 		Engine.time_scale = 1.0
 
-## Ladder zone refcount — called by ladder.gd on Area2D enter/exit.
-func enter_ladder_zone() -> void:
+## Ladder zone refcount — called by ladder.gd on Area2D enter/exit. Tracks the
+## active ladder node so top-out has geometry to target (brief correction E).
+func enter_ladder_zone(ladder: Node2D = null) -> void:
 	_ladder_zones += 1
+	if ladder != null:
+		_active_ladder = ladder
 
-func exit_ladder_zone() -> void:
+func exit_ladder_zone(ladder: Node2D = null) -> void:
 	_ladder_zones = maxi(0, _ladder_zones - 1)
 	if _ladder_zones == 0:
 		_climbing = false
+		_active_ladder = null
 
 ## CLIMB state: vertical movement on the ladder, no gravity. Jump = hop off
 ## with a full jump; touching the floor while pushing down also exits.
+## TOP-OUT (brief correction E): climbing up past the ladder top with up held
+## moves the player to the ladder's data-driven top-exit standing position,
+## nudged out of any collider — never a raw teleport, never stuck under the
+## platform.
 func _update_climb(delta: float, movement_direction: float) -> void:
 	var vertical := Input.get_action_strength("move_down") - Input.get_action_strength("move_up")
+	# Top-out: at/above the ladder top and still pushing up → stand on top.
+	if vertical < 0.0 and _active_ladder != null and is_instance_valid(_active_ladder) \
+			and _active_ladder.has_method("top_y") \
+			and global_position.y <= _active_ladder.top_y() + 6.0:
+		_top_out_ladder()
+		return
 	velocity.y = vertical * climb_speed
 	velocity.x = movement_direction * climb_speed * 0.6
 	if input_handler.is_jump_pressed():
@@ -333,6 +399,24 @@ func _update_climb(delta: float, movement_direction: float) -> void:
 	move_and_slide()
 	if is_on_floor() and vertical > 0.0:
 		_climbing = false
+
+## Place the player at the ladder's top-exit position, then push out of any
+## overlap so they land on the surface with clearance instead of inside it.
+func _top_out_ladder() -> void:
+	_climbing = false
+	velocity = Vector2.ZERO
+	var target: Vector2 = _active_ladder.top_exit_position()
+	global_position = Vector2(target.x, target.y)
+	# Never leave the player inside geometry: if the exit point overlaps a
+	# collider, nudge upward a few steps until free. Bounded — a fully blocked
+	# exit just leaves them at the target rather than tunneling (per the brief:
+	# "define behaviour for blocked top exits").
+	var attempts := 0
+	while move_and_collide(Vector2.ZERO, true) != null and attempts < 8:
+		global_position.y -= 4.0
+		attempts += 1
+	AudioManager.play_sfx("jump")
+	_play_jump_stretch()
 
 ## Falling into a pit — a HARD fail. Plays a devastating sound, costs a LIFE
 ## (not just health), and respawns at the last checkpoint if lives remain;
