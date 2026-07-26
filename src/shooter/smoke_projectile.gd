@@ -16,9 +16,13 @@ var _life: float = 0.0
 
 func _ready() -> void:
 	add_to_group("smoke_projectile")
-	# Bolts collide with world (1) + whatever they can damage; cover is world.
+	# Bolts collide with world (1) + player (2) + enemies (4). The enemy bit is
+	# NOT optional: without it a player bolt never reaches the `enemy` branch
+	# in _on_body_entered, drones cannot be damaged, and the room is
+	# unwinnable. Friendly fire is prevented by the `hostile` checks below,
+	# not by the mask — one bolt script serves both sides.
 	collision_layer = 0
-	collision_mask = 1 | 2   # world + player bodies
+	collision_mask = 1 | 2 | 4
 	_build_visual()
 	body_entered.connect(_on_body_entered)
 	area_entered.connect(_on_area_entered)

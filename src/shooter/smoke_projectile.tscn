@@ -4,6 +4,6 @@
 
 [node name="SmokeProjectile" type="Area2D"]
 collision_layer = 0
-collision_mask = 3
+collision_mask = 7
 monitorable = false
 script = ExtResource("1_bolt")

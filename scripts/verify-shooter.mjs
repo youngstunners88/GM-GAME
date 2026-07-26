@@ -33,7 +33,7 @@ const FATAL = /USER SCRIPT ERROR|Parse Error|Failed to instantiate an autoload|T
 // coordinates 1:1 with game coordinates, so we can click in-canvas buttons.
 const W = 1280, H = 720;
 
-const result = { url: gameUrl, tests: {}, errors: [], statesSeen: [], screenshots: [] };
+const result = { url: gameUrl, tests: {}, errors: [], statesSeen: [], score: 0, screenshots: [] };
 
 const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_BIN || '/opt/pw-browsers/chromium',
@@ -56,9 +56,15 @@ page.on('pageerror', (e) => { if (FATAL.test(String(e))) result.errors.push(Stri
 await page.exposeFunction('__shooterState', (s) => {
   if (!result.statesSeen.includes(s)) result.statesSeen.push(s);
 });
+// ComboSystem beacons {type:"score"} on every kill. A rising score is the only
+// PROOF a drone actually died — the first version of this script asserted that
+// firing produced no errors, which a room with an unhittable enemy passes.
 await page.addInitScript(() => {
+  window.__score = 0;
   window.addEventListener('message', (e) => {
-    if (e.data && e.data.type === 'state') window.__shooterState(e.data.value);
+    if (!e.data) return;
+    if (e.data.type === 'state') window.__shooterState(e.data.value);
+    if (e.data.type === 'score') window.__score = Number(e.data.value) || 0;
   });
 });
 
@@ -99,16 +105,27 @@ try {
   await page.keyboard.up('d');
   await shot('aim');
 
-  console.log('[4/5] firing…');
-  for (let i = 0; i < 6; i++) {
-    await page.mouse.move(900 + i * 20, 260 + i * 8, { steps: 3 });
-    await page.mouse.down();
-    await page.waitForTimeout(180);
-    await page.mouse.up();
-    await page.waitForTimeout(120);
+  console.log('[4/5] firing — must actually kill a drone…');
+  // Sweep the aim vertically through the drone's patrol band and fire. Bolts
+  // travel ~1440px so any ray crossing the drone connects; the drone needs two
+  // hits to die. We require the score beacon to rise — "fired without erroring"
+  // is not evidence the enemy is reachable.
+  for (let pass = 0; pass < 3 && !(await page.evaluate(() => window.__score)); pass++) {
+    for (let i = 0; i < 26; i++) {
+      await page.mouse.move(1090, 210 + i * 13, { steps: 2 });
+      await page.mouse.down();
+      await page.waitForTimeout(110);
+      await page.mouse.up();
+      await page.waitForTimeout(70);
+    }
   }
+  result.score = await page.evaluate(() => window.__score);
   await shot('firing');
   result.tests.fire_no_errors = result.errors.length === 0 ? 'PASS' : 'FAIL';
+  result.tests.drone_killable = result.score > 0
+    ? 'PASS'
+    : 'FAIL: score never rose — bolts cannot damage the drone, room is unwinnable';
+  if (result.score === 0) result.errors.push('No drone kill registered');
 
   console.log('[5/5] taking cover…');
   await page.keyboard.down('d');
