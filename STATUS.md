@@ -11,6 +11,46 @@
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
 
+## 🔫 v1.2 "BLUNT FORCE" — SHOOTER PROTOTYPE IS PLAYABLE (2026-07-26)
+
+**Try it:** main menu → **NEW: BLUNT FORCE (v1.2)** (top-left button).
+ESC returns to the menu. Nothing about the v1.0 campaign changed — Play
+Level 1 and Continue behave exactly as before (re-verified, 5/5 gates).
+
+**Design doc:** `docs/GDD_v1.2_BLUNT_FORCE.md` — 3 pages: Bong Blaster's four
+tiers, the cover system, the three-enemy roster, Auditor Prime's four phases,
+Levels 4–6, and how it all plugs into the existing save/progression without a
+second source of truth. Three open questions for you at the bottom.
+
+**What the prototype proves (`src/shooter/`):**
+- **Aim is decoupled from movement.** The bong tracks your mouse with a live
+  crosshair while you strafe the other way. That one change is most of what
+  separates a shooter from a platformer with a gun.
+- **Firing has weight** — cooldown, muzzle flash, recoil kick, screen shake.
+  The crosshair dims while the weapon is recovering, so you can read your own
+  fire rate without a HUD element.
+- **Cover is the verb.** Hold DOWN next to a crate to duck behind it. The
+  crate eats the incoming bolts, visibly cracks, then shatters — and the drone
+  genuinely loses line of sight (raycast, not a fake timer). Firing from cover
+  peeks you out for a beat, then re-ducks.
+- **The Tax Drone plays fair**: patrol → alert → **0.85s red telegraph** →
+  fire → reposition. It never shoots what it can't see and never shoots
+  without warning you first.
+- **Ammo comes from weed leaves**, placed away from cover on purpose — you
+  have to leave safety to restock. That's the cross-mode economy from the GDD:
+  leaves collected in the platformer become shooter ammo, so v1.0 content gets
+  *more* valuable when v1.2 lands, not obsolete.
+
+Verified in a real browser end to end: boots, reaches PLAYING, strafes, aims,
+fires, ducks, peek-fires — zero script errors
+(`scripts/verify-shooter.mjs`, screenshots captured at each beat).
+
+**Bonus fix found along the way (affects the whole game):** `web3_bridge.gd`
+had a `:=` inference from a Variant, which Godot 4.3 treats as a hard error.
+It silently failed that script at load time and cascaded into `player.gd`,
+`lil_blunt_visual.gd`, and five UI panels on every single export. The export
+log now has **zero** script errors for the first time.
+
 ## 🟢 THE STACK IS LIVE (2026-07-20)
 
 **Backend deployed and answering**: https://lil-blunt-backend.teacherchris37.workers.dev

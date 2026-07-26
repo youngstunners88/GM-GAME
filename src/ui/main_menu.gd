@@ -45,6 +45,11 @@ func _setup_layer_shift_buttons() -> void:
     row.position = Vector2(24, get_viewport().get_visible_rect().size.y - 390)
     add_child(row)
     var defs := [
+        # v1.2 preview. Sits in the layer-shift column (not the main PLAY
+        # stack) so the v1.0 campaign flow is completely untouched — the
+        # prototype is opt-in, and nothing in the platformer depends on it.
+        # ASCII only — the pixel font has no ▶ glyph and renders it as tofu.
+        ["NEW: BLUNT FORCE (v1.2)", _on_shooter_prototype],
         ["CONNECT RABBY", _on_connect_wallet],
         ["NEW TO CRYPTO?", _on_crypto_onboarding],
         ["ASK THE ORACLE", _on_oracle],
@@ -76,7 +81,10 @@ func _setup_layer_shift_buttons() -> void:
         b.pressed.connect(d[1])
         _add_hover_glow(b)
         row.add_child(b)
-    _wallet_btn = row.get_child(0)
+        # Matched by label, not by index: adding entries above CONNECT RABBY
+        # used to silently retarget the wallet button (get_child(0)).
+        if d[0] == "CONNECT RABBY":
+            _wallet_btn = b
     # Reposition to fit the taller button stack without clipping off-screen.
     row.position = Vector2(24, get_viewport().get_visible_rect().size.y - 8 - defs.size() * 54)
     # Offline mode: wallet connect needs the network — disable with a tooltip
@@ -273,6 +281,15 @@ func _on_continue() -> void:
     GameManager.load_session()
     var scene := GameManager.level_scene(GameManager.highest_unlocked_level)
     SceneRouter.load_scene(scene, SceneRouter.Transition.FADE)
+
+## v1.2 "Blunt Force" prototype room. Opt-in preview only — it does not touch
+## campaign save state, and it is NOT the shipping unlock path (per the GDD,
+## shooter levels unlock from campaign completion via
+## GameManager.highest_unlocked_level, never from a menu shortcut).
+func _on_shooter_prototype() -> void:
+    AudioManager.play_sfx("powerup")
+    Web3Bridge.track("shooter_prototype_open")
+    SceneRouter.load_scene("res://src/shooter/prototype_room.tscn", SceneRouter.Transition.FADE)
 
 func _on_quit() -> void:
     get_tree().quit()

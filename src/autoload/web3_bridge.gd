@@ -140,7 +140,11 @@ func _init_js() -> void:
 	# JavaScriptBridge is a global in web builds.
 	_bridge = Engine.get_singleton("JavaScriptBridge") if Engine.has_singleton("JavaScriptBridge") else null
 	# The launcher/page defines window.LilBluntWeb3 (web/web3.js). Confirm it exists.
-	var has := JavaScriptBridge.eval("typeof window.LilBluntWeb3 !== 'undefined'", true)
+	# Explicitly Variant: JavaScriptBridge.eval returns Variant, and Godot 4.3
+	# treats `:=` inference from a Variant as an ERROR (inference_on_variant),
+	# which failed this script at load time and cascaded through every script
+	# that references Web3Bridge (player.gd → lil_blunt_visual.gd → …).
+	var has: Variant = JavaScriptBridge.eval("typeof window.LilBluntWeb3 !== 'undefined'", true)
 	_js_ready = bool(has)
 
 ## Strict 0x-hex sanitizer for anything interpolated into a JavaScriptBridge.eval
