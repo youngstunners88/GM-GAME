@@ -10,6 +10,11 @@
     "goldmine_erc20": "0xfF5FAB9b60955dA5726A5787b9cbf2B4B298A197"
   },
   "explorer_base_url": "https://basescan.org",
+  "icp": {
+    "_note": "Layer 4. leaderboard_canister_id stays EMPTY until the canister is deployed (see docs/architecture/adr-icp-integration.md). Empty = IcpBackend is inert and every read falls back to backend_base_url, so shipping this key early changes nothing at runtime.",
+    "leaderboard_canister_id": "",
+    "gateway": "icp0.io"
+  },
   "social": {
     "telegram": "https://t.me/LilBluntdotWin",
     "discord": "",

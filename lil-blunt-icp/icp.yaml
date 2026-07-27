@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=https://github.com/dfinity/icp-cli/raw/refs/tags/v1.0.0/docs/schemas/icp-yaml-schema.json
+#
+# Lil Blunt — Layer 4 (ICP infrastructure).
+# ONE canister to start, per the integration brief's own rule. The leaderboard
+# is the right first canister because it is the only piece of our backend where
+# centralisation is a TRUST problem rather than a cost problem: today players
+# have to take our word that the scoreboard is honest.
+
+canisters:
+  - name: leaderboard
+    recipe:
+      type: "@dfinity/motoko@v5.0.0"
