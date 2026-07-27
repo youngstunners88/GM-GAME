@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://src/shooter/cover_crate.gd" id="1_cover"]
+[ext_resource type="Script" path="res://src/shooter/cover_system.gd" id="1_cover"]
 
 [node name="CoverCrate" type="StaticBody2D"]
 collision_layer = 1

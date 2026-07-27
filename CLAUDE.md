@@ -26,6 +26,19 @@ I am building a complete Godot 4.3 2D platformer for my client **Rich**, founder
 - `/godot` — Godot 4.3 engine work: GDScript, scenes, nodes, physics, UI, game state
 - `/docs` — Game documentation, marketing copy, changelogs, build instructions
 
+## ⭐ CONTEXT-MANIFEST RULE (read before starting work)
+Start every task by reading `.claude/context-manifests/default.md`, then the
+manifest matching the domain (`shooter.md`, `icp.md`). Load only what the
+manifest lists. **Never load the full repo** — at 100+ source files that spends
+the context window before any work happens.
+
+The manifests also carry the traps that cost real time to rediscover: that
+`gdparse` is syntax-only and passes files a real export rejects, that the
+security sentinel scans `git ls-files` so running it pre-`git add` scans
+nothing, and that the circulating `@icp-cli/cli` install command points at a
+package that doesn't exist. If a manifest path 404s, fix the manifest in the
+same commit — a manifest that lies is worse than none.
+
 ## Routing
 | Task | Go to | Read | Skills |
 |------|-------|------|--------|

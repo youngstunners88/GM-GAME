@@ -20,7 +20,7 @@ extends Node2D
 
 const PLAYER := preload("res://src/shooter/shooter_player.tscn")
 const DRONE := preload("res://src/shooter/enemy_drone.tscn")
-const CRATE := preload("res://src/shooter/cover_crate.tscn")
+const CRATE := preload("res://src/shooter/cover_system.tscn")
 
 const ROOM_WIDTH: float = 1800.0
 ## Room height is deliberately ONE viewport (720). With camera limits set to

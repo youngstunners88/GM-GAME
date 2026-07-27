@@ -3,6 +3,8 @@ moc = "1.9.0"
 
 [canisters]
 leaderboard = "src/leaderboard.mo"
+price_feed = "src/price_feed.mo"
+player_registry = "src/player_registry.mo"
 
 [dependencies]
 base = "0.16.0"

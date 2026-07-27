@@ -10,3 +10,9 @@ canisters:
   - name: leaderboard
     recipe:
       type: "@dfinity/motoko@v5.0.0"
+  - name: price_feed
+    recipe:
+      type: "@dfinity/motoko@v5.0.0"
+  - name: player_registry
+    recipe:
+      type: "@dfinity/motoko@v5.0.0"

@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/icp_contract_test.gd" id="1_icp"]
+
+[node name="IcpContractTest" type="Node"]
+script = ExtResource("1_icp")

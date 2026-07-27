@@ -14,28 +14,33 @@ extends CharacterBody2D
 ## Deliberately standalone (composes only autoloads + LilBluntVisual) so the
 ## v1.0 platformer player is untouched — roadmap anti-pattern rule.
 
-const BOLT := preload("res://src/shooter/smoke_projectile.tscn")
-
 @export var move_speed: float = 250.0
 @export var accel: float = 2200.0
 @export var decel: float = 2600.0
 @export var jump_force: float = -430.0
 @export var gravity: float = 1000.0
-@export var fire_cooldown: float = 0.17
-@export var max_ammo: int = 60
 
 signal ammo_changed(current: int, maximum: int)
 signal health_changed(current: int)
 
-var ammo: int = 60
 var health: int = 5
 var aim_dir: Vector2 = Vector2.RIGHT
 var is_ducking: bool = false
 
-var _cooldown: float = 0.0
+## The equipped weapon owns fire rate, ammo, recoil and what leaves the muzzle
+## (see weapon_base.gd). Swapping tiers later is a node swap, not a player edit.
+var weapon: WeaponBase
+
 var _cover: Node2D = null       # cover we're standing in the zone of
 var _peek_timer: float = 0.0
 var _invuln: float = 0.0
+
+## Ammo now lives on the weapon. Kept as read-only passthroughs so the room
+## HUD and leaf pickups don't need to know about the weapon node.
+var ammo: int:
+	get: return weapon.ammo if weapon != null else 0
+var max_ammo: int:
+	get: return weapon.max_ammo if weapon != null else 0
 
 @onready var visual: LilBluntVisual = $Visual
 @onready var arm: Node2D = $Arm
@@ -50,15 +55,24 @@ func _ready() -> void:
 	add_to_group("player")          # so existing hazards/pickups still see us
 	collision_layer = 2
 	collision_mask = 1              # world + cover
-	ammo = max_ammo
 	flash.visible = false
-	ammo_changed.emit(ammo, max_ammo)
+	_equip(WeaponBongBlaster.new())
 	health_changed.emit(health)
+
+## Attach a weapon and re-broadcast its ammo as our own, so listeners keep a
+## single subscription across weapon swaps.
+func _equip(new_weapon: WeaponBase) -> void:
+	if weapon != null:
+		weapon.queue_free()
+	weapon = new_weapon
+	add_child(weapon)
+	weapon.ammo_changed.connect(func(current: int, maximum: int) -> void:
+		ammo_changed.emit(current, maximum))
+	ammo_changed.emit(weapon.ammo, weapon.max_ammo)
 
 func _physics_process(delta: float) -> void:
 	if not StateMachine.is_playing():
 		return
-	_cooldown -= delta
 	_invuln -= delta
 	if _peek_timer > 0.0:
 		_peek_timer -= delta
@@ -85,7 +99,7 @@ func _update_aim() -> void:
 	reticle.global_position = target
 	# Reticle goes hot when the weapon is actually ready to fire — a free,
 	# glanceable read on the fire-rate cooldown and on being out of ammo.
-	var ready_to_fire := _cooldown <= 0.0 and ammo > 0
+	var ready_to_fire := weapon != null and weapon.can_fire()
 	reticle.modulate = Color(1.0, 1.0, 1.0, 1.0) if ready_to_fire \
 		else Color(1.0, 0.5, 0.5, 0.45)
 	reticle.scale = Vector2.ONE if ready_to_fire else Vector2(0.75, 0.75)
@@ -115,38 +129,29 @@ func _update_movement(delta: float) -> void:
 		AudioManager.play_sfx("jump")
 
 func _try_fire() -> void:
-	if _cooldown > 0.0:
+	if weapon == null or not weapon.can_fire():
+		# Still route a dry trigger through the weapon so it can play its own
+		# empty-magazine feedback and apply its own anti-spam cooldown.
+		if weapon != null:
+			weapon.fire(muzzle.global_position, aim_dir, is_on_floor())
 		return
-	if ammo <= 0:
-		AudioManager.play_sfx("error")
-		_cooldown = 0.4
-		return
+
 	# Peek-fire: shooting from cover stands you up briefly, then re-ducks.
 	if is_ducking:
 		is_ducking = false
 		_peek_timer = 0.4
 
-	_cooldown = fire_cooldown
-	ammo -= 1
-	ammo_changed.emit(ammo, max_ammo)
+	var kick := weapon.fire(muzzle.global_position, aim_dir, is_on_floor())
+	if kick == Vector2.ZERO:
+		return
 
-	var bolt := BOLT.instantiate()
-	bolt.direction = aim_dir
-	bolt.hostile = false
-	bolt.damage = 10
-	bolt.speed = 900.0
-	bolt.global_position = muzzle.global_position
-	get_parent().add_child(bolt)
-
-	# WEIGHT: flash + recoil + shake. This is the difference between a gun
-	# that fires and a gun that feels good.
+	# WEIGHT: the weapon owns recoil/shake/audio; the player owns the muzzle
+	# flash, because the flash is part of the ARM's visuals, not the gun's rules.
+	velocity += kick
 	flash.visible = true
 	get_tree().create_timer(0.05).timeout.connect(func() -> void:
 		if is_instance_valid(flash):
 			flash.visible = false)
-	velocity -= aim_dir * (60.0 if is_on_floor() else 30.0)
-	ScreenShake.shake(0.06, 2.2)
-	AudioManager.play_sfx("throw")
 
 func _update_visual() -> void:
 	# Face the AIM, not the movement — shooter convention.
@@ -158,7 +163,7 @@ func _update_visual() -> void:
 	visual.scale = visual.scale.lerp(want_scale, 0.35)
 	arm.visible = not is_ducking or _peek_timer > 0.0
 
-# ---- cover zone callbacks (from cover_crate.gd) ---------------------------
+# ---- cover zone callbacks (from cover_system.gd) --------------------------
 func enter_cover_zone(cover: Node2D) -> void:
 	_cover = cover
 
@@ -184,14 +189,15 @@ func _die() -> void:
 	# Prototype: respawn in place with a fresh clip rather than a full game
 	# over — keeps the feel-test loop tight. Real levels use checkpoints.
 	health = 5
-	ammo = max_ammo
+	if weapon != null:
+		weapon.refill()
 	health_changed.emit(health)
-	ammo_changed.emit(ammo, max_ammo)
 	_invuln = 1.5
 	AudioManager.play_sfx("fall")
 
 ## Pickups call this (leaf = ammo, per GDD cross-mode economy).
 func add_ammo(amount: int) -> void:
-	ammo = mini(ammo + amount, max_ammo)
-	ammo_changed.emit(ammo, max_ammo)
+	if weapon == null:
+		return
+	weapon.add_ammo(amount)
 	AudioManager.play_sfx("powerup")
