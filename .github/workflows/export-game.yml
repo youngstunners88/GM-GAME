@@ -15,6 +15,12 @@ on:
       # leave web/game/ and the deployed mirrors stale (PR #5 review).
       - 'config.json'
       - 'web/web3.js'
+      # The pipeline's own gates live here (security-sentinel.sh, verify-*.mjs,
+      # release-game.sh). Without this, editing the security gate did NOT re-run
+      # the security gate — a fix to it stayed unverified while the PR kept
+      # showing the stale failure it was meant to fix. Found the hard way on
+      # 1f5a9a1, which triggered no workflow at all.
+      - 'scripts/**'
   workflow_dispatch:
 
 permissions:
