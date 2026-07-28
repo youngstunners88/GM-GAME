@@ -24,12 +24,17 @@ func _ready() -> void:
 	var tex_path := "res://src/assets/sprites/sprite_lil-blunt_idle_01.png"
 	spr.texture = load(tex_path) if ResourceLoader.exists(tex_path) \
 			else load("res://src/assets/sprites/sprite_item_eth-ring.png")
-	spr.position = Vector2(340, 96)
-	spr.scale = Vector2(2, 2)
+	# Sits in the title's right margin, NOT over the body copy. At its old
+	# position it bobbed straight through the first paragraph, which is the
+	# opposite of the readability this panel is for.
+	spr.position = Vector2(700, 46)
+	spr.scale = Vector2(1.6, 1.6)
+	# Behind the text regardless of tree order, so it can never occlude a word.
+	spr.z_index = -1
 	$Panel.add_child(spr)
 	var tw := spr.create_tween().set_loops()
-	tw.tween_property(spr, "position:y", 88.0, 1.1).set_trans(Tween.TRANS_SINE)
-	tw.tween_property(spr, "position:y", 96.0, 1.1).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(spr, "position:y", 38.0, 1.1).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(spr, "position:y", 46.0, 1.1).set_trans(Tween.TRANS_SINE)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):

@@ -57,7 +57,11 @@ func get_sprint_multiplier() -> float:
 func handle_facing_direction(direction: float) -> void:
 	if direction != 0:
 		facing_right = direction > 0
-		player.sprite.scale.x = 1.0 if facing_right else -1.0
+		# DO NOT also mirror the Visual node here. LilBluntVisual owns facing:
+		# its `facing_right` setter flips the sprite, the animation and the held
+		# tool. Setting scale.x = -1 on top of that applied a SECOND mirror, and
+		# two mirrors compose to identity — which is why Lil Blunt appeared to
+		# face right no matter which way he ran. One owner, one flip.
 
 func on_landed() -> void:
 	is_wall_sliding = false

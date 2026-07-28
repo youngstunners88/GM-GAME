@@ -15,7 +15,9 @@ var current_state: State = State.PATROL
 var throw_timer: float = 0.0
 var direction: float = 1.0
 
-@onready var sprite: BossSprite = $ColorRect
+## Assigned, NOT redeclared: EnemyBase already owns `sprite`, and shadowing
+## it is a parse error that leaves this entire script unattached.
+@onready var boss_sprite: BossSprite = $ColorRect
 @onready var collision: CollisionShape2D = $CollisionShape2D
 @onready var hitbox: Area2D = $Hitbox
 @onready var hitbox_shape: CollisionShape2D = $Hitbox/CollisionShape2D
@@ -24,8 +26,12 @@ func _ready() -> void:
 	max_health = 6
 	phase_thresholds = [4, 2]
 	add_to_group("enemy")
-	sprite.color = Color(0.6, 0.4, 0.2, 1.0)
-	sprite.size = Vector2(80, 80)
+	# Boss 3 was the only boss missing this. Kept consistent with the other two
+	# so anything that queries for a live boss (arena logic, analytics, future
+	# "is a boss fight active" checks) sees all three, not two of three.
+	add_to_group("boss")
+	boss_sprite.color = Color(0.6, 0.4, 0.2, 1.0)
+	boss_sprite.size = Vector2(80, 80)
 	collision.position = Vector2(40, 40)
 	hitbox.position = Vector2(40, 40)
 	hitbox_shape.shape = collision.shape
@@ -48,7 +54,7 @@ func _physics_process(delta: float) -> void:
 			move_and_slide()
 			if is_on_wall():
 				direction *= -1.0
-				sprite.scale.x = 1.0 if direction > 0 else -1.0
+				boss_sprite.scale.x = 1.0 if direction > 0 else -1.0
 			if throw_timer <= 0:
 				_throw_dynamite()
 
@@ -61,7 +67,7 @@ func _physics_process(delta: float) -> void:
 			velocity.x = move_toward(velocity.x, 0.0, 150.0 * delta * 60.0)
 			velocity.y += 980.0 * delta
 			move_and_slide()
-			sprite.modulate = Color(1.0, 0.3, 0.3, 1.0) if fmod(throw_timer, 0.2) < 0.1 else Color(1.0, 0.1, 0.1, 1.0)
+			boss_sprite.modulate = Color(1.0, 0.3, 0.3, 1.0) if fmod(throw_timer, 0.2) < 0.1 else Color(1.0, 0.1, 0.1, 1.0)
 
 ## Accelerate patrol + taunt on phase transition (BossBase calls this).
 func _on_phase_changed() -> void:

@@ -16,7 +16,9 @@ var current_phase_state: Phase = Phase.PATROL
 var throw_timer: float = 0.0
 var direction: float = 1.0
 
-@onready var sprite: BossSprite = $ColorRect
+## Assigned, NOT redeclared: EnemyBase already owns `sprite`, and shadowing
+## it is a parse error that leaves this entire script unattached.
+@onready var boss_sprite: BossSprite = $ColorRect
 @onready var collision: CollisionShape2D = $CollisionShape2D
 @onready var hitbox: Area2D = $Hitbox
 @onready var hitbox_shape: CollisionShape2D = $Hitbox/CollisionShape2D
@@ -27,8 +29,8 @@ func _ready() -> void:
 	phase_thresholds = [4, 2]
 	add_to_group("enemy")
 	add_to_group("boss")
-	sprite.color = Color(0.3, 0.2, 0.6, 1.0)
-	sprite.size = Vector2(96, 96)
+	boss_sprite.color = Color(0.3, 0.2, 0.6, 1.0)
+	boss_sprite.size = Vector2(96, 96)
 	collision.position = Vector2(48, 48)
 	hitbox.position = Vector2(48, 48)
 	hitbox_shape.shape = collision.shape
@@ -51,7 +53,7 @@ func _physics_process(delta: float) -> void:
 			move_and_slide()
 			if is_on_wall():
 				direction *= -1.0
-				sprite.scale.x = 1.0 if direction > 0 else -1.0
+				boss_sprite.scale.x = 1.0 if direction > 0 else -1.0
 			if throw_timer <= 0:
 				_throw_shards()
 
@@ -61,7 +63,7 @@ func _physics_process(delta: float) -> void:
 			move_and_slide()
 			if throw_timer <= 0:
 				current_phase_state = Phase.VULNERABLE
-				sprite.color = Color(1.0, 0.2, 0.2, 1.0)
+				boss_sprite.color = Color(1.0, 0.2, 0.2, 1.0)
 				hitbox.monitorable = true
 				hitbox.monitoring = true
 
@@ -69,7 +71,7 @@ func _physics_process(delta: float) -> void:
 			velocity.x = move_toward(velocity.x, 0.0, 100.0)
 			velocity.y += 980.0 * delta
 			move_and_slide()
-			sprite.modulate = Color(1.0, 0.3, 0.3, 1.0) if fmod(throw_timer, 0.3) < 0.15 else Color(1.0, 0.1, 0.1, 1.0)
+			boss_sprite.modulate = Color(1.0, 0.3, 0.3, 1.0) if fmod(throw_timer, 0.3) < 0.15 else Color(1.0, 0.1, 0.1, 1.0)
 
 ## Aimed, slightly-homing ETH orbs. Count + spread + cadence scale with the
 ## BossBase HP phase (1/2/3): 3 orbs → 5 orbs → 5 fast orbs.
@@ -113,7 +115,7 @@ func take_damage(amount: int) -> void:
 	else:
 		current_phase_state = Phase.PATROL
 		throw_timer = 2.0
-		sprite.color = Color(0.3, 0.2, 0.6, 1.0)
+		boss_sprite.color = Color(0.3, 0.2, 0.6, 1.0)
 		hitbox.monitorable = false
 		hitbox.monitoring = false
 		_check_phase_change()

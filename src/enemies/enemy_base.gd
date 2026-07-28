@@ -11,7 +11,13 @@ extends CharacterBody2D
 var is_dead: bool = false
 var is_flashing: bool = false
 
-@onready var sprite: Sprite2D = $Sprite
+## The flashing visual. Typed CanvasItem, not Sprite2D, so subclasses whose art
+## is a different node type (bosses use a BossSprite/Node2D) can point this at
+## their own visual instead of shadowing the member — redeclaring `sprite` in a
+## subclass is a HARD PARSE ERROR that silently leaves the whole script
+## unattached, which is exactly how bosses 2 and 3 lost their AI.
+## get_node_or_null because boss scenes have no "Sprite" child at all.
+@onready var sprite: CanvasItem = get_node_or_null("Sprite")
 
 func _ready() -> void:
     add_to_group("enemy")
@@ -27,7 +33,7 @@ func take_damage(amount: int) -> void:
         die()
 
 func flash() -> void:
-    if is_flashing:
+    if is_flashing or sprite == null:
         return
     is_flashing = true
     var tween := create_tween()
