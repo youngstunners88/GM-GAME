@@ -63,8 +63,10 @@ func play_playlist(paths: Array) -> void:
         # logging "No loader found" errors for files not in the pck yet.
         if ResourceLoader.exists(p):
             found.append(p)
-    # A new base-music request (level/boss/menu) supersedes any Blaze override.
+    # A new base-music request (level/boss/menu) supersedes any Blaze override
+    # or ambient loop (Smoke Lounge) still playing.
     _drop_override_for_new_music()
+    _stop_ambient()
     _duck_out_music()
     _playlist = found
     if _playlist.is_empty():
@@ -299,6 +301,66 @@ func play_sfx_at(name: String, pos: Vector2) -> void:
     root.add_child(player)
     player.play()
     player.finished.connect(player.queue_free)
+
+# ---- Ambient loop with crossfade + pause duck (Smoke Lounge, reusable) ----
+# A single looping track that isn't part of the shuffle playlist system —
+# for atmospheric rooms that want one dedicated song rather than a rotation.
+# Ducks (not silences) while paused so the room never goes dead-quiet.
+var _ambient_player: AudioStreamPlayer = null
+var _ambient_base_db: float = 0.0
+const AMBIENT_DUCK_LINEAR := 0.3
+
+## Fade the current base track out over `fade_seconds` and fade this one in to
+## `target_volume_linear` (0..1) over the same span. Missing asset -> silent
+## no-op, matching play_playlist's degrade-in-dev-builds convention, so a
+## room with no music file yet just plays without music instead of erroring.
+func play_ambient_loop(path: String, target_volume_linear: float = 0.7, fade_seconds: float = 2.0) -> void:
+    if not ResourceLoader.exists(path):
+        return
+    var stream := load(path)
+    if stream == null:
+        return
+    _drop_override_for_new_music()
+    if current_music_player and is_instance_valid(current_music_player):
+        var old := current_music_player
+        var out_tween := old.create_tween()
+        out_tween.tween_property(old, "volume_db", -80.0, fade_seconds)
+        out_tween.finished.connect(old.queue_free)
+    current_music_player = null
+    _stop_ambient()
+    if stream is AudioStreamOggVorbis:
+        (stream as AudioStreamOggVorbis).loop = true
+    elif stream is AudioStreamMP3:
+        (stream as AudioStreamMP3).loop = true
+    _ambient_base_db = linear_to_db(clampf(target_volume_linear, 0.001, 1.0))
+    _ambient_player = AudioStreamPlayer.new()
+    _ambient_player.bus = "Music"
+    _ambient_player.stream = stream
+    _ambient_player.volume_db = -80.0
+    add_child(_ambient_player)
+    _ambient_player.play()
+    var in_tween := _ambient_player.create_tween()
+    in_tween.tween_property(_ambient_player, "volume_db", _ambient_base_db, fade_seconds)
+    # Connected lazily (not in _ready()): AudioManager loads before StateMachine
+    # in project.godot's autoload order, so StateMachine wouldn't exist yet if
+    # this connected at AudioManager._ready() time.
+    if not StateMachine.state_changed.is_connected(_on_state_changed_for_ambient):
+        StateMachine.state_changed.connect(_on_state_changed_for_ambient)
+
+func _on_state_changed_for_ambient(_from: String, to: String) -> void:
+    if _ambient_player == null or not is_instance_valid(_ambient_player):
+        return
+    if to != "PLAYING" and to != "PAUSED":
+        return
+    var target := _ambient_base_db if to == "PLAYING" else linear_to_db(AMBIENT_DUCK_LINEAR)
+    var tw := _ambient_player.create_tween()
+    tw.tween_property(_ambient_player, "volume_db", target, 0.3)
+
+func _stop_ambient() -> void:
+    if _ambient_player and is_instance_valid(_ambient_player):
+        _ambient_player.stop()
+        _ambient_player.queue_free()
+    _ambient_player = null
 
 func set_music_volume(vol_db: float) -> void:
     AudioServer.set_bus_volume_db(music_bus, vol_db)

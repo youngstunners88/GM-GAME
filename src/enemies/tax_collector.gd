@@ -23,7 +23,14 @@ enum State { PATROL, ALERT, PURSUE }
 @export var jump_force: float = -430.0
 ## Widest gap worth attempting. Beyond this the jump cannot land, and trying
 ## would launch the enemy into the pit.
-@export var max_jump_gap: float = 150.0
+## Kimi re-audit: derived from this file's own kinematics, not picked by eye.
+## jump_force=-430 / GRAVITY=980 -> ~0.439s to apex, ~0.878s total airtime at
+## equal launch/land height; at pursue_speed=105 that's ~92px of horizontal
+## travel — the OLD 150px guard let the enemy commit to jumps it could not
+## physically complete. 80px keeps margin for landing on a RAISED ledge (which
+## takes longer to reach and therefore covers LESS horizontal distance for the
+## same launch, not more) and for DifficultyManager's slowed pursue_speed.
+@export var max_jump_gap: float = 80.0
 
 const GRAVITY: float = 980.0
 
@@ -75,13 +82,19 @@ func _physics_process(delta: float) -> void:
                 _face_player()
         State.ALERT:
             # Frozen tell: stand still, facing the player, before committing.
+            # Kimi re-audit: this used to bail back to PATROL the instant the
+            # player left range mid-telegraph, which re-armed a fresh
+            # alert_time on the very next re-entry — a player hovering at the
+            # detection edge could hold the enemy in perpetual telegraph and
+            # it would never reach PURSUE. The telegraph now always completes
+            # once triggered; PURSUE's own lose_interest_time hysteresis
+            # (already the sole disengage path everywhere else) handles a
+            # player who left before the telegraph even finished.
             velocity.x = 0.0
             _alert_timer -= delta
             if _alert_timer <= 0.0:
                 state = State.PURSUE
                 _out_of_range_timer = 0.0
-            elif not _player_in_range():
-                state = State.PATROL
         State.PURSUE:
             _do_pursue(delta)
 
@@ -100,6 +113,11 @@ func _do_patrol() -> void:
 func _do_pursue(delta: float) -> void:
     if _player == null or not is_instance_valid(_player):
         state = State.PATROL
+        # Kimi re-audit: the timeout exit below re-anchors so the enemy
+        # doesn't march back to spawn and look like it "forgot" the chase.
+        # This exit (player freed/removed mid-pursuit) skipped that same
+        # re-anchor — inconsistent for the same disengage outcome.
+        start_x = global_position.x
         return
 
     if _player_in_range():

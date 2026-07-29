@@ -19,6 +19,12 @@ const FEET_LOCAL_Y: float = 16.0
 
 var _spr: Sprite2D
 
+## Ambient pace scale (e.g. Smoke Lounge's chill walk cycle). Applies to the
+## procedural leg-bob today (no AnimatedSprite2D frame sheet ships yet — see
+## OUTFIT_FRAMES below) and to _anim.speed_scale once one does, so the effect
+## isn't silently lost when real frame sheets land.
+var _anim_speed_scale: float = 1.0
+
 ## Power-up tint applied over the art (cyan/green/red glows). WHITE = normal.
 var color: Color = Color.WHITE:
 	set(value):
@@ -99,6 +105,12 @@ func _ready() -> void:
 			_leg_r = leg
 	set_outfit(Player.Outfit.DEFAULT)
 
+## Ambient pace scale, driven by Player.set_movement_scale(). 1.0 = normal.
+func set_speed_scale(scale: float) -> void:
+	_anim_speed_scale = scale
+	if _anim:
+		_anim.speed_scale = scale
+
 ## Drive the named animation ("idle", "run", "jump_up", "jump_down", "attack",
 ## "hurt", "death"). Safe to call every frame; no-ops gracefully until a
 ## SpriteFrames resource exists for the current outfit.
@@ -118,7 +130,7 @@ func _process(delta: float) -> void:
 	var feet_y := FEET_LOCAL_Y - _spr.texture.get_height() / 2.0
 	var dir := 1.0 if facing_right else -1.0
 	if moving:
-		_bob_time += delta
+		_bob_time += delta * _anim_speed_scale
 		var stride := _bob_time * 16.0                 # step cadence
 		var lift := absf(sin(stride)) * 4.0            # body rises between steps
 		# Body: bounce + a small lean into the walk (reads as arm/shoulder swing).

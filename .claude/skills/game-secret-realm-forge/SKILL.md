@@ -11,8 +11,8 @@ stages: a sense of 3D space, lush atmosphere, and a distinct vibe, while still
 running in Godot's 2D engine and looping cleanly back to where the player
 entered.
 
-Reference implementation: `src/level/secret_realm.gd` (the Chill Lounge),
-`secret_door.gd`, `return_portal.gd`.
+Reference implementation: `src/level/secret_realm.gd` (the Smoke Lounge,
+formerly "the Chill Lounge"), `secret_door.gd`, `return_portal.gd`.
 
 ## The "3D feel" in a 2D engine — the core technique
 

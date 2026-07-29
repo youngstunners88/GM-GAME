@@ -7,7 +7,7 @@ func _ready() -> void:
     super()
     _setup_smoke_platforms()
     _setup_blaze_portal(Vector2(1450, 250), 1500, 1)
-    # Hidden door to the Chill Lounge, tucked up on a high ledge.
+    # Hidden door to the Smoke Lounge, tucked up on a high ledge.
     var door := preload("res://src/level/secret_door.tscn").instantiate()
     door.global_position = Vector2(2350, 250)
     add_child(door)

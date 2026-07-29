@@ -5,11 +5,71 @@
 **Branch:** `claude/setup-game-dev-environment-itWJv` · **PR #2**
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-07-18** (Layer Shift
-> + PR #5 review fixes verified: browser boot 5/5 gates, web3 bridge loads).
+> have something current to look at. Last updated: **2026-07-29** (Smoke
+> Lounge rebuilt + expanded, Tax Collector AI cleared by a second audit).
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+
+## 🛋️ THE SMOKE LOUNGE, REBUILT + 3X LONGER (2026-07-29)
+
+**The "Smoke Lounge" you asked for already existed — under a different
+name.** Your own protocol notes from three weeks ago (`design/
+client_protocol_updates.md`) flagged the game's existing secret bonus room —
+built as "the Chill Lounge," reached through a hidden door in Level 1 — as
+the natural place to bring the Smoke Lounge concept into the game once you
+wanted it felt by players. So instead of building a second room next to it,
+this session renamed, restyled, and dramatically expanded that same room.
+
+**What changed:**
+- **3x longer** — 1700px to 5100px. It's meant to feel like a journey to
+  unwind in, not a room you pass through in two seconds.
+- **Rising smoke from the ground** — soft purple-to-gray particles drift up
+  from the floor the whole walk, fading out before they reach head height so
+  they never hide a platform or a collectible.
+- **Lil Blunt moves slower and chiller here** — 60% walking speed, heavier
+  jumps, a touch more gravity, a more relaxed walk cycle. This is opt-in per
+  room, not a global change — every other level plays exactly as before.
+- **Three rest stops** along the walk: a bong alcove to sit at, a signage
+  plinth with a labeled spot for each of SmokeRing/DIAMONDS/GoldMine, and a
+  founder mural ledge — all placeholder-labeled and ready to take real
+  artwork the moment it's in the repo, with zero further code changes needed.
+- **Dedicated music slot wired in** — crossfades in over 2 seconds, ducks
+  (not mutes) while paused, restores on resume. **`assets/music/
+  smoke_lounge.mp3` is not in the repo yet** — the room plays silently until
+  it is. Drop the file in at that exact path and it just works.
+- **Founder portrait / protocol logo files are also not in the repo yet** —
+  same story: colored placeholder panels hold their spots until real art
+  lands.
+
+**The Tax Collector AI got its second review, and passed — after real fixes.**
+Last session's AI review got cut off by a length limit before it reached the
+new enemy chase logic. This session re-ran that review narrowly focused on
+just that file, and it found three real, if subtle, issues: a player could
+stand right at the edge of a Tax Collector's detection range and keep it
+frozen in its "I see you" telegraph forever instead of ever actually giving
+chase; the jump-over-gaps logic was tuned to attempt jumps physically wider
+than the enemy could actually clear (verified independently against the
+game's own jump physics — it really could have landed in pits it was trying
+to avoid); and giving up a chase because you'd escaped behaved slightly
+differently than giving up because you were out of view, when both should
+look the same. All three fixed.
+
+**Two more bugs found the old-fashioned way — actually playing it.** Neither
+external review runs a live build; they read code. Walking the finished room
+in a real browser (not just reading the numbers) caught a spot where the
+player would visibly stall walking into one of the new rest stops (an
+accidental invisible ledge from overlapping floor geometry), and a mural
+panel that rendered in the wrong place relative to its frame. Both fixed and
+re-confirmed with fresh screenshots.
+
+**Gates, freshly re-run after every fix, all pass:** gdparse · export (0
+script errors) · v1.0 campaign 5/5 · shooter 6/6 · save-compat 18/18 ·
+icp-contract 13/13 · security-sentinel 18/18 (0 blockers) · can_instantiate
+(107 scripts + 71 scenes) · boss-visibility suite.
+
+**What's next:** torch flame-throwing (queued, per your own session
+ordering — waited for this room and the AI review to clear first).
 
 ## ⚔️ BOSS HEALTH BARS + SMARTER ENEMIES (2026-07-29)
 

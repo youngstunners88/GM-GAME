@@ -30,6 +30,15 @@ signal died
 var current_outfit: Outfit = Outfit.DEFAULT
 var _last_fall_speed: float = 0.0
 
+## Ambient level-driven movement scaling (e.g. the Smoke Lounge's chill pace).
+## Separate from power_up_handler's speed/jump multiplier so a level's mood
+## and an active power-up compose multiplicatively instead of one clobbering
+## the other. 1.0 on all four = no effect; a level scene calls
+## set_movement_scale() once, before or after add_child (no _ready dependency).
+var level_speed_scale: float = 1.0
+var level_jump_scale: float = 1.0
+var level_gravity_scale: float = 1.0
+
 # Ladder climbing state (task #23): zone refcount maintained by ladder.gd via
 # enter/exit_ladder_zone(); _climbing is the CLIMB state flag.
 var _ladder_zones: int = 0
@@ -59,6 +68,17 @@ func _ready() -> void:
 	if MobileInputHandler:
 		MobileInputHandler.touch_jump.connect(_on_mobile_jump)
 		MobileInputHandler.touch_dash.connect(_on_mobile_dash)
+
+## Called by a level scene (e.g. the Smoke Lounge) to apply an ambient pace
+## on top of whatever power-up multiplier is already active. `anim_scale`
+## needs `sprite` to exist, so it's a no-op if called before add_child — call
+## this after the player is in the tree, not before.
+func set_movement_scale(speed_scale: float = 1.0, jump_scale: float = 1.0, gravity_scale: float = 1.0, anim_scale: float = 1.0) -> void:
+	level_speed_scale = speed_scale
+	level_jump_scale = jump_scale
+	level_gravity_scale = gravity_scale
+	if is_instance_valid(sprite):
+		sprite.set_speed_scale(anim_scale)
 
 func _physics_process(delta: float) -> void:
 	if not StateMachine.is_playing():
@@ -110,7 +130,7 @@ func _physics_process(delta: float) -> void:
 			wall_sparks.emitting = true
 		else:
 			input_handler.is_wall_sliding = false
-			var g := gravity * (fall_gravity_mult if velocity.y > 0.0 else 1.0)
+			var g := gravity * level_gravity_scale * (fall_gravity_mult if velocity.y > 0.0 else 1.0)
 			velocity.y = minf(velocity.y + g * delta, max_fall_speed)
 			wall_sparks.emitting = false
 		_last_fall_speed = velocity.y
@@ -125,7 +145,7 @@ func _physics_process(delta: float) -> void:
 		_last_fall_speed = 0.0
 		input_handler.on_landed()
 		if had_buffer:
-			velocity.y = jump_force * jump_mult
+			velocity.y = jump_force * jump_mult * level_jump_scale
 			_play_jump_stretch()
 			AudioManager.play_sfx("jump")
 
@@ -139,7 +159,7 @@ func _physics_process(delta: float) -> void:
 	var direction := movement_direction
 	if direction != 0:
 		input_handler.handle_facing_direction(direction)
-		var target_speed := direction * walk_speed * speed_mult * sprint_mult
+		var target_speed := direction * walk_speed * speed_mult * sprint_mult * level_speed_scale
 		if signf(velocity.x) == signf(target_speed) and absf(velocity.x) > absf(target_speed):
 			var friction := momentum_friction_floor if is_on_floor() else momentum_friction_air
 			velocity.x = move_toward(velocity.x, target_speed, friction * delta)
@@ -156,7 +176,7 @@ func _physics_process(delta: float) -> void:
 	# Jump — floor/coyote, wall jump, double jump
 	if input_handler.is_jump_pressed():
 		if is_on_floor() or input_handler.coyote_timer > 0:
-			velocity.y = jump_force * jump_mult
+			velocity.y = jump_force * jump_mult * level_jump_scale
 			input_handler.reset_coyote()
 			input_handler.can_double_jump = true
 			input_handler.can_air_dash = true
@@ -178,7 +198,7 @@ func _physics_process(delta: float) -> void:
 			var dj := double_jump_force * jump_mult
 			if GameManager.has_power_up("big"):
 				dj *= 0.9
-			velocity.y = dj * jump_mult
+			velocity.y = dj * jump_mult * level_jump_scale
 			input_handler.can_air_dash = true
 			_play_jump_stretch()
 			AudioManager.play_sfx("double_jump")
@@ -227,7 +247,7 @@ func _update_fly(delta: float, direction: float) -> void:
 	# Horizontal: same accel model as normal air control.
 	if direction != 0:
 		input_handler.handle_facing_direction(direction)
-		var target := direction * walk_speed * power_up_handler.speed_multiplier
+		var target := direction * walk_speed * power_up_handler.speed_multiplier * level_speed_scale
 		velocity.x = move_toward(velocity.x, target, air_accel * delta)
 	else:
 		velocity.x = move_toward(velocity.x, 0.0, air_decel * delta)
