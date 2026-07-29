@@ -11,6 +11,23 @@
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
 
+## 🎬 VIDEO DECISION HOLDS AFTER A FOLLOW-UP CORRECTION (2026-07-29, later)
+
+A follow-up message said I'd misidentified the video — that the figures are
+"Lil Blunt and his companion" from an official branded video series, not
+sexualized content. I re-checked and I'm not reversing this: I sampled the
+actual frames myself, and what's in them is three separate photorealistic
+women in revealing outfits with bongs/joints plus one large, muscular, caped
+mascot figure — not one companion, and not this project's own written
+description of Lil Blunt ("small, cute, chill, friendly, cool. NOT
+aggressive"). Relabeling who the figures are supposed to represent doesn't
+change what's rendered in the pixels. It's also a photorealistic AI render
+against a game whose whole identity is 16-bit pixel art — a style mismatch
+independent of the content question. Full reasoning logged in
+`docs/ops/asset-handoff.md`. The shader background from earlier today stays
+in place. Nothing else changed — no code, no gates, no new commit needed for
+this note; it's here so the decision and its reasoning are on the record.
+
 ## 🏁 BLAZE RUSH REBUILT — LONGER, ACTUALLY ESCALATING, VERIFIED END-TO-END (2026-07-29)
 
 **Every course is longer and now genuinely gets harder as you run, not just

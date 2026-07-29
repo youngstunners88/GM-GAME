@@ -89,6 +89,27 @@ a procedural drifting-smoke + slow-color-breathe background wired into
 zero video-decode cost, no content risk — same "living backdrop" job a video
 was meant to do.
 
+### Follow-up: a correction was sent, the decision stands
+
+A later message said the identification above was wrong — that the figures
+are "Lil Blunt and his companion" from an official branded video series, not
+sexualized content. That doesn't change the call, for two independent
+reasons, neither of which depends on who the figures are supposed to be:
+
+1. **What's actually in the frames**: three separate photorealistic women in
+   revealing outfits (thigh-high boots, cleavage-baring bodysuits) in smoking
+   poses with bongs/joints, plus one large, muscular, caped mascot figure —
+   not a single "companion," and not "small/cute/chill/not aggressive"
+   (this project's own description of Lil Blunt, word for word). Relabeling
+   who these are meant to represent doesn't change what's rendered.
+2. **Style mismatch, independent of content**: it's a glossy photorealistic
+   AI render. This game's whole identity is retro 16-bit pixel art. Even
+   with zero content concern, this specific asset doesn't fit the product.
+
+The shader background stays. If genuinely different, on-brand footage shows
+up, it's a five-minute wire-in — the format/conversion path is proven and
+ready.
+
 ### Original format note (technical detail still accurate)
 
 Godot 4.3 plays exactly one video format, confirmed by querying the running
