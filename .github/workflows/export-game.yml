@@ -42,6 +42,17 @@ jobs:
       - name: Secret scan (gitleaks)
         uses: gitleaks/gitleaks-action@v2
         env:
+          # REQUIRED. Without it the action calls the GitHub API anonymously to
+          # work out whether this account is an org (licensed) or a user (free).
+          # Anonymous calls from shared Actions runner IPs get rate-limited, and
+          # when the lookup fails the action does NOT fail open — it falls back
+          # to demanding a GITLEAKS_LICENSE and hard-errors, turning the whole
+          # job red while the export itself succeeded. That is exactly what
+          # happened on run 30462028631. Authenticating the lookup removes the
+          # rate limit, so the free-for-personal-accounts path resolves.
+          # This does not weaken the scan: gitleaks still runs over full history
+          # and still fails the build on a real finding.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_ENABLE_UPLOAD_ARTIFACT: false
           GITLEAKS_ENABLE_SUMMARY: true
 
