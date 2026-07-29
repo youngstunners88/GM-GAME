@@ -42,6 +42,9 @@ persistent actor PriceFeed {
   /// Cap the response we're willing to pay to receive. Outcall cost scales
   /// with this number, so it is deliberately tight.
   let MAX_RESPONSE_BYTES : Nat64 = 4_000;
+  /// Sanity ceiling on a single quote. Anything above this is a parse artifact
+  /// or a hostile source, never a real token price.
+  let MAX_PRICE : Float = 1.0e18;
 
   var quotes : [Quote] = [];
   var last_refresh : Int = 0;
@@ -160,15 +163,27 @@ persistent actor PriceFeed {
   /// token, so a stale-but-real price beats a fresh-but-wrong one.
   func ingest(body : Text, now : Int) {
     var parsed : [Quote] = [];
-    let trimmed = Text.trim(body, #char '{');
-    for (pair in Text.split(Text.trim(trimmed, #char '}'), #char ',')) {
+    // Strip whitespace FIRST. Trimming '{' and '}' off a body that ends in a
+    // newline removed nothing, so the final pair kept its "}" and failed to
+    // parse — silently dropping the LAST symbol on every refresh. Trailing
+    // newlines are normal in real API responses, and the tolerant-skip design
+    // meant it vanished without any error at all.
+    let clean = Text.trim(body, #predicate(func(c : Char) : Bool {
+      c == ' ' or c == '\n' or c == '\r' or c == '\t'
+    }));
+    let trimmed = Text.trim(Text.trim(clean, #char '{'), #char '}');
+    for (pair in Text.split(trimmed, #char ',')) {
       let kv = Text.split(pair, #char ':');
       switch (kv.next(), kv.next()) {
         case (?rawKey, ?rawVal) {
           let symbol = Text.trim(Text.trim(rawKey, #char ' '), #char '\"');
           switch (parseFloat(Text.trim(rawVal, #char ' '))) {
             case (?price) {
-              if (symbol != "" and price > 0.0) {
+              // Upper bound matters as much as the lower one: parseFloat
+              // accumulates without limit, and IEEE doubles do not trap on
+              // overflow — they become +inf, which passes a bare `> 0.0`
+              // guard, gets stored, and then poisons every later render.
+              if (symbol != "" and price > 0.0 and price < MAX_PRICE) {
                 parsed := Array.append<Quote>(parsed, [{
                   symbol = symbol;
                   price = price;

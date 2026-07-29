@@ -75,17 +75,43 @@ persistent actor Leaderboard {
     };
   };
 
+  /// Record this principal's submission time, and EVICT every entry whose
+  /// cooldown has already expired.
+  ///
+  /// The eviction is the point. Without it this array grew once per unique
+  /// principal, forever, and never shrank — principals are free to mint, so it
+  /// was an unbounded-state and unbounded-cycles surface, and every `submit`
+  /// paid an O(n) scan over it. The board itself is capped at TOP_N; this was
+  /// the uncapped thing hiding behind it. An expired entry is semantically
+  /// dead, so dropping it costs nothing.
   func touchCooldown(p : Principal, now : Int) {
-    let kept = Array.filter<(Principal, Int)>(cooldowns, func((q, _)) { q != p });
+    let kept = Array.filter<(Principal, Int)>(
+      cooldowns,
+      func((q, t)) { q != p and now - t < SUBMIT_COOLDOWN_NS },
+    );
     let buf = Buffer.fromArray<(Principal, Int)>(kept);
     buf.add((p, now));
     cooldowns := Buffer.toArray(buf);
   };
 
-  /// Keep only a player's single best run per level, so one strong player
-  /// cannot wallpaper the board with near-identical entries.
+  /// Remove a player's existing entry for a level, so one strong player cannot
+  /// wallpaper the board with near-identical entries.
+  ///
+  /// NOTE: this drops the entry unconditionally. Callers that want
+  /// "keep the best" must compare first — see `bestScoreFor` and its use in
+  /// `submit`. An earlier version of this file claimed in a comment that it
+  /// kept the best run and did not, so a worse resubmission silently erased a
+  /// better score.
   func withoutPriorRun(list : [Entry], p : Principal, level : Nat) : [Entry] {
     Array.filter<Entry>(list, func(e) { not (e.player == p and e.level == level) });
+  };
+
+  /// The player's current score for a level, or null if they have none.
+  func bestScoreFor(p : Principal, level : Nat) : ?Nat {
+    for (e in entries.vals()) {
+      if (e.player == p and e.level == level) { return ?e.score };
+    };
+    null;
   };
 
   func sanitizeHandle(raw : Text) : Text {
@@ -123,6 +149,18 @@ persistent actor Leaderboard {
       level = level;
       score = score;
       at = now;
+    };
+
+    // Keep the BEST run, not the latest. Without this, a player who replays a
+    // level and does worse wipes their own record off the board — and a
+    // double-submitting client could erase a real score with a zero.
+    switch (bestScoreFor(caller, level)) {
+      case (?existing) {
+        if (score <= existing) {
+          return #ok({ rank = 0; accepted = false });
+        };
+      };
+      case null {};
     };
 
     let buf = Buffer.fromArray<Entry>(withoutPriorRun(entries, caller, level));

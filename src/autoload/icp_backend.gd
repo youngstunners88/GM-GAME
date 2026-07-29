@@ -149,6 +149,11 @@ func fetch_prices() -> void:
 				return
 			var prices: Variant = (parsed as Dictionary).get("prices", {})
 			if typeof(prices) != TYPE_DICTIONARY:
+				# Latch like the other two failure branches. This one used to
+				# fall back WITHOUT latching, so a canister serving well-formed
+				# JSON of the wrong shape was re-queried — and re-timed-out —
+				# on every single call for the rest of the session.
+				icp_online = false
 				_fallback_prices()
 				return
 			_publish_prices(prices, "icp")
