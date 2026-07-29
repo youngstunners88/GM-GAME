@@ -24,6 +24,13 @@ var direction: float = 1.0
 
 func _ready() -> void:
 	max_health = 6
+	# MUST be set explicitly. EnemyBase.health defaults to 1, and this boss was
+	# the only one of the four that set max_health without also setting health
+	# — so the Claim Jumper had 1 HP and died to a single hit, while its bar
+	# and phase thresholds ([4,2]) were configured for a 6-HP fight that could
+	# never happen. Found while wiring the health bar; the bar would have made
+	# it obvious on screen, but it was invisible before.
+	health = max_health
 	phase_thresholds = [4, 2]
 	add_to_group("enemy")
 	# Boss 3 was the only boss missing this. Kept consistent with the other two
@@ -37,6 +44,7 @@ func _ready() -> void:
 	hitbox_shape.shape = collision.shape
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
+	boss_display_name = "The Claim Jumper"
 	_setup_health_bar()
 	BossVoiceSystem.set_active(self, BOSS_ID)
 	BossVoiceSystem.say(self, BOSS_ID, "intro", true)
@@ -133,8 +141,11 @@ func die() -> void:
 	var treasury_payout := 100
 	GoldMineSystem.distribute_treasury_revenue(treasury_payout)
 	GameManager.save_session()
-	if health_bar:
+	if is_instance_valid(health_bar):
 		health_bar.queue_free()
+	# Null it: queue_free() leaves a dangling non-null reference that
+	# still passes a truthy check (Kimi audit).
+	health_bar = null
 	var tween := create_tween()
 	tween.tween_property(self, "scale", Vector2.ZERO, 1.0)
 	tween.parallel().tween_property(self, "rotation", PI * 4, 1.0)

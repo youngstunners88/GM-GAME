@@ -30,6 +30,7 @@ func _ready() -> void:
 	hitbox_shape.shape = collision.shape
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
+	boss_display_name = "The Bandit King"
 	_setup_health_bar()
 
 func _physics_process(delta: float) -> void:
@@ -115,8 +116,11 @@ func die() -> void:
 	ScreenShake.zoom_to(1.0, 0.6)
 	ScreenShake.heavy()
 	GameManager.save_session()
-	if health_bar:
+	if is_instance_valid(health_bar):
 		health_bar.queue_free()
+	# Null it: queue_free() leaves a dangling non-null reference that
+	# still passes a truthy check (Kimi audit).
+	health_bar = null
 	var tween := create_tween()
 	tween.tween_property(self, "scale", Vector2.ZERO, 1.0)
 	tween.parallel().tween_property(self, "rotation", PI * 4, 1.0)

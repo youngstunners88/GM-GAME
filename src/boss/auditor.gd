@@ -25,6 +25,11 @@ var throw_timer: float = 2.0
 var hop_timer: float = 6.0
 var phase: int = 1
 var _base_patrol_speed: float = 90.0
+## Shared screen-anchored bar (src/ui/boss_health_bar.gd). Named with a leading
+## underscore because this boss does NOT extend BossBase — it has no inherited
+## `health_bar` member to match, and shadowing an inherited member is the exact
+## parse-error class that left bosses 2/3/4 scriptless once before.
+var _health_bar: BossHealthBar
 
 # Token-gated spectacle phases (task #23, Movie Layer). Flags read once at
 # fight start from real wallet holdings (Web3Bridge). No wallet → all false →
@@ -53,6 +58,19 @@ func _ready() -> void:
 	hitbox_shape.shape = collision.shape
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
+	# The Auditor extends CharacterBody2D directly rather than BossBase, so it
+	# inherits none of BossBase's health-bar wiring — which is why the FIRST
+	# boss every player meets was the only one fighting with no HP feedback at
+	# all. Wire the same shared bar manually. Thresholds mirror _update_phase()
+	# below, which switches at 50% and 25% of max_health.
+	_health_bar = BossHealthBar.new()
+	# Synchronous: add_child on an in-tree node runs the child's _ready() before
+	# returning, so the bar is fully built here.
+	add_child(_health_bar)
+	_health_bar.set_boss(
+		"The Auditor", max_health,
+		[int(max_health * 0.5), int(max_health * 0.25)])
+	_health_bar.set_health(health)
 	BossVoiceSystem.set_active(self, BOSS_ID)
 	BossVoiceSystem.say(self, BOSS_ID, "intro", true)
 	# Movie-Layer spectacle gates — real balances, read at fight start.
@@ -155,12 +173,17 @@ func _throw_clipboard() -> void:
 func take_damage(amount: int) -> void:
 	if current_state == State.DEFEATED or current_state != State.VULNERABLE:
 		return
+	var hp_before := health
 	health -= amount
 	AudioManager.play_sfx("damage")
 	BossVoiceSystem.say(self, BOSS_ID, "hurt")
 	var tween := create_tween()
 	tween.tween_property(sprite, "modulate", Color(10, 10, 10, 1), 0.05)
 	tween.tween_property(sprite, "modulate", Color(1, 1, 1, 1), 0.05)
+	if _health_bar:
+		_health_bar.set_health(health)
+		# Left-anchored drain: the darkened pip is at the new HP index.
+		_health_bar.flash_damage(health)
 	if health <= 0:
 		die()
 		return
@@ -181,6 +204,8 @@ func _update_phase() -> void:
 		new_phase = 2
 	if new_phase != phase:
 		phase = new_phase
+		if _health_bar:
+			_health_bar.set_phase(phase)
 		patrol_speed = _base_patrol_speed * (1.0 + 0.25 * (phase - 1))
 		Web3Bridge.report_metric("boss_phase_reached", {"boss": BOSS_ID, "phase": phase})
 		if phase == 2:
@@ -197,6 +222,11 @@ func _update_phase() -> void:
 
 func die() -> void:
 	current_state = State.DEFEATED
+	# Free the bar explicitly: it is a CanvasLayer child, so it would otherwise
+	# linger on screen through the whole death tween and the level transition.
+	if _health_bar:
+		_health_bar.queue_free()
+		_health_bar = null
 	BossVoiceSystem.say(self, BOSS_ID, "death", true)
 	BossVoiceSystem.clear_active()
 	GameManager.add_score(500)
@@ -314,10 +344,17 @@ func _on_shard_area(area: Area2D, shard: Area2D) -> void:
 func _take_reflected_damage() -> void:
 	if current_state == State.DEFEATED:
 		return
+	var hp_before := health
 	health -= 2
 	AudioManager.play_sfx("damage")
 	BossVoiceSystem.say(self, BOSS_ID, "hurt")
 	EffectSpawner.burst("explosion", global_position + Vector2(48, 48))
+	# This is the SECOND damage path into this boss and it previously skipped
+	# the health bar entirely, so a reflected shard silently desynced the
+	# display by 2 HP until the next melee hit repainted it (Kimi audit).
+	if is_instance_valid(_health_bar):
+		_health_bar.set_health(health)
+		_health_bar.flash_damage(maxi(health, 0))
 	if health <= 0:
 		die()
 	else:

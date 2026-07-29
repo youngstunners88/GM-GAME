@@ -11,6 +11,48 @@
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
 
+## ⚔️ BOSS HEALTH BARS + SMARTER ENEMIES (2026-07-29)
+
+**Every boss now has a proper health bar — and one of them never had one at
+all.** The Auditor (Stage 1, the first boss anyone meets) was built on a
+different foundation than the other three, so it inherited none of the
+health-bar code. You were fighting the game's opening boss with zero feedback
+on how much damage you'd done.
+
+The new bar shows **one pip per hit point** rather than a smooth sliding bar.
+Bosses only have 6–10 HP, so a smooth bar made a solid hit look like almost
+nothing; now a pip visibly goes out each time you connect, and you can count
+exactly how many hits remain. It also shows the boss's name, marks where the
+boss will enrage before it happens, and shifts colour green → amber → red as
+the fight escalates.
+
+**A boss that died in one hit.** While wiring this up I found the Claim Jumper
+(Stage 3) was configured for a 6-HP fight but actually had **1 HP** — a single
+missing line meant it fell over instantly, and its whole 3-phase escalation
+could never trigger. Invisible before; fixed at the cause.
+
+**Tax Collectors now hunt you.** They previously walked back and forth forever
+and ignored you completely. Now they spot you, pause for half a second with a
+visible tell (so it's never a cheap ambush), then chase — jumping gaps and up
+to higher ledges to follow. If you break away for three seconds they give up
+and resume patrolling wherever they ended up. They deliberately won't attempt
+jumps they can't land, so they don't fling themselves into pits.
+
+**What was already done:** the plan for this session assumed boss phase
+behaviour needed building. It didn't — all four bosses already escalate
+through three phases with faster movement, heavier attack patterns, taunts and
+screen shake. Reported rather than rebuilt.
+
+Reviewed by Kimi K3, which found 5 real defects in the new code (including a
+crash-on-killing-blow and a second damage path that silently desynced the
+bar). All confirmed against the code and fixed. **Note:** that review was cut
+short by a length limit before it reached the Tax Collector AI, so the new
+enemy logic has not had a second pair of eyes yet.
+
+**Gates, freshly re-run after the fixes, all pass:** gdparse · export (0 script
+errors) · v1.0 campaign 5/5 · shooter 6/6 · save-compat 18/18 · icp-contract
+13/13 · security-sentinel 18/18 · can_instantiate (107 scripts + 71 scenes).
+
 ## 🪜 STAGE 2 PROGRESSION BLOCK: ROOT-CAUSED AND FIXED (2026-07-28)
 
 The reported "stuck at the ladder" bug in Crystal Caverns is fixed, verified
