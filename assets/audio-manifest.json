@@ -67,6 +67,33 @@
       "id": "fall",
       "prompt": "Devastating cartoon falling sound, a long descending whistle plummeting down then a heavy dramatic thud impact with a sad fail tone, retro arcade game over feel",
       "duration_seconds": 2.0
+    },
+    {
+      "id": "torch_throw",
+      "prompt": "Retro 16-bit videogame fire toss whoosh, a quick warm air swish with a light crackle riding on top, single fast throw motion, short, clean, no impact",
+      "duration_seconds": 0.6
+    },
+    {
+      "id": "torch_impact",
+      "prompt": "Retro 16-bit videogame flame impact sizzle, a bright crackly hiss with a soft cartoonish pop, punchy attack, fast decay, playful not violent",
+      "duration_seconds": 0.6
+    },
+    {
+      "id": "torch_fizzle",
+      "prompt": "Retro 16-bit videogame flame dying out, a soft descending hiss fading to nothing, gentle and quiet, drier and less bright than an impact sizzle, fast decay",
+      "duration_seconds": 0.6
+    },
+    {
+      "id": "tax_alert",
+      "prompt": "Retro 16-bit videogame enemy notices you, a short two-note ascending detection blip, playful and alert but not alarming, clean chiptune tone, fast decay",
+      "duration_seconds": 0.5
+    }
+  ],
+  "music": [
+    {
+      "id": "smoke_lounge",
+      "prompt": "Ambient chill lounge soundscape, low warm synth drone, soft slow pad, gentle 420-vibe atmosphere, no beat, no melody hook, seamless loopable texture, relaxed and hazy, retro 16-bit videogame ambience",
+      "duration_seconds": 20.0
     }
   ],
   "voice": [

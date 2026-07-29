@@ -2,14 +2,66 @@
 
 **Play it (primary):** https://youngstunners88.itch.io/lil-blunt-adventure
 **Mirror:** https://lil-blunt-game.vercel.app
-**Branch:** `master` (merged from `claude/setup-game-dev-environment-itWJv` via **PR #11**)
+**Branch:** `claude/setup-game-dev-environment-itWJv` (new PR open against `master`, following PR #11's merge)
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-07-29** (Torch
-> flame throw shipped, PR #11 merged to master — this milestone is closed).
+> have something current to look at. Last updated: **2026-07-29** (v1.2
+> visual/audio polish pass: new SFX, Blaze Rush art overhaul).
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+
+## 🎨 v1.2 POLISH: SFX PIPELINE + BLAZE RUSH ART OVERHAUL (2026-07-29)
+
+**Five sounds that were silently missing now play.** The torch's throw,
+impact, and fizzle sounds have existed in code since last session but had no
+audio files behind them — every torch throw played silently. The Tax
+Collector's "I see you" moment had no sound at all. And the Smoke Lounge's
+ambient track still didn't exist. Generated all five through the game's
+existing ElevenLabs pipeline (the same one that made every other sound
+effect and voice line in the game) rather than one-off scripts, so they
+follow the same "retro 16-bit, chill, never aggressive" voice as everything
+else.
+
+**The secret Blaze Rush mode got a full visual overhaul.** This is the
+Geometry-Dash-style bonus corridor hidden behind a glowing portal — it was
+built mechanically complete but visually flat: solid-color rectangles for
+everything, no atmosphere, no particles. It now has a proper layered
+background (a glowing violet haze drifting behind the run), a speed trail
+following Lil Blunt's smoke-cube form, and every obstacle recolored so you
+can read hazard-vs-safe-vs-collectible at a glance without needing to read
+the "FUD" label. A new warning bar now flashes ahead of upcoming hazards
+with enough lead time to actually react — the auto-run genre's classic
+fairness problem, solved the same way the Tax Collector's ambush was solved
+last session.
+
+**An external review caught three real bugs in the new visual code before
+they shipped**: the background's two layers were drawing in the wrong
+order, so the glowing haze was completely hidden behind the solid backdrop
+the whole time; the new warning bar was positioned hundreds of pixels off
+from the actual course (a copy-paste offset that never got adjusted to the
+real ground level); and every hazard's ember particle was simulating
+constantly regardless of whether it was on screen, which would have added
+up on levels with several hazards back to back. All three fixed and
+re-verified with a real browser playthrough.
+
+**What's still a placeholder, on purpose**: the founder portrait and the
+three protocol logos (SmokeRing, DIAMONDS, GoldMine) in the Smoke Lounge.
+The code now checks automatically for real art files at documented paths —
+drop a file in and it appears next time the game boots, no code change
+needed. Until then, the styled placeholder panels stay.
+
+**itch.io publishing — documented, not manually re-run this session.** The
+project's CI already auto-publishes to itch.io on every push to `master`
+when configured. Running it manually from this session risked using an
+unconfirmed credential against the live public game page, so the exact
+command is written up in `docs/ops/publishing.md` instead of executed
+blind.
+
+**Gates, freshly re-run, all pass:** gdparse · export (0 script errors) ·
+v1.0 campaign 5/5 · shooter 6/6 · save-compat 18/18 · icp-contract 13/13 ·
+security-sentinel 18/18 (0 blockers) · can_instantiate (108 scripts + 72
+scenes) · boss-visibility suite.
 
 ## 🔥 TORCH FLAME THROW (2026-07-29)
 

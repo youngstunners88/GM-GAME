@@ -80,6 +80,7 @@ func _physics_process(delta: float) -> void:
                 _alert_timer = alert_time
                 velocity.x = 0.0
                 _face_player()
+                AudioManager.play_sfx_at("tax_alert", global_position)
         State.ALERT:
             # Frozen tell: stand still, facing the player, before committing.
             # Kimi re-audit: this used to bail back to PATROL the instant the

@@ -283,6 +283,35 @@ func _make_cushion(diameter: float, color: Color) -> Panel:
 	p.add_theme_stylebox_override("panel", sb)
 	return p
 
+## Drop-in real-art support for the two rest-stop placeholders (logos,
+## founder mural). Deliberately NOT a generic AssetSwapper autoload — there
+## are exactly four call sites, all already known, and each one is a single
+## ResourceLoader.exists() check. A registry/swap-by-key system would be
+## more machinery than four call sites justify. If a real texture exists at
+## `path`, it replaces the placeholder's children (hidden, not freed, so
+## nothing else needs to change if the file is later removed again); if not,
+## this is a silent no-op and the placeholder keeps showing, matching every
+## other missing-asset convention already used in this codebase.
+func _swap_placeholder_texture(container: Control, path: String) -> void:
+	if not ResourceLoader.exists(path):
+		return
+	var tex: Texture2D = load(path)
+	if tex == null:
+		return
+	for child in container.get_children():
+		child.visible = false
+	var art := TextureRect.new()
+	art.texture = tex
+	art.set_anchors_preset(Control.PRESET_FULL_RECT)
+	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	art.stretch_mode = TextureRect.STRETCH_SCALE
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# "Smoke haze overlay" per the original Smoke Lounge spec — reduced
+	# opacity, slight desaturation — so real art still reads as part of this
+	# hazy room rather than a sharp foreign image pasted on top.
+	art.modulate = Color(0.88, 0.85, 0.92, 0.9)
+	container.add_child(art)
+
 ## Soft radial-falloff light pool, generated once and cached — the same
 ## "no art dependency for a one-off cosmetic effect" technique already used
 ## for the player's tool glow (src/player/lil_blunt_visual.gd _make_glow_texture).
@@ -365,6 +394,9 @@ func _setup_protocol_plinth(x: float) -> void:
 			var bolt := _make_cushion(6.0, COLOR_LIP_ACCENT)
 			bolt.position = corner
 			sign.add_child(bolt)
+		# Drop-in real art: res://src/assets/logos/<name>.png, lowercased. No
+		# code change needed to go from placeholder to real logo.
+		_swap_placeholder_texture(sign, "res://src/assets/logos/%s.png" % sign_names[i].to_lower())
 
 ## Rest stop C — Founder Mural Ledge: the destination beat near the far
 ## third, before the return portal. A long low platform with a wide mural mat
@@ -395,6 +427,9 @@ func _setup_founder_mural(x: float) -> void:
 	label.add_theme_font_size_override("font_size", 14)
 	label.add_theme_color_override("font_color", COLOR_LIP_ACCENT)
 	inner.add_child(label)
+	# Drop-in real art: res://src/assets/art/founder_portrait.png. No code
+	# change needed to go from placeholder to real portrait.
+	_swap_placeholder_texture(inner, "res://src/assets/art/founder_portrait.png")
 	# "Flickering gently" (spec 1.5) — a slow, subtle alpha breathe, not a hard
 	# strobe; a holographic mural should feel alive, not broken.
 	var flicker := mat.create_tween().set_loops()

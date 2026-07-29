@@ -26,6 +26,7 @@ ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = ROOT / "assets" / "audio-manifest.json"
 SFX_DIR = ROOT / "src" / "assets" / "sounds"
 VOICE_DIR = SFX_DIR / "voice"
+MUSIC_DIR = ROOT / "src" / "assets" / "music"
 
 API = "https://api.elevenlabs.io/v1"
 
@@ -91,6 +92,27 @@ def main() -> int:
             "text": sfx["prompt"],
             "duration_seconds": sfx["duration_seconds"],
             "prompt_influence": sfx.get("prompt_influence", 0.4),
+        }, out):
+            ok += 1
+            print(f"  -> {out.relative_to(ROOT)} ({out.stat().st_size}B)")
+        else:
+            fail += 1
+
+    for track in manifest.get("music", []):
+        out = MUSIC_DIR / f"{track['id']}.mp3"
+        if not force_all and track["id"] not in force_ids and out.exists():
+            skip += 1
+            continue
+        print(f"MUSIC  {track['id']}  ({track['duration_seconds']}s)")
+        if dry:
+            continue
+        # Same sound-generation endpoint as SFX, just a longer ambient texture
+        # and a different output directory — AudioManager.play_ambient_loop()
+        # reads from src/assets/music/, not src/assets/sounds/.
+        if post(f"{API}/sound-generation", {
+            "text": track["prompt"],
+            "duration_seconds": track["duration_seconds"],
+            "prompt_influence": track.get("prompt_influence", 0.4),
         }, out):
             ok += 1
             print(f"  -> {out.relative_to(ROOT)} ({out.stat().st_size}B)")
