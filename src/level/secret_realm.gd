@@ -40,6 +40,7 @@ var _perf_timer: float = 0.0
 
 func _ready() -> void:
 	StateMachine.change_state(StateMachine.State.PLAYING)
+	_setup_ambient_bg_shader()
 	_setup_parallax()
 	_setup_floor()
 	_setup_ground_smoke()
@@ -52,11 +53,6 @@ func _ready() -> void:
 	_setup_hud()
 	_setup_title_card()
 	AudioManager.set_reverb_profile("cave")  # roomy lounge echo
-	# NOTE: assets/music/smoke_lounge.mp3 does not exist in the repo as of this
-	# session (checked — only bg_secret_far/mid.jpg and sprite_item_bong.png
-	# were placed). play_ambient_loop degrades to silence, same convention
-	# play_playlist already uses for any missing track, so dropping the real
-	# file in later needs no code change — just the file at this exact path.
 	AudioManager.play_ambient_loop("res://src/assets/music/smoke_lounge.mp3", 0.7, 2.0)
 	# Commentary a beat after the wipe so it lands once the realm is visible.
 	get_tree().create_timer(0.8).timeout.connect(func() -> void:
@@ -72,6 +68,30 @@ func _process(delta: float) -> void:
 		_perf_timer = 1.0
 		if Engine.get_frames_per_second() < 45.0 and _smoke.amount > 40:
 			_smoke.amount = maxi(40, _smoke.amount - 20)
+
+## Screen-space "living background" layer, behind everything else (Godot
+## draws lower CanvasLayer numbers first/further back — the painted parallax
+## below sits at -20, so this must be more negative still, or it would fully
+## occlude the parallax in front of it; the same layering bug this project
+## already caught once in blaze_rush.gd's void/haze layers). A looping video
+## background was requested for this room, but the only footage supplied
+## depicted sexualized figures and aggressive drug-paraphernalia imagery that
+## violates this project's own content rules (no aggressive/stereotypical
+## drug imagery; Lil Blunt's brand stays chill, not depicted that way) — this
+## procedural shader delivers the same "always-moving atmospheric backdrop"
+## brief without that footage: continuous drifting smoke + a slow color
+## breathe, zero file size, no video decode cost on the non-threaded web export.
+func _setup_ambient_bg_shader() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = -21
+	add_child(layer)
+	var bg := ColorRect.new()
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var mat := ShaderMaterial.new()
+	mat.shader = load("res://src/assets/shaders/smoke_lounge_ambient.gdshader")
+	bg.material = mat
+	layer.add_child(bg)
 
 ## Two depth layers at very different motion scales = parallax 3D. Both
 ## layers already tile indefinitely via motion_mirroring (keyed to the

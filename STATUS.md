@@ -5,11 +5,97 @@
 **Branch:** `claude/setup-game-dev-environment-itWJv` (new PR open against `master`, following PR #11's merge)
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-07-29** (your real
-> Smoke Lounge track is in the game; art still blocked — see below).
+> have something current to look at. Last updated: **2026-07-29** (Blaze Rush
+> rebuilt longer + harder; art still blocked, video rejected — see below).
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+
+## 🏁 BLAZE RUSH REBUILT — LONGER, ACTUALLY ESCALATING, VERIFIED END-TO-END (2026-07-29)
+
+**Every course is longer and now genuinely gets harder as you run, not just
+across levels.** Two real problems, fixed separately:
+
+1. **Run speed used to be one flat number the whole way (320px/s, always).**
+   Now each level ramps from a starting speed to a faster one over the course
+   of the run itself (Level 1: 320→400, Level 2: 330→430, Level 3: 340→460).
+   Same warning-bar lead distance the whole time, but less real reaction time
+   as you go — that's what makes the back half of a run feel harder than the
+   front half, which it never did before.
+2. **Course length is up 60-65%** (Level 1: 3400→5450px, Level 2: 4000→6400px,
+   Level 3: 4600→7350px), and every course is now built in four deliberate
+   zones — warm-up (sparse, single hazards) → building (pairs, a wall) →
+   rhythm (evenly-spaced combo train) → gauntlet finale (tightest spacing,
+   least recovery time) — instead of one flat density start to finish.
+
+**On "it feels random": there was never any actual randomness** — I checked
+(grepped the whole dashmode system for every random-number function Godot
+has; zero hits). Every obstacle position was always a fixed, hand-placed
+number. What that complaint was really pointing at was pacing: hazards
+weren't organized into any readable rhythm, so it read as arbitrary even
+though it was deterministic. The zone-based redesign above is the actual fix
+— same zero-RNG data model, but now organized so the difficulty curve is
+visible rather than flat.
+
+**The "return to the main game" question — verified for real, not just read
+in the code.** I wrote a new automated test
+(`tests/blaze_rush_layout_test.gd`, part of the permanent gate suite now)
+that loads the real Blaze Rush scene, teleports the player onto the actual
+finish trigger, and lets the real physics engine fire the actual collision.
+It works: the finish sequence runs, and the engine log shows it genuinely
+calling back into the source level (`[SceneRouter] Loading
+res://src/level/level_01_smoke_realm.tscn`) exactly like the portal that
+launched it recorded. This wasn't broken before, but now there's a
+regression test making sure it stays that way.
+
+**The same new test also machine-checks every course for fairness** — no gap
+wider than the jump arc can actually clear at that point in the run's speed
+ramp, no hazard sitting inside a pit with no floor under it, and a clear
+run-up before every finish line. All three levels pass.
+
+## 🎨 ART FILE + 🎬 VIDEO: BOTH DIDN'T MAKE IT IN, DIFFERENT REASONS (2026-07-29)
+
+**The art PDF arrived empty.** I opened it — it's a genuinely blank page, no
+images, no text. Same failure mode as the Drive link and the pasted portrait
+from before: something about how it's being attached isn't carrying the
+actual content over. The one method that has worked every time this
+engagement (SL.mp3, this session's SFX) is a direct file attachment — a zip
+of the 9 Blaze Rush pieces + 4 logo/portrait images would go straight in.
+
+**The video didn't make it in on purpose — I'm not shipping it, and I want to
+be upfront about why rather than quietly dropping it.** I converted it (that
+part worked — more below) and looked at the actual frames before wiring it
+in. It shows sexualized women in skimpy outfits smoking/serving alongside a
+muscular, aggressive-looking mascot mid-blunt-hit with bongs prominently in
+frame. That's not a judgment call — it directly conflicts with two rules
+this project already has in writing: no aggressive or stereotypical drug
+imagery, and Lil Blunt stays small/cute/chill/**not aggressive**. It also
+doesn't match Lil Blunt's actual established design at all. I deleted the
+converted file rather than leave it sitting in the repo.
+
+**What the Smoke Lounge got instead**: a procedural animated shader
+background — drifting smoke + a slow color breathe, purple-grey to match the
+room's existing palette — sitting behind the painted parallax layers. It's
+the "living, always-moving backdrop" the video was meant to provide, at
+literally zero file size and no video-decode cost on the web export, and it
+has no content problem because there's nothing in it but abstract color and
+motion.
+
+**Correction on tooling**: Muapi (the API key already in this project) is an
+**image generator**, not a video tool — it can't process or "present" video
+in this pipeline. The actual blocker on video was always format (Godot 4.3
+only plays `.ogv`), and that part turned out to be solvable: I found a
+real, working ffmpeg build installable via `npm install ffmpeg-static`
+(no system ffmpeg needed), which fully resolves the MP4→OGV conversion
+problem documented as a blocker in earlier sessions. If a piece of footage
+ever does arrive that's actually usable for this game, converting it is no
+longer the hard part.
+
+**Gates, freshly re-run, all pass:** gdparse · export (0 script errors) ·
+v1.0 campaign 5/5 · shooter 6/6 · save-compat 18/18 · icp-contract 13/13 ·
+security-sentinel 18/18 (0 blockers) · can_instantiate (109 scripts + 74
+scenes, including the new Blaze Rush layout/return-flow test) · new
+Blaze Rush layout/finish-flow gate (all 3 levels).
 
 ## 🎵 YOUR SMOKE LOUNGE TRACK IS IN THE GAME (2026-07-29)
 

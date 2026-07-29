@@ -4,8 +4,13 @@ extends Node2D
 ## one tap to jump, instant restart on crash, $SMOKE tokens along the path.
 ## Launched by BlazePortal via GameManager.dash_return; returns to the
 ## source level on finish or exit.
+##
+## Run speed ramps from speed_start to speed_end across the course (data
+## from BlazeRushLayouts, per level) — same pixel telegraph lead, less real
+## reaction time as the run progresses, which combined with the layouts'
+## shrinking hazard spacing is what makes a run actually get harder as it
+## goes instead of holding one flat difficulty the whole way.
 
-const RUN_SPEED: float = 320.0
 const GRAVITY: float = 2200.0
 const JUMP_VELOCITY: float = -700.0
 const GROUND_Y: float = BlazeRushLayouts.GROUND_Y
@@ -30,6 +35,9 @@ const COLOR_COLLECTIBLE := Color(1.0, 0.95, 0.75, 1.0)
 
 var _level_index: int = 1
 var _course_length: float = 3400.0
+var _speed_start: float = 320.0
+var _speed_end: float = 320.0
+var _current_speed: float = 320.0
 var _player: CharacterBody2D
 var _player_visual: Node2D
 var _camera: Camera2D
@@ -56,6 +64,9 @@ func _ready() -> void:
 	_level_index = int(GameManager.dash_return.get("level_index", 1))
 	var layout := BlazeRushLayouts.get_layout(_level_index)
 	_course_length = layout.get("length", 3400.0)
+	_speed_start = layout.get("speed_start", 320.0)
+	_speed_end = layout.get("speed_end", _speed_start)
+	_current_speed = _speed_start
 	_build_background()
 	_build_ground(layout)
 	_build_obstacles(layout)
@@ -143,10 +154,13 @@ func _build_speed_atmosphere() -> void:
 
 	# Hazard telegraph — a thin world-space warning bar, repositioned each
 	# physics frame in _physics_process to whichever lethal hazard is next
-	# ahead of the player. At RUN_SPEED (320px/s) the player covers ~450px in
-	# ~1.4s; leading by TELEGRAPH_LEAD gives a real reaction window instead of
-	# an ambush, matching the fairness contract already used for the Tax
-	# Collector's ALERT telegraph and the shooter drones' fire warning.
+	# ahead of the player. Run speed ramps from speed_start to speed_end
+	# across the course, so the same TELEGRAPH_LEAD pixel distance buys
+	# steadily less real reaction time as the run progresses (e.g. at 320px/s
+	# it's ~1.4s of warning; by 460px/s late in level 3 that's down to ~1.0s)
+	# — this is the deliberate escalation, not an ambush, matching the
+	# fairness contract already used for the Tax Collector's ALERT telegraph
+	# and the shooter drones' fire warning.
 	# Kimi audit: this was hardcoded to world y in [-260, 0], while every other
 	# world element (floor, candles, walls, tokens, player) is anchored to
 	# GROUND_Y (500.0, from BlazeRushLayouts) — the bar rendered ~500-700px
@@ -483,7 +497,9 @@ func _physics_process(delta: float) -> void:
 	if _finished or _player == null:
 		return
 
-	_player.velocity.x = RUN_SPEED
+	var progress := clampf(_player.position.x / _course_length, 0.0, 1.0)
+	_current_speed = lerpf(_speed_start, _speed_end, progress)
+	_player.velocity.x = _current_speed
 	_player.velocity.y += GRAVITY * delta
 
 	if _tap_buffered and _player.is_on_floor():
