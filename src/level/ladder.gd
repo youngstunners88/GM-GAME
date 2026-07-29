@@ -20,8 +20,14 @@ func _ready() -> void:
 	add_to_group("ladder")
 	collision_layer = 0
 	collision_mask = 2  # player layer
+	# 44px, not the visual rungs' 24px: a forgiving grab zone. At normal fall/
+	# jump horizontal speed a 28px zone crosses in well under 150ms — reliably
+	# missable on approach even when the player is holding UP the whole time,
+	# which reads as "the ladder is a ghost object" even though detection
+	# itself was never broken. Wider hitbox than sprite is a standard
+	# platformer forgiveness trick, not a visible mismatch at this margin.
 	var rect := RectangleShape2D.new()
-	rect.size = Vector2(28, height)
+	rect.size = Vector2(44, height)
 	shape.shape = rect
 	shape.position = Vector2(0, height / 2.0)
 	body_entered.connect(_on_body_entered)

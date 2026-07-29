@@ -91,6 +91,14 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 		input_handler.is_wall_sliding = false
 		wall_sparks.emitting = false
+		# MUST return here. Without it, the rest of this function (gravity,
+		# then the floor/coyote jump check further down) still runs on the
+		# SAME frame — and since "jump" and "move_up" share the W key on the
+		# default WASD binding, the exact keypress that starts a climb also
+		# satisfies the jump check, firing a real jump that stomps the
+		# velocity=ZERO just set above. Entering climb state is a hard mode
+		# switch, same as the `if _climbing: ...; return` case above it.
+		return
 
 	# Gravity — wall slide uses reduced gravity while pressing into the wall
 	if not is_on_floor():
@@ -406,6 +414,19 @@ func _top_out_ladder() -> void:
 	_climbing = false
 	velocity = Vector2.ZERO
 	var target: Vector2 = _active_ladder.top_exit_position()
+	# Force-exit the zone bookkeeping HERE, after reading top_exit_position()
+	# but before anything else, rather than waiting for the ladder's Area2D
+	# body_exited signal. The exit point sits only ~20px above the ladder's
+	# own top, and the player's collision box (28x28) still overlaps the
+	# zone's y-range at that distance — so if the player keeps holding UP after
+	# mounting, the very next physics frame reads `_ladder_zones > 0 and
+	# move_up pressed` as still true and re-enters climb state, which
+	# immediately re-triggers this same top-out, forever: visibly a stuck
+	# flicker at the top rung instead of standing on the platform.
+	# exit_ladder_zone() still fires later when the shapes genuinely separate;
+	# clamping with maxi(0, ...) there makes this early clear harmless.
+	_ladder_zones = 0
+	_active_ladder = null
 	global_position = Vector2(target.x, target.y)
 	# Never leave the player inside geometry: if the exit point overlaps a
 	# collider, nudge upward a few steps until free. Bounded — a fully blocked

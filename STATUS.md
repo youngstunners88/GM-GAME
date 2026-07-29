@@ -11,6 +11,56 @@
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
 
+## 🪜 STAGE 2 PROGRESSION BLOCK: ROOT-CAUSED AND FIXED (2026-07-28)
+
+The reported "stuck at the ladder" bug in Crystal Caverns is fixed, verified
+end to end in a real browser — not just by reading the code. Three real bugs
+were involved, found through direct empirical testing rather than assumption
+(an earlier read of the code looked correct and would have been the wrong
+conclusion):
+
+1. **The real root cause: the ladder's landing spot was floating in mid-air.**
+   Climbing to the top of the ladder placed you 20px above the ladder's own
+   position — which works only if a platform sits directly above the ladder.
+   Neither of Stage 2's two ladders had one: the nearest platform was 65-80px
+   to the side (and, for the second ladder, also 50px too low). You could
+   climb perfectly and still fall right back into the pit, because there was
+   nothing to land on. Fixed by giving each ladder an exit point that actually
+   lands on its real nearby platform — verified by spawning at each ladder,
+   climbing to the top, and confirming the character stands solidly
+   (`on_floor=true`) and stays there.
+2. **Holding UP after mounting caused a stuck flicker** at the top rung
+   instead of standing still — the game kept re-triggering "start climbing"
+   because the exit position didn't fully clear the ladder's grab zone.
+   Fixed so mounting is a clean, one-time event.
+3. **The ladder's grab zone was narrow enough to miss in normal play** even
+   while holding UP the entire time (confirmed by direct testing) — widened
+   it to a standard "forgiving hitbox" platformer convention.
+
+Also fixed while touching this code: entering climb mode could, on the exact
+same keypress, also trigger a real jump (because W is bound to both "up" and
+"jump" by default) — a source of the reported "velocity glitches."
+
+**Found but not fixed — flagging honestly rather than guessing at a fix under
+time pressure:** while auditing the level's other gaps, one pit (the widest
+in the level, double every other one) can put the player in a stuck-against-
+a-wall state while falling. It resolves itself once you hit the level's kill
+zone and respawn, so it is not a permanent lock, but it is not clean. This is
+a different, unrelated issue from the ladder — logged as a follow-up, not
+patched blind in the same session as three other structural fixes.
+
+**Torch power-up (also reported as broken):** confirmed via screenshot that
+it really was dragging at the character's feet instead of being held — the
+sprite was centered on the hand point instead of anchored by its grip, so
+half of it hung down past the feet. Fixed to anchor at the grip, plus added a
+small cosmetic flame glow (the torch already damages nearby enemies on
+contact via the existing aura system — that part was never broken, just not
+visibly obvious). No new mechanic invented, per instruction.
+
+**Gates, freshly re-run, all pass:** gdparse · export (0 script errors) ·
+v1.0 campaign 5/5 · shooter 6/6 · save-compat 18/18 · icp-contract 13/13 ·
+security-sentinel 18/18 · can_instantiate (106 scripts + 71 scenes).
+
 ## 🔎 MULTI-MODEL AUDIT: 4 REAL ICP BUGS FOUND + FIXED (2026-07-28)
 
 Ran the first real dispatch of the new multi-model workflow (Kimi K3 auditing
