@@ -140,7 +140,10 @@ if (rates.error) {
   process.exit(3);
 }
 
-const MAX_OUTPUT = 8000;
+// Reasoning models burn this budget on hidden thinking before emitting a single
+// visible character, so 8000 (the kit's value) returned an empty answer from
+// kimi-k3 while still billing for the thinking. Overridable per call.
+const MAX_OUTPUT = parseInt(process.env.OR_MAX_TOKENS || '', 10) || 24000;
 const worstCase = (estInputTokens * rates.input + MAX_OUTPUT * rates.output) / 1e6;
 
 console.log('=== DISPATCH PLAN ===');
@@ -206,9 +209,25 @@ async function dispatch(attempt = 1) {
     process.exit(5);
   }
 
-  const content = json.choices?.[0]?.message?.content ?? '';
+  const choice = json.choices?.[0] ?? {};
+  const msg = choice.message ?? {};
+  let content = msg.content ?? '';
+
+  // Reasoning models (kimi-k3 among them) spend the output budget on hidden
+  // thinking tokens first. If max_tokens runs out mid-thought you get a
+  // perfectly successful HTTP 200 with an EMPTY content string — which reads
+  // as "the model had nothing to say" when it actually means "you did not pay
+  // for enough tokens to reach the answer". Report the real cause.
   if (!content.trim()) {
-    console.error('ERROR: empty response');
+    const reasoning = msg.reasoning ?? msg.reasoning_content ?? '';
+    console.error('ERROR: empty content.');
+    console.error(`  finish_reason: ${choice.finish_reason ?? 'unknown'}`);
+    console.error(`  completion_tokens: ${json.usage?.completion_tokens ?? 0}`);
+    console.error(`  reasoning chars: ${reasoning.length}`);
+    if (choice.finish_reason === 'length') {
+      console.error('  -> The output budget was exhausted before any visible answer.');
+      console.error(`     Raise MAX_OUTPUT (currently ${MAX_OUTPUT}) and retry.`);
+    }
     process.exit(6);
   }
 
