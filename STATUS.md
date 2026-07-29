@@ -11,6 +11,36 @@
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
 
+## 🔎 MULTI-MODEL AUDIT: 4 REAL ICP BUGS FOUND + FIXED (2026-07-28)
+
+Ran the first real dispatch of the new multi-model workflow (Kimi K3 auditing
+the three ICP canisters + the Godot bridge, with every claim independently
+verified against the actual code before anything changed — see
+`docs/model-responses/2026-07-28-kimi-VALIDATION.md`). Four bugs confirmed and
+fixed, full 8-gate battery re-run clean afterward:
+
+1. **Leaderboard kept your latest run, not your best** — replaying a level and
+   doing worse silently erased your own record. My own code comment claimed
+   the opposite of what the function did.
+2. **The anti-spam cooldown table grew forever** — every principal that ever
+   submitted added a permanent entry, scanned in full on every new submission.
+3. **A trailing newline in the price feed silently dropped the last token**,
+   every single refresh — a routine shape for real API responses.
+4. **Inconsistent error handling in the Godot↔ICP bridge** meant one failure
+   mode kept retrying (and timing out) forever instead of falling back cleanly.
+
+All four fixed, verified against the real files (not just accepted from the
+audit), gates green: gdparse · export (0 script errors) · v1.0 campaign 5/5 ·
+shooter 6/6 · save-compat 18/18 · icp-contract 13/13 · security-sentinel 18/18
+· can_instantiate 106 scripts + 71 scenes. Total dispatch spend: $0.29.
+
+**Blocker, unchanged:** the ICP write path (real score submission on-chain)
+still needs an identity-strategy decision — Rabby wallet vs. Internet
+Identity. Two-option comparison with exact files, session estimates, and risks
+for each is in `docs/architecture/identity-strategy-options.md`. This is
+currently the single thing standing between "reads work" and "the ICP
+leaderboard is real."
+
 ## 🔫 v1.2 "BLUNT FORCE" — SHOOTER PROTOTYPE IS PLAYABLE (2026-07-26)
 
 **Try it:** main menu → **NEW: BLUNT FORCE (v1.2)** (top-left button).
