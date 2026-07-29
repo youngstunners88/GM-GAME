@@ -82,3 +82,35 @@ upgrade, per the client's "give him attacking features too" direction.
 Shockwave stomp (jump+attack slam), airborne spin attack with i-frames, and
 per-level axe-ammo economy were scoped and deferred — the handler's cooldown
 structure leaves room to add them without touching `player.gd`.
+
+## Addendum (2026-07-29) — Torch flame throw
+
+A fourth move, gated on the existing single-slot `torch` power-up
+(`src/powerups/torch_tool.gd`) rather than `purple`: tapping attack while
+torch is equipped throws `src/combat/flame_projectile.gd` instead of the
+base axe. Structurally identical to axe (`Area2D`, layer 64, mask 36,
+`take_damage()` on the `"enemy"` group) but with a shallow gravity arc
+(300px/s horizontal, -50px/s initial vertical, 200px/s² gravity) instead of
+axe's flat throw, and a CPUParticles2D-driven visual (procedural radial-glow
+core + envelope + trail particles) rather than a static sprite — no flame
+sprite sheet exists, so this follows the same "no art dependency for a
+one-off cosmetic effect" pattern already used in `lil_blunt_visual.gd`'s
+tool glow and `boss_health_bar.gd`.
+
+Shares the axe's `_axe_cd` cooldown timer under a new `TORCH_COOLDOWN`
+constant rather than a second timer, since torch and purple can never both
+be active at once (single-slot power-up) — there is no scenario where both
+moves need independent cooldowns simultaneously.
+
+VFX direction: Grok 4.5 dispatch, `docs/model-responses/
+2026-07-29-grok-torch-vfx.md` — main-campaign neon-orange palette
+(`#FFF1A8`/`#FF9F1C`/`#FF4D00`), deliberately distinct from the Smoke
+Lounge's purple-grey. New SFX keys named ahead of asset delivery
+(`torch_throw`, `torch_impact`, `torch_fizzle`), matching how `throw`/`hit`/
+`fire` were named in the original cut.
+
+**Corrected an earlier prompt's assumption**: a session brief asked for this
+to extend `src/shooter/weapon_base.gd`. That class belongs to the standalone
+v1.2 shooter prototype room and its own `shooter_player.gd` — not the main
+platformer. `player.gd` stays untouched, same as the original combat system
+decision above.

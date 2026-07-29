@@ -23,7 +23,7 @@ I am building a complete Godot 4.3 2D platformer for my client **Rich**, founder
 ## Workspaces
 - `/design` — Game design, level layouts, mechanics specs, lore integration, boss design
 - `/assets` — Pixel art direction, sprite specs, audio direction, tileset definitions, animation frame guides
-- `/godot` — Godot 4.3 engine work: GDScript, scenes, nodes, physics, UI, game state
+- `/src` — Godot 4.3 engine work: GDScript, scenes, nodes, physics, UI, game state
 - `/docs` — Game documentation, marketing copy, changelogs, build instructions
 
 ## ⭐ CONTEXT-MANIFEST RULE (read before starting work)
@@ -44,7 +44,7 @@ same commit — a manifest that lies is worse than none.
 |------|-------|------|--------|
 | Design a level, mechanic, or boss | /design | CONTEXT.md | — |
 | Create art/audio specs or style guide | /assets | CONTEXT.md | pixel-art-skill |
-| Write code, build scenes, configure engine | /godot | CONTEXT.md | gdscript-skill |
+| Write code, build scenes, configure engine | /src | `.claude/context-manifests/default.md` | gdscript-skill |
 | Write docs, marketing, or changelogs | /docs | CONTEXT.md | — |
 
 ## Naming Conventions

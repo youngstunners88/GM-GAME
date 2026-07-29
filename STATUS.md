@@ -2,14 +2,71 @@
 
 **Play it (primary):** https://youngstunners88.itch.io/lil-blunt-adventure
 **Mirror:** https://lil-blunt-game.vercel.app
-**Branch:** `claude/setup-game-dev-environment-itWJv` · **PR #2**
+**Branch:** `master` (merged from `claude/setup-game-dev-environment-itWJv` via **PR #11**)
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-07-29** (Smoke
-> Lounge rebuilt + expanded, Tax Collector AI cleared by a second audit).
+> have something current to look at. Last updated: **2026-07-29** (Torch
+> flame throw shipped, PR #11 merged to master — this milestone is closed).
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+
+## 🔥 TORCH FLAME THROW (2026-07-29)
+
+**The torch power-up now fights back.** Pick up a torch and tapping attack
+throws a flame instead of the usual axe — it arcs out in a shallow lob
+(rather than flying flat like the axe, so the two moves read differently at
+a glance), trailing a warm orange glow with a smoky comet tail, and deals
+2 damage on a hit.
+
+**A prompt asked for this to be built in the wrong system.** The instructions
+that generated this session's work pointed at the standalone v1.2 "Blunt
+Force" shooter prototype's weapon code. That system belongs to a completely
+separate playable mode and was never meant to touch the main game — the real
+torch power-up already lives in the main platformer's own combat system
+(the one that already throws axes and breathes fire on Purple Weed). Built
+there instead, so the throw is actually reachable from where the torch
+power-up actually appears.
+
+**Playtesting this took three tries to get a clean read on** — not because
+the throw was broken, but because two OTHER things this project already
+built correctly kept solving the test for me. The Tax Collector's smarter
+chase AI (built two sessions ago) correctly noticed a stationary test
+player and walked into range of the torch's own passive "heat aura" (built
+long before this session), which one-shots a basic minion on contact. Twice
+in a row the test enemy died before I ever got to press the attack button —
+a good sign for those two systems, a bad sign for my test setup. Reworked
+the test scene until it isolated the throw cleanly, then confirmed on real
+screenshots: the flame launches, arcs, hits, deals exactly 2 damage, the
+enemy dies, and a second throw fires cleanly once the half-second cooldown
+clears.
+
+**Also fixed** two real bugs an external review caught in the new code
+before it shipped: every hit was accidentally playing the "no-hit fizzle"
+sound effect *in addition to* the real impact sound (backwards logic — now
+only fires when nothing was actually hit), and a rare scene-transition
+timing case could leave a stray, never-cleaned-up particle effect behind.
+
+**Two stale docs fixed while I was in there.** The repo's root `CONTEXT.md`
+still described the game's file layout from before it was built — different
+capitalization, files that don't exist anymore, none of the levels or bosses
+that shipped since. It now points at the actively-maintained routing system
+instead of re-describing a structure that will only go stale again the same
+way. `CLAUDE.md`'s own routing table had a small factual error (pointed at a
+`/godot` folder that was never actually used — the real code has always
+lived in `/src`), fixed too.
+
+**Gates, freshly re-run, all pass:** gdparse · export (0 script errors) ·
+v1.0 campaign 5/5 · shooter 6/6 · save-compat 18/18 · icp-contract 13/13 ·
+security-sentinel 18/18 (0 blockers) · can_instantiate (108 scripts + 72
+scenes) · boss-visibility suite.
+
+**PR #11 merged to master.** This closes out the milestone this whole
+multi-session push was building toward: v1.0 corrections, the v1.2 shooter
+prototype, the ICP leaderboard layer, and the full P0 gameplay pass (boss
+health bars, ladder fixes, the Smoke Lounge, smarter enemies, and now the
+torch). The full codebase is visible on the repo's default branch again, not
+hidden on a feature branch.
 
 ## 🛋️ THE SMOKE LOUNGE, REBUILT + 3X LONGER (2026-07-29)
 

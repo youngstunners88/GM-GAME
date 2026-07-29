@@ -1,0 +1,51 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/combat/flame_projectile.gd" id="1_flame"]
+[ext_resource type="Texture2D" path="res://src/assets/sprites/fx_dot.png" id="2_dot"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_flame"]
+radius = 12.0
+
+[node name="FlameProjectile" type="Area2D"]
+collision_layer = 64
+collision_mask = 36
+script = ExtResource("1_flame")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_flame")
+
+[node name="Trail" type="CPUParticles2D" parent="."]
+show_behind_parent = true
+emitting = true
+amount = 10
+lifetime = 0.4
+one_shot = false
+explosiveness = 0.0
+randomness = 0.4
+texture = ExtResource("2_dot")
+direction = Vector2(-1, 0)
+spread = 15.0
+gravity = Vector2(0, -10)
+initial_velocity_min = 10.0
+initial_velocity_max = 30.0
+scale_amount_min = 3.0
+scale_amount_max = 6.0
+color = Color(0.353, 0.4, 0.439, 0.5)
+
+[node name="Envelope" type="CPUParticles2D" parent="."]
+emitting = true
+amount = 14
+lifetime = 0.35
+one_shot = false
+explosiveness = 0.1
+randomness = 0.6
+texture = ExtResource("2_dot")
+spread = 40.0
+gravity = Vector2(0, -30)
+initial_velocity_min = 20.0
+initial_velocity_max = 50.0
+scale_amount_min = 2.0
+scale_amount_max = 4.0
+color = Color(1.0, 0.624, 0.11, 0.85)
+
+[node name="Core" type="Sprite2D" parent="."]

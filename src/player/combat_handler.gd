@@ -10,13 +10,18 @@ extends Node
 
 const AXE_SCENE := preload("res://src/combat/axe.tscn")
 const FIRE_BREATH_SCENE := preload("res://src/combat/fire_breath.tscn")
+const FLAME_SCENE := preload("res://src/combat/flame_projectile.tscn")
 
 ## Cooldowns (seconds). Fan is a touch slower than a single throw so the
 ## purple burst doesn't become a strictly-better spam; fire breath is the
-## heavy hitter and gates hardest.
+## heavy hitter and gates hardest. Torch shares the axe's cooldown slot (see
+## _axe_cd) rather than adding a second timer — torch and purple are never
+## both active (single-slot power-up), so there's no case where both moves
+## need independent cooldowns at once.
 const AXE_COOLDOWN := 0.4
 const FAN_COOLDOWN := 0.5
 const FIRE_COOLDOWN := 1.4
+const TORCH_COOLDOWN := 0.5
 ## Fan spread as a vertical velocity fraction of axe speed (outer axes drift).
 const FAN_SPREAD := 0.28
 ## How long the button must be held (purple only) before the flask ignites.
@@ -48,10 +53,13 @@ func _physics_process(delta: float) -> void:
 	var holding := Input.is_action_pressed("attack") or _mobile_down
 	_mobile_press = false
 	var purple := GameManager.has_power_up("purple")
+	var torch := GameManager.has_power_up("torch")
 
 	if pressed:
 		_held = 0.0
-		if purple:
+		if torch:
+			_throw_flame()
+		elif purple:
 			_throw_fan()
 		else:
 			_throw_axe()
@@ -83,6 +91,19 @@ func _throw_fan() -> void:
 	_spawn_axe(0.0)
 	_spawn_axe(FAN_SPREAD)
 	AudioManager.play_sfx("throw")
+
+## Torch's tap attack — a shallow-arc thrown flame, replacing the axe throw
+## for the duration of the torch power-up. Shares _axe_cd (see TORCH_COOLDOWN
+## comment above) rather than its own timer.
+func _throw_flame() -> void:
+	if _axe_cd > 0.0:
+		return
+	_axe_cd = TORCH_COOLDOWN
+	var flame := FLAME_SCENE.instantiate()
+	flame.direction = _facing()
+	flame.global_position = player.smoke_spawn.global_position
+	player.get_tree().current_scene.add_child(flame)
+	AudioManager.play_sfx("torch_throw")
 
 func _spawn_axe(spread: float) -> void:
 	var axe := AXE_SCENE.instantiate()
