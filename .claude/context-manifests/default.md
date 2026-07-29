@@ -53,4 +53,8 @@ node scripts/verify-game.mjs <url>         # v1.0 campaign, 5 gates
 node scripts/verify-shooter.mjs <url>      # v1.2 prototype, 6 gates
 godot --headless res://tests/save_compat_test.tscn   # save format
 bash scripts/security-sentinel.sh          # 18 checks, 0 blockers
+
+# icp-contract gate NEEDS a local price fixture or it reports 6 false failures:
+node scripts/icp-price-fixture.mjs &        # serves :8788/prices
+godot --headless res://tests/icp_contract_test.tscn  # 13/13 only with the above
 ```

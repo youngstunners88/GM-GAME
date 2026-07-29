@@ -100,6 +100,16 @@ def main() -> int:
 
     for track in manifest.get("music", []):
         out = MUSIC_DIR / f"{track['id']}.mp3"
+        # Client-supplied audio is NEVER regenerated — not even under
+        # --force-all / --force <id>. Without this guard, one --force-all run
+        # would silently overwrite a track the client actually authored and
+        # sent us with an AI-generated stand-in, and the only evidence would
+        # be a changed file size in a diff nobody reads. To deliberately
+        # replace a client track, delete the file first.
+        if track.get("source") == "client-supplied" and out.exists():
+            print(f"MUSIC  {track['id']}  -- SKIPPED (client-supplied, protected)")
+            skip += 1
+            continue
         if not force_all and track["id"] not in force_ids and out.exists():
             skip += 1
             continue

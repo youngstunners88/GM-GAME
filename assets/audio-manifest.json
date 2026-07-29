@@ -92,7 +92,9 @@
   "music": [
     {
       "id": "smoke_lounge",
-      "prompt": "Ambient chill lounge soundscape, low warm synth drone, soft slow pad, gentle 420-vibe atmosphere, no beat, no melody hook, seamless loopable texture, relaxed and hazy, retro 16-bit videogame ambience",
+      "source": "client-supplied",
+      "note": "REAL CLIENT TRACK — SL.mp3, delivered 2026-07-29. 65.9s, VBR MP3. This replaced a 20s ElevenLabs stand-in. The generator SKIPS client-supplied entries even under --force-all so this file can never be silently regenerated over. To intentionally replace it, delete the file first.",
+      "prompt": "UNUSED while source=client-supplied. Kept only as the fallback brief if the client track is ever withdrawn: ambient chill lounge soundscape, low warm synth drone, soft slow pad, gentle 420-vibe atmosphere, no beat, no melody hook, seamless loopable texture, relaxed and hazy",
       "duration_seconds": 20.0
     }
   ],

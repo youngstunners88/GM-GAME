@@ -5,11 +5,70 @@
 **Branch:** `claude/setup-game-dev-environment-itWJv` (new PR open against `master`, following PR #11's merge)
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-07-29** (v1.2
-> visual/audio polish pass: new SFX, Blaze Rush art overhaul).
+> have something current to look at. Last updated: **2026-07-29** (your real
+> Smoke Lounge track is in the game; art still blocked — see below).
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+
+## 🎵 YOUR SMOKE LOUNGE TRACK IS IN THE GAME (2026-07-29)
+
+**SL.mp3 is live.** Your real 1m05s track replaced the AI-generated
+placeholder I'd made as a stand-in. It loops in the Smoke Lounge, crossfades
+in over 2 seconds, and ducks (rather than cutting out) when you pause.
+
+**Two things I caught that would have shipped broken:**
+
+1. **The game was still playing my old placeholder.** Copying your file in
+   wasn't enough — Godot had the 20-second stand-in cached and kept serving
+   it even though your 1m05s file was sitting right there on disk. Nothing
+   would have looked wrong in the code or the file list; the game would just
+   have quietly played the wrong music. Caught it by asserting the actual
+   track *length* the engine reports (65.8s) instead of trusting that the
+   copy worked.
+2. **A future command could have silently destroyed your track.** The audio
+   generator had an entry telling it how to regenerate the Smoke Lounge
+   music. One `--force-all` run would have overwritten *your* track with an
+   AI one, and the only trace would have been a changed file size. Your
+   track is now marked client-supplied and the generator refuses to touch
+   it — I tested that by actually running the destructive command twice and
+   confirming the file hash was unchanged.
+
+**On the loop:** MP3 carries a little encoder padding, so there may be a
+faint tick at the ~66-second loop point. If it bothers you, sending the same
+track as `.ogg` (what every other song in the game uses) removes it
+entirely. Minor — flagging it rather than leaving you to notice it later.
+
+## 🎨 ART: STILL BLOCKED, AND HERE'S EXACTLY WHY (2026-07-29)
+
+The 13 images didn't reach me. Being specific so this doesn't loop again:
+
+- **The Google Drive folder** — I can't open Drive links at all. No browser
+  session, no Google login, no network route to a private folder. Sharing it
+  more widely won't help; there's no mechanism on my end.
+- **The founder photo** — it came through as an image *pasted into chat*,
+  not an attached file. I can look at it, but there's no file on disk for me
+  to copy into the game.
+
+**What works:** attach the files to a message, exactly the way SL.mp3
+arrived. That's precisely why the music shipped today and the art didn't. A
+single zip with all 13 is fine.
+
+**About the video** — there's a genuine technical blocker worth knowing
+before you spend time on it. Godot only plays **one** video format: Ogg
+Theora (`.ogv`). Not MP4, not MOV. I confirmed this by querying the engine
+directly rather than going from memory. Whatever's in that Drive folder is
+almost certainly MP4 and won't load as-is. `docs/ops/asset-handoff.md` has
+the exact one-line conversion command, plus a cheaper alternative (animated
+background shader) that gets most of the same atmosphere with no file-size
+or frame-rate cost. Worth a look before converting — your call which way.
+
+**The founder mural is also an open question.** You said you weren't sure
+it's necessary, and I think that instinct is worth taking seriously: the
+slot renders at roughly 190×95 pixels, so a full-body beach photo would be
+mostly unreadable there. A tight headshot, a logo, or just dropping the
+mural entirely are all reasonable. Tell me which and it's a five-minute
+change.
 
 ## 🎨 v1.2 POLISH: SFX PIPELINE + BLAZE RUSH ART OVERHAUL (2026-07-29)
 
