@@ -9,8 +9,11 @@ signal animation_finished(anim: String)
 @export var phase_thresholds: Array[int] = []
 
 var current_phase: int = 1
-var health_bar: ProgressBar
+var health_bar: BossHealthBar
 var _anim_sprite: AnimatedSprite2D
+
+## Player-facing boss name for the health bar. Overridden per boss.
+var boss_display_name: String = "BOSS"
 
 func _ready() -> void:
 	add_to_group("boss")
@@ -19,22 +22,44 @@ func _ready() -> void:
 	super()
 
 func _setup_health_bar() -> void:
-	health_bar = ProgressBar.new()
-	health_bar.size = Vector2(200, 20)
-	health_bar.position = Vector2(-100, -50)
-	health_bar.max_value = max_health
-	health_bar.value = max_health
-	health_bar.modulate = Color(1.0, 0.2, 0.2, 1.0)
+	# Screen-anchored CanvasLayer, NOT a child ProgressBar parented to the boss
+	# body. The old version rode along with the boss, so it jittered during
+	# patrol, slid off-screen when the boss did, and scaled with the boss-arena
+	# camera zoom. See src/ui/boss_health_bar.gd for the full reasoning.
+	health_bar = BossHealthBar.new()
+	# add_child() on a node already inside the tree runs the child's _ready()
+	# SYNCHRONOUSLY, so BossHealthBar._build() has completed by the time this
+	# returns and the bar can be configured immediately. An earlier version
+	# deferred these two calls on the incorrect assumption that _ready() had
+	# not run yet — which cost a one-frame blank bar at fight start.
 	add_child(health_bar)
+	health_bar.set_boss(boss_display_name, max_health, phase_thresholds)
+	health_bar.set_health(health)
 
 func take_damage(amount: int) -> void:
+	var before := health
 	super(amount)
-	_update_health_bar()
+	# super() routes through EnemyBase.take_damage, which calls die() on the
+	# killing blow — and die() frees the health bar. Touching the bar after
+	# that is a call on a freed instance, so bail out once we're dead. (Kimi
+	# audit finding, confirmed by reading EnemyBase.take_damage: it really
+	# does call die() inline.)
+	if is_dead:
+		return
+	_update_health_bar(before)
 	_check_phase_change()
 
-func _update_health_bar() -> void:
-	if health_bar:
-		health_bar.value = health
+func _update_health_bar(hp_before: int = -1) -> void:
+	# is_instance_valid, not `== null`: queue_free() leaves the variable
+	# non-null while the object is already gone, so a null check passes and
+	# the next method call errors.
+	if not is_instance_valid(health_bar):
+		return
+	health_bar.set_health(health)
+	if hp_before > health:
+		# Left-anchored drain: the pip that just went dark is the one at the
+		# new HP index (dropping 6 -> 5 darkens pip 5).
+		health_bar.flash_damage(health)
 
 func _check_phase_change() -> void:
 	if phase_thresholds.is_empty():
@@ -45,6 +70,8 @@ func _check_phase_change() -> void:
 			new_phase += 1
 	if new_phase != current_phase:
 		current_phase = new_phase
+		if health_bar:
+			health_bar.set_phase(current_phase)
 		_on_phase_changed()
 
 func _on_phase_changed() -> void:
@@ -67,8 +94,12 @@ func _on_anim_sprite_finished() -> void:
 	animation_finished.emit(_anim_sprite.animation)
 
 func die() -> void:
-	if health_bar:
+	if is_instance_valid(health_bar):
 		health_bar.queue_free()
+	# Null it explicitly. queue_free() alone leaves a dangling reference that
+	# still passes a truthy `if health_bar:` check, so later callers would
+	# invoke methods on a freed instance.
+	health_bar = null
 	super()
 
 func lock_camera_to_arena(start_x: float, end_x: float) -> void:

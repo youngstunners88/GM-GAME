@@ -36,11 +36,32 @@ func _setup_depth_routes() -> void:
 			deck.color = Color(0.55, 0.85, 1.0, 1.0)  # crystal cyan
 		EntitySpawner.spawn("coin", pos + Vector2(0, -34), self)
 	# VERTICAL SHAFTS — full-height ladders out of the two deadliest drops.
-	for lad: Array in [[Vector2(1420, 300), 350.0], [Vector2(3060, 250), 400.0]]:
-		var ladder := preload("res://src/level/ladder.tscn").instantiate()
-		ladder.global_position = lad[0]
-		ladder.height = lad[1]
-		add_child(ladder)
+	#
+	# top_exit_offset is NOT optional here (the default Vector2(0,-20) assumes
+	# a platform directly above the ladder's own X position). Neither shaft
+	# has one:
+	#   ladder 1 (x=1420) — nearest platform is Vector4(1500,300,100,20),
+	#     80px clear of the ladder's right edge, at the SAME y=300 as the
+	#     ladder top. Default offset left the top-out point floating in open
+	#     air over the pit; the player fell straight back in. This was the
+	#     reported Stage 2 progression block.
+	#   ladder 2 (x=3060) — nearest platform is Vector4(3100,300,100,20):
+	#     both an X gap (~65px) AND a 50px Y mismatch, since this ladder's
+	#     top (y=250) sits above the platform's surface (y=300).
+	# Offsets below land the player centered on each platform, y matching the
+	# "stand 20px above the surface" convention the default offset already
+	# established for the aligned case.
+	var ladder1 := preload("res://src/level/ladder.tscn").instantiate()
+	ladder1.global_position = Vector2(1420, 300)
+	ladder1.height = 350.0
+	ladder1.top_exit_offset = Vector2(130, -20)  # -> platform centre (1550, 280)
+	add_child(ladder1)
+
+	var ladder2 := preload("res://src/level/ladder.tscn").instantiate()
+	ladder2.global_position = Vector2(3060, 250)
+	ladder2.height = 400.0
+	ladder2.top_exit_offset = Vector2(90, 30)  # -> platform centre (3150, 280)
+	add_child(ladder2)
 	# EXPLORER — secret walls hugging the pit edges (lore/tips/shards).
 	for wall_pos: Vector2 in [Vector2(468, 586), Vector2(1968, 586), Vector2(3468, 586)]:
 		var wall := preload("res://src/level/secret_wall.tscn").instantiate()

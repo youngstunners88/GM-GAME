@@ -2,14 +2,293 @@
 
 **Play it (primary):** https://youngstunners88.itch.io/lil-blunt-adventure
 **Mirror:** https://lil-blunt-game.vercel.app
-**Branch:** `claude/setup-game-dev-environment-itWJv` · **PR #2**
+**Branch:** `master` (merged from `claude/setup-game-dev-environment-itWJv` via **PR #11**)
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-07-18** (Layer Shift
-> + PR #5 review fixes verified: browser boot 5/5 gates, web3 bridge loads).
+> have something current to look at. Last updated: **2026-07-29** (Torch
+> flame throw shipped, PR #11 merged to master — this milestone is closed).
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+
+## 🔥 TORCH FLAME THROW (2026-07-29)
+
+**The torch power-up now fights back.** Pick up a torch and tapping attack
+throws a flame instead of the usual axe — it arcs out in a shallow lob
+(rather than flying flat like the axe, so the two moves read differently at
+a glance), trailing a warm orange glow with a smoky comet tail, and deals
+2 damage on a hit.
+
+**A prompt asked for this to be built in the wrong system.** The instructions
+that generated this session's work pointed at the standalone v1.2 "Blunt
+Force" shooter prototype's weapon code. That system belongs to a completely
+separate playable mode and was never meant to touch the main game — the real
+torch power-up already lives in the main platformer's own combat system
+(the one that already throws axes and breathes fire on Purple Weed). Built
+there instead, so the throw is actually reachable from where the torch
+power-up actually appears.
+
+**Playtesting this took three tries to get a clean read on** — not because
+the throw was broken, but because two OTHER things this project already
+built correctly kept solving the test for me. The Tax Collector's smarter
+chase AI (built two sessions ago) correctly noticed a stationary test
+player and walked into range of the torch's own passive "heat aura" (built
+long before this session), which one-shots a basic minion on contact. Twice
+in a row the test enemy died before I ever got to press the attack button —
+a good sign for those two systems, a bad sign for my test setup. Reworked
+the test scene until it isolated the throw cleanly, then confirmed on real
+screenshots: the flame launches, arcs, hits, deals exactly 2 damage, the
+enemy dies, and a second throw fires cleanly once the half-second cooldown
+clears.
+
+**Also fixed** two real bugs an external review caught in the new code
+before it shipped: every hit was accidentally playing the "no-hit fizzle"
+sound effect *in addition to* the real impact sound (backwards logic — now
+only fires when nothing was actually hit), and a rare scene-transition
+timing case could leave a stray, never-cleaned-up particle effect behind.
+
+**Two stale docs fixed while I was in there.** The repo's root `CONTEXT.md`
+still described the game's file layout from before it was built — different
+capitalization, files that don't exist anymore, none of the levels or bosses
+that shipped since. It now points at the actively-maintained routing system
+instead of re-describing a structure that will only go stale again the same
+way. `CLAUDE.md`'s own routing table had a small factual error (pointed at a
+`/godot` folder that was never actually used — the real code has always
+lived in `/src`), fixed too.
+
+**Gates, freshly re-run, all pass:** gdparse · export (0 script errors) ·
+v1.0 campaign 5/5 · shooter 6/6 · save-compat 18/18 · icp-contract 13/13 ·
+security-sentinel 18/18 (0 blockers) · can_instantiate (108 scripts + 72
+scenes) · boss-visibility suite.
+
+**PR #11 merged to master.** This closes out the milestone this whole
+multi-session push was building toward: v1.0 corrections, the v1.2 shooter
+prototype, the ICP leaderboard layer, and the full P0 gameplay pass (boss
+health bars, ladder fixes, the Smoke Lounge, smarter enemies, and now the
+torch). The full codebase is visible on the repo's default branch again, not
+hidden on a feature branch.
+
+## 🛋️ THE SMOKE LOUNGE, REBUILT + 3X LONGER (2026-07-29)
+
+**The "Smoke Lounge" you asked for already existed — under a different
+name.** Your own protocol notes from three weeks ago (`design/
+client_protocol_updates.md`) flagged the game's existing secret bonus room —
+built as "the Chill Lounge," reached through a hidden door in Level 1 — as
+the natural place to bring the Smoke Lounge concept into the game once you
+wanted it felt by players. So instead of building a second room next to it,
+this session renamed, restyled, and dramatically expanded that same room.
+
+**What changed:**
+- **3x longer** — 1700px to 5100px. It's meant to feel like a journey to
+  unwind in, not a room you pass through in two seconds.
+- **Rising smoke from the ground** — soft purple-to-gray particles drift up
+  from the floor the whole walk, fading out before they reach head height so
+  they never hide a platform or a collectible.
+- **Lil Blunt moves slower and chiller here** — 60% walking speed, heavier
+  jumps, a touch more gravity, a more relaxed walk cycle. This is opt-in per
+  room, not a global change — every other level plays exactly as before.
+- **Three rest stops** along the walk: a bong alcove to sit at, a signage
+  plinth with a labeled spot for each of SmokeRing/DIAMONDS/GoldMine, and a
+  founder mural ledge — all placeholder-labeled and ready to take real
+  artwork the moment it's in the repo, with zero further code changes needed.
+- **Dedicated music slot wired in** — crossfades in over 2 seconds, ducks
+  (not mutes) while paused, restores on resume. **`assets/music/
+  smoke_lounge.mp3` is not in the repo yet** — the room plays silently until
+  it is. Drop the file in at that exact path and it just works.
+- **Founder portrait / protocol logo files are also not in the repo yet** —
+  same story: colored placeholder panels hold their spots until real art
+  lands.
+
+**The Tax Collector AI got its second review, and passed — after real fixes.**
+Last session's AI review got cut off by a length limit before it reached the
+new enemy chase logic. This session re-ran that review narrowly focused on
+just that file, and it found three real, if subtle, issues: a player could
+stand right at the edge of a Tax Collector's detection range and keep it
+frozen in its "I see you" telegraph forever instead of ever actually giving
+chase; the jump-over-gaps logic was tuned to attempt jumps physically wider
+than the enemy could actually clear (verified independently against the
+game's own jump physics — it really could have landed in pits it was trying
+to avoid); and giving up a chase because you'd escaped behaved slightly
+differently than giving up because you were out of view, when both should
+look the same. All three fixed.
+
+**Two more bugs found the old-fashioned way — actually playing it.** Neither
+external review runs a live build; they read code. Walking the finished room
+in a real browser (not just reading the numbers) caught a spot where the
+player would visibly stall walking into one of the new rest stops (an
+accidental invisible ledge from overlapping floor geometry), and a mural
+panel that rendered in the wrong place relative to its frame. Both fixed and
+re-confirmed with fresh screenshots.
+
+**Gates, freshly re-run after every fix, all pass:** gdparse · export (0
+script errors) · v1.0 campaign 5/5 · shooter 6/6 · save-compat 18/18 ·
+icp-contract 13/13 · security-sentinel 18/18 (0 blockers) · can_instantiate
+(107 scripts + 71 scenes) · boss-visibility suite.
+
+**What's next:** torch flame-throwing (queued, per your own session
+ordering — waited for this room and the AI review to clear first).
+
+## ⚔️ BOSS HEALTH BARS + SMARTER ENEMIES (2026-07-29)
+
+**Every boss now has a proper health bar — and one of them never had one at
+all.** The Auditor (Stage 1, the first boss anyone meets) was built on a
+different foundation than the other three, so it inherited none of the
+health-bar code. You were fighting the game's opening boss with zero feedback
+on how much damage you'd done.
+
+The new bar shows **one pip per hit point** rather than a smooth sliding bar.
+Bosses only have 6–10 HP, so a smooth bar made a solid hit look like almost
+nothing; now a pip visibly goes out each time you connect, and you can count
+exactly how many hits remain. It also shows the boss's name, marks where the
+boss will enrage before it happens, and shifts colour green → amber → red as
+the fight escalates.
+
+**A boss that died in one hit.** While wiring this up I found the Claim Jumper
+(Stage 3) was configured for a 6-HP fight but actually had **1 HP** — a single
+missing line meant it fell over instantly, and its whole 3-phase escalation
+could never trigger. Invisible before; fixed at the cause.
+
+**Tax Collectors now hunt you.** They previously walked back and forth forever
+and ignored you completely. Now they spot you, pause for half a second with a
+visible tell (so it's never a cheap ambush), then chase — jumping gaps and up
+to higher ledges to follow. If you break away for three seconds they give up
+and resume patrolling wherever they ended up. They deliberately won't attempt
+jumps they can't land, so they don't fling themselves into pits.
+
+**What was already done:** the plan for this session assumed boss phase
+behaviour needed building. It didn't — all four bosses already escalate
+through three phases with faster movement, heavier attack patterns, taunts and
+screen shake. Reported rather than rebuilt.
+
+Reviewed by Kimi K3, which found 5 real defects in the new code (including a
+crash-on-killing-blow and a second damage path that silently desynced the
+bar). All confirmed against the code and fixed. **Note:** that review was cut
+short by a length limit before it reached the Tax Collector AI, so the new
+enemy logic has not had a second pair of eyes yet.
+
+**Gates, freshly re-run after the fixes, all pass:** gdparse · export (0 script
+errors) · v1.0 campaign 5/5 · shooter 6/6 · save-compat 18/18 · icp-contract
+13/13 · security-sentinel 18/18 · can_instantiate (107 scripts + 71 scenes).
+
+## 🪜 STAGE 2 PROGRESSION BLOCK: ROOT-CAUSED AND FIXED (2026-07-28)
+
+The reported "stuck at the ladder" bug in Crystal Caverns is fixed, verified
+end to end in a real browser — not just by reading the code. Three real bugs
+were involved, found through direct empirical testing rather than assumption
+(an earlier read of the code looked correct and would have been the wrong
+conclusion):
+
+1. **The real root cause: the ladder's landing spot was floating in mid-air.**
+   Climbing to the top of the ladder placed you 20px above the ladder's own
+   position — which works only if a platform sits directly above the ladder.
+   Neither of Stage 2's two ladders had one: the nearest platform was 65-80px
+   to the side (and, for the second ladder, also 50px too low). You could
+   climb perfectly and still fall right back into the pit, because there was
+   nothing to land on. Fixed by giving each ladder an exit point that actually
+   lands on its real nearby platform — verified by spawning at each ladder,
+   climbing to the top, and confirming the character stands solidly
+   (`on_floor=true`) and stays there.
+2. **Holding UP after mounting caused a stuck flicker** at the top rung
+   instead of standing still — the game kept re-triggering "start climbing"
+   because the exit position didn't fully clear the ladder's grab zone.
+   Fixed so mounting is a clean, one-time event.
+3. **The ladder's grab zone was narrow enough to miss in normal play** even
+   while holding UP the entire time (confirmed by direct testing) — widened
+   it to a standard "forgiving hitbox" platformer convention.
+
+Also fixed while touching this code: entering climb mode could, on the exact
+same keypress, also trigger a real jump (because W is bound to both "up" and
+"jump" by default) — a source of the reported "velocity glitches."
+
+**Found but not fixed — flagging honestly rather than guessing at a fix under
+time pressure:** while auditing the level's other gaps, one pit (the widest
+in the level, double every other one) can put the player in a stuck-against-
+a-wall state while falling. It resolves itself once you hit the level's kill
+zone and respawn, so it is not a permanent lock, but it is not clean. This is
+a different, unrelated issue from the ladder — logged as a follow-up, not
+patched blind in the same session as three other structural fixes.
+
+**Torch power-up (also reported as broken):** confirmed via screenshot that
+it really was dragging at the character's feet instead of being held — the
+sprite was centered on the hand point instead of anchored by its grip, so
+half of it hung down past the feet. Fixed to anchor at the grip, plus added a
+small cosmetic flame glow (the torch already damages nearby enemies on
+contact via the existing aura system — that part was never broken, just not
+visibly obvious). No new mechanic invented, per instruction.
+
+**Gates, freshly re-run, all pass:** gdparse · export (0 script errors) ·
+v1.0 campaign 5/5 · shooter 6/6 · save-compat 18/18 · icp-contract 13/13 ·
+security-sentinel 18/18 · can_instantiate (106 scripts + 71 scenes).
+
+## 🔎 MULTI-MODEL AUDIT: 4 REAL ICP BUGS FOUND + FIXED (2026-07-28)
+
+Ran the first real dispatch of the new multi-model workflow (Kimi K3 auditing
+the three ICP canisters + the Godot bridge, with every claim independently
+verified against the actual code before anything changed — see
+`docs/model-responses/2026-07-28-kimi-VALIDATION.md`). Four bugs confirmed and
+fixed, full 8-gate battery re-run clean afterward:
+
+1. **Leaderboard kept your latest run, not your best** — replaying a level and
+   doing worse silently erased your own record. My own code comment claimed
+   the opposite of what the function did.
+2. **The anti-spam cooldown table grew forever** — every principal that ever
+   submitted added a permanent entry, scanned in full on every new submission.
+3. **A trailing newline in the price feed silently dropped the last token**,
+   every single refresh — a routine shape for real API responses.
+4. **Inconsistent error handling in the Godot↔ICP bridge** meant one failure
+   mode kept retrying (and timing out) forever instead of falling back cleanly.
+
+All four fixed, verified against the real files (not just accepted from the
+audit), gates green: gdparse · export (0 script errors) · v1.0 campaign 5/5 ·
+shooter 6/6 · save-compat 18/18 · icp-contract 13/13 · security-sentinel 18/18
+· can_instantiate 106 scripts + 71 scenes. Total dispatch spend: $0.29.
+
+**Blocker, unchanged:** the ICP write path (real score submission on-chain)
+still needs an identity-strategy decision — Rabby wallet vs. Internet
+Identity. Two-option comparison with exact files, session estimates, and risks
+for each is in `docs/architecture/identity-strategy-options.md`. This is
+currently the single thing standing between "reads work" and "the ICP
+leaderboard is real."
+
+## 🔫 v1.2 "BLUNT FORCE" — SHOOTER PROTOTYPE IS PLAYABLE (2026-07-26)
+
+**Try it:** main menu → **NEW: BLUNT FORCE (v1.2)** (top-left button).
+ESC returns to the menu. Nothing about the v1.0 campaign changed — Play
+Level 1 and Continue behave exactly as before (re-verified, 5/5 gates).
+
+**Design doc:** `docs/GDD_v1.2_BLUNT_FORCE.md` — 3 pages: Bong Blaster's four
+tiers, the cover system, the three-enemy roster, Auditor Prime's four phases,
+Levels 4–6, and how it all plugs into the existing save/progression without a
+second source of truth. Three open questions for you at the bottom.
+
+**What the prototype proves (`src/shooter/`):**
+- **Aim is decoupled from movement.** The bong tracks your mouse with a live
+  crosshair while you strafe the other way. That one change is most of what
+  separates a shooter from a platformer with a gun.
+- **Firing has weight** — cooldown, muzzle flash, recoil kick, screen shake.
+  The crosshair dims while the weapon is recovering, so you can read your own
+  fire rate without a HUD element.
+- **Cover is the verb.** Hold DOWN next to a crate to duck behind it. The
+  crate eats the incoming bolts, visibly cracks, then shatters — and the drone
+  genuinely loses line of sight (raycast, not a fake timer). Firing from cover
+  peeks you out for a beat, then re-ducks.
+- **The Tax Drone plays fair**: patrol → alert → **0.85s red telegraph** →
+  fire → reposition. It never shoots what it can't see and never shoots
+  without warning you first.
+- **Ammo comes from weed leaves**, placed away from cover on purpose — you
+  have to leave safety to restock. That's the cross-mode economy from the GDD:
+  leaves collected in the platformer become shooter ammo, so v1.0 content gets
+  *more* valuable when v1.2 lands, not obsolete.
+
+Verified in a real browser end to end: boots, reaches PLAYING, strafes, aims,
+fires, ducks, peek-fires — zero script errors
+(`scripts/verify-shooter.mjs`, screenshots captured at each beat).
+
+**Bonus fix found along the way (affects the whole game):** `web3_bridge.gd`
+had a `:=` inference from a Variant, which Godot 4.3 treats as a hard error.
+It silently failed that script at load time and cascaded into `player.gd`,
+`lil_blunt_visual.gd`, and five UI panels on every single export. The export
+log now has **zero** script errors for the first time.
 
 ## 🟢 THE STACK IS LIVE (2026-07-20)
 
@@ -47,7 +326,7 @@ button, polished onboarding copy, all audit fixes.
   matter which chain a player's wallet is on. Privacy preserved: reads are
   stateless, addresses never stored.
 - **In the game build**: "NEW TO CRYPTO?" onboarding (plain-English, exact
-  safety wording, MetaMask guide), full OFFLINE MODE (banner, cached
+  safety wording, Rabby guide), full OFFLINE MODE (banner, cached
   leaderboard, offline Oracle FAQ, queued analytics that sync on reconnect),
   @smokering25 + t.me/LilBluntdotWin on every share/button, rotating share
   taglines (Kimi refreshes weekly, you approve).

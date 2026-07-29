@@ -51,7 +51,9 @@ const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_BIN || '/opt/pw-browsers/chromium',
   // Sandboxed environments route all egress through a mandatory proxy;
   // Chromium ignores the env vars unless told explicitly.
-  ...(process.env.HTTPS_PROXY && !gameUrl.includes('localhost')
+  // (127.0.0.1 counts as local too — proxying it returns 405 and the canvas
+  // never appears, which reads as a false "game is broken".)
+  ...(process.env.HTTPS_PROXY && !/localhost|127\.0\.0\.1|\[::1\]/.test(gameUrl)
     ? { proxy: { server: process.env.HTTPS_PROXY } }
     : {}),
   // SwiftShader flags: headless Chromium has no GPU; without these WebGL (and

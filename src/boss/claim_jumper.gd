@@ -15,22 +15,36 @@ var current_state: State = State.PATROL
 var throw_timer: float = 0.0
 var direction: float = 1.0
 
-@onready var sprite: BossSprite = $ColorRect
+## Assigned, NOT redeclared: EnemyBase already owns `sprite`, and shadowing
+## it is a parse error that leaves this entire script unattached.
+@onready var boss_sprite: BossSprite = $ColorRect
 @onready var collision: CollisionShape2D = $CollisionShape2D
 @onready var hitbox: Area2D = $Hitbox
 @onready var hitbox_shape: CollisionShape2D = $Hitbox/CollisionShape2D
 
 func _ready() -> void:
 	max_health = 6
+	# MUST be set explicitly. EnemyBase.health defaults to 1, and this boss was
+	# the only one of the four that set max_health without also setting health
+	# — so the Claim Jumper had 1 HP and died to a single hit, while its bar
+	# and phase thresholds ([4,2]) were configured for a 6-HP fight that could
+	# never happen. Found while wiring the health bar; the bar would have made
+	# it obvious on screen, but it was invisible before.
+	health = max_health
 	phase_thresholds = [4, 2]
 	add_to_group("enemy")
-	sprite.color = Color(0.6, 0.4, 0.2, 1.0)
-	sprite.size = Vector2(80, 80)
+	# Boss 3 was the only boss missing this. Kept consistent with the other two
+	# so anything that queries for a live boss (arena logic, analytics, future
+	# "is a boss fight active" checks) sees all three, not two of three.
+	add_to_group("boss")
+	boss_sprite.color = Color(0.6, 0.4, 0.2, 1.0)
+	boss_sprite.size = Vector2(80, 80)
 	collision.position = Vector2(40, 40)
 	hitbox.position = Vector2(40, 40)
 	hitbox_shape.shape = collision.shape
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
+	boss_display_name = "The Claim Jumper"
 	_setup_health_bar()
 	BossVoiceSystem.set_active(self, BOSS_ID)
 	BossVoiceSystem.say(self, BOSS_ID, "intro", true)
@@ -48,7 +62,7 @@ func _physics_process(delta: float) -> void:
 			move_and_slide()
 			if is_on_wall():
 				direction *= -1.0
-				sprite.scale.x = 1.0 if direction > 0 else -1.0
+				boss_sprite.scale.x = 1.0 if direction > 0 else -1.0
 			if throw_timer <= 0:
 				_throw_dynamite()
 
@@ -61,7 +75,7 @@ func _physics_process(delta: float) -> void:
 			velocity.x = move_toward(velocity.x, 0.0, 150.0 * delta * 60.0)
 			velocity.y += 980.0 * delta
 			move_and_slide()
-			sprite.modulate = Color(1.0, 0.3, 0.3, 1.0) if fmod(throw_timer, 0.2) < 0.1 else Color(1.0, 0.1, 0.1, 1.0)
+			boss_sprite.modulate = Color(1.0, 0.3, 0.3, 1.0) if fmod(throw_timer, 0.2) < 0.1 else Color(1.0, 0.1, 0.1, 1.0)
 
 ## Accelerate patrol + taunt on phase transition (BossBase calls this).
 func _on_phase_changed() -> void:
@@ -127,23 +141,31 @@ func die() -> void:
 	var treasury_payout := 100
 	GoldMineSystem.distribute_treasury_revenue(treasury_payout)
 	GameManager.save_session()
-	if health_bar:
+	if is_instance_valid(health_bar):
 		health_bar.queue_free()
+	# Null it: queue_free() leaves a dangling non-null reference that
+	# still passes a truthy check (Kimi audit).
+	health_bar = null
 	var tween := create_tween()
 	tween.tween_property(self, "scale", Vector2.ZERO, 1.0)
 	tween.parallel().tween_property(self, "rotation", PI * 4, 1.0)
 	tween.parallel().tween_property(self, "modulate:a", 0.0, 1.0)
 	await tween.finished
 	var victory := Label.new()
-	victory.text = "GOLD RUSH WON!\nXAUT payout: %d\nFort Knox shares: %d" % [xaut_won, GoldMineSystem.fort_knox_shares]
+	# Final boss (brief G): the campaign ends here — back to the menu, which
+	# now offers every unlocked realm via Continue.
+	victory.text = "SMOKE REALM COMPLETE!\nXAUT payout: %d\nFort Knox shares: %d\nYou beat all three realms." % [xaut_won, GoldMineSystem.fort_knox_shares]
 	victory.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	victory.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	victory.position = global_position - Vector2(150, 75)
 	victory.add_theme_font_size_override("font_size", 28)
 	get_tree().current_scene.add_child(victory)
+	# Mark the whole campaign cleared (unlocks all realms for Continue/select).
+	GameManager.highest_unlocked_level = GameManager.LEVEL_SEQUENCE.size()
 	await get_tree().create_timer(3.5).timeout
-	SceneRouter.load_scene("res://src/ui/main_menu.tscn", SceneRouter.Transition.DIAMOND)
+	# Kimi audit ordering: free BEFORE the scene load.
 	queue_free()
+	SceneRouter.load_scene("res://src/ui/main_menu.tscn", SceneRouter.Transition.DIAMOND)
 
 func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("take_damage"):

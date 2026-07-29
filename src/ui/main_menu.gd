@@ -45,7 +45,12 @@ func _setup_layer_shift_buttons() -> void:
     row.position = Vector2(24, get_viewport().get_visible_rect().size.y - 390)
     add_child(row)
     var defs := [
-        ["CONNECT WALLET", _on_connect_wallet],
+        # v1.2 preview. Sits in the layer-shift column (not the main PLAY
+        # stack) so the v1.0 campaign flow is completely untouched — the
+        # prototype is opt-in, and nothing in the platformer depends on it.
+        # ASCII only — the pixel font has no ▶ glyph and renders it as tofu.
+        ["NEW: BLUNT FORCE (v1.2)", _on_shooter_prototype],
+        ["CONNECT RABBY", _on_connect_wallet],
         ["NEW TO CRYPTO?", _on_crypto_onboarding],
         ["ASK THE ORACLE", _on_oracle],
         ["LEADERBOARD", _on_leaderboard],
@@ -57,12 +62,31 @@ func _setup_layer_shift_buttons() -> void:
     for d in defs:
         var b := Button.new()
         b.text = d[0]
-        b.custom_minimum_size = Vector2(240, 36)
-        b.modulate = Color(0.85, 1.0, 0.9)
+        # Brief correction B: readable at 720p base scaled into an itch iframe.
+        # Bigger targets + font + a solid dark plate so labels read over the
+        # forest art (was 240×36 / font 14, too small to read without zoom).
+        b.custom_minimum_size = Vector2(300, 46)
+        b.add_theme_font_size_override("font_size", 20)
+        var plate := StyleBoxFlat.new()
+        plate.bg_color = Color(0.05, 0.09, 0.06, 0.82)
+        plate.set_corner_radius_all(6)
+        plate.content_margin_left = 12
+        plate.content_margin_right = 12
+        b.add_theme_stylebox_override("normal", plate)
+        var plate_hover := plate.duplicate()
+        plate_hover.bg_color = Color(0.10, 0.18, 0.12, 0.92)
+        b.add_theme_stylebox_override("hover", plate_hover)
+        b.add_theme_stylebox_override("focus", plate_hover)
+        b.modulate = Color(0.9, 1.0, 0.92)
         b.pressed.connect(d[1])
         _add_hover_glow(b)
         row.add_child(b)
-    _wallet_btn = row.get_child(0)
+        # Matched by label, not by index: adding entries above CONNECT RABBY
+        # used to silently retarget the wallet button (get_child(0)).
+        if d[0] == "CONNECT RABBY":
+            _wallet_btn = b
+    # Reposition to fit the taller button stack without clipping off-screen.
+    row.position = Vector2(24, get_viewport().get_visible_rect().size.y - 8 - defs.size() * 54)
     # Offline mode: wallet connect needs the network — disable with a tooltip
     # rather than letting it fail mysteriously. Re-enables on reconnect.
     _apply_wallet_online_state(not GameManager.offline_mode)
@@ -94,7 +118,7 @@ func _on_crypto_onboarding() -> void:
 func _on_connect_wallet() -> void:
     Web3Bridge.track("menu_connect_wallet")
     if not Web3Bridge.is_web3_available():
-        _wallet_btn.text = "NO WALLET (play web build)"
+        _wallet_btn.text = "NO WALLET FOUND"
         return
     _wallet_btn.text = "CONNECTING..."
     if Web3Bridge.wallet_address == "":
@@ -105,7 +129,7 @@ func _on_connect_wallet() -> void:
         _wallet_btn.text = "WALLET: " + Web3Bridge.short_address()
         Web3Bridge.report_event("wallet_connect")
     else:
-        _wallet_btn.text = "CONNECT WALLET"
+        _wallet_btn.text = "CONNECT RABBY"
 
 func _on_oracle() -> void:
     Web3Bridge.track("menu_oracle")
@@ -249,11 +273,23 @@ func _on_play() -> void:
     GameManager.reset_session()
     SceneRouter.load_scene("res://src/level/level_01_smoke_realm.tscn", SceneRouter.Transition.FADE)
 
+## Brief correction G: Continue resumes at the highest realm the player has
+## reached (was hardcoded to Level 1, so progress never carried).
 func _on_continue() -> void:
     AudioManager.play_sfx("powerup")
     Web3Bridge.report_event("play_start")
     GameManager.load_session()
-    SceneRouter.load_scene("res://src/level/level_01_smoke_realm.tscn", SceneRouter.Transition.FADE)
+    var scene := GameManager.level_scene(GameManager.highest_unlocked_level)
+    SceneRouter.load_scene(scene, SceneRouter.Transition.FADE)
+
+## v1.2 "Blunt Force" prototype room. Opt-in preview only — it does not touch
+## campaign save state, and it is NOT the shipping unlock path (per the GDD,
+## shooter levels unlock from campaign completion via
+## GameManager.highest_unlocked_level, never from a menu shortcut).
+func _on_shooter_prototype() -> void:
+    AudioManager.play_sfx("powerup")
+    Web3Bridge.track("shooter_prototype_open")
+    SceneRouter.load_scene("res://src/shooter/prototype_room.tscn", SceneRouter.Transition.FADE)
 
 func _on_quit() -> void:
     get_tree().quit()

@@ -1,6 +1,7 @@
 extends Area2D
-## A hidden doorway. Walk into it and Lil Blunt is whisked to the Chill Lounge
-## secret realm — with announcer commentary so the transition reads clearly.
+## A hidden doorway. Walk into it and Lil Blunt is whisked to the Smoke Lounge
+## secret realm (formerly "the Chill Lounge") — with announcer commentary so
+## the transition reads clearly.
 ## Before leaving it records where to come back to (this scene + this door's
 ## position), so the return portal drops the player right back here.
 ## Subtly telegraphed with a soft glowing pulse so it's discoverable, not invisible.

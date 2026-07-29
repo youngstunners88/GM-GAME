@@ -16,7 +16,9 @@ var current_phase_state: Phase = Phase.PATROL
 var throw_timer: float = 0.0
 var direction: float = 1.0
 
-@onready var sprite: BossSprite = $ColorRect
+## Assigned, NOT redeclared: EnemyBase already owns `sprite`, and shadowing
+## it is a parse error that leaves this entire script unattached.
+@onready var boss_sprite: BossSprite = $ColorRect
 @onready var collision: CollisionShape2D = $CollisionShape2D
 @onready var hitbox: Area2D = $Hitbox
 @onready var hitbox_shape: CollisionShape2D = $Hitbox/CollisionShape2D
@@ -27,13 +29,14 @@ func _ready() -> void:
 	phase_thresholds = [4, 2]
 	add_to_group("enemy")
 	add_to_group("boss")
-	sprite.color = Color(0.3, 0.2, 0.6, 1.0)
-	sprite.size = Vector2(96, 96)
+	boss_sprite.color = Color(0.3, 0.2, 0.6, 1.0)
+	boss_sprite.size = Vector2(96, 96)
 	collision.position = Vector2(48, 48)
 	hitbox.position = Vector2(48, 48)
 	hitbox_shape.shape = collision.shape
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
+	boss_display_name = "The Distributor"
 	_setup_health_bar()
 	BossVoiceSystem.set_active(self, BOSS_ID)
 	BossVoiceSystem.say(self, BOSS_ID, "intro", true)
@@ -51,7 +54,7 @@ func _physics_process(delta: float) -> void:
 			move_and_slide()
 			if is_on_wall():
 				direction *= -1.0
-				sprite.scale.x = 1.0 if direction > 0 else -1.0
+				boss_sprite.scale.x = 1.0 if direction > 0 else -1.0
 			if throw_timer <= 0:
 				_throw_shards()
 
@@ -61,7 +64,7 @@ func _physics_process(delta: float) -> void:
 			move_and_slide()
 			if throw_timer <= 0:
 				current_phase_state = Phase.VULNERABLE
-				sprite.color = Color(1.0, 0.2, 0.2, 1.0)
+				boss_sprite.color = Color(1.0, 0.2, 0.2, 1.0)
 				hitbox.monitorable = true
 				hitbox.monitoring = true
 
@@ -69,7 +72,7 @@ func _physics_process(delta: float) -> void:
 			velocity.x = move_toward(velocity.x, 0.0, 100.0)
 			velocity.y += 980.0 * delta
 			move_and_slide()
-			sprite.modulate = Color(1.0, 0.3, 0.3, 1.0) if fmod(throw_timer, 0.3) < 0.15 else Color(1.0, 0.1, 0.1, 1.0)
+			boss_sprite.modulate = Color(1.0, 0.3, 0.3, 1.0) if fmod(throw_timer, 0.3) < 0.15 else Color(1.0, 0.1, 0.1, 1.0)
 
 ## Aimed, slightly-homing ETH orbs. Count + spread + cadence scale with the
 ## BossBase HP phase (1/2/3): 3 orbs → 5 orbs → 5 fast orbs.
@@ -113,7 +116,7 @@ func take_damage(amount: int) -> void:
 	else:
 		current_phase_state = Phase.PATROL
 		throw_timer = 2.0
-		sprite.color = Color(0.3, 0.2, 0.6, 1.0)
+		boss_sprite.color = Color(0.3, 0.2, 0.6, 1.0)
 		hitbox.monitorable = false
 		hitbox.monitoring = false
 		_check_phase_change()
@@ -132,25 +135,28 @@ func die() -> void:
 	AudioManager.play_voice("victory")
 	ScreenShake.heavy()
 	GameManager.save_session()
-	if health_bar:
+	if is_instance_valid(health_bar):
 		health_bar.queue_free()
+	# Null it: queue_free() leaves a dangling non-null reference that
+	# still passes a truthy check (Kimi audit).
+	health_bar = null
 	var tween := create_tween()
 	tween.tween_property(self, "scale", Vector2.ZERO, 1.0)
 	tween.parallel().tween_property(self, "rotation", PI * 4, 1.0)
 	tween.parallel().tween_property(self, "modulate:a", 0.0, 1.0)
 	await tween.finished
 	var victory := Label.new()
-	victory.text = "LEVEL COMPLETE!\nDiamonds unlocked!"
+	victory.text = "LEVEL COMPLETE!\nOnward to the Gold Rush!"
 	victory.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	victory.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	victory.position = global_position - Vector2(100, 50)
 	victory.add_theme_font_size_override("font_size", 32)
 	get_tree().current_scene.add_child(victory)
 	await get_tree().create_timer(3.0).timeout
-	# Kimi audit: free BEFORE the scene load — the old order ran queue_free()
-	# on an instance the scene change had already torn down.
+	# Kimi audit: free BEFORE the scene load. Brief G: advance to Level 3
+	# (Gold Rush), not the menu — this is Level 2's boss.
 	queue_free()
-	SceneRouter.load_scene("res://src/ui/main_menu.tscn", SceneRouter.Transition.DIAMOND)
+	SceneRouter.load_scene(GameManager.next_level_scene(2), SceneRouter.Transition.DIAMOND)
 
 
 func _on_hitbox_body_entered(body: Node2D) -> void:

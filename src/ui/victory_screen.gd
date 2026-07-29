@@ -79,6 +79,9 @@ func _on_view_nft() -> void:
 	if url != "":
 		OS.shell_open(url)
 
+## Brief correction G: advance to the NEXT level instead of always dumping to
+## the menu (which made L2/L3 unreachable). Last level → menu (campaign done).
 func _on_continue() -> void:
 	get_tree().paused = false
-	SceneRouter.load_scene("res://src/ui/main_menu.tscn", SceneRouter.Transition.DIAMOND)
+	var next := GameManager.next_level_scene(_level)
+	SceneRouter.load_scene(next, SceneRouter.Transition.DIAMOND)

@@ -43,8 +43,12 @@ dist/
 .godot/
 *.translation
 export_presets.cfg
-# Uncomment if using Godot:
-# *.import
+# Godot re-import metadata. These hold machine-local UIDs and .godot/imported
+# cache hashes that change every time the engine opens the project, so they
+# churn constantly and conflict between machines. CI regenerates all of them
+# from the source assets on every run and only ever commits web/game/, so
+# nothing depends on them being in the repo.
+*.import
 
 # === Engine: Unity ===
 [Ll]ibrary/

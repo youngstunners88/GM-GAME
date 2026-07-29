@@ -10,6 +10,15 @@
     "goldmine_erc20": "0xfF5FAB9b60955dA5726A5787b9cbf2B4B298A197"
   },
   "explorer_base_url": "https://basescan.org",
+  "icp": {
+    "_note": "Layer 4. Canister IDs stay EMPTY until deployed (docs/architecture/adr-icp-integration.md). Empty = IcpBackend is inert and reads fall back to backend_base_url, so shipping these keys early changes nothing at runtime. For a LOCAL replica set scheme=http, gateway=localhost, port=4943.",
+    "leaderboard_canister_id": "",
+    "price_feed_canister_id": "",
+    "player_registry_canister_id": "",
+    "gateway": "icp0.io",
+    "scheme": "https",
+    "port": 0
+  },
   "social": {
     "telegram": "https://t.me/LilBluntdotWin",
     "discord": "",
