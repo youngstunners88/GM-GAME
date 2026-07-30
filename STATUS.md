@@ -5,11 +5,95 @@
 **Branch:** `claude/setup-game-dev-environment-itWJv` (new PR open against `master`, following PR #11's merge)
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-07-30** (Stage 2
-> audit + Claim Jumper boss fix + Gold Rush level redesign — see below).
+> have something current to look at. Last updated: **2026-07-30** (Distributor
+> boss upgraded to full parity + 3 new quality skills — see below).
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+
+## 💎 THE DISTRIBUTOR IS NO LONGER THE WEAK BOSS (2026-07-30)
+
+**The gap flagged in this morning's Stage 2 audit is closed.** The Distributor
+had real 3-phase escalation but was mechanically thinner than the other two
+bosses: he only floated and threw orbs. No movement threat, no token
+spectacle, no skill-expression moment. He sat in the middle of the difficulty
+curve where he should have been the step up from Stage 1.
+
+**He now has three things he didn't have:**
+
+1. **Hoard Gravity** — he clutches his three ETH orbs and generates a pull
+   field that drags you toward him. Deliberately *not* another dash: both
+   other bosses already charge in a straight line, so a third would have been
+   the same fight a third time. Two dashed rings collapse onto him first as a
+   wind-up, so you always get reaction time. Holding away genuinely resists it
+   (the pull is fed into your momentum, not teleporting you), and it gets
+   longer and stronger each phase.
+2. **Forced Distribution** — every orb he throws is briefly *unstable* right
+   after it spawns. Hit one in that window and it flips around and detonates
+   on him, damaging him **outside** his normal vulnerable window. Flip every
+   orb in a single volley and you trigger **POOL DRAIN**: he's stunned into an
+   extended opening. This is the fight's signature — thematically it's you
+   forcing the hoarder to distribute the payout pools he's sitting on.
+3. **Token spectacle** — three perks (crystal Prism Pools, Gold Ballast that
+   resists the pull, and Blaze-powered Haze that slows incoming orbs). All
+   three are **player-favourable only**; if you hold no tokens you fight
+   exactly the same fight, never a harder one.
+
+Plus: the vulnerable window now **shrinks each phase**, so there's less free
+damage time as everything else escalates — the same fix that made the Claim
+Jumper feel like a real final boss.
+
+**Two bugs caught in my own first draft before it went anywhere:** orbs left
+over from a previous volley could trigger a false POOL DRAIN, and uncapped
+redirect damage added up to 6 against a 7 HP boss — one good volley would have
+ended the fight outright. Both fixed before the code was reviewed.
+
+## 🧰 THREE NEW SKILLS SO THE LAST TWO SESSIONS' BUGS CAN'T RECUR
+
+Every check in these comes from a defect that **actually shipped in this
+project** and got past gdparse, a real export, and the full 8-gate battery.
+None are hypothetical — a boss with a dead state machine compiles perfectly.
+
+- **`boss-fight-auditor`** — catches unreachable boss states, missing
+  vulnerability gates, invisible hazards, wrong collision masks, phases that
+  only change a taunt, and thin-reskin gaps between bosses.
+- **`level-distinctness-checker`** — catches copy-paste levels (the Gold Rush
+  regression), missing per-level colour/audio identity, and props left
+  stranded over pits after a layout change.
+- **`multi-model-orchestrator`** — the Kimi/Grok dispatch protocol, which
+  wasn't written down anywhere before today.
+
+**It caught something on its first run.** The `level-distinctness-checker`
+immediately flagged Gold Rush and Crystal Caverns as identical — which I'd
+already fixed this morning. The real cause was that this machine's copy of the
+project had **silently rolled back four commits**, losing that fix locally.
+Recovered from the remote with nothing lost. Worth knowing: a tool written to
+catch one problem caught a different, invisible one.
+
+## 🤝 MULTI-MODEL COLLABORATION — ACTUALLY USED THIS SESSION
+
+- **Grok 4.5** designed the spectacle layer ($0.02). I took the pull-field
+  concept, the orb-redirect mechanic, and the phase cues — and **rejected
+  three of its ideas**: it assumed the boss arena has pits (it doesn't, the
+  floor is solid), and its "gold platforms" perk was a straight copy of what
+  the Stage 1 boss already does, which is exactly the reskin problem this
+  session existed to fix.
+- **Kimi K3** audited the new code. Its **first run failed and produced
+  nothing** — it spent its whole output budget thinking and emitted zero text,
+  burning about $0.36. Our dispatch tool caught this and refused to save an
+  empty file rather than pretending an audit happened. Retried with a larger
+  budget; findings will be folded in.
+
+Full hand-off record, including what was rejected and why:
+`docs/session-logs/2026-07-30-distributor-spectacle-and-skills.md`.
+
+**Verification, stated honestly**: security sentinel 18/18 with 0 blockers,
+state-reachability and damage-path checks pass on the new boss. The
+engine-level gates (script compile, save-compat, ICP, boss-visibility, real
+export) **cannot run here** — this machine has no Godot binary — so they're
+CI-deferred. And the new Distributor fight has **not been played in a
+browser yet**: the pull strength and redirect timing are tuning numbers that
+need real play to confirm. Flagging that rather than claiming it feels right.
 
 ## 🤠 STAGE 2 AUDIT + STAGE 3 UNIQUENESS + CLAIM JUMPER OVERHAUL (2026-07-30)
 
