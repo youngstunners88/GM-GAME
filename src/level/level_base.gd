@@ -99,9 +99,9 @@ func _setup_geometry() -> void:
 	# Ground + floating platforms get a dark body with a bright lip so they
 	# read as solid ledges over the painted backdrop.
 	for segment in level_data.ground_segments:
-		_create_platform(segment.x, segment.y, segment.z, segment.w, Color(0.10, 0.07, 0.14, 0.94), Color(0.45, 0.9, 0.5, 1.0))
+		_create_platform(segment.x, segment.y, segment.z, segment.w, level_data.platform_body_color, level_data.platform_lip_color)
 	for platform in level_data.platforms:
-		_create_platform(platform.x, platform.y, platform.z, platform.w, Color(0.12, 0.09, 0.18, 0.92), Color(0.55, 0.95, 0.7, 1.0))
+		_create_platform(platform.x, platform.y, platform.z, platform.w, level_data.floating_platform_body_color, level_data.floating_platform_lip_color)
 
 const BLOCK_TEX := preload("res://src/assets/sprites/tile_block-chain.png")
 

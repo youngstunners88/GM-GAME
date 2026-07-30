@@ -10,7 +10,7 @@ level_index = 3
 level_name = "GoldMine Rush"
 bounds = Vector2(4400, 720)
 kill_zone_y = 850.0
-checkpoints = Array[Vector2]([Vector2(1400, 500), Vector2(2800, 500)])
+checkpoints = Array[Vector2]([Vector2(1350, 500), Vector2(2900, 500)])
 parallax_layers = Array[Dictionary]([
 	{
 		"speed": 0.1,
@@ -27,34 +27,35 @@ parallax_layers = Array[Dictionary]([
 ])
 ground_segments = Array[Vector4]([
 	Vector4(0, 650, 400, 70),
-	Vector4(500, 650, 300, 70),
-	Vector4(900, 650, 500, 70),
-	Vector4(1500, 650, 400, 70),
-	Vector4(2000, 650, 400, 70),
-	Vector4(2500, 650, 500, 70),
-	Vector4(3100, 650, 400, 70),
+	Vector4(520, 650, 320, 70),
+	Vector4(1020, 650, 480, 70),
+	Vector4(1600, 650, 380, 70),
+	Vector4(2200, 650, 420, 70),
+	Vector4(2760, 650, 460, 70),
+	Vector4(3380, 650, 100, 70),
 	Vector4(3700, 650, 700, 70)
 ])
 platforms = Array[Vector4]([
-	Vector4(300, 500, 100, 20),
-	Vector4(600, 400, 120, 20),
-	Vector4(900, 350, 100, 20),
-	Vector4(1200, 450, 120, 20),
-	Vector4(1500, 300, 100, 20),
-	Vector4(1900, 400, 150, 20),
-	Vector4(2300, 250, 100, 20),
-	Vector4(2700, 400, 120, 20),
-	Vector4(3100, 300, 100, 20),
-	Vector4(3450, 450, 100, 20)
+	Vector4(250, 450, 120, 20),
+	Vector4(570, 350, 100, 20),
+	Vector4(870, 480, 120, 20),
+	Vector4(1180, 300, 100, 20),
+	Vector4(1480, 420, 120, 20),
+	Vector4(1780, 250, 100, 20),
+	Vector4(2100, 400, 150, 20),
+	Vector4(2420, 320, 100, 20),
+	Vector4(2740, 480, 120, 20),
+	Vector4(3060, 350, 100, 20),
+	Vector4(3380, 450, 100, 20)
 ])
 enemy_spawns = Array[Dictionary]([
 	{
 		"type": "tax_collector",
-		"pos": Vector2(700, 600)
+		"pos": Vector2(300, 600)
 	},
 	{
 		"type": "tax_collector",
-		"pos": Vector2(1500, 600)
+		"pos": Vector2(1200, 600)
 	},
 	{
 		"type": "tax_collector",
@@ -62,33 +63,57 @@ enemy_spawns = Array[Dictionary]([
 	},
 	{
 		"type": "tax_collector",
-		"pos": Vector2(3200, 600)
+		"pos": Vector2(3000, 600)
 	},
 	{
 		"type": "fly_swarm",
-		"pos": Vector2(550, 280)
+		"pos": Vector2(700, 280)
 	},
 	{
 		"type": "fly_swarm",
-		"pos": Vector2(1300, 250)
+		"pos": Vector2(1750, 250)
 	},
 	{
 		"type": "fly_swarm",
-		"pos": Vector2(2100, 200)
+		"pos": Vector2(2450, 220)
 	},
 	{
 		"type": "fly_swarm",
-		"pos": Vector2(2900, 280)
+		"pos": Vector2(3100, 280)
+	},
+	{
+		"type": "hostile_vine",
+		"pos": Vector2(350, 600)
+	},
+	{
+		"type": "hostile_vine",
+		"pos": Vector2(1350, 600)
+	},
+	{
+		"type": "hostile_vine",
+		"pos": Vector2(2900, 600)
+	},
+	{
+		"type": "rolling_boulder",
+		"pos": Vector2(900, 150)
+	},
+	{
+		"type": "rolling_boulder",
+		"pos": Vector2(2300, 150)
+	},
+	{
+		"type": "rolling_boulder",
+		"pos": Vector2(3100, 150)
 	}
 ])
 collectible_spawns = Array[Dictionary]([
 	{
 		"type": "health_pickup",
-		"pos": Vector2(1600, 480)
+		"pos": Vector2(1500, 480)
 	},
 	{
 		"type": "health_pickup",
-		"pos": Vector2(3400, 460)
+		"pos": Vector2(3300, 460)
 	},
 	{
 		"type": "gold_token",
@@ -108,55 +133,55 @@ collectible_spawns = Array[Dictionary]([
 	},
 	{
 		"type": "gold_token",
-		"pos": Vector2(1200, 300)
+		"pos": Vector2(1250, 300)
 	},
 	{
 		"type": "gold_token",
-		"pos": Vector2(1500, 350)
+		"pos": Vector2(1550, 350)
 	},
 	{
 		"type": "gold_token",
-		"pos": Vector2(1800, 250)
+		"pos": Vector2(1850, 250)
 	},
 	{
 		"type": "gold_token",
-		"pos": Vector2(2200, 350)
+		"pos": Vector2(2150, 350)
 	},
 	{
 		"type": "gold_token",
-		"pos": Vector2(2600, 300)
+		"pos": Vector2(2500, 300)
 	},
 	{
 		"type": "gold_token",
-		"pos": Vector2(3000, 350)
+		"pos": Vector2(2850, 350)
 	},
 	{
 		"type": "gold_token",
-		"pos": Vector2(3400, 250)
+		"pos": Vector2(3150, 250)
 	},
 	{
 		"type": "gold_token",
-		"pos": Vector2(3700, 400)
+		"pos": Vector2(3400, 400)
 	},
 	{
 		"type": "gold_token",
-		"pos": Vector2(3200, 600)
+		"pos": Vector2(3100, 600)
 	},
 	{
 		"type": "gold_token",
-		"pos": Vector2(2800, 600)
+		"pos": Vector2(2650, 600)
 	},
 	{
 		"type": "gold_token",
-		"pos": Vector2(2300, 600)
+		"pos": Vector2(2250, 600)
 	},
 	{
 		"type": "wbtc",
-		"pos": Vector2(800, 300)
+		"pos": Vector2(750, 300)
 	},
 	{
 		"type": "wbtc",
-		"pos": Vector2(1600, 300)
+		"pos": Vector2(1650, 300)
 	},
 	{
 		"type": "wbtc",
@@ -164,19 +189,19 @@ collectible_spawns = Array[Dictionary]([
 	},
 	{
 		"type": "wbtc",
-		"pos": Vector2(3100, 280)
+		"pos": Vector2(3050, 280)
 	},
 	{
 		"type": "wbtc",
-		"pos": Vector2(3500, 350)
+		"pos": Vector2(3450, 350)
 	},
 	{
 		"type": "wbtc",
-		"pos": Vector2(1000, 600)
+		"pos": Vector2(950, 600)
 	},
 	{
 		"type": "wbtc",
-		"pos": Vector2(1800, 600)
+		"pos": Vector2(1850, 600)
 	},
 	{
 		"type": "wbtc",
@@ -184,11 +209,11 @@ collectible_spawns = Array[Dictionary]([
 	},
 	{
 		"type": "ethereum_ring",
-		"pos": Vector2(1400, 200)
+		"pos": Vector2(1330, 200)
 	},
 	{
 		"type": "ethereum_ring",
-		"pos": Vector2(2900, 200)
+		"pos": Vector2(2780, 200)
 	},
 	{
 		"type": "coin_btc",
@@ -196,83 +221,83 @@ collectible_spawns = Array[Dictionary]([
 	},
 	{
 		"type": "coin_btc",
-		"pos": Vector2(2000, 600)
+		"pos": Vector2(1950, 600)
 	},
 	{
 		"type": "coin_btc",
-		"pos": Vector2(3300, 600)
+		"pos": Vector2(3200, 600)
 	}
 ])
 powerup_spawns = Array[Dictionary]([
 	{
 		"type": "bong",
-		"pos": Vector2(2400, 130)
+		"pos": Vector2(2350, 130)
 	},
 	{
 		"type": "weed_leaf",
-		"pos": Vector2(450, 540)
+		"pos": Vector2(420, 540)
 	},
 	{
 		"type": "magic_mushroom",
-		"pos": Vector2(1450, 540)
+		"pos": Vector2(1400, 540)
 	},
 	{
 		"type": "diamond_shard",
-		"pos": Vector2(2450, 540)
+		"pos": Vector2(2380, 540)
 	},
 	{
 		"type": "pickaxe_tool",
-		"pos": Vector2(800, 540)
+		"pos": Vector2(770, 540)
 	},
 	{
 		"type": "purple_weed",
-		"pos": Vector2(3100, 500)
+		"pos": Vector2(3050, 500)
 	}
 ])
 breakable_blocks = []
 melt_forges = Array[Dictionary]([
 	{
-		"pos": Vector2(350, 500)
+		"pos": Vector2(200, 500)
 	},
 	{
-		"pos": Vector2(800, 450)
+		"pos": Vector2(700, 450)
 	},
 	{
-		"pos": Vector2(1400, 500)
+		"pos": Vector2(1250, 500)
 	},
 	{
-		"pos": Vector2(2000, 450)
+		"pos": Vector2(2400, 450)
 	},
 	{
-		"pos": Vector2(2800, 500)
+		"pos": Vector2(3000, 500)
 	}
 ])
 mine_carts_fast = Array[Dictionary]([
 	{
-		"pos": Vector2(500, 300),
-		"move_distance": 400,
+		"pos": Vector2(150, 300),
+		"move_distance": 350,
 		"destination_wbtc": 10
 	},
 	{
-		"pos": Vector2(1600, 300),
-		"move_distance": 400,
+		"pos": Vector2(1750, 300),
+		"move_distance": 350,
 		"destination_wbtc": 10
 	},
 	{
-		"pos": Vector2(2600, 300),
-		"move_distance": 400,
+		"pos": Vector2(2900, 300),
+		"move_distance": 350,
 		"destination_wbtc": 10
 	}
 ])
 mine_carts_slow = Array[Dictionary]([
 	{
-		"pos": Vector2(600, 280),
-		"move_distance": 600,
+		"pos": Vector2(1070, 280),
+		"move_distance": 500,
 		"destination_wbtc": 50
 	},
 	{
-		"pos": Vector2(1700, 280),
-		"move_distance": 600,
+		"pos": Vector2(2810, 280),
+		"move_distance": 500,
 		"destination_wbtc": 50
 	}
 ])
@@ -281,3 +306,7 @@ boss_arena = {
 	"end_x": 4400,
 	"spawn": Vector2(4050, 500)
 }
+platform_body_color = Color(0.18, 0.09, 0.04, 0.94)
+platform_lip_color = Color(0.95, 0.75, 0.2, 1.0)
+floating_platform_body_color = Color(0.2, 0.1, 0.05, 0.92)
+floating_platform_lip_color = Color(1.0, 0.82, 0.3, 1.0)
