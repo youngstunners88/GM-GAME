@@ -21,8 +21,16 @@ func _ready() -> void:
 	var rect := RectangleShape2D.new()
 	rect.size = Vector2(width, 10)
 	shape.shape = rect
-	shape.one_way_collision = true
-	shape.one_way_collision_margin = 8.0
+	# set_deferred, NOT a direct write: these platforms are add_child()ed from
+	# the level's _setup_depth_routes() during LevelBase._ready(), which can
+	# land inside a physics flush. A direct write there throws
+	# "Can't change this state while flushing queries" from
+	# body_set_shape_as_one_way_collision — real console spam, caught in the
+	# 2026-07-30 browser playtest. It matters beyond noise: verify-game.mjs
+	# fails its gate on non-benign console errors, so this was degrading the
+	# project's own verification.
+	shape.set_deferred("one_way_collision", true)
+	shape.set_deferred("one_way_collision_margin", 8.0)
 	deck.size = Vector2(width, 8)
 	deck.position = Vector2(-width / 2.0, -5)
 	var tz := RectangleShape2D.new()

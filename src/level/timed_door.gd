@@ -36,7 +36,11 @@ func open() -> void:
 	await tween.finished
 	if not is_instance_valid(self) or not is_inside_tree():
 		return
-	_collision.disabled = true
+	# set_deferred: this line runs after `await tween.finished`, which resumes
+	# inside the frame's physics step, so a direct write throws
+	# "Can't change this state while flushing queries" from
+	# body_set_shape_disabled (2026-07-30 playtest).
+	_collision.set_deferred("disabled", true)
 	await get_tree().create_timer(open_duration).timeout
 	if not is_instance_valid(self) or not is_inside_tree():
 		return
@@ -46,7 +50,8 @@ func close() -> void:
 	if not _is_open:
 		return
 	_is_open = false
-	_collision.disabled = false
+	# Reached from open()'s awaited timer — same flush hazard as above.
+	_collision.set_deferred("disabled", false)
 	var tween := create_tween()
 	tween.tween_property(self, "scale", Vector2.ONE, 0.5)
 	tween.parallel().tween_property(_visual, "modulate:a", 1.0, 0.5)

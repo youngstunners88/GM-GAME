@@ -110,6 +110,48 @@ CI-deferred. And the new Distributor fight has **not been played in a
 browser yet**: the pull strength and redirect timing are tuning numbers that
 need real play to confirm. Flagging that rather than claiming it feels right.
 
+## 🔴 THE DISTRIBUTOR WAS COMPLETELY BROKEN — CAUGHT AND FIXED (2026-07-30, later)
+
+**The boss I rebuilt over the last two sessions did not work at all.** Not
+"felt wrong" — the script had a syntax error that stopped it loading, so the
+Distributor had no AI, no attacks, no states. It would have stood there doing
+nothing. It has been in that state on the working branch since the rebuild
+landed.
+
+**Why it went unnoticed for two sessions:** this sandbox never had the actual
+Godot engine installed, so every check was code-reading rather than running
+the game. I flagged that limitation each time. This session I downloaded and
+security-verified a real Godot 4.3, and it found the problem in about ninety
+seconds. Two separate AI code reviews had read that exact function and missed
+it, because it's an engine-specific typing rule rather than a logic mistake.
+
+**A second, equally invisible bug in the same boss.** Its signature move — a
+gravity field that drags you toward him — was moving the player **zero
+pixels**. Twice. Last session I "fixed" a weak pull by making the number eight
+times bigger; that was the wrong diagnosis. The real problem was the order the
+game updates things in, which no amount of number-tuning could fix. Rewritten
+to physically move the player, and now **measured** at ~109 pixels per second
+of drag against a 200 px/s walk speed — you feel it, and you can walk out of
+it. That's the intended design, verified rather than assumed.
+
+**New permanent safety net.** There's now an automated test that spawns the
+real boss and the real player and runs actual game physics, checking that the
+boss's script loaded, that all five of its attack states really happen, that
+the damage window shrinks as the fight escalates, and that the pull genuinely
+moves the player. Any future regression of this kind fails loudly instead of
+shipping silently.
+
+**Also fixed:** four sources of runtime error spam (harmless-looking, but they
+were making the project's own automated browser check unreliable). All three
+levels now run clean.
+
+**Stated plainly — what is NOT done.** The Distributor fight still has not been
+played start-to-finish by a person. I built a browser robot that got as far as
+Level 1's boss but couldn't beat it to reach Level 2. And one small burst of
+those runtime errors still appears when a level loads in the browser; I tried a
+fix, it didn't work, and I removed it rather than leave something in the code
+that claims to fix a problem it doesn't. Both are written up for next session.
+
 ## 🤠 STAGE 2 AUDIT + STAGE 3 UNIQUENESS + CLAIM JUMPER OVERHAUL (2026-07-30)
 
 **Stage 2 (Crystal Caverns) audit verdict: DONE, one gap flagged.** End-to-end

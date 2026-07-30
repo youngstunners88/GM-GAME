@@ -24,6 +24,12 @@ func _process(delta: float) -> void:
     elif not is_extended and timer >= retract_time:
         extend()
 
+## Physics state is written with set_deferred throughout. retract() is called
+## from _ready() (during level build) and both are called from _process(),
+## either of which can coincide with a physics flush — a direct write then
+## throws "Can't change this state while flushing queries" from
+## area_set_shape_disabled. Caught in the 2026-07-30 browser playtest; it was
+## spamming the console on every level containing a vine.
 func extend() -> void:
     is_extended = true
     timer = 0.0
@@ -31,9 +37,9 @@ func extend() -> void:
     var tween := create_tween().set_parallel()
     tween.tween_property(vine_body, "scale", Vector2(1.0, 1.0), 0.3)
     tween.tween_property(vine_body, "position:y", -23.0, 0.3)
-    hitbox_shape.disabled = false
-    hitbox.monitorable = true
-    hitbox.monitoring = true
+    hitbox_shape.set_deferred("disabled", false)
+    hitbox.set_deferred("monitorable", true)
+    hitbox.set_deferred("monitoring", true)
 
 func retract() -> void:
     is_extended = false
@@ -41,9 +47,9 @@ func retract() -> void:
     var tween := create_tween().set_parallel()
     tween.tween_property(vine_body, "scale", Vector2(0.35, 0.35), 0.3)
     tween.tween_property(vine_body, "position:y", -8.0, 0.3)
-    hitbox_shape.disabled = true
-    hitbox.monitorable = false
-    hitbox.monitoring = false
+    hitbox_shape.set_deferred("disabled", true)
+    hitbox.set_deferred("monitorable", false)
+    hitbox.set_deferred("monitoring", false)
 
 func _on_hitbox_body_entered(body: Node2D) -> void:
     if body.is_in_group("player") and body.has_method("take_damage"):

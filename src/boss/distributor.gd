@@ -32,16 +32,27 @@ enum Phase { PATROL, GRAVITY_TELL, HOARD_GRAVITY, SHARD_THROW, VULNERABLE }
 @export var patrol_speed: float = 80.0
 @export var throw_cooldown: float = 2.0
 @export var vulnerable_time: float = 1.8
-## Radial pull strength (px/s of velocity injected per second at the centre).
+## How fast the field drags the player, in px/s at the centre of the field.
 ##
-## This MUST exceed the player's own deceleration or the field does nothing.
-## The first version used 520, and player.gd has `ground_decel = 2800`: a
-## standing player's own stopping force beat the pull 5.4-to-1, so the field
-## was pure decoration. Kimi's audit asked whether player accel negated the
-## pull; checking the real numbers showed it did. 4200 clears ground_decel
-## (2800) at close range and air_decel (900) across the whole radius, which
-## also makes being airborne inside the field meaningfully more dangerous.
-@export var pull_strength: float = 4200.0
+## THIS IS A DISPLACEMENT SPEED, NOT A VELOCITY INJECTION — and that
+## distinction is the whole mechanic. Two earlier versions wrote
+## `player.velocity.x += strength * delta` and BOTH moved the player exactly
+## 0.0 px, measured in tests/distributor_behaviour_test.gd:
+##
+##   1. strength 520 lost to the player's own `ground_decel = 2800`.
+##   2. strength 4200 "won" that arithmetic and still moved nothing, because
+##      the real problem is node processing order: the boss runs its
+##      _physics_process AFTER the player has already called move_and_slide(),
+##      so the injected velocity is wiped by the player's deceleration on the
+##      next frame before it is ever used to move anything. No strength value
+##      fixes that — it is structural.
+##
+## Displacing with move_and_collide() sidesteps both: it moves the body now,
+## it respects collision (no tunnelling through the arena walls), and it is
+## immune to processing order. Player walk_speed is 200 px/s, so at 130 the
+## pull is clearly felt but can be out-run by holding away — which is exactly
+## the counter-play the telegraph is promising.
+@export var pull_speed: float = 130.0
 @export var pull_radius: float = 420.0
 ## Pull at the FIELD EDGE as a fraction of full strength. Not 0.0: a linear
 ## falloff to zero meant the outer half of the radius was below ground_decel
@@ -217,32 +228,40 @@ func _begin_hoard_gravity() -> void:
 ## move_toward() then fights it every frame, so holding "away" genuinely
 ## resists the pull instead of the boss overriding player input outright.
 func _apply_pull(delta: float) -> void:
-	var p := get_tree().get_first_node_in_group("player")
-	if p == null or not (p is CharacterBody2D):
+	# Cast to a CONCRETE type immediately. get_first_node_in_group() is typed
+	# `Node`, so `p.global_position` is a Variant and `var x := <Variant>` is a
+	# HARD PARSE ERROR in Godot 4.3 — it does not warn, it refuses to load the
+	# whole script, leaving the boss with no behaviour at all. That is the exact
+	# silent failure that once shipped bosses 2 and 3 with no AI. `gdparse`
+	# passes this file happily; only a real engine load catches it.
+	var body := get_tree().get_first_node_in_group("player") as CharacterBody2D
+	if body == null:
 		return
 	# Never drag a dead or respawning player — the field would fight the
 	# respawn placement and could yank them straight back off a ledge.
 	if StateMachine.is_dead():
 		return
 	var centre := global_position + Vector2(48, 48)
-	var to_centre := p.global_position.direction_to(centre)
-	var dist := p.global_position.distance_to(centre)
+	var to_centre := body.global_position.direction_to(centre)
+	var dist := body.global_position.distance_to(centre)
 	if dist > pull_radius or dist < 8.0:
 		return
 	# Falls off with distance so the gradient is learnable, but never below
 	# PULL_EDGE_FRACTION — see that constant for why a falloff to zero made
 	# most of the drawn field inert.
 	var falloff := lerpf(PULL_EDGE_FRACTION, 1.0, 1.0 - clampf(dist / pull_radius, 0.0, 1.0))
-	var strength := pull_strength * falloff * (1.0 + 0.25 * (current_phase - 1))
+	var speed := pull_speed * falloff * (1.0 + 0.25 * (current_phase - 1))
 	# GOLD "Gold Ballast": holders are heavier and resist the drag. Purely
-	# player-favourable — non-holders get the shipped strength, not more.
+	# player-favourable — non-holders get the shipped speed, not more.
 	if _has_gold:
-		strength *= 0.6
-	var body := p as CharacterBody2D
-	body.velocity.x += to_centre.x * strength * delta
-	# Vertical pull is gentler; a strong up-pull fights gravity in a way that
+		speed *= 0.6
+	# Vertical drag is gentler: a strong up-pull fights gravity in a way that
 	# reads as a bug rather than a threat.
-	body.velocity.y += to_centre.y * strength * 0.35 * delta
+	var step := Vector2(to_centre.x, to_centre.y * 0.35) * speed * delta
+	# move_and_collide, not a velocity write — see pull_speed's comment. This
+	# also means the arena walls and floor stop the drag instead of the player
+	# being pulled through geometry.
+	body.move_and_collide(step)
 
 # --- SHARD THROW / FORCED DISTRIBUTION -----------------------------------
 

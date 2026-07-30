@@ -157,3 +157,9 @@ stress-final.png
 gameplay.png
 game-verify*.png
 game-verify*.json
+
+# Browser playtest artifacts (screenshots + JSON), regenerated on demand
+playtest-shots/
+playtest-run2/
+playtest-fresh*/
+playtest-distributor.json

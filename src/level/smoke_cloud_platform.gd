@@ -13,8 +13,13 @@ var moving_forward: bool = true
 func _ready() -> void:
     start_pos = position
     collision.position = Vector2(50, 10)
-    # One-way collision so player can jump through from below
-    collision.one_way_collision = true
+    # One-way collision so player can jump through from below.
+    # set_deferred: these platforms are spawned during level build, which can
+    # land inside a physics flush — a direct write throws "Can't change this
+    # state while flushing queries" from body_set_shape_as_one_way_collision.
+    # Level 1 is full of them, so this was a large share of the console spam
+    # observed in the 2026-07-30 browser playtest.
+    collision.set_deferred("one_way_collision", true)
 
 func _physics_process(delta: float) -> void:
     var target := start_pos + (Vector2(0, move_distance) if vertical else Vector2(move_distance, 0))
