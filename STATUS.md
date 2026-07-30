@@ -5,8 +5,9 @@
 **Branch:** `claude/setup-game-dev-environment-itWJv` (new PR open against `master`, following PR #11's merge)
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-07-29** (Blaze Rush
-> rebuilt longer + harder; art still blocked, video rejected — see below).
+> have something current to look at. Last updated: **2026-07-30** (new
+> `gate-battery-runner` skill on top of the Blaze Rush rebuild + video
+> decision below).
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
@@ -172,6 +173,20 @@ slot renders at roughly 190×95 pixels, so a full-body beach photo would be
 mostly unreadable there. A tight headshot, a logo, or just dropping the
 mural entirely are all reasonable. Tell me which and it's a five-minute
 change.
+
+## 🧰 NEW SKILL: GATE BATTERY RUNNER (2026-07-30)
+
+Every session log for this project has ended with the same hand-typed line —
+`gdparse/can_instantiate (N scripts) · export (0 errors) · v1.0 5/5 · shooter
+6/6 · save-compat 18/18 · icp-contract 13/13 · security-sentinel 18/18 ·
+boss-visibility ALL PASS`. That line was always assembled by re-running eight
+separate commands from memory. `.claude/skills/gate-battery-runner/SKILL.md`
+turns it into a repeatable checklist: the exact command for each of the 8
+gates, its pass criteria, and — importantly — which gates need a local Godot
+binary that this sandbox doesn't have (so they get reported as CI-deferred
+instead of silently skipped or false-passed). Founder session directive: the
+Smoke Lounge video stays deferred; this skill is the only change this
+session.
 
 ## 🎨 v1.2 POLISH: SFX PIPELINE + BLAZE RUSH ART OVERHAUL (2026-07-29)
 

@@ -747,7 +747,7 @@ fail-on=high | total=18 pass=18 fail=0 blockers=0
 | CI-003 | medium | PASS | .gitleaks.toml allowlist stays narrow |
 | CI-004 | low | PASS | .gitleaksignore fingerprint count reasonable |
 
-## 2026-07-29 — Security Sentinel automated run
+## 2026-07-30 — Security Sentinel automated run
 
 fail-on=high | total=18 pass=18 fail=0 blockers=0
 
