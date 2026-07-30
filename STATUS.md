@@ -110,6 +110,48 @@ CI-deferred. And the new Distributor fight has **not been played in a
 browser yet**: the pull strength and redirect timing are tuning numbers that
 need real play to confirm. Flagging that rather than claiming it feels right.
 
+## 🔴 NO BOSS IN THE GAME COULD BE REACHED — FIXED (2026-07-30, evening)
+
+**Every boss arena was walled off from the player.** The game built a solid
+wall across the corridor leading into each boss arena at level start. You
+walked up to it and stopped. The boss spawned on the other side, its health
+bar appeared at the top of the screen, and you could never touch it.
+
+This is why the fights have felt broken. It also explains the automated test
+robot sitting in front of the Auditor for over six minutes without landing a
+single hit — it wasn't bad at the game, it was standing behind a wall.
+
+The wall's actual job is to stop you *running away* mid-fight. It now goes up
+**behind** you once you're inside, and comes back down if you die and respawn
+outside — otherwise you'd be locked out of a fight you couldn't finish or
+leave. Measured before and after: the player now walks straight in on all
+three levels.
+
+**A second, separate blocker on Levels 1 and 2.** The invisible trigger that
+starts each boss fight was floating in the air well above the floor, so
+walking into the arena never started the fight — it only triggered if you
+happened to jump high enough at the right spot. Level 3 was built correctly,
+which is why only that one behaved. Both now reach the ground.
+
+**The Distributor has now actually been fought.** With those two fixes plus a
+temporary shortcut (removed before saving), the fight ran in a real browser
+for the first time: its 7-segment health bar appeared, **the player damaged it
+(7 → 6)**, and **it killed the player**. The boss works.
+
+**Still honest about what's unproven:** the boss was never taken below 6 of 7,
+and the gravity-pull effect was never captured on camera because the player
+respawns far away after dying. How the fight *feels* — the timing of the orb
+counter-attack, the pacing against the other two bosses — is still unvalidated.
+
+**New permanent test** that walks a player at every boss arena and fails if
+they can't get in, so this exact class of bug can't come back silently.
+
+**A note on the outside review:** the second AI reviewer was down all evening
+(three failed attempts, no charge). The audit request is saved and ready to
+re-run. Writing it, though, is what made me ask "what could go wrong with this
+wall?" — and that question found the respawn lock-out bug in my own fix, which
+I then repaired. Logged as still needing a second pair of eyes.
+
 ## 🔴 THE DISTRIBUTOR WAS COMPLETELY BROKEN — CAUGHT AND FIXED (2026-07-30, later)
 
 **The boss I rebuilt over the last two sessions did not work at all.** Not

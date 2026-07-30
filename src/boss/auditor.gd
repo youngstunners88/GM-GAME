@@ -138,8 +138,8 @@ func _physics_process(delta: float) -> void:
 				state_timer = vulnerable_time
 				current_state = State.VULNERABLE
 				sprite.color = Color(1.0, 0.2, 0.2, 1.0)
-				hitbox.monitorable = true
-				hitbox.monitoring = true
+				hitbox.set_deferred("monitorable", true)
+				hitbox.set_deferred("monitoring", true)
 
 		State.VULNERABLE:
 			velocity.x = move_toward(velocity.x, 0.0, 200.0)
@@ -151,8 +151,8 @@ func _physics_process(delta: float) -> void:
 				sprite.color = Color(0.4, 0.25, 0.15, 1.0)
 				current_state = State.PATROL
 				state_timer = maxf(1.4, 3.0 - phase * 0.5)
-				hitbox.monitorable = false
-				hitbox.monitoring = false
+				hitbox.set_deferred("monitorable", false)
+				hitbox.set_deferred("monitoring", false)
 
 ## Aimed clipboard(s) — one shot in P1, two in P2, a triple fan in P3.
 func _throw_clipboard() -> void:
@@ -191,8 +191,8 @@ func take_damage(amount: int) -> void:
 	current_state = State.PATROL
 	state_timer = maxf(1.4, 2.0 - phase * 0.3)
 	sprite.color = Color(0.4, 0.25, 0.15, 1.0)
-	hitbox.monitorable = false
-	hitbox.monitoring = false
+	hitbox.set_deferred("monitorable", false)
+	hitbox.set_deferred("monitoring", false)
 
 ## Recompute phase from HP ratio; on a new phase, escalate + taunt.
 func _update_phase() -> void:
@@ -231,8 +231,8 @@ func die() -> void:
 	BossVoiceSystem.clear_active()
 	GameManager.add_score(500)
 	ScreenShake.shake(0.5, 8.0)
-	hitbox.monitorable = false
-	hitbox.monitoring = false
+	hitbox.set_deferred("monitorable", false)
+	hitbox.set_deferred("monitoring", false)
 	StateMachine.change_state(StateMachine.State.LEVEL_COMPLETE)
 	# AgentMail milestone hook: first Auditor kill triggers the victory email
 	# server-side (idempotent there — safe to report every kill).

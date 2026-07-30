@@ -66,6 +66,9 @@ func _setup_smoke_platforms() -> void:
 func _on_boss_trigger(body: Node2D) -> void:
     if body.is_in_group("player") and not _boss_arena_active:
         _boss_arena_active = true
+        # Raise the entry wall behind the player once they're actually inside.
+        # It is NOT built at level load — doing so sealed the boss off entirely.
+        arm_boss_arena_seal()
         set_boss_background()
         ScreenShake.zoom_to(0.85, 0.5)
         AudioManager.set_reverb_profile("boss")

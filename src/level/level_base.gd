@@ -204,18 +204,70 @@ func _setup_entities() -> void:
 		EntitySpawner.spawn("mine_cart", cart_data.get("pos", Vector2.ZERO), self,
 			{"cart_type": MineCart.CartType.SLOW})
 
+## Only the FAR wall exists from level start.
+##
+## The entry wall used to be built here too, and it made **every boss in the
+## game unreachable**: a 600px-tall wall at `boss_arena.start_x` is directly
+## across the approach, so the player walked into it and stopped. The boss
+## still spawned and its health bar still appeared (the trigger Area2D is
+## 200px wide and reaches 100px west of the wall), which is why this read as
+## "the boss ignores me" rather than "I am blocked" — and why an automated
+## driver sat at the Auditor for 380 seconds without landing a hit.
+##
+## The wall's real job is to stop the player FLEEING mid-fight, so it is now
+## raised behind them once they are actually inside (see _process below).
+## Proven by tests/boss_arena_reachable_test.gd.
 func _setup_boss_arena() -> void:
 	if level_data.boss_arena.is_empty():
 		return
-	# Create boss arena walls
-	var start_x: float = level_data.boss_arena.get("start_x", 0.0)
 	var end_x: float = level_data.boss_arena.get("end_x", 0.0)
-	if start_x > 0:
-		_create_wall(start_x, 400, 20, 600)
 	if end_x > 0:
 		_create_wall(end_x, 400, 20, 600)
 
-func _create_wall(x: float, y: float, w: float, h: float) -> void:
+## Arm the entry wall. Called from each level's _on_boss_trigger; the wall is
+## not built until the player has genuinely crossed into the arena, because
+## the trigger fires while they are still WEST of start_x.
+func arm_boss_arena_seal() -> void:
+	if level_data.boss_arena.is_empty():
+		return
+	var start_x: float = level_data.boss_arena.get("start_x", 0.0)
+	if start_x > 0.0:
+		_seal_x = start_x
+		set_process(true)
+
+## -1 = seal not armed. Set by arm_boss_arena_seal().
+var _seal_x: float = -1.0
+## The entry wall, once raised. Kept so it can be taken back DOWN — see below.
+var _seal_wall: StaticBody2D = null
+
+## Raises the entry wall behind the player, and lowers it again if they end up
+## back outside.
+##
+## The lowering half is not optional. Checkpoints sit west of every arena, so a
+## player who dies mid-fight respawns OUTSIDE a wall that is already up — and
+## with the boss still alive, they would be permanently locked out of a fight
+## they cannot finish and cannot leave. That is a soft-lock, and it is one this
+## seal would have introduced.
+func _process(_delta: float) -> void:
+	if _seal_x < 0.0:
+		set_process(false)
+		return
+	var p := get_tree().get_first_node_in_group("player") as Node2D
+	if p == null:
+		return
+	if _seal_wall == null:
+		# 60px of clearance so the wall never spawns on top of the player.
+		if p.global_position.x > _seal_x + 60.0:
+			_seal_wall = _create_wall(_seal_x, 400, 20, 600)
+	elif p.global_position.x < _seal_x - 40.0:
+		# Player is back outside (death + respawn at a western checkpoint):
+		# drop the wall so they can walk in and re-engage.
+		_seal_wall.queue_free()
+		_seal_wall = null
+
+## Returns the wall so the boss-arena seal can take it back down again
+## (existing callers ignore the return value).
+func _create_wall(x: float, y: float, w: float, h: float) -> StaticBody2D:
 	var wall := StaticBody2D.new()
 	wall.position = Vector2(x, y)
 	var col := CollisionShape2D.new()
@@ -224,6 +276,7 @@ func _create_wall(x: float, y: float, w: float, h: float) -> void:
 	col.shape = shape
 	wall.add_child(col)
 	add_child(wall)
+	return wall
 
 func _spawn_player() -> void:
 	var player := preload("res://src/player/player.tscn").instantiate()

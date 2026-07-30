@@ -6,7 +6,7 @@
 [ext_resource type="Resource" path="res://src/resources/level_02_data.tres" id="4_level02_data"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_trigger"]
-size = Vector2(200, 200)
+size = Vector2(200, 800)
 
 [node name="Level02CrystalCaverns" type="Node2D"]
 script = ExtResource("1_lvl")

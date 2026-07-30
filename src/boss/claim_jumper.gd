@@ -118,8 +118,8 @@ func _physics_process(delta: float) -> void:
 				current_state = State.PATROL
 				direction = -direction
 				throw_timer = maxf(0.9, throw_cooldown - 0.3 * (current_phase - 1))
-				hitbox.monitorable = false
-				hitbox.monitoring = false
+				hitbox.set_deferred("monitorable", false)
+				hitbox.set_deferred("monitoring", false)
 
 func _begin_tell() -> void:
 	current_state = State.TELL
@@ -147,8 +147,8 @@ func _begin_vulnerable() -> void:
 	# shrinks instead of staying flat while everything else gets harder.
 	state_timer = maxf(0.7, vulnerable_time - 0.3 * (current_phase - 1))
 	boss_sprite.color = Color(1.0, 0.2, 0.2, 1.0)
-	hitbox.monitorable = true
-	hitbox.monitoring = true
+	hitbox.set_deferred("monitorable", true)
+	hitbox.set_deferred("monitoring", true)
 
 ## Accelerate patrol + taunt on phase transition (BossBase calls this).
 func _on_phase_changed() -> void:
@@ -208,8 +208,8 @@ func take_damage(amount: int) -> void:
 		throw_timer = maxf(0.9, throw_cooldown - 0.3 * (current_phase - 1))
 		boss_sprite.color = Color(0.6, 0.4, 0.2, 1.0)
 		boss_sprite.modulate = Color(1, 1, 1, 1)
-		hitbox.monitorable = false
-		hitbox.monitoring = false
+		hitbox.set_deferred("monitorable", false)
+		hitbox.set_deferred("monitoring", false)
 		_check_phase_change()
 
 func die() -> void:
@@ -219,8 +219,8 @@ func die() -> void:
 	set_physics_process(false)
 	GameManager.add_score(750)
 	ScreenShake.shake(0.6, 10.0)
-	hitbox.monitorable = false
-	hitbox.monitoring = false
+	hitbox.set_deferred("monitorable", false)
+	hitbox.set_deferred("monitoring", false)
 	StateMachine.change_state(StateMachine.State.LEVEL_COMPLETE)
 	ScreenShake.zoom_to(1.0, 0.6)
 	AudioManager.play_voice("game_complete")

@@ -122,7 +122,7 @@ func _ready() -> void:
 	# Incoming damage is gated separately by `monitorable` + take_damage's own
 	# VULNERABLE check, so leaving this on is safe and it is what makes
 	# walking (or being dragged) into the boss actually cost the player.
-	hitbox.monitoring = true
+	hitbox.set_deferred("monitoring", true)
 	boss_display_name = "The Distributor"
 	throw_timer = throw_cooldown
 	_setup_health_bar()
@@ -358,7 +358,7 @@ func _begin_vulnerable() -> void:
 	boss_sprite.color = Color(1.0, 0.2, 0.2, 1.0)
 	# `monitoring` is already true for the whole fight; only expose the boss
 	# to incoming damage here.
-	hitbox.monitorable = true
+	hitbox.set_deferred("monitorable", true)
 
 func _end_vulnerable() -> void:
 	boss_sprite.modulate = _phase_tint
@@ -369,7 +369,7 @@ func _end_vulnerable() -> void:
 	# (see _ready). Toggling it off here meant the boss's own contact damage
 	# never fired outside the vulnerable window, so HOARD GRAVITY could drag
 	# the player straight into his body for free. Kimi audit finding F2.
-	hitbox.monitorable = false
+	hitbox.set_deferred("monitorable", false)
 	queue_redraw()
 
 # --- TELEGRAPH DRAWING ---------------------------------------------------
@@ -496,8 +496,8 @@ func die() -> void:
 	_prisms.clear()
 	GameManager.add_score(1000)
 	ScreenShake.shake(0.6, 10.0)
-	hitbox.monitorable = false
-	hitbox.monitoring = false
+	hitbox.set_deferred("monitorable", false)
+	hitbox.set_deferred("monitoring", false)
 	StateMachine.change_state(StateMachine.State.LEVEL_COMPLETE)
 	ScreenShake.zoom_to(1.0, 0.6)
 	AudioManager.play_voice("victory")
