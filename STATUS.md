@@ -5,12 +5,80 @@
 **Branch:** `claude/setup-game-dev-environment-itWJv` (new PR open against `master`, following PR #11's merge)
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-07-30** (new
-> `gate-battery-runner` skill on top of the Blaze Rush rebuild + video
-> decision below).
+> have something current to look at. Last updated: **2026-07-30** (Stage 2
+> audit + Claim Jumper boss fix + Gold Rush level redesign — see below).
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+
+## 🤠 STAGE 2 AUDIT + STAGE 3 UNIQUENESS + CLAIM JUMPER OVERHAUL (2026-07-30)
+
+**Stage 2 (Crystal Caverns) audit verdict: DONE, one gap flagged.** End-to-end
+playability is solid — geometry, spawns, checkpoints, and the boss arena all
+wire through correctly, both backdrop images and all 4 music tracks exist on
+disk, and the previously-reported ladder progression block is confirmed
+fixed. The Distributor's 3-phase escalation is real (orb count/speed/homing
+scale with HP, taunts fire on transitions), but it's mechanically thinner
+than the Auditor — no charge/dash, no token-gated spectacle layer, no reflect
+mechanic. That's a real gap, not a bug, and properly closing it means giving
+Distributor its own spectacle system — too large for this session's scope.
+Flagged as a follow-up, not fixed.
+
+**The Claim Jumper (Stage 3 boss) had a real bug: its fight never actually
+worked as designed.** The state machine declared `CHARGE`/`THROW`/
+`VULNERABLE` states but nothing ever transitioned into them — the boss only
+ever ran `PATROL` forever, throwing dynamite from within that loop. Worse,
+`take_damage()` had no gate on being in the vulnerable state at all (unlike
+the Auditor and the Distributor, which both require a telegraphed opening).
+That made the game's intended final boss damageable at every single moment
+with zero risk/reward structure — the *least* demanding of the three fights,
+not the most, which is exactly backwards for a closing boss. Rewired the
+full cycle (PATROL → a telegraphed quick-draw wind-up → CHARGE → THROW →
+VULNERABLE, back to PATROL), gated damage to the VULNERABLE window only, and
+made that window shrink each phase — less free damage time as the fight
+escalates, instead of a flat window while everything else gets harder.
+
+**Dynamite was also invisible AND (very likely) dealt zero damage.** The
+`Area2D` had no sprite, no warning indicator, nothing — just a silent
+2-second wait before an explosion the player had no way to see coming. On
+top of that, its blast-detection `Area2D` defaulted to `collision_mask = 1`
+(World), which never matches the player's `collision_layer = 2` — the exact
+same class of bug as the July 14 kill-zone fix. That means the boss's
+signature attack was likely doing nothing at all regardless of whether you
+saw it coming. Fixed both: a fuse sprite + an expanding warning ring that
+brightens and speeds up as detonation nears (readable "get out of this zone"
+telegraph sized to the real blast radius), the correct collision mask, and a
+one-physics-frame wait before the overlap check (a same-frame `Area2D` hasn't
+registered with the physics server yet).
+
+**Gold Rush's level layout turned out to be a literal copy-paste of Crystal
+Caverns.** The backdrop art was genuinely distinct (sunset canyon vs. cyan
+crystal cave — confirmed by viewing both images), but `ground_segments` and
+`platforms` in `level_03_data.tres` were byte-identical to `level_02_data.tres`
+— the actual platforming skeleton readers stand on 90% of the time was a
+reskin, not a new level. Also found every level's ledges render in the exact
+same hardcoded dark-green colors regardless of theme (`level_base.gd` never
+read per-level tint data at all), so even the backdrop's distinctness never
+reached the geometry itself. Fixed both: added `platform_body_color` /
+`platform_lip_color` fields to `LevelData` (Level 1 keeps its original green
+by default — no regression — Level 2 now reads cyan, Level 3 reads gold/
+rust), and redesigned Gold Rush's ground/platform layout with a genuinely
+different rhythm while keeping every gap width inside the same range already
+proven fair in the shipped Level 1/2 layouts. Restored enemy variety that had
+been dropped relative to Level 2 (`hostile_vine`, `rolling_boulder`), added
+drifting gold-dust motes for atmosphere, and re-anchored the Fort Knox Vault
+— its old `x=3550` placement would have landed it directly over the new
+layout's pre-boss pit.
+
+**Honest verification note**: this sandbox has no local Godot binary (per
+the new `gate-battery-runner` skill), so `script_compile_test`,
+`save_compat_test`, `icp_contract_test`, `boss_visibility_test`, and a real
+web export can't run here — those are CI-deferred. What I could and did run:
+the security sentinel (18/18, 0 blockers) and a manual bracket-balance +
+logic review of every changed file. The level layout reshape in particular
+has NOT been played in a live browser session — flagging that plainly rather
+than claiming a verification I couldn't perform. Recommend confirming via
+the next CI export + a real playthrough before calling Stage 3 fully done.
 
 ## 🎬 VIDEO DECISION HOLDS AFTER A FOLLOW-UP CORRECTION (2026-07-29, later)
 
