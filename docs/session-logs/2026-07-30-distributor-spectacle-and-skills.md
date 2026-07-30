@@ -117,6 +117,51 @@ partial results rather than keep deliberating.
 token burn as much as file size does. A narrower brief would likely have
 succeeded at 24000. Recorded in the `multi-model-orchestrator` skill.
 
+**Retry succeeded**: 10938 in / 13941 out, **$0.2419**.
+
+#### Kimi verdict: SHIP — the hunted bug class is absent
+It independently confirmed all five states reachable with no soft-lock, both
+damage paths routing through the health bar and phase check, and the volley-id
+bookkeeping airtight on both the flip and arrival paths.
+
+#### Findings — all 7 verified against the real files, all 7 fixed
+
+| # | Sev | Finding | Verified? | Action |
+|---|---|---|---|---|
+| F1 | MED | `_damage()` tweened `sprite`, which is **null** on this boss — `EnemyBase` resolves it via `get_node_or_null("Sprite")` and `distributor.tscn` has no such child. Errored on every hit, no flash ever played. | **YES** — confirmed scene has only ColorRect/CollisionShape2D/Hitbox | Tween `boss_sprite`. **Also fixed the identical bug in `claim_jumper.gd`** (same base class, same missing node). The Auditor is exempt — it declares its own `sprite := $ColorRect`. |
+| F2 | MED | `hitbox.monitoring` was only true during VULNERABLE, so contact damage never fired during the pull — Hoard Gravity dragged the player into the boss for free. | **YES** | `monitoring` now on for the whole fight; only `monitorable` stays gated. Incoming damage is still double-gated by `take_damage`'s VULNERABLE check. |
+| F3 | LOW | Shake + "DISTRIBUTED" text fired *before* the volley-id and damage-cap checks — full success feedback on a hit dealing 0 damage. | **YES** | Checks moved above the feedback. |
+| F4 | LOW | `_update_health_bar()` called bare; `BossBase` defaults `hp_before = -1` and only flashes when `hp_before > health`, so the pip-flash never fired. | **YES** — confirmed the signature | Capture `before` and pass it. Same fix applied to `claim_jumper.gd`. |
+| F5 | LOW | Orbs in flight survive `die()` and can hit the player during the ~4s victory sequence, costing a life after the level is won. | **YES** | `call_group("boss_projectile", "queue_free")` in `die()`. |
+| F6 | LOW | The "visible escalation" was a **no-op**: phase 2 set modulate to white (identity), phase 3 changed nothing. My own comment claimed a palette shift that never happened. | **YES** | Added a persistent `_phase_tint` (violet → cyan-white) that every restore path honours instead of resetting to white. |
+| F7 | LOW | `orb.global_position` set before `add_child` — works only because the level root sits at origin. | **YES** | Assignment moved after `add_child`. |
+
+#### The most important thing Kimi surfaced — and it couldn't see it itself
+Its Q5 answer flagged a caveat rather than a defect: *"whether the pull is
+meaningful at all depends on the player's acceleration value, which is in the
+player controller file — **not provided**."*
+
+Checking the real numbers: `player.gd` has **`ground_decel = 2800`** and my
+`pull_strength` was **520**. A standing player's own stopping force beat the
+pull **5.4-to-1**. Combined with F2 (no contact damage during the field),
+**Hoard Gravity was cosmetic** — the exact "looks real, does nothing" class
+this session set out to eliminate, reintroduced by me in the same session.
+
+Fixed: `pull_strength = 4200` (clears `ground_decel` at close range and
+`air_decel = 900` across the whole radius), plus a `PULL_EDGE_FRACTION = 0.6`
+floor on the falloff — a linear falloff to zero left the outer half of the
+drawn ring below `ground_decel` and therefore inert, a telegraph that
+overstated its own threat.
+
+**This is the argument for inlining more context, not less.** Kimi was right
+to refuse to guess; had `player.gd` been inlined it would have reported this
+as a defect instead of a caveat.
+
+#### Also noted, NOT actioned
+`bandit_boss.gd` has the same bare `_update_health_bar()` call, but it is
+**referenced nowhere** in `src/` — orphaned code from an earlier Claim Jumper.
+Not a live defect; deleting it is a separate decision.
+
 ## Part 1 — Distributor gap closed
 
 ### Defects found by my own review BEFORE dispatching

@@ -33,8 +33,21 @@ enum Phase { PATROL, GRAVITY_TELL, HOARD_GRAVITY, SHARD_THROW, VULNERABLE }
 @export var throw_cooldown: float = 2.0
 @export var vulnerable_time: float = 1.8
 ## Radial pull strength (px/s of velocity injected per second at the centre).
-@export var pull_strength: float = 520.0
+##
+## This MUST exceed the player's own deceleration or the field does nothing.
+## The first version used 520, and player.gd has `ground_decel = 2800`: a
+## standing player's own stopping force beat the pull 5.4-to-1, so the field
+## was pure decoration. Kimi's audit asked whether player accel negated the
+## pull; checking the real numbers showed it did. 4200 clears ground_decel
+## (2800) at close range and air_decel (900) across the whole radius, which
+## also makes being airborne inside the field meaningfully more dangerous.
+@export var pull_strength: float = 4200.0
 @export var pull_radius: float = 420.0
+## Pull at the FIELD EDGE as a fraction of full strength. Not 0.0: a linear
+## falloff to zero meant the outer half of the radius was below ground_decel
+## and therefore inert, so the field's usable area was far smaller than the
+## ring drawn on screen — a telegraph that overstates the threat.
+const PULL_EDGE_FRACTION := 0.6
 
 var current_phase_state: Phase = Phase.PATROL
 var throw_timer: float = 0.0
@@ -68,6 +81,12 @@ var _has_gold: bool = false       # Gold Ballast — resist the pull
 var _has_smoke: bool = false      # Haze Softener — Blaze slows incoming orbs
 var _prisms: Array[Node2D] = []
 
+## Persistent per-phase body tint. Every place that "restores" the sprite
+## restores THIS rather than plain white — otherwise the phase colour is wiped
+## the first time the boss leaves a flash or a vulnerable window, which is how
+## the phase-2/3 palette shift ended up being a no-op (Kimi F6).
+var _phase_tint: Color = Color(1, 1, 1, 1)
+
 ## Assigned, NOT redeclared: EnemyBase already owns `sprite`, and shadowing
 ## it is a parse error that leaves this entire script unattached.
 @onready var boss_sprite: BossSprite = $ColorRect
@@ -88,6 +107,11 @@ func _ready() -> void:
 	hitbox_shape.shape = collision.shape
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
+	# Detect overlaps for the WHOLE fight, not just the vulnerable window.
+	# Incoming damage is gated separately by `monitorable` + take_damage's own
+	# VULNERABLE check, so leaving this on is safe and it is what makes
+	# walking (or being dragged) into the boss actually cost the player.
+	hitbox.monitoring = true
 	boss_display_name = "The Distributor"
 	throw_timer = throw_cooldown
 	_setup_health_bar()
@@ -205,9 +229,10 @@ func _apply_pull(delta: float) -> void:
 	var dist := p.global_position.distance_to(centre)
 	if dist > pull_radius or dist < 8.0:
 		return
-	# Falls off with distance so the edge of the field is survivable and the
-	# gradient is learnable.
-	var falloff := 1.0 - clampf(dist / pull_radius, 0.0, 1.0)
+	# Falls off with distance so the gradient is learnable, but never below
+	# PULL_EDGE_FRACTION — see that constant for why a falloff to zero made
+	# most of the drawn field inert.
+	var falloff := lerpf(PULL_EDGE_FRACTION, 1.0, 1.0 - clampf(dist / pull_radius, 0.0, 1.0))
 	var strength := pull_strength * falloff * (1.0 + 0.25 * (current_phase - 1))
 	# GOLD "Gold Ballast": holders are heavier and resist the drag. Purely
 	# player-favourable — non-holders get the shipped strength, not more.
@@ -252,9 +277,13 @@ func _throw_shards() -> void:
 		if _has_smoke and GameManager.has_power_up("blaze"):
 			orb.speed *= 0.6
 		orb.volley_id = _volley_id
-		orb.global_position = global_position + Vector2(48, 20)
 		orb.redirected.connect(_on_orb_redirected.bind(_volley_id))
+		# add_child BEFORE setting global_position: on a node outside the tree
+		# global_position is just local position, so if the parent ever gains a
+		# non-identity transform the orbs would spawn offset from the muzzle.
+		# Correct today only by accident (the level root sits at origin).
 		get_parent().add_child(orb)
+		orb.global_position = global_position + Vector2(48, 20)
 	AudioManager.play_sfx("throw")
 
 ## A redirected orb reached him — damage outside the vulnerable window. This
@@ -264,13 +293,17 @@ func _throw_shards() -> void:
 func take_redirected_orb(from_volley: int = -1) -> void:
 	if is_dead:
 		return
-	ScreenShake.medium()
-	EffectSpawner.float_text(global_position, "DISTRIBUTED", Color(0.7, 0.95, 1.0))
+	# Validity checks run BEFORE the feedback. Playing the shake and the
+	# "DISTRIBUTED" text on a stale-volley or over-cap arrival that deals no
+	# damage is the same "looks real, does nothing" lie as the invisible
+	# dynamite — cosmetic edition. Kimi audit finding F3.
 	if from_volley != _volley_id:
 		return
 	if _volley_damage >= MAX_REDIRECT_DAMAGE_PER_VOLLEY:
 		return
 	_volley_damage += 1
+	ScreenShake.medium()
+	EffectSpawner.float_text(global_position, "DISTRIBUTED", Color(0.7, 0.95, 1.0))
 	_damage(1)
 
 func _on_orb_redirected(from_volley: int) -> void:
@@ -304,16 +337,20 @@ func _begin_vulnerable() -> void:
 	# everything else about the fight gets harder.
 	state_timer = maxf(0.8, vulnerable_time - 0.35 * (current_phase - 1))
 	boss_sprite.color = Color(1.0, 0.2, 0.2, 1.0)
+	# `monitoring` is already true for the whole fight; only expose the boss
+	# to incoming damage here.
 	hitbox.monitorable = true
-	hitbox.monitoring = true
 
 func _end_vulnerable() -> void:
-	boss_sprite.modulate = Color(1, 1, 1, 1)
+	boss_sprite.modulate = _phase_tint
 	boss_sprite.color = Color(0.3, 0.2, 0.6, 1.0)
 	current_phase_state = Phase.PATROL
 	throw_timer = _cadence()
+	# Only `monitorable` is gated — `monitoring` stays ON for the whole fight
+	# (see _ready). Toggling it off here meant the boss's own contact damage
+	# never fired outside the vulnerable window, so HOARD GRAVITY could drag
+	# the player straight into his body for free. Kimi audit finding F2.
 	hitbox.monitorable = false
-	hitbox.monitoring = false
 	queue_redraw()
 
 # --- TELEGRAPH DRAWING ---------------------------------------------------
@@ -376,13 +413,17 @@ func _on_phase_changed() -> void:
 	if current_phase == 2:
 		BossVoiceSystem.say(self, BOSS_ID, "phase50", true)
 		ScreenShake.medium()
-		boss_sprite.modulate = Color(1, 1, 1, 1)
+		# Violet overdrive — the DIAMONDS palette pushed hot.
+		_phase_tint = Color(1.25, 0.85, 1.7, 1.0)
 		_tell_duration = 0.6
 	elif current_phase == 3:
 		BossVoiceSystem.say(self, BOSS_ID, "phase25", true)
 		ScreenShake.medium()
+		# Core blows out to near-white cyan.
+		_phase_tint = Color(1.1, 1.7, 2.1, 1.0)
 		# Tell gets shorter but never disappears — the fight stays fair.
 		_tell_duration = 0.5
+	boss_sprite.modulate = _phase_tint
 	Web3Bridge.report_metric("boss_phase_reached", {"boss": BOSS_ID, "phase": current_phase})
 
 ## Shared damage application for BOTH damage paths (vulnerable-window hits and
@@ -392,13 +433,22 @@ func _on_phase_changed() -> void:
 func _damage(amount: int) -> void:
 	if is_dead:
 		return
+	var before := health
 	health -= amount
 	AudioManager.play_sfx("damage")
 	BossVoiceSystem.say(self, BOSS_ID, "hurt")
+	# Tween `boss_sprite`, NOT `sprite`. EnemyBase resolves `sprite` via
+	# get_node_or_null("Sprite") and this boss's scene has no such child (its
+	# art is the BossSprite on "ColorRect"), so `sprite` is null here and the
+	# old tween errored on every single hit while showing no flash at all.
+	# Kimi audit finding F1.
 	var tween := create_tween()
-	tween.tween_property(sprite, "modulate", Color(10, 10, 10, 1), 0.05)
-	tween.tween_property(sprite, "modulate", Color(1, 1, 1, 1), 0.05)
-	_update_health_bar()
+	tween.tween_property(boss_sprite, "modulate", Color(10, 10, 10, 1), 0.05)
+	tween.tween_property(boss_sprite, "modulate", _phase_tint, 0.05)
+	# Pass the pre-hit HP: BossBase._update_health_bar defaults hp_before to
+	# -1, and its pip-flash only fires when hp_before > health, so calling it
+	# bare silently skipped the damage flash on both paths (Kimi F4).
+	_update_health_bar(before)
 	if health <= 0:
 		die()
 	else:
@@ -417,6 +467,10 @@ func die() -> void:
 	BossVoiceSystem.say(self, BOSS_ID, "death", true)
 	BossVoiceSystem.clear_active()
 	set_physics_process(false)
+	# Clear orbs still in flight. Their 4s lifetime outlives the death tween
+	# plus the 3s victory timer, so without this the player could be hit —
+	# and lose a life — AFTER the level was already won. Kimi audit F5.
+	get_tree().call_group("boss_projectile", "queue_free")
 	for prism in _prisms:
 		if is_instance_valid(prism):
 			prism.queue_free()

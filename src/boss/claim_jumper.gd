@@ -181,13 +181,25 @@ func _throw_dynamite() -> void:
 func take_damage(amount: int) -> void:
 	if is_dead or current_state != State.VULNERABLE:
 		return
+	# Captured BEFORE the decrement — BossBase's pip-flash only fires when
+	# hp_before > health, so reading it afterwards would leave the flash just
+	# as dead as the bare call it replaced.
+	var before := health
 	health -= amount
 	AudioManager.play_sfx("damage")
 	BossVoiceSystem.say(self, BOSS_ID, "hurt")
+	# Tween `boss_sprite`, NOT `sprite`. EnemyBase resolves `sprite` via
+	# get_node_or_null("Sprite") and claim_jumper.tscn has no such child (the
+	# art is the BossSprite on "ColorRect"), so `sprite` is null and this
+	# tween errored on every hit while showing no flash. Found by the Kimi
+	# audit of the Distributor (finding F1) — same defect, same base class.
+	# The Auditor is exempt: it declares its own `sprite := $ColorRect`.
 	var tween := create_tween()
-	tween.tween_property(sprite, "modulate", Color(10, 10, 10, 1), 0.05)
-	tween.tween_property(sprite, "modulate", Color(1, 1, 1, 1), 0.05)
-	_update_health_bar()
+	tween.tween_property(boss_sprite, "modulate", Color(10, 10, 10, 1), 0.05)
+	tween.tween_property(boss_sprite, "modulate", Color(1, 1, 1, 1), 0.05)
+	# Pass pre-hit HP so BossBase's pip-flash actually fires (it only runs
+	# when hp_before > health; the bare call left it permanently skipped).
+	_update_health_bar(before)
 	if health <= 0:
 		die()
 	else:

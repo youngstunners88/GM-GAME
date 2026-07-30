@@ -81,8 +81,23 @@ catch one problem caught a different, invisible one.
 - **Kimi K3** audited the new code. Its **first run failed and produced
   nothing** — it spent its whole output budget thinking and emitted zero text,
   burning about $0.36. Our dispatch tool caught this and refused to save an
-  empty file rather than pretending an audit happened. Retried with a larger
-  budget; findings will be folded in.
+  empty file rather than pretending an audit happened. The retry ($0.24)
+  returned **7 real defects, all verified against the actual files and all
+  fixed**, and its verdict on the core question was clean: no dead states, no
+  ungated damage paths.
+
+  **The single most valuable thing it caught, it couldn't even see.** It
+  flagged that it had no way to know the player's acceleration values, so it
+  couldn't tell whether the new pull field was strong enough to matter. It
+  isn't: the player's own braking force was **5.4× stronger than my pull**, and
+  contact damage was switched off during the field — so Hoard Gravity looked
+  impressive and did **nothing**. That's the exact "looks real, does nothing"
+  bug class this session existed to eliminate, and I had reintroduced it. Now
+  fixed and retuned.
+
+  Two of the seven were also present in the **Claim Jumper** (same base class,
+  same missing sprite node) — its damage flash has been silently erroring on
+  every hit since it shipped. Fixed there too.
 
 Full hand-off record, including what was rejected and why:
 `docs/session-logs/2026-07-30-distributor-spectacle-and-skills.md`.
