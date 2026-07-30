@@ -1,5 +1,21 @@
 name: Export Godot Game to Web
 
+# Serialise export runs per branch.
+#
+# This workflow COMMITS ITS OUTPUT BACK to the branch, so two runs in flight at
+# once race each other's push: the loser dies with "cannot lock ref ... is at
+# <X> but expected <Y>" and reports the whole run as FAILURE even though the
+# export and every gate passed. That is exactly what happened to PR #12 on
+# 668dbf4 (run 30564497392) — two runs for the same commit, one pushed, the
+# other was rejected and went red.
+#
+# cancel-in-progress is deliberately FALSE, not true: a run that is mid-push or
+# mid-butler-deploy should be allowed to finish rather than be killed partway.
+# Queued runs simply rebase onto whatever landed first.
+concurrency:
+  group: export-game-${{ github.ref }}
+  cancel-in-progress: false
+
 on:
   push:
     branches:
@@ -291,10 +307,34 @@ jobs:
           git add -f web/game/
           if ! git diff --cached --quiet; then
             git commit -m "build: export Godot 4.3 game to web (automated CI)"
-            # The branch may have moved while this job ran (e.g. a dev push) —
-            # rebase our export commit on top instead of failing the run.
-            git pull --rebase origin "${GITHUB_REF_NAME}" || true
-            git push -u origin HEAD
+            # Rebase-and-push with RETRIES.
+            #
+            # The old version pulled once and pushed once. There is a race
+            # window between those two commands: if another export run pushes
+            # in it, this push is rejected with
+            #   cannot lock ref ...: is at <X> but expected <Y>
+            # and the whole workflow reports FAILURE even though the export,
+            # the security gate and every other step passed. That produced a
+            # red X on PR #12 for run 30564497392 while the build was fine —
+            # a false failure signal, which is worse than no signal because it
+            # trains everyone to ignore CI.
+            #
+            # The `concurrency` block on this workflow now serialises runs per
+            # branch, so this should be rare; the retry covers what remains.
+            pushed=""
+            for attempt in 1 2 3 4 5; do
+              if git pull --rebase origin "${GITHUB_REF_NAME}" && git push -u origin HEAD; then
+                pushed="yes"
+                echo "Export pushed (attempt ${attempt})"
+                break
+              fi
+              echo "Push attempt ${attempt} failed (branch moved?) — retrying in $((attempt * 3))s"
+              sleep $((attempt * 3))
+            done
+            if [ -z "$pushed" ]; then
+              echo "::error::Could not push the export commit after 5 attempts."
+              exit 1
+            fi
           else
             echo "No changes to commit"
           fi
