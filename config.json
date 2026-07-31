@@ -29,5 +29,11 @@
     "diamonds": "ethereum",
     "goldmine": "ethereum",
     "_note": "Cross-chain: wallet-provider eth_call only sees the wallet's current chain, so balance checks go through the backend /balances endpoint (stateless, read-only)."
+  },
+  "analytics": {
+    "_comment": "PostHog product analytics. `token` is a PostHog PROJECT WRITE key (phc_...) which is public by design \u2014 it can only append events, never read them. It still lives here rather than in code, per the project rule that no keys are hardcoded. Empty token = analytics fully disabled (no network, no JS loaded). CI injects the real value from the POSTHOG_TOKEN repo secret.",
+    "enabled": true,
+    "posthog_token": "",
+    "posthog_host": "https://us.i.posthog.com"
   }
 }

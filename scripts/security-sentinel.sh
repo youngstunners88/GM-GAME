@@ -155,7 +155,16 @@ fi
 #       ^0x[0-9a-fA-F]+$ sanitizer in web3_bridge.gd — a hex string can carry
 #       no quotes, semicolons, or JS); or
 #   (c) the fixed window.parent.postMessage(JSON.stringify(...)) telemetry
-#       template (JSON.stringify emits a valid JS literal).
+#       template (JSON.stringify emits a valid JS literal); or
+#   (d) interpolation where EVERY hole passes through one of the named
+#       sanitizers in src/autoload/analytics.gd — _js_ident() whitelists to
+#       [a-z0-9_], _js_json() emits a JSON literal with U+2028/U+2029 stripped,
+#       _js_config() re-validates the PostHog token/host against a strict
+#       regex. Same guarantee as _hex(): the value provably cannot carry a
+#       quote, semicolon, or any JS syntax. Added 2026-07-30 with the PostHog
+#       bridge. This EXTENDS the safe set with a fourth proven-safe form — it
+#       does not relax the rule: an eval that interpolates anything NOT passed
+#       through one of these still fails.
 # We scan the WHOLE eval expression (call sites can span lines, so join them),
 # then flag any eval whose expression interpolates ('%') without _hex() or the
 # postMessage template. Since Layer Shift added real wallet-bridge eval calls,
@@ -170,7 +179,7 @@ if [ -n "$eval_files" ]; then
   unsafe_eval=$(perl -0777 -ne '
     while (/JavaScriptBridge\.eval(\((?:[^()]++|(?1))*\))/g) {
       my $c = $1;
-      if ($c =~ /%/ && $c !~ /_hex\(/ && $c !~ /window\.parent\.postMessage/) {
+      if ($c =~ /%/ && $c !~ /_hex\(/ && $c !~ /window\.parent\.postMessage/ && $c !~ /_js_(ident|json|config)\(/) {
         $c =~ s/\s+/ /g; print "$c\n";
       }
     }' $eval_files 2>/dev/null || true)

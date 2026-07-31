@@ -110,6 +110,54 @@ CI-deferred. And the new Distributor fight has **not been played in a
 browser yet**: the pull strength and redirect timing are tuning numbers that
 need real play to confirm. Flagging that rather than claiming it feels right.
 
+## 📊 ANALYTICS + PIXEL-ART PIPELINE (2026-07-30, night)
+
+**The CI red X from earlier is fixed and the next run went green.** It was a
+race between two build runs, not a code problem — builds are now serialised so
+they can't collide.
+
+**PostHog analytics is wired.** The important decision here was *not* to bolt
+on a second tracking system. The game already reported ~30 events to its own
+backend — level starts, deaths with cause, boss defeats, power-ups, every menu
+click. All of that now also goes to PostHog automatically, so there's one list
+of events feeding two places instead of two lists that drift apart. Adding a
+new event anywhere in the game reaches PostHog with no extra wiring.
+
+**One trap caught before it cost us anything:** the site's security policy
+blocked the analytics domain outright. Every event would have been silently
+dropped while the code looked perfectly healthy — the same "looks real, does
+nothing" failure that has bitten this project repeatedly. Fixed across all
+three hosting configs.
+
+**Privacy is deliberate:** no email, no name, and **never the wallet address**,
+even though the game knows it. The outside code reviewer pointed out that this
+was a promise in the comments with nothing in the code enforcing it, and that
+the ID being sent could be cross-referenced back to a wallet through our own
+backend. Both now fixed properly — identifying fields are stripped
+automatically, and analytics uses a separate scrambled ID.
+
+**Still needs you:** the PostHog key is intentionally left blank in the repo.
+Drop it in (or let CI inject it) and analytics goes live — it's a public,
+write-only key, so this is safe. Creating the dashboards is also a human job.
+Full event list: `docs/analytics/EVENT_SCHEMA.md`.
+
+**PixelLab (pixel art + animation) is connected and proven.** Generated Lil
+Blunt through it twice, and the comparison is the useful part:
+
+- Describing him in words produced a **generic green humanoid** — no hat, no
+  bulk, no face. Confident, on-spec, and completely off-brand.
+- Feeding it **the existing Lil Blunt sprite as a reference** produced a
+  genuinely on-model character: right build, hat, lit blunt, matching the
+  shipped art.
+
+So the rule for all future art is: never describe an existing character in
+text, always hand it the real sprite. That's written up in a new
+`pixellab-pipeline` skill along with the budget (40 trial generations, one
+careless call can burn half of it) and the settings this game needs.
+
+Generated art lands in a **staging folder and is not shipped** until a human
+looks at it — the first attempt is exactly why that gate exists.
+
 ## 🔴 NO BOSS IN THE GAME COULD BE REACHED — FIXED (2026-07-30, evening)
 
 **Every boss arena was walled off from the player.** The game built a solid
