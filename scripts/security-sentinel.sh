@@ -159,8 +159,8 @@ fi
 #   (d) interpolation where EVERY hole passes through one of the named
 #       sanitizers in src/autoload/analytics.gd — _js_ident() whitelists to
 #       [a-z0-9_], _js_json() emits a JSON literal with U+2028/U+2029 stripped,
-#       _js_config() re-validates the PostHog token/host against a strict
-#       regex. Same guarantee as _hex(): the value provably cannot carry a
+#       _js_config() re-validates the PostHog token/host and _js_dsn() the
+#       Sentry DSN, both against strict regexes. Same guarantee as _hex(): the value provably cannot carry a
 #       quote, semicolon, or any JS syntax. Added 2026-07-30 with the PostHog
 #       bridge. This EXTENDS the safe set with a fourth proven-safe form — it
 #       does not relax the rule: an eval that interpolates anything NOT passed
@@ -179,7 +179,7 @@ if [ -n "$eval_files" ]; then
   unsafe_eval=$(perl -0777 -ne '
     while (/JavaScriptBridge\.eval(\((?:[^()]++|(?1))*\))/g) {
       my $c = $1;
-      if ($c =~ /%/ && $c !~ /_hex\(/ && $c !~ /window\.parent\.postMessage/ && $c !~ /_js_(ident|json|config)\(/) {
+      if ($c =~ /%/ && $c !~ /_hex\(/ && $c !~ /window\.parent\.postMessage/ && $c !~ /_js_(ident|json|config|dsn)\(/) {
         $c =~ s/\s+/ /g; print "$c\n";
       }
     }' $eval_files 2>/dev/null || true)

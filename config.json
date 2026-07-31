@@ -35,5 +35,11 @@
     "enabled": true,
     "posthog_token": "",
     "posthog_host": "https://us.i.posthog.com"
+  },
+  "sentry": {
+    "_comment": "Sentry error reporting. `dsn` is a PUBLIC, WRITE-ONLY ingest key \u2014 it can submit events and nothing else, and it ships in the browser bundle of every Sentry-using site by design. Committed (unlike the PostHog key) because it was read straight from the Sentry API for the project this repo owns, so it is known-correct, and because errors being visible NOW is the entire point. Rotate any time in Sentry > Settings > Client Keys. Empty dsn = reporting fully disabled.",
+    "enabled": true,
+    "dsn": "https://de3519430039a8f4b948a05f2b1329b7@o4510949152980992.ingest.us.sentry.io/4511827931103232",
+    "release": "lil-blunt-web"
   }
 }

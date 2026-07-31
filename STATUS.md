@@ -110,6 +110,55 @@ CI-deferred. And the new Distributor fight has **not been played in a
 browser yet**: the pull strength and redirect timing are tuning numbers that
 need real play to confirm. Flagging that rather than claiming it feels right.
 
+## 🛰️ SENTRY: PRODUCTION ERRORS ARE NO LONGER INVISIBLE (2026-07-31)
+
+**Until now, if the game broke for a player we simply never found out.** No
+crash reports, no failed-save alerts, nothing. That's fixed.
+
+**A real Sentry project now exists and is confirmed receiving events.** I
+created it through Sentry's API (`lil-blunt-web`), then sent a live test event
+and confirmed it appeared in the dashboard — so this is verified working, not
+"the code looks right". You should see one issue titled
+`integration_probe: Sentry wiring verified…` waiting for you.
+
+**What it will tell you:**
+- Crashes and JavaScript errors from the game running in a real browser
+- **Failed saves** — silently losing a player's whole campaign is the worst
+  non-crash thing this game can do, and it was previously invisible
+- Failed level loads (the "stuck on a fade" failure)
+- **Which site the error came from** — itch vs Vercel vs Netlify vs local are
+  tagged separately, so "is this only broken on itch?" is finally answerable
+
+**The outside reviewer told me not to ship the first version, and it was
+right.** Four issues, all fixed:
+
+1. **The biggest one:** I was loading Sentry's code from their servers with no
+   verification. This game can ask you to sign a wallet transaction, and
+   unverified third-party code on that page could tamper with it. Now the exact
+   file is fingerprinted and the browser refuses to run it if a single byte
+   differs.
+2. My privacy claim was **overstated**. I'd scrambled the player ID with a
+   recipe visible in the game's own code — anyone with our backend's data could
+   have unscrambled it and linked errors back to wallets. Now it's a completely
+   separate random ID with no mathematical link at all.
+3. The PII filter **missed data inside lists**, missed spelling variants like
+   `walletAddress`, and never looked at the actual values — so a wallet address
+   buried in an error message would have gone straight through. Now filtered by
+   name *and* content.
+4. Sentry attaches the **page address and network history** by default, which
+   can contain access keys. Both scrubbed.
+
+**Known and deliberate:** PostHog loads its script the same way but *cannot*
+take the same fingerprint protection, because they update that file in place —
+pinning it would break analytics the next time they deploy. Flagging that
+honestly rather than pretending both are equally locked down; self-hosting
+their script is the fix if you want parity.
+
+**Needs you:** just confirm the test event in Sentry and, optionally, tick
+"Prevent Storing of IP Addresses" in project settings. The DSN key is already
+committed — it's public and write-only by design (it can send errors, never
+read them), and you can rotate it any time in Sentry → Client Keys.
+
 ## 📊 ANALYTICS + PIXEL-ART PIPELINE (2026-07-30, night)
 
 **The CI red X from earlier is fixed and the next run went green.** It was a

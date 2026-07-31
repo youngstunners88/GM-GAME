@@ -340,6 +340,9 @@ func save_session() -> bool:
     var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if f == null:
         push_error("GameManager.save_session: cannot open %s" % SAVE_PATH)
+        # A silent save failure loses a player's whole campaign — the worst
+        # non-crash outcome in the game, and invisible without this.
+        ErrorReporter.report("save_failed", {"path": SAVE_PATH})
         return false
     f.store_string(JSON.stringify(data))
     f.close()
