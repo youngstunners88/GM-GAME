@@ -5,12 +5,43 @@
 **Branch:** `claude/setup-game-dev-environment-itWJv` (new PR open against `master`, following PR #11's merge)
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-07-31** (Distributor
-> boss fight now proven under real physics end-to-end; web flush-error burst
-> rechecked — see below).
+> have something current to look at. Last updated: **2026-07-31** (first real
+> live-browser observation of the Distributor fight — see below).
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+
+## 🎮 FIRST REAL LIVE-BROWSER LOOK AT THE DISTRIBUTOR (2026-07-31, later session)
+
+Used a temporary debug warp (built and fully reverted this session — no
+trace left in shipped code) to reach the boss in a real exported browser
+build instead of only headless tests. Honest result:
+
+- **Confirmed live, real evidence**: the fight boots and plays end-to-end —
+  menu → level → arena → "THE DISTRIBUTOR" health bar → a real attack landed
+  and dealt damage (7/7 → 6/7) → score increased → **zero script errors**
+  across 3 separate browser runs. The first exchange happened right on the
+  coded schedule.
+- **Two harness bugs found and fixed along the way** (not boss bugs): an
+  unguarded warp that re-fired on every death-triggered scene reload, and a
+  scripted "hold one direction" input policy that walked straight into a
+  **newly-discovered, genuinely unmapped ~200px pit** in Crystal Caverns'
+  level geometry, right next to the boss arena's own wall (x=3500–3700).
+  That pit is real level-design debt, logged for a future level pass — it's
+  not a Distributor problem, just found while looking for one.
+- **Still honestly unvalidated**: after the harness stabilized, the rest of
+  the observation window went visually static for reasons not fully
+  isolated this session (most likely a headless-browser input-focus
+  artifact, not a real freeze). Redirect-window readability, orb cadence
+  beyond the first throw, POOL DRAIN live, and full multi-phase pace remain
+  unseen by a real playtest. **No boss numbers were changed** — nothing
+  observed contradicted the coded values, so nothing was tuned.
+- Grok 4.5 flagged one comparative design note (not proof): the
+  Distributor's `max_health = 7` is higher than both other bosses' 6 —
+  logged as a hypothesis for the next human playtest, not acted on.
+
+Full report + three-layer compliance note:
+`docs/session-logs/2026-07-31-distributor-feel-observation.md`.
 
 ## 🔬 THE DISTRIBUTOR'S SIGNATURE MECHANIC IS NOW PROVEN, NOT JUST CODED (2026-07-31)
 
