@@ -40,6 +40,24 @@ session — reported honestly as a monitoring item, not claimed as fixed,
 since no code change was made to explain a fix. Full writeup:
 `docs/session-logs/2026-07-31-distributor-evidence-and-flush-recheck.md`.
 
+**Also this session — a live documentation bug fixed, plus three new tools**
+built from real pain, not hypothetical gaps:
+- `docs/engine-reference/godot/VERSION.md` had claimed **Godot 4.6** for
+  five months while the project has always been pinned to **4.3** — every
+  coding session is told to trust that file before using any engine API, so
+  this was one post-4.3 syntax suggestion away from a repeat of the
+  Distributor's original "silently inert" parse-error bug. Corrected.
+- `scripts/bootstrap-godot.sh` — the checksum-verified Godot download/setup
+  every session was hand-deriving from the CI workflow, now a single
+  idempotent script (~3s cold, instant cached).
+- `docs/engine-reference/godot/gdscript-gotchas.md` — three traps this
+  project's debugging actually hit (GDScript lambda-closures-by-value, a
+  confirmed physics-object-churn SIGSEGV, shared-test-tree state leaks),
+  now written down so nobody re-discovers them the hard way.
+- `scripts/repro-web-race.mjs` — the N-run browser console-diff harness
+  built to hunt the flush-error burst, promoted into a reusable tool for
+  the next non-deterministic race investigation.
+
 ## 💎 THE DISTRIBUTOR IS NO LONGER THE WEAK BOSS (2026-07-30)
 
 **The gap flagged in this morning's Stage 2 audit is closed.** The Distributor

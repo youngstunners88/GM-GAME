@@ -43,6 +43,9 @@ dist/
 .godot/
 *.translation
 export_presets.cfg
+# scripts/bootstrap-godot.sh's local cache — a checksum-verified download,
+# not source; every session re-derives it in ~3s, never commit it.
+.godot-cache/
 # Godot re-import metadata. These hold machine-local UIDs and .godot/imported
 # cache hashes that change every time the engine opens the project, so they
 # churn constantly and conflict between machines. CI regenerates all of them

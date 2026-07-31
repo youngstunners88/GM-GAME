@@ -159,3 +159,64 @@ itself was not touched, only its test harness. Grok was scoped to "if the
 fight still feels wrong after real observation" — no new human/browser
 observation of the fight happened this session (see Goal 1's honest gap
 above), so there is nothing for a feel pass to react to yet.
+
+## Blind-spot audit — skills/scripts gaps found from real pain this session
+
+Separately requested: identify gaps in project tooling and build the
+highest-value missing pieces. Surveyed the existing 70+ skills and ~20
+scripts first — the project is not short on generic process skills, so the
+search focused on **concrete gaps that actually cost time in this session
+and the two before it**, consistent with this project's own standard for
+what earns a place in the toolkit (every check here traces to a real defect,
+not a hypothetical one).
+
+**Found and fixed — a live documentation defect, not a missing tool:**
+`docs/engine-reference/godot/VERSION.md` claimed the project was pinned to
+**Godot 4.6** and had for over five months, while `project.godot`, CI's
+`GODOT_VERSION`, and `CLAUDE.md`'s own title all agree it has always been
+**4.3**. Both `src/CLAUDE.md` and `docs/CLAUDE.md` instruct every session to
+trust this directory before using any engine API — so this was one
+`@abstract` decorator away from reproducing the exact failure class the
+Distributor boss already shipped with once (a parse error that silently
+made the whole script inert). Grepped `src/` for any 4.4+-only syntax
+already in use: none found, so this was a live risk, not yet a realized
+bug. Corrected `VERSION.md`, and added an explicit "future upgrade path,
+not current" banner to `breaking-changes.md` and `current-best-practices.md`
+so their real research is kept but can't be mistaken for what the current
+engine supports.
+
+**Built — three concrete gaps:**
+
+1. **`scripts/bootstrap-godot.sh`** — this project runs in ephemeral sandbox
+   containers with no cross-session persistence; every session before this
+   one hand-derived the download-and-SHA512-verify sequence from
+   `.github/workflows/export-game.yml` from scratch. This script is that
+   exact sequence (same URLs, same checksum gate), idempotent, ~3s cold,
+   instant on re-run. Tested end-to-end this session: fresh download +
+   checksum pass, then a second run correctly skipped re-downloading.
+2. **`docs/engine-reference/godot/gdscript-gotchas.md`** — three traps
+   discovered by real debugging this session and the crash investigation:
+   lambda closures capturing local value-type variables by value (not
+   reference — confirmed via an isolated repro), rapid sequential
+   create/destroy of physics `Area2D` objects reliably SIGSEGV-crashing the
+   engine itself (confirmed and fixed in Goal 1 above), and shared-SceneTree
+   test state leaking across sequential test functions (also confirmed and
+   fixed in Goal 1). Linked from `godot-gdscript-specialist.md`'s Version
+   Awareness section and folded into `.claude/rules/test-standards.md` as
+   enforceable rules so future test authors don't rediscover them the hard
+   way.
+3. **`scripts/repro-web-race.mjs`** — hunting the flush-error burst (Goal 2)
+   required writing a disposable "launch N fresh browser sessions, dump full
+   console, aggregate" script from scratch, because `verify-game.mjs` only
+   runs once against a fixed error allowlist. Promoted that into a reusable,
+   generically-parameterized tool (URL, run count, grep pattern, click
+   target) for the next non-deterministic race hunt. Smoke-tested against a
+   live local export (2 runs, correct aggregate output) before committing.
+
+**Considered and deliberately not built:** a dedicated "flush error / race
+condition" skill wrapping the above script. Two data points (this session's
+0/8 non-repro, and the prior session's reliable repro) aren't enough to
+generalize a process yet, and the project's own doctrine is to build tools
+from confirmed patterns, not speculative ones. If a future race investigation
+needs more structure than the script provides, that's the signal to build
+the skill — not before.

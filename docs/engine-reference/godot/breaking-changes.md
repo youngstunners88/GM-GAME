@@ -2,6 +2,12 @@
 
 Last verified: 2026-02-12
 
+> **This project is currently pinned to Godot 4.3** (see `VERSION.md` —
+> corrected 2026-07-31 after this file's version claim drifted from reality).
+> Everything below describes a **future upgrade path that has not been
+> undertaken**. Do not apply any of it to GDScript written for the current
+> codebase; a real 4.3 export rejects 4.4+-only syntax as a hard parse error.
+
 Changes between Godot versions, focused on post-LLM-cutoff changes (4.4+).
 
 ## 4.5 → 4.6 (Jan 2026 — POST-CUTOFF, HIGH RISK)
