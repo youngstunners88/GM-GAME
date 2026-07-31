@@ -18,6 +18,12 @@ extends Node
 const DISTRIBUTOR := preload("res://src/boss/distributor.tscn")
 const PLAYER := preload("res://src/player/player.tscn")
 
+# Distributor.Phase ordinals, mirrored here rather than referenced through
+# `_boss` (typed Node2D so the tests aren't coupled to the boss's static
+# type). Keep in sync with the enum in src/boss/distributor.gd.
+const PHASE_PATROL := 0
+const PHASE_VULNERABLE := 4
+
 var _failures: int = 0
 var _boss: Node2D
 var _player: CharacterBody2D
@@ -68,6 +74,9 @@ func _run() -> void:
 	await _test_states_reachable_at_runtime()
 	await _test_pull_moves_a_standing_player()
 	_test_vulnerable_window_shrinks_per_phase()
+	await _test_orb_redirect_under_real_physics()
+	await _test_pool_drain_under_real_physics()
+	await _test_full_damage_cycle_and_death()
 
 	if _failures == 0:
 		print("DISTRIBUTOR_BEHAVIOUR: ALL PASS")
@@ -149,3 +158,214 @@ func _test_vulnerable_window_shrinks_per_phase() -> void:
 		"%.2f -> %.2f" % [windows[1], windows[2]])
 	_check("window never collapses to nothing", windows[2] >= 0.6,
 		"p3 window is %.2fs — too short to react to" % windows[2])
+
+## THE evidence gap this session exists to close: everything above proves the
+## boss MOVES and HAS a damage window, but nothing yet proves Forced
+## Distribution — the fight's signature mechanic — actually connects under
+## real physics. This drives the REAL spawn path (_throw_shards), then
+## overlaps a stand-in "player attack" Area2D using the EXACT layer/group
+## convention real player attacks use (layer 64, group "projectile" — see
+## boss_projectile.gd), and lets Godot's own physics server fire the redirect,
+## homing, and arrival — none of it called directly. A broken collision mask,
+## a broken group check, or broken homing math would all show up here as a
+## silent "orb never redirects" or "orb never arrives", exactly like a human
+## playtester would observe, instead of a green unit test that only proves the
+## function exists.
+func _test_orb_redirect_under_real_physics() -> void:
+	# Clear any orbs left over from _test_states_reachable_at_runtime(), which
+	# runs the boss through 900 REAL physics frames (~15s) beforehand and
+	# leaves its own naturally-spawned orbs alive (4s lifetime each — several
+	# volleys' worth survive). Without this, `get_children()` below can pick
+	# up a STALE orb from an earlier volley whose `_t` is already seconds past
+	# `unstable_time` — that is exactly what happened on the first run of this
+	# test (orb._t measured at 2.15s), and it looks identical to a genuine
+	# "redirect never fires" bug unless you notice `_t` is already huge.
+	get_tree().call_group("boss_projectile", "queue_free")
+	await get_tree().physics_frame
+
+	_boss.health = 7
+	_boss.set("current_phase", 1)
+	var health_before: int = _boss.health
+
+	_boss.call("_throw_shards")
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+
+	var this_volley: int = int(_boss.get("_volley_id"))
+	var orb: Area2D = null
+	for child in get_children():
+		if child.is_in_group("boss_projectile") and int(child.get("volley_id")) == this_volley:
+			orb = child
+			break
+	_check("_throw_shards spawns a redirectable orb", orb != null,
+		"no boss_projectile from the current volley (id=%d) found in the tree" % this_volley)
+	if orb == null:
+		return
+
+	_check("boss is NOT in VULNERABLE when the volley is thrown",
+		int(_boss.current_phase_state) != PHASE_VULNERABLE,
+		"state=%d — Forced Distribution is meaningless if it can only land during the existing window" % int(_boss.current_phase_state))
+
+	# A stand-in for a real player attack: same layer (64) and group
+	# ("projectile") every real attack in this project uses. This is NOT a
+	# call into the orb's private methods — it is a genuine Area2D the
+	# physics server must actually detect.
+	var attack := Area2D.new()
+	attack.add_to_group("projectile")
+	attack.collision_layer = 64
+	attack.collision_mask = 0
+	var acs := CollisionShape2D.new()
+	var arect := RectangleShape2D.new()
+	arect.size = Vector2(24, 24)
+	acs.shape = arect
+	attack.add_child(acs)
+	attack.global_position = orb.global_position
+	add_child(attack)
+
+	var redirected := false
+	for i in 10:
+		await get_tree().physics_frame
+		if bool(orb.get("_redirected")):
+			redirected = true
+			break
+	_check("a real overlap (layer 64 + group 'projectile') redirects the orb", redirected,
+		"orb._redirected never became true — collision mask/group wiring is broken")
+	attack.queue_free()
+	if not redirected:
+		return
+
+	# The homing + arrival path is itself real physics, not a call — this is
+	# where a wrong distance threshold or a stale owner_boss reference would
+	# leave the orb flying forever instead of connecting.
+	var landed := false
+	for i in 90:
+		await get_tree().physics_frame
+		if not is_instance_valid(orb):
+			landed = true
+			break
+	_check("redirected orb homes in and is consumed on arrival", landed,
+		"orb still alive 1.5s after redirect — homing/arrival math is broken")
+
+	_info("boss health before -> after redirect", "%d -> %d" % [health_before, _boss.health])
+	_check("the redirect actually damaged the boss OUTSIDE the vulnerable window",
+		_boss.health < health_before,
+		"health unchanged at %d — Forced Distribution did not connect under real physics" % _boss.health)
+
+## POOL DRAIN is the volley-clear bonus: redirect every orb in one volley and
+## it fires automatically from inside the redirect signal handler — before
+## any of them have even arrived. Verified by redirecting all three phase-1
+## orbs via the same real-collision path as above, then checking the boss was
+## kicked straight into VULNERABLE with the state_timer extension applied.
+func _test_pool_drain_under_real_physics() -> void:
+	# Clear any stray orbs a previous test left mid-flight so this volley is
+	# unambiguous.
+	get_tree().call_group("boss_projectile", "queue_free")
+	await get_tree().physics_frame
+
+	_boss.health = 7
+	_boss.set("current_phase", 1)
+	_boss.current_phase_state = PHASE_PATROL
+	var health_before: int = _boss.health
+
+	_boss.call("_throw_shards")
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+
+	var this_volley: int = int(_boss.get("_volley_id"))
+	var orbs: Array = []
+	for child in get_children():
+		if child.is_in_group("boss_projectile") and int(child.get("volley_id")) == this_volley:
+			orbs.append(child)
+	_check("phase-1 volley spawns exactly 3 orbs", orbs.size() == 3, "spawned %d" % orbs.size())
+	if orbs.size() != 3:
+		return
+
+	# All 3 stand-in attacks are created up front and freed together at the
+	# end, rather than one-at-a-time create/wait/free — a tight sequential
+	# churn of physics Area2D objects (create -> queue_free -> immediately
+	# create the next) reliably crashed the engine with a SIGSEGV here.
+	# Letting physics settle all three overlaps together across shared
+	# frames avoids that churn entirely.
+	var attacks: Array = []
+	for orb in orbs:
+		var attack := Area2D.new()
+		attack.add_to_group("projectile")
+		attack.collision_layer = 64
+		attack.collision_mask = 0
+		var acs := CollisionShape2D.new()
+		var arect := RectangleShape2D.new()
+		arect.size = Vector2(24, 24)
+		acs.shape = arect
+		attack.add_child(acs)
+		attack.global_position = orb.global_position
+		add_child(attack)
+		attacks.append(attack)
+
+	for i in 10:
+		await get_tree().physics_frame
+		var all_done := true
+		for orb in orbs:
+			if not bool(orb.get("_redirected")):
+				all_done = false
+		if all_done:
+			break
+
+	for attack in attacks:
+		attack.queue_free()
+	await get_tree().physics_frame
+
+	var all_redirected := true
+	for orb in orbs:
+		if is_instance_valid(orb) and not bool(orb.get("_redirected")):
+			all_redirected = false
+	_check("all 3 orbs in the volley were redirected", all_redirected)
+
+	# _pool_drain() fires synchronously from inside the last orb's `redirected`
+	# signal — no travel time needed, so this is observable immediately.
+	_check("POOL DRAIN forces the boss straight into VULNERABLE",
+		int(_boss.current_phase_state) == PHASE_VULNERABLE,
+		"state=%d — the volley-clear bonus did not fire" % int(_boss.current_phase_state))
+	_info("boss health before -> after pool drain", "%d -> %d" % [health_before, _boss.health])
+	_check("POOL DRAIN dealt real damage", _boss.health < health_before,
+		"health unchanged at %d" % _boss.health)
+
+## Drives the ordinary vulnerable-window damage path (no redirects) through
+## BOTH phase thresholds to an actual death, using the real gated
+## `take_damage()` — not a direct health write — so a regression that breaks
+## the VULNERABLE gate or the phase math would fail this exactly like a
+## player finding the fight impossible to finish, or trivial to no-sell.
+func _test_full_damage_cycle_and_death() -> void:
+	get_tree().call_group("boss_projectile", "queue_free")
+	if is_instance_valid(_boss):
+		_boss.queue_free()
+	await get_tree().physics_frame
+
+	_boss = DISTRIBUTOR.instantiate() as Node2D
+	add_child(_boss)
+	_boss.global_position = Vector2(0, 280)
+	for i in 10:
+		await get_tree().physics_frame
+	_check("fresh boss starts at full health", int(_boss.get("health")) == 7,
+		str(_boss.get("health")))
+
+	# Drive down to 1 HP first — stop short of the kill so we can assert the
+	# phase escalation cleanly before touching die()'s scene-transition side
+	# effects (score, StateMachine, SceneRouter) on the final blow.
+	var hits := 0
+	while int(_boss.get("health")) > 1 and hits < 10:
+		_boss.call("_begin_vulnerable")
+		_boss.call("take_damage", 1)
+		hits += 1
+	_check("boss survives down to 1 HP via the gated take_damage() path",
+		int(_boss.get("health")) == 1, "health=%d after %d hits" % [_boss.get("health"), hits])
+	_check("phase escalates to 3 before death (thresholds [4,2])",
+		int(_boss.get("current_phase")) == 3, "current_phase=%d" % int(_boss.get("current_phase")))
+
+	# The killing blow. die() is a coroutine; calling it (indirectly, via
+	# take_damage -> _damage -> die) runs synchronously up to its first
+	# `await`, so `is_dead` — set on die()'s very first line — is reliably
+	# observable right after this call returns, with no extra waiting.
+	_boss.call("_begin_vulnerable")
+	_boss.call("take_damage", 1)
+	_check("the killing blow sets is_dead", bool(_boss.get("is_dead")),
+		"is_dead still false after health should have reached 0")

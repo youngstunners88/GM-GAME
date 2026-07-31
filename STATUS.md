@@ -5,11 +5,40 @@
 **Branch:** `claude/setup-game-dev-environment-itWJv` (new PR open against `master`, following PR #11's merge)
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-07-30** (Distributor
-> boss upgraded to full parity + 3 new quality skills — see below).
+> have something current to look at. Last updated: **2026-07-31** (Distributor
+> boss fight now proven under real physics end-to-end; web flush-error burst
+> rechecked — see below).
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+
+## 🔬 THE DISTRIBUTOR'S SIGNATURE MECHANIC IS NOW PROVEN, NOT JUST CODED (2026-07-31)
+
+Yesterday's Distributor rework (below) added Forced Distribution and POOL
+DRAIN. This session made sure they actually work — not "the script loads and
+a unit test calls a method," but genuine physics: a real `Area2D` overlap
+detected by the physics server itself, across real frames.
+
+- **Orb redirect**: a live volley is thrown, a real attack collider is placed
+  on a live orb, and the test waits for the physics server — not a direct
+  call — to flip the orb's redirected flag. It homes in, lands, and the boss
+  takes real damage **outside** its vulnerable window. Proven.
+- **POOL DRAIN**: all three orbs of a volley redirected via the same real
+  collision path, and the boss is confirmed forced straight into VULNERABLE.
+  Proven. **Found and fixed a real engine crash** (SIGSEGV) in getting this
+  evidence — rapid sequential create/destroy of physics objects was crashing
+  Godot itself; batching the object creation fixed it.
+- **Full fight, phase 1 to death**: driven through both phase thresholds via
+  the real damage gate to an actual death. Proven.
+- **Still honestly unvalidated**: nobody has played this fight by feel yet.
+  Redirect timing and orb cadence are measured, not felt. That's the next
+  real playtest, not a code task.
+
+**Also rechecked, not fixed:** the web-only "5 errors on level load" burst
+from two sessions ago did not reproduce across 8 fresh attempts this
+session — reported honestly as a monitoring item, not claimed as fixed,
+since no code change was made to explain a fix. Full writeup:
+`docs/session-logs/2026-07-31-distributor-evidence-and-flush-recheck.md`.
 
 ## 💎 THE DISTRIBUTOR IS NO LONGER THE WEAK BOSS (2026-07-30)
 
