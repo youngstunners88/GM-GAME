@@ -14,7 +14,10 @@ func _ready() -> void:
     play_btn.pressed.connect(_on_play)
     continue_btn.pressed.connect(_on_continue)
     quit_btn.pressed.connect(_on_quit)
-    title.text = "LIL BLUNT\nTHE SMOKE REALM"
+    # Title is just the name; the SubtitleLabel carries "THE SMOKE REALM".
+    # (Was a two-line string here that duplicated the subtitle — Grok title-
+    # hierarchy brief 2026-08-01: one dominant title, one subtitle, no dupe.)
+    title.text = "LIL BLUNT"
     AudioManager.play_voice("menu_title")
     _setup_backdrop()
     _setup_ambience()
@@ -30,6 +33,24 @@ func _ready() -> void:
     var tween := create_tween().set_loops()
     tween.tween_property(title, "scale", Vector2(1.05, 1.05), 0.8)
     tween.tween_property(title, "scale", Vector2(1.0, 1.0), 0.8)
+    # First-ever run: show the controls once so a new player (esp. on a phone)
+    # knows what to press/tap before they play. Menu-only after that.
+    # load-by-path (not class_name) so the headless gates' stale global class
+    # cache can't break resolution — matches the email panel's pattern.
+    var htp := load("res://src/ui/how_to_play_panel.gd")
+    if not htp.already_shown():
+        htp.mark_shown()
+        _show_how_to_play()
+
+## Open the controls panel (auto-shown once on first run; re-openable anytime
+## from the HOW TO PLAY menu button and the pause menu).
+func _show_how_to_play() -> void:
+    var panel := preload("res://src/ui/how_to_play_panel.tscn").instantiate()
+    add_child(panel)
+
+func _on_how_to_play() -> void:
+    Web3Bridge.track("menu_how_to_play")
+    _show_how_to_play()
 
 ## Movie/Video-Game-Layer entry points on the hub (main menu): the Oracle,
 ## the on-chain leaderboard, community lore, and the community funnel. Each
@@ -49,6 +70,7 @@ func _setup_layer_shift_buttons() -> void:
         # stack) so the v1.0 campaign flow is completely untouched — the
         # prototype is opt-in, and nothing in the platformer depends on it.
         # ASCII only — the pixel font has no ▶ glyph and renders it as tofu.
+        ["HOW TO PLAY", _on_how_to_play],
         ["NEW: BLUNT FORCE (v1.2)", _on_shooter_prototype],
         ["CONNECT RABBY", _on_connect_wallet],
         ["NEW TO CRYPTO?", _on_crypto_onboarding],
@@ -62,11 +84,15 @@ func _setup_layer_shift_buttons() -> void:
     for d in defs:
         var b := Button.new()
         b.text = d[0]
-        # Brief correction B: readable at 720p base scaled into an itch iframe.
-        # Bigger targets + font + a solid dark plate so labels read over the
-        # forest art (was 240×36 / font 14, too small to read without zoom).
-        b.custom_minimum_size = Vector2(300, 46)
-        b.add_theme_font_size_override("font_size", 20)
+        # Readable at 720p base scaled into an itch iframe / on a phone. Grok
+        # title-hierarchy brief 2026-08-01: secondary tier at font 24, ≥52px
+        # tall thumb targets, subordinate to the primary PLAY/CONTINUE/QUIT
+        # (font 36) but still legible. Dark plate + outline so labels read over
+        # the busy art.
+        b.custom_minimum_size = Vector2(320, 56)
+        b.add_theme_font_size_override("font_size", 26)
+        b.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
+        b.add_theme_constant_override("outline_size", 3)
         var plate := StyleBoxFlat.new()
         plate.bg_color = Color(0.05, 0.09, 0.06, 0.82)
         plate.set_corner_radius_all(6)
@@ -86,7 +112,9 @@ func _setup_layer_shift_buttons() -> void:
         if d[0] == "CONNECT RABBY":
             _wallet_btn = b
     # Reposition to fit the taller button stack without clipping off-screen.
-    row.position = Vector2(24, get_viewport().get_visible_rect().size.y - 8 - defs.size() * 54)
+    # 64 = 56px button + 8px separation, so the taller stack still fits above
+    # the bottom edge without clipping on a phone viewport.
+    row.position = Vector2(24, get_viewport().get_visible_rect().size.y - 8 - defs.size() * 64)
     # Offline mode: wallet connect needs the network — disable with a tooltip
     # rather than letting it fail mysteriously. Re-enables on reconnect.
     _apply_wallet_online_state(not GameManager.offline_mode)

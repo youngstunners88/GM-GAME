@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/ui/how_to_play_panel.gd" id="1_htp"]
+
+[node name="HowToPlayPanel" type="CanvasLayer"]
+script = ExtResource("1_htp")

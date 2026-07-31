@@ -5,11 +5,37 @@
 **Branch:** `claude/setup-game-dev-environment-itWJv` (new PR open against `master`, following PR #11's merge)
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-07-31** (first real
-> live-browser observation of the Distributor fight — see below).
+> have something current to look at. Last updated: **2026-08-01** (mobile
+> playability + readable titles + first-run controls guide — see below).
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+
+## 📱 NOW ACTUALLY PLAYABLE ON A PHONE + READABLE TITLES (2026-08-01)
+
+The game was PC-first: on a phone the titles were tiny and the touch controls
+were, in practice, broken. Fixed all three this session.
+
+- **Titles & UI you can actually read.** Menu title 48 → 72, one clean
+  hierarchy (title ≫ subtitle ≫ PLAY ≫ the rest), dark outlines so text holds
+  up over the art, and the in-game HUD numbers bumped + outlined. The first
+  thing you see now reads at arm's length on a phone.
+- **Real mobile controls.** The old touch setup literally showed no controls
+  in a mobile browser (wrong device check), had no way to climb ladders, and
+  double-fired buttons. Rebuilt as one clean system: big LEFT/RIGHT pads, a
+  big ATK, JUMP, DASH, RUN, GRAB, and UP/DOWN for climbing — all real,
+  multi-touch (you can move + jump + attack at once), and the keyboard still
+  works exactly as before on desktop. Proven in a phone-sized browser: it
+  boots, the controls show, and you can reach and play the level by touch
+  alone with zero errors.
+- **"How you roll" guide.** A friendly first-run panel shows what to press on
+  a keyboard AND what to tap on a phone, then stays one tap away from the
+  menu. Chill, dismissible, fits any screen.
+- **Still needs a real phone in hand** for final thumb-comfort/notch tuning —
+  the layout is a strong first pass from a browser touch viewport. Details +
+  the multi-model breakdown (Grok design, Kimi audits, DeepSeek spec) and a
+  known dead pause-menu note: `docs/session-logs/2026-08-01-mobile-onboarding-titles.md`
+  and `docs/MOBILE_CONTROLS_SPEC.md`.
 
 ## 🎮 FIRST REAL LIVE-BROWSER LOOK AT THE DISTRIBUTOR (2026-07-31, later session)
 
