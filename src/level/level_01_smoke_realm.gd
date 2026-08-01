@@ -34,11 +34,28 @@ func _setup_depth_routes() -> void:
         EntitySpawner.spawn("coin", pos + Vector2(0, -34), self)
         EntitySpawner.spawn("coin", pos + Vector2(34, -34), self)
     # Escape-route ladders out of the two deadliest pit approaches.
-    for lad: Array in [[Vector2(770, 350), 300.0], [Vector2(2345, 450), 200.0]]:
-        var ladder := preload("res://src/level/ladder.tscn").instantiate()
-        ladder.global_position = lad[0]
-        ladder.height = lad[1]
-        add_child(ladder)
+    #
+    # Neither ladder set a custom top_exit_offset, so both fell back to the
+    # generic default Vector2(0,-20) ("stand directly above my own x").
+    # Ladder 1 (x=770) happens to land inside platform (750,350,120,20)'s
+    # x-range [750,870] by coincidence, so it was never visibly broken.
+    # Ladder 2 (x=2345) does NOT: the nearest platform is (2400,450,120,20),
+    # whose left edge starts 55px to the right — topping out with the
+    # default offset drops the player in open air short of the platform.
+    # This is the confirmed "climb to the top of a ladder with a platform
+    # and NOT land on it" bug (level_02's ladders already had this tuning;
+    # level_01's never did). Offset computed the same way level_02's were:
+    # target = (platform_x + width/2, platform_y - 20).
+    var ladder1 := preload("res://src/level/ladder.tscn").instantiate()
+    ladder1.global_position = Vector2(770, 350)
+    ladder1.height = 300.0
+    add_child(ladder1)
+
+    var ladder2 := preload("res://src/level/ladder.tscn").instantiate()
+    ladder2.global_position = Vector2(2345, 450)
+    ladder2.height = 200.0
+    ladder2.top_exit_offset = Vector2(115, -20)  # -> platform centre (2460, 430)
+    add_child(ladder2)
     # EXPLORER — secret walls hugging the gap edges and the far quiet corner.
     for wall_pos: Vector2 in [Vector2(468, 586), Vector2(1368, 586), Vector2(2768, 586)]:
         var wall := preload("res://src/level/secret_wall.tscn").instantiate()

@@ -6,21 +6,51 @@ extends CharacterBody2D
 ## Damage window is still the post-charge VULNERABLE state (readable tell), but
 ## the ranged clipboards make him a threat at all times. Voice via BossVoiceSystem.
 ## Design: docs/architecture/adr-boss-ai-overhaul.md.
+##
+## auditor.tscn's root CharacterBody2D collision_mask was 15 (world + PLAYER +
+## enemy + collectible) — Kimi audit 2026-08-02: CharacterBody2D-vs-
+## CharacterBody2D means the player physically collided with the boss's body,
+## so `is_on_wall()` could trip on touching the player, not just real
+## geometry, ending a chase/charge on contact before it ever closed the gap.
+## Contact damage is owned entirely by the separate Hitbox Area2D below, which
+## doesn't need the main body to physically collide with the player at all —
+## fixed to mask=13 (dropped the player layer, value 2).
 
-enum State { PATROL, CHARGE, VULNERABLE, DEFEATED }
+enum State { PATROL, ALERT, PURSUE, VULNERABLE, DEFEATED }
 const BOSS_ID := "tax"
 const CLIPBOARD := preload("res://src/boss/boss_projectile.tscn")
 
 @export var patrol_speed: float = 90.0
-@export var charge_speed: float = 320.0
 @export var vulnerable_time: float = 1.8
 @export var max_health: int = 6
+## Founder defect #6: CHARGE used to dash at a POSITION SNAPSHOTTED once when
+## the charge began — never the live player — so it never actually chased.
+## Replaced with a continuously-retargeting PURSUE state (below); this is its
+## base speed, scaled by phase the same way patrol_speed already is.
+@export var pursue_speed: float = 170.0
+@export var pursue_duration: float = 4.0
+## Fairness contract telegraph (house style, see tax_collector.gd's ALERT):
+## a frozen beat facing the player before the chase begins. Deliberately
+## generous — this is most players' first-ever boss fight.
+@export var alert_time: float = 0.6
+@export var jump_force: float = -430.0
+## Widest gap worth attempting during PURSUE. Derived from this boss's own
+## kinematics (house style, see tax_collector.gd's max_jump_gap comment):
+## jump_force=-430 / gravity 980 -> ~0.88s airtime; at base pursue_speed=170
+## that's ~149px horizontal reach. 110 leaves margin for a raised ledge
+## (shorter horizontal reach for the same launch) and DifficultyManager-style
+## slowdowns.
+@export var max_jump_gap: float = 110.0
+var _jump_cooldown: float = 0.0
 
 var current_state: State = State.PATROL
 var health: int = 6
 var patrol_direction: float = 1.0
-var charge_target: Vector2 = Vector2.ZERO
-var state_timer: float = 0.0
+# Kimi audit (2026-08-02): 0.0 meant "state_timer <= 0.0" was already true on
+# the very first physics frame, so the boss charged/pursued the instant it
+# spawned, at whatever position the player happened to be standing in —
+# before the player even had a beat to register the fight had started.
+var state_timer: float = 2.0
 var throw_timer: float = 2.0
 var hop_timer: float = 6.0
 var phase: int = 1
@@ -123,18 +153,70 @@ func _physics_process(delta: float) -> void:
 				velocity.y = -320.0
 				velocity.x = -patrol_direction * 160.0
 			if state_timer <= 0.0:
-				state_timer = 1.4
-				current_state = State.CHARGE
+				# Telegraph BEFORE the chase — freeze, face the player, tell.
+				state_timer = alert_time
+				current_state = State.ALERT
+				velocity.x = 0.0
 				var p := get_tree().get_first_node_in_group("player")
 				if p:
-					charge_target = p.global_position
+					sprite.scale.x = 1.0 if p.global_position.x > global_position.x else -1.0
+				sprite.color = Color(0.85, 0.5, 0.15, 1.0)  # amber wind-up
+				AudioManager.play_sfx_at("tax_alert", global_position)
 
-		State.CHARGE:
-			var dir := global_position.direction_to(charge_target)
-			velocity.x = dir.x * charge_speed
+		State.ALERT:
+			velocity.x = 0.0
 			velocity.y += 980.0 * delta
 			move_and_slide()
-			if state_timer <= 0.0 or is_on_wall():
+			if state_timer <= 0.0:
+				state_timer = pursue_duration
+				current_state = State.PURSUE
+				sprite.color = Color(0.55, 0.3, 0.12, 1.0)
+				# Contact hurts during the chase; take_damage() stays gated to
+				# VULNERABLE, so a stray projectile hitting this is a no-op.
+				hitbox.set_deferred("monitorable", true)
+				hitbox.set_deferred("monitoring", true)
+
+		State.PURSUE:
+			_jump_cooldown -= delta
+			# Cast immediately: get_first_node_in_group() is typed `Node`, so
+			# `p.global_position` is a Variant and `var x := <Variant>` is a
+			# HARD PARSE ERROR in Godot 4.3 (it does not warn — it refuses to
+			# load the whole script). See distributor.gd's _apply_pull() for
+			# the same documented trap; missed once already in this session's
+			# first draft.
+			var p := get_tree().get_first_node_in_group("player") as CharacterBody2D
+			if p == null:
+				current_state = State.PATROL
+				state_timer = 1.4
+				sprite.color = Color(0.4, 0.25, 0.15, 1.0)
+				hitbox.set_deferred("monitorable", false)
+				hitbox.set_deferred("monitoring", false)
+				return
+			# LIVE tracking — re-read the player every frame, never a snapshot.
+			# Phase speed scaling comes for free: _update_phase already scales
+			# patrol_speed off _base_patrol_speed, so reuse that ratio.
+			var speed_scale := patrol_speed / _base_patrol_speed
+			var dx := p.global_position.x - global_position.x
+			var toward := signf(dx)
+			velocity.x = toward * pursue_speed * speed_scale
+			sprite.scale.x = 1.0 if toward > 0.0 else -1.0
+			# Jump when the player is above or a wall blocks the chase — gated
+			# on max_jump_gap so he never commits to a leap he can't land.
+			var dy := p.global_position.y - global_position.y
+			if is_on_floor() and _jump_cooldown <= 0.0:
+				var wants_up := dy < -48.0
+				var blocked := is_on_wall()
+				if (wants_up or blocked) and absf(dx) <= max_jump_gap:
+					velocity.y = jump_force
+					_jump_cooldown = 0.9
+			# Attack WHILE chasing — same per-phase cadence, slightly tighter.
+			if throw_timer <= 0.0:
+				throw_timer = [0.0, 2.2, 1.7, 1.2][phase]
+				_throw_clipboard()
+			velocity.y += 980.0 * delta
+			move_and_slide()
+			# Overextended — the readable damage window, unchanged from before.
+			if state_timer <= 0.0:
 				state_timer = vulnerable_time
 				current_state = State.VULNERABLE
 				sprite.color = Color(1.0, 0.2, 0.2, 1.0)
@@ -198,7 +280,11 @@ func take_damage(amount: int) -> void:
 func _update_phase() -> void:
 	var ratio := float(health) / float(max_health)
 	var new_phase := 1
-	if ratio <= 0.33:
+	# Kimi audit (2026-08-02): with max_health=6, health=2 is exactly 1/3
+	# (0.3333...) which float-compares GREATER than the literal 0.33 — phase 3
+	# never started at the documented "25%" threshold, only at 1 HP (a one-hit
+	# enrage window). Integer comparison is exact, no float rounding involved.
+	if health * 3 <= max_health:
 		new_phase = 3
 	elif ratio <= 0.66:
 		new_phase = 2

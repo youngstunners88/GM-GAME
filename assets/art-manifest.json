@@ -142,6 +142,15 @@
       "out_h": 720,
       "path": "src/assets/backgrounds/bg_secret_mid.jpg",
       "prompt": "16-bit pixel art game background layer, a trippy floating lounge, levitating velvet couches and glowing lava lamps and big ornate glass bongs with soft curling green and pink smoke, warm neon disco haze, silhouetted relaxed chill figures lounging in the far background, tasteful and classy, cosmic depth, cohesive painterly pixel style, no text"
+    },
+    {
+      "id": "bg_blaze_rush_treeline",
+      "width": 1216,
+      "height": 704,
+      "out_w": 1280,
+      "out_h": 720,
+      "path": "src/assets/backgrounds/bg_blaze_rush_treeline.jpg",
+      "prompt": "16-bit pixel art side-scroller game background, a distant Smoke Realm forest treeline silhouette at night seen from deep within a hazy electric-purple void, dark pine and mushroom-cap canopy shapes in near-black silhouette against a faint purple-magenta glow, extremely minimal detail, no foreground elements, no ground, no characters, no text, wide seamless horizontal tiling composition"
     }
   ]
 }

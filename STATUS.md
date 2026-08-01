@@ -5,11 +5,48 @@
 **Branch:** `claude/setup-game-dev-environment-itWJv` (new PR open against `master`, following PR #11's merge)
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-08-01** (mobile
-> playability + readable titles + first-run controls guide — see below).
+> have something current to look at. Last updated: **2026-08-02** (Stage
+> 2/3 boss-visibility bug fixed — real evidence below; Blaze Rush no longer
+> restarts the game; stomp added; Tax Collector boss redesigned).
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+
+## 🔦 THE BOSS-DISAPPEARING BUG IS FIXED — WITH PROOF (2026-08-02)
+
+For as long as this project has had a Stage 2/3 boss fight, the boss and
+often Lil Blunt himself were never actually visible on screen during the
+fight in any screenshot we ever took — including a dedicated observation
+session two days ago. Found the real cause today: **the camera's scroll
+limit was hardcoded to Level 1's width**, so on the wider Level 2/3 the
+camera physically could not scroll far enough to show the boss arena, and a
+player walking right just walked off the edge of a frozen view. Fixed so
+every level sets its own camera limit from its own size. **First screenshot
+ever showing both the boss and Lil Blunt on screen together, staying
+visible as you move** — this was likely also the "soft-lock" you reported.
+
+**Also this session:**
+- **Blaze Rush no longer restarts the game.** Found the exact one-line bug
+  (a hardcoded save slot) and fixed it — finishing or hitting the new ESC
+  exit now correctly drops you back into the real level you were playing,
+  proven with a real before/after screenshot.
+- **Blaze Rush looks like part of your world now.** Replaced the flat
+  black/purple void with a real Muapi-generated moonlit forest treeline —
+  one deliberate first step, with room for the rotating token logos next.
+- **Stomp exists.** Landing on an enemy's head now kills it and bounces you
+  — it never did before.
+- **The Tax Collector boss actually chases you now** — redesigned so he
+  tracks you live, jumps gaps, and throws while moving instead of freezing
+  into a scripted charge at a spot you've already left.
+- One Level 1 ladder that dropped you into open air instead of onto its
+  platform — fixed.
+- 7 new permanent checks added so these exact bug classes get caught
+  automatically going forward.
+- **Honest gaps, not papered over**: torch-in-hand wasn't re-screenshotted
+  this session (the code looks right); the new stomp and boss chase are
+  gate-verified but not yet seen in a real live fight; one Level 3 ladder
+  is still unresolved. Full breakdown:
+  `docs/session-logs/2026-08-02-blaze-rush-defects-and-vision.md`.
 
 ## 📱 NOW ACTUALLY PLAYABLE ON A PHONE + READABLE TITLES (2026-08-01)
 

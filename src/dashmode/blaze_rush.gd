@@ -103,6 +103,31 @@ func _build_background() -> void:
 	var pbg := ParallaxBackground.new()
 	pbg.layer = -1
 	add_child(pbg)
+
+	# L1a treeline — Grok 4.5 art-direction brief (2026-08-01,
+	# docs/model-responses/2026-08-02-grok-blaze-rush-branding.md), vertical
+	# slice #1: "the fastest proof this is Lil Blunt's world" was a distant
+	# Smoke Realm forest silhouette sitting BEHIND the run, same biome as
+	# every campaign level, without touching any gameplay-critical hazard
+	# silhouette. Muapi-generated (assets/art-manifest.json id
+	# "bg_blaze_rush_treeline"), added as its own ParallaxLayer so it can
+	# scroll slower than the haze blobs (more distant = less motion) and
+	# tiles infinitely via motion_mirroring, same technique as the haze layer
+	# right below it. Added BEFORE the haze layer so haze draws in front.
+	var treeline_layer := ParallaxLayer.new()
+	treeline_layer.motion_scale = Vector2(0.08, 0.0)
+	var treeline_tex: Texture2D = load("res://src/assets/backgrounds/bg_blaze_rush_treeline.jpg")
+	treeline_layer.motion_mirroring = Vector2(float(treeline_tex.get_width()), 0.0)
+	var treeline := Sprite2D.new()
+	treeline.texture = treeline_tex
+	treeline.centered = false
+	treeline.position = Vector2(0.0, GROUND_Y - float(treeline_tex.get_height()))
+	# Slight cool-purple tint keeps it from fighting the haze for saturation —
+	# it's the backdrop, not the focal point (Grok: "brand lives in backplate").
+	treeline.modulate = Color(0.85, 0.8, 1.0, 0.9)
+	treeline_layer.add_child(treeline)
+	pbg.add_child(treeline_layer)
+
 	var haze_layer := ParallaxLayer.new()
 	haze_layer.motion_scale = Vector2(0.15, 0.0)
 	haze_layer.motion_mirroring = Vector2(900.0, 0.0)
@@ -485,6 +510,13 @@ func _build_hud() -> void:
 # --- run loop ----------------------------------------------------------------
 
 func _unhandled_input(event: InputEvent) -> void:
+	# Founder defect #2: exit must be reachable ANY time, not only via the
+	# always-visible ✕ button — a despondent player must not be trapped.
+	if event.is_action_pressed("ui_cancel"):
+		get_viewport().set_input_as_handled()
+		if not _finished:
+			_exit_to_level()
+		return
 	# Whole-screen tap/click = jump (mobile-first, Geometry Dash convention).
 	if event is InputEventScreenTouch and event.pressed:
 		_tap_buffered = true
@@ -616,7 +648,14 @@ func _exit_to_level() -> void:
 	)
 	var portal_pos: Vector2 = GameManager.dash_return.get("position", Vector2.ZERO)
 	if portal_pos != Vector2.ZERO:
-		# LevelBase spawns from checkpoint slot 1 — drop the player back at the portal.
-		GameManager.save_checkpoint(1, 990 + _level_index, portal_pos)
+		# BUG (product-breaking): this hardcoded checkpoint slot 1 regardless of
+		# which level launched the run. save_checkpoint()'s first argument is
+		# the LEVEL NUMBER — the exact key LevelBase._spawn_player() looks up
+		# via get_checkpoint(level_data.level_index). Entering Blaze Rush from
+		# Level 2/3 wrote the checkpoint into Level 1's slot, so on return the
+		# real level found nothing under its own key and fell through to its
+		# default player_spawn — the player resumed at the LEVEL START, which
+		# reads exactly like "the game restarted." Use the actual level index.
+		GameManager.save_checkpoint(_level_index, 990 + _level_index, portal_pos)
 	GameManager.dash_return = {}
 	SceneRouter.load_scene(return_path, SceneRouter.Transition.SMOKE)

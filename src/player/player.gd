@@ -8,6 +8,20 @@ signal died
 @export var walk_speed: float = 200.0
 @export var jump_force: float = -430.0
 @export var gravity: float = 1000.0
+## Mario-style stomp: landing on an enemy's head damages/kills it and bounces
+## the player back up — smaller than a real jump (jump_force=-430) so it
+## chains into another stomp or a normal jump without feeling like a full
+## reset. Founder defect #10: no stomp existed before this; every enemy
+## contact (including landing on its head) hurt the PLAYER instead.
+@export var stomp_bounce_force: float = -300.0
+## Minimum downward speed for contact to count as a stomp — filters out
+## brushing an enemy at the apex of a jump.
+@export var stomp_min_fall_speed: float = 40.0
+## How far above the enemy's own origin the player's origin must be to count
+## as "landed on its head" rather than a side/below hit. Margin is generous
+## (most enemy sprites in this project are ~32-96px) but still excludes a
+## same-height side bump.
+const STOMP_Y_MARGIN: float = 8.0
 @export var double_jump_force: float = -370.0
 ## Falling pulls harder than rising — same jump height (level gaps unchanged),
 ## ~15% less airtime, kills the floaty feel.
@@ -540,10 +554,48 @@ func _on_hurtbox_body_entered(body: Node2D) -> void:
 	if GameManager.has_power_up("pickaxe") and body.has_method("smash"):
 		body.smash()
 		return
-	if body.is_in_group("enemy") and body.has_method("deal_damage"):
-		body.deal_damage(self)
+	if body.is_in_group("enemy"):
+		# Stomp (defect #10): landing on a head is an attack, not a hit —
+		# damage THEM, bounce US. Must run and `return` BEFORE deal_damage,
+		# or the same contact would also hurt the player on the exact hit
+		# that killed the thing standing on.
+		if _try_stomp(body):
+			return
+		if body.has_method("deal_damage"):
+			body.deal_damage(self)
 	elif body.is_in_group("hazard"):
 		take_damage(1)
+
+## True (and fully handled) if this enemy contact is a head-stomp: player
+## falling, player's origin clearly above the enemy's. Side/below contact
+## returns false and stays a normal player-takes-damage hit. Bosses are
+## excluded — they keep their own VULNERABLE-window damage contract, which a
+## free stomp would bypass. velocity.y OR _last_fall_speed: move_and_slide
+## can zero velocity.y on the exact physics frame this Area2D signal fires,
+## but _last_fall_speed still holds the pre-landing value (player.gd only
+## resets it once is_on_floor() is true).
+func _try_stomp(body: Node2D) -> bool:
+	if body.is_in_group("boss"):
+		return false
+	if not body.has_method("take_damage"):
+		return false
+	if body.get("is_dead") == true:
+		return false  # don't re-stomp a corpse mid-death-tween
+	var falling: bool = velocity.y > stomp_min_fall_speed \
+			or _last_fall_speed > stomp_min_fall_speed
+	if not falling:
+		return false
+	if global_position.y >= body.global_position.y - STOMP_Y_MARGIN:
+		return false
+	body.take_damage(1)
+	_ground_pounding = false  # a pound resolves as a stomp, doesn't fight the bounce
+	velocity.y = stomp_bounce_force
+	input_handler.can_double_jump = true
+	input_handler.can_air_dash = true
+	_play_jump_stretch()
+	AudioManager.play_sfx("jump")
+	ComboSystem.add_score(20)
+	return true
 
 func _on_aura_body_entered(body: Node2D) -> void:
 	if body.is_in_group("enemy") and body.has_method("take_damage"):

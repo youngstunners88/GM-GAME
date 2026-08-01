@@ -27,6 +27,7 @@ func _ready() -> void:
 	_setup_entities()
 	_setup_boss_arena()
 	_spawn_player()
+	_setup_camera_limits()
 	_setup_hud()
 	_apply_token_perks()
 	StateMachine.change_state(StateMachine.State.PLAYING)
@@ -296,6 +297,33 @@ func _spawn_player() -> void:
 	else:
 		player.global_position = Vector2(100, 500)
 	add_child(player)
+
+## FIX (Stage 2/3 boss-visibility bug): the Camera2D baked into player.tscn
+## ships with a hardcoded limit_right=3400 — correct for Level 1
+## (bounds.x=3400, pure coincidence) but 1000px SHORT of Level 2 and Level 3
+## (both bounds.x=4400, whose boss arenas sit at x=3700-4400 — ENTIRELY past
+## the clamp). LevelBase never overrode it, so on Stage 2/3 the camera hit a
+## hard wall at x=3400 while the boss spawned beyond it (boss "unseen" on
+## arrival) and the player kept walking right past the now-frozen camera
+## (Lil Blunt "disappearing" off the right edge). secret_realm.gd and
+## prototype_room.gd already set their own camera limits correctly — the
+## shared campaign LevelBase was the one path that never did.
+func _setup_camera_limits() -> void:
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null:
+		# Kimi audit 2026-08-02: silently returning here would resurrect the
+		# EXACT bug this function exists to fix, with no signal that it
+		# happened — warn loudly instead of failing quiet.
+		push_warning("LevelBase: no player in group 'player' — camera limits not set")
+		return
+	var cam := player.get_node_or_null("Camera2D") as Camera2D
+	if cam == null:
+		push_warning("LevelBase: player has no Camera2D child named 'Camera2D' — camera limits not set")
+		return
+	cam.limit_left = 0
+	cam.limit_top = 0
+	cam.limit_right = int(level_data.bounds.x)
+	cam.limit_bottom = int(level_data.kill_zone_y) + 100
 
 ## Adaptive-difficulty application (task #23, Video-Game Layer). Runs when the
 ## player's analytics arrive (or immediately with neutral defaults offline).
