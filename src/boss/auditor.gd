@@ -42,6 +42,13 @@ const CLIPBOARD := preload("res://src/boss/boss_projectile.tscn")
 ## slowdowns.
 @export var max_jump_gap: float = 110.0
 var _jump_cooldown: float = 0.0
+# Founder feel-review fairness tune (2026-08-04): PURSUE speed ramps 55%->100%
+# over 0.7s and the contact hitbox stays inert for the first 0.35s — the
+# ALERT telegraph already existed, but full speed + live contact damage used
+# to land on the exact same frame PURSUE began. Not a redesign: top speed,
+# live tracking, jump gating, and throw cadence are all unchanged.
+var _pursue_elapsed: float = 0.0
+var _pursue_hitbox_live: bool = false
 
 var current_state: State = State.PATROL
 var health: int = 6
@@ -173,11 +180,22 @@ func _physics_process(delta: float) -> void:
 				sprite.color = Color(0.55, 0.3, 0.12, 1.0)
 				# Contact hurts during the chase; take_damage() stays gated to
 				# VULNERABLE, so a stray projectile hitting this is a no-op.
-				hitbox.set_deferred("monitorable", true)
-				hitbox.set_deferred("monitoring", true)
+				# The actual set_deferred enables are delayed — see the
+				# hitbox-grace block in State.PURSUE below.
+				_pursue_elapsed = 0.0
+				_pursue_hitbox_live = false
 
 		State.PURSUE:
 			_jump_cooldown -= delta
+			# Elapsed-PURSUE-time accumulator: frame-rate independent driver
+			# for both the speed ramp and the hitbox grace window below.
+			_pursue_elapsed += delta
+			# Hitbox grace: contact damage arms 0.35s into the chase instead
+			# of on the same frame the chase starts.
+			if not _pursue_hitbox_live and _pursue_elapsed >= 0.35:
+				_pursue_hitbox_live = true
+				hitbox.set_deferred("monitorable", true)
+				hitbox.set_deferred("monitoring", true)
 			# Cast immediately: get_first_node_in_group() is typed `Node`, so
 			# `p.global_position` is a Variant and `var x := <Variant>` is a
 			# HARD PARSE ERROR in Godot 4.3 (it does not warn — it refuses to
@@ -196,9 +214,16 @@ func _physics_process(delta: float) -> void:
 			# Phase speed scaling comes for free: _update_phase already scales
 			# patrol_speed off _base_patrol_speed, so reuse that ratio.
 			var speed_scale := patrol_speed / _base_patrol_speed
+			# Speed ramp: 55% -> 100% of target speed over the first 0.7s of
+			# PURSUE. Multiplies the final velocity.x — pursue_speed,
+			# speed_scale, and all phase math stay untouched. Also scales the
+			# max_jump_gap check below (Kimi post-tune audit): the gap was
+			# derived at full speed's horizontal reach, so a jump launched
+			# mid-ramp must be held to a smaller gap or it can fall short.
+			var ramp := lerpf(0.55, 1.0, clampf(_pursue_elapsed / 0.7, 0.0, 1.0))
 			var dx := p.global_position.x - global_position.x
 			var toward := signf(dx)
-			velocity.x = toward * pursue_speed * speed_scale
+			velocity.x = toward * pursue_speed * speed_scale * ramp
 			sprite.scale.x = 1.0 if toward > 0.0 else -1.0
 			# Jump when the player is above or a wall blocks the chase — gated
 			# on max_jump_gap so he never commits to a leap he can't land.
@@ -206,7 +231,13 @@ func _physics_process(delta: float) -> void:
 			if is_on_floor() and _jump_cooldown <= 0.0:
 				var wants_up := dy < -48.0
 				var blocked := is_on_wall()
-				if (wants_up or blocked) and absf(dx) <= max_jump_gap:
+				# Kimi post-tune audit: max_jump_gap was derived at FULL
+				# pursue_speed's horizontal reach. During the ramp window a
+				# jump launches with less speed and covers less ground, so
+				# the gate must shrink with `ramp` too, or a leap taken in
+				# the first ~0.2s of a chase can now fall short of a gap it
+				# was supposedly guaranteed to clear.
+				if (wants_up or blocked) and absf(dx) <= max_jump_gap * ramp:
 					velocity.y = jump_force
 					_jump_cooldown = 0.9
 			# Attack WHILE chasing — same per-phase cadence, slightly tighter.

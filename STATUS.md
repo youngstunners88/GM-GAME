@@ -5,13 +5,38 @@
 **Branch:** `claude/setup-game-dev-environment-itWJv` (new PR open against `master`, following PR #11's merge)
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-08-03** (torch-in-
-> hand proven with a real screenshot for the first time; stomp and the Tax
-> Collector/Auditor chase both seen working in a live fight; Level 3 ladder
-> fixed and independently verified).
+> have something current to look at. Last updated: **2026-08-04** (Auditor
+> chase punish window tuned for a fairer first encounter; PR #12 has an
+> honest Episode 1 readiness report; Episode 2 + Lil Blunt voice-system
+> roadmap written).
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+
+## 🎯 EPISODE 1 CLOSEOUT: CHASE FEEL TUNED + HONEST READINESS REPORT (2026-08-04)
+
+Last session's feel review said the Auditor's first hit after a chase
+starts landed too fast to feel fair. Fixed: he now ramps up to full chase
+speed over 0.7 seconds and can't actually hurt you on contact until 0.35
+seconds into the chase, instead of both happening on the exact frame he
+starts moving. Top speed, his ability to jump gaps and throw while chasing,
+and the "he tracks you live, not where you were" fix from before are all
+unchanged. A follow-up audit on the tune itself caught a genuinely subtle
+side effect — the ramp meant an early jump in the chase could now come up
+just short of a gap he was supposed to be guaranteed to clear — and that's
+fixed too.
+
+**Also this session**: a full honest readiness report for PR #12 —
+`docs/pr12-episode1-readiness.md` — spelling out exactly what's proven
+solid, what's tuned-but-unverified-in-a-live-playthrough, and what's
+deliberately not started yet. **Merging PR #12 stays your call**, not
+something this session decided for you. Also wrote up the Episode 1 vs.
+Episode 2 plan and the full definition of Lil Blunt's voice system (what he
+says when you get hurt, land a big hit, etc., separate from the bigger
+"talk to him directly" feature that comes later) — `docs/roadmap/episode-
+strategy-and-voice-system.md`. No new audio was generated and no Episode 2
+content was built — this is the plan, not the work, so future sessions
+build the right thing in the right order.
 
 ## 🔦 TORCH-IN-HAND, PROVEN — PLUS STOMP AND THE CHASE, LIVE (2026-08-03)
 
