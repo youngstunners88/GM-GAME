@@ -35,6 +35,29 @@ const OFFLINE_LINES := {
 	"default": "Signal's hazy so I'm keepin' it short — but I'm here. Keep goin'.",
 }
 
+## Extra variants for the two states a struggling player hits most often.
+## Without these, dying to the Auditor repeatedly replays one identical
+## sentence, which reads as canned exactly when the player most needs it not
+## to. Lines from the Grok 4.5 pass
+## (docs/model-responses/2026-08-06-grok-companion-extra-lines.md).
+const OFFLINE_VARIANTS := {
+	"low_lives": [
+		"One left. Breathe with me — we still got this.",
+		"Final life. Easy does it. I'm riding shotgun.",
+		"Down to the wire. Stay loose. Right beside you.",
+	],
+	"boss_death": [
+		"Auditor clipped us. Shake it off — rematch time.",
+		"He got the jump. Next round's ours, real talk.",
+		"Tough hit. Dust off. We learn, we go again.",
+	],
+}
+
+## Round-robin index per state key, so consecutive hits of the same state
+## cycle instead of repeating. Deliberately not random: random repeats itself
+## visibly often at these small pool sizes.
+var _variant_turn: Dictionary = {}
+
 var _cache: Dictionary = {}   # question -> answer, this session
 
 @onready var _panel: Control = $Panel
@@ -59,9 +82,21 @@ func open() -> void:
 	_input.grab_focus()
 	Web3Bridge.track("companion_opened")
 
+## Kimi audit (2026-08-06): this MUST free the panel, not just hide it.
+## The pause-menu opener re-shows itself on this node's `tree_exited`. A
+## hidden-but-alive panel never fires that signal, which left the pause menu
+## hidden while StateMachine was still PAUSED and the tree was unpaused —
+## gameplay stays gated off (player.gd early-returns when not PLAYING) with
+## no visible menu, i.e. a soft-lock recoverable only via the pause key. It
+## also leaked one invisible panel per Talk-button press.
 func close() -> void:
 	visible = false
-	get_tree().paused = false
+	# Hand the tree back to gameplay ONLY if we are not returning to a paused
+	# menu. Opened from the main menu (not PAUSED) -> unpause. Opened from the
+	# pause menu (PAUSED) -> stay paused so the re-shown menu isn't sitting
+	# over a running game.
+	get_tree().paused = StateMachine.is_paused()
+	queue_free()
 
 ## Read-only snapshot of the run. Every field here is safe to show the player
 ## — nothing secret, no wallet keys, no unearned spoilers. The backend
@@ -99,20 +134,34 @@ func _build_state() -> Dictionary:
 ## Picks the offline line that best matches the live run — checked most
 ## specific first so "last life during a boss fight" reads as the boss line,
 ## not the generic one.
+## Returns the base line for `key`, rotating through OFFLINE_VARIANTS when
+## that state has extras. Falls back to OFFLINE_LINES for states with none.
+func _line_for(key: String) -> String:
+	if OFFLINE_VARIANTS.has(key):
+		var pool: Array = OFFLINE_VARIANTS[key]
+		var turn: int = int(_variant_turn.get(key, 0))
+		_variant_turn[key] = turn + 1
+		# Turn 0 uses the original OFFLINE_LINES entry so the established
+		# first-impression wording is still what a player hears first.
+		if turn == 0:
+			return OFFLINE_LINES[key]
+		return str(pool[(turn - 1) % pool.size()])
+	return OFFLINE_LINES[key]
+
 func _offline_line(state: Dictionary) -> String:
 	if str(state.get("last_death", "")) != "" and int(state.get("lives", 3)) < 3:
-		return OFFLINE_LINES["boss_death"]
+		return _line_for("boss_death")
 	if int(state.get("lives", 3)) <= 1:
-		return OFFLINE_LINES["low_lives"]
+		return _line_for("low_lives")
 	if bool(state.get("in_blaze_rush", false)):
-		return OFFLINE_LINES["blaze_rush"]
+		return _line_for("blaze_rush")
 	if str(state.get("boss_active", "")) != "":
-		return OFFLINE_LINES["boss_active"]
+		return _line_for("boss_active")
 	if not (state.get("power_ups", []) as Array).is_empty():
-		return OFFLINE_LINES["powered_up"]
+		return _line_for("powered_up")
 	if bool(state.get("first_run", false)):
-		return OFFLINE_LINES["early"]
-	return OFFLINE_LINES["default"]
+		return _line_for("early")
+	return _line_for("default")
 
 func _on_ask() -> void:
 	var q := _input.text.strip_edges()

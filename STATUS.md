@@ -5,12 +5,41 @@
 **Branch:** `claude/setup-game-dev-environment-itWJv` (new PR open against `master`, following PR #11's merge)
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-08-05** (Lil Blunt
-> now has a VOICE on big moments; you can TALK to him and he knows what's
-> happening in your run; and there's a step-by-step playtest list for you).
+> have something current to look at. Last updated: **2026-08-06** (Lil Blunt
+> now speaks in HIS OWN voice — the real one; plus a soft-lock in the new
+> Talk panel found and fixed before you ever hit it).
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+
+## 🎙️ HIS REAL VOICE IS IN (2026-08-06)
+
+Lil Blunt now speaks with **your custom "Lil Blunt" voice** on every action
+bark — hurt, going down, landing a throw, grabbing a big power-up, beating
+a boss. The stand-in is gone.
+
+**Why it failed last time:** it wasn't a missing voice. There are two
+ElevenLabs keys in the environment and *both* work, but only the newer one
+(`ELEVENLABS_API`) belongs to the workspace that owns his voice — the older
+one simply can't see it. That's why it looked like the voice didn't exist.
+The generator now always prefers the right key, with a note in the code so
+it can't get flipped back.
+
+Checked properly, not just "the download worked": every clip loads in the
+real engine, starts on the right audio channel, and each one's cooldown is
+longer than the clip itself, so he can never talk over himself.
+
+## 🛠️ AND A SOFT-LOCK CAUGHT BEFORE YOU HIT IT (2026-08-06)
+
+The "Talk to Lil Blunt" panel added last session had a real bug: closing it
+from the pause menu left the game paused with **no menu on screen** — stuck
+unless you pressed Escape again. An audit caught it, it's fixed, and the
+fix is proven by driving the actual pause → talk → close sequence and
+confirming the menu comes back every time.
+
+Also, when you're on your last life or have just been beaten by the
+Auditor, he now has a few different things to say instead of repeating one
+line — those are the moments you'd hear it most.
 
 ## 🎮 YOUR TURN: PLEASE PLAY IT (2026-08-05)
 

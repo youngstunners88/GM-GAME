@@ -31,11 +31,21 @@ MUSIC_DIR = ROOT / "src" / "assets" / "music"
 API = "https://api.elevenlabs.io/v1"
 
 
+## Two key names exist in this project's environments. ELEVENLABS_API is the
+## CURRENT one and is preferred: it is the workspace that owns the custom
+## "Lil Blunt" voice (HMGfKwZCRujgXyRDUW0b). The legacy ELEVENLABS_API_KEY
+## authenticates fine but its workspace cannot see that voice, which is what
+## produced the voice_not_found 404 on 2026-08-05. Order matters — do not
+## flip it back. Values are never printed or committed (SEC-001).
+KEY_ENV_NAMES = ("ELEVENLABS_API", "ELEVENLABS_API_KEY")
+
+
 def api_key() -> str:
-    key = os.environ.get("ELEVENLABS_API_KEY", "")
-    if not key:
-        sys.exit("ELEVENLABS_API_KEY not set in environment")
-    return key
+    for name in KEY_ENV_NAMES:
+        key = os.environ.get(name, "")
+        if key:
+            return key
+    sys.exit("No ElevenLabs key set: expected one of " + " or ".join(KEY_ENV_NAMES))
 
 
 def post(url: str, payload: dict, out_path: Path, retries: int = 3) -> bool:
