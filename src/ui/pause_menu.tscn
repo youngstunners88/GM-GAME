@@ -34,5 +34,8 @@ text = "Resume"
 [node name="RestartBtn" type="Button" parent="VBox"]
 text = "Restart"
 
+[node name="TalkBtn" type="Button" parent="VBox"]
+text = "Talk to Lil Blunt"
+
 [node name="QuitBtn" type="Button" parent="VBox"]
 text = "Quit to Menu"

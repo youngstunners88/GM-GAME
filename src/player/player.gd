@@ -383,6 +383,12 @@ func take_damage(amount: int) -> void:
 	ComboSystem.break_combo()
 	ScreenShake.shake(0.2, 5.0)
 	if GameManager.player_health <= 0:
+		# Kimi audit: this branch, NOT die(). GameManager.take_damage() already
+		# transitioned to GAME_OVER just above, so die()'s first guard
+		# (`if StateMachine.is_dead(): return`) returns immediately on every
+		# health death — a bark placed inside die() would be dead code. Here
+		# all guards have passed and it runs exactly once per killing blow.
+		AudioManager.play_bark("vo_death", 5.0)
 		die()
 	else:
 		_hitstop()
@@ -391,6 +397,9 @@ func take_damage(amount: int) -> void:
 		velocity.x = -240.0 if input_handler.facing_right else 240.0
 		power_up_handler.activate_invincibility(1.0)
 		AudioManager.play_sfx("damage")
+		# Lil Blunt's own voice. Safe in this branch only: the fatal case took
+		# the die() path above, so vo_hurt can never double up with vo_death.
+		AudioManager.play_bark("vo_hurt", 4.0)
 
 ## Freeze-frame on impact — ~4 frames at 5% speed reads as a hit, not lag.
 ## Timer ignores time_scale so the freeze always ends on schedule.
@@ -484,6 +493,10 @@ func pit_death() -> void:
 	if StateMachine.is_dead():
 		return
 	AudioManager.play_sfx("fall")
+	# "fall" is environmental; the bark is Lil Blunt's own reaction, so they
+	# complement rather than duplicate. The 5s per-id cooldown covers the
+	# pit-death-then-real-die() sequence when this was the last life.
+	AudioManager.play_bark("vo_death", 5.0)
 	ScreenShake.shake(0.5, 10.0)
 	# Heatmap: pits are obstacle deaths; surviving ones count as a retry.
 	Web3Bridge.report_metric("death", {"obstacle": "pit"})

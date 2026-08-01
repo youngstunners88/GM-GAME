@@ -283,6 +283,50 @@ func _on_voice_finished() -> void:
         var restore := current_music_player.create_tween()
         restore.tween_property(current_music_player, "volume_db", 0.0, 0.5)
 
+## Dedicated player for Lil Blunt's character barks. Deliberately a SEPARATE
+## node from _voice_player: play_voice() is the ANNOUNCER (stage/boss intros,
+## victory) and is single-slot + music-ducking. If barks reused it, a bark on
+## taking damage would cut off a stage-intro line, and every hurt would fire a
+## duck/restore tween pair on the music. One bark slot (newest replaces old)
+## because barks are reactions — the newest is the relevant one — which also
+## stops player nodes accumulating over a long session.
+var _bark_player: AudioStreamPlayer = null
+
+## Last-fired timestamp (msec) per bark id. Per-id so a rapid hurt bark can't
+## starve an attack bark, and vice versa.
+var _bark_last_played: Dictionary = {}
+
+## Play a short Lil Blunt character bark. Never touches current_music_player
+## and never touches _voice_player. Calls inside the per-id cooldown are
+## silently dropped — the cooldown IS the spam absorber for the fan-axe
+## multi-hit and continuous fire-breath tick cadence. A missing or unloadable
+## file is a silent no-op: VO assets may be absent in some builds and
+## gameplay must never depend on them.
+func play_bark(name: String, cooldown: float) -> void:
+    var now := Time.get_ticks_msec()
+    if _bark_last_played.has(name):
+        var last: int = _bark_last_played[name]
+        if now - last < int(cooldown * 1000.0):
+            return
+    var path := _resolve_audio("res://src/assets/sounds/voice/" + name)
+    if path == "":
+        return
+    var stream := load(path)
+    if not stream:
+        return
+    # Stamp only after a successful load, so a build missing this file doesn't
+    # burn the cooldown for nothing.
+    _bark_last_played[name] = now
+    if _bark_player and is_instance_valid(_bark_player):
+        _bark_player.queue_free()
+    _bark_player = AudioStreamPlayer.new()
+    _bark_player.bus = "SFX"
+    _bark_player.stream = stream
+    add_child(_bark_player)
+    _bark_player.play()
+    # Self-cleanup so finished barks don't leak nodes across a session.
+    _bark_player.finished.connect(_bark_player.queue_free)
+
 ## Positional SFX: plays at a world position so pickups/impacts pan and
 ## attenuate with distance from the player instead of sounding global.
 func play_sfx_at(name: String, pos: Vector2) -> void:

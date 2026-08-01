@@ -134,10 +134,16 @@ def main() -> int:
         if not force_all and line["id"] not in force_ids and out.exists():
             skip += 1
             continue
+        # Per-line voice override. The manifest's top-level `voice_id` is the
+        # ANNOUNCER (Callum) who narrates stage/boss intros. Lil Blunt's own
+        # character barks (vo_*) are a different voice entirely, so a line may
+        # name its own `voice_id` and fall back to the announcer when it
+        # doesn't. Same key handling either way — env var only, never inlined.
+        line_voice = line.get("voice_id", voice_id)
         print(f"VO   {line['id']}  \"{line['text']}\"")
         if dry:
             continue
-        if post(f"{API}/text-to-speech/{voice_id}", {
+        if post(f"{API}/text-to-speech/{line_voice}", {
             "text": line["text"],
             "model_id": "eleven_multilingual_v2",
         }, out):

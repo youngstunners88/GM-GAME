@@ -247,6 +247,11 @@ func activate_power_up(type: String, duration: float) -> void:
     power_up_timer = duration
     power_up_changed.emit(type, duration)
     AudioManager.play_sfx("powerup")
+    # Major pickups only. Coins/rings never route through here (they call
+    # add_coin/add_ethereum_ring), and the CLEAR path is the separate
+    # deactivate_power_up(), so an expiry can't reach this line.
+    if type != "" and duration > 0.0:
+        AudioManager.play_bark("vo_collect_major", 10.0)
     # Blaze / Purple Weed: take over the MUSIC exclusively — no more jingle
     # layered over the level track. Pushing again refreshes the token so a
     # second pickup can't be stopped by the first's expiry.

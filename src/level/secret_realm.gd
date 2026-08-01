@@ -230,6 +230,7 @@ func _setup_hud() -> void:
 	add_child(pm)
 	pm.get_node("VBox/ResumeBtn").pressed.connect(pm._on_resume_pressed)
 	pm.get_node("VBox/RestartBtn").pressed.connect(pm._on_restart_pressed)
+	pm.get_node("VBox/TalkBtn").pressed.connect(pm._on_talk_pressed)
 	pm.get_node("VBox/QuitBtn").pressed.connect(pm._on_quit_pressed)
 	add_child(preload("res://src/ui/hud.tscn").instantiate())
 

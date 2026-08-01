@@ -315,6 +315,14 @@ func _backend(method: String, path: String, body: Dictionary, on_done: Callable)
 func ask_oracle(question: String, on_answer: Callable) -> void:
 	_backend("POST", "/oracle", {"question": question, "wallet_address": wallet_address}, on_answer)
 
+## Lil Blunt companion chat. Unlike ask_oracle, this ships a read-only snapshot
+## of the live run so he can react to what's actually happening. No wallet
+## address is sent — the companion has no reason to know it, and not sending it
+## keeps this endpoint free of identity data. Backend owns the model key and
+## re-validates every state field (see backend/worker.js /companion).
+func ask_companion(question: String, state: Dictionary, on_answer: Callable) -> void:
+	_backend("POST", "/companion", {"question": question, "state": state}, on_answer)
+
 func submit_score(score: int, level: int, on_done: Callable) -> void:
 	_backend("POST", "/score", {
 		"score": score, "level": level, "wallet_address": wallet_address}, on_done)

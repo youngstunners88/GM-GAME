@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "voice_id": "N2lVS1w4EtoT3dr4eOWO",
-  "voice_note": "Callum (ElevenLabs premade) \u2014 warm, laid-back, lightly gravelly storyteller. One announcer for the whole game.",
+  "voice_note": "Callum (ElevenLabs premade) — warm, laid-back, lightly gravelly storyteller. One announcer for the whole game. Lil Blunt's own character barks (vo_*) use a per-line voice_id override; they are currently on a STAND-IN voice pending the founder's intended voice being added to the ElevenLabs workspace (see voice_status).",
   "sfx": [
     {
       "id": "jump",
@@ -101,23 +101,23 @@
   "voice": [
     {
       "id": "menu_title",
-      "text": "Lil Blunt\u2026 The Smoke Realm."
+      "text": "Lil Blunt… The Smoke Realm."
     },
     {
       "id": "stage1_intro",
-      "text": "Level One\u2026 The Smoke Realm. Stay chill, Lil Blunt."
+      "text": "Level One… The Smoke Realm. Stay chill, Lil Blunt."
     },
     {
       "id": "stage2_intro",
-      "text": "Level Two\u2026 Crystal Caverns. Diamonds in the deep."
+      "text": "Level Two… Crystal Caverns. Diamonds in the deep."
     },
     {
       "id": "stage3_intro",
-      "text": "Level Three\u2026 GoldMine Rush. Strike it rich, partner."
+      "text": "Level Three… GoldMine Rush. Strike it rich, partner."
     },
     {
       "id": "boss1_intro",
-      "text": "Uh oh\u2026 the Tax Auditor wants his cut!"
+      "text": "Uh oh… the Tax Auditor wants his cut!"
     },
     {
       "id": "boss2_intro",
@@ -133,7 +133,47 @@
     },
     {
       "id": "game_complete",
-      "text": "Game complete! One chill nugget\u2026 one giant win."
+      "text": "Game complete! One chill nugget… one giant win."
+    },
+    {
+      "id": "vo_hurt",
+      "text": "Ow— okay.",
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "note": "Lil Blunt character bark — soft wince, quick recovery, flat-chill",
+      "voice_id_intended": "HMGfKwZCRujgXyRDUW0b",
+      "voice_status": "STAND-IN. Founder's intended Lil Blunt voice HMGfKwZCRujgXyRDUW0b returns voice_not_found on this API key — an ElevenLabs shared-library voice must be added to the workspace before the API can use it. To swap: add that voice in the ElevenLabs dashboard, set voice_id to voice_id_intended here, then run `python3 scripts/generate_audio.py --force vo_hurt`."
+    },
+    {
+      "id": "vo_death",
+      "text": "Welp. I'm out.",
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "note": "Lil Blunt character bark — good-natured shrug, falling pitch",
+      "voice_id_intended": "HMGfKwZCRujgXyRDUW0b",
+      "voice_status": "STAND-IN. Founder's intended Lil Blunt voice HMGfKwZCRujgXyRDUW0b returns voice_not_found on this API key — an ElevenLabs shared-library voice must be added to the workspace before the API can use it. To swap: add that voice in the ElevenLabs dashboard, set voice_id to voice_id_intended here, then run `python3 scripts/generate_audio.py --force vo_death`."
+    },
+    {
+      "id": "vo_attack",
+      "text": "Yo! Got 'em!",
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "note": "Lil Blunt character bark — bright hit of hype, clipped rise",
+      "voice_id_intended": "HMGfKwZCRujgXyRDUW0b",
+      "voice_status": "STAND-IN. Founder's intended Lil Blunt voice HMGfKwZCRujgXyRDUW0b returns voice_not_found on this API key — an ElevenLabs shared-library voice must be added to the workspace before the API can use it. To swap: add that voice in the ElevenLabs dashboard, set voice_id to voice_id_intended here, then run `python3 scripts/generate_audio.py --force vo_attack`."
+    },
+    {
+      "id": "vo_collect_major",
+      "text": "Ohh, nice.",
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "note": "Lil Blunt character bark — warm, pleased, slight smile in voice",
+      "voice_id_intended": "HMGfKwZCRujgXyRDUW0b",
+      "voice_status": "STAND-IN. Founder's intended Lil Blunt voice HMGfKwZCRujgXyRDUW0b returns voice_not_found on this API key — an ElevenLabs shared-library voice must be added to the workspace before the API can use it. To swap: add that voice in the ElevenLabs dashboard, set voice_id to voice_id_intended here, then run `python3 scripts/generate_audio.py --force vo_collect_major`."
+    },
+    {
+      "id": "vo_boss_hype",
+      "text": "Heh— let's gooo.",
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "note": "Lil Blunt character bark — low chuckle into short hype lift",
+      "voice_id_intended": "HMGfKwZCRujgXyRDUW0b",
+      "voice_status": "STAND-IN. Founder's intended Lil Blunt voice HMGfKwZCRujgXyRDUW0b returns voice_not_found on this API key — an ElevenLabs shared-library voice must be added to the workspace before the API can use it. To swap: add that voice in the ElevenLabs dashboard, set voice_id to voice_id_intended here, then run `python3 scripts/generate_audio.py --force vo_boss_hype`."
     }
   ]
 }

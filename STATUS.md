@@ -5,13 +5,53 @@
 **Branch:** `claude/setup-game-dev-environment-itWJv` (new PR open against `master`, following PR #11's merge)
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-08-04** (Auditor
-> chase punish window tuned for a fairer first encounter; PR #12 has an
-> honest Episode 1 readiness report; Episode 2 + Lil Blunt voice-system
-> roadmap written).
+> have something current to look at. Last updated: **2026-08-05** (Lil Blunt
+> now has a VOICE on big moments; you can TALK to him and he knows what's
+> happening in your run; and there's a step-by-step playtest list for you).
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+
+## 🎮 YOUR TURN: PLEASE PLAY IT (2026-08-05)
+
+**The single most useful thing you can do now is play the game for 15
+minutes.** Everything below has been fixed and machine-verified, but you
+have not yet played the live build — that's the biggest open risk on the
+project, and no agent should call Episode 1 "done" without your pass.
+
+**→ `docs/playtest/episode1-human-checklist.md`** — 36 ordered steps.
+Tick them off, screenshot anything that fails, send back the numbers.
+Nothing else in this report matters as much as that list.
+
+**Merging PR #12 stays your decision, after you play.**
+
+## 🗣️ LIL BLUNT HAS A VOICE NOW (2026-08-05)
+
+He reacts out loud on the moments that matter — taking a hit, going down,
+landing a solid throw, grabbing a big power-up, and beating a boss. Not on
+every coin or footstep; only the moments worth a reaction, with cooldowns
+so it never turns into chatter.
+
+**One thing needs you:** the voice ID you gave me
+(`HMGfKwZCRujgXyRDUW0b`) isn't reachable from our API key — ElevenLabs
+requires a shared-library voice to be added to the workspace before the API
+can use it, and only you can do that from the dashboard. So he's currently
+speaking in a clearly-labelled stand-in voice so you can hear the timing
+and feel. **Swapping to his real voice is a one-line change once you add
+it** — exact steps are recorded in `assets/audio-manifest.json`.
+
+## 💬 AND YOU CAN TALK TO HIM (2026-08-05)
+
+"TALK TO LIL BLUNT" is on the main menu and in the pause menu. This isn't a
+generic chatbot bolted on — he gets a live read-only snapshot of your run
+(which level, lives left, which boss is up, whether you're in Blaze Rush,
+what power-ups are active) so he actually responds to what's happening.
+If the server is down he still answers, still in character, still aware of
+where you are. Verified working in a real browser: asked him a question on
+a fresh save and he correctly opened with "Just gettin' started. Take the
+scenic route if you want, no rush."
+
+He never talks price or promises gains — that's a hard rule in his prompt.
 
 ## 🎯 EPISODE 1 CLOSEOUT: CHASE FEEL TUNED + HONEST READINESS REPORT (2026-08-04)
 

@@ -84,6 +84,7 @@ func _on_area_entered(area: Area2D) -> void:
 func _hit(node: Node) -> bool:
 	if node and node.is_in_group("enemy") and node.has_method("take_damage"):
 		node.take_damage(damage)
+		AudioManager.play_bark("vo_attack", 3.0)  # shared cooldown, see axe.gd
 		return true
 	return false
 

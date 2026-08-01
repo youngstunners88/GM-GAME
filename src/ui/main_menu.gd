@@ -75,6 +75,7 @@ func _setup_layer_shift_buttons() -> void:
         ["CONNECT RABBY", _on_connect_wallet],
         ["NEW TO CRYPTO?", _on_crypto_onboarding],
         ["ASK THE ORACLE", _on_oracle],
+        ["TALK TO LIL BLUNT", _on_talk_companion],
         ["LEADERBOARD", _on_leaderboard],
         ["SUBMIT LORE", _on_submit_lore],
         ["JOIN THE SMOKERING", _on_join],
@@ -162,6 +163,15 @@ func _on_connect_wallet() -> void:
 func _on_oracle() -> void:
     Web3Bridge.track("menu_oracle")
     var panel := preload("res://src/ui/oracle_panel.tscn").instantiate()
+    add_child(panel)
+    panel.open()
+
+## Companion chat from the hub. Also reachable mid-run from the pause menu;
+## exposed here too so the feature has a guaranteed-reachable entry point that
+## does not depend on the pause key working on a given platform/browser.
+func _on_talk_companion() -> void:
+    Web3Bridge.track("menu_companion")
+    var panel := preload("res://src/ui/companion_panel.tscn").instantiate()
     add_child(panel)
     panel.open()
 

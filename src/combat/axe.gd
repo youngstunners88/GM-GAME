@@ -49,6 +49,13 @@ func _on_area_entered(area: Area2D) -> void:
 func _hit(node: Node) -> bool:
 	if node and node.is_in_group("enemy") and node.has_method("take_damage"):
 		node.take_damage(damage)
+		# Shared "vo_attack" id across all three hit paths (axe / flame /
+		# fire-breath) so ONE cooldown absorbs fan-axe multi-hits and
+		# continuous flame ticks collectively, not per-weapon. 3.0s is set
+		# from the real clip length: vo_attack.mp3 is 1.23s, so anything under
+		# ~1.5s would cut itself off mid-line during sustained combat, while a
+		# much longer gap stops it reading as a reaction to the hit at all.
+		AudioManager.play_bark("vo_attack", 3.0)
 		return true
 	return false
 

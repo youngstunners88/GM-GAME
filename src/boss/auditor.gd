@@ -362,6 +362,13 @@ func die() -> void:
 			"seconds": (Time.get_ticks_msec() - int(lvl.level_start_ms)) / 1000})
 	ScreenShake.zoom_to(1.0, 0.6)
 	AudioManager.play_voice("victory")
+	# Lil Blunt's hype bark lands AFTER the announcer's victory line instead of
+	# talking over it. 3.3s measured from the real clip (victory.mp3 = 3.13s) —
+	# not a guess. The SceneTreeTimer is owned by the tree and the lambda only
+	# touches the AudioManager autoload, so this still fires after this boss
+	# node frees itself below. 60s cooldown: bosses are rare, never repeat.
+	get_tree().create_timer(3.3).timeout.connect(
+		func() -> void: AudioManager.play_bark("vo_boss_hype", 60.0))
 	ScreenShake.heavy()
 	GameManager.save_session()
 	var tween := create_tween()
