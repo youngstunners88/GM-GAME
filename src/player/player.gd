@@ -123,6 +123,7 @@ func _physics_process(delta: float) -> void:
 	if _ladder_zones > 0 and (Input.is_action_pressed("move_up") or Input.is_action_pressed("move_down")):
 		_climbing = true
 		velocity = Vector2.ZERO
+		_last_fall_speed = 0.0  # else a stale pre-climb value can false-trigger a stomp mid-climb
 		input_handler.is_wall_sliding = false
 		wall_sparks.emitting = false
 		# MUST return here. Without it, the rest of this function (gravity,
@@ -306,9 +307,12 @@ func _resolve_ground_pound() -> void:
 		var collider := get_slide_collision(i).get_collider()
 		if collider and collider.is_in_group("breakable") and collider.has_method("break_block"):
 			collider.break_block()
-	# Stun (damage) enemies within a short radius of the impact.
+	# Stun (damage) enemies within a short radius of the impact. Bosses keep
+	# their own VULNERABLE-window contract (same reason _try_stomp excludes
+	# them) -- a free AoE pound would otherwise bypass it.
 	for enemy in get_tree().get_nodes_in_group("enemy"):
 		if enemy is Node2D and is_instance_valid(enemy) \
+				and not enemy.is_in_group("boss") \
 				and global_position.distance_to(enemy.global_position) < 120.0 \
 				and enemy.has_method("take_damage"):
 			enemy.take_damage(1)
@@ -575,6 +579,8 @@ func _on_hurtbox_body_entered(body: Node2D) -> void:
 ## but _last_fall_speed still holds the pre-landing value (player.gd only
 ## resets it once is_on_floor() is true).
 func _try_stomp(body: Node2D) -> bool:
+	if _climbing:
+		return false  # ladder contact uses the enemy's normal deal_damage path
 	if body.is_in_group("boss"):
 		return false
 	if not body.has_method("take_damage"):

@@ -42,6 +42,7 @@ var facing_right: bool = true:
 		if _tool:
 			_tool.flip_h = not value
 			_tool.position.x = TOOL_HAND_X if value else -TOOL_HAND_X
+			_tool.rotation = 0.35 if value else -0.35
 
 ## Ground-movement flag driven by the player each physics frame; while true
 ## the sprite gets a light run-bob (rotation + hop) so walking reads as
@@ -52,6 +53,11 @@ var moving: bool = false
 const TOOL_HAND_X: float = 14.0
 var _tool: Sprite2D
 var _tool_path: String = ""
+## Grip-anchored Y computed once in set_tool(); _process() re-applies the
+## same per-frame walk bob/lean to _tool from this base so the held tool
+## doesn't drift relative to the hand while walking (_tool is a sibling of
+## _spr, not a child, so it gets none of _spr's bob for free).
+var _tool_base_y: float = 0.0
 ## Cosmetic flame glow, torch only. The project has no 2D lighting pipeline
 ## (no PointLight2D used anywhere) and Stage 2 has no darkness mechanic to
 ## illuminate — a raw light node here would render as an unconfigured bright
@@ -136,13 +142,19 @@ func _process(delta: float) -> void:
 		# Body: bounce + a small lean into the walk (reads as arm/shoulder swing).
 		_spr.position.y = feet_y - lift
 		_spr.rotation = sin(stride) * 0.05 + dir * 0.04
+		# _tool is a sibling of _spr (not a child), so it gets none of the
+		# bob above for free — apply the same lift here or the held item
+		# visibly drifts from the hand while walking (see tool-hold-anchor).
+		if _tool:
+			_tool.position.y = _tool_base_y - lift
+			_tool.rotation = (0.35 if facing_right else -0.35) + sin(stride) * 0.05 * dir
 		# Feet swing forward/back in opposite phase, forward foot lifting — a
 		# clear "legs moving" read. Offset toward the facing direction.
 		var swing := sin(stride) * 7.0
 		_leg_l.visible = true
 		_leg_r.visible = true
-		_leg_l.position = Vector2(-6 + swing * dir, feet_y + _spr.texture.get_height() - 8 - maxf(0.0, swing) * 0.6)
-		_leg_r.position = Vector2(-1 - swing * dir, feet_y + _spr.texture.get_height() - 8 - maxf(0.0, -swing) * 0.6)
+		_leg_l.position = Vector2(-6 + swing * dir, feet_y + _spr.texture.get_height() / 2.0 - 8 - maxf(0.0, swing) * 0.6)
+		_leg_r.position = Vector2(-1 - swing * dir, feet_y + _spr.texture.get_height() / 2.0 - 8 - maxf(0.0, -swing) * 0.6)
 	else:
 		if _bob_time != 0.0:
 			_bob_time = 0.0
@@ -150,7 +162,7 @@ func _process(delta: float) -> void:
 			_spr.position.y = feet_y
 		# Feet planted together under the body while idle.
 		if _leg_l:
-			var by := feet_y + _spr.texture.get_height() - 8
+			var by := feet_y + _spr.texture.get_height() / 2.0 - 8
 			_leg_l.position = Vector2(-6, by)
 			_leg_r.position = Vector2(-1, by)
 
@@ -168,8 +180,8 @@ func set_tool(path: String) -> void:
 		return
 	if _tool == null:
 		_tool = Sprite2D.new()
-		_tool.rotation = 0.35
 		add_child(_tool)
+	_tool.rotation = 0.35 if facing_right else -0.35
 	_tool.texture = load(path)
 	_tool.flip_h = not facing_right
 	# Tool sprites (pickaxe, torch) are tall thin poles (~34-36px) drawn
@@ -183,9 +195,10 @@ func set_tool(path: String) -> void:
 	# and only a short handle stub below it — how you'd actually grip one.
 	var tex_height := float(_tool.texture.get_height()) if _tool.texture else 0.0
 	var grip_from_bottom := tex_height * 0.25
+	_tool_base_y = 2.0 - (tex_height / 2.0 - grip_from_bottom)
 	_tool.position = Vector2(
 		TOOL_HAND_X if facing_right else -TOOL_HAND_X,
-		2.0 - (tex_height / 2.0 - grip_from_bottom))
+		_tool_base_y)
 	if path.contains("torch"):
 		_show_glow(tex_height)
 	else:

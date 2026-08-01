@@ -75,9 +75,16 @@ func _setup_depth_routes() -> void:
 		EntitySpawner.spawn("coin", pos + Vector2(-20, -34), self)
 		EntitySpawner.spawn("coin", pos + Vector2(20, -34), self)
 	# Ladder up to the timed gate's approach ledge (escape from the cart run).
+	# Founder residual (2026-08-03): flagged "still ambiguous" last session.
+	# Resolved by the same computation used for level_01/02's fixed ladders:
+	# nearest platform is Vector4(1480,420,120,20) — top_y=350 with the
+	# default offset (0,-20) lands at (1465,330), 15px short of the
+	# platform's left edge (1480) AND 90px above its surface (420). Target =
+	# (platform_x + width/2, platform_y - 20) = (1540, 400).
 	var ladder := preload("res://src/level/ladder.tscn").instantiate()
 	ladder.global_position = Vector2(1465, 350)
 	ladder.height = 300.0
+	ladder.top_exit_offset = Vector2(75, 50)  # -> platform centre (1540, 400)
 	add_child(ladder)
 	# EXPLORER — secret walls in the old diggings.
 	for wall_pos: Vector2 in [Vector2(868, 586), Vector2(2468, 586), Vector2(3068, 586)]:

@@ -59,3 +59,28 @@ Confirm the tool sprite is added as a child AFTER (or otherwise draws in
 front of) the body/limb sprites it should appear in front of — a
 positionally-correct tool hidden behind a leg or torso sprite reads as "not
 showing" even when the coordinates are right.
+
+## Check 5 — Animation coupling (idle-correct is not walk-correct)
+
+Static grip math being correct only proves the tool is right in the ONE
+pose it was measured in (usually idle). If the body sprite gets ANY
+per-frame offset during other states — a walk bob, a lean/rotation, a
+squash-stretch tween — and the tool sprite is a SIBLING rather than a
+CHILD of the body sprite, the tool will not inherit that offset and will
+visibly drift relative to the hand exactly when the animation plays. This
+was a real, previously-undetected bug in this codebase (2026-08-03): idle
+math was provably correct, but `_process()`'s walk-cycle bob/lean applied
+to the body sprite (`_spr`) was never mirrored to the sibling tool sprite
+(`_tool`), so the torch floated relative to the hand only while walking —
+exactly the kind of thing a single idle-pose screenshot cannot catch.
+
+1. List every per-frame transform the body/limb sprites receive across ALL
+   states (idle, walking, jumping, landing, dashing, taking damage) —
+   position offsets, rotation, scale tweens.
+2. For each one, confirm the tool sprite receives the SAME offset (either
+   because it's a child of the transformed node, or because the code
+   explicitly re-applies the same delta to it).
+3. **FAIL** if any state applies a body transform the tool doesn't share.
+4. Screenshot evidence (Check 3) must include at least one frame captured
+   DURING movement/animation, not just a static idle pose — an idle-only
+   screenshot cannot surface this class of bug.

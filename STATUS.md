@@ -5,12 +5,42 @@
 **Branch:** `claude/setup-game-dev-environment-itWJv` (new PR open against `master`, following PR #11's merge)
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-08-02** (Stage
-> 2/3 boss-visibility bug fixed — real evidence below; Blaze Rush no longer
-> restarts the game; stomp added; Tax Collector boss redesigned).
+> have something current to look at. Last updated: **2026-08-03** (torch-in-
+> hand proven with a real screenshot for the first time; stomp and the Tax
+> Collector/Auditor chase both seen working in a live fight; Level 3 ladder
+> fixed and independently verified).
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+
+## 🔦 TORCH-IN-HAND, PROVEN — PLUS STOMP AND THE CHASE, LIVE (2026-08-03)
+
+The torch-at-the-feet complaint kept coming back even after "fixes" because
+every fix was only ever checked with the character standing still. Turns
+out there were two real bugs, both invisible at idle: the held torch never
+got the same walk-cycle bounce the body does (so it visibly drifted from
+the hand only while walking), and the legs were rendering 8px into the
+ground on every frame. Both fixed. **First screenshot ever showing the
+torch correctly held at hand height WHILE WALKING** — the exact pose that
+was silently broken before.
+
+**Also proven live, not just "should work":**
+- **Stomp**: jumped on a Tax Collector's head — score +40, zero damage
+  taken, bounced clean off. Along the way, hardened two real edge cases a
+  fresh audit found: a stomp could previously false-trigger while climbing
+  a ladder, and Big Mode's ground-pound could hit a boss during its
+  protected phase (the stomp itself already excluded bosses; the pound
+  didn't).
+- **The Tax Collector/Auditor boss chase**: walked away from it mid-fight
+  and it caught up and landed a hit — confirmed it actively pursues rather
+  than standing at its spawn. Feel note from the review: the punish window
+  after turning away reads a little fast for a first encounter; noted for
+  a future tuning pass, not changed today.
+- **Level 3's ladder**: the one flagged "still ambiguous" last session is
+  now fixed and independently re-verified — it lands you dead-centre on
+  the platform bridging the timed-gate gap, not short of it.
+
+Full technical breakdown: `docs/session-logs/2026-08-03-residuals-torch-stomp-chase-ladder.md`.
 
 ## 🔦 THE BOSS-DISAPPEARING BUG IS FIXED — WITH PROOF (2026-08-02)
 
