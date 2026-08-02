@@ -5,12 +5,56 @@
 **Branch:** `claude/setup-game-dev-environment-itWJv` (new PR open against `master`, following PR #11's merge)
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-08-08** (the
-> remaining 9 defects addressed — the death-freeze root cause found and fixed;
-> boss taunts expanded so they stop repeating).
+> have something current to look at. Last updated: **2026-08-08b** (Blaze Rush
+> finish/ESC + full-life-wipe respawn — proven END-TO-END; and the likely
+> reason fixes weren't reaching your live build).
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+
+## ⚠️ WHY FIXES WEREN'T REACHING YOU LIVE — READ THIS (2026-08-08b)
+
+You said Blaze Rush is *still* broken live even after I reported it fixed.
+You're right to be angry, and here's the honest reason: **the build you play
+on itch.io almost certainly does not contain any of these fixes.**
+
+- itch.io only updates when the CI's `butler` deploy step runs, and that step
+  runs **only if a `BUTLER_API_KEY` repo secret is set** (Settings → Secrets →
+  Actions). If that secret was never added, *no push has ever auto-deployed to
+  itch* — the live page is whatever was last uploaded by hand, possibly weeks
+  old. All my branch fixes are invisible there.
+- These fixes also live on the PR #12 branch, **not merged to `master`** (your
+  GitHub homepage / primary).
+
+So this session I did two things: (1) re-proved the three behaviors
+**end-to-end** (not the "data is in a dict" check you correctly rejected), and
+(2) surfaced the deploy gap so we can actually get it in front of you. **To see
+the fixes live, one of:** add the `BUTLER_API_KEY` secret and re-run CI, merge
+PR #12 to master, or tell me to deploy the fixed build to itch now (I have a
+session itch key but won't push to your public page without your OK).
+
+## 🔁 BLAZE RUSH + FULL WIPE — PROVEN END-TO-END (2026-08-08b)
+
+No probe theater this time. Each was driven through the **real scene router**,
+the actual handlers, from a Level-2 entry context:
+
+| Item | Status | End-to-end proof (this session) |
+|---|---|---|
+| **BR-FINISH** — win Blaze Rush → return to entry stage | **FIXED / PROVEN** | Entered Blaze Rush from L2 via SceneRouter → called the **real** `_finish_run()` → asserted the loaded scene is **level_02**, player at the **entry marker (x≈2100)**, not level start. |
+| **BR-ESC** — ESC → same return as finish | **FIXED / PROVEN** | Same entry, called the **real** ESC exit handler (`_exit_to_level`, the exact function `ui_cancel` calls) → back on **level_02** at the entry marker. Finish and ESC share one code path so they can't drift. |
+| **FULL-WIPE** — lose all lives → restart at LEVEL START | **FIXED / PROVEN** | Set a mid-level (boss-door) checkpoint on L2, lives=1, forced a lethal hit → the checkpoint is **cleared**, lives **refilled**, and the level reloads from its **start marker** — not the mid-level checkpoint. |
+
+**The full-wipe rule, in code, per your spec:**
+- Lose a life but lives remain → respawn at the level checkpoint (unchanged).
+- **Lose your LAST life (full wipe) → reload that level from the beginning**
+  (checkpoint cleared, lives refilled). Previously a full wipe went to the
+  menu / restored the mid-level checkpoint — both wrong; fixed.
+
+If Blaze Rush is still broken after you play a build that actually contains
+this commit, tell me and I'll treat it as a genuinely new bug — but the code
+path is now proven correct end-to-end.
+
+Full write-up: `docs/session-logs/2026-08-08b-blaze-rush-e2e-and-wipe.md`.
 
 ## 🩹 REMAINING 9 DEFECTS + DEATH FREEZE ROOT CAUSE — 2026-08-08
 

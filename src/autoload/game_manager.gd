@@ -322,6 +322,19 @@ func _clear_blaze_music_override() -> void:
 func save_checkpoint(level: int, checkpoint_id: int, pos: Vector2) -> void:
     level_checkpoints[level] = {"id": checkpoint_id, "pos": pos}
 
+## Drop a level's saved checkpoint so the next spawn falls back to the level's
+## START marker. Used by a FULL LIFE WIPE: game-over must restart the level
+## from the beginning, not the mid-level checkpoint where the last life fell.
+func clear_checkpoint(level: int) -> void:
+    level_checkpoints.erase(level)
+
+## Refill lives + health to full for a fresh level attempt after a full wipe.
+func refill_run() -> void:
+    lives = max_lives
+    lives_changed.emit(lives)
+    player_health = max_health
+    health_changed.emit(player_health)
+
 func get_checkpoint(level: int) -> Vector2:
     if level in level_checkpoints:
         return level_checkpoints[level].pos

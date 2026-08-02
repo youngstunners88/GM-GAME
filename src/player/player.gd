@@ -577,10 +577,20 @@ func _respawn_or_game_over() -> void:
 		# current state on the die() path; assert it on the pit path too.
 		if not StateMachine.is_dead():
 			StateMachine.change_state(StateMachine.State.GAME_OVER)
+		# FULL LIFE WIPE (lives == 0): restart at the START of the CURRENT level,
+		# not the mid-level checkpoint and not the main menu. Founder rule:
+		#   lives remaining > 0 after a hit -> checkpoint respawn (below)
+		#   lives == 0 / full wipe -> reload THIS level from its start marker
+		# Clearing the checkpoint makes the reloaded level's _spawn_player fall
+		# back to player_spawn (level start) instead of the boss-door checkpoint
+		# where the last life was lost. Lives + health refill for the retry.
+		var wipe_level := GameManager.current_level
+		GameManager.clear_checkpoint(wipe_level)
+		GameManager.refill_run()
 		var t := create_tween()
 		t.tween_property(self, "modulate:a", 0.0, 0.5)
-		await get_tree().create_timer(1.6).timeout
-		SceneRouter.load_scene("res://src/ui/main_menu.tscn", SceneRouter.Transition.FADE)
+		await get_tree().create_timer(1.2).timeout
+		SceneRouter.load_scene(GameManager.level_scene(wipe_level), SceneRouter.Transition.FADE)
 		return
 	# Lives remain — respawn at THIS level's checkpoint (fallbacks below).
 	Web3Bridge.report_metric("retry", {})
