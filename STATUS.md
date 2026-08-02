@@ -5,12 +5,66 @@
 **Branch:** `claude/setup-game-dev-environment-itWJv` (new PR open against `master`, following PR #11's merge)
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-08-08b** (Blaze Rush
-> finish/ESC + full-life-wipe respawn — proven END-TO-END; and the likely
-> reason fixes weren't reaching your live build).
+> have something current to look at. Last updated: **2026-08-08c** (installed
+> skill hygiene so future sessions stop losing time on key confusion + stale
+> "FIXED" claims — no gameplay touched, waiting on your v66 playtest).
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+
+## 🧰 SKILL HYGIENE + KEY DISCOVERY — 2026-08-08c
+
+Tooling session only — **no gameplay code touched.** You hadn't reported a
+playtest result yet on the v66 itch build, so per your own instruction this
+session didn't invent anything to fix; it fixed the process problems that
+caused the last two sessions to waste time.
+
+**Installed under `.claude/skills/`:**
+- `env-secrets-and-apis` — checks which API keys exist in a session **by
+  name only** (never values), so a future session doesn't ask you for a key
+  that's already available, and doesn't confuse a wrong-key error for a
+  missing-key error again (that's exactly what happened with the ElevenLabs
+  voice earlier).
+- `itch-butler-deploy` — how to check/do an itch deploy, gated on your
+  explicit OK for anything touching the public page.
+- `live-build-proof` — writes down, permanently, the standard you enforced
+  last session: no "FIXED" for a live-reported bug without driving the
+  REAL code path end-to-end, plus a live-channel check (is this fix even
+  deployed?) before claiming victory.
+- `game-development`, `game-flow`, `game-logic`, `gameplay-improvements`,
+  `mobile-playable` — the project-knowledge packs from your skills zip.
+  (`game-graphics` from the zip was **not** installed over the existing
+  one — this repo already had a better, project-specific version of that
+  skill; overwriting it would have lost real content for no gain.)
+- `game-flow` got a **Founder overrides** section (and the stale body text
+  below it corrected to match) so it can't silently teach a future session
+  the old "out of lives → main menu" / "Continue → highest unlocked level"
+  rules you already overturned.
+- `docs/skills-routing.md` — a table so future sessions load ONE relevant
+  skill for a task instead of the whole library every time.
+
+**Env key scan (names only, this session):**
+
+| Key | Present |
+|---|---|
+| `ITCH_API_KEY` | ✅ |
+| `BUTLER_API_KEY` | ✅ |
+| `ELEVENLABS_API` | ✅ |
+| `ELEVENLABS_API_KEY` | ✅ |
+| `OPENROUTER_API_KEY` | ✅ |
+| `MUAPI_API_KEY` | ✅ |
+
+The CI workflow (`.github/workflows/export-game.yml`) reads
+`secrets.BUTLER_API_KEY` — that exact name matching what's present in this
+session is a good sign, but **I can't confirm from here whether that name
+is actually configured as a GitHub Actions repo secret** (Settings →
+Secrets → Actions) — session env and repo secrets are genuinely different
+things (see the skill). If a future CI run's export step still shows
+"skipping itch.io deploy," that's your confirmation it isn't set there yet.
+
+**Still waiting on you:** the v66 hard-refresh playtest of Blaze Rush
+finish/ESC and a full life wipe. Nothing in this session claims that's
+confirmed — only that it's proven in-engine and deployed.
 
 ## ✅ DEPLOYED LIVE TO ITCH (2026-08-08b)
 
