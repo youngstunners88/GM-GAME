@@ -12,6 +12,20 @@
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
 
+## ✅ DEPLOYED LIVE TO ITCH (2026-08-08b)
+
+With your go-ahead, I pushed this exact fixed build to
+`youngstunners88/lil-blunt-adventure:html5` via butler. It **patched from the
+previous build #1850922 → #1850949 (version 66)** — which confirms the live
+page really was stale (that's why Blaze Rush "stayed broken" no matter what I
+committed). It's processing now and should be live within a few minutes at
+https://youngstunners88.itch.io/lil-blunt-adventure — please hard-refresh
+(Ctrl/Cmd-Shift-R) and playtest Blaze Rush finish/ESC and a full-life wipe.
+
+Note: this was a manual push from a session key. For it to auto-update on
+every future push, add the `BUTLER_API_KEY` repo secret (or merge to master
+with that secret set). See below.
+
 ## ⚠️ WHY FIXES WEREN'T REACHING YOU LIVE — READ THIS (2026-08-08b)
 
 You said Blaze Rush is *still* broken live even after I reported it fixed.
