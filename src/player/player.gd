@@ -22,6 +22,24 @@ signal died
 ## (most enemy sprites in this project are ~32-96px) but still excludes a
 ## same-height side bump.
 const STOMP_Y_MARGIN: float = 8.0
+## How close the player's ORIGIN must get to a ladder's top before "still
+## holding up" tops him out onto the platform.
+##
+## This was 6.0, which made the top-out physically unreachable whenever a
+## solid platform sat at the ladder's top — i.e. the normal case, and the
+## reason "climbing a ladder doesn't get me onto the platform" survived
+## several offset re-tunings. Climbing runs through move_and_slide(), so the
+## player COLLIDES with the platform's underside on the way up: with a 20px
+## platform whose top edge is level with the ladder top, and a 32px collision
+## box (half-height 16), he is stopped with his origin ~36px below the
+## ladder top and can never satisfy a 6px threshold. He just presses up
+## forever under the platform.
+##
+## 44 clears that worst case (20 platform + 16 half-box + slack). Topping out
+## a little early is harmless: _top_out_ladder() teleports to the ladder's
+## defined top_exit_position() and then nudges out of any overlap, so the
+## landing spot is identical either way.
+const LADDER_TOP_OUT_MARGIN: float = 44.0
 @export var double_jump_force: float = -370.0
 ## Falling pulls harder than rising — same jump height (level gaps unchanged),
 ## ~15% less airtime, kills the floaty feel.
@@ -439,7 +457,7 @@ func _update_climb(delta: float, movement_direction: float) -> void:
 	# Top-out: at/above the ladder top and still pushing up → stand on top.
 	if vertical < 0.0 and _active_ladder != null and is_instance_valid(_active_ladder) \
 			and _active_ladder.has_method("top_y") \
-			and global_position.y <= _active_ladder.top_y() + 6.0:
+			and global_position.y <= _active_ladder.top_y() + LADDER_TOP_OUT_MARGIN:
 		_top_out_ladder()
 		return
 	velocity.y = vertical * climb_speed

@@ -58,6 +58,15 @@ var _tool_path: String = ""
 ## doesn't drift relative to the hand while walking (_tool is a sibling of
 ## _spr, not a child, so it gets none of _spr's bob for free).
 var _tool_base_y: float = 0.0
+## Local-Y of the TOP and the FEET of the sprite's actual opaque pixels,
+## measured from the real texture in set_outfit(). Everything that has to sit
+## "on the character" (the held tool) is derived from these, never from an
+## assumed sprite size. The cowboy art is 49x72 with its opaque box at
+## y 9..58, so its visible feet are at local y=+2 while FEET_LOCAL_Y (the
+## COLLISION floor) is +16 — a 14px gap. Hardcoding against the collision
+## line is exactly what put the torch at the feet across several "fixes".
+var _art_top_local: float = 0.0
+var _art_feet_local: float = 0.0
 ## Cosmetic flame glow, torch only. The project has no 2D lighting pipeline
 ## (no PointLight2D used anywhere) and Stage 2 has no darkness mechanic to
 ## illuminate — a raw light node here would render as an unconfigured bright
@@ -87,28 +96,16 @@ const ONESHOT_ANIMS := ["attack", "hurt", "death"]
 var _anim: AnimatedSprite2D
 var _current_anim: String = ""
 
-## Two small "feet" that shuffle in opposite phase while walking — a literal
-## moving-legs read on top of the single-pose body sprite (real frame sheets
-## replace all of this when they ship, per ASSET_MANIFEST.md).
-var _leg_l: ColorRect
-var _leg_r: ColorRect
-const LEG_COLOR := Color(0.12, 0.10, 0.08, 1.0)
+## NOTE: the procedural leg ColorRects were REMOVED (2026-08-07). They were a
+## leftover from when Lil Blunt was a drawn rectangle with no legs of his own.
+## The shipped art already has legs, so these two dark rects rendered as a
+## solid black block 6px BELOW the art's feet — the "shadow block beneath his
+## feet" the founder screenshotted. Do not reintroduce them; if a walk cycle
+## is wanted, it belongs in a SpriteFrames sheet (see OUTFIT_FRAMES).
 
 func _ready() -> void:
 	_spr = Sprite2D.new()
 	add_child(_spr)
-	# Feet sit just below the body, behind it (drawn first).
-	for i in 2:
-		var leg := ColorRect.new()
-		leg.color = LEG_COLOR
-		leg.size = Vector2(7, 11)
-		leg.pivot_offset = Vector2(3.5, 0)
-		add_child(leg)
-		move_child(leg, 0)
-		if i == 0:
-			_leg_l = leg
-		else:
-			_leg_r = leg
 	set_outfit(Player.Outfit.DEFAULT)
 
 ## Ambient pace scale, driven by Player.set_movement_scale(). 1.0 = normal.
@@ -148,23 +145,14 @@ func _process(delta: float) -> void:
 		if _tool:
 			_tool.position.y = _tool_base_y - lift
 			_tool.rotation = (0.35 if facing_right else -0.35) + sin(stride) * 0.05 * dir
-		# Feet swing forward/back in opposite phase, forward foot lifting — a
-		# clear "legs moving" read. Offset toward the facing direction.
-		var swing := sin(stride) * 7.0
-		_leg_l.visible = true
-		_leg_r.visible = true
-		_leg_l.position = Vector2(-6 + swing * dir, feet_y + _spr.texture.get_height() / 2.0 - 8 - maxf(0.0, swing) * 0.6)
-		_leg_r.position = Vector2(-1 - swing * dir, feet_y + _spr.texture.get_height() / 2.0 - 8 - maxf(0.0, -swing) * 0.6)
 	else:
 		if _bob_time != 0.0:
 			_bob_time = 0.0
 			_spr.rotation = 0.0
 			_spr.position.y = feet_y
-		# Feet planted together under the body while idle.
-		if _leg_l:
-			var by := feet_y + _spr.texture.get_height() / 2.0 - 8
-			_leg_l.position = Vector2(-6, by)
-			_leg_r.position = Vector2(-1, by)
+			if _tool:
+				_tool.position.y = _tool_base_y
+				_tool.rotation = 0.35 if facing_right else -0.35
 
 ## Show/hide the held tool. Pass "" to clear. Path is cached so calling
 ## every frame is free.
@@ -195,7 +183,13 @@ func set_tool(path: String) -> void:
 	# and only a short handle stub below it — how you'd actually grip one.
 	var tex_height := float(_tool.texture.get_height()) if _tool.texture else 0.0
 	var grip_from_bottom := tex_height * 0.25
-	_tool_base_y = 2.0 - (tex_height / 2.0 - grip_from_bottom)
+	# Hand height = 55% down the VISIBLE art, measured from the real texture
+	# (see _art_top_local/_art_feet_local). The old code used a hardcoded
+	# +2.0 that assumed a 32px sprite whose feet were at the collision line;
+	# against the real 49x72 art that put the torch's lower half BELOW his
+	# feet, which is the "torch at the feet" defect that survived two fixes.
+	var hand_y := _art_top_local + (_art_feet_local - _art_top_local) * 0.55
+	_tool_base_y = hand_y - (tex_height / 2.0 - grip_from_bottom)
 	_tool.position = Vector2(
 		TOOL_HAND_X if facing_right else -TOOL_HAND_X,
 		_tool_base_y)
@@ -260,7 +254,35 @@ func set_outfit(outfit: int) -> void:
 	_spr.position = Vector2(0.0, FEET_LOCAL_Y - _spr.texture.get_height() / 2.0)
 	_spr.flip_h = not facing_right
 	_spr.self_modulate = color
+	_measure_art_bounds()
+	# A tool equipped before an outfit swap must re-anchor to the new art.
+	if _tool and _tool_path != "":
+		var reapply := _tool_path
+		_tool_path = ""
+		set_tool(reapply)
 	_setup_frames_for_outfit(outfit)
+
+## Measure where the sprite's OPAQUE pixels actually start and end, in this
+## node's local space. Run once per outfit swap (never per frame — it reads
+## the image back from the GPU-side texture). Falls back to the full texture
+## rect if the image can't be read, which is still better than a hardcoded
+## guess.
+func _measure_art_bounds() -> void:
+	var tex := _spr.texture
+	if tex == null:
+		return
+	var h := float(tex.get_height())
+	var sprite_top := _spr.position.y - h / 2.0
+	_art_top_local = sprite_top
+	_art_feet_local = sprite_top + h
+	var img := tex.get_image()
+	if img == null:
+		return
+	var used := img.get_used_rect()
+	if used.size.y <= 0:
+		return
+	_art_top_local = sprite_top + float(used.position.y)
+	_art_feet_local = sprite_top + float(used.position.y + used.size.y)
 
 ## If a frame-sheet resource exists for this outfit, switch to animated mode.
 func _setup_frames_for_outfit(outfit: int) -> void:

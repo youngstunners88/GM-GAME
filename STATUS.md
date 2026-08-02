@@ -5,12 +5,84 @@
 **Branch:** `claude/setup-game-dev-environment-itWJv` (new PR open against `master`, following PR #11's merge)
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-08-06** (Lil Blunt
-> now speaks in HIS OWN voice — the real one; plus a soft-lock in the new
-> Talk panel found and fixed before you ever hit it).
+> have something current to look at. Last updated: **2026-08-07** (four of the
+> defects you reported are FIXED with proof; the rest are listed honestly
+> below as still open).
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+
+## 🔧 YOUR REPORTED DEFECTS — 2026-08-07
+
+You were right to push back. Two of these ("torch at feet", "ladder") were
+called fixed before and were not. Here is why they kept coming back, and
+what is actually proven this time.
+
+**The root cause behind BOTH:** every previous fix did maths against a
+32-pixel-tall Lil Blunt whose feet sat on the collision line. **His real
+artwork is 49x72**, and his visible feet sit 14px ABOVE that line. So every
+"correct" calculation put things in the wrong place. This session measured
+the real sprite instead of assuming, and now derives positions from the
+actual artwork — so it can't silently drift again if the art changes.
+
+| # | Your report | Status |
+|---|---|---|
+| 1 | Shadow block under his feet | **FIXED** |
+| 2 | Torch still at his feet | **FIXED** |
+| 3 | Can't climb the ladder onto the platform | **FIXED** |
+| 4 | Tax Collector stuck behind a block | **FIXED** |
+| 5 | Protocol logos + founder mural | **NEEDS YOUR FILES** (see below) |
+
+**1. Shadow block — FIXED.** It was two dark rectangles drawn as fake
+"legs", left over from when Lil Blunt was a plain coloured box. His real art
+already has legs, so those rectangles just sat as a black block 6px below his
+feet. Deleted. *Proof: 0 such objects remain on the character.*
+
+**2. Torch at his feet — FIXED.** The torch was anchored to a hardcoded
+position that assumed the old sprite size, which put its lower half below his
+feet. It now anchors to his measured hand. *Proof: the torch now occupies
+y -47 to -11; his feet are at +2 — the whole torch is above his feet, flame
+at head height. Before, it reached +11, i.e. below his feet.*
+
+**3. Ladder — FIXED.** This is why re-tuning the exit position never
+worked: the game only "topped you out" when you got within **6 pixels** of
+the ladder top, but the platform physically blocks you ~34px short of that.
+The condition could never be met, so you pressed up forever under the
+platform. Margin widened to clear the platform. *Proof: a scripted climb now
+ends standing on the platform (y=318, on solid ground); before it stalled
+underneath.*
+
+**4. Tax Collector — FIXED.** Two bugs. He only noticed you within 200px,
+and his jump was gated on *you* being within 80px — so when a block stopped
+him and you were further away, he never jumped and stood there. Obstacle
+hops are now unconditional (a wall means he can't advance anyway), and he
+hunts far wider. *Proof: with the player 500px away and a crate in his path,
+he engages, jumps, and gets past it. Under the old code he did not jump at
+all.*
+
+**5. Protocol logos + founder mural — I NEED THE FILES.** The logos came
+through as images in chat, which I can't save as files into the project. The
+code is already waiting for them — drop them at these exact paths and they
+appear with zero code changes:
+- `src/assets/logos/smokering.png` (the Lil Blunt / FOMO rocket)
+- `src/assets/logos/diamonds.png`
+- `src/assets/logos/goldmine.png`
+- `src/assets/art/founder_portrait.png`
+
+There's a README in each folder with the details.
+
+### Still open from your defect document
+
+I did not get to these, and I'm not going to pretend otherwise: Distributor
+damage both ways (#1), death-freeze (#2), Blaze Rush complete/ESC resume
+(#3, #4), Blaze Rush reskin (#5), Auditor facing away (#6), Level 2 boss
+falling in a gap (#7), bigger levitating Distributor (#8), and
+Continue-vs-Restart (#9). Those are the next session's list.
+
+**One thing you'll hit immediately:** a "Weekly Smoke Realm updates?" email
+popup covers the main menu on first load and you must dismiss it before you
+can press PLAY. It blocked my automated screenshots. Worth removing or
+delaying — say the word.
 
 ## 🎙️ HIS REAL VOICE IS IN (2026-08-06)
 
