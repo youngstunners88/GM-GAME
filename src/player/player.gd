@@ -61,6 +61,9 @@ const LADDER_TOP_OUT_MARGIN: float = 44.0
 
 var current_outfit: Outfit = Outfit.DEFAULT
 var _last_fall_speed: float = 0.0
+## True from the killing blow until the respawn/game-over resolves. Guards
+## die() against re-entry from multiple lethal hits in the same frame.
+var _dying: bool = false
 
 ## Ambient level-driven movement scaling (e.g. the Smoke Lounge's chill pace).
 ## Separate from power_up_handler's speed/jump multiplier so a level's mood
@@ -401,11 +404,7 @@ func take_damage(amount: int) -> void:
 	ComboSystem.break_combo()
 	ScreenShake.shake(0.2, 5.0)
 	if GameManager.player_health <= 0:
-		# Kimi audit: this branch, NOT die(). GameManager.take_damage() already
-		# transitioned to GAME_OVER just above, so die()'s first guard
-		# (`if StateMachine.is_dead(): return`) returns immediately on every
-		# health death — a bark placed inside die() would be dead code. Here
-		# all guards have passed and it runs exactly once per killing blow.
+		# Bark here (not in die()) so it fires exactly once on the killing blow.
 		AudioManager.play_bark("vo_death", 5.0)
 		die()
 	else:
@@ -508,8 +507,9 @@ func _top_out_ladder() -> void:
 ## (not just health), and respawns at the last checkpoint if lives remain;
 ## out of lives ends the run to the main menu. Called by the level kill zone.
 func pit_death() -> void:
-	if StateMachine.is_dead():
+	if StateMachine.is_dead() or _dying:
 		return
+	_dying = true
 	AudioManager.play_sfx("fall")
 	# "fall" is environmental; the bark is Lil Blunt's own reaction, so they
 	# complement rather than duplicate. The 5s per-id cooldown covers the
@@ -518,36 +518,26 @@ func pit_death() -> void:
 	ScreenShake.shake(0.5, 10.0)
 	# Heatmap: pits are obstacle deaths; surviving ones count as a retry.
 	Web3Bridge.report_metric("death", {"obstacle": "pit"})
-	if GameManager.lose_life():
-		# Out of lives — real game over.
-		if StateMachine.change_state(StateMachine.State.GAME_OVER):
-			died.emit()
-			var t := create_tween()
-			t.tween_property(self, "modulate:a", 0.0, 0.5)
-			await get_tree().create_timer(1.6).timeout
-			SceneRouter.load_scene("res://src/ui/main_menu.tscn", SceneRouter.Transition.FADE)
-		return
-	# Lives left — respawn at the level's checkpoint (health already refilled).
-	Web3Bridge.report_metric("retry", {})
-	var checkpoint := GameManager.get_checkpoint(GameManager.current_level)
-	if checkpoint == Vector2.ZERO:
-		checkpoint = GameManager.get_checkpoint(1)
-	if checkpoint != Vector2.ZERO:
-		global_position = checkpoint + Vector2(0, -50)
-	else:
-		global_position = GameManager.player_position + Vector2(0, -260)
-	scale = Vector2.ONE
-	modulate.a = 1.0
-	velocity = Vector2.ZERO
-	power_up_handler.activate_invincibility(1.5)
+	# Unified with the enemy/boss death path (R2): one respawn/game-over helper
+	# so pit and combat deaths can never diverge again.
+	_respawn_or_game_over()
 
 func die() -> void:
-	if StateMachine.is_dead():
+	# Re-entry guard (multiple lethal hits in one frame) — NOT an is_dead()
+	# guard. The old code bailed on `if StateMachine.is_dead(): return`, but
+	# GameManager.take_damage() had already flipped the state to GAME_OVER, so
+	# die() returned immediately and the death/respawn sequence NEVER ran — the
+	# player just froze in GAME_OVER with no control and no respawn. State
+	# ownership now lives here (GameManager no longer steals it).
+	if _dying:
 		return
-	# If the transition is refused (e.g. boss just won the level), do NOT run
-	# the death sequence — its end would fail to restore PLAYING and freeze us.
-	if not StateMachine.change_state(StateMachine.State.GAME_OVER):
-		return
+	_dying = true
+	# Take the death state ourselves. From LEVEL_COMPLETE (boss just won) this
+	# is refused, which is correct: abort the death rather than wedge the SM.
+	if not StateMachine.is_dead():
+		if not StateMachine.change_state(StateMachine.State.GAME_OVER):
+			_dying = false
+			return
 	# AgentMail digest hook: attribute the death to the active boss (if any)
 	# so the weekly email can say "you died to the Tax Collector N times".
 	if BossVoiceSystem._active_boss_id != "":
@@ -565,18 +555,54 @@ func die() -> void:
 
 func _on_death_anim_done() -> void:
 	died.emit()
-	var checkpoint := GameManager.get_checkpoint(1)
+	# R2 (2026-08-08): this used get_checkpoint(1) — HARDCODED level 1 — then
+	# fell through to reload_current_scene() when it found nothing. On Level 2/3
+	# there is no level-1 checkpoint, so every enemy/boss death hit the reload
+	# branch. reload_current_scene() is deferred and does NOT restore PLAYING by
+	# itself; combined with the tween/await timing this presented as the "death
+	# freezes instead of restarting" the founder reported. It also never spent a
+	# life (infinite free retries) — diverging from pit_death()'s correct flow.
+	# Now unified through _respawn_or_game_over(), which spends a life, respawns
+	# at the CURRENT level's checkpoint, and guarantees a return to PLAYING.
+	_respawn_or_game_over()
+
+## Single source of truth for "the player just died": spend a life; if any
+## remain, respawn at the current level's checkpoint and hand control back
+## (PLAYING); if not, run the game-over fade to the main menu. Both the
+## enemy/boss death path (die → death anim → here) and the pit path call this,
+## so respawn behaviour can never diverge between them again.
+func _respawn_or_game_over() -> void:
+	if GameManager.lose_life():
+		# Out of lives — real game over, fade to menu. GAME_OVER is already the
+		# current state on the die() path; assert it on the pit path too.
+		if not StateMachine.is_dead():
+			StateMachine.change_state(StateMachine.State.GAME_OVER)
+		var t := create_tween()
+		t.tween_property(self, "modulate:a", 0.0, 0.5)
+		await get_tree().create_timer(1.6).timeout
+		SceneRouter.load_scene("res://src/ui/main_menu.tscn", SceneRouter.Transition.FADE)
+		return
+	# Lives remain — respawn at THIS level's checkpoint (fallbacks below).
+	Web3Bridge.report_metric("retry", {})
+	var checkpoint := GameManager.get_checkpoint(GameManager.current_level)
+	if checkpoint == Vector2.ZERO:
+		checkpoint = GameManager.get_checkpoint(1)
 	if checkpoint != Vector2.ZERO:
 		global_position = checkpoint + Vector2(0, -50)
-		GameManager.player_health = GameManager.max_health
-		GameManager.health_changed.emit(GameManager.player_health)
-		scale = Vector2.ONE
-		modulate.a = 1.0
-		velocity = Vector2.ZERO
-		power_up_handler.activate_invincibility(1.5)
-		StateMachine.change_state(StateMachine.State.PLAYING)
 	else:
-		get_tree().reload_current_scene()
+		global_position = GameManager.player_position + Vector2(0, -260)
+	GameManager.player_health = GameManager.max_health
+	GameManager.health_changed.emit(GameManager.player_health)
+	scale = Vector2.ONE
+	modulate.a = 1.0
+	velocity = Vector2.ZERO
+	power_up_handler.activate_invincibility(1.5)
+	# Return control. GAME_OVER→PLAYING is an allowed transition; this is what
+	# was missing on the old reload path and caused the freeze. Guard the
+	# from==to case (pit path may still be PLAYING) to avoid a warning.
+	if not StateMachine.is_playing():
+		StateMachine.change_state(StateMachine.State.PLAYING)
+	_dying = false
 
 func _on_hurtbox_area_entered(area: Area2D) -> void:
 	if area.is_in_group("collectible") and area.has_method("collect"):

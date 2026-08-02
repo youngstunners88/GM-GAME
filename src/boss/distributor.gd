@@ -64,6 +64,25 @@ var current_phase_state: Phase = Phase.PATROL
 var throw_timer: float = 0.0
 var state_timer: float = 0.0
 var direction: float = 1.0
+# R7/R8 (2026-08-08): the Distributor now FLOATS on a levitating diamond disc
+# instead of walking with gravity. Old behaviour applied `velocity.y += 980`
+# every frame with no floor/bounds guarantee, so a pit in the L2 arena let him
+# fall out forever and soft-lock the fight (Kimi audit: CRITICAL). Floating
+# removes that class of bug categorically AND delivers the "bigger, scarier,
+# levitating diamonds" redesign. Numbers from the Grok float-feel brief.
+var _hover_home_y: float = 0.0     # captured from spawn on first physics frame
+var _arena_center_x: float = 0.0
+var _anchored: bool = false
+var _bob_t: float = 0.0
+var _disc: Polygon2D = null
+const HOVER_BOB_AMP := 12.0        # px
+const HOVER_BOB_PERIOD := 2.4      # s
+const HOVER_RISE := 180.0          # float this far ABOVE the spawn (off the floor)
+const HOVER_BAND := 70.0           # max +/- Y drift from home before clamp
+const FLOAT_DRIFT_SPEED := 110.0   # px/s horizontal pursuit
+const FLOAT_DEADZONE := 80.0       # don't jitter when roughly above the player
+const ARENA_HALF_W := 300.0        # clamp X within +/- this of the spawn anchor
+const BOSS_SCALE := 1.7            # "much larger, reads as a final boss"
 ## Counts how many gravity-to-throw cycles have run, so the pull and the volley
 ## alternate instead of the pull firing every single time.
 var _cycles: int = 0
@@ -115,6 +134,11 @@ func _ready() -> void:
 	boss_sprite.size = Vector2(96, 96)
 	collision.position = Vector2(48, 48)
 	hitbox.position = Vector2(48, 48)
+	# Scale the whole body (sprite + collision + hitbox together, so the
+	# hitbox never desyncs from the art) — R8 "much larger". A levitating
+	# diamond disc is drawn under him in _add_levitating_disc().
+	scale = Vector2(BOSS_SCALE, BOSS_SCALE)
+	_add_levitating_disc()
 	hitbox_shape.shape = collision.shape
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
@@ -144,17 +168,28 @@ func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
 
+	# Capture the hover anchor on the first frame — the level sets our
+	# global_position (boss_spawn) before add_child, so it is valid here.
+	if not _anchored:
+		_anchored = true
+		_arena_center_x = global_position.x
+		_hover_home_y = global_position.y - HOVER_RISE
+
 	throw_timer -= delta
 	state_timer -= delta
+	_bob_t += delta
 
 	match current_phase_state:
 		Phase.PATROL:
-			velocity.x = patrol_speed * direction
-			velocity.y += 980.0 * delta
-			move_and_slide()
-			if is_on_wall():
-				direction *= -1.0
-				boss_sprite.scale.x = 1.0 if direction > 0 else -1.0
+			# Drift toward the player instead of a fixed patrol, with a deadzone
+			# so he doesn't jitter when already overhead. No gravity — floats.
+			var pdx := _player_dx()
+			if absf(pdx) > FLOAT_DEADZONE:
+				velocity.x = signf(pdx) * FLOAT_DRIFT_SPEED
+				boss_sprite.scale.x = 1.0 if pdx > 0.0 else -1.0
+			else:
+				velocity.x = move_toward(velocity.x, 0.0, 300.0 * delta)
+			_apply_float(delta)
 			if throw_timer <= 0.0:
 				# Alternate: pull, then volley, then pull... so the fight has a
 				# rhythm instead of one attack on repeat.
@@ -168,16 +203,14 @@ func _physics_process(delta: float) -> void:
 			# Orbs snap inward, two dashed rings collapse onto him. The field
 			# does NOT pull yet — this is pure reaction time.
 			velocity.x = move_toward(velocity.x, 0.0, 400.0 * delta)
-			velocity.y += 980.0 * delta
-			move_and_slide()
+			_apply_float(delta)
 			queue_redraw()
 			if state_timer <= 0.0:
 				_begin_hoard_gravity()
 
 		Phase.HOARD_GRAVITY:
 			velocity.x = move_toward(velocity.x, 0.0, 200.0 * delta)
-			velocity.y += 980.0 * delta
-			move_and_slide()
+			_apply_float(delta)
 			_apply_pull(delta)
 			queue_redraw()
 			if state_timer <= 0.0:
@@ -192,18 +225,59 @@ func _physics_process(delta: float) -> void:
 
 		Phase.SHARD_THROW:
 			velocity.x = move_toward(velocity.x, 0.0, 100.0 * delta * 60.0)
-			velocity.y += 980.0 * delta
-			move_and_slide()
+			_apply_float(delta)
 			if state_timer <= 0.0:
 				_begin_vulnerable()
 
 		Phase.VULNERABLE:
 			velocity.x = move_toward(velocity.x, 0.0, 100.0 * delta * 60.0)
-			velocity.y += 980.0 * delta
-			move_and_slide()
+			_apply_float(delta)
 			boss_sprite.modulate = Color(1.0, 0.3, 0.3, 1.0) if fmod(state_timer, 0.3) < 0.15 else Color(1.0, 0.1, 0.1, 1.0)
 			if state_timer <= 0.0:
 				_end_vulnerable()
+
+## Signed horizontal distance to the player (0 if none). Used for float pursuit.
+func _player_dx() -> float:
+	var pl := get_tree().get_first_node_in_group("player")
+	if pl == null:
+		return 0.0
+	return pl.global_position.x - global_position.x
+
+## Drive vertical hover toward the bob target and move; then HARD-CLAMP X and Y
+## into the arena band so the boss can NEVER leave the fight (R7). No gravity,
+## no floor dependency — he floats. Replaces the old `velocity.y += 980` +
+## bare move_and_slide() in every phase.
+func _apply_float(delta: float) -> void:
+	var target_y := _hover_home_y + sin(_bob_t * TAU / HOVER_BOB_PERIOD) * HOVER_BOB_AMP
+	# Ease Y toward the bob target rather than teleporting, so knockback/pull
+	# interactions still read smoothly.
+	velocity.y = (target_y - global_position.y) * 6.0
+	move_and_slide()
+	# Belt-and-braces: clamp position every frame. Even if something (a future
+	# knockback, a physics quirk) shoves him, he is snapped back into the band.
+	global_position.x = clampf(global_position.x,
+		_arena_center_x - ARENA_HALF_W, _arena_center_x + ARENA_HALF_W)
+	global_position.y = clampf(global_position.y,
+		_hover_home_y - HOVER_BAND, _hover_home_y + HOVER_BAND)
+
+## The levitating diamond disc he rides — a flat cyan gem drawn under the body,
+## purely cosmetic (no collision). Sells "floats on diamonds" (R8) and bobs a
+## touch deeper than the body so it reads as the lift source.
+func _add_levitating_disc() -> void:
+	_disc = Polygon2D.new()
+	# A wide, flat diamond centred under the 96px body box (local space; node
+	# scale enlarges it with everything else).
+	_disc.polygon = PackedVector2Array([
+		Vector2(48, 96), Vector2(96, 112), Vector2(48, 128), Vector2(0, 112)])
+	_disc.color = Color(0.5, 0.95, 1.6, 0.85)
+	_disc.z_index = -1
+	add_child(_disc)
+	var glow := Polygon2D.new()
+	glow.polygon = PackedVector2Array([
+		Vector2(48, 90), Vector2(108, 112), Vector2(48, 134), Vector2(-12, 112)])
+	glow.color = Color(0.4, 0.85, 1.4, 0.25)
+	glow.z_index = -2
+	add_child(glow)
 
 ## Cadence between actions, tightening per phase.
 func _cadence() -> float:

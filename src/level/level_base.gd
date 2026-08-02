@@ -30,6 +30,16 @@ func _ready() -> void:
 	_setup_camera_limits()
 	_setup_hud()
 	_apply_token_perks()
+	# R9 (2026-08-08): record the level actually being played so Continue can
+	# resume it. Previously current_level was only set when a level was CLEARED
+	# (next_level_scene), and Continue read highest_unlocked_level — so a player
+	# who reached L2 and refreshed could land back on L1. Recording on ENTRY
+	# makes "last level played" authoritative regardless of how it was reached.
+	# Guarded to the 3 campaign levels (level_index 1..3); the Smoke Lounge and
+	# Blaze Rush do not extend LevelBase, so they never touch this.
+	if level_data and level_data.level_index >= 1:
+		GameManager.current_level = level_data.level_index
+		GameManager.save_session()
 	StateMachine.change_state(StateMachine.State.PLAYING)
 
 # The three parallax sprites (far/mid/near) all sample the level's key art;

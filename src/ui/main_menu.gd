@@ -299,14 +299,12 @@ func _add_hover_glow(btn: Button) -> void:
 
 func _on_play() -> void:
     AudioManager.play_sfx("powerup")
-    # TASK 1 (AgentMail): one-time OPTIONAL email prompt before the first run.
-    # Skipping is one click and it never asks again; the game itself never
-    # requires an email. See src/ui/email_signup_panel.gd.
-    var esp_script := load("res://src/ui/email_signup_panel.gd")
-    if not esp_script.already_shown():
-        var panel := preload("res://src/ui/email_signup_panel.tscn").instantiate()
-        add_child(panel)
-        await panel.closed
+    # EMAIL POPUP (2026-08-08): the one-time signup prompt used to block here
+    # with `await panel.closed`, covering the menu and requiring a SKIP click
+    # before the game would start — the founder (and the automated PLAY path)
+    # hit this every load. It is pure friction: the email is fully optional and
+    # there is already an explicit "JOIN THE SMOKERING" menu button for it. PLAY
+    # is now one click, straight into Level 1.
     Web3Bridge.report_event("play_start")
     GameManager.reset_session()
     SceneRouter.load_scene("res://src/level/level_01_smoke_realm.tscn", SceneRouter.Transition.FADE)
@@ -317,7 +315,10 @@ func _on_continue() -> void:
     AudioManager.play_sfx("powerup")
     Web3Bridge.report_event("play_start")
     GameManager.load_session()
-    var scene := GameManager.level_scene(GameManager.highest_unlocked_level)
+    # R9: resume the LAST level played (current_level, recorded on level entry
+    # by LevelBase), NOT highest_unlocked_level. The old code could send a
+    # player who reached L2 back to L1. PLAY LEVEL 1 stays the fresh restart.
+    var scene := GameManager.level_scene(GameManager.current_level)
     SceneRouter.load_scene(scene, SceneRouter.Transition.FADE)
 
 ## v1.2 "Blunt Force" prototype room. Opt-in preview only — it does not touch

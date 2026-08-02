@@ -216,7 +216,11 @@ func take_damage(amount: int) -> void:
     if player_health <= 0:
         GoldMineSystem.on_player_death()
         player_died.emit()
-        StateMachine.change_state(StateMachine.State.GAME_OVER)
+        # NOTE: the death-state transition is owned by Player.die(), NOT here.
+        # This used to call StateMachine.change_state(GAME_OVER), which flipped
+        # the state BEFORE Player.die() ran; die()'s own is_dead() guard then
+        # bailed and the respawn sequence never executed — the player froze in
+        # GAME_OVER. Player.take_damage() calls die() right after this returns.
 
 func heal(amount: int) -> void:
     player_health = min(player_health + amount, max_health)

@@ -149,7 +149,15 @@ func _physics_process(delta: float) -> void:
 			move_and_slide()
 			if is_on_wall():
 				patrol_direction *= -1.0
-				sprite.scale.x = 1.0 if patrol_direction > 0 else -1.0
+			# R6 (2026-08-08): face the PLAYER during patrol, not the patrol
+			# direction. He throws aimed clipboards at the live player from
+			# PATROL (_throw_clipboard below), so facing patrol_direction meant
+			# he lobbed them from his back — the "boss shows his back" report.
+			# Movement still uses patrol_direction; only the visual facing
+			# tracks the player, matching the ALERT/PURSUE facing contract.
+			var pl := get_tree().get_first_node_in_group("player")
+			if pl:
+				sprite.scale.x = 1.0 if pl.global_position.x > global_position.x else -1.0
 			# Ranged pressure — cadence tightens per phase.
 			if throw_timer <= 0.0:
 				throw_timer = [0.0, 2.6, 2.0, 1.4][phase]

@@ -14,8 +14,8 @@ extends RefCounted
 ## hurt (boss took damage), phase50, phase25, death.
 
 const COUNTS := {
-	"tax": {"intro": 1, "taunt": 3, "mock": 2, "hurt": 2, "phase50": 1, "phase25": 1, "death": 1},
-	"crystal": {"intro": 1, "taunt": 3, "mock": 2, "hurt": 2, "phase50": 1, "phase25": 1, "death": 1},
+	"tax": {"intro": 1, "taunt": 6, "mock": 4, "hurt": 2, "phase50": 1, "phase25": 1, "death": 1},
+	"crystal": {"intro": 1, "taunt": 6, "mock": 4, "hurt": 2, "phase50": 1, "phase25": 1, "death": 1},
 	"bandit": {"intro": 1, "taunt": 3, "mock": 2, "hurt": 2, "phase50": 1, "phase25": 1, "death": 1},
 }
 

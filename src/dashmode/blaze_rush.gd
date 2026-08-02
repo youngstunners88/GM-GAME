@@ -89,10 +89,27 @@ func _build_background() -> void:
 	# flat two-layer background with the haze invisible.
 	var layer := CanvasLayer.new()
 	layer.layer = -2
+	# Void base colour still fills first (covers any letterboxing on odd aspect
+	# ratios), with the R5 branded crystal-cavern backdrop on top of it.
 	var bg := ColorRect.new()
 	bg.color = COLOR_VOID
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	layer.add_child(bg)
+	# R5 (2026-08-08): replace the bland flat void with a generated branded
+	# backdrop (OpenRouter openai/gpt-5-image, per the Grok beat sheet: deep
+	# teal crystal-cavern void, calm central band so foreground stays readable,
+	# faint rings). Screen-space, stretched to fill, dimmed so it reads as
+	# depth behind the parallax haze/treeline in front, not a focal plate.
+	var cavern_path := "res://src/assets/backgrounds/bg_blaze_rush_cavern.png"
+	if ResourceLoader.exists(cavern_path):
+		var art := TextureRect.new()
+		art.texture = load(cavern_path)
+		art.set_anchors_preset(Control.PRESET_FULL_RECT)
+		art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		art.stretch_mode = TextureRect.STRETCH_SCALE
+		art.modulate = Color(0.9, 0.9, 0.95, 1.0)
+		art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		layer.add_child(art)
 	add_child(layer)
 
 	# L1 far haze — true world-space parallax (~0.15x), same ParallaxBackground/

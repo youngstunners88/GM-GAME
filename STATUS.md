@@ -5,12 +5,50 @@
 **Branch:** `claude/setup-game-dev-environment-itWJv` (new PR open against `master`, following PR #11's merge)
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-08-07** (four of the
-> defects you reported are FIXED with proof; the rest are listed honestly
-> below as still open).
+> have something current to look at. Last updated: **2026-08-08** (the
+> remaining 9 defects addressed — the death-freeze root cause found and fixed;
+> boss taunts expanded so they stop repeating).
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+
+## 🩹 REMAINING 9 DEFECTS + DEATH FREEZE ROOT CAUSE — 2026-08-08
+
+Every item below was **proven this session** with an in-engine test (built,
+run, deleted — not committed), not "should work." The one that mattered most:
+
+**The death freeze — found the real cause.** When Lil Blunt's health hit 0,
+`GameManager` flipped the game to GAME_OVER *before* the player's death code
+ran — so the player's own guard saw "already game over" and bailed, and the
+respawn sequence **never executed**. The game just sat frozen in GAME_OVER
+with no control and no menu. On top of that, the respawn looked for a
+*Level-1* checkpoint even when you were on Level 2/3, so it could never find
+one. Fixed by giving the player sole ownership of the death→respawn flow, and
+respawning at the **current** level. *Proof: forced a death on Level 2 → boss
+appears → death → respawn → back in control, one life spent, health refilled.*
+
+| # | Your report | Status | Proof / note |
+|---|---|---|---|
+| R1 | Final boss doesn't take/deal damage | **VERIFIED WORKING** | Both directions correctly wired (projectiles = layer 64, boss hitbox mask 70 = Player+Enemies+Projectiles); `distributor_behaviour` gate confirms boss HP drops through its vulnerable window. The "no impact" feel was largely the death-freeze (R2) — dying to it did nothing visible. |
+| R2 | Death freezes instead of restarting | **FIXED** | Root cause above; Level-2 death→respawn probe passed. |
+| R3 | Blaze Rush finish doesn't return to entry stage | **FIXED (code) / VERIFIED** | Return uses the stored entry `scene_path` + correct level-index checkpoint; probe: enter-from-L2 data → returns to L2, not L1. |
+| R4 | Blaze Rush ESC restarts instead of exiting | **FIXED (code) / VERIFIED** | ESC and finish both route through the same exit-to-entry path; probe confirmed. |
+| R5 | Blaze Rush reskin | **SLICE DONE** | Generated a branded crystal-cavern backdrop (OpenAI image model via OpenRouter, per the Grok art brief), cropped, wired as the far backdrop replacing the flat void. Loads + exports clean. A live in-Blaze-Rush screenshot wasn't captured (the portal is score-gated, not automatable) — see honest note below. |
+| R6 | Auditor shows his back | **FIXED** | He now faces the player during patrol (he throws aimed clipboards from patrol; before, he faced his walk direction). Mirrors the already-working chase-facing. |
+| R7 | L2 boss fell in a gap, fight soft-locked | **FIXED** | The Distributor now **floats** (no gravity, hard-clamped to an arena band). Probe: shoved down at 4000px/s every frame, he never leaves the band. |
+| R8 | L2 boss bigger + levitating diamonds | **FIXED** | Scaled up 1.7× with a levitating diamond disc under him; the float from R7 is the "levitating". Probe confirmed scale + disc. |
+| R9 | Continue loads L1 though you were on L2 | **FIXED** | The level now records itself on entry, and Continue resumes that (not "highest unlocked"). PLAY LEVEL 1 stays the explicit restart. Probe: save on L2 → Continue targets L2. |
+| — | Email popup blocked PLAY | **FIXED** | The forced "Weekly updates?" popup is gone from PLAY; it's one click into Level 1. (Signup still lives on the "JOIN THE SMOKERING" button.) |
+| ⭐ | Bosses repeat their taunts | **FIXED** | Auditor & Distributor now have **6 taunts + 4 mocks each** (doubled), and the picker never plays the same line twice in a row. Probe: 30 picks over 6 lines, all 6 used, zero back-to-back repeats. (The bandit's ElevenLabs voice was removed from the account so its lines couldn't be regenerated on the free tier — it still gets the no-repeat picker; documented.) |
+
+**One honest limitation:** I could not capture live in-game screenshots this
+session. Reaching the Blaze Rush requires unlocking a score-gated portal,
+which isn't automatable, and the headless browser can't reliably click menu
+buttons. Every fix above is instead proven by tests run inside the real Godot
+engine. The R5 backdrop is integrated and verified to load; seeing it in a
+live Blaze Rush run is your quickest confirmation.
+
+Full technical write-up: `docs/session-logs/2026-08-08-remaining-9-defects.md`.
 
 ## 🔧 YOUR REPORTED DEFECTS — 2026-08-07
 
