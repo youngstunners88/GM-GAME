@@ -394,7 +394,10 @@ func load_session() -> bool:
     max_health = clampi(int(data.get("max_health", 3)), 1, 10)
     player_health = clampi(int(data.get("health", max_health)), 1, max_health)
     # Lives persist too (Kimi audit): reloading mid-run must not refill them.
-    lives = clampi(int(data.get("lives", max_lives)), 0, max_lives)
+    # Founder defect B3: lives must be collectible ABOVE max_lives — no upper
+    # clamp here (max_lives stays the REFILL baseline used by refill_run() /
+    # reset_session(), not a hard cap on how many a save can carry).
+    lives = maxi(0, int(data.get("lives", max_lives)))
     lives_changed.emit(lives)
     current_level = clampi(int(data.get("current_level", 1)), 1, 3)
     highest_unlocked_level = clampi(int(data.get("highest_unlocked_level", 1)), 1, LEVEL_SEQUENCE.size())

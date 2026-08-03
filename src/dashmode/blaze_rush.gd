@@ -56,6 +56,25 @@ var _hazard_x: Array[float] = []
 var _telegraph: ColorRect
 const TELEGRAPH_LEAD: float = 450.0
 
+## Founder defect F — magic marijuana skateboard. One data-driven zone per
+## level (BlazeRushLayouts), placed over an existing gap so "steer through
+## instead of jumping" is legible at a glance. Grok 4.5 feel brief (docs/
+## model-responses dispatch this session) supplied the numbers below.
+var _board_zone: Dictionary = {}
+var _on_board: bool = false
+var _board_steer_vx: float = 0.0
+var _board_bob_t: float = 0.0
+var _board_visual: Node2D
+const BOARD_STEER_MAX: float = 140.0
+const BOARD_STEER_ACCEL: float = 900.0
+const BOARD_STEER_DECEL: float = 1100.0
+const BOARD_BOB_AMP: float = 10.0
+const BOARD_BOB_PERIOD: float = 1.8
+const BOARD_SPRING: float = 8.0
+const BOARD_MAGNET_RADIUS: float = 48.0
+const BOARD_MAGNET_PULL: float = 220.0
+const BOARD_JUMP_POP: float = -260.0
+
 @onready var _smoke_label: Label = Label.new()
 @onready var _attempt_label: Label = Label.new()
 @onready var _progress: ProgressBar = ProgressBar.new()
@@ -67,9 +86,11 @@ func _ready() -> void:
 	_speed_start = layout.get("speed_start", 320.0)
 	_speed_end = layout.get("speed_end", _speed_start)
 	_current_speed = _speed_start
+	_board_zone = layout.get("board_zone", {})
 	_build_background()
 	_build_ground(layout)
 	_build_obstacles(layout)
+	_build_protocol_landmarks()
 	_build_finish()
 	_build_player()
 	_build_camera()
@@ -77,6 +98,31 @@ func _ready() -> void:
 	_build_hud()
 	StateMachine.change_state(StateMachine.State.PLAYING)
 	AudioManager.play_sfx("powerup")
+
+## Founder defect A4: L2 (and L3) Blaze Rush read as an identical reskin of
+## L1 — same void/haze tint regardless of _level_index. Ties each run's
+## palette to that level's own campaign identity (Smoke Realm violet /
+## Crystal Caverns cyan / Gold Rush amber) instead of one flat "Electric
+## Haze" default for every level. Ground/hazard/collectible colors are left
+## alone — those are tuned for hazard-vs-safe readability and apply equally
+## well regardless of level.
+func _level_haze_tint() -> Color:
+	match _level_index:
+		2:
+			return Color(0.1, 0.35, 0.55, 1.0)   # Crystal Caverns — cool cyan-blue
+		3:
+			return Color(0.55, 0.35, 0.05, 1.0)  # Gold Rush — warm amber
+		_:
+			return COLOR_HAZE                     # Smoke Realm — violet (unchanged)
+
+func _level_backdrop_modulate() -> Color:
+	match _level_index:
+		2:
+			return Color(0.75, 0.92, 1.0, 0.9)   # cyan-leaning
+		3:
+			return Color(1.0, 0.9, 0.7, 0.9)     # gold-leaning
+		_:
+			return Color(0.85, 0.8, 1.0, 0.9)     # violet (unchanged L1 default)
 
 # --- construction -----------------------------------------------------------
 
@@ -107,7 +153,7 @@ func _build_background() -> void:
 		art.set_anchors_preset(Control.PRESET_FULL_RECT)
 		art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		art.stretch_mode = TextureRect.STRETCH_SCALE
-		art.modulate = Color(0.9, 0.9, 0.95, 1.0)
+		art.modulate = _level_backdrop_modulate()
 		art.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		layer.add_child(art)
 	add_child(layer)
@@ -139,19 +185,21 @@ func _build_background() -> void:
 	treeline.texture = treeline_tex
 	treeline.centered = false
 	treeline.position = Vector2(0.0, GROUND_Y - float(treeline_tex.get_height()))
-	# Slight cool-purple tint keeps it from fighting the haze for saturation —
-	# it's the backdrop, not the focal point (Grok: "brand lives in backplate").
-	treeline.modulate = Color(0.85, 0.8, 1.0, 0.9)
+	# Per-level tint (A4) — was a flat cool-purple regardless of level, which
+	# is exactly why L1/L2/L3 read as reskins of each other. Still keeps it
+	# from fighting the haze for saturation; just ties the hue to the level.
+	treeline.modulate = _level_backdrop_modulate()
 	treeline_layer.add_child(treeline)
 	pbg.add_child(treeline_layer)
 
 	var haze_layer := ParallaxLayer.new()
 	haze_layer.motion_scale = Vector2(0.15, 0.0)
 	haze_layer.motion_mirroring = Vector2(900.0, 0.0)
+	var haze_tint := _level_haze_tint()
 	for i in range(3):
 		var blob := Sprite2D.new()
 		blob.texture = _make_glow_texture()
-		blob.modulate = Color(COLOR_HAZE.r, COLOR_HAZE.g, COLOR_HAZE.b, 0.5)
+		blob.modulate = Color(haze_tint.r, haze_tint.g, haze_tint.b, 0.5)
 		blob.scale = Vector2(6.0, 4.0)
 		blob.position = Vector2(150.0 + i * 300.0, 250.0 + (i % 2) * 150.0)
 		haze_layer.add_child(blob)
@@ -367,14 +415,41 @@ func _make_fud_wall(x: float) -> void:
 	body.add_child(col)
 	add_child(body)
 
-func _make_smoke_token(x: float, height: float) -> void:
-	var area := Area2D.new()
-	area.position = Vector2(x, GROUND_Y - height)
-	area.collision_mask = 2
+func _build_default_token_visual() -> Control:
 	var puff := ColorRect.new()
 	puff.color = COLOR_COLLECTIBLE
 	puff.size = Vector2(16, 16)
 	puff.position = Vector2(-8, -8)
+	return puff
+
+## Founder defect A5 — approximates Solana's stacked-diagonal-bar mark with
+## primitives (no new art dependency, same convention as every other FX in
+## this file): three parallel angled bars in a purple -> teal gradient,
+## matching Solana's real brand colors (#9945FF -> #14F195) closely enough to
+## read as "SOL" at a glance without needing an image asset.
+func _build_sol_token_visual() -> Control:
+	var root := Control.new()
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var sol_purple := Color(0.6, 0.27, 1.0, 1.0)
+	var sol_teal := Color(0.078, 0.945, 0.584, 1.0)
+	for i in range(3):
+		var bar := ColorRect.new()
+		bar.size = Vector2(20, 4)
+		bar.position = Vector2(-10, -9 + i * 7)
+		bar.pivot_offset = Vector2(10, 2)
+		bar.rotation = deg_to_rad(-18.0)
+		bar.color = sol_purple.lerp(sol_teal, float(i) / 2.0)
+		root.add_child(bar)
+	return root
+
+func _make_smoke_token(x: float, height: float) -> void:
+	var area := Area2D.new()
+	area.position = Vector2(x, GROUND_Y - height)
+	area.collision_mask = 2
+	# Founder defect A5: L2 tokens should read as Solana-style, not the same
+	# plain cream puff every level uses. Visual-only branch — collision,
+	# pickup logic, and scoring are identical across all three levels.
+	var puff: Control = _build_sol_token_visual() if _level_index == 2 else _build_default_token_visual()
 	area.add_child(puff)
 	var col := CollisionShape2D.new()
 	var shape := CircleShape2D.new()
@@ -416,6 +491,60 @@ func _spawn_pickup_burst(pos: Vector2) -> void:
 	get_tree().create_timer(0.5).timeout.connect(func() -> void:
 		if is_instance_valid(burst):
 			burst.queue_free())
+
+## Founder defect A3 (stated 4+ times): Blaze Rush must show protocol
+## branding as landmarks along the run, not read as a barren void. Same
+## drop-in-art convention as secret_realm.gd's protocol plinth: shows the
+## real logo the instant a PNG lands at the documented path; a styled
+## placeholder panel until then — "not a barren void" is satisfied either
+## way, no code change needed once real art arrives.
+const PROTOCOL_LANDMARKS := [
+	{"file": "smokering", "label": "FOMO"},
+	{"file": "goldmine", "label": "GOLD MINE"},
+	{"file": "diamonds", "label": "DIAMONDS"},
+]
+
+func _build_protocol_landmarks() -> void:
+	var fractions := [0.22, 0.5, 0.78]
+	for i in range(PROTOCOL_LANDMARKS.size()):
+		_build_one_landmark(_course_length * fractions[i], PROTOCOL_LANDMARKS[i])
+
+func _build_one_landmark(x: float, data: Dictionary) -> void:
+	var panel := Panel.new()
+	panel.position = Vector2(x - 55.0, GROUND_Y - 340.0)
+	panel.size = Vector2(110, 90)
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.z_index = -1  # backdrop scenery — never occludes hazards/tokens
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.08, 0.02, 0.14, 0.55)
+	sb.border_width_left = 2
+	sb.border_width_top = 2
+	sb.border_width_right = 2
+	sb.border_width_bottom = 2
+	sb.border_color = COLOR_ACCENT_LIME
+	sb.set_corner_radius_all(6)
+	panel.add_theme_stylebox_override("panel", sb)
+	add_child(panel)
+
+	var logo_path := "res://src/assets/logos/%s.png" % data.file
+	if ResourceLoader.exists(logo_path):
+		var art := TextureRect.new()
+		art.texture = load(logo_path)
+		art.set_anchors_preset(Control.PRESET_FULL_RECT)
+		art.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+		art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		panel.add_child(art)
+	else:
+		var label := Label.new()
+		label.text = data.label
+		label.set_anchors_preset(Control.PRESET_FULL_RECT)
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.autowrap_mode = TextServer.AUTOWRAP_WORD
+		label.add_theme_font_size_override("font_size", 14)
+		label.add_theme_color_override("font_color", COLOR_ACCENT_LIME)
+		panel.add_child(label)
 
 func _build_finish() -> void:
 	var area := Area2D.new()
@@ -476,7 +605,45 @@ func _build_player() -> void:
 	trail.color = Color(0.3, 1.0, 0.35, 0.6)
 	_player.add_child(trail)
 
+	_build_board_visual()
 	_reset_player()
+
+## Founder defect F visual — flat plank deck + lime top lip + dark trucks +
+## a soft under-glow (same visual language as the Distributor's levitating
+## disc: a haze shape reading as the lift source), with Lil Blunt's own
+## cube-green seated on top so it stays legibly "him," not a foreign prop.
+## Hidden until the player enters a board zone.
+func _build_board_visual() -> void:
+	_board_visual = Node2D.new()
+	_board_visual.visible = false
+	var glow := Polygon2D.new()
+	glow.polygon = PackedVector2Array([
+		Vector2(0, 10), Vector2(30, 2), Vector2(60, 10), Vector2(30, 18)])
+	glow.position = Vector2(-30, 8)
+	glow.color = Color(0.45, 1.0, 0.4, 0.3)
+	_board_visual.add_child(glow)
+	for wx in [-20.0, 16.0]:
+		var truck := ColorRect.new()
+		truck.size = Vector2(8, 5)
+		truck.position = Vector2(wx, 6)
+		truck.color = Color(0.1, 0.08, 0.1, 1.0)
+		_board_visual.add_child(truck)
+	var deck := ColorRect.new()
+	deck.size = Vector2(56, 10)
+	deck.position = Vector2(-28, -4)
+	deck.color = Color(0.25, 0.55, 0.22, 1.0)
+	_board_visual.add_child(deck)
+	var lip := ColorRect.new()
+	lip.size = Vector2(56, 2)
+	lip.position = Vector2(-28, -4)
+	lip.color = COLOR_ACCENT_LIME
+	_board_visual.add_child(lip)
+	var rider := ColorRect.new()
+	rider.size = Vector2(20, 20)
+	rider.position = Vector2(-10, -24)
+	rider.color = Color(0.3, 1.0, 0.35, 1.0)
+	_board_visual.add_child(rider)
+	_player.add_child(_board_visual)
 
 func _build_camera() -> void:
 	_camera = Camera2D.new()
@@ -548,31 +715,92 @@ func _physics_process(delta: float) -> void:
 
 	var progress := clampf(_player.position.x / _course_length, 0.0, 1.0)
 	_current_speed = lerpf(_speed_start, _speed_end, progress)
+
+	var now_on_board := _is_in_board_zone(_player.position.x)
+	if now_on_board != _on_board:
+		_set_board_mode(now_on_board)
+	if _on_board:
+		_physics_board(delta)
+	else:
+		_physics_cube(delta)
+
+	_player.move_and_slide()
+
+	# The board flies clear over ground-level hazards by design (that's the
+	# whole point of a zone placed over a gap) — these checks only apply to
+	# normal cube running.
+	if not _on_board:
+		# Side-slamming a FUD wall is a crash; landing on top is safe.
+		for i in range(_player.get_slide_collision_count()):
+			var collision := _player.get_slide_collision(i)
+			var collider := collision.get_collider()
+			if collider and collider.has_meta("fud_wall") and absf(collision.get_normal().x) > 0.5:
+				_crash()
+				return
+		if _player.position.y > CRASH_Y:
+			_crash()
+			return
+
+	_camera.position.x = _player.position.x + 240.0
+	_progress.value = clampf(_player.position.x / _course_length * 100.0, 0.0, 100.0)
+	_update_telegraph()
+
+func _physics_cube(delta: float) -> void:
 	_player.velocity.x = _current_speed
 	_player.velocity.y += GRAVITY * delta
-
 	if _tap_buffered and _player.is_on_floor():
 		_player.velocity.y = JUMP_VELOCITY
 		_spin_cube()
 	_tap_buffered = false
 
-	_player.move_and_slide()
+func _is_in_board_zone(x: float) -> bool:
+	if _board_zone.is_empty():
+		return false
+	return x >= float(_board_zone.get("start", 0.0)) and x <= float(_board_zone.get("end", 0.0))
 
-	# Side-slamming a FUD wall is a crash; landing on top is safe.
-	for i in range(_player.get_slide_collision_count()):
-		var collision := _player.get_slide_collision(i)
-		var collider := collision.get_collider()
-		if collider and collider.has_meta("fud_wall") and absf(collision.get_normal().x) > 0.5:
-			_crash()
-			return
+func _set_board_mode(active: bool) -> void:
+	_on_board = active
+	_board_bob_t = 0.0
+	_board_steer_vx = 0.0
+	_player_visual.visible = not active
+	if _board_visual:
+		_board_visual.visible = active
+	if active:
+		AudioManager.play_sfx("powerup")
 
-	if _player.position.y > CRASH_Y:
-		_crash()
-		return
+## Founder defect F — steer left/right toward a max +/-140px/s offset from
+## the auto-run speed, spring toward a fixed hover band instead of falling,
+## and lightly magnet toward nearby smoke tokens so the hand-placed token
+## line doesn't need pixel-perfect alignment to feel reliable. Jump still
+## works as a short optional pop (Grok: "for optional routes") — the spring
+## pulls the player straight back onto the band afterward, so it can never
+## be used to skip the whole zone's collectibles.
+func _physics_board(delta: float) -> void:
+	_board_bob_t += delta
+	var steer_input := Input.get_axis("move_left", "move_right")
+	var target_steer := steer_input * BOARD_STEER_MAX
+	var accel := BOARD_STEER_ACCEL if absf(target_steer) > 0.1 else BOARD_STEER_DECEL
+	_board_steer_vx = move_toward(_board_steer_vx, target_steer, accel * delta)
+	_player.velocity.x = _current_speed + _board_steer_vx
 
-	_camera.position.x = _player.position.x + 240.0
-	_progress.value = clampf(_player.position.x / _course_length * 100.0, 0.0, 100.0)
-	_update_telegraph()
+	var zone_height: float = float(_board_zone.get("path_height", 140.0))
+	var target_y := GROUND_Y - zone_height + sin(_board_bob_t * TAU / BOARD_BOB_PERIOD) * BOARD_BOB_AMP
+	_player.velocity.y = (target_y - _player.position.y) * BOARD_SPRING
+
+	if _tap_buffered:
+		_player.velocity.y = BOARD_JUMP_POP
+	_tap_buffered = false
+
+	for token in _smoke_tokens:
+		if not is_instance_valid(token) or not token.visible:
+			continue
+		var to_token: Vector2 = token.global_position - _player.global_position
+		var dist := to_token.length()
+		if dist > 0.1 and dist < BOARD_MAGNET_RADIUS:
+			_player.global_position += to_token.normalized() * BOARD_MAGNET_PULL * delta
+
+	if _board_visual:
+		_board_visual.rotation = lerp_angle(_board_visual.rotation, deg_to_rad(-steer_input * 12.0), 0.2)
 
 ## Find the next lethal hazard ahead of the player and fade the warning bar
 ## in as it enters TELEGRAPH_LEAD range; fully transparent otherwise.
@@ -616,6 +844,7 @@ func _reset_player() -> void:
 	_player.position = Vector2(0.0, GROUND_Y - PLAYER_SIZE)
 	_player.velocity = Vector2.ZERO
 	_player_visual.rotation = 0.0
+	_set_board_mode(false)
 
 func _update_hud() -> void:
 	_smoke_label.text = "PUFFS %d" % _smoke_this_attempt

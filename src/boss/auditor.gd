@@ -23,6 +23,13 @@ const CLIPBOARD := preload("res://src/boss/boss_projectile.tscn")
 @export var patrol_speed: float = 90.0
 @export var vulnerable_time: float = 1.8
 @export var max_health: int = 6
+## Founder defect C3: "noticeably larger" — was the only boss with no scale
+## treatment while Distributor already shipped BOSS_SCALE=1.7 (R8). Grok 4.5
+## size-progression brief (docs/model-responses dispatch this session):
+## Auditor 1.3x -> Distributor 1.7x -> Claim Jumper ~2.0x reads as escalating
+## across the 3-boss campaign instead of flat/inverted (first boss should
+## stay readable/fair, not out-scale the final-style Stage 2 boss).
+const BOSS_SCALE := 1.3
 ## Founder defect #6: CHARGE used to dash at a POSITION SNAPSHOTTED once when
 ## the charge began — never the live player — so it never actually chased.
 ## Replaced with a continuously-retargeting PURSUE state (below); this is its
@@ -92,6 +99,9 @@ func _ready() -> void:
 	sprite.size = Vector2(96, 96)
 	collision.position = Vector2(48, 48)
 	hitbox.position = Vector2(48, 48)
+	# Scale the whole body (sprite + collision + hitbox together, so the
+	# hitbox never desyncs from the art) — same pattern as Distributor's R8.
+	scale = Vector2(BOSS_SCALE, BOSS_SCALE)
 	hitbox_shape.shape = collision.shape
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
@@ -267,6 +277,15 @@ func _physics_process(delta: float) -> void:
 			velocity.y += 980.0 * delta
 			move_and_slide()
 			sprite.modulate = Color(1.0, 0.3, 0.3, 1.0) if fmod(state_timer, 0.3) < 0.15 else Color(1.0, 0.1, 0.1, 1.0)
+			# C1 residual (Kimi audit): PATROL/ALERT/PURSUE all re-face the live
+			# player every frame, but VULNERABLE never did — it kept whatever
+			# facing PURSUE last set, frozen for the whole ~1.8s damage window.
+			# If the player moves during that window (likely — it's the window
+			# they're supposed to attack in), the boss goes stale-faced exactly
+			# while being hit, which reads as "still facing back."
+			var vuln_pl := get_tree().get_first_node_in_group("player")
+			if vuln_pl:
+				sprite.scale.x = 1.0 if vuln_pl.global_position.x > global_position.x else -1.0
 			if state_timer <= 0.0:
 				sprite.modulate = Color(1, 1, 1, 1)
 				sprite.color = Color(0.4, 0.25, 0.15, 1.0)

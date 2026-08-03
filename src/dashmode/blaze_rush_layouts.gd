@@ -87,6 +87,16 @@ static func _level_1() -> Dictionary:
 			# Victory stretch — clear run-up to the finish line.
 			{"type": "smoke", "x": 5350.0, "y": 60.0},
 		],
+		# Founder defect F — magic marijuana skateboard: steer through this
+		# stretch to auto-collect its token line, no jump needed. Centred on
+		# the existing gap at x=3900 (w=160) so the board's purpose is
+		# legible at a glance — it flies you over the pit instead of a timed
+		# jump — with generous lead-in/lead-out either side. 600px wide: at
+		# this course's ~370-390px/s local speed a narrower zone (originally
+		# 280px) crossed in under a second, barely long enough to register
+		# as a ride before the spring's-target check in the probe caught the
+		# player already exiting the far side back into free-fall.
+		"board_zone": {"start": 3700.0, "end": 4300.0, "path_height": 140.0},
 	}
 
 ## --- Level 2 — 330 -> 430 px/s over 6400px, one notch harder throughout. ----
@@ -146,6 +156,10 @@ static func _level_2() -> Dictionary:
 
 			{"type": "smoke", "x": 6200.0, "y": 60.0},
 		],
+		# Founder defect F — board zone over the x=3750 gap (w=170), widened
+		# to 600px (see L1's board_zone comment for why 280-320px was too
+		# narrow to read as a ride at this course's speed).
+		"board_zone": {"start": 3550.0, "end": 4150.0, "path_height": 150.0},
 	}
 
 ## --- Level 3 — 340 -> 460 px/s over 7350px, the hardest run. ----------------
@@ -205,4 +219,8 @@ static func _level_3() -> Dictionary:
 
 			{"type": "smoke", "x": 7300.0, "y": 60.0},
 		],
+		# Founder defect F — board zone over the x=6710 gap (w=190), widened
+		# to 600px (see L1's board_zone comment for why 280-320px was too
+		# narrow to read as a ride at this course's speed).
+		"board_zone": {"start": 6410.0, "end": 7010.0, "path_height": 150.0},
 	}

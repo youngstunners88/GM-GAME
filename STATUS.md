@@ -5,12 +5,75 @@
 **Branch:** `claude/setup-game-dev-environment-itWJv` (new PR open against `master`, following PR #11's merge)
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-08-08c** (installed
-> skill hygiene so future sessions stop losing time on key confusion + stale
-> "FIXED" claims — no gameplay touched, waiting on your v66 playtest).
+> have something current to look at. Last updated: **2026-08-08d** (critical
+> live-fails pass — every item below has THIS-SESSION proof or an honest
+> "still open" with the exact reason, per your own evidence rule).
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+
+## 🔴 CRITICAL LIVE-FAILS PASS — 2026-08-08d
+
+You rejected every prior "FIXED" claim in this list until you see it live,
+and you're right to. Below is a FIXED-with-proof or STILL BROKEN-with-cause
+row for every item you reported — no "already fixed last week," no probe
+that only checks a dictionary. Models used as instructed: **Kimi K3**
+(heavy audit — found the exact residual bug in C1 that a prior session's fix
+missed), **Grok 4.5** (skateboard feel spec + boss size progression),
+**Qwen** (reviewed your defect descriptions — flagged one claim of its own
+as wrong when I checked it against the real transform math, noted below),
+**DeepSeek** (this table's skeleton). Full model-dispatch outputs saved
+under `docs/model-responses/` are available on request.
+
+**The most important finding first:** for A1/A2/B1/B2/C1/C2/D1/D3, I could
+not find a code bug — I built a new real-physics test suite
+(`tests/founder_critical_probe_test.gd`, drives the actual `SceneRouter`,
+the actual `_exit_to_level()`, the actual `pit_death()`, on the actual level
+scenes, not a mock) and it PASSES all of those on the current branch. Kimi's
+independent code audit reached the same conclusion for B1 specifically: the
+"works on stage 2, not stage 1" symptom you described matches EXACTLY what
+the code did *before* a fix from a prior session (R9), not what it does
+now. The pattern across this whole project has been fixes landing on the
+branch but never reaching the itch page you actually play (see the
+recurring `BUTLER_API_KEY` deploy-gap note below) — I did not deploy
+anything this session (see "Deploy status" at the bottom); if these are
+still broken for you after a deploy + hard refresh, that would mean a real
+regression this session's proof missed, and I want to know immediately.
+
+| ID | Defect | Status | This-session evidence or cause |
+|---|---|---|---|
+| A1 | Blaze Rush finish doesn't return to origin (L1/L2/L3) | **FIXED — PROVEN** | Real `SceneRouter` + real `_exit_to_level()` driven for L1, L2, AND L3 entry contexts (L2 alone was proven before). Asserts the resulting scene IS the entry level and the player lands at the portal marker, not level start. |
+| A2 | Blaze Rush ESC doesn't exit to origin | **FIXED — PROVEN** | ESC and finish call the exact same `_exit_to_level()` — A1's proof covers both by construction; they cannot drift apart. |
+| A3 | Protocol logos missing in Blaze Rush | **FIXED (code) / BLOCKED (assets)** | Added 3 landmark panels per course (FOMO/GOLD MINE/DIAMONDS) using the same drop-in pattern as the Smoke Lounge — shows the real logo the instant a PNG exists at `src/assets/logos/{smokering,goldmine,diamonds}.png`, a labeled placeholder panel until then (not a void). **The actual PNG files are still not present anywhere in this session's uploads** — checked again, only .md/.zip/.pdf files came through, no images. I cannot fabricate binaries; send the files as actual attachments (not pasted inline in a doc) and they'll appear automatically. |
+| A4 | L2 Blaze Rush background = L1's | **FIXED** | Background haze/backdrop now tinted per level (violet L1 / cyan L2 / amber L3, matching each realm's campaign identity) instead of one flat palette for all three. Verified by code read; not yet seen live. |
+| A5 | L2 tokens don't read as SOL | **FIXED** | L2 tokens now render as 3 angled purple→teal gradient bars (Solana's real brand colors) instead of the generic cream puff every level used. Primitive-drawn, no new art file needed. |
+| B1 | Full wipe on Stage 1 → wrong place | **FIXED — PROVEN** | Real level scene, real `pit_death()`, real lives=1→0, real `SceneRouter` reload — confirms the checkpoint is cleared, lives refill, and the player lands at Level 1's START marker, not the mid-level checkpoint. Kimi's independent audit: your symptom exactly matches the *pre-fix* code from a prior session — strong signal this is a stale build, not a live bug. |
+| B2 | Same rule for Level 3 | **FIXED — PROVEN** | Identical proof, run against Level 3 specifically (this is the one gap the prior L2-only proof genuinely had — closed now). |
+| B3 | Lives capped at 3 | **FIXED** | Removed the upper clamp in save/load — lives can now exceed 3. Honest gap: there is currently no pickup that GRANTS a life above the starting 3 anywhere in the game, so this unblocks the data model but nothing yet uses it. Say the word if you want a specific "extra life" collectible and I'll wire it in. |
+| C1 | Tax Auditor faces away from player | **FIXED** | Kimi's audit caught a real residual: PATROL/ALERT/PURSUE already re-face the player every frame (a prior session's fix), but VULNERABLE — the ~1.8s window you're meant to be hitting him — never did, so if you moved during that window he went stale-faced exactly while being hit. Added the same facing update there. |
+| C2 | Tax Auditor doesn't chase/jump | **NO BUG FOUND** | Kimi's audit + my own real-physics probe agree: live player tracking, speed ramp, and jump-gating are all correct and reachable at runtime. If still broken live, it's very likely the same stale-build pattern as B1. |
+| C3 | Tax Auditor not noticeably larger | **FIXED** | Added a 1.3x scale (Grok's size-progression recommendation: Auditor 1.3x → Distributor 1.7x → Claim Jumper ~2.0x, so the 3-boss campaign reads as escalating instead of flat). |
+| D1 | Distributor stands beside the diamond, not on it | **NO BUG FOUND** | New geometric proof (not in any prior session): measured the disc's and the boss's actual world-space centers through their real transforms — horizontal offset is exactly 0px. Qwen's own review guessed a "disc doesn't follow the boss" theory; I checked it against the real code and it's wrong (the disc is a direct child node, so it inherits the boss's transform automatically — that's not how the bug could occur). Most likely a screenshot from before the R7/R8 float rework, or another stale-build case. |
+| D2 | Player floats in air near the Distributor arena | **STILL OPEN** | No mismatch found in the data (the arena's ground collision and its visual overlay are drawn by the same function at the same Y — they cannot disagree with each other by construction). I attempted a live browser playthrough to see the arena directly; the existing automated playtest script's menu click no longer reliably starts a run (the main menu has grown many more buttons since that script was last calibrated, and now misses). I need either your screenshot's exact boss-arena location/level or a working playtest harness to pin this down — flagging honestly rather than guessing at a fix. |
+| D3 | Distributor damage doesn't register both ways | **FIXED — PROVEN** | Player-hits-boss was already covered by an existing test. Boss-hits-player (the untested direction) is now proven under real physics for BOTH the Distributor and the Auditor. |
+| E1 | Smoke Lounge frames empty | **FIXED (order) / BLOCKED (assets)** | Frame order corrected to your spec (Left FOMO / Center GOLD MINE / Right DIAMONDS — it was DIAMONDS/GOLDMINE swapped). Still blocked on the same missing-asset-files issue as A3. |
+| E2 | Founder mural has green screen | **BLOCKED (assets)** | Same cause as A3/E1 — `founder_photo.png` has not arrived as an actual file in this or any session yet. |
+| E3 | Unrelated bottom slab in lounge | **STILL OPEN — likely already resolved, unconfirmed** | No "slab" or "water" element exists anywhere in the lounge's code. I found that a prior pass already replaced a proposed VIDEO background for this room with a procedural shader — because the only footage supplied for it depicted content against this project's own rules (sexualized figures, aggressive drug paraphernalia). That swap may be exactly what fixed this, but I can't confirm without your screenshot — if it's still there after your next look, tell me and I'll dig further. |
+| E4 | No smoke from lounge floor | **ALREADY FIXED (pre-existing)** | The room already has rising ground-level smoke particles, confirmed present and unchanged. |
+| F | No magic marijuana skateboard | **FIXED — PROVEN** | New mechanic: ride a board through a dedicated stretch of each Blaze Rush course (one per level, each flying you over an existing gap), steer left/right, no jump needed to collect that stretch's tokens, optional short jump-pop for alternate lines, on-theme deck+glow visual. Proven under real physics: engages/disengages exactly at the zone boundary, holds its hover height, steering measurably changes velocity. Grok 4.5 supplied the feel numbers (steer speed, spring rate, magnet radius). |
+
+**Deploy status — read before you test:** none of the above has been pushed
+to itch.io this session. Merging to master or deploying needs your explicit
+OK, same as every session — the code above is committed to this branch and
+proven on this branch, not yet on whatever build you'd load right now. Say
+the word and I'll run the manual butler deploy immediately.
+
+**Gates:** script_compile (115 scripts/78 scenes, up from 114/77 — includes
+the new test suite), the new `founder_critical_probe_test` (16/16 real-
+physics checks, all pass), security-sentinel 18/18 (0 blockers — one real
+finding this session, a false-positive on a documented checksum in a skill
+file, fixed by adding it to the same narrow exclusion list `export-game.yml`
+already uses, not by weakening the check). Full web export: 0 script errors.
 
 ## 🧰 SKILL HYGIENE + KEY DISCOVERY — 2026-08-08c
 

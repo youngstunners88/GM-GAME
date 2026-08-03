@@ -382,7 +382,10 @@ func _setup_protocol_plinth(x: float) -> void:
 	post.position = Vector2(x - 8, FLOOR_SURFACE_Y - 24 - 70)
 	add_child(post)
 
-	var sign_names := ["SMOKERING", "DIAMONDS", "GOLDMINE"]
+	# Founder mapping (stated explicitly): Left = FOMO/SmokeRing, Center =
+	# GOLD MINE, Right = DIAMONDS. This array renders left-to-right in the
+	# loop below — was DIAMONDS/GOLDMINE swapped relative to that spec.
+	var sign_names := ["SMOKERING", "GOLDMINE", "DIAMONDS"]
 	var slot_w := 90.0
 	var total_w := slot_w * sign_names.size() + 12.0 * (sign_names.size() - 1)
 	var start_x := x - total_w / 2.0
