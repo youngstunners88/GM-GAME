@@ -543,28 +543,45 @@ func _test_boss_backdrop_floor_alignment(level_index: int) -> void:
 	level.call("set_boss_background")
 	await get_tree().process_frame
 
-	var backdrop_sprites: Array = level.get("_backdrop_sprites")
-	_check("L%d: backdrop sprite exists" % level_index, backdrop_sprites.size() > 0)
-	if backdrop_sprites.is_empty():
+	var spr: Sprite2D = level.get("_boss_backdrop_sprite")
+	_check("L%d: dedicated boss backdrop sprite exists" % level_index, is_instance_valid(spr))
+	if not is_instance_valid(spr):
 		level.queue_free()
 		return
 
-	var spr: Sprite2D = backdrop_sprites[0]
 	var layer := spr.get_parent() as ParallaxLayer
-	_check("L%d: backdrop layer frozen to world-fixed (motion_scale 1.0, no mirroring)" % level_index,
+	_check("L%d: backdrop layer world-fixed (motion_scale 1.0, no mirroring)" % level_index,
 		layer != null and layer.motion_scale == Vector2(1.0, 1.0) and layer.motion_mirroring == Vector2.ZERO,
 		"motion_scale=%s mirroring=%s" % [str(layer.motion_scale if layer else "?"),
 			str(layer.motion_mirroring if layer else "?")])
 
 	var start_x: float = level_data.boss_arena.get("start_x", 0.0)
+	var end_x: float = level_data.boss_arena.get("end_x", start_x)
 	var expected_floor_y: float = level.call("_floor_y_at", start_x)
 	var art_floor_row: float = level.get("BOSS_ART_FLOOR_ROW")
-	var actual_art_floor_world_y: float = spr.position.y + art_floor_row
+	var scale_factor: float = spr.scale.x
+	var actual_art_floor_world_y: float = spr.position.y + art_floor_row * scale_factor
 	_info("L%d expected ground Y / art's illustrated floor world Y" % level_index,
 		"%.1f / %.1f" % [expected_floor_y, actual_art_floor_world_y])
 	_check("L%d: backdrop's illustrated floor lines up with the real ground surface" % level_index,
 		absf(actual_art_floor_world_y - expected_floor_y) < 1.0,
 		"art floor at world y=%.1f, real ground at y=%.1f" % [actual_art_floor_world_y, expected_floor_y])
+
+	# Kimi K3 audit caught the first version of this fix leaving a blank
+	# strip on screen: centering the art on the 700px arena left ~300px
+	# uncovered on the left, because the camera's 1280px-wide viewport can
+	# show area WEST of start_x the moment the player first crosses in.
+	# Assert actual pixel coverage, not just that a scale factor exists.
+	var viewport_w: float = get_viewport().get_visible_rect().size.x
+	var camera_min_left: float = start_x - viewport_w / 2.0
+	var art_left: float = spr.position.x
+	var art_right: float = spr.position.x + spr.texture.get_width() * scale_factor
+	_info("L%d camera's leftmost reachable view / art's actual left..right edge" % level_index,
+		"%.1f / %.1f..%.1f" % [camera_min_left, art_left, art_right])
+	_check("L%d: backdrop art covers the camera's full reachable range (no blank strip)" % level_index,
+		art_left <= camera_min_left + 1.0 and art_right >= end_x - 1.0,
+		"camera can show as far left as x=%.1f and as far right as x=%.1f, but art only covers %.1f..%.1f"
+			% [camera_min_left, end_x, art_left, art_right])
 
 	level.queue_free()
 	await get_tree().process_frame

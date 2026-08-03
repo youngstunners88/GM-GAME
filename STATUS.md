@@ -46,45 +46,61 @@ built and waiting for exactly these four filenames at
 
 ### 2. D2 — Lil Blunt standing in the air near the Distributor — FIXED
 
-**Found the real cause.** `LevelBase._setup_background()` builds one
-scrolling/tiling parallax layer per level (`motion_scale=(0.35,0.5)`,
-mirrored every image-width) — correct for a normal level's background that
-needs to repeat across a 4000+px level. `set_boss_background()` swapped
-that SAME layer's texture to the boss art without changing any of that
-scrolling/tiling behavior. `bg_boss_crystal.jpg` is a single fixed diorama
-(measured: exactly 1280x720, matching the game's viewport 1:1) with its own
-illustrated walkway at pixel row ~605 — but by the time the camera has
-scrolled 3700+px to reach the arena, the accumulated parallax offset wraps
-the tiled image to an arbitrary position that has nothing to do with the
-actual arena geometry. That's why it read as "floating" — the art's floor
-line drifts depending on exactly how you got there (walked in vs.
-respawned vs. Blaze Rush return), not a fixed, always-wrong offset a static
-review would catch.
+**Found the real cause, then had it corrected by Kimi K3's audit, then
+fixed the corrected version too — full trail below since two real mistakes
+got caught before this shipped.**
 
-**Fix:** when the boss background swaps in, the layer is now frozen to
-`motion_scale=(1,1)` with zero mirroring — it behaves like ordinary world-
-space geometry from that point on, so it can never drift — and the sprite
-is repositioned so its illustrated floor lines up with the arena's REAL
-ground surface (read from the level's own `ground_segments` data, not a
-hand-guessed number).
+`LevelBase._setup_background()` builds one scrolling/tiling parallax layer
+per level (`motion_scale=(0.35,0.5)`, mirrored every image-width) — correct
+for a normal level background that needs to repeat across a 4000+px level.
+`set_boss_background()` swapped that SAME layer's texture to the boss art
+without changing that scrolling/tiling behavior. `bg_boss_crystal.jpg` is a
+single fixed diorama (measured: exactly 1280x720, matching the viewport 1:1)
+with its own illustrated walkway at pixel row ~605.
 
-**Proof this session:** a new real-physics test
-(`_test_boss_backdrop_floor_alignment`) instantiates Level 2, calls the
-real `set_boss_background()`, and measures the resulting math: expected
-ground Y and the art's illustrated floor world Y both land on **exactly
-650.0**. Kimi K3 audit dispatched to challenge the diagnosis before calling
-it done — see `docs/model-responses/`.
+My first pass described this as the art "drifting to an arbitrary position"
+depending on how you got there. **Kimi's audit correctly rejected that**:
+parallax offset is a deterministic function of camera position, not
+history — with the camera clamped near the arena floor, real ground
+geometry moves 1:1 with the camera while that layer only moved at
+0.5x, producing a **fixed, reproducible ~70px gap** between the art's floor
+and the true ground every single time. Reproducible, not random — I've
+corrected the code comment so a future session doesn't chase a state-
+accumulation bug that doesn't exist.
 
-**Honest caveat:** the illustrated-floor row (605) was measured directly
-from `bg_boss_crystal.jpg` specifically. I checked the other two bosses'
-backdrop art (`bg_boss_tax.jpg` for the Auditor, `bg_boss_bandit.jpg` for
-the Claim Jumper) — both are also 1280x720, but neither has the same clear
-single-walkway composition (the Auditor's is floating platforms over a
-void, the Claim Jumper's is a converging mine tunnel with no obvious single
-ground line). I did **not** apply the same fixed row to those two — doing
-so without visual confirmation risked introducing a NEW misalignment on
-bosses that haven't been reported as broken. If you want those tuned too,
-say so and I'll do the same measurement against their actual art.
+More importantly, Kimi's audit caught a real defect in my actual fix: my
+first version centered the 1280px-wide art on the 700px-wide arena — but
+the camera's own 1280px-wide viewport can show area up to 640px WEST of the
+arena's start the moment the player first crosses in, which is further
+left than the centered art reached. That would have shipped a permanent
+~300px blank strip on the left side of the screen for the entire fight —
+a new, worse, always-visible defect in the exact spot I was fixing.
+
+**Corrected fix:** the boss art is now a separate, ADDITIVE backdrop layer
+(never mutates the shared level-wide backdrop, so retreating to a
+checkpoint west of the arena still shows the normal scrolling level art,
+nothing goes blank) — world-fixed (`motion_scale=(1,1)`, zero mirroring),
+scaled up (~4.7% for Level 2) and positioned to cover the camera's **entire
+reachable range** during the fight, not just the arena's own width, with
+its illustrated floor aligned to the real ground surface read from the
+level's own data.
+
+**Proof this session:** the real-physics test now asserts both the floor
+alignment (expected ground Y and the art's illustrated floor both land on
+exactly **650.0**) and the coverage range (the art's left/right edges
+exactly match the camera's leftmost-reachable x and the arena's end_x —
+**3060.0 to 4400.0**, no gap). Full Kimi K3 exchange in
+`docs/model-responses/2026-08-08e-kimi-d2-adversarial-audit.md` — worth
+reading if you want the exact math.
+
+**Honest caveat, unchanged:** the illustrated-floor row (605) and the ~4.7%
+scale factor were both measured/derived against `bg_boss_crystal.jpg`
+specifically. `bg_boss_tax.jpg` (Auditor) and `bg_boss_bandit.jpg` (Claim
+Jumper) are also 1280x720 but have different, less linear compositions
+(floating platforms over a void; a converging mine tunnel) — I did not
+extend this fix to them since D2 was reported specifically for the
+Distributor arena. Say the word if you want the same treatment for those
+two.
 
 ### 3. E3 — Lounge bottom slab — RECONFIRMED ABSENT
 

@@ -74,28 +74,34 @@ func _setup_background() -> void:
 	pbg.add_child(layer)
 	_backdrop_sprites.append(spr)
 
-## Swap the backdrop to the boss key art (called from boss triggers).
+## Show the boss key art (called from boss triggers).
 ##
-## Founder defect D2 ("player floats in the air on flat ground art"): this
-## used to just swap the texture and leave the sprite on the SAME layer
-## _setup_background() built — motion_scale=(0.35,0.5), mirrored every
-## image-width, tuned for a tileable forest/cave backdrop scrolling across a
-## 4000+px level. bg_boss_crystal.jpg is a single fixed diorama (1280x720 —
-## matches the viewport exactly) with its own illustrated walkway at pixel
-## row ~605 (measured directly from the source art). By the time the camera
-## has scrolled 3700+px to reach the arena, the accumulated parallax offset
-## wraps the mirrored image to an essentially ARBITRARY position — the art's
-## floor line drifts away from the real ground collision depending on
-## exactly how the player got there (walked in vs. respawned vs. Blaze Rush
-## return), which is why this read as inconsistent rather than a fixed
-## offset a static review could catch.
-## Fix: motion_scale=1.0 + zero mirroring makes the layer behave like a
-## plain world-space object — it moves in perfect lockstep with the camera,
-## the same as any real piece of arena geometry, so it can never drift.
-## Then the sprite is positioned so its illustrated floor lines up with the
-## arena's REAL ground surface (read from level_data.ground_segments, not a
-## hand-guessed constant) and centred on the arena horizontally.
+## Founder defect D2 ("player floats in the air on flat ground art"). Real
+## mechanism (corrected after a Kimi K3 audit caught the first version of
+## this fix misdescribing it as "arbitrary drift" — it is not; parallax
+## offset is a deterministic function of camera position, not history): the
+## boss art was swapped onto the SAME layer _setup_background() built for
+## the level's regular repeating backdrop — motion_scale=(0.35,0.5), mirrored
+## every image-width. With the camera clamped near the arena floor, real
+## ground geometry (world y=650) moves 1:1 with the camera while that layer
+## only moves at 0.5x — a fixed, reproducible ~70px gap between the art's
+## illustrated walkway and the actual ground every single time, not
+## something that drifts run to run.
+##
+## Fix: an ADDITIVE dedicated layer for the boss art (never mutate the
+## shared level-wide backdrop sprite) — world-fixed (motion_scale=1,1, zero
+## mirroring, so it moves in perfect lockstep with the camera and can never
+## develop a parallax gap against real geometry again), sized and positioned
+## to cover the camera's ENTIRE reachable range while the arena is sealed.
+## That range is WIDER than the arena itself: the viewport (1280px) reaches
+## past the arena's own start_x when the player first crosses in, which the
+## first version of this fix missed and left a blank strip on screen for
+## the whole fight (caught by the same Kimi audit, with the exact math).
+## Being additive also means a player knocked back to a west-of-arena
+## checkpoint still sees the ORIGINAL, correctly-scrolling level backdrop —
+## nothing here ever needs to revert.
 const BOSS_ART_FLOOR_ROW: float = 605.0
+var _boss_backdrop_sprite: Sprite2D
 
 func set_boss_background() -> void:
 	if level_data == null or level_data.boss_background_path == "":
@@ -103,32 +109,41 @@ func set_boss_background() -> void:
 	var tex: Texture2D = load(level_data.boss_background_path)
 	if tex == null:
 		return
+
+	if not is_instance_valid(_boss_backdrop_sprite):
+		var pbg := ParallaxBackground.new()
+		pbg.layer = -19  # in front of the regular -20 level backdrop, still behind gameplay (0)
+		add_child(pbg)
+		var layer := ParallaxLayer.new()
+		layer.motion_scale = Vector2(1.0, 1.0)
+		layer.motion_mirroring = Vector2.ZERO
+		pbg.add_child(layer)
+		_boss_backdrop_sprite = Sprite2D.new()
+		_boss_backdrop_sprite.centered = false
+		layer.add_child(_boss_backdrop_sprite)
+	_boss_backdrop_sprite.texture = tex
+
 	var start_x: float = level_data.boss_arena.get("start_x", 0.0)
 	var end_x: float = level_data.boss_arena.get("end_x", start_x + tex.get_width())
+	# Cover the camera's full reachable range, not just the arena's own
+	# width — the camera can show up to viewport_width/2 px WEST of start_x
+	# the moment the player first crosses in (Kimi audit).
+	var viewport_w := float(get_viewport().get_visible_rect().size.x)
+	var view_left := start_x - viewport_w / 2.0
+	var required_width := end_x - view_left
+	var scale_factor := required_width / float(tex.get_width())
+	_boss_backdrop_sprite.scale = Vector2(scale_factor, scale_factor)
 	var floor_y := _floor_y_at(start_x)
-	var world_pos := Vector2(
-		(start_x + end_x) / 2.0 - tex.get_width() / 2.0,
-		floor_y - BOSS_ART_FLOOR_ROW)
-	for spr in _backdrop_sprites:
-		if not is_instance_valid(spr):
-			continue
-		spr.texture = tex
-		var layer := spr.get_parent() as ParallaxLayer
-		if layer:
-			layer.motion_scale = Vector2(1.0, 1.0)
-			layer.motion_mirroring = Vector2.ZERO
-			layer.position = Vector2.ZERO
-		spr.position = world_pos
+	_boss_backdrop_sprite.position = Vector2(view_left, floor_y - BOSS_ART_FLOOR_ROW * scale_factor)
 
 ## The ground segment's own Y at a given world X — used to align the boss
 ## backdrop's illustrated floor with the REAL collision surface instead of a
-## guessed constant. Falls back to kill_zone_y (off-screen) if no segment
-## covers x, which just means the backdrop won't visibly misalign since
-## there's no floor there to misalign against.
+## guessed constant.
 func _floor_y_at(x: float) -> float:
 	for seg in level_data.ground_segments:
 		if x >= seg.x and x < seg.x + seg.z:
 			return seg.y
+	push_warning("LevelBase._floor_y_at: no ground segment covers x=%.0f — falling back to kill_zone_y" % x)
 	return level_data.kill_zone_y
 
 func _setup_parallax() -> void:
