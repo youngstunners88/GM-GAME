@@ -75,16 +75,61 @@ func _setup_background() -> void:
 	_backdrop_sprites.append(spr)
 
 ## Swap the backdrop to the boss key art (called from boss triggers).
-## All three parallax depths swap together so the arena reads as one place.
+##
+## Founder defect D2 ("player floats in the air on flat ground art"): this
+## used to just swap the texture and leave the sprite on the SAME layer
+## _setup_background() built — motion_scale=(0.35,0.5), mirrored every
+## image-width, tuned for a tileable forest/cave backdrop scrolling across a
+## 4000+px level. bg_boss_crystal.jpg is a single fixed diorama (1280x720 —
+## matches the viewport exactly) with its own illustrated walkway at pixel
+## row ~605 (measured directly from the source art). By the time the camera
+## has scrolled 3700+px to reach the arena, the accumulated parallax offset
+## wraps the mirrored image to an essentially ARBITRARY position — the art's
+## floor line drifts away from the real ground collision depending on
+## exactly how the player got there (walked in vs. respawned vs. Blaze Rush
+## return), which is why this read as inconsistent rather than a fixed
+## offset a static review could catch.
+## Fix: motion_scale=1.0 + zero mirroring makes the layer behave like a
+## plain world-space object — it moves in perfect lockstep with the camera,
+## the same as any real piece of arena geometry, so it can never drift.
+## Then the sprite is positioned so its illustrated floor lines up with the
+## arena's REAL ground surface (read from level_data.ground_segments, not a
+## hand-guessed constant) and centred on the arena horizontally.
+const BOSS_ART_FLOOR_ROW: float = 605.0
+
 func set_boss_background() -> void:
 	if level_data == null or level_data.boss_background_path == "":
 		return
 	var tex: Texture2D = load(level_data.boss_background_path)
 	if tex == null:
 		return
+	var start_x: float = level_data.boss_arena.get("start_x", 0.0)
+	var end_x: float = level_data.boss_arena.get("end_x", start_x + tex.get_width())
+	var floor_y := _floor_y_at(start_x)
+	var world_pos := Vector2(
+		(start_x + end_x) / 2.0 - tex.get_width() / 2.0,
+		floor_y - BOSS_ART_FLOOR_ROW)
 	for spr in _backdrop_sprites:
-		if is_instance_valid(spr):
-			spr.texture = tex
+		if not is_instance_valid(spr):
+			continue
+		spr.texture = tex
+		var layer := spr.get_parent() as ParallaxLayer
+		if layer:
+			layer.motion_scale = Vector2(1.0, 1.0)
+			layer.motion_mirroring = Vector2.ZERO
+			layer.position = Vector2.ZERO
+		spr.position = world_pos
+
+## The ground segment's own Y at a given world X — used to align the boss
+## backdrop's illustrated floor with the REAL collision surface instead of a
+## guessed constant. Falls back to kill_zone_y (off-screen) if no segment
+## covers x, which just means the backdrop won't visibly misalign since
+## there's no floor there to misalign against.
+func _floor_y_at(x: float) -> float:
+	for seg in level_data.ground_segments:
+		if x >= seg.x and x < seg.x + seg.z:
+			return seg.y
+	return level_data.kill_zone_y
 
 func _setup_parallax() -> void:
 	# Skip the flat color bands when a painted backdrop is present.

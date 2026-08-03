@@ -5,12 +5,118 @@
 **Branch:** `claude/setup-game-dev-environment-itWJv` (new PR open against `master`, following PR #11's merge)
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-08-08d** (critical
-> live-fails pass — every item below has THIS-SESSION proof or an honest
-> "still open" with the exact reason, per your own evidence rule).
+> have something current to look at. Last updated: **2026-08-08e** (found
+> the real root cause of D2 and fixed it; searched exhaustively for the
+> logo/photo files a second time — still not present anywhere in this
+> session; confirmed E3/E4 again).
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+
+## 🟡 REMAINING OPENS — 2026-08-08e
+
+You asked me not to claim "chat images only" without actually searching —
+fair, and I did a much wider search this time. Here's exactly what I found.
+
+### 1. Logos + founder photo — STILL BLOCKED, exact search performed
+
+I searched, in this order: (1) `find /` across the whole session filesystem
+for the four exact filenames, (2) a full recursive listing of
+`/root/.claude/uploads/<session-id>/`, (3) every `.png`/`.jpg`/`.jpeg`/
+`.webp` anywhere under that uploads directory, (4) the **full contents of
+every zip archive** in that uploads directory (`securebuildchecklist.zip`,
+`securebuildchecklistclaudecode.zip`, `NEXT_PROMPT_Claude_Code.zip`,
+`gmgamemultimodelkit.zip`) — zip contents don't show up in a plain filesystem
+search, so this was the genuinely new step this time. Result: zero matches
+for `logo_fomo_lilblunt.png`, `logo_goldmine_gm.png`, `logo_diamonds.png`,
+or `founder_photo.png` anywhere. The only image file I found in any zip was
+an unrelated old screenshot (`stage2_progression_block.png`, a ladder/
+platform bug from a much earlier session, already resolved) bundled in
+`NEXT_PROMPT_Claude_Code.zip` — not one of the four requested files.
+
+I'm not able to invent these — if they were sent as inline chat images
+rather than actual file attachments, they don't reach this environment as
+files no matter how thoroughly I search. Please attach them as files (drag-
+and-drop or the file-upload control, not pasted into a document) and I'll
+wire them in within the same turn — the drop-in code (`_swap_placeholder_texture`
+in `secret_realm.gd`, the new landmark panels in `blaze_rush.gd`) is already
+built and waiting for exactly these four filenames at
+`src/assets/logos/{smokering,goldmine,diamonds}.png` and
+`src/assets/art/founder_portrait.png`.
+
+### 2. D2 — Lil Blunt standing in the air near the Distributor — FIXED
+
+**Found the real cause.** `LevelBase._setup_background()` builds one
+scrolling/tiling parallax layer per level (`motion_scale=(0.35,0.5)`,
+mirrored every image-width) — correct for a normal level's background that
+needs to repeat across a 4000+px level. `set_boss_background()` swapped
+that SAME layer's texture to the boss art without changing any of that
+scrolling/tiling behavior. `bg_boss_crystal.jpg` is a single fixed diorama
+(measured: exactly 1280x720, matching the game's viewport 1:1) with its own
+illustrated walkway at pixel row ~605 — but by the time the camera has
+scrolled 3700+px to reach the arena, the accumulated parallax offset wraps
+the tiled image to an arbitrary position that has nothing to do with the
+actual arena geometry. That's why it read as "floating" — the art's floor
+line drifts depending on exactly how you got there (walked in vs.
+respawned vs. Blaze Rush return), not a fixed, always-wrong offset a static
+review would catch.
+
+**Fix:** when the boss background swaps in, the layer is now frozen to
+`motion_scale=(1,1)` with zero mirroring — it behaves like ordinary world-
+space geometry from that point on, so it can never drift — and the sprite
+is repositioned so its illustrated floor lines up with the arena's REAL
+ground surface (read from the level's own `ground_segments` data, not a
+hand-guessed number).
+
+**Proof this session:** a new real-physics test
+(`_test_boss_backdrop_floor_alignment`) instantiates Level 2, calls the
+real `set_boss_background()`, and measures the resulting math: expected
+ground Y and the art's illustrated floor world Y both land on **exactly
+650.0**. Kimi K3 audit dispatched to challenge the diagnosis before calling
+it done — see `docs/model-responses/`.
+
+**Honest caveat:** the illustrated-floor row (605) was measured directly
+from `bg_boss_crystal.jpg` specifically. I checked the other two bosses'
+backdrop art (`bg_boss_tax.jpg` for the Auditor, `bg_boss_bandit.jpg` for
+the Claim Jumper) — both are also 1280x720, but neither has the same clear
+single-walkway composition (the Auditor's is floating platforms over a
+void, the Claim Jumper's is a converging mine tunnel with no obvious single
+ground line). I did **not** apply the same fixed row to those two — doing
+so without visual confirmation risked introducing a NEW misalignment on
+bosses that haven't been reported as broken. If you want those tuned too,
+say so and I'll do the same measurement against their actual art.
+
+### 3. E3 — Lounge bottom slab — RECONFIRMED ABSENT
+
+Searched `secret_realm.gd` again for any ColorRect/Sprite2D/ParallaxLayer
+that could read as a "water/slab strip" — nothing. Full list of visual
+elements the file actually builds: the ambient procedural smoke shader
+(full-screen, replaces a previously-rejected video background — see the
+code comment on `_setup_ambient_bg_shader()`), two parallax background
+layers (far nebula + near lounge, both painted JPGs I've now viewed
+directly — no water/slab band in either), the floor (collision only, no
+separate visual — the walkway reads through the parallax art), ground-level
+rising smoke particles, and three rest-stop platforms (bong alcove,
+protocol plinth, founder mural). None of these is a bottom slab/water
+strip. My working theory from last session stands: this was likely the
+video background that got rejected and replaced before you saw the room in
+its current state. If it's still visibly there after your next look, I'll
+need your screenshot to find whatever I'm missing.
+
+### 4. E4 — Bottom smoke — reconfirmed present, unchanged
+
+`_setup_ground_smoke()` still exists and is untouched — rising ground-level
+CPUParticles2D, purple-to-gray gradient, gated to reduce below 45fps.
+
+### 5. Deploy — not done, asking now
+
+Everything above is committed to this branch, not deployed. **Say the word
+and I'll run the manual butler push to itch.io right now** — I won't do it
+without that explicit OK.
+
+**Gates:** script_compile clean, `founder_critical_probe_test` — 20/20 real-
+physics checks including the new D2 alignment proof, security-sentinel
+18/18.
 
 ## 🔴 CRITICAL LIVE-FAILS PASS — 2026-08-08d
 
