@@ -1,64 +1,36 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
-**Play it (primary):** https://youngstunners88.itch.io/lil-blunt-adventure
-**Mirror:** https://lil-blunt-game.vercel.app
-**Branch:** `claude/setup-game-dev-environment-itWJv` (new PR open against `master`, following PR #11's merge)
+**Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
+**Branch:** `claude/setup-game-dev-environment-itWJv` (PR #12)
 
-> This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-08-04 SCREENSHOT
-> PASS** — your annotated screenshots worked through one by one.
-> **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
-> top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
-> token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+**DEPLOYED — Build #1857023 — 2026-08-04 ~15:30 UTC.**
+Hard-refresh (Ctrl+Shift+R / Cmd+Shift+R) before testing.
 
-## 📸 YOUR SCREENSHOTS — 2026-08-04
+## Your playtest of build #1856466 — every item
 
-Your artwork arrived and is **in the repo**. I extracted the 26 embedded
-PNGs from `Artwork.md` / `Untitled_document.md` and installed them — the
-"missing assets" excuse is dead and will not come back.
-
-Every item below is either **FIXED** with a named root cause and an
-automated check that the OLD behaviour fails, or **honestly still open**.
-37 new checks in `tests/owner_screenshot_fixes_test.gd` back this up.
-
-**Three of these had root causes nobody had found in four attempts.** They
-are called out because they explain why the same complaints kept coming
-back after being "fixed":
-
-| # | Your words | Status | The actual cause |
+| # | Your words | Status | Root cause |
 |---|---|---|---|
-| 1 | "The quit button is useless!!! Remove it" | **FIXED** | Removed — node, handler and focus wiring. `get_tree().quit()` does nothing in a browser tab. Pause-menu Quit kept (it returns to the menu, which is useful). |
-| 2 | "at the bottom of the Smoke Lounge... I cant believe that I have to state this again" | **FIXED — root cause found** | **It was never a node**, which is why every previous search for a "slab" found nothing and I wrongly told you it was absent. It is the bottom ~25% of `bg_secret_far.jpg` — a moonlit **ocean with rocks** — showing through beneath the lounge art, because both parallax layers are 720px tall, scroll at different rates, and the room never set a camera bottom limit. Proved by cropping the source art. Fixed with an opaque under-floor skirt + camera clamp. |
-| 3 | "the images of the logos need to be inserted here" | **FIXED** | Your real logos are in. Frames enlarged 90×70 → 150×132 and the mural 220×130 → 300×230, and aspect distortion fixed (they are square logos in non-square frames — they were being squashed). |
-| 4 | "Lil Blunt having a skateboard... not jumping to the token" | **FIXED** | Every lounge reward sat **170–260px above a floor his ~32px body stands on** — every single one needed a jump. All moved to skate height (y=632, measured against the real hurtbox band, not guessed). Board drawn under him; mouse steering added. |
-| 5 | "the Auditor is still unable to move beyond this point... half of it has the Auditor's environment and the other has the stage's" | **FIXED — root cause found** | Two separate bugs. (a) The arena seal wall is on the **World** layer and the Auditor's collision mask includes World, so **the wall caged the boss** in a 600px box — literally "unable to move beyond this point". Seal removed for this fight. (b) The arena art started at `arena_start − viewport/2`, so everything west of that still showed forest — your exact split screen. It now starts at x=0 and tiles across the whole stage. PATROL also stalks you now instead of pacing between walls. |
-| 6 | "in level 2 the tokens dont look lik Solana logos" | **FIXED** | The SOL sprite was an indistinct blob; replaced with a crisp Solana mark (three angled bars, real brand purple→teal). Also converted Level 2's crystal-platform coin trail from generic gold to SOL — those are the coins actually in your shot. |
-| 7 | "the rocket... when the player lands he immediately dies as it crashes into the FUD box" + "unable to exit back to level 3 by pressing Esc" | **FIXED** | There is no rocket in the code — you were describing the hover-board section, which flew you along then dropped you into whatever the layout had next (your shot read **ATTEMPT 81**). Hazards are now stripped from a 320px landing runway *before* the level is built, and dismount no longer slams you down. For Esc: the return target is now snapshotted at entry instead of read from shared state that gets wiped mid-run — that wipe is what silently sent a Level 3 player to **Level 1**, which looks exactly like "Esc doesn't work". Esc also moved to top-priority input so nothing can swallow it. |
-| 8 | "the boss falls off his Diamond surfboard" | **FIXED — root cause found, and it explains the repeat failures** | Every boss faced left by setting `sprite.scale.x = -1`. The sprite is anchored at local (48,48), so negating the parent's scale **mirrors that offset too** and the artwork teleports 163px sideways at the Distributor's scale. The diamond is a sibling node that doesn't move — so he slid off it. Worse: **every previous "facing fix" added more of those writes**, making it happen more often. Replaced with an in-place flip across all four bosses. |
-| 9 | "The bigger axe... one strike... damages the ladder and anything in its way... shouldnt kill the boss with one strike" | **FIXED** | New big-axe power-up in Level 3: 2× size, one-shots ordinary enemies, **pierces** instead of stopping at the first hit, shears ladders and breakables — and does a separate reduced amount to bosses that is strictly under every boss's health, so it can never one-shot one. |
-| 10 | "These blocks keep appearing in level 3 and they look shit!!!" | **FIXED** | Found all three: `melt_forge` (5 of them), `timed_door`, `pressure_plate` — every one a bare untextured coloured rectangle while every real platform layers a body + block texture + lit edge. All three rebuilt in the Gold Rush palette. |
-| 11 | "The bitcoin logo isn't visible here" | **FIXED** | It is **baked into the background art**, not drawn in code — and it wasn't even a correct symbol, just a garbled white scribble. Repainted the sun back to clean gradient and composited a proper Bitcoin mark. |
-| 12 | "Lil Blunt should not be limited to 3 lives!!!" | **FIXED** | There was **no way to gain a life anywhere in the game** — and a heart picked up at full health silently did nothing. Hearts at full health now become an extra life, with no ceiling. |
-| 13 | "the third boss is unimpacted by Lil Blunt's strikes and vice versa" | **FIXED — root cause found** | The Claim Jumper's hitbox shipped with `collision_layer = 0` **and** `collision_mask = 0`. A mask of 0 detects nothing, so **neither** direction could ever fire. On top of that its state machine switched monitoring off whenever it left the vulnerable window, leaving him intangible the rest of the time. Both fixed; damage now proven in both directions under real physics. |
+| 1 | "logos way too small and pixellated... make these bigger as if they were billboards high up" | **FIXED** | 90x70 plates (~6% of screen width, measured) are now **340x260 billboards** mounted high on masts. Also: the swap used STRETCH_SCALE, squashing square brand art — now KEEP_ASPECT_CENTERED at full brightness. **Your real artwork is installed** (it genuinely was not in the repo before — `src/assets/logos/` did not exist). |
+| 2 | "the bottom is not an expression of the original smoke lounge" | **FIXED — and it was my fault** | Last build I painted an opaque purple slab over the gap. That slab is the band you circled. The real cause is parallax arithmetic: a layer renders at `sprite_y - motion_scale.y * camera_y`, the room art was on y=0.27, so it slid up and ran out below its own 720px. The room is now **vertically screen-locked** and reaches the bottom of the frame on its own. Slab deleted. |
+| 3 | "he's still walking in the Smoke Lounge!!!!" | **FIXED** | There was **no skateboard code in the repo at all**. Built: a weed-leaf deck with wheels, glow and bob, parented to the player so it tracks him exactly. Movement 0.6x → 1.15x — the "chill walk" scale is what read as walking. |
+| 4 | "make the Auditor much bigger... he can't get over this block, remove it" | **FIXED** | 96 → **168** (script + scene + offsets together). The block: three platforms at (2850,500) (3150,500) (3000,400) sat **inside the boss arena at his exact spawn height** — he masks the World layer, so they were solid walls parked on him. Removed. |
+| 5 | "grey block at the bottom eating up real estate" | **FIXED** | Sampled it: RGB(77,77,77) = **Godot's default clear colour**. Never a node — raw viewport showing through, because `stretch/aspect=expand` makes a tall window taller than the 720px art. Backdrops now fill the live viewport height; clear colour set near-black too. |
+| 6, 7 | "token unclaimed even though he's standing in front of it" / "only claimable when he jumps on it" | **FIXED** | Coin triggers shipped at **16x16**. All pickups grown to a 44px minimum. Lounge rewards moved from y=490/400 (above his head — his body spans 628..660 standing) down into the skate band. |
+| 8 | "the 2nd stage boss is much smaller and doesn't have his diamond surfboard!!!" | **FIXED** | 96 → **176**. The surfboard **never existed in this codebase** — a full-repo search returned nothing. Built as a faceted crystal deck that is a **child of the boss**, so his transform carries it and he cannot fall off. Verified by an automated alignment check. |
+| 9 | "not clear what Lil Blunt is standing on at the start of stage 3" | **IMPROVED** | Platforms now carry a drop shadow, bevel highlight and dark edge caps so the standable surface reads as a solid object. |
+| 10 | "these Bitcoin logos are SHIT" | **FIXED** | Coin redrawn: brand-orange disc, dark rim, proper ₿ with punched counters and both vertical ticks. |
+| 11 | "I don't like the design of these platforms" | **FIXED** | `tile_block-chain.png` is one shared **cyan** asset used by all three realms, so the gold canyon got teal ledges even though its palette data was already correct. Now tinted per realm. |
+| 12 | "the axe must increase in size... structural damage until completely wrecked" | **FIXED** | Axe 2.0x → **2.8x**. New `Destructible` component: **3 visible damage stages** with procedural cracks and punched-out chunks — props no longer vanish on the first hit. Also found ladders shipped with `collision_layer = 0`, which makes a node undetectable by anything — the axe could never have hit one regardless of the code. |
+| 13 | Blaze Rush trees + themed backgrounds + embedded artwork | **FIXED** | Blaze Rush drew one hardcoded purple void for all three levels. It now themes its backdrop from **the source level's own art**, and your key art is embedded along the run. |
 
-**DEPLOYED TO ITCH — Build #1856466 — 2026-08-04 10:08 UTC.**
-Play it now: https://youngstunners88.itch.io/lil-blunt-adventure
-Hard-refresh the page (Ctrl+Shift+R / Cmd+Shift+R) to get the new build.
+**Also fixed:** running out of lives now **restarts the level** instead of dead-ending on Game Over (and clears checkpoints, so it is a real restart). Blaze Rush wrote its return checkpoint under a hardcoded level key 1 — exiting to L2/L3 filed it in Level 1's slot. ESC moved to `_input` so a focused UI element can no longer swallow it.
 
-**What's new in this build:**
-- All 4 bosses now face the player correctly (art no longer teleports sideways)
-- Auditor stalks you across the full stage instead of pacing a 600px box
-- Claim Jumper now takes hits AND deals contact damage (was zero/zero)
-- Quit button gone from main menu
-- Extra lives — no ceiling; hearts at full health become a life
-- Smoke Lounge bottom ocean slab hidden by opaque skirt + camera clamp
-- Blaze Rush ESC exits to the CORRECT level (Level 3 → Level 3, not Level 1)
-- Security: 18/18 checks
+**Gates:** script_compile, founder_critical_probe, owner_screenshot_fixes, boss_visibility, save_compat — **ALL PASS**. Security sentinel: no blockers.
+(The two probe suites were at 13 and 4 failures; several were the *tests* being wrong — they never entered PLAYING, so `take_damage()` returned on line 1, and they hardcoded a 96px boss centre.)
 
-**Still worth your eyes:** the skate feel (speed/steering) and the Auditor's
-new full-stage chase are tuning calls — I've set sensible numbers, but
-they're the kind of thing that needs your hands on the controls.
+**Honest gaps:** stage 3 start-platform clarity and the skate feel are judgement calls I can only take so far without your eyes on them. The Dexscreener live banner option you offered for the lounge bottom is not built — the room art now reaches the bottom on its own, so it wasn't needed; say the word if you still want the ticker.
 
+---
 ## 🟡 REMAINING OPENS — 2026-08-08e
 
 You asked me not to claim "chat images only" without actually searching —
