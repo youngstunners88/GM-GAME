@@ -5,13 +5,48 @@
 **Branch:** `claude/setup-game-dev-environment-itWJv` (new PR open against `master`, following PR #11's merge)
 
 > This report is updated, committed, and pushed on every change so you always
-> have something current to look at. Last updated: **2026-08-08e** (found
-> the real root cause of D2 and fixed it; searched exhaustively for the
-> logo/photo files a second time — still not present anywhere in this
-> session; confirmed E3/E4 again).
+> have something current to look at. Last updated: **2026-08-04 SCREENSHOT
+> PASS** — your annotated screenshots worked through one by one.
 > **State: RELEASE CANDIDATE + LAYER SHIFT** — the platformer is complete; on
 > top of it we just built the Movie + Video-Game layers (wallet, NFT badge,
 > token perks, AI Oracle, on-chain leaderboard, community lore, funnel).
+
+## 📸 YOUR SCREENSHOTS — 2026-08-04
+
+Your artwork arrived and is **in the repo**. I extracted the 26 embedded
+PNGs from `Artwork.md` / `Untitled_document.md` and installed them — the
+"missing assets" excuse is dead and will not come back.
+
+Every item below is either **FIXED** with a named root cause and an
+automated check that the OLD behaviour fails, or **honestly still open**.
+37 new checks in `tests/owner_screenshot_fixes_test.gd` back this up.
+
+**Three of these had root causes nobody had found in four attempts.** They
+are called out because they explain why the same complaints kept coming
+back after being "fixed":
+
+| # | Your words | Status | The actual cause |
+|---|---|---|---|
+| 1 | "The quit button is useless!!! Remove it" | **FIXED** | Removed — node, handler and focus wiring. `get_tree().quit()` does nothing in a browser tab. Pause-menu Quit kept (it returns to the menu, which is useful). |
+| 2 | "at the bottom of the Smoke Lounge... I cant believe that I have to state this again" | **FIXED — root cause found** | **It was never a node**, which is why every previous search for a "slab" found nothing and I wrongly told you it was absent. It is the bottom ~25% of `bg_secret_far.jpg` — a moonlit **ocean with rocks** — showing through beneath the lounge art, because both parallax layers are 720px tall, scroll at different rates, and the room never set a camera bottom limit. Proved by cropping the source art. Fixed with an opaque under-floor skirt + camera clamp. |
+| 3 | "the images of the logos need to be inserted here" | **FIXED** | Your real logos are in. Frames enlarged 90×70 → 150×132 and the mural 220×130 → 300×230, and aspect distortion fixed (they are square logos in non-square frames — they were being squashed). |
+| 4 | "Lil Blunt having a skateboard... not jumping to the token" | **FIXED** | Every lounge reward sat **170–260px above a floor his ~32px body stands on** — every single one needed a jump. All moved to skate height (y=632, measured against the real hurtbox band, not guessed). Board drawn under him; mouse steering added. |
+| 5 | "the Auditor is still unable to move beyond this point... half of it has the Auditor's environment and the other has the stage's" | **FIXED — root cause found** | Two separate bugs. (a) The arena seal wall is on the **World** layer and the Auditor's collision mask includes World, so **the wall caged the boss** in a 600px box — literally "unable to move beyond this point". Seal removed for this fight. (b) The arena art started at `arena_start − viewport/2`, so everything west of that still showed forest — your exact split screen. It now starts at x=0 and tiles across the whole stage. PATROL also stalks you now instead of pacing between walls. |
+| 6 | "in level 2 the tokens dont look lik Solana logos" | **FIXED** | The SOL sprite was an indistinct blob; replaced with a crisp Solana mark (three angled bars, real brand purple→teal). Also converted Level 2's crystal-platform coin trail from generic gold to SOL — those are the coins actually in your shot. |
+| 7 | "the rocket... when the player lands he immediately dies as it crashes into the FUD box" + "unable to exit back to level 3 by pressing Esc" | **FIXED** | There is no rocket in the code — you were describing the hover-board section, which flew you along then dropped you into whatever the layout had next (your shot read **ATTEMPT 81**). Hazards are now stripped from a 320px landing runway *before* the level is built, and dismount no longer slams you down. For Esc: the return target is now snapshotted at entry instead of read from shared state that gets wiped mid-run — that wipe is what silently sent a Level 3 player to **Level 1**, which looks exactly like "Esc doesn't work". Esc also moved to top-priority input so nothing can swallow it. |
+| 8 | "the boss falls off his Diamond surfboard" | **FIXED — root cause found, and it explains the repeat failures** | Every boss faced left by setting `sprite.scale.x = -1`. The sprite is anchored at local (48,48), so negating the parent's scale **mirrors that offset too** and the artwork teleports 163px sideways at the Distributor's scale. The diamond is a sibling node that doesn't move — so he slid off it. Worse: **every previous "facing fix" added more of those writes**, making it happen more often. Replaced with an in-place flip across all four bosses. |
+| 9 | "The bigger axe... one strike... damages the ladder and anything in its way... shouldnt kill the boss with one strike" | **FIXED** | New big-axe power-up in Level 3: 2× size, one-shots ordinary enemies, **pierces** instead of stopping at the first hit, shears ladders and breakables — and does a separate reduced amount to bosses that is strictly under every boss's health, so it can never one-shot one. |
+| 10 | "These blocks keep appearing in level 3 and they look shit!!!" | **FIXED** | Found all three: `melt_forge` (5 of them), `timed_door`, `pressure_plate` — every one a bare untextured coloured rectangle while every real platform layers a body + block texture + lit edge. All three rebuilt in the Gold Rush palette. |
+| 11 | "The bitcoin logo isn't visible here" | **FIXED** | It is **baked into the background art**, not drawn in code — and it wasn't even a correct symbol, just a garbled white scribble. Repainted the sun back to clean gradient and composited a proper Bitcoin mark. |
+| 12 | "Lil Blunt should not be limited to 3 lives!!!" | **FIXED** | There was **no way to gain a life anywhere in the game** — and a heart picked up at full health silently did nothing. Hearts at full health now become an extra life, with no ceiling. |
+| 13 | "the third boss is unimpacted by Lil Blunt's strikes and vice versa" | **FIXED — root cause found** | The Claim Jumper's hitbox shipped with `collision_layer = 0` **and** `collision_mask = 0`. A mask of 0 detects nothing, so **neither** direction could ever fire. On top of that its state machine switched monitoring off whenever it left the vulnerable window, leaving him intangible the rest of the time. Both fixed; damage now proven in both directions under real physics. |
+
+**Not deployed to itch.** Everything above is committed and pushed to the
+branch. Say the word and I'll push the build.
+
+**Still worth your eyes:** the skate feel (speed/steering) and the Auditor's
+new full-stage chase are tuning calls — I've set sensible numbers, but
+they're the kind of thing that needs your hands on the controls.
 
 ## 🟡 REMAINING OPENS — 2026-08-08e
 
