@@ -567,17 +567,24 @@ func _build_hud() -> void:
 
 # --- run loop ----------------------------------------------------------------
 
+## ESC lives in _input, NOT _unhandled_input.
+##
+## Founder, repeatedly: "the player is unable to exit back to level 3 by
+## pressing Esc". _unhandled_input only runs for events NOTHING else consumed,
+## so any Control that happens to be focused — the HUD, the exit button, a
+## pause overlay — silently eats the key and the exit never fires. _input sees
+## it first, unconditionally. Raw keycode is checked alongside the action in
+## case the ui_cancel binding is ever changed.
+func _input(event: InputEvent) -> void:
+	var esc := event.is_action_pressed("ui_cancel")
+	if not esc and event is InputEventKey:
+		var k := event as InputEventKey
+		esc = k.pressed and not k.echo and k.keycode == KEY_ESCAPE
+	if esc:
+		get_viewport().set_input_as_handled()
+		_exit_to_level()
+
 func _unhandled_input(event: InputEvent) -> void:
-	# ESC exits Blaze Rush cleanly, returning to the correct source level.
-	if event.is_action_pressed("ui_cancel"):
-		get_viewport().set_input_as_handled()
-		_exit_to_level()
-		return
-	if event is InputEventKey and event.pressed and not event.echo \
-			and event.keycode == KEY_ESCAPE:
-		get_viewport().set_input_as_handled()
-		_exit_to_level()
-		return
 	# Whole-screen tap/click = jump (mobile-first, Geometry Dash convention).
 	if event is InputEventScreenTouch and event.pressed:
 		_tap_buffered = true
@@ -711,6 +718,12 @@ func _exit_to_level() -> void:
 	var portal_pos: Vector2 = _return_pos
 	if portal_pos != Vector2.ZERO:
 		# LevelBase spawns from checkpoint slot 1 — drop the player back at the portal.
-		GameManager.save_checkpoint(1, 990 + _level_index, portal_pos)
+		# _level_index, NOT a hardcoded 1. level_checkpoints is keyed BY LEVEL,
+		# so writing the return position under key 1 while returning to Level 2
+		# or 3 filed the portal drop-point in the wrong level's slot: the target
+		# level found no checkpoint of its own and spawned the player at its
+		# start, while Level 1 silently inherited a checkpoint from a room the
+		# player was never in.
+		GameManager.save_checkpoint(_level_index, 990 + _level_index, portal_pos)
 	GameManager.dash_return = {}
 	SceneRouter.load_scene(return_path, SceneRouter.Transition.SMOKE)

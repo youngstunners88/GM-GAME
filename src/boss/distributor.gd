@@ -17,6 +17,11 @@ enum Phase { PATROL, SHARD_THROW, VULNERABLE }
 var current_phase_state: Phase = Phase.PATROL
 var throw_timer: float = 0.0
 var direction: float = 1.0
+## The surfboard deck itself, exposed so the alignment gate in
+## tests/founder_critical_probe_test.gd can measure the board's real rendered
+## footprint against the boss's collision centre — the "he falls off his
+## diamond surfboard" defect, checked rather than eyeballed.
+var _disc: Polygon2D
 
 ## Assigned, NOT redeclared: EnemyBase already owns `sprite`, and shadowing
 ## it is a parse error that leaves this entire script unattached.
@@ -90,7 +95,7 @@ func _physics_process(delta: float) -> void:
 ## in this codebase — a search of the whole repo returns nothing. What existed
 ## was a separate decorative diamond placed in the arena that he read as a
 ## board; the boss "fell off" it because every boss used to face left by
-## setting `sprite.scale.x = -1`, and BossSprite anchors its inner Sprite2D at
+## negating the sprite's x-scale, and BossSprite anchors its inner Sprite2D at
 ## size/2, so negating the parent's x-scale MIRRORS that offset and teleports
 ## the art ~160px sideways while the arena diamond stayed put.
 ##
@@ -129,6 +134,7 @@ func _build_diamond_surfboard() -> void:
 	])
 	deck.color = Color(0.62, 0.93, 1.0, 0.96)
 	board.add_child(deck)
+	_disc = deck
 
 	# Bright top facet + dark keel give the flat polygon depth.
 	var facet := Polygon2D.new()

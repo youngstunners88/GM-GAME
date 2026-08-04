@@ -232,11 +232,38 @@ func lose_life() -> bool:
     if lives <= 0:
         GoldMineSystem.on_player_death()
         player_died.emit()
-        StateMachine.change_state(StateMachine.State.GAME_OVER)
+        full_wipe_restart()
         return true
     player_health = max_health
     health_changed.emit(player_health)
     return false
+
+## FULL WIPE on running out of lives.
+##
+## Founder: "Lil Blunt should not be limited to 3 lives" AND, when they do run
+## out, the run must RESTART rather than dead-end on a Game Over screen.
+##
+## "Wipe" means the progress earned during the failed run is genuinely
+## discarded — the crucial part being the CHECKPOINTS. Refilling lives while
+## leaving a mid-level checkpoint standing would drop the player straight back
+## at the point they kept dying at, with a full life bar and no way to start
+## the stage over: a restart in name only, and a softer loop than the founder
+## asked for. The level is reloaded from its own start.
+##
+## Deliberately NOT a route to the menu: the whole point is that the player
+## keeps playing.
+func full_wipe_restart() -> void:
+    level_checkpoints.clear()
+    lives = max_lives
+    lives_changed.emit(lives)
+    player_health = max_health
+    health_changed.emit(player_health)
+    current_power_up = ""
+    power_up_timer = 0.0
+    power_up_changed.emit("", 0.0)
+    save_session()
+    # SceneRouter owns transitions; reload the level the player is on.
+    SceneRouter.load_scene(level_scene(current_level), SceneRouter.Transition.FADE)
 
 ## Grant an extra life. No upper cap — the owner wants unlimited lives.
 func add_life(amount: int = 1) -> void:

@@ -344,6 +344,15 @@ func _test_boss_hits_player_on_contact(boss_scene: PackedScene, label: String) -
 	# 5 real seconds because it was only accumulating simulated time at 1/20
 	# speed). Never trust ambient global state between tests — reset it.
 	Engine.time_scale = 1.0
+	# Player.take_damage() early-returns unless StateMachine.is_playing().
+	# A bare probe scene never enters PLAYING, so EVERY contact-damage check
+	# here was measuring the harness, not the game: the boss really did touch
+	# the player, the player really did call take_damage(), and take_damage()
+	# really did return on line 1 because the state machine said the game was
+	# not running. Enter PLAYING (via TRANSITIONING — the state machine
+	# rejects an arbitrary jump) so contact damage is actually reachable.
+	StateMachine.change_state(StateMachine.State.TRANSITIONING)
+	StateMachine.change_state(StateMachine.State.PLAYING)
 	var floor_body := StaticBody2D.new()
 	floor_body.collision_layer = 1
 	var cs := CollisionShape2D.new()
@@ -379,10 +388,10 @@ func _test_boss_hits_player_on_contact(boss_scene: PackedScene, label: String) -
 	# enter-transition happens repeatedly across the whole window regardless
 	# of exactly when monitoring goes live.
 	for cycle in 10:  # 10 x 0.5s = 5s total, matching the old budget
-		player.global_position = boss.to_global(Vector2(48, 48)) + Vector2(-160, 0)
+		player.global_position = boss.to_global(_body_centre(boss)) + Vector2(-_exit_dist(boss), 0)
 		for i in 10:
 			await get_tree().physics_frame
-		player.global_position = boss.to_global(Vector2(48, 48))
+		player.global_position = boss.to_global(_body_centre(boss))
 		for i in 20:
 			await get_tree().physics_frame
 			if GameManager.player_health < health_before:
@@ -598,3 +607,25 @@ func _test_boss_backdrop_floor_alignment(level_index: int) -> void:
 
 	level.queue_free()
 	await get_tree().process_frame
+
+## Boss body centre in LOCAL space, read from the boss's actual CollisionShape2D
+## instead of the hardcoded Vector2(48, 48) this test used to carry.
+##
+## That literal was the centre of a 96x96 boss. The Auditor is now 168 and the
+## Distributor 176 (the founder asked for them to be much bigger), so the old
+## constant no longer pointed at the middle of anything — the test was placing
+## the player near a corner and then reporting the GAME as broken. A test that
+## hardcodes a size silently rots the moment that size is tuned.
+func _body_centre(boss: Node2D) -> Vector2:
+	var cs := boss.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if cs and cs.shape is RectangleShape2D:
+		return cs.position
+	return Vector2(48, 48)
+
+## Far enough out to guarantee a real exit transition for ANY boss size —
+## body half-width plus the player's own width plus margin.
+func _exit_dist(boss: Node2D) -> float:
+	var cs := boss.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if cs and cs.shape is RectangleShape2D:
+		return (cs.shape as RectangleShape2D).size.x / 2.0 + 90.0
+	return 160.0

@@ -326,17 +326,20 @@ func _attach_skateboard(player: Node2D) -> void:
 ##
 ## 630 puts a 16px pickup's span at 630..646 — inside the body band with
 ## ~14px of margin on both sides, so it collects on contact while skating.
-const SKATE_BAND_Y := 630.0
+## HEIGHT ABOVE THE FLOOR SURFACE (an offset, not an absolute Y).
+## FLOOR_SURFACE_Y - 28 = 632, and a pickup there spans 632..676 with its
+## 44px trigger — squarely across the standing hurtbox band of 630..660.
+const SKATE_PICKUP_Y := 28.0
 
 func _setup_rewards() -> void:
 	# A long collectible trail along the skate line — this is the run's reward.
 	for i in range(14):
-		EntitySpawner.spawn("coin_eth", Vector2(900 + i * 270, SKATE_BAND_Y), self)
-	EntitySpawner.spawn("coin_btc", Vector2(2460, SKATE_BAND_Y), self)
-	EntitySpawner.spawn("coin_btc", Vector2(3150, SKATE_BAND_Y), self)
-	EntitySpawner.spawn("coin_btc", Vector2(4380, SKATE_BAND_Y), self)
-	EntitySpawner.spawn("health_pickup", Vector2(1750, SKATE_BAND_Y), self)
-	EntitySpawner.spawn("health_pickup", Vector2(3900, SKATE_BAND_Y), self)
+		EntitySpawner.spawn("coin_eth", Vector2(900 + i * 270, FLOOR_SURFACE_Y - SKATE_PICKUP_Y), self)
+	EntitySpawner.spawn("coin_btc", Vector2(2460, FLOOR_SURFACE_Y - SKATE_PICKUP_Y), self)
+	EntitySpawner.spawn("coin_btc", Vector2(3150, FLOOR_SURFACE_Y - SKATE_PICKUP_Y), self)
+	EntitySpawner.spawn("coin_btc", Vector2(4380, FLOOR_SURFACE_Y - SKATE_PICKUP_Y), self)
+	EntitySpawner.spawn("health_pickup", Vector2(1750, FLOOR_SURFACE_Y - SKATE_PICKUP_Y), self)
+	EntitySpawner.spawn("health_pickup", Vector2(3900, FLOOR_SURFACE_Y - SKATE_PICKUP_Y), self)
 
 func _setup_portal() -> void:
 	var portal := preload("res://src/level/return_portal.tscn").instantiate()

@@ -118,7 +118,9 @@ func _physics_process(delta: float) -> void:
 			# wall-to-wall. If no player is found fall back to the old bounce.
 			var _pl := get_tree().get_first_node_in_group("player")
 			if _pl:
-				patrol_direction = signf(_pl.global_position.x - global_position.x)
+				var stalk_dir := signf(_pl.global_position.x - global_position.x)
+				if not is_zero_approx(stalk_dir):
+					patrol_direction = stalk_dir
 			velocity.x = patrol_speed * patrol_direction
 			velocity.y += 980.0 * delta
 			move_and_slide()
