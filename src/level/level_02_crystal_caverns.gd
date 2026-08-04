@@ -34,7 +34,12 @@ func _setup_depth_routes() -> void:
 		var deck := plat.get_node_or_null("Deck")
 		if deck:
 			deck.color = Color(0.55, 0.85, 1.0, 1.0)  # crystal cyan
-		EntitySpawner.spawn("coin", pos + Vector2(0, -34), self)
+		# SOLANA, not generic gold (founder: "in level 2 the tokens dont look
+		# like Solana logos"). These plain "coin" pickups on the crystal
+		# one-way chain are the yellow coins visible in his screenshot — the
+		# level's own .tres only ever placed 2 coin_sol, so converting the
+		# trail is what actually changes what he sees while playing.
+		EntitySpawner.spawn("coin_sol", pos + Vector2(0, -34), self)
 	# VERTICAL SHAFTS — full-height ladders out of the two deadliest drops.
 	#
 	# top_exit_offset is NOT optional here (the default Vector2(0,-20) assumes

@@ -12,12 +12,38 @@ var _collision: CollisionShape2D
 func _ready() -> void:
 	_setup_visual()
 
+## Restyled 2026-08-04 — founder called the flat orange rectangles in Level 3
+## "trashy and cheap" and red-circled them. This gate was one of them: a bare
+## untextured ColorRect in #cc4d1a. Now built the same way every real platform
+## is (dark body + tiled block texture + bright gold lip), so it reads as a
+## gold-rush gate rather than a placeholder box.
+const BLOCK_TEX := preload("res://src/assets/sprites/tile_block-chain.png")
+
 func _setup_visual() -> void:
 	_visual = ColorRect.new()
-	_visual.color = Color(0.8, 0.3, 0.1, 1.0)
+	_visual.color = Color(0.18, 0.09, 0.04, 1.0)   # L3 platform_body_color
 	_visual.size = Vector2(door_width, door_height)
 	_visual.position = Vector2(-door_width / 2, -door_height / 2)
 	add_child(_visual)
+
+	var blocks := Sprite2D.new()
+	blocks.texture = BLOCK_TEX
+	blocks.centered = false
+	blocks.region_enabled = true
+	blocks.region_rect = Rect2(0, 0, door_width, door_height)
+	blocks.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	blocks.position = Vector2(-door_width / 2, -door_height / 2)
+	blocks.modulate = Color(1.0, 0.8, 0.55, 0.9)
+	_visual.add_child(blocks)
+
+	# Gold cap + foot so the gate reads as a machined object with a top and
+	# a bottom, not a slab.
+	for edge_y in [0.0, door_height - 5.0]:
+		var band := ColorRect.new()
+		band.color = Color(0.95, 0.75, 0.2, 1.0)   # L3 platform_lip_color
+		band.size = Vector2(door_width, 5)
+		band.position = Vector2(0, edge_y)
+		_visual.add_child(band)
 
 	_collision = CollisionShape2D.new()
 	var shape := RectangleShape2D.new()

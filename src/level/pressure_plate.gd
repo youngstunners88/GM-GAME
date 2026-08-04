@@ -9,12 +9,29 @@ func _ready() -> void:
 	super()
 	_setup_visual()
 
+## Restyled 2026-08-04 — one of the flat orange rectangles the founder
+## red-circled in Level 3 as "trashy and cheap". Was a bare #cc6619 ColorRect.
+## Now a dark plate with a gold pressure pad, matching the Gold Rush palette
+## used by the level's real platforms.
 func _setup_visual() -> void:
-	var col_rect := ColorRect.new()
-	col_rect.color = Color(0.8, 0.4, 0.1, 0.8)
-	col_rect.size = Vector2(60, 20)
-	col_rect.position = Vector2(-30, 0)
-	add_child(col_rect)
+	var base := ColorRect.new()
+	base.color = Color(0.18, 0.09, 0.04, 1.0)      # L3 platform_body_color
+	base.size = Vector2(60, 20)
+	base.position = Vector2(-30, 0)
+	add_child(base)
+	# Inset gold pad — the part that reads as "step here".
+	var pad := ColorRect.new()
+	pad.color = Color(0.95, 0.75, 0.2, 1.0)        # L3 platform_lip_color
+	pad.size = Vector2(48, 6)
+	pad.position = Vector2(-24, 2)
+	add_child(pad)
+	# Rivet heads at the corners for a machined read.
+	for rx in [-27.0, 23.0]:
+		var rivet := ColorRect.new()
+		rivet.color = Color(0.62, 0.47, 0.14, 1.0)
+		rivet.size = Vector2(4, 4)
+		rivet.position = Vector2(rx, 13)
+		add_child(rivet)
 
 	var col := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
