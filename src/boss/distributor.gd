@@ -186,7 +186,7 @@ func _physics_process(delta: float) -> void:
 			var pdx := _player_dx()
 			if absf(pdx) > FLOAT_DEADZONE:
 				velocity.x = signf(pdx) * FLOAT_DRIFT_SPEED
-				boss_sprite.scale.x = 1.0 if pdx > 0.0 else -1.0
+				boss_sprite.set_facing(pdx > 0.0)
 			else:
 				velocity.x = move_toward(velocity.x, 0.0, 300.0 * delta)
 			_apply_float(delta)

@@ -101,7 +101,13 @@ func _setup_background() -> void:
 ## checkpoint still sees the ORIGINAL, correctly-scrolling level backdrop —
 ## nothing here ever needs to revert.
 const BOSS_ART_FLOOR_ROW: float = 605.0
+## Slight upscale so the art reaches the top of the camera's range without
+## visibly softening. Everything BELOW the floor is covered by an opaque
+## skirt instead of by upscaling further — covering the full vertical range
+## with the image alone would need ~2.6x and look badly blurred.
+const BOSS_ART_SCALE: float = 1.15
 var _boss_backdrop_sprite: Sprite2D
+var _boss_backdrop_skirt: ColorRect
 
 func set_boss_background() -> void:
 	if level_data == null or level_data.boss_background_path == "":
@@ -115,26 +121,44 @@ func set_boss_background() -> void:
 		pbg.layer = -19  # in front of the regular -20 level backdrop, still behind gameplay (0)
 		add_child(pbg)
 		var layer := ParallaxLayer.new()
+		# motion_scale 1 = moves in lockstep with the camera, exactly like real
+		# geometry, so the art can never develop a parallax gap against the
+		# ground it is supposed to be sitting on.
 		layer.motion_scale = Vector2(1.0, 1.0)
-		layer.motion_mirroring = Vector2.ZERO
+		# Mirroring is what makes ONE 1280px image cover a 3400px+ level. It is
+		# safe here precisely BECAUSE motion_scale is 1: the layer never drifts,
+		# it just repeats. (At the old 0.35 motion_scale, mirroring is what
+		# produced the misaligned wrapping this whole function exists to fix.)
+		layer.motion_mirroring = Vector2(float(tex.get_width()) * BOSS_ART_SCALE, 0.0)
 		pbg.add_child(layer)
 		_boss_backdrop_sprite = Sprite2D.new()
 		_boss_backdrop_sprite.centered = false
 		layer.add_child(_boss_backdrop_sprite)
 	_boss_backdrop_sprite.texture = tex
+	_boss_backdrop_sprite.scale = Vector2(BOSS_ART_SCALE, BOSS_ART_SCALE)
 
+	# Align the art's illustrated floor to the arena's REAL ground surface.
 	var start_x: float = level_data.boss_arena.get("start_x", 0.0)
-	var end_x: float = level_data.boss_arena.get("end_x", start_x + tex.get_width())
-	# Cover the camera's full reachable range, not just the arena's own
-	# width — the camera can show up to viewport_width/2 px WEST of start_x
-	# the moment the player first crosses in (Kimi audit).
-	var viewport_w := float(get_viewport().get_visible_rect().size.x)
-	var view_left := start_x - viewport_w / 2.0
-	var required_width := end_x - view_left
-	var scale_factor := required_width / float(tex.get_width())
-	_boss_backdrop_sprite.scale = Vector2(scale_factor, scale_factor)
 	var floor_y := _floor_y_at(start_x)
-	_boss_backdrop_sprite.position = Vector2(view_left, floor_y - BOSS_ART_FLOOR_ROW * scale_factor)
+	var top_y := floor_y - BOSS_ART_FLOOR_ROW * BOSS_ART_SCALE
+	# x=0: the art now starts at the LEVEL origin and tiles right across the
+	# whole stage. Founder requirement, verbatim: the arena art must hold
+	# "even if Lil Blunt runs back to the beginning section of the game".
+	# The previous version started at (start_x - viewport/2) and so left the
+	# original stage art showing everywhere west of the arena — the
+	# split-screen half-FOMO/half-forest look in his screenshot.
+	_boss_backdrop_sprite.position = Vector2(0.0, top_y)
+
+	# Opaque under-floor skirt: the image bottom lands at ~782 while the
+	# camera can see to ~950, and below the floor is underground anyway.
+	if not is_instance_valid(_boss_backdrop_skirt):
+		_boss_backdrop_skirt = ColorRect.new()
+		_boss_backdrop_skirt.z_index = -6
+		_boss_backdrop_skirt.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(_boss_backdrop_skirt)
+	_boss_backdrop_skirt.color = Color(0.05, 0.03, 0.09, 1.0)
+	_boss_backdrop_skirt.position = Vector2(-400.0, floor_y - 4.0)
+	_boss_backdrop_skirt.size = Vector2(level_data.bounds.x + 800.0, 1200.0)
 
 ## The ground segment's own Y at a given world X — used to align the boss
 ## backdrop's illustrated floor with the REAL collision surface instead of a

@@ -2,7 +2,6 @@ extends Control
 
 @onready var play_btn: Button = $VBoxContainer/PlayButton
 @onready var continue_btn: Button = $VBoxContainer/ContinueButton
-@onready var quit_btn: Button = $VBoxContainer/QuitButton
 @onready var title: Label = $VBoxContainer/TitleLabel
 
 const VERSION_TAG := "v1.0.0 — BLOCK 420"
@@ -13,7 +12,6 @@ func _ready() -> void:
     StateMachine.change_state(StateMachine.State.MENU)
     play_btn.pressed.connect(_on_play)
     continue_btn.pressed.connect(_on_continue)
-    quit_btn.pressed.connect(_on_quit)
     # Title is just the name; the SubtitleLabel carries "THE SMOKE REALM".
     # (Was a two-line string here that duplicated the subtitle — Grok title-
     # hierarchy brief 2026-08-01: one dominant title, one subtitle, no dupe.)
@@ -21,7 +19,7 @@ func _ready() -> void:
     AudioManager.play_voice("menu_title")
     _setup_backdrop()
     _setup_ambience()
-    for btn: Button in [play_btn, continue_btn, quit_btn]:
+    for btn: Button in [play_btn, continue_btn]:
         _add_hover_glow(btn)
     # Show continue button only if save file exists
     if FileAccess.file_exists(GameManager.SAVE_PATH):
@@ -330,5 +328,8 @@ func _on_shooter_prototype() -> void:
     Web3Bridge.track("shooter_prototype_open")
     SceneRouter.load_scene("res://src/shooter/prototype_room.tscn", SceneRouter.Transition.FADE)
 
-func _on_quit() -> void:
-    get_tree().quit()
+# NOTE: the main-menu QUIT button was removed entirely (founder request,
+# 2026-08-04). get_tree().quit() is a no-op in a browser tab, so on itch/web
+# it was a dead control taking up prime menu real estate. The PAUSE menu's
+# Quit is deliberately KEPT — that one returns to the main menu, which is a
+# real, useful action mid-run.

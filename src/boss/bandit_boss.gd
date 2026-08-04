@@ -46,7 +46,7 @@ func _physics_process(delta: float) -> void:
 			move_and_slide()
 			if is_on_wall():
 				direction *= -1.0
-				boss_sprite.scale.x = 1.0 if direction > 0 else -1.0
+				boss_sprite.set_facing(direction > 0)
 			if throw_timer <= 0:
 				_throw_dynamite()
 

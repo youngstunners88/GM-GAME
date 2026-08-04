@@ -83,9 +83,20 @@ func _setup_smoke_platforms() -> void:
 func _on_boss_trigger(body: Node2D) -> void:
     if body.is_in_group("player") and not _boss_arena_active:
         _boss_arena_active = true
-        # Raise the entry wall behind the player once they're actually inside.
-        # It is NOT built at level load — doing so sealed the boss off entirely.
-        arm_boss_arena_seal()
+        # NO ARENA SEAL for the Auditor (founder, 2026-08-04).
+        #
+        # The seal raises a World-layer wall at boss_arena.start_x (2800) to
+        # stop the player fleeing. But the Auditor's own collision_mask is 13,
+        # which includes bit 1 (World) — so that wall caged the BOSS too,
+        # inside a 600px box between x=2800 and the far wall at x=3400. That
+        # is precisely the founder's "the Auditor is still unable to move
+        # beyond this point".
+        #
+        # His requirement is the opposite of a seal: "even if Lil Blunt runs
+        # back to the beginning section of the game, The Auditor should be
+        # able to chase him all the way through the stage". So this fight is
+        # now a full-stage hunt — the player may retreat and the boss follows.
+        # set_boss_background() correspondingly repaints the ENTIRE level.
         set_boss_background()
         ScreenShake.zoom_to(0.85, 0.5)
         AudioManager.set_reverb_profile("boss")

@@ -35,7 +35,7 @@ const BOSS_SCALE := 1.3
 ## Replaced with a continuously-retargeting PURSUE state (below); this is its
 ## base speed, scaled by phase the same way patrol_speed already is.
 @export var pursue_speed: float = 170.0
-@export var pursue_duration: float = 4.0
+@export var pursue_duration: float = 7.0
 ## Fairness contract telegraph (house style, see tax_collector.gd's ALERT):
 ## a frozen beat facing the player before the chase begins. Deliberately
 ## generous — this is most players' first-ever boss fight.
@@ -154,29 +154,41 @@ func _physics_process(delta: float) -> void:
 
 	match current_state:
 		State.PATROL:
-			velocity.x = patrol_speed * patrol_direction
-			velocity.y += 980.0 * delta
-			move_and_slide()
-			if is_on_wall():
-				patrol_direction *= -1.0
-			# R6 (2026-08-08): face the PLAYER during patrol, not the patrol
-			# direction. He throws aimed clipboards at the live player from
-			# PATROL (_throw_clipboard below), so facing patrol_direction meant
-			# he lobbed them from his back — the "boss shows his back" report.
-			# Movement still uses patrol_direction; only the visual facing
-			# tracks the player, matching the ALERT/PURSUE facing contract.
+			# STALK, don't pace. Founder: "He must actively chase... The
+			# Auditor should be able to chase him all the way through the
+			# stage". The old behaviour walked back and forth on
+			# patrol_direction and reversed on is_on_wall() — which, combined
+			# with the arena seal wall that used to cage him (removed in
+			# level_01_smoke_realm.gd), is why he read as stuck at one spot.
+			# Now even his "calm" state closes distance on the live player, so
+			# there is no state in which he stops hunting.
 			var pl := get_tree().get_first_node_in_group("player")
+			velocity.y += 980.0 * delta
 			if pl:
-				sprite.scale.x = 1.0 if pl.global_position.x > global_position.x else -1.0
+				var stalk_dir := signf(pl.global_position.x - global_position.x)
+				if stalk_dir == 0.0:
+					stalk_dir = patrol_direction
+				patrol_direction = stalk_dir
+				velocity.x = patrol_speed * stalk_dir
+				sprite.set_facing(stalk_dir > 0.0)
+				# Hop over anything blocking the stalk (a ledge, a platform
+				# edge) instead of grinding into it forever.
+				if is_on_wall() and is_on_floor() and _jump_cooldown <= 0.0:
+					velocity.y = jump_force
+					_jump_cooldown = 0.9
+			else:
+				velocity.x = patrol_speed * patrol_direction
+			move_and_slide()
 			# Ranged pressure — cadence tightens per phase.
 			if throw_timer <= 0.0:
 				throw_timer = [0.0, 2.6, 2.0, 1.4][phase]
 				_throw_clipboard()
-			# Occasional reposition hop.
+			# Occasional reposition hop — now a forward vault toward the
+			# player rather than a retreat away from the patrol direction.
 			if hop_timer <= 0.0:
 				hop_timer = 6.0 if phase < 3 else 3.5
 				velocity.y = -320.0
-				velocity.x = -patrol_direction * 160.0
+				velocity.x = patrol_direction * 160.0
 			if state_timer <= 0.0:
 				# Telegraph BEFORE the chase — freeze, face the player, tell.
 				state_timer = alert_time
@@ -184,7 +196,7 @@ func _physics_process(delta: float) -> void:
 				velocity.x = 0.0
 				var p := get_tree().get_first_node_in_group("player")
 				if p:
-					sprite.scale.x = 1.0 if p.global_position.x > global_position.x else -1.0
+					sprite.set_facing(p.global_position.x > global_position.x)
 				sprite.color = Color(0.85, 0.5, 0.15, 1.0)  # amber wind-up
 				AudioManager.play_sfx_at("tax_alert", global_position)
 
@@ -242,7 +254,7 @@ func _physics_process(delta: float) -> void:
 			var dx := p.global_position.x - global_position.x
 			var toward := signf(dx)
 			velocity.x = toward * pursue_speed * speed_scale * ramp
-			sprite.scale.x = 1.0 if toward > 0.0 else -1.0
+			sprite.set_facing(toward > 0.0)
 			# Jump when the player is above or a wall blocks the chase — gated
 			# on max_jump_gap so he never commits to a leap he can't land.
 			var dy := p.global_position.y - global_position.y
@@ -285,7 +297,7 @@ func _physics_process(delta: float) -> void:
 			# while being hit, which reads as "still facing back."
 			var vuln_pl := get_tree().get_first_node_in_group("player")
 			if vuln_pl:
-				sprite.scale.x = 1.0 if vuln_pl.global_position.x > global_position.x else -1.0
+				sprite.set_facing(vuln_pl.global_position.x > global_position.x)
 			if state_timer <= 0.0:
 				sprite.modulate = Color(1, 1, 1, 1)
 				sprite.color = Color(0.4, 0.25, 0.15, 1.0)
@@ -317,9 +329,13 @@ func take_damage(amount: int) -> void:
 	health -= amount
 	AudioManager.play_sfx("damage")
 	BossVoiceSystem.say(self, BOSS_ID, "hurt")
+	# RED pain flash (founder: "On hit the Auditor must flash red and play a
+	# pain voice line"). This was Color(10,10,10,1) — a blown-out WHITE
+	# over-exposure, which reads as a generic sparkle rather than damage.
+	# The pain line is the BossVoiceSystem "hurt" call just above.
 	var tween := create_tween()
-	tween.tween_property(sprite, "modulate", Color(10, 10, 10, 1), 0.05)
-	tween.tween_property(sprite, "modulate", Color(1, 1, 1, 1), 0.05)
+	tween.tween_property(sprite, "modulate", Color(4.0, 0.25, 0.25, 1), 0.05)
+	tween.tween_property(sprite, "modulate", Color(1, 1, 1, 1), 0.12)
 	if _health_bar:
 		_health_bar.set_health(health)
 		# Left-anchored drain: the darkened pip is at the new HP index.

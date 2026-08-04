@@ -79,14 +79,43 @@ const BOARD_JUMP_POP: float = -260.0
 @onready var _attempt_label: Label = Label.new()
 @onready var _progress: ProgressBar = ProgressBar.new()
 
+## WHERE ESC GOES BACK TO — captured ONCE, here, at entry.
+##
+## Founder-reported repeatedly: "the player is unable to exit back to level 3
+## by pressing Esc". A previous session (me) "proved" the exit path worked by
+## feeding it a synthetic GameManager.dash_return dictionary — a proof that
+## could never catch this class of bug, because the failure is about that
+## dictionary's LIFETIME, not its contents.
+##
+## `GameManager.dash_return` is shared mutable autoload state that
+## `_exit_to_level()` itself CLEARS, and that `reset_session()` also clears.
+## Reading it lazily at exit time means any path that empties it first sends
+## the player to the hardcoded `level_01` fallback — which, to a player who
+## entered from Level 3, looks exactly like "Esc doesn't take me back".
+##
+## Snapshotting it into plain members at _ready() makes the return trip
+## depend only on how the run STARTED. Nothing that happens during the run —
+## a crash, a finish, a double-press, another system touching dash_return —
+## can redirect it any more.
+var _return_path: String = ""
+var _return_pos: Vector2 = Vector2.ZERO
+var _exiting: bool = false
+
 func _ready() -> void:
 	_level_index = int(GameManager.dash_return.get("level_index", 1))
+	_return_path = str(GameManager.dash_return.get("scene_path", ""))
+	_return_pos = GameManager.dash_return.get("position", Vector2.ZERO)
+	if _return_path == "":
+		# No launch record (e.g. scene run directly). Fall back to the level
+		# matching the index we were given rather than blindly to level 1.
+		_return_path = GameManager.level_scene(_level_index)
 	var layout := BlazeRushLayouts.get_layout(_level_index)
 	_course_length = layout.get("length", 3400.0)
 	_speed_start = layout.get("speed_start", 320.0)
 	_speed_end = layout.get("speed_end", _speed_start)
 	_current_speed = _speed_start
 	_board_zone = layout.get("board_zone", {})
+	layout = _clear_board_landing_runway(layout)
 	_build_background()
 	_build_ground(layout)
 	_build_obstacles(layout)
@@ -98,6 +127,65 @@ func _ready() -> void:
 	_build_hud()
 	StateMachine.change_state(StateMachine.State.PLAYING)
 	AudioManager.play_sfx("powerup")
+
+## How much clear, hazard-free floor must exist where the board sets you down.
+##
+## Founder: "the rocket at the Blaze Rush is a nice idea but it causes the
+## player to crash into the red candles" / "when the player lands he
+## immediately dies as it crashes into the FUD box". His screenshot read
+## ATTEMPT 81 — he died eighty times to this.
+##
+## There is no literal rocket in the code: what he is describing is the
+## board/hover section, which flies him along a raised path and then, at
+## zone_end, hands control straight back to normal gravity. Whatever the
+## hand-authored layout happened to place next — a candle, a FUD wall, or a
+## GAP in the floor — he fell directly into it with no reaction time. The
+## board's landing spot was never part of the layout design.
+##
+## Rather than hand-editing coordinates per level (and re-breaking it the
+## next time a layout is tuned), the landing window is cleared from the DATA
+## before anything is built, so the guarantee holds for every level and any
+## future layout edit. 320px is comfortably over half a second of runway even
+## at Level 3's top speed of 460px/s.
+const BOARD_LANDING_RUNWAY: float = 320.0
+
+## Strip every lethal obstacle out of the board's landing window.
+##
+## Returns a COPY — BlazeRushLayouts hands back freshly-built dictionaries,
+## but treating layout data as immutable keeps this safe if that ever changes
+## to return shared/static data.
+##
+## Note this must run BEFORE _build_ground(), not just before
+## _build_obstacles(): "gap" entries are what carve holes in the floor, so
+## filtering them only at obstacle-build time would still leave the player
+## landing in a pit.
+func _clear_board_landing_runway(layout: Dictionary) -> Dictionary:
+	if _board_zone.is_empty():
+		return layout
+	var zone_end: float = float(_board_zone.get("end", 0.0))
+	# Start the window slightly BEFORE the zone ends: the player is still
+	# descending as they cross the boundary, so a hazard sitting right on it
+	# is just as lethal as one just after it.
+	var win_start := zone_end - 40.0
+	var win_end := zone_end + BOARD_LANDING_RUNWAY
+	var safe: Array = []
+	var dropped := 0
+	for ob in layout.get("obstacles", []):
+		var t: String = ob.get("type", "")
+		if t == "candle" or t == "fud_wall" or t == "gap":
+			# A gap occupies a span, not a point — reject on overlap.
+			var ob_start: float = float(ob.x)
+			var ob_end: float = ob_start + float(ob.get("w", 0.0))
+			if ob_end >= win_start and ob_start <= win_end:
+				dropped += 1
+				continue
+		safe.append(ob)
+	if dropped > 0:
+		print("[BlazeRush] L%d: cleared %d hazard(s) from the board landing runway (x %.0f..%.0f)"
+			% [_level_index, dropped, win_start, win_end])
+	var out := layout.duplicate(true)
+	out["obstacles"] = safe
+	return out
 
 ## Founder defect A4: L2 (and L3) Blaze Rush read as an identical reskin of
 ## L1 — same void/haze tint regardless of _level_index. Ties each run's
@@ -693,14 +781,34 @@ func _build_hud() -> void:
 
 # --- run loop ----------------------------------------------------------------
 
-func _unhandled_input(event: InputEvent) -> void:
-	# Founder defect #2: exit must be reachable ANY time, not only via the
-	# always-visible ✕ button — a despondent player must not be trapped.
-	if event.is_action_pressed("ui_cancel"):
+## ESC is handled in _input(), NOT _unhandled_input().
+##
+## Founder-reported repeatedly: Esc does not get him out of Blaze Rush.
+## _unhandled_input only runs for events NOTHING else consumed — any focused
+## Control, the HUD CanvasLayer, or an autoload that handles input first can
+## silently swallow it, and the player is then trapped in a run with no way
+## out but to finish or die. Escaping a mode the player wants to leave is not
+## something to route through the lowest-priority input phase. _input() sees
+## it first, unconditionally.
+##
+## It also now fires on the raw ESCAPE keycode in addition to the `ui_cancel`
+## action: ui_cancel is a Godot built-in that is NOT declared in this
+## project's InputMap, so it depends entirely on engine defaults surviving —
+## a dependency worth not having for the one control that prevents a
+## soft-lock.
+func _input(event: InputEvent) -> void:
+	var esc := event.is_action_pressed("ui_cancel")
+	if not esc and event is InputEventKey:
+		var k := event as InputEventKey
+		esc = k.pressed and not k.echo and k.keycode == KEY_ESCAPE
+	if esc:
 		get_viewport().set_input_as_handled()
-		if not _finished:
-			_exit_to_level()
-		return
+		# Deliberately NOT gated on `_finished`: after crossing the line the
+		# run shows a ~1.8s payout toast, and ESC during that window used to
+		# do nothing at all.
+		_exit_to_level()
+
+func _unhandled_input(event: InputEvent) -> void:
 	# Whole-screen tap/click = jump (mobile-first, Geometry Dash convention).
 	if event is InputEventScreenTouch and event.pressed:
 		_tap_buffered = true
@@ -759,6 +867,7 @@ func _is_in_board_zone(x: float) -> bool:
 	return x >= float(_board_zone.get("start", 0.0)) and x <= float(_board_zone.get("end", 0.0))
 
 func _set_board_mode(active: bool) -> void:
+	var was_on_board := _on_board
 	_on_board = active
 	_board_bob_t = 0.0
 	_board_steer_vx = 0.0
@@ -767,6 +876,13 @@ func _set_board_mode(active: bool) -> void:
 		_board_visual.visible = active
 	if active:
 		AudioManager.play_sfx("powerup")
+	elif was_on_board and _player != null:
+		# Dismount softly. The hover spring can be carrying real vertical
+		# speed at the moment the zone ends; handing that straight to a
+		# GRAVITY of 2200 slammed the player down far faster than they could
+		# react. Starting the descent from rest turns the drop into a
+		# readable arc onto the cleared runway (see BOARD_LANDING_RUNWAY).
+		_player.velocity.y = 0.0
 
 ## Founder defect F — steer left/right toward a max +/-140px/s offset from
 ## the auto-run speed, spring toward a fixed hover band instead of falling,
@@ -889,10 +1005,15 @@ func _show_toast(text: String) -> void:
 	layer.add_child(label)
 
 func _exit_to_level() -> void:
-	var return_path: String = GameManager.dash_return.get(
-		"scene_path", "res://src/level/level_01_smoke_realm.tscn"
-	)
-	var portal_pos: Vector2 = GameManager.dash_return.get("position", Vector2.ZERO)
+	# Re-entrancy guard: ESC pressed twice, or ESC during the finish payout,
+	# used to run this twice. The second run read an ALREADY-CLEARED
+	# dash_return and fell through to the level-1 fallback — sending a Level 3
+	# player to Level 1. Now the snapshot is immutable and this returns early.
+	if _exiting:
+		return
+	_exiting = true
+	var return_path: String = _return_path
+	var portal_pos: Vector2 = _return_pos
 	if portal_pos != Vector2.ZERO:
 		# BUG (product-breaking): this hardcoded checkpoint slot 1 regardless of
 		# which level launched the run. save_checkpoint()'s first argument is

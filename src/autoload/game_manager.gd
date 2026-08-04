@@ -226,6 +226,20 @@ func heal(amount: int) -> void:
     player_health = min(player_health + amount, max_health)
     health_changed.emit(player_health)
 
+## Grant extra lives. Founder rule (2026-08-04): "Lil Blunt should not be
+## limited to 3 lives — if the player finds more hearts they can collect them
+## and the life count increases." There is deliberately NO upper clamp here.
+##
+## `max_lives` is NOT a cap on this value — it is only the REFILL BASELINE
+## used by refill_run()/reset_session() to decide how many lives a fresh run
+## or a post-wipe retry starts with. Do not reintroduce a min()/clampi()
+## against it; that is exactly the bug the founder reported repeatedly.
+func add_life(amount: int = 1) -> void:
+    if amount <= 0:
+        return
+    lives += amount
+    lives_changed.emit(lives)
+
 ## Spend a life (pit fall). Returns true if that was the LAST life (game over).
 ## On a surviving loss, health refills so the checkpoint respawn is fair.
 func lose_life() -> bool:

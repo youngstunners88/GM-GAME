@@ -43,6 +43,7 @@ func _ready() -> void:
 	_setup_ambient_bg_shader()
 	_setup_parallax()
 	_setup_floor()
+	_setup_under_floor_skirt()
 	_setup_ground_smoke()
 	_spawn_player()
 	_setup_rewards()
@@ -145,6 +146,48 @@ func _setup_floor() -> void:
 			b.pit_death())
 	add_child(kz)
 
+## THE "BOTTOM SLAB" — founder-reported 3+ times, never found by any previous
+## session because everyone (including me) searched secret_realm.gd for a
+## ColorRect/Sprite/slab NODE and correctly concluded none existed.
+##
+## It is not a node. It is `bg_secret_far.jpg` bleeding through.
+##
+## Confirmed by cropping the source art: the bottom ~25% of bg_secret_far.jpg
+## is a moonlit OCEAN with rocky shores — which is exactly the blue/purple
+## rippling water strip in the founder's screenshot. The two parallax layers
+## are both 720px tall, but they scroll at different vertical motion_scales
+## (far 0.1*0.6=0.06, mid 0.45*0.6=0.27) and this room never set a camera
+## limit_bottom, so with the player standing at y~560 the camera shows down
+## to roughly y~920 — far below the mid layer's (the lounge room's) bottom
+## edge. In that gap the FAR layer is the only thing left to draw, and the
+## part of it that lands there is its ocean.
+##
+## Fix: an opaque skirt in WORLD space (a plain Node2D child, canvas layer 0,
+## which always draws in front of the ParallaxBackgrounds on layers -20/-21)
+## filling everything below the floor surface with the room's own dark palette.
+## z_index -5 keeps it behind the player, platforms and props (all z 0+).
+## Camera limit_bottom is also clamped in _spawn_player so the view stops
+## reasonably below the floor instead of drifting arbitrarily far down.
+func _setup_under_floor_skirt() -> void:
+	var skirt := ColorRect.new()
+	skirt.color = Color(0.106, 0.075, 0.153, 1.0)  # deep lounge purple-black
+	# Start slightly ABOVE the floor surface so there is never a hairline seam
+	# between the skirt and the floor art at any camera position.
+	skirt.position = Vector2(-200.0, FLOOR_SURFACE_Y - 8.0)
+	skirt.size = Vector2(BOUNDS + 400.0, 1400.0)
+	skirt.z_index = -5
+	skirt.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(skirt)
+	# A subtle top lip so the floor line reads as a deliberate edge rather
+	# than a flat colour change — same ash-rose accent the rest stops use.
+	var lip := ColorRect.new()
+	lip.color = Color(COLOR_LIP_ACCENT.r, COLOR_LIP_ACCENT.g, COLOR_LIP_ACCENT.b, 0.25)
+	lip.position = Vector2(-200.0, FLOOR_SURFACE_Y - 8.0)
+	lip.size = Vector2(BOUNDS + 400.0, 3.0)
+	lip.z_index = -4
+	lip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(lip)
+
 ## Ground-level rising smoke (spec 1.2). Reuses fx_dot.png and the "drifting
 ## smoke" recipe already proven in src/ui/main_menu.gd's ambience — same
 ## texture, same CPUParticles2D approach, tuned slower/smaller/hazier for a
@@ -208,6 +251,12 @@ func _spawn_player() -> void:
 	if cam:
 		cam.limit_left = 0
 		cam.limit_right = int(BOUNDS)
+		# Stop the view drifting far below the floor. Without this the camera
+		# followed the player freely and exposed a big empty band under the
+		# room — which is what let the far-parallax ocean show through (see
+		# _setup_under_floor_skirt). The skirt makes that band opaque; this
+		# stops it being needlessly large in the first place.
+		cam.limit_bottom = int(FLOOR_Y + 120.0)
 
 ## The reward for finding the door: a run of high-value crypto coins + health,
 ## spread across the full 5100px walk (scaled 3x from the original 1700px
@@ -325,7 +374,12 @@ func _swap_placeholder_texture(container: Control, path: String) -> void:
 	art.texture = tex
 	art.set_anchors_preset(Control.PRESET_FULL_RECT)
 	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	art.stretch_mode = TextureRect.STRETCH_SCALE
+	# KEEP_ASPECT_CENTERED, not SCALE: the real protocol logos are ~602x601
+	# squares and the sign panels are 90x70, so a plain STRETCH_SCALE squashes
+	# every logo horizontally and they stop reading as the brand marks. Letter-
+	# boxing inside the frame is the correct trade — the frame is the fixed
+	# fixture, the logo is the content.
+	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# "Smoke haze overlay" per the original Smoke Lounge spec — reduced
 	# opacity, slight desaturation — so real art still reads as part of this
@@ -386,14 +440,24 @@ func _setup_protocol_plinth(x: float) -> void:
 	# GOLD MINE, Right = DIAMONDS. This array renders left-to-right in the
 	# loop below — was DIAMONDS/GOLDMINE swapped relative to that spec.
 	var sign_names := ["SMOKERING", "GOLDMINE", "DIAMONDS"]
-	var slot_w := 90.0
-	var total_w := slot_w * sign_names.size() + 12.0 * (sign_names.size() - 1)
+	# Frames sized for the REAL logo art (now installed, ~602x601 squares).
+	# The original 90x70 slots were placeholder-sized: with the aspect ratio
+	# now preserved (see _swap_placeholder_texture) a 602x601 logo inside a
+	# 90x70 frame letterboxes down to 70x70 and the brand mark is unreadable
+	# at play distance — which is the whole point of these panels. Near-square
+	# and much larger so each logo actually reads.
+	var slot_w := 150.0
+	var slot_h := 132.0
+	var gap := 20.0
+	var total_w := slot_w * sign_names.size() + gap * (sign_names.size() - 1)
 	var start_x := x - total_w / 2.0
 	for i in range(sign_names.size()):
-		var slot_x := start_x + i * (slot_w + 12.0)
+		var slot_x := start_x + i * (slot_w + gap)
 		var sign := Panel.new()
-		sign.position = Vector2(slot_x, FLOOR_SURFACE_Y - 24 - 70 - 78)
-		sign.size = Vector2(slot_w, 70.0)
+		# Sit the frames directly above the post instead of a fixed 78px gap,
+		# so the larger panels stay visually mounted on the plinth.
+		sign.position = Vector2(slot_x, FLOOR_SURFACE_Y - 24.0 - 70.0 - slot_h - 10.0)
+		sign.size = Vector2(slot_w, slot_h)
 		sign.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var sb := StyleBoxFlat.new()
 		sb.bg_color = COLOR_MURAL_MAT
@@ -410,11 +474,13 @@ func _setup_protocol_plinth(x: float) -> void:
 		label.set_anchors_preset(Control.PRESET_FULL_RECT)
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		label.add_theme_font_size_override("font_size", 11)
+		label.add_theme_font_size_override("font_size", 15)
 		label.add_theme_color_override("font_color", COLOR_LIP_ACCENT)
 		sign.add_child(label)
-		# Bolt-head corners — cosmetic detail, no function.
-		for corner in [Vector2(4, 4), Vector2(slot_w - 10, 4), Vector2(4, 60), Vector2(slot_w - 10, 60)]:
+		# Bolt-head corners — cosmetic detail, no function. Anchored off the
+		# real slot height so they stay in the corners at any frame size.
+		for corner in [Vector2(4, 4), Vector2(slot_w - 10, 4),
+				Vector2(4, slot_h - 10), Vector2(slot_w - 10, slot_h - 10)]:
 			var bolt := _make_cushion(6.0, COLOR_LIP_ACCENT)
 			bolt.position = corner
 			sign.add_child(bolt)
@@ -430,8 +496,11 @@ func _setup_founder_mural(x: float) -> void:
 
 	var mat := ColorRect.new()
 	mat.color = COLOR_MURAL_MAT
-	mat.size = Vector2(220, 130)
-	mat.position = Vector2(-110, -18 - 150)
+	# Enlarged for the real mural art (602x449, 4:3). The old 220x130 mat with
+	# a 190x95 inner is a 2:1 letterbox — with aspect now preserved the art
+	# would shrink to ~127x95 and read as a stamp rather than a mural.
+	mat.size = Vector2(300, 230)
+	mat.position = Vector2(-150, -18 - 250)
 	platform.add_child(mat)
 	# inner is a child of mat, not of platform — its position is a small inset
 	# relative to mat's own top-left, NOT another absolute platform-relative
@@ -440,7 +509,7 @@ func _setup_founder_mural(x: float) -> void:
 	# actual screenshot of the mural, not by reading the numbers).
 	var inner := ColorRect.new()
 	inner.color = Color(COLOR_PLATFORM_BODY.r, COLOR_PLATFORM_BODY.g, COLOR_PLATFORM_BODY.b, 0.9)
-	inner.size = Vector2(190, 95)
+	inner.size = Vector2(270, 200)
 	inner.position = Vector2(15, 15)
 	mat.add_child(inner)
 	var label := Label.new()
