@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://src/boss/boss_sprite.gd" id="9_bspr"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
-size = Vector2(96, 96)
+size = Vector2(176, 176)
 
 [node name="Distributor" type="CharacterBody2D"]
 collision_layer = 4
@@ -17,7 +17,7 @@ texture_path = "res://src/assets/sprites/sprite_boss_crystalline.png"
 
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(48, 48)
+position = Vector2(88, 88)
 shape = SubResource("RectangleShape2D_1")
 
 [node name="Hitbox" type="Area2D" parent="."]
@@ -27,5 +27,5 @@ monitoring = false
 monitorable = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
-position = Vector2(48, 48)
+position = Vector2(88, 88)
 shape = SubResource("RectangleShape2D_1")

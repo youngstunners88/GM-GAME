@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" path="res://src/assets/sprites/sprite_item_coin-sol.png" id="2_c"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_c"]
-size = Vector2(20, 20)
+size = Vector2(44, 44)
 
 [node name="CryptoCoin" type="Area2D"]
 collision_layer = 8

@@ -82,20 +82,47 @@ func _setup_parallax() -> void:
 	var pbg := ParallaxBackground.new()
 	pbg.layer = -20
 	add_child(pbg)
-	_add_layer(pbg, FAR_BG, 0.1, 1.15, Color(0.8, 0.8, 0.95, 1.0))       # deep, slow, slightly zoomed
-	_add_layer(pbg, MID_BG, 0.45, 1.0, Color(0.68, 0.62, 0.82, 1.0))     # near lounge, multiply-tinted purple-grey
+	# FAR = the deep nebula/skyline. MID = bg_secret_mid.jpg, which IS the whole
+	# lounge room (panelled walls, couches, hookah, patterned carpet floor) at
+	# exactly 1280x720 — the viewport's own size.
+	_add_layer(pbg, FAR_BG, 0.1, Color(0.8, 0.8, 0.95, 1.0))
+	_add_layer(pbg, MID_BG, 0.45, Color(0.92, 0.88, 0.98, 1.0))
 
-func _add_layer(pbg: ParallaxBackground, path: String, speed: float, zoom: float, mod: Color) -> void:
+## WHY THE ROOM LAYER IS VERTICALLY SCREEN-LOCKED (motion_scale.y = 0)
+##
+## Founder, twice: "the bottom is not an expression of the original image of
+## the actual smoke lounge". Both previous attempts treated this as a missing
+## OBJECT — first hunting for a stray slab node (there wasn't one), then (me,
+## last build) PAINTING an opaque purple ColorRect over the gap. That second
+## "fix" is the flat purple band he circled in this round's screenshot: I had
+## replaced a wrong image with a wrong rectangle.
+##
+## The actual cause is layer arithmetic. A ParallaxLayer renders at
+##   screen_y = sprite_y - motion_scale.y * camera_top_left.y
+## The room art was on motion_scale.y = 0.27, so as the camera sat low in a
+## 5100px-wide room the art slid UP the screen and simply ran out below its
+## own 720px height — exposing whatever was behind it (the far layer's ocean,
+## then my slab).
+##
+## Setting motion_scale.y = 0 removes the camera's vertical term entirely: the
+## room stays pinned to the viewport vertically and can never run out at the
+## bottom, while motion_scale.x keeps the horizontal parallax that sells depth.
+## Scaling to the LIVE viewport height (not the baked 720) matters because
+## project.godot uses stretch/aspect="expand" — on a tall browser window the
+## viewport is taller than 720 and a 1:1 sprite would leave a gap again.
+func _add_layer(pbg: ParallaxBackground, path: String, speed: float, mod: Color) -> void:
 	var tex: Texture2D = load(path)
 	if tex == null:
 		return
+	var view_h: float = get_viewport_rect().size.y
+	var fill: float = maxf(1.0, view_h / float(tex.get_height()))
 	var layer := ParallaxLayer.new()
-	layer.motion_scale = Vector2(speed, speed * 0.6)
-	layer.motion_mirroring = Vector2(tex.get_width() * zoom, 0.0)
+	layer.motion_scale = Vector2(speed, 0.0)
+	layer.motion_mirroring = Vector2(tex.get_width() * fill, 0.0)
 	var spr := Sprite2D.new()
 	spr.texture = tex
 	spr.centered = false
-	spr.scale = Vector2(zoom, zoom)
+	spr.scale = Vector2(fill, fill)
 	spr.modulate = mod
 	layer.add_child(spr)
 	pbg.add_child(layer)
@@ -186,11 +213,10 @@ func _spawn_player() -> void:
 	var player := preload("res://src/player/player.tscn").instantiate()
 	player.global_position = Vector2(140, 560)
 	add_child(player)
-	# Slower, chiller pace (spec 1.4): 60% walk speed, 80% jump force, 110%
-	# gravity (heavier arc, still clears the flat floor's zero platforming),
-	# 80% animation speed. Must run AFTER add_child — set_movement_scale's
-	# anim_scale path needs `sprite` (@onready) to already exist.
-	player.set_movement_scale(0.6, 0.8, 1.1, 0.8)
+	# ON THE BOARD he glides rather than plods: 1.15x speed (the old 0.6 "chill
+	# walk" is what made him read as WALKING), 0.8 jump, 1.1 gravity, 0.8 anim.
+	player.set_movement_scale(1.15, 0.8, 1.1, 0.8)
+	_attach_skateboard(player)
 	# The Smoke Lounge's camera limit must match its own 5100px width, not the
 	# 3400px baked into player.tscn for the main-sequence levels — otherwise
 	# the camera stops panning 1700px short of the real end of the room.
@@ -203,16 +229,112 @@ func _spawn_player() -> void:
 		# quarter which bleeds through if the camera travels below floor level.
 		cam.limit_bottom = int(FLOOR_Y + 120)
 
+# ---- Magic marijuana skateboard (founder defect, raised three times) -------
+#
+# "I told you that Lil Blunt needs to be on his marijuana skateboard but he's
+# still walking in the Smoke Lounge!!!!"
+#
+# Lounge-ONLY. It is a child of the player node, so it inherits his transform
+# for free — no _process follow loop that can jitter or desync, and nothing to
+# clean up when the scene changes. Nothing here touches the player script, so
+# platforming in every other level is bit-for-bit unchanged.
+#
+# Geometry: the player's collision box is 32x32 with its ORIGIN AT TOP-LEFT
+# (player.tscn CollisionShape2D sits at +16,+16 of a 32x32 rect), so his feet
+# are at local y = 32 and his centre line is local x = 16. The deck therefore
+# sits at (16, 34) — directly under the soles, not at the sprite centre, which
+# is the mistake that put a previous held-tool visual down by his ankles.
+const BOARD_DECK_W := 52.0
+const BOARD_DECK_H := 7.0
+const BOARD_WHEEL_R := 4.5
+
+func _attach_skateboard(player: Node2D) -> void:
+	var board := Node2D.new()
+	board.name = "Skateboard"
+	board.position = Vector2(16, 34)
+	# Behind the player so his legs read in front of the deck.
+	board.z_index = -1
+	player.add_child(board)
+
+	# Trucks + wheels first (drawn under the deck).
+	for wx: float in [-BOARD_DECK_W * 0.32, BOARD_DECK_W * 0.32]:
+		var truck := ColorRect.new()
+		truck.color = Color(0.62, 0.62, 0.68, 1.0)
+		truck.size = Vector2(6, 5)
+		truck.position = Vector2(wx - 3, 2)
+		board.add_child(truck)
+		var wheel := _make_cushion(BOARD_WHEEL_R * 2.0, Color(0.98, 0.78, 0.25, 1.0))
+		wheel.position = Vector2(wx - BOARD_WHEEL_R, 5)
+		board.add_child(wheel)
+
+	# Deck — weed green with a lighter grip strip.
+	var deck := ColorRect.new()
+	deck.color = Color(0.16, 0.52, 0.18, 1.0)
+	deck.size = Vector2(BOARD_DECK_W, BOARD_DECK_H)
+	deck.position = Vector2(-BOARD_DECK_W / 2.0, -BOARD_DECK_H / 2.0)
+	board.add_child(deck)
+	var grip := ColorRect.new()
+	grip.color = Color(0.34, 0.78, 0.30, 1.0)
+	grip.size = Vector2(BOARD_DECK_W - 6, 2)
+	grip.position = Vector2(-BOARD_DECK_W / 2.0 + 3, -BOARD_DECK_H / 2.0)
+	board.add_child(grip)
+
+	# The "marijuana" part: the real leaf sprite already in the project, laid
+	# on the deck. Guarded — a missing texture must not take the board with it.
+	var leaf_path := "res://src/assets/sprites/sprite_item_weed-leaf.png"
+	if ResourceLoader.exists(leaf_path):
+		var leaf := Sprite2D.new()
+		leaf.texture = load(leaf_path)
+		leaf.scale = Vector2(0.34, 0.34)
+		leaf.position = Vector2(0, -1)
+		leaf.z_index = 1
+		board.add_child(leaf)
+
+	# Under-deck glow — sells "magic" board and keeps it readable against the
+	# lounge's dark carpet.
+	var glow := Sprite2D.new()
+	glow.texture = _make_glow_texture()
+	glow.modulate = Color(0.45, 1.0, 0.45, 0.30)
+	glow.scale = Vector2(1.5, 0.42)
+	glow.position = Vector2(0, 4)
+	glow.z_index = -1
+	board.add_child(glow)
+
+	# Idle bob so the board never looks like a static decal stuck to his feet.
+	var bob := board.create_tween().set_loops()
+	bob.tween_property(board, "position:y", 32.0, 0.9).set_trans(Tween.TRANS_SINE)
+	bob.tween_property(board, "position:y", 34.0, 0.9).set_trans(Tween.TRANS_SINE)
+
 ## The reward for finding the door: a run of high-value crypto coins + health,
 ## spread across the full 5100px walk (scaled 3x from the original 1700px
 ## layout) so they're "hidden in the haze" along the journey rather than
 ## clustered in the first quarter of the room.
+## SKATE HEIGHT, derived — not guessed.
+##
+## Founder: "Lil Blunt having a skateboard... not jumping to the token" and
+## "the token is still unclaimed even though Lil Blunt is standing in front
+## of it."
+##
+## Every reward here used to sit at FLOOR_SURFACE_Y - 170 (y=490) or -260
+## (y=400). The player's body is the 32x32 box from his origin, and with his
+## feet on the floor surface (660) that box spans y 628..660. A pickup at 490
+## is 138px above the top of his head: it was not "hard to reach", it was
+## unreachable without a jump, in a room where the whole point is that he
+## never has to jump.
+##
+## 630 puts a 16px pickup's span at 630..646 — inside the body band with
+## ~14px of margin on both sides, so it collects on contact while skating.
+const SKATE_BAND_Y := 630.0
+
 func _setup_rewards() -> void:
-	for i in range(8):
-		EntitySpawner.spawn("coin_eth", Vector2(1080 + i * 390, FLOOR_SURFACE_Y - 170), self)
-	EntitySpawner.spawn("coin_btc", Vector2(2460, FLOOR_SURFACE_Y - 260), self)
-	EntitySpawner.spawn("coin_btc", Vector2(3150, FLOOR_SURFACE_Y - 260), self)
-	EntitySpawner.spawn("health_pickup", Vector2(3900, FLOOR_SURFACE_Y - 170), self)
+	# A long collectible trail along the skate line — this is the run's reward.
+	for i in range(14):
+		EntitySpawner.spawn("coin_eth", Vector2(900 + i * 270, SKATE_BAND_Y), self)
+	EntitySpawner.spawn("coin_btc", Vector2(2460, SKATE_BAND_Y), self)
+	EntitySpawner.spawn("coin_btc", Vector2(3150, SKATE_BAND_Y), self)
+	EntitySpawner.spawn("coin_btc", Vector2(4380, SKATE_BAND_Y), self)
+	EntitySpawner.spawn("health_pickup", Vector2(1750, SKATE_BAND_Y), self)
+	EntitySpawner.spawn("health_pickup", Vector2(3900, SKATE_BAND_Y), self)
 
 func _setup_portal() -> void:
 	var portal := preload("res://src/level/return_portal.tscn").instantiate()
@@ -318,12 +440,15 @@ func _swap_placeholder_texture(container: Control, path: String) -> void:
 	art.texture = tex
 	art.set_anchors_preset(Control.PRESET_FULL_RECT)
 	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	art.stretch_mode = TextureRect.STRETCH_SCALE
+	# KEEP_ASPECT_CENTERED, not SCALE: the protocol logos are square-ish and the
+	# frames are not, so STRETCH_SCALE was squashing them — part of why the
+	# founder read them as "pixellated". Never distort supplied brand art.
+	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# "Smoke haze overlay" per the original Smoke Lounge spec — reduced
-	# opacity, slight desaturation — so real art still reads as part of this
-	# hazy room rather than a sharp foreign image pasted on top.
-	art.modulate = Color(0.88, 0.85, 0.92, 0.9)
+	# Near-full brightness. The old 0.9-alpha haze wash was applied on top of
+	# art that was already too small to read; dimming legibility for atmosphere
+	# is the wrong trade when the founder's complaint IS legibility.
+	art.modulate = Color(1.0, 0.98, 1.0, 1.0)
 	container.add_child(art)
 
 ## Soft radial-falloff light pool, generated once and cached — the same
@@ -367,49 +492,82 @@ func _setup_bong_alcove(x: float) -> void:
 ## Rest stop B — Protocol Signage Plinth: a mid-run wayfinding beat with three
 ## logo-placeholder slots (SmokeRing / DIAMONDS / GoldMine), so each protocol
 ## has a home before real art drops in.
+## Founder: "These logos are way too small and pixellated to an extent where
+## they are not visible. Make these bigger by extending them as if they were
+## BILLBOARDS HIGH UP."
+##
+## The old slots were 90x70 on a 1280-wide viewport — ~7% of screen width, and
+## Qwen's vision pass measured them at ~6%, below the threshold where a logo
+## reads as a logo at all. These are now 340x260 (~27% of width each), mounted
+## high on the back wall with support masts running down to the floor, so they
+## read as billboards in the room rather than postage stamps on a plinth.
+const BILLBOARD_W := 340.0
+const BILLBOARD_H := 260.0
+const BILLBOARD_GAP := 60.0
+## Top edge, in world Y. Floor surface is 660, so this hangs the boards well
+## above head height — "high up", as asked — while staying inside the frame.
+const BILLBOARD_TOP := 150.0
+
 func _setup_protocol_plinth(x: float) -> void:
 	_add_rest_stop_platform(x, 60.0, 24.0)
-	var post := ColorRect.new()
-	post.color = COLOR_PLATFORM_BODY
-	post.size = Vector2(16, 70)
-	post.position = Vector2(x - 8, FLOOR_SURFACE_Y - 24 - 70)
-	add_child(post)
 
 	var sign_names := ["SMOKERING", "DIAMONDS", "GOLDMINE"]
-	var slot_w := 90.0
-	var total_w := slot_w * sign_names.size() + 12.0 * (sign_names.size() - 1)
+	var total_w := BILLBOARD_W * sign_names.size() + BILLBOARD_GAP * (sign_names.size() - 1)
 	var start_x := x - total_w / 2.0
 	for i in range(sign_names.size()):
-		var slot_x := start_x + i * (slot_w + 12.0)
+		var slot_x: float = start_x + i * (BILLBOARD_W + BILLBOARD_GAP)
+		var board_mid: float = slot_x + BILLBOARD_W / 2.0
+
+		# Twin support masts from the board's bottom edge down to the floor, so
+		# a 260px board reads as MOUNTED rather than floating.
+		for mast_off: float in [-BILLBOARD_W * 0.3, BILLBOARD_W * 0.3]:
+			var mast := ColorRect.new()
+			mast.color = COLOR_PLATFORM_BODY
+			mast.size = Vector2(14, FLOOR_SURFACE_Y - (BILLBOARD_TOP + BILLBOARD_H))
+			mast.position = Vector2(board_mid + mast_off - 7, BILLBOARD_TOP + BILLBOARD_H)
+			mast.z_index = -2
+			add_child(mast)
+
 		var sign := Panel.new()
-		sign.position = Vector2(slot_x, FLOOR_SURFACE_Y - 24 - 70 - 78)
-		sign.size = Vector2(slot_w, 70.0)
+		sign.position = Vector2(slot_x, BILLBOARD_TOP)
+		sign.size = Vector2(BILLBOARD_W, BILLBOARD_H)
 		sign.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var sb := StyleBoxFlat.new()
 		sb.bg_color = COLOR_MURAL_MAT
-		sb.border_width_left = 2
-		sb.border_width_top = 2
-		sb.border_width_right = 2
-		sb.border_width_bottom = 2
+		sb.border_width_left = 4
+		sb.border_width_top = 4
+		sb.border_width_right = 4
+		sb.border_width_bottom = 4
 		sb.border_color = COLOR_LIP_ACCENT
-		sb.set_corner_radius_all(4)
+		sb.set_corner_radius_all(8)
 		sign.add_theme_stylebox_override("panel", sb)
 		add_child(sign)
+
 		var label := Label.new()
 		label.text = sign_names[i]
 		label.set_anchors_preset(Control.PRESET_FULL_RECT)
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		label.add_theme_font_size_override("font_size", 11)
+		label.add_theme_font_size_override("font_size", 30)
 		label.add_theme_color_override("font_color", COLOR_LIP_ACCENT)
 		sign.add_child(label)
 		# Bolt-head corners — cosmetic detail, no function.
-		for corner in [Vector2(4, 4), Vector2(slot_w - 10, 4), Vector2(4, 60), Vector2(slot_w - 10, 60)]:
-			var bolt := _make_cushion(6.0, COLOR_LIP_ACCENT)
+		for corner: Vector2 in [Vector2(10, 10), Vector2(BILLBOARD_W - 26, 10),
+				Vector2(10, BILLBOARD_H - 26), Vector2(BILLBOARD_W - 26, BILLBOARD_H - 26)]:
+			var bolt := _make_cushion(14.0, COLOR_LIP_ACCENT)
 			bolt.position = corner
 			sign.add_child(bolt)
-		# Drop-in real art: res://src/assets/logos/<name>.png, lowercased. No
-		# code change needed to go from placeholder to real logo.
+
+		# Warm spill light so the board reads as lit signage in a dim room.
+		var spill := Sprite2D.new()
+		spill.texture = _make_glow_texture()
+		spill.modulate = Color(0.95, 0.75, 0.55, 0.22)
+		spill.scale = Vector2(BILLBOARD_W / 42.0, BILLBOARD_H / 40.0)
+		spill.position = Vector2(board_mid, BILLBOARD_TOP + BILLBOARD_H / 2.0)
+		spill.z_index = -1
+		add_child(spill)
+
+		# Drop-in real art: res://src/assets/logos/<name>.png, lowercased.
 		_swap_placeholder_texture(sign, "res://src/assets/logos/%s.png" % sign_names[i].to_lower())
 
 ## Rest stop C — Founder Mural Ledge: the destination beat near the far

@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" path="res://src/assets/sprites/sprite_item_weed-leaf.png" id="2_leaf"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_leaf"]
-size = Vector2(28, 28)
+size = Vector2(44, 44)
 
 [node name="WeedLeaf" type="Area2D"]
 collision_layer = 16

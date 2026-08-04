@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" path="res://src/assets/sprites/sprite_item_coin.png" id="2_coin"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_coin"]
-size = Vector2(16, 16)
+size = Vector2(44, 44)
 
 [node name="Coin" type="Area2D"]
 collision_layer = 8

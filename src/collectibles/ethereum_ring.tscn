@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" path="res://src/assets/sprites/sprite_item_eth-ring.png" id="2_ring"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ring"]
-size = Vector2(24, 24)
+size = Vector2(44, 44)
 
 [node name="EthereumRing" type="Area2D"]
 collision_layer = 8

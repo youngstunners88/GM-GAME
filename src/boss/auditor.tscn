@@ -4,10 +4,10 @@
 [ext_resource type="Script" path="res://src/boss/boss_sprite.gd" id="9_bspr"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_auditor"]
-size = Vector2(96, 96)
+size = Vector2(168, 168)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hitbox"]
-size = Vector2(96, 96)
+size = Vector2(168, 168)
 
 [node name="Auditor" type="CharacterBody2D"]
 collision_layer = 4
@@ -20,7 +20,7 @@ texture_path = "res://src/assets/sprites/sprite_boss_tax-collector.png"
 
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(48, 48)
+position = Vector2(84, 84)
 shape = SubResource("RectangleShape2D_auditor")
 
 [node name="Hitbox" type="Area2D" parent="."]
@@ -30,5 +30,5 @@ monitoring = false
 monitorable = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
-position = Vector2(48, 48)
+position = Vector2(84, 84)
 shape = SubResource("RectangleShape2D_hitbox")

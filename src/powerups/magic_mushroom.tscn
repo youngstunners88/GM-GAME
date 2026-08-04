@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" path="res://src/assets/sprites/sprite_item_mushroom.png" id="2_mush"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_mush"]
-size = Vector2(28, 28)
+size = Vector2(44, 44)
 
 [node name="MagicMushroom" type="Area2D"]
 collision_layer = 16

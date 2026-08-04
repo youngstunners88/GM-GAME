@@ -9,6 +9,9 @@ extends CharacterBody2D
 
 enum State { PATROL, CHARGE, VULNERABLE, DEFEATED }
 const BOSS_ID := "tax"
+## On-screen body size. Mirrored by auditor.tscn's RectangleShape2D — change
+## both together, and keep the collision/hitbox offsets at BODY/2.
+const BODY := 168.0
 const CLIPBOARD := preload("res://src/boss/boss_projectile.tscn")
 
 @export var patrol_speed: float = 90.0
@@ -52,9 +55,13 @@ func _ready() -> void:
 	health = max_health
 	_base_patrol_speed = patrol_speed
 	sprite.color = Color(0.4, 0.25, 0.15, 1.0)
-	sprite.size = Vector2(96, 96)
-	collision.position = Vector2(48, 48)
-	hitbox.position = Vector2(48, 48)
+	# Founder: "Make the Auditor MUCH BIGGER — in fact you have REDUCED his
+	# size!!!" 168 vs the old 96 is a 1.75x linear / ~3x area increase. This
+	# MUST stay in lockstep with auditor.tscn's RectangleShape2D (168x168) and
+	# the collision/hitbox offsets (size/2 = 84) or the art and hurtbox drift.
+	sprite.size = Vector2(BODY, BODY)
+	collision.position = Vector2(BODY / 2.0, BODY / 2.0)
+	hitbox.position = Vector2(BODY / 2.0, BODY / 2.0)
 	hitbox_shape.shape = collision.shape
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
@@ -171,7 +178,7 @@ func _throw_clipboard() -> void:
 		proj.direction = base.rotated(s)
 		proj.speed = 240.0 + phase * 40.0
 		proj.tint = Color(0.95, 0.92, 0.8, 1.0)  # paper
-		proj.global_position = global_position + Vector2(48, 40)
+		proj.global_position = global_position + Vector2(BODY / 2.0, BODY * 0.42)
 		get_parent().add_child(proj)
 	AudioManager.play_sfx("throw")
 
@@ -294,7 +301,7 @@ func _summon_diamond_shards() -> void:
 		rect.size = Vector2(26, 26)
 		cs.shape = rect
 		shard.add_child(cs)
-		shard.global_position = global_position + Vector2(48, 20 + offset)
+		shard.global_position = global_position + Vector2(BODY / 2.0, BODY * 0.21 + offset)
 		shard.set_meta("reflected", false)
 		var dir: Vector2 = shard.global_position.direction_to(p.global_position)
 		shard.set_meta("dir", dir)
@@ -319,7 +326,7 @@ func _drive_shard(shard: Area2D) -> void:
 		var spd: float = 220.0 if bool(shard.get_meta("reflected")) else 110.0
 		shard.global_position += dir * spd * 0.016
 		if bool(shard.get_meta("reflected")) and is_instance_valid(self) \
-				and shard.global_position.distance_to(global_position + Vector2(48, 48)) < 56.0:
+				and shard.global_position.distance_to(global_position + Vector2(BODY / 2.0, BODY / 2.0)) < BODY * 0.58:
 			_take_reflected_damage()
 			shard.queue_free())
 	get_tree().create_timer(8.0).timeout.connect(func() -> void:
@@ -338,7 +345,7 @@ func _on_shard_area(area: Area2D, shard: Area2D) -> void:
 	# Player attack (axe/fire) reflects the shard back at the Auditor.
 	if area.is_in_group("projectile") and not bool(shard.get_meta("reflected")):
 		shard.set_meta("reflected", true)
-		shard.set_meta("dir", shard.global_position.direction_to(global_position + Vector2(48, 48)))
+		shard.set_meta("dir", shard.global_position.direction_to(global_position + Vector2(BODY / 2.0, BODY / 2.0)))
 		var spr := shard.get_child(0) as Sprite2D
 		if spr:
 			spr.modulate = Color(1.4, 1.6, 2.2, 1.0)
@@ -353,7 +360,7 @@ func _take_reflected_damage() -> void:
 	health -= 2
 	AudioManager.play_sfx("damage")
 	BossVoiceSystem.say(self, BOSS_ID, "hurt")
-	EffectSpawner.burst("explosion", global_position + Vector2(48, 48))
+	EffectSpawner.burst("explosion", global_position + Vector2(BODY / 2.0, BODY / 2.0))
 	# This is the SECOND damage path into this boss and it previously skipped
 	# the health bar entirely, so a reflected shard silently desynced the
 	# display by 2 HP until the next melee hit repainted it (Kimi audit).
