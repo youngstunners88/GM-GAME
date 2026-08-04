@@ -250,6 +250,10 @@ powerup_spawns = Array[Dictionary]([
 		"pos": Vector2(770, 540)
 	},
 	{
+		"type": "big_axe",
+		"pos": Vector2(2150, 340)
+	},
+	{
 		"type": "purple_weed",
 		"pos": Vector2(3050, 500)
 	}

@@ -109,6 +109,9 @@ func _spawn_axe(spread: float) -> void:
 	var axe := AXE_SCENE.instantiate()
 	axe.direction = _facing()
 	axe.vertical = spread * axe.speed
+	# Big-axe power-up: set BEFORE add_child so axe._ready() sees it (same
+	# pre-add_child prop contract EntitySpawner uses for MineCart.cart_type).
+	axe.big = GameManager.has_power_up("bigaxe")
 	axe.global_position = player.smoke_spawn.global_position
 	player.get_tree().current_scene.add_child(axe)
 

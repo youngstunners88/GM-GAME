@@ -126,8 +126,13 @@ func _physics_process(delta: float) -> void:
 				current_state = State.PATROL
 				direction = -direction
 				throw_timer = maxf(0.9, throw_cooldown - 0.3 * (current_phase - 1))
-				hitbox.set_deferred("monitorable", false)
-				hitbox.set_deferred("monitoring", false)
+				# Hitbox deliberately stays live — see _ready(). Turning
+				# monitoring off here meant the boss could only make contact
+				# during the window the player is supposed to be ATTACKING
+				# him in, and was otherwise completely intangible. That is
+				# the founder's "Lil Blunt is unimpacted by the boss".
+				# take_damage()'s own VULNERABLE gate still controls what the
+				# player can hurt.
 
 func _begin_tell() -> void:
 	current_state = State.TELL
@@ -216,8 +221,8 @@ func take_damage(amount: int) -> void:
 		throw_timer = maxf(0.9, throw_cooldown - 0.3 * (current_phase - 1))
 		boss_sprite.color = Color(0.6, 0.4, 0.2, 1.0)
 		boss_sprite.modulate = Color(1, 1, 1, 1)
-		hitbox.set_deferred("monitorable", false)
-		hitbox.set_deferred("monitoring", false)
+		# Hitbox stays live for the whole fight (see _ready()) — only die()
+		# switches it off.
 		_check_phase_change()
 
 func die() -> void:

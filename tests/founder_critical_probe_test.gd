@@ -550,10 +550,20 @@ func _test_boss_backdrop_floor_alignment(level_index: int) -> void:
 		return
 
 	var layer := spr.get_parent() as ParallaxLayer
-	_check("L%d: backdrop layer world-fixed (motion_scale 1.0, no mirroring)" % level_index,
-		layer != null and layer.motion_scale == Vector2(1.0, 1.0) and layer.motion_mirroring == Vector2.ZERO,
-		"motion_scale=%s mirroring=%s" % [str(layer.motion_scale if layer else "?"),
-			str(layer.motion_mirroring if layer else "?")])
+	# UPDATED 2026-08-04. This used to also demand motion_mirroring == ZERO.
+	# That was correct for the older design, where the boss art only had to
+	# span the arena. The founder then required the arena art to hold across
+	# the WHOLE stage ("even if Lil Blunt runs back to the beginning"), and a
+	# single 1280px image cannot cover a 3400px level without repeating.
+	# Mirroring is safe here specifically BECAUSE motion_scale is 1: the layer
+	# is world-locked, so it tiles without ever drifting against real geometry
+	# (drift was the original D2 bug, and it came from motion_scale 0.35).
+	_check("L%d: backdrop layer world-locked (motion_scale 1.0)" % level_index,
+		layer != null and layer.motion_scale == Vector2(1.0, 1.0),
+		"motion_scale=%s" % str(layer.motion_scale if layer else "?"))
+	_check("L%d: backdrop tiles horizontally to span the whole level" % level_index,
+		layer != null and layer.motion_mirroring.x > 0.0,
+		"mirroring=%s" % str(layer.motion_mirroring if layer else "?"))
 
 	var start_x: float = level_data.boss_arena.get("start_x", 0.0)
 	var end_x: float = level_data.boss_arena.get("end_x", start_x)
@@ -567,21 +577,24 @@ func _test_boss_backdrop_floor_alignment(level_index: int) -> void:
 		absf(actual_art_floor_world_y - expected_floor_y) < 1.0,
 		"art floor at world y=%.1f, real ground at y=%.1f" % [actual_art_floor_world_y, expected_floor_y])
 
-	# Kimi K3 audit caught the first version of this fix leaving a blank
-	# strip on screen: centering the art on the 700px arena left ~300px
-	# uncovered on the left, because the camera's 1280px-wide viewport can
-	# show area WEST of start_x the moment the player first crosses in.
-	# Assert actual pixel coverage, not just that a scale factor exists.
-	var viewport_w: float = get_viewport().get_visible_rect().size.x
-	var camera_min_left: float = start_x - viewport_w / 2.0
-	var art_left: float = spr.position.x
-	var art_right: float = spr.position.x + spr.texture.get_width() * scale_factor
-	_info("L%d camera's leftmost reachable view / art's actual left..right edge" % level_index,
-		"%.1f / %.1f..%.1f" % [camera_min_left, art_left, art_right])
-	_check("L%d: backdrop art covers the camera's full reachable range (no blank strip)" % level_index,
-		art_left <= camera_min_left + 1.0 and art_right >= end_x - 1.0,
-		"camera can show as far left as x=%.1f and as far right as x=%.1f, but art only covers %.1f..%.1f"
-			% [camera_min_left, end_x, art_left, art_right])
+	# Coverage. A Kimi K3 audit previously caught a version of this fix that
+	# centred the art on the 700px arena and left ~300px of blank screen,
+	# because the camera can see WEST of start_x the moment the player
+	# crosses in. The art now starts at the level origin and TILES, so
+	# coverage is continuous from x=0 rightwards for the full level — assert
+	# that rather than a single sprite's finite width.
+	var tile_w: float = spr.texture.get_width() * scale_factor
+	_info("L%d art origin / tile width / level bounds" % level_index,
+		"%.1f / %.1f / %.1f" % [spr.position.x, tile_w, level_data.bounds.x])
+	_check("L%d: backdrop starts at the level origin so nothing west of the arena is stale" % level_index,
+		absf(spr.position.x) < 1.0, "starts at x=%.1f" % spr.position.x)
+	_check("L%d: tiling actually repeats (one tile alone cannot span the level)" % level_index,
+		tile_w > 0.0 and (layer != null and absf(layer.motion_mirroring.x - tile_w) < 1.0),
+		"tile %.1f vs mirroring %s" % [tile_w, str(layer.motion_mirroring if layer else "?")])
+	var skirt: ColorRect = level.get("_boss_backdrop_skirt")
+	_check("L%d: opaque under-floor skirt spans the level" % level_index,
+		is_instance_valid(skirt) and skirt.size.x >= level_data.bounds.x,
+		"skirt=%s" % (str(skirt.size) if is_instance_valid(skirt) else "missing"))
 
 	level.queue_free()
 	await get_tree().process_frame
