@@ -66,6 +66,9 @@ func _ready() -> void:
 	_build_background()
 	_build_ground(layout)
 	_build_obstacles(layout)
+	# After obstacles: the landmarks are decorative and must not influence or
+	# be influenced by hazard placement.
+	_build_protocol_landmarks()
 	_build_finish()
 	_build_player()
 	_build_camera()
@@ -110,6 +113,93 @@ func _build_background() -> void:
 		blob.position = Vector2(150.0 + i * 300.0, 250.0 + (i % 2) * 150.0)
 		haze_layer.add_child(blob)
 	pbg.add_child(haze_layer)
+
+	_build_stage_theme_layer(pbg)
+
+## STAGE-THEMED BACKDROP.
+##
+## Founder: "return the trees in the background of the Blaze Rush like before
+## for stage one as it had the theme of the 1st stage, and the theme of the
+## 2nd Blaze Rush background should align with the 2nd stage and same with
+## the 3rd."
+##
+## Blaze Rush was drawing one hardcoded purple void for all three levels, so
+## every run looked identical and belonged to no stage. This pulls the SOURCE
+## LEVEL's own painted backdrop (the Smoke Realm forest, the Crystal Caverns,
+## the Gold Rush canyon) and darkens/tints it into the Electric Haze palette —
+## the run still reads as the fast secret mode, but it is unmistakably that
+## stage's version of it.
+##
+## Silent no-op if the level resource or its art is missing, matching the
+## missing-asset convention used everywhere else in this project.
+func _build_stage_theme_layer(pbg: ParallaxBackground) -> void:
+	var data_path := "res://src/resources/level_%02d_data.tres" % _level_index
+	if not ResourceLoader.exists(data_path):
+		return
+	var data: Resource = load(data_path)
+	if data == null or not ("background_path" in data):
+		return
+	var art_path: String = str(data.background_path)
+	if art_path == "" or not ResourceLoader.exists(art_path):
+		return
+	var tex: Texture2D = load(art_path)
+	if tex == null:
+		return
+	var view_h: float = get_viewport_rect().size.y
+	var fill: float = maxf(1.0, view_h / float(tex.get_height()))
+	var layer := ParallaxLayer.new()
+	# Slower than the haze so it sits clearly further back; y locked so it can
+	# never slide off and expose the void (same rule as level_base).
+	layer.motion_scale = Vector2(0.08, 0.0)
+	layer.motion_mirroring = Vector2(tex.get_width() * fill, 0.0)
+	var spr := Sprite2D.new()
+	spr.texture = tex
+	spr.centered = false
+	spr.scale = Vector2(fill, fill)
+	# Pushed dark and toward the mode's magenta so the neon foreground still
+	# pops against it — the stage reads, but the run keeps its own identity.
+	spr.modulate = Color(0.42, 0.28, 0.55, 1.0)
+	layer.add_child(spr)
+	pbg.add_child(layer)
+
+## Protocol key art embedded along the course, as the founder mocked up
+## ("here's another design of how we can embed art from the artworks
+## throughout the Blaze Rush"). Purely decorative, placed BEHIND gameplay and
+## well clear of the run line so it can never be mistaken for a platform.
+const BR_ART := [
+	"res://src/assets/art/br_smoke_rocket.png",
+	"res://src/assets/art/br_smoke_chariot.png",
+	"res://src/assets/art/br_diamonds.png",
+	"res://src/assets/art/br_goldmine.png",
+	"res://src/assets/art/br_robinhood.png",
+]
+
+func _build_protocol_landmarks() -> void:
+	var available: Array[String] = []
+	for p: String in BR_ART:
+		if ResourceLoader.exists(p):
+			available.append(p)
+	if available.is_empty():
+		return
+	# Space them across the run; start past the opening so the first seconds
+	# stay clean while the player is still reading the controls.
+	var count: int = 4
+	for i in range(count):
+		var tex: Texture2D = load(available[i % available.size()])
+		if tex == null:
+			continue
+		var art := Sprite2D.new()
+		art.texture = tex
+		# Normalise wildly different source sizes to a consistent on-screen
+		# diameter rather than trusting each PNG's native dimensions.
+		var target: float = 260.0
+		art.scale = Vector2(target / float(tex.get_width()), target / float(tex.get_height()))
+		art.position = Vector2(
+			700.0 + (_course_length - 900.0) * (float(i) / float(count)),
+			GROUND_Y - 300.0 - (40.0 if i % 2 == 0 else 0.0))
+		art.modulate = Color(1.0, 1.0, 1.0, 0.55)
+		art.z_index = -1
+		add_child(art)
 
 ## L2 streak field + L3 dust — camera-attached (not world-parallax): these are
 ## a constant speed cue near the player throughout the whole run, the same way

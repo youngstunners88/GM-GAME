@@ -28,7 +28,7 @@ var _spin: float = 0.0
 var big: bool = false
 const BIG_DAMAGE := 5
 const BIG_BOSS_DAMAGE := 3
-const BIG_SCALE := 2.0
+const BIG_SCALE := 2.8
 const BIG_SPEED_MULT := 1.15
 
 @onready var sprite: Sprite2D = $Sprite
@@ -78,18 +78,24 @@ func _on_area_entered(area: Area2D) -> void:
 func _smash_destructible(node: Node) -> bool:
 	if node == null:
 		return false
+	# PROGRESSIVE structural damage, not instant destruction.
+	#
+	# Founder: "They mustn't break completely as in disappear, but there needs
+	# to be structural damage and if the player persists then we see that the
+	# damage increases until the object is completely wrecked."
+	#
+	# Anything exposing take_structural_damage() (ladders today, any prop that
+	# adds a Destructible tomorrow) absorbs a hit and shows cracks/missing
+	# chunks; only the final hit in the chain removes it. This branch is
+	# checked BEFORE `breakable`, so a prop that has both a damage model and a
+	# legacy break_block() degrades properly instead of vanishing.
+	if node.has_method("take_structural_damage"):
+		node.take_structural_damage(1)
+		AudioManager.play_sfx_at("hit", global_position)
+		ScreenShake.light()
+		return true
 	if node.is_in_group("breakable") and node.has_method("break_block"):
 		node.break_block()
-		return true
-	# Ladders have no damage API of their own; a big axe shearing one off is
-	# pure spectacle, so fade-and-free it rather than adding a health model
-	# to a piece of level furniture.
-	if node is Node2D and node.get_script() != null \
-			and String(node.get_script().resource_path).ends_with("ladder.gd"):
-		var t := (node as Node2D).create_tween()
-		t.tween_property(node, "modulate:a", 0.0, 0.25)
-		t.finished.connect(node.queue_free)
-		AudioManager.play_sfx_at("hit", global_position)
 		return true
 	return false
 

@@ -242,13 +242,50 @@ func _create_platform(x: float, y: float, w: float, h: float, body_color: Color,
 	blocks.region_rect = Rect2(0, 0, w, max(h, 24.0))
 	blocks.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	blocks.position = Vector2(0, min(0.0, h - 24.0))
+	# TINTED TO THE REALM. Founder: "I don't like the design of these
+	# platforms. They are terrible!!!" — on the Gold Rush canyon shot.
+	#
+	# tile_block-chain.png is a single shared CYAN blockchain cube used by all
+	# three realms. The per-level palettes in level_0N_data.tres were already
+	# correct (Level 3 is gold), but they only coloured the thin body rect and
+	# lip — the texture drawn on top kept rendering its own cyan, so a gold
+	# canyon got teal mossy-looking ledges that clashed with everything around
+	# them. Modulating toward the realm's lip colour makes one tile asset serve
+	# three realms instead of fighting two of them.
+	blocks.modulate = Color(
+		0.55 + lip_color.r * 0.55,
+		0.55 + lip_color.g * 0.45,
+		0.55 + lip_color.b * 0.45,
+		1.0)
 	plat.add_child(blocks)
+
+	# Drop shadow under the lip — gives the ledge thickness so it reads as a
+	# solid object rather than a flat sticker on the backdrop.
+	var shade := ColorRect.new()
+	shade.color = Color(0.0, 0.0, 0.0, 0.30)
+	shade.size = Vector2(w, min(6.0, h))
+	shade.position = Vector2(0, min(4.0, h))
+	plat.add_child(shade)
 
 	# Bright top lip — a glowing edge so the standable surface is unmistakable.
 	var lip := ColorRect.new()
 	lip.color = lip_color
 	lip.size = Vector2(w, min(4.0, h))
 	plat.add_child(lip)
+
+	# Warm highlight inset just under the lip, and darker edge caps at both
+	# ends: cheap bevel that reads as carved rock/metal instead of a bar.
+	var inner := ColorRect.new()
+	inner.color = Color(lip_color.r, lip_color.g, lip_color.b, 0.28)
+	inner.size = Vector2(w, 2.0)
+	inner.position = Vector2(0, min(4.0, h))
+	plat.add_child(inner)
+	for cap_x: float in [0.0, w - 3.0]:
+		var cap := ColorRect.new()
+		cap.color = Color(0.0, 0.0, 0.0, 0.35)
+		cap.size = Vector2(3.0, h)
+		cap.position = Vector2(cap_x, 0.0)
+		plat.add_child(cap)
 
 	var col := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
