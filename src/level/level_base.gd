@@ -62,11 +62,31 @@ func _setup_background() -> void:
 	pbg.layer = -20
 	add_child(pbg)
 	var layer := ParallaxLayer.new()
-	layer.motion_scale = Vector2(0.35, 0.5)
-	layer.motion_mirroring = Vector2(float(tex.get_width()), 0.0)
+	# THE GREY BAR AT THE BOTTOM OF THE SCREEN.
+	#
+	# Founder: "I also don't want this grey block at the bottom of the screen.
+	# It's eating up the real estate unnecessarily!!!"
+	#
+	# Sampled from his screenshots it is RGB(77,77,77) — precisely Godot's
+	# DEFAULT clear colour (0.3,0.3,0.3). It was never a node: it is raw
+	# viewport showing through where nothing is painted. project.godot sets
+	# stretch/aspect="expand", so a browser window taller than 16:9 gives a
+	# viewport TALLER than the 720px backdrop, and the uncovered strip is the
+	# clear colour. (project.godot now also sets that colour to near-black as
+	# a belt-and-braces second line of defence.)
+	#
+	# motion_scale.y = 0 pins the painting to the viewport vertically so it can
+	# never slide up and expose a gap, and the fill scale is computed from the
+	# LIVE viewport height rather than the baked 720 so a tall window is
+	# covered too. Horizontal parallax (0.35) is unchanged, so depth still reads.
+	var view_h: float = get_viewport_rect().size.y
+	var fill: float = maxf(1.0, view_h / float(tex.get_height()))
+	layer.motion_scale = Vector2(0.35, 0.0)
+	layer.motion_mirroring = Vector2(float(tex.get_width()) * fill, 0.0)
 	var spr := Sprite2D.new()
 	spr.texture = tex
 	spr.centered = false
+	spr.scale = Vector2(fill, fill)
 	# Very slight cool tint keeps foreground gameplay readable over the art
 	# without draining the painting's colour.
 	spr.modulate = Color(0.9, 0.9, 0.94, 1.0)

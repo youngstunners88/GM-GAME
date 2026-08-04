@@ -6,6 +6,8 @@ extends BossBase
 
 const BOSS_ID := "crystal"
 const ORB := preload("res://src/boss/boss_projectile.tscn")
+## On-screen body size. Mirrored by distributor.tscn's RectangleShape2D.
+const BODY := 176.0
 
 enum Phase { PATROL, SHARD_THROW, VULNERABLE }
 
@@ -30,9 +32,14 @@ func _ready() -> void:
 	add_to_group("enemy")
 	add_to_group("boss")
 	boss_sprite.color = Color(0.3, 0.2, 0.6, 1.0)
-	boss_sprite.size = Vector2(96, 96)
-	collision.position = Vector2(48, 48)
-	hitbox.position = Vector2(48, 48)
+	# Founder: "The Boss in the 2nd stage doesn't have the same impact as
+	# before as he is MUCH smaller and doesn't have his diamond surfboard!!!"
+	# 176 vs the old 96. Mirrored by distributor.tscn (176x176 shape, offsets
+	# at 88) — the two must move together or art and hurtbox separate.
+	boss_sprite.size = Vector2(BODY, BODY)
+	collision.position = Vector2(BODY / 2.0, BODY / 2.0)
+	hitbox.position = Vector2(BODY / 2.0, BODY / 2.0)
+	_build_diamond_surfboard()
 	hitbox_shape.shape = collision.shape
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
@@ -74,6 +81,80 @@ func _physics_process(delta: float) -> void:
 			move_and_slide()
 			boss_sprite.modulate = Color(1.0, 0.3, 0.3, 1.0) if fmod(throw_timer, 0.3) < 0.15 else Color(1.0, 0.1, 0.1, 1.0)
 
+## THE DIAMOND SURFBOARD.
+##
+## Founder, furious: "the boss falls off his Diamond surfboard" and then "he
+## doesn't have his diamond surfboard!!! WHAT THE FUCK!!!"
+##
+## Both complaints have the same origin. There has never been a surfboard NODE
+## in this codebase — a search of the whole repo returns nothing. What existed
+## was a separate decorative diamond placed in the arena that he read as a
+## board; the boss "fell off" it because every boss used to face left by
+## setting `sprite.scale.x = -1`, and BossSprite anchors its inner Sprite2D at
+## size/2, so negating the parent's x-scale MIRRORS that offset and teleports
+## the art ~160px sideways while the arena diamond stayed put.
+##
+## Two fixes, both needed: facing now flips `flip_h` in place (BossSprite.
+## set_facing), and the board is a CHILD of the boss, so it is carried by his
+## transform and cannot be separated from him by any movement or flip.
+func _build_diamond_surfboard() -> void:
+	var board := Node2D.new()
+	board.name = "DiamondSurfboard"
+	# Under the soles: the body box is BODY tall from this node's origin.
+	board.position = Vector2(BODY / 2.0, BODY - 6.0)
+	board.z_index = -1
+	add_child(board)
+
+	var half_w: float = BODY * 0.62
+	var half_h: float = BODY * 0.085
+
+	# Crystal underglow so it reads on the cavern's dark floor.
+	var glow := Sprite2D.new()
+	glow.texture = preload("res://src/assets/sprites/fx_dot.png")
+	glow.modulate = Color(0.45, 0.9, 1.0, 0.34)
+	glow.scale = Vector2(half_w / 12.0, half_h / 7.0)
+	glow.position = Vector2(0, 4)
+	board.add_child(glow)
+
+	# Faceted deck — a stretched diamond built from two mirrored triangles so
+	# it reads as cut crystal rather than a plain lozenge.
+	var deck := Polygon2D.new()
+	deck.polygon = PackedVector2Array([
+		Vector2(-half_w, 0.0),
+		Vector2(-half_w * 0.45, -half_h),
+		Vector2(half_w * 0.45, -half_h),
+		Vector2(half_w, 0.0),
+		Vector2(half_w * 0.45, half_h),
+		Vector2(-half_w * 0.45, half_h),
+	])
+	deck.color = Color(0.62, 0.93, 1.0, 0.96)
+	board.add_child(deck)
+
+	# Bright top facet + dark keel give the flat polygon depth.
+	var facet := Polygon2D.new()
+	facet.polygon = PackedVector2Array([
+		Vector2(-half_w * 0.82, -half_h * 0.18),
+		Vector2(-half_w * 0.35, -half_h * 0.86),
+		Vector2(half_w * 0.35, -half_h * 0.86),
+		Vector2(half_w * 0.82, -half_h * 0.18),
+	])
+	facet.color = Color(0.90, 0.99, 1.0, 0.95)
+	board.add_child(facet)
+
+	var keel := Polygon2D.new()
+	keel.polygon = PackedVector2Array([
+		Vector2(-half_w * 0.5, half_h * 0.2),
+		Vector2(half_w * 0.5, half_h * 0.2),
+		Vector2(0.0, half_h * 1.5),
+	])
+	keel.color = Color(0.20, 0.52, 0.78, 0.95)
+	board.add_child(keel)
+
+	# Hover bob — he SURFS on it rather than standing on a slab.
+	var bob := board.create_tween().set_loops()
+	bob.tween_property(board, "position:y", BODY - 12.0, 1.1).set_trans(Tween.TRANS_SINE)
+	bob.tween_property(board, "position:y", BODY - 6.0, 1.1).set_trans(Tween.TRANS_SINE)
+
 ## Aimed, slightly-homing ETH orbs. Count + spread + cadence scale with the
 ## BossBase HP phase (1/2/3): 3 orbs → 5 orbs → 5 fast orbs.
 func _throw_shards() -> void:
@@ -89,7 +170,7 @@ func _throw_shards() -> void:
 		orb.speed = 170.0 + 40.0 * (current_phase - 1)
 		orb.homing = 0.6 if current_phase >= 2 else 0.0
 		orb.tint = Color(0.6, 0.8, 1.0, 1.0)  # ETH blue
-		orb.global_position = global_position + Vector2(48, 20)
+		orb.global_position = global_position + Vector2(BODY / 2.0, BODY * 0.21)
 		get_parent().add_child(orb)
 	AudioManager.play_sfx("throw")
 
@@ -108,7 +189,7 @@ func take_damage(amount: int) -> void:
 	AudioManager.play_sfx("damage")
 	BossVoiceSystem.say(self, BOSS_ID, "hurt")
 	var tween := create_tween()
-	tween.tween_property(sprite, "modulate", Color(10, 10, 10, 1), 0.05)
+	tween.tween_property(sprite, "modulate", Color(4.0, 0.25, 0.25, 1), 0.05)
 	tween.tween_property(sprite, "modulate", Color(1, 1, 1, 1), 0.05)
 	_update_health_bar()
 	if health <= 0:

@@ -97,7 +97,7 @@ func take_damage(amount: int) -> void:
 	health -= amount
 	AudioManager.play_sfx("damage")
 	var tween := create_tween()
-	tween.tween_property(sprite, "modulate", Color(10, 10, 10, 1), 0.05)
+	tween.tween_property(sprite, "modulate", Color(4.0, 0.25, 0.25, 1), 0.05)
 	tween.tween_property(sprite, "modulate", Color(1, 1, 1, 1), 0.05)
 	_update_health_bar()
 	if health <= 0:

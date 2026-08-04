@@ -137,15 +137,17 @@ func _setup_floor() -> void:
 	col.position = Vector2(BOUNDS / 2, FLOOR_Y)
 	floor_body.add_child(col)
 	add_child(floor_body)
-	# Opaque floor skirt: covers the ocean/water visible in the bottom of
-	# bg_secret_far.jpg when the camera nears FLOOR_Y. Painted in the lounge's
-	# darkest purple so it blends with the near-floor haze.
-	var skirt := ColorRect.new()
-	skirt.color = Color(0.18, 0.10, 0.25, 1.0)
-	skirt.size = Vector2(BOUNDS, 300)
-	skirt.position = Vector2(0, FLOOR_Y - 10)
-	skirt.z_index = -5
-	add_child(skirt)
+	# NO under-floor skirt here — deliberately removed, do not re-add.
+	#
+	# The previous build painted an opaque purple ColorRect across the bottom
+	# 300px to hide the far layer's ocean. The founder circled that exact
+	# rectangle in his very next screenshot: "the bottom is not an expression
+	# of the original image of the actual smoke lounge". Covering wrong art
+	# with a flat slab just swaps one wrong thing for another.
+	#
+	# The room layer is now vertically screen-locked (see _add_layer), so the
+	# lounge art itself reaches the bottom of the frame and there is nothing
+	# left to cover.
 
 	# Kill zone below, in case (shouldn't be reachable, but safe).
 	var kz := Area2D.new()
