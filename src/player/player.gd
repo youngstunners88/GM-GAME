@@ -65,6 +65,13 @@ var _last_fall_speed: float = 0.0
 ## die() against re-entry from multiple lethal hits in the same frame.
 var _dying: bool = false
 
+## Optional external horizontal steer, in the same -1..1 space as keyboard
+## input. Set by the Smoke Lounge so the founder's "or using the mouse to
+## direct Lil Blunt to the tokens" works. Inert everywhere else — the
+## campaign levels never touch it, so their input handling is unchanged.
+var steer_override_active: bool = false
+var steer_override: float = 0.0
+
 ## Ambient level-driven movement scaling (e.g. the Smoke Lounge's chill pace).
 ## Separate from power_up_handler's speed/jump multiplier so a level's mood
 ## and an active power-up compose multiplicatively instead of one clobbering
@@ -127,6 +134,12 @@ func _physics_process(delta: float) -> void:
 	var movement_direction: float = input_handler.get_movement_direction()
 	if MobileInputHandler:
 		movement_direction = MobileInputHandler.get_movement_input()
+	# Smoke Lounge skate cruise: the level can drive steering directly (mouse
+	# aim) on frames where the player isn't already pressing a direction.
+	# Keyboard always wins so arrows never feel unresponsive. Opt-in and
+	# off by default, so no campaign level's handling changes.
+	if steer_override_active and is_zero_approx(movement_direction):
+		movement_direction = steer_override
 
 	# Bong flight: hold jump/up to rise, otherwise sink slowly. Overrides all
 	# normal gravity/wall/jump vertical logic for the duration. Trippy green

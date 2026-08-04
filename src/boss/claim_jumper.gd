@@ -59,6 +59,14 @@ func _ready() -> void:
 	hitbox_shape.shape = collision.shape
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
+	# Detect overlaps for the WHOLE fight, not only the VULNERABLE window —
+	# the same contract the Distributor uses. Founder: "the third boss is
+	# unimpacted by Lil Blunt's strikes and vice versa". Incoming damage is
+	# still gated by take_damage()'s own VULNERABLE check below, so this does
+	# not make him a free target; it is what makes walking into him actually
+	# cost the player something.
+	hitbox.set_deferred("monitoring", true)
+	hitbox.set_deferred("monitorable", true)
 	boss_display_name = "The Claim Jumper"
 	_setup_health_bar()
 	BossVoiceSystem.set_active(self, BOSS_ID)

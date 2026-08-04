@@ -46,6 +46,7 @@ func _ready() -> void:
 	_setup_under_floor_skirt()
 	_setup_ground_smoke()
 	_spawn_player()
+	_setup_skateboard()
 	_setup_rewards()
 	_setup_bong_alcove(BOUNDS * 0.33)
 	_setup_protocol_plinth(BOUNDS * 0.55)
@@ -60,6 +61,7 @@ func _ready() -> void:
 		AudioManager.play_voice("secret_ambient"))
 
 func _process(delta: float) -> void:
+	_update_skate(delta)
 	# Performance budget (spec 1.2): dynamic emission reduction below 45 FPS
 	# rather than a fixed cap that never adapts to a slower device.
 	if _smoke == null or not is_instance_valid(_smoke):
@@ -145,6 +147,113 @@ func _setup_floor() -> void:
 		if b.is_in_group("player") and b.has_method("pit_death"):
 			b.pit_death())
 	add_child(kz)
+
+## THE SKATE CRUISE (founder, 2026-08-04): "Lil Blunt having a skateboard and
+## skating through the Smoke Lounge as opposed to walking through so that the
+## play is not jumping to the token but instead is pressing the keyboard
+## arrows or using the mouse to direct Lil Blunt to the tokens".
+##
+## Deliberately implemented as DRESSING + INPUT, not as a new physics mode:
+##   * every collectible now sits at skate height (see _setup_rewards), so
+##     the room is cleared by pure left/right travel and jumping is never
+##     required for anything;
+##   * a board is drawn under Lil Blunt so he reads as riding, not walking;
+##   * the mouse can steer (hold anywhere / move the cursor) via the player's
+##     opt-in steer_override, keyboard always taking precedence.
+## Nothing here changes Player's physics constants, so the three campaign
+## levels and Blaze Rush are untouched.
+var _skater: Node2D = null
+var _board: Node2D = null
+
+func _setup_skateboard() -> void:
+	_skater = get_tree().get_first_node_in_group("player") as Node2D
+	if _skater == null:
+		return
+	_skater.set("steer_override_active", true)
+	_board = Node2D.new()
+	# Anchored so the WHEELS touch the floor, not the shins.
+	#
+	# The player's collision box is 32x32 with its origin at TOP-LEFT, so his
+	# feet are at player-local y = 32. My first pass assumed a centred origin
+	# and left the board hovering ~10px above the deck. Offsets below are
+	# relative to this node at player-local (16, 26), which puts the deck
+	# centre under him and the wheel bottoms exactly on y = 32.
+	_board.position = Vector2(16, 26)
+	_board.z_index = -1
+	# Under-glow first so the deck draws over it — same "lift source" read as
+	# the Distributor's levitating diamond.
+	var glow := Polygon2D.new()
+	glow.polygon = PackedVector2Array([
+		Vector2(-24, -3), Vector2(0, -9), Vector2(24, -3), Vector2(0, 3)])
+	glow.color = Color(0.45, 1.0, 0.4, 0.28)
+	_board.add_child(glow)
+	for wheel_x in [-16.0, 8.0]:
+		var wheel := ColorRect.new()
+		wheel.size = Vector2(8, 8)          # bottom lands on player-local y=32
+		wheel.position = Vector2(wheel_x, -2)
+		wheel.color = Color(0.165, 0.133, 0.220, 1.0)
+		_board.add_child(wheel)
+	for truck_x in [-14.0, 10.0]:
+		var truck := ColorRect.new()
+		truck.size = Vector2(4, 2)
+		truck.position = Vector2(truck_x, -3)
+		truck.color = COLOR_CUSHION
+		_board.add_child(truck)
+	var deck := ColorRect.new()
+	deck.size = Vector2(40, 6)
+	deck.position = Vector2(-20, -8)
+	deck.color = Color(0.25, 0.55, 0.22, 1.0)   # weed-green deck
+	_board.add_child(deck)
+	var lip := ColorRect.new()
+	lip.size = Vector2(40, 2)
+	lip.position = Vector2(-20, -8)
+	lip.color = Color(0.55, 1.0, 0.25, 1.0)     # lime grip stripe
+	_board.add_child(lip)
+	_skater.add_child(_board)
+
+## Mouse steering + a touch of board tilt. Runs from _process.
+##
+## Mouse steering is GATED on the player actually using the mouse — held
+## button, or pointer moved in the last MOUSE_STEER_GRACE seconds. Without
+## that gate a cursor left resting anywhere off-centre reads as a permanent
+## full-strength steer input and Lil Blunt skates away on his own with the
+## player's hands off the controls. (Caught in review of my first pass.)
+const MOUSE_DEAD_ZONE: float = 24.0
+const MOUSE_SATURATION: float = 220.0
+const MOUSE_STEER_GRACE: float = 1.5
+var _last_mouse_x: float = -1.0
+var _mouse_active_for: float = 0.0
+
+func _update_skate(delta: float) -> void:
+	if _skater == null or not is_instance_valid(_skater):
+		return
+	var vp := _skater.get_viewport()
+	var mouse := vp.get_mouse_position()
+	# Track real pointer movement so a stationary cursor stops steering.
+	if _last_mouse_x >= 0.0 and absf(mouse.x - _last_mouse_x) > 1.0:
+		_mouse_active_for = MOUSE_STEER_GRACE
+	else:
+		_mouse_active_for = maxf(0.0, _mouse_active_for - delta)
+	_last_mouse_x = mouse.x
+	var using_mouse := _mouse_active_for > 0.0 \
+		or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
+
+	var steer := 0.0
+	if using_mouse:
+		# Measure against the VIEWPORT CENTRE, not the player's own screen
+		# position: the camera already keeps him centred, and a fixed
+		# reference doesn't wobble with camera smoothing.
+		var dx := mouse.x - vp.get_visible_rect().size.x * 0.5
+		if absf(dx) > MOUSE_DEAD_ZONE:
+			var mag := (absf(dx) - MOUSE_DEAD_ZONE) / (MOUSE_SATURATION - MOUSE_DEAD_ZONE)
+			steer = clampf(mag, 0.0, 1.0) * signf(dx)
+	_skater.set("steer_override", steer)
+	if _board:
+		# Lean into the carve. Uses the player's real velocity so the board
+		# sits flat when he's stopped, however the steer input looks.
+		var vx: float = _skater.velocity.x if "velocity" in _skater else 0.0
+		var lean := clampf(vx / 200.0, -1.0, 1.0)
+		_board.rotation = lerp_angle(_board.rotation, deg_to_rad(lean * 8.0), 12.0 * delta)
 
 ## THE "BOTTOM SLAB" — founder-reported 3+ times, never found by any previous
 ## session because everyone (including me) searched secret_realm.gd for a
@@ -259,15 +368,30 @@ func _spawn_player() -> void:
 		cam.limit_bottom = int(FLOOR_Y + 120.0)
 
 ## The reward for finding the door: a run of high-value crypto coins + health,
-## spread across the full 5100px walk (scaled 3x from the original 1700px
-## layout) so they're "hidden in the haze" along the journey rather than
-## clustered in the first quarter of the room.
+## spread across the full 5100px walk.
+##
+## SKATE HEIGHT (founder, 2026-08-04): "the play is not jumping to the token
+## but instead is pressing the keyboard arrows or using the mouse to direct
+## Lil Blunt to the tokens". These used to sit at FLOOR_SURFACE_Y - 170 and
+## -260 — i.e. 170-260px above the floor, when Lil Blunt's body is only ~28px
+## tall. Every single one REQUIRED a jump, which is exactly the platforming
+## the lounge is not supposed to be.
+##
+## Exact geometry (measured, not estimated — a Grok 4.5 spec cross-checked
+## against player.tscn by the investigation agent): the player's collision
+## box is 32x32 with its ORIGIN AT TOP-LEFT, so standing on this floor means
+## global_position.y = 628 and the Hurtbox spans world y 630..658. A token
+## spawns as a 20px box at its spawn Y, so spawn Y must land in 618..640 to
+## overlap the hurtbox on a pure horizontal pass. 632 centres it in that band.
+## FLOOR_SURFACE_Y (660) - 28 = 632.
+const SKATE_PICKUP_Y: float = 28.0
+
 func _setup_rewards() -> void:
 	for i in range(8):
-		EntitySpawner.spawn("coin_eth", Vector2(1080 + i * 390, FLOOR_SURFACE_Y - 170), self)
-	EntitySpawner.spawn("coin_btc", Vector2(2460, FLOOR_SURFACE_Y - 260), self)
-	EntitySpawner.spawn("coin_btc", Vector2(3150, FLOOR_SURFACE_Y - 260), self)
-	EntitySpawner.spawn("health_pickup", Vector2(3900, FLOOR_SURFACE_Y - 170), self)
+		EntitySpawner.spawn("coin_eth", Vector2(1080 + i * 390, FLOOR_SURFACE_Y - SKATE_PICKUP_Y), self)
+	EntitySpawner.spawn("coin_btc", Vector2(2460, FLOOR_SURFACE_Y - SKATE_PICKUP_Y), self)
+	EntitySpawner.spawn("coin_btc", Vector2(3150, FLOOR_SURFACE_Y - SKATE_PICKUP_Y), self)
+	EntitySpawner.spawn("health_pickup", Vector2(3900, FLOOR_SURFACE_Y - SKATE_PICKUP_Y), self)
 
 func _setup_portal() -> void:
 	var portal := preload("res://src/level/return_portal.tscn").instantiate()
