@@ -5,12 +5,18 @@ extends Node2D
 ##   sprite.color    — red-flash writes tint the art; base-color writes restore white
 ##   sprite.size     — desired on-screen box; texture is fitted to its height
 ##   sprite.modulate — native Node2D property (damage flicker uses it directly)
-##   set_facing(bool) — mirror the art in place (NEVER write scale.x;
-##                    see the long comment on set_facing for why that breaks)
+##   sprite.set_facing(bool) — flip without displacement (use this, not scale.x)
 
 @export var texture_path: String = ""
 
 var _spr: Sprite2D
+
+## Flip the inner sprite without displacing the art. Using scale.x = -1 on the
+## parent mirrors the child's size/2 offset, teleporting the art sideways.
+## This method flips flip_h in place — position stays pinned.
+func set_facing(face_right: bool) -> void:
+	if _spr:
+		_spr.flip_h = not face_right
 
 ## Emulates ColorRect.size: fits the texture display height to size.y.
 var size: Vector2 = Vector2(96, 96):
@@ -43,29 +49,3 @@ func _fit() -> void:
 	_spr.scale = Vector2(s, s)
 	# ColorRect anchored its box at top-left; centre the art in that box.
 	_spr.position = size / 2.0
-
-## Face the boss left or right WITHOUT displacing the artwork.
-##
-## THE BUG THIS EXISTS TO KILL (founder-reported as "the boss falls off his
-## Diamond surfboard", and a contributor to "the Auditor has his back to Lil
-## Blunt"): every boss script used to write `sprite.scale.x = -1` directly to
-## face left. `_fit()` above anchors the inner Sprite2D at `size / 2` — i.e.
-## local (48, 48) for a 96px body box — so negating the PARENT Node2D's
-## x-scale mirrors that OFFSET as well as the pixels. The art jumps a full
-## 96 local px sideways: 163 world px at the Distributor's BOSS_SCALE of 1.7,
-## 125 px at the Auditor's 1.3.
-##
-## The Distributor's levitating diamond is a SIBLING Polygon2D that is not
-## inside this node and therefore does not move — so the moment he turned to
-## face left his body slid clean off the disc. Exactly the screenshot.
-##
-## Worse, each previous "facing fix" added MORE scale.x writes (PATROL, ALERT,
-## PURSUE, then VULNERABLE), so every attempt to fix the facing made the
-## displacement fire more often rather than less.
-##
-## Mirroring `flip_h` on the inner Sprite2D flips the pixels around the
-## sprite's own centre and leaves its position — and therefore the body's
-## alignment with the disc, the hitbox and the collision box — untouched.
-func set_facing(face_right: bool) -> void:
-	if _spr:
-		_spr.flip_h = not face_right

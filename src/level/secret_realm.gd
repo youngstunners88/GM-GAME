@@ -40,13 +40,10 @@ var _perf_timer: float = 0.0
 
 func _ready() -> void:
 	StateMachine.change_state(StateMachine.State.PLAYING)
-	_setup_ambient_bg_shader()
 	_setup_parallax()
 	_setup_floor()
-	_setup_under_floor_skirt()
 	_setup_ground_smoke()
 	_spawn_player()
-	_setup_skateboard()
 	_setup_rewards()
 	_setup_bong_alcove(BOUNDS * 0.33)
 	_setup_protocol_plinth(BOUNDS * 0.55)
@@ -55,13 +52,17 @@ func _ready() -> void:
 	_setup_hud()
 	_setup_title_card()
 	AudioManager.set_reverb_profile("cave")  # roomy lounge echo
+	# NOTE: assets/music/smoke_lounge.mp3 does not exist in the repo as of this
+	# session (checked — only bg_secret_far/mid.jpg and sprite_item_bong.png
+	# were placed). play_ambient_loop degrades to silence, same convention
+	# play_playlist already uses for any missing track, so dropping the real
+	# file in later needs no code change — just the file at this exact path.
 	AudioManager.play_ambient_loop("res://src/assets/music/smoke_lounge.mp3", 0.7, 2.0)
 	# Commentary a beat after the wipe so it lands once the realm is visible.
 	get_tree().create_timer(0.8).timeout.connect(func() -> void:
 		AudioManager.play_voice("secret_ambient"))
 
 func _process(delta: float) -> void:
-	_update_skate(delta)
 	# Performance budget (spec 1.2): dynamic emission reduction below 45 FPS
 	# rather than a fixed cap that never adapts to a slower device.
 	if _smoke == null or not is_instance_valid(_smoke):
@@ -71,30 +72,6 @@ func _process(delta: float) -> void:
 		_perf_timer = 1.0
 		if Engine.get_frames_per_second() < 45.0 and _smoke.amount > 40:
 			_smoke.amount = maxi(40, _smoke.amount - 20)
-
-## Screen-space "living background" layer, behind everything else (Godot
-## draws lower CanvasLayer numbers first/further back — the painted parallax
-## below sits at -20, so this must be more negative still, or it would fully
-## occlude the parallax in front of it; the same layering bug this project
-## already caught once in blaze_rush.gd's void/haze layers). A looping video
-## background was requested for this room, but the only footage supplied
-## depicted sexualized figures and aggressive drug-paraphernalia imagery that
-## violates this project's own content rules (no aggressive/stereotypical
-## drug imagery; Lil Blunt's brand stays chill, not depicted that way) — this
-## procedural shader delivers the same "always-moving atmospheric backdrop"
-## brief without that footage: continuous drifting smoke + a slow color
-## breathe, zero file size, no video decode cost on the non-threaded web export.
-func _setup_ambient_bg_shader() -> void:
-	var layer := CanvasLayer.new()
-	layer.layer = -21
-	add_child(layer)
-	var bg := ColorRect.new()
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var mat := ShaderMaterial.new()
-	mat.shader = load("res://src/assets/shaders/smoke_lounge_ambient.gdshader")
-	bg.material = mat
-	layer.add_child(bg)
 
 ## Two depth layers at very different motion scales = parallax 3D. Both
 ## layers already tile indefinitely via motion_mirroring (keyed to the
@@ -133,6 +110,16 @@ func _setup_floor() -> void:
 	col.position = Vector2(BOUNDS / 2, FLOOR_Y)
 	floor_body.add_child(col)
 	add_child(floor_body)
+	# Opaque floor skirt: covers the ocean/water visible in the bottom of
+	# bg_secret_far.jpg when the camera nears FLOOR_Y. Painted in the lounge's
+	# darkest purple so it blends with the near-floor haze.
+	var skirt := ColorRect.new()
+	skirt.color = Color(0.18, 0.10, 0.25, 1.0)
+	skirt.size = Vector2(BOUNDS, 300)
+	skirt.position = Vector2(0, FLOOR_Y - 10)
+	skirt.z_index = -5
+	add_child(skirt)
+
 	# Kill zone below, in case (shouldn't be reachable, but safe).
 	var kz := Area2D.new()
 	kz.collision_layer = 0
@@ -147,155 +134,6 @@ func _setup_floor() -> void:
 		if b.is_in_group("player") and b.has_method("pit_death"):
 			b.pit_death())
 	add_child(kz)
-
-## THE SKATE CRUISE (founder, 2026-08-04): "Lil Blunt having a skateboard and
-## skating through the Smoke Lounge as opposed to walking through so that the
-## play is not jumping to the token but instead is pressing the keyboard
-## arrows or using the mouse to direct Lil Blunt to the tokens".
-##
-## Deliberately implemented as DRESSING + INPUT, not as a new physics mode:
-##   * every collectible now sits at skate height (see _setup_rewards), so
-##     the room is cleared by pure left/right travel and jumping is never
-##     required for anything;
-##   * a board is drawn under Lil Blunt so he reads as riding, not walking;
-##   * the mouse can steer (hold anywhere / move the cursor) via the player's
-##     opt-in steer_override, keyboard always taking precedence.
-## Nothing here changes Player's physics constants, so the three campaign
-## levels and Blaze Rush are untouched.
-var _skater: Node2D = null
-var _board: Node2D = null
-
-func _setup_skateboard() -> void:
-	_skater = get_tree().get_first_node_in_group("player") as Node2D
-	if _skater == null:
-		return
-	_skater.set("steer_override_active", true)
-	_board = Node2D.new()
-	# Anchored so the WHEELS touch the floor, not the shins.
-	#
-	# The player's collision box is 32x32 with its origin at TOP-LEFT, so his
-	# feet are at player-local y = 32. My first pass assumed a centred origin
-	# and left the board hovering ~10px above the deck. Offsets below are
-	# relative to this node at player-local (16, 26), which puts the deck
-	# centre under him and the wheel bottoms exactly on y = 32.
-	_board.position = Vector2(16, 26)
-	_board.z_index = -1
-	# Under-glow first so the deck draws over it — same "lift source" read as
-	# the Distributor's levitating diamond.
-	var glow := Polygon2D.new()
-	glow.polygon = PackedVector2Array([
-		Vector2(-24, -3), Vector2(0, -9), Vector2(24, -3), Vector2(0, 3)])
-	glow.color = Color(0.45, 1.0, 0.4, 0.28)
-	_board.add_child(glow)
-	for wheel_x in [-16.0, 8.0]:
-		var wheel := ColorRect.new()
-		wheel.size = Vector2(8, 8)          # bottom lands on player-local y=32
-		wheel.position = Vector2(wheel_x, -2)
-		wheel.color = Color(0.165, 0.133, 0.220, 1.0)
-		_board.add_child(wheel)
-	for truck_x in [-14.0, 10.0]:
-		var truck := ColorRect.new()
-		truck.size = Vector2(4, 2)
-		truck.position = Vector2(truck_x, -3)
-		truck.color = COLOR_CUSHION
-		_board.add_child(truck)
-	var deck := ColorRect.new()
-	deck.size = Vector2(40, 6)
-	deck.position = Vector2(-20, -8)
-	deck.color = Color(0.25, 0.55, 0.22, 1.0)   # weed-green deck
-	_board.add_child(deck)
-	var lip := ColorRect.new()
-	lip.size = Vector2(40, 2)
-	lip.position = Vector2(-20, -8)
-	lip.color = Color(0.55, 1.0, 0.25, 1.0)     # lime grip stripe
-	_board.add_child(lip)
-	_skater.add_child(_board)
-
-## Mouse steering + a touch of board tilt. Runs from _process.
-##
-## Mouse steering is GATED on the player actually using the mouse — held
-## button, or pointer moved in the last MOUSE_STEER_GRACE seconds. Without
-## that gate a cursor left resting anywhere off-centre reads as a permanent
-## full-strength steer input and Lil Blunt skates away on his own with the
-## player's hands off the controls. (Caught in review of my first pass.)
-const MOUSE_DEAD_ZONE: float = 24.0
-const MOUSE_SATURATION: float = 220.0
-const MOUSE_STEER_GRACE: float = 1.5
-var _last_mouse_x: float = -1.0
-var _mouse_active_for: float = 0.0
-
-func _update_skate(delta: float) -> void:
-	if _skater == null or not is_instance_valid(_skater):
-		return
-	var vp := _skater.get_viewport()
-	var mouse := vp.get_mouse_position()
-	# Track real pointer movement so a stationary cursor stops steering.
-	if _last_mouse_x >= 0.0 and absf(mouse.x - _last_mouse_x) > 1.0:
-		_mouse_active_for = MOUSE_STEER_GRACE
-	else:
-		_mouse_active_for = maxf(0.0, _mouse_active_for - delta)
-	_last_mouse_x = mouse.x
-	var using_mouse := _mouse_active_for > 0.0 \
-		or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
-
-	var steer := 0.0
-	if using_mouse:
-		# Measure against the VIEWPORT CENTRE, not the player's own screen
-		# position: the camera already keeps him centred, and a fixed
-		# reference doesn't wobble with camera smoothing.
-		var dx := mouse.x - vp.get_visible_rect().size.x * 0.5
-		if absf(dx) > MOUSE_DEAD_ZONE:
-			var mag := (absf(dx) - MOUSE_DEAD_ZONE) / (MOUSE_SATURATION - MOUSE_DEAD_ZONE)
-			steer = clampf(mag, 0.0, 1.0) * signf(dx)
-	_skater.set("steer_override", steer)
-	if _board:
-		# Lean into the carve. Uses the player's real velocity so the board
-		# sits flat when he's stopped, however the steer input looks.
-		var vx: float = _skater.velocity.x if "velocity" in _skater else 0.0
-		var lean := clampf(vx / 200.0, -1.0, 1.0)
-		_board.rotation = lerp_angle(_board.rotation, deg_to_rad(lean * 8.0), 12.0 * delta)
-
-## THE "BOTTOM SLAB" — founder-reported 3+ times, never found by any previous
-## session because everyone (including me) searched secret_realm.gd for a
-## ColorRect/Sprite/slab NODE and correctly concluded none existed.
-##
-## It is not a node. It is `bg_secret_far.jpg` bleeding through.
-##
-## Confirmed by cropping the source art: the bottom ~25% of bg_secret_far.jpg
-## is a moonlit OCEAN with rocky shores — which is exactly the blue/purple
-## rippling water strip in the founder's screenshot. The two parallax layers
-## are both 720px tall, but they scroll at different vertical motion_scales
-## (far 0.1*0.6=0.06, mid 0.45*0.6=0.27) and this room never set a camera
-## limit_bottom, so with the player standing at y~560 the camera shows down
-## to roughly y~920 — far below the mid layer's (the lounge room's) bottom
-## edge. In that gap the FAR layer is the only thing left to draw, and the
-## part of it that lands there is its ocean.
-##
-## Fix: an opaque skirt in WORLD space (a plain Node2D child, canvas layer 0,
-## which always draws in front of the ParallaxBackgrounds on layers -20/-21)
-## filling everything below the floor surface with the room's own dark palette.
-## z_index -5 keeps it behind the player, platforms and props (all z 0+).
-## Camera limit_bottom is also clamped in _spawn_player so the view stops
-## reasonably below the floor instead of drifting arbitrarily far down.
-func _setup_under_floor_skirt() -> void:
-	var skirt := ColorRect.new()
-	skirt.color = Color(0.106, 0.075, 0.153, 1.0)  # deep lounge purple-black
-	# Start slightly ABOVE the floor surface so there is never a hairline seam
-	# between the skirt and the floor art at any camera position.
-	skirt.position = Vector2(-200.0, FLOOR_SURFACE_Y - 8.0)
-	skirt.size = Vector2(BOUNDS + 400.0, 1400.0)
-	skirt.z_index = -5
-	skirt.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(skirt)
-	# A subtle top lip so the floor line reads as a deliberate edge rather
-	# than a flat colour change — same ash-rose accent the rest stops use.
-	var lip := ColorRect.new()
-	lip.color = Color(COLOR_LIP_ACCENT.r, COLOR_LIP_ACCENT.g, COLOR_LIP_ACCENT.b, 0.25)
-	lip.position = Vector2(-200.0, FLOOR_SURFACE_Y - 8.0)
-	lip.size = Vector2(BOUNDS + 400.0, 3.0)
-	lip.z_index = -4
-	lip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(lip)
 
 ## Ground-level rising smoke (spec 1.2). Reuses fx_dot.png and the "drifting
 ## smoke" recipe already proven in src/ui/main_menu.gd's ambience — same
@@ -360,38 +198,21 @@ func _spawn_player() -> void:
 	if cam:
 		cam.limit_left = 0
 		cam.limit_right = int(BOUNDS)
-		# Stop the view drifting far below the floor. Without this the camera
-		# followed the player freely and exposed a big empty band under the
-		# room — which is what let the far-parallax ocean show through (see
-		# _setup_under_floor_skirt). The skirt makes that band opaque; this
-		# stops it being needlessly large in the first place.
-		cam.limit_bottom = int(FLOOR_Y + 120.0)
+		# Prevent the camera from panning below the floor — the parallax
+		# background art (bg_secret_far.jpg) has ocean water in its bottom
+		# quarter which bleeds through if the camera travels below floor level.
+		cam.limit_bottom = int(FLOOR_Y + 120)
 
 ## The reward for finding the door: a run of high-value crypto coins + health,
-## spread across the full 5100px walk.
-##
-## SKATE HEIGHT (founder, 2026-08-04): "the play is not jumping to the token
-## but instead is pressing the keyboard arrows or using the mouse to direct
-## Lil Blunt to the tokens". These used to sit at FLOOR_SURFACE_Y - 170 and
-## -260 — i.e. 170-260px above the floor, when Lil Blunt's body is only ~28px
-## tall. Every single one REQUIRED a jump, which is exactly the platforming
-## the lounge is not supposed to be.
-##
-## Exact geometry (measured, not estimated — a Grok 4.5 spec cross-checked
-## against player.tscn by the investigation agent): the player's collision
-## box is 32x32 with its ORIGIN AT TOP-LEFT, so standing on this floor means
-## global_position.y = 628 and the Hurtbox spans world y 630..658. A token
-## spawns as a 20px box at its spawn Y, so spawn Y must land in 618..640 to
-## overlap the hurtbox on a pure horizontal pass. 632 centres it in that band.
-## FLOOR_SURFACE_Y (660) - 28 = 632.
-const SKATE_PICKUP_Y: float = 28.0
-
+## spread across the full 5100px walk (scaled 3x from the original 1700px
+## layout) so they're "hidden in the haze" along the journey rather than
+## clustered in the first quarter of the room.
 func _setup_rewards() -> void:
 	for i in range(8):
-		EntitySpawner.spawn("coin_eth", Vector2(1080 + i * 390, FLOOR_SURFACE_Y - SKATE_PICKUP_Y), self)
-	EntitySpawner.spawn("coin_btc", Vector2(2460, FLOOR_SURFACE_Y - SKATE_PICKUP_Y), self)
-	EntitySpawner.spawn("coin_btc", Vector2(3150, FLOOR_SURFACE_Y - SKATE_PICKUP_Y), self)
-	EntitySpawner.spawn("health_pickup", Vector2(3900, FLOOR_SURFACE_Y - SKATE_PICKUP_Y), self)
+		EntitySpawner.spawn("coin_eth", Vector2(1080 + i * 390, FLOOR_SURFACE_Y - 170), self)
+	EntitySpawner.spawn("coin_btc", Vector2(2460, FLOOR_SURFACE_Y - 260), self)
+	EntitySpawner.spawn("coin_btc", Vector2(3150, FLOOR_SURFACE_Y - 260), self)
+	EntitySpawner.spawn("health_pickup", Vector2(3900, FLOOR_SURFACE_Y - 170), self)
 
 func _setup_portal() -> void:
 	var portal := preload("res://src/level/return_portal.tscn").instantiate()
@@ -403,7 +224,6 @@ func _setup_hud() -> void:
 	add_child(pm)
 	pm.get_node("VBox/ResumeBtn").pressed.connect(pm._on_resume_pressed)
 	pm.get_node("VBox/RestartBtn").pressed.connect(pm._on_restart_pressed)
-	pm.get_node("VBox/TalkBtn").pressed.connect(pm._on_talk_pressed)
 	pm.get_node("VBox/QuitBtn").pressed.connect(pm._on_quit_pressed)
 	add_child(preload("res://src/ui/hud.tscn").instantiate())
 
@@ -498,12 +318,7 @@ func _swap_placeholder_texture(container: Control, path: String) -> void:
 	art.texture = tex
 	art.set_anchors_preset(Control.PRESET_FULL_RECT)
 	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	# KEEP_ASPECT_CENTERED, not SCALE: the real protocol logos are ~602x601
-	# squares and the sign panels are 90x70, so a plain STRETCH_SCALE squashes
-	# every logo horizontally and they stop reading as the brand marks. Letter-
-	# boxing inside the frame is the correct trade — the frame is the fixed
-	# fixture, the logo is the content.
-	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	art.stretch_mode = TextureRect.STRETCH_SCALE
 	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# "Smoke haze overlay" per the original Smoke Lounge spec — reduced
 	# opacity, slight desaturation — so real art still reads as part of this
@@ -560,28 +375,15 @@ func _setup_protocol_plinth(x: float) -> void:
 	post.position = Vector2(x - 8, FLOOR_SURFACE_Y - 24 - 70)
 	add_child(post)
 
-	# Founder mapping (stated explicitly): Left = FOMO/SmokeRing, Center =
-	# GOLD MINE, Right = DIAMONDS. This array renders left-to-right in the
-	# loop below — was DIAMONDS/GOLDMINE swapped relative to that spec.
-	var sign_names := ["SMOKERING", "GOLDMINE", "DIAMONDS"]
-	# Frames sized for the REAL logo art (now installed, ~602x601 squares).
-	# The original 90x70 slots were placeholder-sized: with the aspect ratio
-	# now preserved (see _swap_placeholder_texture) a 602x601 logo inside a
-	# 90x70 frame letterboxes down to 70x70 and the brand mark is unreadable
-	# at play distance — which is the whole point of these panels. Near-square
-	# and much larger so each logo actually reads.
-	var slot_w := 150.0
-	var slot_h := 132.0
-	var gap := 20.0
-	var total_w := slot_w * sign_names.size() + gap * (sign_names.size() - 1)
+	var sign_names := ["SMOKERING", "DIAMONDS", "GOLDMINE"]
+	var slot_w := 90.0
+	var total_w := slot_w * sign_names.size() + 12.0 * (sign_names.size() - 1)
 	var start_x := x - total_w / 2.0
 	for i in range(sign_names.size()):
-		var slot_x := start_x + i * (slot_w + gap)
+		var slot_x := start_x + i * (slot_w + 12.0)
 		var sign := Panel.new()
-		# Sit the frames directly above the post instead of a fixed 78px gap,
-		# so the larger panels stay visually mounted on the plinth.
-		sign.position = Vector2(slot_x, FLOOR_SURFACE_Y - 24.0 - 70.0 - slot_h - 10.0)
-		sign.size = Vector2(slot_w, slot_h)
+		sign.position = Vector2(slot_x, FLOOR_SURFACE_Y - 24 - 70 - 78)
+		sign.size = Vector2(slot_w, 70.0)
 		sign.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var sb := StyleBoxFlat.new()
 		sb.bg_color = COLOR_MURAL_MAT
@@ -598,13 +400,11 @@ func _setup_protocol_plinth(x: float) -> void:
 		label.set_anchors_preset(Control.PRESET_FULL_RECT)
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		label.add_theme_font_size_override("font_size", 15)
+		label.add_theme_font_size_override("font_size", 11)
 		label.add_theme_color_override("font_color", COLOR_LIP_ACCENT)
 		sign.add_child(label)
-		# Bolt-head corners — cosmetic detail, no function. Anchored off the
-		# real slot height so they stay in the corners at any frame size.
-		for corner in [Vector2(4, 4), Vector2(slot_w - 10, 4),
-				Vector2(4, slot_h - 10), Vector2(slot_w - 10, slot_h - 10)]:
+		# Bolt-head corners — cosmetic detail, no function.
+		for corner in [Vector2(4, 4), Vector2(slot_w - 10, 4), Vector2(4, 60), Vector2(slot_w - 10, 60)]:
 			var bolt := _make_cushion(6.0, COLOR_LIP_ACCENT)
 			bolt.position = corner
 			sign.add_child(bolt)
@@ -620,11 +420,8 @@ func _setup_founder_mural(x: float) -> void:
 
 	var mat := ColorRect.new()
 	mat.color = COLOR_MURAL_MAT
-	# Enlarged for the real mural art (602x449, 4:3). The old 220x130 mat with
-	# a 190x95 inner is a 2:1 letterbox — with aspect now preserved the art
-	# would shrink to ~127x95 and read as a stamp rather than a mural.
-	mat.size = Vector2(300, 230)
-	mat.position = Vector2(-150, -18 - 250)
+	mat.size = Vector2(220, 130)
+	mat.position = Vector2(-110, -18 - 150)
 	platform.add_child(mat)
 	# inner is a child of mat, not of platform — its position is a small inset
 	# relative to mat's own top-left, NOT another absolute platform-relative
@@ -633,7 +430,7 @@ func _setup_founder_mural(x: float) -> void:
 	# actual screenshot of the mural, not by reading the numbers).
 	var inner := ColorRect.new()
 	inner.color = Color(COLOR_PLATFORM_BODY.r, COLOR_PLATFORM_BODY.g, COLOR_PLATFORM_BODY.b, 0.9)
-	inner.size = Vector2(270, 200)
+	inner.size = Vector2(190, 95)
 	inner.position = Vector2(15, 15)
 	mat.add_child(inner)
 	var label := Label.new()

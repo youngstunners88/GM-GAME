@@ -12,10 +12,7 @@ func _ready() -> void:
     StateMachine.change_state(StateMachine.State.MENU)
     play_btn.pressed.connect(_on_play)
     continue_btn.pressed.connect(_on_continue)
-    # Title is just the name; the SubtitleLabel carries "THE SMOKE REALM".
-    # (Was a two-line string here that duplicated the subtitle — Grok title-
-    # hierarchy brief 2026-08-01: one dominant title, one subtitle, no dupe.)
-    title.text = "LIL BLUNT"
+    title.text = "LIL BLUNT\nTHE SMOKE REALM"
     AudioManager.play_voice("menu_title")
     _setup_backdrop()
     _setup_ambience()
@@ -31,24 +28,6 @@ func _ready() -> void:
     var tween := create_tween().set_loops()
     tween.tween_property(title, "scale", Vector2(1.05, 1.05), 0.8)
     tween.tween_property(title, "scale", Vector2(1.0, 1.0), 0.8)
-    # First-ever run: show the controls once so a new player (esp. on a phone)
-    # knows what to press/tap before they play. Menu-only after that.
-    # load-by-path (not class_name) so the headless gates' stale global class
-    # cache can't break resolution — matches the email panel's pattern.
-    var htp := load("res://src/ui/how_to_play_panel.gd")
-    if not htp.already_shown():
-        htp.mark_shown()
-        _show_how_to_play()
-
-## Open the controls panel (auto-shown once on first run; re-openable anytime
-## from the HOW TO PLAY menu button and the pause menu).
-func _show_how_to_play() -> void:
-    var panel := preload("res://src/ui/how_to_play_panel.tscn").instantiate()
-    add_child(panel)
-
-func _on_how_to_play() -> void:
-    Web3Bridge.track("menu_how_to_play")
-    _show_how_to_play()
 
 ## Movie/Video-Game-Layer entry points on the hub (main menu): the Oracle,
 ## the on-chain leaderboard, community lore, and the community funnel. Each
@@ -68,12 +47,10 @@ func _setup_layer_shift_buttons() -> void:
         # stack) so the v1.0 campaign flow is completely untouched — the
         # prototype is opt-in, and nothing in the platformer depends on it.
         # ASCII only — the pixel font has no ▶ glyph and renders it as tofu.
-        ["HOW TO PLAY", _on_how_to_play],
         ["NEW: BLUNT FORCE (v1.2)", _on_shooter_prototype],
         ["CONNECT RABBY", _on_connect_wallet],
         ["NEW TO CRYPTO?", _on_crypto_onboarding],
         ["ASK THE ORACLE", _on_oracle],
-        ["TALK TO LIL BLUNT", _on_talk_companion],
         ["LEADERBOARD", _on_leaderboard],
         ["SUBMIT LORE", _on_submit_lore],
         ["JOIN THE SMOKERING", _on_join],
@@ -83,15 +60,11 @@ func _setup_layer_shift_buttons() -> void:
     for d in defs:
         var b := Button.new()
         b.text = d[0]
-        # Readable at 720p base scaled into an itch iframe / on a phone. Grok
-        # title-hierarchy brief 2026-08-01: secondary tier at font 24, ≥52px
-        # tall thumb targets, subordinate to the primary PLAY/CONTINUE/QUIT
-        # (font 36) but still legible. Dark plate + outline so labels read over
-        # the busy art.
-        b.custom_minimum_size = Vector2(320, 56)
-        b.add_theme_font_size_override("font_size", 26)
-        b.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
-        b.add_theme_constant_override("outline_size", 3)
+        # Brief correction B: readable at 720p base scaled into an itch iframe.
+        # Bigger targets + font + a solid dark plate so labels read over the
+        # forest art (was 240×36 / font 14, too small to read without zoom).
+        b.custom_minimum_size = Vector2(300, 46)
+        b.add_theme_font_size_override("font_size", 20)
         var plate := StyleBoxFlat.new()
         plate.bg_color = Color(0.05, 0.09, 0.06, 0.82)
         plate.set_corner_radius_all(6)
@@ -111,9 +84,7 @@ func _setup_layer_shift_buttons() -> void:
         if d[0] == "CONNECT RABBY":
             _wallet_btn = b
     # Reposition to fit the taller button stack without clipping off-screen.
-    # 64 = 56px button + 8px separation, so the taller stack still fits above
-    # the bottom edge without clipping on a phone viewport.
-    row.position = Vector2(24, get_viewport().get_visible_rect().size.y - 8 - defs.size() * 64)
+    row.position = Vector2(24, get_viewport().get_visible_rect().size.y - 8 - defs.size() * 54)
     # Offline mode: wallet connect needs the network — disable with a tooltip
     # rather than letting it fail mysteriously. Re-enables on reconnect.
     _apply_wallet_online_state(not GameManager.offline_mode)
@@ -161,15 +132,6 @@ func _on_connect_wallet() -> void:
 func _on_oracle() -> void:
     Web3Bridge.track("menu_oracle")
     var panel := preload("res://src/ui/oracle_panel.tscn").instantiate()
-    add_child(panel)
-    panel.open()
-
-## Companion chat from the hub. Also reachable mid-run from the pause menu;
-## exposed here too so the feature has a guaranteed-reachable entry point that
-## does not depend on the pause key working on a given platform/browser.
-func _on_talk_companion() -> void:
-    Web3Bridge.track("menu_companion")
-    var panel := preload("res://src/ui/companion_panel.tscn").instantiate()
     add_child(panel)
     panel.open()
 
@@ -297,12 +259,14 @@ func _add_hover_glow(btn: Button) -> void:
 
 func _on_play() -> void:
     AudioManager.play_sfx("powerup")
-    # EMAIL POPUP (2026-08-08): the one-time signup prompt used to block here
-    # with `await panel.closed`, covering the menu and requiring a SKIP click
-    # before the game would start — the founder (and the automated PLAY path)
-    # hit this every load. It is pure friction: the email is fully optional and
-    # there is already an explicit "JOIN THE SMOKERING" menu button for it. PLAY
-    # is now one click, straight into Level 1.
+    # TASK 1 (AgentMail): one-time OPTIONAL email prompt before the first run.
+    # Skipping is one click and it never asks again; the game itself never
+    # requires an email. See src/ui/email_signup_panel.gd.
+    var esp_script := load("res://src/ui/email_signup_panel.gd")
+    if not esp_script.already_shown():
+        var panel := preload("res://src/ui/email_signup_panel.tscn").instantiate()
+        add_child(panel)
+        await panel.closed
     Web3Bridge.report_event("play_start")
     GameManager.reset_session()
     SceneRouter.load_scene("res://src/level/level_01_smoke_realm.tscn", SceneRouter.Transition.FADE)
@@ -313,10 +277,7 @@ func _on_continue() -> void:
     AudioManager.play_sfx("powerup")
     Web3Bridge.report_event("play_start")
     GameManager.load_session()
-    # R9: resume the LAST level played (current_level, recorded on level entry
-    # by LevelBase), NOT highest_unlocked_level. The old code could send a
-    # player who reached L2 back to L1. PLAY LEVEL 1 stays the fresh restart.
-    var scene := GameManager.level_scene(GameManager.current_level)
+    var scene := GameManager.level_scene(GameManager.highest_unlocked_level)
     SceneRouter.load_scene(scene, SceneRouter.Transition.FADE)
 
 ## v1.2 "Blunt Force" prototype room. Opt-in preview only — it does not touch
@@ -328,8 +289,5 @@ func _on_shooter_prototype() -> void:
     Web3Bridge.track("shooter_prototype_open")
     SceneRouter.load_scene("res://src/shooter/prototype_room.tscn", SceneRouter.Transition.FADE)
 
-# NOTE: the main-menu QUIT button was removed entirely (founder request,
-# 2026-08-04). get_tree().quit() is a no-op in a browser tab, so on itch/web
-# it was a dead control taking up prime menu real estate. The PAUSE menu's
-# Quit is deliberately KEPT — that one returns to the main menu, which is a
-# real, useful action mid-run.
+# Quit button removed — get_tree().quit() is a no-op in browser and
+# confusing on web. Players close the tab themselves.

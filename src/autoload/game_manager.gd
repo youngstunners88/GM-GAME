@@ -216,29 +216,11 @@ func take_damage(amount: int) -> void:
     if player_health <= 0:
         GoldMineSystem.on_player_death()
         player_died.emit()
-        # NOTE: the death-state transition is owned by Player.die(), NOT here.
-        # This used to call StateMachine.change_state(GAME_OVER), which flipped
-        # the state BEFORE Player.die() ran; die()'s own is_dead() guard then
-        # bailed and the respawn sequence never executed — the player froze in
-        # GAME_OVER. Player.take_damage() calls die() right after this returns.
+        StateMachine.change_state(StateMachine.State.GAME_OVER)
 
 func heal(amount: int) -> void:
     player_health = min(player_health + amount, max_health)
     health_changed.emit(player_health)
-
-## Grant extra lives. Founder rule (2026-08-04): "Lil Blunt should not be
-## limited to 3 lives — if the player finds more hearts they can collect them
-## and the life count increases." There is deliberately NO upper clamp here.
-##
-## `max_lives` is NOT a cap on this value — it is only the REFILL BASELINE
-## used by refill_run()/reset_session() to decide how many lives a fresh run
-## or a post-wipe retry starts with. Do not reintroduce a min()/clampi()
-## against it; that is exactly the bug the founder reported repeatedly.
-func add_life(amount: int = 1) -> void:
-    if amount <= 0:
-        return
-    lives += amount
-    lives_changed.emit(lives)
 
 ## Spend a life (pit fall). Returns true if that was the LAST life (game over).
 ## On a surviving loss, health refills so the checkpoint respawn is fair.
@@ -256,6 +238,13 @@ func lose_life() -> bool:
     health_changed.emit(player_health)
     return false
 
+## Grant an extra life. No upper cap — the owner wants unlimited lives.
+func add_life(amount: int = 1) -> void:
+    if amount <= 0:
+        return
+    lives += amount
+    lives_changed.emit(lives)
+
 ## Blaze/Purple own an exclusive music override; token guards its release
 ## against stale expiry (brief correction A).
 var _blaze_music_token: int = -1
@@ -265,11 +254,6 @@ func activate_power_up(type: String, duration: float) -> void:
     power_up_timer = duration
     power_up_changed.emit(type, duration)
     AudioManager.play_sfx("powerup")
-    # Major pickups only. Coins/rings never route through here (they call
-    # add_coin/add_ethereum_ring), and the CLEAR path is the separate
-    # deactivate_power_up(), so an expiry can't reach this line.
-    if type != "" and duration > 0.0:
-        AudioManager.play_bark("vo_collect_major", 10.0)
     # Blaze / Purple Weed: take over the MUSIC exclusively — no more jingle
     # layered over the level track. Pushing again refreshes the token so a
     # second pickup can't be stopped by the first's expiry.
@@ -336,19 +320,6 @@ func _clear_blaze_music_override() -> void:
 func save_checkpoint(level: int, checkpoint_id: int, pos: Vector2) -> void:
     level_checkpoints[level] = {"id": checkpoint_id, "pos": pos}
 
-## Drop a level's saved checkpoint so the next spawn falls back to the level's
-## START marker. Used by a FULL LIFE WIPE: game-over must restart the level
-## from the beginning, not the mid-level checkpoint where the last life fell.
-func clear_checkpoint(level: int) -> void:
-    level_checkpoints.erase(level)
-
-## Refill lives + health to full for a fresh level attempt after a full wipe.
-func refill_run() -> void:
-    lives = max_lives
-    lives_changed.emit(lives)
-    player_health = max_health
-    health_changed.emit(player_health)
-
 func get_checkpoint(level: int) -> Vector2:
     if level in level_checkpoints:
         return level_checkpoints[level].pos
@@ -376,9 +347,6 @@ func save_session() -> bool:
     var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if f == null:
         push_error("GameManager.save_session: cannot open %s" % SAVE_PATH)
-        # A silent save failure loses a player's whole campaign — the worst
-        # non-crash outcome in the game, and invisible without this.
-        ErrorReporter.report("save_failed", {"path": SAVE_PATH})
         return false
     f.store_string(JSON.stringify(data))
     f.close()
@@ -407,10 +375,8 @@ func load_session() -> bool:
     _deserialize_blaze_completions(data.get("blaze_rush", {}))
     max_health = clampi(int(data.get("max_health", 3)), 1, 10)
     player_health = clampi(int(data.get("health", max_health)), 1, max_health)
-    # Lives persist too (Kimi audit): reloading mid-run must not refill them.
-    # Founder defect B3: lives must be collectible ABOVE max_lives — no upper
-    # clamp here (max_lives stays the REFILL baseline used by refill_run() /
-    # reset_session(), not a hard cap on how many a save can carry).
+    # Lives persist; no upper cap — add_life() is uncapped, so saves may
+    # carry more lives than max_lives.
     lives = maxi(0, int(data.get("lives", max_lives)))
     lives_changed.emit(lives)
     current_level = clampi(int(data.get("current_level", 1)), 1, 3)
