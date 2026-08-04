@@ -41,8 +41,19 @@ back after being "fixed":
 | 12 | "Lil Blunt should not be limited to 3 lives!!!" | **FIXED** | There was **no way to gain a life anywhere in the game** — and a heart picked up at full health silently did nothing. Hearts at full health now become an extra life, with no ceiling. |
 | 13 | "the third boss is unimpacted by Lil Blunt's strikes and vice versa" | **FIXED — root cause found** | The Claim Jumper's hitbox shipped with `collision_layer = 0` **and** `collision_mask = 0`. A mask of 0 detects nothing, so **neither** direction could ever fire. On top of that its state machine switched monitoring off whenever it left the vulnerable window, leaving him intangible the rest of the time. Both fixed; damage now proven in both directions under real physics. |
 
-**Not deployed to itch.** Everything above is committed and pushed to the
-branch. Say the word and I'll push the build.
+**DEPLOYED TO ITCH — Build #1856466 — 2026-08-04 10:08 UTC.**
+Play it now: https://youngstunners88.itch.io/lil-blunt-adventure
+Hard-refresh the page (Ctrl+Shift+R / Cmd+Shift+R) to get the new build.
+
+**What's new in this build:**
+- All 4 bosses now face the player correctly (art no longer teleports sideways)
+- Auditor stalks you across the full stage instead of pacing a 600px box
+- Claim Jumper now takes hits AND deals contact damage (was zero/zero)
+- Quit button gone from main menu
+- Extra lives — no ceiling; hearts at full health become a life
+- Smoke Lounge bottom ocean slab hidden by opaque skirt + camera clamp
+- Blaze Rush ESC exits to the CORRECT level (Level 3 → Level 3, not Level 1)
+- Security: 18/18 checks
 
 **Still worth your eyes:** the skate feel (speed/steering) and the Auditor's
 new full-stage chase are tuning calls — I've set sensible numbers, but
