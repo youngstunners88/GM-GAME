@@ -32,6 +32,14 @@ var _base_patrol_speed: float = 90.0
 var _leap_cooldown: float = 0.0
 ## Clears ~196px at gravity 980 — enough for this project's real ledge heights.
 const LEAP_VELOCITY: float = -620.0
+## Motion-feel constants (founder: "smoother, less robotic" — capability
+## unchanged). Accel is ~4x patrol speed so he still reaches full pace in
+## about a quarter second; the harder turn figure keeps direction changes
+## crisp rather than floaty.
+const WALK_ACCEL: float = 560.0
+const TURN_DECEL: float = 1300.0
+## Horizontal slack before he commits to a new facing, in px.
+const TURN_DEAD_ZONE: float = 34.0
 ## Shared screen-anchored bar (src/ui/boss_health_bar.gd). Named with a leading
 ## underscore because this boss does NOT extend BossBase — it has no inherited
 ## `health_bar` member to match, and shadowing an inherited member is the exact
@@ -123,13 +131,27 @@ func _physics_process(delta: float) -> void:
 			# wall-to-wall. If no player is found fall back to the old bounce.
 			var _pl := get_tree().get_first_node_in_group("player")
 			if _pl:
-				var stalk_dir := signf(_pl.global_position.x - global_position.x)
-				if not is_zero_approx(stalk_dir):
+				# Dead zone: only re-commit once the player is properly to one
+				# side, otherwise he vibrates when they stand over him.
+				# Explicitly typed: _pl comes from get_first_node_in_group(),
+				# which returns Node, so `.global_position.x` is a Variant and
+				# `:=` is a HARD parse error in Godot 4.3.
+				var dx: float = _pl.global_position.x - global_position.x
+				if absf(dx) > TURN_DEAD_ZONE:
+					var stalk_dir := signf(dx)
 					patrol_direction = stalk_dir
-			velocity.x = patrol_speed * patrol_direction
+			# Ease toward the target speed instead of snapping to it. Turning
+			# round brakes harder than setting off, which reads as weight.
+			var target_vx := patrol_speed * patrol_direction
+			var rate: float = (TURN_DECEL if signf(target_vx) != signf(velocity.x)
+				and not is_zero_approx(velocity.x) else WALK_ACCEL)
+			velocity.x = move_toward(velocity.x, target_vx, rate * delta)
 			velocity.y += 980.0 * delta
 			move_and_slide()
-			sprite.set_facing(patrol_direction > 0.0)
+			# Follow committed motion, not the raw player delta, so the sprite
+			# cannot strobe while he is turning around.
+			if absf(velocity.x) > 12.0:
+				sprite.set_facing(velocity.x > 0.0)
 			# Blocked by terrain -> LEAP. 196px of clearance vs the old 59px.
 			if is_on_wall() and is_on_floor() and _leap_cooldown <= 0.0:
 				velocity.y = LEAP_VELOCITY
@@ -147,8 +169,10 @@ func _physics_process(delta: float) -> void:
 			# Occasional reposition hop.
 			if hop_timer <= 0.0:
 				hop_timer = 6.0 if phase < 3 else 3.5
-				velocity.y = -320.0
-				velocity.x = -patrol_direction * 160.0
+				velocity.y = -300.0
+				# Blend, don't slam: keep most of his current momentum so the
+				# reposition reads as a skip rather than a teleport-and-reverse.
+				velocity.x = lerpf(velocity.x, -patrol_direction * 150.0, 0.45)
 			if state_timer <= 0.0:
 				state_timer = 1.4
 				current_state = State.CHARGE

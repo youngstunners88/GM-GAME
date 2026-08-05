@@ -166,6 +166,12 @@ func _build_stage_theme_layer(pbg: ParallaxBackground) -> void:
 ## ("here's another design of how we can embed art from the artworks
 ## throughout the Blaze Rush"). Purely decorative, placed BEHIND gameplay and
 ## well clear of the run line so it can never be mistaken for a platform.
+## Where the embedded key art sits inside the purple ground band, and how big.
+## The band is 220px tall from GROUND_Y; 150px of art centred at +122 sits in
+## its lower half with clearance top and bottom.
+const BAND_ART_Y: float = 122.0
+const BAND_ART_SIZE: float = 150.0
+
 const BR_ART := [
 	"res://src/assets/art/br_smoke_rocket.png",
 	"res://src/assets/art/br_smoke_chariot.png",
@@ -183,7 +189,7 @@ func _build_protocol_landmarks() -> void:
 		return
 	# Space them across the run; start past the opening so the first seconds
 	# stay clean while the player is still reading the controls.
-	var count: int = 4
+	var count: int = 5
 	for i in range(count):
 		var tex: Texture2D = load(available[i % available.size()])
 		if tex == null:
@@ -192,13 +198,20 @@ func _build_protocol_landmarks() -> void:
 		art.texture = tex
 		# Normalise wildly different source sizes to a consistent on-screen
 		# diameter rather than trusting each PNG's native dimensions.
-		var target: float = 260.0
+		var target: float = BAND_ART_SIZE
 		art.scale = Vector2(target / float(tex.get_width()), target / float(tex.get_height()))
+		# Founder A5: "the artworks need to be at the BOTTOM by the purple
+		# block." They were at GROUND_Y - 300 — up in the sky, nowhere near it.
+		# The purple ground band runs GROUND_Y .. GROUND_Y+220 (see
+		# _make_floor_segment), so seating the art low inside that band puts it
+		# in the empty real estate he is pointing at. z_index 1 draws it ON the
+		# band (the band itself is a plain ColorRect at default z), while the
+		# run line stays well above at GROUND_Y and up.
 		art.position = Vector2(
 			700.0 + (_course_length - 900.0) * (float(i) / float(count)),
-			GROUND_Y - 300.0 - (40.0 if i % 2 == 0 else 0.0))
-		art.modulate = Color(1.0, 1.0, 1.0, 0.55)
-		art.z_index = -1
+			GROUND_Y + BAND_ART_Y)
+		art.modulate = Color(1.0, 1.0, 1.0, 0.62)
+		art.z_index = 1
 		add_child(art)
 
 ## L2 streak field + L3 dust — camera-attached (not world-parallax): these are
@@ -385,21 +398,44 @@ func _make_fud_wall(x: float) -> void:
 	var body := StaticBody2D.new()
 	body.position = Vector2(x, GROUND_Y - 52.0)
 	body.set_meta("fud_wall", true)
-	var visual := ColorRect.new()
-	visual.color = Color(0.3, 0.2, 0.55, 1.0)  # darker violet sides, same family as floor
-	visual.size = Vector2(46, 52)
-	visual.position = Vector2(-23, 0)
-	body.add_child(visual)
+	# FLAMING DIAMOND, not a square block (founder A6, with his reference image).
+	#
+	# The COLLISION stays a rectangle — the founder asked for a look, not a
+	# physics change, and reshaping the collider would silently retune every
+	# jump in all three courses. Only the visual changes.
+	#
+	# Grok's read (docs/model-responses/2026-08-05-grok-token-art.md): solid
+	# opaque body, flames confined to the upper third so the mass stays
+	# unbroken, hot palette that cannot be confused with the collectible
+	# language. The cyan top lip is kept — it is the "you can land here" signal
+	# and dropping it would make a readable obstacle unreadable.
+	var gem := Polygon2D.new()
+	gem.polygon = PackedVector2Array([
+		Vector2(0, -6), Vector2(23, 26), Vector2(0, 58), Vector2(-23, 26)])
+	gem.color = Color(0.86, 0.16, 0.42, 1.0)
+	body.add_child(gem)
+	var gem_facet := Polygon2D.new()
+	gem_facet.polygon = PackedVector2Array([
+		Vector2(0, -6), Vector2(11, 26), Vector2(0, 44), Vector2(-11, 26)])
+	gem_facet.color = Color(1.0, 0.45, 0.30, 1.0)
+	body.add_child(gem_facet)
+	# Flame licks off the upper tip only — never under the body, so the
+	# silhouette a player reads at 320px/s is still a solid diamond.
+	for fx: float in [-9.0, 0.0, 9.0]:
+		var lick := Polygon2D.new()
+		var hgt: float = 20.0 if is_zero_approx(fx) else 13.0
+		lick.polygon = PackedVector2Array([
+			Vector2(fx - 5.0, -4.0), Vector2(fx, -4.0 - hgt), Vector2(fx + 5.0, -4.0)])
+		lick.color = Color(1.0, 0.72, 0.18, 0.95)
+		body.add_child(lick)
+		var flick := lick.create_tween().set_loops()
+		flick.tween_property(lick, "scale", Vector2(1.0, 1.35), 0.28).set_trans(Tween.TRANS_SINE)
+		flick.tween_property(lick, "scale", Vector2(1.0, 0.85), 0.28).set_trans(Tween.TRANS_SINE)
 	var top_lip := ColorRect.new()
 	top_lip.color = COLOR_SAFE_EDGE  # thick cyan-mint top lip: the glance-test "landable" signal
 	top_lip.size = Vector2(46, 4)
 	top_lip.position = Vector2(-23, 0)
 	body.add_child(top_lip)
-	var tag := Label.new()
-	tag.text = "FUD"
-	tag.position = Vector2(-16, 14)
-	tag.add_theme_font_size_override("font_size", 14)
-	body.add_child(tag)
 	var col := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
 	shape.size = Vector2(46, 52)
