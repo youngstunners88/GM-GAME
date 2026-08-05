@@ -356,6 +356,65 @@ func _setup_rewards() -> void:
 	EntitySpawner.spawn("coin_btc", Vector2(4380, FLOOR_SURFACE_Y - SKATE_PICKUP_Y), self)
 	EntitySpawner.spawn("health_pickup", Vector2(1750, FLOOR_SURFACE_Y - SKATE_PICKUP_Y), self)
 	EntitySpawner.spawn("health_pickup", Vector2(3900, FLOOR_SURFACE_Y - SKATE_PICKUP_Y), self)
+	# Founder G2: "in the Smoke Lounge Lil Blunt should also be able to collect
+	# some weed nuggets and joints as extra points along with what is currently
+	# available there." Drawn in code from the existing leaf art — no new asset
+	# dependency, same skate-height band so they collect by rolling through.
+	for i in range(18):
+		_spawn_nugget(760.0 + i * 230.0, i % 3 == 0)
+
+## A collectable nugget (or joint) worth bonus score. Built as a plain Area2D
+## rather than a new .tscn so it needs no scene/import round-trip.
+func _spawn_nugget(x: float, is_joint: bool) -> void:
+	var pick := Area2D.new()
+	pick.collision_layer = 8
+	pick.collision_mask = 2
+	pick.position = Vector2(x, FLOOR_SURFACE_Y - SKATE_PICKUP_Y)
+	var cs := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(44, 44)   # same forgiving trigger as every other pickup
+	cs.shape = rect
+	pick.add_child(cs)
+	if is_joint:
+		var body := ColorRect.new()
+		body.color = Color(0.94, 0.90, 0.80, 1.0)
+		body.size = Vector2(26, 7)
+		body.position = Vector2(-13, -3)
+		pick.add_child(body)
+		var ember := ColorRect.new()
+		ember.color = Color(1.0, 0.45, 0.12, 1.0)
+		ember.size = Vector2(6, 7)
+		ember.position = Vector2(13, -3)
+		pick.add_child(ember)
+	else:
+		var leaf_path := "res://src/assets/sprites/sprite_item_weed-leaf.png"
+		if ResourceLoader.exists(leaf_path):
+			var spr := Sprite2D.new()
+			spr.texture = load(leaf_path)
+			spr.scale = Vector2(0.5, 0.5)
+			pick.add_child(spr)
+		else:
+			var nug := ColorRect.new()
+			nug.color = Color(0.30, 0.66, 0.28, 1.0)
+			nug.size = Vector2(18, 18)
+			nug.position = Vector2(-9, -9)
+			pick.add_child(nug)
+	var pts: int = 50 if is_joint else 25
+	pick.body_entered.connect(func(b: Node2D) -> void:
+		if not b.is_in_group("player"):
+			return
+		ComboSystem.add_score(pts)
+		GameManager.add_smoke(1)
+		AudioManager.play_sfx_at("coin", pick.global_position)
+		pick.set_deferred("monitoring", false)
+		var tw := pick.create_tween()
+		tw.tween_property(pick, "position:y", pick.position.y - 22.0, 0.22)
+		tw.parallel().tween_property(pick, "modulate:a", 0.0, 0.22)
+		tw.finished.connect(pick.queue_free))
+	add_child(pick)
+	var bob := pick.create_tween().set_loops()
+	bob.tween_property(pick, "position:y", pick.position.y - 5.0, 0.7)
+	bob.tween_property(pick, "position:y", pick.position.y, 0.7)
 
 func _setup_portal() -> void:
 	var portal := preload("res://src/level/return_portal.tscn").instantiate()
@@ -522,8 +581,14 @@ func _setup_bong_alcove(x: float) -> void:
 ## reads as a logo at all. These are now 340x260 (~27% of width each), mounted
 ## high on the back wall with support masts running down to the floor, so they
 ## read as billboards in the room rather than postage stamps on a plinth.
-const BILLBOARD_W := 340.0
-const BILLBOARD_H := 260.0
+## SQUARE, so a circular plate is a true circle rather than an ellipse.
+## Founder B2/B5: "remove the background of the logo so that we only have it in
+## its circular shape" and "they need to fit seamlessly as circular billboards".
+## The supplied protocol art is already circular with dark corners, so a round
+## plate of the same tone makes the corners disappear instead of reading as a
+## square sticker pasted on a square sign.
+const BILLBOARD_W := 300.0
+const BILLBOARD_H := 300.0
 const BILLBOARD_GAP := 60.0
 ## Top edge, in world Y. Floor surface is 660, so this hangs the boards well
 ## above head height — "high up", as asked — while staying inside the frame.
@@ -554,13 +619,13 @@ func _setup_protocol_plinth(x: float) -> void:
 		sign.size = Vector2(BILLBOARD_W, BILLBOARD_H)
 		sign.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var sb := StyleBoxFlat.new()
-		sb.bg_color = COLOR_MURAL_MAT
+		sb.bg_color = Color(0.06, 0.05, 0.09, 1.0)  # matches the art's own dark field
 		sb.border_width_left = 4
 		sb.border_width_top = 4
 		sb.border_width_right = 4
 		sb.border_width_bottom = 4
 		sb.border_color = COLOR_LIP_ACCENT
-		sb.set_corner_radius_all(8)
+		sb.set_corner_radius_all(int(BILLBOARD_W / 2.0))  # a full circle
 		sign.add_theme_stylebox_override("panel", sb)
 		add_child(sign)
 
@@ -573,11 +638,6 @@ func _setup_protocol_plinth(x: float) -> void:
 		label.add_theme_color_override("font_color", COLOR_LIP_ACCENT)
 		sign.add_child(label)
 		# Bolt-head corners — cosmetic detail, no function.
-		for corner: Vector2 in [Vector2(10, 10), Vector2(BILLBOARD_W - 26, 10),
-				Vector2(10, BILLBOARD_H - 26), Vector2(BILLBOARD_W - 26, BILLBOARD_H - 26)]:
-			var bolt := _make_cushion(14.0, COLOR_LIP_ACCENT)
-			bolt.position = corner
-			sign.add_child(bolt)
 
 		# Warm spill light so the board reads as lit signage in a dim room.
 		var spill := Sprite2D.new()

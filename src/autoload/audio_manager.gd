@@ -267,11 +267,17 @@ func play_voice(name: String) -> void:
         _voice_player.queue_free()
     _voice_player = AudioStreamPlayer.new()
     _voice_player.bus = "SFX"
+    # Founder F4: "the previous bosses dont speak or the volume is not loud
+    # enough." VO played at unity gain on the shared SFX bus, so it sat level
+    # with coin pings and axe hits and got lost in a fight. +6dB puts the line
+    # clearly on top of the mix; the music duck below was already there and was
+    # never the whole story on its own.
+    _voice_player.volume_db = 6.0
     _voice_player.stream = stream
     add_child(_voice_player)
     if current_music_player and is_instance_valid(current_music_player):
         var duck := current_music_player.create_tween()
-        duck.tween_property(current_music_player, "volume_db", -8.0, 0.25)
+        duck.tween_property(current_music_player, "volume_db", -14.0, 0.2)
     _voice_player.play()
     _voice_player.finished.connect(_on_voice_finished)
 
