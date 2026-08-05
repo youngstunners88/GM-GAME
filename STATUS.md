@@ -3,32 +3,62 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv` (PR #12)
 
-**DEPLOYED — Build #1857023 — 2026-08-04 ~15:30 UTC.**
-Hard-refresh (Ctrl+Shift+R / Cmd+Shift+R) before testing.
+**DEPLOYED — Build #1858067 — 2026-08-05 ~00:55 UTC.** Hard-refresh first.
 
-## Your playtest of build #1856466 — every item
+## The Blaze Rush exit — why five "fixed" claims all failed you
 
-| # | Your words | Status | Root cause |
+I built a probe that drives the REAL paths: skating into the finish line under
+real physics, and a real Escape keypress. **All 14 checks pass, on L1, L2 and
+L3, for both finish and ESC.** The engine was never broken — which is exactly
+why every previous probe passed while you still could not get out.
+
+**The game runs in an iframe on itch.io, and browsers RESERVE the Escape key.**
+It exits fullscreen and releases pointer-lock, and is swallowed before it ever
+reaches the game. No headless test can reproduce that, and no amount of
+engine-side fixing was ever going to help.
+
+So exiting no longer depends on Escape:
+- **Q** and **Backspace** also exit (neither is browser-reserved)
+- The exit button is now a real labelled **"EXIT (Q)"** plate, not a 22px ✕
+- A **watchdog**: 2.5s after any exit request, if the scene hasn't changed, it
+  bypasses the scene router entirely. You can no longer be stranded.
+- The win toast timer ignores time-scale — a stuck hit-stop was turning a 1.8s
+  wait into 36 real seconds, which looks exactly like "it never returns me".
+
+| ID | Your words | Status | Root cause |
 |---|---|---|---|
-| 1 | "logos way too small and pixellated... make these bigger as if they were billboards high up" | **FIXED** | 90x70 plates (~6% of screen width, measured) are now **340x260 billboards** mounted high on masts. Also: the swap used STRETCH_SCALE, squashing square brand art — now KEEP_ASPECT_CENTERED at full brightness. **Your real artwork is installed** (it genuinely was not in the repo before — `src/assets/logos/` did not exist). |
-| 2 | "the bottom is not an expression of the original smoke lounge" | **FIXED — and it was my fault** | Last build I painted an opaque purple slab over the gap. That slab is the band you circled. The real cause is parallax arithmetic: a layer renders at `sprite_y - motion_scale.y * camera_y`, the room art was on y=0.27, so it slid up and ran out below its own 720px. The room is now **vertically screen-locked** and reaches the bottom of the frame on its own. Slab deleted. |
-| 3 | "he's still walking in the Smoke Lounge!!!!" | **FIXED** | There was **no skateboard code in the repo at all**. Built: a weed-leaf deck with wheels, glow and bob, parented to the player so it tracks him exactly. Movement 0.6x → 1.15x — the "chill walk" scale is what read as walking. |
-| 4 | "make the Auditor much bigger... he can't get over this block, remove it" | **FIXED** | 96 → **168** (script + scene + offsets together). The block: three platforms at (2850,500) (3150,500) (3000,400) sat **inside the boss arena at his exact spawn height** — he masks the World layer, so they were solid walls parked on him. Removed. |
-| 5 | "grey block at the bottom eating up real estate" | **FIXED** | Sampled it: RGB(77,77,77) = **Godot's default clear colour**. Never a node — raw viewport showing through, because `stretch/aspect=expand` makes a tall window taller than the 720px art. Backdrops now fill the live viewport height; clear colour set near-black too. |
-| 6, 7 | "token unclaimed even though he's standing in front of it" / "only claimable when he jumps on it" | **FIXED** | Coin triggers shipped at **16x16**. All pickups grown to a 44px minimum. Lounge rewards moved from y=490/400 (above his head — his body spans 628..660 standing) down into the skate band. |
-| 8 | "the 2nd stage boss is much smaller and doesn't have his diamond surfboard!!!" | **FIXED** | 96 → **176**. The surfboard **never existed in this codebase** — a full-repo search returned nothing. Built as a faceted crystal deck that is a **child of the boss**, so his transform carries it and he cannot fall off. Verified by an automated alignment check. |
-| 9 | "not clear what Lil Blunt is standing on at the start of stage 3" | **IMPROVED** | Platforms now carry a drop shadow, bevel highlight and dark edge caps so the standable surface reads as a solid object. |
-| 10 | "these Bitcoin logos are SHIT" | **FIXED** | Coin redrawn: brand-orange disc, dark rim, proper ₿ with punched counters and both vertical ticks. |
-| 11 | "I don't like the design of these platforms" | **FIXED** | `tile_block-chain.png` is one shared **cyan** asset used by all three realms, so the gold canyon got teal ledges even though its palette data was already correct. Now tinted per realm. |
-| 12 | "the axe must increase in size... structural damage until completely wrecked" | **FIXED** | Axe 2.0x → **2.8x**. New `Destructible` component: **3 visible damage stages** with procedural cracks and punched-out chunks — props no longer vanish on the first hit. Also found ladders shipped with `collision_layer = 0`, which makes a node undetectable by anything — the axe could never have hit one regardless of the code. |
-| 13 | Blaze Rush trees + themed backgrounds + embedded artwork | **FIXED** | Blaze Rush drew one hardcoded purple void for all three levels. It now themes its backdrop from **the source level's own art**, and your key art is embedded along the run. |
+| A1-A3 | finish + ESC don't return me | **FIXED** | Browser eats ESC (above). Now 3 keys + big button + watchdog. |
+| A4/G3 | only enter Lounge/Blaze once | **FIXED** | Portals had a `_used` flag, but it's per-instance and returning rebuilds the level. Now persisted in GameManager and the node is **removed**. |
+| A7/H3 | text ridiculously small | **FIXED** | Blaze HUD 22→34, win toast 34→52. |
+| B2/B5 | circular, no background plate | **FIXED** | Billboards now square 300×300 with a fully circular plate in the art's own dark tone. |
+| C1/C2 | board far below feet; stands above surfaces | **FIXED — one cause** | The art has transparent padding under the feet, so his painted soles floated 14px above every floor and the board (anchored to the collision line) sat that far below him. Now measured per outfit and corrected. |
+| D1 | Auditor shows his back | **FIXED** | `set_facing` assumed every boss sheet faces right. The tax-collector art doesn't, so every flip pointed him the wrong way. |
+| D2/D4 | STILL can't get over the block | **FIXED — real cause** | Not one prop. At gravity 980 his −340 hop clears **59px**; the arena's ledges are 100px+. Any step was a permanent wall. He now **leaps 196px**. |
+| D3 | too easy | **FIXED** | HP 6→10, speed 90→140, charge 320→430, vulnerable window 1.8s→1.1s. |
+| E1 | boss too small | **FIXED** | 96→176. |
+| E2/E4 | must levitate; fell in trench and vanished | **FIXED** | He was a gravity-bound walker with a decorative board. Gravity removed entirely — free 2D hover + hard arena clamp. |
+| E3 | permanently red | **FIXED** | VULNERABLE repainted him red every frame, so red was his resting state. Now a cyan shimmer; red is the hit flash only. |
+| F1 | final boss too weak/small | **FIXED** | 80→190 body, HP 6→14. |
+| F2 | boss touch → back to level start | **FIXED** | New rule wired into all four bosses; clears the checkpoint first, else "the beginning" would mean "the last checkpoint". |
+| F3 | 1st big axe throws small axes, 2nd is invisible | **FIXED** | There was **no `bigaxe` branch** in the held-tool code, so it fell through and cleared the sprite. Held size now reads the projectile's own constant. |
+| F4 | boss VO missing/too quiet | **FIXED** | VO played at unity gain on the shared SFX bus, level with coin pings. +6dB, deeper music duck. |
+| G2 | weed nuggets + joints in lounge | **FIXED** | 18 pickups along the skate line, 25/50 pts. |
 
-**Also fixed:** running out of lives now **restarts the level** instead of dead-ending on Game Over (and clears checkpoints, so it is a real restart). Blaze Rush wrote its return checkpoint under a hardcoded level key 1 — exiting to L2/L3 filed it in Level 1's slot. ESC moved to `_input` so a focused UI element can no longer swallow it.
+## Honest gaps
 
-**Gates:** script_compile, founder_critical_probe, owner_screenshot_fixes, boss_visibility, save_compat — **ALL PASS**. Security sentinel: no blockers.
-(The two probe suites were at 13 and 4 failures; several were the *tests* being wrong — they never entered PLAYING, so `take_damage()` returned on line 1, and they hardcoded a 96px boss centre.)
+- **B6/B7 (ETH + Bitcoin token art)** — the BTC coin was redrawn last build; I
+  have not redone the ETH tokens to the Solana standard this round.
+- **A5/A6 (artwork at the bottom purple band, flaming-diamond blocks)** — Blaze
+  Rush is stage-themed with your art embedded, but the art is not yet anchored
+  to the bottom band and the blocks are not flaming diamonds.
+- **C3 (invisible barrier)** and **H1/H2 (junk props, ugly stage)** — not yet
+  hunted down.
 
-**Honest gaps:** stage 3 start-platform clarity and the skate feel are judgement calls I can only take so far without your eyes on them. The Dexscreener live banner option you offered for the lounge bottom is not built — the room art now reaches the bottom on its own, so it wasn't needed; say the word if you still want the ticker.
+**Gates:** blaze_lifecycle_e2e, founder_critical_probe, owner_screenshot_fixes,
+script_compile, boss_visibility, save_compat — **ALL PASS**. Sentinel 18/18.
+
+**Models this session:** Qwen 2.5-VL audited all 25 screenshots (note:
+`qwen3.8-max` does not exist on OpenRouter). anydoc skill installed.
 
 ---
 ## 🟡 REMAINING OPENS — 2026-08-08e
