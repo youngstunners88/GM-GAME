@@ -248,8 +248,12 @@ func die() -> void:
 
 func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("take_damage"):
-		body.take_damage(1)
+		GameManager.last_damage_source = BOSS_ID
 		BossVoiceSystem.say(self, BOSS_ID, "mock")
+		# Founder stakes rule: ANY boss touch returns Lil Blunt to the START of
+		# the level, regardless of remaining lives — not hurt-and-continue.
+		# See GameManager.boss_contact_restart().
+		GameManager.boss_contact_restart()
 
 func _on_hitbox_area_entered(area: Area2D) -> void:
 	if area.is_in_group("projectile"):

@@ -13,6 +13,12 @@ var _hint: Label
 var _pulse_tween: Tween
 
 func _ready() -> void:
+	# One Blaze Rush run per stage — same rule the founder gave for the Smoke
+	# Lounge diamond. The portal is removed, not merely disabled, so it cannot
+	# be re-entered by accident mid-chase.
+	if GameManager.is_side_entrance_used("blaze", level_index):
+		queue_free()
+		return
 	body_entered.connect(_on_body_entered)
 	GameManager.score_changed.connect(_on_any_score_changed)
 	ComboSystem.score_changed.connect(_on_any_score_changed)
@@ -89,6 +95,7 @@ func _on_unlocked() -> void:
 func _on_body_entered(body: Node2D) -> void:
 	if not _unlocked or not body.is_in_group("player"):
 		return
+	GameManager.mark_side_entrance_used("blaze", level_index)
 	# Remember where to come back to before leaving the level.
 	GameManager.dash_return = {
 		"scene_path": get_tree().current_scene.scene_file_path,

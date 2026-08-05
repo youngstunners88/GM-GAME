@@ -540,19 +540,33 @@ func _build_hud() -> void:
 	var row := HBoxContainer.new()
 	margin.add_child(row)
 
-	_smoke_label.add_theme_font_size_override("font_size", 22)
+	_smoke_label.add_theme_font_size_override("font_size", 52)
 	row.add_child(_smoke_label)
 
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(spacer)
 
-	_attempt_label.add_theme_font_size_override("font_size", 22)
+	_attempt_label.add_theme_font_size_override("font_size", 52)
 	row.add_child(_attempt_label)
 
 	var exit_btn := Button.new()
-	exit_btn.text = "  ✕  "
+	exit_btn.text = "  EXIT (Q)  "
 	exit_btn.focus_mode = Control.FOCUS_NONE
+	exit_btn.custom_minimum_size = Vector2(210, 58)
+	exit_btn.add_theme_font_size_override("font_size", 26)
+	exit_btn.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	exit_btn.add_theme_constant_override("outline_size", 4)
+	var exit_plate := StyleBoxFlat.new()
+	exit_plate.bg_color = Color(0.55, 0.09, 0.14, 0.94)
+	exit_plate.set_corner_radius_all(8)
+	exit_plate.content_margin_left = 14
+	exit_plate.content_margin_right = 14
+	exit_btn.add_theme_stylebox_override("normal", exit_plate)
+	var exit_hover := exit_plate.duplicate()
+	exit_hover.bg_color = Color(0.78, 0.16, 0.20, 0.98)
+	exit_btn.add_theme_stylebox_override("hover", exit_hover)
+	exit_btn.add_theme_stylebox_override("pressed", exit_hover)
 	exit_btn.pressed.connect(_exit_to_level)
 	row.add_child(exit_btn)
 
@@ -567,20 +581,30 @@ func _build_hud() -> void:
 
 # --- run loop ----------------------------------------------------------------
 
-## ESC lives in _input, NOT _unhandled_input.
+## WHY ESCAPE ALONE WAS NEVER GOING TO BE ENOUGH.
 ##
-## Founder, repeatedly: "the player is unable to exit back to level 3 by
-## pressing Esc". _unhandled_input only runs for events NOTHING else consumed,
-## so any Control that happens to be focused — the HUD, the exit button, a
-## pause overlay — silently eats the key and the exit never fires. _input sees
-## it first, unconditionally. Raw keycode is checked alongside the action in
-## case the ui_cancel binding is ever changed.
+## The founder has reported "can't exit with Esc" across five builds. Each
+## time the engine-side fix was real AND the complaint stayed true, because
+## the problem is not in this project at all:
+##
+## The game ships as an HTML5 canvas inside an IFRAME on itch.io. In every
+## major browser the Escape key is reserved chrome — it exits fullscreen and
+## releases pointer-lock, and the browser consumes it BEFORE the event is
+## dispatched to the canvas. A headless Godot probe cannot reproduce that: a
+## real InputEventKey injected in-engine reaches _input() perfectly, which is
+## exactly why every probe passed while the founder still could not get out.
+##
+## So Escape is kept (it works in a desktop/standalone build) but is no longer
+## the ONLY way out. Q and Backspace are not browser-reserved, and the on-screen
+## button is now large enough to hit without hunting for it.
+const EXIT_KEYS := [KEY_ESCAPE, KEY_Q, KEY_BACKSPACE]
+
 func _input(event: InputEvent) -> void:
-	var esc := event.is_action_pressed("ui_cancel")
-	if not esc and event is InputEventKey:
+	var wants_exit := event.is_action_pressed("ui_cancel")
+	if not wants_exit and event is InputEventKey:
 		var k := event as InputEventKey
-		esc = k.pressed and not k.echo and k.keycode == KEY_ESCAPE
-	if esc:
+		wants_exit = k.pressed and not k.echo and k.keycode in EXIT_KEYS
+	if wants_exit:
 		get_viewport().set_input_as_handled()
 		_exit_to_level()
 
@@ -693,7 +717,12 @@ func _finish_run() -> void:
 
 	AudioManager.play_sfx("powerup")
 	_show_toast("\n".join(toast_lines))
-	await get_tree().create_timer(1.8).timeout
+	# ignore_time_scale = TRUE (4th arg). Engine.time_scale is global and the
+	# player's hit-stop drops it to 0.05; if a hit-stop coroutine is orphaned
+	# (its node freed mid-await) the scale is never restored, and a 1.8s timer
+	# that respects it becomes a 36-SECOND wait. To the founder that is
+	# indistinguishable from "the game doesn't return me after I win".
+	await get_tree().create_timer(1.2, true, false, true).timeout
 	_exit_to_level()
 
 func _show_toast(text: String) -> void:
@@ -704,7 +733,7 @@ func _show_toast(text: String) -> void:
 	label.text = text
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.set_anchors_preset(Control.PRESET_CENTER)
-	label.add_theme_font_size_override("font_size", 34)
+	label.add_theme_font_size_override("font_size", 52)
 	label.modulate = Color(1.0, 0.85, 0.3, 1.0)
 	layer.add_child(label)
 
@@ -727,3 +756,33 @@ func _exit_to_level() -> void:
 		GameManager.save_checkpoint(_level_index, 990 + _level_index, portal_pos)
 	GameManager.dash_return = {}
 	SceneRouter.load_scene(return_path, SceneRouter.Transition.SMOKE)
+	_arm_exit_watchdog(return_path)
+
+## LAST-RESORT EXIT. The player must NEVER be stranded in Blaze Rush.
+##
+## SceneRouter.load_scene() begins with `if _loading_path != "": return` — a
+## SILENT no-op guarded only by a push_warning, which is invisible in a browser.
+## Any earlier load that failed to clear that field leaves the router
+## permanently refusing every future request, and from the founder's seat that
+## is precisely "I finished / I pressed the key and nothing happened, forever".
+##
+## This does not try to diagnose that state; it just verifies the outcome. If
+## the scene has NOT changed shortly after we asked, go around SceneRouter
+## entirely with the engine's own change_scene_to_file. A slightly abrupt
+## transition is an acceptable price for never trapping the player.
+func _arm_exit_watchdog(return_path: String) -> void:
+	# ignore_time_scale so a stuck Engine.time_scale cannot disarm the net.
+	await get_tree().create_timer(2.5, true, false, true).timeout
+	if not is_inside_tree():
+		return
+	var cur := get_tree().current_scene
+	if is_instance_valid(cur) and cur.scene_file_path == return_path:
+		return  # SceneRouter did its job.
+	push_warning("BlazeRush: SceneRouter did not land %s in 2.5s — forcing." % return_path)
+	# Lift any wipe/fade overlay the stalled router left on screen, or the
+	# forced scene change lands behind an opaque rectangle.
+	SceneTransition.fade_in()
+	StateMachine.change_state(StateMachine.State.TRANSITIONING)
+	var err := get_tree().change_scene_to_file(return_path)
+	if err != OK:
+		push_error("BlazeRush: forced exit to %s failed (err %d)" % [return_path, err])
