@@ -353,7 +353,21 @@ func _resolve_ground_pound() -> void:
 
 ## Show the held tool sprite while a tool power-up is active.
 func _update_tool_visual() -> void:
-	if GameManager.has_power_up("pickaxe"):
+	# BIG AXE FIRST — and it must come before "pickaxe", because both use the
+	# same pickaxe artwork and whichever branch is tested first wins.
+	#
+	# Founder F3: "the 1st bigger axe still throws the smaller axes even though
+	# he has the bigger one in his hand. When he collects the 2nd axe WE DON'T
+	# SEE IT but he ends up throwing bigger axes."
+	#
+	# There was no "bigaxe" branch at all, so holding the big axe fell through
+	# to the else and CLEARED the held sprite — he could never see which axe he
+	# had. The scale comes from the projectile's own BIG_SCALE constant, so the
+	# weapon in his hand and the weapon that leaves it can never disagree.
+	if GameManager.has_power_up("bigaxe"):
+		sprite.set_tool("res://src/assets/sprites/sprite_item_pickaxe.png",
+			load("res://src/combat/axe.gd").BIG_SCALE)
+	elif GameManager.has_power_up("pickaxe"):
 		sprite.set_tool("res://src/assets/sprites/sprite_item_pickaxe.png")
 	elif GameManager.has_power_up("torch"):
 		sprite.set_tool("res://src/assets/sprites/sprite_item_torch.png")

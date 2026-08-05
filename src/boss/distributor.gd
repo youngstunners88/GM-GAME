@@ -61,30 +61,26 @@ func _physics_process(delta: float) -> void:
 
 	match current_phase_state:
 		Phase.PATROL:
-			velocity.x = patrol_speed * direction
-			velocity.y += 980.0 * delta
-			move_and_slide()
-			if is_on_wall():
-				direction *= -1.0
-				boss_sprite.set_facing(direction > 0)
+			_hover_pursue(delta)
 			if throw_timer <= 0:
 				_throw_shards()
 
 		Phase.SHARD_THROW:
-			velocity.x = move_toward(velocity.x, 0.0, 100.0)
-			velocity.y += 980.0 * delta
-			move_and_slide()
+			_hover_brake(delta)
 			if throw_timer <= 0:
 				current_phase_state = Phase.VULNERABLE
-				boss_sprite.color = Color(1.0, 0.2, 0.2, 1.0)
+				# Vulnerability is telegraphed by a soft CYAN shimmer, not by
+				# turning him red — red is reserved for the hit flash so a
+				# landed blow actually reads (founder E3).
+				boss_sprite.color = Color.WHITE
 				hitbox.monitorable = true
 				hitbox.monitoring = true
 
 		Phase.VULNERABLE:
-			velocity.x = move_toward(velocity.x, 0.0, 100.0)
-			velocity.y += 980.0 * delta
-			move_and_slide()
-			boss_sprite.modulate = Color(1.0, 0.3, 0.3, 1.0) if fmod(throw_timer, 0.3) < 0.15 else Color(1.0, 0.1, 0.1, 1.0)
+			_hover_brake(delta)
+			# Cyan shimmer = "hit me now". Never red (see E3 above).
+			boss_sprite.modulate = (Color(0.75, 1.15, 1.35, 1.0)
+				if fmod(throw_timer, 0.34) < 0.17 else Color(1, 1, 1, 1))
 
 ## THE DIAMOND SURFBOARD.
 ##
@@ -102,6 +98,43 @@ func _physics_process(delta: float) -> void:
 ## Two fixes, both needed: facing now flips `flip_h` in place (BossSprite.
 ## set_facing), and the board is a CHILD of the boss, so it is carried by his
 ## transform and cannot be separated from him by any movement or flip.
+## Free 2D hover pursuit — the "levitate in any direction" the founder asked
+## for, and the reason he can no longer fall anywhere.
+const HOVER_ACCEL: float = 340.0
+const HOVER_MAX: float = 210.0
+## Ride height above the player, so he looms rather than sitting on their head.
+const HOVER_ABOVE: float = 150.0
+## Hard arena clamp, set by the level when the fight starts. Zero size = unset,
+## in which case only the flight model applies.
+var arena_min: Vector2 = Vector2.ZERO
+var arena_max: Vector2 = Vector2.ZERO
+
+func _hover_pursue(delta: float) -> void:
+	var p := get_tree().get_first_node_in_group("player")
+	if p:
+		var target: Vector2 = p.global_position + Vector2(0.0, -HOVER_ABOVE)
+		var to: Vector2 = target - global_position
+		velocity = velocity.move_toward(to.normalized() * HOVER_MAX, HOVER_ACCEL * delta)
+		boss_sprite.set_facing(to.x > 0.0)
+	else:
+		velocity = velocity.move_toward(Vector2.ZERO, HOVER_ACCEL * delta)
+	# NO gravity term anywhere in this script any more.
+	move_and_slide()
+	_clamp_to_arena()
+
+func _hover_brake(delta: float) -> void:
+	velocity = velocity.move_toward(Vector2.ZERO, HOVER_ACCEL * delta)
+	move_and_slide()
+	_clamp_to_arena()
+
+## Last line of defence against "he fell in the trench and disappeared". Even
+## if some future force pushes him, he physically cannot leave the arena box.
+func _clamp_to_arena() -> void:
+	if arena_max == Vector2.ZERO:
+		return
+	global_position.x = clampf(global_position.x, arena_min.x, arena_max.x)
+	global_position.y = clampf(global_position.y, arena_min.y, arena_max.y)
+
 func _build_diamond_surfboard() -> void:
 	var board := Node2D.new()
 	board.name = "DiamondSurfboard"

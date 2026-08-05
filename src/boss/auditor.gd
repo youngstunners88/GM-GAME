@@ -14,13 +14,13 @@ const BOSS_ID := "tax"
 const BODY := 168.0
 const CLIPBOARD := preload("res://src/boss/boss_projectile.tscn")
 
-@export var patrol_speed: float = 90.0
-@export var charge_speed: float = 320.0
-@export var vulnerable_time: float = 1.8
-@export var max_health: int = 6
+@export var patrol_speed: float = 140.0
+@export var charge_speed: float = 430.0
+@export var vulnerable_time: float = 1.1
+@export var max_health: int = 10
 
 var current_state: State = State.PATROL
-var health: int = 6
+var health: int = 10
 var patrol_direction: float = 1.0
 var charge_target: Vector2 = Vector2.ZERO
 var state_timer: float = 0.0
@@ -28,6 +28,10 @@ var throw_timer: float = 2.0
 var hop_timer: float = 6.0
 var phase: int = 1
 var _base_patrol_speed: float = 90.0
+## Gate on the leap so he arcs instead of vibrating against a wall every frame.
+var _leap_cooldown: float = 0.0
+## Clears ~196px at gravity 980 — enough for this project's real ledge heights.
+const LEAP_VELOCITY: float = -620.0
 ## Shared screen-anchored bar (src/ui/boss_health_bar.gd). Named with a leading
 ## underscore because this boss does NOT extend BossBase — it has no inherited
 ## `health_bar` member to match, and shadowing an inherited member is the exact
@@ -102,6 +106,7 @@ func _physics_process(delta: float) -> void:
 	state_timer -= delta
 	throw_timer -= delta
 	hop_timer -= delta
+	_leap_cooldown -= delta
 
 	# "Diamond Surge" (DIAMONDS holders, phase 2+): the Auditor summons slow
 	# diamond shards — hit one with an attack and it reflects back for damage
@@ -125,8 +130,16 @@ func _physics_process(delta: float) -> void:
 			velocity.y += 980.0 * delta
 			move_and_slide()
 			sprite.set_facing(patrol_direction > 0.0)
-			if is_on_wall() and is_on_floor():
-				velocity.y = -340.0
+			# Blocked by terrain -> LEAP. 196px of clearance vs the old 59px.
+			if is_on_wall() and is_on_floor() and _leap_cooldown <= 0.0:
+				velocity.y = LEAP_VELOCITY
+				_leap_cooldown = 0.55
+			# He also hops when the player is well above him, so he pursues up
+			# the stage's terraces instead of pacing along the bottom of them.
+			if _pl and is_on_floor() and _leap_cooldown <= 0.0 \
+					and _pl.global_position.y < global_position.y - 90.0:
+				velocity.y = LEAP_VELOCITY
+				_leap_cooldown = 0.9
 			# Ranged pressure — cadence tightens per phase.
 			if throw_timer <= 0.0:
 				throw_timer = [0.0, 2.6, 2.0, 1.4][phase]

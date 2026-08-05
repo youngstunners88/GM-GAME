@@ -67,6 +67,22 @@ var _tool_base_y: float = 0.0
 ## line is exactly what put the torch at the feet across several "fixes".
 var _art_top_local: float = 0.0
 var _art_feet_local: float = 0.0
+## HOW FAR THE ART MUST DROP SO HIS VISIBLE FEET TOUCH THE GROUND.
+##
+## Founder, twice in one message: "Lil Blunt must not be standing above
+## surfaces like he currently is, he must stand directly on the surface" and
+## "the skateboard is so far from his feet... he wombles above the skateboard".
+##
+## Those are ONE bug. The sprite was anchored so the TEXTURE'S BOTTOM EDGE
+## lands on the collision floor — but the character art has transparent
+## padding under its feet (the cowboy sheet is 49x72 with opaque rows only
+## 9..58), so the last PAINTED row sits ~14px higher. He therefore hovers a
+## constant 14px above every floor, and anything anchored to the collision
+## floor — the skateboard deck — appears that far BELOW his soles.
+##
+## Measured per outfit from the real texture, never hardcoded: different
+## outfits have different padding.
+var _art_offset_y: float = 0.0
 ## Cosmetic flame glow, torch only. The project has no 2D lighting pipeline
 ## (no PointLight2D used anywhere) and Stage 2 has no darkness mechanic to
 ## illuminate — a raw light node here would render as an unconfigured bright
@@ -130,7 +146,7 @@ func play_animation(anim: String) -> void:
 		_anim.play(anim)
 
 func _process(delta: float) -> void:
-	var feet_y := FEET_LOCAL_Y - _spr.texture.get_height() / 2.0
+	var feet_y := FEET_LOCAL_Y - _spr.texture.get_height() / 2.0 + _art_offset_y
 	var dir := 1.0 if facing_right else -1.0
 	if moving:
 		_bob_time += delta * _anim_speed_scale
@@ -156,7 +172,7 @@ func _process(delta: float) -> void:
 
 ## Show/hide the held tool. Pass "" to clear. Path is cached so calling
 ## every frame is free.
-func set_tool(path: String) -> void:
+func set_tool(path: String, tool_scale: float = 1.0) -> void:
 	if path == _tool_path:
 		return
 	_tool_path = path
@@ -171,6 +187,7 @@ func set_tool(path: String) -> void:
 		add_child(_tool)
 	_tool.rotation = 0.35 if facing_right else -0.35
 	_tool.texture = load(path)
+	_tool.scale = Vector2(tool_scale, tool_scale)
 	_tool.flip_h = not facing_right
 	# Tool sprites (pickaxe, torch) are tall thin poles (~34-36px) drawn
 	# CENTERED on this node's position by default. Anchoring the geometric
@@ -252,6 +269,8 @@ func set_outfit(outfit: int) -> void:
 	_spr.texture = load(path)
 	# Anchor feet to the collision floor so he stands ON platforms.
 	_spr.position = Vector2(0.0, FEET_LOCAL_Y - _spr.texture.get_height() / 2.0)
+	# _art_offset_y is applied by _measure_art_bounds() below, once the real
+	# opaque bounds of THIS outfit are known.
 	_spr.flip_h = not facing_right
 	_spr.self_modulate = color
 	_measure_art_bounds()
@@ -283,6 +302,13 @@ func _measure_art_bounds() -> void:
 		return
 	_art_top_local = sprite_top + float(used.position.y)
 	_art_feet_local = sprite_top + float(used.position.y + used.size.y)
+	# Drop the art so its last opaque row lands exactly on the collision floor.
+	_art_offset_y = FEET_LOCAL_Y - _art_feet_local
+	_spr.position.y += _art_offset_y
+	# Keep the cached bounds in the same local space as the re-seated sprite,
+	# or the held-tool grip (derived from them) drifts by the same amount.
+	_art_top_local += _art_offset_y
+	_art_feet_local += _art_offset_y
 
 ## If a frame-sheet resource exists for this outfit, switch to animated mode.
 func _setup_frames_for_outfit(outfit: int) -> void:

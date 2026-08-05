@@ -387,6 +387,8 @@ func _test_boss_hits_player_on_contact(boss_scene: PackedScene, label: String) -
 	# damage). Cycle the player out and back in instead, so a genuine
 	# enter-transition happens repeatedly across the whole window regardless
 	# of exactly when monitoring goes live.
+	# Seed a checkpoint so its ERASURE by boss_contact_restart() is observable.
+	GameManager.save_checkpoint(GameManager.current_level, 777, Vector2(500, 500))
 	for cycle in 10:  # 10 x 0.5s = 5s total, matching the old budget
 		player.global_position = boss.to_global(_body_centre(boss)) + Vector2(-_exit_dist(boss), 0)
 		for i in 10:
@@ -394,7 +396,12 @@ func _test_boss_hits_player_on_contact(boss_scene: PackedScene, label: String) -
 		player.global_position = boss.to_global(_body_centre(boss))
 		for i in 20:
 			await get_tree().physics_frame
-			if GameManager.player_health < health_before:
+			# NEW CONTRACT (founder F2): contact triggers a level restart, not
+			# damage. boss_contact_restart() erases this level's checkpoint and
+			# asks SceneRouter to reload — either is proof contact registered.
+			if GameManager.player_health < health_before \
+					or GameManager.get("_boss_restart_pending") \
+					or not (GameManager.current_level in GameManager.level_checkpoints):
 				hit = true
 				break
 		if boss.has_method("get") and "current_state" in boss:
@@ -407,8 +414,8 @@ func _test_boss_hits_player_on_contact(boss_scene: PackedScene, label: String) -
 					   str(boss.global_position), str(player.global_position)])
 		if hit:
 			break
-	_check("%s: standing in the boss body damages the player under real physics" % label,
-		hit, "player health stayed at %d after 5s of repeated contact" % GameManager.player_health)
+	_check("%s: touching the boss body sends the player back to level start" % label,
+		hit, "no restart requested after 5s of repeated contact (health %d)" % GameManager.player_health)
 
 	player.queue_free()
 	boss.queue_free()

@@ -84,6 +84,17 @@ func _on_boss_trigger(body: Node2D) -> void:
 		AudioManager.set_reverb_profile("boss")
 		var boss := preload("res://src/boss/distributor.tscn").instantiate()
 		boss.global_position = boss_spawn.global_position
+		# The Distributor FLIES (founder E2/E4). Hand him the arena box before
+		# add_child so his clamp is live on his very first physics frame — he
+		# must never be able to drift into a trench and vanish. Set as plain
+		# properties BEFORE add_child, the same pre-add contract the carts and
+		# the big axe use.
+		var arena: Dictionary = level_data.boss_arena
+		var ax0: float = float(arena.get("start_x", 0.0)) + 90.0
+		var ax1: float = float(arena.get("end_x", 0.0)) - 90.0
+		var ay: float = float(boss_spawn.global_position.y)
+		boss.arena_min = Vector2(ax0, ay - 320.0)
+		boss.arena_max = Vector2(ax1, ay + 120.0)
 		add_child(boss)
 		AudioManager.play_playlist(["res://src/assets/music/boss02_theme.ogg", "res://src/assets/music/boss02_theme_alt.ogg"])
 		AudioManager.play_voice("boss2_intro")

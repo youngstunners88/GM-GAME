@@ -116,6 +116,11 @@ fi
 #   - mops.lock pins Motoko package hashes for lil-blunt-icp. Committing it is
 #     required for reproducible canister builds, so deleting or ignoring it to
 #     appease this check would REDUCE supply-chain integrity, not improve it.
+#   - skills-lock.json is the lockfile written by `npx skills add` (the
+#     firecrawl/anydoc install this session). Its 64-hex entries are npm-style
+#     INTEGRITY hashes pinning exactly which skill revision is installed —
+#     the same supply-chain-verification role as mops.lock, and the precise
+#     opposite of a secret: a checksum exists to be published and compared.
 #   - itch-butler-deploy/SKILL.md documents that SAME pinned butler checksum
 #     (copy-pasted from export-game.yml, per the skill's own text, so a
 #     session can verify a manual deploy without re-deriving it) — flagged
@@ -128,7 +133,8 @@ key_hits=$(git ls-files | xargs grep -lEn "\b(0x)?[a-fA-F0-9]{64}\b" 2>/dev/null
   | grep -vE "\.(wasm|pck|png|jpg|jpeg|ogg|import)$" \
   | grep -v "\.github/workflows/export-game\.yml" \
   | grep -vE "(^|/)mops\.lock$" \
-  | grep -vE "(^|/)itch-butler-deploy/SKILL\.md$" || true)
+  | grep -vE "(^|/)itch-butler-deploy/SKILL\.md$" \
+  | grep -vE "(^|/)skills-lock\.json$" || true)
 if [ -z "$key_hits" ]; then
   record "SEC-005" "critical" "PASS" "No 64-hex private-key-shaped literals in tracked source" "clean"
 else

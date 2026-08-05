@@ -249,11 +249,27 @@ func _spawn_player() -> void:
 const BOARD_DECK_W := 52.0
 const BOARD_DECK_H := 7.0
 const BOARD_WHEEL_R := 4.5
+## Deck centre in player-local Y. His collision box runs 0..32 from the node
+## origin, so 31 puts the deck right at the sole line with the wheels just
+## below it — he rides ON the board rather than hovering over it.
+const BOARD_DECK_Y := 31.0
 
 func _attach_skateboard(player: Node2D) -> void:
 	var board := Node2D.new()
 	board.name = "Skateboard"
-	board.position = Vector2(16, 34)
+	# Under his VISIBLE soles, not the collision floor.
+	#
+	# Founder: "I love the skateboard, but it is so far from his feet!!! He
+	# needs to be standing ON the skateboard... I notice that he wombles above
+	# the skateboard."
+	#
+	# The board used to sit at the collision floor (local y=32). The character
+	# art has transparent padding below its feet, so his painted soles are
+	# ~14px higher than that line — the board was correctly placed and still
+	# looked detached. lil_blunt_visual now drops the art onto the collision
+	# floor (_art_offset_y), which closes the gap from the other side; the deck
+	# sits just under that line so the wheels read as touching the ground.
+	board.position = Vector2(16, BOARD_DECK_Y)
 	# Behind the player so his legs read in front of the deck.
 	board.z_index = -1
 	player.add_child(board)
@@ -304,8 +320,8 @@ func _attach_skateboard(player: Node2D) -> void:
 
 	# Idle bob so the board never looks like a static decal stuck to his feet.
 	var bob := board.create_tween().set_loops()
-	bob.tween_property(board, "position:y", 32.0, 0.9).set_trans(Tween.TRANS_SINE)
-	bob.tween_property(board, "position:y", 34.0, 0.9).set_trans(Tween.TRANS_SINE)
+	bob.tween_property(board, "position:y", BOARD_DECK_Y - 1.5, 0.9).set_trans(Tween.TRANS_SINE)
+	bob.tween_property(board, "position:y", BOARD_DECK_Y, 0.9).set_trans(Tween.TRANS_SINE)
 
 ## The reward for finding the door: a run of high-value crypto coins + health,
 ## spread across the full 5100px walk (scaled 3x from the original 1700px
