@@ -3,47 +3,40 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv` (PR #12)
 
-**DEPLOYED — Build #1858067 — 2026-08-05 ~00:55 UTC.** Hard-refresh first.
+**DEPLOYED — Build #1858610 — 2026-08-05.** Hard-refresh before testing.
 
-## The Blaze Rush exit — why five "fixed" claims all failed you
+## This pass — narrow art + one feel tweak
 
-I built a probe that drives the REAL paths: skating into the finish line under
-real physics, and a real Escape keypress. **All 14 checks pass, on L1, L2 and
-L3, for both finish and ESC.** The engine was never broken — which is exactly
-why every previous probe passed while you still could not get out.
-
-**The game runs in an iframe on itch.io, and browsers RESERVE the Escape key.**
-It exits fullscreen and releases pointer-lock, and is swallowed before it ever
-reaches the game. No headless test can reproduce that, and no amount of
-engine-side fixing was ever going to help.
-
-So exiting no longer depends on Escape:
-- **Q** and **Backspace** also exit (neither is browser-reserved)
-- The exit button is now a real labelled **"EXIT (Q)"** plate, not a 22px ✕
-- A **watchdog**: 2.5s after any exit request, if the scene hasn't changed, it
-  bypasses the scene router entirely. You can no longer be stranded.
-- The win toast timer ignores time-scale — a stuck hit-stop was turning a 1.8s
-  wait into 36 real seconds, which looks exactly like "it never returns me".
-
-| ID | Your words | Status | Root cause |
+| # | Task | Status | What it actually was |
 |---|---|---|---|
-| A1-A3 | finish + ESC don't return me | **FIXED** | Browser eats ESC (above). Now 3 keys + big button + watchdog. |
-| A4/G3 | only enter Lounge/Blaze once | **FIXED** | Portals had a `_used` flag, but it's per-instance and returning rebuilds the level. Now persisted in GameManager and the node is **removed**. |
-| A7/H3 | text ridiculously small | **FIXED** | Blaze HUD 22→34, win toast 34→52. |
-| B2/B5 | circular, no background plate | **FIXED** | Billboards now square 300×300 with a fully circular plate in the art's own dark tone. |
-| C1/C2 | board far below feet; stands above surfaces | **FIXED — one cause** | The art has transparent padding under the feet, so his painted soles floated 14px above every floor and the board (anchored to the collision line) sat that far below him. Now measured per outfit and corrected. |
-| D1 | Auditor shows his back | **FIXED** | `set_facing` assumed every boss sheet faces right. The tax-collector art doesn't, so every flip pointed him the wrong way. |
-| D2/D4 | STILL can't get over the block | **FIXED — real cause** | Not one prop. At gravity 980 his −340 hop clears **59px**; the arena's ledges are 100px+. Any step was a permanent wall. He now **leaps 196px**. |
-| D3 | too easy | **FIXED** | HP 6→10, speed 90→140, charge 320→430, vulnerable window 1.8s→1.1s. |
-| E1 | boss too small | **FIXED** | 96→176. |
-| E2/E4 | must levitate; fell in trench and vanished | **FIXED** | He was a gravity-bound walker with a decorative board. Gravity removed entirely — free 2D hover + hard arena clamp. |
-| E3 | permanently red | **FIXED** | VULNERABLE repainted him red every frame, so red was his resting state. Now a cyan shimmer; red is the hit flash only. |
-| F1 | final boss too weak/small | **FIXED** | 80→190 body, HP 6→14. |
-| F2 | boss touch → back to level start | **FIXED** | New rule wired into all four bosses; clears the checkpoint first, else "the beginning" would mean "the last checkpoint". |
-| F3 | 1st big axe throws small axes, 2nd is invisible | **FIXED** | There was **no `bigaxe` branch** in the held-tool code, so it fell through and cleared the sprite. Held size now reads the projectile's own constant. |
-| F4 | boss VO missing/too quiet | **FIXED** | VO played at unity gain on the shared SFX bus, level with coin pings. +6dB, deeper music duck. |
-| G2 | weed nuggets + joints in lounge | **FIXED** | 18 pickups along the skate line, 25/50 pts. |
+| 1 | ETH tokens to the Solana standard | **FIXED** | The sprite shipped with a **grey square plate and the word "ethereum" baked into it** — exactly the junk SOL doesn't have. Redrawn as a bare octahedron on full transparency, brightest facet upper-left, dark keyline. |
+| 2 | Bitcoin logo | **FIXED** | The mark baked into the Level 3 backdrop was **tilted ~14° with its two bowls merged into a white blob**. That smear is the thing you keep calling shit. Repainted upright, counters genuinely open, both ticks visible. |
+| 3 | Blaze art at the bottom purple band | **FIXED** | It was at `GROUND_Y − 300` — up in the sky, nowhere near the band. The purple ground runs `GROUND_Y..+220`; art now sits low inside it, 5 pieces across the run. |
+| 4 | Flaming diamonds replace square blocks | **FIXED** | Solid diamond, hot core, bright inner facet, flame licks off the **upper tip only** so the silhouette stays an unbroken mass at speed. |
+| 5 | Auditor smoothness | **FIXED** | Chase and leap untouched. Three sources of robotic snap removed: `velocity.x` was **snapped to full speed every frame**; direction flipped the instant you crossed his centre line (so he vibrated when you stood over him); facing followed that same jittery signal. |
 
+## One deliberate disagreement
+
+Grok advised dropping the Bitcoin **disc** for a bare gold ₿ "to match SOL".
+I kept the disc. SOL and ETH work without a plate because their marks are
+chunky geometric masses — a thin gold ₿ on transparency would disappear against
+Level 3, which is an entirely amber canyon. The disc is what gives it a
+silhouette there. Say the word if you want it tried the other way.
+
+## Untouched on purpose
+
+Blaze exit/finish, boss-touch stakes, skateboard foot-plant, Distributor
+size/float/red-flash, portal one-shot, lounge nuggets, VO, final boss HP — all
+confirmed working by you, none of it reopened. The flaming-diamond change is
+**visual only**: the collision box and the cyan "landable" top lip are
+unchanged, because reshaping the collider would silently retune every jump in
+all three courses.
+
+**Gates:** script_compile, blaze_lifecycle_e2e, founder_critical_probe,
+owner_screenshot_fixes, boss_visibility, save_compat — **ALL PASS**.
+Sentinel clean.
+
+---
 ## Honest gaps
 
 - **B6/B7 (ETH + Bitcoin token art)** — the BTC coin was redrawn last build; I
