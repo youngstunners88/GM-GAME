@@ -376,16 +376,39 @@ func _spawn_nugget(x: float, is_joint: bool) -> void:
 	cs.shape = rect
 	pick.add_child(cs)
 	if is_joint:
-		var body := ColorRect.new()
-		body.color = Color(0.94, 0.90, 0.80, 1.0)
-		body.size = Vector2(26, 7)
-		body.position = Vector2(-13, -3)
-		pick.add_child(body)
-		var ember := ColorRect.new()
-		ember.color = Color(1.0, 0.45, 0.12, 1.0)
-		ember.size = Vector2(6, 7)
-		ember.position = Vector2(13, -3)
+		# Tapered cone: ~4px at the lit tip, ~10px at the mouth end.
+		var cone := Polygon2D.new()
+		cone.polygon = PackedVector2Array([
+			Vector2(-15.0, -5.0), Vector2(10.0, -2.0),
+			Vector2(10.0, 2.0), Vector2(-15.0, 5.0)])
+		cone.color = Color(0.96, 0.93, 0.85, 1.0)
+		pick.add_child(cone)
+		# Twisted paper tail at the fat end — the silhouette cue that says
+		# "rolled", which a cigarette does not have.
+		var twist := Polygon2D.new()
+		twist.polygon = PackedVector2Array([
+			Vector2(10.0, -2.0), Vector2(17.0, -0.5),
+			Vector2(17.0, 0.5), Vector2(10.0, 2.0)])
+		twist.color = Color(0.88, 0.84, 0.74, 1.0)
+		pick.add_child(twist)
+		# Crutch/filter band near the mouth, off-white card not orange filter.
+		var band := Polygon2D.new()
+		band.polygon = PackedVector2Array([
+			Vector2(4.0, -2.6), Vector2(9.0, -2.1),
+			Vector2(9.0, 2.1), Vector2(4.0, 2.6)])
+		band.color = Color(0.78, 0.68, 0.50, 1.0)
+		pick.add_child(band)
+		var ember := Polygon2D.new()
+		ember.polygon = PackedVector2Array([
+			Vector2(-19.0, -2.0), Vector2(-15.0, -5.0),
+			Vector2(-15.0, 5.0), Vector2(-19.0, 2.0)])
+		ember.color = Color(1.0, 0.42, 0.10, 1.0)
 		pick.add_child(ember)
+		var smoke := Polygon2D.new()
+		smoke.polygon = PackedVector2Array([
+			Vector2(-20.0, -6.0), Vector2(-24.0, -13.0), Vector2(-18.0, -10.0)])
+		smoke.color = Color(0.85, 0.85, 0.9, 0.5)
+		pick.add_child(smoke)
 	else:
 		var leaf_path := "res://src/assets/sprites/sprite_item_weed-leaf.png"
 		if ResourceLoader.exists(leaf_path):

@@ -384,8 +384,8 @@ func _make_candle(x: float) -> void:
 	var gem := Sprite2D.new()
 	gem.texture = preload("res://src/assets/sprites/fx_flame_diamond.png")
 	gem.centered = false
-	gem.scale = Vector2(0.62, 0.62)
-	gem.position = Vector2(-30, -62)
+	gem.scale = Vector2(0.58, 0.58)
+	gem.position = Vector2(-21, -70)
 	area.add_child(gem)
 	var flick := gem.create_tween().set_loops()
 	flick.tween_property(gem, "modulate", Color(1.18, 1.06, 0.92, 1.0), 0.3).set_trans(Tween.TRANS_SINE)
