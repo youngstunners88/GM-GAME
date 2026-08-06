@@ -3,38 +3,50 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv` (PR #12)
 
-**DEPLOYED — Build #1858610 — 2026-08-05.** Hard-refresh before testing.
+**DEPLOYED — Build #1860761 — 2026-08-05.** Hard-refresh before testing.
 
-## This pass — narrow art + one feel tweak
+## Rejection acknowledged
 
-| # | Task | Status | What it actually was |
-|---|---|---|---|
-| 1 | ETH tokens to the Solana standard | **FIXED** | The sprite shipped with a **grey square plate and the word "ethereum" baked into it** — exactly the junk SOL doesn't have. Redrawn as a bare octahedron on full transparency, brightest facet upper-left, dark keyline. |
-| 2 | Bitcoin logo | **FIXED** | The mark baked into the Level 3 backdrop was **tilted ~14° with its two bowls merged into a white blob**. That smear is the thing you keep calling shit. Repainted upright, counters genuinely open, both ticks visible. |
-| 3 | Blaze art at the bottom purple band | **FIXED** | It was at `GROUND_Y − 300` — up in the sky, nowhere near the band. The purple ground runs `GROUND_Y..+220`; art now sits low inside it, 5 pieces across the run. |
-| 4 | Flaming diamonds replace square blocks | **FIXED** | Solid diamond, hot core, bright inner facet, flame licks off the **upper tip only** so the silhouette stays an unbroken mass at speed. |
-| 5 | Auditor smoothness | **FIXED** | Chase and leap untouched. Three sources of robotic snap removed: `velocity.x` was **snapped to full speed every frame**; direction flipped the instant you crossed his centre line (so he vibrated when you stood over him); facing followed that same jittery signal. |
+You were right on both counts. Last pass I drew a flat magenta polygon with
+three small triangles on top and called it a flaming diamond — that was a weak
+substitute, not the flame-diamond language in your reference. And I left the
+protocol logos carrying their own **square** field, which rendered as a dark
+plate behind each one; that is the "what the fuck is this" you circled. Both
+are redone from your artwork, not reinvented.
 
-## One deliberate disagreement
+| Task | Status | What changed |
+|---|---|---|
+| **2nd boss size** (your message) | **FIXED** | 176 → **240**. `BODY` drives sprite, collision offsets and the surfboard together, so it is the one number that moves. |
+| **T1 flaming diamonds** | **FIXED** | Real generated artwork: faceted crimson gem, flames wrapping the crown, trimmed to its own alpha. **96px art over the unchanged 52px collider**, so it reads big while the physics stays exactly as tuned. |
+| **FUD box** | **RESTORED** | Label on a plate behind the gem. Removing it last pass took away the only thing naming the hazard. |
+| **T2 solid circular logos** | **FIXED** | New `badge_*.png`: cropped to the art's **real alpha bbox** (so the logo fills its own badge instead of floating in a ring of backing colour), hard-cropped to a circle, composited onto an **opaque** disc sampled from the art's own interior. Circular **and** solid. |
+| **Band art** | **FIXED** | 150 → 190px and **fully opaque** — it was at 0.62 alpha, which is the transparency you kept objecting to. |
+| **Billboards raised** | **FIXED** | Smoke Lounge billboards lifted (`BILLBOARD_TOP` 150 → 96) and now prefer the solid badges. |
 
-Grok advised dropping the Bitcoin **disc** for a bare gold ₿ "to match SOL".
-I kept the disc. SOL and ETH work without a plate because their marks are
-chunky geometric masses — a thin gold ₿ on transparency would disappear against
-Level 3, which is an entirely amber canyon. The disc is what gives it a
-silhouette there. Say the word if you want it tried the other way.
+## Model-ID correction
 
-## Untouched on purpose
+`openai/gpt-image-2` **does not exist** in OpenRouter's catalogue. The OpenAI
+image models it serves are `gpt-5.4-image-2`, `gpt-5-image` and
+`gpt-5-image-mini`. I used **`openai/gpt-5.4-image-2`** — the one carrying the
+`-image-2` line. No Qwen touched any pixels; new `scripts/or-image.mjs` handles
+image replies (the bitmap arrives on `message.images`, not as text).
 
-Blaze exit/finish, boss-touch stakes, skateboard foot-plant, Distributor
-size/float/red-flash, portal one-shot, lounge nuggets, VO, final boss HP — all
-confirmed working by you, none of it reopened. The flaming-diamond change is
-**visual only**: the collision box and the cyan "landable" top lip are
-unchanged, because reshaping the collider would silently retune every jump in
-all three courses.
+## A gate that had quietly rotted
 
-**Gates:** script_compile, blaze_lifecycle_e2e, founder_critical_probe,
-owner_screenshot_fixes, boss_visibility, save_compat — **ALL PASS**.
-Sentinel clean.
+The surfboard-footprint check capped the offset at `96.0 * boss.scale.y`. Its
+comment claimed that tracked the boss's size — but sizing is done by the `BODY`
+constant and `scale.y` stays 1.0, so growing the boss moved the real offset
+while the ceiling never budged. It failed a **correctly placed** board. Now
+derived from the boss's actual collision box.
+
+## Still open from your list
+
+- **T3 per-stage Blaze backgrounds** — currently the source level's art tinted;
+  not yet a distinct forest-variant plate per realm.
+- **T4 tokens masked** — not yet traced.
+- **T5 the joint still reads as a cigarette** — not yet reshaped.
+
+**Gates:** all six suites ALL PASS. Sentinel clean.
 
 ---
 ## Honest gaps
