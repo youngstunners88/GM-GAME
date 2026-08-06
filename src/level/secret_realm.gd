@@ -529,6 +529,10 @@ func _swap_placeholder_texture(container: Control, path: String) -> void:
 	# art that was already too small to read; dimming legibility for atmosphere
 	# is the wrong trade when the founder's complaint IS legibility.
 	art.modulate = Color(1.0, 0.98, 1.0, 1.0)
+	# Brand art is photographic, not pixel art: nearest-neighbour downscaling is
+	# what made the founder's logos read as "pixelated shit". Linear+mipmaps
+	# here only; the game's pixel sprites are untouched.
+	art.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	container.add_child(art)
 
 ## Soft radial-falloff light pool, generated once and cached — the same

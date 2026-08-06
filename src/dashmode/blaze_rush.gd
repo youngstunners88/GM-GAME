@@ -187,6 +187,19 @@ const BR_ART := [
 	"res://src/assets/art/badge_hood.png",
 ]
 
+## X ranges with no floor under them. Logos must never be placed here: with
+## the band absent the art hangs in the void, which is exactly what the
+## founder circled.
+var _gap_spans: Array[Vector2] = []
+
+func _x_over_gap(x: float) -> bool:
+	for g: Vector2 in _gap_spans:
+		# Half the art's width of clearance either side, so a badge never even
+		# overhangs the lip of a gap.
+		if x > g.x - BAND_ART_SIZE * 0.5 and x < g.y + BAND_ART_SIZE * 0.5:
+			return true
+	return false
+
 func _build_protocol_landmarks() -> void:
 	var available: Array[String] = []
 	for p: String in BR_ART:
@@ -214,11 +227,19 @@ func _build_protocol_landmarks() -> void:
 		# in the empty real estate he is pointing at. z_index 1 draws it ON the
 		# band (the band itself is a plain ColorRect at default z), while the
 		# run line stays well above at GROUND_Y and up.
-		art.position = Vector2(
-			700.0 + (_course_length - 900.0) * (float(i) / float(count)),
-			GROUND_Y + BAND_ART_Y)
+		var ax: float = 700.0 + (_course_length - 900.0) * (float(i) / float(count))
+		# Nudge along the run until the slot is genuinely over purple band.
+		var tries := 0
+		while _x_over_gap(ax) and tries < 24:
+			ax += BAND_ART_SIZE * 0.6
+			tries += 1
+		if _x_over_gap(ax):
+			continue  # no clear band left for this one; drop it rather than float it
+		art.position = Vector2(ax, GROUND_Y + BAND_ART_Y)
 		# Fully opaque: "solid", per the founder. No alpha wash.
 		art.modulate = Color(1.0, 1.0, 1.0, 1.0)
+		# Smooth downscale for photographic brand art (see note above).
+		art.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		art.z_index = 1
 		add_child(art)
 
@@ -303,6 +324,10 @@ func _build_ground(layout: Dictionary) -> void:
 		if ob.get("type", "") == "gap":
 			gaps.append(Vector2(ob.x, ob.x + ob.get("w", 140.0)))
 	gaps.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
+	# Kept for _build_protocol_landmarks(): logos only over real band.
+	_gap_spans.clear()
+	for g: Vector2 in gaps:
+		_gap_spans.append(g)
 
 	var cursor: float = -200.0
 	for gap in gaps:
@@ -352,16 +377,19 @@ func _make_candle(x: float) -> void:
 	area.position = Vector2(x, GROUND_Y)
 	area.collision_mask = 2  # player runs on layer 2
 	area.set_meta("hazard", true)
-	var body := ColorRect.new()
-	body.color = COLOR_HAZARD
-	body.size = Vector2(18, 34)
-	body.position = Vector2(-9, -34)
-	area.add_child(body)
-	var wick := ColorRect.new()
-	wick.color = Color(1.0, 0.55, 0.15, 0.9)  # hotter yellow-orange top cap
-	wick.size = Vector2(4, 14)
-	wick.position = Vector2(-2, -48)
-	area.add_child(wick)
+	# FLAMING DIAMOND. These red bars are the props the founder circled in
+	# flaming_diamonds_image1 (src/assets/logos/founder/ref_squares_to_replace.png)
+	# — NOT the FUD wall I changed last pass. Same generated gem art, sized to
+	# the candle's own 30px-tall killbox with the flames overhanging above it.
+	var gem := Sprite2D.new()
+	gem.texture = preload("res://src/assets/sprites/fx_flame_diamond.png")
+	gem.centered = false
+	gem.scale = Vector2(0.62, 0.62)
+	gem.position = Vector2(-30, -62)
+	area.add_child(gem)
+	var flick := gem.create_tween().set_loops()
+	flick.tween_property(gem, "modulate", Color(1.18, 1.06, 0.92, 1.0), 0.3).set_trans(Tween.TRANS_SINE)
+	flick.tween_property(gem, "modulate", Color(0.9, 0.9, 1.0, 1.0), 0.3).set_trans(Tween.TRANS_SINE)
 	var col := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
 	shape.size = Vector2(14, 30)
@@ -406,43 +434,23 @@ func _make_fud_wall(x: float) -> void:
 	var body := StaticBody2D.new()
 	body.position = Vector2(x, GROUND_Y - 52.0)
 	body.set_meta("fud_wall", true)
-	# FLAMING DIAMOND — the real thing this time.
+	# THE ORIGINAL FUD BOX, restored as it was.
 	#
-	# Founder: "You didn't replace the white blocks with the flaming diamonds
-	# that I requested!!! You totally misconstrued the command!" Last pass I
-	# drew a flat magenta polygon with three little triangles on top and called
-	# it a flaming diamond; he is right that it was a weak substitute for the
-	# flame-diamond language in his reference.
-	#
-	# This is real artwork generated through the image model (see STATUS) and
-	# trimmed to its own alpha: a faceted crimson gem with flames wrapping the
-	# crown. It is 96px tall over a 52px collider, so the flames overhang the
-	# box — the obstacle READS big while the physics stays exactly as tuned.
-	var gem := Sprite2D.new()
-	gem.texture = preload("res://src/assets/sprites/fx_flame_diamond.png")
-	gem.centered = false
-	gem.position = Vector2(-24, -44)
-	body.add_child(gem)
-	# Flicker the whole prop very slightly rather than animating sub-parts —
-	# one tween per obstacle, and the silhouette never breaks up.
-	var flick := gem.create_tween().set_loops()
-	flick.tween_property(gem, "modulate", Color(1.14, 1.05, 0.95, 1.0), 0.34).set_trans(Tween.TRANS_SINE)
-	flick.tween_property(gem, "modulate", Color(0.92, 0.92, 1.0, 1.0), 0.34).set_trans(Tween.TRANS_SINE)
-
-	# FUD BOX RESTORED (founder: "Return the FUD box that we had previously").
-	# The label is what named the hazard; removing it last pass took away the
-	# only thing telling the player WHAT this block is. Kept behind the gem so
-	# the diamond stays the silhouette.
-	var fud_plate := ColorRect.new()
-	fud_plate.color = Color(0.16, 0.10, 0.30, 0.92)
-	fud_plate.size = Vector2(46, 22)
-	fud_plate.position = Vector2(-23, 30)
-	body.add_child(fud_plate)
+	# Founder: "I told you to bring back the FUD box back! Not this shit!!!
+	# You're confusing the task!" — ref_fud_reject.png. Two separate props were
+	# conflated: the FUD wall is a LANDABLE block, and the flaming diamond
+	# belongs on the CANDLES (see _make_candle). Putting a gem on the FUD wall
+	# made both unreadable. This is the plain solid block again.
+	var visual := ColorRect.new()
+	visual.color = Color(0.3, 0.2, 0.55, 1.0)
+	visual.size = Vector2(46, 52)
+	visual.position = Vector2(-23, 0)
+	body.add_child(visual)
 	var tag := Label.new()
 	tag.text = "FUD"
-	tag.position = Vector2(-20, 30)
-	tag.add_theme_font_size_override("font_size", 17)
-	tag.add_theme_color_override("font_color", Color(1, 0.86, 0.5))
+	tag.position = Vector2(-17, 15)
+	tag.add_theme_font_size_override("font_size", 16)
+	tag.add_theme_color_override("font_color", Color(1, 0.9, 0.6))
 	tag.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	tag.add_theme_constant_override("outline_size", 4)
 	body.add_child(tag)
