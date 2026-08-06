@@ -376,39 +376,33 @@ func _spawn_nugget(x: float, is_joint: bool) -> void:
 	cs.shape = rect
 	pick.add_child(cs)
 	if is_joint:
-		# Tapered cone: ~4px at the lit tip, ~10px at the mouth end.
-		var cone := Polygon2D.new()
-		cone.polygon = PackedVector2Array([
-			Vector2(-15.0, -5.0), Vector2(10.0, -2.0),
-			Vector2(10.0, 2.0), Vector2(-15.0, 5.0)])
-		cone.color = Color(0.96, 0.93, 0.85, 1.0)
-		pick.add_child(cone)
-		# Twisted paper tail at the fat end — the silhouette cue that says
-		# "rolled", which a cigarette does not have.
+		# Slim, even-width tube with a twisted tip. The earlier version tapered
+		# from 4px to 10px with a rounded end, which read as phallic rather than
+		# rolled — a joint is essentially a straight cylinder plus a pinched
+		# paper twist, so the silhouette is what has to change, not the colour.
+		var paper := ColorRect.new()
+		paper.color = Color(0.97, 0.95, 0.89, 1.0)
+		paper.size = Vector2(26, 5)
+		paper.position = Vector2(-11, -2)
+		pick.add_child(paper)
+		# Pinched twist at the mouth end — two converging triangles to a point.
 		var twist := Polygon2D.new()
 		twist.polygon = PackedVector2Array([
-			Vector2(10.0, -2.0), Vector2(17.0, -0.5),
-			Vector2(17.0, 0.5), Vector2(10.0, 2.0)])
-		twist.color = Color(0.88, 0.84, 0.74, 1.0)
+			Vector2(15.0, -2.0), Vector2(21.0, 0.0), Vector2(15.0, 3.0)])
+		twist.color = Color(0.90, 0.87, 0.79, 1.0)
 		pick.add_child(twist)
-		# Crutch/filter band near the mouth, off-white card not orange filter.
-		var band := Polygon2D.new()
-		band.polygon = PackedVector2Array([
-			Vector2(4.0, -2.6), Vector2(9.0, -2.1),
-			Vector2(9.0, 2.1), Vector2(4.0, 2.6)])
-		band.color = Color(0.78, 0.68, 0.50, 1.0)
-		pick.add_child(band)
-		var ember := Polygon2D.new()
-		ember.polygon = PackedVector2Array([
-			Vector2(-19.0, -2.0), Vector2(-15.0, -5.0),
-			Vector2(-15.0, 5.0), Vector2(-19.0, 2.0)])
+		# Green flecks through the paper: reads as herb inside, not tobacco.
+		for fx: float in [-6.0, 0.0, 6.0]:
+			var fleck := ColorRect.new()
+			fleck.color = Color(0.40, 0.62, 0.28, 0.75)
+			fleck.size = Vector2(3, 2)
+			fleck.position = Vector2(fx, -1)
+			pick.add_child(fleck)
+		var ember := ColorRect.new()
 		ember.color = Color(1.0, 0.42, 0.10, 1.0)
+		ember.size = Vector2(4, 5)
+		ember.position = Vector2(-15, -2)
 		pick.add_child(ember)
-		var smoke := Polygon2D.new()
-		smoke.polygon = PackedVector2Array([
-			Vector2(-20.0, -6.0), Vector2(-24.0, -13.0), Vector2(-18.0, -10.0)])
-		smoke.color = Color(0.85, 0.85, 0.9, 0.5)
-		pick.add_child(smoke)
 	else:
 		var leaf_path := "res://src/assets/sprites/sprite_item_weed-leaf.png"
 		if ResourceLoader.exists(leaf_path):
@@ -624,7 +618,8 @@ const BILLBOARD_TOP := 96.0
 func _setup_protocol_plinth(x: float) -> void:
 	_add_rest_stop_platform(x, 60.0, 24.0)
 
-	var sign_names := ["SMOKERING", "DIAMONDS", "GOLDMINE"]
+	var sign_names := ["LIL BLUNT", "DIAMONDS", "GOLDMINE"]
+	var sign_badges := ["badge_lilblunt", "badge_diamonds", "badge_goldmine"]
 	var total_w := BILLBOARD_W * sign_names.size() + BILLBOARD_GAP * (sign_names.size() - 1)
 	var start_x := x - total_w / 2.0
 	for i in range(sign_names.size()):
@@ -678,7 +673,7 @@ func _setup_protocol_plinth(x: float) -> void:
 		# Drop-in real art: res://src/assets/logos/<name>.png, lowercased.
 		# Solid circular badge first (founder: circular, NOT transparent); the raw
 		# logo file is only a fallback if a badge is missing.
-		var badge := "res://src/assets/art/badge_%s.png" % sign_names[i].to_lower()
+		var badge := "res://src/assets/art/%s.png" % sign_badges[i]
 		if ResourceLoader.exists(badge):
 			_swap_placeholder_texture(sign, badge)
 		else:

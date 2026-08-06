@@ -377,19 +377,19 @@ func _make_candle(x: float) -> void:
 	area.position = Vector2(x, GROUND_Y)
 	area.collision_mask = 2  # player runs on layer 2
 	area.set_meta("hazard", true)
-	# FLAMING DIAMOND. These red bars are the props the founder circled in
-	# flaming_diamonds_image1 (src/assets/logos/founder/ref_squares_to_replace.png)
-	# — NOT the FUD wall I changed last pass. Same generated gem art, sized to
-	# the candle's own 30px-tall killbox with the flames overhanging above it.
-	var gem := Sprite2D.new()
-	gem.texture = preload("res://src/assets/sprites/fx_flame_diamond.png")
-	gem.centered = false
-	gem.scale = Vector2(0.58, 0.58)
-	gem.position = Vector2(-21, -70)
-	area.add_child(gem)
-	var flick := gem.create_tween().set_loops()
-	flick.tween_property(gem, "modulate", Color(1.18, 1.06, 0.92, 1.0), 0.3).set_trans(Tween.TRANS_SINE)
-	flick.tween_property(gem, "modulate", Color(0.9, 0.9, 1.0, 1.0), 0.3).set_trans(Tween.TRANS_SINE)
+	# RED CANDLE — restored. "Bring back the red candles and replace these
+	# squares with the flaming diamonds." The diamonds belong on the floating
+	# SMOKE TOKENS (see _make_smoke_token), not on this hazard.
+	var body := ColorRect.new()
+	body.color = COLOR_HAZARD
+	body.size = Vector2(18, 34)
+	body.position = Vector2(-9, -34)
+	area.add_child(body)
+	var wick := ColorRect.new()
+	wick.color = Color(1.0, 0.55, 0.15, 0.9)
+	wick.size = Vector2(4, 14)
+	wick.position = Vector2(-2, -48)
+	area.add_child(wick)
 	var col := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
 	shape.size = Vector2(14, 30)
@@ -471,10 +471,9 @@ func _make_smoke_token(x: float, height: float) -> void:
 	var area := Area2D.new()
 	area.position = Vector2(x, GROUND_Y - height)
 	area.collision_mask = 2
-	var puff := ColorRect.new()
-	puff.color = COLOR_COLLECTIBLE
-	puff.size = Vector2(16, 16)
-	puff.position = Vector2(-8, -8)
+	var puff := Sprite2D.new()
+	puff.texture = preload("res://src/assets/sprites/fx_flame_diamond.png")
+	puff.scale = Vector2(0.34, 0.34)
 	area.add_child(puff)
 	var col := CollisionShape2D.new()
 	var shape := CircleShape2D.new()
