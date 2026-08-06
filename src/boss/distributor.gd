@@ -7,7 +7,7 @@ extends BossBase
 const BOSS_ID := "crystal"
 const ORB := preload("res://src/boss/boss_projectile.tscn")
 ## On-screen body size. Mirrored by distributor.tscn's RectangleShape2D.
-const BODY := 176.0
+const BODY := 240.0
 
 enum Phase { PATROL, SHARD_THROW, VULNERABLE }
 
@@ -39,7 +39,7 @@ func _ready() -> void:
 	boss_sprite.color = Color(0.3, 0.2, 0.6, 1.0)
 	# Founder: "The Boss in the 2nd stage doesn't have the same impact as
 	# before as he is MUCH smaller and doesn't have his diamond surfboard!!!"
-	# 176 vs the old 96. Mirrored by distributor.tscn (176x176 shape, offsets
+	# 240 now (was 176, was 96 before that). Mirrored by distributor.tscn (176x176 shape, offsets
 	# at 88) — the two must move together or art and hurtbox separate.
 	boss_sprite.size = Vector2(BODY, BODY)
 	collision.position = Vector2(BODY / 2.0, BODY / 2.0)

@@ -592,7 +592,7 @@ const BILLBOARD_H := 300.0
 const BILLBOARD_GAP := 60.0
 ## Top edge, in world Y. Floor surface is 660, so this hangs the boards well
 ## above head height — "high up", as asked — while staying inside the frame.
-const BILLBOARD_TOP := 150.0
+const BILLBOARD_TOP := 96.0
 
 func _setup_protocol_plinth(x: float) -> void:
 	_add_rest_stop_platform(x, 60.0, 24.0)
@@ -649,7 +649,13 @@ func _setup_protocol_plinth(x: float) -> void:
 		add_child(spill)
 
 		# Drop-in real art: res://src/assets/logos/<name>.png, lowercased.
-		_swap_placeholder_texture(sign, "res://src/assets/logos/%s.png" % sign_names[i].to_lower())
+		# Solid circular badge first (founder: circular, NOT transparent); the raw
+		# logo file is only a fallback if a badge is missing.
+		var badge := "res://src/assets/art/badge_%s.png" % sign_names[i].to_lower()
+		if ResourceLoader.exists(badge):
+			_swap_placeholder_texture(sign, badge)
+		else:
+			_swap_placeholder_texture(sign, "res://src/assets/logos/%s.png" % sign_names[i].to_lower())
 
 ## Rest stop C — Founder Mural Ledge: the destination beat near the far
 ## third, before the return portal. A long low platform with a wide mural mat

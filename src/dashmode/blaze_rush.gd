@@ -170,14 +170,21 @@ func _build_stage_theme_layer(pbg: ParallaxBackground) -> void:
 ## The band is 220px tall from GROUND_Y; 150px of art centred at +122 sits in
 ## its lower half with clearance top and bottom.
 const BAND_ART_Y: float = 122.0
-const BAND_ART_SIZE: float = 150.0
+const BAND_ART_SIZE: float = 190.0
 
+## SOLID CIRCULAR badges, not the raw square-cornered artwork.
+##
+## Founder, three separate times: "I don't want the logos to be transparent!!!
+## They need to be circular!!!!" The raw PNGs carry a square field around the
+## disc, which rendered as a dark plate behind each logo in the purple band —
+## his "what the fuck is this" screenshot. These are pre-composited opaque
+## circular badges (src/assets/art/badge_*.png).
 const BR_ART := [
-	"res://src/assets/art/br_smoke_rocket.png",
-	"res://src/assets/art/br_smoke_chariot.png",
-	"res://src/assets/art/br_diamonds.png",
-	"res://src/assets/art/br_goldmine.png",
-	"res://src/assets/art/br_robinhood.png",
+	"res://src/assets/art/badge_fomo.png",
+	"res://src/assets/art/badge_diamonds.png",
+	"res://src/assets/art/badge_goldmine.png",
+	"res://src/assets/art/badge_smokering.png",
+	"res://src/assets/art/badge_hood.png",
 ]
 
 func _build_protocol_landmarks() -> void:
@@ -210,7 +217,8 @@ func _build_protocol_landmarks() -> void:
 		art.position = Vector2(
 			700.0 + (_course_length - 900.0) * (float(i) / float(count)),
 			GROUND_Y + BAND_ART_Y)
-		art.modulate = Color(1.0, 1.0, 1.0, 0.62)
+		# Fully opaque: "solid", per the founder. No alpha wash.
+		art.modulate = Color(1.0, 1.0, 1.0, 1.0)
 		art.z_index = 1
 		add_child(art)
 
@@ -398,39 +406,46 @@ func _make_fud_wall(x: float) -> void:
 	var body := StaticBody2D.new()
 	body.position = Vector2(x, GROUND_Y - 52.0)
 	body.set_meta("fud_wall", true)
-	# FLAMING DIAMOND, not a square block (founder A6, with his reference image).
+	# FLAMING DIAMOND — the real thing this time.
 	#
-	# The COLLISION stays a rectangle — the founder asked for a look, not a
-	# physics change, and reshaping the collider would silently retune every
-	# jump in all three courses. Only the visual changes.
+	# Founder: "You didn't replace the white blocks with the flaming diamonds
+	# that I requested!!! You totally misconstrued the command!" Last pass I
+	# drew a flat magenta polygon with three little triangles on top and called
+	# it a flaming diamond; he is right that it was a weak substitute for the
+	# flame-diamond language in his reference.
 	#
-	# Grok's read (docs/model-responses/2026-08-05-grok-token-art.md): solid
-	# opaque body, flames confined to the upper third so the mass stays
-	# unbroken, hot palette that cannot be confused with the collectible
-	# language. The cyan top lip is kept — it is the "you can land here" signal
-	# and dropping it would make a readable obstacle unreadable.
-	var gem := Polygon2D.new()
-	gem.polygon = PackedVector2Array([
-		Vector2(0, -6), Vector2(23, 26), Vector2(0, 58), Vector2(-23, 26)])
-	gem.color = Color(0.86, 0.16, 0.42, 1.0)
+	# This is real artwork generated through the image model (see STATUS) and
+	# trimmed to its own alpha: a faceted crimson gem with flames wrapping the
+	# crown. It is 96px tall over a 52px collider, so the flames overhang the
+	# box — the obstacle READS big while the physics stays exactly as tuned.
+	var gem := Sprite2D.new()
+	gem.texture = preload("res://src/assets/sprites/fx_flame_diamond.png")
+	gem.centered = false
+	gem.position = Vector2(-24, -44)
 	body.add_child(gem)
-	var gem_facet := Polygon2D.new()
-	gem_facet.polygon = PackedVector2Array([
-		Vector2(0, -6), Vector2(11, 26), Vector2(0, 44), Vector2(-11, 26)])
-	gem_facet.color = Color(1.0, 0.45, 0.30, 1.0)
-	body.add_child(gem_facet)
-	# Flame licks off the upper tip only — never under the body, so the
-	# silhouette a player reads at 320px/s is still a solid diamond.
-	for fx: float in [-9.0, 0.0, 9.0]:
-		var lick := Polygon2D.new()
-		var hgt: float = 20.0 if is_zero_approx(fx) else 13.0
-		lick.polygon = PackedVector2Array([
-			Vector2(fx - 5.0, -4.0), Vector2(fx, -4.0 - hgt), Vector2(fx + 5.0, -4.0)])
-		lick.color = Color(1.0, 0.72, 0.18, 0.95)
-		body.add_child(lick)
-		var flick := lick.create_tween().set_loops()
-		flick.tween_property(lick, "scale", Vector2(1.0, 1.35), 0.28).set_trans(Tween.TRANS_SINE)
-		flick.tween_property(lick, "scale", Vector2(1.0, 0.85), 0.28).set_trans(Tween.TRANS_SINE)
+	# Flicker the whole prop very slightly rather than animating sub-parts —
+	# one tween per obstacle, and the silhouette never breaks up.
+	var flick := gem.create_tween().set_loops()
+	flick.tween_property(gem, "modulate", Color(1.14, 1.05, 0.95, 1.0), 0.34).set_trans(Tween.TRANS_SINE)
+	flick.tween_property(gem, "modulate", Color(0.92, 0.92, 1.0, 1.0), 0.34).set_trans(Tween.TRANS_SINE)
+
+	# FUD BOX RESTORED (founder: "Return the FUD box that we had previously").
+	# The label is what named the hazard; removing it last pass took away the
+	# only thing telling the player WHAT this block is. Kept behind the gem so
+	# the diamond stays the silhouette.
+	var fud_plate := ColorRect.new()
+	fud_plate.color = Color(0.16, 0.10, 0.30, 0.92)
+	fud_plate.size = Vector2(46, 22)
+	fud_plate.position = Vector2(-23, 30)
+	body.add_child(fud_plate)
+	var tag := Label.new()
+	tag.text = "FUD"
+	tag.position = Vector2(-20, 30)
+	tag.add_theme_font_size_override("font_size", 17)
+	tag.add_theme_color_override("font_color", Color(1, 0.86, 0.5))
+	tag.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	tag.add_theme_constant_override("outline_size", 4)
+	body.add_child(tag)
 	var top_lip := ColorRect.new()
 	top_lip.color = COLOR_SAFE_EDGE  # thick cyan-mint top lip: the glance-test "landable" signal
 	top_lip.size = Vector2(46, 4)

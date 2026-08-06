@@ -306,14 +306,22 @@ func _test_distributor_disc_renders_under_boss_body() -> void:
 	_check("disc is horizontally centred under the boss body (not beside it)",
 		absf(offset.x) < 3.0,
 		"disc is %.1fpx off-centre horizontally — this IS 'stands beside, not on' if nonzero" % offset.x)
-	# By design the disc's local vertices run y=[96,128] (mean 112) while the
-	# body's collision centre is at local y=48 — an intentional 64-local-px
-	# "feet" offset (96 local px is a generous ceiling: 1.5x that intentional
-	# gap, scaled by the boss's real transform so BOSS_SCALE changes don't
-	# require updating this test).
+	# The board is a FOOTPRINT: below the body centre, and no further down than
+	# the body's own half-height (plus a little slack for the hover bob).
+	#
+	# Derived from the boss's real CollisionShape2D, not from a fixed 96px
+	# scaled by boss.scale.y. That old form silently rotted: the comment
+	# claimed it tracked the boss's size, but sizing is done by the BODY
+	# constant, not by node scale — scale.y stays 1.0 — so growing the boss
+	# from 96 to 176 to 240 moved the real offset while the ceiling never
+	# budged, and the gate failed on a board that was correctly placed.
+	var body_cs := boss.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	var half_h: float = 48.0
+	if body_cs and body_cs.shape is RectangleShape2D:
+		half_h = (body_cs.shape as RectangleShape2D).size.y / 2.0
 	_check("disc sits below the body (a real footprint, not floating away from it)",
-		offset.y > 0.0 and offset.y < 96.0 * boss.scale.y,
-		"vertical offset %.1fpx" % offset.y)
+		offset.y > 0.0 and offset.y < half_h * 1.15 * boss.scale.y,
+		"vertical offset %.1fpx vs ceiling %.1fpx" % [offset.y, half_h * 1.15 * boss.scale.y])
 
 	boss.queue_free()
 	await get_tree().process_frame
