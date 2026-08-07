@@ -42,6 +42,19 @@ var _exiting: bool = false
 ## Snapshot dash_return at _ready so a mid-run reset() can't clear it.
 var _return_path: String = ""
 var _return_pos: Vector2 = Vector2.ZERO
+## Blaze-exclusive BGM. Released on EVERY exit path (finish, Q/ESC/EXIT,
+## watchdog) via _release_music(), so the track can never leak into a level.
+const BLAZE_MUSIC := "res://src/assets/music/blaze_rush_theme.mp3"
+var _music_token: int = -1
+
+func _release_music() -> void:
+	if _music_token != -1:
+		AudioManager.release_music_override(_music_token)
+		_music_token = -1
+
+## Belt and braces: if this node is freed by ANY route the override is dropped.
+func _exit_tree() -> void:
+	_release_music()
 
 ## Hazard telegraph (Grok's "critical for auto-run" call): one reusable
 ## warning bar, not one per obstacle — repositions each frame to whichever
@@ -76,6 +89,10 @@ func _ready() -> void:
 	_build_hud()
 	StateMachine.change_state(StateMachine.State.PLAYING)
 	AudioManager.play_sfx("powerup")
+	# Blaze Rush has its own track (founder-supplied NewLB2.mp3). push/pop
+	# override pauses and later RESUMES the level's music at its saved
+	# position, so returning to the stage does not restart its song.
+	_music_token = AudioManager.push_music_override(BLAZE_MUSIC)
 
 # --- construction -----------------------------------------------------------
 
@@ -467,17 +484,25 @@ func _make_fud_wall(x: float) -> void:
 	body.add_child(col)
 	add_child(body)
 
+## Peak of a ground jump: v^2 / 2g. Anything above this is unreachable.
+const JUMP_PEAK: float = (JUMP_VELOCITY * JUMP_VELOCITY) / (2.0 * GRAVITY)
+## Ceiling for a token: the jump peak plus most of a FUD wall's 52px, minus a
+## margin so it is comfortably grabbable rather than a pixel-perfect apex.
+const TOKEN_MAX_HEIGHT: float = JUMP_PEAK + 34.0
+
 func _make_smoke_token(x: float, height: float) -> void:
 	var area := Area2D.new()
-	area.position = Vector2(x, GROUND_Y - height)
+	area.position = Vector2(x, GROUND_Y - minf(height, TOKEN_MAX_HEIGHT))
 	area.collision_mask = 2
 	var puff := Sprite2D.new()
-	puff.texture = preload("res://src/assets/sprites/fx_flame_diamond.png")
-	puff.scale = Vector2(0.34, 0.34)
+	# Blue gem so the RED flame reads against it (founder T1). Slightly smaller
+	# than the 0.34 that shipped.
+	puff.texture = preload("res://src/assets/sprites/fx_flame_diamond_blue.png")
+	puff.scale = Vector2(0.28, 0.28)
 	area.add_child(puff)
 	var col := CollisionShape2D.new()
 	var shape := CircleShape2D.new()
-	shape.radius = 14.0
+	shape.radius = 26.0   # forgiving grab at 320px/s (was 14)
 	col.shape = shape
 	area.add_child(col)
 	# Gentle idle pulse (1.0 -> 1.12) so it reads as "alive/grabbable" at speed.
@@ -813,6 +838,7 @@ func _exit_to_level() -> void:
 		# player was never in.
 		GameManager.save_checkpoint(_level_index, 990 + _level_index, portal_pos)
 	GameManager.dash_return = {}
+	_release_music()
 	SceneRouter.load_scene(return_path, SceneRouter.Transition.SMOKE)
 	_arm_exit_watchdog(return_path)
 

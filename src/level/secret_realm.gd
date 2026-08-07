@@ -376,33 +376,44 @@ func _spawn_nugget(x: float, is_joint: bool) -> void:
 	cs.shape = rect
 	pick.add_child(cs)
 	if is_joint:
-		# Slim, even-width tube with a twisted tip. The earlier version tapered
-		# from 4px to 10px with a rounded end, which read as phallic rather than
-		# rolled — a joint is essentially a straight cylinder plus a pinched
-		# paper twist, so the silhouette is what has to change, not the colour.
-		var paper := ColorRect.new()
-		paper.color = Color(0.97, 0.95, 0.89, 1.0)
-		paper.size = Vector2(26, 5)
-		paper.position = Vector2(-11, -2)
-		pick.add_child(paper)
-		# Pinched twist at the mouth end — two converging triangles to a point.
-		var twist := Polygon2D.new()
-		twist.polygon = PackedVector2Array([
-			Vector2(15.0, -2.0), Vector2(21.0, 0.0), Vector2(15.0, 3.0)])
-		twist.color = Color(0.90, 0.87, 0.79, 1.0)
-		pick.add_child(twist)
-		# Green flecks through the paper: reads as herb inside, not tobacco.
-		for fx: float in [-6.0, 0.0, 6.0]:
-			var fleck := ColorRect.new()
-			fleck.color = Color(0.40, 0.62, 0.28, 0.75)
-			fleck.size = Vector2(3, 2)
-			fleck.position = Vector2(fx, -1)
-			pick.add_child(fleck)
-		var ember := ColorRect.new()
-		ember.color = Color(1.0, 0.42, 0.10, 1.0)
-		ember.size = Vector2(4, 5)
-		ember.position = Vector2(-15, -2)
-		pick.add_child(ember)
+		# CURVED WEED PIPE — bowl + curved stem.
+		#
+		# A joint silhouette (a tube) kept reading as something else no matter how
+		# it was tapered, so the object itself changes. A pipe is unmistakable:
+		# a round bowl at one end, a stem that CURVES up to a mouthpiece.
+		var bowl := _make_cushion(13.0, Color(0.42, 0.26, 0.16, 1.0))
+		bowl.position = Vector2(-17, -6)
+		pick.add_child(bowl)
+		# Bowl rim + the herb sitting in it.
+		var rim := _make_cushion(9.0, Color(0.30, 0.18, 0.11, 1.0))
+		rim.position = Vector2(-15, -8)
+		pick.add_child(rim)
+		var herb := _make_cushion(6.0, Color(0.36, 0.62, 0.26, 1.0))
+		herb.position = Vector2(-13.5, -7)
+		pick.add_child(herb)
+		# Curved stem: a short polyline of segments arcing up to the mouthpiece.
+		var stem_pts := [
+			Vector2(-6.0, 2.0), Vector2(1.0, 4.0),
+			Vector2(8.0, 3.0), Vector2(14.0, -1.0)]
+		for si in range(stem_pts.size() - 1):
+			var a: Vector2 = stem_pts[si]
+			var b: Vector2 = stem_pts[si + 1]
+			var seg := Line2D.new()
+			seg.add_point(a)
+			seg.add_point(b)
+			seg.width = 5.0
+			seg.default_color = Color(0.42, 0.26, 0.16, 1.0)
+			pick.add_child(seg)
+		# Mouthpiece bead at the top of the curve.
+		var tip := _make_cushion(7.0, Color(0.52, 0.34, 0.20, 1.0))
+		tip.position = Vector2(12, -5)
+		pick.add_child(tip)
+		# Smoke curl off the bowl.
+		var curl := Polygon2D.new()
+		curl.polygon = PackedVector2Array([
+			Vector2(-14.0, -12.0), Vector2(-18.0, -21.0), Vector2(-11.0, -17.0)])
+		curl.color = Color(0.85, 0.86, 0.90, 0.5)
+		pick.add_child(curl)
 	else:
 		var leaf_path := "res://src/assets/sprites/sprite_item_weed-leaf.png"
 		if ResourceLoader.exists(leaf_path):
