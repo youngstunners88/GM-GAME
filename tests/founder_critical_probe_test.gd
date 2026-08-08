@@ -51,6 +51,7 @@ func _run() -> void:
 	await _test_auditor_hits_player_on_contact()
 	await _test_skateboard_zone_hover_and_steer()
 	await _test_boss_backdrop_floor_alignment(2)
+	await _test_lounge_pickups_never_overlap()
 
 	if _failures == 0:
 		print("FOUNDER_CRITICAL_PROBE: ALL PASS")
@@ -644,3 +645,53 @@ func _exit_dist(boss: Node2D) -> float:
 	if cs and cs.shape is RectangleShape2D:
 		return (cs.shape as RectangleShape2D).size.x / 2.0 + 90.0
 	return 160.0
+
+## "Its like you just threw them around with no care to placement" + the items
+## masking each other, in the Smoke Lounge.
+##
+## Measured, not eyeballed: build the real lounge and read back the world X of
+## every collectible it spawned. Five pickup types used to each generate their
+## own independent arithmetic progression at the same Y, so 22 of 43 items sat
+## inside a neighbour's 44px trigger — including an exact 0px overlap. They are
+## now placed from one evenly-pitched lattice, and this asserts BOTH properties
+## the founder actually named: nothing overlaps, and the spacing is uniform.
+func _test_lounge_pickups_never_overlap() -> void:
+	var lounge: Node2D = load("res://src/level/secret_realm.tscn").instantiate()
+	get_tree().root.add_child(lounge)
+	await get_tree().process_frame
+	await get_tree().process_frame
+
+	var xs: Array[float] = []
+	for node in lounge.get_children():
+		var a := node as Area2D
+		if a == null:
+			continue
+		# Every lounge pickup is on the collectible layer (8) and sits in the
+		# skate band; the level's own props are not Area2Ds on that layer.
+		if a.collision_layer != 8:
+			continue
+		xs.append(a.global_position.x)
+	xs.sort()
+	_info("lounge pickups placed", xs.size())
+	_check("the lounge actually spawned its pickup lane", xs.size() >= 30,
+		"only %d collectibles found" % xs.size())
+
+	var min_gap := INF
+	var max_gap := 0.0
+	for i in range(1, xs.size()):
+		var g: float = xs[i] - xs[i - 1]
+		min_gap = minf(min_gap, g)
+		max_gap = maxf(max_gap, g)
+	if xs.size() > 1:
+		_info("closest two pickups (px apart)", min_gap)
+		# 44px triggers on ~40px sprites: below ~88px they visibly touch.
+		_check("no two lounge pickups mask each other", min_gap >= 88.0,
+			"closest pair is %.0fpx apart — they overlap on screen" % min_gap)
+		# Uniform pitch is the other half of the complaint. A lattice gives one
+		# pitch end to end; independent progressions give a ragged spread.
+		_check("lounge pickup spacing is uniform, not scattered",
+			max_gap - min_gap < 2.0,
+			"pitch varies from %.0f to %.0f px" % [min_gap, max_gap])
+
+	lounge.queue_free()
+	await get_tree().process_frame

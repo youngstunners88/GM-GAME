@@ -350,29 +350,93 @@ func _attach_skateboard(player: Node2D) -> void:
 ## 44px trigger — squarely across the standing hurtbox band of 630..660.
 const SKATE_PICKUP_Y := 28.0
 
+## Where the collectible lane starts and ends, and the closest two pickups are
+## ever allowed to sit. 44px triggers on ~40px sprites need roughly 90px of
+## pitch before they stop touching; 93 is what the lane below actually lands on.
+const LANE_START_X := 760.0
+const LANE_END_X := 4700.0
+const LANE_MIN_PITCH := 90.0
+
 func _setup_rewards() -> void:
-	# A long collectible trail along the skate line — this is the run's reward.
-	for i in range(14):
-		EntitySpawner.spawn("coin_eth", Vector2(900 + i * 270, FLOOR_SURFACE_Y - SKATE_PICKUP_Y), self)
-	EntitySpawner.spawn("coin_btc", Vector2(2460, FLOOR_SURFACE_Y - SKATE_PICKUP_Y), self)
-	EntitySpawner.spawn("coin_btc", Vector2(3150, FLOOR_SURFACE_Y - SKATE_PICKUP_Y), self)
-	EntitySpawner.spawn("coin_btc", Vector2(4380, FLOOR_SURFACE_Y - SKATE_PICKUP_Y), self)
-	EntitySpawner.spawn("health_pickup", Vector2(1750, FLOOR_SURFACE_Y - SKATE_PICKUP_Y), self)
-	EntitySpawner.spawn("health_pickup", Vector2(3900, FLOOR_SURFACE_Y - SKATE_PICKUP_Y), self)
-	# Founder G2: "in the Smoke Lounge Lil Blunt should also be able to collect
-	# some weed nuggets and joints as extra points along with what is currently
-	# available there." Drawn in code from the existing leaf art — no new asset
-	# dependency, same skate-height band so they collect by rolling through.
-	for i in range(18):
-		_spawn_nugget(760.0 + i * 230.0, i % 3 == 0)
-	# L5 — collectible weed HOOKAH pipes (distinct from the decorative curved
-	# pipe pickup above). Founder: "the weed pipe is great. We also need weed
-	# Hookah Pipes that need to be collected too." Uses the existing bong art
-	# (a hookah IS a water pipe — same silhouette family already in the
-	# project) so this needs no new asset, but is a real scoring pickup, not
-	# the ambient decoration at the Bong Alcove.
-	for i in range(6):
-		_spawn_hookah(1400.0 + i * 620.0)
+	# ONE LANE, ONE LATTICE — every pickup in the lounge is placed from here.
+	#
+	# Founder: "its like you just threw them around with no care to placement",
+	# and separately that the items mask each other. Both were literally true,
+	# and the cause was structural rather than a few bad numbers: five pickup
+	# types each generated their OWN arithmetic progression (coins 900+270i,
+	# nuggets 760+230i, hookahs 1400+620i, plus hand-typed BTC and health
+	# coordinates) at the SAME Y. Nothing reconciled them, so they collided
+	# wherever their periods happened to line up — 22 of the 43 items sat
+	# within 90px of a neighbour, including an EXACT 0px overlap at x=3060 and
+	# several 10px pairs. Retyping the constants would only move the collisions
+	# somewhere else.
+	#
+	# So types no longer own coordinates. The lane owns evenly-pitched SLOTS,
+	# and each type is assigned slots; the rare pickups claim theirs first at an
+	# even cadence of their own, and the common ones fill what is left. Two
+	# items cannot share a slot, so they cannot mask each other, and the pitch
+	# is uniform end to end.
+	var y: float = FLOOR_SURFACE_Y - SKATE_PICKUP_Y
+	var slot_count: int = int((LANE_END_X - LANE_START_X) / LANE_MIN_PITCH) + 1
+	var pitch: float = (LANE_END_X - LANE_START_X) / float(maxi(slot_count - 1, 1))
+	var kinds: Array[String] = []
+	kinds.resize(slot_count)
+	kinds.fill("")
+
+	# Rare pickups first, spread across the whole lane by even division rather
+	# than by hand-picked x values. The half-step offset keeps them off the very
+	# first and last slots, which read better as a run-in and a run-out.
+	_claim_slots(kinds, "hookah", 6)
+	_claim_slots(kinds, "coin_btc", 3)
+	_claim_slots(kinds, "health_pickup", 2)
+
+	# Everything else alternates nugget / ETH coin so the lane has a readable
+	# rhythm instead of a single undifferentiated string of pickups. Every third
+	# nugget is a pipe, matching the ratio the lounge already shipped with.
+	var nugget_n: int = 0
+	for i in range(slot_count):
+		if kinds[i] != "":
+			continue
+		if i % 2 == 0:
+			kinds[i] = "nugget_pipe" if nugget_n % 3 == 0 else "nugget"
+			nugget_n += 1
+		else:
+			kinds[i] = "coin_eth"
+
+	for i in range(slot_count):
+		var x: float = LANE_START_X + pitch * float(i)
+		match kinds[i]:
+			"nugget":
+				_spawn_nugget(x, false)
+			"nugget_pipe":
+				# Founder G2: "Lil Blunt should also be able to collect some weed
+				# nuggets and joints as extra points."
+				_spawn_nugget(x, true)
+			"hookah":
+				# L5 — collectible weed HOOKAH pipes, distinct from the decorative
+				# bong at the alcove. Founder: "the weed pipe is great. We also
+				# need weed Hookah Pipes that need to be collected too."
+				_spawn_hookah(x)
+			_:
+				EntitySpawner.spawn(kinds[i], Vector2(x, y), self)
+
+## Reserve `count` slots for `kind`, spaced as evenly across the lane as the
+## slot count allows. Skips any slot already taken, so two rare types can never
+## be assigned the same position.
+func _claim_slots(kinds: Array[String], kind: String, count: int) -> void:
+	if count <= 0:
+		return
+	var n: int = kinds.size()
+	var step: float = float(n) / float(count)
+	for k in range(count):
+		var idx: int = clampi(int(step * (float(k) + 0.5)), 0, n - 1)
+		# Nudge off an occupied slot rather than overwrite it.
+		var tries: int = 0
+		while kinds[idx] != "" and tries < n:
+			idx = (idx + 1) % n
+			tries += 1
+		if kinds[idx] == "":
+			kinds[idx] = kind
 
 ## A collectable nugget (or joint) worth bonus score. Built as a plain Area2D
 ## rather than a new .tscn so it needs no scene/import round-trip.

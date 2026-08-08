@@ -114,10 +114,24 @@ blaze-lifecycle-e2e — **all ALL PASS**. Security sentinel **18/18**, sprite
 alpha clean. `icp_contract` fails in this sandbox only: it needs a live ICP
 canister and the outbound proxy blocks it — unrelated to these changes.
 
+### 8. Smoke Lounge — "like you just threw them around with no care to placement"
+
+Also literally true, and measurable. Five pickup types each generated their
+**own** arithmetic progression at the same height — coins `900+270i`, nuggets
+`760+230i`, hookahs `1400+620i`, plus hand-typed BTC and health coordinates.
+Nothing reconciled them, so they collided wherever their periods lined up:
+**22 of the 43 items sat inside a neighbour's 44px trigger**, including an
+exact **0px overlap at x=3060** and several 10px pairs. Retyping the numbers
+would only have moved the collisions elsewhere.
+
+Types no longer own coordinates. The lane owns evenly-pitched slots; rare
+pickups claim theirs first at an even cadence, common ones fill the rest, and
+two items cannot share a slot. Result: **44 pickups, uniform 91.6px pitch, zero
+overlaps** — asserted in `founder_critical_probe_test` against the real level,
+reading back each spawned collectible's actual world position.
+
 ## Still open
 
-- **Smoke Lounge prop placement** — items masking each other and uneven
-  spacing. Not addressed this pass.
 - **Per-stage Blaze forest backgrounds** — still the source level's art tinted.
 - **B.AI integration** — config-only, needs its own session.
 
