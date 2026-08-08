@@ -285,6 +285,23 @@ func boss_contact_restart() -> void:
     if _boss_restart_pending:
         return
     _boss_restart_pending = true
+    # THIS IS A DEATH, NOT A SETBACK.
+    #
+    # Founder, repeatedly: "the moment he touches Lil Blunt the stage needs to
+    # restart as Lil Blunt has DIED and the player has LOST ALL OF THEIR
+    # POINTS." My previous version reloaded the level but carried the score,
+    # coins, rings and SMOKE straight through — so a boss touch cost the
+    # player nothing but a walk back, which is exactly the missing stakes he
+    # kept reporting. Everything earned in the run is now forfeit.
+    total_score = 0
+    score_changed.emit(total_score)
+    coins_collected = 0
+    coins_changed.emit(coins_collected)
+    ethereum_rings_collected = 0
+    rings_changed.emit(ethereum_rings_collected)
+    smoke_collected = 0
+    smoke_changed.emit(smoke_collected)
+    ComboSystem.break_combo()
     level_checkpoints.erase(current_level)
     player_health = max_health
     health_changed.emit(player_health)
@@ -292,6 +309,11 @@ func boss_contact_restart() -> void:
     power_up_timer = 0.0
     power_up_changed.emit("", 0.0)
     last_damage_source = "boss_contact"
+    # Read as a death: the same signal + audio any other fatal hit raises, so
+    # HUD/analytics/VO all treat it identically.
+    player_died.emit()
+    AudioManager.play_sfx("damage")
+    AudioManager.play_bark("vo_death", 0.0)
     save_session()
     SceneRouter.load_scene(level_scene(current_level), SceneRouter.Transition.FADE)
     # Cleared on the next level's _ready via reset_boss_restart_flag(); a bare

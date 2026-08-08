@@ -73,16 +73,42 @@ func play_playlist(paths: Array) -> void:
         return
     _play_next_in_playlist(true)
 
+## Players that are mid-fade-out. UNTRACKED before, which is the whole bug:
+## _duck_out_music() detached the outgoing player and relied on a tween to
+## free it 0.8s later, keeping no reference. A second play_playlist() inside
+## that window (level load -> boss trigger, or a boss-contact level reload)
+## therefore ducked only the CURRENT player while the previous one kept
+## playing to its own timer — two stage tracks audible at once, the founder's
+## "a song playing and another song playing in the background subtly."
+var _retiring: Array[AudioStreamPlayer] = []
+
+## Hard-stop anything still fading from an earlier switch. Called before
+## starting a new fade so at most ONE outgoing track can ever be audible.
+func _purge_retiring() -> void:
+    for pl: AudioStreamPlayer in _retiring:
+        if is_instance_valid(pl):
+            pl.stop()
+            pl.queue_free()
+    _retiring.clear()
+
 ## Fade the current track out and free it — replaces the old hard stop.
 func _duck_out_music() -> void:
+    _purge_retiring()
     if current_music_player and is_instance_valid(current_music_player):
         var old := current_music_player
+        _retiring.append(old)
         var tween := old.create_tween()
-        tween.tween_property(old, "volume_db", -32.0, 0.8)
-        tween.finished.connect(old.queue_free)
+        # 0.45s, not 0.8s: shorter overlap with the incoming track's fade-in,
+        # so a switch reads as a transition rather than two songs playing.
+        tween.tween_property(old, "volume_db", -32.0, 0.45)
+        tween.finished.connect(func() -> void:
+            _retiring.erase(old)
+            if is_instance_valid(old):
+                old.queue_free())
     current_music_player = null
 
 func _stop_music() -> void:
+    _purge_retiring()
     if current_music_player and is_instance_valid(current_music_player):
         current_music_player.stop()
         current_music_player.queue_free()
@@ -217,6 +243,7 @@ func discard_music_override(token: int) -> void:
         return
     _override_active = false
     _clear_override_player()
+    _purge_retiring()
     if current_music_player and is_instance_valid(current_music_player):
         current_music_player.stop()
         current_music_player.queue_free()

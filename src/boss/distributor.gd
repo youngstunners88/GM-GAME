@@ -12,10 +12,15 @@ const BODY := 240.0
 enum Phase { PATROL, SHARD_THROW, VULNERABLE }
 
 @export var patrol_speed: float = 80.0
-@export var throw_cooldown: float = 2.0
+@export var throw_cooldown: float = 1.5
 
 var current_phase_state: Phase = Phase.PATROL
-var throw_timer: float = 0.0
+## Starts positive so he CHASES for a beat before his first volley. At 0.0 he
+## threw on the very first physics frame.
+var throw_timer: float = 2.2
+## Counts the vulnerable window down. Without it VULNERABLE never ended.
+var vuln_timer: float = 0.0
+@export var vulnerable_time: float = 1.6
 var direction: float = 1.0
 ## The surfboard deck itself, exposed so the alignment gate in
 ## tests/founder_critical_probe_test.gd can measure the board's real rendered
@@ -31,9 +36,13 @@ var _disc: Polygon2D
 @onready var hitbox_shape: CollisionShape2D = $Hitbox/CollisionShape2D
 
 func _ready() -> void:
-	max_health = 7
-	health = 7
-	phase_thresholds = [4, 2]
+	# STAGE 2 OF 3 — must be harder than the Auditor (10 HP), easier than the
+	# Claim Jumper. The curve used to run BACKWARDS: 10 -> 7 -> 6, so each
+	# stage's boss was weaker than the last. Founder: "the bosses need to be
+	# more challenging with each stage!!!"
+	max_health = 14
+	health = 14
+	phase_thresholds = [9, 4]
 	add_to_group("enemy")
 	add_to_group("boss")
 	boss_sprite.color = Color(0.3, 0.2, 0.6, 1.0)
@@ -61,14 +70,17 @@ func _physics_process(delta: float) -> void:
 
 	match current_phase_state:
 		Phase.PATROL:
-			_hover_pursue(delta)
+			_hover_pursue(delta, 1.0)
 			if throw_timer <= 0:
 				_throw_shards()
 
 		Phase.SHARD_THROW:
-			_hover_brake(delta)
+			# Keeps closing while he throws, just slower. He was braking to a
+			# dead stop here, which is half of why he never felt like a threat.
+			_hover_pursue(delta, 0.45)
 			if throw_timer <= 0:
 				current_phase_state = Phase.VULNERABLE
+				vuln_timer = vulnerable_time
 				# Vulnerability is telegraphed by a soft CYAN shimmer, not by
 				# turning him red — red is reserved for the hit flash so a
 				# landed blow actually reads (founder E3).
@@ -77,10 +89,22 @@ func _physics_process(delta: float) -> void:
 				hitbox.monitoring = true
 
 		Phase.VULNERABLE:
+			# THE BUG THE FOUNDER HIT: "the 2nd boss doesn't chase Lil Blunt!!!"
+			#
+			# VULNERABLE had NO timeout. The only line returning this boss to
+			# PATROL lived inside take_damage(), so once he entered his
+			# vulnerable window he sat braking to a halt FOREVER unless the
+			# player chose to hit him. And because throw_timer started at 0.0
+			# he threw on frame one and reached that dead state within about a
+			# second of the fight starting — so for practically the whole
+			# fight he was a stationary target, not a pursuer.
+			vuln_timer -= delta
 			_hover_brake(delta)
 			# Cyan shimmer = "hit me now". Never red (see E3 above).
 			boss_sprite.modulate = (Color(0.75, 1.15, 1.35, 1.0)
-				if fmod(throw_timer, 0.34) < 0.17 else Color(1, 1, 1, 1))
+				if fmod(vuln_timer, 0.34) < 0.17 else Color(1, 1, 1, 1))
+			if vuln_timer <= 0.0:
+				_end_vulnerable()
 
 ## THE DIAMOND SURFBOARD.
 ##
@@ -100,8 +124,8 @@ func _physics_process(delta: float) -> void:
 ## transform and cannot be separated from him by any movement or flip.
 ## Free 2D hover pursuit — the "levitate in any direction" the founder asked
 ## for, and the reason he can no longer fall anywhere.
-const HOVER_ACCEL: float = 340.0
-const HOVER_MAX: float = 210.0
+const HOVER_ACCEL: float = 430.0
+const HOVER_MAX: float = 265.0
 ## Ride height above the player, so he looms rather than sitting on their head.
 const HOVER_ABOVE: float = 150.0
 ## Hard arena clamp, set by the level when the fight starts. Zero size = unset,
@@ -109,12 +133,23 @@ const HOVER_ABOVE: float = 150.0
 var arena_min: Vector2 = Vector2.ZERO
 var arena_max: Vector2 = Vector2.ZERO
 
-func _hover_pursue(delta: float) -> void:
+## Shared exit from the vulnerable window — closes the damage gate and puts
+## him straight back on the hunt.
+func _end_vulnerable() -> void:
+	current_phase_state = Phase.PATROL
+	throw_timer = maxf(1.2, throw_cooldown - 0.4 * (current_phase - 1))
+	boss_sprite.color = Color(0.3, 0.2, 0.6, 1.0)
+	boss_sprite.modulate = Color(1, 1, 1, 1)
+	hitbox.monitorable = false
+	hitbox.monitoring = false
+
+func _hover_pursue(delta: float, speed_scale: float = 1.0) -> void:
 	var p := get_tree().get_first_node_in_group("player")
 	if p:
 		var target: Vector2 = p.global_position + Vector2(0.0, -HOVER_ABOVE)
 		var to: Vector2 = target - global_position
-		velocity = velocity.move_toward(to.normalized() * HOVER_MAX, HOVER_ACCEL * delta)
+		velocity = velocity.move_toward(
+			to.normalized() * HOVER_MAX * speed_scale, HOVER_ACCEL * delta)
 		boss_sprite.set_facing(to.x > 0.0)
 	else:
 		velocity = velocity.move_toward(Vector2.ZERO, HOVER_ACCEL * delta)
@@ -234,11 +269,9 @@ func take_damage(amount: int) -> void:
 	if health <= 0:
 		die()
 	else:
-		current_phase_state = Phase.PATROL
-		throw_timer = 2.0
-		boss_sprite.color = Color(0.3, 0.2, 0.6, 1.0)
-		hitbox.monitorable = false
-		hitbox.monitoring = false
+		# Same exit as the timeout path — one function, so a future edit
+		# cannot leave one route closing the damage gate and the other not.
+		_end_vulnerable()
 		_check_phase_change()
 
 func die() -> void:
