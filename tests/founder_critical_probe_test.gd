@@ -52,6 +52,7 @@ func _run() -> void:
 	await _test_skateboard_zone_hover_and_steer()
 	await _test_boss_backdrop_floor_alignment(2)
 	await _test_lounge_pickups_never_overlap()
+	await _test_blaze_backdrops_differ_per_realm()
 
 	if _failures == 0:
 		print("FOUNDER_CRITICAL_PROBE: ALL PASS")
@@ -695,3 +696,72 @@ func _test_lounge_pickups_never_overlap() -> void:
 
 	lounge.queue_free()
 	await get_tree().process_frame
+
+## "Return the trees in the background of the Blaze Rush... the theme of the
+##  2nd should align with the 2nd stage and same with the 3rd" — and NOT a
+##  single tint of the main stage art.
+##
+## The previous implementation loaded each LEVEL's own painted plate and
+## modulated it toward magenta, so all three runs were one picture at three
+## tints. A check that merely asserted "a backdrop layer exists" would have
+## passed that happily, which is why this compares the three realms against
+## each other instead: it reads the texture actually assigned for L1/L2/L3 and
+## requires three DIFFERENT plates, each the realm's dedicated forest art, all
+## shipping unmodulated.
+func _test_blaze_backdrops_differ_per_realm() -> void:
+	var seen: Dictionary = {}
+	for level_index in [1, 2, 3]:
+		GameManager.dash_return = {
+			"scene_path": LEVEL_SCENES[level_index],
+			"position": Vector2(1234.5, 321.5),
+			"level_index": level_index,
+		}
+		await _arm_decoy_current_scene()
+		var run: Node = BLAZE_RUSH.instantiate()
+		add_child(run)
+		await get_tree().process_frame
+		await get_tree().process_frame
+
+		var path: String = ""
+		var tint := Color(1, 1, 1, 1)
+		# The backdrop is the slowest ParallaxLayer in the run's background.
+		for pbg in _find_all(run, "ParallaxBackground"):
+			for child in pbg.get_children():
+				var pl := child as ParallaxLayer
+				if pl == null or not is_equal_approx(pl.motion_scale.x, 0.08):
+					continue
+				for gc in pl.get_children():
+					var spr := gc as Sprite2D
+					if spr != null and spr.texture != null:
+						path = spr.texture.resource_path
+						tint = spr.modulate
+		_check("L%d Blaze: a backdrop plate is assigned" % level_index, path != "",
+			"no 0.08-motion_scale ParallaxLayer with a texture was built")
+		if path != "":
+			_check("L%d Blaze: uses its own realm forest plate, not the level's art" % level_index,
+				path.contains("bg_blaze_l"), path)
+			# A modulated plate is the "single tint of the main stage art" the
+			# founder rejected — the realm plates are painted, not tinted.
+			_check("L%d Blaze: backdrop ships unmodulated (painted, not tinted)" % level_index,
+				tint.is_equal_approx(Color(1, 1, 1, 1)), str(tint))
+			seen[level_index] = path
+		run.queue_free()
+		await get_tree().process_frame
+
+	var distinct: Dictionary = {}
+	for k in seen:
+		distinct[seen[k]] = true
+	_info("blaze backdrops", seen)
+	_check("all three Blaze realms use DIFFERENT backdrops",
+		distinct.size() == seen.size() and seen.size() == 3,
+		"%d plate(s) across %d realms — a shared plate is the 'same art, different tint' defect"
+			% [distinct.size(), seen.size()])
+
+## Depth-first search for nodes of a given class name.
+func _find_all(root: Node, cls: String) -> Array[Node]:
+	var out: Array[Node] = []
+	if root.is_class(cls):
+		out.append(root)
+	for c in root.get_children():
+		out.append_array(_find_all(c, cls))
+	return out
