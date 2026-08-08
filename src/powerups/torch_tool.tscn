@@ -4,7 +4,7 @@
 [ext_resource type="Texture2D" path="res://src/assets/sprites/sprite_item_torch.png" id="2_torch"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_torch"]
-size = Vector2(16, 36)
+size = Vector2(44, 44)
 
 [node name="TorchTool" type="Area2D"]
 collision_layer = 16

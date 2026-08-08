@@ -250,9 +250,22 @@ GDScript code or language features, you MUST:
 
 Key post-cutoff GDScript changes: variadic arguments (`...`), `@abstract`
 decorator, script backtracing in Release builds. Check the reference docs
-for the full list.
+for the full list. **These are a future upgrade path, not this project's
+current engine** — see the correction notice at the top of `VERSION.md`
+before assuming any post-4.3 feature is available.
 
 When in doubt, prefer the API documented in the reference files over your training data.
+
+## Known Project-Specific Gotchas
+
+Read `docs/engine-reference/godot/gdscript-gotchas.md` before writing signal
+handlers, test harnesses that spawn/destroy physics objects, or anything
+that waits on a flag set from inside a lambda. Every entry there is a trap
+that already cost real debugging time in this project — lambda closures
+capturing local variables by value instead of by reference, a confirmed
+engine SIGSEGV from rapid sequential physics-object churn, and a test
+state-isolation bug from stale objects surviving across test functions in a
+shared scene tree.
 
 ## Tooling — ripgrep File Filtering
 

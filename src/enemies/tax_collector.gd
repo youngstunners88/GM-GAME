@@ -13,8 +13,14 @@ enum State { PATROL, ALERT, PURSUE }
 @export var patrol_distance: float = 200.0
 ## Pursuit must outpace patrol or closing distance reads as "nothing changed".
 @export var pursue_speed: float = 105.0
-@export var detect_x: float = 200.0
-@export var detect_y: float = 100.0
+@export var detect_x: float = 520.0
+@export var detect_y: float = 220.0
+## Once he has ENGAGED, he keeps hunting far past the initial detect box —
+## the founder's requirement is that he pursues across the whole stage, not
+## that he gives up the moment you walk a screen away. Initial detection
+## stays screen-sized so he never aggros from off-screen unfairly.
+@export var pursue_keep_x: float = 1600.0
+@export var pursue_keep_y: float = 600.0
 ## Telegraph before the chase starts. Deliberately generous.
 @export var alert_time: float = 0.5
 ## Give up only after the player has been clear this long. Without this
@@ -80,6 +86,7 @@ func _physics_process(delta: float) -> void:
                 _alert_timer = alert_time
                 velocity.x = 0.0
                 _face_player()
+                AudioManager.play_sfx_at("tax_alert", global_position)
         State.ALERT:
             # Frozen tell: stand still, facing the player, before committing.
             # Kimi re-audit: this used to bail back to PATROL the instant the
@@ -120,7 +127,7 @@ func _do_pursue(delta: float) -> void:
         start_x = global_position.x
         return
 
-    if _player_in_range():
+    if _player_in_pursue_range():
         _out_of_range_timer = 0.0
     else:
         _out_of_range_timer += delta
@@ -144,7 +151,19 @@ func _do_pursue(delta: float) -> void:
     if is_on_floor() and _jump_cooldown <= 0.0:
         var wants_up := dy < -40.0
         var blocked := is_on_wall()
-        if (wants_up or blocked) and absf(dx) <= max_jump_gap:
+        # Two DIFFERENT jump reasons that must not share one gate:
+        #
+        #  * blocked  — a wall/crate is physically in front of him. Hop it,
+        #    unconditionally. This used to be gated on the player being
+        #    within max_jump_gap (80px), so whenever the founder ran further
+        #    than that, a blocked Tax Collector simply never jumped and stood
+        #    behind the block for the rest of the fight. A wall means he
+        #    cannot advance anyway, so jumping is always the better move.
+        #
+        #  * wants_up — the player is above him with no wall in the way. This
+        #    one KEEPS the max_jump_gap guard, because that guard exists to
+        #    stop him launching across a pit he cannot land on.
+        if blocked or (wants_up and absf(dx) <= max_jump_gap):
             velocity.y = jump_force
             _jump_cooldown = 0.8
 
@@ -153,6 +172,13 @@ func _player_in_range() -> bool:
         return false
     var d := _player.global_position - global_position
     return absf(d.x) <= detect_x and absf(d.y) <= detect_y
+
+## Wider "stay locked on" box used only while already PURSUING.
+func _player_in_pursue_range() -> bool:
+    if _player == null or not is_instance_valid(_player):
+        return false
+    var d := _player.global_position - global_position
+    return absf(d.x) <= pursue_keep_x and absf(d.y) <= pursue_keep_y
 
 func _face_player() -> void:
     if _player != null and is_instance_valid(_player):

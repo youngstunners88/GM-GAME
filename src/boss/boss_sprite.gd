@@ -5,11 +5,28 @@ extends Node2D
 ##   sprite.color    — red-flash writes tint the art; base-color writes restore white
 ##   sprite.size     — desired on-screen box; texture is fitted to its height
 ##   sprite.modulate — native Node2D property (damage flicker uses it directly)
-##   sprite.scale.x  — native flip (scripts set 1.0 / -1.0)
+##   sprite.set_facing(bool) — flip without displacement (use this, not scale.x)
 
 @export var texture_path: String = ""
 
 var _spr: Sprite2D
+
+## Flip the inner sprite without displacing the art. Using scale.x = -1 on the
+## parent mirrors the child's size/2 offset, teleporting the art sideways.
+## This method flips flip_h in place — position stays pinned.
+## Does the SOURCE artwork already point to the viewer's right?
+##
+## Founder, twice: "the Tax Auditor is still facing Lil Blunt with his back."
+## set_facing() assumed every boss sheet is drawn facing right, so for a sheet
+## drawn the other way every call flipped him exactly the wrong way — chasing
+## the player while presenting his back. Which way a given PNG happens to face
+## is a property of that art, so it belongs on the node, not baked into the
+## flip logic.
+@export var art_faces_right: bool = true
+
+func set_facing(face_right: bool) -> void:
+	if _spr:
+		_spr.flip_h = (face_right != art_faces_right)
 
 ## Emulates ColorRect.size: fits the texture display height to size.y.
 var size: Vector2 = Vector2(96, 96):

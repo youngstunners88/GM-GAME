@@ -49,6 +49,9 @@ func load_scene(path: String, transition_type: Transition = Transition.FADE) -> 
         var err_web := get_tree().change_scene_to_file(scene_path)
         if err_web != OK:
             push_error("SceneRouter: change_scene_to_file failed for %s (err %d)" % [scene_path, err_web])
+            # A failed scene change strands the player on a fade overlay — the
+            # most player-visible failure this game has.
+            ErrorReporter.report("scene_load_failed", {"path": scene_path, "err": err_web, "route": "web"})
             _abort_load()
             return
         await get_tree().process_frame
@@ -63,6 +66,7 @@ func load_scene(path: String, transition_type: Transition = Transition.FADE) -> 
     var err := ResourceLoader.load_threaded_request(path)
     if err != OK:
         push_error("SceneRouter: load_threaded_request failed for %s (err %d)" % [path, err])
+        ErrorReporter.report("scene_load_failed", {"path": path, "err": err, "route": "threaded_request"})
         _abort_load()
         return
     set_process(true)
@@ -99,6 +103,7 @@ func _process(_delta: float) -> void:
             _finalise_load()
         ResourceLoader.THREAD_LOAD_FAILED, ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
             push_error("SceneRouter: failed to load %s" % _loading_path)
+            ErrorReporter.report("scene_load_failed", {"path": _loading_path, "route": "threaded_status"})
             _abort_load()
 
 func _finalise_load() -> void:

@@ -18,10 +18,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -300.0
-offset_top = -220.0
-offset_right = 300.0
-offset_bottom = 220.0
+offset_left = -320.0
+offset_top = -260.0
+offset_right = 320.0
+offset_bottom = 260.0
 
 [node name="VBox" type="VBoxContainer" parent="Panel"]
 anchors_preset = 15
@@ -31,33 +31,39 @@ offset_left = 24.0
 offset_top = 20.0
 offset_right = -24.0
 offset_bottom = -20.0
-theme_override_constants/separation = 12
+theme_override_constants/separation = 14
 
 [node name="Title" type="Label" parent="Panel/VBox"]
 text = "WEEKLY SMOKE REALM UPDATES?"
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 32
 
 [node name="Blurb" type="Label" parent="Panel/VBox"]
 text = "Optional: get your weekly rank, tips, and realm news. Skip anytime — the game never needs it."
 autowrap_mode = 2
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 22
 
 [node name="Name" type="LineEdit" parent="Panel/VBox"]
 placeholder_text = "Name or handle (optional)"
 max_length = 40
+custom_minimum_size = Vector2(0, 56)
+theme_override_font_sizes/font_size = 22
 
 [node name="Email" type="LineEdit" parent="Panel/VBox"]
 placeholder_text = "you@example.com"
 max_length = 254
+custom_minimum_size = Vector2(0, 56)
+theme_override_font_sizes/font_size = 22
 
 [node name="Consent" type="CheckBox" parent="Panel/VBox"]
 text = "I agree to receive game updates and leaderboard notifications"
+custom_minimum_size = Vector2(0, 52)
+theme_override_font_sizes/font_size = 22
 
 [node name="Status" type="Label" parent="Panel/VBox"]
 text = ""
 autowrap_mode = 2
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 20
 
 [node name="Row" type="HBoxContainer" parent="Panel/VBox"]
 alignment = 1
@@ -65,8 +71,10 @@ theme_override_constants/separation = 20
 
 [node name="JoinBtn" type="Button" parent="Panel/VBox/Row"]
 text = "JOIN THE LIST"
-custom_minimum_size = Vector2(160, 44)
+custom_minimum_size = Vector2(200, 64)
+theme_override_font_sizes/font_size = 24
 
 [node name="SkipBtn" type="Button" parent="Panel/VBox/Row"]
 text = "SKIP"
-custom_minimum_size = Vector2(120, 44)
+custom_minimum_size = Vector2(140, 64)
+theme_override_font_sizes/font_size = 24

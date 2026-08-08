@@ -232,11 +232,131 @@ func lose_life() -> bool:
     if lives <= 0:
         GoldMineSystem.on_player_death()
         player_died.emit()
-        StateMachine.change_state(StateMachine.State.GAME_OVER)
+        full_wipe_restart()
         return true
     player_health = max_health
     health_changed.emit(player_health)
     return false
+
+## FULL WIPE on running out of lives.
+##
+## Founder: "Lil Blunt should not be limited to 3 lives" AND, when they do run
+## out, the run must RESTART rather than dead-end on a Game Over screen.
+##
+## "Wipe" means the progress earned during the failed run is genuinely
+## discarded — the crucial part being the CHECKPOINTS. Refilling lives while
+## leaving a mid-level checkpoint standing would drop the player straight back
+## at the point they kept dying at, with a full life bar and no way to start
+## the stage over: a restart in name only, and a softer loop than the founder
+## asked for. The level is reloaded from its own start.
+##
+## Deliberately NOT a route to the menu: the whole point is that the player
+## keeps playing.
+func full_wipe_restart() -> void:
+    level_checkpoints.clear()
+    lives = max_lives
+    lives_changed.emit(lives)
+    player_health = max_health
+    health_changed.emit(player_health)
+    current_power_up = ""
+    power_up_timer = 0.0
+    power_up_changed.emit("", 0.0)
+    save_session()
+    # SceneRouter owns transitions; reload the level the player is on.
+    SceneRouter.load_scene(level_scene(current_level), SceneRouter.Transition.FADE)
+
+## BOSS CONTACT = BACK TO THE START OF THE LEVEL (founder's new stakes rule):
+## "In level one when Lil Blunt is touched by the tax auditor he gets hurt,
+##  but then the tax auditor dies. Lil Blunt is supposed to return to the
+##  beginning if the tax auditor touches him. The same is true for ALL the
+##  bosses REGARDLESS of his lives. This raises the stakes."
+##
+## So this is deliberately NOT a life loss and NOT ordinary damage — touching a
+## boss costs the whole run of that level. The checkpoint for the level is
+## cleared first, otherwise LevelBase would respawn him at the mid-level
+## checkpoint and "return to the beginning" would quietly mean "return to
+## wherever he last was", which is the softer outcome the rule exists to remove.
+##
+## Guarded because several bosses can land contact on the same frame as a
+## projectile or a second hitbox, and two concurrent scene loads would race.
+var _boss_restart_pending: bool = false
+
+func boss_contact_restart() -> void:
+    if _boss_restart_pending:
+        return
+    _boss_restart_pending = true
+    # THIS IS A DEATH, NOT A SETBACK.
+    #
+    # Founder, repeatedly: "the moment he touches Lil Blunt the stage needs to
+    # restart as Lil Blunt has DIED and the player has LOST ALL OF THEIR
+    # POINTS." My previous version reloaded the level but carried the score,
+    # coins, rings and SMOKE straight through — so a boss touch cost the
+    # player nothing but a walk back, which is exactly the missing stakes he
+    # kept reporting. Everything earned in the run is now forfeit.
+    total_score = 0
+    score_changed.emit(total_score)
+    coins_collected = 0
+    coins_changed.emit(coins_collected)
+    ethereum_rings_collected = 0
+    rings_changed.emit(ethereum_rings_collected)
+    smoke_collected = 0
+    smoke_changed.emit(smoke_collected)
+    ComboSystem.break_combo()
+    level_checkpoints.erase(current_level)
+    player_health = max_health
+    health_changed.emit(player_health)
+    current_power_up = ""
+    power_up_timer = 0.0
+    power_up_changed.emit("", 0.0)
+    last_damage_source = "boss_contact"
+    # Read as a death: the same signal + audio any other fatal hit raises, so
+    # HUD/analytics/VO all treat it identically.
+    player_died.emit()
+    AudioManager.play_sfx("damage")
+    AudioManager.play_bark("vo_death", 0.0)
+    save_session()
+    SceneRouter.load_scene(level_scene(current_level), SceneRouter.Transition.FADE)
+    # Cleared on the next level's _ready via reset_boss_restart_flag(); a bare
+    # timer here would fire on a freed tree if the load is slow.
+    get_tree().create_timer(3.0, true, false, true).timeout.connect(
+        reset_boss_restart_flag)
+
+func reset_boss_restart_flag() -> void:
+    _boss_restart_pending = false
+
+## ONE-SHOT SIDE ENTRANCES (founder, verbatim):
+## "a player should only be able to enter once and once entered in that
+##  particular stage they shouldn't be able to enter again as it interferes
+##  with the gameplay when the player is running away from the tax collector
+##  and entering the Smoke Lounge by accident. Therefore remove the big
+##  diamond of the smoke lounge once someone exits."
+##
+## Keyed by level index. This MUST live here rather than on the portal node:
+## the portals already had a `_used` bool, but it is per-INSTANCE, and coming
+## back from the Lounge reloads the level and builds a brand-new portal with
+## `_used` false again. That is precisely how he kept falling back in while
+## fleeing the Tax Collector.
+var secret_door_used: Dictionary = {}   # level_index -> true
+var blaze_portal_used: Dictionary = {}  # level_index -> true
+
+func mark_side_entrance_used(kind: String, level: int) -> void:
+    if kind == "secret":
+        secret_door_used[level] = true
+    else:
+        blaze_portal_used[level] = true
+    save_session()
+
+func is_side_entrance_used(kind: String, level: int) -> bool:
+    if kind == "secret":
+        return bool(secret_door_used.get(level, false))
+    return bool(blaze_portal_used.get(level, false))
+
+## Grant an extra life. No upper cap — the owner wants unlimited lives.
+func add_life(amount: int = 1) -> void:
+    if amount <= 0:
+        return
+    lives += amount
+    lives_changed.emit(lives)
 
 ## Blaze/Purple own an exclusive music override; token guards its release
 ## against stale expiry (brief correction A).
@@ -368,8 +488,9 @@ func load_session() -> bool:
     _deserialize_blaze_completions(data.get("blaze_rush", {}))
     max_health = clampi(int(data.get("max_health", 3)), 1, 10)
     player_health = clampi(int(data.get("health", max_health)), 1, max_health)
-    # Lives persist too (Kimi audit): reloading mid-run must not refill them.
-    lives = clampi(int(data.get("lives", max_lives)), 0, max_lives)
+    # Lives persist; no upper cap — add_life() is uncapped, so saves may
+    # carry more lives than max_lives.
+    lives = maxi(0, int(data.get("lives", max_lives)))
     lives_changed.emit(lives)
     current_level = clampi(int(data.get("current_level", 1)), 1, 3)
     highest_unlocked_level = clampi(int(data.get("highest_unlocked_level", 1)), 1, LEVEL_SEQUENCE.size())

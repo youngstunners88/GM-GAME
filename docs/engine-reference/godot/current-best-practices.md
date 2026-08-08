@@ -1,9 +1,17 @@
 # Godot — Current Best Practices
 
-Last verified: 2026-02-12 | Engine: Godot 4.6
+Last verified: 2026-02-12 | Researched for: Godot 4.6 (future upgrade target)
+
+> **This project is currently pinned to Godot 4.3** (see `VERSION.md` —
+> corrected 2026-07-31 after this file's version claim drifted from reality).
+> None of the practices below are available in the engine this project
+> actually ships against. Do not use `@abstract`, variadic `Variant...` args,
+> or any other 4.4+-only feature listed here in current GDScript — a real 4.3
+> export rejects them as a hard parse error.
 
 Practices that are **new or changed** since the model's training data (~4.3).
-This supplements (not replaces) the agent's built-in knowledge.
+This supplements (not replaces) the agent's built-in knowledge, and only
+becomes relevant once/if the project actually upgrades past 4.3.
 
 ## GDScript (4.5+)
 

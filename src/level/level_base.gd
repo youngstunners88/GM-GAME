@@ -27,8 +27,19 @@ func _ready() -> void:
 	_setup_entities()
 	_setup_boss_arena()
 	_spawn_player()
+	_setup_camera_limits()
 	_setup_hud()
 	_apply_token_perks()
+	# R9 (2026-08-08): record the level actually being played so Continue can
+	# resume it. Previously current_level was only set when a level was CLEARED
+	# (next_level_scene), and Continue read highest_unlocked_level — so a player
+	# who reached L2 and refreshed could land back on L1. Recording on ENTRY
+	# makes "last level played" authoritative regardless of how it was reached.
+	# Guarded to the 3 campaign levels (level_index 1..3); the Smoke Lounge and
+	# Blaze Rush do not extend LevelBase, so they never touch this.
+	if level_data and level_data.level_index >= 1:
+		GameManager.current_level = level_data.level_index
+		GameManager.save_session()
 	StateMachine.change_state(StateMachine.State.PLAYING)
 
 # The three parallax sprites (far/mid/near) all sample the level's key art;
@@ -51,11 +62,31 @@ func _setup_background() -> void:
 	pbg.layer = -20
 	add_child(pbg)
 	var layer := ParallaxLayer.new()
-	layer.motion_scale = Vector2(0.35, 0.5)
-	layer.motion_mirroring = Vector2(float(tex.get_width()), 0.0)
+	# THE GREY BAR AT THE BOTTOM OF THE SCREEN.
+	#
+	# Founder: "I also don't want this grey block at the bottom of the screen.
+	# It's eating up the real estate unnecessarily!!!"
+	#
+	# Sampled from his screenshots it is RGB(77,77,77) — precisely Godot's
+	# DEFAULT clear colour (0.3,0.3,0.3). It was never a node: it is raw
+	# viewport showing through where nothing is painted. project.godot sets
+	# stretch/aspect="expand", so a browser window taller than 16:9 gives a
+	# viewport TALLER than the 720px backdrop, and the uncovered strip is the
+	# clear colour. (project.godot now also sets that colour to near-black as
+	# a belt-and-braces second line of defence.)
+	#
+	# motion_scale.y = 0 pins the painting to the viewport vertically so it can
+	# never slide up and expose a gap, and the fill scale is computed from the
+	# LIVE viewport height rather than the baked 720 so a tall window is
+	# covered too. Horizontal parallax (0.35) is unchanged, so depth still reads.
+	var view_h: float = get_viewport_rect().size.y
+	var fill: float = maxf(1.0, view_h / float(tex.get_height()))
+	layer.motion_scale = Vector2(0.35, 0.0)
+	layer.motion_mirroring = Vector2(float(tex.get_width()) * fill, 0.0)
 	var spr := Sprite2D.new()
 	spr.texture = tex
 	spr.centered = false
+	spr.scale = Vector2(fill, fill)
 	# Very slight cool tint keeps foreground gameplay readable over the art
 	# without draining the painting's colour.
 	spr.modulate = Color(0.9, 0.9, 0.94, 1.0)
@@ -63,17 +94,101 @@ func _setup_background() -> void:
 	pbg.add_child(layer)
 	_backdrop_sprites.append(spr)
 
-## Swap the backdrop to the boss key art (called from boss triggers).
-## All three parallax depths swap together so the arena reads as one place.
+## Show the boss key art (called from boss triggers).
+##
+## Founder defect D2 ("player floats in the air on flat ground art"). Real
+## mechanism (corrected after a Kimi K3 audit caught the first version of
+## this fix misdescribing it as "arbitrary drift" — it is not; parallax
+## offset is a deterministic function of camera position, not history): the
+## boss art was swapped onto the SAME layer _setup_background() built for
+## the level's regular repeating backdrop — motion_scale=(0.35,0.5), mirrored
+## every image-width. With the camera clamped near the arena floor, real
+## ground geometry (world y=650) moves 1:1 with the camera while that layer
+## only moves at 0.5x — a fixed, reproducible ~70px gap between the art's
+## illustrated walkway and the actual ground every single time, not
+## something that drifts run to run.
+##
+## Fix: an ADDITIVE dedicated layer for the boss art (never mutate the
+## shared level-wide backdrop sprite) — world-fixed (motion_scale=1,1, zero
+## mirroring, so it moves in perfect lockstep with the camera and can never
+## develop a parallax gap against real geometry again), sized and positioned
+## to cover the camera's ENTIRE reachable range while the arena is sealed.
+## That range is WIDER than the arena itself: the viewport (1280px) reaches
+## past the arena's own start_x when the player first crosses in, which the
+## first version of this fix missed and left a blank strip on screen for
+## the whole fight (caught by the same Kimi audit, with the exact math).
+## Being additive also means a player knocked back to a west-of-arena
+## checkpoint still sees the ORIGINAL, correctly-scrolling level backdrop —
+## nothing here ever needs to revert.
+const BOSS_ART_FLOOR_ROW: float = 605.0
+## Slight upscale so the art reaches the top of the camera's range without
+## visibly softening. Everything BELOW the floor is covered by an opaque
+## skirt instead of by upscaling further — covering the full vertical range
+## with the image alone would need ~2.6x and look badly blurred.
+const BOSS_ART_SCALE: float = 1.15
+var _boss_backdrop_sprite: Sprite2D
+var _boss_backdrop_skirt: ColorRect
+
 func set_boss_background() -> void:
 	if level_data == null or level_data.boss_background_path == "":
 		return
 	var tex: Texture2D = load(level_data.boss_background_path)
 	if tex == null:
 		return
-	for spr in _backdrop_sprites:
-		if is_instance_valid(spr):
-			spr.texture = tex
+
+	if not is_instance_valid(_boss_backdrop_sprite):
+		var pbg := ParallaxBackground.new()
+		pbg.layer = -19  # in front of the regular -20 level backdrop, still behind gameplay (0)
+		add_child(pbg)
+		var layer := ParallaxLayer.new()
+		# motion_scale 1 = moves in lockstep with the camera, exactly like real
+		# geometry, so the art can never develop a parallax gap against the
+		# ground it is supposed to be sitting on.
+		layer.motion_scale = Vector2(1.0, 1.0)
+		# Mirroring is what makes ONE 1280px image cover a 3400px+ level. It is
+		# safe here precisely BECAUSE motion_scale is 1: the layer never drifts,
+		# it just repeats. (At the old 0.35 motion_scale, mirroring is what
+		# produced the misaligned wrapping this whole function exists to fix.)
+		layer.motion_mirroring = Vector2(float(tex.get_width()) * BOSS_ART_SCALE, 0.0)
+		pbg.add_child(layer)
+		_boss_backdrop_sprite = Sprite2D.new()
+		_boss_backdrop_sprite.centered = false
+		layer.add_child(_boss_backdrop_sprite)
+	_boss_backdrop_sprite.texture = tex
+	_boss_backdrop_sprite.scale = Vector2(BOSS_ART_SCALE, BOSS_ART_SCALE)
+
+	# Align the art's illustrated floor to the arena's REAL ground surface.
+	var start_x: float = level_data.boss_arena.get("start_x", 0.0)
+	var floor_y := _floor_y_at(start_x)
+	var top_y := floor_y - BOSS_ART_FLOOR_ROW * BOSS_ART_SCALE
+	# x=0: the art now starts at the LEVEL origin and tiles right across the
+	# whole stage. Founder requirement, verbatim: the arena art must hold
+	# "even if Lil Blunt runs back to the beginning section of the game".
+	# The previous version started at (start_x - viewport/2) and so left the
+	# original stage art showing everywhere west of the arena — the
+	# split-screen half-FOMO/half-forest look in his screenshot.
+	_boss_backdrop_sprite.position = Vector2(0.0, top_y)
+
+	# Opaque under-floor skirt: the image bottom lands at ~782 while the
+	# camera can see to ~950, and below the floor is underground anyway.
+	if not is_instance_valid(_boss_backdrop_skirt):
+		_boss_backdrop_skirt = ColorRect.new()
+		_boss_backdrop_skirt.z_index = -6
+		_boss_backdrop_skirt.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(_boss_backdrop_skirt)
+	_boss_backdrop_skirt.color = Color(0.05, 0.03, 0.09, 1.0)
+	_boss_backdrop_skirt.position = Vector2(-400.0, floor_y - 4.0)
+	_boss_backdrop_skirt.size = Vector2(level_data.bounds.x + 800.0, 1200.0)
+
+## The ground segment's own Y at a given world X — used to align the boss
+## backdrop's illustrated floor with the REAL collision surface instead of a
+## guessed constant.
+func _floor_y_at(x: float) -> float:
+	for seg in level_data.ground_segments:
+		if x >= seg.x and x < seg.x + seg.z:
+			return seg.y
+	push_warning("LevelBase._floor_y_at: no ground segment covers x=%.0f — falling back to kill_zone_y" % x)
+	return level_data.kill_zone_y
 
 func _setup_parallax() -> void:
 	# Skip the flat color bands when a painted backdrop is present.
@@ -99,9 +214,9 @@ func _setup_geometry() -> void:
 	# Ground + floating platforms get a dark body with a bright lip so they
 	# read as solid ledges over the painted backdrop.
 	for segment in level_data.ground_segments:
-		_create_platform(segment.x, segment.y, segment.z, segment.w, Color(0.10, 0.07, 0.14, 0.94), Color(0.45, 0.9, 0.5, 1.0))
+		_create_platform(segment.x, segment.y, segment.z, segment.w, level_data.platform_body_color, level_data.platform_lip_color)
 	for platform in level_data.platforms:
-		_create_platform(platform.x, platform.y, platform.z, platform.w, Color(0.12, 0.09, 0.18, 0.92), Color(0.55, 0.95, 0.7, 1.0))
+		_create_platform(platform.x, platform.y, platform.z, platform.w, level_data.floating_platform_body_color, level_data.floating_platform_lip_color)
 
 const BLOCK_TEX := preload("res://src/assets/sprites/tile_block-chain.png")
 
@@ -127,13 +242,50 @@ func _create_platform(x: float, y: float, w: float, h: float, body_color: Color,
 	blocks.region_rect = Rect2(0, 0, w, max(h, 24.0))
 	blocks.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
 	blocks.position = Vector2(0, min(0.0, h - 24.0))
+	# TINTED TO THE REALM. Founder: "I don't like the design of these
+	# platforms. They are terrible!!!" — on the Gold Rush canyon shot.
+	#
+	# tile_block-chain.png is a single shared CYAN blockchain cube used by all
+	# three realms. The per-level palettes in level_0N_data.tres were already
+	# correct (Level 3 is gold), but they only coloured the thin body rect and
+	# lip — the texture drawn on top kept rendering its own cyan, so a gold
+	# canyon got teal mossy-looking ledges that clashed with everything around
+	# them. Modulating toward the realm's lip colour makes one tile asset serve
+	# three realms instead of fighting two of them.
+	blocks.modulate = Color(
+		0.55 + lip_color.r * 0.55,
+		0.55 + lip_color.g * 0.45,
+		0.55 + lip_color.b * 0.45,
+		1.0)
 	plat.add_child(blocks)
+
+	# Drop shadow under the lip — gives the ledge thickness so it reads as a
+	# solid object rather than a flat sticker on the backdrop.
+	var shade := ColorRect.new()
+	shade.color = Color(0.0, 0.0, 0.0, 0.30)
+	shade.size = Vector2(w, min(6.0, h))
+	shade.position = Vector2(0, min(4.0, h))
+	plat.add_child(shade)
 
 	# Bright top lip — a glowing edge so the standable surface is unmistakable.
 	var lip := ColorRect.new()
 	lip.color = lip_color
 	lip.size = Vector2(w, min(4.0, h))
 	plat.add_child(lip)
+
+	# Warm highlight inset just under the lip, and darker edge caps at both
+	# ends: cheap bevel that reads as carved rock/metal instead of a bar.
+	var inner := ColorRect.new()
+	inner.color = Color(lip_color.r, lip_color.g, lip_color.b, 0.28)
+	inner.size = Vector2(w, 2.0)
+	inner.position = Vector2(0, min(4.0, h))
+	plat.add_child(inner)
+	for cap_x: float in [0.0, w - 3.0]:
+		var cap := ColorRect.new()
+		cap.color = Color(0.0, 0.0, 0.0, 0.35)
+		cap.size = Vector2(3.0, h)
+		cap.position = Vector2(cap_x, 0.0)
+		plat.add_child(cap)
 
 	var col := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
@@ -204,18 +356,70 @@ func _setup_entities() -> void:
 		EntitySpawner.spawn("mine_cart", cart_data.get("pos", Vector2.ZERO), self,
 			{"cart_type": MineCart.CartType.SLOW})
 
+## Only the FAR wall exists from level start.
+##
+## The entry wall used to be built here too, and it made **every boss in the
+## game unreachable**: a 600px-tall wall at `boss_arena.start_x` is directly
+## across the approach, so the player walked into it and stopped. The boss
+## still spawned and its health bar still appeared (the trigger Area2D is
+## 200px wide and reaches 100px west of the wall), which is why this read as
+## "the boss ignores me" rather than "I am blocked" — and why an automated
+## driver sat at the Auditor for 380 seconds without landing a hit.
+##
+## The wall's real job is to stop the player FLEEING mid-fight, so it is now
+## raised behind them once they are actually inside (see _process below).
+## Proven by tests/boss_arena_reachable_test.gd.
 func _setup_boss_arena() -> void:
 	if level_data.boss_arena.is_empty():
 		return
-	# Create boss arena walls
-	var start_x: float = level_data.boss_arena.get("start_x", 0.0)
 	var end_x: float = level_data.boss_arena.get("end_x", 0.0)
-	if start_x > 0:
-		_create_wall(start_x, 400, 20, 600)
 	if end_x > 0:
 		_create_wall(end_x, 400, 20, 600)
 
-func _create_wall(x: float, y: float, w: float, h: float) -> void:
+## Arm the entry wall. Called from each level's _on_boss_trigger; the wall is
+## not built until the player has genuinely crossed into the arena, because
+## the trigger fires while they are still WEST of start_x.
+func arm_boss_arena_seal() -> void:
+	if level_data.boss_arena.is_empty():
+		return
+	var start_x: float = level_data.boss_arena.get("start_x", 0.0)
+	if start_x > 0.0:
+		_seal_x = start_x
+		set_process(true)
+
+## -1 = seal not armed. Set by arm_boss_arena_seal().
+var _seal_x: float = -1.0
+## The entry wall, once raised. Kept so it can be taken back DOWN — see below.
+var _seal_wall: StaticBody2D = null
+
+## Raises the entry wall behind the player, and lowers it again if they end up
+## back outside.
+##
+## The lowering half is not optional. Checkpoints sit west of every arena, so a
+## player who dies mid-fight respawns OUTSIDE a wall that is already up — and
+## with the boss still alive, they would be permanently locked out of a fight
+## they cannot finish and cannot leave. That is a soft-lock, and it is one this
+## seal would have introduced.
+func _process(_delta: float) -> void:
+	if _seal_x < 0.0:
+		set_process(false)
+		return
+	var p := get_tree().get_first_node_in_group("player") as Node2D
+	if p == null:
+		return
+	if _seal_wall == null:
+		# 60px of clearance so the wall never spawns on top of the player.
+		if p.global_position.x > _seal_x + 60.0:
+			_seal_wall = _create_wall(_seal_x, 400, 20, 600)
+	elif p.global_position.x < _seal_x - 40.0:
+		# Player is back outside (death + respawn at a western checkpoint):
+		# drop the wall so they can walk in and re-engage.
+		_seal_wall.queue_free()
+		_seal_wall = null
+
+## Returns the wall so the boss-arena seal can take it back down again
+## (existing callers ignore the return value).
+func _create_wall(x: float, y: float, w: float, h: float) -> StaticBody2D:
 	var wall := StaticBody2D.new()
 	wall.position = Vector2(x, y)
 	var col := CollisionShape2D.new()
@@ -224,6 +428,7 @@ func _create_wall(x: float, y: float, w: float, h: float) -> void:
 	col.shape = shape
 	wall.add_child(col)
 	add_child(wall)
+	return wall
 
 func _spawn_player() -> void:
 	var player := preload("res://src/player/player.tscn").instantiate()
@@ -243,6 +448,33 @@ func _spawn_player() -> void:
 	else:
 		player.global_position = Vector2(100, 500)
 	add_child(player)
+
+## FIX (Stage 2/3 boss-visibility bug): the Camera2D baked into player.tscn
+## ships with a hardcoded limit_right=3400 — correct for Level 1
+## (bounds.x=3400, pure coincidence) but 1000px SHORT of Level 2 and Level 3
+## (both bounds.x=4400, whose boss arenas sit at x=3700-4400 — ENTIRELY past
+## the clamp). LevelBase never overrode it, so on Stage 2/3 the camera hit a
+## hard wall at x=3400 while the boss spawned beyond it (boss "unseen" on
+## arrival) and the player kept walking right past the now-frozen camera
+## (Lil Blunt "disappearing" off the right edge). secret_realm.gd and
+## prototype_room.gd already set their own camera limits correctly — the
+## shared campaign LevelBase was the one path that never did.
+func _setup_camera_limits() -> void:
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null:
+		# Kimi audit 2026-08-02: silently returning here would resurrect the
+		# EXACT bug this function exists to fix, with no signal that it
+		# happened — warn loudly instead of failing quiet.
+		push_warning("LevelBase: no player in group 'player' — camera limits not set")
+		return
+	var cam := player.get_node_or_null("Camera2D") as Camera2D
+	if cam == null:
+		push_warning("LevelBase: player has no Camera2D child named 'Camera2D' — camera limits not set")
+		return
+	cam.limit_left = 0
+	cam.limit_top = 0
+	cam.limit_right = int(level_data.bounds.x)
+	cam.limit_bottom = int(level_data.kill_zone_y) + 100
 
 ## Adaptive-difficulty application (task #23, Video-Game Layer). Runs when the
 ## player's analytics arrive (or immediately with neutral defaults offline).
@@ -362,6 +594,7 @@ func _setup_hud() -> void:
 	add_child(pm)
 	pm.get_node("VBox/ResumeBtn").pressed.connect(pm._on_resume_pressed)
 	pm.get_node("VBox/RestartBtn").pressed.connect(pm._on_restart_pressed)
+	pm.get_node("VBox/TalkBtn").pressed.connect(pm._on_talk_pressed)
 	pm.get_node("VBox/QuitBtn").pressed.connect(pm._on_quit_pressed)
 
 func _on_boss_trigger(body: Node2D) -> void:

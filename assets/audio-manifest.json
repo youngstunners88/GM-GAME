@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "voice_id": "N2lVS1w4EtoT3dr4eOWO",
-  "voice_note": "Callum (ElevenLabs premade) \u2014 warm, laid-back, lightly gravelly storyteller. One announcer for the whole game.",
+  "voice_note": "Callum (ElevenLabs premade) — warm, laid-back, lightly gravelly storyteller. One announcer for the whole game. Lil Blunt's own character barks (vo_*) use a per-line voice_id override pointing at the custom 'Lil Blunt' voice HMGfKwZCRujgXyRDUW0b.",
   "sfx": [
     {
       "id": "jump",
@@ -67,28 +67,57 @@
       "id": "fall",
       "prompt": "Devastating cartoon falling sound, a long descending whistle plummeting down then a heavy dramatic thud impact with a sad fail tone, retro arcade game over feel",
       "duration_seconds": 2.0
+    },
+    {
+      "id": "torch_throw",
+      "prompt": "Retro 16-bit videogame fire toss whoosh, a quick warm air swish with a light crackle riding on top, single fast throw motion, short, clean, no impact",
+      "duration_seconds": 0.6
+    },
+    {
+      "id": "torch_impact",
+      "prompt": "Retro 16-bit videogame flame impact sizzle, a bright crackly hiss with a soft cartoonish pop, punchy attack, fast decay, playful not violent",
+      "duration_seconds": 0.6
+    },
+    {
+      "id": "torch_fizzle",
+      "prompt": "Retro 16-bit videogame flame dying out, a soft descending hiss fading to nothing, gentle and quiet, drier and less bright than an impact sizzle, fast decay",
+      "duration_seconds": 0.6
+    },
+    {
+      "id": "tax_alert",
+      "prompt": "Retro 16-bit videogame enemy notices you, a short two-note ascending detection blip, playful and alert but not alarming, clean chiptune tone, fast decay",
+      "duration_seconds": 0.5
+    }
+  ],
+  "music": [
+    {
+      "id": "smoke_lounge",
+      "source": "client-supplied",
+      "note": "REAL CLIENT TRACK — SL.mp3, delivered 2026-07-29. 65.9s, VBR MP3. This replaced a 20s ElevenLabs stand-in. The generator SKIPS client-supplied entries even under --force-all so this file can never be silently regenerated over. To intentionally replace it, delete the file first.",
+      "prompt": "UNUSED while source=client-supplied. Kept only as the fallback brief if the client track is ever withdrawn: ambient chill lounge soundscape, low warm synth drone, soft slow pad, gentle 420-vibe atmosphere, no beat, no melody hook, seamless loopable texture, relaxed and hazy",
+      "duration_seconds": 20.0
     }
   ],
   "voice": [
     {
       "id": "menu_title",
-      "text": "Lil Blunt\u2026 The Smoke Realm."
+      "text": "Lil Blunt… The Smoke Realm."
     },
     {
       "id": "stage1_intro",
-      "text": "Level One\u2026 The Smoke Realm. Stay chill, Lil Blunt."
+      "text": "Level One… The Smoke Realm. Stay chill, Lil Blunt."
     },
     {
       "id": "stage2_intro",
-      "text": "Level Two\u2026 Crystal Caverns. Diamonds in the deep."
+      "text": "Level Two… Crystal Caverns. Diamonds in the deep."
     },
     {
       "id": "stage3_intro",
-      "text": "Level Three\u2026 GoldMine Rush. Strike it rich, partner."
+      "text": "Level Three… GoldMine Rush. Strike it rich, partner."
     },
     {
       "id": "boss1_intro",
-      "text": "Uh oh\u2026 the Tax Auditor wants his cut!"
+      "text": "Uh oh… the Tax Auditor wants his cut!"
     },
     {
       "id": "boss2_intro",
@@ -104,7 +133,42 @@
     },
     {
       "id": "game_complete",
-      "text": "Game complete! One chill nugget\u2026 one giant win."
+      "text": "Game complete! One chill nugget… one giant win."
+    },
+    {
+      "id": "vo_hurt",
+      "text": "Ow— okay.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Lil Blunt character bark — soft wince, quick recovery, flat-chill",
+      "voice_status": "LIVE on the real custom 'Lil Blunt' voice. Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
+    },
+    {
+      "id": "vo_death",
+      "text": "Welp. I'm out.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Lil Blunt character bark — good-natured shrug, falling pitch",
+      "voice_status": "LIVE on the real custom 'Lil Blunt' voice. Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
+    },
+    {
+      "id": "vo_attack",
+      "text": "Yo! Got 'em!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Lil Blunt character bark — bright hit of hype, clipped rise",
+      "voice_status": "LIVE on the real custom 'Lil Blunt' voice. Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
+    },
+    {
+      "id": "vo_collect_major",
+      "text": "Ohh, nice.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Lil Blunt character bark — warm, pleased, slight smile in voice",
+      "voice_status": "LIVE on the real custom 'Lil Blunt' voice. Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
+    },
+    {
+      "id": "vo_boss_hype",
+      "text": "Heh— let's gooo.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Lil Blunt character bark — low chuckle into short hype lift",
+      "voice_status": "LIVE on the real custom 'Lil Blunt' voice. Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
     }
   ]
 }

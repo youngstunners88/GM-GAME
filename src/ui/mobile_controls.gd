@@ -1,161 +1,147 @@
 extends CanvasLayer
-## Mobile touch control UI overlay — virtual joystick + action buttons.
-## Only visible on mobile devices. Desktop uses keyboard.
+## On-screen touch controls for the HTML5 / mobile build.
+##
+## DESIGN (Grok 4.5 mobile-scheme brief + Kimi K3 input audit, 2026-08-01 —
+## docs/model-responses/2026-08-01-*.md):
+##   Left thumb  = big digital LEFT / RIGHT zones (no fake analog stick), plus a
+##                 compact UP / DOWN pair for ladders (touch had NO climb input
+##                 before — a hard progression blocker on phones).
+##   Right thumb = ATK as the big primary (it drives attacks AND the Boss-2 orb
+##                 redirect), JUMP above it, DASH to its left, small SPRINT and
+##                 a centre-bottom INTERACT.
+##
+## ARCHITECTURE: every control is a `TouchScreenButton` bound to an existing
+## InputMap `action`. Pressing it calls `Input.action_press(action)`; releasing
+## calls `Input.action_release(action)`. That means touch flows through the
+## EXACT same code paths the keyboard already uses (movement, jump, double
+## jump, climb up/down, dash, sprint, interact, attack tap + fire-breath hold) —
+## so desktop parity is preserved by construction, and the three overlapping
+## input systems that caused double-fire / dead-signal bugs (Kimi F2/F4/F5/F6)
+## collapse into one. TouchScreenButton is also genuinely multitouch (each
+## tracks its own finger), which plain Control Buttons under
+## emulate_mouse_from_touch are NOT — you can hold LEFT + JUMP + ATK at once.
+##
+## `visibility_mode = TOUCHSCREEN_ONLY` makes the hit areas inert on
+## non-touch desktop automatically; we also hide the cosmetic panels there.
 
 class_name MobileControls
 
-@export var button_size: float = 80.0
-@export var button_spacing: float = 100.0
+# Native mobile OR any touchscreen device. The Web export reports
+# OS.get_name() as "Web" (never Android/iOS), so a mobile browser only reveals
+# itself through is_touchscreen_available() — matches MobileInputHandler.
+var is_touch: bool = OS.get_name() in ["Android", "iOS"] or DisplayServer.is_touchscreen_available()
 
-# Match MobileInputHandler: show touch UI on native mobile AND on any
-# touchscreen (incl. the Web export, where OS.get_name() is "Web").
-var is_mobile: bool = OS.get_name() in ["Android", "iOS"] or DisplayServer.is_touchscreen_available()
+## Each control: id, InputMap action, label, rect (as viewport fractions
+## x,y,w,h), tint, font size, and whether it's a primary (bigger label).
+## Labels are ASCII ONLY: the pixel font has no arrow glyphs (◄►▲▼ render as
+## tofu boxes — the same trap flagged in main_menu.gd). "<" ">" and the words
+## UP/DOWN are basic-Latin and always present.
+const CONTROLS: Array[Dictionary] = [
+	{"id": "left",     "action": "move_left",  "label": "<",    "rect": [0.02, 0.62, 0.13, 0.31], "tint": Color(0.45, 0.85, 0.55), "font": 48, "primary": true},
+	{"id": "right",    "action": "move_right", "label": ">",    "rect": [0.16, 0.62, 0.13, 0.31], "tint": Color(0.45, 0.85, 0.55), "font": 48, "primary": true},
+	{"id": "up",       "action": "move_up",    "label": "UP",   "rect": [0.04, 0.34, 0.10, 0.15], "tint": Color(0.55, 0.8, 1.0),   "font": 24, "primary": false},
+	{"id": "down",     "action": "move_down",  "label": "DOWN", "rect": [0.04, 0.50, 0.10, 0.12], "tint": Color(0.55, 0.8, 1.0),   "font": 22, "primary": false},
+	{"id": "interact", "action": "interact",   "label": "GRAB", "rect": [0.44, 0.85, 0.12, 0.12], "tint": Color(0.85, 0.8, 0.35),  "font": 22, "primary": false},
+	{"id": "sprint",   "action": "sprint",     "label": "RUN",  "rect": [0.58, 0.36, 0.11, 0.20], "tint": Color(1.0, 0.65, 0.35),  "font": 24, "primary": false},
+	{"id": "dash",     "action": "dash",       "label": "DASH", "rect": [0.58, 0.60, 0.12, 0.22], "tint": Color(0.8, 0.45, 1.0),   "font": 26, "primary": false},
+	{"id": "jump",     "action": "jump",       "label": "JUMP", "rect": [0.79, 0.30, 0.19, 0.26], "tint": Color(0.35, 0.8, 1.0),   "font": 32, "primary": true},
+	{"id": "atk",      "action": "attack",     "label": "ATK",  "rect": [0.71, 0.58, 0.22, 0.32], "tint": Color(1.0, 0.4, 0.4),    "font": 40, "primary": true},
+]
 
-# Visual elements
-var joystick_bg: ColorRect
-var joystick_stick: ColorRect
-var jump_button: Button
-var sprint_button: Button
-var dash_button: Button
-var interact_button: Button
-var attack_button: Button
+# Panels keyed by control id, so a size_changed rebuild can reposition without
+# tearing the whole tree down.
+var _panels: Dictionary = {}
+var _buttons: Dictionary = {}
 
 func _ready() -> void:
-	if not is_mobile:
-		hide()
+	# Sit above HUD; process even when the tree is paused so controls never
+	# freeze mid-press.
+	layer = 50
+	if not is_touch:
+		visible = false
 		return
+	_build()
+	get_viewport().size_changed.connect(_relayout)
 
-	visible = true
-	_setup_joystick()
-	_setup_buttons()
+func _build() -> void:
+	var vp: Vector2 = get_viewport().get_visible_rect().size
+	for def in CONTROLS:
+		_add_control(def, vp)
 
-	# Connect MobileInputHandler signals
-	if MobileInputHandler:
-		MobileInputHandler.touch_jump.connect(_on_jump_pressed)
-		MobileInputHandler.touch_sprint.connect(_on_sprint_pressed)
-		MobileInputHandler.touch_sprint_released.connect(_on_sprint_released)
-		MobileInputHandler.touch_dash.connect(_on_dash_pressed)
-		MobileInputHandler.touch_interact.connect(_on_interact_pressed)
+func _add_control(def: Dictionary, vp: Vector2) -> void:
+	var rect := _rect_for(def["rect"], vp)
 
-func _setup_joystick() -> void:
-	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	# Cosmetic panel (purely visual; never eats input).
+	var panel := Panel.new()
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.position = rect.position
+	panel.size = rect.size
+	var sb := StyleBoxFlat.new()
+	var tint: Color = def["tint"]
+	sb.bg_color = Color(tint.r, tint.g, tint.b, 0.28)
+	sb.border_color = Color(tint.r, tint.g, tint.b, 0.85)
+	sb.set_border_width_all(3)
+	sb.set_corner_radius_all(18 if def["primary"] else 12)
+	panel.add_theme_stylebox_override("panel", sb)
+	add_child(panel)
 
-	# Joystick background (left side, 40% of screen)
-	joystick_bg = ColorRect.new()
-	joystick_bg.color = Color(0.2, 0.2, 0.2, 0.5)
-	joystick_bg.size = Vector2(viewport_size.x * 0.4, viewport_size.y)
-	joystick_bg.position = Vector2(0, 0)
-	add_child(joystick_bg)
+	var label := Label.new()
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.text = def["label"]
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	label.add_theme_font_size_override("font_size", def["font"])
+	label.add_theme_color_override("font_color", Color(1, 1, 1, 0.92))
+	# Dark outline so the glyph reads over busy level art.
+	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+	label.add_theme_constant_override("outline_size", 5)
+	panel.add_child(label)
+	_panels[def["id"]] = panel
 
-	# Joystick stick (inner circle)
-	joystick_stick = ColorRect.new()
-	joystick_stick.color = Color(0.5, 0.8, 0.5, 0.7)
-	joystick_stick.size = Vector2(60, 60)
-	joystick_stick.position = Vector2(viewport_size.x * 0.2 - 30, viewport_size.y / 2 - 30)
-	add_child(joystick_stick)
+	# Hit area: a real TouchScreenButton bound to the InputMap action.
+	var btn := TouchScreenButton.new()
+	btn.action = def["action"]
+	btn.visibility_mode = TouchScreenButton.VISIBILITY_TOUCHSCREEN_ONLY
+	btn.shape_centered = false
+	btn.position = rect.position
+	var shape := RectangleShape2D.new()
+	shape.size = rect.size
+	btn.shape = shape
+	add_child(btn)
+	# Press feedback: brighten the panel while held.
+	btn.pressed.connect(_on_btn_pressed.bind(def["id"], tint))
+	btn.released.connect(_on_btn_released.bind(def["id"], tint))
+	_buttons[def["id"]] = btn
 
-func _setup_buttons() -> void:
-	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
-	var button_x: float = viewport_size.x - button_size - 20
+func _rect_for(frac: Array, vp: Vector2) -> Rect2:
+	return Rect2(
+		frac[0] * vp.x, frac[1] * vp.y,
+		frac[2] * vp.x, frac[3] * vp.y
+	)
 
-	# Jump button (top)
-	jump_button = Button.new()
-	jump_button.text = "JUMP"
-	jump_button.custom_minimum_size = Vector2(button_size, button_size)
-	jump_button.position = Vector2(button_x, 20)
-	jump_button.modulate = Color(0.3, 0.8, 1.0, 0.8)
-	jump_button.pressed.connect(_on_jump_button)
-	add_child(jump_button)
+## Reposition on viewport resize / orientation change (Kimi F8: everything used
+## to be computed once in _ready and went stale on rotate).
+func _relayout() -> void:
+	if not is_touch:
+		return
+	var vp: Vector2 = get_viewport().get_visible_rect().size
+	for def in CONTROLS:
+		var id: String = def["id"]
+		var rect := _rect_for(def["rect"], vp)
+		if _panels.has(id) and is_instance_valid(_panels[id]):
+			_panels[id].position = rect.position
+			_panels[id].size = rect.size
+		if _buttons.has(id) and is_instance_valid(_buttons[id]):
+			_buttons[id].position = rect.position
+			(_buttons[id].shape as RectangleShape2D).size = rect.size
 
-	# Sprint button (middle)
-	sprint_button = Button.new()
-	sprint_button.text = "SPRINT"
-	sprint_button.custom_minimum_size = Vector2(button_size, button_size)
-	sprint_button.position = Vector2(button_x, 20 + button_spacing)
-	sprint_button.modulate = Color(1.0, 0.6, 0.3, 0.8)
-	sprint_button.pressed.connect(_on_sprint_button)
-	add_child(sprint_button)
+func _on_btn_pressed(id: String, tint: Color) -> void:
+	if _panels.has(id) and is_instance_valid(_panels[id]):
+		var sb: StyleBoxFlat = _panels[id].get_theme_stylebox("panel")
+		sb.bg_color = Color(tint.r, tint.g, tint.b, 0.6)
 
-	# Dash button (lower)
-	dash_button = Button.new()
-	dash_button.text = "DASH"
-	dash_button.custom_minimum_size = Vector2(button_size, button_size)
-	dash_button.position = Vector2(button_x, 20 + button_spacing * 2)
-	dash_button.modulate = Color(0.8, 0.3, 1.0, 0.8)
-	dash_button.pressed.connect(_on_dash_button)
-	add_child(dash_button)
-
-	# Interact button (bottom)
-	interact_button = Button.new()
-	interact_button.text = "E"
-	interact_button.custom_minimum_size = Vector2(button_size, button_size)
-	interact_button.position = Vector2(button_x, viewport_size.y - button_size - 20)
-	interact_button.modulate = Color(0.8, 0.8, 0.3, 0.8)
-	interact_button.pressed.connect(_on_interact_button)
-	add_child(interact_button)
-
-	# Attack button (left of the action stack) — press-and-hold aware so the
-	# purple ETH-flask fire-breath channel works on touch, not just keyboard.
-	attack_button = Button.new()
-	attack_button.text = "ATK"
-	attack_button.custom_minimum_size = Vector2(button_size, button_size)
-	attack_button.position = Vector2(button_x - button_spacing, 20 + button_spacing)
-	attack_button.modulate = Color(1.0, 0.4, 0.4, 0.85)
-	attack_button.button_down.connect(_on_attack_down)
-	attack_button.button_up.connect(_on_attack_up)
-	add_child(attack_button)
-
-func _on_jump_button() -> void:
-	if MobileInputHandler:
-		MobileInputHandler.touch_jump.emit()
-
-func _on_sprint_button() -> void:
-	if MobileInputHandler:
-		MobileInputHandler.touch_sprint.emit()
-
-func _on_dash_button() -> void:
-	if MobileInputHandler:
-		MobileInputHandler.touch_dash.emit()
-
-func _on_interact_button() -> void:
-	if MobileInputHandler:
-		MobileInputHandler.touch_interact.emit()
-
-func _on_attack_down() -> void:
-	if attack_button:
-		attack_button.modulate = Color(1.0, 0.6, 0.6, 1.0)
-	if MobileInputHandler:
-		MobileInputHandler.touch_attack.emit()
-
-func _on_attack_up() -> void:
-	if attack_button:
-		attack_button.modulate = Color(1.0, 0.4, 0.4, 0.85)
-	if MobileInputHandler:
-		MobileInputHandler.touch_attack_released.emit()
-
-# Input event handlers (called from MobileInputHandler)
-func _on_jump_pressed() -> void:
-	if jump_button:
-		jump_button.modulate = Color(0.5, 1.0, 1.0, 1.0)
-		await get_tree().create_timer(0.1).timeout
-		jump_button.modulate = Color(0.3, 0.8, 1.0, 0.8)
-
-func _on_sprint_pressed() -> void:
-	if sprint_button:
-		sprint_button.modulate = Color(1.0, 0.8, 0.5, 1.0)
-
-func _on_sprint_released() -> void:
-	if sprint_button:
-		sprint_button.modulate = Color(1.0, 0.6, 0.3, 0.8)
-
-func _on_dash_pressed() -> void:
-	if dash_button:
-		dash_button.modulate = Color(1.0, 0.5, 1.0, 1.0)
-		await get_tree().create_timer(0.1).timeout
-		dash_button.modulate = Color(0.8, 0.3, 1.0, 0.8)
-
-func _on_interact_pressed() -> void:
-	if interact_button:
-		interact_button.modulate = Color(1.0, 1.0, 0.7, 1.0)
-		await get_tree().create_timer(0.1).timeout
-		interact_button.modulate = Color(0.8, 0.8, 0.3, 0.8)
+func _on_btn_released(id: String, tint: Color) -> void:
+	if _panels.has(id) and is_instance_valid(_panels[id]):
+		var sb: StyleBoxFlat = _panels[id].get_theme_stylebox("panel")
+		sb.bg_color = Color(tint.r, tint.g, tint.b, 0.28)

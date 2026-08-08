@@ -22,6 +22,8 @@ EntitySpawner="*res://src/autoload/entity_spawner.gd"
 EffectSpawner="*res://src/autoload/effect_spawner.gd"
 BossVoiceSystem="*res://src/boss/boss_voice_system.gd"
 Web3Bridge="*res://src/autoload/web3_bridge.gd"
+Analytics="*res://src/autoload/analytics.gd"
+ErrorReporter="*res://src/autoload/error_reporter.gd"
 DifficultyManager="*res://src/autoload/difficulty_manager.gd"
 DevCoordinator="*res://src/autoload/dev_coordinator.gd"
 MobileInputHandler="*res://src/autoload/mobile_input_handler.gd"
@@ -97,8 +99,10 @@ move_down={
 2d_physics/layer_5="PowerUps"
 2d_physics/layer_6="Hazards"
 2d_physics/layer_7="Projectiles"
+2d_physics/layer_8="Destructible"
 
 [rendering]
 renderer/rendering_method="forward_plus"
 2d/snap_2d_transforms_to_pixel=true
 2d/snap_2d_vertices_to_pixel=true
+environment/defaults/default_clear_color=Color(0.03, 0.02, 0.05, 1)

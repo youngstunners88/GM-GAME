@@ -54,6 +54,13 @@ func die() -> void:
     tween.finished.connect(queue_free)
 
 func deal_damage(target: Node2D) -> void:
+    # Kimi audit (2026-08-02): missing before the stomp mechanic existed,
+    # this corpse still dealt contact damage during its ~0.3s death tween
+    # (die() below) if the player re-touched it — invisible with normal
+    # contact, but a stomp deliberately bounces the player back down onto a
+    # freshly-killed enemy, which would otherwise re-trigger this every time.
+    if is_dead:
+        return
     if target.has_method("take_damage"):
         GameManager.last_damage_source = analytics_id
         target.take_damage(contact_damage)

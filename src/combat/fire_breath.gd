@@ -42,6 +42,7 @@ func _burn() -> void:
 func _burn_node(node: Node) -> bool:
 	if node and node.is_in_group("enemy") and node.has_method("take_damage"):
 		node.take_damage(1)
+		AudioManager.play_bark("vo_attack", 3.0)  # shared cooldown, see axe.gd
 		return true
 	return false
 

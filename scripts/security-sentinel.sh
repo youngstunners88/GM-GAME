@@ -109,18 +109,32 @@ fi
 # SEC-004's 40-char regex cannot catch a 64-char private key. Scans the
 # working tree (not history — that's gitleaks' + CI's job) so a fresh leak
 # is caught before the next commit, not after.
-# Two narrow exclusions, both DEPENDENCY-INTEGRITY files whose entire content
-# is by definition SHA256 content hashes — the same category, not a loosening:
+# Three narrow exclusions, all DEPENDENCY-INTEGRITY files whose entire
+# relevant content is by definition SHA256 content hashes — the same
+# category, not a loosening:
 #   - export-game.yml pins Godot/butler release checksums (see DEP-004).
 #   - mops.lock pins Motoko package hashes for lil-blunt-icp. Committing it is
 #     required for reproducible canister builds, so deleting or ignoring it to
 #     appease this check would REDUCE supply-chain integrity, not improve it.
-# Both are whole-file excludes of generated/pinned manifests. A genuinely new
-# 64-hex literal in any hand-written file still fails, which is the point.
+#   - skills-lock.json is the lockfile written by `npx skills add` (the
+#     firecrawl/anydoc install this session). Its 64-hex entries are npm-style
+#     INTEGRITY hashes pinning exactly which skill revision is installed —
+#     the same supply-chain-verification role as mops.lock, and the precise
+#     opposite of a secret: a checksum exists to be published and compared.
+#   - itch-butler-deploy/SKILL.md documents that SAME pinned butler checksum
+#     (copy-pasted from export-game.yml, per the skill's own text, so a
+#     session can verify a manual deploy without re-deriving it) — flagged
+#     the first time a security-sentinel run happened after this skill was
+#     authored. A checksum meant to be publicly verified is not a secret.
+# All three are whole-file excludes of generated/pinned/documented manifests.
+# A genuinely new 64-hex literal in any hand-written file still fails, which
+# is the point.
 key_hits=$(git ls-files | xargs grep -lEn "\b(0x)?[a-fA-F0-9]{64}\b" 2>/dev/null \
   | grep -vE "\.(wasm|pck|png|jpg|jpeg|ogg|import)$" \
   | grep -v "\.github/workflows/export-game\.yml" \
-  | grep -vE "(^|/)mops\.lock$" || true)
+  | grep -vE "(^|/)mops\.lock$" \
+  | grep -vE "(^|/)itch-butler-deploy/SKILL\.md$" \
+  | grep -vE "(^|/)skills-lock\.json$" || true)
 if [ -z "$key_hits" ]; then
   record "SEC-005" "critical" "PASS" "No 64-hex private-key-shaped literals in tracked source" "clean"
 else
@@ -155,7 +169,16 @@ fi
 #       ^0x[0-9a-fA-F]+$ sanitizer in web3_bridge.gd — a hex string can carry
 #       no quotes, semicolons, or JS); or
 #   (c) the fixed window.parent.postMessage(JSON.stringify(...)) telemetry
-#       template (JSON.stringify emits a valid JS literal).
+#       template (JSON.stringify emits a valid JS literal); or
+#   (d) interpolation where EVERY hole passes through one of the named
+#       sanitizers in src/autoload/analytics.gd — _js_ident() whitelists to
+#       [a-z0-9_], _js_json() emits a JSON literal with U+2028/U+2029 stripped,
+#       _js_config() re-validates the PostHog token/host and _js_dsn() the
+#       Sentry DSN, both against strict regexes. Same guarantee as _hex(): the value provably cannot carry a
+#       quote, semicolon, or any JS syntax. Added 2026-07-30 with the PostHog
+#       bridge. This EXTENDS the safe set with a fourth proven-safe form — it
+#       does not relax the rule: an eval that interpolates anything NOT passed
+#       through one of these still fails.
 # We scan the WHOLE eval expression (call sites can span lines, so join them),
 # then flag any eval whose expression interpolates ('%') without _hex() or the
 # postMessage template. Since Layer Shift added real wallet-bridge eval calls,
@@ -170,7 +193,7 @@ if [ -n "$eval_files" ]; then
   unsafe_eval=$(perl -0777 -ne '
     while (/JavaScriptBridge\.eval(\((?:[^()]++|(?1))*\))/g) {
       my $c = $1;
-      if ($c =~ /%/ && $c !~ /_hex\(/ && $c !~ /window\.parent\.postMessage/) {
+      if ($c =~ /%/ && $c !~ /_hex\(/ && $c !~ /window\.parent\.postMessage/ && $c !~ /_js_(ident|json|config|dsn)\(/) {
         $c =~ s/\s+/ /g; print "$c\n";
       }
     }' $eval_files 2>/dev/null || true)

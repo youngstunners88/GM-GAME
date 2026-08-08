@@ -44,6 +44,7 @@ func transition_to_scene(path: String) -> void:
     var err := get_tree().change_scene_to_file(path)
     if err != OK:
         push_error("Failed to load scene: " + path)
+        ErrorReporter.report("scene_load_failed", {"path": path, "route": "transition"})
     tween = create_tween()
     tween.tween_property(fade_rect, "color:a", 0.0, 0.4)
 

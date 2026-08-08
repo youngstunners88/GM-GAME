@@ -9,15 +9,18 @@ extends CharacterBody2D
 
 enum State { PATROL, CHARGE, VULNERABLE, DEFEATED }
 const BOSS_ID := "tax"
+## On-screen body size. Mirrored by auditor.tscn's RectangleShape2D — change
+## both together, and keep the collision/hitbox offsets at BODY/2.
+const BODY := 168.0
 const CLIPBOARD := preload("res://src/boss/boss_projectile.tscn")
 
-@export var patrol_speed: float = 90.0
-@export var charge_speed: float = 320.0
-@export var vulnerable_time: float = 1.8
-@export var max_health: int = 6
+@export var patrol_speed: float = 140.0
+@export var charge_speed: float = 430.0
+@export var vulnerable_time: float = 1.1
+@export var max_health: int = 10
 
 var current_state: State = State.PATROL
-var health: int = 6
+var health: int = 10
 var patrol_direction: float = 1.0
 var charge_target: Vector2 = Vector2.ZERO
 var state_timer: float = 0.0
@@ -25,6 +28,18 @@ var throw_timer: float = 2.0
 var hop_timer: float = 6.0
 var phase: int = 1
 var _base_patrol_speed: float = 90.0
+## Gate on the leap so he arcs instead of vibrating against a wall every frame.
+var _leap_cooldown: float = 0.0
+## Clears ~196px at gravity 980 — enough for this project's real ledge heights.
+const LEAP_VELOCITY: float = -620.0
+## Motion-feel constants (founder: "smoother, less robotic" — capability
+## unchanged). Accel is ~4x patrol speed so he still reaches full pace in
+## about a quarter second; the harder turn figure keeps direction changes
+## crisp rather than floaty.
+const WALK_ACCEL: float = 560.0
+const TURN_DECEL: float = 1300.0
+## Horizontal slack before he commits to a new facing, in px.
+const TURN_DEAD_ZONE: float = 34.0
 ## Shared screen-anchored bar (src/ui/boss_health_bar.gd). Named with a leading
 ## underscore because this boss does NOT extend BossBase — it has no inherited
 ## `health_bar` member to match, and shadowing an inherited member is the exact
@@ -52,12 +67,31 @@ func _ready() -> void:
 	health = max_health
 	_base_patrol_speed = patrol_speed
 	sprite.color = Color(0.4, 0.25, 0.15, 1.0)
-	sprite.size = Vector2(96, 96)
-	collision.position = Vector2(48, 48)
-	hitbox.position = Vector2(48, 48)
+	# Founder: "Make the Auditor MUCH BIGGER — in fact you have REDUCED his
+	# size!!!" 168 vs the old 96 is a 1.75x linear / ~3x area increase. This
+	# MUST stay in lockstep with auditor.tscn's RectangleShape2D (168x168) and
+	# the collision/hitbox offsets (size/2 = 84) or the art and hurtbox drift.
+	sprite.size = Vector2(BODY, BODY)
+	collision.position = Vector2(BODY / 2.0, BODY / 2.0)
+	hitbox.position = Vector2(BODY / 2.0, BODY / 2.0)
 	hitbox_shape.shape = collision.shape
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
+	# CONTACT DETECTION STAYS ON FOR THE WHOLE FIGHT.
+	#
+	# Founder, several times over: "the moment he touches Lil Blunt the stage
+	# needs to restart as Lil Blunt has died." This boss gated `monitoring`
+	# to its vulnerable window, which turns this Area2D OFF for roughly 80%
+	# of the fight — `body_entered` never fires, so the player walks straight
+	# through the boss and nothing happens. That is the whole reported bug:
+	# the restart logic was correct, it was simply never reached.
+	#
+	# Incoming DAMAGE is gated by `monitorable` instead (player attacks detect
+	# the boss, not the reverse) plus take_damage()'s own vulnerable-state
+	# check, so leaving detection on costs nothing and is what makes contact
+	# actually end the run.
+	hitbox.monitoring = true
+	hitbox.monitorable = false
 	# The Auditor extends CharacterBody2D directly rather than BossBase, so it
 	# inherits none of BossBase's health-bar wiring — which is why the FIRST
 	# boss every player meets was the only one fighting with no HP feedback at
@@ -95,6 +129,7 @@ func _physics_process(delta: float) -> void:
 	state_timer -= delta
 	throw_timer -= delta
 	hop_timer -= delta
+	_leap_cooldown -= delta
 
 	# "Diamond Surge" (DIAMONDS holders, phase 2+): the Auditor summons slow
 	# diamond shards — hit one with an attack and it reflects back for damage
@@ -107,12 +142,41 @@ func _physics_process(delta: float) -> void:
 
 	match current_state:
 		State.PATROL:
-			velocity.x = patrol_speed * patrol_direction
+			# Stalk the live player across the full level instead of bouncing
+			# wall-to-wall. If no player is found fall back to the old bounce.
+			var _pl := get_tree().get_first_node_in_group("player")
+			if _pl:
+				# Dead zone: only re-commit once the player is properly to one
+				# side, otherwise he vibrates when they stand over him.
+				# Explicitly typed: _pl comes from get_first_node_in_group(),
+				# which returns Node, so `.global_position.x` is a Variant and
+				# `:=` is a HARD parse error in Godot 4.3.
+				var dx: float = _pl.global_position.x - global_position.x
+				if absf(dx) > TURN_DEAD_ZONE:
+					var stalk_dir := signf(dx)
+					patrol_direction = stalk_dir
+			# Ease toward the target speed instead of snapping to it. Turning
+			# round brakes harder than setting off, which reads as weight.
+			var target_vx := patrol_speed * patrol_direction
+			var rate: float = (TURN_DECEL if signf(target_vx) != signf(velocity.x)
+				and not is_zero_approx(velocity.x) else WALK_ACCEL)
+			velocity.x = move_toward(velocity.x, target_vx, rate * delta)
 			velocity.y += 980.0 * delta
 			move_and_slide()
-			if is_on_wall():
-				patrol_direction *= -1.0
-				sprite.scale.x = 1.0 if patrol_direction > 0 else -1.0
+			# Follow committed motion, not the raw player delta, so the sprite
+			# cannot strobe while he is turning around.
+			if absf(velocity.x) > 12.0:
+				sprite.set_facing(velocity.x > 0.0)
+			# Blocked by terrain -> LEAP. 196px of clearance vs the old 59px.
+			if is_on_wall() and is_on_floor() and _leap_cooldown <= 0.0:
+				velocity.y = LEAP_VELOCITY
+				_leap_cooldown = 0.55
+			# He also hops when the player is well above him, so he pursues up
+			# the stage's terraces instead of pacing along the bottom of them.
+			if _pl and is_on_floor() and _leap_cooldown <= 0.0 \
+					and _pl.global_position.y < global_position.y - 90.0:
+				velocity.y = LEAP_VELOCITY
+				_leap_cooldown = 0.9
 			# Ranged pressure — cadence tightens per phase.
 			if throw_timer <= 0.0:
 				throw_timer = [0.0, 2.6, 2.0, 1.4][phase]
@@ -120,8 +184,10 @@ func _physics_process(delta: float) -> void:
 			# Occasional reposition hop.
 			if hop_timer <= 0.0:
 				hop_timer = 6.0 if phase < 3 else 3.5
-				velocity.y = -320.0
-				velocity.x = -patrol_direction * 160.0
+				velocity.y = -300.0
+				# Blend, don't slam: keep most of his current momentum so the
+				# reposition reads as a skip rather than a teleport-and-reverse.
+				velocity.x = lerpf(velocity.x, -patrol_direction * 150.0, 0.45)
 			if state_timer <= 0.0:
 				state_timer = 1.4
 				current_state = State.CHARGE
@@ -139,7 +205,6 @@ func _physics_process(delta: float) -> void:
 				current_state = State.VULNERABLE
 				sprite.color = Color(1.0, 0.2, 0.2, 1.0)
 				hitbox.monitorable = true
-				hitbox.monitoring = true
 
 		State.VULNERABLE:
 			velocity.x = move_toward(velocity.x, 0.0, 200.0)
@@ -152,7 +217,6 @@ func _physics_process(delta: float) -> void:
 				current_state = State.PATROL
 				state_timer = maxf(1.4, 3.0 - phase * 0.5)
 				hitbox.monitorable = false
-				hitbox.monitoring = false
 
 ## Aimed clipboard(s) — one shot in P1, two in P2, a triple fan in P3.
 func _throw_clipboard() -> void:
@@ -166,7 +230,7 @@ func _throw_clipboard() -> void:
 		proj.direction = base.rotated(s)
 		proj.speed = 240.0 + phase * 40.0
 		proj.tint = Color(0.95, 0.92, 0.8, 1.0)  # paper
-		proj.global_position = global_position + Vector2(48, 40)
+		proj.global_position = global_position + Vector2(BODY / 2.0, BODY * 0.42)
 		get_parent().add_child(proj)
 	AudioManager.play_sfx("throw")
 
@@ -178,7 +242,7 @@ func take_damage(amount: int) -> void:
 	AudioManager.play_sfx("damage")
 	BossVoiceSystem.say(self, BOSS_ID, "hurt")
 	var tween := create_tween()
-	tween.tween_property(sprite, "modulate", Color(10, 10, 10, 1), 0.05)
+	tween.tween_property(sprite, "modulate", Color(4.0, 0.25, 0.25, 1), 0.05)
 	tween.tween_property(sprite, "modulate", Color(1, 1, 1, 1), 0.05)
 	if _health_bar:
 		_health_bar.set_health(health)
@@ -192,7 +256,6 @@ func take_damage(amount: int) -> void:
 	state_timer = maxf(1.4, 2.0 - phase * 0.3)
 	sprite.color = Color(0.4, 0.25, 0.15, 1.0)
 	hitbox.monitorable = false
-	hitbox.monitoring = false
 
 ## Recompute phase from HP ratio; on a new phase, escalate + taunt.
 func _update_phase() -> void:
@@ -289,7 +352,7 @@ func _summon_diamond_shards() -> void:
 		rect.size = Vector2(26, 26)
 		cs.shape = rect
 		shard.add_child(cs)
-		shard.global_position = global_position + Vector2(48, 20 + offset)
+		shard.global_position = global_position + Vector2(BODY / 2.0, BODY * 0.21 + offset)
 		shard.set_meta("reflected", false)
 		var dir: Vector2 = shard.global_position.direction_to(p.global_position)
 		shard.set_meta("dir", dir)
@@ -314,7 +377,7 @@ func _drive_shard(shard: Area2D) -> void:
 		var spd: float = 220.0 if bool(shard.get_meta("reflected")) else 110.0
 		shard.global_position += dir * spd * 0.016
 		if bool(shard.get_meta("reflected")) and is_instance_valid(self) \
-				and shard.global_position.distance_to(global_position + Vector2(48, 48)) < 56.0:
+				and shard.global_position.distance_to(global_position + Vector2(BODY / 2.0, BODY / 2.0)) < BODY * 0.58:
 			_take_reflected_damage()
 			shard.queue_free())
 	get_tree().create_timer(8.0).timeout.connect(func() -> void:
@@ -333,7 +396,7 @@ func _on_shard_area(area: Area2D, shard: Area2D) -> void:
 	# Player attack (axe/fire) reflects the shard back at the Auditor.
 	if area.is_in_group("projectile") and not bool(shard.get_meta("reflected")):
 		shard.set_meta("reflected", true)
-		shard.set_meta("dir", shard.global_position.direction_to(global_position + Vector2(48, 48)))
+		shard.set_meta("dir", shard.global_position.direction_to(global_position + Vector2(BODY / 2.0, BODY / 2.0)))
 		var spr := shard.get_child(0) as Sprite2D
 		if spr:
 			spr.modulate = Color(1.4, 1.6, 2.2, 1.0)
@@ -348,7 +411,7 @@ func _take_reflected_damage() -> void:
 	health -= 2
 	AudioManager.play_sfx("damage")
 	BossVoiceSystem.say(self, BOSS_ID, "hurt")
-	EffectSpawner.burst("explosion", global_position + Vector2(48, 48))
+	EffectSpawner.burst("explosion", global_position + Vector2(BODY / 2.0, BODY / 2.0))
 	# This is the SECOND damage path into this boss and it previously skipped
 	# the health bar entirely, so a reflected shard silently desynced the
 	# display by 2 HP until the next melee hit repainted it (Kimi audit).
@@ -375,8 +438,11 @@ func _spawn_gold_platforms() -> void:
 func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("take_damage"):
 		GameManager.last_damage_source = BOSS_ID
-		body.take_damage(1)
 		BossVoiceSystem.say(self, BOSS_ID, "mock")
+		# Founder stakes rule: ANY boss touch returns Lil Blunt to the START of
+		# the level, regardless of remaining lives — not hurt-and-continue.
+		# See GameManager.boss_contact_restart().
+		GameManager.boss_contact_restart()
 
 func _on_hitbox_area_entered(area: Area2D) -> void:
 	if area.is_in_group("projectile"):

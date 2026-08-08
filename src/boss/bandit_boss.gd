@@ -30,6 +30,21 @@ func _ready() -> void:
 	hitbox_shape.shape = collision.shape
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
+	# CONTACT DETECTION STAYS ON FOR THE WHOLE FIGHT.
+	#
+	# Founder, several times over: "the moment he touches Lil Blunt the stage
+	# needs to restart as Lil Blunt has died." This boss gated `monitoring`
+	# to its vulnerable window, which turns this Area2D OFF for roughly 80%
+	# of the fight — `body_entered` never fires, so the player walks straight
+	# through the boss and nothing happens. That is the whole reported bug:
+	# the restart logic was correct, it was simply never reached.
+	#
+	# Incoming DAMAGE is gated by `monitorable` instead (player attacks detect
+	# the boss, not the reverse) plus take_damage()'s own vulnerable-state
+	# check, so leaving detection on costs nothing and is what makes contact
+	# actually end the run.
+	hitbox.monitoring = true
+	hitbox.monitorable = false
 	boss_display_name = "The Bandit King"
 	_setup_health_bar()
 
@@ -46,7 +61,7 @@ func _physics_process(delta: float) -> void:
 			move_and_slide()
 			if is_on_wall():
 				direction *= -1.0
-				boss_sprite.scale.x = 1.0 if direction > 0 else -1.0
+				boss_sprite.set_facing(direction > 0)
 			if throw_timer <= 0:
 				_throw_dynamite()
 
@@ -65,7 +80,6 @@ func _physics_process(delta: float) -> void:
 				current_phase_local = Phase.VULNERABLE
 				boss_sprite.color = Color(1.0, 0.2, 0.2, 1.0)
 				hitbox.monitorable = true
-				hitbox.monitoring = true
 				throw_timer = 1.0
 
 		Phase.VULNERABLE:
@@ -77,7 +91,6 @@ func _physics_process(delta: float) -> void:
 				current_phase_local = Phase.PATROL
 				boss_sprite.color = Color(0.5, 0.3, 0.1, 1.0)
 				hitbox.monitorable = false
-				hitbox.monitoring = false
 				throw_timer = 2.0
 
 func _throw_dynamite() -> void:
@@ -97,7 +110,7 @@ func take_damage(amount: int) -> void:
 	health -= amount
 	AudioManager.play_sfx("damage")
 	var tween := create_tween()
-	tween.tween_property(sprite, "modulate", Color(10, 10, 10, 1), 0.05)
+	tween.tween_property(sprite, "modulate", Color(4.0, 0.25, 0.25, 1), 0.05)
 	tween.tween_property(sprite, "modulate", Color(1, 1, 1, 1), 0.05)
 	_update_health_bar()
 	if health <= 0:
@@ -139,7 +152,11 @@ func die() -> void:
 
 func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("take_damage"):
-		body.take_damage(1)
+		GameManager.last_damage_source = "bandit_king"
+		# Founder stakes rule: ANY boss touch returns Lil Blunt to the START of
+		# the level, regardless of remaining lives — not hurt-and-continue.
+		# See GameManager.boss_contact_restart().
+		GameManager.boss_contact_restart()
 
 func _on_hitbox_area_entered(area: Area2D) -> void:
 	if area.is_in_group("projectile"):

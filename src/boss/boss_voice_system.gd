@@ -21,6 +21,11 @@ var _cooldown := 0.0
 var _ambient_timer := 0.0
 var _active_boss: Node2D = null
 var _active_boss_id := ""
+## Last line index played per "boss_id:category", so the picker never plays the
+## same taunt twice in a row (founder: "they keep repeating themselves"). Pure
+## randi() % count repeated an N-line pool ~1/N of the time; this makes every
+## consecutive line different whenever the pool has 2+ entries.
+var _last_idx: Dictionary = {}
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -57,7 +62,15 @@ func say(source: Node2D, boss_id: String, category: String, force: bool = false)
 	var count: int = BossVoiceData.COUNTS.get(boss_id, {}).get(category, 0)
 	if count <= 0:
 		return
+	# Pick a line, avoiding an immediate repeat of the last one in this
+	# category. With 2+ lines the next taunt is always different; with 1 it
+	# just plays it. This is the cheap half of the "more vocabulary" fix — the
+	# other half is more lines in BossVoiceData.COUNTS (+ their audio).
+	var key := "%s:%s" % [boss_id, category]
 	var idx := randi() % count
+	if count > 1 and idx == int(_last_idx.get(key, -1)):
+		idx = (idx + 1 + (randi() % (count - 1))) % count
+	_last_idx[key] = idx
 	var path := "%s%s_%s_%d.mp3" % [VOICE_DIR, boss_id, category, idx]
 	if not ResourceLoader.exists(path):
 		return

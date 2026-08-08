@@ -8,6 +8,38 @@ signal died
 @export var walk_speed: float = 200.0
 @export var jump_force: float = -430.0
 @export var gravity: float = 1000.0
+## Mario-style stomp: landing on an enemy's head damages/kills it and bounces
+## the player back up — smaller than a real jump (jump_force=-430) so it
+## chains into another stomp or a normal jump without feeling like a full
+## reset. Founder defect #10: no stomp existed before this; every enemy
+## contact (including landing on its head) hurt the PLAYER instead.
+@export var stomp_bounce_force: float = -300.0
+## Minimum downward speed for contact to count as a stomp — filters out
+## brushing an enemy at the apex of a jump.
+@export var stomp_min_fall_speed: float = 40.0
+## How far above the enemy's own origin the player's origin must be to count
+## as "landed on its head" rather than a side/below hit. Margin is generous
+## (most enemy sprites in this project are ~32-96px) but still excludes a
+## same-height side bump.
+const STOMP_Y_MARGIN: float = 8.0
+## How close the player's ORIGIN must get to a ladder's top before "still
+## holding up" tops him out onto the platform.
+##
+## This was 6.0, which made the top-out physically unreachable whenever a
+## solid platform sat at the ladder's top — i.e. the normal case, and the
+## reason "climbing a ladder doesn't get me onto the platform" survived
+## several offset re-tunings. Climbing runs through move_and_slide(), so the
+## player COLLIDES with the platform's underside on the way up: with a 20px
+## platform whose top edge is level with the ladder top, and a 32px collision
+## box (half-height 16), he is stopped with his origin ~36px below the
+## ladder top and can never satisfy a 6px threshold. He just presses up
+## forever under the platform.
+##
+## 44 clears that worst case (20 platform + 16 half-box + slack). Topping out
+## a little early is harmless: _top_out_ladder() teleports to the ladder's
+## defined top_exit_position() and then nudges out of any overlap, so the
+## landing spot is identical either way.
+const LADDER_TOP_OUT_MARGIN: float = 44.0
 @export var double_jump_force: float = -370.0
 ## Falling pulls harder than rising — same jump height (level gaps unchanged),
 ## ~15% less airtime, kills the floaty feel.
@@ -29,6 +61,16 @@ signal died
 
 var current_outfit: Outfit = Outfit.DEFAULT
 var _last_fall_speed: float = 0.0
+## True from the killing blow until the respawn/game-over resolves. Guards
+## die() against re-entry from multiple lethal hits in the same frame.
+var _dying: bool = false
+
+## Optional external horizontal steer, in the same -1..1 space as keyboard
+## input. Set by the Smoke Lounge so the founder's "or using the mouse to
+## direct Lil Blunt to the tokens" works. Inert everywhere else — the
+## campaign levels never touch it, so their input handling is unchanged.
+var steer_override_active: bool = false
+var steer_override: float = 0.0
 
 ## Ambient level-driven movement scaling (e.g. the Smoke Lounge's chill pace).
 ## Separate from power_up_handler's speed/jump multiplier so a level's mood
@@ -92,6 +134,12 @@ func _physics_process(delta: float) -> void:
 	var movement_direction: float = input_handler.get_movement_direction()
 	if MobileInputHandler:
 		movement_direction = MobileInputHandler.get_movement_input()
+	# Smoke Lounge skate cruise: the level can drive steering directly (mouse
+	# aim) on frames where the player isn't already pressing a direction.
+	# Keyboard always wins so arrows never feel unresponsive. Opt-in and
+	# off by default, so no campaign level's handling changes.
+	if steer_override_active and is_zero_approx(movement_direction):
+		movement_direction = steer_override
 
 	# Bong flight: hold jump/up to rise, otherwise sink slowly. Overrides all
 	# normal gravity/wall/jump vertical logic for the duration. Trippy green
@@ -109,6 +157,7 @@ func _physics_process(delta: float) -> void:
 	if _ladder_zones > 0 and (Input.is_action_pressed("move_up") or Input.is_action_pressed("move_down")):
 		_climbing = true
 		velocity = Vector2.ZERO
+		_last_fall_speed = 0.0  # else a stale pre-climb value can false-trigger a stomp mid-climb
 		input_handler.is_wall_sliding = false
 		wall_sparks.emitting = false
 		# MUST return here. Without it, the rest of this function (gravity,
@@ -292,16 +341,33 @@ func _resolve_ground_pound() -> void:
 		var collider := get_slide_collision(i).get_collider()
 		if collider and collider.is_in_group("breakable") and collider.has_method("break_block"):
 			collider.break_block()
-	# Stun (damage) enemies within a short radius of the impact.
+	# Stun (damage) enemies within a short radius of the impact. Bosses keep
+	# their own VULNERABLE-window contract (same reason _try_stomp excludes
+	# them) -- a free AoE pound would otherwise bypass it.
 	for enemy in get_tree().get_nodes_in_group("enemy"):
 		if enemy is Node2D and is_instance_valid(enemy) \
+				and not enemy.is_in_group("boss") \
 				and global_position.distance_to(enemy.global_position) < 120.0 \
 				and enemy.has_method("take_damage"):
 			enemy.take_damage(1)
 
 ## Show the held tool sprite while a tool power-up is active.
 func _update_tool_visual() -> void:
-	if GameManager.has_power_up("pickaxe"):
+	# BIG AXE FIRST — and it must come before "pickaxe", because both use the
+	# same pickaxe artwork and whichever branch is tested first wins.
+	#
+	# Founder F3: "the 1st bigger axe still throws the smaller axes even though
+	# he has the bigger one in his hand. When he collects the 2nd axe WE DON'T
+	# SEE IT but he ends up throwing bigger axes."
+	#
+	# There was no "bigaxe" branch at all, so holding the big axe fell through
+	# to the else and CLEARED the held sprite — he could never see which axe he
+	# had. The scale comes from the projectile's own BIG_SCALE constant, so the
+	# weapon in his hand and the weapon that leaves it can never disagree.
+	if GameManager.has_power_up("bigaxe"):
+		sprite.set_tool("res://src/assets/sprites/sprite_item_pickaxe.png",
+			load("res://src/combat/axe.gd").BIG_SCALE)
+	elif GameManager.has_power_up("pickaxe"):
 		sprite.set_tool("res://src/assets/sprites/sprite_item_pickaxe.png")
 	elif GameManager.has_power_up("torch"):
 		sprite.set_tool("res://src/assets/sprites/sprite_item_torch.png")
@@ -365,6 +431,8 @@ func take_damage(amount: int) -> void:
 	ComboSystem.break_combo()
 	ScreenShake.shake(0.2, 5.0)
 	if GameManager.player_health <= 0:
+		# Bark here (not in die()) so it fires exactly once on the killing blow.
+		AudioManager.play_bark("vo_death", 5.0)
 		die()
 	else:
 		_hitstop()
@@ -373,6 +441,9 @@ func take_damage(amount: int) -> void:
 		velocity.x = -240.0 if input_handler.facing_right else 240.0
 		power_up_handler.activate_invincibility(1.0)
 		AudioManager.play_sfx("damage")
+		# Lil Blunt's own voice. Safe in this branch only: the fatal case took
+		# the die() path above, so vo_hurt can never double up with vo_death.
+		AudioManager.play_bark("vo_hurt", 4.0)
 
 ## Freeze-frame on impact — ~4 frames at 5% speed reads as a hit, not lag.
 ## Timer ignores time_scale so the freeze always ends on schedule.
@@ -412,7 +483,7 @@ func _update_climb(delta: float, movement_direction: float) -> void:
 	# Top-out: at/above the ladder top and still pushing up → stand on top.
 	if vertical < 0.0 and _active_ladder != null and is_instance_valid(_active_ladder) \
 			and _active_ladder.has_method("top_y") \
-			and global_position.y <= _active_ladder.top_y() + 6.0:
+			and global_position.y <= _active_ladder.top_y() + LADDER_TOP_OUT_MARGIN:
 		_top_out_ladder()
 		return
 	velocity.y = vertical * climb_speed
@@ -463,42 +534,37 @@ func _top_out_ladder() -> void:
 ## (not just health), and respawns at the last checkpoint if lives remain;
 ## out of lives ends the run to the main menu. Called by the level kill zone.
 func pit_death() -> void:
-	if StateMachine.is_dead():
+	if StateMachine.is_dead() or _dying:
 		return
+	_dying = true
 	AudioManager.play_sfx("fall")
+	# "fall" is environmental; the bark is Lil Blunt's own reaction, so they
+	# complement rather than duplicate. The 5s per-id cooldown covers the
+	# pit-death-then-real-die() sequence when this was the last life.
+	AudioManager.play_bark("vo_death", 5.0)
 	ScreenShake.shake(0.5, 10.0)
 	# Heatmap: pits are obstacle deaths; surviving ones count as a retry.
 	Web3Bridge.report_metric("death", {"obstacle": "pit"})
-	if GameManager.lose_life():
-		# Out of lives — real game over.
-		if StateMachine.change_state(StateMachine.State.GAME_OVER):
-			died.emit()
-			var t := create_tween()
-			t.tween_property(self, "modulate:a", 0.0, 0.5)
-			await get_tree().create_timer(1.6).timeout
-			SceneRouter.load_scene("res://src/ui/main_menu.tscn", SceneRouter.Transition.FADE)
-		return
-	# Lives left — respawn at the level's checkpoint (health already refilled).
-	Web3Bridge.report_metric("retry", {})
-	var checkpoint := GameManager.get_checkpoint(GameManager.current_level)
-	if checkpoint == Vector2.ZERO:
-		checkpoint = GameManager.get_checkpoint(1)
-	if checkpoint != Vector2.ZERO:
-		global_position = checkpoint + Vector2(0, -50)
-	else:
-		global_position = GameManager.player_position + Vector2(0, -260)
-	scale = Vector2.ONE
-	modulate.a = 1.0
-	velocity = Vector2.ZERO
-	power_up_handler.activate_invincibility(1.5)
+	# Unified with the enemy/boss death path (R2): one respawn/game-over helper
+	# so pit and combat deaths can never diverge again.
+	_respawn_or_game_over()
 
 func die() -> void:
-	if StateMachine.is_dead():
+	# Re-entry guard (multiple lethal hits in one frame) — NOT an is_dead()
+	# guard. The old code bailed on `if StateMachine.is_dead(): return`, but
+	# GameManager.take_damage() had already flipped the state to GAME_OVER, so
+	# die() returned immediately and the death/respawn sequence NEVER ran — the
+	# player just froze in GAME_OVER with no control and no respawn. State
+	# ownership now lives here (GameManager no longer steals it).
+	if _dying:
 		return
-	# If the transition is refused (e.g. boss just won the level), do NOT run
-	# the death sequence — its end would fail to restore PLAYING and freeze us.
-	if not StateMachine.change_state(StateMachine.State.GAME_OVER):
-		return
+	_dying = true
+	# Take the death state ourselves. From LEVEL_COMPLETE (boss just won) this
+	# is refused, which is correct: abort the death rather than wedge the SM.
+	if not StateMachine.is_dead():
+		if not StateMachine.change_state(StateMachine.State.GAME_OVER):
+			_dying = false
+			return
 	# AgentMail digest hook: attribute the death to the active boss (if any)
 	# so the weekly email can say "you died to the Tax Collector N times".
 	if BossVoiceSystem._active_boss_id != "":
@@ -516,18 +582,64 @@ func die() -> void:
 
 func _on_death_anim_done() -> void:
 	died.emit()
-	var checkpoint := GameManager.get_checkpoint(1)
+	# R2 (2026-08-08): this used get_checkpoint(1) — HARDCODED level 1 — then
+	# fell through to reload_current_scene() when it found nothing. On Level 2/3
+	# there is no level-1 checkpoint, so every enemy/boss death hit the reload
+	# branch. reload_current_scene() is deferred and does NOT restore PLAYING by
+	# itself; combined with the tween/await timing this presented as the "death
+	# freezes instead of restarting" the founder reported. It also never spent a
+	# life (infinite free retries) — diverging from pit_death()'s correct flow.
+	# Now unified through _respawn_or_game_over(), which spends a life, respawns
+	# at the CURRENT level's checkpoint, and guarantees a return to PLAYING.
+	_respawn_or_game_over()
+
+## Single source of truth for "the player just died": spend a life; if any
+## remain, respawn at the current level's checkpoint and hand control back
+## (PLAYING); if not, run the game-over fade to the main menu. Both the
+## enemy/boss death path (die → death anim → here) and the pit path call this,
+## so respawn behaviour can never diverge between them again.
+func _respawn_or_game_over() -> void:
+	if GameManager.lose_life():
+		# Out of lives — real game over, fade to menu. GAME_OVER is already the
+		# current state on the die() path; assert it on the pit path too.
+		if not StateMachine.is_dead():
+			StateMachine.change_state(StateMachine.State.GAME_OVER)
+		# FULL LIFE WIPE (lives == 0): restart at the START of the CURRENT level,
+		# not the mid-level checkpoint and not the main menu. Founder rule:
+		#   lives remaining > 0 after a hit -> checkpoint respawn (below)
+		#   lives == 0 / full wipe -> reload THIS level from its start marker
+		# Clearing the checkpoint makes the reloaded level's _spawn_player fall
+		# back to player_spawn (level start) instead of the boss-door checkpoint
+		# where the last life was lost. Lives + health refill for the retry.
+		var wipe_level := GameManager.current_level
+		GameManager.clear_checkpoint(wipe_level)
+		GameManager.refill_run()
+		var t := create_tween()
+		t.tween_property(self, "modulate:a", 0.0, 0.5)
+		await get_tree().create_timer(1.2).timeout
+		SceneRouter.load_scene(GameManager.level_scene(wipe_level), SceneRouter.Transition.FADE)
+		return
+	# Lives remain — respawn at THIS level's checkpoint (fallbacks below).
+	Web3Bridge.report_metric("retry", {})
+	var checkpoint := GameManager.get_checkpoint(GameManager.current_level)
+	if checkpoint == Vector2.ZERO:
+		checkpoint = GameManager.get_checkpoint(1)
 	if checkpoint != Vector2.ZERO:
 		global_position = checkpoint + Vector2(0, -50)
-		GameManager.player_health = GameManager.max_health
-		GameManager.health_changed.emit(GameManager.player_health)
-		scale = Vector2.ONE
-		modulate.a = 1.0
-		velocity = Vector2.ZERO
-		power_up_handler.activate_invincibility(1.5)
-		StateMachine.change_state(StateMachine.State.PLAYING)
 	else:
-		get_tree().reload_current_scene()
+		global_position = GameManager.player_position + Vector2(0, -260)
+	GameManager.player_health = GameManager.max_health
+	GameManager.health_changed.emit(GameManager.player_health)
+	scale = Vector2.ONE
+	modulate.a = 1.0
+	velocity = Vector2.ZERO
+	power_up_handler.activate_invincibility(1.5)
+	# Return control. GAME_OVER→PLAYING is an allowed transition; this is what
+	# was missing on the old reload path and caused the freeze. Guard the
+	# from==to case (pit path may still be PLAYING) to avoid a warning.
+	if not StateMachine.is_playing():
+		StateMachine.change_state(StateMachine.State.PLAYING)
+	_dying = false
 
 func _on_hurtbox_area_entered(area: Area2D) -> void:
 	if area.is_in_group("collectible") and area.has_method("collect"):
@@ -540,10 +652,50 @@ func _on_hurtbox_body_entered(body: Node2D) -> void:
 	if GameManager.has_power_up("pickaxe") and body.has_method("smash"):
 		body.smash()
 		return
-	if body.is_in_group("enemy") and body.has_method("deal_damage"):
-		body.deal_damage(self)
+	if body.is_in_group("enemy"):
+		# Stomp (defect #10): landing on a head is an attack, not a hit —
+		# damage THEM, bounce US. Must run and `return` BEFORE deal_damage,
+		# or the same contact would also hurt the player on the exact hit
+		# that killed the thing standing on.
+		if _try_stomp(body):
+			return
+		if body.has_method("deal_damage"):
+			body.deal_damage(self)
 	elif body.is_in_group("hazard"):
 		take_damage(1)
+
+## True (and fully handled) if this enemy contact is a head-stomp: player
+## falling, player's origin clearly above the enemy's. Side/below contact
+## returns false and stays a normal player-takes-damage hit. Bosses are
+## excluded — they keep their own VULNERABLE-window damage contract, which a
+## free stomp would bypass. velocity.y OR _last_fall_speed: move_and_slide
+## can zero velocity.y on the exact physics frame this Area2D signal fires,
+## but _last_fall_speed still holds the pre-landing value (player.gd only
+## resets it once is_on_floor() is true).
+func _try_stomp(body: Node2D) -> bool:
+	if _climbing:
+		return false  # ladder contact uses the enemy's normal deal_damage path
+	if body.is_in_group("boss"):
+		return false
+	if not body.has_method("take_damage"):
+		return false
+	if body.get("is_dead") == true:
+		return false  # don't re-stomp a corpse mid-death-tween
+	var falling: bool = velocity.y > stomp_min_fall_speed \
+			or _last_fall_speed > stomp_min_fall_speed
+	if not falling:
+		return false
+	if global_position.y >= body.global_position.y - STOMP_Y_MARGIN:
+		return false
+	body.take_damage(1)
+	_ground_pounding = false  # a pound resolves as a stomp, doesn't fight the bounce
+	velocity.y = stomp_bounce_force
+	input_handler.can_double_jump = true
+	input_handler.can_air_dash = true
+	_play_jump_stretch()
+	AudioManager.play_sfx("jump")
+	ComboSystem.add_score(20)
+	return true
 
 func _on_aura_body_entered(body: Node2D) -> void:
 	if body.is_in_group("enemy") and body.has_method("take_damage"):

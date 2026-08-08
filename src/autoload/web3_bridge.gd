@@ -315,6 +315,14 @@ func _backend(method: String, path: String, body: Dictionary, on_done: Callable)
 func ask_oracle(question: String, on_answer: Callable) -> void:
 	_backend("POST", "/oracle", {"question": question, "wallet_address": wallet_address}, on_answer)
 
+## Lil Blunt companion chat. Unlike ask_oracle, this ships a read-only snapshot
+## of the live run so he can react to what's actually happening. No wallet
+## address is sent — the companion has no reason to know it, and not sending it
+## keeps this endpoint free of identity data. Backend owns the model key and
+## re-validates every state field (see backend/worker.js /companion).
+func ask_companion(question: String, state: Dictionary, on_answer: Callable) -> void:
+	_backend("POST", "/companion", {"question": question, "state": state}, on_answer)
+
 func submit_score(score: int, level: int, on_done: Callable) -> void:
 	_backend("POST", "/score", {
 		"score": score, "level": level, "wallet_address": wallet_address}, on_done)
@@ -347,6 +355,12 @@ func submit_lore(text: String, on_done: Callable) -> void:
 ## Fire-and-forget anonymous funnel analytics (which buttons get clicked).
 ## Offline: queued to user://analytics_queue.json, flushed on reconnect.
 func track(event: String) -> void:
+	# PostHog mirror FIRST, deliberately before the has_backend() guard: the
+	# game's own backend is optional, and analytics must not silently switch
+	# itself off just because backend_base_url is unset. Prefixed "ui_" so a
+	# button click can never be conflated with the gameplay event of the same
+	# name — "level_complete" exists as both a menu click and a real clear.
+	Analytics.capture("ui_" + event)
 	if not has_backend():
 		return
 	if _health_checked_once and not backend_online:
@@ -402,6 +416,7 @@ func invite_friend(friend_email: String, on_done: Callable) -> void:
 ## (play_start / death {boss} / boss_defeat {boss, score, first_time} /
 ## wallet_connect). Fire-and-forget; no-ops without a backend.
 func report_event(event: String, data: Dictionary = {}) -> void:
+	Analytics.capture(event, data)
 	if not has_backend():
 		return
 	var body := {"player_id": player_id(), "event": event}
@@ -418,6 +433,7 @@ func report_event(event: String, data: Dictionary = {}) -> void:
 ## referral_code_used / level_complete / retry. Feeds pstats on the backend,
 ## which powers dynamic difficulty + the founder digest. Fire-and-forget.
 func report_metric(event_type: String, event_data: Dictionary = {}) -> void:
+	Analytics.capture(event_type, event_data)
 	if not has_backend():
 		return
 	var body := {"player_id": player_id(), "event_type": event_type, "event_data": event_data}

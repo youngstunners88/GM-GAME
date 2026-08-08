@@ -73,16 +73,42 @@ func play_playlist(paths: Array) -> void:
         return
     _play_next_in_playlist(true)
 
+## Players that are mid-fade-out. UNTRACKED before, which is the whole bug:
+## _duck_out_music() detached the outgoing player and relied on a tween to
+## free it 0.8s later, keeping no reference. A second play_playlist() inside
+## that window (level load -> boss trigger, or a boss-contact level reload)
+## therefore ducked only the CURRENT player while the previous one kept
+## playing to its own timer — two stage tracks audible at once, the founder's
+## "a song playing and another song playing in the background subtly."
+var _retiring: Array[AudioStreamPlayer] = []
+
+## Hard-stop anything still fading from an earlier switch. Called before
+## starting a new fade so at most ONE outgoing track can ever be audible.
+func _purge_retiring() -> void:
+    for pl: AudioStreamPlayer in _retiring:
+        if is_instance_valid(pl):
+            pl.stop()
+            pl.queue_free()
+    _retiring.clear()
+
 ## Fade the current track out and free it — replaces the old hard stop.
 func _duck_out_music() -> void:
+    _purge_retiring()
     if current_music_player and is_instance_valid(current_music_player):
         var old := current_music_player
+        _retiring.append(old)
         var tween := old.create_tween()
-        tween.tween_property(old, "volume_db", -32.0, 0.8)
-        tween.finished.connect(old.queue_free)
+        # 0.45s, not 0.8s: shorter overlap with the incoming track's fade-in,
+        # so a switch reads as a transition rather than two songs playing.
+        tween.tween_property(old, "volume_db", -32.0, 0.45)
+        tween.finished.connect(func() -> void:
+            _retiring.erase(old)
+            if is_instance_valid(old):
+                old.queue_free())
     current_music_player = null
 
 func _stop_music() -> void:
+    _purge_retiring()
     if current_music_player and is_instance_valid(current_music_player):
         current_music_player.stop()
         current_music_player.queue_free()
@@ -207,6 +233,24 @@ func release_music_override(token: int) -> void:
         _play_next_in_playlist(true)
     _saved_stream = null
 
+## Drop an override WITHOUT resuming the paused base track. For a caller that
+## is about to trigger its OWN fresh play_playlist() immediately after (a full
+## scene reload) — resuming the base track just to have it faded back out a
+## moment later is the redundant step that creates a dual-track bleed. See
+## Blaze Rush's _release_music() for the call site this exists for.
+func discard_music_override(token: int) -> void:
+    if token != _override_token or not _override_active:
+        return
+    _override_active = false
+    _clear_override_player()
+    _purge_retiring()
+    if current_music_player and is_instance_valid(current_music_player):
+        current_music_player.stop()
+        current_music_player.queue_free()
+    current_music_player = null
+    _saved_stream = null
+    _saved_playlist = []
+
 func _clear_override_player() -> void:
     if _override_player and is_instance_valid(_override_player):
         _override_player.stop()
@@ -267,11 +311,17 @@ func play_voice(name: String) -> void:
         _voice_player.queue_free()
     _voice_player = AudioStreamPlayer.new()
     _voice_player.bus = "SFX"
+    # Founder F4: "the previous bosses dont speak or the volume is not loud
+    # enough." VO played at unity gain on the shared SFX bus, so it sat level
+    # with coin pings and axe hits and got lost in a fight. +6dB puts the line
+    # clearly on top of the mix; the music duck below was already there and was
+    # never the whole story on its own.
+    _voice_player.volume_db = 6.0
     _voice_player.stream = stream
     add_child(_voice_player)
     if current_music_player and is_instance_valid(current_music_player):
         var duck := current_music_player.create_tween()
-        duck.tween_property(current_music_player, "volume_db", -8.0, 0.25)
+        duck.tween_property(current_music_player, "volume_db", -14.0, 0.2)
     _voice_player.play()
     _voice_player.finished.connect(_on_voice_finished)
 
@@ -282,6 +332,50 @@ func _on_voice_finished() -> void:
     if current_music_player and is_instance_valid(current_music_player):
         var restore := current_music_player.create_tween()
         restore.tween_property(current_music_player, "volume_db", 0.0, 0.5)
+
+## Dedicated player for Lil Blunt's character barks. Deliberately a SEPARATE
+## node from _voice_player: play_voice() is the ANNOUNCER (stage/boss intros,
+## victory) and is single-slot + music-ducking. If barks reused it, a bark on
+## taking damage would cut off a stage-intro line, and every hurt would fire a
+## duck/restore tween pair on the music. One bark slot (newest replaces old)
+## because barks are reactions — the newest is the relevant one — which also
+## stops player nodes accumulating over a long session.
+var _bark_player: AudioStreamPlayer = null
+
+## Last-fired timestamp (msec) per bark id. Per-id so a rapid hurt bark can't
+## starve an attack bark, and vice versa.
+var _bark_last_played: Dictionary = {}
+
+## Play a short Lil Blunt character bark. Never touches current_music_player
+## and never touches _voice_player. Calls inside the per-id cooldown are
+## silently dropped — the cooldown IS the spam absorber for the fan-axe
+## multi-hit and continuous fire-breath tick cadence. A missing or unloadable
+## file is a silent no-op: VO assets may be absent in some builds and
+## gameplay must never depend on them.
+func play_bark(name: String, cooldown: float) -> void:
+    var now := Time.get_ticks_msec()
+    if _bark_last_played.has(name):
+        var last: int = _bark_last_played[name]
+        if now - last < int(cooldown * 1000.0):
+            return
+    var path := _resolve_audio("res://src/assets/sounds/voice/" + name)
+    if path == "":
+        return
+    var stream := load(path)
+    if not stream:
+        return
+    # Stamp only after a successful load, so a build missing this file doesn't
+    # burn the cooldown for nothing.
+    _bark_last_played[name] = now
+    if _bark_player and is_instance_valid(_bark_player):
+        _bark_player.queue_free()
+    _bark_player = AudioStreamPlayer.new()
+    _bark_player.bus = "SFX"
+    _bark_player.stream = stream
+    add_child(_bark_player)
+    _bark_player.play()
+    # Self-cleanup so finished barks don't leak nodes across a session.
+    _bark_player.finished.connect(_bark_player.queue_free)
 
 ## Positional SFX: plays at a world position so pickups/impacts pan and
 ## attenuate with distance from the player instead of sounding global.

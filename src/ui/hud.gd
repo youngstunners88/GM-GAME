@@ -121,15 +121,22 @@ func _on_health_changed(new_health: int) -> void:
 ## undiscoverable (no prompt that J / ATK throws). Fades out after 6s.
 func _show_control_hint() -> void:
     var hint := Label.new()
-    hint.text = "MOVE  A/D  ·  JUMP  W/Space  ·  ATTACK  J  ·  DASH  K"
+    # Input-aware: keyboard players see keys, touch players see tap targets
+    # (showing "A/D · W/Space" on a phone with no keyboard was useless — Kimi
+    # font-audit 2026-08-01). Full controls live in the HOW TO PLAY panel.
+    var touch := OS.get_name() in ["Android", "iOS"] or DisplayServer.is_touchscreen_available()
+    if touch:
+        hint.text = "MOVE  < >   ·   JUMP   ·   ATK   ·   CLIMB  UP/DOWN"
+    else:
+        hint.text = "MOVE  A/D  ·  JUMP  W/Space  ·  ATTACK  J  ·  DASH  K"
     hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    hint.add_theme_font_size_override("font_size", 18)
+    hint.add_theme_font_size_override("font_size", 26)
     hint.add_theme_constant_override("outline_size", 5)
     hint.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
     hint.modulate = Color(1, 1, 1, 0.9)
     var vw := get_viewport().get_visible_rect().size
-    hint.position = Vector2(vw.x / 2 - 300, vw.y - 48)
-    hint.custom_minimum_size.x = 600
+    hint.position = Vector2(vw.x / 2 - 350, vw.y - 56)
+    hint.custom_minimum_size.x = 700
     add_child(hint)
     var tween := create_tween()
     tween.tween_interval(6.0)
@@ -192,8 +199,14 @@ func _on_player_died() -> void:
     var game_over := Label.new()
     game_over.text = "YOU DIED\nRespawning..."
     game_over.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    game_over.position = Vector2(get_viewport().size.x / 2 - 100, get_viewport().size.y / 2 - 50)
+    # get_visible_rect(), NOT get_viewport().size: with canvas_items+expand they
+    # disagree on every window that isn't exactly 1280x720 (i.e. every phone),
+    # which parked this and the two toasts below off-centre (Kimi font-audit #3).
+    var _vs := get_viewport().get_visible_rect().size
+    game_over.position = Vector2(_vs.x / 2 - 100, _vs.y / 2 - 50)
     game_over.add_theme_font_size_override("font_size", 48)
+    game_over.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+    game_over.add_theme_constant_override("outline_size", 6)
     add_child(game_over)
     await get_tree().create_timer(1.5).timeout
     game_over.queue_free()
@@ -214,8 +227,10 @@ func _on_auction_complete(xaut_won: int, multiplier: float) -> void:
     var toast := Label.new()
     toast.text = "GOLD RUSH AUCTION\n+%d XAUT (%.1f%% share)" % [xaut_won, multiplier * 100.0]
     toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    toast.position = Vector2(get_viewport().size.x / 2 - 150, 120)
-    toast.add_theme_font_size_override("font_size", 28)
+    toast.position = Vector2(get_viewport().get_visible_rect().size.x / 2 - 150, 120)
+    toast.add_theme_font_size_override("font_size", 30)
+    toast.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+    toast.add_theme_constant_override("outline_size", 5)
     toast.modulate = Color(1.0, 0.84, 0.0, 1.0)
     add_child(toast)
     var tween := create_tween()
@@ -227,8 +242,10 @@ func _on_certificate_earned(count: int) -> void:
     var toast := Label.new()
     toast.text = "GOLD CLAIM CERTIFICATE x%d" % count
     toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    toast.position = Vector2(get_viewport().size.x / 2 - 150, 180)
-    toast.add_theme_font_size_override("font_size", 24)
+    toast.position = Vector2(get_viewport().get_visible_rect().size.x / 2 - 150, 180)
+    toast.add_theme_font_size_override("font_size", 28)
+    toast.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+    toast.add_theme_constant_override("outline_size", 5)
     toast.modulate = Color(0.0, 1.0, 0.8, 1.0)
     add_child(toast)
     var tween := create_tween()

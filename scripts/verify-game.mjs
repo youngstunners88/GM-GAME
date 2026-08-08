@@ -154,10 +154,15 @@ try {
   if (booted) {
     console.log('[4/4] Clicking PLAY LEVEL 1 and waiting for PLAYING state...');
     const vp = page.viewportSize();
+    // First launch auto-shows the HOW YOU ROLL controls panel over the menu,
+    // covering PLAY — dismiss it (Escape, its documented cancel path) before
+    // clicking. A fresh browser is always first-run, so this must run every
+    // time. Harmless if the panel isn't present.
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(600);
     // Current menu layout: PLAY button center ≈ y 0.60 (was 0.553 pre-subtitle).
     await page.mouse.click(vp.width * 0.5, vp.height * 0.6);
-    // First run shows the optional email-signup panel; Escape skips it (the
-    // panel's documented keyboard path). Harmless if no panel appeared.
+    // First run then shows the optional email-signup panel; Escape skips it.
     await page.waitForTimeout(2500);
     await page.keyboard.press('Escape');
     const playing = await page

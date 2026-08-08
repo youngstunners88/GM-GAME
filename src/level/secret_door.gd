@@ -13,6 +13,13 @@ var _used := false
 
 func _ready() -> void:
 	add_to_group("secret_door")
+	# One visit per stage. Removing the node outright (rather than just
+	# ignoring the overlap) is what the founder actually asked for — "remove
+	# the big diamond" — so it cannot even be seen, let alone re-entered by
+	# accident while being chased.
+	if GameManager.is_side_entrance_used("secret", GameManager.current_level):
+		queue_free()
+		return
 	body_entered.connect(_on_body_entered)
 	# Gentle pulse — a "there's something here" cue without spelling it out.
 	if sprite:
@@ -24,6 +31,7 @@ func _on_body_entered(body: Node2D) -> void:
 	if _used or not body.is_in_group("player"):
 		return
 	_used = true
+	GameManager.mark_side_entrance_used("secret", GameManager.current_level)
 	GameManager.secret_return = {
 		"scene_path": get_tree().current_scene.scene_file_path,
 		"position": global_position,

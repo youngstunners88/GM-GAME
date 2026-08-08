@@ -8,12 +8,20 @@ const DYNAMITE := preload("res://src/boss/dynamite.tscn")
 
 enum State { PATROL, THROW, VULNERABLE }
 
-@export var patrol_speed: float = 100.0
-@export var throw_cooldown: float = 1.5
+@export var patrol_speed: float = 165.0
+@export var throw_cooldown: float = 1.05
 
 var current_state: State = State.PATROL
 var throw_timer: float = 0.0
 var direction: float = 1.0
+## Motion feel + traversal, matching the Auditor's tuned values so the two
+## bosses move with the same weight rather than each having its own dialect.
+var _hop_cooldown: float = 0.0
+const WALK_ACCEL: float = 620.0
+const TURN_DECEL: float = 1400.0
+const TURN_DEAD_ZONE: float = 34.0
+## Clears ~196px at gravity 980 — same envelope the Auditor uses.
+const HOP_VELOCITY: float = -620.0
 
 ## Assigned, NOT redeclared: EnemyBase already owns `sprite`, and shadowing
 ## it is a parse error that leaves this entire script unattached.
@@ -23,7 +31,9 @@ var direction: float = 1.0
 @onready var hitbox_shape: CollisionShape2D = $Hitbox/CollisionShape2D
 
 func _ready() -> void:
-	max_health = 6
+	# STAGE 3 OF 3 — the hardest stage boss. Was 6 HP, i.e. weaker than both
+	# bosses before him (see the distributor note on the inverted curve).
+	max_health = 18
 	# MUST be set explicitly. EnemyBase.health defaults to 1, and this boss was
 	# the only one of the four that set max_health without also setting health
 	# — so the Claim Jumper had 1 HP and died to a single hit, while its bar
@@ -31,7 +41,7 @@ func _ready() -> void:
 	# never happen. Found while wiring the health bar; the bar would have made
 	# it obvious on screen, but it was invisible before.
 	health = max_health
-	phase_thresholds = [4, 2]
+	phase_thresholds = [12, 6]
 	add_to_group("enemy")
 	# Boss 3 was the only boss missing this. Kept consistent with the other two
 	# so anything that queries for a live boss (arena logic, analytics, future
@@ -54,15 +64,37 @@ func _physics_process(delta: float) -> void:
 		return
 
 	throw_timer -= delta
+	_hop_cooldown -= delta
 
 	match current_state:
 		State.PATROL:
-			velocity.x = patrol_speed * direction
+			# STALK the live player rather than pacing wall to wall. The
+			# founder's "the bosses need to be more challenging" applies here
+			# too: this boss only ever bounced between walls, so a player who
+			# stood still was never approached.
+			var pl := get_tree().get_first_node_in_group("player")
+			if pl:
+				var dx: float = pl.global_position.x - global_position.x
+				if absf(dx) > TURN_DEAD_ZONE:
+					direction = signf(dx)
+			# Ease into the target speed so he reads as heavy, not robotic.
+			var target_vx: float = patrol_speed * direction
+			var rate: float = (TURN_DECEL
+				if signf(target_vx) != signf(velocity.x) and not is_zero_approx(velocity.x)
+				else WALK_ACCEL)
+			velocity.x = move_toward(velocity.x, target_vx, rate * delta)
 			velocity.y += 980.0 * delta
 			move_and_slide()
-			if is_on_wall():
-				direction *= -1.0
-				boss_sprite.scale.x = 1.0 if direction > 0 else -1.0
+			if absf(velocity.x) > 12.0:
+				boss_sprite.set_facing(velocity.x > 0.0)
+			# Blocked by terrain, or the player is above him -> hop.
+			if is_on_floor() and _hop_cooldown <= 0.0:
+				var want_hop := is_on_wall()
+				if pl and pl.global_position.y < global_position.y - 80.0:
+					want_hop = true
+				if want_hop:
+					velocity.y = HOP_VELOCITY
+					_hop_cooldown = 0.7
 			if throw_timer <= 0:
 				_throw_dynamite()
 
@@ -80,10 +112,10 @@ func _physics_process(delta: float) -> void:
 ## Accelerate patrol + taunt on phase transition (BossBase calls this).
 func _on_phase_changed() -> void:
 	if current_phase >= 2:
-		patrol_speed = 150.0
+		patrol_speed = 215.0
 		BossVoiceSystem.say(self, BOSS_ID, "phase50", true)
 	if current_phase >= 3:
-		patrol_speed = 190.0
+		patrol_speed = 275.0
 		BossVoiceSystem.say(self, BOSS_ID, "phase25", true)
 		ScreenShake.medium()
 
@@ -109,7 +141,7 @@ func take_damage(amount: int) -> void:
 	AudioManager.play_sfx("damage")
 	BossVoiceSystem.say(self, BOSS_ID, "hurt")
 	var tween := create_tween()
-	tween.tween_property(sprite, "modulate", Color(10, 10, 10, 1), 0.05)
+	tween.tween_property(sprite, "modulate", Color(4.0, 0.25, 0.25, 1), 0.05)
 	tween.tween_property(sprite, "modulate", Color(1, 1, 1, 1), 0.05)
 	_update_health_bar()
 	if health <= 0:
@@ -169,8 +201,12 @@ func die() -> void:
 
 func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("take_damage"):
-		body.take_damage(1)
+		GameManager.last_damage_source = BOSS_ID
 		BossVoiceSystem.say(self, BOSS_ID, "mock")
+		# Founder stakes rule: ANY boss touch returns Lil Blunt to the START of
+		# the level, regardless of remaining lives — not hurt-and-continue.
+		# See GameManager.boss_contact_restart().
+		GameManager.boss_contact_restart()
 
 func _on_hitbox_area_entered(area: Area2D) -> void:
 	if area.is_in_group("projectile"):
