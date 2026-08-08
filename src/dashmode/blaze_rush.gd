@@ -138,33 +138,42 @@ func _build_background() -> void:
 
 	_build_stage_theme_layer(pbg)
 
-## STAGE-THEMED BACKDROP.
+## STAGE-THEMED BACKDROP — one dedicated FOREST plate per Blaze realm.
 ##
 ## Founder: "return the trees in the background of the Blaze Rush like before
 ## for stage one as it had the theme of the 1st stage, and the theme of the
 ## 2nd Blaze Rush background should align with the 2nd stage and same with
-## the 3rd."
+## the 3rd" — and, this round, explicitly NOT "a single tint of the main
+## stage art".
 ##
-## Blaze Rush was drawing one hardcoded purple void for all three levels, so
-## every run looked identical and belonged to no stage. This pulls the SOURCE
-## LEVEL's own painted backdrop (the Smoke Realm forest, the Crystal Caverns,
-## the Gold Rush canyon) and darkens/tints it into the Electric Haze palette —
-## the run still reads as the fast secret mode, but it is unmistakably that
-## stage's version of it.
+## That is exactly what the previous version did: it loaded the source LEVEL's
+## own painted plate and `modulate`d it toward magenta. All three runs were
+## therefore the same picture at three different tints, and none of them had
+## the treeline he actually remembers.
 ##
-## Silent no-op if the level resource or its art is missing, matching the
-## missing-asset convention used everywhere else in this project.
+## `bg_blaze_rush_treeline.jpg` — the "before" art — was sitting in the repo
+## referenced by nothing at all. It is now the base for all three realms, so
+## every Blaze run is unmistakably the same forest world, while each realm
+## gets its own plate that differs STRUCTURALLY rather than by tint:
+##
+##   L1 Smoke   — violet canopy, glowing mushroom caps in the mid distance
+##   L2 Crystal — cave-cyan sky, crystal spires rising through the treeline
+##   L3 Gold    — amber sunset, flat-topped canyon buttes and a low sun
+##
+## Built by scripts/make-blaze-backdrops.py (gradient-mapped from the shared
+## treeline, with per-realm landmarks composited behind the near trees).
+##
+## Falls back to the old level-plate tint when a realm plate is missing, and is
+## a silent no-op if that is missing too — the same missing-asset convention
+## used everywhere else in this project.
+const BLAZE_BACKDROPS := {
+	1: "res://src/assets/backgrounds/bg_blaze_l1_smoke.jpg",
+	2: "res://src/assets/backgrounds/bg_blaze_l2_crystal.jpg",
+	3: "res://src/assets/backgrounds/bg_blaze_l3_gold.jpg",
+}
+
 func _build_stage_theme_layer(pbg: ParallaxBackground) -> void:
-	var data_path := "res://src/resources/level_%02d_data.tres" % _level_index
-	if not ResourceLoader.exists(data_path):
-		return
-	var data: Resource = load(data_path)
-	if data == null or not ("background_path" in data):
-		return
-	var art_path: String = str(data.background_path)
-	if art_path == "" or not ResourceLoader.exists(art_path):
-		return
-	var tex: Texture2D = load(art_path)
+	var tex: Texture2D = _resolve_backdrop_texture()
 	if tex == null:
 		return
 	var view_h: float = get_viewport_rect().size.y
@@ -178,11 +187,38 @@ func _build_stage_theme_layer(pbg: ParallaxBackground) -> void:
 	spr.texture = tex
 	spr.centered = false
 	spr.scale = Vector2(fill, fill)
-	# Pushed dark and toward the mode's magenta so the neon foreground still
-	# pops against it — the stage reads, but the run keeps its own identity.
-	spr.modulate = Color(0.42, 0.28, 0.55, 1.0)
+	# The dedicated plates are ALREADY painted in their realm's Blaze palette,
+	# so they ship unmodulated — pushing them dark again is what flattened all
+	# three into "same art, different tint" last time. Only the legacy fallback
+	# (a raw level plate, painted for the bright campaign stage) still needs
+	# knocking back so the neon foreground reads against it.
+	spr.modulate = (Color(1.0, 1.0, 1.0, 1.0) if _using_realm_plate
+		else Color(0.42, 0.28, 0.55, 1.0))
 	layer.add_child(spr)
 	pbg.add_child(layer)
+
+## True when the backdrop came from BLAZE_BACKDROPS rather than the fallback.
+var _using_realm_plate: bool = false
+
+## The realm's own forest plate, or the source level's plate as a fallback.
+func _resolve_backdrop_texture() -> Texture2D:
+	var realm_path: String = BLAZE_BACKDROPS.get(_level_index, "")
+	if realm_path != "" and ResourceLoader.exists(realm_path):
+		var realm_tex: Texture2D = load(realm_path)
+		if realm_tex != null:
+			_using_realm_plate = true
+			return realm_tex
+	_using_realm_plate = false
+	var data_path := "res://src/resources/level_%02d_data.tres" % _level_index
+	if not ResourceLoader.exists(data_path):
+		return null
+	var data: Resource = load(data_path)
+	if data == null or not ("background_path" in data):
+		return null
+	var art_path: String = str(data.background_path)
+	if art_path == "" or not ResourceLoader.exists(art_path):
+		return null
+	return load(art_path)
 
 ## Protocol key art embedded along the course, as the founder mocked up
 ## ("here's another design of how we can embed art from the artworks

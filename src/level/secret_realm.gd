@@ -160,7 +160,22 @@ func _setup_lounge_video() -> void:
 	vid.set_anchors_preset(Control.PRESET_FULL_RECT)
 	vid.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(vid)
+	_video = vid
 	vid.play()
+
+## Stop decoding the moment the player leaves the lounge.
+##
+## Freeing the scene does stop playback, but a Theora stream is CPU-decoded
+## every frame and the return portal's transition holds both scenes alive
+## briefly — so an explicit stop is the difference between "the video ends" and
+## "the video ends a beat after the player is already back in the level, while
+## the new stage is loading". Costs nothing and removes the ambiguity.
+func _exit_tree() -> void:
+	if is_instance_valid(_video):
+		_video.stop()
+
+## The lounge's brand-video player, or null when the asset is absent.
+var _video: VideoStreamPlayer = null
 
 func _add_layer(pbg: ParallaxBackground, path: String, speed: float, mod: Color) -> void:
 	var tex: Texture2D = load(path)
