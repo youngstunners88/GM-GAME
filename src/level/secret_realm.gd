@@ -81,7 +81,28 @@ func _process(delta: float) -> void:
 ## texture's own width, not level length), so the 3x BOUNDS extension needs
 ## no structural change here — only the mid layer's tone shifts toward the
 ## Smoke Lounge's purple-grey palette instead of the old neutral lounge tint.
+## FOUNDER DIRECTIVE — docs/directives/FOUNDER_SMOKE_LOUNGE_VIDEO.md (binding):
+## the official $SMOKE LOUNGE brand video is the Smoke Lounge's atmospheric
+## background, not a procedural substitute.
+##
+## The asset itself is NOT in the repository — the directive references a video
+## "supplied by the founder" that was never committed, and nothing matching it
+## exists under any tracked path. So the wire-up ships and the file is what is
+## missing: drop an Ogg Theora encode at the path below and it plays on the
+## next load, full-bleed and looping, with no code change. That is the same
+## drop-in convention the lounge already uses for the protocol logos and the
+## founder mural (_swap_placeholder_texture).
+##
+## Ogg Theora (.ogv) specifically: it is the only container Godot 4.3's
+## VideoStreamPlayer decodes without a plugin, and it is the only one that
+## survives the HTML5 export.
+const LOUNGE_VIDEO := "res://src/assets/video/smoke_lounge.ogv"
+
 func _setup_parallax() -> void:
+	# The video, when present, sits BEHIND the parallax plates rather than
+	# replacing them: if the encode is short, letterboxed, or fails to decode
+	# on a given browser, the room art is still there instead of a black void.
+	_setup_lounge_video()
 	var pbg := ParallaxBackground.new()
 	pbg.layer = -20
 	add_child(pbg)
@@ -113,6 +134,34 @@ func _setup_parallax() -> void:
 ## Scaling to the LIVE viewport height (not the baked 720) matters because
 ## project.godot uses stretch/aspect="expand" — on a tall browser window the
 ## viewport is taller than 720 and a 1:1 sprite would leave a gap again.
+## Full-bleed looping brand video behind the gameplay plane. No-op when the
+## asset is absent, so the lounge is unchanged until the file lands.
+func _setup_lounge_video() -> void:
+	if not ResourceLoader.exists(LOUNGE_VIDEO):
+		return
+	var stream: VideoStream = load(LOUNGE_VIDEO) as VideoStream
+	if stream == null:
+		return
+	var layer := CanvasLayer.new()
+	layer.name = "LoungeVideo"
+	# Below the parallax plates (-20) so those remain the fallback surface.
+	layer.layer = -30
+	add_child(layer)
+
+	var vid := VideoStreamPlayer.new()
+	vid.name = "BrandVideo"
+	vid.stream = stream
+	vid.expand = true
+	vid.loop = true
+	# MUTED, deliberately. The directive requires the lounge's music crossfade
+	# slot to be preserved; an unmuted video track would play over the top of
+	# it and there is no mixing story for that.
+	vid.volume_db = -80.0
+	vid.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vid.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(vid)
+	vid.play()
+
 func _add_layer(pbg: ParallaxBackground, path: String, speed: float, mod: Color) -> void:
 	var tex: Texture2D = load(path)
 	if tex == null:

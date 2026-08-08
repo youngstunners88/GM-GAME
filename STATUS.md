@@ -130,6 +130,34 @@ two items cannot share a slot. Result: **44 pickups, uniform 91.6px pitch, zero
 overlaps** — asserted in `founder_critical_probe_test` against the real level,
 reading back each spawned collectible's actual world position.
 
+### 9. The Smoke Lounge video directive — I need the file from you
+
+`docs/directives/FOUNDER_SMOKE_LOUNGE_VIDEO.md` (binding, on master since
+30 July) says the official **$SMOKE LOUNGE** video is the lounge's background
+and to stop substituting a procedural one. That directive was sitting on master
+and never reached this branch until now — my fault, and it has been unactioned
+since it was written.
+
+**The video itself is not in the repository.** The directive refers to a video
+"supplied by the founder"; nothing matching it exists under any tracked path, so
+there was never anything to wire.
+
+The wire-up is now shipped and waiting on the file. Drop it at:
+
+```
+src/assets/video/smoke_lounge.ogv
+```
+
+and it plays on the next load — full-bleed, looping, behind the gameplay plane,
+muted so the lounge's music crossfade still owns the audio. No further code
+change needed. **It must be `.ogv` (Ogg Theora)** — that is the only format
+Godot 4.3 decodes without a plugin and the only one that survives the HTML5
+export the game ships on. An `.mp4` will not play. Conversion command and size
+guidance are in `src/assets/video/README.md`.
+
+If the file is missing or a browser fails to decode it, the existing room art
+stays up — the lounge never falls back to a black screen.
+
 ## Still open
 
 - **Per-stage Blaze forest backgrounds** — still the source level's art tinted.
