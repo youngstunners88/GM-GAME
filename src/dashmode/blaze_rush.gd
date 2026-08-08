@@ -49,7 +49,12 @@ var _music_token: int = -1
 
 func _release_music() -> void:
 	if _music_token != -1:
-		AudioManager.release_music_override(_music_token)
+		# discard_music_override(), NOT release_music_override(): the
+		# destination scene's own _ready() calls play_playlist() a moment
+		# after this, so resuming the paused base track first only creates a
+		# ~0.8s window where it overlaps the fresh track fading in (the
+		# founder's reported "faint second song").
+		AudioManager.discard_music_override(_music_token)
 		_music_token = -1
 
 ## Belt and braces: if this node is freed by ANY route the override is dropped.
@@ -196,12 +201,23 @@ const BAND_ART_SIZE: float = 190.0
 ## disc, which rendered as a dark plate behind each logo in the purple band —
 ## his "what the fuck is this" screenshot. These are pre-composited opaque
 ## circular badges (src/assets/art/badge_*.png).
+## Founder: "you need to feature all of the protocol logos in the Blaze
+## Rush... none of the logos must ever be pixelated." Every circular badge
+## the game has (all rebuilt clean, no added outline, correct green-ring
+## DIAMONDS and the founder's own real GoldMine mark), plus two additional
+## wide-format artworks alongside them.
 const BR_ART := [
-	"res://src/assets/art/badge_fomo.png",
+	"res://src/assets/art/badge_lilblunt.png",
 	"res://src/assets/art/badge_diamonds.png",
 	"res://src/assets/art/badge_goldmine.png",
 	"res://src/assets/art/badge_smokering.png",
 	"res://src/assets/art/badge_hood.png",
+]
+## Wide-format artworks — NOT forced into circular badges, kept at their own
+## aspect ratio. Placed the same as BR_ART (band-anchored, gap-aware).
+const BR_ART_WIDE := [
+	"res://src/assets/art/br_smoke_lounge_car.png",
+	"res://src/assets/art/br_diamond_certificate.png",
 ]
 
 ## X ranges with no floor under them. Logos must never be placed here: with
@@ -209,34 +225,48 @@ const BR_ART := [
 ## founder circled.
 var _gap_spans: Array[Vector2] = []
 
-func _x_over_gap(x: float) -> bool:
+func _x_over_gap(x: float, half_width: float = BAND_ART_SIZE * 0.5) -> bool:
 	for g: Vector2 in _gap_spans:
-		# Half the art's width of clearance either side, so a badge never even
+		# half_width of clearance either side, so a badge (or a wide banner —
+		# some founder artworks are up to 3x wider than tall) never even
 		# overhangs the lip of a gap.
-		if x > g.x - BAND_ART_SIZE * 0.5 and x < g.y + BAND_ART_SIZE * 0.5:
+		if x > g.x - half_width and x < g.y + half_width:
 			return true
 	return false
 
 func _build_protocol_landmarks() -> void:
-	var available: Array[String] = []
+	# (path, is_wide) — square badges fit BAND_ART_SIZE both dimensions;
+	# wide artworks are scaled by HEIGHT ONLY so they keep their native aspect
+	# ratio instead of being squashed into a square.
+	var available: Array[Array] = []
 	for p: String in BR_ART:
 		if ResourceLoader.exists(p):
-			available.append(p)
+			available.append([p, false])
+	for p: String in BR_ART_WIDE:
+		if ResourceLoader.exists(p):
+			available.append([p, true])
 	if available.is_empty():
 		return
-	# Space them across the run; start past the opening so the first seconds
-	# stay clean while the player is still reading the controls.
-	var count: int = 5
+	# Founder: "feature ALL of the protocol logos in the Blaze Rush." One slot
+	# per available artwork (not a modulo subset), so every piece appears
+	# exactly once per run rather than some being skipped.
+	var count: int = available.size()
 	for i in range(count):
-		var tex: Texture2D = load(available[i % available.size()])
+		var entry: Array = available[i]
+		var tex: Texture2D = load(entry[0])
 		if tex == null:
 			continue
+		var is_wide: bool = entry[1]
 		var art := Sprite2D.new()
 		art.texture = tex
 		# Normalise wildly different source sizes to a consistent on-screen
-		# diameter rather than trusting each PNG's native dimensions.
+		# scale rather than trusting each PNG's native dimensions.
 		var target: float = BAND_ART_SIZE
-		art.scale = Vector2(target / float(tex.get_width()), target / float(tex.get_height()))
+		if is_wide:
+			var s: float = target / float(tex.get_height())
+			art.scale = Vector2(s, s)  # uniform scale preserves aspect ratio
+		else:
+			art.scale = Vector2(target / float(tex.get_width()), target / float(tex.get_height()))
 		# Founder A5: "the artworks need to be at the BOTTOM by the purple
 		# block." They were at GROUND_Y - 300 — up in the sky, nowhere near it.
 		# The purple ground band runs GROUND_Y .. GROUND_Y+220 (see
@@ -244,13 +274,14 @@ func _build_protocol_landmarks() -> void:
 		# in the empty real estate he is pointing at. z_index 1 draws it ON the
 		# band (the band itself is a plain ColorRect at default z), while the
 		# run line stays well above at GROUND_Y and up.
+		var half_w: float = art.scale.x * float(tex.get_width()) / 2.0
 		var ax: float = 700.0 + (_course_length - 900.0) * (float(i) / float(count))
 		# Nudge along the run until the slot is genuinely over purple band.
 		var tries := 0
-		while _x_over_gap(ax) and tries < 24:
-			ax += BAND_ART_SIZE * 0.6
+		while _x_over_gap(ax, half_w) and tries < 24:
+			ax += half_w * 1.2
 			tries += 1
-		if _x_over_gap(ax):
+		if _x_over_gap(ax, half_w):
 			continue  # no clear band left for this one; drop it rather than float it
 		art.position = Vector2(ax, GROUND_Y + BAND_ART_Y)
 		# Fully opaque: "solid", per the founder. No alpha wash.
@@ -486,13 +517,29 @@ func _make_fud_wall(x: float) -> void:
 
 ## Peak of a ground jump: v^2 / 2g. Anything above this is unreachable.
 const JUMP_PEAK: float = (JUMP_VELOCITY * JUMP_VELOCITY) / (2.0 * GRAVITY)
-## Ceiling for a token: the jump peak plus most of a FUD wall's 52px, minus a
-## margin so it is comfortably grabbable rather than a pixel-perfect apex.
+## Ceiling for a HOVER/jump token: the jump peak plus most of a FUD wall's
+## 52px, minus a margin so it is comfortably grabbable, not a pixel-perfect
+## apex.
 const TOKEN_MAX_HEIGHT: float = JUMP_PEAK + 34.0
+## Layout heights AT OR BELOW this are meant to read as "ground level" —
+## founder: "the final diamond requires the player to jump if he/she wants to
+## claim it even though the diamond is on the ground level. Perhaps it's a
+## bug." It was: a token authored at height 60 sits close enough to the
+## player's standing collision box that most of the time it grazes, but not
+## reliably — a near-miss, not a clean walk-through. Anything authored at or
+## below this is forced down into WALK_CLAIM_HEIGHT, which the running
+## player's own standing hurtbox always overlaps without a jump.
+const GROUND_TOKEN_CUTOFF: float = 70.0
+const WALK_CLAIM_HEIGHT: float = 18.0
 
 func _make_smoke_token(x: float, height: float) -> void:
+	var actual_height: float = height
+	if height <= GROUND_TOKEN_CUTOFF:
+		actual_height = WALK_CLAIM_HEIGHT
+	else:
+		actual_height = minf(height, TOKEN_MAX_HEIGHT)
 	var area := Area2D.new()
-	area.position = Vector2(x, GROUND_Y - minf(height, TOKEN_MAX_HEIGHT))
+	area.position = Vector2(x, GROUND_Y - actual_height)
 	area.collision_mask = 2
 	var puff := Sprite2D.new()
 	# Blue gem so the RED flame reads against it (founder T1). Slightly smaller

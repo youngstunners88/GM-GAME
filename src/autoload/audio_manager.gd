@@ -207,6 +207,23 @@ func release_music_override(token: int) -> void:
         _play_next_in_playlist(true)
     _saved_stream = null
 
+## Drop an override WITHOUT resuming the paused base track. For a caller that
+## is about to trigger its OWN fresh play_playlist() immediately after (a full
+## scene reload) — resuming the base track just to have it faded back out a
+## moment later is the redundant step that creates a dual-track bleed. See
+## Blaze Rush's _release_music() for the call site this exists for.
+func discard_music_override(token: int) -> void:
+    if token != _override_token or not _override_active:
+        return
+    _override_active = false
+    _clear_override_player()
+    if current_music_player and is_instance_valid(current_music_player):
+        current_music_player.stop()
+        current_music_player.queue_free()
+    current_music_player = null
+    _saved_stream = null
+    _saved_playlist = []
+
 func _clear_override_player() -> void:
     if _override_player and is_instance_valid(_override_player):
         _override_player.stop()

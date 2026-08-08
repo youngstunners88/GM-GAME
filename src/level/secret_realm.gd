@@ -47,7 +47,10 @@ func _ready() -> void:
 	_setup_rewards()
 	_setup_bong_alcove(BOUNDS * 0.33)
 	_setup_protocol_plinth(BOUNDS * 0.55)
-	_setup_founder_mural(BOUNDS * 0.80)
+	# _setup_founder_mural() REMOVED. Founder: "Remove this totally!" pointing
+	# at this exact rest stop — a dark framed plate mounted on the wall. The
+	# function is kept below (unreferenced) rather than deleted outright, in
+	# case a future rest stop wants the same platform/end-cap plumbing.
 	_setup_portal()
 	_setup_hud()
 	_setup_title_card()
@@ -362,6 +365,14 @@ func _setup_rewards() -> void:
 	# dependency, same skate-height band so they collect by rolling through.
 	for i in range(18):
 		_spawn_nugget(760.0 + i * 230.0, i % 3 == 0)
+	# L5 — collectible weed HOOKAH pipes (distinct from the decorative curved
+	# pipe pickup above). Founder: "the weed pipe is great. We also need weed
+	# Hookah Pipes that need to be collected too." Uses the existing bong art
+	# (a hookah IS a water pipe — same silhouette family already in the
+	# project) so this needs no new asset, but is a real scoring pickup, not
+	# the ambient decoration at the Bong Alcove.
+	for i in range(6):
+		_spawn_hookah(1400.0 + i * 620.0)
 
 ## A collectable nugget (or joint) worth bonus score. Built as a plain Area2D
 ## rather than a new .tscn so it needs no scene/import round-trip.
@@ -443,6 +454,49 @@ func _spawn_nugget(x: float, is_joint: bool) -> void:
 	var bob := pick.create_tween().set_loops()
 	bob.tween_property(pick, "position:y", pick.position.y - 5.0, 0.7)
 	bob.tween_property(pick, "position:y", pick.position.y, 0.7)
+
+## A collectible hookah pipe — worth more than a nugget/pipe pickup, reusing
+## the bong sprite already in the project (a hookah is the same water-pipe
+## silhouette). Deliberately a bigger score/SMOKE reward than _spawn_nugget's
+## items, since it is the rarer of the two pickup types along the run.
+func _spawn_hookah(x: float) -> void:
+	var pick := Area2D.new()
+	pick.collision_layer = 8
+	pick.collision_mask = 2
+	pick.position = Vector2(x, FLOOR_SURFACE_Y - SKATE_PICKUP_Y)
+	var cs := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(44, 44)
+	cs.shape = rect
+	pick.add_child(cs)
+	var leaf_path := "res://src/assets/sprites/sprite_item_bong.png"
+	if ResourceLoader.exists(leaf_path):
+		var spr := Sprite2D.new()
+		spr.texture = load(leaf_path)
+		spr.scale = Vector2(0.62, 0.62)
+		spr.position = Vector2(0, -14)
+		pick.add_child(spr)
+	else:
+		var body := ColorRect.new()
+		body.color = Color(0.30, 0.55, 0.50, 1.0)
+		body.size = Vector2(20, 26)
+		body.position = Vector2(-10, -22)
+		pick.add_child(body)
+	pick.body_entered.connect(func(b: Node2D) -> void:
+		if not b.is_in_group("player"):
+			return
+		ComboSystem.add_score(90)
+		GameManager.add_smoke(2)
+		AudioManager.play_sfx_at("coin", pick.global_position)
+		pick.set_deferred("monitoring", false)
+		var tw := pick.create_tween()
+		tw.tween_property(pick, "position:y", pick.position.y - 26.0, 0.25)
+		tw.parallel().tween_property(pick, "modulate:a", 0.0, 0.25)
+		tw.finished.connect(pick.queue_free))
+	add_child(pick)
+	var bob := pick.create_tween().set_loops()
+	bob.tween_property(pick, "position:y", pick.position.y - 6.0, 0.8)
+	bob.tween_property(pick, "position:y", pick.position.y, 0.8)
 
 func _setup_portal() -> void:
 	var portal := preload("res://src/level/return_portal.tscn").instantiate()
@@ -637,13 +691,18 @@ func _setup_protocol_plinth(x: float) -> void:
 		var slot_x: float = start_x + i * (BILLBOARD_W + BILLBOARD_GAP)
 		var board_mid: float = slot_x + BILLBOARD_W / 2.0
 
-		# Twin support masts from the board's bottom edge down to the floor, so
-		# a 260px board reads as MOUNTED rather than floating.
+		# Twin support masts, flush against the CIRCULAR badge underside.
+		var badge_r: float = BILLBOARD_W / 2.0
+		var badge_center_y: float = BILLBOARD_TOP + BILLBOARD_H / 2.0
 		for mast_off: float in [-BILLBOARD_W * 0.3, BILLBOARD_W * 0.3]:
+			# True lower boundary of the circle at this horizontal offset
+			# (Pythagoras), not the square panel's flat bottom edge.
+			var dy: float = sqrt(maxf(badge_r * badge_r - mast_off * mast_off, 0.0))
+			var mast_top: float = badge_center_y + dy
 			var mast := ColorRect.new()
 			mast.color = COLOR_PLATFORM_BODY
-			mast.size = Vector2(14, FLOOR_SURFACE_Y - (BILLBOARD_TOP + BILLBOARD_H))
-			mast.position = Vector2(board_mid + mast_off - 7, BILLBOARD_TOP + BILLBOARD_H)
+			mast.size = Vector2(14, FLOOR_SURFACE_Y - mast_top)
+			mast.position = Vector2(board_mid + mast_off - 7, mast_top)
 			mast.z_index = -2
 			add_child(mast)
 
@@ -660,6 +719,7 @@ func _setup_protocol_plinth(x: float) -> void:
 		sb.border_color = COLOR_LIP_ACCENT
 		sb.set_corner_radius_all(int(BILLBOARD_W / 2.0))  # a full circle
 		sign.add_theme_stylebox_override("panel", sb)
+		sign.z_index = 10  # never let a prop (pipe, bong, particles) mask a logo
 		add_child(sign)
 
 		var label := Label.new()
