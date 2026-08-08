@@ -212,6 +212,11 @@ const BR_ART := [
 	"res://src/assets/art/badge_goldmine.png",
 	"res://src/assets/art/badge_smokering.png",
 	"res://src/assets/art/badge_hood.png",
+	# The mode's own mark — founder: "you also need to add the Blaze logo."
+	# Composed onto the same circular field as the protocol badges so it sits
+	# in the lineup at matching size, not as a loose gameplay sprite.
+	"res://src/assets/art/badge_blaze.png",
+	"res://src/assets/art/badge_h420.png",
 ]
 ## Wide-format artworks — NOT forced into circular badges, kept at their own
 ## aspect ratio. Placed the same as BR_ART (band-anchored, gap-aware).
@@ -234,6 +239,53 @@ func _x_over_gap(x: float, half_width: float = BAND_ART_SIZE * 0.5) -> bool:
 			return true
 	return false
 
+## Where the evenly-spaced lattice of landmark slots starts and how much runway
+## is left clear at the far end (the finish gate and its approach live there).
+const LANDMARK_START_X: float = 700.0
+const LANDMARK_END_MARGIN: float = 300.0
+
+## X for landmark `i` of `count`, or INF if there is no clear band for it.
+##
+## Founder: "the logos are unevenly spaced... its like you just threw them
+## around with no care to placement." Two things did that, and both are fixed
+## here rather than by hand-tuning numbers:
+##
+##   1. The old slot formula divided the run by `count` but indexed by `i`, so
+##      the last artwork landed a full pitch short of the end and the whole set
+##      bunched toward the start. Slots are now centred in their own cell
+##      ((i + 0.5) / count), which is symmetric at both ends.
+##   2. Gap avoidance nudged a blocked slot forward in half-a-badge steps until
+##      it cleared — a badge sitting over a long gap would walk right up to the
+##      badge after it and sit almost on top of it. The search now steps in
+##      quarter-pitch units and alternates BACKWARD and forward, so a displaced
+##      badge stays on the same lattice and moves the shortest distance to a
+##      valid cell; candidates that land within MIN_SEP of something already
+##      placed are rejected outright.
+func _landmark_slot_x(i: int, count: int, half_w: float, placed_x: Array[float]) -> float:
+	var span: float = maxf(_course_length - LANDMARK_END_MARGIN - LANDMARK_START_X, 1.0)
+	var pitch: float = span / float(count)
+	var ideal: float = LANDMARK_START_X + pitch * (float(i) + 0.5)
+	# Never let two artworks crowd: at minimum a full badge width of air, and
+	# never less than 60% of the even pitch.
+	var min_sep: float = maxf(BAND_ART_SIZE * 1.15, pitch * 0.6)
+	var step: float = pitch * 0.25
+	# offset 0 first, then -1, +1, -2, +2 ... so the nearest valid cell wins.
+	for k in range(0, 9):
+		for dir in ([0] if k == 0 else [-1, 1]):
+			var cand: float = ideal + float(dir) * float(k) * step
+			if cand < LANDMARK_START_X * 0.5 or cand > _course_length - 120.0:
+				continue
+			if _x_over_gap(cand, half_w):
+				continue
+			var crowded := false
+			for p: float in placed_x:
+				if absf(cand - p) < min_sep:
+					crowded = true
+					break
+			if not crowded:
+				return cand
+	return INF
+
 func _build_protocol_landmarks() -> void:
 	# (path, is_wide) — square badges fit BAND_ART_SIZE both dimensions;
 	# wide artworks are scaled by HEIGHT ONLY so they keep their native aspect
@@ -251,6 +303,7 @@ func _build_protocol_landmarks() -> void:
 	# per available artwork (not a modulo subset), so every piece appears
 	# exactly once per run rather than some being skipped.
 	var count: int = available.size()
+	var placed_x: Array[float] = []
 	for i in range(count):
 		var entry: Array = available[i]
 		var tex: Texture2D = load(entry[0])
@@ -275,14 +328,10 @@ func _build_protocol_landmarks() -> void:
 		# band (the band itself is a plain ColorRect at default z), while the
 		# run line stays well above at GROUND_Y and up.
 		var half_w: float = art.scale.x * float(tex.get_width()) / 2.0
-		var ax: float = 700.0 + (_course_length - 900.0) * (float(i) / float(count))
-		# Nudge along the run until the slot is genuinely over purple band.
-		var tries := 0
-		while _x_over_gap(ax, half_w) and tries < 24:
-			ax += half_w * 1.2
-			tries += 1
-		if _x_over_gap(ax, half_w):
+		var ax: float = _landmark_slot_x(i, count, half_w, placed_x)
+		if is_inf(ax):
 			continue  # no clear band left for this one; drop it rather than float it
+		placed_x.append(ax)
 		art.position = Vector2(ax, GROUND_Y + BAND_ART_Y)
 		# Fully opaque: "solid", per the founder. No alpha wash.
 		art.modulate = Color(1.0, 1.0, 1.0, 1.0)
@@ -531,6 +580,12 @@ const TOKEN_MAX_HEIGHT: float = JUMP_PEAK + 34.0
 ## player's own standing hurtbox always overlaps without a jump.
 const GROUND_TOKEN_CUTOFF: float = 70.0
 const WALK_CLAIM_HEIGHT: float = 18.0
+## On-screen size of a flaming-diamond token. Source art is 103x128, so 0.26
+## renders ≈27x33px — comfortably under the 18x48 red candle and the 46x52 FUD
+## wall it sits beside, which is what the founder asked for ("the 1st flaming
+## diamond masks the red candle"). Read the pulse-tween comment below before
+## changing this: the constant only holds if the tween stays relative to it.
+const TOKEN_SCALE := Vector2(0.26, 0.26)
 
 func _make_smoke_token(x: float, height: float) -> void:
 	var actual_height: float = height
@@ -542,20 +597,29 @@ func _make_smoke_token(x: float, height: float) -> void:
 	area.position = Vector2(x, GROUND_Y - actual_height)
 	area.collision_mask = 2
 	var puff := Sprite2D.new()
-	# Blue gem so the RED flame reads against it (founder T1). Slightly smaller
-	# than the 0.34 that shipped.
+	# Blue gem so the RED flame reads against it (founder T1).
 	puff.texture = preload("res://src/assets/sprites/fx_flame_diamond_blue.png")
-	puff.scale = Vector2(0.28, 0.28)
+	puff.scale = TOKEN_SCALE
 	area.add_child(puff)
 	var col := CollisionShape2D.new()
 	var shape := CircleShape2D.new()
 	shape.radius = 26.0   # forgiving grab at 320px/s (was 14)
 	col.shape = shape
 	area.add_child(col)
-	# Gentle idle pulse (1.0 -> 1.12) so it reads as "alive/grabbable" at speed.
+	# Gentle idle pulse, RELATIVE to TOKEN_SCALE.
+	#
+	# THIS is why the founder kept seeing giant flaming diamonds after every
+	# "make them smaller" pass. The pulse tweened to the ABSOLUTE Vector2(1.0)
+	# / Vector2(1.12), not to a multiple of the authored scale — so within
+	# half a second of the run starting every token snapped from 0.28 (≈29x36px,
+	# smaller than a candle) up to 1.0-1.12 (≈103x143px, nearly three times a
+	# FUD wall's height) and stayed there for the rest of the run. Shrinking
+	# the authored constant could never fix it; the tween overwrote it on frame
+	# ~30 regardless. Anchored to TOKEN_SCALE, the authored size is now the
+	# size that actually renders.
 	var pulse := puff.create_tween().set_loops()
-	pulse.tween_property(puff, "scale", Vector2(1.12, 1.12), 0.5).set_trans(Tween.TRANS_SINE)
-	pulse.tween_property(puff, "scale", Vector2(1.0, 1.0), 0.5).set_trans(Tween.TRANS_SINE)
+	pulse.tween_property(puff, "scale", TOKEN_SCALE * 1.12, 0.5).set_trans(Tween.TRANS_SINE)
+	pulse.tween_property(puff, "scale", TOKEN_SCALE, 0.5).set_trans(Tween.TRANS_SINE)
 	area.body_entered.connect(func(b: Node2D) -> void:
 		if b == _player and area.visible:
 			area.visible = false

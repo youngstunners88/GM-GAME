@@ -23,15 +23,7 @@ func _ready() -> void:
 	for level in [1, 2, 3]:
 		_validate_layout_data(level)
 	await _validate_finish_and_return_flow()
-
-	if _failures.is_empty():
-		print("BLAZE_RUSH_LAYOUT: ALL PASS")
-		get_tree().quit(0)
-	else:
-		print("BLAZE_RUSH_LAYOUT: %d FAILURE(S)" % _failures.size())
-		for f in _failures:
-			print("  [FAIL] %s" % f)
-		get_tree().quit(1)
+	_report_and_quit()
 
 func test_blaze_rush_layouts_gaps_stay_within_local_jump_range(level: int, layout: Dictionary) -> void:
 	var length: float = layout.get("length", 1.0)
@@ -123,14 +115,48 @@ func test_blaze_rush_finish_triggers_exit_to_return_scene() -> void:
 		return
 
 	# _finish_run() awaits a 1.8s toast timer before calling _exit_to_level(),
-	# which is the piece that actually reads GameManager.dash_return and
-	# calls SceneRouter.load_scene — wait past it so that real code path runs.
-	await get_tree().create_timer(2.2).timeout
-	if not GameManager.dash_return.is_empty():
+	# which is the piece that actually reads GameManager.dash_return and calls
+	# SceneRouter.load_scene — wait past it so that real code path runs.
+	#
+	# POLL, DO NOT SLEEP THROUGH IT. `_exit_to_level` ends in a real
+	# SceneRouter.load_scene(), and this test node IS the current scene — so
+	# the very success it is checking for also FREES it. A fixed
+	# `await create_timer(2.2)` therefore resumed inside a freed node and the
+	# suite died silently: no verdict line, no exit code, just a hang until the
+	# CI timeout killed it. It behaved identically whether the code under test
+	# passed or failed, which makes it worse than having no gate at all.
+	#
+	# So: sample every frame, and report the instant the observable effect
+	# lands, before the scene swap can take us with it.
+	var exited := false
+	for i in range(200):
+		if GameManager.dash_return.is_empty():
+			exited = true
+			break
+		await get_tree().process_frame
+	if not exited:
 		_failures.append("finish-flow: _exit_to_level did not run — GameManager.dash_return was never cleared")
+	_report_and_quit()
 
 	if is_instance_valid(run):
 		run.queue_free()
+
+## Print the verdict and exit. Called from the finish-flow check the moment its
+## result is known (see above) and again from _ready() as a backstop for runs
+## that never reach the scene swap.
+var _reported := false
+func _report_and_quit() -> void:
+	if _reported:
+		return
+	_reported = true
+	if _failures.is_empty():
+		print("BLAZE_RUSH_LAYOUT: ALL PASS")
+		get_tree().quit(0)
+	else:
+		print("BLAZE_RUSH_LAYOUT: %d FAILURE(S)" % _failures.size())
+		for f in _failures:
+			print("  [FAIL] %s" % f)
+		get_tree().quit(1)
 
 func _validate_finish_and_return_flow() -> void:
 	await test_blaze_rush_finish_triggers_exit_to_return_scene()

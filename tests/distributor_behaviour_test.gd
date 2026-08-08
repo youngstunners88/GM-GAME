@@ -91,7 +91,7 @@ func _test_script_actually_attached() -> void:
 	var scr: Variant = _boss.get_script()
 	_check("boss script attached", scr != null, "(parse error would leave this null)")
 	_check("boss exposes its state machine", "current_phase_state" in _boss)
-	_check("boss health initialised to 7", _boss.health == 7, str(_boss.health))
+	_check("boss health initialised to 14", _boss.health == 14, str(_boss.health))
 
 ## Drive the boss through a full cycle and record which states are actually
 ## entered by REAL physics — not by grepping for assignments.
@@ -114,7 +114,9 @@ func _test_states_reachable_at_runtime() -> void:
 ## A standing player decelerates at ground_decel = 2800, so a pull weaker than
 ## that produces literally zero displacement — which is what shipped first.
 func _test_pull_moves_a_standing_player() -> void:
-	var centre: Vector2 = _boss.global_position + Vector2(48, 48)
+	# Ask the boss where its middle is rather than assuming +48: the body grew
+	# from 96px to 240px and every hardcoded half-extent silently went stale.
+	var centre: Vector2 = _boss.call("hit_centre")
 	# Mid-field: far enough that the falloff is doing real work.
 	var start := centre + Vector2(-220, 0)
 	_player.global_position = start
@@ -183,7 +185,7 @@ func _test_orb_redirect_under_real_physics() -> void:
 	get_tree().call_group("boss_projectile", "queue_free")
 	await get_tree().physics_frame
 
-	_boss.health = 7
+	_boss.health = 12
 	_boss.set("current_phase", 1)
 	var health_before: int = _boss.health
 
@@ -262,7 +264,7 @@ func _test_pool_drain_under_real_physics() -> void:
 	get_tree().call_group("boss_projectile", "queue_free")
 	await get_tree().physics_frame
 
-	_boss.health = 7
+	_boss.health = 12
 	_boss.set("current_phase", 1)
 	_boss.current_phase_state = PHASE_PATROL
 	var health_before: int = _boss.health
@@ -345,20 +347,22 @@ func _test_full_damage_cycle_and_death() -> void:
 	_boss.global_position = Vector2(0, 280)
 	for i in 10:
 		await get_tree().physics_frame
-	_check("fresh boss starts at full health", int(_boss.get("health")) == 7,
+	_check("fresh boss starts at full health", int(_boss.get("health")) == 14,
 		str(_boss.get("health")))
 
 	# Drive down to 1 HP first — stop short of the kill so we can assert the
 	# phase escalation cleanly before touching die()'s scene-transition side
 	# effects (score, StateMachine, SceneRouter) on the final blow.
+	# 13 hits to walk 14 HP down to 1; the ceiling is generous so a genuine
+	# stall shows up as a failed assertion rather than a hung test.
 	var hits := 0
-	while int(_boss.get("health")) > 1 and hits < 10:
+	while int(_boss.get("health")) > 1 and hits < 30:
 		_boss.call("_begin_vulnerable")
 		_boss.call("take_damage", 1)
 		hits += 1
 	_check("boss survives down to 1 HP via the gated take_damage() path",
 		int(_boss.get("health")) == 1, "health=%d after %d hits" % [_boss.get("health"), hits])
-	_check("phase escalates to 3 before death (thresholds [4,2])",
+	_check("phase escalates to 3 before death (thresholds [9,4])",
 		int(_boss.get("current_phase")) == 3, "current_phase=%d" % int(_boss.get("current_phase")))
 
 	# The killing blow. die() is a coroutine; calling it (indirectly, via

@@ -20,6 +20,7 @@ func _ready() -> void:
 	await _test_distributor_leaves_vulnerable()
 	await _test_claim_jumper_chases()
 	_test_difficulty_escalates()
+	await _test_bosses_detect_contact_outside_their_window()
 	await _test_boss_contact_wipes_score()
 	print("BOSS_STAKES: %s" % ("ALL PASS" if _fail == 0 else "%d FAILURE(S)" % _fail))
 	get_tree().quit(_fail)
@@ -181,3 +182,52 @@ func _test_boss_contact_wipes_score() -> void:
 		"checkpoint survived — 'restart' would mean 'resume'")
 
 	GameManager.reset_boss_restart_flag()
+
+# --------------------------------------------------------------------------
+# "There is a glitch issue with the 1st boss as i have stated a few times that
+#  the moment he touches Lil Blunt the stage needs to restart."
+#
+# The restart LOGIC was already right (see _test_boss_contact_wipes_score).
+# What was broken was one layer below it: every boss switched its Hitbox's
+# `monitoring` OFF whenever it left its vulnerable window, which disables the
+# Area2D outright. `body_entered` therefore never fired for roughly 80% of each
+# fight and the player walked clean through the boss. That is exactly the shape
+# of a bug that survives being "fixed" several times — the code you read looks
+# correct, because it is; it is simply unreachable.
+#
+# So this asserts the REACHABILITY, not the consequence: on every boss, at rest
+# in its ordinary non-vulnerable state, the hitbox must still be detecting.
+# --------------------------------------------------------------------------
+func _test_bosses_detect_contact_outside_their_window() -> void:
+	var cases := [
+		["Auditor (L1)", AUDITOR],
+		["Distributor (L2)", DISTRIBUTOR],
+		["Claim Jumper (L3)", CLAIM_JUMPER],
+	]
+	var floor_body := StaticBody2D.new()
+	floor_body.collision_layer = 1
+	var fcs := CollisionShape2D.new()
+	var frect := RectangleShape2D.new()
+	frect.size = Vector2(4000, 80)
+	fcs.shape = frect
+	floor_body.add_child(fcs)
+	floor_body.global_position = Vector2(600, 700)
+	add_child(floor_body)
+
+	for case: Array in cases:
+		var boss: Node2D = (case[1] as PackedScene).instantiate()
+		add_child(boss)
+		boss.global_position = Vector2(600, 500)
+		# Several frames so _ready and the first state transitions have run.
+		for i in 12:
+			await get_tree().physics_frame
+		var hb := boss.get_node_or_null("Hitbox") as Area2D
+		_check("%s exposes a Hitbox" % case[0], hb != null)
+		if hb != null:
+			_check("%s still DETECTS the player outside its vulnerable window" % case[0],
+				hb.monitoring,
+				"Hitbox.monitoring is false — body_entered can never fire, so boss contact does nothing")
+		boss.queue_free()
+		await get_tree().physics_frame
+	floor_body.queue_free()
+	await get_tree().physics_frame

@@ -77,6 +77,21 @@ func _ready() -> void:
 	hitbox_shape.shape = collision.shape
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
+	# CONTACT DETECTION STAYS ON FOR THE WHOLE FIGHT.
+	#
+	# Founder, several times over: "the moment he touches Lil Blunt the stage
+	# needs to restart as Lil Blunt has died." This boss gated `monitoring`
+	# to its vulnerable window, which turns this Area2D OFF for roughly 80%
+	# of the fight — `body_entered` never fires, so the player walks straight
+	# through the boss and nothing happens. That is the whole reported bug:
+	# the restart logic was correct, it was simply never reached.
+	#
+	# Incoming DAMAGE is gated by `monitorable` instead (player attacks detect
+	# the boss, not the reverse) plus take_damage()'s own vulnerable-state
+	# check, so leaving detection on costs nothing and is what makes contact
+	# actually end the run.
+	hitbox.monitoring = true
+	hitbox.monitorable = false
 	# The Auditor extends CharacterBody2D directly rather than BossBase, so it
 	# inherits none of BossBase's health-bar wiring — which is why the FIRST
 	# boss every player meets was the only one fighting with no HP feedback at
@@ -190,7 +205,6 @@ func _physics_process(delta: float) -> void:
 				current_state = State.VULNERABLE
 				sprite.color = Color(1.0, 0.2, 0.2, 1.0)
 				hitbox.monitorable = true
-				hitbox.monitoring = true
 
 		State.VULNERABLE:
 			velocity.x = move_toward(velocity.x, 0.0, 200.0)
@@ -203,7 +217,6 @@ func _physics_process(delta: float) -> void:
 				current_state = State.PATROL
 				state_timer = maxf(1.4, 3.0 - phase * 0.5)
 				hitbox.monitorable = false
-				hitbox.monitoring = false
 
 ## Aimed clipboard(s) — one shot in P1, two in P2, a triple fan in P3.
 func _throw_clipboard() -> void:
@@ -243,7 +256,6 @@ func take_damage(amount: int) -> void:
 	state_timer = maxf(1.4, 2.0 - phase * 0.3)
 	sprite.color = Color(0.4, 0.25, 0.15, 1.0)
 	hitbox.monitorable = false
-	hitbox.monitoring = false
 
 ## Recompute phase from HP ratio; on a new phase, escalate + taunt.
 func _update_phase() -> void:

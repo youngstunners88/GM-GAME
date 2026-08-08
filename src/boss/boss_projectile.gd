@@ -59,7 +59,7 @@ func _physics_process(delta: float) -> void:
 			direction = direction.lerp(want, clampf(homing * delta, 0.0, 1.0)).normalized()
 	if _redirected and is_instance_valid(owner_boss):
 		# Home hard on the boss so a good redirect actually connects.
-		var centre: Vector2 = owner_boss.global_position + Vector2(48, 48)
+		var centre: Vector2 = _boss_centre()
 		var to_boss := global_position.direction_to(centre)
 		direction = direction.lerp(to_boss, clampf(6.0 * delta, 0.0, 1.0)).normalized()
 		# Arrival is a distance check, NOT a collision callback: the boss body's
@@ -86,6 +86,16 @@ func _physics_process(delta: float) -> void:
 				sprite.modulate = tint
 				sprite.scale = Vector2.ONE * 0.9
 
+## Where a redirected orb aims. Bosses expose their own body centre via
+## hit_centre(); the +48 fallback is the legacy 96px body's half-extent and is
+## only reached by a boss that predates that method. Hardcoding 48 here used to
+## be the only rule, which quietly went wrong the moment the Distributor's body
+## grew from 96 to 240 — orbs then homed on a point 72px above his real middle.
+func _boss_centre() -> Vector2:
+	if owner_boss.has_method("hit_centre"):
+		return owner_boss.hit_centre()
+	return owner_boss.global_position + Vector2(48, 48)
+
 func _on_area_entered(area: Area2D) -> void:
 	if _redirected or not redirectable:
 		return
@@ -102,7 +112,7 @@ func _redirect() -> void:
 	speed = 420.0
 	homing = 0.0
 	if is_instance_valid(owner_boss):
-		direction = global_position.direction_to(owner_boss.global_position + Vector2(48, 48))
+		direction = global_position.direction_to(_boss_centre())
 	if sprite:
 		sprite.modulate = Color(2.4, 2.8, 3.0, 1.0)
 		sprite.scale = Vector2.ONE * 1.25

@@ -5,6 +5,124 @@
 
 **DEPLOYED — Build #1860761 — 2026-08-05.** Hard-refresh before testing.
 
+## What changed this pass
+
+I found the reason the same complaints kept coming back. In three of the four
+cases the code you were told was fixed **was** fixed — it just could not run.
+
+### 1. "The moment he touches Lil Blunt the stage needs to restart" — the real cause
+
+Last build I made boss contact a real death (score, coins, rings and SMOKE all
+forfeit, restart from the level start). That part was correct. What I missed is
+one layer below it: every boss switched its hitbox's **`monitoring` flag off**
+whenever it left its vulnerable window. That flag disables the detector
+outright — so `body_entered` never fired, and for roughly **80% of each fight
+you could walk straight through the boss** and nothing happened at all. The
+restart logic was never reached.
+
+Contact detection now stays on for the entire fight on all three bosses.
+Incoming damage is gated separately (`monitorable` plus the vulnerable-state
+check), so bosses are still only hurtable in their window — but touching one
+now always ends the run, exactly as you asked.
+
+`tests/boss_stakes_test.gd` gained a permanent check for this on **each** boss,
+because "the code looks right" is precisely how this survived being fixed
+several times.
+
+### 2. "The 2nd boss doesn't chase Lil Blunt!!!" — and a boss that had been gutted
+
+The chase lock-up is fixed (last build). Investigating it turned up something
+worse: commit `2992000`, a sprite-facing fix, **rewrote the Distributor
+wholesale and cut it from 121 lines to 20**, silently deleting three entire
+systems:
+
+| System | What it does |
+|---|---|
+| **HOARD GRAVITY** | A telegraphed radial pull field that drags you toward him. Punishes standing still; you can out-walk it by holding away. |
+| **FORCED DISTRIBUTION** | Every orb has a brief unstable window — hit it and it flies back at him for damage *outside* his vulnerable window. The fight's signature skill move. |
+| **POOL DRAIN** | Flip **every** orb in one volley and he's stunned into an extended vulnerable window plus bonus damage. |
+
+Nothing announced the loss. The boss just became "float and lob orbs", and the
+behaviour test guarding those systems has been failing ever since without
+anyone reading it. All three are restored, merged onto the newer free-hover
+pursuit rather than replacing it — so he now chases **and** has his fight back.
+
+He also hovered 150px above you with a 240px-tall body, meaning he was
+permanently *inside* you. Harmless only while contact was switched off; the
+moment contact was fixed that would have been an unavoidable kill one second
+into every attempt. His ride height now clears his own body.
+
+### 3. "The flaming diamonds are still too big"
+
+Not a sizing judgement — a bug. The tokens were authored at scale **0.28**
+(≈29×36px, smaller than a red candle), but the idle pulse tweened to the
+**absolute** `Vector2(1.0)` instead of a multiple of that. Half a second into
+every run all of them snapped to ≈103×143px — nearly three times a FUD wall's
+height — and stayed there. Shrinking the authored number could never have
+worked; the tween overwrote it on frame 30 regardless. The pulse is now
+relative, so the authored size is the size that renders.
+
+### 4. "Why did you replace the fucking Lil Blunt LOGO"
+
+Recovered. The FOMO blue-space rocket badge was deleted in `d2193ef` when I
+swapped in the H420 cowboy art; I pulled the original back out of that commit's
+parent and restored it as the Lil Blunt logo. The H420 art is kept as its own
+badge rather than thrown away, so it still appears in the Blaze Rush lineup.
+
+I also stripped the **~5px flat white ring** that was baked around it. That
+ring is not in your artwork — my old badge compositor painted it on. It is cut
+off, not painted over, so the art itself is untouched.
+
+### 5. GoldMine logo off-centre with a grey ring
+
+Fixed. Its opaque area sat at (29,1)–(480,436) inside a 512px frame — off to
+one side with dead space below — and the gold radial glow around it read as the
+grey ring. Re-centred on the real artwork and hard-masked to a circle.
+
+### 6. Stage tokens shaped like the protocol logos
+
+Done: **stage 1** collects the Lil Blunt mark, **stage 2** the DIAMONDS mark,
+**stage 3** the GoldMine mark. Baked at 64px with a gold rim so they still read
+as coins, swapped at runtime — every coin already placed in every level picks
+up the right face with no scene edits.
+
+### 7. Blaze Rush — spacing and the Blaze logo
+
+The **Blaze logo** (the flaming-diamond mark) now exists as a proper circular
+badge and is in the lineup alongside the protocol logos.
+
+Even spacing had two causes, both fixed properly rather than hand-tuned: slots
+were indexed off-by-one so the whole set bunched toward the start, and a logo
+blocked by a gap was nudged forward in small steps until it cleared — often
+landing almost on top of its neighbour. Slots now sit centred in their own
+cell, and a displaced logo hops to the nearest valid cell on the same lattice
+with a hard minimum separation.
+
+## A gate that could never report
+
+`blaze_rush_layout_test` ends by exercising the real finish → return-to-level
+path. That path calls `SceneRouter.load_scene()` — which frees the test scene,
+which **is** the test. It resumed inside a freed node and died silently: no
+verdict, no exit code, just a hang until the timeout killed it. It behaved
+identically whether the code passed or failed, which is worse than having no
+gate. It now reports the moment the result is known.
+
+**Gates:** script-compile, blaze-layout, boss-stakes (13/13), distributor
+behaviour (**26/26, previously red**), founder-critical-probe,
+owner-screenshot-fixes, save-compat, boss-visibility, boss-arena-reachable,
+blaze-lifecycle-e2e — **all ALL PASS**. Security sentinel **18/18**, sprite
+alpha clean. `icp_contract` fails in this sandbox only: it needs a live ICP
+canister and the outbound proxy blocks it — unrelated to these changes.
+
+## Still open
+
+- **Smoke Lounge prop placement** — items masking each other and uneven
+  spacing. Not addressed this pass.
+- **Per-stage Blaze forest backgrounds** — still the source level's art tinted.
+- **B.AI integration** — config-only, needs its own session.
+
+---
+
 ## Rejection acknowledged
 
 You were right on both counts. Last pass I drew a flat magenta polygon with
