@@ -3,7 +3,8 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv` (PR #12 merged; branch restarted from master)
 
-**DEPLOYED — Build #1860761 — 2026-08-05.** Hard-refresh before testing.
+**DEPLOYED — CI run #133 (`363ec8e`) — 2026-08-08.** Hard-refresh before testing.
+Export, security audit and itch.io butler deploy all green.
 
 ## This pass — T1 / T2
 
