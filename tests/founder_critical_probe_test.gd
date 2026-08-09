@@ -53,6 +53,8 @@ func _run() -> void:
 	await _test_boss_backdrop_floor_alignment(2)
 	await _test_lounge_pickups_never_overlap()
 	await _test_blaze_backdrops_differ_per_realm()
+	await _test_blaze_band_includes_robinhood_after_goldmine_move()
+	await _test_blaze_music_is_the_founders_track()
 
 	if _failures == 0:
 		print("FOUNDER_CRITICAL_PROBE: ALL PASS")
@@ -765,3 +767,66 @@ func _find_all(root: Node, cls: String) -> Array[Node]:
 	for c in root.get_children():
 		out.append_array(_find_all(c, cls))
 	return out
+
+## B3 — GoldMine moved right; the Robin Hood x Smoke Lounge artwork was already
+## in the repo (byte-identical to an unreferenced file, br_robinhood.png) and
+## now fills the slot GoldMine vacated. This proves both halves against the
+## real band build rather than reading the ordered list back.
+func _test_blaze_band_includes_robinhood_after_goldmine_move() -> void:
+	GameManager.dash_return = {
+		"scene_path": LEVEL_SCENES[1],
+		"position": Vector2(1234.5, 321.5),
+		"level_index": 1,
+	}
+	await _arm_decoy_current_scene()
+	var run: Node = BLAZE_RUSH.instantiate()
+	add_child(run)
+	await get_tree().process_frame
+	await get_tree().process_frame
+
+	var paths: Array[String] = []
+	for child in run.get_children():
+		var spr := child as Sprite2D
+		if spr != null and spr.texture != null:
+			paths.append(spr.texture.resource_path)
+
+	_check("Blaze band includes the Robin Hood x Smoke Lounge artwork",
+		paths.any(func(p: String) -> bool: return p.contains("br_robinhood")),
+		"br_robinhood.png was not placed on the course")
+	_check("Blaze band still includes the GoldMine badge",
+		paths.any(func(p: String) -> bool: return p.contains("badge_goldmine")),
+		"moving GoldMine right must not drop it from the band")
+	run.queue_free()
+	await get_tree().process_frame
+
+## The founder replaced the Blaze theme (New_LB3.mp3, "Enter the Blaze Rush!
+## Crush DIAMONDS!"). Confirms the run actually acquires a music override on
+## the shipped file, not merely that the file exists on disk.
+func _test_blaze_music_is_the_founders_track() -> void:
+	var path := "res://src/assets/music/blaze_rush_theme.mp3"
+	_check("Blaze theme file present", ResourceLoader.exists(path))
+	if not ResourceLoader.exists(path):
+		return
+	var stream: AudioStream = load(path) as AudioStream
+	_check("Blaze theme loads as an AudioStream", stream != null)
+	if stream:
+		# The founder's track runs ~3:24; the old placeholder theme was much
+		# shorter. A length floor catches an accidental revert to the old file
+		# without hardcoding an exact duration future re-encodes might shift.
+		_check("Blaze theme is the founder's ~3:24 track, not the old placeholder",
+			stream.get_length() > 120.0, "length=%.1fs" % stream.get_length())
+
+	GameManager.dash_return = {
+		"scene_path": LEVEL_SCENES[1],
+		"position": Vector2(1234.5, 321.5),
+		"level_index": 1,
+	}
+	await _arm_decoy_current_scene()
+	var run: Node = BLAZE_RUSH.instantiate()
+	add_child(run)
+	for i in 6:
+		await get_tree().process_frame
+	_check("Blaze run acquires the music override on the shipped theme",
+		int(run.get("_music_token")) != -1)
+	run.queue_free()
+	await get_tree().process_frame
