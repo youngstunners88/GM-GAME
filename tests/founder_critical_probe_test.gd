@@ -53,6 +53,7 @@ func _run() -> void:
 	await _test_boss_backdrop_floor_alignment(2)
 	await _test_lounge_pickups_never_overlap()
 	await _test_blaze_backdrops_differ_per_realm()
+	await _test_founder_art_drop_ins_actually_render()
 	await _test_blaze_band_includes_robinhood_after_goldmine_move()
 	await _test_blaze_music_is_the_founders_track()
 
@@ -828,5 +829,94 @@ func _test_blaze_music_is_the_founders_track() -> void:
 		await get_tree().process_frame
 	_check("Blaze run acquires the music override on the shipped theme",
 		int(run.get("_music_token")) != -1)
+	run.queue_free()
+	await get_tree().process_frame
+
+## B1 / B2 / B6 — "wired but not visible" must never ship as a claim again.
+##
+## Founder, after a prior pass, correctly pushed back: code that checks
+## ResourceLoader.exists() is not the same as the art showing up in the game.
+## This instantiates the REAL Blaze Rush scene and reads back the actual
+## Texture2D assigned to each live node, and asserts it resolves to the
+## founder's file by RESOURCE PATH — not merely "a texture is set" (which the
+## old fallback assets would also satisfy) and not merely "the file is on
+## disk" (which proves nothing about whether the game picked it up).
+func _test_founder_art_drop_ins_actually_render() -> void:
+	if not ResourceLoader.exists("res://src/assets/logos/founder/blaze_diamond_correct.png") \
+			and not ResourceLoader.exists("res://src/assets/logos/founder/enter_the_blaze_rush.png") \
+			and not ResourceLoader.exists("res://src/assets/logos/founder/now_look_smoke_lounge.png"):
+		_check("founder art drop-in check skipped (no founder art on disk yet)", true)
+		return
+
+	GameManager.dash_return = {
+		"scene_path": "res://src/level/level_01_smoke_realm.tscn",
+		"position": Vector2(500, 400),
+		"level_index": 1,
+	}
+	var run: Node2D = BLAZE_RUSH.instantiate()
+	add_child(run)
+	await get_tree().process_frame
+	await get_tree().process_frame
+
+	# B1 — the token art. Read back the FIRST spawned token's own Sprite2D.
+	var tokens: Array = run.get("_smoke_tokens")
+	_check("Blaze Rush spawned diamond tokens to check", tokens.size() > 0)
+	if tokens.size() > 0 and ResourceLoader.exists("res://src/assets/logos/founder/blaze_diamond_correct.png"):
+		var tok_spr: Sprite2D = (tokens[0] as Node).get_child(0) as Sprite2D
+		_check("B1: token Sprite2D exists", tok_spr != null)
+		if tok_spr != null:
+			var tok_tex: Texture2D = tok_spr.texture
+			_check("B1: live token texture IS the founder's diamond, not the old blue gem",
+				tok_tex != null and tok_tex.resource_path.contains("blaze_diamond_correct"),
+				"resource_path = %s" % (tok_tex.resource_path if tok_tex else "null"))
+			# Corner alpha of the LOADED texture — proves this test isn't reading
+			# a stale copy of the source PNG from disk independently of the game.
+			var tok_img: Image = tok_tex.get_image() if tok_tex else null
+			if tok_img != null and not tok_img.is_compressed():
+				var w := tok_img.get_width()
+				var h := tok_img.get_height()
+				_check("B1: the live-loaded texture is actually keyed (corner alpha 0)",
+					tok_img.get_pixel(0, 0).a < 0.05 and tok_img.get_pixel(w - 1, h - 1).a < 0.05)
+
+	# B2 — the world-info card. _build_world_card() is called from _ready(), so
+	# the node exists briefly then tweens out; check it in the SAME frame batch
+	# rather than waiting past its fade.
+	if ResourceLoader.exists("res://src/assets/logos/founder/enter_the_blaze_rush.png"):
+		var card_layer := run.get_node_or_null("WorldCard")
+		_check("B2: WorldCard layer was built", card_layer != null)
+		if card_layer != null:
+			var card := card_layer.get_child(0) as TextureRect
+			_check("B2: card TextureRect exists", card != null)
+			if card != null:
+				var card_tex: Texture2D = card.texture
+				_check("B2: live world card texture IS the founder's 'Enter the Blaze Rush' art",
+					card_tex != null and card_tex.resource_path.contains("enter_the_blaze_rush"),
+					"resource_path = %s" % (card_tex.resource_path if card_tex else "null"))
+
+	# B6 — the lounge banner replaces the legacy plate OUTRIGHT (not alongside).
+	if ResourceLoader.exists("res://src/assets/logos/founder/now_look_smoke_lounge.png"):
+		var banner := run.get_node_or_null("SmokeLoungeBanner")
+		_check("B6: SmokeLoungeBanner node was built", banner != null)
+		if banner != null:
+			var art_spr: Sprite2D = null
+			for c in banner.get_children():
+				if c is Sprite2D:
+					art_spr = c
+			_check("B6: banner carries a Sprite2D", art_spr != null)
+			if art_spr != null:
+				var banner_tex: Texture2D = art_spr.texture
+				_check("B6: live banner texture IS the founder's replacement art",
+					banner_tex != null and banner_tex.resource_path.contains("now_look_smoke_lounge"),
+					"resource_path = %s" % (banner_tex.resource_path if banner_tex else "null"))
+		# The legacy lowrider plate must not ALSO appear in the landmark band —
+		# "replace entirely" means gone, not doubled up.
+		var legacy_still_present := false
+		for child in run.get_children():
+			var spr := child as Sprite2D
+			if spr != null and spr.texture != null and spr.texture.resource_path.contains("br_smoke_lounge_car"):
+				legacy_still_present = true
+		_check("B6: the legacy lowrider plate is dropped from the band, not doubled up",
+			not legacy_still_present)
+
 	run.queue_free()
 	await get_tree().process_frame
