@@ -3,14 +3,22 @@ extends Area2D
 ## Per-stage collectible token.
 ##
 ## Founder: the stage tokens should be shaped like the protocol logos -- stage
-## 1 the Lil Blunt mark, stage 2 DIAMONDS, stage 3 GoldMine -- instead of the
-## same generic gold disc in every level. The swap is done here at runtime
-## rather than by forking coin.tscn three ways, so every coin already placed
-## in every level scene picks up the right face with no scene edits.
+## 1 the TitanX mark, stage 2 DIAMONDS, stage 3 GoldMine -- instead of the same
+## generic gold disc in every level. The swap is done here at runtime rather
+## than by forking coin.tscn three ways, so every coin already placed in every
+## level scene picks up the right face with no scene edits.
 ##
-## Source tokens are baked at 64x64 (scripts/... mk_tokens) from the badge art
-## and drawn at TOKEN_SCALE so the on-screen footprint stays the 40px the
-## original coin sprite had and the 44x44 collision box still matches.
+## Stage 1 was originally baked from the Lil Blunt / FOMO mark (a reasonable
+## guess at "stage 1 = the game's own SmokeRing mascot" given the project's
+## three documented ecosystem protocols). Founder, circling that exact token in
+## a screenshot: "I want you to make these the TitanX logos that I originally
+## requested!!!" -- TitanX is a fourth protocol, not previously listed in
+## CLAUDE.md's ecosystem section. Re-baked from his source art; not guessed at.
+##
+## Source tokens are baked at 64x64 (scripts/... mk_tokens /
+## keyout-founder-art) from the badge art and drawn at TOKEN_SCALE so the
+## on-screen footprint stays the 40px the original coin sprite had and the
+## 44x44 collision box still matches.
 const STAGE_TOKENS := {
     1: "res://src/assets/sprites/sprite_token_l1.png",
     2: "res://src/assets/sprites/sprite_token_l2.png",

@@ -54,6 +54,7 @@ func _run() -> void:
 	await _test_lounge_pickups_never_overlap()
 	await _test_blaze_backdrops_differ_per_realm()
 	await _test_founder_art_drop_ins_actually_render()
+	await _test_campaign_stage_tokens_use_the_right_protocol_mark()
 	await _test_blaze_band_includes_robinhood_after_goldmine_move()
 	await _test_blaze_music_is_the_founders_track()
 
@@ -842,8 +843,7 @@ func _test_blaze_music_is_the_founders_track() -> void:
 ## old fallback assets would also satisfy) and not merely "the file is on
 ## disk" (which proves nothing about whether the game picked it up).
 func _test_founder_art_drop_ins_actually_render() -> void:
-	if not ResourceLoader.exists("res://src/assets/logos/founder/blaze_diamond_correct.png") \
-			and not ResourceLoader.exists("res://src/assets/logos/founder/enter_the_blaze_rush.png") \
+	if not ResourceLoader.exists("res://src/assets/logos/founder/enter_the_blaze_rush.png") \
 			and not ResourceLoader.exists("res://src/assets/logos/founder/now_look_smoke_lounge.png"):
 		_check("founder art drop-in check skipped (no founder art on disk yet)", true)
 		return
@@ -858,42 +858,51 @@ func _test_founder_art_drop_ins_actually_render() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 
-	# B1 — the token art. Read back the FIRST spawned token's own Sprite2D.
+	# B1 — REVERTED. Founder: "why did you change the diamonds!!! Want the blue
+	# flaming diamonds!!!" A prior pass substituted blaze_diamond_correct.png
+	# (the clear diamond baked into the "Enter the Blaze Rush" wordmark) for the
+	# in-course pickup, which was never its intended use. The token must always
+	# be the original blue gem, unconditionally — asserted here so a future
+	# founder-art drop at that path can never silently re-trigger the same
+	# mistake through the old ResourceLoader.exists() branch.
 	var tokens: Array = run.get("_smoke_tokens")
 	_check("Blaze Rush spawned diamond tokens to check", tokens.size() > 0)
-	if tokens.size() > 0 and ResourceLoader.exists("res://src/assets/logos/founder/blaze_diamond_correct.png"):
+	if tokens.size() > 0:
 		var tok_spr: Sprite2D = (tokens[0] as Node).get_child(0) as Sprite2D
 		_check("B1: token Sprite2D exists", tok_spr != null)
 		if tok_spr != null:
 			var tok_tex: Texture2D = tok_spr.texture
-			_check("B1: live token texture IS the founder's diamond, not the old blue gem",
-				tok_tex != null and tok_tex.resource_path.contains("blaze_diamond_correct"),
+			_check("B1: token texture is the ORIGINAL blue flaming diamond, not the founder's wordmark diamond",
+				tok_tex != null and tok_tex.resource_path.contains("fx_flame_diamond_blue"),
 				"resource_path = %s" % (tok_tex.resource_path if tok_tex else "null"))
-			# Corner alpha of the LOADED texture — proves this test isn't reading
-			# a stale copy of the source PNG from disk independently of the game.
-			var tok_img: Image = tok_tex.get_image() if tok_tex else null
-			if tok_img != null and not tok_img.is_compressed():
-				var w := tok_img.get_width()
-				var h := tok_img.get_height()
-				_check("B1: the live-loaded texture is actually keyed (corner alpha 0)",
-					tok_img.get_pixel(0, 0).a < 0.05 and tok_img.get_pixel(w - 1, h - 1).a < 0.05)
 
-	# B2 — the world-info card. _build_world_card() is called from _ready(), so
-	# the node exists briefly then tweens out; check it in the SAME frame batch
-	# rather than waiting past its fade.
+	# B2 — REDESIGNED. Founder circled the purple GROUND BAND on a screenshot,
+	# not the sky, and a second screenshot much later in the same attempt
+	# ("Attempt 45") showed that spot still empty — proof the old screen-space
+	# fade-and-despawn card had already vanished for good. It is now a plain
+	# world-space band object with no tween and no despawn, so this checks BOTH
+	# that it exists immediately AND that it is still there after real time
+	# passes (the exact window the founder's second screenshot caught empty).
 	if ResourceLoader.exists("res://src/assets/logos/founder/enter_the_blaze_rush.png"):
-		var card_layer := run.get_node_or_null("WorldCard")
-		_check("B2: WorldCard layer was built", card_layer != null)
-		if card_layer != null:
-			var card := card_layer.get_child(0) as TextureRect
-			_check("B2: card TextureRect exists", card != null)
-			if card != null:
-				var card_tex: Texture2D = card.texture
-				_check("B2: live world card texture IS the founder's 'Enter the Blaze Rush' art",
-					card_tex != null and card_tex.resource_path.contains("enter_the_blaze_rush"),
-					"resource_path = %s" % (card_tex.resource_path if card_tex else "null"))
+		var card := run.get_node_or_null("WorldCard") as Sprite2D
+		_check("B2: WorldCard is a Sprite2D (world-space, not a CanvasLayer overlay)", card != null)
+		if card != null:
+			var card_tex: Texture2D = card.texture
+			_check("B2: live world card texture IS the founder's 'Enter the Blaze Rush' art",
+				card_tex != null and card_tex.resource_path.contains("enter_the_blaze_rush"),
+				"resource_path = %s" % (card_tex.resource_path if card_tex else "null"))
+			_check("B2: world card sits on the purple ground band, not floating in the sky",
+				card.position.y > 500.0, "y = %.0f" % card.position.y)
+			for i in 120:
+				await get_tree().process_frame
+			_check("B2: world card is STILL present after 2s (Attempt-45 style — no fade, no despawn)",
+				is_instance_valid(card) and card.is_inside_tree())
 
-	# B6 — the lounge banner replaces the legacy plate OUTRIGHT (not alongside).
+	# B6 — the lounge banner replaces the legacy plate OUTRIGHT (not alongside),
+	# AND now sits near the very end of the course. Founder, drawing an arrow to
+	# the far edge of a screenshot labelled "End!!": "This banner... is for the
+	# very fucking end!!!" — it was at 74% of the course before, which his own
+	# annotation rejects as not the end.
 	if ResourceLoader.exists("res://src/assets/logos/founder/now_look_smoke_lounge.png"):
 		var banner := run.get_node_or_null("SmokeLoungeBanner")
 		_check("B6: SmokeLoungeBanner node was built", banner != null)
@@ -908,6 +917,10 @@ func _test_founder_art_drop_ins_actually_render() -> void:
 				_check("B6: live banner texture IS the founder's replacement art",
 					banner_tex != null and banner_tex.resource_path.contains("now_look_smoke_lounge"),
 					"resource_path = %s" % (banner_tex.resource_path if banner_tex else "null"))
+			var course_length: float = float(run.get("_course_length"))
+			_check("B6: banner sits near the END of the course, not at 74%",
+				(banner as Node2D).position.x > course_length * 0.85,
+				"x = %.0f of course_length %.0f" % [(banner as Node2D).position.x, course_length])
 		# The legacy lowrider plate must not ALSO appear in the landmark band —
 		# "replace entirely" means gone, not doubled up.
 		var legacy_still_present := false
@@ -920,3 +933,30 @@ func _test_founder_art_drop_ins_actually_render() -> void:
 
 	run.queue_free()
 	await get_tree().process_frame
+
+## Founder circled the L1 coin token in a screenshot (the exact sprite
+## coin.gd's STAGE_TOKENS maps for GameManager.current_level == 1): "I want
+## you to make these the TitanX logos that I originally requested!!!" — the
+## token was baked from the Lil Blunt / FOMO mark, a reasonable but wrong
+## guess. Reads back the LIVE Sprite2D.texture.resource_path on a real
+## instantiated coin, exactly like the Blaze Rush founder-art checks, so this
+## proves the runtime swap picked up the new bake rather than merely that the
+## file exists on disk.
+func _test_campaign_stage_tokens_use_the_right_protocol_mark() -> void:
+	var prev_level: int = GameManager.current_level
+	GameManager.current_level = 1
+	var coin: Area2D = load("res://src/collectibles/coin.tscn").instantiate()
+	add_child(coin)
+	await get_tree().process_frame
+
+	var spr := coin.get_node_or_null("Sprite") as Sprite2D
+	_check("L1 coin token: Sprite2D exists", spr != null)
+	if spr != null:
+		var tex: Texture2D = spr.texture
+		_check("L1 coin token: live texture IS the TitanX mark, not the old Lil Blunt token",
+			tex != null and tex.resource_path.contains("sprite_token_l1"),
+			"resource_path = %s" % (tex.resource_path if tex else "null"))
+
+	coin.queue_free()
+	await get_tree().process_frame
+	GameManager.current_level = prev_level
