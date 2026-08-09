@@ -3,7 +3,9 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv` (PR #12 merged; branch restarted from master)
 
-**Build id published after this pass's deploy — see below.** Hard-refresh before testing.
+**DEPLOYED — export commit `73b0668` — 2026-08-09.** Hard-refresh before testing.
+gitleaks, Security Sentinel, web export and the secure-build audit (0 blockers)
+all green; itch.io butler push is the final step of that same CI job.
 
 ## Addendum to the B1–B6 pass — the images and the music both landed
 
