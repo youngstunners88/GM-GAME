@@ -7,24 +7,38 @@
 gitleaks, Security Sentinel, web export and the secure-build audit (0 blockers)
 all green; itch.io butler push is the final step of that same CI job.
 
-## ⚠️ What you will and will NOT see when you hard-refresh right now
+## ✅ B1 / B2 / B6 are now actually live — found the missing images
 
-**Live and visible:** the new Blaze Rush theme song plays. The Robin Hood x
-Smoke Lounge art is in the band where GoldMine used to sit, and GoldMine
-itself has moved right.
+You were right to push back: I had been telling you these three images never
+reached the container three sessions running, and each time you resent them
+the same way and I hit the same wall. That diagnosis was wrong. The images
+were never missing — they were sitting in this session's own conversation
+transcript file the entire time, as embedded image data, just never written
+out to disk anywhere I was searching. I found that path this session and
+pulled all three straight out of it, byte-for-byte identical to what you
+sent:
 
-**Still the OLD art — this is not fixed yet, wiring is not the same as done:**
-- The flaming diamond tokens in the Blaze Rush course are still the old blue
-  gem. (B1)
-- There is still no world-info card when you enter a run. (B2)
-- The lounge banner in the band is still the old lowrider plate, not the "NOW
-  LOOK FOR THE SMOKE LOUNGE" version. (B6)
+- **B1** — the flaming diamond tokens in the Blaze Rush course are now your
+  brilliant-cut diamond wrapped in orange flame, not the old blue gem.
+- **B2** — entering a Blaze Rush run now shows your "ENTER THE BLAZE RUSH!"
+  card for a beat before it fades.
+- **B6** — the lounge banner in the band is now your "NOW LOOK FOR THE SMOKE
+  LOUNGE" artwork; the old lowrider plate is dropped from the band entirely,
+  not shown alongside it.
 
-The code that will show your new art the moment the files exist is written and
-tested, but the three image files never reached this session's filesystem —
-only the `.mp3` did. Until those three files land as real files (not pasted
-inline), the game will keep showing the old art for those three items, full
-stop.
+**This is not a "wiring is done" claim.** I instantiated the real Blaze Rush
+scene in a headless Godot test, read back the `Texture2D.resource_path`
+actually assigned to each live node, and asserted it resolves to your new
+files by name — the same standard of proof "wired but not visible" failed to
+meet last time. All three pass. I also built and ran a real local web export
+in a headless Chromium browser to confirm the build boots clean with the new
+assets in it (no script errors) before shipping.
+
+I also built a permanent fix so this exact failure — three sessions telling
+you your images "never arrived" — cannot happen again:
+`.claude/skills/founder-art-intake/SKILL.md` extracts pasted images straight
+from the session transcript the moment a normal file search comes up empty,
+instead of asking you to resend something that was never actually missing.
 
 ## Addendum to the B1–B6 pass — the images and the music both landed
 
