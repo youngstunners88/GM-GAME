@@ -3,10 +3,78 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv` (PR #12 merged; branch restarted from master)
 
-**DEPLOYED — export commit `f25a528` (CI run #139) — 2026-08-09.** Hard-refresh
-before testing. gitleaks, Security Sentinel, web export, the secure-build audit
-(0 blockers) and the gh-pages mirror all green; itch.io butler push is the
-final step of that same job.
+**DEPLOYED — export commit `2867f00` — 2026-08-09.** Hard-refresh before
+testing. gitleaks, Security Sentinel, web export and the secure-build audit
+(0 blockers) all green; itch.io butler push is the final step of that same
+job.
+
+## ⚠️ Three things from last pass were wrong. Fixed, with the actual root cause each time.
+
+You sent a consolidated document — 15 images drawn on directly with arrows and
+circles, plus 5 Google Drive links. This time everything landed as real files
+(the doc itself was a proper attachment; the Drive links worked directly), so
+no recovery tricks were needed — just careful reading of exactly what each
+annotation pointed at.
+
+| Item | What was wrong | Status |
+|---|---|---|
+| **Diamond token** | Last pass swapped it to your wordmark diamond. Wrong asset entirely. | **REVERTED** to the original blue flaming diamond |
+| **World-info card** | Floated in the sky, faded after 1.5s, then stayed gone for the rest of the attempt | **REDESIGNED**: now sits in the ground band, permanent, on every attempt |
+| **Smoke Lounge banner** | Anchored at 74% of the course | **MOVED** to the actual end, just ahead of the finish |
+| **Stage 1 coin token** | Baked from the Lil Blunt mark (my own guess, not what you asked for) | **REPLACED** with your TitanX logo |
+
+### The diamond — I misread what "the correct diamond" was for
+
+You wrote "why did you change the diamonds!!! Want the blue flaming
+diamonds!!!" Last pass I took an image you sent (a clear diamond wrapped in
+orange flame) and used it to replace the in-course pickup token. That was
+never what it was for — it's baked into your "ENTER THE BLAZE RUSH!" wordmark
+art (this document's `image3` is that exact wordmark, confirming it). The
+pickup token is the original blue flaming diamond again, unconditionally. Your
+file is still on disk, just not wired to anything right now.
+
+### The world card — I fixed the wrong half of the complaint
+
+You drew directly on a screenshot: an arrow from the card down to the purple
+ground band, and "I want it in the spot that I intuitively illustrated!!!!"
+A second screenshot from much later in the same attempt ("Attempt 45") showed
+that exact spot still empty — because the old version was a screen overlay
+that faded out after 1.5 seconds and never came back. It's a normal object in
+the level now, sitting in the band, with no fade and no despawn — you'll see
+it on every attempt, not just the first two seconds of the first one.
+
+### The banner — moved to where you actually pointed
+
+You drew an arrow from the banner all the way to the edge of a screenshot and
+wrote "End!!" next to it. It was sitting at 74% of the course. It's anchored
+near the finish line now.
+
+### Stage 1 token — TitanX, not Lil Blunt
+
+You circled the round token icon in a Level 1 screenshot: "I want you to make
+these the TitanX logos that I originally requested!!!" An earlier session had
+baked that token from the Lil Blunt mascot logo, on the assumption that stage
+1 should represent the game's own SmokeRing branding. That was a guess, and
+it was wrong — it's your TitanX logo now. Stage 2 (DIAMONDS) and stage 3
+(GoldMine) already matched your reference images for those stages, so I left
+them alone; your note "that doesn't replace the current Solana coins in stage
+2" is already true — every coin type in the game feeds the same score/coins
+counter regardless of which logo it wears, so nothing needed to change there.
+
+### Found, not fixed: a dead currency system
+
+Investigating this, I found the HUD's `wBTC`, `XAUT`, and `DIAMONDS` rows are
+wired to a real `GoldMineSystem` economy (mining, Fort Knox rewards, boss
+auctions per the GoldMine whitepaper) that has **no pickup anywhere in any
+level** that actually feeds it — those three numbers can never move off zero
+no matter how you play. That's out of scope for this pass (nothing in your
+document asked for it), but flagging it now rather than let it sit quiet.
+
+**Gates:** 14 suites ALL PASS (rewrote the founder-art gate for all three
+corrections, added a new one for the campaign coin token). Verified via real
+Godot scene instantiation reading back live texture paths and node positions,
+plus a real local web export booted clean in headless Chromium before
+shipping. Sentinel 18/18.
 
 ## ✅ B1 / B2 / B6 are now actually live — found the missing images
 
