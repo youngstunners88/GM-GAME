@@ -254,6 +254,9 @@ func lose_life() -> bool:
 ## keeps playing.
 func full_wipe_restart() -> void:
     level_checkpoints.clear()
+    # A full wipe is a brand-new attempt: the Blaze portal and secret door on
+    # this level become available again (see reopen_side_entrances).
+    reopen_side_entrances(current_level)
     lives = max_lives
     lives_changed.emit(lives)
     player_health = max_health
@@ -303,6 +306,8 @@ func boss_contact_restart() -> void:
     smoke_changed.emit(smoke_collected)
     ComboSystem.break_combo()
     level_checkpoints.erase(current_level)
+    # Boss contact is a death, so it is a fresh attempt too.
+    reopen_side_entrances(current_level)
     player_health = max_health
     health_changed.emit(player_health)
     current_power_up = ""
@@ -350,6 +355,28 @@ func is_side_entrance_used(kind: String, level: int) -> bool:
     if kind == "secret":
         return bool(secret_door_used.get(level, false))
     return bool(blaze_portal_used.get(level, false))
+
+## Reopen a level's side entrances (Blaze portal + secret door) for a FRESH
+## ATTEMPT at that level.
+##
+## Founder: "player collects first diamond, then the game/section resets, but
+## the diamond stays already claimed... claim state must not persist across a
+## Blaze run restart."
+##
+## `blaze_portal_used` / `secret_door_used` were written by
+## mark_side_entrance_used() and then cleared NOWHERE in the entire codebase —
+## not on death, not on a full wipe, not even in reset_progress(). So the first
+## time a player took the Blaze entrance on a level it was consumed for good:
+## every later restart of that level rebuilt the portal, found the flag still
+## true, and queue_free()d it on the spot.
+##
+## The once-per-visit rule still holds — this does NOT let the portal be
+## re-entered inside a single attempt, which is what stopped the founder
+## falling back in while fleeing the Tax Collector. It only says that dying and
+## restarting the level is a NEW attempt, so the entrance is available again.
+func reopen_side_entrances(level: int) -> void:
+    secret_door_used.erase(level)
+    blaze_portal_used.erase(level)
 
 ## Grant an extra life. No upper cap — the owner wants unlimited lives.
 func add_life(amount: int = 1) -> void:
@@ -419,6 +446,8 @@ func reset_session() -> void:
     smoke_collected = 0
     smoke_changed.emit(0)
     blaze_rush_completed.clear()
+    secret_door_used.clear()
+    blaze_portal_used.clear()
     dash_return = {}
     level_checkpoints.clear()
     GoldMineSystem.reset_session()

@@ -76,13 +76,33 @@ def smoke_realm(img):
     'trees like before' the founder asked to have back."""
     ov = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     d = ImageDraw.Draw(ov)
-    # Mid-distance mushroom caps, echoing bg_l1_forest's pink glow.
+    # Mid-distance mushrooms, echoing bg_l1_forest's pink glow.
+    #
+    # Founder (B5): these must READ as magic mushrooms, "cap + stem, not
+    # generic blobs". The first cut was literally an ellipse with a 6px
+    # rectangle under it, which at this distance is a blob on a stick. A
+    # mushroom is legible from three cues, all of them added here: a cap that
+    # OVERHANGS the stem, a darker underside so the cap reads as a solid, and
+    # spots. The stem is also tapered and wider at the base so it plants.
     caps = [(165, 430, 58), (410, 452, 40), (700, 424, 50),
             (960, 446, 44), (1165, 418, 36)]
     for x, y, s in caps:
-        d.ellipse((x - s, y - s * 0.62, x + s, y + s * 0.62), fill=(214, 74, 150, 235))
-        d.ellipse((x - s, y - s * 0.62, x + s, y + s * 0.30), fill=(240, 116, 182, 235))
-        d.rectangle((x - s * 0.17, y, x + s * 0.17, y + s * 0.95), fill=(196, 150, 200, 220))
+        st_top, st_bot = s * 0.20, s * 0.30
+        d.polygon([(x - st_top, y), (x + st_top, y),
+                   (x + st_bot, y + s * 1.05), (x - st_bot, y + s * 1.05)],
+                  fill=(214, 178, 214, 232))
+        # Cap: wider than the stem by design — that overhang IS the silhouette.
+        d.ellipse((x - s, y - s * 0.66, x + s, y + s * 0.30), fill=(214, 74, 150, 238))
+        # Lit crown over a darker underside band.
+        d.chord((x - s, y - s * 0.66, x + s, y + s * 0.30), 180, 360,
+                fill=(244, 116, 182, 240))
+        d.chord((x - s * 0.92, y - s * 0.10, x + s * 0.92, y + s * 0.30), 10, 170,
+                fill=(150, 40, 104, 235))
+        for sx, sy, sr in [(-0.42, -0.30, 0.17), (0.06, -0.40, 0.20),
+                           (0.48, -0.24, 0.14)]:
+            d.ellipse((x + s * (sx - sr), y + s * (sy - sr * 0.8),
+                       x + s * (sx + sr), y + s * (sy + sr * 0.8)),
+                      fill=(255, 226, 244, 236))
     ov = ov.filter(ImageFilter.GaussianBlur(0.6))
     img.alpha_composite(ov)
     for x, y, s in caps:

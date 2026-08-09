@@ -3,8 +3,96 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv` (PR #12 merged; branch restarted from master)
 
-**DEPLOYED — CI run #133 (`363ec8e`) — 2026-08-08.** Hard-refresh before testing.
-Export, security audit and itch.io butler deploy all green.
+**Build id published after this pass's deploy — see below.** Hard-refresh before testing.
+
+## This pass — B1–B6
+
+**Read this first: the reference images did not reach me.** The prompt points at
+`artifacts/founder-art/references/blaze_obs_image1.png … image10.png`. That
+folder does not exist in this container, no file matching those names exists
+anywhere on disk, and the only thing that arrived was the prompt text itself
+(twice, byte-identical, no embedded images). I have **not** guessed at your
+artwork — that is the mistake that cost us the Lil Blunt logo and the flaming
+diamonds before.
+
+| # | Item | Status | Proof / what's blocking |
+|---|---|---|---|
+| **B4** | Diamond claim survives Blaze restart | **FIXED** | Two separate root causes, both reproduced then fixed. 12-check gate. |
+| **B5** | Magic mushrooms look wrong | **FIXED** | Runtime error removed + pickup redrawn + backdrop mushrooms rebuilt. |
+| **B6** | Smoke Lounge anticipation banner | **PARTIAL** | New banner built and gated on L1/L2/L3. "Replace entirely" needs image10. |
+| **B3** | Band spacing, GM logo right | **PARTIAL** | GM shifted right. The image7 insert needs image7. |
+| **B1** | Wrong flaming diamond art | **BLOCKED** | Needs image2 (the correct mark). |
+| **B2** | World-info tab fill | **BLOCKED** | Needs image3/4/5. |
+
+### B4 — two bugs, not one. Both reproduced before fixing.
+
+**(a) A same-frame race — this is your "often via candle bounce".**
+A candle and a diamond can be touched on the *same physics frame*. The pickup
+set `visible = false` immediately and the crash reset set `visible = true`
+immediately, so whichever the physics server reported **second** won:
+
+```
+candle  -> _crash() -> token.visible = true    (restored)
+diamond -> pickup   -> area.visible  = false   (claimed again)
+```
+
+The diamond then stayed claimed for the rest of the run. The reset now happens
+strictly *after* every collision callback for that frame, plus a guard that
+stops a pickup registering once a crash is already pending. I wrote the failing
+test first — it reproduced your exact symptom, then went green.
+
+**(b) The Blaze entrance was consumed permanently.**
+`blaze_portal_used` / `secret_door_used` were written when you entered, and
+cleared **nowhere in the entire codebase** — not on death, not on a full wipe,
+not even on a new session. So the first Blaze run on a level killed that
+entrance for good: every later restart rebuilt the portal, saw the flag still
+set, and deleted it on the spot. A fresh attempt now reopens it. The
+once-per-visit rule still holds inside a run, so this does not reintroduce the
+"kept falling back in while fleeing the Tax Collector" problem.
+
+### B5 — the mushrooms were throwing an error on every spawn
+
+`magic_mushroom.gd` still carried ColorRect-era placeholder code
+(`sprite.color = …`, `sprite.size = …`) against a scene that has used a real
+`Sprite2D` for a long time. A Sprite2D has neither property, so every mushroom
+threw *"Invalid assignment of property or key 'color'"* and **aborted the rest
+of `_ready()` on that line**. `weed_leaf.gd` had the identical defect; those two
+were the last placeholder-era stragglers.
+
+On top of that the 40px sprite itself was a low-contrast smudge. Redrawn from
+the silhouette in: a wide domed cap that **overhangs** a clearly separate stem,
+dark keyline, cream spots. The Blaze backdrop mushrooms — which were honestly
+just an ellipse on a rectangle — got the same treatment.
+
+### B6 — banner: what I did and did not do
+
+Built a dedicated **SMOKE LOUNGE / CHILL OUT AHEAD** banner, placed late in each
+course so you meet it on the way to the finish, and it is now **guaranteed on
+L1, L2 and L3**. It owns its own placement rather than competing for a slot on
+the landmark lattice — anything in that lattice gets *dropped* if it cannot
+clear a floor gap, so whether the callout survived was a function of each
+course's gap layout. Gated: present on all three, on the band, late in the run,
+never over a gap.
+
+What I did **not** do is delete your existing `br_smoke_lounge_car.png` lowrider
+artwork, because without image10 I cannot tell whether that is the banner you
+want replaced. Removing your art on a guess is the failure mode I keep getting
+punished for, so it stays until you confirm.
+
+### What I need from you
+
+1. **image2** — the correct flaming diamond mark (B1).
+2. **image3 / image4 / image5** — the world-info tab and the art that fills it (B2).
+3. **image7** — the artwork to insert in the band (B3).
+4. **image10** — the banner to replace (B6).
+
+Attaching them the way the prompt `.md` arrived works; the images just didn't
+come with it this time.
+
+**Gates:** script-compile, blaze-claim-reset (new), blaze-lounge-banner (new),
+founder-critical-probe, blaze-layout, blaze-lifecycle-e2e, boss-stakes,
+distributor-behaviour, owner-screenshot-fixes, save-compat, boss-visibility,
+boss-arena-reachable — **all ALL PASS**. Sentinel 18/18, sprite-alpha clean.
 
 ## This pass — T1 / T2
 
