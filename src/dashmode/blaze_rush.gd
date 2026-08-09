@@ -87,6 +87,7 @@ func _ready() -> void:
 	# After obstacles: the landmarks are decorative and must not influence or
 	# be influenced by hazard placement.
 	_build_protocol_landmarks()
+	_build_lounge_banner()
 	_build_finish()
 	_build_player()
 	_build_camera()
@@ -242,12 +243,20 @@ const BAND_ART_SIZE: float = 190.0
 ## the game has (all rebuilt clean, no added outline, correct green-ring
 ## DIAMONDS and the founder's own real GoldMine mark), plus two additional
 ## wide-format artworks alongside them.
+## ORDER IS THE LAYOUT. Slots are handed out along an even lattice in this
+## order, so moving an entry later in this list moves that logo further RIGHT
+## along the course.
+##
+## Founder (B3): "GM logo highlighted to move right." GoldMine was third of
+## seven — roughly a third of the way in. It now sits second from last, which
+## is the right-hand end of the band, and everything after its old position
+## shifts one slot earlier to close the space it left.
 const BR_ART := [
 	"res://src/assets/art/badge_lilblunt.png",
 	"res://src/assets/art/badge_diamonds.png",
-	"res://src/assets/art/badge_goldmine.png",
 	"res://src/assets/art/badge_smokering.png",
 	"res://src/assets/art/badge_hood.png",
+	"res://src/assets/art/badge_goldmine.png",
 	# The mode's own mark — founder: "you also need to add the Blaze logo."
 	# Composed onto the same circular field as the protocol badges so it sits
 	# in the lineup at matching size, not as a loose gameplay sprite.
@@ -320,6 +329,100 @@ func _landmark_slot_x(i: int, count: int, half_w: float, placed_x: Array[float])
 					break
 			if not crowded:
 				return cand
+	return INF
+
+## SMOKE LOUNGE ANTICIPATION BANNER — on every Blaze course, guaranteed.
+##
+## Founder (B6): the banner must make the player "anticipate the Smoke Lounge",
+## and the callout has to be on the L1/L2/L3 Blaze band, "not once".
+##
+## Why this is its own node and not another entry in BR_ART_WIDE: everything in
+## that list competes for a slot on the landmark lattice, and any piece that
+## cannot clear a floor gap is DROPPED rather than moved far (see
+## _landmark_slot_x returning INF). Whether the lounge callout survived was
+## therefore a function of each course's gap layout — fine today, silently gone
+## the next time a layout changes. This one owns its placement: it searches
+## from three-quarters along the run for the first stretch of solid purple band
+## and, failing that, walks backwards, so it is placed or the course has no
+## band at all.
+##
+## Placed late in the run on purpose — anticipation works when you see it on
+## the way to the finish, not in the first two seconds.
+##
+## Composed procedurally rather than from a PNG so it carries no white outline
+## and cannot pixelate at any zoom, per the standing logo constraints. It sits
+## on the band (z_index 1) well below the run line, decorative only.
+const LOUNGE_BANNER_W: float = 300.0
+const LOUNGE_BANNER_H: float = 104.0
+
+func _build_lounge_banner() -> void:
+	var half_w: float = LOUNGE_BANNER_W * 0.5
+	var bx: float = _find_band_slot(_course_length * 0.74, half_w)
+	if is_inf(bx):
+		return
+
+	var banner := Node2D.new()
+	banner.name = "SmokeLoungeBanner"
+	banner.position = Vector2(bx, GROUND_Y + BAND_ART_Y)
+	banner.z_index = 1
+	add_child(banner)
+
+	var plate := ColorRect.new()
+	plate.color = Color(0.07, 0.03, 0.13, 1.0)
+	plate.size = Vector2(LOUNGE_BANNER_W, LOUNGE_BANNER_H)
+	plate.position = Vector2(-half_w, -LOUNGE_BANNER_H * 0.5)
+	banner.add_child(plate)
+
+	# Mint trim, the Smoke Lounge's own accent (COLOR_LIP_ACCENT's family in
+	# secret_realm.gd), so the callout is colour-linked to the place it advertises.
+	for edge: Vector2 in [Vector2(0, -1), Vector2(0, 1)]:
+		var trim := ColorRect.new()
+		trim.color = Color(0.42, 0.95, 0.78, 1.0)
+		trim.size = Vector2(LOUNGE_BANNER_W, 5)
+		trim.position = Vector2(-half_w, edge.y * (LOUNGE_BANNER_H * 0.5) - (5 if edge.y > 0 else 0))
+		banner.add_child(trim)
+
+	var head := Label.new()
+	head.text = "SMOKE LOUNGE"
+	head.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	head.position = Vector2(-half_w, -LOUNGE_BANNER_H * 0.5 + 12)
+	head.custom_minimum_size = Vector2(LOUNGE_BANNER_W, 0)
+	head.add_theme_font_size_override("font_size", 30)
+	head.add_theme_color_override("font_color", Color(0.55, 1.0, 0.85))
+	head.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.95))
+	head.add_theme_constant_override("outline_size", 5)
+	banner.add_child(head)
+
+	var sub := Label.new()
+	sub.text = "▸  CHILL OUT AHEAD  ◂"
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub.position = Vector2(-half_w, -LOUNGE_BANNER_H * 0.5 + 52)
+	sub.custom_minimum_size = Vector2(LOUNGE_BANNER_W, 0)
+	sub.add_theme_font_size_override("font_size", 17)
+	sub.add_theme_color_override("font_color", Color(1.0, 0.86, 0.55))
+	sub.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.95))
+	sub.add_theme_constant_override("outline_size", 4)
+	banner.add_child(sub)
+
+	# Slow breath so it reads as lit signage rather than a flat decal. Anchored
+	# to Vector2.ONE, not an absolute — the flaming-diamond lesson.
+	var pulse := banner.create_tween().set_loops()
+	pulse.tween_property(banner, "scale", Vector2(1.03, 1.03), 1.1).set_trans(Tween.TRANS_SINE)
+	pulse.tween_property(banner, "scale", Vector2.ONE, 1.1).set_trans(Tween.TRANS_SINE)
+
+## First x at or after `from_x` whose band is solid for `half_w` either side,
+## searching forward then backward. INF only if the course has no clear band.
+func _find_band_slot(from_x: float, half_w: float) -> float:
+	var limit: float = _course_length - 120.0
+	var x: float = clampf(from_x, 400.0, limit)
+	var step: float = 90.0
+	for i in range(48):
+		var fwd: float = x + step * float(i)
+		if fwd <= limit and not _x_over_gap(fwd, half_w):
+			return fwd
+		var back: float = x - step * float(i)
+		if back >= 400.0 and not _x_over_gap(back, half_w):
+			return back
 	return INF
 
 func _build_protocol_landmarks() -> void:
@@ -657,7 +760,12 @@ func _make_smoke_token(x: float, height: float) -> void:
 	pulse.tween_property(puff, "scale", TOKEN_SCALE * 1.12, 0.5).set_trans(Tween.TRANS_SINE)
 	pulse.tween_property(puff, "scale", TOKEN_SCALE, 0.5).set_trans(Tween.TRANS_SINE)
 	area.body_entered.connect(func(b: Node2D) -> void:
-		if b == _player and area.visible:
+		# `_crash_pending` guard: a candle and a diamond can be touched on the
+		# SAME physics frame ("often via candle bounce", the founder's words).
+		# Without this, a pickup that the physics server reports AFTER the
+		# candle re-hides a token the crash has just restored, and it stays
+		# claimed for the rest of the run. See _crash().
+		if b == _player and area.visible and not _crash_pending:
 			area.visible = false
 			area.set_deferred("monitoring", false)
 			_smoke_this_attempt += 1
@@ -902,6 +1010,10 @@ func _spin_cube() -> void:
 	var tween := create_tween()
 	tween.tween_property(_player_visual, "rotation", _player_visual.rotation + PI, 0.35)
 
+## True from the moment a crash is registered until the tokens have actually
+## been restored. Set for exactly one frame; read by the pickup handler.
+var _crash_pending: bool = false
+
 func _crash() -> void:
 	if _finished:
 		return
@@ -910,10 +1022,38 @@ func _crash() -> void:
 	ScreenShake.shake(0.2, 6.0)
 	AudioManager.play_sfx("hit")
 	_reset_player()
-	for token in _smoke_tokens:
-		token.visible = true
-		token.set_deferred("monitoring", true)
+	# RESTORE THE DIAMONDS AFTER ALL OF THIS FRAME'S COLLISION CALLBACKS, NOT
+	# DURING THEM.
+	#
+	# Founder: "player collects first diamond (often via candle bounce), then
+	# the section resets, but the diamond stays already claimed."
+	#
+	# Restoring inline looked correct and tested green in isolation, but a
+	# candle and a diamond can be touched on the SAME physics frame — which is
+	# precisely what a bounce off a candle into a diamond is. Area2D callbacks
+	# for one frame fire in whatever order the physics server reports them, so
+	# when the candle came first the sequence was:
+	#
+	#   candle  -> _crash() -> token.visible = true      (restored)
+	#   diamond -> pickup   -> area.visible  = false     (claimed again)
+	#
+	# and the token stayed claimed for the rest of the run. Deferring the
+	# restore puts it strictly after every collision callback for the frame, so
+	# the reset is always the last word. The `_crash_pending` guard in the
+	# pickup handler closes the same hole from the other side.
+	_crash_pending = true
+	_restore_tokens.call_deferred()
 	_update_hud()
+
+## Put every diamond back and reopen it for collection. Deferred out of
+## _crash() — see the note there.
+func _restore_tokens() -> void:
+	for token in _smoke_tokens:
+		if not is_instance_valid(token):
+			continue
+		token.visible = true
+		token.monitoring = true
+	_crash_pending = false
 
 func _reset_player() -> void:
 	_player.position = Vector2(0.0, GROUND_Y - PLAYER_SIZE)
