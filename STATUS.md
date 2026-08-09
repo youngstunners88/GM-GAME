@@ -3,9 +3,28 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv` (PR #12 merged; branch restarted from master)
 
-**DEPLOYED — export commit `73b0668` — 2026-08-09.** Hard-refresh before testing.
+**DEPLOYED — export commit `31a6d7c` — 2026-08-09.** Hard-refresh before testing.
 gitleaks, Security Sentinel, web export and the secure-build audit (0 blockers)
 all green; itch.io butler push is the final step of that same CI job.
+
+## ⚠️ What you will and will NOT see when you hard-refresh right now
+
+**Live and visible:** the new Blaze Rush theme song plays. The Robin Hood x
+Smoke Lounge art is in the band where GoldMine used to sit, and GoldMine
+itself has moved right.
+
+**Still the OLD art — this is not fixed yet, wiring is not the same as done:**
+- The flaming diamond tokens in the Blaze Rush course are still the old blue
+  gem. (B1)
+- There is still no world-info card when you enter a run. (B2)
+- The lounge banner in the band is still the old lowrider plate, not the "NOW
+  LOOK FOR THE SMOKE LOUNGE" version. (B6)
+
+The code that will show your new art the moment the files exist is written and
+tested, but the three image files never reached this session's filesystem —
+only the `.mp3` did. Until those three files land as real files (not pasted
+inline), the game will keep showing the old art for those three items, full
+stop.
 
 ## Addendum to the B1–B6 pass — the images and the music both landed
 
