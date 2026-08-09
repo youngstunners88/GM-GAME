@@ -88,6 +88,7 @@ func _ready() -> void:
 	# be influenced by hazard placement.
 	_build_protocol_landmarks()
 	_build_lounge_banner()
+	_build_world_card()
 	_build_finish()
 	_build_player()
 	_build_camera()
@@ -243,31 +244,70 @@ const BAND_ART_SIZE: float = 190.0
 ## the game has (all rebuilt clean, no added outline, correct green-ring
 ## DIAMONDS and the founder's own real GoldMine mark), plus two additional
 ## wide-format artworks alongside them.
-## ORDER IS THE LAYOUT. Slots are handed out along an even lattice in this
-## order, so moving an entry later in this list moves that logo further RIGHT
-## along the course.
+## FOUNDER ARTWORK DROP-IN PATHS (B1 / B2 / B6).
 ##
-## Founder (B3): "GM logo highlighted to move right." GoldMine was third of
-## seven — roughly a third of the way in. It now sits second from last, which
-## is the right-hand end of the band, and everything after its old position
-## shifts one slot earlier to close the space it left.
-const BR_ART := [
-	"res://src/assets/art/badge_lilblunt.png",
-	"res://src/assets/art/badge_diamonds.png",
-	"res://src/assets/art/badge_smokering.png",
-	"res://src/assets/art/badge_hood.png",
-	"res://src/assets/art/badge_goldmine.png",
+## The founder sent these four images in chat and I can see all of them, but
+## pasted images render into the conversation without ever being written to
+## disk — nothing landed anywhere on the filesystem, so there are no source
+## pixels to use. Re-drawing a brand mark from a description is reinterpretation
+## and is exactly how the Lil Blunt logo got replaced with the wrong art, so
+## nothing here is guessed at.
+##
+## Instead every one is wired to a documented path: drop the file, run
+## `godot --headless --import` once, and it appears with no code change. Same
+## convention as the Smoke Lounge video and the protocol logo placeholders.
+##
+##   B1  blaze_diamond_correct.png   the correct flaming-diamond mark, used for
+##                                   the in-course tokens and the Blaze badge
+##   B2  enter_the_blaze_rush.png    "ENTER THE BLAZE RUSH!" — the world-info
+##                                   card shown on entering a run
+##   B6  now_look_smoke_lounge.png   "NOW LOOK FOR THE SMOKE LOUNGE" — replaces
+##                                   the lowrider plate outright once present
+const FOUNDER_ART_DIR := "res://src/assets/logos/founder/"
+const DIAMOND_ART := FOUNDER_ART_DIR + "blaze_diamond_correct.png"
+const WORLD_CARD_ART := FOUNDER_ART_DIR + "enter_the_blaze_rush.png"
+const LOUNGE_BANNER_ART := FOUNDER_ART_DIR + "now_look_smoke_lounge.png"
+## The plate B6 replaces. Confirmed as the one the founder means: his new
+## artwork is this exact lowrider with the "NOW LOOK FOR THE SMOKE LOUNGE"
+## call-to-action added to its right-hand side.
+const LEGACY_LOUNGE_ART := "res://src/assets/art/br_smoke_lounge_car.png"
+
+## ORDER IS THE LAYOUT — one ordered list, badges and wide art together.
+##
+## Slots are handed out along an even lattice in this exact order, so an
+## entry's position here IS its position along the course. Badges and wide
+## artworks used to live in two separate arrays that were concatenated, which
+## meant every wide piece was forced to the END of the run no matter what the
+## founder asked for. They are one list now so any arrangement is expressible.
+##
+## Founder (B3): "GM logo highlighted to move right... place [the Robin Hood x
+## Smoke Lounge] artwork in the space freed / where GM currently sits."
+## GoldMine was third of seven; it now sits second from last (the right-hand
+## end of the band) and Robin Hood takes the third slot it vacated.
+##
+## `br_robinhood.png` was already in the repo, byte-identical to
+## robinhood_smokelounge.png and referenced by NOTHING — the same way the Blaze
+## treeline backdrop was sitting unused. It is wired now rather than re-made.
+##
+## `is_wide` scales by HEIGHT only so a banner keeps its aspect ratio instead of
+## being squashed into a square badge footprint.
+const BR_ART_ORDER := [
+	{"path": "res://src/assets/art/badge_lilblunt.png", "wide": false},
+	{"path": "res://src/assets/art/badge_diamonds.png", "wide": false},
+	# B3: the slot GoldMine vacated.
+	{"path": "res://src/assets/art/br_robinhood.png", "wide": true},
+	{"path": "res://src/assets/art/badge_smokering.png", "wide": false},
+	{"path": "res://src/assets/art/badge_hood.png", "wide": false},
+	{"path": "res://src/assets/art/br_diamond_certificate.png", "wide": true},
 	# The mode's own mark — founder: "you also need to add the Blaze logo."
-	# Composed onto the same circular field as the protocol badges so it sits
-	# in the lineup at matching size, not as a loose gameplay sprite.
-	"res://src/assets/art/badge_blaze.png",
-	"res://src/assets/art/badge_h420.png",
-]
-## Wide-format artworks — NOT forced into circular badges, kept at their own
-## aspect ratio. Placed the same as BR_ART (band-anchored, gap-aware).
-const BR_ART_WIDE := [
-	"res://src/assets/art/br_smoke_lounge_car.png",
-	"res://src/assets/art/br_diamond_certificate.png",
+	{"path": "res://src/assets/art/badge_blaze.png", "wide": false},
+	# B3: GoldMine moved right, near the end of the band.
+	{"path": "res://src/assets/art/badge_goldmine.png", "wide": false},
+	{"path": "res://src/assets/art/badge_h420.png", "wide": false},
+	# The Smoke Lounge lowrider. Founder (B6) wants this banner replaced by the
+	# "NOW LOOK FOR THE SMOKE LOUNGE" artwork; see LOUNGE_BANNER_ART, which
+	# drops this entry automatically once that file lands.
+	{"path": "res://src/assets/art/br_smoke_lounge_car.png", "wide": true},
 ]
 
 ## X ranges with no floor under them. Logos must never be placed here: with
@@ -331,6 +371,50 @@ func _landmark_slot_x(i: int, count: int, half_w: float, placed_x: Array[float])
 				return cand
 	return INF
 
+
+## B2 — WORLD-INFO CARD: "so the player is informed of the world they entered".
+##
+## Founder art: "ENTER THE BLAZE RUSH!" — a wide flaming-diamond wordmark. It
+## shows on entering a run, holds briefly, then fades, so it reads as an arrival
+## title rather than another permanent decal on the band.
+##
+## Screen-space on its own CanvasLayer above gameplay but BELOW the HUD, so it
+## never covers the puff/attempt counters. Silent no-op until the art lands —
+## an empty plate with no wordmark tells the player nothing, which is the empty
+## tab the founder circled in the first place.
+const WORLD_CARD_HOLD: float = 1.5
+const WORLD_CARD_FADE: float = 0.7
+
+func _build_world_card() -> void:
+	if not ResourceLoader.exists(WORLD_CARD_ART):
+		return
+	var tex: Texture2D = load(WORLD_CARD_ART)
+	if tex == null:
+		return
+	var layer := CanvasLayer.new()
+	layer.name = "WorldCard"
+	layer.layer = 5
+	add_child(layer)
+
+	var card := TextureRect.new()
+	card.texture = tex
+	card.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	card.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card.set_anchors_preset(Control.PRESET_FULL_RECT)
+	# Upper-middle third: clear of the HUD row at the top and of the run line.
+	card.offset_top = 70
+	card.offset_bottom = -260
+	card.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	layer.add_child(card)
+
+	card.modulate = Color(1, 1, 1, 0)
+	var tw := card.create_tween()
+	tw.tween_property(card, "modulate:a", 1.0, 0.35)
+	tw.tween_interval(WORLD_CARD_HOLD)
+	tw.tween_property(card, "modulate:a", 0.0, WORLD_CARD_FADE)
+	tw.finished.connect(layer.queue_free)
+
 ## SMOKE LOUNGE ANTICIPATION BANNER — on every Blaze course, guaranteed.
 ##
 ## Founder (B6): the banner must make the player "anticipate the Smoke Lounge",
@@ -366,6 +450,26 @@ func _build_lounge_banner() -> void:
 	banner.position = Vector2(bx, GROUND_Y + BAND_ART_Y)
 	banner.z_index = 1
 	add_child(banner)
+
+	# B6: the founder's own "NOW LOOK FOR THE SMOKE LOUNGE" artwork the moment
+	# it is on disk. It carries its own call to action, so the procedural plate
+	# and lettering below are the FALLBACK, not a frame around it — drawing both
+	# would double the message.
+	if ResourceLoader.exists(LOUNGE_BANNER_ART):
+		var art_tex: Texture2D = load(LOUNGE_BANNER_ART)
+		if art_tex != null:
+			var art := Sprite2D.new()
+			art.texture = art_tex
+			# Height-fit so a wide banner keeps its aspect ratio; the band is
+			# 220px tall from GROUND_Y and this sits inside it.
+			var fit: float = (LOUNGE_BANNER_H * 1.55) / maxf(float(art_tex.get_height()), 1.0)
+			art.scale = Vector2(fit, fit)
+			art.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+			banner.add_child(art)
+			var breath := banner.create_tween().set_loops()
+			breath.tween_property(banner, "scale", Vector2(1.03, 1.03), 1.1).set_trans(Tween.TRANS_SINE)
+			breath.tween_property(banner, "scale", Vector2.ONE, 1.1).set_trans(Tween.TRANS_SINE)
+			return
 
 	var plate := ColorRect.new()
 	plate.color = Color(0.07, 0.03, 0.13, 1.0)
@@ -430,12 +534,16 @@ func _build_protocol_landmarks() -> void:
 	# wide artworks are scaled by HEIGHT ONLY so they keep their native aspect
 	# ratio instead of being squashed into a square.
 	var available: Array[Array] = []
-	for p: String in BR_ART:
-		if ResourceLoader.exists(p):
-			available.append([p, false])
-	for p: String in BR_ART_WIDE:
-		if ResourceLoader.exists(p):
-			available.append([p, true])
+	for entry: Dictionary in BR_ART_ORDER:
+		var path: String = str(entry["path"])
+		if not ResourceLoader.exists(path):
+			continue
+		# B6: once the founder's replacement lounge banner exists, the old
+		# lowrider plate is dropped from the band rather than shown alongside it
+		# ("replace entirely").
+		if path == LEGACY_LOUNGE_ART and ResourceLoader.exists(LOUNGE_BANNER_ART):
+			continue
+		available.append([path, bool(entry["wide"])])
 	if available.is_empty():
 		return
 	# Founder: "feature ALL of the protocol logos in the Blaze Rush." One slot
@@ -736,9 +844,21 @@ func _make_smoke_token(x: float, height: float) -> void:
 	area.position = Vector2(x, GROUND_Y - actual_height)
 	area.collision_mask = 2
 	var puff := Sprite2D.new()
-	# Blue gem so the RED flame reads against it (founder T1).
-	puff.texture = preload("res://src/assets/sprites/fx_flame_diamond_blue.png")
-	puff.scale = TOKEN_SCALE
+	# B1: the founder's own flaming-diamond mark when it is on disk, otherwise
+	# the blue gem that ships today. He circled the current one as wrong; his
+	# replacement is a clear brilliant-cut diamond wrapped in orange flame.
+	var diamond_tex: Texture2D = null
+	if ResourceLoader.exists(DIAMOND_ART):
+		diamond_tex = load(DIAMOND_ART)
+	if diamond_tex == null:
+		diamond_tex = preload("res://src/assets/sprites/fx_flame_diamond_blue.png")
+	puff.texture = diamond_tex
+	# Normalise to the same on-screen footprint whatever the source resolution
+	# is — a 1024px founder PNG at TOKEN_SCALE would be enormous.
+	var tok_px: float = maxf(float(diamond_tex.get_width()), 1.0)
+	var tok_fit: float = (103.0 / tok_px)
+	puff.scale = TOKEN_SCALE * tok_fit
+	puff.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	area.add_child(puff)
 	var col := CollisionShape2D.new()
 	var shape := CircleShape2D.new()
@@ -757,8 +877,12 @@ func _make_smoke_token(x: float, height: float) -> void:
 	# ~30 regardless. Anchored to TOKEN_SCALE, the authored size is now the
 	# size that actually renders.
 	var pulse := puff.create_tween().set_loops()
-	pulse.tween_property(puff, "scale", TOKEN_SCALE * 1.12, 0.5).set_trans(Tween.TRANS_SINE)
-	pulse.tween_property(puff, "scale", TOKEN_SCALE, 0.5).set_trans(Tween.TRANS_SINE)
+	# Relative to the SCALE THIS TOKEN ACTUALLY HAS, not the constant — the
+	# founder art is a different resolution, so puff.scale is TOKEN_SCALE times
+	# a fit factor. Tweening to the bare constant would shrink it every loop.
+	var tok_base: Vector2 = puff.scale
+	pulse.tween_property(puff, "scale", tok_base * 1.12, 0.5).set_trans(Tween.TRANS_SINE)
+	pulse.tween_property(puff, "scale", tok_base, 0.5).set_trans(Tween.TRANS_SINE)
 	area.body_entered.connect(func(b: Node2D) -> void:
 		# `_crash_pending` guard: a candle and a diamond can be touched on the
 		# SAME physics frame ("often via candle bounce", the founder's words).
