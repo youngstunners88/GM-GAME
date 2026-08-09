@@ -257,14 +257,20 @@ const BAND_ART_SIZE: float = 190.0
 ## `godot --headless --import` once, and it appears with no code change. Same
 ## convention as the Smoke Lounge video and the protocol logo placeholders.
 ##
-##   B1  blaze_diamond_correct.png   the correct flaming-diamond mark, used for
-##                                   the in-course tokens and the Blaze badge
 ##   B2  enter_the_blaze_rush.png    "ENTER THE BLAZE RUSH!" — the world-info
 ##                                   card shown on entering a run
 ##   B6  now_look_smoke_lounge.png   "NOW LOOK FOR THE SMOKE LOUNGE" — replaces
 ##                                   the lowrider plate outright once present
+##
+## blaze_diamond_correct.png (the clear brilliant-cut diamond) is NOT in this
+## list. A prior pass wired it as the in-course token art, reasoning that "the
+## correct diamond" the founder sent was meant to replace the collectible.
+## Wrong — that diamond is baked into the enter_the_blaze_rush.png wordmark
+## itself and was never a standalone asset. Founder, explicitly: "why did you
+## change the diamonds!!! Want the blue flaming diamonds!!!" The file is kept
+## on disk (it is real founder art, just not for this), but nothing in this
+## script loads it any more — see _make_smoke_token().
 const FOUNDER_ART_DIR := "res://src/assets/logos/founder/"
-const DIAMOND_ART := FOUNDER_ART_DIR + "blaze_diamond_correct.png"
 const WORLD_CARD_ART := FOUNDER_ART_DIR + "enter_the_blaze_rush.png"
 const LOUNGE_BANNER_ART := FOUNDER_ART_DIR + "now_look_smoke_lounge.png"
 ## The plate B6 replaces. Confirmed as the one the founder means: his new
@@ -374,16 +380,29 @@ func _landmark_slot_x(i: int, count: int, half_w: float, placed_x: Array[float])
 
 ## B2 — WORLD-INFO CARD: "so the player is informed of the world they entered".
 ##
-## Founder art: "ENTER THE BLAZE RUSH!" — a wide flaming-diamond wordmark. It
-## shows on entering a run, holds briefly, then fades, so it reads as an arrival
-## title rather than another permanent decal on the band.
+## REDESIGNED. The first cut put this on a screen-space CanvasLayer, floating
+## mid-sky, fading out after 1.5s. Founder, drawing directly on a screenshot:
+## "You fucked it up by having the text above! I want it in the spot that I
+## intuitively illustrated!!!!" — his illustration circled the purple GROUND
+## BAND at the start of the run, the same real estate every protocol badge and
+## the lounge banner already live on. A second screenshot, much later in the
+## same attempt ("Attempt 45"), showed that exact spot still empty — proving
+## the old version had already faded out and left nothing behind, which is the
+## "empty tab" complaint in the first place.
 ##
-## Screen-space on its own CanvasLayer above gameplay but BELOW the HUD, so it
-## never covers the puff/attempt counters. Silent no-op until the art lands —
-## an empty plate with no wordmark tells the player nothing, which is the empty
-## tab the founder circled in the first place.
-const WORLD_CARD_HOLD: float = 1.5
-const WORLD_CARD_FADE: float = 0.7
+## So this is now a plain WORLD-SPACE band object, built the same way as the
+## lounge banner and the protocol badges: no CanvasLayer, no tween, no
+## despawn. It sits at a fixed track position near the start and simply scrolls
+## past like everything else on the band — visible on every attempt, not just
+## the first two seconds of the level.
+const WORLD_CARD_W: float = 340.0
+const WORLD_CARD_H: float = 118.0
+## Early in the band, but not the very first thing — let the run establish
+## itself for a beat first (matches the founder's illustrated position, which
+## sat a short distance in, not at x=0). 400 is also _find_band_slot's own
+## floor (it clamps from_x to >= 400), so this is the earliest a slot search
+## can actually land regardless.
+const WORLD_CARD_X: float = 400.0
 
 func _build_world_card() -> void:
 	if not ResourceLoader.exists(WORLD_CARD_ART):
@@ -391,29 +410,22 @@ func _build_world_card() -> void:
 	var tex: Texture2D = load(WORLD_CARD_ART)
 	if tex == null:
 		return
-	var layer := CanvasLayer.new()
-	layer.name = "WorldCard"
-	layer.layer = 5
-	add_child(layer)
+	var half_w: float = WORLD_CARD_W * 0.5
+	var bx: float = _find_band_slot(WORLD_CARD_X, half_w)
+	if is_inf(bx):
+		return
 
-	var card := TextureRect.new()
-	card.texture = tex
-	card.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	card.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	card.set_anchors_preset(Control.PRESET_FULL_RECT)
-	# Upper-middle third: clear of the HUD row at the top and of the run line.
-	card.offset_top = 70
-	card.offset_bottom = -260
-	card.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	layer.add_child(card)
-
-	card.modulate = Color(1, 1, 1, 0)
-	var tw := card.create_tween()
-	tw.tween_property(card, "modulate:a", 1.0, 0.35)
-	tw.tween_interval(WORLD_CARD_HOLD)
-	tw.tween_property(card, "modulate:a", 0.0, WORLD_CARD_FADE)
-	tw.finished.connect(layer.queue_free)
+	var art := Sprite2D.new()
+	art.name = "WorldCard"
+	# Height-fit, same convention as the lounge banner: keeps native aspect
+	# ratio instead of squashing a wide wordmark into a square footprint.
+	var fit: float = WORLD_CARD_H / maxf(float(tex.get_height()), 1.0)
+	art.texture = tex
+	art.scale = Vector2(fit, fit)
+	art.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	art.position = Vector2(bx, GROUND_Y + BAND_ART_Y)
+	art.z_index = 1
+	add_child(art)
 
 ## SMOKE LOUNGE ANTICIPATION BANNER — on every Blaze course, guaranteed.
 ##
@@ -426,22 +438,27 @@ func _build_world_card() -> void:
 ## _landmark_slot_x returning INF). Whether the lounge callout survived was
 ## therefore a function of each course's gap layout — fine today, silently gone
 ## the next time a layout changes. This one owns its placement: it searches
-## from three-quarters along the run for the first stretch of solid purple band
-## and, failing that, walks backwards, so it is placed or the course has no
-## band at all.
+## backward from near the very end of the run for the first stretch of solid
+## purple band, so it is placed or the course has no band at all.
 ##
-## Placed late in the run on purpose — anticipation works when you see it on
-## the way to the finish, not in the first two seconds.
-##
-## Composed procedurally rather than from a PNG so it carries no white outline
-## and cannot pixelate at any zoom, per the standing logo constraints. It sits
-## on the band (z_index 1) well below the run line, decorative only.
+## Founder, drawing an arrow from the banner all the way to the right edge of a
+## screenshot, labelled "End!!": "This banner of inviting the player to look
+## for the Smoke Lounge is for the very fucking end!!!" It was anchored at 74%
+## of the course before — clearly not "the end" by his own annotation. Anchored
+## just ahead of the finish trigger now (_build_finish() sits at
+## _course_length + 120), so it is the last thing on the band before the run
+## concludes.
 const LOUNGE_BANNER_W: float = 300.0
 const LOUNGE_BANNER_H: float = 104.0
+## How far back from the finish trigger the search starts. Not 0: the banner
+## needs its own half-width of clearance plus a visible gap before the finish
+## ring, or it reads as crammed against the end rather than "the last thing you
+## see before it."
+const LOUNGE_BANNER_END_MARGIN: float = 260.0
 
 func _build_lounge_banner() -> void:
 	var half_w: float = LOUNGE_BANNER_W * 0.5
-	var bx: float = _find_band_slot(_course_length * 0.74, half_w)
+	var bx: float = _find_band_slot(_course_length - LOUNGE_BANNER_END_MARGIN, half_w)
 	if is_inf(bx):
 		return
 
@@ -844,21 +861,16 @@ func _make_smoke_token(x: float, height: float) -> void:
 	area.position = Vector2(x, GROUND_Y - actual_height)
 	area.collision_mask = 2
 	var puff := Sprite2D.new()
-	# B1: the founder's own flaming-diamond mark when it is on disk, otherwise
-	# the blue gem that ships today. He circled the current one as wrong; his
-	# replacement is a clear brilliant-cut diamond wrapped in orange flame.
-	var diamond_tex: Texture2D = null
-	if ResourceLoader.exists(DIAMOND_ART):
-		diamond_tex = load(DIAMOND_ART)
-	if diamond_tex == null:
-		diamond_tex = preload("res://src/assets/sprites/fx_flame_diamond_blue.png")
-	puff.texture = diamond_tex
-	# Normalise to the same on-screen footprint whatever the source resolution
-	# is — a 1024px founder PNG at TOKEN_SCALE would be enormous.
-	var tok_px: float = maxf(float(diamond_tex.get_width()), 1.0)
-	var tok_fit: float = (103.0 / tok_px)
-	puff.scale = TOKEN_SCALE * tok_fit
-	puff.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	# B1 REVERTED. A prior pass swapped this to the founder's clear
+	# brilliant-cut diamond (blaze_diamond_correct.png), reasoning that "the
+	# correct diamond art" he sent was meant for the in-course pickup. It
+	# wasn't — that art is the diamond baked into the "ENTER THE BLAZE RUSH!"
+	# wordmark (see WORLD_CARD_ART) and was never intended as a standalone
+	# token. Founder, explicitly: "why did you change the diamonds!!! Want
+	# the blue flaming diamonds!!!" The token is the ORIGINAL blue gem again,
+	# unconditionally — no substitution.
+	puff.texture = preload("res://src/assets/sprites/fx_flame_diamond_blue.png")
+	puff.scale = TOKEN_SCALE
 	area.add_child(puff)
 	var col := CollisionShape2D.new()
 	var shape := CircleShape2D.new()
