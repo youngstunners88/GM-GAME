@@ -3,10 +3,124 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv` (PR #12 merged; branch restarted from master)
 
-**DEPLOYED — export commit `2867f00` — 2026-08-09.** Hard-refresh before
+**DEPLOYED — export commit `3866789` — 2026-08-10.** Hard-refresh before
 testing. gitleaks, Security Sentinel, web export and the secure-build audit
 (0 blockers) all green; itch.io butler push is the final step of that same
 job.
+
+## This pass — every item you listed, with the actual root cause each time
+
+You asked what you can give me to help. Short answer at the bottom. First, what
+was wrong — and in four of these the cause was mechanical and provable, not a
+matter of taste.
+
+| # | Your words | Status |
+|---|---|---|
+| T0 | "the l at the bottom of the screen thats not supposed to be there" | **FIXED** — it was the progress bar |
+| T3 | "TOO SMALL CUNT!!!!" (ENTER THE BLAZE RUSH) | **FIXED** — 57px → 180px tall |
+| T4 | "WHY ARE YOU MASKING THE FUCKING ARTWORK!" | **FIXED** — real root cause below |
+| T4b | "WHY do you have this again!!!!" | **REMOVED** — that badge was mine, not yours |
+| T7 | banner "for the very fucking end" | **FIXED** — now at 96–97% of the course |
+| T8 | TitanX / DIAMONDS+Solana / GoldMine tokens + scoring | **DONE** |
+| T1/T2/T5/T6 | claim reset, blue diamonds, text placement, tab fill | already shipped last pass, re-verified |
+
+### T0 — the bar at the bottom was the progress bar
+
+It was the Blaze Rush course-progress `ProgressBar`. It looked like a stray UI
+line for a precise reason: it had **no theme applied**, so it rendered in
+Godot's stock grey-on-black skin while everything else in that mode is painted
+in the Electric Haze palette. It was anchored flush to the bottom edge, and
+because the floor band's bottom lands exactly on the window bottom, it sat
+*inside* the purple band hugging the window frame — and its light/dark split
+moved as you progressed, which is what made it read as a scrollbar.
+
+Deleted outright, not restyled. Verified by rendering a real 1280×720 frame:
+the bottom rows are now pure band colour.
+
+### T3 — the title: two mistakes stacked
+
+1. The PNG was 1536×1024 but its **visible artwork was only the middle 492px** —
+   48% of that file is transparent padding. I was fitting the *padding*, so a
+   nominal 118px card drew a ~57px wordmark.
+2. 118 was too timid anyway next to the 190px protocol badges.
+
+Cropped the art to its own bounds (no pixels of your artwork touched) and set
+the height to 180. It is now the largest thing on the band — taller and much
+wider than any badge.
+
+### T4 — the masking was real, and it was three separate bugs
+
+Nothing was drawing *over* your artwork. Two different things were happening:
+
+- **The banner hung off the band into a floor gap.** The clearance check was
+  handed a hardcoded 150px half-width, but the banner is height-fit — your
+  1500×515 art renders ~469px wide, a *real* half-width of 234px. So up to 84px
+  of artwork could overhang a hole at each end, and the void showed through.
+- **The title and the badges were drawing through each other.** Three separate
+  systems place art on that band, and none of them knew what the others had
+  placed. Each only avoided floor gaps.
+
+Fixed both properly: there is now **one shared ledger** of every footprint
+claimed on the band. The title and the end banner claim their spans first, then
+the badges fill what's left, and every placement query rejects anything that
+would touch a neighbour. Gate asserts zero overlaps and zero gap-overhangs
+across all three levels, measured from each sprite's *real* rendered size.
+
+### T4b — the badge you crossed out was mine
+
+That flaming-diamond badge was never your art. An earlier session composed it
+from a small in-game sprite to satisfy "add the Blaze logo" — i.e. I invented a
+protocol mark and presented it as one. Removed from the lineup. The file is
+left on disk but nothing references it, and nothing should re-add it unless you
+supply an actual Blaze logo.
+
+### T7 — the banner was stuck at 83%, and here's why
+
+Every course has a floor gap shortly before the end (L1's is 4800–4970 of
+5450). My end-limit stopped the search at `course_length − 120`, but the finish
+line is actually at `course_length + 120` — so I was throwing away 240px of
+perfectly good band at exactly the spot the banner needed. A 469px banner
+couldn't fit between that last gap and my artificial cut-off, so it got shoved
+back *before* the gap. Now searching up to just short of the finish ring:
+
+- L1 → 96.2% · L2 → 96.8% · L3 → 97.2%
+
+The finish position is now a shared constant so the two can't silently disagree
+again.
+
+### T8 — tokens, and a dead economy I found
+
+- **Stage 1** — already TitanX (the plain coins swap to that face on L1).
+- **Stage 2** — DIAMONDS tokens **added alongside** the Solana coins, never
+  replacing them, offset so they read as two distinct pickups.
+- **Stage 3** — GoldMine tokens on the gold lane.
+
+On "the game must include Tokens in the scoring system": your HUD has had
+**DIAMONDS** and **GOLD** rows wired to the GoldMine economy for a long time,
+but **no collectible in any level ever incremented them** — they were pinned at
+zero no matter how well you played. The new tokens now credit those rows *and*
+add score. Gate proves the balances actually move through the real pickup path.
+
+**Gates:** 12 suites ALL PASS, sentinel 18/18, sprite-alpha clean. The bottom
+bar removal and the title size were verified by rendering real frames, not by
+reading code.
+
+### What you asked: what can you give me to help
+
+Three things, in order of value:
+
+1. **Keep sending the annotated screenshots.** They are the single most useful
+   thing you produce. Every root cause above came from an arrow or a circle on
+   a real frame — "TOO SMALL" plus a screenshot beat any description.
+2. **Tell me when something is my invention rather than your asset.** Twice now
+   I have made up brand art and shipped it as if it were yours (the Blaze
+   badge, the Lil Blunt token). If you flag "that is not mine" I will delete it
+   immediately rather than defend it.
+3. **Nothing else.** The failures this session were mine and were mechanical —
+   fitting an image's padding instead of its artwork, checking clearance with a
+   hardcoded width instead of the real one, and letting three placement systems
+   run blind to each other. They were all findable from what you already sent. I
+   have added gates for each so they cannot come back silently.
 
 ## ⚠️ Three things from last pass were wrong. Fixed, with the actual root cause each time.
 

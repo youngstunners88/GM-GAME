@@ -55,6 +55,7 @@ func _run() -> void:
 	await _test_blaze_backdrops_differ_per_realm()
 	await _test_founder_art_drop_ins_actually_render()
 	await _test_campaign_stage_tokens_use_the_right_protocol_mark()
+	await _test_band_art_never_overlaps_and_title_dominates()
 	await _test_blaze_band_includes_robinhood_after_goldmine_move()
 	await _test_blaze_music_is_the_founders_track()
 
@@ -919,7 +920,7 @@ func _test_founder_art_drop_ins_actually_render() -> void:
 					"resource_path = %s" % (banner_tex.resource_path if banner_tex else "null"))
 			var course_length: float = float(run.get("_course_length"))
 			_check("B6: banner sits near the END of the course, not at 74%",
-				(banner as Node2D).position.x > course_length * 0.85,
+				(banner as Node2D).position.x > course_length * 0.90,
 				"x = %.0f of course_length %.0f" % [(banner as Node2D).position.x, course_length])
 		# The legacy lowrider plate must not ALSO appear in the landmark band —
 		# "replace entirely" means gone, not doubled up.
@@ -960,3 +961,137 @@ func _test_campaign_stage_tokens_use_the_right_protocol_mark() -> void:
 	coin.queue_free()
 	await get_tree().process_frame
 	GameManager.current_level = prev_level
+
+	# The per-stage protocol tokens must actually COUNT. Founder: "the game must
+	# include Tokens in the scoring system." The HUD has had DIAMONDS and GOLD
+	# rows fed by GoldMineSystem since forever, but until now no collectible in
+	# any campaign level incremented either — they were pinned at 0 whatever you
+	# did. These drive the REAL collect() path and read the REAL balances back.
+	for spec: Array in [
+		["res://src/collectibles/coin_diamonds.tscn", "diamonds"],
+		["res://src/collectibles/coin_goldmine.tscn", "gold"],
+	]:
+		var scene_path: String = str(spec[0])
+		var kind: String = str(spec[1])
+		var score_before: int = ComboSystem.current_score
+		var bal_before: int = (GoldMineSystem.diamonds_balance if kind == "diamonds"
+			else GoldMineSystem.gold_balance)
+
+		var tok: Area2D = load(scene_path).instantiate()
+		add_child(tok)
+		await get_tree().process_frame
+		tok.call("collect")
+		await get_tree().process_frame
+
+		var bal_after: int = (GoldMineSystem.diamonds_balance if kind == "diamonds"
+			else GoldMineSystem.gold_balance)
+		_check("%s token credits the %s HUD counter" % [kind, kind.to_upper()],
+			bal_after > bal_before,
+			"%d -> %d" % [bal_before, bal_after])
+		_check("%s token also adds to the score" % kind,
+			ComboSystem.current_score > score_before,
+			"score %d -> %d" % [score_before, ComboSystem.current_score])
+		if is_instance_valid(tok):
+			tok.queue_free()
+		await get_tree().process_frame
+
+## THE MASKING GATE. Founder, three separate times and increasingly angry:
+## "WHY ARE YOU MASKING THE FUCKING ARTWORK!"
+##
+## Three independent systems draw on the Blaze Rush band — the title card, the
+## Smoke Lounge banner, and the protocol badges — and each used to avoid only
+## floor gaps (and, for badges, other badges). Nothing stopped them drawing
+## through each other, and nothing stopped a HEIGHT-fit wide banner overhanging
+## a gap because the clearance check was handed a nominal constant instead of
+## the sprite's real rendered width.
+##
+## This measures the ACTUAL rendered footprint of every piece of band art, on
+## every level, and asserts: nothing overlaps anything, nothing hangs over a
+## gap, the title really is the dominant element, and the lounge invite really
+## is at the end.
+func _test_band_art_never_overlaps_and_title_dominates() -> void:
+	for level_index in [1, 2, 3]:
+		GameManager.dash_return = {
+			"scene_path": "res://src/level/level_01_smoke_realm.tscn",
+			"position": Vector2(500, 400),
+			"level_index": level_index,
+		}
+		var run: Node2D = BLAZE_RUSH.instantiate()
+		add_child(run)
+		await get_tree().process_frame
+		await get_tree().process_frame
+
+		var band_y: float = BlazeRushLayouts.GROUND_Y
+		var course_length: float = float(run.get("_course_length"))
+
+		# Collect (name, centre_x, half_width) for every piece of band art.
+		var pieces: Array = []
+		for child in run.get_children():
+			var n2d := child as Node2D
+			if n2d == null or n2d.position.y < band_y:
+				continue
+			var spr := child as Sprite2D
+			if spr == null:
+				# The lounge banner is a Node2D wrapping its Sprite2D.
+				for gc in n2d.get_children():
+					if gc is Sprite2D:
+						spr = gc
+						break
+				if spr == null:
+					continue
+				var hw_b: float = float(spr.texture.get_width()) * spr.scale.x * 0.5
+				pieces.append([n2d.name, n2d.position.x, hw_b])
+				continue
+			if spr.texture == null:
+				continue
+			var hw: float = float(spr.texture.get_width()) * spr.scale.x * 0.5
+			pieces.append([spr.name, spr.position.x, hw])
+
+		_check("L%d band: art was placed" % level_index, pieces.size() >= 3,
+			"only %d piece(s)" % pieces.size())
+
+		# 1) Nothing overlaps anything.
+		var overlaps: Array[String] = []
+		for i in range(pieces.size()):
+			for j in range(i + 1, pieces.size()):
+				var a: Array = pieces[i]
+				var b: Array = pieces[j]
+				var gap: float = absf(float(a[1]) - float(b[1])) - (float(a[2]) + float(b[2]))
+				if gap < 0.0:
+					overlaps.append("%s<->%s overlap by %.0fpx" % [a[0], b[0], -gap])
+		_check("L%d band: no two artworks overlap" % level_index, overlaps.is_empty(),
+			", ".join(overlaps))
+
+		# 2) Nothing hangs over a floor gap, measured with its REAL half-width.
+		var over_gap: Array[String] = []
+		for p: Array in pieces:
+			if bool(run.call("_x_over_gap", float(p[1]), float(p[2]))):
+				over_gap.append(str(p[0]))
+		_check("L%d band: no artwork overhangs a floor gap" % level_index,
+			over_gap.is_empty(), ", ".join(over_gap))
+
+		# 3) The title dominates. Founder: "TOO SMALL CUNT!!!!"
+		var card := run.get_node_or_null("WorldCard") as Sprite2D
+		if card != null and card.texture != null:
+			var card_h: float = float(card.texture.get_height()) * card.scale.y
+			var card_w: float = float(card.texture.get_width()) * card.scale.x
+			_check("L%d title: rendered height >= 170px (was ~57px)" % level_index,
+				card_h >= 170.0, "height = %.0fpx" % card_h)
+			_check("L%d title: wider than a protocol badge (190px)" % level_index,
+				card_w > 190.0, "width = %.0fpx" % card_w)
+
+		# 4) The lounge invite is at the END. Founder: "for the very fucking end".
+		var banner := run.get_node_or_null("SmokeLoungeBanner") as Node2D
+		if banner != null:
+			_check("L%d lounge banner sits in the last 10%% of the course" % level_index,
+				banner.position.x > course_length * 0.90,
+				"x = %.0f of %.0f" % [banner.position.x, course_length])
+
+		# 5) The stray bottom bar is gone for good. Founder: "the l at the bottom
+		#    of the screen thats not supposed to be there".
+		var bars := _find_all(run, "ProgressBar")
+		_check("L%d: no ProgressBar anywhere in the Blaze Rush scene" % level_index,
+			bars.is_empty(), "%d found" % bars.size())
+
+		run.queue_free()
+		await get_tree().process_frame
