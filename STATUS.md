@@ -3,7 +3,7 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv` (PR #12 merged; branch restarted from master)
 
-**DEPLOYED — export commit `3866789` — 2026-08-10.** Hard-refresh before
+**DEPLOYED — export commit `51b79a2` — 2026-08-10.** Hard-refresh before
 testing. gitleaks, Security Sentinel, web export and the secure-build audit
 (0 blockers) all green; itch.io butler push is the final step of that same
 job.
