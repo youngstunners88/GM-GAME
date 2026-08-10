@@ -1,5 +1,9 @@
 # 🌿 Lil Blunt: The Smoke Realm
 
+## ▶️ Play now (itch.io)
+
+**https://youngstunners88.itch.io/lil-blunt-adventure**
+
 A complete Godot 4.3 2D platformer starring Lil Blunt, the chill weed mascot of SmokeRing (SMOKE), navigating realms tied to three crypto protocols: SmokeRing, DIAMONDS, and GoldMine.
 
 ## 🚀 Quick Start
