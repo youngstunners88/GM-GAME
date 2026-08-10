@@ -40,6 +40,11 @@ func _setup_depth_routes() -> void:
 		# level's own .tres only ever placed 2 coin_sol, so converting the
 		# trail is what actually changes what he sees while playing.
 		EntitySpawner.spawn("coin_sol", pos + Vector2(0, -34), self)
+		# DIAMONDS token ALONGSIDE the Solana coin, never instead of it —
+		# founder: "that doesnt replace the current Solana coins in stage 2".
+		# Offset right so the pair reads as two distinct pickups rather than
+		# one overlapping smudge (44px triggers need ~48px of separation).
+		EntitySpawner.spawn("coin_diamonds", pos + Vector2(52, -34), self)
 	# VERTICAL SHAFTS — full-height ladders out of the two deadliest drops.
 	#
 	# top_exit_offset is NOT optional here (the default Vector2(0,-20) assumes

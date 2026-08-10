@@ -72,7 +72,6 @@ const TELEGRAPH_LEAD: float = 450.0
 
 @onready var _smoke_label: Label = Label.new()
 @onready var _attempt_label: Label = Label.new()
-@onready var _progress: ProgressBar = ProgressBar.new()
 
 func _ready() -> void:
 	_level_index = int(GameManager.dash_return.get("level_index", 1))
@@ -86,9 +85,17 @@ func _ready() -> void:
 	_build_obstacles(layout)
 	# After obstacles: the landmarks are decorative and must not influence or
 	# be influenced by hazard placement.
-	_build_protocol_landmarks()
-	_build_lounge_banner()
+	#
+	# ORDER MATTERS. The two FIXED-ANCHOR pieces claim their span first — the
+	# title has to sit early and the lounge invite has to sit at the very end —
+	# and only then do the protocol badges fill whatever band is left. Building
+	# the badges first (as this did) let them take the slots the title and the
+	# banner needed, and since the three systems reserved nothing from each
+	# other they simply drew on top of one another. That is the overlap the
+	# founder keeps calling "masking the artwork".
 	_build_world_card()
+	_build_lounge_banner()
+	_build_protocol_landmarks()
 	_build_finish()
 	_build_player()
 	_build_camera()
@@ -305,8 +312,16 @@ const BR_ART_ORDER := [
 	{"path": "res://src/assets/art/badge_smokering.png", "wide": false},
 	{"path": "res://src/assets/art/badge_hood.png", "wide": false},
 	{"path": "res://src/assets/art/br_diamond_certificate.png", "wide": true},
-	# The mode's own mark — founder: "you also need to add the Blaze logo."
-	{"path": "res://src/assets/art/badge_blaze.png", "wide": false},
+	# badge_blaze.png REMOVED — founder, crossing it out: "WHY do you have this
+	# again!!!!"
+	#
+	# That badge was never his artwork. An earlier session composed it here from
+	# the small in-game fx_flame_diamond sprite to satisfy "you also need to add
+	# the Blaze logo", i.e. it was my invention presented as a protocol mark, and
+	# it has now been rejected twice. The file is left on disk rather than
+	# deleted (harmless, and deleting art has burned this project before), but
+	# nothing references it and nothing should re-add it without him supplying
+	# an actual Blaze logo.
 	# B3: GoldMine moved right, near the end of the band.
 	{"path": "res://src/assets/art/badge_goldmine.png", "wide": false},
 	{"path": "res://src/assets/art/badge_h420.png", "wide": false},
@@ -320,6 +335,39 @@ const BR_ART_ORDER := [
 ## the band absent the art hangs in the void, which is exactly what the
 ## founder circled.
 var _gap_spans: Array[Vector2] = []
+
+## ONE LEDGER OF EVERY FOOTPRINT ALREADY CLAIMED ON THE BAND.
+##
+## Founder, repeatedly and with escalating anger: "WHY ARE YOU MASKING THE
+## FUCKING ARTWORK!"
+##
+## Three separate systems draw on this band — _build_world_card(),
+## _build_lounge_banner() and _build_protocol_landmarks() — and until now each
+## one only avoided floor GAPS and (for the badges) other badges. None of them
+## knew what the others had placed, so the title could be drawn straight through
+## a protocol badge and the banner through whatever was near the end. Every
+## piece now records the span it actually occupies here, and every placement
+## query rejects a span that would touch one.
+##
+## Stored as Vector2(left_x, right_x) in world space.
+var _band_reservations: Array[Vector2] = []
+
+## Minimum clear air between two pieces of band art, so neighbours read as
+## separate objects instead of a collage.
+const BAND_ART_PAD: float = 26.0
+
+## True when [x-half_w, x+half_w] touches nothing already claimed.
+func _band_span_free(x: float, half_w: float) -> bool:
+	var lo: float = x - half_w - BAND_ART_PAD
+	var hi: float = x + half_w + BAND_ART_PAD
+	for r: Vector2 in _band_reservations:
+		if lo < r.y and hi > r.x:
+			return false
+	return true
+
+## Claim a span so nothing placed later can overlap it.
+func _reserve_band_span(x: float, half_w: float) -> void:
+	_band_reservations.append(Vector2(x - half_w, x + half_w))
 
 func _x_over_gap(x: float, half_width: float = BAND_ART_SIZE * 0.5) -> bool:
 	for g: Vector2 in _gap_spans:
@@ -368,6 +416,10 @@ func _landmark_slot_x(i: int, count: int, half_w: float, placed_x: Array[float])
 				continue
 			if _x_over_gap(cand, half_w):
 				continue
+			# Never overlap the title or the lounge banner, which claimed their
+			# spans before this ran (see _band_reservations).
+			if not _band_span_free(cand, half_w):
+				continue
 			var crowded := false
 			for p: float in placed_x:
 				if absf(cand - p) < min_sep:
@@ -395,13 +447,27 @@ func _landmark_slot_x(i: int, count: int, half_w: float, placed_x: Array[float])
 ## despawn. It sits at a fixed track position near the start and simply scrolls
 ## past like everything else on the band — visible on every attempt, not just
 ## the first two seconds of the level.
-const WORLD_CARD_W: float = 340.0
-const WORLD_CARD_H: float = 118.0
+## Rendered height of the title on the band.
+##
+## Founder: "TOO SMALL CUNT!!!!" — and he was right by a wide margin. TWO
+## separate mistakes stacked:
+##
+##  1. The source PNG was 1536x1024 but its VISIBLE artwork occupied only the
+##     middle 492px — 48% of the image height was transparent padding. Fitting
+##     to `tex.get_height()` therefore fit the PADDING, so a nominal 118px card
+##     rendered a ~57px-tall wordmark. The asset is now cropped to its own alpha
+##     bounding box (1516x492), so height-fitting is finally honest.
+##  2. 118 was itself too timid next to the 190px protocol badges beside it.
+##
+## 180 makes the title the single largest thing on the band — taller and much
+## wider than any badge — which is what "dominates the entry real estate" and
+## "readable on phone" require. The band is 220px deep from GROUND_Y and the art
+## is centred at BAND_ART_Y (122), so 180 spans GROUND_Y+32 .. GROUND_Y+212 and
+## still sits fully inside it.
+const WORLD_CARD_H: float = 180.0
 ## Early in the band, but not the very first thing — let the run establish
 ## itself for a beat first (matches the founder's illustrated position, which
-## sat a short distance in, not at x=0). 400 is also _find_band_slot's own
-## floor (it clamps from_x to >= 400), so this is the earliest a slot search
-## can actually land regardless.
+## sat a short distance in, not at x=0).
 const WORLD_CARD_X: float = 400.0
 
 func _build_world_card() -> void:
@@ -410,16 +476,19 @@ func _build_world_card() -> void:
 	var tex: Texture2D = load(WORLD_CARD_ART)
 	if tex == null:
 		return
-	var half_w: float = WORLD_CARD_W * 0.5
+	# Height-fit keeps the wordmark's aspect ratio instead of squashing it into
+	# a square footprint. Computed BEFORE picking a slot, because the slot
+	# search needs the REAL rendered half-width — see below.
+	var fit: float = WORLD_CARD_H / maxf(float(tex.get_height()), 1.0)
+	var half_w: float = float(tex.get_width()) * fit * 0.5
 	var bx: float = _find_band_slot(WORLD_CARD_X, half_w)
 	if is_inf(bx):
 		return
 
+	_reserve_band_span(bx, half_w)
+
 	var art := Sprite2D.new()
 	art.name = "WorldCard"
-	# Height-fit, same convention as the lounge banner: keeps native aspect
-	# ratio instead of squashing a wide wordmark into a square footprint.
-	var fit: float = WORLD_CARD_H / maxf(float(tex.get_height()), 1.0)
 	art.texture = tex
 	art.scale = Vector2(fit, fit)
 	art.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
@@ -450,17 +519,63 @@ func _build_world_card() -> void:
 ## concludes.
 const LOUNGE_BANNER_W: float = 300.0
 const LOUNGE_BANNER_H: float = 104.0
-## How far back from the finish trigger the search starts. Not 0: the banner
-## needs its own half-width of clearance plus a visible gap before the finish
-## ring, or it reads as crammed against the end rather than "the last thing you
-## see before it."
-const LOUNGE_BANNER_END_MARGIN: float = 260.0
+## Rendered height of the founder's banner artwork (the procedural fallback
+## below still uses LOUNGE_BANNER_H).
+const LOUNGE_BANNER_ART_H: float = 161.0
+## Where _build_finish() puts the finish trigger, relative to _course_length.
+## Kept as a named constant because the lounge banner's placement depends on it
+## — the two silently disagreeing is what pushed the banner off the end stretch.
+const FINISH_TRIGGER_OFFSET: float = 120.0
+## Clear air between the banner's right edge and the finish ring, so it reads as
+## "the last thing you see before the end" rather than crammed against it.
+const FINISH_CLEARANCE: float = 90.0
 
 func _build_lounge_banner() -> void:
+	# THE TEXTURE IS RESOLVED FIRST, BECAUSE THE SLOT SEARCH NEEDS THE REAL
+	# RENDERED WIDTH.
+	#
+	# Founder: "WHY ARE YOU MASKING THE FUCKING ARTWORK!" — nothing was drawing
+	# over it. The banner was hanging off the edge of the purple band into a
+	# floor GAP, so the void showed through behind its left third and it read as
+	# masked.
+	#
+	# Cause: the gap-clearance check was handed LOUNGE_BANNER_W * 0.5 (150px),
+	# but the sprite is HEIGHT-fit — the founder's 1500x515 artwork renders
+	# ~469px wide, a real half-width of ~234px. _x_over_gap was therefore
+	# clearing 150px either side of a sprite that actually needed 234, so up to
+	# 84px of artwork could overhang a gap at each end. Exactly the same class
+	# of bug as the surfboard-footprint gate that once used a stale constant
+	# instead of the real collision extent: never let a clearance check use a
+	# nominal size when the drawn size is computed.
+	var art_tex: Texture2D = null
+	if ResourceLoader.exists(LOUNGE_BANNER_ART):
+		art_tex = load(LOUNGE_BANNER_ART)
+
+	var fit: float = 1.0
 	var half_w: float = LOUNGE_BANNER_W * 0.5
-	var bx: float = _find_band_slot(_course_length - LOUNGE_BANNER_END_MARGIN, half_w)
+	if art_tex != null:
+		fit = LOUNGE_BANNER_ART_H / maxf(float(art_tex.get_height()), 1.0)
+		half_w = float(art_tex.get_width()) * fit * 0.5
+
+	# "This banner ... is for the very fucking end!!!"
+	#
+	# The usable band runs right up to the FINISH TRIGGER, which _build_finish()
+	# puts at _course_length + 120 — not to _course_length itself. The default
+	# limit (_course_length - 120) was throwing away 240px of perfectly good
+	# band at exactly the point this banner needs it, and that mattered because
+	# every course has a floor gap shortly before the end (L1's is 4800..4970 of
+	# 5450). With the tighter limit a 469px-wide banner could not fit between
+	# that last gap and the cut-off, so it was shoved back BEFORE the gap and
+	# landed at ~83% of the course instead of at the end. Searching up to just
+	# short of the finish ring lets it sit in the final stretch where he wants
+	# it.
+	var finish_x: float = _course_length + FINISH_TRIGGER_OFFSET
+	var max_x: float = finish_x - FINISH_CLEARANCE
+	var bx: float = _find_band_slot(max_x, half_w, max_x)
 	if is_inf(bx):
 		return
+
+	_reserve_band_span(bx, half_w)
 
 	var banner := Node2D.new()
 	banner.name = "SmokeLoungeBanner"
@@ -472,21 +587,16 @@ func _build_lounge_banner() -> void:
 	# it is on disk. It carries its own call to action, so the procedural plate
 	# and lettering below are the FALLBACK, not a frame around it — drawing both
 	# would double the message.
-	if ResourceLoader.exists(LOUNGE_BANNER_ART):
-		var art_tex: Texture2D = load(LOUNGE_BANNER_ART)
-		if art_tex != null:
-			var art := Sprite2D.new()
-			art.texture = art_tex
-			# Height-fit so a wide banner keeps its aspect ratio; the band is
-			# 220px tall from GROUND_Y and this sits inside it.
-			var fit: float = (LOUNGE_BANNER_H * 1.55) / maxf(float(art_tex.get_height()), 1.0)
-			art.scale = Vector2(fit, fit)
-			art.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-			banner.add_child(art)
-			var breath := banner.create_tween().set_loops()
-			breath.tween_property(banner, "scale", Vector2(1.03, 1.03), 1.1).set_trans(Tween.TRANS_SINE)
-			breath.tween_property(banner, "scale", Vector2.ONE, 1.1).set_trans(Tween.TRANS_SINE)
-			return
+	if art_tex != null:
+		var art := Sprite2D.new()
+		art.texture = art_tex
+		art.scale = Vector2(fit, fit)
+		art.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		banner.add_child(art)
+		var breath := banner.create_tween().set_loops()
+		breath.tween_property(banner, "scale", Vector2(1.03, 1.03), 1.1).set_trans(Tween.TRANS_SINE)
+		breath.tween_property(banner, "scale", Vector2.ONE, 1.1).set_trans(Tween.TRANS_SINE)
+		return
 
 	var plate := ColorRect.new()
 	plate.color = Color(0.07, 0.03, 0.13, 1.0)
@@ -533,16 +643,27 @@ func _build_lounge_banner() -> void:
 
 ## First x at or after `from_x` whose band is solid for `half_w` either side,
 ## searching forward then backward. INF only if the course has no clear band.
-func _find_band_slot(from_x: float, half_w: float) -> float:
-	var limit: float = _course_length - 120.0
-	var x: float = clampf(from_x, 400.0, limit)
+##
+## The bounds are half_w-aware. They used to be flat 400 / _course_length-120
+## regardless of how wide the caller's art actually was, which let a wide banner
+## be placed with its CENTRE inside the course but an EDGE hanging off the end
+## of the band (or before its start) — the same overhang that read as the
+## artwork being masked.
+func _find_band_slot(from_x: float, half_w: float, max_x: float = -1.0) -> float:
+	var lo: float = 400.0 + half_w
+	var hi: float = (_course_length - 120.0 if max_x < 0.0 else max_x) - half_w
+	if hi < lo:
+		# Course too short to seat art this wide anywhere; centre it and let the
+		# caller decide, rather than silently returning a position that overhangs.
+		return INF
+	var x: float = clampf(from_x, lo, hi)
 	var step: float = 90.0
-	for i in range(48):
+	for i in range(64):
 		var fwd: float = x + step * float(i)
-		if fwd <= limit and not _x_over_gap(fwd, half_w):
+		if fwd <= hi and not _x_over_gap(fwd, half_w) and _band_span_free(fwd, half_w):
 			return fwd
 		var back: float = x - step * float(i)
-		if back >= 400.0 and not _x_over_gap(back, half_w):
+		if back >= lo and not _x_over_gap(back, half_w) and _band_span_free(back, half_w):
 			return back
 	return INF
 
@@ -596,6 +717,7 @@ func _build_protocol_landmarks() -> void:
 		if is_inf(ax):
 			continue  # no clear band left for this one; drop it rather than float it
 		placed_x.append(ax)
+		_reserve_band_span(ax, half_w)
 		art.position = Vector2(ax, GROUND_Y + BAND_ART_Y)
 		# Fully opaque: "solid", per the founder. No alpha wash.
 		art.modulate = Color(1.0, 1.0, 1.0, 1.0)
@@ -934,7 +1056,7 @@ func _spawn_pickup_burst(pos: Vector2) -> void:
 
 func _build_finish() -> void:
 	var area := Area2D.new()
-	area.position = Vector2(_course_length + 120.0, GROUND_Y - 60.0)
+	area.position = Vector2(_course_length + FINISH_TRIGGER_OFFSET, GROUND_Y - 60.0)
 	area.collision_mask = 2
 	var ring := ColorRect.new()
 	ring.color = Color(1.0, 0.85, 0.2, 1.0)
@@ -1044,12 +1166,26 @@ func _build_hud() -> void:
 	exit_btn.pressed.connect(_exit_to_level)
 	row.add_child(exit_btn)
 
-	_progress.max_value = 100.0
-	_progress.show_percentage = false
-	_progress.custom_minimum_size = Vector2(0, 6)
-	_progress.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	_progress.offset_top = -8.0
-	layer.add_child(_progress)
+	# THE BAR AT THE BOTTOM OF THE SCREEN IS GONE.
+	#
+	# Founder: "you fucked up the l at the bottom of the screen thats not
+	# supposed to be there".
+	#
+	# It was this course-progress ProgressBar, and it looked like a stray UI
+	# line for a precise reason: it carried NO theme override, so it rendered in
+	# Godot 4.3's stock ProgressBar skin — a translucent near-black track with a
+	# translucent white fill — while every other pixel in this mode is authored
+	# in the Electric Haze palette. Anchored PRESET_BOTTOM_WIDE with
+	# offset_top = -8 it sat in the last 8px of the viewport, and because
+	# GROUND_Y (500) + the floor band's 220px height lands exactly on the 720px
+	# viewport bottom, it hugged the window edge INSIDE the purple band. The
+	# grey/white split moving with progress is what made it read as a scrollbar
+	# thumb rather than part of the game.
+	#
+	# Removed outright rather than restyled: he asked for it gone, and the HUD
+	# already reports PUFFS and ATTEMPT. `_progress` is deleted entirely (its
+	# declaration and its per-frame update too) so nothing keeps driving a node
+	# that is no longer displayed.
 
 	_update_hud()
 
@@ -1118,7 +1254,6 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_camera.position.x = _player.position.x + 240.0
-	_progress.value = clampf(_player.position.x / _course_length * 100.0, 0.0, 100.0)
 	_update_telegraph()
 
 ## Find the next lethal hazard ahead of the player and fade the warning bar

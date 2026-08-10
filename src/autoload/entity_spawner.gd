@@ -9,6 +9,18 @@ var entity_scenes: Dictionary = {
 	"coin_eth": preload("res://src/collectibles/coin_eth.tscn"),
 	"coin_btc": preload("res://src/collectibles/coin_btc.tscn"),
 	"coin_sol": preload("res://src/collectibles/coin_sol.tscn"),
+	# PER-STAGE PROTOCOL TOKENS (founder: "the game must include Tokens in the
+	# scoring system"). Both reuse crypto_coin.gd, so they count toward the coin
+	# tally AND add score exactly like the Solana coins already do — they ADD to
+	# the existing pickups rather than replacing them ("that doesnt replace the
+	# current Solana coins in stage 2"), and each also credits its protocol's
+	# HUD row via crypto_coin.gd's protocol_credit.
+	#
+	# Stage 1 needs no entry here: coin.gd already swaps the plain "coin" face
+	# to the TitanX token whenever GameManager.current_level == 1, so L1's coin
+	# trails are already TitanX without a second near-identical pickup type.
+	"coin_diamonds": preload("res://src/collectibles/coin_diamonds.tscn"),
+	"coin_goldmine": preload("res://src/collectibles/coin_goldmine.tscn"),
 	"ethereum_ring": preload("res://src/collectibles/ethereum_ring.tscn"),
 	"health_pickup": preload("res://src/collectibles/health_pickup.tscn"),
 	"weed_leaf": preload("res://src/powerups/weed_leaf.tscn"),

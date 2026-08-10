@@ -6,6 +6,28 @@ extends Area2D
 
 @export var score_value: int = 25
 
+## Optional protocol counter this token credits, ON TOP of the coin tally and
+## score. "" = none (the plain ETH/BTC/SOL coins behave exactly as before).
+##
+## Founder: "This is the Diamonds token for the 2nd stage. Now that doesnt
+## replace the current Solana coins in stage 2. Therefore the game must include
+## Tokens in the scoring system."
+##
+## The HUD has always had DIAMONDS and GOLD rows fed by GoldMineSystem, but
+## until now NO collectible in any campaign level incremented them — they were
+## permanently pinned at 0 no matter how you played. Routing the per-stage
+## protocol tokens through them is what makes those rows mean something.
+@export var protocol_credit: String = ""
+@export var protocol_amount: int = 1
+
+func _credit_protocol() -> void:
+	match protocol_credit:
+		"diamonds":
+			# collect_diamonds applies the whitepaper's 20% burn internally.
+			GoldMineSystem.collect_diamonds(protocol_amount)
+		"gold":
+			GoldMineSystem.mine_gold(protocol_amount)
+
 func _ready() -> void:
 	add_to_group("collectible")
 	body_entered.connect(_on_body_entered)
@@ -26,6 +48,7 @@ func collect() -> void:
 	_collected = true
 	GameManager.add_coin()
 	ComboSystem.add_score(score_value)
+	_credit_protocol()
 	AudioManager.play_sfx_at("coin", global_position)
 	EffectSpawner.burst("coin_sparkle", global_position)
 	ScreenShake.light()

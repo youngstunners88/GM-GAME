@@ -74,6 +74,10 @@ func _setup_depth_routes() -> void:
 			deck.color = Color(0.95, 0.8, 0.3, 1.0)  # gold
 		EntitySpawner.spawn("coin", pos + Vector2(-20, -34), self)
 		EntitySpawner.spawn("coin", pos + Vector2(20, -34), self)
+		# GoldMine protocol token on the gold lane (founder: "Lets have GoldMine
+		# tokens for the 3rd stage of course"). Credits the HUD's GOLD row as
+		# well as score — see crypto_coin.gd's protocol_credit.
+		EntitySpawner.spawn("coin_goldmine", pos + Vector2(0, -76), self)
 	# Ladder up to the timed gate's approach ledge (escape from the cart run).
 	# Founder residual (2026-08-03): flagged "still ambiguous" last session.
 	# Resolved by the same computation used for level_01/02's fixed ladders:
