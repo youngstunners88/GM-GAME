@@ -312,6 +312,15 @@ const BR_ART_ORDER := [
 	{"path": "res://src/assets/art/badge_smokering.png", "wide": false},
 	{"path": "res://src/assets/art/badge_hood.png", "wide": false},
 	{"path": "res://src/assets/art/br_diamond_certificate.png", "wide": true},
+	# THE FLAMING DIAMOND — one of the two logos the founder says are missing.
+	#
+	# This is his own artwork (the clear brilliant-cut diamond in orange flame).
+	# It was never on the band at all: a previous pass wired it to the in-course
+	# TOKEN by mistake, then correctly reverted that, but never put it where it
+	# actually belongs. Already square with transparent corners, so it drops
+	# straight into the circular-badge slot at BAND_ART_SIZE like every other
+	# protocol mark — no re-cut, no invented substitute.
+	{"path": "res://src/assets/logos/founder/blaze_diamond_correct.png", "wide": false},
 	# badge_blaze.png REMOVED — founder, crossing it out: "WHY do you have this
 	# again!!!!"
 	#
@@ -715,7 +724,24 @@ func _build_protocol_landmarks() -> void:
 		var half_w: float = art.scale.x * float(tex.get_width()) / 2.0
 		var ax: float = _landmark_slot_x(i, count, half_w, placed_x)
 		if is_inf(ax):
-			continue  # no clear band left for this one; drop it rather than float it
+			# LAST RESORT — never silently drop a logo.
+			#
+			# Founder: "There is only 2 logos missing in the blaze rush."
+			# One of those two was badge_h420, which was in this list the whole
+			# time: it is placed LAST, the even lattice had no free cell left
+			# for it once the title and the end banner had claimed their spans,
+			# and this branch quietly `continue`d. The logo therefore existed in
+			# code, passed every "is it configured" check, and simply never
+			# appeared on L1 or L2 — the exact failure mode of a silent drop.
+			#
+			# Falling back to a plain left-to-right scan for the first spot that
+			# clears both the floor gaps and every existing reservation means a
+			# piece can only be missing if the course genuinely has nowhere to
+			# put it, and the gate below asserts that never happens.
+			ax = _find_band_slot(LANDMARK_START_X, half_w)
+			if is_inf(ax):
+				push_warning("Blaze Rush: no band space for %s" % entry[0])
+				continue
 		placed_x.append(ax)
 		_reserve_band_span(ax, half_w)
 		art.position = Vector2(ax, GROUND_Y + BAND_ART_Y)

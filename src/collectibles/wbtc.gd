@@ -11,11 +11,23 @@ func _ready() -> void:
 	_setup_visual()
 
 func _setup_visual() -> void:
-	var rect := ColorRect.new()
-	rect.color = Color(1.0, 0.55, 0.0, 1.0)  # Bitcoin orange
-	rect.size = Vector2(30, 15)
-	rect.position = Vector2(-15, -7.5)
-	add_child(rect)
+	# THE "RANDOM ORANGE RECTANGLES" WERE THESE.
+	#
+	# Founder, about the same object in two different screenshots:
+	#   "Ive told you many times to remove these random orange rectangles that
+	#    have no function!!!"
+	#   "This bitcoin symbol is still not clear!"
+	#
+	# This pickup drew itself as a bare 30x15 ColorRect in Bitcoin orange with
+	# no symbol on it whatsoever. At game scale that is an orange smear with no
+	# meaning attached, which is exactly why he read the same object as both
+	# functionless clutter AND an unreadable Bitcoin — it was both. It is now a
+	# struck gold-rimmed coin carrying a bold B, at the same 40px footprint the
+	# other protocol tokens use.
+	var coin := Sprite2D.new()
+	coin.texture = preload("res://src/assets/sprites/sprite_item_wbtc.png")
+	coin.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	add_child(coin)
 
 	var col := CollisionShape2D.new()
 	var shape := CircleShape2D.new()

@@ -116,6 +116,23 @@ func _on_boss_trigger(body: Node2D) -> void:
 		AudioManager.set_reverb_profile("boss")
 		var boss := preload("res://src/boss/claim_jumper.tscn").instantiate()
 		boss.global_position = boss_spawn.global_position
+		# HAND HIM THE ARENA BOX BEFORE add_child, so the clamp is live on his
+		# very first physics frame — the same pre-add contract level_02 uses for
+		# the Distributor.
+		#
+		# Founder: the Claim Jumper "dies by falling off the ledge... the game
+		# cannot proceed". He had no bounds of any kind; the moment his stalk
+		# carried him past a platform lip he fell out of the world and the fight
+		# became unwinnable. The 90px inset matches level_02's, keeping him off
+		# the arena's own walls.
+		var arena: Dictionary = level_data.boss_arena
+		var bx0: float = float(arena.get("start_x", 0.0)) + 90.0
+		var bx1: float = float(arena.get("end_x", 0.0)) - 90.0
+		var by: float = float(boss_spawn.global_position.y)
+		boss.arena_min = Vector2(bx0, by - 400.0)
+		# Floor clamp sits a little BELOW the spawn line so a legitimate hop
+		# landing is never snagged, but a fall into the void is caught.
+		boss.arena_max = Vector2(bx1, by + 60.0)
 		add_child(boss)
 		AudioManager.play_playlist(["res://src/assets/music/boss03_theme.ogg", "res://src/assets/music/boss03_theme_alt.ogg"])
 		AudioManager.play_voice("boss3_intro")

@@ -107,14 +107,44 @@ func _physics_process(delta: float) -> void:
 
     move_and_slide()
 
+## LEDGE SENSE — how far ahead he checks for solid ground, and how far down.
+const LEDGE_PROBE_AHEAD: float = 26.0
+const LEDGE_PROBE_DROP: float = 90.0
+
+## True when there is NO floor ahead in `facing`, i.e. the next step walks off
+## a platform.
+##
+## Founder: "The gnome characters also are stupid and fall off ledges
+## automatically." He is describing these. Patrol only ever reversed on
+## `is_on_wall()`, so a platform EDGE — which is not a wall — was invisible to
+## them and they marched straight into the void, one after another, until the
+## realm was undefended.
+##
+## Body is 32x32 with its ORIGIN AT THE TOP-LEFT (collision sits at +16,+16),
+## so the feet are at origin.y + 32 and the centre at origin.x + 16.
+func _ledge_ahead(facing: float) -> bool:
+    var space := get_world_2d().direct_space_state
+    var foot_y: float = global_position.y + 32.0
+    var from := Vector2(global_position.x + 16.0 + LEDGE_PROBE_AHEAD * facing, foot_y - 6.0)
+    var params := PhysicsRayQueryParameters2D.create(from, from + Vector2(0.0, LEDGE_PROBE_DROP))
+    # World geometry only (layer 1) — never mistake the player or a pickup for floor.
+    params.collision_mask = 1
+    params.exclude = [get_rid()]
+    return space.intersect_ray(params).is_empty()
+
 func _do_patrol() -> void:
     velocity.x = patrol_speed if moving_right else -patrol_speed
     if global_position.x > start_x + patrol_distance:
         moving_right = false
     elif global_position.x < start_x - patrol_distance:
         moving_right = true
+    # A wall OR a ledge turns him. Without the ledge half he walked off every
+    # platform edge in the level.
     if is_on_wall():
         moving_right = not moving_right
+    elif is_on_floor() and _ledge_ahead(1.0 if moving_right else -1.0):
+        moving_right = not moving_right
+    velocity.x = patrol_speed if moving_right else -patrol_speed
     _face(moving_right)
 
 func _do_pursue(delta: float) -> void:
@@ -144,6 +174,15 @@ func _do_pursue(delta: float) -> void:
     velocity.x = toward * pursue_speed
     _face(toward > 0.0)
 
+    # Chasing must not become suicide either: hold the lip when the ground
+    # runs out ahead. The jump logic below can still carry him ACROSS the gap
+    # when the leap is actually makeable (max_jump_gap), so this stops the
+    # walk-off without making him passive.
+    var at_ledge := false
+    if is_on_floor() and not is_zero_approx(toward) and _ledge_ahead(toward):
+        at_ledge = true
+        velocity.x = 0.0
+
     # Jump when the player is meaningfully above us, or when a wall blocks the
     # chase. Gated on max_jump_gap so the enemy never commits to a leap it
     # cannot land — the "don't overshoot into the pit" requirement.
@@ -163,7 +202,14 @@ func _do_pursue(delta: float) -> void:
         #  * wants_up — the player is above him with no wall in the way. This
         #    one KEEPS the max_jump_gap guard, because that guard exists to
         #    stop him launching across a pit he cannot land on.
-        if blocked or (wants_up and absf(dx) <= max_jump_gap):
+        #  * at_ledge — the ground runs out ahead but the player is close
+        #    enough that the gap is makeable. Same max_jump_gap guard as
+        #    wants_up, for exactly the same reason: it is the guard that stops
+        #    him launching across a pit he cannot land on. Without this branch
+        #    the new ledge stop would leave him frozen at every edge, which
+        #    trades "walks off and dies" for "stands there and is harmless" —
+        #    the founder wants them defending the realm, not safe.
+        if blocked or ((wants_up or at_ledge) and absf(dx) <= max_jump_gap):
             velocity.y = jump_force
             _jump_cooldown = 0.8
 

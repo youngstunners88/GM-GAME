@@ -263,6 +263,7 @@ func full_wipe_restart() -> void:
     health_changed.emit(player_health)
     current_power_up = ""
     power_up_timer = 0.0
+    big_axe_timer = 0.0
     power_up_changed.emit("", 0.0)
     save_session()
     # SceneRouter owns transitions; reload the level the player is on.
@@ -313,6 +314,7 @@ func boss_contact_restart() -> void:
     current_power_up = ""
     power_up_timer = 0.0
     power_up_changed.emit("", 0.0)
+    big_axe_timer = 0.0
     last_damage_source = "boss_contact"
     # Read as a death: the same signal + audio any other fatal hit raises, so
     # HUD/analytics/VO all treat it identically.
@@ -389,7 +391,26 @@ func add_life(amount: int = 1) -> void:
 ## against stale expiry (brief correction A).
 var _blaze_music_token: int = -1
 
+## INDEPENDENT TIMER FOR THE BIG-AXE WEAPON MODIFIER.
+##
+## Founder: "when Lil Blunt colllects it it doesnt let him throw the huge axe,
+## its just the same sized axe as before."
+##
+## `current_power_up` is a SINGLE SLOT — activate_power_up overwrites it every
+## time. The big axe is a WEAPON modifier, not a body state, but it was sharing
+## that one slot with blaze / big / diamond / pickaxe / torch / bong / purple.
+## So picking up literally any other power-up after the axe — a mushroom, a
+## weed leaf, a shard — silently reverted the throw to a normal axe, which in a
+## stage as pickup-dense as the Gold Rush happens within seconds. The axe kept
+## its own 25s duration in name only.
+##
+## Tracked separately so the two cannot clobber each other. current_power_up is
+## still set as well, so the HUD's power-up bar behaves exactly as before.
+var big_axe_timer: float = 0.0
+
 func activate_power_up(type: String, duration: float) -> void:
+    if type == "bigaxe":
+        big_axe_timer = duration
     current_power_up = type
     power_up_timer = duration
     power_up_changed.emit(type, duration)
@@ -410,10 +431,14 @@ func deactivate_power_up() -> void:
         AudioManager.release_music_override(_blaze_music_token)
         _blaze_music_token = -1
     current_power_up = ""
+    big_axe_timer = 0.0
     power_up_timer = 0.0
     power_up_changed.emit("", 0.0)
 
 func has_power_up(type: String) -> bool:
+    # The big axe survives other pickups — see big_axe_timer.
+    if type == "bigaxe":
+        return big_axe_timer > 0.0
     return current_power_up == type
 
 func _process(delta: float) -> void:
@@ -421,12 +446,16 @@ func _process(delta: float) -> void:
         power_up_timer -= delta
         if power_up_timer <= 0:
             deactivate_power_up()
+    # Ticks on its own clock so another pickup cannot cut the axe short.
+    if big_axe_timer > 0.0:
+        big_axe_timer = maxf(0.0, big_axe_timer - delta)
 
 func reset_level() -> void:
     player_health = max_health
     _clear_blaze_music_override()
     current_power_up = ""
     power_up_timer = 0.0
+    big_axe_timer = 0.0
     # The HUD in the incoming level _ready()s BEFORE the player spawns and
     # reads these values — without this emit it keeps showing the previous
     # level's damaged heart count until the next hit.
@@ -439,6 +468,7 @@ func reset_session() -> void:
     _clear_blaze_music_override()
     current_power_up = ""
     power_up_timer = 0.0
+    big_axe_timer = 0.0
     health_changed.emit(player_health)
     total_score = 0
     coins_collected = 0
