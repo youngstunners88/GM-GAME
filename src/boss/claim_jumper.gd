@@ -59,6 +59,81 @@ func _ready() -> void:
 	BossVoiceSystem.set_active(self, BOSS_ID)
 	BossVoiceSystem.say(self, BOSS_ID, "intro", true)
 
+## HARD ARENA BOX — the boss physically cannot leave the fight.
+##
+## Founder: "There is a massive glistch with the final boss as he is fucking
+## dumb and dies by falling off the ledge... Lil Blunt is unable to deal with
+## him so the game cannot proceed."
+##
+## He was right that it makes the game unfinishable, and the cause was simply
+## that this boss had NO bounds of any kind: he applied gravity, walked toward
+## the player, and the moment the stalk carried him past the lip of a platform
+## he fell into the void below the arena and the fight could never end. The
+## Distributor already solved exactly this (see distributor.gd's
+## _clamp_to_arena, added after he "fell in the trench and disappeared"), but
+## the fix was never carried across to this boss.
+##
+## Set by level_03_gold_rush.gd from the level's own boss_arena data BEFORE
+## add_child, so the clamp is live on the very first physics frame.
+## Zero size = unset, in which case only the ledge sense below applies.
+var arena_min: Vector2 = Vector2.ZERO
+var arena_max: Vector2 = Vector2.ZERO
+
+func _clamp_to_arena() -> void:
+	if arena_max == Vector2.ZERO:
+		return
+	global_position.x = clampf(global_position.x, arena_min.x, arena_max.x)
+	# Only the FLOOR is clamped, not the ceiling: he hops, and pinning his
+	# maximum height would cancel the hop mid-air.
+	if global_position.y > arena_max.y:
+		global_position.y = arena_max.y
+		if velocity.y > 0.0:
+			velocity.y = 0.0
+
+## How far ahead of himself he checks for solid ground, and how far down.
+const LEDGE_PROBE_AHEAD: float = 56.0
+const LEDGE_PROBE_DROP: float = 120.0
+
+## True when there is NO floor ahead in `facing` — i.e. the next step walks off
+## a ledge. Belt and braces alongside the arena clamp: the clamp stops him
+## leaving the arena box, this stops him walking into a pit INSIDE it.
+func _ledge_ahead(facing: float) -> bool:
+	var space := get_world_2d().direct_space_state
+	# Cast from just above his feet, ahead of the body, straight down.
+	# Body is 80x80 with its ORIGIN AT THE TOP-LEFT (collision sits at +40,+40),
+	# so the feet are at origin.y + 80 and the centre at origin.x + 40.
+	var foot_y: float = global_position.y + 80.0
+	var from := Vector2(global_position.x + 40.0 + LEDGE_PROBE_AHEAD * facing, foot_y - 8.0)
+	var params := PhysicsRayQueryParameters2D.create(from, from + Vector2(0.0, LEDGE_PROBE_DROP))
+	# World geometry only (layer 1) — never treat the player or a pickup as floor.
+	params.collision_mask = 1
+	params.exclude = [get_rid()]
+	return space.intersect_ray(params).is_empty()
+
+## Horizontal reach of one hop. HOP_VELOCITY -620 against gravity 980 is ~1.26s
+## of airtime; at the fastest phase-3 patrol speed (275) that is ~348px. Probed
+## a little short of the true maximum so he only commits to a landing he can
+## comfortably make.
+const HOP_REACH: float = 300.0
+
+## True when there IS ground to land on across the gap ahead.
+##
+## Without this the ledge sense made things WORSE, not better: spotting a ledge
+## triggered the hop, and the hop then carried him over the edge and into the
+## void anyway — the test caught him at y=2242 with the floor at 600. A gap is
+## only worth jumping if something is waiting on the other side.
+func _gap_crossable(facing: float) -> bool:
+	var space := get_world_2d().direct_space_state
+	var foot_y: float = global_position.y + 80.0
+	for dist: float in [140.0, 200.0, 260.0, HOP_REACH]:
+		var from := Vector2(global_position.x + 40.0 + dist * facing, foot_y - 8.0)
+		var params := PhysicsRayQueryParameters2D.create(from, from + Vector2(0.0, LEDGE_PROBE_DROP))
+		params.collision_mask = 1
+		params.exclude = [get_rid()]
+		if not space.intersect_ray(params).is_empty():
+			return true
+	return false
+
 func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
@@ -83,13 +158,29 @@ func _physics_process(delta: float) -> void:
 				if signf(target_vx) != signf(velocity.x) and not is_zero_approx(velocity.x)
 				else WALK_ACCEL)
 			velocity.x = move_toward(velocity.x, target_vx, rate * delta)
+			# LEDGE SENSE. Standing on solid ground with a drop directly ahead,
+			# he refuses to take the step — he holds the lip instead of walking
+			# into the void. Only while GROUNDED, so a hop across a gap is never
+			# cancelled mid-air.
+			var at_ledge := false
+			if is_on_floor() and not is_zero_approx(target_vx):
+				at_ledge = _ledge_ahead(signf(target_vx))
+				if at_ledge:
+					velocity.x = 0.0
 			velocity.y += 980.0 * delta
 			move_and_slide()
+			_clamp_to_arena()
 			if absf(velocity.x) > 12.0:
 				boss_sprite.set_facing(velocity.x > 0.0)
-			# Blocked by terrain, or the player is above him -> hop.
+			# Blocked by terrain, or the player is above him -> hop. A ledge now
+			# also triggers the hop: if the player is across a gap he JUMPS it
+			# rather than standing at the edge forever, which keeps him
+			# threatening instead of merely safe.
 			if is_on_floor() and _hop_cooldown <= 0.0:
-				var want_hop := is_on_wall()
+				# A ledge only justifies a hop when there is somewhere to LAND.
+				# Otherwise he holds the lip: still blocking the arena, never
+				# suiciding into the void.
+				var want_hop := is_on_wall() or (at_ledge and _gap_crossable(direction))
 				if pl and pl.global_position.y < global_position.y - 80.0:
 					want_hop = true
 				if want_hop:
@@ -102,11 +193,13 @@ func _physics_process(delta: float) -> void:
 			velocity.x = move_toward(velocity.x, 0.0, 100.0 * delta * 60.0)
 			velocity.y += 980.0 * delta
 			move_and_slide()
+			_clamp_to_arena()
 
 		State.VULNERABLE:
 			velocity.x = move_toward(velocity.x, 0.0, 150.0 * delta * 60.0)
 			velocity.y += 980.0 * delta
 			move_and_slide()
+			_clamp_to_arena()
 			boss_sprite.modulate = Color(1.0, 0.3, 0.3, 1.0) if fmod(throw_timer, 0.2) < 0.1 else Color(1.0, 0.1, 0.1, 1.0)
 
 ## Accelerate patrol + taunt on phase transition (BossBase calls this).

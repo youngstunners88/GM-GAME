@@ -32,6 +32,7 @@ func _ready() -> void:
 	await _run()
 
 func _check(label: String, cond: bool, detail: String = "") -> void:
+	_checks_run += 1
 	if cond:
 		print("  [PASS] %s" % label)
 	else:
@@ -40,6 +41,16 @@ func _check(label: String, cond: bool, detail: String = "") -> void:
 
 func _info(label: String, value: Variant) -> void:
 	print("  [INFO] %s = %s" % [label, str(value)])
+
+## Number of _check() calls the suite is expected to make. A GDScript runtime
+## error (a bad index, a nonexistent method) ABORTS the enclosing function
+## silently — the remaining assertions in it simply never run, `_failures`
+## stays where it was, and the suite prints ALL PASS. That is exactly how a
+## broken assertion in this file reported green while asserting nothing.
+## Counting the checks that actually executed turns that silent abort into a
+## loud failure.
+const MIN_EXPECTED_CHECKS: int = 80
+var _checks_run: int = 0
 
 func _run() -> void:
 	for lvl in [1, 2, 3]:
@@ -59,8 +70,13 @@ func _run() -> void:
 	await _test_blaze_band_includes_robinhood_after_goldmine_move()
 	await _test_blaze_music_is_the_founders_track()
 
+	if _checks_run < MIN_EXPECTED_CHECKS:
+		print("  [FAIL] only %d assertions ran (expected >= %d) — a runtime error aborted a test mid-way"
+			% [_checks_run, MIN_EXPECTED_CHECKS])
+		_failures += 1
+
 	if _failures == 0:
-		print("FOUNDER_CRITICAL_PROBE: ALL PASS")
+		print("FOUNDER_CRITICAL_PROBE: ALL PASS (%d assertions)" % _checks_run)
 		get_tree().quit(0)
 	else:
 		print("FOUNDER_CRITICAL_PROBE: %d FAILURE(S)" % _failures)
@@ -1040,15 +1056,42 @@ func _test_band_art_never_overlaps_and_title_dominates() -> void:
 				if spr == null:
 					continue
 				var hw_b: float = float(spr.texture.get_width()) * spr.scale.x * 0.5
-				pieces.append([n2d.name, n2d.position.x, hw_b])
+				pieces.append([n2d.name, n2d.position.x, hw_b, spr.texture.resource_path.get_file()])
 				continue
 			if spr.texture == null:
 				continue
 			var hw: float = float(spr.texture.get_width()) * spr.scale.x * 0.5
-			pieces.append([spr.name, spr.position.x, hw])
+			pieces.append([spr.name, spr.position.x, hw, spr.texture.resource_path.get_file()])
 
 		_check("L%d band: art was placed" % level_index, pieces.size() >= 3,
 			"only %d piece(s)" % pieces.size())
+
+		# NOTHING IS SILENTLY DROPPED. Founder: "There is only 2 logos missing
+		# in the blaze rush." One of them (badge_h420) was configured correctly
+		# the whole time — the even lattice simply had no free cell left for the
+		# last entry once the title and end banner reserved their spans, and the
+		# placement loop quietly skipped it. It passed every "is it in the list"
+		# check while never appearing on L1 or L2. This asserts the rendered
+		# result, not the configuration.
+		var want: Array[String] = []
+		for entry: Dictionary in (run.get_script() as GDScript).get_script_constant_map()["BR_ART_ORDER"]:
+			var pth: String = str(entry["path"])
+			if not ResourceLoader.exists(pth):
+				continue
+			# The legacy lowrider plate is deliberately dropped once the
+			# founder's replacement banner exists — that one is intentional.
+			if pth.contains("br_smoke_lounge_car"):
+				continue
+			want.append(pth.get_file())
+		var got: Array[String] = []
+		for p2: Array in pieces:
+			got.append(str(p2[3]))
+		var missing: Array[String] = []
+		for w: String in want:
+			if not got.has(w):
+				missing.append(w)
+		_check("L%d band: every configured logo actually renders" % level_index,
+			missing.is_empty(), "missing: %s" % ", ".join(missing))
 
 		# 1) Nothing overlaps anything.
 		var overlaps: Array[String] = []

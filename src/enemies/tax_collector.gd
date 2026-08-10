@@ -68,6 +68,7 @@ func _physics_process(delta: float) -> void:
         return
 
     _jump_cooldown -= delta
+    _arrow_cd -= delta
     # Player lookup is a scene-tree group search. Doing it every frame for
     # every Tax Collector in the level is wasted work; 0.2s is far finer than
     # human reaction time, so the AI loses nothing perceptible.
@@ -77,6 +78,11 @@ func _physics_process(delta: float) -> void:
         _player = get_tree().get_first_node_in_group("player")
 
     velocity.y += GRAVITY * delta
+
+    # Loose an arrow the moment the player is in the detection box and the bow
+    # is off cooldown — aimed at wherever the player actually is.
+    if _arrow_cd <= 0.0 and state != State.PATROL and _player_in_range():
+        _fire_arrow()
 
     match state:
         State.PATROL:
@@ -107,14 +113,78 @@ func _physics_process(delta: float) -> void:
 
     move_and_slide()
 
+## BOW AND ARROW. Founder: "have the gnome like characters fire arrows at Lil
+## Blunt from their bow and arrows in any direction to increase the difficulty."
+##
+## "In any direction" is the important half: the arrow is aimed at the player's
+## actual position, so one of these on a ledge genuinely threatens someone
+## below or above it, rather than only along its own patrol line.
+##
+## Fires from either PATROL or PURSUE — a gnome that has spotted you is
+## dangerous even while it is still walking — but only inside its normal
+## detection box, and on its own cooldown so it never becomes a turret.
+##
+## Reuses boss_projectile.tscn for the same reason the vine venom does: it
+## already flies, damages the player, despawns on world geometry, and tints.
+const ARROW := preload("res://src/boss/boss_projectile.tscn")
+@export var arrow_cooldown: float = 2.2
+@export var arrow_speed: float = 330.0
+var _arrow_cd: float = 0.0
+
+## Loose one arrow at the player's current position.
+func _fire_arrow() -> void:
+    if _player == null or not is_instance_valid(_player):
+        return
+    _arrow_cd = arrow_cooldown
+    var to: Vector2 = _player.global_position - global_position
+    var arrow := ARROW.instantiate()
+    arrow.direction = to.normalized()
+    arrow.speed = arrow_speed
+    arrow.tint = Color(0.85, 0.72, 0.45, 1.0)   # fletched shaft
+    arrow.lifetime = 3.0
+    get_parent().add_child(arrow)
+    # Offset out of his own body so the arrow never spawns inside him.
+    arrow.global_position = global_position + Vector2(16.0, 12.0) + to.normalized() * 22.0
+    AudioManager.play_sfx_at("throw", global_position)
+
+## LEDGE SENSE — how far ahead he checks for solid ground, and how far down.
+const LEDGE_PROBE_AHEAD: float = 26.0
+const LEDGE_PROBE_DROP: float = 90.0
+
+## True when there is NO floor ahead in `facing`, i.e. the next step walks off
+## a platform.
+##
+## Founder: "The gnome characters also are stupid and fall off ledges
+## automatically." He is describing these. Patrol only ever reversed on
+## `is_on_wall()`, so a platform EDGE — which is not a wall — was invisible to
+## them and they marched straight into the void, one after another, until the
+## realm was undefended.
+##
+## Body is 32x32 with its ORIGIN AT THE TOP-LEFT (collision sits at +16,+16),
+## so the feet are at origin.y + 32 and the centre at origin.x + 16.
+func _ledge_ahead(facing: float) -> bool:
+    var space := get_world_2d().direct_space_state
+    var foot_y: float = global_position.y + 32.0
+    var from := Vector2(global_position.x + 16.0 + LEDGE_PROBE_AHEAD * facing, foot_y - 6.0)
+    var params := PhysicsRayQueryParameters2D.create(from, from + Vector2(0.0, LEDGE_PROBE_DROP))
+    # World geometry only (layer 1) — never mistake the player or a pickup for floor.
+    params.collision_mask = 1
+    params.exclude = [get_rid()]
+    return space.intersect_ray(params).is_empty()
+
 func _do_patrol() -> void:
     velocity.x = patrol_speed if moving_right else -patrol_speed
     if global_position.x > start_x + patrol_distance:
         moving_right = false
     elif global_position.x < start_x - patrol_distance:
         moving_right = true
+    # A wall OR a ledge turns him. Without the ledge half he walked off every
+    # platform edge in the level.
     if is_on_wall():
         moving_right = not moving_right
+    elif is_on_floor() and _ledge_ahead(1.0 if moving_right else -1.0):
+        moving_right = not moving_right
+    velocity.x = patrol_speed if moving_right else -patrol_speed
     _face(moving_right)
 
 func _do_pursue(delta: float) -> void:
@@ -144,6 +214,15 @@ func _do_pursue(delta: float) -> void:
     velocity.x = toward * pursue_speed
     _face(toward > 0.0)
 
+    # Chasing must not become suicide either: hold the lip when the ground
+    # runs out ahead. The jump logic below can still carry him ACROSS the gap
+    # when the leap is actually makeable (max_jump_gap), so this stops the
+    # walk-off without making him passive.
+    var at_ledge := false
+    if is_on_floor() and not is_zero_approx(toward) and _ledge_ahead(toward):
+        at_ledge = true
+        velocity.x = 0.0
+
     # Jump when the player is meaningfully above us, or when a wall blocks the
     # chase. Gated on max_jump_gap so the enemy never commits to a leap it
     # cannot land — the "don't overshoot into the pit" requirement.
@@ -163,7 +242,14 @@ func _do_pursue(delta: float) -> void:
         #  * wants_up — the player is above him with no wall in the way. This
         #    one KEEPS the max_jump_gap guard, because that guard exists to
         #    stop him launching across a pit he cannot land on.
-        if blocked or (wants_up and absf(dx) <= max_jump_gap):
+        #  * at_ledge — the ground runs out ahead but the player is close
+        #    enough that the gap is makeable. Same max_jump_gap guard as
+        #    wants_up, for exactly the same reason: it is the guard that stops
+        #    him launching across a pit he cannot land on. Without this branch
+        #    the new ledge stop would leave him frozen at every edge, which
+        #    trades "walks off and dies" for "stands there and is harmless" —
+        #    the founder wants them defending the realm, not safe.
+        if blocked or ((wants_up or at_ledge) and absf(dx) <= max_jump_gap):
             velocity.y = jump_force
             _jump_cooldown = 0.8
 
