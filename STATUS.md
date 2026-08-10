@@ -8,6 +8,101 @@ testing. gitleaks, Security Sentinel, web export and the secure-build audit
 (0 blockers) all green; itch.io butler push is the final step of that same
 job.
 
+## Stage 3 pass — what I fixed, and what I did NOT
+
+| Your item | Status |
+|---|---|
+| Final boss dies falling off a ledge — game can't proceed | **FIXED** |
+| Gnomes walk off ledges | **FIXED** |
+| 2 missing Blaze logos | **FIXED** — one was being silently dropped |
+| "Random orange rectangles with no function" | **FIXED** — they were the wBTC pickups |
+| "Bitcoin symbol still not clear" | **FIXED** — same object as the rectangles |
+| Big axe: wrong size + throw stays small | **FIXED** — root cause was a shared slot |
+| Stage 2 boss not chasing | **FIXED** — he could not catch a sprinting player |
+| Snakes spit venom, all stages | **DONE** |
+| Gnomes fire arrows in any direction, all stages | **DONE** |
+| image7 remove / image8 clarify / image9 clarify | **NOT DONE** — see bottom |
+
+### The boss falling off the ledge
+
+He had **no bounds of any kind**. Gravity plus a stalk toward you meant the
+first platform edge carried him into the void, and the fight could never end.
+The Stage 2 boss already had exactly this fix — it was never carried across.
+
+He now has a hard arena box fed from Level 3's own arena data, plus a probe
+that stops him stepping off a lip *inside* the arena.
+
+Worth admitting: my first version made it **worse**. Spotting a ledge triggered
+his existing hop, which then launched him over the edge anyway — the new test
+caught him at y=2242 with the floor at 600. He now only jumps a gap when
+there's something to land on; otherwise he holds the edge, still blocking you.
+
+### The gnomes
+
+They only ever turned around on `is_on_wall()`. A platform **edge** is not a
+wall, so it was invisible to them and they marched into the void one after
+another. They now turn at edges while patrolling, hold the lip while chasing,
+and deliberately jump a gap when it's actually makeable — so they defend the
+realm instead of either dying or standing still.
+
+### The two missing logos — one was being silently dropped
+
+`badge_h420` was configured correctly the whole time. It's placed last on the
+band's even lattice, there was no free cell left once the title and end banner
+claimed their spans, and the placement loop quietly skipped it. It passed every
+"is it in the list" check while never appearing on Stage 1 or 2. There's now a
+fallback so a logo can only be missing if the course genuinely has nowhere for
+it — and a gate that asserts all 11 pieces actually render on all three levels.
+
+The second, your flaming diamond, had never been on the band at all.
+
+### The orange rectangles and the Bitcoin are the same object
+
+The wBTC pickup drew itself as a bare 30×15 orange rectangle with **no symbol
+on it whatsoever**. That's why you circled the same thing twice — once as
+functionless clutter, once as an unreadable Bitcoin. Both readings were right.
+It's now a struck gold-rimmed coin with a bold ₿, same size as the other tokens.
+
+### The big axe
+
+`current_power_up` is a **single slot**, and the big axe shared it with blaze /
+mushroom / diamond / pickaxe / torch / bong. So picking up *anything* after the
+axe silently reverted your throw to a normal axe — which in a stage this
+pickup-dense happens within seconds. It's a weapon modifier, not a body state,
+so it now runs on its own timer that nothing else can clobber.
+
+### Stage 2 boss chase
+
+Player top speed is 240 (200 walk × 1.2 sprint). The boss was 265 — but only in
+his patrol state. During his tell / gravity / throw states he dropped to
+**66–119 px/s**, so for roughly half of every cycle you simply outran him by
+holding the run key. Raised so his slowest pursuing state still roughly matches
+a sprint. Gated by a test that runs away from him at full speed, rather than the
+old one that only proved he approaches a player standing still.
+
+### A false green in my own tests
+
+Worth telling you: `founder_critical_probe` reported ALL PASS while a runtime
+error had aborted a test halfway through — the remaining assertions never ran
+and the failure count stayed at zero. It now counts how many assertions
+actually executed and fails if the count is short. It currently runs 103.
+
+### What I did NOT do
+
+**image7 (remove), image8 and image9 (clarify their significance).** I chose to
+stop here rather than guess at three more art/design judgements at the end of a
+long pass — guessing is exactly what has burned us repeatedly. Tell me what
+image8 and image9 actually are meant to be and I'll do them properly next.
+
+**Multi-model dispatch** (Fable/Grok/Kimi) — the subagent runs hit the org
+monthly spend limit and returned errors, so I did this work directly rather
+than report audits that never happened. One investigation agent did complete
+and it is what pinned down the bottom-bar element last pass.
+
+**Gates:** 13 suites ALL PASS, sentinel 18/18, sprite-alpha clean. New suite
+`stage3_defence_test.gd` proves the boss and gnome ledge behaviour under real
+physics on a real platform beside a real void.
+
 ## This pass — every item you listed, with the actual root cause each time
 
 You asked what you can give me to help. Short answer at the bottom. First, what

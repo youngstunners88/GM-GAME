@@ -68,6 +68,7 @@ func _physics_process(delta: float) -> void:
         return
 
     _jump_cooldown -= delta
+    _arrow_cd -= delta
     # Player lookup is a scene-tree group search. Doing it every frame for
     # every Tax Collector in the level is wasted work; 0.2s is far finer than
     # human reaction time, so the AI loses nothing perceptible.
@@ -77,6 +78,11 @@ func _physics_process(delta: float) -> void:
         _player = get_tree().get_first_node_in_group("player")
 
     velocity.y += GRAVITY * delta
+
+    # Loose an arrow the moment the player is in the detection box and the bow
+    # is off cooldown — aimed at wherever the player actually is.
+    if _arrow_cd <= 0.0 and state != State.PATROL and _player_in_range():
+        _fire_arrow()
 
     match state:
         State.PATROL:
@@ -106,6 +112,40 @@ func _physics_process(delta: float) -> void:
             _do_pursue(delta)
 
     move_and_slide()
+
+## BOW AND ARROW. Founder: "have the gnome like characters fire arrows at Lil
+## Blunt from their bow and arrows in any direction to increase the difficulty."
+##
+## "In any direction" is the important half: the arrow is aimed at the player's
+## actual position, so one of these on a ledge genuinely threatens someone
+## below or above it, rather than only along its own patrol line.
+##
+## Fires from either PATROL or PURSUE — a gnome that has spotted you is
+## dangerous even while it is still walking — but only inside its normal
+## detection box, and on its own cooldown so it never becomes a turret.
+##
+## Reuses boss_projectile.tscn for the same reason the vine venom does: it
+## already flies, damages the player, despawns on world geometry, and tints.
+const ARROW := preload("res://src/boss/boss_projectile.tscn")
+@export var arrow_cooldown: float = 2.2
+@export var arrow_speed: float = 330.0
+var _arrow_cd: float = 0.0
+
+## Loose one arrow at the player's current position.
+func _fire_arrow() -> void:
+    if _player == null or not is_instance_valid(_player):
+        return
+    _arrow_cd = arrow_cooldown
+    var to: Vector2 = _player.global_position - global_position
+    var arrow := ARROW.instantiate()
+    arrow.direction = to.normalized()
+    arrow.speed = arrow_speed
+    arrow.tint = Color(0.85, 0.72, 0.45, 1.0)   # fletched shaft
+    arrow.lifetime = 3.0
+    get_parent().add_child(arrow)
+    # Offset out of his own body so the arrow never spawns inside him.
+    arrow.global_position = global_position + Vector2(16.0, 12.0) + to.normalized() * 22.0
+    AudioManager.play_sfx_at("throw", global_position)
 
 ## LEDGE SENSE — how far ahead he checks for solid ground, and how far down.
 const LEDGE_PROBE_AHEAD: float = 26.0

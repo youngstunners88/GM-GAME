@@ -21,6 +21,9 @@ func _ready() -> void:
 	await _test_boss_arena_clamp_catches_a_fall()
 	await _test_gnome_does_not_walk_off_a_ledge()
 	_test_big_axe_survives_another_powerup()
+	await _test_snakes_spit_venom()
+	await _test_gnomes_fire_arrows()
+	await _test_stage2_boss_outruns_a_sprinting_player()
 	print("STAGE3_DEFENCE: %s" % ("ALL PASS" if _fail == 0 else "%d FAILURE(S)" % _fail))
 	get_tree().quit(_fail)
 
@@ -131,3 +134,88 @@ func _test_big_axe_survives_another_powerup() -> void:
 	_check("big axe survives a weed leaf too", GameManager.has_power_up("bigaxe"))
 	GameManager.big_axe_timer = 0.0
 	_check("big axe expires on its own timer", not GameManager.has_power_up("bigaxe"))
+
+
+const HOSTILE_VINE := preload("res://src/enemies/hostile_vine.tscn")
+const DISTRIBUTOR := preload("res://src/boss/distributor.tscn")
+
+## Founder: "I also want all of the snakes to spit venom in all the stages."
+## The striking vines ARE the snakes, and they were a purely passive hazard —
+## anything that kept its distance was never threatened.
+func _test_snakes_spit_venom() -> void:
+	get_tree().call_group("boss_projectile", "queue_free")
+	await get_tree().physics_frame
+	var player := _make_player(Vector2(260, 300))
+	var vine: Node2D = HOSTILE_VINE.instantiate()
+	add_child(vine)
+	vine.global_position = Vector2(0, 300)
+	# Force the extended (dangerous) state — venom only fires while extended,
+	# so the existing tell still telegraphs it.
+	vine.call("extend")
+	var spat := false
+	for i in 240:
+		await get_tree().physics_frame
+		for n in get_children():
+			if n.is_in_group("boss_projectile"):
+				spat = true
+				break
+		if spat:
+			break
+	_check("a snake spits venom at a player in range", spat)
+	get_tree().call_group("boss_projectile", "queue_free")
+	vine.queue_free(); player.queue_free()
+	await get_tree().physics_frame
+
+## Founder: "have the gnome like characters fire arrows at Lil Blunt from their
+## bow and arrows in ANY direction". The aim must be a real vector at the
+## player, not the enemy's own patrol axis — otherwise a gnome on a ledge can
+## never threaten anyone below it.
+func _test_gnomes_fire_arrows() -> void:
+	get_tree().call_group("boss_projectile", "queue_free")
+	await get_tree().physics_frame
+	var ledge := _make_ledge(1000.0, 600.0)
+	var gnome: Node2D = TAX_COLLECTOR.instantiate()
+	add_child(gnome)
+	gnome.global_position = Vector2(500, 568)
+	# Player well BELOW and to the side — only a genuinely aimed shot reaches.
+	var player := _make_player(Vector2(660, 700))
+	var arrow: Node2D = null
+	for i in 300:
+		await get_tree().physics_frame
+		for n in get_children():
+			if n.is_in_group("boss_projectile"):
+				arrow = n
+				break
+		if arrow != null:
+			break
+	_check("a gnome fires an arrow at a player in range", arrow != null)
+	if arrow != null:
+		var d: Vector2 = arrow.get("direction")
+		_check("the arrow is aimed in an arbitrary direction, not axis-locked",
+			absf(d.y) > 0.08,
+			"direction = %s (y component too small to be aimed)" % str(d))
+	get_tree().call_group("boss_projectile", "queue_free")
+	gnome.queue_free(); player.queue_free(); ledge.queue_free()
+	await get_tree().physics_frame
+
+## Founder: "the boss is not chasing Lil Blunt which makes it too easy."
+## The existing boss_stakes gate only proves he closes on a STATIONARY player.
+## This one runs away from him at the player's real top speed (walk 200 *
+## sprint 1.2 = 240 px/s), which is the case that was actually failing.
+func _test_stage2_boss_outruns_a_sprinting_player() -> void:
+	var player := _make_player(Vector2(600, 500))
+	var boss: Node2D = DISTRIBUTOR.instantiate()
+	add_child(boss)
+	boss.global_position = Vector2(0, 400)
+	await get_tree().physics_frame
+	var start_gap: float = absf(player.global_position.x - boss.global_position.x)
+	for i in 300:
+		# Player sprints away every frame.
+		player.global_position.x += 240.0 * (1.0 / 60.0)
+		await get_tree().physics_frame
+	var end_gap: float = absf(player.global_position.x - boss.global_position.x)
+	_check("the L2 boss closes on a player sprinting away at top speed",
+		end_gap < start_gap,
+		"gap went %.0f -> %.0f — he cannot catch a running player" % [start_gap, end_gap])
+	boss.queue_free(); player.queue_free()
+	await get_tree().physics_frame

@@ -192,13 +192,13 @@ func _physics_process(delta: float) -> void:
 			# does NOT pull yet — this is pure reaction time. He keeps closing
 			# while he winds up; a boss that brakes to a halt to telegraph is a
 			# boss you can ignore.
-			_hover_pursue(delta, 0.35)
+			_hover_pursue(delta, 0.62)
 			queue_redraw()
 			if state_timer <= 0.0:
 				_begin_hoard_gravity()
 
 		Phase.HOARD_GRAVITY:
-			_hover_pursue(delta, 0.25)
+			_hover_pursue(delta, 0.55)
 			_apply_pull(delta)
 			queue_redraw()
 			if state_timer <= 0.0:
@@ -214,7 +214,7 @@ func _physics_process(delta: float) -> void:
 		Phase.SHARD_THROW:
 			# Keeps closing while he throws, just slower. He was braking to a
 			# dead stop here, which is half of why he never felt like a threat.
-			_hover_pursue(delta, 0.45)
+			_hover_pursue(delta, 0.70)
 			if state_timer <= 0.0:
 				_begin_vulnerable()
 
@@ -231,7 +231,15 @@ func _physics_process(delta: float) -> void:
 ## Free 2D hover pursuit — the "levitate in any direction" the founder asked
 ## for, and the reason he can no longer fall anywhere.
 const HOVER_ACCEL: float = 430.0
-const HOVER_MAX: float = 265.0
+## Player top speed is walk_speed 200 * SPRINT_MULTIPLIER 1.2 = 240 px/s.
+##
+## Founder: "the boss is not chasing Lil Blunt which makes it too easy."
+## 265 looked like it beat 240, but he only moves at FULL speed in PATROL — the
+## scales below dropped him to 93 (tell), 66 (hoard) and 119 (throw) px/s, i.e.
+## far slower than a running player for roughly half of every cycle, so a
+## player who simply held the run key was never caught. Raised so the slowest
+## pursuing state still roughly matches a sprint, with real headroom in PATROL.
+const HOVER_MAX: float = 330.0
 ## Ride height above the player, measured from the player to this node's ORIGIN.
 ##
 ## Must clear the body, not just the origin. This node's origin is the body's
