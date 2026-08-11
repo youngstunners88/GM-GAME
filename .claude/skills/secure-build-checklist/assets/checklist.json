@@ -128,7 +128,10 @@
             "getUser"
           ],
           "severity": "critical",
-          "fix": "Every non-public route must call an auth helper. Public routes = only login, signup, webhooks (with signature verify), health, public assets."
+          "fix": "Every non-public route must call an auth helper. Public routes = only login, signup, webhooks (with signature verify), health, public assets.",
+          "policy": "not_applicable",
+          "reason": "this rule matches Express/Next route handlers in *.ts; the project ships a Godot HTML5 bundle with no server routes and no auth of any kind",
+          "rearm_when": "any authenticated route, session, or user account is introduced (including on the Cloudflare Worker)"
         },
         {
           "id": "AUTH002",
@@ -162,7 +165,7 @@
           ],
           "expect_pattern": "constructEvent|verifySignature|webhooks\\.construct|whsec_",
           "severity": "critical",
-          "fix": "Every webhook handler must verify the provider's signature. Never trust webhook bodies without verification \u2014 anyone can POST to a public URL."
+          "fix": "Every webhook handler must verify the provider's signature. Never trust webhook bodies without verification — anyone can POST to a public URL."
         }
       ]
     },
@@ -273,7 +276,7 @@
             "create policy"
           ],
           "severity": "critical",
-          "fix": "Postgres tables default to 'allow all'. RLS must be explicitly enabled AND a policy created. Perly's #1 finding: vibe coders ship Supabase with RLS off \u2192 entire user table public."
+          "fix": "Postgres tables default to 'allow all'. RLS must be explicitly enabled AND a policy created. Perly's #1 finding: vibe coders ship Supabase with RLS off → entire user table public."
         },
         {
           "id": "AI003",
@@ -383,7 +386,10 @@
             "track"
           ],
           "severity": "medium",
-          "fix": "Log every login, logout, password reset, role change, and API key creation with user ID, IP, timestamp. Required to investigate breaches."
+          "fix": "Log every login, logout, password reset, role change, and API key creation with user ID, IP, timestamp. Required to investigate breaches.",
+          "policy": "not_applicable",
+          "reason": "audits login/logout/password-reset/role-change events; none of those events exist because the game has no accounts",
+          "rearm_when": "user accounts, login, or a leaderboard identity are introduced"
         }
       ]
     },
@@ -402,7 +408,7 @@
             "legal/**"
           ],
           "severity": "high",
-          "fix": "Required before charging money or collecting any data. 'Vibe coders are getting sued' \u2014 most haven't realised. Don't collect emails without a ToS/PP."
+          "fix": "Required before charging money or collecting any data. 'Vibe coders are getting sued' — most haven't realised. Don't collect emails without a ToS/PP."
         },
         {
           "id": "DATA002",
@@ -424,7 +430,7 @@
             "LICENSE.md"
           ],
           "severity": "medium",
-          "fix": "Every dependency, font, image, model must have a license compatible with your use. AI code suggestions sometimes carry over training-data snippets \u2014 check."
+          "fix": "Every dependency, font, image, model must have a license compatible with your use. AI code suggestions sometimes carry over training-data snippets — check."
         }
       ]
     },
@@ -460,9 +466,11 @@
         {
           "id": "INFRA003",
           "title": "Backups configured for databases",
-          "policy": "review",
+          "policy": "not_applicable",
           "severity": "medium",
-          "fix": "Daily automated backups with at least one offsite copy. Test restore quarterly. Vibecoded apps go down and lose user data because nobody configured backups."
+          "fix": "Daily automated backups with at least one offsite copy. Test restore quarterly. Vibecoded apps go down and lose user data because nobody configured backups.",
+          "reason": "database backup policy; the project has no database — all state is client-side in the browser",
+          "rearm_when": "any database or server-side persistence is introduced"
         }
       ]
     },
@@ -473,9 +481,11 @@
         {
           "id": "PLAT001",
           "title": "No unreviewed privileged platform interfaces",
-          "policy": "review",
+          "policy": "not_applicable",
           "severity": "critical",
-          "fix": "Review accessibility or automation services, overlays, screen capture, device-admin, debug bridges, native shells, IPC, background services, and install/update permissions. Each needs a product justification, least privilege, visible consent, revocation, and abuse-case tests."
+          "fix": "Review accessibility or automation services, overlays, screen capture, device-admin, debug bridges, native shells, IPC, background services, and install/update permissions. Each needs a product justification, least privilege, visible consent, revocation, and abuse-case tests.",
+          "reason": "Android/native control-plane surface; the shipped artefact is a browser HTML5 bundle with no ADB, accessibility service, device-admin, privileged helper, or update mechanism the game controls",
+          "rearm_when": "an Android, iOS or desktop export preset is added — the gate is pre-written in ANDROID_EXPORT_SECURITY.md"
         },
         {
           "id": "PLAT002",
@@ -545,9 +555,11 @@
         {
           "id": "PLAT005",
           "title": "No hidden persistence or process-resurrection behaviour",
-          "policy": "review",
+          "policy": "not_applicable",
           "severity": "high",
-          "fix": "Review boot receivers, auto-start, foreground-service disguises, invisible activities or overlays, cross-process resurrection, silent media, watchdogs, and restart loops. Persistence must be necessary, disclosed, stoppable by the user, and covered by kill, revoke, reboot, and uninstall tests."
+          "fix": "Review boot receivers, auto-start, foreground-service disguises, invisible activities or overlays, cross-process resurrection, silent media, watchdogs, and restart loops. Persistence must be necessary, disclosed, stoppable by the user, and covered by kill, revoke, reboot, and uninstall tests.",
+          "reason": "Android/native control-plane surface; the shipped artefact is a browser HTML5 bundle with no ADB, accessibility service, device-admin, privileged helper, or update mechanism the game controls",
+          "rearm_when": "an Android, iOS or desktop export preset is added — the gate is pre-written in ANDROID_EXPORT_SECURITY.md"
         },
         {
           "id": "PLAT006",
@@ -582,9 +594,11 @@
         {
           "id": "PLAT007",
           "title": "Release artifacts exclude developer bridges and debug flags",
-          "policy": "review",
+          "policy": "not_applicable",
           "severity": "high",
-          "fix": "Build and inspect the actual release artifact. Verify debug flags, test endpoints, local admin panels, verbose logs, developer menus, ADB hooks, test certificates, and source maps are absent or inaccessible."
+          "fix": "Build and inspect the actual release artifact. Verify debug flags, test endpoints, local admin panels, verbose logs, developer menus, ADB hooks, test certificates, and source maps are absent or inaccessible.",
+          "reason": "Android/native control-plane surface; the shipped artefact is a browser HTML5 bundle with no ADB, accessibility service, device-admin, privileged helper, or update mechanism the game controls",
+          "rearm_when": "an Android, iOS or desktop export preset is added — the gate is pre-written in ANDROID_EXPORT_SECURITY.md"
         }
       ]
     },
@@ -604,58 +618,74 @@
         {
           "id": "DEFI001",
           "title": "Critical state-changing functions have explicit access control",
-          "policy": "manual",
+          "policy": "not_applicable",
           "severity": "critical",
-          "fix": "Review mint, burn, upgrade, initialise, rescue, pause, parameter-change, withdrawal, oracle-update, and governance execution paths. Require explicit roles and test that unauthorised callers fail."
+          "fix": "Review mint, burn, upgrade, initialise, rescue, pause, parameter-change, withdrawal, oracle-update, and governance execution paths. Require explicit roles and test that unauthorised callers fail.",
+          "reason": "no Solidity or contract artefact exists in this repository — the founder rule for this project is SKIP unless contract artefacts appear",
+          "rearm_when": "any .sol file, ABI, or deployed-contract artefact lands in-tree (external ERC-20/721 interactions stay tracked manually in DEFI_REVIEW.md)"
         },
         {
           "id": "DEFI002",
           "title": "Economic invariants are specified and tested",
-          "policy": "manual",
+          "policy": "not_applicable",
           "severity": "critical",
-          "fix": "Write and test invariants for supply, reserves, collateralisation, debt, shares, rewards, fees, and conservation of value across every state transition and cross-contract path."
+          "fix": "Write and test invariants for supply, reserves, collateralisation, debt, shares, rewards, fees, and conservation of value across every state transition and cross-contract path.",
+          "reason": "no Solidity or contract artefact exists in this repository — the founder rule for this project is SKIP unless contract artefacts appear",
+          "rearm_when": "any .sol file, ABI, or deployed-contract artefact lands in-tree (external ERC-20/721 interactions stay tracked manually in DEFI_REVIEW.md)"
         },
         {
           "id": "DEFI003",
           "title": "Oracle inputs resist manipulation and stale data",
-          "policy": "manual",
+          "policy": "not_applicable",
           "severity": "critical",
-          "fix": "Do not rely on a single low-liquidity spot pool. Validate source independence, freshness, bounds, decimals, deviation, sequencer status where relevant, and failure behaviour. Test flash-loan and same-block manipulation."
+          "fix": "Do not rely on a single low-liquidity spot pool. Validate source independence, freshness, bounds, decimals, deviation, sequencer status where relevant, and failure behaviour. Test flash-loan and same-block manipulation.",
+          "reason": "no Solidity or contract artefact exists in this repository — the founder rule for this project is SKIP unless contract artefacts appear",
+          "rearm_when": "any .sol file, ABI, or deployed-contract artefact lands in-tree (external ERC-20/721 interactions stay tracked manually in DEFI_REVIEW.md)"
         },
         {
           "id": "DEFI004",
           "title": "Reentrancy, callbacks, and external calls are controlled",
-          "policy": "manual",
+          "policy": "not_applicable",
           "severity": "critical",
-          "fix": "Apply checks-effects-interactions, narrowly scoped reentrancy guards, safe token handling, callback threat modelling, and cross-contract tests."
+          "fix": "Apply checks-effects-interactions, narrowly scoped reentrancy guards, safe token handling, callback threat modelling, and cross-contract tests.",
+          "reason": "no Solidity or contract artefact exists in this repository — the founder rule for this project is SKIP unless contract artefacts appear",
+          "rearm_when": "any .sol file, ABI, or deployed-contract artefact lands in-tree (external ERC-20/721 interactions stay tracked manually in DEFI_REVIEW.md)"
         },
         {
           "id": "DEFI005",
           "title": "Flash-loan and same-transaction economic attacks are tested",
-          "policy": "manual",
+          "policy": "not_applicable",
           "severity": "critical",
-          "fix": "Test price, liquidity, collateral, reward, liquidation, governance, reserve, and share-accounting logic against atomic manipulation on a local fork or testnet."
+          "fix": "Test price, liquidity, collateral, reward, liquidation, governance, reserve, and share-accounting logic against atomic manipulation on a local fork or testnet.",
+          "reason": "no Solidity or contract artefact exists in this repository — the founder rule for this project is SKIP unless contract artefacts appear",
+          "rearm_when": "any .sol file, ABI, or deployed-contract artefact lands in-tree (external ERC-20/721 interactions stay tracked manually in DEFI_REVIEW.md)"
         },
         {
           "id": "DEFI006",
           "title": "Token-standard edge cases are covered",
-          "policy": "manual",
+          "policy": "not_applicable",
           "severity": "high",
-          "fix": "Test fee-on-transfer, rebasing, non-standard return values, decimals, approval and permit replay, ERC-777-style hooks, malicious receivers, and zero-value or rounding cases."
+          "fix": "Test fee-on-transfer, rebasing, non-standard return values, decimals, approval and permit replay, ERC-777-style hooks, malicious receivers, and zero-value or rounding cases.",
+          "reason": "no Solidity or contract artefact exists in this repository — the founder rule for this project is SKIP unless contract artefacts appear",
+          "rearm_when": "any .sol file, ABI, or deployed-contract artefact lands in-tree (external ERC-20/721 interactions stay tracked manually in DEFI_REVIEW.md)"
         },
         {
           "id": "DEFI007",
           "title": "Upgrade, admin, emergency, and deployment controls are independently reviewed",
-          "policy": "manual",
+          "policy": "not_applicable",
           "severity": "high",
-          "fix": "Review proxy initialisation, implementation upgrades, multisig, timelocks, pause, recovery, chain IDs, compiler settings, linked libraries, constructor arguments, and privileged addresses. Verify deployed source and bytecode."
+          "fix": "Review proxy initialisation, implementation upgrades, multisig, timelocks, pause, recovery, chain IDs, compiler settings, linked libraries, constructor arguments, and privileged addresses. Verify deployed source and bytecode.",
+          "reason": "no Solidity or contract artefact exists in this repository — the founder rule for this project is SKIP unless contract artefacts appear",
+          "rearm_when": "any .sol file, ABI, or deployed-contract artefact lands in-tree (external ERC-20/721 interactions stay tracked manually in DEFI_REVIEW.md)"
         },
         {
           "id": "DEFI008",
           "title": "Static, fuzz, invariant, fork, and runtime monitoring controls exist",
-          "policy": "manual",
+          "policy": "not_applicable",
           "severity": "high",
-          "fix": "Run static analysis, dependency checks, unit tests, fuzzing, invariant tests, fork-based integration tests, event monitoring, alert thresholds, pause criteria, bug bounty or responsible disclosure, and incident response before mainnet."
+          "fix": "Run static analysis, dependency checks, unit tests, fuzzing, invariant tests, fork-based integration tests, event monitoring, alert thresholds, pause criteria, bug bounty or responsible disclosure, and incident response before mainnet.",
+          "reason": "no Solidity or contract artefact exists in this repository — the founder rule for this project is SKIP unless contract artefacts appear",
+          "rearm_when": "any .sol file, ABI, or deployed-contract artefact lands in-tree (external ERC-20/721 interactions stay tracked manually in DEFI_REVIEW.md)"
         }
       ]
     }
@@ -692,6 +722,6 @@
       "React/Next",
       "Vite"
     ],
-    "note": "Supabase/Mongo/React-specific patterns naturally skip or pass on this stack; DeFi category is MANUAL (external ERC-20/721 interactions, no .sol in repo) \u2014 see DEFI_REVIEW.md. Platform-privilege manual items live in ANDROID_EXPORT_SECURITY.md."
+    "note": "Supabase/Mongo/React-specific patterns naturally skip or pass on this stack; DeFi category is MANUAL (external ERC-20/721 interactions, no .sol in repo) — see DEFI_REVIEW.md. Platform-privilege manual items live in ANDROID_EXPORT_SECURITY.md."
   }
 }

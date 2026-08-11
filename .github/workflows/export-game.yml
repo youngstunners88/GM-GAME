@@ -251,11 +251,11 @@ jobs:
           curl -fsSL https://bun.sh/install | bash
           export PATH="$HOME/.bun/bin:$PATH"
           set +e
-          bun scripts/security-audit.ts --fail-on=high --json > security-report.json
+          bun .claude/skills/secure-build-checklist/scripts/audit.ts --fail-on=high --json > security-report.json
           CODE=$?
           set -e
           # Human-readable summary in the CI log either way.
-          bun scripts/security-audit.ts --fail-on=high || true
+          bun .claude/skills/secure-build-checklist/scripts/audit.ts --fail-on=high || true
           if [ "$CODE" -ne 0 ]; then
             echo "::error::secure-build-checklist BLOCKED the ship (critical/high findings) — see security-report.json"
             exit 1
@@ -281,7 +281,7 @@ jobs:
             {
               echo "## 🔒 Security audit blocked this build"
               echo ""
-              echo "\`scripts/security-audit.ts --fail-on=high\` found blockers:"
+              echo "\`.claude/skills/secure-build-checklist/scripts/audit.ts --fail-on=high\` found blockers:"
               echo '```'
               jq -r '.findings[] | select(.status=="fail" and (.severity=="critical" or .severity=="high")) | "[\(.severity|ascii_upcase)] \(.id) \(.title)\n    fix: \(.fix[0:200])"' security-report.json 2>/dev/null || echo "(see security-report.json artifact)"
               echo '```'

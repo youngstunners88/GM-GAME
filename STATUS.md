@@ -14,7 +14,7 @@ Sentinel 18/18, 0 blockers.** The new chase gates were verified to FAIL on the
 previous code first — boss travelled 276px in 7s of kiting and stalled 210px
 from the west wall — so they are proof, not decoration.
 
-## THIS PASS — boss chase (real fix), arrows, band density, Stage 3 clarity
+## PREVIOUS PASS — boss chase (real fix), arrows, band density, Stage 3 clarity
 
 | Your item | Status |
 |---|---|
@@ -242,6 +242,150 @@ for "no evidence" because I hadn't given it the relevant files — my error, so 
 re-ran it with the full set rather than accept a flattering result.
 
 ---
+
+
+---
+
+# THIS PASS — secure-build-checklist installed as a skill, and what running it honestly revealed
+
+## It was already here — at the wrong path, with three checks silently not running
+
+You asked me to install the pack at `.claude/skills/secure-build-checklist/`.
+A previous session had **already installed it**, but flattened into `scripts/`,
+which is exactly why the run command in your prompt didn't exist. So I moved it
+rather than installing a second copy — one implementation, no drift, same rule
+we already apply to the sentinel. `git mv` throughout, so history follows.
+
+| Piece | Now at |
+|---|---|
+| Skill entry point | `.claude/skills/secure-build-checklist/SKILL.md` |
+| Scanner | `.claude/skills/secure-build-checklist/scripts/audit.ts` |
+| Rules | `.claude/skills/secure-build-checklist/assets/checklist.json` |
+| Reference | `.claude/skills/secure-build-checklist/references/checklist.md` |
+| Old path | `scripts/security-audit.ts` — a 3-line shim, still works, not a copy |
+
+That layout is also the upstream pack's own, so the next version bump is a diff
+instead of an archaeology exercise.
+
+## The result changed, and the new numbers are the honest ones
+
+| | before | after |
+|---|---|---|
+| pass | 28 | **29** |
+| fail | 0 | **0** |
+| manual | 14 | **2** |
+| skip | 5 | **16** |
+
+Nothing got weaker. Three things got truthful.
+
+**1. Three checks were never running at all.** `SEC002` (critical — ".env files
+gitignored"), `AUTH001` (critical) and `LOG003` used rule shapes the scanner had
+no handler for. They fell through to a catch-all that reported them as **skip**,
+so every green run had been quietly not-checking a critical secrets rule.
+
+The catch-all is now a **failure**, not a skip: a rule the scanner cannot execute
+is not a rule that does not apply, and conflating those is precisely how a
+checklist goes green while covering less than it claims. The moment I changed it,
+those three lit up red — which is how I found them.
+
+`SEC002` now has a real implementation and genuinely passes. The other two were
+about Express routes and login audit logs; neither exists here, so they are now
+explicit skips (below).
+
+**2. Skips had no reasons.** Your instruction was "mark skip with reason". The
+machine output was emitting bare skips with nothing attached. Every skip now
+carries a **reason** and a **re-check trigger**, in the JSON and printed
+unconditionally in the human report — not hidden behind `--verbose`:
+
+```
+[SKIP] DEP002  Lockfile committed
+  why:      precondition file 'package.json' is not present in this project
+  re-check: when a 'package.json' is added
+```
+
+A rule marked not-applicable **without** both a reason and a re-arm trigger is
+now reported as a **failure**. An undocumented skip is indistinguishable from
+nobody having looked.
+
+**3. Manual went 14 → 2, per your own adaptation rules.** You said DeFi should
+SKIP unless contract artefacts appear, and Android control-plane should SKIP for
+the web build. They were sitting as MANUAL — 11 of the 14 "manual" items were
+for surfaces that don't exist in this repo, which makes the report harder to
+read and inflates the sense of outstanding work. Reclassified to skip-with-reason
+and a re-arm trigger.
+
+The **2 remaining manual items are the real ones**, and they're both yours to
+answer, not mine: `AUTH003` (default-deny on new routes) and `API002` (bearer
+auth on write routes) — both about the Cloudflare Worker endpoints.
+
+## Where it stands
+
+- **secure-build-checklist v1.3.0+gmgame.1 — 47 total · 29 pass · 0 fail ·
+  2 manual · 16 skip · exit 0** at `--fail-on=high`.
+- **No critical or high findings.** Nothing blocks the ship.
+- **game-security-sentinel still 18/18, 0 blockers.** Untouched, not replaced.
+  Both are green, which is the bar for calling this ship-safe.
+- Both are wired into CI ahead of the export commit and the itch push, so a
+  blocker stops a deploy with or without a chat session existing.
+
+## Two things I want you to actually look at
+
+**1. There are legal pages in this repo that Claude wrote, not you.** A previous
+session found "we collect emails with no ToS/Privacy" and responded by writing
+`terms.md` and `privacy.md`. Your rule this time was that legal posture is
+MANUAL — ask, don't invent. I haven't written any new ones, but the earlier ones
+are live and describe how *your* project handles *your* users' data. **Please
+read them and confirm they're true, or tell me to pull them.** DeepSeek flagged
+this unprompted when auditing my work, and it was right to.
+
+**2. Skipping the DeFi category is your call, and it is now recorded as yours.**
+You asked for SKIP unless contract artefacts appear, and there is no `.sol`
+in-tree, so all 8 DeFi checks now skip. But real ERC-20/721 interactions do
+exist, and Grok ranked wallet-signing risk as the **second most exploitable**
+thing about this project. The skip reason points at `DEFI_REVIEW.md` and re-arms
+the moment any contract artefact lands. Say the word and I'll flip those back to
+manual.
+
+## Real risks Grok found that the checklist does not cover at all
+
+Worth more than the 47 checks, honestly. Ranked by how exploitable they are here:
+
+1. **The CI deploy key is a code-execution channel for every player.** A stolen
+   `BUTLER_API_KEY` or a malicious workflow path pushes an arbitrary WASM bundle
+   to your trusted itch URL. The checklist talks about secrets generically; it
+   has no concept of "the game update channel *is* remote code execution".
+2. **The web3 bridge is the only privileged client surface.** Any tampering with
+   `web/web3.js` or the HTML shell turns into malicious signature prompts. No key
+   handling does not mean no wallet risk.
+3. **Third-party host integrity.** An itch.io account takeover beats every green
+   check on this page. There is no signing players could verify.
+4. **`config.json` ships inside the pck** — whoever can ship a build can point
+   the game at different contracts while the UI still looks like Lil Blunt.
+5. **Client-side logic is honour-system.** The pck is reverse-engineerable; any
+   score, gate or eligibility check in GDScript is forgeable, and there is no
+   server to re-verify against.
+
+None of these are new breakage — they're the shape of the risk for a static game
+bundle with a wallet UI on someone else's host. I've recorded them rather than
+silently fixed them, because 1–3 are decisions about how you want to run the
+project, not code changes I should make unilaterally.
+
+## Multi-model log
+
+| Model | Role | Result | Cost |
+|---|---|---|---|
+| `anthropic/claude-fable-5` | Lead: install design + adaptation mapping | ⚠️ **truncated at the 24k output cap** mid-answer — category mapping + overlap map usable, its "what would falsely pass" section never arrived | $1.3439 |
+| `x-ai/grok-4.5` | Stack reality check | ✅ produced the uncovered-risk list above | $0.0266 |
+| `deepseek/deepseek-v4-pro` | Compliance matrix | ✅ caught the ToS/privacy issue and the DeFi/Android SKIP-vs-MANUAL mismatch, both acted on | $0.0067 |
+| `moonshotai/kimi-k3` | False-pass hunt | ⏳ still running at write-up | — |
+| `qwen/qwen3.8-max` | Scanner integrity / can it be fooled | ⏳ still running at write-up | — |
+
+Fable's truncation is a real gap, not a rounding error — I'm reporting it rather
+than implying I got a full answer. Its brief overlapped Kimi's and Qwen's, and
+the substantive finding (three unrunnable checks) came out of running the thing
+rather than reading it, which is the lesson I'd keep.
+
+**No dispatch errors this pass** — the model IDs from last time held.
 
 ## PREVIOUS PASS (kept for history)
 
