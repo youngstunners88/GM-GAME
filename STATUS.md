@@ -3,10 +3,11 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv`
 
-**DEPLOYING — 2026-08-11.** Build id and export commit added below once CI
-lands this push. Hard-refresh before testing. gitleaks, Security Sentinel, the
-secure-build-checklist gate and the web export all green in CI; the itch.io
-butler push is the final step of that same job. Web export is still
+**DEPLOYED — export commit `39a4ae6` — build id `eb628d5` — 2026-08-11.**
+Hard-refresh before testing. gitleaks, Security Sentinel, the
+secure-build-checklist gate and the web export all green in CI (confirmed via
+the actual job logs, not just "push succeeded" — the itch.io butler step ran
+for real, uploaded 115+ MiB, and reported success). Web export is still
 non-threaded (`variant/thread_support=false`) — the setting that has to stay
 put or the game silently fails to boot on itch.
 
