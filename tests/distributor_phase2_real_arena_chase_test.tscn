@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/distributor_phase2_real_arena_chase_test.gd" id="1"]
+
+[node name="DistributorPhase2RealArenaChaseTest" type="Node"]
+script = ExtResource("1")

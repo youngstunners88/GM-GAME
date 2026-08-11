@@ -1,5 +1,11 @@
 # Privacy Policy — Lil Blunt: The Smoke Realm
 
+> **DRAFT — NOT LEGAL REVIEWED.** Written by an AI session in response to a
+> real gap (email collection with no posted policy), not by counsel. Kept in
+> the repo at the founder's explicit instruction pending his review; do not
+> treat as finished, binding text, and do not invent or extend it further
+> without his say-so.
+
 _Last updated: 2026-07-19 · Operator: SmokeRing ("we"). Contact:
 support@smokering.game (once live; until then, the itch.io page)._
 

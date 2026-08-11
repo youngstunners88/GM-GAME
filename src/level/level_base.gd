@@ -20,6 +20,20 @@ func _ready() -> void:
 	DifficultyManager.refresh()
 	if boss_trigger:
 		boss_trigger.body_entered.connect(_on_boss_trigger)
+	# GameManager.current_level MUST be set before _setup_entities() spawns
+	# anything. entity_spawner.gd's EntitySpawner.spawn() calls add_child() on
+	# a parent (this node) that is already inside the tree, which fires the
+	# new child's _ready() SYNCHRONOUSLY, in the same call — so any spawned
+	# entity that reads GameManager.current_level from its own _ready() (e.g.
+	# coin.gd choosing which stage's protocol logo to wear, and since this
+	# pass, which system to credit for it) was reading the PREVIOUS level's
+	# index on every level transition, not this one's. Harmless while
+	# current_level only picked cosmetic art; no longer harmless now that it
+	# also decides which currency a pickup credits (T4, "$TITANX/$DIAMONDS/
+	# $GOLD are tokens and not coins" — a stale read would misattribute the
+	# credit, not just the logo).
+	if level_data and level_data.level_index >= 1:
+		GameManager.current_level = level_data.level_index
 	_setup_background()
 	_setup_geometry()
 	_setup_parallax()
@@ -37,8 +51,11 @@ func _ready() -> void:
 	# makes "last level played" authoritative regardless of how it was reached.
 	# Guarded to the 3 campaign levels (level_index 1..3); the Smoke Lounge and
 	# Blaze Rush do not extend LevelBase, so they never touch this.
+	#
+	# The ASSIGNMENT itself moved above (before _setup_entities()); this save
+	# stays here so it still persists everything ELSE _ready() has set up by
+	# this point (checkpoint state, HUD-visible stats), not just current_level.
 	if level_data and level_data.level_index >= 1:
-		GameManager.current_level = level_data.level_index
 		GameManager.save_session()
 	StateMachine.change_state(StateMachine.State.PLAYING)
 

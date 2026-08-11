@@ -1043,6 +1043,30 @@ const WALK_CLAIM_HEIGHT: float = 18.0
 ## diamond masks the red candle"). Read the pulse-tween comment below before
 ## changing this: the constant only holds if the tween stays relative to it.
 const TOKEN_SCALE := Vector2(0.26, 0.26)
+## Extra room, beyond the token's own collision radius, that a pickup is still
+## trusted from.
+##
+## Fable-5 review caught this at 24.0: the real worst-case LEGITIMATE first-
+## overlap distance is bigger than that leaves room for. The player's actual
+## collision box is 24x24 (PLAYER_SIZE - 4, see _build_player()), so its
+## half-diagonal is sqrt(12^2+12^2) ~= 17px; a token clipped at the corner of
+## that box is detected at radius(26) + 17 = 43px from centre to centre —
+## against the old 26+24=50px claim radius that was only 7px of margin.
+## Physics detection is discrete, not continuous, so the frame the overlap is
+## FOUND ON can already be a further step or two past the exact geometric
+## boundary: at up to ~430px/s course speed (7.2px/frame) plus vertical speed
+## while falling (gravity 2200, so well over 200px/s within a few frames,
+## ~4px/frame and climbing), a fast diagonal clip can easily add another
+## 10-15px on top of the geometric worst case.
+##
+## Raised to 60 — claim radius 86px — which still leaves an enormous margin
+## below a genuinely stale pickup: the closest any level's course ever places
+## a token to the x=0 respawn point is x=440 (checked all three layouts), so
+## even at 86px there is zero risk of a stale post-teleport signal slipping
+## through. This constant only needs to be generous enough to never reject a
+## real pickup — it does not need to be tight, and tight is what caused the
+## near-miss above.
+const STALE_PICKUP_SLACK: float = 60.0
 
 func _make_smoke_token(x: float, height: float) -> void:
 	var actual_height: float = height
@@ -1070,6 +1094,10 @@ func _make_smoke_token(x: float, height: float) -> void:
 	shape.radius = 26.0   # forgiving grab at 320px/s (was 14)
 	col.shape = shape
 	area.add_child(col)
+	# How far the player may legitimately be from this token's centre for a
+	# `body_entered` on it to be trusted. See the STALE PICKUP note below —
+	# this is the token's own real collision radius, not a hand-tuned guess.
+	var claim_radius: float = shape.radius + STALE_PICKUP_SLACK
 	# Gentle idle pulse, RELATIVE to TOKEN_SCALE.
 	#
 	# THIS is why the founder kept seeing giant flaming diamonds after every
@@ -1089,12 +1117,37 @@ func _make_smoke_token(x: float, height: float) -> void:
 	pulse.tween_property(puff, "scale", tok_base * 1.12, 0.5).set_trans(Tween.TRANS_SINE)
 	pulse.tween_property(puff, "scale", tok_base, 0.5).set_trans(Tween.TRANS_SINE)
 	area.body_entered.connect(func(b: Node2D) -> void:
-		# `_crash_pending` guard: a candle and a diamond can be touched on the
-		# SAME physics frame ("often via candle bounce", the founder's words).
-		# Without this, a pickup that the physics server reports AFTER the
-		# candle re-hides a token the crash has just restored, and it stays
-		# claimed for the rest of the run. See _crash().
-		if b == _player and area.visible and not _crash_pending:
+		# STALE PICKUP — this is what "often via candle bounce" actually was.
+		#
+		# `_crash_pending` alone was NOT enough, and the founder was right that
+		# this kept happening: "I haven't even collected it here, but because
+		# I collected it on my previous attempt I automatically have it now.
+		# I've told you about this before!!!"
+		#
+		# Every candle and every fud_wall in every level layout is followed by
+		# a diamond ~20px later on the course — close enough that their
+		# collision shapes geometrically OVERLAP (candle: x413-427, first
+		# diamond: x414-466). Driving the REAL player through this pair with
+		# real physics (tests/blaze_diamond_bounce_repro_test.gd, not a
+		# synthetic .emit() call) reproduced a stale claim on **30 of 30**
+		# crash cycles — this was never a rare race, it fired every single
+		# time. The candle's body_entered fires, calls _crash(), which resets
+		# the counter and TELEPORTS the player back to x=0. The diamond's own
+		# body_entered — already queued by the physics server from the moment
+		# the player's real collision shape swept through the overlap — is
+		# still delivered, but one physics step LATE: after _crash()'s
+		# deferred _restore_tokens() has already flipped `_crash_pending` back
+		# to false. The guard's window closes before the stale signal it was
+		# built to catch actually arrives.
+		#
+		# A pending flag can't fix a signal that arrives after the flag it
+		# depends on has already been cleared. What CAN'T lie is where the
+		# player actually is: a legitimate pickup happens within this token's
+		# own collision radius; a stale one arrives after `_reset_player()`
+		# has already teleported the player thirty-plus times that radius
+		# away. So trust distance, not timing.
+		if b == _player and area.visible and not _crash_pending \
+				and _player.global_position.distance_to(area.global_position) <= claim_radius:
 			area.visible = false
 			area.set_deferred("monitoring", false)
 			_smoke_this_attempt += 1
@@ -1217,25 +1270,45 @@ func _build_hud() -> void:
 	_attempt_label.add_theme_font_size_override("font_size", 52)
 	row.add_child(_attempt_label)
 
-	var exit_btn := Button.new()
-	exit_btn.text = "  EXIT (Q)  "
-	exit_btn.focus_mode = Control.FOCUS_NONE
-	exit_btn.custom_minimum_size = Vector2(210, 58)
-	exit_btn.add_theme_font_size_override("font_size", 26)
-	exit_btn.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
-	exit_btn.add_theme_constant_override("outline_size", 4)
+	# "TAP OUT" — was "EXIT". Founder: change the label so it reads as "this is
+	# too difficult" / "I'm out" rather than a neutral menu action, and put
+	# Lil Blunt's own face next to it to sell that read. Behavior is
+	# UNCHANGED — same button, same key, same `_exit_to_level()` — this is a
+	# label + art change only.
+	var tapout_face := TextureRect.new()
+	tapout_face.name = "TapOutFace"
+	tapout_face.texture = preload("res://src/assets/sprites/sprite_lil-blunt_tapout.png")
+	# EXPAND_IGNORE_SIZE (matches main_menu.gd / secret_realm.gd): without it a
+	# TextureRect's minimum size is its TEXTURE's native resolution, not
+	# `custom_minimum_size` — the source art is 585x586, so this control would
+	# have laid out at nearly the full viewport width instead of 58x58 and
+	# shoved the TAP OUT button off the right edge of the screen.
+	tapout_face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tapout_face.custom_minimum_size = Vector2(58, 58)
+	tapout_face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tapout_face.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	row.add_child(tapout_face)
+
+	var tapout_btn := Button.new()
+	tapout_btn.name = "TapOutButton"
+	tapout_btn.text = "  TAP OUT (Q)  "
+	tapout_btn.focus_mode = Control.FOCUS_NONE
+	tapout_btn.custom_minimum_size = Vector2(210, 58)
+	tapout_btn.add_theme_font_size_override("font_size", 26)
+	tapout_btn.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	tapout_btn.add_theme_constant_override("outline_size", 4)
 	var exit_plate := StyleBoxFlat.new()
 	exit_plate.bg_color = Color(0.55, 0.09, 0.14, 0.94)
 	exit_plate.set_corner_radius_all(8)
 	exit_plate.content_margin_left = 14
 	exit_plate.content_margin_right = 14
-	exit_btn.add_theme_stylebox_override("normal", exit_plate)
+	tapout_btn.add_theme_stylebox_override("normal", exit_plate)
 	var exit_hover := exit_plate.duplicate()
 	exit_hover.bg_color = Color(0.78, 0.16, 0.20, 0.98)
-	exit_btn.add_theme_stylebox_override("hover", exit_hover)
-	exit_btn.add_theme_stylebox_override("pressed", exit_hover)
-	exit_btn.pressed.connect(_exit_to_level)
-	row.add_child(exit_btn)
+	tapout_btn.add_theme_stylebox_override("hover", exit_hover)
+	tapout_btn.add_theme_stylebox_override("pressed", exit_hover)
+	tapout_btn.pressed.connect(_exit_to_level)
+	row.add_child(tapout_btn)
 
 	# THE BAR AT THE BOTTOM OF THE SCREEN IS GONE.
 	#
@@ -1403,7 +1476,15 @@ func _reset_player() -> void:
 	_player_visual.rotation = 0.0
 
 func _update_hud() -> void:
-	_smoke_label.text = "PUFFS %d" % _smoke_this_attempt
+	# Founder: "PUFFS" -> "BLAZE DIAMONDS". Same rename as the main HUD's
+	# smoke_label (hud.gd) — this is the in-mode counter for the exact same
+	# underlying value (GameManager.smoke_collected banks this attempt's
+	# total via add_smoke() in _finish_run()). Missed on the first pass of
+	# this rename: this file has its OWN copy of the label, separate from
+	# hud.gd's, and only that one got changed. Caught by grepping the tree
+	# for the literal string "PUFFS" after the fact rather than trusting the
+	# earlier edit was complete.
+	_smoke_label.text = "BLAZE DIAMONDS %d" % _smoke_this_attempt
 	_attempt_label.text = "ATTEMPT %d " % _attempts
 
 # --- finish / exit -----------------------------------------------------------
@@ -1418,7 +1499,10 @@ func _finish_run() -> void:
 	ComboSystem.add_score_no_combo(_smoke_this_attempt * SCORE_PER_SMOKE)
 
 	var first_clear: bool = not GameManager.blaze_rush_completed.get(_level_index, false)
-	var toast_lines: Array[String] = ["BLAZE RUSH CLEAR!", "+%d SMOKE" % _smoke_this_attempt]
+	# Same rename as the HUD label above — the exit toast is the last thing a
+	# player sees this value called, so leaving it "SMOKE" here would have
+	# reintroduced the inconsistency in a different spot.
+	var toast_lines: Array[String] = ["BLAZE RUSH CLEAR!", "+%d BLAZE DIAMONDS" % _smoke_this_attempt]
 	if first_clear:
 		GoldMineSystem.mine_gold(COMPLETION_GOLD)
 		toast_lines.append("+%d GOLD" % COMPLETION_GOLD)

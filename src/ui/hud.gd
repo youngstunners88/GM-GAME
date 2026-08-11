@@ -8,6 +8,10 @@ extends CanvasLayer
 @onready var wbtc_label: Label = $MarginContainer/VBoxContainer/WbtcLabel
 @onready var xaut_label: Label = $MarginContainer/VBoxContainer/XautLabel
 @onready var diamond_label: Label = $MarginContainer/VBoxContainer/DiamondLabel
+## $TITANX — the 4th protocol token, grouped under the "TOKENS" header with
+## GOLD/DIAMONDS/wBTC/XAUT. Founder: "$TITANX, $DIAMONDS, AND $GOLD are
+## tokens and not coins."
+@onready var titanx_label: Label = $MarginContainer/VBoxContainer/TitanxLabel
 @onready var smoke_label: Label = $MarginContainer/VBoxContainer/SmokeLabel
 @onready var powerup_label: Label = $MarginContainer/VBoxContainer/PowerUpLabel
 @onready var powerup_bar: ProgressBar = $MarginContainer/VBoxContainer/PowerUpBar
@@ -29,6 +33,7 @@ func _ready() -> void:
     GameManager.coins_changed.connect(_on_coins_changed)
     GameManager.rings_changed.connect(_on_rings_changed)
     GameManager.smoke_changed.connect(_on_smoke_changed)
+    GameManager.titanx_changed.connect(_on_titanx_changed)
     GameManager.power_up_changed.connect(_on_power_up_changed)
     GameManager.player_died.connect(_on_player_died)
     GoldMineSystem.gold_changed.connect(_on_gold_changed)
@@ -182,8 +187,17 @@ func _on_coins_changed(new_count: int) -> void:
 func _on_rings_changed(new_count: int) -> void:
     ring_label.text = "RINGS %d" % new_count
 
+func _on_titanx_changed(new_count: int) -> void:
+    titanx_label.text = "TITANX %d" % new_count
+
 func _on_smoke_changed(new_count: int) -> void:
-    smoke_label.text = "PUFFS %d" % new_count
+    # Founder: "The 'PUFFS' text needs to be changed to 'BLAZE DIAMONDS'."
+    # Same underlying counter (GameManager.smoke_collected) — this is the
+    # blue flaming diamond token from Blaze Rush plus the secret realm's
+    # smoke clouds. Distinct from `diamond_label` below, which is the
+    # GoldMine DIAMONDS protocol allocation; the "BLAZE" qualifier keeps the
+    # two readable as different things on the same HUD.
+    smoke_label.text = "BLAZE DIAMONDS %d" % new_count
 
 func _on_power_up_changed(type: String, _duration: float) -> void:
     if type == "":

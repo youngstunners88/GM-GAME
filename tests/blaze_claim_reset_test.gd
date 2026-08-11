@@ -56,8 +56,16 @@ func _run() -> void:
 
 	# Claim through the token's OWN handler, driven with the real player node,
 	# so this exercises the shipped pickup path rather than a hand-set flag.
+	#
+	# The player must actually BE where the token is before this fires: the
+	# pickup handler now validates the player's real distance to the token
+	# (blaze_diamond_bounce_repro_test.gd), which rejects an emit() fired
+	# from the player's default spawn position 400+px away exactly as it
+	# should — that gap is what a STALE signal looks like, and this test
+	# is not trying to reproduce that case here.
 	var player: CharacterBody2D = run.get("_player")
 	var first: Area2D = tokens[0]
+	player.global_position = first.global_position
 	first.body_entered.emit(player)
 	await get_tree().process_frame
 	_check("claiming a diamond hides it", not first.visible)
