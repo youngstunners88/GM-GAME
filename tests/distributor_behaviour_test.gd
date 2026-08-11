@@ -97,11 +97,31 @@ func _test_script_actually_attached() -> void:
 ## entered by REAL physics — not by grepping for assignments.
 func _test_states_reachable_at_runtime() -> void:
 	var seen := {}
+	# CONTACT OFF FOR THIS MEASUREMENT ONLY.
+	#
+	# This test parks a real, uncontrolled player in the arena for 15 seconds.
+	# That was harmless while the boss could not reach anybody — which is
+	# precisely the defect the founder kept reporting ("the 2nd boss doesn't
+	# chase Lil Blunt"). Now that he does chase, he catches the motionless
+	# player, and boss contact restarts the level by design: SceneRouter loaded
+	# level 2 underneath the test, `_boss` was freed, and the run hung on the
+	# next `_boss.current_phase_state`.
+	#
+	# The boss being lethal to someone standing still is CORRECT and is
+	# asserted elsewhere (tests/boss_stakes_test.gd covers the restart-on-touch
+	# rule; stage3_defence covers the chase). What this test measures is which
+	# STATES the machine reaches, which is driven by its own timers and does
+	# not depend on the player surviving. So the hitbox is muted here rather
+	# than the boss being slowed back down to make an unrelated test pass.
+	var hb := _boss.get_node("Hitbox") as Area2D
+	hb.monitoring = false
 	# The boss alternates pull-cycle / volley-cycle, so run long enough to see
 	# both branches (throw_cooldown is 2s; 900 frames ~= 15s at 60Hz).
 	for i in 900:
 		seen[int(_boss.current_phase_state)] = true
 		await get_tree().physics_frame
+	hb.set_deferred("monitoring", true)
+	await get_tree().physics_frame
 	# Phase enum: 0 PATROL, 1 GRAVITY_TELL, 2 HOARD_GRAVITY, 3 SHARD_THROW, 4 VULNERABLE
 	var names := ["PATROL", "GRAVITY_TELL", "HOARD_GRAVITY", "SHARD_THROW", "VULNERABLE"]
 	for i in names.size():

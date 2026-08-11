@@ -1,12 +1,243 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/setup-game-dev-environment-itWJv` (PR #12 merged; branch restarted from master)
+**Branch:** `claude/setup-game-dev-environment-itWJv`
 
-**DEPLOYED — export commit `51b79a2` — 2026-08-10.** Hard-refresh before
-testing. gitleaks, Security Sentinel, web export and the secure-build audit
-(0 blockers) all green; itch.io butler push is the final step of that same
-job.
+**Gates: 14 suites ALL PASS + `distributor_behaviour` ALL PASS. Security
+Sentinel 18/18, 0 blockers.** The new chase gates were verified to FAIL on the
+previous code first — boss travelled 276px in 7s of kiting and stalled 210px
+from the west wall — so they are proof, not decoration.
+
+## THIS PASS — boss chase (real fix), arrows, band density, Stage 3 clarity
+
+| Your item | Status |
+|---|---|
+| T1 — Stage 2 boss **still not moving/chasing** after PR #19 | **FIXED — and I can show you why the last fix didn't work** |
+| T2 — Stage 3 boss must chase, too easy | **FIXED** |
+| T3 — Gnome arrows must LOOK like arrows | **FIXED** — new drawn arrow + a drawn bow |
+| T4 — Blaze band, large empty real estate on L2/L3 | **FIXED** — L2 10→13 pieces, L3 10→16 |
+| T5 — Stage 3 look | **PARTLY FIXED** — one real defect found and fixed; read the honest note |
+| T6 — STATUS with per-model sections + costs | **BELOW** |
+
+---
+
+### T1 — why last pass's boss fix didn't reach you
+
+Last pass I raised his speed and the gate went green. It went green because
+**the gate never switched the arena walls on.** It built the boss floating in
+open space; the real level always hands him an arena box. The box was the bug.
+
+Three things compounded:
+
+1. He steered his **origin** at you, and his origin is his body's top-left
+   corner. His body is 240px wide, so his visible middle always sat **120px
+   east of the point he was aiming at** — he was chasing somewhere he had
+   already passed.
+2. The level clamped that same origin to `[3790, 4310]`. Converted to where his
+   body actually is, his middle could never go west of **3910** — inside an
+   arena that starts at **3700**. The western 210px of the fight was physically
+   unreachable.
+3. Nothing zeroed his speed when the clamp caught him, so he sat wedged against
+   the boundary at full throttle.
+
+So: **stand anywhere near the western wall and he freezes.** That is the exact
+thing you kept seeing. He wasn't slow; he was pinned.
+
+Fixed: he steers with his body centre, the arena walls are applied against his
+body instead of his corner, he stops pushing when he hits a wall, and no
+pursuing state can drop below **265 px/s** (you sprint at 240 — his tell states
+were 182–231, i.e. slower than you for most of every cycle).
+
+One more thing came out of the numbers, and it's the reason raising speeds
+alone was never going to be enough: he **braked to a dead stop** while
+vulnerable, which is 1.6 seconds of a ~7-second cycle. Even with every other
+state above your sprint, a full cycle came out roughly **50px NET LOST** to a
+player just holding run — he was only ever "catching" you because arenas have
+walls. He now keeps drifting toward you while vulnerable, at half a sprint. It
+is still by far the slowest he gets, and still your window to hit him; it just
+isn't a free escape any more.
+
+**Proof, and I ran it both ways.** Reproducing the old code with the old arena
+values, the new gate reports:
+
+```
+[FAIL] the L2 boss actually MOVES inside a real arena box
+       boss travelled only 276 px in 7s of kiting — he is pinned
+[FAIL] the L2 boss reaches a player pinned against the west arena wall
+       boss centre stalled 210 px away (west wall is unreachable)
+```
+
+With the fix, both pass and he closes to touching range.
+
+### T2 — Stage 3 boss
+
+He chased at **165 px/s** in phase 1 and 215 in phase 2. You sprint at **240**.
+For two of his three phases you could escape him by holding one key. And his
+THROW state braked him to a dead stop, so every attack handed you a free gap.
+
+Now 255 / 300 / 345 by phase, and he keeps closing while he throws. His ledge
+sense and arena clamp are untouched — the new gate asserts he chases you to the
+wall *and* that chasing never drops him out of the world, so the fix you liked
+last pass can't be undone by this one.
+
+### T3 — the arrows are now arrows
+
+They were `boss_projectile.tscn` — the bosses' spinning **circle**, tinted tan.
+Behaviour was fine; the picture was the bug, which is why behaviour tests never
+caught it.
+
+New `gnome_arrow.gd` draws a wooden shaft, a triangular steel head and two
+fletching feathers, and rotates to point where it's flying. The gnome also now
+**draws a bow**: it comes up when he spots you, aims at wherever you actually
+are, and a nocked arrow appears about a third of a second before he looses —
+so every shot is telegraphed.
+
+### T4 — the empty purple band on L2/L3
+
+Arithmetic, not taste. The band divided the **whole course** by a **fixed**
+number of logos, so a longer stage meant a wider stride:
+
+| | course length | old stride |
+|---|---|---|
+| L1 | 5450 | ~494 |
+| L2 | 6400 | ~600 |
+| L3 | 7350 | ~706 |
+
+Same ten pieces, stretched further. The longer the stage, the emptier the band
+— backwards from what you're paying for. Second cause: when a piece couldn't
+sit on its slot (floor gap in the way) it was retried **from the start of the
+course**, packing everything left and leaving a dead tail before the end banner.
+
+Now the piece count comes from the course length at a fixed ~430px stride and
+the logo list **cycles** to fill it, and a displaced piece is retried next to
+where it belonged. Result:
+
+| | pieces before | pieces now | widest empty run |
+|---|---|---|---|
+| L1 | 10 | 10 | under 520px |
+| L2 | 10 | **13** | 560px → under 520px |
+| L3 | 10 | **16** | 724px → under 520px |
+
+No overlaps, nothing over a void — both re-asserted by the new gate, which
+fails on the old code and passes on the new.
+
+### T5 — Stage 3, and an honest note
+
+**Found and fixed one real defect.** `big_axe` and `pickaxe_tool` were using
+**the same sprite**, and Stage 3 spawns both. Two different power-ups, pixel
+identical on screen — so the second one could only read as a duplicate, i.e. as
+clutter, and there was no way to tell which you'd just picked up. The big axe
+now has its own drawn sprite: a broad double-bladed axe with a gold collar,
+clearly not the pickaxe. A gate now fails if any two power-ups ever share art
+again.
+
+**What I did NOT find.** I audited every prop Stage 3 spawns — its level data
+and its level script — and every remaining spawn has a gameplay function
+(gates, plates, one-ways, ladders, secret walls, carts, forges, tokens). Grok
+audited the same files independently and reached the same conclusion: the only
+purely-decorative thing left is the gold ambient dust, which fits. **I am not
+going to delete things at random to look busy.** If Stage 3 still looks wrong
+to you, send one screenshot with the offending thing circled and I'll fix that
+specific object — I've now got a skill that pulls your images straight out of
+the session, so they will not go missing again. The GoldMine tokens you like
+were not touched.
+
+### Three more live bugs the chase work flushed out
+
+Fixing the chase made the boss actually reach you, and running the full gate
+battery against a *real* boss surfaced three defects that had been sitting
+there silently. All three are fixed.
+
+**1. Stage 3's pressure plate was wired to nothing.** The plate that starts the
+Gold Rush gate timer assigned its door list from an untyped array literal into
+a typed `Array[NodePath]` property. Godot doesn't convert that — it **rejects
+the assignment** and prints an error. So the plate had **zero** linked doors:
+you could stand on it all day and the gate it exists to open never moved. The
+stage's headline mechanic has been dead, failing into an error message nobody
+was reading.
+
+**2. Running out of lives did nothing at all.** The full-wipe path calls
+`GameManager.clear_checkpoint()` — a function that **does not exist**. A
+missing method is a runtime error, not a compile error, so it aborted the rest
+of that function: the health/lives refill never ran and the level reload on the
+next line never ran either. Lose your last life and the game just sat in
+GAME_OVER. Function written, path now completes.
+
+**3. The new chase could kill you on his opening move.** Centring him over you
+meant his 240px body swept SIDEWAYS THROUGH you while he climbed to his hover
+height — and boss contact is an instant restart, not a hit, so it never even
+registered as damage. A logging build caught him doing it with his centre at
+(-262, 61) against a player at (-200, 300): a run lost by someone who never
+touched a control. He now rises straight up until the bottom of his body is
+clear of your head, and only then starts closing sideways. His gravity field
+also can't finish the job for him any more — the upward drag is capped at the
+clear air left under his board. The tug-of-war and the punishment for standing
+still are unchanged; closing the last stretch is your decision again, which is
+what that mechanic always said it was.
+
+I got this wrong once on the way: my first attempt switched the field off
+entirely inside a radius, which quietly disabled the pull at exactly the
+distances it's measured at — the "cosmetic pull" regression this fight has
+already shipped once. The gate caught it, and it's capped rather than disabled
+now.
+
+---
+
+## T6 — MULTI-MODEL LOG (OpenRouter, every call, with real costs)
+
+`OPENROUTER_API_KEY` present and working. **Last session's failure was Claude
+subagents hitting an Anthropic org spend limit — not OpenRouter, and not an
+excuse.** Every model below ran for real this pass.
+
+| Model | Role | Result | Cost |
+|---|---|---|---|
+| `anthropic/claude-fable-5` | Lead: chase AI + arrow art | ✅ 26,110 in / 17,148 out | **$1.1185** |
+| `x-ai/grok-4.5` | Blaze spacing + Stage 3 clutter audit | ✅ 23,199 in / 4,230 out | **$0.0718** |
+| `moonshotai/kimi-k3` | Chase numbers, boss vs player sprint | ✅ 11,336 in / 10,927 out | **$0.1979** |
+| `moonshotai/kimi-k2-thinking` | Same brief, second opinion | ✅ 11,213 in / 15,149 out | **$0.0446** |
+| `deepseek/deepseek-v4-pro` | Compliance matrix (run twice) | ✅ | **~$0.07** |
+| `x-ai/grok-4.1-fast` | first attempt | ❌ *"not in OpenRouter's catalogue"* | $0.00 |
+| `x-ai/grok-code-fast-1` | first attempt | ❌ *"not in OpenRouter's catalogue"* | $0.00 |
+
+The two errors were **wrong model IDs on my side**, not billing. I listed the
+live catalogue, found the real IDs (`x-ai/grok-4.5`, `moonshotai/kimi-k3`,
+`anthropic/claude-fable-5`, `deepseek/deepseek-v4-pro`) and retried — both
+retries succeeded. **Total spend this pass: ~$1.50.**
+
+Full transcripts are committed under `docs/model-responses/`.
+
+**Fable-5 (lead).** Independently derived the same three-part root cause for
+the Stage 2 boss before I showed it my conclusion — origin-vs-centre seeking,
+the origin clamp squeezing the reachable range, and velocity not zeroed at the
+clamp. Wrote the arrow projectile and the drawn bow, which I took almost
+verbatim (I dropped its `class_name` — a brand-new global class breaks a
+headless export). It also correctly flagged that it could not verify the
+player's collision layer from the files it had; I checked and matched the
+existing projectile's layer/mask rather than guessing.
+
+**Kimi K3.** Numbers, and harsher than mine. Verdict: *"DISPROVEN — the boss
+cannot reliably catch a sprinting player, and at the arena's left edge it never
+can."* Measured the boss losing **223px per cycle** to a fleeing player, spent
+**58–63% of every cycle** below sprint speed, and named the pin zone to the
+pixel: *"player standing at the left wall, x ∈ [3700, 3790)… the sprite hangs
+at a fixed x, 210px of centre separation, forever. This is the live 'boss not
+moving / not chasing.'"* It also caught the same class of bug on the vertical
+axis, which I fixed at the same time.
+
+**Grok 4.5.** Traced the band placement maths, identified that the stride
+scales with course length and that displaced pieces pack leftward leaving a
+dead tail — both of which I fixed. On Stage 3 it audited every spawn and found
+no functionless clutter left in the level script, matching my own read; it also
+listed every silent-drop path in the band placer, which is how the "warn only
+for a logo's first appearance" rule got written.
+
+**DeepSeek V4 Pro.** Compliance matrix. Its first run marked several items FAIL
+for "no evidence" because I hadn't given it the relevant files — my error, so I
+re-ran it with the full set rather than accept a flattering result.
+
+---
+
+## PREVIOUS PASS (kept for history)
 
 ## Stage 3 pass — what I fixed, and what I did NOT
 
