@@ -8,8 +8,17 @@ const DYNAMITE := preload("res://src/boss/dynamite.tscn")
 
 enum State { PATROL, THROW, VULNERABLE }
 
-@export var patrol_speed: float = 165.0
+## Stage 3 is the LAST boss and must be the hardest. Player top speed is
+## walk_speed 200 * SPRINT_MULTIPLIER 1.2 = 240 px/s, and this boss chased at
+## 165 in phase 1 and 215 in phase 2 — slower than a running player for two of
+## his three phases. That is the whole of the founder's "stage 3 boss is too
+## easy": you could not be caught by simply holding run. Every phase now beats
+## a sprint, with the gap widening as his health drops.
+@export var patrol_speed: float = 255.0
 @export var throw_cooldown: float = 1.05
+## Floor under any chasing state's speed. THROW used to brake him to a dead
+## stop, which handed the player a free escape window on every single attack.
+const MIN_CHASE_SPEED: float = 250.0
 
 var current_state: State = State.PATROL
 var throw_timer: float = 0.0
@@ -79,10 +88,24 @@ func _ready() -> void:
 var arena_min: Vector2 = Vector2.ZERO
 var arena_max: Vector2 = Vector2.ZERO
 
+## Half of the 80x80 body. The origin is the TOP-LEFT, so the centre — the
+## thing that actually has to stay inside the arena — is origin + this.
+const HALF_BODY: float = 40.0
+
 func _clamp_to_arena() -> void:
 	if arena_max == Vector2.ZERO:
 		return
-	global_position.x = clampf(global_position.x, arena_min.x, arena_max.x)
+	# Clamp the body CENTRE, inset by half a body, so the whole sprite stays in
+	# the arena. Also zero the velocity pushing into the wall, otherwise he
+	# accelerates into the clamp every frame and has to unwind a saturated
+	# velocity before he can turn around — he reads as stuck.
+	var lo_x: float = arena_min.x + HALF_BODY
+	var hi_x: float = maxf(lo_x, arena_max.x - HALF_BODY)
+	var centre_x: float = global_position.x + HALF_BODY
+	var clamped_x: float = clampf(centre_x, lo_x, hi_x)
+	if not is_equal_approx(clamped_x, centre_x):
+		global_position.x += clamped_x - centre_x
+		velocity.x = 0.0
 	# Only the FLOOR is clamped, not the ceiling: he hops, and pinning his
 	# maximum height would cancel the hop mid-air.
 	if global_position.y > arena_max.y:
@@ -111,9 +134,10 @@ func _ledge_ahead(facing: float) -> bool:
 	return space.intersect_ray(params).is_empty()
 
 ## Horizontal reach of one hop. HOP_VELOCITY -620 against gravity 980 is ~1.26s
-## of airtime; at the fastest phase-3 patrol speed (275) that is ~348px. Probed
-## a little short of the true maximum so he only commits to a landing he can
-## comfortably make.
+## of airtime; even at phase-1 speed (255) that is ~321px. Deliberately probed
+## SHORT of the true maximum so he only commits to a landing he can comfortably
+## make — the chase speed-ups above only widen that safety margin, they never
+## narrow it, so this stays correct without re-tuning.
 const HOP_REACH: float = 300.0
 
 ## True when there IS ground to land on across the gap ahead.
@@ -134,6 +158,48 @@ func _gap_crossable(facing: float) -> bool:
 			return true
 	return false
 
+## One frame of grounded pursuit at `speed` px/s. Returns true if he is standing
+## at a ledge lip and has refused to take the step.
+##
+## Extracted so PATROL and THROW share ONE chase implementation. They used to
+## have two: PATROL stalked, THROW braked to zero — which meant every attack
+## handed the player an escape window, and any future fix to the ledge sense
+## would have had to be made twice.
+func _ground_chase(delta: float, speed: float) -> bool:
+	# STALK the live player rather than pacing wall to wall. The founder's "the
+	# bosses need to be more challenging" applies here too: this boss only ever
+	# bounced between walls, so a player who stood still was never approached.
+	#
+	# Compared CENTRE to player, not origin to player: the origin is the body's
+	# top-left, so an origin-based comparison biased every decision 40px east
+	# and made him oscillate around a point he was never actually on.
+	var pl := get_tree().get_first_node_in_group("player")
+	if pl:
+		var dx: float = pl.global_position.x - (global_position.x + HALF_BODY)
+		if absf(dx) > TURN_DEAD_ZONE:
+			direction = signf(dx)
+	# Ease into the target speed so he reads as heavy, not robotic.
+	var target_vx: float = speed * direction
+	var rate: float = (TURN_DECEL
+		if signf(target_vx) != signf(velocity.x) and not is_zero_approx(velocity.x)
+		else WALK_ACCEL)
+	velocity.x = move_toward(velocity.x, target_vx, rate * delta)
+	# LEDGE SENSE. Standing on solid ground with a drop directly ahead, he
+	# refuses to take the step — he holds the lip instead of walking into the
+	# void. Only while GROUNDED, so a hop across a gap is never cancelled
+	# mid-air. Founder explicitly asked that this NOT regress.
+	var at_ledge := false
+	if is_on_floor() and not is_zero_approx(target_vx):
+		at_ledge = _ledge_ahead(signf(target_vx))
+		if at_ledge:
+			velocity.x = 0.0
+	velocity.y += 980.0 * delta
+	move_and_slide()
+	_clamp_to_arena()
+	if absf(velocity.x) > 12.0:
+		boss_sprite.set_facing(velocity.x > 0.0)
+	return at_ledge
+
 func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
@@ -143,35 +209,8 @@ func _physics_process(delta: float) -> void:
 
 	match current_state:
 		State.PATROL:
-			# STALK the live player rather than pacing wall to wall. The
-			# founder's "the bosses need to be more challenging" applies here
-			# too: this boss only ever bounced between walls, so a player who
-			# stood still was never approached.
 			var pl := get_tree().get_first_node_in_group("player")
-			if pl:
-				var dx: float = pl.global_position.x - global_position.x
-				if absf(dx) > TURN_DEAD_ZONE:
-					direction = signf(dx)
-			# Ease into the target speed so he reads as heavy, not robotic.
-			var target_vx: float = patrol_speed * direction
-			var rate: float = (TURN_DECEL
-				if signf(target_vx) != signf(velocity.x) and not is_zero_approx(velocity.x)
-				else WALK_ACCEL)
-			velocity.x = move_toward(velocity.x, target_vx, rate * delta)
-			# LEDGE SENSE. Standing on solid ground with a drop directly ahead,
-			# he refuses to take the step — he holds the lip instead of walking
-			# into the void. Only while GROUNDED, so a hop across a gap is never
-			# cancelled mid-air.
-			var at_ledge := false
-			if is_on_floor() and not is_zero_approx(target_vx):
-				at_ledge = _ledge_ahead(signf(target_vx))
-				if at_ledge:
-					velocity.x = 0.0
-			velocity.y += 980.0 * delta
-			move_and_slide()
-			_clamp_to_arena()
-			if absf(velocity.x) > 12.0:
-				boss_sprite.set_facing(velocity.x > 0.0)
+			var at_ledge: bool = _ground_chase(delta, patrol_speed)
 			# Blocked by terrain, or the player is above him -> hop. A ledge now
 			# also triggers the hop: if the player is across a gap he JUMPS it
 			# rather than standing at the edge forever, which keeps him
@@ -190,10 +229,12 @@ func _physics_process(delta: float) -> void:
 				_throw_dynamite()
 
 		State.THROW:
-			velocity.x = move_toward(velocity.x, 0.0, 100.0 * delta * 60.0)
-			velocity.y += 980.0 * delta
-			move_and_slide()
-			_clamp_to_arena()
+			# He KEEPS COMING while he winds up and throws. Braking to a dead
+			# stop here gave the player a guaranteed free gap on every attack,
+			# so the fight was a series of safe windows joined by short chases.
+			# Slower than patrol so the throw still reads as a commitment, but
+			# never below a sprint.
+			_ground_chase(delta, maxf(patrol_speed * 0.72, MIN_CHASE_SPEED))
 
 		State.VULNERABLE:
 			velocity.x = move_toward(velocity.x, 0.0, 150.0 * delta * 60.0)
@@ -204,11 +245,13 @@ func _physics_process(delta: float) -> void:
 
 ## Accelerate patrol + taunt on phase transition (BossBase calls this).
 func _on_phase_changed() -> void:
+	# Both were BELOW the player's 240 px/s sprint at phase 2 (215) and barely
+	# above it at phase 3 (275). Re-tuned so the pressure genuinely escalates.
 	if current_phase >= 2:
-		patrol_speed = 215.0
+		patrol_speed = 300.0
 		BossVoiceSystem.say(self, BOSS_ID, "phase50", true)
 	if current_phase >= 3:
-		patrol_speed = 275.0
+		patrol_speed = 345.0
 		BossVoiceSystem.say(self, BOSS_ID, "phase25", true)
 		ScreenShake.medium()
 

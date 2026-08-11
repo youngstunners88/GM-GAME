@@ -497,6 +497,23 @@ func get_checkpoint(level: int) -> Vector2:
         return level_checkpoints[level].pos
     return Vector2.ZERO
 
+## Forget `level`'s mid-level checkpoint so its next load starts at the level's
+## own spawn marker.
+##
+## THIS DID NOT EXIST, and player.gd called it anyway. The full-life-wipe path
+## (`_respawn_or_game_over`, lives == 0) is supposed to restart the CURRENT
+## level from its START — the founder's rule — and it opens by clearing the
+## checkpoint so `_spawn_player` falls back to the spawn marker. Instead the
+## call threw "Invalid call. Nonexistent function 'clear_checkpoint'", which
+## ABORTS the rest of that function: the health/lives refill never ran and the
+## `SceneRouter.load_scene` on the next line never ran either. A full wipe
+## therefore left the game sitting in GAME_OVER with no reload at all.
+##
+## Nothing caught it because a GDScript call to a missing method is a runtime
+## error, not a compile error — the script battery loads this file happily.
+func clear_checkpoint(level: int) -> void:
+    level_checkpoints.erase(level)
+
 func save_session() -> bool:
     var data: Dictionary = {
         "total_score": total_score,

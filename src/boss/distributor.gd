@@ -219,7 +219,21 @@ func _physics_process(delta: float) -> void:
 				_begin_vulnerable()
 
 		Phase.VULNERABLE:
-			_hover_brake(delta)
+			# HE STILL DRIFTS TOWARD YOU WHILE VULNERABLE.
+			#
+			# He used to brake to a dead stop here, and at 1.6s of a ~7.1s
+			# cycle that is nearly a quarter of the fight spent motionless. Do
+			# the arithmetic against a player holding run: even with every
+			# other state now above sprint speed, one full cycle came out at
+			# roughly 50px NET LOST — the open-runway gate measured the gap
+			# going 600 -> 787. He was only ever "catching" the player because
+			# the arena has walls.
+			#
+			# VULNERABLE is the player's damage window and it stays: he is
+			# still the slowest he ever gets, at half a sprint, and visibly
+			# so. But drifting is not the same as free escape, and the founder
+			# asked for stakes.
+			_hover_pursue(delta, 0.0, VULNERABLE_DRIFT)
 			# Vulnerability is telegraphed by a soft CYAN shimmer, not by
 			# turning him red — red is reserved for the hit flash so a landed
 			# blow actually reads (founder E3).
@@ -252,10 +266,51 @@ const HOVER_MAX: float = 330.0
 ## readable 60px gap under his board, so touching him is something the player
 ## does — by jumping into him, or by losing the tug-of-war with HOARD GRAVITY —
 ## rather than something the fight does to them on spawn.
-const HOVER_CLEARANCE: float = 60.0
-const HOVER_ABOVE: float = BODY + HOVER_CLEARANCE
+## Clear air between the bottom of his board and the top of the player.
+##
+## RAISED FROM 60 WITH THE CENTRE-SEEKING FIX, and it had to be. While he
+## steered his ORIGIN at the player his 240px body sat entirely to one side of
+## them, so a vertical overshoot on the way down met empty space. Centre-
+## seeking parks that body directly overhead, where the only thing between him
+## and a contact kill is this gap — and he closes on it at up to 330 px/s with
+## 430 px/s^2 of braking, which overshoots a 60px gap easily. A distributor
+## behaviour run caught it immediately: he killed a player who was standing
+## still and never touched a control.
+##
+## That is the exact failure this constant already existed to prevent. From
+## its original note: touching him must be "something the player does — by
+## jumping into him, or by losing the tug-of-war with HOARD GRAVITY — rather
+## than something the fight does to them on spawn." 130 restores that margin
+## against the new approach speed without moving him further away
+## horizontally, which is the axis the chase is actually judged on.
+const HOVER_CLEARANCE: float = 130.0
+## Ride height measured from the player to the body's CENTRE, so the drawn gap
+## under his board is the same 60px regardless of where this node's origin is.
+const HOVER_ABOVE: float = BODY / 2.0 + HOVER_CLEARANCE
+## He must be this far clear of the player's head before he moves sideways at
+## all — see the climb rule in _hover_pursue.
+const CLIMB_CLEAR_MARGIN: float = 60.0
+## Clear air the gravity field must always leave under his board.
+const PULL_FLOOR_MARGIN: float = 48.0
+
+## Floor under every pursuing state's speed, in px/s.
+##
+## FOUNDER, TWICE: "the 2nd boss doesn't chase Lil Blunt" and then, after the
+## last pass raised HOVER_MAX to 330, "still not moving/chasing". Raising the
+## ceiling did nothing for the states that matter: the per-state scales below
+## are 0.62 / 0.55 / 0.70, which at 330 give 205 / 182 / 231 px/s — all three
+## still BELOW the player's 240 px/s sprint, and those three states are most of
+## every cycle. A player holding run was mathematically uncatchable no matter
+## how high HOVER_MAX went. The scale now only ever ADDS speed above this floor;
+## it can no longer drop him under a sprint.
+const MIN_PURSUE_SPEED: float = 265.0
+
 ## Hard arena clamp, set by the level when the fight starts. Zero size = unset,
 ## in which case only the flight model applies.
+##
+## These are the RAW arena bounds in world space (the level passes start_x /
+## end_x untouched). The half-body inset is applied HERE, by the only object
+## that knows how big it is — see _clamp_to_arena.
 var arena_min: Vector2 = Vector2.ZERO
 var arena_max: Vector2 = Vector2.ZERO
 
@@ -269,13 +324,59 @@ func hit_centre() -> Vector2:
 func _cadence() -> float:
 	return maxf(1.2, throw_cooldown - 0.4 * (current_phase - 1))
 
-func _hover_pursue(delta: float, speed_scale: float = 1.0) -> void:
+## Speed he keeps while vulnerable — half a sprint, so he closes slowly rather
+## than handing over a free window. See the VULNERABLE case in _physics_process.
+const VULNERABLE_DRIFT: float = 120.0
+
+func _hover_pursue(delta: float, speed_scale: float = 1.0,
+		min_speed: float = MIN_PURSUE_SPEED) -> void:
 	var p := get_tree().get_first_node_in_group("player")
 	if p:
 		var target: Vector2 = p.global_position + Vector2(0.0, -HOVER_ABOVE)
-		var to: Vector2 = target - global_position
-		velocity = velocity.move_toward(
-			to.normalized() * HOVER_MAX * speed_scale, HOVER_ACCEL * delta)
+		# STEERS FROM THE BODY CENTRE, NOT THE ORIGIN. This node's origin is the
+		# body's TOP-LEFT and the body is 240 wide, so aiming the origin at the
+		# player parked his visible centre a permanent 120px EAST of them — he
+		# was chasing a point he had already overshot. Combined with the arena
+		# clamp below that was enough to pin him motionless for the whole
+		# western third of the arena, which is exactly what the founder saw.
+		var to: Vector2 = target - hit_centre()
+		# CLIMB CLEAR FIRST, CLOSE SECOND.
+		#
+		# Centre-seeking fixed the chase and immediately introduced a new way to
+		# die. He spawns at roughly the player's own height, so steering his
+		# centre at them swept a 240px body SIDEWAYS THROUGH them on the
+		# approach — and boss contact is an instant restart, not a hit, so a
+		# player who never touched a control lost the run on his opening move.
+		# A logging build caught him doing it with his centre at (-262, 61)
+		# against a player at (-200, 300): 119px of daylight at the moment the
+		# print ran, and a body that had already passed straight over them.
+		#
+		# This is exactly what HOVER_CLEARANCE exists to prevent — from its own
+		# note, contact must be "something the player does... rather than
+		# something the fight does to them on spawn."
+		#
+		# The rule is therefore geometric, not a fudge factor: until the BOTTOM
+		# OF HIS BODY is clear of the top of the player, he does not move
+		# sideways at all. He rises straight up, and only starts closing once
+		# he can no longer collide on the way. A softer version of this (damping
+		# the horizontal to 15%) was not enough — damped is still lateral, and
+		# he covered the gap during the climb anyway.
+		# The lock only applies where a collision is actually possible: he must
+		# be low enough to hit them AND close enough horizontally for their
+		# spans to meet. Locking unconditionally was too blunt — approaching
+		# from 600px away at the player's own height, he froze his horizontal
+		# closing for the whole climb and LOST ground to a sprinting player,
+		# which the open-runway gate caught at once (gap 600 -> 787). A full
+		# body width of horizontal separation is half a body more than contact
+		# needs, so he starts rising well before he could reach them.
+		var centre: Vector2 = hit_centre()
+		var body_bottom: float = centre.y + BODY / 2.0
+		var too_low: bool = body_bottom > p.global_position.y - CLIMB_CLEAR_MARGIN
+		var could_touch: bool = absf(centre.x - p.global_position.x) < BODY
+		if too_low and could_touch:
+			to.x = 0.0
+		var speed: float = maxf(HOVER_MAX * speed_scale, min_speed)
+		velocity = velocity.move_toward(to.normalized() * speed, HOVER_ACCEL * delta)
 		boss_sprite.set_facing(to.x > 0.0)
 	else:
 		velocity = velocity.move_toward(Vector2.ZERO, HOVER_ACCEL * delta)
@@ -290,11 +391,32 @@ func _hover_brake(delta: float) -> void:
 
 ## Last line of defence against "he fell in the trench and disappeared". Even
 ## if some future force pushes him, he physically cannot leave the arena box.
+##
+## Clamps the body CENTRE, inset by half a body, so the whole 240px sprite
+## stays inside the arena. The previous version clamped the ORIGIN to bounds
+## the level had already inset by a magic 90 — which let the body hang 150px
+## past the east wall while blocking the centre from ever reaching the western
+## 210px of the arena.
+##
+## It also RESETS the velocity component pushing into the wall. Without that,
+## `move_toward` kept accelerating into the clamp every frame and the boss sat
+## glued to the boundary with a saturated velocity, so the instant the player
+## moved back into reach he still needed a full deceleration to unstick — he
+## read as frozen.
 func _clamp_to_arena() -> void:
 	if arena_max == Vector2.ZERO:
 		return
-	global_position.x = clampf(global_position.x, arena_min.x, arena_max.x)
-	global_position.y = clampf(global_position.y, arena_min.y, arena_max.y)
+	var half: float = BODY / 2.0
+	var lo_x: float = arena_min.x + half
+	var hi_x: float = maxf(lo_x, arena_max.x - half)
+	var centre: Vector2 = hit_centre()
+	var clamped_x: float = clampf(centre.x, lo_x, hi_x)
+	var clamped_y: float = clampf(centre.y, arena_min.y, arena_max.y)
+	if not is_equal_approx(clamped_x, centre.x):
+		velocity.x = 0.0
+	if not is_equal_approx(clamped_y, centre.y):
+		velocity.y = 0.0
+	global_position += Vector2(clamped_x - centre.x, clamped_y - centre.y)
 
 ## THE DIAMOND SURFBOARD.
 ##
@@ -417,6 +539,23 @@ func _apply_pull(delta: float) -> void:
 	# Vertical drag is gentler: a strong up-pull fights gravity in a way that
 	# reads as a bug rather than a threat.
 	var step := Vector2(to_centre.x, to_centre.y * 0.35) * speed * delta
+	# THE FIELD MAY NOT DELIVER THE CONTACT KILL ITSELF.
+	#
+	# While he hovered 120px to one side of the player this pull was mostly
+	# SIDEWAYS and the question never came up. Centre-seeking put him directly
+	# overhead, which turns the same field into a vertical winch pointed at an
+	# instant-restart hitbox. The upward step is therefore capped at whatever
+	# clear air is left under his board, minus a margin — so the drag can lift
+	# you, it can absolutely make you fight it, and it can never finish the job
+	# for him.
+	#
+	# A radial no-pull core was the first attempt and was wrong: at the ranges
+	# the field is actually measured at it disabled the mechanic outright,
+	# which is the "cosmetic pull" regression this fight has already shipped
+	# once. Capping the step keeps the pull real at every distance.
+	if step.y < 0.0:
+		var clear_air: float = body.global_position.y - (centre.y + BODY / 2.0)
+		step.y = -minf(-step.y, maxf(0.0, clear_air - PULL_FLOOR_MARGIN))
 	# move_and_collide, not a velocity write — see pull_speed's comment. This
 	# also means the arena walls and floor stop the drag instead of the player
 	# being pulled through geometry.

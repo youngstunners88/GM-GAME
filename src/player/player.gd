@@ -365,8 +365,17 @@ func _update_tool_visual() -> void:
 	# had. The scale comes from the projectile's own BIG_SCALE constant, so the
 	# weapon in his hand and the weapon that leaves it can never disagree.
 	if GameManager.has_power_up("bigaxe"):
-		sprite.set_tool("res://src/assets/sprites/sprite_item_pickaxe.png",
-			load("res://src/combat/axe.gd").BIG_SCALE)
+		# Held art and thrown art both come from axe.gd, so the weapon in his
+		# hand and the weapon that leaves it can never disagree.
+		#
+		# This ALSO fixes a silent bug: set_tool() early-returns when the path
+		# is unchanged, so while both branches passed the SAME pickaxe path,
+		# upgrading pickaxe -> big axe kept the old scale and he saw no change
+		# at all. That is the founder's "WE DON'T SEE IT but he ends up
+		# throwing bigger axes", still half-live after the previous fix.
+		var axe_script: GDScript = load("res://src/combat/axe.gd")
+		var consts: Dictionary = axe_script.get_script_constant_map()
+		sprite.set_tool(str(consts["BIG_ART"]), float(consts["BIG_SCALE"]))
 	elif GameManager.has_power_up("pickaxe"):
 		sprite.set_tool("res://src/assets/sprites/sprite_item_pickaxe.png")
 	elif GameManager.has_power_up("torch"):

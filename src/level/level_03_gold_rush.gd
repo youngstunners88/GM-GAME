@@ -63,7 +63,15 @@ func _setup_depth_routes() -> void:
 	var plate := preload("res://src/level/pressure_plate.tscn").instantiate()
 	plate.global_position = Vector2(1180, 630)
 	add_child(plate)
-	plate.linked_doors = [plate.get_path_to(gate)]
+	# MUST be a TYPED array. `linked_doors` is `Array[NodePath]`, and assigning
+	# an untyped `[...]` literal to it does not convert — Godot REJECTS the
+	# assignment at runtime with "Invalid assignment of property or key
+	# 'linked_doors'". The plate therefore had NO linked doors: stepping on it
+	# started nothing, and the Gold Rush gate it is supposed to open could
+	# never be opened by it. It failed silently in a printed error nobody was
+	# reading, which is why the stage's headline mechanic has been dead.
+	var links: Array[NodePath] = [plate.get_path_to(gate)]
+	plate.linked_doors = links
 	var gold_lane := [Vector2(1700, 460), Vector2(1900, 400), Vector2(2100, 340), Vector2(2300, 400)]
 	for pos: Vector2 in gold_lane:
 		var plat := preload("res://src/level/one_way_platform.tscn").instantiate()
@@ -125,9 +133,13 @@ func _on_boss_trigger(body: Node2D) -> void:
 		# carried him past a platform lip he fell out of the world and the fight
 		# became unwinnable. The 90px inset matches level_02's, keeping him off
 		# the arena's own walls.
+		# RAW arena bounds — the boss insets by its own half-body now (see
+		# claim_jumper._clamp_to_arena). The old 90px inset was applied to the
+		# boss's ORIGIN, which is its body's top-left, so it shifted his
+		# reachable range 40px east AND stole 130px of chase room at each end.
 		var arena: Dictionary = level_data.boss_arena
-		var bx0: float = float(arena.get("start_x", 0.0)) + 90.0
-		var bx1: float = float(arena.get("end_x", 0.0)) - 90.0
+		var bx0: float = float(arena.get("start_x", 0.0))
+		var bx1: float = float(arena.get("end_x", 0.0))
 		var by: float = float(boss_spawn.global_position.y)
 		boss.arena_min = Vector2(bx0, by - 400.0)
 		# Floor clamp sits a little BELOW the spawn line so a legitimate hop

@@ -28,8 +28,16 @@ var _spin: float = 0.0
 var big: bool = false
 const BIG_DAMAGE := 5
 const BIG_BOSS_DAMAGE := 3
-const BIG_SCALE := 2.8
+## The BIG axe is drawn as an actual big axe now, so the projectile is scaled
+## against ITS pixel size, not the pickaxe's. sprite_item_bigaxe.png is 40x44
+## against the pickaxe's 18x34, so the old 2.8 (tuned for the pickaxe) would
+## have thrown something roughly twice the intended size.
+const BIG_SCALE := 1.55
 const BIG_SPEED_MULT := 1.15
+## Art for the upgraded axe. Until now the "big axe" was the PICKAXE sprite
+## blown up and tinted gold — which is also why the big-axe PICKUP and the
+## pickaxe pickup were indistinguishable on Stage 3 (founder T5).
+const BIG_ART := "res://src/assets/sprites/sprite_item_bigaxe.png"
 
 @onready var sprite: Sprite2D = $Sprite
 
@@ -39,7 +47,11 @@ func _ready() -> void:
 		damage = BIG_DAMAGE
 		speed *= BIG_SPEED_MULT
 		scale = Vector2(BIG_SCALE, BIG_SCALE)
-		modulate = Color(1.35, 1.1, 0.55, 1.0)   # hot gilded edge
+		if sprite:
+			sprite.texture = load(BIG_ART)
+		# No gold tint any more — the art carries its own gold collar, and
+		# tinting on top of it washed the steel out.
+		modulate = Color(1.0, 1.0, 1.0, 1.0)
 	body_entered.connect(_on_body_entered)
 	# Some enemies (e.g. HostileVine) are a Node2D with an Area2D hitbox rather
 	# than a physics body — those only surface through area_entered.

@@ -412,7 +412,21 @@ func _test_big_axe_power() -> void:
 	_info("big axe damage / scale", "%d / %s" % [int(big.get("damage")), str(big.scale)])
 	_check("big axe hits much harder than a normal axe",
 		int(big.get("damage")) > int(normal.get("damage")) if is_instance_valid(normal) else int(big.get("damage")) >= 5)
-	_check("big axe is visibly larger", big.scale.x >= 1.9, "scale=%s" % str(big.scale))
+	# MEASURED IN RENDERED PIXELS, NOT IN `scale`.
+	#
+	# This used to assert `scale.x >= 1.9`, which was only ever a proxy for
+	# "bigger on screen" — and it stopped being a valid one the moment the big
+	# axe got its own, larger artwork instead of being the pickaxe blown up.
+	# Its scale legitimately DROPPED (2.8 -> 1.55) while the thing the founder
+	# actually looks at grew from 50x95 to 62x68 wide and heavier. Asserting
+	# on a nominal constant instead of the real rendered extent is the same
+	# substitution that produced the banner-clearance bug; measure the pixels.
+	var big_spr := big.get_node("Sprite") as Sprite2D
+	var norm_spr := AXE.instantiate().get_node("Sprite") as Sprite2D
+	var big_w: float = big.scale.x * big_spr.scale.x * float(big_spr.texture.get_width())
+	var norm_w: float = norm_spr.scale.x * float(norm_spr.texture.get_width())
+	_check("big axe is visibly larger", big_w >= norm_w * 1.9,
+		"big renders %.0fpx wide vs a normal axe's %.0fpx" % [big_w, norm_w])
 
 	# One-shot an ordinary enemy under real physics.
 	var enemy: Node = TAX_COLLECTOR.instantiate()

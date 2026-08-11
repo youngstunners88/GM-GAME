@@ -392,6 +392,34 @@ func _x_over_gap(x: float, half_width: float = BAND_ART_SIZE * 0.5) -> bool:
 const LANDMARK_START_X: float = 700.0
 const LANDMARK_END_MARGIN: float = 300.0
 
+## Target clear distance between consecutive band artworks, in px.
+##
+## FOUNDER: "large empty real estate = money left on the table" about L2/L3.
+## The cause was structural, not a bad constant. The lattice divided the WHOLE
+## course by a FIXED piece count, so the stride grew with the course:
+##
+##   L1  length 5450 -> span 4450 -> pitch ~494
+##   L2  length 6400 -> span 5400 -> pitch ~600
+##   L3  length 7350 -> span 6350 -> pitch ~706
+##
+## Same nine or ten logos, stretched over a course half again as long — so the
+## longer the level, the emptier the band, which is exactly backwards from what
+## he is paying for. The piece COUNT is now derived from the course length at
+## this fixed pitch and the art list CYCLES to fill it, so a longer course buys
+## more brand impressions instead of more empty purple.
+const TARGET_BAND_PITCH: float = 430.0
+## Hard ceiling on how many times the list may repeat, so a hypothetical very
+## long course can't turn the band into wallpaper.
+const MAX_BAND_CYCLES: int = 3
+
+## Un-searched ideal x for landmark `i` of `count` — the exact even-lattice
+## position before gap/overlap avoidance nudges it. Shared by the slot search
+## and by the last-resort fallback, so a displaced piece is retried NEAR where
+## it belonged instead of being packed back at the start of the course.
+func _landmark_ideal_x(i: int, count: int) -> float:
+	var span: float = maxf(_course_length - LANDMARK_END_MARGIN - LANDMARK_START_X, 1.0)
+	return LANDMARK_START_X + (span / float(count)) * (float(i) + 0.5)
+
 ## X for landmark `i` of `count`, or INF if there is no clear band for it.
 ##
 ## Founder: "the logos are unevenly spaced... its like you just threw them
@@ -412,7 +440,7 @@ const LANDMARK_END_MARGIN: float = 300.0
 func _landmark_slot_x(i: int, count: int, half_w: float, placed_x: Array[float]) -> float:
 	var span: float = maxf(_course_length - LANDMARK_END_MARGIN - LANDMARK_START_X, 1.0)
 	var pitch: float = span / float(count)
-	var ideal: float = LANDMARK_START_X + pitch * (float(i) + 0.5)
+	var ideal: float = _landmark_ideal_x(i, count)
 	# Never let two artworks crowd: at minimum a full badge width of air, and
 	# never less than 60% of the even pitch.
 	var min_sep: float = maxf(BAND_ART_SIZE * 1.15, pitch * 0.6)
@@ -693,13 +721,22 @@ func _build_protocol_landmarks() -> void:
 		available.append([path, bool(entry["wide"])])
 	if available.is_empty():
 		return
-	# Founder: "feature ALL of the protocol logos in the Blaze Rush." One slot
-	# per available artwork (not a modulo subset), so every piece appears
-	# exactly once per run rather than some being skipped.
-	var count: int = available.size()
+	# Founder: "feature ALL of the protocol logos in the Blaze Rush." Every
+	# available artwork gets a slot (not a modulo subset), so no piece is ever
+	# skipped — and on a course long enough to hold more, the list CYCLES so
+	# the extra band length is filled with more brand rather than more nothing.
+	#
+	# The first `available.size()` slots are therefore always the complete
+	# unique set, placed first and with the whole band still free. Repeats come
+	# after, so if the course genuinely runs out of clear space it is only ever
+	# a duplicate that is dropped, never a logo's only appearance.
+	var unique_count: int = available.size()
+	var span: float = maxf(_course_length - LANDMARK_END_MARGIN - LANDMARK_START_X, 1.0)
+	var wanted: int = int(round(span / TARGET_BAND_PITCH))
+	var count: int = clampi(wanted, unique_count, unique_count * MAX_BAND_CYCLES)
 	var placed_x: Array[float] = []
 	for i in range(count):
-		var entry: Array = available[i]
+		var entry: Array = available[i % unique_count]
 		var tex: Texture2D = load(entry[0])
 		if tex == null:
 			continue
@@ -738,9 +775,17 @@ func _build_protocol_landmarks() -> void:
 			# clears both the floor gaps and every existing reservation means a
 			# piece can only be missing if the course genuinely has nowhere to
 			# put it, and the gate below asserts that never happens.
-			ax = _find_band_slot(LANDMARK_START_X, half_w)
+			# Scan outward from where the piece BELONGED, not from the start of
+			# the course. Scanning from LANDMARK_START_X packed every displaced
+			# piece back into the left of the band, which is the other half of
+			# the founder's "large empty real estate": a gappy course pushed
+			# pieces leftward and left a long dead tail before the end banner.
+			ax = _find_band_slot(_landmark_ideal_x(i, count), half_w)
 			if is_inf(ax):
-				push_warning("Blaze Rush: no band space for %s" % entry[0])
+				# Only ever warn for a piece's FIRST appearance. A dropped
+				# repeat is a course that is simply full, which is fine.
+				if i < unique_count:
+					push_warning("Blaze Rush: no band space for %s" % entry[0])
 				continue
 		placed_x.append(ax)
 		_reserve_band_span(ax, half_w)

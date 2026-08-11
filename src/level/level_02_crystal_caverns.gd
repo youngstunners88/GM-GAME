@@ -95,8 +95,15 @@ func _on_boss_trigger(body: Node2D) -> void:
 		# properties BEFORE add_child, the same pre-add contract the carts and
 		# the big axe use.
 		var arena: Dictionary = level_data.boss_arena
-		var ax0: float = float(arena.get("start_x", 0.0)) + 90.0
-		var ax1: float = float(arena.get("end_x", 0.0)) - 90.0
+		# RAW arena bounds. The 90px inset that used to be applied here is gone:
+		# it was inset from the wrong reference (this boss's origin is its body's
+		# TOP-LEFT, not its centre), so it shrank the boss's reachable centre
+		# range to [3910, 4430] inside a 3700..4400 arena — he could not reach
+		# the western 210px at all, and stood pinned at the clamp whenever the
+		# player fought from the arena entrance. The boss now insets by its own
+		# half-body, which is the only place the body size is actually known.
+		var ax0: float = float(arena.get("start_x", 0.0))
+		var ax1: float = float(arena.get("end_x", 0.0))
 		var ay: float = float(boss_spawn.global_position.y)
 		boss.arena_min = Vector2(ax0, ay - 320.0)
 		boss.arena_max = Vector2(ax1, ay + 120.0)
