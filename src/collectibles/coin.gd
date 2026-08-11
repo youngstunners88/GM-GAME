@@ -19,12 +19,30 @@ extends Area2D
 ## keyout-founder-art) from the badge art and drawn at TOKEN_SCALE so the
 ## on-screen footprint stays the 40px the original coin sprite had and the
 ## 44x44 collision box still matches.
+##
+## What each pickup CREDITS now matches what it SHOWS (see collect()) --
+## it used to always feed GameManager.add_coin() regardless of face, so a
+## TitanX/DIAMONDS/GoldMine-branded pickup still counted as a "coin" on the
+## HUD. Founder: "$TITANX, $DIAMONDS, AND $GOLD are tokens and not coins."
 const STAGE_TOKENS := {
     1: "res://src/assets/sprites/sprite_token_l1.png",
     2: "res://src/assets/sprites/sprite_token_l2.png",
     3: "res://src/assets/sprites/sprite_token_l3.png",
 }
 const TOKEN_SCALE := Vector2(0.625, 0.625)
+
+## Which system a stage-branded pickup credits. Empty string on stages with no
+## token art (L4+) falls back to the plain coin path — see collect().
+const STAGE_CREDIT := {
+    1: "titanx",
+    2: "diamonds",
+    3: "gold",
+}
+
+## Set by _apply_stage_token() the moment the sprite is decided, so collect()
+## never has to re-derive "is this branded" from GameManager.current_level a
+## second time and risk answering it differently.
+var _credit_target: String = ""
 
 func _ready() -> void:
     add_to_group("collectible")
@@ -49,14 +67,31 @@ func _apply_stage_token() -> Vector2:
     # Brand art is photographic, not pixel art: nearest-neighbour downscaling
     # aliases the fine linework into noise at this size.
     $Sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+    _credit_target = STAGE_CREDIT.get(GameManager.current_level, "")
     return TOKEN_SCALE
 
 func _on_body_entered(body: Node2D) -> void:
     if body.is_in_group("player"):
         collect()
 
+## Founder: "$TITANX, $DIAMONDS, AND $GOLD are tokens and not coins." This
+## pickup swaps its FACE to a protocol logo per stage (see STAGE_TOKENS) but
+## used to ALWAYS credit GameManager.add_coin() regardless — so a player
+## collecting a TitanX-branded token on Stage 1 watched the "COINS" counter
+## go up, which is exactly the mislabeling the founder is describing: the HUD
+## was calling a protocol token a coin. It now credits the SAME system its
+## face represents. Stages with no token art (L4+) fall back to the original
+## generic-coin behaviour unchanged.
 func collect() -> void:
-    GameManager.add_coin()
+    match _credit_target:
+        "titanx":
+            GameManager.add_titanx()
+        "diamonds":
+            GoldMineSystem.collect_diamonds(1)
+        "gold":
+            GoldMineSystem.mine_gold(1)
+        _:
+            GameManager.add_coin()
     ComboSystem.add_score(10)
     AudioManager.play_sfx_at("coin", global_position)
     EffectSpawner.burst("coin_sparkle", global_position)

@@ -1,5 +1,11 @@
 # Terms of Service — Lil Blunt: The Smoke Realm
 
+> **DRAFT — NOT LEGAL REVIEWED.** Written by an AI session in response to a
+> real gap (email collection with no posted terms), not by counsel. Kept in
+> the repo at the founder's explicit instruction pending his review; do not
+> treat as finished, binding text, and do not invent or extend it further
+> without his say-so.
+
 _Last updated: 2026-07-19 · Operator: SmokeRing ("we")._
 
 1. **The game is free** to play in the browser. No purchases, no paywalls.

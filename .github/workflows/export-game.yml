@@ -37,6 +37,17 @@ on:
       # showing the stale failure it was meant to fix. Found the hard way on
       # 1f5a9a1, which triggered no workflow at all.
       - 'scripts/**'
+      # secure-build-checklist was relocated from scripts/ to this skill path
+      # (founder request, PR #21) and immediately reproduced the EXACT bug the
+      # comment above documents: the scanner and its rules moved out from under
+      # the path filter, so a commit that only touched the security gate
+      # (checklist.json, audit.ts) triggered NO workflow at all — silently,
+      # with no error, on the very next commit after the move. Caught only by
+      # noticing the PR's check-run list was empty when it should not have
+      # been. `scripts/security-audit.ts` (the back-compat shim) stayed inside
+      # scripts/** and so still triggered CI on its own, which is exactly how
+      # this went unnoticed for one full commit.
+      - '.claude/skills/secure-build-checklist/**'
   workflow_dispatch:
 
 permissions:

@@ -160,8 +160,14 @@ try {
     // time. Harmless if the panel isn't present.
     await page.keyboard.press('Escape');
     await page.waitForTimeout(600);
-    // Current menu layout: PLAY button center ≈ y 0.60 (was 0.553 pre-subtitle).
-    await page.mouse.click(vp.width * 0.5, vp.height * 0.6);
+    // Current menu layout: PLAY button center ≈ y 0.71 (was 0.553 pre-subtitle,
+    // then 0.60 — re-measured 2026-08-11 from an actual screenshot's pixel
+    // bounds after 0.60 started missing high again: the button's real span is
+    // y≈482-540px at a 720px-tall viewport (center 511px = 0.71), not 432px.
+    // This mismatch is exactly why the previous calibration silently produced
+    // "MENU → MENU" self-transitions instead of reaching PLAYING — measure
+    // from a real screenshot when this next drifts, don't guess.
+    await page.mouse.click(vp.width * 0.5, vp.height * 0.71);
     // First run then shows the optional email-signup panel; Escape skips it.
     await page.waitForTimeout(2500);
     await page.keyboard.press('Escape');

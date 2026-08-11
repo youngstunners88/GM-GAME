@@ -290,20 +290,49 @@ const HOVER_ABOVE: float = BODY / 2.0 + HOVER_CLEARANCE
 ## He must be this far clear of the player's head before he moves sideways at
 ## all — see the climb rule in _hover_pursue.
 const CLIMB_CLEAR_MARGIN: float = 60.0
+## Speed used ONLY while the climb lock (above) is active — pure vertical
+## motion, so it carries none of the lateral-sweep collision risk that caps
+## every other pursuing state at MIN_PURSUE_SPEED. Set above the normal chase
+## floor so getting clear of the safety lock is faster, not a multi-cycle drag
+## on the actual chase — but NOT set higher than this: 520 was tried first and
+## REGRESSED the real-arena-bounds gate (boss travelled only 385px in 7s,
+## under the 400px pass bar) by overshooting the climb target hard enough,
+## inside the arena's own y-bounds, that he spent longer recovering from the
+## overshoot than he saved climbing faster. 400 is the value that improved the
+## open-ground case without costing the bounded-arena one — verified by
+## running both real-physics gates, not assumed.
+const CLIMB_SPEED: float = 400.0
 ## Clear air the gravity field must always leave under his board.
 const PULL_FLOOR_MARGIN: float = 48.0
 
 ## Floor under every pursuing state's speed, in px/s.
 ##
-## FOUNDER, TWICE: "the 2nd boss doesn't chase Lil Blunt" and then, after the
-## last pass raised HOVER_MAX to 330, "still not moving/chasing". Raising the
-## ceiling did nothing for the states that matter: the per-state scales below
-## are 0.62 / 0.55 / 0.70, which at 330 give 205 / 182 / 231 px/s — all three
-## still BELOW the player's 240 px/s sprint, and those three states are most of
-## every cycle. A player holding run was mathematically uncatchable no matter
-## how high HOVER_MAX went. The scale now only ever ADDS speed above this floor;
-## it can no longer drop him under a sprint.
-const MIN_PURSUE_SPEED: float = 265.0
+## FOUNDER, THREE TIMES NOW: "the 2nd boss doesn't chase Lil Blunt", then
+## after HOVER_MAX went to 330, "still not moving/chasing", then again after
+## this floor was first added at 265: "The boss in stage 2 is still not
+## chasing!!!!"
+##
+## The first two fixes were real and are why he chases at all in phase 1 — but
+## every gate written for them (including the real-arena-bounds one) drove a
+## FRESH, undamaged boss, which never leaves phase 1. Kimi K3 was asked to
+## re-derive the numbers from this file with no memory of any prior fix, and
+## reconstructed the FULL phase-2 cycle independently — confirmed by hand
+## here against every actual duration/scale constant in this file, not
+## estimated: at the old 265 floor, one full phase-2 super-cycle (a
+## HOARD_GRAVITY-and-SHARD_THROW long cycle plus a SHARD_THROW-only short
+## cycle, 8.2s total — this is the real alternation the state machine runs
+## once damage has dropped him below the phase_thresholds[9,4] first
+## threshold) nets to **-1.5px against a player who does nothing but hold
+## sprint on open ground**. Not slow — a dead heat, trending backward. Every
+## previous gate passed because it never damaged the boss into phase 2, and
+## the one gate that ran long enough to matter also clamped the player at an
+## arena wall, where a bounded arena hides an open-ground net rate of zero.
+##
+## Raised to 315: solves for a comfortably positive net rate (~+164px per the
+## same 8.2s phase-2 super-cycle, see distributor_phase2_open_ground_chase_
+## test.gd) without touching VULNERABLE_DRIFT (his actual damage window, kept
+## at half a sprint on purpose) or any state's duration/pacing.
+const MIN_PURSUE_SPEED: float = 315.0
 
 ## Hard arena clamp, set by the level when the fight starts. Zero size = unset,
 ## in which case only the flight model applies.
@@ -373,9 +402,29 @@ func _hover_pursue(delta: float, speed_scale: float = 1.0,
 		var body_bottom: float = centre.y + BODY / 2.0
 		var too_low: bool = body_bottom > p.global_position.y - CLIMB_CLEAR_MARGIN
 		var could_touch: bool = absf(centre.x - p.global_position.x) < BODY
-		if too_low and could_touch:
+		var climbing: bool = too_low and could_touch
+		if climbing:
 			to.x = 0.0
-		var speed: float = maxf(HOVER_MAX * speed_scale, min_speed)
+		# CLIMBING GETS ITS OWN, FASTER FLOOR.
+		#
+		# Found by driving a REAL fight through Phase 2 for a sustained
+		# open-ground kite (distributor_phase2_open_ground_chase_test.gd) after
+		# raising MIN_PURSUE_SPEED alone did almost nothing: he and the player
+		# spawn at roughly the same height very often (right after a pull, a
+		# vulnerable window, or simply the fight's own opening), which means
+		# EVERY one of those moments re-triggers the climb lock above, and at
+		# the ordinary chase floor a ~180px climb costs 0.6-0.8s of ZERO
+		# horizontal progress before he's even pointed at the player again —
+		# that dead window, repeated every cycle, was the real reason a
+		# sprinting player never felt caught, not the pursuing-state floor.
+		#
+		# This is safe to speed up on its own: the lock's entire job is
+		# "no LATERAL movement while a sideways sweep could still hit them",
+		# and pure vertical motion has no lateral component to sweep with —
+		# raising it cannot reintroduce the spawn-kill bug HOVER_CLEARANCE and
+		# this lock exist to prevent. It only shortens how long he spends
+		# getting out of the way of his own safety check.
+		var speed: float = CLIMB_SPEED if climbing else maxf(HOVER_MAX * speed_scale, min_speed)
 		velocity = velocity.move_toward(to.normalized() * speed, HOVER_ACCEL * delta)
 		boss_sprite.set_facing(to.x > 0.0)
 	else:

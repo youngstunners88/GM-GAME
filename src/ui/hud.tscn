@@ -47,15 +47,41 @@ theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 26
 text = "RINGS 0"
 
+[node name="TokensHeader" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.85, 1.0, 1.0)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 18
+text = "TOKENS"
+
 [node name="GoldLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.9, 1.0, 1.0)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
 theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 26
 text = "GOLD 0"
 
+[node name="DiamondLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.9, 1.0, 1.0)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 26
+text = "DIAMONDS 0"
+
+[node name="TitanxLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.9, 1.0, 1.0)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 26
+text = "TITANX 0"
+
 [node name="WbtcLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.9, 1.0, 1.0)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
 theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 26
@@ -63,24 +89,18 @@ text = "wBTC 0"
 
 [node name="XautLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.9, 1.0, 1.0)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
 theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 26
 text = "XAUT 0"
-
-[node name="DiamondLabel" type="Label" parent="MarginContainer/VBoxContainer"]
-layout_mode = 2
-theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
-theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 26
-text = "DIAMONDS 0"
 
 [node name="SmokeLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
 theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 26
-text = "PUFFS 0"
+text = "BLAZE DIAMONDS 0"
 
 [node name="PowerUpLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2

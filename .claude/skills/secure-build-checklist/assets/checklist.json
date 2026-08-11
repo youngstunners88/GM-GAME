@@ -626,7 +626,7 @@
           "policy": "not_applicable",
           "severity": "critical",
           "fix": "Review mint, burn, upgrade, initialise, rescue, pause, parameter-change, withdrawal, oracle-update, and governance execution paths. Require explicit roles and test that unauthorised callers fail.",
-          "reason": "no Solidity or contract artefact exists in this repository — the founder rule for this project is SKIP unless contract artefacts appear",
+          "reason": "FOUNDER DECISION (2026-08-11): keep SKIP — no .sol or contract artefact in-tree, web3 interaction here is client-facing only. Founder explicitly asked this not fail the ship this session; may flip to manual later. Real ERC-20/721 interactions are tracked manually in DEFI_REVIEW.md in the meantime.",
           "rearm_when": "any .sol file, ABI, or deployed-contract artefact lands in-tree (external ERC-20/721 interactions stay tracked manually in DEFI_REVIEW.md)"
         },
         {
@@ -635,7 +635,7 @@
           "policy": "not_applicable",
           "severity": "critical",
           "fix": "Write and test invariants for supply, reserves, collateralisation, debt, shares, rewards, fees, and conservation of value across every state transition and cross-contract path.",
-          "reason": "no Solidity or contract artefact exists in this repository — the founder rule for this project is SKIP unless contract artefacts appear",
+          "reason": "FOUNDER DECISION (2026-08-11): keep SKIP — no .sol or contract artefact in-tree, web3 interaction here is client-facing only. Founder explicitly asked this not fail the ship this session; may flip to manual later. Real ERC-20/721 interactions are tracked manually in DEFI_REVIEW.md in the meantime.",
           "rearm_when": "any .sol file, ABI, or deployed-contract artefact lands in-tree (external ERC-20/721 interactions stay tracked manually in DEFI_REVIEW.md)"
         },
         {
@@ -644,7 +644,7 @@
           "policy": "not_applicable",
           "severity": "critical",
           "fix": "Do not rely on a single low-liquidity spot pool. Validate source independence, freshness, bounds, decimals, deviation, sequencer status where relevant, and failure behaviour. Test flash-loan and same-block manipulation.",
-          "reason": "no Solidity or contract artefact exists in this repository — the founder rule for this project is SKIP unless contract artefacts appear",
+          "reason": "FOUNDER DECISION (2026-08-11): keep SKIP — no .sol or contract artefact in-tree, web3 interaction here is client-facing only. Founder explicitly asked this not fail the ship this session; may flip to manual later. Real ERC-20/721 interactions are tracked manually in DEFI_REVIEW.md in the meantime.",
           "rearm_when": "any .sol file, ABI, or deployed-contract artefact lands in-tree (external ERC-20/721 interactions stay tracked manually in DEFI_REVIEW.md)"
         },
         {
@@ -653,7 +653,7 @@
           "policy": "not_applicable",
           "severity": "critical",
           "fix": "Apply checks-effects-interactions, narrowly scoped reentrancy guards, safe token handling, callback threat modelling, and cross-contract tests.",
-          "reason": "no Solidity or contract artefact exists in this repository — the founder rule for this project is SKIP unless contract artefacts appear",
+          "reason": "FOUNDER DECISION (2026-08-11): keep SKIP — no .sol or contract artefact in-tree, web3 interaction here is client-facing only. Founder explicitly asked this not fail the ship this session; may flip to manual later. Real ERC-20/721 interactions are tracked manually in DEFI_REVIEW.md in the meantime.",
           "rearm_when": "any .sol file, ABI, or deployed-contract artefact lands in-tree (external ERC-20/721 interactions stay tracked manually in DEFI_REVIEW.md)"
         },
         {
@@ -662,7 +662,7 @@
           "policy": "not_applicable",
           "severity": "critical",
           "fix": "Test price, liquidity, collateral, reward, liquidation, governance, reserve, and share-accounting logic against atomic manipulation on a local fork or testnet.",
-          "reason": "no Solidity or contract artefact exists in this repository — the founder rule for this project is SKIP unless contract artefacts appear",
+          "reason": "FOUNDER DECISION (2026-08-11): keep SKIP — no .sol or contract artefact in-tree, web3 interaction here is client-facing only. Founder explicitly asked this not fail the ship this session; may flip to manual later. Real ERC-20/721 interactions are tracked manually in DEFI_REVIEW.md in the meantime.",
           "rearm_when": "any .sol file, ABI, or deployed-contract artefact lands in-tree (external ERC-20/721 interactions stay tracked manually in DEFI_REVIEW.md)"
         },
         {
@@ -671,7 +671,7 @@
           "policy": "not_applicable",
           "severity": "high",
           "fix": "Test fee-on-transfer, rebasing, non-standard return values, decimals, approval and permit replay, ERC-777-style hooks, malicious receivers, and zero-value or rounding cases.",
-          "reason": "no Solidity or contract artefact exists in this repository — the founder rule for this project is SKIP unless contract artefacts appear",
+          "reason": "FOUNDER DECISION (2026-08-11): keep SKIP — no .sol or contract artefact in-tree, web3 interaction here is client-facing only. Founder explicitly asked this not fail the ship this session; may flip to manual later. Real ERC-20/721 interactions are tracked manually in DEFI_REVIEW.md in the meantime.",
           "rearm_when": "any .sol file, ABI, or deployed-contract artefact lands in-tree (external ERC-20/721 interactions stay tracked manually in DEFI_REVIEW.md)"
         },
         {
@@ -680,7 +680,7 @@
           "policy": "not_applicable",
           "severity": "high",
           "fix": "Review proxy initialisation, implementation upgrades, multisig, timelocks, pause, recovery, chain IDs, compiler settings, linked libraries, constructor arguments, and privileged addresses. Verify deployed source and bytecode.",
-          "reason": "no Solidity or contract artefact exists in this repository — the founder rule for this project is SKIP unless contract artefacts appear",
+          "reason": "FOUNDER DECISION (2026-08-11): keep SKIP — no .sol or contract artefact in-tree, web3 interaction here is client-facing only. Founder explicitly asked this not fail the ship this session; may flip to manual later. Real ERC-20/721 interactions are tracked manually in DEFI_REVIEW.md in the meantime.",
           "rearm_when": "any .sol file, ABI, or deployed-contract artefact lands in-tree (external ERC-20/721 interactions stay tracked manually in DEFI_REVIEW.md)"
         },
         {
@@ -689,7 +689,7 @@
           "policy": "not_applicable",
           "severity": "high",
           "fix": "Run static analysis, dependency checks, unit tests, fuzzing, invariant tests, fork-based integration tests, event monitoring, alert thresholds, pause criteria, bug bounty or responsible disclosure, and incident response before mainnet.",
-          "reason": "no Solidity or contract artefact exists in this repository — the founder rule for this project is SKIP unless contract artefacts appear",
+          "reason": "FOUNDER DECISION (2026-08-11): keep SKIP — no .sol or contract artefact in-tree, web3 interaction here is client-facing only. Founder explicitly asked this not fail the ship this session; may flip to manual later. Real ERC-20/721 interactions are tracked manually in DEFI_REVIEW.md in the meantime.",
           "rearm_when": "any .sol file, ABI, or deployed-contract artefact lands in-tree (external ERC-20/721 interactions stay tracked manually in DEFI_REVIEW.md)"
         }
       ]

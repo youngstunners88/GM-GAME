@@ -6,6 +6,12 @@ signal power_up_changed(type: String, duration: float)
 signal coins_changed(new_count: int)
 signal rings_changed(new_count: int)
 signal smoke_changed(new_count: int)
+## $TITANX — the 4th protocol token (founder: "TitanX is a fourth protocol,
+## not previously listed in CLAUDE.md's ecosystem section"). Lives here, not
+## in GoldMineSystem: it is not a GoldMine mechanic, it is a peer token the
+## same way DIAMONDS and GOLD are, so it gets its own counter rather than
+## being misfiled under a thematically unrelated system.
+signal titanx_changed(new_count: int)
 signal player_died
 signal lives_changed(new_lives: int)
 ## Systems architecture v3.0 §3.3 — signal-driven, never polled.
@@ -19,6 +25,12 @@ var total_score: int = 0
 var coins_collected: int = 0
 var ethereum_rings_collected: int = 0
 var smoke_collected: int = 0
+## $TITANX collected. NOT reset by boss_contact_restart() — a protocol token
+## allocation, same persistence class as GoldMineSystem's gold/diamonds/wBTC/
+## XAUT (none of which a boss touch wipes either), unlike coins/rings/smoke
+## which ARE run currency and ARE forfeit on a boss kill. See
+## boss_contact_restart()'s own note on why that distinction exists.
+var titanx_collected: int = 0
 # Blaze Rush (secret dash mode) bookkeeping.
 var blaze_rush_completed: Dictionary = {}   # level_index -> true once one-time bonuses paid
 var dash_return: Dictionary = {}            # transient: scene_path/position/level_index for the return trip
@@ -198,6 +210,24 @@ func add_ethereum_ring() -> void:
     rings_changed.emit(ethereum_rings_collected)
     add_score(50)
 
+## Credit $TITANX. Founder: "$TITANX... are tokens and not coins" — a
+## separate counter from add_coin() so a TitanX pickup is never counted, on
+## screen or in code, as a coin.
+##
+## NO bonus add_score() here (Fable-5 review caught an earlier version that
+## had one). Its sibling stage-branded pickups don't get a uniform bonus
+## either: GoldMineSystem.collect_diamonds() adds no extra GameManager score
+## at all, mine_gold() adds its own pre-existing +25 as part of a whitepaper
+## mechanic this function has no business touching. Inventing a THIRD, unrelated
+## number here (the previous version used 15) made three visually-parallel
+## pickups score three unrelated amounts for no reason a player could ever
+## learn. coin.gd's own ComboSystem.add_score(10), which fires for every
+## stage-branded pickup identically, is the uniform per-pickup signal; this
+## function should only ever touch the counter that's actually its job.
+func add_titanx(amount: int = 1) -> void:
+    titanx_collected += amount
+    titanx_changed.emit(titanx_collected)
+
 ## Bank $SMOKE tokens earned in Blaze Rush runs.
 func add_smoke(amount: int) -> void:
     if amount <= 0:
@@ -297,6 +327,12 @@ func boss_contact_restart() -> void:
     # coins, rings and SMOKE straight through — so a boss touch cost the
     # player nothing but a walk back, which is exactly the missing stakes he
     # kept reporting. Everything earned in the run is now forfeit.
+    #
+    # titanx_collected is DELIBERATELY absent from this list, exactly like
+    # GoldMineSystem's gold/diamonds/wBTC/XAUT (also untouched here) — those
+    # are protocol token holdings, not run currency, and a boss touch does
+    # not liquidate a player's tokens any more than it liquidates their
+    # DIAMONDS or GOLD.
     total_score = 0
     score_changed.emit(total_score)
     coins_collected = 0
@@ -475,6 +511,8 @@ func reset_session() -> void:
     ethereum_rings_collected = 0
     smoke_collected = 0
     smoke_changed.emit(0)
+    titanx_collected = 0
+    titanx_changed.emit(0)
     blaze_rush_completed.clear()
     secret_door_used.clear()
     blaze_portal_used.clear()
@@ -520,6 +558,7 @@ func save_session() -> bool:
         "coins": coins_collected,
         "rings": ethereum_rings_collected,
         "smoke": smoke_collected,
+        "titanx": titanx_collected,
         "blaze_rush": _serialize_blaze_completions(),
         "health": player_health,
         "max_health": max_health,
@@ -561,6 +600,7 @@ func load_session() -> bool:
     coins_collected = maxi(0, int(data.get("coins", 0)))
     ethereum_rings_collected = maxi(0, int(data.get("rings", 0)))
     smoke_collected = maxi(0, int(data.get("smoke", 0)))
+    titanx_collected = maxi(0, int(data.get("titanx", 0)))
     _deserialize_blaze_completions(data.get("blaze_rush", {}))
     max_health = clampi(int(data.get("max_health", 3)), 1, 10)
     player_health = clampi(int(data.get("health", max_health)), 1, max_health)
