@@ -231,7 +231,8 @@
             "*.py"
           ],
           "severity": "critical",
-          "fix": "Use execFile/spawn with an args array. Never interpolate user input into a shell command. Validate with an allowlist of permitted values."
+          "fix": "Use execFile/spawn with an args array. Never interpolate user input into a shell command. Validate with an allowlist of permitted values.",
+          "covered_by": "security-sentinel INJ-001 (no OS.execute in game code) — the GDScript equivalent of shelling out"
         },
         {
           "id": "INJ005",
@@ -242,7 +243,8 @@
             "*.js"
           ],
           "severity": "high",
-          "fix": "Resolve paths and verify the resolved path starts with the intended base directory. Block '..' and absolute paths from user input."
+          "fix": "Resolve paths and verify the resolved path starts with the intended base directory. Block '..' and absolute paths from user input.",
+          "covered_by": "security-sentinel INJ-004 (FileAccess.open never takes a runtime-built path)"
         }
       ]
     },
@@ -261,7 +263,8 @@
             "*.jsx"
           ],
           "severity": "critical",
-          "fix": "AI models frequently emit eval() or new Function(). These are RCE. Replace with explicit logic, lookup tables, or a sandboxed interpreter (e.g. isolated-vm)."
+          "fix": "AI models frequently emit eval() or new Function(). These are RCE. Replace with explicit logic, lookup tables, or a sandboxed interpreter (e.g. isolated-vm).",
+          "covered_by": "security-sentinel INJ-002 (no Expression) and INJ-003 (JavaScriptBridge.eval is _hex()-sanitised) — the GDScript/web-bridge equivalents of eval"
         },
         {
           "id": "AI002",
@@ -300,7 +303,8 @@
           ],
           "must_not_match": "process\\.env|VITE_|NEXT_PUBLIC_|REACT_APP_|EXPO_PUBLIC_",
           "severity": "critical",
-          "fix": "Keys prefixed with VITE_/NEXT_PUBLIC_/REACT_APP_/EXPO_PUBLIC_ are bundled into the client. Any key shipped client-side is public within seconds. Move server-side, proxy through your own API."
+          "fix": "Keys prefixed with VITE_/NEXT_PUBLIC_/REACT_APP_/EXPO_PUBLIC_ are bundled into the client. Any key shipped client-side is public within seconds. Move server-side, proxy through your own API.",
+          "covered_by": "security-sentinel SEC-001 (no secret-looking strings in shipped paths) and CI-001 (gitleaks over full history)"
         }
       ]
     },
@@ -461,7 +465,8 @@
           ],
           "exclude_files_when_prod": true,
           "severity": "high",
-          "fix": "NODE_ENV=production disables verbose errors and dev tooling. Set it in your deploy environment, not just your .env."
+          "fix": "NODE_ENV=production disables verbose errors and dev tooling. Set it in your deploy environment, not just your .env.",
+          "covered_by": "security-sentinel DEP-003 (no source maps in shipped bundle) and DEP-001 (web export stays non-threaded)"
         },
         {
           "id": "INFRA003",

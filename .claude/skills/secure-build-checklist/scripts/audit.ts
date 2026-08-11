@@ -540,15 +540,57 @@ function runCheck(check: Check, categoryKey: string, allFiles: string[]): void {
       if (isExcluded(rel, check.exclude)) return false;
       return globMatch(rel, check.files);
     });
+
+    // A RULE THAT EXAMINED NOTHING DID NOT PASS.
+    //
+    // This is the single most dangerous shape a scanner can have, and it was
+    // live here: a rule whose target glob matched ZERO files produced an empty
+    // match list, fell through to the "no matches = clean" branch, and reported
+    // PASS. On this project that is not a corner case — most upstream rules
+    // target `*.ts`/`*.tsx`/`*.jsx`, and the shipped game is GDScript, so a
+    // large slice of the green count was rules that had never opened a file.
+    //
+    // Now reported as a skip, with the glob that found nothing quoted, so the
+    // reader can tell "we looked and it was clean" apart from "there was
+    // nothing here to look at". Found by qwen3.7-max auditing this scanner.
+    if (targetFiles.length === 0) {
+      findings.push({
+        id: check.id, title: check.title, category: categoryKey,
+        severity: check.severity, status: "skip", fix: check.fix,
+        reason: (check as any).covered_by
+          ? `no file matched this rule's target glob (${check.files.join(", ")}) — this codebase is GDScript, not JS/TS. Equivalent coverage: ${(check as any).covered_by}`
+          : `no file in this project matched the rule's target glob (${check.files.join(", ")})`,
+        rearm_when: `a file matching ${check.files.join(" or ")} is added`,
+      });
+      return;
+    }
     let allMatches: Array<{ file: string; line: number; excerpt: string }> = [];
+    let regexErrors: string[] = [];
     for (const p of patterns) {
       try {
         const re = new RegExp(p, "i");
         allMatches.push(...searchPattern(targetFiles, re, check.exclude));
       } catch (e: any) {
+        regexErrors.push(p);
         if (verbose) console.error(`bad pattern in ${check.id}: ${e.message}`);
       }
     }
+    // A PATTERN THAT FAILED TO COMPILE DID NOT FIND NOTHING.
+    //
+    // The catch above swallowed the error and left `allMatches` empty, which
+    // fell straight through to "no matches = clean". A typo'd regex in the
+    // rules file therefore turned that rule green forever, and only `--verbose`
+    // whispered about it. Reported as a failure now: the rule did not run.
+    if (regexErrors.length > 0) {
+      findings.push({
+        id: check.id, title: check.title, category: categoryKey,
+        severity: check.severity, status: "fail",
+        fix: `${regexErrors.length} pattern(s) in this rule failed to compile, so the rule NEVER RAN: ${regexErrors.join(" | ")}. Fix the regex. Original guidance: ${check.fix}`,
+        reason: "rule contains an invalid regular expression",
+      });
+      return;
+    }
+
     // de-dup
     const seen = new Set<string>();
     allMatches = allMatches.filter((m) => {

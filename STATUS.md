@@ -271,31 +271,42 @@ instead of an archaeology exercise.
 
 | | before | after |
 |---|---|---|
-| pass | 28 | **29** |
+| pass | 28 | **11** |
 | fail | 0 | **0** |
 | manual | 14 | **2** |
-| skip | 5 | **16** |
+| skip | 5 | **34** |
 
-Nothing got weaker. Three things got truthful.
+**Nothing got weaker. The number got truthful.** 28 was never real.
 
 **1. Three checks were never running at all.** `SEC002` (critical — ".env files
 gitignored"), `AUTH001` (critical) and `LOG003` used rule shapes the scanner had
-no handler for. They fell through to a catch-all that reported them as **skip**,
-so every green run had been quietly not-checking a critical secrets rule.
+no handler for. They fell through a catch-all that reported them as **skip**, so
+every green run had been quietly not-checking a critical secrets rule.
 
-The catch-all is now a **failure**, not a skip: a rule the scanner cannot execute
-is not a rule that does not apply, and conflating those is precisely how a
-checklist goes green while covering less than it claims. The moment I changed it,
-those three lit up red — which is how I found them.
+The catch-all is now a **failure**: a rule the scanner cannot execute is not a
+rule that does not apply. The moment I changed it, those three lit up red —
+which is how I found them. `SEC002` now has a real implementation and genuinely
+passes.
 
-`SEC002` now has a real implementation and genuinely passes. The other two were
-about Express routes and login audit logs; neither exists here, so they are now
-explicit skips (below).
+**2. Eighteen more "passes" had never opened a file.** This is the big one, and
+Qwen found it. A rule whose target file pattern matched **zero files** produced
+an empty result list, fell through the "no matches = clean" branch, and reported
+PASS. Most of the pack targets `*.ts` / `*.js` — this is a GDScript game, so
+eighteen rules were reporting green having examined nothing at all.
 
-**2. Skips had no reasons.** Your instruction was "mark skip with reason". The
+They are skips now, each naming the pattern that found nothing. **11 of 47 rules
+actually examined a file.** That is the real coverage, and it is the number I
+should have been giving you all along instead of 28.
+
+Five of those eighteen are covered by the sentinel's GDScript-aware equivalents
+— eval, shell execution, path traversal, key leakage, debug artefacts — and the
+skip now says so by name, so a skip doesn't read as a hole when it isn't. That
+overlap is precisely why both scanners have to stay.
+
+**3. Skips had no reasons.** Your instruction was "mark skip with reason"; the
 machine output was emitting bare skips with nothing attached. Every skip now
-carries a **reason** and a **re-check trigger**, in the JSON and printed
-unconditionally in the human report — not hidden behind `--verbose`:
+carries a **reason** and a **re-check trigger**, in JSON and printed
+unconditionally — not hidden behind `--verbose`:
 
 ```
 [SKIP] DEP002  Lockfile committed
@@ -303,30 +314,48 @@ unconditionally in the human report — not hidden behind `--verbose`:
   re-check: when a 'package.json' is added
 ```
 
-A rule marked not-applicable **without** both a reason and a re-arm trigger is
-now reported as a **failure**. An undocumented skip is indistinguishable from
-nobody having looked.
+A rule marked not-applicable **without** both is now a **failure**. An
+undocumented skip is indistinguishable from nobody having looked.
 
-**3. Manual went 14 → 2, per your own adaptation rules.** You said DeFi should
-SKIP unless contract artefacts appear, and Android control-plane should SKIP for
-the web build. They were sitting as MANUAL — 11 of the 14 "manual" items were
-for surfaces that don't exist in this repo, which makes the report harder to
-read and inflates the sense of outstanding work. Reclassified to skip-with-reason
-and a re-arm trigger.
+**4. Manual went 14 → 2, per your own adaptation rules.** You said DeFi skips
+unless contract artefacts appear and Android control-plane skips for a web
+build. They were sitting as MANUAL — 11 of the 14 were for surfaces this repo
+doesn't have. The **2 remaining are the real ones**, both yours to answer:
+`AUTH003` (default-deny on new routes) and `API002` (bearer auth on write
+routes), both about the Cloudflare Worker.
 
-The **2 remaining manual items are the real ones**, and they're both yours to
-answer, not mine: `AUTH003` (default-deny on new routes) and `API002` (bearer
-auth on write routes) — both about the Cloudflare Worker endpoints.
+I also verified the gate still bites: injecting a rule with an uncompilable
+regex, and one the scanner can't execute, each exit 1 and block.
 
 ## Where it stands
 
-- **secure-build-checklist v1.3.0+gmgame.1 — 47 total · 29 pass · 0 fail ·
-  2 manual · 16 skip · exit 0** at `--fail-on=high`.
-- **No critical or high findings.** Nothing blocks the ship.
-- **game-security-sentinel still 18/18, 0 blockers.** Untouched, not replaced.
-  Both are green, which is the bar for calling this ship-safe.
-- Both are wired into CI ahead of the export commit and the itch push, so a
-  blocker stops a deploy with or without a chat session existing.
+- **secure-build-checklist v1.3.0+gmgame.1 — 47 total · 11 pass · 0 fail ·
+  2 manual · 34 skip · exit 0** at `--fail-on=high`, and clean at the stricter
+  `--fail-on=medium` too.
+- **No critical or high findings. Nothing blocks the ship.**
+- **game-security-sentinel still 18/18, 0 blockers**, untouched.
+- CI ran the whole thing at the new path and produced export commit `90ea707`,
+  so the gate works in CI, not just on my machine.
+
+## The one I found but did NOT ship
+
+The scanner's pattern matcher compiles `*` so that **`*.js` only matches
+top-level files**. Every rule in the pack uses top-level patterns, so on a repo
+where code lives in `src/`, `web/` and `backend/`, those rules were opening
+almost nothing. The checklist's eval rule was never scanning `web/web3.js` —
+which Grok independently ranked as the second most exploitable surface you have.
+
+I trialled the fix on a scratch copy: it takes real coverage from **11 to 25**.
+It also produces **three critical failures, all false positives** — a mobile
+orientation check read as an auth check, a *comment* mentioning eval, and email
+share buttons read as a remote command channel.
+
+Shipping that turns your deploy gate red on three things that are fine, and a
+scanner that cries wolf teaches everyone to skip it. So it is written up with
+the measured before/after and the exact tuning each rule needs, in
+`docs/security/sentinel-hardening-backlog.md`, for a focused pass rather than a
+drive-by at the end of this one. **It is the highest-value security work
+outstanding on the project.**
 
 ## Two things I want you to actually look at
 
@@ -377,15 +406,36 @@ project, not code changes I should make unilaterally.
 | `anthropic/claude-fable-5` | Lead: install design + adaptation mapping | ⚠️ **truncated at the 24k output cap** mid-answer — category mapping + overlap map usable, its "what would falsely pass" section never arrived | $1.3439 |
 | `x-ai/grok-4.5` | Stack reality check | ✅ produced the uncovered-risk list above | $0.0266 |
 | `deepseek/deepseek-v4-pro` | Compliance matrix | ✅ caught the ToS/privacy issue and the DeFi/Android SKIP-vs-MANUAL mismatch, both acted on | $0.0067 |
-| `moonshotai/kimi-k3` | False-pass hunt | ⏳ still running at write-up | — |
-| `qwen/qwen3.8-max` | Scanner integrity / can it be fooled | ⏳ still running at write-up | — |
+| `moonshotai/kimi-k3` | False-pass hunt | ❌ **hung ~50 min, no output** → retried on `kimi-k2-thinking` ✅ | $0.0281 |
+| `qwen/qwen3.8-max` | Scanner integrity | ❌ **hung ~50 min, no output** → retried on `qwen3.7-max` ✅ **found the glob gap** | $0.0749 |
 
-Fable's truncation is a real gap, not a rounding error — I'm reporting it rather
-than implying I got a full answer. Its brief overlapped Kimi's and Qwen's, and
-the substantive finding (three unrunnable checks) came out of running the thing
-rather than reading it, which is the lesson I'd keep.
+**Qwen earned its keep.** It was asked one question — can this scanner be fooled
+into reporting a clean pass — and found the zero-file-glob hole that turned 18
+green checks into rules that had never opened a file. That single finding is why
+the headline number in this report is 11 and not 29.
 
-**No dispatch errors this pass** — the model IDs from last time held.
+**Kimi was useful and also partly wrong, which is worth saying.** It hunted the
+same class of bug in the sentinel and produced four headline claims. I checked
+each against the actual repo rather than taking them: **three did not hold** —
+`web/game` has 13 tracked files (not gitignored), `src/` has 110 `.gd` files
+(not empty), and its `.env.local` regex claim is wrong because grep isn't
+anchored at the end. The fourth is real but weaker than framed. All of it,
+refuted and standing, is written up in
+`docs/security/sentinel-hardening-backlog.md` with the verification commands, so
+nobody re-litigates it from memory.
+
+**Fable truncated at the 24k output cap** mid-answer. Its category mapping and
+overlap map are usable; the section I most wanted — what would falsely pass —
+never arrived. Reporting that rather than implying a full answer. Kimi and Qwen
+covered that ground anyway, and better.
+
+**Two of five models hung with no output and no error** on their first attempt
+(`kimi-k3`, `qwen3.8-max`), for roughly 50 minutes each. I killed them and
+retried on alternate IDs per your rule; both retries returned. That is a
+dispatch failure mode worth knowing about — it looks identical to "still
+thinking", so it needs a timeout rather than patience.
+
+**Total OpenRouter spend this pass: ~$1.48.**
 
 ## PREVIOUS PASS (kept for history)
 
