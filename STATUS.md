@@ -3,6 +3,12 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv`
 
+**DEPLOYED — export commit `0b4f110` — build id `df0ea61` — 2026-08-11.**
+Hard-refresh before testing. gitleaks, Security Sentinel and the web export all
+green in CI; the itch.io butler push is the final step of that same job. Web
+export is still non-threaded (`variant/thread_support=false`) — the setting
+that has to stay put or the game silently fails to boot on itch.
+
 **Gates: 14 suites ALL PASS + `distributor_behaviour` ALL PASS. Security
 Sentinel 18/18, 0 blockers.** The new chase gates were verified to FAIL on the
 previous code first — boss travelled 276px in 7s of kiting and stalled 210px
