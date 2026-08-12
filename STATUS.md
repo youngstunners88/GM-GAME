@@ -49,9 +49,19 @@ blaze lifecycle, coin credit + the new vault gate). Security Sentinel 18/18.
 
 ---
 
-**LIVE ON MASTER — PR #22 MERGED — merge commit `2c8b417` — export commit
-`e2d41d7` — 2026-08-12.** PR #22 (T1–T5: pixelation, jitter, L1 hitbox, S2
-chase+crystals, final boss scale) is merged to master and deployed. CI ran
+**LIVE ON MASTER — PR #23 MERGED (Part B) — merge commit `8371caa` — export
+commit `804e81b` — 2026-08-12.** The Diamond Vault + Fort Knox downward
+set-pieces (above) are merged to master and deployed. CI ran green on both the
+branch head (`a66985e`, run #155) and the master merge (`8371caa`, run #156) —
+**`Deploy to itch.io via butler`: success on both.** Hard-refresh the itch page
+and drop into the 2400–2500 pit on Stage 2 (Diamond Vault) / the 2620–2760 pit
+on Stage 3 (Fort Knox) to see them live. Earlier this day PR #22 (T1–T5:
+pixelation, jitter, L1 hitbox, S2 chase+crystals, final boss scale) landed the
+same way (merge `2c8b417`, export `e2d41d7`, runs #153/#154, butler green).
+
+<details><summary>PR #22 deploy detail (superseded by PR #23 above)</summary>
+
+PR #22 is merged to master and deployed. CI ran
 green on both the branch head (`aec2f82`, run #153) and the master merge
 (`2c8b417`, run #154) — **including the `Deploy to itch.io via butler` step:
 success on both.** The `gitleaks`, `Security Sentinel`, and
@@ -59,10 +69,12 @@ success on both.** The `gitleaks`, `Security Sentinel`, and
 non-threaded (`variant/thread_support=false`) — the setting that must never
 regress or the game silently fails to boot on itch.
 
+</details>
+
 > **HARD-REFRESH REQUIRED before testing the live build.** The browser caches
 > the old `index.pck`; a normal reload can keep serving the pre-fix build.
 > Force a hard refresh (Ctrl/Cmd-Shift-R, or open in a private window) so you
-> actually load export `e2d41d7`.
+> actually load the latest export.
 
 ### PART A — PR #22 verification matrix (code + gates verified; live visual confirm pending your refresh)
 
