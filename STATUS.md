@@ -3,14 +3,14 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv`
 
-**SESSION 4 — pushed to `claude/setup-game-dev-environment-itWJv`, CI/deploy
-in flight — 2026-08-12.** All 15 gates green locally (script-compile 142
+**LIVE — source commit `17c87f3` — export commit `3bb3247` — 2026-08-12.**
+CI run `31648464835` green end to end: gitleaks, Security Sentinel,
+secure-build-checklist, web export (non-threaded verified), and **`Deploy to
+itch.io via butler`: success**. All 15 gates green locally (script-compile 142
 scripts / 106 scenes, the two new S4 gates, vault-scene, boss-stakes,
 stage3-defence, distributor chase + crystal, claim-jumper-pressure, blaze
 lifecycle, boss-visibility, save-compat, founder-critical-probe 103
-assertions), Security Sentinel 18/18 with 0 blockers, web export stays
-non-threaded. Live build id lands here once CI's `Deploy to itch.io via
-butler` is green.
+assertions), Security Sentinel 18/18 with 0 blockers.
 
 > **HARD-REFRESH REQUIRED before testing.** The browser caches the old
 > `index.pck`; force a hard refresh (Ctrl/Cmd-Shift-R, or a private window)
