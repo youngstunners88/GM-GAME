@@ -77,6 +77,17 @@ func _setup_depth_routes() -> void:
 		var wall := preload("res://src/level/secret_wall.tscn").instantiate()
 		wall.global_position = wall_pos
 		add_child(wall)
+	# DIAMOND VAULT (Part B) — downward DIAMONDS set-piece dropped through the
+	# 2400-2500 floor pit: a crystal strongroom with a coin_diamonds hoard and
+	# a ladder back up onto the 2500-3000 segment. Distinct from the horizontal,
+	# scene-loading Blaze Portal / Smoke Lounge — this is an in-level drop-in.
+	# x-span 2384-2516 is clear of the one-way chain (ends 1902), both ladders
+	# (1420/3060), the secret walls, and the blaze portal (2100,280).
+	var diamond_vault := preload("res://src/level/protocol_vault.tscn").instantiate()
+	diamond_vault.protocol = "diamonds"
+	diamond_vault.mouth_width = 100.0
+	diamond_vault.global_position = Vector2(2450, 650)
+	add_child(diamond_vault)
 
 func _on_boss_trigger(body: Node2D) -> void:
 	if body.is_in_group("player") and not _boss_arena_active:
