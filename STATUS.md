@@ -3,22 +3,209 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv`
 
-**DEPLOYED — export commit `39a4ae6` — build id `eb628d5` — 2026-08-11.**
-Hard-refresh before testing. gitleaks, Security Sentinel, the
-secure-build-checklist gate and the web export all green in CI (confirmed via
-the actual job logs, not just "push succeeded" — the itch.io butler step ran
-for real, uploaded 115+ MiB, and reported success). Web export is still
+**PUSHED — build id `267eab3` — 2026-08-12.** CI export + itch.io butler
+deploy triggered on push per `.github/workflows/export-game.yml` — check the
+Actions tab for the export commit and butler upload confirmation. Hard-
+refresh before testing once that run completes. Web export is still
 non-threaded (`variant/thread_support=false`) — the setting that has to stay
 put or the game silently fails to boot on itch.
 
-**Gates: 19 suites ALL PASS (script compile, founder critical probe,
-boss/blaze/save regression suites, plus 5 new this pass). Security Sentinel
-18/18, 0 blockers. secure-build-checklist 11 pass/0 fail/2 manual/34 skip, 0
-blockers.** Every new gate this pass was verified to FAIL on the previous
-code first, not just pass on the new — see each item below for its own
-before/after numbers.
+**Gates: 22 suites ALL PASS (script compile, founder critical probe,
+boss/blaze/save regression suites, plus 3 new this pass — T1/T2 pixelation
+ratio gate, T3 hurtbox geometry gate, T4 crystal-shard gate). Security
+Sentinel 18/18, 0 blockers.** Every new gate this pass was verified to FAIL
+on the previous code first, not just pass on the new — see each item below
+for its own before/after numbers.
 
-## THIS PASS — HUD relabels, the diamond claim-reset bug (finally root-caused), TitanX tokens, and Stage 2's Phase 2 chase gap
+## THIS PASS — no more pixelated art, the L1 "dies without touching him" bug (actually found), Stage 2 pushed harder, crystal shards, and a bigger final boss
+
+You sent real screenshots this session (extracted straight from the attached
+doc, not lost this time) plus five explicit demands: never ship pixelated
+art, fix Level 1's phantom death, fix Stage 2's chase for real, add crystal
+shards, and make the final boss bigger and meaner. Multi-model dispatched
+FIRST as required — Fable, Grok, Kimi, DeepSeek, and Qwen (vision, on your
+actual screenshots) all ran before any large edit, logged below.
+
+| Your item | Status |
+|---|---|
+| T1 — TAP OUT face pixelated | **FIXED** — real root cause was the source art, not the filter |
+| T2 — band art jittery ("DIAMOND LOUNGE" card) | **FIXED** — same mechanism as T1, not a separate bug |
+| T3 — L1 boss kills you without touching him | **ROOT-CAUSED** — a real, verified geometry bug, not a hitbox-size fudge |
+| T4 — Stage 2 still not chasing + crystal shards | **FIXED** + new attack shipped |
+| T5 — final boss too small/weak | **FIXED** — now the biggest boss in the game, not the smallest |
+
+### T1 / T2 — the pixelation and the "jitter" were the same bug
+
+Your two screenshots showed it plainly: the TAP OUT face was an unreadable
+green blob, and on the band art, the "DIAMOND LOUNGE" card looked soft and
+warped next to two sharp circular badges right beside it. I had Qwen (vision
+model) look at both images independently before touching anything — it
+confirmed the same read: TAP OUT face "does not resemble a recognizable
+face... heavily pixelated", and the middle band card "the odd one out due to
+its reduced sharpness."
+
+The filter setting was already correct (`LINEAR_WITH_MIPMAPS`, set last
+session). The actual cause: the TAP OUT source art was 585x586px displayed at
+58x58 — a ~10x downscale, by far the steepest of any UI element in the game.
+The "DIAMOND LOUNGE" card (`br_diamond_certificate.png`) was 602x903 scaled
+down to fit a 190px band slot — a ~4.75x downscale, again steeper than every
+sharp badge sitting right next to it at ~2.7x. A third asset,
+`blaze_diamond_correct.png` (the flaming-diamond badge), was even worse at
+1024x1024 → ~5.4x, though it happened not to be the one you circled.
+
+Fixed at the source, not by fighting Godot's import pipeline: all three PNGs
+resized down to a clean 2x oversample of their real on-screen size (Lanczos
+resample, alpha preserved) — the same healthy ratio every already-sharp badge
+in the game uses. I chose this over hand-editing `.import` files because
+those files are gitignored and CI regenerates them from project-wide
+defaults on every export — a per-file override would never have survived a
+real deploy.
+
+New standing gate (`blaze_rush_no_pixelation_test.gd`): checks the actual
+minification ratio of every texture on the Blaze Rush band plus the TAP OUT
+face against a 3.2x ceiling. If a future art drop reintroduces a
+hundreds-of-percent oversized source, this fails the build instead of
+shipping pixelated again.
+
+### T3 — the L1 "dies without touching him" bug, actually found
+
+This is the one I'm most confident about, because I didn't just trust a
+plausible-sounding fix — Kimi K3 re-derived the boss's hitbox geometry from
+the actual scene files with no memory of any prior session, and I verified
+its finding by hand against the real `.tscn` and `.gd` before touching
+anything.
+
+**The real bug:** the Auditor's (and, it turns out, the Distributor's) kill
+zone was double-offset. The scene file already positioned the hurtbox's
+collision shape at the body's centre; the boss script then moved the entire
+hurtbox *node* to that same centre a second time. Stacking both offsets
+shifted the true kill zone a full half-body diagonally off the visible
+sprite — roughly 99px of lethal empty space past his right/bottom edge,
+while you could stand *inside* his left/top half with no death at all. It
+was asymmetric and facing-independent, which is exactly why it read as "for
+some reason" instead of a clean, explainable pattern.
+
+Fixed in both bosses: the offset is now applied exactly once, and each
+boss's hurtbox is additionally trimmed to match its actual visible art
+silhouette (both source sprites carry real transparent padding around the
+character) rather than the full square body box. New regression gate
+(`boss_ghost_death_hurtbox_test.gd`) checks the hurtbox geometry directly on
+both bosses and then proves, through the real `GameManager.boss_contact_restart()`
+path, that genuine contact still ends the run exactly like before — the "no
+contact → no death, contact → normal rules" gate you asked for, both halves
+covered.
+
+### T4 — Stage 2 pushed harder, plus crystal shards
+
+You'd already told me this was still not chasing live even after a session
+that raised the pursuing-speed floor and proved it in the real arena — so I
+had Kimi independently re-derive the FULL multi-phase cycle again rather
+than re-trust the existing gate. It found the actual remaining drag: the
+gravity-pull attack could winch you up to just inside the boss's own
+"don't sweep sideways through you" safety lock, re-arming it mid-fight far
+more often than the open-ground test ever modeled — each re-arm cost far
+more time than the earlier speed fix had clawed back. Fixed the pull's clear-
+air margin so it can no longer trigger that lock, then raised the pursuing
+speed floor again (315 → 345 px/s) per your explicit "push further, prefer
+stronger pursuit over leaving him outrunnable."
+
+New attack, as asked: **crystal shards** — a third action in his rotation
+(pull → ETH-orb volley → crystal shards → repeat), visually distinct
+(crystalline white, not the ETH blue), non-redirectable, faster and
+tighter-spread than the existing orb volley, so it reads as raw pressure
+rather than another skill-shot window. Verified firing from the boss's own
+real action rotation, not just called directly, in a new regression test.
+
+### T5 — the final boss, scaled up for real
+
+Checked every boss's own size constant against each other for the first
+time this session: Auditor 168px, Distributor 240px, Claim Jumper — the
+LAST boss in the campaign — was 80px. The final fight was, by a wide margin,
+visually the smallest of the three. Raised to 280px, now the biggest boss in
+the game, alongside a real effectiveness pass: base chase speed 255 → 290
+(and every phase above it), dynamite cooldown tightened (1.05s → 0.85s), and
+the dynamite fuse itself now burns faster each phase (still telegraphed,
+never below a dodgeable 1.3s).
+
+Resizing a boss whose movement code hardcoded its old 80px body in six
+different places (ledge-sense probes, arena-clamp inset, foot position) is
+exactly the kind of change that reintroduces the "final boss falls off a
+ledge" bug you reported before — so I refactored those into a single `BODY`
+constant, matching the pattern the other two bosses already use, and caught
+one real new bug in the process: the ledge-sense probe distance was tuned
+relative to the OLD half-body, so at the new size it checked for ground
+underneath his own torso instead of past his actual toe — he'd have walked
+straight off ledges he used to correctly hold at. Caught by the existing
+real-physics gate going red the moment I made the size change, not by
+inspection. Fixed, and all three previously-passing `stage3_defence_test.gd`
+checks (ledge-hold, arena-clamp fall protection, chase-and-corner) are green
+again with numbers that reflect the bigger body's real geometry, not stale
+assumptions.
+
+---
+
+## Multi-model log (OpenRouter, every dispatch, real costs)
+
+| Model | Role | Result | Cost |
+|---|---|---|---|
+| `moonshotai/kimi-k3` | L1 death path + Stage 2 chase numbers, re-derived from the real files with no prior memory | ✅ found the actual double-offset hitbox bug (T3) and the pull/climb-lock interaction (T4) — both fixes shipped from its findings, verified by hand before use | $0.3827 |
+| `anthropic/claude-fable-5` | Lead implementer review — T1 art-fix plan and T3 hurtbox-fix plan, grounded in the real source files | ✅ correctly identified resizing the source PNG (not fighting the gitignored `.import` pipeline) as the right T1 fix, and independently found the same ~17px hurtbox pad Kimi's deeper pass built on | $0.4615 |
+| `x-ai/grok-4.5` | Pixelation / jitter visual audit against the real band-art placement code | ✅ correctly ruled out camera/shake coupling and per-frame rescale, and pointed straight at the same import-ratio mechanism T1 used — confirmed by directly measuring the flagged asset's real downscale ratio | $0.0649 |
+| `deepseek/deepseek-v4-pro` | Pre-implementation compliance matrix against this session's own prompt | ✅ correctly flagged that Stage 2's chase claim needed a gate that forces the boss past Phase 1 to be trustworthy — exactly the class of gate already used here | $0.0038 |
+| `qwen/qwen3-vl-235b-a22b-thinking` (vision) | Confirm sharp-vs-pixelated directly on your two real screenshots, before any fix | ✅ independently confirmed both defects from the actual images: the TAP OUT blob and the "DIAMOND LOUNGE" card as the visibly soft one among sharp neighbors | not tracked by `or-vision.mjs` (no live pricing lookup in that script — flagging honestly rather than inventing a number) |
+
+**Total tracked OpenRouter spend this pass: ~$0.91** (text dispatches only;
+the vision call's cost wasn't priced by the script used).
+
+**Kimi's finding is the one that actually moved T3 and T4 forward.** Both
+times, I had already gathered plausible-looking evidence myself (a ~17px
+hurtbox padding for T3, matching Fable's independent finding) — and both
+times Kimi's from-scratch re-derivation found a SECOND, larger, actually-
+dominant mechanism underneath it that I verified by hand against the real
+scene files before writing a single line of the fix. That's the pattern this
+project's multi-model rule exists for: not a second opinion that agrees, but
+an independent derivation that catches what the first pass's plausible
+answer would have shipped as "fixed" while leaving the real bug live.
+
+---
+
+## Full gate battery — every regression test, this pass
+
+22 suites, ALL PASS (19 previously-existing + 3 new this pass — no suite
+skipped, no suite silently left red):
+
+`script_compile` · `blaze_rush_layout` · `blaze_lounge_banner` ·
+`blaze_band_density` · `blaze_lifecycle_e2e` · `blaze_hud_label_fit` ·
+`blaze_diamond_bounce_repro` · `blaze_claim_reset` · `coin_token_credit` ·
+`level_entry_current_level_order` · `owner_screenshot_fixes` ·
+`save_compat` · `founder_critical_probe` (103 assertions) ·
+`boss_arena_reachable` · `boss_visibility` · `boss_stakes` ·
+`distributor_behaviour` · `distributor_phase2_real_arena_chase` ·
+`stage3_defence` · **`blaze_rush_no_pixelation`** (new, T1/T2) ·
+**`boss_ghost_death_hurtbox`** (new, T3) ·
+**`distributor_crystal_shard`** (new, T4)
+
+Two of the new tests found real bugs on their FIRST run against the fixed
+code, not just after: `boss_ghost_death_hurtbox_test` initially failed on an
+existing test in `distributor_behaviour_test.gd` because the corrected
+hurtbox now legitimately overlaps the point where the Distributor spawns his
+orbs — the fix there was muting the boss's own contact detection during that
+specific isolated redirect-mechanic test, the same technique already used
+elsewhere in that file for an analogous reason. `stage3_defence_test.gd`
+initially failed three ways the moment the final boss's body grew, all
+traced to test code that hardcoded his old 80px size in its own spawn-height
+and gap-measurement math — not new game bugs, but real test staleness that
+a smaller, less careful resize could easily have shipped past.
+
+Security Sentinel: 18/18, 0 blockers, fail-on=high.
+
+**Model-advice:** claude-opus-4-8 for the next session — everything left in
+the backlog (Level 2/3 live in-browser platforming proof, a fresh Stage 3
+screenshot if anything still looks off after this pass) is exactly the
+"hidden root cause, needs real investigation" category this session's own
+T3/T4 findings came from, not routine implementation.
+
+## PREVIOUS PASS — HUD relabels, the diamond claim-reset bug (finally root-caused), TitanX tokens, and Stage 2's Phase 2 chase gap
 
 Founder answers applied first, per the prompt: legal pages (`terms.md`/`privacy.md`)
 now open with an explicit **DRAFT — NOT LEGAL REVIEWED** banner, nothing else

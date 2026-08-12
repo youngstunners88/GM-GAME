@@ -311,6 +311,14 @@ const BR_ART_ORDER := [
 	{"path": "res://src/assets/art/br_robinhood.png", "wide": true},
 	{"path": "res://src/assets/art/badge_smokering.png", "wide": false},
 	{"path": "res://src/assets/art/badge_hood.png", "wide": false},
+	# Founder, this session: "This artwork is very jittery and difficult to
+	# see as a result!!!" — circled specifically on the band. Root cause was
+	# the same class as the TAP OUT face: the source was 602x903 scaled by
+	# HEIGHT to BAND_ART_SIZE (190), a ~4.75x downscale vs. the ~2.7x every
+	# sharp square badge on this same band already uses, with the same
+	# project-wide mipmaps/generate=false default leaving nothing for LINEAR
+	# to sample. Resized to 253x380 (a ~2x oversample of its ~127x190 display
+	# size) to bring it into the same healthy ratio band as its neighbours.
 	{"path": "res://src/assets/art/br_diamond_certificate.png", "wide": true},
 	# THE FLAMING DIAMOND — one of the two logos the founder says are missing.
 	#
@@ -320,6 +328,9 @@ const BR_ART_ORDER := [
 	# actually belongs. Already square with transparent corners, so it drops
 	# straight into the circular-badge slot at BAND_ART_SIZE like every other
 	# protocol mark — no re-cut, no invented substitute.
+	#
+	# Also resized 1024x1024 -> 380x380 in the same no-pixelation pass above —
+	# at 1024px it was a ~5.4x downscale, the most extreme on the whole band.
 	{"path": "res://src/assets/logos/founder/blaze_diamond_correct.png", "wide": false},
 	# badge_blaze.png REMOVED — founder, crossing it out: "WHY do you have this
 	# again!!!!"
@@ -1280,9 +1291,22 @@ func _build_hud() -> void:
 	tapout_face.texture = preload("res://src/assets/sprites/sprite_lil-blunt_tapout.png")
 	# EXPAND_IGNORE_SIZE (matches main_menu.gd / secret_realm.gd): without it a
 	# TextureRect's minimum size is its TEXTURE's native resolution, not
-	# `custom_minimum_size` — the source art is 585x586, so this control would
-	# have laid out at nearly the full viewport width instead of 58x58 and
-	# shoved the TAP OUT button off the right edge of the screen.
+	# `custom_minimum_size`, which would shove the TAP OUT button off-screen.
+	#
+	# Founder, this session: "The lil blunt icon is so pixelated i cant see
+	# whats going on here... I dont want any of the artworks to ever be
+	# pixelated period!!!" The source PNG used to be 585x586 displayed at
+	# 58x58 — a ~10x downscale, by far the most extreme minification ratio of
+	# any UI sprite in this project, and its .import has mipmaps/generate=false
+	# (the project-wide default, confirmed on 58 of 58 checked .import files;
+	# `.import` files are gitignored and CI-regenerated, so a per-file import
+	# override would not have survived a real export anyway). LINEAR_WITH_
+	# MIPMAPS therefore had no mips to actually sample at that ratio. Fixed at
+	# the source: the PNG is now 116x116 — a clean 2x oversample of the 58px
+	# display size, the same healthy ratio every OTHER sharp badge in this
+	# project already uses (~2.7x), so it reads crisp even with plain LINEAR
+	# and no mips. Keep future replacements of this asset within ~2-3x of
+	# 58px; going back to hundreds-of-px source reintroduces the exact bug.
 	tapout_face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	tapout_face.custom_minimum_size = Vector2(58, 58)
 	tapout_face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED

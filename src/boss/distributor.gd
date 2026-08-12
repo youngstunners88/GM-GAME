@@ -33,6 +33,22 @@ const BODY := 240.0
 
 enum Phase { PATROL, GRAVITY_TELL, HOARD_GRAVITY, SHARD_THROW, VULNERABLE }
 
+## Hurtbox matches the scaled OPAQUE silhouette of sprite_boss_crystalline.png,
+## not the full BODY box. Source is 104x150 with opaque bbox (3,19)-(100,126);
+## BossSprite._fit() scales it by BODY/150 = 1.6 to fill the body height, so
+## the real on-screen character is ~155x171, centered ~0.8px left and ~4px up
+## from the body box's own centre (120,120).
+##
+## Same double-offset bug as auditor.gd (Kimi K3, found re-deriving the L1
+## boss and confirmed by hand against this scene): `hitbox.position` below
+## used to ALSO move the Area2D to (120,120) on top of
+## distributor.tscn's Hitbox/CollisionShape2D, which already carried that same
+## (120,120) offset — stacking both put the shape's true centre at (240,240),
+## a full half-body diagonally off the visible sprite. Same class of bug, same
+## fix as the Auditor.
+const HURTBOX_SIZE := Vector2(155.0, 171.0)
+const HURTBOX_CENTER := Vector2(119.0, 116.0)
+
 @export var patrol_speed: float = 80.0
 @export var throw_cooldown: float = 1.5
 @export var vulnerable_time: float = 1.6
@@ -134,9 +150,13 @@ func _ready() -> void:
 	# the two must move together or art and hurtbox separate.
 	boss_sprite.size = Vector2(BODY, BODY)
 	collision.position = Vector2(BODY / 2.0, BODY / 2.0)
-	hitbox.position = Vector2(BODY / 2.0, BODY / 2.0)
+	# Hitbox stays at the boss's own origin (0,0) — see HURTBOX_SIZE's comment
+	# above. DO NOT set hitbox.position here; that was the double-offset bug.
 	_build_diamond_surfboard()
-	hitbox_shape.shape = collision.shape
+	var hurt_shape := RectangleShape2D.new()
+	hurt_shape.size = HURTBOX_SIZE
+	hitbox_shape.shape = hurt_shape
+	hitbox_shape.position = HURTBOX_CENTER
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
 	# CONTACT DETECTION STAYS ON FOR THE WHOLE FIGHT.
@@ -179,12 +199,26 @@ func _physics_process(delta: float) -> void:
 		Phase.PATROL:
 			_hover_pursue(delta, 1.0)
 			if throw_timer <= 0.0:
-				# Alternate: pull, then volley, then pull... so the fight has a
-				# rhythm instead of one attack on repeat.
-				if _cycles % 2 == 0:
-					_begin_gravity_tell()
-				else:
-					_throw_shards()
+				# THREE-WAY ROTATION: pull, then ETH-orb volley (Forced
+				# Distribution), then a crystal shard barrage, then repeat — so
+				# the fight has a rhythm instead of one attack on loop.
+				#
+				# Founder, this session: "lets make the 2nd boss fire crystals
+				# rather and crystal shards at times." The existing ETH-orb
+				# volley (_throw_shards, ORB, blue-tinted, redirectable — the
+				# Forced Distribution signature) is a distinct, already-shipped
+				# mechanic; this adds a THIRD action, visually and mechanically
+				# separate from both that and Level 1's clipboard, using its
+				# own crystalline-white tint and a faster, non-redirectable,
+				# tighter-spread barrage that reads as raw ranged pressure
+				# rather than a skill-shot window.
+				match _cycles % 3:
+					0:
+						_begin_gravity_tell()
+					1:
+						_throw_shards()
+					_:
+						_throw_crystal_shards()
 				_cycles += 1
 
 		Phase.GRAVITY_TELL:
@@ -303,7 +337,21 @@ const CLIMB_CLEAR_MARGIN: float = 60.0
 ## running both real-physics gates, not assumed.
 const CLIMB_SPEED: float = 400.0
 ## Clear air the gravity field must always leave under his board.
-const PULL_FLOOR_MARGIN: float = 48.0
+##
+## RAISED 48 -> 72 (CLIMB_CLEAR_MARGIN + 12 buffer). Founder, this session,
+## again: "The 2nd boss is still not chasing Lil Blunt". Kimi K3 re-derived
+## the FULL multi-phase cycle (not just phase 2) inside the real bounded
+## arena, not just open ground, and found the open-ground gate's own math
+## (+164px/cycle at the old MIN_PURSUE_SPEED=315) doesn't survive contact
+## with HOARD_GRAVITY: `_apply_pull` could winch the player up to exactly
+## PULL_FLOOR_MARGIN (48) of clear air under his board — INSIDE the
+## CLIMB_CLEAR_MARGIN=60 band that locks him to vertical-only movement. Every
+## pull could therefore re-arm his own "don't sweep sideways through you"
+## safety lock mid-fight, at ~4x the cost in dead time that the speed floor
+## clawed back, which is why the fight still read as "not chasing" live even
+## though the bounded real-arena gate passed. 72 keeps the pull's clear-air
+## floor physically outside the lock band, so it can no longer trigger this.
+const PULL_FLOOR_MARGIN: float = 72.0
 
 ## Floor under every pursuing state's speed, in px/s.
 ##
@@ -328,11 +376,18 @@ const PULL_FLOOR_MARGIN: float = 48.0
 ## the one gate that ran long enough to matter also clamped the player at an
 ## arena wall, where a bounded arena hides an open-ground net rate of zero.
 ##
-## Raised to 315: solves for a comfortably positive net rate (~+164px per the
-## same 8.2s phase-2 super-cycle, see distributor_phase2_open_ground_chase_
-## test.gd) without touching VULNERABLE_DRIFT (his actual damage window, kept
-## at half a sprint on purpose) or any state's duration/pacing.
-const MIN_PURSUE_SPEED: float = 315.0
+## Raised 265 -> 315 -> 345 across two sessions. 315 solved the open-ground
+## math (~+164px/8.2s super-cycle) but the founder still reported "still not
+## chasing" live — see PULL_FLOOR_MARGIN's comment for why the climb lock was
+## the real remaining drag once the pull could no longer re-arm it. With that
+## fixed, 345 (Kimi K3's re-derivation) pushes the pursuing floor further
+## still, per the founder's explicit "push further... prefer stronger pursuit
+## over leaving him outrunnable": ~+262.5px/8.2s in phase 2 (worst phase),
+## ~+340.5 in phase 1, ~+378 in phase 3 — comfortably positive in every phase,
+## not just the open-ground case. VULNERABLE_DRIFT (his actual damage window,
+## kept at half a sprint on purpose) and every state's duration/pacing are
+## untouched — the fair hit window the founder liked does not shrink.
+const MIN_PURSUE_SPEED: float = 345.0
 
 ## Hard arena clamp, set by the level when the fight starts. Zero size = unset,
 ## in which case only the flight model applies.
@@ -650,6 +705,39 @@ func _throw_shards() -> void:
 		# non-identity transform the orbs would spawn offset from the muzzle.
 		get_parent().add_child(orb)
 		orb.global_position = global_position + Vector2(BODY / 2.0, BODY * 0.21)
+	AudioManager.play_sfx("throw")
+
+## CRYSTAL SHARDS — a third, distinct ranged attack.
+##
+## Founder, this session: "lets make the 2nd boss fire crystals rather and
+## crystal shards at times." Deliberately NOT the same mechanic as the ETH-orb
+## volley above (Forced Distribution's redirect window is that attack's whole
+## identity) and NOT the Auditor's clipboard fan on Level 1 — a tighter,
+## faster, non-redirectable barrage with its own crystalline-white tint, so it
+## reads as raw pressure rather than another skill-shot window. Count + speed
+## scale with phase, same convention as every other attack in this fight.
+func _throw_crystal_shards() -> void:
+	current_phase_state = Phase.SHARD_THROW
+	state_timer = 0.4
+	throw_timer = _cadence()
+	queue_redraw()
+	var count: int = [0, 2, 3, 4][current_phase]
+	var p := get_tree().get_first_node_in_group("player")
+	var base := Vector2.DOWN if p == null else global_position.direction_to(p.global_position)
+	# Tighter fan than the ETH-orb volley (0.12 vs 0.22 rad step) — reads as a
+	# focused barrage rather than a wide spread.
+	for i in range(count):
+		var spread := (float(i) - float(count - 1) / 2.0) * 0.12
+		var shard := ORB.instantiate()
+		shard.direction = base.rotated(spread)
+		# Faster and non-homing: a straight-line barrage, not a tracking one —
+		# the counter-play is footwork, not waiting out a redirect window.
+		shard.speed = 260.0 + 50.0 * (current_phase - 1)
+		shard.homing = 0.0
+		shard.tint = Color(0.85, 0.98, 1.0, 1.0)  # crystalline white, NOT the ETH blue
+		shard.redirectable = false
+		get_parent().add_child(shard)
+		shard.global_position = global_position + Vector2(BODY / 2.0, BODY * 0.21)
 	AudioManager.play_sfx("throw")
 
 ## A redirected orb reached him — damage outside the vulnerable window. This

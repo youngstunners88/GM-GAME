@@ -8,17 +8,35 @@ const DYNAMITE := preload("res://src/boss/dynamite.tscn")
 
 enum State { PATROL, THROW, VULNERABLE }
 
+## On-screen body size. Mirrored by claim_jumper.tscn's RectangleShape2D.
+##
+## Founder, this session: "The final boss still is way to small and
+## ineffective against Lil Blunt." Confirmed against every other boss's own
+## BODY: Auditor 168, Distributor 240, Claim Jumper was 80 — the LAST boss in
+## the campaign was visually the SMALLEST of the three by a wide margin.
+## Raised to 280, ahead of both, so the final fight reads as the biggest
+## threat, which is what "final boss" should mean. sprite_boss_bandit-cart.png
+## is fully opaque edge-to-edge (no transparent padding, unlike the other two
+## bosses' art) so the hitbox can stay matched to the full body box without
+## the trim T3 needed for the Auditor/Distributor.
+const BODY := 280.0
+
 ## Stage 3 is the LAST boss and must be the hardest. Player top speed is
 ## walk_speed 200 * SPRINT_MULTIPLIER 1.2 = 240 px/s, and this boss chased at
 ## 165 in phase 1 and 215 in phase 2 — slower than a running player for two of
 ## his three phases. That is the whole of the founder's "stage 3 boss is too
 ## easy": you could not be caught by simply holding run. Every phase now beats
 ## a sprint, with the gap widening as his health drops.
-@export var patrol_speed: float = 255.0
-@export var throw_cooldown: float = 1.05
+##
+## Raised again this session (255 -> 290 base) alongside the BODY increase —
+## founder: "way to small and ineffective". A bigger silhouette with the same
+## old speed would just be a slower-feeling boss; pressure has to rise with
+## the size, not just the art.
+@export var patrol_speed: float = 290.0
+@export var throw_cooldown: float = 0.85
 ## Floor under any chasing state's speed. THROW used to brake him to a dead
 ## stop, which handed the player a free escape window on every single attack.
-const MIN_CHASE_SPEED: float = 250.0
+const MIN_CHASE_SPEED: float = 280.0
 
 var current_state: State = State.PATROL
 var throw_timer: float = 0.0
@@ -57,9 +75,17 @@ func _ready() -> void:
 	# "is a boss fight active" checks) sees all three, not two of three.
 	add_to_group("boss")
 	boss_sprite.color = Color(0.6, 0.4, 0.2, 1.0)
-	boss_sprite.size = Vector2(80, 80)
-	collision.position = Vector2(40, 40)
-	hitbox.position = Vector2(40, 40)
+	boss_sprite.size = Vector2(BODY, BODY)
+	collision.position = Vector2(BODY / 2.0, BODY / 2.0)
+	# SINGLE offset, on the Hitbox node itself — hitbox_shape (the child
+	# CollisionShape2D) stays at its tscn default (0,0). Auditor/Distributor
+	# both shipped this session with the offset applied TWICE (once on the
+	# tscn child, once again here), which shifted their kill zones a full
+	# half-body off the visible art (T3's root cause, Kimi K3). This scene's
+	# child shape was never given its own tscn offset, so it was never
+	# exposed to that bug — keep it that way rather than "fixing" it to match
+	# the other two and reintroducing the exact defect just patched there.
+	hitbox.position = Vector2(BODY / 2.0, BODY / 2.0)
 	hitbox_shape.shape = collision.shape
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
@@ -88,9 +114,9 @@ func _ready() -> void:
 var arena_min: Vector2 = Vector2.ZERO
 var arena_max: Vector2 = Vector2.ZERO
 
-## Half of the 80x80 body. The origin is the TOP-LEFT, so the centre — the
-## thing that actually has to stay inside the arena — is origin + this.
-const HALF_BODY: float = 40.0
+## Half of the body. The origin is the TOP-LEFT, so the centre — the thing
+## that actually has to stay inside the arena — is origin + this.
+const HALF_BODY: float = BODY / 2.0
 
 func _clamp_to_arena() -> void:
 	if arena_max == Vector2.ZERO:
@@ -113,8 +139,18 @@ func _clamp_to_arena() -> void:
 		if velocity.y > 0.0:
 			velocity.y = 0.0
 
-## How far ahead of himself he checks for solid ground, and how far down.
-const LEDGE_PROBE_AHEAD: float = 56.0
+## How far PAST HIS OWN TOE he checks for solid ground, and how far down.
+##
+## Deliberately a margin past the toe, not a total distance from the body
+## centre. It used to be measured from centre (56px, tuned against the old
+## 80px BODY's 40px HALF_BODY — i.e. 16px past that toe). When BODY grew to
+## 280 this session, HALF_BODY grew to 140 and a still-centre-relative 56px
+## probe landed 84px INSIDE his own torso, never reaching the real edge at
+## all — he walked straight off ledges he used to correctly hold at (caught
+## by tests/stage3_defence_test.gd's real-physics gate, not by inspection).
+## Measuring from the toe instead means a future BODY resize can't silently
+## repeat this.
+const LEDGE_PROBE_MARGIN: float = 16.0
 const LEDGE_PROBE_DROP: float = 120.0
 
 ## True when there is NO floor ahead in `facing` — i.e. the next step walks off
@@ -122,11 +158,12 @@ const LEDGE_PROBE_DROP: float = 120.0
 ## leaving the arena box, this stops him walking into a pit INSIDE it.
 func _ledge_ahead(facing: float) -> bool:
 	var space := get_world_2d().direct_space_state
-	# Cast from just above his feet, ahead of the body, straight down.
-	# Body is 80x80 with its ORIGIN AT THE TOP-LEFT (collision sits at +40,+40),
-	# so the feet are at origin.y + 80 and the centre at origin.x + 40.
-	var foot_y: float = global_position.y + 80.0
-	var from := Vector2(global_position.x + 40.0 + LEDGE_PROBE_AHEAD * facing, foot_y - 8.0)
+	# Cast from just above his feet, ahead of the body, straight down. Body is
+	# BODYxBODY with its ORIGIN AT THE TOP-LEFT (collision sits at +HALF_BODY),
+	# so the feet are at origin.y + BODY and the centre at origin.x + HALF_BODY.
+	var foot_y: float = global_position.y + BODY
+	var toe_x: float = global_position.x + HALF_BODY + HALF_BODY * facing
+	var from := Vector2(toe_x + LEDGE_PROBE_MARGIN * facing, foot_y - 8.0)
 	var params := PhysicsRayQueryParameters2D.create(from, from + Vector2(0.0, LEDGE_PROBE_DROP))
 	# World geometry only (layer 1) — never treat the player or a pickup as floor.
 	params.collision_mask = 1
@@ -148,9 +185,9 @@ const HOP_REACH: float = 300.0
 ## only worth jumping if something is waiting on the other side.
 func _gap_crossable(facing: float) -> bool:
 	var space := get_world_2d().direct_space_state
-	var foot_y: float = global_position.y + 80.0
+	var foot_y: float = global_position.y + BODY
 	for dist: float in [140.0, 200.0, 260.0, HOP_REACH]:
-		var from := Vector2(global_position.x + 40.0 + dist * facing, foot_y - 8.0)
+		var from := Vector2(global_position.x + HALF_BODY + dist * facing, foot_y - 8.0)
 		var params := PhysicsRayQueryParameters2D.create(from, from + Vector2(0.0, LEDGE_PROBE_DROP))
 		params.collision_mask = 1
 		params.exclude = [get_rid()]
@@ -245,18 +282,24 @@ func _physics_process(delta: float) -> void:
 
 ## Accelerate patrol + taunt on phase transition (BossBase calls this).
 func _on_phase_changed() -> void:
-	# Both were BELOW the player's 240 px/s sprint at phase 2 (215) and barely
-	# above it at phase 3 (275). Re-tuned so the pressure genuinely escalates.
+	# Raised again this session alongside BODY and the base speed — founder:
+	# "way to small and ineffective". 300/345 were the old phase 2/3 values;
+	# every phase now clears a sprint (240 px/s) by an even wider margin.
 	if current_phase >= 2:
-		patrol_speed = 300.0
+		patrol_speed = 335.0
 		BossVoiceSystem.say(self, BOSS_ID, "phase50", true)
 	if current_phase >= 3:
-		patrol_speed = 345.0
+		patrol_speed = 385.0
 		BossVoiceSystem.say(self, BOSS_ID, "phase25", true)
 		ScreenShake.medium()
 
 ## Lob dynamite so it lands on the player's position — a telegraphed blast
 ## zone. Phase 1: 1 stick. Phase 2: 2. Phase 3: 3 spread around the player.
+##
+## explosion_delay now shrinks with phase (still telegraphed — never below a
+## dodgeable 1.3s — but tighter each phase) alongside throw_cooldown's own
+## phase scaling, so the barrage genuinely intensifies rather than just
+## adding more sticks at the same leisurely fuse.
 func _throw_dynamite() -> void:
 	throw_timer = maxf(0.8, throw_cooldown - 0.3 * (current_phase - 1))
 	var p := get_tree().get_first_node_in_group("player")
@@ -264,9 +307,11 @@ func _throw_dynamite() -> void:
 	if p:
 		target = p.global_position + Vector2(0, -80)
 	var count: int = [0, 1, 2, 3][current_phase]
+	var delay: float = maxf(1.3, 2.0 - 0.35 * (current_phase - 1))
 	for i in range(count):
 		var dyn := DYNAMITE.instantiate()
 		dyn.global_position = target + Vector2((i - float(count - 1) / 2.0) * 70.0, 0)
+		dyn.explosion_delay = delay
 		get_parent().add_child(dyn)
 	AudioManager.play_sfx("throw")
 

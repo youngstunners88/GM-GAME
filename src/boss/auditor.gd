@@ -10,8 +10,27 @@ extends CharacterBody2D
 enum State { PATROL, CHARGE, VULNERABLE, DEFEATED }
 const BOSS_ID := "tax"
 ## On-screen body size. Mirrored by auditor.tscn's RectangleShape2D — change
-## both together, and keep the collision/hitbox offsets at BODY/2.
+## both together, and keep the collision offset at BODY/2.
 const BODY := 168.0
+## Hurtbox matches the scaled OPAQUE silhouette of sprite_boss_tax-collector.png,
+## not the full BODY box. Source is 131x150 with opaque bbox (7,0)-(127,143);
+## BossSprite._fit() scales it by BODY/150 = 1.12 to fill the body height, so
+## the real on-screen character is ~134x160, centered ~1.7px right and ~3.9px
+## up from the body box's own centre (84,84).
+##
+## Founder, this session: "Lil Blunt will die completely without even
+## touching the boss for some reason." Root cause (Kimi K3, verified by hand
+## against this scene): the hitbox was double-offset. auditor.tscn already
+## positions Hitbox/CollisionShape2D at (84,84) LOCAL TO THE HITBOX NODE, and
+## _ready() below used to ALSO move the Hitbox Area2D itself to (84,84) —
+## stacking both offsets moved the shape's true centre to (168,168), a full
+## half-body diagonally off the visible sprite. The kill zone spanned
+## x/y 84..252 while the art only occupies roughly 0..168: ~99px of lethal
+## air past the boss's right/bottom edge, while his left/top half could be
+## stood inside with no death at all — asymmetric and facing-independent,
+## exactly matching "for some reason" and "dies without even touching him".
+const HURTBOX_SIZE := Vector2(134.0, 160.0)
+const HURTBOX_CENTER := Vector2(86.0, 80.0)
 const CLIPBOARD := preload("res://src/boss/boss_projectile.tscn")
 
 @export var patrol_speed: float = 140.0
@@ -73,8 +92,19 @@ func _ready() -> void:
 	# the collision/hitbox offsets (size/2 = 84) or the art and hurtbox drift.
 	sprite.size = Vector2(BODY, BODY)
 	collision.position = Vector2(BODY / 2.0, BODY / 2.0)
-	hitbox.position = Vector2(BODY / 2.0, BODY / 2.0)
-	hitbox_shape.shape = collision.shape
+	# Hitbox stays at the boss's own origin (0,0) — auditor.tscn's
+	# Hitbox/CollisionShape2D child already carries the (86,80) offset itself.
+	# Setting hitbox.position here too was the double-offset bug (see
+	# HURTBOX_SIZE's comment above): DO NOT re-add an offset on this node.
+	#
+	# Own, distinct shape — NOT `collision.shape`. Sharing one RectangleShape2D
+	# resource between the hurtbox and the physical body collider means
+	# resizing the hurtbox to the art's silhouette would also shrink the
+	# body's real collision, breaking is_on_wall()/is_on_floor() leap triggers.
+	var hurt_shape := RectangleShape2D.new()
+	hurt_shape.size = HURTBOX_SIZE
+	hitbox_shape.shape = hurt_shape
+	hitbox_shape.position = HURTBOX_CENTER
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
 	# CONTACT DETECTION STAYS ON FOR THE WHOLE FIGHT.

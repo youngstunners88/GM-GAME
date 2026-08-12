@@ -1,0 +1,25 @@
+<!-- dispatched: deepseek/deepseek-v4-pro
+     prompt: prompts/deepseek-compliance-matrix-t1-t5.md
+     files inlined: 1
+     tokens: 1574 in / 2193 out
+     cost: $0.0038
+     NOTE: unvalidated model output. Claude must verify every claim
+     against the real files before any of it informs code. -->
+**Compliance matrix — pre‑implementation checklist (all items NOT STARTED)**  
+*Founder decisions (1)–(3) are settled, non‑negotiable, and not re‑opened here.*
+
+| Item | What the prompt requires | What evidence would PROVE it (falsifiable, not “code touched”) | Status |
+|------|--------------------------|---------------------------------------------------------------|--------|
+| **T1 – Sharp TAP OUT face + logos** | No pixelation on TAP OUT Lil Blunt icon or any UI/logo art. High‑res source, linear+mipmap filtering, adequate draw size. | 1. Take a screenshot of the TAP OUT face at its in‑game rendered size. 2. Compare against the source asset downscaled with bilinear/trilinear filtering (not nearest). 3. Zoom to 400% – no blocky/aliased edges. 4. Repeat for all HUD logos (BLAZE DIAMONDS, protocol row). | NOT STARTED |
+| **T2 – Band art stable (no jitter)** | Artwork (logos, HUD) must not jitter, swim, or sub‑pixel shift during movement/camera shake. | 1. Run the game with camera shake enabled and player moving. 2. Record a 10‑second video of the HUD area. 3. Track a fixed pixel on the TAP OUT face – its screen‑space position must not deviate by more than 1 pixel over the clip. 4. Confirm no visible “swimming” when viewed at 1:1. | NOT STARTED |
+| **T3 – L1: no ghost death** | Lil Blunt must never die without actual contact with the Stage 1 boss. No oversized hurtbox, residual DoT, hazard, or one‑frame overlap. | 1. Set up a real‑physics test: drive the player near the boss’s Hitbox shape (within 10 units) but never overlapping, for 30 seconds. 2. Assert that `boss_contact_restart()` or equivalent death trigger never fires. 3. Repeat with the player at multiple angles and speeds. 4. Also test that legitimate contact (overlap) still causes death normally. | NOT STARTED |
+| **T4 – S2: chases in real arena + crystal/shard volleys** | Stage 2 boss must continuously pursue across all phases in the shipped arena, closing distance. Must also fire crystal/shard attacks (ranged pressure). | **Trustworthy verification (previous “chase fixed” claims were contradicted):** 1. Use a scripted test that damages the boss enough to cycle through **all phases** (not just Phase 1). 2. While the boss is alive, move the player to the far side of the arena and record the boss’s distance to player every 0.5 s for 15 s. 3. Assert that the distance **decreases monotonically** (or within a small tolerance) in every phase – the boss never stops chasing. 4. Assert that at least **N crystal/shard projectiles** are spawned during the test (N ≥ 5). 5. Run the test 3 times in a row without failure. 6. Gate: the test must not rely on the player never damaging the boss past Phase 1; it must force the boss into Phase 2+ and verify chase there. | NOT STARTED |
+| **T5 – Final boss larger and effective** | Scale up final boss visually, raise damage/chase/pressure so fight is not trivial, keep arena clamps (no ledge falls). | 1. Measure the boss’s bounding box in the arena – must be at least **X% larger** than the previous build (X to be set by founder, e.g., 50% larger). 2. Combat test: player stands still at mid‑range; boss must deal enough damage to kill the player within **Y seconds** (Y e.g., 8 s). 3. Boss must actively close distance and attack; no idle periods longer than 2 s. 4. Verify the boss never falls off ledges or clips through arena geometry. | NOT STARTED |
+| **Multi‑model log present** | Log each model’s findings in STATUS or `docs/model-responses/` before large code changes. | 1. A markdown file exists (e.g., `docs/model-responses/session-YYYY-MM-DD.md`). 2. It contains sections for **Fable‑5**, **Grok 4.5**, **Kimi K3**, **DeepSeek** (this matrix), and **Claude** (orchestration). 3. Each section has the model’s raw output or a summary of findings, not just a placeholder. | NOT STARTED |
+| **Gates green** | All automated checks pass before deploy. | 1. Lint/type‑check exit code 0. 2. All unit/integration tests pass. 3. Build succeeds with no errors. | NOT STARTED |
+| **Deploy + build id** | Successful deployment with a recorded build identifier. | 1. Deployment log shows success. 2. A build id (git commit hash or CI build number) is written to `STATUS.md` or the deploy summary. | NOT STARTED |
+
+**Settled founder decisions (not in matrix):**  
+- HUD label “BLAZE DIAMONDS” and protocol row `$DIAMONDS` / `$TITANX` / `$GOLD` stay as‑is.  
+- Stage 1 TitanX token progress persists across boss death.  
+- Stage 2 chase must be pushed further – no re‑discussion.
