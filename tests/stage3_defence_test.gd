@@ -218,7 +218,18 @@ func _test_stage2_boss_outruns_a_sprinting_player() -> void:
 	boss.global_position = Vector2(0, 400)
 	await get_tree().physics_frame
 	var start_gap: float = absf(player.global_position.x - boss.global_position.x)
-	for i in 300:
+	# 660 frames (~11s), not 300 (~5s): the boss's own PATROL action rotation
+	# is a 3-slot cycle (pull / ETH-orb / crystal-shard) roughly 10.6s long in
+	# Phase 1, and only 2 of those 3 slots lead into a VULNERABLE (120px/s)
+	# deceleration — a short window shorter than one full rotation samples a
+	# DIFFERENT slice of that cycle depending on which action happens to fire
+	# first, which is an artifact of the sample window, not of the chase
+	# itself (confirmed by hand: total time-at-speed across one full rotation
+	# is identical regardless of action order — reordering the rotation this
+	# session, T3, made a 300-frame window flip on exactly this alignment
+	# artifact). A full-rotation window is order-independent and the honest
+	# measure of whether he actually catches a sprinting player.
+	for i in 660:
 		# Player sprints away every frame.
 		player.global_position.x += 240.0 * (1.0 / 60.0)
 		await get_tree().physics_frame

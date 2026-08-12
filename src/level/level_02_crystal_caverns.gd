@@ -2,6 +2,18 @@ extends LevelBase
 
 var _boss_arena_active: bool = false
 
+## Runs BEFORE `_setup_kill_zone()` (see `level_base.gd`), so the Diamond
+## Vault's chamber (built later, in `_setup_depth_routes()`) can extend past
+## the level-wide kill band without needing the vault node to exist yet — its
+## world position is already a design-time constant here, matching the
+## literal `Vector2(2450, 650)` `_setup_depth_routes()` places it at, and its
+## mouth_width (100) matches too. `protocol_vault.gd::kill_zone_gap_range()`
+## computes the exact same range from those same two numbers; kept as a
+## literal here (rather than instantiating the vault early just to ask it)
+## because the vault legitimately doesn't exist yet at this point in _ready().
+func _register_kill_zone_gaps() -> void:
+	kill_zone_gaps.append(Vector2(2300.0, 2600.0))
+
 func _ready() -> void:
 	level_data = preload("res://src/resources/level_02_data.tres")
 	super()

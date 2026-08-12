@@ -3,6 +3,218 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv`
 
+## THIS PASS — vaults are real sections now, the L2 boss "still not chasing" bug actually found, S2/S3 combat honesty pass
+
+Founder verdict this session (verbatim): the shipped vaults were "not just a
+hole in the ground with a ladder and tokens" complete enough; the Stage 2
+boss "still does not chase" and "not firing crystals" despite a prior
+session's fix; the Stage 3 boss is "too easy to kill." Multi-model dispatched
+first as mandated — Fable, Grok, Kimi, DeepSeek — log in
+`docs/model-responses/2026-08-12-s3-*.md`. Two dispatches (Fable, Kimi) hit
+transient OpenRouter 5xx/truncation errors and were retried with a raised
+output budget until they landed complete — noted here rather than silently
+re-run, per this project's own honesty standard.
+
+| Your item | Status |
+|---|---|
+| T1/T2 — vaults are "a hole with a ladder", not complete sections | **FIXED** — both vaults rebuilt with real multi-tier geometry, a protocol hazard, 2 distinct interactables, and your actual reference art |
+| T3 — Stage 2 boss still not chasing / no crystals live | **ROOT-CAUSED** — a real ordering bug, not a re-assertion of the same fix |
+| T4 — Stage 3 boss too easy to kill | **ROOT-CAUSED** — two real bugs, both fixed |
+
+### T1/T2 — the vaults are real sections now
+
+Your screenshots weren't part of this ask, but the complaint was specific
+enough to act on directly: a single 150px pit with a floor and a coin pile
+doesn't read as a place. Three real design/art references
+(`DIAMOND_VAULT_CORE`, `GOLD_DEPOSIT_VAULTS`, plus a deposit pillar, melt
+forge, and vault-door asset) came in via your Drive link this session and are
+now actually wired into the game — not just referenced, loaded and visible.
+
+**The core problem: the old 175px vertical band was never going to be enough.**
+Godot's kill-zone Area2D that ends a run on a pit-fall is one single strip
+spanning the ENTIRE level width, so a vault built anywhere past that strip's
+top edge was lethal — the reason last session's vault topped out at a shallow
+150px pit. Fixed properly this time, not patched around: `level_base.gd`
+gained a `kill_zone_gaps` mechanism — a level can now register an x-range
+its own downward set-piece occupies, and the kill zone builds itself as
+multiple strips that skip that range instead of one continuous one. **Every
+level that doesn't register a gap is provably unaffected** — verified with a
+dedicated test (`kill_zone_gap_test.gd`) proving the empty-gaps case produces
+the exact same single full-width strip as before, byte for byte. Only L2 and
+L3's own vaults opt in.
+
+That bought real depth: each vault is now **5 solid platforms, not 1** — a
+floor plus two climbable tiers, both jump-legal (checked against the real
+92px single-jump apex, not eyeballed). Each vault has:
+- **A protocol-appropriate hazard.** Diamond Vault drops telegraphed crystal
+  shards from the ceiling on a timer. Fort Knox has a spinning, patrolling
+  gear guard on its tier lane. Both deal real damage on real contact —
+  verified firing from the vault's own timer/Tween, not asserted.
+- **Two distinct interactables**, not one reskinned twice. Diamond Vault: a
+  deposit pillar (your reference art) that grants a coin burst, plus a
+  separate switch that reveals a bigger hoard with its own visual payoff.
+  Fort Knox: the REAL `melt_forge` entity (already in this codebase, already
+  proven — burn GOLD for a temporary boost) plus its own reveal switch. Both
+  one-shot — verified a second use grants nothing more, so the reward isn't
+  farmable.
+- **Your actual reference art**, not a placeholder: the two wide backdrop
+  paintings seated behind the platforms (clipped to the chamber window, not
+  bled across the whole screen — an early draft of this got that wrong and
+  was corrected before shipping), the deposit pillar and melt forge as the
+  interactable props, the vault door as Fort Knox's centerpiece. Resized to
+  a healthy 2-3x oversample on the way in, same fix as last session's TAP OUT
+  pixelation bug — none of this new art ships pixelated either.
+
+**No new soft-lock risk**, checked explicitly: the exit ladder is still
+non-destructible, the top-out math is unchanged (still lands 40px onto real
+ground east of the pit), and a new gate proves it end to end — a real 32px
+player drops through the mouth, lands on the now-much-deeper floor, the real
+(gap-aware) kill band never fires, and the exit is still reachable and safe.
+
+### T3 — Stage 2 "still not chasing" — a real bug, not a re-assertion
+
+You'd already told me this was fixed once (raised chase speed, added a
+crystal-shard attack) and it still read as broken live. I didn't re-assert
+that fix — I had Kimi K3 re-derive the entire fight timeline from scratch,
+in the real Stage 2 arena's exact geometry (real boss spawn point, real
+arena clamp, real single-floor arena with no obstructing platforms), with no
+memory of the prior session's conclusions.
+
+**What it found:** the crystal-shard attack was real and correctly coded —
+but it sat THIRD in the boss's 3-slot action rotation. The math: his first
+crystal volley didn't fire until roughly 9.3 seconds into a fresh fight. He
+also chases at 345px/s, and any contact with him is an instant run-wipe — so
+a normal engagement (you get caught, or you're playing cautiously and it
+ends before then) could be over well before his rotation ever reached the
+crystal slot. The chase code itself re-derives as genuinely correct over a
+full rotation; the reported "not chasing" almost certainly reads as "nothing
+about this fight is different" because the one new, visually distinct thing
+you'd notice was structurally rare in a short fight.
+
+**Fixed:** crystal shards moved to the FIRST slot in the rotation. Verified
+with a real-physics test that confirms this — a fresh boss, driven only by
+its own real state machine, now fires its first crystal volley at **2.2
+seconds**, not 9.3. The same test fails outright against the pre-fix code
+(confirmed by reverting and re-running it), so this isn't a test that would
+have passed either way.
+
+**One test-alignment artifact caught along the way, not a game bug:** the
+existing "boss outruns a sprinting player" gate briefly went red after the
+reorder. Traced it by hand — the boss's action rotation runs on a ~10.6
+second cycle, and a 5-second measurement window samples a *different* slice
+of that cycle depending on which action fires first, even though the total
+time spent at each speed across one full rotation is identical either way.
+Fixed the test to measure across a full rotation instead of an arbitrary
+short window — the same class of fix this project has needed before for
+exactly this reason.
+
+**What I did NOT do this pass:** put a real browser on the live exported
+build to visually confirm the crystal shards specifically (the standard
+caveat for anything gated only by headless physics — see Definition of Done
+below). CI rebuilds fresh from the exact pushed commit every time, so there's
+no plausible path for the source fix to not reach the deployed build, but
+your own eyes on a hard refresh is still the real confirmation.
+
+### T4 — Stage 3 "too easy to kill" — two real bugs, not a tuning pass
+
+This is a different complaint than last session's "too easy to escape"
+(which chase-speed tuning fixed). Grep-verified before touching anything:
+**`claim_jumper.gd`'s `take_damage()` had no state gate at all** — compare
+the other two bosses, both of which only accept damage during an explicit
+vulnerable window. Worse: **`current_state` never actually left PATROL** in
+the shipped code — the dynamite-throw function reset its cooldown and spawned
+dynamite without ever setting the state that was supposed to slow him down
+and later open a real damage window. The `THROW` and `VULNERABLE` branches
+already sitting in his state machine were dead code — correct-looking,
+never reached.
+
+The real number this produced: at max player DPS (axe, 0.4s cooldown, one
+hit landing every 2.5/second) against his 18 HP, with zero exposure required,
+the actual time-to-kill was **7.1 seconds** — confirmed by driving the
+pre-fix code through a real sustained-fire simulation, not estimated.
+
+**Fixed:** dynamite throws now genuinely commit him to a THROW state, which
+leads into a real VULNERABLE window afterward — `take_damage()` now requires
+it, same convention as the other two bosses. Verified with real physics: the
+boss's own attack cycle (not a hand-set state) now actually reaches both
+THROW and VULNERABLE, damage outside that window is a confirmed no-op, and
+under the exact same sustained-perfect-axe-fire simulation, **time-to-kill
+is now 18.8 seconds** — the fight is completable, but no longer risk-free
+from any range. Also found and fixed, while in this code: the boss's own hit-
+flash tween was silently targeting a null node on every single landed hit
+(same class of bug last session's Distributor pass already found and fixed
+once — a boss whose take-damage feedback never actually played).
+
+---
+
+## Multi-model log (OpenRouter, every dispatch, real costs)
+
+| Model | Role | Result | Cost |
+|---|---|---|---|
+| `anthropic/claude-fable-5` | Vault multi-tier layout + kill-zone-gap depth argument + real-art placement | ✅ argued FOR the kill-zone-gap surgery (correctly identified the 175px band as genuinely too shallow for "complete sections"), gave the exact tier geometry shipped | $1.2146 |
+| `x-ai/grok-4.5` | Protocol identity / interactable readability / layering rules | ✅ concrete idle-vs-spent visual states for interactables, backdrop-vs-playable layering rule, Fort Knox door placement — all used as shipped | $0.0148 |
+| `moonshotai/kimi-k3` | S2 chase re-derivation in the real arena + S3 DPS/vulnerability-gating audit + vault soft-lock invariants | ✅ found the actual T3 rotation-order bug and the actual T4 zero-gating bug — both fixes shipped directly from its analysis, verified by hand and by real-physics test before use | $0.5581 |
+| `deepseek/deepseek-v4-pro` | Pre-implementation compliance matrix — falsifiable proof criteria for every item | ✅ set the exact bar this session's new gates were built to (platform-tier counts, distinct-interactable counts, TTK floor) | $0.0101 |
+
+**Total tracked OpenRouter spend this pass: ~$1.80** (both Fable and Kimi hit
+transient OpenRouter 5xx / truncated-response errors on the first attempt and
+were retried with a raised output budget — noted here rather than silently
+re-run; the failed attempts' own token cost isn't separately itemized since
+the API didn't return a usable cost figure for them).
+
+**Kimi's finding is what actually moved T3 and T4 forward, again.** For T3,
+the code re-derives as correct over a full rotation — the bug was specifically
+that the founder's most visible new feature was rotation-slot-3, effectively
+invisible in a short fight. For T4, a plain `grep` for `current_state = State.VULNERABLE`
+turning up zero assignments outside the enum/match statement was the whole
+proof — dead code hiding behind a correct-looking state machine, the same
+class of bug this project keeps finding under close audit.
+
+## Full gate battery — every regression test, this pass
+
+26 suites, ALL PASS (22 previously-existing + 4 new this pass):
+
+`script_compile` · `blaze_rush_layout` · `blaze_lounge_banner` ·
+`blaze_band_density` · `blaze_lifecycle_e2e` · `blaze_hud_label_fit` ·
+`blaze_diamond_bounce_repro` · `blaze_claim_reset` · `coin_token_credit` ·
+`level_entry_current_level_order` · `owner_screenshot_fixes` · `save_compat` ·
+`founder_critical_probe` (103 assertions) · `blaze_rush_no_pixelation` ·
+`boss_ghost_death_hurtbox` · `distributor_crystal_shard` ·
+`boss_arena_reachable` · `boss_visibility` · `boss_stakes` ·
+`distributor_behaviour` · `distributor_phase2_real_arena_chase` ·
+`stage3_defence` · **`distributor_early_crystal`** (new, T3) ·
+**`claim_jumper_pressure`** (new, T4) · **`kill_zone_gap`** (new, T1/T2) ·
+**`protocol_vault`** (rewritten for the deepened geometry, T1/T2) ·
+**`vault_interactables`** (new, T1/T2)
+
+Every new/changed gate this pass was verified to FAIL on the pre-fix code
+first: the crystal-shard timing test fails at ~9.3s against the old rotation
+order; the Claim Jumper pressure test fails 4 of 6 checks (7.1s TTK) against
+the old ungated `take_damage()`; the kill-zone-gap tests prove the empty-gaps
+case is byte-identical to the original single-strip behavior, so every level
+without a vault is provably unaffected by the new mechanism.
+
+Security Sentinel: 18/18, 0 blockers, fail-on=high.
+
+**Honest limit on this pass, stated plainly:** everything above is proven
+with real Godot physics against the real game files — not a browser
+platforming run to Level 2's boss room or a live drop into either vault.
+Reaching those points blind in a headless browser is the same slow,
+failure-prone problem this project has flagged before for boss-room
+verification. CI rebuilds fresh from this exact commit, so there's no
+plausible staleness gap between source and deploy — but your own eyes on a
+hard refresh is still the real confirmation for anything visual (the vault
+art, the crystal shard's actual look, the gear guard's patrol).
+
+**Model-advice:** claude-opus-4-8 for the next session if anything above
+reads as still wrong live — hunting a live-vs-gate discrepancy is exactly
+the hidden-root-cause work this session's own T3/T4 findings came from.
+claude-sonnet-5 is fine if it's just tuning numbers (vault reward size,
+hazard cadence, chase speed) once the shape of everything above is confirmed
+right.
+
+---
+
 ## PART B — Diamond Vault (S2) + Fort Knox (S3) downward set-pieces
 
 **Two new downward vaults you DROP into and climb back out of** — the founder's

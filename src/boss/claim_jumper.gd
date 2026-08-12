@@ -38,7 +38,31 @@ const BODY := 280.0
 ## stop, which handed the player a free escape window on every single attack.
 const MIN_CHASE_SPEED: float = 280.0
 
+## Damage window after each dynamite throw, shrinking by phase like the other
+## two bosses' vulnerable windows. Player DPS is 2.5/s (0.4s axe cooldown);
+## against 18 HP that is a 7.2s floor on pure hit-connecting time — Kimi K3's
+## exact number, re-derived this session after the founder called the fight
+## "too easy to kill". A player who is never gated at all can pay that in one
+## unbroken burst from any range; requiring the window makes them earn it.
+@export var vulnerable_time: float = 0.9
+
+## Founder, this session: "too easy to kill." Root cause (Kimi K3 TTK
+## analysis): `take_damage()` had NO state gate at all — compare
+## `auditor.gd`/`distributor.gd`, both of which only accept damage during an
+## explicit VULNERABLE window. Worse: `current_state` NEVER actually left
+## PATROL in the shipped code — `_throw_dynamite()` reset `throw_timer` and
+## spawned dynamite without ever setting `current_state = State.THROW`, so the
+## THROW and VULNERABLE branches below (and their handling comments) were
+## dead code. A player standing at axe range (2.5 DPS, 0.4s cooldown) could
+## kill 18 HP in 7.2s from any state, any range, with zero exposure to his
+## only attack — full risk-free damage output. Both bugs fixed together:
+## dynamite now actually enters THROW, then a real VULNERABLE window that
+## `take_damage()` requires.
 var current_state: State = State.PATROL
+## Drains every physics frame; drives the THROW commitment and the
+## VULNERABLE window's duration (mirrors auditor.gd's/distributor.gd's own
+## state_timer convention).
+var state_timer: float = 0.0
 var throw_timer: float = 0.0
 var direction: float = 1.0
 ## Motion feel + traversal, matching the Auditor's tuned values so the two
@@ -243,6 +267,7 @@ func _physics_process(delta: float) -> void:
 
 	throw_timer -= delta
 	_hop_cooldown -= delta
+	state_timer -= delta
 
 	match current_state:
 		State.PATROL:
@@ -272,13 +297,34 @@ func _physics_process(delta: float) -> void:
 			# Slower than patrol so the throw still reads as a commitment, but
 			# never below a sprint.
 			_ground_chase(delta, maxf(patrol_speed * 0.72, MIN_CHASE_SPEED))
+			if state_timer <= 0.0:
+				_begin_vulnerable()
 
 		State.VULNERABLE:
 			velocity.x = move_toward(velocity.x, 0.0, 150.0 * delta * 60.0)
 			velocity.y += 980.0 * delta
 			move_and_slide()
 			_clamp_to_arena()
-			boss_sprite.modulate = Color(1.0, 0.3, 0.3, 1.0) if fmod(throw_timer, 0.2) < 0.1 else Color(1.0, 0.1, 0.1, 1.0)
+			boss_sprite.modulate = Color(1.0, 0.3, 0.3, 1.0) if fmod(state_timer, 0.2) < 0.1 else Color(1.0, 0.1, 0.1, 1.0)
+			if state_timer <= 0.0:
+				_end_vulnerable()
+
+## Opens the real damage window (`take_damage()` requires this state). Shrinks
+## per phase like the other two bosses' windows — less free damage time as
+## the rest of the fight escalates, same convention as auditor.gd.
+func _begin_vulnerable() -> void:
+	current_state = State.VULNERABLE
+	state_timer = maxf(0.6, vulnerable_time - 0.15 * (current_phase - 1))
+
+## Shared exit — the timeout path is the only path today, but kept as its own
+## function (matching distributor.gd's _end_vulnerable convention) so a future
+## "hit ends the window early" change has one place to land, not two.
+func _end_vulnerable() -> void:
+	current_state = State.PATROL
+	boss_sprite.modulate = Color(1, 1, 1, 1)
+	# The chase-cooldown for his NEXT dynamite throw starts now, not when this
+	# throw was launched — see _throw_dynamite()'s comment for why.
+	throw_timer = maxf(0.8, throw_cooldown - 0.3 * (current_phase - 1))
 
 ## Accelerate patrol + taunt on phase transition (BossBase calls this).
 func _on_phase_changed() -> void:
@@ -301,7 +347,15 @@ func _on_phase_changed() -> void:
 ## phase scaling, so the barrage genuinely intensifies rather than just
 ## adding more sticks at the same leisurely fuse.
 func _throw_dynamite() -> void:
-	throw_timer = maxf(0.8, throw_cooldown - 0.3 * (current_phase - 1))
+	# Actually enters THROW now (see the field comments above `current_state`
+	# — it never did before). The chase-cooldown reset moves to
+	# `_end_vulnerable()`, not here: THROW's 0.4s commitment plus the
+	# VULNERABLE window both drain unconditionally every frame regardless of
+	# state, so resetting `throw_timer` here would let the next attack fire
+	# again mid-window on short cycles — vulnerable almost back-to-back
+	# instead of a real chase-then-opening rhythm.
+	current_state = State.THROW
+	state_timer = 0.4
 	var p := get_tree().get_first_node_in_group("player")
 	var target := global_position + Vector2(120 * (1.0 if direction > 0 else -1.0), -60)
 	if p:
@@ -316,14 +370,21 @@ func _throw_dynamite() -> void:
 	AudioManager.play_sfx("throw")
 
 func take_damage(amount: int) -> void:
-	if is_dead:
+	if is_dead or current_state != State.VULNERABLE:
 		return
 	health -= amount
 	AudioManager.play_sfx("damage")
 	BossVoiceSystem.say(self, BOSS_ID, "hurt")
+	# Tween `boss_sprite`, NOT the inherited `sprite` — EnemyBase resolves
+	# `sprite` via get_node_or_null("Sprite") and this boss's scene has no
+	# such child (its art is the BossSprite on "ColorRect"), so `sprite` is
+	# null here and this tween silently no-op'd on every hit: a landed blow
+	# never actually flashed. Same bug, same fix distributor.gd already
+	# needed (Kimi audit, last session) — found while wiring the real
+	# vulnerable-window feedback this session.
 	var tween := create_tween()
-	tween.tween_property(sprite, "modulate", Color(4.0, 0.25, 0.25, 1), 0.05)
-	tween.tween_property(sprite, "modulate", Color(1, 1, 1, 1), 0.05)
+	tween.tween_property(boss_sprite, "modulate", Color(4.0, 0.25, 0.25, 1), 0.05)
+	tween.tween_property(boss_sprite, "modulate", Color(1, 1, 1, 1), 0.05)
 	_update_health_bar()
 	if health <= 0:
 		die()

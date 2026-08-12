@@ -2,6 +2,12 @@ extends LevelBase
 
 var _boss_arena_active: bool = false
 
+## Runs BEFORE `_setup_kill_zone()` — see level_02's identical override for
+## the full rationale. Fort Knox sits at world (2690, 650), mouth_width 140,
+## matching `_setup_depth_routes()`'s literal placement below.
+func _register_kill_zone_gaps() -> void:
+	kill_zone_gaps.append(Vector2(2520.0, 2860.0))
+
 func _ready() -> void:
 	level_data = preload("res://src/resources/level_03_data.tres")
 	super()
