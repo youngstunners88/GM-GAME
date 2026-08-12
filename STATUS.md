@@ -3,12 +3,12 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv`
 
-**PUSHED — build id `PENDING-COMMIT-HASH` — 2026-08-12.** CI export + itch.io
-butler deploy triggered on push per `.github/workflows/export-game.yml`; this
-line gets the real commit hash in the same push. Hard-refresh before testing
-once the Actions run completes. Web export is still non-threaded
-(`variant/thread_support=false`) — the setting that has to stay put or the
-game silently fails to boot on itch.
+**PUSHED — build id `267eab3` — 2026-08-12.** CI export + itch.io butler
+deploy triggered on push per `.github/workflows/export-game.yml` — check the
+Actions tab for the export commit and butler upload confirmation. Hard-
+refresh before testing once that run completes. Web export is still
+non-threaded (`variant/thread_support=false`) — the setting that has to stay
+put or the game silently fails to boot on itch.
 
 **Gates: 22 suites ALL PASS (script compile, founder critical probe,
 boss/blaze/save regression suites, plus 3 new this pass — T1/T2 pixelation
