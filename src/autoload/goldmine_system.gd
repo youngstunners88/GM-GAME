@@ -17,6 +17,7 @@ signal xaut_changed(new_amount: int)
 signal melt_triggered(melted_gold: int, bonus_pct: float)
 signal auction_complete(xaut_won: int, multiplier: float)
 signal certificate_earned(count: int)
+signal diamond_shares_changed(new_shares: int)
 
 # Whitepaper constants
 const DIAMOND_BURN_PCT: float = 0.20             # 20% Diamond burn on mint
@@ -42,6 +43,10 @@ var wbtc_balance: int = 0
 var xaut_balance: int = 0
 var fort_knox_shares: int = 0
 var gold_certificates: int = 0
+## DIAMONDS protocol staking receipt — the Diamond Vault's gamified stake loop
+## (session 4). Mirrors fort_knox_shares for GOLD; earned by staking collected
+## diamonds in the Diamond Vault, weighted by commitment term.
+var diamond_shares: int = 0
 
 # Per-level forfeit pool — feeds boss auction payout
 var auction_gold_pool: int = 0
@@ -140,6 +145,27 @@ func stake_in_fort_knox(amount: int, days_committed: int) -> int:
 	_check_certificates()
 	return shares
 
+## Stake collected DIAMONDS in the Diamond Vault — the gamified example of the
+## DIAMONDS protocol the founder asked for (session 4). Mirrors
+## stake_in_fort_knox: commits diamonds from `diamonds_balance` into
+## `diamond_shares`, weighted by commitment term (288d = base, 2888d = 2x).
+## Returns the shares generated (0 if nothing staked). Never stakes more than
+## the player actually holds. Unlike the GOLD Fort Knox stake there is no
+## certificate threshold — the three-payout-pool weighting is expressed purely
+## as the share multiplier here, so the vault UI can read it back cleanly.
+func stake_diamonds(amount: int, days_committed: int) -> int:
+	amount = clampi(amount, 0, diamonds_balance)
+	if amount <= 0:
+		return 0
+	diamonds_balance -= amount
+	# Same linear term scale as Fort Knox: longer commitment, more shares.
+	var term_ratio: float = clampf((float(days_committed) - 288.0) / 2600.0, 0.0, 1.0)
+	var shares: int = int(round(amount * (1.0 + (term_ratio * MAX_TERM_BONUS_PCT))))
+	diamond_shares += shares
+	diamonds_changed.emit(diamonds_balance)
+	diamond_shares_changed.emit(diamond_shares)
+	return shares
+
 ## Internal: check if Fort Knox shares cross the 22,000-per-Cert threshold.
 func _check_certificates() -> void:
 	var new_certs: int = fort_knox_shares / CERT_SHARES_REQUIRED
@@ -182,6 +208,7 @@ func reset_session() -> void:
 	xaut_balance = 0
 	fort_knox_shares = 0
 	gold_certificates = 0
+	diamond_shares = 0
 	auction_gold_pool = 0
 	lifetime_gold_mined = 0
 	lifetime_diamonds_burned = 0
@@ -195,6 +222,7 @@ func get_save_data() -> Dictionary:
 		"xaut": xaut_balance,
 		"fort_knox_shares": fort_knox_shares,
 		"gold_certificates": gold_certificates,
+		"diamond_shares": diamond_shares,
 		"lifetime_gold_mined": lifetime_gold_mined,
 		"lifetime_diamonds_burned": lifetime_diamonds_burned,
 	}
@@ -206,9 +234,11 @@ func load_save_data(data: Dictionary) -> void:
 	xaut_balance = int(data.get("xaut", 0))
 	fort_knox_shares = int(data.get("fort_knox_shares", 0))
 	gold_certificates = int(data.get("gold_certificates", 0))
+	diamond_shares = int(data.get("diamond_shares", 0))
 	lifetime_gold_mined = int(data.get("lifetime_gold_mined", 0))
 	lifetime_diamonds_burned = int(data.get("lifetime_diamonds_burned", 0))
 	gold_changed.emit(gold_balance)
 	diamonds_changed.emit(diamonds_balance)
 	wbtc_changed.emit(wbtc_balance)
 	xaut_changed.emit(xaut_balance)
+	diamond_shares_changed.emit(diamond_shares)

@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/s4_combat_fixes_test.gd" id="1_s4c"]
+
+[node name="S4CombatFixesTest" type="Node2D"]
+script = ExtResource("1_s4c")
