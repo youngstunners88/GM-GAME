@@ -3,6 +3,18 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv`
 
+**LIVE ON MASTER — merge commit `131c204` — export commit `ab46ab5` —
+2026-08-12.** CI green on both the branch head (`15f8a24`) and the master
+merge (`131c204`) — `Deploy to itch.io via butler`: success on both,
+gitleaks/Security Sentinel/secure-build-checklist all green, web export
+stayed non-threaded.
+
+> **HARD-REFRESH REQUIRED before testing.** The browser caches the old
+> `index.pck`; force a hard refresh (Ctrl/Cmd-Shift-R, or a private window)
+> to actually load export `ab46ab5`. Drop into the pit at x≈2450 on Stage 2
+> and x≈2690 on Stage 3 to see the new vault interiors; both bosses' fixes
+> only show up once you actually fight them.
+
 ## THIS PASS — vaults are real sections now, the L2 boss "still not chasing" bug actually found, S2/S3 combat honesty pass
 
 Founder verdict this session (verbatim): the shipped vaults were "not just a
