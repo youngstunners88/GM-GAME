@@ -381,10 +381,13 @@ func reset_boss_restart_flag() -> void:
 ## fleeing the Tax Collector.
 var secret_door_used: Dictionary = {}   # level_index -> true
 var blaze_portal_used: Dictionary = {}  # level_index -> true
+var vault_door_used: Dictionary = {}    # level_index -> true (Diamond Vault / Fort Knox)
 
 func mark_side_entrance_used(kind: String, level: int) -> void:
     if kind == "secret":
         secret_door_used[level] = true
+    elif kind == "vault":
+        vault_door_used[level] = true
     else:
         blaze_portal_used[level] = true
     save_session()
@@ -392,6 +395,8 @@ func mark_side_entrance_used(kind: String, level: int) -> void:
 func is_side_entrance_used(kind: String, level: int) -> bool:
     if kind == "secret":
         return bool(secret_door_used.get(level, false))
+    elif kind == "vault":
+        return bool(vault_door_used.get(level, false))
     return bool(blaze_portal_used.get(level, false))
 
 ## Reopen a level's side entrances (Blaze portal + secret door) for a FRESH
@@ -415,6 +420,7 @@ func is_side_entrance_used(kind: String, level: int) -> bool:
 func reopen_side_entrances(level: int) -> void:
     secret_door_used.erase(level)
     blaze_portal_used.erase(level)
+    vault_door_used.erase(level)
 
 ## Grant an extra life. No upper cap — the owner wants unlimited lives.
 func add_life(amount: int = 1) -> void:
@@ -516,6 +522,7 @@ func reset_session() -> void:
     blaze_rush_completed.clear()
     secret_door_used.clear()
     blaze_portal_used.clear()
+    vault_door_used.clear()
     dash_return = {}
     level_checkpoints.clear()
     GoldMineSystem.reset_session()

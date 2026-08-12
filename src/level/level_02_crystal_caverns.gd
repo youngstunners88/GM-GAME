@@ -2,17 +2,11 @@ extends LevelBase
 
 var _boss_arena_active: bool = false
 
-## Runs BEFORE `_setup_kill_zone()` (see `level_base.gd`), so the Diamond
-## Vault's chamber (built later, in `_setup_depth_routes()`) can extend past
-## the level-wide kill band without needing the vault node to exist yet — its
-## world position is already a design-time constant here, matching the
-## literal `Vector2(2450, 650)` `_setup_depth_routes()` places it at, and its
-## mouth_width (100) matches too. `protocol_vault.gd::kill_zone_gap_range()`
-## computes the exact same range from those same two numbers; kept as a
-## literal here (rather than instantiating the vault early just to ask it)
-## because the vault legitimately doesn't exist yet at this point in _ready().
-func _register_kill_zone_gaps() -> void:
-	kill_zone_gaps.append(Vector2(2300.0, 2600.0))
+## Session 4: the Diamond Vault is now a FULL SEPARATE SCENE reached through a
+## walk-into door (like Blaze Rush / the Smoke Lounge), NOT an in-level pit —
+## so there is no longer a downward chamber to exclude from the kill zone. The
+## old `kill_zone_gaps` registration is removed; `_setup_depth_routes()` fills
+## the former drop pit with solid ground and places a `vault_door` on it.
 
 func _ready() -> void:
 	level_data = preload("res://src/resources/level_02_data.tres")
@@ -89,17 +83,31 @@ func _setup_depth_routes() -> void:
 		var wall := preload("res://src/level/secret_wall.tscn").instantiate()
 		wall.global_position = wall_pos
 		add_child(wall)
-	# DIAMOND VAULT (Part B) — downward DIAMONDS set-piece dropped through the
-	# 2400-2500 floor pit: a crystal strongroom with a coin_diamonds hoard and
-	# a ladder back up onto the 2500-3000 segment. Distinct from the horizontal,
-	# scene-loading Blaze Portal / Smoke Lounge — this is an in-level drop-in.
-	# x-span 2384-2516 is clear of the one-way chain (ends 1902), both ladders
-	# (1420/3060), the secret walls, and the blaze portal (2100,280).
-	var diamond_vault := preload("res://src/level/protocol_vault.tscn").instantiate()
-	diamond_vault.protocol = "diamonds"
-	diamond_vault.mouth_width = 100.0
-	diamond_vault.global_position = Vector2(2450, 650)
-	add_child(diamond_vault)
+	# DIAMOND VAULT (session 4) — now a FULL SEPARATE ENVIRONMENT reached by
+	# walking into a door, like Blaze Rush. The old 2400-2500 drop pit is
+	# filled with solid ground so the door sits on walkable floor where the
+	# player used to fall in; the door loads diamond_vault_realm.tscn and the
+	# return portal there brings the player back to this exact spot.
+	var vault_bridge := StaticBody2D.new()
+	vault_bridge.collision_layer = 1
+	var bcol := CollisionShape2D.new()
+	var brect := RectangleShape2D.new()
+	brect.size = Vector2(100, 70)
+	bcol.shape = brect
+	bcol.position = Vector2(2450, 685)  # fills the 2400-2500 pit, surface at y=650
+	vault_bridge.add_child(bcol)
+	var bdeck := ColorRect.new()
+	bdeck.size = Vector2(100, 70)
+	bdeck.position = Vector2(2400, 650)
+	bdeck.color = Color(0.2, 0.28, 0.4, 1.0)  # match the crystal-cavern platform tone
+	vault_bridge.add_child(bdeck)
+	add_child(vault_bridge)
+
+	var diamond_door := preload("res://src/level/vault_door.tscn").instantiate()
+	diamond_door.protocol = "diamonds"
+	diamond_door.realm_path = "res://src/level/diamond_vault_realm.tscn"
+	diamond_door.global_position = Vector2(2450, 650)
+	add_child(diamond_door)
 
 func _on_boss_trigger(body: Node2D) -> void:
 	if body.is_in_group("player") and not _boss_arena_active:

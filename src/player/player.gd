@@ -86,6 +86,17 @@ var level_gravity_scale: float = 1.0
 var _ladder_zones: int = 0
 var _climbing: bool = false
 var _active_ladder: Node2D = null   # the ladder whose zone we're in (top-out)
+
+## Rolling "last safe ground" buffer for death respawn. Two slots so a pit
+## death respawns at the sample BEFORE the crumbling lip, not on the edge the
+## player just walked off. Sampled ~2x/sec while grounded (see _physics_process).
+## Founder (session 4): dying in Stage 3 "he appears somewhere else!!! He must
+## reappear exactly or close to where he died." Root cause: _respawn_or_game_over
+## fell back to get_checkpoint(1) — a LEVEL-1 coordinate — when the current
+## level had no checkpoint; this replaces that with the real death-adjacent spot.
+var _last_safe_position: Vector2 = Vector2.ZERO
+var _prev_safe_position: Vector2 = Vector2.ZERO
+var _safe_pos_timer: float = 0.0
 @export var climb_speed: float = 150.0
 
 @onready var sprite: LilBluntVisual = $Visual
@@ -125,6 +136,16 @@ func set_movement_scale(speed_scale: float = 1.0, jump_scale: float = 1.0, gravi
 func _physics_process(delta: float) -> void:
 	if not StateMachine.is_playing():
 		return
+
+	# Roll the "last safe ground" buffer while grounded, ~2x/sec. Two slots so a
+	# fall respawns at the sample before the lip, not the edge just left (see the
+	# field comment). Cheap; runs every frame but only samples on the timer.
+	if is_on_floor() and not _dying:
+		_safe_pos_timer -= delta
+		if _safe_pos_timer <= 0.0:
+			_safe_pos_timer = 0.5
+			_prev_safe_position = _last_safe_position if _last_safe_position != Vector2.ZERO else global_position
+			_last_safe_position = global_position
 
 	var speed_mult: float = power_up_handler.speed_multiplier
 	var jump_mult: float = power_up_handler.jump_multiplier
@@ -628,13 +649,23 @@ func _respawn_or_game_over() -> void:
 		await get_tree().create_timer(1.2).timeout
 		SceneRouter.load_scene(GameManager.level_scene(wipe_level), SceneRouter.Transition.FADE)
 		return
-	# Lives remain — respawn at THIS level's checkpoint (fallbacks below).
+	# Lives remain — respawn at THIS level's checkpoint, else near where the
+	# player died. Founder (session 4): dying in Stage 3 "he appears somewhere
+	# else!!! He must reappear exactly or close to where he died." The bug was
+	# the cross-level fallback below (get_checkpoint(1)) firing when the current
+	# level had no checkpoint yet — it dropped the player at a LEVEL-1 coordinate
+	# inside the Level-3 scene. Removed. Now: this level's checkpoint if any,
+	# else the last safe grounded spot (the sample before the lip, so a pit
+	# death lands on solid ground near the death, not on the crumbling edge),
+	# else the level's own start marker as a final safety.
 	Web3Bridge.report_metric("retry", {})
 	var checkpoint := GameManager.get_checkpoint(GameManager.current_level)
-	if checkpoint == Vector2.ZERO:
-		checkpoint = GameManager.get_checkpoint(1)
 	if checkpoint != Vector2.ZERO:
 		global_position = checkpoint + Vector2(0, -50)
+	elif _prev_safe_position != Vector2.ZERO:
+		global_position = _prev_safe_position + Vector2(0, -10)
+	elif _last_safe_position != Vector2.ZERO:
+		global_position = _last_safe_position + Vector2(0, -10)
 	else:
 		global_position = GameManager.player_position + Vector2(0, -260)
 	GameManager.player_health = GameManager.max_health

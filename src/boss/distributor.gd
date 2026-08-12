@@ -457,7 +457,13 @@ func _hover_pursue(delta: float, speed_scale: float = 1.0,
 		var centre: Vector2 = hit_centre()
 		var body_bottom: float = centre.y + BODY / 2.0
 		var too_low: bool = body_bottom > p.global_position.y - CLIMB_CLEAR_MARGIN
-		var could_touch: bool = absf(centre.x - p.global_position.x) < BODY
+		# BODY * 0.75, not full BODY (Kimi K3, session 4): the climb lock zeroes
+		# horizontal closing while it's active, and its trigger band was a full
+		# body wide — the residual "not chasing live" window. Contact needs only
+		# ~half a body + the player's half-width, so 0.75*BODY (180px) keeps the
+		# sideways-sweep-kill margin while shrinking the dead window a kiting
+		# player was exploiting.
+		var could_touch: bool = absf(centre.x - p.global_position.x) < BODY * 0.75
 		var climbing: bool = too_low and could_touch
 		if climbing:
 			to.x = 0.0
@@ -735,10 +741,25 @@ func _throw_crystal_shards() -> void:
 		# the counter-play is footwork, not waiting out a redirect window.
 		shard.speed = 260.0 + 50.0 * (current_phase - 1)
 		shard.homing = 0.0
-		shard.tint = Color(0.85, 0.98, 1.0, 1.0)  # crystalline white, NOT the ETH blue
+		# VISUALLY DISTINCT CRYSTAL SHARD, not a recolored dot. Founder
+		# (session 4): "not firing the diamonds nor the shards which makes his
+		# attack the same as the 1st boss." Root cause (Kimi K3, confirmed):
+		# _throw_crystal_shards, _throw_shards AND the Stage-1 clipboard all
+		# instantiate boss_projectile.tscn, which draws fx_dot.png recolored by
+		# `tint` — so a white-tinted dot reads identical to the Stage-1 dot. Fix:
+		# hide the base dot (transparent tint -> boss_projectile sets
+		# sprite.modulate = tint) and draw an actual angular crystal shard on top.
+		shard.tint = Color(0.85, 0.98, 1.0, 0.0)  # base dot hidden
 		shard.redirectable = false
 		get_parent().add_child(shard)
 		shard.global_position = global_position + Vector2(BODY / 2.0, BODY * 0.21)
+		var poly := Polygon2D.new()
+		poly.polygon = PackedVector2Array([
+			Vector2(16, 0), Vector2(2, 6), Vector2(-14, 3),
+			Vector2(-14, -3), Vector2(2, -6)])
+		poly.color = Color(0.85, 0.98, 1.0, 1.0)
+		poly.rotation = shard.direction.angle()
+		shard.add_child(poly)
 	AudioManager.play_sfx("throw")
 
 ## A redirected orb reached him — damage outside the vulnerable window. This

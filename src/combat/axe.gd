@@ -73,14 +73,40 @@ func _on_body_entered(body: Node2D) -> void:
 	elif body.has_method("smash"):        # rolling boulder
 		body.smash()
 		_impact()
+	elif _try_break_block(body):
+		# ANY axe breaks a breakable block. Founder (session 4): "this hammer
+		# doesnt work" — pointing at a Bitcoin block his thrown weapon passed
+		# straight through. Two bugs: (1) breakable_block sat on collision_layer
+		# 1 (World) only, which the axe's mask (164 = Destructible|Hazards|
+		# Enemies) never sees — fixed by adding the Destructible bit (layer 129)
+		# so the axe detects it; (2) `_smash_destructible` was big-axe-only, but
+		# a breakable block is meant to be broken by the BASE attack too (he was
+		# in Blaze Mode, not holding the big axe). Ladders stay big-axe-only (see
+		# _smash_destructible) — only the `breakable` group is opened up here.
+		# A normal axe despawns on the break (piercing stays a big-axe trait).
+		_impact()
 	elif big and _smash_destructible(body):
 		# Big axe ploughs through scenery ("damages the ladder and anything
 		# that comes in its way") without stopping.
 		pass
 
+## Break a `breakable`-group block with any axe. Returns true if it broke one.
+## Deliberately narrower than _smash_destructible: it only touches the
+## `breakable` group (Bitcoin blocks etc.), NEVER the take_structural_damage
+## props (ladders), which must remain big-axe-only so a normal throw can't
+## shear a vault/escape ladder.
+func _try_break_block(node: Node) -> bool:
+	if node != null and node.is_in_group("breakable") and node.has_method("break_block"):
+		node.break_block()
+		AudioManager.play_sfx_at("hit", global_position)
+		return true
+	return false
+
 func _on_area_entered(area: Area2D) -> void:
 	# The hitbox Area2D itself usually isn't the enemy — the enemy is its owner.
 	if _hit(area) or _hit(area.get_parent()):
+		_impact()
+	elif _try_break_block(area) or _try_break_block(area.get_parent()):
 		_impact()
 	elif big and (_smash_destructible(area) or _smash_destructible(area.get_parent())):
 		pass

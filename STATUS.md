@@ -3,6 +3,145 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv`
 
+**LIVE — source commit `17c87f3` — export commit `3bb3247` — 2026-08-12.**
+CI run `31648464835` green end to end: gitleaks, Security Sentinel,
+secure-build-checklist, web export (non-threaded verified), and **`Deploy to
+itch.io via butler`: success**. All 15 gates green locally (script-compile 142
+scripts / 106 scenes, the two new S4 gates, vault-scene, boss-stakes,
+stage3-defence, distributor chase + crystal, claim-jumper-pressure, blaze
+lifecycle, boss-visibility, save-compat, founder-critical-probe 103
+assertions), Security Sentinel 18/18 with 0 blockers.
+
+> **HARD-REFRESH REQUIRED before testing.** The browser caches the old
+> `index.pck`; force a hard refresh (Ctrl/Cmd-Shift-R, or a private window)
+> to actually load the new export. Walk into the vault door (no longer a pit)
+> at x≈2450 on Stage 2 / x≈2690 on Stage 3 — each now loads a FULL separate
+> environment. Both bosses' fixes only show once you actually fight them.
+
+## THIS PASS (Session 4) — vaults are full separate environments, S2/S3 boss + hammer + respawn honesty pass
+
+Founder verdict this session (verbatim): the in-level vaults were "a hole in
+the ground," unacceptable — each must be a Blaze-Rush-class FULL separate
+scene, and the Diamond Vault must let you STAKE your collected diamonds. The
+Stage 2 boss's attack "reads the same as Stage 1." The Stage 3 boss's
+explosion "didnt do any damage," it shows its back and stops advancing. "This
+hammer doesnt work." Dying on Stage 3 puts Lil Blunt "somewhere else." Multi-
+model dispatched first as mandated — Fable, Grok, Kimi K3, DeepSeek, Qwen
+(vision) — logs in `docs/model-responses/2026-08-12-s4-*.md`. Kimi's first
+run burned its whole budget on hidden reasoning and returned nothing; it was
+re-dispatched with a tighter 2-question scope and a raised token budget until
+it landed — noted here rather than silently re-run.
+
+| Your item | Status |
+|---|---|
+| T1/T2 — vaults are "a hole in the ground," not real environments | **FIXED** — each vault is now a FULL separate scene (own backdrop, floor, camera limits, return portal); Diamond Vault stakes real diamonds via GoldMineSystem, Fort Knox is a full gold environment; exit returns to the stage entry region |
+| T3 — Stage 2 boss attack reads same as Stage 1 | **FIXED** — crystal shards now carry distinct Polygon2D geometry with the base dot hidden; proven in the real arena |
+| T4 — Stage 3 explosion did no damage / faces away / won't advance | **FIXED** — synchronous blast damage (no frame-delay miss), faces the player every frame, pursues horizontally |
+| T5 — "this hammer doesnt work" | **FIXED** — any thrown axe now breaks Bitcoin/breakable blocks (block put on the Destructible layer + base-attack break path) |
+| T6 — Stage 3 death respawns "somewhere else" | **FIXED** — cross-level fallback removed; respawns at the last safe grounded spot near the death |
+
+### T1/T2 — vaults are full separate environments now, not pits
+
+The previous session dug the pits deeper; the founder's point stands that a
+pit is not a place. This pass replaces the in-level pit entirely. Each vault
+is now a **separate scene** built on the same proven plumbing as the
+Blaze-class secret realm: a walk-into `vault_door` Area2D on solid ground
+(the old pit is bridged over) stores the stage return point and loads a full
+`vault_realm` scene — its own parallax backdrop from your reference art, a
+solid floor, walls, camera limits, ambient dressing, a title card, and a
+`return_portal` that drops you back at the exact stage position you left. No
+soft-lock: the entrance is one-shot per run and the exit is always present.
+
+- **Diamond Vault** is a gamified DIAMONDS-protocol example: two staking
+  altars (a 288-day short term and a 2888-day long term) that move REAL
+  balances — `GoldMineSystem.stake_diamonds()` was added mirroring the Fort
+  Knox staking primitive, with a term-length share bonus. Staking 25% of your
+  collected diamonds is verified to actually decrement the diamond balance and
+  mint diamond-shares, not just play an animation.
+- **Fort Knox** is the full GOLD MINE environment with its own gold-vault
+  backdrop and Fort-Knox staking altars on the same pattern.
+
+Proven by `vault_scene_test.gd` (25 assertions): the realm is a genuinely
+separate scene with no `LevelBase` inside it, has floor + player + return
+portal + altars, staking moves the real GoldMineSystem primitives, the levels
+build a `vault_door` (not the old in-level `protocol_vault`), and the old pit
+is bridged.
+
+### T3/T4/T5/T6 — combat, tool, and respawn fixes (each proven to fail on the old code)
+
+- **T3 crystal shards** — every boss projectile was the same recolored
+  `fx_dot`, which is exactly why the founder said the Stage 2 attack "reads
+  the same as Stage 1." Each thrown crystal now carries a real Polygon2D
+  shard shape and the base dot is made transparent, so only the shard shows.
+- **T4 explosion damage** — the Claim Jumper's dynamite spawned a temporary
+  Area2D then `await get_tree().physics_frame` before reading overlaps;
+  `physics_frame` fires at the START of the next tick, BEFORE that tick
+  computes the new area's overlaps, so it read empty EVERY time and dealt zero
+  damage. Replaced with a synchronous `intersect_shape` against the space
+  state — damages whoever is in radius immediately.
+- **T4 facing / pursuit** — the boss now re-faces the live player every frame
+  (not only while moving, so he no longer shows his back while standing) and
+  its ledge probe was widened so it keeps advancing horizontally instead of
+  hopping in place.
+- **T5 hammer** — the Bitcoin block sat on the World layer only, which the
+  axe's collision mask never saw, and the break path was big-axe-only. The
+  block now carries the Destructible bit and ANY thrown axe breaks it.
+- **T6 respawn** — `_respawn_or_game_over()` fell back to the LEVEL-1
+  checkpoint when the current level had none, teleporting you to a Level-1
+  coordinate inside the Level-3 scene. Removed; it now respawns at the last
+  safe grounded sample near the death. The gate proves the old path
+  respawned 2306px away and the fix lands within 60px.
+
+### Multi-model log (Session 4) — OpenRouter, every dispatch
+
+Dispatched before the large edits, as mandated. Full responses committed under
+`docs/model-responses/`:
+- `2026-08-12-s4-fable-architecture.md` — vault-as-separate-scene architecture
+- `2026-08-12-s4-grok-vault-identity.md` — vault identity / staking readability
+- `2026-08-12-s4-kimi-boss-respawn.md` — boss crystal / dynamite / respawn root-cause
+- `2026-08-12-s4-deepseek-compliance.md` — compliance / regression cross-check
+- `2026-08-12-s4-qwen-vision.md` — vision read of the six screenshots
+
+Honest note: Kimi's first dispatch spent its entire token budget on hidden
+reasoning and returned no visible answer; it was re-dispatched with a tighter
+2-question scope and a raised budget until it landed. Fable and DeepSeek both
+guessed the bandit-cart sprite faces LEFT and recommended flipping
+`art_faces_right` — I checked the actual PNG, confirmed it faces RIGHT, and
+did NOT change it (flipping it would have inverted facing). Multi-model is
+advisory; the source of truth is the asset and the test.
+
+### Full gate battery (Session 4) — all green
+
+| Gate | Result |
+|---|---|
+| `script_compile_test` | ALL PASS — 142 scripts, 106 scenes |
+| `s4_combat_fixes_test` (T3/T4/T5) | ALL PASS (7 assertions) |
+| `s4_respawn_near_death_test` (T6) | ALL PASS — proven to FAIL on pre-fix code (respawned 2306px away) |
+| `vault_scene_test` (T1/T2) | ALL PASS (25 assertions) |
+| `boss_stakes_test` | ALL PASS |
+| `stage3_defence_test` | ALL PASS |
+| `distributor_phase2_real_arena_chase_test` | ALL PASS |
+| `distributor_crystal_shard_test` | ALL PASS |
+| `claim_jumper_pressure_test` | ALL PASS |
+| `blaze_lifecycle_e2e_test` | ALL PASS |
+| `boss_visibility_test` | ALL PASS |
+| `kill_zone_gap_test` | ALL PASS |
+| `save_compat_test` | ALL PASS |
+| `founder_critical_probe_test` | ALL PASS (103 assertions) |
+| Security Sentinel (`--log`) | 18/18, 0 blockers, non-threaded verified |
+
+### Honest live limits (Session 4)
+
+These gates are real-physics headless proofs, not browser playthroughs. The
+vault staking, the synchronous blast damage, the crystal geometry, the axe
+break, and the near-death respawn are each proven at the engine level and each
+new gate is proven to fail on the pre-fix code. What a headless gate cannot
+prove is the *feel* — whether the Stage 3 boss now reads as genuinely
+threatening in live play, or whether the vault environments read as "a place."
+Those are your call once the new export is live and hard-refreshed.
+
+<details><summary>Previous pass (Session 3) — in-level vault set-pieces + first S2/S3 boss root-cause</summary>
+
 ## THIS PASS — vaults are real sections now, the L2 boss "still not chasing" bug actually found, S2/S3 combat honesty pass
 
 Founder verdict this session (verbatim): the shipped vaults were "not just a
@@ -3976,3 +4115,5 @@ browsers. Fixes shipped:
   (boot, 8 parse errors, missing input map, black-screen scene load, empty
   level data). Added browser verification harness + `/game-graphics`,
   `/playtest-web`, `/export-deploy` skills.
+
+</details>

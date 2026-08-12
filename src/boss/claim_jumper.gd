@@ -211,8 +211,16 @@ func _gap_crossable(facing: float) -> bool:
 	var space := get_world_2d().direct_space_state
 	var foot_y: float = global_position.y + BODY
 	for dist: float in [140.0, 200.0, 260.0, HOP_REACH]:
-		var from := Vector2(global_position.x + HALF_BODY + dist * facing, foot_y - 8.0)
-		var params := PhysicsRayQueryParameters2D.create(from, from + Vector2(0.0, LEDGE_PROBE_DROP))
+		# Probe from within the HOP ENVELOPE, not just at foot level. HOP_VELOCITY
+		# -620 vs gravity 980 clears ~196px of rise, so ground HIGHER than his
+		# feet (a raised ledge — exactly where a player standing above him is) is
+		# reachable. The old probe started at foot_y-8 and only cast DOWN 120px,
+		# so any higher landing read as "uncrossable"; PATROL then hopped
+		# straight up in place forever (Kimi K3, session 4: the "only jumps
+		# directly up / doesn't advance" bug). Starting 190px up and casting 310px
+		# down sees both higher ledges and same-level ground within one hop.
+		var from := Vector2(global_position.x + HALF_BODY + dist * facing, foot_y - 190.0)
+		var params := PhysicsRayQueryParameters2D.create(from, from + Vector2(0.0, 310.0))
 		params.collision_mask = 1
 		params.exclude = [get_rid()]
 		if not space.intersect_ray(params).is_empty():
@@ -257,13 +265,26 @@ func _ground_chase(delta: float, speed: float) -> bool:
 	velocity.y += 980.0 * delta
 	move_and_slide()
 	_clamp_to_arena()
-	if absf(velocity.x) > 12.0:
-		boss_sprite.set_facing(velocity.x > 0.0)
+	# Facing is handled every frame in _physics_process now (see below), NOT
+	# here — this gated update froze his facing whenever velocity.x hit ~0 (at a
+	# ledge, the arena clamp, or a braking state), leaving his back to a player
+	# standing beside him (founder session 4). Kept the return; dropped the flip.
 	return at_ledge
 
 func _physics_process(delta: float) -> void:
 	if is_dead:
 		return
+
+	# FACE THE PLAYER EVERY FRAME, regardless of velocity. The bandit-cart art
+	# faces right natively (art_faces_right defaults true, verified against the
+	# sprite), so this is purely about WHEN facing updates: gating it on
+	# |velocity.x|>12 meant a stopped boss kept his stale facing and showed his
+	# back. Founder: "why is his back facing Lil Blunt?" — this is the fix.
+	var pl_face := get_tree().get_first_node_in_group("player")
+	if pl_face:
+		var fdx: float = pl_face.global_position.x - (global_position.x + HALF_BODY)
+		if absf(fdx) > TURN_DEAD_ZONE:
+			boss_sprite.set_facing(fdx > 0.0)
 
 	throw_timer -= delta
 	_hop_cooldown -= delta
@@ -282,10 +303,22 @@ func _physics_process(delta: float) -> void:
 				# Otherwise he holds the lip: still blocking the arena, never
 				# suiciding into the void.
 				var want_hop := is_on_wall() or (at_ledge and _gap_crossable(direction))
-				if pl and pl.global_position.y < global_position.y - 80.0:
+				# Player above -> hop ONLY if there's actually reachable ground
+				# that way. Without the _gap_crossable gate this fired
+				# unconditionally, and since the old _gap_crossable couldn't see
+				# higher ledges it also left vx=0 — so he hopped straight up in
+				# place forever instead of advancing (Kimi K3, session 4).
+				if pl and pl.global_position.y < global_position.y - 80.0 and _gap_crossable(direction):
 					want_hop = true
 				if want_hop:
 					velocity.y = HOP_VELOCITY
+					# COMMIT FORWARD on the hop. _ground_chase zeroes velocity.x at
+					# a ledge lip, so without re-injecting horizontal speed here the
+					# hop is purely vertical (straight up, no progress). Airborne
+					# frames skip the ledge sense and _gap_crossable already
+					# confirmed a landing, so this carries him toward the player
+					# instead of hopping in place.
+					velocity.x = patrol_speed * direction
 					_hop_cooldown = 0.7
 			if throw_timer <= 0:
 				_throw_dynamite()

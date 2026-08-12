@@ -9,7 +9,12 @@ extends Area2D
 ## legible at a glance.
 
 @export var explosion_delay: float = 2.0
-@export var explosion_radius: float = 100.0
+## 120, not 100: the blast is aimed at player_pos + (0,-80), so its centre
+## floats 80px above the standing player. At radius 100 the circle's lower edge
+## only reaches ~player_pos.y+20 — a hair over the 32px body, so a small
+## mis-aim or a step read as "no damage". 120 makes standing on the telegraphed
+## marker an unambiguous hit while staying dodgeable by actually moving away.
+@export var explosion_radius: float = 120.0
 
 var _elapsed: float = 0.0
 var _exploded: bool = false
@@ -56,31 +61,30 @@ func _explode() -> void:
 		return
 	_exploded = true
 	queue_redraw()
-	var explosion := Area2D.new()
-	explosion.position = global_position
-	# Area2D.new() defaults to collision_layer=1/mask=1 (World). The player is
-	# on layer 2, so without this override get_overlapping_bodies() below
-	# would return empty every time — the blast would look and sound real but
-	# deal zero damage. Same class of bug as the kill-zone fix (2026-07-14):
-	# an Area2D silently matching nothing because nobody set its mask.
-	explosion.collision_layer = 0
-	explosion.collision_mask = 2
-	get_parent().add_child(explosion)
 
-	var col := CollisionShape2D.new()
-	var shape := CircleShape2D.new()
-	shape.radius = explosion_radius
-	col.shape = shape
-	explosion.add_child(col)
-
-	# A freshly added Area2D needs one physics step before the physics server
-	# has actually registered its shape against existing bodies — calling
-	# get_overlapping_bodies() in the same frame it's created can return empty
-	# even with a correct mask.
-	await get_tree().physics_frame
-	var overlapping := explosion.get_overlapping_bodies()
-	for body in overlapping:
-		if body.is_in_group("player") and body.has_method("take_damage"):
+	# SYNCHRONOUS shape query — the blast damages whoever is in radius RIGHT NOW,
+	# with no frame delay. Founder (session 4, twice): "the boss tried to blow
+	# me up but it didnt do any damage!" Root cause (Kimi K3, confirmed): the
+	# old code spawned a temporary Area2D then `await get_tree().physics_frame`
+	# before `get_overlapping_bodies()`. `physics_frame` fires at the START of
+	# the next physics tick, BEFORE that tick computes the new Area2D's overlaps
+	# — so the query read pre-registration state and returned empty EVERY time.
+	# The blast looked and sounded real and dealt zero damage. A direct
+	# `intersect_shape` against the space state needs no registration frame and
+	# works identically whether _explode() was called by the fuse timer or by a
+	# player walking into the dynamite.
+	var space := get_world_2d().direct_space_state
+	var circle := CircleShape2D.new()
+	circle.radius = explosion_radius
+	var params := PhysicsShapeQueryParameters2D.new()
+	params.shape = circle
+	params.transform = Transform2D(0.0, global_position)
+	params.collision_mask = 2  # player layer
+	params.collide_with_bodies = true
+	params.collide_with_areas = false
+	for hit in space.intersect_shape(params, 8):
+		var body: Object = hit.get("collider")
+		if body != null and body.is_in_group("player") and body.has_method("take_damage"):
 			body.take_damage(1)
 
 	EffectSpawner.burst("explosion", global_position)
@@ -94,4 +98,3 @@ func _explode() -> void:
 	tween.parallel().tween_property(self, "modulate:a", 0.0, 0.1)
 	await tween.finished
 	queue_free()
-	explosion.queue_free()

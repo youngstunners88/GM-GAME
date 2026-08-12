@@ -2,11 +2,9 @@ extends LevelBase
 
 var _boss_arena_active: bool = false
 
-## Runs BEFORE `_setup_kill_zone()` — see level_02's identical override for
-## the full rationale. Fort Knox sits at world (2690, 650), mouth_width 140,
-## matching `_setup_depth_routes()`'s literal placement below.
-func _register_kill_zone_gaps() -> void:
-	kill_zone_gaps.append(Vector2(2520.0, 2860.0))
+## Session 4: Fort Knox is now a full separate scene reached through a
+## walk-into door (see level_02's twin change) — no in-level chamber, so the
+## kill_zone_gaps registration is removed and the old drop pit is bridged.
 
 func _ready() -> void:
 	level_data = preload("res://src/resources/level_03_data.tres")
@@ -122,18 +120,30 @@ func _setup_depth_routes() -> void:
 	reserve.room_title = "— THE GOLD RUSH RESERVE —"
 	reserve.global_position = Vector2(3420, 648)
 	add_child(reserve)
-	# FORT KNOX (Part B) — downward GOLD MINE set-piece dropped through the
-	# 2620-2760 floor pit: a fortified bullion vault with a coin_goldmine hoard
-	# and a ladder back up onto the 2760-3220 segment. The playable Fort Knox
-	# the founder's design locks to Stage 3. In-level drop-in, NOT a scene load,
-	# so it's distinct from the Blaze Portal and this Reserve alcove. x-span
-	# 2604-2776 is clear of the gold lane (ends 2300), the ladder (1465), the
-	# secret walls (868/2468/3068), and the blaze portal (2600,300 — 300px up).
-	var fort_knox := preload("res://src/level/protocol_vault.tscn").instantiate()
-	fort_knox.protocol = "gold"
-	fort_knox.mouth_width = 140.0
-	fort_knox.global_position = Vector2(2690, 650)
-	add_child(fort_knox)
+	# FORT KNOX (session 4) — now a FULL SEPARATE ENVIRONMENT reached by walking
+	# into the vault door, like Blaze Rush. The old 2620-2760 drop pit is filled
+	# with solid ground; the door loads fort_knox_realm.tscn and its return
+	# portal brings the player back here.
+	var knox_bridge := StaticBody2D.new()
+	knox_bridge.collision_layer = 1
+	var kbcol := CollisionShape2D.new()
+	var kbrect := RectangleShape2D.new()
+	kbrect.size = Vector2(140, 70)
+	kbcol.shape = kbrect
+	kbcol.position = Vector2(2690, 685)  # fills the 2620-2760 pit, surface at y=650
+	knox_bridge.add_child(kbcol)
+	var kbdeck := ColorRect.new()
+	kbdeck.size = Vector2(140, 70)
+	kbdeck.position = Vector2(2620, 650)
+	kbdeck.color = Color(0.18, 0.13, 0.07, 1.0)  # gold-rush platform tone
+	knox_bridge.add_child(kbdeck)
+	add_child(knox_bridge)
+
+	var knox_door := preload("res://src/level/vault_door.tscn").instantiate()
+	knox_door.protocol = "gold"
+	knox_door.realm_path = "res://src/level/fort_knox_realm.tscn"
+	knox_door.global_position = Vector2(2690, 650)
+	add_child(knox_door)
 
 func _on_boss_trigger(body: Node2D) -> void:
 	if body.is_in_group("player") and not _boss_arena_active:
