@@ -1,70 +1,78 @@
 # FOUNDER PROMPT — No pixelation + L1 ghost death + S2 chase/crystals + final boss scale
 
-**Baseline:** master `eb628d5` (HUD TAP OUT / claim-reset / tokens claimed). Hard-refresh before FIXED.  
-**Do not reopen** claim-reset or TAP OUT unless founder shows them broken again.
+**Baseline:** master `eb628d5`. Hard-refresh before FIXED.  
+**Do not reopen** claim-reset / TAP OUT / BLAZE DIAMONDS label unless founder shows them broken again.
+
+---
+
+## MULTI-MODEL — MANDATORY EVERY SESSION (non-negotiable)
+
+Founder: **all models on deck every session.** Do not solo. Do not skip because of prior spend errors.
+
+| Model | Role | Required |
+|-------|------|----------|
+| **Fable-5** (OpenRouter) | Lead implementer | YES |
+| **Grok 4.5** | Pixelation / jitter visual audit | YES |
+| **Kimi K3** | L1 death path + S2 chase numbers in **real** arena | YES |
+| **DeepSeek** | Compliance matrix | YES |
+| **Qwen** (vision if screenshots attached) | Confirm sharp vs pixelated / chase still idle | If screenshots present |
+| **Claude** | Orchestrate, wire, gates, STATUS | YES — not sole designer |
+
+Dispatch **Fable + Grok + Kimi before** large code changes. Log each model’s findings in STATUS (or `docs/model-responses/`). If a model ID fails, list live catalogue, retry alternate ID, record error — **do not** silently drop the role.
 
 ---
 
 ## FOUNDER DECISIONS (Claude asked — answers, do not re-ask)
 
-1. **Naming:** HUD label **"BLAZE DIAMONDS"** stays for the Blaze counter. Protocol token row stays **$DIAMONDS** / **$TITANX** / **$GOLD**. No collision “fix” that renames founder’s chosen words.
-2. **Stage 1 TitanX on boss death:** **Keep** TitanX (and token progress) across boss death — same as GOLD/DIAMONDS. Do not wipe on boss death.
-3. **Stage 2 Phase 2 chase:** **Yes — push further.** Founder still sees no chase. Make Phase 2 (and overall) reliably close distance in the **shipped** arena, not only a test arena. Prefer slightly faster / longer pursuit window over leaving him outrunnable.
+1. **Naming:** HUD **"BLAZE DIAMONDS"** stays. Protocol row **$DIAMONDS** / **$TITANX** / **$GOLD**. Do not rename founder words to “fix collision.”
+2. **Stage 1 TitanX on boss death:** **Keep** token progress across boss death (same as GOLD/DIAMONDS).
+3. **Stage 2 Phase 2 chase:** **Yes — push further.** Still not chasing live. Close distance in the **shipped** arena. Prefer stronger pursuit over leaving him outrunnable.
 
 ---
 
-## NEW LIVE DEFECTS (this session)
+## NEW LIVE DEFECTS
 
-Refs: founder screenshots attached in Claude session (pixelated TAP OUT face; jittery band art).
+Founder will attach screenshots in Claude session (pixelated TAP OUT face, jittery art).
 
 ### T1 — **Never pixelate art**
 - TAP OUT Lil Blunt icon is **pixelated / unreadable**.  
-- **Rule:** founder artworks must **never** use nearest-neighbor downscale that destroys faces/logos. Use high-res source, correct filter (linear/mipmaps where appropriate for UI), sufficient draw size.  
-- Apply to TAP OUT face and any other UI/logo that still looks blocky.
+- **Standing rule:** no founder artwork may ship pixelated. High-res source, correct filter (linear + mipmaps for UI downscale — not nearest that destroys faces), adequate draw size.  
+- Fix TAP OUT face and any other blocky UI/logo.
 
 ### T2 — Jittery artwork
-- Band/logo art is **jittery / hard to see**.  
-- Stabilize: stop sub-pixel swimming, snap to pixel grid if needed, or reduce shake/scroll coupling that makes logos vibrate. Must be readable while moving.
+- Art is **jittery / hard to see**.  
+- Stabilize: kill sub-pixel swimming, snap if needed, reduce camera/shake coupling on logos. Readable while moving.
 
 ### T3 — Level 1 boss: death without contact
-- Lil Blunt **dies completely without touching** the Stage 1 boss.  
-- Find real cause (hurtbox too large, residual damage, arena hazard, wrong collision layer, one-frame overlap, etc.). Gate: stand still / no contact → no death; contact → normal damage rules only.
+- Lil Blunt **dies without touching** the Stage 1 boss.  
+- Root-cause (oversized hurtbox, residual DoT, hazard, wrong layer, one-frame overlap, etc.).  
+- Gate: no contact → no death; contact → normal rules only.
 
-### T4 — Stage 2 boss **still not chasing** + crystal attacks
-- Chase still broken live after prior fixes — treat as **open**. Fix until kiting in **real** Stage 2 arena shows continuous pursuit (all relevant phases).  
-- **New:** boss fires **crystals / crystal shards** at times (ranged pressure), not only melee/orb patterns if those were soft. Distinct from gnome arrows.
+### T4 — Stage 2 boss still not chasing + **crystal attacks**
+- Chase still broken live — **open**. Fix until real Stage 2 arena kiting shows continuous pursuit across phases.  
+- **New behavior:** fire **crystals / crystal shards** at times (ranged pressure). Distinct from gnome arrows and from soft melee-only patterns.
 
 ### T5 — Final boss too small / ineffective
-- Scale up final boss (readable threat).  
-- Increase effectiveness: damage, chase or pressure, so the fight is not trivial. Keep arena clamps so scale-up does not reintroduce ledge suicide.
-
----
-
-## MULTI-MODEL
-
-| Model | Role |
-|-------|------|
-| Fable-5 / Claude | Implement art filters + L1 death + S2 chase/crystals + final scale |
-| Kimi | L1 death path + S2 chase numbers in real arena |
-| Grok | Pixelation/jitter visual rules |
-| DeepSeek | Compliance matrix |
+- **Scale up** final boss (clear threat).  
+- Raise effectiveness (damage / chase / pressure) so fight is not trivial.  
+- Keep arena clamps — scale must not reintroduce ledge falls.
 
 ---
 
 ## OUT OF SCOPE
 
-Legal pages rewrite, DeFi enable, video, Episode 2, undoing TAP OUT/claim fixes without evidence.
+Legal rewrite, DeFi enable, video, Episode 2, undoing working HUD/claim without evidence.
 
 ---
 
 ## Definition of done
 
-- TAP OUT face and logos sharp (no pixelation).  
-- Band art not jittery.  
-- L1: no death without boss contact.  
-- S2: chases in real arena + crystal/shard attacks.  
+- Sharp TAP OUT face + logos (no pixelation).  
+- Band art stable (not jittery).  
+- L1: no ghost death.  
+- S2: chases in real arena + crystal/shard volleys.  
 - Final boss larger and effective.  
-- Founder decisions applied in STATUS.  
+- Multi-model log present for this session.  
 - Gates green; deploy; build id.
 
-**Start:** Fetch → T1–T5 → gates → deploy.
+**Start:** Fetch → **dispatch Fable + Grok + Kimi first** → T1–T5 → gates → deploy → STATUS with model sections.
