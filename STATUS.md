@@ -3,6 +3,52 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv`
 
+## PART B — Diamond Vault (S2) + Fort Knox (S3) downward set-pieces
+
+**Two new downward vaults you DROP into and climb back out of** — the founder's
+locked Part B design. Multi-model dispatched FIRST as mandated (Fable, Grok,
+Kimi before any large edit; log in `docs/model-responses/2026-08-12-partb-*.md`).
+
+| Set-piece | Stage | Protocol | How it works |
+|---|---|---|---|
+| **Diamond Vault** | 2 Crystal Caverns | DIAMONDS | Drop through the 2400–2500 crystal mouth into a cyan strongroom; grab a `coin_diamonds` hoard; climb the crystal ladder back onto the route. |
+| **Fort Knox** | 3 Gold Rush | GOLD MINE | Drop through the 2620–2760 steel hatch into a bullion vault; grab a `coin_goldmine` hoard; climb the brass ladder back onto the route. |
+
+- **Distinct from Blaze Rush / Smoke Lounge / Secret Realm** by construction:
+  those are horizontal Area2Ds that `SceneRouter.load_scene()` into a separate
+  scene (a stage wipe). A vault is an **in-level strong hub** — the player
+  physically drops down and climbs back up, no scene load. The downward axis +
+  crystal-collar vs steel-hatch silhouettes seal the difference.
+- **One reusable `protocol_vault.gd/.tscn`** (parametric by `protocol` +
+  `mouth_width`), placed by each level's `_setup_depth_routes()`.
+- **No soft-lock, proven, not asserted:** the exit ladder's `top_exit_offset`
+  is derived from `mouth_width` (never the default `(0,-20)` that once landed
+  the top-out over air and blocked Stage 2), and the vault ladder is
+  **non-destructible** — Kimi K3 caught that a big-axe-shorn ladder over a
+  kill-band-guarding floor is unrecoverable (the player can't even die to
+  reset). Fixed in `ladder.gd` with a `destructible` opt-out.
+- **Name-collision fix:** Stage 3 already had a wallet-gated "— THE FORT KNOX
+  VAULT —" spectacle alcove (Hall-of-Blaze skin). The founder's locked design
+  gives "Fort Knox" to the new **playable** vault, so the alcove was renamed
+  "— THE GOLD RUSH RESERVE —" (Grok + Fable both flagged the collision).
+
+**Gate:** new `protocol_vault_test.gd` — 32 assertions, ALL PASS. A real 32×32
+body drops through each mouth under real gravity and rests on the chamber floor
+(~800) with the **real full-width kill band present and never triggered**; the
+exit is proven sound by geometry (ladder spans floor→surface, reachable on
+foot, top-out lands 24px onto the exit segment with a real downward raycast
+confirming solid ground). Both vaults confirmed built inside their **real**
+level scenes. **Honest limit:** this is real-physics + real-level-integration
+proof, not a live in-browser platforming run to x=2450 — reaching a mid-level
+vault blind in a headless browser is the same slow/failure-prone problem noted
+for the boss rooms. Hard-refresh and drop into each pit to see them live.
+
+Full battery still green after the level/ladder edits (script compile, founder
+critical probe (103), stage3 defence, boss arena reachable, level entry order,
+blaze lifecycle, coin credit + the new vault gate). Security Sentinel 18/18.
+
+---
+
 **LIVE ON MASTER — PR #22 MERGED — merge commit `2c8b417` — export commit
 `e2d41d7` — 2026-08-12.** PR #22 (T1–T5: pixelation, jitter, L1 hitbox, S2
 chase+crystals, final boss scale) is merged to master and deployed. CI ran

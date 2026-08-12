@@ -103,15 +103,31 @@ func _setup_depth_routes() -> void:
 		var wall := preload("res://src/level/secret_wall.tscn").instantiate()
 		wall.global_position = wall_pos
 		add_child(wall)
-	# FORT KNOX VAULT — token-gated community room before the boss arena.
+	# GOLD RUSH RESERVE — token-gated community room before the boss arena.
+	# RENAMED from "— THE FORT KNOX VAULT —" (Part B): the founder's locked
+	# design assigns the name "Fort Knox" to the new PLAYABLE downward vault
+	# below, so this wallet-gated spectacle alcove (Hall-of-Blaze pattern, a
+	# skin via room_title — L1 keeps "THE HALL OF BLAZE") takes a distinct name
+	# to avoid two "Fort Knox" labels in one level. Grok + Fable both flagged
+	# the collision; the spectacle room yields the name, not the playable vault.
 	# x=3420 sits on the last ground segment before the final pit + boss wall
-	# (segment ends at 3480, wall starts 3700) — NOT in the gap between them,
-	# which is where the old x=3550 landed after the Stage 3 ground layout
-	# was redesigned to stop duplicating Stage 2's geometry.
-	var vault := preload("res://src/level/hall_of_blaze.tscn").instantiate()
-	vault.room_title = "— THE FORT KNOX VAULT —"
-	vault.global_position = Vector2(3420, 648)
-	add_child(vault)
+	# (segment ends at 3480, wall starts 3700) — NOT in the gap between them.
+	var reserve := preload("res://src/level/hall_of_blaze.tscn").instantiate()
+	reserve.room_title = "— THE GOLD RUSH RESERVE —"
+	reserve.global_position = Vector2(3420, 648)
+	add_child(reserve)
+	# FORT KNOX (Part B) — downward GOLD MINE set-piece dropped through the
+	# 2620-2760 floor pit: a fortified bullion vault with a coin_goldmine hoard
+	# and a ladder back up onto the 2760-3220 segment. The playable Fort Knox
+	# the founder's design locks to Stage 3. In-level drop-in, NOT a scene load,
+	# so it's distinct from the Blaze Portal and this Reserve alcove. x-span
+	# 2604-2776 is clear of the gold lane (ends 2300), the ladder (1465), the
+	# secret walls (868/2468/3068), and the blaze portal (2600,300 — 300px up).
+	var fort_knox := preload("res://src/level/protocol_vault.tscn").instantiate()
+	fort_knox.protocol = "gold"
+	fort_knox.mouth_width = 140.0
+	fort_knox.global_position = Vector2(2690, 650)
+	add_child(fort_knox)
 
 func _on_boss_trigger(body: Node2D) -> void:
 	if body.is_in_group("player") and not _boss_arena_active:

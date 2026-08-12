@@ -13,6 +13,20 @@ extends Area2D
 ## surface sits higher than the ladder top.
 @export var top_exit_offset: Vector2 = Vector2(0, -20)
 
+## Whether the big axe can shear this ladder off. TRUE for the world ladders
+## the mechanic was built for. Set FALSE for a ladder that is the ONLY way out
+## of a sealed pocket — e.g. the protocol vaults (Diamond Vault / Fort Knox):
+## Kimi K3 audit found that a destroyed vault ladder is an unrecoverable
+## soft-lock, because the vault floor guards the kill band, so the trapped
+## player cannot even die to reset. A destructible ladder is only safe where a
+## fall-out or an alternate route exists; a vault has neither.
+@export var destructible: bool = true
+
+## Optional identity tint applied to the whole rung group (white = the default
+## Smoke-Realm green). The protocol vaults set this so the exit ladder reads as
+## crystal (Diamond Vault) or brass (Fort Knox) rather than jungle vine.
+@export var rung_color: Color = Color(1, 1, 1, 1)
+
 @onready var shape: CollisionShape2D = $CollisionShape2D
 @onready var rungs: Node2D = $Rungs
 
@@ -38,7 +52,11 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
 	_draw_rungs()
-	_setup_destructible()
+	rungs.modulate = rung_color
+	# Only wire the big-axe shear on ladders that can safely lose it. A vault's
+	# sole exit ladder stays indestructible (see `destructible`'s note).
+	if destructible:
+		_setup_destructible()
 
 # ---- Structural damage (big axe) -------------------------------------------
 
