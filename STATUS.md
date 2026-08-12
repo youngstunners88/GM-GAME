@@ -3,19 +3,49 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv`
 
-**PUSHED — build id `267eab3` — 2026-08-12.** CI export + itch.io butler
-deploy triggered on push per `.github/workflows/export-game.yml` — check the
-Actions tab for the export commit and butler upload confirmation. Hard-
-refresh before testing once that run completes. Web export is still
-non-threaded (`variant/thread_support=false`) — the setting that has to stay
-put or the game silently fails to boot on itch.
+**LIVE ON MASTER — PR #22 MERGED — merge commit `2c8b417` — export commit
+`e2d41d7` — 2026-08-12.** PR #22 (T1–T5: pixelation, jitter, L1 hitbox, S2
+chase+crystals, final boss scale) is merged to master and deployed. CI ran
+green on both the branch head (`aec2f82`, run #153) and the master merge
+(`2c8b417`, run #154) — **including the `Deploy to itch.io via butler` step:
+success on both.** The `gitleaks`, `Security Sentinel`, and
+`secure-build-checklist` gates are green in CI, and the web export stayed
+non-threaded (`variant/thread_support=false`) — the setting that must never
+regress or the game silently fails to boot on itch.
 
-**Gates: 22 suites ALL PASS (script compile, founder critical probe,
-boss/blaze/save regression suites, plus 3 new this pass — T1/T2 pixelation
-ratio gate, T3 hurtbox geometry gate, T4 crystal-shard gate). Security
-Sentinel 18/18, 0 blockers.** Every new gate this pass was verified to FAIL
-on the previous code first, not just pass on the new — see each item below
-for its own before/after numbers.
+> **HARD-REFRESH REQUIRED before testing the live build.** The browser caches
+> the old `index.pck`; a normal reload can keep serving the pre-fix build.
+> Force a hard refresh (Ctrl/Cmd-Shift-R, or open in a private window) so you
+> actually load export `e2d41d7`.
+
+### PART A — PR #22 verification matrix (code + gates verified; live visual confirm pending your refresh)
+
+Every item below is proven by a real Godot gate that **fails on the
+pre-fix code and passes on the shipped code** — not a data-only check. What I
+have **not** done this turn is put human eyes (or a fresh browser screenshot)
+on the *live* itch build post-refresh, so the last column is honest about
+that: the fix is verified in-engine and in CI, live-visual confirmation is
+yours to make on a hard refresh.
+
+| Item | Expected | Gate proof | Live-visual confirm |
+|------|----------|------------|---------------------|
+| **T1 TAP OUT face** | Sharp, not pixelated | `blaze_rush_no_pixelation_test` — enforces a ≤3.2× minification ratio; the old 585→58px (~10×) source now fails, the resized 116px source passes. Qwen (vision) independently confirmed the *original* blob on your screenshot. | ⏳ your hard refresh |
+| **T2 band art** | Not jittery | Same gate — the "DIAMOND LOUNGE" card's 602×903 source (~4.75×) now passes at 253×380. Same root cause as T1, not a separate bug. | ⏳ your hard refresh |
+| **T3 L1 boss** | No death without contact | `boss_ghost_death_hurtbox_test` — proves the hurtbox centre is no longer a half-body off the sprite, and that genuine contact still ends the run via the real `boss_contact_restart()` path. | ⏳ playtest to Level 1 boss |
+| **T4 S2 boss** | Chases in real arena + crystal/shard attacks | `distributor_phase2_real_arena_chase_test` (closes distance through Phase 2 in the real level_02 box) + `distributor_crystal_shard_test` (crystal shard fires from the real rotation, distinct from the ETH-orb volley). | ⏳ playtest to Stage 2 boss |
+| **T5 final boss** | Larger + effective pressure | `stage3_defence_test` — boss body 80→280px, chase/dynamite pressure raised, arena clamps + ledge-sense still hold (no void death). | ⏳ playtest to Stage 3 boss |
+
+**Part A is closed on my side: merged, CI green, itch deploy green, STATUS
+recorded.** If anything looks wrong after your hard refresh, send a screenshot
+and I'll fix that item narrowly. If it looks right (or you're silent), Part B
+(Diamond Vault + Fort Knox downward set-pieces) is next — I have **not**
+started it, per your instruction to hold until Part A is clear.
+
+**Gates (unchanged since PR #22, same tree now on master): 22 suites ALL PASS
+(script compile, founder critical probe, boss/blaze/save regression suites,
+plus 3 new — T1/T2 pixelation ratio gate, T3 hurtbox geometry gate, T4
+crystal-shard gate). Security Sentinel 18/18, 0 blockers.** Every new gate was
+verified to FAIL on the previous code first, not just pass on the new.
 
 ## THIS PASS — no more pixelated art, the L1 "dies without touching him" bug (actually found), Stage 2 pushed harder, crystal shards, and a bigger final boss
 
