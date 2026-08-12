@@ -74,8 +74,13 @@ func _test_boss_does_not_walk_off_a_ledge() -> void:
 	var player := _make_player(Vector2(edge_x + 400.0, floor_y - 40.0))
 	var boss: Node2D = CLAIM_JUMPER.instantiate()
 	add_child(boss)
-	boss.global_position = Vector2(edge_x - 300.0, floor_y - 80.0)
-	for i in 240:
+	# Spawn comfortably ABOVE the floor and let gravity settle him onto it,
+	# rather than an exact "floor_y - BODY" placement — that hardcoded the old
+	# 80px BODY and silently spawned him already clipped through the platform
+	# once BODY grew to 280 this session (T5), which read identically to a
+	# genuine ledge-walk-off failure until traced back to the spawn line.
+	boss.global_position = Vector2(edge_x - 300.0, floor_y - 500.0)
+	for i in 300:
 		await get_tree().physics_frame
 
 	_check("boss did not fall into the void chasing a player across a gap",
@@ -295,20 +300,49 @@ func _test_stage3_boss_chases_inside_the_real_arena() -> void:
 	var boss: Node2D = CLAIM_JUMPER.instantiate()
 	boss.set("arena_min", Vector2(arena_start, spawn.y - 400.0))
 	boss.set("arena_max", Vector2(arena_end, spawn.y + 60.0))
-	boss.global_position = spawn
+	# `spawn` (500) sat exactly on the platform surface for the OLD 80px BODY
+	# (origin + 80 == the floor's 580 surface). With BODY now 280, that same
+	# origin.y embeds him 200px INTO solid ground — real physics then fights
+	# that penetration instead of chasing, which is what actually produced
+	# the earlier "gap went 160 -> 434" failure (not a chase-speed bug).
+	# Spawn well above the platform and let him fall onto it first.
+	boss.global_position = Vector2(spawn.x, spawn.y - 250.0)
 	add_child(boss)
 	await get_tree().physics_frame
-	var start_gap: float = absf((boss.global_position.x + 40.0) - player.global_position.x)
+	# BOSS_HALF_BODY must track claim_jumper.gd's own HALF_BODY (BODY/2).
+	# Raised from 40 (BODY=80) to 140 (BODY=280) in T5's "final boss too
+	# small" pass — a bigger body needs proportionally more clearance from
+	# the boss's own arena-clamp wall, so both the centre-offset used here
+	# AND the "reaches the wall" threshold below have to move with it.
+	const BOSS_HALF_BODY: float = 140.0
+	# Measured from the genuine spawn moment, BEFORE the fall/settle wait —
+	# he starts closing distance during that fall too (real gravity + real
+	# chase, both running the instant he's in the tree), and measuring after
+	# settling instead would baseline against a boss who has already closed
+	# most of the gap, making "does he close further" fail even when the
+	# actual full-engagement chase is working correctly.
+	var start_gap: float = absf((boss.global_position.x + BOSS_HALF_BODY) - player.global_position.x)
+	for i in 60:
+		await get_tree().physics_frame
+	_check("boss actually landed on the platform before the chase measurement continues",
+		bool(boss.call("is_on_floor")),
+		"boss y = %.0f — still falling/embedded, the gap measurement below would be meaningless"
+			% boss.global_position.y)
 	for i in 420:
 		player.global_position.x = maxf(arena_start,
 			player.global_position.x - 240.0 * (1.0 / 60.0))
 		await get_tree().physics_frame
-	var end_gap: float = absf((boss.global_position.x + 40.0) - player.global_position.x)
+	var end_gap: float = absf((boss.global_position.x + BOSS_HALF_BODY) - player.global_position.x)
 	_check("the L3 boss closes on a player kiting at full sprint",
 		end_gap < start_gap,
 		"gap went %.0f -> %.0f" % [start_gap, end_gap])
+	# Hard floor on how close centres can ever get: the boss's own arena
+	# clamp keeps his centre at least HALF_BODY (140) off arena_start (3700),
+	# and the player can walk all the way to that same wall — so 140px is the
+	# true minimum achievable gap, not a tuning slack. 160 gives a small,
+	# honest buffer above that floor rather than an arbitrary round number.
 	_check("the L3 boss reaches a player pinned against the west arena wall",
-		end_gap < 120.0,
+		end_gap < 160.0,
 		"boss centre stalled %.0f px away" % end_gap)
 	_check("chasing did not drop the L3 boss out of the world",
 		boss.global_position.y < spawn.y + 200.0,

@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/blaze_rush_no_pixelation_test.gd" id="1_np"]
+
+[node name="BlazeRushNoPixelationTest" type="Node"]
+script = ExtResource("1_np")
