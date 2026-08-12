@@ -199,26 +199,27 @@ func _physics_process(delta: float) -> void:
 		Phase.PATROL:
 			_hover_pursue(delta, 1.0)
 			if throw_timer <= 0.0:
-				# THREE-WAY ROTATION: pull, then ETH-orb volley (Forced
-				# Distribution), then a crystal shard barrage, then repeat — so
-				# the fight has a rhythm instead of one attack on loop.
+				# THREE-WAY ROTATION: crystal shards FIRST, then pull, then the
+				# ETH-orb volley (Forced Distribution), then repeat.
 				#
-				# Founder, this session: "lets make the 2nd boss fire crystals
-				# rather and crystal shards at times." The existing ETH-orb
-				# volley (_throw_shards, ORB, blue-tinted, redirectable — the
-				# Forced Distribution signature) is a distinct, already-shipped
-				# mechanic; this adds a THIRD action, visually and mechanically
-				# separate from both that and Level 1's clipboard, using its
-				# own crystalline-white tint and a faster, non-redirectable,
-				# tighter-spread barrage that reads as raw ranged pressure
-				# rather than a skill-shot window.
+				# Founder, this session (again): "not firing diamonds / crystals
+				# / crystal shards as requested" — despite the attack existing
+				# and firing correctly in every headless gate. Kimi K3 re-derived
+				# the full rotation timeline from this file: crystal shards sat
+				# THIRD in the cycle, so the first volley didn't fire until
+				# ~9.3s into the fight — and any engagement that ends earlier
+				# (very possible: he chases at 345px/s, and boss contact is an
+				# instant run-wipe) never reaches it at all. Moving crystals to
+				# slot 0 fires the first volley at ~2.2s instead — inside every
+				# realistic engagement, not just long ones. Zero mechanical
+				# risk: same three functions, only the order changes.
 				match _cycles % 3:
 					0:
-						_begin_gravity_tell()
-					1:
-						_throw_shards()
-					_:
 						_throw_crystal_shards()
+					1:
+						_begin_gravity_tell()
+					_:
+						_throw_shards()
 				_cycles += 1
 
 		Phase.GRAVITY_TELL:

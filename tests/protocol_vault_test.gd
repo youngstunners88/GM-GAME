@@ -1,10 +1,19 @@
 extends Node2D
-## Gate for the Part B downward set-pieces — Diamond Vault (S2) + Fort Knox
-## (S3). Proves the founder's three hard rules with real physics + geometry:
+## Gate for the downward set-pieces — Diamond Vault (S2) + Fort Knox (S3).
+## Proves the founder's three hard rules with real physics + geometry:
 ## CAN ENTER (drop through the mouth and land in the chamber, not the kill
 ## zone), CAN EXIT (a reachable ladder whose top-out lands on solid ground east
 ## of the pit), and NO SOFT-LOCK (the vault ladder cannot be destroyed, and the
 ## exit is never over air — the exact bug that once blocked Stage 2).
+##
+## T1/T2 (this session): both vaults deepened into multi-tier "complete
+## sections" (world y up to ~995, past the level's OLD single-strip kill band
+## at 825-1225). Safety now depends on `level_base.gd`'s `kill_zone_gaps`
+## mechanism actually excluding the vault's x-range — this test builds its
+## kill band the same SPLIT way the real level now does (see
+## `_make_split_killband`), not a naive single continuous strip, so it proves
+## the real safety mechanism, not a stale assumption from the single-tier
+## version.
 ##
 ## Entry is driven with a REAL 32x32 CharacterBody2D falling under the real
 ## gravity/fall constants (the same stand-in technique the boss gates use) so
@@ -19,6 +28,7 @@ const VAULT := preload("res://src/level/protocol_vault.tscn")
 const GRAVITY := 1000.0
 const MAX_FALL := 720.0
 const KILL_BAND_TOP := 825.0  # _setup_kill_zone: kill_zone_y(850)+175-200
+const KILL_BAND_BOTTOM := 1225.0
 
 var _fail: int = 0
 
@@ -58,8 +68,12 @@ func _test_vault_geometry(label: String, protocol: String, mouth_width: float) -
 			bodies.append(c)
 		elif c.is_in_group("ladder"):
 			ladder = c
-	_check("%s: builds a solid floor + two walls (3 StaticBodies)" % label,
-		bodies.size() == 3, "found %d StaticBody children" % bodies.size())
+	# Floor + 2 walls + 2 platform tiers (T1/T2) = 5, this session's "complete
+	# section" expansion — was 3 (floor + 2 walls only) in the single-tier
+	# version. The founder's own requirement: "multiple platforms/chambers,
+	# not one pit floor" — this count is the falsifiable check for that.
+	_check("%s: builds a solid floor + two walls + two platform tiers (5 StaticBodies, not a single pit floor)" % label,
+		bodies.size() == 5, "found %d StaticBody children" % bodies.size())
 	_check("%s: has an exit ladder" % label, ladder != null)
 	if ladder != null:
 		_check("%s: exit ladder is NON-destructible (no soft-lock)" % label,
@@ -91,24 +105,33 @@ func _make_segment(seg: Rect2) -> StaticBody2D:
 	add_child(body)
 	return body
 
-func _make_killband() -> Array:
-	# The real full-width kill Area2D (mask 2 = player) at y 825..1225, with a
-	# flag set the instant a player-group body enters it.
+## Builds the kill band the SAME way `level_base.gd::_setup_kill_zone()` now
+## does: split into strips that exclude `gap` (the vault's own x-range), not
+## one naive continuous strip. Returns [Array[Area2D] strips, Array[bool] flag].
+## A single shared flag (any strip firing sets it) is enough for the drop-in
+## proof; `_test_gap_edge_still_lethal` checks per-strip behaviour separately.
+func _make_split_killband(gap: Vector2, full_lo: float = -2000.0, full_hi: float = 7000.0) -> Array:
 	var flag := [false]
-	var band := Area2D.new()
-	band.collision_layer = 0
-	band.collision_mask = 2
-	var cs := CollisionShape2D.new()
-	var rect := RectangleShape2D.new()
-	rect.size = Vector2(8000, 400)
-	cs.shape = rect
-	band.add_child(cs)
-	band.position = Vector2(2500, KILL_BAND_TOP + 200)  # centre of the 825..1225 band
-	band.body_entered.connect(func(b: Node2D) -> void:
-		if b.is_in_group("player"):
-			flag[0] = true)
-	add_child(band)
-	return [band, flag]
+	var strips: Array[Area2D] = []
+	for interval: Vector2 in [Vector2(full_lo, gap.x), Vector2(gap.y, full_hi)]:
+		var w: float = interval.y - interval.x
+		if w <= 0.0:
+			continue
+		var band := Area2D.new()
+		band.collision_layer = 0
+		band.collision_mask = 2
+		var cs := CollisionShape2D.new()
+		var rect := RectangleShape2D.new()
+		rect.size = Vector2(w, 400)
+		cs.shape = rect
+		band.add_child(cs)
+		band.position = Vector2(interval.x + w / 2.0, KILL_BAND_TOP + 200)
+		band.body_entered.connect(func(b: Node2D) -> void:
+			if b.is_in_group("player"):
+				flag[0] = true)
+		add_child(band)
+		strips.append(band)
+	return [strips, flag]
 
 func _make_player(at: Vector2) -> CharacterBody2D:
 	var p := CharacterBody2D.new()
@@ -128,18 +151,22 @@ func _test_dropin_and_exit(label: String, protocol: String, mouth_width: float,
 		origin: Vector2, left_seg: Rect2, right_seg: Rect2) -> void:
 	var seg_l := _make_segment(left_seg)
 	var seg_r := _make_segment(right_seg)
-	var kb: Array = _make_killband()
-	var kill_flag: Array = kb[1]
 	var vault := VAULT.instantiate()
 	vault.protocol = protocol
 	vault.mouth_width = mouth_width
 	vault.global_position = origin
+	# Gap must be registered BEFORE the kill band is built, matching the real
+	# level's _register_kill_zone_gaps() -> _setup_kill_zone() ordering.
+	var gap: Vector2 = vault.kill_zone_gap_range()
+	var kb: Array = _make_split_killband(gap)
+	var kill_flag: Array = kb[1]
 	add_child(vault)
 	await get_tree().physics_frame
 	# Drop the player straight down through the centre of the mouth.
 	var player := _make_player(Vector2(origin.x, 560))
-	# Fall for ~2s of real physics; drive gravity the way the player does.
-	for i in range(120):
+	# Fall for ~3s of real physics — the deeper multi-tier chamber (T1/T2 this
+	# session) needs more airtime than the old single-tier ~800 floor did.
+	for i in range(180):
 		player.velocity.y = minf(player.velocity.y + GRAVITY * (1.0 / 60.0), MAX_FALL)
 		player.move_and_slide()
 		await get_tree().physics_frame
@@ -147,14 +174,17 @@ func _test_dropin_and_exit(label: String, protocol: String, mouth_width: float,
 			pass  # rested
 
 	var feet: float = player.global_position.y + 16.0
-	_check("%s: player DROPS IN and rests on the chamber floor (~800)" % label,
-		feet >= 790.0 and feet <= 812.0,
-		"feet at %.1f (expected ~800)" % feet)
-	_check("%s: player never entered the kill band (drop-in is survivable)" % label,
+	# Floor top is world 955 this session (deepened for the "complete section"
+	# expansion, using the kill_zone_gaps mechanism — was ~800 single-tier).
+	_check("%s: player DROPS IN and rests on the deepened chamber floor (~955)" % label,
+		feet >= 945.0 and feet <= 967.0,
+		"feet at %.1f (expected ~955)" % feet)
+	_check("%s: player never entered the kill band (the registered gap protects the deeper floor)" % label,
 		not bool(kill_flag[0]),
-		"kill band fired — the drop-in fell into the hazard")
-	_check("%s: player rests ABOVE the kill band top (%.0f)" % [label, KILL_BAND_TOP],
-		feet < KILL_BAND_TOP, "feet %.1f vs band top %.0f" % [feet, KILL_BAND_TOP])
+		"kill band fired — the deepened floor is inside the OLD band (825-1225) and needs the gap to survive")
+	_check("%s: the floor genuinely sits inside the old band's range (proves the gap is doing real work, not just avoiding it)" % label,
+		feet > KILL_BAND_TOP and feet < KILL_BAND_BOTTOM,
+		"feet %.1f — expected this floor to be WITHIN 825-1225, otherwise the gap mechanism isn't actually being exercised" % feet)
 
 	# --- Exit soundness (geometry) ---
 	var ladder: Node = null
@@ -193,7 +223,8 @@ func _test_dropin_and_exit(label: String, protocol: String, mouth_width: float,
 			"a downward ray from the exit point found no floor")
 
 	player.queue_free(); vault.queue_free(); seg_l.queue_free(); seg_r.queue_free()
-	(kb[0] as Node).queue_free()
+	for strip: Area2D in (kb[0] as Array):
+		strip.queue_free()
 	await get_tree().physics_frame
 
 # --- Real level integration -------------------------------------------------

@@ -11,8 +11,18 @@ extends Node2D
 ## level_complete pacing metric for adaptive difficulty (task #23).
 var level_start_ms: int = 0
 
+## Full-level-width x-ranges the kill zone must NOT cover (world space),
+## registered before `_setup_kill_zone()` runs — see `_register_kill_zone_gaps()`.
+var kill_zone_gaps: Array[Vector2] = []
+
 func _ready() -> void:
 	level_start_ms = Time.get_ticks_msec()
+	# MUST run before _setup_kill_zone(): a level that carves a deep vault
+	# under one of its own floor pits (Part B/C, protocol_vault.gd) needs its
+	# x-range excluded from the level-wide kill band BEFORE that band is
+	# built, not patched afterward. Virtual hook, default no-op — every level
+	# without a vault is unaffected.
+	_register_kill_zone_gaps()
 	# Adaptive difficulty (task #23): pull this player's heatmap BEFORE
 	# entities spawn where possible; late-arriving tuning is applied in
 	# _on_difficulty_ready (checkpoint/hint tweaks are placement-safe anytime).
@@ -313,7 +323,54 @@ func _create_platform(x: float, y: float, w: float, h: float, body_color: Color,
 
 	add_child(plat)
 
+## Override point (default no-op): a level that carves a deep vault under one
+## of its own pits appends its vault's world x-range here, e.g.
+## `kill_zone_gaps.append(Vector2(2340, 2560))`. Called from `_ready()` BEFORE
+## `_setup_kill_zone()` — the vault's x-position is a design-time constant in
+## the level script (the same literal already used for the vault's own
+## `global_position`), so this does not need the vault node to exist yet.
+func _register_kill_zone_gaps() -> void:
+	pass
+
+## ONE full-width strip when `kill_zone_gaps` is empty — byte-identical to
+## this project's original behavior, so every level that doesn't register a
+## gap is completely unaffected. A level that DOES register one (Part B/C's
+## downward vaults) gets N strips instead, skipping the registered x-ranges,
+## so a vault chamber can safely extend past the old kill_zone_y+175±200 band
+## — the vault's own solid floor is the real guard against falling through
+## (same "the floor is the guard" proof the vaults were already built on),
+## this just stops the LEVEL-WIDE band from also claiming that same airspace.
 func _setup_kill_zone() -> void:
+	var full_width: float = level_data.bounds.x
+	var y_centre: float = level_data.kill_zone_y + 175.0
+	for interval: Vector2 in _kill_zone_strip_intervals(full_width):
+		_build_kill_zone_strip(interval.x, interval.y, y_centre)
+
+## Splits [0, full_width] into strips excluding `kill_zone_gaps`. Gaps are
+## sorted and clamped to the level bounds first so registration order and
+## slightly-oversized ranges can't produce overlapping or out-of-bounds
+## strips.
+func _kill_zone_strip_intervals(full_width: float) -> Array[Vector2]:
+	if kill_zone_gaps.is_empty():
+		return [Vector2(0.0, full_width)]
+	var gaps := kill_zone_gaps.duplicate()
+	gaps.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
+	var intervals: Array[Vector2] = []
+	var cursor := 0.0
+	for gap: Vector2 in gaps:
+		var gap_lo: float = clampf(gap.x, 0.0, full_width)
+		var gap_hi: float = clampf(gap.y, 0.0, full_width)
+		if gap_lo > cursor:
+			intervals.append(Vector2(cursor, gap_lo))
+		cursor = maxf(cursor, gap_hi)
+	if cursor < full_width:
+		intervals.append(Vector2(cursor, full_width))
+	return intervals
+
+func _build_kill_zone_strip(x_lo: float, x_hi: float, y_centre: float) -> void:
+	var w: float = x_hi - x_lo
+	if w <= 0.0:
+		return
 	var kill_zone := Area2D.new()
 	kill_zone.add_to_group("hazard")
 	# CRITICAL: Area2D.new() defaults collision_mask to 1 (World). The player
@@ -327,10 +384,10 @@ func _setup_kill_zone() -> void:
 	# also catches a player who clips slightly into level geometry.
 	var col := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
-	shape.size = Vector2(level_data.bounds.x, 400)
+	shape.size = Vector2(w, 400)
 	col.shape = shape
 	kill_zone.add_child(col)
-	kill_zone.position = Vector2(level_data.bounds.x / 2, level_data.kill_zone_y + 175)
+	kill_zone.position = Vector2(x_lo + w / 2.0, y_centre)
 	kill_zone.body_entered.connect(func(body: Node2D) -> void:
 		# Pit falls are a HARD fail: pit_death() plays the devastating sound and
 		# costs a LIFE (not just health). Falls back to die() only if a custom
