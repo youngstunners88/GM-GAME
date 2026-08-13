@@ -3,12 +3,13 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv`
 
-**SESSION 6 — pushed to `claude/setup-game-dev-environment-itWJv`, CI/deploy in
-flight — 2026-08-13.** Diamond Vault real utility (clerk + stake/crush), Stage 2
-boss fires diamonds/shards only (no circles), Stage 3 boss chases horizontally
-instead of pogoing, Fort Knox gains a second chamber, and B.AI is wired as an
-extra multi-model lane. 15 gates green locally + Security Sentinel 18/18. Live
-build id lands here once CI's `Deploy to itch.io via butler` is green.
+**LIVE — source commit `cbc6847` — export commit `b5f0af5` — deployed to itch —
+2026-08-13.** CI run `31665282968` green end to end: gitleaks, Security
+Sentinel, secure-build-checklist, web export (non-threaded), and **`Deploy to
+itch.io via butler`: success**. Diamond Vault real utility (clerk + stake/crush),
+Stage 2 boss fires diamonds/shards only (no circles), Stage 3 boss chases
+horizontally instead of pogoing, Fort Knox gains a second chamber, and B.AI is
+wired as an extra multi-model lane. 15 gates green + Security Sentinel 18/18.
 
 > **HARD-REFRESH REQUIRED before testing** (Ctrl/Cmd-Shift-R or a private
 > window). Enter the Diamond Vault on Stage 2 and talk to the clerk (walk up,
