@@ -3,6 +3,40 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv`
 
+**LIVE — master merge `5d8c003` — export commit `4536938` — deployed to itch —
+2026-08-13.** This is the Session-4 code (source `17c87f3`) after it merged to
+master; CI re-exported it on the merge (`Export Godot Game to Web`: success,
+`Deploy to itch.io via butler`: success). The docs-only commit `6f7428c`
+(Session-5 prompt) does not change the game build.
+
+## SESSION 5 — Part A live-verification matrix (no code changed)
+
+Founder has **not playtested yet** and asked for the Part A verification matrix
+only, until fail screenshots arrive. Per the prompt's rules I did **not**
+reopen or rework any Session-4 item — no code changed this session, so nothing
+new was deployed. Multi-model dispatch is gated on code changes; with none, it
+is held for Part B. Every Session-4 claim was re-confirmed against the current
+master tree by re-running its backing gate (all green today):
+
+| ID | Session-4 claim | Backing gate (re-run today) | Verdict |
+|----|-----------------|------------------------------|---------|
+| V1 | Diamond Vault = full separate scene + stake diamonds | `vault_scene_test` (25 assertions: separate scene, own floor, staking moves real GoldMineSystem balances) | ✅ code/gate PASS — awaiting founder live play |
+| V2 | Fort Knox = full gold environment | `vault_scene_test` | ✅ code/gate PASS — awaiting founder live play |
+| V3 | Vault exit returns near stage entry (no soft-lock) | `vault_scene_test` (records `secret_return`, realm has a `return_portal`) | ✅ code/gate PASS — awaiting founder live play |
+| V4 | S2 boss chases + fires distinct crystal shards | `distributor_phase2_real_arena_chase_test` (closes to <150px, never drifts uncatchable) + `distributor_crystal_shard_test` + `s4_combat_fixes` (distinct Polygon2D shard, base dot hidden) | ✅ code/gate PASS — awaiting founder live play |
+| V5 | S3 boss damages + faces + advances horizontally | `s4_combat_fixes` (synchronous blast damage; faces live player) + `stage3_defence` + `claim_jumper_pressure` | ✅ code/gate PASS — awaiting founder live play |
+| V6 | Hammer/axe breaks intended blocks | `s4_combat_fixes` (normal axe breaks a Destructible-layer block) | ✅ code/gate PASS — awaiting founder live play |
+| V7 | S3 death respawns near death | `s4_respawn_near_death` (proven to fail on pre-fix code: 2306px→<60px) | ✅ code/gate PASS — awaiting founder live play |
+
+**Honest scope of this verdict:** these are real-physics headless proofs on the
+live master tree, not a browser playthrough or a founder sign-off. "✅ code/gate
+PASS" means the mechanism is proven at the engine level; it is **not** a claim
+that live play feels right. The founder's hard-refresh playtest is the
+remaining gate — if any item fails live, send a screenshot and Part B fixes
+only that item (multi-model first, narrow scope).
+
+<details><summary>Session 4 live-build details (source 17c87f3 / export 3bb3247)</summary>
+
 **LIVE — source commit `17c87f3` — export commit `3bb3247` — 2026-08-12.**
 CI run `31648464835` green end to end: gitleaks, Security Sentinel,
 secure-build-checklist, web export (non-threaded verified), and **`Deploy to
@@ -11,6 +45,8 @@ scripts / 106 scenes, the two new S4 gates, vault-scene, boss-stakes,
 stage3-defence, distributor chase + crystal, claim-jumper-pressure, blaze
 lifecycle, boss-visibility, save-compat, founder-critical-probe 103
 assertions), Security Sentinel 18/18 with 0 blockers.
+
+</details>
 
 > **HARD-REFRESH REQUIRED before testing.** The browser caches the old
 > `index.pck`; force a hard refresh (Ctrl/Cmd-Shift-R, or a private window)
