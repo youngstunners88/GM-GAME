@@ -1,6 +1,107 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
+**Branch:** `claude/context-management-continuation-tuepzj`
+
+## Blaze band pass — scale, placement, and the masking bug's actual cause
+
+**Not deployed yet — this is the code state, pending CI export.** Hard-refresh
+before testing once the build lands.
+
+All 18 of your marked-up images landed as real files this time and are now
+committed to `artifacts/founder-art/references/`, so no future session has to
+recover them or ask you to resend anything.
+
+### The three complaints about the title were one complaint
+
+Image 1 ("TOO SMALL"), image 4 ("you fucked it up by having the text above")
+and images 5/6/7 (the empty tab + the art + your mockup) were being treated as
+three separate jobs. They are one: **the wordmark belongs in the purple band,
+and it must fill it.**
+
+I measured your mockup rather than eyeballing it — in image 7 the artwork
+covers the band from edge to edge, 600 of 602 pixels across and 168 of 169
+down, with no purple showing behind it. The old version was a 340x118 plate
+covering about a tenth of that. It is now **900x220 — the full height of the
+band and 70% of the screen width.**
+
+I rendered two crops and compared them against your mockup before choosing.
+A true full-width fill needs such a deep crop that it cuts the top off the
+flame and the point off the diamond; 900px keeps the whole wordmark, the whole
+diamond and the crypto cubes. Your art is cropped, never squashed — the aspect
+ratio is preserved and there is a test asserting it.
+
+### Why the artwork kept getting masked — it was never a bad coordinate
+
+The banner sat under a badge disc because **three separate pieces of code each
+had their own private idea of which stretch of band was free.** The badge
+placer built a list of where it had put things and then threw that list away.
+The banner and the title card then picked their own spots using a check that
+only looked for holes in the floor — it had no idea a badge was already there.
+
+There is one shared occupancy list now, and every piece both claims its space
+and respects everyone else's. A second bug fed the same failure: the banner
+reserved 150px either side of itself and then **drew 235px** — the 85px it drew
+beyond its own claim is exactly where a badge could sit. It now measures what
+actually gets drawn.
+
+### What that fix broke, and how I caught it
+
+Making the title card six times bigger pushed the **GoldMine mark and H420 off
+the end of the course entirely** — the badge lattice was still laying out over
+ground the card had taken, so those two silently vanished. You asked for GM to
+be *moved*, not deleted, so that would have been a new bug shipped inside a
+fix. The lattice now derives its range from what is actually reserved, and
+badges size down slightly on a tight course instead of dropping. Verified on
+all three courses: nothing is dropped, nothing overlaps.
+
+| Item | Status |
+|---|---|
+| Title large, in the band, filling it | **FIXED** — 900x220, was 340x118 |
+| Red flaming diamond disc (image 2) | **REMOVED** from the band, with a note so it stops coming back |
+| Artwork masked (image 3) | **FIXED** — root cause was shared-space bookkeeping, not position |
+| Lounge invite banner at the end | **CONFIRMED** at >80% of the course on all three stages |
+| GM right, Robin Hood in its old slot | **CONFIRMED** on all three stages |
+| Blue flaming diamonds on course | **CONFIRMED** — already correct, verified live |
+| Claim survives restart (image 11) | **CONFIRMED FIXED** — verified, not assumed |
+| TitanX / DIAMONDS / GoldMine tokens | **CONFIRMED** — already correct, Solana untouched |
+
+### Two things I want to be straight with you about
+
+**The stray "L" at the bottom of the screen: I could not find it.** It is not
+in your document — no image or note mentions it — and when I enlarged the
+bottom strip of five of your screenshots the only thing down there is the 6px
+progress bar. I did not want to delete something at random and tell you it was
+handled. If you can send one screenshot with it circled I will remove it in
+minutes. While looking I did find and fix a real glyph bug nearby: the lounge
+banner's fallback text used arrow characters the pixel font cannot render.
+
+**Stage tokens and the diamond claim bug needed no work** — both were already
+correct from the last pass. I verified them properly rather than taking the
+last report's word for it: the tokens by reading back the actual images the
+game loads, the claim bug by running its test. Your Solana coins are safe;
+they are a separate object from the stage tokens, so the stage swap never
+touched them.
+
+### Proof
+
+A new test (`tests/blaze_band_layout_test.gd`) builds the real Blaze Rush scene
+for all three stages and measures the live nodes — 48 assertions, all passing.
+**I also deliberately reintroduced each original bug to prove the test catches
+it**, rather than trusting a green result: with the fixes reverted it fails
+with "overlapped by badge_h420.png", which is your image 3 exactly.
+
+**Gates:** 10 suites pass (script compile, band layout, claim reset, lounge
+banner, layout, lifecycle, screenshot fixes, critical probe, boss visibility,
+save compat). Security Sentinel 18/18, zero blockers. ICP contract test fails
+6 network assertions because this sandbox cannot reach the canister — it
+correctly reports "offline" and every logic assertion passes; unrelated to
+this work.
+
+---
+
+
+**Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv` (PR #12 merged; branch restarted from master)
 
 **DEPLOYED — export commit `2867f00` — 2026-08-09.** Hard-refresh before

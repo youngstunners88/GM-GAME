@@ -86,9 +86,24 @@ func _ready() -> void:
 	_build_obstacles(layout)
 	# After obstacles: the landmarks are decorative and must not influence or
 	# be influenced by hazard placement.
-	_build_protocol_landmarks()
-	_build_lounge_banner()
+	#
+	# ORDER IS LOAD-BEARING — the two FIXED-POSITION pieces go first.
+	#
+	# Founder, on a screenshot of the lounge banner with a badge disc bulging out
+	# above and below it: "WHY ARE YOU MASKING THE FUCKING ARTWORK!" The cause was
+	# not a bad coordinate. _build_protocol_landmarks() kept its `placed_x` list
+	# as a LOCAL and threw it away, and the banner/world card then picked their
+	# own spots with _find_band_slot(), which only ever checked for floor GAPS —
+	# it had no idea a badge was already sitting there. Three builders, three
+	# private notions of what was free, one shared 220px band.
+	#
+	# There is one occupancy list now (`_band_taken`) and every builder both
+	# reserves into it and respects it. The world card (entry) and lounge banner
+	# (end) own their positions by design, so they claim first and the badges —
+	# which are free to slide along a lattice — route around them.
 	_build_world_card()
+	_build_lounge_banner()
+	_build_protocol_landmarks()
 	_build_finish()
 	_build_player()
 	_build_camera()
@@ -231,6 +246,10 @@ func _resolve_backdrop_texture() -> Texture2D:
 ## its lower half with clearance top and bottom.
 const BAND_ART_Y: float = 122.0
 const BAND_ART_SIZE: float = 190.0
+## Badges shrink to fit a crowded band (see _build_protocol_landmarks) but never
+## below this — past it a brand mark stops being recognisable at run speed,
+## which is its own founder complaint waiting to happen.
+const BAND_ART_MIN_SIZE: float = 120.0
 
 ## SOLID CIRCULAR badges, not the raw square-cornered artwork.
 ##
@@ -305,8 +324,15 @@ const BR_ART_ORDER := [
 	{"path": "res://src/assets/art/badge_smokering.png", "wide": false},
 	{"path": "res://src/assets/art/badge_hood.png", "wide": false},
 	{"path": "res://src/assets/art/br_diamond_certificate.png", "wide": true},
-	# The mode's own mark — founder: "you also need to add the Blaze logo."
-	{"path": "res://src/assets/art/badge_blaze.png", "wide": false},
+	# badge_blaze.png IS DELIBERATELY ABSENT — do not "restore" it.
+	#
+	# It is a bronze disc carrying a RED flaming diamond. The founder struck it
+	# through with a large X and wrote "WHY do you have this again!!!!" — "again"
+	# because an earlier pass had already pulled it once, and a later pass put it
+	# back reading his "you also need to add the Blaze logo" as covering this
+	# specific disc. It does not: his very next note on the same page is "why did
+	# you change the diamonds!!! Want the blue flaming diamonds!!!" The red
+	# diamond is the wrong mark, and this list is where it kept coming back from.
 	# B3: GoldMine moved right, near the end of the band.
 	{"path": "res://src/assets/art/badge_goldmine.png", "wide": false},
 	{"path": "res://src/assets/art/badge_h420.png", "wide": false},
@@ -321,6 +347,31 @@ const BR_ART_ORDER := [
 ## founder circled.
 var _gap_spans: Array[Vector2] = []
 
+## X ranges ALREADY OCCUPIED by a piece of band art, as (x_min, x_max).
+##
+## The single source of truth for "is this stretch of band free", shared by all
+## three builders. Before this existed the badge lattice, the lounge banner and
+## the world card each tracked their own placements privately, so two of them
+## could — and did — resolve to the same x and draw on top of each other. That
+## overlap is the "masking" the founder photographed.
+var _band_taken: Array[Vector2] = []
+
+## Air to leave between two neighbouring pieces of band art. Not zero: touching
+## edges still read as one smeared object at speed, and the founder's complaint
+## was about legibility, not literal pixel overlap.
+const BAND_CLEARANCE: float = 40.0
+
+## Claim `half_w` either side of `cx` so nothing else can be placed there.
+func _reserve_band(cx: float, half_w: float) -> void:
+	_band_taken.append(Vector2(cx - half_w, cx + half_w))
+
+## True if art of `half_w` centred at `x` would touch anything already placed.
+func _band_blocked(x: float, half_w: float) -> bool:
+	for span: Vector2 in _band_taken:
+		if x + half_w + BAND_CLEARANCE > span.x and x - half_w - BAND_CLEARANCE < span.y:
+			return true
+	return false
+
 func _x_over_gap(x: float, half_width: float = BAND_ART_SIZE * 0.5) -> bool:
 	for g: Vector2 in _gap_spans:
 		# half_width of clearance either side, so a badge (or a wide banner —
@@ -332,7 +383,12 @@ func _x_over_gap(x: float, half_width: float = BAND_ART_SIZE * 0.5) -> bool:
 
 ## Where the evenly-spaced lattice of landmark slots starts and how much runway
 ## is left clear at the far end (the finish gate and its approach live there).
-const LANDMARK_START_X: float = 700.0
+## Clear of the world card, which now spans roughly x=-50..850 (it is centred
+## near WORLD_CARD_X at 900px wide). At the old 700 every early badge resolved
+## inside the card and got pushed or dropped by the occupancy check for no
+## reason; starting the lattice past it keeps the entry clean and the badges
+## evenly spread over the runway that is actually free.
+const LANDMARK_START_X: float = 1100.0
 const LANDMARK_END_MARGIN: float = 300.0
 
 ## X for landmark `i` of `count`, or INF if there is no clear band for it.
@@ -352,21 +408,36 @@ const LANDMARK_END_MARGIN: float = 300.0
 ##      badge stays on the same lattice and moves the shortest distance to a
 ##      valid cell; candidates that land within MIN_SEP of something already
 ##      placed are rejected outright.
-func _landmark_slot_x(i: int, count: int, half_w: float, placed_x: Array[float]) -> float:
-	var span: float = maxf(_course_length - LANDMARK_END_MARGIN - LANDMARK_START_X, 1.0)
+## `start_x`/`end_x` are the stretch of band actually left over once the world
+## card and lounge banner have claimed theirs, and `min_sep` is sized to that
+## stretch by the caller. They used to be the constants LANDMARK_START_X /
+## LANDMARK_END_MARGIN and a fixed `maxf(BAND_ART_SIZE * 1.15, ...)`, which is
+## how enlarging the world card silently deleted GoldMine and H420 from the run:
+## the lattice kept laying out over ground that was no longer free, every cell
+## at the end failed the occupancy test, and those two returned INF and were
+## dropped. A demand for more separation than the free band can supply is not a
+## safety margin, it is a guarantee that the tail of the list vanishes.
+func _landmark_slot_x(i: int, count: int, half_w: float, placed_x: Array[float],
+		start_x: float, end_x: float, min_sep: float) -> float:
+	var span: float = maxf(end_x - start_x, 1.0)
 	var pitch: float = span / float(count)
-	var ideal: float = LANDMARK_START_X + pitch * (float(i) + 0.5)
-	# Never let two artworks crowd: at minimum a full badge width of air, and
-	# never less than 60% of the even pitch.
-	var min_sep: float = maxf(BAND_ART_SIZE * 1.15, pitch * 0.6)
+	var ideal: float = start_x + pitch * (float(i) + 0.5)
 	var step: float = pitch * 0.25
 	# offset 0 first, then -1, +1, -2, +2 ... so the nearest valid cell wins.
 	for k in range(0, 9):
 		for dir in ([0] if k == 0 else [-1, 1]):
 			var cand: float = ideal + float(dir) * float(k) * step
-			if cand < LANDMARK_START_X * 0.5 or cand > _course_length - 120.0:
+			# Stay inside the free stretch itself — a displaced badge must not
+			# wander back into the world card or forward into the lounge banner.
+			if cand < start_x - half_w or cand > end_x + half_w:
+				continue
+			if cand > _course_length - 120.0:
 				continue
 			if _x_over_gap(cand, half_w):
+				continue
+			# The world card and the lounge banner are already down by now and
+			# own their spots; a badge routes around them rather than over them.
+			if _band_blocked(cand, half_w):
 				continue
 			var crowded := false
 			for p: float in placed_x:
@@ -395,8 +466,29 @@ func _landmark_slot_x(i: int, count: int, half_w: float, placed_x: Array[float])
 ## despawn. It sits at a fixed track position near the start and simply scrolls
 ## past like everything else on the band — visible on every attempt, not just
 ## the first two seconds of the level.
-const WORLD_CARD_W: float = 340.0
-const WORLD_CARD_H: float = 118.0
+## IT FILLS THE BAND. IT IS NOT A PLATE SITTING IN THE BAND.
+##
+## Founder, on the previous version: "TOO SMALL" — and separately, circling the
+## empty purple band, "This tab needs to have the image that i am going to
+## present below... This is what needs to fill that section of real estate."
+## He then supplied his own mock-up of the result.
+##
+## That mock-up is the spec, and it was measured rather than eyeballed: sampling
+## it shows the artwork covering the band from x=0 to x=600 of 602 and y=0 to
+## y=168 of 169 — edge to edge, corner to corner, with no purple visible behind
+## it at all. The old 340x118 height-fit plate covered about a tenth of that.
+##
+## So this is a COVER fit (fill both axes, crop the overflow), not the CONTAIN
+## fit every other piece of band art uses. Both crops were rendered and compared
+## against the mock-up before picking: a true full-viewport 1280-wide fill needs
+## a 26% vertical slice of the source, which cuts the top off the flame and the
+## point off the diamond. 900px keeps a 37% slice — the whole wordmark, the whole
+## diamond, the crypto cubes — and still spans 70% of the 1280px viewport, which
+## is what "dominates the entry" means here.
+const WORLD_CARD_W: float = 900.0
+## Full band height: the band is 220px from GROUND_Y (see _make_floor_segment)
+## and the founder's mock-up leaves no margin top or bottom.
+const WORLD_CARD_H: float = 220.0
 ## Early in the band, but not the very first thing — let the run establish
 ## itself for a beat first (matches the founder's illustrated position, which
 ## sat a short distance in, not at x=0). 400 is also _find_band_slot's own
@@ -417,15 +509,31 @@ func _build_world_card() -> void:
 
 	var art := Sprite2D.new()
 	art.name = "WorldCard"
-	# Height-fit, same convention as the lounge banner: keeps native aspect
-	# ratio instead of squashing a wide wordmark into a square footprint.
-	var fit: float = WORLD_CARD_H / maxf(float(tex.get_height()), 1.0)
 	art.texture = tex
-	art.scale = Vector2(fit, fit)
+
+	# COVER fit via a centred source region — see the WORLD_CARD_W note.
+	#
+	# Cropping in the region rect rather than scaling non-uniformly is the whole
+	# point: squashing a 1.6-aspect wordmark into a 4.1-aspect slot would distort
+	# the founder's brand art, and "no pixelation / don't change my artwork" has
+	# been a standing instruction for several passes.
+	var tw: float = maxf(float(tex.get_width()), 1.0)
+	var th: float = maxf(float(tex.get_height()), 1.0)
+	var slot_ar: float = WORLD_CARD_W / WORLD_CARD_H
+	var rh: float = minf(th, tw / slot_ar)
+	var rw: float = minf(tw, rh * slot_ar)
+	art.region_enabled = true
+	art.region_rect = Rect2((tw - rw) * 0.5, (th - rh) * 0.5, rw, rh)
+	art.scale = Vector2(WORLD_CARD_W / rw, WORLD_CARD_H / rh)
+
 	art.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	art.position = Vector2(bx, GROUND_Y + BAND_ART_Y)
+	# Centred on the band's own midline, not BAND_ART_Y: this piece is as tall as
+	# the band itself, so the badge convention of seating art low inside it would
+	# hang half the wordmark below the floor.
+	art.position = Vector2(bx, GROUND_Y + WORLD_CARD_H * 0.5)
 	art.z_index = 1
 	add_child(art)
+	_reserve_band(bx, half_w)
 
 ## SMOKE LOUNGE ANTICIPATION BANNER — on every Blaze course, guaranteed.
 ##
@@ -456,8 +564,26 @@ const LOUNGE_BANNER_H: float = 104.0
 ## see before it."
 const LOUNGE_BANNER_END_MARGIN: float = 260.0
 
+## How wide the lounge banner ACTUALLY DRAWS, not how wide LOUNGE_BANNER_W says.
+##
+## The founder's artwork is 2.91:1. Height-fitting it to LOUNGE_BANNER_H * 1.55
+## renders it ~470px wide, but every placement decision was being made against
+## LOUNGE_BANNER_W (300) — so the banner reserved 150px either side and then drew
+## 235. The 85px it drew beyond its own claim is exactly where a badge could sit
+## and mask it. Placement now measures the thing that ends up on screen.
+func _lounge_drawn_half_width() -> float:
+	var fallback: float = LOUNGE_BANNER_W * 0.5
+	if not ResourceLoader.exists(LOUNGE_BANNER_ART):
+		return fallback
+	var tex: Texture2D = load(LOUNGE_BANNER_ART)
+	if tex == null or tex.get_height() <= 0:
+		return fallback
+	var fit: float = (LOUNGE_BANNER_H * 1.55) / float(tex.get_height())
+	# * 1.03 covers the slow "lit signage" breath tween at its widest.
+	return maxf(fallback, float(tex.get_width()) * fit * 0.5 * 1.03)
+
 func _build_lounge_banner() -> void:
-	var half_w: float = LOUNGE_BANNER_W * 0.5
+	var half_w: float = _lounge_drawn_half_width()
 	var bx: float = _find_band_slot(_course_length - LOUNGE_BANNER_END_MARGIN, half_w)
 	if is_inf(bx):
 		return
@@ -467,6 +593,11 @@ func _build_lounge_banner() -> void:
 	banner.position = Vector2(bx, GROUND_Y + BAND_ART_Y)
 	banner.z_index = 1
 	add_child(banner)
+	# Claim the space BEFORE the badges are laid out, so nothing can be placed
+	# on top of it. The founder's "why are you masking the artwork" screenshot
+	# was a badge disc drawn at the same x as this banner, its rim bulging out
+	# above and below the artwork. `half_w` here is the REAL drawn half-width.
+	_reserve_band(bx, half_w)
 
 	# B6: the founder's own "NOW LOOK FOR THE SMOKE LOUNGE" artwork the moment
 	# it is on disk. It carries its own call to action, so the procedural plate
@@ -515,7 +646,12 @@ func _build_lounge_banner() -> void:
 	banner.add_child(head)
 
 	var sub := Label.new()
-	sub.text = "▸  CHILL OUT AHEAD  ◂"
+	# ASCII ONLY. The pixel font has no arrow glyphs — the previous "▸ ◂" pair
+	# rendered as tofu boxes on web (docs/MOBILE_CONTROLS_SPEC.md says so
+	# explicitly). Latent rather than live, since this whole plate is the
+	# fallback for a missing LOUNGE_BANNER_ART, but it would surface the moment
+	# that file went astray.
+	sub.text = ">>  CHILL OUT AHEAD  <<"
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.position = Vector2(-half_w, -LOUNGE_BANNER_H * 0.5 + 52)
 	sub.custom_minimum_size = Vector2(LOUNGE_BANNER_W, 0)
@@ -539,10 +675,10 @@ func _find_band_slot(from_x: float, half_w: float) -> float:
 	var step: float = 90.0
 	for i in range(48):
 		var fwd: float = x + step * float(i)
-		if fwd <= limit and not _x_over_gap(fwd, half_w):
+		if fwd <= limit and not _x_over_gap(fwd, half_w) and not _band_blocked(fwd, half_w):
 			return fwd
 		var back: float = x - step * float(i)
-		if back >= 400.0 and not _x_over_gap(back, half_w):
+		if back >= 400.0 and not _x_over_gap(back, half_w) and not _band_blocked(back, half_w):
 			return back
 	return INF
 
@@ -567,6 +703,39 @@ func _build_protocol_landmarks() -> void:
 	# per available artwork (not a modulo subset), so every piece appears
 	# exactly once per run rather than some being skipped.
 	var count: int = available.size()
+
+	# THE FREE STRETCH, derived from what is actually reserved — not constants.
+	#
+	# The world card owns the entry and the lounge banner owns the end, and both
+	# are already in `_band_taken` by the time this runs. Anything at the entry
+	# half of the course pushes the lattice start right; anything at the end half
+	# pulls its end left.
+	var lat_start: float = LANDMARK_START_X
+	var lat_end: float = _course_length - LANDMARK_END_MARGIN
+	for span: Vector2 in _band_taken:
+		if span.y < _course_length * 0.5:
+			lat_start = maxf(lat_start, span.y + BAND_CLEARANCE)
+		else:
+			lat_end = minf(lat_end, span.x - BAND_CLEARANCE)
+
+	# SIZE THE BADGES TO THE ROOM THAT EXISTS.
+	#
+	# Founder: "feature ALL of the protocol logos in the Blaze Rush" AND "lets
+	# better space this section". Those pull against each other on a short course
+	# once the entry card takes 900px, and the old code resolved the conflict by
+	# silently dropping whatever did not fit — which is how the GoldMine mark he
+	# explicitly asked to reposition could disappear from the band entirely.
+	# Shrinking slightly so every mark survives is the honest trade; a hard floor
+	# keeps them legible rather than shrinking without limit.
+	var usable: float = maxf(lat_end - lat_start, 1.0)
+	var art_size: float = BAND_ART_SIZE
+	var needed: float = float(count) * (BAND_ART_SIZE + BAND_CLEARANCE)
+	if needed > usable:
+		# -6 keeps required separation strictly under the pitch instead of landing
+		# exactly on it, where float equality decides whether a badge survives.
+		art_size = maxf(BAND_ART_MIN_SIZE, usable / float(count) - BAND_CLEARANCE - 6.0)
+	var min_sep: float = art_size + BAND_CLEARANCE
+
 	var placed_x: Array[float] = []
 	for i in range(count):
 		var entry: Array = available[i]
@@ -578,7 +747,7 @@ func _build_protocol_landmarks() -> void:
 		art.texture = tex
 		# Normalise wildly different source sizes to a consistent on-screen
 		# scale rather than trusting each PNG's native dimensions.
-		var target: float = BAND_ART_SIZE
+		var target: float = art_size
 		if is_wide:
 			var s: float = target / float(tex.get_height())
 			art.scale = Vector2(s, s)  # uniform scale preserves aspect ratio
@@ -592,10 +761,12 @@ func _build_protocol_landmarks() -> void:
 		# band (the band itself is a plain ColorRect at default z), while the
 		# run line stays well above at GROUND_Y and up.
 		var half_w: float = art.scale.x * float(tex.get_width()) / 2.0
-		var ax: float = _landmark_slot_x(i, count, half_w, placed_x)
+		var ax: float = _landmark_slot_x(i, count, half_w, placed_x, lat_start, lat_end, min_sep)
 		if is_inf(ax):
 			continue  # no clear band left for this one; drop it rather than float it
 		placed_x.append(ax)
+		# Claim it so later badges — and any future band builder — route around.
+		_reserve_band(ax, half_w)
 		art.position = Vector2(ax, GROUND_Y + BAND_ART_Y)
 		# Fully opaque: "solid", per the founder. No alpha wash.
 		art.modulate = Color(1.0, 1.0, 1.0, 1.0)
