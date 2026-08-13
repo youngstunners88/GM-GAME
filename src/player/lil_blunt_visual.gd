@@ -262,13 +262,22 @@ func _make_glow_texture() -> ImageTexture:
 	return _glow_tex
 
 ## Swap outfit art (cowboy for Forest/Gold Rush, miner/crystal for Caves).
+## Modest visual scale-up (founder session 7: "Lil Blunt is too miniature — make
+## him slightly bigger"). Applied to the RENDER only — the 32px collision box on
+## the Player is untouched, so movement/hitboxes are unchanged and he stays
+## playable. The foot-anchor math below multiplies every offset by this factor
+## so his visible feet still land exactly on the floor (the past "hovers above
+## the surface" bug does NOT return — proven by the render-scale gate).
+const RENDER_SCALE: float = 1.25
+
 func set_outfit(outfit: int) -> void:
 	if _spr == null:
 		return
 	var path: String = OUTFIT_TEXTURES.get(outfit, OUTFIT_TEXTURES[Player.Outfit.DEFAULT])
 	_spr.texture = load(path)
-	# Anchor feet to the collision floor so he stands ON platforms.
-	_spr.position = Vector2(0.0, FEET_LOCAL_Y - _spr.texture.get_height() / 2.0)
+	_spr.scale = Vector2(RENDER_SCALE, RENDER_SCALE)
+	# Anchor feet to the collision floor so he stands ON platforms (scaled).
+	_spr.position = Vector2(0.0, FEET_LOCAL_Y - _spr.texture.get_height() * RENDER_SCALE / 2.0)
 	# _art_offset_y is applied by _measure_art_bounds() below, once the real
 	# opaque bounds of THIS outfit are known.
 	_spr.flip_h = not facing_right
@@ -290,18 +299,20 @@ func _measure_art_bounds() -> void:
 	var tex := _spr.texture
 	if tex == null:
 		return
+	# All vertical offsets are in the sprite's SCALED render space (RENDER_SCALE),
+	# so the opaque feet still land on the collision floor after the scale-up.
 	var h := float(tex.get_height())
-	var sprite_top := _spr.position.y - h / 2.0
+	var sprite_top := _spr.position.y - h * RENDER_SCALE / 2.0
 	_art_top_local = sprite_top
-	_art_feet_local = sprite_top + h
+	_art_feet_local = sprite_top + h * RENDER_SCALE
 	var img := tex.get_image()
 	if img == null:
 		return
 	var used := img.get_used_rect()
 	if used.size.y <= 0:
 		return
-	_art_top_local = sprite_top + float(used.position.y)
-	_art_feet_local = sprite_top + float(used.position.y + used.size.y)
+	_art_top_local = sprite_top + float(used.position.y) * RENDER_SCALE
+	_art_feet_local = sprite_top + float(used.position.y + used.size.y) * RENDER_SCALE
 	# Drop the art so its last opaque row lands exactly on the collision floor.
 	_art_offset_y = FEET_LOCAL_Y - _art_feet_local
 	_spr.position.y += _art_offset_y
@@ -322,8 +333,11 @@ func _setup_frames_for_outfit(outfit: int) -> void:
 		_anim = AnimatedSprite2D.new()
 		add_child(_anim)
 	_anim.sprite_frames = load(frames_path)
-	# Feet-anchor using the 64×64 frame spec from ASSET_MANIFEST.md.
-	_anim.position = Vector2(0.0, FEET_LOCAL_Y - 32.0)
+	# Feet-anchor using the 64×64 frame spec from ASSET_MANIFEST.md, scaled to
+	# match the static sprite's RENDER_SCALE so the animated outfit is the same
+	# (slightly bigger) size and its feet still land on the floor.
+	_anim.scale = Vector2(RENDER_SCALE, RENDER_SCALE)
+	_anim.position = Vector2(0.0, FEET_LOCAL_Y - 32.0 * RENDER_SCALE)
 	_anim.visible = true
 	_spr.visible = false
 	if _current_anim != "":
