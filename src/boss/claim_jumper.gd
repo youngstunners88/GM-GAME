@@ -73,6 +73,10 @@ const TURN_DECEL: float = 1400.0
 const TURN_DEAD_ZONE: float = 34.0
 ## Clears ~196px at gravity 980 — same envelope the Auditor uses.
 const HOP_VELOCITY: float = -620.0
+## Total airtime of one hop: 2 * |HOP_VELOCITY| / gravity ≈ 1.265s. Used to size
+## the hop's horizontal commit so he LANDS on the player's x instead of
+## overshooting (see the PATROL hop block).
+const HOP_AIRTIME: float = -2.0 * HOP_VELOCITY / 980.0
 
 ## Assigned, NOT redeclared: EnemyBase already owns `sprite`, and shadowing
 ## it is a parse error that leaves this entire script unattached.
@@ -227,6 +231,31 @@ func _gap_crossable(facing: float) -> bool:
 			return true
 	return false
 
+## True only when there is REAL higher ground ahead (a raised ledge the player
+## could be standing on), within one hop's rise. Distinct from _gap_crossable,
+## which is trivially true on flat ground (it accepts the floor he's already on).
+##
+## Founder (session 6): the final boss "still only jumps in one spot." Root
+## cause (confirmed by real-physics gate): the "player above" hop used
+## _gap_crossable, which returns true anywhere on flat ground — so every time
+## the player merely JUMPED over/near him, the above-check fired and he pogo'd
+## in place instead of chasing on the ground. This probes ONLY the band ABOVE
+## his own feet: on flat ground nothing is up there (no hop -> he runs after the
+## player); on a real raised ledge there is (hop -> he climbs to reach them).
+func _higher_ground_ahead(facing: float) -> bool:
+	var space := get_world_2d().direct_space_state
+	var foot_y: float = global_position.y + BODY
+	for dist: float in [140.0, 200.0, 260.0, HOP_REACH]:
+		var from := Vector2(global_position.x + HALF_BODY + dist * facing, foot_y - 190.0)
+		# Cast DOWN only to 40px above the current feet — a hit means ground that
+		# is meaningfully higher than where he stands, i.e. an actual ledge.
+		var params := PhysicsRayQueryParameters2D.create(from, from + Vector2(0.0, 150.0))
+		params.collision_mask = 1
+		params.exclude = [get_rid()]
+		if not space.intersect_ray(params).is_empty():
+			return true
+	return false
+
 ## One frame of grounded pursuit at `speed` px/s. Returns true if he is standing
 ## at a ledge lip and has refused to take the step.
 ##
@@ -308,17 +337,32 @@ func _physics_process(delta: float) -> void:
 				# unconditionally, and since the old _gap_crossable couldn't see
 				# higher ledges it also left vx=0 — so he hopped straight up in
 				# place forever instead of advancing (Kimi K3, session 4).
-				if pl and pl.global_position.y < global_position.y - 80.0 and _gap_crossable(direction):
+				# Session 6: _higher_ground_ahead, NOT _gap_crossable. The latter is
+				# trivially true on flat ground, so the player merely JUMPING near him
+				# fired this and he pogo'd in place ("still only jumps in one spot").
+				# Now the above-hop needs a REAL raised ledge; on flat ground he chases
+				# on the ground via _ground_chase instead.
+				if pl and pl.global_position.y < global_position.y - 80.0 and _higher_ground_ahead(direction):
 					want_hop = true
 				if want_hop:
 					velocity.y = HOP_VELOCITY
-					# COMMIT FORWARD on the hop. _ground_chase zeroes velocity.x at
-					# a ledge lip, so without re-injecting horizontal speed here the
-					# hop is purely vertical (straight up, no progress). Airborne
-					# frames skip the ledge sense and _gap_crossable already
-					# confirmed a landing, so this carries him toward the player
-					# instead of hopping in place.
-					velocity.x = patrol_speed * direction
+					# COMMIT TOWARD THE PLAYER'S X, SIZED TO THE GAP — not a blind
+					# full-speed lunge. Founder (session 6): the final boss "still
+					# only jumps in one spot." Root cause (Kimi K3, real-arena
+					# trace): `velocity.x = patrol_speed * direction` committed the
+					# full 290px/s every hop, so against a nearby/overhead player he
+					# overshot by ~367px per hop, `dx` flipped, and he ping-ponged
+					# ±367px around the player for a NET displacement of ~0 — a
+					# stationary pogo. Worse, `_hop_cooldown` (0.7s) is shorter than
+					# the 1.265s airtime, so he never gets a grounded chase frame
+					# between hops; he ONLY hops. Sizing the commit to the real gap
+					# (pdx / airtime, clamped to patrol_speed) lands him ON the
+					# player's x when close and saturates to a genuine pursuit when
+					# the player kites — no overshoot, no ping-pong. The
+					# `_gap_crossable`/`at_ledge` guards above are untouched, so
+					# ledge suicide stays fixed.
+					var pdx: float = (pl.global_position.x - (global_position.x + HALF_BODY)) if pl else direction * HOP_REACH
+					velocity.x = clampf(pdx / HOP_AIRTIME, -patrol_speed, patrol_speed)
 					_hop_cooldown = 0.7
 			if throw_timer <= 0:
 				_throw_dynamite()

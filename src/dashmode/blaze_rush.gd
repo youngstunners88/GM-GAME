@@ -1521,6 +1521,11 @@ func _finish_run() -> void:
 	# Bank the run: SMOKE persists, score pays out (no combo interference).
 	GameManager.add_smoke(_smoke_this_attempt)
 	ComboSystem.add_score_no_combo(_smoke_this_attempt * SCORE_PER_SMOKE)
+	# The Blaze Rush collectibles are branded "BLAZE DIAMONDS" (toast below); feed
+	# them into the crushable Blaze Diamond stack so the Diamond Vault clerk can
+	# offer them for crushing "according to stack limit from collections"
+	# (session 6, founder). add_blaze_diamonds clamps to BLAZE_DIAMOND_STACK_LIMIT.
+	GoldMineSystem.add_blaze_diamonds(_smoke_this_attempt)
 
 	var first_clear: bool = not GameManager.blaze_rush_completed.get(_level_index, false)
 	# Same rename as the HUD label above — the exit toast is the last thing a

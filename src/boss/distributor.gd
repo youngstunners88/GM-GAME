@@ -698,7 +698,15 @@ func _throw_shards() -> void:
 		orb.direction = base.rotated(spread)
 		orb.speed = 170.0 + 40.0 * (current_phase - 1)
 		orb.homing = 0.6 if current_phase >= 2 else 0.0
-		orb.tint = Color(0.6, 0.8, 1.0, 1.0)  # ETH blue
+		# DIAMONDS, NOT CIRCLES. Founder (session 6): "the 2nd boss still fires
+		# circles" — the redirectable volley was a recolored fx_dot (a blue disc),
+		# which reads identically to the Stage-1 boss's dot. Every S2 projectile
+		# must now be a diamond or a crystal shard (distinct geometry), so this
+		# volley gets the SAME treatment _throw_crystal_shards already uses: the
+		# base dot is hidden (tint alpha 0) and an angular DIAMOND Polygon2D rides
+		# on top. The Forced-Distribution redirect + homing are untouched — they
+		# live on the orb root; the poly is a passive child (Fable-5 / Kimi s6).
+		orb.tint = Color(0.7, 0.9, 1.0, 0.0)  # base dot hidden
 		orb.redirectable = true
 		orb.owner_boss = self
 		# SMOKE "Haze Softener": holders running Blaze meet slower orbs.
@@ -712,6 +720,19 @@ func _throw_shards() -> void:
 		# non-identity transform the orbs would spawn offset from the muzzle.
 		get_parent().add_child(orb)
 		orb.global_position = global_position + Vector2(BODY / 2.0, BODY * 0.21)
+		# The visible DIAMOND — a classic rhombus, distinct from the crystal
+		# shard's elongated kite so the two attacks read apart. Passive child of
+		# the orb; the redirect/homing logic never reads it.
+		var gem := Polygon2D.new()
+		gem.polygon = PackedVector2Array([
+			Vector2(0, -11), Vector2(8, 0), Vector2(0, 11), Vector2(-8, 0)])
+		gem.color = Color(0.72, 0.93, 1.0, 0.96)
+		orb.add_child(gem)
+		var facet := Polygon2D.new()
+		facet.polygon = PackedVector2Array([
+			Vector2(0, -11), Vector2(8, 0), Vector2(0, 0), Vector2(-8, 0)])
+		facet.color = Color(0.92, 0.99, 1.0, 0.95)
+		orb.add_child(facet)
 	AudioManager.play_sfx("throw")
 
 ## CRYSTAL SHARDS — a third, distinct ranged attack.

@@ -3,11 +3,93 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv`
 
-**LIVE — master merge `5d8c003` — export commit `4536938` — deployed to itch —
-2026-08-13.** This is the Session-4 code (source `17c87f3`) after it merged to
-master; CI re-exported it on the merge (`Export Godot Game to Web`: success,
-`Deploy to itch.io via butler`: success). The docs-only commit `6f7428c`
-(Session-5 prompt) does not change the game build.
+**SESSION 6 — pushed to `claude/setup-game-dev-environment-itWJv`, CI/deploy in
+flight — 2026-08-13.** Diamond Vault real utility (clerk + stake/crush), Stage 2
+boss fires diamonds/shards only (no circles), Stage 3 boss chases horizontally
+instead of pogoing, Fort Knox gains a second chamber, and B.AI is wired as an
+extra multi-model lane. 15 gates green locally + Security Sentinel 18/18. Live
+build id lands here once CI's `Deploy to itch.io via butler` is green.
+
+> **HARD-REFRESH REQUIRED before testing** (Ctrl/Cmd-Shift-R or a private
+> window). Enter the Diamond Vault on Stage 2 and talk to the clerk (walk up,
+> press **E**) to stake $DIAMONDS and crush Blaze Diamonds. Fort Knox on Stage 3
+> now has an upper Assay Hall. Both bosses' fixes show once you fight them.
+
+## SESSION 6 — vault utility, pure-diamond S2 boss, S3 horizontal chase, Fort Knox depth, B.AI
+
+Founder live complaints this round: the Diamond Vault "looks better but no real
+utility for diamonds collected" — wanted a vault CHARACTER that asks how many
+diamond tokens to store and how many Blaze Diamonds to crush by stack limit; the
+Stage 2 boss "still fires circles"; the Stage 3 boss "still only jumps in one
+spot"; Fort Knox "needs more development." Multi-model dispatched FIRST as
+mandated — Fable-5, Grok 4.5, Kimi K3, DeepSeek, plus **B.AI** (extra
+Claude-compatible capacity) — logs in `docs/model-responses/2026-08-13-s6-*.md`.
+
+| Your item | Status |
+|---|---|
+| Diamond Vault has no real diamond utility | **FIXED** — a vault clerk (Mira "Ledger" Voss) you talk to: stake $DIAMONDS tokens AND crush Blaze Diamonds (from your Blaze Rush collections) into more $DIAMONDS, both clamped to what you own and a collection stack limit |
+| Stage 2 boss still fires circles | **FIXED** — the redirectable volley is now diamond-shaped (distinct geometry, base dot hidden); every S2 projectile is a diamond or a crystal shard, no circles |
+| Stage 3 boss only jumps in one spot | **FIXED** — he now chases on the ground instead of pogoing when you jump overhead; the in-place hop only fires for a real raised ledge |
+| Fort Knox needs more development | **FIXED** — a second chamber (the GOLD Rush Assay Hall) reached by platforming, with a new Assay Scale that weighs GOLD into a Fort Knox stake |
+
+### T1 — the Diamond Vault clerk (real diamond utility)
+
+The vault used to be walk-up altars with no character and no choice. Now the
+Diamond Vault holds a clerk NPC, **Mira "Ledger" Voss** (Grok s6), you walk up
+to and talk to (press **E**). She runs a two-step flow that moves REAL economy
+counters: first "how many $DIAMONDS you locking in?" (staked via the existing
+term-weighted `stake_diamonds`), then "how many Blaze Diamonds we crushing?"
+Blaze Diamonds are a NEW, separate resource — the diamonds you collect in Blaze
+Rush — capped at a **stack limit** (20) so the crush is a real choice; crushing
+mints 5 $DIAMONDS each (the same token the vault then stakes, so the two
+questions are one funnel, not two disconnected sinks). All clamping lives in
+`GoldMineSystem`, never the UI, so a UI bug can't mint from nothing — proven by
+`s6_vault_utility_test` (11 assertions incl. the clerk flow moving real
+balances and old saves without the new key loading as 0).
+
+### T2 — Stage 2 boss: diamonds, not circles
+
+The boss had three attacks; two were already distinct (crystal shards, gravity
+pull) but the redirectable "Forced Distribution" volley was a recolored blue
+`fx_dot` — a disc that reads exactly like the Stage-1 boss's dot. That volley
+now hides the dot and draws an angular **diamond** on each projectile, keeping
+the redirect/Pool-Drain mechanic intact. A subtle trap caught and fixed: the
+projectile's redirect-window flash used to lerp the dot's own colour, which
+would have flickered the hidden disc back into view — the flash now modulates
+the projectile root so the diamond pulses while the dot stays invisible. Gate:
+every projectile in the volley carries diamond geometry with the dot hidden.
+
+### T3 — Stage 3 boss: chases instead of pogoing
+
+Root cause (Kimi K3 real-arena trace, confirmed by a real-physics gate): the
+"player is above me" hop was gated on a ledge check that is **trivially true on
+flat ground**, so every time you merely jumped near him he launched a hop —
+pogoing in place instead of chasing. The hop now requires a genuinely higher
+ledge to reach; on flat ground he stays down and runs after you. Gate: with a
+player hovering just overhead on flat ground, the boss launches **0** hops
+(pre-fix: 5) while still making forward horizontal progress — and the ledge
+sense + arena clamp are untouched, so he still never suicides off the edge.
+
+### T4 — Fort Knox: a second chamber
+
+Fort Knox was one gold room. It now has a second beat: a stepped climb up to an
+elevated **GOLD Rush Assay Hall** (Grok identity — a frontier bank-mine, not a
+diamond desk) holding a new interactable beyond coins, the **Assay Scale**,
+where you weigh GOLD into a Fort Knox stake. Gate: the realm exposes a reachable
+`assay_scale` that moves gold into Fort Knox shares.
+
+### B.AI — configured as an extra multi-model lane
+
+B.AI (`B_AI_API_KEY` in env — the actual var name; the prompt's `BAI_API_KEY`
+is absent) is reachable and authenticated. It is wired as a **standalone
+dispatch script** (`scripts/bai-call.mjs`, Anthropic-Messages-compatible),
+**not** by overriding this session's `ANTHROPIC_BASE_URL` — doing that would
+hijack the orchestrator's own model routing for this and every future session.
+Honest limit: the account's premium models (Claude/GLM/GPT) return
+"deposit required"; the usable non-premium lane is `kimi-k2.5`, which drafted
+the T1 flow this session. Key presence checked by name only, never printed.
+
+<details><summary>Session 5 — Part A live-verification matrix (no code changed)</summary>
 
 ## SESSION 5 — Part A live-verification matrix (no code changed)
 
@@ -34,6 +116,8 @@ PASS" means the mechanism is proven at the engine level; it is **not** a claim
 that live play feels right. The founder's hard-refresh playtest is the
 remaining gate — if any item fails live, send a screenshot and Part B fixes
 only that item (multi-model first, narrow scope).
+
+</details>
 
 <details><summary>Session 4 live-build details (source 17c87f3 / export 3bb3247)</summary>
 

@@ -78,13 +78,23 @@ func _physics_process(delta: float) -> void:
 		if redirectable and not _redirected:
 			# Unstable window reads as a bright white-cyan flash; once it lapses
 			# the orb settles back to its normal tint and can no longer be hit.
+			#
+			# The flash is applied to the PROJECTILE ROOT's `modulate`, not the
+			# sprite's, so it works whether the projectile shows the base dot or a
+			# child DIAMOND polygon (session 6): a hidden dot has tint.a == 0, and
+			# lerping the sprite's own modulate off that tint would raise the
+			# alpha and flicker the disc back into view during the redirect window
+			# — the exact "circles" the founder called out. Modulating the root
+			# multiplies through: the alpha-0 dot stays invisible, while the child
+			# diamond (its own alpha 1) picks up the bright pulse.
 			if _t <= unstable_time:
 				var f := 0.5 + 0.5 * sin(_t * 40.0)
-				sprite.modulate = tint.lerp(Color(2.2, 2.6, 2.8, 1.0), 0.45 + 0.4 * f)
-				sprite.scale = Vector2.ONE * (0.9 + 0.25 * f)
+				modulate = Color(1, 1, 1, 1).lerp(Color(2.2, 2.6, 2.8, 1.0), 0.45 + 0.4 * f)
+				scale = Vector2.ONE * (0.9 + 0.25 * f)
 			else:
-				sprite.modulate = tint
-				sprite.scale = Vector2.ONE * 0.9
+				modulate = Color(1, 1, 1, 1)
+				scale = Vector2.ONE * 0.9
+			sprite.modulate = tint
 
 ## Where a redirected orb aims. Bosses expose their own body centre via
 ## hit_centre(); the +48 fallback is the legacy 96px body's half-extent and is

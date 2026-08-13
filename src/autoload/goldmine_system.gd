@@ -48,6 +48,22 @@ var gold_certificates: int = 0
 ## diamonds in the Diamond Vault, weighted by commitment term.
 var diamond_shares: int = 0
 
+## BLAZE DIAMONDS — the diamonds collected in Blaze Rush dash mode, held as a
+## SEPARATE resource from $DIAMONDS tokens (session 6, founder: the vault clerk
+## asks "how many diamond tokens to store" AND "how many blaze diamonds to
+## crush according to stack limit from collections"). They cap at a stack limit
+## so the crush is a considered choice, not a runaway pile. Crushing converts
+## them into stakeable $DIAMONDS tokens (see crush_blaze_diamonds).
+const BLAZE_DIAMOND_STACK_LIMIT: int = 20
+## 1 Blaze Diamond crushes into this many $DIAMONDS tokens. Blaze Diamonds are
+## earned by SKILL (surviving Blaze Rush), so the yield is generous enough to
+## make the dash worth it and to feed the same stake_diamonds() sink the vault
+## already exposes — the clerk's two questions become one funnel, not two
+## disconnected sinks (Fable-5 s6).
+const BLAZE_DIAMOND_CRUSH_YIELD: int = 5
+var blaze_diamonds: int = 0
+signal blaze_diamonds_changed(new_amount: int)
+
 # Per-level forfeit pool — feeds boss auction payout
 var auction_gold_pool: int = 0
 var lifetime_gold_mined: int = 0
@@ -166,6 +182,31 @@ func stake_diamonds(amount: int, days_committed: int) -> int:
 	diamond_shares_changed.emit(diamond_shares)
 	return shares
 
+## Collect a Blaze Diamond (from Blaze Rush). Clamped to the stack limit so the
+## crushable pile is always a bounded, readable number the clerk can offer.
+## Returns the new balance.
+func add_blaze_diamonds(n: int = 1) -> int:
+	blaze_diamonds = clampi(blaze_diamonds + n, 0, BLAZE_DIAMOND_STACK_LIMIT)
+	blaze_diamonds_changed.emit(blaze_diamonds)
+	return blaze_diamonds
+
+## CRUSH Blaze Diamonds into $DIAMONDS tokens — the vault clerk's crush action
+## (session 6). Never crushes more than held; each crushed Blaze Diamond mints
+## BLAZE_DIAMOND_CRUSH_YIELD $DIAMONDS tokens (which stake_diamonds() can then
+## consume). Returns the number of $DIAMONDS minted (0 if nothing crushed).
+## All clamping lives HERE, not in the UI, so the flow is headlessly testable
+## and a UI bug can never mint from thin air (Fable-5 / DeepSeek s6).
+func crush_blaze_diamonds(amount: int) -> int:
+	var n: int = clampi(amount, 0, blaze_diamonds)
+	if n <= 0:
+		return 0
+	blaze_diamonds -= n
+	var minted: int = n * BLAZE_DIAMOND_CRUSH_YIELD
+	diamonds_balance += minted
+	blaze_diamonds_changed.emit(blaze_diamonds)
+	diamonds_changed.emit(diamonds_balance)
+	return minted
+
 ## Internal: check if Fort Knox shares cross the 22,000-per-Cert threshold.
 func _check_certificates() -> void:
 	var new_certs: int = fort_knox_shares / CERT_SHARES_REQUIRED
@@ -209,6 +250,7 @@ func reset_session() -> void:
 	fort_knox_shares = 0
 	gold_certificates = 0
 	diamond_shares = 0
+	blaze_diamonds = 0
 	auction_gold_pool = 0
 	lifetime_gold_mined = 0
 	lifetime_diamonds_burned = 0
@@ -223,6 +265,7 @@ func get_save_data() -> Dictionary:
 		"fort_knox_shares": fort_knox_shares,
 		"gold_certificates": gold_certificates,
 		"diamond_shares": diamond_shares,
+		"blaze_diamonds": blaze_diamonds,
 		"lifetime_gold_mined": lifetime_gold_mined,
 		"lifetime_diamonds_burned": lifetime_diamonds_burned,
 	}
@@ -235,6 +278,9 @@ func load_save_data(data: Dictionary) -> void:
 	fort_knox_shares = int(data.get("fort_knox_shares", 0))
 	gold_certificates = int(data.get("gold_certificates", 0))
 	diamond_shares = int(data.get("diamond_shares", 0))
+	# Default-guarded so a save written BEFORE session 6 (no blaze_diamonds key)
+	# loads as 0 instead of crashing (DeepSeek s6 regression risk #4).
+	blaze_diamonds = int(data.get("blaze_diamonds", 0))
 	lifetime_gold_mined = int(data.get("lifetime_gold_mined", 0))
 	lifetime_diamonds_burned = int(data.get("lifetime_diamonds_burned", 0))
 	gold_changed.emit(gold_balance)
@@ -242,3 +288,4 @@ func load_save_data(data: Dictionary) -> void:
 	wbtc_changed.emit(wbtc_balance)
 	xaut_changed.emit(xaut_balance)
 	diamond_shares_changed.emit(diamond_shares)
+	blaze_diamonds_changed.emit(blaze_diamonds)
