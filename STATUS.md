@@ -3,13 +3,14 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv`
 
-**SESSION 7 — pushed to `claude/setup-game-dev-environment-itWJv`, CI/deploy in
-flight — 2026-08-13.** Readable vault UI (big outlined text), Mira Voss + Gold
-Scale founder art wired, a big-button clerk you can actually use, Stage 2 boss
-diamonds/shards now travel the whole arena + a new chase root cause fixed, Lil
-Blunt scaled up, and the distracting Gold Rush coin shrunk. 15+ gates green +
-Security Sentinel 18/18. Live build id lands here once CI's `Deploy to itch.io
-via butler` is green.
+**LIVE — source commit `49469bd` — export commit `31f7795` — deployed to itch —
+2026-08-13.** CI run `31706640292` green end to end: gitleaks, Security
+Sentinel, secure-build-checklist, web export (non-threaded), and **`Deploy to
+itch.io via butler`: success**. Readable vault UI (big outlined text), Mira Voss
++ Gold Scale founder art wired and proven to render, a big-button clerk you can
+actually use, Stage 2 diamonds/shards now travel the whole arena + a new chase
+root cause fixed, Lil Blunt scaled up 1.25×, and the distracting Gold Rush coin
+shrunk. 15+ gates green + Security Sentinel 18/18.
 
 > **HARD-REFRESH REQUIRED before testing** (Ctrl/Cmd-Shift-R or a private
 > window). In the Diamond Vault, walk up to **Mira Voss** and press **E** — the
