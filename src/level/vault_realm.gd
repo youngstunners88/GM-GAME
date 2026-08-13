@@ -44,13 +44,38 @@ var _readout: Label = null
 ## step "crush" -> ... -> step "done" applies via GoldMineSystem primitives.
 const CLERK_TERM_DAYS: int = 2888   # clerk stakes at the long (2x) commitment
 var _at_clerk: bool = false
-var _clerk_step: String = ""        # "", "stake", "crush", "done"
+var _clerk_open: bool = false       # is the big-button panel showing?
 var _clerk_stake_amt: int = 0
 var _clerk_crush_amt: int = 0
+var _clerk_row: int = 0             # 0 = stake row, 1 = crush row (keyboard focus)
 var _clerk_panel: CanvasLayer = null
-var _clerk_prompt: Label = null
-var _clerk_amount: Label = null
-var _clerk_hint: Label = null
+var _clerk_holdings: Label = null
+var _clerk_stake_val: Label = null
+var _clerk_crush_val: Label = null
+var _clerk_msg: Label = null
+
+# --- Readability (T1): every vault label/button is big + black-outlined -------
+## Founder (session 7), repeated: vault text is "way too small" and unreadable
+## on the busy backdrops — a ship-blocker. One helper styles every label so a
+## new label can't ship un-outlined, and 24px is the hard mobile-web minimum
+## (Fable/Kimi s7). Colours: cyan for the Diamond Vault, gold for Fort Knox.
+const MIN_LABEL_SIZE: int = 24
+func _fg() -> Color:
+	return Color(0.85, 1.0, 1.0, 1.0) if _diamonds else Color(1.0, 0.9, 0.55, 1.0)
+
+func style_label(l: Label, size: int) -> void:
+	var s: int = maxi(size, MIN_LABEL_SIZE)
+	l.add_theme_font_size_override("font_size", s)
+	l.add_theme_color_override("font_color", _fg())
+	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	l.add_theme_constant_override("outline_size", maxi(4, int(round(s / 4.0))))
+
+func style_button(b: Button, size: int) -> void:
+	var s: int = maxi(size, MIN_LABEL_SIZE)
+	b.add_theme_font_size_override("font_size", s)
+	b.add_theme_color_override("font_color", Color(1, 1, 1, 1))
+	b.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	b.add_theme_constant_override("outline_size", maxi(4, int(round(s / 4.0))))
 
 func _ready() -> void:
 	_diamonds = protocol == "diamonds"
@@ -64,6 +89,7 @@ func _ready() -> void:
 	_setup_altar("long", 1720.0)   # 2888-day pool: 2x shares, behind a hazard
 	if _diamonds:
 		_setup_clerk(430.0)        # the stake/crush attendant, near spawn
+		_setup_diamond_scale(1250.0)  # the readable Gold Scale instrument (T6)
 	else:
 		_setup_fort_knox_depth()   # second chamber: the GOLD Rush Assay Hall (T4)
 	_setup_hazard()
@@ -75,14 +101,19 @@ func _ready() -> void:
 		MobileInputHandler.touch_interact.connect(_on_mobile_interact)
 
 func _physics_process(_delta: float) -> void:
-	# Clerk dialogue takes priority over altar staking when its panel is open.
-	if _clerk_step != "":
-		if Input.is_action_just_pressed("ui_left"):
+	# Clerk panel takes priority over altar staking when it's open. Keyboard is
+	# an accelerator on top of the on-screen big buttons: up/down pick the row,
+	# left/right adjust it, E/enter confirms, esc leaves.
+	if _clerk_open:
+		if Input.is_action_just_pressed("ui_up") or Input.is_action_just_pressed("ui_down"):
+			_clerk_row = 1 - _clerk_row
+			_refresh_clerk_panel()
+		elif Input.is_action_just_pressed("ui_left"):
 			clerk_adjust(-1)
 		elif Input.is_action_just_pressed("ui_right"):
 			clerk_adjust(1)
 		elif Input.is_action_just_pressed("interact") or Input.is_action_just_pressed("ui_accept"):
-			clerk_confirm_step()
+			clerk_confirm()
 		elif Input.is_action_just_pressed("ui_cancel"):
 			clerk_close()
 		return
@@ -93,9 +124,8 @@ func _physics_process(_delta: float) -> void:
 		_stake_at(_at_altar)
 
 func _on_mobile_interact() -> void:
-	if _clerk_step != "":
-		clerk_confirm_step()
-		return
+	if _clerk_open:
+		return  # mobile uses the on-screen buttons directly, not this
 	if _at_clerk:
 		clerk_open()
 		return
@@ -238,12 +268,11 @@ func _setup_altar(kind: String, x: float) -> void:
 		spr.scale = Vector2(0.55, 0.55)
 		spr.position = Vector2(0, -60)
 		altar.add_child(spr)
-	# Term plate.
+	# Term plate — big + outlined so it reads on the busy backdrop (T1).
 	var plate := Label.new()
-	plate.text = ("288-DAY POOL" if kind == "short" else "2888-DAY POOL  (2x)")
-	plate.position = Vector2(-70, -150)
-	plate.add_theme_font_size_override("font_size", 13)
-	plate.modulate = Color(0.7, 1.0, 1.0, 1.0) if _diamonds else Color(1.0, 0.85, 0.4, 1.0)
+	plate.text = ("288-DAY POOL" if kind == "short" else "2888-DAY POOL (2x)")
+	plate.position = Vector2(-80, -170)
+	style_label(plate, 26)
 	altar.add_child(plate)
 
 	# Idle glow so it reads interactive.
@@ -311,8 +340,7 @@ func _float_text(text: String) -> void:
 		return
 	var f := Label.new()
 	f.text = text
-	f.add_theme_font_size_override("font_size", 22)
-	f.modulate = Color(0.7, 1.0, 1.0, 1.0) if _diamonds else Color(1.0, 0.85, 0.4, 1.0)
+	style_label(f, 34)
 	f.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	f.position = Vector2(0, 90)
 	_readout.get_parent().add_child(f)
@@ -323,48 +351,43 @@ func _float_text(text: String) -> void:
 
 # --- Vault clerk: the real diamond utility (T1) -----------------------------
 
-## Build Mira "Ledger" Voss (Grok s6): a slim attendant drawn from primitives —
-## a faceted cyan vest, a coin-visor cap, and a floating share-token halo — plus
-## the Area2D that opens her dialogue on interact.
+## Build Mira "Ledger" Voss from the FOUNDER'S art (session 7 — do not invent a
+## clerk when founder art exists): her standing sprite, a big outlined name
+## plate, and the Area2D that opens her big-button dialogue on interact.
+const MIRA_ART := "res://src/assets/art/vaults/mira_voss.png"
 func _setup_clerk(x: float) -> void:
 	var clerk := Node2D.new()
 	clerk.name = "VaultClerk"
 	clerk.position = Vector2(x, SURFACE_Y)
 	add_child(clerk)
 
-	# Body — faceted diamond-cut vest.
-	var vest := Polygon2D.new()
-	vest.polygon = PackedVector2Array([
-		Vector2(-16, -6), Vector2(16, -6), Vector2(12, 40), Vector2(-12, 40)])
-	vest.color = Color(0.55, 0.9, 1.0, 1.0)
-	clerk.add_child(vest)
-	# Head + coin-visor cap.
-	var head := Polygon2D.new()
-	head.polygon = PackedVector2Array([
-		Vector2(-11, -34), Vector2(11, -34), Vector2(11, -8), Vector2(-11, -8)])
-	head.color = Color(0.85, 0.98, 1.0, 1.0)
-	clerk.add_child(head)
-	var visor := Polygon2D.new()
-	visor.polygon = PackedVector2Array([
-		Vector2(-15, -34), Vector2(15, -34), Vector2(12, -28), Vector2(-12, -28)])
-	visor.color = Color(1.0, 0.85, 0.35, 1.0)
-	clerk.add_child(visor)
-	# Floating share-token halo behind the head.
-	var halo := Sprite2D.new()
-	halo.texture = load("res://src/assets/sprites/fx_dot.png")
-	halo.modulate = Color(0.6, 1.0, 1.0, 0.7)
-	halo.position = Vector2(0, -46)
-	halo.scale = Vector2(1.4, 1.4)
-	clerk.add_child(halo)
-	var bob := clerk.create_tween().set_loops()
-	bob.tween_property(halo, "position:y", -52.0, 1.0).set_trans(Tween.TRANS_SINE)
-	bob.tween_property(halo, "position:y", -46.0, 1.0).set_trans(Tween.TRANS_SINE)
+	# Founder Mira Voss art — a ~170px-tall standing NPC. Her sprite is 602x903
+	# with feet at the bottom; anchor so her feet meet the vault floor.
+	var spr := Sprite2D.new()
+	if ResourceLoader.exists(MIRA_ART):
+		var tex: Texture2D = load(MIRA_ART)
+		spr.texture = tex
+		var target_h := 190.0
+		var s: float = target_h / float(tex.get_height())
+		spr.scale = Vector2(s, s)
+		spr.position = Vector2(0, -target_h / 2.0 + 6.0)
+	clerk.add_child(spr)
+	# Soft glow so she reads as interactive against the busy backdrop.
+	var glow := Sprite2D.new()
+	glow.texture = load("res://src/assets/sprites/fx_dot.png")
+	glow.modulate = Color(0.6, 1.0, 1.0, 0.35)
+	glow.position = Vector2(0, -90)
+	glow.scale = Vector2(3.0, 3.0)
+	glow.z_index = -1
+	clerk.add_child(glow)
+	var gtw := clerk.create_tween().set_loops()
+	gtw.tween_property(glow, "modulate:a", 0.5, 1.0).set_trans(Tween.TRANS_SINE)
+	gtw.tween_property(glow, "modulate:a", 0.25, 1.0).set_trans(Tween.TRANS_SINE)
 
 	var plate := Label.new()
 	plate.text = "MIRA \"LEDGER\" VOSS\n[E] TALK"
-	plate.position = Vector2(-70, -100)
-	plate.add_theme_font_size_override("font_size", 13)
-	plate.modulate = Color(0.7, 1.0, 1.0, 1.0)
+	plate.position = Vector2(-96, -250)
+	style_label(plate, 26)
 	clerk.add_child(plate)
 
 	var area := Area2D.new()
@@ -373,9 +396,9 @@ func _setup_clerk(x: float) -> void:
 	clerk.add_child(area)
 	var cs := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
-	rect.size = Vector2(120, 130)
+	rect.size = Vector2(150, 200)
 	cs.shape = rect
-	cs.position = Vector2(0, -20)
+	cs.position = Vector2(0, -90)
 	area.add_child(cs)
 	area.body_entered.connect(func(b: Node2D) -> void:
 		if b.is_in_group("player"):
@@ -383,51 +406,59 @@ func _setup_clerk(x: float) -> void:
 	area.body_exited.connect(func(b: Node2D) -> void:
 		if b.is_in_group("player"):
 			_at_clerk = false
-			if _clerk_step != "":
+			if _clerk_open:
 				clerk_close())
 
-## Open the clerk dialogue. Starts on the STAKE step, pre-clamped to holdings.
-## Public + logic-only so a headless test can drive the whole flow.
+## Open the clerk's big-button panel. BOTH the stake and crush rows are visible
+## at once (founder session 7: "I don't seem to have the options to utilise the
+## diamond tokens" — the old sequential text flow hid them). Amounts default to
+## everything held, clamped. Public + logic-only so a headless test drives it.
 func clerk_open() -> void:
 	if not _diamonds:
 		return
-	_clerk_step = "stake"
-	_clerk_stake_amt = clampi(GoldMineSystem.diamonds_balance, 0, GoldMineSystem.diamonds_balance)
-	_clerk_crush_amt = clampi(_crush_cap(), 0, _crush_cap())
+	_clerk_open = true
+	_clerk_row = 0
+	_clerk_stake_amt = GoldMineSystem.diamonds_balance
+	_clerk_crush_amt = _crush_cap()
 	_build_clerk_panel()
 	_refresh_clerk_panel()
+
+## Diamond Vault's readable Gold Scale instrument (T6) — informational, so the
+## founder's "the instrument that moves left and right is unclear even in the
+## Diamond vault" is answered with the same labelled, tilting scale as Fort Knox.
+func _setup_diamond_scale(x: float) -> void:
+	var node := Node2D.new()
+	node.name = "DiamondScale"
+	node.position = Vector2(x, SURFACE_Y - 30.0)
+	add_child(node)
+	_build_gold_scale(node, true)
 
 ## Upper bound on a crush: never more than held, never more than the stack limit.
 func _crush_cap() -> int:
 	return mini(GoldMineSystem.blaze_diamonds, GoldMineSystem.BLAZE_DIAMOND_STACK_LIMIT)
 
-## Adjust the current step's amount by `dir` (clamped to that step's bounds).
+## Adjust the currently-focused row (keyboard). The on-screen +/- buttons call
+## the row-specific setters directly.
 func clerk_adjust(dir: int) -> void:
-	match _clerk_step:
-		"stake":
-			_clerk_stake_amt = clampi(_clerk_stake_amt + dir, 0, GoldMineSystem.diamonds_balance)
-		"crush":
-			_clerk_crush_amt = clampi(_clerk_crush_amt + dir, 0, _crush_cap())
+	if _clerk_row == 0:
+		clerk_adjust_stake(dir)
+	else:
+		clerk_adjust_crush(dir)
+
+func clerk_adjust_stake(dir: int) -> void:
+	_clerk_stake_amt = clampi(_clerk_stake_amt + dir, 0, GoldMineSystem.diamonds_balance)
 	_refresh_clerk_panel()
 
-## Confirm the current step and advance. stake -> crush -> done(apply) -> close.
-func clerk_confirm_step() -> void:
-	match _clerk_step:
-		"stake":
-			_clerk_step = "crush"
-			_clerk_crush_amt = clampi(_clerk_crush_amt, 0, _crush_cap())
-		"crush":
-			_clerk_apply()
-			_clerk_step = "done"
-		_:
-			clerk_close()
-			return
+func clerk_adjust_crush(dir: int) -> void:
+	_clerk_crush_amt = clampi(_clerk_crush_amt + dir, 0, _crush_cap())
 	_refresh_clerk_panel()
 
-## Apply BOTH decisions through the clamped GoldMineSystem primitives. The UI
-## never mutates balances directly (Fable-5 s6), so this is the single source of
-## truth for the flow and is what the headless gate exercises.
-func _clerk_apply() -> void:
+## CONFIRM: apply BOTH the stake and the crush through the clamped GoldMineSystem
+## primitives (the UI never mutates balances directly — Fable/DeepSeek s6/s7), so
+## this one method is the single source of truth the headless gate exercises.
+func clerk_confirm() -> void:
+	if not _clerk_open:
+		return
 	var shares := 0
 	if _clerk_stake_amt > 0:
 		shares = GoldMineSystem.stake_diamonds(_clerk_stake_amt, CLERK_TERM_DAYS)
@@ -439,12 +470,43 @@ func _clerk_apply() -> void:
 	GameManager.add_score(shares * 10 + minted)
 	_float_text("+%d SHARES  +%d $DIAMONDS" % [shares, minted])
 	_refresh_readout()
+	clerk_close()
 
 func clerk_close() -> void:
-	_clerk_step = ""
+	_clerk_open = false
 	if _clerk_panel != null and is_instance_valid(_clerk_panel):
 		_clerk_panel.queue_free()
 	_clerk_panel = null
+
+## A big +/- control row: a large label, a "-" Button, a big value Label, a "+"
+## Button. Buttons are >=96px tall touch targets (Fable/Kimi s7).
+func _clerk_row_ui(parent: Control, y: float, title: String, minus: Callable, plus: Callable) -> Label:
+	var title_l := Label.new()
+	title_l.position = Vector2(28, y)
+	style_label(title_l, 30)
+	title_l.text = title
+	parent.add_child(title_l)
+	var minus_b := Button.new()
+	minus_b.text = "-"
+	minus_b.custom_minimum_size = Vector2(96, 96)
+	minus_b.position = Vector2(360, y - 26)
+	style_button(minus_b, 44)
+	minus_b.pressed.connect(minus)
+	parent.add_child(minus_b)
+	var val := Label.new()
+	val.position = Vector2(474, y - 8)
+	val.custom_minimum_size = Vector2(150, 0)
+	val.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	style_label(val, 40)
+	parent.add_child(val)
+	var plus_b := Button.new()
+	plus_b.text = "+"
+	plus_b.custom_minimum_size = Vector2(96, 96)
+	plus_b.position = Vector2(650, y - 26)
+	style_button(plus_b, 44)
+	plus_b.pressed.connect(plus)
+	parent.add_child(plus_b)
+	return val
 
 func _build_clerk_panel() -> void:
 	if _clerk_panel != null and is_instance_valid(_clerk_panel):
@@ -453,45 +515,79 @@ func _build_clerk_panel() -> void:
 	layer.layer = 30
 	add_child(layer)
 	_clerk_panel = layer
+	var root := Control.new()
+	root.set_anchors_preset(Control.PRESET_CENTER)
+	layer.add_child(root)
+
+	# Mira Voss portrait beside the panel (founder art).
+	if ResourceLoader.exists(MIRA_ART):
+		var portrait := TextureRect.new()
+		portrait.texture = load(MIRA_ART)
+		portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
+		portrait.custom_minimum_size = Vector2(260, 400)
+		portrait.position = Vector2(-540, -200)
+		root.add_child(portrait)
+
 	var panel := ColorRect.new()
-	panel.color = Color(0.04, 0.08, 0.16, 0.92)
-	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.custom_minimum_size = Vector2(560, 200)
-	panel.position = Vector2(-280, -100)
-	layer.add_child(panel)
-	_clerk_prompt = Label.new()
-	_clerk_prompt.position = Vector2(24, 18)
-	_clerk_prompt.add_theme_font_size_override("font_size", 18)
-	_clerk_prompt.modulate = Color(0.8, 1.0, 1.0, 1.0)
-	panel.add_child(_clerk_prompt)
-	_clerk_amount = Label.new()
-	_clerk_amount.position = Vector2(24, 96)
-	_clerk_amount.add_theme_font_size_override("font_size", 26)
-	_clerk_amount.modulate = Color(1.0, 0.95, 0.6, 1.0)
-	panel.add_child(_clerk_amount)
-	_clerk_hint = Label.new()
-	_clerk_hint.position = Vector2(24, 150)
-	_clerk_hint.add_theme_font_size_override("font_size", 13)
-	_clerk_hint.modulate = Color(0.7, 0.85, 0.95, 1.0)
-	panel.add_child(_clerk_hint)
+	panel.color = Color(0.04, 0.08, 0.16, 0.95) if _diamonds else Color(0.14, 0.09, 0.03, 0.95)
+	panel.custom_minimum_size = Vector2(780, 400)
+	panel.position = Vector2(-260, -200)
+	root.add_child(panel)
+	# Gold/cyan border so the panel pops off the busy backdrop.
+	var border := ColorRect.new()
+	border.color = _fg()
+	border.custom_minimum_size = Vector2(780, 6)
+	border.position = Vector2(-260, -200)
+	root.add_child(border)
+
+	_clerk_holdings = Label.new()
+	_clerk_holdings.position = Vector2(-236, -180)
+	style_label(_clerk_holdings, 30)
+	root.add_child(_clerk_holdings)
+
+	_clerk_stake_val = _clerk_row_ui(root, -96.0, "STAKE $DIAMONDS",
+		func() -> void: clerk_adjust_stake(-1), func() -> void: clerk_adjust_stake(1))
+	_clerk_crush_val = _clerk_row_ui(root, 12.0, "CRUSH BLAZE",
+		func() -> void: clerk_adjust_crush(-1), func() -> void: clerk_adjust_crush(1))
+
+	var confirm := Button.new()
+	confirm.text = "CONFIRM"
+	confirm.name = "CONFIRM"
+	confirm.custom_minimum_size = Vector2(320, 96)
+	confirm.position = Vector2(-40, 96)
+	style_button(confirm, 40)
+	confirm.pressed.connect(clerk_confirm)
+	root.add_child(confirm)
+
+	var leave := Button.new()
+	leave.text = "LEAVE"
+	leave.custom_minimum_size = Vector2(180, 72)
+	leave.position = Vector2(300, 108)
+	style_button(leave, 30)
+	leave.pressed.connect(clerk_close)
+	root.add_child(leave)
+
+	_clerk_msg = Label.new()
+	_clerk_msg.position = Vector2(-236, -136)
+	style_label(_clerk_msg, 26)
+	root.add_child(_clerk_msg)
 
 func _refresh_clerk_panel() -> void:
-	if _clerk_prompt == null or not is_instance_valid(_clerk_prompt):
+	if _clerk_holdings == null or not is_instance_valid(_clerk_holdings):
 		return
-	match _clerk_step:
-		"stake":
-			_clerk_prompt.text = "MIRA: How many $DIAMONDS you locking in?\nLonger days, fatter share mint. (held: %d)" % GoldMineSystem.diamonds_balance
-			_clerk_amount.text = "STAKE  %d  $DIAMONDS" % _clerk_stake_amt
-		"crush":
-			if _crush_cap() <= 0:
-				_clerk_prompt.text = "MIRA: No Blaze Diamonds to crush.\nDash a Blaze Rush and come back glowing."
-			else:
-				_clerk_prompt.text = "MIRA: How many Blaze Diamonds we crushing?\nStack limit's whatever you collected. (held: %d / %d)" % [GoldMineSystem.blaze_diamonds, GoldMineSystem.BLAZE_DIAMOND_STACK_LIMIT]
-			_clerk_amount.text = "CRUSH  %d  ->  +%d $DIAMONDS" % [_clerk_crush_amt, _clerk_crush_amt * GoldMineSystem.BLAZE_DIAMOND_CRUSH_YIELD]
-		"done":
-			_clerk_prompt.text = "MIRA: Locked and ledgered.\nShares minted — pools drip when the epoch turns."
-			_clerk_amount.text = ""
-	_clerk_hint.text = "[<-]/[->] adjust    [E] confirm    [ESC] leave"
+	_clerk_holdings.text = "$DIAMONDS: %d      BLAZE DIAMONDS: %d / %d" % [
+		GoldMineSystem.diamonds_balance, GoldMineSystem.blaze_diamonds, GoldMineSystem.BLAZE_DIAMOND_STACK_LIMIT]
+	_clerk_stake_val.text = str(_clerk_stake_amt)
+	_clerk_crush_val.text = "%d  (+%d)" % [_clerk_crush_amt, _clerk_crush_amt * GoldMineSystem.BLAZE_DIAMOND_CRUSH_YIELD]
+	# Mira's line reacts to what's in the pocket (Grok s7 copy).
+	if GoldMineSystem.diamonds_balance <= 0 and _crush_cap() <= 0:
+		_clerk_msg.text = "MIRA: Empty pockets, full vibes. Grab some $DIAMONDS first."
+	else:
+		_clerk_msg.text = "MIRA: Stake 'em or crush 'em, then CONFIRM."
+	# Highlight the keyboard-focused row.
+	_clerk_stake_val.modulate = Color(1, 1, 0.5) if _clerk_row == 0 else _fg()
+	_clerk_crush_val.modulate = Color(1, 1, 0.5) if _clerk_row == 1 else _fg()
 
 # --- Fort Knox second chamber: the GOLD Rush Assay Hall (T4) -----------------
 
@@ -505,9 +601,8 @@ func _setup_fort_knox_depth() -> void:
 	# Timber-and-iron signage announcing the hall (Grok copy).
 	var sign := Label.new()
 	sign.text = "FORT KNOX ASSAY — WEIGH IT. STAKE IT. 100-DAY MINERS ONLY."
-	sign.position = Vector2(1980.0, SURFACE_Y - 250.0)
-	sign.add_theme_font_size_override("font_size", 15)
-	sign.modulate = Color(1.0, 0.85, 0.4, 1.0)
+	sign.position = Vector2(1960.0, SURFACE_Y - 300.0)
+	style_label(sign, 26)
 	add_child(sign)
 
 	# Climb up to the mezzanine: three stepped platforms (jump-legal — each rise
@@ -534,29 +629,18 @@ func _setup_fort_knox_depth() -> void:
 	add_child(scale)
 	var scs := CollisionShape2D.new()
 	var srect := RectangleShape2D.new()
-	srect.size = Vector2(120.0, 100.0)
+	srect.size = Vector2(150.0, 140.0)
 	scs.shape = srect
+	scs.position = Vector2(0, -30)
 	scale.add_child(scs)
-	# A balance-scale silhouette from primitives (Grok's "Assay Scale & Claim
-	# Wheel"): a post, a beam, two pans.
-	var post := Polygon2D.new()
-	post.polygon = PackedVector2Array([Vector2(-4,0), Vector2(4,0), Vector2(4,40), Vector2(-4,40)])
-	post.color = Color(0.5, 0.4, 0.2, 1.0)
-	scale.add_child(post)
-	var beam := Polygon2D.new()
-	beam.polygon = PackedVector2Array([Vector2(-44,-2), Vector2(44,-2), Vector2(44,4), Vector2(-44,4)])
-	beam.color = Color(0.85, 0.7, 0.35, 1.0)
-	scale.add_child(beam)
-	for sx: float in [-44.0, 44.0]:
-		var pan := Polygon2D.new()
-		pan.polygon = PackedVector2Array([Vector2(sx-14,10), Vector2(sx+14,10), Vector2(sx+9,22), Vector2(sx-9,22)])
-		pan.color = Color(1.0, 0.82, 0.3, 1.0)
-		scale.add_child(pan)
+	# The founder's Gold Scale instrument (T6): art + readable STAKED/RETURN
+	# values + a tilting needle. Built by the shared helper below so the Diamond
+	# Vault and Fort Knox show the SAME understandable instrument.
+	_build_gold_scale(scale, false)
 	var tag := Label.new()
 	tag.text = "ASSAY SCALE\n[E] WEIGH GOLD"
-	tag.position = Vector2(-56.0, -78.0)
-	tag.add_theme_font_size_override("font_size", 13)
-	tag.modulate = Color(1.0, 0.88, 0.5, 1.0)
+	tag.position = Vector2(-90.0, -150.0)
+	style_label(tag, 26)
 	scale.add_child(tag)
 	scale.body_entered.connect(func(b: Node2D) -> void:
 		if b.is_in_group("player"):
@@ -564,6 +648,55 @@ func _setup_fort_knox_depth() -> void:
 	scale.body_exited.connect(func(b: Node2D) -> void:
 		if b.is_in_group("player") and _at_altar == "assay":
 			_at_altar = "")
+
+## The founder Gold Scale instrument, shared by both realms (T6). Draws the
+## founder art, labels the two pans STAKED / RETURN (Grok s7), and a needle that
+## tilts toward whichever side is heavier — so "what is this and what's it
+## telling me" reads at a glance. `diamonds` picks which balances it reads.
+func _build_gold_scale(parent: Node2D, diamonds: bool) -> void:
+	var art := "res://src/assets/art/vaults/gold_scale.png"
+	if ResourceLoader.exists(art):
+		var spr := Sprite2D.new()
+		var tex: Texture2D = load(art)
+		spr.texture = tex
+		var target_h := 150.0
+		var s: float = target_h / float(tex.get_height())
+		spr.scale = Vector2(s, s)
+		spr.position = Vector2(0, -40)
+		parent.add_child(spr)
+	# STAKED (left) and RETURN (right) — large + outlined so a player instantly
+	# knows what each pan means.
+	var left := Label.new()
+	left.text = "STAKED"
+	left.position = Vector2(-120, -120)
+	style_label(left, 24)
+	parent.add_child(left)
+	var right := Label.new()
+	right.text = "RETURN"
+	right.position = Vector2(60, -120)
+	style_label(right, 24)
+	parent.add_child(right)
+	# A needle that tilts toward the heavier side (staked vs return value).
+	var needle := Polygon2D.new()
+	needle.polygon = PackedVector2Array([Vector2(-3, 0), Vector2(3, 0), Vector2(0, -34)])
+	needle.color = Color(1, 0.2, 0.1, 1.0)
+	needle.position = Vector2(0, -40)
+	parent.add_child(needle)
+	# Update the tilt live from the real balances.
+	var updater := func() -> void:
+		if not is_instance_valid(needle):
+			return
+		var staked: float = float(GoldMineSystem.diamond_shares if diamonds else GoldMineSystem.fort_knox_shares)
+		var ret: float = float(GoldMineSystem.diamonds_balance if diamonds else GoldMineSystem.gold_balance)
+		var total: float = maxf(1.0, staked + ret)
+		# -0.5..+0.5 rad: leans left when more is staked, right when more is held.
+		needle.rotation = clampf((ret - staked) / total, -1.0, 1.0) * 0.5
+	updater.call()
+	if diamonds:
+		GoldMineSystem.diamond_shares_changed.connect(func(_s: int) -> void: updater.call())
+		GoldMineSystem.diamonds_changed.connect(func(_s: int) -> void: updater.call())
+	else:
+		GoldMineSystem.gold_changed.connect(func(_s: int) -> void: updater.call())
 
 ## A one-way-safe solid platform used by the Assay Hall climb.
 func _build_platform(centre: Vector2, size: Vector2) -> void:
@@ -628,9 +761,8 @@ func _setup_return_portal() -> void:
 	add_child(portal)
 	var tag := Label.new()
 	tag.text = "EXIT ->"
-	tag.position = Vector2(BOUNDS - 210.0, SURFACE_Y - 150.0)
-	tag.add_theme_font_size_override("font_size", 14)
-	tag.modulate = Color(0.8, 1.0, 1.0, 1.0) if _diamonds else Color(1.0, 0.85, 0.4, 1.0)
+	tag.position = Vector2(BOUNDS - 230.0, SURFACE_Y - 170.0)
+	style_label(tag, 28)
 	add_child(tag)
 
 # --- HUD / title ------------------------------------------------------------
@@ -640,9 +772,8 @@ func _setup_hud() -> void:
 	layer.layer = 20
 	add_child(layer)
 	_readout = Label.new()
-	_readout.add_theme_font_size_override("font_size", 20)
 	_readout.position = Vector2(24, 24)
-	_readout.modulate = Color(0.8, 1.0, 1.0, 1.0) if _diamonds else Color(1.0, 0.88, 0.5, 1.0)
+	style_label(_readout, 30)
 	layer.add_child(_readout)
 	_refresh_readout()
 	if _diamonds:
@@ -668,10 +799,9 @@ func _setup_title_card() -> void:
 	add_child(layer)
 	var title := Label.new()
 	title.text = "— THE DIAMOND VAULT —" if _diamonds else "— FORT KNOX —"
-	title.add_theme_font_size_override("font_size", 44)
+	style_label(title, 52)
 	title.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	title.position = Vector2(-260, 80)
-	title.modulate = Color(0.7, 1.0, 1.0, 1.0) if _diamonds else Color(1.0, 0.85, 0.4, 1.0)
+	title.position = Vector2(-300, 80)
 	layer.add_child(title)
 	var tw := title.create_tween()
 	tw.tween_interval(2.2)

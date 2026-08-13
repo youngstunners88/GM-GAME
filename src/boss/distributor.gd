@@ -279,7 +279,17 @@ func _physics_process(delta: float) -> void:
 
 ## Free 2D hover pursuit — the "levitate in any direction" the founder asked
 ## for, and the reason he can no longer fall anywhere.
-const HOVER_ACCEL: float = 430.0
+##
+## RAISED 430 -> 1600 (Kimi K3, session 7). The founder reported "still not
+## chasing" across MANY sessions even as MIN_PURSUE_SPEED was raised three times
+## — because every chase gate drove a STRAIGHT-LINE player, and the real problem
+## is only visible against a WEAVING one: at accel 430, a full horizontal
+## reversal (±345 px/s) took 690/430 ≈ 1.6s of near-zero net horizontal velocity,
+## while a real player reverses in ~0.1s. The boss just oscillated overhead,
+## average horizontal closing ≈ 0 — exactly "hovers but doesn't chase". At 1600
+## a reversal is ~0.43s and 0->345 is ~0.22s, so he actually tracks a juking
+## player. Speed floors were never the missing piece; the acceleration was.
+const HOVER_ACCEL: float = 1600.0
 ## Player top speed is walk_speed 200 * SPRINT_MULTIPLIER 1.2 = 240 px/s.
 ##
 ## Founder: "the boss is not chasing Lil Blunt which makes it too easy."
@@ -697,6 +707,13 @@ func _throw_shards() -> void:
 		var orb := ORB.instantiate()
 		orb.direction = base.rotated(spread)
 		orb.speed = 170.0 + 40.0 * (current_phase - 1)
+		# LONG RANGE (founder session 7: "the diamond bomb and shards don't reach
+		# Lil Blunt when he's far away"). At 170-250 px/s the default 4s lifetime
+		# only carried them 680-1000px — short of the ~1226px diagonal across the
+		# arena to a player hovering below. Extend the lifetime (Kimi K3 s7) rather
+		# than the speed, so range grows to 1360-2000px WITHOUT shrinking the
+		# Forced-Distribution redirect window that raising speed would gut.
+		orb.lifetime = 8.0
 		orb.homing = 0.6 if current_phase >= 2 else 0.0
 		# DIAMONDS, NOT CIRCLES. Founder (session 6): "the 2nd boss still fires
 		# circles" — the redirectable volley was a recolored fx_dot (a blue disc),
@@ -761,6 +778,10 @@ func _throw_crystal_shards() -> void:
 		# Faster and non-homing: a straight-line barrage, not a tracking one —
 		# the counter-play is footwork, not waiting out a redirect window.
 		shard.speed = 260.0 + 50.0 * (current_phase - 1)
+		# Same long-range fix as the ETH-diamond volley (Kimi K3 s7): 260-360 px/s
+		# over the default 4s only reached 1040-1440px; 5s clears the ~1226px
+		# diagonal at every phase so the shards actually connect across the arena.
+		shard.lifetime = 5.0
 		shard.homing = 0.0
 		# VISUALLY DISTINCT CRYSTAL SHARD, not a recolored dot. Founder
 		# (session 4): "not firing the diamonds nor the shards which makes his

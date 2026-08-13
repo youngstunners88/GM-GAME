@@ -86,10 +86,10 @@ func _test_clerk_flow_moves_real_balances() -> void:
 		"no VaultClerk node — the founder's 'speak to a character' is missing")
 
 	var shares_before: int = GoldMineSystem.diamond_shares
-	# Drive the clerk state machine directly (UI-independent, headless-safe).
-	realm.call("clerk_open")                 # step -> stake, stake_amt clamped to 100
-	realm.call("clerk_confirm_step")         # apply stake, step -> crush, crush_amt clamped to 10
-	realm.call("clerk_confirm_step")         # apply crush (done)
+	# Drive the clerk directly (UI-independent, headless-safe). Session 7: the
+	# panel now shows BOTH rows and a single CONFIRM applies stake + crush.
+	realm.call("clerk_open")                 # stake_amt -> 100, crush_amt -> 10 (clamped)
+	realm.call("clerk_confirm")              # applies stake(100) + crush(10)
 	var yield_each: int = GoldMineSystem.BLAZE_DIAMOND_CRUSH_YIELD
 
 	_check("clerk stake consumed the staked $DIAMONDS and minted shares",

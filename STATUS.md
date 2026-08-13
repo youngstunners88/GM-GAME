@@ -3,6 +3,77 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv`
 
+**LIVE — source commit `49469bd` — export commit `31f7795` — deployed to itch —
+2026-08-13.** CI run `31706640292` green end to end: gitleaks, Security
+Sentinel, secure-build-checklist, web export (non-threaded), and **`Deploy to
+itch.io via butler`: success**. Readable vault UI (big outlined text), Mira Voss
++ Gold Scale founder art wired and proven to render, a big-button clerk you can
+actually use, Stage 2 diamonds/shards now travel the whole arena + a new chase
+root cause fixed, Lil Blunt scaled up 1.25×, and the distracting Gold Rush coin
+shrunk. 15+ gates green + Security Sentinel 18/18.
+
+> **HARD-REFRESH REQUIRED before testing** (Ctrl/Cmd-Shift-R or a private
+> window). In the Diamond Vault, walk up to **Mira Voss** and press **E** — the
+> panel now has big +/- and CONFIRM buttons to stake $DIAMONDS and crush Blaze
+> Diamonds. Fight the Stage 2 boss from across the arena — the diamonds reach
+> you now.
+
+## SESSION 7 — readable UI, Mira Voss + Gold Scale art, long-range S2 + new chase fix, bigger Blunt
+
+Founder live complaints: vault text "way too small" with no outline (a repeated
+ship-blocker); "I don't seem to have the options to utilise the diamond tokens";
+the S2 boss's "diamond bomb and shards don't reach Lil Blunt when he's far" and
+he's "STILL not chasing" ("how many eternities…"); Lil Blunt "too miniature";
+one big background element "distracting"; the scale instrument "not clear."
+MAXIMUM multi-model dispatched first — Fable-5, Grok 4.5, Kimi K3, DeepSeek,
+**Qwen3-VL-235B** (vision on the screenshots), and **B.AI** — logs in
+`docs/model-responses/2026-08-13-s7-*.md`.
+
+| Your item | Status |
+|---|---|
+| Vault text too small, no outline | **FIXED** — one `style_label` helper makes every vault label ≥24px (mobile-min) with a black outline; a new gate fails if any label ships under-sized or un-outlined |
+| Can't see/use collected diamond tokens | **FIXED** — the clerk is now a big-button panel (Mira Voss portrait + holdings + STAKE −/+ + CRUSH −/+ + a large CONFIRM); options are obvious buttons, not tiny icons |
+| S2 diamond bomb/shards don't reach when far | **FIXED** — projectile lifetime extended so a phase-1 shot now travels ~1360px (was 680px, short of the arena); proven crossing 1300px in-gate |
+| S2 boss still not chasing | **ROOT-CAUSED (new)** — not the speed (raised 3× before); `HOVER_ACCEL` was 430, so a full reversal took ~1.6s of near-zero horizontal velocity and he oscillated overhead. Raised to 1600; in-gate his pursuit velocity goes 69→227 px/s. See honest live note below. |
+| Lil Blunt too miniature | **FIXED** — visual scaled 1.25× with feet still anchored to the floor and the 32px collision unchanged (proven in-gate) |
+| Distracting background element | **FIXED** — the oversized Bitcoin "sun" coin in the Gold Rush backdrop shrunk to ~57% |
+| Scale instrument unclear | **FIXED** — the founder Gold Scale art now IS the instrument in both the Diamond Vault and Fort Knox, with big outlined STAKED / RETURN labels and a needle that tilts toward the heavier side |
+
+### Founder art wired (and proven to actually render)
+
+Both pieces the founder sent were extracted from the attachment, verified as
+clean transparent cut-outs, saved at stable paths
+(`src/assets/art/vaults/mira_voss.png`, `gold_scale.png`), and — the part that
+matters after past "wired but not visible" rejections — proven to render by
+reading back the live nodes' `texture.resource_path`: Mira renders as the vault
+clerk, the Gold Scale renders in both realms.
+
+### The one honest limit — S2 "chasing"
+
+The projectile-range half of the S2 complaint is concretely fixed and proven
+(661px → 1302px in-gate). The *chase* half has a real, newly-found cause
+(`HOVER_ACCEL`) and the fix measurably improves his pursuit velocity in a
+real-physics gate — but this fight has passed headless chase gates before while
+the founder still saw "not chasing" live. So this is **not** claimed as
+definitely-fixed live: if it still reads as not-chasing after a hard refresh,
+the next step is a real browser capture of the fight, not another headless
+tuning pass.
+
+### Multi-model log (Session 7)
+
+- `2026-08-13-s7-fable-implementer.md` — readability helper, big-button layout, scale math
+- `2026-08-13-s7-grok-ui-copy.md` — UI hierarchy, Mira dialogue, STAKED/RETURN scale labels
+- `2026-08-13-s7-kimi-range-gates.md` — the range math AND the `HOVER_ACCEL` chase root cause + the readability gate proxy
+- `2026-08-13-s7-qwen-vision.md` — **Qwen3-VL-235B** read the founder screenshots and confirmed the unreadable-text / unclear-scale failures
+- `2026-08-13-s7-deepseek-compliance.md` — flagged the player-scale foot-anchor regression risk (covered by a gate)
+- `2026-08-13-s7-bai-draft.md` — **B.AI** (`kimi-k2.5` lane) drafted the big-button flow
+
+B.AI note: reachable and authenticating via `B_AI_API_KEY`; premium models still
+need a deposit, so the usable lane stays `kimi-k2.5`. Dispatched via
+`scripts/bai-call.mjs`, never by overriding this session's model routing.
+
+<details><summary>Session 6 live-build details (source cbc6847 / export b5f0af5)</summary>
+
 **LIVE — source commit `cbc6847` — export commit `b5f0af5` — deployed to itch —
 2026-08-13.** CI run `31665282968` green end to end: gitleaks, Security
 Sentinel, secure-build-checklist, web export (non-threaded), and **`Deploy to
@@ -10,6 +81,8 @@ itch.io via butler`: success**. Diamond Vault real utility (clerk + stake/crush)
 Stage 2 boss fires diamonds/shards only (no circles), Stage 3 boss chases
 horizontally instead of pogoing, Fort Knox gains a second chamber, and B.AI is
 wired as an extra multi-model lane. 15 gates green + Security Sentinel 18/18.
+
+</details>
 
 > **HARD-REFRESH REQUIRED before testing** (Ctrl/Cmd-Shift-R or a private
 > window). Enter the Diamond Vault on Stage 2 and talk to the clerk (walk up,
