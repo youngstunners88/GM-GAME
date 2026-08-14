@@ -3,8 +3,10 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv`
 
-**SESSION 8 — pushed to `claude/setup-game-dev-environment-itWJv`, CI/deploy in
-flight — 2026-08-14.** Mira now stands on the floor, faces you, speaks (VO),
+**LIVE — source commit `f28020e` — export commit `67f7615` — deployed to itch —
+2026-08-14.** CI run `31758833146` green end to end (gitleaks, Security
+Sentinel, secure-build-checklist, non-threaded web export, **butler deploy:
+success**). Mira now stands on the floor, faces you, speaks (VO),
 says goodbye, and her dialogue is STEPPED (one line per E, no instant dump);
 Gideon "Goldwater" Vale added to Fort Knox with cowboy VO; founder emblems +
 Gideon art wired and proven to render; the big Bitcoin sun restored; the 2888
