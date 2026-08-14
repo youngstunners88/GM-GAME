@@ -3,12 +3,12 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv`
 
-**SESSION 9 — pushed to `claude/setup-game-dev-environment-itWJv`, CI/deploy in
-flight — 2026-08-14.** S2 lock hysteresis shipped (proven at engine level),
-Mira + Gideon voices regenerated on the working ElevenLabs key, and a real
-browser capture attempted. Gates green + Security 18/18. **Honest headline: the
-S2 chase is NOT claimed fixed — see below.** Live build id lands once CI's
-butler deploy is green.
+**LIVE — source commit `fc1a82e` — export commit `2b9243b` — deployed to itch —
+2026-08-14.** CI run `31775440975` green end to end (**butler deploy: success**).
+S2 lock hysteresis shipped (proven at engine level), Mira + Gideon voices
+regenerated on the working ElevenLabs key, and a real browser capture attempted.
+Gates green + Security 18/18. **Honest headline: the S2 chase is NOT claimed
+fixed — see below.**
 
 ## SESSION 9 — S2 lock hysteresis, regenerated voices, honest browser capture
 
