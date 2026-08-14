@@ -10,6 +10,13 @@ var _wallet_btn: Button
 
 func _ready() -> void:
     StateMachine.change_state(StateMachine.State.MENU)
+    # S10 T6/T7 — TEST-ONLY boss warp entry. If the web page is loaded with
+    # ?boss=N (N=2 or 3), route straight to that level so its in-level warp
+    # (LevelBase._maybe_debug_boss_warp) can drop the player into the boss arena
+    # for a Playwright capture — a blind driver cannot beat Level 1's boss, which
+    # blocked every prior Distributor capture. No ?boss param => normal menu.
+    if _boot_boss_warp():
+        return
     play_btn.pressed.connect(_on_play)
     continue_btn.pressed.connect(_on_continue)
     title.text = "LIL BLUNT\nTHE SMOKE REALM"
@@ -28,6 +35,25 @@ func _ready() -> void:
     var tween := create_tween().set_loops()
     tween.tween_property(title, "scale", Vector2(1.05, 1.05), 0.8)
     tween.tween_property(title, "scale", Vector2(1.0, 1.0), 0.8)
+
+## TEST-ONLY (S10 T6/T7). Reads ?boss=N on web; if N is a valid boss level
+## (2 or 3), routes straight there and returns true so _ready stops setting up
+## the menu. Returns false (no-op) on a normal load or any non-web build.
+func _boot_boss_warp() -> bool:
+    if not OS.has_feature("web"):
+        return false
+    var q: Variant = JavaScriptBridge.eval(
+        "new URLSearchParams(window.location.search).get('boss') || ''", true)
+    var s := str(q)
+    if not s.is_valid_int():
+        return false
+    var n := int(s)
+    if n < 2 or n > 3:
+        return false
+    # Mark the target unlocked so a fresh save can't bounce the load, then route.
+    GameManager.highest_unlocked_level = maxi(GameManager.highest_unlocked_level, n)
+    SceneRouter.load_scene(GameManager.level_scene(n), SceneRouter.Transition.FADE)
+    return true
 
 ## Movie/Video-Game-Layer entry points on the hub (main menu): the Oracle,
 ## the on-chain leaderboard, community lore, and the community funnel. Each

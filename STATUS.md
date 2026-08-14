@@ -1,14 +1,53 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/setup-game-dev-environment-itWJv`
+**Branch:** `claude/session10-dual-subscription-l8ekui`
 
-**LIVE — source commit `fc1a82e` — export commit `2b9243b` — deployed to itch —
-2026-08-14.** CI run `31775440975` green end to end (**butler deploy: success**).
-S2 lock hysteresis shipped (proven at engine level), Mira + Gideon voices
-regenerated on the working ElevenLabs key, and a real browser capture attempted.
-Gates green + Security 18/18. **Honest headline: the S2 chase is NOT claimed
-fixed — see below.**
+**SESSION 10 pushed to the working branch — CI export + butler deploy will land
+the live build id (same pattern as S8/S9). HARD-REFRESH itch before testing.**
+Vault Security Sentinels replace the oversized emblems + "useless triangle"; the
+gold machine is gone from the Diamond Vault; Gideon's E-dialogue no longer dead-
+locks; the final-boss "frozen statue" is FIXED (regression-gated + captured); and
+— for the first time ever — the S2 AND S3 boss fights were reached in a REAL
+browser capture via a new test-only `?boss=N` warp. Gates green + Security 18/18.
+
+## SESSION 10 — sentinels, no gold machine, E-dialogue, final-boss statue fix, boss-warp capture
+
+New Claude subscription (dual-subscription handoff; active implementer until
+Sunday). Full detail: `docs/session-logs/2026-08-14-s10.md`. Captures:
+`docs/captures/2026-08-14-s10/`.
+
+**Multi-model — honest:** the mandated OpenRouter deck (Grok/Kimi/Qwen/DeepSeek/
+B.AI) is **blocked by this session's egress policy** (`openrouter.ai:443` →
+hard 403, confirmed via the agent-proxy status). Per proxy policy a 403 is
+reported, not routed around. To not solo, the boss-chase audit lane ran via an
+in-harness **Claude specialist agent** (independent read-only GDScript audit) —
+a real second set of eyes, flagged as the substitute it is.
+
+| Founder item | Status |
+|---|---|
+| **T1 — no gold machine in Diamond Vault** | ✅ **DONE** — the gold "Diamond Scale" instrument is removed from the cyan vault (Gold Scale stays in Fort Knox where it's on-theme). Gated. |
+| **T1 — Diamond Vault Security Sentinel (smaller)** | ✅ **DONE** — one floor-standing `diamond_sentinel.png` guardian at **172px** (was a faint 300px background emblem), patrols the pool crossing and deals contact damage; the abstract "triangle" hazard is gone. Gated (renders + < 300px + no gold-scale). |
+| **T2 — Fort Knox Security Sentinel (smaller)** | ✅ **DONE** — same treatment, `fortknox_sentinel.png` at 172px. Gated. |
+| **T3 — E again does nothing** | ✅ **DONE** — a second E on Gideon's last line now CLOSES the dialogue instead of silently re-showing the last line; stepped pacing preserved. Gated. |
+| **T4 — walk block** | ⚠️ **NEEDS FOUNDER SCREENSHOT** — a proactive geometry scan found no blocker on the main campaign/vault walking paths; the exact circled spot wasn't attached this session, so I will NOT claim it fixed. Send the screenshot and I'll pinpoint + fix. |
+| **T5 — layout/camera readability** | ⚠️ **PARTIAL** — vault set-pieces moved to floor level with readable name plates (helps), but the specific circled element needs the founder screenshot. |
+| **T6 — S2 boss chase** | 🟡 **CAPTURED, NOT claimed fixed** — `?boss=2` warp + real browser capture (a first). The Distributor **tracks the player horizontally and runs Hoard Gravity — it is NOT idle/frozen** — but holds its overhead ride height by design (flying boss; body contact = instant restart). S9 hysteresis + this session's 0.5 in-lock horizontal bump improve tracking. Whether "tracks overhead" reads as "chasing" is a **design call needing your eyes** — see `docs/captures/2026-08-14-s10/` (s2-*). |
+| **T7 — final boss frozen statue** | ✅ **FIXED (regression-gated + captured)** — root cause: after BODY grew to 280, the ledge probe read the arena's own boundary WALL as a "ledge" and zeroed his speed every frame at any wall (constant in the tight arena). Boundary guard added. Capture shows him **advancing on the player, throwing dynamite, and killing the driver**; `tests/s10_final_boss_wall_freeze_test.gd` FAILS on pre-fix, PASSES on the fix. |
+| **Non-threaded export trap** | ✅ **FIXED** — `export-web.sh` (and the committed `export_presets.cfg`) carried stale Godot-3.x `web/use_threads` keys; pinned to `variant/thread_support=false` matching CI, stale `index.worker.js` artifact removed. Web export stays non-threaded (SEC/DEP-001 green). |
+
+**Gates (real Godot 4.3 headless):** script_compile ALL PASS (149/113); s8+S10
+vault gates ALL PASS; s10_final_boss_wall_freeze ALL PASS (fails on pre-fix,
+verified); stage3_defence, distributor_behaviour, distributor_phase2_real_arena
+_chase, boss_arena_reachable, save_compat ALL PASS; Security Sentinel **18/18**.
+
+---
+
+**Session 9 headline (superseded by S10 above):** LIVE — source commit
+`fc1a82e` — export commit `2b9243b` — deployed to itch — 2026-08-14. CI run
+`31775440975` green end to end (**butler deploy: success**). S2 lock hysteresis
+shipped (proven at engine level), Mira + Gideon voices regenerated on the working
+ElevenLabs key, and a real browser capture attempted. Gates green + Security 18/18.
 
 ## SESSION 9 — S2 lock hysteresis, regenerated voices, honest browser capture
 

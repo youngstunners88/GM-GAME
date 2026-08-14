@@ -107,28 +107,58 @@ func _test_gideon_and_golden_platforms() -> void:
 	await get_tree().process_frame
 	var g_open: bool = realm.get("_gideon_open")
 	_check("Gideon dialogue opens (stepped)", g_open)
+	# S10 T3 — a SECOND E on the last line must CLOSE (no dead input). Step past
+	# the last line, then one more step should dismiss the dialogue.
+	for _i in range(8):
+		realm.call("gideon_step")
+	await get_tree().process_frame
+	var g_open_after: bool = realm.get("_gideon_open")
+	_check("Gideon's terminal E closes the dialogue (no dead input)",
+		not g_open_after, "dialogue still open after stepping past the last line")
 	var golden := get_tree().get_nodes_in_group("golden_platform")
 	_check("Fort Knox has golden highlighted platforms", golden.size() >= 1,
 		"%d golden platforms" % golden.size())
 	realm.queue_free()
 	await get_tree().process_frame
 
-## T4 — founder emblems render in both realms; primary pool plate distinct.
+## S10 T1/T2 — each realm shows a Security Sentinel that (a) renders, (b) is
+## SMALLER than the old oversized 300px emblem, and (c) the Diamond Vault shows
+## NO gold-scale "golden machine". Plus the primary-pool plate stays distinct.
 func _test_emblems_render_and_primary_pool() -> void:
 	for scene in [DIAMOND_VAULT, FORT_KNOX]:
 		var realm: Node = scene.instantiate()
 		add_child(realm)
 		await get_tree().process_frame
-		var emblems := get_tree().get_nodes_in_group("vault_emblem")
+		var diamonds: bool = realm.get("_diamonds")
+		var realm_name := "Diamond Vault" if diamonds else "Fort Knox"
+		var sentinel_h: float = realm.get("SENTINEL_H")
+		# The Security Sentinel node (vault_sentinel group) renders the founder art.
+		var sentinels := get_tree().get_nodes_in_group("vault_sentinel")
 		var rendered := false
-		for e in emblems:
+		var rendered_h := 0.0
+		for e in sentinels:
 			var sprs: Array = []
 			_collect(e, "Sprite2D", sprs)
 			for s in sprs:
 				if s.texture != null and s.texture.resource_path.findn("sentinel") != -1:
 					rendered = true
-		_check("%s shows a founder emblem centerpiece that renders" % ("Diamond Vault" if realm.get("_diamonds") else "Fort Knox"),
-			rendered, "no sentinel-textured emblem sprite found")
+					rendered_h = float(s.texture.get_height()) * s.scale.y
+		_check("%s shows a Security Sentinel that renders (founder art)" % realm_name,
+			rendered, "no sentinel-textured sprite found")
+		# Smaller than the oversized 300px emblem it replaced, still clearly visible.
+		_check("%s Security Sentinel is smaller than the old oversized 300px prop" % realm_name,
+			rendered and rendered_h < 300.0 and rendered_h >= 80.0,
+			"rendered height %.0fpx (SENTINEL_H=%.0f) not in [80,300)" % [rendered_h, sentinel_h])
+		# S10 T1 — no gold-machine (gold_scale) texture in the DIAMOND vault.
+		if diamonds:
+			var all_sprs: Array = []
+			_collect(realm, "Sprite2D", all_sprs)
+			var has_gold_machine := false
+			for s in all_sprs:
+				if s.texture != null and s.texture.resource_path.findn("gold_scale") != -1:
+					has_gold_machine = true
+			_check("Diamond Vault has NO gold-scale machine (removed per founder)",
+				not has_gold_machine, "a gold_scale sprite is still present in the Diamond Vault")
 		# The primary (2888-day) pool plate is larger + star-marked.
 		var labels: Array = []
 		_collect(realm, "Label", labels)
@@ -136,8 +166,8 @@ func _test_emblems_render_and_primary_pool() -> void:
 		for l in labels:
 			if l.text.findn("PRIMARY") != -1 and l.get_theme_font_size("font_size") >= 30:
 				primary_plate = true
-		_check("%s primary 2888-day pool plate is distinct + larger" % ("Diamond Vault" if realm.get("_diamonds") else "Fort Knox"),
+		_check("%s primary 2888-day pool plate is distinct + larger" % realm_name,
 			primary_plate, "no large PRIMARY pool plate")
 		realm.queue_free()
-		get_tree().call_group("vault_emblem", "queue_free")
+		get_tree().call_group("vault_sentinel", "queue_free")
 		await get_tree().process_frame
