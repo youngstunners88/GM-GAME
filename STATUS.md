@@ -3,6 +3,47 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv`
 
+**SESSION 9 — pushed to `claude/setup-game-dev-environment-itWJv`, CI/deploy in
+flight — 2026-08-14.** S2 lock hysteresis shipped (proven at engine level),
+Mira + Gideon voices regenerated on the working ElevenLabs key, and a real
+browser capture attempted. Gates green + Security 18/18. **Honest headline: the
+S2 chase is NOT claimed fixed — see below.** Live build id lands once CI's
+butler deploy is green.
+
+## SESSION 9 — S2 lock hysteresis, regenerated voices, honest browser capture
+
+Full multi-model deck dispatched first (Fable-5, Grok 4.5, Kimi K3, DeepSeek,
+Qwen3-max, B.AI) — logs in `docs/model-responses/2026-08-14-s9-*.md`.
+
+| Item | Status |
+|---|---|
+| **Voices — regenerate Mira + Gideon (cowboy)** | ✅ **DONE** on the working key — Mira = Jessica (warm/bright), Gideon = Bill (wise, mature, old-American, closest to a frontier voice). **`ELEVENLABS_2` is STILL a key ID, not an `sk_` secret** (proven with a live API call → `invalid_api_key`). Paste the actual `sk_...` value to move VO to that workspace / a bespoke western voice. |
+| **S2 lock hysteresis** | ✅ **DONE + gated** — the climb lock no longer re-arms on every hop (0.9s cooldown; genuine-imminent-sweep bypass) and creeps at 25% instead of hard-stalling. `s9_lock_hysteresis_test` fails on pre-fix (vx=0 stall, instant re-lock), passes post-fix. |
+| **S2 real browser capture** | ⚠️ **ATTEMPTED — no chase evidence obtained (honest)** — see below. |
+| **S3 final boss chase** | Gated by the weave+hop kite gate (0 pogo hops); held from blind changes pending a live capture, same as S2. |
+
+### The browser capture — what actually happened (no spin)
+
+I exported the game non-threaded locally, served it, and drove the Distributor
+fight with Playwright (`scripts/playtest-distributor.mjs`, 150s, real chromium).
+**The engine booted clean with zero console errors — but the blind traversal
+driver could not reach the Stage-2 Distributor.** It holds Right + jumps +
+attacks on a cadence, which cannot beat Level 1's boss (that needs real combat),
+so the run died on Level 1 and reset to the main menu. Evidence + frames:
+`docs/captures/2026-08-14-s9/` (03-* shows the menu reset, never reaching
+Crystal Caverns). **So this capture proves boot health but says nothing about
+the S2 chase either way — therefore the chase is NOT claimed fixed.**
+
+What IS real: the lock-hysteresis fix is a genuine engine-level improvement to
+the exact mechanism Kimi identified (the climb lock perma-arming on hops),
+proven to change behaviour by a gate that fails on the old code. What's still
+missing is live proof. The honest next step is a **debug boss-warp hook** (the
+game has no teleport hook today, which is why a blind driver can't reach the
+boss) so a Playwright capture can actually record the Distributor fight — OR a
+founder playtest. Flagged for the next session.
+
+<details><summary>Session 8 live-build details (source f28020e / export 67f7615)</summary>
+
 **LIVE — source commit `f28020e` — export commit `67f7615` — deployed to itch —
 2026-08-14.** CI run `31758833146` green end to end (gitleaks, Security
 Sentinel, secure-build-checklist, non-threaded web export, **butler deploy:
@@ -88,6 +129,8 @@ dialogue ends; Gideon + golden platforms exist; both emblems render; the primary
 pool plate is distinct. Plus the full regression battery (S6/S7 vault gates,
 founder-critical-probe 103, save-compat, boss-visibility) and Security Sentinel
 18/18.
+
+</details>
 
 <details><summary>Session 7 live-build details (source 49469bd / export 31f7795)</summary>
 
