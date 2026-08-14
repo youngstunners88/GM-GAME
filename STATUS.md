@@ -3,6 +3,94 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/setup-game-dev-environment-itWJv`
 
+**LIVE — source commit `f28020e` — export commit `67f7615` — deployed to itch —
+2026-08-14.** CI run `31758833146` green end to end (gitleaks, Security
+Sentinel, secure-build-checklist, non-threaded web export, **butler deploy:
+success**). Mira now stands on the floor, faces you, speaks (VO),
+says goodbye, and her dialogue is STEPPED (one line per E, no instant dump);
+Gideon "Goldwater" Vale added to Fort Knox with cowboy VO; founder emblems +
+Gideon art wired and proven to render; the big Bitcoin sun restored; the 2888
+primary pool made larger/distinct; Fort Knox platforms golden. Full model deck
+(Fable, Grok, Kimi, DeepSeek, Qwen3-VL, B.AI). Gates green + Security 18/18. Live
+build id lands once CI's butler deploy is green.
+
+> **HARD-REFRESH REQUIRED before testing.** Talk to Mira (walk up, **E**) — she
+> greets you out loud, steps through her lines, and waves you off. Meet **Gideon
+> Vale** on the Fort Knox floor. **Honest heads-up:** the Stage-2/Stage-3 boss
+> CHASE was NOT changed this session — see the honest note below.
+
+## SESSION 8 — Mira voice + behavior, Gideon Vale, founder emblems, sun restore, stepped dialogue
+
+Founder live after S7: Mira needs voice/facing/farewell + standing at the right
+level; dialogue too fast; wire Gideon; restore the bigger Bitcoin sun; pools
+distinct; golden Fort Knox platforms; and the S2/S3 boss chase is STILL wrong.
+Full multi-model deck dispatched first (logs in
+`docs/model-responses/2026-08-14-s8-*.md`): Fable-5 (implementation), Grok 4.5
+(dialogue copy + layout), Kimi K3 (chase — see honest note), DeepSeek
+(compliance), **Qwen3-VL-235B** (vision on the founder art for placement/scale),
+B.AI (stepped-dialogue draft).
+
+| Your item | Status |
+|---|---|
+| Mira: voice, same floor level, faces you, farewell, slow dialogue | **DONE** — she's floor-anchored, flips to face you, greets/farewells with real ElevenLabs VO, and her intro is stepped (one line per E; the STAKE/CRUSH/CONFIRM buttons only appear after you've read it) |
+| Gideon "Goldwater" Vale in Fort Knox | **DONE** — founder art wired as a floor NPC on the entrance floor, stepped dialogue in a thick cowboy accent + VO |
+| Restore the previous (bigger) Bitcoin sun | **DONE** — reverted the S7 shrink; the full sun is back |
+| Founder emblem / threat art | **DONE** — the Diamond Vault "sentinel" and Fort Knox "sentinel" emblems are wired as centerpieces (proven to render) |
+| 288 / 2888 pools distinct + labels clear | **DONE** — the 2888 primary pool is larger, gold-tinted, haloed, and star-labelled "PRIMARY" |
+| Golden highlighted Fort Knox platforms | **DONE** — the Assay Hall climb platforms are gold with a pulsing glow |
+| **S2 boss horizontal chase** | **Kimi-identified cause + a marginal mitigation shipped — NOT claimed fixed (honest note below)** |
+| **Final boss (S3) chase** | **HELD — Kimi focused on S2; S3 needs a live capture, not another blind tweak** |
+
+### Voices — delivered, with an honest key note
+
+Mira and Gideon now have real ElevenLabs voices (greet + farewell each), wired to
+play when they speak. **Important:** the `ELEVENLABS_2` value in the environment
+is an API key **ID** (64 hex chars), NOT a usable secret — ElevenLabs requires a
+key that starts with `sk_`, and `ELEVENLABS_2` returns `invalid_api_key`. So the
+voices were generated on the working `ELEVENLABS_API_KEY` workspace with premade
+voices (warm female for Mira, gravelly male for Gideon) so they ship THIS
+session rather than being blocked. To put them on the intended `ELEVENLABS_2`
+workspace / a bespoke western voice, please paste the actual `sk_...` secret for
+that workspace and I'll regenerate. No key value was ever printed or committed.
+
+### The honest note on the boss chase (T2/T3)
+
+The founder's own prompt says claiming the S2 chase "FIXED" without honest
+language is out of scope — and it's right to. Kimi K3 (the mandated lane) DID
+land its real-arena analysis and it's the most useful yet: in the narrow 700px
+Stage-2 arena the boss's centre can only travel ~460px, and the climb lock (the
+thing that zeroes his horizontal closing) armed on a band that covered ~78% of
+that range AND re-armed every time the player HOPPED — which every prior chase
+gate missed because they drove a ground-runner that never jumps. That is the
+headless-green / live-broken divergence, finally named.
+
+What I shipped: Kimi's minimal numeric change — the lock band `BODY*0.75 →
+BODY*0.6` (144px, still clears the 120px half-body + 16px player half-width, so
+no sweep-kill regression). **What I am NOT doing is claiming this fixes the live
+chase.** A new gate (`s8_s2_lock_duty_test`) drives a weaving+HOPPING player in
+the real arena and measures lock duty at ~36% — i.e. in the headless model the
+boss is already free to close ~64% of the time, which does NOT reproduce the
+founder's live "hovers overhead," and the 0.6 change barely moves that number.
+So: the numeric change is a real but marginal mitigation; **Kimi's own
+conclusion is that the proper fix is lock HYSTERESIS (a code change, not a
+number) — flagged for the immediate next session — and the live behaviour needs
+a real browser capture of the fight to root-cause.** No false "fixed" here.
+
+The Stage-3 final boss chase was not touched this session (Kimi focused on S2);
+it keeps the S6 `_higher_ground_ahead` fix and is held for the same
+live-capture treatment rather than another blind tweak.
+
+### Session 8 gate — `s8_dialogue_npc_art_test` (18 assertions, all green)
+
+SteppedDialogue reveals one line at a time and clamps/leaves correctly; Mira &
+Gideon stand on the floor; the clerk's action buttons stay hidden until the
+dialogue ends; Gideon + golden platforms exist; both emblems render; the primary
+pool plate is distinct. Plus the full regression battery (S6/S7 vault gates,
+founder-critical-probe 103, save-compat, boss-visibility) and Security Sentinel
+18/18.
+
+<details><summary>Session 7 live-build details (source 49469bd / export 31f7795)</summary>
+
 **LIVE — source commit `49469bd` — export commit `31f7795` — deployed to itch —
 2026-08-13.** CI run `31706640292` green end to end: gitleaks, Security
 Sentinel, secure-build-checklist, web export (non-threaded), and **`Deploy to
@@ -71,6 +159,8 @@ tuning pass.
 B.AI note: reachable and authenticating via `B_AI_API_KEY`; premium models still
 need a deposit, so the usable lane stays `kimi-k2.5`. Dispatched via
 `scripts/bai-call.mjs`, never by overriding this session's model routing.
+
+</details>
 
 <details><summary>Session 6 live-build details (source cbc6847 / export b5f0af5)</summary>
 

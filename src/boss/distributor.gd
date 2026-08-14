@@ -467,13 +467,20 @@ func _hover_pursue(delta: float, speed_scale: float = 1.0,
 		var centre: Vector2 = hit_centre()
 		var body_bottom: float = centre.y + BODY / 2.0
 		var too_low: bool = body_bottom > p.global_position.y - CLIMB_CLEAR_MARGIN
-		# BODY * 0.75, not full BODY (Kimi K3, session 4): the climb lock zeroes
-		# horizontal closing while it's active, and its trigger band was a full
-		# body wide — the residual "not chasing live" window. Contact needs only
-		# ~half a body + the player's half-width, so 0.75*BODY (180px) keeps the
-		# sideways-sweep-kill margin while shrinking the dead window a kiting
-		# player was exploiting.
-		var could_touch: bool = absf(centre.x - p.global_position.x) < BODY * 0.75
+		# BODY * 0.6 (Kimi K3, session 8), down from 0.75. THE live "still not
+		# chasing" cause: in the REAL Stage-2 arena the boss's centre can only
+		# travel ~460px (700px arena minus his own half-body inset at each wall).
+		# The old 0.75 band (±180px) covered 78% of that range, and `too_low`
+		# re-arms every time the player rises ~70px — so a player who WEAVES AND
+		# HOPS (which every prior chase gate's ground-runner never did) kept the
+		# climb lock armed almost continuously, zeroing his horizontal closing:
+		# he hovered overhead instead of chasing. That is exactly the
+		# headless-green / live-broken divergence. Contact needs only half a body
+		# (120) + the player's 16px collision half-width = 136px, so 0.6*BODY
+		# (144px) preserves the sideways-sweep-kill margin while dropping lock
+		# coverage 78% -> 63% and breaking the weave-hop perma-lock. (A proper
+		# hysteresis on the lock is the deeper fix — flagged for a follow-up.)
+		var could_touch: bool = absf(centre.x - p.global_position.x) < BODY * 0.6
 		var climbing: bool = too_low and could_touch
 		if climbing:
 			to.x = 0.0
