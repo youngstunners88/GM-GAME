@@ -54,6 +54,79 @@ var _clerk_stake_val: Label = null
 var _clerk_crush_val: Label = null
 var _clerk_msg: Label = null
 
+# --- Stepped dialogue (T1/T6) -----------------------------------------------
+## Founder (session 8): pressing E "must not snap the full conversation
+## instantly — the player must have time to read and decide." This reveals ONE
+## line per E press; only after the last intro line do the stake/crush/confirm
+## buttons appear. Reusable by BOTH Mira and Gideon (Fable-5 s8). UI-free so a
+## headless gate can drive it without the panel.
+class SteppedDialogue extends RefCounted:
+	var lines: Array = []
+	var farewell: String = ""
+	var idx: int = -1
+	func advance() -> String:
+		idx = mini(idx + 1, lines.size() - 1)
+		return lines[idx] if lines.size() > 0 else ""
+	func at_end() -> bool:
+		return idx >= lines.size() - 1
+	func started() -> bool:
+		return idx >= 0
+	func leave() -> String:
+		idx = -1
+		return farewell
+
+var _mira_dlg: SteppedDialogue = null
+var _mira_sprite: Sprite2D = null
+var _clerk_x: float = 0.0
+var _clerk_line: Label = null       # the one currently-shown dialogue line
+var _clerk_actions: Array = []      # stake/crush/confirm controls, hidden until dialogue ends
+
+# --- Gideon "Goldwater" Vale (Fort Knox NPC, T5) ----------------------------
+var _at_gideon: bool = false
+var _gideon_open: bool = false
+var _gideon_dlg: SteppedDialogue = null
+var _gideon_sprite: Sprite2D = null
+var _gideon_x: float = 0.0
+var _gideon_panel: CanvasLayer = null
+var _gideon_line: Label = null
+
+## Play a vault character's VO clip (Mira / Gideon). Fire-and-forget: builds a
+## throwaway AudioStreamPlayer that frees itself when the line finishes.
+## Voices generated via ElevenLabs (see docs/model-responses + STATUS voice note).
+func _play_vo(path: String) -> void:
+	if not ResourceLoader.exists(path):
+		return
+	var p := AudioStreamPlayer.new()
+	p.stream = load(path)
+	p.bus = "Master"
+	add_child(p)
+	p.play()
+	p.finished.connect(p.queue_free)
+
+func _make_mira_dialogue() -> SteppedDialogue:
+	var d := SteppedDialogue.new()
+	# Grok 4.5 s8 copy — chill, positive.
+	d.lines = [
+		"Hey Lil Blunt — welcome to the Diamond Vault. What can I get you?",
+		"Ready to stake? Hit STAKE and lock those diamonds in.",
+		"Feeling bold? CRUSH turns Blaze Diamonds into pure power.",
+		"Looking good. CONFIRM when you're set — no rush.",
+	]
+	d.farewell = "Catch you later — vault's always open for you."
+	return d
+
+func _make_gideon_dialogue() -> SteppedDialogue:
+	var d := SteppedDialogue.new()
+	# Grok 4.5 s8 copy — thick western cowboy accent.
+	d.lines = [
+		"Howdy, partner! Name's Goldwater Vale — Fort Knox's your gold rush stop.",
+		"Step up to the assay scale, friend — let's weigh that glitter proper.",
+		"Fancy stakin' yer claim? Park that gold on an altar and let it grow.",
+		"That'll do, partner. Hit CONFIRM and we'll lock her down tight.",
+	]
+	d.farewell = "Ride safe now — come back when yer pockets need fillin' again."
+	return d
+
 # --- Readability (T1): every vault label/button is big + black-outlined -------
 ## Founder (session 7), repeated: vault text is "way too small" and unreadable
 ## on the busy backdrops — a ship-blocker. One helper styles every label so a
@@ -88,6 +161,8 @@ func _ready() -> void:
 	_setup_altar("short", 900.0)   # 288-day pool: safe, base shares
 	_setup_altar("long", 1720.0)   # 2888-day pool: 2x shares, behind a hazard
 	if _diamonds:
+		# Diamond Vault threat/emblem centerpiece (founder art, T4), behind gameplay.
+		_setup_emblem("res://src/assets/art/vaults/diamond_sentinel.png", Vector2(1300.0, 240.0), 300.0)
 		_setup_clerk(430.0)        # the stake/crush attendant, near spawn
 		_setup_diamond_scale(1250.0)  # the readable Gold Scale instrument (T6)
 	else:
@@ -101,10 +176,40 @@ func _ready() -> void:
 		MobileInputHandler.touch_interact.connect(_on_mobile_interact)
 
 func _physics_process(_delta: float) -> void:
-	# Clerk panel takes priority over altar staking when it's open. Keyboard is
-	# an accelerator on top of the on-screen big buttons: up/down pick the row,
-	# left/right adjust it, E/enter confirms, esc leaves.
+	# Mira FACES the player whenever he's around (T1). Her art faces left at rest,
+	# so flip_h when the player is to her right.
+	if _mira_sprite != null and is_instance_valid(_mira_sprite):
+		var pl := get_tree().get_first_node_in_group("player")
+		if pl:
+			_mira_sprite.flip_h = pl.global_position.x > _clerk_x
+	# Gideon faces the player too.
+	if _gideon_sprite != null and is_instance_valid(_gideon_sprite):
+		var pg := get_tree().get_first_node_in_group("player")
+		if pg:
+			_gideon_sprite.flip_h = pg.global_position.x > _gideon_x
+
+	# Gideon's stepped dialogue (Fort Knox).
+	if _gideon_open:
+		if Input.is_action_just_pressed("interact") or Input.is_action_just_pressed("ui_accept"):
+			gideon_step()
+		elif Input.is_action_just_pressed("ui_cancel"):
+			gideon_close()
+		return
+	if _at_gideon and Input.is_action_just_pressed("interact"):
+		gideon_open()
+		return
+
+	# Clerk panel. STEPPED first (T1/T6): while the intro dialogue is still
+	# running, E advances ONE line and the stake/crush/confirm buttons stay
+	# hidden — no instant dump. Once the dialogue reaches its last line the
+	# action controls appear and the keyboard accelerators take over.
 	if _clerk_open:
+		if _mira_dlg != null and not _mira_dlg.at_end():
+			if Input.is_action_just_pressed("interact") or Input.is_action_just_pressed("ui_accept"):
+				_clerk_advance_dialogue()
+			elif Input.is_action_just_pressed("ui_cancel"):
+				clerk_close()
+			return
 		if Input.is_action_just_pressed("ui_up") or Input.is_action_just_pressed("ui_down"):
 			_clerk_row = 1 - _clerk_row
 			_refresh_clerk_panel()
@@ -262,17 +367,33 @@ func _setup_altar(kind: String, x: float) -> void:
 		prop_path = "res://src/assets/art/vaults/diamond_deposit_pillar.png"
 	else:
 		prop_path = "res://src/assets/art/vaults/goldmine_melt_forge.png"
+	# The 2888-day "long" pool is the PRIMARY pool — larger & visually distinct
+	# from the 288-day pool (founder T4: "primary pool larger and visually
+	# distinct; labels clear").
+	var primary: bool = kind == "long"
 	if ResourceLoader.exists(prop_path):
 		var spr := Sprite2D.new()
 		spr.texture = load(prop_path)
-		spr.scale = Vector2(0.55, 0.55)
-		spr.position = Vector2(0, -60)
+		spr.scale = Vector2(0.8, 0.8) if primary else Vector2(0.5, 0.5)
+		spr.position = Vector2(0, -70 if primary else -55)
+		# Primary pool gets a warm golden tint so it stands apart at a glance.
+		spr.modulate = Color(1.25, 1.1, 0.7, 1.0) if primary else Color(1, 1, 1, 1)
 		altar.add_child(spr)
-	# Term plate — big + outlined so it reads on the busy backdrop (T1).
+	# A halo ring behind the primary pool so it reads as the headline option.
+	if primary:
+		var halo := Sprite2D.new()
+		halo.texture = load("res://src/assets/sprites/fx_dot.png")
+		halo.modulate = (Color(0.6, 1.0, 1.0, 0.4) if _diamonds else Color(1.0, 0.85, 0.35, 0.4))
+		halo.scale = Vector2(6.0, 6.0)
+		halo.position = Vector2(0, -70)
+		halo.z_index = -2
+		altar.add_child(halo)
+	# Term plate — big + outlined so it reads on the busy backdrop (T1). The
+	# primary plate is bigger and calls itself out.
 	var plate := Label.new()
-	plate.text = ("288-DAY POOL" if kind == "short" else "2888-DAY POOL (2x)")
-	plate.position = Vector2(-80, -170)
-	style_label(plate, 26)
+	plate.text = ("288-DAY POOL" if kind == "short" else "★ 2888-DAY POOL — PRIMARY (2x) ★")
+	plate.position = Vector2((-160 if primary else -80), (-200 if primary else -170))
+	style_label(plate, 34 if primary else 26)
 	altar.add_child(plate)
 
 	# Idle glow so it reads interactive.
@@ -358,20 +479,27 @@ const MIRA_ART := "res://src/assets/art/vaults/mira_voss.png"
 func _setup_clerk(x: float) -> void:
 	var clerk := Node2D.new()
 	clerk.name = "VaultClerk"
-	clerk.position = Vector2(x, SURFACE_Y)
+	# ON THE FLOOR, not floating (founder session 8: "same floor level as Lil
+	# Blunt"). The clerk node sits on the floor surface (FLOOR_Y); her sprite is
+	# bottom-anchored so her feet land exactly there.
+	clerk.position = Vector2(x, FLOOR_Y)
+	_clerk_x = x
+	_mira_dlg = _make_mira_dialogue()
 	add_child(clerk)
 
-	# Founder Mira Voss art — a ~170px-tall standing NPC. Her sprite is 602x903
-	# with feet at the bottom; anchor so her feet meet the vault floor.
+	# Founder Mira Voss art. Sprite 602x903, feet at the bottom; centre-anchored
+	# with position.y = -target_h/2 so the bottom edge (her feet) is at the clerk
+	# node's y == the floor surface.
 	var spr := Sprite2D.new()
+	var target_h := 210.0
 	if ResourceLoader.exists(MIRA_ART):
 		var tex: Texture2D = load(MIRA_ART)
 		spr.texture = tex
-		var target_h := 190.0
 		var s: float = target_h / float(tex.get_height())
 		spr.scale = Vector2(s, s)
-		spr.position = Vector2(0, -target_h / 2.0 + 6.0)
+	spr.position = Vector2(0, -target_h / 2.0)
 	clerk.add_child(spr)
+	_mira_sprite = spr
 	# Soft glow so she reads as interactive against the busy backdrop.
 	var glow := Sprite2D.new()
 	glow.texture = load("res://src/assets/sprites/fx_dot.png")
@@ -406,6 +534,10 @@ func _setup_clerk(x: float) -> void:
 	area.body_exited.connect(func(b: Node2D) -> void:
 		if b.is_in_group("player"):
 			_at_clerk = false
+			# FAREWELL (T1): float her parting line + VO as the player leaves.
+			if _mira_dlg != null:
+				_float_text(_mira_dlg.leave())
+				_play_vo("res://src/assets/sounds/voice/vault/mira_farewell.mp3")
 			if _clerk_open:
 				clerk_close())
 
@@ -420,8 +552,50 @@ func clerk_open() -> void:
 	_clerk_row = 0
 	_clerk_stake_amt = GoldMineSystem.diamonds_balance
 	_clerk_crush_amt = _crush_cap()
+	# Start the STEPPED intro (T1/T6): show her first line, keep the action
+	# controls hidden until the player has read through the dialogue.
+	if _mira_dlg == null:
+		_mira_dlg = _make_mira_dialogue()
+	_mira_dlg.idx = -1
 	_build_clerk_panel()
+	_clerk_advance_dialogue()
 	_refresh_clerk_panel()
+	_play_vo("res://src/assets/sounds/voice/vault/mira_greet.mp3")  # Mira VO (T1)
+
+## Advance the intro dialogue by one line. When the last line is reached, reveal
+## the stake/crush/confirm controls so the player can act.
+func _clerk_advance_dialogue() -> void:
+	if _mira_dlg == null:
+		return
+	var line := _mira_dlg.advance()
+	if _clerk_line != null and is_instance_valid(_clerk_line):
+		_clerk_line.text = "MIRA: " + line
+	var show_actions: bool = _mira_dlg.at_end()
+	for c in _clerk_actions:
+		if is_instance_valid(c):
+			c.visible = show_actions
+
+## A founder emblem/threat centerpiece (T4) — placed BEHIND gameplay (z_index
+## negative, no collision) with a slow idle bob + glow so it reads as an
+## imposing set-piece, not a collectible. `target_h` in px; art is square-ish.
+func _setup_emblem(art_path: String, at: Vector2, target_h: float) -> void:
+	if not ResourceLoader.exists(art_path):
+		return
+	var node := Node2D.new()
+	node.name = "VaultEmblem"
+	node.add_to_group("vault_emblem")
+	node.position = at
+	node.z_index = -6
+	add_child(node)
+	var spr := Sprite2D.new()
+	var tex: Texture2D = load(art_path)
+	spr.texture = tex
+	var s: float = target_h / float(tex.get_height())
+	spr.scale = Vector2(s, s)
+	node.add_child(spr)
+	var tw := node.create_tween().set_loops()
+	tw.tween_property(node, "position:y", at.y - 16.0, 2.2).set_trans(Tween.TRANS_SINE)
+	tw.tween_property(node, "position:y", at.y, 2.2).set_trans(Tween.TRANS_SINE)
 
 ## Diamond Vault's readable Gold Scale instrument (T6) — informational, so the
 ## founder's "the instrument that moves left and right is unclear even in the
@@ -478,34 +652,150 @@ func clerk_close() -> void:
 		_clerk_panel.queue_free()
 	_clerk_panel = null
 
+# --- Gideon "Goldwater" Vale (Fort Knox NPC, T5) ----------------------------
+const GIDEON_ART := "res://src/assets/art/vaults/gideon_vale.png"
+func _setup_gideon(x: float, y: float) -> void:
+	var g := Node2D.new()
+	g.name = "GideonVale"
+	g.position = Vector2(x, y)
+	_gideon_x = x
+	_gideon_dlg = _make_gideon_dialogue()
+	add_child(g)
+	var spr := Sprite2D.new()
+	var target_h := 220.0
+	if ResourceLoader.exists(GIDEON_ART):
+		var tex: Texture2D = load(GIDEON_ART)
+		spr.texture = tex
+		spr.scale = Vector2(target_h / float(tex.get_height()), target_h / float(tex.get_height()))
+	spr.position = Vector2(0, -target_h / 2.0)
+	g.add_child(spr)
+	_gideon_sprite = spr
+	var plate := Label.new()
+	plate.text = "GIDEON \"GOLDWATER\" VALE\n[E] TALK"
+	plate.position = Vector2(-110, -280)
+	style_label(plate, 26)
+	g.add_child(plate)
+	var area := Area2D.new()
+	area.collision_layer = 0
+	area.collision_mask = 2
+	g.add_child(area)
+	var cs := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(160, 220)
+	cs.shape = rect
+	cs.position = Vector2(0, -100)
+	area.add_child(cs)
+	area.body_entered.connect(func(b: Node2D) -> void:
+		if b.is_in_group("player"):
+			_at_gideon = true)
+	area.body_exited.connect(func(b: Node2D) -> void:
+		if b.is_in_group("player"):
+			_at_gideon = false
+			if _gideon_dlg != null:
+				_float_text(_gideon_dlg.leave())
+				_play_vo("res://src/assets/sounds/voice/vault/gideon_farewell.mp3")
+			if _gideon_open:
+				gideon_close())
+
+func gideon_open() -> void:
+	_gideon_open = true
+	if _gideon_dlg == null:
+		_gideon_dlg = _make_gideon_dialogue()
+	_gideon_dlg.idx = -1
+	_build_gideon_panel()
+	gideon_step()
+	_play_vo("res://src/assets/sounds/voice/vault/gideon_greet.mp3")  # Gideon VO (T5)
+
+## Advance Gideon's dialogue one line per E; after the last line, staking is via
+## the nearby altars / assay scale (he's a guide, not a menu).
+func gideon_step() -> void:
+	if _gideon_dlg == null:
+		return
+	var line := _gideon_dlg.advance()
+	if _gideon_line != null and is_instance_valid(_gideon_line):
+		_gideon_line.text = "GIDEON: " + line
+	if _gideon_dlg.at_end():
+		# Last line reached — let a further E close so he doesn't trap the player.
+		pass
+
+func gideon_close() -> void:
+	_gideon_open = false
+	if _gideon_panel != null and is_instance_valid(_gideon_panel):
+		_gideon_panel.queue_free()
+	_gideon_panel = null
+
+func _build_gideon_panel() -> void:
+	if _gideon_panel != null and is_instance_valid(_gideon_panel):
+		return
+	var layer := CanvasLayer.new()
+	layer.layer = 30
+	add_child(layer)
+	_gideon_panel = layer
+	var root := Control.new()
+	root.set_anchors_preset(Control.PRESET_CENTER)
+	layer.add_child(root)
+	if ResourceLoader.exists(GIDEON_ART):
+		var portrait := TextureRect.new()
+		portrait.texture = load(GIDEON_ART)
+		portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
+		portrait.custom_minimum_size = Vector2(240, 380)
+		portrait.position = Vector2(-540, -190)
+		root.add_child(portrait)
+	var panel := ColorRect.new()
+	panel.color = Color(0.14, 0.09, 0.03, 0.95)
+	panel.custom_minimum_size = Vector2(780, 200)
+	panel.position = Vector2(-260, -110)
+	root.add_child(panel)
+	var border := ColorRect.new()
+	border.color = Color(1.0, 0.85, 0.4, 1.0)
+	border.custom_minimum_size = Vector2(780, 6)
+	border.position = Vector2(-260, -110)
+	root.add_child(border)
+	_gideon_line = Label.new()
+	_gideon_line.position = Vector2(-236, -84)
+	_gideon_line.custom_minimum_size = Vector2(720, 0)
+	_gideon_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	style_label(_gideon_line, 28)
+	root.add_child(_gideon_line)
+	var hint := Label.new()
+	hint.text = "[E] next   [ESC] leave"
+	hint.position = Vector2(-236, 40)
+	style_label(hint, 22)
+	root.add_child(hint)
+
 ## A big +/- control row: a large label, a "-" Button, a big value Label, a "+"
 ## Button. Buttons are >=96px tall touch targets (Fable/Kimi s7).
 func _clerk_row_ui(parent: Control, y: float, title: String, minus: Callable, plus: Callable) -> Label:
 	var title_l := Label.new()
-	title_l.position = Vector2(28, y)
+	title_l.position = Vector2(-236, y)
 	style_label(title_l, 30)
 	title_l.text = title
 	parent.add_child(title_l)
+	_clerk_actions.append(title_l)
 	var minus_b := Button.new()
 	minus_b.text = "-"
 	minus_b.custom_minimum_size = Vector2(96, 96)
-	minus_b.position = Vector2(360, y - 26)
+	minus_b.position = Vector2(100, y - 26)
 	style_button(minus_b, 44)
 	minus_b.pressed.connect(minus)
 	parent.add_child(minus_b)
+	_clerk_actions.append(minus_b)
 	var val := Label.new()
-	val.position = Vector2(474, y - 8)
-	val.custom_minimum_size = Vector2(150, 0)
+	val.position = Vector2(214, y - 8)
+	val.custom_minimum_size = Vector2(180, 0)
 	val.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	style_label(val, 40)
 	parent.add_child(val)
+	_clerk_actions.append(val)
 	var plus_b := Button.new()
 	plus_b.text = "+"
 	plus_b.custom_minimum_size = Vector2(96, 96)
-	plus_b.position = Vector2(650, y - 26)
+	plus_b.position = Vector2(410, y - 26)
 	style_button(plus_b, 44)
 	plus_b.pressed.connect(plus)
 	parent.add_child(plus_b)
+	_clerk_actions.append(plus_b)
 	return val
 
 func _build_clerk_panel() -> void:
@@ -546,31 +836,48 @@ func _build_clerk_panel() -> void:
 	style_label(_clerk_holdings, 30)
 	root.add_child(_clerk_holdings)
 
-	_clerk_stake_val = _clerk_row_ui(root, -96.0, "STAKE $DIAMONDS",
+	# The stepped dialogue line — the ONE line currently being read. Always
+	# visible; the stake/crush/confirm controls below stay hidden until the
+	# player has stepped to the last line (T1/T6: no instant dump).
+	_clerk_line = Label.new()
+	_clerk_line.position = Vector2(-236, -136)
+	_clerk_line.custom_minimum_size = Vector2(720, 0)
+	_clerk_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	style_label(_clerk_line, 28)
+	root.add_child(_clerk_line)
+	var hint := Label.new()
+	hint.text = "[E] next"
+	hint.position = Vector2(440, -190)
+	style_label(hint, 22)
+	root.add_child(hint)
+
+	_clerk_actions = []
+	_clerk_stake_val = _clerk_row_ui(root, -60.0, "STAKE $DIAMONDS",
 		func() -> void: clerk_adjust_stake(-1), func() -> void: clerk_adjust_stake(1))
-	_clerk_crush_val = _clerk_row_ui(root, 12.0, "CRUSH BLAZE",
+	_clerk_crush_val = _clerk_row_ui(root, 48.0, "CRUSH BLAZE",
 		func() -> void: clerk_adjust_crush(-1), func() -> void: clerk_adjust_crush(1))
 
 	var confirm := Button.new()
 	confirm.text = "CONFIRM"
 	confirm.name = "CONFIRM"
 	confirm.custom_minimum_size = Vector2(320, 96)
-	confirm.position = Vector2(-40, 96)
+	confirm.position = Vector2(-40, 128)
 	style_button(confirm, 40)
 	confirm.pressed.connect(clerk_confirm)
 	root.add_child(confirm)
+	_clerk_actions.append(confirm)
 
 	var leave := Button.new()
 	leave.text = "LEAVE"
 	leave.custom_minimum_size = Vector2(180, 72)
-	leave.position = Vector2(300, 108)
+	leave.position = Vector2(300, 140)
 	style_button(leave, 30)
 	leave.pressed.connect(clerk_close)
 	root.add_child(leave)
 
 	_clerk_msg = Label.new()
-	_clerk_msg.position = Vector2(-236, -136)
-	style_label(_clerk_msg, 26)
+	_clerk_msg.position = Vector2(-236, 236)
+	style_label(_clerk_msg, 24)
 	root.add_child(_clerk_msg)
 
 func _refresh_clerk_panel() -> void:
@@ -598,6 +905,11 @@ func _refresh_clerk_panel() -> void:
 ## coins: the ASSAY SCALE, where Lil Blunt weighs GOLD into a Fort Knox stake.
 ## Distinct from the Diamond Vault's clerk so it never reads as a reskin.
 func _setup_fort_knox_depth() -> void:
+	# Fort Knox threat emblem centerpiece (founder art, T4) — behind gameplay.
+	_setup_emblem("res://src/assets/art/vaults/fortknox_sentinel.png", Vector2(1300.0, 260.0), 300.0)
+	# GIDEON "GOLDWATER" VALE — Fort Knox speaker on the entrance floor (T5), the
+	# first face the player meets (Grok s8 hierarchy).
+	_setup_gideon(360.0, FLOOR_Y)
 	# Timber-and-iron signage announcing the hall (Grok copy).
 	var sign := Label.new()
 	sign.text = "FORT KNOX ASSAY — WEIGH IT. STAKE IT. 100-DAY MINERS ONLY."
@@ -613,10 +925,10 @@ func _setup_fort_knox_depth() -> void:
 		Vector2(2380.0, SURFACE_Y - 230.0),
 	]
 	for p: Vector2 in steps:
-		_build_platform(p, Vector2(150.0, 24.0))
-	# The mezzanine deck itself — the Assay Hall floor.
+		_build_platform(p, Vector2(150.0, 24.0), true)  # golden highlight (T5)
+	# The mezzanine deck itself — the Assay Hall floor (golden).
 	var mezz_y: float = SURFACE_Y - 230.0
-	_build_platform(Vector2(2560.0, mezz_y), Vector2(360.0, 28.0))
+	_build_platform(Vector2(2560.0, mezz_y), Vector2(360.0, 28.0), true)
 
 	# THE ASSAY SCALE — weigh GOLD into a Fort Knox stake. Grouped so the gate can
 	# assert the second chamber exists and is reachable/interactive.
@@ -698,10 +1010,13 @@ func _build_gold_scale(parent: Node2D, diamonds: bool) -> void:
 	else:
 		GoldMineSystem.gold_changed.connect(func(_s: int) -> void: updater.call())
 
-## A one-way-safe solid platform used by the Assay Hall climb.
-func _build_platform(centre: Vector2, size: Vector2) -> void:
+## A one-way-safe solid platform used by the Assay Hall climb. `golden` makes it
+## a bright, obviously-highlighted route (founder T5: "highlighted platforms →
+## golden") with a glowing gold deck + bright lip.
+func _build_platform(centre: Vector2, size: Vector2, golden: bool = false) -> void:
 	var body := StaticBody2D.new()
 	body.collision_layer = 1
+	body.add_to_group("golden_platform" if golden else "vault_platform")
 	var col := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
 	shape.size = size
@@ -711,15 +1026,26 @@ func _build_platform(centre: Vector2, size: Vector2) -> void:
 	var deck := ColorRect.new()
 	deck.size = size
 	deck.position = -size / 2.0
-	deck.color = Color(0.24, 0.17, 0.09, 1.0)
+	deck.color = Color(0.85, 0.62, 0.15, 1.0) if golden else Color(0.24, 0.17, 0.09, 1.0)
 	deck.z_index = -2
 	body.add_child(deck)
 	var lip := ColorRect.new()
-	lip.size = Vector2(size.x, 3)
+	lip.size = Vector2(size.x, 5 if golden else 3)
 	lip.position = Vector2(-size.x / 2.0, -size.y / 2.0)
-	lip.color = Color(0.95, 0.75, 0.3, 0.9)
+	lip.color = Color(1.0, 0.92, 0.5, 1.0) if golden else Color(0.95, 0.75, 0.3, 0.9)
 	lip.z_index = -1
 	body.add_child(lip)
+	if golden:
+		# A soft pulsing glow so the highlighted route reads at a glance.
+		var glow := ColorRect.new()
+		glow.size = Vector2(size.x + 12, size.y + 12)
+		glow.position = Vector2(-size.x / 2.0 - 6, -size.y / 2.0 - 6)
+		glow.color = Color(1.0, 0.85, 0.3, 0.25)
+		glow.z_index = -3
+		body.add_child(glow)
+		var gt := body.create_tween().set_loops()
+		gt.tween_property(glow, "modulate:a", 0.4, 0.9).set_trans(Tween.TRANS_SINE)
+		gt.tween_property(glow, "modulate:a", 0.9, 0.9).set_trans(Tween.TRANS_SINE)
 	add_child(body)
 
 # --- Hazard (risk half of the stake loop, protocol-flavoured) ---------------
