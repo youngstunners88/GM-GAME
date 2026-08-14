@@ -290,6 +290,15 @@ func _physics_process(delta: float) -> void:
 ## a reversal is ~0.43s and 0->345 is ~0.22s, so he actually tracks a juking
 ## player. Speed floors were never the missing piece; the acceleration was.
 const HOVER_ACCEL: float = 1600.0
+## Lock hysteresis (session 9): after the climb lock releases it cannot re-arm
+## for LOCK_COOLDOWN seconds — so a hopping player can't perma-arm it every jump
+## and pin the boss overhead. A genuine imminent sweep (|dx| < LOCK_ARM_OVERLAP,
+## a strict subset of the could_touch band) bypasses the cooldown so the
+## spawn/approach sweep-kill guard is preserved.
+const LOCK_COOLDOWN: float = 0.9
+const LOCK_ARM_OVERLAP: float = 96.0
+var _climb_locked: bool = false
+var _lock_cd: float = 0.0
 ## Player top speed is walk_speed 200 * SPRINT_MULTIPLIER 1.2 = 240 px/s.
 ##
 ## Founder: "the boss is not chasing Lil Blunt which makes it too easy."
@@ -480,10 +489,28 @@ func _hover_pursue(delta: float, speed_scale: float = 1.0,
 		# (144px) preserves the sideways-sweep-kill margin while dropping lock
 		# coverage 78% -> 63% and breaking the weave-hop perma-lock. (A proper
 		# hysteresis on the lock is the deeper fix — flagged for a follow-up.)
-		var could_touch: bool = absf(centre.x - p.global_position.x) < BODY * 0.6
-		var climbing: bool = too_low and could_touch
+		_lock_cd = maxf(0.0, _lock_cd - delta)
+		# LOCK HYSTERESIS (Kimi/Fable/Qwen s9). The single-frame `too_low and
+		# could_touch` climb lock re-armed on EVERY player hop, pinning the boss
+		# into vertical-only motion in the 700px arena — the live "hovers, doesn't
+		# chase". Now: once the lock RELEASES it cannot re-arm for LOCK_COOLDOWN,
+		# UNLESS a genuine imminent body-sweep is happening (|dx| < LOCK_ARM_OVERLAP,
+		# a strict subset of the could_touch band so the cooldown actually bites) —
+		# that bypass preserves the spawn/approach sweep-kill guard. And while
+		# locked he no longer hard-stalls: he still CREEPS toward the player at 25%
+		# (Qwen) so the fight reads as pursuit, not a freeze.
+		var raw_lock: bool = too_low and absf(centre.x - p.global_position.x) < BODY * 0.6
+		var imminent: bool = raw_lock and absf(centre.x - p.global_position.x) < LOCK_ARM_OVERLAP
+		if _climb_locked:
+			if not raw_lock:
+				_climb_locked = false
+				_lock_cd = LOCK_COOLDOWN
+		else:
+			if imminent or (_lock_cd <= 0.0 and raw_lock):
+				_climb_locked = true
+		var climbing: bool = _climb_locked
 		if climbing:
-			to.x = 0.0
+			to.x *= 0.25   # damped, not zeroed — he keeps closing during the lock
 		# CLIMBING GETS ITS OWN, FASTER FLOOR.
 		#
 		# Found by driving a REAL fight through Phase 2 for a sustained
