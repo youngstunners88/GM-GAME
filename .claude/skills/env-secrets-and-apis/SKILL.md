@@ -35,10 +35,14 @@ checking *which* key a workspace resolves to, not by re-asking the founder.
    target voice ID via `GET /v1/voices` before concluding a voice is
    missing (see `scripts/generate_audio.py`'s `KEY_ENV_NAMES` order — do
    not silently reorder it back).
-4. **OpenRouter / Muapi** are single-key services in this project
-   (`OPENROUTER_API_KEY`, `MUAPI_API_KEY`) — no known ambiguity, but still
-   check presence-only before assuming a dispatch or image-gen call will
-   work.
+4. **OpenRouter has a primary + fallback key.** Session 10 hit a hard 403
+   on `openrouter.ai` under the primary key. Founder added `OPENROUTER_2`.
+   Check **both** `OPENROUTER_API_KEY` and `OPENROUTER_2`. Prefer
+   `OPENROUTER_2` when the primary returns 403. For scripts that only read
+   `OPENROUTER_API_KEY`, export `OPENROUTER_API_KEY="$OPENROUTER_2"` in the
+   dispatch shell only — never print or commit the value.
+5. **Muapi** is single-key (`MUAPI_API_KEY`) — check presence-only before
+   assuming image-gen will work.
 
 ## How to run the scan
 
@@ -46,7 +50,7 @@ Names only — this exact pattern never echoes a value:
 
 ```bash
 for k in ITCH_API_KEY BUTLER_API_KEY ELEVENLABS_API ELEVENLABS_API_KEY \
-         OPENROUTER_API_KEY MUAPI_API_KEY; do
+         OPENROUTER_API_KEY OPENROUTER_2 MUAPI_API_KEY B_AI_API_KEY; do
   v=$(printenv "$k" 2>/dev/null)
   if [ -n "$v" ]; then echo "$k: present (len ${#v})"; else echo "$k: absent"; fi
 done
@@ -89,3 +93,5 @@ so it survives to the next session.
 - Do not print a key value into a commit, a STATUS.md note, a test file, or
   a chat message under any circumstance, including "just to confirm it's
   right" — length and presence are always sufficient.
+- Do not treat a 403 on the primary OpenRouter key as "multi-model skipped"
+  without first trying `OPENROUTER_2`.
