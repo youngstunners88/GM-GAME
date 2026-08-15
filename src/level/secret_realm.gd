@@ -144,10 +144,29 @@ func _setup_lounge_video() -> void:
 		return
 	var layer := CanvasLayer.new()
 	layer.name = "LoungeVideo"
-	# Below the parallax plates (-20) so those remain the fallback surface.
-	layer.layer = -30
+	# IN FRONT of the -20 parallax plates but behind the gameplay plane (0). The
+	# original wire-up put this at -30, BEHIND the opaque full-screen room jpg
+	# (bg_secret_mid.jpg at -20) — which occludes it completely, so the brand
+	# video would never have shown. The room art now FRAMES the video instead of
+	# hiding it: the plates fill the screen, the video sits centered on top.
+	layer.layer = -15
 	add_child(layer)
 
+	# The founder's clip is PORTRAIT (720x1280 source). Stretching it to the
+	# landscape viewport (the old expand + FULL_RECT) would squash the brand
+	# footage badly, so present it ASPECT-PRESERVED and centered — a "contain"
+	# fit against the live viewport — with the lounge room art showing to either
+	# side as a frame. expand=true then fills that correctly-proportioned rect
+	# with no distortion.
+	var vp: Vector2 = get_viewport_rect().size
+	var src := Vector2(float(stream.get_width()) if stream.has_method("get_width") else 405.0,
+		float(stream.get_height()) if stream.has_method("get_height") else 720.0)
+	var ar: float = src.x / maxf(1.0, src.y)   # width/height of the source
+	var h: float = vp.y
+	var w: float = h * ar
+	if w > vp.x:
+		w = vp.x
+		h = w / ar
 	var vid := VideoStreamPlayer.new()
 	vid.name = "BrandVideo"
 	vid.stream = stream
@@ -157,7 +176,8 @@ func _setup_lounge_video() -> void:
 	# slot to be preserved; an unmuted video track would play over the top of
 	# it and there is no mixing story for that.
 	vid.volume_db = -80.0
-	vid.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vid.position = Vector2((vp.x - w) * 0.5, (vp.y - h) * 0.5)
+	vid.size = Vector2(w, h)
 	vid.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(vid)
 	_video = vid
