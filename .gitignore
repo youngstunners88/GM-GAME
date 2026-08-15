@@ -171,3 +171,7 @@ playtest-fresh*/
 playtest-distributor.json
 playtest-boss*/
 playtest-final/
+
+# S10 boss-warp capture artifacts (evidence copied into docs/captures/)
+playtest-shots-*/
+playtest-boss-*.json

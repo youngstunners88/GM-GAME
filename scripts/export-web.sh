@@ -47,7 +47,12 @@ fi
 echo "Version: $("$GODOT" --version 2>&1 | head -1)"
 echo ""
 
-# Create export preset if needed
+# Create export preset if needed. Kept in sync with .github/workflows/
+# export-game.yml so a LOCAL export and the CI/itch deploy are the identical,
+# NON-THREADED build. The old heredoc wrote the Godot-3.x `web/use_threads=true`
+# keys, which produced a THREADED build (index.worker.js, needs SharedArrayBuffer
+# + COOP/COEP) that silently fails to boot on itch.io — the "game doesn't play"
+# bug. Godot 4.3's correct key is `variant/thread_support=false`.
 if [ ! -f "export_presets.cfg" ]; then
     echo "📝 Creating export preset..."
     mkdir -p .godot
@@ -59,19 +64,26 @@ runnable=true
 dedicated_server=false
 custom_features=""
 export_filter="all_resources"
-include_filter=""
+include_filter="config.json,src/autoload/share_taglines.json"
 exclude_filter="*.yml,*.yaml,*.md"
 export_path="web/game/index.html"
 script_export_mode=1
 script_encryption_key=""
 
 [preset.0.options]
-compression/enabled=true
-compression/algorithms/deflate/compression_level=9
-web/enable_cuda=false
-web/enable_vulkan=false
-web/use_threads=true
-web/threads_count=8
+custom_template/debug=""
+custom_template/release=""
+variant/extensions_support=false
+variant/thread_support=false
+vram_texture_compression/for_desktop=true
+vram_texture_compression/for_mobile=false
+html/export_icon=true
+html/custom_html_shell=""
+html/head_include="<script src=\"web3.js\"></script>"
+html/canvas_resize_policy=2
+html/focus_canvas_on_start=true
+html/experimental_virtual_keyboard=false
+progressive_web_app/enabled=false
 EOF
 fi
 

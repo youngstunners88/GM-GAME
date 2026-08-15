@@ -68,6 +68,45 @@ func _ready() -> void:
 	if level_data and level_data.level_index >= 1:
 		GameManager.save_session()
 	StateMachine.change_state(StateMachine.State.PLAYING)
+	# S10 T6/T7 — test-only boss warp, fired after the whole _ready chain (incl.
+	# subclass geometry) has run. No-op unless the page is loaded with ?boss=N.
+	call_deferred("_maybe_debug_boss_warp")
+
+## TEST-ONLY debug warp (S10 T6/T7). If the web page is loaded with `?boss=N`
+## and N == this level's index, drop the player straight into the boss arena and
+## fire the level's REAL `_on_boss_trigger` path, so a Playwright capture can
+## record the Distributor / Claim Jumper fight without first beating Level 1's
+## boss (a blind key-driver cannot, which blocked every prior S2 capture).
+##
+## It reuses the exact live approach (audit parity checklist): the player is
+## placed just EAST of the entry trigger, then `_on_boss_trigger` runs — same
+## seal wall (`arm_boss_arena_seal`), same `set_boss_background`, same arena
+## bounds set on the boss BEFORE add_child. So it captures the real fight, not a
+## lookalike. A normal production load has no `?boss` param, so this never fires.
+func _maybe_debug_boss_warp() -> void:
+	if level_data == null or level_data.boss_arena.is_empty():
+		return
+	var want := _requested_boss_warp()
+	if want <= 0 or want != level_data.level_index:
+		return
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if player == null or boss_trigger == null:
+		return
+	var start_x: float = level_data.boss_arena.get("start_x", 0.0)
+	# Just inside the arena, east of the entry trigger, so the normal seal +
+	# spawn logic runs identically to a walked-in approach.
+	player.global_position = Vector2(start_x + 120.0, player.global_position.y)
+	_on_boss_trigger(player)
+
+## Reads the `?boss=N` query param on web (0 if absent / not a web build).
+## Tiny + side-effect-free so it cannot affect a normal production load.
+func _requested_boss_warp() -> int:
+	if not OS.has_feature("web"):
+		return 0
+	var q: Variant = JavaScriptBridge.eval(
+		"new URLSearchParams(window.location.search).get('boss') || ''", true)
+	var s := str(q)
+	return int(s) if s.is_valid_int() else 0
 
 # The three parallax sprites (far/mid/near) all sample the level's key art;
 # kept as an array so the boss-arena swap can retexture every depth at once.

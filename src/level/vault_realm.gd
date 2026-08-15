@@ -161,13 +161,18 @@ func _ready() -> void:
 	_setup_altar("short", 900.0)   # 288-day pool: safe, base shares
 	_setup_altar("long", 1720.0)   # 2888-day pool: 2x shares, behind a hazard
 	if _diamonds:
-		# Diamond Vault threat/emblem centerpiece (founder art, T4), behind gameplay.
-		_setup_emblem("res://src/assets/art/vaults/diamond_sentinel.png", Vector2(1300.0, 240.0), 300.0)
 		_setup_clerk(430.0)        # the stake/crush attendant, near spawn
-		_setup_diamond_scale(1250.0)  # the readable Gold Scale instrument (T6)
+		# S10 T1: the gold-themed "Diamond Scale" instrument was REMOVED from the
+		# Diamond Vault — it read as a golden machine that does not belong in a
+		# cyan/diamond space (founder). The Gold Scale is Fort Knox's Assay Scale
+		# only, where it is on-theme.
 	else:
 		_setup_fort_knox_depth()   # second chamber: the GOLD Rush Assay Hall (T4)
-	_setup_hazard()
+	# S10 T1/T2: ONE readable, threatening Security Sentinel per vault — it
+	# replaces BOTH the oversized faint background "emblem" AND the abstract
+	# sweeping "triangle" hazard the founder called useless. It patrols the
+	# crossing to the primary pool and deals contact damage: a real guardian.
+	_setup_security_sentinel()
 	_setup_return_portal()
 	_setup_hud()
 	_setup_title_card()
@@ -575,37 +580,82 @@ func _clerk_advance_dialogue() -> void:
 		if is_instance_valid(c):
 			c.visible = show_actions
 
-## A founder emblem/threat centerpiece (T4) — placed BEHIND gameplay (z_index
-## negative, no collision) with a slow idle bob + glow so it reads as an
-## imposing set-piece, not a collectible. `target_h` in px; art is square-ish.
-func _setup_emblem(art_path: String, at: Vector2, target_h: float) -> void:
-	if not ResourceLoader.exists(art_path):
-		return
-	var node := Node2D.new()
-	node.name = "VaultEmblem"
-	node.add_to_group("vault_emblem")
-	node.position = at
-	node.z_index = -6
-	add_child(node)
-	var spr := Sprite2D.new()
-	var tex: Texture2D = load(art_path)
-	spr.texture = tex
-	var s: float = target_h / float(tex.get_height())
-	spr.scale = Vector2(s, s)
-	node.add_child(spr)
-	var tw := node.create_tween().set_loops()
-	tw.tween_property(node, "position:y", at.y - 16.0, 2.2).set_trans(Tween.TRANS_SINE)
-	tw.tween_property(node, "position:y", at.y, 2.2).set_trans(Tween.TRANS_SINE)
+## THE VAULT SECURITY SENTINEL (S10 T1/T2).
+##
+## Founder, with screenshots: the giant faint "emblem" (300px tall, z_index -6,
+## behind everything) read as an OVERSIZED USELESS PROP, and the sweeping damage
+## hazard was drawn as an abstract "useless triangle". This folds both into ONE
+## thing that actually earns its place: the founder's own sentinel art at a
+## MODEST, readable size (SENTINEL_H — deliberately well under the old 300px),
+## standing on the vault floor between the two pools, slowly patrolling and
+## dealing contact damage. A real security presence you time your crossing to
+## the richer 2888 pool around — not a decal, not a screen-eater.
+##
+## Protocol-aware: diamond_sentinel.png in the Diamond Vault, fortknox_sentinel
+## in Fort Knox. No collision LAYER (it never blocks walking — T4 stays clear);
+## collision MASK 2 so it detects the player and damages on contact.
+const SENTINEL_H: float = 172.0    # < the old 300px oversized emblem, still a clear threat
+func _setup_security_sentinel() -> void:
+	var art := "res://src/assets/art/vaults/diamond_sentinel.png" if _diamonds \
+		else "res://src/assets/art/vaults/fortknox_sentinel.png"
+	var guard := Area2D.new()
+	guard.name = "SecuritySentinel"
+	guard.add_to_group("vault_sentinel")
+	guard.collision_layer = 0
+	guard.collision_mask = 2          # detects the player only; never blocks a walk
+	# Between the two altars, feet on the floor — the risk gate to the 2888 pool.
+	var feet_y: float = FLOOR_Y - 28.0
+	guard.position = Vector2(1300.0, feet_y)
+	add_child(guard)
 
-## Diamond Vault's readable Gold Scale instrument (T6) — informational, so the
-## founder's "the instrument that moves left and right is unclear even in the
-## Diamond vault" is answered with the same labelled, tilting scale as Fort Knox.
-func _setup_diamond_scale(x: float) -> void:
-	var node := Node2D.new()
-	node.name = "DiamondScale"
-	node.position = Vector2(x, SURFACE_Y - 30.0)
-	add_child(node)
-	_build_gold_scale(node, true)
+	# Damage box sized to the torso/legs of the sprite (fair — not the whole
+	# bounding box, which on a narrow crossing would be an unfair wall of hurt).
+	var cs := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(72.0, SENTINEL_H * 0.78)
+	cs.shape = rect
+	cs.position = Vector2(0.0, -SENTINEL_H * 0.5)
+	guard.add_child(cs)
+
+	# The founder's sentinel art, bottom-anchored so its feet meet the floor.
+	var spr := Sprite2D.new()
+	if ResourceLoader.exists(art):
+		var tex: Texture2D = load(art)
+		spr.texture = tex
+		var s: float = SENTINEL_H / float(tex.get_height())
+		spr.scale = Vector2(s, s)
+	spr.position = Vector2(0.0, -SENTINEL_H / 2.0)
+	guard.add_child(spr)
+
+	# Menacing scanner pulse so it reads as an ACTIVE security threat, not a statue.
+	var aura := Sprite2D.new()
+	aura.texture = load("res://src/assets/sprites/fx_dot.png")
+	aura.modulate = Color(1.0, 0.25, 0.25, 0.4) if _diamonds else Color(1.0, 0.4, 0.12, 0.4)
+	aura.position = Vector2(0.0, -SENTINEL_H * 0.5)
+	aura.scale = Vector2(3.4, 3.4)
+	aura.z_index = -1
+	guard.add_child(aura)
+	var pulse := guard.create_tween().set_loops()
+	pulse.tween_property(aura, "modulate:a", 0.12, 0.7).set_trans(Tween.TRANS_SINE)
+	pulse.tween_property(aura, "modulate:a", 0.4, 0.7).set_trans(Tween.TRANS_SINE)
+
+	# Name plate — big + outlined, above its head, so the threat is legible.
+	var plate := Label.new()
+	plate.text = "DIAMOND VAULT\nSECURITY SENTINEL" if _diamonds else "FORT KNOX\nSECURITY SENTINEL"
+	plate.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	plate.custom_minimum_size = Vector2(300.0, 0.0)
+	plate.position = Vector2(-150.0, -SENTINEL_H - 82.0)
+	style_label(plate, 24)
+	guard.add_child(plate)
+
+	guard.body_entered.connect(func(b: Node2D) -> void:
+		if b.is_in_group("player") and b.has_method("take_damage"):
+			b.take_damage(1))
+
+	# Slow patrol across the crossing — a timing gate, never a static wall.
+	var sweep := guard.create_tween().set_loops()
+	sweep.tween_property(guard, "position:x", 1480.0, 1.6).set_trans(Tween.TRANS_SINE)
+	sweep.tween_property(guard, "position:x", 1300.0, 1.6).set_trans(Tween.TRANS_SINE)
 
 ## Upper bound on a crush: never more than held, never more than the stack limit.
 func _crush_cap() -> int:
@@ -711,12 +761,21 @@ func gideon_open() -> void:
 func gideon_step() -> void:
 	if _gideon_dlg == null:
 		return
+	# S10 T3 — "E again does nothing" fix. The OLD code let advance() clamp at
+	# the last line and just RE-SHOW it forever, so a second E on the final line
+	# was dead input (only ESC could leave). Now: if we are already at the end,
+	# this E is the continue/close action — it dismisses the dialogue. Pacing is
+	# unchanged (still one line per E up to the last); only the terminal press
+	# now resolves instead of doing nothing.
+	if _gideon_dlg.at_end():
+		gideon_close()
+		return
 	var line := _gideon_dlg.advance()
 	if _gideon_line != null and is_instance_valid(_gideon_line):
 		_gideon_line.text = "GIDEON: " + line
-	if _gideon_dlg.at_end():
-		# Last line reached — let a further E close so he doesn't trap the player.
-		pass
+	if _gideon_dlg.at_end() and _gideon_line != null and is_instance_valid(_gideon_line):
+		# Tell the player the next E closes, so the terminal press is discoverable.
+		_gideon_line.text += "   [E to close]"
 
 func gideon_close() -> void:
 	_gideon_open = false
@@ -905,8 +964,9 @@ func _refresh_clerk_panel() -> void:
 ## coins: the ASSAY SCALE, where Lil Blunt weighs GOLD into a Fort Knox stake.
 ## Distinct from the Diamond Vault's clerk so it never reads as a reskin.
 func _setup_fort_knox_depth() -> void:
-	# Fort Knox threat emblem centerpiece (founder art, T4) — behind gameplay.
-	_setup_emblem("res://src/assets/art/vaults/fortknox_sentinel.png", Vector2(1300.0, 260.0), 300.0)
+	# S10 T2: the Fort Knox Security Sentinel is now the shared, correctly-sized
+	# _setup_security_sentinel() guardian (called from _ready) — no more oversized
+	# faint background emblem here.
 	# GIDEON "GOLDWATER" VALE — Fort Knox speaker on the entrance floor (T5), the
 	# first face the player meets (Grok s8 hierarchy).
 	_setup_gideon(360.0, FLOOR_Y)
@@ -1047,37 +1107,6 @@ func _build_platform(centre: Vector2, size: Vector2, golden: bool = false) -> vo
 		gt.tween_property(glow, "modulate:a", 0.4, 0.9).set_trans(Tween.TRANS_SINE)
 		gt.tween_property(glow, "modulate:a", 0.9, 0.9).set_trans(Tween.TRANS_SINE)
 	add_child(body)
-
-# --- Hazard (risk half of the stake loop, protocol-flavoured) ---------------
-
-func _setup_hazard() -> void:
-	# Between the two altars: crossing to the richer 2888 pool costs a little
-	# risk. Diamond = a slow crystal sentry sweep; Fort Knox = a steam vent.
-	var hz := Area2D.new()
-	hz.collision_layer = 0
-	hz.collision_mask = 2
-	hz.position = Vector2(1300.0, SURFACE_Y - 20.0)
-	add_child(hz)
-	var cs := CollisionShape2D.new()
-	var rect := RectangleShape2D.new()
-	rect.size = Vector2(28, 60)
-	cs.shape = rect
-	hz.add_child(cs)
-	var poly := Polygon2D.new()
-	if _diamonds:
-		poly.polygon = PackedVector2Array([Vector2(0,-30),Vector2(12,20),Vector2(-12,20)])
-		poly.color = Color(0.55, 0.9, 1.0, 0.9)
-	else:
-		poly.polygon = PackedVector2Array([Vector2(-12,-24),Vector2(12,-24),Vector2(12,24),Vector2(-12,24)])
-		poly.color = Color(1.0, 0.6, 0.2, 0.9)
-	hz.add_child(poly)
-	hz.body_entered.connect(func(b: Node2D) -> void:
-		if b.is_in_group("player") and b.has_method("take_damage"):
-			b.take_damage(1))
-	# Sweep it back and forth so it's a timing crossing, not a static wall.
-	var sweep := create_tween().set_loops()
-	sweep.tween_property(hz, "position:x", 1480.0, 1.4).set_trans(Tween.TRANS_SINE)
-	sweep.tween_property(hz, "position:x", 1300.0, 1.4).set_trans(Tween.TRANS_SINE)
 
 # --- Exit -------------------------------------------------------------------
 

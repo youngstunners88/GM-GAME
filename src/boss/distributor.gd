@@ -510,7 +510,17 @@ func _hover_pursue(delta: float, speed_scale: float = 1.0,
 				_climb_locked = true
 		var climbing: bool = _climb_locked
 		if climbing:
-			to.x *= 0.25   # damped, not zeroed — he keeps closing during the lock
+			# S10 T6 (Kimi-role audit): at close range `imminent` (|dx|<96) re-arms
+			# the lock every frame regardless of the cooldown, so against a close+
+			# hopping player (exactly the founder's play pattern) the lock is
+			# effectively continuous and 0.25 damping left only ~52px/s of horizontal
+			# closing — well under a 240px/s sprint, i.e. still "hovers, doesn't chase".
+			# Doubling the in-lock horizontal to 0.5 (~104px/s) is the SAFE half of
+			# the fix: it does NOT reintroduce the sideways-sweep contact-kill that a
+			# full bypass-defeat would (contact = instant run restart — a worse
+			# regression than a slow chase). The remaining verdict is deferred to a
+			# real browser capture (T6), per "claim FIXED only with capture".
+			to.x *= 0.5   # damped, not zeroed — he keeps closing during the lock
 		# CLIMBING GETS ITS OWN, FASTER FLOOR.
 		#
 		# Found by driving a REAL fight through Phase 2 for a sustained

@@ -185,6 +185,24 @@ const LEDGE_PROBE_DROP: float = 120.0
 ## a ledge. Belt and braces alongside the arena clamp: the clamp stops him
 ## leaving the arena box, this stops him walking into a pit INSIDE it.
 func _ledge_ahead(facing: float) -> bool:
+	# S10 T7 — THE "FROZEN STATUE" REGRESSION (Kimi-role audit, confirmed here
+	# against the live Gold Rush arena constants). When BODY grew to 280,
+	# HALF_BODY became 140, so `_clamp_to_arena` pins his CENTRE at
+	# arena_max.x - 140. From there this probe casts at toe_x(=arena_max.x) +
+	# LEDGE_PROBE_MARGIN(16) — i.e. 16px PAST the arena's own SOLID boundary wall
+	# — finds no floor, and reports a "ledge" that is really the wall. `_ground_chase`
+	# then zeros velocity.x every single frame (and `_gap_crossable` sees no landing
+	# past the world edge, so he never hops either): a per-frame, zero-vx, zero-hop
+	# FREEZE the moment the chase drives him to a wall. In a 420px-wide reachable
+	# band he is ALWAYS near a wall, so this read as a statue. The boundary is a
+	# solid wall, not a pit — never treat it as a ledge. Ledge protection INSIDE
+	# the arena is untouched.
+	if arena_max != Vector2.ZERO:
+		var centre_x: float = global_position.x + HALF_BODY
+		if facing > 0.0 and centre_x >= arena_max.x - HALF_BODY - 1.0:
+			return false
+		if facing < 0.0 and centre_x <= arena_min.x + HALF_BODY + 1.0:
+			return false
 	var space := get_world_2d().direct_space_state
 	# Cast from just above his feet, ahead of the body, straight down. Body is
 	# BODYxBODY with its ORIGIN AT THE TOP-LEFT (collision sits at +HALF_BODY),
