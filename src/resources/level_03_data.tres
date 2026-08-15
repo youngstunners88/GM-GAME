@@ -26,27 +26,20 @@ parallax_layers = Array[Dictionary]([
 	}
 ])
 ground_segments = Array[Vector4]([
-	Vector4(0, 650, 400, 70),
-	Vector4(520, 650, 320, 70),
-	Vector4(1020, 650, 480, 70),
-	Vector4(1600, 650, 380, 70),
-	Vector4(2200, 650, 420, 70),
-	Vector4(2760, 650, 460, 70),
-	Vector4(3380, 650, 100, 70),
+	Vector4(0, 650, 560, 70),
+	Vector4(700, 650, 520, 70),
+	Vector4(1320, 650, 200, 70),
+	Vector4(1660, 650, 960, 70),
+	Vector4(2760, 650, 800, 70),
 	Vector4(3700, 650, 700, 70)
 ])
 platforms = Array[Vector4]([
-	Vector4(250, 450, 120, 20),
-	Vector4(570, 350, 100, 20),
-	Vector4(870, 480, 120, 20),
-	Vector4(1180, 300, 100, 20),
+	Vector4(300, 500, 120, 20),
+	Vector4(980, 470, 110, 20),
+	Vector4(1330, 380, 110, 20),
 	Vector4(1480, 420, 120, 20),
-	Vector4(1780, 250, 100, 20),
-	Vector4(2100, 400, 150, 20),
-	Vector4(2420, 320, 100, 20),
-	Vector4(2740, 480, 120, 20),
-	Vector4(3060, 350, 100, 20),
-	Vector4(3380, 450, 100, 20)
+	Vector4(2060, 430, 130, 20),
+	Vector4(2380, 320, 100, 20)
 ])
 enemy_spawns = Array[Dictionary]([
 	{
@@ -267,7 +260,7 @@ melt_forges = Array[Dictionary]([
 		"pos": Vector2(700, 450)
 	},
 	{
-		"pos": Vector2(1250, 500)
+		"pos": Vector2(1150, 500)
 	},
 	{
 		"pos": Vector2(2400, 450)
