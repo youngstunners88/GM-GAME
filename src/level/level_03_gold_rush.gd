@@ -102,8 +102,14 @@ func _setup_depth_routes() -> void:
 	ladder.height = 300.0
 	ladder.top_exit_offset = Vector2(75, 50)  # -> platform centre (1540, 400)
 	add_child(ladder)
-	# EXPLORER — secret walls in the old diggings.
-	for wall_pos: Vector2 in [Vector2(868, 586), Vector2(2468, 586), Vector2(3068, 586)]:
+	# EXPLORER — secret walls tucked in the PITS (the diggings), not on the flat
+	# claim roads. S11 layout redesign made the main ground continuous where it
+	# used to have gaps, so the old on-ground wall x's would have become
+	# chest-high blocks on a flat run (a walk-block the founder is sensitive to).
+	# These sit at pit x's, y≈624 — the proven pit-edge pattern (like the old
+	# x=868 that lived in a gap): smashable while crossing a gap, never blocking
+	# a grounded walk. Verified by tests/s11_stage3_walkpath_test.gd.
+	for wall_pos: Vector2 in [Vector2(620, 624), Vector2(1260, 624), Vector2(3620, 624)]:
 		var wall := preload("res://src/level/secret_wall.tscn").instantiate()
 		wall.global_position = wall_pos
 		add_child(wall)

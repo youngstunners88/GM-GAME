@@ -1,15 +1,55 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/session10-dual-subscription-l8ekui`
+**Branch:** `claude/session11-stage3-layout`
 
-**SESSION 10 pushed to the working branch — CI export + butler deploy will land
-the live build id (same pattern as S8/S9). HARD-REFRESH itch before testing.**
-Vault Security Sentinels replace the oversized emblems + "useless triangle"; the
-gold machine is gone from the Diamond Vault; Gideon's E-dialogue no longer dead-
-locks; the final-boss "frozen statue" is FIXED (regression-gated + captured); and
-— for the first time ever — the S2 AND S3 boss fights were reached in a REAL
-browser capture via a new test-only `?boss=N` warp. Gates green + Security 18/18.
+**SESSION 11 — Stage 3 Gold Rush layout redesign. HARD-REFRESH itch after CI
+deploys.** Stage 3's ground was a mild reskin of Stage 2 (8 segments / 11 decks
+of the same stepping rhythm, plus two unfair 220px gaps). Rebuilt into a real
+Gold-Rush rhythm: **6 ground segments** with two dominant long claim-trails
+(960px post-gate, 800px boss runway), **6** purposeful floating platforms (was
+11), every main-path gap now **140px** (single-jump-legal — the 220s are gone),
+and secret walls moved off the flat run into pits so they can't become
+walk-blocks. Distinct from L2 (~19% shared). Multi-model (Grok+Kimi via
+`OPENROUTER_2`) ran for real this session. Gates green + Security 18/18.
+
+## SESSION 11 — Stage 3 Gold Rush platform layout + aesthetics
+
+Full detail: `docs/session-logs/2026-08-15-s11.md`.
+
+**Multi-model — worked (OPENROUTER_2).** S10's OpenRouter 403 was a host block;
+this session the host is reachable via `OPENROUTER_2`. One fix needed:
+`or-call.mjs` used Node `fetch` which ignores `HTTPS_PROXY` (unlike curl) — routed
+it through the proxy via undici (guarded; CI/no-proxy unchanged). Grok 4.5 (layout
+rhythm, $0.008) + Kimi K3 (geometry fairness/distinctness, $0.128) dispatched
+before the edit; both logged in `docs/model-responses/2026-08-15-s11-*`. Every
+claim verified against real files + empirical gates.
+
+| Item | Status |
+|---|---|
+| **T1 — platform layout** | ✅ **DONE** — 8→6 ground segments, Gold-Rush rhythm (two long claim-trails), 11→6 floaters, all gaps 140px (unfair 220s removed). Distinctness ~19% shared vs L2 = **DISTINCT**. Proven by `s11_stage3_walkpath_test` (corridor clear + gaps ≤170) + boss_arena_reachable + stage3_defence. |
+| **T2 — aesthetics/identity** | ✅ palette already gold (no cyan leftovers in L3); clutter reduced via the 11→6 platform cull; gold-dust / timed gate / Fort Knox door / Reserve intact. |
+| **T3 — set-piece anchors** | ✅ plate 1180, timed gate 1520, ladder 1465, vault door 2690 (bridged), Reserve 3420, boss arena 3700–4400 all on solid spans; reachability gates green. |
+| **T4 — walk-block** | ⚠️ **NEEDS SCREENSHOT** (not attached). The redesign removed the *class* of on-ground blocker (secret walls) + the 220px gaps, but the exact circled spot needs the founder image. Not claimed fixed. |
+| **T5 — circled layout/camera** | ⚠️ **NEEDS SCREENSHOT** (not attached). |
+| **T6 — S2 Distributor chase feel** | 🟡 **DESIGN CALL — no code change.** Captures (`docs/captures/2026-08-14-s10/s2-*`) show a flying boss that tracks horizontally + runs Hoard Gravity, holding overhead because contact = instant restart. **Recommendation: keep the overhead flying-boss rules** (aerial zoner, distinct from the two ground bosses); making him "descend onto" the player means rewriting the boss-touch-restarts rule. Awaiting your explicit choice. |
+| **T7 — final boss statue** | ✅ Fixed + regression-gated in S10; not reopened (no live regression). |
+
+**Gates:** script_compile (149/113), s11_stage3_walkpath, boss_arena_reachable,
+stage3_defence, s10_final_boss_wall_freeze — all PASS; Security Sentinel 18/18;
+web export non-threaded; Stage 3 boots clean in the real export (0 console errors).
+
+<details><summary>Session 10 (previous)</summary>
+
+**SESSION 10 — CI #170 green + butler deploy: success (source `47d8d3c`, export
+`71f4e66`, merged to master via PR #31 `b715a026`).**
+Vault Security Sentinels replaced the oversized emblems + "useless triangle"; the
+gold machine removed from the Diamond Vault; Gideon's E-dialogue dead-lock fixed;
+the final-boss "frozen statue" FIXED (regression-gated + captured); first-ever
+real browser capture of the S2 & S3 fights via a test-only `?boss=N` warp.
+Gates green + Security 18/18. Full detail below.
+
+</details>
 
 ## SESSION 10 — sentinels, no gold machine, E-dialogue, final-boss statue fix, boss-warp capture
 
