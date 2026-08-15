@@ -17,6 +17,11 @@ func _ready() -> void:
     # blocked every prior Distributor capture. No ?boss param => normal menu.
     if _boot_boss_warp():
         return
+    # TEST-ONLY — ?lounge=1 routes straight into the Smoke Lounge so the founder's
+    # brand video can be verified in a real browser (the lounge is a secret realm
+    # a blind driver can't reach). No param => normal menu.
+    if _boot_lounge():
+        return
     play_btn.pressed.connect(_on_play)
     continue_btn.pressed.connect(_on_continue)
     title.text = "LIL BLUNT\nTHE SMOKE REALM"
@@ -53,6 +58,18 @@ func _boot_boss_warp() -> bool:
     # Mark the target unlocked so a fresh save can't bounce the load, then route.
     GameManager.highest_unlocked_level = maxi(GameManager.highest_unlocked_level, n)
     SceneRouter.load_scene(GameManager.level_scene(n), SceneRouter.Transition.FADE)
+    return true
+
+## TEST-ONLY. Reads ?lounge=1 on web and routes into the Smoke Lounge so the
+## founder's brand video can be captured in a browser. No-op otherwise.
+func _boot_lounge() -> bool:
+    if not OS.has_feature("web"):
+        return false
+    var q: Variant = JavaScriptBridge.eval(
+        "new URLSearchParams(window.location.search).get('lounge') || ''", true)
+    if str(q) != "1":
+        return false
+    SceneRouter.load_scene("res://src/level/secret_realm.tscn", SceneRouter.Transition.FADE)
     return true
 
 ## Movie/Video-Game-Layer entry points on the hub (main menu): the Oracle,

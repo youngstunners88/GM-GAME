@@ -177,6 +177,20 @@ func _ready() -> void:
 	_setup_hud()
 	_setup_title_card()
 	AudioManager.set_reverb_profile("cave")
+	# VAULT MUSIC — the vaults used to run in silence (only reverb + SFX). Each
+	# vault now plays its PARENT stage's two-track theme on the same alternating
+	# model levels/bosses use: the Diamond Vault (entered from Crystal Caverns)
+	# carries the L2 theme, Fort Knox (entered from Gold Rush) carries the L3
+	# theme — distinct per vault, on-theme, and reusing shipped tracks (no new
+	# assets). play_playlist degrades silently if a track is ever absent.
+	if _diamonds:
+		AudioManager.play_playlist([
+			"res://src/assets/music/level02_theme.ogg",
+			"res://src/assets/music/level02_theme_alt.ogg"])
+	else:
+		AudioManager.play_playlist([
+			"res://src/assets/music/level03_theme.ogg",
+			"res://src/assets/music/level03_theme_alt.ogg"])
 	if MobileInputHandler:
 		MobileInputHandler.touch_interact.connect(_on_mobile_interact)
 

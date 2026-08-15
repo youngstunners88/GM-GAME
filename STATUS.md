@@ -1,7 +1,24 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/session11-stage3-layout`
+**Branch:** `claude/vault-music`
+
+**VAULT MUSIC + SMOKE LOUNGE VIDEO (follow-up) — BOTH DONE.** The Diamond Vault
+and Fort Knox ran in **silence** (reverb + SFX only) — both now play their parent
+stage's theme (Diamond Vault → Crystal Caverns L2 theme, Fort Knox → Gold Rush L3
+theme), distinct per vault, reusing shipped tracks. Gated by `s11_vault_music_test`.
+**The founder's $SMOKE LOUNGE brand video is now LIVE-wired and browser-proven.**
+The founder supplied a portrait (720×1280) MP4; it was transcoded to
+`src/assets/video/smoke_lounge.ogv` (Ogg Theora — the only HTML5-safe format
+Godot 4.3 decodes) and wired into the lounge. Two real defects in the shipped
+wire-up were fixed: it was on a layer BEHIND the opaque room jpg (invisible), and
+`expand + FULL_RECT` would have squashed the portrait footage — it now plays
+**centered, aspect-preserved, framed by the lounge room**, in front of the plates
+and behind gameplay. **Verified in a real browser** (Theora decodes on the HTML5
+export, 0 console errors — see `docs/captures/2026-08-15-s11-lounge/`). Gated by
+`s11_lounge_video_test`. A test-only `?lounge=1` route was added for the capture.
+
+
 
 **SESSION 11 — Stage 3 Gold Rush layout redesign. HARD-REFRESH itch after CI
 deploys.** Stage 3's ground was a mild reskin of Stage 2 (8 segments / 11 decks
