@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://dualrealbosschase01"]
+
+[ext_resource type="Script" path="res://tests/dual_real_level_boss_chase_test.gd" id="1"]
+
+[node name="DualRealLevelBossChaseTest" type="Node"]
+script = ExtResource("1")

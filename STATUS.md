@@ -1,7 +1,89 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/lounge-video-fullscreen`
+**Branch:** `claude/critical-live-fails`
+
+**⛔ ROOT CAUSE OF "EVERY FIX IS STILL BROKEN LIVE" — THE DEPLOY PIPELINE WAS
+SHIPPING A STALE BUILD (2026-08-16).** While verifying this session's fixes
+reached itch, the butler deploy reported **"Re-used 100.00% of old, added 0 B
+fresh data"** — the live build was byte-identical to the previous one. Traced
+to the real cause, proven not guessed:
+- CI's "Export game to Web" step pipes Godot through `… | tee | tail`, so the
+  step's exit code is `tail`'s — **a failed/no-op export was silently masked**.
+  It produced NO fresh `index.pck`; the stale committed one (from the checkout)
+  sailed through every later gate. The gh-pages log even prints
+  `index.pck is 99.95 MB` (the *committed* size) at butler time, and the commit
+  step logs "No changes to commit" — the export never overwrote anything.
+- Why it can't just commit a fresh one: a real export is now **~124 MiB**, over
+  GitHub's **100 MiB single-file push cap**, so a fresh `index.pck` cannot be
+  committed at all. The tracked one has been frozen at 99.95 MiB (an old build)
+  and re-shipped on every push. **This is why boss/dialogue/every fix across
+  many sessions read as "still broken" — the code never reached the live game.**
+- Proven locally: a clean re-export contains this session's new code (the new
+  `[E] close` dialogue string is present; the old `[E to close]` is gone) while
+  the committed/shipped pck contains only the OLD string.
+
+The deeper cause the loud failure then exposed: CI's "Create export preset"
+step wrote explanatory `#` comment lines INTO `export_presets.cfg`. Godot's
+ConfigFile parser rejects `#` comments — one line makes the WHOLE preset fail
+(`Unexpected identifier: 'all_resources'` → `Invalid export preset name: Web`),
+so the export produced no pck at all. Those comments arrived with the earlier
+pck-size fix, which is exactly when live fixes stopped landing.
+
+Fix (pipeline), **verified live**:
+- The generated `export_presets.cfg` is now pure key=value — every `#`
+  explanation moved OUT of the heredoc into shell comments.
+- Export runs under `set -o pipefail`, deletes the stale pck first, and hard-
+  fails if no fresh pck is produced — a broken export goes RED, never ships stale.
+- `index.pck` is untracked (gitignored) so the >100 MiB artifact never blocks
+  the git push nor gets restored over the fresh one; butler ships the FRESH pck
+  to itch from disk (itch has no such cap; itch is primary). The gh-pages/Vercel
+  mirror no longer carries the pck (secondary; itch is canonical).
+- **Proof (CI run #185):** butler reported `added 17.18 MiB fresh data` (vs the
+  prior "0 B fresh data" on every run) and pushed 129.97 MiB — the live itch
+  build is now current with this session's code AND every prior stuck fix. Give
+  itch ~1–2 min to process, then hard-refresh (Cmd/Ctrl+Shift+R).
+
+**CRITICAL LIVE FAILS — FINAL BOSS FREEZE, GIDEON DIALOGUE, ASSAY SCALE
+(2026-08-16).** Four founder-reported live fails, fixed by actually reproducing
+them in the real levels instead of re-tuning against isolated tests again.
+
+- **FINAL BOSS "doesn't move / doesn't chase" — ROOT CAUSE FOUND & FIXED.**
+  Every prior boss-chase fix was validated in a SYNTHETIC arena and the founder
+  kept rejecting it. This time a real-level, per-frame probe drove the ACTUAL
+  Claim Jumper in the ACTUAL Gold Rush arena and caught it red-handed: his
+  VULNERABLE state braked him to `vx=0` and held it for the **entire ~0.9s
+  window every cycle** — with a 0.85s throw-cooldown + 0.4s throw, that is
+  **~65% of every cycle frozen solid mid-arena**. No isolated gate ever sat in
+  VULNERABLE long enough to see it. Fix: he now DRIFTS toward the player at half
+  a sprint during VULNERABLE (the exact fix `distributor.gd` already carried and
+  the Claim Jumper never got), plus a 1.2s opening chase beat so he pursues
+  before his first dynamite. Real-level gate: he now tracks the player **399px
+  wall-to-wall, to within ±11px**. The Distributor was separately re-verified in
+  its real arena and already chases correctly (444px, ±39px).
+- **BOSS RESPAWN CRASH — also fixed (same investigation).** The real-level
+  probe surfaced a second, latent bug the boss freeze was hiding:
+  `player.gd`'s out-of-lives path called `GameManager.refill_run()`, a function
+  that **never existed** — so every genuine full-life-wipe threw
+  `Invalid call. Nonexistent function 'refill_run'`, aborting the restart (no
+  refill, no reload). Added the missing `refill_run()` and refactored
+  `full_wipe_restart()` to share it (one implementation, no drift).
+- **GIDEON DIALOGUE "I press E to go next but it also cancels" — FIXED.** On the
+  last line, E dismisses the panel (intended since S10) but the prompt still
+  read `[E] next   [ESC] leave`, so a normal advance looked like a cancel. The
+  hint is now honest per line: `[E] next` mid-conversation, `[E] close` on the
+  final line; dropped the confusing inline `[E to close]`.
+- **FORT KNOX ASSAY SCALE "off too far off screen" — FIXED.** The scale sat at
+  x=2560 with the camera's right limit at BOUNDS=2600; its art, `RETURN` label
+  and `[E] WEIGH GOLD` tag reached ~2710, well past the visible edge. Shifted
+  the whole Assay Hall (climb + mezzanine + scale) left to centre on x=2380 so
+  the entire instrument sits inside the camera bounds; climb re-spaced, rises
+  unchanged.
+
+Gates: full script-compile PASS (154 scripts), new real-level boss-chase gate
+PASS for BOTH bosses (`dual_real_level_boss_chase_test`), Security Sentinel
+18/18. Portrait-video complaint (image1) was already resolved by the merged
+full-screen swap (#34).
 
 **VAULT MUSIC FIX — branch `claude/vault-music-critical-fixes` (2026-08-16, PR pending).**
 The vaults were (wrongly) playing their PARENT stage themes (level02/level03).
