@@ -1,7 +1,48 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/lounge-video-fullscreen`
+**Branch:** `claude/critical-live-fails`
+
+**CRITICAL LIVE FAILS — FINAL BOSS FREEZE, GIDEON DIALOGUE, ASSAY SCALE
+(2026-08-16).** Four founder-reported live fails, fixed by actually reproducing
+them in the real levels instead of re-tuning against isolated tests again.
+
+- **FINAL BOSS "doesn't move / doesn't chase" — ROOT CAUSE FOUND & FIXED.**
+  Every prior boss-chase fix was validated in a SYNTHETIC arena and the founder
+  kept rejecting it. This time a real-level, per-frame probe drove the ACTUAL
+  Claim Jumper in the ACTUAL Gold Rush arena and caught it red-handed: his
+  VULNERABLE state braked him to `vx=0` and held it for the **entire ~0.9s
+  window every cycle** — with a 0.85s throw-cooldown + 0.4s throw, that is
+  **~65% of every cycle frozen solid mid-arena**. No isolated gate ever sat in
+  VULNERABLE long enough to see it. Fix: he now DRIFTS toward the player at half
+  a sprint during VULNERABLE (the exact fix `distributor.gd` already carried and
+  the Claim Jumper never got), plus a 1.2s opening chase beat so he pursues
+  before his first dynamite. Real-level gate: he now tracks the player **399px
+  wall-to-wall, to within ±11px**. The Distributor was separately re-verified in
+  its real arena and already chases correctly (444px, ±39px).
+- **BOSS RESPAWN CRASH — also fixed (same investigation).** The real-level
+  probe surfaced a second, latent bug the boss freeze was hiding:
+  `player.gd`'s out-of-lives path called `GameManager.refill_run()`, a function
+  that **never existed** — so every genuine full-life-wipe threw
+  `Invalid call. Nonexistent function 'refill_run'`, aborting the restart (no
+  refill, no reload). Added the missing `refill_run()` and refactored
+  `full_wipe_restart()` to share it (one implementation, no drift).
+- **GIDEON DIALOGUE "I press E to go next but it also cancels" — FIXED.** On the
+  last line, E dismisses the panel (intended since S10) but the prompt still
+  read `[E] next   [ESC] leave`, so a normal advance looked like a cancel. The
+  hint is now honest per line: `[E] next` mid-conversation, `[E] close` on the
+  final line; dropped the confusing inline `[E to close]`.
+- **FORT KNOX ASSAY SCALE "off too far off screen" — FIXED.** The scale sat at
+  x=2560 with the camera's right limit at BOUNDS=2600; its art, `RETURN` label
+  and `[E] WEIGH GOLD` tag reached ~2710, well past the visible edge. Shifted
+  the whole Assay Hall (climb + mezzanine + scale) left to centre on x=2380 so
+  the entire instrument sits inside the camera bounds; climb re-spaced, rises
+  unchanged.
+
+Gates: full script-compile PASS (154 scripts), new real-level boss-chase gate
+PASS for BOTH bosses (`dual_real_level_boss_chase_test`), Security Sentinel
+18/18. Portrait-video complaint (image1) was already resolved by the merged
+full-screen swap (#34).
 
 **SMOKE LOUNGE VIDEO — SWAPPED TO A FULL-SCREEN LANDSCAPE CUT (2026-08-16),
 PLUS a real fix to a build-breaking size bug it exposed.** Founder supplied a

@@ -38,6 +38,12 @@ const BODY := 280.0
 ## stop, which handed the player a free escape window on every single attack.
 const MIN_CHASE_SPEED: float = 280.0
 
+## Speed he keeps while VULNERABLE — half a sprint (player top speed is 240), so
+## he closes slowly rather than freezing solid. See the VULNERABLE case for the
+## founder bug this fixes; mirrors distributor.gd's VULNERABLE_DRIFT exactly so
+## the two bosses handle their damage window the same way.
+const VULNERABLE_DRIFT: float = 120.0
+
 ## Damage window after each dynamite throw, shrinking by phase like the other
 ## two bosses' vulnerable windows. Player DPS is 2.5/s (0.4s axe cooldown);
 ## against 18 HP that is a 7.2s floor on pure hit-connecting time — Kimi K3's
@@ -118,6 +124,11 @@ func _ready() -> void:
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
 	boss_display_name = "The Claim Jumper"
+	# Chase for a beat before the first dynamite (Distributor parity — it starts
+	# its own throw_timer positive for the same reason). At the old 0.0 he threw
+	# on physics frame 1 and dropped straight into the throw/vulnerable rhythm,
+	# so the fight opened on a near-stationary boss instead of a pursuing one.
+	throw_timer = 1.2
 	_setup_health_bar()
 	BossVoiceSystem.set_active(self, BOSS_ID)
 	BossVoiceSystem.say(self, BOSS_ID, "intro", true)
@@ -396,10 +407,25 @@ func _physics_process(delta: float) -> void:
 				_begin_vulnerable()
 
 		State.VULNERABLE:
-			velocity.x = move_toward(velocity.x, 0.0, 150.0 * delta * 60.0)
-			velocity.y += 980.0 * delta
-			move_and_slide()
-			_clamp_to_arena()
+			# DRIFT toward the player instead of braking to a dead stop.
+			#
+			# THE "final boss doesn't move / doesn't chase" ROOT CAUSE, caught by
+			# a real-level per-frame probe (dual_claim_jumper_chase_probe): the
+			# old `move_toward(velocity.x, 0.0, ...)` froze him at vx=0 for the
+			# ENTIRE ~0.9s vulnerable window, and with throw_cooldown 0.85 + a
+			# 0.4s throw that is ~65% of every cycle spent perfectly still — far
+			# worse than the Distributor's old dead stop (~25% of a 7s cycle).
+			# Every isolated boss gate drove a FRESH boss that spent most of its
+			# short life in PATROL, so none of them sat in VULNERABLE long enough
+			# to see the freeze; only the real arena did.
+			#
+			# This is the SAME fix distributor.gd already carries (its VULNERABLE
+			# case + VULNERABLE_DRIFT): he stays the slowest he ever gets — half a
+			# sprint — so the damage window is still real and he reads as clearly
+			# easier to hit, but he never hands the player a free escape by
+			# freezing. Ledge sense + arena clamp come free via _ground_chase, so
+			# he still won't walk into a pit while vulnerable.
+			_ground_chase(delta, VULNERABLE_DRIFT)
 			boss_sprite.modulate = Color(1.0, 0.3, 0.3, 1.0) if fmod(state_timer, 0.2) < 0.1 else Color(1.0, 0.1, 0.1, 1.0)
 			if state_timer <= 0.0:
 				_end_vulnerable()
