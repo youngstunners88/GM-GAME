@@ -7,6 +7,23 @@
 
 ---
 
+## VAULT MP3 FILES — AVAILABLE NOW (do not say they are missing)
+
+| File | Size | MD5 |
+|------|------|-----|
+| `diamonds_are_forever.mp3` | 1,395,151 bytes | `175b1e7606c965be57614a815db822b8` |
+| `goldmine.mp3` | 3,313,663 bytes | `5b4b92e9a3df88f54cf3783d35106be3` |
+
+**Claude:** When the founder attaches these two files in this session, place them at:
+- `src/assets/music/diamonds_are_forever.mp3`
+- `src/assets/music/goldmine.mp3`
+
+Then gate that they load, finish PR #35, deploy with butler **fresh** bytes.
+
+Do **not** claim the files are missing from Drive/repo again without checking session attachments first.
+
+---
+
 ## MANDATORY — Multi-model via OpenRouter (every session, no exceptions)
 
 | Model | Via | Role |
@@ -29,81 +46,51 @@ Solo Claude is not allowed. Evidence of dispatches in STATUS.
   - Diamond Vault wired to `res://src/assets/music/diamonds_are_forever.mp3`
   - Fort Knox wired to `res://src/assets/music/goldmine.mp3`
   - Gate `crit_vault_music_test` asserts exclusive tracks and no parent themes
-- **Honest blocker they hit**: the two MP3 **files** were not in the repo, git history, uploads, or Drive at the time. Wrong parent-theme music is **gone**; vaults will be **silent** until the files are placed.
-- **Do not re-implement the wiring.** It is already in PR #35. Only place the files and finish the ship.
+- **Do not re-implement the wiring.** Only place the MP3 files and finish the ship.
 
 ### Session B (new subscription — still active) — bosses, dialogue, pipeline
 
 - **Branch**: `claude/critical-live-fails` (CI #185 green, butler shipped **17.18 MiB fresh data**)
-- **What landed and is live on itch** (after hard-refresh):
-  - Claim Jumper VULNERABLE freeze fixed (was motionless ~65% of cycle) — drifts toward player
-  - Gideon dialogue hint honest per line (`[E] close` on final line)
-  - Assay Scale shifted fully inside camera bounds
-  - `GameManager.refill_run()` added (respawn crash)
-  - **Deploy pipeline unfrozen**: CI export no longer masks failures; `#` comments stripped from generated preset; oversized `index.pck` untracked so butler ships fresh bytes
-- **Do not re-open boss chase / E / scale / pipeline** unless a hard-refresh playtest still fails. Prove with capture if claiming FIXED again.
+- Claim Jumper VULNERABLE freeze fixed, Gideon E hint fixed, Assay Scale on-screen, `refill_run()` added, deploy pipeline unfrozen.
+- **Do not re-open** unless hard-refresh still fails.
 
 ### Dual-session rule
 
-- Fetch master first. Named branches only. No force-push.
-- Prefer sequential merges via PR.
-- If both touch the same file, STATUS-note and coordinate — do not clobber.
+Fetch master first. Named branches only. No force-push. Prefer sequential merges via PR.
 
 ---
 
-## What is still open (this session’s job)
+## What is still open
 
-### 1. Place the exclusive vault MP3s (top remaining priority)
+### 1. Place the exclusive vault MP3s (top priority)
 
-Founder has the files. They must land at:
+Founder attaches the two files this session. Place at:
+- `src/assets/music/diamonds_are_forever.mp3`
+- `src/assets/music/goldmine.mp3`
 
-| File | Target path |
-|------|-------------|
-| `Diamondsareforever.mp3` | `res://src/assets/music/diamonds_are_forever.mp3` |
-| `Goldmine.mp3` | `res://src/assets/music/goldmine.mp3` |
+Gate load. Finish PR #35. Deploy with fresh butler bytes.
 
-**How to get them**: Founder will attach them in this Claude session (or drop them in Drive). Once present:
+### 2. Confirm Smoke Lounge video after hard-refresh
 
-1. Copy into `src/assets/music/` with the exact names above.
-2. Confirm PR #35 wiring still points at those paths (or rebase PR #35 onto current work).
-3. Gate that the files exist and load (ResourceLoader / AudioStream).
-4. Deploy via butler so vaults are no longer silent.
-
-Wrong parent-theme music is already removed by PR #35. Do not put level02/level03 themes back.
-
-### 2. Confirm / finish Smoke Lounge video
-
-After hard-refresh: if the video aspect is still wrong or it loops, replace with the founder Drive clip:
-
-https://drive.google.com/file/d/1H-Ob6SJQxgj2TvMLFPMQA3S48fIwZaBp/view?usp=sharing  
-
+Drive: https://drive.google.com/file/d/1H-Ob6SJQxgj2TvMLFPMQA3S48fIwZaBp/view?usp=sharing  
 One-shot, full-screen cover, muted, lounge ambient continues.
 
-### 3. Merge order (when green)
+### 3. Merge carefully — no clobber
 
-Suggested order once MP3s are in and video is confirmed:
-
-1. Land vault-music files + finish PR #35 (or equivalent commit on a named branch).
-2. Merge / rebase `claude/critical-live-fails` gameplay + pipeline fixes to master if not already reflected on the live itch build you care about.
-3. STATUS honest: what is live, what still needs founder hard-refresh confirmation.
-
-### 4. Optional but preferred
-
-Live browser capture of Distributor + Claim Jumper on the **current** itch build (post-pipeline-fix). Headless alone has already failed this founder many times.
+### 4. Optional: browser capture of bosses on current live build
 
 ---
 
 ## Definition of Done
 
-- [ ] OpenRouter multi-model used (Claude + Kimi + Grok) — evidence in STATUS
-- [ ] `diamonds_are_forever.mp3` and `goldmine.mp3` present under `src/assets/music/`
+- [ ] OpenRouter multi-model used — evidence in STATUS
+- [ ] Both MP3s under `src/assets/music/` with correct names
 - [ ] Vaults play exclusive tracks (not parent themes, not silence)
-- [ ] PR #35 (or equivalent) merged / shipped; no duplicate rewiring
-- [ ] Session B boss/dialogue/scale/pipeline work not re-broken
-- [ ] Smoke Lounge video correct after hard-refresh (or fixed)
-- [ ] Gates green; butler ships **fresh** data (not 0 B)
-- [ ] STATUS.md updated with dual-session acknowledgment
-- [ ] Founder can hard-refresh itch and hear correct vault music
+- [ ] PR #35 finished / shipped
+- [ ] Session B work not re-broken
+- [ ] Video correct or fixed
+- [ ] Butler ships **fresh** data (not 0 B)
+- [ ] STATUS updated
 
 ---
 
@@ -114,19 +101,15 @@ FOUNDER DIRECTIVE ACTIVE — docs/founder-prompts/PROMPT_COORDINATE_BOTH_SESSION
 
 You are the driving session (new subscription). Old sub hit rate limit.
 
-ACKNOWLEDGE — do not redo:
-- PR #35 / claude/vault-music-critical-fixes: exclusive track WIRING already done; parent themes removed. Only the MP3 FILES were missing.
-- claude/critical-live-fails: Claim Jumper VULNERABLE freeze, Gideon E hint, Assay Scale, refill_run, deploy pipeline unfrozen — already fixed and shipped with fresh butler data. Do not reopen unless hard-refresh still fails.
+ACKNOWLEDGE — do not redo PR #35 wiring or critical-live-fails boss/pipeline work.
 
 YOUR JOB:
-1. OpenRouter multi-model required (Claude + Kimi K3 + Grok 4.5).
-2. Place Diamondsareforever.mp3 → res://src/assets/music/diamonds_are_forever.mp3 and Goldmine.mp3 → res://src/assets/music/goldmine.mp3 (founder will attach or provide). Gate that they load.
-3. Finish ship of vault music (PR #35 or rebase) so vaults are not silent.
-4. Confirm Smoke Lounge video after hard-refresh; fix only if still wrong (Drive link in prompt).
-5. Merge order careful — no clobber of the other session’s work.
-6. Optional: browser capture of bosses on current live build.
+1. OpenRouter multi-model required.
+2. Founder is attaching diamonds_are_forever.mp3 and goldmine.mp3 — place them under src/assets/music/, gate load, finish PR #35, deploy fresh.
+3. Confirm video after hard-refresh; fix only if still wrong.
+4. Careful merge — no clobber.
 
-Gates + STATUS + butler with fresh bytes. No FIXED claims without proof.
+Gates + STATUS + butler with fresh bytes.
 ```
 
 End of directive.
