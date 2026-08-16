@@ -44,13 +44,28 @@ const MIN_CHASE_SPEED: float = 280.0
 ## the two bosses handle their damage window the same way.
 const VULNERABLE_DRIFT: float = 120.0
 
+## Hold at least this far from the player while VULNERABLE — do NOT drift point
+## blank. The VULNERABLE_DRIFT fix (chase-while-exposed, replacing the old
+## vx=0 freeze) also DELIVERED him straight onto the player's axe for free —
+## that is the founder's "the third boss is now way too easy to defeat" (Kimi K3:
+## "drift toward the player delivers him to the weapon while being harmless").
+## He now closes only to here; the player must step INTO range to land hits.
+const VULNERABLE_SEPARATION: float = 96.0
+
+## Max HP the player can strip in a SINGLE vulnerable window before he shakes it
+## off and returns to the hunt. Caps burst-down so the kill takes >= ceil(HP/cap)
+## windows (deterministic, ~6 for 18 HP) instead of one point-blank melt — the
+## other half of the "too easy" fix.
+const MAX_VULN_DAMAGE_PER_WINDOW: int = 3
+var _vuln_damage: int = 0
+
 ## Damage window after each dynamite throw, shrinking by phase like the other
 ## two bosses' vulnerable windows. Player DPS is 2.5/s (0.4s axe cooldown);
 ## against 18 HP that is a 7.2s floor on pure hit-connecting time — Kimi K3's
 ## exact number, re-derived this session after the founder called the fight
 ## "too easy to kill". A player who is never gated at all can pay that in one
 ## unbroken burst from any range; requiring the window makes them earn it.
-@export var vulnerable_time: float = 0.9
+@export var vulnerable_time: float = 0.7
 
 ## Founder, this session: "too easy to kill." Root cause (Kimi K3 TTK
 ## analysis): `take_damage()` had NO state gate at all — compare
@@ -419,13 +434,24 @@ func _physics_process(delta: float) -> void:
 			# short life in PATROL, so none of them sat in VULNERABLE long enough
 			# to see the freeze; only the real arena did.
 			#
-			# This is the SAME fix distributor.gd already carries (its VULNERABLE
-			# case + VULNERABLE_DRIFT): he stays the slowest he ever gets — half a
-			# sprint — so the damage window is still real and he reads as clearly
-			# easier to hit, but he never hands the player a free escape by
-			# freezing. Ledge sense + arena clamp come free via _ground_chase, so
-			# he still won't walk into a pit while vulnerable.
-			_ground_chase(delta, VULNERABLE_DRIFT)
+			# This is the SAME approach distributor.gd carries — but with a
+			# SEPARATION FLOOR so it does not regress into "too easy". He drifts
+			# toward the player only until VULNERABLE_SEPARATION, then holds his
+			# ground: still visibly pursuing across the arena (never the old
+			# mid-arena freeze), but he no longer parks himself point-blank on the
+			# player's axe. The player must step INTO range to cash the window.
+			# Ledge sense + arena clamp come free via _ground_chase.
+			var vpl := get_tree().get_first_node_in_group("player")
+			var vdx: float = (vpl.global_position.x - (global_position.x + HALF_BODY)) if vpl else 0.0
+			if absf(vdx) > VULNERABLE_SEPARATION:
+				_ground_chase(delta, VULNERABLE_DRIFT)
+			else:
+				# Hold at contact range (brief — the window is <=0.7s and only
+				# once the player is already close), not a cross-arena freeze.
+				velocity.x = move_toward(velocity.x, 0.0, TURN_DECEL * delta)
+				velocity.y += 980.0 * delta
+				move_and_slide()
+				_clamp_to_arena()
 			boss_sprite.modulate = Color(1.0, 0.3, 0.3, 1.0) if fmod(state_timer, 0.2) < 0.1 else Color(1.0, 0.1, 0.1, 1.0)
 			if state_timer <= 0.0:
 				_end_vulnerable()
@@ -435,7 +461,8 @@ func _physics_process(delta: float) -> void:
 ## the rest of the fight escalates, same convention as auditor.gd.
 func _begin_vulnerable() -> void:
 	current_state = State.VULNERABLE
-	state_timer = maxf(0.6, vulnerable_time - 0.15 * (current_phase - 1))
+	_vuln_damage = 0
+	state_timer = maxf(0.45, vulnerable_time - 0.15 * (current_phase - 1))
 
 ## Shared exit — the timeout path is the only path today, but kept as its own
 ## function (matching distributor.gd's _end_vulnerable convention) so a future
@@ -509,8 +536,16 @@ func take_damage(amount: int) -> void:
 	_update_health_bar()
 	if health <= 0:
 		die()
-	else:
-		_check_phase_change()
+		return
+	_check_phase_change()
+	# Per-window damage cap: once the player has stripped MAX_VULN_DAMAGE_PER_WINDOW
+	# this window, he shakes it off and returns to the hunt — no burst-down. Forces
+	# ceil(HP/cap) separate windows, so the kill has to be EARNED across the fight
+	# (founder: "too easy to defeat"). _check_phase_change first so a phase step
+	# still lands on this hit.
+	_vuln_damage += amount
+	if _vuln_damage >= MAX_VULN_DAMAGE_PER_WINDOW:
+		_end_vulnerable()
 
 func die() -> void:
 	is_dead = true
