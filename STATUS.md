@@ -1,7 +1,24 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/smoke-lounge-video-replace` (new $SMOKE LOUNGE brand cinematic)
+**Branch:** `master` (PR #37 merged)
+
+**✅ PR #37 MERGED + LIVE — Smoke Lounge video (2026-08-16, new subscription).**
+Took over the old subscription's in-flight PR #37 and shipped it:
+- Verified the asset on the branch: `smoke_lounge.ogv` is **Theora 1280×720, no
+  audio stream** (ffprobe), 27.7 MB; `secret_realm.gd` playback **unchanged**.
+- `tests/s11_lounge_video_test.gd` **5/5 PASS** on the branch tree (loads as
+  VideoStreamTheora, looping, COVERS viewport, muted, correct layer).
+- CI green (run #192, Security Sentinel 18/18) and **butler shipped
+  `added 36.31 MiB fresh data`** — the new cinematic is **already live on itch**
+  from the branch build. PR #37 undrafted + merged to `master` (`99f6a94`); the
+  post-merge master run re-ships identical content (correctly ~0 B fresh, since
+  #192 already delivered it).
+- Multi-model (mandate): Kimi K3 verify — no blocker
+  (`docs/model-responses/2026-08-16-pr37-kimi.md`), plus the old sub's Kimi/Grok
+  logs. PR #36 (stake/Assay) and the bosses were left untouched per the directive.
+- **Founder: hard-refresh the Smoke Lounge (Ctrl/Cmd+Shift+R)** to see the new
+  cinematic — the old one may be browser-cached.
 
 **🎬 SMOKE LOUNGE BRAND VIDEO REPLACED (2026-08-16).** Executed
 `PROMPT_SMOKE_LOUNGE_VIDEO_REPLACE.md` — **new picture only, playback
