@@ -153,6 +153,27 @@ jobs:
       - name: Create export preset
         run: |
           mkdir -p web/game .godot/editor
+          # CRITICAL: the heredoc below becomes res://export_presets.cfg, which
+          # Godot parses with ConfigFile. ConfigFile does NOT accept `#` comments
+          # — any `#` line makes the WHOLE preset fail to parse ("Unexpected
+          # identifier"), Godot then reports "Invalid export preset name: Web",
+          # and the export produces NO pck. That is exactly what silently
+          # happened for many sessions: explanatory `#` comments had been added
+          # INSIDE this heredoc, the export died, the masked pipe hid it, and the
+          # stale committed build kept shipping to itch. Keep the heredoc PURE
+          # key=value only. Explanations live here, as SHELL comments, OUTSIDE
+          # the heredoc:
+          #   export_filter=all_resources  -> bundle every res:// under the root
+          #   include_filter               -> config.json + taglines are plain
+          #        (non-resource) files the Web3Bridge autoload reads at runtime;
+          #        without force-include the contracts/backend wiring is absent.
+          #   exclude_filter docs/,tests/,prompts/,scripts/ -> dev-only dirs that
+          #        all_resources would otherwise sweep into the .pck (docs/
+          #        captures alone was ~15MB of dead weight).
+          #   variant/thread_support=false -> non-threaded: no SharedArrayBuffer/
+          #        COOP/COEP needed, so it boots on itch.io/iframes/mobile.
+          #   html/head_include            -> loads web/web3.js (copied beside
+          #        index.html post-export) so window.LilBluntWeb3 exists at boot.
           cat > export_presets.cfg << 'EOF'
           [preset.0]
           name="Web"
@@ -161,20 +182,7 @@ jobs:
           dedicated_server=false
           custom_features=""
           export_filter="all_resources"
-          # config.json is a plain (non-resource) file the Web3Bridge autoload
-          # reads at runtime via res://config.json — it must be force-included or
-          # the Movie/Video-Game Layer wiring (contracts, backend URL) is absent
-          # in the exported build.
           include_filter="config.json,src/autoload/share_taglines.json"
-          # docs/, tests/, prompts/, scripts/ are dev-only (grep-verified: no
-          # src/ code ever loads a res:// path under them) but were shipping
-          # inside the playable web build anyway — export_filter=all_resources
-          # sweeps every file under the project root that isn't excluded, not
-          # just files referenced by a scene. docs/captures/ alone (session
-          # screenshot evidence) had grown to ~15MB of dead weight riding along
-          # in index.pck, which is why an unrelated asset change could — and
-          # did (run #177) — push the committed .pck over GitHub's 100MB
-          # single-file cap with no warning until the push itself was rejected.
           exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*"
           export_path="web/game/index.html"
           script_export_mode=1
@@ -184,16 +192,11 @@ jobs:
           custom_template/debug=""
           custom_template/release=""
           variant/extensions_support=false
-          # Non-threaded export: no SharedArrayBuffer/COOP/COEP requirement, so the
-          # game boots on itch.io, iframes, and mobile browsers without special headers.
           variant/thread_support=false
           vram_texture_compression/for_desktop=true
           vram_texture_compression/for_mobile=false
           html/export_icon=true
           html/custom_html_shell=""
-          # Load the browser-side Web3 bridge (web/web3.js, copied next to
-          # index.html after export) so window.LilBluntWeb3 exists before the
-          # engine boots. Plain window.ethereum, no external CDN — CSP/itch safe.
           html/head_include="<script src=\"web3.js\"></script>"
           html/canvas_resize_policy=2
           html/focus_canvas_on_start=true
