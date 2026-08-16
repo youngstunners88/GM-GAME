@@ -1,7 +1,44 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/vault-music-critical-fixes` (PR #35 — finishing both sessions)
+**Branch:** `claude/smoke-lounge-video-replace` (new $SMOKE LOUNGE brand cinematic)
+
+**🎬 SMOKE LOUNGE BRAND VIDEO REPLACED (2026-08-16).** Executed
+`PROMPT_SMOKE_LOUNGE_VIDEO_REPLACE.md` — **new picture only, playback
+architecture untouched** as the founder directed ("the way the video was
+integrated is really great — do not redesign playback").
+- Founder's new cinematic (Google Drive, HEVC 1920×1080 · 44.6s · AAC · 65 MB)
+  encoded with the exact founder recipe to `src/assets/video/smoke_lounge.ogv`:
+  `ffmpeg -an -c:v libtheora -q:v 7 -vf scale=1280:720…increase,crop=1280:720 -r 24`.
+  Result: **Theora · 1280×720 · 44.67s · NO audio stream · 27.7 MB** (< GitHub's
+  100 MB single-file cap; the shipped `index.pck` is CI-built + butler-only,
+  never committed, so no push-cap regression).
+- Content verified by extracting real frames: neon $SMOKE LOUNGE entrance with
+  doors parting on green smoke (BTC/Solana/ETH wall logos) → luxe interior with
+  the floating diamond $SMOKE centerpiece, gold coin rain, energy beams, hosts,
+  and BTC/GM/DIAMONDS/Solana/ETH protocol logos. Exactly the founder's brief.
+- **Unchanged (verified by gate):** full-screen COVER fit, `loop = true`, muted
+  (source `-an` + `volume_db` belt-and-suspenders), lounge ambient continues
+  underneath, `VideoStreamPlayer` on the CanvasLayer between room plates and
+  gameplay, stops on `_exit_tree`. No edit to `secret_realm.gd`.
+- Gate `tests/s11_lounge_video_test.gd`: **5/5 PASS** (loads as
+  VideoStreamTheora, BrandVideo player looping, COVERS whole viewport, muted,
+  correct layer). Security Sentinel **18/18**, non-threaded export intact.
+- Multi-model (mandate): Kimi K3 → **NO-BLOCKER, ship it** (format correct,
+  16:9→16:9 crop is a no-op, 27.7 MB fine for a 44s 720p loop); Grok 4.5 → brand
+  vibe lands as a hidden bonus room. Logged in
+  `docs/model-responses/2026-08-16-sl-video-{kimi,grok}.md`.
+- Added the `smoke-lounge-video-replace` skill to the repo
+  (`.claude/skills/…/SKILL.md`) for next time, per the directive.
+- **Not FIXED until founder hard-refreshes itch:** butler must ship fresh bytes;
+  itch/browser cache the old `.ogv`, so a hard-refresh (Ctrl/Cmd+Shift+R) on the
+  Smoke Lounge is required to see the new cinematic.
+- Bosses untouched. PR #36 (stake CONFIRM + Assay Scale) is a **separate draft
+  branch off master** — this video branch does not touch or clobber it.
+
+---
+
+**Branch (earlier):** `claude/vault-music-critical-fixes` (PR #35 — finishing both sessions)
 
 **🎵 VAULT MUSIC MP3s PLACED + BOTH SESSIONS MERGED (2026-08-16).** Coordinated
 finish per `PROMPT_COORDINATE_BOTH_SESSIONS_FINISH.md`. Session A's PR #35
