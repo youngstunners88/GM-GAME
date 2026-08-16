@@ -1,7 +1,28 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/critical-live-fails`
+**Branch:** `claude/vault-music-critical-fixes` (PR #35 — finishing both sessions)
+
+**🎵 VAULT MUSIC MP3s PLACED + BOTH SESSIONS MERGED (2026-08-16).** Coordinated
+finish per `PROMPT_COORDINATE_BOTH_SESSIONS_FINISH.md`. Session A's PR #35
+(vault-music wiring — exclusive Diamond Vault / Fort Knox tracks, no parent
+themes) was blocked only on the missing MP3s; Session B (this one) carried the
+deploy-pipeline fix that PR #35 needs to ship fresh at all. Both merged onto the
+PR #35 branch:
+- Placed `src/assets/music/diamonds_are_forever.mp3` (md5 175b1e76…, matches
+  founder manifest) and `goldmine.mp3` (md5 5b4b92e9…). Both load as
+  AudioStream; `.import` generated. Removed the obsolete `_vault_music_chunks/`
+  base64 reconstruction cruft + `reconstruct_vault_music.py`.
+- Merge preserved the EXCLUSIVE vault tracks (gate `crit_vault_music_test` PASS:
+  wires both mp3s, no level02/03 theme) AND Session B's Claim Jumper freeze fix,
+  Gideon `[E] close` hint, Assay Scale on-screen, `refill_run()`, and the
+  export-preset/`pipefail`/untracked-pck pipeline fix.
+- Gates: script-compile 155/118 PASS, `dual_real_level_boss_chase` PASS (both
+  bosses, 432px/400px), mp3 load PASS, Security Sentinel 18/18.
+- Multi-model (mandate): Kimi K3 dispatched via OpenRouter for the vault-music +
+  merge + pipeline verification — `docs/model-responses/2026-08-16-dual-finish-kimi.md`
+  (verdict: no blocker; its file-load/packing/merge concerns all verified above).
+- Deploy: merging PR #35 → master; CI must show butler "added N MiB fresh data".
 
 **⛔ ROOT CAUSE OF "EVERY FIX IS STILL BROKEN LIVE" — THE DEPLOY PIPELINE WAS
 SHIPPING A STALE BUILD (2026-08-16).** While verifying this session's fixes
