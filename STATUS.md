@@ -1,7 +1,41 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/vault-music-critical-fixes` (PR #35 — finishing both sessions)
+**Branch:** `claude/live-residuals-stake-assay` (stake CONFIRM + Assay Scale redesign)
+
+**✅ LIVE RESIDUALS — STAKE CONFIRM + ASSAY SCALE REDESIGN (2026-08-16).**
+Executed `PROMPT_LIVE_RESIDUALS_STAKE_ASSAY_BOSSES.md`. Bosses intentionally
+LEFT to the parallel session per the founder's explicit "Leave the bosses."
+- **#1 Stake never confirmed — FIXED + GATED.** Gideon's dialogue promised
+  "hit CONFIRM" but the panel only offered `[E] close`/`[ESC] leave` — the
+  copy advertised a control that wasn't wired. Now Gideon's final line is a
+  real commit: pressing **E** on the last dialogue step stakes 25% of your
+  GOLD into Fort Knox (`GoldMineSystem.stake_in_fort_knox`), plays the powerup
+  SFX + shake, floats "LOCKED IN — +N FORT KNOX SHARES", and refreshes the
+  readout. One-shot guarded; no-op on empty gold. Gate
+  `tests/res_stake_assay_test.gd` proves `fort_knox_shares` rises and
+  `gold_balance` drops end-to-end, and that the last line still says CONFIRM.
+- **#2 Assay Scale "text masking each other" — REBUILT + GATED.** Root cause:
+  styled + black-outlined Labels report a real minimum height of ~72–90px
+  in-tree (not ~font_size), so the old 60px row gaps overlapped. Rebuilt
+  `_build_gold_scale` with a dark backing panel and generous ~100px bands
+  (title → scale → STAKED/RETURN labels → live values → hint) so no two label
+  rects can intersect. Scale art enlarged to 230px with a bright halo ring so
+  it reads as the instrument; all labels ≥26px with black outline. Gate
+  asserts ≥3 labels, scale art ≥200px, and **no two label rects overlap**.
+- **#3 Distributor / Claim Jumper chase — NOT TOUCHED (founder: "Leave the
+  bosses").** Owned by the parallel session; requires real-browser capture.
+- Gates all green: `res_stake_assay_test` 6/6, `crit_vault_music_test` 3/3,
+  `s8_dialogue_npc_art_test` 7/7, Security Sentinel 18/18.
+- Multi-model (mandate): Kimi K3 + Grok 4.5 dispatched via OpenRouter —
+  `docs/model-responses/2026-08-16-res-{kimi,grok}.md` (Kimi → real confirm
+  panel design; Grok → Assay layout). Both approaches adopted above.
+- Dual-session note: STATUS.md history below belongs to the parallel session's
+  PR #35 branch; this section is prepended, not a rewrite.
+
+---
+
+**Branch (parallel session):** `claude/vault-music-critical-fixes` (PR #35)
 
 **🎵 VAULT MUSIC MP3s PLACED + BOTH SESSIONS MERGED (2026-08-16).** Coordinated
 finish per `PROMPT_COORDINATE_BOTH_SESSIONS_FINISH.md`. Session A's PR #35
