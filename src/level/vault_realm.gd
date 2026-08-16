@@ -89,6 +89,12 @@ var _gideon_sprite: Sprite2D = null
 var _gideon_x: float = 0.0
 var _gideon_panel: CanvasLayer = null
 var _gideon_line: Label = null
+## The bottom prompt line. Stored so gideon_step can keep it HONEST: on a mid
+## line E advances ("[E] next"), on the last line E dismisses ("[E] close").
+## A static "[E] next   [ESC] leave" was the founder's "I press E to go next
+## but it also cancels" — on the final line E closed the panel while the hint
+## still promised another line, so a normal advance read as a cancel.
+var _gideon_hint: Label = null
 
 ## Play a vault character's VO clip (Mira / Gideon). Fire-and-forget: builds a
 ## throwaway AudioStreamPlayer that frees itself when the line finishes.
@@ -177,20 +183,22 @@ func _ready() -> void:
 	_setup_hud()
 	_setup_title_card()
 	AudioManager.set_reverb_profile("cave")
-	# VAULT MUSIC — the vaults used to run in silence (only reverb + SFX). Each
-	# vault now plays its PARENT stage's two-track theme on the same alternating
-	# model levels/bosses use: the Diamond Vault (entered from Crystal Caverns)
-	# carries the L2 theme, Fort Knox (entered from Gold Rush) carries the L3
-	# theme — distinct per vault, on-theme, and reusing shipped tracks (no new
-	# assets). play_playlist degrades silently if a track is ever absent.
+	# EXCLUSIVE VAULT MUSIC (founder directive, critical). The vaults previously
+	# (wrongly) played their PARENT STAGE themes (level02/level03) — the founder
+	# was explicit that each vault must play its OWN exclusive track, NEVER the
+	# stage theme. A single-track playlist loops that one track; play_playlist
+	# supersedes/ducks whatever was playing (stop-previous), and on exit the
+	# stage scene reloads and re-establishes its own music, so "restore on exit"
+	# and "never plays outside the vault" both hold for free (separate scene).
+	#   Diamond Vault -> diamonds_are_forever.mp3 (exclusive)
+	#   Fort Knox     -> goldmine.mp3            (exclusive)
+	# NOTE: the founder-supplied MP3s were NOT present in the repo / uploads /
+	# Drive at wiring time — see STATUS. play_playlist degrades to SILENCE (never
+	# the wrong parent theme) until the files are dropped at these exact paths.
 	if _diamonds:
-		AudioManager.play_playlist([
-			"res://src/assets/music/level02_theme.ogg",
-			"res://src/assets/music/level02_theme_alt.ogg"])
+		AudioManager.play_playlist(["res://src/assets/music/diamonds_are_forever.mp3"])
 	else:
-		AudioManager.play_playlist([
-			"res://src/assets/music/level03_theme.ogg",
-			"res://src/assets/music/level03_theme_alt.ogg"])
+		AudioManager.play_playlist(["res://src/assets/music/goldmine.mp3"])
 	if MobileInputHandler:
 		MobileInputHandler.touch_interact.connect(_on_mobile_interact)
 
@@ -787,9 +795,11 @@ func gideon_step() -> void:
 	var line := _gideon_dlg.advance()
 	if _gideon_line != null and is_instance_valid(_gideon_line):
 		_gideon_line.text = "GIDEON: " + line
-	if _gideon_dlg.at_end() and _gideon_line != null and is_instance_valid(_gideon_line):
-		# Tell the player the next E closes, so the terminal press is discoverable.
-		_gideon_line.text += "   [E to close]"
+	# Keep the prompt truthful about what THIS line's E will do. On the last line
+	# the next E closes the panel, so say so — never leave it promising "next".
+	if _gideon_hint != null and is_instance_valid(_gideon_hint):
+		_gideon_hint.text = ("[E] close   [ESC] leave" if _gideon_dlg.at_end()
+			else "[E] next   [ESC] leave")
 
 func gideon_close() -> void:
 	_gideon_open = false
@@ -836,6 +846,8 @@ func _build_gideon_panel() -> void:
 	hint.position = Vector2(-236, 40)
 	style_label(hint, 22)
 	root.add_child(hint)
+	# Stored so gideon_step can flip it to "[E] close" on the terminal line.
+	_gideon_hint = hint
 
 ## A big +/- control row: a large label, a "-" Button, a big value Label, a "+"
 ## Button. Buttons are >=96px tall touch targets (Fable/Kimi s7).
@@ -993,16 +1005,27 @@ func _setup_fort_knox_depth() -> void:
 
 	# Climb up to the mezzanine: three stepped platforms (jump-legal — each rise
 	# is <= the player's ~92px single-jump apex, checked not eyeballed).
+	#
+	# S-DUAL: the whole hall shifted LEFT. It used to centre the mezzanine at
+	# x=2560 and the Assay Scale on top of it — but the camera pins its right
+	# edge at limit_right=BOUNDS(2600), and the scale's art, its RETURN label
+	# (+150px) and its "[E] WEIGH GOLD" tag all reach ~2710, well past 2600. That
+	# is the founder's "this is off too far off screen": half the instrument sat
+	# outside the visible window. HALL_CX centres it so the entire scale — art,
+	# both pan labels and the tag — stays inside the camera's right limit with
+	# margin. The climb is re-spaced to land on the new deck; rises unchanged.
+	const HALL_CX: float = 2380.0
 	var steps: Array = [
 		Vector2(2020.0, SURFACE_Y - 70.0),
-		Vector2(2200.0, SURFACE_Y - 150.0),
-		Vector2(2380.0, SURFACE_Y - 230.0),
+		Vector2(2160.0, SURFACE_Y - 150.0),
+		Vector2(2300.0, SURFACE_Y - 230.0),
 	]
 	for p: Vector2 in steps:
 		_build_platform(p, Vector2(150.0, 24.0), true)  # golden highlight (T5)
-	# The mezzanine deck itself — the Assay Hall floor (golden).
+	# The mezzanine deck itself — the Assay Hall floor (golden). Centred on
+	# HALL_CX, width 360 → spans 2200..2560, fully inside limit_right=2600.
 	var mezz_y: float = SURFACE_Y - 230.0
-	_build_platform(Vector2(2560.0, mezz_y), Vector2(360.0, 28.0), true)
+	_build_platform(Vector2(HALL_CX, mezz_y), Vector2(360.0, 28.0), true)
 
 	# THE ASSAY SCALE — weigh GOLD into a Fort Knox stake. Grouped so the gate can
 	# assert the second chamber exists and is reachable/interactive.
@@ -1011,7 +1034,7 @@ func _setup_fort_knox_depth() -> void:
 	scale.add_to_group("assay_scale")
 	scale.collision_layer = 0
 	scale.collision_mask = 2
-	scale.position = Vector2(2560.0, mezz_y - 40.0)
+	scale.position = Vector2(HALL_CX, mezz_y - 40.0)
 	add_child(scale)
 	var scs := CollisionShape2D.new()
 	var srect := RectangleShape2D.new()

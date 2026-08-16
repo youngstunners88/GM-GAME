@@ -1,7 +1,130 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/lounge-video-fullscreen`
+**Branch:** `claude/vault-music-critical-fixes` (PR #35 — finishing both sessions)
+
+**🎵 VAULT MUSIC MP3s PLACED + BOTH SESSIONS MERGED (2026-08-16).** Coordinated
+finish per `PROMPT_COORDINATE_BOTH_SESSIONS_FINISH.md`. Session A's PR #35
+(vault-music wiring — exclusive Diamond Vault / Fort Knox tracks, no parent
+themes) was blocked only on the missing MP3s; Session B (this one) carried the
+deploy-pipeline fix that PR #35 needs to ship fresh at all. Both merged onto the
+PR #35 branch:
+- Placed `src/assets/music/diamonds_are_forever.mp3` (md5 175b1e76…, matches
+  founder manifest) and `goldmine.mp3` (md5 5b4b92e9…). Both load as
+  AudioStream; `.import` generated. Removed the obsolete `_vault_music_chunks/`
+  base64 reconstruction cruft + `reconstruct_vault_music.py`.
+- Merge preserved the EXCLUSIVE vault tracks (gate `crit_vault_music_test` PASS:
+  wires both mp3s, no level02/03 theme) AND Session B's Claim Jumper freeze fix,
+  Gideon `[E] close` hint, Assay Scale on-screen, `refill_run()`, and the
+  export-preset/`pipefail`/untracked-pck pipeline fix.
+- Gates: script-compile 155/118 PASS, `dual_real_level_boss_chase` PASS (both
+  bosses, 432px/400px), mp3 load PASS, Security Sentinel 18/18.
+- Multi-model (mandate): Kimi K3 dispatched via OpenRouter for the vault-music +
+  merge + pipeline verification — `docs/model-responses/2026-08-16-dual-finish-kimi.md`
+  (verdict: no blocker; its file-load/packing/merge concerns all verified above).
+- Deploy: merging PR #35 → master; CI must show butler "added N MiB fresh data".
+
+**⛔ ROOT CAUSE OF "EVERY FIX IS STILL BROKEN LIVE" — THE DEPLOY PIPELINE WAS
+SHIPPING A STALE BUILD (2026-08-16).** While verifying this session's fixes
+reached itch, the butler deploy reported **"Re-used 100.00% of old, added 0 B
+fresh data"** — the live build was byte-identical to the previous one. Traced
+to the real cause, proven not guessed:
+- CI's "Export game to Web" step pipes Godot through `… | tee | tail`, so the
+  step's exit code is `tail`'s — **a failed/no-op export was silently masked**.
+  It produced NO fresh `index.pck`; the stale committed one (from the checkout)
+  sailed through every later gate. The gh-pages log even prints
+  `index.pck is 99.95 MB` (the *committed* size) at butler time, and the commit
+  step logs "No changes to commit" — the export never overwrote anything.
+- Why it can't just commit a fresh one: a real export is now **~124 MiB**, over
+  GitHub's **100 MiB single-file push cap**, so a fresh `index.pck` cannot be
+  committed at all. The tracked one has been frozen at 99.95 MiB (an old build)
+  and re-shipped on every push. **This is why boss/dialogue/every fix across
+  many sessions read as "still broken" — the code never reached the live game.**
+- Proven locally: a clean re-export contains this session's new code (the new
+  `[E] close` dialogue string is present; the old `[E to close]` is gone) while
+  the committed/shipped pck contains only the OLD string.
+
+The deeper cause the loud failure then exposed: CI's "Create export preset"
+step wrote explanatory `#` comment lines INTO `export_presets.cfg`. Godot's
+ConfigFile parser rejects `#` comments — one line makes the WHOLE preset fail
+(`Unexpected identifier: 'all_resources'` → `Invalid export preset name: Web`),
+so the export produced no pck at all. Those comments arrived with the earlier
+pck-size fix, which is exactly when live fixes stopped landing.
+
+Fix (pipeline), **verified live**:
+- The generated `export_presets.cfg` is now pure key=value — every `#`
+  explanation moved OUT of the heredoc into shell comments.
+- Export runs under `set -o pipefail`, deletes the stale pck first, and hard-
+  fails if no fresh pck is produced — a broken export goes RED, never ships stale.
+- `index.pck` is untracked (gitignored) so the >100 MiB artifact never blocks
+  the git push nor gets restored over the fresh one; butler ships the FRESH pck
+  to itch from disk (itch has no such cap; itch is primary). The gh-pages/Vercel
+  mirror no longer carries the pck (secondary; itch is canonical).
+- **Proof (CI run #185):** butler reported `added 17.18 MiB fresh data` (vs the
+  prior "0 B fresh data" on every run) and pushed 129.97 MiB — the live itch
+  build is now current with this session's code AND every prior stuck fix. Give
+  itch ~1–2 min to process, then hard-refresh (Cmd/Ctrl+Shift+R).
+
+**CRITICAL LIVE FAILS — FINAL BOSS FREEZE, GIDEON DIALOGUE, ASSAY SCALE
+(2026-08-16).** Four founder-reported live fails, fixed by actually reproducing
+them in the real levels instead of re-tuning against isolated tests again.
+
+- **FINAL BOSS "doesn't move / doesn't chase" — ROOT CAUSE FOUND & FIXED.**
+  Every prior boss-chase fix was validated in a SYNTHETIC arena and the founder
+  kept rejecting it. This time a real-level, per-frame probe drove the ACTUAL
+  Claim Jumper in the ACTUAL Gold Rush arena and caught it red-handed: his
+  VULNERABLE state braked him to `vx=0` and held it for the **entire ~0.9s
+  window every cycle** — with a 0.85s throw-cooldown + 0.4s throw, that is
+  **~65% of every cycle frozen solid mid-arena**. No isolated gate ever sat in
+  VULNERABLE long enough to see it. Fix: he now DRIFTS toward the player at half
+  a sprint during VULNERABLE (the exact fix `distributor.gd` already carried and
+  the Claim Jumper never got), plus a 1.2s opening chase beat so he pursues
+  before his first dynamite. Real-level gate: he now tracks the player **399px
+  wall-to-wall, to within ±11px**. The Distributor was separately re-verified in
+  its real arena and already chases correctly (444px, ±39px).
+- **BOSS RESPAWN CRASH — also fixed (same investigation).** The real-level
+  probe surfaced a second, latent bug the boss freeze was hiding:
+  `player.gd`'s out-of-lives path called `GameManager.refill_run()`, a function
+  that **never existed** — so every genuine full-life-wipe threw
+  `Invalid call. Nonexistent function 'refill_run'`, aborting the restart (no
+  refill, no reload). Added the missing `refill_run()` and refactored
+  `full_wipe_restart()` to share it (one implementation, no drift).
+- **GIDEON DIALOGUE "I press E to go next but it also cancels" — FIXED.** On the
+  last line, E dismisses the panel (intended since S10) but the prompt still
+  read `[E] next   [ESC] leave`, so a normal advance looked like a cancel. The
+  hint is now honest per line: `[E] next` mid-conversation, `[E] close` on the
+  final line; dropped the confusing inline `[E to close]`.
+- **FORT KNOX ASSAY SCALE "off too far off screen" — FIXED.** The scale sat at
+  x=2560 with the camera's right limit at BOUNDS=2600; its art, `RETURN` label
+  and `[E] WEIGH GOLD` tag reached ~2710, well past the visible edge. Shifted
+  the whole Assay Hall (climb + mezzanine + scale) left to centre on x=2380 so
+  the entire instrument sits inside the camera bounds; climb re-spaced, rises
+  unchanged.
+
+Gates: full script-compile PASS (154 scripts), new real-level boss-chase gate
+PASS for BOTH bosses (`dual_real_level_boss_chase_test`), Security Sentinel
+18/18. Portrait-video complaint (image1) was already resolved by the merged
+full-screen swap (#34).
+
+**VAULT MUSIC FIX — branch `claude/vault-music-critical-fixes` (2026-08-16, PR pending).**
+The vaults were (wrongly) playing their PARENT stage themes (level02/level03).
+Fixed in `vault_realm.gd`: the Diamond Vault now wires **`diamonds_are_forever.mp3`**
+exclusively and Fort Knox wires **`goldmine.mp3`** exclusively (single-track loop
+via `AudioManager.play_playlist`; the stage scene re-establishes its own music on
+exit, and a separate scene means it never plays outside the vault). Gate
+`crit_vault_music_test` asserts the exclusive tracks are wired and NO level02/03
+theme remains. **HONEST BLOCKER:** the founder-supplied `Diamondsareforever.mp3` /
+`Goldmine.mp3` are NOT in the repo, git history, session uploads, or the Drive
+folder (searched all four) — so the wiring is correct but the vaults play SILENCE
+(never the wrong theme) until the two MP3s are dropped at
+`res://src/assets/music/diamonds_are_forever.mp3` and `.../goldmine.mp3`. Please
+attach them or add them to the Drive art folder and I'll place + deploy.
+Multi-model this turn: **Claude (lead) + Kimi K3 + Grok 4.5** via OpenRouter
+(logs in `docs/model-responses/2026-08-16-crit-*.md`). Dual-session note: the
+other subscription owns `claude/lounge-video-fullscreen` (video + S10/S11);
+I stayed on a separate branch and touched only the vault music path to avoid
+collision — bosses/E-dialogue/off-screen are that session's active domain and
+need their real-browser captures, not another headless claim.
 
 **SMOKE LOUNGE VIDEO — SWAPPED TO A FULL-SCREEN LANDSCAPE CUT (2026-08-16),
 PLUS a real fix to a build-breaking size bug it exposed.** Founder supplied a

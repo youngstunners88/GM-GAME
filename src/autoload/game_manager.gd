@@ -282,11 +282,21 @@ func lose_life() -> bool:
 ##
 ## Deliberately NOT a route to the menu: the whole point is that the player
 ## keeps playing.
-func full_wipe_restart() -> void:
-    level_checkpoints.clear()
-    # A full wipe is a brand-new attempt: the Blaze portal and secret door on
-    # this level become available again (see reopen_side_entrances).
-    reopen_side_entrances(current_level)
+## Pure run-state refill: restore lives + health and clear any active power-up,
+## then persist. Deliberately does NOT clear checkpoints and does NOT load a
+## scene — the CALLER owns the transition.
+##
+## This exists because player.gd's full-wipe path (_respawn_or_game_over, when
+## lives hit 0) called `GameManager.refill_run()` — a function that never
+## existed. On EVERY genuine out-of-lives wipe that line threw
+## "Invalid call. Nonexistent function 'refill_run'", aborting the rest of
+## _respawn_or_game_over so its own fade + SceneRouter.load_scene never ran: the
+## run neither refilled nor restarted. Isolated boss/headless tests never
+## exercised the real death path, so it stayed invisible until a real-level
+## chase sim drove the player out of lives (dual_real_level_boss_chase_test).
+## player.gd clears the checkpoint and drives its own fade+load around this
+## call, so refilling here must stay load-free or the two loads race.
+func refill_run() -> void:
     lives = max_lives
     lives_changed.emit(lives)
     player_health = max_health
@@ -296,6 +306,15 @@ func full_wipe_restart() -> void:
     big_axe_timer = 0.0
     power_up_changed.emit("", 0.0)
     save_session()
+
+func full_wipe_restart() -> void:
+    level_checkpoints.clear()
+    # A full wipe is a brand-new attempt: the Blaze portal and secret door on
+    # this level become available again (see reopen_side_entrances).
+    reopen_side_entrances(current_level)
+    # Shared refill (lives/health/power-up/save) — ONE implementation, so the
+    # wipe path and player.gd's out-of-lives path can never drift apart.
+    refill_run()
     # SceneRouter owns transitions; reload the level the player is on.
     SceneRouter.load_scene(level_scene(current_level), SceneRouter.Transition.FADE)
 
