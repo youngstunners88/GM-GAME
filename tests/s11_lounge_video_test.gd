@@ -1,15 +1,20 @@
 extends Node2D
 ## S11 — Smoke Lounge brand-video wire-up gate.
 ##
-## The founder supplied the $SMOKE LOUNGE clip (a PORTRAIT 720x1280 phone video);
-## it was transcoded to src/assets/video/smoke_lounge.ogv (Ogg Theora, the only
-## HTML5-safe format Godot 4.3 decodes). This proves:
+## The founder supplied the $SMOKE LOUNGE clip (2026-08-16: a LANDSCAPE
+## 1280x720, audio-free encode — replacing the original portrait clip); it is
+## transcoded to src/assets/video/smoke_lounge.ogv (Ogg Theora, the only
+## HTML5-safe format Godot 4.3 decodes, `-an` at the source so it carries no
+## audio track at all). This proves:
 ##   1. the asset loads as a VideoStreamTheora,
 ##   2. the lounge builds a BrandVideo player carrying that stream, looping,
-##   3. it is presented ASPECT-PRESERVED (not stretched to the landscape
-##      viewport) — i.e. the player rect keeps the source's portrait ratio, so
-##      the brand footage is not squashed,
-##   4. it sits IN FRONT of the -20 parallax room (so it is actually visible,
+##   3. it is presented with a COVER fit — the player rect fills the ENTIRE
+##      viewport on both axes (founder: "I want the entire screen to be
+##      covered"), never leaving a gap on either edge,
+##   4. it is MUTED regardless of the source track (belt-and-suspenders on top
+##      of the audio-free encode, so the lounge's own background music is
+##      never fought for the audio bus),
+##   5. it sits IN FRONT of the -20 parallax room (so it is actually visible,
 ##      not occluded behind the opaque room jpg as the original wire-up was).
 ##
 ## Run: godot --headless res://tests/s11_lounge_video_test.tscn
@@ -41,13 +46,20 @@ func _ready() -> void:
 		"no VideoStreamPlayer with a stream/loop found")
 
 	if vid != null:
-		# 3. Aspect preserved: rect ratio ~ source portrait ratio (405/720=0.5625),
-		#    NOT the landscape viewport ratio (~1.78). Guards against the squash.
-		var rect_ar: float = vid.size.x / maxf(1.0, vid.size.y)
-		_check("brand video is aspect-preserved (portrait, not stretched to landscape)",
-			rect_ar < 1.0 and absf(rect_ar - (405.0 / 720.0)) < 0.05,
-			"rect aspect %.3f (expected ~0.5625, portrait)" % rect_ar)
-		# 4. Visible layer: its CanvasLayer is in FRONT of the -20 plates and
+		# 3. COVER fit: the player rect must be >= the viewport on BOTH axes
+		#    (within a tiny float-rounding tolerance) — i.e. it never leaves a
+		#    gap for the room art to show through. This is the opposite
+		#    assertion from the earlier "contain" gate (which required the
+		#    rect to be SMALLER than the viewport on one axis, letterboxed).
+		var vp: Vector2 = realm.get_viewport().get_visible_rect().size
+		_check("brand video COVERS the entire screen (no gap on either axis)",
+			vid.size.x >= vp.x - 0.5 and vid.size.y >= vp.y - 0.5,
+			"rect %s vs viewport %s" % [str(vid.size), str(vp)])
+		# 4. Muted regardless of the (now audio-free) source encode.
+		_check("brand video is muted (no sound leaks over the lounge music)",
+			vid.volume_db <= -40.0,
+			"volume_db=%.1f (want <= -40)" % vid.volume_db)
+		# 5. Visible layer: its CanvasLayer is in FRONT of the -20 plates and
 		#    behind the gameplay plane (0).
 		var cl := vid.get_parent() as CanvasLayer
 		_check("brand video layer is in front of the room plates and behind gameplay",

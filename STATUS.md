@@ -1,22 +1,29 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/vault-music`
+**Branch:** `claude/lounge-video-fullscreen`
 
-**VAULT MUSIC + SMOKE LOUNGE VIDEO (follow-up) — BOTH DONE.** The Diamond Vault
-and Fort Knox ran in **silence** (reverb + SFX only) — both now play their parent
-stage's theme (Diamond Vault → Crystal Caverns L2 theme, Fort Knox → Gold Rush L3
-theme), distinct per vault, reusing shipped tracks. Gated by `s11_vault_music_test`.
-**The founder's $SMOKE LOUNGE brand video is now LIVE-wired and browser-proven.**
-The founder supplied a portrait (720×1280) MP4; it was transcoded to
-`src/assets/video/smoke_lounge.ogv` (Ogg Theora — the only HTML5-safe format
-Godot 4.3 decodes) and wired into the lounge. Two real defects in the shipped
-wire-up were fixed: it was on a layer BEHIND the opaque room jpg (invisible), and
-`expand + FULL_RECT` would have squashed the portrait footage — it now plays
-**centered, aspect-preserved, framed by the lounge room**, in front of the plates
-and behind gameplay. **Verified in a real browser** (Theora decodes on the HTML5
-export, 0 console errors — see `docs/captures/2026-08-15-s11-lounge/`). Gated by
-`s11_lounge_video_test`. A test-only `?lounge=1` route was added for the capture.
+**SMOKE LOUNGE VIDEO — SWAPPED TO A FULL-SCREEN LANDSCAPE CUT (2026-08-16).**
+Founder supplied a SECOND clip (1280×720 landscape, matching the project's own
+base viewport) to replace the first portrait one, with two explicit asks: cover
+the ENTIRE screen (no framing/letterboxing), and NO audio (the lounge's own
+background music must keep playing). Re-encoded to `smoke_lounge.ogv` with
+`ffmpeg -an` (audio stream stripped at the source, not just muted) and rewired
+the fit from "contain" (letterboxed, framed by the room art) to "cover" (scales
+to the LARGER axis so the clip always fills the full viewport, cropping any
+overflow — the room art never shows through). `volume_db=-80` kept as
+belt-and-suspenders on top of the audio-free encode. **Verified in a real
+browser**: 0 console errors, full edge-to-edge coverage confirmed across 3
+frames spanning the loop (doorway greeting → smoky hallway → back to doorway) —
+see `docs/captures/2026-08-16-lounge-fullscreen/`. Gated by the updated
+`s11_lounge_video_test` (now asserts cover-fit + mute, not the old portrait
+contain-fit numbers).
+
+**VAULT MUSIC + SMOKE LOUNGE VIDEO (2026-08-15) — merged to master.** The
+Diamond Vault and Fort Knox ran in **silence** (reverb + SFX only) — both now
+play their parent stage's theme (Diamond Vault → Crystal Caverns L2 theme, Fort
+Knox → Gold Rush L3 theme), distinct per vault, reusing shipped tracks. Gated by
+`s11_vault_music_test`.
 
 
 
