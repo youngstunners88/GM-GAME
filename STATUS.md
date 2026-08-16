@@ -3,6 +3,34 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/critical-live-fails`
 
+**⛔ ROOT CAUSE OF "EVERY FIX IS STILL BROKEN LIVE" — THE DEPLOY PIPELINE WAS
+SHIPPING A STALE BUILD (2026-08-16).** While verifying this session's fixes
+reached itch, the butler deploy reported **"Re-used 100.00% of old, added 0 B
+fresh data"** — the live build was byte-identical to the previous one. Traced
+to the real cause, proven not guessed:
+- CI's "Export game to Web" step pipes Godot through `… | tee | tail`, so the
+  step's exit code is `tail`'s — **a failed/no-op export was silently masked**.
+  It produced NO fresh `index.pck`; the stale committed one (from the checkout)
+  sailed through every later gate. The gh-pages log even prints
+  `index.pck is 99.95 MB` (the *committed* size) at butler time, and the commit
+  step logs "No changes to commit" — the export never overwrote anything.
+- Why it can't just commit a fresh one: a real export is now **~124 MiB**, over
+  GitHub's **100 MiB single-file push cap**, so a fresh `index.pck` cannot be
+  committed at all. The tracked one has been frozen at 99.95 MiB (an old build)
+  and re-shipped on every push. **This is why boss/dialogue/every fix across
+  many sessions read as "still broken" — the code never reached the live game.**
+- Proven locally: a clean re-export contains this session's new code (the new
+  `[E] close` dialogue string is present; the old `[E to close]` is gone) while
+  the committed/shipped pck contains only the OLD string.
+
+Fix (pipeline): export now runs under `set -o pipefail` with the stale pck
+deleted first and a hard "fresh pck must exist" gate — a broken export fails
+LOUD instead of shipping stale. `index.pck` is untracked (gitignored) so the
+>100 MiB artifact never blocks the git push, and butler ships the FRESH pck to
+itch straight from disk (itch has no such cap; itch is the primary platform).
+The gh-pages/Vercel mirror no longer carries the pck (secondary; itch is
+canonical). Verifying the next CI run shows butler "added >0 B fresh data".
+
 **CRITICAL LIVE FAILS — FINAL BOSS FREEZE, GIDEON DIALOGUE, ASSAY SCALE
 (2026-08-16).** Four founder-reported live fails, fixed by actually reproducing
 them in the real levels instead of re-tuning against isolated tests again.

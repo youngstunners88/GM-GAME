@@ -175,3 +175,8 @@ playtest-final/
 # S10 boss-warp capture artifacts (evidence copied into docs/captures/)
 playtest-shots-*/
 playtest-boss-*.json
+
+# Build artifact: a fresh web export exceeds GitHub's 100 MiB single-file cap.
+# itch gets the fresh pck via butler straight from the runner disk; git never
+# carries it (committing it froze the live build for many sessions).
+web/game/index.pck
