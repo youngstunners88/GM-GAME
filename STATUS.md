@@ -1,7 +1,37 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `master` (PR #37 merged)
+**Branch:** `claude/boss-chase-difficulty`
+
+**🥊 BOSSES — BROWSER-PROVEN CHASE + CLAIM JUMPER DIFFICULTY RETUNE (2026-08-16).**
+Founder: "2nd and 3rd bosses still don't chase; 3rd boss is way too easy now."
+Handled with real browser captures on the current build (no headless-only claims):
+- **Chase, PROVEN in-browser** (`docs/captures/2026-08-16-bosses/`): warped into
+  each arena via `?boss=N`, held a direction, screenshotted the sequence. The
+  camera keeps Lil Blunt centred, so the boss's on-screen position IS the gap.
+  Claim Jumper closed from ~360px to ~130px and killed the player; Distributor
+  reached the player and cost a life. **Both chase.** Most likely the founder's
+  rejection was the *stale* build — the deploy pipeline was frozen for many
+  sessions and the boss fix only reached itch ~an hour before; a hard-refresh
+  (Ctrl/Cmd+Shift+R) is needed.
+- **Claim Jumper "too easy" — real regression, now fixed.** Kimi K3 (OpenRouter)
+  pinpointed it: the earlier VULNERABLE_DRIFT fix (chase-while-exposed, which
+  cured the freeze) also *delivered him point-blank onto the player's axe*, so a
+  whole window could be bursted down. Retune (all in `src/boss/claim_jumper.gd`):
+  - **Separation floor** (`VULNERABLE_SEPARATION` 96px): he closes but holds at
+    contact range instead of parking on the weapon — player must step in.
+  - **Per-window damage cap** (`MAX_VULN_DAMAGE_PER_WINDOW` 3): the window ends
+    once the cap is hit, forcing ≥ ceil(HP/cap) windows — kill now takes **6
+    windows**, not one melt.
+  - **Shorter window** (`vulnerable_time` 0.9 → 0.7, floor 0.45): less free time.
+  The chase itself is untouched.
+- Gates: script-compile 155/118 PASS, `dual_real_level_boss_chase_test` PASS
+  (both bosses, 432px/400px — chase not regressed), new
+  `claim_jumper_difficulty_test` PASS (cap 3, 6 windows to kill), Security
+  Sentinel 18/18. Fresh browser capture on the retuned build confirms he still
+  chases + kills. Multi-model: Kimi K3 log `docs/model-responses/2026-08-16-residuals-kimi.md`.
+- Deploying via CI (butler fresh). Distributor left as-is (already chases;
+  founder flagged it as "not chasing" which the capture disproves).
 
 **✅ PR #37 MERGED + LIVE — Smoke Lounge video (2026-08-16, new subscription).**
 Took over the old subscription's in-flight PR #37 and shipped it:
