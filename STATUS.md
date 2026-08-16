@@ -23,13 +23,26 @@ to the real cause, proven not guessed:
   `[E] close` dialogue string is present; the old `[E to close]` is gone) while
   the committed/shipped pck contains only the OLD string.
 
-Fix (pipeline): export now runs under `set -o pipefail` with the stale pck
-deleted first and a hard "fresh pck must exist" gate — a broken export fails
-LOUD instead of shipping stale. `index.pck` is untracked (gitignored) so the
->100 MiB artifact never blocks the git push, and butler ships the FRESH pck to
-itch straight from disk (itch has no such cap; itch is the primary platform).
-The gh-pages/Vercel mirror no longer carries the pck (secondary; itch is
-canonical). Verifying the next CI run shows butler "added >0 B fresh data".
+The deeper cause the loud failure then exposed: CI's "Create export preset"
+step wrote explanatory `#` comment lines INTO `export_presets.cfg`. Godot's
+ConfigFile parser rejects `#` comments — one line makes the WHOLE preset fail
+(`Unexpected identifier: 'all_resources'` → `Invalid export preset name: Web`),
+so the export produced no pck at all. Those comments arrived with the earlier
+pck-size fix, which is exactly when live fixes stopped landing.
+
+Fix (pipeline), **verified live**:
+- The generated `export_presets.cfg` is now pure key=value — every `#`
+  explanation moved OUT of the heredoc into shell comments.
+- Export runs under `set -o pipefail`, deletes the stale pck first, and hard-
+  fails if no fresh pck is produced — a broken export goes RED, never ships stale.
+- `index.pck` is untracked (gitignored) so the >100 MiB artifact never blocks
+  the git push nor gets restored over the fresh one; butler ships the FRESH pck
+  to itch from disk (itch has no such cap; itch is primary). The gh-pages/Vercel
+  mirror no longer carries the pck (secondary; itch is canonical).
+- **Proof (CI run #185):** butler reported `added 17.18 MiB fresh data` (vs the
+  prior "0 B fresh data" on every run) and pushed 129.97 MiB — the live itch
+  build is now current with this session's code AND every prior stuck fix. Give
+  itch ~1–2 min to process, then hard-refresh (Cmd/Ctrl+Shift+R).
 
 **CRITICAL LIVE FAILS — FINAL BOSS FREEZE, GIDEON DIALOGUE, ASSAY SCALE
 (2026-08-16).** Four founder-reported live fails, fixed by actually reproducing
