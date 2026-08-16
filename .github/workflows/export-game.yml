@@ -166,7 +166,16 @@ jobs:
           # the Movie/Video-Game Layer wiring (contracts, backend URL) is absent
           # in the exported build.
           include_filter="config.json,src/autoload/share_taglines.json"
-          exclude_filter="*.yml,*.yaml,*.md"
+          # docs/, tests/, prompts/, scripts/ are dev-only (grep-verified: no
+          # src/ code ever loads a res:// path under them) but were shipping
+          # inside the playable web build anyway — export_filter=all_resources
+          # sweeps every file under the project root that isn't excluded, not
+          # just files referenced by a scene. docs/captures/ alone (session
+          # screenshot evidence) had grown to ~15MB of dead weight riding along
+          # in index.pck, which is why an unrelated asset change could — and
+          # did (run #177) — push the committed .pck over GitHub's 100MB
+          # single-file cap with no warning until the push itself was rejected.
+          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*"
           export_path="web/game/index.html"
           script_export_mode=1
           script_encryption_key=""

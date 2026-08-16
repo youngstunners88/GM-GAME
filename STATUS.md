@@ -3,20 +3,40 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/lounge-video-fullscreen`
 
-**SMOKE LOUNGE VIDEO — SWAPPED TO A FULL-SCREEN LANDSCAPE CUT (2026-08-16).**
-Founder supplied a SECOND clip (1280×720 landscape, matching the project's own
-base viewport) to replace the first portrait one, with two explicit asks: cover
-the ENTIRE screen (no framing/letterboxing), and NO audio (the lounge's own
-background music must keep playing). Re-encoded to `smoke_lounge.ogv` with
-`ffmpeg -an` (audio stream stripped at the source, not just muted) and rewired
-the fit from "contain" (letterboxed, framed by the room art) to "cover" (scales
-to the LARGER axis so the clip always fills the full viewport, cropping any
-overflow — the room art never shows through). `volume_db=-80` kept as
-belt-and-suspenders on top of the audio-free encode. **Verified in a real
-browser**: 0 console errors, full edge-to-edge coverage confirmed across 3
-frames spanning the loop (doorway greeting → smoky hallway → back to doorway) —
-see `docs/captures/2026-08-16-lounge-fullscreen/`. Gated by the updated
-`s11_lounge_video_test` (now asserts cover-fit + mute, not the old portrait
+**SMOKE LOUNGE VIDEO — SWAPPED TO A FULL-SCREEN LANDSCAPE CUT (2026-08-16),
+PLUS a real fix to a build-breaking size bug it exposed.** Founder supplied a
+SECOND clip (1280×720 landscape, matching the project's own base viewport) to
+replace the first portrait one, with two explicit asks: cover the ENTIRE screen
+(no framing/letterboxing), and NO audio (the lounge's own background music must
+keep playing). Re-encoded to `smoke_lounge.ogv` with `ffmpeg -an` (audio stream
+stripped at the source, not just muted) and rewired the fit from "contain"
+(letterboxed, framed by the room art) to "cover" (scales to the LARGER axis so
+the clip always fills the full viewport, cropping any overflow — the room art
+never shows through). `volume_db=-80` kept as belt-and-suspenders.
+
+**CI broke on the first push (run #177)** — the committed `web/game/index.pck`
+came out at 107.15MB, over GitHub's 100MB single-file push cap. Root-caused,
+not just patched: the LAST known-good build already had only **~53KB of
+headroom** under that cap, because `docs/`, `tests/`, `prompts/`, and
+`scripts/` (dev-only, zero runtime references — grep-verified) were being
+swept into the shipped web build by `export_filter="all_resources"`, which
+bundles everything under the project root unless excluded — `docs/captures/`
+alone (session screenshot evidence, growing every session) had quietly reached
+~15MB of dead weight riding along in the playable build. Added
+`docs/*,tests/*,prompts/*,scripts/*` to `exclude_filter` in BOTH
+`scripts/export-web.sh` and `.github/workflows/export-game.yml` (kept
+byte-identical, the existing convention) — reclaims ~17MB, verified via a
+clean `git worktree` export (not the local working tree, which was itself
+contaminated by the same uncommitted debug artifacts). This let the FULL
+1280×720 quality video ship (7.6MB) instead of a heavily downscaled fallback,
+with **~4.3MB of real margin** to spare (empirically measured: 100,520,272 /
+104,857,600 bytes) — a durable fix, not a one-time video shrink, since future
+session captures no longer threaten the build at all.
+
+**Verified in a real browser** (final full-quality build): 0 console errors,
+full edge-to-edge coverage, sharp footage — see
+`docs/captures/2026-08-16-lounge-fullscreen/`. Gated by the updated
+`s11_lounge_video_test` (asserts cover-fit + mute, not the old portrait
 contain-fit numbers).
 
 **VAULT MUSIC + SMOKE LOUNGE VIDEO (2026-08-15) — merged to master.** The
