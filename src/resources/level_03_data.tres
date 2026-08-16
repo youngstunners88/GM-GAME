@@ -30,6 +30,7 @@ ground_segments = Array[Vector4]([
 	Vector4(700, 650, 520, 70),
 	Vector4(1320, 650, 200, 70),
 	Vector4(1660, 650, 960, 70),
+	Vector4(2620, 650, 140, 70),
 	Vector4(2760, 650, 800, 70),
 	Vector4(3700, 650, 700, 70)
 ])
@@ -110,7 +111,7 @@ collectible_spawns = Array[Dictionary]([
 	},
 	{
 		"type": "gold_token",
-		"pos": Vector2(200, 600)
+		"pos": Vector2(320, 600)
 	},
 	{
 		"type": "gold_token",
@@ -254,19 +255,13 @@ powerup_spawns = Array[Dictionary]([
 breakable_blocks = []
 melt_forges = Array[Dictionary]([
 	{
-		"pos": Vector2(200, 500)
+		"pos": Vector2(200, 605)
 	},
 	{
-		"pos": Vector2(700, 450)
+		"pos": Vector2(2250, 605)
 	},
 	{
-		"pos": Vector2(1150, 500)
-	},
-	{
-		"pos": Vector2(2400, 450)
-	},
-	{
-		"pos": Vector2(3000, 500)
+		"pos": Vector2(3000, 605)
 	}
 ])
 mine_carts_fast = Array[Dictionary]([

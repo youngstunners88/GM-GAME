@@ -1,7 +1,56 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/boss-chase-difficulty`
+**Branch:** `claude/stage3-aesthetics-hammer-clutter`
+
+**⛏️ STAGE 3 — USELESS-BLOCK CLEANUP + HAMMER + GOLD-RUSH PASS (2026-08-16).**
+Executed `PROMPT_STAGE3_AESTHETICS_HAMMER_CLUTTER.md`. Root-caused the founder's
+long-standing "random useless blocks" complaint that a prior re-skin never
+actually fixed.
+- **Useless/floating blocks (highest priority) — FIXED.** The 5 melt forges
+  were placed at y=450–500, which **floats them 105–155px above the y=650
+  ground with no platform beneath** — the player standing on the floor can't
+  even enter them to press E, so they were functionally dead AND read as
+  "random floating blocks." The 2026-08-04 session only re-textured them; it
+  never fixed where they *sit*. Now **thinned 5 → 3 and all grounded**
+  (y=605, base on the floor) at x=200, 2250, 3000 — each beside a ground-level
+  GOLD token so "burn 3 GOLD for a boost" is a real tradeoff (early / mid /
+  pre-boss). Removed the three redundant floating ones (700,450 / 1150,500 /
+  2400,450). Nudged the gold token that was embedded in the x=200 furnace.
+- **The other red-circled "trashy block" — FIXED.** `level_03_gold_rush.gd`
+  hand-built the Fort Knox door footing as a bare brown `ColorRect` box
+  (2620–2760 pit fill) that bypassed the standard platform body/tile/gold-lip
+  construction — one of the flat rectangles the founder red-circled. Replaced
+  with a real `ground_segment` `Vector4(2620,650,140,70)` so it renders as
+  built terrain; the vault door at (2690,650) is unchanged.
+- **Hammer / big_axe — MORE SUBSTANTIAL.** Thrown big axe `BIG_SCALE`
+  1.55 → **1.95** (~78px wide vs the base throw's ~9px); pickup sprite scale
+  1.15 → **1.45**. Both use `sprite_item_bigaxe.png`, distinct from the pickaxe.
+  Piercing + non-lethal-to-boss constraints unchanged.
+- **Aesthetic identity.** Verified: Stage 3 palette is already gold / steel /
+  Bitcoin-orange with **no cyan/crystal** on any reachable prop; the cleanup
+  removes the floating-prop "soup" so the gold reads as intentional (Grok's
+  top recommendation). Kept gold-dust motes, gold gate, mine carts, Reserve.
+- **Gates:** new `tests/stage3_clutter_test.gd` **7/7** (forges thinned +
+  grounded, pit is real ground, script box gone, big-axe throw+pickup
+  substantial & distinct); `s11_stage3_walkpath` 2/2 (corridor clear, gaps
+  ≤170); `owner_screenshot_fixes` big-axe P7 ALL PASS; `stage3_defence` 7/7
+  (boss chase intact, power-up sprites all distinct); Security Sentinel 18/18.
+- **Multi-model (mandate):** Grok 4.5 (aesthetic), Kimi K3 (functionless-prop
+  geometry audit — found the float + the bridge box), DeepSeek (DoD matrix).
+  Logged in `docs/model-responses/2026-08-16-s3-{grok,kimi,deepseek}.md`.
+- **Honest limits:** the founder's `goldmine_s3_image*.png` reference set named
+  in the prompt does not exist anywhere in the workspace (no `artifacts/
+  founder-art/`, not in uploads, no inline paste this turn), and this
+  environment's headless GL renderer segfaults so I could not self-capture a
+  screenshot. Changes are geometry/data-driven and model-validated; **final
+  visual sign-off is the founder's hard-refresh** on itch after deploy.
+- Bosses (chase/difficulty) untouched — already shipped by the parallel branch.
+  VO work is a separate prompt, not mixed in here.
+
+---
+
+**Branch (earlier):** `claude/boss-chase-difficulty`
 
 **🥊 BOSSES — BROWSER-PROVEN CHASE + CLAIM JUMPER DIFFICULTY RETUNE (2026-08-16).**
 Founder: "2nd and 3rd bosses still don't chase; 3rd boss is way too easy now."
