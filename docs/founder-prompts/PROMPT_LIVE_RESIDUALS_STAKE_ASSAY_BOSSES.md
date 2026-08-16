@@ -1,113 +1,158 @@
-# FOUNDER DIRECTIVE — Live residuals after PR #35 merge
+# FOUNDER DIRECTIVE — Live residuals: Stake CONFIRM + Assay Scale design + Boss chase
 
 **Status**: Binding  
 **Date**: 2026-08-16  
 **Source**: Founder (Rich / youngstunners88)  
-**Priority**: Immediate. Hard-refresh playtest after the “everything is live” claim.
+**For**: Claude Code on the **original / old subscription** (rate limits hit on the other sub — this file is the full handoff)
 
 ---
 
-## MANDATORY — OpenRouter multi-model every session
+## How to use this file
+
+1. `git fetch origin && git checkout master && git pull`
+2. Read this entire document before editing anything
+3. Work on a **named branch** (e.g. `claude/live-residuals-stake-assay-bosses`)
+4. OpenRouter multi-model required (see below)
+5. Deploy via butler when CI is green; hard-refresh itch before FIXED claims
+
+**Repo:** `youngstunners88/GM-GAME`  
+**Live:** https://youngstunners88.itch.io/lil-blunt-adventure  
+**Engine:** Godot 4.3 · non-threaded HTML5 · $SMOKE / $DIAMONDS / $GOLD  
+**Master after recent merges:** PR #35 (vault exclusive music + pipeline unfreeze) merged; live build has been shipping fresh butler data again
+
+---
+
+## MANDATORY — OpenRouter multi-model (every session, no exceptions)
 
 | Model | Via | Role |
 |-------|-----|------|
-| **Claude Code** | Lead | Commits, gates, STATUS |
-| **Kimi K3** | OpenRouter | Stake/input flow, boss chase physics |
-| **Grok 4.5** | OpenRouter | Assay/scale layout feel, UX copy |
+| **Claude Code** | Lead | Owns commits, gates, STATUS, final code |
+| **Kimi K3** (`moonshotai/kimi-k3`) | OpenRouter | Stake/input flow, boss chase physics, gates |
+| **Grok 4.5** (latest Grok on OpenRouter) | OpenRouter | Assay Scale layout, UX copy, pressure feel |
 
-Solo Claude banned. Evidence in STATUS.
-
-Do **not** reopen vault music wiring or the deploy-pipeline fix unless butler is shipping 0 B again. Those were claimed shipped. This prompt is only the live fails below.
+Solo Claude is not allowed. Log dispatches under `docs/model-responses/` and note them in STATUS.
 
 ---
 
-## Founder evidence (screenshots + text)
+## Full context (what already shipped — do not redo)
+
+### Vault music (done)
+- Diamond Vault → `res://src/assets/music/diamonds_are_forever.mp3` exclusively
+- Fort Knox → `res://src/assets/music/goldmine.mp3` exclusively
+- Parent stage themes removed from vaults
+- Files placed; PR #35 merged; butler shipped fresh (~21 MiB)
+
+### Deploy pipeline (done — critical)
+- Root cause of “every fix still broken live” was a **frozen export**: CI preset had `#` comments Godot rejects → no pck → butler pushed 0 B fresh for many sessions
+- Fixed: comment-free preset, pipefail + freshness gate, `index.pck` untracked so butler ships from disk
+- **Do not regress this.** If butler reports 0 B fresh when you changed source, stop and fix export before claiming FIXED
+
+### Claimed boss/dialogue/scale position work (partial — founder rejects live)
+- Claim Jumper VULNERABLE freeze (vx=0 for ~0.9s) was patched to drift toward player
+- Gideon hint text made honest per line (`[E] close` on last line)
+- Assay Scale hall shifted left into camera bounds
+- `GameManager.refill_run()` added for respawn crash
+
+**Founder hard-refresh still fails on stake UX, Assay design, and boss chase/difficulty.** Treat those claims as incomplete until proven with browser captures / founder confirmation.
+
+---
+
+## Live fails (this session’s only job)
 
 ### 1. Staking never completes — nowhere to CONFIRM
 
-Founder: “The process of staking never occurs! There’s nowhere to confirm!!!!”
+**Founder (verbatim):**  
+“I told you to fix this!!!! The process of staking never occurs! There’s nowhere to confirm!!!!”
 
-**Screenshot (Fort Knox / Gideon):**
-- Dialogue: “Hit CONFIRM and we’ll lock her down tight.”
-- Visible controls: only `[E] close` and `[ESC] leave`
-- **No CONFIRM button. No stake amount UI. No commit action.**
+**Screenshot evidence (Fort Knox / Gideon panel):**
+- Dialogue line: “Hit CONFIRM and we’ll lock her down tight.”
+- On-screen controls: **only** `[E] close` and `[ESC] leave`
+- No CONFIRM button, no amount controls, no commit action
 
-Gideon’s copy promises CONFIRM; the panel does not provide it. Altars say “press E to STAKE 25%” but the founder cannot complete a stake flow that feels confirmed.
+Gideon’s copy **promises CONFIRM**; the panel does not provide it. HUD says “Walk to an altar, press E to STAKE 25%” but the founder cannot complete a stake that feels confirmed.
 
-**Required:**
-- Diamond Vault (Mira): stake / crush / **CONFIRM** must be visible, tappable, and actually call `GoldMineSystem` primitives so balances change. If dialogue is still stepping, CONFIRM only after the last line — but CONFIRM must exist and work.
-- Fort Knox (Gideon + altars + Assay): either give Gideon a real confirm/stake path **or** stop promising CONFIRM in dialogue and make the altar / Assay Scale path unmistakable (clear prompt, clear result float, shares update on HUD).
-- End-to-end: player can enter vault → choose amount or use 25% altar/assay → **confirm** → see shares/balance change. Headless gate that proves a stake mutates `GoldMineSystem` state.
+**Required fix:**
+1. **Diamond Vault (Mira):** Stake / Crush / **CONFIRM** controls must appear (after stepped dialogue if still used), be readable, and call real `GoldMineSystem` primitives so balances/shares change.
+2. **Fort Knox (Gideon + altars + Assay):**
+   - Either give Gideon a real stake/confirm path, **or**
+   - Stop promising CONFIRM in dialogue and make the altar / Assay Scale path unmistakable (clear on-screen prompt, success float, HUD shares update).
+3. **End-to-end gate:** enter vault → stake path → confirm → `GoldMineSystem` state mutates (shares or balances). Headless gate required.
+4. Copy must never advertise a control that is not on screen.
 
-### 2. Assay Scale design — text masking, scale too small
-
-Founder: “Why do you do such a cheap job with design! The text is masking each other! The scale is not that visibly clear so we need to make it distinct and larger in size.”
-
-**Screenshot (Assay Hall):**
-- `ASSAY SCALE` / `[E] WEIGH GOLD` / `STAKED` / `RETURN` / numbers all overlap
-- Scale instrument is small and hard to read against the busy backdrop
-- Labels fight the environment art
-
-**Required:**
-- Rebuild Assay Scale UI layout: no overlapping labels; clear hierarchy (title → instrument → STAKED/RETURN values → interact hint)
-- **Larger** scale art and value labels (mobile-readable, outlined)
-- Distinct visual separation from the mezzanine / EXIT / pool plates
-- Use **PIXELLAB_SECRET** and/or **MUAPI_API_KEY** (in environment) if new art is needed for a clearer scale instrument — do not invent a muddy reskin; improve clarity
-- Same readability standard as vault labels (min ~24px + black outline)
-
-### 3. 2nd boss (Distributor) and 3rd boss (Claim Jumper) still do not chase
-
-Founder: “The 2nd and third bosses still dont fucking chase!!!!!!!”  
-Also: “The third boss is now way too easy to defeat. We addressed this is you resolved it and now its back!”
-
-Claimed fixed with VULNERABLE drift + real-level gates. Live playtest rejects it again.
-
-**Required:**
-- Distributor closes distance and pressures in a **real browser** capture on the **current** itch build (not headless-only)
-- Claim Jumper moves/chases in a real browser capture on the current itch build
-- Claim Jumper difficulty: restore real pressure (not a trivial kill). If VULNERABLE drift made him a punching bag, retune so chase + damage + timing still threaten — founder said he is **too easy** now
-- Hard rule: no FIXED without browser capture (or founder confirmation). Headless gates have already failed this founder.
+Key files: `src/level/vault_realm.gd` (Mira clerk panel, Gideon panel, altars, assay), `GoldMineSystem` autoload.
 
 ---
 
-## Do not redo (already claimed shipped)
+### 2. Assay Scale design — text masking, scale too small
 
-- Exclusive vault MP3s (`diamonds_are_forever.mp3` / `goldmine.mp3`)
-- Deploy pipeline (pipefail, comment-free preset, untracked pck)
-- Gideon “E closes on last line” hint text alone (insufficient — CONFIRM path is the real gap)
-- Assay Scale only shifted left (position fixed; **design** still fails)
+**Founder (verbatim):**  
+“Why do you do such a cheap job with design! The text is masking each other! The scale is not that visibly clear so we need to make it distinct and larger in size. Improve the design as you have access to PIXELLAB_SECRET api key and MUAPI_API_KEY in environments”
+
+**Screenshot evidence (Assay Hall, founder circled):**
+- `ASSAY SCALE` / `[E] WEIGH GOLD` / `STAKED` / `RETURN` / numbers **overlap each other**
+- Scale instrument is small and hard to read on the busy gold backdrop
+- Labels fight environment art and EXIT / pool plates
+
+**Required fix:**
+1. Rebuild layout: **no overlapping labels**
+2. Clear hierarchy: title → larger instrument → STAKED / RETURN values → interact hint
+3. **Larger** scale art and value text (mobile-readable, black outline, min ~24px)
+4. Distinct from mezzanine / EXIT / pool signage
+5. Use **PIXELLAB_SECRET** and/or **MUAPI_API_KEY** from the environment if new scale art is needed — clarity over decoration
+6. Position was already shifted on-screen; this is a **design** residual, not a camera residual
+
+Key code: `_build_gold_scale`, Assay Scale setup in `vault_realm.gd` Fort Knox depth section.
+
+---
+
+### 3. Distributor + Claim Jumper still do not chase; Claim Jumper too easy
+
+**Founder (verbatim):**  
+“The 2nd and third bosses still dont fucking chase!!!!!!! … The third boss is now way too easy to defeat. We addressed this is you resolved it and now its back!”
+
+**Required fix:**
+1. **Distributor (Stage 2):** closes distance and pressures — prove with **real browser capture** on the **current** itch build
+2. **Claim Jumper (Stage 3):** moves and chases — same browser capture requirement
+3. **Difficulty:** Claim Jumper must not be a trivial kill. If VULNERABLE drift made him a punching bag, retune (chase speed, vulnerable window, damage, throw timing) so the fight still threatens
+4. **Hard rule:** Headless-only gates have already failed this founder. No FIXED without browser capture or founder confirmation
+
+Key files: distributor / claim_jumper boss scripts, level arena bounds, any warp `?boss=N` path.
 
 ---
 
 ## Definition of Done
 
-- [ ] OpenRouter multi-model used — evidence in STATUS
-- [ ] Stake flow has a real CONFIRM (or clear altar/assay commit) and mutates balances — gated
+- [ ] OpenRouter multi-model used (Claude + Kimi K3 + Grok 4.5) — evidence in STATUS
+- [ ] Stake flow has real CONFIRM (or clear altar/assay commit) and mutates balances — gated
 - [ ] Gideon/Mira copy never promises a control that is not on screen
 - [ ] Assay Scale: no overlapping text; larger, distinct instrument + values
 - [ ] PixelLab / MuAPI used if new scale art is required
-- [ ] Distributor chase proven in browser capture on live build
-- [ ] Claim Jumper chase proven in browser capture; not trivially easy
+- [ ] Distributor chase: browser capture on live itch build
+- [ ] Claim Jumper chase: browser capture; fight not trivially easy
 - [ ] Gates + Security Sentinel green
-- [ ] Butler ships **fresh** data
-- [ ] STATUS honest (no FIXED without captures)
+- [ ] Butler ships **fresh** data (not 0 B when source changed)
+- [ ] STATUS.md honest — no FIXED without captures / founder confirmation
 
 ---
 
-## Prompt Claude must fulfill
+## Prompt Claude must fulfill (copy block)
 
 ```
-FOUNDER DIRECTIVE ACTIVE — docs/founder-prompts/PROMPT_LIVE_RESIDUALS_STAKE_ASSAY_BOSSES.md
+FOUNDER DIRECTIVE ACTIVE — PROMPT_LIVE_RESIDUALS_STAKE_ASSAY_BOSSES.md
 
-After the “everything live” claim, founder hard-refresh still fails:
+You are on the original Claude subscription. Full context is in this file — read it end to end.
 
-1. STAKING: process never occurs — nowhere to CONFIRM. Gideon says “Hit CONFIRM” but only [E] close / [ESC] leave show. Fix so stake can be confirmed and balances change. Gate it.
+Already shipped (do not redo): exclusive vault MP3s, deploy pipeline unfreeze (PR #35 era).
 
-2. ASSAY SCALE DESIGN: text masks itself; scale too small. Larger, distinct layout; no overlap. Use PIXELLAB_SECRET / MUAPI_API_KEY if new art needed.
+Live fails after hard-refresh:
 
-3. BOSSES: Distributor + Claim Jumper still do not chase live. Claim Jumper now too easy. Fix + browser captures on current itch build. Headless-only is not enough.
+1. STAKING — process never occurs; nowhere to CONFIRM. Gideon says “Hit CONFIRM” but UI only shows [E] close / [ESC] leave. Fix so stake can be confirmed and GoldMineSystem balances change. Gate it. Never promise a control that is not on screen.
 
-OpenRouter multi-model required. Do not reopen music/pipeline. Gates + STATUS + fresh butler deploy.
+2. ASSAY SCALE DESIGN — text masks itself; scale too small. Larger, distinct layout; zero overlap. Use PIXELLAB_SECRET / MUAPI_API_KEY if new art is needed.
+
+3. BOSSES — Distributor + Claim Jumper still do not chase live. Claim Jumper now too easy. Fix + browser captures on current itch build. Headless-only is not enough.
+
+OpenRouter multi-model required (Claude + Kimi K3 + Grok 4.5). Named branch. Gates + STATUS + butler with fresh bytes. No FIXED without captures.
 ```
 
 End of directive.
