@@ -3,6 +3,26 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/lounge-video-fullscreen`
 
+**VAULT MUSIC FIX — branch `claude/vault-music-critical-fixes` (2026-08-16, PR pending).**
+The vaults were (wrongly) playing their PARENT stage themes (level02/level03).
+Fixed in `vault_realm.gd`: the Diamond Vault now wires **`diamonds_are_forever.mp3`**
+exclusively and Fort Knox wires **`goldmine.mp3`** exclusively (single-track loop
+via `AudioManager.play_playlist`; the stage scene re-establishes its own music on
+exit, and a separate scene means it never plays outside the vault). Gate
+`crit_vault_music_test` asserts the exclusive tracks are wired and NO level02/03
+theme remains. **HONEST BLOCKER:** the founder-supplied `Diamondsareforever.mp3` /
+`Goldmine.mp3` are NOT in the repo, git history, session uploads, or the Drive
+folder (searched all four) — so the wiring is correct but the vaults play SILENCE
+(never the wrong theme) until the two MP3s are dropped at
+`res://src/assets/music/diamonds_are_forever.mp3` and `.../goldmine.mp3`. Please
+attach them or add them to the Drive art folder and I'll place + deploy.
+Multi-model this turn: **Claude (lead) + Kimi K3 + Grok 4.5** via OpenRouter
+(logs in `docs/model-responses/2026-08-16-crit-*.md`). Dual-session note: the
+other subscription owns `claude/lounge-video-fullscreen` (video + S10/S11);
+I stayed on a separate branch and touched only the vault music path to avoid
+collision — bosses/E-dialogue/off-screen are that session's active domain and
+need their real-browser captures, not another headless claim.
+
 **SMOKE LOUNGE VIDEO — SWAPPED TO A FULL-SCREEN LANDSCAPE CUT (2026-08-16),
 PLUS a real fix to a build-breaking size bug it exposed.** Founder supplied a
 SECOND clip (1280×720 landscape, matching the project's own base viewport) to

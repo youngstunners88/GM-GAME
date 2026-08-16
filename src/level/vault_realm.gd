@@ -177,20 +177,22 @@ func _ready() -> void:
 	_setup_hud()
 	_setup_title_card()
 	AudioManager.set_reverb_profile("cave")
-	# VAULT MUSIC — the vaults used to run in silence (only reverb + SFX). Each
-	# vault now plays its PARENT stage's two-track theme on the same alternating
-	# model levels/bosses use: the Diamond Vault (entered from Crystal Caverns)
-	# carries the L2 theme, Fort Knox (entered from Gold Rush) carries the L3
-	# theme — distinct per vault, on-theme, and reusing shipped tracks (no new
-	# assets). play_playlist degrades silently if a track is ever absent.
+	# EXCLUSIVE VAULT MUSIC (founder directive, critical). The vaults previously
+	# (wrongly) played their PARENT STAGE themes (level02/level03) — the founder
+	# was explicit that each vault must play its OWN exclusive track, NEVER the
+	# stage theme. A single-track playlist loops that one track; play_playlist
+	# supersedes/ducks whatever was playing (stop-previous), and on exit the
+	# stage scene reloads and re-establishes its own music, so "restore on exit"
+	# and "never plays outside the vault" both hold for free (separate scene).
+	#   Diamond Vault -> diamonds_are_forever.mp3 (exclusive)
+	#   Fort Knox     -> goldmine.mp3            (exclusive)
+	# NOTE: the founder-supplied MP3s were NOT present in the repo / uploads /
+	# Drive at wiring time — see STATUS. play_playlist degrades to SILENCE (never
+	# the wrong parent theme) until the files are dropped at these exact paths.
 	if _diamonds:
-		AudioManager.play_playlist([
-			"res://src/assets/music/level02_theme.ogg",
-			"res://src/assets/music/level02_theme_alt.ogg"])
+		AudioManager.play_playlist(["res://src/assets/music/diamonds_are_forever.mp3"])
 	else:
-		AudioManager.play_playlist([
-			"res://src/assets/music/level03_theme.ogg",
-			"res://src/assets/music/level03_theme_alt.ogg"])
+		AudioManager.play_playlist(["res://src/assets/music/goldmine.mp3"])
 	if MobileInputHandler:
 		MobileInputHandler.touch_interact.connect(_on_mobile_interact)
 
