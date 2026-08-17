@@ -1,0 +1,38 @@
+[
+  {
+    "t": "2.59",
+    "dir": "a",
+    "beat": 0,
+    "shot": "docs/captures/2026-08-17-live-verify/boss2_human_beat0.png"
+  },
+  {
+    "t": "4.67",
+    "dir": "d",
+    "beat": 1,
+    "shot": "docs/captures/2026-08-17-live-verify/boss2_human_beat1.png"
+  },
+  {
+    "t": "7.19",
+    "dir": "a",
+    "beat": 2,
+    "shot": "docs/captures/2026-08-17-live-verify/boss2_human_beat2.png"
+  },
+  {
+    "t": "9.66",
+    "dir": "d",
+    "beat": 3,
+    "shot": "docs/captures/2026-08-17-live-verify/boss2_human_beat3.png"
+  },
+  {
+    "t": "12.28",
+    "dir": "a",
+    "beat": 4,
+    "shot": "docs/captures/2026-08-17-live-verify/boss2_human_beat4.png"
+  },
+  {
+    "t": "14.65",
+    "dir": "d",
+    "beat": 5,
+    "shot": "docs/captures/2026-08-17-live-verify/boss2_human_beat5.png"
+  }
+]

@@ -96,18 +96,33 @@ var _gideon_line: Label = null
 ## still promised another line, so a normal advance read as a cancel.
 var _gideon_hint: Label = null
 
-## Play a vault character's VO clip (Mira / Gideon). Fire-and-forget: builds a
-## throwaway AudioStreamPlayer that frees itself when the line finishes.
-## Voices generated via ElevenLabs (see docs/model-responses + STATUS voice note).
+## Play a vault character's VO clip (Mira / Gideon).
+##
+## Founder residual (2026-08-17): "the other character[s] are too softly
+## spoken as the music overpowers them." Root cause: this used to build its
+## own throwaway AudioStreamPlayer on the "Master" bus at unity gain — no
+## boost, no ducking, competing directly against the vault's music track.
+## AudioManager.play_voice() already solves exactly this class of problem for
+## the stage announcer (+6dB on the SFX bus, plus a -14dB music duck for the
+## line's duration, tweened back up after — founder F4, "the previous bosses
+## dont speak or the volume is not loud enough"). Routing Mira/Gideon through
+## the SAME proven mechanism, rather than inventing a second one, gets both
+## fixes for free: their lines are now louder AND the vault music ducks while
+## they talk. Single-slot by design (a new line replaces the old one), which
+## also fixes the old version's ability to stack overlapping/garbled lines on
+## a fast double-E-press.
+##
+## Does NOT touch the Smoke Lounge video's mute rule — that video's own bus
+## is untouched by this; only the Music bus (vault ambience) ducks here.
 func _play_vo(path: String) -> void:
 	if not ResourceLoader.exists(path):
 		return
-	var p := AudioStreamPlayer.new()
-	p.stream = load(path)
-	p.bus = "Master"
-	add_child(p)
-	p.play()
-	p.finished.connect(p.queue_free)
+	# path looks like "res://src/assets/sounds/voice/vault/mira_greet.mp3" —
+	# AudioManager.play_voice(name) re-prepends "res://src/assets/sounds/voice/"
+	# and resolves the extension itself, so strip both back off.
+	const VOICE_ROOT := "res://src/assets/sounds/voice/"
+	var name := path.trim_prefix(VOICE_ROOT).get_basename()
+	AudioManager.play_voice(name)
 
 func _make_mira_dialogue() -> SteppedDialogue:
 	var d := SteppedDialogue.new()

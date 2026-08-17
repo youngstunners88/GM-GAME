@@ -24,6 +24,11 @@
       "duration_seconds": 0.7
     },
     {
+      "id": "blaze_ignite",
+      "prompt": "Retro 16-bit videogame power-up ignition, a warm whooshing flame catching alight rising into a triumphant chiptune sparkle flourish, chill and cool not aggressive, punchy attack with a short glowing tail, distinct from a generic coin or ring chime",
+      "duration_seconds": 1.1
+    },
+    {
       "id": "damage",
       "prompt": "Retro 16-bit videogame player hurt sound, soft cartoonish ouch thud, two-note descending, gentle not violent, muffled bump, fast decay, no distortion",
       "duration_seconds": 0.6

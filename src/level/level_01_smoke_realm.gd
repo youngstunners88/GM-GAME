@@ -13,7 +13,18 @@ func _ready() -> void:
     add_child(door)
     _setup_depth_routes()
     AudioManager.set_reverb_profile("forest")
-    AudioManager.play_playlist(["res://src/assets/music/level01_theme.ogg", "res://src/assets/music/level01_theme_alt.ogg", "res://src/assets/music/lil_blunt_theme.mp3"])
+    # Founder residual (2026-08-17): "This song needs to always be the 1st
+    # song that plays in level one no matter what" — level01_theme.ogg is
+    # listed FIRST, and AudioManager.play_playlist() now guarantees the first
+    # entry starts the very first track deterministically (see
+    # AudioManager._play_playlist_first for why: the picker used to be random
+    # even on the opening call, which is exactly "a different song playing"
+    # every time the game boots).
+    # "This song must also feature in level 1" — level01_theme_oxbow.mp3
+    # (founder-supplied "Oxbow Lake") added as a real rotation track.
+    # "Remove this song completely!" — the old level01_theme_alt.ogg is
+    # deleted from disk and dropped from this playlist.
+    AudioManager.play_playlist(["res://src/assets/music/level01_theme.ogg", "res://src/assets/music/level01_theme_oxbow.mp3", "res://src/assets/music/lil_blunt_theme.mp3"])
     AudioManager.play_voice("stage1_intro")
 
 ## Task #23 — three routes per section (ground y=650, plats y=300..500):

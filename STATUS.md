@@ -1,7 +1,110 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/vo-volume-vocab-elevenlabs`
+**Branch:** `claude/residuals-spawn-grace-audio-fixes`
+
+**🔥 HARD-REFRESH RESIDUALS — MERGED DRAFTS, SPAWN-DEATH FIX, AUDIO CLEANUP
+(2026-08-17).** Founder verified on a real hard-refresh of the live itch build
+and reported 7 items still failing, some furiously (`PROMPT_RESIDUALS_HARD_
+REFRESH_FAILS.md` + a follow-up doc with 3 Google Drive music links + 2
+screenshots). Investigated and fixed for real — see the honest limits section
+at the end for the one item that is NOT fully resolved.
+
+**Root cause of items #1, #2, #3 (stake CONFIRM / Assay Scale / Stage 3
+axe+clutter): they were already fixed in code, sitting as unmerged draft PRs
+#36 and #38.** The founder's hard-refresh correctly showed the OLD broken
+state because the fixes had never shipped past the draft stage. Both merged
+to master this session (`b7f8dbf`, `4a7306b`) — no new code needed for these
+three, just unblocking work that was already done and gated.
+
+**#4/#5 Bosses "still don't chase" + Claim Jumper "too easy again" — real
+investigation, partial fix, honest limits.**
+- Read `distributor.gd`/`claim_jumper.gd` in full: this is an extraordinarily
+  heavily-engineered pursuit system already (HOVER_ACCEL 1600, MIN_PURSUE_SPEED
+  345 vs the player's 240 sprint, climb-lock hysteresis) with a long documented
+  history of "founder says still doesn't chase" → real numeric root causes
+  found and fixed, repeatedly. No further blind numeric re-tuning was made —
+  that well has already been worked hard by prior sessions.
+- **Built a fresh local export** (this environment's Chromium cannot reach the
+  live itch.io/itch.zone URLs at all — confirmed via direct tests, a sandbox
+  network-policy limit, not a game bug) using the exact CI export recipe, and
+  ran real Playwright captures against it (`docs/captures/2026-08-16-bosses/
+  boss{2,3}_{verify,postfix}_*.png`).
+- **Found and fixed a real bug:** the player was dying to boss body contact
+  within ~2s of the fight starting — before the boss's first scripted attack
+  — reproduced independently twice. Each death fully restarts the level, so
+  the fight never gets far enough for a chase to be visible, which reads as
+  "the boss doesn't chase." Added a 1.2s **spawn grace window** (`BossBase`)
+  during which boss body contact cannot end the run (ranged damage/attacks
+  are untouched). Also mirrored onto the Auditor (Stage 1) — it carries the
+  identical hitbox/restart pattern but extends `CharacterBody2D` directly
+  rather than `BossBase`, so it couldn't inherit the base-class fix and got
+  its own local copy; not founder-reported broken, added for consistency
+  since the same failure class was architecturally present. New gate
+  `boss_spawn_grace_test.gd` 12/12 (all three bosses).
+  **Kimi's audit flagged this correctly as a real, code-verified fix, not yet
+  a proven "FIXED" claim** — the exact death timestamp vs. the 1.2s window and
+  a post-fix live capture remain open; see honest limits below.
+- **Direct evidence the pursuit itself is NOT frozen:** a clean capture on the
+  fixed build shows the Distributor's on-screen position moving substantially
+  toward the player when they ran right — real tracking, not a stalled boss.
+- **Honest limit:** this environment's software-rendered Chromium is too slow
+  and erratic (screenshot timing off by 5-10x) for frame-accurate proof of
+  the full pursuit feel, and the actual live itch URL is unreachable from
+  here at all. Grok's read: at this point "doesn't chase" is more likely a
+  **perception** issue (a levitating hover-boss reads as passive even while
+  numerically tracking) than a remaining bug — next step if it persists after
+  this deploy: a short founder screen recording of one failing encounter.
+- Claim Jumper's difficulty constants (`MAX_VULN_DAMAGE_PER_WINDOW=3`,
+  `VULNERABLE_SEPARATION=96`) were verified intact — no regression found there.
+
+**#6 Lil Blunt vocab variety — already shipped by a parallel session** (3
+variations per reaction, anti-repeat, +6dB) before this branch started; no
+action needed here.
+
+**#7 NPC VO too soft vs music — FIXED.** Mira/Gideon's `_play_vo` built its
+own throwaway `AudioStreamPlayer` on `"Master"` bus at unity gain, no ducking
+— it never used the proven mechanism the stage announcer already had. Now
+routes through `AudioManager.play_voice()` (+6dB boost, −14dB music duck while
+the line plays, restored after). Smoke Lounge video mute rule untouched. New
+gate `npc_vo_ducking_test.gd` 5/5.
+
+**Follow-up doc — Level 1 music + weed-leaf SFX:**
+- **"A different song playing every time I turn on my machine" — root-caused
+  and fixed.** `AudioManager._play_next_in_playlist()` picked randomly even on
+  the very first call of a fresh `play_playlist()`. Now the opening track is
+  always `paths[0]`; later track-finish auto-advances still rotate normally.
+- Founder's 3 linked tracks: **Song A** (always-first) matches the existing
+  `level01_theme.ogg` — now guaranteed first via the fix above. **Song B**
+  ("Oxbow Lake") added as `level01_theme_oxbow.mp3`, a real rotation track.
+  **Song C** matched `level01_theme_alt.ogg` (duration-verified) — deleted
+  from disk and dropped from Level 1's playlist; verified not shared by any
+  other level.
+- **"Don't change the music when Lil Blunt gets this leaf... make an awesome
+  unique sound instead" — FIXED.** The weed_leaf pickup (`type == "blaze"`)
+  used to hijack the whole level's music for its 12s duration via
+  `push_music_override`. Now plays a new one-shot SFX (`blaze_ignite`,
+  ElevenLabs-generated) and the level music keeps playing underneath. Purple
+  Weed (a separate, rarer flagship power-up) still takes over the music —
+  untouched, since the founder's screenshot was specifically the weed leaf.
+- New gates: `level1_music_residual_test.gd` 8/8, `blaze_leaf_sfx_test.gd` 4/4.
+
+**Gates:** `script_compile` 163 scripts / 122 scenes ALL PASS;
+`boss_spawn_grace_test` 12/12; `npc_vo_ducking_test` 5/5;
+`level1_music_residual_test` 8/8; `blaze_leaf_sfx_test` 4/4;
+`owner_screenshot_fixes`, `stage3_defence`, `dual_real_level_boss_chase_test`
+all still ALL PASS (no regressions). Security Sentinel 18/18.
+
+**Multi-model (mandate):** Kimi K3 (code/regression audit) + Grok 4.5 (design
+sanity on grace window, chase perception, weed SFX brand fit) via OpenRouter —
+`docs/model-responses/2026-08-17-residuals2-{kimi,grok}.md`.
+
+**Out of scope, per the founder's own rule:** Smoke Lounge (locked), new
+levels/Episode 2, new protocols/wallet flows.
+
+---
+
+**Branch (earlier):** `claude/vo-volume-vocab-elevenlabs`
 
 **🔊 LIL BLUNT VO — LOUDER + BIGGER VOCABULARY (2026-08-16).** Founder: VO is too
 quiet, and Lil Blunt has only one line per reaction — expand it.
