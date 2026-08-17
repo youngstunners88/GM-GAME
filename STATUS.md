@@ -1,7 +1,7 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/stage3-aesthetics-hammer-clutter`
+**Branch:** `claude/stage3-aesthetics-hammer-clutter` (now merging to master)
 
 **⛏️ STAGE 3 — USELESS-BLOCK CLEANUP + HAMMER + GOLD-RUSH PASS (2026-08-16).**
 Executed `PROMPT_STAGE3_AESTHETICS_HAMMER_CLUTTER.md`. Root-caused the founder's
@@ -47,6 +47,40 @@ actually fixed.
   visual sign-off is the founder's hard-refresh** on itch after deploy.
 - Bosses (chase/difficulty) untouched — already shipped by the parallel branch.
   VO work is a separate prompt, not mixed in here.
+
+---
+
+**Branch (earlier):** `claude/live-residuals-stake-assay` (stake CONFIRM + Assay Scale redesign — merged)
+
+**✅ LIVE RESIDUALS — STAKE CONFIRM + ASSAY SCALE REDESIGN (2026-08-16).**
+Executed `PROMPT_LIVE_RESIDUALS_STAKE_ASSAY_BOSSES.md`. Bosses intentionally
+LEFT to the parallel session per the founder's explicit "Leave the bosses."
+- **#1 Stake never confirmed — FIXED + GATED.** Gideon's dialogue promised
+  "hit CONFIRM" but the panel only offered `[E] close`/`[ESC] leave` — the
+  copy advertised a control that wasn't wired. Now Gideon's final line is a
+  real commit: pressing **E** on the last dialogue step stakes 25% of your
+  GOLD into Fort Knox (`GoldMineSystem.stake_in_fort_knox`), plays the powerup
+  SFX + shake, floats "LOCKED IN — +N FORT KNOX SHARES", and refreshes the
+  readout. One-shot guarded; no-op on empty gold. Gate
+  `tests/res_stake_assay_test.gd` proves `fort_knox_shares` rises and
+  `gold_balance` drops end-to-end, and that the last line still says CONFIRM.
+- **#2 Assay Scale "text masking each other" — REBUILT + GATED.** Root cause:
+  styled + black-outlined Labels report a real minimum height of ~72–90px
+  in-tree (not ~font_size), so the old 60px row gaps overlapped. Rebuilt
+  `_build_gold_scale` with a dark backing panel and generous ~100px bands
+  (title → scale → STAKED/RETURN labels → live values → hint) so no two label
+  rects can intersect. Scale art enlarged to 230px with a bright halo ring so
+  it reads as the instrument; all labels ≥26px with black outline. Gate
+  asserts ≥3 labels, scale art ≥200px, and **no two label rects overlap**.
+- **#3 Distributor / Claim Jumper chase — NOT TOUCHED (founder: "Leave the
+  bosses").** Owned by the parallel session; requires real-browser capture.
+- Gates all green: `res_stake_assay_test` 6/6, `crit_vault_music_test` 3/3,
+  `s8_dialogue_npc_art_test` 7/7, Security Sentinel 18/18.
+- Multi-model (mandate): Kimi K3 + Grok 4.5 dispatched via OpenRouter —
+  `docs/model-responses/2026-08-16-res-{kimi,grok}.md` (Kimi → real confirm
+  panel design; Grok → Assay layout). Both approaches adopted above.
+- Dual-session note: STATUS.md history below belongs to the parallel session's
+  PR #35 branch; this section is prepended, not a rewrite.
 
 ---
 
