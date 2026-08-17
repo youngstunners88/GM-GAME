@@ -1,6 +1,106 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
+**Branch:** `claude/stage3-hud-props-axe-residual`
+
+**🎯 HUD / PROPS / AXE RESIDUAL — six screenshot defects, all fixed and gated
+(2026-08-17).** Founder sent a fresh batch of 6 screenshots after PR #40's
+boss-standoff fix. Per that prompt's own instruction, **Stage 2/3 boss chase
+was NOT re-touched** — this pass is scoped to the six new defects only.
+
+1. **Black SCORE/HUD backing plate — removed.** `HUDMask`, an opaque
+   `Color(0,0,0,1)` `ColorRect` sitting behind SCORE+lives, was cut from all
+   three level scenes (`level_01/02/03`). The rest of the stat list never had
+   a backing plate and already read fine, so nothing else changed. **Live
+   screenshot confirms** the painted stage now shows straight through:
+   `docs/captures/2026-08-17-hud-props-axe/hud_no_black_plate.png`.
+2. **HUD stat text shrunk.** The cropped screenshot the founder circled was
+   the stat TEXT block, not a sprite. `SCORE` 30→22px, the 9 token/resource
+   labels 26→18px, `TOKENS` header 18→13px. Grok 4.5 confirmed 18-22px is
+   safe (the 24px floor from the S7 readability pass was for vault panels,
+   not the HUD list) before this shipped.
+3/5. **The two mine carts ("floating boxers" / "random load box, no impact")
+   — real art, real trigger, real reward.** Root cause was worse than bad
+   art: `board_player()`/`unboard_player()` had **zero call sites anywhere in
+   the codebase** — walking into a cart genuinely did nothing, which is
+   exactly "no impact on Lil Blunt or the game points." Generated proper
+   wooden (fast/DAY 88) and armored-gold (slow/DAY 288) cart sprites via the
+   project's `openai/gpt-5.4-image-2` path, chroma-keyed clean (new
+   `scripts/keyout-magenta.py`, corner-flood + tight interior pass for
+   enclosed background gaps like the underside between the wheels), wired
+   `mine_cart.gd` to a real `Sprite2D`, and added a real `Area2D` boarding
+   trigger wired to `board_player`/`unboard_player` that awards wBTC with
+   floating "+N wBTC" text, a sparkle burst, and a screenshake the moment the
+   player reaches it — proven via a real physics overlap in the new gate, not
+   a grep. Also found and removed an orphaned static `ColorRect` +
+   `CollisionShape2D` baked directly in `mine_cart.tscn`, duplicating what
+   the script already builds at runtime — the second half of why the cart
+   read as an undefined "boxer."
+4. **Big axe pushed further — power AND feedback.** `BIG_SCALE` 1.95→2.6 (the
+   normal thrown axe is a pickaxe sprite at 0.5 scale, ~9x17px — nearly
+   invisible; the big axe now renders ~104x114px), `BIG_DAMAGE` 5→8,
+   `BIG_BOSS_DAMAGE` 3→4 (still strictly under every boss's max health —
+   Auditor 10, Distributor 14, Claim Jumper 18 — so the "never one-shot a
+   boss" constraint from the original request holds). The pickup itself
+   enlarged too (1.45x→2.0x). Just as important: impact FEEDBACK now differs,
+   not only the damage number — big-axe hits get a heavier screenshake tier
+   (`ScreenShake.heavy()` vs none before) and a distinct, weightier SFX
+   (`torch_impact` vs the light `hit` ping), where before both axes gave
+   identical feedback despite the 5x damage gap.
+6. **Path-blocking box removed — and it was a real collision bug, not just
+   visual clutter.** `timed_door.tscn` carried an orphaned static
+   `ColorRect` + `CollisionShape2D`, duplicating what `timed_door.gd` already
+   builds at runtime. The static collider was never touched by `open()`/
+   `close()` — only the script's own runtime collision shape toggles — so
+   even when the door visually opened, **this leftover collider stayed solid
+   forever**, permanently blocking the path regardless of the door's actual
+   state. That is almost certainly the literal mechanism behind "box that
+   blocks the path... remove it." Both orphaned nodes deleted; walk-path gate
+   re-verified clean. Also bumped wBTC/coin_btc collision+visual scale
+   (radius 15→20, coin scale 1.0→1.3x) for on-screen clarity — **live
+   screenshot confirms** the Bitcoin coin now reads clearly:
+   `docs/captures/2026-08-17-hud-props-axe/hud_wbtc_coin_clear.png`.
+
+**Multi-model (per the directive's explicit skill table):**
+- **Grok 4.5** — recommended the sun-shrink target (40-45%, not my first-pass
+  55%) and confirmed 18-22px HUD text / full HUDMask removal were safe;
+  incorporated before shipping.
+- **DeepSeek** — full compliance matrix against the DoD, all items marked
+  PLANNED, correctly flagged the mine cart (H3/H5) as highest risk due to the
+  external image-gen dependency + dead-code wiring — which is exactly where
+  the real bug turned out to be.
+- **Kimi K3** — first two dispatches burned their token budget on internal
+  reasoning and returned empty (`finish_reason: length`); the retry landed
+  and correctly guessed, sight-unseen, that the timed_door box likely had "a
+  stale second collider" duplicate to the visual — confirmed exactly right
+  once the .tscn was read.
+- **Qwen VL lane** — `or-call.mjs`/`or-image.mjs` have no vision-input path,
+  so a live text+vision re-confirmation of all 6 shots wasn't possible
+  through that pipeline. Substituted with a real local web export
+  (CI's exact preset) served + driven with Playwright, which live-confirmed
+  items 1, 2, and 6b directly (screenshots above). Items 3/4/5/6a are
+  confirmed via a new 22-assertion behavioral gate
+  (`tests/hud_props_axe_residual_test.gd`, includes a real physics-overlap
+  proof that the mine cart reward actually fires) plus direct asset
+  inspection, not yet re-screenshotted at their exact level positions in a
+  live run — **founder hard-refresh is still the final proof**, per the
+  directive's own header.
+- **B.AI** — not dispatched; no rate-limit pressure this session.
+
+**Gates:** every existing gate re-run clean after this batch (HUDMask
+removal / font resize / background art swap / timed_door node removal
+touched shared UI and level scenes, so this mattered): script_compile
+(165 scripts / 123 scenes), s11_stage3_walkpath, owner_screenshot_fixes,
+stage3_defence, dual_real_level_boss_chase, s8_dialogue_npc_art,
+res_stake_assay, boss_standoff_assay, stage3_clutter, npc_vo_ducking,
+level1_music_residual, blaze_leaf_sfx, crit_vault_music — plus the new
+`hud_props_axe_residual_test` (22/22). Security Sentinel 18/18, 0 blockers.
+
+**Stage 3 Claim Jumper remains OPEN** (unchanged from PR #40 — this prompt
+was explicitly scoped away from the boss chase). Not re-claiming it fixed.
+
+---
+
 **Branch:** `claude/critical-bosses-stage3-assay`
 
 **🎯 BOSSES: ROOT CAUSE FOUND AFTER 10+ FAILED ATTEMPTS — AND IT WAS THE

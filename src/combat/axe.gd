@@ -26,17 +26,23 @@ var _spin: float = 0.0
 ## deliberately less than any boss's max health (Auditor 6, Distributor 7) so
 ## it can never be a one-hit boss kill.
 var big: bool = false
-const BIG_DAMAGE := 5
-const BIG_BOSS_DAMAGE := 3
+## Founder (Stage 3 HUD/props/axe residual, 2026-08-17): "The axe is still not
+## making a fucking difference!! ... this axe must be more powerful so that
+## when thrown its larger and more effective than Lil Blunt's normal axe."
+## Damage raised again (5->8) and boss chip damage (3->4) — still strictly
+## under every boss's max health (Auditor 10, Distributor 14, Claim Jumper 18,
+## Bandit 10) so the one-shot-boss constraint from the original request holds.
+const BIG_DAMAGE := 8
+const BIG_BOSS_DAMAGE := 4
 ## The BIG axe is drawn as an actual big axe now, so the projectile is scaled
 ## against ITS pixel size, not the pickaxe's. sprite_item_bigaxe.png is 40x44
-## against the pickaxe's 18x34.
-## Founder (Stage 3 residual, 2026-08-16): "the throw stays small." Raised from
-## 1.55 -> 1.95 so the thrown axe reads as a genuinely heavy weapon — ~78px
-## wide vs the base throw's ~9px (a pickaxe sprite at 0.5). The circle hitbox
-## scales with it, which only makes the power-fantasy throw MORE forgiving for
-## the player, never less fair to them.
-const BIG_SCALE := 1.95
+## against the pickaxe's 18x34, and the NORMAL thrown axe reuses the pickaxe
+## sprite at 0.5 scale — a ~9x17px projectile, nearly invisible at 1280x720.
+## Raised again 1.95 -> 2.6 so the thrown big axe is ~104x114px: unmistakably
+## a different, larger, heavier weapon than the base throw, not a marginal
+## bump. The circle hitbox scales with it, which only makes the power-fantasy
+## throw MORE forgiving for the player, never less fair to them.
+const BIG_SCALE := 2.6
 const BIG_SPEED_MULT := 1.15
 ## Art for the upgraded axe. Until now the "big axe" was the PICKAXE sprite
 ## blown up and tinted gold — which is also why the big-axe PICKUP and the
@@ -162,13 +168,18 @@ func _hit(node: Node) -> bool:
 	return false
 
 func _impact() -> void:
-	AudioManager.play_sfx_at("hit", global_position)
 	# The big axe PIERCES — it keeps flying through whatever it just killed,
 	# which is what makes "anything that comes in its way" true rather than
-	# "the first thing in its way".
+	# "the first thing in its way". Its impact also has to be FELT as more
+	# powerful, not just carry a bigger damage number: a heavier screenshake
+	# tier and a distinct, weightier SFX (torch_impact reads as a solid
+	# crunch vs the light "hit" ping the base throw uses) instead of the
+	# identical feedback both used to share.
 	if big:
-		ScreenShake.light()
+		AudioManager.play_sfx_at("torch_impact", global_position)
+		ScreenShake.heavy()
 		return
+	AudioManager.play_sfx_at("hit", global_position)
 	_despawn()
 
 func _despawn() -> void:

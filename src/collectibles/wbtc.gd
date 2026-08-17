@@ -24,14 +24,20 @@ func _setup_visual() -> void:
 	# functionless clutter AND an unreadable Bitcoin — it was both. It is now a
 	# struck gold-rimmed coin carrying a bold B, at the same 40px footprint the
 	# other protocol tokens use.
+	# Founder (Stage 3 HUD/props/axe residual, 2026-08-17): "This BTC logo is
+	# shit and unclear!!!" — same object, same complaint pattern as the
+	# "orange rectangles" fix above. The coin art itself is fine at native
+	# resolution (checked directly); the problem was on-screen scale. Bumped
+	# ~1.3x (radius 15 -> 20) so the Bitcoin B reads clearly at gameplay zoom.
 	var coin := Sprite2D.new()
 	coin.texture = preload("res://src/assets/sprites/sprite_item_wbtc.png")
 	coin.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	coin.scale = Vector2(1.3, 1.3)
 	add_child(coin)
 
 	var col := CollisionShape2D.new()
 	var shape := CircleShape2D.new()
-	shape.radius = 15
+	shape.radius = 20
 	col.shape = shape
 	add_child(col)
 
