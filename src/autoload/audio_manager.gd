@@ -71,7 +71,16 @@ func play_playlist(paths: Array) -> void:
     _playlist = found
     if _playlist.is_empty():
         return
-    _play_next_in_playlist(true)
+    # Founder residual (2026-08-17): "there is a different song playing" on
+    # boot — _play_next_in_playlist() picked RANDOMLY even on this very first
+    # call (candidates = the full list, since _last_track starts unset), so
+    # which track opened a level was never actually deterministic. The FIRST
+    # track of a fresh playlist call is now always paths[0] — callers rely on
+    # this to guarantee a specific "always plays first" track (see
+    # level_01_smoke_realm.gd). Later auto-advances on track-finish still
+    # call _play_next_in_playlist() with no override and randomize as before,
+    # so the rest of the playlist still gets real rotation.
+    _play_next_in_playlist(true, true)
 
 ## Players that are mid-fade-out. UNTRACKED before, which is the whole bug:
 ## _duck_out_music() detached the outgoing player and relied on a tween to
@@ -114,11 +123,15 @@ func _stop_music() -> void:
         current_music_player.queue_free()
     current_music_player = null
 
-func _play_next_in_playlist(fade_in: bool = false) -> void:
-    var candidates: Array = _playlist
-    if _playlist.size() > 1:
-        candidates = _playlist.filter(func(p): return p != _last_track)
-    var path: String = candidates[randi() % candidates.size()]
+func _play_next_in_playlist(fade_in: bool = false, force_first: bool = false) -> void:
+    var path: String
+    if force_first:
+        path = _playlist[0]
+    else:
+        var candidates: Array = _playlist
+        if _playlist.size() > 1:
+            candidates = _playlist.filter(func(p): return p != _last_track)
+        path = candidates[randi() % candidates.size()]
     var stream := load(path)
     if not stream:
         return

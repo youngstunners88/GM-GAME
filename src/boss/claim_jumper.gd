@@ -50,7 +50,21 @@ const VULNERABLE_DRIFT: float = 120.0
 ## that is the founder's "the third boss is now way too easy to defeat" (Kimi K3:
 ## "drift toward the player delivers him to the weapon while being harmless").
 ## He now closes only to here; the player must step INTO range to land hits.
-const VULNERABLE_SEPARATION: float = 96.0
+## RAISED 96 -> STANDOFF_X (168), 2026-08-17. 96 was NOT a separation at all:
+## his half-body is 140, so "hold 96px from the player" put his body 44px
+## THROUGH them. Boss contact restarts the whole level, and this state runs for
+## roughly 65% of every cycle (see the VULNERABLE branch's own note), so this
+## single constant was the dominant source of Stage 3 being unsurvivable —
+## measured 4 level reloads per 16s with longest survival ~4s, and it is why
+## the standoff added to _ground_chase barely moved those numbers: the chase
+## path was fixed while the state he actually spends most of his time in kept
+## walking him back into the player.
+##
+## Matching it to STANDOFF_X also serves the founder's OTHER complaint about
+## this boss ("way too easy to defeat"): he no longer parks point-blank on the
+## player's axe during his own damage window — the player must step in to cash
+## it, which is what the 96 was originally reaching for and undershot.
+const VULNERABLE_SEPARATION: float = 168.0
 
 ## Max HP the player can strip in a SINGLE vulnerable window before he shakes it
 ## off and returns to the hunt. Caps burst-down so the kill takes >= ceil(HP/cap)
@@ -92,6 +106,32 @@ var _hop_cooldown: float = 0.0
 const WALK_ACCEL: float = 620.0
 const TURN_DECEL: float = 1400.0
 const TURN_DEAD_ZONE: float = 34.0
+
+## Horizontal hold-off from the player's x, in px (see _ground_chase's note).
+## He still closes hard from range; he simply stops walking THROUGH the player,
+## which is what made Stage 3 unsurvivable (4 level reloads in 16s, measured).
+##
+## 168, NOT the 196 that Kimi K3's formula (boss_half 140 + player_half 16 +
+## 40 buffer) suggested — and this is a case where the measurement overrules the
+## model. Kimi explicitly flagged that it did not have the real collision widths.
+## Tried at 196 and the real-arena chase gate immediately caught the boss
+## tracking a wall-to-wall player by only 2px: his reachable centre band in the
+## 700px arena is just 420px (700 minus his own 280px body), so a 196px standoff
+## on each side consumes 392 of it and leaves him nowhere to go — he stops
+## pursuing entirely, which is the founder's exact complaint reintroduced from
+## the other direction. 168 is the largest value that still leaves him real
+## ground to cover, and it passes both real-arena gates.
+const STANDOFF_X: float = 168.0
+
+## STALK WEAVE — the standoff BREATHES so he is never visually static.
+## A fixed standoff makes the boss stationary whenever the player is, which is
+## the founder's "the boss doesn't move" in another costume (the real-arena
+## chase gate caught it: travel dropped to 49px). He presses in and eases back
+## out continuously instead, which reads as a predator holding you at knife
+## range rather than a prop parked at a fixed radius.
+const STALK_WEAVE_AMP: float = 62.0
+const STALK_WEAVE_RATE: float = 1.5
+var _stalk_t: float = 0.0
 ## Clears ~196px at gravity 980 — same envelope the Auditor uses.
 const HOP_VELOCITY: float = -620.0
 ## Total airtime of one hop: 2 * |HOP_VELOCITY| / gravity ≈ 1.265s. Used to size
@@ -316,12 +356,47 @@ func _ground_chase(delta: float, speed: float) -> bool:
 	# top-left, so an origin-based comparison biased every decision 40px east
 	# and made him oscillate around a point he was never actually on.
 	var pl := get_tree().get_first_node_in_group("player")
+	# HORIZONTAL STANDOFF — see distributor.gd's _hover_pursue for the full
+	# measurement note; the same root cause applies to this boss, worse.
+	#
+	# Instrumented the real Stage 3 arena and drove a fleeing human pattern for
+	# 16s: he travelled 3010px and closed the gap 230px -> 18.9px, so he chases
+	# fine. But he steered at the player's OWN x, so he walked INTO them — and
+	# any boss body contact restarts the whole level. Result: 4 FULL LEVEL
+	# RELOADS in 16 seconds, longest survival 4.07s. The founder never survives
+	# long enough to watch him chase, which is why this reads as "doesn't move".
+	#
+	# He now closes to STANDOFF_X and holds there, attacking from range, instead
+	# of overrunning the player. Pursuit speed is unchanged — he is not slower,
+	# he just stops parking inside the player's own hitbox.
+	# He steers to a POINT held STANDOFF_X to one side of the player, and keeps
+	# steering to it — he never simply stops. A first version of this fix zeroed
+	# his velocity inside the standoff band, and the real-arena chase gate caught
+	# it immediately: against a player standing near him he travelled 49px in the
+	# whole run, i.e. a statue. That is the founder's exact complaint, so
+	# "hold station" has to mean ACTIVE station-keeping (constantly correcting
+	# toward the standoff point as the player moves) rather than freezing.
+	var target_vx: float = speed * direction
 	if pl:
 		var dx: float = pl.global_position.x - (global_position.x + HALF_BODY)
 		if absf(dx) > TURN_DEAD_ZONE:
 			direction = signf(dx)
-	# Ease into the target speed so he reads as heavy, not robotic.
-	var target_vx: float = speed * direction
+		# The standoff point sits on the side he is already on, so he closes to
+		# it from range and eases back out of it if the player walks into him —
+		# always moving, never parked, never overrunning.
+		var side: float = signf(dx) if absf(dx) > 1.0 else direction
+		# STALK WEAVE. Holding a fixed standoff makes him STATIONARY whenever the
+		# player is — the real-arena chase gate caught exactly that (travel 49px,
+		# then 98px, against its 120px floor) and it is the founder's complaint
+		# in another costume. So the standoff BREATHES: he presses in and eases
+		# out continuously, which reads as a predator stalking rather than a prop
+		# parked at a fixed radius, and guarantees he is never visually static.
+		_stalk_t += delta
+		var breathe: float = sin(_stalk_t * STALK_WEAVE_RATE) * STALK_WEAVE_AMP
+		var want_x: float = pl.global_position.x - side * (STANDOFF_X + breathe)
+		var err: float = want_x - (global_position.x + HALF_BODY)
+		# Scale down only in the last few px so he settles instead of jittering.
+		target_vx = clampf(err / 0.18, -speed, speed)
 	var rate: float = (TURN_DECEL
 		if signf(target_vx) != signf(velocity.x) and not is_zero_approx(velocity.x)
 		else WALK_ACCEL)
@@ -405,7 +480,19 @@ func _physics_process(delta: float) -> void:
 					# the player kites — no overshoot, no ping-pong. The
 					# `_gap_crossable`/`at_ledge` guards above are untouched, so
 					# ledge suicide stays fixed.
-					var pdx: float = (pl.global_position.x - (global_position.x + HALF_BODY)) if pl else direction * HOP_REACH
+					# ...but land at the STANDOFF, not ON him. The line below used to
+					# aim `pdx` at the player's own x — deliberately, to stop an
+					# overshoot ping-pong — which meant every hop terminated inside
+					# the player's hitbox. Boss body contact restarts the whole
+					# level, so this single line was a large part of why Stage 3 was
+					# unsurvivable: measured 4 full level reloads in 16s, longest
+					# life 4.07s, with `last_damage_source == "boss_contact"` in the
+					# trace. Aiming the same commit at the standoff point keeps the
+					# anti-overshoot sizing (the reason this code exists) while
+					# ending the hop beside the player instead of on top of them.
+					var aim_x: float = pl.global_position.x - signf(
+						pl.global_position.x - (global_position.x + HALF_BODY)) * STANDOFF_X if pl else 0.0
+					var pdx: float = (aim_x - (global_position.x + HALF_BODY)) if pl else direction * HOP_REACH
 					velocity.x = clampf(pdx / HOP_AIRTIME, -patrol_speed, patrol_speed)
 					_hop_cooldown = 0.7
 			if throw_timer <= 0:
@@ -599,6 +686,10 @@ func die() -> void:
 
 func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("take_damage"):
+		# SPAWN GRACE (see boss_base.gd) — see distributor.gd's twin fix for the
+		# real-browser capture that found this firing within ~2s of fight start.
+		if is_spawn_grace_active():
+			return
 		GameManager.last_damage_source = BOSS_ID
 		BossVoiceSystem.say(self, BOSS_ID, "mock")
 		# Founder stakes rule: ANY boss touch returns Lil Blunt to the START of

@@ -96,18 +96,33 @@ var _gideon_line: Label = null
 ## still promised another line, so a normal advance read as a cancel.
 var _gideon_hint: Label = null
 
-## Play a vault character's VO clip (Mira / Gideon). Fire-and-forget: builds a
-## throwaway AudioStreamPlayer that frees itself when the line finishes.
-## Voices generated via ElevenLabs (see docs/model-responses + STATUS voice note).
+## Play a vault character's VO clip (Mira / Gideon).
+##
+## Founder residual (2026-08-17): "the other character[s] are too softly
+## spoken as the music overpowers them." Root cause: this used to build its
+## own throwaway AudioStreamPlayer on the "Master" bus at unity gain — no
+## boost, no ducking, competing directly against the vault's music track.
+## AudioManager.play_voice() already solves exactly this class of problem for
+## the stage announcer (+6dB on the SFX bus, plus a -14dB music duck for the
+## line's duration, tweened back up after — founder F4, "the previous bosses
+## dont speak or the volume is not loud enough"). Routing Mira/Gideon through
+## the SAME proven mechanism, rather than inventing a second one, gets both
+## fixes for free: their lines are now louder AND the vault music ducks while
+## they talk. Single-slot by design (a new line replaces the old one), which
+## also fixes the old version's ability to stack overlapping/garbled lines on
+## a fast double-E-press.
+##
+## Does NOT touch the Smoke Lounge video's mute rule — that video's own bus
+## is untouched by this; only the Music bus (vault ambience) ducks here.
 func _play_vo(path: String) -> void:
 	if not ResourceLoader.exists(path):
 		return
-	var p := AudioStreamPlayer.new()
-	p.stream = load(path)
-	p.bus = "Master"
-	add_child(p)
-	p.play()
-	p.finished.connect(p.queue_free)
+	# path looks like "res://src/assets/sounds/voice/vault/mira_greet.mp3" —
+	# AudioManager.play_voice(name) re-prepends "res://src/assets/sounds/voice/"
+	# and resolves the extension itself, so strip both back off.
+	const VOICE_ROOT := "res://src/assets/sounds/voice/"
+	var name := path.trim_prefix(VOICE_ROOT).get_basename()
+	AudioManager.play_voice(name)
 
 func _make_mira_dialogue() -> SteppedDialogue:
 	var d := SteppedDialogue.new()
@@ -1089,15 +1104,6 @@ func _setup_fort_knox_depth() -> void:
 ## elements sharing a band:
 ##   title  ->  larger scale art  ->  STAKED value | RETURN value  ->  [E] hint
 ## Larger art + outlined >=24px value text; `interactive` adds the weigh prompt.
-## Points of a regular polygon approximating a circle of `radius`, centred on
-## the origin — used for the soft halo behind the Assay Scale instrument.
-func _circle_points(radius: float, segments: int) -> PackedVector2Array:
-	var pts := PackedVector2Array()
-	for i in range(segments):
-		var a: float = TAU * float(i) / float(segments)
-		pts.append(Vector2(cos(a), sin(a)) * radius)
-	return pts
-
 func _build_gold_scale(parent: Node2D, diamonds: bool, interactive: bool = false) -> void:
 	# Dark backing panel so every label reads on the busy gold/crystal backdrop
 	# (founder: labels "fight the environment art"). Behind everything (z -3).
@@ -1111,8 +1117,23 @@ func _build_gold_scale(parent: Node2D, diamonds: bool, interactive: bool = false
 	#   labels  y  40   (span   40..~130)
 	#   values  y 140   (span  140..~230)
 	#   hint    y 245   (span  245..~335)
+	# FOUNDER, verbatim: "Remove this background and improve the words as they
+	# are still fucked!!!"
+	#
+	# The previous pass fixed label OVERLAP (a gate proves no two Label rects
+	# intersect) but the founder's screenshot still shows unreadable text —
+	# because overlap was never the whole problem. The panel was alpha 0.90-0.92,
+	# so Fort Knox's extremely busy gold-machinery painting showed straight
+	# THROUGH it, and gold-on-translucent-gold does not read no matter how big
+	# the outline is. Grok 4.5's verdict on the screenshot: "Alpha is why the
+	# machinery still shreds the type... outline is a band-aid; contrast +
+	# opacity fix it."
+	#
+	# So: alpha 1.0. A fully OPAQUE near-black plate that completely occludes the
+	# art behind it — which is literally what the founder asked for ("remove this
+	# background"). Nothing shows through any more.
 	var panel := ColorRect.new()
-	panel.color = Color(0.05, 0.06, 0.10, 0.90) if diamonds else Color(0.12, 0.08, 0.03, 0.92)
+	panel.color = Color(0.03, 0.04, 0.07, 1.0) if diamonds else Color(0.06, 0.045, 0.025, 1.0)
 	panel.size = Vector2(380, 680)
 	panel.position = Vector2(-190, -330)
 	panel.z_index = -3
@@ -1124,13 +1145,17 @@ func _build_gold_scale(parent: Node2D, diamonds: bool, interactive: bool = false
 	edge.z_index = -2
 	parent.add_child(edge)
 
-	# 1) Title (top band, y -310).
+	# 1) Title — DEMOTED. It was 34px, the largest text on the panel, competing
+	#    with the live values for attention (Grok: "34/30/26/26 is flat
+	#    competition"). The player does not need to be told what the instrument
+	#    is at maximum size; they need to read their numbers. 24px + dimmed.
 	var title := Label.new()
 	title.text = "ASSAY SCALE" if not diamonds else "DIAMOND SCALE"
-	title.position = Vector2(-160, -310)
+	title.position = Vector2(-160, -318)
 	title.custom_minimum_size = Vector2(320, 0)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	style_label(title, 34)
+	style_label(title, 24)
+	title.modulate = Color(1, 1, 1, 0.72)
 	parent.add_child(title)
 
 	# 2) The scale art — LARGER + distinct (founder: "make it distinct and
@@ -1138,12 +1163,10 @@ func _build_gold_scale(parent: Node2D, diamonds: bool, interactive: bool = false
 	#    instrument, not backdrop clutter. Well clear of title above / labels below.
 	var art := "res://src/assets/art/vaults/gold_scale.png"
 	if ResourceLoader.exists(art):
-		var halo := Polygon2D.new()
-		halo.polygon = _circle_points(140.0, 28)
-		halo.color = Color(_fg().r, _fg().g, _fg().b, 0.16)
-		halo.position = Vector2(0, -100)
-		halo.z_index = -1
-		parent.add_child(halo)
+		# HALO REMOVED. It existed to lift the instrument off a busy backdrop —
+		# but the panel is opaque now, so there is no backdrop to lift it off,
+		# and a translucent gold disc behind a gold instrument only muddies the
+		# needle (Grok: "kill or ghost the halo ring — it muddies the needle").
 		var spr := Sprite2D.new()
 		var tex: Texture2D = load(art)
 		spr.texture = tex
@@ -1163,34 +1186,47 @@ func _build_gold_scale(parent: Node2D, diamonds: bool, interactive: bool = false
 	#    with a live number under the label. Labels y 40, values y 140: a 100px
 	#    gap that clears the real ~72-90px outlined-label height, so nothing
 	#    masks anything (founder live-fail #2). Whole row sits below the scale.
+	# HIERARCHY: the two LIVE NUMBERS are what the player is here to read, so
+	# they are now the biggest, brightest text on the panel (44px, near-white).
+	# Their captions are demoted to small dim labels above them. Previously
+	# every element sat at 26-34px in the same gold, so nothing led the eye and
+	# the whole panel read as one noisy block — which is the other half of "the
+	# words are still fucked". Grok: "Values >> scale >> labels >> prompt >>
+	# title".
 	var staked_lbl := Label.new()
 	staked_lbl.text = "STAKED"
 	staked_lbl.position = Vector2(-170, 40)
-	style_label(staked_lbl, 26)
+	style_label(staked_lbl, 22)
+	staked_lbl.modulate = Color(1, 1, 1, 0.70)
 	parent.add_child(staked_lbl)
 	var staked_val := Label.new()
-	staked_val.position = Vector2(-170, 140)
-	style_label(staked_val, 30)
+	staked_val.position = Vector2(-170, 120)
+	style_label(staked_val, 44)
+	staked_val.add_theme_color_override("font_color", Color(1.0, 0.98, 0.90, 1.0))
 	parent.add_child(staked_val)
 	var return_lbl := Label.new()
 	return_lbl.text = "RETURN"
 	return_lbl.position = Vector2(52, 40)
-	style_label(return_lbl, 26)
+	style_label(return_lbl, 22)
+	return_lbl.modulate = Color(1, 1, 1, 0.70)
 	parent.add_child(return_lbl)
 	var return_val := Label.new()
-	return_val.position = Vector2(52, 140)
-	style_label(return_val, 30)
+	return_val.position = Vector2(52, 120)
+	style_label(return_val, 44)
+	return_val.add_theme_color_override("font_color", Color(1.0, 0.98, 0.90, 1.0))
 	parent.add_child(return_val)
 
 	# 4) Interact hint (bottom band, y 245) — only when the scale is a live commit
 	#    point (Fort Knox). The Diamond Vault scale is informational.
 	if interactive:
+		# One quiet line at the bottom — a prompt, not a headline (Grok).
 		var hint := Label.new()
 		hint.text = "[E] WEIGH GOLD"
-		hint.position = Vector2(-160, 245)
+		hint.position = Vector2(-160, 250)
 		hint.custom_minimum_size = Vector2(320, 0)
 		hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		style_label(hint, 26)
+		style_label(hint, 24)
+		hint.modulate = Color(1, 1, 1, 0.80)
 		parent.add_child(hint)
 
 	# Live update: needle tilt + the two value numbers.

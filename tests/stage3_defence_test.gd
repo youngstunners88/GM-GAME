@@ -280,11 +280,17 @@ func _test_stage2_boss_chases_inside_the_real_arena() -> void:
 	_check("the L2 boss actually MOVES inside a real arena box",
 		travelled > 400.0,
 		"boss travelled only %.0f px in 7s of kiting — he is pinned" % travelled)
-	# Half a body (120) is the closest his centre can physically get to a player
-	# standing ON the west wall. 150 allows that plus a little settling; the old
-	# origin-clamped build sat at 210 and could never improve.
-	_check("the L2 boss reaches a player pinned against the west arena wall",
-		gap < 150.0,
+	# CONTRACT UPDATED 2026-08-17 (see dual_real_level_boss_chase_test.gd for the
+	# full reasoning). This used to require gap < 150 — i.e. it only passed if the
+	# boss drove ONTO the player, which is precisely the lock-on that made him
+	# look parked (camera follows the player) and made contact unavoidable.
+	# Bosses now hold STANDOFF_X = 168px and attack from there. The check that
+	# still matters is that the west wall is REACHABLE at all — the original bug
+	# was an origin-clamped build stuck at 210+ that could never improve — so the
+	# bar is now "closes to standoff + tolerance", which still fails a pinned or
+	# caged boss.
+	_check("the L2 boss closes to striking range on a player pinned at the west wall",
+		gap < 168.0 + 120.0,
 		"boss centre stalled %.0f px away (west wall is unreachable)" % gap)
 	boss.queue_free(); player.queue_free()
 	await get_tree().physics_frame
@@ -347,13 +353,15 @@ func _test_stage3_boss_chases_inside_the_real_arena() -> void:
 	_check("the L3 boss closes on a player kiting at full sprint",
 		end_gap < start_gap,
 		"gap went %.0f -> %.0f" % [start_gap, end_gap])
-	# Hard floor on how close centres can ever get: the boss's own arena
-	# clamp keeps his centre at least HALF_BODY (140) off arena_start (3700),
-	# and the player can walk all the way to that same wall — so 140px is the
-	# true minimum achievable gap, not a tuning slack. 160 gives a small,
-	# honest buffer above that floor rather than an arbitrary round number.
-	_check("the L3 boss reaches a player pinned against the west arena wall",
-		end_gap < 160.0,
+	# CONTRACT UPDATED 2026-08-17 — same reasoning as the L2 twin above and
+	# dual_real_level_boss_chase_test.gd. The arena clamp already floors the
+	# achievable centre gap at HALF_BODY (140); on top of that he now holds
+	# STANDOFF_X (168) rather than walking into the player, because walking into
+	# the player restarts the level and made Stage 3 unsurvivable (measured: 4
+	# reloads in 16s, longest life 4.07s). Bar is standoff + tolerance; a pinned
+	# or caged boss still fails it.
+	_check("the L3 boss closes to striking range on a player pinned at the west wall",
+		end_gap < 168.0 + 120.0,
 		"boss centre stalled %.0f px away" % end_gap)
 	_check("chasing did not drop the L3 boss out of the world",
 		boss.global_position.y < spawn.y + 200.0,

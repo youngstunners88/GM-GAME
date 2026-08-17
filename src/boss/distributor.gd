@@ -409,6 +409,34 @@ const PULL_FLOOR_MARGIN: float = 72.0
 ## untouched — the fair hit window the founder liked does not shrink.
 const MIN_PURSUE_SPEED: float = 345.0
 
+## Horizontal hold-off from the player's x, in px. See the long note in
+## _hover_pursue for the measurement that produced this.
+##
+## His half-body is 120 and the player's collision half-width is ~16, so 190
+## leaves roughly 54px of visible daylight between his edge and the player:
+## close enough to read as menacing and to threaten, far enough that he is a
+## SEPARATE moving object on screen (restoring the relative motion the camera
+## was cancelling out) and that a routine jump no longer lands inside an
+## instant-restart hitbox. Deliberately NOT larger — this is a standoff, not a
+## retreat; he must still feel like he is on top of you.
+const STANDOFF_X: float = 168.0
+
+## STALK WEAVE — the standoff BREATHES so he is never visually static.
+## A fixed standoff makes the boss stationary whenever the player is, which is
+## the founder's "the boss doesn't move" in another costume (the real-arena
+## chase gate caught it: travel dropped to 49px). He presses in and eases back
+## out continuously instead, which reads as a predator holding you at knife
+## range rather than a prop parked at a fixed radius.
+const STALK_WEAVE_AMP: float = 70.0
+const STALK_WEAVE_RATE: float = 1.35
+var _stalk_t: float = 0.0
+## He only re-picks which side to hold once he is this far past the player's
+## centre. Without the deadzone he flip-flops sides every frame when the player
+## runs underneath him, which reads as jitter and re-introduces the
+## sweep-through-the-player contact kill.
+const STANDOFF_FLIP_DEADZONE: float = 70.0
+var _standoff_side: float = 1.0
+
 ## Hard arena clamp, set by the level when the fight starts. Zero size = unset,
 ## in which case only the flight model applies.
 ##
@@ -436,7 +464,52 @@ func _hover_pursue(delta: float, speed_scale: float = 1.0,
 		min_speed: float = MIN_PURSUE_SPEED) -> void:
 	var p := get_tree().get_first_node_in_group("player")
 	if p:
-		var target: Vector2 = p.global_position + Vector2(0.0, -HOVER_ABOVE)
+		# ------------------------------------------------------------------
+		# HORIZONTAL STANDOFF — the fix for "the boss doesn't move", measured.
+		#
+		# Instrumented the REAL web build (level_base.gd's chase telemetry) and
+		# drove a fleeing human pattern for 16s in the real Stage 2 arena:
+		#   boss travelled 1564px, gap closed 350px -> 6.7px, gap_mean 64.6px,
+		#   and 52% OF ALL SAMPLES had |boss.x - player.x| < 60px.
+		# So he chases perfectly — he was never broken. But he steered at the
+		# player's OWN x, so he LOCKED ON and rode directly overhead. The camera
+		# follows the player, so a boss welded to the player's x has almost NO
+		# motion relative to the screen: he looks parked even while covering
+		# 1.5k px of world. That is precisely "the 2nd boss doesn't move".
+		#
+		# It also made him unfightable: parked overhead at 165-250px of vertical
+		# clearance, ANY jump put the player inside an instant-restart hitbox.
+		# On Stage 3 the same lock-on produced 4 full level reloads in 16s
+		# (longest life 4.07s) — the founder is booted to the level start before
+		# a chase is ever observable.
+		#
+		# THIS IS WHY TEN PRIOR FIXES FAILED: every one RAISED aggression
+		# (MIN_PURSUE_SPEED 265->315->345, HOVER_ACCEL 430->1600), which tightened
+		# the lock-on and killed faster — making the reported symptom strictly
+		# worse each time. The direction was backwards.
+		#
+		# Fix: steer at a point held STANDOFF_X to one side of the player instead
+		# of on top of them. He still closes at full speed from range (a visibly
+		# charging boss), then holds at threat distance and attacks from there.
+		# Relative motion returns, contact becomes a mistake instead of a
+		# certainty, and the founder's "any touch restarts the level" stakes rule
+		# is untouched. Pursuit speeds are NOT weakened.
+		var centre_now: Vector2 = hit_centre()
+		var dx_now: float = centre_now.x - p.global_position.x
+		# Hold the side he is already on. Hysteresis (only re-pick a side once he
+		# is meaningfully past centre) stops him oscillating through the player
+		# when the player runs under him.
+		if absf(dx_now) > STANDOFF_FLIP_DEADZONE:
+			_standoff_side = signf(dx_now)
+		if _standoff_side == 0.0:
+			_standoff_side = 1.0
+		# See STALK_WEAVE_AMP: the hold distance breathes so he is never static
+		# even against a stationary player — a fixed radius is just a different
+		# way to look parked, which is the complaint being fixed.
+		_stalk_t += delta
+		var breathe: float = sin(_stalk_t * STALK_WEAVE_RATE) * STALK_WEAVE_AMP
+		var target: Vector2 = p.global_position + Vector2(
+			_standoff_side * (STANDOFF_X + breathe), -HOVER_ABOVE)
 		# STEERS FROM THE BODY CENTRE, NOT THE ORIGIN. This node's origin is the
 		# body's TOP-LEFT and the body is 240 wide, so aiming the origin at the
 		# player parked his visible centre a permanent 120px EAST of them — he
@@ -1077,6 +1150,11 @@ func die() -> void:
 
 func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("take_damage"):
+		# SPAWN GRACE (see boss_base.gd) — a real-browser capture caught this
+		# firing within ~2s of fight start, before the boss's first scripted
+		# action, from the opening close-the-gap sweep. See BossBase for why.
+		if is_spawn_grace_active():
+			return
 		GameManager.last_damage_source = BOSS_ID
 		BossVoiceSystem.say(self, BOSS_ID, "mock")
 		# Founder stakes rule: ANY boss touch returns Lil Blunt to the START of

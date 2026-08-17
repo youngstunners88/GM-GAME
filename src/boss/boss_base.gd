@@ -15,11 +15,54 @@ var _anim_sprite: AnimatedSprite2D
 ## Player-facing boss name for the health bar. Overridden per boss.
 var boss_display_name: String = "BOSS"
 
+## SPAWN GRACE (residuals, 2026-08-17): a real-browser capture on a fresh
+## export caught the player dying to boss contact within ~2s of the fight
+## starting, twice independently, well before the boss's first scripted
+## action (PATROL's first attack fires at throw_timer=2.2s) — i.e. from raw
+## body contact during the boss's opening close-the-gap sweep, not from any
+## attack. Distributor's own comments already document this exact failure
+## class once ("he killed a player who was standing still and never touched
+## a control") and partially guarded it with HOVER_CLEARANCE/PULL_FLOOR_MARGIN
+## — but those guard the STEADY-STATE hover, not the very first frames where
+## the boss is still closing from his spawn point at up to MIN_PURSUE_SPEED
+## with HOVER_ACCEL=1600 ramping fast, which can out-close the safety lock's
+## own reaction window. A player who takes a full-run "you touched me, restart
+## the level" hit before the fight has even visibly begun reads as "the boss
+## doesn't chase" — because they never survive to see him chase.
+##
+## Root-agnostic fix, not a chase-numbers retune (those are already heavily
+## tuned across many prior sessions — see distributor.gd's MIN_PURSUE_SPEED
+## history — and should not be blindly re-tuned without stronger evidence):
+## a brief window after the boss enters the fight during which boss BODY
+## CONTACT cannot trigger the run-ending restart. Damage TO the boss and
+## incoming ranged attacks are completely unaffected — this only swallows the
+## specific "he materialized/closed distance and grazed me before I could
+## even see what's happening" spawn-transition hit.
+const SPAWN_GRACE_SEC: float = 1.2
+var _spawn_grace_until_msec: int = 0
+
+## Set in _enter_tree(), NOT _ready(). Every concrete boss (distributor.gd,
+## claim_jumper.gd, ...) fully overrides _ready() WITHOUT calling super() —
+## a pre-existing pattern in this codebase, each boss reimplements its own
+## add_to_group/_setup_health_bar inline — so anything this base class needs
+## to run unconditionally for every boss must live in a lifecycle hook no
+## subclass shadows. _enter_tree() fires before _ready() and isn't overridden
+## anywhere in the boss hierarchy, so it is the one place that reliably runs
+## first without depending on every boss remembering to call super().
+func _enter_tree() -> void:
+	_spawn_grace_until_msec = Time.get_ticks_msec() + int(SPAWN_GRACE_SEC * 1000.0)
+
 func _ready() -> void:
 	add_to_group("boss")
 	health = max_health
 	_setup_health_bar()
 	super()
+
+## True for SPAWN_GRACE_SEC after this boss entered the tree. Each boss's
+## own contact handler should check this before calling
+## GameManager.boss_contact_restart() — see distributor.gd / claim_jumper.gd.
+func is_spawn_grace_active() -> bool:
+	return Time.get_ticks_msec() < _spawn_grace_until_msec
 
 func _setup_health_bar() -> void:
 	# Screen-anchored CanvasLayer, NOT a child ProgressBar parented to the boss

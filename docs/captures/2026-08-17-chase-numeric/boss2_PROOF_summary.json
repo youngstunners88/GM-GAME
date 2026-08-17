@@ -1,0 +1,23 @@
+{
+  "label": "boss2_PROOF",
+  "samples": 1096,
+  "duration_s": 18.25,
+  "boss_x_min": 3820,
+  "boss_x_max": 4170,
+  "boss_x_range": 350,
+  "boss_path_len": 3097,
+  "player_path_len": 2588.5,
+  "gap_start": 350,
+  "gap_end": 136.9,
+  "gap_min": 41.8,
+  "gap_max": 385.6,
+  "gap_mean": 182,
+  "states": [
+    "0",
+    "3",
+    "4",
+    "1",
+    "2"
+  ],
+  "VERDICT_boss_moved": "MOVES"
+}
