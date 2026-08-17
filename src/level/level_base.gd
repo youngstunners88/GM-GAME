@@ -97,6 +97,66 @@ func _maybe_debug_boss_warp() -> void:
 	# spawn logic runs identically to a walked-in approach.
 	player.global_position = Vector2(start_x + 120.0, player.global_position.y)
 	_on_boss_trigger(player)
+	set_physics_process(true)
+	_chase_probe_active = true
+
+## --- TEST-ONLY CHASE TELEMETRY ------------------------------------------
+##
+## The founder has rejected "the boss chases" more than TEN times, and every
+## prior attempt to prove it relied on eyeballing screenshots — which cannot
+## distinguish "the boss is stationary" from "the boss is tracking perfectly
+## and the camera is following the player." That ambiguity is why this bug
+## has survived so many sessions.
+##
+## This posts the REAL world coordinates of the boss and the player to the
+## embedding page every physics tick, so a Playwright run can compute the
+## actual gap over time and the actual distance travelled — falsifiable
+## numbers instead of a judgement call about pixels.
+##
+## Strictly test-only: it is armed ONLY from _maybe_debug_boss_warp(), which
+## itself no-ops unless the page was loaded with `?boss=N`. A normal
+## production load never sets `_chase_probe_active`, so this costs nothing
+## and emits nothing. Uses the same sentinel-approved fixed postMessage
+## template as StateMachine._announce_state_to_page (JSON.stringify'd payload
+## interpolated into a constant template, same-origin target only).
+var _chase_probe_active: bool = false
+var _chase_probe_t: float = 0.0
+
+func _physics_process(delta: float) -> void:
+	if not _chase_probe_active or not OS.has_feature("web"):
+		return
+	_chase_probe_t += delta
+	var boss: Node = null
+	for n in get_tree().get_nodes_in_group("boss"):
+		if is_instance_valid(n):
+			boss = n
+			break
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if boss == null or player == null:
+		return
+	# Report the boss's BODY CENTRE where the boss exposes one (hit_centre()),
+	# so the number means the same thing as the chase maths inside the boss.
+	var bpos: Vector2 = boss.global_position
+	if boss.has_method("hit_centre"):
+		bpos = boss.call("hit_centre")
+	var payload := JSON.stringify({
+		"type": "chase",
+		"t": snappedf(_chase_probe_t, 0.001),
+		"bx": snappedf(bpos.x, 0.1), "by": snappedf(bpos.y, 0.1),
+		"px": snappedf(player.global_position.x, 0.1),
+		"py": snappedf(player.global_position.y, 0.1),
+		"bvx": snappedf(boss.get("velocity").x if boss.get("velocity") != null else 0.0, 0.1),
+		"st": str(boss.get("current_phase_state")) if boss.get("current_phase_state") != null else str(boss.get("current_state")),
+		# What actually ended the run matters as much as the geometry: a death
+		# by dynamite/explosion is legitimate difficulty, a death by boss BODY
+		# contact is the unfightable lock-on this fix targets. Without this the
+		# two are indistinguishable in the trace.
+		"hp": GameManager.player_health,
+		"src": str(GameManager.last_damage_source),
+	})
+	JavaScriptBridge.eval(
+		"try { window.parent.postMessage(%s, window.location.origin); } catch (e) {}" % payload
+	)
 
 ## Reads the `?boss=N` query param on web (0 if absent / not a web build).
 ## Tiny + side-effect-free so it cannot affect a normal production load.

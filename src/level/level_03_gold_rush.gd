@@ -24,9 +24,15 @@ func _ready() -> void:
 ## of regressing either system. Spread across the level so the sense of
 ## "sun-baked, drifting dust" reads no matter where the player currently is.
 func _setup_ambient_dust() -> void:
+	# CUT 6 -> 1 (founder: "stage 3 is still looking shit"). Grok 4.5 on the
+	# current stage: the dust emitters "turn the whole stage into sparkle noise
+	# and fight the gold lips/tokens... if you must keep dust, 1 tiny emitter at
+	# the vault/alcove only." Six full-width emitters meant no part of the stage
+	# was ever visually quiet, so nothing could read as a landmark. One remains,
+	# at the Fort Knox vault approach, where it marks the set-piece instead of
+	# blanketing the level.
 	var spots: Array[Vector2] = [
-		Vector2(300, 200), Vector2(1100, 150), Vector2(1900, 180),
-		Vector2(2600, 160), Vector2(3300, 200), Vector2(3900, 220),
+		Vector2(2600, 160),
 	]
 	for spot in spots:
 		var dust := CPUParticles2D.new()

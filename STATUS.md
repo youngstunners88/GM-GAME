@@ -1,6 +1,108 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
+**Branch:** `claude/critical-bosses-stage3-assay`
+
+**🎯 BOSSES: ROOT CAUSE FOUND AFTER 10+ FAILED ATTEMPTS — AND IT WAS THE
+OPPOSITE OF WHAT EVERY PRIOR FIX DID (2026-08-17).**
+
+I stopped arguing from screenshots and **instrumented the real web build**: a
+test-only probe (armed only by `?boss=N`, silent in production) posts the boss's
+and the player's true world coordinates every physics tick. A Playwright run then
+drives a fleeing-human pattern for 16s in each real arena and computes the actual
+numbers. Full traces: `docs/captures/2026-08-17-chase-numeric/`.
+
+**What the numbers showed:** both bosses were *already chasing perfectly* — the
+Distributor closed the gap 350px → 6.7px and covered 1564px. They were never
+frozen. The bug is that they steered at the player's **own x**, so they locked on
+and rode directly on top of him. **The camera follows the player**, so a boss
+welded to the player's x has almost no motion *relative to the screen* — it looks
+parked while crossing thousands of world pixels. That is "the bosses don't move".
+It also made contact unavoidable, and contact restarts the whole level.
+
+**That is why ten fixes failed.** Every previous attempt raised aggression
+(MIN_PURSUE_SPEED 265→315→345, HOVER_ACCEL 430→1600), which tightened the lock-on
+and killed faster — making the reported symptom *strictly worse* each time. The
+lever was always speed; the problem was always **aim**.
+
+**The fix — a horizontal STANDOFF (not a speed change).** Both bosses now close at
+full speed to a threat distance beside the player and attack from there, instead
+of occupying his pixel. Pursuit speeds are untouched (a gate guards them). The
+standoff also *breathes* (a stalk weave), because a fixed radius is just a new way
+to look parked — the real-arena gate caught that immediately when I first tried it.
+
+| Stage 2 — Distributor | before | after |
+|---|---|---|
+| boss path travelled | 1564 px | **3274 px** (2.1× more visible motion) |
+| % of fight parked on the player | **52%** | **11%** |
+| mean gap | 64.6 px | 171.7 px |
+| closest approach | 0 px (overlap) | 9.7 px |
+| level reloads / 16s | 0 | 0 |
+
+**Stage 2 is fixed and measured.** Founder: hard-refresh and watch him swing in
+and hold at range instead of sitting on your head.
+
+**Stage 3 — Claim Jumper: one real bug fixed, NOT yet fixed overall (honest).**
+Found a genuine defect: `VULNERABLE_SEPARATION` was **96px while his own
+half-body is 140px** — so during his damage window (≈65% of every cycle) he held
+a position where his body *overlapped the player*, i.e. guaranteed contact.
+Raised to match the standoff. His hop also committed to landing **on** the
+player's x; it now lands at the standoff.
+- Measured: boss path 3010 → **3496 px**, parked-on-player 38% → **30%**.
+- **Still failing:** survival did not improve (~3-11s, high variance; 4-5 level
+  reloads per 16s run). The damage-source trace shows those deaths are dominated
+  by **dynamite**, not body contact — that is legitimate difficulty, and since the
+  founder has *also* called this boss "too easy", I did **not** nerf it.
+- **This needs founder eyes.** I am not claiming Stage 3 is fixed.
+
+**🧾 FORT KNOX ASSAY PANEL — background removed, words rebuilt.** Founder:
+"Remove this background and improve the words as they are still fucked!!!" The
+previous pass fixed label *overlap* (gated) but the founder was never complaining
+about overlap — the panel was **alpha 0.90**, so Fort Knox's busy gold-machinery
+painting showed straight through it and gold-on-gold cannot read at any outline
+weight. Now:
+- Panel is **fully opaque** (alpha 1.0) — the art behind it is genuinely gone.
+- **Live values are now the largest text** (44px, near-white); title demoted
+  34→24px and dimmed; STAKED/RETURN captions 26→22px dimmed; prompt quieted.
+- The halo ring behind the instrument is removed (it muddied the needle).
+
+**⛏️ STAGE 3 DECLUTTER — removal, not addition** (Grok 4.5's concrete counts):
+gold tokens 15→**6**, wBTC 8→**3**, BTC coins 3→**1** (kept evenly spread, not
+just the first N), mine carts 5→**2**, gold-dust emitters 6→**1**. Nothing was
+added. Set-pieces intact (timed gate, Fort Knox door, Reserve, boss arena);
+walk-path gate still passes.
+
+**Multi-model (all six lanes, honestly recorded):**
+- **Kimi K3** — validated the diagnosis point-by-point (AGREE ×5) and caught a
+  real flaw: a *statically*-held standoff rebuilds the same freeze at a new
+  radius. That is why the stalk weave exists. Its suggested 196px ground standoff
+  was **measured and rejected** — at 196 the arena leaves him nowhere to go and he
+  stopped tracking entirely (2px). Evidence overruled the model; 168 ships.
+- **Grok 4.5** — Stage 3 cut list + "alpha is why the machinery still shreds the
+  type"; drove the opaque-panel and value-dominance decisions.
+- **DeepSeek** — compliance matrix; flagged A2 (background) as not-done, which it
+  now is, and named the exact repeat-failure risk.
+- **Qwen VL lane** — `or-call.mjs` is text-only and cannot carry an image, so the
+  vision read was done by the lead on the founder's actual screenshot and logged
+  in the Qwen skill's format rather than skipped.
+- **B.AI lane** — not dispatched; recorded as an honest blocker rather than
+  re-running an existing model under a new label to fake a sixth opinion.
+- All six skills installed under `.claude/skills/model-*`.
+
+**Gates:** 14/14 green — script_compile (163 scripts / 122 scenes), new
+`boss_standoff_assay_test` 11/11, stage3_defence, dual_real_level_boss_chase,
+boss_spawn_grace, stage3_clutter, s11_stage3_walkpath, owner_screenshot_fixes,
+s8_dialogue_npc_art, res_stake_assay, vault_scene, npc_vo_ducking,
+level1_music_residual, blaze_leaf_sfx, crit_vault_music. Security Sentinel 18/18.
+
+**Two chase gates were deliberately re-contracted** (documented in-file): they
+asserted the boss must reach the player's *exact position*, which encoded the
+lock-on bug — a correct standoff boss failed them. The replacement is stronger:
+the boss must close to striking range at both walls **and** move in the same
+direction as the player. A frozen or caged boss still fails.
+
+---
+
 **Branch:** `claude/residuals-spawn-grace-audio-fixes`
 
 **🔥 HARD-REFRESH RESIDUALS — MERGED DRAFTS, SPAWN-DEATH FIX, AUDIO CLEANUP

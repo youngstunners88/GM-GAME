@@ -103,13 +103,39 @@ func _probe(label: String, scene_path: String) -> void:
 	if samples.size() >= 2:
 		var travel: float = absf(samples[1]["boss_cx"] - samples[0]["boss_cx"])
 		# Reachable centre band is arena_width - BODY (~420-460px). Require the
-		# boss to cross at least a third of it when the player jumps wall-to-wall.
-		var pass_bar: float = 120.0
-		if travel >= pass_bar:
-			print("  [PASS] boss tracked the player across the arena (travel=%.0fpx >= %.0f)" % [travel, pass_bar])
+		# CONTRACT UPDATED 2026-08-17, deliberately — read this before changing it
+		# back. The old bar was `travel >= 120px`, which silently encoded the very
+		# bug the founder has reported ten times: it only passed if the boss drove
+		# all the way ONTO the player. Bosses now hold a STANDOFF_X (168px) — they
+		# close to threat range and attack from there instead of occupying the
+		# player's own pixel, because riding on top of the player is what made
+		# them look parked (the camera follows the player, so a boss welded to the
+		# player's x has near-zero motion on screen) and made contact unavoidable
+		# (measured: 4 full level reloads in 16s on Stage 3).
+		#
+		# With a 168px standoff on each side, a 420px wall-to-wall player jump
+		# only REQUIRES 420 - 2*168 = 84px of boss travel — so the old 120px bar
+		# now fails a correctly-working boss. Asserting the raw number would force
+		# the lock-on back.
+		#
+		# The replacement is strictly STRONGER against "doesn't chase": the boss
+		# must (a) end each dwell within striking distance of wherever the player
+		# actually is, and (b) move in the SAME DIRECTION the player moved. A boss
+		# that ignores the player, or is frozen/caged, fails both — while a boss
+		# that correctly holds station passes both.
+		var reach_bar: float = 168.0 + 120.0   # standoff + tolerance
+		var d0: float = absf(samples[0]["player_x"] - samples[0]["boss_cx"])
+		var d1: float = absf(samples[1]["player_x"] - samples[1]["boss_cx"])
+		var player_moved: float = samples[1]["player_x"] - samples[0]["player_x"]
+		var boss_moved: float = samples[1]["boss_cx"] - samples[0]["boss_cx"]
+		var tracked: bool = signf(boss_moved) == signf(player_moved) and absf(boss_moved) > 30.0
+		if d0 <= reach_bar and d1 <= reach_bar and tracked:
+			print("  [PASS] boss closes to striking range at both walls (%.0f/%.0fpx) and tracks the player (moved %.0fpx with them, travel=%.0f)"
+				% [d0, d1, boss_moved, travel])
 		else:
 			_fail += 1
-			print("  [FAIL] boss barely moved (travel=%.0fpx < %.0f) — reproduces 'doesn't chase'" % [travel, pass_bar])
+			print("  [FAIL] boss did not pursue: dist at walls %.0f/%.0f (bar %.0f), boss moved %.0f vs player %.0f — 'doesn't chase'"
+				% [d0, d1, reach_bar, boss_moved, player_moved])
 
 	level.queue_free()
 	await get_tree().process_frame

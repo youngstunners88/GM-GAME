@@ -1,0 +1,21 @@
+{
+  "label": "boss3_SHIP",
+  "samples": 953,
+  "duration_s": 2.33,
+  "boss_x_min": 3710.1,
+  "boss_x_max": 4050,
+  "boss_x_range": 339.9,
+  "boss_path_len": 3302.1,
+  "player_path_len": 1887.8,
+  "gap_start": 230,
+  "gap_end": 17.3,
+  "gap_min": 0,
+  "gap_max": 248,
+  "gap_mean": 98.7,
+  "states": [
+    "0",
+    "1",
+    "2"
+  ],
+  "VERDICT_boss_moved": "MOVES"
+}

@@ -1,0 +1,21 @@
+{
+  "label": "boss3_AFTER2",
+  "samples": 991,
+  "duration_s": 1.45,
+  "boss_x_min": 3748.5,
+  "boss_x_max": 4050,
+  "boss_x_range": 301.5,
+  "boss_path_len": 1504.8,
+  "player_path_len": 1957.1,
+  "gap_start": 230,
+  "gap_end": 39.3,
+  "gap_min": 0.1,
+  "gap_max": 268.8,
+  "gap_mean": 101,
+  "states": [
+    "0",
+    "1",
+    "2"
+  ],
+  "VERDICT_boss_moved": "MOVES"
+}
