@@ -127,8 +127,8 @@ func _make_gideon_dialogue() -> SteppedDialogue:
 	d.lines = [
 		"Howdy, partner! Name's Goldwater Vale — Fort Knox's your gold rush stop.",
 		"Step up to the assay scale, friend — let's weigh that glitter proper.",
-		"Fancy stakin' yer claim? Park that gold on an altar and let it grow.",
-		"That'll do, partner. Hit CONFIRM and we'll lock her down tight.",
+		"Fancy stakin' yer claim? I'll lock a quarter of yer GOLD into the vault.",
+		"Ready? Press E to CONFIRM — I'll lock her down tight.",
 	]
 	d.farewell = "Ride safe now — come back when yer pockets need fillin' again."
 	return d
@@ -789,17 +789,43 @@ func gideon_step() -> void:
 	# this E is the continue/close action — it dismisses the dialogue. Pacing is
 	# unchanged (still one line per E up to the last); only the terminal press
 	# now resolves instead of doing nothing.
+	# TERMINAL E = A REAL CONFIRM (founder: "staking never completes — there's
+	# nowhere to confirm!"). Gideon's last line promises CONFIRM; that promise is
+	# now TRUE — the E that lands on the end-of-dialogue actually stakes 25% of the
+	# player's GOLD into Fort Knox (real GoldMineSystem mutation), floats the
+	# result, then closes. Copy never advertises a control that doesn't act.
 	if _gideon_dlg.at_end():
+		_gideon_confirm_stake()
 		gideon_close()
 		return
 	var line := _gideon_dlg.advance()
 	if _gideon_line != null and is_instance_valid(_gideon_line):
 		_gideon_line.text = "GIDEON: " + line
-	# Keep the prompt truthful about what THIS line's E will do. On the last line
-	# the next E closes the panel, so say so — never leave it promising "next".
+	# Keep the prompt truthful about what THIS line's E will do: advance on a mid
+	# line, CONFIRM the stake on the last line.
 	if _gideon_hint != null and is_instance_valid(_gideon_hint):
-		_gideon_hint.text = ("[E] close   [ESC] leave" if _gideon_dlg.at_end()
+		_gideon_hint.text = ("[E] CONFIRM STAKE   [ESC] leave" if _gideon_dlg.at_end()
 			else "[E] next   [ESC] leave")
+
+## Gideon's confirm: stake 25% of held GOLD into Fort Knox via the real
+## GoldMineSystem primitive, with an honest success/empty float. One-shot per
+## visit so a mash can't drain the balance. HUD + scale update off the
+## GoldMineSystem `gold_changed` signal they already listen to (Kimi s-res).
+var _gideon_staked := false
+func _gideon_confirm_stake() -> void:
+	if _gideon_staked:
+		return
+	if GoldMineSystem.gold_balance <= 0:
+		_float_text("GIDEON: Empty poke, partner — go dig up some GOLD first.")
+		return
+	var amt: int = maxi(1, GoldMineSystem.gold_balance / 4)
+	var shares: int = GoldMineSystem.stake_in_fort_knox(amt, CLERK_TERM_DAYS)
+	_gideon_staked = true
+	AudioManager.play_sfx("powerup")
+	ScreenShake.light()
+	GameManager.add_score(shares * 10)
+	_float_text("LOCKED IN — +%d FORT KNOX SHARES" % shares)
+	_refresh_readout()
 
 func gideon_close() -> void:
 	_gideon_open = false
@@ -1042,15 +1068,11 @@ func _setup_fort_knox_depth() -> void:
 	scs.shape = srect
 	scs.position = Vector2(0, -30)
 	scale.add_child(scs)
-	# The founder's Gold Scale instrument (T6): art + readable STAKED/RETURN
-	# values + a tilting needle. Built by the shared helper below so the Diamond
-	# Vault and Fort Knox show the SAME understandable instrument.
-	_build_gold_scale(scale, false)
-	var tag := Label.new()
-	tag.text = "ASSAY SCALE\n[E] WEIGH GOLD"
-	tag.position = Vector2(-90.0, -150.0)
-	style_label(tag, 26)
-	scale.add_child(tag)
+	# The founder's Gold Scale instrument — self-contained, non-overlapping,
+	# larger, with the title + [E] WEIGH GOLD hint built IN (no separate `tag`
+	# label stacked on top of the STAKED/RETURN values — that was the overlap the
+	# founder circled). `interactive` = true draws the weigh prompt.
+	_build_gold_scale(scale, false, true)
 	scale.body_entered.connect(func(b: Node2D) -> void:
 		if b.is_in_group("player"):
 			_at_altar = "assay")
@@ -1058,48 +1080,131 @@ func _setup_fort_knox_depth() -> void:
 		if b.is_in_group("player") and _at_altar == "assay":
 			_at_altar = "")
 
-## The founder Gold Scale instrument, shared by both realms (T6). Draws the
-## founder art, labels the two pans STAKED / RETURN (Grok s7), and a needle that
-## tilts toward whichever side is heavier — so "what is this and what's it
-## telling me" reads at a glance. `diamonds` picks which balances it reads.
-func _build_gold_scale(parent: Node2D, diamonds: bool) -> void:
+## The founder Gold Scale instrument, shared by both realms. REBUILT session
+## "live-residuals" (founder: "the text is masking each other! the scale is not
+## visibly clear — make it distinct and larger"). The old version stacked the
+## title, [E] hint, STAKED and RETURN labels all around y=-120..-150 so they
+## overlapped each other and the busy backdrop. Now it is a single self-contained
+## instrument with a dark backing panel and a strict vertical hierarchy, NO two
+## elements sharing a band:
+##   title  ->  larger scale art  ->  STAKED value | RETURN value  ->  [E] hint
+## Larger art + outlined >=24px value text; `interactive` adds the weigh prompt.
+## Points of a regular polygon approximating a circle of `radius`, centred on
+## the origin — used for the soft halo behind the Assay Scale instrument.
+func _circle_points(radius: float, segments: int) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	for i in range(segments):
+		var a: float = TAU * float(i) / float(segments)
+		pts.append(Vector2(cos(a), sin(a)) * radius)
+	return pts
+
+func _build_gold_scale(parent: Node2D, diamonds: bool, interactive: bool = false) -> void:
+	# Dark backing panel so every label reads on the busy gold/crystal backdrop
+	# (founder: labels "fight the environment art"). Behind everything (z -3).
+	#
+	# LAYOUT NOTE (founder live-fail #2: "text is masking each other"): styled +
+	# black-outlined Labels report a real minimum height of ~72-90px in-tree
+	# (NOT ~font_size). Every vertical gap below therefore clears ~95px so no two
+	# label rects can ever intersect. Bands, top -> bottom:
+	#   title   y -310  (span -310..-220)
+	#   scale   centre y -100, 230 tall (span -215..15)
+	#   labels  y  40   (span   40..~130)
+	#   values  y 140   (span  140..~230)
+	#   hint    y 245   (span  245..~335)
+	var panel := ColorRect.new()
+	panel.color = Color(0.05, 0.06, 0.10, 0.90) if diamonds else Color(0.12, 0.08, 0.03, 0.92)
+	panel.size = Vector2(380, 680)
+	panel.position = Vector2(-190, -330)
+	panel.z_index = -3
+	parent.add_child(panel)
+	var edge := ColorRect.new()
+	edge.color = _fg()
+	edge.size = Vector2(360, 6)
+	edge.position = Vector2(-180, -330)
+	edge.z_index = -2
+	parent.add_child(edge)
+
+	# 1) Title (top band, y -310).
+	var title := Label.new()
+	title.text = "ASSAY SCALE" if not diamonds else "DIAMOND SCALE"
+	title.position = Vector2(-160, -310)
+	title.custom_minimum_size = Vector2(320, 0)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	style_label(title, 34)
+	parent.add_child(title)
+
+	# 2) The scale art — LARGER + distinct (founder: "make it distinct and
+	#    larger"). 230px tall, centred, with a bright ring so it reads as the
+	#    instrument, not backdrop clutter. Well clear of title above / labels below.
 	var art := "res://src/assets/art/vaults/gold_scale.png"
 	if ResourceLoader.exists(art):
+		var halo := Polygon2D.new()
+		halo.polygon = _circle_points(140.0, 28)
+		halo.color = Color(_fg().r, _fg().g, _fg().b, 0.16)
+		halo.position = Vector2(0, -100)
+		halo.z_index = -1
+		parent.add_child(halo)
 		var spr := Sprite2D.new()
 		var tex: Texture2D = load(art)
 		spr.texture = tex
-		var target_h := 150.0
-		var s: float = target_h / float(tex.get_height())
+		var s: float = 230.0 / float(tex.get_height())
 		spr.scale = Vector2(s, s)
-		spr.position = Vector2(0, -40)
+		spr.position = Vector2(0, -100)   # 230 tall -> spans ~-215..15, under the title
 		parent.add_child(spr)
-	# STAKED (left) and RETURN (right) — large + outlined so a player instantly
-	# knows what each pan means.
-	var left := Label.new()
-	left.text = "STAKED"
-	left.position = Vector2(-120, -120)
-	style_label(left, 24)
-	parent.add_child(left)
-	var right := Label.new()
-	right.text = "RETURN"
-	right.position = Vector2(60, -120)
-	style_label(right, 24)
-	parent.add_child(right)
-	# A needle that tilts toward the heavier side (staked vs return value).
+
+	# A bigger needle over the scale hub, tilting toward the heavier pan.
 	var needle := Polygon2D.new()
-	needle.polygon = PackedVector2Array([Vector2(-3, 0), Vector2(3, 0), Vector2(0, -34)])
-	needle.color = Color(1, 0.2, 0.1, 1.0)
-	needle.position = Vector2(0, -40)
+	needle.polygon = PackedVector2Array([Vector2(-6, 0), Vector2(6, 0), Vector2(0, -66)])
+	needle.color = Color(1, 0.25, 0.12, 1.0)
+	needle.position = Vector2(0, -100)
 	parent.add_child(needle)
-	# Update the tilt live from the real balances.
+
+	# 3) Value row — STAKED on the left, RETURN on the right, each its own column
+	#    with a live number under the label. Labels y 40, values y 140: a 100px
+	#    gap that clears the real ~72-90px outlined-label height, so nothing
+	#    masks anything (founder live-fail #2). Whole row sits below the scale.
+	var staked_lbl := Label.new()
+	staked_lbl.text = "STAKED"
+	staked_lbl.position = Vector2(-170, 40)
+	style_label(staked_lbl, 26)
+	parent.add_child(staked_lbl)
+	var staked_val := Label.new()
+	staked_val.position = Vector2(-170, 140)
+	style_label(staked_val, 30)
+	parent.add_child(staked_val)
+	var return_lbl := Label.new()
+	return_lbl.text = "RETURN"
+	return_lbl.position = Vector2(52, 40)
+	style_label(return_lbl, 26)
+	parent.add_child(return_lbl)
+	var return_val := Label.new()
+	return_val.position = Vector2(52, 140)
+	style_label(return_val, 30)
+	parent.add_child(return_val)
+
+	# 4) Interact hint (bottom band, y 245) — only when the scale is a live commit
+	#    point (Fort Knox). The Diamond Vault scale is informational.
+	if interactive:
+		var hint := Label.new()
+		hint.text = "[E] WEIGH GOLD"
+		hint.position = Vector2(-160, 245)
+		hint.custom_minimum_size = Vector2(320, 0)
+		hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		style_label(hint, 26)
+		parent.add_child(hint)
+
+	# Live update: needle tilt + the two value numbers.
 	var updater := func() -> void:
 		if not is_instance_valid(needle):
 			return
 		var staked: float = float(GoldMineSystem.diamond_shares if diamonds else GoldMineSystem.fort_knox_shares)
 		var ret: float = float(GoldMineSystem.diamonds_balance if diamonds else GoldMineSystem.gold_balance)
 		var total: float = maxf(1.0, staked + ret)
-		# -0.5..+0.5 rad: leans left when more is staked, right when more is held.
 		needle.rotation = clampf((ret - staked) / total, -1.0, 1.0) * 0.5
+		if is_instance_valid(staked_val):
+			staked_val.text = str(int(staked))
+		if is_instance_valid(return_val):
+			return_val.text = str(int(ret))
 	updater.call()
 	if diamonds:
 		GoldMineSystem.diamond_shares_changed.connect(func(_s: int) -> void: updater.call())
