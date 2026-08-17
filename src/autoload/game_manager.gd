@@ -476,10 +476,23 @@ func activate_power_up(type: String, duration: float) -> void:
     power_up_timer = duration
     power_up_changed.emit(type, duration)
     AudioManager.play_sfx("powerup")
-    # Blaze / Purple Weed: take over the MUSIC exclusively — no more jingle
-    # layered over the level track. Pushing again refreshes the token so a
-    # second pickup can't be stopped by the first's expiry.
-    if type == "blaze" or type == "purple":
+    # Founder residual (2026-08-17): "Don't change the music when Lil Blunt
+    # gets this leaf" (the weed_leaf pickup, power_up_type "blaze") — "rather
+    # make some awesome unique sound." It used to hijack the MUSIC entirely
+    # via push_music_override, replacing the level track with fresh_boost.ogg
+    # for the whole 12s duration. Now a single distinct one-shot SFX
+    # (blaze_ignite, ElevenLabs-generated) plays on pickup and the level
+    # music keeps running underneath, same as every other power-up.
+    #
+    # Purple Weed (type "purple") is a SEPARATE, rarer flagship power-up
+    # (docs: "stronger than Blaze Mode... think Mario's super mushroom") and
+    # is NOT what the founder's screenshot was pointing at — its music
+    # takeover is left exactly as it was.
+    if type == "blaze":
+        AudioManager.play_sfx("blaze_ignite")
+    elif type == "purple":
+        # Pushing again refreshes the token so a second pickup can't be
+        # stopped by the first's expiry.
         _blaze_music_token = AudioManager.push_music_override("res://src/assets/sounds/fresh_boost.ogg")
     # Analytics (task #23): which power-ups actually get used feeds the
     # founder digest + future tuning. Fire-and-forget, no-op offline.
