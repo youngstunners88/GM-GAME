@@ -1,7 +1,29 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/boss-chase-difficulty`
+**Branch:** `claude/vo-volume-vocab-elevenlabs`
+
+**🔊 LIL BLUNT VO — LOUDER + BIGGER VOCABULARY (2026-08-16).** Founder: VO is too
+quiet, and Lil Blunt has only one line per reaction — expand it.
+- **Volume:** his character barks played at unity gain on the SFX bus (level with
+  coin pings / axe hits, so his own voice got lost). Raised `_bark_player` to
+  **+6 dB** — matching the announcer (`play_voice`), which the founder was happy
+  with — so his lines read clearly over gameplay SFX.
+- **Vocabulary:** each reaction now has **3 variations** (was 1), generated on his
+  real custom ElevenLabs voice and picked at random (no immediate repeat):
+  - hurt: "Ow— okay." / "Oof— my bad." / "Easy, easy."
+  - hit enemy: "Yo! Got 'em!" / "Boom— down!" / "Easy dub."
+  - major pickup: "Ohh, nice." / "Sweet, that's mine." / "Stackin' up!"
+  - boss start: "Heh— let's gooo." / "Alright, big guy." / "Show time."
+  - down/out: "Welp. I'm out." / "Aw, man…" / "Catch me next round."
+  All chill/positive/on-brand (Kimi K3 flagged "Too easy!" as off-brand → swapped
+  to "Easy dub."). `play_bark` is now data-driven: drop in more numbered clips
+  (`vo_hurt_4`…) and they're used with no code change.
+- Gates: new `bark_variants_test` PASS (≥3 loadable clips per reaction),
+  script-compile 156/119 PASS, Security Sentinel 18/18. Multi-model: Kimi K3 via
+  OpenRouter (`docs/model-responses/2026-08-16-vo-kimi.md`). Deploying via CI
+  (butler fresh). Hard-refresh itch to hear it.
+
 
 **🥊 BOSSES — BROWSER-PROVEN CHASE + CLAIM JUMPER DIFFICULTY RETUNE (2026-08-16).**
 Founder: "2nd and 3rd bosses still don't chase; 3rd boss is way too easy now."
