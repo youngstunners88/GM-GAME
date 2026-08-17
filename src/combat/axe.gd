@@ -30,9 +30,13 @@ const BIG_DAMAGE := 5
 const BIG_BOSS_DAMAGE := 3
 ## The BIG axe is drawn as an actual big axe now, so the projectile is scaled
 ## against ITS pixel size, not the pickaxe's. sprite_item_bigaxe.png is 40x44
-## against the pickaxe's 18x34, so the old 2.8 (tuned for the pickaxe) would
-## have thrown something roughly twice the intended size.
-const BIG_SCALE := 1.55
+## against the pickaxe's 18x34.
+## Founder (Stage 3 residual, 2026-08-16): "the throw stays small." Raised from
+## 1.55 -> 1.95 so the thrown axe reads as a genuinely heavy weapon — ~78px
+## wide vs the base throw's ~9px (a pickaxe sprite at 0.5). The circle hitbox
+## scales with it, which only makes the power-fantasy throw MORE forgiving for
+## the player, never less fair to them.
+const BIG_SCALE := 1.95
 const BIG_SPEED_MULT := 1.15
 ## Art for the upgraded axe. Until now the "big axe" was the PICKAXE sprite
 ## blown up and tinted gold — which is also why the big-axe PICKUP and the

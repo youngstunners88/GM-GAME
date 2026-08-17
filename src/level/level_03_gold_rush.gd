@@ -126,25 +126,17 @@ func _setup_depth_routes() -> void:
 	reserve.room_title = "— THE GOLD RUSH RESERVE —"
 	reserve.global_position = Vector2(3420, 648)
 	add_child(reserve)
-	# FORT KNOX (session 4) — now a FULL SEPARATE ENVIRONMENT reached by walking
-	# into the vault door, like Blaze Rush. The old 2620-2760 drop pit is filled
-	# with solid ground; the door loads fort_knox_realm.tscn and its return
-	# portal brings the player back here.
-	var knox_bridge := StaticBody2D.new()
-	knox_bridge.collision_layer = 1
-	var kbcol := CollisionShape2D.new()
-	var kbrect := RectangleShape2D.new()
-	kbrect.size = Vector2(140, 70)
-	kbcol.shape = kbrect
-	kbcol.position = Vector2(2690, 685)  # fills the 2620-2760 pit, surface at y=650
-	knox_bridge.add_child(kbcol)
-	var kbdeck := ColorRect.new()
-	kbdeck.size = Vector2(140, 70)
-	kbdeck.position = Vector2(2620, 650)
-	kbdeck.color = Color(0.18, 0.13, 0.07, 1.0)  # gold-rush platform tone
-	knox_bridge.add_child(kbdeck)
-	add_child(knox_bridge)
-
+	# FORT KNOX (session 4) — a FULL SEPARATE ENVIRONMENT reached by walking into
+	# the vault door, like Blaze Rush. The old 2620-2760 drop pit that the door
+	# footing needs is now filled by a real `ground_segment` in level_03_data.tres
+	# (Vector4(2620,650,140,70)), so it renders through LevelBase._create_platform
+	# with the same dark body + chain-tile + gold lip as every other platform.
+	#
+	# Founder (Stage 3 clutter pass, 2026-08-16): the old script-built bridge was
+	# a bare brown ColorRect box bypassing that construction — one of the flat
+	# "trashy/cheap" rectangles he red-circled. Replaced with data-driven ground
+	# so it reads as built terrain, not a dropped-in block. The vault door below
+	# is unchanged and still sits at (2690,650).
 	var knox_door := preload("res://src/level/vault_door.tscn").instantiate()
 	knox_door.protocol = "gold"
 	knox_door.realm_path = "res://src/level/fort_knox_realm.tscn"
