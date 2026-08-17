@@ -3,6 +3,69 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/stage3-hud-props-axe-residual`
 
+**🎯 PR #41 VERIFIED BY REAL PLAYTEST CAPTURE — AND IT CAUGHT A REAL BUG THE
+FIRST PASS MISSED (2026-08-17).** Founder, after PR #41: *"I don't trust
+Claude code and you anymore because you don't even reserve the screenshots I
+sent you in the Md files! Do we need to build an agent that can play the
+game to playtest because I can't keep going up and down for this shit!"*
+Two concrete fixes this pass:
+
+**1. The founder's 6 original screenshots are now permanently preserved.**
+They were sent as base64 data embedded in an uploaded `.md` file, which is
+why a plain disk search never found them — extracted per the
+`founder-art-intake` pattern and saved to both required locations:
+`artifacts/founder_shots_2026-08-17/shot_1.png` … `shot_6.png` and
+`docs/captures/2026-08-17-founder-residuals/shot_1.png` … `shot_6.png`.
+Two new skills installed so this never regresses:
+`.claude/skills/founder-screenshot-preserve/`,
+`.claude/skills/playtest-agent-playwright/`.
+
+**2. Built a real playtest agent — and it caught PR #41 lying about item
+3/5.** Added a test-only `?level=N` + `?spawn_x=N&spawn_y=M` debug warp pair
+(`main_menu.gd` + `level_base.gd`, same pattern as the existing `?boss=N`
+warp: web-only, no-interpolated-eval, zero effect on a normal load) so a
+Playwright agent can drop into ANY point of ANY level without playing the
+whole campaign for every capture. First real run against PR #41's own build
+found that **both mine carts collapsed to world x≈0 on the very first
+physics tick**, clustering on top of the HUD instead of shuttling along
+their authored track (fast cart designed for x=150, slow cart for x=1070).
+Root cause: `_physics_process` wrote `position.x = cycle_position *
+move_distance` — LOCAL position measured from the level origin, discarding
+wherever the level had actually placed the cart. This is almost certainly
+the deeper reason the carts read as "random" in the first place — they
+weren't just badly drawn, they were **in the wrong place**. Fixed by
+anchoring to the cart's own spawn x (`_origin_x`, captured in `_ready()`)
+and oscillating around that instead of around zero. New regression test:
+`_check_mine_cart_stays_near_spawn()` in `hud_props_axe_residual_test.gd`
+(now 23/23).
+
+**Verdict on each of PR #41's 6 claims, per this build's actual captures:**
+
+| # | Claim | Verdict | Frame |
+|---|-------|---------|-------|
+| 1 | Black HUD plate removed | **CONFIRMED** | `docs/captures/2026-08-17-hud-props-axe/hud_no_black_plate.png` |
+| 2 | HUD text + sun shrunk | **CONFIRMED** | same frame — SCORE/stat list visibly smaller, sun a modest sky motif, not screen-dominating |
+| 3/5 | Mine carts — art + working reward | **CONFIRMED (after this session's position fix)** — was silently broken (position collapse) at PR #41 merge time, not caught until this playtest pass | `docs/captures/2026-08-17-pr41-verify/carts_both_correctly_positioned.png`, `carts_and_btc_coin_clear.png` |
+| 4 | Big axe larger + stronger | **CONFIRMED pickup** (dramatically larger, unmistakably distinct from the pickaxe); throw-in-flight remains gate-verified only, not live-captured this pass | `docs/captures/2026-08-17-pr41-verify/bigaxe_pickup_large.png` |
+| 6a | Path-blocking box removed | **CONFIRMED** — walked the gate corridor clean through to a "Section clear!" prompt, no dark box, no invisible collider | `docs/captures/2026-08-17-pr41-verify/gate_area_no_blocking_box.png` |
+| 6b | BTC/wBTC coin clarity | **CONFIRMED** — clean orange "B" coin, legible at gameplay scale in every capture | `docs/captures/2026-08-17-pr41-verify/carts_and_btc_coin_clear.png` |
+
+**Gates:** `hud_props_axe_residual_test` 23/23 (was 22, +1 for the position
+regression), plus the full existing battery re-run green: script_compile
+(165/123), s11_stage3_walkpath, owner_screenshot_fixes, stage3_defence,
+dual_real_level_boss_chase, s8_dialogue_npc_art, res_stake_assay,
+boss_standoff_assay, stage3_clutter, boss_spawn_grace. Security Sentinel
+18/18, 0 blockers (including the two new `JavaScriptBridge.eval` call sites
+— fixed template, no interpolation, same pattern as the existing boss warp).
+
+**Boss chase untouched, still OPEN** — out of scope for this verification
+pass per the directive's own instruction.
+
+**Honest limit:** big axe throw-in-flight and boss-chase items were not
+re-captured live this pass (no capture proved a regression there, and the
+directive says not to expand scope without one) — those remain gate-verified
+per PR #41/#40's own evidence.
+
 **🎯 HUD / PROPS / AXE RESIDUAL — six screenshot defects, all fixed and gated
 (2026-08-17).** Founder sent a fresh batch of 6 screenshots after PR #40's
 boss-standoff fix. Per that prompt's own instruction, **Stage 2/3 boss chase

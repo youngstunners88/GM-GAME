@@ -17,6 +17,13 @@ func _ready() -> void:
     # blocked every prior Distributor capture. No ?boss param => normal menu.
     if _boot_boss_warp():
         return
+    # TEST-ONLY (playtest-agent-playwright skill) — ?level=N routes straight to
+    # that level with NO boss-arena teleport, so a paired ?spawn_x (handled by
+    # LevelBase._maybe_debug_spawn_warp) can drop the player anywhere in it —
+    # a mine cart, a timed door, a coin — for a Playwright capture. No param
+    # => normal menu.
+    if _boot_level_warp():
+        return
     # TEST-ONLY — ?lounge=1 routes straight into the Smoke Lounge so the founder's
     # brand video can be verified in a real browser (the lounge is a secret realm
     # a blind driver can't reach). No param => normal menu.
@@ -56,6 +63,25 @@ func _boot_boss_warp() -> bool:
     if n < 2 or n > 3:
         return false
     # Mark the target unlocked so a fresh save can't bounce the load, then route.
+    GameManager.highest_unlocked_level = maxi(GameManager.highest_unlocked_level, n)
+    SceneRouter.load_scene(GameManager.level_scene(n), SceneRouter.Transition.FADE)
+    return true
+
+## TEST-ONLY (playtest-agent-playwright skill). Reads ?level=N on web; if N is
+## a valid level (1-3), routes straight there — no arena teleport, unlike
+## ?boss=N. Pair with ?spawn_x (LevelBase._maybe_debug_spawn_warp) to land the
+## player at an exact world position for a capture. No-op otherwise.
+func _boot_level_warp() -> bool:
+    if not OS.has_feature("web"):
+        return false
+    var q: Variant = JavaScriptBridge.eval(
+        "new URLSearchParams(window.location.search).get('level') || ''", true)
+    var s := str(q)
+    if not s.is_valid_int():
+        return false
+    var n := int(s)
+    if n < 1 or n > 3:
+        return false
     GameManager.highest_unlocked_level = maxi(GameManager.highest_unlocked_level, n)
     SceneRouter.load_scene(GameManager.level_scene(n), SceneRouter.Transition.FADE)
     return true

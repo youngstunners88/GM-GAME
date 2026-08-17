@@ -15,6 +15,14 @@ extends Node2D
 ##      the path even while the door visually looked open. Both removed.
 ##   6b. wbtc/coin_btc collision+visual scale bumped for on-screen clarity.
 ##
+## Also covers a bug a live Playwright playtest capture found AFTER PR #41
+## shipped (founder directive PROMPT_VERIFY_PR41_HARD_REFRESH.md): both carts
+## snapped to world x~0 on the very first physics tick instead of shuttling
+## around their authored spawn position, because the old code wrote
+## `position.x = cycle_position * move_distance` — LOCAL position from the
+## level origin, discarding wherever EntitySpawner actually placed the cart.
+## See `_check_mine_cart_stays_near_spawn()`.
+##
 ## Run: godot --headless res://tests/hud_props_axe_residual_test.tscn
 
 const MINE_CART := preload("res://src/level/mine_cart.tscn")
@@ -29,6 +37,7 @@ func _ready() -> void:
 	_check_timed_door_no_orphans()
 	_check_wbtc_coin_scale()
 	await _check_mine_cart_reward()
+	await _check_mine_cart_stays_near_spawn()
 	print("HUD_PROPS_AXE_RESIDUAL: %s" % ("ALL PASS" if _fail == 0 else "%d FAILURE(S)" % _fail))
 	get_tree().quit(_fail)
 
@@ -134,5 +143,29 @@ func _check_mine_cart_reward() -> void:
 		after > before, "before=%d after=%d" % [before, after])
 
 	player.queue_free()
+	cart.queue_free()
+	await get_tree().process_frame
+
+## Regression for the real bug a live playtest capture found: a cart spawned
+## far from the level origin must stay near ITS OWN spawn point, oscillating
+## by at most `move_distance`, not collapse toward world x=0.
+func _check_mine_cart_stays_near_spawn() -> void:
+	var cart: Node = MINE_CART.instantiate()
+	cart.cart_type = 1  # CartType.SLOW
+	cart.move_distance = 500.0
+	var spawn_x := 2400.0
+	cart.global_position = Vector2(spawn_x, 280)
+	add_child(cart)
+
+	for _i in range(90):  # 1.5s — well past a full departure cycle at this stage
+		await get_tree().physics_frame
+
+	var x_after: float = cart.global_position.x
+	var drift: float = x_after - spawn_x
+	_check("mine cart oscillates around its OWN spawn point, not the level origin",
+		drift >= -1.0 and drift <= cart.move_distance + 1.0,
+		"spawn_x=%.0f move_distance=%.0f but cart is now at x=%.0f (drift=%.0f) — it collapsed toward world origin"
+			% [spawn_x, cart.move_distance, x_after, drift])
+
 	cart.queue_free()
 	await get_tree().process_frame

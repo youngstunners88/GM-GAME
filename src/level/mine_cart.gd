@@ -36,8 +36,21 @@ var _visual_size: Vector2
 var _is_flashing: bool = false
 var player_aboard: bool = false
 var _reward_on_cooldown: bool = false
+## Real bug, found via a live Playwright playtest capture (founder directive
+## PROMPT_VERIFY_PR41_HARD_REFRESH.md — "no FIXED without a capture frame").
+## The old `_physics_process` wrote `position.x = cycle_position *
+## move_distance` directly, which is LOCAL position relative to the level
+## root — so on the very first physics tick every cart snapped from its
+## authored track position (fast=150, slow=1070) to somewhere between 0 and
+## move_distance, clustering both carts together right next to the level
+## origin/HUD instead of shuttling along their own track segment. This is
+## almost certainly why they read as "random" — they were LITERALLY in the
+## wrong place, not just badly drawn. Captured before `_ready()` runs, so it
+## reflects wherever EntitySpawner.spawn() actually placed this instance.
+var _origin_x: float = 0.0
 
 func _ready() -> void:
+	_origin_x = position.x
 	if cart_type == CartType.FAST:
 		speed = 150.0
 		cycle_time = 5.0
@@ -125,7 +138,9 @@ func _on_trigger_body_exited(body: Node2D) -> void:
 func _physics_process(delta: float) -> void:
 	_time_elapsed += delta
 	var cycle_position := fmod(_time_elapsed, cycle_time) / cycle_time
-	position.x = cycle_position * move_distance
+	# Oscillate around the cart's OWN authored spawn point, not the level
+	# origin — see _origin_x's doc comment for the bug this fixes.
+	position.x = _origin_x + cycle_position * move_distance
 	_check_warning_flash(cycle_position)
 
 	# If player is aboard, move them with the cart

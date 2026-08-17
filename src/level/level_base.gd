@@ -85,9 +85,11 @@ func _ready() -> void:
 ## lookalike. A normal production load has no `?boss` param, so this never fires.
 func _maybe_debug_boss_warp() -> void:
 	if level_data == null or level_data.boss_arena.is_empty():
+		_maybe_debug_spawn_warp()
 		return
 	var want := _requested_boss_warp()
 	if want <= 0 or want != level_data.level_index:
+		_maybe_debug_spawn_warp()
 		return
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	if player == null or boss_trigger == null:
@@ -98,6 +100,34 @@ func _maybe_debug_boss_warp() -> void:
 	player.global_position = Vector2(start_x + 120.0, player.global_position.y)
 	_on_boss_trigger(player)
 	set_physics_process(true)
+
+## TEST-ONLY debug spawn (`playtest-agent-playwright` skill, founder directive
+## PROMPT_VERIFY_PR41_HARD_REFRESH.md: "Do we need to build an agent that can
+## play the game... I can't keep going up and down for this shit!"). If the
+## page is loaded with `?spawn_x=N` (optionally `&spawn_y=M`), drop the player
+## at that world position once the level has finished building — no boss
+## fight, no arena seal, just a plain reposition. Lets a Playwright agent
+## reach any point in ANY level (a mine cart, a timed door, a coin) to capture
+## evidence, instead of playing through the whole campaign for every single
+## claim. Same test-only, web-only, no-interpolated-eval pattern as the
+## existing `?boss=N` warp above — a normal production load has no
+## `?spawn_x` param, so this never fires.
+func _maybe_debug_spawn_warp() -> void:
+	if not OS.has_feature("web"):
+		return
+	var qx: Variant = JavaScriptBridge.eval(
+		"new URLSearchParams(window.location.search).get('spawn_x') || ''", true)
+	var sx := str(qx)
+	if not sx.is_valid_float():
+		return
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if player == null:
+		return
+	var qy: Variant = JavaScriptBridge.eval(
+		"new URLSearchParams(window.location.search).get('spawn_y') || ''", true)
+	var sy := str(qy)
+	var y: float = float(sy) if sy.is_valid_float() else player.global_position.y
+	player.global_position = Vector2(float(sx), y)
 	_chase_probe_active = true
 
 ## --- TEST-ONLY CHASE TELEMETRY ------------------------------------------
