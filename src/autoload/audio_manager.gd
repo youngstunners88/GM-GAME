@@ -352,25 +352,65 @@ var _bark_last_played: Dictionary = {}
 ## multi-hit and continuous fire-breath tick cadence. A missing or unloadable
 ## file is a silent no-op: VO assets may be absent in some builds and
 ## gameplay must never depend on them.
+## How many bark variants to probe per id (<id>, <id>_2 .. <id>_N). Founder
+## asked to "expand his vocabulary" — Lil Blunt now has 3+ lines per reaction,
+## picked at random. A fixed probe ceiling keeps it data-driven: drop in more
+## numbered files and they are used with no code change.
+const BARK_MAX_VARIANTS := 6
+## Resolved variant paths per base id (built once). Empty array = no VO shipped.
+var _bark_variants: Dictionary = {}
+## Last variant index played per base id, so a reaction does not repeat the same
+## line back-to-back and waste the new variety.
+var _bark_last_variant: Dictionary = {}
+
+## All existing clips for a bark id: the base plus <id>_2..<id>_N. _resolve_audio
+## is remap-aware (works in the exported pck, not just the editor) and tries
+## .ogg then .mp3, so a mixed set resolves correctly. Cached after first build.
+func _bark_paths(name: String) -> Array:
+    if _bark_variants.has(name):
+        return _bark_variants[name]
+    var paths: Array = []
+    var base := _resolve_audio("res://src/assets/sounds/voice/" + name)
+    if base != "":
+        paths.append(base)
+    for i in range(2, BARK_MAX_VARIANTS + 1):
+        var v := _resolve_audio("res://src/assets/sounds/voice/%s_%d" % [name, i])
+        if v != "":
+            paths.append(v)
+    _bark_variants[name] = paths
+    return paths
+
 func play_bark(name: String, cooldown: float) -> void:
     var now := Time.get_ticks_msec()
     if _bark_last_played.has(name):
         var last: int = _bark_last_played[name]
         if now - last < int(cooldown * 1000.0):
             return
-    var path := _resolve_audio("res://src/assets/sounds/voice/" + name)
-    if path == "":
+    var paths: Array = _bark_paths(name)
+    if paths.is_empty():
         return
-    var stream := load(path)
+    # Random variant, avoiding an immediate repeat when more than one exists.
+    var idx: int = 0
+    if paths.size() > 1:
+        idx = randi() % paths.size()
+        if int(_bark_last_variant.get(name, -1)) == idx:
+            idx = (idx + 1) % paths.size()
+    var stream := load(paths[idx])
     if not stream:
         return
     # Stamp only after a successful load, so a build missing this file doesn't
     # burn the cooldown for nothing.
+    _bark_last_variant[name] = idx
     _bark_last_played[name] = now
     if _bark_player and is_instance_valid(_bark_player):
         _bark_player.queue_free()
     _bark_player = AudioStreamPlayer.new()
     _bark_player.bus = "SFX"
+    # Founder: "VO too quiet — raise it." Lil Blunt's barks sat at unity gain on
+    # the SFX bus, level with coin pings and axe hits, so his own voice got lost
+    # — the same problem play_voice() (the announcer) already solved at +6dB.
+    # Match it so his lines read clearly over gameplay SFX.
+    _bark_player.volume_db = 6.0
     _bark_player.stream = stream
     add_child(_bark_player)
     _bark_player.play()
