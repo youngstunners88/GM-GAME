@@ -1,7 +1,7 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/live-residuals-stake-assay` (stake CONFIRM + Assay Scale redesign)
+**Branch:** `claude/live-residuals-stake-assay` (stake CONFIRM + Assay Scale redesign — now merging to master)
 
 **✅ LIVE RESIDUALS — STAKE CONFIRM + ASSAY SCALE REDESIGN (2026-08-16).**
 Executed `PROMPT_LIVE_RESIDUALS_STAKE_ASSAY_BOSSES.md`. Bosses intentionally
@@ -35,7 +35,89 @@ LEFT to the parallel session per the founder's explicit "Leave the bosses."
 
 ---
 
-**Branch (parallel session):** `claude/vault-music-critical-fixes` (PR #35)
+**🥊 BOSSES — BROWSER-PROVEN CHASE + CLAIM JUMPER DIFFICULTY RETUNE (2026-08-16).**
+Founder: "2nd and 3rd bosses still don't chase; 3rd boss is way too easy now."
+Handled with real browser captures on the current build (no headless-only claims):
+- **Chase, PROVEN in-browser** (`docs/captures/2026-08-16-bosses/`): warped into
+  each arena via `?boss=N`, held a direction, screenshotted the sequence. The
+  camera keeps Lil Blunt centred, so the boss's on-screen position IS the gap.
+  Claim Jumper closed from ~360px to ~130px and killed the player; Distributor
+  reached the player and cost a life. **Both chase.** Most likely the founder's
+  rejection was the *stale* build — the deploy pipeline was frozen for many
+  sessions and the boss fix only reached itch ~an hour before; a hard-refresh
+  (Ctrl/Cmd+Shift+R) is needed.
+- **Claim Jumper "too easy" — real regression, now fixed.** Kimi K3 (OpenRouter)
+  pinpointed it: the earlier VULNERABLE_DRIFT fix (chase-while-exposed, which
+  cured the freeze) also *delivered him point-blank onto the player's axe*, so a
+  whole window could be bursted down. Retune (all in `src/boss/claim_jumper.gd`):
+  - **Separation floor** (`VULNERABLE_SEPARATION` 96px): he closes but holds at
+    contact range instead of parking on the weapon — player must step in.
+  - **Per-window damage cap** (`MAX_VULN_DAMAGE_PER_WINDOW` 3): the window ends
+    once the cap is hit, forcing ≥ ceil(HP/cap) windows — kill now takes **6
+    windows**, not one melt.
+  - **Shorter window** (`vulnerable_time` 0.9 → 0.7, floor 0.45): less free time.
+  The chase itself is untouched.
+- Gates: script-compile 155/118 PASS, `dual_real_level_boss_chase_test` PASS
+  (both bosses, 432px/400px — chase not regressed), new
+  `claim_jumper_difficulty_test` PASS (cap 3, 6 windows to kill), Security
+  Sentinel 18/18. Fresh browser capture on the retuned build confirms he still
+  chases + kills. Multi-model: Kimi K3 log `docs/model-responses/2026-08-16-residuals-kimi.md`.
+- Deploying via CI (butler fresh). Distributor left as-is (already chases;
+  founder flagged it as "not chasing" which the capture disproves).
+
+**✅ PR #37 MERGED + LIVE — Smoke Lounge video (2026-08-16, new subscription).**
+Took over the old subscription's in-flight PR #37 and shipped it:
+- Verified the asset on the branch: `smoke_lounge.ogv` is **Theora 1280×720, no
+  audio stream** (ffprobe), 27.7 MB; `secret_realm.gd` playback **unchanged**.
+- `tests/s11_lounge_video_test.gd` **5/5 PASS** on the branch tree (loads as
+  VideoStreamTheora, looping, COVERS viewport, muted, correct layer).
+- CI green (run #192, Security Sentinel 18/18) and **butler shipped
+  `added 36.31 MiB fresh data`** — the new cinematic is **already live on itch**
+  from the branch build. PR #37 undrafted + merged to `master` (`99f6a94`); the
+  post-merge master run re-ships identical content (correctly ~0 B fresh, since
+  #192 already delivered it).
+- Multi-model (mandate): Kimi K3 verify — no blocker
+  (`docs/model-responses/2026-08-16-pr37-kimi.md`), plus the old sub's Kimi/Grok
+  logs. PR #36 (stake/Assay) and the bosses were left untouched per the directive.
+- **Founder: hard-refresh the Smoke Lounge (Ctrl/Cmd+Shift+R)** to see the new
+  cinematic — the old one may be browser-cached.
+
+**🎬 SMOKE LOUNGE BRAND VIDEO REPLACED (2026-08-16).** Executed
+`PROMPT_SMOKE_LOUNGE_VIDEO_REPLACE.md` — **new picture only, playback
+architecture untouched** as the founder directed ("the way the video was
+integrated is really great — do not redesign playback").
+- Founder's new cinematic (Google Drive, HEVC 1920×1080 · 44.6s · AAC · 65 MB)
+  encoded with the exact founder recipe to `src/assets/video/smoke_lounge.ogv`:
+  `ffmpeg -an -c:v libtheora -q:v 7 -vf scale=1280:720…increase,crop=1280:720 -r 24`.
+  Result: **Theora · 1280×720 · 44.67s · NO audio stream · 27.7 MB** (< GitHub's
+  100 MB single-file cap; the shipped `index.pck` is CI-built + butler-only,
+  never committed, so no push-cap regression).
+- Content verified by extracting real frames: neon $SMOKE LOUNGE entrance with
+  doors parting on green smoke (BTC/Solana/ETH wall logos) → luxe interior with
+  the floating diamond $SMOKE centerpiece, gold coin rain, energy beams, hosts,
+  and BTC/GM/DIAMONDS/Solana/ETH protocol logos. Exactly the founder's brief.
+- **Unchanged (verified by gate):** full-screen COVER fit, `loop = true`, muted
+  (source `-an` + `volume_db` belt-and-suspenders), lounge ambient continues
+  underneath, `VideoStreamPlayer` on the CanvasLayer between room plates and
+  gameplay, stops on `_exit_tree`. No edit to `secret_realm.gd`.
+- Gate `tests/s11_lounge_video_test.gd`: **5/5 PASS** (loads as
+  VideoStreamTheora, BrandVideo player looping, COVERS whole viewport, muted,
+  correct layer). Security Sentinel **18/18**, non-threaded export intact.
+- Multi-model (mandate): Kimi K3 → **NO-BLOCKER, ship it** (format correct,
+  16:9→16:9 crop is a no-op, 27.7 MB fine for a 44s 720p loop); Grok 4.5 → brand
+  vibe lands as a hidden bonus room. Logged in
+  `docs/model-responses/2026-08-16-sl-video-{kimi,grok}.md`.
+- Added the `smoke-lounge-video-replace` skill to the repo
+  (`.claude/skills/…/SKILL.md`) for next time, per the directive.
+- **Not FIXED until founder hard-refreshes itch:** butler must ship fresh bytes;
+  itch/browser cache the old `.ogv`, so a hard-refresh (Ctrl/Cmd+Shift+R) on the
+  Smoke Lounge is required to see the new cinematic.
+- Bosses untouched. PR #36 (stake CONFIRM + Assay Scale) is a **separate draft
+  branch off master** — this video branch does not touch or clobber it.
+
+---
+
+**Branch (earlier):** `claude/vault-music-critical-fixes` (PR #35 — finishing both sessions)
 
 **🎵 VAULT MUSIC MP3s PLACED + BOTH SESSIONS MERGED (2026-08-16).** Coordinated
 finish per `PROMPT_COORDINATE_BOTH_SESSIONS_FINISH.md`. Session A's PR #35
