@@ -23,9 +23,18 @@ extends Node2D
 ## level origin, discarding wherever EntitySpawner actually placed the cart.
 ## See `_check_mine_cart_stays_near_spawn()`.
 ##
+## Also covers R4 from PROMPT_PR41_REJECTED_SUN_BTC_BOX_AXE_BOSSES.md
+## (2026-08-18, founder: "The axe still doesnt work! You're a LIAR!!!!") — a
+## deterministic runtime proof that the thrown big axe's actual rendered
+## footprint is dramatically larger than the normal axe's, not just a passing
+## string-match on the BIG_SCALE constant. See `_check_big_axe_visual_size()`.
+## A live capture confirming this in real gameplay lives at
+## docs/captures/2026-08-18-axe-proof/.
+##
 ## Run: godot --headless res://tests/hud_props_axe_residual_test.tscn
 
 const MINE_CART := preload("res://src/level/mine_cart.tscn")
+const AXE := preload("res://src/combat/axe.tscn")
 
 var _fail: int = 0
 
@@ -38,6 +47,7 @@ func _ready() -> void:
 	_check_wbtc_coin_scale()
 	await _check_mine_cart_reward()
 	await _check_mine_cart_stays_near_spawn()
+	_check_big_axe_visual_size()
 	print("HUD_PROPS_AXE_RESIDUAL: %s" % ("ALL PASS" if _fail == 0 else "%d FAILURE(S)" % _fail))
 	get_tree().quit(_fail)
 
@@ -168,4 +178,38 @@ func _check_mine_cart_stays_near_spawn() -> void:
 			% [spawn_x, cart.move_distance, x_after, drift])
 
 	cart.queue_free()
+	await get_tree().process_frame
+
+## R4: the thrown big axe must render dramatically larger than the normal
+## axe — a deterministic runtime measurement (actual Sprite2D footprint,
+## texture size * scale), not just a string-match on the BIG_SCALE constant.
+## Fails on the pre-fix value (BIG_SCALE 1.0 would give ~1x, still under the
+## 3x area bar this asserts).
+func _check_big_axe_visual_size() -> void:
+	var normal: Node = AXE.instantiate()
+	normal.big = false
+	add_child(normal)
+	var big: Node = AXE.instantiate()
+	big.big = true
+	add_child(big)
+
+	var normal_sprite: Sprite2D = normal.get_node("Sprite")
+	var big_sprite: Sprite2D = big.get_node("Sprite")
+	# BIG_SCALE is applied to the Axe ROOT (Area2D), not the Sprite child, so
+	# the true rendered footprint needs both the sprite's own .tscn scale AND
+	# the root's runtime scale multiplied in.
+	var normal_footprint: Vector2 = normal_sprite.texture.get_size() * normal_sprite.scale * (normal as Node2D).scale
+	var big_footprint: Vector2 = big_sprite.texture.get_size() * big_sprite.scale * (big as Node2D).scale
+	var normal_area: float = normal_footprint.x * normal_footprint.y
+	var big_area: float = big_footprint.x * big_footprint.y
+	var ratio: float = big_area / normal_area if normal_area > 0.0 else 0.0
+	_check("thrown big axe's rendered footprint is dramatically larger than the normal axe (>=6x area)",
+		ratio >= 6.0,
+		"normal footprint~%.0f big footprint~%.0f ratio=%.1fx" % [normal_area, big_area, ratio])
+	_check("big axe uses its own distinct art (not the pickaxe sprite)",
+		big_sprite.texture.resource_path.find("bigaxe") != -1,
+		"texture=%s" % big_sprite.texture.resource_path)
+
+	normal.queue_free()
+	big.queue_free()
 	await get_tree().process_frame

@@ -3,6 +3,94 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/stage3-hud-props-axe-residual`
 
+**🎯 PR #41 REJECTED ON LIVE FRAMES — R1/R2/R3/R4 FIXED AND CAPTURE-PROVEN,
+R5 (BOSS CHASE) HONESTLY STILL BROKEN (2026-08-18).** Founder, after PR #41
+shipped: *"Why is it that we gave all the models skills and still just
+bullshit lies!!! What the fuck is it going to take!!!!"* Four fresh
+screenshots (`shot_1.png`–`shot_4.png`) circled real, live defects. Extracted
+per `founder-screenshot-preserve` to
+`artifacts/founder_shots_2026-08-18/` and
+`docs/captures/2026-08-18-pr41-rejected/`.
+
+- **R1 — orange box ("Remove this shit!!!") — FIXED.** Root cause:
+  `melt_forge.gd`'s "molten mouth" was a flat solid
+  `Color(1.0, 0.45, 0.12, 0.95)` `ColorRect` — the exact "undefined box"
+  failure the furnace's own OUTER shell had already been fixed for once
+  before. Replaced with a dark recessed opening + continuously-emitting
+  ember particles (motion supplies the "molten" read, not a static
+  flat-colour block). No collider was ever attached to it, so nothing was
+  left orphaned. Live capture:
+  `docs/captures/2026-08-18-r1-r2-r3-fixed/forge_sun_coin_fixed.png`.
+- **R2 — sun over-shrunk ("Bring back the sun as it was before!!!") —
+  FIXED.** Reverted to the exact pre-PR#41 asset from git history
+  (`f28020e`), per the directive's explicit "do not invent a new sun."
+  (Grok, dispatched blind with no image access, suggested a 70% compromise —
+  overridden by the founder's own literal instruction once the real asset
+  was in hand.)
+- **R3 — "BTC logo" / gold coin ("Fix this BTC logo... 20th time!!!") —
+  FIXED, and it's the SAME asset as R2.** Pixel-matched the founder's
+  circled coin against the restored background: it's a small decorative
+  Bitcoin coin baked into `bg_l3_goldrush.jpg`'s sky, JPEG-degraded at that
+  size into an unreadable glyph that reads as a corrupted "T". (Grok,
+  working blind, guessed this was a separate TitanX gameplay token —
+  investigated and ruled out by direct pixel comparison against the actual
+  founder screenshot before acting.) Fixed by inpainting it out and
+  compositing a small clean crop of the SAME asset's own large, crisp
+  Bitcoin coin (the sun) in its place — same iconography, no new art
+  dependency, no seam.
+- **R4 — big axe ("still doesnt work! You're a LIAR!!!!") — FIXED, with
+  real proof this time.** A live capture of an actual thrown axe (not a
+  synthetic gate) shows the normal axe as a barely-visible ~9x17px sliver
+  and the big axe as a large, unmistakable hammer-shaped weapon in flight:
+  `docs/captures/2026-08-18-axe-proof/normal_axe_thrown_tiny.png` vs
+  `big_axe_thrown_large.png`. Backed by a new deterministic gate
+  (`_check_big_axe_visual_size` — measures the actual rendered Sprite2D
+  footprint including the root node's runtime scale, not a string-match on
+  a constant) asserting ≥6x rendered area; genuinely fails against the
+  pre-fix 1.0 scale.
+- **R5 — boss chase ("still dont chase!!! You are absolutely useless!!!!")
+  — HONEST: STILL BROKEN, not claimed fixed.** Drove a REAL fleeing session
+  (not the wall-pinning synthetic gate) against both bosses in their real
+  arenas and captured before/after frames ~2s apart:
+  `docs/captures/2026-08-18-boss-chase-still-broken/`. Both bosses'
+  ON-SCREEN position is visually static across that window despite the
+  player actively fleeing. Root cause identified in code, not just
+  observed: `_hover_pursue`'s target is `player.global_position +
+  fixed_offset`, and the camera also follows the player — so by
+  construction the boss's SCREEN position stays near-constant even while
+  it is genuinely tracking the player in world space (confirmed by reading
+  `distributor.gd`'s own standoff math). PR #40's standoff fix was real and
+  measured correctly in world-space terms; it just cannot ever LOOK like
+  chasing to a human under a player-following camera, because "hold a
+  constant offset" produces zero relative screen motion by definition. Kimi
+  K3 (dispatched, `docs/model-responses/2026-08-18-rejected-kimi.md`)
+  independently converged on the same hypothesis. Per the directive's own
+  explicit constraint ("no speed-only retune") and the scope of this pass
+  (R1-R4 fixes + R5 prove-or-disclose), no redesign was attempted here — the
+  correct fix is a visible catch-up/surge dynamic (let the boss lag then
+  close with a readable burst) rather than another tuning pass, flagged as
+  follow-up scope for a future session.
+
+**Multi-model:** Kimi K3 (R5 hypothesis — independently converged on the
+camera-relative-stasis root cause; R1 particle/gradient suggestion used),
+Grok 4.5 (R2/R3 — both hypotheses were investigated but overridden by direct
+pixel evidence + the founder's explicit instruction once the real
+screenshots were available), DeepSeek (compliance matrix, correctly flagged
+R4/R5 as highest risk — `docs/model-responses/2026-08-18-rejected-deepseek.md`).
+Qwen VL — no vision-input path through this project's `or-call.mjs`; the
+lead performed the visual reads directly against the real founder
+screenshots and live captures instead. B.AI — not dispatched, no
+rate-limit pressure.
+
+**Gates:** `hud_props_axe_residual_test` now 26/26 (was 23, +3 for the new
+`_check_big_axe_visual_size` proof). Full existing battery re-run green:
+script_compile (165/123), s11_stage3_walkpath, owner_screenshot_fixes,
+stage3_defence, dual_real_level_boss_chase, s8_dialogue_npc_art,
+res_stake_assay, boss_standoff_assay, stage3_clutter, boss_spawn_grace.
+Security Sentinel 18/18, 0 blockers.
+
+---
+
 **🎯 PR #41 VERIFIED BY REAL PLAYTEST CAPTURE — AND IT CAUGHT A REAL BUG THE
 FIRST PASS MISSED (2026-08-17).** Founder, after PR #41: *"I don't trust
 Claude code and you anymore because you don't even reserve the screenshots I
