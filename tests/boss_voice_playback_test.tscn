@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://cbvplay0boss18vo"]
+
+[ext_resource type="Script" path="res://tests/boss_voice_playback_test.gd" id="1_bvplay"]
+
+[node name="BossVoicePlaybackTest" type="Node"]
+script = ExtResource("1_bvplay")

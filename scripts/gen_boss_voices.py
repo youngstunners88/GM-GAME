@@ -6,7 +6,7 @@ per boss. ELEVENLABS_API_KEY from env only. Stdlib only.
 
 Usage: python3 scripts/gen_boss_voices.py [--force]
 """
-import json, os, sys, time, urllib.request, urllib.error
+import json, os, shutil, subprocess, sys, time, urllib.request, urllib.error
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -15,11 +15,49 @@ OUT = ROOT / "src" / "assets" / "sounds" / "voice" / "boss"
 API = "https://api.elevenlabs.io/v1/text-to-speech"
 
 
+# Two key names exist in this project's environments. ELEVENLABS_API owns the
+# custom antagonist voices (IRS Auditor / Crystal Distributor / Bandit) and the
+# custom "Lil Blunt" voice; the legacy ELEVENLABS_API_KEY workspace CANNOT see
+# them and returns voice_not_found. Prefer ELEVENLABS_API, fall back to legacy —
+# same order as scripts/generate_audio.py. (Value read from env only, SEC-001.)
+KEY_ENV_NAMES = ("ELEVENLABS_API", "ELEVENLABS_API_KEY")
+
+
 def key():
-    k = os.environ.get("ELEVENLABS_API_KEY", "")
-    if not k:
-        sys.exit("ELEVENLABS_API_KEY not set")
-    return k
+    for name in KEY_ENV_NAMES:
+        k = os.environ.get(name, "")
+        if k:
+            return k
+    sys.exit("No ElevenLabs key set: expected one of " + " or ".join(KEY_ENV_NAMES))
+
+
+# EBU R128 loudness target. Antagonist lines are normalized to a consistent,
+# hot integrated loudness so no boss is quieter than another and the whole set
+# sits well above gameplay SFX (paired with the +10 dB player gain in
+# boss_voice_system.gd). Best-effort: if ffmpeg is absent (e.g. a stripped CI
+# image) the raw ElevenLabs mp3 ships unchanged.
+NORMALIZE_LUFS = -14.0
+_HAVE_FFMPEG = shutil.which("ffmpeg") is not None
+
+
+def normalize(path: Path) -> bool:
+    if not _HAVE_FFMPEG:
+        return False
+    tmp = path.with_suffix(".norm.mp3")
+    try:
+        subprocess.run(
+            ["ffmpeg", "-y", "-i", str(path),
+             "-af", f"loudnorm=I={NORMALIZE_LUFS}:TP=-1.5:LRA=11",
+             "-ar", "44100", "-b:a", "128k", str(tmp)],
+            check=True, capture_output=True, timeout=120)
+        if tmp.exists() and tmp.stat().st_size > 800:
+            tmp.replace(path)
+            return True
+    except Exception as e:
+        print(f"  ! normalize skipped: {e}")
+    if tmp.exists():
+        tmp.unlink()
+    return False
 
 
 def tts(voice_id, text, model, out_path, retries=3):
@@ -58,7 +96,10 @@ def main():
                     skip += 1; continue
                 print(f"{boss}/{cat}[{i}] \"{text}\"")
                 if tts(vid, text, model, out):
-                    ok += 1; print(f"  -> {out.name} ({out.stat().st_size}B)")
+                    norm = normalize(out)
+                    ok += 1
+                    tag = "normalized" if norm else "raw"
+                    print(f"  -> {out.name} ({out.stat().st_size}B, {tag})")
                 else:
                     fail += 1
     print(f"\ndone: {ok} generated, {skip} skipped, {fail} failed")

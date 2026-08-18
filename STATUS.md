@@ -1,7 +1,53 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/vo-volume-vocab-elevenlabs`
+**Branch:** `claude/antagonist-boss-vo-elevenlabs`
+
+**🗣️ ANTAGONIST BOSS VO — LOUD + CREATIVE (2026-08-18).** Founder: the THREE
+bosses "went silent" and their lines "don't vary." Root-caused and fixed with
+runtime + browser proof (no data-scan "FIXED" claims).
+- **Why they were silent (root cause):** `boss_voice_system.gd` plays boss lines
+  on its own `AudioStreamPlayer2D` that sat at the **default 0 dB**, while Lil
+  Blunt's barks and the announcer both run at **+6 dB** on the same SFX bus — so
+  the bosses were a full 6 dB under everything and drowned out. Raised the boss
+  player to **+10 dB** (4 dB HOTTER than the hero — correct for a menace).
+- **Second silent-maker (generator key):** `gen_boss_voices.py` read
+  `ELEVENLABS_API_KEY`, the workspace that **can't see** the custom antagonist
+  voices (returns `voice_not_found`). Fixed to try **`ELEVENLABS_API` first**
+  (same pattern as the Lil Blunt generator).
+- **Truncated voice ID caught:** the founder's crystal id `VtsQlMLXxJPBwTtP`
+  (16 chars) was truncated. Confirmed the real full id against the live
+  ElevenLabs library → **`VtsQlMLXxJPBwTtPTtoc`** ("Crystal Distributor"). All
+  three ids now full 20-char: tax `jcg9W9tUWJjBuX5zV0dL`, crystal
+  `VtsQlMLXxJPBwTtPTtoc`, bandit `LEQxdWqt02nZ8lXoPL0Y`.
+- **Bigger vocabulary:** every pool grown and all three bosses brought to
+  **parity** — 8 taunts / 5 mocks / 3 hurts / 2 each intro·phase50·phase25·death
+  (bandit was starved at 3 taunts / 2 mocks). **72 clips regenerated** with the
+  correct voices and **loudness-normalized** (ffmpeg EBU R128) so no boss is
+  quieter than another.
+- **PROOF (all green):**
+  - `boss_voice_sync_test` PASS — ids full-length, COUNTS==json, all 72 clips
+    present & loadable, gain +10 dB (≥ +8 floor).
+  - `boss_voice_playback_test` PASS — drives the **real** `BossVoiceSystem` for
+    every boss/category: player actually `.playing` with a stream at +10 dB;
+    20 consecutive taunts, **zero back-to-back repeats**. Directly disproves all
+    four founder failure modes (silence / volume≤0 / missing files / spam).
+  - Fresh web export + **Playwright/Chromium** boss-warp: all three bosses boot,
+    bosses 2 & 3 reach the fight, **zero console errors** (frames in
+    `docs/captures/2026-08-18-boss-vo/`).
+  - Full-project `script_compile_test` ALL PASS; Security Sentinel 18/18.
+- **New skill** `artifacts/skills-for-claude/antagonist-boss-vo-elevenlabs/` —
+  codifies the four traps (0 dB player, wrong workspace, truncated id, spam) so
+  this never regresses.
+- **Multi-model (mandate):** Grok 4.5 (creative lines) + Kimi K3 (audit) via
+  OpenRouter — `docs/model-responses/2026-08-18-bossvo-{grok,kimi}.md`. Acted on
+  Grok's flag that two crystal lines edged toward gore for the PG bar (swapped
+  "…your blood" → "…your whole stack").
+- Deploying via CI (butler fresh). Founder only hard-refreshes itch to hear it.
+
+---
+
+**Branch (earlier):** `claude/vo-volume-vocab-elevenlabs`
 
 **🔊 LIL BLUNT VO — LOUDER + BIGGER VOCABULARY (2026-08-16).** Founder: VO is too
 quiet, and Lil Blunt has only one line per reaction — expand it.
