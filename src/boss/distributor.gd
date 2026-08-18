@@ -337,7 +337,14 @@ const HOVER_MAX: float = 330.0
 ## than something the fight does to them on spawn." 130 restores that margin
 ## against the new approach speed without moving him further away
 ## horizontally, which is the axis the chase is actually judged on.
-const HOVER_CLEARANCE: float = 130.0
+## 130 -> 55 (2026-08-18, Kimi K3 audit). THE reason every previous speed
+## fix failed to satisfy the founder: he was never failing to close, he was
+## closing onto a point HOVER_ABOVE = BODY/2 + CLEARANCE = 250px over the
+## player's head, then braking to a dead hover. Chase gates measure
+## horizontal closing and pass; the founder watches a boss that arrived and
+## parked. Halving the clearance brings him down into the player's space so
+## the pursuit reads as "coming at me" rather than "floating up there".
+const HOVER_CLEARANCE: float = 55.0
 ## Ride height measured from the player to the body's CENTRE, so the drawn gap
 ## under his board is the same 60px regardless of where this node's origin is.
 const HOVER_ABOVE: float = BODY / 2.0 + HOVER_CLEARANCE

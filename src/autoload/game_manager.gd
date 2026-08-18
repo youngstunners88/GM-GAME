@@ -3,6 +3,10 @@ extends Node
 signal score_changed(new_score: int)
 signal health_changed(new_health: int)
 signal power_up_changed(type: String, duration: float)
+## Fires the moment a weed-leaf / Blaze pickup lands, so the player can run its
+## eccentric celebration. Separate from power_up_changed because that also
+## fires on expiry and for every other power-up type.
+signal blaze_celebration
 signal coins_changed(new_count: int)
 signal rings_changed(new_count: int)
 signal smoke_changed(new_count: int)
@@ -475,15 +479,37 @@ func activate_power_up(type: String, duration: float) -> void:
     current_power_up = type
     power_up_timer = duration
     power_up_changed.emit(type, duration)
-    AudioManager.play_sfx("powerup")
-    # Blaze / Purple Weed: take over the MUSIC exclusively — no more jingle
-    # layered over the level track. Pushing again refreshes the token so a
-    # second pickup can't be stopped by the first's expiry.
+    # Blaze / Purple Weed (the weed-leaf family) DELIBERATELY does not touch the
+    # music. A previous session made these pickups push a music override
+    # ("fresh_boost.ogg"), which re-broke a fix the founder had already asked
+    # for and signed off: "You corrected the music from not changing when Lil
+    # Blunt takes the weed leaf and now there's fucking music changes."
+    # The level track keeps playing straight through the pickup. Do not
+    # reintroduce a push_music_override here — the celebration below is what
+    # sells the pickup, not a track swap.
     if type == "blaze" or type == "purple":
-        _blaze_music_token = AudioManager.push_music_override("res://src/assets/sounds/fresh_boost.ogg")
+        _celebrate_blaze()
+    else:
+        AudioManager.play_sfx("powerup")
     # Analytics (task #23): which power-ups actually get used feeds the
     # founder digest + future tuning. Fire-and-forget, no-op offline.
     Web3Bridge.report_metric("powerup_used", {"type": type})
+
+## Founder: "We need a really eccentric celebration from Lil Blunt for taking
+## this leaf and a unique sound that is stoner based."
+##
+## Audio half lives here so it fires no matter which scene the leaf sits in;
+## the visual half (spin + smoke burst + shout) is player-side, driven off the
+## power_up_changed signal already emitted above. Deliberately NO music change.
+func _celebrate_blaze() -> void:
+    # Unique stoner-based pickup sound — a bong-rip/exhale swell, distinct from
+    # the generic "powerup" chime every other pickup uses.
+    AudioManager.play_sfx("blaze_leaf")
+    # Lil Blunt shouts about it. 0.0 cooldown: this is a rare, deliberate beat,
+    # it must never be swallowed by an unrelated bark's cooldown window.
+    AudioManager.play_bark("vo_blaze_hype", 0.0)
+    ScreenShake.shake(0.25, 4.0)
+    blaze_celebration.emit()
 
 func deactivate_power_up() -> void:
     # Release the Blaze music override (token-guarded — stale releases no-op,

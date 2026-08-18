@@ -1,0 +1,14 @@
+{
+  "url": "http://localhost:8899/game/index.html?stage=3",
+  "mode": "stage3",
+  "booted": true,
+  "errors": [],
+  "shots": [
+    "docs/captures/2026-08-18-owner-rage/stage3/shot-000-level-open.png",
+    "docs/captures/2026-08-18-owner-rage/stage3/shot-001-walk-0.png",
+    "docs/captures/2026-08-18-owner-rage/stage3/shot-002-walk-1.png",
+    "docs/captures/2026-08-18-owner-rage/stage3/shot-003-walk-2.png",
+    "docs/captures/2026-08-18-owner-rage/stage3/shot-004-walk-3.png",
+    "docs/captures/2026-08-18-owner-rage/stage3/shot-005-final.png"
+  ]
+}

@@ -253,42 +253,32 @@ powerup_spawns = Array[Dictionary]([
 	}
 ])
 breakable_blocks = []
-melt_forges = Array[Dictionary]([
-	{
-		"pos": Vector2(200, 605)
-	},
-	{
-		"pos": Vector2(2250, 605)
-	},
-	{
-		"pos": Vector2(3000, 605)
-	}
-])
+melt_forges = Array[Dictionary]([])
 mine_carts_fast = Array[Dictionary]([
 	{
-		"pos": Vector2(150, 300),
+		"pos": Vector2(150, 430),
 		"move_distance": 350,
 		"destination_wbtc": 10
 	},
 	{
-		"pos": Vector2(1750, 300),
+		"pos": Vector2(1750, 430),
 		"move_distance": 350,
 		"destination_wbtc": 10
 	},
 	{
-		"pos": Vector2(2900, 300),
+		"pos": Vector2(2900, 430),
 		"move_distance": 350,
 		"destination_wbtc": 10
 	}
 ])
 mine_carts_slow = Array[Dictionary]([
 	{
-		"pos": Vector2(1070, 280),
+		"pos": Vector2(1070, 400),
 		"move_distance": 500,
 		"destination_wbtc": 50
 	},
 	{
-		"pos": Vector2(2810, 280),
+		"pos": Vector2(2810, 400),
 		"move_distance": 500,
 		"destination_wbtc": 50
 	}

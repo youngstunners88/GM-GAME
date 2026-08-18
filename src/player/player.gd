@@ -117,6 +117,7 @@ func _ready() -> void:
 	hurtbox.body_entered.connect(_on_hurtbox_body_entered)
 	aura.body_entered.connect(_on_aura_body_entered)
 	ScreenShake.register_camera(camera)
+	GameManager.blaze_celebration.connect(_on_blaze_celebration)
 
 	if MobileInputHandler:
 		MobileInputHandler.touch_jump.connect(_on_mobile_jump)
@@ -450,6 +451,57 @@ func emit_blaze_smoke() -> void:
 	var base_dir := Vector2.RIGHT if input_handler.facing_right else Vector2.LEFT
 	puff.direction = base_dir + Vector2(velocity.x * 0.3 / walk_speed, 0.0)
 	get_tree().current_scene.add_child(puff)
+
+## The eccentric weed-leaf celebration the founder asked for: Lil Blunt does a
+## full spin with a squash-and-stretch pop, throws out a ring of smoke puffs,
+## and a hype word pops over his head. Deliberately loud VISUALLY so the pickup
+## feels special WITHOUT changing the music (see GameManager._celebrate_blaze).
+func _on_blaze_celebration() -> void:
+	if not is_instance_valid(sprite):
+		return
+	# Ring of smoke — 8 puffs thrown outward, not the usual single trail puff.
+	for i in range(8):
+		var puff := preload("res://src/effects/smoke_puff.tscn").instantiate()
+		puff.global_position = smoke_spawn.global_position
+		var ang := TAU * float(i) / 8.0
+		puff.direction = Vector2(cos(ang), sin(ang))
+		get_tree().current_scene.add_child(puff)
+
+	# 360 spin + squash/stretch pop, then settle back exactly where it started
+	# (base_scale captured live so a Mushroom-grown Lil Blunt doesn't shrink).
+	var base_scale: Vector2 = sprite.scale
+	var tw := create_tween()
+	tw.tween_property(sprite, "rotation", sprite.rotation + TAU, 0.45) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(sprite, "scale", base_scale * 1.35, 0.12) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.chain().tween_property(sprite, "scale", base_scale, 0.18) \
+		.set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tw.finished.connect(func() -> void:
+		if is_instance_valid(sprite):
+			sprite.rotation = 0.0
+			sprite.scale = base_scale)
+
+	_pop_celebration_word()
+
+## Floating hype word over Lil Blunt's head. Node2D-parented to the scene (not
+## the player) so it doesn't inherit the spin we just started.
+func _pop_celebration_word() -> void:
+	var words := ["BLAAAZE!", "SO CHILL", "LEVITATIN'", "PUFF PUFF!", "VIBES!"]
+	var label := Label.new()
+	label.text = words[randi() % words.size()]
+	label.add_theme_font_size_override("font_size", 28)
+	label.add_theme_color_override("font_color", Color(0.55, 1.0, 0.45))
+	label.add_theme_constant_override("outline_size", 7)
+	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	label.z_index = 100
+	label.global_position = global_position + Vector2(-60, -90)
+	get_tree().current_scene.add_child(label)
+	var t := create_tween()
+	t.tween_property(label, "global_position:y", label.global_position.y - 60, 0.9) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	t.parallel().tween_property(label, "modulate:a", 0.0, 0.9)
+	t.finished.connect(label.queue_free)
 
 func take_damage(amount: int) -> void:
 	# Damage only exists while PLAYING. This also protects the boss-victory
