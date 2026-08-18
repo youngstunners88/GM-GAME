@@ -150,6 +150,8 @@ func _hit(node: Node) -> bool:
 		var dmg := damage
 		if big and node.is_in_group("boss"):
 			dmg = BIG_BOSS_DAMAGE
+			# A boss chip is the moment the founder wants to feel most.
+			_boss_hitstop()
 		node.take_damage(dmg)
 		# Shared "vo_attack" id across all three hit paths (axe / flame /
 		# fire-breath) so ONE cooldown absorbs fan-axe multi-hits and
@@ -162,14 +164,28 @@ func _hit(node: Node) -> bool:
 	return false
 
 func _impact() -> void:
-	AudioManager.play_sfx_at("hit", global_position)
-	# The big axe PIERCES — it keeps flying through whatever it just killed,
-	# which is what makes "anything that comes in its way" true rather than
-	# "the first thing in its way".
+	# Founder: "The axe still doesn't work" — it always DID deal damage, but the
+	# feedback was a 0.1s/2.0 `light()` nudge and the same generic "hit" ping the
+	# 1-damage starter axe uses, so a 5-damage cleave was indistinguishable from
+	# a pea-shooter. The hit now has to be FELT: its own heavy metal SFX, a real
+	# screenshake, and a hitstop on boss connects.
 	if big:
-		ScreenShake.light()
+		AudioManager.play_sfx_at("bigaxe_impact", global_position)
+		ScreenShake.heavy()
+		# The big axe PIERCES — it keeps flying through whatever it just killed,
+		# which is what makes "anything that comes in its way" true rather than
+		# "the first thing in its way".
 		return
+	AudioManager.play_sfx_at("hit", global_position)
 	_despawn()
+
+## Momentary freeze so a heavy connect reads as impact rather than a graze.
+## Boss hits only — a hitstop on every trash-mob kill would make the stage
+## feel laggy rather than weighty.
+func _boss_hitstop() -> void:
+	Engine.time_scale = 0.05
+	await get_tree().create_timer(0.06 * 0.05, true, false, true).timeout
+	Engine.time_scale = 1.0
 
 func _despawn() -> void:
 	if is_instance_valid(self):

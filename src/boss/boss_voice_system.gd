@@ -15,15 +15,34 @@ const VOICE_DIR := "res://src/assets/sounds/voice/boss/"
 ## (AudioManager.play_bark / play_voice) both run at +6 dB — so on a shared SFX
 ## bus the three bosses were a full 6 dB under everything else and vanished
 ## under gameplay noise. Pushed to +10 dB so the antagonists clearly cut
-## through (4 dB HOTTER than the hero, which is what a menacing boss should be).
-const PLAYER_VOLUME_DB := 10.0
+## through (6 dB HOTTER than the hero, which is what a menacing boss should be).
+## Founder still reported "not loud enough" at +10 with a POSITIONAL player —
+## the real thief was distance attenuation, fixed below; +12 is the top of the
+## directive's requested +10..+12 band now that nothing scales it down.
+const PLAYER_VOLUME_DB := 12.0
 ## Minimum gap between any two lines from the same boss.
 const COOLDOWN := 2.2
 ## Ambient taunt cadence window (seconds).
 const AMBIENT_MIN := 8.0
 const AMBIENT_MAX := 12.0
 
-var _player: AudioStreamPlayer2D
+## How hard the music ducks while a boss line is speaking, and how long the
+## duck takes to release after the line ends. Boss VO is dialogue — it wins
+## over the track, the same way AudioManager.play_voice ducks for the announcer.
+const MUSIC_DUCK_DB := -14.0
+const DUCK_RELEASE := 0.35
+
+## NON-POSITIONAL on purpose. This was an AudioStreamPlayer2D with
+## max_distance=2000 — a positional player attenuates with distance from the
+## listener, so a boss on the far side of its own arena was scaled down to near
+## nothing NO MATTER what volume_db said. Raising the gain to +10 dB alone did
+## not fix the founder's "I can't hear them at all" because attenuation was
+## eating it downstream. A plain AudioStreamPlayer is screen-space: the line
+## plays at full authored level wherever the boss stands.
+var _player: AudioStreamPlayer
+var _music_bus := -1
+var _music_db_normal := 0.0
+var _duck_timer := 0.0
 var _cooldown := 0.0
 var _ambient_timer := 0.0
 var _active_boss: Node2D = null
@@ -36,11 +55,16 @@ var _last_idx: Dictionary = {}
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	_player = AudioStreamPlayer2D.new()
-	_player.bus = "SFX"
+	_player = AudioStreamPlayer.new()
+	# "Voice" bus if the project defines one, else SFX. A dedicated bus lets the
+	# mix treat dialogue separately from coin pings and axe hits.
+	_player.bus = "Voice" if AudioServer.get_bus_index("Voice") != -1 else "SFX"
 	_player.volume_db = PLAYER_VOLUME_DB  # was default 0 dB → bosses were inaudible
-	_player.max_distance = 2000.0
 	add_child(_player)
+	_music_bus = AudioServer.get_bus_index("Music")
+	if _music_bus != -1:
+		_music_db_normal = AudioServer.get_bus_volume_db(_music_bus)
+	_player.finished.connect(_on_line_finished)
 
 func _process(delta: float) -> void:
 	if _cooldown > 0.0:
@@ -86,9 +110,31 @@ func say(source: Node2D, boss_id: String, category: String, force: bool = false)
 	if stream == null:
 		return
 	_player.stream = stream
-	if is_instance_valid(source):
-		_player.global_position = source.global_position
-	# Duck music under the line (reuses AudioManager's voice ducking pattern
-	# would require its player; keep it simple — SFX bus is separate from music).
+	# `source` is no longer used to place the sound (the player is deliberately
+	# non-positional — see _player's declaration). It stays in the signature so
+	# every existing boss call site keeps working unchanged.
 	_player.play()
+	_duck_music(true)
 	_cooldown = COOLDOWN
+
+## Pull the music down while a boss speaks and restore it after. Same intent as
+## AudioManager.play_voice's announcer duck: dialogue should never fight the
+## track. Guarded on the bus existing, and restores to the level the mix was
+## actually at, not a hardcoded 0.
+func _duck_music(on: bool) -> void:
+	if _music_bus == -1:
+		return
+	if on:
+		if _duck_timer <= 0.0:
+			_music_db_normal = AudioServer.get_bus_volume_db(_music_bus)
+		_duck_timer = 1.0
+		AudioServer.set_bus_volume_db(_music_bus, _music_db_normal + MUSIC_DUCK_DB)
+	else:
+		_duck_timer = 0.0
+		AudioServer.set_bus_volume_db(_music_bus, _music_db_normal)
+
+func _on_line_finished() -> void:
+	# Small release so back-to-back lines don't pump the music up and down.
+	await get_tree().create_timer(DUCK_RELEASE).timeout
+	if not _player.playing:
+		_duck_music(false)

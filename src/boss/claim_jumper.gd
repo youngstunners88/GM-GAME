@@ -42,7 +42,10 @@ const MIN_CHASE_SPEED: float = 280.0
 ## he closes slowly rather than freezing solid. See the VULNERABLE case for the
 ## founder bug this fixes; mirrors distributor.gd's VULNERABLE_DRIFT exactly so
 ## the two bosses handle their damage window the same way.
-const VULNERABLE_DRIFT: float = 120.0
+## 120 -> 250 (2026-08-18): at 120 the vulnerable window dragged the
+## phase-1 cycle average to ~227 px/s, below the player's 240 sprint, so a
+## player who just held run was never caught. 250 puts the average at ~273.
+const VULNERABLE_DRIFT: float = 250.0
 
 ## Hold at least this far from the player while VULNERABLE — do NOT drift point
 ## blank. The VULNERABLE_DRIFT fix (chase-while-exposed, replacing the old
@@ -434,24 +437,22 @@ func _physics_process(delta: float) -> void:
 			# short life in PATROL, so none of them sat in VULNERABLE long enough
 			# to see the freeze; only the real arena did.
 			#
-			# This is the SAME approach distributor.gd carries — but with a
-			# SEPARATION FLOOR so it does not regress into "too easy". He drifts
-			# toward the player only until VULNERABLE_SEPARATION, then holds his
-			# ground: still visibly pursuing across the arena (never the old
-			# mid-arena freeze), but he no longer parks himself point-blank on the
-			# player's axe. The player must step INTO range to cash the window.
+			# 2026-08-18 (Kimi K3 audit, after the founder's 10th+ "still doesn't
+			# chase"): the SEPARATION FLOOR that used to sit here was itself the
+			# thing being read as "not chasing". It braked him to ZERO for up to
+			# 0.7s at exactly the moment the player is closest and looking right
+			# at him — ~36% of every 1.95s cycle spent stopped, at melee range —
+			# and dragged the phase-1 cycle-average speed to ~227 px/s, UNDER the
+			# player's 240 sprint, so simply holding run outran him.
+			#
+			# The floor was redundant regardless: MAX_VULN_DAMAGE_PER_WINDOW
+			# already caps how much can be burst off him in a single window, which
+			# is the "too easy" regression the floor was added to prevent. He now
+			# keeps closing for the WHOLE window, lifting the cycle average to
+			# ~273 px/s — above sprint, so he gains ground on a running player.
 			# Ledge sense + arena clamp come free via _ground_chase.
-			var vpl := get_tree().get_first_node_in_group("player")
-			var vdx: float = (vpl.global_position.x - (global_position.x + HALF_BODY)) if vpl else 0.0
-			if absf(vdx) > VULNERABLE_SEPARATION:
-				_ground_chase(delta, VULNERABLE_DRIFT)
-			else:
-				# Hold at contact range (brief — the window is <=0.7s and only
-				# once the player is already close), not a cross-arena freeze.
-				velocity.x = move_toward(velocity.x, 0.0, TURN_DECEL * delta)
-				velocity.y += 980.0 * delta
-				move_and_slide()
-				_clamp_to_arena()
+			_ground_chase(delta, VULNERABLE_DRIFT)
+			_clamp_to_arena()
 			boss_sprite.modulate = Color(1.0, 0.3, 0.3, 1.0) if fmod(state_timer, 0.2) < 0.1 else Color(1.0, 0.1, 0.1, 1.0)
 			if state_timer <= 0.0:
 				_end_vulnerable()

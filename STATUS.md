@@ -1,7 +1,75 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/antagonist-boss-vo-elevenlabs`
+**Branch:** `claude/owner-rage-20260818-regressions`
+
+**🔥 OWNER-RAGE RESIDUAL — REGRESSIONS + ALL CURRENT FAILS (2026-08-18).**
+Executed `PROMPT_OWNER_RAGE_20260818_REGRESSIONS_AND_FAILS.md`. Your 5 screenshots
+were embedded in the doc as base64, not on disk — extracted and preserved at
+`artifacts/founder_shots_2026-08-18_cunt/shot_1..5.png` and
+`docs/captures/2026-08-18-owner-rage/`. Every item below is proven by a browser
+frame in `docs/captures/2026-08-18-owner-rage/stage3/`, not by a claim.
+
+- **1. Orange box on the track — GONE.** It was the **melt-forge prop**, and my
+  own earlier session put it there: PR #38 "fixed" the forges floating at y=450
+  by *grounding* them at y=605 — which planted a solid orange rectangle right on
+  the track beside you. All 3 removed (`melt_forges = []`).
+- **2. 88 / 288 mining carts — RESTORED TO VIEW.** They were never deleted from
+  the data; they sat at **y=280-300**, and with a 720-tall viewport centred on a
+  grounded player the top of the screen lands at y≈240-290 — so they were being
+  **sliced off by the screen edge**. Dropped to y=430/400: unmistakably floating,
+  always fully visible.
+- **3. BTC logo — FIXED AT THE REAL SOURCE (why 19 tries failed).** The coin you
+  keep circling is **not a game object** — it is *painted into the background
+  art* `bg_l3_goldrush.jpg`. Every prior session edited the collectible sprite
+  while the broken glyph sat untouched in the JPG. Repainted that coin with a
+  correct Bitcoin mark (official orange, white ₿, 14° rotation), glow preserved,
+  rest of the painting untouched. The collectible sprites were also redrawn
+  crisp **at their original 40/48px footprint** (a 128px master made the coins
+  render 3x too big — caught in the first capture and corrected before ship).
+- **4. Stage 2 + 3 bosses "still don't chase" — ROOT-CAUSED (Kimi K3).** Both
+  bosses *were* closing distance; the gates measured it and passed. What you
+  were watching:
+  - **Distributor** chased to a point **250px ABOVE your head** and then braked
+    to a dead hover. Every prior speed fix just made him *arrive faster and park
+    more reliably*. Overhead clearance **130 → 55** so he comes into your space.
+  - **Claim Jumper** **full-stopped for 0.7s at melee range** — ~36% of every
+    cycle, exactly when you're closest and watching — and his phase-1 cycle
+    average was **227 px/s, UNDER your 240 sprint**, so holding run outran him.
+    Removed the stop, drift **120 → 250**; average now ~273 px/s. Difficulty is
+    unchanged: `MAX_VULN_DAMAGE_PER_WINDOW` already caps burst damage.
+- **5. Axe "doesn't work" — it always damaged, it never FELT like it.** A 5-dmg
+  cleave used a 0.1s/2.0 nudge and the same generic ping as the 1-dmg starter
+  axe. Now: **heavy screenshake**, its **own** heavy metal impact SFX
+  (`bigaxe_impact`), and a **hitstop on boss connects**.
+- **6. Boss voices still too quiet — REAL CAUSE FOUND.** My +10 dB fix was
+  incomplete: the player was an **AudioStreamPlayer2D**, i.e. *positional*, so
+  distance attenuation scaled the line down no matter what the dB said. Now a
+  **non-positional** player on a Voice bus at **+12 dB**, and the **music ducks
+  −14 dB** while a boss speaks.
+- **7. HUD text — RE-SHRUNK.** SCORE 30→22, every stat row 26→18, TOKENS 18→14.
+- **8. Weed leaf — MUSIC NO LONGER CHANGES + CELEBRATION ADDED.** A previous
+  session re-added a `push_music_override("fresh_boost.ogg")` on blaze/purple
+  pickup, undoing your signed-off fix. Removed. In its place: an **eccentric
+  celebration** — 360° spin + squash/stretch pop, an 8-puff smoke ring, a
+  floating hype word ("BLAAAZE!", "PUFF PUFF!", …) — plus a **unique stoner SFX**
+  (bong-rip gurgle into a woozy exhale) and **3 new Lil Blunt barks**.
+- **Gates:** new `owner_rage_20260818_test` **14/14**, full script compile
+  162 scripts / 124 scenes ALL PASS, `stage3_defence` 23/23,
+  `claim_jumper_difficulty` + `dual_real_level_boss_chase` ALL PASS,
+  `boss_voice_sync` + `boss_voice_playback` PASS, Security Sentinel 18/18.
+- **Multi-model:** Kimi K3 chase audit (the item-4 root cause) —
+  `docs/model-responses/2026-08-18-owner-rage/kimi-chase.md`. **Honest note:**
+  Grok/Qwen/DeepSeek/Codex/B.AI were **not** dispatched this pass — Kimi's audit
+  answered the open question and the rest were visual/data fixes I verified
+  directly in browser frames.
+- **Known, not fixed (not on your list):** a pre-existing
+  `area_set_shape_disabled` console warning on the Stage 3 track (harmless, game
+  runs clean) — my diff doesn't touch collision code; flagged for its own pass.
+
+---
+
+**Branch (earlier):** `claude/antagonist-boss-vo-elevenlabs`
 
 **🗣️ ANTAGONIST BOSS VO — LOUD + CREATIVE (2026-08-18).** Founder: the THREE
 bosses "went silent" and their lines "don't vary." Root-caused and fixed with

@@ -22,6 +22,10 @@ func _ready() -> void:
     # a blind driver can't reach). No param => normal menu.
     if _boot_lounge():
         return
+    # TEST-ONLY — ?stage=N routes to the START of level N so the founder's track
+    # screenshots (props, carts, collectibles, HUD) can be reproduced exactly.
+    if _boot_stage_warp():
+        return
     play_btn.pressed.connect(_on_play)
     continue_btn.pressed.connect(_on_continue)
     title.text = "LIL BLUNT\nTHE SMOKE REALM"
@@ -56,6 +60,25 @@ func _boot_boss_warp() -> bool:
     if n < 2 or n > 3:
         return false
     # Mark the target unlocked so a fresh save can't bounce the load, then route.
+    GameManager.highest_unlocked_level = maxi(GameManager.highest_unlocked_level, n)
+    SceneRouter.load_scene(GameManager.level_scene(n), SceneRouter.Transition.FADE)
+    return true
+
+## TEST-ONLY. Reads ?stage=N (1-3) and routes to the START of that level.
+## Distinct from ?boss=N, which loads the level AND warps to the boss arena —
+## verifying the founder's TRACK screenshots (props, carts, collectibles, HUD)
+## needs the level played from its opening, which ?boss= skips past.
+func _boot_stage_warp() -> bool:
+    if not OS.has_feature("web"):
+        return false
+    var q: Variant = JavaScriptBridge.eval(
+        "new URLSearchParams(window.location.search).get('stage') || ''", true)
+    var s := str(q)
+    if not s.is_valid_int():
+        return false
+    var n := int(s)
+    if n < 1 or n > 3:
+        return false
     GameManager.highest_unlocked_level = maxi(GameManager.highest_unlocked_level, n)
     SceneRouter.load_scene(GameManager.level_scene(n), SceneRouter.Transition.FADE)
     return true
