@@ -13,7 +13,22 @@ func _ready() -> void:
     add_child(door)
     _setup_depth_routes()
     AudioManager.set_reverb_profile("forest")
-    AudioManager.play_playlist(["res://src/assets/music/level01_theme.ogg", "res://src/assets/music/level01_theme_alt.ogg", "res://src/assets/music/lil_blunt_theme.mp3"])
+    # Founder (LEVEL1_MUSIC_ORDER_BOSS1_SIZE_CARTS_CHASE, 2026-08-18): "Song A
+    # must always be the first song that plays in Level 1, no matter what
+    # (cold start, machine on, etc.)... Song B must also feature in Level 1
+    # ... Song C must be removed completely." level01_theme_always_first.mp3
+    # is the founder-supplied track locked to position 0 with force_first=true
+    # (see AudioManager.play_playlist) so it is never left to the shuffle.
+    # level01_theme_oxbow.mp3 is the founder's earlier "Oxbow Lake" supply,
+    # already confirmed in rotation. level01_theme_alt.ogg (the track the
+    # founder asked removed) is deleted from the project entirely, not just
+    # dropped from this array.
+    AudioManager.play_playlist([
+        "res://src/assets/music/level01_theme_always_first.mp3",
+        "res://src/assets/music/level01_theme_oxbow.mp3",
+        "res://src/assets/music/level01_theme.ogg",
+        "res://src/assets/music/lil_blunt_theme.mp3",
+    ], true)
     AudioManager.play_voice("stage1_intro")
 
 ## Task #23 — three routes per section (ground y=650, plats y=300..500):

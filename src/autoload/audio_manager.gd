@@ -56,7 +56,20 @@ func play_music(path: String) -> void:
 ## and every boss has two songs that alternate randomly, forever.
 ## Switches DUCK: the outgoing track fades to silence over ~0.8s while the
 ## incoming one rises from -12dB, so boss-arena handoffs stop hard-cutting.
-func play_playlist(paths: Array) -> void:
+## `force_first`, when true, guarantees `paths[0]` (the first path that
+## actually resolves via ResourceLoader) plays FIRST — deterministically, not
+## as a matter of luck. Founder (LEVEL1_MUSIC_ORDER_BOSS1_SIZE_CARTS_CHASE,
+## 2026-08-18): "Song A must always be the first song that plays in Level 1,
+## no matter what (cold start, machine on, etc.)... I realise that when i
+## turn on my machine to play the game there is a different song playing!"
+## Root cause: `_play_next_in_playlist()` picks `candidates[randi() %
+## candidates.size()]` UNCONDITIONALLY — the `fade_in` bool this function
+## already passed it only ever controlled the fade curve, never which track
+## got chosen, so "first" was always a coin flip regardless of array order.
+## Scoped to level_01_smoke_realm.gd's own call (per-caller, not global) so
+## Level 2/3/boss arenas keep their existing random-shuffle-on-entry feel —
+## only Level 1's specific "always this song first" ask changes behaviour.
+func play_playlist(paths: Array, force_first: bool = false) -> void:
     var found: Array = []
     for p in paths:
         # Tracks may be absent in dev builds — degrade silently instead of
@@ -71,7 +84,7 @@ func play_playlist(paths: Array) -> void:
     _playlist = found
     if _playlist.is_empty():
         return
-    _play_next_in_playlist(true)
+    _play_next_in_playlist(true, force_first)
 
 ## Players that are mid-fade-out. UNTRACKED before, which is the whole bug:
 ## _duck_out_music() detached the outgoing player and relied on a tween to
@@ -114,11 +127,15 @@ func _stop_music() -> void:
         current_music_player.queue_free()
     current_music_player = null
 
-func _play_next_in_playlist(fade_in: bool = false) -> void:
-    var candidates: Array = _playlist
-    if _playlist.size() > 1:
-        candidates = _playlist.filter(func(p): return p != _last_track)
-    var path: String = candidates[randi() % candidates.size()]
+func _play_next_in_playlist(fade_in: bool = false, force_first: bool = false) -> void:
+    var path: String
+    if force_first and not _playlist.is_empty():
+        path = _playlist[0]
+    else:
+        var candidates: Array = _playlist
+        if _playlist.size() > 1:
+            candidates = _playlist.filter(func(p): return p != _last_track)
+        path = candidates[randi() % candidates.size()]
     var stream := load(path)
     if not stream:
         return

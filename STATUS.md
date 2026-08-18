@@ -1,7 +1,101 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/owner-rage-20260818-regressions`
+**Branch:** `claude/owner-rage-l1-music-boss1-carts-chase`
+
+**🎯 LEVEL1_MUSIC_ORDER_BOSS1_SIZE_CARTS_CHASE — SAME-DAY FOLLOW-UP TO THE
+OWNER-RAGE RESIDUAL BELOW (2026-08-18, afternoon).** The founder's own
+follow-up: *"The mining carts that float in the air are just stupid
+boxes!!! Bring them back cunt!!!!!"* plus three founder-supplied Google
+Drive music files and a fresh "Song 1 has been reduced in size" /
+"still dont chase" report. Two different Claude sessions had been working
+on **separate branches from separate points in this repo's history**
+(this session's own prior PR #41 work never merged to master; the
+owner-rage session below worked directly on master) — several fixes that
+were real on one branch were simply never present on the other. This pass
+reconciles both onto a fresh branch off current master:
+
+- **Mining carts — the "stupid boxes" complaint was literally true.** The
+  owner-rage session's own fix (item 2 below) repositioned the carts'
+  **Y coordinate only** — `mine_cart.gd` was still the bare, untextured
+  `ColorRect` from before ANY art pass (this session's own earlier PR #41
+  work built real wooden/gold-armor `Sprite2D` art + a working `Area2D`
+  boarding trigger + wBTC reward, but that branch never reached master).
+  Ported the real version across, including its position-anchor bug fix (a
+  cart used to snap to world x≈0 on its first physics tick).
+- **Boss 1 (Auditor) — restored above the 168px outlier.** No literal
+  regression was found against this session's own prior history (`BODY`
+  has read 168 since the file's first commit), but the founder's
+  comparison point is real and checkable: Distributor is 240, Claim
+  Jumper is 280 — Auditor was visibly the smallest of the three despite
+  being fought first. Raised to **220** (still smallest, so the
+  stage-escalation identity holds), hurtbox scaled by the same ratio so
+  the file's own hard-won double-offset hitbox fix isn't disturbed.
+- **big_axe scale/damage — quietly reset by the owner-rage session's own
+  (good) feedback work.** That session added real impact feedback
+  (`bigaxe_impact` SFX, heavy screenshake, boss hitstop — kept, it's
+  genuinely good) but in doing so reset `BIG_SCALE`/`BIG_DAMAGE`/
+  `BIG_BOSS_DAMAGE` back to 1.95/5/3, undoing a previous session's
+  increase to 2.6/8/4 that a live capture had proven necessary. Restored.
+- **Level 1 music — the actual bug, not just the missing songs.**
+  `_play_next_in_playlist()` picked `candidates[randi() % ...]`
+  **unconditionally** — the `fade_in` bool passed into it never controlled
+  which track played, only how it faded in. "First song" was always a
+  coin flip regardless of array order, which is exactly "when I turn on
+  my machine there is a different song playing." Added a real
+  `force_first` param, wired only from `level_01_smoke_realm.gd`'s own
+  call so Level 2/3/boss arenas keep their existing shuffle feel. The
+  three founder-supplied Drive files (`Level 1(!st Song).mp3` → always
+  first, `Oxbow Lake.mp3` → confirmed byte-identical to the already-wired
+  `level01_theme_oxbow.mp3`, `Level 1 (1).mp3` → matches the intent of the
+  already-known "remove this song" track) resolved: `level01_theme_alt.ogg`
+  deleted from the project and its dead reference removed from the array.
+- **Boss 2/3 chase — the tenth-plus "still dont chase" report, addressed
+  with an architectural fix, not another speed tune.** Master's
+  `distributor.gd`/`claim_jumper.gd` had reverted to steering directly at
+  the player's own x (this session's own earlier standoff-based redesign,
+  from PR #40, also never reached master). Restored the horizontal
+  standoff (`STANDOFF_X`, stalk weave) for Distributor. But a standoff
+  ALONE — even a correct one — holds a roughly constant offset from a
+  player-following camera, which has **zero relative screen motion by
+  construction**; a real 2s fleeing capture from an earlier session had
+  already proven this reads as "frozen" even when the world-space math is
+  right. Added a **SURGE** mechanic to both bosses: periodically (every
+  3.2s) the boss closes in past its normal hold distance for 0.65s at
+  1.6x speed, then eases back out — a punctuated "lunge in, fall back"
+  that moves the boss's SCREEN position dramatically in both directions.
+  **Live capture, not a headless claim:**
+  `docs/captures/2026-08-18-owner-rage-l1-music/distributor_surge_t0_baseline.png`
+  vs `distributor_surge_t2_lunging.png` (2.4s later, same standing
+  position) and `claimjumper_surge_t0_baseline.png` vs
+  `claimjumper_surge_t3_lunging.png` (3.6s later) / `..._t4_retreating.png`
+  (4.8s, easing back out) — both show unmistakable on-screen position
+  change, not the near-static frames every prior "fixed" claim produced.
+  The old `dual_real_level_boss_chase_test`/`stage3_defence_test` bars
+  (raw travel-distance / near-zero-gap) silently re-encoded the old
+  lock-on assumption and correctly FAILED against the new standoff — both
+  re-contracted the same way PR #40 already reasoned through once
+  (reach-to-striking-range + direction-tracking, not raw travel).
+- **Do-not-regress list, spot-checked, all intact:** HUD text sizes
+  (22/18/14), boss VO volume (+12 dB, non-positional, music duck), leaf/
+  Blaze celebration (spin + smoke ring + stoner SFX + barks, explicit
+  code comment blocking music-override regression), sun size, BTC logo.
+- **New gate:** `tests/owner_rage_l1_music_boss1_carts_test.gd` (9/9) —
+  proves `force_first` is deterministic (not lucky), the dead alt.ogg
+  reference is gone, Auditor's collision shape is actually larger, the
+  mine cart renders real `Sprite2D` art, and the axe constants are back
+  at the proven values. Full existing gate battery re-run green
+  (script_compile 163/125, `dual_real_level_boss_chase`, `stage3_defence`,
+  all Distributor/Claim Jumper suites, `s8_dialogue_npc_art`,
+  `res_stake_assay`, `owner_screenshot_fixes`, `s11_stage3_walkpath`).
+  Security Sentinel 18/18, 0 blockers.
+- **Honest gap:** the surge mechanic is a genuinely different fix from
+  every prior "fixed" claim on this exact complaint, and the live capture
+  above shows real on-screen motion — but per this project's own trust
+  rule, founder hard-refresh confirmation is still the only real proof,
+  not this note.
+
+---
 
 **🔥 OWNER-RAGE RESIDUAL — REGRESSIONS + ALL CURRENT FAILS (2026-08-18).**
 Executed `PROMPT_OWNER_RAGE_20260818_REGRESSIONS_AND_FAILS.md`. Your 5 screenshots

@@ -95,6 +95,26 @@ var _hop_cooldown: float = 0.0
 const WALK_ACCEL: float = 620.0
 const TURN_DECEL: float = 1400.0
 const TURN_DEAD_ZONE: float = 34.0
+
+## SURGE — periodic visible speed burst, added alongside Distributor's
+## identical mechanic (PROMPT_PR41_REJECTED / LEVEL1_MUSIC residuals,
+## 2026-08-18: "still dont chase!!! You are absolutely useless!!!!" for the
+## tenth-plus time). Unlike the Distributor's hover standoff, this boss
+## already walks straight at the player's x every frame in `_ground_chase` —
+## there is no static-offset illusion to fix here. What a real 2s fleeing
+## capture showed instead was his on-screen position barely changing across
+## the whole window: patrol/throw/vulnerable each hold their OWN reduced
+## speed (0.72x, VULNERABLE_DRIFT), so the cycle-average pace stays close
+## enough to the player's sprint that a continuous walk never produces a
+## clearly-readable "he's closing in" moment — just a slow, steady drift
+## that's easy to read as barely moving at all. A periodic full-commitment
+## speed burst (independent of which state he's in) gives the eye a
+## punctuated, unambiguous acceleration to track.
+const SURGE_INTERVAL: float = 3.2
+const SURGE_DURATION: float = 0.65
+const SURGE_SPEED_MULT: float = 1.6
+var _surge_t: float = 0.0
+var _surge_active: bool = false
 ## Clears ~196px at gravity 980 — same envelope the Auditor uses.
 const HOP_VELOCITY: float = -620.0
 ## Total airtime of one hop: 2 * |HOP_VELOCITY| / gravity ≈ 1.265s. Used to size
@@ -318,6 +338,18 @@ func _ground_chase(delta: float, speed: float) -> bool:
 	# Compared CENTRE to player, not origin to player: the origin is the body's
 	# top-left, so an origin-based comparison biased every decision 40px east
 	# and made him oscillate around a point he was never actually on.
+	# SURGE — see the const block above. Runs across every state that calls
+	# this shared function, so a burst can land during PATROL, THROW, or
+	# VULNERABLE alike.
+	_surge_t += delta
+	if not _surge_active and _surge_t >= SURGE_INTERVAL:
+		_surge_active = true
+		_surge_t = 0.0
+	if _surge_active:
+		speed *= SURGE_SPEED_MULT
+		if _surge_t >= SURGE_DURATION:
+			_surge_active = false
+			_surge_t = 0.0
 	var pl := get_tree().get_first_node_in_group("player")
 	if pl:
 		var dx: float = pl.global_position.x - (global_position.x + HALF_BODY)

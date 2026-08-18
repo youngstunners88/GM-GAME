@@ -299,6 +299,47 @@ const LOCK_COOLDOWN: float = 0.9
 const LOCK_ARM_OVERLAP: float = 96.0
 var _climb_locked: bool = false
 var _lock_cd: float = 0.0
+
+## STANDOFF + SURGE — real root cause of the founder's TENTH-PLUS "still
+## doesn't chase" report (PROMPT_PR41_REJECTED / LEVEL1_MUSIC residuals,
+## 2026-08-18), diagnosed by reading this exact function: `target` used to be
+## `player.global_position + Vector2(0.0, -HOVER_ABOVE)` — steering directly
+## at the player's OWN x. A live Playwright capture (2s of active player
+## fleeing, boss's on-screen position measured before/after) showed the
+## boss's SCREEN position barely moves even though `to` is genuinely nonzero
+## every frame: the camera follows the player, and a boss that steers at the
+## player's exact x rides at an almost-fixed screen offset near the player at
+## all times — there is no MOMENT where he visibly closes a gap, because he
+## is never meaningfully behind.
+##
+## Two changes, not one, because they fix two different failures:
+##
+## 1. STANDOFF_X: steer at a point held to one side of the player instead of
+##    directly on top of them, so a genuine gap can open and close rather
+##    than a permanent near-zero offset (this was tried once before, in an
+##    earlier session on a different branch, and measured to work — but that
+##    branch never reached this codebase's live lineage, which kept tuning
+##    the center-lock instead).
+## 2. SURGE: even a standoff that holds a CONSTANT offset reads as "parked
+##    beside me", not "chasing", because holding steady state has no visible
+##    motion of its own. Periodically (SURGE_INTERVAL) he closes in past the
+##    standoff toward the player (SURGE_CLOSE_FACTOR) for SURGE_DURATION at
+##    SURGE_SPEED_MULT, then eases back out — a punctuated, readable
+##    "lunge in, fall back" that moves his SCREEN position dramatically in
+##    both directions, which a constant hold can never produce regardless of
+##    how correct the underlying pursuit speed is.
+const STANDOFF_X: float = 168.0
+const STALK_WEAVE_AMP: float = 70.0
+const STALK_WEAVE_RATE: float = 1.35
+var _stalk_t: float = 0.0
+var _standoff_side: float = 0.0
+const STANDOFF_FLIP_DEADZONE: float = 24.0
+const SURGE_INTERVAL: float = 3.2
+const SURGE_DURATION: float = 0.65
+const SURGE_CLOSE_FACTOR: float = 0.25  ## fraction of STANDOFF_X he closes to during a surge
+const SURGE_SPEED_MULT: float = 1.6
+var _surge_t: float = 0.0
+var _surge_active: bool = false
 ## Player top speed is walk_speed 200 * SPRINT_MULTIPLIER 1.2 = 240 px/s.
 ##
 ## Founder: "the boss is not chasing Lil Blunt which makes it too easy."
@@ -443,7 +484,34 @@ func _hover_pursue(delta: float, speed_scale: float = 1.0,
 		min_speed: float = MIN_PURSUE_SPEED) -> void:
 	var p := get_tree().get_first_node_in_group("player")
 	if p:
-		var target: Vector2 = p.global_position + Vector2(0.0, -HOVER_ABOVE)
+		# Hold a side of the player (with hysteresis so he doesn't oscillate
+		# through them when the player runs underneath) and breathe around it
+		# so a stalled player doesn't turn the standoff into a new static
+		# park. See STANDOFF_X's block comment for why this exists at all.
+		var dx_now: float = hit_centre().x - p.global_position.x
+		if absf(dx_now) > STANDOFF_FLIP_DEADZONE:
+			_standoff_side = signf(dx_now)
+		if _standoff_side == 0.0:
+			_standoff_side = 1.0
+		_stalk_t += delta
+		var breathe: float = sin(_stalk_t * STALK_WEAVE_RATE) * STALK_WEAVE_AMP
+		var standoff_now: float = STANDOFF_X + breathe
+		# SURGE: periodically lunge past the standoff toward the player, then
+		# ease back out. This is what actually reads as "chasing" on screen —
+		# see STANDOFF_X's comment for why holding even a correct constant
+		# offset cannot, by itself, look like pursuit under a player-following
+		# camera.
+		_surge_t += delta
+		if not _surge_active and _surge_t >= SURGE_INTERVAL:
+			_surge_active = true
+			_surge_t = 0.0
+		if _surge_active:
+			standoff_now = STANDOFF_X * SURGE_CLOSE_FACTOR
+			if _surge_t >= SURGE_DURATION:
+				_surge_active = false
+				_surge_t = 0.0
+		var target: Vector2 = p.global_position + Vector2(
+			_standoff_side * standoff_now, -HOVER_ABOVE)
 		# STEERS FROM THE BODY CENTRE, NOT THE ORIGIN. This node's origin is the
 		# body's TOP-LEFT and the body is 240 wide, so aiming the origin at the
 		# player parked his visible centre a permanent 120px EAST of them — he
@@ -548,6 +616,8 @@ func _hover_pursue(delta: float, speed_scale: float = 1.0,
 		# this lock exist to prevent. It only shortens how long he spends
 		# getting out of the way of his own safety check.
 		var speed: float = CLIMB_SPEED if climbing else maxf(HOVER_MAX * speed_scale, min_speed)
+		if _surge_active:
+			speed *= SURGE_SPEED_MULT
 		velocity = velocity.move_toward(to.normalized() * speed, HOVER_ACCEL * delta)
 		boss_sprite.set_facing(to.x > 0.0)
 	else:

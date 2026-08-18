@@ -11,14 +11,28 @@ enum State { PATROL, CHARGE, VULNERABLE, DEFEATED }
 const BOSS_ID := "tax"
 ## On-screen body size. Mirrored by auditor.tscn's RectangleShape2D — change
 ## both together, and keep the collision offset at BODY/2.
-const BODY := 168.0
+##
+## Founder (LEVEL1_MUSIC_ORDER_BOSS1_SIZE_CARTS_CHASE, 2026-08-18): "1st boss
+## ... has been reduced in size — restore previous larger scale. WHY was it
+## shrunk?" No code-level regression against this session's own prior work
+## was found (BODY has read 168 across this file's entire git history), but
+## the founder's own comparison point is real: Distributor (Stage 2) is 240,
+## Claim Jumper (Stage 3) is 280 — Auditor was visibly the smallest of the
+## three despite being fought FIRST, which reads exactly as "shrunk" against
+## the bosses that follow. Raised to 220 (still smallest of the three, so
+## the difficulty-scale identity across stages is untouched, but no longer
+## an outlier). HURTBOX_SIZE/CENTER below are scaled by the same 220/168
+## ratio to preserve the exact fit this file's own hard-won double-offset
+## fix (see below) depends on — do not hand-tune them independently of BODY.
+const BODY := 220.0
 ## Hurtbox matches the scaled OPAQUE silhouette of sprite_boss_tax-collector.png,
 ## not the full BODY box. Source is 131x150 with opaque bbox (7,0)-(127,143);
-## BossSprite._fit() scales it by BODY/150 = 1.12 to fill the body height, so
-## the real on-screen character is ~134x160, centered ~1.7px right and ~3.9px
-## up from the body box's own centre (84,84).
+## BossSprite._fit() scales it by BODY/150 to fill the body height, so
+## the real on-screen character is centered off the body box's own centre
+## (BODY/2, BODY/2). Values below = the original 134x160 / (86,80) at
+## BODY=168, scaled by 220/168.
 ##
-## Founder, this session: "Lil Blunt will die completely without even
+## Founder, an earlier session: "Lil Blunt will die completely without even
 ## touching the boss for some reason." Root cause (Kimi K3, verified by hand
 ## against this scene): the hitbox was double-offset. auditor.tscn already
 ## positions Hitbox/CollisionShape2D at (84,84) LOCAL TO THE HITBOX NODE, and
@@ -29,8 +43,8 @@ const BODY := 168.0
 ## air past the boss's right/bottom edge, while his left/top half could be
 ## stood inside with no death at all — asymmetric and facing-independent,
 ## exactly matching "for some reason" and "dies without even touching him".
-const HURTBOX_SIZE := Vector2(134.0, 160.0)
-const HURTBOX_CENTER := Vector2(86.0, 80.0)
+const HURTBOX_SIZE := Vector2(175.5, 209.5)
+const HURTBOX_CENTER := Vector2(112.6, 104.8)
 const CLIPBOARD := preload("res://src/boss/boss_projectile.tscn")
 
 @export var patrol_speed: float = 140.0

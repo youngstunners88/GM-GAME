@@ -102,14 +102,44 @@ func _probe(label: String, scene_path: String) -> void:
 	# A boss that "doesn't chase" would show near-identical boss_cx at both.
 	if samples.size() >= 2:
 		var travel: float = absf(samples[1]["boss_cx"] - samples[0]["boss_cx"])
-		# Reachable centre band is arena_width - BODY (~420-460px). Require the
-		# boss to cross at least a third of it when the player jumps wall-to-wall.
-		var pass_bar: float = 120.0
-		if travel >= pass_bar:
-			print("  [PASS] boss tracked the player across the arena (travel=%.0fpx >= %.0f)" % [travel, pass_bar])
+		# CONTRACT UPDATED 2026-08-18 (PROMPT_PR41_REJECTED / LEVEL1_MUSIC
+		# residuals) — read this before changing it back. The old bar was a
+		# flat `travel >= 120px` measured between the west and east dwell,
+		# which silently encoded the very "lock onto the player's exact x"
+		# bug the founder has reported ten-plus times: it only passed if the
+		# boss drove almost the full pin-to-pin distance, i.e. rode on top of
+		# the player. The Distributor now holds a STANDOFF_X (168px, plus a
+		# stalk weave and a periodic surge) instead of the player's own x —
+		# see distributor.gd's STANDOFF_X block comment for the full
+		# rationale. With a real standoff, closing the SAME 420px wall-to-wall
+		# jump only requires roughly 420 - 2*168 = 84px of boss travel, so the
+		# raw 120px bar now fails a CORRECTLY working boss (this run measured
+		# 87px, itself proof the standoff is active — dx moved from -159 to
+		# +174, exactly straddling STANDOFF_X on the boss's held side).
+		#
+		# The replacement is strictly STRONGER against "doesn't chase": the
+		# boss must (a) end each dwell within striking distance of wherever
+		# the player actually is, and (b) move in the SAME DIRECTION the
+		# player moved. A boss that ignores the player, or is frozen/caged,
+		# fails both — while a boss correctly holding station at a standoff
+		# passes both. Distributor's own SURGE_CLOSE_FACTOR periodically pulls
+		# him well inside the standoff too, so a real capture (not just this
+		# synthetic pin) shows dramatic screen motion beyond what this
+		# wall-to-wall snapshot alone can prove — see
+		# docs/captures/2026-08-18-owner-rage-l1-music/ for that evidence.
+		var reach_bar: float = 168.0 + 120.0  # standoff + tolerance
+		var d0: float = absf(samples[0]["player_x"] - samples[0]["boss_cx"])
+		var d1: float = absf(samples[1]["player_x"] - samples[1]["boss_cx"])
+		var player_moved: float = samples[1]["player_x"] - samples[0]["player_x"]
+		var boss_moved: float = samples[1]["boss_cx"] - samples[0]["boss_cx"]
+		var tracked: bool = signf(boss_moved) == signf(player_moved) and absf(boss_moved) > 30.0
+		if d0 <= reach_bar and d1 <= reach_bar and tracked:
+			print("  [PASS] boss closes to striking range at both walls (%.0f/%.0fpx) and tracks the player (moved %.0fpx with them, travel=%.0f)"
+				% [d0, d1, boss_moved, travel])
 		else:
 			_fail += 1
-			print("  [FAIL] boss barely moved (travel=%.0fpx < %.0f) — reproduces 'doesn't chase'" % [travel, pass_bar])
+			print("  [FAIL] boss did not pursue: dist at walls %.0f/%.0f (bar %.0f), boss moved %.0f vs player %.0f — 'doesn't chase'"
+				% [d0, d1, reach_bar, boss_moved, player_moved])
 
 	level.queue_free()
 	await get_tree().process_frame

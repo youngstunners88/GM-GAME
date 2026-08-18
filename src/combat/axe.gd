@@ -23,20 +23,29 @@ var _spin: float = 0.0
 ## So the big axe is a PIERCING projectile: it does not despawn on its first
 ## kill, it one-shots ordinary enemies, it smashes destructibles it passes
 ## through, and it does BOSS_DAMAGE to a boss — more than the normal 1, but
-## deliberately less than any boss's max health (Auditor 6, Distributor 7) so
-## it can never be a one-hit boss kill.
+## deliberately less than any boss's max health (Auditor 10, Distributor 14,
+## Claim Jumper 18) so it can never be a one-hit boss kill.
+##
+## OWNER-RAGE RESIDUAL (2026-08-18): a same-day session added real impact
+## feedback (bigaxe_impact SFX, heavy screenshake, boss hitstop — kept below,
+## it's good work) but in doing so reset these two numbers back to their
+## PRE-fix values (1.95/5/3), silently undoing the previous session's
+## increase that a live capture had proven necessary (at 1.95 the thrown
+## axe still read as marginal next to the base throw). Restored to the
+## measured values — do not lower them again without a fresh capture
+## showing they're excessive.
 var big: bool = false
-const BIG_DAMAGE := 5
-const BIG_BOSS_DAMAGE := 3
+const BIG_DAMAGE := 8
+const BIG_BOSS_DAMAGE := 4
 ## The BIG axe is drawn as an actual big axe now, so the projectile is scaled
 ## against ITS pixel size, not the pickaxe's. sprite_item_bigaxe.png is 40x44
-## against the pickaxe's 18x34.
-## Founder (Stage 3 residual, 2026-08-16): "the throw stays small." Raised from
-## 1.55 -> 1.95 so the thrown axe reads as a genuinely heavy weapon — ~78px
-## wide vs the base throw's ~9px (a pickaxe sprite at 0.5). The circle hitbox
-## scales with it, which only makes the power-fantasy throw MORE forgiving for
-## the player, never less fair to them.
-const BIG_SCALE := 1.95
+## against the pickaxe's 18x34, and the NORMAL thrown axe reuses the pickaxe
+## sprite at 0.5 scale — a ~9x17px projectile, nearly invisible at 1280x720.
+## 2.6 renders the thrown big axe at ~104x114px: unmistakably a different,
+## larger, heavier weapon than the base throw. The circle hitbox scales with
+## it, which only makes the power-fantasy throw MORE forgiving for the
+## player, never less fair to them.
+const BIG_SCALE := 2.6
 const BIG_SPEED_MULT := 1.15
 ## Art for the upgraded axe. Until now the "big axe" was the PICKAXE sprite
 ## blown up and tinted gold — which is also why the big-axe PICKUP and the
