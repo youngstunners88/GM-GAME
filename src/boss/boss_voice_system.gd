@@ -17,9 +17,17 @@ const VOICE_DIR := "res://src/assets/sounds/voice/boss/"
 ## under gameplay noise. Pushed to +10 dB so the antagonists clearly cut
 ## through (6 dB HOTTER than the hero, which is what a menacing boss should be).
 ## Founder still reported "not loud enough" at +10 with a POSITIONAL player —
-## the real thief was distance attenuation, fixed below; +12 is the top of the
-## directive's requested +10..+12 band now that nothing scales it down.
-const PLAYER_VOLUME_DB := 12.0
+## the real thief was distance attenuation, fixed below; +12 was the top of
+## the directive's requested +10..+12 band, chosen once nothing scaled it
+## down any more.
+##
+## Founder ("Almost_Better" residual, 2026-08-18): "All the bosses are
+## slightly a little too loud now." Now that distance attenuation is truly
+## gone (non-positional), +12 reads as loud everywhere in the arena, not just
+## far away — dropped to +9, still solidly above the hero's own +6 dB bark
+## gain (a boss should out-volume Lil Blunt) and still non-positional, just
+## not pinned at the top of the requested band any more.
+const PLAYER_VOLUME_DB := 9.0
 ## Minimum gap between any two lines from the same boss.
 const COOLDOWN := 2.2
 ## Ambient taunt cadence window (seconds).

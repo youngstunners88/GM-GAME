@@ -9,6 +9,25 @@ extends CharacterBody2D
 
 enum State { PATROL, CHARGE, VULNERABLE, DEFEATED }
 const BOSS_ID := "tax"
+
+## SPAWN GRACE — a real-browser capture caught the Auditor's own hitbox
+## restarting the run within ~1s of a fight starting, before any scripted
+## attack, from the opening close-the-gap sweep. Other bosses in this file's
+## own history already carried this fix (mirrored from boss_base.gd's
+## rationale), but master never had it wired for the Auditor specifically —
+## and the BODY increase to 220 (see below) made his hitbox reach further,
+## raising the odds of an instant spawn-contact restart being mistaken for
+## "the boss won't let me get past this point" (2026-08-18, "Almost_Better"
+## residual — a live capture showed the level reloading 3x in the first few
+## seconds of a boss=1 warp, which is exactly this).
+const SPAWN_GRACE_SEC: float = 1.2
+var _spawn_grace_until_msec: int = 0
+
+func _enter_tree() -> void:
+	_spawn_grace_until_msec = Time.get_ticks_msec() + int(SPAWN_GRACE_SEC * 1000.0)
+
+func is_spawn_grace_active() -> bool:
+	return Time.get_ticks_msec() < _spawn_grace_until_msec
 ## On-screen body size. Mirrored by auditor.tscn's RectangleShape2D — change
 ## both together, and keep the collision offset at BODY/2.
 ##
@@ -481,6 +500,9 @@ func _spawn_gold_platforms() -> void:
 
 func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("take_damage"):
+		# SPAWN GRACE — see this file's own const block above.
+		if is_spawn_grace_active():
+			return
 		GameManager.last_damage_source = BOSS_ID
 		BossVoiceSystem.say(self, BOSS_ID, "mock")
 		# Founder stakes rule: ANY boss touch returns Lil Blunt to the START of

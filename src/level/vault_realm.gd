@@ -1023,9 +1023,25 @@ func _setup_fort_knox_depth() -> void:
 	# first face the player meets (Grok s8 hierarchy).
 	_setup_gideon(360.0, FLOOR_Y)
 	# Timber-and-iron signage announcing the hall (Grok copy).
+	#
+	# Founder ("Almost_Better" residual, 2026-08-18): "The only problem here is
+	# that the text is behind the image. Just put it below the 'FORT KNOX
+	# ASSAY' text!!!" Root cause: this single-line, unwrapped Label at font 26
+	# renders wide enough (~60 characters) to reach past x=2190, INTO the
+	# Assay Scale's own panel footprint (HALL_CX=2380, panel spans roughly
+	# 2190..2570) — the scale's art/panel are added to the tree AFTER this
+	# sign, so in Godot's same-z_index draw order they paint on top of it.
+	# Wrapped to a fixed width well clear of that footprint (three short
+	# lines instead of one very long one) so it can never physically reach
+	# the scale's panel again, rather than fighting z-order.
 	var sign := Label.new()
-	sign.text = "FORT KNOX ASSAY — WEIGH IT. STAKE IT. 100-DAY MINERS ONLY."
-	sign.position = Vector2(1960.0, SURFACE_Y - 300.0)
+	sign.text = "FORT KNOX ASSAY —\nWEIGH IT. STAKE IT.\n100-DAY MINERS ONLY."
+	# Shifted left from 1960 -> 1780 too: even wrapped, the longest line
+	# ("100-DAY MINERS ONLY.", ~20 chars at font 26) still runs ~300-340px,
+	# and starting at the old 1960 would still just clip the scale panel's
+	# left edge (~2190). 1780 keeps every line's right edge comfortably
+	# short of it.
+	sign.position = Vector2(1780.0, SURFACE_Y - 300.0)
 	style_label(sign, 26)
 	add_child(sign)
 

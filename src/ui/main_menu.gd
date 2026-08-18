@@ -46,8 +46,14 @@ func _ready() -> void:
     tween.tween_property(title, "scale", Vector2(1.0, 1.0), 0.8)
 
 ## TEST-ONLY (S10 T6/T7). Reads ?boss=N on web; if N is a valid boss level
-## (2 or 3), routes straight there and returns true so _ready stops setting up
+## (1-3), routes straight there and returns true so _ready stops setting up
 ## the menu. Returns false (no-op) on a normal load or any non-web build.
+##
+## Extended to include 1 (2026-08-18, PROMPT "Almost_Better" residual) so the
+## Auditor's own mobility regression ("cant jump beyond this point anymore")
+## can be captured directly, the same way ?boss=2/3 has always let a
+## Playwright agent reach Distributor/Claim Jumper without playing the whole
+## campaign first.
 func _boot_boss_warp() -> bool:
     if not OS.has_feature("web"):
         return false
@@ -57,7 +63,7 @@ func _boot_boss_warp() -> bool:
     if not s.is_valid_int():
         return false
     var n := int(s)
-    if n < 2 or n > 3:
+    if n < 1 or n > 3:
         return false
     # Mark the target unlocked so a fresh save can't bounce the load, then route.
     GameManager.highest_unlocked_level = maxi(GameManager.highest_unlocked_level, n)

@@ -3,6 +3,66 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/owner-rage-l1-music-boss1-carts-chase`
 
+**🎯 "ALMOST_BETTER" RESIDUAL — SAME-DAY FOLLOW-UP, FOUND A REAL BUG MY OWN
+PREVIOUS FIX INTRODUCED (2026-08-18, later).** 5 fresh founder screenshots
+after the L1-music/boss1-size/carts/chase pass above. Extracted per
+`founder-screenshot-preserve` to
+`artifacts/founder_shots_2026-08-18_almost-better/` and
+`docs/captures/2026-08-18-almost-better/`.
+
+- **"Remove this backpiece so it is the actual backdrop" — the HUDMask
+  black plate was STILL THERE.** This branch is fresh off master, and my
+  very first `HUDMask` removal (from way back in this session's PR #41
+  work) lived on a branch that never merged to master either — same
+  reconciliation gap as the mine carts/axe/chase items in the pass above.
+  Re-removed from all 3 levels. Live capture:
+  `docs/captures/2026-08-18-almost-better-fixed/hudmask_gone_boss1_stable.png`.
+- **"1st boss cant jump beyond this point anymore... he could get around
+  like a gazelle" — genuinely caused by this session's own Auditor size
+  increase, but not the size itself.** A real capture (`?boss=1`, extended
+  the existing `?boss=N` debug warp to allow N=1) showed the level
+  reloading repeatedly within the first second — the Auditor extends
+  `CharacterBody2D` directly and never had the spawn-grace fix every other
+  boss's own history already carries (this session's earlier BODY 168→220
+  increase gave his hitbox more reach, making an instant spawn-contact
+  restart more likely, which reads exactly like "he can't get past this
+  point" since the level just keeps restarting near him). Added spawn
+  grace to the Auditor directly, and to `BossBase` (shared by Distributor
+  and Claim Jumper, which never had it either — same class of bug, same
+  fix, all three bosses).
+- **"2nd/3rd boss cant move beyond this point"** — same root cause as
+  above, confirmed by the same instant-restart pattern. `?boss=2`/`?boss=3`
+  now show 0 unexpected scene reloads in an 8s window (was repeated
+  restarts).
+- **"All the bosses are slightly a little too loud now"** — `PLAYER_
+  VOLUME_DB` 12→9 (still non-positional, still well above the +8dB floor
+  and the hero's own +6dB bark gain, just not pinned at the top of the
+  previously-requested band).
+- **Fort Knox Assay panel text overlap** — the "FORT KNOX ASSAY — WEIGH
+  IT..." sign was a single unwrapped ~60-character Label at font 26,
+  which renders wide enough to reach into the Assay Scale's own panel
+  footprint (the scale's art/panel are added to the tree AFTER the sign,
+  so they draw on top of it). Wrapped to three short lines and shifted
+  left (x 1960→1780) so it can't physically reach the panel again.
+- **New gate:** `tests/almost_better_20260818_test.gd` (12/12) — proves
+  all three bosses' spawn grace actually blocks a same-frame contact
+  restart (not just that the timer field exists), the HUDMask string is
+  gone from every level file, VO volume is in the 8-12dB band, and the
+  Assay sign's position/wrapping changed.
+- Full existing gate battery re-run green (script_compile 163/125,
+  `owner_rage_l1_music_boss1_carts_test`, `dual_real_level_boss_chase`,
+  `stage3_defence`, `boss_voice_sync_test`, `distributor_behaviour`,
+  `claim_jumper_difficulty`, `s8_dialogue_npc_art`, `res_stake_assay`,
+  `owner_screenshot_fixes`, `s11_stage3_walkpath`,
+  `owner_rage_20260818_test`). Security Sentinel 18/18, 0 blockers.
+- **Honest gap:** the Assay panel fix is verified by direct pixel-range
+  math against the actual layout code, not a fresh live capture — the
+  Assay Hall sits behind platforming inside Fort Knox that a scripted
+  Playwright session can't reach quickly. Founder hard-refresh is the
+  real proof, same as everything else in this pass.
+
+---
+
 **🎯 LEVEL1_MUSIC_ORDER_BOSS1_SIZE_CARTS_CHASE — SAME-DAY FOLLOW-UP TO THE
 OWNER-RAGE RESIDUAL BELOW (2026-08-18, afternoon).** The founder's own
 follow-up: *"The mining carts that float in the air are just stupid
