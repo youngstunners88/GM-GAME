@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bvsync0boss18vo"]
+
+[ext_resource type="Script" path="res://tests/boss_voice_sync_test.gd" id="1_bvsync"]
+
+[node name="BossVoiceSyncTest" type="Node"]
+script = ExtResource("1_bvsync")

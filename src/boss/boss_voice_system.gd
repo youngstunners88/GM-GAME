@@ -10,6 +10,13 @@ extends Node
 ## boss is registered as active.
 
 const VOICE_DIR := "res://src/assets/sounds/voice/boss/"
+## Playback gain for the three antagonist voices. Founder root cause: this
+## player sat at the default 0 dB while Lil Blunt's barks and the announcer
+## (AudioManager.play_bark / play_voice) both run at +6 dB — so on a shared SFX
+## bus the three bosses were a full 6 dB under everything else and vanished
+## under gameplay noise. Pushed to +10 dB so the antagonists clearly cut
+## through (4 dB HOTTER than the hero, which is what a menacing boss should be).
+const PLAYER_VOLUME_DB := 10.0
 ## Minimum gap between any two lines from the same boss.
 const COOLDOWN := 2.2
 ## Ambient taunt cadence window (seconds).
@@ -31,6 +38,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_player = AudioStreamPlayer2D.new()
 	_player.bus = "SFX"
+	_player.volume_db = PLAYER_VOLUME_DB  # was default 0 dB → bosses were inaudible
 	_player.max_distance = 2000.0
 	add_child(_player)
 
