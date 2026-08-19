@@ -66,7 +66,29 @@ const HURTBOX_SIZE := Vector2(175.5, 209.5)
 const HURTBOX_CENTER := Vector2(112.6, 104.8)
 const CLIPBOARD := preload("res://src/boss/boss_projectile.tscn")
 
-@export var patrol_speed: float = 140.0
+## CYCLE-MEAN PURSUIT SPEED, not just the PATROL number.
+##
+## Kimi K3 (2026-08-19) did for this boss the arithmetic distributor.gd's
+## MIN_PURSUE_SPEED comment already does for boss 2, and which nobody had ever
+## done for boss 1. The player's top speed is walk_speed 200 * SPRINT 1.2 =
+## 240 px/s, and the Auditor's phase-1 cycle is:
+##
+##   PATROL      2.5 s at patrol_speed
+##   CHARGE      1.4 s at charge_speed (430)
+##   VULNERABLE  1.1 s at VULNERABLE_DRIFT
+##
+## At the old 140/120 that is (2.5*140 + 1.4*430 + 1.1*120) / 5.0 = **217 px/s**
+## — BELOW a held sprint. A player who simply ran was never caught in phase 1,
+## no matter how correct the pursuit logic was, which is the other half of
+## "the 1st boss cant get passed this point": he is not only mis-steering, he
+## is too slow on average to close.
+##
+## 235/170 gives (2.5*235 + 1.4*430 + 1.1*170) / 5.0 = **275 px/s**, ~15% over
+## a sprint, so he gains ground across a full cycle instead of losing it.
+## charge_speed and every state DURATION are untouched, so the fight's rhythm
+## and its fair damage window are unchanged — only the average closing rate.
+## Phase scaling still multiplies this (see _on_phase_changed).
+@export var patrol_speed: float = 235.0
 @export var charge_speed: float = 430.0
 @export var vulnerable_time: float = 1.1
 @export var max_health: int = 10
@@ -97,7 +119,7 @@ const TURN_DEAD_ZONE: float = 34.0
 ## Mirrors distributor.gd's and claim_jumper.gd's constants of the same name;
 ## this boss was the only one of the three still hard-braking to zero there.
 ## See the VULNERABLE branch in _physics_process for the measured symptom.
-const VULNERABLE_DRIFT: float = 120.0
+const VULNERABLE_DRIFT: float = 170.0
 ## Shared screen-anchored bar (src/ui/boss_health_bar.gd). Named with a leading
 ## underscore because this boss does NOT extend BossBase — it has no inherited
 ## `health_bar` member to match, and shadowing an inherited member is the exact

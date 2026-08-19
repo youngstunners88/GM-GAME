@@ -76,6 +76,18 @@ ownership" conclusion unprompted.
   vector, and the periodic "reposition" hop blended toward
   `-patrol_direction * 150.0` — deliberately *away* from the player every 6 s.
 
+### 2b. Stage 1 was also too SLOW on average to ever catch a running player
+
+Kimi K3 did for boss 1 the cycle-mean arithmetic that `distributor.gd`'s
+`MIN_PURSUE_SPEED` comment already does for boss 2, and which nobody had done
+here. Phase-1 cycle: PATROL 2.5 s @140 + CHARGE 1.4 s @430 + VULNERABLE 1.1 s
+@120 = **217 px/s mean, against a 240 px/s sprint.** Correct steering could not
+have saved that: a player holding run was mathematically uncatchable in phase 1.
+
+`patrol_speed` 140 → 235 and `VULNERABLE_DRIFT` 120 → 170 give a 275 px/s mean
+(~15% over sprint). `charge_speed` and every state DURATION are untouched, so
+the fight's rhythm and its fair damage window are unchanged.
+
 ### 3. Stage 3 — my own previous commit's standoff was making it worse (P0)
 
 The preceding commit added `CHASE_SEPARATION = 200` with an ACTIVE RETREAT.
@@ -166,10 +178,16 @@ bill separately.
 | openai/gpt-5.3-codex | independent technical adversary | `codex-boss-rootcause.md` |
 | qwen/qwen3-235b-a22b-thinking | architecture / root cause | `qwen3-boss-rootcause.md` |
 | deepseek/deepseek-v4-pro | code forensics | `deepseek-boss-rootcause.md` |
-| moonshotai/kimi-k3 | gameplay systems audit | dispatched |
-| anthropic/claude-fable-5 | visual/UX audit | dispatched |
+| moonshotai/kimi-k3 | gameplay systems audit | `kimik3-boss-rootcause.md` |
+| anthropic/claude-fable-5 | visual/UX audit | dispatched; no output returned before the pass closed |
 
-Consensus: all four returned models independently agreed the arena-clamp
+Kimi K3 additionally supplied the cycle-mean speed arithmetic above and
+independently confirmed that "does not move" and "too easy" are the SAME
+configuration seen from two angles: the player stands outside, the boss clamps,
+and the per-window damage cap added earlier to fix "too easy" merely lengthened
+a risk-free farm.
+
+Consensus: all five returned models independently agreed the arena-clamp
 hypothesis explains Stage 2/3 but NOT Stage 1, and independently identified the
 stale `charge_target` and the missing `* delta`. Grok 4.6 additionally found the
 origin-vs-centre aim bias and the reversing reposition hop, both of which were
