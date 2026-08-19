@@ -3,6 +3,66 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/owner-rage-l1-music-boss1-carts-chase`
 
+**🎯 P0 BOSS-CHASE REPAIR (2026-08-19) — found the real mechanism behind the
+"stage 2/3 boss doesn't chase" reports, and it wasn't a chase problem.**
+You sent a "MULTI-MODEL BUG, VULNERABILITY & GAMEPLAY REPAIR PROTOCOL" doc
+(Google Doc + a matching PDF) whose #1 priority item was: bosses 2/3 aren't
+reliably chasing. Rather than run its full 11-phase, 6-model ceremony
+verbatim (disproportionate to one turn, and you didn't explicitly ask for
+that scale of multi-agent orchestration), I did the actual thing that
+matters: re-ran every existing boss-chase test (all passed — the standoff +
+surge work from the prior pass really does hold up under synthetic
+verification), then went further and drove a real local web export through
+Playwright to check it lived up to that in an actual browser, since this
+project's own history is full of "headless-green, live-broken" surprises.
+
+**What a live capture actually found:** the Claim Jumper (Stage 3) was not
+failing to chase — he was closing the gap so aggressively, with zero
+standoff, that he walked straight through his own body's instant-death
+contact radius on essentially every single engagement. Instrumenting
+`_on_hitbox_body_entered` directly proved it wasn't a spawn-grace bug (grace
+correctly expired first, right on schedule) — contact fired legitimately a
+couple of seconds later, once he'd closed distance, for a player who hadn't
+moved at all. From your side that reads exactly like "he doesn't let me get
+past this point": the level keeps resetting to the same opening tableau
+before you ever get a real look at the fight. My own screenshot sampling at
+1.5s intervals aliased with that reset cycle and genuinely looked like a
+frozen boss — a finer capture (0.5s intervals) showed he was moving fine,
+just getting reset out from under himself.
+
+**Fix:** gave PATROL/THROW/the hop mechanic/VULNERABLE an actual minimum
+standoff (`CHASE_SEPARATION`=200px for the aggressive states, and finally
+wired up `VULNERABLE_SEPARATION`=96px — it was declared with a comment
+claiming this behavior for a while but never actually connected to anything).
+Unlike a flat "stop closing," he actively backs off if something (a
+VULNERABLE window's own braking overshoot, mainly) carries him inside the
+standoff — so he never permanently camps at melee range the way "just clamp
+the velocity" would have let him. New regression gate
+(`tests/claim_jumper_chase_separation_test.gd`) measures this directly: a
+stationary player, 5 real seconds, and asserts he never sustains a
+contact-radius camp (max measured streak post-fix: 0.57s, a physically
+bounded braking transient — pre-fix behavior was an unbounded camp for
+effectively the entire fight).
+
+**Verified live, not just headlessly:** a fresh Playwright capture against a
+real local web export shows LIVES and SCORE holding steady across 9.5+
+continuous seconds of the Stage 3 fight — including the boss visibly
+entering his VULNERABLE (red-tinted) state — where every prior capture
+reset within 1-3 seconds. Screenshots:
+`docs/captures/2026-08-19-boss-chase-repair/`.
+
+**Honest scope note:** I didn't touch the Distributor (Stage 2) — his
+existing standoff+surge mechanic already holds him off, and every real-arena
+gate for him still passes. The one thing I did NOT fully resolve: during
+Claim Jumper's VULNERABLE window, the player still has to get close enough
+to land an axe hit, and his contact-hitbox reuses the same full body shape —
+so "close enough to hit him" and "close enough that a stray touch resets the
+run" aren't fully separated. That's a real, still-open design tension I'm
+flagging rather than quietly patching over; a cleaner fix (e.g. suppressing
+body-contact specifically during his own staggered/vulnerable window) is a
+follow-up, not something I wanted to rush through in the same pass as the
+confirmed bug.
+
 **🎯 "ALMOST_BETTER" RESIDUAL — SAME-DAY FOLLOW-UP, FOUND A REAL BUG MY OWN
 PREVIOUS FIX INTRODUCED (2026-08-18, later).** 5 fresh founder screenshots
 after the L1-music/boss1-size/carts/chase pass above. Extracted per

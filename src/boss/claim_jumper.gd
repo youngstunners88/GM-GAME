@@ -53,7 +53,54 @@ const VULNERABLE_DRIFT: float = 250.0
 ## that is the founder's "the third boss is now way too easy to defeat" (Kimi K3:
 ## "drift toward the player delivers him to the weapon while being harmless").
 ## He now closes only to here; the player must step INTO range to land hits.
+##
+## WIRED 2026-08-18, THROUGH A DIFFERENT MECHANISM THAN THE ONE THAT WAS
+## REVERTED. `_ground_chase` gained a real min-separation parameter this pass
+## (see CHASE_SEPARATION below) that ACTIVELY RETREATS when already closer
+## than the standoff, rather than freezing dead — so he still closes
+## continuously at VULNERABLE_DRIFT for the whole approach, exactly as before,
+## for as long as he's beyond 96px. That preserves the reason the old floor
+## was pulled (braking to a hard vx=0 stop for up to 0.7s at melee range,
+## ~36% of every cycle motionless — read as "doesn't chase").
+##
+## What forced re-wiring THIS state specifically, not just PATROL/THROW: a
+## direct measurement (tests/claim_jumper_chase_separation_test.gd), not a
+## live capture, caught that leaving VULNERABLE unprotected still fed the same
+## bug one step removed — a VULNERABLE window that ran its full course left
+## him at near-zero separation, and `_end_vulnerable()` hands straight back to
+## PATROL at whatever position he's already at, so the very first frame of the
+## next chase state inherited contact-radius range regardless of PATROL's own
+## floor. Confirmed by re-running that same test after wiring this: the
+## transient the min-distance assertion still catches is now bounded to a
+## handful of frames during the PATROL/VULNERABLE boundary, not a permanent
+## camp — see that test file for the exact numbers.
 const VULNERABLE_SEPARATION: float = 96.0
+
+## Hold at least this far from the player during PATROL/THROW — the aggressive
+## chase states, and exactly the two a live capture caught causing the loop
+## VULNERABLE_SEPARATION's comment describes.
+##
+## Root cause: PATROL/THROW walk straight at the player until TURN_DEAD_ZONE
+## (34px) — effectively zero standoff — and boss contact is
+## `GameManager.boss_contact_restart()`, an INSTANT full run-reset, not a
+## graze. HALF_BODY is 140, so his own hurtbox alone reaches ~140-160px; with
+## no standoff he was walking straight through that radius every single
+## engagement. Instrumenting `_on_hitbox_body_entered` in a real browser run
+## confirmed it directly: spawn grace correctly expired at 1.2s, and contact
+## fired legitimately (not a grace bug) once he'd closed the gap — for a
+## stationary player, every single attempt, well before he ever reached his
+## own THROW/VULNERABLE attack cycle. `tests/dual_real_level_boss_chase_test.gd`
+## never caught this because it explicitly disables the Hitbox's `monitoring`
+## before measuring chase distance ("gating the CHASE, not contact") — the
+## exact mechanism that kills a real run in play was deliberately switched off
+## for that gate.
+##
+## 200 clears his own contact radius (~155px) with margin for TURN_DECEL
+## braking overshoot (up to ~53px at phase-3's 385px/s), and still sits well
+## inside the wall-to-wall reach_bar (288px) that same test asserts — so he
+## still closes to clearly-threatening, striking-adjacent range, he just no
+## longer walks through the player to get there.
+const CHASE_SEPARATION: float = 200.0
 
 ## Max HP the player can strip in a SINGLE vulnerable window before he shakes it
 ## off and returns to the hunt. Caps burst-down so the kill takes >= ceil(HP/cap)
@@ -330,7 +377,7 @@ func _higher_ground_ahead(facing: float) -> bool:
 ## have two: PATROL stalked, THROW braked to zero — which meant every attack
 ## handed the player an escape window, and any future fix to the ledge sense
 ## would have had to be made twice.
-func _ground_chase(delta: float, speed: float) -> bool:
+func _ground_chase(delta: float, speed: float, min_separation: float = 0.0) -> bool:
 	# STALK the live player rather than pacing wall to wall. The founder's "the
 	# bosses need to be more challenging" applies here too: this boss only ever
 	# bounced between walls, so a player who stood still was never approached.
@@ -351,12 +398,34 @@ func _ground_chase(delta: float, speed: float) -> bool:
 			_surge_active = false
 			_surge_t = 0.0
 	var pl := get_tree().get_first_node_in_group("player")
+	var dx: float = 0.0
+	var have_player := false
 	if pl:
-		var dx: float = pl.global_position.x - (global_position.x + HALF_BODY)
+		have_player = true
+		dx = pl.global_position.x - (global_position.x + HALF_BODY)
 		if absf(dx) > TURN_DEAD_ZONE:
 			direction = signf(dx)
 	# Ease into the target speed so he reads as heavy, not robotic.
 	var target_vx: float = speed * direction
+	# HOLD / BACK OFF ONCE CLOSE ENOUGH — see CHASE_SEPARATION's own comment for
+	# the live-reproduced bug this closes: unthrottled closing walked him
+	# straight through his own instant-death contact radius on every engagement.
+	#
+	# ACTIVELY RETREATS, not just freezes, when already closer than the
+	# standoff — a flat "zero the velocity" first attempt here left him camped
+	# at whatever distance he happened to already be at (e.g. inherited from a
+	# VULNERABLE window, which has no separation floor of its own), instead of
+	# re-opening the gap. Mirrors distributor.gd's standoff-seeking philosophy:
+	# a boss that only ever stops closing, never backs off, converges to
+	# melee range the first time anything (a hop, a VULNERABLE cycle, a wall
+	# clamp) carries him inside the standoff once.
+	if have_player and min_separation > 0.0:
+		var gap: float = absf(dx)
+		if gap < min_separation:
+			var away_dir: float = -signf(dx) if not is_zero_approx(dx) else -direction
+			target_vx = speed * away_dir
+		elif is_equal_approx(gap, min_separation):
+			target_vx = 0.0
 	var rate: float = (TURN_DECEL
 		if signf(target_vx) != signf(velocity.x) and not is_zero_approx(velocity.x)
 		else WALK_ACCEL)
@@ -401,7 +470,7 @@ func _physics_process(delta: float) -> void:
 	match current_state:
 		State.PATROL:
 			var pl := get_tree().get_first_node_in_group("player")
-			var at_ledge: bool = _ground_chase(delta, patrol_speed)
+			var at_ledge: bool = _ground_chase(delta, patrol_speed, CHASE_SEPARATION)
 			# Blocked by terrain, or the player is above him -> hop. A ledge now
 			# also triggers the hop: if the player is across a gap he JUMPS it
 			# rather than standing at the edge forever, which keeps him
@@ -441,7 +510,23 @@ func _physics_process(delta: float) -> void:
 					# `_gap_crossable`/`at_ledge` guards above are untouched, so
 					# ledge suicide stays fixed.
 					var pdx: float = (pl.global_position.x - (global_position.x + HALF_BODY)) if pl else direction * HOP_REACH
-					velocity.x = clampf(pdx / HOP_AIRTIME, -patrol_speed, patrol_speed)
+					# HOLD THE SAME STANDOFF A HOP GETS, TOO (2026-08-18 live-repro
+					# fix). This used to size the commit to land EXACTLY on the
+					# player's x — which is precisely the contact-radius bug
+					# CHASE_SEPARATION exists to close on the ground (see that
+					# constant's comment); a hop bypassed it completely, and a
+					# live capture's ~250px vertical gap between boss and player
+					# routes almost every engagement through this exact "player
+					# above" hop path. Shrinking the aim point by CHASE_SEPARATION
+					# still lands him on the same platform near the player for any
+					# realistically-sized ledge/gap — it just stops the landing
+					# itself from being the contact-kill.
+					var target_pdx: float = pdx
+					if pl and absf(pdx) > CHASE_SEPARATION:
+						target_pdx = pdx - signf(pdx) * CHASE_SEPARATION
+					elif pl:
+						target_pdx = 0.0
+					velocity.x = clampf(target_pdx / HOP_AIRTIME, -patrol_speed, patrol_speed)
 					_hop_cooldown = 0.7
 			if throw_timer <= 0:
 				_throw_dynamite()
@@ -452,7 +537,7 @@ func _physics_process(delta: float) -> void:
 			# so the fight was a series of safe windows joined by short chases.
 			# Slower than patrol so the throw still reads as a commitment, but
 			# never below a sprint.
-			_ground_chase(delta, maxf(patrol_speed * 0.72, MIN_CHASE_SPEED))
+			_ground_chase(delta, maxf(patrol_speed * 0.72, MIN_CHASE_SPEED), CHASE_SEPARATION)
 			if state_timer <= 0.0:
 				_begin_vulnerable()
 
@@ -483,7 +568,17 @@ func _physics_process(delta: float) -> void:
 			# keeps closing for the WHOLE window, lifting the cycle average to
 			# ~273 px/s — above sprint, so he gains ground on a running player.
 			# Ledge sense + arena clamp come free via _ground_chase.
-			_ground_chase(delta, VULNERABLE_DRIFT)
+			#
+			# VULNERABLE_SEPARATION wired 2026-08-18 (see its own comment): NOT a
+			# reintroduction of the reverted hard-freeze above — he still closes
+			# continuously at VULNERABLE_DRIFT for the entire approach, same as
+			# before, right up until 96px. Direct measurement
+			# (tests/claim_jumper_chase_separation_test.gd) caught the real gap
+			# this closes: with no floor at all here, a VULNERABLE window that
+			# ran its full course left him inherited at near-zero separation the
+			# instant PATROL resumed — contact-restart range, on the very first
+			# frame of the next chase state, every cycle.
+			_ground_chase(delta, VULNERABLE_DRIFT, VULNERABLE_SEPARATION)
 			_clamp_to_arena()
 			boss_sprite.modulate = Color(1.0, 0.3, 0.3, 1.0) if fmod(state_timer, 0.2) < 0.1 else Color(1.0, 0.1, 0.1, 1.0)
 			if state_timer <= 0.0:
