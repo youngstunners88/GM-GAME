@@ -3,6 +3,67 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/owner-rage-l1-music-boss1-carts-chase`
 
+**🎯 THE "BOSS WON'T GET PAST THIS POINT" BUG — FOUND AND MEASURED (2026-08-19,
+second pass).**
+
+You said it 20+ times and you were right every time. I finally measured the
+thing you were actually pointing at instead of the thing I assumed you meant.
+
+**The test:** park Lil Blunt at the edge of the arena — exactly what you do —
+and record where the boss stops. Result:
+
+| Boss | you stand at | boss stops dead at | gap | why |
+|---|---|---|---|---|
+| Stage 2 | 3730 | **3820** | 90px | his clamp limit, to the pixel |
+| Stage 3 | 3730 | **3856** | 126px | same |
+| Stage 1 | 2830 | **2905** | 75px | jammed on a hidden wall |
+
+Every arena had a **dead pocket at each end that the boss's body physically
+could not enter.** The clamp kept his whole BODY inside the arena — but you have
+no such restriction, so you could always stand somewhere he could never follow.
+He tracked you perfectly right up to an invisible line and then stopped. That is
+the screenshot you have sent me over and over.
+
+Stage 1 was a different blocker with the same shape: a hidden pickaxe-breakable
+**secret wall at x=2768** was caging him out of the western half of the stage.
+Level 1 has no arena seal on purpose (you asked for a full-stage hunt), so
+nothing was supposed to stop him — an easter egg was.
+
+**Fixes:** the clamp now holds his CENTRE inside the arena instead of his whole
+body, so he can reach anywhere you can; the Auditor walks through secret walls;
+and the ledge-check now asks "is the probe outside the arena?" instead of
+"am I at the clamp?", so it can't re-freeze him when the clamp moves.
+
+**After:** Stage 2's east-edge gap went 90px → **1px**. Stage 1's west gap
+75px → **29px**. Stage 3's 126px → 120px, and that last one is now his
+*tracking* standoff (he has to stop somewhere — touching you restarts the run),
+not a wall.
+
+**Also this pass:**
+- **All** of boss 2's attacks are faster now, not just some — the ETH-orb volley
+  went 170/210/250 → 250/310/370 px/s to match the crystal shards. The redirect
+  window is timed (0.35s), not distance-based, so the skill shot still works.
+- **The leaves are gone.** They were an adaptive-difficulty "hint leaf" that
+  switches on after repeated deaths and spawns at every level's start point —
+  which is exactly why they appeared "all of a sudden" in "each stage".
+- **Fullscreen button** (top-right, or press F). Being straight with you: the
+  blank space around the game is the itch.io **page embed size**, which is a
+  setting on your itch dashboard (Edit game → Embed options) — butler only
+  uploads the build, it cannot resize that frame. Rather than keep telling you
+  that, the game can now fill your whole monitor from a button. **If you also
+  raise the embed size on the itch page, set it to 1280×720 and tick the
+  fullscreen button option.**
+- **Pickaxe axe damage 4 → 6**, so a thrown pickaxe one-shots every ordinary
+  enemy.
+
+**Verified:** 49 gates pass; the 2 failures are pre-existing and unrelated (ICP
+endpoint offline in the build container, vault music drift). Security 18/18.
+
+**Honest gap:** measured headlessly against the real levels, not captured in a
+browser this pass.
+
+---
+
 **🎯 FORENSIC REPAIR PASS (2026-08-19) — found why the bosses look frozen, and
 it was never their speed.**
 

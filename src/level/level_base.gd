@@ -523,13 +523,28 @@ func _process(_delta: float) -> void:
 	if _seal_wall == null:
 		# 60px of clearance so the wall never spawns on top of the player.
 		if p.global_position.x > _seal_x + 60.0:
-			_seal_wall = _create_wall(_seal_x, 400, 20, 600)
+			_seal_wall = _create_wall(_seal_x, 400, 20, 600, true)
 	elif p.global_position.x < _seal_x - 40.0:
 		# Player is back outside (death + respawn at a western checkpoint):
 		# drop the wall so they can walk in and re-engage.
 		_seal_wall.queue_free()
 		_seal_wall = null
-		# ...AND TEAR THE FIGHT DOWN WITH IT. See _end_boss_fight().
+	# END THE FIGHT WHENEVER THE PLAYER IS OUTSIDE — NOT ONLY ON THE FRAME THE
+	# WALL COMES DOWN.
+	#
+	# This used to live inside the `elif` above, which made it conditional on
+	# `_seal_wall` currently existing. Two real ways that misses:
+	#   * the player triggers the boss but turns back west before ever crossing
+	#     `_seal_x + 60`, so the wall is never raised and the `elif` is never
+	#     reached at all;
+	#   * the wall came down on an earlier trip, leaving `_seal_wall` null, so a
+	#     second retreat re-enters the `if` branch instead.
+	# Either way the boss stayed alive with an unreachable target — the exact
+	# frozen-boss state this teardown exists to prevent. Checking the player's
+	# position directly is unconditional, and _end_boss_fight() is a no-op once
+	# the latch is already clear, so running it every frame while outside is
+	# cheap and idempotent.
+	if p.global_position.x < _seal_x - 40.0:
 		_end_boss_fight()
 
 ## THE "BOSS DOESN'T MOVE" SHARED ROOT CAUSE (2026-08-19 forensic pass).
@@ -580,9 +595,24 @@ func _end_boss_fight() -> void:
 
 ## Returns the wall so the boss-arena seal can take it back down again
 ## (existing callers ignore the return value).
-func _create_wall(x: float, y: float, w: float, h: float) -> StaticBody2D:
+## `player_only` walls collide with the player and nothing else.
+##
+## The boss-arena SEAL used a plain StaticBody2D on the default World layer, so
+## it blocked the BOSS as well as the player. That is the Stage 1 half of "the
+## boss cant get passed this point": the Auditor has no arena clamp at all, yet
+## a probe with the player parked at the arena's west edge (x=2830) measured him
+## hard-stopped at x=2905 — his body flush against the seal wall at 2800, 75px
+## short of the player, forever. The wall was caging the boss out of the very
+## pocket the player was standing in.
+##
+## Layer 8 (Player) is the only bit the player's own mask reads, so a
+## player-only wall still seals the player in while the boss can cross it.
+## Containing the BOSS is the arena clamp's job, not this wall's.
+func _create_wall(x: float, y: float, w: float, h: float, player_only: bool = false) -> StaticBody2D:
 	var wall := StaticBody2D.new()
 	wall.position = Vector2(x, y)
+	if player_only:
+		wall.collision_layer = 8
 	var col := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
 	shape.size = Vector2(w, h)
@@ -655,10 +685,22 @@ func _on_difficulty_ready() -> void:
 		var b: Vector2 = level_data.checkpoints[level_data.checkpoints.size() - 1]
 		EntitySpawner.spawn("checkpoint", (a + b) / 2.0 + Vector2(0, -4), self,
 			{"checkpoint_id": 90, "level_index": level_data.level_index})
-	# 3. Heavy retriers get a Hint Leaf: touch it and the route to the next
-	#    checkpoints glows for 5 seconds.
-	if DifficultyManager.hint_leaf:
-		_spawn_hint_leaf()
+	# 3. Hint Leaf — DISABLED (founder, 2026-08-19).
+	#
+	# "I noticed these leaves in the very 1st point of each stage all of a
+	# sudden. Remove them. They have no function."
+	#
+	# They were adaptive difficulty: DifficultyManager.hint_leaf turns on for
+	# players who die repeatedly, and _spawn_hint_leaf() drops a green weed leaf
+	# at player_spawn + (90,-20) which lights the checkpoint route for 5s. That
+	# explains both halves of his report — "all of a sudden" (it switched on
+	# after a run of deaths) and "in the very 1st point of EACH stage" (it is
+	# anchored to every level's spawn). To him it reads as an inert prop,
+	# because its one interaction is invisible until touched.
+	#
+	# The spawner is kept, not deleted, so the mechanic can be reinstated
+	# deliberately (with a readable tell) rather than rebuilt from scratch.
+	# Nothing else calls it, so it is simply never invoked today.
 
 ## Glowing leaf near spawn; on pickup, draws a dotted guide line through the
 ## level's checkpoints for 5s. A nudge, not a walkthrough.

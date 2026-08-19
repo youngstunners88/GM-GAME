@@ -166,6 +166,29 @@ func _ready() -> void:
 	hurt_shape.size = HURTBOX_SIZE
 	hitbox_shape.shape = hurt_shape
 	hitbox_shape.position = HURTBOX_CENTER
+	# WALK THROUGH THE PLAYER'S EASTER-EGG WALLS.
+	#
+	# Founder: "The 1st boss also doesnt move anymore even though he used to
+	# chase Lil Blunt". Level 1 deliberately has NO arena seal — this fight is a
+	# full-stage hunt by explicit founder request — so nothing was supposed to
+	# stop him. Measured instead, with the player parked at the arena's west edge
+	# (x=2830): the Auditor hard-stopped at centre x=2905 and never closed the
+	# last 75px.
+	#
+	# The blocker is a `secret_wall` at x=2768 (level_01_smoke_realm.gd places
+	# three: 468, 1368, 2768). It is a 32px StaticBody2D on collision_layer 1
+	# (World), and this boss's collision_mask is 13, which includes World — so his
+	# 220px body jams against it: 2784 (the wall's east face) + 110 (half body) =
+	# 2894, matching the 2905 measured. A hidden pickaxe-breakable easter egg was
+	# caging the boss out of the western half of the stage.
+	#
+	# Collision EXCEPTIONS rather than layer surgery: the wall must keep blocking
+	# the PLAYER (that is its whole purpose, and its layer is also how the pickaxe
+	# smash path finds it), so the only thing that changes is that this boss
+	# ignores it. A wall freed later (smashed) drops out of the list harmlessly.
+	for w in get_tree().get_nodes_in_group("secret_wall"):
+		if w is CollisionObject2D:
+			add_collision_exception_with(w)
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
 	# CONTACT DETECTION STAYS ON FOR THE WHOLE FIGHT.

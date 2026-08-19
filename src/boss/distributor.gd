@@ -645,12 +645,41 @@ func _hover_brake(delta: float) -> void:
 ## glued to the boundary with a saturated velocity, so the instant the player
 ## moved back into reach he still needed a full deceleration to unstick — he
 ## read as frozen.
+## Margin the boss's CENTRE keeps from the arena wall, in px.
+##
+## THIS REPLACED A HALF-BODY INSET, AND THAT INSET WAS THE "BOSS DOES NOT MOVE
+## BEYOND THIS POINT" BUG — reported by the founder 20+ times across many
+## sessions, and never once actually measured until now.
+##
+## The clamp used to keep the boss's whole BODY inside the arena
+## (`arena_min.x + BODY/2 .. arena_max.x - BODY/2`). The PLAYER has no such
+## restriction — he walks right up to the wall. So every arena had a dead
+## pocket at each end, half a body wide, that the player could stand in and the
+## boss could not advance into. Measured on the real levels with the player
+## parked at the arena edge:
+##
+##   Distributor (BODY 240): player at 3730, boss hard-stopped at 3820 — his
+##       exact clamp limit — leaving a 90px gap he could never close.
+##   Claim Jumper (BODY 280): player at 3730, boss stopped at 3856, 126px gap.
+##
+## He tracks correctly the whole way in (tracking score +0.57), then hits an
+## invisible line and stops dead. That is precisely the screenshot: player at
+## one end, boss parked at a fixed coordinate, "not moving beyond this point".
+## Every previous fix tuned speed/accel/standoff, none of which can move a boss
+## that a clamp is holding.
+##
+## Clamping the CENTRE (with a small margin, not half a body) still does the
+## job the clamp exists for — he cannot leave the fight or drift into a trench
+## — while letting him reach any x the player can reach. His body may now
+## overhang the arena edge by up to half a body, which is correct: the arena
+## boundary is where the FIGHT is, not a shelf his sprite must sit on.
+const ARENA_EDGE_MARGIN: float = 24.0
+
 func _clamp_to_arena() -> void:
 	if arena_max == Vector2.ZERO:
 		return
-	var half: float = BODY / 2.0
-	var lo_x: float = arena_min.x + half
-	var hi_x: float = maxf(lo_x, arena_max.x - half)
+	var lo_x: float = arena_min.x + ARENA_EDGE_MARGIN
+	var hi_x: float = maxf(lo_x, arena_max.x - ARENA_EDGE_MARGIN)
 	var centre: Vector2 = hit_centre()
 	var clamped_x: float = clampf(centre.x, lo_x, hi_x)
 	var clamped_y: float = clampf(centre.y, arena_min.y, arena_max.y)
@@ -827,7 +856,22 @@ func _throw_shards() -> void:
 		var spread := (float(i) - float(count - 1) / 2.0) * 0.22
 		var orb := ORB.instantiate()
 		orb.direction = base.rotated(spread)
-		orb.speed = 170.0 + 40.0 * (current_phase - 1)
+		# FOUNDER (2026-08-19): "I told you that all of the 2nd bosses attacks
+		# must be faster not just some!!!" The previous pass sped up only the
+		# crystal-shard barrage (_throw_crystal_shards) and deliberately left
+		# this ETH-orb volley alone to protect the Forced-Distribution redirect
+		# window. He is right that this is half a fix.
+		#
+		# 170/210/250 -> 250/310/370 px/s per phase (~47% faster), matching the
+		# uplift the crystal shards got.
+		#
+		# The redirect window survives because it is measured in TIME, not
+		# distance: boss_projectile.gd gates the flip on `_t <= unstable_time`
+		# (0.35s from spawn), so a faster orb has exactly the same 0.35s of
+		# redirectability — it simply covers more ground during it. The skill
+		# shot is unchanged in duration; it is now a tighter read, which is the
+		# point of "faster attacks".
+		orb.speed = 250.0 + 60.0 * (current_phase - 1)
 		# LONG RANGE (founder session 7: "the diamond bomb and shards don't reach
 		# Lil Blunt when he's far away"). At 170-250 px/s the default 4s lifetime
 		# only carried them 680-1000px — short of the ~1226px diagonal across the

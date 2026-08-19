@@ -273,6 +273,36 @@ var arena_max: Vector2 = Vector2.ZERO
 ## that actually has to stay inside the arena — is origin + this.
 const HALF_BODY: float = BODY / 2.0
 
+## Margin the boss's CENTRE keeps from the arena wall, in px.
+##
+## THIS REPLACED A HALF-BODY INSET, AND THAT INSET WAS THE "BOSS DOES NOT MOVE
+## BEYOND THIS POINT" BUG — reported by the founder 20+ times across many
+## sessions, and never once actually measured until now.
+##
+## The clamp used to keep the boss's whole BODY inside the arena
+## (`arena_min.x + BODY/2 .. arena_max.x - BODY/2`). The PLAYER has no such
+## restriction — he walks right up to the wall. So every arena had a dead
+## pocket at each end, half a body wide, that the player could stand in and the
+## boss could not advance into. Measured on the real levels with the player
+## parked at the arena edge:
+##
+##   Distributor (BODY 240): player at 3730, boss hard-stopped at 3820 — his
+##       exact clamp limit — leaving a 90px gap he could never close.
+##   Claim Jumper (BODY 280): player at 3730, boss stopped at 3856, 126px gap.
+##
+## He tracks correctly the whole way in (tracking score +0.57), then hits an
+## invisible line and stops dead. That is precisely the screenshot: player at
+## one end, boss parked at a fixed coordinate, "not moving beyond this point".
+## Every previous fix tuned speed/accel/standoff, none of which can move a boss
+## that a clamp is holding.
+##
+## Clamping the CENTRE (with a small margin, not half a body) still does the
+## job the clamp exists for — he cannot leave the fight or drift into a trench
+## — while letting him reach any x the player can reach. His body may now
+## overhang the arena edge by up to half a body, which is correct: the arena
+## boundary is where the FIGHT is, not a shelf his sprite must sit on.
+const ARENA_EDGE_MARGIN: float = 24.0
+
 func _clamp_to_arena() -> void:
 	if arena_max == Vector2.ZERO:
 		return
@@ -280,8 +310,8 @@ func _clamp_to_arena() -> void:
 	# the arena. Also zero the velocity pushing into the wall, otherwise he
 	# accelerates into the clamp every frame and has to unwind a saturated
 	# velocity before he can turn around — he reads as stuck.
-	var lo_x: float = arena_min.x + HALF_BODY
-	var hi_x: float = maxf(lo_x, arena_max.x - HALF_BODY)
+	var lo_x: float = arena_min.x + ARENA_EDGE_MARGIN
+	var hi_x: float = maxf(lo_x, arena_max.x - ARENA_EDGE_MARGIN)
 	var centre_x: float = global_position.x + HALF_BODY
 	var clamped_x: float = clampf(centre_x, lo_x, hi_x)
 	if not is_equal_approx(clamped_x, centre_x):
@@ -326,9 +356,23 @@ func _ledge_ahead(facing: float) -> bool:
 	# the arena is untouched.
 	if arena_max != Vector2.ZERO:
 		var centre_x: float = global_position.x + HALF_BODY
-		if facing > 0.0 and centre_x >= arena_max.x - HALF_BODY - 1.0:
-			return false
-		if facing < 0.0 and centre_x <= arena_min.x + HALF_BODY + 1.0:
+		# TEST THE PROBE POINT, NOT THE BOSS'S CURRENT POSITION.
+		#
+		# This used to ask "is my CENTRE at the clamp limit?" (originally
+		# HALF_BODY, briefly ARENA_EDGE_MARGIN). Both are the same mistake: they
+		# tie a question about GEOMETRY to a question about POSITION, so the
+		# moment the clamp margin changes the rule silently stops matching the
+		# ground it is describing. When the clamp widened from half-a-body to
+		# ARENA_EDGE_MARGIN, a boss standing anywhere in the newly-reachable
+		# strip probed past the arena edge, found no floor, and froze — the very
+		# freeze this block exists to prevent, just relocated inward.
+		#
+		# The real invariant: if the probe lands OUTSIDE the arena, it is asking
+		# about the boundary wall, and a wall is not a pit. Interior pits are
+		# untouched because their probe point is still inside the arena, so it
+		# falls through to the real raycast below.
+		var probe_x: float = centre_x + HALF_BODY * facing + LEDGE_PROBE_MARGIN * facing
+		if probe_x >= arena_max.x or probe_x <= arena_min.x:
 			return false
 	var space := get_world_2d().direct_space_state
 	# Cast from just above his feet, ahead of the body, straight down. Body is

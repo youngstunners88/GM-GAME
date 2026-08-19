@@ -79,8 +79,15 @@ const BIG_ART := "res://src/assets/sprites/sprite_item_bigaxe.png"
 ##   BIG AXE  8 dmg  | 2.6x | "bigaxe_impact"   | heavy shake  | hitstop    | PIERCES
 ## So the pickaxe reads as a solid miner's strike, and piercing + hitstop stay
 ## the big axe's exclusive signature.
+## FOUNDER FOLLOW-UP (2026-08-19): "The axe that Lil Blunt collects is now
+## bigger when thrown but it also needs to have more power against the enemies
+## when used." The size change landed; the power did not go far enough. 4 -> 6
+## so a pickaxe throw one-shots every ordinary enemy in the game (the toughest
+## non-boss has 3 HP), which is what "more power against the enemies" means in
+## practice. Boss damage stays deliberately lower than the big axe's (see
+## PICK_BOSS_DAMAGE) so the weapon ladder default < pickaxe < big axe holds.
 var heavy: bool = false
-const PICK_DAMAGE := 4
+const PICK_DAMAGE := 6
 const PICK_BOSS_DAMAGE := 2
 const PICK_SCALE := 1.5
 const PICK_SPEED_MULT := 1.08
