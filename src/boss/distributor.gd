@@ -898,7 +898,22 @@ func _throw_crystal_shards() -> void:
 		shard.direction = base.rotated(spread)
 		# Faster and non-homing: a straight-line barrage, not a tracking one —
 		# the counter-play is footwork, not waiting out a redirect window.
-		shard.speed = 260.0 + 50.0 * (current_phase - 1)
+		# FASTER CRYSTALS (founder, 2026-08-19: "Lets also make his crystal
+		# attacks faster"). 260/310/360 -> 380/450/520 px/s per phase, ~46%
+		# quicker, which is a real change in how hard the barrage is to walk
+		# out of rather than a cosmetic one.
+		#
+		# This is the ONE Distributor attack where raising speed is free: these
+		# shards are `redirectable = false` (see below), so they are not part of
+		# the Forced-Distribution mechanic. The redirect window that a previous
+		# session deliberately protected by extending LIFETIME instead of speed
+		# belongs to the ETH-orb volley in _throw_shards() — that attack's speed
+		# is untouched here, so the signature redirect skill-shot keeps exactly
+		# the timing it has today.
+		#
+		# Lifetime stays 5.0 s, so range grows 1300-1800 -> 1900-2600 px, still
+		# comfortably clearing the ~1226 px arena diagonal at every phase.
+		shard.speed = 380.0 + 70.0 * (current_phase - 1)
 		# Same long-range fix as the ETH-diamond volley (Kimi K3 s7): 260-360 px/s
 		# over the default 4s only reached 1040-1440px; 5s clears the ~1226px
 		# diagonal at every phase so the shards actually connect across the arena.
@@ -1156,7 +1171,25 @@ func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("take_damage"):
 		# SPAWN GRACE — see BossBase's own const block.
 		if is_spawn_grace_active():
-			return
+			# GRACE SWALLOWS THE ENTRY EVENT — RE-CHECK WHEN IT EXPIRES.
+			#
+			# `body_entered` fires exactly ONCE, on the frame the player first
+			# overlaps. Returning outright during spawn grace therefore did not
+			# DELAY the contact, it CANCELLED it: a player still standing inside
+			# the boss when grace ended was permanently immune to him, because no
+			# second entry event ever arrives while they remain inside. Caught by
+			# tests/boss_ghost_death_hurtbox_test.gd.
+			#
+			# Waiting out the remaining grace and then re-testing the REAL overlap
+			# keeps the intent (no instant wipe at spawn) without the loophole.
+			# Both nodes are re-validated after the wait since the scene can change.
+			var remaining: float = float(_spawn_grace_until_msec - Time.get_ticks_msec()) / 1000.0
+			if remaining > 0.0:
+				await get_tree().create_timer(remaining, true, false, true).timeout
+			if not is_instance_valid(self) or not is_instance_valid(body):
+				return
+			if not is_instance_valid(hitbox) or not hitbox.overlaps_body(body):
+				return
 		GameManager.last_damage_source = BOSS_ID
 		BossVoiceSystem.say(self, BOSS_ID, "mock")
 		# Founder stakes rule: ANY boss touch returns Lil Blunt to the START of

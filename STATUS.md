@@ -3,6 +3,87 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/owner-rage-l1-music-boss1-carts-chase`
 
+**🎯 FORENSIC REPAIR PASS (2026-08-19) — found why the bosses look frozen, and
+it was never their speed.**
+
+You sent a forensic-repair directive plus 11 screenshots. I built real
+instrumentation first instead of trusting the last session's conclusions
+(`tools/boss_ai_diagnostic.gd` + `tests/boss_chase_live_test.gd`): it drives a
+real kiting player through all three actual boss arenas and measures a
+**tracking score** — does the boss move the SAME direction as you (+1) or the
+opposite (−1)?
+
+**Baseline: Stage 1 scored −0.20. He was moving AWAY from you more often than
+toward you.** Stages 2 and 3 scored +0.56 and +0.39 — they track fine *as long
+as you are inside the arena*.
+
+**The shared root cause.** Measuring your own screenshots put Lil Blunt at world
+x≈3109 in the Stage 2 shot — **591 px OUTSIDE the arena (it starts at 3700)** —
+with the boss welded to his west wall at 3813. Every boss is hard-clamped inside
+his arena, but the entry wall drops when you walk back west, and nothing ended
+the fight. So the boss kept chasing a target he was structurally forbidden from
+reaching, and stood still. That is why ~10 previous speed/acceleration/standoff
+tunings all failed: **you cannot fix a boss whose target is outside his
+permitted world by making him faster.** It also explains "the final boss is way
+too easy" — a wall-pinned boss is a stationary target you can shoot from safety.
+Leaving the arena now ends the fight, so walking back in starts a clean one.
+
+**Stage 1 had three more real bugs**, all now fixed and confirmed by three
+independent models: his charge locked onto a SNAPSHOT of where you were and
+never updated (so he charged at old ground, or away from you if you reversed);
+his stagger used `move_toward(velocity.x, 0.0, 200.0)` with a missing `* delta`,
+which is a dead stop in two frames — instrumentation caught him parked at
+exactly x=3030.0 and x=3280.0 with zero velocity; and his periodic hop
+deliberately threw him AWAY from you every 6 seconds.
+
+**I also reverted my own last fix.** The standoff I added last session made him
+*retreat*, and a gate measured him travelling 217px while you travelled 360px —
+he was losing ground. Grok 4.6 and Qwen3 both objected, and your directive said
+exactly this ("standoff is NOT a substitute for correct pursuit"). Replaced with
+velocity-matching: 217 → 298px.
+
+**And the contradiction behind "can't approach him / too easy":** the Claim
+Jumper was the only boss whose instant-restart contact box was his *whole* 280px
+body — kill radius ~156px, **wider than the 96px his own damage window closes
+to**. The moment the fight invited you in was the moment standing there wiped
+your run. He now has a fair contact core (~103px).
+
+**Result — all 9 chase scenarios pass:**
+
+| Boss | tracking (was → now) | arena used (was → now) |
+|---|---|---|
+| Stage 1 Auditor | **−0.20 → +0.59** | 250px → 370px |
+| Stage 2 Distributor | +0.56 → +0.79 | full 460px |
+| Stage 3 Claim Jumper | +0.39 → +0.50 | 396 → 399px |
+
+**Also fixed:** boss 2 voice specifically quietened (−4 dB, per-boss now — the
+last pass wrongly moved the shared gain for all three); Gideon's voice was
+playing at 0 dB while everything else ran at +6/+9, now +9; crystal attacks
+380/450/520 px/s (up ~46%, and safe — it does not touch the orb-redirect
+window); the FORT KNOX ASSAY text raised clear of the pool plate (the real
+clash was vertical, which is why moving it sideways last time didn't work); the
+vertical shading box removed, circular shade kept and strengthened; and the
+**axe** — you were comparing the PICKAXE against the big axe, and the pickaxe
+was throwing a byte-identical DEFAULT axe. It now has a real middle tier
+(4 damage, 1.5× size, heavy impact SFX + shake), with pierce and hitstop still
+exclusive to the big axe.
+
+**NOT done this pass — being straight with you:** the screen-size/viewport item,
+the Stage 3 mountain seam, the Fort Knox "badly glued" background, and the Blaze
+Rush rectangle residue are **not started**. The multi-agent pass that was to
+cover them stopped when the Claude account hit its monthly spend limit (13 of 15
+agents failed mid-run). I identified the likely cause of the Blaze Rush purple
+rectangle (a full-screen background ColorRect showing through below the forest
+art) but did not implement it. The viewport item is mostly an itch.io page
+setting rather than something in this repo.
+
+**Still unverified in a browser:** these are headless-measured, not yet captured
+in a live web build this pass.
+
+Full audit: `docs/audits/2026-08-19-founder-fix-session/00-executive-summary.md`
+
+---
+
 **🎯 P0 BOSS-CHASE REPAIR (2026-08-19) — found the real mechanism behind the
 "stage 2/3 boss doesn't chase" reports, and it wasn't a chase problem.**
 You sent a "MULTI-MODEL BUG, VULNERABILITY & GAMEPLAY REPAIR PROTOCOL" doc

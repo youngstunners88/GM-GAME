@@ -529,6 +529,54 @@ func _process(_delta: float) -> void:
 		# drop the wall so they can walk in and re-engage.
 		_seal_wall.queue_free()
 		_seal_wall = null
+		# ...AND TEAR THE FIGHT DOWN WITH IT. See _end_boss_fight().
+		_end_boss_fight()
+
+## THE "BOSS DOESN'T MOVE" SHARED ROOT CAUSE (2026-08-19 forensic pass).
+##
+## Every boss is clamped STRICTLY INSIDE its own arena box (distributor and
+## claim_jumper via _clamp_to_arena; see each boss's own arena_min/arena_max).
+## The player, however, could be OUTSIDE that box while the fight was still
+## live — the seal above drops the moment they walk back west, but nothing
+## ended the fight, so the boss stayed alive, kept pursuing a target it was
+## structurally forbidden from reaching, and sat welded to its clamp.
+##
+## Measured, not assumed: photogrammetry on the founder's own Stage 2
+## screenshot puts Lil Blunt at world x~3109 — 591 px WEST of that arena's
+## start_x (3700) — while the Distributor sits at ~3813, i.e. pinned on his
+## west clamp (his reachable centre range is only [3820, 4280]). The Stage 1
+## shot shows the same shape: player retreated ~900 px west, boss never left
+## the arena mouth. That is exactly "THE BOSS IS NOT FUCKING MOVING": he
+## genuinely cannot, and no amount of speed/acceleration/standoff tuning
+## (this repo has ~10 such attempts recorded in comments) can fix a boss whose
+## target is outside his own permitted world.
+##
+## It also explains the companion complaint that the Stage 3 boss is "way too
+## easy to defeat": a wall-pinned boss is a stationary target that can be shot
+## from safety, outside his reach, indefinitely.
+##
+## The fix is to make the two rules stop contradicting each other. The fight is
+## only coherent while the player is inside the arena, so leaving it ENDS the
+## fight rather than freezing it: the boss is freed and the level's own
+## `_boss_arena_active` latch is cleared, so walking back in re-runs
+## `_on_boss_trigger` and starts a clean fight.
+##
+## This deliberately does NOT just re-seal the player in. The seal's drop
+## behaviour exists to prevent a real soft-lock — checkpoints sit WEST of every
+## arena, so a player who dies mid-fight respawns outside a wall that is
+## already up, permanently locked out of a fight they can neither finish nor
+## leave. Ending the fight preserves that escape hatch instead of trading one
+## trap for another.
+func _end_boss_fight() -> void:
+	# `_boss_arena_active` is declared on each concrete level script, not here,
+	# so it is cleared dynamically. get()/set() resolve it on the instance; the
+	# guard keeps this a no-op for any level that has no boss.
+	if get("_boss_arena_active") == null:
+		return
+	set("_boss_arena_active", false)
+	for boss in get_tree().get_nodes_in_group("boss"):
+		if is_instance_valid(boss):
+			boss.queue_free()
 
 ## Returns the wall so the boss-arena seal can take it back down again
 ## (existing callers ignore the return value).

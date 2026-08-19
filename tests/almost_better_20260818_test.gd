@@ -96,7 +96,39 @@ func _check_vo_volume() -> void:
 
 func _check_assay_sign_clear_of_panel() -> void:
 	var src := FileAccess.get_file_as_string("res://src/level/vault_realm.gd")
-	_check("Fort Knox Assay sign moved clear of the scale panel's footprint (x=1780, was 1960)",
-		src.find("Vector2(1780.0, SURFACE_Y - 300.0)") != -1)
+	# SUPERSEDED 2026-08-19. This used to pin the literal
+	# `Vector2(1780.0, SURFACE_Y - 300.0)`, which is exactly the layout the
+	# founder rejected a second time ("Raise the FORT KNOX ASSAY text ... no
+	# text should mask other text!!!"): the 2026-08-18 sideways move cleared
+	# the scale panel and then collided with the 2888-day pool plate instead.
+	# Asserting a magic coordinate also meant the test PASSED while the screen
+	# was visibly broken. It now asserts the real invariant — the sign's band
+	# and the pool plate's band must not intersect — so any future reposition
+	# is judged on whether it actually separates the text.
+	var sign_y: float = _parse_sign_offset(src)
+	# Sign: font 26, outlined -> ~35px line height, 3 lines.
+	var sign_top: float = 600.0 - sign_y          # SURFACE_Y is 600.0
+	var sign_bottom: float = sign_top + 3.0 * 35.0
+	# 2888 pool plate: _setup_altar("long", 1720) places it at altar-local
+	# (-160, -200) => world y = SURFACE_Y - 200, font 34 -> ~43px tall.
+	var plate_top: float = 600.0 - 200.0
+	var plate_bottom: float = plate_top + 43.0
+	var overlaps: bool = sign_top < plate_bottom and plate_top < sign_bottom
+	_check("Fort Knox Assay sign does not overlap the 2888-day pool plate (sign %.0f..%.0f vs plate %.0f..%.0f)"
+			% [sign_top, sign_bottom, plate_top, plate_bottom],
+		not overlaps, "bands intersect")
+
+## Reads the literal N out of `sign.position = Vector2(<x>, SURFACE_Y - N)`.
+func _parse_sign_offset(src: String) -> float:
+	var marker := "sign.position = Vector2("
+	var i := src.find(marker)
+	if i == -1:
+		return -1.0
+	var seg := src.substr(i, 120)
+	var dash := seg.find("SURFACE_Y - ")
+	if dash == -1:
+		return -1.0
+	var tail := seg.substr(dash + 12, 12)
+	return float(tail)
 	_check("Fort Knox Assay sign wrapped to short lines (was one long unwrapped line)",
 		src.find("FORT KNOX ASSAY —\\nWEIGH IT. STAKE IT.\\n100-DAY MINERS ONLY.") != -1)

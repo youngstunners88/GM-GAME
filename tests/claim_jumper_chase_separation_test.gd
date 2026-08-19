@@ -15,19 +15,24 @@ extends Node
 ## contact radius — while he is in PATROL/THROW, the two states the live
 ## capture actually caught (state=0/PATROL at the moment of contact).
 ##
-## VULNERABLE is DELIBERATELY excluded from this gate's measurement. It has
-## its own unresolved tension (the player must enter melee/axe range to damage
-## him there, and his Hitbox reuses the full BODY collision shape, so "close
-## enough to hit" and "close enough to die on contact" are not yet
-## disentangled) — see STATUS.md for why that is left as an open follow-up
-## rather than patched here alongside the confirmed PATROL/THROW bug.
+## VULNERABLE is excluded from the measurement because it is the damage
+## window: the player is SUPPOSED to close in there. That used to be an
+## unresolved contradiction (his contact hitbox was the full 280px body, kill
+## radius ~156px, wider than the 96px his own vulnerable window closes to — so
+## "close enough to hit him" was also "close enough to lose the run"). It is
+## resolved as of 2026-08-19: his hitbox is now a trimmed contact core
+## (~103px kill radius), measured live below rather than assumed.
 ##
 ## Run: godot --headless res://tests/claim_jumper_chase_separation_test.tscn
 
 const LEVEL_PATH := "res://src/level/level_03_gold_rush.tscn"
 ## HALF_BODY(140) + a generous player half-width — anything below this is
 ## real body-overlap range, i.e. exactly what boss_contact_restart() fires on.
-const CONTACT_RADIUS := 150.0
+## Measured from the boss's REAL contact hitbox at runtime rather than
+## hardcoded, so this gate cannot drift out of sync with the shape the game
+## actually uses (it was hardcoded to 150 while the hitbox was the full 280px
+## body, and is now a trimmed contact core — see claim_jumper.gd's _ready).
+var CONTACT_RADIUS := 150.0
 
 var _fail: int = 0
 
@@ -81,15 +86,18 @@ func _run() -> void:
 	var hb := boss.get_node_or_null("Hitbox")
 	if hb != null:
 		hb.set_deferred("monitoring", false)
+		# Derive the real kill radius: half the contact shape's width plus the
+		# player's ~16px half-width.
+		var hbs := hb.get_node_or_null("CollisionShape2D")
+		if hbs != null and hbs.shape is RectangleShape2D:
+			CONTACT_RADIUS = (hbs.shape as RectangleShape2D).size.x * 0.5 + 16.0
+			_info("measured contact kill radius from the live hitbox", "%.0f px" % CONTACT_RADIUS)
 
 	# STATIONARY player — the exact real-browser repro condition. No dodging,
 	# no kiting: if the boss has any standoff at all, this is where it shows.
-	# PATROL/THROW only. VULNERABLE (State enum value 2) is a SEPARATE, known
-	# tension — the player must enter melee/axe range to damage him there,
-	# which is not disentangled from his own body-contact hitbox in this pass
-	# (his Hitbox reuses the full BODY collision shape) — see STATUS.md. This
-	# gate covers exactly what CHASE_SEPARATION/the hop fix changed: the
-	# aggressive pursuit states a live capture caught causing the loop.
+	# PATROL/THROW only (VULNERABLE, State enum value 2, is the damage window —
+	# closing in there is intended). This gate covers the aggressive pursuit
+	# states the live capture caught causing the restart loop.
 	# CONSECUTIVE-FRAME streak, not a bare minimum. A heavy, eased character
 	# (WALK_ACCEL/TURN_DECEL, not an instant velocity clamp) legitimately
 	# overshoots a standoff target for a handful of physics frames when a
@@ -133,12 +141,11 @@ func _run() -> void:
 	# not a bounded transient. Before ANY of this pass's fixes he converged to
 	# ~30px and STAYED there for effectively the entire fight — a streak
 	# spanning virtually the whole 5s/300-frame window. Measured post-fix:
-	# ~34 frames (0.57s), from VULNERABLE_SEPARATION's own braking overshoot
-	# recovering into PATROL's wider CHASE_SEPARATION — a real, bounded
-	# transient, not a persistent camp. 90 frames (1.5s) is generous headroom
-	# above that measured recovery time while remaining nowhere close to the
-	# pre-fix, effectively-unbounded streak — so this still fails hard if a
-	# future change reintroduces genuine camping.
+	# a bounded transient while he eases out of VULNERABLE's smaller 96px floor
+	# back to PATROL's wider CHASE_SEPARATION — not a persistent camp. 90 frames
+	# (1.5s) is generous headroom above that recovery while remaining nowhere
+	# near the pre-fix, effectively-unbounded streak, so this still fails hard
+	# if a future change reintroduces genuine camping.
 	_check("boss does not CAMP inside his own contact radius (max_contact_streak=%d frames, bar <90)" % max_contact_streak,
 		max_contact_streak < 90, "max_contact_streak=%d frames (%.2fs)" % [max_contact_streak, max_contact_streak / 60.0])
 	_check("boss holds at roughly CHASE_SEPARATION against a stationary player (last_patrol_dist=%.0f)" % last_patrol_dist,

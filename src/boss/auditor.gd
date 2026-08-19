@@ -92,6 +92,12 @@ const WALK_ACCEL: float = 560.0
 const TURN_DECEL: float = 1300.0
 ## Horizontal slack before he commits to a new facing, in px.
 const TURN_DEAD_ZONE: float = 34.0
+## Speed he keeps while VULNERABLE — half a sprint (player top speed is 240),
+## so his damage window is the slowest he ever gets without being a dead stop.
+## Mirrors distributor.gd's and claim_jumper.gd's constants of the same name;
+## this boss was the only one of the three still hard-braking to zero there.
+## See the VULNERABLE branch in _physics_process for the measured symptom.
+const VULNERABLE_DRIFT: float = 120.0
 ## Shared screen-anchored bar (src/ui/boss_health_bar.gd). Named with a leading
 ## underscore because this boss does NOT extend BossBase — it has no inherited
 ## `health_bar` member to match, and shadowing an inherited member is the exact
@@ -248,9 +254,23 @@ func _physics_process(delta: float) -> void:
 			if hop_timer <= 0.0:
 				hop_timer = 6.0 if phase < 3 else 3.5
 				velocity.y = -300.0
-				# Blend, don't slam: keep most of his current momentum so the
-				# reposition reads as a skip rather than a teleport-and-reverse.
-				velocity.x = lerpf(velocity.x, -patrol_direction * 150.0, 0.45)
+				# THE HOP NO LONGER THROWS HIM BACKWARDS.
+				#
+				# This used to blend toward `-patrol_direction * 150.0` — i.e.
+				# AWAY from the side he is currently chasing. Since
+				# `patrol_direction` is set from the player's bearing in PATROL,
+				# that meant every 6 s (3.5 s in phase 3) he deliberately hopped
+				# away from Lil Blunt. Grok 4.6 flagged it as sufficient on its
+				# own to drive a NEGATIVE tracking score, which is exactly what
+				# instrumentation measured (-0.20: moving opposite the player
+				# more often than with them).
+				#
+				# It stays a reposition — a vertical skip that sheds some
+				# horizontal speed so it reads as a hop rather than a sprint —
+				# but it no longer reverses his pursuit. Damping to 45% of
+				# current velocity keeps the "skip" feel the original comment
+				# wanted without the retreat.
+				velocity.x = velocity.x * 0.45
 			if state_timer <= 0.0:
 				state_timer = 1.4
 				current_state = State.CHARGE
@@ -259,8 +279,44 @@ func _physics_process(delta: float) -> void:
 					charge_target = p.global_position
 
 		State.CHARGE:
-			var dir := global_position.direction_to(charge_target)
-			velocity.x = dir.x * charge_speed
+			# RE-READ THE LIVE PLAYER EVERY FRAME. `charge_target` used to be a
+			# snapshot taken once on entry to CHARGE (see the PATROL branch
+			# above) and never refreshed, so a 1.4 s charge against a player
+			# sprinting at 240 px/s arrived up to ~336 px behind where they now
+			# were — and if they had reversed past him, he charged AWAY from
+			# them. Instrumentation caught this as a NEGATIVE tracking score
+			# (-0.20: he moved opposite the player more often than with them)
+			# while both other bosses scored +0.4..+0.8 on the same harness.
+			# That is the founder's "the 1st boss cant get passed this point":
+			# he commits to stale ground, then re-commits to stale ground.
+			#
+			# This is a re-aim, not a homing missile: he still only steers with
+			# `charge_speed` for a bounded `state_timer`, and the repo's own
+			# boss-chase rule ("re-read the LIVE player position every frame,
+			# never a stale snapshot") is what he was violating.
+			var live := get_tree().get_first_node_in_group("player")
+			if live:
+				charge_target = (live as Node2D).global_position
+			# AIM FROM THE BODY CENTRE, AND STEER ON THE HORIZONTAL DELTA ONLY.
+			# Two further defects found by Grok 4.6 reviewing this file:
+			#
+			#  1. `global_position` is this node's TOP-LEFT (collision sits at
+			#     +BODY/2), so charging "at" the player from the origin biased
+			#     every charge ~110 px EAST of where he visibly is.
+			#  2. `direction_to()` returns a 2D-NORMALIZED vector, so the
+			#     horizontal component was scaled down by the vertical gap: a
+			#     player standing above him (he leaps when they are >90 px up)
+			#     could shrink dir.x toward zero, making a full-commitment
+			#     charge crawl horizontally — or, combined with (1), point the
+			#     wrong way entirely.
+			#
+			# Steering on signf(dx) from the centre gives a charge that always
+			# commits at full `charge_speed` toward the player's actual side.
+			# The charge is still bounded by `state_timer` and still ends on a
+			# wall, so this makes it correct, not unfair.
+			var centre_x: float = global_position.x + BODY / 2.0
+			var cdx: float = charge_target.x - centre_x
+			velocity.x = signf(cdx) * charge_speed if absf(cdx) > TURN_DEAD_ZONE else 0.0
 			velocity.y += 980.0 * delta
 			move_and_slide()
 			if state_timer <= 0.0 or is_on_wall():
@@ -270,7 +326,31 @@ func _physics_process(delta: float) -> void:
 				hitbox.monitorable = true
 
 		State.VULNERABLE:
-			velocity.x = move_toward(velocity.x, 0.0, 200.0)
+			# HE KEEPS CLOSING WHILE EXPOSED — the same fix distributor.gd
+			# (VULNERABLE_DRIFT) and claim_jumper.gd already carry, which the
+			# Auditor never received.
+			#
+			# The old line was `move_toward(velocity.x, 0.0, 200.0)` — note the
+			# MISSING `* delta`. move_toward's third argument is a per-call
+			# delta, so at 60 fps that bled 200 px/s of speed EVERY FRAME
+			# (12000 px/s^2): he did not decelerate, he stopped dead within two
+			# frames and then stood perfectly still for the whole window.
+			# Instrumentation caught him parked at exactly x=3030.0 and x=3280.0
+			# with vx=0.000 for seconds at a time — the literal "cant get passed
+			# this point" the founder screenshotted.
+			#
+			# He now drifts toward the player at half a sprint (player top speed
+			# is 240 px/s), so the damage window is still the slowest he ever
+			# gets and still clearly readable, but it is no longer a free escape
+			# — and, critically, it is no longer a dead stop at a fixed
+			# coordinate.
+			var vuln_target := get_tree().get_first_node_in_group("player")
+			var drift_dir := 0.0
+			if vuln_target:
+				var vdx: float = (vuln_target as Node2D).global_position.x - (global_position.x + BODY / 2.0)
+				if absf(vdx) > TURN_DEAD_ZONE:
+					drift_dir = signf(vdx)
+			velocity.x = move_toward(velocity.x, VULNERABLE_DRIFT * drift_dir, WALK_ACCEL * delta)
 			velocity.y += 980.0 * delta
 			move_and_slide()
 			sprite.modulate = Color(1.0, 0.3, 0.3, 1.0) if fmod(state_timer, 0.3) < 0.15 else Color(1.0, 0.1, 0.1, 1.0)
@@ -502,7 +582,25 @@ func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("take_damage"):
 		# SPAWN GRACE — see this file's own const block above.
 		if is_spawn_grace_active():
-			return
+			# GRACE SWALLOWS THE ENTRY EVENT — RE-CHECK WHEN IT EXPIRES.
+			#
+			# `body_entered` fires exactly ONCE, on the frame the player first
+			# overlaps. Returning outright during spawn grace therefore did not
+			# DELAY the contact, it CANCELLED it: a player still standing inside
+			# the boss when grace ended was permanently immune to him, because no
+			# second entry event ever arrives while they remain inside. Caught by
+			# tests/boss_ghost_death_hurtbox_test.gd.
+			#
+			# Waiting out the remaining grace and then re-testing the REAL overlap
+			# keeps the intent (no instant wipe at spawn) without the loophole.
+			# Both nodes are re-validated after the wait since the scene can change.
+			var remaining: float = float(_spawn_grace_until_msec - Time.get_ticks_msec()) / 1000.0
+			if remaining > 0.0:
+				await get_tree().create_timer(remaining, true, false, true).timeout
+			if not is_instance_valid(self) or not is_instance_valid(body):
+				return
+			if not is_instance_valid(hitbox) or not hitbox.overlaps_body(body):
+				return
 		GameManager.last_damage_source = BOSS_ID
 		BossVoiceSystem.say(self, BOSS_ID, "mock")
 		# Founder stakes rule: ANY boss touch returns Lil Blunt to the START of

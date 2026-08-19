@@ -99,12 +99,29 @@ var _gideon_hint: Label = null
 ## Play a vault character's VO clip (Mira / Gideon). Fire-and-forget: builds a
 ## throwaway AudioStreamPlayer that frees itself when the line finishes.
 ## Voices generated via ElevenLabs (see docs/model-responses + STATUS voice note).
-func _play_vo(path: String) -> void:
+## Gain for vault NPC dialogue.
+##
+## Founder: "Make Gideon's voice louder". Root cause found by comparing every
+## voice path in the game rather than by guessing at the mp3s: this function
+## built a bare AudioStreamPlayer and never set `volume_db`, so Gideon and Mira
+## played at the Godot default of 0 dB — while AudioManager.play_voice (the
+## announcer) and play_bark (Lil Blunt) both run at +6 dB and BossVoiceSystem
+## runs at +9 dB. The vault NPCs were the QUIETEST voices in the game by 6-9 dB,
+## which is why he could not make Gideon out.
+##
+## Deliberately per-source, not a global mix change: the founder simultaneously
+## reports the Stage 2 BOSS is too loud, so raising the whole mix would make
+## that complaint worse. +9 puts these NPCs level with boss dialogue, which is
+## the right tier for a character who is speaking directly to the player.
+const NPC_VOICE_DB := 9.0
+
+func _play_vo(path: String, gain_db: float = NPC_VOICE_DB) -> void:
 	if not ResourceLoader.exists(path):
 		return
 	var p := AudioStreamPlayer.new()
 	p.stream = load(path)
 	p.bus = "Master"
+	p.volume_db = gain_db
 	add_child(p)
 	p.play()
 	p.finished.connect(p.queue_free)
@@ -1041,7 +1058,35 @@ func _setup_fort_knox_depth() -> void:
 	# and starting at the old 1960 would still just clip the scale panel's
 	# left edge (~2190). 1780 keeps every line's right edge comfortably
 	# short of it.
-	sign.position = Vector2(1780.0, SURFACE_Y - 300.0)
+	# FIX-07 (founder, 2026-08-19, ANGRY REPEAT ASK): "Raise the 'FORT KNOX
+	# ASSAY - WEIGH IT. STAKE IT. 100-DAY MINERS ONLY' TEXT ... no text should
+	# mask other text!!!"
+	#
+	# The 2026-08-18 attempt above (x 1960 -> 1780 + wrap to 3 lines) fixed the
+	# collision with the Assay Scale's PANEL and then collided with something
+	# else instead — which is why he is asking again. The real conflict is
+	# VERTICAL, against the 2888-day pool plate, and moving sideways could never
+	# have solved it. Measured from the actual node placements:
+	#
+	#   this sign      x 1780..~2070, at y = SURFACE_Y - 300 = 300
+	#                  font 26 outlined -> real line height ~35px, 3 lines
+	#                  => occupied band y 300..~405
+	#   2888 pool plate  _setup_altar("long", 1720) places its plate at
+	#                  altar-local (-160, -200) => world x 1560..~2160,
+	#                  y = SURFACE_Y - 200 = 400, font 34 => band y 400..~443
+	#
+	# Bands 300..405 and 400..443 INTERSECT, and the x ranges overlap almost
+	# completely (1780..2070 sits inside 1560..2160). That is exactly the
+	# "FORT KNOX ASSAY / WEIGH IT. STAKE IT. / 100-DAY MINERS ONLY" block
+	# printing through "2888-DAY POOL - PRIMARY (2x)" in his screenshot.
+	#
+	# Raised to SURFACE_Y - 430 = 170, so the sign occupies y 170..~275 and
+	# clears the pool plate's top edge (400) by ~125px. Cross-checked against
+	# the other two labels that share this hall:
+	#   Assay Scale title  x ~2200..2560 (HALL_CX 2380 +/- 180) -> no x overlap
+	#   Security Sentinel  x ~1150..1450 (guard at 1300)        -> no x overlap
+	# so raising it cannot introduce a new collision the way the sideways move did.
+	sign.position = Vector2(1780.0, SURFACE_Y - 430.0)
 	style_label(sign, 26)
 	add_child(sign)
 
@@ -1127,18 +1172,21 @@ func _build_gold_scale(parent: Node2D, diamonds: bool, interactive: bool = false
 	#   labels  y  40   (span   40..~130)
 	#   values  y 140   (span  140..~230)
 	#   hint    y 245   (span  245..~335)
-	var panel := ColorRect.new()
-	panel.color = Color(0.05, 0.06, 0.10, 0.90) if diamonds else Color(0.12, 0.08, 0.03, 0.92)
-	panel.size = Vector2(380, 680)
-	panel.position = Vector2(-190, -330)
-	panel.z_index = -3
-	parent.add_child(panel)
-	var edge := ColorRect.new()
-	edge.color = _fg()
-	edge.size = Vector2(360, 6)
-	edge.position = Vector2(-180, -330)
-	edge.z_index = -2
-	parent.add_child(edge)
+	# FIX-08 (founder, 2026-08-19): "Remove the vertical rectangle shading box.
+	# Just keep the circular shade by the scale as it will suffice in creating
+	# the necessary colour contrast."
+	#
+	# The removed nodes were a 380x680 ColorRect at (-190,-330) plus its 360x6
+	# top trim — that tall dark slab IS the "vertical rectangle" in his
+	# screenshot. It was added to stop labels fighting the busy gold backdrop,
+	# and he is explicitly accepting that trade: the circular halo below (a
+	# Polygon2D disc behind the scale art) is the contrast device he wants kept.
+	#
+	# Readability is preserved without the slab because every label in this
+	# instrument goes through style_label(), which applies a black outline —
+	# the panel was belt-and-braces on top of that, not the only thing making
+	# the text legible. The halo is strengthened (see below) to keep anchoring
+	# the instrument now that it is the only backing element.
 
 	# 1) Title (top band, y -310).
 	var title := Label.new()
@@ -1154,11 +1202,16 @@ func _build_gold_scale(parent: Node2D, diamonds: bool, interactive: bool = false
 	#    instrument, not backdrop clutter. Well clear of title above / labels below.
 	var art := "res://src/assets/art/vaults/gold_scale.png"
 	if ResourceLoader.exists(art):
+		# THE circular shade the founder chose to keep (FIX-08). Now that the
+		# rectangular backing panel is gone this is the instrument's only
+		# contrast device, so it is bigger (140 -> 175) and less transparent
+		# (0.16 -> 0.34) — still a soft disc, not a second box, and still
+		# comfortably inside the 380px-wide footprint the panel used to occupy.
 		var halo := Polygon2D.new()
-		halo.polygon = _circle_points(140.0, 28)
-		halo.color = Color(_fg().r, _fg().g, _fg().b, 0.16)
+		halo.polygon = _circle_points(175.0, 32)
+		halo.color = Color(_fg().r * 0.25, _fg().g * 0.22, _fg().b * 0.18, 0.34)
 		halo.position = Vector2(0, -100)
-		halo.z_index = -1
+		halo.z_index = -3
 		parent.add_child(halo)
 		var spr := Sprite2D.new()
 		var tex: Texture2D = load(art)

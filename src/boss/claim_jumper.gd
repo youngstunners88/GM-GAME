@@ -160,6 +160,10 @@ const TURN_DEAD_ZONE: float = 34.0
 const SURGE_INTERVAL: float = 3.2
 const SURGE_DURATION: float = 0.65
 const SURGE_SPEED_MULT: float = 1.6
+## Last known player x, sampled at the end of each _ground_chase frame. Used to
+## derive the player's own velocity so the standoff can MATCH it rather than
+## stopping or reversing — see the velocity-matching block in _ground_chase.
+var _last_player_x: float = 0.0
 var _surge_t: float = 0.0
 var _surge_active: bool = false
 ## Clears ~196px at gravity 980 — same envelope the Auditor uses.
@@ -205,7 +209,34 @@ func _ready() -> void:
 	# exposed to that bug — keep it that way rather than "fixing" it to match
 	# the other two and reintroducing the exact defect just patched there.
 	hitbox.position = Vector2(BODY / 2.0, BODY / 2.0)
-	hitbox_shape.shape = collision.shape
+	# CONTACT CORE, NOT THE WHOLE BODY (2026-08-19).
+	#
+	# This was `hitbox_shape.shape = collision.shape` — the contact Area2D
+	# literally SHARED the 280x280 physics box. He was the only one of the
+	# three bosses doing that: auditor.gd and distributor.gd both give their
+	# hitbox a trimmed shape (HURTBOX_SIZE/HURTBOX_CENTER) rather than the full
+	# body box.
+	#
+	# Why it matters here specifically: boss contact is
+	# GameManager.boss_contact_restart(), an INSTANT full-run wipe. With a
+	# 280-wide contact box his kill radius is ~140 + the player's ~16 half-width
+	# = ~156 px from his centre — LARGER than the VULNERABLE_SEPARATION (96) his
+	# own damage window deliberately closes to. So the one moment the fight
+	# tells the player to step in and attack was also the moment standing there
+	# wiped the run. That contradiction is why every separation value tried so
+	# far either camped him inside contact range or stopped him chasing.
+	#
+	# A 0.62 x 0.78 core (174 x 218, centred) drops the kill radius to ~87+16 =
+	# ~103 px, comfortably inside the vulnerable-window standoff, so "close
+	# enough to hit him" is no longer "close enough to lose the run". The
+	# founder's rule is intact — touching the Claim Jumper still restarts the
+	# stage — it now means touching HIM rather than the empty air around his
+	# cart. Sharing `collision.shape` was also an aliasing hazard: both nodes
+	# pointed at ONE RectangleShape2D resource, so resizing either would have
+	# silently resized the other.
+	var contact_core := RectangleShape2D.new()
+	contact_core.size = Vector2(BODY * 0.62, BODY * 0.78)
+	hitbox_shape.shape = contact_core
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
 	boss_display_name = "The Claim Jumper"
@@ -419,13 +450,50 @@ func _ground_chase(delta: float, speed: float, min_separation: float = 0.0) -> b
 	# a boss that only ever stops closing, never backs off, converges to
 	# melee range the first time anything (a hop, a VULNERABLE cycle, a wall
 	# clamp) carries him inside the standoff once.
-	if have_player and min_separation > 0.0:
-		var gap: float = absf(dx)
-		if gap < min_separation:
-			var away_dir: float = -signf(dx) if not is_zero_approx(dx) else -direction
-			target_vx = speed * away_dir
-		elif is_equal_approx(gap, min_separation):
-			target_vx = 0.0
+	# HOLD STATION — DO NOT RETREAT (2026-08-19 correction to my own previous fix).
+	#
+	# The version shipped in the previous commit actively drove him AWAY at full
+	# `speed` whenever he was inside `min_separation`. Three independent reviews
+	# (Grok 4.6, Qwen3, and the founder's own repair directive: "DO NOT 'fix'
+	# boss chase by ONLY ADDING STANDOFF ... It is NOT a substitute for correct
+	# pursuit") plus a real gate all landed on the same objection, and the gate
+	# put a number on it: tests/s6_boss_projectile_chase_test measured him
+	# travelling only 217 px in 6 s while chasing a player who moved ~360 px.
+	# He was not holding a standoff, he was LOSING GROUND — every time he
+	# touched the separation band he reversed to full speed and then had to
+	# re-accelerate from a stop, so a retreating player steadily outran him.
+	# On screen that is indistinguishable from "the boss doesn't chase".
+	#
+	# Stopping (rather than reversing) still prevents the instant-restart body
+	# contact this separation exists for, but costs him no ground: he sits at
+	# the edge of the band and resumes closing the moment the player moves off.
+	if have_player and min_separation > 0.0 and absf(dx) < min_separation:
+		# MATCH THE PLAYER'S VELOCITY, don't stop and don't reverse.
+		#
+		# Stopping dead and reversing both fail, for opposite reasons, and both
+		# were measured rather than argued:
+		#   reverse at full speed -> he loses ground every time he clips the
+		#       band and a fleeing player steadily outruns him (s6 gate: 217 px
+		#       of boss travel against ~360 px of player travel).
+		#   stop dead            -> he cannot re-open a gap he is already
+		#       inside (e.g. carried in by the VULNERABLE window's own smaller
+		#       96 px floor), so he camps at ~74 px, well inside his own
+		#       instant-restart contact radius (separation gate: a 2.05 s camp).
+		#
+		# Holding the player's OWN velocity keeps the gap constant instead: he
+		# travels exactly as far as they do, so he never falls behind, and he
+		# never closes into a contact-kill either. A gentle outward bias is
+		# added only when he is WELL inside the band, which is the only case
+		# that actually needs correcting, and at a fraction of chase speed so
+		# it never reads as fleeing.
+		var player_vx: float = (pl as Node2D).global_position.x - _last_player_x
+		player_vx = player_vx / maxf(delta, 0.0001)
+		target_vx = clampf(player_vx, -speed, speed)
+		if absf(dx) < min_separation * 0.6:
+			target_vx += -signf(dx) * speed * 0.25
+			target_vx = clampf(target_vx, -speed, speed)
+	if have_player:
+		_last_player_x = (pl as Node2D).global_position.x
 	var rate: float = (TURN_DECEL
 		if signf(target_vx) != signf(velocity.x) and not is_zero_approx(velocity.x)
 		else WALK_ACCEL)
@@ -729,7 +797,25 @@ func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("take_damage"):
 		# SPAWN GRACE — see BossBase's own const block.
 		if is_spawn_grace_active():
-			return
+			# GRACE SWALLOWS THE ENTRY EVENT — RE-CHECK WHEN IT EXPIRES.
+			#
+			# `body_entered` fires exactly ONCE, on the frame the player first
+			# overlaps. Returning outright during spawn grace therefore did not
+			# DELAY the contact, it CANCELLED it: a player still standing inside
+			# the boss when grace ended was permanently immune to him, because no
+			# second entry event ever arrives while they remain inside. Caught by
+			# tests/boss_ghost_death_hurtbox_test.gd.
+			#
+			# Waiting out the remaining grace and then re-testing the REAL overlap
+			# keeps the intent (no instant wipe at spawn) without the loophole.
+			# Both nodes are re-validated after the wait since the scene can change.
+			var remaining: float = float(_spawn_grace_until_msec - Time.get_ticks_msec()) / 1000.0
+			if remaining > 0.0:
+				await get_tree().create_timer(remaining, true, false, true).timeout
+			if not is_instance_valid(self) or not is_instance_valid(body):
+				return
+			if not is_instance_valid(hitbox) or not hitbox.overlaps_body(body):
+				return
 		GameManager.last_damage_source = BOSS_ID
 		BossVoiceSystem.say(self, BOSS_ID, "mock")
 		# Founder stakes rule: ANY boss touch returns Lil Blunt to the START of
