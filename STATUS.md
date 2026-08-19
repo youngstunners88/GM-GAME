@@ -1,7 +1,363 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/owner-rage-20260818-regressions`
+**Branch:** `claude/owner-rage-l1-music-boss1-carts-chase`
+
+**🎯 THE "BOSS WON'T GET PAST THIS POINT" BUG — FOUND AND MEASURED (2026-08-19,
+second pass).**
+
+You said it 20+ times and you were right every time. I finally measured the
+thing you were actually pointing at instead of the thing I assumed you meant.
+
+**The test:** park Lil Blunt at the edge of the arena — exactly what you do —
+and record where the boss stops. Result:
+
+| Boss | you stand at | boss stops dead at | gap | why |
+|---|---|---|---|---|
+| Stage 2 | 3730 | **3820** | 90px | his clamp limit, to the pixel |
+| Stage 3 | 3730 | **3856** | 126px | same |
+| Stage 1 | 2830 | **2905** | 75px | jammed on a hidden wall |
+
+Every arena had a **dead pocket at each end that the boss's body physically
+could not enter.** The clamp kept his whole BODY inside the arena — but you have
+no such restriction, so you could always stand somewhere he could never follow.
+He tracked you perfectly right up to an invisible line and then stopped. That is
+the screenshot you have sent me over and over.
+
+Stage 1 was a different blocker with the same shape: a hidden pickaxe-breakable
+**secret wall at x=2768** was caging him out of the western half of the stage.
+Level 1 has no arena seal on purpose (you asked for a full-stage hunt), so
+nothing was supposed to stop him — an easter egg was.
+
+**Fixes:** the clamp now holds his CENTRE inside the arena instead of his whole
+body, so he can reach anywhere you can; the Auditor walks through secret walls;
+and the ledge-check now asks "is the probe outside the arena?" instead of
+"am I at the clamp?", so it can't re-freeze him when the clamp moves.
+
+**After:** Stage 2's east-edge gap went 90px → **1px**. Stage 1's west gap
+75px → **29px**. Stage 3's 126px → 120px, and that last one is now his
+*tracking* standoff (he has to stop somewhere — touching you restarts the run),
+not a wall.
+
+**Also this pass:**
+- **All** of boss 2's attacks are faster now, not just some — the ETH-orb volley
+  went 170/210/250 → 250/310/370 px/s to match the crystal shards. The redirect
+  window is timed (0.35s), not distance-based, so the skill shot still works.
+- **The leaves are gone.** They were an adaptive-difficulty "hint leaf" that
+  switches on after repeated deaths and spawns at every level's start point —
+  which is exactly why they appeared "all of a sudden" in "each stage".
+- **Fullscreen button** (top-right, or press F). Being straight with you: the
+  blank space around the game is the itch.io **page embed size**, which is a
+  setting on your itch dashboard (Edit game → Embed options) — butler only
+  uploads the build, it cannot resize that frame. Rather than keep telling you
+  that, the game can now fill your whole monitor from a button. **If you also
+  raise the embed size on the itch page, set it to 1280×720 and tick the
+  fullscreen button option.**
+- **Pickaxe axe damage 4 → 6**, so a thrown pickaxe one-shots every ordinary
+  enemy.
+
+**Verified:** 49 gates pass; the 2 failures are pre-existing and unrelated (ICP
+endpoint offline in the build container, vault music drift). Security 18/18.
+
+**Honest gap:** measured headlessly against the real levels, not captured in a
+browser this pass.
+
+---
+
+**🎯 FORENSIC REPAIR PASS (2026-08-19) — found why the bosses look frozen, and
+it was never their speed.**
+
+You sent a forensic-repair directive plus 11 screenshots. I built real
+instrumentation first instead of trusting the last session's conclusions
+(`tools/boss_ai_diagnostic.gd` + `tests/boss_chase_live_test.gd`): it drives a
+real kiting player through all three actual boss arenas and measures a
+**tracking score** — does the boss move the SAME direction as you (+1) or the
+opposite (−1)?
+
+**Baseline: Stage 1 scored −0.20. He was moving AWAY from you more often than
+toward you.** Stages 2 and 3 scored +0.56 and +0.39 — they track fine *as long
+as you are inside the arena*.
+
+**The shared root cause.** Measuring your own screenshots put Lil Blunt at world
+x≈3109 in the Stage 2 shot — **591 px OUTSIDE the arena (it starts at 3700)** —
+with the boss welded to his west wall at 3813. Every boss is hard-clamped inside
+his arena, but the entry wall drops when you walk back west, and nothing ended
+the fight. So the boss kept chasing a target he was structurally forbidden from
+reaching, and stood still. That is why ~10 previous speed/acceleration/standoff
+tunings all failed: **you cannot fix a boss whose target is outside his
+permitted world by making him faster.** It also explains "the final boss is way
+too easy" — a wall-pinned boss is a stationary target you can shoot from safety.
+Leaving the arena now ends the fight, so walking back in starts a clean one.
+
+**Stage 1 had three more real bugs**, all now fixed and confirmed by three
+independent models: his charge locked onto a SNAPSHOT of where you were and
+never updated (so he charged at old ground, or away from you if you reversed);
+his stagger used `move_toward(velocity.x, 0.0, 200.0)` with a missing `* delta`,
+which is a dead stop in two frames — instrumentation caught him parked at
+exactly x=3030.0 and x=3280.0 with zero velocity; and his periodic hop
+deliberately threw him AWAY from you every 6 seconds.
+
+**I also reverted my own last fix.** The standoff I added last session made him
+*retreat*, and a gate measured him travelling 217px while you travelled 360px —
+he was losing ground. Grok 4.6 and Qwen3 both objected, and your directive said
+exactly this ("standoff is NOT a substitute for correct pursuit"). Replaced with
+velocity-matching: 217 → 298px.
+
+**And the contradiction behind "can't approach him / too easy":** the Claim
+Jumper was the only boss whose instant-restart contact box was his *whole* 280px
+body — kill radius ~156px, **wider than the 96px his own damage window closes
+to**. The moment the fight invited you in was the moment standing there wiped
+your run. He now has a fair contact core (~103px).
+
+**Result — all 9 chase scenarios pass:**
+
+| Boss | tracking (was → now) | arena used (was → now) |
+|---|---|---|
+| Stage 1 Auditor | **−0.20 → +0.59** | 250px → 370px |
+| Stage 2 Distributor | +0.56 → +0.79 | full 460px |
+| Stage 3 Claim Jumper | +0.39 → +0.50 | 396 → 399px |
+
+**Also fixed:** boss 2 voice specifically quietened (−4 dB, per-boss now — the
+last pass wrongly moved the shared gain for all three); Gideon's voice was
+playing at 0 dB while everything else ran at +6/+9, now +9; crystal attacks
+380/450/520 px/s (up ~46%, and safe — it does not touch the orb-redirect
+window); the FORT KNOX ASSAY text raised clear of the pool plate (the real
+clash was vertical, which is why moving it sideways last time didn't work); the
+vertical shading box removed, circular shade kept and strengthened; and the
+**axe** — you were comparing the PICKAXE against the big axe, and the pickaxe
+was throwing a byte-identical DEFAULT axe. It now has a real middle tier
+(4 damage, 1.5× size, heavy impact SFX + shake), with pierce and hitstop still
+exclusive to the big axe.
+
+**NOT done this pass — being straight with you:** the screen-size/viewport item,
+the Stage 3 mountain seam, the Fort Knox "badly glued" background, and the Blaze
+Rush rectangle residue are **not started**. The multi-agent pass that was to
+cover them stopped when the Claude account hit its monthly spend limit (13 of 15
+agents failed mid-run). I identified the likely cause of the Blaze Rush purple
+rectangle (a full-screen background ColorRect showing through below the forest
+art) but did not implement it. The viewport item is mostly an itch.io page
+setting rather than something in this repo.
+
+**Still unverified in a browser:** these are headless-measured, not yet captured
+in a live web build this pass.
+
+Full audit: `docs/audits/2026-08-19-founder-fix-session/00-executive-summary.md`
+
+---
+
+**🎯 P0 BOSS-CHASE REPAIR (2026-08-19) — found the real mechanism behind the
+"stage 2/3 boss doesn't chase" reports, and it wasn't a chase problem.**
+You sent a "MULTI-MODEL BUG, VULNERABILITY & GAMEPLAY REPAIR PROTOCOL" doc
+(Google Doc + a matching PDF) whose #1 priority item was: bosses 2/3 aren't
+reliably chasing. Rather than run its full 11-phase, 6-model ceremony
+verbatim (disproportionate to one turn, and you didn't explicitly ask for
+that scale of multi-agent orchestration), I did the actual thing that
+matters: re-ran every existing boss-chase test (all passed — the standoff +
+surge work from the prior pass really does hold up under synthetic
+verification), then went further and drove a real local web export through
+Playwright to check it lived up to that in an actual browser, since this
+project's own history is full of "headless-green, live-broken" surprises.
+
+**What a live capture actually found:** the Claim Jumper (Stage 3) was not
+failing to chase — he was closing the gap so aggressively, with zero
+standoff, that he walked straight through his own body's instant-death
+contact radius on essentially every single engagement. Instrumenting
+`_on_hitbox_body_entered` directly proved it wasn't a spawn-grace bug (grace
+correctly expired first, right on schedule) — contact fired legitimately a
+couple of seconds later, once he'd closed distance, for a player who hadn't
+moved at all. From your side that reads exactly like "he doesn't let me get
+past this point": the level keeps resetting to the same opening tableau
+before you ever get a real look at the fight. My own screenshot sampling at
+1.5s intervals aliased with that reset cycle and genuinely looked like a
+frozen boss — a finer capture (0.5s intervals) showed he was moving fine,
+just getting reset out from under himself.
+
+**Fix:** gave PATROL/THROW/the hop mechanic/VULNERABLE an actual minimum
+standoff (`CHASE_SEPARATION`=200px for the aggressive states, and finally
+wired up `VULNERABLE_SEPARATION`=96px — it was declared with a comment
+claiming this behavior for a while but never actually connected to anything).
+Unlike a flat "stop closing," he actively backs off if something (a
+VULNERABLE window's own braking overshoot, mainly) carries him inside the
+standoff — so he never permanently camps at melee range the way "just clamp
+the velocity" would have let him. New regression gate
+(`tests/claim_jumper_chase_separation_test.gd`) measures this directly: a
+stationary player, 5 real seconds, and asserts he never sustains a
+contact-radius camp (max measured streak post-fix: 0.57s, a physically
+bounded braking transient — pre-fix behavior was an unbounded camp for
+effectively the entire fight).
+
+**Verified live, not just headlessly:** a fresh Playwright capture against a
+real local web export shows LIVES and SCORE holding steady across 9.5+
+continuous seconds of the Stage 3 fight — including the boss visibly
+entering his VULNERABLE (red-tinted) state — where every prior capture
+reset within 1-3 seconds. Screenshots:
+`docs/captures/2026-08-19-boss-chase-repair/`.
+
+**Honest scope note:** I didn't touch the Distributor (Stage 2) — his
+existing standoff+surge mechanic already holds him off, and every real-arena
+gate for him still passes. The one thing I did NOT fully resolve: during
+Claim Jumper's VULNERABLE window, the player still has to get close enough
+to land an axe hit, and his contact-hitbox reuses the same full body shape —
+so "close enough to hit him" and "close enough that a stray touch resets the
+run" aren't fully separated. That's a real, still-open design tension I'm
+flagging rather than quietly patching over; a cleaner fix (e.g. suppressing
+body-contact specifically during his own staggered/vulnerable window) is a
+follow-up, not something I wanted to rush through in the same pass as the
+confirmed bug.
+
+**🎯 "ALMOST_BETTER" RESIDUAL — SAME-DAY FOLLOW-UP, FOUND A REAL BUG MY OWN
+PREVIOUS FIX INTRODUCED (2026-08-18, later).** 5 fresh founder screenshots
+after the L1-music/boss1-size/carts/chase pass above. Extracted per
+`founder-screenshot-preserve` to
+`artifacts/founder_shots_2026-08-18_almost-better/` and
+`docs/captures/2026-08-18-almost-better/`.
+
+- **"Remove this backpiece so it is the actual backdrop" — the HUDMask
+  black plate was STILL THERE.** This branch is fresh off master, and my
+  very first `HUDMask` removal (from way back in this session's PR #41
+  work) lived on a branch that never merged to master either — same
+  reconciliation gap as the mine carts/axe/chase items in the pass above.
+  Re-removed from all 3 levels. Live capture:
+  `docs/captures/2026-08-18-almost-better-fixed/hudmask_gone_boss1_stable.png`.
+- **"1st boss cant jump beyond this point anymore... he could get around
+  like a gazelle" — genuinely caused by this session's own Auditor size
+  increase, but not the size itself.** A real capture (`?boss=1`, extended
+  the existing `?boss=N` debug warp to allow N=1) showed the level
+  reloading repeatedly within the first second — the Auditor extends
+  `CharacterBody2D` directly and never had the spawn-grace fix every other
+  boss's own history already carries (this session's earlier BODY 168→220
+  increase gave his hitbox more reach, making an instant spawn-contact
+  restart more likely, which reads exactly like "he can't get past this
+  point" since the level just keeps restarting near him). Added spawn
+  grace to the Auditor directly, and to `BossBase` (shared by Distributor
+  and Claim Jumper, which never had it either — same class of bug, same
+  fix, all three bosses).
+- **"2nd/3rd boss cant move beyond this point"** — same root cause as
+  above, confirmed by the same instant-restart pattern. `?boss=2`/`?boss=3`
+  now show 0 unexpected scene reloads in an 8s window (was repeated
+  restarts).
+- **"All the bosses are slightly a little too loud now"** — `PLAYER_
+  VOLUME_DB` 12→9 (still non-positional, still well above the +8dB floor
+  and the hero's own +6dB bark gain, just not pinned at the top of the
+  previously-requested band).
+- **Fort Knox Assay panel text overlap** — the "FORT KNOX ASSAY — WEIGH
+  IT..." sign was a single unwrapped ~60-character Label at font 26,
+  which renders wide enough to reach into the Assay Scale's own panel
+  footprint (the scale's art/panel are added to the tree AFTER the sign,
+  so they draw on top of it). Wrapped to three short lines and shifted
+  left (x 1960→1780) so it can't physically reach the panel again.
+- **New gate:** `tests/almost_better_20260818_test.gd` (12/12) — proves
+  all three bosses' spawn grace actually blocks a same-frame contact
+  restart (not just that the timer field exists), the HUDMask string is
+  gone from every level file, VO volume is in the 8-12dB band, and the
+  Assay sign's position/wrapping changed.
+- Full existing gate battery re-run green (script_compile 163/125,
+  `owner_rage_l1_music_boss1_carts_test`, `dual_real_level_boss_chase`,
+  `stage3_defence`, `boss_voice_sync_test`, `distributor_behaviour`,
+  `claim_jumper_difficulty`, `s8_dialogue_npc_art`, `res_stake_assay`,
+  `owner_screenshot_fixes`, `s11_stage3_walkpath`,
+  `owner_rage_20260818_test`). Security Sentinel 18/18, 0 blockers.
+- **Honest gap:** the Assay panel fix is verified by direct pixel-range
+  math against the actual layout code, not a fresh live capture — the
+  Assay Hall sits behind platforming inside Fort Knox that a scripted
+  Playwright session can't reach quickly. Founder hard-refresh is the
+  real proof, same as everything else in this pass.
+
+---
+
+**🎯 LEVEL1_MUSIC_ORDER_BOSS1_SIZE_CARTS_CHASE — SAME-DAY FOLLOW-UP TO THE
+OWNER-RAGE RESIDUAL BELOW (2026-08-18, afternoon).** The founder's own
+follow-up: *"The mining carts that float in the air are just stupid
+boxes!!! Bring them back cunt!!!!!"* plus three founder-supplied Google
+Drive music files and a fresh "Song 1 has been reduced in size" /
+"still dont chase" report. Two different Claude sessions had been working
+on **separate branches from separate points in this repo's history**
+(this session's own prior PR #41 work never merged to master; the
+owner-rage session below worked directly on master) — several fixes that
+were real on one branch were simply never present on the other. This pass
+reconciles both onto a fresh branch off current master:
+
+- **Mining carts — the "stupid boxes" complaint was literally true.** The
+  owner-rage session's own fix (item 2 below) repositioned the carts'
+  **Y coordinate only** — `mine_cart.gd` was still the bare, untextured
+  `ColorRect` from before ANY art pass (this session's own earlier PR #41
+  work built real wooden/gold-armor `Sprite2D` art + a working `Area2D`
+  boarding trigger + wBTC reward, but that branch never reached master).
+  Ported the real version across, including its position-anchor bug fix (a
+  cart used to snap to world x≈0 on its first physics tick).
+- **Boss 1 (Auditor) — restored above the 168px outlier.** No literal
+  regression was found against this session's own prior history (`BODY`
+  has read 168 since the file's first commit), but the founder's
+  comparison point is real and checkable: Distributor is 240, Claim
+  Jumper is 280 — Auditor was visibly the smallest of the three despite
+  being fought first. Raised to **220** (still smallest, so the
+  stage-escalation identity holds), hurtbox scaled by the same ratio so
+  the file's own hard-won double-offset hitbox fix isn't disturbed.
+- **big_axe scale/damage — quietly reset by the owner-rage session's own
+  (good) feedback work.** That session added real impact feedback
+  (`bigaxe_impact` SFX, heavy screenshake, boss hitstop — kept, it's
+  genuinely good) but in doing so reset `BIG_SCALE`/`BIG_DAMAGE`/
+  `BIG_BOSS_DAMAGE` back to 1.95/5/3, undoing a previous session's
+  increase to 2.6/8/4 that a live capture had proven necessary. Restored.
+- **Level 1 music — the actual bug, not just the missing songs.**
+  `_play_next_in_playlist()` picked `candidates[randi() % ...]`
+  **unconditionally** — the `fade_in` bool passed into it never controlled
+  which track played, only how it faded in. "First song" was always a
+  coin flip regardless of array order, which is exactly "when I turn on
+  my machine there is a different song playing." Added a real
+  `force_first` param, wired only from `level_01_smoke_realm.gd`'s own
+  call so Level 2/3/boss arenas keep their existing shuffle feel. The
+  three founder-supplied Drive files (`Level 1(!st Song).mp3` → always
+  first, `Oxbow Lake.mp3` → confirmed byte-identical to the already-wired
+  `level01_theme_oxbow.mp3`, `Level 1 (1).mp3` → matches the intent of the
+  already-known "remove this song" track) resolved: `level01_theme_alt.ogg`
+  deleted from the project and its dead reference removed from the array.
+- **Boss 2/3 chase — the tenth-plus "still dont chase" report, addressed
+  with an architectural fix, not another speed tune.** Master's
+  `distributor.gd`/`claim_jumper.gd` had reverted to steering directly at
+  the player's own x (this session's own earlier standoff-based redesign,
+  from PR #40, also never reached master). Restored the horizontal
+  standoff (`STANDOFF_X`, stalk weave) for Distributor. But a standoff
+  ALONE — even a correct one — holds a roughly constant offset from a
+  player-following camera, which has **zero relative screen motion by
+  construction**; a real 2s fleeing capture from an earlier session had
+  already proven this reads as "frozen" even when the world-space math is
+  right. Added a **SURGE** mechanic to both bosses: periodically (every
+  3.2s) the boss closes in past its normal hold distance for 0.65s at
+  1.6x speed, then eases back out — a punctuated "lunge in, fall back"
+  that moves the boss's SCREEN position dramatically in both directions.
+  **Live capture, not a headless claim:**
+  `docs/captures/2026-08-18-owner-rage-l1-music/distributor_surge_t0_baseline.png`
+  vs `distributor_surge_t2_lunging.png` (2.4s later, same standing
+  position) and `claimjumper_surge_t0_baseline.png` vs
+  `claimjumper_surge_t3_lunging.png` (3.6s later) / `..._t4_retreating.png`
+  (4.8s, easing back out) — both show unmistakable on-screen position
+  change, not the near-static frames every prior "fixed" claim produced.
+  The old `dual_real_level_boss_chase_test`/`stage3_defence_test` bars
+  (raw travel-distance / near-zero-gap) silently re-encoded the old
+  lock-on assumption and correctly FAILED against the new standoff — both
+  re-contracted the same way PR #40 already reasoned through once
+  (reach-to-striking-range + direction-tracking, not raw travel).
+- **Do-not-regress list, spot-checked, all intact:** HUD text sizes
+  (22/18/14), boss VO volume (+12 dB, non-positional, music duck), leaf/
+  Blaze celebration (spin + smoke ring + stoner SFX + barks, explicit
+  code comment blocking music-override regression), sun size, BTC logo.
+- **New gate:** `tests/owner_rage_l1_music_boss1_carts_test.gd` (9/9) —
+  proves `force_first` is deterministic (not lucky), the dead alt.ogg
+  reference is gone, Auditor's collision shape is actually larger, the
+  mine cart renders real `Sprite2D` art, and the axe constants are back
+  at the proven values. Full existing gate battery re-run green
+  (script_compile 163/125, `dual_real_level_boss_chase`, `stage3_defence`,
+  all Distributor/Claim Jumper suites, `s8_dialogue_npc_art`,
+  `res_stake_assay`, `owner_screenshot_fixes`, `s11_stage3_walkpath`).
+  Security Sentinel 18/18, 0 blockers.
+- **Honest gap:** the surge mechanic is a genuinely different fix from
+  every prior "fixed" claim on this exact complaint, and the live capture
+  above shows real on-screen motion — but per this project's own trust
+  rule, founder hard-refresh confirmation is still the only real proof,
+  not this note.
+
+---
 
 **🔥 OWNER-RAGE RESIDUAL — REGRESSIONS + ALL CURRENT FAILS (2026-08-18).**
 Executed `PROMPT_OWNER_RAGE_20260818_REGRESSIONS_AND_FAILS.md`. Your 5 screenshots

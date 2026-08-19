@@ -15,6 +15,26 @@ var _anim_sprite: AnimatedSprite2D
 ## Player-facing boss name for the health bar. Overridden per boss.
 var boss_display_name: String = "BOSS"
 
+## SPAWN GRACE — shared by every BossBase subclass (Distributor, Claim
+## Jumper). A real-browser capture caught a boss killing the player via
+## body contact within ~2s of a fight starting, before any scripted attack,
+## from the opening close-the-gap sweep — indistinguishable, from the
+## founder's side, from "the boss won't let me past this point" (the level
+## just restarts near the boss over and over). Neither subclass calls
+## `super()` in its own `_ready()`, so this can't be set there; `_enter_tree`
+## runs unconditionally on every instance regardless of subclass `_ready`
+## chains. Each subclass's own `_on_hitbox_body_entered` must check
+## `is_spawn_grace_active()` before calling `GameManager.boss_contact_restart()`
+## — this base class only tracks the timer, it does not intercept the signal.
+const SPAWN_GRACE_SEC: float = 1.2
+var _spawn_grace_until_msec: int = 0
+
+func _enter_tree() -> void:
+	_spawn_grace_until_msec = Time.get_ticks_msec() + int(SPAWN_GRACE_SEC * 1000.0)
+
+func is_spawn_grace_active() -> bool:
+	return Time.get_ticks_msec() < _spawn_grace_until_msec
+
 func _ready() -> void:
 	add_to_group("boss")
 	health = max_health

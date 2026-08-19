@@ -53,7 +53,54 @@ const VULNERABLE_DRIFT: float = 250.0
 ## that is the founder's "the third boss is now way too easy to defeat" (Kimi K3:
 ## "drift toward the player delivers him to the weapon while being harmless").
 ## He now closes only to here; the player must step INTO range to land hits.
+##
+## WIRED 2026-08-18, THROUGH A DIFFERENT MECHANISM THAN THE ONE THAT WAS
+## REVERTED. `_ground_chase` gained a real min-separation parameter this pass
+## (see CHASE_SEPARATION below) that ACTIVELY RETREATS when already closer
+## than the standoff, rather than freezing dead — so he still closes
+## continuously at VULNERABLE_DRIFT for the whole approach, exactly as before,
+## for as long as he's beyond 96px. That preserves the reason the old floor
+## was pulled (braking to a hard vx=0 stop for up to 0.7s at melee range,
+## ~36% of every cycle motionless — read as "doesn't chase").
+##
+## What forced re-wiring THIS state specifically, not just PATROL/THROW: a
+## direct measurement (tests/claim_jumper_chase_separation_test.gd), not a
+## live capture, caught that leaving VULNERABLE unprotected still fed the same
+## bug one step removed — a VULNERABLE window that ran its full course left
+## him at near-zero separation, and `_end_vulnerable()` hands straight back to
+## PATROL at whatever position he's already at, so the very first frame of the
+## next chase state inherited contact-radius range regardless of PATROL's own
+## floor. Confirmed by re-running that same test after wiring this: the
+## transient the min-distance assertion still catches is now bounded to a
+## handful of frames during the PATROL/VULNERABLE boundary, not a permanent
+## camp — see that test file for the exact numbers.
 const VULNERABLE_SEPARATION: float = 96.0
+
+## Hold at least this far from the player during PATROL/THROW — the aggressive
+## chase states, and exactly the two a live capture caught causing the loop
+## VULNERABLE_SEPARATION's comment describes.
+##
+## Root cause: PATROL/THROW walk straight at the player until TURN_DEAD_ZONE
+## (34px) — effectively zero standoff — and boss contact is
+## `GameManager.boss_contact_restart()`, an INSTANT full run-reset, not a
+## graze. HALF_BODY is 140, so his own hurtbox alone reaches ~140-160px; with
+## no standoff he was walking straight through that radius every single
+## engagement. Instrumenting `_on_hitbox_body_entered` in a real browser run
+## confirmed it directly: spawn grace correctly expired at 1.2s, and contact
+## fired legitimately (not a grace bug) once he'd closed the gap — for a
+## stationary player, every single attempt, well before he ever reached his
+## own THROW/VULNERABLE attack cycle. `tests/dual_real_level_boss_chase_test.gd`
+## never caught this because it explicitly disables the Hitbox's `monitoring`
+## before measuring chase distance ("gating the CHASE, not contact") — the
+## exact mechanism that kills a real run in play was deliberately switched off
+## for that gate.
+##
+## 200 clears his own contact radius (~155px) with margin for TURN_DECEL
+## braking overshoot (up to ~53px at phase-3's 385px/s), and still sits well
+## inside the wall-to-wall reach_bar (288px) that same test asserts — so he
+## still closes to clearly-threatening, striking-adjacent range, he just no
+## longer walks through the player to get there.
+const CHASE_SEPARATION: float = 200.0
 
 ## Max HP the player can strip in a SINGLE vulnerable window before he shakes it
 ## off and returns to the hunt. Caps burst-down so the kill takes >= ceil(HP/cap)
@@ -95,6 +142,30 @@ var _hop_cooldown: float = 0.0
 const WALK_ACCEL: float = 620.0
 const TURN_DECEL: float = 1400.0
 const TURN_DEAD_ZONE: float = 34.0
+
+## SURGE — periodic visible speed burst, added alongside Distributor's
+## identical mechanic (PROMPT_PR41_REJECTED / LEVEL1_MUSIC residuals,
+## 2026-08-18: "still dont chase!!! You are absolutely useless!!!!" for the
+## tenth-plus time). Unlike the Distributor's hover standoff, this boss
+## already walks straight at the player's x every frame in `_ground_chase` —
+## there is no static-offset illusion to fix here. What a real 2s fleeing
+## capture showed instead was his on-screen position barely changing across
+## the whole window: patrol/throw/vulnerable each hold their OWN reduced
+## speed (0.72x, VULNERABLE_DRIFT), so the cycle-average pace stays close
+## enough to the player's sprint that a continuous walk never produces a
+## clearly-readable "he's closing in" moment — just a slow, steady drift
+## that's easy to read as barely moving at all. A periodic full-commitment
+## speed burst (independent of which state he's in) gives the eye a
+## punctuated, unambiguous acceleration to track.
+const SURGE_INTERVAL: float = 3.2
+const SURGE_DURATION: float = 0.65
+const SURGE_SPEED_MULT: float = 1.6
+## Last known player x, sampled at the end of each _ground_chase frame. Used to
+## derive the player's own velocity so the standoff can MATCH it rather than
+## stopping or reversing — see the velocity-matching block in _ground_chase.
+var _last_player_x: float = 0.0
+var _surge_t: float = 0.0
+var _surge_active: bool = false
 ## Clears ~196px at gravity 980 — same envelope the Auditor uses.
 const HOP_VELOCITY: float = -620.0
 ## Total airtime of one hop: 2 * |HOP_VELOCITY| / gravity ≈ 1.265s. Used to size
@@ -138,7 +209,34 @@ func _ready() -> void:
 	# exposed to that bug — keep it that way rather than "fixing" it to match
 	# the other two and reintroducing the exact defect just patched there.
 	hitbox.position = Vector2(BODY / 2.0, BODY / 2.0)
-	hitbox_shape.shape = collision.shape
+	# CONTACT CORE, NOT THE WHOLE BODY (2026-08-19).
+	#
+	# This was `hitbox_shape.shape = collision.shape` — the contact Area2D
+	# literally SHARED the 280x280 physics box. He was the only one of the
+	# three bosses doing that: auditor.gd and distributor.gd both give their
+	# hitbox a trimmed shape (HURTBOX_SIZE/HURTBOX_CENTER) rather than the full
+	# body box.
+	#
+	# Why it matters here specifically: boss contact is
+	# GameManager.boss_contact_restart(), an INSTANT full-run wipe. With a
+	# 280-wide contact box his kill radius is ~140 + the player's ~16 half-width
+	# = ~156 px from his centre — LARGER than the VULNERABLE_SEPARATION (96) his
+	# own damage window deliberately closes to. So the one moment the fight
+	# tells the player to step in and attack was also the moment standing there
+	# wiped the run. That contradiction is why every separation value tried so
+	# far either camped him inside contact range or stopped him chasing.
+	#
+	# A 0.62 x 0.78 core (174 x 218, centred) drops the kill radius to ~87+16 =
+	# ~103 px, comfortably inside the vulnerable-window standoff, so "close
+	# enough to hit him" is no longer "close enough to lose the run". The
+	# founder's rule is intact — touching the Claim Jumper still restarts the
+	# stage — it now means touching HIM rather than the empty air around his
+	# cart. Sharing `collision.shape` was also an aliasing hazard: both nodes
+	# pointed at ONE RectangleShape2D resource, so resizing either would have
+	# silently resized the other.
+	var contact_core := RectangleShape2D.new()
+	contact_core.size = Vector2(BODY * 0.62, BODY * 0.78)
+	hitbox_shape.shape = contact_core
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
 	boss_display_name = "The Claim Jumper"
@@ -175,6 +273,36 @@ var arena_max: Vector2 = Vector2.ZERO
 ## that actually has to stay inside the arena — is origin + this.
 const HALF_BODY: float = BODY / 2.0
 
+## Margin the boss's CENTRE keeps from the arena wall, in px.
+##
+## THIS REPLACED A HALF-BODY INSET, AND THAT INSET WAS THE "BOSS DOES NOT MOVE
+## BEYOND THIS POINT" BUG — reported by the founder 20+ times across many
+## sessions, and never once actually measured until now.
+##
+## The clamp used to keep the boss's whole BODY inside the arena
+## (`arena_min.x + BODY/2 .. arena_max.x - BODY/2`). The PLAYER has no such
+## restriction — he walks right up to the wall. So every arena had a dead
+## pocket at each end, half a body wide, that the player could stand in and the
+## boss could not advance into. Measured on the real levels with the player
+## parked at the arena edge:
+##
+##   Distributor (BODY 240): player at 3730, boss hard-stopped at 3820 — his
+##       exact clamp limit — leaving a 90px gap he could never close.
+##   Claim Jumper (BODY 280): player at 3730, boss stopped at 3856, 126px gap.
+##
+## He tracks correctly the whole way in (tracking score +0.57), then hits an
+## invisible line and stops dead. That is precisely the screenshot: player at
+## one end, boss parked at a fixed coordinate, "not moving beyond this point".
+## Every previous fix tuned speed/accel/standoff, none of which can move a boss
+## that a clamp is holding.
+##
+## Clamping the CENTRE (with a small margin, not half a body) still does the
+## job the clamp exists for — he cannot leave the fight or drift into a trench
+## — while letting him reach any x the player can reach. His body may now
+## overhang the arena edge by up to half a body, which is correct: the arena
+## boundary is where the FIGHT is, not a shelf his sprite must sit on.
+const ARENA_EDGE_MARGIN: float = 24.0
+
 func _clamp_to_arena() -> void:
 	if arena_max == Vector2.ZERO:
 		return
@@ -182,8 +310,8 @@ func _clamp_to_arena() -> void:
 	# the arena. Also zero the velocity pushing into the wall, otherwise he
 	# accelerates into the clamp every frame and has to unwind a saturated
 	# velocity before he can turn around — he reads as stuck.
-	var lo_x: float = arena_min.x + HALF_BODY
-	var hi_x: float = maxf(lo_x, arena_max.x - HALF_BODY)
+	var lo_x: float = arena_min.x + ARENA_EDGE_MARGIN
+	var hi_x: float = maxf(lo_x, arena_max.x - ARENA_EDGE_MARGIN)
 	var centre_x: float = global_position.x + HALF_BODY
 	var clamped_x: float = clampf(centre_x, lo_x, hi_x)
 	if not is_equal_approx(clamped_x, centre_x):
@@ -228,9 +356,23 @@ func _ledge_ahead(facing: float) -> bool:
 	# the arena is untouched.
 	if arena_max != Vector2.ZERO:
 		var centre_x: float = global_position.x + HALF_BODY
-		if facing > 0.0 and centre_x >= arena_max.x - HALF_BODY - 1.0:
-			return false
-		if facing < 0.0 and centre_x <= arena_min.x + HALF_BODY + 1.0:
+		# TEST THE PROBE POINT, NOT THE BOSS'S CURRENT POSITION.
+		#
+		# This used to ask "is my CENTRE at the clamp limit?" (originally
+		# HALF_BODY, briefly ARENA_EDGE_MARGIN). Both are the same mistake: they
+		# tie a question about GEOMETRY to a question about POSITION, so the
+		# moment the clamp margin changes the rule silently stops matching the
+		# ground it is describing. When the clamp widened from half-a-body to
+		# ARENA_EDGE_MARGIN, a boss standing anywhere in the newly-reachable
+		# strip probed past the arena edge, found no floor, and froze — the very
+		# freeze this block exists to prevent, just relocated inward.
+		#
+		# The real invariant: if the probe lands OUTSIDE the arena, it is asking
+		# about the boundary wall, and a wall is not a pit. Interior pits are
+		# untouched because their probe point is still inside the arena, so it
+		# falls through to the real raycast below.
+		var probe_x: float = centre_x + HALF_BODY * facing + LEDGE_PROBE_MARGIN * facing
+		if probe_x >= arena_max.x or probe_x <= arena_min.x:
 			return false
 	var space := get_world_2d().direct_space_state
 	# Cast from just above his feet, ahead of the body, straight down. Body is
@@ -310,7 +452,7 @@ func _higher_ground_ahead(facing: float) -> bool:
 ## have two: PATROL stalked, THROW braked to zero — which meant every attack
 ## handed the player an escape window, and any future fix to the ledge sense
 ## would have had to be made twice.
-func _ground_chase(delta: float, speed: float) -> bool:
+func _ground_chase(delta: float, speed: float, min_separation: float = 0.0) -> bool:
 	# STALK the live player rather than pacing wall to wall. The founder's "the
 	# bosses need to be more challenging" applies here too: this boss only ever
 	# bounced between walls, so a player who stood still was never approached.
@@ -318,13 +460,84 @@ func _ground_chase(delta: float, speed: float) -> bool:
 	# Compared CENTRE to player, not origin to player: the origin is the body's
 	# top-left, so an origin-based comparison biased every decision 40px east
 	# and made him oscillate around a point he was never actually on.
+	# SURGE — see the const block above. Runs across every state that calls
+	# this shared function, so a burst can land during PATROL, THROW, or
+	# VULNERABLE alike.
+	_surge_t += delta
+	if not _surge_active and _surge_t >= SURGE_INTERVAL:
+		_surge_active = true
+		_surge_t = 0.0
+	if _surge_active:
+		speed *= SURGE_SPEED_MULT
+		if _surge_t >= SURGE_DURATION:
+			_surge_active = false
+			_surge_t = 0.0
 	var pl := get_tree().get_first_node_in_group("player")
+	var dx: float = 0.0
+	var have_player := false
 	if pl:
-		var dx: float = pl.global_position.x - (global_position.x + HALF_BODY)
+		have_player = true
+		dx = pl.global_position.x - (global_position.x + HALF_BODY)
 		if absf(dx) > TURN_DEAD_ZONE:
 			direction = signf(dx)
 	# Ease into the target speed so he reads as heavy, not robotic.
 	var target_vx: float = speed * direction
+	# HOLD / BACK OFF ONCE CLOSE ENOUGH — see CHASE_SEPARATION's own comment for
+	# the live-reproduced bug this closes: unthrottled closing walked him
+	# straight through his own instant-death contact radius on every engagement.
+	#
+	# ACTIVELY RETREATS, not just freezes, when already closer than the
+	# standoff — a flat "zero the velocity" first attempt here left him camped
+	# at whatever distance he happened to already be at (e.g. inherited from a
+	# VULNERABLE window, which has no separation floor of its own), instead of
+	# re-opening the gap. Mirrors distributor.gd's standoff-seeking philosophy:
+	# a boss that only ever stops closing, never backs off, converges to
+	# melee range the first time anything (a hop, a VULNERABLE cycle, a wall
+	# clamp) carries him inside the standoff once.
+	# HOLD STATION — DO NOT RETREAT (2026-08-19 correction to my own previous fix).
+	#
+	# The version shipped in the previous commit actively drove him AWAY at full
+	# `speed` whenever he was inside `min_separation`. Three independent reviews
+	# (Grok 4.6, Qwen3, and the founder's own repair directive: "DO NOT 'fix'
+	# boss chase by ONLY ADDING STANDOFF ... It is NOT a substitute for correct
+	# pursuit") plus a real gate all landed on the same objection, and the gate
+	# put a number on it: tests/s6_boss_projectile_chase_test measured him
+	# travelling only 217 px in 6 s while chasing a player who moved ~360 px.
+	# He was not holding a standoff, he was LOSING GROUND — every time he
+	# touched the separation band he reversed to full speed and then had to
+	# re-accelerate from a stop, so a retreating player steadily outran him.
+	# On screen that is indistinguishable from "the boss doesn't chase".
+	#
+	# Stopping (rather than reversing) still prevents the instant-restart body
+	# contact this separation exists for, but costs him no ground: he sits at
+	# the edge of the band and resumes closing the moment the player moves off.
+	if have_player and min_separation > 0.0 and absf(dx) < min_separation:
+		# MATCH THE PLAYER'S VELOCITY, don't stop and don't reverse.
+		#
+		# Stopping dead and reversing both fail, for opposite reasons, and both
+		# were measured rather than argued:
+		#   reverse at full speed -> he loses ground every time he clips the
+		#       band and a fleeing player steadily outruns him (s6 gate: 217 px
+		#       of boss travel against ~360 px of player travel).
+		#   stop dead            -> he cannot re-open a gap he is already
+		#       inside (e.g. carried in by the VULNERABLE window's own smaller
+		#       96 px floor), so he camps at ~74 px, well inside his own
+		#       instant-restart contact radius (separation gate: a 2.05 s camp).
+		#
+		# Holding the player's OWN velocity keeps the gap constant instead: he
+		# travels exactly as far as they do, so he never falls behind, and he
+		# never closes into a contact-kill either. A gentle outward bias is
+		# added only when he is WELL inside the band, which is the only case
+		# that actually needs correcting, and at a fraction of chase speed so
+		# it never reads as fleeing.
+		var player_vx: float = (pl as Node2D).global_position.x - _last_player_x
+		player_vx = player_vx / maxf(delta, 0.0001)
+		target_vx = clampf(player_vx, -speed, speed)
+		if absf(dx) < min_separation * 0.6:
+			target_vx += -signf(dx) * speed * 0.25
+			target_vx = clampf(target_vx, -speed, speed)
+	if have_player:
+		_last_player_x = (pl as Node2D).global_position.x
 	var rate: float = (TURN_DECEL
 		if signf(target_vx) != signf(velocity.x) and not is_zero_approx(velocity.x)
 		else WALK_ACCEL)
@@ -369,7 +582,7 @@ func _physics_process(delta: float) -> void:
 	match current_state:
 		State.PATROL:
 			var pl := get_tree().get_first_node_in_group("player")
-			var at_ledge: bool = _ground_chase(delta, patrol_speed)
+			var at_ledge: bool = _ground_chase(delta, patrol_speed, CHASE_SEPARATION)
 			# Blocked by terrain, or the player is above him -> hop. A ledge now
 			# also triggers the hop: if the player is across a gap he JUMPS it
 			# rather than standing at the edge forever, which keeps him
@@ -409,7 +622,23 @@ func _physics_process(delta: float) -> void:
 					# `_gap_crossable`/`at_ledge` guards above are untouched, so
 					# ledge suicide stays fixed.
 					var pdx: float = (pl.global_position.x - (global_position.x + HALF_BODY)) if pl else direction * HOP_REACH
-					velocity.x = clampf(pdx / HOP_AIRTIME, -patrol_speed, patrol_speed)
+					# HOLD THE SAME STANDOFF A HOP GETS, TOO (2026-08-18 live-repro
+					# fix). This used to size the commit to land EXACTLY on the
+					# player's x — which is precisely the contact-radius bug
+					# CHASE_SEPARATION exists to close on the ground (see that
+					# constant's comment); a hop bypassed it completely, and a
+					# live capture's ~250px vertical gap between boss and player
+					# routes almost every engagement through this exact "player
+					# above" hop path. Shrinking the aim point by CHASE_SEPARATION
+					# still lands him on the same platform near the player for any
+					# realistically-sized ledge/gap — it just stops the landing
+					# itself from being the contact-kill.
+					var target_pdx: float = pdx
+					if pl and absf(pdx) > CHASE_SEPARATION:
+						target_pdx = pdx - signf(pdx) * CHASE_SEPARATION
+					elif pl:
+						target_pdx = 0.0
+					velocity.x = clampf(target_pdx / HOP_AIRTIME, -patrol_speed, patrol_speed)
 					_hop_cooldown = 0.7
 			if throw_timer <= 0:
 				_throw_dynamite()
@@ -420,7 +649,7 @@ func _physics_process(delta: float) -> void:
 			# so the fight was a series of safe windows joined by short chases.
 			# Slower than patrol so the throw still reads as a commitment, but
 			# never below a sprint.
-			_ground_chase(delta, maxf(patrol_speed * 0.72, MIN_CHASE_SPEED))
+			_ground_chase(delta, maxf(patrol_speed * 0.72, MIN_CHASE_SPEED), CHASE_SEPARATION)
 			if state_timer <= 0.0:
 				_begin_vulnerable()
 
@@ -451,7 +680,17 @@ func _physics_process(delta: float) -> void:
 			# keeps closing for the WHOLE window, lifting the cycle average to
 			# ~273 px/s — above sprint, so he gains ground on a running player.
 			# Ledge sense + arena clamp come free via _ground_chase.
-			_ground_chase(delta, VULNERABLE_DRIFT)
+			#
+			# VULNERABLE_SEPARATION wired 2026-08-18 (see its own comment): NOT a
+			# reintroduction of the reverted hard-freeze above — he still closes
+			# continuously at VULNERABLE_DRIFT for the entire approach, same as
+			# before, right up until 96px. Direct measurement
+			# (tests/claim_jumper_chase_separation_test.gd) caught the real gap
+			# this closes: with no floor at all here, a VULNERABLE window that
+			# ran its full course left him inherited at near-zero separation the
+			# instant PATROL resumed — contact-restart range, on the very first
+			# frame of the next chase state, every cycle.
+			_ground_chase(delta, VULNERABLE_DRIFT, VULNERABLE_SEPARATION)
 			_clamp_to_arena()
 			boss_sprite.modulate = Color(1.0, 0.3, 0.3, 1.0) if fmod(state_timer, 0.2) < 0.1 else Color(1.0, 0.1, 0.1, 1.0)
 			if state_timer <= 0.0:
@@ -600,6 +839,27 @@ func die() -> void:
 
 func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("take_damage"):
+		# SPAWN GRACE — see BossBase's own const block.
+		if is_spawn_grace_active():
+			# GRACE SWALLOWS THE ENTRY EVENT — RE-CHECK WHEN IT EXPIRES.
+			#
+			# `body_entered` fires exactly ONCE, on the frame the player first
+			# overlaps. Returning outright during spawn grace therefore did not
+			# DELAY the contact, it CANCELLED it: a player still standing inside
+			# the boss when grace ended was permanently immune to him, because no
+			# second entry event ever arrives while they remain inside. Caught by
+			# tests/boss_ghost_death_hurtbox_test.gd.
+			#
+			# Waiting out the remaining grace and then re-testing the REAL overlap
+			# keeps the intent (no instant wipe at spawn) without the loophole.
+			# Both nodes are re-validated after the wait since the scene can change.
+			var remaining: float = float(_spawn_grace_until_msec - Time.get_ticks_msec()) / 1000.0
+			if remaining > 0.0:
+				await get_tree().create_timer(remaining, true, false, true).timeout
+			if not is_instance_valid(self) or not is_instance_valid(body):
+				return
+			if not is_instance_valid(hitbox) or not hitbox.overlaps_body(body):
+				return
 		GameManager.last_damage_source = BOSS_ID
 		BossVoiceSystem.say(self, BOSS_ID, "mock")
 		# Founder stakes rule: ANY boss touch returns Lil Blunt to the START of

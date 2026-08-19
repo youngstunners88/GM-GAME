@@ -280,11 +280,16 @@ func _test_stage2_boss_chases_inside_the_real_arena() -> void:
 	_check("the L2 boss actually MOVES inside a real arena box",
 		travelled > 400.0,
 		"boss travelled only %.0f px in 7s of kiting — he is pinned" % travelled)
-	# Half a body (120) is the closest his centre can physically get to a player
-	# standing ON the west wall. 150 allows that plus a little settling; the old
-	# origin-clamped build sat at 210 and could never improve.
+	# CONTRACT UPDATED 2026-08-18 (PROMPT_PR41_REJECTED / LEVEL1_MUSIC
+	# residuals) — the 150px bar assumed the boss steers his centre directly
+	# onto the player (half-body + settling room). He now holds a
+	# STANDOFF_X (168px, see distributor.gd) instead of riding on top of the
+	# player — that was the actual fix for "camera follows the player, so a
+	# boss welded to their x has no visible relative motion". A boss stopped
+	# ~168px away is CORRECTLY working, not stalled; only a gap far beyond
+	# the standoff (a genuinely frozen or caged boss) should fail this.
 	_check("the L2 boss reaches a player pinned against the west arena wall",
-		gap < 150.0,
+		gap < 168.0 + 70.0,
 		"boss centre stalled %.0f px away (west wall is unreachable)" % gap)
 	boss.queue_free(); player.queue_free()
 	await get_tree().physics_frame

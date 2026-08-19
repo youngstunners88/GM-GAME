@@ -112,6 +112,12 @@ func _spawn_axe(spread: float) -> void:
 	# Big-axe power-up: set BEFORE add_child so axe._ready() sees it (same
 	# pre-add_child prop contract EntitySpawner uses for MineCart.cart_type).
 	axe.big = GameManager.has_power_up("bigaxe")
+	# PICKAXE = the middle weight class (see axe.gd's `heavy` block). Without
+	# this the pickaxe threw a byte-identical DEFAULT axe, which is exactly the
+	# founder's "the axe is still exactly the same ... it doesnt have a more
+	# powerful impact than Lil Blunt's default axes" while his HUD read PICKAXE.
+	# Guarded on `big` so upgrading pickaxe -> big axe is never a downgrade.
+	axe.heavy = GameManager.has_power_up("pickaxe") and not axe.big
 	axe.global_position = player.smoke_spawn.global_position
 	player.get_tree().current_scene.add_child(axe)
 

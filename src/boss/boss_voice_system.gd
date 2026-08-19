@@ -17,9 +17,40 @@ const VOICE_DIR := "res://src/assets/sounds/voice/boss/"
 ## under gameplay noise. Pushed to +10 dB so the antagonists clearly cut
 ## through (6 dB HOTTER than the hero, which is what a menacing boss should be).
 ## Founder still reported "not loud enough" at +10 with a POSITIONAL player —
-## the real thief was distance attenuation, fixed below; +12 is the top of the
-## directive's requested +10..+12 band now that nothing scales it down.
-const PLAYER_VOLUME_DB := 12.0
+## the real thief was distance attenuation, fixed below; +12 was the top of
+## the directive's requested +10..+12 band, chosen once nothing scaled it
+## down any more.
+##
+## Founder ("Almost_Better" residual, 2026-08-18): "All the bosses are
+## slightly a little too loud now." Now that distance attenuation is truly
+## gone (non-positional), +12 reads as loud everywhere in the arena, not just
+## far away — dropped to +9, still solidly above the hero's own +6 dB bark
+## gain (a boss should out-volume Lil Blunt) and still non-positional, just
+## not pinned at the top of the requested band any more.
+const PLAYER_VOLUME_DB := 9.0
+
+## PER-BOSS trim on top of PLAYER_VOLUME_DB, in dB.
+##
+## Founder (2026-08-19): "The 2nd boss is too loud." — note: the 2nd boss
+## SPECIFICALLY, while the same pass asks for Gideon to be made LOUDER. The
+## previous fix moved the single shared gain 12 -> 9 for ALL THREE bosses,
+## which is precisely the global-mix change that cannot satisfy a per-source
+## complaint: it quietened the Auditor and Claim Jumper nobody complained
+## about, and the Distributor was still the loudest thing on screen.
+##
+## Why the Distributor reads hotter than his siblings at an identical gain:
+## he is the only boss whose fight also runs a continuous ambient-taunt timer
+## against a LONG cycle (his PATROL/GRAVITY_TELL/HOARD_GRAVITY/SHARD_THROW/
+## VULNERABLE loop keeps him registered as the active boss for the whole
+## fight), so he simply speaks far more often than the other two — and every
+## line ducks the music by MUSIC_DUCK_DB, so the track keeps dipping under him.
+## -4 dB puts his lines below the hero's own +6 dB barks in the same scene
+## while keeping him clearly audible.
+const BOSS_GAIN_DB := {
+	"tax": 0.0,       # Auditor — not complained about, left exactly as shipped
+	"crystal": -4.0,  # Distributor — the "2nd boss is too loud" fix
+	"bandit": 0.0,    # Claim Jumper — not complained about
+}
 ## Minimum gap between any two lines from the same boss.
 const COOLDOWN := 2.2
 ## Ambient taunt cadence window (seconds).
@@ -110,6 +141,9 @@ func say(source: Node2D, boss_id: String, category: String, force: bool = false)
 	if stream == null:
 		return
 	_player.stream = stream
+	# Apply this boss's own trim (see BOSS_GAIN_DB). Set per line rather than
+	# once in _ready because a single shared player serves all three bosses.
+	_player.volume_db = PLAYER_VOLUME_DB + float(BOSS_GAIN_DB.get(boss_id, 0.0))
 	# `source` is no longer used to place the sound (the player is deliberately
 	# non-positional — see _player's declaration). It stays in the signature so
 	# every existing boss call site keeps working unchanged.

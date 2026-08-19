@@ -299,6 +299,47 @@ const LOCK_COOLDOWN: float = 0.9
 const LOCK_ARM_OVERLAP: float = 96.0
 var _climb_locked: bool = false
 var _lock_cd: float = 0.0
+
+## STANDOFF + SURGE — real root cause of the founder's TENTH-PLUS "still
+## doesn't chase" report (PROMPT_PR41_REJECTED / LEVEL1_MUSIC residuals,
+## 2026-08-18), diagnosed by reading this exact function: `target` used to be
+## `player.global_position + Vector2(0.0, -HOVER_ABOVE)` — steering directly
+## at the player's OWN x. A live Playwright capture (2s of active player
+## fleeing, boss's on-screen position measured before/after) showed the
+## boss's SCREEN position barely moves even though `to` is genuinely nonzero
+## every frame: the camera follows the player, and a boss that steers at the
+## player's exact x rides at an almost-fixed screen offset near the player at
+## all times — there is no MOMENT where he visibly closes a gap, because he
+## is never meaningfully behind.
+##
+## Two changes, not one, because they fix two different failures:
+##
+## 1. STANDOFF_X: steer at a point held to one side of the player instead of
+##    directly on top of them, so a genuine gap can open and close rather
+##    than a permanent near-zero offset (this was tried once before, in an
+##    earlier session on a different branch, and measured to work — but that
+##    branch never reached this codebase's live lineage, which kept tuning
+##    the center-lock instead).
+## 2. SURGE: even a standoff that holds a CONSTANT offset reads as "parked
+##    beside me", not "chasing", because holding steady state has no visible
+##    motion of its own. Periodically (SURGE_INTERVAL) he closes in past the
+##    standoff toward the player (SURGE_CLOSE_FACTOR) for SURGE_DURATION at
+##    SURGE_SPEED_MULT, then eases back out — a punctuated, readable
+##    "lunge in, fall back" that moves his SCREEN position dramatically in
+##    both directions, which a constant hold can never produce regardless of
+##    how correct the underlying pursuit speed is.
+const STANDOFF_X: float = 168.0
+const STALK_WEAVE_AMP: float = 70.0
+const STALK_WEAVE_RATE: float = 1.35
+var _stalk_t: float = 0.0
+var _standoff_side: float = 0.0
+const STANDOFF_FLIP_DEADZONE: float = 24.0
+const SURGE_INTERVAL: float = 3.2
+const SURGE_DURATION: float = 0.65
+const SURGE_CLOSE_FACTOR: float = 0.25  ## fraction of STANDOFF_X he closes to during a surge
+const SURGE_SPEED_MULT: float = 1.6
+var _surge_t: float = 0.0
+var _surge_active: bool = false
 ## Player top speed is walk_speed 200 * SPRINT_MULTIPLIER 1.2 = 240 px/s.
 ##
 ## Founder: "the boss is not chasing Lil Blunt which makes it too easy."
@@ -443,7 +484,34 @@ func _hover_pursue(delta: float, speed_scale: float = 1.0,
 		min_speed: float = MIN_PURSUE_SPEED) -> void:
 	var p := get_tree().get_first_node_in_group("player")
 	if p:
-		var target: Vector2 = p.global_position + Vector2(0.0, -HOVER_ABOVE)
+		# Hold a side of the player (with hysteresis so he doesn't oscillate
+		# through them when the player runs underneath) and breathe around it
+		# so a stalled player doesn't turn the standoff into a new static
+		# park. See STANDOFF_X's block comment for why this exists at all.
+		var dx_now: float = hit_centre().x - p.global_position.x
+		if absf(dx_now) > STANDOFF_FLIP_DEADZONE:
+			_standoff_side = signf(dx_now)
+		if _standoff_side == 0.0:
+			_standoff_side = 1.0
+		_stalk_t += delta
+		var breathe: float = sin(_stalk_t * STALK_WEAVE_RATE) * STALK_WEAVE_AMP
+		var standoff_now: float = STANDOFF_X + breathe
+		# SURGE: periodically lunge past the standoff toward the player, then
+		# ease back out. This is what actually reads as "chasing" on screen —
+		# see STANDOFF_X's comment for why holding even a correct constant
+		# offset cannot, by itself, look like pursuit under a player-following
+		# camera.
+		_surge_t += delta
+		if not _surge_active and _surge_t >= SURGE_INTERVAL:
+			_surge_active = true
+			_surge_t = 0.0
+		if _surge_active:
+			standoff_now = STANDOFF_X * SURGE_CLOSE_FACTOR
+			if _surge_t >= SURGE_DURATION:
+				_surge_active = false
+				_surge_t = 0.0
+		var target: Vector2 = p.global_position + Vector2(
+			_standoff_side * standoff_now, -HOVER_ABOVE)
 		# STEERS FROM THE BODY CENTRE, NOT THE ORIGIN. This node's origin is the
 		# body's TOP-LEFT and the body is 240 wide, so aiming the origin at the
 		# player parked his visible centre a permanent 120px EAST of them — he
@@ -548,6 +616,8 @@ func _hover_pursue(delta: float, speed_scale: float = 1.0,
 		# this lock exist to prevent. It only shortens how long he spends
 		# getting out of the way of his own safety check.
 		var speed: float = CLIMB_SPEED if climbing else maxf(HOVER_MAX * speed_scale, min_speed)
+		if _surge_active:
+			speed *= SURGE_SPEED_MULT
 		velocity = velocity.move_toward(to.normalized() * speed, HOVER_ACCEL * delta)
 		boss_sprite.set_facing(to.x > 0.0)
 	else:
@@ -575,12 +645,41 @@ func _hover_brake(delta: float) -> void:
 ## glued to the boundary with a saturated velocity, so the instant the player
 ## moved back into reach he still needed a full deceleration to unstick — he
 ## read as frozen.
+## Margin the boss's CENTRE keeps from the arena wall, in px.
+##
+## THIS REPLACED A HALF-BODY INSET, AND THAT INSET WAS THE "BOSS DOES NOT MOVE
+## BEYOND THIS POINT" BUG — reported by the founder 20+ times across many
+## sessions, and never once actually measured until now.
+##
+## The clamp used to keep the boss's whole BODY inside the arena
+## (`arena_min.x + BODY/2 .. arena_max.x - BODY/2`). The PLAYER has no such
+## restriction — he walks right up to the wall. So every arena had a dead
+## pocket at each end, half a body wide, that the player could stand in and the
+## boss could not advance into. Measured on the real levels with the player
+## parked at the arena edge:
+##
+##   Distributor (BODY 240): player at 3730, boss hard-stopped at 3820 — his
+##       exact clamp limit — leaving a 90px gap he could never close.
+##   Claim Jumper (BODY 280): player at 3730, boss stopped at 3856, 126px gap.
+##
+## He tracks correctly the whole way in (tracking score +0.57), then hits an
+## invisible line and stops dead. That is precisely the screenshot: player at
+## one end, boss parked at a fixed coordinate, "not moving beyond this point".
+## Every previous fix tuned speed/accel/standoff, none of which can move a boss
+## that a clamp is holding.
+##
+## Clamping the CENTRE (with a small margin, not half a body) still does the
+## job the clamp exists for — he cannot leave the fight or drift into a trench
+## — while letting him reach any x the player can reach. His body may now
+## overhang the arena edge by up to half a body, which is correct: the arena
+## boundary is where the FIGHT is, not a shelf his sprite must sit on.
+const ARENA_EDGE_MARGIN: float = 24.0
+
 func _clamp_to_arena() -> void:
 	if arena_max == Vector2.ZERO:
 		return
-	var half: float = BODY / 2.0
-	var lo_x: float = arena_min.x + half
-	var hi_x: float = maxf(lo_x, arena_max.x - half)
+	var lo_x: float = arena_min.x + ARENA_EDGE_MARGIN
+	var hi_x: float = maxf(lo_x, arena_max.x - ARENA_EDGE_MARGIN)
 	var centre: Vector2 = hit_centre()
 	var clamped_x: float = clampf(centre.x, lo_x, hi_x)
 	var clamped_y: float = clampf(centre.y, arena_min.y, arena_max.y)
@@ -757,7 +856,22 @@ func _throw_shards() -> void:
 		var spread := (float(i) - float(count - 1) / 2.0) * 0.22
 		var orb := ORB.instantiate()
 		orb.direction = base.rotated(spread)
-		orb.speed = 170.0 + 40.0 * (current_phase - 1)
+		# FOUNDER (2026-08-19): "I told you that all of the 2nd bosses attacks
+		# must be faster not just some!!!" The previous pass sped up only the
+		# crystal-shard barrage (_throw_crystal_shards) and deliberately left
+		# this ETH-orb volley alone to protect the Forced-Distribution redirect
+		# window. He is right that this is half a fix.
+		#
+		# 170/210/250 -> 250/310/370 px/s per phase (~47% faster), matching the
+		# uplift the crystal shards got.
+		#
+		# The redirect window survives because it is measured in TIME, not
+		# distance: boss_projectile.gd gates the flip on `_t <= unstable_time`
+		# (0.35s from spawn), so a faster orb has exactly the same 0.35s of
+		# redirectability — it simply covers more ground during it. The skill
+		# shot is unchanged in duration; it is now a tighter read, which is the
+		# point of "faster attacks".
+		orb.speed = 250.0 + 60.0 * (current_phase - 1)
 		# LONG RANGE (founder session 7: "the diamond bomb and shards don't reach
 		# Lil Blunt when he's far away"). At 170-250 px/s the default 4s lifetime
 		# only carried them 680-1000px — short of the ~1226px diagonal across the
@@ -828,7 +942,22 @@ func _throw_crystal_shards() -> void:
 		shard.direction = base.rotated(spread)
 		# Faster and non-homing: a straight-line barrage, not a tracking one —
 		# the counter-play is footwork, not waiting out a redirect window.
-		shard.speed = 260.0 + 50.0 * (current_phase - 1)
+		# FASTER CRYSTALS (founder, 2026-08-19: "Lets also make his crystal
+		# attacks faster"). 260/310/360 -> 380/450/520 px/s per phase, ~46%
+		# quicker, which is a real change in how hard the barrage is to walk
+		# out of rather than a cosmetic one.
+		#
+		# This is the ONE Distributor attack where raising speed is free: these
+		# shards are `redirectable = false` (see below), so they are not part of
+		# the Forced-Distribution mechanic. The redirect window that a previous
+		# session deliberately protected by extending LIFETIME instead of speed
+		# belongs to the ETH-orb volley in _throw_shards() — that attack's speed
+		# is untouched here, so the signature redirect skill-shot keeps exactly
+		# the timing it has today.
+		#
+		# Lifetime stays 5.0 s, so range grows 1300-1800 -> 1900-2600 px, still
+		# comfortably clearing the ~1226 px arena diagonal at every phase.
+		shard.speed = 380.0 + 70.0 * (current_phase - 1)
 		# Same long-range fix as the ETH-diamond volley (Kimi K3 s7): 260-360 px/s
 		# over the default 4s only reached 1040-1440px; 5s clears the ~1226px
 		# diagonal at every phase so the shards actually connect across the arena.
@@ -1084,6 +1213,27 @@ func die() -> void:
 
 func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("take_damage"):
+		# SPAWN GRACE — see BossBase's own const block.
+		if is_spawn_grace_active():
+			# GRACE SWALLOWS THE ENTRY EVENT — RE-CHECK WHEN IT EXPIRES.
+			#
+			# `body_entered` fires exactly ONCE, on the frame the player first
+			# overlaps. Returning outright during spawn grace therefore did not
+			# DELAY the contact, it CANCELLED it: a player still standing inside
+			# the boss when grace ended was permanently immune to him, because no
+			# second entry event ever arrives while they remain inside. Caught by
+			# tests/boss_ghost_death_hurtbox_test.gd.
+			#
+			# Waiting out the remaining grace and then re-testing the REAL overlap
+			# keeps the intent (no instant wipe at spawn) without the loophole.
+			# Both nodes are re-validated after the wait since the scene can change.
+			var remaining: float = float(_spawn_grace_until_msec - Time.get_ticks_msec()) / 1000.0
+			if remaining > 0.0:
+				await get_tree().create_timer(remaining, true, false, true).timeout
+			if not is_instance_valid(self) or not is_instance_valid(body):
+				return
+			if not is_instance_valid(hitbox) or not hitbox.overlaps_body(body):
+				return
 		GameManager.last_damage_source = BOSS_ID
 		BossVoiceSystem.say(self, BOSS_ID, "mock")
 		# Founder stakes rule: ANY boss touch returns Lil Blunt to the START of

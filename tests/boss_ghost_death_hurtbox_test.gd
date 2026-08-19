@@ -24,11 +24,33 @@ const DISTRIBUTOR := preload("res://src/boss/distributor.tscn")
 
 var _fail: int = 0
 
+## BODY constant off a boss scene's attached script, so this gate tracks the
+## real value instead of a copy that silently rots when the art is resized.
+func _body_of(scene: PackedScene) -> float:
+	var probe: Node = scene.instantiate()
+	var scr: GDScript = probe.get_script()
+	var body: float = float(scr.get_script_constant_map().get("BODY", 0.0))
+	probe.free()
+	return body
+
+## HURTBOX_CENTER constant off a boss scene's attached script.
+func _hurtbox_centre_of(scene: PackedScene) -> Vector2:
+	var probe: Node = scene.instantiate()
+	var scr: GDScript = probe.get_script()
+	var c: Variant = scr.get_script_constant_map().get("HURTBOX_CENTER", Vector2.ZERO)
+	probe.free()
+	return c if c is Vector2 else Vector2.ZERO
+
 func _ready() -> void:
 	await get_tree().process_frame
 	print("BOSS GHOST-DEATH HURTBOX GEOMETRY:")
-	_test_hurtbox_geometry("Auditor (L1)", AUDITOR, 168.0)
-	_test_hurtbox_geometry("Distributor (L2)", DISTRIBUTOR, 240.0)
+	# Body sizes are READ FROM THE BOSS SCRIPTS, not hardcoded. They were
+	# literal 168.0 / 240.0, and the Auditor's BODY has since gone 168 -> 220
+	# (a founder-requested size increase), so this gate had been failing on a
+	# stale constant rather than on a real geometry defect — a test asserting
+	# yesterday's numbers instead of today's invariant.
+	_test_hurtbox_geometry("Auditor (L1)", AUDITOR, _body_of(AUDITOR))
+	_test_hurtbox_geometry("Distributor (L2)", DISTRIBUTOR, _body_of(DISTRIBUTOR))
 	await _test_real_contact_still_kills()
 	print("BOSS_GHOST_DEATH_HURTBOX: %s" % ("ALL PASS" if _fail == 0 else "%d FAILURE(S)" % _fail))
 	get_tree().quit(_fail)
@@ -96,12 +118,33 @@ func _test_real_contact_still_kills() -> void:
 	cs.shape = r
 	cs.position = Vector2(16, 16)
 	player.add_child(cs)
-	# Centre the player squarely inside the CORRECTED hurtbox (local centre
-	# ~(86,80) on a 168-body boss), which genuinely overlaps the visible art.
-	player.global_position = Vector2(1000 + 86 - 16, 500 + 80 - 16)
+	# Centre the player squarely inside the CORRECTED hurtbox, reading the
+	# boss's own HURTBOX_CENTER rather than the literal (86,80) this used to
+	# assume — that pair was derived for a 168px Auditor body and stopped
+	# pointing at the hurtbox once BODY grew to 220, so the "player" was being
+	# parked OUTSIDE the shape and the contact assertion failed for a reason
+	# that had nothing to do with contact.
+	var hc: Vector2 = _hurtbox_centre_of(AUDITOR)
+	player.global_position = Vector2(1000.0 + hc.x - 16.0, 500.0 + hc.y - 16.0)
 	add_child(player)
 
-	for i in range(10):
+	# Wait past the boss's spawn-grace window (1.2s) plus margin: contact is
+	# deliberately suppressed during grace, and the boss now re-checks the
+	# overlap when grace expires rather than cancelling the contact outright.
+	#
+	# BOTH BODIES ARE RE-PINNED EVERY FRAME. This scene has no floor, so the
+	# Auditor applies gravity and free-falls: over the ~1.7s needed to clear
+	# spawn grace he dropped ~1350px (measured: hitbox global y 500 -> 1847),
+	# carrying his hurtbox far away from the player and making the overlap
+	# assertion fail for a reason that has nothing to do with contact. The old
+	# 10-frame wait hid this only because he had barely moved.
+	var boss_anchor: Vector2 = boss.global_position
+	var player_anchor: Vector2 = player.global_position
+	for i in range(100):
+		if is_instance_valid(boss):
+			boss.global_position = boss_anchor
+		if is_instance_valid(player):
+			player.global_position = player_anchor
 		await get_tree().physics_frame
 
 	_check("player standing inside the boss's real silhouette DOES trigger boss_contact_restart",

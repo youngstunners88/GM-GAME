@@ -523,18 +523,96 @@ func _process(_delta: float) -> void:
 	if _seal_wall == null:
 		# 60px of clearance so the wall never spawns on top of the player.
 		if p.global_position.x > _seal_x + 60.0:
-			_seal_wall = _create_wall(_seal_x, 400, 20, 600)
+			_seal_wall = _create_wall(_seal_x, 400, 20, 600, true)
 	elif p.global_position.x < _seal_x - 40.0:
 		# Player is back outside (death + respawn at a western checkpoint):
 		# drop the wall so they can walk in and re-engage.
 		_seal_wall.queue_free()
 		_seal_wall = null
+	# END THE FIGHT WHENEVER THE PLAYER IS OUTSIDE — NOT ONLY ON THE FRAME THE
+	# WALL COMES DOWN.
+	#
+	# This used to live inside the `elif` above, which made it conditional on
+	# `_seal_wall` currently existing. Two real ways that misses:
+	#   * the player triggers the boss but turns back west before ever crossing
+	#     `_seal_x + 60`, so the wall is never raised and the `elif` is never
+	#     reached at all;
+	#   * the wall came down on an earlier trip, leaving `_seal_wall` null, so a
+	#     second retreat re-enters the `if` branch instead.
+	# Either way the boss stayed alive with an unreachable target — the exact
+	# frozen-boss state this teardown exists to prevent. Checking the player's
+	# position directly is unconditional, and _end_boss_fight() is a no-op once
+	# the latch is already clear, so running it every frame while outside is
+	# cheap and idempotent.
+	if p.global_position.x < _seal_x - 40.0:
+		_end_boss_fight()
+
+## THE "BOSS DOESN'T MOVE" SHARED ROOT CAUSE (2026-08-19 forensic pass).
+##
+## Every boss is clamped STRICTLY INSIDE its own arena box (distributor and
+## claim_jumper via _clamp_to_arena; see each boss's own arena_min/arena_max).
+## The player, however, could be OUTSIDE that box while the fight was still
+## live — the seal above drops the moment they walk back west, but nothing
+## ended the fight, so the boss stayed alive, kept pursuing a target it was
+## structurally forbidden from reaching, and sat welded to its clamp.
+##
+## Measured, not assumed: photogrammetry on the founder's own Stage 2
+## screenshot puts Lil Blunt at world x~3109 — 591 px WEST of that arena's
+## start_x (3700) — while the Distributor sits at ~3813, i.e. pinned on his
+## west clamp (his reachable centre range is only [3820, 4280]). The Stage 1
+## shot shows the same shape: player retreated ~900 px west, boss never left
+## the arena mouth. That is exactly "THE BOSS IS NOT FUCKING MOVING": he
+## genuinely cannot, and no amount of speed/acceleration/standoff tuning
+## (this repo has ~10 such attempts recorded in comments) can fix a boss whose
+## target is outside his own permitted world.
+##
+## It also explains the companion complaint that the Stage 3 boss is "way too
+## easy to defeat": a wall-pinned boss is a stationary target that can be shot
+## from safety, outside his reach, indefinitely.
+##
+## The fix is to make the two rules stop contradicting each other. The fight is
+## only coherent while the player is inside the arena, so leaving it ENDS the
+## fight rather than freezing it: the boss is freed and the level's own
+## `_boss_arena_active` latch is cleared, so walking back in re-runs
+## `_on_boss_trigger` and starts a clean fight.
+##
+## This deliberately does NOT just re-seal the player in. The seal's drop
+## behaviour exists to prevent a real soft-lock — checkpoints sit WEST of every
+## arena, so a player who dies mid-fight respawns outside a wall that is
+## already up, permanently locked out of a fight they can neither finish nor
+## leave. Ending the fight preserves that escape hatch instead of trading one
+## trap for another.
+func _end_boss_fight() -> void:
+	# `_boss_arena_active` is declared on each concrete level script, not here,
+	# so it is cleared dynamically. get()/set() resolve it on the instance; the
+	# guard keeps this a no-op for any level that has no boss.
+	if get("_boss_arena_active") == null:
+		return
+	set("_boss_arena_active", false)
+	for boss in get_tree().get_nodes_in_group("boss"):
+		if is_instance_valid(boss):
+			boss.queue_free()
 
 ## Returns the wall so the boss-arena seal can take it back down again
 ## (existing callers ignore the return value).
-func _create_wall(x: float, y: float, w: float, h: float) -> StaticBody2D:
+## `player_only` walls collide with the player and nothing else.
+##
+## The boss-arena SEAL used a plain StaticBody2D on the default World layer, so
+## it blocked the BOSS as well as the player. That is the Stage 1 half of "the
+## boss cant get passed this point": the Auditor has no arena clamp at all, yet
+## a probe with the player parked at the arena's west edge (x=2830) measured him
+## hard-stopped at x=2905 — his body flush against the seal wall at 2800, 75px
+## short of the player, forever. The wall was caging the boss out of the very
+## pocket the player was standing in.
+##
+## Layer 8 (Player) is the only bit the player's own mask reads, so a
+## player-only wall still seals the player in while the boss can cross it.
+## Containing the BOSS is the arena clamp's job, not this wall's.
+func _create_wall(x: float, y: float, w: float, h: float, player_only: bool = false) -> StaticBody2D:
 	var wall := StaticBody2D.new()
 	wall.position = Vector2(x, y)
+	if player_only:
+		wall.collision_layer = 8
 	var col := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
 	shape.size = Vector2(w, h)
@@ -607,10 +685,22 @@ func _on_difficulty_ready() -> void:
 		var b: Vector2 = level_data.checkpoints[level_data.checkpoints.size() - 1]
 		EntitySpawner.spawn("checkpoint", (a + b) / 2.0 + Vector2(0, -4), self,
 			{"checkpoint_id": 90, "level_index": level_data.level_index})
-	# 3. Heavy retriers get a Hint Leaf: touch it and the route to the next
-	#    checkpoints glows for 5 seconds.
-	if DifficultyManager.hint_leaf:
-		_spawn_hint_leaf()
+	# 3. Hint Leaf — DISABLED (founder, 2026-08-19).
+	#
+	# "I noticed these leaves in the very 1st point of each stage all of a
+	# sudden. Remove them. They have no function."
+	#
+	# They were adaptive difficulty: DifficultyManager.hint_leaf turns on for
+	# players who die repeatedly, and _spawn_hint_leaf() drops a green weed leaf
+	# at player_spawn + (90,-20) which lights the checkpoint route for 5s. That
+	# explains both halves of his report — "all of a sudden" (it switched on
+	# after a run of deaths) and "in the very 1st point of EACH stage" (it is
+	# anchored to every level's spawn). To him it reads as an inert prop,
+	# because its one interaction is invisible until touched.
+	#
+	# The spawner is kept, not deleted, so the mechanic can be reinstated
+	# deliberately (with a readable tell) rather than rebuilt from scratch.
+	# Nothing else calls it, so it is simply never invoked today.
 
 ## Glowing leaf near spawn; on pickup, draws a dotted guide line through the
 ## level's checkpoints for 5s. A nudge, not a walkthrough.

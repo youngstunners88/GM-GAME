@@ -28,6 +28,7 @@ var _combo_label: Label
 var _lives_label: Label
 
 func _ready() -> void:
+    _build_fullscreen_button()
     GameManager.score_changed.connect(_on_score_changed)
     GameManager.health_changed.connect(_on_health_changed)
     GameManager.coins_changed.connect(_on_coins_changed)
@@ -266,3 +267,35 @@ func _on_certificate_earned(count: int) -> void:
     tween.tween_interval(3.0)
     tween.tween_property(toast, "modulate:a", 0.0, 0.4)
     tween.finished.connect(toast.queue_free)
+
+
+## Top-right EXPAND button — the discoverable half of FullscreenToggle.
+##
+## Founder, three separate passes: "I'm so sick of playing this game on such a
+## small payview screen." The blank area around the game is the itch.io page's
+## embed frame, which is a dashboard setting and not something this build can
+## resize. A fullscreen control makes that irrelevant: one click and the game
+## owns the whole monitor.
+##
+## It is a BUTTON, not just the F key, because browsers only grant fullscreen
+## from a genuine user gesture and because a keybind he has never been told
+## about does not exist as far as he is concerned. Anchored top-right so it
+## cannot cover the score/lives column on the left.
+func _build_fullscreen_button() -> void:
+    var btn := Button.new()
+    btn.name = "FullscreenButton"
+    btn.text = "⛶"
+    btn.tooltip_text = "Fullscreen (F)"
+    btn.focus_mode = Control.FOCUS_NONE
+    btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+    btn.position = Vector2(-96, 8)
+    btn.custom_minimum_size = Vector2(56, 44)
+    btn.add_theme_font_size_override("font_size", 26)
+    # mouse_filter STOP on the button itself only; the HUD root stays PASS so
+    # this cannot swallow gameplay clicks anywhere else on screen.
+    btn.mouse_filter = Control.MOUSE_FILTER_STOP
+    btn.pressed.connect(func() -> void:
+        FullscreenToggle.toggle()
+        btn.text = "⛶"
+    )
+    add_child(btn)
