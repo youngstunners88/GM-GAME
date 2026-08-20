@@ -109,7 +109,18 @@ func _setup_depth_routes() -> void:
 	# These sit at pit x's, y≈624 — the proven pit-edge pattern (like the old
 	# x=868 that lived in a gap): smashable while crossing a gap, never blocking
 	# a grounded walk. Verified by tests/s11_stage3_walkpath_test.gd.
-	for wall_pos: Vector2 in [Vector2(620, 624), Vector2(1260, 624), Vector2(3620, 624)]:
+	#
+	# Founder, 2026-08-21 residual: "remove the block and the gap so the final
+	# boss can travel straight and start chasing without that barrier." The
+	# x=3620 wall used to be the ONLY floor across the 140px gap right before
+	# the boss arena (3560..3700) — the player could smash it (it's meant to
+	# be discovered) and permanently open a hole the Claim Jumper, with no
+	# pickaxe and no fly/glide, could never cross again mid-chase. Fixed at
+	# the source: level_03_data.tres now fills that gap with a real ground
+	# segment (same precedent as the already-fixed 2620-2760 pit), so this
+	# wall is no longer sitting over open air — removed rather than left as
+	# a smashable obstacle on now-solid ground.
+	for wall_pos: Vector2 in [Vector2(620, 624), Vector2(1260, 624)]:
 		var wall := preload("res://src/level/secret_wall.tscn").instantiate()
 		wall.global_position = wall_pos
 		add_child(wall)

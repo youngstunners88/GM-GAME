@@ -145,17 +145,30 @@ var _sidestep_dir: float = 1.0
 ## Casts upward at increasing offsets each side and returns the direction of the
 ## first probe that finds open sky. Falls back to his current heading, so a
 ## fully-enclosed boss still commits to something rather than dithering.
+## Kimi K3 audit (2026-08-21 residual): the old version's nested loop tried
+## dist-then-dir with dir=+1.0 (east) always checked first at every distance,
+## so with open sky on both sides he ALWAYS committed east — approaching a
+## launch block from the east, a ceiling bonk under a terrace systematically
+## sidestepped him AWAY from the very block he needed to mount. Now checks
+## the nearest opening in EACH direction independently and returns whichever
+## is genuinely closer, falling back to patrol_direction only on a true tie.
 func _ceiling_escape_dir() -> float:
 	var space := get_world_2d().direct_space_state
 	var head_y: float = global_position.y + 8.0
-	for dist: float in [120.0, 220.0, 320.0, 420.0]:
-		for dir: float in [1.0, -1.0]:
+	var open_dist: Dictionary = {1.0: INF, -1.0: INF}
+	for dir: float in [1.0, -1.0]:
+		for dist: float in [120.0, 220.0, 320.0, 420.0]:
 			var from := Vector2(global_position.x + BODY / 2.0 + dist * dir, head_y)
 			var params := PhysicsRayQueryParameters2D.create(from, from + Vector2(0.0, -260.0))
 			params.collision_mask = 1
 			params.exclude = [get_rid()]
 			if space.intersect_ray(params).is_empty():
-				return dir
+				open_dist[dir] = dist
+				break
+	if open_dist[1.0] < open_dist[-1.0]:
+		return 1.0
+	if open_dist[-1.0] < open_dist[1.0]:
+		return -1.0
 	return signf(patrol_direction) if not is_zero_approx(patrol_direction) else 1.0
 ## Motion-feel constants (founder: "smoother, less robotic" — capability
 ## unchanged). Accel is ~4x patrol speed so he still reaches full pace in
@@ -371,7 +384,17 @@ func _physics_process(delta: float) -> void:
 			# double jump, not a conditional one. Still gated on
 			# `_air_jump_ready` (armed at take-off, cleared on use and on any
 			# ceiling contact) so it can never become an infinite hover.
-			elif _air_jump_ready and not is_on_floor() and velocity.y > -120.0:
+			#
+			# Kimi K3 audit (2026-08-21 residual): this used to be `elif`
+			# chained under the sidestep branch above, so ANY active sidestep
+			# (up to 1.2s, armed by an EARLIER ceiling bonk) silently
+			# suppressed the air jump for its whole duration — including for
+			# a fresh wall-leap (line ~336, which is not gated on sidestep at
+			# all) fired mid-sidestep. That reproduced exactly the founder's
+			# "walks through the block" loop: leap off the block, air jump
+			# never fires because a stale sidestep is still ticking, he falls
+			# short, lands, repeats. Now a plain `if`, independent of sidestep.
+			if _air_jump_ready and not is_on_floor() and velocity.y > -120.0:
 				velocity.y = AIR_JUMP_VELOCITY
 				_air_jump_ready = false
 			# Kimi K3 audit (2026-08-20 residual): `is_on_floor()` reflects the
