@@ -40,6 +40,15 @@ var entity_scenes: Dictionary = {
 	"wbtc": preload("res://src/collectibles/wbtc.tscn"),
 	"gold_token": preload("res://src/collectibles/gold_token.tscn"),
 	"melt_forge": preload("res://src/level/melt_forge.tscn"),
+	# Decorative damage traps (founder, Block_Fixes_1, 2026-08-20): "beautiful"
+	# but harmful set-dressing, one alluring pair per level, using the
+	# founder's own reference art.
+	"trap_deadly_beauty": preload("res://src/hazards/trap_deadly_beauty.tscn"),
+	"trap_widows_thorn": preload("res://src/hazards/trap_widows_thorn.tscn"),
+	"trap_diamond_fang": preload("res://src/hazards/trap_diamond_fang.tscn"),
+	"trap_siren_crystal": preload("res://src/hazards/trap_siren_crystal.tscn"),
+	"trap_gold_rush": preload("res://src/hazards/trap_gold_rush.tscn"),
+	"trap_golden_widow": preload("res://src/hazards/trap_golden_widow.tscn"),
 }
 
 ## Spawn an entity by type name. `props` are set on the instance BEFORE it

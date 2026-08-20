@@ -5,6 +5,49 @@
 
 ---
 
+**🥀 CHECKPOINT INVISIBLE AGAIN + SIX REAL TRAPS (2026-08-20, Block_Fixes_1).**
+
+Direct side effect of my own prior fix: making the checkpoint block solid (so
+the Auditor could launch off it) used a shared scene every checkpoint in the
+game instantiates — so all 6 checkpoints across all 3 levels turned into
+visible solid boxes, not just the one near GOV VAULT. You sent 6 screenshots
+of exactly that.
+
+**Fix, per your own choice when I asked** (invisible checkpoint + traps
+nearby, not traps replacing the save function): the checkpoint's `ColorRect`
+is alpha 0 in both states now — save-on-touch, audio, and the "capture this
+moment" hint are all untouched, it just doesn't render as a block anymore.
+The `StandSurface` that makes it solid for the Auditor is untouched too.
+
+Then, using your own reference art, six new decorative damage traps —
+**The Deadly Beauty** and **The Widow's Thorn** (Level 1), **The Diamond
+Fang** and **The Siren Crystal** (Level 2), **Gold Rush Trap** and **Golden
+Widow** (Level 3) — placed near where each checkpoint used to visibly sit.
+Each is a static `Node2D` with your art at ~15% scale, a slow idle pulse so
+it doesn't read as dead set-dressing, and a proper hitbox that calls the
+player's own `take_damage()` on contact — same convention as the hostile
+vine, so knockback/invincibility-frames/hitstop are all the real system, not
+a bespoke one.
+
+**Verified:** new gate `tests/visual_trap_damage_test.gd` proves the
+checkpoint is invisible + still solid, and that all 6 traps actually deal
+damage on contact (not just "exist in the scene"). Full test suite: only the
+pre-existing unrelated failures. Security sentinel 18/18. Live capture of
+all 6 traps in their real level positions via a new test-only `?stage=N&
+spawn_x=N` debug warp (`docs/captures/2026-08-20-block-fixes/live-verify/`)
+— every trap renders in its correct level's art style and the checkpoint box
+is gone from view.
+
+**On "the 2nd and 3rd bosses need to chase"**: re-measured this exact turn
+before touching anything else — `boss_chase_live_test.gd` (real physics,
+both bosses, multiple platform heights) reads tracking_score +0.64 to +0.86
+(+1 = always follows the player). That's the same instrumentation and the
+same passing result as this session's prior pass, already deployed. I didn't
+find a new regression to fix — flagging honestly rather than guessing at a
+change with no new evidence.
+
+---
+
 **🧱 BOSS 1 SOLID BLOCK + REAL DOUBLE JUMP, STAGE 2 ATTACK SPEED, BLAZE RUSH CLEANUP (2026-08-20).**
 
 Three items, same screenshots you sent (`artifacts/founder_shots_2026-08-20_fix/shot_1..3.png`), multi-model reviewed (Kimi K3 + Grok 4.6, `docs/model-responses/2026-08-20-boss1-s2-blaze/`).
