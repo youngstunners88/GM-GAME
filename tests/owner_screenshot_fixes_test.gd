@@ -261,6 +261,22 @@ func _test_boss_facing_does_not_displace_art() -> void:
 	_check("levitating disc exists", is_instance_valid(disc))
 
 	var art_node0 := spr.get_child(0) as Node2D
+	# FREEZE HIM WHILE MEASURING THE FLIP.
+	#
+	# This reads art_node0.GLOBAL position either side of a set_facing() call,
+	# with a frame awaited in between — so any motion the boss makes during that
+	# frame is charged to the flip. The Distributor's _physics_process runs
+	# _hover_pursue -> move_and_slide() every frame and will chase any node left
+	# in the "player" group by an earlier subtest in this same file, which is
+	# exactly the cross-test contamination documented in
+	# .claude/rules/test-standards.md. That produced a ~3.8px "art jumped"
+	# failure that had nothing to do with facing.
+	#
+	# Stopping his physics isolates the ONE thing this gate is about: whether
+	# flipping translates the artwork. The assertion below is unchanged and
+	# still strict (<1px) — this removes a confound, it does not relax the bar.
+	boss.set_physics_process(false)
+	boss.set("velocity", Vector2.ZERO)
 	spr.set_facing(true)
 	await get_tree().process_frame
 	var art_right: Vector2 = art_node0.global_position

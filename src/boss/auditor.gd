@@ -106,6 +106,57 @@ var _base_patrol_speed: float = 90.0
 var _leap_cooldown: float = 0.0
 ## Clears ~196px at gravity 980 — enough for this project's real ledge heights.
 const LEAP_VELOCITY: float = -620.0
+## PLATFORM INTELLIGENCE (founder, 2026-08-20): "He is now stuck here as he
+## tries jumping up and down and hitting his head on the platform!!!! Give him
+## more intelligence to use the block to launch himself over the platform or to
+## double jump!"
+##
+## Root cause: he only ever leapt FROM THE FLOOR, and one leap clears ~196px
+## (LEAP_VELOCITY -620 against gravity 980). A terrace higher than that is
+## unreachable, so the "player is above me" rule below fired every 0.9s
+## forever, each time driving his head into the same platform underside. He had
+## no second option and no memory that the attempt had failed.
+##
+## Two additions, deliberately the ones the founder asked for:
+##   AIR JUMP — one mid-air leap, armed on take-off and spent only while
+##       ASCENDING TOWARD a player who is still above him. Stacked on the first
+##       leap it clears roughly 196 + 196 = ~390px, which covers every terrace
+##       in the campaign.
+##   CEILING SIDESTEP — if he does clip a platform underside, he stops shoving
+##       upward into it and commits to a horizontal search for a gap for
+##       CEILING_SIDESTEP_SEC. That is what stops the head-banging LOOP; the
+##       air jump is what gets him up once he finds the gap.
+const AIR_JUMP_VELOCITY: float = -560.0
+## Long enough to clear a real platform at patrol speed: 1.2s * 235px/s = 282px,
+## and the campaign's terraces are ~150-300px wide. At the first attempt's 0.7s
+## he only made 164px per try and the direction kept flipping, so he oscillated
+## around the player's column and netted 123px in 7s — measured, not guessed.
+const CEILING_SIDESTEP_SEC: float = 1.2
+var _air_jump_ready: bool = false
+var _ceiling_sidestep: float = 0.0
+## Direction LOCKED for the duration of a sidestep. Without it, patrol_direction
+## is recomputed from the player's bearing every frame, so a player standing
+## directly above kept reversing him into the blocked column — the head-banging
+## simply became head-banging while shuffling.
+var _sidestep_dir: float = 1.0
+
+## Which way is the nearer edge of the thing blocking him overhead?
+##
+## Casts upward at increasing offsets each side and returns the direction of the
+## first probe that finds open sky. Falls back to his current heading, so a
+## fully-enclosed boss still commits to something rather than dithering.
+func _ceiling_escape_dir() -> float:
+	var space := get_world_2d().direct_space_state
+	var head_y: float = global_position.y + 8.0
+	for dist: float in [120.0, 220.0, 320.0, 420.0]:
+		for dir: float in [1.0, -1.0]:
+			var from := Vector2(global_position.x + BODY / 2.0 + dist * dir, head_y)
+			var params := PhysicsRayQueryParameters2D.create(from, from + Vector2(0.0, -260.0))
+			params.collision_mask = 1
+			params.exclude = [get_rid()]
+			if space.intersect_ray(params).is_empty():
+				return dir
+	return signf(patrol_direction) if not is_zero_approx(patrol_direction) else 1.0
 ## Motion-feel constants (founder: "smoother, less robotic" — capability
 ## unchanged). Accel is ~4x patrol speed so he still reaches full pace in
 ## about a quarter second; the harder turn figure keeps direction changes
@@ -285,12 +336,43 @@ func _physics_process(delta: float) -> void:
 			if is_on_wall() and is_on_floor() and _leap_cooldown <= 0.0:
 				velocity.y = LEAP_VELOCITY
 				_leap_cooldown = 0.55
+				_air_jump_ready = true
 			# He also hops when the player is well above him, so he pursues up
 			# the stage's terraces instead of pacing along the bottom of them.
 			if _pl and is_on_floor() and _leap_cooldown <= 0.0 \
-					and _pl.global_position.y < global_position.y - 90.0:
+					and _pl.global_position.y < global_position.y - 90.0 \
+					and _ceiling_sidestep <= 0.0:
 				velocity.y = LEAP_VELOCITY
 				_leap_cooldown = 0.9
+				_air_jump_ready = true
+			# CEILING SIDESTEP — he just drove his head into a platform.
+			# Kill the upward push (shoving into a ceiling is what produced the
+			# jitter the founder filmed) and commit to travelling sideways for a
+			# moment so he actually hunts for the edge instead of retrying the
+			# same blocked column.
+			if is_on_ceiling():
+				velocity.y = maxf(velocity.y, 0.0)
+				_ceiling_sidestep = CEILING_SIDESTEP_SEC
+				_air_jump_ready = false
+				# Commit to the nearer OPEN side, not to the player. The player
+				# is usually straight above the thing blocking him, so steering
+				# at them is what kept him in the blocked column.
+				_sidestep_dir = _ceiling_escape_dir()
+			if _ceiling_sidestep > 0.0:
+				_ceiling_sidestep -= delta
+				velocity.x = patrol_speed * _sidestep_dir
+				sprite.set_facing(_sidestep_dir > 0.0)
+			# AIR JUMP — the second half of the leap, spent only while still
+			# rising toward a player who remains above him. Gated on
+			# `_air_jump_ready` (armed at take-off, cleared on use and on any
+			# ceiling contact) so it can never become an infinite hover.
+			elif _air_jump_ready and not is_on_floor() and _pl \
+					and velocity.y > -120.0 \
+					and _pl.global_position.y < global_position.y - 60.0:
+				velocity.y = AIR_JUMP_VELOCITY
+				_air_jump_ready = false
+			if is_on_floor():
+				_air_jump_ready = false
 			# Ranged pressure — cadence tightens per phase.
 			if throw_timer <= 0.0:
 				throw_timer = [0.0, 2.6, 2.0, 1.4][phase]

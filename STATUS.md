@@ -3,6 +3,59 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/owner-rage-l1-music-boss1-carts-chase`
 
+**🚨 I BROKE THE STAGE 2 BOSS AND I'VE FIXED IT (2026-08-20).**
+
+You were right and it was my fault. My previous fix ended a boss fight whenever
+you stood outside the arena. The geometry made that catastrophic:
+
+- Level 2's boss trigger is a 200px-wide box centred on x=3700 → it spans
+  **3600–3800**.
+- The arena starts at 3700, so my teardown line sat at **3660 — inside the
+  trigger**.
+
+So walking in from the west fired the trigger at x=3600, the boss spawned, and
+**one frame later my own code deleted him.** Then `body_entered` can't fire
+again while you're still standing in the trigger, so the arena stayed empty
+forever and the stage was uncompletable. Stage 3 was hit the same way.
+
+**Fix:** you can only *leave* somewhere you have *entered*. The teardown now
+waits until you've actually got inside the arena before it can end anything.
+
+**Proved both ways:** on the broken code the new gate reports *"no boss in the
+'boss' group — the arena is empty"* for Stages 2 and 3; with the fix all six
+assertions pass. The new gate (`boss_spawn_survives_walk_in_test.gd`) walks the
+player in **through the trigger from the west** — the only way you ever actually
+start these fights. Every previous boss test teleported the player past the
+trigger and called the spawn function directly, which is precisely why none of
+them caught this.
+
+**Stage 1 head-banging — fixed.** He only ever jumped from the ground (~196px of
+reach), so any taller platform meant he re-jumped into the same underside every
+0.9s forever. He now has:
+- a **double jump** (one mid-air leap, ~390px total reach), and
+- a **ceiling sidestep**: when he clips a platform he stops shoving upward and
+  commits to the *nearer open side* (found by raycast), instead of steering at
+  you — you're usually standing on top of the very thing blocking him.
+
+Measured under a real ceiling trap: he went from 123px of movement (stuck,
+oscillating) to **285px**, ceiling hits 4 → 2.
+
+**The black bottom bar — found it.** It wasn't letterboxing or the embed. It was
+`_boss_backdrop_skirt`, a ColorRect filled with near-black (0.05, 0.03, 0.09),
+1200px tall, added whenever a boss fight starts — which is why every one of your
+black-bar screenshots is a boss fight. It has a real job (stopping raw viewport
+showing through below the floor), so I didn't delete it: it now **tiles the
+world's own backdrop art, darkened**, so the environment continues downward
+instead of a void.
+
+**Verified:** 51 gates pass; the 2 failures are pre-existing and unrelated (ICP
+endpoint offline in the container, vault music drift). Security 18/18.
+
+**Still open from your list:** the mountain seam, the chamber/tunnel spectacle,
+and re-checking the axe feel. Not started — not claimed.
+
+---
+
 **🎯 THE "BOSS WON'T GET PAST THIS POINT" BUG — FOUND AND MEASURED (2026-08-19,
 second pass).**
 

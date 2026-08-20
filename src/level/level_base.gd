@@ -193,7 +193,9 @@ const BOSS_ART_FLOOR_ROW: float = 605.0
 ## with the image alone would need ~2.6x and look badly blurred.
 const BOSS_ART_SCALE: float = 1.15
 var _boss_backdrop_sprite: Sprite2D
-var _boss_backdrop_skirt: ColorRect
+## TextureRect since 2026-08-20 (was a flat near-black ColorRect — see
+## set_boss_background for the founder report that changed it).
+var _boss_backdrop_skirt: Control
 
 func set_boss_background() -> void:
 	if level_data == null or level_data.boss_background_path == "":
@@ -235,16 +237,43 @@ func set_boss_background() -> void:
 	# split-screen half-FOMO/half-forest look in his screenshot.
 	_boss_backdrop_sprite.position = Vector2(0.0, top_y)
 
-	# Opaque under-floor skirt: the image bottom lands at ~782 while the
-	# camera can see to ~950, and below the floor is underground anyway.
-	if not is_instance_valid(_boss_backdrop_skirt):
-		_boss_backdrop_skirt = ColorRect.new()
-		_boss_backdrop_skirt.z_index = -6
-		_boss_backdrop_skirt.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(_boss_backdrop_skirt)
-	_boss_backdrop_skirt.color = Color(0.05, 0.03, 0.09, 1.0)
-	_boss_backdrop_skirt.position = Vector2(-400.0, floor_y - 4.0)
-	_boss_backdrop_skirt.size = Vector2(level_data.bounds.x + 800.0, 1200.0)
+	# UNDER-FLOOR SKIRT — CONTINUES THE WORLD ART, IT IS NOT A BLACK SLAB.
+	#
+	# FOUNDER, on three separate screenshots in one pass: "lets not have this
+	# bottom part of the screen black as the background world needs to be
+	# prevailing in the design here".
+	#
+	# This was a ColorRect filled with Color(0.05, 0.03, 0.09) — near-black —
+	# 1200px tall and wider than the level, parked from the floor line down. The
+	# camera's limit_bottom is kill_zone_y + 100, well below the floor, so
+	# whenever it dips (which it does constantly, the camera follows the player)
+	# that slab is the bottom quarter of the screen. Every one of his black-bar
+	# screenshots is a boss fight, because `set_boss_background()` is the only
+	# thing that creates this node — which is exactly why it reads as "the
+	# bottom part of the screen" rather than a level-design choice.
+	#
+	# It still has a real job: the boss backdrop image ends around y=782 while
+	# the camera can see to ~950, and raw viewport clear-colour showing through
+	# is the ORIGINAL grey-bar bug this repo already fixed once. So the fix is
+	# not to delete it — it is to fill it with the WORLD instead of with black.
+	# A TextureRect tiling the same boss backdrop art, darkened to read as
+	# below-ground, satisfies both: nothing shows through, and what the player
+	# sees down there is the environment continuing rather than a void.
+	if is_instance_valid(_boss_backdrop_skirt):
+		_boss_backdrop_skirt.queue_free()
+	var skirt := TextureRect.new()
+	skirt.name = "BossBackdropSkirt"
+	skirt.texture = tex
+	skirt.stretch_mode = TextureRect.STRETCH_TILE
+	# Darkened, not blackened: the art still reads through it as underground
+	# rock rather than as an empty band.
+	skirt.modulate = Color(0.42, 0.40, 0.50, 1.0)
+	skirt.z_index = -6
+	skirt.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	skirt.position = Vector2(-400.0, floor_y - 4.0)
+	skirt.size = Vector2(level_data.bounds.x + 800.0, 1200.0)
+	add_child(skirt)
+	_boss_backdrop_skirt = skirt
 
 ## The ground segment's own Y at a given world X — used to align the boss
 ## backdrop's illustrated floor with the REAL collision surface instead of a
@@ -504,6 +533,11 @@ func arm_boss_arena_seal() -> void:
 var _seal_x: float = -1.0
 ## The entry wall, once raised. Kept so it can be taken back DOWN — see below.
 var _seal_wall: StaticBody2D = null
+## True once the player has genuinely got INSIDE the boss arena this engagement.
+## Gates the fight teardown below — see the regression note there. Without it,
+## a boss trigger that overlaps the seal line despawns its own boss on the frame
+## after it spawns.
+var _seal_player_inside: bool = false
 
 ## Raises the entry wall behind the player, and lowers it again if they end up
 ## back outside.
@@ -529,22 +563,32 @@ func _process(_delta: float) -> void:
 		# drop the wall so they can walk in and re-engage.
 		_seal_wall.queue_free()
 		_seal_wall = null
-	# END THE FIGHT WHENEVER THE PLAYER IS OUTSIDE — NOT ONLY ON THE FRAME THE
-	# WALL COMES DOWN.
+	# END THE FIGHT ONLY ONCE THE PLAYER HAS ACTUALLY BEEN INSIDE.
 	#
-	# This used to live inside the `elif` above, which made it conditional on
-	# `_seal_wall` currently existing. Two real ways that misses:
-	#   * the player triggers the boss but turns back west before ever crossing
-	#     `_seal_x + 60`, so the wall is never raised and the `elif` is never
-	#     reached at all;
-	#   * the wall came down on an earlier trip, leaving `_seal_wall` null, so a
-	#     second retreat re-enters the `if` branch instead.
-	# Either way the boss stayed alive with an unreachable target — the exact
-	# frozen-boss state this teardown exists to prevent. Checking the player's
-	# position directly is unconditional, and _end_boss_fight() is a no-op once
-	# the latch is already clear, so running it every frame while outside is
-	# cheap and idempotent.
-	if p.global_position.x < _seal_x - 40.0:
+	# CRITICAL REGRESSION THIS GUARDS (founder, 2026-08-20: "Now the 2nd boss is
+	# not present at all!!! I cant even progress to the next stage!!!"). The
+	# previous revision made the teardown UNCONDITIONAL on the player's x, which
+	# looked safer and was catastrophic:
+	#
+	#   level_02's BossTrigger is a 200x800 box centred at x=3700, so it spans
+	#   3600..3800. `_seal_x` is that level's arena start_x = 3700, so the
+	#   teardown line sits at 3660 — INSIDE the trigger. Walking in from the west
+	#   fires `_on_boss_trigger` at x=3600, the boss spawns, and on the very next
+	#   _process frame the player is still at ~3600 < 3660, so the fight is torn
+	#   down and the boss freed roughly one frame after appearing. The player
+	#   then walks into an empty arena, and because `body_entered` only fires on
+	#   ENTRY they are already inside the trigger — no second entry event ever
+	#   arrives, so the boss never comes back and the stage cannot be completed.
+	#
+	# The rule is now the semantically correct one: you can only LEAVE somewhere
+	# you have ENTERED. `_seal_player_inside` latches when the player gets
+	# properly into the arena (the same +60 threshold that raises the wall), and
+	# only then does retreating past the line end the fight. It is cleared on
+	# teardown so a fresh walk-in re-arms the whole cycle.
+	if p.global_position.x > _seal_x + 60.0:
+		_seal_player_inside = true
+	elif _seal_player_inside and p.global_position.x < _seal_x - 40.0:
+		_seal_player_inside = false
 		_end_boss_fight()
 
 ## THE "BOSS DOESN'T MOVE" SHARED ROOT CAUSE (2026-08-19 forensic pass).
