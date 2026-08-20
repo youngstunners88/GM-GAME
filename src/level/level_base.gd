@@ -193,7 +193,9 @@ const BOSS_ART_FLOOR_ROW: float = 605.0
 ## with the image alone would need ~2.6x and look badly blurred.
 const BOSS_ART_SCALE: float = 1.15
 var _boss_backdrop_sprite: Sprite2D
-var _boss_backdrop_skirt: ColorRect
+## TextureRect since 2026-08-20 (was a flat near-black ColorRect — see
+## set_boss_background for the founder report that changed it).
+var _boss_backdrop_skirt: Control
 
 func set_boss_background() -> void:
 	if level_data == null or level_data.boss_background_path == "":
@@ -235,16 +237,43 @@ func set_boss_background() -> void:
 	# split-screen half-FOMO/half-forest look in his screenshot.
 	_boss_backdrop_sprite.position = Vector2(0.0, top_y)
 
-	# Opaque under-floor skirt: the image bottom lands at ~782 while the
-	# camera can see to ~950, and below the floor is underground anyway.
-	if not is_instance_valid(_boss_backdrop_skirt):
-		_boss_backdrop_skirt = ColorRect.new()
-		_boss_backdrop_skirt.z_index = -6
-		_boss_backdrop_skirt.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(_boss_backdrop_skirt)
-	_boss_backdrop_skirt.color = Color(0.05, 0.03, 0.09, 1.0)
-	_boss_backdrop_skirt.position = Vector2(-400.0, floor_y - 4.0)
-	_boss_backdrop_skirt.size = Vector2(level_data.bounds.x + 800.0, 1200.0)
+	# UNDER-FLOOR SKIRT — CONTINUES THE WORLD ART, IT IS NOT A BLACK SLAB.
+	#
+	# FOUNDER, on three separate screenshots in one pass: "lets not have this
+	# bottom part of the screen black as the background world needs to be
+	# prevailing in the design here".
+	#
+	# This was a ColorRect filled with Color(0.05, 0.03, 0.09) — near-black —
+	# 1200px tall and wider than the level, parked from the floor line down. The
+	# camera's limit_bottom is kill_zone_y + 100, well below the floor, so
+	# whenever it dips (which it does constantly, the camera follows the player)
+	# that slab is the bottom quarter of the screen. Every one of his black-bar
+	# screenshots is a boss fight, because `set_boss_background()` is the only
+	# thing that creates this node — which is exactly why it reads as "the
+	# bottom part of the screen" rather than a level-design choice.
+	#
+	# It still has a real job: the boss backdrop image ends around y=782 while
+	# the camera can see to ~950, and raw viewport clear-colour showing through
+	# is the ORIGINAL grey-bar bug this repo already fixed once. So the fix is
+	# not to delete it — it is to fill it with the WORLD instead of with black.
+	# A TextureRect tiling the same boss backdrop art, darkened to read as
+	# below-ground, satisfies both: nothing shows through, and what the player
+	# sees down there is the environment continuing rather than a void.
+	if is_instance_valid(_boss_backdrop_skirt):
+		_boss_backdrop_skirt.queue_free()
+	var skirt := TextureRect.new()
+	skirt.name = "BossBackdropSkirt"
+	skirt.texture = tex
+	skirt.stretch_mode = TextureRect.STRETCH_TILE
+	# Darkened, not blackened: the art still reads through it as underground
+	# rock rather than as an empty band.
+	skirt.modulate = Color(0.42, 0.40, 0.50, 1.0)
+	skirt.z_index = -6
+	skirt.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	skirt.position = Vector2(-400.0, floor_y - 4.0)
+	skirt.size = Vector2(level_data.bounds.x + 800.0, 1200.0)
+	add_child(skirt)
+	_boss_backdrop_skirt = skirt
 
 ## The ground segment's own Y at a given world X — used to align the boss
 ## backdrop's illustrated floor with the REAL collision surface instead of a
