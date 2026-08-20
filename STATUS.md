@@ -3,6 +3,50 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/owner-rage-l1-music-boss1-carts-chase`
 
+**🎨 THE "BADLY GLUED" BACKGROUNDS — ONE CAUSE, NINE FILES (2026-08-20).**
+
+You've said "looks pasted together" / "badly glued" about the Stage 3 mountain,
+Fort Knox, and more. It was never one bad picture — it was **one systemic bug**.
+
+Every scrolling backdrop is drawn with `motion_mirroring`, which **repeats** the
+image sideways (it does not mirror-flip it). So the picture's LAST column gets
+drawn directly against its FIRST column, forever. If those two edges don't match,
+that join is a hard vertical line down the whole screen — the exact line you drew
+on the mountain.
+
+I measured every backdrop: the join versus the art's own normal column-to-column
+detail. **Nine were 2.5x–6.7x** — plainly visible:
+
+| backdrop | seam before | after |
+|---|---|---|
+| Blaze Rush cavern | 6.69x | 0.00x |
+| Secret realm (mid) | 5.72x | 0.11x |
+| Blaze Rush treeline | 5.24x | 0.19x |
+| Stage 1 forest | 3.45x | 0.15x |
+| **Stage 3 mountain** | **2.97x** | **0.05x** |
+| Stage 2 crystal | 2.76x | 0.11x |
+| Fort Knox backdrop | 1.39x (highest raw join of all) | 0.00x |
+
+Fixed at the **source art**, not painted over: each image's trailing edge is now
+blended so it wraps into its own leading edge, which is what "tileable" actually
+means. The interior art is untouched (Stage 3's normal detail level moved 3.15 →
+3.09). A new gate (`background_seam_test.gd`) measures all 12 mirrored backdrops
+every run, so a future art drop can't quietly bring the seams back.
+
+**Verified in a browser:** `docs/captures/2026-08-20-seams/` — Stage 3's mountain
+and Stage 2's cavern now read as one continuous panorama.
+
+**Vault entrance (the "messy" one).** Measured cause: the "view through the door"
+sprite was fitted by HEIGHT only — the 1024px-wide painting rendered ~231px
+across a doorway whose mouth is ~104px, so more than half of it hung outside the
+arch as a stray panel. It's now cropped to the mouth's own aspect, and the
+doorway has four receding, darkening rings that drift downward, so it reads as a
+**tunnel going down** rather than a flat panel. Honest limit: verified in code
+and arithmetic, **not** captured in a browser — the vault door needs platforming
+a scripted driver can't do.
+
+---
+
 **🚨 I BROKE THE STAGE 2 BOSS AND I'VE FIXED IT (2026-08-20).**
 
 You were right and it was my fault. My previous fix ended a boss fight whenever

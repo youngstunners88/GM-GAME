@@ -60,6 +60,7 @@ func _build_visual() -> void:
 		frame.add_child(glow)
 		# The backdrop art, cropped small, previewed inside the arch mouth —
 		# a slice of the place beyond the door.
+		_build_tunnel(frame, Color(0.45, 0.85, 1.0))
 		var peek := _make_peek("res://src/assets/art/vaults/diamond_vault_backdrop.png")
 		if peek:
 			frame.add_child(peek)
@@ -72,6 +73,7 @@ func _build_visual() -> void:
 	else:
 		# Fort Knox blast door — the founder's own vault-door art as the
 		# centerpiece of the entrance.
+		_build_tunnel(frame, Color(1.0, 0.78, 0.35))
 		var door := Sprite2D.new()
 		if ResourceLoader.exists("res://src/assets/art/vaults/fort_knox_vault_door.png"):
 			door.texture = load("res://src/assets/art/vaults/fort_knox_vault_door.png")
@@ -96,18 +98,67 @@ func _build_visual() -> void:
 	tw.tween_property(frame, "modulate", Color(1.25, 1.25, 1.25, 1.0), 0.9).set_trans(Tween.TRANS_SINE)
 	tw.tween_property(frame, "modulate", Color(0.85, 0.85, 0.85, 1.0), 0.9).set_trans(Tween.TRANS_SINE)
 
+## The aperture the doorway actually has, in local px. Everything that draws
+## "the place beyond the door" is cropped to this — see _make_peek.
+const MOUTH := Vector2(104.0, 130.0)
+const MOUTH_CENTRE := Vector2(0.0, -75.0)
+
 func _make_peek(path: String) -> Sprite2D:
 	if not ResourceLoader.exists(path):
 		return null
 	var spr := Sprite2D.new()
-	spr.texture = load(path)
-	var tex := spr.texture
-	# Fit the arch mouth (~88x130) by height.
-	var s: float = 130.0 / float(tex.get_height())
-	spr.scale = Vector2(s, s)
-	spr.position = Vector2(0, -75)
+	var tex: Texture2D = load(path)
+	spr.texture = tex
+	# CROP TO THE MOUTH — do not scale the whole painting down and let it spill.
+	#
+	# Founder (shot_3): the vault entrance "looks messy". Measured cause: this
+	# fitted the backdrop by HEIGHT only — 130 / 576 = 0.226, which renders the
+	# 1024px-wide painting at ~231px across a doorway whose mouth is ~104px.
+	# More than half the image hung outside the arch on both sides, behind the
+	# pillars, as an unframed rectangle of unrelated art. That reads as a
+	# stray panel pasted behind the door, which is exactly what he circled.
+	#
+	# region_rect takes the CENTRE slice of the source at the mouth's own aspect,
+	# so what shows through the doorway is a correctly-proportioned window into
+	# the vault rather than a squashed whole-painting thumbnail.
+	var tw: float = float(tex.get_width())
+	var th: float = float(tex.get_height())
+	var aspect: float = MOUTH.x / MOUTH.y
+	var src_h: float = th
+	var src_w: float = minf(tw, th * aspect)
+	spr.region_enabled = true
+	spr.region_rect = Rect2((tw - src_w) * 0.5, (th - src_h) * 0.5, src_w, src_h)
+	spr.scale = Vector2(MOUTH.x / src_w, MOUTH.y / src_h)
+	spr.position = MOUTH_CENTRE
 	spr.z_index = -1
 	return spr
+
+## Receding rings inside the mouth so the doorway reads as a TUNNEL going
+## down/in, not a flat panel on a wall.
+##
+## Founder (shot_3): "lets make it have like a chamber like effect that goes
+## downward like a tunnel chamber". Four nested frames, each smaller, darker and
+## nudged DOWNWARD, give a forced-perspective throat: the eye reads successive
+## edges as distance, and the downward drift sells "it goes down" rather than
+## "it goes back". Drawn behind the peek slice (z -2) so the view through the
+## door still sits at the far end of the throat.
+func _build_tunnel(frame: Node2D, tint: Color) -> void:
+	var rings := 4
+	for i in range(rings):
+		var t: float = float(i) / float(rings)          # 0 = mouth, 1 = deepest
+		var ring := ColorRect.new()
+		var w: float = MOUTH.x * (1.0 - 0.16 * float(i))
+		var h: float = MOUTH.y * (1.0 - 0.14 * float(i))
+		ring.size = Vector2(w, h)
+		# Each ring sits a little lower than the last: the throat descends.
+		ring.position = Vector2(-w * 0.5, MOUTH_CENTRE.y - h * 0.5 + 10.0 * float(i))
+		# Darken with depth; keep a touch of the protocol colour so it still
+		# reads as crystal/gold rather than a black hole.
+		var k: float = 1.0 - 0.72 * t
+		ring.color = Color(tint.r * k * 0.5, tint.g * k * 0.5, tint.b * k * 0.5,
+			0.30 + 0.16 * float(i))
+		ring.z_index = -2
+		frame.add_child(ring)
 
 func _on_body_entered(body: Node2D) -> void:
 	if _used or not body.is_in_group("player"):
