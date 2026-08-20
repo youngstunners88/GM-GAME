@@ -99,6 +99,14 @@ enemy_spawns = Array[Dictionary]([
 	{
 		"type": "rolling_boulder",
 		"pos": Vector2(2500, 200)
+	},
+	{
+		"type": "trap_deadly_beauty",
+		"pos": Vector2(1160, 480)
+	},
+	{
+		"type": "trap_widows_thorn",
+		"pos": Vector2(2260, 460)
 	}
 ])
 collectible_spawns = Array[Dictionary]([

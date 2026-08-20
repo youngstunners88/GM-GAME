@@ -71,6 +71,7 @@ func _ready() -> void:
 	# S10 T6/T7 — test-only boss warp, fired after the whole _ready chain (incl.
 	# subclass geometry) has run. No-op unless the page is loaded with ?boss=N.
 	call_deferred("_maybe_debug_boss_warp")
+	call_deferred("_maybe_debug_spawn_warp")
 
 ## TEST-ONLY debug warp (S10 T6/T7). If the web page is loaded with `?boss=N`
 ## and N == this level's index, drop the player straight into the boss arena and
@@ -107,6 +108,24 @@ func _requested_boss_warp() -> int:
 		"new URLSearchParams(window.location.search).get('boss') || ''", true)
 	var s := str(q)
 	return int(s) if s.is_valid_int() else 0
+
+## TEST-ONLY debug warp (Block_Fixes_1 playtest capture). If the page is
+## loaded with `?spawn_x=N`, moves the player to that world x on THIS level
+## only, after normal spawn/entity setup. Used to Playwright-capture new
+## decorative traps and other mid-level content without a scripted key-driver
+## walking the whole level. No-op unless the query param is present.
+func _maybe_debug_spawn_warp() -> void:
+	if not OS.has_feature("web"):
+		return
+	var q: Variant = JavaScriptBridge.eval(
+		"new URLSearchParams(window.location.search).get('spawn_x') || ''", true)
+	var s := str(q)
+	if not s.is_valid_float():
+		return
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if player == null:
+		return
+	player.global_position = Vector2(s.to_float(), player.global_position.y)
 
 # The three parallax sprites (far/mid/near) all sample the level's key art;
 # kept as an array so the boss-arena swap can retexture every depth at once.
