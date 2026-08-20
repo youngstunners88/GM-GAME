@@ -362,16 +362,29 @@ func _physics_process(delta: float) -> void:
 				_ceiling_sidestep -= delta
 				velocity.x = patrol_speed * _sidestep_dir
 				sprite.set_facing(_sidestep_dir > 0.0)
-			# AIR JUMP — the second half of the leap, spent only while still
-			# rising toward a player who remains above him. Gated on
+			# AIR JUMP — the second half of the leap. Founder, 2026-08-20 (this
+			# residual): "Why cant he double jump in any event!!!" — the prior
+			# version only spent it while a player was still tracked directly
+			# above him, so a leap off a launch block with the player elsewhere
+			# on screen never got the second jump. Now it fires on ANY leap the
+			# instant he's still rising and hasn't already used it — a real
+			# double jump, not a conditional one. Still gated on
 			# `_air_jump_ready` (armed at take-off, cleared on use and on any
 			# ceiling contact) so it can never become an infinite hover.
-			elif _air_jump_ready and not is_on_floor() and _pl \
-					and velocity.y > -120.0 \
-					and _pl.global_position.y < global_position.y - 60.0:
+			elif _air_jump_ready and not is_on_floor() and velocity.y > -120.0:
 				velocity.y = AIR_JUMP_VELOCITY
 				_air_jump_ready = false
-			if is_on_floor():
+			# Kimi K3 audit (2026-08-20 residual): `is_on_floor()` reflects the
+			# move_and_slide() that already ran THIS frame, before the leap
+			# above ever set velocity.y — so on the very takeoff frame it was
+			# still true, and a bare `if is_on_floor(): _air_jump_ready = false`
+			# cleared the flag the same frame it was armed. The double jump
+			# could never fire; this is the real root cause behind "why cant
+			# he double jump in any event!!!". Excluding the takeoff frame
+			# (velocity.y just went negative from the leap) lets a genuine
+			# landing still clear it, since move_and_slide() zeroes/positivizes
+			# velocity.y on contact.
+			if is_on_floor() and velocity.y >= 0.0:
 				_air_jump_ready = false
 			# Ranged pressure — cadence tightens per phase.
 			if throw_timer <= 0.0:

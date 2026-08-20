@@ -862,8 +862,11 @@ func _throw_shards() -> void:
 		# this ETH-orb volley alone to protect the Forced-Distribution redirect
 		# window. He is right that this is half a fix.
 		#
-		# 170/210/250 -> 250/310/370 px/s per phase (~47% faster), matching the
-		# uplift the crystal shards got.
+		# 170/210/250 -> 250/310/370 -> 500/600/700 px/s per phase. Founder,
+		# 2026-08-20 residual: "This bosses attacks are still too slow!!!" —
+		# two prior bumps still weren't enough, so this pass goes to a real
+		# jump (~1.4-2.0x a ~350px/s player run speed, per Grok 4.6's read:
+		# "another +15-35% on the same curve will look like the same bug").
 		#
 		# The redirect window survives because it is measured in TIME, not
 		# distance: boss_projectile.gd gates the flip on `_t <= unstable_time`
@@ -871,7 +874,7 @@ func _throw_shards() -> void:
 		# redirectability — it simply covers more ground during it. The skill
 		# shot is unchanged in duration; it is now a tighter read, which is the
 		# point of "faster attacks".
-		orb.speed = 250.0 + 60.0 * (current_phase - 1)
+		orb.speed = 500.0 + 100.0 * (current_phase - 1)
 		# LONG RANGE (founder session 7: "the diamond bomb and shards don't reach
 		# Lil Blunt when he's far away"). At 170-250 px/s the default 4s lifetime
 		# only carried them 680-1000px — short of the ~1226px diagonal across the
@@ -943,9 +946,9 @@ func _throw_crystal_shards() -> void:
 		# Faster and non-homing: a straight-line barrage, not a tracking one —
 		# the counter-play is footwork, not waiting out a redirect window.
 		# FASTER CRYSTALS (founder, 2026-08-19: "Lets also make his crystal
-		# attacks faster"). 260/310/360 -> 380/450/520 px/s per phase, ~46%
-		# quicker, which is a real change in how hard the barrage is to walk
-		# out of rather than a cosmetic one.
+		# attacks faster"). 260/310/360 -> 380/450/520 -> 600/700/800 px/s per
+		# phase. Founder, 2026-08-20 residual: "This bosses attacks are still
+		# too slow!!!" — a real jump this time, not another incremental step.
 		#
 		# This is the ONE Distributor attack where raising speed is free: these
 		# shards are `redirectable = false` (see below), so they are not part of
@@ -957,7 +960,7 @@ func _throw_crystal_shards() -> void:
 		#
 		# Lifetime stays 5.0 s, so range grows 1300-1800 -> 1900-2600 px, still
 		# comfortably clearing the ~1226 px arena diagonal at every phase.
-		shard.speed = 380.0 + 70.0 * (current_phase - 1)
+		shard.speed = 600.0 + 100.0 * (current_phase - 1)
 		# Same long-range fix as the ETH-diamond volley (Kimi K3 s7): 260-360 px/s
 		# over the default 4s only reached 1040-1440px; 5s clears the ~1226px
 		# diagonal at every phase so the shards actually connect across the arena.

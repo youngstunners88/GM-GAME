@@ -136,11 +136,18 @@ func _build_background() -> void:
 	var haze_layer := ParallaxLayer.new()
 	haze_layer.motion_scale = Vector2(0.15, 0.0)
 	haze_layer.motion_mirroring = Vector2(900.0, 0.0)
+	# Founder, 2026-08-20 residual (shot_3): circled these as "rectangle
+	# residue / clutter" — at 0.5 alpha and a 32px radial-falloff texture
+	# stretched 6x4, each blob's edge was hard enough to read as a solid dark
+	# oval sitting in the sky rather than atmospheric haze. Softened by going
+	# bigger + much lower opacity so the same falloff curve spans more space
+	# and fades out well before its edge, instead of clipping into a visible
+	# shape.
 	for i in range(3):
 		var blob := Sprite2D.new()
 		blob.texture = _make_glow_texture()
-		blob.modulate = Color(COLOR_HAZE.r, COLOR_HAZE.g, COLOR_HAZE.b, 0.5)
-		blob.scale = Vector2(6.0, 4.0)
+		blob.modulate = Color(COLOR_HAZE.r, COLOR_HAZE.g, COLOR_HAZE.b, 0.16)
+		blob.scale = Vector2(11.0, 7.0)
 		blob.position = Vector2(150.0 + i * 300.0, 250.0 + (i % 2) * 150.0)
 		haze_layer.add_child(blob)
 	pbg.add_child(haze_layer)
@@ -906,10 +913,30 @@ func _make_floor_segment(from_x: float, to_x: float) -> void:
 		return
 	var body := StaticBody2D.new()
 	body.position = Vector2(from_x, GROUND_Y)
+	# Founder, 2026-08-20 residual (shot_3): circled the ground band as
+	# "rectangle residue" — a single flat COLOR_SAFE_GROUND swatch across the
+	# full 220px band reads as an unfinished placeholder box, not ground.
+	# Give it real shading: a lighter top band and a darker body, like a lit
+	# surface, instead of one flat fill.
 	var visual := ColorRect.new()
-	visual.color = COLOR_SAFE_GROUND
-	visual.size = Vector2(w, 220.0)
+	visual.color = COLOR_SAFE_GROUND.lightened(0.14)
+	visual.size = Vector2(w, 60.0)
 	body.add_child(visual)
+	var visual_body := ColorRect.new()
+	visual_body.position = Vector2(0.0, 60.0)
+	visual_body.color = COLOR_SAFE_GROUND.darkened(0.22)
+	visual_body.size = Vector2(w, 160.0)
+	body.add_child(visual_body)
+	# Grok 4.6 (2026-08-20 residual): "two flat boxes... will keep reading as
+	# unfinished residue... add cheap surface language: faint horizontal
+	# seams." Two thin low-contrast lines break up the body band without
+	# adding per-tile texture cost — bounded by segment count, not width.
+	for seam_y in [110.0, 165.0]:
+		var seam := ColorRect.new()
+		seam.position = Vector2(0.0, seam_y)
+		seam.color = Color(0, 0, 0, 0.12)
+		seam.size = Vector2(w, 2.0)
+		body.add_child(seam)
 	var edge := ColorRect.new()
 	edge.color = COLOR_SAFE_EDGE
 	edge.size = Vector2(w, 4.0)

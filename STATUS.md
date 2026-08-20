@@ -3,6 +3,22 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/owner-rage-l1-music-boss1-carts-chase`
 
+---
+
+**🧱 BOSS 1 SOLID BLOCK + REAL DOUBLE JUMP, STAGE 2 ATTACK SPEED, BLAZE RUSH CLEANUP (2026-08-20).**
+
+Three items, same screenshots you sent (`artifacts/founder_shots_2026-08-20_fix/shot_1..3.png`), multi-model reviewed (Kimi K3 + Grok 4.6, `docs/model-responses/2026-08-20-boss1-s2-blaze/`).
+
+1. **The green block is now solid.** It was a checkpoint marker (`Area2D`) — trigger-only by design, so it never had a physical body and everyone walked straight through it. Added a `StaticBody2D` on the World collision layer matching its visible footprint. Both the player and the Auditor can now stand on it.
+
+2. **Double jump was silently broken — found by Kimi K3, not by me first.** I initially just removed a player-position gate on the air-jump, thinking that explained "why can't he double jump in any event." Kimi's review of the actual code found the real bug: the flag that arms the double jump got set on take-off, then a leftover `if is_on_floor(): _air_jump_ready = false` check *later in the same frame* cleared it immediately — `is_on_floor()` was still reading the stale pre-leap physics state. The double jump could never fire, on any leap, ever. Fixed by excluding the takeoff frame from that clear. New gate: `checkpoint_solid_platform_test.gd` proves the block is standable; the existing `auditor_platform_intelligence_test.gd` still passes (no head-banging regression).
+
+3. **Stage 2 attacks are faster — for real this time.** Two prior passes (170→250, then 250→340) weren't enough. Grok 4.6's read: "another +15-35% on the same curve will look like the same bug." This pass is a real jump: ETH-orb volley 250→**500** px/s base (phase-scaled to 700), crystal shards 380→**600** px/s base (phase-scaled to 800) — roughly 1.4-2x player run speed now. The 0.35s time-gated redirect skill-shot is untouched (it's timed, not distance-based).
+
+4. **Blaze Rush "rectangle residue" — found and fixed, not just tinted.** The flat purple strip you circled is `_make_floor_segment()`'s ground-band fill: one solid `ColorRect` spanning the whole run at `Color(0.45, 0.35, 0.75)`. Split it into a lit top band + a shaded body band, added two low-contrast seam lines so it reads as a surface instead of a colored box. The "navy oval" clutter in the sky was the atmospheric haze blobs rendering too opaque/hard-edged (alpha 0.5, small); softened to alpha 0.16 and enlarged so the same glow fades into the background instead of sitting there as a visible shape.
+
+**Verified:** full 55-test suite (only the two pre-existing unrelated failures — `icp_contract_test`, `s11_vault_music_test` — plus a pre-existing VO-volume test failure that predates this session's changes, confirmed via `git stash`), security sentinel 18/18, real non-threaded web export driven with Playwright via the `?boss=1`/`?boss=2` debug warp (`docs/captures/2026-08-20-fix/live-verify/`) — the build boots clean and the Auditor is seen moving between platform heights instead of being pinned under one. **Honest limit:** the live capture shows the boss navigating platforms and the arena loading correctly, not a frame-perfect "circled block → upper platform" sequence — a scripted key-driver can't reliably line up with autonomous boss AI on one scripted pass. The physics-level proof for the block+jump fix is the new headless gate, which reproduces the exact mechanism.
+
 **🎨 THE "BADLY GLUED" BACKGROUNDS — ONE CAUSE, NINE FILES (2026-08-20).**
 
 You've said "looks pasted together" / "badly glued" about the Stage 3 mountain,
