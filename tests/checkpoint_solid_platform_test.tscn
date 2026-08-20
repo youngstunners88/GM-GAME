@@ -1,0 +1,4 @@
+[gd_scene load_steps=2 format=3 uid="uid://checkptsolid01"]
+[ext_resource type="Script" path="res://tests/checkpoint_solid_platform_test.gd" id="1"]
+[node name="CheckpointSolidPlatformTest" type="Node"]
+script = ExtResource("1")
