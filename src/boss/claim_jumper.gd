@@ -139,6 +139,17 @@ var direction: float = 1.0
 ## Motion feel + traversal, matching the Auditor's tuned values so the two
 ## bosses move with the same weight rather than each having its own dialect.
 var _hop_cooldown: float = 0.0
+## DOUBLE JUMP (founder, 2026-08-21 final-presentation residual: "why is he
+## not jumping. He needs to be able to double jump too!!!!"). Armed on every
+## hop takeoff, spent once while still rising, same envelope as the
+## Auditor's air-jump — this project's other two bosses (Auditor, and the
+## Distributor via its hover) already have a second vertical tool; the
+## Claim Jumper had none. Mirrors the Auditor's arm/clear pattern exactly,
+## including the fix for the bug Kimi K3 found there: the clear below only
+## fires on a genuine landing (`velocity.y >= 0.0`), not on the stale
+## `is_on_floor()` read still true on the takeoff frame itself — that
+## ordering bug would have silently swallowed every single air hop.
+var _air_hop_ready: bool = false
 const WALK_ACCEL: float = 620.0
 const TURN_DECEL: float = 1400.0
 const TURN_DEAD_ZONE: float = 34.0
@@ -172,6 +183,9 @@ const HOP_VELOCITY: float = -620.0
 ## the hop's horizontal commit so he LANDS on the player's x instead of
 ## overshooting (see the PATROL hop block).
 const HOP_AIRTIME: float = -2.0 * HOP_VELOCITY / 980.0
+## Second half of the double jump, spent mid-air. Same value as the
+## Auditor's AIR_JUMP_VELOCITY so the two bosses share one vocabulary.
+const AIR_HOP_VELOCITY: float = -560.0
 
 ## Assigned, NOT redeclared: EnemyBase already owns `sprite`, and shadowing
 ## it is a parse error that leaves this entire script unattached.
@@ -640,6 +654,25 @@ func _physics_process(delta: float) -> void:
 						target_pdx = 0.0
 					velocity.x = clampf(target_pdx / HOP_AIRTIME, -patrol_speed, patrol_speed)
 					_hop_cooldown = 0.7
+					_air_hop_ready = true
+			# DOUBLE JUMP — fires once, independent of is_on_floor(), while
+			# still rising from a hop. See `_air_hop_ready`'s declaration for
+			# why the landing-clear below is gated on velocity.y, not a bare
+			# is_on_floor() check.
+			if _air_hop_ready and not is_on_floor() and velocity.y > -120.0:
+				velocity.y = AIR_HOP_VELOCITY
+				_air_hop_ready = false
+				# Grok 4.6 (2026-08-21 final-presentation review): the first
+				# hop and the air-hop reuse the same sprite pose, so on a
+				# quick presentation pass "two hops" can read as "one long
+				# floaty jump" — undercutting the very thing being proven. A
+				# cheap squash/stretch kick at the exact air-hop frame gives
+				# it a visible second beat without needing a new animation.
+				var kick := create_tween()
+				kick.tween_property(boss_sprite, "scale", Vector2(0.75, 1.3), 0.08)
+				kick.tween_property(boss_sprite, "scale", Vector2(1.0, 1.0), 0.12)
+			if is_on_floor() and velocity.y >= 0.0:
+				_air_hop_ready = false
 			if throw_timer <= 0:
 				_throw_dynamite()
 
@@ -744,6 +777,13 @@ func _throw_dynamite() -> void:
 	# instead of a real chase-then-opening rhythm.
 	current_state = State.THROW
 	state_timer = 0.4
+	# DeepSeek v4 Pro audit (2026-08-21 final-presentation residual):
+	# `_air_hop_ready` is only armed/fired/cleared inside PATROL, so a hop
+	# taken right as this fires could leave it stale true across THROW and
+	# VULNERABLE, then unexpectedly fire on the first PATROL frame back. Not
+	# a soft-lock (the boost is harmless), but no state should carry another
+	# state's mid-air promise — clear it on every transition out of PATROL.
+	_air_hop_ready = false
 	var p := get_tree().get_first_node_in_group("player")
 	var target := global_position + Vector2(120 * (1.0 if direction > 0 else -1.0), -60)
 	if p:

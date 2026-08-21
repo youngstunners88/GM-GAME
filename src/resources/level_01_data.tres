@@ -48,7 +48,6 @@ platforms = Array[Vector4]([
 	Vector4(1400, 350, 100, 20),
 	Vector4(1700, 400, 150, 20),
 	Vector4(2100, 300, 100, 20),
-	Vector4(2400, 450, 120, 20),
 	Vector4(2600, 350, 100, 20)
 ])
 enemy_spawns = Array[Dictionary]([

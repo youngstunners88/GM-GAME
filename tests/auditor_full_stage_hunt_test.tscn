@@ -1,0 +1,4 @@
+[gd_scene load_steps=2 format=3 uid="uid://auditorfullstagehunt01"]
+[ext_resource type="Script" path="res://tests/auditor_full_stage_hunt_test.gd" id="1"]
+[node name="AuditorFullStageHuntTest" type="Node"]
+script = ExtResource("1")

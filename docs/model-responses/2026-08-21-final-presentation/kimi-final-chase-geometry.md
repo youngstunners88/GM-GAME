@@ -1,0 +1,16 @@
+<!-- dispatched: moonshotai/kimi-k3
+     prompt: /tmp/claude-0/-home-user-GM-GAME/a77cc0d7-ba64-5875-85a6-fe6f7aa41b68/scratchpad/prompts/kimi-final-chase-geometry.md
+     files inlined: 3
+     tokens: 18314 in / 14797 out
+     cost: $0.2769
+     NOTE: unvalidated model output. Claude must verify every claim
+     against the real files before any of it informs code. -->
+**Bottom line:** Q3 is clean. Q4 has one real (minor) edge case. Q1/Q2 have gaps that need info not in the provided files.
+
+**1.** One remaining candidate: platform `Vector4(2600, 350, 100, 20)` (level_01_data.tres line 51) — x∈[2600,2700], y∈[350,370]. Grounded, the Auditor (body 168; head at y≈482 on the y=650 floor) passes under it. But the x=2520 stick happened at platform height (y 450–470), so his leap must carry his body into that band — and auditor.gd wasn't provided, so leap trigger/height is unverifiable, as is why 2520 was *permanent* while other hitches resolved. A player reversing at x≈2600 (boss mid-leap as chase direction flips) is exactly what a single-direction probe doesn't exercise. Everything else in the band is flat ground (line 40) or non-solid entity spawns. `secret_wall` at (2768,586) (smoke_realm.gd ≈line 77): collision layer not provided. Run a reversal probe at x≈2600 before shipping.
+
+**2.** Math checks: 650−400=250 = 450−200, same absolute top; base sits flush on the segment top (y=650, x=2345 ∈ [2300,2800], line 40). Two things can't be verified from provided files: climb speed (ladder.tscn/player not included), so the doubled climb time can't be weighed against Auditor pursuit pressure; and the default `top_exit_offset` value — if it ejects the player left by >45px, they land in the 2200–2300 pit (lines 39–40), not the "continuous ground" the comment promises. The 400px fall after topping out clears kill_zone_y=800 assuming no fall damage exists. Door at (2350,250) (line 12) now sits at the ladder top — presumably intended.
+
+**3.** Correct as written. In State.PATROL, `_air_hop_ready = true` is nested inside `if want_hop:` inside the floor/cooldown gate, but the fire check (`if _air_hop_ready and not is_on_floor() and velocity.y > -120.0:`) and the landing clear are indented as *siblings* of `if is_on_floor() and _hop_cooldown <= 0.0:` — they run every PATROL frame regardless of floor. On takeoff, the stale `is_on_floor()` (move_and_slide already ran in `_ground_chase`) blocks same-frame firing; the `velocity.y >= 0.0` gate blocks the stale-floor clear. No re-gating.
+
+**4.** Real, low severity. `_air_hop_ready` is consumed/cleared only inside PATROL; nothing in THROW, VULNERABLE, or `_ground_chase` touches it, and `throw_timer` is checked right after the hop block, so THROW can begin mid-hop. Hop airtime (1.265s) exceeds THROW (0.4s) + minimum VULNERABLE (0.45s) = 0.85s, so PATROL can resume with him still airborne and *descending* (vy ≈ +213). The flag survived, and `velocity.y > -120.0` is true for any downward velocity — the air-hop fires ~0.9s late, mid-fall. Not a soft-lock, but a visible pop during the demo. Clear `_air_hop_ready` in `_throw_dynamite()`/`_begin_vulnerable()`, or move the landing-clear into `_ground_chase`.
