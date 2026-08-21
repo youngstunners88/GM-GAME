@@ -31,7 +31,7 @@ ground_segments = Array[Vector4]([
 	Vector4(1320, 650, 200, 70),
 	Vector4(1660, 650, 960, 70),
 	Vector4(2620, 650, 140, 70),
-	Vector4(2760, 650, 800, 70),
+	Vector4(2760, 650, 940, 70),
 	Vector4(3700, 650, 700, 70)
 ])
 platforms = Array[Vector4]([
