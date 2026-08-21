@@ -346,7 +346,35 @@ func _physics_process(delta: float) -> void:
 			if absf(velocity.x) > 12.0:
 				sprite.set_facing(velocity.x > 0.0)
 			# Blocked by terrain -> LEAP. 196px of clearance vs the old 59px.
-			if is_on_wall() and is_on_floor() and _leap_cooldown <= 0.0:
+			#
+			# Founder, 2026-08-21 (post-final-presentation regression):
+			# "the boss seems to linger in the air at times" / "automatically
+			# kills Lil Blunt from walking through the block". Root cause
+			# (measured via a real-physics probe walking the full level):
+			# EVERY wall/platform-edge bump re-armed a fresh leap+air-jump,
+			# with no upper bound on how high the chain could climb — landing
+			# on one platform near a ledge just handed him a brand new
+			# is_on_wall()+is_on_floor() trigger to leap again from THAT
+			# height. Across the platform-dense stretch of Level 1 this
+			# chained leap after leap after leap, launching him hundreds of
+			# pixels above the highest real platform (measured: y=-169, with
+			# the highest real platform at y=300) before gravity eventually
+			# brought him back down — reading as erratic "lingering", and an
+			# unpredictable landing spot when he finally descended is exactly
+			# what could put his hitbox on the player without warning.
+			#
+			# Un-gating the air-jump from "player must be above" (the
+			# founder's OWN prior request: "why cant he double jump in any
+			# event!!!") removed the one thing that used to cap how high a
+			# climb was worth — he'd only chain upward while genuinely
+			# chasing a player who was still above him. Restoring that as a
+			# height CEILING rather than an unconditional gate keeps the
+			# double jump available on every real leap (still fixes "why
+			# cant he double jump") while stopping him from leaping again
+			# off a wall he's already well above any plausible player
+			# position at.
+			var already_high_enough: bool = _pl != null and global_position.y < _pl.global_position.y - 400.0
+			if is_on_wall() and is_on_floor() and _leap_cooldown <= 0.0 and not already_high_enough:
 				velocity.y = LEAP_VELOCITY
 				_leap_cooldown = 0.55
 				_air_jump_ready = true
@@ -354,7 +382,7 @@ func _physics_process(delta: float) -> void:
 			# the stage's terraces instead of pacing along the bottom of them.
 			if _pl and is_on_floor() and _leap_cooldown <= 0.0 \
 					and _pl.global_position.y < global_position.y - 90.0 \
-					and _ceiling_sidestep <= 0.0:
+					and _ceiling_sidestep <= 0.0 and not already_high_enough:
 				velocity.y = LEAP_VELOCITY
 				_leap_cooldown = 0.9
 				_air_jump_ready = true
@@ -394,7 +422,14 @@ func _physics_process(delta: float) -> void:
 			# "walks through the block" loop: leap off the block, air jump
 			# never fires because a stale sidestep is still ticking, he falls
 			# short, lands, repeats. Now a plain `if`, independent of sidestep.
-			if _air_jump_ready and not is_on_floor() and velocity.y > -120.0:
+			# Same height ceiling as the wall-leap above: a leap armed the
+			# frame BEFORE crossing the ceiling would otherwise still chain
+			# into an ungated air-jump several frames later once velocity.y
+			# decayed past -120 — measured live, this alone accounted for
+			# the worst of the runaway climbing (a leap fired right at the
+			# threshold, then its own air-jump added another ~160px on top,
+			# well past where the cap meant to stop him).
+			if _air_jump_ready and not is_on_floor() and velocity.y > -120.0 and not already_high_enough:
 				velocity.y = AIR_JUMP_VELOCITY
 				_air_jump_ready = false
 			# Kimi K3 audit (2026-08-20 residual): `is_on_floor()` reflects the

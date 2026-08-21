@@ -5,6 +5,84 @@
 
 ---
 
+**🩹 RUNAWAY-CLIMB ROOT CAUSE FOUND ON BOTH BOSSES; CLAIM JUMPER STUCK-NEAR-TNT RESIDUAL FIXED (2026-08-22).**
+
+Two fresh complaints arrived back to back: an inline Level 1 screenshot ("the
+boss just automatically kills Lil Blunt from walking through the block...
+also the boss seems to linger in the air at times") and a file,
+`PROMPT_CLAIM_JUMPER_STUCK_DOUBLE_JUMP.md`, with a Level 3 screenshot showing
+an erratic path near Hall of Blaze/minecart/TNT. Full audit trail:
+`docs/audits/2026-08-22-stuck-boss-residuals/audit.md`.
+
+**Both turned out to be the same underlying bug, on two different bosses.**
+A real-physics probe of the Auditor patrolling Level 1 with no player nearby
+(the worst case) found every wall/ledge contact re-arms a fresh leap+air-jump
+with **no ceiling** on cumulative height — landing near one ledge just handed
+him a brand-new trigger to leap again from that height. Measured: he climbed
+to y=-170 (highest real platform in the level is y=300), spending nearly 10%
+of a 60-second patrol above the visible screen before an unpredictable fall
+put him wherever gravity happened to drop him — and since ANY boss contact is
+already a full run-reset (a deliberate stakes mechanic from an earlier
+session), an unpredictable landing spot is exactly what reads as "kills Lil
+Blunt from walking through the block." Fixed with a height-sanity ceiling
+(won't arm — or fire — a fresh leap/air-jump once already 400px+ above the
+player) on all three trigger points; gating only one was tried first and
+measured as not working (`min_y` unchanged), so all three got the gate.
+Result: worst overshoot down to -58px (from -170), time above the screen top
+down 71%.
+
+**Claim Jumper had the identical defect, hidden by different arena
+mechanics.** His arena clamp pins his X at the wall but deliberately never
+clamps his Y ceiling (so a real hop doesn't get cancelled mid-air) — so a hop
+taken right at that wall re-armed every 0.7 seconds with his X frozen,
+climbing in place forever instead of ever getting a real grounded chase
+frame. That reads as "stuck" even though he's technically airborne and
+"jumping" the whole time — matching your screenshot exactly. Same height
+ceiling fix, applied to both his hop-arm and his air-hop-fire conditions.
+
+**Multi-model dispatch, exactly as your prompt's table specified — Kimi K3,
+DeepSeek v4 Pro, and Grok 4.6 reviewing the actual patch, not a fresh design:**
+- **Grok 4.6**, doing the truth-audit you asked for, correctly rejected my
+  first test as insufficient proof — it parked the player just *outside* the
+  arena wall, which only proves the climb is bounded while permanently
+  pinned, not that he actually leaves the stuck point and resumes the chase.
+  I wrote a second gate specifically to answer that: flee the player to both
+  real, reachable ends of the arena and confirm he actually **closes to zero
+  distance** in both directions. He does.
+- **Kimi K3** confirmed the ceiling fix is real, then found a genuine gap: it
+  read the player's position directly and would have silently disabled
+  itself during any frame the player reference goes briefly null (death,
+  respawn, scene transition). Hardened it with a last-known-position
+  fallback so the safety net can't drop out from under itself.
+- **DeepSeek v4 Pro** independently flagged the same "could this ever block a
+  legitimate hop" question Kimi raised (currently inert — the real Stage 3
+  arena is flat ground with no elevation change to trigger it, documented
+  honestly in the audit rather than silently ignored) — and separately
+  claimed the dynamite-throw code was nested inside the gate and would have
+  broken his attack. I checked the actual file: it isn't, that claim was
+  wrong, and I said so in the audit rather than "fixing" something that
+  wasn't broken.
+
+**Proof, in the real arenas, not empty test boxes — both your explicit ask
+and the standing project rule:** two new permanent gates on real
+`level_01_smoke_realm.tscn` / `level_03_gold_rush.tscn` scenes plus a real
+`?boss=1`/`?boss=3` browser capture confirming both bosses boot and render
+correctly (not off-screen, not frozen). All 4 existing Claim Jumper gates and
+all 3 existing Auditor gates still pass with no regression — full numbers in
+the audit doc. Security sentinel 18/18. Full suite: 58/61, the 3 failures are
+the same pre-existing unrelated ones this project already tracks
+(`icp_contract_test`, `s11_vault_music_test`, `boss_voice_playback_test`).
+
+**Honest gap, stated plainly per your own hard rule against "FIXED from
+memory or local play only":** I have not personally hard-refreshed the
+shipped itch.io build myself in a way that substitutes for your own
+confirmation — that checkbox on your own definition-of-done stays open until
+you see it. Everything above is real-physics headless measurement plus a
+real-browser boot check, which is the strongest proof available before you
+verify it yourself.
+
+---
+
 **🎯 FINAL PRESENTATION: PLATFORM REMOVED, REAL DOUBLE JUMP ADDED TO CLAIM JUMPER (2026-08-21).**
 
 Your screenshots overrode my prior "make the AI smarter" approach — you were right to reject that path. Full audit trail: `docs/audits/2026-08-21-final-presentation/audit.md`.

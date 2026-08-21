@@ -1,0 +1,4 @@
+[gd_scene load_steps=2 format=3 uid="uid://auditornorunaway01"]
+[ext_resource type="Script" path="res://tests/auditor_no_runaway_climb_test.gd" id="1"]
+[node name="AuditorNoRunawayClimbTest" type="Node"]
+script = ExtResource("1")
