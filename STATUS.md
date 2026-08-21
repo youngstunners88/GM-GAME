@@ -5,6 +5,20 @@
 
 ---
 
+**🎯 FINAL PRESENTATION: PLATFORM REMOVED, REAL DOUBLE JUMP ADDED TO CLAIM JUMPER (2026-08-21).**
+
+Your screenshots overrode my prior "make the AI smarter" approach — you were right to reject that path. Full audit trail: `docs/audits/2026-08-21-final-presentation/audit.md`.
+
+**Shot 1 — the circled platform is gone, not just "handled smarter."** A headless real-physics probe (fleeing the player across the whole level, matching this game's own "chase him even if he runs back to the start" design) found the Auditor **permanently** wall-stuck at x=2520 — the exact right edge of the platform you circled (`Vector4(2400,450,120,20)`). Removed it outright. It sat above ground that's already solid there, so nothing was lost except a nearby ladder that used to land on it — re-grounded that ladder to the real floor so it doesn't dangle in mid-air. New gate proves it: a player who flees the entire level (x=2920 to x=150) now gets caught within **3 pixels**, not abandoned behind a wall.
+
+**Shot 2 — the Claim Jumper now has a real double jump.** Root cause: he never had one — one hop and nothing else, unlike the Auditor. Added the second jump with the same arm/fire/clear pattern already proven on the Auditor. Two independent models (Kimi K3 and DeepSeek, working separately) both caught the same real bug in my first draft: the jump-ready flag could go stale across his attack cycle and fire late as a visible pop — fixed. Grok flagged that a plain second hop with no visual distinction could read as "one long floaty jump" rather than a real double-jump on camera — added a visible squash-kick at the exact moment it fires. New gate proves the jump itself fires for real (11 confirmed mid-air velocity kicks in 40 seconds of physics), and Codex pushed back hard enough on an unverifiable claim that I went and checked the boss's actual collision layers directly rather than taking my own word for it (confirmed: he does collide with real ground, same as every other boss).
+
+**Honest gap:** the live browser capture for the double jump didn't happen to land on the exact jump frame in this pass — the rigorous proof is the headless gate reading real velocity telemetry, not a lucky screenshot. Said so plainly rather than claiming a catch I didn't get.
+
+**Multi-model, full packets, not stubs:** Kimi K3, Grok 4.6, DeepSeek v4 Pro, Codex (via OpenRouter's `gpt-5.3-codex`), and B.AI — note `kimi-k2.5`, this project's usual free B.AI model, has been retired and its replacement `kimi-k2.6` now needs a paid deposit, so B.AI ran on `minimax-m2.7` instead this pass. All five logs in `docs/model-responses/2026-08-21-final-presentation/`.
+
+---
+
 **🐛 TWO REAL BOSS-AI BUGS FOUND BY KIMI K3, STAGE 2 ATTACKS RAISED AGAIN, STAGE 3 BARRIER REMOVED (2026-08-21).**
 
 This directive arrived as text only — no screenshots this time (checked the session transcript and the prompt file directly; neither carried image data, unlike the last two rounds). Worked from the written defects plus my own live investigation of the current build rather than guessing at an image that was never sent.
