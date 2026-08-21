@@ -175,6 +175,15 @@ const SURGE_SPEED_MULT: float = 1.6
 ## derive the player's own velocity so the standoff can MATCH it rather than
 ## stopping or reversing — see the velocity-matching block in _ground_chase.
 var _last_player_x: float = 0.0
+## Last known player y, sampled alongside `_last_player_x`. Kimi K3 review
+## (2026-08-22, PROMPT_CLAIM_JUMPER_STUCK_DOUBLE_JUMP patch audit): the PATROL
+## height-ceiling gate (`already_high_enough`) reads `pl.global_position.y`
+## directly and "fails OPEN" whenever `pl` is momentarily null (a death/respawn
+## or scene-transition window) — the unbounded climb it guards against would
+## fully return for that window. Falling back to the last known height instead
+## of skipping the gate keeps it engaged even when the live player reference
+## drops out.
+var _last_player_y: float = 0.0
 var _surge_t: float = 0.0
 var _surge_active: bool = false
 ## Clears ~196px at gravity 980 — same envelope the Auditor uses.
@@ -552,6 +561,7 @@ func _ground_chase(delta: float, speed: float, min_separation: float = 0.0) -> b
 			target_vx = clampf(target_vx, -speed, speed)
 	if have_player:
 		_last_player_x = (pl as Node2D).global_position.x
+		_last_player_y = (pl as Node2D).global_position.y
 	var rate: float = (TURN_DECEL
 		if signf(target_vx) != signf(velocity.x) and not is_zero_approx(velocity.x)
 		else WALK_ACCEL)
@@ -601,7 +611,27 @@ func _physics_process(delta: float) -> void:
 			# also triggers the hop: if the player is across a gap he JUMPS it
 			# rather than standing at the edge forever, which keeps him
 			# threatening instead of merely safe.
-			if is_on_floor() and _hop_cooldown <= 0.0:
+			# Founder, 2026-08-22 (PROMPT_CLAIM_JUMPER_STUCK_DOUBLE_JUMP):
+			# "He cannot move beyond the current platform/ledge point." Same
+			# root cause the Auditor had (found + fixed 2026-08-21): a hop
+			# and its air-hop both fire unconditionally on ANY `is_on_wall()`
+			# contact, with no ceiling on how high the chain climbs. In this
+			# boss's case `_clamp_to_arena()` clamps X but NOT the top of Y
+			# ("Only the FLOOR is clamped, not the ceiling"), so a hop taken
+			# right at the clamped arena wall re-fires every `_hop_cooldown`
+			# (0.7s) with X pinned by the clamp — he climbs in place forever
+			# instead of ever getting a real grounded chase frame, which
+			# reads as exactly "stuck" even though he's technically airborne
+			# and "jumping". Capped the same way: don't arm a fresh hop once
+			# already well above where the player could plausibly be.
+			# Kimi K3 review: reading `pl.global_position.y` directly here fails
+			# OPEN (gate disabled, unbounded climb returns) during any frame the
+			# player node is momentarily null (death/respawn, scene transition).
+			# Falling back to `_last_player_y` keeps the ceiling engaged through
+			# that window instead of silently dropping it.
+			var reference_y: float = pl.global_position.y if pl != null else _last_player_y
+			var already_high_enough: bool = global_position.y < reference_y - 400.0
+			if is_on_floor() and _hop_cooldown <= 0.0 and not already_high_enough:
 				# A ledge only justifies a hop when there is somewhere to LAND.
 				# Otherwise he holds the lip: still blocking the arena, never
 				# suiciding into the void.
@@ -659,7 +689,15 @@ func _physics_process(delta: float) -> void:
 			# still rising from a hop. See `_air_hop_ready`'s declaration for
 			# why the landing-clear below is gated on velocity.y, not a bare
 			# is_on_floor() check.
-			if _air_hop_ready and not is_on_floor() and velocity.y > -120.0:
+			#
+			# Same height ceiling as the hop-trigger above: a hop armed the
+			# frame BEFORE crossing the ceiling would otherwise still chain
+			# into an ungated air-hop several frames later once velocity.y
+			# decayed past -120 — this alone was enough to make the Auditor's
+			# analogous first-pass fix measure as unchanged (min_y identical
+			# before/after gating only the leap trigger), so it is gated here
+			# too rather than assumed unnecessary.
+			if _air_hop_ready and not is_on_floor() and velocity.y > -120.0 and not already_high_enough:
 				velocity.y = AIR_HOP_VELOCITY
 				_air_hop_ready = false
 				# Grok 4.6 (2026-08-21 final-presentation review): the first
