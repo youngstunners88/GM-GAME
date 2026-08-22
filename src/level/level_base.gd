@@ -535,7 +535,30 @@ func _setup_boss_arena() -> void:
 		return
 	var end_x: float = level_data.boss_arena.get("end_x", 0.0)
 	if end_x > 0:
-		_create_wall(end_x, 400, 20, 600)
+		# PLAYER-ONLY, exactly like the west seal below.
+		#
+		# Founder, 2026-08-22 (~50th "why don't you make boss3 move"): this call
+		# had NO player_only flag, so the east wall kept the default
+		# collision_layer 1 ("World") — which both bosses mask (13 = 1|4|8). The
+		# wall built to stop the PLAYER leaving the arena was solid to the BOSS.
+		#
+		# Measured on the real level_03 arena with the player parked at x=4390:
+		# the Claim Jumper's right edge pinned at exactly 4390 (the wall's west
+		# face; the wall spans 4390-4410) with velocity.x = 0, and he sat there
+		# FROZEN FOR 13.05s of a 15s run. His centre stopped at 4250 — a full
+		# 126px short of the 4376 his own `_clamp_to_arena()` would allow, and
+		# squarely inside the minecart/gold band the founder circled.
+		#
+		# Kimi K3 confirmed the geometry independently: body span at clamp is
+		# [4236, 4516] against a wall face at 4390, so the body necessarily
+		# protrudes 126px and `is_on_wall()` latches while overlapped — and
+		# raising HOP velocity cannot touch it, because it is a horizontal
+		# problem, not a vertical one.
+		#
+		# The boss is bounded by `_clamp_to_arena()`. The wall only ever needed
+		# to bound the player, so it moves to the same dedicated ArenaSeal layer
+		# the west seal uses.
+		_create_wall(end_x, 400, 20, 600, true)
 
 ## Arm the entry wall. Called from each level's _on_boss_trigger; the wall is
 ## not built until the player has genuinely crossed into the arena, because

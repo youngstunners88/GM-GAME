@@ -5,6 +5,69 @@
 
 ---
 
+**🚧 BOSS 3: THE ARENA'S *EAST* WALL WAS ALSO SOLID TO HIM (2026-08-22, dispatch-first round).**
+
+Founder: *"Why the fuck don't you make the fucking boss3 move?!"* (~50th ask).
+Full audit: `docs/audits/2026-08-22-boss3-east-wall/audit.md`.
+Packets: `artifacts/dispatch_2026-08-22_boss13/`.
+
+**I followed your rate-limit protocol — packets first, no code until they came
+back. They changed the outcome, twice.**
+
+**The cause.** Last round I fixed the WEST seal wall. There are two walls. The
+EAST one is built by `_create_wall(end_x, 400, 20, 600)` with **no player_only
+flag**, so it stayed on the "World" collision layer — which both bosses collide
+with. The wall built to stop *you* leaving the arena was solid to the *boss*.
+
+Measured with you parked at the east edge (x=4390): his right edge pinned at
+**exactly 4390** — the wall's face — with horizontal speed zero, and he sat
+**frozen for 13.05 of 15 seconds**. His centre stopped at **4250**, which is
+inside the minecart/gold band you circle. A second probe moved the player west
+mid-run and he escaped instantly, so the freeze is **directional**: he is only
+trapped while you stand east of him. That is exactly your screenshot.
+
+| Player parked at the east edge, 15s | Before | After |
+|---|---:|---:|
+| Furthest boss centre X | 4250 | **4316** |
+| Longest frozen on the spot | **13.05s** | **1.55s** |
+
+New gate `claim_jumper_passes_circle_test` asserts boss centre X gets PAST the
+circled band — nothing about height, nothing about hop counts, because you told
+me those metrics are worthless. **Proven to fail on the old code** (centre 4250,
+frozen 12.98s) and pass on the new.
+
+**What I threw away from the candidate patch, and why.**
+
+1. **The anti-stuck vault — rejected.** Grok 4.6 took it apart: the timer
+   measures "am I crawling this instant", not "have I failed to advance", so a
+   hop that lands on the same spot counts as progress. And it needs **2 seconds
+   of visible standing still** before it even tries. That is the bug, staged.
+2. **The arena-boundary guard — rejected.** It suppresses the hop near the
+   wall, but the arena clamp already zeroes horizontal speed, so removing the
+   hop leaves nothing to move him at all. Grok: *"trades the pogo for a
+   permanent freeze."* My measurement agreed — at that wall he was already
+   frozen, not pogoing.
+3. **Boss 1's stronger jump (-630/-570) — tried, measured, reverted.** Kimi K3's
+   arithmetic is genuinely right: the platform at (1100,450) needs 200px and the
+   old jump gives 196.1, missing by 3.9px. But when I actually ran it, the
+   full-stage chase gate went from PASS to **stuck for 1335 frames**, and sky-float
+   went from 2.8% to 7.1%. More jump power lets him climb into pockets he can't
+   get out of. Reverted; `auditor.gd` now carries a comment recording exactly
+   this so nobody burns another round on it.
+
+**Boss 1 is still open.** No behaviour change shipped for him this round either.
+
+**WAITING ON FOUNDER FILE.** The **orange-circle** screenshot
+(`artifacts/founder_shots_2026-08-22_boss3_stuck/shot_1.png`) and
+`shot_auditor_grounded_platforms.png` were not in the upload. I estimated the
+circled band as world x 4150-4300 from your "minecart / gold" description — **if
+that band is wrong, the gate's numbers need changing.** The Qwen vision packet
+is blocked on that file, and the two skills you named
+(`gm-game-claim-jumper-boss`, `gm-game-founder-executor`) do not exist in the repo.
+B-AI's packet failed to dispatch (network error) — not claiming it.
+
+Security sentinel 18/18, 0 blockers. Live frames: `docs/captures/2026-08-22-boss3/`.
+
 **🏃 BOSS 3 NOW ACTUALLY MOVES — THE ARENA'S OWN DOOR WAS HOLDING HIM (2026-08-22).**
 
 Founder: *"Why the fuck don't you make the fucking boss3 move?!"*
