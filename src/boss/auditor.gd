@@ -341,28 +341,6 @@ func _physics_process(delta: float) -> void:
 			velocity.x = move_toward(velocity.x, target_vx, rate * delta)
 			velocity.y += 980.0 * delta
 			move_and_slide()
-			# DEMOLISH BREAKABLE BLOCKS HE WALKS INTO.
-			#
-			# Founder, 2026-08-22: "The fucking 1st boss is still floating in
-			# the fucking sky!!!!" Second half of that root cause (measured on
-			# the real level_01 scene, after the checkpoint's invisible
-			# StandSurface was removed): he then walks west and freezes at
-			# x=1882, permanently pressed against a 32x32 breakable block at
-			# (1850,500) — `level_01_data.tres` lists blocks at x=850, 950,
-			# 1350, 1750 and 1850, all directly on his ground-level chase lane.
-			# A 220px boss cannot pass a 32px block, so `is_on_wall()` latched
-			# true forever and re-armed his wall-leap every cooldown: he pogo'd
-			# in place for the rest of the fight.
-			#
-			# He SMASHES them rather than ignoring them. Making blocks
-			# non-colliding for him would have read as the boss phasing through
-			# solid level geometry, which the founder has explicitly rejected
-			# ("make it so that the boss does not walk through this block").
-			# Demolishing them is legible, in-character for a Tax Collector,
-			# and permanently clears the lane instead of re-blocking next lap.
-			# No score is awarded — the player did not earn it.
-			if is_on_wall():
-				_smash_blocking_breakables()
 			# Follow committed motion, not the raw player delta, so the sprite
 			# cannot strobe while he is turning around.
 			if absf(velocity.x) > 12.0:
@@ -785,29 +763,6 @@ func _take_reflected_damage() -> void:
 		die()
 	else:
 		_update_phase()
-
-## Smash any breakable block he is currently pressed against, so a 32x32 prop
-## can never permanently wall a 220px boss. See the call site in PATROL for the
-## founder report and the measured root cause.
-##
-## SECRET WALLS ARE DELIBERATELY EXCLUDED. `secret_wall.gd` joins the very same
-## "breakable" group and exposes the same `break_block()` contract, so a plain
-## group check would have had the boss casually demolishing the level's hidden
-## routes on his way past — spoiling every secret the player is meant to find.
-## Matching on the concrete script keeps this to real breakable blocks only.
-func _smash_blocking_breakables() -> void:
-	for i in range(get_slide_collision_count()):
-		var col: KinematicCollision2D = get_slide_collision(i)
-		var o: Object = col.get_collider()
-		if o == null or not (o is Node):
-			continue
-		var n := o as Node
-		if not n.is_in_group("breakable") or not n.has_method("break_block"):
-			continue
-		var sc: Script = n.get_script()
-		if sc == null or not str(sc.resource_path).ends_with("breakable_block.gd"):
-			continue
-		n.call("break_block", false)
 
 ## Golden safe-zone platforms for the phase-3 endgame (GoldMine holders).
 func _spawn_gold_platforms() -> void:

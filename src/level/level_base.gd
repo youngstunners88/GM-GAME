@@ -675,7 +675,35 @@ func _create_wall(x: float, y: float, w: float, h: float, player_only: bool = fa
 	var wall := StaticBody2D.new()
 	wall.position = Vector2(x, y)
 	if player_only:
-		wall.collision_layer = 8
+		# DEDICATED LAYER 9 ("ArenaSeal", value 256) — not 8, and not 2.
+		#
+		# Founder, 2026-08-22 (~50th "why the fuck don't you make boss 3 move"):
+		# this said 8, and `player_only` was simply not true. project.godot names
+		# layer 4 = value 8 = "Collectibles", and BOTH bosses carry
+		# collision_mask = 13 (World|Enemies|Collectibles) — so the wall built to
+		# seal the PLAYER into the arena was solid to the boss as well.
+		#
+		# Measured on the real level_03 arena with a fleeing bot: the Claim
+		# Jumper's x pinned at 3710 against this wall (arena start_x = 3700,
+		# wall spans 3690-3710) with velocity.x forced to 0, then pogo-hopped up
+		# its face over and over. Across an 18s chase he covered 340px of a
+		# 700px arena and never once got east of his own spawn.
+		#
+		# The obvious repair is layer 2 ("Player"), the one existing layer the
+		# player masks (11 = 1|2|8) that the bosses do not (13 = 1|4|8). Grok
+		# 4.6's audit rejected that, correctly: `_create_wall` is shared by
+		# EVERY level's seal, and enemy hurtboxes mask bit 2 (mask 70 = 2|4|64).
+		# A wall wearing the Player layer would proc every "I hit the player"
+		# listener in the game against an invisible slab at the arena mouth —
+		# hit sparks on empty air, contact-damage enemies biting the doorway,
+		# aim/aggro queries locking onto the wall's AABB. `is_in_group("player")`
+		# guards most of that, but "most" is not a collision-identity guarantee.
+		#
+		# So the seal gets its OWN layer that nothing else masks, and only the
+		# player's body opts into it (player.tscn mask 11 -> 267). The boss is
+		# then bounded by his own `_clamp_to_arena()`, which is what was
+		# supposed to bound him all along.
+		wall.collision_layer = 256
 	var col := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
 	shape.size = Vector2(w, h)
