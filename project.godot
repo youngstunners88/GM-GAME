@@ -101,6 +101,7 @@ move_down={
 2d_physics/layer_6="Hazards"
 2d_physics/layer_7="Projectiles"
 2d_physics/layer_8="Destructible"
+2d_physics/layer_9="ArenaSeal"
 
 [rendering]
 renderer/rendering_method="forward_plus"

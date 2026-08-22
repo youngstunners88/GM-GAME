@@ -5,6 +5,108 @@
 
 ---
 
+**🏃 BOSS 3 NOW ACTUALLY MOVES — THE ARENA'S OWN DOOR WAS HOLDING HIM (2026-08-22).**
+
+Founder: *"Why the fuck don't you make the fucking boss3 move?!"*
+(`artifacts/founder_shots_2026-08-22_boss3/shot_1.png`). Full audit:
+`docs/audits/2026-08-22-boss3-still-not-moving/audit.md`.
+
+**First: you were right to reject my last fix, and right about why.** You said
+"reject any claim that only shows bounded Y while X is frozen." My gate for
+this boss measured his height and his jump count and **never once checked that
+his X changed**. X was frozen the whole time and the test passed anyway.
+
+**What was actually wrong.** When the boss fight starts, the game builds a wall
+across the arena entrance to stop *you* leaving. That wall was put on the
+collision layer named "Collectibles" — and both bosses are set to collide with
+Collectibles. So the door built to keep you in was **solid to the boss**.
+Level 3's arena starts at x=3700; the wall spans 3690–3710; his position pinned
+at **exactly 3710** with his horizontal speed forced to zero, and he hopped
+against it for the rest of the fight. That is your screenshot.
+
+**Fix:** the seal now has its own private collision layer that only Lil Blunt
+collides with. The boss is bounded by his own arena clamp, which was always
+what was supposed to bound him.
+
+**Measured, real Stage 3 arena, 18s of continuous kiting:**
+
+| | Before | After |
+|---|---:|---:|
+| Ground he covers | 340px | **526px** |
+| Longest frozen on the spot | 1.35s | **0.88s** |
+| Time glued on top of Lil Blunt | **45.9%** | **12.0%** |
+| Ever gets east of his spawn | no | yes |
+
+That glue number was the surprise — jammed against the door he was sitting
+inside your contact radius almost half the fight. Freeing him fixed the
+riding-on-top problem too.
+
+**Live frames:** `docs/captures/2026-08-22-boss3/` — eight follow-cam shots
+while kiting him both directions; he visibly changes position between them.
+
+**Two things I am NOT claiming.**
+1. **Your "visible double jump" requirement is not met.** The run recorded one
+   air-hop, because the arena floor is flat and there is no ledge he needs a
+   second jump to clear. Counting hops is not showing one. Not ticking that box.
+2. About half the new movement is him going **west out through the arena
+   mouth**, not across the room toward the minecart. His clamp bounds his body
+   *centre*, so his left half now sits past the entrance line — that is
+   pre-existing clamp behaviour, but it means "526px" flatters how much of the
+   room he really crosses.
+
+Grok 4.6's audit changed this fix twice: it rejected my first repair (putting
+the seal on the "Player" layer) because every enemy hurtbox masks that layer
+and would have fired against an invisible slab in the doorway, and it stopped
+me claiming the double-jump box. Both were right.
+
+New permanent gates: `claim_jumper_moves_test` (asserts **X movement**, proven
+to fail on the old code) and `arena_seal_contract_test` (you still can't leave
+the arena; the boss still isn't walled by it).
+
+**🔎 STAGE 1 "FLOATING BOSS" — CAUSE FOUND AND PROVEN, BUT NOT FIXED YET (2026-08-22).**
+
+Founder, hard-refresh on live itch: *"The fucking 1st boss is still floating in
+the fucking sky!!!!"* (`artifacts/founder_shots_2026-08-22/shot_1.png`). Full
+audit: `docs/audits/2026-08-22-boss1-floating-sky/audit.md`.
+
+**Straight answer: I did not fix it this round. I reverted my own fix.** It
+made your screenshot go away and quietly broke his ability to cross Level 1,
+which is worse. You have been told "fixed" wrongly twice on this already, so I
+am not doing it a third time.
+
+**What I did establish, with measurements rather than guesses.** He is not
+floating — he is **trapped, and pogo-jumping**, which looks identical on
+screen. Two rounds (including mine) tuned his jump height; that was the wrong
+variable. Kimi K3, given only the raw level geometry and jump constants,
+confirmed independently that *"something other than rise is failing."*
+
+Logging his real collider contacts frame by frame on the live Level 1 scene
+found it: with the player standing still, his x freezes at **exactly 2200** —
+the position of an **invisible solid block attached to every checkpoint** — and
+he pogos there for **46.8 of 60 seconds**, feet above every platform. That is
+your screenshot.
+
+**Why I could not just delete that block.** It turns out to be his *staircase*.
+His jump clears 196px, and climbing onto the platform at (1100,450) from the
+ground needs **200px** — he is **four pixels short**, so he has always been
+relying on level furniture to get around Level 1. I tried six variants
+(removing the block, making it one-way, letting him smash breakable blocks,
+smashing only as a last resort, raising his jump to 222px). Every one killed
+the freeze in your screenshot **and** stranded him somewhere else — the
+full-route chase test went from passing (he ends up 7px from the player) to
+leaving him stuck for 2572 frames.
+
+**So the honest state:** cause proven and documented, no behaviour changed,
+Level 1 traversal left exactly as it was. The real fix is a general
+anti-stuck behaviour — detect that he has made no progress, then vault or
+reroute — not another tweak to the scenery. That is a bigger change than this
+residual, and half-shipping it is precisely what caused the regression I just
+backed out.
+
+What is in this commit: the founder screenshot, the full audit with the
+measurement table, a new permanent gate that reports the freeze loudly as a
+known open defect, and the live browser capture.
+
 **🩹 RUNAWAY-CLIMB ROOT CAUSE FOUND ON BOTH BOSSES; CLAIM JUMPER STUCK-NEAR-TNT RESIDUAL FIXED (2026-08-22).**
 
 Two fresh complaints arrived back to back: an inline Level 1 screenshot ("the
