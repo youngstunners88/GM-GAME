@@ -5,7 +5,56 @@
 
 ---
 
-**🚧 BOSS 3: THE ARENA'S *EAST* WALL WAS ALSO SOLID TO HIM (2026-08-22, dispatch-first round).**
+**⛔ BOSS 3 EAST-WALL FIX FOUND, MEASURED — AND HELD BACK, NOT MERGED (2026-08-22).**
+
+**Read this first: I am not shipping this one.** The full 64-test suite caught
+that my own fix trades your freeze for something worse. PR #51 is open but
+deliberately NOT merged.
+
+**What the fix got right.** There are two arena walls and I only fixed the west
+one last round. The EAST wall was on the "World" collision layer, so the barrier
+built to stop *you* leaving was solid to the *boss*. With you parked at the east
+edge he pinned at exactly x=4390 with zero horizontal speed and sat **frozen
+13.05 of 15 seconds**, centre stuck at 4250 — inside your circled band. Freeing
+it moved him to 4316 and cut the freeze to 1.55s.
+
+**What it broke.** Running the FULL suite (not just the boss gates I checked
+first) failed three Claim Jumper gates that had been green:
+
+| Gate | Result |
+|---|---|
+| `claim_jumper_moves_test` | **glued to the player 97.0% of the run** |
+| `claim_jumper_double_jump_test` | **0 air-hops in 40s** |
+| `claim_jumper_no_runaway_climb_test` | **0 air-hops** |
+
+Both are things you have explicitly banned:
+1. **He now rides on top of Lil Blunt.** Because boss contact is an instant run
+   reset, 97% glued is effectively unplayable — worse than the freeze it fixes.
+2. **His double jump stopped firing entirely.** His hop was triggered by
+   touching a wall. I removed both walls, so I removed his only hop trigger.
+   Uncomfortable truth: the double jump you asked for was previously firing
+   *because of* the wall-pogo bug, not in spite of it.
+
+**So the honest position:** the east-wall diagnosis is solid and measured, the
+remedy in isolation is a net downgrade against your own acceptance rules, and it
+needs a real hop trigger + a standoff that survives a moving player before it can
+ship. That is design work, not another constant.
+
+Everything is committed and pushed on the branch so nothing is lost, and the
+audit records the exact numbers so the next attempt starts from measurement.
+
+Also this round: **Boss 1's stronger jump (-630/-570) was tried and reverted** —
+Kimi K3's arithmetic is right (the platform at 1100,450 needs 200px, the old
+jump gives 196.1), but measuring it sent the full-stage chase gate from PASS to
+stuck-for-1335-frames and sky-float from 2.8% to 7.1%. Boss 1 remains open.
+
+Full audit: `docs/audits/2026-08-22-boss3-east-wall/audit.md`.
+Packets: `artifacts/dispatch_2026-08-22_boss13/`.
+Security sentinel 18/18, 0 blockers.
+
+---
+
+**🚧 (SUPERSEDED BY THE ENTRY ABOVE) BOSS 3 EAST WALL — original write-up.**
 
 Founder: *"Why the fuck don't you make the fucking boss3 move?!"* (~50th ask).
 Full audit: `docs/audits/2026-08-22-boss3-east-wall/audit.md`.

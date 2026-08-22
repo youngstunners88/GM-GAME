@@ -112,3 +112,54 @@ constraint — the level's pocket geometry is. `auditor.gd` therefore carries
 - **Boss 3**: real fix, measured, gate proven to fail pre-fix. Not "FIXED" until
   the founder hard-refreshes.
 - **Boss 1**: still open. No behaviour change shipped this round either.
+
+
+---
+
+## 7. POST-INTEGRATION: the fix was HELD BACK, not merged
+
+The full 64-test suite (run after the targeted boss gates) failed **three**
+Claim Jumper gates that were green before this change:
+
+| Gate | Before east-wall fix | After |
+|---|---|---|
+| `claim_jumper_moves_test` | glued 12.0% | **glued 97.0%** |
+| `claim_jumper_double_jump_test` | air_hop_events 11 | **0** |
+| `claim_jumper_no_runaway_climb_test` | air_hop_events 8 | **0** |
+
+### Why
+
+1. **Hop trigger removed.** `want_hop = is_on_wall() or (at_ledge and
+   _gap_crossable(...))`. With BOTH arena walls now non-colliding for the boss,
+   `is_on_wall()` never fires on the flat arena floor, so he never hops. The
+   double jump the founder demanded had been firing *because of* the wall-pogo
+   bug — the gate was green for the wrong reason.
+
+2. **Standoff collapses against a moving player.** `_ground_chase`'s
+   min_separation logic MATCHES the player's velocity once inside the band and
+   deliberately does not retreat (documented in that function: "stop dead → he
+   cannot re-open a gap he is already inside"). The east wall had been
+   artificially supplying the separation in this scenario. Removed, he tracks at
+   whatever distance he arrived at — 97% of the run inside 110px.
+   The project's own `claim_jumper_chase_separation_test` still passes because
+   it measures a STATIONARY player (holds 122px); the weakness only shows
+   against a moving one.
+
+### Decision
+
+**Not merged.** Boss contact is `GameManager.boss_contact_restart()` — an
+instant full-run reset — so 97% glued is effectively unplayable, and the founder
+has explicitly banned both "ride on top of Lil Blunt" and losing the double
+jump. Trading a 13s freeze for that is a net downgrade against his own
+acceptance bar.
+
+### What a real fix needs
+
+- A hop trigger that does not depend on arena-wall contact (ledge/higher-ground
+  based, or a genuine no-progress detector that survives Grok's critique —
+  net displacement over a window, not `abs(dx)/delta` on one frame).
+- A standoff that re-opens a gap against a MOVING player, not only a stationary
+  one.
+
+Both are design changes to the chase, not constants. Recorded here so the next
+attempt starts from these numbers.
