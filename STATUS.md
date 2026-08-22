@@ -51,6 +51,15 @@ most repeated complaint. The cost is he gets closer to you more often. Your
 options: (a) leave it, (b) let him back off while still facing you, or (c) make
 contact cost a life instead of restarting the run. Say which and I will build it.
 
+**LIVE CAPTURE — one thing you should see before you decide.** In
+`docs/captures/2026-08-22-boss3-final/` the browser build shows **"YOU DIED"
+within about two seconds** of the fight starting, twice. He is chasing — that is
+the fix working — but he closes fast and any touch restarts the run. Caveat I
+will not hide behind: those captures use the `?boss=3` debug warp, which drops
+Lil Blunt straight into the arena next to him rather than walking in from the
+west, so real play is probably less brutal than that. It is still the clearest
+possible illustration of why the trade-off above needs your answer.
+
 I also removed my own arbitrary "40% glue" bar from that gate rather than quietly
 raising it to pass — the standoff claim belongs to the separation gate that
 already owns it, and that one passes.
