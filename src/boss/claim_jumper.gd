@@ -574,46 +574,28 @@ func _ground_chase(delta: float, speed: float, min_separation: float = 0.0) -> b
 		# it never reads as fleeing.
 		var player_vx: float = (pl as Node2D).global_position.x - _last_player_x
 		player_vx = player_vx / maxf(delta, 0.0001)
-		# SETPOINT REGULATOR, not "match whatever distance I arrived at".
+		# HOLD STATION BY MATCHING THE PLAYER'S VELOCITY. See this block's history
+		# above: stopping dead camps him inside contact range, and reversing loses
+		# ground to a fleeing player.
 		#
-		# Founder, 2026-08-22: the previous rule was
-		#     target_vx = clamp(player_vx, ...)   # inside the whole bubble
-		#     + a 0.25*speed outward nudge only inside 0.6*min_separation
-		# Grok 4.6's audit named it exactly: MATCHING the player's velocity
-		# anywhere inside the band makes the SETPOINT "whatever gap I happened to
-		# arrive at". Against a stationary player that looked fine (the project's
-		# own separation gate measures a stationary player and saw ~122px). Against
-		# a player moving ~170px/s it tracked at contact range — MEASURED at
-		# 97.0% of an 18s kite spent inside 110px, once the arena walls stopped
-		# artificially supplying the separation. Boss contact is
-		# `GameManager.boss_contact_restart()`, an instant full-run wipe, so that
-		# is a landmine on every kite, not a cosmetic issue.
+		# A setpoint regulator (regulate on |dx| - min_separation, so the formation
+		# distance IS the setpoint) was tried here on 2026-08-22 and REVERTED the
+		# same session. It was added to fix a "97% glued" reading that turned out to
+		# be a bug in the GATE, not the game — claim_jumper_moves_test was comparing
+		# the boss's ORIGIN (top-left of a 280px body) to the player instead of his
+		# CENTRE, understating every gap by a full half-body. Measured correctly the
+		# separation was already mean 138px with 35% of the run at 160-220px.
 		#
-		# This regulates on the ERROR against min_separation instead, so the
-		# formation distance IS min_separation rather than an accident:
-		#   |dx| > sep  ->  player_vx PLUS a closing term: he runs FASTER than a
-		#                   fleeing player (up to the speed cap), so unlike the
-		#                   retreat version reverted on 2026-08-19 he does not
-		#                   lose ground (that one measured 217px of boss travel
-		#                   against 360px of player travel).
-		#   |dx| = sep  ->  target_vx == player_vx: he holds formation AT the
-		#                   standoff, travelling exactly as far as they do.
-		#   |dx| < sep  ->  the term reverses to re-open the gap. He keeps FACING
-		#                   the player (facing is set every frame in
-		#                   _physics_process), so this reads as backing off under
-		#                   guard, not as fleeing.
-		#
-		# HONEST LIMIT, stated rather than hidden: with `speed` at or below the
-		# player's 240px/s sprint, this can stop the gap TIGHTENING against a
-		# player walking straight at him but cannot RE-OPEN it — relative
-		# velocity saturates at zero. Re-opening against a full-speed approach
-		# needs either a higher speed (banned: no speed-only fixes) or a one-shot
-		# evade. On a 1D arena floor with contact-as-instant-death there is no
-		# rule that holds a standoff against a player who simply walks into him.
-		var err: float = absf(dx) - min_separation
-		var s_dir: float = signf(dx) if not is_zero_approx(dx) else direction
-		target_vx = clampf(player_vx + speed * clampf(err / 80.0, -1.0, 1.0) * s_dir,
-			-speed, speed)
+		# And the regulator cost real ground: because it reverses inside the band,
+		# `s6_boss_projectile_chase_test` fell to 221px of boss travel in 6s — right
+		# back at the 217px that got the ORIGINAL retreat version reverted on
+		# 2026-08-19. Grok 4.6 predicted exactly this ("inside 200, target_vx opposes
+		# dx"). Losing ground is the founder's oldest complaint; do not trade it for
+		# a standoff number.
+		target_vx = clampf(player_vx, -speed, speed)
+		if absf(dx) < min_separation * 0.6:
+			target_vx += -signf(dx) * speed * 0.25
+			target_vx = clampf(target_vx, -speed, speed)
 	if have_player:
 		_last_player_x = (pl as Node2D).global_position.x
 		_last_player_y = (pl as Node2D).global_position.y

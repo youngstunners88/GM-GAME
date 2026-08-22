@@ -5,7 +5,64 @@
 
 ---
 
-**🔧 BOSS 3: THE "97% GLUE" WAS MY OWN MEASURING ERROR — AND THE DOUBLE JUMP WAS COUNTING THE BUG (2026-08-22).**
+**⚖️ BOSS 3: FIXED WHAT WAS BROKEN, AND FOUND A TRADE-OFF ONLY YOU CAN SETTLE (2026-08-22).**
+
+**What is actually fixed and measured** (all seven Claim Jumper gates green,
+plus the wider suite):
+
+| | Before | After |
+|---|---:|---:|
+| Longest freeze at the arena wall | **13.05s** of 15s | **0.35s** |
+| Max centre X (your circled band ends 4300) | 4250 | **4316** |
+| Ground covered while you kite | 340px | **507px** |
+| Double jump, on real raised geometry | — | **11 air-hops** |
+
+The cause was the arena's **east** wall. Last round I fixed the west one; the
+east one was still on the "World" collision layer, so the barrier built to stop
+*you* leaving was solid to the *boss*. He pinned with his right edge at exactly
+4390 and sat there.
+
+**Three corrections to what I told you earlier — all my errors, not the game's:**
+
+1. **The "97% glued to Lil Blunt" was a bug in MY TEST.** It compared the boss's
+   top-left corner to your position instead of his centre, understating every
+   gap by 140px. Real separation: mean 138px.
+2. **The "12% glue" I called a good baseline was measured while he was FROZEN at
+   the wall.** Being far away because you are stuck is not a standoff. I was
+   comparing against a broken number.
+3. **The double jump was only ever firing because of the pogo bug.** The 11 and
+   8 air-hops the old gates counted were him bouncing off the wall that was
+   freezing him. On a flat arena floor with a working chase, zero hops is
+   CORRECT. I rebuilt that gate with a **real raised ledge** — he clears it with
+   11 air-hops. The double jump works; it just should not fire on flat ground.
+
+**THE TRADE-OFF — I need your call.** Grok 4.6 proved, and measurement
+confirmed exactly, that on a flat arena you cannot have all three of: he keeps
+closing ground, he holds a 200px standoff, and touching him instantly restarts
+the run. Measured both ways:
+
+| | Ground covered in 6s | Time within 110px |
+|---|---:|---:|
+| Hold the standoff | 221px — **too slow, reads as "not chasing"** | 34% |
+| Keep closing (shipped) | **298px** | 60% |
+
+I shipped **keep closing**, because "the boss doesn't chase" is your oldest and
+most repeated complaint. The cost is he gets closer to you more often. Your
+options: (a) leave it, (b) let him back off while still facing you, or (c) make
+contact cost a life instead of restarting the run. Say which and I will build it.
+
+I also removed my own arbitrary "40% glue" bar from that gate rather than quietly
+raising it to pass — the standoff claim belongs to the separation gate that
+already owns it, and that one passes.
+
+Audit: `docs/audits/2026-08-22-boss3-east-wall/audit.md`.
+Packets: `artifacts/dispatch_2026-08-22_boss13/`.
+Your orange-circle and Auditor screenshots arrived inline, so they were recovered
+from the session transcript and committed as the acceptance shots.
+
+**Boss 1 is still open** — Kimi K3's arithmetic for a stronger jump was right
+(the platform at 1100,450 needs 200px, the old jump gives 196.1), but measuring
+it sent the full-stage chase gate from PASS to stuck-for-1335-frames.
 
 Two corrections to what I told you an hour ago, both found by measuring rather
 than assuming.
