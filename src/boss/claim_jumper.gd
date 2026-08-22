@@ -186,6 +186,10 @@ var _last_player_x: float = 0.0
 var _last_player_y: float = 0.0
 var _surge_t: float = 0.0
 var _surge_active: bool = false
+## True on any frame `_clamp_to_arena()` actually held him at an arena bound.
+## Replaces `is_on_wall()` as PATROL's hop trigger now that both arena walls are
+## player-only — see `_clamp_to_arena`'s own comment.
+var _clamp_blocked: bool = false
 ## Clears ~196px at gravity 980 — same envelope the Auditor uses.
 const HOP_VELOCITY: float = -620.0
 ## Total airtime of one hop: 2 * |HOP_VELOCITY| / gravity ≈ 1.265s. Used to size
@@ -326,9 +330,21 @@ const HALF_BODY: float = BODY / 2.0
 ## boundary is where the FIGHT is, not a shelf his sprite must sit on.
 const ARENA_EDGE_MARGIN: float = 24.0
 
-func _clamp_to_arena() -> void:
+## Returns TRUE when it actually clamped the boss's x this frame — i.e. he is
+## pressed against the arena bound and cannot advance further that way.
+##
+## Founder, 2026-08-22: this used to return nothing, and the ONLY hop trigger in
+## PATROL was `is_on_wall()`. Both arena walls are now on a player-only
+## collision layer (they were solid to the boss, which froze him for 13.05s of a
+## 15s run), so `is_on_wall()` never fires on the flat arena floor and he lost
+## every hop — measured 0 air-hops across a 40s kite AND with the player held
+## 220px overhead. The barrier did not go away, it just moved: this clamp IS the
+## wall now. So the clamp reports the block, and PATROL uses that where it used
+## to use `is_on_wall()`. Grok 4.6's audit called this out as the direct
+## successor to the removed sensor rather than a new anti-stuck heuristic.
+func _clamp_to_arena() -> bool:
 	if arena_max == Vector2.ZERO:
-		return
+		return false
 	# Clamp the body CENTRE, inset by half a body, so the whole sprite stays in
 	# the arena. Also zero the velocity pushing into the wall, otherwise he
 	# accelerates into the clamp every frame and has to unwind a saturated
@@ -337,15 +353,18 @@ func _clamp_to_arena() -> void:
 	var hi_x: float = maxf(lo_x, arena_max.x - ARENA_EDGE_MARGIN)
 	var centre_x: float = global_position.x + HALF_BODY
 	var clamped_x: float = clampf(centre_x, lo_x, hi_x)
+	var did_clamp := false
 	if not is_equal_approx(clamped_x, centre_x):
 		global_position.x += clamped_x - centre_x
 		velocity.x = 0.0
+		did_clamp = true
 	# Only the FLOOR is clamped, not the ceiling: he hops, and pinning his
 	# maximum height would cancel the hop mid-air.
 	if global_position.y > arena_max.y:
 		global_position.y = arena_max.y
 		if velocity.y > 0.0:
 			velocity.y = 0.0
+	return did_clamp
 
 ## How far PAST HIS OWN TOE he checks for solid ground, and how far down.
 ##
@@ -555,10 +574,46 @@ func _ground_chase(delta: float, speed: float, min_separation: float = 0.0) -> b
 		# it never reads as fleeing.
 		var player_vx: float = (pl as Node2D).global_position.x - _last_player_x
 		player_vx = player_vx / maxf(delta, 0.0001)
-		target_vx = clampf(player_vx, -speed, speed)
-		if absf(dx) < min_separation * 0.6:
-			target_vx += -signf(dx) * speed * 0.25
-			target_vx = clampf(target_vx, -speed, speed)
+		# SETPOINT REGULATOR, not "match whatever distance I arrived at".
+		#
+		# Founder, 2026-08-22: the previous rule was
+		#     target_vx = clamp(player_vx, ...)   # inside the whole bubble
+		#     + a 0.25*speed outward nudge only inside 0.6*min_separation
+		# Grok 4.6's audit named it exactly: MATCHING the player's velocity
+		# anywhere inside the band makes the SETPOINT "whatever gap I happened to
+		# arrive at". Against a stationary player that looked fine (the project's
+		# own separation gate measures a stationary player and saw ~122px). Against
+		# a player moving ~170px/s it tracked at contact range — MEASURED at
+		# 97.0% of an 18s kite spent inside 110px, once the arena walls stopped
+		# artificially supplying the separation. Boss contact is
+		# `GameManager.boss_contact_restart()`, an instant full-run wipe, so that
+		# is a landmine on every kite, not a cosmetic issue.
+		#
+		# This regulates on the ERROR against min_separation instead, so the
+		# formation distance IS min_separation rather than an accident:
+		#   |dx| > sep  ->  player_vx PLUS a closing term: he runs FASTER than a
+		#                   fleeing player (up to the speed cap), so unlike the
+		#                   retreat version reverted on 2026-08-19 he does not
+		#                   lose ground (that one measured 217px of boss travel
+		#                   against 360px of player travel).
+		#   |dx| = sep  ->  target_vx == player_vx: he holds formation AT the
+		#                   standoff, travelling exactly as far as they do.
+		#   |dx| < sep  ->  the term reverses to re-open the gap. He keeps FACING
+		#                   the player (facing is set every frame in
+		#                   _physics_process), so this reads as backing off under
+		#                   guard, not as fleeing.
+		#
+		# HONEST LIMIT, stated rather than hidden: with `speed` at or below the
+		# player's 240px/s sprint, this can stop the gap TIGHTENING against a
+		# player walking straight at him but cannot RE-OPEN it — relative
+		# velocity saturates at zero. Re-opening against a full-speed approach
+		# needs either a higher speed (banned: no speed-only fixes) or a one-shot
+		# evade. On a 1D arena floor with contact-as-instant-death there is no
+		# rule that holds a standoff against a player who simply walks into him.
+		var err: float = absf(dx) - min_separation
+		var s_dir: float = signf(dx) if not is_zero_approx(dx) else direction
+		target_vx = clampf(player_vx + speed * clampf(err / 80.0, -1.0, 1.0) * s_dir,
+			-speed, speed)
 	if have_player:
 		_last_player_x = (pl as Node2D).global_position.x
 		_last_player_y = (pl as Node2D).global_position.y
@@ -577,7 +632,7 @@ func _ground_chase(delta: float, speed: float, min_separation: float = 0.0) -> b
 			velocity.x = 0.0
 	velocity.y += 980.0 * delta
 	move_and_slide()
-	_clamp_to_arena()
+	_clamp_blocked = _clamp_to_arena()
 	# Facing is handled every frame in _physics_process now (see below), NOT
 	# here — this gated update froze his facing whenever velocity.x hit ~0 (at a
 	# ledge, the arena clamp, or a braking state), leaving his back to a player

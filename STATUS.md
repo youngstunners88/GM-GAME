@@ -5,7 +5,61 @@
 
 ---
 
-**⛔ BOSS 3 EAST-WALL FIX FOUND, MEASURED — AND HELD BACK, NOT MERGED (2026-08-22).**
+**🔧 BOSS 3: THE "97% GLUE" WAS MY OWN MEASURING ERROR — AND THE DOUBLE JUMP WAS COUNTING THE BUG (2026-08-22).**
+
+Two corrections to what I told you an hour ago, both found by measuring rather
+than assuming.
+
+**1. The "97% glued to Lil Blunt" was a bug in MY TEST, not in the game.** My
+gate compared the boss's ORIGIN — the top-left corner of his 280px body — to
+your position, instead of his CENTRE. The origin sits 140px west of centre, so a
+perfectly correct 200px standoff was being reported as ~60px. Measured properly:
+**mean separation 138px, min 29px**, with 35% of the run sitting at 160-220px,
+which is the standoff doing its job. I also checked the "12%" I had praised as
+the good baseline — that was measured while he was FROZEN at the wall. Being far
+away because you are stuck is not good behaviour. I was comparing against a
+broken number.
+
+**2. The double jump was only ever firing because of the pogo bug.** Grok 4.6's
+audit called it and the measurement confirmed it: the 11 and 8 air-hops the old
+gates counted were him bouncing off arena walls that were also freezing him for
+13 seconds. Once the walls stopped being solid to him the count went to zero —
+and with a working standoff he never reaches the arena bound, so nothing asks
+him to jump. **On a flat arena floor, zero hops is the correct answer.**
+
+So I rebuilt that gate around what you actually asked for — "double jump when
+geometry needs it" — by putting a **real raised ledge** in the arena with Lil
+Blunt standing on it. Result: **11 air-hops, gate passes.** The double jump is
+alive and correct. The old gate was asserting the bug.
+
+**Boss 3 now, all seven of his gates passing:**
+
+| | Before | After |
+|---|---:|---:|
+| Longest freeze | **13.05s** | **1.55s** |
+| Max centre X (your circled band ends 4300) | 4250 | **4316** |
+| Closest engagement | — | 29px |
+| Time glued (centre-based) | — | 34% (bar 40%) |
+| Double jump on real geometry | — | **11 air-hops** |
+
+**One thing needs YOUR decision.** Grok proved a genuine contradiction, and it
+is probably why so many attempts have bounced: on a flat 1D arena you cannot
+have all three of (a) hold a 200px standoff, (b) never back off, and (c) contact
+is an instant run reset — against a player who simply walks into him at full
+speed. One has to give: he backs off while still facing you, or contact stops
+being an instant reset, or he gets touched when you walk into him. Tell me which
+and I will build to it.
+
+Also this round: your orange-circle and Auditor-grounded screenshots arrived
+inline rather than as files, so they were recovered from the session transcript
+and are now committed as the acceptance shots.
+
+Audit: `docs/audits/2026-08-22-boss3-east-wall/audit.md`.
+Packets: `artifacts/dispatch_2026-08-22_boss13/`.
+
+---
+
+**⛔ (SUPERSEDED) BOSS 3 EAST-WALL FIX FOUND, MEASURED — AND HELD BACK, NOT MERGED (2026-08-22).**
 
 **Read this first: I am not shipping this one.** The full 64-test suite caught
 that my own fix trades your freeze for something worse. PR #51 is open but

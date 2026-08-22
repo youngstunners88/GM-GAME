@@ -77,6 +77,7 @@ func _run() -> void:
 	var max_frozen: int = 0
 	var prev_x: float = boss.global_position.x
 	var air_hops: int = 0
+	var min_gap: float = INF
 	var prev_vy: float = 0.0
 	var glued: int = 0
 	var n: int = 1080  # 18s
@@ -105,20 +106,33 @@ func _run() -> void:
 		else:
 			frozen = 0
 		prev_x = bx
-		if absf(bx - player.global_position.x) < 110.0:
+		# CENTRE, not origin. The origin is the body's TOP-LEFT and HALF_BODY is
+		# 140, so comparing origin-to-player understates the real gap by a full
+		# half body — a correct 200px standoff measured as ~60px and this metric
+		# reported 97% "glued" when the true mean separation was 138px. That was a
+		# bug in this gate, not in the boss.
+		min_gap = minf(min_gap, absf((bx + 140.0) - player.global_position.x))
+		if absf((bx + 140.0) - player.global_position.x) < 110.0:
 			glued += 1
 		await get_tree().physics_frame
 
 	var span: float = max_x - min_x
 	print("  [INFO] x_range=[%.0f,%.0f] span=%.0fpx (arena is 700px) max_frozen=%.2fs air_hops=%d glued=%.1f%%"
 		% [min_x, max_x, span, max_frozen / 60.0, air_hops, 100.0 * glued / n])
+	print("  [INFO] closest centre approach=%.0fpx" % min_gap)
 
 	# THE ASSERTION THE OLD GATE WAS MISSING.
 	_check("Claim Jumper's WORLD X actually moves — covers >= 400px of the arena",
 		span >= 400.0, "only covered %.0fpx in 18s — he is parked" % span)
-	# 3710 was the exact x he pinned at against the mis-layered seal wall.
-	_check("Claim Jumper gets PAST the old stuck boundary (x < 3700)",
-		min_x < 3700.0, "never got west of %.0f — still walled at the seal" % min_x)
+	# REPLACED a bad assertion. This used to demand `min_x < 3700` — the exact x
+	# he pinned at against the mis-layered west seal. That only ever passed
+	# because the seal was DRAGGING him to the arena's west edge; once he holds a
+	# correct 200px standoff he has no reason to go that far west against a bot
+	# whose own westmost point is 3760, so the check was asserting the symptom of
+	# a bug as if it were the fix. What actually matters is that he ENGAGES:
+	# closes to striking-adjacent range at least once during the kite.
+	_check("Claim Jumper actually engages (centre closes to within 260px at least once)",
+		min_gap < 260.0, "closest approach was %.0fpx — he never engaged" % min_gap)
 	_check("Claim Jumper is never frozen in place for long (< 3s)",
 		max_frozen < 180, "frozen %.2fs" % (max_frozen / 60.0))
 	# Chase quality must not regress into riding on top of the player.
