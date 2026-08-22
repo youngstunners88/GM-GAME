@@ -105,6 +105,21 @@ var _base_patrol_speed: float = 90.0
 ## Gate on the leap so he arcs instead of vibrating against a wall every frame.
 var _leap_cooldown: float = 0.0
 ## Clears ~196px at gravity 980 — enough for this project's real ledge heights.
+##
+## DELIBERATELY NOT RAISED TO -630. Kimi K3's arithmetic for that change is
+## CORRECT in isolation (2026-08-22 dispatch): platform (1100,450) needs 200px,
+## -620 gives 196.1 and misses by 3.9px, -630 gives 202.5 and clears. It is the
+## only obstacle on the stage where the two values differ.
+##
+## It was tried, measured, and REVERTED, because the emergent behaviour gets
+## WORSE, not better: with -630/-570 `auditor_full_stage_hunt_test` went from
+## PASS (final gap 7px) to stuck for 1335 consecutive frames, and
+## `auditor_no_sky_float_test` went from 2.8% to 7.1% of the fight with his feet
+## above every platform. More leap power lets him climb into pockets he then
+## cannot get out of. An earlier attempt at -660 failed the same way.
+##
+## The paper arithmetic is not the constraint — the level's pocket geometry is.
+## Do not raise this again without running BOTH Auditor gates.
 const LEAP_VELOCITY: float = -620.0
 ## PLATFORM INTELLIGENCE (founder, 2026-08-20): "He is now stuck here as he
 ## tries jumping up and down and hitting his head on the platform!!!! Give him
@@ -126,6 +141,11 @@ const LEAP_VELOCITY: float = -620.0
 ##       upward into it and commits to a horizontal search for a gap for
 ##       CEILING_SIDESTEP_SEC. That is what stops the head-banging LOOP; the
 ##       air jump is what gets him up once he finds the gap.
+## Reverted alongside LEAP_VELOCITY above — see that constant's comment for the
+## measured regression. Kimi K3's note is worth keeping even though the change
+## was not: the air jump fires at the `velocity.y > -120` gate below, NOT at
+## apex, so the leap's last ~7.3px is discarded and the real stacked clearance
+## is ~348.8px, not the ~356px the naive sum suggests.
 const AIR_JUMP_VELOCITY: float = -560.0
 ## Long enough to clear a real platform at patrol speed: 1.2s * 235px/s = 282px,
 ## and the campaign's terraces are ~150-300px wide. At the first attempt's 0.7s

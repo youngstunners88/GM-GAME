@@ -95,8 +95,19 @@ func _run() -> void:
 	_check("Boss never climbs unbounded past the height ceiling (+%.0fpx tolerance)" % CEILING_TOLERANCE,
 		frames_far_above_ceiling == 0,
 		"boss spent %d frames above the ceiling+tolerance — runaway climb regressed" % frames_far_above_ceiling)
-	_check("Double jump still fires even while pinned at the arena wall",
-		air_hop_events > 0, "no air-hop event observed in 16s pinned at the wall")
+	# REMOVED, DELIBERATELY: this used to assert `air_hop_events > 0` while
+	# "pinned at the arena wall". Founder, 2026-08-22 — that assertion was
+	# encoding the BUG. Both arena walls were solid to the boss, `is_on_wall()`
+	# latched every grounded frame, and the 8 air-hops it counted were him
+	# pogoing against a wall that was also freezing him for 13.05s of a 15s run.
+	# With the walls moved to a player-only layer he no longer pins there, and a
+	# correct standoff means he never even reaches the bound — so 0 air-hops here
+	# is the RIGHT answer, and demanding hops would demand the pogo back.
+	#
+	# The double jump itself is proven by claim_jumper_double_jump_test, which
+	# builds a real raised ledge and measures 11 air-hops against it. This gate
+	# keeps only the claim its name makes: no unbounded climbing.
+	print("  [INFO] air-hops here are not asserted — see this block's comment (0 is correct at the bound)")
 
 	boss.queue_free()
 	level.queue_free()
