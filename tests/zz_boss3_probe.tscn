@@ -1,0 +1,4 @@
+[gd_scene load_steps=2 format=3 uid="uid://zzboss3probe01"]
+[ext_resource type="Script" path="res://tests/zz_boss3_probe.gd" id="1"]
+[node name="ZZBoss3Probe" type="Node"]
+script = ExtResource("1")

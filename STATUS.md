@@ -5,6 +5,50 @@
 
 ---
 
+**🔎 STAGE 1 "FLOATING BOSS" — CAUSE FOUND AND PROVEN, BUT NOT FIXED YET (2026-08-22).**
+
+Founder, hard-refresh on live itch: *"The fucking 1st boss is still floating in
+the fucking sky!!!!"* (`artifacts/founder_shots_2026-08-22/shot_1.png`). Full
+audit: `docs/audits/2026-08-22-boss1-floating-sky/audit.md`.
+
+**Straight answer: I did not fix it this round. I reverted my own fix.** It
+made your screenshot go away and quietly broke his ability to cross Level 1,
+which is worse. You have been told "fixed" wrongly twice on this already, so I
+am not doing it a third time.
+
+**What I did establish, with measurements rather than guesses.** He is not
+floating — he is **trapped, and pogo-jumping**, which looks identical on
+screen. Two rounds (including mine) tuned his jump height; that was the wrong
+variable. Kimi K3, given only the raw level geometry and jump constants,
+confirmed independently that *"something other than rise is failing."*
+
+Logging his real collider contacts frame by frame on the live Level 1 scene
+found it: with the player standing still, his x freezes at **exactly 2200** —
+the position of an **invisible solid block attached to every checkpoint** — and
+he pogos there for **46.8 of 60 seconds**, feet above every platform. That is
+your screenshot.
+
+**Why I could not just delete that block.** It turns out to be his *staircase*.
+His jump clears 196px, and climbing onto the platform at (1100,450) from the
+ground needs **200px** — he is **four pixels short**, so he has always been
+relying on level furniture to get around Level 1. I tried six variants
+(removing the block, making it one-way, letting him smash breakable blocks,
+smashing only as a last resort, raising his jump to 222px). Every one killed
+the freeze in your screenshot **and** stranded him somewhere else — the
+full-route chase test went from passing (he ends up 7px from the player) to
+leaving him stuck for 2572 frames.
+
+**So the honest state:** cause proven and documented, no behaviour changed,
+Level 1 traversal left exactly as it was. The real fix is a general
+anti-stuck behaviour — detect that he has made no progress, then vault or
+reroute — not another tweak to the scenery. That is a bigger change than this
+residual, and half-shipping it is precisely what caused the regression I just
+backed out.
+
+What is in this commit: the founder screenshot, the full audit with the
+measurement table, a new permanent gate that reports the freeze loudly as a
+known open defect, and the live browser capture.
+
 **🩹 RUNAWAY-CLIMB ROOT CAUSE FOUND ON BOTH BOSSES; CLAIM JUMPER STUCK-NEAR-TNT RESIDUAL FIXED (2026-08-22).**
 
 Two fresh complaints arrived back to back: an inline Level 1 screenshot ("the

@@ -1,0 +1,4 @@
+[gd_scene load_steps=2 format=3 uid="uid://auditornoskyfloat01"]
+[ext_resource type="Script" path="res://tests/auditor_no_sky_float_test.gd" id="1"]
+[node name="AuditorNoSkyFloatTest" type="Node"]
+script = ExtResource("1")
