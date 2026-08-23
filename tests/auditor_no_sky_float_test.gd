@@ -17,10 +17,9 @@ extends Node
 ##
 ## BOTH ATTEMPTED FIXES WERE REVERTED — see STATUS below for why.
 ##
-## STATUS: PARTIALLY OPEN. This gate asserts he is not up in the sky and that he
-## makes real ground. It does NOT yet assert "never frozen", because that is
-## still broken against a PARKED player and every attempted fix regressed
-## something worse:
+## STATUS: FULL (2026-08-23). Asserts he is not in the sky, makes real ground,
+## AND is never stuck en route — all three green after the one-way fix below.
+## History of why "never frozen" was hard (kept as a warning):
 ##
 ##   * Removing the checkpoint's solid StandSurface, or making it one-way, kills
 ##     the pin — but that body is the boss's STAIRCASE. Without it he strands at
@@ -33,9 +32,13 @@ extends Node
 ##   * Raising LEAP_VELOCITY to 660 (222px of rise, vs the 200 needed) did not
 ##     rescue it either.
 ##
-## The honest read: his traversal of level_01 currently DEPENDS on props being
-## solid in the right places, and the parked-player pin is the cost of that.
-## A real fix is a general anti-stuck behaviour, not another prop tweak.
+## RESOLUTION (2026-08-23): the props did not need to be solid to be a
+## staircase — they need to be ONE-WAY. The checkpoint StandSurface and the
+## level's floating platforms are now landable-from-above but passable
+## horizontally, so the boss mounts them to chase up but is never walled by
+## them at torso height. Kimi K3 identified that platforms (300,500) and
+## (1100,450) were the last two hard walls on the ground lane; one-way clears
+## both. LEAP stays -620 and the height cap is unchanged — no arithmetic bump.
 ##
 ## Run: godot --headless res://tests/auditor_no_sky_float_test.tscn
 
@@ -101,8 +104,11 @@ func _run() -> void:
 		min_feet = minf(min_feet, feet)
 		if feet < HIGHEST_PLATFORM_TOP:
 			sky_frames += 1
-		# "Frozen" = not meaningfully advancing horizontally.
-		if absf(boss.global_position.x - prev_x) < 0.5:
+		# "Frozen EN ROUTE" = not advancing horizontally WHILE still far from the
+		# player. Once he has closed the gap (caught a parked player) standing
+		# still is correct, not a freeze — so only count stalls at range.
+		var far: bool = absf(boss.global_position.x - PLAYER_X) > 250.0
+		if far and absf(boss.global_position.x - prev_x) < 0.5:
 			frozen_streak += 1
 			max_frozen_streak = maxi(max_frozen_streak, frozen_streak)
 		else:
@@ -121,17 +127,14 @@ func _run() -> void:
 	_check("Auditor is not up in the sky (feet above EVERY platform < 5%% of the fight)",
 		float(sky_frames) / float(n) < 0.05,
 		"spent %.1f%% of the fight with his feet above the highest platform" % (100.0 * sky_frames / n))
-	# OPEN DEFECT, DELIBERATELY NOT ASSERTED — see this file's header. Against a
-	# PARKED player the Auditor still pins on the checkpoint's solid StandSurface
-	# at x=2200 and pogos there (measured ~46.8s of a 60s run). It is reported
-	# loudly here rather than asserted, because every fix tried so far traded it
-	# for a WORSE regression in auditor_full_stage_hunt_test — that gate drives a
-	# fleeing player over the whole route and only passes while those props stay
-	# solid, since they are the boss's staircase. Asserting it would either fail
-	# CI permanently or tempt a "fix" that strands him somewhere else.
-	if max_frozen_streak >= 300:
-		print("  [OPEN] KNOWN DEFECT: frozen %.2fs against level furniture (parked-player case). NOT fixed."
-			% (max_frozen_streak / 60.0))
+	# NOW ASSERTED (2026-08-23): with the checkpoint StandSurface and the level's
+	# floating platforms made ONE-WAY, the boss is no longer pinned/pogoing on
+	# them at range. Previously this hit ~46.8s of a 60s run and was left
+	# unasserted; it is now a real gate. Post-catch camping on a reached parked
+	# player does not count (see the "far" guard above).
+	_check("Auditor is never stuck en route (< 5s frozen while > 250px from the player)",
+		max_frozen_streak < 300,
+		"frozen %.2fs at range — pinned on level geometry again" % (max_frozen_streak / 60.0))
 	# Deliberately asserts PROGRESS, not a final gap. The "closes to within
 	# 400px" claim is owned by auditor_full_stage_hunt_test, which drives a
 	# moving player over the whole route. Here the player is parked, and the

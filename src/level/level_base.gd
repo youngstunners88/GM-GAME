@@ -329,12 +329,28 @@ func _setup_geometry() -> void:
 	# read as solid ledges over the painted backdrop.
 	for segment in level_data.ground_segments:
 		_create_platform(segment.x, segment.y, segment.z, segment.w, level_data.platform_body_color, level_data.platform_lip_color)
+	# FLOATING platforms are ONE-WAY; ground segments stay fully solid.
+	#
+	# Founder, 2026-08-23 (Auditor "still floating / unfightable"). Kimi K3's
+	# geometry pass found that even with the checkpoint and breakable blocks
+	# handled, two real floating platforms — (300,500) and (1100,450) — still
+	# stand as hard WALLS to the 220px-tall Auditor on the ground chase lane:
+	# their under-clearance (130px, 180px) is far less than his body, so he can
+	# neither duck under nor (at LEAP -620, 196px) reliably mount them, and he
+	# pins/pogos against them — the "floating" the founder sees.
+	#
+	# One-way collision is the idiomatic platformer answer: a floating ledge you
+	# LAND ON from above and pass THROUGH from the side or below. It clears the
+	# horizontal wall for the boss (and lets him still mount from above to chase
+	# a player up top) without removing a single standable surface for the
+	# player. Ground segments are deliberately NOT one-way — the floor must stay
+	# solid underfoot.
 	for platform in level_data.platforms:
-		_create_platform(platform.x, platform.y, platform.z, platform.w, level_data.floating_platform_body_color, level_data.floating_platform_lip_color)
+		_create_platform(platform.x, platform.y, platform.z, platform.w, level_data.floating_platform_body_color, level_data.floating_platform_lip_color, true)
 
 const BLOCK_TEX := preload("res://src/assets/sprites/tile_block-chain.png")
 
-func _create_platform(x: float, y: float, w: float, h: float, body_color: Color, lip_color: Color = Color(0.5, 0.9, 0.6, 1.0)) -> void:
+func _create_platform(x: float, y: float, w: float, h: float, body_color: Color, lip_color: Color = Color(0.5, 0.9, 0.6, 1.0), one_way: bool = false) -> void:
 	var plat := StaticBody2D.new()
 	plat.position = Vector2(x, y)
 	plat.collision_layer = 1
@@ -406,6 +422,10 @@ func _create_platform(x: float, y: float, w: float, h: float, body_color: Color,
 	shape.size = Vector2(w, h)
 	col.shape = shape
 	col.position = Vector2(w / 2, h / 2)
+	# One-way (floating ledges only): solid to land on from above, passable
+	# from the side/below. Godot's one-way normal points "up" in the shape's
+	# local space by default, which is what we want for a floor plate.
+	col.one_way_collision = one_way
 	plat.add_child(col)
 
 	add_child(plat)
