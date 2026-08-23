@@ -1,0 +1,4 @@
+[gd_scene load_steps=2 format=3 uid="uid://l1returnpath01"]
+[ext_resource type="Script" path="res://tests/level1_return_path_test.gd" id="1"]
+[node name="Level1ReturnPathTest" type="Node"]
+script = ExtResource("1")

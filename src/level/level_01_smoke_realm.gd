@@ -75,8 +75,24 @@ func _setup_depth_routes() -> void:
     ladder2.global_position = Vector2(2345, 650)
     ladder2.height = 400.0
     add_child(ladder2)
-    # EXPLORER — secret walls hugging the gap edges and the far quiet corner.
-    for wall_pos: Vector2 in [Vector2(468, 586), Vector2(1368, 586), Vector2(2768, 586)]:
+    # EXPLORER — secret walls as OVERHEAD discoverables, not corridor gates.
+    #
+    # Founder, 2026-08-23: "Lil Blunt goes to the end of Stage 1 and gets stuck,
+    # cannot return." Measured on the real level: a WALKING player driven west
+    # from the stage end (x=3350) walls at exactly x=2800 against the secret
+    # wall at (2768,586) and cannot pass — these 32x32 bodies floated at y=586,
+    # i.e. right at the player's head height, straddling the ground corridor of
+    # a full-stage-HUNT level with no seal, so two-way travel was blocked for
+    # any player without Blaze/pickaxe to smash them. (The Auditor already
+    # carried explicit collision exceptions for these same walls — see
+    # auditor.gd — which is the boss half of the same mistake.)
+    #
+    # Raised 586 -> 500 so they sit at the SAME overhead height as this level's
+    # breakable_blocks, which the player has walked under both directions for
+    # ~50 sessions with no report. The shimmer secret stays discoverable and
+    # smashable (jump or Blaze puff up into it); it just no longer gates the
+    # corridor. Boss is unaffected (it ignores them via collision exception).
+    for wall_pos: Vector2 in [Vector2(468, 500), Vector2(1368, 500), Vector2(2768, 500)]:
         var wall := preload("res://src/level/secret_wall.tscn").instantiate()
         wall.global_position = wall_pos
         add_child(wall)
