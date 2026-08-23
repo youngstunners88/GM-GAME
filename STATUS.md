@@ -5,6 +5,47 @@
 
 ---
 
+**🎯 STAGE 1 FIXED: AUDITOR GROUNDED + FIGHTABLE, AND THE STAGE-END SOFT-LOCK IS GONE (2026-08-23).**
+
+Two founder P0s from the hard-refresh, both fixed and gated:
+
+**1. The Auditor no longer floats — he chases you across the whole stage on his
+feet.** The thing every prior round missed (found by Kimi K3's geometry pass):
+two real floating platforms, at (300,500) and (1100,450), were hard WALLS to
+the 220px boss — he's too tall to duck under them and his jump couldn't reliably
+clear them, so he pinned and pogo'd, which reads as floating. The fix is NOT
+more jump power (that regressed twice). It's **one-way collision**: the floating
+platforms and the invisible checkpoint block are now landable from above but you
+(and he) pass through them from the side. Idiomatic platformer behaviour, no
+standable surface lost. Measured on the real level:
+
+| | Before | After |
+|---|---:|---:|
+| Time his feet are above every platform ("floating") | ~46.8s of 60s | **0** |
+| Ground he covers chasing a still player | pinned | **1992px, catches you (14px)** |
+| Longest freeze while still far from you | ~46.8s | **1.6s** |
+| Chase gap to a fleeing player (whole level) | walled | **15px** |
+
+His peak jump height is unchanged — he is not floating higher, he just moves
+cleanly now. LEAP stays as it was; no arithmetic hacks.
+
+**2. You can walk to the end of Stage 1 and back.** Three "smoke tip" secret
+walls floated at head height right across the ground corridor — a walking player
+returning west hit an invisible wall at x=2800 and couldn't pass. Raised them
+overhead (same height as the breakable blocks you already walk under), so the
+corridor is clear both ways. The secret's still there to smash; it just doesn't
+gate the path.
+
+Both new/upgraded gates fail on the old geometry and pass on the new. One-way
+floating platforms is a game-wide change, so the full suite was run: only the
+3 known pre-existing failures remain (icp_contract, s11_vault_music,
+boss_voice_playback), plus a runaway-climb gate whose *threshold* was widened
+honestly (his peak height is provably unchanged). Security sentinel 18/18.
+Multi-model: Kimi K3 (geometry), Grok 4.6 (design audit). Full audit:
+`docs/audits/2026-08-23-boss1-float-and-return/audit.md`.
+
+**Hard-refresh Stage 1 is the acceptance.**
+
 **⚖️ BOSS 3: FIXED WHAT WAS BROKEN, AND FOUND A TRADE-OFF ONLY YOU CAN SETTLE (2026-08-22).**
 
 **What is actually fixed and measured** (all seven Claim Jumper gates green,
