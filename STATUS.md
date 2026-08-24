@@ -5,6 +5,47 @@
 
 ---
 
+**🧱 P0 FIXED: Lil Blunt falls through platforms + Boss 1 walks through the blocks — both, one root cause (2026-08-24).**
+
+Your screen recording showed Lil Blunt dropping straight through the thick
+solid platforms, and the same fight showed the Auditor walking through the very
+blocks you need to gain distance behind. **Both came from one change** (PR #52
+made those platforms "one-way" — solid only from directly above). That let the
+boss phase them *and* let you fall through them.
+
+**The platforms are fully SOLID again — for you and for him.**
+- **You land on all 8** floating platforms (gate proves every one).
+- **They block the Auditor** — that's your leverage: he *stops* at a wall, on
+  screen, every time.
+- **He still hunts you across the whole stage.** When a wall stops him he plants
+  for a beat (your window to run), then **vaults over it** and keeps coming. He
+  never floats up into the sky doing it.
+
+Measured on the real level, player fled to the far west:
+
+| | Plain-solid (stuck) | Now |
+|---|---:|---:|
+| Chase gap to a fled player (whole stage) | 1732px, abandoned | **88px — on top of you** |
+| Longest he's ever stuck at a wall | 2532 frames (~42s) | **93 frames (1.5s)** |
+| Time his feet are up in the sky | — | **0.0%** |
+
+Getting here also fixed two things the measurement surfaced that had nothing to
+do with platforms: mob **Tax Collectors** were physically walling the boss (he
+now passes through his own kind), and a **20px platform** was slipping between
+his sensor rays (he now scans finely). The full detective trail, with the
+numbers, is in `docs/audits/2026-08-24-boss1-solid-walls-vault/audit.md`.
+
+**Consulted first (as always):** Kimi K3 (which platforms are real walls) and
+Grok 4.6 (the "you can't have a solid wall vs a big boss without a pin *or* a
+traverse" rule that killed the tempting shortcuts). A new **ungameable gate**
+locks BOTH halves in — the walls must block him AND he must still catch you — so
+this can't quietly regress to either failure again. Every Auditor gate + the new
+player-landing gate + the return-path gate are green. Security 18/18.
+
+**Hard-refresh is the acceptance** — the itch build updates after this ships.
+
+---
+
 **🧊 P0 FIXED: Stage 3 "frozen but music playing" after big mode — a stranded slow-motion global (2026-08-23).**
 
 Founder (2nd time): "After big mode on Stage 3 the game is completely frozen
@@ -27,12 +68,9 @@ now restores speed via a timer the scene reload can't orphan. Gate
 recovery (fails on the old code, passes on the new). Security 18/18.
 Audit: `docs/audits/2026-08-23-stage3-bigmode-freeze/audit.md`.
 
-**Still open (next):** Boss 1 walks through the spacing platforms after PR #52's
-one-way change — that was too coarse; the platforms Lil Blunt uses for distance
-must block the Auditor again while he still crosses the stage. Being worked
-next. (Founder screenshots for both this freeze and the walkthrough did not
-arrive as files this turn — the `.md` reports were enough to root-cause; noting
-it honestly.)
+**Update (2026-08-24):** the Boss 1 "walks through the blocks" residual noted
+here is now **FIXED** — see the top section of this report. Both P0s ship
+together through one gate-gated merge.
 
 **🎯 STAGE 1 FIXED: AUDITOR GROUNDED + FIGHTABLE, AND THE STAGE-END SOFT-LOCK IS GONE (2026-08-23).**
 

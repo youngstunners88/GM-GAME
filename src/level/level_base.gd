@@ -334,31 +334,56 @@ func _setup_geometry() -> void:
 	# read as solid ledges over the painted backdrop.
 	for segment in level_data.ground_segments:
 		_create_platform(segment.x, segment.y, segment.z, segment.w, level_data.platform_body_color, level_data.platform_lip_color)
-	# FLOATING platforms are ONE-WAY; ground segments stay fully solid.
+	# FLOATING platforms are FULLY SOLID — the same as ground.
 	#
-	# Founder, 2026-08-23 (Auditor "still floating / unfightable"). Kimi K3's
-	# geometry pass found that even with the checkpoint and breakable blocks
-	# handled, two real floating platforms — (300,500) and (1100,450) — still
-	# stand as hard WALLS to the 220px-tall Auditor on the ground chase lane:
-	# their under-clearance (130px, 180px) is far less than his body, so he can
-	# neither duck under nor (at LEAP -620, 196px) reliably mount them, and he
-	# pins/pogos against them — the "floating" the founder sees.
+	# Founder, 2026-08-24 (P0, with a screen recording): "Lil Blunt can't land on
+	# the thicker solid platforms ... falls through them" AND, same report,
+	# "the boss walks through the blocks ... nothing Lil Blunt can leverage for
+	# distance, fight impossible." Both halves are ONE root cause: PR #52 made
+	# every floating platform ONE-WAY (solid-from-above, passable-from-the-side).
+	# That regressed two things at once —
+	#   (1) the PLAYER falls through: a one-way plate only catches you on the
+	#       exact frame you cross its top surface DOWNWARD; approach it rising,
+	#       or clip its side, and you pass straight through. That is the video.
+	#   (2) the BOSS phases through: with the side removed, the two body-height
+	#       platforms — (300,500) and (1100,450) — stopped being walls, so the
+	#       Auditor walked through them and the player had no geometry to gain
+	#       distance behind. "Fight impossible."
 	#
-	# One-way collision is the idiomatic platformer answer: a floating ledge you
-	# LAND ON from above and pass THROUGH from the side or below. It clears the
-	# horizontal wall for the boss (and lets him still mount from above to chase
-	# a player up top) without removing a single standable surface for the
-	# player. Ground segments are deliberately NOT one-way — the floor must stay
-	# solid underfoot.
+	# The founder's instruction is explicit and rules out the tempting shortcut
+	# (a per-boss collision exception): "Spacing platforms must BLOCK the boss;
+	# he must still chase." A collision exception makes the boss NOT blocked —
+	# it re-creates (2). Grok 4.6's audit (artifacts/dispatch_2026-08-24_boss1_
+	# walkthrough/02_GROK_OUT.md) put it bluntly: ignore the two walls for the
+	# boss "and he walks through the only walls in the level ... leverage is
+	# still zero. That is the reject text."
+	#
+	# So the platforms go back to FULLY SOLID for everyone. The player lands on
+	# all eight again (fixes (1)); the two body-height platforms are hard walls
+	# to the boss again (gives leverage). The boss is NOT permanently pinned by
+	# them because auditor.gd already carries the leap + air-jump + ceiling-
+	# sidestep traverse machinery built for exactly this ("use the block to
+	# launch himself over the platform", founder 2026-08-20) — PR #52's one-way
+	# is what had left that machinery with no walls to climb. Measured:
+	# tests/auditor_solid_wall_traverse_test.gd proves he still closes the full
+	# stage over solid walls without pin/pogo/sky-climb.
 	for platform in level_data.platforms:
-		_create_platform(platform.x, platform.y, platform.z, platform.w, level_data.floating_platform_body_color, level_data.floating_platform_lip_color, true)
+		_create_platform(platform.x, platform.y, platform.z, platform.w, level_data.floating_platform_body_color, level_data.floating_platform_lip_color, false, true)
 
 const BLOCK_TEX := preload("res://src/assets/sprites/tile_block-chain.png")
 
-func _create_platform(x: float, y: float, w: float, h: float, body_color: Color, lip_color: Color = Color(0.5, 0.9, 0.6, 1.0), one_way: bool = false) -> void:
+func _create_platform(x: float, y: float, w: float, h: float, body_color: Color, lip_color: Color = Color(0.5, 0.9, 0.6, 1.0), one_way: bool = false, soft_platform: bool = false) -> void:
 	var plat := StaticBody2D.new()
 	plat.position = Vector2(x, y)
 	plat.collision_layer = 1
+	# FLOATING platforms are SOLID (the player lands on them) but tagged as a
+	# boss "soft platform": the Auditor is BLOCKED by them on his ground chase
+	# (that block is the founder's requested leverage), and only phases through
+	# them during the brief, telegraphed wall-vault arc (auditor.gd) so his 220px
+	# body clears the dense pocket geometry without pogoing. Ground segments are
+	# never tagged — the floor must always stop the boss too.
+	if soft_platform:
+		plat.add_to_group("boss_soft_platform")
 
 	# Dark base under the blocks so gaps between tiles read as solid, not
 	# see-through, and the platform still contrasts the painted backdrop.

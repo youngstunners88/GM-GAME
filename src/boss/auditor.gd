@@ -160,6 +160,193 @@ var _ceiling_sidestep: float = 0.0
 ## simply became head-banging while shuffling.
 var _sidestep_dir: float = 1.0
 
+## WALL-VAULT — the deterministic replacement for the emergent leap+pogo.
+##
+## Founder, 2026-08-24 (P0, screen recording): after PR #52 was reverted to make
+## Level 1's floating platforms SOLID again (so Lil Blunt stops falling through
+## them), a real-physics probe (tests/auditor_full_stage_hunt_test) measured the
+## Auditor PERMANENTLY WALLED at x=1882 — his west face pinned against the
+## breakable block at (1850,500) — for 2532 straight frames (42s), 1732px behind
+## a fleeing player. The founder's instruction is that the spacing platforms MUST
+## block him (so the player gets leverage) but he MUST still chase.
+##
+## Root cause of the pin (measured, not guessed): the old `is_on_wall() &&
+## is_on_floor()` leap fires LEAP_VELOCITY (196px of rise — enough to clear a
+## 150px-tall wall), but `move_and_slide` zeros his horizontal velocity against
+## the wall face every frame he overlaps it, so at the leap's apex he has ~0
+## commit toward the player and has to re-accelerate from a standstill in the
+## brief window his feet are above the ledge — he never makes it across and
+## falls back onto the same face. A pogo, exactly what reads as "still flying".
+##
+## Grok 4.6's audit (artifacts/dispatch_2026-08-24_boss1_walkthrough) named the
+## fix precisely: "a horizontal-commit vault needs a SHORT hop sized to the
+## face, with x LOCKED, under a peak cap relative to takeoff — do NOT reuse the
+## hunt leap." So the vault:
+##   * measures the obstacle's TOP with an upward wall-probe (`_wall_top_y`),
+##   * sizes the hop to exactly clear it + a margin, capped (never a sky launch),
+##   * FORCES velocity.x toward the player for the whole airborne window so the
+##     commit is already there at apex (this is the half the old leap lacked),
+##   * caps the peak the instant his feet clear the ledge, so it can neither
+##     overshoot into the sky nor chain into the runaway climb the two Auditor
+##     gates were built to stop.
+## Kept separate from the terrace-pursuit leap (player-far-above), which still
+## uses LEAP_VELOCITY and is untouched.
+const VAULT_MARGIN: float = 46.0
+## Hard ceiling on a single vault's rise. The tallest torso-wall on Level 1 needs
+## 200px (floating platform (1100,450), top y=450, boss feet y=650); this caps a
+## mis-measured probe from ever sizing a sky-shot. 200 + margin, rounded.
+const VAULT_MAX_RISE: float = 250.0
+## How long horizontal commit stays forced after a vault kicks off. Long enough
+## to carry a 220px body fully across a 100-150px ledge at patrol speed, short
+## enough that it ends before he could reach another wall and re-lock.
+const VAULT_COMMIT_SEC: float = 0.8
+## TELEGRAPH / LEVERAGE WINDOW. When a spacing platform first blocks him he does
+## NOT vault instantly — he plants at the wall for this long (a readable "he's
+## stuck at the block" beat) before launching. That pause IS the distance the
+## founder wants Lil Blunt to be able to gain ("nothing to leverage for
+## distance"): the wall genuinely stops the boss, on screen, every time, and only
+## then does he climb over. Also satisfies the boss-chase rule "telegraph before
+## aggression".
+const VAULT_WINDUP_SEC: float = 0.4
+var _vault_timer: float = 0.0
+var _vault_dir: float = 1.0
+## Counts down the telegraph; > 0 means "planted at the wall, about to vault".
+var _vault_windup: float = 0.0
+## True while the boss is mid-vault and has temporarily excepted his collision
+## with the boss_soft_platform group so his 220px body arcs over the dense
+## pocket geometry without pogoing. Cleared (collisions restored) on landing.
+var _vault_phasing: bool = false
+## Feet Y at the instant a vault launched — the peak cap is measured from here so
+## a vault can never rise more than VAULT_MAX_RISE above its own take-off, no
+## matter what the ledge probe returned.
+var _vault_launch_feet: float = 0.0
+
+## Temporarily remove (enable=true) / restore (enable=false) the boss's collision
+## with every floating platform and breakable block, so a vault arc is not
+## deflected by the platform he is clearing or by its crowded neighbours. Raycasts
+## ignore these exceptions, so is_on_wall/_wall_top_y still see the geometry — only
+## the physical body stops colliding, and only for the ~0.8s of the arc.
+func _phase_soft_platforms(enable: bool) -> void:
+	if enable == _vault_phasing:
+		return
+	_vault_phasing = enable
+	for p in get_tree().get_nodes_in_group("boss_soft_platform"):
+		if is_instance_valid(p) and p is CollisionObject2D:
+			if enable:
+				add_collision_exception_with(p)
+			else:
+				remove_collision_exception_with(p)
+
+## True while his body still overlaps ANY soft platform — the vault must keep
+## phasing (and committing forward) until this is false, or restoring collisions
+## while still inside a platform would just shove him back into the pin.
+func _overlapping_soft() -> bool:
+	var space := get_world_2d().direct_space_state
+	var q := PhysicsShapeQueryParameters2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(BODY, BODY)
+	q.shape = rect
+	q.transform = Transform2D(0.0, global_position + Vector2(BODY / 2.0, BODY / 2.0))
+	q.collision_mask = 1
+	q.exclude = [get_rid()]
+	for hit in space.intersect_shape(q, 8):
+		var c: Object = hit.get("collider")
+		if c is Node and (c as Node).is_in_group("boss_soft_platform"):
+			return true
+	return false
+
+## True when the thing blocking him in direction `dir` is a soft platform / block
+## (something he is meant to vault), not the ground or an arena seal. Casts a few
+## rays across his torso and checks the collider's group.
+func _blocking_is_soft(dir: float) -> bool:
+	var space := get_world_2d().direct_space_state
+	var lead_x: float = global_position.x + (BODY if dir > 0.0 else 0.0)
+	var feet_y: float = global_position.y + BODY
+	# FINE scan (10px steps) across the whole body. A coarse 4-ray scan (33px
+	# apart) straddles and MISSES a 20px-tall platform — measured: he pinned at
+	# x=400 against the (300,500) ledge for the rest of the run because both
+	# bracketing rays (y=496 and y=529) passed above and below its y[500,520]
+	# band, so `soft` read false and the vault never fired.
+	for step: int in range(0, 24):
+		var y: float = feet_y - 4.0 - float(step) * 10.0
+		if y < global_position.y - 4.0:
+			break
+		var from := Vector2(lead_x - dir * 6.0, y)
+		var params := PhysicsRayQueryParameters2D.create(from, from + Vector2(dir * 46.0, 0.0))
+		params.collision_mask = 1
+		params.exclude = [get_rid()]
+		var hit: Dictionary = space.intersect_ray(params)
+		if not hit.is_empty():
+			var col: Object = hit.get("collider")
+			if col is Node and (col as Node).is_in_group("boss_soft_platform"):
+				return true
+	return false
+
+## Launch the phasing vault in direction `dir`: size the hop to the ledge (capped),
+## force horizontal commit (in _physics_process), and phase the soft platforms.
+func _launch_vault(dir: float) -> void:
+	var feet_y: float = global_position.y + BODY
+	var ledge_top: float = _wall_top_y(dir)
+	var rise: float = VAULT_MAX_RISE
+	if ledge_top != INF and ledge_top < feet_y:
+		rise = clampf((feet_y - ledge_top) + VAULT_MARGIN, 0.0, VAULT_MAX_RISE)
+	velocity.y = -sqrt(2.0 * 980.0 * rise)
+	_vault_dir = dir
+	_vault_timer = VAULT_COMMIT_SEC
+	_vault_launch_feet = feet_y
+	_leap_cooldown = 1.2
+	_air_jump_ready = false
+	_phase_soft_platforms(true)
+
+## Cancel any in-progress vault/telegraph and restore collisions. Called whenever
+## he leaves PATROL (charge, damage) so a half-finished vault can never strand the
+## phase-through flag on and let him walk through platforms for the rest of the
+## fight.
+func _end_vault() -> void:
+	_vault_timer = 0.0
+	_vault_windup = 0.0
+	_phase_soft_platforms(false)
+
+## The world-Y of the TOP surface of whatever wall is blocking the boss's path in
+## the direction `dir` (-1 west, +1 east), or INF if nothing across his body
+## height blocks him (a false is_on_wall, or a full-height wall he cannot vault).
+##
+## CRITICAL: the obstacle is NOT necessarily at foot level. The two spacing
+## platforms and the breakable block sit at his TORSO — e.g. the block (1850,500)
+## spans y[500,532] while his feet are at y≈650, ~120px lower — so a probe that
+## started at his feet and stopped at the first clear height read "clear" on frame
+## one and never fired the vault (measured: he stayed pinned at x=1882). Instead,
+## scan the WHOLE body span, collect every height that is blocked ahead of him,
+## and return the TOPMOST (smallest y) blocked point — the surface his feet must
+## rise above to clear the obstacle. A wall that blocks the entire body height
+## (arena seal) reaches the head row, so it is rejected as un-vaultable.
+func _wall_top_y(dir: float) -> float:
+	var space := get_world_2d().direct_space_state
+	var lead_x: float = global_position.x + (BODY if dir > 0.0 else 0.0)
+	var feet_y: float = global_position.y + BODY
+	var head_y: float = global_position.y
+	var top_blocked: float = INF
+	var blocked_rows: int = 0
+	# Sample the body span from just below the feet up to the head.
+	for step: int in range(0, 20):
+		var y: float = feet_y - 4.0 - float(step) * 12.0
+		if y < head_y - 4.0:
+			break
+		var from := Vector2(lead_x - dir * 6.0, y)
+		var to := from + Vector2(dir * 46.0, 0.0)
+		var params := PhysicsRayQueryParameters2D.create(from, to)
+		params.collision_mask = 1
+		params.exclude = [get_rid()]
+		if not space.intersect_ray(params).is_empty():
+			blocked_rows += 1
+			top_blocked = minf(top_blocked, y)
+	# Nothing ahead across the whole body = false is_on_wall (an edge, another
+	# body). A wall blocking essentially the ENTIRE body height (a 600px seal)
+	# is not a ledge to hop — refuse it so he never launches into a full wall.
+	if top_blocked == INF or blocked_rows >= 16:
+		return INF
+	return top_blocked
+
 ## Which way is the nearer edge of the thing blocking him overhead?
 ##
 ## Casts upward at increasing offsets each side and returns the direction of the
@@ -273,6 +460,24 @@ func _ready() -> void:
 	for w in get_tree().get_nodes_in_group("secret_wall"):
 		if w is CollisionObject2D:
 			add_collision_exception_with(w)
+	# PERMANENT phase-through for incidental invisible obstacles — right now
+	# only the checkpoint StandSurface (checkpoint.gd tags it). Unlike the
+	# spacing platforms, these are not something Lil Blunt can use for cover,
+	# and a boss winding up to vault an invisible box reads as random jumping,
+	# so he simply ignores them. They stay solid for the player.
+	for pt in get_tree().get_nodes_in_group("boss_phase_through"):
+		if pt is CollisionObject2D:
+			add_collision_exception_with(pt)
+	# DON'T let mob enemies wall the boss. His body collision_mask is 13
+	# (World|Enemies|Collectibles), so the Tax Collector patrols scattered across
+	# the full-stage chase lane physically STOP him — a real-physics probe caught
+	# him pinned at x=541 against a TaxCollector at (509,617) for the rest of the
+	# run, 400px short of a fled player, which reads as yet another "the boss
+	# can't get past this point". A chasing boss should pass through mobs, not
+	# queue behind them. Drop only the Enemies bit (layer 3): World (ground/
+	# platforms) and Collectibles are untouched, and his player-contact hitbox is
+	# a separate Area2D, so nothing about the fight itself changes.
+	set_collision_mask_value(3, false)
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
 	# CONTACT DETECTION STAYS ON FOR THE WHOLE FIGHT.
@@ -324,10 +529,19 @@ func _exit_tree() -> void:
 func _physics_process(delta: float) -> void:
 	if current_state == State.DEFEATED:
 		return
+	# Restore platform collision the instant the vault arc is over AND his body is
+	# clear of every soft platform — NEVER while still overlapping one, because
+	# re-solidifying inside a ledge makes the physics server depenetrate (teleport)
+	# him up onto it, wedged where the vault probe no longer sees the wall (the
+	# 18s stall this whole mechanism had to design around). Runs in ANY state, so
+	# even a charge that began the frame the arc ended still resolves cleanly.
+	if _vault_phasing and _vault_timer <= 0.0 and is_on_floor() and not _overlapping_soft():
+		_phase_soft_platforms(false)
 	state_timer -= delta
 	throw_timer -= delta
 	hop_timer -= delta
 	_leap_cooldown -= delta
+	_vault_timer -= delta
 
 	# "Diamond Surge" (DIAMONDS holders, phase 2+): the Auditor summons slow
 	# diamond shards — hit one with an attack and it reflects back for damage
@@ -359,8 +573,27 @@ func _physics_process(delta: float) -> void:
 			var rate: float = (TURN_DECEL if signf(target_vx) != signf(velocity.x)
 				and not is_zero_approx(velocity.x) else WALK_ACCEL)
 			velocity.x = move_toward(velocity.x, target_vx, rate * delta)
+			# WALL-VAULT horizontal COMMIT (see _wall_top_y / the vault trigger
+			# below). This is the half the old leap lacked: while the vault window
+			# is open, FORCE full horizontal speed toward the player every frame,
+			# BEFORE move_and_slide, so the commit is already present at the arc's
+			# apex instead of having to re-accelerate from the standstill the wall
+			# imposed. The 1.25x nudge guarantees he crosses the ledge rather than
+			# stalling on its lip. Overrides the ease above only during the window.
+			# Force the commit for the whole arc AND until he is physically clear of
+			# the platform he phased, so he can never re-solidify still inside it.
+			if _vault_timer > 0.0 or _vault_phasing:
+				velocity.x = _vault_dir * patrol_speed * 1.25
 			velocity.y += 980.0 * delta
 			move_and_slide()
+			# PEAK CAP — a vault can never rise more than VAULT_MAX_RISE above the
+			# feet height it launched from, whatever the ledge probe returned, so it
+			# can never become the runaway sky-climb the two Auditor gates catch.
+			if _vault_timer > 0.0 and velocity.y < 0.0 \
+					and (global_position.y + BODY) <= _vault_launch_feet - VAULT_MAX_RISE:
+				velocity.y = 0.0
+			# (Un-phase is handled once, at the top of _physics_process, so it works
+			# in any state — see the note there.)
 			# Follow committed motion, not the raw player delta, so the sprite
 			# cannot strobe while he is turning around.
 			if absf(velocity.x) > 12.0:
@@ -394,10 +627,32 @@ func _physics_process(delta: float) -> void:
 			# off a wall he's already well above any plausible player
 			# position at.
 			var already_high_enough: bool = _pl != null and global_position.y < _pl.global_position.y - 400.0
-			if is_on_wall() and is_on_floor() and _leap_cooldown <= 0.0 and not already_high_enough:
-				velocity.y = LEAP_VELOCITY
-				_leap_cooldown = 0.55
-				_air_jump_ready = true
+			# WALL-VAULT (replaces the old blind is_on_wall LEAP that pogoed).
+			#
+			# When a SOLID spacing platform blocks his ground chase, don't fire
+			# the full hunt leap and hope — measure the ledge and hop exactly over
+			# it, with horizontal commit forced (see the vault block just before
+			# move_and_slide above). `_wall_top_y` returns INF for a full-height
+			# wall (arena seal) or a false is_on_wall, so he only vaults a real,
+			# clearable ledge. The rise is sized to that ledge + a margin and hard-
+			# capped by VAULT_MAX_RISE, so it can neither fall short (the pin the
+			# founder filmed) nor overshoot into the sky (the float the two Auditor
+			# gates catch). No air-jump stacks on it.
+			if _vault_timer <= 0.0 and not already_high_enough:
+				if _vault_windup > 0.0:
+					# Planted at the wall, telegraphing — this pause is the leverage.
+					_vault_windup -= delta
+					sprite.modulate = Color(1.0, 0.85, 0.6, 1.0)
+					if _vault_windup <= 0.0:
+						sprite.modulate = Color(1, 1, 1, 1)
+						_launch_vault(_vault_dir)
+				elif is_on_wall() and is_on_floor() and _leap_cooldown <= 0.0 \
+						and _blocking_is_soft(patrol_direction) \
+						and _wall_top_y(patrol_direction) != INF:
+					# A soft spacing platform / block is stopping him: start the
+					# telegraph, lock the direction, then _launch_vault fires above.
+					_vault_windup = VAULT_WINDUP_SEC
+					_vault_dir = patrol_direction
 			# He also hops when the player is well above him, so he pursues up
 			# the stage's terraces instead of pacing along the bottom of them.
 			if _pl and is_on_floor() and _leap_cooldown <= 0.0 \
@@ -411,7 +666,7 @@ func _physics_process(delta: float) -> void:
 			# jitter the founder filmed) and commit to travelling sideways for a
 			# moment so he actually hunts for the edge instead of retrying the
 			# same blocked column.
-			if is_on_ceiling():
+			if is_on_ceiling() and _vault_timer <= 0.0:
 				velocity.y = maxf(velocity.y, 0.0)
 				_ceiling_sidestep = CEILING_SIDESTEP_SEC
 				_air_jump_ready = false
@@ -419,7 +674,10 @@ func _physics_process(delta: float) -> void:
 				# is usually straight above the thing blocking him, so steering
 				# at them is what kept him in the blocked column.
 				_sidestep_dir = _ceiling_escape_dir()
-			if _ceiling_sidestep > 0.0:
+			# A vault owns horizontal movement outright (its forced commit is set
+			# before move_and_slide above) — a sidestep armed by an earlier bonk
+			# must not steal the wheel mid-vault and reverse him off the ledge.
+			if _ceiling_sidestep > 0.0 and _vault_timer <= 0.0:
 				_ceiling_sidestep -= delta
 				velocity.x = patrol_speed * _sidestep_dir
 				sprite.set_facing(_sidestep_dir > 0.0)
@@ -468,8 +726,9 @@ func _physics_process(delta: float) -> void:
 			if throw_timer <= 0.0:
 				throw_timer = [0.0, 2.6, 2.0, 1.4][phase]
 				_throw_clipboard()
-			# Occasional reposition hop.
-			if hop_timer <= 0.0:
+			# Occasional reposition hop — never mid-vault (its velocity write would
+			# fight the vault arc and could drop him onto a pocket platform).
+			if hop_timer <= 0.0 and _vault_timer <= 0.0 and not _vault_phasing and _vault_windup <= 0.0:
 				hop_timer = 6.0 if phase < 3 else 3.5
 				velocity.y = -300.0
 				# THE HOP NO LONGER THROWS HIM BACKWARDS.
@@ -489,7 +748,14 @@ func _physics_process(delta: float) -> void:
 				# current velocity keeps the "skip" feel the original comment
 				# wanted without the retreat.
 				velocity.x = velocity.x * 0.45
-			if state_timer <= 0.0:
+			# Do NOT start a charge in the middle of a vault (telegraph, arc, or the
+			# tail where he is still phased and clearing the platform). Interrupting
+			# it here is exactly what stranded him: _end_vault would restore his
+			# collision while his body still overlapped a ledge, and the physics
+			# depenetration teleported him UP onto it, wedged where the vault probe
+			# no longer recognised the wall. Let the vault finish first.
+			if state_timer <= 0.0 and _vault_timer <= 0.0 \
+					and not _vault_phasing and _vault_windup <= 0.0:
 				state_timer = 1.4
 				current_state = State.CHARGE
 				var p := get_tree().get_first_node_in_group("player")

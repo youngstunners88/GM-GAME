@@ -37,18 +37,30 @@ func _ready() -> void:
 	print("PLAYER_SOLID_PLATFORM_LAND: %s" % ("ALL PASS" if _fail == 0 else "%d FAILURE(S)" % _fail))
 	get_tree().quit(_fail)
 
+## Recursively turn off monitoring on every Area2D so no trigger fires during
+## the teleport-and-drop probing.
+func _disable_all_areas(n: Node) -> void:
+	if n is Area2D:
+		(n as Area2D).set_deferred("monitoring", false)
+	for child in n.get_children():
+		_disable_all_areas(child)
+
 func _run() -> void:
 	var level := LEVEL.instantiate()
 	add_child(level)
 	await get_tree().process_frame
 	await get_tree().process_frame
-	# Do not let the boss trigger fire during the drops.
-	var bt := level.get_node_or_null("BossTrigger")
-	if bt != null:
-		bt.set_deferred("monitoring", false)
+	# Neutralise EVERY Area2D trigger before the drops. This gate only tests
+	# static-platform LANDING (StaticBody2D collision); the level's Area2D
+	# triggers — the boss trigger, collectibles, and especially the Blaze Portal
+	# at (1450,250), which sits right where the player is dropped onto platform
+	# (1400,350) — would otherwise fire on a teleported test player and warp the
+	# whole SceneTree to blaze_rush.tscn mid-run (measured: the gate died after
+	# 4 platforms). Disabling monitoring leaves the platforms fully solid.
+	_disable_all_areas(level)
 	await get_tree().process_frame
 
-	var player := get_tree().get_first_node_in_group("player")
+	var player: CharacterBody2D = get_tree().get_first_node_in_group("player")
 	var landed := 0
 	for i in range(PLATFORMS.size()):
 		var top: Vector2 = PLATFORMS[i]
@@ -66,7 +78,7 @@ func _run() -> void:
 				rested = true
 				rest_y = player.global_position.y
 			await get_tree().physics_frame
-		var ok := rested and player.is_on_floor() and player.global_position.y < top.y + 40.0
+		var ok: bool = rested and player.is_on_floor() and player.global_position.y < top.y + 40.0
 		if ok:
 			landed += 1
 		_check("lands & stays on platform (%d,%d)" % [int(top.x), int(top.y)],

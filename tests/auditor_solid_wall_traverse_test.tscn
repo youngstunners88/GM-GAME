@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/auditor_solid_wall_traverse_test.gd" id="1"]
+
+[node name="AuditorSolidWallTraverse" type="Node"]
+script = ExtResource("1")
