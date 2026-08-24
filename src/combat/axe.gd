@@ -252,8 +252,13 @@ func _impact() -> void:
 ## feel laggy rather than weighty.
 func _boss_hitstop() -> void:
 	Engine.time_scale = 0.05
-	await get_tree().create_timer(0.06 * 0.05, true, false, true).timeout
-	Engine.time_scale = 1.0
+	# Restore off the tree-owned timer's signal, not this coroutine — the axe is
+	# freed shortly after impact (_despawn), and if that happens mid-hitstop the
+	# awaited resume never runs, stranding the GLOBAL Engine.time_scale at 0.05
+	# (the Stage-3 "frozen but music plays" freeze). See player.gd::_hitstop and
+	# SceneRouter.load_scene for the full root cause.
+	get_tree().create_timer(0.06 * 0.05, true, false, true).timeout.connect(func() -> void:
+		Engine.time_scale = 1.0)
 
 func _despawn() -> void:
 	if is_instance_valid(self):

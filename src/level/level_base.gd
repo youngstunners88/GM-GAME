@@ -17,6 +17,11 @@ var kill_zone_gaps: Array[Vector2] = []
 
 func _ready() -> void:
 	level_start_ms = Time.get_ticks_msec()
+	# Belt-and-braces against a stranded hitstop time_scale (see
+	# SceneRouter.load_scene). load_scene already resets it, but a level entered
+	# by any other path (first boot, a direct scene set) still starts at real
+	# time. A level should never begin in slow-motion.
+	Engine.time_scale = 1.0
 	# MUST run before _setup_kill_zone(): a level that carves a deep vault
 	# under one of its own floor pits (Part B/C, protocol_vault.gd) needs its
 	# x-range excluded from the level-wide kill band BEFORE that band is
