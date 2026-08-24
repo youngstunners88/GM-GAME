@@ -22,6 +22,14 @@ func _ready() -> void:
     sprite.color = Color(0.5, 0.5, 1.0, 0.0)
     sprite.size = Vector2(32, 48)
     $CollisionShape2D.position = Vector2(16, 24)
+    # The StandSurface is an INVISIBLE solid the Auditor used to launch off. With
+    # the wall-vault (auditor.gd) he no longer needs it as a staircase, and a boss
+    # winding up + vaulting an invisible box reads as random jumping — so tag it
+    # for a PERMANENT boss exception instead (like the secret_wall easter eggs).
+    # It stays solid for the player; the boss simply walks through it.
+    var stand := get_node_or_null("StandSurface")
+    if stand != null:
+        stand.add_to_group("boss_phase_through")
 
 func _on_body_entered(body: Node2D) -> void:
     if body.is_in_group("player") and not activated:

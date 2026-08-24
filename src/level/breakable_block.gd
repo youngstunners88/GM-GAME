@@ -5,6 +5,13 @@ extends StaticBody2D
 
 func _ready() -> void:
     add_to_group("breakable")
+    # A breakable block sits at the Auditor's torso height on his ground lane, so
+    # it is one of the walls that blocks his chase (leverage). Tag it into the
+    # boss "soft platform" set so he winds up and vaults it like a floating
+    # platform — phasing it only during the brief vault arc — instead of pinning
+    # against it forever (measured: the all-solid revert stranded him here at
+    # x=1882 for 42s). See auditor.gd's wall-vault.
+    add_to_group("boss_soft_platform")
     collision.position = Vector2(16, 16)
 
 func break_block() -> void:

@@ -22,6 +22,34 @@ func load_scene(path: String, transition_type: Transition = Transition.FADE) -> 
         push_warning("SceneRouter: load already in progress for %s" % _loading_path)
         return
 
+    # ALWAYS restore real time BEFORE a transition.
+    #
+    # Founder, 2026-08-23 (2nd occurrence): "After big mode on Stage 3 the game
+    # is completely frozen while the music continues." Root cause (measured):
+    # the hitstop juice in player.gd::_hitstop and axe.gd::_boss_hitstop sets the
+    # GLOBAL `Engine.time_scale = 0.05`, then `await`s a short timer and only
+    # restores 1.0 on the line AFTER the await. On Stage 3 any boss touch is
+    # `GameManager.boss_contact_restart()`, which reloads the level THROUGH this
+    # function — so if a hit lands (hitstop starts) and contact fires within the
+    # same ~0.06s window, the player/axe node is freed mid-await, its restore
+    # line never runs, and `Engine.time_scale` is left pinned at 0.05. It is a
+    # global on the Engine, so it SURVIVES the reload: the fresh scene then runs
+    # physics/_process at 5% while the audio server (unaffected) plays on —
+    # exactly "frozen, but the music continues". blaze_rush.gd already had to
+    # defend its own timers against "a stuck Engine.time_scale"; this is the
+    # root cause it was working around.
+    #
+    # Every transition, respawn and boss-restart passes through here, so
+    # resetting at the top makes a stranded hitstop self-heal on the next load
+    # and never persist into a new scene. It also stops the fade timer below
+    # (NOT ignore_time_scale) from running at 5% and stretching 0.3s into 6s.
+    Engine.time_scale = 1.0
+    # And clear any stranded pause for the same reason (a modal panel freed by a
+    # mid-open reload would otherwise leave the tree paused). change_state below
+    # already sets paused=false for TRANSITIONING, but making it explicit here
+    # documents the invariant: NO global sim state survives a transition.
+    get_tree().paused = false
+
     StateMachine.change_state(StateMachine.State.TRANSITIONING)
     _loading_path = path
     _transition_type = transition_type

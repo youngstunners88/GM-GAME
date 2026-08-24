@@ -5,6 +5,73 @@
 
 ---
 
+**🧱 P0 FIXED: Lil Blunt falls through platforms + Boss 1 walks through the blocks — both, one root cause (2026-08-24).**
+
+Your screen recording showed Lil Blunt dropping straight through the thick
+solid platforms, and the same fight showed the Auditor walking through the very
+blocks you need to gain distance behind. **Both came from one change** (PR #52
+made those platforms "one-way" — solid only from directly above). That let the
+boss phase them *and* let you fall through them.
+
+**The platforms are fully SOLID again — for you and for him.**
+- **You land on all 8** floating platforms (gate proves every one).
+- **They block the Auditor** — that's your leverage: he *stops* at a wall, on
+  screen, every time.
+- **He still hunts you across the whole stage.** When a wall stops him he plants
+  for a beat (your window to run), then **vaults over it** and keeps coming. He
+  never floats up into the sky doing it.
+
+Measured on the real level, player fled to the far west:
+
+| | Plain-solid (stuck) | Now |
+|---|---:|---:|
+| Chase gap to a fled player (whole stage) | 1732px, abandoned | **88px — on top of you** |
+| Longest he's ever stuck at a wall | 2532 frames (~42s) | **93 frames (1.5s)** |
+| Time his feet are up in the sky | — | **0.0%** |
+
+Getting here also fixed two things the measurement surfaced that had nothing to
+do with platforms: mob **Tax Collectors** were physically walling the boss (he
+now passes through his own kind), and a **20px platform** was slipping between
+his sensor rays (he now scans finely). The full detective trail, with the
+numbers, is in `docs/audits/2026-08-24-boss1-solid-walls-vault/audit.md`.
+
+**Consulted first (as always):** Kimi K3 (which platforms are real walls) and
+Grok 4.6 (the "you can't have a solid wall vs a big boss without a pin *or* a
+traverse" rule that killed the tempting shortcuts). A new **ungameable gate**
+locks BOTH halves in — the walls must block him AND he must still catch you — so
+this can't quietly regress to either failure again. Every Auditor gate + the new
+player-landing gate + the return-path gate are green. Security 18/18.
+
+**Hard-refresh is the acceptance** — the itch build updates after this ships.
+
+---
+
+**🧊 P0 FIXED: Stage 3 "frozen but music playing" after big mode — a stranded slow-motion global (2026-08-23).**
+
+Founder (2nd time): "After big mode on Stage 3 the game is completely frozen
+while the music continues." Found and fixed with a repro that fails without the
+fix.
+
+**Root cause.** The hit-impact "juice" briefly sets the game's GLOBAL slow-motion
+(`Engine.time_scale = 0.05`) and restores normal speed a fraction of a second
+later. On Stage 3, touching the boss instantly restarts the level. If a hit and
+a boss-touch happen in the same ~0.06s window, the object that would restore
+normal speed is destroyed by the restart before it can — so the game reloads
+**stuck at 5% speed**. Physics/input crawl (looks frozen); the audio thread is
+unaffected (music plays on). Intermittent because it needs that exact overlap —
+which is why it was the "2nd time".
+
+**Fix.** Every scene load/restart now resets speed to normal as its first act,
+so a stranded slow-mo can never survive into the next scene; the hit-juice also
+now restores speed via a timer the scene reload can't orphan. Gate
+`time_scale_recovers_on_scene_load_test` reproduces the stuck state and proves
+recovery (fails on the old code, passes on the new). Security 18/18.
+Audit: `docs/audits/2026-08-23-stage3-bigmode-freeze/audit.md`.
+
+**Update (2026-08-24):** the Boss 1 "walks through the blocks" residual noted
+here is now **FIXED** — see the top section of this report. Both P0s ship
+together through one gate-gated merge.
+
 **🎯 STAGE 1 FIXED: AUDITOR GROUNDED + FIGHTABLE, AND THE STAGE-END SOFT-LOCK IS GONE (2026-08-23).**
 
 Two founder P0s from the hard-refresh, both fixed and gated:

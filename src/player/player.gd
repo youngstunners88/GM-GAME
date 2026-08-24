@@ -537,9 +537,18 @@ func _hitstop(duration: float = 0.07) -> void:
 	_hitstop_token += 1
 	var my_token := _hitstop_token
 	Engine.time_scale = 0.05
-	await get_tree().create_timer(duration, true, false, true).timeout
-	if my_token == _hitstop_token:
-		Engine.time_scale = 1.0
+	# Restore off the TIMER's own timeout signal, not this coroutine's resume.
+	# Founder, 2026-08-23 freeze: if this node is freed during the hitstop (Stage
+	# 3 boss contact reloads the level within the 0.06s window), the coroutine is
+	# abandoned and the line after `await` never runs, stranding the GLOBAL
+	# Engine.time_scale at 0.05. The SceneTreeTimer is owned by the tree, not by
+	# this node, so binding the restore to its timeout fires even after this node
+	# is gone. (SceneRouter.load_scene also resets time_scale as the real safety
+	# net; this stops the strand happening in the first place.)
+	var t := get_tree().create_timer(duration, true, false, true)
+	t.timeout.connect(func() -> void:
+		if my_token == _hitstop_token:
+			Engine.time_scale = 1.0)
 
 ## Ladder zone refcount — called by ladder.gd on Area2D enter/exit. Tracks the
 ## active ladder node so top-out has geometry to target (brief correction E).

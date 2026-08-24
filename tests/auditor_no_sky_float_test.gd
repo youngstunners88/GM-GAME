@@ -32,13 +32,18 @@ extends Node
 ##   * Raising LEAP_VELOCITY to 660 (222px of rise, vs the 200 needed) did not
 ##     rescue it either.
 ##
-## RESOLUTION (2026-08-23): the props did not need to be solid to be a
-## staircase — they need to be ONE-WAY. The checkpoint StandSurface and the
-## level's floating platforms are now landable-from-above but passable
-## horizontally, so the boss mounts them to chase up but is never walled by
-## them at torso height. Kimi K3 identified that platforms (300,500) and
-## (1100,450) were the last two hard walls on the ground lane; one-way clears
-## both. LEAP stays -620 and the height cap is unchanged — no arithmetic bump.
+## RESOLUTION (2026-08-23): one-way collision. SUPERSEDED (2026-08-24).
+##
+## The one-way approach was reverted because it regressed the PLAYER (Lil Blunt
+## fell through the thin decks) and removed the boss "block" the founder wants
+## for leverage. The platforms are now FULLY SOLID again; the boss no longer
+## pins/floats on them because auditor.gd carries a telegraphed, phasing
+## WALL-VAULT (he plants at a wall, then hops over it, phasing the platforms only
+## for the brief arc). This gate still passes under that design — feet never go
+## above the highest platform (0.0% sky) — and it is the anti-fly half of the
+## proof; the leverage half lives in auditor_solid_wall_traverse_test. Do NOT
+## re-introduce one-way to "fix floating": it breaks player landing. See
+## docs/audits/2026-08-24-boss1-solid-walls-vault/audit.md.
 ##
 ## Run: godot --headless res://tests/auditor_no_sky_float_test.tscn
 

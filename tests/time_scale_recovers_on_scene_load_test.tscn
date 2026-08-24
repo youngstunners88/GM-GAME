@@ -1,0 +1,4 @@
+[gd_scene load_steps=2 format=3 uid="uid://timescalerecover01"]
+[ext_resource type="Script" path="res://tests/time_scale_recovers_on_scene_load_test.gd" id="1"]
+[node name="TimeScaleRecoversTest" type="Node"]
+script = ExtResource("1")
