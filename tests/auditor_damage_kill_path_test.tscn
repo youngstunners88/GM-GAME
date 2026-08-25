@@ -1,0 +1,4 @@
+[gd_scene load_steps=2 format=3 uid="uid://auditorkillpath01"]
+[ext_resource type="Script" path="res://tests/auditor_damage_kill_path_test.gd" id="1"]
+[node name="AuditorDamageKillPathTest" type="Node"]
+script = ExtResource("1")
