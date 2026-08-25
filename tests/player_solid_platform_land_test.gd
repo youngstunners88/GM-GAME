@@ -14,10 +14,12 @@ extends Node
 ## Run: godot --headless res://tests/player_solid_platform_land_test.tscn
 
 const LEVEL := preload("res://src/level/level_01_smoke_realm.tscn")
-## Level 1 floating platforms (x, y, w, h) from level_01_data.tres.
+## Level 1 floating platforms (x, y, w, h) from level_01_data.tres. Positions
+## re-spaced 2026-08-25 so a solid 220px boss can vault every wall without
+## clipping a neighbour (P2/P5/P6 moved) — keep in sync with the .tres.
 const PLATFORMS := [
-	Vector2(300, 500), Vector2(500, 400), Vector2(750, 350), Vector2(1100, 450),
-	Vector2(1400, 350), Vector2(1700, 400), Vector2(2100, 300), Vector2(2600, 350),
+	Vector2(300, 500), Vector2(620, 400), Vector2(750, 350), Vector2(1100, 450),
+	Vector2(1420, 350), Vector2(1852, 400), Vector2(2100, 300), Vector2(2600, 350),
 ]
 const PLAT_W := [100.0, 100.0, 120.0, 100.0, 100.0, 150.0, 100.0, 100.0]
 

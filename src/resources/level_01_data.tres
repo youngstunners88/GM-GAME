@@ -42,11 +42,11 @@ ground_segments = Array[Vector4]([
 ])
 platforms = Array[Vector4]([
 	Vector4(300, 500, 100, 20),
-	Vector4(500, 400, 100, 20),
+	Vector4(620, 400, 100, 20),
 	Vector4(750, 350, 120, 20),
 	Vector4(1100, 450, 100, 20),
-	Vector4(1400, 350, 100, 20),
-	Vector4(1700, 400, 150, 20),
+	Vector4(1420, 350, 100, 20),
+	Vector4(1852, 400, 150, 20),
 	Vector4(2100, 300, 100, 20),
 	Vector4(2600, 350, 100, 20)
 ])
@@ -225,11 +225,9 @@ powerup_spawns = Array[Dictionary]([
 	}
 ])
 breakable_blocks = Array[Vector2]([
-	Vector2(850, 500),
-	Vector2(950, 500),
-	Vector2(1350, 500),
-	Vector2(1750, 500),
-	Vector2(1850, 500)
+	Vector2(1600, 500),
+	Vector2(2250, 500),
+	Vector2(2700, 500)
 ])
 boss_arena = {
 	"start_x": 2800,

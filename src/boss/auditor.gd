@@ -467,12 +467,12 @@ func _ready() -> void:
 	# stalled a solid vault (his east shoulder catching (2100,300) over the block).
 	# Excepting them costs nothing on the ground and lets a solid jump clear the
 	# real walls cleanly. Classified once here by geometry, not hardcoded ids.
-	var grounded_head_y: float = 650.0 - BODY  # Level 1 ground is y=650.
-	for sp in get_tree().get_nodes_in_group("boss_soft_platform"):
-		if sp is CollisionObject2D:
-			var r: Rect2 = _platform_rect(sp)
-			if r.size != Vector2.ZERO and (r.position.y + r.size.y) <= grounded_head_y + 6.0:
-				add_collision_exception_with(sp)
+	# EVERY cyan block is SOLID to the boss — no exceptions. Founder hard-refresh
+	# (2026-08-25): the permanent overhead exception made him visibly walk through
+	# the circled cyan platform. Floating platforms and breakable blocks share the
+	# same cyan tile, so ALL must block him. The level geometry is re-spaced (see
+	# level_01_data.tres) so a solid 220px body can vault every wall without
+	# clipping a neighbour, instead of excepting anything.
 	hitbox.body_entered.connect(_on_hitbox_body_entered)
 	hitbox.area_entered.connect(_on_hitbox_area_entered)
 	# CONTACT DETECTION STAYS ON FOR THE WHOLE FIGHT.
