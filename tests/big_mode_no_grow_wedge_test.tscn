@@ -1,0 +1,4 @@
+[gd_scene load_steps=2 format=3 uid="uid://bigmodewedge01"]
+[ext_resource type="Script" path="res://tests/big_mode_no_grow_wedge_test.gd" id="1"]
+[node name="BigModeNoGrowWedgeTest" type="Node"]
+script = ExtResource("1")

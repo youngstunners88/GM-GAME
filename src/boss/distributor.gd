@@ -328,15 +328,32 @@ var _lock_cd: float = 0.0
 ##    "lunge in, fall back" that moves his SCREEN position dramatically in
 ##    both directions, which a constant hold can never produce regardless of
 ##    how correct the underlying pursuit speed is.
-const STANDOFF_X: float = 168.0
+## 168 -> 60 (2026-08-25, founder "the 2nd boss is way too easy... just needs to
+## CHASE"). DeepSeek's FSM trace put a number on the long-standing "hovers but
+## doesn't chase": the boss steered at a point 168px to the SIDE of the player
+## and, once it reached that standoff, PARKED there for ~69.5% of every cycle —
+## it was never actually over the player, so under a player-following camera it
+## read as "floating beside me," not pursuit. The side offset existed only to
+## give the camera a gap that opens/closes; 60 keeps a slight breathing offset
+## (so he isn't a rigid center-lock) while bringing him down onto the player's
+## own column, where a descending boss is a real threat. HOVER_ABOVE (rides
+## above) + the climb lock still prevent the sideways-sweep contact-kill that a
+## true center-lock once caused — this narrows the resting offset, it does not
+## remove the vertical safety.
+const STANDOFF_X: float = 60.0
 const STALK_WEAVE_AMP: float = 70.0
 const STALK_WEAVE_RATE: float = 1.35
 var _stalk_t: float = 0.0
 var _standoff_side: float = 0.0
 const STANDOFF_FLIP_DEADZONE: float = 24.0
-const SURGE_INTERVAL: float = 3.2
+## SURGE is now a real lunge ONTO the player's x, not a partial close of the
+## standoff. interval 3.2 -> 2.4 (more frequent), close-factor 0.25 -> 0.0 (he
+## drives to the player's column during the burst). This is the punctuated
+## "he's coming at me" beat the founder keeps asking for; the climb lock keeps
+## the vertical approach safe.
+const SURGE_INTERVAL: float = 2.4
 const SURGE_DURATION: float = 0.65
-const SURGE_CLOSE_FACTOR: float = 0.25  ## fraction of STANDOFF_X he closes to during a surge
+const SURGE_CLOSE_FACTOR: float = 0.0  ## he lunges to the player's own x during a surge
 const SURGE_SPEED_MULT: float = 1.6
 var _surge_t: float = 0.0
 var _surge_active: bool = false

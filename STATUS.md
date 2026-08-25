@@ -5,6 +5,49 @@
 
 ---
 
+**🧊 P0 FIXED — the Stage-3 freeze ("frozen but music still playing", shot_2). Plus Stage-2 chase overhaul, Stage-1 boss gets smarter as he's hurt (2026-08-25 HEAVY GAUNTLET).**
+
+**The freeze (your #1):** Root-caused with real measurement, not guesswork. The
+Magic Mushroom grows Lil Blunt 1.5×, which scales his collision box from 32→48px.
+If he grew under an overhang or in a canyon pinch, the bigger body got **stuck
+inside the solid rock** — he couldn't move, but the music and enemies kept
+running, so it read as "the game froze." (It was **not** a paused game or a
+stuck slow-mo — those were already hardened; this was a different, physical
+wedge.) **Fix:** the moment he grows, the game pushes him back out of any solid
+he's overlapping. A headless test proves the wedge is real and that the fix
+frees him and he can move again. DeepSeek independently fingered the same cause.
+
+**Stage 2 (Distributor) — "way too easy, must chase":** Found the real reason he
+never felt like he was chasing — he steered at a point **168px OFF TO YOUR SIDE**
+and parked there ~70% of every cycle, so he floated *beside* you instead of
+coming at you. Now he bears down on your **own column** (side offset 168 → 60)
+and his periodic lunge drives all the way onto your position instead of a half-
+hearted step-in. Every Stage-2 gate still green, including the spawn-safety one
+(he doesn't cheap-kill you on approach).
+
+**Stage 3 (Claim Jumper) — "still not chasing":** I *measured* the real fight —
+parked you at the far west and he closed from 4184→3806 and **gained 277px on a
+sprinting player**. The chase code works. So I made him lunge more often (more
+visibly aggressive) but did **not** fake it with numbers that break the fight:
+pulling his standoff tighter actually made him camp *inside* his own instant-kill
+range and freeze at the wall, so I reverted that. **Honest:** the "parked far
+right" screenshot is most consistent with the touch-restart throwing you back to
+the level start — your hard-refresh is the real judge here.
+
+**Stage 1 (Auditor) — smarter as HP drops (you asked):** As his health falls he
+now re-commits to catch-up jumps/vaults sooner (cooldown 100%/80%/60% at
+full/half/low HP) — he keeps *trying to reach you* the more cornered he is. Pure
+timing; every cyan block stays solid, he stays grounded, no runaway climb — all
+Stage-1 gates green.
+
+**Gates:** all boss + player + Stage-1 land/return + freeze + time-scale gates
+green; **Security 18/18**. Models: DeepSeek (freeze + chase trace — confirmed my
+measurements); Grok 4.6 & a stealth model dispatched but returned unusable
+output (looped / empty — noted honestly, not relied on); Kimi skipped (its usual
+budget-exhaust). **Hard-refresh is the acceptance for chase + freeze.**
+
+---
+
 **🧱 P0 FIXED: Boss 1 STILL phased the circled cyan block — now EVERY cyan block is solid (2026-08-25).**
 
 You hard-refreshed and the Auditor still walked through the circled cyan
