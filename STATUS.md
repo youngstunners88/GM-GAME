@@ -5,6 +5,42 @@
 
 ---
 
+**🧱 P0 FIXED: Boss 1 STILL phased the circled cyan block — now EVERY cyan block is solid (2026-08-25).**
+
+You hard-refreshed and the Auditor still walked through the circled cyan
+platform. You were right. My previous fix left the *overhead* platforms (the
+ones above his head) set to "ignore" so he could jump the walls — and those are
+cyan too, so he ghosted them. **Every cyan block is now fully solid to him — no
+exceptions anywhere.** Measured: **0.0%** of the fight is his body inside a
+platform (was the whole problem).
+
+The catch: a 220px boss physically can't jump the walls in the old tightly-packed
+layout without his shoulders catching the platform next door — the level had more
+cyan blocks crammed together than his body is wide. So I **re-spaced Level 1**:
+same platform heights (your jumps are unchanged), a few platforms nudged apart,
+and the breakable blocks spaced out (5 → 3). Now he jumps every wall cleanly,
+stays solid the whole time, and still chases you down.
+
+Measured, Lil Blunt fleeing the stage:
+| | Now |
+|---|---:|
+| His body inside any cyan block | **0.0%** |
+| Walls actually blocking him (spacing) | **76 beats** |
+| Catches a fleeing player | **gap 82** |
+| Lands on all 8 platforms | **yes** |
+
+Consulted Grok 4.6 (same verdict: solid + geometry, never exceptions) and
+dispatched Kimi K3 (it timed out — noted honestly). The ungameable gate measures
+his real BODY against the real blocks, so a ghost fails it. Audit:
+`docs/audits/2026-08-25-boss1-solid-respace/audit.md`.
+
+**Honest note:** 3 platforms moved ≤150px (same heights) and 2 of 5 breakable
+crates were removed to make room for a solid big boss. The level plays the same;
+if you want the exact old crate layout back, that needs a different tradeoff
+(smaller boss) — say the word. **Hard-refresh is the acceptance.**
+
+---
+
 **👻 P0 FIXED (again, properly): Boss 1 "walks through EVERYTHING" — removed the runtime phasing that caused it (2026-08-25).**
 
 You hard-refreshed and the Auditor was ghosting straight through the platforms —
