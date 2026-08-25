@@ -5,6 +5,49 @@
 
 ---
 
+**👻 P0 FIXED (again, properly): Boss 1 "walks through EVERYTHING" — removed the runtime phasing that caused it (2026-08-25).**
+
+You hard-refreshed and the Auditor was ghosting straight through the platforms —
+worse than before. You were right. The previous fix (PR #53) gave him a vault
+that temporarily *turned off* his collision with platforms to hop over them,
+then turned it back on. That toggle was the bug: a body his size flipping
+collision on/off against thin 20px platforms **can't be done mid-move without an
+artefact** — I measured him ghosting the level 26% of the time in one variant,
+and getting **sealed inside a platform** in another. And the old gates missed it
+because they measured ray-casts (which ignore the collision trick), not his
+actual body — exactly the "passes the gate, broken live" you called out.
+
+**The fix: no collision toggling at all, ever.**
+- The three platforms that matter for spacing — the ones at his body height —
+  are **solid 100% of the time**. He is blocked by them, full stop. Measured
+  ground-level walk-through of them: **0.0%** (was 26-83%).
+- The platforms *above his head* (which he only ever clipped while jumping) are
+  ignored once at spawn, so his jump clears the real walls cleanly.
+- The vault is now a plain **solid jump** — he plants at the wall (your window to
+  run), then jumps over it, staying solid the whole time.
+
+Measured, Lil Blunt fleeing the whole stage:
+
+| | Broken (live) | Now |
+|---|---:|---:|
+| Time his grounded body is inside a spacing wall | 26-83% | **0.0%** |
+| Walls actually stopping him (spacing beats) | — | **92** |
+| Catches a fully-fled player | ghosted past | **gap 40px** |
+
+The gate for this was **rewritten to measure his real body against the real
+walls** — a boss that ghosts them now fails it, so this can't quietly regress
+again. Full Auditor battery + Boss 3 regression green. Audit:
+`docs/audits/2026-08-25-boss1-walks-through-everything/audit.md`.
+
+**Honest limit:** while *jumping*, he passes through an overhead platform he's
+leaping past (reads as jumping, not walking through), and he can't yet stand on
+a high overhead ledge to chase you up there (he throws clipboards instead). Say
+the word if that matters and it's the next piece.
+
+**Hard-refresh is the acceptance** — live after this ships.
+
+---
+
 **🧱 P0 FIXED: Lil Blunt falls through platforms + Boss 1 walks through the blocks — both, one root cause (2026-08-24).**
 
 Your screen recording showed Lil Blunt dropping straight through the thick
