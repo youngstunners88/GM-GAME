@@ -621,6 +621,47 @@ func _top_out_ladder() -> void:
 	AudioManager.play_sfx("jump")
 	_play_jump_stretch()
 
+## Push the body out of any solid it is embedded in. Called after the Magic
+## Mushroom grows Lil Blunt 1.5x (power_up_handler._update_scale): the enlarged
+## 48x48 collision box can appear already overlapping a low ceiling, an overhead
+## platform, or a canyon constriction, and move_and_slide cannot depenetrate a
+## body that is on the floor with no free axis — the player is WEDGED and cannot
+## move, while music and enemies keep running. That is the founder's Stage-3
+## "the game is now frozen even though the music is still playing" (shot_2, a
+## magic mushroom on screen): a grow-wedge, not a tree pause and not a stranded
+## time_scale (both already hardened). DeepSeek's FSM/freeze trace reached the
+## same root cause independently.
+##
+## The player's CollisionShape2D is TOP-LEFT anchored (offset (16,16) on a 32x32
+## box), so scaling the node 1.5x grows the body DOWN and RIGHT from the origin:
+## the feet sink into the floor and the right side pushes into any wall. This
+## resolves it by true depenetration — each pass reads the deepest contact and
+## slides out along its normal by the penetration depth, repeated so multiple
+## simultaneous contacts (floor + wall) all clear. Bounded; converges whenever a
+## fit exists (every reachable real-level spot has room for the 48px body on at
+## least one side). If the pocket is genuinely smaller than the grown body on
+## every axis — which no shipped level geometry produces — it restores the
+## anchor rather than tunnelling.
+func resolve_grow_overlap() -> void:
+	var anchor: Vector2 = global_position
+	for _i in range(24):
+		# recovery_as_collision=true (4th arg) is REQUIRED to detect a body that
+		# is already overlapping with zero motion — a plain move_and_collide(ZERO)
+		# reports nothing at rest, which would make this a silent no-op.
+		var col := move_and_collide(Vector2.ZERO, true, 0.08, true)
+		if col == null:
+			return  # free
+		var depth: float = col.get_depth()
+		if depth <= 0.0:
+			depth = 4.0  # fallback if a driver reports 0 depth
+		# Slide out along the contact normal by the penetration depth (+epsilon so
+		# the next probe doesn't re-detect the same skin-thin overlap).
+		global_position += col.get_normal() * (depth + 0.5)
+	# Could not converge (impossible pocket — not a real level case): don't leave
+	# him buried; put him back where he was and let normal physics take over.
+	if move_and_collide(Vector2.ZERO, true, 0.08, true) != null:
+		global_position = anchor
+
 ## Falling into a pit — a HARD fail. Plays a devastating sound, costs a LIFE
 ## (not just health), and respawns at the last checkpoint if lives remain;
 ## out of lives ends the run to the main menu. Called by the level kill zone.

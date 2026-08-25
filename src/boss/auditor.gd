@@ -270,8 +270,21 @@ func _launch_vault(dir: float) -> void:
 	_vault_dir = dir
 	_vault_timer = VAULT_COMMIT_SEC
 	_vault_launch_feet = feet_y
-	_leap_cooldown = 1.2
+	_leap_cooldown = 1.2 * _aggression_cd_scale()
 	_air_jump_ready = false
+
+## HP-SCALED AGGRESSION (founder, 2026-08-25): "make him more intelligent to
+## make resolutions to catch Lil Blunt... the more the stakes increase with his
+## health levels." As his HP falls he should COMMIT to catch-up leaps/vaults
+## sooner, so he plans platform routes to the player instead of pacing. The
+## safe lever is the re-attempt cooldown, NOT the collision geometry (every cyan
+## block must stay solid — do not touch that): phase 1 keeps the tuned timing,
+## phase 2 re-arms 20% sooner, phase 3 40% sooner. Pure timing, so it cannot
+## regress the solid-wall / grounded / no-runaway-climb gates. patrol_speed
+## already scales per phase in _update_phase; this adds the "keeps trying to
+## reach me" persistence on top of raw speed.
+func _aggression_cd_scale() -> float:
+	return [1.0, 1.0, 0.8, 0.6][clampi(phase, 1, 3)]
 
 ## Reset the vault/telegraph timers when he leaves PATROL (charge, damage).
 func _end_vault() -> void:
@@ -647,7 +660,7 @@ func _physics_process(delta: float) -> void:
 					and _pl.global_position.y < global_position.y - 90.0 \
 					and _ceiling_sidestep <= 0.0 and not already_high_enough:
 				velocity.y = LEAP_VELOCITY
-				_leap_cooldown = 0.9
+				_leap_cooldown = 0.9 * _aggression_cd_scale()
 				_air_jump_ready = true
 			# CEILING SIDESTEP — he just drove his head into a platform.
 			# Kill the upward push (shoving into a ceiling is what produced the

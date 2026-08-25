@@ -95,11 +95,21 @@ const VULNERABLE_SEPARATION: float = 96.0
 ## exact mechanism that kills a real run in play was deliberately switched off
 ## for that gate.
 ##
-## 200 clears his own contact radius (~155px) with margin for TURN_DECEL
-## braking overshoot (up to ~53px at phase-3's 385px/s), and still sits well
-## inside the wall-to-wall reach_bar (288px) that same test asserts — so he
-## still closes to clearly-threatening, striking-adjacent range, he just no
-## longer walks through the player to get there.
+## 200 (held — a 2026-08-25 attempt to tighten this to 160 was REVERTED same
+## session). Founder "the final boss is STILL not chasing", but a real-physics
+## measurement this session (gauntlet_chase_measure_probe) proved the chase
+## itself works: parked far west he closed from centre 4184 to ~3806 and GAINED
+## 277px on a sprinting player, and DeepSeek's FSM trace independently confirmed
+## his speeds are fine and the "parked far right" screenshot is "not explained by
+## his chase speeds." Reducing this to 160 made him SETTLE at ~97px — inside the
+## live-measured 103px contact-kill core — so he camped in contact range (122
+## frames) and froze at the arena wall (9.38s), failing both
+## claim_jumper_chase_separation_test and claim_jumper_passes_circle_test.
+## Because the outward-hold bias only engages below 0.6*separation, the settle
+## point tracks ~0.6*this value; 200 settles him ~120px out (safely past 103),
+## 160 pulls it inside contact. The Stage-3 "not chasing" is therefore NOT a
+## separation problem — it is the contact-restart loop / opening-moment
+## perception, which live hard-refresh must close, not a constant tweak.
 const CHASE_SEPARATION: float = 200.0
 
 ## Max HP the player can strip in a SINGLE vulnerable window before he shakes it
@@ -168,7 +178,13 @@ const TURN_DEAD_ZONE: float = 34.0
 ## that's easy to read as barely moving at all. A periodic full-commitment
 ## speed burst (independent of which state he's in) gives the eye a
 ## punctuated, unambiguous acceleration to track.
-const SURGE_INTERVAL: float = 3.2
+## interval 3.2 -> 2.4 (2026-08-25). Separation tuning destabilises the contact
+## core (see CHASE_SEPARATION), so the safe lever for a MORE visibly-pursuing
+## Stage-3 boss is a more frequent SURGE: it only scales speed for the burst, it
+## never changes where he settles, so it adds readable "he's lunging at me"
+## beats without pulling him inside the 103px contact-kill radius. Matches the
+## Distributor's new surge cadence so the two late bosses read alike.
+const SURGE_INTERVAL: float = 2.4
 const SURGE_DURATION: float = 0.65
 const SURGE_SPEED_MULT: float = 1.6
 ## Last known player x, sampled at the end of each _ground_chase frame. Used to

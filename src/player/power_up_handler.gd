@@ -64,8 +64,17 @@ func _update_blaze(delta: float) -> void:
 func _update_scale() -> void:
 	var new_scale := Vector2(1.5, 1.5) if GameManager.has_power_up("big") else Vector2.ONE
 	if current_scale != new_scale:
+		var growing := new_scale.x > current_scale.x
 		current_scale = new_scale
 		player.scale = current_scale
+		# GROW-WEDGE GUARD (founder shot_2, Stage-3 "frozen but music playing").
+		# Scaling the player node scales its CollisionShape2D too: growing to 48px
+		# under a low ceiling / in a canyon constriction leaves the body embedded
+		# in solids with no free axis, and a grounded CharacterBody2D cannot
+		# depenetrate — Lil Blunt is wedged and unmovable while music/enemies run.
+		# Push him back out the moment he grows. See player.resolve_grow_overlap().
+		if growing and player.has_method("resolve_grow_overlap"):
+			player.resolve_grow_overlap()
 
 func activate_invincibility(duration: float) -> void:
 	invincible_timer = duration
