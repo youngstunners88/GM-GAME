@@ -5,6 +5,47 @@
 
 ---
 
+**🩸 P0 FIXED — the Tax Auditor is killable again + 🏇 bosses 2 & 3 now CLOSE IN (with real browser proof) (2026-08-26).**
+
+**Auditor "won't die at 3 segments" — FIXED (and it was my fault).** My last
+round made him leap/vault more aggressively at low HP — too aggressively: near a
+wall he chained vaults so fast he never finished the charge that opens his one
+damage window, so your shots hit an invulnerable boss forever. He was literally
+unkillable. Fixed with a hard guarantee: if he goes too long without opening a
+damage window, he's forced to charge (open one) the next time he's on the ground
+— so he can be smart, but he can never be immortal again. Proven by a new gate
+that shoots him from low HP to a real death; pre-fix it timed out (never died),
+post-fix he dies in 2–4 windows.
+
+**Stage 2 + 3 "still don't move in" — FIXED, and this time with browser frames,
+not headless.** The real reason (DeepSeek's audit, and it's finally the right
+diagnosis): the camera follows Lil Blunt, so a boss that keeps ANY fixed gap has
+zero motion on your screen — it *looks* parked no matter how fast it moves. The
+fix is to make each boss LUNGE: the Distributor now dives down onto your column
+during his surge, and the Claim Jumper drives all the way in to just outside his
+own hitbox, then both reset — a big, visible "he's coming at me," not a distant
+hover.
+
+**Proof (you asked for it — real build, real browser):**
+`artifacts/chase_capture_2026-08-26/` — I built the actual web export, drove a
+weaving/hopping kite in a real browser, and captured frames. Stage 3: the Claim
+Jumper starts far-right (shot-003), then by shot-004 has **closed to centre and
+caught Lil Blunt** ("YOU DIED"). Stage 2: the Distributor engages centre-screen,
+right on top of you. A headless gate also confirms the on-screen gap now SWINGS
+132px (S2) / 162px (S3) per cycle instead of holding flat.
+
+**Honest note:** both bosses now catch a kiting player readily — in the capture
+Lil Blunt dies to each. That's the "moves in on me" you wanted, but it also means
+the fights got harder (touch = restart, your rule). If either feels *too*
+punishing on your hard-refresh, say so and I'll ease the lunge depth. **Your
+hard-refresh is the close.**
+
+Gates: all boss + player + Stage-1 + freeze + kill-path + new visible-lunge gates
+green; Security 18/18. Model: DeepSeek (both tracks — confirmed the vault-chain
+starvation AND the camera-relative "parked" cause).
+
+---
+
 **🧊 P0 FIXED — the Stage-3 freeze ("frozen but music still playing", shot_2). Plus Stage-2 chase overhaul, Stage-1 boss gets smarter as he's hurt (2026-08-25 HEAVY GAUNTLET).**
 
 **The freeze (your #1):** Root-caused with real measurement, not guesswork. The
