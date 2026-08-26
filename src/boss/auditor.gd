@@ -102,6 +102,21 @@ var throw_timer: float = 2.0
 var hop_timer: float = 6.0
 var phase: int = 1
 var _base_patrol_speed: float = 90.0
+## Time (s) spent continuously in PATROL without entering CHARGE. Drives the
+## anti-starvation guard below — see CHARGE_STALL_LIMIT.
+var _patrol_stall: float = 0.0
+## Hard cap on how long PATROL may run without opening a damage window. Founder,
+## 2026-08-26: "the Tax Auditor won't die at this point of his health bar... I've
+## been shooting him and nothing is happening." Root cause (DeepSeek FSM trace +
+## our own): the CHARGE gate requires `_vault_timer<=0 AND _vault_windup<=0`, and
+## PR #56's low-HP aggression made the vault/leap re-arm (0.6x cooldown) FASTER
+## than one vault cycle completes (~1.2s), so near any wall the boss chained
+## vaults forever, the gate was never satisfied, CHARGE→VULNERABLE never fired,
+## and take_damage()'s `state != VULNERABLE` early-return made him UNKILLABLE.
+## This guarantees a charge (hence a damage window) at worst every few seconds at
+## every HP band, regardless of vault timing — the boss can be smart, but he can
+## never become immortal.
+const CHARGE_STALL_LIMIT: float = 3.2
 ## Gate on the leap so he arcs instead of vibrating against a wall every frame.
 var _leap_cooldown: float = 0.0
 ## Clears ~196px at gravity 980 — enough for this project's real ledge heights.
@@ -283,8 +298,13 @@ func _launch_vault(dir: float) -> void:
 ## regress the solid-wall / grounded / no-runaway-climb gates. patrol_speed
 ## already scales per phase in _update_phase; this adds the "keeps trying to
 ## reach me" persistence on top of raw speed.
+## 2026-08-26: softened from [_,1.0,0.8,0.6] to [_,1.0,0.9,0.8]. The 0.6 phase-3
+## value re-armed the vault faster than a vault cycle completes and starved the
+## damage window (the "won't die" bug). The gentler curve keeps rising aggression
+## while the CHARGE_STALL_LIMIT guard below is the hard guarantee against ever
+## starving VULNERABLE again.
 func _aggression_cd_scale() -> float:
-	return [1.0, 1.0, 0.8, 0.6][clampi(phase, 1, 3)]
+	return [1.0, 1.0, 0.9, 0.8][clampi(phase, 1, 3)]
 
 ## Reset the vault/telegraph timers when he leaves PATROL (charge, damage).
 func _end_vault() -> void:
@@ -755,9 +775,23 @@ func _physics_process(delta: float) -> void:
 			# collision while his body still overlapped a ledge, and the physics
 			# depenetration teleported him UP onto it, wedged where the vault probe
 			# no longer recognised the wall. Let the vault finish first.
-			if state_timer <= 0.0 and _vault_timer <= 0.0 \
-					and _vault_windup <= 0.0:
+			_patrol_stall += delta
+			# ANTI-STARVATION FORCE-CHARGE (founder "won't die"): if the vault/leap
+			# chain has kept him out of CHARGE for too long, force it the next time
+			# he is GROUNDED — never mid-arc (grounded means any vault has already
+			# landed, so clearing its timers here can't strand him the way an
+			# in-flight interrupt would; the fight carries NO runtime phasing to
+			# restore, see the note at the top of _physics_process). This is what
+			# guarantees a VULNERABLE window — and therefore killability — at every
+			# HP band.
+			var _force_charge: bool = _patrol_stall >= CHARGE_STALL_LIMIT and is_on_floor()
+			if _force_charge:
+				_vault_timer = 0.0
+				_vault_windup = 0.0
+			if (state_timer <= 0.0 and _vault_timer <= 0.0 and _vault_windup <= 0.0) \
+					or _force_charge:
 				state_timer = 1.4
+				_patrol_stall = 0.0
 				current_state = State.CHARGE
 				var p := get_tree().get_first_node_in_group("player")
 				if p:

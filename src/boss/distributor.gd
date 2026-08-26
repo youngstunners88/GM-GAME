@@ -355,6 +355,12 @@ const SURGE_INTERVAL: float = 2.4
 const SURGE_DURATION: float = 0.65
 const SURGE_CLOSE_FACTOR: float = 0.0  ## he lunges to the player's own x during a surge
 const SURGE_SPEED_MULT: float = 1.6
+## Ride height during a surge — a ~25px drop from HOVER_ABOVE (175) toward the
+## player. body-bottom = player.y - SURGE_DIVE_ABOVE + BODY/2 = player.y - 30, so
+## his board stays ~30px above the head (no auto contact-kill) while the drop is
+## clearly visible on screen. The horizontal close (standoff→0) + this vertical
+## drop together are the "swoop onto Lil Blunt" the founder wants.
+const SURGE_DIVE_ABOVE: float = 150.0
 var _surge_t: float = 0.0
 var _surge_active: bool = false
 ## Player top speed is walk_speed 200 * SPRINT_MULTIPLIER 1.2 = 240 px/s.
@@ -522,13 +528,23 @@ func _hover_pursue(delta: float, speed_scale: float = 1.0,
 		if not _surge_active and _surge_t >= SURGE_INTERVAL:
 			_surge_active = true
 			_surge_t = 0.0
+		# DIVE height for the surge. A hover boss that only closes HORIZONTALLY
+		# still reads as parked under a follow-cam if it stays at a constant
+		# altitude; dropping toward the player during the surge adds the visible
+		# VERTICAL "swoop in" the founder is asking for (2026-08-26: "still doesn't
+		# move in on Lil Blunt"). Held safely ABOVE the head (body-bottom stays
+		# clear) so the dive is a threat the player answers by moving, never an
+		# automatic spawn/approach contact-kill — the same contract HOVER_CLEARANCE
+		# guarantees at rest.
+		var above_now: float = HOVER_ABOVE
 		if _surge_active:
 			standoff_now = STANDOFF_X * SURGE_CLOSE_FACTOR
+			above_now = SURGE_DIVE_ABOVE
 			if _surge_t >= SURGE_DURATION:
 				_surge_active = false
 				_surge_t = 0.0
 		var target: Vector2 = p.global_position + Vector2(
-			_standoff_side * standoff_now, -HOVER_ABOVE)
+			_standoff_side * standoff_now, -above_now)
 		# STEERS FROM THE BODY CENTRE, NOT THE ORIGIN. This node's origin is the
 		# body's TOP-LEFT and the body is 240 wide, so aiming the origin at the
 		# player parked his visible centre a permanent 120px EAST of them — he

@@ -112,6 +112,13 @@ const VULNERABLE_SEPARATION: float = 96.0
 ## perception, which live hard-refresh must close, not a constant tweak.
 const CHASE_SEPARATION: float = 200.0
 
+## How close a LUNGE drives before it stops. The live-measured contact core is
+## ~103px (0.62x0.78 of the 280 body + player half-width), so 118 bears down to
+## visibly-on-top-of-you while staying just outside the instant-restart touch.
+## The lunge is what makes the chase READ as a chase under a follow-cam (see the
+## LUNGE block in _ground_chase); this is its inner limit.
+const LUNGE_MIN: float = 118.0
+
 ## Max HP the player can strip in a SINGLE vulnerable window before he shakes it
 ## off and returns to the hunt. Caps burst-down so the kill takes >= ceil(HP/cap)
 ## windows (deterministic, ~6 for 18 HP) instead of one point-blank melt — the
@@ -540,6 +547,20 @@ func _ground_chase(delta: float, speed: float, min_separation: float = 0.0) -> b
 			direction = signf(dx)
 	# Ease into the target speed so he reads as heavy, not robotic.
 	var target_vx: float = speed * direction
+	# LUNGE (founder, 2026-08-26: "the bosses STILL don't move in on Lil Blunt").
+	# The hold below keeps a CONSTANT gap, and under a player-following camera a
+	# constant gap has ZERO on-screen motion — it reads as parked no matter the
+	# speed. DeepSeek's audit: "a boss that holds a constant offset is invisible
+	# to a tracking camera; a boss that CYCLES its offset is visible." So during
+	# each SURGE the boss BYPASSES the standoff hold and drives hard all the way
+	# in to just outside his own contact core (LUNGE_MIN, measured 103px core +
+	# margin), a big visible close every cycle, then the hold re-opens him for the
+	# next one. This is the on-screen "he's coming at me" the founder wants — not
+	# a faster constant offset.
+	if _surge_active and have_player:
+		if absf(dx) <= LUNGE_MIN:
+			target_vx = 0.0  # arrived just outside contact — don't self-trigger the run-reset
+		# else: keep the full surge-speed charge straight at the player
 	# HOLD / BACK OFF ONCE CLOSE ENOUGH — see CHASE_SEPARATION's own comment for
 	# the live-reproduced bug this closes: unthrottled closing walked him
 	# straight through his own instant-death contact radius on every engagement.
@@ -569,7 +590,7 @@ func _ground_chase(delta: float, speed: float, min_separation: float = 0.0) -> b
 	# Stopping (rather than reversing) still prevents the instant-restart body
 	# contact this separation exists for, but costs him no ground: he sits at
 	# the edge of the band and resumes closing the moment the player moves off.
-	if have_player and min_separation > 0.0 and absf(dx) < min_separation:
+	elif have_player and min_separation > 0.0 and absf(dx) < min_separation:
 		# MATCH THE PLAYER'S VELOCITY, don't stop and don't reverse.
 		#
 		# Stopping dead and reversing both fail, for opposite reasons, and both
