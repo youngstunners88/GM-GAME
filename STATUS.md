@@ -5,6 +5,64 @@
 
 ---
 
+**🧊 P0 — the Stage-3 freeze, properly this time: a real root cause + a safety net that can't fail, and a BUILD TAG so you can prove you're on it (2026-08-26, build `2026-08-26d`).**
+
+You were still frozen on the Stage-3 platform after my last "fix" — and your
+shot_1 shows it happening with **no Big Mode**, so it was never (only) the
+mushroom-grow wedge I patched. Two things this round:
+
+1. **BUILD TAG** — bottom-left corner of the HUD now reads `BUILD 2026-08-26d`
+   (and it prints at boot). On your hard-refresh, **check that string**. If it's
+   older than this, your browser cached the old build and that alone explains a
+   "still broken" — hard-refresh again / clear cache. Every prior round may have
+   been invisible to you for exactly this reason.
+
+2. **Real root cause found + fixed.** The **ladder top-out** (climbing to the top
+   of a ladder onto a platform) checked "am I stuck in a wall?" with the wrong
+   physics call — one that *never detects a resting overlap* — so if the top of
+   the ladder put Lil Blunt even slightly inside the platform/ledge, he was left
+   **embedded and frozen**. That's the platform-next-to-a-ladder spot in your
+   shots. Fixed to use the correct depenetration that slides him out on any side.
+
+3. **Anti-deadlock heartbeat (safety net).** Regardless of cause: if you're
+   holding a direction but haven't moved for 1.4s while the game is playing, the
+   game force-unsticks Lil Blunt (clears any stuck climb/hurt flag, pushes him
+   out of any solid) and logs it. So you can never be frozen-while-pressing
+   again, even if some new cause appears.
+
+4. **F3 debug overlay** — press **F3** (or add `?debug=1` to the URL) to see live
+   player + boss state (position, velocity, on-floor, climbing, paused,
+   time-scale, each boss's state + gap). If anything still misbehaves, one F3
+   screenshot tells me exactly what's stuck.
+
+### Forensic block (residual-required)
+```
+BUILD_TAG:        2026-08-26d
+NAVAGENT_USED:    no (grep: none in src/)
+FREEZE_ROOT:      ladder _top_out_ladder embed-probe used move_and_collide()
+                  WITHOUT recovery_as_collision → never depenetrated a top-out
+                  landing that overlapped a solid → player embedded/frozen.
+FIX_FREEZE:       top-out now calls resolve_grow_overlap() (recovery probe, slides
+                  out any axis) + anti-deadlock heartbeat force-unstick + build tag.
+CHASE_PARK_ROOT:  constant offset under a follow-camera (fixed in the lunge/dive;
+                  you couldn't SEE it because you were frozen before the boss).
+SEP_BYPASS_DURING_LUNGE: yes (claim_jumper _ground_chase: `if _surge_active` branch
+                  bypasses the velocity-match hold; distributor dives during surge).
+GAP_LABEL_OR_F3:  yes (F3 overlay shows each boss's gap to player).
+WARP_ONLY_USED:   no — boss_visible_lunge_test drives the REAL level scenes; the
+                  browser capture used a real export.
+GATES:            player_freeze_recovery (new, was N/A pre-fix) + boss_visible_lunge
+                  (S2 amp 218px / S3 136px) + auditor_damage_kill_path — all green;
+                  Security 18/18.
+```
+
+**Honest:** the heartbeat guarantees you're never stuck-while-moving; the ladder
+fix removes the specific cause I could pin. If a freeze somehow persists, F3 →
+screenshot is now the fastest close. **Hard-refresh (with the build tag visible)
+is the acceptance.**
+
+---
+
 **🩸 P0 FIXED — the Tax Auditor is killable again + 🏇 bosses 2 & 3 now CLOSE IN (with real browser proof) (2026-08-26).**
 
 **Auditor "won't die at 3 segments" — FIXED (and it was my fault).** My last

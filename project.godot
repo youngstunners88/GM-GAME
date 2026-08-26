@@ -30,6 +30,7 @@ MobileInputHandler="*res://src/autoload/mobile_input_handler.gd"
 ComboSystem="*res://src/autoload/combo_system.gd"
 IcpBackend="*res://src/autoload/icp_backend.gd"
 FullscreenToggle="*res://src/autoload/fullscreen_toggle.gd"
+DebugOverlay="*res://src/autoload/debug_overlay.gd"
 
 [display]
 window/size/viewport_width=1280

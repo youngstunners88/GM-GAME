@@ -25,6 +25,12 @@ signal crypto_balance_updated(token: String, balance: float)
 signal wallet_address_changed(address: String)
 
 # Persistent player data only — no state booleans (those live in StateMachine).
+## Visible build identity — bump on every ship. Shown on the HUD (top-left under
+## the score) and printed once at boot, so a founder hard-refresh can PROVE it is
+## running the new build and not a stale itch/browser cache (the merged
+## 2026-08-26 residual's Phase 0: "Without this, every other step is invalid").
+const BUILD_TAG := "2026-08-26d"
+
 var total_score: int = 0
 var coins_collected: int = 0
 var ethereum_rings_collected: int = 0
@@ -198,6 +204,7 @@ func set_wallet_address(address: String) -> void:
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
+    print("[BUILD] Lil Blunt Adventure — build %s" % BUILD_TAG)
     load_session()
 
 func add_score(points: int) -> void:

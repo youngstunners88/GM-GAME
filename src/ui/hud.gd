@@ -66,6 +66,18 @@ func _ready() -> void:
     add_child(_lives_label)
     _on_lives_changed(GameManager.lives)
 
+    # BUILD TAG — bottom-left corner, always visible (merged 2026-08-26 residual
+    # Phase 0). A founder hard-refresh must SEE this string; if it shows an older
+    # tag than the ship, they are on a stale cache and every other check is moot.
+    var build_label := Label.new()
+    build_label.text = "BUILD %s" % GameManager.BUILD_TAG
+    build_label.add_theme_font_size_override("font_size", 13)
+    build_label.add_theme_constant_override("outline_size", 4)
+    build_label.add_theme_color_override("font_color", Color(0.7, 1.0, 0.7, 0.85))
+    build_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+    build_label.position = Vector2(10, get_viewport().get_visible_rect().size.y - 26)
+    add_child(build_label)
+
     # White damage flash — sits over gameplay, ignores input, starts invisible.
     _flash_rect = ColorRect.new()
     _flash_rect.color = Color(1, 1, 1, 0)
