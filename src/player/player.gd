@@ -87,6 +87,19 @@ var _ladder_zones: int = 0
 var _climbing: bool = false
 var _active_ladder: Node2D = null   # the ladder whose zone we're in (top-out)
 
+## ANTI-DEADLOCK HEARTBEAT (merged 2026-08-26 residual, Qwen autopsy). The
+## founder is STILL frozen on the Stage-3 mushroom/ladder platform after the
+## grow-wedge fix — and shot_1 shows it happening with NO big-mode, so it is not
+## (only) the grow wedge: a stranded climb flag, a `move_and_slide` wedge, or a
+## stuck busy/dying flag can pin him too. This is the safety net that guarantees
+## he can never stay frozen while actively trying to move; the specific root
+## cause is still logged and pursued, but the player is never left stuck for the
+## founder regardless of which cause hit.
+var _stuck_anchor: Vector2 = Vector2.ZERO
+var _stuck_timer: float = 0.0
+var _heartbeat_fired: bool = false   # log-once so the root cause isn't hidden forever
+const STUCK_LIMIT: float = 1.4       # seconds of "input held, no movement" before force-unstick
+
 ## Rolling "last safe ground" buffer for death respawn. Two slots so a pit
 ## death respawns at the sample BEFORE the crumbling lip, not on the edge the
 ## player just walked off. Sampled ~2x/sec while grounded (see _physics_process).
@@ -162,6 +175,30 @@ func _physics_process(delta: float) -> void:
 	# off by default, so no campaign level's handling changes.
 	if steer_override_active and is_zero_approx(movement_direction):
 		movement_direction = steer_override
+
+	# ANTI-DEADLOCK HEARTBEAT — see the field block. If the player is actively
+	# trying to move (a direction, up/down, or jump held) yet has not actually
+	# moved for STUCK_LIMIT seconds, force him unstuck. Only counts as "trying"
+	# when an input is held, so standing still never trips it; only counts as
+	# "stuck" when his real position hasn't changed, so pushing a wall (blocked
+	# but free to turn) never trips it either — move_and_slide still slides him
+	# along the wall, changing position. Fly has its own vertical model, skip it.
+	var wants_move: bool = movement_direction != 0.0 \
+		or Input.is_action_pressed("move_up") or Input.is_action_pressed("move_down") \
+		or input_handler.is_jump_pressed()
+	if wants_move and not GameManager.has_power_up("fly"):
+		if _stuck_anchor.distance_to(global_position) > 6.0:
+			_stuck_anchor = global_position
+			_stuck_timer = 0.0
+		else:
+			_stuck_timer += delta
+			if _stuck_timer >= STUCK_LIMIT:
+				_force_unstick()
+				_stuck_timer = 0.0
+				_stuck_anchor = global_position
+	else:
+		_stuck_anchor = global_position
+		_stuck_timer = 0.0
 
 	# Bong flight: hold jump/up to rise, otherwise sink slowly. Overrides all
 	# normal gravity/wall/jump vertical logic for the duration. Trippy green
@@ -610,14 +647,15 @@ func _top_out_ladder() -> void:
 	_ladder_zones = 0
 	_active_ladder = null
 	global_position = Vector2(target.x, target.y)
-	# Never leave the player inside geometry: if the exit point overlaps a
-	# collider, nudge upward a few steps until free. Bounded — a fully blocked
-	# exit just leaves them at the target rather than tunneling (per the brief:
-	# "define behaviour for blocked top exits").
-	var attempts := 0
-	while move_and_collide(Vector2.ZERO, true) != null and attempts < 8:
-		global_position.y -= 4.0
-		attempts += 1
+	# Never leave the player inside geometry. This USED to be a bounded
+	# `while move_and_collide(Vector2.ZERO, true)` up-nudge — but that probe has
+	# NO recovery_as_collision (4th arg), so it does not report a resting overlap
+	# and the loop never fired: a top-out onto a spot that overlaps a solid left
+	# the player EMBEDDED and unable to move. That is a real root cause of the
+	# founder's Stage-3 "frozen on the platform next to the ladder" (shot_1, no
+	# big-mode). resolve_grow_overlap() uses the correct recovery probe and slides
+	# out along contact normals on any axis, so the exit is always clear.
+	resolve_grow_overlap()
 	AudioManager.play_sfx("jump")
 	_play_jump_stretch()
 
@@ -661,6 +699,25 @@ func resolve_grow_overlap() -> void:
 	# him buried; put him back where he was and let normal physics take over.
 	if move_and_collide(Vector2.ZERO, true, 0.08, true) != null:
 		global_position = anchor
+
+## Break the player out of a freeze: called by the anti-deadlock heartbeat when
+## he has been trying to move but hasn't for STUCK_LIMIT seconds. Clears the
+## movement-blocking state flags that can strand (a climb flag left true with no
+## ladder under him; a `_dying` flag stranded true while still PLAYING — a real
+## death would have flipped the StateMachine and this _physics_process returns
+## early, so clearing it here only unsticks a false one), then depenetrates out
+## of any solid he is embedded in (reuses resolve_grow_overlap, which slides out
+## along contact normals — it works for ANY wedge, not just the mushroom grow).
+## Logs once so the specific root cause is still visible and pursued, not hidden.
+func _force_unstick() -> void:
+	_climbing = false
+	_ladder_zones = 0
+	_dying = false
+	velocity = Vector2.ZERO
+	resolve_grow_overlap()
+	if not _heartbeat_fired:
+		_heartbeat_fired = true
+		push_warning("[HEARTBEAT] player stuck > %.1fs while trying to move — force-unstuck at %s (root cause still under investigation)" % [STUCK_LIMIT, str(global_position)])
 
 ## Falling into a pit — a HARD fail. Plays a devastating sound, costs a LIFE
 ## (not just health), and respawns at the last checkpoint if lives remain;
