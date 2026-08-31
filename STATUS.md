@@ -1,7 +1,88 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/owner-rage-l1-music-boss1-carts-chase`
+**Branch:** `claude/context-management-continuation-tuepzj`
+
+---
+
+**🔥 The ENTER THE BLAZE RUSH title now FILLS the band, not sits inside it (2026-08-31).**
+
+All 18 of your marked-up images landed as real files this time. They are
+committed to `artifacts/founder-art/references/` so no future session has to
+recover them or ask you to resend anything.
+
+### The three title complaints were one complaint
+
+"TOO SMALL", "you fucked it up by having the text above", and the empty tab you
+circled with your own mockup underneath were being treated as three separate
+jobs. They are one: **the wordmark belongs in the purple band, and it must fill
+it.**
+
+I measured your mockup instead of eyeballing it. In it, the artwork covers the
+band from edge to edge — 600 of 602 pixels across, 168 of 169 down, no purple
+showing behind it. That is an aspect of 3.56.
+
+The title was being **height-fitted**, which fits art *inside* a slot. You asked
+for the opposite. It is now a **cover fit at 783x220** — the full depth of the
+band, at your mockup's exact aspect, about 61% of the screen width. It costs a
+13% vertical crop, so the whole wordmark, the whole diamond and the crypto cubes
+all survive. Your art is cropped, never squashed, and there is a test asserting
+it isn't distorted.
+
+For scale: the version you rejected as "TOO SMALL" was 340x118. The version
+before this pass was 555x180 — taller, but actually **narrower** than the one you
+had already rejected.
+
+### Most of the rest was already fixed — by other work, not by me
+
+I have to be straight with you: while I was working, a lot of this had already
+been fixed on the main branch by the boss/ladder sessions, and my branch was cut
+from an older starting point. So I threw most of my own version away and kept
+theirs, which was better:
+
+- **The masking.** I concluded a badge was drawn on top of the banner. The real
+  cause, already found and fixed, was the banner **overhanging a floor gap** so
+  the void showed through behind it. Their diagnosis was right and mine was not.
+- **The red flaming diamond disc** you crossed out was already removed.
+- **GM moved right with Robin Hood in its old slot** was already in place.
+
+What I kept from my own work is the title fill above, and a test.
+
+### Two things that needed no work at all
+
+**The diamond claim bug** (collect it, land on the candle, it stays claimed) and
+**the stage tokens** (TitanX / DIAMONDS / GoldMine) were already correct. I did
+not take the previous report's word for it — I ran the claim bug's test and read
+back the actual images the game loads. Your Solana coins are safe: they are a
+separate object from the stage tokens, so the stage swap never touched them.
+
+### The stray "L" — I could not find it
+
+It is not in your document. No image or note mentions it, and when I enlarged the
+bottom strip of five of your screenshots the only thing there is the thin
+progress bar. I would rather tell you that than delete something at random and
+call it handled. **Send me one screenshot with it circled and it is gone in
+minutes.** While looking I did fix a real glyph bug nearby: the lounge banner's
+fallback text used arrow characters the pixel font cannot draw.
+
+### Proof
+
+`tests/blaze_band_layout_test.gd` builds the real Blaze course for all three
+stages and measures the live nodes — 51 assertions, all passing. **I also put
+each original bug back deliberately to prove the test catches it** rather than
+trusting a green result.
+
+The preview below is rendered from the actual scene, not a mockup:
+`artifacts/founder-art/band_preview_L1.png`.
+
+**Gates:** 13 suites pass (script compile, band layout, claim reset, lounge
+banner, layout, lifecycle, screenshot fixes, critical probe 102 assertions, boss
+visibility, boss arena, boss stakes, distributor, save compat). Security Sentinel
+18/18, 0 blockers. The ICP test fails 6 network assertions because this sandbox
+cannot reach the canister — it correctly reports "offline" and every logic
+assertion passes.
+
+---
 
 ---
 

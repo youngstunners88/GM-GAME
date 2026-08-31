@@ -514,12 +514,24 @@ func _landmark_slot_x(i: int, count: int, half_w: float, placed_x: Array[float])
 ##     bounding box (1516x492), so height-fitting is finally honest.
 ##  2. 118 was itself too timid next to the 190px protocol badges beside it.
 ##
-## 180 makes the title the single largest thing on the band — taller and much
-## wider than any badge — which is what "dominates the entry real estate" and
-## "readable on phone" require. The band is 220px deep from GROUND_Y and the art
-## is centred at BAND_ART_Y (122), so 180 spans GROUND_Y+32 .. GROUND_Y+212 and
-## still sits fully inside it.
-const WORLD_CARD_H: float = 180.0
+##  3. And 180 was still a CONTAIN fit — it fits the art INSIDE the band. The
+##     founder asked for the opposite: circling the empty band, "This is what
+##     needs to fill that section of real estate."
+##
+## So the card now COVERS the band instead of fitting inside it. The numbers are
+## measured off the founder's own mock-up rather than chosen: sampling it shows
+## his artwork covering the band from x=0 to x=600 of 602 and y=0 to y=168 of
+## 169 — no purple visible behind it — which is an aspect of 3.56.
+##
+## 220 is the full depth of the band (see _make_floor_segment: a 60px lit top
+## plus a 160px body), and 783 is that height at the mock-up's 3.56 aspect. With
+## the alpha-trimmed 1516x492 source that costs a 13% vertical crop — the whole
+## wordmark, diamond and cubes survive — and renders 783x220, about 61% of the
+## 1280px viewport. For scale: the version the founder rejected outright as
+## "TOO SMALL" was 340x118.
+const WORLD_CARD_H: float = 220.0
+## Width comes from the mock-up's aspect, not from the badge lattice.
+const WORLD_CARD_W: float = 783.0
 ## Early in the band, but not the very first thing — let the run establish
 ## itself for a beat first (matches the founder's illustrated position, which
 ## sat a short distance in, not at x=0).
@@ -531,11 +543,7 @@ func _build_world_card() -> void:
 	var tex: Texture2D = load(WORLD_CARD_ART)
 	if tex == null:
 		return
-	# Height-fit keeps the wordmark's aspect ratio instead of squashing it into
-	# a square footprint. Computed BEFORE picking a slot, because the slot
-	# search needs the REAL rendered half-width — see below.
-	var fit: float = WORLD_CARD_H / maxf(float(tex.get_height()), 1.0)
-	var half_w: float = float(tex.get_width()) * fit * 0.5
+	var half_w: float = WORLD_CARD_W * 0.5
 	var bx: float = _find_band_slot(WORLD_CARD_X, half_w)
 	if is_inf(bx):
 		return
@@ -545,9 +553,42 @@ func _build_world_card() -> void:
 	var art := Sprite2D.new()
 	art.name = "WorldCard"
 	art.texture = tex
-	art.scale = Vector2(fit, fit)
+
+	# COVER fit — fill both axes of the band and crop the overflow.
+	#
+	# A height fit CONTAINS the art inside the slot; the founder asked for the
+	# opposite. Circling the empty band: "This tab needs to have the image that
+	# i am going to present below... This is what needs to fill that section of
+	# real estate", and separately, of the small version: "TOO SMALL".
+	#
+	# His mock-up is the spec and it was measured, not eyeballed: sampling it
+	# shows the artwork covering the band from x=0 to x=600 of 602 and y=0 to
+	# y=168 of 169 — edge to edge, no purple visible behind it. A height fit to
+	# 180 renders this 1.5-aspect wordmark 270px wide, which is NARROWER than
+	# the 340px version he had already rejected as too small.
+	#
+	# Cropping in the region rect rather than scaling the axes independently is
+	# deliberate: squashing a 1.5-aspect wordmark into a 4.1-aspect slot would
+	# distort his brand art, and "none of the logos must ever be pixelated" has
+	# been a standing instruction. Both candidate crops were rendered and
+	# compared against the mock-up before choosing this one — a full-viewport
+	# 1280px fill needs a 26% vertical slice that cuts the top off the flame and
+	# the point off the diamond, while 900px keeps a 37% slice: the whole
+	# wordmark, the whole diamond, the crypto cubes.
+	var tw: float = maxf(float(tex.get_width()), 1.0)
+	var th: float = maxf(float(tex.get_height()), 1.0)
+	var slot_ar: float = WORLD_CARD_W / WORLD_CARD_H
+	var rh: float = minf(th, tw / slot_ar)
+	var rw: float = minf(tw, rh * slot_ar)
+	art.region_enabled = true
+	art.region_rect = Rect2((tw - rw) * 0.5, (th - rh) * 0.5, rw, rh)
+	art.scale = Vector2(WORLD_CARD_W / rw, WORLD_CARD_H / rh)
+
 	art.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	art.position = Vector2(bx, GROUND_Y + BAND_ART_Y)
+	# Centred on the band's own midline, NOT BAND_ART_Y: this piece is as tall
+	# as the band itself, so the badge convention of seating art low inside the
+	# band would hang half the wordmark below the floor.
+	art.position = Vector2(bx, GROUND_Y + WORLD_CARD_H * 0.5)
 	art.z_index = 1
 	add_child(art)
 

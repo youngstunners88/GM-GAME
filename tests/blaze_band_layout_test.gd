@@ -126,11 +126,25 @@ func _check_level(level_index: int) -> void:
 		_check("L%d lounge banner is at the END of the course" % level_index,
 			banner.position.x > course * 0.8,
 			"x = %.0f of %.0f" % [banner.position.x, course])
-		# THE MASKING CHECK. The founder's screenshot was a badge disc drawn at
-		# the same x as this banner, its rim visible above and below the art.
-		# Measured against the banner's REAL drawn width, which is what the old
-		# code got wrong: it reserved 150px either side and drew 235.
-		var b_half: float = float(run.call("_lounge_drawn_half_width"))
+		# THE MASKING CHECKS. Two independent causes have produced the founder's
+		# "WHY ARE YOU MASKING THE FUCKING ARTWORK" screenshot, so both are
+		# asserted: the banner overhanging a floor GAP (the void showing through
+		# behind it), and another piece of band art drawn across it.
+		#
+		# Both are measured against the banner's REAL drawn half-width, read off
+		# its own sprite rather than a nominal constant — using the constant
+		# while the sprite is height-fit is the bug class itself.
+		var b_half: float = 0.0
+		for c in banner.get_children():
+			var bs := c as Sprite2D
+			if bs != null and bs.texture != null:
+				b_half = maxf(b_half, absf(bs.scale.x) * float(bs.texture.get_width()) * 0.5)
+		_check("L%d lounge banner drawn width is measurable" % level_index, b_half > 0.0)
+
+		var over_gap: bool = bool(run.call("_x_over_gap", banner.position.x, b_half))
+		_check("L%d lounge banner does NOT overhang a floor gap" % level_index, not over_gap,
+			"the void showing through behind it reads as masked")
+
 		var masked_by: String = ""
 		for a in art:
 			if absf(float(a["x"]) - banner.position.x) < b_half + float(a["half"]):
@@ -150,20 +164,32 @@ func _check_level(level_index: int) -> void:
 		overlaps == "", overlaps)
 
 	# --- image9/10: GoldMine moved right, Robin Hood in the slot it vacated ---
-	var gm_x: float = -1.0
-	var rh_x: float = -1.0
+	# CYCLE-AWARE. The art list repeats along the band (MAX_BAND_CYCLES), so a
+	# long course carries several GoldMine and Robin Hood marks. Comparing only
+	# the last-seen x of each is wrong: L3's final cycle is truncated after
+	# Robin Hood before it reaches GoldMine, which made a correct layout look
+	# like a violation. The founder's instruction is about their ORDER within
+	# the repeating pattern, so that is what is asserted — for every cycle where
+	# both appear, GoldMine follows Robin Hood.
+	var gm_xs: Array[float] = []
+	var rh_xs: Array[float] = []
 	for a in art:
 		var p: String = str(a["path"])
 		if p.contains("goldmine"):
-			gm_x = float(a["x"])
+			gm_xs.append(float(a["x"]))
 		if p.contains("robinhood"):
-			rh_x = float(a["x"])
-	_check("L%d GoldMine mark is present on the band" % level_index, gm_x >= 0.0,
+			rh_xs.append(float(a["x"]))
+	gm_xs.sort()
+	rh_xs.sort()
+	_check("L%d GoldMine mark is present on the band" % level_index, gm_xs.size() > 0,
 		"dropped - founder asked for it MOVED, not removed")
-	_check("L%d Robin Hood artwork is present on the band" % level_index, rh_x >= 0.0)
-	if gm_x >= 0.0 and rh_x >= 0.0:
-		_check("L%d GoldMine sits to the RIGHT of Robin Hood" % level_index, gm_x > rh_x,
-			"GM x=%.0f, RH x=%.0f" % [gm_x, rh_x])
+	_check("L%d Robin Hood artwork is present on the band" % level_index, rh_xs.size() > 0)
+	var bad_cycle: String = ""
+	for i in range(mini(gm_xs.size(), rh_xs.size())):
+		if gm_xs[i] <= rh_xs[i]:
+			bad_cycle = "cycle %d: GM x=%.0f, RH x=%.0f" % [i + 1, gm_xs[i], rh_xs[i]]
+	_check("L%d GoldMine sits RIGHT of Robin Hood in every cycle" % level_index,
+		bad_cycle == "", bad_cycle)
 
 	# --- image4: course pickups are the BLUE flaming diamond ------------------
 	var tokens: Array = run.get("_smoke_tokens")
