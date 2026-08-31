@@ -41,6 +41,27 @@ the next agent hunting for files that were renamed.
   4.3 treats as a hard error). A real export is the only ground truth.
 - **Run the sentinel AFTER `git add`.** It scans `git ls-files`, so running it
   on unstaged new files silently scans nothing.
+- **A green branch CI does NOT mean it deployed.** The butler push is the LAST
+  step of the export job, and every step is skipped if an earlier one fails.
+  gitleaks is step 3 — when it fails, the export and the deploy never run, the
+  job is simply red, and itch.io keeps serving the previous build. Confirm a
+  deploy from the butler step's own log (it prints MiB pushed), never from a
+  green tick, and confirm it on the branch that actually deployed: a branch
+  build deploying does not mean the later master merge did.
+- **gitleaks can fail on commits weeks old, with nothing to do with your diff.**
+  CI scans with `--no-merges --first-parent`, so commits that arrive on a
+  feature branch's side of a merge are never walked. Merging from a stale base
+  puts them on the walked line for the first time and they get scanned for the
+  first time. Before suppressing: read the flagged line — several are prose or
+  empty-string assignments in docs. Then pin the exact FINGERPRINT in
+  `.gitleaksignore` (never a rule or path allowlist; the sentinel's CI-003
+  checks the allowlist stays narrow), and PARAPHRASE the offending text in your
+  comment — quoting it verbatim recreates the pattern in your own commit, which
+  is how fingerprint #2 in that file came to exist.
+- **Check master before starting Blaze/level work.** Several sessions run in
+  parallel on this repo and master moves fast. A branch cut from a stale base
+  can re-solve, and then silently revert, work that already landed — verify
+  with `git log <base>..origin/master -- <file>` before writing code.
 - Enemies are never weed-themed. Approved: Tax Collectors, flies, boulders,
   hostile vines, Compliance machines.
 
