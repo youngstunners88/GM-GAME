@@ -5,8 +5,10 @@
 
 ## Blaze band pass — scale, placement, and the masking bug's actual cause
 
-**Not deployed yet — this is the code state, pending CI export.** Hard-refresh
-before testing once the build lands.
+**DEPLOYED — export commit `e5164f6` — 2026-08-13.** Hard-refresh before
+testing. All 20 CI steps green: gitleaks, Security Sentinel, web export, the
+secure-build audit, and the butler push to itch.io (119 MiB pushed, 15.4 MiB
+of it new — verified in the job log, not assumed from a green tick).
 
 All 18 of your marked-up images landed as real files this time and are now
 committed to `artifacts/founder-art/references/`, so no future session has to
