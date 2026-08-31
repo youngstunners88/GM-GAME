@@ -3,9 +3,19 @@ extends Node
 signal score_changed(new_score: int)
 signal health_changed(new_health: int)
 signal power_up_changed(type: String, duration: float)
+## Fires the moment a weed-leaf / Blaze pickup lands, so the player can run its
+## eccentric celebration. Separate from power_up_changed because that also
+## fires on expiry and for every other power-up type.
+signal blaze_celebration
 signal coins_changed(new_count: int)
 signal rings_changed(new_count: int)
 signal smoke_changed(new_count: int)
+## $TITANX — the 4th protocol token (founder: "TitanX is a fourth protocol,
+## not previously listed in CLAUDE.md's ecosystem section"). Lives here, not
+## in GoldMineSystem: it is not a GoldMine mechanic, it is a peer token the
+## same way DIAMONDS and GOLD are, so it gets its own counter rather than
+## being misfiled under a thematically unrelated system.
+signal titanx_changed(new_count: int)
 signal player_died
 signal lives_changed(new_lives: int)
 ## Systems architecture v3.0 §3.3 — signal-driven, never polled.
@@ -15,10 +25,22 @@ signal crypto_balance_updated(token: String, balance: float)
 signal wallet_address_changed(address: String)
 
 # Persistent player data only — no state booleans (those live in StateMachine).
+## Visible build identity — bump on every ship. Shown on the HUD (top-left under
+## the score) and printed once at boot, so a founder hard-refresh can PROVE it is
+## running the new build and not a stale itch/browser cache (the merged
+## 2026-08-26 residual's Phase 0: "Without this, every other step is invalid").
+const BUILD_TAG := "2026-08-26d"
+
 var total_score: int = 0
 var coins_collected: int = 0
 var ethereum_rings_collected: int = 0
 var smoke_collected: int = 0
+## $TITANX collected. NOT reset by boss_contact_restart() — a protocol token
+## allocation, same persistence class as GoldMineSystem's gold/diamonds/wBTC/
+## XAUT (none of which a boss touch wipes either), unlike coins/rings/smoke
+## which ARE run currency and ARE forfeit on a boss kill. See
+## boss_contact_restart()'s own note on why that distinction exists.
+var titanx_collected: int = 0
 # Blaze Rush (secret dash mode) bookkeeping.
 var blaze_rush_completed: Dictionary = {}   # level_index -> true once one-time bonuses paid
 var dash_return: Dictionary = {}            # transient: scene_path/position/level_index for the return trip
@@ -182,6 +204,7 @@ func set_wallet_address(address: String) -> void:
 
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
+    print("[BUILD] Lil Blunt Adventure — build %s" % BUILD_TAG)
     load_session()
 
 func add_score(points: int) -> void:
@@ -197,6 +220,24 @@ func add_ethereum_ring() -> void:
     ethereum_rings_collected += 1
     rings_changed.emit(ethereum_rings_collected)
     add_score(50)
+
+## Credit $TITANX. Founder: "$TITANX... are tokens and not coins" — a
+## separate counter from add_coin() so a TitanX pickup is never counted, on
+## screen or in code, as a coin.
+##
+## NO bonus add_score() here (Fable-5 review caught an earlier version that
+## had one). Its sibling stage-branded pickups don't get a uniform bonus
+## either: GoldMineSystem.collect_diamonds() adds no extra GameManager score
+## at all, mine_gold() adds its own pre-existing +25 as part of a whitepaper
+## mechanic this function has no business touching. Inventing a THIRD, unrelated
+## number here (the previous version used 15) made three visually-parallel
+## pickups score three unrelated amounts for no reason a player could ever
+## learn. coin.gd's own ComboSystem.add_score(10), which fires for every
+## stage-branded pickup identically, is the uniform per-pickup signal; this
+## function should only ever touch the counter that's actually its job.
+func add_titanx(amount: int = 1) -> void:
+    titanx_collected += amount
+    titanx_changed.emit(titanx_collected)
 
 ## Bank $SMOKE tokens earned in Blaze Rush runs.
 func add_smoke(amount: int) -> void:
@@ -252,19 +293,39 @@ func lose_life() -> bool:
 ##
 ## Deliberately NOT a route to the menu: the whole point is that the player
 ## keeps playing.
-func full_wipe_restart() -> void:
-    level_checkpoints.clear()
-    # A full wipe is a brand-new attempt: the Blaze portal and secret door on
-    # this level become available again (see reopen_side_entrances).
-    reopen_side_entrances(current_level)
+## Pure run-state refill: restore lives + health and clear any active power-up,
+## then persist. Deliberately does NOT clear checkpoints and does NOT load a
+## scene — the CALLER owns the transition.
+##
+## This exists because player.gd's full-wipe path (_respawn_or_game_over, when
+## lives hit 0) called `GameManager.refill_run()` — a function that never
+## existed. On EVERY genuine out-of-lives wipe that line threw
+## "Invalid call. Nonexistent function 'refill_run'", aborting the rest of
+## _respawn_or_game_over so its own fade + SceneRouter.load_scene never ran: the
+## run neither refilled nor restarted. Isolated boss/headless tests never
+## exercised the real death path, so it stayed invisible until a real-level
+## chase sim drove the player out of lives (dual_real_level_boss_chase_test).
+## player.gd clears the checkpoint and drives its own fade+load around this
+## call, so refilling here must stay load-free or the two loads race.
+func refill_run() -> void:
     lives = max_lives
     lives_changed.emit(lives)
     player_health = max_health
     health_changed.emit(player_health)
     current_power_up = ""
     power_up_timer = 0.0
+    big_axe_timer = 0.0
     power_up_changed.emit("", 0.0)
     save_session()
+
+func full_wipe_restart() -> void:
+    level_checkpoints.clear()
+    # A full wipe is a brand-new attempt: the Blaze portal and secret door on
+    # this level become available again (see reopen_side_entrances).
+    reopen_side_entrances(current_level)
+    # Shared refill (lives/health/power-up/save) — ONE implementation, so the
+    # wipe path and player.gd's out-of-lives path can never drift apart.
+    refill_run()
     # SceneRouter owns transitions; reload the level the player is on.
     SceneRouter.load_scene(level_scene(current_level), SceneRouter.Transition.FADE)
 
@@ -296,6 +357,12 @@ func boss_contact_restart() -> void:
     # coins, rings and SMOKE straight through — so a boss touch cost the
     # player nothing but a walk back, which is exactly the missing stakes he
     # kept reporting. Everything earned in the run is now forfeit.
+    #
+    # titanx_collected is DELIBERATELY absent from this list, exactly like
+    # GoldMineSystem's gold/diamonds/wBTC/XAUT (also untouched here) — those
+    # are protocol token holdings, not run currency, and a boss touch does
+    # not liquidate a player's tokens any more than it liquidates their
+    # DIAMONDS or GOLD.
     total_score = 0
     score_changed.emit(total_score)
     coins_collected = 0
@@ -313,6 +380,7 @@ func boss_contact_restart() -> void:
     current_power_up = ""
     power_up_timer = 0.0
     power_up_changed.emit("", 0.0)
+    big_axe_timer = 0.0
     last_damage_source = "boss_contact"
     # Read as a death: the same signal + audio any other fatal hit raises, so
     # HUD/analytics/VO all treat it identically.
@@ -343,10 +411,13 @@ func reset_boss_restart_flag() -> void:
 ## fleeing the Tax Collector.
 var secret_door_used: Dictionary = {}   # level_index -> true
 var blaze_portal_used: Dictionary = {}  # level_index -> true
+var vault_door_used: Dictionary = {}    # level_index -> true (Diamond Vault / Fort Knox)
 
 func mark_side_entrance_used(kind: String, level: int) -> void:
     if kind == "secret":
         secret_door_used[level] = true
+    elif kind == "vault":
+        vault_door_used[level] = true
     else:
         blaze_portal_used[level] = true
     save_session()
@@ -354,6 +425,8 @@ func mark_side_entrance_used(kind: String, level: int) -> void:
 func is_side_entrance_used(kind: String, level: int) -> bool:
     if kind == "secret":
         return bool(secret_door_used.get(level, false))
+    elif kind == "vault":
+        return bool(vault_door_used.get(level, false))
     return bool(blaze_portal_used.get(level, false))
 
 ## Reopen a level's side entrances (Blaze portal + secret door) for a FRESH
@@ -377,6 +450,7 @@ func is_side_entrance_used(kind: String, level: int) -> bool:
 func reopen_side_entrances(level: int) -> void:
     secret_door_used.erase(level)
     blaze_portal_used.erase(level)
+    vault_door_used.erase(level)
 
 ## Grant an extra life. No upper cap — the owner wants unlimited lives.
 func add_life(amount: int = 1) -> void:
@@ -389,19 +463,60 @@ func add_life(amount: int = 1) -> void:
 ## against stale expiry (brief correction A).
 var _blaze_music_token: int = -1
 
+## INDEPENDENT TIMER FOR THE BIG-AXE WEAPON MODIFIER.
+##
+## Founder: "when Lil Blunt colllects it it doesnt let him throw the huge axe,
+## its just the same sized axe as before."
+##
+## `current_power_up` is a SINGLE SLOT — activate_power_up overwrites it every
+## time. The big axe is a WEAPON modifier, not a body state, but it was sharing
+## that one slot with blaze / big / diamond / pickaxe / torch / bong / purple.
+## So picking up literally any other power-up after the axe — a mushroom, a
+## weed leaf, a shard — silently reverted the throw to a normal axe, which in a
+## stage as pickup-dense as the Gold Rush happens within seconds. The axe kept
+## its own 25s duration in name only.
+##
+## Tracked separately so the two cannot clobber each other. current_power_up is
+## still set as well, so the HUD's power-up bar behaves exactly as before.
+var big_axe_timer: float = 0.0
+
 func activate_power_up(type: String, duration: float) -> void:
+    if type == "bigaxe":
+        big_axe_timer = duration
     current_power_up = type
     power_up_timer = duration
     power_up_changed.emit(type, duration)
-    AudioManager.play_sfx("powerup")
-    # Blaze / Purple Weed: take over the MUSIC exclusively — no more jingle
-    # layered over the level track. Pushing again refreshes the token so a
-    # second pickup can't be stopped by the first's expiry.
+    # Blaze / Purple Weed (the weed-leaf family) DELIBERATELY does not touch the
+    # music. A previous session made these pickups push a music override
+    # ("fresh_boost.ogg"), which re-broke a fix the founder had already asked
+    # for and signed off: "You corrected the music from not changing when Lil
+    # Blunt takes the weed leaf and now there's fucking music changes."
+    # The level track keeps playing straight through the pickup. Do not
+    # reintroduce a push_music_override here — the celebration below is what
+    # sells the pickup, not a track swap.
     if type == "blaze" or type == "purple":
-        _blaze_music_token = AudioManager.push_music_override("res://src/assets/sounds/fresh_boost.ogg")
+        _celebrate_blaze()
+    else:
+        AudioManager.play_sfx("powerup")
     # Analytics (task #23): which power-ups actually get used feeds the
     # founder digest + future tuning. Fire-and-forget, no-op offline.
     Web3Bridge.report_metric("powerup_used", {"type": type})
+
+## Founder: "We need a really eccentric celebration from Lil Blunt for taking
+## this leaf and a unique sound that is stoner based."
+##
+## Audio half lives here so it fires no matter which scene the leaf sits in;
+## the visual half (spin + smoke burst + shout) is player-side, driven off the
+## power_up_changed signal already emitted above. Deliberately NO music change.
+func _celebrate_blaze() -> void:
+    # Unique stoner-based pickup sound — a bong-rip/exhale swell, distinct from
+    # the generic "powerup" chime every other pickup uses.
+    AudioManager.play_sfx("blaze_leaf")
+    # Lil Blunt shouts about it. 0.0 cooldown: this is a rare, deliberate beat,
+    # it must never be swallowed by an unrelated bark's cooldown window.
+    AudioManager.play_bark("vo_blaze_hype", 0.0)
+    ScreenShake.shake(0.25, 4.0)
+    blaze_celebration.emit()
 
 func deactivate_power_up() -> void:
     # Release the Blaze music override (token-guarded — stale releases no-op,
@@ -410,10 +525,14 @@ func deactivate_power_up() -> void:
         AudioManager.release_music_override(_blaze_music_token)
         _blaze_music_token = -1
     current_power_up = ""
+    big_axe_timer = 0.0
     power_up_timer = 0.0
     power_up_changed.emit("", 0.0)
 
 func has_power_up(type: String) -> bool:
+    # The big axe survives other pickups — see big_axe_timer.
+    if type == "bigaxe":
+        return big_axe_timer > 0.0
     return current_power_up == type
 
 func _process(delta: float) -> void:
@@ -421,12 +540,16 @@ func _process(delta: float) -> void:
         power_up_timer -= delta
         if power_up_timer <= 0:
             deactivate_power_up()
+    # Ticks on its own clock so another pickup cannot cut the axe short.
+    if big_axe_timer > 0.0:
+        big_axe_timer = maxf(0.0, big_axe_timer - delta)
 
 func reset_level() -> void:
     player_health = max_health
     _clear_blaze_music_override()
     current_power_up = ""
     power_up_timer = 0.0
+    big_axe_timer = 0.0
     # The HUD in the incoming level _ready()s BEFORE the player spawns and
     # reads these values — without this emit it keeps showing the previous
     # level's damaged heart count until the next hit.
@@ -439,15 +562,19 @@ func reset_session() -> void:
     _clear_blaze_music_override()
     current_power_up = ""
     power_up_timer = 0.0
+    big_axe_timer = 0.0
     health_changed.emit(player_health)
     total_score = 0
     coins_collected = 0
     ethereum_rings_collected = 0
     smoke_collected = 0
     smoke_changed.emit(0)
+    titanx_collected = 0
+    titanx_changed.emit(0)
     blaze_rush_completed.clear()
     secret_door_used.clear()
     blaze_portal_used.clear()
+    vault_door_used.clear()
     dash_return = {}
     level_checkpoints.clear()
     GoldMineSystem.reset_session()
@@ -467,12 +594,30 @@ func get_checkpoint(level: int) -> Vector2:
         return level_checkpoints[level].pos
     return Vector2.ZERO
 
+## Forget `level`'s mid-level checkpoint so its next load starts at the level's
+## own spawn marker.
+##
+## THIS DID NOT EXIST, and player.gd called it anyway. The full-life-wipe path
+## (`_respawn_or_game_over`, lives == 0) is supposed to restart the CURRENT
+## level from its START — the founder's rule — and it opens by clearing the
+## checkpoint so `_spawn_player` falls back to the spawn marker. Instead the
+## call threw "Invalid call. Nonexistent function 'clear_checkpoint'", which
+## ABORTS the rest of that function: the health/lives refill never ran and the
+## `SceneRouter.load_scene` on the next line never ran either. A full wipe
+## therefore left the game sitting in GAME_OVER with no reload at all.
+##
+## Nothing caught it because a GDScript call to a missing method is a runtime
+## error, not a compile error — the script battery loads this file happily.
+func clear_checkpoint(level: int) -> void:
+    level_checkpoints.erase(level)
+
 func save_session() -> bool:
     var data: Dictionary = {
         "total_score": total_score,
         "coins": coins_collected,
         "rings": ethereum_rings_collected,
         "smoke": smoke_collected,
+        "titanx": titanx_collected,
         "blaze_rush": _serialize_blaze_completions(),
         "health": player_health,
         "max_health": max_health,
@@ -514,6 +659,7 @@ func load_session() -> bool:
     coins_collected = maxi(0, int(data.get("coins", 0)))
     ethereum_rings_collected = maxi(0, int(data.get("rings", 0)))
     smoke_collected = maxi(0, int(data.get("smoke", 0)))
+    titanx_collected = maxi(0, int(data.get("titanx", 0)))
     _deserialize_blaze_completions(data.get("blaze_rush", {}))
     max_health = clampi(int(data.get("max_health", 3)), 1, 10)
     player_health = clampi(int(data.get("health", max_health)), 1, max_health)

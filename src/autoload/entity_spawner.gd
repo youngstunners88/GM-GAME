@@ -9,6 +9,18 @@ var entity_scenes: Dictionary = {
 	"coin_eth": preload("res://src/collectibles/coin_eth.tscn"),
 	"coin_btc": preload("res://src/collectibles/coin_btc.tscn"),
 	"coin_sol": preload("res://src/collectibles/coin_sol.tscn"),
+	# PER-STAGE PROTOCOL TOKENS (founder: "the game must include Tokens in the
+	# scoring system"). Both reuse crypto_coin.gd, so they count toward the coin
+	# tally AND add score exactly like the Solana coins already do — they ADD to
+	# the existing pickups rather than replacing them ("that doesnt replace the
+	# current Solana coins in stage 2"), and each also credits its protocol's
+	# HUD row via crypto_coin.gd's protocol_credit.
+	#
+	# Stage 1 needs no entry here: coin.gd already swaps the plain "coin" face
+	# to the TitanX token whenever GameManager.current_level == 1, so L1's coin
+	# trails are already TitanX without a second near-identical pickup type.
+	"coin_diamonds": preload("res://src/collectibles/coin_diamonds.tscn"),
+	"coin_goldmine": preload("res://src/collectibles/coin_goldmine.tscn"),
 	"ethereum_ring": preload("res://src/collectibles/ethereum_ring.tscn"),
 	"health_pickup": preload("res://src/collectibles/health_pickup.tscn"),
 	"weed_leaf": preload("res://src/powerups/weed_leaf.tscn"),
@@ -28,6 +40,15 @@ var entity_scenes: Dictionary = {
 	"wbtc": preload("res://src/collectibles/wbtc.tscn"),
 	"gold_token": preload("res://src/collectibles/gold_token.tscn"),
 	"melt_forge": preload("res://src/level/melt_forge.tscn"),
+	# Decorative damage traps (founder, Block_Fixes_1, 2026-08-20): "beautiful"
+	# but harmful set-dressing, one alluring pair per level, using the
+	# founder's own reference art.
+	"trap_deadly_beauty": preload("res://src/hazards/trap_deadly_beauty.tscn"),
+	"trap_widows_thorn": preload("res://src/hazards/trap_widows_thorn.tscn"),
+	"trap_diamond_fang": preload("res://src/hazards/trap_diamond_fang.tscn"),
+	"trap_siren_crystal": preload("res://src/hazards/trap_siren_crystal.tscn"),
+	"trap_gold_rush": preload("res://src/hazards/trap_gold_rush.tscn"),
+	"trap_golden_widow": preload("res://src/hazards/trap_golden_widow.tscn"),
 }
 
 ## Spawn an entity by type name. `props` are set on the instance BEFORE it

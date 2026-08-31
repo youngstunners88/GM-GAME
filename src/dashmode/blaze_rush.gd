@@ -72,7 +72,6 @@ const TELEGRAPH_LEAD: float = 450.0
 
 @onready var _smoke_label: Label = Label.new()
 @onready var _attempt_label: Label = Label.new()
-@onready var _progress: ProgressBar = ProgressBar.new()
 
 func _ready() -> void:
 	_level_index = int(GameManager.dash_return.get("level_index", 1))
@@ -87,20 +86,13 @@ func _ready() -> void:
 	# After obstacles: the landmarks are decorative and must not influence or
 	# be influenced by hazard placement.
 	#
-	# ORDER IS LOAD-BEARING — the two FIXED-POSITION pieces go first.
-	#
-	# Founder, on a screenshot of the lounge banner with a badge disc bulging out
-	# above and below it: "WHY ARE YOU MASKING THE FUCKING ARTWORK!" The cause was
-	# not a bad coordinate. _build_protocol_landmarks() kept its `placed_x` list
-	# as a LOCAL and threw it away, and the banner/world card then picked their
-	# own spots with _find_band_slot(), which only ever checked for floor GAPS —
-	# it had no idea a badge was already sitting there. Three builders, three
-	# private notions of what was free, one shared 220px band.
-	#
-	# There is one occupancy list now (`_band_taken`) and every builder both
-	# reserves into it and respects it. The world card (entry) and lounge banner
-	# (end) own their positions by design, so they claim first and the badges —
-	# which are free to slide along a lattice — route around them.
+	# ORDER MATTERS. The two FIXED-ANCHOR pieces claim their span first — the
+	# title has to sit early and the lounge invite has to sit at the very end —
+	# and only then do the protocol badges fill whatever band is left. Building
+	# the badges first (as this did) let them take the slots the title and the
+	# banner needed, and since the three systems reserved nothing from each
+	# other they simply drew on top of one another. That is the overlap the
+	# founder keeps calling "masking the artwork".
 	_build_world_card()
 	_build_lounge_banner()
 	_build_protocol_landmarks()
@@ -144,11 +136,18 @@ func _build_background() -> void:
 	var haze_layer := ParallaxLayer.new()
 	haze_layer.motion_scale = Vector2(0.15, 0.0)
 	haze_layer.motion_mirroring = Vector2(900.0, 0.0)
+	# Founder, 2026-08-20 residual (shot_3): circled these as "rectangle
+	# residue / clutter" — at 0.5 alpha and a 32px radial-falloff texture
+	# stretched 6x4, each blob's edge was hard enough to read as a solid dark
+	# oval sitting in the sky rather than atmospheric haze. Softened by going
+	# bigger + much lower opacity so the same falloff curve spans more space
+	# and fades out well before its edge, instead of clipping into a visible
+	# shape.
 	for i in range(3):
 		var blob := Sprite2D.new()
 		blob.texture = _make_glow_texture()
-		blob.modulate = Color(COLOR_HAZE.r, COLOR_HAZE.g, COLOR_HAZE.b, 0.5)
-		blob.scale = Vector2(6.0, 4.0)
+		blob.modulate = Color(COLOR_HAZE.r, COLOR_HAZE.g, COLOR_HAZE.b, 0.16)
+		blob.scale = Vector2(11.0, 7.0)
 		blob.position = Vector2(150.0 + i * 300.0, 250.0 + (i % 2) * 150.0)
 		haze_layer.add_child(blob)
 	pbg.add_child(haze_layer)
@@ -246,10 +245,6 @@ func _resolve_backdrop_texture() -> Texture2D:
 ## its lower half with clearance top and bottom.
 const BAND_ART_Y: float = 122.0
 const BAND_ART_SIZE: float = 190.0
-## Badges shrink to fit a crowded band (see _build_protocol_landmarks) but never
-## below this — past it a brand mark stops being recognisable at run speed,
-## which is its own founder complaint waiting to happen.
-const BAND_ART_MIN_SIZE: float = 120.0
 
 ## SOLID CIRCULAR badges, not the raw square-cornered artwork.
 ##
@@ -323,16 +318,37 @@ const BR_ART_ORDER := [
 	{"path": "res://src/assets/art/br_robinhood.png", "wide": true},
 	{"path": "res://src/assets/art/badge_smokering.png", "wide": false},
 	{"path": "res://src/assets/art/badge_hood.png", "wide": false},
+	# Founder, this session: "This artwork is very jittery and difficult to
+	# see as a result!!!" — circled specifically on the band. Root cause was
+	# the same class as the TAP OUT face: the source was 602x903 scaled by
+	# HEIGHT to BAND_ART_SIZE (190), a ~4.75x downscale vs. the ~2.7x every
+	# sharp square badge on this same band already uses, with the same
+	# project-wide mipmaps/generate=false default leaving nothing for LINEAR
+	# to sample. Resized to 253x380 (a ~2x oversample of its ~127x190 display
+	# size) to bring it into the same healthy ratio band as its neighbours.
 	{"path": "res://src/assets/art/br_diamond_certificate.png", "wide": true},
-	# badge_blaze.png IS DELIBERATELY ABSENT — do not "restore" it.
+	# THE FLAMING DIAMOND — one of the two logos the founder says are missing.
 	#
-	# It is a bronze disc carrying a RED flaming diamond. The founder struck it
-	# through with a large X and wrote "WHY do you have this again!!!!" — "again"
-	# because an earlier pass had already pulled it once, and a later pass put it
-	# back reading his "you also need to add the Blaze logo" as covering this
-	# specific disc. It does not: his very next note on the same page is "why did
-	# you change the diamonds!!! Want the blue flaming diamonds!!!" The red
-	# diamond is the wrong mark, and this list is where it kept coming back from.
+	# This is his own artwork (the clear brilliant-cut diamond in orange flame).
+	# It was never on the band at all: a previous pass wired it to the in-course
+	# TOKEN by mistake, then correctly reverted that, but never put it where it
+	# actually belongs. Already square with transparent corners, so it drops
+	# straight into the circular-badge slot at BAND_ART_SIZE like every other
+	# protocol mark — no re-cut, no invented substitute.
+	#
+	# Also resized 1024x1024 -> 380x380 in the same no-pixelation pass above —
+	# at 1024px it was a ~5.4x downscale, the most extreme on the whole band.
+	{"path": "res://src/assets/logos/founder/blaze_diamond_correct.png", "wide": false},
+	# badge_blaze.png REMOVED — founder, crossing it out: "WHY do you have this
+	# again!!!!"
+	#
+	# That badge was never his artwork. An earlier session composed it here from
+	# the small in-game fx_flame_diamond sprite to satisfy "you also need to add
+	# the Blaze logo", i.e. it was my invention presented as a protocol mark, and
+	# it has now been rejected twice. The file is left on disk rather than
+	# deleted (harmless, and deleting art has burned this project before), but
+	# nothing references it and nothing should re-add it without him supplying
+	# an actual Blaze logo.
 	# B3: GoldMine moved right, near the end of the band.
 	{"path": "res://src/assets/art/badge_goldmine.png", "wide": false},
 	{"path": "res://src/assets/art/badge_h420.png", "wide": false},
@@ -347,30 +363,38 @@ const BR_ART_ORDER := [
 ## founder circled.
 var _gap_spans: Array[Vector2] = []
 
-## X ranges ALREADY OCCUPIED by a piece of band art, as (x_min, x_max).
+## ONE LEDGER OF EVERY FOOTPRINT ALREADY CLAIMED ON THE BAND.
 ##
-## The single source of truth for "is this stretch of band free", shared by all
-## three builders. Before this existed the badge lattice, the lounge banner and
-## the world card each tracked their own placements privately, so two of them
-## could — and did — resolve to the same x and draw on top of each other. That
-## overlap is the "masking" the founder photographed.
-var _band_taken: Array[Vector2] = []
+## Founder, repeatedly and with escalating anger: "WHY ARE YOU MASKING THE
+## FUCKING ARTWORK!"
+##
+## Three separate systems draw on this band — _build_world_card(),
+## _build_lounge_banner() and _build_protocol_landmarks() — and until now each
+## one only avoided floor GAPS and (for the badges) other badges. None of them
+## knew what the others had placed, so the title could be drawn straight through
+## a protocol badge and the banner through whatever was near the end. Every
+## piece now records the span it actually occupies here, and every placement
+## query rejects a span that would touch one.
+##
+## Stored as Vector2(left_x, right_x) in world space.
+var _band_reservations: Array[Vector2] = []
 
-## Air to leave between two neighbouring pieces of band art. Not zero: touching
-## edges still read as one smeared object at speed, and the founder's complaint
-## was about legibility, not literal pixel overlap.
-const BAND_CLEARANCE: float = 40.0
+## Minimum clear air between two pieces of band art, so neighbours read as
+## separate objects instead of a collage.
+const BAND_ART_PAD: float = 26.0
 
-## Claim `half_w` either side of `cx` so nothing else can be placed there.
-func _reserve_band(cx: float, half_w: float) -> void:
-	_band_taken.append(Vector2(cx - half_w, cx + half_w))
+## True when [x-half_w, x+half_w] touches nothing already claimed.
+func _band_span_free(x: float, half_w: float) -> bool:
+	var lo: float = x - half_w - BAND_ART_PAD
+	var hi: float = x + half_w + BAND_ART_PAD
+	for r: Vector2 in _band_reservations:
+		if lo < r.y and hi > r.x:
+			return false
+	return true
 
-## True if art of `half_w` centred at `x` would touch anything already placed.
-func _band_blocked(x: float, half_w: float) -> bool:
-	for span: Vector2 in _band_taken:
-		if x + half_w + BAND_CLEARANCE > span.x and x - half_w - BAND_CLEARANCE < span.y:
-			return true
-	return false
+## Claim a span so nothing placed later can overlap it.
+func _reserve_band_span(x: float, half_w: float) -> void:
+	_band_reservations.append(Vector2(x - half_w, x + half_w))
 
 func _x_over_gap(x: float, half_width: float = BAND_ART_SIZE * 0.5) -> bool:
 	for g: Vector2 in _gap_spans:
@@ -383,13 +407,36 @@ func _x_over_gap(x: float, half_width: float = BAND_ART_SIZE * 0.5) -> bool:
 
 ## Where the evenly-spaced lattice of landmark slots starts and how much runway
 ## is left clear at the far end (the finish gate and its approach live there).
-## Clear of the world card, which now spans roughly x=-50..850 (it is centred
-## near WORLD_CARD_X at 900px wide). At the old 700 every early badge resolved
-## inside the card and got pushed or dropped by the occupancy check for no
-## reason; starting the lattice past it keeps the entry clean and the badges
-## evenly spread over the runway that is actually free.
-const LANDMARK_START_X: float = 1100.0
+const LANDMARK_START_X: float = 700.0
 const LANDMARK_END_MARGIN: float = 300.0
+
+## Target clear distance between consecutive band artworks, in px.
+##
+## FOUNDER: "large empty real estate = money left on the table" about L2/L3.
+## The cause was structural, not a bad constant. The lattice divided the WHOLE
+## course by a FIXED piece count, so the stride grew with the course:
+##
+##   L1  length 5450 -> span 4450 -> pitch ~494
+##   L2  length 6400 -> span 5400 -> pitch ~600
+##   L3  length 7350 -> span 6350 -> pitch ~706
+##
+## Same nine or ten logos, stretched over a course half again as long — so the
+## longer the level, the emptier the band, which is exactly backwards from what
+## he is paying for. The piece COUNT is now derived from the course length at
+## this fixed pitch and the art list CYCLES to fill it, so a longer course buys
+## more brand impressions instead of more empty purple.
+const TARGET_BAND_PITCH: float = 430.0
+## Hard ceiling on how many times the list may repeat, so a hypothetical very
+## long course can't turn the band into wallpaper.
+const MAX_BAND_CYCLES: int = 3
+
+## Un-searched ideal x for landmark `i` of `count` — the exact even-lattice
+## position before gap/overlap avoidance nudges it. Shared by the slot search
+## and by the last-resort fallback, so a displaced piece is retried NEAR where
+## it belonged instead of being packed back at the start of the course.
+func _landmark_ideal_x(i: int, count: int) -> float:
+	var span: float = maxf(_course_length - LANDMARK_END_MARGIN - LANDMARK_START_X, 1.0)
+	return LANDMARK_START_X + (span / float(count)) * (float(i) + 0.5)
 
 ## X for landmark `i` of `count`, or INF if there is no clear band for it.
 ##
@@ -408,36 +455,25 @@ const LANDMARK_END_MARGIN: float = 300.0
 ##      badge stays on the same lattice and moves the shortest distance to a
 ##      valid cell; candidates that land within MIN_SEP of something already
 ##      placed are rejected outright.
-## `start_x`/`end_x` are the stretch of band actually left over once the world
-## card and lounge banner have claimed theirs, and `min_sep` is sized to that
-## stretch by the caller. They used to be the constants LANDMARK_START_X /
-## LANDMARK_END_MARGIN and a fixed `maxf(BAND_ART_SIZE * 1.15, ...)`, which is
-## how enlarging the world card silently deleted GoldMine and H420 from the run:
-## the lattice kept laying out over ground that was no longer free, every cell
-## at the end failed the occupancy test, and those two returned INF and were
-## dropped. A demand for more separation than the free band can supply is not a
-## safety margin, it is a guarantee that the tail of the list vanishes.
-func _landmark_slot_x(i: int, count: int, half_w: float, placed_x: Array[float],
-		start_x: float, end_x: float, min_sep: float) -> float:
-	var span: float = maxf(end_x - start_x, 1.0)
+func _landmark_slot_x(i: int, count: int, half_w: float, placed_x: Array[float]) -> float:
+	var span: float = maxf(_course_length - LANDMARK_END_MARGIN - LANDMARK_START_X, 1.0)
 	var pitch: float = span / float(count)
-	var ideal: float = start_x + pitch * (float(i) + 0.5)
+	var ideal: float = _landmark_ideal_x(i, count)
+	# Never let two artworks crowd: at minimum a full badge width of air, and
+	# never less than 60% of the even pitch.
+	var min_sep: float = maxf(BAND_ART_SIZE * 1.15, pitch * 0.6)
 	var step: float = pitch * 0.25
 	# offset 0 first, then -1, +1, -2, +2 ... so the nearest valid cell wins.
 	for k in range(0, 9):
 		for dir in ([0] if k == 0 else [-1, 1]):
 			var cand: float = ideal + float(dir) * float(k) * step
-			# Stay inside the free stretch itself — a displaced badge must not
-			# wander back into the world card or forward into the lounge banner.
-			if cand < start_x - half_w or cand > end_x + half_w:
-				continue
-			if cand > _course_length - 120.0:
+			if cand < LANDMARK_START_X * 0.5 or cand > _course_length - 120.0:
 				continue
 			if _x_over_gap(cand, half_w):
 				continue
-			# The world card and the lounge banner are already down by now and
-			# own their spots; a badge routes around them rather than over them.
-			if _band_blocked(cand, half_w):
+			# Never overlap the title or the lounge banner, which claimed their
+			# spans before this ran (see _band_reservations).
+			if not _band_span_free(cand, half_w):
 				continue
 			var crowded := false
 			for p: float in placed_x:
@@ -466,34 +502,27 @@ func _landmark_slot_x(i: int, count: int, half_w: float, placed_x: Array[float],
 ## despawn. It sits at a fixed track position near the start and simply scrolls
 ## past like everything else on the band — visible on every attempt, not just
 ## the first two seconds of the level.
-## IT FILLS THE BAND. IT IS NOT A PLATE SITTING IN THE BAND.
+## Rendered height of the title on the band.
 ##
-## Founder, on the previous version: "TOO SMALL" — and separately, circling the
-## empty purple band, "This tab needs to have the image that i am going to
-## present below... This is what needs to fill that section of real estate."
-## He then supplied his own mock-up of the result.
+## Founder: "TOO SMALL CUNT!!!!" — and he was right by a wide margin. TWO
+## separate mistakes stacked:
 ##
-## That mock-up is the spec, and it was measured rather than eyeballed: sampling
-## it shows the artwork covering the band from x=0 to x=600 of 602 and y=0 to
-## y=168 of 169 — edge to edge, corner to corner, with no purple visible behind
-## it at all. The old 340x118 height-fit plate covered about a tenth of that.
+##  1. The source PNG was 1536x1024 but its VISIBLE artwork occupied only the
+##     middle 492px — 48% of the image height was transparent padding. Fitting
+##     to `tex.get_height()` therefore fit the PADDING, so a nominal 118px card
+##     rendered a ~57px-tall wordmark. The asset is now cropped to its own alpha
+##     bounding box (1516x492), so height-fitting is finally honest.
+##  2. 118 was itself too timid next to the 190px protocol badges beside it.
 ##
-## So this is a COVER fit (fill both axes, crop the overflow), not the CONTAIN
-## fit every other piece of band art uses. Both crops were rendered and compared
-## against the mock-up before picking: a true full-viewport 1280-wide fill needs
-## a 26% vertical slice of the source, which cuts the top off the flame and the
-## point off the diamond. 900px keeps a 37% slice — the whole wordmark, the whole
-## diamond, the crypto cubes — and still spans 70% of the 1280px viewport, which
-## is what "dominates the entry" means here.
-const WORLD_CARD_W: float = 900.0
-## Full band height: the band is 220px from GROUND_Y (see _make_floor_segment)
-## and the founder's mock-up leaves no margin top or bottom.
-const WORLD_CARD_H: float = 220.0
+## 180 makes the title the single largest thing on the band — taller and much
+## wider than any badge — which is what "dominates the entry real estate" and
+## "readable on phone" require. The band is 220px deep from GROUND_Y and the art
+## is centred at BAND_ART_Y (122), so 180 spans GROUND_Y+32 .. GROUND_Y+212 and
+## still sits fully inside it.
+const WORLD_CARD_H: float = 180.0
 ## Early in the band, but not the very first thing — let the run establish
 ## itself for a beat first (matches the founder's illustrated position, which
-## sat a short distance in, not at x=0). 400 is also _find_band_slot's own
-## floor (it clamps from_x to >= 400), so this is the earliest a slot search
-## can actually land regardless.
+## sat a short distance in, not at x=0).
 const WORLD_CARD_X: float = 400.0
 
 func _build_world_card() -> void:
@@ -502,38 +531,25 @@ func _build_world_card() -> void:
 	var tex: Texture2D = load(WORLD_CARD_ART)
 	if tex == null:
 		return
-	var half_w: float = WORLD_CARD_W * 0.5
+	# Height-fit keeps the wordmark's aspect ratio instead of squashing it into
+	# a square footprint. Computed BEFORE picking a slot, because the slot
+	# search needs the REAL rendered half-width — see below.
+	var fit: float = WORLD_CARD_H / maxf(float(tex.get_height()), 1.0)
+	var half_w: float = float(tex.get_width()) * fit * 0.5
 	var bx: float = _find_band_slot(WORLD_CARD_X, half_w)
 	if is_inf(bx):
 		return
 
+	_reserve_band_span(bx, half_w)
+
 	var art := Sprite2D.new()
 	art.name = "WorldCard"
 	art.texture = tex
-
-	# COVER fit via a centred source region — see the WORLD_CARD_W note.
-	#
-	# Cropping in the region rect rather than scaling non-uniformly is the whole
-	# point: squashing a 1.6-aspect wordmark into a 4.1-aspect slot would distort
-	# the founder's brand art, and "no pixelation / don't change my artwork" has
-	# been a standing instruction for several passes.
-	var tw: float = maxf(float(tex.get_width()), 1.0)
-	var th: float = maxf(float(tex.get_height()), 1.0)
-	var slot_ar: float = WORLD_CARD_W / WORLD_CARD_H
-	var rh: float = minf(th, tw / slot_ar)
-	var rw: float = minf(tw, rh * slot_ar)
-	art.region_enabled = true
-	art.region_rect = Rect2((tw - rw) * 0.5, (th - rh) * 0.5, rw, rh)
-	art.scale = Vector2(WORLD_CARD_W / rw, WORLD_CARD_H / rh)
-
+	art.scale = Vector2(fit, fit)
 	art.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	# Centred on the band's own midline, not BAND_ART_Y: this piece is as tall as
-	# the band itself, so the badge convention of seating art low inside it would
-	# hang half the wordmark below the floor.
-	art.position = Vector2(bx, GROUND_Y + WORLD_CARD_H * 0.5)
+	art.position = Vector2(bx, GROUND_Y + BAND_ART_Y)
 	art.z_index = 1
 	add_child(art)
-	_reserve_band(bx, half_w)
 
 ## SMOKE LOUNGE ANTICIPATION BANNER — on every Blaze course, guaranteed.
 ##
@@ -558,66 +574,84 @@ func _build_world_card() -> void:
 ## concludes.
 const LOUNGE_BANNER_W: float = 300.0
 const LOUNGE_BANNER_H: float = 104.0
-## How far back from the finish trigger the search starts. Not 0: the banner
-## needs its own half-width of clearance plus a visible gap before the finish
-## ring, or it reads as crammed against the end rather than "the last thing you
-## see before it."
-const LOUNGE_BANNER_END_MARGIN: float = 260.0
-
-## How wide the lounge banner ACTUALLY DRAWS, not how wide LOUNGE_BANNER_W says.
-##
-## The founder's artwork is 2.91:1. Height-fitting it to LOUNGE_BANNER_H * 1.55
-## renders it ~470px wide, but every placement decision was being made against
-## LOUNGE_BANNER_W (300) — so the banner reserved 150px either side and then drew
-## 235. The 85px it drew beyond its own claim is exactly where a badge could sit
-## and mask it. Placement now measures the thing that ends up on screen.
-func _lounge_drawn_half_width() -> float:
-	var fallback: float = LOUNGE_BANNER_W * 0.5
-	if not ResourceLoader.exists(LOUNGE_BANNER_ART):
-		return fallback
-	var tex: Texture2D = load(LOUNGE_BANNER_ART)
-	if tex == null or tex.get_height() <= 0:
-		return fallback
-	var fit: float = (LOUNGE_BANNER_H * 1.55) / float(tex.get_height())
-	# * 1.03 covers the slow "lit signage" breath tween at its widest.
-	return maxf(fallback, float(tex.get_width()) * fit * 0.5 * 1.03)
+## Rendered height of the founder's banner artwork (the procedural fallback
+## below still uses LOUNGE_BANNER_H).
+const LOUNGE_BANNER_ART_H: float = 161.0
+## Where _build_finish() puts the finish trigger, relative to _course_length.
+## Kept as a named constant because the lounge banner's placement depends on it
+## — the two silently disagreeing is what pushed the banner off the end stretch.
+const FINISH_TRIGGER_OFFSET: float = 120.0
+## Clear air between the banner's right edge and the finish ring, so it reads as
+## "the last thing you see before the end" rather than crammed against it.
+const FINISH_CLEARANCE: float = 90.0
 
 func _build_lounge_banner() -> void:
-	var half_w: float = _lounge_drawn_half_width()
-	var bx: float = _find_band_slot(_course_length - LOUNGE_BANNER_END_MARGIN, half_w)
+	# THE TEXTURE IS RESOLVED FIRST, BECAUSE THE SLOT SEARCH NEEDS THE REAL
+	# RENDERED WIDTH.
+	#
+	# Founder: "WHY ARE YOU MASKING THE FUCKING ARTWORK!" — nothing was drawing
+	# over it. The banner was hanging off the edge of the purple band into a
+	# floor GAP, so the void showed through behind its left third and it read as
+	# masked.
+	#
+	# Cause: the gap-clearance check was handed LOUNGE_BANNER_W * 0.5 (150px),
+	# but the sprite is HEIGHT-fit — the founder's 1500x515 artwork renders
+	# ~469px wide, a real half-width of ~234px. _x_over_gap was therefore
+	# clearing 150px either side of a sprite that actually needed 234, so up to
+	# 84px of artwork could overhang a gap at each end. Exactly the same class
+	# of bug as the surfboard-footprint gate that once used a stale constant
+	# instead of the real collision extent: never let a clearance check use a
+	# nominal size when the drawn size is computed.
+	var art_tex: Texture2D = null
+	if ResourceLoader.exists(LOUNGE_BANNER_ART):
+		art_tex = load(LOUNGE_BANNER_ART)
+
+	var fit: float = 1.0
+	var half_w: float = LOUNGE_BANNER_W * 0.5
+	if art_tex != null:
+		fit = LOUNGE_BANNER_ART_H / maxf(float(art_tex.get_height()), 1.0)
+		half_w = float(art_tex.get_width()) * fit * 0.5
+
+	# "This banner ... is for the very fucking end!!!"
+	#
+	# The usable band runs right up to the FINISH TRIGGER, which _build_finish()
+	# puts at _course_length + 120 — not to _course_length itself. The default
+	# limit (_course_length - 120) was throwing away 240px of perfectly good
+	# band at exactly the point this banner needs it, and that mattered because
+	# every course has a floor gap shortly before the end (L1's is 4800..4970 of
+	# 5450). With the tighter limit a 469px-wide banner could not fit between
+	# that last gap and the cut-off, so it was shoved back BEFORE the gap and
+	# landed at ~83% of the course instead of at the end. Searching up to just
+	# short of the finish ring lets it sit in the final stretch where he wants
+	# it.
+	var finish_x: float = _course_length + FINISH_TRIGGER_OFFSET
+	var max_x: float = finish_x - FINISH_CLEARANCE
+	var bx: float = _find_band_slot(max_x, half_w, max_x)
 	if is_inf(bx):
 		return
+
+	_reserve_band_span(bx, half_w)
 
 	var banner := Node2D.new()
 	banner.name = "SmokeLoungeBanner"
 	banner.position = Vector2(bx, GROUND_Y + BAND_ART_Y)
 	banner.z_index = 1
 	add_child(banner)
-	# Claim the space BEFORE the badges are laid out, so nothing can be placed
-	# on top of it. The founder's "why are you masking the artwork" screenshot
-	# was a badge disc drawn at the same x as this banner, its rim bulging out
-	# above and below the artwork. `half_w` here is the REAL drawn half-width.
-	_reserve_band(bx, half_w)
 
 	# B6: the founder's own "NOW LOOK FOR THE SMOKE LOUNGE" artwork the moment
 	# it is on disk. It carries its own call to action, so the procedural plate
 	# and lettering below are the FALLBACK, not a frame around it — drawing both
 	# would double the message.
-	if ResourceLoader.exists(LOUNGE_BANNER_ART):
-		var art_tex: Texture2D = load(LOUNGE_BANNER_ART)
-		if art_tex != null:
-			var art := Sprite2D.new()
-			art.texture = art_tex
-			# Height-fit so a wide banner keeps its aspect ratio; the band is
-			# 220px tall from GROUND_Y and this sits inside it.
-			var fit: float = (LOUNGE_BANNER_H * 1.55) / maxf(float(art_tex.get_height()), 1.0)
-			art.scale = Vector2(fit, fit)
-			art.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-			banner.add_child(art)
-			var breath := banner.create_tween().set_loops()
-			breath.tween_property(banner, "scale", Vector2(1.03, 1.03), 1.1).set_trans(Tween.TRANS_SINE)
-			breath.tween_property(banner, "scale", Vector2.ONE, 1.1).set_trans(Tween.TRANS_SINE)
-			return
+	if art_tex != null:
+		var art := Sprite2D.new()
+		art.texture = art_tex
+		art.scale = Vector2(fit, fit)
+		art.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		banner.add_child(art)
+		var breath := banner.create_tween().set_loops()
+		breath.tween_property(banner, "scale", Vector2(1.03, 1.03), 1.1).set_trans(Tween.TRANS_SINE)
+		breath.tween_property(banner, "scale", Vector2.ONE, 1.1).set_trans(Tween.TRANS_SINE)
+		return
 
 	var plate := ColorRect.new()
 	plate.color = Color(0.07, 0.03, 0.13, 1.0)
@@ -646,12 +680,7 @@ func _build_lounge_banner() -> void:
 	banner.add_child(head)
 
 	var sub := Label.new()
-	# ASCII ONLY. The pixel font has no arrow glyphs — the previous "▸ ◂" pair
-	# rendered as tofu boxes on web (docs/MOBILE_CONTROLS_SPEC.md says so
-	# explicitly). Latent rather than live, since this whole plate is the
-	# fallback for a missing LOUNGE_BANNER_ART, but it would surface the moment
-	# that file went astray.
-	sub.text = ">>  CHILL OUT AHEAD  <<"
+	sub.text = "▸  CHILL OUT AHEAD  ◂"
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.position = Vector2(-half_w, -LOUNGE_BANNER_H * 0.5 + 52)
 	sub.custom_minimum_size = Vector2(LOUNGE_BANNER_W, 0)
@@ -669,16 +698,27 @@ func _build_lounge_banner() -> void:
 
 ## First x at or after `from_x` whose band is solid for `half_w` either side,
 ## searching forward then backward. INF only if the course has no clear band.
-func _find_band_slot(from_x: float, half_w: float) -> float:
-	var limit: float = _course_length - 120.0
-	var x: float = clampf(from_x, 400.0, limit)
+##
+## The bounds are half_w-aware. They used to be flat 400 / _course_length-120
+## regardless of how wide the caller's art actually was, which let a wide banner
+## be placed with its CENTRE inside the course but an EDGE hanging off the end
+## of the band (or before its start) — the same overhang that read as the
+## artwork being masked.
+func _find_band_slot(from_x: float, half_w: float, max_x: float = -1.0) -> float:
+	var lo: float = 400.0 + half_w
+	var hi: float = (_course_length - 120.0 if max_x < 0.0 else max_x) - half_w
+	if hi < lo:
+		# Course too short to seat art this wide anywhere; centre it and let the
+		# caller decide, rather than silently returning a position that overhangs.
+		return INF
+	var x: float = clampf(from_x, lo, hi)
 	var step: float = 90.0
-	for i in range(48):
+	for i in range(64):
 		var fwd: float = x + step * float(i)
-		if fwd <= limit and not _x_over_gap(fwd, half_w) and not _band_blocked(fwd, half_w):
+		if fwd <= hi and not _x_over_gap(fwd, half_w) and _band_span_free(fwd, half_w):
 			return fwd
 		var back: float = x - step * float(i)
-		if back >= 400.0 and not _x_over_gap(back, half_w) and not _band_blocked(back, half_w):
+		if back >= lo and not _x_over_gap(back, half_w) and _band_span_free(back, half_w):
 			return back
 	return INF
 
@@ -699,46 +739,22 @@ func _build_protocol_landmarks() -> void:
 		available.append([path, bool(entry["wide"])])
 	if available.is_empty():
 		return
-	# Founder: "feature ALL of the protocol logos in the Blaze Rush." One slot
-	# per available artwork (not a modulo subset), so every piece appears
-	# exactly once per run rather than some being skipped.
-	var count: int = available.size()
-
-	# THE FREE STRETCH, derived from what is actually reserved — not constants.
+	# Founder: "feature ALL of the protocol logos in the Blaze Rush." Every
+	# available artwork gets a slot (not a modulo subset), so no piece is ever
+	# skipped — and on a course long enough to hold more, the list CYCLES so
+	# the extra band length is filled with more brand rather than more nothing.
 	#
-	# The world card owns the entry and the lounge banner owns the end, and both
-	# are already in `_band_taken` by the time this runs. Anything at the entry
-	# half of the course pushes the lattice start right; anything at the end half
-	# pulls its end left.
-	var lat_start: float = LANDMARK_START_X
-	var lat_end: float = _course_length - LANDMARK_END_MARGIN
-	for span: Vector2 in _band_taken:
-		if span.y < _course_length * 0.5:
-			lat_start = maxf(lat_start, span.y + BAND_CLEARANCE)
-		else:
-			lat_end = minf(lat_end, span.x - BAND_CLEARANCE)
-
-	# SIZE THE BADGES TO THE ROOM THAT EXISTS.
-	#
-	# Founder: "feature ALL of the protocol logos in the Blaze Rush" AND "lets
-	# better space this section". Those pull against each other on a short course
-	# once the entry card takes 900px, and the old code resolved the conflict by
-	# silently dropping whatever did not fit — which is how the GoldMine mark he
-	# explicitly asked to reposition could disappear from the band entirely.
-	# Shrinking slightly so every mark survives is the honest trade; a hard floor
-	# keeps them legible rather than shrinking without limit.
-	var usable: float = maxf(lat_end - lat_start, 1.0)
-	var art_size: float = BAND_ART_SIZE
-	var needed: float = float(count) * (BAND_ART_SIZE + BAND_CLEARANCE)
-	if needed > usable:
-		# -6 keeps required separation strictly under the pitch instead of landing
-		# exactly on it, where float equality decides whether a badge survives.
-		art_size = maxf(BAND_ART_MIN_SIZE, usable / float(count) - BAND_CLEARANCE - 6.0)
-	var min_sep: float = art_size + BAND_CLEARANCE
-
+	# The first `available.size()` slots are therefore always the complete
+	# unique set, placed first and with the whole band still free. Repeats come
+	# after, so if the course genuinely runs out of clear space it is only ever
+	# a duplicate that is dropped, never a logo's only appearance.
+	var unique_count: int = available.size()
+	var span: float = maxf(_course_length - LANDMARK_END_MARGIN - LANDMARK_START_X, 1.0)
+	var wanted: int = int(round(span / TARGET_BAND_PITCH))
+	var count: int = clampi(wanted, unique_count, unique_count * MAX_BAND_CYCLES)
 	var placed_x: Array[float] = []
 	for i in range(count):
-		var entry: Array = available[i]
+		var entry: Array = available[i % unique_count]
 		var tex: Texture2D = load(entry[0])
 		if tex == null:
 			continue
@@ -747,7 +763,7 @@ func _build_protocol_landmarks() -> void:
 		art.texture = tex
 		# Normalise wildly different source sizes to a consistent on-screen
 		# scale rather than trusting each PNG's native dimensions.
-		var target: float = art_size
+		var target: float = BAND_ART_SIZE
 		if is_wide:
 			var s: float = target / float(tex.get_height())
 			art.scale = Vector2(s, s)  # uniform scale preserves aspect ratio
@@ -761,12 +777,36 @@ func _build_protocol_landmarks() -> void:
 		# band (the band itself is a plain ColorRect at default z), while the
 		# run line stays well above at GROUND_Y and up.
 		var half_w: float = art.scale.x * float(tex.get_width()) / 2.0
-		var ax: float = _landmark_slot_x(i, count, half_w, placed_x, lat_start, lat_end, min_sep)
+		var ax: float = _landmark_slot_x(i, count, half_w, placed_x)
 		if is_inf(ax):
-			continue  # no clear band left for this one; drop it rather than float it
+			# LAST RESORT — never silently drop a logo.
+			#
+			# Founder: "There is only 2 logos missing in the blaze rush."
+			# One of those two was badge_h420, which was in this list the whole
+			# time: it is placed LAST, the even lattice had no free cell left
+			# for it once the title and the end banner had claimed their spans,
+			# and this branch quietly `continue`d. The logo therefore existed in
+			# code, passed every "is it configured" check, and simply never
+			# appeared on L1 or L2 — the exact failure mode of a silent drop.
+			#
+			# Falling back to a plain left-to-right scan for the first spot that
+			# clears both the floor gaps and every existing reservation means a
+			# piece can only be missing if the course genuinely has nowhere to
+			# put it, and the gate below asserts that never happens.
+			# Scan outward from where the piece BELONGED, not from the start of
+			# the course. Scanning from LANDMARK_START_X packed every displaced
+			# piece back into the left of the band, which is the other half of
+			# the founder's "large empty real estate": a gappy course pushed
+			# pieces leftward and left a long dead tail before the end banner.
+			ax = _find_band_slot(_landmark_ideal_x(i, count), half_w)
+			if is_inf(ax):
+				# Only ever warn for a piece's FIRST appearance. A dropped
+				# repeat is a course that is simply full, which is fine.
+				if i < unique_count:
+					push_warning("Blaze Rush: no band space for %s" % entry[0])
+				continue
 		placed_x.append(ax)
-		# Claim it so later badges — and any future band builder — route around.
-		_reserve_band(ax, half_w)
+		_reserve_band_span(ax, half_w)
 		art.position = Vector2(ax, GROUND_Y + BAND_ART_Y)
 		# Fully opaque: "solid", per the founder. No alpha wash.
 		art.modulate = Color(1.0, 1.0, 1.0, 1.0)
@@ -873,10 +913,30 @@ func _make_floor_segment(from_x: float, to_x: float) -> void:
 		return
 	var body := StaticBody2D.new()
 	body.position = Vector2(from_x, GROUND_Y)
+	# Founder, 2026-08-20 residual (shot_3): circled the ground band as
+	# "rectangle residue" — a single flat COLOR_SAFE_GROUND swatch across the
+	# full 220px band reads as an unfinished placeholder box, not ground.
+	# Give it real shading: a lighter top band and a darker body, like a lit
+	# surface, instead of one flat fill.
 	var visual := ColorRect.new()
-	visual.color = COLOR_SAFE_GROUND
-	visual.size = Vector2(w, 220.0)
+	visual.color = COLOR_SAFE_GROUND.lightened(0.14)
+	visual.size = Vector2(w, 60.0)
 	body.add_child(visual)
+	var visual_body := ColorRect.new()
+	visual_body.position = Vector2(0.0, 60.0)
+	visual_body.color = COLOR_SAFE_GROUND.darkened(0.22)
+	visual_body.size = Vector2(w, 160.0)
+	body.add_child(visual_body)
+	# Grok 4.6 (2026-08-20 residual): "two flat boxes... will keep reading as
+	# unfinished residue... add cheap surface language: faint horizontal
+	# seams." Two thin low-contrast lines break up the body band without
+	# adding per-tile texture cost — bounded by segment count, not width.
+	for seam_y in [110.0, 165.0]:
+		var seam := ColorRect.new()
+		seam.position = Vector2(0.0, seam_y)
+		seam.color = Color(0, 0, 0, 0.12)
+		seam.size = Vector2(w, 2.0)
+		body.add_child(seam)
 	var edge := ColorRect.new()
 	edge.color = COLOR_SAFE_EDGE
 	edge.size = Vector2(w, 4.0)
@@ -1021,6 +1081,30 @@ const WALK_CLAIM_HEIGHT: float = 18.0
 ## diamond masks the red candle"). Read the pulse-tween comment below before
 ## changing this: the constant only holds if the tween stays relative to it.
 const TOKEN_SCALE := Vector2(0.26, 0.26)
+## Extra room, beyond the token's own collision radius, that a pickup is still
+## trusted from.
+##
+## Fable-5 review caught this at 24.0: the real worst-case LEGITIMATE first-
+## overlap distance is bigger than that leaves room for. The player's actual
+## collision box is 24x24 (PLAYER_SIZE - 4, see _build_player()), so its
+## half-diagonal is sqrt(12^2+12^2) ~= 17px; a token clipped at the corner of
+## that box is detected at radius(26) + 17 = 43px from centre to centre —
+## against the old 26+24=50px claim radius that was only 7px of margin.
+## Physics detection is discrete, not continuous, so the frame the overlap is
+## FOUND ON can already be a further step or two past the exact geometric
+## boundary: at up to ~430px/s course speed (7.2px/frame) plus vertical speed
+## while falling (gravity 2200, so well over 200px/s within a few frames,
+## ~4px/frame and climbing), a fast diagonal clip can easily add another
+## 10-15px on top of the geometric worst case.
+##
+## Raised to 60 — claim radius 86px — which still leaves an enormous margin
+## below a genuinely stale pickup: the closest any level's course ever places
+## a token to the x=0 respawn point is x=440 (checked all three layouts), so
+## even at 86px there is zero risk of a stale post-teleport signal slipping
+## through. This constant only needs to be generous enough to never reject a
+## real pickup — it does not need to be tight, and tight is what caused the
+## near-miss above.
+const STALE_PICKUP_SLACK: float = 60.0
 
 func _make_smoke_token(x: float, height: float) -> void:
 	var actual_height: float = height
@@ -1048,6 +1132,10 @@ func _make_smoke_token(x: float, height: float) -> void:
 	shape.radius = 26.0   # forgiving grab at 320px/s (was 14)
 	col.shape = shape
 	area.add_child(col)
+	# How far the player may legitimately be from this token's centre for a
+	# `body_entered` on it to be trusted. See the STALE PICKUP note below —
+	# this is the token's own real collision radius, not a hand-tuned guess.
+	var claim_radius: float = shape.radius + STALE_PICKUP_SLACK
 	# Gentle idle pulse, RELATIVE to TOKEN_SCALE.
 	#
 	# THIS is why the founder kept seeing giant flaming diamonds after every
@@ -1067,12 +1155,37 @@ func _make_smoke_token(x: float, height: float) -> void:
 	pulse.tween_property(puff, "scale", tok_base * 1.12, 0.5).set_trans(Tween.TRANS_SINE)
 	pulse.tween_property(puff, "scale", tok_base, 0.5).set_trans(Tween.TRANS_SINE)
 	area.body_entered.connect(func(b: Node2D) -> void:
-		# `_crash_pending` guard: a candle and a diamond can be touched on the
-		# SAME physics frame ("often via candle bounce", the founder's words).
-		# Without this, a pickup that the physics server reports AFTER the
-		# candle re-hides a token the crash has just restored, and it stays
-		# claimed for the rest of the run. See _crash().
-		if b == _player and area.visible and not _crash_pending:
+		# STALE PICKUP — this is what "often via candle bounce" actually was.
+		#
+		# `_crash_pending` alone was NOT enough, and the founder was right that
+		# this kept happening: "I haven't even collected it here, but because
+		# I collected it on my previous attempt I automatically have it now.
+		# I've told you about this before!!!"
+		#
+		# Every candle and every fud_wall in every level layout is followed by
+		# a diamond ~20px later on the course — close enough that their
+		# collision shapes geometrically OVERLAP (candle: x413-427, first
+		# diamond: x414-466). Driving the REAL player through this pair with
+		# real physics (tests/blaze_diamond_bounce_repro_test.gd, not a
+		# synthetic .emit() call) reproduced a stale claim on **30 of 30**
+		# crash cycles — this was never a rare race, it fired every single
+		# time. The candle's body_entered fires, calls _crash(), which resets
+		# the counter and TELEPORTS the player back to x=0. The diamond's own
+		# body_entered — already queued by the physics server from the moment
+		# the player's real collision shape swept through the overlap — is
+		# still delivered, but one physics step LATE: after _crash()'s
+		# deferred _restore_tokens() has already flipped `_crash_pending` back
+		# to false. The guard's window closes before the stale signal it was
+		# built to catch actually arrives.
+		#
+		# A pending flag can't fix a signal that arrives after the flag it
+		# depends on has already been cleared. What CAN'T lie is where the
+		# player actually is: a legitimate pickup happens within this token's
+		# own collision radius; a stale one arrives after `_reset_player()`
+		# has already teleported the player thirty-plus times that radius
+		# away. So trust distance, not timing.
+		if b == _player and area.visible and not _crash_pending \
+				and _player.global_position.distance_to(area.global_position) <= claim_radius:
 			area.visible = false
 			area.set_deferred("monitoring", false)
 			_smoke_this_attempt += 1
@@ -1105,7 +1218,7 @@ func _spawn_pickup_burst(pos: Vector2) -> void:
 
 func _build_finish() -> void:
 	var area := Area2D.new()
-	area.position = Vector2(_course_length + 120.0, GROUND_Y - 60.0)
+	area.position = Vector2(_course_length + FINISH_TRIGGER_OFFSET, GROUND_Y - 60.0)
 	area.collision_mask = 2
 	var ring := ColorRect.new()
 	ring.color = Color(1.0, 0.85, 0.2, 1.0)
@@ -1195,32 +1308,79 @@ func _build_hud() -> void:
 	_attempt_label.add_theme_font_size_override("font_size", 52)
 	row.add_child(_attempt_label)
 
-	var exit_btn := Button.new()
-	exit_btn.text = "  EXIT (Q)  "
-	exit_btn.focus_mode = Control.FOCUS_NONE
-	exit_btn.custom_minimum_size = Vector2(210, 58)
-	exit_btn.add_theme_font_size_override("font_size", 26)
-	exit_btn.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
-	exit_btn.add_theme_constant_override("outline_size", 4)
+	# "TAP OUT" — was "EXIT". Founder: change the label so it reads as "this is
+	# too difficult" / "I'm out" rather than a neutral menu action, and put
+	# Lil Blunt's own face next to it to sell that read. Behavior is
+	# UNCHANGED — same button, same key, same `_exit_to_level()` — this is a
+	# label + art change only.
+	var tapout_face := TextureRect.new()
+	tapout_face.name = "TapOutFace"
+	tapout_face.texture = preload("res://src/assets/sprites/sprite_lil-blunt_tapout.png")
+	# EXPAND_IGNORE_SIZE (matches main_menu.gd / secret_realm.gd): without it a
+	# TextureRect's minimum size is its TEXTURE's native resolution, not
+	# `custom_minimum_size`, which would shove the TAP OUT button off-screen.
+	#
+	# Founder, this session: "The lil blunt icon is so pixelated i cant see
+	# whats going on here... I dont want any of the artworks to ever be
+	# pixelated period!!!" The source PNG used to be 585x586 displayed at
+	# 58x58 — a ~10x downscale, by far the most extreme minification ratio of
+	# any UI sprite in this project, and its .import has mipmaps/generate=false
+	# (the project-wide default, confirmed on 58 of 58 checked .import files;
+	# `.import` files are gitignored and CI-regenerated, so a per-file import
+	# override would not have survived a real export anyway). LINEAR_WITH_
+	# MIPMAPS therefore had no mips to actually sample at that ratio. Fixed at
+	# the source: the PNG is now 116x116 — a clean 2x oversample of the 58px
+	# display size, the same healthy ratio every OTHER sharp badge in this
+	# project already uses (~2.7x), so it reads crisp even with plain LINEAR
+	# and no mips. Keep future replacements of this asset within ~2-3x of
+	# 58px; going back to hundreds-of-px source reintroduces the exact bug.
+	tapout_face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tapout_face.custom_minimum_size = Vector2(58, 58)
+	tapout_face.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tapout_face.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	row.add_child(tapout_face)
+
+	var tapout_btn := Button.new()
+	tapout_btn.name = "TapOutButton"
+	tapout_btn.text = "  TAP OUT (Q)  "
+	tapout_btn.focus_mode = Control.FOCUS_NONE
+	tapout_btn.custom_minimum_size = Vector2(210, 58)
+	tapout_btn.add_theme_font_size_override("font_size", 26)
+	tapout_btn.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	tapout_btn.add_theme_constant_override("outline_size", 4)
 	var exit_plate := StyleBoxFlat.new()
 	exit_plate.bg_color = Color(0.55, 0.09, 0.14, 0.94)
 	exit_plate.set_corner_radius_all(8)
 	exit_plate.content_margin_left = 14
 	exit_plate.content_margin_right = 14
-	exit_btn.add_theme_stylebox_override("normal", exit_plate)
+	tapout_btn.add_theme_stylebox_override("normal", exit_plate)
 	var exit_hover := exit_plate.duplicate()
 	exit_hover.bg_color = Color(0.78, 0.16, 0.20, 0.98)
-	exit_btn.add_theme_stylebox_override("hover", exit_hover)
-	exit_btn.add_theme_stylebox_override("pressed", exit_hover)
-	exit_btn.pressed.connect(_exit_to_level)
-	row.add_child(exit_btn)
+	tapout_btn.add_theme_stylebox_override("hover", exit_hover)
+	tapout_btn.add_theme_stylebox_override("pressed", exit_hover)
+	tapout_btn.pressed.connect(_exit_to_level)
+	row.add_child(tapout_btn)
 
-	_progress.max_value = 100.0
-	_progress.show_percentage = false
-	_progress.custom_minimum_size = Vector2(0, 6)
-	_progress.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	_progress.offset_top = -8.0
-	layer.add_child(_progress)
+	# THE BAR AT THE BOTTOM OF THE SCREEN IS GONE.
+	#
+	# Founder: "you fucked up the l at the bottom of the screen thats not
+	# supposed to be there".
+	#
+	# It was this course-progress ProgressBar, and it looked like a stray UI
+	# line for a precise reason: it carried NO theme override, so it rendered in
+	# Godot 4.3's stock ProgressBar skin — a translucent near-black track with a
+	# translucent white fill — while every other pixel in this mode is authored
+	# in the Electric Haze palette. Anchored PRESET_BOTTOM_WIDE with
+	# offset_top = -8 it sat in the last 8px of the viewport, and because
+	# GROUND_Y (500) + the floor band's 220px height lands exactly on the 720px
+	# viewport bottom, it hugged the window edge INSIDE the purple band. The
+	# grey/white split moving with progress is what made it read as a scrollbar
+	# thumb rather than part of the game.
+	#
+	# Removed outright rather than restyled: he asked for it gone, and the HUD
+	# already reports PUFFS and ATTEMPT. `_progress` is deleted entirely (its
+	# declaration and its per-frame update too) so nothing keeps driving a node
+	# that is no longer displayed.
 
 	_update_hud()
 
@@ -1289,7 +1449,6 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_camera.position.x = _player.position.x + 240.0
-	_progress.value = clampf(_player.position.x / _course_length * 100.0, 0.0, 100.0)
 	_update_telegraph()
 
 ## Find the next lethal hazard ahead of the player and fade the warning bar
@@ -1368,7 +1527,15 @@ func _reset_player() -> void:
 	_player_visual.rotation = 0.0
 
 func _update_hud() -> void:
-	_smoke_label.text = "PUFFS %d" % _smoke_this_attempt
+	# Founder: "PUFFS" -> "BLAZE DIAMONDS". Same rename as the main HUD's
+	# smoke_label (hud.gd) — this is the in-mode counter for the exact same
+	# underlying value (GameManager.smoke_collected banks this attempt's
+	# total via add_smoke() in _finish_run()). Missed on the first pass of
+	# this rename: this file has its OWN copy of the label, separate from
+	# hud.gd's, and only that one got changed. Caught by grepping the tree
+	# for the literal string "PUFFS" after the fact rather than trusting the
+	# earlier edit was complete.
+	_smoke_label.text = "BLAZE DIAMONDS %d" % _smoke_this_attempt
 	_attempt_label.text = "ATTEMPT %d " % _attempts
 
 # --- finish / exit -----------------------------------------------------------
@@ -1381,9 +1548,17 @@ func _finish_run() -> void:
 	# Bank the run: SMOKE persists, score pays out (no combo interference).
 	GameManager.add_smoke(_smoke_this_attempt)
 	ComboSystem.add_score_no_combo(_smoke_this_attempt * SCORE_PER_SMOKE)
+	# The Blaze Rush collectibles are branded "BLAZE DIAMONDS" (toast below); feed
+	# them into the crushable Blaze Diamond stack so the Diamond Vault clerk can
+	# offer them for crushing "according to stack limit from collections"
+	# (session 6, founder). add_blaze_diamonds clamps to BLAZE_DIAMOND_STACK_LIMIT.
+	GoldMineSystem.add_blaze_diamonds(_smoke_this_attempt)
 
 	var first_clear: bool = not GameManager.blaze_rush_completed.get(_level_index, false)
-	var toast_lines: Array[String] = ["BLAZE RUSH CLEAR!", "+%d SMOKE" % _smoke_this_attempt]
+	# Same rename as the HUD label above — the exit toast is the last thing a
+	# player sees this value called, so leaving it "SMOKE" here would have
+	# reintroduced the inconsistency in a different spot.
+	var toast_lines: Array[String] = ["BLAZE RUSH CLEAR!", "+%d BLAZE DIAMONDS" % _smoke_this_attempt]
 	if first_clear:
 		GoldMineSystem.mine_gold(COMPLETION_GOLD)
 		toast_lines.append("+%d GOLD" % COMPLETION_GOLD)

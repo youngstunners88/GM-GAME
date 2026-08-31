@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://cownerage18aug26"]
+
+[ext_resource type="Script" path="res://tests/owner_rage_20260818_test.gd" id="1_orage"]
+
+[node name="OwnerRage20260818Test" type="Node"]
+script = ExtResource("1_orage")

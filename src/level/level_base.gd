@@ -11,8 +11,23 @@ extends Node2D
 ## level_complete pacing metric for adaptive difficulty (task #23).
 var level_start_ms: int = 0
 
+## Full-level-width x-ranges the kill zone must NOT cover (world space),
+## registered before `_setup_kill_zone()` runs — see `_register_kill_zone_gaps()`.
+var kill_zone_gaps: Array[Vector2] = []
+
 func _ready() -> void:
 	level_start_ms = Time.get_ticks_msec()
+	# Belt-and-braces against a stranded hitstop time_scale (see
+	# SceneRouter.load_scene). load_scene already resets it, but a level entered
+	# by any other path (first boot, a direct scene set) still starts at real
+	# time. A level should never begin in slow-motion.
+	Engine.time_scale = 1.0
+	# MUST run before _setup_kill_zone(): a level that carves a deep vault
+	# under one of its own floor pits (Part B/C, protocol_vault.gd) needs its
+	# x-range excluded from the level-wide kill band BEFORE that band is
+	# built, not patched afterward. Virtual hook, default no-op — every level
+	# without a vault is unaffected.
+	_register_kill_zone_gaps()
 	# Adaptive difficulty (task #23): pull this player's heatmap BEFORE
 	# entities spawn where possible; late-arriving tuning is applied in
 	# _on_difficulty_ready (checkpoint/hint tweaks are placement-safe anytime).
@@ -20,6 +35,20 @@ func _ready() -> void:
 	DifficultyManager.refresh()
 	if boss_trigger:
 		boss_trigger.body_entered.connect(_on_boss_trigger)
+	# GameManager.current_level MUST be set before _setup_entities() spawns
+	# anything. entity_spawner.gd's EntitySpawner.spawn() calls add_child() on
+	# a parent (this node) that is already inside the tree, which fires the
+	# new child's _ready() SYNCHRONOUSLY, in the same call — so any spawned
+	# entity that reads GameManager.current_level from its own _ready() (e.g.
+	# coin.gd choosing which stage's protocol logo to wear, and since this
+	# pass, which system to credit for it) was reading the PREVIOUS level's
+	# index on every level transition, not this one's. Harmless while
+	# current_level only picked cosmetic art; no longer harmless now that it
+	# also decides which currency a pickup credits (T4, "$TITANX/$DIAMONDS/
+	# $GOLD are tokens and not coins" — a stale read would misattribute the
+	# credit, not just the logo).
+	if level_data and level_data.level_index >= 1:
+		GameManager.current_level = level_data.level_index
 	_setup_background()
 	_setup_geometry()
 	_setup_parallax()
@@ -37,10 +66,71 @@ func _ready() -> void:
 	# makes "last level played" authoritative regardless of how it was reached.
 	# Guarded to the 3 campaign levels (level_index 1..3); the Smoke Lounge and
 	# Blaze Rush do not extend LevelBase, so they never touch this.
+	#
+	# The ASSIGNMENT itself moved above (before _setup_entities()); this save
+	# stays here so it still persists everything ELSE _ready() has set up by
+	# this point (checkpoint state, HUD-visible stats), not just current_level.
 	if level_data and level_data.level_index >= 1:
-		GameManager.current_level = level_data.level_index
 		GameManager.save_session()
 	StateMachine.change_state(StateMachine.State.PLAYING)
+	# S10 T6/T7 — test-only boss warp, fired after the whole _ready chain (incl.
+	# subclass geometry) has run. No-op unless the page is loaded with ?boss=N.
+	call_deferred("_maybe_debug_boss_warp")
+	call_deferred("_maybe_debug_spawn_warp")
+
+## TEST-ONLY debug warp (S10 T6/T7). If the web page is loaded with `?boss=N`
+## and N == this level's index, drop the player straight into the boss arena and
+## fire the level's REAL `_on_boss_trigger` path, so a Playwright capture can
+## record the Distributor / Claim Jumper fight without first beating Level 1's
+## boss (a blind key-driver cannot, which blocked every prior S2 capture).
+##
+## It reuses the exact live approach (audit parity checklist): the player is
+## placed just EAST of the entry trigger, then `_on_boss_trigger` runs — same
+## seal wall (`arm_boss_arena_seal`), same `set_boss_background`, same arena
+## bounds set on the boss BEFORE add_child. So it captures the real fight, not a
+## lookalike. A normal production load has no `?boss` param, so this never fires.
+func _maybe_debug_boss_warp() -> void:
+	if level_data == null or level_data.boss_arena.is_empty():
+		return
+	var want := _requested_boss_warp()
+	if want <= 0 or want != level_data.level_index:
+		return
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if player == null or boss_trigger == null:
+		return
+	var start_x: float = level_data.boss_arena.get("start_x", 0.0)
+	# Just inside the arena, east of the entry trigger, so the normal seal +
+	# spawn logic runs identically to a walked-in approach.
+	player.global_position = Vector2(start_x + 120.0, player.global_position.y)
+	_on_boss_trigger(player)
+
+## Reads the `?boss=N` query param on web (0 if absent / not a web build).
+## Tiny + side-effect-free so it cannot affect a normal production load.
+func _requested_boss_warp() -> int:
+	if not OS.has_feature("web"):
+		return 0
+	var q: Variant = JavaScriptBridge.eval(
+		"new URLSearchParams(window.location.search).get('boss') || ''", true)
+	var s := str(q)
+	return int(s) if s.is_valid_int() else 0
+
+## TEST-ONLY debug warp (Block_Fixes_1 playtest capture). If the page is
+## loaded with `?spawn_x=N`, moves the player to that world x on THIS level
+## only, after normal spawn/entity setup. Used to Playwright-capture new
+## decorative traps and other mid-level content without a scripted key-driver
+## walking the whole level. No-op unless the query param is present.
+func _maybe_debug_spawn_warp() -> void:
+	if not OS.has_feature("web"):
+		return
+	var q: Variant = JavaScriptBridge.eval(
+		"new URLSearchParams(window.location.search).get('spawn_x') || ''", true)
+	var s := str(q)
+	if not s.is_valid_float():
+		return
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if player == null:
+		return
+	player.global_position = Vector2(s.to_float(), player.global_position.y)
 
 # The three parallax sprites (far/mid/near) all sample the level's key art;
 # kept as an array so the boss-arena swap can retexture every depth at once.
@@ -127,7 +217,9 @@ const BOSS_ART_FLOOR_ROW: float = 605.0
 ## with the image alone would need ~2.6x and look badly blurred.
 const BOSS_ART_SCALE: float = 1.15
 var _boss_backdrop_sprite: Sprite2D
-var _boss_backdrop_skirt: ColorRect
+## TextureRect since 2026-08-20 (was a flat near-black ColorRect — see
+## set_boss_background for the founder report that changed it).
+var _boss_backdrop_skirt: Control
 
 func set_boss_background() -> void:
 	if level_data == null or level_data.boss_background_path == "":
@@ -169,16 +261,43 @@ func set_boss_background() -> void:
 	# split-screen half-FOMO/half-forest look in his screenshot.
 	_boss_backdrop_sprite.position = Vector2(0.0, top_y)
 
-	# Opaque under-floor skirt: the image bottom lands at ~782 while the
-	# camera can see to ~950, and below the floor is underground anyway.
-	if not is_instance_valid(_boss_backdrop_skirt):
-		_boss_backdrop_skirt = ColorRect.new()
-		_boss_backdrop_skirt.z_index = -6
-		_boss_backdrop_skirt.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(_boss_backdrop_skirt)
-	_boss_backdrop_skirt.color = Color(0.05, 0.03, 0.09, 1.0)
-	_boss_backdrop_skirt.position = Vector2(-400.0, floor_y - 4.0)
-	_boss_backdrop_skirt.size = Vector2(level_data.bounds.x + 800.0, 1200.0)
+	# UNDER-FLOOR SKIRT — CONTINUES THE WORLD ART, IT IS NOT A BLACK SLAB.
+	#
+	# FOUNDER, on three separate screenshots in one pass: "lets not have this
+	# bottom part of the screen black as the background world needs to be
+	# prevailing in the design here".
+	#
+	# This was a ColorRect filled with Color(0.05, 0.03, 0.09) — near-black —
+	# 1200px tall and wider than the level, parked from the floor line down. The
+	# camera's limit_bottom is kill_zone_y + 100, well below the floor, so
+	# whenever it dips (which it does constantly, the camera follows the player)
+	# that slab is the bottom quarter of the screen. Every one of his black-bar
+	# screenshots is a boss fight, because `set_boss_background()` is the only
+	# thing that creates this node — which is exactly why it reads as "the
+	# bottom part of the screen" rather than a level-design choice.
+	#
+	# It still has a real job: the boss backdrop image ends around y=782 while
+	# the camera can see to ~950, and raw viewport clear-colour showing through
+	# is the ORIGINAL grey-bar bug this repo already fixed once. So the fix is
+	# not to delete it — it is to fill it with the WORLD instead of with black.
+	# A TextureRect tiling the same boss backdrop art, darkened to read as
+	# below-ground, satisfies both: nothing shows through, and what the player
+	# sees down there is the environment continuing rather than a void.
+	if is_instance_valid(_boss_backdrop_skirt):
+		_boss_backdrop_skirt.queue_free()
+	var skirt := TextureRect.new()
+	skirt.name = "BossBackdropSkirt"
+	skirt.texture = tex
+	skirt.stretch_mode = TextureRect.STRETCH_TILE
+	# Darkened, not blackened: the art still reads through it as underground
+	# rock rather than as an empty band.
+	skirt.modulate = Color(0.42, 0.40, 0.50, 1.0)
+	skirt.z_index = -6
+	skirt.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	skirt.position = Vector2(-400.0, floor_y - 4.0)
+	skirt.size = Vector2(level_data.bounds.x + 800.0, 1200.0)
+	add_child(skirt)
+	_boss_backdrop_skirt = skirt
 
 ## The ground segment's own Y at a given world X — used to align the boss
 ## backdrop's illustrated floor with the REAL collision surface instead of a
@@ -215,15 +334,56 @@ func _setup_geometry() -> void:
 	# read as solid ledges over the painted backdrop.
 	for segment in level_data.ground_segments:
 		_create_platform(segment.x, segment.y, segment.z, segment.w, level_data.platform_body_color, level_data.platform_lip_color)
+	# FLOATING platforms are FULLY SOLID — the same as ground.
+	#
+	# Founder, 2026-08-24 (P0, with a screen recording): "Lil Blunt can't land on
+	# the thicker solid platforms ... falls through them" AND, same report,
+	# "the boss walks through the blocks ... nothing Lil Blunt can leverage for
+	# distance, fight impossible." Both halves are ONE root cause: PR #52 made
+	# every floating platform ONE-WAY (solid-from-above, passable-from-the-side).
+	# That regressed two things at once —
+	#   (1) the PLAYER falls through: a one-way plate only catches you on the
+	#       exact frame you cross its top surface DOWNWARD; approach it rising,
+	#       or clip its side, and you pass straight through. That is the video.
+	#   (2) the BOSS phases through: with the side removed, the two body-height
+	#       platforms — (300,500) and (1100,450) — stopped being walls, so the
+	#       Auditor walked through them and the player had no geometry to gain
+	#       distance behind. "Fight impossible."
+	#
+	# The founder's instruction is explicit and rules out the tempting shortcut
+	# (a per-boss collision exception): "Spacing platforms must BLOCK the boss;
+	# he must still chase." A collision exception makes the boss NOT blocked —
+	# it re-creates (2). Grok 4.6's audit (artifacts/dispatch_2026-08-24_boss1_
+	# walkthrough/02_GROK_OUT.md) put it bluntly: ignore the two walls for the
+	# boss "and he walks through the only walls in the level ... leverage is
+	# still zero. That is the reject text."
+	#
+	# So the platforms go back to FULLY SOLID for everyone. The player lands on
+	# all eight again (fixes (1)); the two body-height platforms are hard walls
+	# to the boss again (gives leverage). The boss is NOT permanently pinned by
+	# them because auditor.gd already carries the leap + air-jump + ceiling-
+	# sidestep traverse machinery built for exactly this ("use the block to
+	# launch himself over the platform", founder 2026-08-20) — PR #52's one-way
+	# is what had left that machinery with no walls to climb. Measured:
+	# tests/auditor_solid_wall_traverse_test.gd proves he still closes the full
+	# stage over solid walls without pin/pogo/sky-climb.
 	for platform in level_data.platforms:
-		_create_platform(platform.x, platform.y, platform.z, platform.w, level_data.floating_platform_body_color, level_data.floating_platform_lip_color)
+		_create_platform(platform.x, platform.y, platform.z, platform.w, level_data.floating_platform_body_color, level_data.floating_platform_lip_color, false, true)
 
 const BLOCK_TEX := preload("res://src/assets/sprites/tile_block-chain.png")
 
-func _create_platform(x: float, y: float, w: float, h: float, body_color: Color, lip_color: Color = Color(0.5, 0.9, 0.6, 1.0)) -> void:
+func _create_platform(x: float, y: float, w: float, h: float, body_color: Color, lip_color: Color = Color(0.5, 0.9, 0.6, 1.0), one_way: bool = false, soft_platform: bool = false) -> void:
 	var plat := StaticBody2D.new()
 	plat.position = Vector2(x, y)
 	plat.collision_layer = 1
+	# FLOATING platforms are SOLID (the player lands on them) but tagged as a
+	# boss "soft platform": the Auditor is BLOCKED by them on his ground chase
+	# (that block is the founder's requested leverage), and only phases through
+	# them during the brief, telegraphed wall-vault arc (auditor.gd) so his 220px
+	# body clears the dense pocket geometry without pogoing. Ground segments are
+	# never tagged — the floor must always stop the boss too.
+	if soft_platform:
+		plat.add_to_group("boss_soft_platform")
 
 	# Dark base under the blocks so gaps between tiles read as solid, not
 	# see-through, and the platform still contrasts the painted backdrop.
@@ -292,11 +452,62 @@ func _create_platform(x: float, y: float, w: float, h: float, body_color: Color,
 	shape.size = Vector2(w, h)
 	col.shape = shape
 	col.position = Vector2(w / 2, h / 2)
+	# One-way (floating ledges only): solid to land on from above, passable
+	# from the side/below. Godot's one-way normal points "up" in the shape's
+	# local space by default, which is what we want for a floor plate.
+	col.one_way_collision = one_way
 	plat.add_child(col)
 
 	add_child(plat)
 
+## Override point (default no-op): a level that carves a deep vault under one
+## of its own pits appends its vault's world x-range here, e.g.
+## `kill_zone_gaps.append(Vector2(2340, 2560))`. Called from `_ready()` BEFORE
+## `_setup_kill_zone()` — the vault's x-position is a design-time constant in
+## the level script (the same literal already used for the vault's own
+## `global_position`), so this does not need the vault node to exist yet.
+func _register_kill_zone_gaps() -> void:
+	pass
+
+## ONE full-width strip when `kill_zone_gaps` is empty — byte-identical to
+## this project's original behavior, so every level that doesn't register a
+## gap is completely unaffected. A level that DOES register one (Part B/C's
+## downward vaults) gets N strips instead, skipping the registered x-ranges,
+## so a vault chamber can safely extend past the old kill_zone_y+175±200 band
+## — the vault's own solid floor is the real guard against falling through
+## (same "the floor is the guard" proof the vaults were already built on),
+## this just stops the LEVEL-WIDE band from also claiming that same airspace.
 func _setup_kill_zone() -> void:
+	var full_width: float = level_data.bounds.x
+	var y_centre: float = level_data.kill_zone_y + 175.0
+	for interval: Vector2 in _kill_zone_strip_intervals(full_width):
+		_build_kill_zone_strip(interval.x, interval.y, y_centre)
+
+## Splits [0, full_width] into strips excluding `kill_zone_gaps`. Gaps are
+## sorted and clamped to the level bounds first so registration order and
+## slightly-oversized ranges can't produce overlapping or out-of-bounds
+## strips.
+func _kill_zone_strip_intervals(full_width: float) -> Array[Vector2]:
+	if kill_zone_gaps.is_empty():
+		return [Vector2(0.0, full_width)]
+	var gaps := kill_zone_gaps.duplicate()
+	gaps.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.x < b.x)
+	var intervals: Array[Vector2] = []
+	var cursor := 0.0
+	for gap: Vector2 in gaps:
+		var gap_lo: float = clampf(gap.x, 0.0, full_width)
+		var gap_hi: float = clampf(gap.y, 0.0, full_width)
+		if gap_lo > cursor:
+			intervals.append(Vector2(cursor, gap_lo))
+		cursor = maxf(cursor, gap_hi)
+	if cursor < full_width:
+		intervals.append(Vector2(cursor, full_width))
+	return intervals
+
+func _build_kill_zone_strip(x_lo: float, x_hi: float, y_centre: float) -> void:
+	var w: float = x_hi - x_lo
+	if w <= 0.0:
+		return
 	var kill_zone := Area2D.new()
 	kill_zone.add_to_group("hazard")
 	# CRITICAL: Area2D.new() defaults collision_mask to 1 (World). The player
@@ -310,10 +521,10 @@ func _setup_kill_zone() -> void:
 	# also catches a player who clips slightly into level geometry.
 	var col := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
-	shape.size = Vector2(level_data.bounds.x, 400)
+	shape.size = Vector2(w, 400)
 	col.shape = shape
 	kill_zone.add_child(col)
-	kill_zone.position = Vector2(level_data.bounds.x / 2, level_data.kill_zone_y + 175)
+	kill_zone.position = Vector2(x_lo + w / 2.0, y_centre)
 	kill_zone.body_entered.connect(func(body: Node2D) -> void:
 		# Pit falls are a HARD fail: pit_death() plays the devastating sound and
 		# costs a LIFE (not just health). Falls back to die() only if a custom
@@ -374,7 +585,30 @@ func _setup_boss_arena() -> void:
 		return
 	var end_x: float = level_data.boss_arena.get("end_x", 0.0)
 	if end_x > 0:
-		_create_wall(end_x, 400, 20, 600)
+		# PLAYER-ONLY, exactly like the west seal below.
+		#
+		# Founder, 2026-08-22 (~50th "why don't you make boss3 move"): this call
+		# had NO player_only flag, so the east wall kept the default
+		# collision_layer 1 ("World") — which both bosses mask (13 = 1|4|8). The
+		# wall built to stop the PLAYER leaving the arena was solid to the BOSS.
+		#
+		# Measured on the real level_03 arena with the player parked at x=4390:
+		# the Claim Jumper's right edge pinned at exactly 4390 (the wall's west
+		# face; the wall spans 4390-4410) with velocity.x = 0, and he sat there
+		# FROZEN FOR 13.05s of a 15s run. His centre stopped at 4250 — a full
+		# 126px short of the 4376 his own `_clamp_to_arena()` would allow, and
+		# squarely inside the minecart/gold band the founder circled.
+		#
+		# Kimi K3 confirmed the geometry independently: body span at clamp is
+		# [4236, 4516] against a wall face at 4390, so the body necessarily
+		# protrudes 126px and `is_on_wall()` latches while overlapped — and
+		# raising HOP velocity cannot touch it, because it is a horizontal
+		# problem, not a vertical one.
+		#
+		# The boss is bounded by `_clamp_to_arena()`. The wall only ever needed
+		# to bound the player, so it moves to the same dedicated ArenaSeal layer
+		# the west seal uses.
+		_create_wall(end_x, 400, 20, 600, true)
 
 ## Arm the entry wall. Called from each level's _on_boss_trigger; the wall is
 ## not built until the player has genuinely crossed into the arena, because
@@ -391,6 +625,11 @@ func arm_boss_arena_seal() -> void:
 var _seal_x: float = -1.0
 ## The entry wall, once raised. Kept so it can be taken back DOWN — see below.
 var _seal_wall: StaticBody2D = null
+## True once the player has genuinely got INSIDE the boss arena this engagement.
+## Gates the fight teardown below — see the regression note there. Without it,
+## a boss trigger that overlaps the seal line despawns its own boss on the frame
+## after it spawns.
+var _seal_player_inside: bool = false
 
 ## Raises the entry wall behind the player, and lowers it again if they end up
 ## back outside.
@@ -410,18 +649,134 @@ func _process(_delta: float) -> void:
 	if _seal_wall == null:
 		# 60px of clearance so the wall never spawns on top of the player.
 		if p.global_position.x > _seal_x + 60.0:
-			_seal_wall = _create_wall(_seal_x, 400, 20, 600)
+			_seal_wall = _create_wall(_seal_x, 400, 20, 600, true)
 	elif p.global_position.x < _seal_x - 40.0:
 		# Player is back outside (death + respawn at a western checkpoint):
 		# drop the wall so they can walk in and re-engage.
 		_seal_wall.queue_free()
 		_seal_wall = null
+	# END THE FIGHT ONLY ONCE THE PLAYER HAS ACTUALLY BEEN INSIDE.
+	#
+	# CRITICAL REGRESSION THIS GUARDS (founder, 2026-08-20: "Now the 2nd boss is
+	# not present at all!!! I cant even progress to the next stage!!!"). The
+	# previous revision made the teardown UNCONDITIONAL on the player's x, which
+	# looked safer and was catastrophic:
+	#
+	#   level_02's BossTrigger is a 200x800 box centred at x=3700, so it spans
+	#   3600..3800. `_seal_x` is that level's arena start_x = 3700, so the
+	#   teardown line sits at 3660 — INSIDE the trigger. Walking in from the west
+	#   fires `_on_boss_trigger` at x=3600, the boss spawns, and on the very next
+	#   _process frame the player is still at ~3600 < 3660, so the fight is torn
+	#   down and the boss freed roughly one frame after appearing. The player
+	#   then walks into an empty arena, and because `body_entered` only fires on
+	#   ENTRY they are already inside the trigger — no second entry event ever
+	#   arrives, so the boss never comes back and the stage cannot be completed.
+	#
+	# The rule is now the semantically correct one: you can only LEAVE somewhere
+	# you have ENTERED. `_seal_player_inside` latches when the player gets
+	# properly into the arena (the same +60 threshold that raises the wall), and
+	# only then does retreating past the line end the fight. It is cleared on
+	# teardown so a fresh walk-in re-arms the whole cycle.
+	if p.global_position.x > _seal_x + 60.0:
+		_seal_player_inside = true
+	elif _seal_player_inside and p.global_position.x < _seal_x - 40.0:
+		_seal_player_inside = false
+		_end_boss_fight()
+
+## THE "BOSS DOESN'T MOVE" SHARED ROOT CAUSE (2026-08-19 forensic pass).
+##
+## Every boss is clamped STRICTLY INSIDE its own arena box (distributor and
+## claim_jumper via _clamp_to_arena; see each boss's own arena_min/arena_max).
+## The player, however, could be OUTSIDE that box while the fight was still
+## live — the seal above drops the moment they walk back west, but nothing
+## ended the fight, so the boss stayed alive, kept pursuing a target it was
+## structurally forbidden from reaching, and sat welded to its clamp.
+##
+## Measured, not assumed: photogrammetry on the founder's own Stage 2
+## screenshot puts Lil Blunt at world x~3109 — 591 px WEST of that arena's
+## start_x (3700) — while the Distributor sits at ~3813, i.e. pinned on his
+## west clamp (his reachable centre range is only [3820, 4280]). The Stage 1
+## shot shows the same shape: player retreated ~900 px west, boss never left
+## the arena mouth. That is exactly "THE BOSS IS NOT FUCKING MOVING": he
+## genuinely cannot, and no amount of speed/acceleration/standoff tuning
+## (this repo has ~10 such attempts recorded in comments) can fix a boss whose
+## target is outside his own permitted world.
+##
+## It also explains the companion complaint that the Stage 3 boss is "way too
+## easy to defeat": a wall-pinned boss is a stationary target that can be shot
+## from safety, outside his reach, indefinitely.
+##
+## The fix is to make the two rules stop contradicting each other. The fight is
+## only coherent while the player is inside the arena, so leaving it ENDS the
+## fight rather than freezing it: the boss is freed and the level's own
+## `_boss_arena_active` latch is cleared, so walking back in re-runs
+## `_on_boss_trigger` and starts a clean fight.
+##
+## This deliberately does NOT just re-seal the player in. The seal's drop
+## behaviour exists to prevent a real soft-lock — checkpoints sit WEST of every
+## arena, so a player who dies mid-fight respawns outside a wall that is
+## already up, permanently locked out of a fight they can neither finish nor
+## leave. Ending the fight preserves that escape hatch instead of trading one
+## trap for another.
+func _end_boss_fight() -> void:
+	# `_boss_arena_active` is declared on each concrete level script, not here,
+	# so it is cleared dynamically. get()/set() resolve it on the instance; the
+	# guard keeps this a no-op for any level that has no boss.
+	if get("_boss_arena_active") == null:
+		return
+	set("_boss_arena_active", false)
+	for boss in get_tree().get_nodes_in_group("boss"):
+		if is_instance_valid(boss):
+			boss.queue_free()
 
 ## Returns the wall so the boss-arena seal can take it back down again
 ## (existing callers ignore the return value).
-func _create_wall(x: float, y: float, w: float, h: float) -> StaticBody2D:
+## `player_only` walls collide with the player and nothing else.
+##
+## The boss-arena SEAL used a plain StaticBody2D on the default World layer, so
+## it blocked the BOSS as well as the player. That is the Stage 1 half of "the
+## boss cant get passed this point": the Auditor has no arena clamp at all, yet
+## a probe with the player parked at the arena's west edge (x=2830) measured him
+## hard-stopped at x=2905 — his body flush against the seal wall at 2800, 75px
+## short of the player, forever. The wall was caging the boss out of the very
+## pocket the player was standing in.
+##
+## Layer 8 (Player) is the only bit the player's own mask reads, so a
+## player-only wall still seals the player in while the boss can cross it.
+## Containing the BOSS is the arena clamp's job, not this wall's.
+func _create_wall(x: float, y: float, w: float, h: float, player_only: bool = false) -> StaticBody2D:
 	var wall := StaticBody2D.new()
 	wall.position = Vector2(x, y)
+	if player_only:
+		# DEDICATED LAYER 9 ("ArenaSeal", value 256) — not 8, and not 2.
+		#
+		# Founder, 2026-08-22 (~50th "why the fuck don't you make boss 3 move"):
+		# this said 8, and `player_only` was simply not true. project.godot names
+		# layer 4 = value 8 = "Collectibles", and BOTH bosses carry
+		# collision_mask = 13 (World|Enemies|Collectibles) — so the wall built to
+		# seal the PLAYER into the arena was solid to the boss as well.
+		#
+		# Measured on the real level_03 arena with a fleeing bot: the Claim
+		# Jumper's x pinned at 3710 against this wall (arena start_x = 3700,
+		# wall spans 3690-3710) with velocity.x forced to 0, then pogo-hopped up
+		# its face over and over. Across an 18s chase he covered 340px of a
+		# 700px arena and never once got east of his own spawn.
+		#
+		# The obvious repair is layer 2 ("Player"), the one existing layer the
+		# player masks (11 = 1|2|8) that the bosses do not (13 = 1|4|8). Grok
+		# 4.6's audit rejected that, correctly: `_create_wall` is shared by
+		# EVERY level's seal, and enemy hurtboxes mask bit 2 (mask 70 = 2|4|64).
+		# A wall wearing the Player layer would proc every "I hit the player"
+		# listener in the game against an invisible slab at the arena mouth —
+		# hit sparks on empty air, contact-damage enemies biting the doorway,
+		# aim/aggro queries locking onto the wall's AABB. `is_in_group("player")`
+		# guards most of that, but "most" is not a collision-identity guarantee.
+		#
+		# So the seal gets its OWN layer that nothing else masks, and only the
+		# player's body opts into it (player.tscn mask 11 -> 267). The boss is
+		# then bounded by his own `_clamp_to_arena()`, which is what was
+		# supposed to bound him all along.
+		wall.collision_layer = 256
 	var col := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
 	shape.size = Vector2(w, h)
@@ -494,10 +849,22 @@ func _on_difficulty_ready() -> void:
 		var b: Vector2 = level_data.checkpoints[level_data.checkpoints.size() - 1]
 		EntitySpawner.spawn("checkpoint", (a + b) / 2.0 + Vector2(0, -4), self,
 			{"checkpoint_id": 90, "level_index": level_data.level_index})
-	# 3. Heavy retriers get a Hint Leaf: touch it and the route to the next
-	#    checkpoints glows for 5 seconds.
-	if DifficultyManager.hint_leaf:
-		_spawn_hint_leaf()
+	# 3. Hint Leaf — DISABLED (founder, 2026-08-19).
+	#
+	# "I noticed these leaves in the very 1st point of each stage all of a
+	# sudden. Remove them. They have no function."
+	#
+	# They were adaptive difficulty: DifficultyManager.hint_leaf turns on for
+	# players who die repeatedly, and _spawn_hint_leaf() drops a green weed leaf
+	# at player_spawn + (90,-20) which lights the checkpoint route for 5s. That
+	# explains both halves of his report — "all of a sudden" (it switched on
+	# after a run of deaths) and "in the very 1st point of EACH stage" (it is
+	# anchored to every level's spawn). To him it reads as an inert prop,
+	# because its one interaction is invisible until touched.
+	#
+	# The spawner is kept, not deleted, so the mechanic can be reinstated
+	# deliberately (with a readable tell) rather than rebuilt from scratch.
+	# Nothing else calls it, so it is simply never invoked today.
 
 ## Glowing leaf near spawn; on pickup, draws a dotted guide line through the
 ## level's checkpoints for 5s. A nudge, not a walkthrough.

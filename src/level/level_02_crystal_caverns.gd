@@ -2,6 +2,12 @@ extends LevelBase
 
 var _boss_arena_active: bool = false
 
+## Session 4: the Diamond Vault is now a FULL SEPARATE SCENE reached through a
+## walk-into door (like Blaze Rush / the Smoke Lounge), NOT an in-level pit —
+## so there is no longer a downward chamber to exclude from the kill zone. The
+## old `kill_zone_gaps` registration is removed; `_setup_depth_routes()` fills
+## the former drop pit with solid ground and places a `vault_door` on it.
+
 func _ready() -> void:
 	level_data = preload("res://src/resources/level_02_data.tres")
 	super()
@@ -40,6 +46,11 @@ func _setup_depth_routes() -> void:
 		# level's own .tres only ever placed 2 coin_sol, so converting the
 		# trail is what actually changes what he sees while playing.
 		EntitySpawner.spawn("coin_sol", pos + Vector2(0, -34), self)
+		# DIAMONDS token ALONGSIDE the Solana coin, never instead of it —
+		# founder: "that doesnt replace the current Solana coins in stage 2".
+		# Offset right so the pair reads as two distinct pickups rather than
+		# one overlapping smudge (44px triggers need ~48px of separation).
+		EntitySpawner.spawn("coin_diamonds", pos + Vector2(52, -34), self)
 	# VERTICAL SHAFTS — full-height ladders out of the two deadliest drops.
 	#
 	# top_exit_offset is NOT optional here (the default Vector2(0,-20) assumes
@@ -72,6 +83,31 @@ func _setup_depth_routes() -> void:
 		var wall := preload("res://src/level/secret_wall.tscn").instantiate()
 		wall.global_position = wall_pos
 		add_child(wall)
+	# DIAMOND VAULT (session 4) — now a FULL SEPARATE ENVIRONMENT reached by
+	# walking into a door, like Blaze Rush. The old 2400-2500 drop pit is
+	# filled with solid ground so the door sits on walkable floor where the
+	# player used to fall in; the door loads diamond_vault_realm.tscn and the
+	# return portal there brings the player back to this exact spot.
+	var vault_bridge := StaticBody2D.new()
+	vault_bridge.collision_layer = 1
+	var bcol := CollisionShape2D.new()
+	var brect := RectangleShape2D.new()
+	brect.size = Vector2(100, 70)
+	bcol.shape = brect
+	bcol.position = Vector2(2450, 685)  # fills the 2400-2500 pit, surface at y=650
+	vault_bridge.add_child(bcol)
+	var bdeck := ColorRect.new()
+	bdeck.size = Vector2(100, 70)
+	bdeck.position = Vector2(2400, 650)
+	bdeck.color = Color(0.2, 0.28, 0.4, 1.0)  # match the crystal-cavern platform tone
+	vault_bridge.add_child(bdeck)
+	add_child(vault_bridge)
+
+	var diamond_door := preload("res://src/level/vault_door.tscn").instantiate()
+	diamond_door.protocol = "diamonds"
+	diamond_door.realm_path = "res://src/level/diamond_vault_realm.tscn"
+	diamond_door.global_position = Vector2(2450, 650)
+	add_child(diamond_door)
 
 func _on_boss_trigger(body: Node2D) -> void:
 	if body.is_in_group("player") and not _boss_arena_active:
@@ -90,8 +126,15 @@ func _on_boss_trigger(body: Node2D) -> void:
 		# properties BEFORE add_child, the same pre-add contract the carts and
 		# the big axe use.
 		var arena: Dictionary = level_data.boss_arena
-		var ax0: float = float(arena.get("start_x", 0.0)) + 90.0
-		var ax1: float = float(arena.get("end_x", 0.0)) - 90.0
+		# RAW arena bounds. The 90px inset that used to be applied here is gone:
+		# it was inset from the wrong reference (this boss's origin is its body's
+		# TOP-LEFT, not its centre), so it shrank the boss's reachable centre
+		# range to [3910, 4430] inside a 3700..4400 arena — he could not reach
+		# the western 210px at all, and stood pinned at the clamp whenever the
+		# player fought from the arena entrance. The boss now insets by its own
+		# half-body, which is the only place the body size is actually known.
+		var ax0: float = float(arena.get("start_x", 0.0))
+		var ax1: float = float(arena.get("end_x", 0.0))
 		var ay: float = float(boss_spawn.global_position.y)
 		boss.arena_min = Vector2(ax0, ay - 320.0)
 		boss.arena_max = Vector2(ax1, ay + 120.0)

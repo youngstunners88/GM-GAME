@@ -10,6 +10,22 @@ var _wallet_btn: Button
 
 func _ready() -> void:
     StateMachine.change_state(StateMachine.State.MENU)
+    # S10 T6/T7 — TEST-ONLY boss warp entry. If the web page is loaded with
+    # ?boss=N (N=2 or 3), route straight to that level so its in-level warp
+    # (LevelBase._maybe_debug_boss_warp) can drop the player into the boss arena
+    # for a Playwright capture — a blind driver cannot beat Level 1's boss, which
+    # blocked every prior Distributor capture. No ?boss param => normal menu.
+    if _boot_boss_warp():
+        return
+    # TEST-ONLY — ?lounge=1 routes straight into the Smoke Lounge so the founder's
+    # brand video can be verified in a real browser (the lounge is a secret realm
+    # a blind driver can't reach). No param => normal menu.
+    if _boot_lounge():
+        return
+    # TEST-ONLY — ?stage=N routes to the START of level N so the founder's track
+    # screenshots (props, carts, collectibles, HUD) can be reproduced exactly.
+    if _boot_stage_warp():
+        return
     play_btn.pressed.connect(_on_play)
     continue_btn.pressed.connect(_on_continue)
     title.text = "LIL BLUNT\nTHE SMOKE REALM"
@@ -28,6 +44,62 @@ func _ready() -> void:
     var tween := create_tween().set_loops()
     tween.tween_property(title, "scale", Vector2(1.05, 1.05), 0.8)
     tween.tween_property(title, "scale", Vector2(1.0, 1.0), 0.8)
+
+## TEST-ONLY (S10 T6/T7). Reads ?boss=N on web; if N is a valid boss level
+## (1-3), routes straight there and returns true so _ready stops setting up
+## the menu. Returns false (no-op) on a normal load or any non-web build.
+##
+## Extended to include 1 (2026-08-18, PROMPT "Almost_Better" residual) so the
+## Auditor's own mobility regression ("cant jump beyond this point anymore")
+## can be captured directly, the same way ?boss=2/3 has always let a
+## Playwright agent reach Distributor/Claim Jumper without playing the whole
+## campaign first.
+func _boot_boss_warp() -> bool:
+    if not OS.has_feature("web"):
+        return false
+    var q: Variant = JavaScriptBridge.eval(
+        "new URLSearchParams(window.location.search).get('boss') || ''", true)
+    var s := str(q)
+    if not s.is_valid_int():
+        return false
+    var n := int(s)
+    if n < 1 or n > 3:
+        return false
+    # Mark the target unlocked so a fresh save can't bounce the load, then route.
+    GameManager.highest_unlocked_level = maxi(GameManager.highest_unlocked_level, n)
+    SceneRouter.load_scene(GameManager.level_scene(n), SceneRouter.Transition.FADE)
+    return true
+
+## TEST-ONLY. Reads ?stage=N (1-3) and routes to the START of that level.
+## Distinct from ?boss=N, which loads the level AND warps to the boss arena —
+## verifying the founder's TRACK screenshots (props, carts, collectibles, HUD)
+## needs the level played from its opening, which ?boss= skips past.
+func _boot_stage_warp() -> bool:
+    if not OS.has_feature("web"):
+        return false
+    var q: Variant = JavaScriptBridge.eval(
+        "new URLSearchParams(window.location.search).get('stage') || ''", true)
+    var s := str(q)
+    if not s.is_valid_int():
+        return false
+    var n := int(s)
+    if n < 1 or n > 3:
+        return false
+    GameManager.highest_unlocked_level = maxi(GameManager.highest_unlocked_level, n)
+    SceneRouter.load_scene(GameManager.level_scene(n), SceneRouter.Transition.FADE)
+    return true
+
+## TEST-ONLY. Reads ?lounge=1 on web and routes into the Smoke Lounge so the
+## founder's brand video can be captured in a browser. No-op otherwise.
+func _boot_lounge() -> bool:
+    if not OS.has_feature("web"):
+        return false
+    var q: Variant = JavaScriptBridge.eval(
+        "new URLSearchParams(window.location.search).get('lounge') || ''", true)
+    if str(q) != "1":
+        return false
+    SceneRouter.load_scene("res://src/level/secret_realm.tscn", SceneRouter.Transition.FADE)
+    return true
 
 ## Movie/Video-Game-Layer entry points on the hub (main menu): the Oracle,
 ## the on-chain leaderboard, community lore, and the community funnel. Each

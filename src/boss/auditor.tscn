@@ -4,10 +4,10 @@
 [ext_resource type="Script" path="res://src/boss/boss_sprite.gd" id="9_bspr"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_auditor"]
-size = Vector2(168, 168)
+size = Vector2(220, 220)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hitbox"]
-size = Vector2(168, 168)
+size = Vector2(175.5, 209.5)
 
 [node name="Auditor" type="CharacterBody2D"]
 collision_layer = 4
@@ -21,7 +21,7 @@ art_faces_right = false
 
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(84, 84)
+position = Vector2(110, 110)
 shape = SubResource("RectangleShape2D_auditor")
 
 [node name="Hitbox" type="Area2D" parent="."]
@@ -31,5 +31,5 @@ monitoring = false
 monitorable = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
-position = Vector2(84, 84)
+position = Vector2(112.6, 104.8)
 shape = SubResource("RectangleShape2D_hitbox")

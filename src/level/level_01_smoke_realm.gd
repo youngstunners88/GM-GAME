@@ -13,7 +13,22 @@ func _ready() -> void:
     add_child(door)
     _setup_depth_routes()
     AudioManager.set_reverb_profile("forest")
-    AudioManager.play_playlist(["res://src/assets/music/level01_theme.ogg", "res://src/assets/music/level01_theme_alt.ogg", "res://src/assets/music/lil_blunt_theme.mp3"])
+    # Founder (LEVEL1_MUSIC_ORDER_BOSS1_SIZE_CARTS_CHASE, 2026-08-18): "Song A
+    # must always be the first song that plays in Level 1, no matter what
+    # (cold start, machine on, etc.)... Song B must also feature in Level 1
+    # ... Song C must be removed completely." level01_theme_always_first.mp3
+    # is the founder-supplied track locked to position 0 with force_first=true
+    # (see AudioManager.play_playlist) so it is never left to the shuffle.
+    # level01_theme_oxbow.mp3 is the founder's earlier "Oxbow Lake" supply,
+    # already confirmed in rotation. level01_theme_alt.ogg (the track the
+    # founder asked removed) is deleted from the project entirely, not just
+    # dropped from this array.
+    AudioManager.play_playlist([
+        "res://src/assets/music/level01_theme_always_first.mp3",
+        "res://src/assets/music/level01_theme_oxbow.mp3",
+        "res://src/assets/music/level01_theme.ogg",
+        "res://src/assets/music/lil_blunt_theme.mp3",
+    ], true)
     AudioManager.play_voice("stage1_intro")
 
 ## Task #23 — three routes per section (ground y=650, plats y=300..500):
@@ -35,29 +50,49 @@ func _setup_depth_routes() -> void:
         EntitySpawner.spawn("coin", pos + Vector2(34, -34), self)
     # Escape-route ladders out of the two deadliest pit approaches.
     #
-    # Neither ladder set a custom top_exit_offset, so both fell back to the
-    # generic default Vector2(0,-20) ("stand directly above my own x").
     # Ladder 1 (x=770) happens to land inside platform (750,350,120,20)'s
     # x-range [750,870] by coincidence, so it was never visibly broken.
-    # Ladder 2 (x=2345) does NOT: the nearest platform is (2400,450,120,20),
-    # whose left edge starts 55px to the right — topping out with the
-    # default offset drops the player in open air short of the platform.
-    # This is the confirmed "climb to the top of a ladder with a platform
-    # and NOT land on it" bug (level_02's ladders already had this tuning;
-    # level_01's never did). Offset computed the same way level_02's were:
-    # target = (platform_x + width/2, platform_y - 20).
     var ladder1 := preload("res://src/level/ladder.tscn").instantiate()
     ladder1.global_position = Vector2(770, 350)
     ladder1.height = 300.0
     add_child(ladder1)
 
+    # Ladder 2 (x=2345). Founder, 2026-08-21 (final presentation residual):
+    # circled platform (2400,450,120,20) and demanded it be REMOVED outright
+    # — a headless real-physics probe confirmed the Auditor was permanently
+    # wall-stuck at x=2520 (that platform's exact right edge) while chasing a
+    # fleeing player back through the level, exactly this founder's repeated
+    # complaint. This ladder used to start AT that platform's height (450)
+    # and its top-exit was tuned to land ON it — both now dangling on a
+    # removed object. Re-grounded to climb from the real floor (y=650, this
+    # stretch's ground segment is continuous, so nothing is lost) up to the
+    # SAME absolute top height as before (250), and reverted to the generic
+    # default top-exit offset since there is no longer a specific platform to
+    # target — the player tops out near the high coin/ring collectibles and
+    # falls back to the (still continuous) ground below, same as any ladder
+    # with no adjacent platform.
     var ladder2 := preload("res://src/level/ladder.tscn").instantiate()
-    ladder2.global_position = Vector2(2345, 450)
-    ladder2.height = 200.0
-    ladder2.top_exit_offset = Vector2(115, -20)  # -> platform centre (2460, 430)
+    ladder2.global_position = Vector2(2345, 650)
+    ladder2.height = 400.0
     add_child(ladder2)
-    # EXPLORER — secret walls hugging the gap edges and the far quiet corner.
-    for wall_pos: Vector2 in [Vector2(468, 586), Vector2(1368, 586), Vector2(2768, 586)]:
+    # EXPLORER — secret walls as OVERHEAD discoverables, not corridor gates.
+    #
+    # Founder, 2026-08-23: "Lil Blunt goes to the end of Stage 1 and gets stuck,
+    # cannot return." Measured on the real level: a WALKING player driven west
+    # from the stage end (x=3350) walls at exactly x=2800 against the secret
+    # wall at (2768,586) and cannot pass — these 32x32 bodies floated at y=586,
+    # i.e. right at the player's head height, straddling the ground corridor of
+    # a full-stage-HUNT level with no seal, so two-way travel was blocked for
+    # any player without Blaze/pickaxe to smash them. (The Auditor already
+    # carried explicit collision exceptions for these same walls — see
+    # auditor.gd — which is the boss half of the same mistake.)
+    #
+    # Raised 586 -> 500 so they sit at the SAME overhead height as this level's
+    # breakable_blocks, which the player has walked under both directions for
+    # ~50 sessions with no report. The shimmer secret stays discoverable and
+    # smashable (jump or Blaze puff up into it); it just no longer gates the
+    # corridor. Boss is unaffected (it ignores them via collision exception).
+    for wall_pos: Vector2 in [Vector2(468, 500), Vector2(1368, 500), Vector2(2768, 500)]:
         var wall := preload("res://src/level/secret_wall.tscn").instantiate()
         wall.global_position = wall_pos
         add_child(wall)

@@ -1,0 +1,10 @@
+<!-- dispatched: x-ai/grok-4.6
+     prompt: /tmp/claude-0/-home-user-GM-GAME/a77cc0d7-ba64-5875-85a6-fe6f7aa41b68/scratchpad/prompts/grok-pressure-barrier.md
+     files inlined: 0
+     tokens: 804 in / 1132 out
+     cost: $0.0084
+     NOTE: unvalidated model output. Claude must verify every claim
+     against the real files before any of it informs code. -->
+**Q1.** Yes — this is past the “punishing but fair” line for a 2D skill-shot fight. At ~300–350 px/s run, a 750–1010 px/s non-redirectable shard crosses a typical 300–400 px dodge lane in ~0.3–0.5 s: one jump, no lateral outrun. One such shot with a clear telegraph can still read as hard. A phase-3 barrage of up to 4 straight shards does not: spacing collapses into a moving wall, and the only remaining answer is frame-tight vertical dodge. Orbs at 650–910 are the same class. Speeding projectiles to paper over a chase that still “doesn’t read” under the camera is the wrong lever — it makes the fight *cheaper*, not more chase-correct. Hard stays fair while the player can still choose jump / drop / sidestep after seeing the shot; it becomes cheap the moment lateral movement is dead and missing one of four lines is a hit. Cap shards nearer 2× player speed (or keep 750 only if count, spread, and telegraph are cut), and fix chase readability with camera lead, boss accel, or spacing — not more px/s.
+
+**Q2.** A boss that can permanently fail to enter or leave its own arena is categorically disqualifying; a 140 px gap is not worth that failure mode. The smashable wall was load-bearing geometry dressed as an easter egg, not a discovery loop — once it was the only floor, “secret” was already broken. Filling it the same way as 2620–2760 is the right fix. Rhythm lost is a short hop, not a set-piece. If the founder wanted the smash beat, put an optional secret wall on a side path or lore alcove that never gates arena access.

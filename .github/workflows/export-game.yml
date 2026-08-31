@@ -37,6 +37,17 @@ on:
       # showing the stale failure it was meant to fix. Found the hard way on
       # 1f5a9a1, which triggered no workflow at all.
       - 'scripts/**'
+      # secure-build-checklist was relocated from scripts/ to this skill path
+      # (founder request, PR #21) and immediately reproduced the EXACT bug the
+      # comment above documents: the scanner and its rules moved out from under
+      # the path filter, so a commit that only touched the security gate
+      # (checklist.json, audit.ts) triggered NO workflow at all — silently,
+      # with no error, on the very next commit after the move. Caught only by
+      # noticing the PR's check-run list was empty when it should not have
+      # been. `scripts/security-audit.ts` (the back-compat shim) stayed inside
+      # scripts/** and so still triggered CI on its own, which is exactly how
+      # this went unnoticed for one full commit.
+      - '.claude/skills/secure-build-checklist/**'
   workflow_dispatch:
 
 permissions:
@@ -142,6 +153,27 @@ jobs:
       - name: Create export preset
         run: |
           mkdir -p web/game .godot/editor
+          # CRITICAL: the heredoc below becomes res://export_presets.cfg, which
+          # Godot parses with ConfigFile. ConfigFile does NOT accept `#` comments
+          # — any `#` line makes the WHOLE preset fail to parse ("Unexpected
+          # identifier"), Godot then reports "Invalid export preset name: Web",
+          # and the export produces NO pck. That is exactly what silently
+          # happened for many sessions: explanatory `#` comments had been added
+          # INSIDE this heredoc, the export died, the masked pipe hid it, and the
+          # stale committed build kept shipping to itch. Keep the heredoc PURE
+          # key=value only. Explanations live here, as SHELL comments, OUTSIDE
+          # the heredoc:
+          #   export_filter=all_resources  -> bundle every res:// under the root
+          #   include_filter               -> config.json + taglines are plain
+          #        (non-resource) files the Web3Bridge autoload reads at runtime;
+          #        without force-include the contracts/backend wiring is absent.
+          #   exclude_filter docs/,tests/,prompts/,scripts/ -> dev-only dirs that
+          #        all_resources would otherwise sweep into the .pck (docs/
+          #        captures alone was ~15MB of dead weight).
+          #   variant/thread_support=false -> non-threaded: no SharedArrayBuffer/
+          #        COOP/COEP needed, so it boots on itch.io/iframes/mobile.
+          #   html/head_include            -> loads web/web3.js (copied beside
+          #        index.html post-export) so window.LilBluntWeb3 exists at boot.
           cat > export_presets.cfg << 'EOF'
           [preset.0]
           name="Web"
@@ -150,12 +182,8 @@ jobs:
           dedicated_server=false
           custom_features=""
           export_filter="all_resources"
-          # config.json is a plain (non-resource) file the Web3Bridge autoload
-          # reads at runtime via res://config.json — it must be force-included or
-          # the Movie/Video-Game Layer wiring (contracts, backend URL) is absent
-          # in the exported build.
           include_filter="config.json,src/autoload/share_taglines.json"
-          exclude_filter="*.yml,*.yaml,*.md"
+          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*"
           export_path="web/game/index.html"
           script_export_mode=1
           script_encryption_key=""
@@ -164,16 +192,11 @@ jobs:
           custom_template/debug=""
           custom_template/release=""
           variant/extensions_support=false
-          # Non-threaded export: no SharedArrayBuffer/COOP/COEP requirement, so the
-          # game boots on itch.io, iframes, and mobile browsers without special headers.
           variant/thread_support=false
           vram_texture_compression/for_desktop=true
           vram_texture_compression/for_mobile=false
           html/export_icon=true
           html/custom_html_shell=""
-          # Load the browser-side Web3 bridge (web/web3.js, copied next to
-          # index.html after export) so window.LilBluntWeb3 exists before the
-          # engine boots. Plain window.ethereum, no external CDN — CSP/itch safe.
           html/head_include="<script src=\"web3.js\"></script>"
           html/canvas_resize_policy=2
           html/focus_canvas_on_start=true
@@ -196,9 +219,26 @@ jobs:
 
       - name: Export game to Web
         run: |
+          # pipefail is LOAD-BEARING: without it the step's exit code is `tail`'s
+          # (always 0), so a FAILED export (missing template, resource error) was
+          # silently masked — Godot errored, exit code was swallowed, and the
+          # stale committed web/game (from the checkout) sailed through every
+          # later gate and got shipped to itch. That is the root cause of the
+          # live build being frozen for many sessions: the export never actually
+          # ran, so butler kept re-pushing the same committed .pck ("0 B fresh
+          # data") no matter what source changed. Fail loudly instead.
+          set -o pipefail
+          rm -f web/game/index.pck   # so a no-op export can't leave the stale pck
           "$GODOT_BIN" --headless --verbose --export-release "Web" web/game/index.html 2>&1 | tee export.log | tail -60
           echo "=== web/game/ contents ==="
           ls -lh web/game/ || true
+          # Hard gate: the export MUST have produced a fresh pck this run. If it
+          # didn't, the export silently no-op'd — fail rather than ship stale.
+          if [ ! -f web/game/index.pck ]; then
+            echo "::error::export produced no web/game/index.pck — export failed; see export.log"
+            cat export.log
+            exit 1
+          fi
 
       - name: Verify export output
         run: |
@@ -251,11 +291,11 @@ jobs:
           curl -fsSL https://bun.sh/install | bash
           export PATH="$HOME/.bun/bin:$PATH"
           set +e
-          bun scripts/security-audit.ts --fail-on=high --json > security-report.json
+          bun .claude/skills/secure-build-checklist/scripts/audit.ts --fail-on=high --json > security-report.json
           CODE=$?
           set -e
           # Human-readable summary in the CI log either way.
-          bun scripts/security-audit.ts --fail-on=high || true
+          bun .claude/skills/secure-build-checklist/scripts/audit.ts --fail-on=high || true
           if [ "$CODE" -ne 0 ]; then
             echo "::error::secure-build-checklist BLOCKED the ship (critical/high findings) — see security-report.json"
             exit 1
@@ -281,7 +321,7 @@ jobs:
             {
               echo "## 🔒 Security audit blocked this build"
               echo ""
-              echo "\`scripts/security-audit.ts --fail-on=high\` found blockers:"
+              echo "\`.claude/skills/secure-build-checklist/scripts/audit.ts --fail-on=high\` found blockers:"
               echo '```'
               jq -r '.findings[] | select(.status=="fail" and (.severity=="critical" or .severity=="high")) | "[\(.severity|ascii_upcase)] \(.id) \(.title)\n    fix: \(.fix[0:200])"' security-report.json 2>/dev/null || echo "(see security-report.json artifact)"
               echo '```'
@@ -305,6 +345,14 @@ jobs:
           git config --global user.name "Claude Code Bot"
           git config --global user.email "claude@anthropic.com"
           git add -f web/game/
+          # NEVER commit index.pck. A fresh export is ~120+ MiB — over GitHub's
+          # 100 MiB single-file PUSH cap — so committing it makes `git push`
+          # reject the whole run (and previously forced the export to stay stale
+          # under the cap). The .pck is a build artifact; itch gets the FRESH one
+          # via butler straight from disk (below), and the git tree keeps only
+          # the small loader files for the mirror. Leaving it on disk is the
+          # point — `git reset` unstages without deleting the file.
+          git reset -q -- web/game/index.pck || true
           if ! git diff --cached --quiet; then
             git commit -m "build: export Godot 4.3 game to web (automated CI)"
             # Rebase-and-push with RETRIES.
@@ -351,6 +399,11 @@ jobs:
           touch .nojekyll
           git init -qb gh-pages
           git add -A
+          # Same 100 MiB cap as the main commit: keep the >100 MiB index.pck OFF
+          # the mirror push but leave the file on disk (butler, the next step,
+          # ships the fresh .pck to itch — the primary platform). `git rm
+          # --cached` unstages without deleting from the working tree.
+          git rm -q --cached index.pck 2>/dev/null || true
           git -c user.name="Claude Code Bot" -c user.email="claude@anthropic.com" \
             commit -qm "pages: web build @ ${GITHUB_SHA::7}"
           git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}" gh-pages

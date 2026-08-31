@@ -35,6 +35,23 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { dirname, resolve } from 'path';
 
+// Route through the agent proxy when one is present. This sandbox's egress goes
+// via HTTPS_PROXY, but Node's global fetch (undici) does NOT honor that env var
+// on its own — unlike curl — so without this the wrapper gets a hard 403 from
+// the proxy while a plain `curl` to the same host succeeds (exactly the S10/S11
+// symptom). Best-effort + guarded: no proxy env, or no undici installed, leaves
+// behaviour unchanged (CI, or local dev with no proxy).
+const _proxy = process.env.HTTPS_PROXY || process.env.https_proxy;
+if (_proxy) {
+  try {
+    const { ProxyAgent, setGlobalDispatcher } = await import('undici');
+    setGlobalDispatcher(new ProxyAgent(_proxy));
+  } catch (e) {
+    console.error('WARN: HTTPS_PROXY is set but undici ProxyAgent is unavailable (' +
+      e.message + ') — OpenRouter fetch may 403. Run `npm install undici`.');
+  }
+}
+
 const API_KEY = process.env.OPENROUTER_API_KEY;
 if (!API_KEY) {
   console.error('ERROR: OPENROUTER_API_KEY not set');

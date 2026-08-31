@@ -13,20 +13,29 @@ var activated: bool = false
 
 func _ready() -> void:
     body_entered.connect(_on_body_entered)
-    sprite.color = Color(0.5, 0.5, 1.0, 0.5)
+    # Founder, 2026-08-20 (Block_Fixes_1): the floating blue/green block was
+    # never meant to be a visible object — it's a save trigger. Six screenshots
+    # showed it reading as an unexplained solid box in every level once the
+    # boss-launch fix (StandSurface below) made it physically solid too.
+    # Invisible now; save + audio + snapshot feedback are untouched. The
+    # StandSurface stays solid so the Auditor can still launch off it.
+    sprite.color = Color(0.5, 0.5, 1.0, 0.0)
     sprite.size = Vector2(32, 48)
     $CollisionShape2D.position = Vector2(16, 24)
+    # The StandSurface is an INVISIBLE solid the Auditor used to launch off. With
+    # the wall-vault (auditor.gd) he no longer needs it as a staircase, and a boss
+    # winding up + vaulting an invisible box reads as random jumping — so tag it
+    # for a PERMANENT boss exception instead (like the secret_wall easter eggs).
+    # It stays solid for the player; the boss simply walks through it.
+    var stand := get_node_or_null("StandSurface")
+    if stand != null:
+        stand.add_to_group("boss_phase_through")
 
 func _on_body_entered(body: Node2D) -> void:
     if body.is_in_group("player") and not activated:
         activated = true
         GameManager.save_checkpoint(level_index, checkpoint_id, global_position)
-        sprite.color = Color(0.2, 1.0, 0.2, 0.8)
         AudioManager.play_sfx("powerup")
-        # Flash effect
-        var tween := create_tween()
-        tween.tween_property(sprite, "scale:y", 1.5, 0.2)
-        tween.tween_property(sprite, "scale:y", 1.0, 0.2)
         _snapshot_moment()
 
 ## Snapshot Moment (task #23, Movie-Layer marketing hook): a section-end beat.

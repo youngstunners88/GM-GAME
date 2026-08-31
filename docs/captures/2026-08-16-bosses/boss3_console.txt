@@ -1,0 +1,40 @@
+[log] Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+[log] OpenGL API OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium)) - Compatibility - Using Device: WebKit - WebKit WebGL
+[error] USER WARNING: Invalid state transition: MENU → MENU
+[error]    at: push_warning (core/variant/variant_utility.cpp:1112)
+[log] [SceneRouter] Loading res://src/level/level_03_gold_rush.tscn (nodes before: 50)
+[log] [SceneRouter] Loaded res://src/level/level_03_gold_rush.tscn (sync web path)
+[log] [SceneRouter] Loading res://src/level/level_03_gold_rush.tscn (nodes before: 647)
+[log] [SceneRouter] Loaded res://src/level/level_03_gold_rush.tscn (sync web path)
+[log] [SceneRouter] Loading res://src/level/level_03_gold_rush.tscn (nodes before: 649)
+[log] [SceneRouter] Loaded res://src/level/level_03_gold_rush.tscn (sync web path)
+[error] Failed to load resource: net::ERR_CONNECTION_RESET
+[error] Failed to load resource: net::ERR_CONNECTION_RESET
+[error] TypeError: Failed to fetch
+    at Object.create (http://127.0.0.1:8099/index.js:9:221077)
+    at _godot_js_fetch_create (http://127.0.0.1:8099/index.js:9:221972)
+    at wasm://wasm/086f3c36:wasm-funct
+[log] [SceneRouter] Loading res://src/level/level_03_gold_rush.tscn (nodes before: 659)
+[log] [SceneRouter] Loaded res://src/level/level_03_gold_rush.tscn (sync web path)
+[error] Failed to load resource: net::ERR_CONNECTION_RESET
+[error] TypeError: Failed to fetch
+    at Object.create (http://127.0.0.1:8099/index.js:9:221077)
+    at _godot_js_fetch_create (http://127.0.0.1:8099/index.js:9:221972)
+    at wasm://wasm/086f3c36:wasm-funct
+[log] [SceneRouter] Loading res://src/level/level_03_gold_rush.tscn (nodes before: 657)
+[log] [SceneRouter] Loaded res://src/level/level_03_gold_rush.tscn (sync web path)
+[error] Failed to load resource: net::ERR_CONNECTION_RESET
+[error] TypeError: Failed to fetch
+    at Object.create (http://127.0.0.1:8099/index.js:9:221077)
+    at _godot_js_fetch_create (http://127.0.0.1:8099/index.js:9:221972)
+    at wasm://wasm/086f3c36:wasm-funct
+[error] Failed to load resource: net::ERR_CONNECTION_RESET
+[error] TypeError: Failed to fetch
+    at Object.create (http://127.0.0.1:8099/index.js:9:221077)
+    at _godot_js_fetch_create (http://127.0.0.1:8099/index.js:9:221972)
+    at wasm://wasm/086f3c36:wasm-funct
+[error] Failed to load resource: net::ERR_CONNECTION_RESET
+[error] TypeError: Failed to fetch
+    at Object.create (http://127.0.0.1:8099/index.js:9:221077)
+    at _godot_js_fetch_create (http://127.0.0.1:8099/index.js:9:221972)
+    at wasm://wasm/086f3c36:wasm-funct

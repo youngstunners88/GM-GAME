@@ -86,6 +86,30 @@ var level_gravity_scale: float = 1.0
 var _ladder_zones: int = 0
 var _climbing: bool = false
 var _active_ladder: Node2D = null   # the ladder whose zone we're in (top-out)
+
+## ANTI-DEADLOCK HEARTBEAT (merged 2026-08-26 residual, Qwen autopsy). The
+## founder is STILL frozen on the Stage-3 mushroom/ladder platform after the
+## grow-wedge fix — and shot_1 shows it happening with NO big-mode, so it is not
+## (only) the grow wedge: a stranded climb flag, a `move_and_slide` wedge, or a
+## stuck busy/dying flag can pin him too. This is the safety net that guarantees
+## he can never stay frozen while actively trying to move; the specific root
+## cause is still logged and pursued, but the player is never left stuck for the
+## founder regardless of which cause hit.
+var _stuck_anchor: Vector2 = Vector2.ZERO
+var _stuck_timer: float = 0.0
+var _heartbeat_fired: bool = false   # log-once so the root cause isn't hidden forever
+const STUCK_LIMIT: float = 1.4       # seconds of "input held, no movement" before force-unstick
+
+## Rolling "last safe ground" buffer for death respawn. Two slots so a pit
+## death respawns at the sample BEFORE the crumbling lip, not on the edge the
+## player just walked off. Sampled ~2x/sec while grounded (see _physics_process).
+## Founder (session 4): dying in Stage 3 "he appears somewhere else!!! He must
+## reappear exactly or close to where he died." Root cause: _respawn_or_game_over
+## fell back to get_checkpoint(1) — a LEVEL-1 coordinate — when the current
+## level had no checkpoint; this replaces that with the real death-adjacent spot.
+var _last_safe_position: Vector2 = Vector2.ZERO
+var _prev_safe_position: Vector2 = Vector2.ZERO
+var _safe_pos_timer: float = 0.0
 @export var climb_speed: float = 150.0
 
 @onready var sprite: LilBluntVisual = $Visual
@@ -106,6 +130,7 @@ func _ready() -> void:
 	hurtbox.body_entered.connect(_on_hurtbox_body_entered)
 	aura.body_entered.connect(_on_aura_body_entered)
 	ScreenShake.register_camera(camera)
+	GameManager.blaze_celebration.connect(_on_blaze_celebration)
 
 	if MobileInputHandler:
 		MobileInputHandler.touch_jump.connect(_on_mobile_jump)
@@ -126,6 +151,16 @@ func _physics_process(delta: float) -> void:
 	if not StateMachine.is_playing():
 		return
 
+	# Roll the "last safe ground" buffer while grounded, ~2x/sec. Two slots so a
+	# fall respawns at the sample before the lip, not the edge just left (see the
+	# field comment). Cheap; runs every frame but only samples on the timer.
+	if is_on_floor() and not _dying:
+		_safe_pos_timer -= delta
+		if _safe_pos_timer <= 0.0:
+			_safe_pos_timer = 0.5
+			_prev_safe_position = _last_safe_position if _last_safe_position != Vector2.ZERO else global_position
+			_last_safe_position = global_position
+
 	var speed_mult: float = power_up_handler.speed_multiplier
 	var jump_mult: float = power_up_handler.jump_multiplier
 	var sprint_mult: float = input_handler.get_sprint_multiplier()
@@ -140,6 +175,30 @@ func _physics_process(delta: float) -> void:
 	# off by default, so no campaign level's handling changes.
 	if steer_override_active and is_zero_approx(movement_direction):
 		movement_direction = steer_override
+
+	# ANTI-DEADLOCK HEARTBEAT — see the field block. If the player is actively
+	# trying to move (a direction, up/down, or jump held) yet has not actually
+	# moved for STUCK_LIMIT seconds, force him unstuck. Only counts as "trying"
+	# when an input is held, so standing still never trips it; only counts as
+	# "stuck" when his real position hasn't changed, so pushing a wall (blocked
+	# but free to turn) never trips it either — move_and_slide still slides him
+	# along the wall, changing position. Fly has its own vertical model, skip it.
+	var wants_move: bool = movement_direction != 0.0 \
+		or Input.is_action_pressed("move_up") or Input.is_action_pressed("move_down") \
+		or input_handler.is_jump_pressed()
+	if wants_move and not GameManager.has_power_up("fly"):
+		if _stuck_anchor.distance_to(global_position) > 6.0:
+			_stuck_anchor = global_position
+			_stuck_timer = 0.0
+		else:
+			_stuck_timer += delta
+			if _stuck_timer >= STUCK_LIMIT:
+				_force_unstick()
+				_stuck_timer = 0.0
+				_stuck_anchor = global_position
+	else:
+		_stuck_anchor = global_position
+		_stuck_timer = 0.0
 
 	# Bong flight: hold jump/up to rise, otherwise sink slowly. Overrides all
 	# normal gravity/wall/jump vertical logic for the duration. Trippy green
@@ -365,8 +424,17 @@ func _update_tool_visual() -> void:
 	# had. The scale comes from the projectile's own BIG_SCALE constant, so the
 	# weapon in his hand and the weapon that leaves it can never disagree.
 	if GameManager.has_power_up("bigaxe"):
-		sprite.set_tool("res://src/assets/sprites/sprite_item_pickaxe.png",
-			load("res://src/combat/axe.gd").BIG_SCALE)
+		# Held art and thrown art both come from axe.gd, so the weapon in his
+		# hand and the weapon that leaves it can never disagree.
+		#
+		# This ALSO fixes a silent bug: set_tool() early-returns when the path
+		# is unchanged, so while both branches passed the SAME pickaxe path,
+		# upgrading pickaxe -> big axe kept the old scale and he saw no change
+		# at all. That is the founder's "WE DON'T SEE IT but he ends up
+		# throwing bigger axes", still half-live after the previous fix.
+		var axe_script: GDScript = load("res://src/combat/axe.gd")
+		var consts: Dictionary = axe_script.get_script_constant_map()
+		sprite.set_tool(str(consts["BIG_ART"]), float(consts["BIG_SCALE"]))
 	elif GameManager.has_power_up("pickaxe"):
 		sprite.set_tool("res://src/assets/sprites/sprite_item_pickaxe.png")
 	elif GameManager.has_power_up("torch"):
@@ -421,6 +489,57 @@ func emit_blaze_smoke() -> void:
 	puff.direction = base_dir + Vector2(velocity.x * 0.3 / walk_speed, 0.0)
 	get_tree().current_scene.add_child(puff)
 
+## The eccentric weed-leaf celebration the founder asked for: Lil Blunt does a
+## full spin with a squash-and-stretch pop, throws out a ring of smoke puffs,
+## and a hype word pops over his head. Deliberately loud VISUALLY so the pickup
+## feels special WITHOUT changing the music (see GameManager._celebrate_blaze).
+func _on_blaze_celebration() -> void:
+	if not is_instance_valid(sprite):
+		return
+	# Ring of smoke — 8 puffs thrown outward, not the usual single trail puff.
+	for i in range(8):
+		var puff := preload("res://src/effects/smoke_puff.tscn").instantiate()
+		puff.global_position = smoke_spawn.global_position
+		var ang := TAU * float(i) / 8.0
+		puff.direction = Vector2(cos(ang), sin(ang))
+		get_tree().current_scene.add_child(puff)
+
+	# 360 spin + squash/stretch pop, then settle back exactly where it started
+	# (base_scale captured live so a Mushroom-grown Lil Blunt doesn't shrink).
+	var base_scale: Vector2 = sprite.scale
+	var tw := create_tween()
+	tw.tween_property(sprite, "rotation", sprite.rotation + TAU, 0.45) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(sprite, "scale", base_scale * 1.35, 0.12) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.chain().tween_property(sprite, "scale", base_scale, 0.18) \
+		.set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+	tw.finished.connect(func() -> void:
+		if is_instance_valid(sprite):
+			sprite.rotation = 0.0
+			sprite.scale = base_scale)
+
+	_pop_celebration_word()
+
+## Floating hype word over Lil Blunt's head. Node2D-parented to the scene (not
+## the player) so it doesn't inherit the spin we just started.
+func _pop_celebration_word() -> void:
+	var words := ["BLAAAZE!", "SO CHILL", "LEVITATIN'", "PUFF PUFF!", "VIBES!"]
+	var label := Label.new()
+	label.text = words[randi() % words.size()]
+	label.add_theme_font_size_override("font_size", 28)
+	label.add_theme_color_override("font_color", Color(0.55, 1.0, 0.45))
+	label.add_theme_constant_override("outline_size", 7)
+	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	label.z_index = 100
+	label.global_position = global_position + Vector2(-60, -90)
+	get_tree().current_scene.add_child(label)
+	var t := create_tween()
+	t.tween_property(label, "global_position:y", label.global_position.y - 60, 0.9) \
+		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	t.parallel().tween_property(label, "modulate:a", 0.0, 0.9)
+	t.finished.connect(label.queue_free)
+
 func take_damage(amount: int) -> void:
 	# Damage only exists while PLAYING. This also protects the boss-victory
 	# window (LEVEL_COMPLETE): dying there used to wedge the StateMachine
@@ -455,9 +574,18 @@ func _hitstop(duration: float = 0.07) -> void:
 	_hitstop_token += 1
 	var my_token := _hitstop_token
 	Engine.time_scale = 0.05
-	await get_tree().create_timer(duration, true, false, true).timeout
-	if my_token == _hitstop_token:
-		Engine.time_scale = 1.0
+	# Restore off the TIMER's own timeout signal, not this coroutine's resume.
+	# Founder, 2026-08-23 freeze: if this node is freed during the hitstop (Stage
+	# 3 boss contact reloads the level within the 0.06s window), the coroutine is
+	# abandoned and the line after `await` never runs, stranding the GLOBAL
+	# Engine.time_scale at 0.05. The SceneTreeTimer is owned by the tree, not by
+	# this node, so binding the restore to its timeout fires even after this node
+	# is gone. (SceneRouter.load_scene also resets time_scale as the real safety
+	# net; this stops the strand happening in the first place.)
+	var t := get_tree().create_timer(duration, true, false, true)
+	t.timeout.connect(func() -> void:
+		if my_token == _hitstop_token:
+			Engine.time_scale = 1.0)
 
 ## Ladder zone refcount — called by ladder.gd on Area2D enter/exit. Tracks the
 ## active ladder node so top-out has geometry to target (brief correction E).
@@ -519,16 +647,77 @@ func _top_out_ladder() -> void:
 	_ladder_zones = 0
 	_active_ladder = null
 	global_position = Vector2(target.x, target.y)
-	# Never leave the player inside geometry: if the exit point overlaps a
-	# collider, nudge upward a few steps until free. Bounded — a fully blocked
-	# exit just leaves them at the target rather than tunneling (per the brief:
-	# "define behaviour for blocked top exits").
-	var attempts := 0
-	while move_and_collide(Vector2.ZERO, true) != null and attempts < 8:
-		global_position.y -= 4.0
-		attempts += 1
+	# Never leave the player inside geometry. This USED to be a bounded
+	# `while move_and_collide(Vector2.ZERO, true)` up-nudge — but that probe has
+	# NO recovery_as_collision (4th arg), so it does not report a resting overlap
+	# and the loop never fired: a top-out onto a spot that overlaps a solid left
+	# the player EMBEDDED and unable to move. That is a real root cause of the
+	# founder's Stage-3 "frozen on the platform next to the ladder" (shot_1, no
+	# big-mode). resolve_grow_overlap() uses the correct recovery probe and slides
+	# out along contact normals on any axis, so the exit is always clear.
+	resolve_grow_overlap()
 	AudioManager.play_sfx("jump")
 	_play_jump_stretch()
+
+## Push the body out of any solid it is embedded in. Called after the Magic
+## Mushroom grows Lil Blunt 1.5x (power_up_handler._update_scale): the enlarged
+## 48x48 collision box can appear already overlapping a low ceiling, an overhead
+## platform, or a canyon constriction, and move_and_slide cannot depenetrate a
+## body that is on the floor with no free axis — the player is WEDGED and cannot
+## move, while music and enemies keep running. That is the founder's Stage-3
+## "the game is now frozen even though the music is still playing" (shot_2, a
+## magic mushroom on screen): a grow-wedge, not a tree pause and not a stranded
+## time_scale (both already hardened). DeepSeek's FSM/freeze trace reached the
+## same root cause independently.
+##
+## The player's CollisionShape2D is TOP-LEFT anchored (offset (16,16) on a 32x32
+## box), so scaling the node 1.5x grows the body DOWN and RIGHT from the origin:
+## the feet sink into the floor and the right side pushes into any wall. This
+## resolves it by true depenetration — each pass reads the deepest contact and
+## slides out along its normal by the penetration depth, repeated so multiple
+## simultaneous contacts (floor + wall) all clear. Bounded; converges whenever a
+## fit exists (every reachable real-level spot has room for the 48px body on at
+## least one side). If the pocket is genuinely smaller than the grown body on
+## every axis — which no shipped level geometry produces — it restores the
+## anchor rather than tunnelling.
+func resolve_grow_overlap() -> void:
+	var anchor: Vector2 = global_position
+	for _i in range(24):
+		# recovery_as_collision=true (4th arg) is REQUIRED to detect a body that
+		# is already overlapping with zero motion — a plain move_and_collide(ZERO)
+		# reports nothing at rest, which would make this a silent no-op.
+		var col := move_and_collide(Vector2.ZERO, true, 0.08, true)
+		if col == null:
+			return  # free
+		var depth: float = col.get_depth()
+		if depth <= 0.0:
+			depth = 4.0  # fallback if a driver reports 0 depth
+		# Slide out along the contact normal by the penetration depth (+epsilon so
+		# the next probe doesn't re-detect the same skin-thin overlap).
+		global_position += col.get_normal() * (depth + 0.5)
+	# Could not converge (impossible pocket — not a real level case): don't leave
+	# him buried; put him back where he was and let normal physics take over.
+	if move_and_collide(Vector2.ZERO, true, 0.08, true) != null:
+		global_position = anchor
+
+## Break the player out of a freeze: called by the anti-deadlock heartbeat when
+## he has been trying to move but hasn't for STUCK_LIMIT seconds. Clears the
+## movement-blocking state flags that can strand (a climb flag left true with no
+## ladder under him; a `_dying` flag stranded true while still PLAYING — a real
+## death would have flipped the StateMachine and this _physics_process returns
+## early, so clearing it here only unsticks a false one), then depenetrates out
+## of any solid he is embedded in (reuses resolve_grow_overlap, which slides out
+## along contact normals — it works for ANY wedge, not just the mushroom grow).
+## Logs once so the specific root cause is still visible and pursued, not hidden.
+func _force_unstick() -> void:
+	_climbing = false
+	_ladder_zones = 0
+	_dying = false
+	velocity = Vector2.ZERO
+	resolve_grow_overlap()
+	if not _heartbeat_fired:
+		_heartbeat_fired = true
+		push_warning("[HEARTBEAT] player stuck > %.1fs while trying to move — force-unstuck at %s (root cause still under investigation)" % [STUCK_LIMIT, str(global_position)])
 
 ## Falling into a pit — a HARD fail. Plays a devastating sound, costs a LIFE
 ## (not just health), and respawns at the last checkpoint if lives remain;
@@ -619,13 +808,23 @@ func _respawn_or_game_over() -> void:
 		await get_tree().create_timer(1.2).timeout
 		SceneRouter.load_scene(GameManager.level_scene(wipe_level), SceneRouter.Transition.FADE)
 		return
-	# Lives remain — respawn at THIS level's checkpoint (fallbacks below).
+	# Lives remain — respawn at THIS level's checkpoint, else near where the
+	# player died. Founder (session 4): dying in Stage 3 "he appears somewhere
+	# else!!! He must reappear exactly or close to where he died." The bug was
+	# the cross-level fallback below (get_checkpoint(1)) firing when the current
+	# level had no checkpoint yet — it dropped the player at a LEVEL-1 coordinate
+	# inside the Level-3 scene. Removed. Now: this level's checkpoint if any,
+	# else the last safe grounded spot (the sample before the lip, so a pit
+	# death lands on solid ground near the death, not on the crumbling edge),
+	# else the level's own start marker as a final safety.
 	Web3Bridge.report_metric("retry", {})
 	var checkpoint := GameManager.get_checkpoint(GameManager.current_level)
-	if checkpoint == Vector2.ZERO:
-		checkpoint = GameManager.get_checkpoint(1)
 	if checkpoint != Vector2.ZERO:
 		global_position = checkpoint + Vector2(0, -50)
+	elif _prev_safe_position != Vector2.ZERO:
+		global_position = _prev_safe_position + Vector2(0, -10)
+	elif _last_safe_position != Vector2.ZERO:
+		global_position = _last_safe_position + Vector2(0, -10)
 	else:
 		global_position = GameManager.player_position + Vector2(0, -260)
 	GameManager.player_health = GameManager.max_health

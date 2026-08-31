@@ -127,11 +127,40 @@ func _setup_visual() -> void:
 	add_child(blocks)
 
 	# Molten mouth — the bit that should actually read as a forge.
+	#
+	# Founder (OWNER RAGE, 2026-08-18): "Remove this shit!!!" — circled this
+	# exact rectangle. It was a flat solid `Color(1.0, 0.45, 0.12, 0.95)`
+	# ColorRect: the same "undefined box" failure this file's own outer shell
+	# was already fixed for once (see the comment above). A same-day session
+	# diagnosed "orange box" as this whole prop sitting on the walkable track
+	# and repositioned/thinned instances instead — real work, but it left
+	# this specific rectangle in place, so the founder's next screenshot
+	# still circled it. Fixed the actual object: a dark RECESSED opening
+	# (reads as a cavity, not a solid-colour prop) with continuously
+	# emitting ember particles supplying the "molten" identity through
+	# motion, not a static flat-colour block.
 	var mouth := ColorRect.new()
-	mouth.color = Color(1.0, 0.45, 0.12, 0.95)
+	mouth.color = Color(0.05, 0.02, 0.01, 0.9)
 	mouth.size = Vector2(34, 22)
 	mouth.position = Vector2(-17, -6)
 	add_child(mouth)
+
+	var embers := CPUParticles2D.new()
+	embers.position = Vector2(0, 5)
+	embers.amount = 10
+	embers.lifetime = 1.1
+	embers.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	embers.emission_rect_extents = Vector2(15, 9)
+	embers.direction = Vector2(0, -1)
+	embers.spread = 25.0
+	embers.initial_velocity_min = 12.0
+	embers.initial_velocity_max = 26.0
+	embers.gravity = Vector2(0, -18)
+	embers.scale_amount_min = 0.6
+	embers.scale_amount_max = 1.3
+	embers.color = Color(1.0, 0.5, 0.1, 0.9)
+	embers.emitting = true
+	add_child(embers)
 
 	# Gold trim: top lip plus a matching base plate so it sits, not floats.
 	var trim := ColorRect.new()

@@ -97,11 +97,31 @@ func _test_script_actually_attached() -> void:
 ## entered by REAL physics — not by grepping for assignments.
 func _test_states_reachable_at_runtime() -> void:
 	var seen := {}
+	# CONTACT OFF FOR THIS MEASUREMENT ONLY.
+	#
+	# This test parks a real, uncontrolled player in the arena for 15 seconds.
+	# That was harmless while the boss could not reach anybody — which is
+	# precisely the defect the founder kept reporting ("the 2nd boss doesn't
+	# chase Lil Blunt"). Now that he does chase, he catches the motionless
+	# player, and boss contact restarts the level by design: SceneRouter loaded
+	# level 2 underneath the test, `_boss` was freed, and the run hung on the
+	# next `_boss.current_phase_state`.
+	#
+	# The boss being lethal to someone standing still is CORRECT and is
+	# asserted elsewhere (tests/boss_stakes_test.gd covers the restart-on-touch
+	# rule; stage3_defence covers the chase). What this test measures is which
+	# STATES the machine reaches, which is driven by its own timers and does
+	# not depend on the player surviving. So the hitbox is muted here rather
+	# than the boss being slowed back down to make an unrelated test pass.
+	var hb := _boss.get_node("Hitbox") as Area2D
+	hb.monitoring = false
 	# The boss alternates pull-cycle / volley-cycle, so run long enough to see
 	# both branches (throw_cooldown is 2s; 900 frames ~= 15s at 60Hz).
 	for i in 900:
 		seen[int(_boss.current_phase_state)] = true
 		await get_tree().physics_frame
+	hb.set_deferred("monitoring", true)
+	await get_tree().physics_frame
 	# Phase enum: 0 PATROL, 1 GRAVITY_TELL, 2 HOARD_GRAVITY, 3 SHARD_THROW, 4 VULNERABLE
 	var names := ["PATROL", "GRAVITY_TELL", "HOARD_GRAVITY", "SHARD_THROW", "VULNERABLE"]
 	for i in names.size():
@@ -208,6 +228,20 @@ func _test_orb_redirect_under_real_physics() -> void:
 		int(_boss.current_phase_state) != PHASE_VULNERABLE,
 		"state=%d — Forced Distribution is meaningless if it can only land during the existing window" % int(_boss.current_phase_state))
 
+	# CONTACT OFF FOR THIS MEASUREMENT ONLY — same technique as
+	# _test_states_reachable_at_runtime() above, for a related but distinct
+	# reason. The orb muzzle sits at (BODY/2, BODY*0.21), which is genuinely
+	# inside the boss's own (correctly re-centred — see distributor.gd's
+	# HURTBOX_SIZE/CENTER) hurtbox: a real player weapon there would ALSO be
+	# hitting the boss directly. That's correct in a real fight, but it isn't
+	# what THIS test isolates — it wants to prove the ORB redirect path works
+	# on its own, not conflate it with the separate direct-hit path (which
+	# would additionally call take_damage() -> _end_vulnerable(), stepping on
+	# whatever state the redirect path just set). Muted here, restored after.
+	var hb := _boss.get_node("Hitbox") as Area2D
+	var hb_monitoring_before := hb.monitoring
+	hb.monitoring = false
+
 	# A stand-in for a real player attack: same layer (64) and group
 	# ("projectile") every real attack in this project uses. This is NOT a
 	# call into the orb's private methods — it is a genuine Area2D the
@@ -233,6 +267,7 @@ func _test_orb_redirect_under_real_physics() -> void:
 	_check("a real overlap (layer 64 + group 'projectile') redirects the orb", redirected,
 		"orb._redirected never became true — collision mask/group wiring is broken")
 	attack.queue_free()
+	hb.set_deferred("monitoring", hb_monitoring_before)
 	if not redirected:
 		return
 
@@ -282,6 +317,16 @@ func _test_pool_drain_under_real_physics() -> void:
 	if orbs.size() != 3:
 		return
 
+	# CONTACT OFF FOR THIS MEASUREMENT ONLY — see the identical note in
+	# _test_orb_redirect_under_real_physics(). The orb muzzle sits inside the
+	# boss's own (correctly re-centred) hurtbox, so these stand-in attacks
+	# would otherwise ALSO land a direct hit on the boss and call
+	# take_damage() -> _end_vulnerable(), undoing the very VULNERABLE state
+	# this test exists to prove POOL DRAIN sets.
+	var hb := _boss.get_node("Hitbox") as Area2D
+	var hb_monitoring_before := hb.monitoring
+	hb.monitoring = false
+
 	# All 3 stand-in attacks are created up front and freed together at the
 	# end, rather than one-at-a-time create/wait/free — a tight sequential
 	# churn of physics Area2D objects (create -> queue_free -> immediately
@@ -314,6 +359,7 @@ func _test_pool_drain_under_real_physics() -> void:
 
 	for attack in attacks:
 		attack.queue_free()
+	hb.set_deferred("monitoring", hb_monitoring_before)
 	await get_tree().physics_frame
 
 	var all_redirected := true

@@ -26,27 +26,21 @@ parallax_layers = Array[Dictionary]([
 	}
 ])
 ground_segments = Array[Vector4]([
-	Vector4(0, 650, 400, 70),
-	Vector4(520, 650, 320, 70),
-	Vector4(1020, 650, 480, 70),
-	Vector4(1600, 650, 380, 70),
-	Vector4(2200, 650, 420, 70),
-	Vector4(2760, 650, 460, 70),
-	Vector4(3380, 650, 100, 70),
+	Vector4(0, 650, 560, 70),
+	Vector4(700, 650, 520, 70),
+	Vector4(1320, 650, 200, 70),
+	Vector4(1660, 650, 960, 70),
+	Vector4(2620, 650, 140, 70),
+	Vector4(2760, 650, 940, 70),
 	Vector4(3700, 650, 700, 70)
 ])
 platforms = Array[Vector4]([
-	Vector4(250, 450, 120, 20),
-	Vector4(570, 350, 100, 20),
-	Vector4(870, 480, 120, 20),
-	Vector4(1180, 300, 100, 20),
+	Vector4(300, 500, 120, 20),
+	Vector4(980, 470, 110, 20),
+	Vector4(1330, 380, 110, 20),
 	Vector4(1480, 420, 120, 20),
-	Vector4(1780, 250, 100, 20),
-	Vector4(2100, 400, 150, 20),
-	Vector4(2420, 320, 100, 20),
-	Vector4(2740, 480, 120, 20),
-	Vector4(3060, 350, 100, 20),
-	Vector4(3380, 450, 100, 20)
+	Vector4(2060, 430, 130, 20),
+	Vector4(2380, 320, 100, 20)
 ])
 enemy_spawns = Array[Dictionary]([
 	{
@@ -104,6 +98,14 @@ enemy_spawns = Array[Dictionary]([
 	{
 		"type": "rolling_boulder",
 		"pos": Vector2(3100, 150)
+	},
+	{
+		"type": "trap_gold_rush",
+		"pos": Vector2(1410, 480)
+	},
+	{
+		"type": "trap_golden_widow",
+		"pos": Vector2(2960, 460)
 	}
 ])
 collectible_spawns = Array[Dictionary]([
@@ -117,7 +119,7 @@ collectible_spawns = Array[Dictionary]([
 	},
 	{
 		"type": "gold_token",
-		"pos": Vector2(200, 600)
+		"pos": Vector2(320, 600)
 	},
 	{
 		"type": "gold_token",
@@ -259,48 +261,32 @@ powerup_spawns = Array[Dictionary]([
 	}
 ])
 breakable_blocks = []
-melt_forges = Array[Dictionary]([
-	{
-		"pos": Vector2(200, 500)
-	},
-	{
-		"pos": Vector2(700, 450)
-	},
-	{
-		"pos": Vector2(1250, 500)
-	},
-	{
-		"pos": Vector2(2400, 450)
-	},
-	{
-		"pos": Vector2(3000, 500)
-	}
-])
+melt_forges = Array[Dictionary]([])
 mine_carts_fast = Array[Dictionary]([
 	{
-		"pos": Vector2(150, 300),
+		"pos": Vector2(150, 430),
 		"move_distance": 350,
 		"destination_wbtc": 10
 	},
 	{
-		"pos": Vector2(1750, 300),
+		"pos": Vector2(1750, 430),
 		"move_distance": 350,
 		"destination_wbtc": 10
 	},
 	{
-		"pos": Vector2(2900, 300),
+		"pos": Vector2(2900, 430),
 		"move_distance": 350,
 		"destination_wbtc": 10
 	}
 ])
 mine_carts_slow = Array[Dictionary]([
 	{
-		"pos": Vector2(1070, 280),
+		"pos": Vector2(1070, 400),
 		"move_distance": 500,
 		"destination_wbtc": 50
 	},
 	{
-		"pos": Vector2(2810, 280),
+		"pos": Vector2(2810, 400),
 		"move_distance": 500,
 		"destination_wbtc": 50
 	}

@@ -8,9 +8,11 @@ security model (sentinel's 18 checks, TRUST-001, rate limits, CORS, gitleaks).
 
 | Piece | Path |
 |---|---|
-| Scanner (Bun) | `scripts/security-audit.ts` |
-| Rules (adapted) | `scripts/assets/security-checklist.json` (v1.3.0+gmgame.1) |
-| Human-readable reference | `docs/security/secure-build-checklist-reference.md` |
+| Skill entry point | `.claude/skills/secure-build-checklist/SKILL.md` |
+| Scanner (Bun) | `.claude/skills/secure-build-checklist/scripts/audit.ts` |
+| Rules (adapted) | `.claude/skills/secure-build-checklist/assets/checklist.json` (v1.3.0+gmgame.1) |
+| Human-readable reference | `.claude/skills/secure-build-checklist/references/checklist.md` |
+| Back-compat shim | `scripts/security-audit.ts` (re-execs the above; not a copy) |
 | Manual DeFi gate | `DEFI_REVIEW.md` |
 | Manual Android gate | `ANDROID_EXPORT_SECURITY.md` |
 | This record | `SECURITY_CHECKLIST_INTEGRATION.md` |
@@ -20,7 +22,7 @@ security model (sentinel's 18 checks, TRUST-001, rate limits, CORS, gitleaks).
 Order: gitleaks → sentinel → Godot export → web3.js bundle gate →
 **security-audit (this gate)** → commit export → mirrors → itch.io butler.
 
-- Step installs Bun, runs `bun scripts/security-audit.ts --fail-on=high --json`.
+- Step installs Bun, runs `bun .claude/skills/secure-build-checklist/scripts/audit.ts --fail-on=high --json`.
 - **Exit 1 blocks the deploy** exactly like the web3.js gate (deploy steps are
   `if: success()`).
 - `security-report.json` is uploaded as a CI artifact (30 days) on every run.
@@ -28,7 +30,8 @@ Order: gitleaks → sentinel → Godot export → web3.js bundle gate →
   critical/high blockers.
 - On pass the log prints: `Security audit passed — X checks, Y skipped, Z manual`.
 
-Run locally any time: `bun scripts/security-audit.ts --fail-on=high`.
+Run locally any time:
+`bun .claude/skills/secure-build-checklist/scripts/audit.ts . --fail-on=high --verbose`.
 
 ## Stack adaptations (task #2) — each one deliberate
 
@@ -65,3 +68,34 @@ Current status: **28 pass · 0 fail · 14 manual · 5 skip · exit 0** at
 - Both run in CI on every push; either can block alone. The checklist
   narrative home remains `docs/security/GAME_SECURITY_CHECKLIST.md`
   (Sections A–H) — audit runs append to `docs/security/audit-log.md`.
+
+## 2026-08-11 — relocated into the skill layout (founder request)
+
+The founder asked for this pack installed as a skill at
+`.claude/skills/secure-build-checklist/` with `SKILL.md`, `assets/checklist.json`,
+`references/checklist.md`, `scripts/audit.ts`.
+
+It was already installed here — but flattened into `scripts/`, which is why the
+run command in the founder's prompt did not exist. Rather than install a second
+copy, the existing one MOVED to the requested layout, which is also the upstream
+pack's own layout: this tree is byte-comparable to upstream again, so the next
+version bump is a diff instead of an archaeology exercise. `git mv` throughout,
+so history follows the files.
+
+Verified behaviour-preserving: the run reports **47 total / 28 pass / 0 fail /
+14 manual / 5 skip, exit 0** at `--fail-on=high` from the new path, identical to
+the old one.
+
+Three fixes went in alongside the move:
+
+1. `assets/checklist.json` is now resolved at the **skill root** (`../assets/`),
+   matching upstream, with the legacy `scripts/assets/security-checklist.json`
+   still probed as a fallback.
+2. **A missing or empty rules file is now fatal (exit 2).** Previously an
+   unreadable or malformed checklist would have produced zero findings and
+   therefore a clean, green, entirely meaningless pass — the worst thing this
+   tool can do. It now refuses.
+3. That guard was itself written wrong on the first attempt (`categories.length`
+   on an object-keyed map yields `undefined`, so the guard would have been the
+   silent no-op it exists to prevent). Caught by running it. Counts the checks
+   now, not the container.

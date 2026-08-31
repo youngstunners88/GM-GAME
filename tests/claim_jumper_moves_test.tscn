@@ -1,0 +1,4 @@
+[gd_scene load_steps=2 format=3 uid="uid://claimjumpermoves01"]
+[ext_resource type="Script" path="res://tests/claim_jumper_moves_test.gd" id="1"]
+[node name="ClaimJumperMovesTest" type="Node"]
+script = ExtResource("1")

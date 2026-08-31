@@ -8,6 +8,10 @@ extends CanvasLayer
 @onready var wbtc_label: Label = $MarginContainer/VBoxContainer/WbtcLabel
 @onready var xaut_label: Label = $MarginContainer/VBoxContainer/XautLabel
 @onready var diamond_label: Label = $MarginContainer/VBoxContainer/DiamondLabel
+## $TITANX — the 4th protocol token, grouped under the "TOKENS" header with
+## GOLD/DIAMONDS/wBTC/XAUT. Founder: "$TITANX, $DIAMONDS, AND $GOLD are
+## tokens and not coins."
+@onready var titanx_label: Label = $MarginContainer/VBoxContainer/TitanxLabel
 @onready var smoke_label: Label = $MarginContainer/VBoxContainer/SmokeLabel
 @onready var powerup_label: Label = $MarginContainer/VBoxContainer/PowerUpLabel
 @onready var powerup_bar: ProgressBar = $MarginContainer/VBoxContainer/PowerUpBar
@@ -24,11 +28,13 @@ var _combo_label: Label
 var _lives_label: Label
 
 func _ready() -> void:
+    _build_fullscreen_button()
     GameManager.score_changed.connect(_on_score_changed)
     GameManager.health_changed.connect(_on_health_changed)
     GameManager.coins_changed.connect(_on_coins_changed)
     GameManager.rings_changed.connect(_on_rings_changed)
     GameManager.smoke_changed.connect(_on_smoke_changed)
+    GameManager.titanx_changed.connect(_on_titanx_changed)
     GameManager.power_up_changed.connect(_on_power_up_changed)
     GameManager.player_died.connect(_on_player_died)
     GoldMineSystem.gold_changed.connect(_on_gold_changed)
@@ -59,6 +65,18 @@ func _ready() -> void:
     _lives_label.position = Vector2(get_viewport().get_visible_rect().size.x - 150, 14)
     add_child(_lives_label)
     _on_lives_changed(GameManager.lives)
+
+    # BUILD TAG — bottom-left corner, always visible (merged 2026-08-26 residual
+    # Phase 0). A founder hard-refresh must SEE this string; if it shows an older
+    # tag than the ship, they are on a stale cache and every other check is moot.
+    var build_label := Label.new()
+    build_label.text = "BUILD %s" % GameManager.BUILD_TAG
+    build_label.add_theme_font_size_override("font_size", 13)
+    build_label.add_theme_constant_override("outline_size", 4)
+    build_label.add_theme_color_override("font_color", Color(0.7, 1.0, 0.7, 0.85))
+    build_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+    build_label.position = Vector2(10, get_viewport().get_visible_rect().size.y - 26)
+    add_child(build_label)
 
     # White damage flash — sits over gameplay, ignores input, starts invisible.
     _flash_rect = ColorRect.new()
@@ -182,8 +200,17 @@ func _on_coins_changed(new_count: int) -> void:
 func _on_rings_changed(new_count: int) -> void:
     ring_label.text = "RINGS %d" % new_count
 
+func _on_titanx_changed(new_count: int) -> void:
+    titanx_label.text = "TITANX %d" % new_count
+
 func _on_smoke_changed(new_count: int) -> void:
-    smoke_label.text = "PUFFS %d" % new_count
+    # Founder: "The 'PUFFS' text needs to be changed to 'BLAZE DIAMONDS'."
+    # Same underlying counter (GameManager.smoke_collected) — this is the
+    # blue flaming diamond token from Blaze Rush plus the secret realm's
+    # smoke clouds. Distinct from `diamond_label` below, which is the
+    # GoldMine DIAMONDS protocol allocation; the "BLAZE" qualifier keeps the
+    # two readable as different things on the same HUD.
+    smoke_label.text = "BLAZE DIAMONDS %d" % new_count
 
 func _on_power_up_changed(type: String, _duration: float) -> void:
     if type == "":
@@ -252,3 +279,35 @@ func _on_certificate_earned(count: int) -> void:
     tween.tween_interval(3.0)
     tween.tween_property(toast, "modulate:a", 0.0, 0.4)
     tween.finished.connect(toast.queue_free)
+
+
+## Top-right EXPAND button — the discoverable half of FullscreenToggle.
+##
+## Founder, three separate passes: "I'm so sick of playing this game on such a
+## small payview screen." The blank area around the game is the itch.io page's
+## embed frame, which is a dashboard setting and not something this build can
+## resize. A fullscreen control makes that irrelevant: one click and the game
+## owns the whole monitor.
+##
+## It is a BUTTON, not just the F key, because browsers only grant fullscreen
+## from a genuine user gesture and because a keybind he has never been told
+## about does not exist as far as he is concerned. Anchored top-right so it
+## cannot cover the score/lives column on the left.
+func _build_fullscreen_button() -> void:
+    var btn := Button.new()
+    btn.name = "FullscreenButton"
+    btn.text = "⛶"
+    btn.tooltip_text = "Fullscreen (F)"
+    btn.focus_mode = Control.FOCUS_NONE
+    btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+    btn.position = Vector2(-96, 8)
+    btn.custom_minimum_size = Vector2(56, 44)
+    btn.add_theme_font_size_override("font_size", 26)
+    # mouse_filter STOP on the button itself only; the HUD root stays PASS so
+    # this cannot swallow gameplay clicks anywhere else on screen.
+    btn.mouse_filter = Control.MOUSE_FILTER_STOP
+    btn.pressed.connect(func() -> void:
+        FullscreenToggle.toggle()
+        btn.text = "⛶"
+    )
+    add_child(btn)

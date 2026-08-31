@@ -96,6 +96,16 @@ func _process(delta: float) -> void:
 ## Ogg Theora (.ogv) specifically: it is the only container Godot 4.3's
 ## VideoStreamPlayer decodes without a plugin, and it is the only one that
 ## survives the HTML5 export.
+##
+## SECOND founder clip (2026-08-16): replaced the original portrait phone
+## video with a landscape (1280x720, matching the project's own base
+## viewport) brand clip, and switched the fit from "contain" (letterboxed,
+## framed by the room art) to "cover" (fills the entire screen, cropping any
+## overflow) — founder: "I want the entire screen to be covered". Re-encoded
+## with `-an` (audio stream stripped entirely at the source, not just muted)
+## per the founder's explicit "the video must not have any sound" — the
+## lounge's own background music keeps playing underneath, per the original
+## directive.
 const LOUNGE_VIDEO := "res://src/assets/video/smoke_lounge.ogv"
 
 func _setup_parallax() -> void:
@@ -144,20 +154,45 @@ func _setup_lounge_video() -> void:
 		return
 	var layer := CanvasLayer.new()
 	layer.name = "LoungeVideo"
-	# Below the parallax plates (-20) so those remain the fallback surface.
-	layer.layer = -30
+	# IN FRONT of the -20 parallax plates but behind the gameplay plane (0). The
+	# original wire-up put this at -30, BEHIND the opaque full-screen room jpg
+	# (bg_secret_mid.jpg at -20) — which occludes it completely, so the brand
+	# video would never have shown. The room art now FRAMES the video instead of
+	# hiding it: the plates fill the screen, the video sits centered on top.
+	layer.layer = -15
 	add_child(layer)
 
+	# COVER fit: scale the clip so it fills the ENTIRE viewport with no gap on
+	# either axis, cropping whatever overflows — founder: "I want the entire
+	# screen to be covered". This is the opposite pick from a "contain"
+	# (letterbox) fit: contain takes the SMALLER of the two axis-scales so the
+	# whole frame is visible with bars; cover takes the LARGER of the two so
+	# the frame always exceeds the viewport on one axis. The overflow needs no
+	# manual clipping — VideoStreamPlayer is a Control under this CanvasLayer,
+	# and content positioned outside the root viewport's own bounds is simply
+	# not drawn there, the same way any off-screen Control content is clipped.
+	var vp: Vector2 = get_viewport_rect().size
+	var src := Vector2(float(stream.get_width()) if stream.has_method("get_width") else 1280.0,
+		float(stream.get_height()) if stream.has_method("get_height") else 720.0)
+	var ar: float = src.x / maxf(1.0, src.y)   # width/height of the source
+	var h: float = vp.y
+	var w: float = h * ar
+	if w < vp.x:
+		w = vp.x
+		h = w / ar
 	var vid := VideoStreamPlayer.new()
 	vid.name = "BrandVideo"
 	vid.stream = stream
 	vid.expand = true
 	vid.loop = true
-	# MUTED, deliberately. The directive requires the lounge's music crossfade
-	# slot to be preserved; an unmuted video track would play over the top of
-	# it and there is no mixing story for that.
+	# MUTED regardless of the source track. The 2026-08-16 encode already
+	# strips audio entirely at the source (`ffmpeg -an` — founder: "the video
+	# must not have any sound"), so this is belt-and-suspenders: even a future
+	# re-encode that forgets -an can't leak sound over the lounge's own music,
+	# which the directive requires to keep playing underneath.
 	vid.volume_db = -80.0
-	vid.set_anchors_preset(Control.PRESET_FULL_RECT)
+	vid.position = Vector2((vp.x - w) * 0.5, (vp.y - h) * 0.5)
+	vid.size = Vector2(w, h)
 	vid.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(vid)
 	_video = vid

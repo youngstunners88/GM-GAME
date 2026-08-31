@@ -1,13 +1,14 @@
 {
-  "note": "Boss taunt VO. Generated via ElevenLabs into src/assets/sounds/voice/boss/<boss>_<category>_<i>.mp3. Three distinct plan-available voices. boss_voice_system.gd plays them; boss_voice_data.gd mirrors the per-category counts for the runtime random-picker.",
+  "note": "Boss taunt VO. Generated via ElevenLabs into src/assets/sounds/voice/boss/<boss>_<category>_<i>.mp3. Three distinct CUSTOM antagonist voices (owned by the ELEVENLABS_API workspace — the legacy ELEVENLABS_API_KEY workspace canNOT see them). boss_voice_system.gd plays them at +10 dB; boss_voice_data.gd mirrors the per-category counts for the runtime random-picker. Keep COUNTS in boss_voice_data.gd in sync with the line counts here.",
   "model_id": "eleven_multilingual_v2",
   "bosses": {
     "tax": {
-      "voice_id": "IKne3meq5aSn9XLyUdCD",
-      "voice_note": "Charlie — thin, condescending; reads bureaucratic",
+      "voice_id": "jcg9W9tUWJjBuX5zV0dL",
+      "voice_note": "Custom 'IRS Auditor' — nasal, bureaucratic, condescending. Stage 1 Tax Collector / Auditor.",
       "lines": {
         "intro": [
-          "Lil Blunt! Your gains are MY gains!"
+          "Lil Blunt! Your gains are MY gains!",
+          "Step aside — this is a lawful seizure!"
         ],
         "taunt": [
           "I'm auditing your soul, green boy!",
@@ -15,35 +16,43 @@
           "F-O-M-O won't save you from the I-R-S!",
           "Your deductions are DENIED, nugget!",
           "Every puff is a taxable event!",
-          "I've got a subpoena with your name on it!"
+          "I've got a subpoena with your name on it!",
+          "Late fees compound, little sprout!",
+          "Report to Window Four for processing!"
         ],
         "mock": [
           "That's a penalty for late payment!",
           "Ha! Filed under: losers!",
           "Assets: seized. Mood: improved.",
-          "Consider yourself audited, kid!"
+          "Consider yourself audited, kid!",
+          "Garnished! Right off the top!"
         ],
         "hurt": [
           "You can't audit ME!",
-          "Ow! That's assault on a federal agent!"
+          "Ow! That's assault on a federal agent!",
+          "I'll add that to your bill!"
         ],
         "phase50": [
-          "Fine! We are escalating to a full audit!"
+          "Fine! We are escalating to a full audit!",
+          "Requesting backup from the Bureau!"
         ],
         "phase25": [
-          "This is highway robbery! MY robbery!"
+          "This is highway robbery! MY robbery!",
+          "You'll never survive the paperwork!"
         ],
         "death": [
-          "I'll see you... in tax court..."
+          "I'll see you... in tax court...",
+          "Appealing this... to a higher office..."
         ]
       }
     },
     "crystal": {
-      "voice_id": "onwK4e9ZLuTAKqWW03F9",
-      "voice_note": "Daniel — deep, flat, corporate-cold",
+      "voice_id": "VtsQlMLXxJPBwTtPTtoc",
+      "voice_note": "Custom 'Crystal Distributor' — cold, robotic, corporate-flat. Stage 2 liquidation/buyback antagonist.",
       "lines": {
         "intro": [
-          "Your portfolio is... underperforming."
+          "Your portfolio is... underperforming.",
+          "Initiating your liquidation. Please hold."
         ],
         "taunt": [
           "Liquidating your health. Please hold.",
@@ -51,57 +60,77 @@
           "Diamond hands? I prefer diamond bones.",
           "Your equity has been... redistributed.",
           "Hold still. This is a mandatory buyback.",
-          "I hoard. You bleed. Efficient."
+          "I hoard. You bleed. Efficient.",
+          "Your rewards pool is now my pool.",
+          "Downtrend detected. That's you."
         ],
         "mock": [
           "Loss recognized. Synergy achieved.",
           "Downsizing you. Nothing personal.",
           "Marked down, and marked for deletion.",
-          "Your dividends are... denied."
+          "Your dividends are... denied.",
+          "Slippage. Acceptable. For me."
         ],
         "hurt": [
           "Unacceptable variance.",
-          "Recalculating threat level."
+          "Recalculating threat level.",
+          "Error. You were not... priced in."
         ],
         "phase50": [
-          "Q3 earnings are... your blood."
+          "Q3 earnings are... your whole stack.",
+          "Deploying additional capital. Against you."
         ],
         "phase25": [
-          "Initiating hostile takeover protocol."
+          "Initiating hostile takeover protocol.",
+          "Emergency buyback. All of you."
         ],
         "death": [
-          "System... failure... liquidating..."
+          "System... failure... liquidating...",
+          "Shorting... my own... position..."
         ]
       }
     },
     "bandit": {
-      "voice_id": "VR6AewLTigWG4xSOukaG",
-      "voice_note": "Arnold — gruff, energetic; reads wild-west unhinged",
+      "voice_id": "LEQxdWqt02nZ8lXoPL0Y",
+      "voice_note": "Custom 'Bandit' — gravelly, wild-west, unhinged. Stage 3 Claim Jumper.",
       "lines": {
         "intro": [
-          "Yeehaw, greenhorn! Time for T-N-T!"
+          "Yeehaw, greenhorn! Time for T-N-T!",
+          "This here claim's MINE, ya sprout!"
         ],
         "taunt": [
           "I'm gonna blast you back to seed!",
           "This minecart's got your name on it!",
-          "Fort Knox? More like Fort Knocked Out!"
+          "Fort Knox? More like Fort Knocked Out!",
+          "Hand over the gold, ya little weed!",
+          "I jumped better claims than yours!",
+          "Say howdy to my dynamite, partner!",
+          "Yer nuggets belong to ME now!",
+          "Ain't no sheriff comin' to save ya!"
         ],
         "mock": [
           "Haha! Ya got dusted!",
-          "Eat dynamite, ya little nugget!"
+          "Eat dynamite, ya little nugget!",
+          "Back to the dirt where ya came from!",
+          "Struck out, greenhorn!",
+          "That's a claim-jumpin' good time!"
         ],
         "hurt": [
           "Why you little—!",
-          "That all ya got, greenhorn?!"
+          "That all ya got, greenhorn?!",
+          "Ya dented my hat, ya varmint!"
         ],
         "phase50": [
-          "Now I'm angry! Off the rails we go!"
+          "Now I'm angry! Off the rails we go!",
+          "Time to light the WHOLE fuse!"
         ],
         "phase25": [
-          "Mega bomb time! Tick, tick, tick!"
+          "Mega bomb time! Tick, tick, tick!",
+          "I'll bury us both, ya hear?!"
         ],
         "death": [
-          "Ya blew it all up... good for you... greenhorn..."
+          "Ya blew it all up... good for you... greenhorn...",
+          "My gold... my claim... my... hat..."
         ]
       }
     }

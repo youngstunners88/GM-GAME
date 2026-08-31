@@ -29,6 +29,8 @@ DevCoordinator="*res://src/autoload/dev_coordinator.gd"
 MobileInputHandler="*res://src/autoload/mobile_input_handler.gd"
 ComboSystem="*res://src/autoload/combo_system.gd"
 IcpBackend="*res://src/autoload/icp_backend.gd"
+FullscreenToggle="*res://src/autoload/fullscreen_toggle.gd"
+DebugOverlay="*res://src/autoload/debug_overlay.gd"
 
 [display]
 window/size/viewport_width=1280
@@ -100,6 +102,7 @@ move_down={
 2d_physics/layer_6="Hazards"
 2d_physics/layer_7="Projectiles"
 2d_physics/layer_8="Destructible"
+2d_physics/layer_9="ArenaSeal"
 
 [rendering]
 renderer/rendering_method="forward_plus"

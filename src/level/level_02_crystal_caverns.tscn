@@ -42,12 +42,6 @@ shape = SubResource("RectangleShape2D_trigger")
 [node name="BossSpawn" type="Marker2D" parent="."]
 position = Vector2(4050, 550)
 
-[node name="HUDMask" type="ColorRect" parent="."]
-anchors_preset = 0
-offset_right = 400.0
-offset_bottom = 120.0
-color = Color(0, 0, 0, 1)
-z_index = 10
 
 [node name="HUD" parent="." instance=ExtResource("2_hud")]
 z_index = 11

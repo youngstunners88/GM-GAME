@@ -10,13 +10,70 @@ extends Node
 ## boss is registered as active.
 
 const VOICE_DIR := "res://src/assets/sounds/voice/boss/"
+## Playback gain for the three antagonist voices. Founder root cause: this
+## player sat at the default 0 dB while Lil Blunt's barks and the announcer
+## (AudioManager.play_bark / play_voice) both run at +6 dB — so on a shared SFX
+## bus the three bosses were a full 6 dB under everything else and vanished
+## under gameplay noise. Pushed to +10 dB so the antagonists clearly cut
+## through (6 dB HOTTER than the hero, which is what a menacing boss should be).
+## Founder still reported "not loud enough" at +10 with a POSITIONAL player —
+## the real thief was distance attenuation, fixed below; +12 was the top of
+## the directive's requested +10..+12 band, chosen once nothing scaled it
+## down any more.
+##
+## Founder ("Almost_Better" residual, 2026-08-18): "All the bosses are
+## slightly a little too loud now." Now that distance attenuation is truly
+## gone (non-positional), +12 reads as loud everywhere in the arena, not just
+## far away — dropped to +9, still solidly above the hero's own +6 dB bark
+## gain (a boss should out-volume Lil Blunt) and still non-positional, just
+## not pinned at the top of the requested band any more.
+const PLAYER_VOLUME_DB := 9.0
+
+## PER-BOSS trim on top of PLAYER_VOLUME_DB, in dB.
+##
+## Founder (2026-08-19): "The 2nd boss is too loud." — note: the 2nd boss
+## SPECIFICALLY, while the same pass asks for Gideon to be made LOUDER. The
+## previous fix moved the single shared gain 12 -> 9 for ALL THREE bosses,
+## which is precisely the global-mix change that cannot satisfy a per-source
+## complaint: it quietened the Auditor and Claim Jumper nobody complained
+## about, and the Distributor was still the loudest thing on screen.
+##
+## Why the Distributor reads hotter than his siblings at an identical gain:
+## he is the only boss whose fight also runs a continuous ambient-taunt timer
+## against a LONG cycle (his PATROL/GRAVITY_TELL/HOARD_GRAVITY/SHARD_THROW/
+## VULNERABLE loop keeps him registered as the active boss for the whole
+## fight), so he simply speaks far more often than the other two — and every
+## line ducks the music by MUSIC_DUCK_DB, so the track keeps dipping under him.
+## -4 dB puts his lines below the hero's own +6 dB barks in the same scene
+## while keeping him clearly audible.
+const BOSS_GAIN_DB := {
+	"tax": 0.0,       # Auditor — not complained about, left exactly as shipped
+	"crystal": -4.0,  # Distributor — the "2nd boss is too loud" fix
+	"bandit": 0.0,    # Claim Jumper — not complained about
+}
 ## Minimum gap between any two lines from the same boss.
 const COOLDOWN := 2.2
 ## Ambient taunt cadence window (seconds).
 const AMBIENT_MIN := 8.0
 const AMBIENT_MAX := 12.0
 
-var _player: AudioStreamPlayer2D
+## How hard the music ducks while a boss line is speaking, and how long the
+## duck takes to release after the line ends. Boss VO is dialogue — it wins
+## over the track, the same way AudioManager.play_voice ducks for the announcer.
+const MUSIC_DUCK_DB := -14.0
+const DUCK_RELEASE := 0.35
+
+## NON-POSITIONAL on purpose. This was an AudioStreamPlayer2D with
+## max_distance=2000 — a positional player attenuates with distance from the
+## listener, so a boss on the far side of its own arena was scaled down to near
+## nothing NO MATTER what volume_db said. Raising the gain to +10 dB alone did
+## not fix the founder's "I can't hear them at all" because attenuation was
+## eating it downstream. A plain AudioStreamPlayer is screen-space: the line
+## plays at full authored level wherever the boss stands.
+var _player: AudioStreamPlayer
+var _music_bus := -1
+var _music_db_normal := 0.0
+var _duck_timer := 0.0
 var _cooldown := 0.0
 var _ambient_timer := 0.0
 var _active_boss: Node2D = null
@@ -29,10 +86,16 @@ var _last_idx: Dictionary = {}
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	_player = AudioStreamPlayer2D.new()
-	_player.bus = "SFX"
-	_player.max_distance = 2000.0
+	_player = AudioStreamPlayer.new()
+	# "Voice" bus if the project defines one, else SFX. A dedicated bus lets the
+	# mix treat dialogue separately from coin pings and axe hits.
+	_player.bus = "Voice" if AudioServer.get_bus_index("Voice") != -1 else "SFX"
+	_player.volume_db = PLAYER_VOLUME_DB  # was default 0 dB → bosses were inaudible
 	add_child(_player)
+	_music_bus = AudioServer.get_bus_index("Music")
+	if _music_bus != -1:
+		_music_db_normal = AudioServer.get_bus_volume_db(_music_bus)
+	_player.finished.connect(_on_line_finished)
 
 func _process(delta: float) -> void:
 	if _cooldown > 0.0:
@@ -78,9 +141,34 @@ func say(source: Node2D, boss_id: String, category: String, force: bool = false)
 	if stream == null:
 		return
 	_player.stream = stream
-	if is_instance_valid(source):
-		_player.global_position = source.global_position
-	# Duck music under the line (reuses AudioManager's voice ducking pattern
-	# would require its player; keep it simple — SFX bus is separate from music).
+	# Apply this boss's own trim (see BOSS_GAIN_DB). Set per line rather than
+	# once in _ready because a single shared player serves all three bosses.
+	_player.volume_db = PLAYER_VOLUME_DB + float(BOSS_GAIN_DB.get(boss_id, 0.0))
+	# `source` is no longer used to place the sound (the player is deliberately
+	# non-positional — see _player's declaration). It stays in the signature so
+	# every existing boss call site keeps working unchanged.
 	_player.play()
+	_duck_music(true)
 	_cooldown = COOLDOWN
+
+## Pull the music down while a boss speaks and restore it after. Same intent as
+## AudioManager.play_voice's announcer duck: dialogue should never fight the
+## track. Guarded on the bus existing, and restores to the level the mix was
+## actually at, not a hardcoded 0.
+func _duck_music(on: bool) -> void:
+	if _music_bus == -1:
+		return
+	if on:
+		if _duck_timer <= 0.0:
+			_music_db_normal = AudioServer.get_bus_volume_db(_music_bus)
+		_duck_timer = 1.0
+		AudioServer.set_bus_volume_db(_music_bus, _music_db_normal + MUSIC_DUCK_DB)
+	else:
+		_duck_timer = 0.0
+		AudioServer.set_bus_volume_db(_music_bus, _music_db_normal)
+
+func _on_line_finished() -> void:
+	# Small release so back-to-back lines don't pump the music up and down.
+	await get_tree().create_timer(DUCK_RELEASE).timeout
+	if not _player.playing:
+		_duck_music(false)

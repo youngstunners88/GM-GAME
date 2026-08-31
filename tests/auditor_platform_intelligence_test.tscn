@@ -1,0 +1,4 @@
+[gd_scene load_steps=2 format=3 uid="uid://auditorplat01"]
+[ext_resource type="Script" path="res://tests/auditor_platform_intelligence_test.gd" id="1"]
+[node name="AuditorPlatformIntelligenceTest" type="Node"]
+script = ExtResource("1")

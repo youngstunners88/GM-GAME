@@ -87,6 +87,16 @@
       "id": "tax_alert",
       "prompt": "Retro 16-bit videogame enemy notices you, a short two-note ascending detection blip, playful and alert but not alarming, clean chiptune tone, fast decay",
       "duration_seconds": 0.5
+    },
+    {
+      "id": "blaze_leaf",
+      "prompt": "Retro 16-bit videogame magic herb pickup, a deep bubbling bong-rip gurgle rising into a warm satisfied exhale, with a woozy psychedelic pitch-bend wobble and a soft sparkle tail, chill and funny, not harsh",
+      "duration_seconds": 1.6
+    },
+    {
+      "id": "bigaxe_impact",
+      "prompt": "Retro 16-bit videogame heavy axe impact, a deep meaty metal cleave with a low crunching thud and a bright steel ring on top, powerful and weighty, much heavier than a light hit, punchy attack with a short tail",
+      "duration_seconds": 0.9
     }
   ],
   "music": [
@@ -169,6 +179,84 @@
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
       "note": "Lil Blunt character bark — low chuckle into short hype lift",
       "voice_status": "LIVE on the real custom 'Lil Blunt' voice. Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
+    },
+    {
+      "id": "vo_hurt_2",
+      "text": "Oof— my bad.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Lil Blunt hurt variant 2 — chill shrug-off, quick recovery"
+    },
+    {
+      "id": "vo_hurt_3",
+      "text": "Easy, easy.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Lil Blunt hurt variant 3 — unbothered, mellow"
+    },
+    {
+      "id": "vo_attack_2",
+      "text": "Boom— down!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Lil Blunt enemy-defeat variant 2 — playful pop, not aggressive"
+    },
+    {
+      "id": "vo_attack_3",
+      "text": "Easy dub.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Lil Blunt enemy-defeat variant 3 — chill win (Kimi swap for 'too easy', kept on-brand)"
+    },
+    {
+      "id": "vo_collect_major_2",
+      "text": "Sweet, that's mine.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Lil Blunt major-pickup variant 2 — warm, pleased"
+    },
+    {
+      "id": "vo_collect_major_3",
+      "text": "Stackin' up!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Lil Blunt major-pickup variant 3 — satisfied little grin"
+    },
+    {
+      "id": "vo_boss_hype_2",
+      "text": "Alright, big guy.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Lil Blunt boss-start variant 2 — relaxed confidence"
+    },
+    {
+      "id": "vo_boss_hype_3",
+      "text": "Show time.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Lil Blunt boss-start variant 3 — cool, ready"
+    },
+    {
+      "id": "vo_death_2",
+      "text": "Aw, man…",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Lil Blunt death variant 2 — good-natured, falling pitch"
+    },
+    {
+      "id": "vo_death_3",
+      "text": "Catch me next round.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Lil Blunt death variant 3 — easy-going, no sting"
+    },
+    {
+      "id": "vo_blaze_hype",
+      "text": "Ohhh yeah— blaze mode!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Lil Blunt weed-leaf celebration — eccentric, delighted, stoner-chill"
+    },
+    {
+      "id": "vo_blaze_hype_2",
+      "text": "Now we're vibin'!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Lil Blunt weed-leaf celebration — eccentric, delighted, stoner-chill"
+    },
+    {
+      "id": "vo_blaze_hype_3",
+      "text": "Woo! That's the good stuff.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Lil Blunt weed-leaf celebration — eccentric, delighted, stoner-chill"
     }
   ]
 }
