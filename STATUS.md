@@ -7,6 +7,30 @@
 
 **🔥 The ENTER THE BLAZE RUSH title now FILLS the band, not sits inside it (2026-08-31).**
 
+**LIVE — export run `33354284861`, master `a5d7111`, 2026-08-31.** Hard-refresh
+before testing. Confirmed from the butler step's own output — 200.15 MiB pushed,
+**17.11 MiB of it fresh** — not from a green tick.
+
+### It took three tries to actually ship, and I told you it was live once before it was
+
+Worth being straight about, because it is the exact loop you keep getting stuck in:
+
+1. The branch build deployed, and I reported the fix as live off the back of it.
+   Then the merge to master failed and **skipped the deploy entirely** — every
+   step after a failure is skipped, and the butler push is the last step. You
+   would have refreshed and seen the old build.
+2. That failure was gitleaks, on a **weeks-old commit unrelated to the game** —
+   a founder prompt whose "secret" is an empty-string key assignment in a line
+   whose whole point is that the key is not hardcoded. It surfaced only because
+   the scan walks `--first-parent` and my merge put that old commit on the
+   walked path for the first time. Pinned by fingerprint after reading it.
+3. Merging that fix then triggered **no CI at all** — the workflow has a `paths:`
+   filter and `.gitleaksignore` is not in it. No red X, just silence. Ran the
+   export manually to get the build out.
+
+All three traps are now written into `.claude/context-manifests/default.md` so
+the next session does not spend the time again.
+
 All 18 of your marked-up images landed as real files this time. They are
 committed to `artifacts/founder-art/references/` so no future session has to
 recover them or ask you to resend anything.
