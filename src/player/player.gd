@@ -326,9 +326,15 @@ func _physics_process(delta: float) -> void:
 		_try_air_dash()
 
 	# Ground pound overrides fall velocity while active and resolves on landing.
+	# WATCHDOG (founder 2026-08-26 blue-block freeze): the pound used to end ONLY
+	# on is_on_floor(). When the block it shatters was the floor, that could never
+	# come true and the pound hung forever with vertical control locked. A pound
+	# is a ~0.5s move; if it has run far longer than any real slam, resolve it
+	# anyway so the state can never strand.
 	if _ground_pounding:
 		velocity.y = ground_pound_speed
-		if is_on_floor():
+		_ground_pound_t += delta
+		if is_on_floor() or _ground_pound_t >= GROUND_POUND_MAX_SEC:
 			_resolve_ground_pound()
 
 	_update_sprite_color()
@@ -379,11 +385,17 @@ func _check_pickaxe_breaks() -> void:
 # ---- Big Mode ground pound (brief correction F) ---------------------------
 var _ground_pounding: bool = false
 @export var ground_pound_speed: float = 900.0
+## Seconds the current pound has been running — drives the watchdog in
+## _physics_process so a pound can never hang when the floor it shattered stops
+## reporting is_on_floor(). A real slam resolves in well under half a second.
+var _ground_pound_t: float = 0.0
+const GROUND_POUND_MAX_SEC: float = 1.5
 
 ## Slam straight down fast; on landing, break breakables below and stun nearby
 ## enemies. Cancels horizontal control for the slam so it reads as committed.
 func _start_ground_pound() -> void:
 	_ground_pounding = true
+	_ground_pound_t = 0.0
 	velocity.y = ground_pound_speed
 	velocity.x = 0.0
 	_play_land_squash()
@@ -713,6 +725,11 @@ func _force_unstick() -> void:
 	_climbing = false
 	_ladder_zones = 0
 	_dying = false
+	# _ground_pounding was MISSING here and that was a real gap: the Big-Mode
+	# pound only ends on `is_on_floor()`, so when the block it shattered left the
+	# floor broken the flag stayed true forever and the heartbeat freed nothing.
+	# (Founder 2026-08-26, "jumps on the blue block … then he freezes".)
+	_ground_pounding = false
 	velocity = Vector2.ZERO
 	resolve_grow_overlap()
 	if not _heartbeat_fired:

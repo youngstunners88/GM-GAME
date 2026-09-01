@@ -20,6 +20,9 @@ const SMOKE_TIPS: Array[String] = [
 
 ## Deterministic per-instance variety without storing state: hash position.
 var _variant: int = 0
+## The looping "this wall breathes" shimmer. Held so break_block() can stop it
+## before fading the sprite out — see _ready().
+var _shimmer: Tween = null
 
 @onready var sprite: Sprite2D = $Sprite
 @onready var collision: CollisionShape2D = $CollisionShape2D
@@ -31,9 +34,12 @@ func _ready() -> void:
 	_variant = int(abs(global_position.x * 13.0 + global_position.y * 7.0))
 	# The tell: a slow faint shimmer — discoverable, not invisible, per the
 	# secret-door precedent. Normal terrain doesn't breathe.
-	var tw := create_tween().set_loops()
-	tw.tween_property(sprite, "modulate", Color(1.12, 1.12, 1.2, 1.0), 1.6)
-	tw.tween_property(sprite, "modulate", Color(0.94, 0.94, 0.98, 1.0), 1.6)
+	# Held so break_block() can KILL it: the shimmer drives sprite.modulate on a
+	# loop, and the break fade now animates sprite.modulate:a — without stopping
+	# the loop first the shimmer would keep overwriting the fade.
+	_shimmer = create_tween().set_loops()
+	_shimmer.tween_property(sprite, "modulate", Color(1.12, 1.12, 1.2, 1.0), 1.6)
+	_shimmer.tween_property(sprite, "modulate", Color(0.94, 0.94, 0.98, 1.0), 1.6)
 
 ## Same contract as breakable_block so the pickaxe smash path just works.
 func break_block() -> void:
@@ -42,10 +48,19 @@ func break_block() -> void:
 	Web3Bridge.report_metric("secret_found", {"kind": "wall"})
 	GameManager.add_score(20)
 	_reveal_payload()
+	# SAME ZERO-SCALE COLLIDER FREEZE as breakable_block (founder 2026-08-26,
+	# "jumps on the blue block, it disappears, then he freezes"). Tweening `self`
+	# scaled this StaticBody2D's CollisionShape2D to zero — a degenerate,
+	# non-invertible collider that traps whoever is standing on it. Disable the
+	# collider immediately (deferred: we can be inside a physics flush) and
+	# animate the SPRITE so the physics body's transform is never degenerate.
+	collision.set_deferred("disabled", true)
+	if _shimmer != null and _shimmer.is_valid():
+		_shimmer.kill()
 	var tween := create_tween()
-	tween.tween_property(self, "scale", Vector2(1.2, 1.2), 0.05)
-	tween.tween_property(self, "scale", Vector2.ZERO, 0.2)
-	tween.parallel().tween_property(self, "modulate:a", 0.0, 0.2)
+	tween.tween_property(sprite, "scale", Vector2(1.2, 1.2), 0.05)
+	tween.tween_property(sprite, "scale", Vector2.ZERO, 0.2)
+	tween.parallel().tween_property(sprite, "modulate:a", 0.0, 0.2)
 	tween.finished.connect(queue_free)
 
 func _reveal_payload() -> void:

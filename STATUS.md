@@ -5,6 +5,46 @@
 
 ---
 
+**🧱 P0 FIXED — the blue-block freeze. Real root cause, and it was a nasty one (build `2026-08-26e`).**
+
+You: *"When Lil Blunt jumps on the blue block it disappears then he freezes and
+the music continues but the game is frozen!!!"* — you were right, and this was a
+**different bug** from the ladder one I fixed last round.
+
+**What was actually happening.** When a blue block breaks, the old code shrank
+**the whole block — its solid collision box included — down to nothing** over a
+quarter second. A collision box scaled to zero is *broken* as far as the physics
+engine is concerned. So for that quarter second Lil Blunt was standing on a floor
+that had turned into a broken, zero-size object: he couldn't be pushed out of it,
+the game stopped believing he was on the ground, and because breaking the block is
+a Big-Mode ground-pound, the pound never finished — it waits for "am I on the
+ground?", which could never come true again. Frozen solid, music still playing.
+And since **he breaks the very block he's standing on**, it hit every time.
+
+**The fix (three parts):**
+1. The block's **collision is switched off the instant it breaks**, so it stops
+   being a floor cleanly — Lil Blunt just falls, exactly as if it vanished.
+2. Only the **picture** shrinks now, never the solid body — so a broken
+   zero-size collision box can't exist at all. Same visual, no trap.
+3. The **secret walls had the identical bug** — fixed too.
+
+**Plus two safety-net gaps closed:** the ground-pound now times out instead of
+hanging forever, and the anti-freeze heartbeat now also clears a stuck pound
+(it previously didn't, which is why it couldn't rescue you from this one).
+
+**Proof:** new gate `breakable_block_no_freeze_test` stands the player on a real
+block, breaks it under him, and watches every frame of the break. On the OLD code
+it fails — *"frame 6: collider ENABLED at body scale 0.88"* — on the new code it
+passes. Regression gates green (freeze recovery, grow-wedge, player land, Auditor
+solid-wall, Level-1 return); Security 18/18.
+
+**Honest note:** the gate proves the *mechanism* (no live collider on a
+shrinking body). In an isolated test scene the player doesn't wedge the same way
+he does in the real level, so the gate guards the cause, not the symptom —
+**your hard-refresh on `BUILD 2026-08-26e` is the close.**
+
+---
+
 **🧊 P0 — the Stage-3 freeze, properly this time: a real root cause + a safety net that can't fail, and a BUILD TAG so you can prove you're on it (2026-08-26, build `2026-08-26d`).**
 
 You were still frozen on the Stage-3 platform after my last "fix" — and your
