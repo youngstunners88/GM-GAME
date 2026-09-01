@@ -29,7 +29,7 @@ signal wallet_address_changed(address: String)
 ## the score) and printed once at boot, so a founder hard-refresh can PROVE it is
 ## running the new build and not a stale itch/browser cache (the merged
 ## 2026-08-26 residual's Phase 0: "Without this, every other step is invalid").
-const BUILD_TAG := "2026-08-26d"
+const BUILD_TAG := "2026-08-26e"
 
 var total_score: int = 0
 var coins_collected: int = 0
