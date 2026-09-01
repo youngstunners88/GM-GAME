@@ -7,5 +7,20 @@
 # 2) The first version of THIS file quoted that line verbatim in a comment,
 #    recreating the pattern in commit ef2866e. Comment reworded; fingerprint
 #    pins the historical occurrence.
+# 3) A founder prompt documenting B.AI setup describes the local settings file:
+#    a base-URL assignment, then a note that auth comes from the environment,
+#    then a key variable assigned an EMPTY quoted string. That empty string is
+#    what the generic-api-key heuristic matches. The line's whole purpose is to
+#    say the key is NOT hardcoded. No credential exists here.
+#
+#    Deliberately paraphrased rather than quoted: see (2) above — quoting the
+#    matched line verbatim in this file is what created that second fingerprint.
+#
+#    Why it surfaced on 2026-08-31 and not when it was committed: the CI scan
+#    runs with `--no-merges --first-parent`, so commits that arrive on a feature
+#    branch's side of a merge are never walked. 7136199 came in that way. A
+#    later merge put it on the first-parent line, and the scanner reached it for
+#    the first time. The finding is old; only its visibility is new.
 b244bd3fb53cc744d0eb4886894bdfcfee15dd8b:docs/architecture/adr-combat-system.md:generic-api-key:69
 ef2866e62207a8c3c6789a00d839fc5143bd7934:.gitleaksignore:generic-api-key:4
+71361998b54e88465f1360fdd9e78505d5bcc012:docs/founder-prompts/PROMPT_SESSION6_VAULT_UTILITY_BOSSES_BAI.md:generic-api-key:24
