@@ -24,6 +24,9 @@ func _setup_visual() -> void:
 	_visual.color = Color(0.18, 0.09, 0.04, 1.0)   # L3 platform_body_color
 	_visual.size = Vector2(door_width, door_height)
 	_visual.position = Vector2(-door_width / 2, -door_height / 2)
+	# Shrink from the middle, so animating the VISUAL (see open()) reads the same
+	# as the old whole-body scale did, without the degenerate-collider hazard.
+	_visual.pivot_offset = Vector2(door_width / 2, door_height / 2)
 	add_child(_visual)
 
 	var blocks := Sprite2D.new()
@@ -56,17 +59,26 @@ func open() -> void:
 	if _is_open:
 		return
 	_is_open = true
+	# COLLIDER OFF FIRST, AND ANIMATE THE VISUAL — NOT THE BODY.
+	#
+	# This used to tween `self` (the StaticBody2D) to Vector2.ZERO over 0.5s and
+	# only disable the collider AFTER the tween. That scales the CollisionShape2D
+	# to zero too: for that half second the door is a DEGENERATE, non-invertible
+	# collider, and anything standing on or pressed against it is trapped and
+	# cannot depenetrate. It is exactly the freeze the founder hit on the blue
+	# breakable block (2026-08-26) — found repo-wide by scripts/bug-pattern-scan.sh,
+	# and worse here because the window is 0.5s instead of 0.25s.
+	#
+	# set_deferred: open() can be reached from a physics callback, and a direct
+	# write throws "Can't change this state while flushing queries" from
+	# body_set_shape_disabled (2026-07-30 playtest).
+	_collision.set_deferred("disabled", true)
 	var tween := create_tween()
-	tween.tween_property(self, "scale", Vector2.ZERO, 0.5)
+	tween.tween_property(_visual, "scale", Vector2.ZERO, 0.5)
 	tween.parallel().tween_property(_visual, "modulate:a", 0.0, 0.5)
 	await tween.finished
 	if not is_instance_valid(self) or not is_inside_tree():
 		return
-	# set_deferred: this line runs after `await tween.finished`, which resumes
-	# inside the frame's physics step, so a direct write throws
-	# "Can't change this state while flushing queries" from
-	# body_set_shape_disabled (2026-07-30 playtest).
-	_collision.set_deferred("disabled", true)
 	await get_tree().create_timer(open_duration).timeout
 	if not is_instance_valid(self) or not is_inside_tree():
 		return
@@ -79,5 +91,6 @@ func close() -> void:
 	# Reached from open()'s awaited timer — same flush hazard as above.
 	_collision.set_deferred("disabled", false)
 	var tween := create_tween()
-	tween.tween_property(self, "scale", Vector2.ONE, 0.5)
+	# Mirrors open(): the VISUAL scales, never the physics body.
+	tween.tween_property(_visual, "scale", Vector2.ONE, 0.5)
 	tween.parallel().tween_property(_visual, "modulate:a", 1.0, 0.5)
