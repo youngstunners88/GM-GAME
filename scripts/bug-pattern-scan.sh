@@ -21,6 +21,17 @@ STRICT=0
 CRIT=0; HIGH=0; MED=0
 SRC="src"
 
+# ACKNOWLEDGED EXCEPTIONS — sites reviewed and found safe, with the reason.
+# Format: "<path>|<reason>". A scanner that reports a known-safe site as
+# CRITICAL every night trains the reader (and the nightly agent) to ignore
+# CRITICAL, which is worse than not scanning. Nothing is hidden: these still
+# print, under their own heading.
+ACK_ZERO_SCALE="src/player/player.gd|death tween; _physics_process early-returns while not PLAYING and _respawn_or_game_over resets scale to ONE (verified 2026-09-02)"
+
+ack_reason() { # path -> reason, or empty
+  printf '%s\n' "$ACK_ZERO_SCALE" | awk -F'|' -v p="$1" '$1==p {print $2}'
+}
+
 hdr() { printf '\n\033[1m%s\033[0m\n' "$1"; }
 hit() { # sev, label, results
   local sev="$1" label="$2" res="$3"
@@ -48,18 +59,28 @@ hdr "1. FREEZE / SOFT-LOCK CLASSES"
 # CollisionShape2D to zero -> degenerate, non-invertible collider -> whoever
 # stands on it is trapped and cannot depenetrate. Animate the SPRITE instead and
 # disable the collider first.
-res=""; safe=""
+res=""; safe=""; ackd=""
 for m in $(grep -rln 'tween_property(self, *"scale".*ZERO' $SRC --include=*.gd 2>/dev/null); do
-  # "Neutralised" = the body stops colliding around the shrink. A death anim that
-  # disables its collider/monitoring is safe; a LIVE prop that keeps colliding
-  # while it shrinks to zero is the freeze (breakable_block, timed_door).
-  if grep -qE 'set_deferred\("disabled", *true\)|monitoring *= *false|monitorable *= *false|set_physics_process\(false\)' "$m"; then
-    safe="${safe}${m} (looks neutralised - spot-check the collider goes off BEFORE the tween)"$'\n'
+  why=$(ack_reason "$m")
+  if [ -n "$why" ]; then
+    ackd="${ackd}${m} — ${why}"$'\n'
+    continue
+  fi
+  # "Neutralised" = the body stops colliding around the shrink. Covers both the
+  # property form (monitoring = false) and the deferred form
+  # (set_deferred("monitoring", false)) — powerup_base uses the latter, which the
+  # first version of this check missed and reported as CRITICAL.
+  if grep -qE 'set_deferred\("disabled", *true\)|set_deferred\("monitoring", *false\)|set_deferred\("monitorable", *false\)|monitoring *= *false|monitorable *= *false|set_physics_process\(false\)' "$m"; then
+    safe="${safe}${m} (neutralised - spot-check the disable happens BEFORE the tween)"$'\n'
   else
     res="${res}${m}: shrinks a LIVE body to zero, nothing disables its collider"$'\n'
   fi
 done
 hit CRITICAL "zero-scaling a LIVE body (degenerate collider / freeze)" "${res}"
+if [ -n "$ackd" ]; then
+  printf '  [ack]  %-8s %s\n' "REVIEWED" "zero-scale sites acknowledged safe:"
+  printf '%s' "$ackd" | sed 's/^/           /'
+fi
 if [ -n "$safe" ]; then
   printf '  [note] %-8s %s\n' "TRIAGE" "zero-scale sites that look neutralised:"
   printf '%s' "$safe" | sed 's/^/           /'
@@ -76,14 +97,22 @@ hit CRITICAL "embed probe without recovery_as_collision (never detects a wedge)"
 # 1c. Stranded global time_scale: a hitstop that restores on an awaited coroutine
 # dies with its node. Restores must ride a TREE-owned timer with
 # ignore_time_scale=true (create_timer(t, true, false, true)).
-res=$(grep -rn 'Engine.time_scale *= *0' $SRC --include=*.gd 2>/dev/null \
-  | grep -v 'time_scale *= *1' || true)
+res=""
+for f in $(grep -rlE '^[^#]*Engine\.time_scale *= *0' $SRC --include=*.gd 2>/dev/null); do
+  # Hardened = restores to 1.0 AND does it on a tree-owned timer that ignores
+  # time_scale (create_timer(t, true, false, true)) rather than on an awaited
+  # coroutine that dies with the node.
+  if grep -q 'Engine.time_scale *= *1' "$f" && grep -qE 'create_timer\([^)]*, *true, *false, *true\)' "$f"; then
+    continue
+  fi
+  res="${res}${f}: sets time_scale low without a tree-owned ignore_time_scale restore"$'\n'
+done
 hit HIGH "Engine.time_scale set low — confirm a tree-owned ignore_time_scale restore" "$res"
 
 # 1d. Direct tree pause without a guaranteed release in the same file.
 res=""
 for f in $(grep -rl 'get_tree().paused *= *true' $SRC --include=*.gd 2>/dev/null); do
-  if ! grep -q 'get_tree().paused *= *false' "$f"; then
+  if ! grep -qE 'get_tree\(\)\.paused *= *(false|StateMachine\.|[a-z_]+\()' "$f"; then
     res="${res:-}$f: pauses the tree, no 'paused = false' in this file"$'\n'
   fi
 done
@@ -108,7 +137,12 @@ hdr "2. COROUTINE / LIFETIME CLASSES"
 res=$(grep -rn -A3 '^[[:space:]]*await ' $SRC --include=*.gd 2>/dev/null \
   | grep -E 'global_position|queue_free|add_child|\.text *=|\.visible' \
   | grep -v 'is_instance_valid' | head -25 || true)
-hit HIGH "node touched after 'await' without is_instance_valid re-check" "$res"
+# MEASURED 2026-09-02 (nightly pass): Godot 4.3 abandons the coroutine when its
+# owner is freed, so the post-await line never executes — a silent SKIP of
+# whatever that line does, NOT a dangling-pointer crash. Real risk is therefore
+# "cleanup/logic silently didn't happen", which is MEDIUM and needs a human read,
+# not an auto-fix.
+hit MEDIUM "logic after 'await' may be silently skipped if the node is freed (review)" "$res"
 
 # 2b. Physics-state writes that must be deferred (throws "Can't change this
 # state while flushing queries" when hit from a physics callback).
