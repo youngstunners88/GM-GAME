@@ -125,6 +125,56 @@ gate must be proven to FAIL before the fix and PASS after.
 
 ---
 
+## 6b. Known failure mode — "the routine didn't run"
+
+**Observed 2026-09-02 22:09 UTC.** The Routine fired on schedule and the run
+still produced nothing. It was not a prompt or rails problem — the spawned
+session never executed step 1:
+
+```
+status:      ROUTINE_RUN_STATUS_FAILED
+fired_at:    2026-09-02T22:09:20Z
+finished_at: 2026-09-02T22:09:26Z   # died in 6 seconds
+error_kind:  init_script
+message:     "Setup script failed"
+detail:      "Session worker failed to initialize"
+```
+
+**What that means.** Each firing creates a *fresh* cloud session, and a fresh
+session runs the environment's **setup script** before the agent gets control.
+That script exited non-zero, so the container was torn down before the first
+`git fetch`. No branch, no report, no error in the repo — which is why the
+failure is invisible from inside the codebase.
+
+**Where the fix lives.** The setup script is stored on the *environment*
+(`GM Game`, `env_01KT7hyyj7ad7rtuJ5CHbXEA`), not in this repo — there is no
+`setup.sh`, no `.devcontainer/`, and the `.claude/hooks/` SessionStart hooks are
+a separate mechanism that runs *after* init. So it cannot be repaired from a
+session; it is edited in the Claude Code web UI under
+**Environments → GM Game → setup script**.
+
+**Diagnosing it:** re-run the Routine on demand and read the run record rather
+than waiting a day for the next fire —
+
+```
+list_triggers                      # -> last_run.status, last_run.session_id
+get_session <that session_id>      # -> external_metadata.last_init_error
+```
+
+`last_run.status: FAILED` with a `finished_at` only seconds after `fired_at` is
+always this class: the setup script, not the work.
+
+**Verifying the repair:** `fire_trigger` once by hand and confirm the run
+reaches a real step (a branch appears, or the report file is written). A Routine
+that has never completed a single successful run should not be trusted to be
+working just because it is `enabled: true` — `enabled` only means it will *try*.
+
+**Interim mitigation.** Run the pass in an existing session instead
+(`/loop` with the nightly prompt). A live session has already initialized, so it
+bypasses the broken setup script entirely — at the cost of not being unattended.
+
+---
+
 ## 7. Morning checklist (60 seconds)
 
 1. Open `docs/ops/nightly-reports/<date>.md` — read the "deliberately did NOT
