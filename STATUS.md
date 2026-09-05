@@ -45,10 +45,26 @@ session type). What's in the repo now, under `artifacts/episode2-gold-mine/`:
 - **Assets:** either you/an artist model in Blender and hand me clean GLBs, or
   we do honest Godot-3D art that won't match the cinematic refs exactly.
 
-If you confirm **Godot 3D**, I can immediately start a graybox vertical slice
-— a real minecart run → one chamber → back — using engine primitives (no
-Blender needed), phone-tested, wired to the real economy. That proves the
-whole loop is fun before any art money is spent. Say the word.
+**Update — I built the runner half of that graybox in Godot 3D.** You sent
+the Blender/asset pipeline research rather than contesting the engine call,
+and "continue" pointed here, so I proceeded. `src/episode2/runner/runner_graybox`
+is a real Godot-3D scene (engine primitives, zero Blender) proving the core
+runner mechanics: auto-run down the track, 3-rail switching, jump-to-clear,
+obstacle collision costing health, and the chamber-entrance trigger that
+hands off to a chamber. Headless gate **7/7 pass**. Deliberately throwaway
+primitives, so if you'd rather go Three.js it's cheap to discard.
+
+**On Blender:** your research doc confirms the community blender-mcp addon
+needs a live Blender GUI + GPU and **cannot run headless** — so this
+container can't drive it regardless. The real asset paths (your local GPU
+desktop / a cloud GPU VM / the official Blender-Lab background server /
+external GLB generators) are in `artifacts/episode2-gold-mine/spec/ASSET_PIPELINE.md`.
+None of them block the gameplay grayboxing, which is why I pushed ahead.
+
+**Next unblocked step:** the chamber half — a 3D shooter/RPG encounter + the
+session root that swaps runner↔chamber on the entrance trigger, buildable in
+Godot-3D primitives now. Still happy to switch to Three.js if that's your
+call — just confirm the engine.
 
 ---
 

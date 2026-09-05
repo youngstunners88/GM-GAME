@@ -207,5 +207,20 @@ decision first, say so and I'll hold.
 - `docs/model-responses/2026-09-05-*-episode2-*.md` — multi-model design
   review.
 
+- `spec/BLENDER_MCP_SETUP.md` + `spec/ASSET_PIPELINE.md` — the founder's
+  Blender-MCP research brief and the resulting asset-pipeline decision tree
+  (the community addon needs a live GUI/GPU and cannot run headless; four
+  real paths incl. the official Blender-Lab background server and external
+  GLB generators).
+- **`src/episode2/runner/runner_graybox.{gd,tscn}` + `tests/ep2_runner_graybox_test`**
+  — the first real Episode 2 build: a Godot-3D runner graybox (engine
+  primitives, no Blender) proving auto-run, 3-rail switching, jump-to-clear,
+  obstacle collision, and the `chamber_reached` entrance trigger + halt.
+  Headless gate: 7/7 pass. This is the runner half of the loop, in code.
+
 **Not done (blocked or forks on the §7 decision):** any Blender scene, any
-GLB, the minimal 3D movement+shooting runtime test. Held deliberately.
+GLB, any hyper-real asset (all need a Blender+GPU host — see ASSET_PIPELINE).
+The **chamber half** of the loop (the 3D shooter/RPG encounter + the
+persistent session root that swaps runner↔chamber on `chamber_reached`) is
+the next graybox step and is unblocked — buildable in Godot 3D primitives
+once the engine choice is confirmed. Held pending that confirm.
