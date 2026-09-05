@@ -5,6 +5,53 @@
 
 ---
 
+**🗺️ Episode 2 (Gold Mine Runner) — planning session done; one real decision needed before build (2026-09-05).**
+
+You sent the Episode 2 spec + 3 reference stills: a 3D over-the-shoulder
+minecart **runner** through the gold mine, interleaved with full 3D
+**shooter/RPG "chambers"** that dramatize the real Gold Mine protocol. This
+session did the architecture + planning slice of it (the spec's own stated
+session type). What's in the repo now, under `artifacts/episode2-gold-mine/`:
+
+- The folder scaffold the spec said existed but didn't, with your 3 reference
+  images preserved (`references/IMG_2478/2479/2480`).
+- `spec/00_ARCHITECTURE.md` — the full plan: the runner↔chamber loop, the
+  engine options, and an honest environment section.
+- `chambers/01..06_*.md` — all six chambers designed as 3D shooter/RPG
+  encounters, each mapped to the real white-paper mechanic and citing the
+  actual numbers already in `goldmine_system.gd` (100-day miner, 20% Diamond
+  burn, 3× melt / +900%, 22,000 Fort Knox shares, etc.) — no invented economics.
+- `.claude/skills/gm-game-episode2-gold-mine-runner/SKILL.md` — the working skill.
+- Multi-model design review (strong planner + Grok) in `docs/model-responses/`.
+
+**Two things I have to be straight about:**
+
+1. **The Blender pipeline can't run here.** The spec forces Blender +
+   blender-mcp + hyper-real GLB export. This container has **no Blender and
+   no GPU** (verified), and the spec's "already created" scaffold/skill did
+   not exist. So the spec's step-1/step-2 (confirm blender-mcp, make a Blender
+   scene) are blocked in this environment. I did **not** fake a 3D pipeline.
+
+2. **"Hyper-realistic, matches the references exactly" isn't achievable as a
+   mobile web game** — both design-review models said so bluntly. Those refs
+   are offline cinematic renders. The honest real-time ceiling is
+   "Uncharted-mobile / stylized realism" (baked light, emissive gold veins,
+   fog fakes). Fidelity should be judged from a real browser build, not the
+   concept art.
+
+**The one decision I need from you (I did not make it for you):**
+- **Engine:** both models strongly recommend **Godot 4.3 in 3D** (keeps one
+  engine + the existing economy/CI/export) over a second Three.js runtime.
+- **Assets:** either you/an artist model in Blender and hand me clean GLBs, or
+  we do honest Godot-3D art that won't match the cinematic refs exactly.
+
+If you confirm **Godot 3D**, I can immediately start a graybox vertical slice
+— a real minecart run → one chamber → back — using engine primitives (no
+Blender needed), phone-tested, wired to the real economy. That proves the
+whole loop is fun before any art money is spent. Say the word.
+
+---
+
 **🎬 All three Episode 1 endings are now real Seedance videos — Stage 3 finished after the credit top-up (2026-09-05).**
 
 Thank you for topping up Muapi. Stage 3 (Claim Jumper → Episode 1 close) is
