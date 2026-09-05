@@ -5,6 +5,33 @@
 
 ---
 
+**🎬 Stage 2 now has its ending too — the crystal titan gets shattered by the pickaxe, then the Fort Knox vault opens into Gold Rush (2026-09-05).**
+
+Same treatment as Stage 1, one boss later: beat the Distributor (the crystal
+titan) and a ~7-second scene plays in place of the old plain "LEVEL
+COMPLETE!" text — incoming crystal shards get batted down with the pickaxe,
+a close-in smash cracks the boss while Lil Blunt talks trash ("Nice
+diamonds. Mine now."), the titan shatters into a real blue/purple/gold
+particle burst, then the actual Fort Knox vault door art you already have in
+the project (`fort_knox_vault_door.png`) swings into view and the screen
+washes gold as you head into Stage 3. The crystal boss's own defeat line
+(his existing custom voice) already played a moment earlier — this doesn't
+duplicate it, it's a separate beat.
+
+Same deliberate scope call as Stage 1, same reason: in-engine, not a
+rendered video, because a video can't ship its own dialogue reliably on this
+project's web export. Same design-review-before-code process too: Grok 4.5 +
+gpt-6-astra-pro on the beat sheet, Kimi K3 auditing the boss-death wiring
+(that's what caught real Stage 1 issues before they shipped — same discipline
+applies here). New gate `stage2_defeat_cutscene_test` passes 5/5 across
+repeated runs (I found and fixed a one-frame test-timing flake myself before
+calling it done — the scene frees ~15 child nodes in its last frame, and one
+frame of margin wasn't always enough for the test to observe it). Security
+sentinel still 18/18. Existing `distributor_behaviour_test` (25 checks
+covering the whole fight, not just the ending) still fully green.
+
+---
+
 **🎬 Stage 1 now has a real ending — the Auditor's defeat leads straight into Crystal Caverns (2026-09-05).**
 
 You asked for a clear beat after the first boss so it's obvious you're moving

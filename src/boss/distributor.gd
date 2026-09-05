@@ -1241,14 +1241,18 @@ func die() -> void:
 	tween.parallel().tween_property(self, "rotation", PI * 4, 1.0)
 	tween.parallel().tween_property(self, "modulate:a", 0.0, 1.0)
 	await tween.finished
-	var victory := Label.new()
-	victory.text = "LEVEL COMPLETE!\nOnward to the Gold Rush!"
-	victory.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	victory.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	victory.position = global_position - Vector2(100, 50)
-	victory.add_theme_font_size_override("font_size", 32)
-	get_tree().current_scene.add_child(victory)
-	await get_tree().create_timer(3.0).timeout
+	# Stage 2 -> Gold Rush progress beat: pickaxe shatters the crystal titan,
+	# the Fort Knox vault door opens. Purely presentational — StateMachine
+	# has been LEVEL_COMPLETE since near the top of this function, so player
+	# input has already been frozen for the whole sequence; this only
+	# extends that already-safe window, same as the tween above. Replaces
+	# the plain "LEVEL COMPLETE!" Label + 3s wait that used to sit here. See
+	# src/level/stage2_boss_defeat_cutscene.gd and the design brief +
+	# multi-model review at docs/model-responses/2026-09-05-*-stage2-defeat-cutscene.md.
+	var cutscene := preload("res://src/level/stage2_boss_defeat_cutscene.gd").new()
+	get_tree().current_scene.add_child(cutscene)
+	cutscene.play()
+	await cutscene.finished
 	# Kimi audit: free BEFORE the scene load. Brief G: advance to Level 3
 	# (Gold Rush), not the menu — this is Level 2's boss.
 	queue_free()

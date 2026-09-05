@@ -174,6 +174,13 @@
       "voice_status": "LIVE on the real custom 'Lil Blunt' voice. Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
     },
     {
+      "id": "cutscene_s2_defeat_lilblunt",
+      "text": "Nice diamonds. Mine now.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Stage 2 boss-defeat cutscene — Lil Blunt's cocky line after the pickaxe finishing blow on the Distributor (Crystalline Bureaucrat), before the Fort Knox vault door opens into Gold Rush (Stage 3). Same custom 'Lil Blunt' voice as the other vo_*/cutscene_* barks. The Crystal boss's own defeat reaction uses its EXISTING 'death' line (boss_voice_system.gd / boss-voices.json, voice_id VtsQlMLXxJPBwTtPTtoc) which already fires at the top of distributor.gd::die() — no new boss line needed here.",
+      "voice_status": "LIVE on the real custom 'Lil Blunt' voice. Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
+    },
+    {
       "id": "vo_attack",
       "text": "Yo! Got 'em!",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
