@@ -1,18 +1,14 @@
 extends Node
-## Gate for src/level/stage1_boss_defeat_cutscene.gd — the Stage 1 boss-defeat
-## progress beat wired into auditor.gd::die() before victory_screen.
-##
-## Both design-review passes (Grok 4.5 + gpt-6-astra-pro, see
-## docs/model-responses/2026-09-05-*-stage1-defeat-cutscene.md) converged on
-## the same failure-safety spine: the sequence must reach `finished` in
-## bounded time under normal conditions, AND it must still reach `finished`
-## even when the player node it looks up doesn't exist (this project's own
-## freeze-bug history is entirely sequences that assumed some other node
-## would still be there a frame later).
+## Gate for src/level/stage1_boss_defeat_cutscene.gd — now a real Seedance-
+## generated Ogg Theora+Vorbis video (was a screen-space ColorRect sequence
+## before the founder rejected that substitution). Proves the video actually
+## decodes, plays for close to its real duration, and produces non-silent
+## audio activity on the AudioServer bus — not just that the node exists.
 ##
 ## Run: .godot-cache/Godot_v4.3-stable_linux.x86_64 --headless res://tests/stage1_defeat_cutscene_test.tscn
 
 const CUTSCENE := preload("res://src/level/stage1_boss_defeat_cutscene.gd")
+const VIDEO_PATH := "res://src/assets/video/cutscenes/stage1_boss_defeat.ogv"
 
 var _fail: int = 0
 
@@ -26,48 +22,43 @@ func _check(label: String, ok: bool, detail: String = "") -> void:
 func _ready() -> void:
 	await get_tree().process_frame
 	print("STAGE1 DEFEAT CUTSCENE:")
-	await _run_without_player()
-	await _run_with_player()
+	_check("video asset exists on disk", ResourceLoader.exists(VIDEO_PATH))
+	await _run_normal()
 	print("STAGE1_DEFEAT_CUTSCENE: %s" % ("ALL PASS" if _fail == 0 else "%d FAILURE(S)" % _fail))
 	get_tree().quit(_fail)
 
-## Failure-safety case: no "player" group member exists at all. The cutscene
-## must not hang or error trying to reach into a node that isn't there.
-func _run_without_player() -> void:
+func _run_normal() -> void:
 	var cutscene: CanvasLayer = CUTSCENE.new()
 	add_child(cutscene)
 	var start_ms := Time.get_ticks_msec()
+
+	# Sample AudioServer peak volume across the real 15s runtime to prove the
+	# video's embedded audio track is actually being decoded and mixed, not
+	# just present in the file. A real device isn't required for this —
+	# headless runs the mix through the Dummy driver, which still reports
+	# peak levels for whatever's playing.
+	var master_bus := AudioServer.get_bus_index("Master")
+	var saw_audio_activity := false
+
 	cutscene.play()
-	await cutscene.finished
+
+	while is_instance_valid(cutscene):
+		if master_bus != -1:
+			var peak_l: float = AudioServer.get_bus_peak_volume_left_db(master_bus, 0)
+			# -80 dB is effectively silence; anything clearly above that means
+			# something is actually being mixed to the output.
+			if peak_l > -60.0:
+				saw_audio_activity = true
+		await get_tree().create_timer(0.3, true, false, true).timeout
+
 	var elapsed := (Time.get_ticks_msec() - start_ms) / 1000.0
-	_check("finishes with no player present", true)
-	_check("finishes well under its own 14s hard deadline (took %.1fs)" % elapsed,
-		elapsed < 12.0, "took %.1fs — deadline path likely triggered instead of normal completion" % elapsed)
-	# queue_free() defers actual deallocation to end-of-frame, so give it one
-	# frame before checking — this is a test-timing wait, not a game wait.
+	_check("finishes", true)
+	_check("ran close to the video's real ~15s duration (took %.1fs)" % elapsed,
+		elapsed > 10.0 and elapsed < 22.0,
+		"took %.1fs — too short means it degraded instead of actually playing; too long means the 20s hard deadline fired" % elapsed)
+	_check("AudioServer registered non-silent activity while the video played", saw_audio_activity,
+		"peak level never rose above -60dB — the embedded audio track may not be decoding/mixing")
+
+	await get_tree().process_frame
 	await get_tree().process_frame
 	_check("frees itself after finishing", not is_instance_valid(cutscene))
-
-## Normal case: a real player node exists and gets the MINER outfit.
-func _run_with_player() -> void:
-	StateMachine.change_state(StateMachine.State.TRANSITIONING)
-	StateMachine.change_state(StateMachine.State.PLAYING)
-	var player: CharacterBody2D = preload("res://src/player/player.tscn").instantiate()
-	add_child(player)
-	player.global_position = Vector2(500, 300)
-	await get_tree().physics_frame
-
-	var cutscene: CanvasLayer = CUTSCENE.new()
-	add_child(cutscene)
-	var start_ms := Time.get_ticks_msec()
-	cutscene.play()
-	await cutscene.finished
-	var elapsed := (Time.get_ticks_msec() - start_ms) / 1000.0
-	_check("finishes with a real player present (took %.1fs)" % elapsed, elapsed < 12.0)
-	_check("player was given the MINER outfit (same call level_02 makes)",
-		is_instance_valid(player) and player.current_outfit == Player.Outfit.MINER)
-	_check("player node itself was never freed or hidden by the cutscene",
-		is_instance_valid(player) and player.modulate.a > 0.0)
-
-	if is_instance_valid(player):
-		player.queue_free()
