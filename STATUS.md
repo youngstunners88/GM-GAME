@@ -66,6 +66,24 @@ session root that swaps runner↔chamber on the entrance trigger, buildable in
 Godot-3D primitives now. Still happy to switch to Three.js if that's your
 call — just confirm the engine.
 
+**Update — your headless-3D research doc was right, and I proved it here.**
+Your second brief said Blender can export GLB in-container without a GPU or
+display. I tested that end to end and it **works**: installing the `bpy`
+Python wheel gives headless Blender, and GLB export runs no render pass so it
+needs no GPU. I wrote `tools/blender/build_asset.py` and it generated three
+real props right in this container — `minecart.glb`, `gold_nugget.glb`,
+`rail_segment.glb` — and a Godot gate (`tests/ep2_glb_pipeline_test`) proves
+Godot 4.3 actually **imports and loads** all three into real 3D mesh scenes
+(minecart = 7 parts: hull/rim/4 wheels/leaf emblem). **All pass, headless.**
+
+What this unlocks: **stylized, hard-surface props** (cart, rails, beams,
+lanterns, nuggets, rocks) can now be built and dropped into the runner
+in-session, no external Blender machine needed. What it does **not** change:
+a hyper-real, rigged **hero Lil Blunt still needs a human Blender pass** — a
+primitive-assembly script can't author an organic character, and I won't
+pretend otherwise. Details in `ASSET_PIPELINE.md` (new Path E, marked
+VERIFIED). Security sentinel green (18/18) on this change.
+
 ---
 
 **🎬 All three Episode 1 endings are now real Seedance videos — Stage 3 finished after the credit top-up (2026-09-05).**
