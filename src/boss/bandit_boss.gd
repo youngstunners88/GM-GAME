@@ -139,14 +139,19 @@ func die() -> void:
 	tween.parallel().tween_property(self, "rotation", PI * 4, 1.0)
 	tween.parallel().tween_property(self, "modulate:a", 0.0, 1.0)
 	await tween.finished
-	var victory := Label.new()
-	victory.text = "GAME COMPLETE!\nLil Blunt victorious!"
-	victory.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	victory.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	victory.position = global_position - Vector2(100, 50)
-	victory.add_theme_font_size_override("font_size", 32)
-	get_tree().current_scene.add_child(victory)
-	await get_tree().create_timer(3.0).timeout
+	# Episode 1 close: dynamite resistance -> outthink the rail switch ->
+	# Bitcoin-token detonation -> a separate cart deeper into the mine.
+	# Purely presentational — StateMachine has been LEVEL_COMPLETE since near
+	# the top of this function, so player input has already been frozen for
+	# the whole sequence; this only extends that already-safe window, same
+	# as the tween above. Replaces the plain "GAME COMPLETE!" Label + 3s
+	# wait that used to sit here. See src/level/stage3_boss_defeat_cutscene.gd
+	# and the design brief + multi-model review at
+	# docs/model-responses/2026-09-05-*-stage3-defeat-cutscene.md.
+	var cutscene := preload("res://src/level/stage3_boss_defeat_cutscene.gd").new()
+	get_tree().current_scene.add_child(cutscene)
+	cutscene.play()
+	await cutscene.finished
 	SceneRouter.load_scene("res://src/ui/main_menu.tscn", SceneRouter.Transition.DIAMOND)
 	queue_free()
 
