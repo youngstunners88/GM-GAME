@@ -1,16 +1,14 @@
 extends Node
-## Gate for src/level/stage3_boss_defeat_cutscene.gd — the Stage 3 FINAL
-## boss-defeat progress beat (Episode 1 close) wired into
-## bandit_boss.gd::die() in place of the plain "GAME COMPLETE!" Label + 3s
-## wait.
-##
-## Same failure-safety contract as tests/stage1_defeat_cutscene_test.gd and
-## stage2_defeat_cutscene_test.gd (both shipped in PR #63): the sequence
-## must reach `finished` in bounded time and free itself afterward.
+## Gate for src/level/stage3_boss_defeat_cutscene.gd — now a real Seedance-
+## generated Ogg Theora+Vorbis video (was a screen-space ColorRect sequence
+## before the founder rejected that substitution, same as Stage 1/2). Proves
+## the video actually decodes, plays for close to its real duration, and
+## produces non-silent audio activity on the AudioServer bus.
 ##
 ## Run: .godot-cache/Godot_v4.3-stable_linux.x86_64 --headless res://tests/stage3_defeat_cutscene_test.tscn
 
 const CUTSCENE := preload("res://src/level/stage3_boss_defeat_cutscene.gd")
+const VIDEO_PATH := "res://src/assets/video/cutscenes/stage3_boss_defeat.ogv"
 
 var _fail: int = 0
 
@@ -24,6 +22,7 @@ func _check(label: String, ok: bool, detail: String = "") -> void:
 func _ready() -> void:
 	await get_tree().process_frame
 	print("STAGE3 DEFEAT CUTSCENE:")
+	_check("video asset exists on disk", ResourceLoader.exists(VIDEO_PATH))
 	await _run_normal()
 	print("STAGE3_DEFEAT_CUTSCENE: %s" % ("ALL PASS" if _fail == 0 else "%d FAILURE(S)" % _fail))
 	get_tree().quit(_fail)
@@ -32,16 +31,27 @@ func _run_normal() -> void:
 	var cutscene: CanvasLayer = CUTSCENE.new()
 	add_child(cutscene)
 	var start_ms := Time.get_ticks_msec()
+
+	var master_bus := AudioServer.get_bus_index("Master")
+	var saw_audio_activity := false
+
 	cutscene.play()
-	await cutscene.finished
+
+	while is_instance_valid(cutscene):
+		if master_bus != -1:
+			var peak_l: float = AudioServer.get_bus_peak_volume_left_db(master_bus, 0)
+			if peak_l > -60.0:
+				saw_audio_activity = true
+		await get_tree().create_timer(0.3, true, false, true).timeout
+
 	var elapsed := (Time.get_ticks_msec() - start_ms) / 1000.0
 	_check("finishes", true)
-	_check("finishes well under its own 15s hard deadline (took %.1fs)" % elapsed,
-		elapsed < 13.0, "took %.1fs — deadline path likely triggered instead of normal completion" % elapsed)
-	# queue_free() defers actual deallocation to end-of-frame. This cutscene
-	# frees many children (debris pieces, tokens, boss parts) in the same
-	# frame as itself — Stage 2's gate observed a one-frame flake here, so
-	# this one starts with two frames of margin already.
+	_check("ran close to the video's real ~15s duration (took %.1fs)" % elapsed,
+		elapsed > 10.0 and elapsed < 22.0,
+		"took %.1fs — too short means it degraded instead of actually playing; too long means the 20s hard deadline fired" % elapsed)
+	_check("AudioServer registered non-silent activity while the video played", saw_audio_activity,
+		"peak level never rose above -60dB — the embedded audio track may not be decoding/mixing")
+
 	await get_tree().process_frame
 	await get_tree().process_frame
 	_check("frees itself after finishing", not is_instance_valid(cutscene))
