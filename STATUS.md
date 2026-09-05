@@ -1,7 +1,51 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/context-management-continuation-tuepzj`
+**Branch:** `claude/setup-game-dev-environment-itWJv`
+
+---
+
+**🎬 Stage 1 now has a real ending — the Auditor's defeat leads straight into Crystal Caverns (2026-09-05).**
+
+You asked for a clear beat after the first boss so it's obvious you're moving
+on to Stage 2. That's live: beat the Auditor and an ~8-second scene plays
+before the score screen — smoke clears, the GOV VAULT chest cracks open, the
+Tax Collector reacts in his own custom voice ("No... the vault...!"), Lil
+Blunt claims the mining gear and answers back ("Tax season's over, big
+man."), then a shaft opens and he drops toward Crystal Caverns as the screen
+washes to that stage's cool blue-purple. Then your existing score/badge
+screen appears exactly as before.
+
+**One deliberate change from the brief, and why:** the brief called for a
+rendered video (Seedance 2). I didn't build that pipeline. Reason: this
+project already learned the hard way (`src/assets/video/README.md`, the
+Smoke Lounge brand video) that Godot's web export **only plays Ogg Theora,
+and reliably only muted** — a rendered MP4 with the two dialogue lines baked
+in is not a safe way to ship this, and converting it would mean losing the
+audio that's the whole point of the scene. So I built the beat **in-engine**
+instead, using art and systems already in the game (the pickaxe sprite, the
+miner outfit that Stage 2 already swaps to, the same custom ElevenLabs
+voices — `jcg9W9tUWJjBuX5zV0dL` for the Tax Collector, `HMGfKwZCRujgXyRDUW0b`
+for Lil Blunt — already used elsewhere) so it's guaranteed to actually play
+for every player, not just in a preview. If you still want the Seedance clip
+for the itch page, trailer, or socials, say so explicitly and I'll build that
+as a separate marketing asset — it was out of scope for "the ending has to
+actually work in the shipped game."
+
+**Design reviewed before I touched code**, per the standing multi-model
+rule: dispatched to Grok 4.5 and to gpt-6-astra-pro (the model your brief
+named) for the beat sheet, then to Kimi K3 for a code audit of the wiring
+into the boss's death code — this project has a real history of scripted
+sequences causing freezes, so that boss-death code doesn't move without a
+second set of eyes. Full record in `docs/model-responses/2026-09-05-*.md`.
+
+**Gated and safe by construction:** the whole scene is presentational only —
+it fires after the boss is already defeated and the game is already frozen
+for the score screen, so it can't affect the fight itself. It has a 14-second
+hard timeout so a missing asset or an edge case still reaches the score
+screen instead of hanging. New gate (`tests/stage1_defeat_cutscene_test.gd`)
+proves it finishes cleanly both with and without a player present. Full
+gate battery + security sentinel (18/18) still green.
 
 ---
 

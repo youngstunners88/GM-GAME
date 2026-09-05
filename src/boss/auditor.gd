@@ -977,6 +977,17 @@ func die() -> void:
 	tween.parallel().tween_property(self, "rotation", PI * 4, 1.0)
 	tween.parallel().tween_property(self, "modulate:a", 0.0, 1.0)
 	await tween.finished
+	# Stage 1 -> Crystal Caverns progress beat: vault looted, mining gear
+	# claimed, shaft jump. Purely presentational — StateMachine has been
+	# LEVEL_COMPLETE since the top of this function, so player input has
+	# already been frozen for the whole sequence; this only extends that
+	# already-safe window, same as the tween above. See
+	# src/level/stage1_boss_defeat_cutscene.gd and the design brief +
+	# multi-model review at docs/model-responses/2026-09-05-*-stage1-defeat-cutscene.md.
+	var cutscene := preload("res://src/level/stage1_boss_defeat_cutscene.gd").new()
+	get_tree().current_scene.add_child(cutscene)
+	cutscene.play()
+	await cutscene.finished
 	# Movie/Video-Game Layer: wallet-gated badge claim + on-chain score + NFT
 	# funnel. The level is already won; this screen is purely additive and skips
 	# cleanly with no wallet/backend. See src/ui/victory_screen.gd + LAYER_SHIFT.md.

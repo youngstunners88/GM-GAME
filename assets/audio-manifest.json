@@ -160,6 +160,20 @@
       "voice_status": "LIVE on the real custom 'Lil Blunt' voice. Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
     },
     {
+      "id": "cutscene_s1_defeat_taxcollector",
+      "text": "No... the vault...!",
+      "voice_id": "jcg9W9tUWJjBuX5zV0dL",
+      "note": "Stage 1 boss-defeat cutscene — Tax Collector reacting to the GOV VAULT being looted. Same custom 'IRS Auditor' voice already used for the tax boss's taunt/death lines (see assets/boss-voices.json); this is a one-off narrative line, not part of the randomized taunt pool, so it lives here rather than in boss-voices.json/BossVoiceData.COUNTS.",
+      "voice_status": "Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
+    },
+    {
+      "id": "cutscene_s1_defeat_lilblunt",
+      "text": "Tax season's over, big man.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Stage 1 boss-defeat cutscene — Lil Blunt claiming the mining gear before the shaft jump into Crystal Caverns. Same custom 'Lil Blunt' voice as the other vo_* barks.",
+      "voice_status": "LIVE on the real custom 'Lil Blunt' voice. Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
+    },
+    {
       "id": "vo_attack",
       "text": "Yo! Got 'em!",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",

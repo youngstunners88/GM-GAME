@@ -1,0 +1,4 @@
+[gd_scene load_steps=2 format=3 uid="uid://s1defeatcut01"]
+[ext_resource type="Script" path="res://tests/stage1_defeat_cutscene_test.gd" id="1"]
+[node name="Stage1DefeatCutsceneTest" type="Node"]
+script = ExtResource("1")
