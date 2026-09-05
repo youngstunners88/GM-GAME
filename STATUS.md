@@ -5,6 +5,41 @@
 
 ---
 
+**🎬 Episode 1 now has a real finale — the Claim Jumper goes down to his own dynamite, then Lil Blunt rides deeper into the mine (2026-09-05).**
+
+The last boss gets the send-off it deserves. Beat him and a ~9-second scene
+plays instead of the old plain "GAME COMPLETE!" text: he lights another
+stick of dynamite still looking dangerous, Lil Blunt stops brawling and
+hooks the pickaxe under a rail switch to divert his own minecart, then
+plants real Bitcoin tokens (the actual BTC sprite already in your game, not
+a generic coin — that was explicit in your brief) into his dynamite load.
+It detonates, wrecks the skull cart, and Lil Blunt boards a separate cart
+that rides deeper into the mine as an "EPISODE 1 COMPLETE / Deeper..." card
+fades in over the moving cart — never a static ending pose. Then the game
+routes to the main menu exactly as it already did.
+
+Same three things as the last two endings, same reasons: in-engine (not a
+rendered video, for the same web-export-only-plays-muted-audio reason);
+reused nothing but assets already in the game (pickaxe, the real BTC coin
+sprite, the boss's own minecart sprite, the plain minecart prop, the miner
+portrait); and design-reviewed before I touched code. One honest note on
+that last point — the Grok half of the review didn't come back usable this
+time (it started narrating a plan and stopped short of an actual beat
+sheet), so this one leans on gpt-6-astra-pro's response alone, which I still
+verified line-by-line against the real files rather than taking on faith.
+Kimi K3's code audit of the boss-death wiring is in progress; I'll fold in
+anything real it finds. New gate `stage3_defeat_cutscene_test`: 3/3 stable
+runs. Security sentinel: 18/18. Existing `claim_jumper_moves_test` still
+green — the fight itself wasn't touched.
+
+**All three Episode 1 bosses now have real endings**, in one PR (#63):
+Auditor → Crystal Caverns, Distributor → Gold Rush, Claim Jumper → Episode 1
+close. Same architecture throughout, same discipline throughout — every
+boss-death wiring change got its own multi-model design pass and its own
+Kimi audit before landing.
+
+---
+
 **🎬 Stage 2 now has its ending too — the crystal titan gets shattered by the pickaxe, then the Fort Knox vault opens into Gold Rush (2026-09-05).**
 
 Same treatment as Stage 1, one boss later: beat the Distributor (the crystal

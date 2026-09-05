@@ -181,6 +181,34 @@
       "voice_status": "LIVE on the real custom 'Lil Blunt' voice. Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
     },
     {
+      "id": "cutscene_s3_resist_bandit",
+      "text": "This claim's mine!",
+      "voice_id": "LEQxdWqt02nZ8lXoPL0Y",
+      "note": "Stage 3 FINAL boss-defeat cutscene (Episode 1 close) — Claim Jumper's opening aggression line, selling that he's still dangerous before Lil Blunt outthinks him. Same custom 'Bandit' voice already used for the bandit boss's taunt/death lines (see assets/boss-voices.json); this is a one-off narrative line, not part of the randomized taunt pool.",
+      "voice_status": "Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
+    },
+    {
+      "id": "cutscene_s3_defeat_lilblunt",
+      "text": "Bitcoin beats dynamite.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Stage 3 FINAL boss-defeat cutscene — Lil Blunt's payoff line right after the Bitcoin-token detonation wrecks the Claim Jumper's minecart. Same custom 'Lil Blunt' voice as the other vo_*/cutscene_* barks.",
+      "voice_status": "LIVE on the real custom 'Lil Blunt' voice. Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
+    },
+    {
+      "id": "cutscene_s3_defeat_bandit",
+      "text": "The tokens—!",
+      "voice_id": "LEQxdWqt02nZ8lXoPL0Y",
+      "note": "Stage 3 FINAL boss-defeat cutscene — Claim Jumper's shocked reaction to the Bitcoin-token detonation. Distinct from his EXISTING randomized 'death' lines (boss-voices.json — 'Ya blew it all up... good for you... greenhorn...' / 'My gold... my claim... my... hat...'), which already fire separately at the top of bandit_boss.gd::die() before this cutscene starts; this is a new one-off tied to this specific beat, same pattern as the Stage 1/Stage 2 cutscenes.",
+      "voice_status": "Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
+    },
+    {
+      "id": "cutscene_s3_exit_lilblunt",
+      "text": "Going deeper.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Stage 3 FINAL boss-defeat cutscene — Lil Blunt's line as he boards the mining cart heading deeper into the mine, closing Episode 1. Same custom 'Lil Blunt' voice as the other vo_*/cutscene_* barks.",
+      "voice_status": "LIVE on the real custom 'Lil Blunt' voice. Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
+    },
+    {
       "id": "vo_attack",
       "text": "Yo! Got 'em!",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
