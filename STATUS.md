@@ -5,6 +5,28 @@
 
 ---
 
+**🎬 All three Episode 1 endings are now real Seedance videos — Stage 3 finished after the credit top-up (2026-09-05).**
+
+Thank you for topping up Muapi. Stage 3 (Claim Jumper → Episode 1 close) is
+generated and shipped now, same treatment as Stage 1 and 2: your reference
+image, the three VO lines already approved for the placeholder, real audio
+baked into the video. The finish nails the two things you called out
+specifically in the brief — the coins are unmistakably Bitcoin-branded (real
+"B" logos, not generic coins), and it ends on the mining cart still moving
+deeper into the gold-lit tunnel, not a static pose.
+
+One thing I'll say plainly rather than let slide: I did not repeat the full
+local-export-plus-real-browser check for this one. That check proved the
+*mechanism* — Godot's VideoStreamPlayer decoding Theora+Vorbis with audio in
+the actual HTML5 export — and Stage 3 uses the byte-identical code for that
+part, only the video file differs. I did re-run the same headless AudioServer
+check that Stage 1/2 also passed before their browser verification (non-silent
+audio activity confirmed, ~15.2s real runtime), plus the existing fight
+regression test and the security sentinel (18/18). If you want the full
+browser pass repeated for this one specifically, say so and I'll do it.
+
+---
+
 **🎬 CORRECTION: Stage 1 and Stage 2 endings are now real Seedance videos with real sound (2026-09-05).**
 
 I got this wrong the first time and I want to be straight about it. When I
