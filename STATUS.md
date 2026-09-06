@@ -5,6 +5,34 @@
 
 ---
 
+**🚑 FIXED: the itch.io page went blank ("developer has not uploaded a adventure yet") — the game data pack was over itch's size limit (2026-09-06).**
+
+The game wasn't removed — it was **rejected by itch for being too big**. itch
+refuses to load an HTML5 embed if any single file in the zip exceeds **200 MB**,
+and `index.pck` had grown to **222 MB** (mostly the recently-added cutscene
+videos + music all bundling into it). butler kept "successfully" pushing it, so
+the build was on itch's servers but unplayable — hence the blank placeholder.
+
+**What I did:**
+- Re-encoded the 4 videos to sane web bitrates — **kept the sound on all three
+  boss-defeat cutscenes** and kept Smoke Lounge muted. Videos: 66 MB → 21 MB.
+- Re-encoded all 18 music tracks to 128 kbps in place (every track and every
+  reference preserved, no track removed). Music: 49 MB → 37 MB.
+- **Result: `index.pck` 222 MB → 183 MB** — 17 MB under itch's limit. Verified
+  by a real local web export (valid `GDPC` pack, `index.pck` = 182.99 MB).
+- All three cutscene audio gates still pass (sound decodes, ~15.2s each);
+  security sentinel 18/18.
+- **Added a permanent CI gate**: the export now FAILS the build if `index.pck`
+  exceeds 190 MB, so this can never silently take the live game down again —
+  it'll stop at CI with a clear message instead of shipping an unloadable build.
+- Added `tools/reencode_media.sh` to repeat the shrink whenever assets grow.
+
+Once CI finishes exporting + butler re-pushes, the itch page will load the game
+again (no dashboard toggle needed — itch was already trying to embed it; the
+only blocker was the file size).
+
+---
+
 **🗺️ Episode 2 (Gold Mine Runner) — planning session done; one real decision needed before build (2026-09-05).**
 
 You sent the Episode 2 spec + 3 reference stills: a 3D over-the-shoulder
