@@ -112,6 +112,41 @@ primitive-assembly script can't author an organic character, and I won't
 pretend otherwise. Details in `ASSET_PIPELINE.md` (new Path E, marked
 VERIFIED). Security sentinel green (18/18) on this change.
 
+**Update — you sent an updated ("FINAL") spec with new reference images
+(2026-09-06): named enemies (balaclava bears with bows, pushing boulders)
+and explicit traversal (duck / cart-jump / zip-line). I built the hazard
+model for it in the runner graybox — real code, not just design docs:**
+
+- **Duck** blocks an **arrow** hazard (bears firing) — jumping does NOT,
+  a flying projectile still hits you airborne. **Jump** clears a
+  **boulder** hazard (bears pushing rocks) — ducking does NOT, it crushes
+  low. These are deliberately opposite so the two threats read differently
+  at speed, not palette swaps of the same box.
+- **Zip-line** is real now too — a genuinely different plane of movement
+  (grab the overhead cable), not a fourth rail. Lane-switch/duck/jump all
+  suspend while zip-lining; dismount lands you cleanly back on the rail.
+- Design went to Grok 4.5, and I had Kimi K3 audit my own implementation
+  before calling it done — Kimi found **3 real bugs** (a float-rounding
+  edge on the duck timer, duck cover wrongly surviving a zip-line ride, and
+  a free pass on hazards right after a zip ends because gravity hadn't
+  caught the cart back up yet). Fixed all three, and I didn't just trust
+  the fix — I temporarily un-fixed each one and re-ran the tests to prove
+  they actually go red without the fix and green with it, before shipping.
+- 3 of your 5 new images were genuinely new (2 duplicated stills you'd
+  already sent) — saved as `IMG_2492`/`IMG_2497` (bear action shots) and a
+  bear-archer character reference. All in
+  `artifacts/episode2-gold-mine/references/`.
+- **What this does NOT include yet:** the bears themselves aren't spawned
+  enemies — only the arrow/boulder hazards they'd throw exist. Positioning
+  bears on ledges, aiming, and boulder-push timing is a separate pass.
+- Your spec named Three.js again — I did **not** start it. Real work
+  (this hazard model, the GLB pipeline) is already in Godot 3D, and both
+  prior model reviews said Godot over Three.js; switching now would mean
+  discarding what's built, not just "picking." Say the word if you actually
+  want Three.js specifically and I'll re-plan around it.
+- Gate: `tests/ep2_runner_graybox_test.gd`, **20/20 pass**. Security
+  sentinel 18/18. Full log in `spec/00_ARCHITECTURE.md` §5a.
+
 ---
 
 **🎬 All three Episode 1 endings are now real Seedance videos — Stage 3 finished after the credit top-up (2026-09-05).**
