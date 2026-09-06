@@ -106,6 +106,20 @@
       "note": "REAL CLIENT TRACK — SL.mp3, delivered 2026-07-29. 65.9s, VBR MP3. This replaced a 20s ElevenLabs stand-in. The generator SKIPS client-supplied entries even under --force-all so this file can never be silently regenerated over. To intentionally replace it, delete the file first.",
       "prompt": "UNUSED while source=client-supplied. Kept only as the fallback brief if the client track is ever withdrawn: ambient chill lounge soundscape, low warm synth drone, soft slow pad, gentle 420-vibe atmosphere, no beat, no melody hook, seamless loopable texture, relaxed and hazy",
       "duration_seconds": 20.0
+    },
+    {
+      "id": "goldmine_dreams",
+      "source": "client-supplied",
+      "note": "REAL CLIENT TRACK — GoldMineDreams.mp3, delivered 2026-09-06. 140.8s, VBR MP3 (~190kbps). Episode 2 runner-section music, shuffled with goldmine_high via AudioManager.play_playlist() in src/episode2/runner/runner_graybox.gd. Founder direction: plays on shuffle 'until further notice'. The generator SKIPS client-supplied entries even under --force-all so this file can never be silently regenerated over. To intentionally replace it, delete the file first.",
+      "prompt": "UNUSED while source=client-supplied.",
+      "duration_seconds": 140.8
+    },
+    {
+      "id": "goldmine_high",
+      "source": "client-supplied",
+      "note": "REAL CLIENT TRACK — GoldMineHigh.mp3, delivered 2026-09-06. 95.5s, VBR MP3 (~203kbps). Episode 2 runner-section music, shuffled with goldmine_dreams via AudioManager.play_playlist() in src/episode2/runner/runner_graybox.gd. Founder direction: plays on shuffle 'until further notice'. The generator SKIPS client-supplied entries even under --force-all so this file can never be silently regenerated over. To intentionally replace it, delete the file first.",
+      "prompt": "UNUSED while source=client-supplied.",
+      "duration_seconds": 95.5
     }
   ],
   "voice": [

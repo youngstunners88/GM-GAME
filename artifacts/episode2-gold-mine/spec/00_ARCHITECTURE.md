@@ -13,7 +13,14 @@ Blender(bpy)→GLB→Godot import pipeline (§5, corrected from the original
 socket, not the `bpy` Python module, and no longer describes reality).
 The founder sent an updated ("FINAL") spec this session with new reference
 images (balaclava-bear enemies, arrows, boulders) — verbatim copy +
-Claude's status annotations in `spec/FOUNDER_PROMPT_V2_ADDENDUM.md`.
+Claude's status annotations in `spec/FOUNDER_PROMPT_V2_ADDENDUM.md`. Later
+the same day, a third "Story-First Spec" escalated the brief into a full
+story bible (Inferno Bull companion, Winchester 1886, Wild West shooter
+tone shift) — verbatim copy in `spec/FOUNDER_PROMPT_V3_ADDENDUM.md`, story
+outline in `spec/STORY_OUTLINE.md`, First Chamber beat sheet folded into
+`chambers/01_CHAMBER_MINER_SHAFT.md`. Still planning-only — no chamber code
+exists. The runner also now carries real music (`goldmine_dreams.mp3` /
+`goldmine_high.mp3`, shuffled per founder direction).
 
 ---
 
