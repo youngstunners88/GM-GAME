@@ -147,6 +147,46 @@ model for it in the runner graybox — real code, not just design docs:**
 - Gate: `tests/ep2_runner_graybox_test.gd`, **20/20 pass**. Security
   sentinel 18/18. Full log in `spec/00_ARCHITECTURE.md` §5a.
 
+**Update — runner music is live, and you escalated the brief into a full story bible (2026-09-06):**
+
+- **The 2 tracks you sent (`GoldMineDreams.mp3`, `GoldMineHigh.mp3`) now
+  shuffle in the runner section**, exactly as asked ("until further
+  notice"). Wired through the same `AudioManager.play_playlist()` every
+  other level already uses — shuffle with no-immediate-repeat is that
+  system's existing behavior, nothing new invented. Gate:
+  `tests/ep2_runner_music_test.gd`, 5/5 pass, verified against the real
+  `AudioManager` playback state, not just that the files exist.
+- **Your "Story-First Spec"** turns Episode 2 into a story bible: Lil Blunt
+  meets the **Inferno Bull** in the first chamber, who hands him a
+  **Winchester 1886** and fights beside him — from there the game shifts
+  into a Wild West-toned 3D shooter, with room left for more companions
+  and antagonist types beyond the bears later. This session did the
+  planning pass it asked for (narrative architecture, not code):
+  - `artifacts/episode2-gold-mine/spec/STORY_OUTLINE.md` — all six
+    white-paper chambers sequenced into one journey, with a reasoned
+    underground vs. frontier call for each (the auction hall, stockpile
+    depot, and claim office read as public/frontier spaces; the miner
+    shaft, Fort Knox, and treasury stay underground).
+  - Chamber 1's design doc now has a full 8-beat Bull/Winchester
+    introduction, merged with its existing vesting mechanic rather than
+    replacing it — the bear assault during the vest bar *is* the fight
+    that introduces the gun.
+  - Companion and antagonist-variety architectures are designed at the
+    slot level (how a second companion or a new enemy type plugs in later
+    without a rewrite) — reviewed with Grok 4.5 first, since this is
+    exactly the kind of substantial design decision this project always
+    routes through a second model before I commit to it.
+  - **One thing I have to correct:** your spec's reference list says
+    `inferno_bull.png` is already on disk. It isn't — only the spec text
+    and the 2 mp3s actually arrived this turn, no image. If you have a
+    Bull reference, send it (pasted inline or attached, either works) and
+    I'll lock in his visual design the same way I did for the balaclava
+    bear.
+  - **Still not started:** any chamber code. This was explicitly a
+    planning session (your own spec called it that), and no chamber
+    graybox exists yet — building Chamber 1 for real is the next step
+    once you've had a look at the beat sheet.
+
 ---
 
 **🎬 All three Episode 1 endings are now real Seedance videos — Stage 3 finished after the credit top-up (2026-09-05).**

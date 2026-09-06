@@ -9,10 +9,14 @@ extends Node3D
 ## hour or Blender session is spent. When real GLBs arrive they drop into the
 ## same node slots without touching this logic.
 ##
-## Deliberately self-contained: it pulls in none of the Episode 1 autoloads
-## (StateMachine, GameManager, etc.) so the graybox can be reasoned about and
-## headless-tested in isolation. Economy wiring to goldmine_system.gd comes
-## when the loop is proven, not in the graybox.
+## Deliberately self-contained: it pulls in none of the Episode-1-specific
+## gameplay autoloads (StateMachine, GameManager, etc.) so the graybox can be
+## reasoned about and headless-tested in isolation. Economy wiring to
+## goldmine_system.gd comes when the loop is proven, not in the graybox.
+## `AudioManager` is the one exception — it's a project-wide music/audio
+## singleton already used across every episode/level (not Episode-1-only
+## gameplay state), so using it here is consistent with existing convention,
+## not a break of the isolation goal above.
 ##
 ## Mode model (per Astra's reviewed architecture): the runner is one of the
 ## two modes under a future persistent session root. Here it runs standalone
@@ -96,11 +100,23 @@ var _zip_segments: Array = []
 var _ziplining: bool = false
 var _was_ziplining: bool = false  # edge-detects the zip→cart dismount frame
 
+## Runner-section music, per founder direction (2026-09-06): these two
+## tracks shuffle "until further notice" — plain founder-supplied tracks,
+## same convention as every other level's `AudioManager.play_playlist()`
+## call (level_01/02/03_smoke_realm.gd etc.). `play_playlist` already
+## shuffles with no-immediate-repeat on each track's natural end — no new
+## shuffle logic needed here.
+const RUNNER_MUSIC_PLAYLIST := [
+	"res://src/assets/music/goldmine_dreams.mp3",
+	"res://src/assets/music/goldmine_high.mp3",
+]
+
 @onready var _cart: Node3D = $Cart
 
 func _ready() -> void:
 	if _cart:
 		_cart.position = Vector3(LANE_X[_lane], 0.0, 0.0)
+	AudioManager.play_playlist(RUNNER_MUSIC_PLAYLIST)
 
 ## Configure the segment before/at spawn. Call before the run advances.
 ## `obstacles` entries missing "type" default to "box" (legacy jump-clears).

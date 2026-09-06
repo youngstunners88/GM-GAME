@@ -1,13 +1,17 @@
 # FOUNDER PROMPT — Episode 2: Gold Mine Runner + Protocol Chambers (SHOOTER/RPG MODE)
 
-> **⚠️ Superseded in part, 2026-09-06.** The founder sent an updated,
-> "FINAL" spec with new reference images (balaclava-bear enemies, arrows,
-> boulders, explicit duck/cart-jump/zip-line traversal). Verbatim copy:
-> `spec/FOUNDER_PROMPT_V2_ADDENDUM.md`. Where the two conflict, V2 wins —
-> most notably the enemy/traversal spec (§3 below is now generic "dodge
-> obstacles"; V2's balaclava-bear/arrow/boulder spec is what's actually
-> implemented in `src/episode2/runner/runner_graybox.gd`). This file is
-> kept for its still-valid parts (chamber table, hard rules, folder layout).
+> **⚠️ Superseded in part, 2026-09-06 (twice).** The founder first sent an
+> updated "FINAL" spec (balaclava-bear enemies, arrows, boulders, explicit
+> duck/cart-jump/zip-line traversal) — verbatim copy:
+> `spec/FOUNDER_PROMPT_V2_ADDENDUM.md`. Then, same day, a third
+> "Story-First Spec" escalating the whole brief into a story bible (Inferno
+> Bull companion, Winchester 1886, Wild West shooter tone shift, companion/
+> antagonist architecture) — verbatim copy:
+> `spec/FOUNDER_PROMPT_V3_ADDENDUM.md`. Where these conflict, **V3 is the
+> current word** on narrative scope; V2 is still the current word on the
+> runner hazard mechanics (V3 doesn't change duck/jump/zip/arrow/boulder,
+> it adds a story frame around them). This file is kept for its still-valid
+> parts (chamber table, hard rules, folder layout).
 
 **GIVE THIS ENTIRE FILE TO CLAUDE CODE.**  
 This is the single source of truth. Do not look elsewhere for the Episode 2 brief.
