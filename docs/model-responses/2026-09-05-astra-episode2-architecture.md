@@ -1,0 +1,16 @@
+<!-- dispatched: openai/gpt-6-astra-pro
+     prompt: prompts/astra-episode2-architecture.md
+     files inlined: 0
+     tokens: 5386 in / 1124 out
+     cost: $0.1101
+     NOTE: unvalidated model output. Claude must verify every claim
+     against the real files before any of it informs code. -->
+1. **Choose Godot 4.3 3D; the deciding factor is retaining one engine and deployment pipeline.** Both engines support GLB; naming Three.js first does not justify duplicating runtime, build/deploy, input, and economy integration, nor does it guarantee higher visual fidelity. Keep `goldmine_system.gd` as the economy authority and reuse game-state/mobile-input logic where practical; those files were not provided, so their actual reuse boundaries need inspection. Validate a Godot 3D export on itch.io and representative phones early—the existing 2D export is not proof of acceptable 3D performance.
+
+2. **Use a persistent session root with separate runner/chamber scenes and explicit transition states; the deciding factor is bounded memory without losing authoritative state.** Keep economy and progression outside disposable scenes, save the runner’s track position and motion state, and swap mode-specific controllers/cameras while masking loading with a tunnel, door, or brief fade. Guard against double-triggered rewards, stale input, duplicate players, and incorrect resume positions; loading everything into one scene risks mobile memory pressure, while uncoordinated scene swaps risk state loss and stalls.
+
+3. **Reject “matches the references exactly” as an acceptance criterion; the deciding factor is measured mobile-web frame time and memory, not engine branding.** AI concept renders are art direction, not evidence of achievable real-time assets: a defensible target is realism-oriented materials, strong composition, baked lighting, limited dynamic effects, and tightly bounded environments—not guaranteed cinematic parity. Tell the founder: “We can pursue this visual direction, but fidelity must be approved from an actual browser build on agreed target phones, not from offline renders.”
+
+4. **Build a Godot graybox vertical slice next; the deciding factor is proving the complete playable loop before investing in assets.** Deliver a short minecart run → one chamber with basic movement/combat and one protocol interaction → return to the saved track position, using engine primitives explicitly labeled as temporary—not finished art. Integrate existing economy constants rather than copying or inventing numbers, and test touch controls plus the itch.io export; source files and authoritative protocol constants must be supplied for that integration. Final Blender-authored assets remain gated on a founder-provided Blender host or handed-over GLBs; blender-mcp cannot replace the missing Blender process.
+
+**If I had to pick the next 1 week of work:** ship and phone-test that one-chamber Godot graybox loop, verify state/reward continuity, and record load time, frame time, and memory before authorizing an art-production phase.

@@ -183,3 +183,10 @@ web/game/index.pck
 
 # session working files
 scratchpad/
+
+# Throwaway local web export used to browser-verify a change before shipping
+# it (see .claude/skills/browser-verify-game/SKILL.md and
+# founder-art-intake's "export locally, cleanup after" pattern). Never
+# committed; `rm -rf` is blocked by this environment's permission policy, so
+# leaving it in place and gitignoring it is the sanctioned cleanup.
+web_verify/

@@ -250,6 +250,21 @@ jobs:
             cat export.log
             exit 1
           fi
+          # itch.io rejects the WHOLE HTML embed if ANY single file in the zip
+          # exceeds 200 MB ("Zip contains file that is too large"). index.pck is
+          # the one that grows (videos, music, art bundle into it). If it crosses
+          # the limit the live game silently shows "developer has not uploaded"
+          # even though butler "succeeds" — this exact regression took the game
+          # down. Fail loudly HERE, before butler ships an unloadable build.
+          # Threshold is 190 MB, ~10 MB under itch's 200 MB hard cap, so there is
+          # margin to fix (trim/re-encode assets) before it ever reaches players.
+          PCK_BYTES=$(stat -c%s web/game/index.pck)
+          PCK_MB=$(( PCK_BYTES / 1024 / 1024 ))
+          echo "index.pck = ${PCK_MB} MB (itch per-file limit: 200 MB; CI gate: 190 MB)"
+          if [ "$PCK_BYTES" -gt $(( 190 * 1024 * 1024 )) ]; then
+            echo "::error::index.pck is ${PCK_MB} MB — over the 190 MB CI gate and approaching itch's 200 MB hard limit. Trim/re-encode heavy assets (videos, music, art) before shipping. See tools/reencode_media.sh."
+            exit 1
+          fi
 
       - name: Bundle browser Web3 bridge (Layer Shift)
         run: |
