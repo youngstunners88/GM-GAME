@@ -34,6 +34,7 @@ const VIDEO := "res://src/assets/video/cutscenes/stage3_boss_defeat.ogv"
 
 var _video_player: VideoStreamPlayer = null
 var _done := false
+var _music_muted := false
 
 func play() -> void:
 	layer = 5  # above HUD/gameplay, below the level-transition wipe (layer 10)
@@ -67,6 +68,11 @@ func play() -> void:
 	add_child(vid)
 	_video_player = vid
 	vid.finished.connect(_finish)
+	# Silence the stage/boss music so it doesn't play over the cutscene's own
+	# baked-in VO. The video's audio is on the Master bus, so muting the Music
+	# bus only kills the background track; restored in _finish() so the next
+	# stage's music plays normally.
+	_mute_stage_music()
 	vid.play()
 
 	get_tree().create_timer(20.0, true, false, true).timeout.connect(_finish)
@@ -74,10 +80,29 @@ func play() -> void:
 func _exit_tree() -> void:
 	if is_instance_valid(_video_player):
 		_video_player.stop()
+	# Safety: never leave the Music bus muted if we're torn down off the
+	# normal _finish() path.
+	_restore_stage_music()
+
+func _mute_stage_music() -> void:
+	var bus := AudioServer.get_bus_index("Music")
+	if bus < 0:
+		return
+	AudioServer.set_bus_mute(bus, true)
+	_music_muted = true
+
+func _restore_stage_music() -> void:
+	if not _music_muted:
+		return
+	var bus := AudioServer.get_bus_index("Music")
+	if bus >= 0:
+		AudioServer.set_bus_mute(bus, false)
+	_music_muted = false
 
 func _finish() -> void:
 	if _done:
 		return
 	_done = true
+	_restore_stage_music()
 	finished.emit()
 	queue_free()

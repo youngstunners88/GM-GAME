@@ -1,0 +1,4 @@
+[gd_scene load_steps=2 format=3 uid="uid://cutscenemusicmutetest01"]
+[ext_resource type="Script" path="res://tests/cutscene_music_mute_test.gd" id="1"]
+[node name="CutsceneMusicMuteTest" type="Node"]
+script = ExtResource("1")
