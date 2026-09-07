@@ -187,6 +187,49 @@ model for it in the runner graybox — real code, not just design docs:**
     graybox exists yet — building Chamber 1 for real is the next step
     once you've had a look at the beat sheet.
 
+**Update — Pascal Editor for the chambers: I ran it rather than trusting the README, and built Fort Knox for real (2026-09-07):**
+
+- **The Fort Knox Vault now exists as an actual Pascal scene**, not a plan —
+  24 × 16m hall, 6m vault walls, a melt-furnace alcove, three real door
+  openings and four labelled zones. Pascal's own validator says
+  `{"valid":true,"errors":[]}`. It's committed at
+  `artifacts/episode2-gold-mine/assets/chambers/fort_knox/fort_knox_shell.pascal.json`,
+  and `tools/pascal/build_fort_knox.mjs` rebuilds it from scratch on demand.
+- **All five Pascal chambers are specced** with real metre dimensions, named
+  zones, and one primary interaction point each, in
+  `spec/CHAMBER_ARCHITECTURE_PLAN.md`. Design reviewed with Grok 4.5 first,
+  per the usual rule — and it caught a genuine mistake in my first pass: I'd
+  built the vault as a **sealed box** with no doors and a completely walled-off
+  furnace. Fixed before committing.
+- **One correction to your spec, and it's the important one.** Your plan has
+  "build in Pascal → export GLB" as a single headless step. The first half
+  works here; the second half can't. Pascal's own tool answers:
+  *"GLB export requires the Three.js renderer, which is browser-only."* Its
+  exporter needs a live rendered scene in a browser with WebGPU, and this
+  container has no GPU.
+  So the working pipeline is: **build script (here, in git) → `.pascal.json` →
+  open in the Pascal editor on your machine → one-click GLB → into the game.**
+  That's arguably better than the original plan, because the layout is
+  versioned, reviewable code instead of a hand-dragged scene — only the final
+  export needs a browser, about a minute per chamber.
+- Two real bugs in Pascal's published package had to be worked around to get
+  this far (a `zod` version that breaks all their node-creation tools, and 179
+  malformed ESM imports). Both are documented in the build script header so
+  nobody has to rediscover them.
+- **First Chamber decision:** build it *without* Pascal. It's a rough mine
+  shaft — rock, timber, ore chutes — which is exactly what Pascal isn't for,
+  and it's the story-critical Bull/Winchester beat that shouldn't wait on an
+  asset pipeline.
+- **One thing I need from you, and it's now come up in three specs running:**
+  all three assumed a **Three.js** runtime, but every working piece of Episode
+  2 — the runner, the hazards, the music, the GLB pipeline — is **Godot 4.3
+  3D**, and two model reviews recommended Godot over adding a second runtime.
+  Pascal doesn't force the choice (GLB loads in both), so nothing here is
+  wasted either way. But: do you want Three.js *specifically* — which means
+  rebuilding the working Godot runner — or did you mean "a 3D web game," which
+  Godot already gives you? Until you tell me otherwise I'll keep building on
+  Godot, because that's where the tested code is.
+
 ---
 
 **🎬 All three Episode 1 endings are now real Seedance videos — Stage 3 finished after the credit top-up (2026-09-05).**

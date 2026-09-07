@@ -18,9 +18,16 @@ the same day, a third "Story-First Spec" escalated the brief into a full
 story bible (Inferno Bull companion, Winchester 1886, Wild West shooter
 tone shift) — verbatim copy in `spec/FOUNDER_PROMPT_V3_ADDENDUM.md`, story
 outline in `spec/STORY_OUTLINE.md`, First Chamber beat sheet folded into
-`chambers/01_CHAMBER_MINER_SHAFT.md`. Still planning-only — no chamber code
-exists. The runner also now carries real music (`goldmine_dreams.mp3` /
-`goldmine_high.mp3`, shuffled per founder direction).
+`chambers/01_CHAMBER_MINER_SHAFT.md`. Still planning-only — no chamber
+*gameplay* code exists. The runner also now carries real music
+(`goldmine_dreams.mp3` / `goldmine_high.mp3`, shuffled per founder direction).
+A fourth spec (2026-09-07) adds **Pascal Editor** for the chamber interiors —
+`spec/FOUNDER_PROMPT_V4_ADDENDUM.md` + `spec/CHAMBER_ARCHITECTURE_PLAN.md`.
+Pascal authoring is proven headless here (`tools/pascal/build_fort_knox.mjs`
+builds a validated Fort Knox shell); its **GLB export is browser-only**, so the
+pipeline is: headless build script → `*.pascal.json` → open in the Pascal
+editor → GLB. Pascal emits GLB, which loads in Godot or Three.js alike, so it
+does **not** force the still-open engine question.
 
 ---
 
