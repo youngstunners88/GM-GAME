@@ -262,10 +262,13 @@ model for it in the runner graybox — real code, not just design docs:**
   Lounge promise), the Miner Shaft's Bull section retired, and the journey
   order updated. That chamber is deliberately **not** a Pascal build — it's a
   rough industrial cavern, not architecture.
-- **Reference art:** `inferno_bull_armed`, `inferno_bull_whiskey` and
-  `inferno_bull_smelting` are saved. The profile also lists
-  `inferno_bull.png` (the logo) as on disk — that one didn't arrive; send it
-  whenever and I'll file it with the rest.
+- **Reference art: all four are now in.** `inferno_bull_armed`,
+  `inferno_bull_whiskey`, `inferno_bull_smelting`, and the **Inferno logo**
+  (the flaming-bull roundel) which landed 2026-09-08. Saved as
+  `inferno_bull_logo.jpeg` — it came through as a 400x400 JPEG rather than a
+  PNG, so it's stored under its real format instead of being mislabelled. If
+  you want it as a transparent PNG for UI/badge use, that's a quick keying
+  pass whenever you want it.
 - **Still blocked, same as before:** the Bull's character sheet, rig,
   animations and GLB are all the *same* organic-character gap as Lil Blunt's
   own model. Props are solved; characters need an artist or a supplied rigged

@@ -157,14 +157,14 @@ unmodified above.
 
 ## §3 Visual Design — reference art on disk
 
-Three of the four listed references arrived and are saved:
+**All four listed references are now on disk.** Three arrived with the profile; the logo followed on 2026-09-08:
 
 | Profile lists | On disk | Notes |
 |---|---|---|
 | `inferno_bull_armed.jpeg` | ✅ | Winchester, bandoliers, red bandana, horned hard-hat — the combat/companion look |
 | `inferno_bull_whiskey.jpeg` | ✅ | Overalls, pickaxe over shoulder, whiskey glass — the relaxed/smelting look |
 | `inferno_bull_smelting.jpeg` | ✅ | Green/flaming-horn cinematic variant, seated among molten gold — matches the Chamber 0 staging exactly |
-| `inferno_bull.png` (logo) | ❌ **not received** | The profile lists it as on disk; no logo image arrived with this message (only the three above). Send it and it'll be saved alongside the others. |
+| `inferno_bull.png` (logo) | ✅ **received 2026-09-08**, saved as `inferno_bull_logo.jpeg` | The Inferno roundel: black bull, flame-lensed aviators, brass nose ring, flames, "INFERNO" wordmark, red ground. **Filename note:** it arrived as a 400x400 JPEG, not a PNG, so it's stored with its true extension rather than mislabelled `.png`. If a transparent-background PNG is wanted for UI use, that's a separate keying pass — say the word. |
 
 ## §8 Asset & Implementation Notes — honest per-item status
 
