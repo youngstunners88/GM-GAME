@@ -238,21 +238,20 @@ model for it in the runner graybox — real code, not just design docs:**
   drifts — the runner does not get rebuilt, Pascal stays a layout tool whose
   GLB output imports into Godot, and Three.js is prototype-only. That question
   was open across four spec intakes; it should not need asking again.
-- **The Bull has a voice, and it's real audio you can play.** Five clips
-  generated and committed (`src/assets/sounds/voice/vo_bull_*.mp3`):
-  *"You made it this far. That's rarer than you think."*, the rifle hand-off,
-  *"I don't do sidekicks..."*, the Smoke Lounge promise, and the closing line.
-  Voice is **"Elijah Boone – Storytellin' Cowboy"** (ElevenLabs professional
-  tier) — I picked a stock professional voice over designing a custom one on
-  purpose: custom voices are owned by a single workspace, which is exactly why
-  the custom "Lil Blunt" voice breaks on the other API key. This one works
-  everywhere.
-  I also slowed the delivery (`speed: 0.85`) to match your "low, gravelly,
-  slow, measured" direction — the clips come out at 2.1-2.6 words/sec, which
-  is measurably slower than normal speech, so the setting demonstrably took.
-  **Please listen to one before we lock it** — I can prove they're real,
-  correctly-paced audio, but I can't judge whether the *tone* sounds like the
-  Bull to you. If it's wrong, it's a one-line manifest change to swap voices.
+- **The Bull has an ORIGINAL voice that we own.** You told me to create one,
+  and my first pass picked a stock voice instead — that was me substituting my
+  own judgement for your instruction, and it was wrong. Ownership is the whole
+  point for a brand character. Fixed: **"Inferno Bull"**
+  (`uWE48TmsTuIjyh2ifoNL`) is now an original voice designed from your
+  character profile and owned in our ElevenLabs workspace, exactly like the
+  custom Lil Blunt voice. The stock voice is gone from the project entirely.
+  I couldn't judge the three design candidates by ear, so I measured them:
+  the one I picked runs at **77 Hz** versus 112 and 129 Hz for the others,
+  with the darkest tone and more than double the chest-register energy —
+  deep and thick, by the numbers rather than by hoping. The five shipped
+  lines land at 78-89 Hz (normal male speech is ~100-120 Hz), slowed to
+  `speed 0.80`. One line came out lighter than its siblings, so I re-rolled it
+  and kept the deeper take.
 - **Your Bull profile fixed a mistake in my earlier plan, and I've corrected
   it.** I had folded the Bull/Winchester hand-off into the Miner Shaft
   (the vesting chamber). Your profile puts it in a **smelting facility** right

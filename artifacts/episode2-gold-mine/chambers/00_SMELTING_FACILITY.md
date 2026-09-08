@@ -90,11 +90,16 @@ the first chamber). Pascal is for the formal protocol interiors.
 
 All five lines above are **generated and committed** —
 `src/assets/sounds/voice/vo_bull_*.mp3`, played via
-`AudioManager.play_voice("vo_bull_made_it")` etc. Voice:
-`LNV6ahDtkAOqwn1X3R7a` ("Elijah Boone – Storytellin' Cowboy", ElevenLabs
-professional tier), with `speed: 0.85` / `stability: 0.75` to hit the
-profile's "low, gravelly, slow, measured". Defined in
-`assets/audio-manifest.json`.
+`AudioManager.play_voice("vo_bull_made_it")` etc.
+
+The Bull speaks with an **original voice designed and owned by this project**:
+`uWE48TmsTuIjyh2ifoNL` ("Inferno Bull", ElevenLabs `generated` category),
+created from the character profile via Voice Design rather than picked off the
+shelf. It measures ~78-89 Hz median pitch across the shipped lines — genuine
+bass, against ~100-120 Hz for typical adult male speech — with `speed: 0.80`
+for the profile's "slow, measured" delivery. Defined in
+`assets/audio-manifest.json`; see `spec/INFERNO_BULL_CHARACTER_PROFILE.md` §5
+for how it was chosen and measured.
 
 ## What this beat must NOT do
 
