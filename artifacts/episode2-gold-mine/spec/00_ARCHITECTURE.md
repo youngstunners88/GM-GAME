@@ -183,15 +183,14 @@ would mean discarding that, not just "picking."
 
 ## 6. Open design questions (prompt does not specify — do NOT invent)
 
-1. **Engine:** ~~Three.js or Godot 4.3?~~ **De-facto Godot 4.3 3D** as of
-   2026-09-06 — the founder's V2 spec named Three.js first again, but the
-   skill's rail #4 and both multi-model reviews (§7a) say Godot, and real
-   work (runner graybox, GLB pipeline, both headless-gated) is already
-   built there. Three.js was NOT started this session; starting it now
-   would fork mid-build without the explicit sign-off the skill requires.
-   Still nominally the founder's call to override, but "pick one" is no
-   longer the honest framing — it's now "confirm Godot, or explicitly
-   authorize discarding the Godot work to start over in Three.js."
+1. **Engine:** ✅ **CLOSED, 2026-09-08 — Godot 4.3, final, by founder
+   decision.** The runner is not to be rebuilt in Three.js. Pascal is a
+   layout tool only (its GLB output imports into Godot). Three.js is
+   allowed for optional future web prototypes but is explicitly not the
+   game runtime. Recorded as
+   `docs/architecture/adr-episode2-runtime-engine.md` (ADR-0001, Accepted).
+   This question sat open across four spec intakes; it is now settled and
+   should not be reopened without superseding that ADR.
 2. **Runner controls:** ~~auto-scroll with jump/duck + rail-switch?~~
    **Resolved in code, 2026-09-06** — auto-scroll (fixed forward speed) +
    discrete lane-switch/jump/duck + a separate zip-line mode, per §5a. Still
@@ -219,7 +218,8 @@ would mean discarding that, not just "picking."
 
 ## 7. Recommended path forward (for founder sign-off)
 
-**Engine fork is resolved by inertia + both model reviews: Godot 4.3 3D.**
+**Engine fork is CLOSED: Godot 4.3, by founder decision 2026-09-08 —
+see ADR-0001 (`docs/architecture/adr-episode2-runtime-engine.md`).**
 What's still open is organic/character assets. Three honest options,
 cheapest-first — unchanged in substance from the prior session, since bpy
 proving out props doesn't change the character-asset gap:

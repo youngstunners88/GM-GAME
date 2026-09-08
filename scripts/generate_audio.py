@@ -153,10 +153,18 @@ def main() -> int:
         print(f"VO   {line['id']}  \"{line['text']}\"")
         if dry:
             continue
-        if post(f"{API}/text-to-speech/{line_voice}", {
+        payload = {
             "text": line["text"],
             "model_id": "eleven_multilingual_v2",
-        }, out):
+        }
+        # Optional per-line delivery control (stability / similarity_boost /
+        # style / speed). Used where a character's direction is explicit about
+        # pacing — e.g. Inferno Bull is specced "low, gravelly, slow, measured",
+        # which the default settings render too brisk. Omitted lines keep
+        # ElevenLabs' defaults exactly as before.
+        if line.get("voice_settings"):
+            payload["voice_settings"] = line["voice_settings"]
+        if post(f"{API}/text-to-speech/{line_voice}", payload, out):
             ok += 1
             print(f"  -> {out.relative_to(ROOT)} ({out.stat().st_size}B)")
         else:

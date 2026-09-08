@@ -230,6 +230,49 @@ model for it in the runner graybox — real code, not just design docs:**
   Godot already gives you? Until you tell me otherwise I'll keep building on
   Godot, because that's where the tested code is.
 
+**Update — engine settled, and the Inferno Bull can speak (2026-09-08):**
+
+- **ENGINE DECISION CLOSED: Godot 4.3.** You called it, and it's now recorded
+  properly as an architecture decision record
+  (`docs/architecture/adr-episode2-runtime-engine.md`) rather than a note that
+  drifts — the runner does not get rebuilt, Pascal stays a layout tool whose
+  GLB output imports into Godot, and Three.js is prototype-only. That question
+  was open across four spec intakes; it should not need asking again.
+- **The Bull has a voice, and it's real audio you can play.** Five clips
+  generated and committed (`src/assets/sounds/voice/vo_bull_*.mp3`):
+  *"You made it this far. That's rarer than you think."*, the rifle hand-off,
+  *"I don't do sidekicks..."*, the Smoke Lounge promise, and the closing line.
+  Voice is **"Elijah Boone – Storytellin' Cowboy"** (ElevenLabs professional
+  tier) — I picked a stock professional voice over designing a custom one on
+  purpose: custom voices are owned by a single workspace, which is exactly why
+  the custom "Lil Blunt" voice breaks on the other API key. This one works
+  everywhere.
+  I also slowed the delivery (`speed: 0.85`) to match your "low, gravelly,
+  slow, measured" direction — the clips come out at 2.1-2.6 words/sec, which
+  is measurably slower than normal speech, so the setting demonstrably took.
+  **Please listen to one before we lock it** — I can prove they're real,
+  correctly-paced audio, but I can't judge whether the *tone* sounds like the
+  Bull to you. If it's wrong, it's a one-line manifest change to swap voices.
+- **Your Bull profile fixed a mistake in my earlier plan, and I've corrected
+  it.** I had folded the Bull/Winchester hand-off into the Miner Shaft
+  (the vesting chamber). Your profile puts it in a **smelting facility** right
+  after the opening runner, with Fort Knox as the first real destination —
+  which is better, because it separates the story beat from the economy. So:
+  new `chambers/00_SMELTING_FACILITY.md` with the full 9-beat meeting (the
+  drink, the sizing-up, the gun, the "I don't do sidekicks" terms, the Smoke
+  Lounge promise), the Miner Shaft's Bull section retired, and the journey
+  order updated. That chamber is deliberately **not** a Pascal build — it's a
+  rough industrial cavern, not architecture.
+- **Reference art:** `inferno_bull_armed`, `inferno_bull_whiskey` and
+  `inferno_bull_smelting` are saved. The profile also lists
+  `inferno_bull.png` (the logo) as on disk — that one didn't arrive; send it
+  whenever and I'll file it with the rest.
+- **Still blocked, same as before:** the Bull's character sheet, rig,
+  animations and GLB are all the *same* organic-character gap as Lil Blunt's
+  own model. Props are solved; characters need an artist or a supplied rigged
+  GLB. Nothing about this profile changes that, and I'd rather say so than
+  quietly not deliver items 1-4 of your asset list.
+
 ---
 
 **🎬 All three Episode 1 endings are now real Seedance videos — Stage 3 finished after the credit top-up (2026-09-05).**
