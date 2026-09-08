@@ -157,14 +157,14 @@ unmodified above.
 
 ## §3 Visual Design — reference art on disk
 
-Three of the four listed references arrived and are saved:
+**All four listed references are now on disk.** Three arrived with the profile; the logo followed on 2026-09-08:
 
 | Profile lists | On disk | Notes |
 |---|---|---|
 | `inferno_bull_armed.jpeg` | ✅ | Winchester, bandoliers, red bandana, horned hard-hat — the combat/companion look |
 | `inferno_bull_whiskey.jpeg` | ✅ | Overalls, pickaxe over shoulder, whiskey glass — the relaxed/smelting look |
 | `inferno_bull_smelting.jpeg` | ✅ | Green/flaming-horn cinematic variant, seated among molten gold — matches the Chamber 0 staging exactly |
-| `inferno_bull.png` (logo) | ❌ **not received** | The profile lists it as on disk; no logo image arrived with this message (only the three above). Send it and it'll be saved alongside the others. |
+| `inferno_bull.png` (logo) | ✅ **received 2026-09-08**, saved as `inferno_bull_logo.jpeg` | The Inferno roundel: black bull, flame-lensed aviators, brass nose ring, flames, "INFERNO" wordmark, red ground. **Filename note:** it arrived as a 400x400 JPEG, not a PNG, so it's stored with its true extension rather than mislabelled `.png`. If a transparent-background PNG is wanted for UI use, that's a separate keying pass — say the word. |
 
 ## §8 Asset & Implementation Notes — honest per-item status
 
@@ -183,44 +183,73 @@ the Bull exactly as for Lil Blunt himself. That gap is unchanged by this
 profile and still needs the founder's Option A/B/C decision in
 `00_ARCHITECTURE.md` §7.
 
-## §5 Voice — DONE, with the reasoning
+## §5 Voice — DONE. Original voice, designed and owned by this project.
 
-**Voice ID: `LNV6ahDtkAOqwn1X3R7a`** — "Elijah Boone – Storytellin' Cowboy",
-ElevenLabs *professional* tier. Stored in `assets/audio-manifest.json` on each
-Bull line as a `voice_id` override, so it's reused automatically for every
-future Bull line.
+**Voice ID: `uWE48TmsTuIjyh2ifoNL`** — name **"Inferno Bull"**, ElevenLabs
+category `generated`. This is an **original voice created from the character
+profile via ElevenLabs Voice Design**, owned by this project — not a stock
+voice. Stored as a per-line `voice_id` override in
+`assets/audio-manifest.json`, so it is reused automatically for every future
+Bull line.
 
-*Selected rather than designed*, deliberately: a professional stock voice is
-visible to every workspace, whereas a custom-designed voice is owned by one
-workspace — the trap the custom "Lil Blunt" voice already hits (`voice_status`
-in the manifest records it returning `voice_not_found` on the legacy key).
-Selecting avoids re-creating that fragility for a second character.
+**Correction on the record:** the first pass selected a stock professional
+voice ("Elijah Boone – Storytellin' Cowboy"). That was the wrong call — the
+founder's instruction was to *create* a voice we own, and ownership is the
+point for a brand character. The stock voice has been replaced entirely; no
+Bull line references it any more.
 
-**Delivery tuning:** the profile asks for "low, gravelly, **slow, measured**".
-ElevenLabs defaults render this voice too brisk, so the Bull's lines carry
-`voice_settings: {stability: 0.75, similarity_boost: 0.75, style: 0.15,
-speed: 0.85}`. This required a small generator change (`scripts/generate_audio.py`
-now passes an optional per-line `voice_settings`); lines without it are
-unaffected.
+### How the voice was chosen — by measurement, not by guessing
 
-**The five sample lines are generated and committed:**
+Voice Design returned three candidate previews from the character
+description. Since tone can't be judged here by ear, all three were decoded
+and measured on the same script:
 
-| ID | Duration | Rate |
+| Preview | Median F0 | Spectral centroid (brightness) | Energy < 300 Hz |
+|---|---|---|---|
+| 0 | 111.9 Hz | 1405 | 9.5% |
+| 1 | 128.9 Hz | 1490 | 11.8% |
+| **2 → chosen** | **77.4 Hz** | **1060 (darkest)** | **21.8%** |
+
+Preview 2 wins decisively on exactly the founder's criteria — "deep and thick".
+77 Hz is genuine bass (typical adult male speech sits ~100-120 Hz), it has the
+darkest timbre, and more than double the chest-register energy of the others.
+It was also the fastest of the three, but **pace is tunable via settings and
+timbre is not**, so it was selected on timbre and slowed with
+`voice_settings.speed = 0.80`.
+
+### Shipped clips, measured
+
+| ID | Duration | Median F0 |
 |---|---|---|
-| `vo_bull_made_it` | 4.78s | 2.09 w/s |
-| `vo_bull_take_rifle` | 5.67s | 2.29 w/s |
-| `vo_bull_no_sidekicks` | 4.78s | 2.30 w/s |
-| `vo_bull_smoke_lounge` | 5.04s | 2.58 w/s |
-| `vo_bull_still_standing` | 7.00s | 2.43 w/s |
+| `vo_bull_made_it` | 3.58s | 84.2 Hz |
+| `vo_bull_take_rifle` | 5.80s | 82.6 Hz |
+| `vo_bull_no_sidekicks` | 3.99s | 88.8 Hz |
+| `vo_bull_smoke_lounge` | 5.02s | 78.8 Hz |
+| `vo_bull_still_standing` | 7.76s | 84.2 Hz |
 
-All in `src/assets/sounds/voice/`, playable via
-`AudioManager.play_voice("vo_bull_made_it")`. 2.1-2.6 words/sec is measurably
-slower than normal speech (~2.5-3.5 w/s), confirming the `speed` setting took
-effect.
+All in `src/assets/sounds/voice/`, played via
+`AudioManager.play_voice("vo_bull_made_it")`.
 
-**Honest limit:** I verified these are real, non-trivial audio at the intended
-pace. I cannot judge *tone* — whether it sounds like the Bull. Per this
-project's own audio rule ("do NOT ship without hearing it once"), the founder
-should listen before the voice is locked. If it reads wrong, the fix is a
-different `voice_id` in the manifest plus a `--force` regenerate; no code
-changes needed.
+Two measurement notes, for honesty about method:
+- `vo_bull_no_sidekicks` first measured as 165.8 Hz — that was an **octave
+  error in the autocorrelation estimator**, not a real reading. Re-measured
+  with a harmonic-product-spectrum method it was 105 Hz: genuinely lighter
+  than its siblings, though not double. It was re-generated once and the new
+  take (88.8 Hz) kept because it measured deeper.
+- Generation is nondeterministic, so line-to-line register varies. Any line
+  that reads thin can simply be re-rolled with
+  `python3 scripts/generate_audio.py --force <id>`.
+
+**Operational note (important):** a `generated` voice is owned by **one
+ElevenLabs workspace** — this one requires the `ELEVENLABS_API` key.
+`scripts/generate_audio.py` already prefers that key over the legacy
+`ELEVENLABS_API_KEY`, so generation works; but the legacy workspace would
+return `voice_not_found`. This is the same property the custom "Lil Blunt"
+voice already has, so it is a known, precedented condition rather than a new
+fragility.
+
+**Honest limit, unchanged:** these are verified as real audio, genuinely deep
+(low-80s Hz), and correctly paced. I still cannot judge *character* by ear —
+whether it sounds like the Bull is the founder's call. If it misses, the fix
+is another Voice Design pass with an adjusted description, or a re-roll; the
+manifest is the only thing that changes.

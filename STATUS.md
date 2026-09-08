@@ -33,6 +33,46 @@ only blocker was the file size).
 
 ---
 
+**🎨 Episode 2 Smelting-Facility graphics demo (Three.js, web prototype only) — built (2026-09-08).**
+
+You asked for a Three.js graphics demo of the smelting facility, built with the
+`dream-loop` skill, everything procedural, no downloaded assets. It's in
+`artifacts/episode2-gold-mine/threejs/demo/` — open `index.html` over a local
+web server (`README.md` in that folder has the one-line command).
+
+**This is a look-development prototype, not the game.** The engine decision you
+made stands: the runtime is Godot 4.3 (ADR-0001). Nothing here ships.
+
+**What's in it:** isometric ortho camera that lazy-follows Lil Blunt (click the
+ground to move, drag to orbit, scroll to zoom); the furnace with an arched
+glowing fire mouth; a stone-rimmed crucible with a molten flame column rising
+out of it; a timber-framed masonry facade with arched doorways; a back-wall
+tunnel mouth; mine-cart rails; hanging lanterns; and both characters — Lil
+Blunt in hard-hat and headlamp, and the Inferno Bull staged nearby.
+Living detail: lantern flicker, flame lick, heat haze, drifting dust, embers,
+falling pebbles, cigar smoke, and idle/walk animations on both characters.
+
+Every mesh is a three.js primitive and every texture — flagstone, rock,
+masonry, timber, and their normal maps — is painted to a `<canvas>` at load
+time. The only file fetched is three.js itself, vendored into the folder.
+
+**Two honest limits:**
+- **The 60 fps target is unverified, not met.** The ~20 fps measured during the
+  build was on SwiftShader, a software rasterizer with no GPU — the only
+  renderer this sandbox has. That number says nothing about real hardware.
+  One page load on any machine with a GPU settles it.
+- **It does not yet match its concept art.** A fresh art-director pass scored
+  the previous round 2/10 on a gated ladder and listed ten layout faults. This
+  round rebuilt the composition against that list — camera, flame column, fire
+  mouth, crucible scale, facade placement, tunnel, lantern emission, rails,
+  stairs, foreground occlusion — and fixed three real bugs found by looking at
+  the render: ore-vein instances left floating in mid-air after the rock walls
+  moved, a lantern cage that fully enclosed its own emissive glass, and the
+  Bull standing inside the crucible plinth. It is meaningfully better and still
+  short of the target.
+
+---
+
 **🗺️ Episode 2 (Gold Mine Runner) — planning session done; one real decision needed before build (2026-09-05).**
 
 You sent the Episode 2 spec + 3 reference stills: a 3D over-the-shoulder
@@ -238,21 +278,20 @@ model for it in the runner graybox — real code, not just design docs:**
   drifts — the runner does not get rebuilt, Pascal stays a layout tool whose
   GLB output imports into Godot, and Three.js is prototype-only. That question
   was open across four spec intakes; it should not need asking again.
-- **The Bull has a voice, and it's real audio you can play.** Five clips
-  generated and committed (`src/assets/sounds/voice/vo_bull_*.mp3`):
-  *"You made it this far. That's rarer than you think."*, the rifle hand-off,
-  *"I don't do sidekicks..."*, the Smoke Lounge promise, and the closing line.
-  Voice is **"Elijah Boone – Storytellin' Cowboy"** (ElevenLabs professional
-  tier) — I picked a stock professional voice over designing a custom one on
-  purpose: custom voices are owned by a single workspace, which is exactly why
-  the custom "Lil Blunt" voice breaks on the other API key. This one works
-  everywhere.
-  I also slowed the delivery (`speed: 0.85`) to match your "low, gravelly,
-  slow, measured" direction — the clips come out at 2.1-2.6 words/sec, which
-  is measurably slower than normal speech, so the setting demonstrably took.
-  **Please listen to one before we lock it** — I can prove they're real,
-  correctly-paced audio, but I can't judge whether the *tone* sounds like the
-  Bull to you. If it's wrong, it's a one-line manifest change to swap voices.
+- **The Bull has an ORIGINAL voice that we own.** You told me to create one,
+  and my first pass picked a stock voice instead — that was me substituting my
+  own judgement for your instruction, and it was wrong. Ownership is the whole
+  point for a brand character. Fixed: **"Inferno Bull"**
+  (`uWE48TmsTuIjyh2ifoNL`) is now an original voice designed from your
+  character profile and owned in our ElevenLabs workspace, exactly like the
+  custom Lil Blunt voice. The stock voice is gone from the project entirely.
+  I couldn't judge the three design candidates by ear, so I measured them:
+  the one I picked runs at **77 Hz** versus 112 and 129 Hz for the others,
+  with the darkest tone and more than double the chest-register energy —
+  deep and thick, by the numbers rather than by hoping. The five shipped
+  lines land at 78-89 Hz (normal male speech is ~100-120 Hz), slowed to
+  `speed 0.80`. One line came out lighter than its siblings, so I re-rolled it
+  and kept the deeper take.
 - **Your Bull profile fixed a mistake in my earlier plan, and I've corrected
   it.** I had folded the Bull/Winchester hand-off into the Miner Shaft
   (the vesting chamber). Your profile puts it in a **smelting facility** right
@@ -263,10 +302,13 @@ model for it in the runner graybox — real code, not just design docs:**
   Lounge promise), the Miner Shaft's Bull section retired, and the journey
   order updated. That chamber is deliberately **not** a Pascal build — it's a
   rough industrial cavern, not architecture.
-- **Reference art:** `inferno_bull_armed`, `inferno_bull_whiskey` and
-  `inferno_bull_smelting` are saved. The profile also lists
-  `inferno_bull.png` (the logo) as on disk — that one didn't arrive; send it
-  whenever and I'll file it with the rest.
+- **Reference art: all four are now in.** `inferno_bull_armed`,
+  `inferno_bull_whiskey`, `inferno_bull_smelting`, and the **Inferno logo**
+  (the flaming-bull roundel) which landed 2026-09-08. Saved as
+  `inferno_bull_logo.jpeg` — it came through as a 400x400 JPEG rather than a
+  PNG, so it's stored under its real format instead of being mislabelled. If
+  you want it as a transparent PNG for UI/badge use, that's a quick keying
+  pass whenever you want it.
 - **Still blocked, same as before:** the Bull's character sheet, rig,
   animations and GLB are all the *same* organic-character gap as Lil Blunt's
   own model. Props are solved; characters need an artist or a supplied rigged
