@@ -33,6 +33,46 @@ only blocker was the file size).
 
 ---
 
+**🎨 Episode 2 Smelting-Facility graphics demo (Three.js, web prototype only) — built (2026-09-08).**
+
+You asked for a Three.js graphics demo of the smelting facility, built with the
+`dream-loop` skill, everything procedural, no downloaded assets. It's in
+`artifacts/episode2-gold-mine/threejs/demo/` — open `index.html` over a local
+web server (`README.md` in that folder has the one-line command).
+
+**This is a look-development prototype, not the game.** The engine decision you
+made stands: the runtime is Godot 4.3 (ADR-0001). Nothing here ships.
+
+**What's in it:** isometric ortho camera that lazy-follows Lil Blunt (click the
+ground to move, drag to orbit, scroll to zoom); the furnace with an arched
+glowing fire mouth; a stone-rimmed crucible with a molten flame column rising
+out of it; a timber-framed masonry facade with arched doorways; a back-wall
+tunnel mouth; mine-cart rails; hanging lanterns; and both characters — Lil
+Blunt in hard-hat and headlamp, and the Inferno Bull staged nearby.
+Living detail: lantern flicker, flame lick, heat haze, drifting dust, embers,
+falling pebbles, cigar smoke, and idle/walk animations on both characters.
+
+Every mesh is a three.js primitive and every texture — flagstone, rock,
+masonry, timber, and their normal maps — is painted to a `<canvas>` at load
+time. The only file fetched is three.js itself, vendored into the folder.
+
+**Two honest limits:**
+- **The 60 fps target is unverified, not met.** The ~20 fps measured during the
+  build was on SwiftShader, a software rasterizer with no GPU — the only
+  renderer this sandbox has. That number says nothing about real hardware.
+  One page load on any machine with a GPU settles it.
+- **It does not yet match its concept art.** A fresh art-director pass scored
+  the previous round 2/10 on a gated ladder and listed ten layout faults. This
+  round rebuilt the composition against that list — camera, flame column, fire
+  mouth, crucible scale, facade placement, tunnel, lantern emission, rails,
+  stairs, foreground occlusion — and fixed three real bugs found by looking at
+  the render: ore-vein instances left floating in mid-air after the rock walls
+  moved, a lantern cage that fully enclosed its own emissive glass, and the
+  Bull standing inside the crucible plinth. It is meaningfully better and still
+  short of the target.
+
+---
+
 **🗺️ Episode 2 (Gold Mine Runner) — planning session done; one real decision needed before build (2026-09-05).**
 
 You sent the Episode 2 spec + 3 reference stills: a 3D over-the-shoulder
