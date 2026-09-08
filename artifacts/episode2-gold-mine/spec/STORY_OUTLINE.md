@@ -13,19 +13,35 @@ graybox exists yet (only the runner half does, see `00_ARCHITECTURE.md`
 
 ## The journey, in order
 
+> **Sequence revised 2026-09-08** by the Inferno Bull character profile:
+> the Bull meeting + Winchester hand-off happen in a **smelting facility**
+> immediately after the opening runner (a story set-piece with no protocol
+> mechanic), and **Fort Knox** is the first protocol chamber. The Miner Shaft
+> keeps its vesting mechanic but moves later and no longer hosts the
+> companion introduction. See `chambers/00_SMELTING_FACILITY.md`.
+
 ```
 [Runner: mine descent]
         │  bear hazards (arrow/boulder), duck/jump/zipline — already built
         ▼
-[Chamber 1 — Miner Shaft]  ★ Bull entrance + Winchester 1886 hand-off (MANDATORY, founder hard rule)
-        │  GOLD Mining pillar: 100-day/1%-day vest, Diamond burn, early-claim tradeoff
-        │  (full beat sheet: chambers/01_CHAMBER_MINER_SHAFT.md)
+[Chamber 0 — SMELTING FACILITY]  ★ Inferno Bull + Winchester 1886 hand-off
+        │  STORY SET-PIECE — no protocol mechanic. Shared drink, gun hand-off,
+        │  aim/fire/cover taught. Tone shifts to Wild West shooter here.
+        │  (full beat sheet: chambers/00_SMELTING_FACILITY.md)
+        ▼
+[Runner or short walk: approach]
+        │  first armed stretch — the gun's first real use has stakes
+        ▼
+[Chamber 1 — Fort Knox Vault]   (the first PROTOCOL chamber)
+        │  Staking + Melt pillar: lock length, 3x melt for up to +900% share bonus
+        │  Built: assets/chambers/fort_knox/fort_knox_shell.pascal.json
         ▼
 [Runner: deeper rails]
-        │  same verbs (duck/jump/zip) — now Lil Blunt is armed, tone has shifted
+        │  same verbs (duck/jump/zip), now armed and accompanied
         ▼
-[Chamber 2 — Fort Knox Vault]
-        │  Staking + Melt pillar: lock length, 3x melt for up to +900% share bonus
+[Chamber 2 — Miner Shaft]
+        │  GOLD Mining pillar: 100-day/1%-day vest, Diamond burn, early-claim
+        │  tradeoff (chambers/01_CHAMBER_MINER_SHAFT.md — mechanic still valid)
         ▼
 [Runner: mine-mouth → frontier track]
         │  FIRST underground→above-ground transition

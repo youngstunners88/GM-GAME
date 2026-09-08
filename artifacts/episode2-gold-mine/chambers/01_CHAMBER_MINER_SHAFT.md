@@ -41,16 +41,26 @@ chamber verbs (aim/shoot/cover) and for the Bull's introduction. The
 "vesting-under-pressure" idea from the original design (below) still holds;
 the pressure source is now specifically the bear assault, not a placeholder.
 
-## Story integration — First Chamber = Bull entrance + Winchester hand-off
-(Per `spec/FOUNDER_PROMPT_V3_ADDENDUM.md`, the founder's story-first spec;
-beat structure reviewed by Grok 4.5,
-`docs/model-responses/2026-09-06-grok-ep2-story-outline.md`, verified against
-this chamber's existing mechanic rather than pasted verbatim.)
+## ⚠️ SUPERSEDED — the Bull/Winchester beat moved out of this chamber
 
-This chamber is the **mandatory** introduction of the Inferno Bull companion
-and the Winchester 1886 — the founder's hard rule that this must happen in
-the *first* chamber, before any others. Beat sheet, merged with the vesting
-mechanic above rather than replacing it:
+**The beat sheet below is no longer current.** It was written on 2026-09-06,
+before the founder's Inferno Bull character profile existed. That profile
+(`spec/INFERNO_BULL_CHARACTER_PROFILE.md`, 2026-09-08) places the Bull
+meeting and the Winchester hand-off in a **smelting facility** immediately
+after the opening runner section — a story set-piece with no protocol
+mechanic — and names **Fort Knox** as the first destination afterwards.
+
+- The Bull beat now lives in **`00_SMELTING_FACILITY.md`**.
+- **This chamber keeps its GOLD-mining/vesting mechanic** (above), unchanged
+  and still valid. It simply no longer hosts the companion introduction, and
+  is no longer necessarily the first chamber the player reaches.
+- The bear-assault-during-vesting idea below is still a reasonable pressure
+  design for this chamber; only the Bull/Winchester framing is retired.
+
+<details>
+<summary>Retired beat sheet (2026-09-06) — kept for history</summary>
+
+Beat sheet, merged with the vesting mechanic above rather than replacing it:
 
 1. **Enter / read the room** — Lil Blunt drops from the minecart into the
    shaft floor. The Miner Rig console (existing mechanic, above) is visible
@@ -94,6 +104,8 @@ mechanic above rather than replacing it:
 **Reward on exit (unchanged from the original mechanic):** GOLD credited per
 how far the vest bar filled; forfeited portion (if early-claimed) routed to
 `auction_gold_pool`; 20% of any Diamonds spent burned per `DIAMOND_BURN_PCT`.
+
+</details>
 
 ## Open questions (updated — some resolved above, some still open)
 - ~~Is combat required?~~ **Resolved: yes, mandatory** — it's how the Bull

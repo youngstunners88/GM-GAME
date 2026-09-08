@@ -320,6 +320,66 @@
       "text": "Woo! That's the good stuff.",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
       "note": "Lil Blunt weed-leaf celebration — eccentric, delighted, stoner-chill"
+    },
+    {
+      "id": "vo_bull_made_it",
+      "text": "You made it this far. That's rarer than you think.",
+      "voice_id": "LNV6ahDtkAOqwn1X3R7a",
+      "voice_settings": {
+        "stability": 0.75,
+        "similarity_boost": 0.75,
+        "style": 0.15,
+        "speed": 0.85
+      },
+      "note": "Inferno Bull (Episode 2 companion). Voice: 'Elijah Boone - Storytellin' Cowboy' (ElevenLabs professional tier) - selected as the closest match to the character profile's 'old miner + gunslinger, deep, gravelly, slow, measured, slight Western drawl'. Chosen over a designed custom voice deliberately: a professional stock voice is visible to every workspace, avoiding the voice_not_found trap that the custom 'Lil Blunt' voice hits on the legacy key."
+    },
+    {
+      "id": "vo_bull_take_rifle",
+      "text": "Take the rifle. You're gonna need more than a pickaxe from here on.",
+      "voice_id": "LNV6ahDtkAOqwn1X3R7a",
+      "voice_settings": {
+        "stability": 0.75,
+        "similarity_boost": 0.75,
+        "style": 0.15,
+        "speed": 0.85
+      },
+      "note": "Inferno Bull companion line - same voice/settings as vo_bull_made_it."
+    },
+    {
+      "id": "vo_bull_no_sidekicks",
+      "text": "I don't do sidekicks. But I'll walk with you a stretch.",
+      "voice_id": "LNV6ahDtkAOqwn1X3R7a",
+      "voice_settings": {
+        "stability": 0.75,
+        "similarity_boost": 0.75,
+        "style": 0.15,
+        "speed": 0.85
+      },
+      "note": "Inferno Bull companion line - same voice/settings as vo_bull_made_it."
+    },
+    {
+      "id": "vo_bull_smoke_lounge",
+      "text": "When this is over... you owe me a seat in that Smoke Lounge.",
+      "voice_id": "LNV6ahDtkAOqwn1X3R7a",
+      "voice_settings": {
+        "stability": 0.75,
+        "similarity_boost": 0.75,
+        "style": 0.15,
+        "speed": 0.85
+      },
+      "note": "Inferno Bull companion line - same voice/settings as vo_bull_made_it."
+    },
+    {
+      "id": "vo_bull_still_standing",
+      "text": "The mine don't care how long you've been down here. It only cares if you're still standing.",
+      "voice_id": "LNV6ahDtkAOqwn1X3R7a",
+      "voice_settings": {
+        "stability": 0.75,
+        "similarity_boost": 0.75,
+        "style": 0.15,
+        "speed": 0.85
+      },
+      "note": "Inferno Bull companion line - same voice/settings as vo_bull_made_it."
     }
   ]
 }
