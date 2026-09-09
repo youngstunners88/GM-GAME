@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://ep2sessionroot01"]
+
+[ext_resource type="Script" path="res://src/episode2/session/ep2_session_root.gd" id="1"]
+
+[node name="Ep2SessionRoot" type="Node"]
+script = ExtResource("1")

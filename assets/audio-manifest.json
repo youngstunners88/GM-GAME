@@ -110,16 +110,30 @@
     {
       "id": "goldmine_dreams",
       "source": "client-supplied",
-      "note": "REAL CLIENT TRACK — GoldMineDreams.mp3, delivered 2026-09-06. 140.8s, VBR MP3 (~190kbps). Episode 2 runner-section music, shuffled with goldmine_high via AudioManager.play_playlist() in src/episode2/runner/runner_graybox.gd. Founder direction: plays on shuffle 'until further notice'. The generator SKIPS client-supplied entries even under --force-all so this file can never be silently regenerated over. To intentionally replace it, delete the file first.",
+      "note": "REAL CLIENT TRACK — GoldMineDreams.mp3, delivered 2026-09-06. 140.8s, VBR MP3 (~190kbps). Episode 2 runner-section music, shuffled with goldmine_high via AudioManager.play_playlist() in src/episode2/runner/runner_graybox.gd. Founder direction: plays on shuffle 'until further notice'. The generator SKIPS client-supplied entries even under --force-all so this file can never be silently regenerated over. To intentionally replace it, delete the file first. SUPERSEDED 2026-09-09: no longer wired to the runner — the founder delivered Run.mp3/Run_1.mp3 for the runner specifically, which is the 'further notice' this entry anticipated. File and entry retained (real client asset, may be reused elsewhere); asserted unwired by tests/ep2_runner_music_test.gd.",
       "prompt": "UNUSED while source=client-supplied.",
       "duration_seconds": 140.8
     },
     {
       "id": "goldmine_high",
       "source": "client-supplied",
-      "note": "REAL CLIENT TRACK — GoldMineHigh.mp3, delivered 2026-09-06. 95.5s, VBR MP3 (~203kbps). Episode 2 runner-section music, shuffled with goldmine_dreams via AudioManager.play_playlist() in src/episode2/runner/runner_graybox.gd. Founder direction: plays on shuffle 'until further notice'. The generator SKIPS client-supplied entries even under --force-all so this file can never be silently regenerated over. To intentionally replace it, delete the file first.",
+      "note": "REAL CLIENT TRACK — GoldMineHigh.mp3, delivered 2026-09-06. 95.5s, VBR MP3 (~203kbps). Episode 2 runner-section music, shuffled with goldmine_dreams via AudioManager.play_playlist() in src/episode2/runner/runner_graybox.gd. Founder direction: plays on shuffle 'until further notice'. The generator SKIPS client-supplied entries even under --force-all so this file can never be silently regenerated over. To intentionally replace it, delete the file first. SUPERSEDED 2026-09-09: no longer wired to the runner — the founder delivered Run.mp3/Run_1.mp3 for the runner specifically, which is the 'further notice' this entry anticipated. File and entry retained (real client asset, may be reused elsewhere); asserted unwired by tests/ep2_runner_music_test.gd.",
       "prompt": "UNUSED while source=client-supplied.",
       "duration_seconds": 95.5
+    },
+    {
+      "id": "runner_run",
+      "source": "client-supplied",
+      "note": "REAL CLIENT TRACK — Run.mp3, delivered 2026-09-09. 168.6s, stereo MP3 48kHz (~201kbps). Episode 2 runner-section music, sequenced with runner_run_1 via AudioManager.play_playlist(..., force_first=true) in src/episode2/runner/runner_graybox.gd — routed through the Music bus so volume settings apply. Supersedes goldmine_dreams/goldmine_high for the runner. Delivered with an embedded mjpeg cover-art frame, stripped on import with `ffmpeg -map 0:a -c copy` so Godot's importer sees only the audio stream. The generator SKIPS client-supplied entries even under --force-all so this file can never be silently regenerated over. To intentionally replace it, delete the file first. Plays FIRST in every runner segment (force_first).",
+      "prompt": "UNUSED while source=client-supplied.",
+      "duration_seconds": 168.6
+    },
+    {
+      "id": "runner_run_1",
+      "source": "client-supplied",
+      "note": "REAL CLIENT TRACK — Run_1.mp3, delivered 2026-09-09. 139.68s, stereo MP3 48kHz (~213kbps). Episode 2 runner-section music, sequenced with runner_run via AudioManager.play_playlist(..., force_first=true) in src/episode2/runner/runner_graybox.gd — routed through the Music bus so volume settings apply. Supersedes goldmine_dreams/goldmine_high for the runner. Delivered with an embedded mjpeg cover-art frame, stripped on import with `ffmpeg -map 0:a -c copy` so Godot's importer sees only the audio stream. The generator SKIPS client-supplied entries even under --force-all so this file can never be silently regenerated over. To intentionally replace it, delete the file first.",
+      "prompt": "UNUSED while source=client-supplied.",
+      "duration_seconds": 139.68
     }
   ],
   "voice": [

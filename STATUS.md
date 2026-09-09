@@ -1,7 +1,87 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/setup-game-dev-environment-itWJv`
+**Branch:** `claude/audit-tool-references-8y0zkt`
+
+---
+
+**🎮 EPISODE 2: the runner↔chamber loop is closed — Chamber 1 (Miner Shaft) built, session root wired, new runner soundtrack in (2026-09-09).**
+
+Episode 2 previously had only half a loop: a runner graybox that stopped at a
+chamber entrance and emitted a signal nothing listened to. Both missing halves
+now exist and are gated headlessly.
+
+**1. Chamber 1 — Miner Shaft (`src/episode2/chamber/miner_shaft.gd`)**
+The GOLD-mining/vesting encounter from the chamber brief, as a 3D graybox
+(engine primitives, no art — same discipline as the runner):
+- Start a Miner with **ETH** or **ETH+Diamonds**; the vest bar fills as the
+  compressed 100-day / 1%-per-day curve.
+- **Early Claim lever always available**: take the vested portion now and
+  forfeit the unvested remainder to the auction pool — the white paper's real
+  risk/reward tradeoff, as a combat decision.
+- Pressure is the balaclava-bear assault: bears only mobilise once the rig
+  starts, close on it, and sabotage. Shooting is deterministic (nearest target,
+  no RNG) so the gate can assert exact outcomes.
+- **Cover is a real trade, not a free win** — behind cover you stop losing
+  health and start losing yield.
+- Protocol numbers are read from `goldmine_system.gd`, never invented. The GOLD
+  principal is a caller-supplied argument precisely *because* no such constant
+  exists in the white paper.
+
+**2. Session root (`src/episode2/session/ep2_session_root.gd`)**
+The persistent root that swaps runner↔chamber on the entrance trigger and owns
+everything that must outlive a disposable scene. All five architecture guards
+are implemented **and individually asserted**: double-triggered rewards, stale
+input, duplicate player, wrong resume position, mobile memory.
+
+**3. Zip-line — already built, now actually reachable**
+The IMG_2479 overhead zip-line traversal was already implemented and unit-tested
+in the runner (it was not, as previously noted, still to-do). What was missing is
+that nothing drove it through a real session, so "built" and "reachable in play"
+were different claims. It is now part of the default track plan and asserted
+mid-loop.
+
+**🐛 Economy bug found and fixed by the new gate.** The first version of the
+payout used `GoldMineSystem.forfeit_to_auction()` to route the unvested
+remainder. Despite the name, that function **transfers GOLD out of the player's
+balance** (clamped to it) rather than crediting the pool — so a half-vested
+1000-GOLD miner paid the player 499 and then immediately took all 499 back.
+**A successful early claim paid nothing.** The unvested remainder was never in
+the player's balance, so the commit now credits the pool without debiting the
+player. Regression-locked by test 15.
+
+**Test results — all green:**
+| Gate | Result |
+|---|---|
+| `ep2_runner_graybox_test` (pre-existing) | **21/21 PASS** |
+| `ep2_miner_shaft_test` (new) | **35/35 PASS** |
+| `ep2_session_root_test` (new) | **26/26 PASS** |
+| `ep2_runner_music_test` (updated) | **9/9 PASS** |
+| `security-sentinel.sh` | **18/18, 0 blockers** |
+
+**🎵 New runner soundtrack.** The founder's `Run.mp3` (2:48) and `Run_1.mp3`
+(2:19) are now the runner-section music, replacing `goldmine_dreams` /
+`goldmine_high` (whose 2026-09-06 "until further notice" direction this
+supersedes). Both had an embedded cover-art frame, stripped with
+`ffmpeg -map 0:a -c copy` so Godot's importer sees only audio. They arrived at
+201/213 kbps — well above this project's 128 kbps music standard — so they were
+re-encoded with the repo's own `tools/reencode_media.sh` settings, cutting them
+from 7.96 MB to **4.82 MB** with no change to length. They sequence through
+`AudioManager.play_playlist(..., force_first = true)`: Run.mp3 always opens,
+then the two alternate on natural track end, routed through the **Music bus** so
+volume settings still apply. The two retired tracks stay on disk and in the
+manifest (real client assets) but are wired to nothing.
+
+**📦 Pack size vs. the 190 MB CI gate — measured, not estimated:**
+`index.pck` = **191,854,928 bytes (182.97 MiB)** from a real local Web
+export (valid `GDPC` pack). The gate is 199,229,440 bytes, leaving
+**7.03 MiB of headroom** — comfortably passing, and roughly double the ~3 MB
+that was previously assumed. Retiring `goldmine_dreams` + `goldmine_high` from
+disk would free a further 5.55 MiB if headroom is ever needed.
+
+**Next:** tune the vest time-compression ratio and bear wave pacing by playtest
+(both are flagged open questions in the chamber brief, not design-doc answers),
+then Fort Knox as the second chamber.
 
 ---
 
