@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://ep2entry0001"]
+
+[ext_resource type="Script" path="res://src/episode2/ep2_entry.gd" id="1"]
+
+[node name="Ep2Entry" type="Node"]
+script = ExtResource("1")

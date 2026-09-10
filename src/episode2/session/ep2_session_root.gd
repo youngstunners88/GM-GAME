@@ -284,3 +284,52 @@ func get_total_distance() -> float:
 	if _mode == Mode.RUNNER and _active and _active.has_method("get_distance"):
 		live = float(_active.get_distance())
 	return _completed_distance + live
+
+# --- Live player input (guard #2 still applies) --------------------------------
+#
+# Until this block existed, Episode 2 had NO input handling anywhere: the verbs
+# above were callable only from code, so the headless gates drove the whole loop
+# while a human pressing keys did nothing. Every gate was green and the feature
+# was unplayable — instantiating a scene directly and calling step() proves the
+# LOGIC, never the REACHABILITY.
+#
+# Input maps onto the existing Episode 1 actions rather than adding new ones, so
+# the mobile touch controls (which emit these same actions) work here for free:
+#
+#   Runner   move_left/move_right = switch rail · jump = jump · move_down = duck (hold)
+#   Chamber  attack = shoot · interact = start the Miner Rig
+#            move_down = take cover (hold) · dash = pull the Early Claim lever
+#
+# Routing still goes through the mode-gated verbs above, so a key pressed on the
+# runner's last frame cannot drive a chamber that is mid-load.
+
+## Set false to drive this root purely from a test harness.
+@export var input_enabled: bool = true
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not input_enabled or event.is_echo():
+		return
+	match _mode:
+		Mode.RUNNER:
+			if event.is_action_pressed("move_left"):
+				runner_switch_lane_left()
+			elif event.is_action_pressed("move_right"):
+				runner_switch_lane_right()
+			elif event.is_action_pressed("jump"):
+				runner_jump()
+			elif event.is_action_pressed("move_down"):
+				runner_duck_start()
+			elif event.is_action_released("move_down"):
+				runner_duck_end()
+		Mode.CHAMBER:
+			if event.is_action_pressed("attack"):
+				chamber_shoot()
+			elif event.is_action_pressed("interact"):
+				# Diamonds cost more but spin a heavier miner; hold sprint to opt in.
+				chamber_start_rig("eth_diamonds" if Input.is_action_pressed("sprint") else "eth")
+			elif event.is_action_pressed("dash"):
+				chamber_early_claim()
+			elif event.is_action_pressed("move_down"):
+				chamber_take_cover()
+			elif event.is_action_released("move_down"):
+				chamber_leave_cover()

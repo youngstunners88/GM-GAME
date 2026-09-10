@@ -5,13 +5,19 @@
 # module, and the .pck is packed binary resources. These are build artifacts,
 # not source — every source path stays fully scanned.
 #
-# NOTE deliberately NOT allowlisted: the two real private keys leaked in
-# historical commit a0a4fb2 ("Initial commit - workspace backup", trading-bot
-# scripts, since deleted from the tree). Push-event scans only cover new
-# commits so day-to-day CI passes, but a full-history scan (workflow_dispatch)
-# will keep failing — correctly — until that history is rewritten. See
-# docs/security/audit-log.md (2026-07-12 incident entry). Do not "fix" a red
-# full-history scan by adding those commits here.
+# NOTE deliberately NOT allowlisted: the two real private keys that were leaked
+# in historical commit a0a4fb2 ("Initial commit - workspace backup", trading-bot
+# scripts). That history was REWRITTEN and force-pushed on 2026-07-12 (two
+# git filter-repo passes, owner-approved), and a full-history scan verified
+# 0 occurrences of either key across all refs. See docs/security/audit-log.md
+# (2026-07-12 incident entry, "Status: RESOLVED").
+#
+# So: a full-history scan (workflow_dispatch) is expected to be CLEAN today.
+# If one goes red, treat it as a NEW finding and triage it — do not dismiss it
+# as "the known historical leak", and never "fix" it by allowlisting the
+# offending commits here. (This note previously said the opposite, describing a
+# rewrite that had not happened yet; it was stale, and a stale note that tells
+# you to expect a red scan is exactly how a real leak gets waved through.)
 
 [extend]
 useDefault = true

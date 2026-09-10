@@ -5,6 +5,151 @@
 
 ---
 
+**🕹️ EPISODE 2 IS NOW REACHABLE — you can actually play it after boss 3 (2026-09-10).**
+
+You reported you couldn't test Episode 2. You were right, and the reason was
+worse than a bug: **Episode 2 was in the build but nothing could reach it.**
+
+Three things were missing, all confirmed by reading the code, not guessed:
+
+1. **No route.** `LEVEL_SEQUENCE` had exactly three entries. After boss 3,
+   `next_level_scene(3)` fell through and returned the **main menu**. No script
+   anywhere outside `src/episode2/` referenced the Episode 2 scenes at all.
+2. **No input.** Not one Episode 2 script read an input action. Every verb —
+   jump, duck, shoot, Early Claim — was callable only from code. Pressing keys
+   did literally nothing.
+3. **No lights.** Neither 3D scene had a light or an environment, so both would
+   have rendered unlit even if you'd got to them.
+
+**Why the tests never caught it — the important part.** All eight gates were
+green, including a 2000-cycle soak and a 4000-operation economy fuzz. Every one
+of them *instantiates the Episode 2 scenes directly and drives them with
+`step(delta)`*. That proves the LOGIC is right. It can never prove a **player
+can get there**. The loop was correct and unreachable at the same time, and my
+reports said "the loop is closed" — true of the loop's internals, and misleading
+about whether you could play it. That's on me.
+
+**Fixed:**
+- Boss 3 → Episode 2. Clearing the last Episode 1 level now hands off to the new
+  `src/episode2/ep2_entry.tscn` instead of the menu. Kept as an explicit
+  `EPISODE2_SCENE` constant rather than a 4th `LEVEL_SEQUENCE` entry, because
+  that array also drives unlock clamping and the campaign-complete check —
+  appending would have quietly changed all three.
+- **Real controls**, mapped onto the existing Episode 1 actions so the mobile
+  touch controls work for free: `A`/`D` switch rail, `SPACE` jump, `S` duck; in
+  the chamber `E` starts a Miner (hold `SHIFT` to pay ETH+Diamonds), shoot,
+  `S` for cover, dash for the **Early Claim** lever. `ESC` always exits.
+- **Lighting + environment** on both 3D scenes.
+- **A HUD** so a playtest is legible: mode, distance, health, lane, ammo, live
+  bear count, and a live vest bar with the claimed/forfeited GOLD on resolve.
+
+**New gate: `ep2_reachability_test` (13/13).** It asserts the path a *human*
+takes — that clearing the last level routes to Episode 2, that the entry scene
+reaches a playable RUNNER mode with no test harness driving it, that a
+synthesised `move_right` really switches rail and `jump` really lifts the cart,
+and that both scenes have a light. Its first assertion was **false** before this
+fix, so it is failing-first by construction. This is the gate class that was
+missing: everything else tested logic, this tests reachability.
+
+All gates green: reachability 13/13, economy invariants 45/45, fuzz 4000 ops,
+soak 14/14, runner 21/21, chamber 35/35, session root 26/26, music 9/9.
+
+**Honest limit:** this is proven headlessly. It has **not** been played in a
+browser yet — that needs the CI export to land and a real playtest. Episode 2 is
+still a **graybox** (box meshes, no art), so expect it to look plain; the point
+right now is that it is reachable and controllable.
+
+---
+
+**🛡️ EPISODE 2 FOUNDATION HARDENING — 21 economy defects found and fixed, foundation proven before Fort Knox (2026-09-10).**
+
+Ran a full bug/vulnerability/stress audit on the Episode 2 foundation *before*
+building Chamber 2, so a second chamber isn't stacked on unproven ground.
+
+**The economy is free-to-play — no real funds move.** It was audited as the
+**value-accounting foundation** on-chain wiring will inherit, where every one of
+these becomes a mint exploit rather than a simulation quirk.
+
+**Four reusable skills committed** (`.claude/skills/`), so this capability
+outlives the task: `goldmine-economy-invariants`, `ep2-state-transition-audit`,
+`deterministic-stress-harness`, `ep2-security-and-trust-audit`.
+
+**21 defects found and fixed.** Every assertion was written **failing-first** —
+the new gate reported 21 failures before the fixes and 0 after, so each one is
+proven to catch its bug rather than merely passing.
+
+- **Sign discipline (12 findings).** Every value-moving function accepted
+  negative amounts through an unguarded `-=`, which is a **mint**.
+  `melt_gold(-100, 50)` created 100 GOLD from nothing *and* granted 50 shares.
+  `mine_gold(-500)` drove the monotonic lifetime counter negative.
+- **The worst one:** `settle_auction(1000000, 1)` paid **100,000,000 XAUT**
+  where an honest full share pays 100 — a **10⁶× mint** from attacker-controllable
+  input, because the pool-share multiplier had no upper bound. Now clamped.
+- **`award_wbtc` overpaid.** Any pool name other than `"short"`/`"long"` fell
+  through *unscaled*, paying 100% — more than either legitimate pool.
+- **`melt_gold` hardcoded `* 3.0`** instead of deriving the bonus from its own
+  constants. Correct only because 9/3 = 3; it would have silently desynced the
+  moment either constant was retuned.
+- **Save tampering.** `load_save_data()` assigned balances straight from an
+  untrusted dict, bypassing every guard — a hand-edited save could set negative
+  balances or a Blaze pile far above its own stack limit. Now bounded.
+- **Missing burn ledger.** Auction settlement destroyed GOLD with nothing
+  recording it, so conservation was unverifiable by construction.
+
+**One fix was caught by the gate itself.** The first attempt clamped an
+over-stake to match a sibling function — which is the *same* silent-divergence
+pattern as the original `forfeit_to_auction` bug. An explicit stake should fail
+loudly, not quietly stake something smaller. Reverted to an explicit refusal.
+
+**Stress-tested, not just unit-tested.** 2000 full runner↔chamber cycles with
+**exact zero drift** on economy totals and node count; 4000 seeded fuzz
+operations across all 12 economy functions with no invariant violated; verb
+spam, out-of-order verbs and rapid re-entry all refused without a crash or a
+double payout; and a player dying mid-vest commits **nothing** to the ledger.
+
+Both stress gates are **seeded and reproducible** — a failure prints
+`REPRO: seed=… step=… op=…`. Proven non-vacuous by negative control: putting
+one bug back makes the fuzz report 471 violations naming the exact call.
+
+**Trust-boundary map delivered** (`docs/security/EP2_TRUST_BOUNDARY.md`) — eight
+value-bearing outcomes, what each would let a tampered client forge, and the
+honest verdict that **nothing is server-authoritative today because there is no
+server**. Proof-of-Play is currently spoofable three ways; the fix direction
+(seeded deterministic replay, verified off-client) is recorded as a requirement
+rather than half-built.
+
+**Also fixed:** `.gitleaks.toml` carried a **stale comment** claiming a full-history
+scan "will keep failing" — but that history was rewritten and verified clean back
+in July. A note telling future readers to expect a red scan is how a genuinely
+new leak gets waved through. Corrected.
+
+**Gates — all green:**
+| Gate | Result |
+|---|---|
+| `goldmine_economy_invariants` (new) | **45/45** (was 21 failures pre-fix) |
+| `goldmine_economy_fuzz` (new) | **4000 ops, 0 violations** |
+| `ep2_stress_soak` (new) | **14/14**, 2000 cycles, zero drift |
+| `ep2_runner_graybox` | 21/21 |
+| `ep2_miner_shaft` | 35/35 |
+| `ep2_session_root` | 26/26 |
+| `ep2_runner_music` | 9/9 |
+| `security-sentinel.sh` | 18/18, 0 blockers |
+
+`index.pck` = **191,857,168 bytes (182.97 MiB)**, **7.03 MiB** under the 190 MiB
+CI gate (+2,240 bytes from this work).
+
+**Verdict: the foundation is firm for Chamber 2.** Eight open findings are
+documented in the trust-boundary map — none block Fort Knox, all must be
+resolved before on-chain wiring. The two that matter most: claim certificates
+are currently granted **free** (the white paper's 0.5 XAUT price is declared but
+never charged), and it **cannot** be charged correctly today because the XAUT
+ledger is integer-only and 0.5 is unrepresentable. That needs a fixed-point
+decision, not a guessed rounding rule.
+
+**Next:** Fort Knox (Chamber 2), on the now-proven pattern.
+
+---
+
 **🎮 EPISODE 2: the runner↔chamber loop is closed — Chamber 1 (Miner Shaft) built, session root wired, new runner soundtrack in (2026-09-09).**
 
 Episode 2 previously had only half a loop: a runner graybox that stopped at a

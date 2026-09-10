@@ -72,6 +72,13 @@ const LEVEL_SEQUENCE: Array[String] = [
     "res://src/level/level_03_gold_rush.tscn",
 ]
 const MENU_SCENE := "res://src/ui/main_menu.tscn"
+## Episode 2 (3D Gold Mine runner + Protocol Chambers) — the destination after
+## the Episode 1 campaign is cleared. Deliberately NOT an entry in
+## LEVEL_SEQUENCE: that array means "the Episode 1 levels" and is also used for
+## highest_unlocked_level clamping and the campaign-complete check
+## (completed.size() >= LEVEL_SEQUENCE.size()), so appending to it would quietly
+## change all three. The hand-off is explicit instead.
+const EPISODE2_SCENE := "res://src/episode2/ep2_entry.tscn"
 
 ## Scene path to advance to after clearing `level_index` (1-based). Returns the
 ## menu when the campaign is complete. Also unlocks the level for continue.
@@ -81,6 +88,13 @@ func next_level_scene(cleared_level_index: int) -> String:
         highest_unlocked_level = maxi(highest_unlocked_level, next_idx + 1)
         current_level = next_idx + 1
         return LEVEL_SEQUENCE[next_idx]
+    # Episode 1 campaign cleared (boss 3 down) -> hand off to Episode 2 rather
+    # than dumping the player back at the menu. Before this, Episode 2 existed
+    # in the build but NOTHING could reach it: LEVEL_SEQUENCE had three entries,
+    # this returned MENU_SCENE, and no other script referenced the Episode 2
+    # scenes at all — which is why it could not be playtested.
+    if next_idx >= LEVEL_SEQUENCE.size():
+        return EPISODE2_SCENE
     return MENU_SCENE
 
 func level_scene(level_index: int) -> String:
