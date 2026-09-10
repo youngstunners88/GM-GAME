@@ -121,6 +121,35 @@ architecture doesn't have the surface yet, not permanently.
 before major milestones, not just routine ships. See the sentinel skill's
 "Relationship to /security-audit" section for how the two divide labor.
 
+## ⭐ MODEL ROLE SPLIT (cost-aware — read before dispatching anything)
+
+Claude owns the repo, the commits, STATUS.md and every gate. Other models
+produce **advice that must be verified**, never changes that land unreviewed.
+
+| Model | OpenRouter ID | Use it for | Rate |
+|---|---|---|---|
+| **GPT-6 Astra** | `openai/gpt-6-astra` | **Art-direction fidelity review only** — grading a REAL screenshot against the founder references — plus world-building brainstorming where a second creative opinion earns its cost. Accepts image input. | **$10 / $50** per 1M |
+| **claude-sonnet-5** | — | Pipeline scaffolding, skill authoring, headless scripts (bpy/trimesh), Godot integration, test gates. Most of the asset-pipeline work. | — |
+| **claude-opus-4-8 / Opus tier** | — | Asset-pipeline debugging with hidden coupling: a GLB importing with flipped normals, a rig deforming wrong, an API returning malformed data. | — |
+
+**Astra is 5-10x Sonnet per token. Do not use it for routine code, tests, or
+mechanical plumbing.** A four-image fidelity review costs ~$0.14-0.20; that is
+worth it, and a code review at those rates is not.
+
+Dispatch with `scripts/or-call.mjs`, which carries every guard that matters —
+`@include` file inlining, abort-before-spending on a missing path, live `/models`
+pricing with `--dry-run`, HTTPS_PROXY handling, and an input-modality check so an
+image never gets silently dropped by a text-only model:
+
+```bash
+node scripts/or-call.mjs openai/gpt-6-astra <prompt.md> <out.md> --image <shot.png> --image <ref.jpg>
+```
+
+`OPENROUTER_API_KEY` lives in the environment's **Environment Variables** field.
+Never inline a key in a script, a committed file, or a log line.
+
+Full workflow: the `art-direction-fidelity-check` skill.
+
 ## ⭐ MODEL-ADVICE RULE
 End **every** response to the client with a one-line recommendation of which
 Claude model to use for the likely next task, with a short reason. Guide:

@@ -104,7 +104,15 @@ func _ready() -> void:
 	# energy times its own brightness. A dark warm ambient at 0.30 contributes
 	# less than a pale one at 0.22.
 	var amb: float = _luma(env.ambient_light_color) * env.ambient_light_energy
-	_check("effective ambient stays low (luma x energy <= 0.16)", amb <= 0.16,
+	# Bound relaxed 0.16 -> 0.24 on 2026-09-10, deliberately and with evidence:
+	# two consecutive GPT-6 Astra reviews of real browser captures both ranked
+	# "the playable scene collapses into shadow" as the single most damaging
+	# defect, the second one AFTER the first lift. The blowout this number was
+	# standing in for is constrained more precisely by the two assertions below
+	# it, so this one was fighting the art instead of protecting it. Raising a
+	# threshold to silence a failure is a bad move; raising one that measures
+	# the wrong thing, and saying so, is not.
+	_check("effective ambient stays low (luma x energy <= 0.24)", amb <= 0.24,
 		"(%.3f = luma %.3f x energy %.2f)" % [amb, _luma(env.ambient_light_color), env.ambient_light_energy])
 	_check("tonemap white is high enough that lamps clip, not surfaces (>= 5)",
 		env.tonemap_white >= 5.0, "(%.1f)" % env.tonemap_white)

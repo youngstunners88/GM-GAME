@@ -3,17 +3,17 @@
   "shots": [
     {
       "name": "ep2_runner_start.png",
-      "bytes": 82955
+      "bytes": 145317
     },
     {
       "name": "ep2_runner_mid.png",
-      "bytes": 87659
+      "bytes": 141992
     },
     {
       "name": "ep2_runner_late.png",
-      "bytes": 102637
+      "bytes": 124827
     }
   ],
   "errors": [],
-  "captured": "2026-09-10T04:28:03.588Z"
+  "captured": "2026-09-10T04:44:18.820Z"
 }

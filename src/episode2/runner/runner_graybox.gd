@@ -132,8 +132,37 @@ const RUNNER_MUSIC_PLAYLIST := [
 	"res://src/assets/music/runner_run_1.mp3",
 ]
 
-## Headless-built GLB prop for the player cart (tools/blender/build_asset.py).
+## Headless-built GLB props (tools/blender/build_asset.py, proven importable by
+## tests/ep2_glb_pipeline_test.tscn). Every one of these has a primitive
+## fallback below it — a GLB that fails to load must degrade to a visible box,
+## never to nothing, because an invisible hazard is the worst bug this episode
+## has shipped.
 const CART_MODEL := "res://src/episode2/assets/minecart.glb"
+const LANTERN_MODEL := "res://src/episode2/assets/lantern.glb"
+const BOULDER_MODEL := "res://src/episode2/assets/boulder.glb"
+const GOLD_PILE_MODEL := "res://src/episode2/assets/gold_pile.glb"
+const ROCK_CHUNK_MODEL := "res://src/episode2/assets/rock_chunk.glb"
+## PLACEHOLDER rider, not the hero character — see
+## .claude/skills/hero-character-pipeline/SKILL.md. It exists because all three
+## founder references are anchored by Lil Blunt's green silhouette in the cart,
+## and without it the runner reads as an empty cart rolling itself downhill.
+const RIDER_PLACEHOLDER_MODEL := "res://src/episode2/assets/lil_blunt_placeholder.glb"
+
+
+## Instance a GLB prop, or return null so the caller can fall back.
+func _prop(path: String, pos: Vector3, scale: float = 1.0, yaw: float = 0.0) -> Node3D:
+	if not ResourceLoader.exists(path):
+		return null
+	var packed: PackedScene = load(path)
+	if packed == null:
+		return null
+	var n: Node3D = packed.instantiate()
+	n.position = pos
+	n.scale = Vector3.ONE * scale
+	if yaw != 0.0:
+		n.rotate_y(yaw)
+	_visuals.add_child(n)
+	return n
 
 @onready var _cart: Node3D = $Cart
 
@@ -211,6 +240,16 @@ func _apply_art() -> void:
 			cart_root.add_child(model)
 			if cart:
 				cart.visible = false
+	if cart_root and ResourceLoader.exists(RIDER_PLACEHOLDER_MODEL):
+		var rp: PackedScene = load(RIDER_PLACEHOLDER_MODEL)
+		if rp:
+			var rider: Node3D = rp.instantiate()
+			# Seated height tuned against a real capture: at y=0.72 the head sat
+			# level with the cart rim and the green silhouette — the thing that
+			# anchors all three references — was clipped by his own cart.
+			rider.position = Vector3(0.0, 1.02, 0.12)
+			rider.scale = Vector3.ONE * 1.15
+			cart_root.add_child(rider)
 
 	_build_tunnel()
 
@@ -224,16 +263,17 @@ func _apply_art() -> void:
 	var side: float = 1.0
 	while z < track_len:
 		var lamp := Ep2Palette.make_lantern_light()
-		lamp.position = Vector3(4.4 * side, 3.4, z)
+		lamp.position = Vector3((_wall_x_at(z) - 1.1) * side, 3.4, z)
 		_visuals.add_child(lamp)
-		var bulb := MeshInstance3D.new()
-		var sm := SphereMesh.new()
-		sm.radius = 0.2
-		sm.height = 0.4
-		bulb.mesh = sm
-		bulb.material_override = Ep2Palette.make("lantern")
-		bulb.position = lamp.position
-		_visuals.add_child(bulb)
+		if _prop(LANTERN_MODEL, lamp.position - Vector3(0.0, 0.42, 0.0), 1.15) == null:
+			var bulb := MeshInstance3D.new()
+			var sm := SphereMesh.new()
+			sm.radius = 0.2
+			sm.height = 0.4
+			bulb.mesh = sm
+			bulb.material_override = Ep2Palette.make("lantern")
+			bulb.position = lamp.position
+			_visuals.add_child(bulb)
 		z += 14.0
 		side = -side
 
@@ -245,18 +285,44 @@ func _apply_art() -> void:
 ## there were no surfaces for the lanterns to fall on, so a correct warm palette
 ## still rendered as a blue-black void. Every founder reference is an ENCLOSED
 ## tunnel — the rock is most of the frame. Six boxes buy the whole read.
+## Inner face of the wall at a given z — the veins and posts have to follow the
+## segmented wall or they float in mid-air where a bay opens out.
+func _wall_x_at(z: float) -> float:
+	var i: int = int(floor((z + 20.0) / 20.0))
+	if (i % 4) == 2:
+		return 8.34
+	return 5.54 + float(i % 3) * 0.35
+
+
 func _build_tunnel() -> void:
 	var track_len: float = _chamber_z + 60.0
-	var mid_z: float = track_len * 0.5 - 20.0
 
-	for side in [-1.0, 1.0]:
-		var wall := BoxMesh.new()
-		wall.size = Vector3(0.6, 7.0, track_len)
-		_add_visual(wall, Ep2Palette.make("rock"), Vector3(5.6 * side, 2.6, mid_z))
-
-	var ceiling := BoxMesh.new()
-	ceiling.size = Vector3(12.0, 0.6, track_len)
-	_add_visual(ceiling, Ep2Palette.make("rock_deep"), Vector3(0.0, 6.3, mid_z))
+	# SEGMENTED walls, not two long boxes. The fidelity review's finding #4 was
+	# that the result read as "a rectangular shaft, not a cavern" — the
+	# references have uneven openings and occasional tall, wide pockets. The
+	# gameplay route stays perfectly straight; only the enclosure breathes.
+	# Deterministic per-segment offsets (index arithmetic, no RNG) so two
+	# captures of the same track are comparable.
+	const SEG := 20.0
+	var segs: int = int(ceil(track_len / SEG))
+	for i in segs:
+		var z0: float = -20.0 + float(i) * SEG
+		var pocket: bool = (i % 4) == 2                 # every fourth bay opens out
+		var half_w: float = 8.4 if pocket else (5.6 + float(i % 3) * 0.35)
+		var h: float = 9.0 if pocket else (7.0 + float(i % 2) * 0.8)
+		for side in [-1.0, 1.0]:
+			var wall := BoxMesh.new()
+			wall.size = Vector3(0.6, h, SEG)
+			_add_visual(wall, Ep2Palette.make("rock"),
+				Vector3(half_w * side, h * 0.5 - 0.8, z0 + SEG * 0.5))
+		var ceiling := BoxMesh.new()
+		ceiling.size = Vector3(half_w * 2.0 + 1.2, 0.6, SEG)
+		_add_visual(ceiling, Ep2Palette.make("rock_deep"),
+			Vector3(0.0, h - 0.8, z0 + SEG * 0.5))
+		# Loose rock on the floor of the wide bays, so a pocket reads as a
+		# worked-out chamber rather than a gap in the wall.
+		if pocket:
+			_prop(ROCK_CHUNK_MODEL, Vector3(6.6 * (1.0 if (i % 8) == 2 else -1.0), -0.45, z0 + 9.0), 2.2)
 
 	# Gold veins in the walls — the glitter that reads as "this is a GOLD mine"
 	# rather than "this is a tunnel". Deterministic spacing, not random: a fixed
@@ -276,7 +342,7 @@ func _build_tunnel() -> void:
 			var scale: float = 0.22 + float((i + k) % 3) * 0.14
 			vein.size = Vector3(0.12, scale, scale * 1.6)
 			_add_visual(vein, Ep2Palette.make("gold_vein"),
-				Vector3(5.26 * side2,
+				Vector3(_wall_x_at(z) * side2,
 					0.9 + float((i * 3 + k) % 5) * 1.05,
 					z + float(k) * 1.3))
 		z += 4.5
@@ -286,12 +352,13 @@ func _build_tunnel() -> void:
 	# sense of speed that a smooth wall cannot.
 	var bz: float = 10.0
 	while bz < track_len - 20.0:
+		var wx: float = _wall_x_at(bz) - 0.55
 		for side3 in [-1.0, 1.0]:
 			var post := BoxMesh.new()
 			post.size = Vector3(0.45, 6.0, 0.45)
-			_add_visual(post, Ep2Palette.make("wood"), Vector3(5.0 * side3, 2.6, bz))
+			_add_visual(post, Ep2Palette.make("wood"), Vector3(wx * side3, 2.6, bz))
 		var beam := BoxMesh.new()
-		beam.size = Vector3(10.6, 0.45, 0.45)
+		beam.size = Vector3(wx * 2.0 + 0.5, 0.45, 0.45)
 		_add_visual(beam, Ep2Palette.make("wood"), Vector3(0.0, 5.6, bz))
 		bz += 18.0
 
@@ -311,6 +378,23 @@ func _build_visuals() -> void:
 		var rail := BoxMesh.new()
 		rail.size = Vector3(0.18, 0.12, _chamber_z + 40.0)
 		_add_visual(rail, Ep2Palette.make("iron"), Vector3(float(x), -0.42, (_chamber_z + 40.0) * 0.5))
+
+	# Sleepers. The fidelity review found the outer track boundaries reading
+	# more clearly than the railway itself; in every reference it is the rhythm
+	# of the cross-ties that explains where the route goes. Spaced 3 m so the
+	# count stays modest on a web export.
+	var tie_z: float = 0.0
+	while tie_z < _chamber_z + 40.0:
+		var tie := BoxMesh.new()
+		tie.size = Vector3(6.6, 0.12, 0.5)
+		_add_visual(tie, Ep2Palette.make("wood"), Vector3(0.0, -0.5, tie_z))
+		tie_z += 3.0
+
+	# Gold piles as scenery — the references never show a lone nugget, gold is
+	# always heaped. Placed off the rails so they never read as collectible.
+	for gp in [Vector3(-4.3, -0.4, _chamber_z * 0.35), Vector3(4.3, -0.4, _chamber_z * 0.62),
+			Vector3(-4.3, -0.4, _chamber_z * 0.88)]:
+		_prop(GOLD_PILE_MODEL, gp, 1.6)
 
 	# Hazards, shaped and placed by the verb that clears them.
 	for o in _obstacles:
@@ -333,10 +417,11 @@ func _build_visuals() -> void:
 			"boulder":
 				# Pale granite — in ref 1 the boulders are the lightest large
 				# objects in frame, which is what separates them from the wall.
-				var b := SphereMesh.new()
-				b.radius = 0.75
-				b.height = 1.5
-				_add_visual(b, Ep2Palette.make("boulder"), Vector3(x, 0.55, z))
+				if _prop(BOULDER_MODEL, Vector3(x, 0.7, z), 1.0) == null:
+					var b := SphereMesh.new()
+					b.radius = 0.75
+					b.height = 1.5
+					_add_visual(b, Ep2Palette.make("boulder"), Vector3(x, 0.55, z))
 			_:
 				# Timber crate with brass banding, same family as the carts.
 				var c := BoxMesh.new()

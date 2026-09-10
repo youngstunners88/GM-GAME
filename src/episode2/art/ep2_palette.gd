@@ -63,8 +63,20 @@ static func _hex(s: String) -> Color:
 static func table() -> Dictionary:
 	return {
 		# --- rock: the dark ground everything else reads against (ref 1,2,3) ---
-		"rock": Surface.new(_hex("#302D29"), 0.0, 0.78),
-		"rock_deep": Surface.new(_hex("#1E1A17"), 0.0, 0.92),
+		# COOL charcoal, not warm brown. Two independent fidelity reviews of real
+		# captures said the same thing: "the palette reads as brown timber
+		# rather than gold-bearing rock", where the references separate cool
+		# charcoal stone from warm wood and warm gold. Warming the rock made
+		# every surface in frame the same hue family and flattened the scene.
+		# Cool charcoal, but DARK cool charcoal. The first cool value (#3A3B3E)
+		# tripped the gate's gold-to-rock ratio at 3.3 against a 4.0 floor —
+		# which is Astra's OWN figure from the value study, so the two halves of
+		# its advice were in tension. Resolved the physically correct way: the
+		# hue comes from albedo, the brightness comes from the lighting rig
+		# (ambient 0.42, key 0.7), not from lifting the albedo of the thing gold
+		# is supposed to out-read.
+		"rock": Surface.new(_hex("#2C2E33"), 0.0, 0.78),
+		"rock_deep": Surface.new(_hex("#1F2126"), 0.0, 0.92),
 		# Gold in the wall glitters in all three refs. Modest emission stands in
 		# for the specular sparkle a flat box cannot produce.
 		# Emission dropped from 0.35: at 0.35 the veins read as flat yellow
@@ -76,7 +88,12 @@ static func table() -> Dictionary:
 		"wood": Surface.new(_hex("#51321C"), 0.0, 0.85),
 		"wood_light": Surface.new(_hex("#6B4A2F"), 0.0, 0.80),
 		"brass": Surface.new(_hex("#9A7039"), 0.75, 0.42),
-		"iron": Surface.new(_hex("#626367"), 0.70, 0.38),
+		# Metallic dropped 0.70 -> 0.35 and albedo lifted. In the Compatibility
+		# backend there is no reflection source, so a 0.70-metallic rail had
+		# almost nothing to reflect and rendered as a dark line: the fidelity
+		# review's finding #3 was that the outer track boundaries were clearer
+		# than the actual railway. Rails are the thing that explains the route.
+		"iron": Surface.new(_hex("#9BA0A8"), 0.30, 0.38),
 		"steel_cable": Surface.new(_hex("#777C83"), 0.80, 0.32),
 
 		# --- value: what the player is here for (ref 3 nugget carts) ---
@@ -192,8 +209,19 @@ static func make_environment() -> Environment:
 	# itself was invisible between lanterns. The references are dark AND you can
 	# always see the stone. 0.30 warm is where the rock reads brown without the
 	# gold losing its job as the bright thing.
-	env.ambient_light_color = _hex("#7E6B57")
-	env.ambient_light_energy = 0.30
+	# Cooled slightly and lifted to 0.34. The fidelity review's #1 finding was
+	# "darkness erases the playable scene" and its #2 was that the lighting was
+	# almost entirely brown, where the references contrast amber lantern pools
+	# against a cool slate cavern. The ambient term is the cool half of that
+	# contrast; the lanterns are the warm half.
+	# Cool, and lifted again to 0.42. "The playable scene collapses into shadow"
+	# was the #1 finding of BOTH fidelity reviews of real captures — the second
+	# one after the first lift. The blowout this value used to guard against is
+	# guarded better by the two assertions beside it in the gate (tonemap white,
+	# and "no ordinary surface competes with gold"), which constrain the actual
+	# cause: pale albedo with nowhere to clip.
+	env.ambient_light_color = _hex("#7C8794")
+	env.ambient_light_energy = 0.42
 
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env.tonemap_white = 6.0
@@ -232,7 +260,11 @@ static func make_key_light() -> DirectionalLight3D:
 	# lanterns and turned brown rock blue. In the references the lamps are the
 	# light source and the cool component is only the shadow fill.
 	d.light_color = _hex("#A8BCD2")
-	d.light_energy = 0.35
+	# Back up from 0.35. It was cut to 0.35 when the runner had no walls and the
+	# cool key was the ONLY thing lighting a bare floor, turning it blue. With
+	# the tunnel enclosed and lanterns actually reaching the rails, this is the
+	# cool fill the references have and the scene needs it to stop being black.
+	d.light_energy = 0.7
 	d.shadow_enabled = true
 	d.rotation_degrees = Vector3(-55.0, 30.0, 0.0)
 	return d

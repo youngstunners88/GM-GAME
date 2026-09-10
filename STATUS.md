@@ -5,6 +5,80 @@
 
 ---
 
+**🎨 EPISODE 2 NOW LOOKS LIKE A GOLD MINE (2026-09-10) — and two cameras were pointing the wrong way.**
+
+Screenshot proof: `artifacts/ep2-shots/ep2_runner_start.png` (real Chromium,
+real web export, not a mock).
+
+**What changed for you.** Episode 2 was a graybox — grey boxes in a black void.
+It is now a lit mine tunnel: charcoal rock walls with scattered gold ore, timber
+support frames, brass lanterns throwing warm pools on the rails, sleepered
+track, wide worked-out bays every fourth section, and **Lil Blunt riding in a
+real timber-and-brass minecart with the gold leaf emblem on it**.
+
+**The bug that pass found.** Both Episode 2 cameras were **facing backwards**.
+Measured, not guessed: a headless probe of the real scenes put
+`dot(camera forward, direction to the next obstacle)` at **-0.86** in the runner
+and **-0.85** to the mining rig in the chamber. You were watching the tunnel you
+had already passed. Hazards arrived from behind the camera and were never
+visible — which is the complete explanation for both "the cart isn't in frame"
+and a playtest dying in thirteen seconds. Every gate stayed green through it,
+because positions, collisions and health were all correct. Both cameras now face
+the play space, and the runner's rail order had to flip with them (looking down
++Z with +Y up puts world +X on your LEFT, so the old order would have mirrored
+A and D on screen).
+
+**A 64.6 MB download you were shipping to every player, removed.** The web
+export was sweeping all of `artifacts/` into the game package — 80 MB of your
+own reference art and old capture screenshots that no scene ever loads. The
+build went from **183.0 MiB to 121.4 MiB**, and headroom under the CI size gate
+went from 6.99 MiB to **68.6 MiB**. Faster load on itch, and room for real 3D
+assets.
+
+**How the art was decided — it was not invented.** Every colour traces to your
+three reference images. GPT-6 Astra (wired in this session via OpenRouter, image
+input and all) read those references and produced the starting palette, then
+graded two real browser screenshots against them. Both reviews are archived in
+`artifacts/episode2-gold-mine/art/`. Its top finding both times was "the
+playable scene collapses into shadow", and the lighting was re-tuned twice
+because of it. Its verdict on the last capture was still **OFF MODEL** — honest
+state below.
+
+**Nine real 3D props, built in-session, no GPU and no Blender install:**
+minecart, lantern, timber beam, boulder, rock chunk, rail segment, gold nugget,
+gold pile, and a placeholder rider. All headless via the `bpy` Python wheel,
+all proven to import into Godot with materials by an extended gate.
+
+**New gate: `ep2_art_direction_test` (21/21).** Failing-first by construction —
+the lantern assertions were false before this pass (neither scene had a single
+warm light) and the camera assertions fail against the old transforms. It locks
+what logic gates cannot see: the blowout condition and camera framing.
+
+**Four new skills committed** so future sessions inherit all of this:
+`hard-surface-prop-pipeline`, `hero-character-pipeline`,
+`art-direction-fidelity-check`, `world-building-workflow`.
+
+**Honest limits — what is NOT done:**
+- The last fidelity verdict was **OFF MODEL**, not ON MODEL. The remaining gap
+  is mostly value range: the mine still reads darker and browner than your
+  references, which show more separation between cool stone and warm gold.
+- **Lil Blunt in the cart is a PLACEHOLDER**, built from primitives. It is a
+  silhouette stand-in so the frame has its subject; it is not the hero
+  character. The real one needs an image-to-3D service (Meshy or Tripo), which
+  needs **you** to add an API key and allowlist that host in the environment
+  settings — neither is doable from inside a session.
+- Only the runner half was browser-captured. The chamber's camera fix is proven
+  headlessly but has not been looked at in a browser yet.
+- `web/game/index.html` is still tracked and still causes merge conflicts on
+  every CI export. Still open, still not fixed here.
+
+**Gates:** art-direction 21/21 · reachability 13/13 · miner-shaft 35/35 ·
+session-root 26/26 · glb-pipeline ALL PASS (9 props) · stress-soak ALL PASS ·
+economy-invariants 45/45 · security-sentinel 18/18.
+**pck:** 127,335,776 bytes — **71,893,664 free** under the 199,229,440 gate.
+
+---
+
 **🕹️ EPISODE 2 IS NOW REACHABLE — you can actually play it after boss 3 (2026-09-10).**
 
 You reported you couldn't test Episode 2. You were right, and the reason was
