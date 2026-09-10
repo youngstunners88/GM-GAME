@@ -5,6 +5,62 @@
 
 ---
 
+**🕹️ EPISODE 2 IS NOW REACHABLE — you can actually play it after boss 3 (2026-09-10).**
+
+You reported you couldn't test Episode 2. You were right, and the reason was
+worse than a bug: **Episode 2 was in the build but nothing could reach it.**
+
+Three things were missing, all confirmed by reading the code, not guessed:
+
+1. **No route.** `LEVEL_SEQUENCE` had exactly three entries. After boss 3,
+   `next_level_scene(3)` fell through and returned the **main menu**. No script
+   anywhere outside `src/episode2/` referenced the Episode 2 scenes at all.
+2. **No input.** Not one Episode 2 script read an input action. Every verb —
+   jump, duck, shoot, Early Claim — was callable only from code. Pressing keys
+   did literally nothing.
+3. **No lights.** Neither 3D scene had a light or an environment, so both would
+   have rendered unlit even if you'd got to them.
+
+**Why the tests never caught it — the important part.** All eight gates were
+green, including a 2000-cycle soak and a 4000-operation economy fuzz. Every one
+of them *instantiates the Episode 2 scenes directly and drives them with
+`step(delta)`*. That proves the LOGIC is right. It can never prove a **player
+can get there**. The loop was correct and unreachable at the same time, and my
+reports said "the loop is closed" — true of the loop's internals, and misleading
+about whether you could play it. That's on me.
+
+**Fixed:**
+- Boss 3 → Episode 2. Clearing the last Episode 1 level now hands off to the new
+  `src/episode2/ep2_entry.tscn` instead of the menu. Kept as an explicit
+  `EPISODE2_SCENE` constant rather than a 4th `LEVEL_SEQUENCE` entry, because
+  that array also drives unlock clamping and the campaign-complete check —
+  appending would have quietly changed all three.
+- **Real controls**, mapped onto the existing Episode 1 actions so the mobile
+  touch controls work for free: `A`/`D` switch rail, `SPACE` jump, `S` duck; in
+  the chamber `E` starts a Miner (hold `SHIFT` to pay ETH+Diamonds), shoot,
+  `S` for cover, dash for the **Early Claim** lever. `ESC` always exits.
+- **Lighting + environment** on both 3D scenes.
+- **A HUD** so a playtest is legible: mode, distance, health, lane, ammo, live
+  bear count, and a live vest bar with the claimed/forfeited GOLD on resolve.
+
+**New gate: `ep2_reachability_test` (13/13).** It asserts the path a *human*
+takes — that clearing the last level routes to Episode 2, that the entry scene
+reaches a playable RUNNER mode with no test harness driving it, that a
+synthesised `move_right` really switches rail and `jump` really lifts the cart,
+and that both scenes have a light. Its first assertion was **false** before this
+fix, so it is failing-first by construction. This is the gate class that was
+missing: everything else tested logic, this tests reachability.
+
+All gates green: reachability 13/13, economy invariants 45/45, fuzz 4000 ops,
+soak 14/14, runner 21/21, chamber 35/35, session root 26/26, music 9/9.
+
+**Honest limit:** this is proven headlessly. It has **not** been played in a
+browser yet — that needs the CI export to land and a real playtest. Episode 2 is
+still a **graybox** (box meshes, no art), so expect it to look plain; the point
+right now is that it is reachable and controllable.
+
+---
+
 **🛡️ EPISODE 2 FOUNDATION HARDENING — 21 economy defects found and fixed, foundation proven before Fort Knox (2026-09-10).**
 
 Ran a full bug/vulnerability/stress audit on the Episode 2 foundation *before*

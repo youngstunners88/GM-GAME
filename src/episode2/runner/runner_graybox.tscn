@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3 uid="uid://ep2runnergraybox01"]
+[gd_scene load_steps=6 format=3 uid="uid://ep2runnergraybox01"]
 
 [ext_resource type="Script" path="res://src/episode2/runner/runner_graybox.gd" id="1"]
 
@@ -7,6 +7,14 @@ size = Vector3(1.6, 1.0, 2.2)
 
 [sub_resource type="BoxMesh" id="BoxMesh_ground"]
 size = Vector3(9, 0.2, 400)
+
+[sub_resource type="Environment" id="Environment_runner"]
+background_mode = 1
+background_color = Color(0.06, 0.05, 0.08, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.45, 0.40, 0.52, 1)
+ambient_light_energy = 0.55
+tonemap_mode = 2
 
 [node name="RunnerGraybox" type="Node3D"]
 script = ExtResource("1")
@@ -23,3 +31,12 @@ mesh = SubResource("BoxMesh_cart")
 
 [node name="Camera3D" type="Camera3D" parent="Cart"]
 transform = Transform3D(1, 0, 0, 0, 0.94, 0.34, 0, -0.34, 0.94, 0, 4, -6)
+
+; Graybox lighting. Without a light and an environment a 3D scene renders unlit/black in the web export.
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_runner")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.6, 0.8, 0, -0.8, 0.6, 0, 12, -4)
+light_energy = 1.1
+shadow_enabled = true
