@@ -7,6 +7,13 @@ allowed-tools: Read, Write, Bash, Glob, Grep
 
 # PixelLab Pipeline
 
+> **Status: requires one-time setup.** The PixelLab MCP is deliberately **not**
+> registered in the repo's `.mcp.json`, so it is unavailable in a fresh session
+> until you run the `claude mcp add` command under "Connection" below. The
+> `PIXELLAB_SECRET` API key is provisioned in the environment. Verify the server
+> is connected before following the rest of this skill — otherwise every
+> generation step here silently has no tool to call.
+
 Pixel art + animation generation via the PixelLab MCP. Complements the
 existing Muapi path (`game-aesthetics-forge`), which does painterly backdrops
 and key art; PixelLab does *sprites and animation frames*, which Muapi cannot.
