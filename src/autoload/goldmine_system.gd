@@ -68,6 +68,10 @@ signal blaze_diamonds_changed(new_amount: int)
 var auction_gold_pool: int = 0
 var lifetime_gold_mined: int = 0
 var lifetime_diamonds_burned: int = 0
+## I1 burn ledger: GOLD destroyed by auction settlement. settle_auction() zeroes
+## the pool per the whitepaper's no-carry-over rule; without this counter the
+## value simply vanished and conservation could not be checked across a settle.
+var lifetime_gold_settled: int = 0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -75,6 +79,10 @@ func _ready() -> void:
 ## Mine GOLD by collecting gold_token (analogue to starting a miner).
 ## Each token represents "vested" gold from a completed miner.
 func mine_gold(amount: int) -> void:
+	# I4 sign discipline: a negative amount here is a BURN of the player's
+	# balance AND a decrement of a monotonic lifetime counter. Refuse it.
+	if amount <= 0:
+		return
 	gold_balance += amount
 	lifetime_gold_mined += amount
 	gold_changed.emit(gold_balance)
@@ -83,6 +91,10 @@ func mine_gold(amount: int) -> void:
 ## Collect Diamonds — auto-applies the permanent 20% burn from the whitepaper.
 ## Returns the net Diamonds added after burn.
 func collect_diamonds(raw_amount: int) -> int:
+	# I4: a negative raw_amount inverts the burn (burned becomes negative,
+	# kept becomes a debit) and corrupts lifetime_diamonds_burned.
+	if raw_amount <= 0:
+		return 0
 	var burned: int = int(round(raw_amount * DIAMOND_BURN_PCT))
 	var kept: int = raw_amount - burned
 	diamonds_balance += kept
@@ -93,11 +105,19 @@ func collect_diamonds(raw_amount: int) -> int:
 ## Award wBTC — represents Fort Knox staking payout.
 ## Pool param chooses 60/40 split: "short" (day 88) or "long" (day 288).
 func award_wbtc(amount: int, pool: String = "short") -> void:
-	var scaled: int = amount
+	if amount <= 0:
+		return
+	# I2 name-matches-behavior: the contract is "pool chooses the 60/40 split".
+	# An unrecognised pool previously fell through UNSCALED, paying 100% — more
+	# than either legitimate pool. Fail loudly instead of silently overpaying.
+	var scaled: int = 0
 	if pool == "short":
 		scaled = int(round(amount * FORT_KNOX_SHORT_POOL_PCT))
 	elif pool == "long":
 		scaled = int(round(amount * FORT_KNOX_LONG_POOL_PCT))
+	else:
+		push_error("award_wbtc: unknown pool '%s' (expected 'short' or 'long') — no award made" % pool)
+		return
 	wbtc_balance += scaled
 	wbtc_changed.emit(wbtc_balance)
 	GameManager.add_score(scaled * 10)
@@ -105,6 +125,10 @@ func award_wbtc(amount: int, pool: String = "short") -> void:
 ## Melt GOLD — voluntary burn to gain melt bonus multiplier (whitepaper Fort Knox).
 ## Returns the bonus % earned (0.5 = 50%, 9.0 = 900%).
 func melt_gold(amount_to_melt: int, staked_amount: int) -> float:
+	# I4: a negative melt previously MINTED gold (gold_balance -= negative) and
+	# still granted shares — the clearest value-creation-as-side-effect path.
+	if amount_to_melt <= 0:
+		return 0.0
 	if amount_to_melt > gold_balance:
 		return 0.0
 	if staked_amount <= 0:
@@ -112,16 +136,33 @@ func melt_gold(amount_to_melt: int, staked_amount: int) -> float:
 	gold_balance -= amount_to_melt
 	var melt_ratio: float = float(amount_to_melt) / float(staked_amount)
 	melt_ratio = clampf(melt_ratio, 0.0, float(MAX_MELT_RATIO))
-	# Linear interpolation: 1× melt = 100% bonus, 3× melt = 900% bonus
-	var bonus_pct: float = melt_ratio * 3.0
+	# Linear interpolation: 1× melt = 100% bonus, MAX_MELT_RATIO× = MAX_MELT_BONUS_PCT.
+	# Derived from the constants rather than a hardcoded 3.0 — the literal was
+	# correct only because 9/3 == 3, and would have silently desynced the moment
+	# either constant was retuned (I2, magic-number-duplicating-a-constant).
+	var bonus_per_ratio: float = MAX_MELT_BONUS_PCT / float(MAX_MELT_RATIO)
+	var bonus_pct: float = melt_ratio * bonus_per_ratio
 	fort_knox_shares += int(staked_amount * (1.0 + bonus_pct))
 	gold_changed.emit(gold_balance)
 	melt_triggered.emit(amount_to_melt, bonus_pct)
 	return bonus_pct
 
-## Forfeit GOLD to auction pool (whitepaper Gold Rush Auction).
-## 50% of remainder after LP match goes to Strategic Reserve, 50% is melted.
+## Forfeit GOLD to the auction pool (whitepaper Gold Rush Auction).
+##
+## CONTRACT — read this before calling: despite the name, this is a TRANSFER
+## OUT OF the player's balance, clamped to what they hold. It does NOT credit
+## the pool with arbitrary GOLD. Calling it to route value the player never
+## held silently pays nothing (the clamp eats it) — that is exactly how
+## Episode 2's early-claim payout was destroyed. To credit the pool WITHOUT
+## debiting the player, add to `auction_gold_pool` directly.
+##
+## NOTE: RESERVE_FORFEIT_SPLIT (50/50 melt vs Strategic Reserve) is declared in
+## this file but NOT implemented here — 100% goes to the auction pool. The
+## previous docstring claimed the split; the code never did it. Flagged as an
+## open finding rather than silently invented.
 func forfeit_to_auction(amount: int) -> void:
+	if amount <= 0:
+		return
 	if amount > gold_balance:
 		amount = gold_balance
 	gold_balance -= amount
@@ -134,7 +175,12 @@ func settle_auction(user_contribution: int, total_pool: int) -> int:
 	if total_pool <= 0 or user_contribution <= 0:
 		auction_complete.emit(0, 0.0)
 		return 0
-	var multiplier: float = float(user_contribution) / float(total_pool)
+	# I5 untrusted caller input: on a web export both arguments are
+	# attacker-controllable. Unbounded, user_contribution > total_pool minted
+	# XAUT without limit (1,000,000 contribution against a pool of 1 paid
+	# 100,000,000 vs an honest full share of 100). A share of the pool cannot
+	# exceed the whole pool.
+	var multiplier: float = clampf(float(user_contribution) / float(total_pool), 0.0, 1.0)
 	# Base XAUT pool scales with auction_gold_pool — 1 GOLD = 0.1 XAUT base reward
 	var base_xaut: int = int(round(auction_gold_pool * 0.1))
 	var xaut_won: int = int(round(base_xaut * multiplier))
@@ -142,13 +188,28 @@ func settle_auction(user_contribution: int, total_pool: int) -> int:
 	xaut_changed.emit(xaut_balance)
 	GameManager.add_score(xaut_won * 100)
 	auction_complete.emit(xaut_won, multiplier)
-	# Reset weekly pool — whitepaper specifies no carry-over
+	# Reset weekly pool — whitepaper specifies no carry-over.
+	# I1: record what settlement destroys, so conservation across a settle is
+	# verifiable instead of unverifiable-by-construction.
+	lifetime_gold_settled += auction_gold_pool
 	auction_gold_pool = 0
 	return xaut_won
 
 ## Stake GOLD into Fort Knox vault — generates shares for Gold Claim Cert eligibility.
 ## Returns total shares (with max term bonus if commitment is full 2,888 days).
 func stake_in_fort_knox(amount: int, days_committed: int) -> int:
+	# I4: a negative stake previously MINTED gold (gold_balance -= negative) and
+	# produced negative shares.
+	#
+	# Deliberately REFUSES an over-stake rather than clamping to holdings, even
+	# though the sibling stake_diamonds() clamps. Clamping here would silently
+	# stake a different amount than the caller asked for — the same
+	# "behaviour diverges from the call" pattern that made forfeit_to_auction()
+	# destroy Episode 2's early-claim payout. An explicit staking action should
+	# fail loudly, not quietly do something smaller. The asymmetry with
+	# stake_diamonds() is intentional and documented, not an oversight.
+	if amount <= 0:
+		return 0
 	if amount > gold_balance:
 		return 0
 	gold_balance -= amount
@@ -218,7 +279,14 @@ func _check_certificates() -> void:
 
 ## Treasury distribution — splits incoming revenue per whitepaper percentages.
 ## Used when boss defeats trigger "Treasury revenue distribution" cinematic.
+## NOTE: `swf` and `founder` are computed and RETURNED but not moved anywhere —
+## no Sovereign-Wealth-Fund or founder ledger exists in this simulation, so 30%
+## of the split has no destination. Flagged as an open finding for the on-chain
+## wiring step rather than silently invented here.
 func distribute_treasury_revenue(total_revenue: int) -> Dictionary:
+	# I4: a negative revenue previously debited xaut_balance and the auction pool.
+	if total_revenue <= 0:
+		return {"nft": 0, "auction": 0, "swf": 0, "founder": 0}
 	var nft_share: int = int(round(total_revenue * TREASURY_NFT_PCT))
 	var auction_share: int = int(round(total_revenue * TREASURY_AUCTION_PCT))
 	var swf_share: int = int(round(total_revenue * TREASURY_SWF_PCT))
@@ -254,6 +322,7 @@ func reset_session() -> void:
 	auction_gold_pool = 0
 	lifetime_gold_mined = 0
 	lifetime_diamonds_burned = 0
+	lifetime_gold_settled = 0
 
 ## Save snapshot for persistence layer.
 func get_save_data() -> Dictionary:
@@ -268,21 +337,38 @@ func get_save_data() -> Dictionary:
 		"blaze_diamonds": blaze_diamonds,
 		"lifetime_gold_mined": lifetime_gold_mined,
 		"lifetime_diamonds_burned": lifetime_diamonds_burned,
+		"lifetime_gold_settled": lifetime_gold_settled,
 	}
 
+## TRUST BOUNDARY — the widest client-authority surface in the economy.
+##
+## On a web/mobile export the save lives on hardware the player controls, so
+## every value arriving here is UNTRUSTED INPUT. This function assigns balances
+## directly, which means it bypasses every guard the value-moving functions
+## above enforce: a hand-edited save could previously set a negative balance,
+## negative shares, negative lifetime counters, or a Blaze-Diamond pile far
+## above its own stack limit.
+##
+## The clamping below makes tampering *bounded*, not *impossible* — a save can
+## still claim any non-negative balance. Nothing here is a substitute for
+## server/chain-side authority; it is the floor that keeps impossible states out
+## of the ledger. See .claude/skills/ep2-security-and-trust-audit/SKILL.md.
 func load_save_data(data: Dictionary) -> void:
-	gold_balance = int(data.get("gold", 0))
-	diamonds_balance = int(data.get("diamonds", 0))
-	wbtc_balance = int(data.get("wbtc", 0))
-	xaut_balance = int(data.get("xaut", 0))
-	fort_knox_shares = int(data.get("fort_knox_shares", 0))
-	gold_certificates = int(data.get("gold_certificates", 0))
-	diamond_shares = int(data.get("diamond_shares", 0))
+	gold_balance = maxi(0, int(data.get("gold", 0)))
+	diamonds_balance = maxi(0, int(data.get("diamonds", 0)))
+	wbtc_balance = maxi(0, int(data.get("wbtc", 0)))
+	xaut_balance = maxi(0, int(data.get("xaut", 0)))
+	fort_knox_shares = maxi(0, int(data.get("fort_knox_shares", 0)))
+	gold_certificates = maxi(0, int(data.get("gold_certificates", 0)))
+	diamond_shares = maxi(0, int(data.get("diamond_shares", 0)))
 	# Default-guarded so a save written BEFORE session 6 (no blaze_diamonds key)
-	# loads as 0 instead of crashing (DeepSeek s6 regression risk #4).
-	blaze_diamonds = int(data.get("blaze_diamonds", 0))
-	lifetime_gold_mined = int(data.get("lifetime_gold_mined", 0))
-	lifetime_diamonds_burned = int(data.get("lifetime_diamonds_burned", 0))
+	# loads as 0 instead of crashing (DeepSeek s6 regression risk #4), and
+	# clamped to the stack limit the crush flow assumes — add_blaze_diamonds()
+	# enforces that ceiling, so a save must not be able to walk around it.
+	blaze_diamonds = clampi(int(data.get("blaze_diamonds", 0)), 0, BLAZE_DIAMOND_STACK_LIMIT)
+	lifetime_gold_mined = maxi(0, int(data.get("lifetime_gold_mined", 0)))
+	lifetime_diamonds_burned = maxi(0, int(data.get("lifetime_diamonds_burned", 0)))
+	lifetime_gold_settled = maxi(0, int(data.get("lifetime_gold_settled", 0)))
 	gold_changed.emit(gold_balance)
 	diamonds_changed.emit(diamonds_balance)
 	wbtc_changed.emit(wbtc_balance)
