@@ -90,11 +90,19 @@ var _running: bool = false
 # Bears are pure DATA in `_bears` (z/hp/alive dictionaries). Nothing drew them,
 # so a player was shooting and being killed by enemies that were invisible.
 # One mesh per bear, advanced each frame to its live z, and dimmed on death.
-const COL_BEAR := Color(0.16, 0.15, 0.18)
+#
+# Surfaces come from `Ep2Palette` (traced to the founder reference art). The
+# bandits of ref 1 are black balaclavas over tan cloth — no weed theming on
+# enemies, per the global rule. `COL_BEAR_DEAD` stays a local constant because
+# it is a STATE tint, not a surface in the world's material vocabulary.
 const COL_BEAR_DEAD := Color(0.10, 0.10, 0.10)
 
 var _visuals: Node3D = null
 var _bear_meshes: Array = []
+## Cached once — _sync_visuals() runs every frame per bear, and rebuilding the
+## whole palette dictionary in that loop would be a per-frame allocation for a
+## value that never changes.
+var _bear_alive_color: Color = Color(0.16, 0.15, 0.18)
 
 func _build_visuals() -> void:
 	if _visuals and is_instance_valid(_visuals):
@@ -103,19 +111,73 @@ func _build_visuals() -> void:
 	_visuals.name = "Visuals"
 	add_child(_visuals)
 	_bear_meshes.clear()
+	_bear_alive_color = Ep2Palette.table()["bandit"].albedo
+	_apply_art()
 	for b in _bears:
 		var mi := MeshInstance3D.new()
 		var caps := CapsuleMesh.new()
 		caps.radius = 0.45
 		caps.height = 1.8
 		mi.mesh = caps
-		var m := StandardMaterial3D.new()
-		m.albedo_color = COL_BEAR
-		m.roughness = 0.9
-		mi.material_override = m
+		# make_unique, NOT make: _sync_visuals() mutates albedo_color on death,
+		# and a shared cached material would dim every bandit at once.
+		mi.material_override = Ep2Palette.make_unique("bandit")
 		mi.position = Vector3(0.0, 0.9, float(b["z"]))
 		_visuals.add_child(mi)
 		_bear_meshes.append(mi)
+
+## Push the shared Episode 2 art direction onto this scene's static nodes.
+##
+## Done in code rather than as .tscn sub-resources so `Ep2Palette` stays the
+## ONE place a surface is defined. Two scenes with their own inline
+## StandardMaterial3D blocks is how "everything is grey" became a four-file
+## problem in the first place.
+func _apply_art() -> void:
+	var we := get_node_or_null("WorldEnvironment") as WorldEnvironment
+	if we:
+		we.environment = Ep2Palette.make_environment()
+	var sun := get_node_or_null("Sun") as DirectionalLight3D
+	if sun:
+		var key := Ep2Palette.make_key_light()
+		sun.light_color = key.light_color
+		sun.light_energy = key.light_energy
+		sun.shadow_enabled = key.shadow_enabled
+		key.queue_free()
+
+	for path in ["Floor", "WallWest", "WallEast"]:
+		var mi := get_node_or_null(path) as MeshInstance3D
+		if mi:
+			mi.material_override = Ep2Palette.make("rock")
+	var rig := get_node_or_null("Rig/RigMesh") as MeshInstance3D
+	if rig:
+		rig.material_override = Ep2Palette.make("wood_light")
+	var lever := get_node_or_null("Rig/EarlyClaimLever") as MeshInstance3D
+	if lever:
+		# The Early Claim lever is the one thing in the room you can pull for
+		# gold, so it wears gold — the value read of ref 3's nugget carts.
+		lever.material_override = Ep2Palette.make("gold")
+	for path in ["CoverA", "CoverB", "CoverC"]:
+		var mi2 := get_node_or_null(path) as MeshInstance3D
+		if mi2:
+			mi2.material_override = Ep2Palette.make("crate")
+
+	# Warm lanterns on the shaft walls. These are simultaneously on-model (every
+	# reference lights the mine with lamps on the timber) and the readability
+	# fix: at ambient 0.18 the room needs real light sources, not a brighter
+	# ambient, or the gold has nothing to be brighter than.
+	for spec in [Vector3(-5.2, 2.6, 2.0), Vector3(5.2, 2.6, 7.0), Vector3(-5.2, 2.6, 12.0)]:
+		var lamp := Ep2Palette.make_lantern_light()
+		lamp.position = spec
+		_visuals.add_child(lamp)
+		var bulb := MeshInstance3D.new()
+		var sm := SphereMesh.new()
+		sm.radius = 0.18
+		sm.height = 0.36
+		bulb.mesh = sm
+		bulb.material_override = Ep2Palette.make("lantern")
+		bulb.position = spec
+		_visuals.add_child(bulb)
+
 
 ## Keep each bear mesh on its live z and dim it when killed. Cosmetic only.
 func _sync_visuals() -> void:
@@ -128,7 +190,7 @@ func _sync_visuals() -> void:
 		mi.visible = true
 		var m: StandardMaterial3D = mi.material_override
 		if m:
-			m.albedo_color = COL_BEAR if b["alive"] else COL_BEAR_DEAD
+			m.albedo_color = _bear_alive_color if b["alive"] else COL_BEAR_DEAD
 		if not b["alive"]:
 			mi.position.y = 0.25
 			mi.rotation.x = deg_to_rad(90.0)

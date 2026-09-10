@@ -1,0 +1,19 @@
+{
+  "url": "http://localhost:8899/game/index.html?ep2=1",
+  "shots": [
+    {
+      "name": "ep2_runner_start.png",
+      "bytes": 82955
+    },
+    {
+      "name": "ep2_runner_mid.png",
+      "bytes": 87659
+    },
+    {
+      "name": "ep2_runner_late.png",
+      "bytes": 102637
+    }
+  ],
+  "errors": [],
+  "captured": "2026-09-10T04:28:03.588Z"
+}

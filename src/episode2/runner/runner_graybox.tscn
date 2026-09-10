@@ -40,8 +40,20 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
 mesh = SubResource("BoxMesh_cart")
 material_override = SubResource("Mat_accent")
 
+; Chase camera, FACING FORWARD.
+;
+; The original basis had the camera looking down world -Z while the cart runs
+; toward +Z. A headless probe of the real scene measured dot(forward, direction
+; to the next obstacle) = -0.86: the entire track ahead, and the cart itself,
+; were BEHIND the camera. The player was watching the tunnel they had already
+; passed, which is why the cart was never in frame and why hazards were
+; impossible to read - they arrived from off-screen behind.
+;
+; Basis below: forward (0,-0.407,0.914) = down +Z pitched 24 degrees down,
+; right (-1,0,0), up (0,0.914,0.407). Position is 7.5 behind and 3.2 above the
+; cart, so the cart sits in the lower third of frame as in every reference.
 [node name="Camera3D" type="Camera3D" parent="Cart"]
-transform = Transform3D(1, 0, 0, 0, 0.94, 0.34, 0, -0.34, 0.94, 0, 4, -6)
+transform = Transform3D(-1, 0, 0, 0, 0.914, 0.407, 0, 0.407, -0.914, 0, 3.2, -7.5)
 
 ; Graybox lighting. Without a light and an environment a 3D scene renders unlit/black in the web export.
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
