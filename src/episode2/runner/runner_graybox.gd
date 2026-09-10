@@ -126,6 +126,93 @@ const RUNNER_MUSIC_PLAYLIST := [
 
 @onready var _cart: Node3D = $Cart
 
+# --- Graybox visuals ----------------------------------------------------------
+#
+# Hazards are pure DATA in `_obstacles` — z/lane/type dictionaries the physics
+# reads. Nothing ever drew them, so a browser playtest showed a player losing
+# health to obstacles that were literally invisible: unplayable, while every
+# headless gate stayed green (they assert health/positions, never pixels).
+#
+# These spawn one mesh per hazard, colour-coded by the verb that clears it, so
+# the player can read the track. Cosmetic only — no logic reads them back.
+const COL_BOX := Color(0.72, 0.45, 0.18)      # crate — JUMP
+const COL_ARROW := Color(0.85, 0.18, 0.20)    # arrow — DUCK
+const COL_BOULDER := Color(0.45, 0.42, 0.40)  # boulder — JUMP
+const COL_RAIL := Color(0.30, 0.26, 0.22)
+const COL_ZIP := Color(0.85, 0.72, 0.25)
+
+var _visuals: Node3D = null
+
+func _mat(c: Color, emit: float = 0.0) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = c
+	m.roughness = 0.85
+	if emit > 0.0:
+		m.emission_enabled = true
+		m.emission = c
+		m.emission_energy_multiplier = emit
+	return m
+
+func _add_visual(mesh: Mesh, mat: StandardMaterial3D, pos: Vector3) -> void:
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	mi.material_override = mat
+	mi.position = pos
+	_visuals.add_child(mi)
+
+## Rebuild every cosmetic mesh for the current track. Called from setup(), so a
+## reused instance never keeps the previous run's hazards on screen.
+func _build_visuals() -> void:
+	if _visuals and is_instance_valid(_visuals):
+		_visuals.queue_free()
+	_visuals = Node3D.new()
+	_visuals.name = "Visuals"
+	add_child(_visuals)
+
+	# Lane rails, so the three rails are readable at speed.
+	for x in LANE_X:
+		var rail := BoxMesh.new()
+		rail.size = Vector3(0.18, 0.12, _chamber_z + 40.0)
+		_add_visual(rail, _mat(COL_RAIL), Vector3(float(x), -0.42, (_chamber_z + 40.0) * 0.5))
+
+	# Hazards, shaped and placed by the verb that clears them.
+	for o in _obstacles:
+		var lane: int = int(o.get("lane", 1))
+		var z: float = float(o.get("z", 0.0))
+		var t: String = str(o.get("type", "box"))
+		var x: float = float(LANE_X[clampi(lane, 0, LANE_X.size() - 1)])
+		match t:
+			"arrow":
+				# Sits at head height — you DUCK under it. Emissive so the
+				# "don't jump into this" read is instant.
+				var a := BoxMesh.new()
+				a.size = Vector3(1.9, 0.28, 0.28)
+				_add_visual(a, _mat(COL_ARROW, 0.7), Vector3(x, 1.45, z))
+			"boulder":
+				var b := SphereMesh.new()
+				b.radius = 0.75
+				b.height = 1.5
+				_add_visual(b, _mat(COL_BOULDER), Vector3(x, 0.55, z))
+			_:
+				var c := BoxMesh.new()
+				c.size = Vector3(1.5, 1.0, 1.0)
+				_add_visual(c, _mat(COL_BOX), Vector3(x, 0.45, z))
+
+	# Overhead zip cable over each zip segment.
+	for seg in _zip_segments:
+		var s0: float = float(seg.get("start_z", 0.0))
+		var s1: float = float(seg.get("end_z", 0.0))
+		if s1 <= s0:
+			continue
+		var cable := BoxMesh.new()
+		cable.size = Vector3(0.12, 0.12, s1 - s0)
+		_add_visual(cable, _mat(COL_ZIP, 0.5), Vector3(0.0, ZIP_HEIGHT + 0.9, (s0 + s1) * 0.5))
+
+	# Chamber entrance marker — a lit gate so the goal is visible from the track.
+	var gate := BoxMesh.new()
+	gate.size = Vector3(7.5, 0.4, 0.4)
+	_add_visual(gate, _mat(Color(0.35, 0.9, 0.55), 0.9), Vector3(0.0, 2.6, _chamber_z))
+
 func _ready() -> void:
 	if _cart:
 		_cart.position = Vector3(LANE_X[_lane], 0.0, 0.0)
@@ -155,6 +242,7 @@ func setup(chamber_z: float, obstacles: Array = [], zip_segments: Array = []) ->
 	_duck_hold_time = 0.0
 	_ziplining = false
 	_was_ziplining = false
+	_build_visuals()
 	if _cart:
 		_cart.position = Vector3(LANE_X[_lane], 0.0, 0.0)
 

@@ -85,6 +85,54 @@ var _running: bool = false
 
 @onready var _rig: Node3D = $Rig
 
+# --- Graybox visuals ----------------------------------------------------------
+#
+# Bears are pure DATA in `_bears` (z/hp/alive dictionaries). Nothing drew them,
+# so a player was shooting and being killed by enemies that were invisible.
+# One mesh per bear, advanced each frame to its live z, and dimmed on death.
+const COL_BEAR := Color(0.16, 0.15, 0.18)
+const COL_BEAR_DEAD := Color(0.10, 0.10, 0.10)
+
+var _visuals: Node3D = null
+var _bear_meshes: Array = []
+
+func _build_visuals() -> void:
+	if _visuals and is_instance_valid(_visuals):
+		_visuals.queue_free()
+	_visuals = Node3D.new()
+	_visuals.name = "Visuals"
+	add_child(_visuals)
+	_bear_meshes.clear()
+	for b in _bears:
+		var mi := MeshInstance3D.new()
+		var caps := CapsuleMesh.new()
+		caps.radius = 0.45
+		caps.height = 1.8
+		mi.mesh = caps
+		var m := StandardMaterial3D.new()
+		m.albedo_color = COL_BEAR
+		m.roughness = 0.9
+		mi.material_override = m
+		mi.position = Vector3(0.0, 0.9, float(b["z"]))
+		_visuals.add_child(mi)
+		_bear_meshes.append(mi)
+
+## Keep each bear mesh on its live z and dim it when killed. Cosmetic only.
+func _sync_visuals() -> void:
+	for i in mini(_bear_meshes.size(), _bears.size()):
+		var mi: MeshInstance3D = _bear_meshes[i]
+		if not is_instance_valid(mi):
+			continue
+		var b: Dictionary = _bears[i]
+		mi.position.z = float(b["z"])
+		mi.visible = true
+		var m: StandardMaterial3D = mi.material_override
+		if m:
+			m.albedo_color = COL_BEAR if b["alive"] else COL_BEAR_DEAD
+		if not b["alive"]:
+			mi.position.y = 0.25
+			mi.rotation.x = deg_to_rad(90.0)
+
 func _ready() -> void:
 	if _rig:
 		_rig.position = RIG_POSITION
@@ -118,6 +166,7 @@ func setup(gold_principal: int, bears: Array = [], diamonds_paid: int = 0) -> vo
 	_ammo = START_AMMO
 	_in_cover = false
 	_running = true
+	_build_visuals()
 
 func _physics_process(delta: float) -> void:
 	if _running:
@@ -136,6 +185,7 @@ func _advance(delta: float) -> void:
 		_vest = minf(1.0, _vest + delta / VEST_SECONDS_FULL)
 
 	_advance_bears(delta)
+	_sync_visuals()
 
 	# Full vest resolves the encounter on its own — hold-to-full is the
 	# patient branch of the brief's risk/reward decision.
