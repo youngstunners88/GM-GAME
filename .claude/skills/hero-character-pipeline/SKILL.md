@@ -83,15 +83,25 @@ Then: real export, real browser capture, `art-direction-fidelity-check`, and
 
 ## Current status
 
+Probed live on 2026-09-10, not assumed:
+
 | Stage | State |
 |---|---|
 | Placeholder silhouette in-game | **done** — primitives, browser-verified, explicitly not the hero |
-| Generation API selected | **blocked** — needs a founder decision on service + an API key in env |
-| Host allowlisted | **blocked** — needs `api.meshy.ai` (or the chosen host) added to the environment's network policy |
+| Network reachability | **NOT a blocker.** All three hosts answer from this sandbox today: `api.meshy.ai` 404 (host up, path empty), `api.tripo3d.ai` 200, `hyperhuman.deemos.com` 301. No allowlisting is needed for these. |
+| API credential | **BLOCKED — the only blocker.** `MESHY_API_KEY`, `TRIPO_API_KEY`, `RODIN_API_KEY` and `HYPER3D_API_KEY` are all absent from the session environment (checked by name; values are never read or printed). The founder adds one in the environment's **Environment Variables** field. |
+| Generation | not started — needs the credential above |
 | Rig | not started |
 | Licence check | not started |
 | Founder sign-off | not started |
 
-Two of those blockers are founder-side infrastructure, not work anyone can do
-from a session. Say so plainly rather than reporting the placeholder as progress
+**No AI-generated concept art is needed as an intermediate, and none should be
+made.** Meshy and Tripo both accept an input IMAGE, and the founder's own
+reference art already shows Lil Blunt from three angles. Generating a
+turnaround sheet first would insert an invented interpretation between the
+founder's art and the mesh — which is the drift the "never invent art
+direction" rule exists to prevent. Feed the references directly.
+
+The one remaining blocker is founder-side and cannot be resolved from a
+session. Say so plainly rather than reporting the placeholder as progress
 toward a finished character.
