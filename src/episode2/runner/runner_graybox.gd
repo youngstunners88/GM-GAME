@@ -100,15 +100,28 @@ var _zip_segments: Array = []
 var _ziplining: bool = false
 var _was_ziplining: bool = false  # edge-detects the zip→cart dismount frame
 
-## Runner-section music, per founder direction (2026-09-06): these two
-## tracks shuffle "until further notice" — plain founder-supplied tracks,
-## same convention as every other level's `AudioManager.play_playlist()`
-## call (level_01/02/03_smoke_realm.gd etc.). `play_playlist` already
-## shuffles with no-immediate-repeat on each track's natural end — no new
-## shuffle logic needed here.
+## Runner-section music. Founder direction (2026-09-09) supersedes the
+## 2026-09-06 direction that goldmine_dreams/goldmine_high shuffle here
+## "until further notice" — these two tracks are that further notice, and
+## were delivered for the runner specifically. The previous two tracks are
+## left on disk and in assets/audio-manifest.json (they are real client
+## assets) but are no longer wired to any scene.
+##
+## Sequencing: `AudioManager.play_playlist()` already advances to the next
+## track on each track's natural end and shuffles with no-immediate-repeat
+## (see `_play_next_in_playlist`), which with a 2-track list means Run and
+## Run_1 alternate and then continue indefinitely — the founder's option (b)
+## "sequence into Run_1 once Run finishes", with zero new plumbing. It also
+## routes playback through the **Music** bus (`current_music_player.bus =
+## "Music"`), so the existing volume sliders/settings keep working; a bespoke
+## AudioStreamPlayer here would have bypassed them.
+##
+## `force_first = true` so the runner always OPENS on Run.mp3 (the founder's
+## "plays Run.mp3 during runner segments"), then shuffles from there —
+## without it, play_playlist picks its first track at random.
 const RUNNER_MUSIC_PLAYLIST := [
-	"res://src/assets/music/goldmine_dreams.mp3",
-	"res://src/assets/music/goldmine_high.mp3",
+	"res://src/assets/music/runner_run.mp3",
+	"res://src/assets/music/runner_run_1.mp3",
 ]
 
 @onready var _cart: Node3D = $Cart
@@ -116,7 +129,7 @@ const RUNNER_MUSIC_PLAYLIST := [
 func _ready() -> void:
 	if _cart:
 		_cart.position = Vector3(LANE_X[_lane], 0.0, 0.0)
-	AudioManager.play_playlist(RUNNER_MUSIC_PLAYLIST)
+	AudioManager.play_playlist(RUNNER_MUSIC_PLAYLIST, true)
 
 ## Configure the segment before/at spawn. Call before the run advances.
 ## `obstacles` entries missing "type" default to "box" (legacy jump-clears).
