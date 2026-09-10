@@ -26,6 +26,8 @@ func _ready() -> void:
     # screenshots (props, carts, collectibles, HUD) can be reproduced exactly.
     if _boot_stage_warp():
         return
+    if _boot_episode2():
+        return
     play_btn.pressed.connect(_on_play)
     continue_btn.pressed.connect(_on_continue)
     title.text = "LIL BLUNT\nTHE SMOKE REALM"
@@ -89,6 +91,19 @@ func _boot_stage_warp() -> bool:
     SceneRouter.load_scene(GameManager.level_scene(n), SceneRouter.Transition.FADE)
     return true
 
+## TEST-ONLY. Reads ?ep2=1 on web and routes straight into Episode 2, so the
+## runner/chamber loop can be opened with a URL instead of a full playthrough.
+## Same shape as _boot_lounge below.
+func _boot_episode2() -> bool:
+    if not OS.has_feature("web"):
+        return false
+    var q: Variant = JavaScriptBridge.eval(
+        "new URLSearchParams(window.location.search).get('ep2') || ''", true)
+    if str(q) != "1":
+        return false
+    SceneRouter.load_scene(GameManager.EPISODE2_SCENE, SceneRouter.Transition.FADE)
+    return true
+
 ## TEST-ONLY. Reads ?lounge=1 on web and routes into the Smoke Lounge so the
 ## founder's brand video can be captured in a browser. No-op otherwise.
 func _boot_lounge() -> bool:
@@ -119,6 +134,7 @@ func _setup_layer_shift_buttons() -> void:
         # stack) so the v1.0 campaign flow is completely untouched — the
         # prototype is opt-in, and nothing in the platformer depends on it.
         # ASCII only — the pixel font has no ▶ glyph and renders it as tofu.
+        ["NEW: EPISODE 2 (GOLD MINE)", _on_episode2],
         ["NEW: BLUNT FORCE (v1.2)", _on_shooter_prototype],
         ["CONNECT RABBY", _on_connect_wallet],
         ["NEW TO CRYPTO?", _on_crypto_onboarding],
@@ -356,6 +372,18 @@ func _on_continue() -> void:
 ## campaign save state, and it is NOT the shipping unlock path (per the GDD,
 ## shooter levels unlock from campaign completion via
 ## GameManager.highest_unlocked_level, never from a menu shortcut).
+## Episode 2 (3D Gold Mine runner + Protocol Chambers) — direct entry.
+##
+## Episode 2 is also reached organically after boss 3
+## (GameManager.next_level_scene -> EPISODE2_SCENE), but requiring a full
+## three-level, three-boss playthrough to reach it makes it effectively
+## untestable: that is exactly why it sat unplayable and unnoticed. This button
+## is the same opt-in prototype entry the v1.2 shooter already uses.
+func _on_episode2() -> void:
+    AudioManager.play_sfx("powerup")
+    Web3Bridge.track("episode2_open")
+    SceneRouter.load_scene(GameManager.EPISODE2_SCENE, SceneRouter.Transition.FADE)
+
 func _on_shooter_prototype() -> void:
     AudioManager.play_sfx("powerup")
     Web3Bridge.track("shooter_prototype_open")

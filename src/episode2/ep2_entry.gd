@@ -25,12 +25,17 @@ const MENU_SCENE := "res://src/ui/main_menu.tscn"
 const TRACK_PLAN: Array = [
 	{
 		"chamber_z": 180.0,
+		# Spacing is deliberately generous for a FIRST run. Browser playtest of
+		# the earlier, tighter track ended in RUN FAILED inside ~13 seconds:
+		# hazards arrived every ~2s at RUN_SPEED 12, which is not learnable when
+		# you are also discovering the controls. Each hazard now gets ~3s of
+		# reaction time, and the first two are in side lanes so simply holding
+		# the centre rail survives the opening.
 		"obstacles": [
-			{"z": 40.0, "lane": 1, "type": "box"},
-			{"z": 62.0, "lane": 0, "type": "arrow"},
-			{"z": 88.0, "lane": 2, "type": "boulder"},
-			{"z": 132.0, "lane": 1, "type": "box"},
-			{"z": 156.0, "lane": 0, "type": "boulder"},
+			{"z": 45.0, "lane": 0, "type": "box"},
+			{"z": 80.0, "lane": 2, "type": "box"},
+			{"z": 118.0, "lane": 1, "type": "boulder"},
+			{"z": 155.0, "lane": 0, "type": "arrow"},
 		],
 		"zip_segments": [{"start_z": 100.0, "end_z": 120.0}],
 		"gold_principal": 1000,
@@ -39,6 +44,7 @@ const TRACK_PLAN: Array = [
 ]
 
 var _root: Node = null
+var _ended: bool = false
 var _hud: Label = null
 var _hint: Label = null
 var _banner: Label = null
@@ -48,12 +54,23 @@ func _ready() -> void:
 
 	_root = SESSION_ROOT.instantiate()
 	add_child(_root)
-	_root.configure(TRACK_PLAN, true)      # commit_to_economy: real GOLD in play
 	_root.mode_changed.connect(_on_mode_changed)
 	_root.chamber_committed.connect(_on_chamber_committed)
 	_root.session_complete.connect(_on_session_complete)
 	_root.session_failed.connect(_on_session_failed)
+	_start_session()
+
+## (Re)start a run from segment 0. Used by _ready() and by the retry path.
+## Signals are connected ONCE in _ready(); reconnecting here would multiply
+## every commit callback per retry.
+func _start_session() -> void:
+	_ended = false
+	_banner.text = ""
+	_root.configure(TRACK_PLAN, true)      # commit_to_economy: real GOLD in play
 	_root.start()
+
+func _restart() -> void:
+	_start_session()
 
 func _process(_delta: float) -> void:
 	_refresh_hud()
@@ -64,6 +81,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		get_tree().paused = false
 		SceneRouter.load_scene(MENU_SCENE, SceneRouter.Transition.DIAMOND)
+		return
+	# RETRY. When a run ends, the session root tears the active scene down —
+	# which also removes the only Camera3D, so the screen goes BLACK. A browser
+	# playtest hit exactly that: fail at ~13s, then stare at nothing. An ended
+	# run must always offer a way back in.
+	if _ended and (event.is_action_pressed("jump") or event.is_action_pressed("ui_accept")
+			or (event is InputEventKey and event.pressed and event.keycode == KEY_R)):
+		_restart()
 
 # --- HUD ----------------------------------------------------------------------
 
@@ -142,7 +167,9 @@ func _on_chamber_committed(_index: int, result: Dictionary) -> void:
 	]
 
 func _on_session_complete() -> void:
-	_banner.text = "EPISODE 2 SLICE COMPLETE — ESC to return to the menu"
+	_ended = true
+	_banner.text = "EPISODE 2 SLICE COMPLETE\nSPACE / R  run it again        ESC  menu"
 
 func _on_session_failed() -> void:
-	_banner.text = "RUN FAILED — ESC to return to the menu"
+	_ended = true
+	_banner.text = "RUN FAILED\nSPACE / R  try again        ESC  menu"
