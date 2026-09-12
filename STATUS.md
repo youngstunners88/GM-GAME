@@ -5,6 +5,48 @@
 
 ---
 
+**🧱 SCENE FOUNDATION KITS — DeepSeek, and it found a real bug (2026-09-12).**
+
+Two scene kits authored and on disk under
+`artifacts/episode2-gold-mine/deepseek-scenes/`: **01_smelting_facility** and
+**02_runner_opening**, each with SCENE_SPEC / AESTHETIC_LOCK / GODOT_NOTES /
+REVIEW, so the later high-fidelity pass has law to follow instead of taste.
+
+**No separate DeepSeek profile was needed.** The brief assumed a Hugging Face
+router and a `launch.sh` in another Claude Code profile — none of which exists
+here. You already have an OpenRouter key, so DeepSeek is one command through the
+same wrapper everything else uses, **with the founder reference images attached**
+so it reasons from your art rather than from a description of it.
+
+**It earned its keep on the first call.** DeepSeek read the shipped smelting
+chamber code and caught that the establishing camera sat at z = -14 while the
+room's floor and walls end at z = -11.5 — **the wide shot was filming from 2.5 m
+outside the room.** Confirmed by arithmetic and fixed. That had survived a real
+browser capture, because a wide shot with nothing behind it just reads as
+graybox.
+
+**Best note on the runner:** the references get their depth from hanging baskets
+and distant walkways *beyond* the tunnel wall. Widening the tunnel into bays
+(what we built) makes a bigger box; it does not add a second depth plane. That
+is the concrete answer to the earlier "rectangular shaft, not a cavern" finding.
+
+**Total cost of both kits: $0.0296.**
+
+**Every file is marked UNVALIDATED and every scene folder has a
+`_VERIFICATION.md`** listing exactly what was checked against the code — what
+was true, what was wrong, and what was not checked. One error in the kits was
+mine, not DeepSeek's (I told it the tunnel was 12 m wide; it is 11.2 m).
+
+**Two founder calls waiting**, both real:
+1. Should the player be able to walk sideways in the smelting facility? The room
+   is 22 m wide and he is locked to the centre line, so the crucibles and ingot
+   racks can never be approached. Cheap to change; it turns a cinematic rail
+   into a small explorable room.
+2. The green chamber gate is an **invented** marker — no reference shows a gate.
+   Keep it, or replace it with something on-model?
+
+---
+
 **🐂 THE FIRST CHAMBER IS PLAYABLE — Inferno Bull, the whiskey, the Winchester (2026-09-12).**
 
 Screenshot proof: `artifacts/ep2-shots/ep2_smelting_handoff.png` (real Chromium,

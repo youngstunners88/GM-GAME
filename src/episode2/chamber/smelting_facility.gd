@@ -103,7 +103,14 @@ var _walk_input: float = 0.0         # -1..1 along Z, set by walk_forward/back
 ## pulls back out for the verb teach, which needs the room again.
 ##
 ## Each entry is [position, pitch degrees].
-const CAM_WIDE := [Vector3(0.0, 4.2, -14.0), -14.0]
+## z = -11.0, not -14.0. The floor and side walls span z = -11.5 to 18.5
+## (30 m centred at 3.5), so the establishing camera used to sit 2.5 m BEYOND
+## the back edge of the room, hanging in the runner tunnel with no shell behind
+## it. Caught by the DeepSeek scene-kit pass reading the real code and confirmed
+## by arithmetic — see deepseek-scenes/01_smelting_facility/_VERIFICATION.md.
+## It survived a browser capture because "the wide shot looks empty" reads as
+## graybox rather than as a camera outside the room.
+const CAM_WIDE := [Vector3(0.0, 4.2, -11.0), -14.0]
 const CAM_CLOSE := [Vector3(1.1, 2.3, 1.4), -8.0]
 const CAM_TEACH := [Vector3(-1.0, 3.2, -3.0), -12.0]
 const CAM_LERP := 1.8          # units/sec — a push-in, not a snap
