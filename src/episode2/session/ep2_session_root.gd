@@ -49,7 +49,19 @@ signal session_failed
 enum Mode { IDLE, RUNNER, CHAMBER, TRANSITION }
 
 const RUNNER_SCENE := preload("res://src/episode2/runner/runner_graybox.tscn")
-const CHAMBER_SCENE := preload("res://src/episode2/chamber/miner_shaft.tscn")
+## Chambers, by the id a track-plan segment names in its "chamber" key.
+##
+## Was a single `CHAMBER_SCENE` const pointing at the Miner Shaft. Episode 2
+## has seven designed chambers and the FIRST thing the player reaches is not a
+## protocol chamber at all — it is the Smelting Facility, where the Inferno Bull
+## hands over the Winchester (chambers/00_SMELTING_FACILITY.md). A segment that
+## names no chamber still gets the Miner Shaft, so every existing plan and gate
+## keeps its exact previous behaviour.
+const CHAMBER_SCENES := {
+	"smelting_facility": preload("res://src/episode2/chamber/smelting_facility.tscn"),
+	"miner_shaft": preload("res://src/episode2/chamber/miner_shaft.tscn"),
+}
+const DEFAULT_CHAMBER := "miner_shaft"
 
 ## Default GOLD principal for a graybox miner. NOT a protocol constant — no
 ## such value exists in goldmine_system.gd or the white paper (see the
@@ -119,7 +131,14 @@ func _enter_chamber() -> void:
 		_completed_distance += float(_active.get_distance())
 	_teardown_active()                      # guard #3 + #5
 	var seg: Dictionary = _plan[_segment]
-	var c: Node = CHAMBER_SCENE.instantiate()
+	var chamber_id: String = str(seg.get("chamber", DEFAULT_CHAMBER))
+	if not CHAMBER_SCENES.has(chamber_id):
+		# Loud, not silent. A typo'd chamber id that quietly fell back to the
+		# Miner Shaft would put the player in the wrong room with the right
+		# economy attached to it — a story bug wearing a working chamber's face.
+		push_error("Ep2SessionRoot: unknown chamber id \"%s\"; falling back to %s" % [chamber_id, DEFAULT_CHAMBER])
+		chamber_id = DEFAULT_CHAMBER
+	var c: Node = CHAMBER_SCENES[chamber_id].instantiate()
 	add_child(c)
 	_active = c
 	c.setup(
@@ -258,6 +277,19 @@ func chamber_early_claim() -> bool:
 		return _active.early_claim()
 	return false
 
+## Walk the player through a chamber that supports it. `has_method` rather than
+## an id check: the Miner Shaft legitimately has no walk verb, and adding an
+## empty one to it just to satisfy a caller would be worse than asking.
+func chamber_walk(direction: float) -> void:
+	if _mode == Mode.CHAMBER and _active and _active.has_method("walk"):
+		_active.walk(direction)
+
+
+func chamber_walk_stop() -> void:
+	if _mode == Mode.CHAMBER and _active and _active.has_method("walk_stop"):
+		_active.walk_stop()
+
+
 func chamber_take_cover() -> void:
 	if _mode == Mode.CHAMBER and _active:
 		_active.take_cover()
@@ -333,3 +365,13 @@ func _unhandled_input(event: InputEvent) -> void:
 				chamber_take_cover()
 			elif event.is_action_released("move_down"):
 				chamber_leave_cover()
+			# Walking. Only the Smelting Facility moves the player on foot; the
+			# Miner Shaft holds position at the rig, so the verb is routed by
+			# capability rather than by chamber id — a chamber that cannot walk
+			# simply does not answer to it.
+			elif event.is_action_pressed("move_right"):
+				chamber_walk(1.0)
+			elif event.is_action_pressed("move_left"):
+				chamber_walk(-1.0)
+			elif event.is_action_released("move_right") or event.is_action_released("move_left"):
+				chamber_walk_stop()

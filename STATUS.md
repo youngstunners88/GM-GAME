@@ -5,6 +5,199 @@
 
 ---
 
+**🧱 SCENE FOUNDATION KITS — DeepSeek, and it found a real bug (2026-09-12).**
+
+Two scene kits authored and on disk under
+`artifacts/episode2-gold-mine/deepseek-scenes/`: **01_smelting_facility** and
+**02_runner_opening**, each with SCENE_SPEC / AESTHETIC_LOCK / GODOT_NOTES /
+REVIEW, so the later high-fidelity pass has law to follow instead of taste.
+
+**No separate DeepSeek profile was needed.** The brief assumed a Hugging Face
+router and a `launch.sh` in another Claude Code profile — none of which exists
+here. You already have an OpenRouter key, so DeepSeek is one command through the
+same wrapper everything else uses, **with the founder reference images attached**
+so it reasons from your art rather than from a description of it.
+
+**It earned its keep on the first call.** DeepSeek read the shipped smelting
+chamber code and caught that the establishing camera sat at z = -14 while the
+room's floor and walls end at z = -11.5 — **the wide shot was filming from 2.5 m
+outside the room.** Confirmed by arithmetic and fixed. That had survived a real
+browser capture, because a wide shot with nothing behind it just reads as
+graybox.
+
+**Best note on the runner:** the references get their depth from hanging baskets
+and distant walkways *beyond* the tunnel wall. Widening the tunnel into bays
+(what we built) makes a bigger box; it does not add a second depth plane. That
+is the concrete answer to the earlier "rectangular shaft, not a cavern" finding.
+
+**Total cost of both kits: $0.0296.**
+
+**Every file is marked UNVALIDATED and every scene folder has a
+`_VERIFICATION.md`** listing exactly what was checked against the code — what
+was true, what was wrong, and what was not checked. One error in the kits was
+mine, not DeepSeek's (I told it the tunnel was 12 m wide; it is 11.2 m).
+
+**Two founder calls waiting**, both real:
+1. Should the player be able to walk sideways in the smelting facility? The room
+   is 22 m wide and he is locked to the centre line, so the crucibles and ingot
+   racks can never be approached. Cheap to change; it turns a cinematic rail
+   into a small explorable room.
+2. The green chamber gate is an **invented** marker — no reference shows a gate.
+   Keep it, or replace it with something on-model?
+
+---
+
+**🐂 THE FIRST CHAMBER IS PLAYABLE — Inferno Bull, the whiskey, the Winchester (2026-09-12).**
+
+Screenshot proof: `artifacts/ep2-shots/ep2_smelting_handoff.png` (real Chromium,
+real web export).
+
+**What you can now play.** The cart brakes out of the runner tunnel into the
+**Smelting Facility** — heat, light, crucibles pouring molten gold. You walk
+across the floor. **Inferno Bull** is sitting among the gold with a whiskey and
+a lit cigar, horns and hard-hat lamp catching the light. The camera pushes in
+for the conversation. He speaks — in **his own voice**, the one designed and
+owned by this project — and hands you the **Winchester 1886**. You shoot a rack
+of empty casting molds to learn the gun. He tells you he doesn't do sidekicks.
+You promise him a seat in the Smoke Lounge. Then he falls in and you walk out
+toward Fort Knox.
+
+All five of his lines play at the right beats, and **you cannot talk over him** —
+each beat holds for the measured length of the clip, so mashing E can't skip the
+character.
+
+**It mints nothing, deliberately.** Chamber 0 carries no white-paper mechanic:
+`gold_awarded` and `gold_forfeited` are hard zeros and Early Claim refuses. The
+economy still starts at Fort Knox, exactly as the design says.
+
+**Six new 3D props**, all built headlessly in-session with no GPU and no Blender
+install: the Winchester 1886 (barrel, mag tube, receiver, large-loop lever,
+straight-wrist stock, sights), a tipping pour-crucible with molten gold, an
+ingot rack, a whiskey tumbler, and an Inferno Bull silhouette.
+
+**Two real bugs found by looking at the pixels, not at the tests:**
+1. The chamber HUD was stamping the *Miner Shaft's* controls over Chamber 0 —
+   a story beat telling you to "start Miner" and "EARLY CLAIM", neither of which
+   exists in that room. One misplaced line; fixed.
+2. The whole encounter was playing at postage-stamp scale from the wide
+   establishing shot — the Bull was two horns in the middle distance. The
+   camera now pushes in for the conversation and pulls back for the shooting.
+
+And one thing that looked like a bug and wasn't: the first capture showed the
+keyboard being ignored. A HUD diagnostic proved the key was landing and the
+player *was* walking — the software-rendered test browser runs this scene at
+about 14 fps, so he'd covered a quarter of the distance. The capture harness was
+impatient, not the game. Worth knowing on its own: this room is heavier than the
+runner and is the first place to watch performance.
+
+**AUDIO LAYER — everything that doesn't need a key is built.**
+- **Godot bus layout live**: Ambience / Mechanical / Threat / Action / Score /
+  VO / UI, created at boot, with the Score bus able to duck under the runner.
+  Episode 1's Music and SFX buses are untouched — it has shipped and routes
+  through them.
+- **25 VARCO prompts written and versioned** across runner, smelting and
+  Winchester sets, in the founder's priority order.
+- `scripts/varco-sound.mjs` generates, names and logs every stem, and its
+  `--list` / `--dry-run` work with no key so the library and the spend estimate
+  are reviewable before anything is paid for.
+- **One blocker, and it is not the network.** `api.varco.ai` answers fine from
+  here — nothing needs allowlisting. There is simply **no VARCO API key in the
+  environment** (`VARCO_API_KEY`, `OPENAPI_KEY`, `VARCO_KEY` all absent). Add one
+  in the environment's Environment Variables field and the first 25 stems are a
+  single command away. Full instructions: `artifacts/episode2-gold-mine/audio/SETUP.md`.
+
+**Honest limits:**
+- **Inferno Bull on screen is a PLACEHOLDER silhouette**, built from primitives —
+  the horns, hard-hat lamp, flame lenses, cigar ember and bandolier are there so
+  the beat can be staged and played, but this is not the hyper-real character
+  from your reference art. Same blocker as Lil Blunt's model: an image-to-3D API
+  credential.
+- No combat in Chamber 0, per the spec's own recommendation — the gun's first
+  real use should have stakes, and those belong on the approach to Fort Knox.
+- Fort Knox itself is still designed, not built.
+
+**Gates:** smelting-facility 33/33 (new) · audio-buses 13/13 (new) ·
+art-direction 21/21 · glb-pipeline ALL PASS (14 props) · reachability 13/13 ·
+session-root 26/26 · miner-shaft 35/35 · stress-soak ALL PASS ·
+economy-invariants 45/45.
+**pck:** 127,445,984 bytes — **71,783,456 free** under the 199,229,440 gate.
+
+---
+
+**🎨 EPISODE 2 NOW LOOKS LIKE A GOLD MINE (2026-09-10) — and two cameras were pointing the wrong way.**
+
+Screenshot proof: `artifacts/ep2-shots/ep2_runner_start.png` (real Chromium,
+real web export, not a mock).
+
+**What changed for you.** Episode 2 was a graybox — grey boxes in a black void.
+It is now a lit mine tunnel: charcoal rock walls with scattered gold ore, timber
+support frames, brass lanterns throwing warm pools on the rails, sleepered
+track, wide worked-out bays every fourth section, and **Lil Blunt riding in a
+real timber-and-brass minecart with the gold leaf emblem on it**.
+
+**The bug that pass found.** Both Episode 2 cameras were **facing backwards**.
+Measured, not guessed: a headless probe of the real scenes put
+`dot(camera forward, direction to the next obstacle)` at **-0.86** in the runner
+and **-0.85** to the mining rig in the chamber. You were watching the tunnel you
+had already passed. Hazards arrived from behind the camera and were never
+visible — which is the complete explanation for both "the cart isn't in frame"
+and a playtest dying in thirteen seconds. Every gate stayed green through it,
+because positions, collisions and health were all correct. Both cameras now face
+the play space, and the runner's rail order had to flip with them (looking down
++Z with +Y up puts world +X on your LEFT, so the old order would have mirrored
+A and D on screen).
+
+**A 64.6 MB download you were shipping to every player, removed.** The web
+export was sweeping all of `artifacts/` into the game package — 80 MB of your
+own reference art and old capture screenshots that no scene ever loads. The
+build went from **183.0 MiB to 121.4 MiB**, and headroom under the CI size gate
+went from 6.99 MiB to **68.6 MiB**. Faster load on itch, and room for real 3D
+assets.
+
+**How the art was decided — it was not invented.** Every colour traces to your
+three reference images. GPT-6 Astra (wired in this session via OpenRouter, image
+input and all) read those references and produced the starting palette, then
+graded two real browser screenshots against them. Both reviews are archived in
+`artifacts/episode2-gold-mine/art/`. Its top finding both times was "the
+playable scene collapses into shadow", and the lighting was re-tuned twice
+because of it. Its verdict on the last capture was still **OFF MODEL** — honest
+state below.
+
+**Nine real 3D props, built in-session, no GPU and no Blender install:**
+minecart, lantern, timber beam, boulder, rock chunk, rail segment, gold nugget,
+gold pile, and a placeholder rider. All headless via the `bpy` Python wheel,
+all proven to import into Godot with materials by an extended gate.
+
+**New gate: `ep2_art_direction_test` (21/21).** Failing-first by construction —
+the lantern assertions were false before this pass (neither scene had a single
+warm light) and the camera assertions fail against the old transforms. It locks
+what logic gates cannot see: the blowout condition and camera framing.
+
+**Four new skills committed** so future sessions inherit all of this:
+`hard-surface-prop-pipeline`, `hero-character-pipeline`,
+`art-direction-fidelity-check`, `world-building-workflow`.
+
+**Honest limits — what is NOT done:**
+- The last fidelity verdict was **OFF MODEL**, not ON MODEL. The remaining gap
+  is mostly value range: the mine still reads darker and browner than your
+  references, which show more separation between cool stone and warm gold.
+- **Lil Blunt in the cart is a PLACEHOLDER**, built from primitives. It is a
+  silhouette stand-in so the frame has its subject; it is not the hero
+  character. The real one needs an image-to-3D service (Meshy or Tripo), which
+  needs **you** to add an API key and allowlist that host in the environment
+  settings — neither is doable from inside a session.
+- Only the runner half was browser-captured. The chamber's camera fix is proven
+  headlessly but has not been looked at in a browser yet.
+- `web/game/index.html` is still tracked and still causes merge conflicts on
+  every CI export. Still open, still not fixed here.
+
+**Gates:** art-direction 21/21 · reachability 13/13 · miner-shaft 35/35 ·
+session-root 26/26 · glb-pipeline ALL PASS (9 props) · stress-soak ALL PASS ·
+economy-invariants 45/45 · security-sentinel 18/18.
+**pck:** 127,335,776 bytes — **71,893,664 free** under the 199,229,440 gate.
+
+---
+
 **🕹️ EPISODE 2 IS NOW REACHABLE — you can actually play it after boss 3 (2026-09-10).**
 
 You reported you couldn't test Episode 2. You were right, and the reason was
