@@ -5,6 +5,83 @@
 
 ---
 
+**🐂 THE FIRST CHAMBER IS PLAYABLE — Inferno Bull, the whiskey, the Winchester (2026-09-12).**
+
+Screenshot proof: `artifacts/ep2-shots/ep2_smelting_handoff.png` (real Chromium,
+real web export).
+
+**What you can now play.** The cart brakes out of the runner tunnel into the
+**Smelting Facility** — heat, light, crucibles pouring molten gold. You walk
+across the floor. **Inferno Bull** is sitting among the gold with a whiskey and
+a lit cigar, horns and hard-hat lamp catching the light. The camera pushes in
+for the conversation. He speaks — in **his own voice**, the one designed and
+owned by this project — and hands you the **Winchester 1886**. You shoot a rack
+of empty casting molds to learn the gun. He tells you he doesn't do sidekicks.
+You promise him a seat in the Smoke Lounge. Then he falls in and you walk out
+toward Fort Knox.
+
+All five of his lines play at the right beats, and **you cannot talk over him** —
+each beat holds for the measured length of the clip, so mashing E can't skip the
+character.
+
+**It mints nothing, deliberately.** Chamber 0 carries no white-paper mechanic:
+`gold_awarded` and `gold_forfeited` are hard zeros and Early Claim refuses. The
+economy still starts at Fort Knox, exactly as the design says.
+
+**Six new 3D props**, all built headlessly in-session with no GPU and no Blender
+install: the Winchester 1886 (barrel, mag tube, receiver, large-loop lever,
+straight-wrist stock, sights), a tipping pour-crucible with molten gold, an
+ingot rack, a whiskey tumbler, and an Inferno Bull silhouette.
+
+**Two real bugs found by looking at the pixels, not at the tests:**
+1. The chamber HUD was stamping the *Miner Shaft's* controls over Chamber 0 —
+   a story beat telling you to "start Miner" and "EARLY CLAIM", neither of which
+   exists in that room. One misplaced line; fixed.
+2. The whole encounter was playing at postage-stamp scale from the wide
+   establishing shot — the Bull was two horns in the middle distance. The
+   camera now pushes in for the conversation and pulls back for the shooting.
+
+And one thing that looked like a bug and wasn't: the first capture showed the
+keyboard being ignored. A HUD diagnostic proved the key was landing and the
+player *was* walking — the software-rendered test browser runs this scene at
+about 14 fps, so he'd covered a quarter of the distance. The capture harness was
+impatient, not the game. Worth knowing on its own: this room is heavier than the
+runner and is the first place to watch performance.
+
+**AUDIO LAYER — everything that doesn't need a key is built.**
+- **Godot bus layout live**: Ambience / Mechanical / Threat / Action / Score /
+  VO / UI, created at boot, with the Score bus able to duck under the runner.
+  Episode 1's Music and SFX buses are untouched — it has shipped and routes
+  through them.
+- **25 VARCO prompts written and versioned** across runner, smelting and
+  Winchester sets, in the founder's priority order.
+- `scripts/varco-sound.mjs` generates, names and logs every stem, and its
+  `--list` / `--dry-run` work with no key so the library and the spend estimate
+  are reviewable before anything is paid for.
+- **One blocker, and it is not the network.** `api.varco.ai` answers fine from
+  here — nothing needs allowlisting. There is simply **no VARCO API key in the
+  environment** (`VARCO_API_KEY`, `OPENAPI_KEY`, `VARCO_KEY` all absent). Add one
+  in the environment's Environment Variables field and the first 25 stems are a
+  single command away. Full instructions: `artifacts/episode2-gold-mine/audio/SETUP.md`.
+
+**Honest limits:**
+- **Inferno Bull on screen is a PLACEHOLDER silhouette**, built from primitives —
+  the horns, hard-hat lamp, flame lenses, cigar ember and bandolier are there so
+  the beat can be staged and played, but this is not the hyper-real character
+  from your reference art. Same blocker as Lil Blunt's model: an image-to-3D API
+  credential.
+- No combat in Chamber 0, per the spec's own recommendation — the gun's first
+  real use should have stakes, and those belong on the approach to Fort Knox.
+- Fort Knox itself is still designed, not built.
+
+**Gates:** smelting-facility 33/33 (new) · audio-buses 13/13 (new) ·
+art-direction 21/21 · glb-pipeline ALL PASS (14 props) · reachability 13/13 ·
+session-root 26/26 · miner-shaft 35/35 · stress-soak ALL PASS ·
+economy-invariants 45/45.
+**pck:** 127,445,984 bytes — **71,783,456 free** under the 199,229,440 gate.
+
+---
+
 **🎨 EPISODE 2 NOW LOOKS LIKE A GOLD MINE (2026-09-10) — and two cameras were pointing the wrong way.**
 
 Screenshot proof: `artifacts/ep2-shots/ep2_runner_start.png` (real Chromium,

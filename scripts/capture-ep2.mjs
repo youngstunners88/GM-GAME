@@ -30,7 +30,12 @@ if (!URL_BASE) {
 }
 fs.mkdirSync(OUT_DIR, { recursive: true });
 
-const url = URL_BASE + (URL_BASE.includes('?') ? '&' : '?') + 'ep2=1';
+// --chamber warps straight into the Smelting Facility (Chamber 0). Without it a
+// capture of the chamber has to survive 180 m of runner hazards first, which
+// makes a failed screenshot ambiguous — runner problem, or chamber problem?
+const CHAMBER = process.argv.includes('--chamber');
+const url = URL_BASE + (URL_BASE.includes('?') ? '&' : '?') + 'ep2=1' +
+  (CHAMBER ? '&ep2chamber=1' : '');
 const errors = [];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -81,15 +86,65 @@ async function shot(name) {
   console.log(`  shot ${name} (${bytes} B)`);
 }
 
+// Focus the canvas explicitly, not just click it. Godot's web build listens
+// for keys on the canvas element; the first Chamber 0 capture clicked, looked
+// alive (the beat advanced on its own timer) and still ignored every keypress,
+// because a click alone had not made the canvas the focused element.
 await page.click('canvas', { position: { x: 640, y: 400 } }).catch(() => {});
+await page.evaluate(() => {
+  const c = document.querySelector('canvas');
+  if (c) { c.setAttribute('tabindex', '0'); c.focus(); }
+});
 await sleep(2500);
-await shot('ep2_runner_start.png');
 
-// Let the cart cover ground so hazards, lanterns and the zip cable are in frame.
-await sleep(4000);
-await shot('ep2_runner_mid.png');
-await sleep(4000);
-await shot('ep2_runner_late.png');
+if (CHAMBER) {
+  // Chamber 0 is a conversation, so the capture has to PLAY it: walk to the
+  // Bull, then press E through the beats. A static screenshot of the arrival
+  // frame would prove the room loaded and nothing about whether it works.
+  await shot('ep2_smelting_arrival.png');
+
+  // Hold D for 14 s, not 4. This capture runs under SwiftShader software
+  // rendering, where the chamber measured about 14 fps — a HUD diagnostic
+  // showed the walk verb routing correctly (`mode=2 key=D mr=true`) while the
+  // player covered only 4.1 m of the 10.8 m he needs, because the whole scene
+  // was time-dilated to roughly a quarter speed. The first read of that was
+  // "input is broken"; it was the harness being impatient. Real hardware walks
+  // it in ~4 s, so the extra wait costs a capture nothing and buys it
+  // independence from whatever framerate the sandbox manages.
+  await page.keyboard.down('d');
+  await sleep(14000);
+  await page.keyboard.up('d');
+  await sleep(1500);
+  await shot('ep2_smelting_meeting.png');   // the drink
+  // Line holds are the measured clip durations; tripled here for the same
+  // time-dilation reason, and harmless because a beat simply waits.
+  for (const wait of [9000, 3000, 12000, 3000]) {
+    await page.keyboard.press('e');
+    await sleep(wait);
+  }
+  await shot('ep2_smelting_handoff.png');   // rifle in hand
+  for (let i = 0; i < 4; i++) { await page.keyboard.press('Control'); await sleep(1200); }
+  await sleep(2000);
+  await shot('ep2_smelting_verbteach.png'); // molds broken
+
+  // A capture that silently did nothing looks exactly like a capture that
+  // worked, so assert on the pixels: the four chamber shots must not be
+  // byte-identical. The first run produced three identical files and that was
+  // the only clue the keyboard was being ignored.
+  const bytes = shots.filter((s) => s.name.startsWith('ep2_smelting')).map((s) => s.bytes);
+  if (new Set(bytes).size < 3) {
+    console.error(`\nFAIL — the chamber shots barely differ (${bytes.join(', ')} bytes).`);
+    console.error('  The beats did not advance: input is not reaching the canvas.');
+    process.exitCode = 1;
+  }
+} else {
+  await shot('ep2_runner_start.png');
+  // Let the cart cover ground so hazards, lanterns and the zip cable are in frame.
+  await sleep(4000);
+  await shot('ep2_runner_mid.png');
+  await sleep(4000);
+  await shot('ep2_runner_late.png');
+}
 
 await browser.close();
 

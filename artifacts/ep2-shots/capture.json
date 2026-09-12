@@ -1,19 +1,23 @@
 {
-  "url": "http://localhost:8899/game/index.html?ep2=1",
+  "url": "http://localhost:8899/game/index.html?ep2=1&ep2chamber=1",
   "shots": [
     {
-      "name": "ep2_runner_start.png",
-      "bytes": 145317
+      "name": "ep2_smelting_arrival.png",
+      "bytes": 164348
     },
     {
-      "name": "ep2_runner_mid.png",
-      "bytes": 141992
+      "name": "ep2_smelting_meeting.png",
+      "bytes": 174703
     },
     {
-      "name": "ep2_runner_late.png",
-      "bytes": 124827
+      "name": "ep2_smelting_handoff.png",
+      "bytes": 182642
+    },
+    {
+      "name": "ep2_smelting_verbteach.png",
+      "bytes": 182642
     }
   ],
   "errors": [],
-  "captured": "2026-09-10T04:44:18.820Z"
+  "captured": "2026-09-12T08:08:01.435Z"
 }

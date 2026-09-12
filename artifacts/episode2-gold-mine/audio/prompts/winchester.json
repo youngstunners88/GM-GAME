@@ -1,0 +1,23 @@
+{
+  "section": "winchester",
+  "version": 1,
+  "authored": "2026-09-12",
+  "source": "artifacts/PROMPT_EPISODE2_VARCO_SOUND_INTEGRATION.md §3.C",
+  "note": "Period-accurate and HEAVY is the whole brief here. The 1886 is a big-bore lever gun, not a carbine — the report should sit low and the lever should sound like machined steel, not a toy.",
+  "stems": [
+    { "id": "ep2_bull_winchester_fire_01", "layer": "action", "loop": false,
+      "prompt": "Heavy lever-action Winchester 1886 rifle fired once in a large stone chamber, deep report, short echo, mechanical lever cock afterward" },
+    { "id": "ep2_bull_winchester_fire_02", "layer": "action", "loop": false,
+      "prompt": "Large calibre lever-action rifle shot in an enclosed rock cavern, heavy low crack with a long reverberant tail, slightly different mic distance" },
+    { "id": "ep2_bull_winchester_fire_03", "layer": "action", "loop": false,
+      "prompt": "Big-bore rifle discharge underground, thick low-end punch, dust and grit falling afterwards, no lever action on this take" },
+    { "id": "ep2_bull_winchester_lever_01", "layer": "mechanical", "loop": false,
+      "prompt": "Lever-action rifle lever thrown down and back, machined steel on steel, spent brass shell ejected and landing on stone, close perspective" },
+    { "id": "ep2_bull_winchester_load_01", "layer": "mechanical", "loop": false,
+      "prompt": "Brass cartridges pushed one at a time through the loading gate of a lever-action rifle, metallic click and spring tension, unhurried" },
+    { "id": "ep2_bull_impact_rock_01", "layer": "action", "loop": false,
+      "prompt": "Rifle bullet striking solid rock, sharp crack, stone chips and dust, short underground slapback" },
+    { "id": "ep2_bull_coverfire_01", "layer": "action", "loop": false,
+      "prompt": "Three heavy rifle shots fired in quick succession from a position behind the listener, lever worked between each, large stone space" }
+  ]
+}

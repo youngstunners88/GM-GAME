@@ -297,8 +297,171 @@ def build_lil_blunt_placeholder() -> None:
         _box("Arm%+d" % sx, (0.14, 0.14, 0.40), (sx * 0.36, -0.04, 0.34), leaf)
 
 
+# --- Chamber 0: the Smelting Facility -----------------------------------------
+# Source: artifacts/episode2-gold-mine/chambers/00_SMELTING_FACILITY.md and
+# references/inferno_bull_smelting.jpeg (Bull seated among molten gold, whiskey
+# in hand, cigar lit, pour-crucibles working behind him).
+
+MOLTEN     = (1.00, 0.62, 0.16)
+GUN_STEEL  = (0.34, 0.35, 0.38)
+GUN_WOOD   = (0.36, 0.19, 0.09)
+BULL_HIDE  = (0.10, 0.09, 0.10)
+WHISKEY    = (0.72, 0.38, 0.10)
+
+
+def build_winchester_1886() -> None:
+    """Lever-action rifle, period-silhouette. The Bull's hand-off prop.
+
+    Hard-surface and parametric, so this is squarely Path E work — unlike the
+    organic characters, a rifle IS a pile of cylinders and boxes. Proportions
+    follow the 1886: 26" octagon barrel under a full-length magazine tube,
+    straight-wrist stock, large loop lever.
+
+    Built along +Y (Blender), which glTF's Y-up conversion turns into -Z, so in
+    engine the muzzle points the way a held rifle should without extra rotation.
+    """
+    steel = _mat("Win_Steel", GUN_STEEL, 0.85, 0.30)
+    wood = _mat("Win_Wood", GUN_WOOD, 0.0, 0.55)
+    brass = _mat("Win_Brass", BRASS, 0.75, 0.32)
+
+    # Barrel + magazine tube, muzzle at +Y.
+    _cyl("Barrel", 0.021, 0.66, (0.0, 0.30, 0.0), (math.pi / 2, 0, 0), steel, verts=8)
+    _cyl("MagTube", 0.016, 0.60, (0.0, 0.27, -0.036), (math.pi / 2, 0, 0), steel, verts=8)
+    _box("Forearm", (0.052, 0.26, 0.058), (0.0, 0.06, -0.018), wood)
+    _box("BarrelBand", (0.056, 0.030, 0.075), (0.0, 0.19, -0.018), brass)
+
+    # Receiver — the boxy heart of a lever gun.
+    _box("Receiver", (0.048, 0.26, 0.105), (0.0, -0.10, 0.005), steel)
+    _box("LoadingGate", (0.052, 0.06, 0.035), (0.024, -0.06, -0.010), brass)
+    _box("Hammer", (0.020, 0.030, 0.055), (0.0, -0.215, 0.062), steel)
+
+    # Large-loop lever, the 1886's signature: three segments approximating the
+    # closed loop a solid ring of geometry would cost far more to describe.
+    _box("LeverArm", (0.020, 0.115, 0.022), (0.0, -0.145, -0.062), steel)
+    _box("LeverLoopBack", (0.020, 0.022, 0.075), (0.0, -0.205, -0.092), steel)
+    _box("LeverLoopBottom", (0.020, 0.110, 0.020), (0.0, -0.150, -0.126), steel)
+    _box("Trigger", (0.014, 0.018, 0.036), (0.0, -0.130, -0.048), steel)
+
+    # Straight-wrist stock + butt plate.
+    o = _box("Stock", (0.052, 0.34, 0.098), (0.0, -0.40, -0.012), wood)
+    o.rotation_euler = (0.055, 0.0, 0.0)
+    _box("ButtPlate", (0.056, 0.022, 0.115), (0.0, -0.572, -0.024), brass)
+
+    # Sights, so the silhouette reads as a rifle and not a stick.
+    _box("FrontSight", (0.010, 0.012, 0.024), (0.0, 0.60, 0.030), steel)
+    _box("RearSight", (0.030, 0.020, 0.016), (0.0, 0.05, 0.030), steel)
+
+
+def build_crucible() -> None:
+    """Tipping pour-crucible with molten gold. The facility's light source.
+
+    The molten surface is the one place in Episode 2 where a high emission
+    value is correct rather than a blowout: it IS the lamp.
+    """
+    iron = _mat("Cruc_Iron", (0.16, 0.15, 0.15), 0.6, 0.62)
+    hot = _mat("Cruc_HotIron", (0.42, 0.16, 0.06), 0.5, 0.55, emit=(1.0, 0.30, 0.05, 1.4))
+    gold = _mat("Cruc_Molten", MOLTEN, 0.3, 0.18, emit=(1.0, 0.58, 0.14, 6.0))
+
+    _cyl("Vessel", 0.85, 1.10, (0, 0, 0.90), (0, 0, 0), iron, verts=20)
+    _cyl("VesselLip", 0.92, 0.12, (0, 0, 1.46), (0, 0, 0), hot, verts=20)
+    _cyl("Molten", 0.78, 0.06, (0, 0, 1.42), (0, 0, 0), gold, verts=20)
+    for sx in (-1.0, 1.0):          # trunnion pins + frame
+        _cyl("Trunnion%+d" % sx, 0.10, 0.34, (sx * 0.95, 0, 1.05), (0, math.pi / 2, 0), iron, verts=10)
+        _box("Upright%+d" % sx, (0.16, 0.16, 1.30), (sx * 1.18, 0, 0.65), iron)
+    _box("Base", (2.7, 0.9, 0.18), (0, 0, 0.09), iron)
+
+
+def build_ingot_rack() -> None:
+    """Rack of cast gold ingots — what the facility is FOR."""
+    iron = _mat("Rack_Iron", (0.18, 0.17, 0.17), 0.6, 0.6)
+    gold = _mat("Rack_Gold", GOLD, 0.85, 0.24, emit=(0.95, 0.74, 0.28, 0.4))
+    for z in (0.10, 0.62, 1.14):
+        _box("Shelf@%.2f" % z, (1.9, 0.7, 0.07), (0, 0, z), iron)
+    for sx in (-1.0, 1.0):
+        for sy in (-1.0, 1.0):
+            _box("Post%+d%+d" % (sx, sy), (0.09, 0.09, 1.5), (sx * 0.88, sy * 0.28, 0.75), iron)
+    for row, z in enumerate((0.19, 0.71, 1.23)):
+        for i in range(4 - row):        # tapers upward, so it reads as stacked
+            _box("Ingot%d_%d" % (row, i), (0.36, 0.19, 0.11),
+                 (-0.62 + i * 0.42, 0.0, z), gold)
+
+
+def build_whiskey_glass() -> None:
+    """Tumbler and pour. Small, but it is the character beat."""
+    glass = _mat("Whis_Glass", (0.80, 0.82, 0.84), 0.1, 0.08)
+    liquor = _mat("Whis_Liquor", WHISKEY, 0.0, 0.15, emit=(0.85, 0.42, 0.10, 0.7))
+    _cyl("Tumbler", 0.055, 0.12, (0, 0, 0.06), (0, 0, 0), glass, verts=16)
+    _cyl("Pour", 0.048, 0.055, (0, 0, 0.045), (0, 0, 0), liquor, verts=16)
+    _cyl("GlassBase", 0.058, 0.018, (0, 0, 0.009), (0, 0, 0), glass, verts=16)
+
+
+def build_inferno_bull_placeholder() -> None:
+    """PLACEHOLDER Inferno Bull — NOT the character.
+
+    Same honesty rule as the Lil Blunt placeholder: a primitive-assembly script
+    cannot author a hyper-real anthropomorphic bull, and this does not pretend
+    to. It is the SILHOUETTE the founder's reference art is built on — massive
+    black bull, long curved horns, copper hard-hat with a lit headlamp, dark
+    flame-lensed aviators, cigar with an ember, red bandana, bandolier, gold
+    bull-skull buckle — so the smelting-facility beat can be staged, blocked and
+    played now, with the real GLB dropping into the same node slot later.
+
+    Seated pose, matching references/inferno_bull_smelting.jpeg.
+    """
+    hide = _mat("Bull_Hide", BULL_HIDE, 0.0, 0.72)
+    horn = _mat("Bull_Horn", (0.76, 0.72, 0.62), 0.0, 0.42)
+    hat = _mat("Bull_Hat", (0.62, 0.34, 0.14), 0.7, 0.36)
+    lamp = _mat("Bull_Lamp", LANTERN_LIT, 0.0, 0.35, emit=(1.0, 0.80, 0.45, 4.0))
+    lens = _mat("Bull_Lens", (0.30, 0.06, 0.02), 0.4, 0.20, emit=(1.0, 0.35, 0.06, 2.2))
+    bandana = _mat("Bull_Bandana", (0.55, 0.10, 0.09), 0.0, 0.75)
+    leather = _mat("Bull_Leather", (0.24, 0.15, 0.09), 0.0, 0.72)
+    gold = _mat("Bull_Gold", GOLD, 0.85, 0.26, emit=(0.95, 0.74, 0.28, 0.4))
+    ember = _mat("Bull_Ember", (1.0, 0.42, 0.10), 0.0, 0.4, emit=(1.0, 0.35, 0.06, 5.0))
+
+    # Seated: hips at z~0.55, torso leaning back a touch.
+    _box("Hips", (0.92, 0.70, 0.42), (0.0, 0.0, 0.52), hide)
+    t = _box("Torso", (1.06, 0.62, 0.95), (0.0, -0.06, 1.16), hide)
+    t.rotation_euler = (-0.10, 0.0, 0.0)
+    _box("Bandolier", (1.12, 0.20, 0.16), (0.0, -0.34, 1.24), leather, rot=(0.0, 0.55, 0.0))
+    _box("Buckle", (0.22, 0.10, 0.16), (0.0, -0.34, 0.74), gold)
+    # Thighs forward, shins down — a seated read from any angle.
+    for sx in (-1.0, 1.0):
+        _box("Thigh%+d" % sx, (0.34, 0.78, 0.34), (sx * 0.30, -0.44, 0.50), hide)
+        _box("Shin%+d" % sx, (0.30, 0.30, 0.52), (sx * 0.30, -0.76, 0.22), hide)
+        _box("Boot%+d" % sx, (0.32, 0.44, 0.20), (sx * 0.30, -0.88, 0.06), leather)
+        _box("Arm%+d" % sx, (0.28, 0.30, 0.74), (sx * 0.62, -0.20, 1.20), hide)
+
+    _box("Neck", (0.44, 0.36, 0.26), (0.0, -0.04, 1.74), hide)
+    _box("Bandana", (0.58, 0.46, 0.16), (0.0, -0.04, 1.80), bandana)
+    _box("Skull", (0.62, 0.56, 0.52), (0.0, -0.10, 2.06), hide)
+    _box("Muzzle", (0.42, 0.34, 0.32), (0.0, -0.40, 1.98), hide)
+    _cyl("NoseRing", 0.09, 0.025, (0.0, -0.56, 1.92), (0.0, math.pi / 2, 0.0), gold, verts=12)
+
+    # Long curved horns — three segments each, sweeping out then up.
+    for sx in (-1.0, 1.0):
+        _cyl("HornA%+d" % sx, 0.075, 0.34, (sx * 0.42, -0.06, 2.22), (0.0, math.pi / 2, 0.0), horn, verts=8)
+        _cyl("HornB%+d" % sx, 0.060, 0.28, (sx * 0.66, -0.06, 2.34), (0.5 * sx, 0.9 * sx, 0.0), horn, verts=8)
+        _cyl("HornC%+d" % sx, 0.042, 0.24, (sx * 0.78, -0.06, 2.58), (0.0, 0.25 * sx, 0.0), horn, verts=8)
+
+    # Copper hard-hat + headlamp, and the flame-lensed aviators.
+    _ico("HardHat", 0.36, (0.0, -0.08, 2.30), hat, subdiv=2, scale=(1.0, 1.0, 0.62))
+    _cyl("HatBrim", 0.40, 0.045, (0.0, -0.14, 2.22), (0.0, 0.0, 0.0), hat, verts=18)
+    _ico("HeadLamp", 0.085, (0.0, -0.40, 2.26), lamp, subdiv=2)
+    for sx in (-1.0, 1.0):
+        _box("Lens%+d" % sx, (0.19, 0.05, 0.13), (sx * 0.14, -0.36, 2.06), lens)
+
+    # Cigar with a live ember — permanently in mouth, per the profile.
+    _cyl("Cigar", 0.028, 0.26, (0.10, -0.62, 1.94), (math.pi / 2, 0, 0), leather, verts=8)
+    _ico("CigarEmber", 0.032, (0.10, -0.75, 1.94), ember, subdiv=1)
+
+
 BUILDERS = {
     "lil_blunt_placeholder": build_lil_blunt_placeholder,
+    "inferno_bull_placeholder": build_inferno_bull_placeholder,
+    "winchester_1886": build_winchester_1886,
+    "crucible": build_crucible,
+    "ingot_rack": build_ingot_rack,
+    "whiskey_glass": build_whiskey_glass,
     "minecart": build_minecart,
     "gold_nugget": build_gold_nugget,
     "gold_pile": build_gold_pile,

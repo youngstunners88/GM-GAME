@@ -1,0 +1,24 @@
+[gd_scene load_steps=2 format=3 uid="uid://ep2smelting01"]
+
+[ext_resource type="Script" path="res://src/episode2/chamber/smelting_facility.gd" id="1"]
+
+[node name="SmeltingFacility" type="Node3D"]
+script = ExtResource("1")
+
+; Camera. Same forward-facing basis the runner and shaft cameras were corrected
+; to: forward (0,-0.242,0.970) down +Z, right (-1,0,0), up (0,0.970,0.242).
+; Pulled back to z=-14 so the whole staging - player at the tunnel mouth, the
+; Bull among the crucibles at +6, the exit at +15 - is in one frame.
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 0.97, 0.242, 0, 0.242, -0.97, 0, 4.2, -14)
+fov = 68.0
+
+; Lighting. Chamber 0's real light source is the molten gold in the crucibles
+; (built in _build_visuals as OmniLight3D per pour); this pair is the fill that
+; keeps silhouettes legible.
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.7, 0.71, 0, -0.71, 0.7, 0, 12, 2)
+light_energy = 0.4
+shadow_enabled = true

@@ -251,6 +251,41 @@ static func make_environment() -> Environment:
 	return env
 
 
+## Chamber 0's atmosphere — the SMELTING FACILITY.
+##
+## Deliberately the warmest, brightest space in Episode 2. The spec calls for
+## exactly that: after a dark, high-speed runner stretch the player walks into
+## heat and light, and the molten gold is the dominant light source rather than
+## lanterns. This is the one room where the mine's own value is what lights it.
+##
+## It still obeys the anti-blowout rule the art gate enforces — the lift comes
+## from warm ambient and the crucibles' emission, not from washing the rock out.
+static func make_forge_environment() -> Environment:
+	var env := make_environment()
+	env.background_color = _hex("#140C07")
+	env.ambient_light_color = _hex("#C98A4E")
+	env.ambient_light_energy = 0.55
+	# Warm, denser haze: heat shimmer and furnace smoke, and it hides the far
+	# wall so the cavern reads bigger than the box it is.
+	env.fog_light_color = _hex("#6B3D1C")
+	env.fog_density = 0.020
+	# The molten pours are genuine HDR sources, so let them bloom properly.
+	env.glow_intensity = 0.55
+	env.glow_hdr_threshold = 1.1
+	return env
+
+
+## The forge key light: a low, hot up-light standing in for the pour glow.
+static func make_forge_light() -> OmniLight3D:
+	var o := OmniLight3D.new()
+	o.light_color = _hex("#FF8A3C")
+	o.light_energy = 6.0
+	o.omni_range = 22.0
+	o.omni_attenuation = 1.2
+	o.shadow_enabled = false
+	return o
+
+
 ## The cool, dim key light. A mine has no sun; this is the fill that keeps
 ## silhouettes legible, and the warm omnis below are the real light sources.
 static func make_key_light() -> DirectionalLight3D:
