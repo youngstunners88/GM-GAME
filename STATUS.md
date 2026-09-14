@@ -5,6 +5,61 @@
 
 ---
 
+**💨 STAGE 1 NOW THROWS SMOKE BOMBS, NOT AXES (2026-09-14). Episode 1 only.**
+
+Your lock: Lil Blunt doesn't own an axe in Stage 1 — he only finds the
+pickaxe/mining gear after beating the Stage 1 Tax Collector. So Stage 1's
+attack is now a **thrown smoke bomb**, and it is a real projectile, not an axe
+wearing a new sprite.
+
+**Three things a player can feel, on purpose:**
+- **It arcs.** The axe flies dead flat; a bomb is lobbed and falls. That reads
+  as "thrown object" before any art exists.
+- **It tumbles slowly** — a quarter of the axe's blade-spin, so the two weapons
+  look different in flight at a glance.
+- **It puffs.** On impact it bursts into the same green-white smoke as the
+  Blaze auto-puff, so the hit reads as smoke, not metal.
+
+**Nothing else moved.** Stage 2 still throws the axe. Stage 3's big axe and
+hammer are untouched. The pickaxe is still the Stage 1 boss reward that opens
+Crystal Caverns. The swap is gated on the stage — the axe, its three weight
+tiers and every power-up that feeds them are exactly as they were.
+
+Purple Power in Stage 1 now fans **three bombs** instead of three axes, so the
+power-up keeps its identity without handing him a weapon he hasn't found.
+
+**A trap I had to close.** The impact puff reuses `smoke_puff`, which is itself
+a *damaging* projectile (it's Blaze Mode's attack). Left alone, the bomb's
+five-puff burst would have re-damaged whatever it just hit, five times over —
+silently making the starter weapon about six times stronger than the axe it
+replaced. Puffs spawned as impact VFX are now explicitly harmless.
+
+**Damage is unchanged at 1** — same weight class as the axe, so the Auditor
+fight takes exactly the number of hits it always did. The gate asserts the boss
+still takes damage, because a Stage 1 weapon that can't hurt the Stage 1 boss
+is a soft-lock, not a balance note.
+
+**New gate: `ep1_stage1_smoke_bombs_test` (13/13)**, failing-first — before
+today Stage 1 threw axes and the bomb didn't exist. It counts what actually
+spawns into the live scene at each stage, so "hiding the axe poorly" cannot
+pass it.
+
+*(Honest note on my own testing: the first run of that gate reported two
+failures that were **my test's** bug, not the game's — projectiles spawn into
+the scene root, so leftovers from the Stage 1 run were still being counted
+during the Stage 2 check. Fixed to count before/after deltas.)*
+
+Browser-checked at `?stage=1`: zero script errors, and a small dark-green
+bundle visible in flight where an axe used to be — no steel pickaxe sprite
+anywhere. Shots in `artifacts/ep1-shots/`.
+
+**Gates:** stage1-smoke-bombs 13/13 · script-compile ALL PASS · save-compat
+ALL PASS · smelting-facility 33/33 · reachability 13/13 · art-direction 21/21 ·
+audio-buses 13/13 · glb-pipeline ALL PASS · session-root 26/26.
+**pck:** 127,457,456 bytes — 71,771,984 free.
+
+---
+
 **🧱 SCENE FOUNDATION KITS — DeepSeek, and it found a real bug (2026-09-12).**
 
 Two scene kits authored and on disk under

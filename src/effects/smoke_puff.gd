@@ -3,13 +3,22 @@ extends Area2D
 var direction: Vector2 = Vector2.RIGHT
 var speed: float = 300.0
 var lifetime: float = 3.0
+## Pure VFX: skip the damage wiring entirely.
+##
+## A smoke puff is normally a REAL damaging projectile — it is Blaze Mode's
+## auto-puff attack. The Stage 1 smoke bomb reuses the same puff for its impact
+## burst, and without this flag that burst would re-damage whatever the bomb
+## just hit, five times over, silently making the starter weapon several times
+## stronger than the axe it replaces.
+var harmless: bool = false
 
 @onready var sprite: ColorRect = $ColorRect
 
 func _ready() -> void:
-    add_to_group("projectile")
-    body_entered.connect(_on_body_entered)
-    area_entered.connect(_on_area_entered)
+    if not harmless:
+        add_to_group("projectile")
+        body_entered.connect(_on_body_entered)
+        area_entered.connect(_on_area_entered)
     sprite.color = Color(0.8, 0.9, 0.8, 0.6)
     sprite.size = Vector2(20, 20)
     $CollisionShape2D.position = Vector2(10, 10)

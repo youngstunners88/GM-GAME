@@ -1,14 +1,17 @@
 class_name CombatHandler
 extends Node
-## Lil Blunt's attacks. Base move: throw an axe in the facing direction. The
+## Lil Blunt's attacks. Base move: a thrown projectile in the facing direction —
+## WHICH projectile depends on the stage, see `_uses_smoke_bombs()`. The
 ## Purple Weed power-up is where the attack fantasy opens up — a tap throws a
-## three-axe fan, and holding the button lights the ETH flask for a fire-breath
+## three-shot fan of the stage's weapon, and holding the button lights the ETH
+## flask for a fire-breath
 ## channel. Keyboard ("attack" action) and the mobile attack button both route
 ## through here.
 ##
 ## Design/numbers live in docs/architecture/adr-combat-system.md.
 
 const AXE_SCENE := preload("res://src/combat/axe.tscn")
+const SMOKE_BOMB_SCENE := preload("res://src/combat/smoke_bomb.tscn")
 const FIRE_BREATH_SCENE := preload("res://src/combat/fire_breath.tscn")
 const FLAME_SCENE := preload("res://src/combat/flame_projectile.tscn")
 
@@ -75,21 +78,42 @@ func _physics_process(delta: float) -> void:
 func _facing() -> float:
 	return 1.0 if player.input_handler.facing_right else -1.0
 
+## STAGE 1 THROWS SMOKE BOMBS, NOT AXES.
+##
+## Founder lock (2026-09-14): Lil Blunt only finds the pickaxe/mining gear
+## AFTER beating the Stage 1 Tax Collector — the GOV VAULT loot that opens
+## Crystal Caverns — so a thrown axe in Stage 1 is a weapon he does not own
+## yet. Stage 1's base attack is a smoke bomb; Stage 2 keeps the axe exactly as
+## it is, and Stage 3's big axe / hammer are untouched.
+##
+## Gated on the stage, deliberately NOT a global removal of axes. The axe
+## scene, its three weight tiers and every power-up that feeds them are
+## untouched — this only chooses which projectile the base throw spawns.
+##
+## `GameManager.current_level` is authoritative here: level_base.gd sets it
+## from `level_data.level_index` BEFORE entities spawn, so it is correct on a
+## fresh start, a checkpoint resume and a `?stage=N` warp alike.
+func _uses_smoke_bombs() -> bool:
+	return GameManager.current_level == 1
+
 func _throw_axe() -> void:
 	if _axe_cd > 0.0:
 		return
 	_axe_cd = AXE_COOLDOWN
-	_spawn_axe(0.0)
+	_spawn_projectile(0.0)
 	AudioManager.play_sfx("throw")
 
-## Three axes: one straight, two drifting up/down — the purple power flex.
+## Three projectiles: one straight, two drifting up/down — the purple power
+## flex. In Stage 1 that is a three-bomb spread rather than a three-axe fan, so
+## the power-up keeps its identity without handing him a weapon he has not
+## found yet.
 func _throw_fan() -> void:
 	if _axe_cd > 0.0:
 		return
 	_axe_cd = FAN_COOLDOWN
-	_spawn_axe(-FAN_SPREAD)
-	_spawn_axe(0.0)
-	_spawn_axe(FAN_SPREAD)
+	_spawn_projectile(-FAN_SPREAD)
+	_spawn_projectile(0.0)
+	_spawn_projectile(FAN_SPREAD)
 	AudioManager.play_sfx("throw")
 
 ## Torch's tap attack — a shallow-arc thrown flame, replacing the axe throw
@@ -104,6 +128,28 @@ func _throw_flame() -> void:
 	flame.global_position = player.smoke_spawn.global_position
 	player.get_tree().current_scene.add_child(flame)
 	AudioManager.play_sfx("torch_throw")
+
+## The base throw. Routes to the stage's weapon; everything downstream (input,
+## cooldown, facing, spawn point, SFX) is shared, which is why this is a weapon
+## swap and not a player rewrite.
+func _spawn_projectile(spread: float) -> void:
+	if _uses_smoke_bombs():
+		_spawn_smoke_bomb(spread)
+	else:
+		_spawn_axe(spread)
+
+
+func _spawn_smoke_bomb(spread: float) -> void:
+	var bomb := SMOKE_BOMB_SCENE.instantiate()
+	bomb.direction = _facing()
+	bomb.vertical = spread * bomb.speed
+	# No `big`/`heavy` tiers here on purpose. Those come from the bigaxe and
+	# pickaxe power-ups, neither of which exists in Stage 1 — the pickaxe IS
+	# the Stage 1 boss reward. If a weapon power-up is ever added to Stage 1,
+	# it needs its own smoke-bomb tier rather than silently reviving the axe.
+	bomb.global_position = player.smoke_spawn.global_position
+	player.get_tree().current_scene.add_child(bomb)
+
 
 func _spawn_axe(spread: float) -> void:
 	var axe := AXE_SCENE.instantiate()

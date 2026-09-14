@@ -27,10 +27,18 @@ const SHOWN_FLAG := "user://how_to_play_shown.txt"
 
 ## action name, keyboard hint, touch hint.
 ## ASCII ONLY in the hints — the pixel font renders arrow glyphs as tofu.
-const ROWS: Array = [
+## A FUNCTION, not a const, since 2026-09-14: the attack hint now names the
+## stage's actual weapon, and a `const` array cannot call anything at
+## initialisation time. Everything else about the table is unchanged.
+func _rows() -> Array:
+	return [
 	["Move", "A / D  or  Arrows", "tap  <  >"],
 	["Jump", "Space / W", "tap JUMP  (again midair = double)"],
-	["Attack", "J", "tap ATK  (hold w/ Purple = fire breath)"],
+	# Stage-aware: the Stage 1 weapon is a thrown SMOKE BOMB, not an axe — Lil
+	# Blunt does not own the pickaxe until he beats the Stage 1 Tax Collector
+	# (founder lock, 2026-09-14). Telling a Stage 1 player to "throw an axe"
+	# would describe a weapon the game will not give them.
+	["Attack", "J", "tap ATK  %s  (hold w/ Purple = fire breath)" % _weapon_word()],
 	["Dash", "K", "tap  DASH"],
 	["Run", "Shift  (hold)", "hold  RUN"],
 	["Climb", "W / S  or  Up / Down", "tap UP / DOWN  (on ladders)"],
@@ -121,7 +129,7 @@ func _build() -> void:
 	_add_cell(grid, "KEYBOARD", 20, Color(0.6, 0.85, 1.0), true)
 	_add_cell(grid, "TOUCH", 20, Color(0.6, 1.0, 0.7), true)
 
-	for row in ROWS:
+	for row in _rows():
 		_add_cell(grid, row[0], 24, Color(1, 0.95, 0.55), true)   # action
 		_add_cell(grid, row[1], 22, Color(0.9, 0.95, 1.0), false) # keyboard
 		_add_cell(grid, row[2], 22, Color(0.85, 1.0, 0.9), false) # touch
@@ -165,3 +173,9 @@ func _input(event: InputEvent) -> void:
 func _dismiss() -> void:
 	closed.emit()
 	queue_free()
+
+
+## The player-facing name of the current stage's thrown weapon.
+## Stage 1 = smoke bombs; Stage 2 onward = the axe line (pickaxe, big axe).
+func _weapon_word() -> String:
+	return "smoke bomb" if GameManager.current_level == 1 else "axe"
