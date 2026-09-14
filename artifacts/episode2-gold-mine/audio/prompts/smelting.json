@@ -1,0 +1,25 @@
+{
+  "section": "smelting",
+  "version": 1,
+  "authored": "2026-09-12",
+  "source": "artifacts/PROMPT_EPISODE2_VARCO_SOUND_INTEGRATION.md §3.B, §5 + chambers/00_SMELTING_FACILITY.md",
+  "note": "The brief calls this the emotional centre of the first act: 'audio must feel expensive and still'. Prompts are written for quiet weight, not spectacle — the furnace is huge but the room is calm, because the beat is a man handing a kid a rifle.",
+  "stems": [
+    { "id": "ep2_smelt_furnace_roar_loop_01", "layer": "ambience", "loop": true,
+      "prompt": "Industrial smelting furnace pouring molten gold, intense heat roar, bubbling metal, occasional crackle of slag, deep and powerful, slightly distant, seamless loop" },
+    { "id": "ep2_smelt_heat_haze_loop_01", "layer": "ambience", "loop": true,
+      "prompt": "Low steady flame and radiant heat inside a large stone cavern, soft roar with no crackle detail, warm and enveloping, very quiet, seamless loop" },
+    { "id": "ep2_smelt_pour_oneshot_01", "layer": "mechanical", "loop": false,
+      "prompt": "Crucible tipping and pouring molten metal into a casting mould, thick liquid metal flow, hiss and spit as it meets cold iron, heavy mechanical groan of the tipping frame" },
+    { "id": "ep2_smelt_whiskey_pour_01", "layer": "action", "loop": false,
+      "prompt": "Whiskey poured from a bottle into a heavy glass tumbler, close and intimate, then the glass set down firmly on a wooden crate" },
+    { "id": "ep2_smelt_cigar_draw_01", "layer": "action", "loop": false,
+      "prompt": "Slow deep draw on a lit cigar, faint ember crackle, then a long relaxed exhale, very close microphone, unhurried" },
+    { "id": "ep2_smelt_leather_chain_01", "layer": "mechanical", "loop": false,
+      "prompt": "Heavy leather harness and small metal chains shifting as a large heavy figure leans forward in a seat, creak and clink, close and weighty" },
+    { "id": "ep2_smelt_workers_distant_loop_01", "layer": "ambience", "loop": true,
+      "prompt": "Distant miners working in a large underground industrial space, faint hammer strikes on metal, muffled voices too far to make out words, occasional cart, very low in the mix, seamless loop" },
+    { "id": "ep2_smelt_score_hymn_loop_01", "layer": "score", "loop": true,
+      "prompt": "Slow heavy hymn-like male drone, single sustained low vocal chord, industrial metallic resonance underneath, reverent and still, no percussion, no melody movement, seamless loop" }
+  ]
+}

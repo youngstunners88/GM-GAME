@@ -75,8 +75,17 @@ mesh = SubResource("BoxMesh_cover_low")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 0.9, 11)
 mesh = SubResource("BoxMesh_cover_high")
 
+; FACING THE ROOM. Same defect the runner camera had, measured the same way:
+; a headless probe of the real scene put the camera's forward at (0,-0.34,-0.94)
+; while the rig sits at z=+14 and every piece of cover is at z=+4..+11, giving
+; dot(forward, direction to rig) = -0.847. The rig, the cover and the Early
+; Claim lever - the entire encounter - were BEHIND the camera.
+;
+; Basis: forward (0,-0.242,0.970) = down +Z pitched 14 degrees; right (-1,0,0);
+; up (0,0.970,0.242). Moved from z=-5 to z=-9 so the bear that spawns at z=-6
+; also starts in front of the player instead of behind their head.
 [node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.94, 0.34, 0, -0.34, 0.94, 0, 5, -5)
+transform = Transform3D(-1, 0, 0, 0, 0.97, 0.242, 0, 0.242, -0.97, 0, 3.6, -9)
 
 ; Graybox lighting. Without a light and an environment a 3D scene renders unlit/black in the web export.
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]

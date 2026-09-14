@@ -17,7 +17,56 @@ func _ready() -> void:
         AudioServer.add_bus(-1)
         AudioServer.set_bus_name(AudioServer.bus_count - 1, "SFX")
         sfx_bus = AudioServer.get_bus_index("SFX")
+    _setup_ep2_buses()
     _setup_reverb()
+
+# ---- Episode 2 bus layout -------------------------------------------------
+#
+# From the VARCO Sound integration brief
+# (artifacts/PROMPT_EPISODE2_VARCO_SOUND_INTEGRATION.md §4.3). Episode 2 thinks
+# in STEMS, not in finished mixes: bed, mechanical, threat, action, score, VO,
+# UI, each generated separately so the runner can duck Score and lift
+# Mechanical/Threat without touching a baked file.
+#
+# Music and SFX are deliberately NOT touched. Episode 1 has shipped and routes
+# everything through those two; adding buses beside them is additive, and
+# re-pointing them would risk a live episode for a future one's convenience.
+#
+# Idempotent by construction: an existing bus of the same name is reused, so
+# this survives a project that later ships a real default_bus_layout.tres.
+const EP2_BUSES := ["Ambience", "Mechanical", "Threat", "Action", "Score", "VO", "UI"]
+
+var ep2_buses: Dictionary = {}
+
+func _setup_ep2_buses() -> void:
+    for bus_name in EP2_BUSES:
+        var idx: int = AudioServer.get_bus_index(bus_name)
+        if idx == -1:
+            AudioServer.add_bus(-1)
+            idx = AudioServer.bus_count - 1
+            AudioServer.set_bus_name(idx, bus_name)
+            AudioServer.set_bus_send(idx, "Master")
+        ep2_buses[bus_name] = idx
+
+## Bus index by name, or the SFX bus as a fallback.
+##
+## Falling back rather than returning -1 is intentional: an unrecognised bus
+## name should play the sound somewhere audible, because a silent stem is a bug
+## nobody notices until a playtest, while a stem on the wrong bus is obvious
+## the moment you move a slider.
+func ep2_bus(bus_name: String) -> int:
+    if ep2_buses.has(bus_name):
+        return int(ep2_buses[bus_name])
+    push_warning("AudioManager: unknown Episode 2 bus %s — routing to SFX" % bus_name)
+    return sfx_bus
+
+## Duck the Score bus while the runner is loud, and restore it in the chambers.
+## The brief asks for exactly this: "Runner sections may duck Score and raise
+## Mechanical/Threat."
+func ep2_set_score_duck(ducked: bool) -> void:
+    var idx: int = ep2_bus("Score")
+    if idx >= 0:
+        AudioServer.set_bus_volume_db(idx, -9.0 if ducked else 0.0)
 
 # ---- Environmental reverb -------------------------------------------------
 # One Reverb effect on the SFX bus; each realm sets its own room feel.
