@@ -1249,18 +1249,18 @@ func die() -> void:
 	# the plain "LEVEL COMPLETE!" Label + 3s wait that used to sit here. See
 	# src/level/stage2_boss_defeat_cutscene.gd and the design brief +
 	# multi-model review at docs/model-responses/2026-09-05-*-stage2-defeat-cutscene.md.
+	# GOLDEN REVOLVER REVEAL (founder, 2026-09-16): the boss-defeat video
+	# itself now ENDS on the chest-opening/revolver-reveal beat (Seedance
+	# video-extend continuation onto the original vault-opens footage — see
+	# the video's own commit and STATUS.md for how it was produced). An
+	# earlier same-day pass added a separate in-engine CanvasLayer beat
+	# (bus-smash reveal) for this same narrative moment because no video
+	# pipeline was available yet; that beat is now superseded and removed —
+	# playing both would show two different revolver reveals back to back.
 	var cutscene := preload("res://src/level/stage2_boss_defeat_cutscene.gd").new()
 	get_tree().current_scene.add_child(cutscene)
 	cutscene.play()
 	await cutscene.finished
-	# GOLDEN REVOLVER REVEAL (founder, 2026-09-16): a new beat inserted here,
-	# after the existing video and before the existing Stage 3 transition —
-	# neither of which this touches. See stage2_revolver_reveal.gd for why
-	# this is CanvasLayer primitives rather than a regenerated video.
-	var reveal := preload("res://src/level/stage2_revolver_reveal.gd").new()
-	get_tree().current_scene.add_child(reveal)
-	reveal.play()
-	await reveal.finished
 	# Kimi audit: free BEFORE the scene load. Brief G: advance to Level 3
 	# (Gold Rush), not the menu — this is Level 2's boss.
 	queue_free()

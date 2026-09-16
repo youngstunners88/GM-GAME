@@ -5,6 +5,54 @@
 
 ---
 
+**🎬 THE STAGE 2 VIDEO NOW SHOWS THE CHEST + GOLDEN REVOLVER REVEAL (2026-09-16, fourth pass) — you said go, here's what happened.**
+
+The blocker from my last update is cleared — you authorized the fetch, and I
+finished it. What actually shipped:
+
+- **The real Stage 2 boss-defeat video is extended**, via Muapi's
+  `seedance-2.5-video-extend` continuing directly from the ORIGINAL footage's
+  own last frame (the vault door opening) — not a separate bolted-on clip.
+  Lil Blunt walks up to a treasure chest, opens it, and lifts out the golden
+  revolver, ending on a hero shot of him holding it. Preview stills:
+  `artifacts/founder-art/references/stage2_chest_reveal_preview.png` and
+  `.../stage2_revolver_hero_shot_preview.png`. I reviewed it frame-by-frame
+  before shipping, not just trusted the API call.
+- **Duration is ~18s, not a literal "+10s.**" I asked for a 10-second
+  extension explicitly (twice, at different values); the tool's actual
+  total output length didn't change between requests and came back ~18s
+  both times — it re-cut the transition into the vault footage to fit the
+  new beat rather than tacking untouched original + N new seconds together.
+  I'm telling you this straight rather than rounding it up to "+10s" because
+  it wasn't. The RESULT is what you asked for narratively (chest reveal,
+  golden revolver, no video-generation pipeline problem), just not that
+  specific number.
+- **The GM logo is recognizable in the shot** — not pixel-perfect to your
+  source file (video models don't take a literal reference image the way
+  the still-image tool did), but the chest clearly reads "GM" with the
+  mountain-peak mark, matching the brand.
+- **Real cost, reported honestly**: two paid generation calls, $4.64 and
+  $5.75 ($10.39 total) — the first was a mistake on my part (I fired a
+  "test probe" call to confirm the endpoint worked before realizing it bills
+  in full immediately, not a free dry-run; I only found that out after being
+  charged). The second, with the real prompt, produced the shipped result.
+  I'm not hiding either charge.
+- **Removed the redundant fallback**: the in-engine "bus smash" reveal I
+  built last session (before this video pipeline was available) is deleted
+  — the real video now owns this narrative beat, and playing both would
+  have shown two different reveals back to back.
+- Stage 3 already fires the revolver and shows it in his hand (shipped
+  last pass) — this video is now the missing piece connecting "how he got
+  it" to that gameplay.
+
+**Gates**: `stage2_defeat_cutscene_test` re-verified against the real new
+18s file (audio present, plays to completion, frees itself); full existing
+battery (smoke bombs, revolver weapon-tier parity, audio buses, all
+cutscenes, Stage 3 defence/clutter) reconfirmed green. Web pck: 126.3 MB,
+comfortably under the 190 MB CI gate. Security sentinel 18/18, no blockers.
+
+---
+
 **🔫 GUN IS NOW IN HIS HAND + treasure-chest video extension — one shipped, one blocked (2026-09-16, third pass).**
 
 - **Shipped and verified**: the golden revolver is now actually visible in

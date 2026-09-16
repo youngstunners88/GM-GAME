@@ -45,7 +45,9 @@ func _run_normal() -> void:
 
 	var elapsed := (Time.get_ticks_msec() - start_ms) / 1000.0
 	_check("finishes", true)
-	_check("ran close to the video's real ~15s duration (took %.1fs)" % elapsed,
+	# Extended 2026-09-16 (chest/revolver reveal appended via Muapi's
+	# seedance-2.5-video-extend): real duration is now ~18s, up from ~15s.
+	_check("ran close to the video's real ~18s duration (took %.1fs)" % elapsed,
 		elapsed > 10.0 and elapsed < 22.0,
 		"took %.1fs — too short means it degraded instead of actually playing; too long means the 20s hard deadline fired" % elapsed)
 	_check("AudioServer registered non-silent activity while the video played", saw_audio_activity,

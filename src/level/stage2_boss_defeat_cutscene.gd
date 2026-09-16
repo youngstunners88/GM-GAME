@@ -1,21 +1,36 @@
 class_name Stage2BossDefeatCutscene
 extends CanvasLayer
 ## Stage 2 boss-defeat cutscene: Distributor (Crystalline Bureaucrat)
-## shattered by the pickaxe -> Fort Knox vault door opens -> Gold Rush
-## (Stage 3). Plays after the Distributor's own death tween (see
-## distributor.gd::die()) and replaces its plain 3s "LEVEL COMPLETE!" Label
-## wait — the queue_free() + SceneRouter.load_scene() that follows is
-## untouched.
+## shattered by the pickaxe -> Fort Knox vault door opens -> chest reveal ->
+## golden revolver claimed -> Gold Rush (Stage 3). Plays after the
+## Distributor's own death tween (see distributor.gd::die()) and replaces its
+## plain 3s "LEVEL COMPLETE!" Label wait — the queue_free() +
+## SceneRouter.load_scene() that follows is untouched.
 ##
 ## Same architecture as src/level/stage1_boss_defeat_cutscene.gd: a real
-## Seedance-2-generated video (shot list: docs/model-responses/2026-09-05-
-## astra-stage2-defeat-cutscene.md; reference still: artifacts/founder-art/
-## references/stage2_boss_defeat_cutscene_reference.jpg), encoded to Ogg
-## Theora+Vorbis with its dialogue baked into the video's own audio track —
-## no separate AudioStreamPlayer needed. Plays at normal volume; the Smoke
-## Lounge brand video (secret_realm.gd) ships muted by specific founder
-## request for that ambient asset, not because this engine can't play
-## Theora+Vorbis audio.
+## generated video, encoded to Ogg Theora+Vorbis with its dialogue baked into
+## the video's own audio track — no separate AudioStreamPlayer needed. Plays
+## at normal volume; the Smoke Lounge brand video (secret_realm.gd) ships
+## muted by specific founder request for that ambient asset, not because this
+## engine can't play Theora+Vorbis audio.
+##
+## EXTENDED (founder, 2026-09-16): the original ~15s cut (Seedance-2, shot
+## list docs/model-responses/2026-09-05-astra-stage2-defeat-cutscene.md;
+## reference artifacts/founder-art/references/stage2_boss_defeat_cutscene_
+## reference.jpg) ended on the vault door opening. Extended via Muapi's
+## seedance-2.5-video-extend, continuing from the original footage's own
+## last frame: Lil Blunt finds a treasure chest bearing the real GM logo
+## (artifacts/founder-art/references/gm_logo.png, pulled from the founder's
+## own Drive link), opens it, and lifts out the golden revolver — the same
+## weapon Stage 3 now fires (see combat_handler.gd::_uses_revolver) and
+## visibly holds (see player.gd::_update_tool_visual). Final cut is ~18s,
+## not a literal +10s append — the tool re-cut the transition into the vault
+## footage rather than tacking the new segment on after an untouched
+## original, and duration didn't scale linearly with the requested
+## extension length in testing. The result was reviewed frame-by-frame
+## before shipping; the earlier same-day in-engine "bus smash" reveal beat
+## (a placeholder built before this video pipeline was available) is now
+## removed from distributor.gd as redundant.
 ##
 ## Failure-safety: a missing/corrupt video asset degrades to an immediate
 ## `finished` rather than hanging the boss-death sequence, and a 20s hard
