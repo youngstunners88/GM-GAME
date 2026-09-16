@@ -5,6 +5,89 @@
 
 ---
 
+**🛠️ BOTH THINGS YOU CALLED OUT ARE FIXED (2026-09-16, fifth pass) — the gun-on-his-head bug and the video that wasn't a real extension.**
+
+You were right on both counts. Here's exactly what was wrong and what changed.
+
+**1. "Why is his entire head the fucking gun!!!!" — FIXED, verified in a real browser + a headless regression test.**
+
+Root cause: the code that positions a held item (`LilBluntVisual.set_tool()`
+in `src/player/lil_blunt_visual.gd`) was built for tall, thin pole-shaped
+tools — pickaxe, torch, big axe. It centers the item vertically at
+chest/neck height and tilts it ~20°, which is correct for a pole held
+upright. The golden revolver is the opposite shape — wide and short
+(56×31px, landscape) — so that same math centered its wide silhouette
+right at chest/neck height and the tilt swung it up over the head. That's
+the literal bug: not a metaphor, the gun sprite was really overlapping his
+head on screen. I reproduced it in a real browser first (screenshot showed
+it plainly) before touching any code.
+
+The fix adds a separate anchor for sidearms: the revolver is now anchored
+at hip height (well below the head) with a shallow ~7° hold angle instead
+of the pole's 20°, and shifted forward along the hand so the grip sits at
+his hand instead of the image's center. Pickaxe/torch/big axe are
+untouched — they still use the exact pole math that already worked for
+them. Re-verified in a real browser at multiple facings and walk states:
+cowboy hat, cigar, red bandana all clearly visible, gun held at his side
+like the reference image you sent. Added a regression test
+(`tests/ep3_stage3_golden_revolver_test.gd`) that asserts the held revolver
+stays below the head line and never reverts to the pole's tilt angle —
+this specific bug can't come back silently.
+
+(Side note, not a bug in your image: while reproducing this I found a Tax
+Collector enemy sometimes stands close enough to the player's Stage 3 spawn
+point to visually overlap him in a screenshot, which is what confused my
+own first look at this. Cosmetic only, didn't touch it — flagging in case
+you spot two heads in a screenshot near spawn and wonder.)
+
+**2. "The video scene is an extension! Not a replacement! It is a continuation!" — FIXED, this was a real mistake on my part.**
+
+You were right and I was wrong to ship the first version. What I shipped
+called Muapi's `seedance-2.5-video-extend`, and despite its name, that tool
+does not append — it regenerates its own version of the source clip's
+ending and blends into it. I'd actually already noticed the shipped result
+didn't run the numbers I expected and said so in my last update, but I
+shipped it anyway instead of treating that as the dealbreaker it was. Frame
+diffing the AI output against your real original footage confirms it: the
+AI clip's very first frame is already a different shot, not a continuation
+of your original's last frame. That's a partial replacement, full stop —
+exactly what you told me not to do.
+
+The real fix: I recovered your true original video byte-for-byte from git
+history (it was never actually deleted, just superseded in the working
+tree) and hard-cut it together with the same chest/revolver footage from
+before — **no new paid generation call, $0 additional spend.** Verified
+frame-by-frame that the splice is clean: the original plays completely
+untouched through 15.1s (confirmed identical to the pre-extension file),
+then cuts to the new reveal footage. A hard cut between two shots is a
+normal edit; what you objected to was your original footage being altered,
+and it no longer is. New total runtime is ~33.1s (15.1s original + 18.0s
+reveal, unchanged from before).
+
+While fixing this I caught a second, related bug the first version had
+already introduced: the cutscene's own 20-second failure-safety timeout was
+shorter than the video itself once extended, so it would have silently cut
+the video off ~13 seconds early on every single playthrough. Bumped it to
+40s with real margin. Updated the duration gate
+(`tests/stage2_defeat_cutscene_test.gd`) to assert the real ~33.1s runtime
+so a regression on either the splice or the deadline fails loud instead of
+quietly truncating playback again.
+
+**Verification**: `stage2_defeat_cutscene_test` re-run against the real new
+file headlessly through Godot's actual `VideoStreamPlayer` — decodes,
+plays its full ~33.1s, registers real audio activity, frees itself
+correctly. `ep3_stage3_golden_revolver_test` re-run with the new
+head-position assertions. Full existing battery (smoke bombs, revolver
+weapon-tier parity, Stage 3 defence/clutter) reconfirmed green. Security
+sentinel 18/18, no blockers. I did not complete a full live boss-fight
+browser playthrough of the video in the time I had (scripted combat
+through the Level 2 boss timed out) — the verification above is real
+engine decode + frame-accurate splice analysis on the actual shipped file,
+not a live playthrough, and I want to be upfront about that distinction
+rather than round it up.
+
+---
+
 **🎬 THE STAGE 2 VIDEO NOW SHOWS THE CHEST + GOLDEN REVOLVER REVEAL (2026-09-16, fourth pass) — you said go, here's what happened.**
 
 The blocker from my last update is cleared — you authorized the fetch, and I

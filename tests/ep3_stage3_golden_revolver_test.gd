@@ -232,6 +232,25 @@ func _ready() -> void:
 		held_path == "res://src/assets/sprites/sprite_item_golden_revolver.png",
 		"(held_path=%s)" % held_path)
 
+	# Regression (founder, 2026-09-16, screenshotted): "why is his entire head
+	# the fucking gun!!!!" — the wide/landscape revolver sprite was anchored
+	# and rotated using set_tool()'s pole-shaped math (built for a tall
+	# pickaxe/torch), which centered it at 55%-down-the-art (chest/neck
+	# height) and tilted it 20deg — its width then swallowed the head. The
+	# fix anchors sidearms near hip height (well below the head) with a
+	# shallow tilt. Assert both halves of that fix hold.
+	if p2.sprite and p2.sprite._tool:
+		var vis = p2.sprite
+		var art_height: float = vis._art_feet_local - vis._art_top_local
+		var head_boundary: float = vis._art_top_local + art_height * 0.45
+		_check("held revolver is anchored BELOW the head (hip height, not chest/neck)",
+			vis._tool.position.y > head_boundary,
+			"(tool_y=%.1f, head_boundary=%.1f, art %.1f..%.1f)" % [
+				vis._tool.position.y, head_boundary, vis._art_top_local, vis._art_feet_local])
+		_check("held revolver uses a shallow hold angle, not the 20deg pole tilt",
+			absf(vis._tool.rotation) < 0.2,
+			"(rotation=%.3f rad)" % vis._tool.rotation)
+
 	GameManager.current_level = 1
 	p2._update_tool_visual()
 	var held_path_s1 := ""
