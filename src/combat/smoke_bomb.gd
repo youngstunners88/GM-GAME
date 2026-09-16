@@ -8,14 +8,14 @@ extends Area2D
 ## Stage 1 attack is a small thrown smoke bomb instead — which is also the
 ## weapon that actually matches the marijuana-smoke identity.
 ##
-## This is a REAL replacement, not a reskinned axe, and the difference is
-## deliberate in three places a player can feel:
-##   * it ARCS. The axe flies dead flat; a thrown bomb falls. That alone reads
-##     as "lobbed object" rather than "hurled blade" before any art exists.
-##   * it TUMBLES SLOWLY. The axe spins fast to read as a blade; a bomb turns
-##     lazily end over end.
-##   * it PUFFS. On impact it bursts into the same green-white smoke the Blaze
-##     auto-puff uses, so the hit reads as smoke rather than metal.
+## Founder playtest correction (2026-09-16, overrides the 2026-09-14 build):
+## the bomb travels FLAT, exactly like the axe — no gravity, no lob, no dip.
+## The founder explicitly rejected an arc as the way to distinguish this
+## weapon from the axe. The distinction the player actually feels now is:
+##   * it PUFFS. On impact it bursts into a visible green-white smoke
+##     explosion, so the hit reads as smoke rather than metal.
+##   * optional slow tumble in flight (small, cosmetic — never used to hide
+##     any vertical drift).
 ##
 ## Collision is intentionally IDENTICAL to axe.gd — layer 7 (Projectiles),
 ## masking Enemies (bit 3), Hazards (bit 6, rolling boulders) and Destructible.
@@ -24,26 +24,12 @@ extends Area2D
 ## Stage 1 enemy, boulder and breakable block that the axe could hit is still
 ## hittable — the swap changes the weapon, not the level's solvability.
 
-const PUFF_SCENE := preload("res://src/effects/smoke_puff.tscn")
-
 var direction: float = 1.0        ## -1 = left, +1 = right
-var speed: float = 520.0          ## slower than the axe's 620: it is lobbed
-var vertical: float = 0.0         ## px/s initial vertical drift (fan spread)
+var speed: float = 640.0          ## matches/beats the axe's 620 — a shot, not a lob
+var vertical: float = 0.0         ## px/s constant vertical drift (fan spread only)
 var damage: int = 1               ## same as the base axe — balance unchanged
-var lifetime: float = 1.6         ## longer than the axe's 1.2 to offset the arc
+var lifetime: float = 1.2         ## same as the axe's — no arc to compensate for
 
-## Arc. A bomb is thrown, not thrown-at — a modest gravity is what separates it
-## from a blade without making it hard to aim. At 520 px/s and 560 px/s² a
-## throw drops roughly 55 px over its first half-second, which crosses a screen
-## of enemies comfortably while still visibly falling.
-const GRAVITY := 560.0
-## Slight upward launch so the arc peaks ahead of the player rather than
-## starting to drop immediately — the shape of an underarm lob.
-const LAUNCH_LIFT := -120.0
-const PUFF_COUNT := 5
-const PUFF_SPEED := 90.0
-
-var _vy: float = 0.0
 var _spin: float = 0.0
 
 @onready var _body: ColorRect = $Body
@@ -52,7 +38,6 @@ var _spin: float = 0.0
 
 func _ready() -> void:
 	add_to_group("projectile")
-	_vy = LAUNCH_LIFT + vertical
 	body_entered.connect(_on_body_entered)
 	# Some enemies (e.g. HostileVine) are a Node2D with an Area2D hitbox rather
 	# than a physics body — those only surface through area_entered. Same
@@ -62,12 +47,15 @@ func _ready() -> void:
 	t.timeout.connect(_fizzle)
 
 
+## Straight-line travel — identical shape to axe.gd's flat trajectory.
+## `vertical` is a constant (not accumulated) so Y velocity never grows after
+## spawn: no gravity term exists here at all.
 func _physics_process(delta: float) -> void:
-	_vy += GRAVITY * delta
 	position.x += direction * speed * delta
-	position.y += _vy * delta
-	# Lazy end-over-end tumble — a quarter of the axe's spin rate, so the two
-	# weapons read differently in flight even at a glance.
+	position.y += vertical * delta
+	# Small cosmetic tumble only — a quarter of the axe's spin rate so the two
+	# weapons still read differently in flight. Never used to mask a dip:
+	# there is no vertical acceleration to mask.
 	_spin += delta * 5.0 * signf(direction)
 	rotation = _spin
 
@@ -116,44 +104,30 @@ func _hit(node: Node) -> bool:
 	return false
 
 
-## The hit. A ring of green-white smoke where the bomb landed — the whole point
-## of the weapon, and why the impact must never be the axe's metal "hit" ping
-## alone.
+## The hit. A visible green smoke EXPLOSION where the bomb landed — the whole
+## point of the weapon, and why the impact must never be the axe's metal "hit"
+## ping alone. The explosion is pure CPUParticles2D VFX: it has no collision
+## shape and cannot deal damage, so it can never re-open the "impact burst
+## re-damages the target" trap a previous build had with a reused damaging
+## projectile as the impact effect.
 func _burst() -> void:
-	_spawn_smoke()
+	_spawn_explosion()
 	AudioManager.play_sfx_at("hit", global_position)
 	ScreenShake.light()
 	_despawn()
 
 
 ## Ran out of air without hitting anything — it still puffs, because a thrown
-## smoke bomb that silently vanishes looks like a bug. Smaller burst than a
-## connect so a hit still reads as the louder event.
+## smoke bomb that silently vanishes looks like a bug.
 func _fizzle() -> void:
 	if not is_instance_valid(self):
 		return
-	_spawn_smoke(3)
+	_spawn_explosion()
 	_despawn()
 
 
-func _spawn_smoke(count: int = PUFF_COUNT) -> void:
-	var root := get_tree().current_scene
-	if root == null:
-		return
-	for i in count:
-		var puff := PUFF_SCENE.instantiate()
-		# HARMLESS: these are the impact VFX, not a second damage source.
-		# Without this the burst would re-damage whatever the bomb just hit
-		# (smoke_puff is itself a damaging projectile for Blaze Mode), which
-		# would silently make the Stage 1 weapon several times stronger than
-		# the axe it replaces.
-		puff.harmless = true
-		puff.speed = PUFF_SPEED
-		puff.lifetime = 0.7
-		var ang := TAU * float(i) / float(count)
-		puff.direction = Vector2(cos(ang), sin(ang) * 0.7)
-		puff.global_position = global_position
-		root.add_child(puff)
+func _spawn_explosion() -> void:
+	EffectSpawner.burst("smoke_explosion", global_position)
 
 
 func _despawn() -> void:

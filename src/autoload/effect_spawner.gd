@@ -7,6 +7,7 @@ var _scenes: Dictionary = {
 	"explosion": preload("res://src/effects/explosion.tscn"),
 	"dash_trail": preload("res://src/effects/dash_trail.tscn"),
 	"confetti": preload("res://src/effects/level_complete_confetti.tscn"),
+	"smoke_explosion": preload("res://src/effects/smoke_explosion.tscn"),
 }
 
 ## Spawn a one-shot particle burst at a world position. Unknown names no-op

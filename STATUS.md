@@ -5,7 +5,65 @@
 
 ---
 
-**💨 STAGE 1 NOW THROWS SMOKE BOMBS, NOT AXES (2026-09-14). Episode 1 only.**
+**🎯 SMOKE BOMB CORRECTED: STRAIGHT SHOT + REAL EXPLOSION (2026-09-16). Overrides the arc below.**
+
+Your playtest call was right and I'd built the wrong thing. The 2026-09-14
+smoke bomb intentionally arced (gravity + a small upward launch) to make it
+feel different from the axe. You rejected that — no dip, no lob, straight
+line, like a shot. Fixed:
+
+- **`gravity_scale` equivalent removed entirely.** `smoke_bomb.gd` had a
+  `GRAVITY` constant and an accumulating `_vy` — both deleted. The projectile
+  now moves exactly like `axe.gd`: `position.x += direction*speed*delta`,
+  `position.y += vertical*delta` with `vertical` used only as a *constant*
+  (not accelerating) drift for the fan-spread power-up. Speed bumped from 520
+  to **640**, beating the axe's 620, so it reads as a shot.
+- **New gate assertion, not just a manual check:** the gate fires the bomb for
+  20 physics frames at `vertical = 0` and asserts Y never moves at all, then
+  again at `vertical = 40` and asserts the two halves of the flight cover
+  equal distance (no acceleration) — a real gravity leak fails this
+  automatically from now on.
+- **Real green smoke explosion, not a 5-pixel puff.** New
+  `src/effects/smoke_explosion.tscn`: a 40-particle CPUParticles2D burst
+  (green→white→transparent, scale 4-9px, velocity up to 340px/s) using the
+  same fire-and-forget `one_shot_effect.gd` pattern as the existing
+  `explosion`/`confetti` VFX. It has **no collision shape at all** — not a
+  "harmless flag" bolted onto a damaging node, but a node class that
+  physically cannot deal damage, closing the "6x puff-damage" trap
+  permanently rather than just avoiding it this time. Damage stays 1.
+  Registered in `EffectSpawner` as `"smoke_explosion"`.
+- **Gate extended** to assert a hit actually spawns the explosion node into
+  the scene, not just that it "arcs" (that old assertion is gone — it tested
+  for the exact behavior you just rejected).
+
+**Audio P0 ("all sound disappeared") — investigated, not reproduced.** Ran the
+founder's checklist in order: printed every bus's mute flag and volume_db on a
+fresh headless boot (all 10 buses: Master/Music/SFX/Ambience/Mechanical/
+Threat/Action/Score/VO/UI — unmuted, 0 dB); confirmed the web export doesn't
+touch `src/assets/*` so no bus/audio asset is dropped from the build;
+confirmed the exact exported build boots a real, running `AudioContext` in an
+actual Chromium instance (checked twice, with and without permissive autoplay
+flags) with zero script errors; confirmed via the GitHub Actions log that the
+last butler deploy (commit `fcc279e`) genuinely pushed 155.66 MiB to the live
+itch.io channel and reported success. I could not get a sandboxed browser to
+render the live itch.io iframe directly (a TLS-trust limitation specific to
+this environment, not a game issue), so I can't rule out something
+itch-iframe-specific with certainty from here. **Added a permanent regression
+gate anyway** (`ep2_audio_buses_test` now asserts every bus is unmuted and
+above -79dB on every boot, plus that stage music is actually `playing` when a
+music player exists) so a real future mute/volume regression fails CI
+immediately instead of shipping silently. If sound is still out on your next
+hard-refresh of the live build, tell me exactly what you see/hear (menu music?
+jump SFX? nothing at all?) — that narrows it far faster than another blind
+sweep of the same healthy code.
+
+**Gates:** stage1-smoke-bombs 15/15 (2 new) · audio-buses 31/31 (18 new) ·
+cutscene-mute 10/10 · stage1/2/3-defeat-cutscene ALL PASS (music restore
+proven unaffected) · security-sentinel 18/18, no blockers.
+
+---
+
+**💨 STAGE 1 NOW THROWS SMOKE BOMBS, NOT AXES (2026-09-14). Episode 1 only — see the correction above; the arc/tumble described here was replaced 2026-09-16.**
 
 Your lock: Lil Blunt doesn't own an axe in Stage 1 — he only finds the
 pickaxe/mining gear after beating the Stage 1 Tax Collector. So Stage 1's

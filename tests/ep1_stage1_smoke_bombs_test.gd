@@ -18,21 +18,30 @@ extends Node
 ##     still winnable with the only weapon Stage 1 gives you. A weapon that
 ##     cannot hurt the boss would soft-lock the whole episode.
 ##   * Purple Power in Stage 1 fans three BOMBS, not three axes.
-##   * The bomb ARCS. This is the difference between a real replacement and an
-##     axe wearing a bomb sprite, and it is cheap to assert.
+##   * The bomb travels DEAD STRAIGHT — no gravity, no dip, no lob. Founder
+##     playtest (2026-09-16) explicitly REJECTED a prior version of this gate
+##     that asserted the opposite (that the bomb "ARCS"). A build that leaks
+##     gravity onto this projectile again must fail this gate.
+##   * A hit spawns the green smoke explosion VFX — a real, visible burst,
+##     not the old 5-puff impact that reused a damaging projectile as its own
+##     impact effect.
 ##   * The impact puff does NOT damage. smoke_puff is itself a damaging
-##     projectile (Blaze Mode's auto-puff); if the bomb's five-puff burst kept
-##     that wiring, the "same weight class as the axe" claim would be false by
-##     a factor of six.
+##     projectile (Blaze Mode's auto-puff); if the bomb's impact VFX ever
+##     reused that wiring, the "same weight class as the axe" claim would be
+##     false by a large factor.
 ##
 ## FAILING-FIRST: every assertion below was false before 2026-09-14 — Stage 1
-## threw axes and `smoke_bomb.tscn` did not exist.
+## threw axes and `smoke_bomb.tscn` did not exist. The straight-flight and
+## explosion-VFX assertions were added 2026-09-16 to gate the founder's
+## playtest correction (the 2026-09-14 build shipped with an arc, which was
+## then explicitly rejected).
 ##
 ## Run: .godot-cache/Godot_v4.3-stable_linux.x86_64 --headless \
 ##        res://tests/ep1_stage1_smoke_bombs_test.tscn
 
 const BOMB := preload("res://src/combat/smoke_bomb.tscn")
 const PUFF := preload("res://src/effects/smoke_puff.tscn")
+const EXPLOSION_SCRIPT := "res://src/effects/one_shot_effect.gd"
 const PLAYER := preload("res://src/player/player.tscn")
 
 var _fail: int = 0
@@ -176,13 +185,45 @@ func _ready() -> void:
 	_check("same weight class as the axe it replaced (1 damage)", bomb.damage == 1,
 		str(bomb.damage))
 
-	# --- 3. it is a real replacement, not an axe in a costume --------------
-	var start_y: float = bomb.position.y
-	for i in 20:
+	# --- 3. straight flight — no gravity leak -------------------------------
+	# Founder-mandated gate (2026-09-16): fails if Y velocity grows after
+	# spawn. `vertical` is a constant drift term (fan spread), so with
+	# vertical == 0 the Y position must never move at all across many physics
+	# steps; with a nonzero vertical it must move at a CONSTANT rate (no
+	# acceleration), which the two-sample check below proves.
+	bomb.vertical = 0.0
+	var y0: float = bomb.position.y
+	for i in 10:
 		bomb._physics_process(1.0 / 60.0)
-	_check("the bomb ARCS — it is lobbed, not thrown flat", bomb.position.y != start_y,
-		"(y %.1f -> %.1f)" % [start_y, bomb.position.y])
-	bomb.queue_free()
+	var y1: float = bomb.position.y
+	for i in 10:
+		bomb._physics_process(1.0 / 60.0)
+	var y2: float = bomb.position.y
+	_check("the bomb flies DEAD STRAIGHT — no gravity, no dip",
+		y0 == y1 and y1 == y2, "(y %.2f -> %.2f -> %.2f)" % [y0, y1, y2])
+
+	bomb.vertical = 40.0
+	var vy_start: float = bomb.position.y
+	for i in 10:
+		bomb._physics_process(1.0 / 60.0)
+	var vy_delta_a: float = bomb.position.y - vy_start
+	var vy_mid: float = bomb.position.y
+	for i in 10:
+		bomb._physics_process(1.0 / 60.0)
+	var vy_delta_b: float = bomb.position.y - vy_mid
+	_check("fan-spread vertical drift is CONSTANT velocity, not accelerating (gravity leak check)",
+		absf(vy_delta_a - vy_delta_b) < 0.01,
+		"(delta_a %.4f, delta_b %.4f)" % [vy_delta_a, vy_delta_b])
+
+	# --- 3b. a hit spawns a real, visible explosion, not a tiny puff --------
+	var root3: Node = get_tree().current_scene
+	var fx_before := _count_in_scene(root3, EXPLOSION_SCRIPT)
+	bomb._burst()
+	await get_tree().process_frame
+	var fx_after := _count_in_scene(root3, EXPLOSION_SCRIPT)
+	_check("a hit spawns the green smoke explosion VFX", fx_after > fx_before,
+		"(before %d, after %d)" % [fx_before, fx_after])
+
 	mob.queue_free()
 	boss.queue_free()
 

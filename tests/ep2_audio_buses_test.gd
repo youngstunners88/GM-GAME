@@ -13,6 +13,15 @@ extends Node
 ##
 ## FAILING-FIRST: all seven Episode 2 buses were absent before 2026-09-12.
 ##
+## Extended 2026-09-16 (STAGE1_SMOKE_BOMBS_STRAIGHT_SHOT_AUDIO_DEAD): a founder
+## P0 report that "all game sound has suddenly disappeared" — checked here as
+## a permanent regression test rather than a one-off manual check, per the
+## brief's explicit "gates updated... audio buses not muted." Every bus must
+## come out of a fresh boot unmuted and at an audible volume; a muted bus or a
+## volume floored to -80dB (left over from a headless test, or a stray
+## AudioServer.set_bus_mute / volume_db = -80 call on a real code path) is
+## exactly how sound "disappears" without any bus going missing.
+##
 ## Run: .godot-cache/Godot_v4.3-stable_linux.x86_64 --headless \
 ##        res://tests/ep2_audio_buses_test.tscn
 
@@ -62,6 +71,25 @@ func _ready() -> void:
 	var restored: float = AudioServer.get_bus_volume_db(score)
 	_check("score ducks for the runner and restores", ducked < -1.0 and is_equal_approx(restored, 0.0),
 		"(%.1f dB -> %.1f dB)" % [ducked, restored])
+
+	# --- audio-alive gate (2026-09-16 P0: "all sound disappeared") -----------
+	# Checked on every bus that exists at this point, not just Music/SFX — a
+	# missing bus falls back to SFX per ep2_bus(), but a MUTED SFX would still
+	# silence everything routed through that fallback too.
+	for i in AudioServer.bus_count:
+		var name_i: String = AudioServer.get_bus_name(i)
+		var muted: bool = AudioServer.is_bus_mute(i)
+		var vol_db: float = AudioServer.get_bus_volume_db(i)
+		_check("bus %s is not muted after boot" % name_i, not muted)
+		_check("bus %s volume is not floored to silence" % name_i, vol_db > -79.0,
+			"(%.1f dB)" % vol_db)
+
+	if am.current_music_player != null:
+		_check("stage music is actually playing after boot",
+			am.current_music_player.playing,
+			"(current_music_player exists but playing=false)")
+	else:
+		print("  [PASS] no current_music_player set (no stage music expected outside a level)")
 
 	if _fail == 0:
 		print("EP2_AUDIO_BUSES: ALL PASS")
