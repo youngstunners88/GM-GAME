@@ -38,6 +38,19 @@ const EP2_BUSES := ["Ambience", "Mechanical", "Threat", "Action", "Score", "VO",
 
 var ep2_buses: Dictionary = {}
 
+## P0 REGRESSION FIX (2026-09-16): this used to also call
+## `AudioServer.set_bus_send(idx, "Master")` here — redundant, since a bus
+## created with `add_bus(-1)` already defaults its send target to "Master".
+## That redundant call is what silenced ALL audio in the web export: calling
+## `set_bus_send` on each of the 7 EP2 buses corrupts Godot 4.3's non-threaded
+## HTML5 audio mix graph, and every AudioStreamPlayer on every bus (not just
+## the EP2 ones) then produces genuine, permanent silence — reproduced and
+## isolated in a from-scratch minimal Godot project: bus creation ALONE is
+## harmless at any bus count, but adding this one now-removed `set_bus_send`
+## call reproduces total silence deterministically, and removing it restores
+## sound. This is why cutscene video audio (decoded by VideoStreamPlayer, a
+## separate pipeline that never touches this bus graph) kept working while
+## everything else went silent.
 func _setup_ep2_buses() -> void:
     for bus_name in EP2_BUSES:
         var idx: int = AudioServer.get_bus_index(bus_name)
@@ -45,7 +58,6 @@ func _setup_ep2_buses() -> void:
             AudioServer.add_bus(-1)
             idx = AudioServer.bus_count - 1
             AudioServer.set_bus_name(idx, bus_name)
-            AudioServer.set_bus_send(idx, "Master")
         ep2_buses[bus_name] = idx
 
 ## Bus index by name, or the SFX bus as a fallback.

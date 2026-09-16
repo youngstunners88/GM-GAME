@@ -5,6 +5,61 @@
 
 ---
 
+**🔊 AUDIO P0 — ROOT CAUSE FOUND AND FIXED (2026-09-16, second pass).**
+
+You said "the audio is still not working, only the videos at the end of levels
+play." That was the exact clue that cracked it: cutscene video audio is
+decoded by `VideoStreamPlayer`, a completely separate pipeline from every
+other sound in the game — so "only video works" meant something was silencing
+the ENTIRE `AudioStreamPlayer` mix graph, not one bus or one file.
+
+My first pass (below, "investigated, not reproduced") checked bus mute flags
+and volume_db and found them healthy — true, but the wrong layer to check.
+Bus mute/volume is metadata the engine reports; it says nothing about whether
+real PCM samples are actually reaching the browser's speakers. This time I
+built a real measurement: a Playwright script that taps a live `AnalyserNode`
+into whatever connects to the browser's `AudioContext.destination`, so it
+reads the ACTUAL sound the browser would play, regardless of what any bus
+property claims. Against the shipped build, every reading — menu, in-level
+BGM, jump SFX, all of it — came back a flat, genuine zero. Bus state said
+"fine"; the real speaker signal said "nothing." That gap is exactly why the
+first pass didn't find it.
+
+From there I isolated the cause by bisection, not guesswork: a fresh, empty
+Godot project with one beep played sound perfectly on the exact same
+toolchain — so this was never a "Godot web audio is broken here" problem, it
+was something specific to this project. I rebuilt the project's real audio
+setup piece by piece in that clean project until sound broke, and it broke on
+exactly one line: `_setup_ep2_buses()` in `audio_manager.gd` was calling
+`AudioServer.set_bus_send(idx, "Master")` on each of the 7 Episode 2 buses
+(Ambience/Mechanical/Threat/Action/Score/VO/UI). That call was always
+redundant — a bus created with `add_bus(-1)` already sends to Master by
+default — but on Godot 4.3's non-threaded HTML5 export it corrupts the audio
+mix graph outright: every `AudioStreamPlayer` on every bus goes permanently
+silent, while bus mute/volume_db keep reporting perfectly healthy the whole
+time, and video-embedded audio (a separate pipeline) keeps working — which
+is exactly what you were seeing. **Deleted that one call.** Confirmed with
+the same real-speaker measurement: BGM and jump SFX both came back loud and
+clear (peaks up to 128/128) on the exact same build that read zero before the
+fix, and confirmed the broken version reliably fails the same test — so this
+isn't a one-off, it's a real, repeatable fix.
+
+This also means the actual regression shipped in the **2026-09-12 Episode 2
+VARCO audio-bus work** (when those 7 buses were first added), not the
+smoke-bomb session — the founder brief's dating pointed at the wrong commit,
+worth knowing since Episode 2 bus-graph changes are the thing to double-check
+first if sound ever goes fully silent again.
+
+**New permanent gate:** `scripts/verify-audio-output.mjs` — a real-browser
+audio-output check (not a bus-metadata check) that boots the actual exported
+build, taps the real audio graph, and asserts BGM and jump SFX both produce
+measurable signal. Verified it fails on the broken build and passes on the
+fixed one. This is the gate that would have caught this the first time;
+`ep2_audio_buses_test`'s bus-health checks stay too (still useful, just not
+sufficient alone).
+
+---
+
 **🎯 SMOKE BOMB CORRECTED: STRAIGHT SHOT + REAL EXPLOSION (2026-09-16). Overrides the arc below.**
 
 Your playtest call was right and I'd built the wrong thing. The 2026-09-14
