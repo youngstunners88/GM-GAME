@@ -160,8 +160,13 @@ func _ready() -> void:
 	_check("Stage 2 still throws the axe", int(s2.get("axes", 0)) >= 1, str(s2))
 	_check("Stage 2 throws no smoke bomb", int(s2.get("bombs", -1)) == 0, str(s2))
 
+	# Stage 3 no longer throws the axe either — the founder's golden-revolver
+	# brief (2026-09-16) swapped it to a fired bullet. That swap, and parity
+	# with axe.gd's damage tiers, is gated by ep3_stage3_golden_revolver_test;
+	# this file only needs to keep asserting Stage 3 spawns NO smoke bomb
+	# (its own weapon stays gated to Stage 1 alone).
 	var s3: Dictionary = await _attack_at_stage(3)
-	_check("Stage 3 weapons unchanged (still axe)", int(s3.get("axes", 0)) >= 1, str(s3))
+	_check("Stage 3 throws no smoke bomb", int(s3.get("bombs", -1)) == 0, str(s3))
 
 	# --- 2. it actually kills things --------------------------------------
 	var bomb = BOMB.instantiate()

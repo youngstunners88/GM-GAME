@@ -1253,6 +1253,14 @@ func die() -> void:
 	get_tree().current_scene.add_child(cutscene)
 	cutscene.play()
 	await cutscene.finished
+	# GOLDEN REVOLVER REVEAL (founder, 2026-09-16): a new beat inserted here,
+	# after the existing video and before the existing Stage 3 transition —
+	# neither of which this touches. See stage2_revolver_reveal.gd for why
+	# this is CanvasLayer primitives rather than a regenerated video.
+	var reveal := preload("res://src/level/stage2_revolver_reveal.gd").new()
+	get_tree().current_scene.add_child(reveal)
+	reveal.play()
+	await reveal.finished
 	# Kimi audit: free BEFORE the scene load. Brief G: advance to Level 3
 	# (Gold Rush), not the menu — this is Level 2's boss.
 	queue_free()

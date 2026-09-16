@@ -5,6 +5,54 @@
 
 ---
 
+**🔫 STAGE 3 GOLDEN REVOLVER — new weapon, new reveal beat (2026-09-16).**
+
+From your reference art (the Gold Rush sheriff holding the golden Remington):
+Stage 3's base attack is now a fired bullet, not the thrown axe, and there's
+a new beat between the Stage 2 boss video and Stage 3 explaining how he got
+it — the bus he smashes drops the revolver.
+
+- **Real art, not a regeneration.** I pulled your actual reference image out
+  of this session (it doesn't land on disk automatically when pasted — a
+  known quirk, not something you did wrong), cropped just the revolver, and
+  keyed out its background. `src/assets/sprites/sprite_item_golden_revolver.png`
+  is your art, not an AI reinterpretation of it. Original saved at
+  `artifacts/founder-art/references/stage3_golden_revolver_reference.jpg`.
+- **New `revolver_bullet.gd`/`.tscn`**: a small fast golden slug (bright
+  white-hot core) that fires flat and instant — no arc, no spin, a shot not
+  a throw — with its own muzzle-flash spark and a new ElevenLabs-generated
+  "gunshot" SFX (`src/assets/sounds/gunshot.mp3`) on every fire.
+- **"When he grabs the axe and the hammer just changes accordingly"** — your
+  words, and exactly what happens: the pickaxe/bigaxe power-up tiers weren't
+  touched. `revolver_bullet.gd` mirrors `axe.gd`'s tier constants exactly
+  (default 1 / pickaxe 6 / bigaxe 8 damage, same boss-damage caps, same
+  bigaxe piercing) — picking those up in Stage 3 still does precisely what
+  it always did, it just reads as a bigger/stronger shot instead of a bigger
+  thrown weapon. Verified against `axe.gd`'s own constants in the gate, not
+  new made-up numbers.
+- **The reveal beat**: `stage2_revolver_reveal.gd` plays after the existing
+  Stage 2 boss-defeat video and before the existing Stage 3 transition —
+  neither of which changed. A bus (drawn from primitives, same
+  procedural-art rule every other unreleased asset in this project follows)
+  gets smashed, breaks into flung fragments, and the golden revolver arcs up
+  out of the wreck to a "GOLDEN REVOLVER ACQUIRED" pop. **Honest limit**: no
+  video-generation tool is wired into this environment, so this is NOT a
+  regenerated cutscene video — it's an in-engine sequence, built the same
+  way the ORIGINAL Stage 2 shot list was drafted before the Seedance video
+  replaced it. If you want this as an actual rendered video matching the
+  other two boss-defeat cutscenes' polish, that needs the video pipeline
+  wired up first (same blocker as the hero-character model).
+- Browser-verified: the bullet fires, travels flat, and reads as a golden
+  streak at gameplay zoom (screenshot-checked at `?stage=3`); no new console
+  errors.
+
+**New gates**: `ep3_stage3_golden_revolver_test` (13/13, failing-first) and
+`stage2_revolver_reveal_test` (4/4) — both green, plus the full existing
+battery (smoke bombs, audio buses, all three cutscenes, Stage 3 clutter and
+defence) reconfirmed unaffected.
+
+---
+
 **🔊 AUDIO P0 — ROOT CAUSE FOUND AND FIXED (2026-09-16, second pass).**
 
 You said "the audio is still not working, only the videos at the end of levels

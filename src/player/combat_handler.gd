@@ -12,6 +12,7 @@ extends Node
 
 const AXE_SCENE := preload("res://src/combat/axe.tscn")
 const SMOKE_BOMB_SCENE := preload("res://src/combat/smoke_bomb.tscn")
+const REVOLVER_BULLET_SCENE := preload("res://src/combat/revolver_bullet.tscn")
 const FIRE_BREATH_SCENE := preload("res://src/combat/fire_breath.tscn")
 const FLAME_SCENE := preload("res://src/combat/flame_projectile.tscn")
 
@@ -96,6 +97,22 @@ func _facing() -> float:
 func _uses_smoke_bombs() -> bool:
 	return GameManager.current_level == 1
 
+## STAGE 3 FIRES THE GOLDEN REVOLVER, NOT THE AXE.
+##
+## Founder lock (2026-09-16, golden Remington reference art): the revolver is
+## picked up in the beat between the Stage 2 boss defeat video and Stage 3
+## (see `stage2_revolver_reveal.gd`), so by the time Lil Blunt reaches the
+## Gold Rush he is armed with it instead of the axe.
+##
+## The pickaxe/bigaxe power-up tiers are NOT bypassed — `_spawn_revolver_bullet`
+## passes the exact same `heavy`/`big` flags `_spawn_axe` does, so those
+## power-ups still do exactly what they already do (same damage numbers, same
+## boss-damage caps, same big-tier piercing); they just read as an upgraded
+## SHOT here instead of a bigger thrown weapon. Founder's own words: "when he
+## grabs the axe and the hammer just changes accordingly."
+func _uses_revolver() -> bool:
+	return GameManager.current_level == 3
+
 func _throw_axe() -> void:
 	if _axe_cd > 0.0:
 		return
@@ -135,6 +152,8 @@ func _throw_flame() -> void:
 func _spawn_projectile(spread: float) -> void:
 	if _uses_smoke_bombs():
 		_spawn_smoke_bomb(spread)
+	elif _uses_revolver():
+		_spawn_revolver_bullet(spread)
 	else:
 		_spawn_axe(spread)
 
@@ -166,6 +185,17 @@ func _spawn_axe(spread: float) -> void:
 	axe.heavy = GameManager.has_power_up("pickaxe") and not axe.big
 	axe.global_position = player.smoke_spawn.global_position
 	player.get_tree().current_scene.add_child(axe)
+
+func _spawn_revolver_bullet(spread: float) -> void:
+	var bullet := REVOLVER_BULLET_SCENE.instantiate()
+	bullet.direction = _facing()
+	bullet.vertical = spread * bullet.speed
+	# Same pre-add_child prop contract as _spawn_axe: big wins over heavy,
+	# exactly mirroring axe.gd's tier resolution.
+	bullet.big = GameManager.has_power_up("bigaxe")
+	bullet.heavy = GameManager.has_power_up("pickaxe") and not bullet.big
+	bullet.global_position = player.smoke_spawn.global_position
+	player.get_tree().current_scene.add_child(bullet)
 
 func _breathe_fire() -> void:
 	_fire_cd = FIRE_COOLDOWN
