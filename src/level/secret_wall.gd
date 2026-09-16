@@ -42,7 +42,19 @@ func _ready() -> void:
 	_shimmer.tween_property(sprite, "modulate", Color(0.94, 0.94, 0.98, 1.0), 1.6)
 
 ## Same contract as breakable_block so the pickaxe smash path just works.
+##
+## Breaks ONCE. The collider goes down with set_deferred, so it stays live for
+## the rest of the frame and can be reported again by the next move_and_slide
+## before the disable lands. Unguarded, one smash paid the score bonus, fired
+## the secret_found metric and ran _reveal_payload() — which can start a
+## community-lore network request and spawn a Diamond Shard — once per frame
+## of contact.
+var _broken: bool = false
+
 func break_block() -> void:
+	if _broken:
+		return
+	_broken = true
 	AudioManager.play_sfx("damage")
 	ScreenShake.shake(0.2, 4.0)
 	Web3Bridge.report_metric("secret_found", {"kind": "wall"})

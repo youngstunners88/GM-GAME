@@ -5,6 +5,74 @@
 
 ---
 
+**🧊 THE BLUE BLOCK FREEZE — ACTUALLY ROOT-CAUSED THIS TIME (2026-09-16, seventh pass). Three previous "fixes" all missed it.**
+
+You reported this back on 2026-08-26 and again now. You were right both times,
+and the honest summary is that the earlier passes fixed things that were *not*
+the cause. Here is what was really happening — measured, not guessed.
+
+**What the "blue block" is.** It's `secret_wall.tscn`. It's the only thing in
+the game that draws the blockchain-cube texture untinted, so it renders in the
+texture's own cyan while every platform tints it to the realm's colour. Stage 3
+places two of them — at x=620 and x=1260 — and **both sit inside holes in the
+ground** (the floor has gaps at 560-700 and 1220-1320). They ARE the floor
+across those holes. That's the gap you circled in red.
+
+**Cause 1 — you were smashing your own floor.** `player._check_pickaxe_breaks()`
+runs every physics frame and smashes every breakable it's touching. Its own
+comment says "walking INTO a block smashes it", but the contact list includes
+the FLOOR. Stage 3's pickaxe sits at x=770 — right between the two blue blocks.
+So the route is: walk right, cross block #1, pick up the pickaxe, step onto
+block #2 — and the block deletes itself under your feet on the first frame you
+land. Your screenshot shows PICKAXE 41%. Fixed: floor contacts are now skipped.
+Walking sideways into a block, and jumping up into Level 1's overhead walls,
+both still smash exactly as before — I gated both.
+
+**Cause 2 — the freeze itself, which nothing had ever touched.** `is_on_floor()`
+is latched from the last `move_and_slide()`. Standing still, velocity is zero,
+so the next `move_and_slide()` is a zero-length move that never re-tests the
+contact and the flag stays true. Fine while the floor exists. The instant it
+stops existing, the player still reports "on floor", so gravity is never
+applied, velocity stays zero, the next move is zero-length again — **welded in
+mid-air, forever, with the music still playing.** I measured it: collider
+already disabled, body at a healthy scale, and the player held y=508.0 with
+`is_on_floor()==true` for 50 straight physics frames. Every earlier fix
+hardened the *block*; none touched the latch on the *player*, which is exactly
+why they never worked. Fixed with a floor-liveness probe — a hair of downward
+velocity while grounded, so every frame is a real contact test. Absorbed by any
+real floor, invisible in play.
+
+**Cause 3 — found while fixing the above: the Gold Rush timed gate never
+actually opened.** `timed_door.tscn` already ships a CollisionShape2D, and the
+script was creating a *second* one at runtime and only ever tracking that. So
+"opening" the gate disabled one collider while the scene's stayed solid
+forever. Proven with a raycast: with the tracked collider reporting
+`disabled == true`, the body still returned a hit. That means Stage 3's
+headline race-the-gate mechanic has been dead, and standing on the gate when it
+"opened" welded you to a collider nothing in the script could switch off. It
+also still animated its own body scale to zero — the one remaining copy of the
+degenerate-collider bug that was fixed in the other two blocks back in August
+and never applied here. Both fixed; it adopts the scene's own nodes now.
+
+Also fixed while in here: a block could run its whole break sequence several
+times over (stacked tweens, score paid per frame, a duplicate network request),
+and a freed secret wall's lore callback threw a real console error that this
+project's own browser gate fails on.
+
+**Verification.** New gate `tests/blue_block_floor_freeze_test.gd`, written
+failing-first — it reproduced your bug on the old code (block destroyed under
+his feet, player dumped in the pit) before any fix went in, and is 8/8 now. It
+drives the real scenes under the real player, not mocks. Re-ran the movement
+battery that this change could plausibly break: the 8-platform landing gate,
+the old breakable-block gate, freeze-recovery, big-mode wedge, smoke bombs,
+Stage 3 defence and walkpath, revolver — all green. Security sentinel 18/18.
+Then drove Stage 3 in a real browser through both blue blocks twice (66
+screenshots): the world scrolls continuously the whole way, the block stays
+intact, the run survives a death and keeps going, and there are no GDScript
+console errors left.
+
+---
+
 **🪓 AXE/HAMMER PICKUP NOW ACTUALLY THROWS THE AXE/HAMMER IN STAGE 3 — FIXED (2026-09-16, sixth pass).**
 
 You said: "when Lil Blunt grabs the axe or the hammer he still shoots bullets
