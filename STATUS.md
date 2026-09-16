@@ -5,6 +5,51 @@
 
 ---
 
+**🪓 AXE/HAMMER PICKUP NOW ACTUALLY THROWS THE AXE/HAMMER IN STAGE 3 — FIXED (2026-09-16, sixth pass).**
+
+You said: "when Lil Blunt grabs the axe or the hammer he still shoots bullets
+instead of throwing the axe or hammer." You were right, and this was a
+misread on my part from an earlier pass, not a new bug.
+
+Root cause: `CombatHandler._uses_revolver()` in `src/player/combat_handler.gd`
+returned `true` for all of Stage 3, unconditionally — it never checked
+whether Lil Blunt was currently holding the pickaxe or big axe (hammer)
+power-up. So even with one of those equipped, every attack still routed to
+`_spawn_revolver_bullet()`, just with the pickaxe/bigaxe damage numbers
+applied to a bullet — it always looked and behaved like a shot, never an
+actual thrown axe/hammer. That was a deliberate design choice from an
+earlier pass, based on your words "when he grabs the axe and the hammer just
+changes accordingly" — read at the time as "keep the same damage tiers,
+just reskin them as a shot." That reading was wrong; you meant the actual
+weapon changes. The held-tool SPRITE already got this right (he visibly
+holds the pickaxe/hammer over the revolver when one is equipped) — only the
+THROWN attack was still silently forced to the bullet.
+
+Fix: `_uses_revolver()` now returns `false` whenever the pickaxe or bigaxe
+power-up is active, so the base attack falls through to `_spawn_axe()` —
+the same function Stage 2 already uses, which reads those same two
+power-ups to pick the correct sprite and damage tier (pickaxe vs the big
+axe/"hammer" art). Held weapon and thrown weapon can no longer disagree.
+With neither power-up active, Stage 3 still fires the revolver as before.
+
+**Verification**: added three regression assertions to
+`ep3_stage3_golden_revolver_test.gd` that call the real `CombatHandler`
+through `_throw_axe()` with each power-up active and assert the exact scene
+type spawned — pickaxe throws an axe and zero bullets, bigaxe throws the
+hammer and zero bullets, neither held still fires the revolver. All pass,
+plus the full existing battery (18 revolver/gun-position checks, smoke
+bombs, Stage 3 defence, the Stage 2 cutscene) reconfirmed green. Security
+sentinel 18/18. **Honest limit**: I was not able to reliably reproduce
+picking up the pickaxe in a live browser session in the time I had — Stage
+3's early platforming has enough hazards/RNG that a scripted run kept dying
+or missing the pickup before reaching it. The regression test above calls
+the same production `CombatHandler`/`GameManager` code a real pickup would
+drive, so I'm confident in the fix, but I want to flag that this one is
+verified by test, not by a screenshot of it happening live — tell me if you
+still see bullets after grabbing the axe/hammer and I'll chase it further.
+
+---
+
 **🛠️ BOTH THINGS YOU CALLED OUT ARE FIXED (2026-09-16, fifth pass) — the gun-on-his-head bug and the video that wasn't a real extension.**
 
 You were right on both counts. Here's exactly what was wrong and what changed.

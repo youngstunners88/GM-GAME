@@ -219,6 +219,68 @@ func _ready() -> void:
 		_check("Purple fan in Stage 3 fires THREE revolver bullets", got_b == 3, str(got_b))
 		_check("...and no axes", got_a == 0, str(got_a))
 
+	# --- 5b. picking up the axe/hammer in Stage 3 THROWS the axe/hammer,----
+	# not a bullet. Regression (founder, 2026-09-16, 2nd pass): "when Lil
+	# Blunt grabs the axe or the hammer he still shoots bullets instead of
+	# throwing the axe or hammer." The held-tool SPRITE already switched
+	# correctly (section 6 below); the THROWN projectile did not — this
+	# gate is on the actual attack, not the hand.
+	GameManager.current_level = 3
+	var host3 := Node2D.new()
+	add_child(host3)
+	var p3 = PLAYER.instantiate()
+	host3.add_child(p3)
+	await get_tree().process_frame
+	var h3 = p3.get_node_or_null("CombatHandler")
+	if h3 == null:
+		for c in p3.get_children():
+			if c is CombatHandler:
+				h3 = c
+	if h3:
+		var root3: Node = get_tree().current_scene
+
+		GameManager.activate_power_up("pickaxe", 30.0)
+		_clear_projectiles()
+		var b0 := _count_in_scene(root3, "res://src/combat/revolver_bullet.gd")
+		var a0 := _count_in_scene(root3, "res://src/combat/axe.gd")
+		h3._axe_cd = 0.0  # bypass the throw cooldown — this test fires 3 throws back to back
+		h3._throw_axe()
+		await get_tree().process_frame
+		_check("holding the pickaxe in Stage 3 THROWS an axe, not a bullet",
+			_count_in_scene(root3, "res://src/combat/axe.gd") - a0 == 1,
+			"(axes spawned: %d)" % (_count_in_scene(root3, "res://src/combat/axe.gd") - a0))
+		_check("...and fires no bullet",
+			_count_in_scene(root3, "res://src/combat/revolver_bullet.gd") - b0 == 0,
+			"(bullets spawned: %d)" % (_count_in_scene(root3, "res://src/combat/revolver_bullet.gd") - b0))
+		GameManager.deactivate_power_up()
+		_clear_projectiles()
+
+		GameManager.activate_power_up("bigaxe", 30.0)
+		var b1 := _count_in_scene(root3, "res://src/combat/revolver_bullet.gd")
+		var a1 := _count_in_scene(root3, "res://src/combat/axe.gd")
+		h3._axe_cd = 0.0
+		h3._throw_axe()
+		await get_tree().process_frame
+		_check("holding the hammer (bigaxe) in Stage 3 THROWS the hammer, not a bullet",
+			_count_in_scene(root3, "res://src/combat/axe.gd") - a1 == 1,
+			"(axes spawned: %d)" % (_count_in_scene(root3, "res://src/combat/axe.gd") - a1))
+		_check("...and fires no bullet",
+			_count_in_scene(root3, "res://src/combat/revolver_bullet.gd") - b1 == 0,
+			"(bullets spawned: %d)" % (_count_in_scene(root3, "res://src/combat/revolver_bullet.gd") - b1))
+		GameManager.deactivate_power_up()
+		_clear_projectiles()
+
+		var b2 := _count_in_scene(root3, "res://src/combat/revolver_bullet.gd")
+		h3._axe_cd = 0.0
+		h3._throw_axe()
+		await get_tree().process_frame
+		_check("with neither tool power-up held, Stage 3 still fires the revolver",
+			_count_in_scene(root3, "res://src/combat/revolver_bullet.gd") - b2 == 1,
+			"(bullets spawned: %d)" % (_count_in_scene(root3, "res://src/combat/revolver_bullet.gd") - b2))
+	host3.queue_free()
+	await get_tree().process_frame
+	_clear_projectiles()
+
 	# --- 6. the revolver is actually visible IN HIS HAND in Stage 3 --------
 	# Founder (2026-09-16): "the gun needs to be in his hand for this to make
 	# sense". Bullets alone aren't enough — LilBluntVisual's held-tool slot

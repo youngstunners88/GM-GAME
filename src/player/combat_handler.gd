@@ -97,20 +97,31 @@ func _facing() -> float:
 func _uses_smoke_bombs() -> bool:
 	return GameManager.current_level == 1
 
-## STAGE 3 FIRES THE GOLDEN REVOLVER, NOT THE AXE.
+## STAGE 3 FIRES THE GOLDEN REVOLVER — UNLESS HE'S HOLDING THE AXE OR HAMMER.
 ##
 ## Founder lock (2026-09-16, golden Remington reference art): the revolver is
 ## picked up in the beat between the Stage 2 boss defeat video and Stage 3
 ## (see `stage2_revolver_reveal.gd`), so by the time Lil Blunt reaches the
 ## Gold Rush he is armed with it instead of the axe.
 ##
-## The pickaxe/bigaxe power-up tiers are NOT bypassed — `_spawn_revolver_bullet`
-## passes the exact same `heavy`/`big` flags `_spawn_axe` does, so those
-## power-ups still do exactly what they already do (same damage numbers, same
-## boss-damage caps, same big-tier piercing); they just read as an upgraded
-## SHOT here instead of a bigger thrown weapon. Founder's own words: "when he
-## grabs the axe and the hammer just changes accordingly."
+## CORRECTED (founder, 2026-09-16, 2nd pass): "when Lil Blunt grabs the axe or
+## the hammer he still shoots bullets instead of throwing the axe or hammer."
+## The first pass read the founder's earlier "when he grabs the axe and the
+## hammer just changes accordingly" as "keep the same tier NUMBERS, just skin
+## them as a shot" — wrong. He means the actual WEAPON changes: picking up
+## the pickaxe or big axe (the "hammer" — see axe.gd's BIG_ART comment) must
+## make Lil Blunt throw THAT weapon, the same as it already does visually in
+## his hand (player.gd::_update_tool_visual already shows the pickaxe/bigaxe
+## sprite over the revolver whenever one is held — only the THROWN projectile
+## was still silently forced to the bullet). So the revolver is Stage 3's
+## weapon only when neither tool power-up is currently held; picking either
+## one up switches the actual thrown attack back to `_spawn_axe`, which
+## already reads the same two power-ups to pick its damage tier and sprite
+## (pickaxe vs BIG_ART) — held weapon and thrown weapon can no longer
+## disagree, matching the fix already applied to the hand sprite.
 func _uses_revolver() -> bool:
+	if GameManager.has_power_up("bigaxe") or GameManager.has_power_up("pickaxe"):
+		return false
 	return GameManager.current_level == 3
 
 func _throw_axe() -> void:
