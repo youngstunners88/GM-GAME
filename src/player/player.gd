@@ -451,6 +451,17 @@ func _update_tool_visual() -> void:
 		sprite.set_tool("res://src/assets/sprites/sprite_item_pickaxe.png")
 	elif GameManager.has_power_up("torch"):
 		sprite.set_tool("res://src/assets/sprites/sprite_item_torch.png")
+	elif GameManager.current_level == 3:
+		# GOLDEN REVOLVER (founder, 2026-09-16, reference art): "the gun needs
+		# to be in his hand for this to make sense" — Stage 3's base weapon
+		# is the revolver (see combat_handler.gd::_uses_revolver), so it's
+		# the default held tool there, same as every other stage's base
+		# weapon is implicitly "no held tool, just the thrown/fired
+		# projectile" — except here the founder specifically wants the gun
+		# VISIBLE in hand at all times, not only mid-throw. A pickaxe/bigaxe
+		# pickup still overrides this above, exactly as it already overrode
+		# the (invisible) base axe in Stage 2/3 before this change.
+		sprite.set_tool("res://src/assets/sprites/sprite_item_golden_revolver.png", 0.9)
 	else:
 		sprite.set_tool("")
 

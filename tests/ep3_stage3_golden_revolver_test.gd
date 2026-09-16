@@ -218,6 +218,29 @@ func _ready() -> void:
 		var got_a := _count_in_scene(root2, "res://src/combat/axe.gd") - fa
 		_check("Purple fan in Stage 3 fires THREE revolver bullets", got_b == 3, str(got_b))
 		_check("...and no axes", got_a == 0, str(got_a))
+
+	# --- 6. the revolver is actually visible IN HIS HAND in Stage 3 --------
+	# Founder (2026-09-16): "the gun needs to be in his hand for this to make
+	# sense". Bullets alone aren't enough — LilBluntVisual's held-tool slot
+	# (the same mechanism that already shows the pickaxe/torch/big axe) must
+	# default to the revolver whenever no other tool power-up overrides it.
+	p2._update_tool_visual()
+	var held_path := ""
+	if p2.sprite and p2.sprite._tool and p2.sprite._tool.texture:
+		held_path = p2.sprite._tool.texture.resource_path
+	_check("Stage 3 shows the golden revolver in Lil Blunt's hand",
+		held_path == "res://src/assets/sprites/sprite_item_golden_revolver.png",
+		"(held_path=%s)" % held_path)
+
+	GameManager.current_level = 1
+	p2._update_tool_visual()
+	var held_path_s1 := ""
+	if p2.sprite and p2.sprite._tool and p2.sprite._tool.texture:
+		held_path_s1 = p2.sprite._tool.texture.resource_path
+	_check("Stage 1 does NOT hold the revolver (no gun before Stage 3)",
+		held_path_s1 != "res://src/assets/sprites/sprite_item_golden_revolver.png",
+		"(held_path=%s)" % held_path_s1)
+
 	host2.queue_free()
 
 	await get_tree().process_frame

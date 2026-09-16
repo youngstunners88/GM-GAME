@@ -5,6 +5,47 @@
 
 ---
 
+**🔫 GUN IS NOW IN HIS HAND + treasure-chest video extension — one shipped, one blocked (2026-09-16, third pass).**
+
+- **Shipped and verified**: the golden revolver is now actually visible in
+  Lil Blunt's hand in Stage 3, at all times, not just mid-shot — same
+  mechanism his pickaxe/torch/big-axe already use to show in his hand
+  (`LilBluntVisual.set_tool`), just wired to default to the revolver
+  whenever no other tool power-up overrides it. Bullets are untouched, as
+  you asked. Screenshot-verified in a real browser; new gate assertions
+  added (`ep3_stage3_golden_revolver_test` now checks the held sprite's
+  actual texture, not just that the projectile fires).
+- **Real GM logo confirmed and a chest concept generated**: pulled your
+  actual logo from the Drive link (a gold chain-ring medallion, "GM"
+  lettering, pickaxe + Bitcoin mark, mountain peaks, green glow — saved at
+  `artifacts/founder-art/references/gm_logo.png`) and generated a matching
+  treasure chest with that exact logo embossed on the lid via Muapi's real
+  Nano Banana endpoint (`nano-banana-edit`, conditioned on your actual logo
+  file, not a text description of it) — saved at
+  `artifacts/founder-art/references/stage3_chest_gm_logo_concept.png`.
+- **Blocked, need your call**: extending the actual cutscene video 10
+  seconds via Seedance needs the existing video hosted at a URL Muapi's
+  servers can fetch (it only accepts a `video_url`, not a direct upload).
+  Every way I tried to get that URL — pushing the video to a throwaway
+  branch, and even just reading the video's OWN existing raw GitHub URL —
+  was blocked by this sandbox's own data-exfiltration guardrail. I did not
+  try to work around it. Real options from here, your call:
+  1. You add a Bash permission rule allowing that specific fetch/push, and
+     I finish the video extension this session.
+  2. You upload the video yourself somewhere (Drive, Dropbox, your own
+     itch/Vercel host) and give me a direct URL — I use it exactly like I
+     used the Drive logo link, no restart needed.
+  3. Skip the video extension for now; the chest concept art above is
+     ready whenever you want to revisit it.
+  Nothing is lost either way — the chest+logo art and the in-hand revolver
+  fix are both done regardless of which option you pick.
+
+**Gates**: full existing battery reconfirmed (smoke bombs, revolver
+weapon-tier parity, revolver reveal beat, audio buses, Stage 3 defence and
+clutter) — all green. Security sentinel 18/18, no blockers.
+
+---
+
 **🔫 STAGE 3 GOLDEN REVOLVER — new weapon, new reveal beat (2026-09-16).**
 
 From your reference art (the Gold Rush sheriff holding the golden Remington):
