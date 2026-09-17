@@ -5,6 +5,71 @@
 
 ---
 
+**🎨 THE GREEN BLEMISHES — REAL ROOT CAUSE FOUND AND FIXED (2026-09-17, ninth pass). Dispatched to GPT-6 Astra as you asked; here's what came back and what I did with it.**
+
+You sent a Google Doc with 6 circled screenshots and said you wanted GPT-6
+Astra on this. I read the doc (pulled the real images out of it, not just
+the captions), dispatched Astra with all 6 plus a live capture of my own
+($0.19), and used its diagnosis to go find the actual cause rather than
+patching pixels again.
+
+**The green blemishes in Level 2's Blaze Rush, Level 3's Blaze Rush, and
+right after exiting either one are ALL THE SAME BUG, and it was never the
+art.** Astra's strongest finding: the green patches showed up at the
+**same screen position across completely different scenes** — that's the
+signature of a screen-space overlay, not something baked into a background
+image (I'd already scanned both relevant JPEGs pixel-by-pixel and confirmed
+zero green pixels in either). That pointed me at the scene-transition
+system instead of the art.
+
+Found it: entering and exiting Blaze Rush both hardcoded the **SMOKE**
+transition — a full-screen dissolve wipe whose colour is intentionally
+weed-green and purple (`transition_wipe.gdshader`, "the Smoke Realm
+signature"). That's correct for Level 1. For Level 2 (cyan Crystal Caverns)
+and Level 3 (amber Gold Rush canyon), the exact same green/purple cloud
+flashed over the screen on every single entry and exit — which is precisely
+"green shit blemish" and "after exiting it ends up on the stage screen too."
+Nothing was leaking, stuck, or corrupted — it was playing the wrong
+themed transition, every time, for two of the three realms.
+
+I confirmed this by capturing the actual live transition frame-by-frame in a
+browser (not guessing from a screenshot) — the mid-dissolve frame showed the
+exact soft green/purple blobs from your screenshots, and one frame later it
+was gone. Fix: added a `blaze_transition_for_level()` helper so the wipe
+always matches the realm — Level 2 now uses the existing cyan DIAMOND
+pattern (already used for the vault doors, so zero new art), and Level 3
+gets a new warm amber/gold pattern I added to the same shader (matching the
+canyon's own palette, no new art assets, just a colour branch). Verified
+live: L2's transition is now solid cyan, L3's is now solid gold — zero green
+pixels in either, scanned programmatically across 50 frames each.
+
+**Also from Astra's review, still open — flagging honestly rather than
+guessing further and risking another wrong fix:**
+- The "dividing line" in Level 2's *main* gameplay screen (not a vault, not
+  Blaze Rush) — I found the region you circled has a genuine light-beam
+  design element nearby, but couldn't confirm the exact dark line is the
+  same thing or a separate tiling artifact. Needs a cleaner repro.
+- Level 3's canyon streaks near the "BLAZE RUSH!" sign — this is on the same
+  canyon plate (`bg_l3_goldrush.jpg`) I deliberately left untouched last
+  round because a repair there was cutting your Bitcoin coin. Your new
+  circles may be pointing at a different region of the same plate; I didn't
+  re-open that file this round to avoid risking the coin again without
+  confirming the exact spot first.
+- Fort Knox's vault (Stage 3) has the SAME kind of visible seam I fixed for
+  the Diamond Vault (Stage 2) — my fix code is already shared between both,
+  but I caught Fort Knox still showing it live. Not yet root-caused.
+- The Level 1 sliver next to the tree — checked the actual Magic Mushroom
+  sprite and spawn code, both look correct (normal round mushroom icon, no
+  crop bug in the code). Astra's own read agrees it doesn't look like the
+  mushroom. Genuinely unidentified — not fixed.
+
+**Gates**: new `blaze_transition_palette_test` 10/10 (pins the exact
+regression — a hardcoded SMOKE call — so it can't silently come back).
+Full existing Blaze Rush + vault battery reconfirmed green. Security
+sentinel 18/18.
+
+---
+
 **🎨 THE BACKGROUND BLEMISHES, THE VAULT'S DIVIDING LINE AND THE GREEN STUFF — ALL FIXED (2026-09-17, eighth pass).**
 
 Three separate causes behind what you circled. None of them was one bug in one

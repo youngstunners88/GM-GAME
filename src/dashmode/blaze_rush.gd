@@ -1643,7 +1643,9 @@ func _exit_to_level() -> void:
 		GameManager.save_checkpoint(_level_index, 990 + _level_index, portal_pos)
 	GameManager.dash_return = {}
 	_release_music()
-	SceneRouter.load_scene(return_path, SceneRouter.Transition.SMOKE)
+	# Same realm-matched wipe as the entry (blaze_portal.gd) — the exit must
+	# not un-match what the entry just established.
+	SceneRouter.load_scene(return_path, SceneRouter.blaze_transition_for_level(_level_index))
 	_arm_exit_watchdog(return_path)
 
 ## LAST-RESORT EXIT. The player must NEVER be stranded in Blaze Rush.
