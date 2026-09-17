@@ -86,6 +86,18 @@ jobs:
       - name: Security Sentinel
         run: ./scripts/security-sentinel.sh --fail-on=high
 
+      # Background art gate (founder 2026-09-16, "blemishes throughout different
+      # stages"). Nearly every shipped backdrop carried a horizontally-smeared
+      # band along its right edge, and because the backdrops TILE, that band
+      # repeated across the whole level. Now that they are repaired this keeps
+      # a blemished plate from ever being committed again. Deliberately
+      # dependency-light: the check runs on Pillow + numpy, no OpenCV (that is
+      # only needed by the one-off repair pass).
+      - name: Background art gate
+        run: |
+          python3 -m pip install --quiet --disable-pip-version-check pillow numpy
+          python3 scripts/repair-backgrounds.py --check
+
       - name: Download Godot editor + export templates
         run: |
           set -euo pipefail

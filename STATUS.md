@@ -5,6 +5,77 @@
 
 ---
 
+**🎨 THE BACKGROUND BLEMISHES, THE VAULT'S DIVIDING LINE AND THE GREEN STUFF — ALL FIXED (2026-09-17, eighth pass).**
+
+Three separate causes behind what you circled. None of them was one bug in one
+place, which is why it looked like it was "throughout different stages".
+
+**1. The blemishes were baked into the artwork itself.** Not an engine bug —
+the images on disk are damaged. The image generator that produced this art left
+two kinds of defect in it:
+
+- A **smeared, streaked band down the right-hand edge** of almost every
+  background — 12 of the 13 plates had one, up to 95px wide. This is the dark
+  striped block you circled in Levels 1 and 2. And because the engine **tiles**
+  the backdrop every texture-width as you walk, that one bad band repeats
+  across the entire level — which is exactly why it looked like it "permeates
+  throughout".
+- **Rectangular patch blocks pasted over the artwork** in the Blaze Rush gold
+  plate — flat dark quads with hard straight borders sitting on top of the
+  forest. Those are the blotches you circled all over the Blaze Rush shot, and
+  your circles matched them almost one-for-one.
+
+I repaired all 12 damaged plates with `scripts/repair-backgrounds.py`. The
+patch quads are **rebuilt** using exemplar inpainting, which copies real
+patches from elsewhere in the same painting — so a hole through the treeline
+comes back as actual trees, not a blur. The edge bands are **cropped off**
+rather than painted over, so nothing is invented at the border. I tried the
+obvious diffusion-based repair first and rejected it: it left soft smeared
+blobs, which is the very thing you were complaining about.
+
+**2. The Diamond Vault's dividing line was a real code bug — one missing
+multiply.** `vault_realm.gd` scaled the 1024px-wide vault plate up to fill the
+screen (so it renders 1280 wide) but told the engine to repeat it every
+**1024** px — the *unscaled* width. Every repeat therefore restarted 256px
+before the previous copy had finished, slicing the painting mid-image and
+butting an unrelated part of it against the cut. That is literally "the scene
+cut off and a new background pasted from a different design" — you read it
+exactly right. The same function also hardcoded a 720px fill height instead of
+using the real window height, which is what left the flat strip along the
+bottom of your screenshot. Both fixed; the level backdrop already did this
+correctly, so it was one file out of step.
+
+**3. The green stuff is gone.** Blaze Rush was spraying a **40-particle
+lime-green streak field parented to the camera**, so it drifted across the view
+for the entire run on every backdrop — including Stage 3's warm sunset, where
+a cold green is completely off-palette. Deleted outright, not dimmed.
+
+**One judgement call I want to flag, so you can overrule me:** the Blaze Rush
+player character *is* a neon-green cube, and he carries a short green trail
+pinned to his own body as his speed cue. I **kept** that — it moves with him
+and reads as his motion, unlike the ambient field that was spraying across the
+whole screen for no reason. If you want his trail gone too, say so and it's a
+one-line change.
+
+**Guard-rails so this can't come back:** a new CI gate
+(`scripts/repair-backgrounds.py --check`) scans every shipped background for
+smear bands and fails the build on any that reappear — it runs on the same
+scan that found these, and it's dependency-light so CI doesn't need extra
+tooling. A new engine gate (`tests/backdrop_seam_and_vfx_test.gd`) asserts the
+vault repeats at its *rendered* width, covers the full window height, and that
+no ambient green field exists in Blaze Rush. Neither the Diamond Vault nor
+Blaze Rush has a URL warp, so a browser driver can't reach them reliably —
+this gate drives both scenes directly instead.
+
+**Verified**: all 13 plates pass the art gate; the new backdrop/VFX gate is
+6/6; the regression battery (blue-block freeze, 8-platform landing, revolver,
+Stage 2 cutscene, Stage 3 defence) is green; security sentinel 18/18. Levels 1
+and 2 were driven in a real browser after the repair and the striped bands are
+gone from both. Honest limit: the Diamond Vault and Blaze Rush are verified by
+the engine gate above, not by a live screenshot, for the warp reason given.
+
+---
+
 **🧊 THE BLUE BLOCK FREEZE — ACTUALLY ROOT-CAUSED THIS TIME (2026-09-16, seventh pass). Three previous "fixes" all missed it.**
 
 You reported this back on 2026-08-26 and again now. You were right both times,

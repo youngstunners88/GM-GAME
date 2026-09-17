@@ -293,12 +293,28 @@ func _setup_backdrop() -> void:
 		var layer := ParallaxLayer.new()
 		var tex: Texture2D = load(path)
 		layer.motion_scale = Vector2(0.4, 0.0)  # horizontal parallax, vertically screen-locked
-		layer.motion_mirroring = Vector2(tex.get_width(), 0)
+		# THE "DIVIDING LINE" DOWN THE VAULT (founder 2026-09-16: "there is a
+		# dividing line as if the scene was cutoff and a new background pasted
+		# from a different design").
+		#
+		# It was exactly that, and the cause is one missing multiply. The
+		# backdrop is 1024x576 scaled by `s` (=1.25 at 720p) so it RENDERS
+		# 1280px wide, but the mirroring repeated every 1024px — the UNSCALED
+		# width. Each repeat therefore restarted 256px before the previous copy
+		# had finished, slicing the painting mid-image and butting an unrelated
+		# part of it against the cut. Mirroring must be the SCALED width, which
+		# is what level_base._setup_background() already does correctly.
+		var view_h: float = get_viewport_rect().size.y
+		# And fill from the LIVE viewport height, never a hardcoded 720:
+		# project.godot stretches with aspect="expand", so a window taller than
+		# 16:9 gives a viewport taller than 720 and the art stops short, leaving
+		# the flat uncovered strip along the bottom of the founder's screenshot.
+		# Same lesson, same fix as the level backdrop.
+		var s: float = maxf(1.0, view_h / float(tex.get_height()))
+		layer.motion_mirroring = Vector2(float(tex.get_width()) * s, 0.0)
 		var spr := Sprite2D.new()
 		spr.texture = tex
 		spr.centered = false
-		# Scale the art to fill viewport height (~720); tint slightly for depth.
-		var s: float = 720.0 / float(tex.get_height())
 		spr.scale = Vector2(s, s)
 		spr.modulate = Color(0.9, 0.9, 0.95, 1.0)
 		layer.add_child(spr)

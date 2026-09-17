@@ -22,7 +22,6 @@ const SCORE_PER_SMOKE: int = 10
 ## secret FAST mode; it's allowed to look different.
 const COLOR_VOID := Color(0.04, 0.0, 0.08, 1.0)
 const COLOR_HAZE := Color(0.35, 0.05, 0.55, 1.0)
-const COLOR_ACCENT_LIME := Color(0.55, 1.0, 0.25, 1.0)
 const COLOR_HAZARD := Color(1.0, 0.25, 0.08, 1.0)
 const COLOR_SAFE_GROUND := Color(0.45, 0.35, 0.75, 1.0)
 const COLOR_SAFE_EDGE := Color(0.3, 1.0, 0.85, 1.0)
@@ -861,22 +860,17 @@ func _build_protocol_landmarks() -> void:
 ## sprint_dust/wall_sparks are children of the PLAYER in the main game rather
 ## than fixed world props the run would leave behind after one pass.
 func _build_speed_atmosphere() -> void:
-	var streaks := CPUParticles2D.new()
-	streaks.texture = load("res://src/assets/sprites/fx_dot.png")
-	streaks.amount = 40
-	streaks.lifetime = 0.5
-	streaks.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-	streaks.emission_rect_extents = Vector2(80.0, 300.0)
-	streaks.position = Vector2(300.0, 0.0)
-	streaks.direction = Vector2(-1, 0)
-	streaks.spread = 4.0
-	streaks.initial_velocity_min = 500.0
-	streaks.initial_velocity_max = 700.0
-	streaks.scale_amount_min = 0.3
-	streaks.scale_amount_max = 1.2
-	streaks.color = Color(COLOR_ACCENT_LIME.r, COLOR_ACCENT_LIME.g, COLOR_ACCENT_LIME.b, 0.35)
-	_camera.add_child(streaks)
-
+	# THE GREEN STUFF BLOWING THROUGH THE SCREEN IS GONE (founder 2026-09-16:
+	# "there is a lot of green shit that is blowing around in the air for some
+	# reason. Remove it").
+	#
+	# It was a 40-particle lime-green streak field parented to
+	# the camera, so it drifted across the view for the entire run on every
+	# backdrop — including Stage 3's warm sunset treeline, where a cold green
+	# is completely off-palette. It was only ever a speed cue, and the neutral
+	# dust field below already carries that read without tinting the screen.
+	# Deliberately deleted rather than dimmed: the founder asked for it gone,
+	# and a fainter version of the wrong colour is still the wrong colour.
 	var dust := CPUParticles2D.new()
 	dust.texture = load("res://src/assets/sprites/fx_dot.png")
 	dust.amount = 20
