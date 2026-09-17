@@ -28,6 +28,12 @@ func _ready() -> void:
         return
     if _boot_episode2():
         return
+    # TEST-ONLY — ?vault=fort|diamond routes straight into the Fort Knox / Diamond
+    # Vault staking realm so the founder's seam screenshots can be reproduced in a
+    # browser without walking a whole level to the hidden vault door. No param =>
+    # normal menu.
+    if _boot_vault_warp():
+        return
     play_btn.pressed.connect(_on_play)
     continue_btn.pressed.connect(_on_continue)
     title.text = "LIL BLUNT\nTHE SMOKE REALM"
@@ -102,6 +108,26 @@ func _boot_episode2() -> bool:
     if str(q) != "1":
         return false
     SceneRouter.load_scene(GameManager.EPISODE2_SCENE, SceneRouter.Transition.FADE)
+    return true
+
+## TEST-ONLY. Reads ?vault=fort|diamond on web and routes straight into that
+## staking realm (both scenes share vault_realm.gd, differing only by protocol),
+## so the founder's "dividing line / paper seam" screenshots can be captured in a
+## browser. No-op on a normal load or any non-web build.
+func _boot_vault_warp() -> bool:
+    if not OS.has_feature("web"):
+        return false
+    var q: Variant = JavaScriptBridge.eval(
+        "new URLSearchParams(window.location.search).get('vault') || ''", true)
+    var s := str(q).to_lower()
+    var path := ""
+    if s == "fort" or s == "fortknox" or s == "gold":
+        path = "res://src/level/fort_knox_realm.tscn"
+    elif s == "diamond" or s == "diamonds":
+        path = "res://src/level/diamond_vault_realm.tscn"
+    else:
+        return false
+    SceneRouter.load_scene(path, SceneRouter.Transition.FADE)
     return true
 
 ## TEST-ONLY. Reads ?lounge=1 on web and routes into the Smoke Lounge so the

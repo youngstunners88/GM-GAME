@@ -97,6 +97,19 @@ jobs:
         run: |
           python3 -m pip install --quiet --disable-pip-version-check pillow numpy
           python3 scripts/repair-backgrounds.py --check
+          # Founder 2026-09-17 residual seams (all live-verified in a browser):
+          #  - Fort Knox vault backdrop had a baked horizontal SMEAR band on its
+          #    right edge (Diamond Vault did not) -> detail-graft repair.
+          #  - Level 1 "sliver by the tree" and Level 2 "dividing line" were both
+          #    the parallax TILE-WRAP join of plates that did not tile
+          #    (edge-diff 17.7 / 10.9) -> seamless-edge heal.
+          #  - Level 3 canyon "smudge" was the plate's dark low-detail edges
+          #    doubling at the wrap -> plate widened (bg_l3_goldrush_wide.jpg) so
+          #    it never wraps in-level. This asserts that wide plate exists and
+          #    still tiles, and that the level data points at it.
+          python3 scripts/repair-fort-knox-backdrop.py --check
+          python3 scripts/make-bg-seamless.py --check
+          python3 scripts/check-l3-wide-backdrop.py --check
 
       - name: Download Godot editor + export templates
         run: |
