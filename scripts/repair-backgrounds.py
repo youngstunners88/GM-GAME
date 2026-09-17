@@ -24,10 +24,17 @@ Repairs, in order:
   * interior quads are REBUILT with exemplar (shift-map) inpainting, which
     copies real patches from elsewhere in the same painting, so a hole through
     the treeline comes back as trees;
-  * the smear band is CROPPED OFF — never painted over — and the rest rescaled
-    back to the original size. Nothing is invented at the border, and the few
-    percent of horizontal stretch is invisible on a plate that the engine
-    already scales and parallaxes.
+  * the smear band is CROPPED OFF — never painted over, and NEVER rescaled
+    back to the original width. The plate simply ends up narrower; the engine
+    tiles by the real texture width, so nothing downstream cares.
+
+    Rescaling back to 1280 was the first version and it was a bad mistake. An
+    ~8% horizontal stretch turned the round Bitcoin coin in the Stage 3 canyon
+    into an ellipse and shifted the composition until a second coin was clipped
+    at the frame edge — the founder caught it immediately ("the bitcoin logo
+    against the background is now cut!!!"). Distorting a brand mark to save a
+    few pixels of width is never the right trade. The cut position is also
+    chosen to avoid slicing a logo (see safe_cut).
 
 WHAT THIS DELIBERATELY DOES NOT DO — and why, so nobody re-adds it:
 A "seamless tiling" pass (roll + inpaint the wrap, or cross-fade the edges)
@@ -93,6 +100,20 @@ INTERIOR_QUADS = {
 SMEAR_RATIO = 0.70
 MIN_BAND = 16        # ignore runs shorter than this
 
+# FIRST, DO NO HARM. Plates listed here are left exactly as authored.
+#
+# bg_l3_goldrush is the Stage 3 canyon. Its right-edge streaking is faint, the
+# founder never flagged it in any screenshot — and a small Bitcoin coin sits at
+# x 1115..1195, right inside the band. Every repair available there is worse
+# than the defect: cropping to clear the streaks slices the coin (which is
+# exactly what he caught: "the bitcoin logo against the background is now
+# cut!!!"), and inpainting around a protected coin box leaves visible patch
+# seams in the canyon wall. A faint streak nobody reported beats a cut brand
+# mark, so this plate stays untouched until the art itself is regenerated.
+SKIP = {
+    "bg_l3_goldrush.jpg",
+}
+
 
 def smear_band(img: np.ndarray) -> int:
     """Width in px of the horizontally-smeared run touching the RIGHT edge.
@@ -133,8 +154,68 @@ def rebuild(img: np.ndarray, hole: np.ndarray) -> np.ndarray:
     return dst
 
 
+def salience(img: np.ndarray) -> np.ndarray:
+    """Per-column 'how much does this column matter' score.
+
+    A column running through a brand logo, a coin or a lit prop is bright,
+    saturated and full of edges; one running through flat sky or shadowed rock
+    is not. Used to place the crop where it cannot slice a artwork element.
+    """
+    f = img.astype(np.float32)
+    bright = f.max(axis=2)                       # luminance-ish
+    sat = bright - f.min(axis=2)                 # colourfulness
+    # MAX down the column, never the mean. A Bitcoin coin is ~110px tall in a
+    # 720px frame, so averaging dilutes it to nothing — measured: the coin's
+    # column scored 0.11 by mean (indistinguishable from empty sky at 0.02)
+    # but 0.78 by max against 0.05 for sky. The mean version is exactly why
+    # the first cut went straight through the coin.
+    return ((bright / 255.0) * (sat / 255.0)).max(axis=0)
+
+
+def safe_cut(img: np.ndarray, floor_px: int) -> int:
+    """How many right-hand columns to drop: enough to clear the smear, placed
+    where the cut does NOT run through artwork.
+
+    FOUNDER, 2026-09-17: "the bitcoin logo against the background is now cut!!!"
+    He was right. The first version cropped a fixed `floor_px` and then rescaled
+    back to the original width. Two separate harms, both real:
+
+      * the rescale stretched every plate ~8% horizontally, turning the round
+        Bitcoin coin in bg_l3_goldrush into an ellipse — a distorted BRAND MARK;
+      * the cut landed at x=1185, straight through a second, smaller Bitcoin
+        coin that occupies x 1115..1195, lopping its right edge off.
+
+    So: never rescale (the caller now keeps the cropped width, and the engine
+    tiles by the real texture width anyway, so nothing downstream cares), and
+    walk the cut outward from the minimum until it sits in a quiet column.
+    """
+    w = img.shape[1]
+    s = salience(img)
+    quiet = float(np.percentile(s, 40))       # "ordinary background" for this plate
+
+    def edge_score(cut: int) -> float:
+        col = w - cut - 1                     # the column that becomes the new edge
+        return float(s[max(0, col - 4):col + 1].max())
+
+    # Prefer the smallest cut, at or beyond the smear start, that leaves a quiet
+    # edge. Failing that, pull the cut BACK below the smear start — leaving a
+    # few columns of the faintest streaks is a far smaller sin than slicing a
+    # brand mark in half, and the band fades out gradually anyway.
+    for cut in range(floor_px, min(floor_px + 220, w - 32)):
+        if edge_score(cut) <= quiet:
+            return cut
+    for cut in range(floor_px - 1, max(0, floor_px - 60), -1):
+        if edge_score(cut) <= quiet:
+            return cut
+    # Nothing quiet either way: take the least-bad edge rather than guessing.
+    span = range(max(1, floor_px - 60), min(floor_px + 220, w - 32))
+    return min(span, key=edge_score)
+
+
 def repair(path: str) -> tuple[bool, str]:
     name = os.path.basename(path)
+    if name in SKIP:
+        return True, f"{name}: SKIPPED by policy (see SKIP)"
     img = cv2.imread(path, cv2.IMREAD_COLOR)
     if img is None:
         return False, f"{name}: unreadable"
@@ -151,8 +232,9 @@ def repair(path: str) -> tuple[bool, str]:
 
     band = smear_band(img)
     if band:
-        img = cv2.resize(img[:, : w - band], (w, h), interpolation=cv2.INTER_LANCZOS4)
-        notes.append(f"cropped {band}px smear band")
+        cut = safe_cut(img, band)
+        img = img[:, : w - cut]
+        notes.append(f"cropped {cut}px smear band (now {img.shape[1]}px wide)")
 
     if not notes:
         # Nothing to do — do NOT rewrite. Re-encoding a clean JPEG just to
@@ -184,6 +266,8 @@ def check(path: str) -> tuple[bool, str]:
     except Exception as exc:  # noqa: BLE001 - reported, not swallowed
         return False, f"{name}: unreadable ({exc})"
     band = smear_band(img)
+    if name in SKIP:
+        return True, f"{name}: smear_band={band}px (skipped by policy)"
     return band == 0, f"{name}: smear_band={band}px"
 
 
