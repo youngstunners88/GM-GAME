@@ -1,3 +1,5 @@
+> ⚠️ SUPERSEDED (v1, rejected by founder — blind text-to-video, wrong character, no people, cheap on-screen text). Kept for audit trail only. See v2 files below.
+
 > Seedance 2 prompt authored by Astra GPT-6 (openai/gpt-6-astra) via OpenRouter, 2026-09-18 (temp 0.2), filed verbatim by Claude Code.
 
 # shot-04

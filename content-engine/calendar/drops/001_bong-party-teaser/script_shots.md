@@ -1,28 +1,49 @@
-# Shot list — Drop 001 (Bong-Party Teaser)
+# Shot list — Drop 001 (Bong-Party Teaser) — v2
 
-State: **LOCKED by founder 2026-09-18** ("lock 001")
-Format: format-hype-30s · 9:16 · Seedance 2 for all 30s · **10s hero window = 9.0–19.0s**
+State: **RENDERED, awaiting founder review**
+Format: format-hype-30s (adapted) · 9:16 · anime/comic-book style ·
+still (nano-banana-pro-edit) → animate (Seedance 2 image-to-video) ·
+**no on-screen text anywhere** (founder: "I don't want text!!!!")
+Hero window: 9.0–19.0s
 
-> Shot list authored by **Astra GPT-6** (`openai/gpt-6-astra`) via OpenRouter,
-> 2026-09-18. Filed verbatim by Claude Code.
->
-> **Founder-lock note:** the opening hook is founder-locked as **"every Friday
-> the smoke rings up on Solana"**. Astra's Shot 1 VO cell reads "every week…"
-> as a conservative fidelity hedge; the founder's lock takes precedence, so the
-> line rendered in Shot 1 is the **"every Friday…"** version. All other cells
-> stand as authored. Seedance 2.5 is NOT to be spent until the founder says so —
-> the hero window (9.0–19.0s, Shots 4–5) will be cut from the Seedance 2 master
-> for now.
+> v2 is a full rebuild after founder rejection of v1. v1 ignored the real
+> Lil Blunt reference art (generated a generic character from imagination),
+> dropped the "moving to Solana" premise, had no people at the party, and
+> tried to render on-screen text inside the video model (looked cheap/garbled).
+> v2 fixes all four: generated on-model anime-style stills conditioned on the
+> real founder-supplied reference art, animated those stills (character
+> fidelity locked from frame one), a packed party with human partygoers
+> including a woman excited to be there, and **zero text anywhere in the
+> video** — the message lives in the post caption, not burned into the footage.
 
-<!-- BEGIN ASTRA OUTPUT (verbatim) -->
-| Shot | Time | In hero window? | Camera | Subject (on-model) | Action | Environment | Must-include | Must-not-invent |
-|---|---|---|---|---|---|---|---|---|
-| 1 — Hook | 0.0–1.5s | No | Vertical 9:16 close-up; quick push-in | Lil Blunt; approved design and wardrobe | Snaps toward camera; smoke ring hits lens | Velvet doorway threshold | Weekly-only approved VO: “every week the smoke rings up on Solana”; ring fills frame | Friday schedule exceeds locked weekly facts; no new costume or accessories |
-| 2 — Setup | 1.5–8.0s | No | Track through doorway behind him; settle into medium framing | Same Lil Blunt; matching wardrobe and lighting | Enters lounge as bass builds | Smoke Realm lounge; velvet entrance, atmospheric smoke | Clear spatial continuity; bass-led anticipation | No additional characters, outside brands, or logos |
-| 3 — Ring launch | 8.0–9.0s | No | Tight three-quarter view; follow ring outward | Same on-model Lil Blunt | Flicks smoke ring; ring expands into spinning tunnel | Same lounge | Readable flick-to-tunnel transformation | No new powers explained as protocol features; no metrics |
-| 4 — Tunnel dive | 9.0–14.0s | **Yes — fully** | Dive through ring tunnel toward Lil Blunt | Same Lil Blunt, visible beyond tunnel | Holds confident pose as camera rushes toward him | Smoke tunnel within established lounge | **Hero window starts at 9.0s**; recognizable silhouette; consistent lighting palette | No wardrobe, facial-design, or location reset |
-| 5 — Hero orbit | 14.0–19.0s | **Yes — fully** | Emerge into continuous orbit behind him; return to front close-up | Same on-model Lil Blunt | Turns with camera; lands signature smirk | Same lounge; smoke maintains motion continuity | Smirk clearly readable by **19.0s hero-window end** | No extra mascots; no unapproved design details |
-| 6 — Peak resolve | 19.0–20.0s | No | Hold close-up, then ease back | Same Lil Blunt | Holds smirk as smoke clears space for payoff | Same lounge | Smooth transition from party peak to NFT reveal | No reward payout animation or balance counters |
-| 7 — Payoff | 20.0–27.0s | No | Controlled pullback; floating frame beside Lil Blunt | Same Lil Blunt; NFT artwork uses only approved Lil Blunt design | Presents floating NFT frame; text holds legibly | Same lounge and lighting | Caption: **“NFTs with wrapped Smoke”**; **“NFT buyers eligible for SOL rewards at bong party — not guaranteed”** | No guaranteed SOL, amounts, yields, APY, market cap, TVL, prices, or invented mechanics |
-| 8 — CTA | 27.0–30.0s | No | Settle into static vertical end card | Same Lil Blunt; unchanged wardrobe and lighting | Holds final pose beside CTA | Simplified continuation of lounge backdrop | **“$SMOKE on Solana”** / **“LilBlunt.win”** / **“follow @smokering25”**; mobile-safe text | No outside logos, fake numbers, balance counters, or additional claims |
-<!-- END ASTRA OUTPUT -->
+## Pipeline (2 stages, not 1)
+1. **Still generation** — `nano-banana-pro-edit` (MuAPI), reference images from
+   `../assets/` (real founder art) via `images_list` + `@image1`/`@image2`
+   tags. See `v2_still-01-rocket.json`, `v2_still-02-party.json`,
+   `v2_still-03-payoff.json`.
+2. **Animation** — `seedance-2-image-to-video-fast` (MuAPI, Seedance 2 family),
+   each still as the start frame. See `v2_clip-A/B/C_seedance2-i2v.json`.
+
+## Clips
+
+| Clip | Time | Still source | Scene | In hero window? |
+|---|---|---|---|---|
+| A | 0.0–8.0s | rocket still | Lil Blunt rides his branded rocket through space toward the glowing Solana mark — the "moving to Solana" journey | No |
+| B | 8.0–20.0s | party still | Arrival at a packed neon bong-party lounge on Solana; a lavender-haired anime woman excitedly at his side; a crowd of human partygoers dancing behind them; purple double-chamber bong in hand | **Yes — fully** (9.0–19.0s) |
+| C | 20.0–30.3s | payoff still (+3s padded hold) | Surrounded by the cheering crowd, presents a glowing wrapped-leaf NFT card (iconographic, no text on the card itself) | No |
+
+## On-model lock (from `ref-03-smoke-solana.png` + `ref-01-fomo-rocket.jpg`)
+Muscular green cannabis-leaf character, spiky leaf mohawk, round googly
+freckled eyes, wide grin, cigar with visible smoke (never a joint/bong
+mouthpiece), mirrored sunglasses, red bandana, open black leather jacket with
+gold leaf embroidery, thick gold chains with a Solana "S" pendant, gold rings,
+purple double-chamber bong loaded with visible bud. Rockstar/gangster swagger,
+not a soft mascot.
+
+## Must-not
+- No text, captions, words, or logos other than Lil Blunt's own branding and
+  the Solana mark, rendered anywhere in any frame.
+- No APY/MC/TVL/price/"guaranteed SOL" — the payoff card is purely
+  iconographic (a wrapped leaf), no reward numbers implied.
+- No real, identifiable people; the party crowd and the woman character are
+  original stylized anime figures.

@@ -1,8 +1,28 @@
-# Brief — Drop 001 (Bong-Party Teaser)
+# Brief — Drop 001 (Bong-Party Teaser) — v2
 
-> Creative authored by **Astra GPT-6** (`openai/gpt-6-astra`) via OpenRouter,
-> 2026-09-18. Filed verbatim by Claude Code. Do not rewrite Astra's locked lines.
+> The v1 brief below (Astra GPT-6 output) is preserved for audit trail but was
+> built without ever looking at the real Lil Blunt reference art — a process
+> failure, not Astra's fault; the reference art wasn't fetched into that
+> session. v2 corrects this: every generation step is conditioned directly on
+> the founder-supplied reference images in `assets/`. See
+> `prompts/v2_reference_audit.md` for what was actually in the founder's doc,
+> and `script_shots.md` for the current shot breakdown.
 
+## v2 correction summary
+- **On-model**: stills generated with `nano-banana-pro-edit`, conditioned on
+  `assets/ref-03-smoke-solana.png` and `assets/ref-01-fomo-rocket.jpg` —
+  the actual brand art, not an imagined character.
+- **Premise restored**: Lil Blunt physically travels to Solana (rocket
+  journey), matching the founder's "main premise of the story."
+- **People at the party**: a crowd of human partygoers + a lavender-haired
+  anime woman excited to be there, present throughout the party scene.
+- **Style**: anime/comic-book, matching the quality bar in
+  https://x.com/defisparco/status/2083931401599217875 (see reference audit).
+- **No text anywhere** in the video — founder's explicit call mid-session.
+
+---
+
+<!-- BEGIN v1 ASTRA OUTPUT (superseded, kept for audit trail) -->
 ## Founder lock (resolves Astra's fidelity flag)
 The founder LOCKED the opening hook verbatim: **"every Friday the smoke rings up
 on Solana"**. Astra flagged "Friday" as `WAITING ON FOUNDER` because the Gitbook
@@ -12,15 +32,12 @@ Astra's locked creative *unless the founder does*). **Friday is confirmed for
 this drop's opening line.** Astra's alternate "every week…" phrasing is retained
 below as-authored; the final uses the founder-locked "every Friday…" line.
 
----
-
-<!-- BEGIN ASTRA OUTPUT (verbatim) -->
 ## 3 Hooks
 1. "every Friday the smoke rings up on Solana" — **WAITING ON FOUNDER**: Friday timing isn’t in the locked facts.
 2. “Weekly bong party. Lil Blunt runs the room.”
 3. “Solana got smoke. Lil Blunt brought trouble.”
 
-## 30s Beat Sheet
+## 30s Beat Sheet (v1, superseded — generic character, no people, in-scene text)
 
 | Time/Beat | On-screen action | VO/caption | Visual note (Lil Blunt on-model) |
 |---|---|---|---|
@@ -32,4 +49,4 @@ below as-authored; the final uses the founder-locked "every Friday…" line.
 
 ## 10s Hero Window
 **9.0–19.0s** — The smoke-ring tunnel loops the camera behind Lil Blunt and lands on his original smirk and pose. One seamless, rewatchable orbit.
-<!-- END ASTRA OUTPUT -->
+<!-- END v1 ASTRA OUTPUT -->

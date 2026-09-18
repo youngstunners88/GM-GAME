@@ -1,12 +1,18 @@
 # Drop 001 — Bong-Party Teaser
-Format: format-hype-30s
-State: assembled (30s master + 10s hero built; awaiting founder review → distribution)
+Format: format-hype-30s (adapted: anime/comic style, no on-screen text)
+State: **v2 assembled** (rebuilt after founder rejection; awaiting founder review → distribution)
 Target date: WAITING ON FOUNDER
-Hook (locked seed): "every Friday the smoke rings up on Solana"
-Hero window: 9.0–19.0s (cut from Seedance 2 master — 2.5 unspent)
-Masters:
-- output/2026-09-18_bong-party-teaser_30s.mp4 (720x1280, 30.27s)
-- output/2026-09-18_bong-party-teaser_hero10s.mp4 (720x1280, 10.0s, cut 9–19s)
+Premise (v2, founder-corrected): Lil Blunt is MOVING TO SOLANA. Anime/comic
+style, on-model per real reference art, bong party has real people in it,
+**zero on-screen text** — hook/CTA lines now live in the post caption only.
+Hero window: 9.0–19.0s (cut from v2 master — Seedance 2.5 still unspent)
+Masters (v2 — current):
+- output/2026-09-18_bong-party-teaser_30s_v2.mp4 (720x1280, 30.30s)
+- output/2026-09-18_bong-party-teaser_hero10s_v2.mp4 (720x1280, 10.0s, cut 9–19s)
+Masters (v1 — REJECTED by founder, removed from output/, superseded): the
+original `_30s.mp4` / `_hero10s.mp4` render. Ignored the real reference art,
+dropped the Solana-migration premise, no people at the party, tried to render
+on-screen text in-scene (looked cheap). Full pivot logged below.
 Links (posts): none yet
 
 ## Recipe (from formats/format-hype-30s.md)
@@ -52,4 +58,43 @@ full 30s; characters/brands not in the locked brief.
   - Clip C 20–30s rid 2c09a79a-419a-4152-b2e1-8c917d13d3a4  (10.08s) $1.25
   - Render subtotal ~$3.75. Raw clips in builds/ (gitignored).
 - 2026-09-18 ffmpeg concat → output/…_30s.mp4 (30.27s); cut 9–19s → output/…_hero10s.mp4 (10.0s). Seedance 2.5 NOT used.
-- 2026-09-18 state=assembled. Sent to founder for review before distribution.
+- 2026-09-18 state=assembled (v1). Sent to founder for review before distribution.
+- 2026-09-18 **FOUNDER REJECTED v1**: ignored real Lil Blunt reference art (a
+  generic character was generated from imagination instead), dropped the
+  "moving to Solana" premise, party had no people in it, on-screen text looked
+  cheap/AI-garbled. Instructed: use the real reference art + image models to
+  generate on-model stills, then animate from those stills; party scenes need
+  people; primarily anime style; look better than
+  https://x.com/defisparco/status/2083931401599217875; install
+  `typesafe-ai/skills` via npx + claude plugin marketplace.
+- 2026-09-18 Re-audited the founder's Google Doc for reference images (founder
+  said "more than 4"): verified via docx-media export AND pdfimages extraction
+  — doc genuinely contains exactly 4 unique images (the alpha-mask "5th" is a
+  duplicate). Committed the 4 real refs to `assets/` and pushed (public repo →
+  raw.githubusercontent.com URLs, fetchable by the render API).
+- 2026-09-18 Pulled the reference video (via api.fxtwitter.com, X itself
+  returned HTTP 402) and sampled frames to set the v2 art-direction bar:
+  anime/comic-book style, dramatic linework, an anime woman character at the
+  party, clean typography (never AI-rendered in-scene text). See
+  `prompts/v2_reference_audit.md`.
+- 2026-09-18 Installed `typesafe-ai` skill (`npx skills add typesafe-ai/skills
+  --skill typesafe-ai` + committed to `.agents/skills/` and
+  `.claude/skills/`). Researched it: an AI-judgment/typed-decision framework
+  (routing, ranking, extraction, verification) for application code — not an
+  image/video tool, so it wasn't part of this render. Flagged as a good fit
+  for a future automated brand-fidelity checker before spending render budget.
+- 2026-09-18 **v2 pipeline (2 stages)**: (1) `nano-banana-pro-edit` (MuAPI)
+  generated 3 on-model anime-style stills conditioned on the real reference
+  art via `images_list`/`@image1` — rocket-to-Solana, party-arrival-with-crowd
+  (+ anime woman character), NFT payoff. $0.12 × 3 = $0.36. (2)
+  `seedance-2-image-to-video-fast` (Seedance 2 family) animated each still as
+  the start frame — Clip A 8s ($1.20), Clip B 12s ($1.80, hero window),
+  Clip C 7s ($1.05). Render subtotal $4.05 (stills+video ≈ $4.41 total).
+  Seedance 2.5 still unspent.
+- 2026-09-18 Mid-session founder correction: **"I don't want text!!!!"** —
+  dropped title-card plan (was building proper HTML/CSS typography via
+  Playwright to fix the "cheap text" complaint) entirely. v2 video has **zero
+  on-screen text**; hook/CTA lines move to the post caption only.
+- 2026-09-18 ffmpeg-assembled v2 master (30.30s, clip C padded +3s with a
+  silent hold/zoom, no text) + 10s hero cut (9–19s). Removed the rejected v1
+  masters from `output/`. state=v2 assembled. Sent to founder for review.

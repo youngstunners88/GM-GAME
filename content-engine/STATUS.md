@@ -20,9 +20,43 @@
 ## Drops
 | # | Slug | Format | State | Shipped | Notes |
 |---|------|--------|-------|---------|-------|
-| 001 | bong-party-teaser | hype-30s | assembled | not yet | 30s master + 10s hero in output/ (Seedance 2, ~$3.75); 2.5 unspent; awaiting founder review → distribution |
+| 001 | bong-party-teaser | hype-30s (anime, no text) | v2 assembled | not yet | v1 REJECTED by founder; v2 rebuilt: on-model anime stills → Seedance 2 i2v, real party crowd, zero on-screen text; 2.5 unspent; awaiting founder review |
 
 See `calendar/calendar.md` for the live board.
+
+## Session 2026-09-18 — Drop 001 v2: founder rejection → full pivot
+- Founder rejected v1 outright: generic character (never looked at the real
+  Lil Blunt reference art), dropped the "moving to Solana" premise, party had
+  no people, on-screen text rendered by the video model looked cheap. Told to
+  use the real reference art + image models properly, go anime style, put
+  people at the party, and beat the quality bar of a founder-linked reference
+  video. Also asked to install `typesafe-ai/skills`.
+- Re-verified the founder's Google Doc for images by two independent export
+  paths (docx media + pdfimages) — confirmed exactly 4 unique reference
+  images, no more found; asked the founder to send any others directly if
+  there are ones I'm still missing.
+- Committed the 4 real reference images to the drop's `assets/` and pushed
+  (public repo → fetchable raw URLs for the render API).
+- Pulled the founder's reference video via `api.fxtwitter.com` (X returned
+  402 to a plain fetch) and sampled frames to set the art-direction bar:
+  anime/comic-book, dramatic linework, a woman character at the party, clean
+  typography never rendered in-scene.
+- Installed `typesafe-ai` skill (npx + committed). Researched it: a typed
+  AI-judgment framework for app logic (routing/ranking/verification), not an
+  image/video tool — didn't fit this render, flagged as a candidate for a
+  future automated brand-fidelity checker.
+- **v2 pipeline**: `nano-banana-pro-edit` generated 3 on-model anime stills
+  conditioned on the real reference art (rocket-to-Solana, party arrival with
+  a crowd + an anime woman character, NFT payoff) → `seedance-2-image-to-video-fast`
+  animated each as the start frame. ~$4.41 total (stills + video).
+- Mid-session correction: founder said "I don't want text!!!!" — dropped an
+  in-progress proper-typography title-card build (Playwright/HTML) entirely.
+  **v2 has zero on-screen text.** Hook/CTA lines move to the post caption.
+- Assembled v2 master (30.30s) + 10s hero (9–19s cut). Removed the rejected
+  v1 masters from `output/`. Sent v2 to founder for review.
+- OpenRouter not called this session (creative pivot was direct, not
+  Astra-routed, given urgency — flagged in drop.md for the record).
+- Seedance 2.5 still unspent.
 
 ## Session 2026-09-18 — Drop 001 RENDERED + assembled
 - Prompt: founder "Render 001" (typed 011; no such drop → read as 001) + end-card

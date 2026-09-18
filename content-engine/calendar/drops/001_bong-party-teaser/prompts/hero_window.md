@@ -1,3 +1,5 @@
+> ⚠️ SUPERSEDED (v1, rejected by founder — blind text-to-video, wrong character, no people, cheap on-screen text). Kept for audit trail only. See v2 files below.
+
 # Hero window — Drop 001
 
 **Window: 9.0–19.0s** (Shots 4 "Tunnel dive" + 5 "Hero orbit").

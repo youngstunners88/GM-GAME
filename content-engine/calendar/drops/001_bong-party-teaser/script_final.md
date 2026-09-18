@@ -1,38 +1,29 @@
-# Script (final) — Drop 001 (Bong-Party Teaser)
+# Script (final) — Drop 001 (Bong-Party Teaser) — v2
 
-State: **LOCKED by founder 2026-09-18** ("lock 001"). Seedance 2 prompt authoring authorized; Seedance 2.5 remains unspent.
-Format: format-hype-30s · 9:16 · Seedance 2 (all 30s) · hero window 9.0–19.0s
+State: **RENDERED — awaiting founder review**
+Format: anime/comic-book style · 9:16 · no on-screen text (founder call)
 
-> VO/caption lines are Astra GPT-6's locked beat-sheet lines, transcribed into
-> read order by Claude Code (no invention). The opening line is the
-> **founder-locked** hook. Nothing here states a guaranteed reward, amount, APY,
-> MC, TVL, or price.
+## What's in frame (no dialogue, no captions — pure visual)
+1. **0–8s** — Lil Blunt rockets through space toward a glowing Solana emblem.
+   The migration story: he's leaving for Solana.
+2. **8–20s** *(10s hero window: 9–19s)* — Touchdown at a neon bong-party
+   lounge on Solana. A lavender-haired anime woman is thrilled to be at his
+   side; a crowd of partygoers dances behind them; he's holding his purple
+   bong.
+3. **20–30.3s** — Surrounded by the cheering crowd, he presents a glowing
+   wrapped-leaf NFT card (icon only, no numbers, no claims).
 
-## Read-through (VO + on-screen caption)
-
-**0.0–1.5s — Hook**
-- VO / on-screen (founder-locked): **"every Friday the smoke rings up on Solana"**
-
-**1.5–8s — Setup (Smoke Realm)**
-- VO: "Welcome to the Smoke Realm. Lil Blunt runs this lounge."
-
-**8–20s — Party peak** *(10s hero window: 9.0–19.0s)*
-- VO: "Weekly bong parties. Bass rude. Smoke disrespectful."
-
-**20–27s — Payoff**
-- VO / caption: "NFTs with wrapped Smoke. NFT buyers eligible for SOL rewards at the bong party. Not guaranteed."
-
-**27–30s — CTA (end card)**
-- On-screen: **LilBlunt.win** · **$SMOKE on Solana**  *(ends on "$SMOKE on Solana"; handle dropped per founder 2026-09-18 — no handles/figures)*
+## Where the message lives now
+The founder cut all on-screen text from the video itself. The hook line and
+CTA — **"every Friday the smoke rings up on Solana"** and **"$SMOKE on
+Solana"** — move to the **post caption** when this ships (see
+`distribution-smoke` skill / `posts/`), not burned into the footage.
 
 ## Claim-safety check (Claude)
-- [x] No APY / market cap / TVL / price / "guaranteed SOL" anywhere
-- [x] SOL rewards stated as **eligibility only** ("eligible… not guaranteed")
-- [x] Only locked facts: $SMOKE on Solana, weekly bong parties, wrapped-Smoke NFTs, eligibility
-- [x] Lil Blunt the only character; no outside brands/logos
-- [x] Friday appears **only** because the founder locked the hook line
-
-## To lock
-Reply "lock 001" (or edit the hook/lines) and I'll hand off to the Seedance
-pipeline. Per your instruction, Seedance 2.5 stays unspent — the 9.0–19.0s hero
-window will be cut from the Seedance 2 master until you greenlight 2.5.
+- [x] No APY / market cap / TVL / price / "guaranteed SOL" anywhere on screen
+- [x] NFT card is iconographic only — no reward numbers or guarantees implied
+- [x] Only locked facts referenced (weekly bong party, wrapped-Smoke NFTs) —
+      and only in the caption now, not the video
+- [x] Lil Blunt the only branded character; the woman/crowd are original
+      stylized figures, not real people
+- [x] Zero text in any frame, per founder instruction

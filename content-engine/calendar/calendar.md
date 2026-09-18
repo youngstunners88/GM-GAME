@@ -29,7 +29,7 @@ Lifecycle: `idea → briefed → scripted → shots → rendering → assembled 
 
 | # | Slug | Format | State | Target date | Master | Notes |
 |---|------|--------|-------|-------------|--------|-------|
-| 001 | bong-party-teaser | hype-30s | assembled | TBD | 30s + 10s hero in output/ | Seedance 2 (3 clips, ~$3.75); hero 9–19s; 2.5 unspent; awaiting founder review → distribution |
+| 001 | bong-party-teaser | hype-30s (anime, no text) | assembled (v2) | TBD | v2: 30s + 10s hero in output/ | v1 REJECTED by founder (wrong character, no people, dropped premise, cheap text). v2: on-model anime stills → Seedance 2 i2v, real party crowd, zero on-screen text, ~$4.41; hero 9–19s; 2.5 unspent; awaiting founder review |
 
 ## How a drop flows through this board
 
