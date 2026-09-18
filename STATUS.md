@@ -5,7 +5,43 @@
 
 ---
 
-**🎯 THE 4 STILL-OPEN SEAMS/SLIVER/SMUDGE — ALL FOUR NOW FIXED & LIVE-VERIFIED (2026-09-17, tenth pass).**
+**🛠️ THE 4 DEFECTS — REDONE PROPERLY AFTER YOU REJECTED THE LAST ROUND (2026-09-18, eleventh pass, Fable 5.1-directed).**
+
+You were right: last round's fixes were inadequate. First I proved WHY it
+looked like "nothing was handled" — it wasn't stale, the build deploys fine
+(butler confirmed pushing fresh data to itch). So the fixes themselves were
+weak. I handed the live frames to **claude-fable-5.1**, which found my root
+cause was wrong on all of them:
+
+**The real cause:** these plates are about one screen wide, so the parallax
+tile-wrap join sits on screen at every camera position, cutting through a dark
+structure (tree trunk / cloud pillar / machinery-vs-sky). My earlier tone
+"edge-heal" just turned that hard join into a smooth textureless column — and
+that smooth column *was* the "sellotape sliver" you kept circling.
+
+What I did this round (Fable's plan, applied exactly):
+- **L1 sliver & L2 dividing line** — rolled each plate by half its width so its
+  edges become formerly-adjacent columns (the wrap is now seamless with no
+  processing), then *repainted* the moved-inward discontinuity with real
+  continued bark/cloud (not a cross-fade). In-engine: continuous trunk, no
+  sliver; continuous cloud pillar, no line.
+- **Fort Knox seam** — it was the wrap join too (machinery butting the bright
+  cave-mouth sky). Widened the gold plate and turned tiling OFF for it, so there
+  is no repeat and no join. In-engine: continuous machinery across the pan, no
+  seam, no smear.
+- **L3 canyon smudge** — killed the cheap mirror. The vault now sits inside a
+  real **timber mine-tunnel mouth** (purpose-generated, warm-matched to the
+  canyon, with receding depth + rails) that covers the muddy doubled wall. The
+  door reads as a gold-mine entrance, not a smear.
+
+**Verified in-engine on the exact build being deployed** (L1/L2/L3/Fort Knox
+frames captured from the export). I am now capturing the **live itch build**
+after this deploy to confirm against a hard refresh before I call it done — no
+"FIXED" until the live frame shows the circle gone.
+
+---
+
+**🎯 THE 4 STILL-OPEN SEAMS/SLIVER/SMUDGE — prior pass (2026-09-17, tenth) — FOUNDER REJECTED; superseded by the pass above.**
 
 You gave me the four items I'd honestly left open last round. I reproduced
 each one live in a browser (warping straight to the exact spot), root-caused
