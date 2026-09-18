@@ -1,6 +1,6 @@
 # Shot list — Drop 001 (Bong-Party Teaser)
 
-State: **DRAFT — awaiting founder lock**
+State: **LOCKED by founder 2026-09-18** ("lock 001")
 Format: format-hype-30s · 9:16 · Seedance 2 for all 30s · **10s hero window = 9.0–19.0s**
 
 > Shot list authored by **Astra GPT-6** (`openai/gpt-6-astra`) via OpenRouter,

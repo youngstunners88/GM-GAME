@@ -20,9 +20,25 @@
 ## Drops
 | # | Slug | Format | State | Shipped | Notes |
 |---|------|--------|-------|---------|-------|
-| 001 | bong-party-teaser | hype-30s | scripted (awaiting founder lock) | no | Astra creative filed; hero window 9.0–19.0s; NOT rendered; Seedance 2.5 unspent |
+| 001 | bong-party-teaser | hype-30s | render-ready (LOCKED) | no | 8 Seedance 2 prompts authored; hero 9.0–19.0s cut-from-master; NOT rendered; Seedance 2.5 unspent; awaiting founder render go |
 
 See `calendar/calendar.md` for the live board.
+
+## Session 2026-09-18 — Drop 001 LOCKED + Seedance 2 prompts
+- Prompt: founder "lock 001"
+- Shipped:
+  - script_final.md + script_shots.md marked LOCKED
+  - **Astra GPT-6** (temp 0.2) converted the 8 locked shots → `prompts/shot-01..08_seedance2.md` (Seedance 2)
+  - `prompts/hero_window.md` documents the 9.0–19.0s cut-from-master plan; **no Seedance 2.5 prompt authored** (founder hold)
+  - Board advanced scripted → render-ready
+- Fidelity correction: shot-08 — restored founder-locked CTA "follow @smokering25"
+  that Astra dropped over a misread of the no-on-screen-numbers rule (a brand
+  handle is not a fake metric). Annotated in the shot file; founder can veto.
+- OpenRouter: called `openai/gpt-6-astra` (1 batched prompt-authoring call,
+  ~$0.10). Lead model throughout; no substitute.
+- **NOT rendered.** Awaiting founder render go + a live render path (FilmEra MCP
+  not added this session; MuAPI available). Seedance 2.5 unspent.
+- Gates: n/a (no game code, no render)
 
 ## Session 2026-09-18 — Drop 001 briefed + scripted
 - Prompt: founder lock — cadence defaults, format-hype-30s, drop 001, hook seed

@@ -1,6 +1,6 @@
 # Drop 001 — Bong-Party Teaser
 Format: format-hype-30s
-State: scripted (awaiting founder lock — do not render)
+State: locked → prompts authored (render-ready; NOT rendered)
 Target date: WAITING ON FOUNDER
 Hook (locked seed): "every Friday the smoke rings up on Solana"
 Hero window: 9.0–19.0s (Shots 4–5; cut from Seedance 2 master — 2.5 unspent)
@@ -37,3 +37,7 @@ full 30s; characters/brands not in the locked brief.
 - 2026-09-18 Astra GPT-6 (openai/gpt-6-astra) authored 3 hooks + 30s beat sheet + 10s hero window (9.0–19.0s) → brief.md; shot list → script_shots.md; read-through → script_final.md
 - 2026-09-18 Astra fidelity-flagged "Friday" (locked facts say weekly); founder lock of the hook resolves it — Friday confirmed for the opening line only
 - 2026-09-18 state=scripted, awaiting founder lock. NOT rendered. Seedance 2.5 unspent per founder.
+- 2026-09-18 FOUNDER LOCKED ("lock 001"). script_final.md + script_shots.md marked LOCKED.
+- 2026-09-18 Astra GPT-6 (temp 0.2) converted the 8 locked shots → prompts/shot-01..08_seedance2.md (Seedance 2). hero_window.md notes the 9.0–19.0s cut plan; no Seedance 2.5 prompt authored (founder hold).
+- 2026-09-18 Fidelity correction on shot-08: restored founder-locked CTA "follow @smokering25" that Astra dropped over a misread of the no-on-screen-numbers rule (handle ≠ metric). Annotated; founder can veto.
+- 2026-09-18 state=render-ready. NOT rendered — awaiting founder render go + live render path (FilmEra MCP / MuAPI).

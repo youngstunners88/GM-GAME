@@ -1,6 +1,6 @@
 # Script (final) — Drop 001 (Bong-Party Teaser)
 
-State: **READY FOR FOUNDER LOCK** — do not render until the founder locks this.
+State: **LOCKED by founder 2026-09-18** ("lock 001"). Seedance 2 prompt authoring authorized; Seedance 2.5 remains unspent.
 Format: format-hype-30s · 9:16 · Seedance 2 (all 30s) · hero window 9.0–19.0s
 
 > VO/caption lines are Astra GPT-6's locked beat-sheet lines, transcribed into
