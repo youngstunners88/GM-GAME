@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1_ld")
-background_path = "res://src/assets/backgrounds/bg_l3_goldrush_wide.jpg"
+background_path = "res://src/assets/backgrounds/bg_l3_goldrush.jpg"
 boss_background_path = "res://src/assets/backgrounds/bg_boss_bandit.jpg"
 level_index = 3
 level_name = "GoldMine Rush"

@@ -112,16 +112,6 @@ MIN_BAND = 16        # ignore runs shorter than this
 # mark, so this plate stays untouched until the art itself is regenerated.
 SKIP = {
     "bg_l3_goldrush.jpg",
-    # The widened Stage 3 plate (bg_l3_goldrush.jpg + its horizontal mirror,
-    # 2560px) that the level now actually uses — added 2026-09-17 to kill the
-    # "central peak smudge" (the 1280px plate's dark canyon-wall edges doubling
-    # at the parallax wrap; widening it means it never wraps in-level). The
-    # mirror puts the same dark, low-detail (but NOT smeared) canyon wall on the
-    # right edge, so the streak heuristic false-positives here for the identical
-    # reason the original is skipped, and repairing it would still risk the
-    # baked wBTC coin. Tiling + width are gated separately by
-    # scripts/check-l3-wide-backdrop.py.
-    "bg_l3_goldrush_wide.jpg",
 }
 
 

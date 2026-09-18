@@ -148,6 +148,21 @@ func _setup_depth_routes() -> void:
 	# "trashy/cheap" rectangles he red-circled. Replaced with data-driven ground
 	# so it reads as built terrain, not a dropped-in block. The vault door below
 	# is unchanged and still sits at (2690,650).
+	# MINE-PORTAL BACKDROP behind the vault door (founder 2026-09-18 + Fable 5.1).
+	# The Stage 3 canyon plate's dark low-detail edge-walls double at the parallax
+	# wrap into a muddy umber slab exactly behind this door — the "smudge / streaks"
+	# the founder circled. Fable's fix: make the vault read as set into a REAL mine
+	# mouth. Rather than a mirrored plate (the rejected cheap trick), a purpose-made
+	# timber mine portal (Muapi Flux, warm-tinted + edge-feathered to blend into the
+	# canyon) is placed as a midground panel here: it frames the door as a mine
+	# tunnel with genuine receding depth + rails, and covers the muddy slab. z_index
+	# -5 keeps it behind the door and player but in front of the parallax backdrop.
+	var mine_portal := Sprite2D.new()
+	mine_portal.texture = load("res://src/assets/props/mine_portal.png")
+	mine_portal.global_position = Vector2(2690, 470)
+	mine_portal.scale = Vector2(1.18, 1.18)
+	mine_portal.z_index = -5
+	add_child(mine_portal)
 	var knox_door := preload("res://src/level/vault_door.tscn").instantiate()
 	knox_door.protocol = "gold"
 	knox_door.realm_path = "res://src/level/fort_knox_realm.tscn"

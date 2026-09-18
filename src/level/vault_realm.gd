@@ -311,7 +311,20 @@ func _setup_backdrop() -> void:
 		# the flat uncovered strip along the bottom of the founder's screenshot.
 		# Same lesson, same fix as the level backdrop.
 		var s: float = maxf(1.0, view_h / float(tex.get_height()))
-		layer.motion_mirroring = Vector2(float(tex.get_width()) * s, 0.0)
+		# TILE-WRAP SEAM (founder 2026-09-18, Fable 5.1 diagnosis). The vault
+		# plates are ~viewport-wide, so `motion_mirroring = width*scale` puts the
+		# repeat join on screen at every camera position. On the DIAMOND plate the
+		# two edges meet in dark crystal and read fine, but the FORT KNOX (gold)
+		# plate's right edge is dense machinery and its left edge is the bright
+		# cave-mouth sky — bright-next-to-dark can never be edge-healed, so the
+		# join always showed as a hard vertical line. Fix: the gold plate is now
+		# widened (1480px, machinery-only extension fading into shadow so no mirror
+		# reads) to cover the whole camera travel, and tiling is turned OFF for it
+		# — no repeat, no join. Diamond keeps its working mirrored parallax.
+		if _diamonds:
+			layer.motion_mirroring = Vector2(float(tex.get_width()) * s, 0.0)
+		else:
+			layer.motion_mirroring = Vector2.ZERO
 		var spr := Sprite2D.new()
 		spr.texture = tex
 		spr.centered = false
