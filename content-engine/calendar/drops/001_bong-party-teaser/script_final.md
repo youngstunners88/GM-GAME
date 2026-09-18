@@ -23,7 +23,7 @@ Format: format-hype-30s · 9:16 · Seedance 2 (all 30s) · hero window 9.0–19.
 - VO / caption: "NFTs with wrapped Smoke. NFT buyers eligible for SOL rewards at the bong party. Not guaranteed."
 
 **27–30s — CTA (end card)**
-- On-screen: **$SMOKE on Solana** · **LilBlunt.win** · **Follow @smokering25**
+- On-screen: **LilBlunt.win** · **$SMOKE on Solana**  *(ends on "$SMOKE on Solana"; handle dropped per founder 2026-09-18 — no handles/figures)*
 
 ## Claim-safety check (Claude)
 - [x] No APY / market cap / TVL / price / "guaranteed SOL" anywhere

@@ -41,3 +41,6 @@ full 30s; characters/brands not in the locked brief.
 - 2026-09-18 Astra GPT-6 (temp 0.2) converted the 8 locked shots → prompts/shot-01..08_seedance2.md (Seedance 2). hero_window.md notes the 9.0–19.0s cut plan; no Seedance 2.5 prompt authored (founder hold).
 - 2026-09-18 Fidelity correction on shot-08: restored founder-locked CTA "follow @smokering25" that Astra dropped over a misread of the no-on-screen-numbers rule (handle ≠ metric). Annotated; founder can veto.
 - 2026-09-18 state=render-ready. NOT rendered — awaiting founder render go + live render path (FilmEra MCP / MuAPI).
+- 2026-09-18 FOUNDER: end card ends on "$SMOKE on Solana", drop @smokering25 handle, no figures. Reverted the shot-08 handle correction; script_final CTA updated.
+- 2026-09-18 FOUNDER: "Render 001" (typed 011 — no such drop; read as 001).
+- 2026-09-18 Render path = MuAPI `seedance-2-text-to-video` (Seedance 2, 4–15s/clip, x-api-key). Seedance 2.5 held. Duration bound → 30s renders as 3 clips (A 0–8s, B 8–20s [hero 9–19s], C 20–30s), ffmpeg-assembled. Clip A test render submitted (rid cc9fffc0…).
