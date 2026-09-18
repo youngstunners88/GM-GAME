@@ -6,6 +6,12 @@
       "sourceType": "github",
       "skillPath": "skills/convert-documents-to-markdown/SKILL.md",
       "computedHash": "89a2f0bee0b69d36520d78d5e6ac9907409e9b06fa3a542b3c97a06944306497"
+    },
+    "typesafe-ai": {
+      "source": "typesafe-ai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/typesafe-ai/SKILL.md",
+      "computedHash": "9cd84c5e535dec8dec59917c110f9c00b4a61faadb86b432ec7e41051170af12"
     }
   }
 }
