@@ -19,7 +19,7 @@ twice without a new hook (see `distribution/CONTEXT.md`).
 
 | Priority | Working title | Format | Hook seed | Status |
 |----------|---------------|--------|-----------|--------|
-| 1 | Bong-party teaser | hype-30s | "every Friday the smoke rings up on Solana" | idea |
+| 1 | Bong-party teaser | hype-30s | "every Friday the smoke rings up on Solana" | in flight → drop 001 (scripted) |
 | 2 | Wrapped-Smoke NFT reveal | hype-30s | "your NFT is your ticket in" | idea |
 | 3 | SOL-reward moment | hero-10s | reward flash at the party peak | idea |
 
@@ -29,7 +29,7 @@ Lifecycle: `idea → briefed → scripted → shots → rendering → assembled 
 
 | # | Slug | Format | State | Target date | Master | Notes |
 |---|------|--------|-------|-------------|--------|-------|
-| — | — | — | — | — | — | none yet — run `/drop-runner` to start 001 |
+| 001 | bong-party-teaser | hype-30s | scripted | TBD | — | Astra creative filed; script + shots ready for founder lock; hero window 9.0–19.0s; Seedance 2.5 unspent |
 
 ## How a drop flows through this board
 
