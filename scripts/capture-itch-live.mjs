@@ -11,16 +11,13 @@ const b=await chromium.launch(o);
 // 1) get the current game iframe URL
 const ctx0=await b.newContext({viewport:{width:1280,height:800},ignoreHTTPSErrors:true});
 const pg0=await ctx0.newPage();
-await pg0.goto('https://youngstunners88.itch.io/lil-blunt-adventure',{waitUntil:'networkidle',timeout:120000});
-await sleep(4000);
-// click any run/play button to force the embed to materialize
-for (const sel of ['.load_iframe_btn','button.button','.iframe_placeholder']) { const el=await pg0.$(sel); if(el){ await el.click().catch(()=>{}); break; } }
-await sleep(2500);
+await pg0.goto('https://youngstunners88.itch.io/lil-blunt-adventure',{waitUntil:'domcontentloaded',timeout:120000});
+await sleep(5000);
 let GAME=await pg0.evaluate(()=>{
-  const f=document.querySelector('iframe#game_drop, iframe.game_frame, iframe[src*="itch.zone"]');
+  const f=document.querySelector('iframe[src*="itch.zone"]');
   if(f&&f.src) return f.src;
   const ph=document.querySelector('[data-iframe]');
-  if(ph){const m=(ph.getAttribute('data-iframe')||'').match(/src=\"([^\"]+)\"/); if(m) return m[1].replace(/&amp;/g,'&');}
+  if(ph){const m=(ph.getAttribute('data-iframe')||'').match(/src="([^"]+)"/); if(m) return m[1].replace(/&amp;/g,'&');}
   return '';
 });
 await ctx0.close();

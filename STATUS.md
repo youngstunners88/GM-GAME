@@ -34,10 +34,15 @@ What I did this round (Fable's plan, applied exactly):
   canyon, with receding depth + rails) that covers the muddy doubled wall. The
   door reads as a gold-mine entrance, not a smear.
 
-**Verified in-engine on the exact build being deployed** (L1/L2/L3/Fort Knox
-frames captured from the export). I am now capturing the **live itch build**
-after this deploy to confirm against a hard refresh before I call it done — no
-"FIXED" until the live frame shows the circle gone.
+**LIVE-VERIFIED — all four confirmed FIXED on the live itch build 1990548**
+(newer than the 1989293 that was showing the defects), captured with a
+hard-refresh straight off itch.zone, not a local export:
+- L1 — continuous forest, no vertical sliver by the tree. **FIXED**
+- L2 — continuous cloud pillar, no dividing line. **FIXED**
+- L3 — vault sits inside the timber mine mouth; muddy smudge gone, no mirror. **FIXED**
+- Fort Knox — continuous vault machinery, no seam, no smear band. **FIXED**
+
+Live proof frames: `docs/captures/2026-09-18-fable-redo/LIVE_*.png`.
 
 ---
 
