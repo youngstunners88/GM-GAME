@@ -20,9 +20,22 @@
 ## Drops
 | # | Slug | Format | State | Shipped | Notes |
 |---|------|--------|-------|---------|-------|
-| 001 | bong-party-teaser | hype-30s | render-ready (LOCKED) | no | 8 Seedance 2 prompts authored; hero 9.0–19.0s cut-from-master; NOT rendered; Seedance 2.5 unspent; awaiting founder render go |
+| 001 | bong-party-teaser | hype-30s | assembled | not yet | 30s master + 10s hero in output/ (Seedance 2, ~$3.75); 2.5 unspent; awaiting founder review → distribution |
 
 See `calendar/calendar.md` for the live board.
+
+## Session 2026-09-18 — Drop 001 RENDERED + assembled
+- Prompt: founder "Render 001" (typed 011; no such drop → read as 001) + end-card
+  decision (end on "$SMOKE on Solana", drop handle, no figures)
+- Render path proven: **MuAPI `seedance-2-text-to-video`** (Seedance 2, 4–15s/clip,
+  720x1280, native audio). FilmEra MCP was not available; MuAPI used instead.
+- Duration bound (4–15s) → 30s composed as 3 in-bounds clips, ffmpeg-assembled:
+  - Clip A 0–8s   rid cc9fffc0…  · Clip B 8–20s rid beffbb7a… (hero 9–19s) · Clip C 20–30s rid 2c09a79a…
+  - Render subtotal ~$3.75. **Seedance 2.5 NOT spent** (founder hold).
+- Output: `output/2026-09-18_bong-party-teaser_30s.mp4` (30.27s) +
+  `_hero10s.mp4` (10.0s, cut 9–19s). Raw clips in builds/ (gitignored).
+- Sent both to founder for review before distribution.
+- Gates: n/a (no game code)
 
 ## Session 2026-09-18 — Drop 001 LOCKED + Seedance 2 prompts
 - Prompt: founder "lock 001"

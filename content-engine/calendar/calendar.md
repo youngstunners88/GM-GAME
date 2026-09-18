@@ -29,7 +29,7 @@ Lifecycle: `idea → briefed → scripted → shots → rendering → assembled 
 
 | # | Slug | Format | State | Target date | Master | Notes |
 |---|------|--------|-------|-------------|--------|-------|
-| 001 | bong-party-teaser | hype-30s | render-ready | TBD | — | LOCKED; 8 Seedance 2 prompts authored; hero window 9.0–19.0s cut-from-master; Seedance 2.5 unspent; awaiting founder render go + live render path |
+| 001 | bong-party-teaser | hype-30s | assembled | TBD | 30s + 10s hero in output/ | Seedance 2 (3 clips, ~$3.75); hero 9–19s; 2.5 unspent; awaiting founder review → distribution |
 
 ## How a drop flows through this board
 

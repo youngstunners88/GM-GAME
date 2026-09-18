@@ -1,10 +1,12 @@
 # Drop 001 — Bong-Party Teaser
 Format: format-hype-30s
-State: locked → prompts authored (render-ready; NOT rendered)
+State: assembled (30s master + 10s hero built; awaiting founder review → distribution)
 Target date: WAITING ON FOUNDER
 Hook (locked seed): "every Friday the smoke rings up on Solana"
-Hero window: 9.0–19.0s (Shots 4–5; cut from Seedance 2 master — 2.5 unspent)
-Masters: none yet
+Hero window: 9.0–19.0s (cut from Seedance 2 master — 2.5 unspent)
+Masters:
+- output/2026-09-18_bong-party-teaser_30s.mp4 (720x1280, 30.27s)
+- output/2026-09-18_bong-party-teaser_hero10s.mp4 (720x1280, 10.0s, cut 9–19s)
 Links (posts): none yet
 
 ## Recipe (from formats/format-hype-30s.md)
@@ -43,4 +45,11 @@ full 30s; characters/brands not in the locked brief.
 - 2026-09-18 state=render-ready. NOT rendered — awaiting founder render go + live render path (FilmEra MCP / MuAPI).
 - 2026-09-18 FOUNDER: end card ends on "$SMOKE on Solana", drop @smokering25 handle, no figures. Reverted the shot-08 handle correction; script_final CTA updated.
 - 2026-09-18 FOUNDER: "Render 001" (typed 011 — no such drop; read as 001).
-- 2026-09-18 Render path = MuAPI `seedance-2-text-to-video` (Seedance 2, 4–15s/clip, x-api-key). Seedance 2.5 held. Duration bound → 30s renders as 3 clips (A 0–8s, B 8–20s [hero 9–19s], C 20–30s), ffmpeg-assembled. Clip A test render submitted (rid cc9fffc0…).
+- 2026-09-18 Render path = MuAPI `seedance-2-text-to-video` (Seedance 2, 4–15s/clip, x-api-key). Seedance 2.5 held. Duration bound → 30s renders as 3 clips (A 0–8s, B 8–20s [hero 9–19s], C 20–30s), ffmpeg-assembled.
+- 2026-09-18 RENDERED (Seedance 2, 720x1280, 24fps, native audio):
+  - Clip A 0–8s   rid cc9fffc0-ea6d-4e55-9f12-8ff19eb3d62c  (8.10s) $1.25
+  - Clip B 8–20s  rid beffbb7a-9e8c-4137-966d-91ba7ca20447  (12.10s) $1.25
+  - Clip C 20–30s rid 2c09a79a-419a-4152-b2e1-8c917d13d3a4  (10.08s) $1.25
+  - Render subtotal ~$3.75. Raw clips in builds/ (gitignored).
+- 2026-09-18 ffmpeg concat → output/…_30s.mp4 (30.27s); cut 9–19s → output/…_hero10s.mp4 (10.0s). Seedance 2.5 NOT used.
+- 2026-09-18 state=assembled. Sent to founder for review before distribution.
