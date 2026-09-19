@@ -18,9 +18,18 @@ smooths), plus fine grain so JPEG can't re-band them. Measured banding
 
 On the green blemishes: the current Blaze backdrops contain **0% out-of-palette
 green** (scanned all three), and the lime-green particle field was already
-deleted. The green you circled was in the *older* pre-regeneration build. Next
-step is a fresh live-itch hard-refresh capture to confirm the current build
-shows no lines, no green, and no dividing line before I call any of it fixed.
+deleted. The green you circled was in the *older* pre-regeneration build.
+
+**LIVE-VERIFIED FIXED on itch build 1993466** (fresh hard-refresh capture off
+itch.zone, warped straight into each Blaze Rush and back out to the stage):
+- **L1 Blaze sky** — smooth purple→pink gradient, no horizontal lines.
+- **L3 Blaze sky** — smooth radial sun-glow, no concentric ring lines.
+- **Green blemishes** — gone. The only green left in the sky band is the green
+  Lil Blunt avatar icon by the TAP-OUT button (UI) and, in the stages, the
+  character / leaf pickups / platform trims — all intended. No off-palette blob
+  sits alone in the sky on any Blaze frame or on the L1/L2/L3 stage after exit.
+- **Dividing line** — not present on any current Blaze backdrop or exit stage.
+Live proof: `docs/captures/2026-09-19-blaze-lines/LIVE_*.png`.
 
 ---
 
