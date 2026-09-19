@@ -5,6 +5,25 @@
 
 ---
 
+**🔥 BLAZE RUSH SKY "LINES" — SMOOTHED OUT (2026-09-19, thirteenth pass).**
+
+You said the regenerated skies were "full of lines" and that the green
+blemishes carry into the stage on exit. Root cause of the lines: the flat
+vector-art skies were built from hard-edged color bands — **horizontal stripes
+on L1, concentric rings around the L3 sun** — that read as lines across the
+background. Fix: I melted those bands into smooth gradients (vertical-gradient
+masked blur that keeps the tree/mountain silhouettes crisp — only the sky
+smooths), plus fine grain so JPEG can't re-band them. Measured banding
+(sharp vertical steps): **L1 106→4 rows, L3 59→22, L2 27→0**.
+
+On the green blemishes: the current Blaze backdrops contain **0% out-of-palette
+green** (scanned all three), and the lime-green particle field was already
+deleted. The green you circled was in the *older* pre-regeneration build. Next
+step is a fresh live-itch hard-refresh capture to confirm the current build
+shows no lines, no green, and no dividing line before I call any of it fixed.
+
+---
+
 **🔥 BLAZE RUSH SMUDGES — BACKDROPS REGENERATED CLEAN (2026-09-19, twelfth pass).**
 
 You confirmed the four stage/vault fixes are "much better" but the Blaze Rush
