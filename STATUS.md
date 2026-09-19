@@ -5,6 +5,36 @@
 
 ---
 
+**🎯 THE DIVIDING LINE — ACTUAL ROOT CAUSE FOUND, NOT AN ART BUG (2026-09-19, fourteenth pass).**
+
+You circled it again on L2 Blaze Rush: a hard vertical black bar on the left
+edge. This time I traced it all the way down instead of touching the art
+again — **it was never a content problem.** The backdrop tile's on-screen
+width was computed from viewport HEIGHT only. For the Blaze plates (exact
+16:9) that makes the tile width land EXACTLY equal to the viewport width —
+zero pixel margin, a knife-edge that any sub-pixel float rounding in the
+scroll exposes as raw void (near-black) through the seam. For the main-stage
+L1/L2 backdrops it was worse: those plates draw narrower than the viewport
+outright. No amount of regenerating or repainting sky art could ever have
+fixed this — it's layout math, not a picture. This is very likely the SAME
+bug that showed up across every earlier pass as "smudges," "green
+blemishes," and "the dividing line" — one root cause, several disguises.
+
+**Fix:** the backdrop tile width now also satisfies the viewport WIDTH
+requirement (not just height), and consecutive tiles are forced to overlap by
+64px instead of butting exactly together — no knife-edge left for rounding to
+expose, at any scroll position. Applied to both the Blaze Rush backdrop layer
+and the main-stage backdrop layer.
+
+**LIVE-VERIFIED on itch build 1993510**: extended captures (12 frames per
+Blaze realm, 10 per main stage, spanning multiple scroll positions including
+the exact framing from your screenshot) show zero seams — automated dark-column
+scan across all 58 frames + manual spot-check, before/after comparison at your
+exact reported position. Proof + your original screenshot side-by-side in
+`docs/captures/2026-09-19-tile-seam-rootcause/`.
+
+---
+
 **🔥 BLAZE RUSH SKY "LINES" — SMOOTHED OUT (2026-09-19, thirteenth pass).**
 
 You said the regenerated skies were "full of lines" and that the green
