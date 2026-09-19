@@ -129,12 +129,26 @@ produce **advice that must be verified**, never changes that land unreviewed.
 | Model | OpenRouter ID | Use it for | Rate |
 |---|---|---|---|
 | **GPT-6 Astra** | `openai/gpt-6-astra` | **Art-direction fidelity review only** — grading a REAL screenshot against the founder references — plus world-building brainstorming where a second creative opinion earns its cost. Accepts image input. | **$10 / $50** per 1M |
+| **DeepSeek V4.1 Flash** | `deepseek/deepseek-v4.1-flash` | **Cheap first-pass diagnosis/triage** — combing long logs, big diffs, or a stack of screenshots for candidates before Claude spends its own context verifying them; rubber-duck audits of a script Claude already wrote. Its output is a lead, not a fact — Claude re-derives and confirms every claim against the real files/live build before it informs any commit or STATUS entry. Verified live 2026-09-19 (real dispatch through `scripts/or-call.mjs`, real OpenRouter catalog entry, not assumed). | **$0.15 / $0.60** per 1M |
 | **claude-sonnet-5** | — | Pipeline scaffolding, skill authoring, headless scripts (bpy/trimesh), Godot integration, test gates. Most of the asset-pipeline work. | — |
 | **claude-opus-4-8 / Opus tier** | — | Asset-pipeline debugging with hidden coupling: a GLB importing with flipped normals, a rig deforming wrong, an API returning malformed data. | — |
 
 **Astra is 5-10x Sonnet per token. Do not use it for routine code, tests, or
 mechanical plumbing.** A four-image fidelity review costs ~$0.14-0.20; that is
 worth it, and a code review at those rates is not.
+
+**DeepSeek V4.1 Flash is ~65x cheaper than Astra and has a 1M-token context** —
+reach for it whenever a task is mostly *volume* (scan every frame, every log
+line, every diff hunk) rather than judgment. It never touches the repo and
+never gets the final word: Claude still owns the diagnosis, the fix, the
+commit, and every "FIXED" claim, per the rule at the top of this section. This
+does not relax `live-build-proof` — a DeepSeek read of a screenshot is not a
+substitute for Claude's own live-itch verification.
+
+No model called "typesafe" or "jev" exists on OpenRouter — checked the full
+live catalog (447 models, 54 vendors) on 2026-09-19, zero matches by that name
+or anything close to it. If that name resurfaces, re-check the catalog before
+assuming it's real OR assuming it isn't; don't answer from memory either way.
 
 Dispatch with `scripts/or-call.mjs`, which carries every guard that matters —
 `@include` file inlining, abort-before-spending on a missing path, live `/models`
