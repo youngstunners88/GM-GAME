@@ -191,3 +191,15 @@ scratchpad/
 # leaving it in place and gitignoring it is the sanctioned cleanup.
 web_verify/
 .dream-loop/
+
+# 2026-09-17 seam/sliver/smudge verification sweeps (proofs curated into docs/captures/)
+artifacts/stage-shots/
+artifacts/vault-shots/
+artifacts/vault-shots-fixed/
+artifacts/warp/
+artifacts/warp-fixed/
+artifacts/itch-live/
+artifacts/verify2/
+artifacts/verify2fk/
+artifacts/blaze/
+artifacts/itch-blaze/

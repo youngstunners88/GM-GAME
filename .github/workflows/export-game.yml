@@ -86,6 +86,29 @@ jobs:
       - name: Security Sentinel
         run: ./scripts/security-sentinel.sh --fail-on=high
 
+      # Background art gate (founder 2026-09-16, "blemishes throughout different
+      # stages"). Nearly every shipped backdrop carried a horizontally-smeared
+      # band along its right edge, and because the backdrops TILE, that band
+      # repeated across the whole level. Now that they are repaired this keeps
+      # a blemished plate from ever being committed again. Deliberately
+      # dependency-light: the check runs on Pillow + numpy, no OpenCV (that is
+      # only needed by the one-off repair pass).
+      - name: Background art gate
+        run: |
+          python3 -m pip install --quiet --disable-pip-version-check pillow numpy
+          python3 scripts/repair-backgrounds.py --check
+          # Founder 2026-09-18 + Fable 5.1 diagnosis. The real defect behind the
+          # "sliver / dividing line / seam" was the parallax TILE-WRAP join of
+          # plates that are ~viewport-wide, cutting through a dark structure. The
+          # earlier tone "edge-heal" only smeared it. Real fixes:
+          #  - L1/L2: ROLL the plate by ~W/2 (wrap becomes natively seamless) then
+          #    REPAINT the now-interior discontinuity (repaint-wrap-seam.py). Gate
+          #    = make-bg-seamless.py --check (wrap seamless, no full-height join).
+          #  - Fort Knox: widen the gold plate + turn tiling OFF for it (no join).
+          #    Gate = repair-fort-knox-backdrop.py --check (wide enough, no smear).
+          python3 scripts/repair-fort-knox-backdrop.py --check
+          python3 scripts/make-bg-seamless.py --check
+
       - name: Download Godot editor + export templates
         run: |
           set -euo pipefail
@@ -183,7 +206,7 @@ jobs:
           custom_features=""
           export_filter="all_resources"
           include_filter="config.json,src/autoload/share_taglines.json"
-          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*"
+          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,node_modules/*,.godot-cache/*,artifacts/*"
           export_path="web/game/index.html"
           script_export_mode=1
           script_encryption_key=""

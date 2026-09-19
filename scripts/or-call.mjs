@@ -3,11 +3,13 @@
  * or-call.mjs — OpenRouter dispatch wrapper for GM-GAME multi-model work.
  *
  * Usage:
- *   node scripts/or-call.mjs <model-id> <prompt-file> [output-file] [--dry-run]
+ *   node scripts/or-call.mjs <model-id> <prompt-file> [output-file] [--dry-run] [--image <path>]...
  *
  * Examples:
  *   node scripts/or-call.mjs moonshotai/kimi-k3 prompts/kimi-icp-audit.md out.md --dry-run
  *   node scripts/or-call.mjs x-ai/grok-4.5 prompts/grok-identity-strategy.md out.md
+ *   node scripts/or-call.mjs openai/gpt-6-astra prompts/astra-fidelity.md out.md \
+ *        --image artifacts/ep2-shot.png --image artifacts/founder-art/references/ep2_runner_ref_3_minecart_ride.jpg
  *
  * WHY THIS IS NOT THE VERSION FROM THE KIT DOC — three things had to change
  * before a dispatch could produce anything useful:
@@ -60,11 +62,35 @@ if (!API_KEY) {
 
 const args = process.argv.slice(2);
 const DRY_RUN = args.includes('--dry-run');
-const positional = args.filter((a) => !a.startsWith('--'));
+
+// `--image <path>` / `--image=<path>`, repeatable. This exists for the
+// art-direction-fidelity-check skill: the whole lesson of Episode 2 was "look
+// at the real pixels", and a reviewer model cannot do that from a written
+// description of a screenshot. Both spellings are parsed on purpose — the
+// `--image=x` form survives a naive positional filter but `--image x` does not,
+// and letting the path fall through to OUTPUT_FILE would OVERWRITE the very
+// screenshot being reviewed.
+const IMAGES = [];
+const positional = [];
+for (let i = 0; i < args.length; i++) {
+  const a = args[i];
+  if (a === '--image') {
+    const v = args[++i];
+    if (!v || v.startsWith('--')) {
+      console.error('ERROR: --image needs a file path');
+      process.exit(1);
+    }
+    IMAGES.push(v);
+    continue;
+  }
+  if (a.startsWith('--image=')) { IMAGES.push(a.slice('--image='.length)); continue; }
+  if (a.startsWith('--')) continue;   // --dry-run and any future flag
+  positional.push(a);
+}
 const [MODEL, PROMPT_FILE, OUTPUT_FILE] = positional;
 
 if (!MODEL || !PROMPT_FILE) {
-  console.error('Usage: node or-call.mjs <model-id> <prompt-file> [output-file] [--dry-run]');
+  console.error('Usage: node or-call.mjs <model-id> <prompt-file> [output-file] [--dry-run] [--image <path>]...');
   process.exit(1);
 }
 if (!existsSync(PROMPT_FILE)) {
@@ -112,6 +138,40 @@ if (missing.length) {
   process.exit(2);
 }
 
+// ---- image attachments ----------------------------------------------------
+
+/**
+ * Read each --image into a base64 data: URI.
+ *
+ * Same abort-before-spending rule as @include: a missing screenshot means the
+ * reviewer would grade a scene it never saw, and answer confidently anyway.
+ * That failure mode is worse than no review at all, so it exits non-zero.
+ */
+const MIME = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.gif': 'image/gif' };
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const imageParts = [];
+const badImages = [];
+for (const rel of IMAGES) {
+  const abs = resolve(process.cwd(), rel);
+  if (!existsSync(abs)) { badImages.push(`${rel} (not found)`); continue; }
+  const ext = rel.slice(rel.lastIndexOf('.')).toLowerCase();
+  const mime = MIME[ext];
+  if (!mime) { badImages.push(`${rel} (unsupported extension ${ext}; use png/jpg/webp/gif)`); continue; }
+  const buf = readFileSync(abs);
+  if (buf.length > MAX_IMAGE_BYTES) {
+    badImages.push(`${rel} (${buf.length} bytes > ${MAX_IMAGE_BYTES} cap — downscale it first)`);
+    continue;
+  }
+  imageParts.push({ rel, bytes: buf.length, url: `data:${mime};base64,${buf.toString('base64')}` });
+}
+if (badImages.length) {
+  console.error('ERROR: --image paths unusable — refusing to dispatch:');
+  for (const p of badImages) console.error(`  ${p}`);
+  console.error('\nA fidelity review of a screenshot the model never received is');
+  console.error('not a review; it is a paid hallucination.');
+  process.exit(2);
+}
+
 // ---- live pricing ---------------------------------------------------------
 
 /**
@@ -143,17 +203,34 @@ async function getRates(model, attempt = 1) {
     input: parseFloat(hit.pricing.prompt) * 1e6,
     output: parseFloat(hit.pricing.completion) * 1e6,
     context: hit.context_length,
+    inputModalities: hit.architecture?.input_modalities ?? [],
   };
 }
 
 // Rough but honest: ~4 chars/token for English + code.
-const estInputTokens = Math.ceil(prompt.length / 4);
+// NOTE the base64 image payloads are deliberately NOT counted here. Providers
+// bill an image at a fixed tile cost, not at the length of its encoding, so
+// adding ~650KB of base64 to this figure would over-estimate a 3-reference
+// review by roughly 500x and make the dry-run useless as a budget signal.
+const IMAGE_TOKENS_EST = 2000;   // per image, high-detail, order-of-magnitude
+const estInputTokens = Math.ceil(prompt.length / 4) + imageParts.length * IMAGE_TOKENS_EST;
 
 const rates = await getRates(MODEL);
 if (rates.error) {
   console.error(`ERROR: ${rates.error}`);
   console.error('Model IDs change. List them with:');
   console.error('  curl -s https://openrouter.ai/api/v1/models -H "Authorization: Bearer $OPENROUTER_API_KEY" | jq -r ".data[].id"');
+  process.exit(3);
+}
+
+// Sending an image to a text-only model does not fail loudly — the provider
+// drops or rejects the part and the model answers from the text alone, which
+// reads exactly like a real review. Catch it here, before spending.
+if (imageParts.length && !rates.inputModalities.includes('image')) {
+  console.error(`ERROR: ${MODEL} does not accept image input `
+    + `(modalities: ${rates.inputModalities.join(', ') || 'unknown'}).`);
+  console.error('It would answer from the text alone and the reply would look');
+  console.error('like a genuine visual review. Pick a vision model instead.');
   process.exit(3);
 }
 
@@ -167,6 +244,7 @@ console.log('=== DISPATCH PLAN ===');
 console.log(`Model:          ${MODEL}`);
 console.log(`Prompt file:    ${PROMPT_FILE}`);
 console.log(`Files inlined:  ${included}`);
+console.log(`Images attached: ${imageParts.length}${imageParts.length ? ' (' + imageParts.map((i) => i.rel).join(', ') + ')' : ''}`);
 console.log(`Est. input:     ~${estInputTokens} tokens (context limit ${rates.context})`);
 console.log(`Rates:          $${rates.input}/1M in, $${rates.output}/1M out`);
 console.log(`Worst-case cost: $${worstCase.toFixed(4)} (at max_tokens=${MAX_OUTPUT})`);
@@ -194,7 +272,16 @@ const body = {
         + 'appear in the files provided to you. If something you need was not provided, '
         + 'say exactly what is missing rather than guessing.',
     },
-    { role: 'user', content: prompt },
+    {
+      role: 'user',
+      // Multimodal only when images are actually attached: a bare string keeps
+      // the request identical to every text-only dispatch this repo already
+      // relies on, so adding vision support cannot regress the Grok/Kimi paths.
+      content: imageParts.length
+        ? [{ type: 'text', text: prompt },
+           ...imageParts.map((i) => ({ type: 'image_url', image_url: { url: i.url } }))]
+        : prompt,
+    },
   ],
   temperature: MODEL.includes('kimi') ? 0.2 : 0.5,
   max_tokens: MAX_OUTPUT,
@@ -261,6 +348,7 @@ async function dispatch(attempt = 1) {
       `<!-- dispatched: ${MODEL}`,
       `     prompt: ${PROMPT_FILE}`,
       `     files inlined: ${included}`,
+      `     images attached: ${imageParts.length}${imageParts.length ? ' (' + imageParts.map((i) => i.rel).join(', ') + ')' : ''}`,
       `     tokens: ${u.prompt_tokens || 0} in / ${u.completion_tokens || 0} out`,
       `     cost: $${cost.toFixed(4)}`,
       `     NOTE: unvalidated model output. Claude must verify every claim`,

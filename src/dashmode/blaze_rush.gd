@@ -22,7 +22,6 @@ const SCORE_PER_SMOKE: int = 10
 ## secret FAST mode; it's allowed to look different.
 const COLOR_VOID := Color(0.04, 0.0, 0.08, 1.0)
 const COLOR_HAZE := Color(0.35, 0.05, 0.55, 1.0)
-const COLOR_ACCENT_LIME := Color(0.55, 1.0, 0.25, 1.0)
 const COLOR_HAZARD := Color(1.0, 0.25, 0.08, 1.0)
 const COLOR_SAFE_GROUND := Color(0.45, 0.35, 0.75, 1.0)
 const COLOR_SAFE_EDGE := Color(0.3, 1.0, 0.85, 1.0)
@@ -182,11 +181,36 @@ func _build_background() -> void:
 ## Falls back to the old level-plate tint when a realm plate is missing, and is
 ## a silent no-op if that is missing too — the same missing-asset convention
 ## used everywhere else in this project.
+# v2 plates (founder 2026-09-19: "the blaze rush still has the smudges").
+# The originals were gradient-mapped from a shared treeline and carried baked
+# AI-generation artifacts — hard-edged dark "quad" patches and mottled blotches
+# in the smooth cloud sky that read as smudges (the founder circled them on the
+# L3 sunset plate). Rather than inpaint subtle blotches out of a smooth gradient
+# (which over-selects), these are freshly generated clean per-realm skies (Muapi
+# Flux) that keep each realm's signature — L1 purple twilight + glowing
+# mushrooms, L2 blue night + cyan crystal spires, L3 gold sunset — with smooth
+# banded clouds and no baked artifacts, then edge-healed to tile seamlessly.
 const BLAZE_BACKDROPS := {
-	1: "res://src/assets/backgrounds/bg_blaze_l1_smoke.jpg",
-	2: "res://src/assets/backgrounds/bg_blaze_l2_crystal.jpg",
-	3: "res://src/assets/backgrounds/bg_blaze_l3_gold.jpg",
+	1: "res://src/assets/backgrounds/bg_blaze_l1_smoke_v2.jpg",
+	2: "res://src/assets/backgrounds/bg_blaze_l2_crystal_v2.jpg",
+	3: "res://src/assets/backgrounds/bg_blaze_l3_gold_v2.jpg",
 }
+
+## Overlap between consecutive mirrored tiles, in px, so a tile boundary can
+## NEVER land exactly on the screen edge. Root cause (founder, 2026-09-19,
+## screenshot of a hard vertical black bar in L2 Blaze Rush, recurring "at the
+## beginning and halfway through" every run): with tex 1024x576 and the 1280x720
+## viewport, fill = 720/576 = 1.25, so tile width = 1024*1.25 = EXACTLY 1280 —
+## the same as the viewport width, a knife-edge with zero pixel margin. Any
+## sub-pixel float rounding in the parallax scroll (motion_scale * camera_x)
+## then exposes COLOR_VOID (near-black) through the gap between tiles, which
+## reads as a hard dividing line — recurring every time the camera crosses a
+## tile boundary, not just once. This is an ART-INDEPENDENT layout bug: no
+## backdrop image, however clean, can fix a 0px-margin tile seam. Same lesson
+## already applied to the Fort Knox backdrop (widened past its knife-edge);
+## applying it here too. TILE_OVERLAP_PX shrinks the repeat period below the
+## drawn width so adjacent copies overlap instead of butting exactly together.
+const TILE_OVERLAP_PX: float = 64.0
 
 func _build_stage_theme_layer(pbg: ParallaxBackground) -> void:
 	var tex: Texture2D = _resolve_backdrop_texture()
@@ -198,7 +222,8 @@ func _build_stage_theme_layer(pbg: ParallaxBackground) -> void:
 	# Slower than the haze so it sits clearly further back; y locked so it can
 	# never slide off and expose the void (same rule as level_base).
 	layer.motion_scale = Vector2(0.08, 0.0)
-	layer.motion_mirroring = Vector2(tex.get_width() * fill, 0.0)
+	var drawn_width: float = tex.get_width() * fill
+	layer.motion_mirroring = Vector2(maxf(1.0, drawn_width - TILE_OVERLAP_PX), 0.0)
 	var spr := Sprite2D.new()
 	spr.texture = tex
 	spr.centered = false
@@ -861,22 +886,17 @@ func _build_protocol_landmarks() -> void:
 ## sprint_dust/wall_sparks are children of the PLAYER in the main game rather
 ## than fixed world props the run would leave behind after one pass.
 func _build_speed_atmosphere() -> void:
-	var streaks := CPUParticles2D.new()
-	streaks.texture = load("res://src/assets/sprites/fx_dot.png")
-	streaks.amount = 40
-	streaks.lifetime = 0.5
-	streaks.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-	streaks.emission_rect_extents = Vector2(80.0, 300.0)
-	streaks.position = Vector2(300.0, 0.0)
-	streaks.direction = Vector2(-1, 0)
-	streaks.spread = 4.0
-	streaks.initial_velocity_min = 500.0
-	streaks.initial_velocity_max = 700.0
-	streaks.scale_amount_min = 0.3
-	streaks.scale_amount_max = 1.2
-	streaks.color = Color(COLOR_ACCENT_LIME.r, COLOR_ACCENT_LIME.g, COLOR_ACCENT_LIME.b, 0.35)
-	_camera.add_child(streaks)
-
+	# THE GREEN STUFF BLOWING THROUGH THE SCREEN IS GONE (founder 2026-09-16:
+	# "there is a lot of green shit that is blowing around in the air for some
+	# reason. Remove it").
+	#
+	# It was a 40-particle lime-green streak field parented to
+	# the camera, so it drifted across the view for the entire run on every
+	# backdrop — including Stage 3's warm sunset treeline, where a cold green
+	# is completely off-palette. It was only ever a speed cue, and the neutral
+	# dust field below already carries that read without tinting the screen.
+	# Deliberately deleted rather than dimmed: the founder asked for it gone,
+	# and a fainter version of the wrong colour is still the wrong colour.
 	var dust := CPUParticles2D.new()
 	dust.texture = load("res://src/assets/sprites/fx_dot.png")
 	dust.amount = 20
@@ -1649,7 +1669,9 @@ func _exit_to_level() -> void:
 		GameManager.save_checkpoint(_level_index, 990 + _level_index, portal_pos)
 	GameManager.dash_return = {}
 	_release_music()
-	SceneRouter.load_scene(return_path, SceneRouter.Transition.SMOKE)
+	# Same realm-matched wipe as the entry (blaze_portal.gd) — the exit must
+	# not un-match what the entry just established.
+	SceneRouter.load_scene(return_path, SceneRouter.blaze_transition_for_level(_level_index))
 	_arm_exit_watchdog(return_path)
 
 ## LAST-RESORT EXIT. The player must NEVER be stranded in Blaze Rush.

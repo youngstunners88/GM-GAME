@@ -1,0 +1,29 @@
+{
+  "section": "runner",
+  "version": 1,
+  "authored": "2026-09-12",
+  "source": "artifacts/PROMPT_EPISODE2_VARCO_SOUND_INTEGRATION.md §3.A, §5",
+  "note": "Founder's starter prompts, kept verbatim where given and expanded where the brief said to expand. Re-version this file rather than editing in place once real generations come back — the brief asks for the best versions kept, which needs a before to compare against.",
+  "stems": [
+    { "id": "ep2_runner_bed_mine_loop_01", "layer": "ambience", "loop": true,
+      "prompt": "Deep underground gold mine ambience, wet stone, distant furnace roar, occasional water drip, low rock stress creaks, lantern flame hiss, dark and heavy, no music, seamless loop" },
+    { "id": "ep2_runner_cart_rails_loop_01", "layer": "mechanical", "loop": true,
+      "prompt": "Wooden mine cart with iron wheels rolling fast on wet rails inside a tunnel, rhythmic metallic clatter, occasional spark, heavy and industrial, loopable" },
+    { "id": "ep2_runner_zipline_rush_01", "layer": "mechanical", "loop": false,
+      "prompt": "Steel pulley running fast along a taut cable in a cavern, metal-on-metal rush with sparks, wind past the ears, ends with a jolt as it reaches the anchor" },
+    { "id": "ep2_runner_duck_01", "layer": "action", "loop": false,
+      "prompt": "Body dropping fast into a wooden cart, cloth and leather scuff, dull wood thud, sound briefly muffled as if crouched inside a box" },
+    { "id": "ep2_runner_jump_land_01", "layer": "action", "loop": false,
+      "prompt": "Heavy boots leaving a wooden surface then landing hard on old timber planks, wind rush between, wood creak and strain on impact" },
+    { "id": "ep2_runner_arrow_flyby_01", "layer": "threat", "loop": false,
+      "prompt": "Single wooden arrow flying past at high speed then striking a wooden beam, sharp whistle then dry thud, close perspective" },
+    { "id": "ep2_runner_arrow_flyby_02", "layer": "threat", "loop": false,
+      "prompt": "Arrow passing very close to the head at speed, tight whistle, then a hard metallic ricochet off an iron rail, underground reverb tail" },
+    { "id": "ep2_runner_boulder_roll_01", "layer": "threat", "loop": false,
+      "prompt": "Large rough boulder tumbling down inclined mine tracks, grinding rock, breaking timber, heavy final impact, reverberant underground space" },
+    { "id": "ep2_runner_bear_distant_01", "layer": "threat", "loop": false,
+      "prompt": "Large animal vocalisation heard from far down a stone tunnel, low chest growl, threatening and real, heavily reverberant, not cartoonish" },
+    { "id": "ep2_runner_score_drone_loop_01", "layer": "score", "loop": true,
+      "prompt": "Low male choir drone, sparse and hymn-like, dark underground cathedral feeling mixed with industrial resonance, very slow, no melody, masculine and heavy, seamless loop" }
+  ]
+}

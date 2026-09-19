@@ -45,9 +45,16 @@ func _run_normal() -> void:
 
 	var elapsed := (Time.get_ticks_msec() - start_ms) / 1000.0
 	_check("finishes", true)
-	_check("ran close to the video's real ~15s duration (took %.1fs)" % elapsed,
-		elapsed > 10.0 and elapsed < 22.0,
-		"took %.1fs — too short means it degraded instead of actually playing; too long means the 20s hard deadline fired" % elapsed)
+	# CORRECTED 2026-09-16 (founder: "extension, not replacement"): the video
+	# is now a true concatenation — the untouched 15.104s original followed by
+	# the 18.0s chest/revolver reveal, total ~33.1s. The cutscene's own hard
+	# deadline (_DEADLINE_SEC in stage2_boss_defeat_cutscene.gd) was bumped to
+	# 40.0s to give it real margin; this bound is intentionally wide of that
+	# deadline so a regression there (deadline creeping back below the video's
+	# real length) fails loud here instead of silently truncating playback.
+	_check("ran close to the video's real ~33.1s duration (took %.1fs)" % elapsed,
+		elapsed > 25.0 and elapsed < 38.0,
+		"took %.1fs — too short means it degraded or hit the hard deadline early; too long means the deadline isn't covering a stall" % elapsed)
 	_check("AudioServer registered non-silent activity while the video played", saw_audio_activity,
 		"peak level never rose above -60dB — the embedded audio track may not be decoding/mixing")
 

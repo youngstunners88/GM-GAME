@@ -35,7 +35,17 @@ func _ready() -> void:
 ##     falls like the block was never there.
 ##  2. Animate the SPRITE, never the body. The physics transform is left at
 ##     scale 1 for its whole life, so a degenerate collider cannot exist at all.
+##  3. Break ONCE. The collider goes down with set_deferred, so it stays live
+##     for the rest of the frame and can be reported again by the next
+##     move_and_slide before the disable lands. Without this guard one smash
+##     stacked several tweens on the same sprite and paid its score bonus once
+##     per frame of contact.
+var _broken: bool = false
+
 func break_block() -> void:
+    if _broken:
+        return
+    _broken = true
     AudioManager.play_sfx("damage")
     ScreenShake.shake(0.15, 3.0)
     collision.set_deferred("disabled", true)

@@ -1,0 +1,23 @@
+{
+  "url": "http://localhost:8899/game/index.html?ep2=1&ep2chamber=1",
+  "shots": [
+    {
+      "name": "ep2_smelting_arrival.png",
+      "bytes": 164348
+    },
+    {
+      "name": "ep2_smelting_meeting.png",
+      "bytes": 174703
+    },
+    {
+      "name": "ep2_smelting_handoff.png",
+      "bytes": 182642
+    },
+    {
+      "name": "ep2_smelting_verbteach.png",
+      "bytes": 182642
+    }
+  ],
+  "errors": [],
+  "captured": "2026-09-12T08:08:01.435Z"
+}

@@ -102,4 +102,7 @@ func _on_body_entered(body: Node2D) -> void:
 		"position": global_position,
 		"level_index": level_index,
 	}
-	SceneRouter.load_scene("res://src/dashmode/blaze_rush.tscn", SceneRouter.Transition.SMOKE)
+	# Match the wipe to THIS realm's palette, not a blanket green/purple smoke
+	# cloud — see SceneRouter.blaze_transition_for_level for why.
+	SceneRouter.load_scene("res://src/dashmode/blaze_rush.tscn",
+		SceneRouter.blaze_transition_for_level(level_index))
