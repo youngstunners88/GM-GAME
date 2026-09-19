@@ -5,6 +5,25 @@
 
 ---
 
+**🔥 BLAZE RUSH SMUDGES — BACKDROPS REGENERATED CLEAN (2026-09-19, twelfth pass).**
+
+You confirmed the four stage/vault fixes are "much better" but the Blaze Rush
+still had smudges. Reproduced live (added a `?blaze=N` browser warp): the three
+Blaze Rush backdrops were gradient-mapped from a shared treeline and carried
+baked AI-generation artifacts — hard-edged dark "quad" patches and mottled
+blotches in the smooth cloud sky (you'd circled them on the L3 sunset plate).
+Auto-inpainting a smooth gradient over-selects the intentional cloud bands, so I
+regenerated the three skies clean (Muapi Flux), each keeping its realm signature:
+- L1 smoke — purple twilight, layered mountains, glowing pink mushrooms
+- L2 crystal — blue night, glowing cyan crystal spires
+- L3 gold — warm amber sunset, big pale sun
+
+Smooth banded clouds, no baked artifacts, edge-healed to tile seamlessly.
+Verified clean in-engine for all three realms; capturing the live itch build
+after this deploy to confirm before marking FIXED.
+
+---
+
 **🛠️ THE 4 DEFECTS — REDONE PROPERLY AFTER YOU REJECTED THE LAST ROUND (2026-09-18, eleventh pass, Fable 5.1-directed).**
 
 You were right: last round's fixes were inadequate. First I proved WHY it
