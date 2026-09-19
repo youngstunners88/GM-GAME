@@ -181,10 +181,19 @@ func _build_background() -> void:
 ## Falls back to the old level-plate tint when a realm plate is missing, and is
 ## a silent no-op if that is missing too — the same missing-asset convention
 ## used everywhere else in this project.
+# v2 plates (founder 2026-09-19: "the blaze rush still has the smudges").
+# The originals were gradient-mapped from a shared treeline and carried baked
+# AI-generation artifacts — hard-edged dark "quad" patches and mottled blotches
+# in the smooth cloud sky that read as smudges (the founder circled them on the
+# L3 sunset plate). Rather than inpaint subtle blotches out of a smooth gradient
+# (which over-selects), these are freshly generated clean per-realm skies (Muapi
+# Flux) that keep each realm's signature — L1 purple twilight + glowing
+# mushrooms, L2 blue night + cyan crystal spires, L3 gold sunset — with smooth
+# banded clouds and no baked artifacts, then edge-healed to tile seamlessly.
 const BLAZE_BACKDROPS := {
-	1: "res://src/assets/backgrounds/bg_blaze_l1_smoke.jpg",
-	2: "res://src/assets/backgrounds/bg_blaze_l2_crystal.jpg",
-	3: "res://src/assets/backgrounds/bg_blaze_l3_gold.jpg",
+	1: "res://src/assets/backgrounds/bg_blaze_l1_smoke_v2.jpg",
+	2: "res://src/assets/backgrounds/bg_blaze_l2_crystal_v2.jpg",
+	3: "res://src/assets/backgrounds/bg_blaze_l3_gold_v2.jpg",
 }
 
 func _build_stage_theme_layer(pbg: ParallaxBackground) -> void:
