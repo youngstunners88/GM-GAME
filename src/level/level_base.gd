@@ -136,6 +136,10 @@ func _maybe_debug_spawn_warp() -> void:
 # kept as an array so the boss-arena swap can retexture every depth at once.
 var _backdrop_sprites: Array[Sprite2D] = []
 
+## Overlap between consecutive mirrored backdrop tiles, in px — see the
+## "THE RECURRING DIVIDING LINE" note in _setup_background() below.
+const TILE_OVERLAP_PX: float = 64.0
+
 func _setup_background() -> void:
 	# One crisp full-screen painting on a slow-scroll parallax layer. The art
 	# is cohesive and premium now (Muapi Flux, blockchain-themed per realm), so
@@ -169,10 +173,25 @@ func _setup_background() -> void:
 	# never slide up and expose a gap, and the fill scale is computed from the
 	# LIVE viewport height rather than the baked 720 so a tall window is
 	# covered too. Horizontal parallax (0.35) is unchanged, so depth still reads.
+	#
+	# THE RECURRING "DIVIDING LINE" (founder, multiple passes, most recently
+	# 2026-09-19 on the Blaze Rush plates): fill was computed from height ONLY.
+	# For a non-16:9 backdrop that makes the drawn tile NARROWER than the
+	# viewport outright (measured: bg_l1_forest.jpg 1189px, bg_l2_crystal.jpg
+	# 1201px drawn vs a 1280px viewport — a permanent, guaranteed gap, not an
+	# edge case), and even a 16:9 plate lands EXACTLY on the viewport width
+	# with zero pixel margin, a knife-edge that any float-rounding in the
+	# parallax scroll exposes as raw void through the seam. fill must also
+	# satisfy the WIDTH requirement, and TILE_OVERLAP_PX shrinks the repeat
+	# period so consecutive tiles overlap instead of butting exactly together.
+	# Same fix applied to the Blaze Rush theme layer
+	# (dashmode/blaze_rush.gd _build_stage_theme_layer) for the same root cause.
 	var view_h: float = get_viewport_rect().size.y
-	var fill: float = maxf(1.0, view_h / float(tex.get_height()))
+	var view_w: float = get_viewport_rect().size.x
+	var fill: float = maxf(view_h / float(tex.get_height()), view_w / float(tex.get_width()))
 	layer.motion_scale = Vector2(0.35, 0.0)
-	layer.motion_mirroring = Vector2(float(tex.get_width()) * fill, 0.0)
+	var drawn_width: float = tex.get_width() * fill
+	layer.motion_mirroring = Vector2(maxf(1.0, drawn_width - TILE_OVERLAP_PX), 0.0)
 	var spr := Sprite2D.new()
 	spr.texture = tex
 	spr.centered = false

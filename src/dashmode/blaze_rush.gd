@@ -196,6 +196,22 @@ const BLAZE_BACKDROPS := {
 	3: "res://src/assets/backgrounds/bg_blaze_l3_gold_v2.jpg",
 }
 
+## Overlap between consecutive mirrored tiles, in px, so a tile boundary can
+## NEVER land exactly on the screen edge. Root cause (founder, 2026-09-19,
+## screenshot of a hard vertical black bar in L2 Blaze Rush, recurring "at the
+## beginning and halfway through" every run): with tex 1024x576 and the 1280x720
+## viewport, fill = 720/576 = 1.25, so tile width = 1024*1.25 = EXACTLY 1280 —
+## the same as the viewport width, a knife-edge with zero pixel margin. Any
+## sub-pixel float rounding in the parallax scroll (motion_scale * camera_x)
+## then exposes COLOR_VOID (near-black) through the gap between tiles, which
+## reads as a hard dividing line — recurring every time the camera crosses a
+## tile boundary, not just once. This is an ART-INDEPENDENT layout bug: no
+## backdrop image, however clean, can fix a 0px-margin tile seam. Same lesson
+## already applied to the Fort Knox backdrop (widened past its knife-edge);
+## applying it here too. TILE_OVERLAP_PX shrinks the repeat period below the
+## drawn width so adjacent copies overlap instead of butting exactly together.
+const TILE_OVERLAP_PX: float = 64.0
+
 func _build_stage_theme_layer(pbg: ParallaxBackground) -> void:
 	var tex: Texture2D = _resolve_backdrop_texture()
 	if tex == null:
@@ -206,7 +222,8 @@ func _build_stage_theme_layer(pbg: ParallaxBackground) -> void:
 	# Slower than the haze so it sits clearly further back; y locked so it can
 	# never slide off and expose the void (same rule as level_base).
 	layer.motion_scale = Vector2(0.08, 0.0)
-	layer.motion_mirroring = Vector2(tex.get_width() * fill, 0.0)
+	var drawn_width: float = tex.get_width() * fill
+	layer.motion_mirroring = Vector2(maxf(1.0, drawn_width - TILE_OVERLAP_PX), 0.0)
 	var spr := Sprite2D.new()
 	spr.texture = tex
 	spr.centered = false
