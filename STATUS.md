@@ -19,8 +19,9 @@ regenerated the three skies clean (Muapi Flux), each keeping its realm signature
 - L3 gold — warm amber sunset, big pale sun
 
 Smooth banded clouds, no baked artifacts, edge-healed to tile seamlessly.
-Verified clean in-engine for all three realms; capturing the live itch build
-after this deploy to confirm before marking FIXED.
+**LIVE-VERIFIED FIXED** on itch build 1993299 (hard refresh off itch.zone): all
+three Blaze Rush realms read clean — no dark blotches, no rectangular quads, no
+smudges. Live proof: `docs/captures/2026-09-19-blaze-smudges/LIVE_*.png`.
 
 ---
 
