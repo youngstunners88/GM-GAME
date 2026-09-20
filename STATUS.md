@@ -5,6 +5,50 @@
 
 ---
 
+**🧪 SEAM + SMUDGE GATE, AND THE GREEN BLEMISHES FOUND AT LAST (2026-09-20, fifteenth pass).**
+
+You were right on every count, including about me.
+
+**The Level 1 dividing line was mine.** Measured live at x=1216 — exactly
+1280-64, my own tile OVERLAP. An overlap makes the repeat period SHORTER than
+the tile, so the art jumps backwards 64px at every wrap and draws a seam even on
+a perfect plate. Overlap never hides a join; it manufactures one. Reverted to an
+exact butt-join (padded, pixel-rounded width, so the old black-bar bug cannot
+return).
+
+**THE GREEN SMUDGES — found, and they were never in the artwork.** They are the
+Blaze Rush speed-trail particles, `Color(0.3, 1.0, 0.35)` — two soft green
+blotches landing on the flat purple ground band, separate from the player cube.
+That is why regenerating, repainting and healing backdrop plates never removed
+them. Recoloured to the warm collectible tone. Burying the background could
+never have worked, exactly as you said.
+
+**Blaze plates were genuinely non-seamless** — join-step ratios 17.4 / 7.7 / 3.4,
+repaired to 1.8 / 1.2 / 1.3 (Poisson blend; my first repair attempt left a
+visible smear and was thrown away, not shipped).
+
+**Diamond Vault** — the new gate caught your "very subtle" one: void_frac 0.56 at
+x=4. It scaled from viewport height only, same zero-margin knife-edge. Fixed.
+
+**New gates so this cannot ship silently again:**
+- `scripts/seam-smudge-gate.py` — per-frame void-bar / seam / green metrics.
+  Proven to FAIL on your circled frame AND on a frame I previously called clean.
+- `scripts/make-plate-seamless.py` — tile-join ratio + repair. **Now runs in CI**
+  and fails the build at ratio >= 3.
+- `scripts/jev.mjs` + `jev-decision-gate` skill — Jev ship/block verdict on the
+  NUMBERS. Proven on the pre-fix frames: dividing line 0.99, green 0.98,
+  choice **block**, confidence 1.00.
+- `seam-smudge-sentinel` skill.
+
+**NOT YET VERIFIED LIVE — deliberately not claiming FIXED.** CI is green (all 21
+steps, including the new art gate) and butler pushed successfully at 13:25, but
+itch is still processing the 173 MiB build and has temporarily pulled the
+playable embed, so there are no live frames to measure yet. The previous build
+still serves, so nothing is down. The moment the embed returns I capture all
+five of your circles and run gate + Jev before a single FIXED is written.
+
+---
+
 **🎯 THE DIVIDING LINE — ACTUAL ROOT CAUSE FOUND, NOT AN ART BUG (2026-09-19, fourteenth pass).**
 
 You circled it again on L2 Blaze Rush: a hard vertical black bar on the left
