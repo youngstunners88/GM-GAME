@@ -1334,8 +1334,19 @@ func _build_player() -> void:
 	_player.add_child(col)
 	add_child(_player)
 
-	# Speed trail — one emitter, small green squares fading out behind the run
-	# direction (Grok: "1 trail emitter only").
+	# Speed trail — one emitter, small dots fading out behind the run direction
+	# (Grok: "1 trail emitter only").
+	#
+	# NOT GREEN ANY MORE. Founder, repeatedly, across many sessions: "these 2
+	# green blemishes that are present in the blaze rush". They were never in
+	# the backdrop art — which is why regenerating and repainting plates never
+	# removed them, and why he kept being told a thing was fixed when he could
+	# still plainly see it. They are THESE particles: soft neon-green dots
+	# landing on the flat purple ground band, where they read as smudges rather
+	# than as a speed cue. Located by cropping the live frame at the exact
+	# coordinates where the green pixels clustered (x~320-480, y~480-600).
+	# Recoloured to the same warm collectible tone the neutral dust field
+	# already uses, so the speed cue survives without tinting the screen green.
 	var trail := CPUParticles2D.new()
 	trail.texture = load("res://src/assets/sprites/fx_dot.png")
 	trail.amount = 25
@@ -1346,7 +1357,7 @@ func _build_player() -> void:
 	trail.initial_velocity_max = 90.0
 	trail.scale_amount_min = 0.25
 	trail.scale_amount_max = 0.45
-	trail.color = Color(0.3, 1.0, 0.35, 0.6)
+	trail.color = Color(COLOR_COLLECTIBLE.r, COLOR_COLLECTIBLE.g, COLOR_COLLECTIBLE.b, 0.55)
 	_player.add_child(trail)
 
 	_reset_player()

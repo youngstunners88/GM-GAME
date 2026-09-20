@@ -43,7 +43,9 @@ STEP_T = 26.0        # per-channel-mean step that counts as a hard edge
 SEAM_FRAC_FAIL = 0.55   # full-height-ish discontinuity => dividing line
 VOID_FRAC_FAIL = 0.50   # half the band near-black in one column => void gap
 NEAR_BLACK = 26
-GREEN_BLOB_FAIL = 900   # px of off-palette green in the backdrop band
+GREEN_BLOB_FAIL = 600   # px of off-palette green. The Blaze player cube alone is
+                        # ~400-450px and is intentional; the two green trail
+                        # smudges pushed it to ~790. Tuned to separate those.
 WIDE_STEP_FAIL = 9.0    # mean-colour difference across a 30px window either side
 BAND_TOP = 0.10         # skip the HUD strip
 BAND_BOT = 0.60         # skip ground band / promo banner / control hints
@@ -119,7 +121,12 @@ def analyse(path):
     band = band_of(im)
     void_frac, seam_frac, cwide = column_metrics(band)
     rseam, rwide = row_metrics(band)
-    gb = green_blob_px(band)
+    # GREEN IS CHECKED ON THE WHOLE FRAME, not the backdrop band. The first
+    # version of this gate scanned the band only and therefore MISSED the two
+    # green blemishes the founder had been reporting for weeks: they sit on the
+    # Blaze Rush ground band at y~480-600, i.e. ~70-80% down, well below
+    # BAND_BOT. A smudge can land anywhere, so look everywhere except the HUD.
+    gb = green_blob_px(im[int(im.shape[0] * BAND_TOP):])
 
     # A defect needs BOTH a hard line AND a real discontinuity across it.
     col_score = np.minimum(seam_frac, 1.0) * (cwide >= WIDE_STEP_FAIL)

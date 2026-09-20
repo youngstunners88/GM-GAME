@@ -310,7 +310,21 @@ func _setup_backdrop() -> void:
 		# 16:9 gives a viewport taller than 720 and the art stops short, leaving
 		# the flat uncovered strip along the bottom of the founder's screenshot.
 		# Same lesson, same fix as the level backdrop.
-		var s: float = maxf(1.0, view_h / float(tex.get_height()))
+		# WIDTH MATTERS TOO (founder 2026-09-20: "There's a dividing line in the
+		# diamond vault. It's very subtle"). Scaling from height alone leaves the
+		# drawn plate exactly viewport-wide (1024 * 720/576 = 1280) with zero
+		# margin, so float rounding in the parallax scroll exposes the clear
+		# colour as a near-black bar down the edge. The seam-smudge gate measured
+		# it on the live build: void_frac 0.56 at x=4. Same knife-edge, same fix
+		# as level_base/blaze_rush — satisfy the WIDTH too, pad it, and round the
+		# drawn width up to a whole pixel so the repeat period can never disagree
+		# with the drawn tile by a fraction.
+		var view_w: float = get_viewport_rect().size.x
+		var s: float = maxf(
+			(view_h + 2.0) / float(tex.get_height()),
+			(view_w + 2.0) / float(tex.get_width()))
+		var drawn_w: float = ceilf(tex.get_width() * s)
+		s = drawn_w / float(tex.get_width())
 		# TILE-WRAP SEAM (founder 2026-09-18, Fable 5.1 diagnosis). The vault
 		# plates are ~viewport-wide, so `motion_mirroring = width*scale` puts the
 		# repeat join on screen at every camera position. On the DIAMOND plate the
@@ -322,7 +336,9 @@ func _setup_backdrop() -> void:
 		# reads) to cover the whole camera travel, and tiling is turned OFF for it
 		# — no repeat, no join. Diamond keeps its working mirrored parallax.
 		if _diamonds:
-			layer.motion_mirroring = Vector2(float(tex.get_width()) * s, 0.0)
+			# drawn_w, not width*s recomputed — the period must equal the drawn
+			# tile EXACTLY, to the pixel.
+			layer.motion_mirroring = Vector2(drawn_w, 0.0)
 		else:
 			layer.motion_mirroring = Vector2.ZERO
 		var spr := Sprite2D.new()
