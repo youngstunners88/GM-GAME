@@ -136,9 +136,11 @@ func _maybe_debug_spawn_warp() -> void:
 # kept as an array so the boss-arena swap can retexture every depth at once.
 var _backdrop_sprites: Array[Sprite2D] = []
 
-## Overlap between consecutive mirrored backdrop tiles, in px — see the
-## "THE RECURRING DIVIDING LINE" note in _setup_background() below.
-const TILE_OVERLAP_PX: float = 64.0
+## Padding added to the backdrop fill so a tile is always a touch LARGER than
+## the viewport — see the "THE RECURRING DIVIDING LINE" note in
+## _setup_background() below. This replaced a 64px tile OVERLAP, which was a
+## mistake: see that note.
+const TILE_SAFE_PAD_PX: float = 2.0
 
 func _setup_background() -> void:
 	# One crisp full-screen painting on a slow-scroll parallax layer. The art
@@ -174,24 +176,38 @@ func _setup_background() -> void:
 	# LIVE viewport height rather than the baked 720 so a tall window is
 	# covered too. Horizontal parallax (0.35) is unchanged, so depth still reads.
 	#
-	# THE RECURRING "DIVIDING LINE" (founder, multiple passes, most recently
-	# 2026-09-19 on the Blaze Rush plates): fill was computed from height ONLY.
-	# For a non-16:9 backdrop that makes the drawn tile NARROWER than the
-	# viewport outright (measured: bg_l1_forest.jpg 1189px, bg_l2_crystal.jpg
-	# 1201px drawn vs a 1280px viewport — a permanent, guaranteed gap, not an
-	# edge case), and even a 16:9 plate lands EXACTLY on the viewport width
-	# with zero pixel margin, a knife-edge that any float-rounding in the
-	# parallax scroll exposes as raw void through the seam. fill must also
-	# satisfy the WIDTH requirement, and TILE_OVERLAP_PX shrinks the repeat
-	# period so consecutive tiles overlap instead of butting exactly together.
-	# Same fix applied to the Blaze Rush theme layer
-	# (dashmode/blaze_rush.gd _build_stage_theme_layer) for the same root cause.
+	# THE RECURRING "DIVIDING LINE" — two separate bugs, fixed in two steps.
+	#
+	# (1) fill was computed from viewport HEIGHT only. For a non-16:9 plate that
+	#     leaves the drawn tile NARROWER than the viewport, and for a 16:9 plate
+	#     it lands EXACTLY on the viewport width with zero margin — a knife-edge
+	#     that float rounding in the parallax scroll exposes as raw void
+	#     (near-black) through the join. That is the black bar. fill must satisfy
+	#     the WIDTH requirement too, plus a small pad so rounding can never bite.
+	#
+	# (2) The first attempt at (1) also set motion_mirroring = drawn_width - 64,
+	#     making consecutive tiles OVERLAP. That was wrong and shipped a NEW
+	#     dividing line the founder immediately caught in Level 1. An overlap
+	#     means the repeat period is SHORTER than the tile, so the art jumps
+	#     backwards 64px at every wrap — a visible discontinuity even on a
+	#     perfectly seamless plate. Measured live: L1 seam at x=1216, which is
+	#     exactly 1280-64, tracking the camera like a tile join. Overlap does not
+	#     hide a join; it manufactures one.
+	#
+	# Correct: repeat period == drawn width EXACTLY (a true butt-join), with the
+	# width itself rounded UP to a whole pixel so the period and the drawn tile
+	# can never disagree by a fraction. Plates are made genuinely seamless
+	# out-of-band by scripts/make-plate-seamless.py, which is what actually
+	# removes the join — not anything done here.
 	var view_h: float = get_viewport_rect().size.y
 	var view_w: float = get_viewport_rect().size.x
-	var fill: float = maxf(view_h / float(tex.get_height()), view_w / float(tex.get_width()))
+	var fill: float = maxf(
+		(view_h + TILE_SAFE_PAD_PX) / float(tex.get_height()),
+		(view_w + TILE_SAFE_PAD_PX) / float(tex.get_width()))
+	var drawn_width: float = ceilf(tex.get_width() * fill)
+	fill = drawn_width / float(tex.get_width())  # keep scale and period consistent
 	layer.motion_scale = Vector2(0.35, 0.0)
-	var drawn_width: float = tex.get_width() * fill
-	layer.motion_mirroring = Vector2(maxf(1.0, drawn_width - TILE_OVERLAP_PX), 0.0)
+	layer.motion_mirroring = Vector2(drawn_width, 0.0)
 	var spr := Sprite2D.new()
 	spr.texture = tex
 	spr.centered = false

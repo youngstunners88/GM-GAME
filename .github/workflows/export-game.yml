@@ -96,6 +96,20 @@ jobs:
       - name: Background art gate
         run: |
           python3 -m pip install --quiet --disable-pip-version-check pillow numpy
+          # TILE-JOIN GATE (founder 2026-09-20, "why more dividing lines").
+          # Every plate drawn on a mirrored ParallaxLayer butt-joins its own
+          # right edge against its own left edge forever. If those do not match,
+          # that join IS the dividing line. Measured as a STEP ratio normalised
+          # by the plate's own column-to-column variation, so a legitimate
+          # left-to-right gradient does not trip it. ~1 = seamless, >=3 = hard
+          # join. Repair with: python3 scripts/make-plate-seamless.py <plate>
+          python3 scripts/make-plate-seamless.py --check --max-wrap 3.0 \
+            src/assets/backgrounds/bg_l1_forest.jpg \
+            src/assets/backgrounds/bg_l2_crystal.jpg \
+            src/assets/backgrounds/bg_l3_goldrush.jpg \
+            src/assets/backgrounds/bg_blaze_l1_smoke_v2.jpg \
+            src/assets/backgrounds/bg_blaze_l2_crystal_v2.jpg \
+            src/assets/backgrounds/bg_blaze_l3_gold_v2.jpg
           python3 scripts/repair-backgrounds.py --check
           # Founder 2026-09-18 + Fable 5.1 diagnosis. The real defect behind the
           # "sliver / dividing line / seam" was the parallax TILE-WRAP join of

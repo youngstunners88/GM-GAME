@@ -145,10 +145,22 @@ commit, and every "FIXED" claim, per the rule at the top of this section. This
 does not relax `live-build-proof` — a DeepSeek read of a screenshot is not a
 substitute for Claude's own live-itch verification.
 
-No model called "typesafe" or "jev" exists on OpenRouter — checked the full
-live catalog (447 models, 54 vendors) on 2026-09-19, zero matches by that name
-or anything close to it. If that name resurfaces, re-check the catalog before
-assuming it's real OR assuming it isn't; don't answer from memory either way.
+| **Jev (TypeSafe)** | `~typesafe/jev-latest` (pins to `typesafe/jev-1.13`) | **Ship/block DECISIONS on numbers.** Not a chat model — it answers structured questions and is called at `POST https://openrouter.ai/api/alpha/decisions`, NOT `/v1/chat/completions`. Question types: `noul` (0-1 likelihood), `choice` (+`criteria`), `score`. Every question needs `instructions`. Costs ~$0.00002 a call. | ~$0.00002/call |
+
+**CORRECTION (2026-09-20).** A previous version of this file stated that no
+"typesafe"/"jev" model existed, on the strength of a `GET /v1/models` grep. That
+was WRONG and it cost the founder real time. Decisions models are NOT listed in
+`/v1/models`. The catalog is not proof of absence — only a real HTTP call to the
+right endpoint is. Verified working; a 400 from that endpoint is a SCHEMA error
+(it names the missing field), never "model does not exist".
+
+**Jev is text-only — it does NOT see images.** Control-tested 2026-09-20: an
+image with a black bar scored `noul` 0.22, an identical image without one scored
+0.19, and the token count tracked the base64 STRING length, not the picture. So
+never hand Jev a screenshot and treat the number as a verdict on the pixels —
+that is fake verification. Feed it the NUMERIC METRICS from
+`scripts/seam-smudge-gate.py`; let DeepSeek V4.1 Flash (real vision, verified
+same day) do the looking.
 
 Dispatch with `scripts/or-call.mjs`, which carries every guard that matters —
 `@include` file inlining, abort-before-spending on a missing path, live `/models`
