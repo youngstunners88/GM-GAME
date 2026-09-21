@@ -135,20 +135,33 @@ func _build_background() -> void:
 	var haze_layer := ParallaxLayer.new()
 	haze_layer.motion_scale = Vector2(0.15, 0.0)
 	haze_layer.motion_mirroring = Vector2(900.0, 0.0)
-	# Founder, 2026-08-20 residual (shot_3): circled these as "rectangle
-	# residue / clutter" — at 0.5 alpha and a 32px radial-falloff texture
-	# stretched 6x4, each blob's edge was hard enough to read as a solid dark
-	# oval sitting in the sky rather than atmospheric haze. Softened by going
-	# bigger + much lower opacity so the same falloff curve spans more space
-	# and fades out well before its edge, instead of clipping into a visible
-	# shape.
-	for i in range(3):
-		var blob := Sprite2D.new()
-		blob.texture = _make_glow_texture()
-		blob.modulate = Color(COLOR_HAZE.r, COLOR_HAZE.g, COLOR_HAZE.b, 0.16)
-		blob.scale = Vector2(11.0, 7.0)
-		blob.position = Vector2(150.0 + i * 300.0, 250.0 + (i % 2) * 150.0)
-		haze_layer.add_child(blob)
+	# THE HAZE BLOBS ARE GONE. These were "the smudges".
+	#
+	# Founder circled them 2026-08-20 as "rectangle residue / clutter". That
+	# round only SOFTENED them (0.5 alpha -> 0.16, 6x4 -> 11x7). He circled the
+	# exact same three shapes again on 2026-09-21, having reported them in
+	# between as green smudges that "are always in the same region even before
+	# the game starts". Softening a thing the client has asked to be rid of just
+	# buys another month of him re-reporting it.
+	#
+	# Why they read as dirty green-grey smears rather than atmosphere:
+	# COLOR_HAZE is Color(0.35, 0.05, 0.55) — its GREEN channel is 0.05, so
+	# wherever a blob sits it suppresses green far harder than red or blue.
+	# Measured off the founder's own 2026-09-21 capture, inside a blob vs the
+	# clean sky beside it: R x0.81, G x0.70, B x0.80 — green crushed hardest,
+	# which on the L3 amber sunset is exactly the "shit green colour" he kept
+	# describing, and on the L1/L2 plates a dull desaturated stain.
+	#
+	# And they never moved because this layer is motion_scale 0.15 with the
+	# blobs pinned at x=150/450/750 — hence "always in the same region".
+	#
+	# Every green-channel detector written for this bug scanned for G > R and
+	# G > B and reported the game CLEAN, because these are not green pixels;
+	# they are a magenta wash REMOVING green. That is why it stayed invisible to
+	# automation for a month while being obvious on the founder's screen.
+	#
+	# The neutral dust field in _build_speed_atmosphere() already carries the
+	# depth cue, so nothing replaces these.
 	pbg.add_child(haze_layer)
 
 	_build_stage_theme_layer(pbg)

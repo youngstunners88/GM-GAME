@@ -95,3 +95,31 @@ reported by the gate so a darkening "fix" is itself detectable.
   `/v1/models`. **Text only — it cannot see images** (control-tested: bar 0.22
   vs no-bar 0.19). Feed it the gate's NUMBERS, never a screenshot.
 - **Claude** — owns the diagnosis, the patch, the commit and the FIXED claim.
+
+## A "green smudge" can be a colour-REMOVING wash (2026-09-21)
+
+The longest-running defect in this project was three `COLOR_HAZE` blobs in
+`dashmode/blaze_rush.gd` — `Color(0.35, 0.05, 0.55)` at 0.16 alpha, parked at
+x=150/450/750 on a `motion_scale 0.15` layer.
+
+**Green channel 0.05.** They did not ADD green; they REMOVED it. Measured from
+the founder's own capture, inside a blob vs the clean sky beside it:
+`R x0.81, G x0.70, B x0.80` — green crushed hardest. On the amber L3 sunset that
+reads as a dirty olive smear; the founder called it "a kind of shit green
+colour" and was right.
+
+Every detector built for this bug tested `G > R AND G > B` and reported the game
+CLEAN — correctly and uselessly. **A magenta wash over warm art looks green.**
+
+Rules that follow:
+1. Test green **relative to the local background**, not absolute channel
+   dominance. `ge = G - (R+B)/2`, minus a large-radius blur of itself.
+2. A defect that is **always in the same screen region** is not backdrop art —
+   it is pinned to a slow/zero parallax layer or an overlay. Use that: sample
+   the same frame coordinate across frames where the camera HAS moved.
+3. When the founder circles something, **measure inside the circle against
+   outside it** before trusting any threshold. That single step would have
+   found this on day one.
+4. **Softening a thing the client asked to be removed does not remove it.**
+   These blobs were softened on 2026-08-20 after he circled them, and he
+   circled the identical shapes a month later.
