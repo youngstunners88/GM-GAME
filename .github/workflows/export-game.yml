@@ -110,6 +110,15 @@ jobs:
             src/assets/backgrounds/bg_blaze_l1_smoke_v2.jpg \
             src/assets/backgrounds/bg_blaze_l2_crystal_v2.jpg \
             src/assets/backgrounds/bg_blaze_l3_gold_v2.jpg
+          # GREEN VFX GATE (founder 2026-09-21: green smudges "in each of the
+          # stages 1, 2 and 3 as well as the Blaze Rush sections" and the Hall
+          # of Blaze). Root cause was NOT backdrop art - it was
+          # effects/smoke_puff.gd drawing the Blaze Mode auto-puff as a soft
+          # TRANSLUCENT GREEN rect straight onto the current scene, so it washed
+          # over every backdrop in the game. An image gate cannot catch that
+          # reliably (the puff only exists while the player holds Blaze Mode), so
+          # it is caught at the source instead.
+          python3 scripts/check-green-vfx.py
           python3 scripts/repair-backgrounds.py --check
           # Founder 2026-09-18 + Fable 5.1 diagnosis. The real defect behind the
           # "sliver / dividing line / seam" was the parallax TILE-WRAP join of

@@ -362,7 +362,7 @@ func _setup_ambience() -> void:
     smoke.initial_velocity_max = 42.0
     smoke.scale_amount_min = 24.0
     smoke.scale_amount_max = 60.0
-    smoke.color = Color(0.75, 0.9, 0.78, 0.06)
+    smoke.color = Color(0.85, 0.85, 0.88, 0.06)  # neutral, not green (see effects/smoke_puff.gd)
     add_child(smoke)
 
     var ring_tex: Texture2D = load("res://src/assets/sprites/sprite_item_eth-ring.png")
