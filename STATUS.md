@@ -5,6 +5,48 @@
 
 ---
 
+**🟢 THE GREEN SMUDGES — FOUND. IT WAS NEVER THE BACKDROPS (2026-09-21, sixteenth pass).**
+
+You said the green was in stages 1, 2 AND 3, in the Blaze Rush of 1 and 3, and
+in the Hall of Blaze. That "everywhere" was the clue that finally cracked it: a
+defect present in every scene is not a backdrop, it is something drawn OVER all
+of them.
+
+**Root cause: `effects/smoke_puff.gd` — the Blaze Mode auto-puff.** It was
+`Color(0.8, 0.9, 0.8, 0.6)`: soft-edged, translucent, green-dominant. That is
+the literal definition of a smudge. `emit_blaze_smoke()` adds it to
+`get_tree().current_scene`, so in Blaze Mode it lands on top of every backdrop
+in the game. Every hunt through the backdrop ART came back clean because the
+art WAS clean — this was being painted over it.
+
+It also explains why my own scans kept saying clean: the puff only exists while
+you hold Blaze Mode, and my capture bot only walks and jumps, so it never
+picked up a power-up. The measurements were never wrong; they were never
+pointed at the right moment.
+
+Fixed, keeping the mechanic: the puff is now neutral grey, so it reads as smoke
+on purple, cyan and amber alike. The Hall of Blaze leaderboard bars (which you
+named) were the same defect — translucent green washing over the room; now
+solid mint. Menu smoke neutralised too.
+
+**Diamond Vault dividing line — fixed by making the join impossible.** The
+plate is mirror-tiled now (`[A | flip(A)]`, 1024→2048 wide): both the centre
+and wrap joins measure **0.00** step against a 17.93 median, seamless by
+construction rather than by blending. At 2568px drawn it also exceeds the
+2320px the vault needs, so the wrap never comes on screen at all.
+
+**New gate: `scripts/check-green-vfx.py`**, running in CI. Fails the build on
+any translucent green-dominant VFX colour outside a reasoned allowlist.
+Verified BOTH ways — passes the fixed tree, and fails the moment the original
+colour is put back. (Threshold is 0.08, not 0.10: at 0.10 it missed the real
+bug, because 0.9−0.8 is 0.0999… in floating point. A gate that cannot catch the
+bug it was built for is worthless.)
+
+**Not yet live-verified** — CI is building. No FIXED claim until I capture the
+live build with Blaze Mode actually active this time.
+
+---
+
 **🧪 SEAM + SMUDGE GATE, AND THE GREEN BLEMISHES FOUND AT LAST (2026-09-20, fifteenth pass).**
 
 You were right on every count, including about me.
