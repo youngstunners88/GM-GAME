@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "default_class": "unknown",
+  "classes": {
+    "trivial-edit": {
+      "tier": "haiku",
+      "describe": "a trivial one-file change: a typo, a copy edit, a constant tweak, or a quick factual question with no design judgement",
+      "manifest": "none",
+      "gates": ["gdparse"]
+    },
+    "scoped-implementation": {
+      "tier": "sonnet",
+      "describe": "well-scoped implementation that follows an existing pattern already in the codebase: a new level from an existing template, tuning constants, routine asset wiring, docs",
+      "manifest": ".claude/context-manifests/default.md",
+      "skills": ["game-development"],
+      "gates": ["gdparse", "export", "security-sentinel"]
+    },
+    "architecture-or-unknown-bug": {
+      "tier": "opus",
+      "describe": "debugging a fault with no known cause, architecture or multi-system integration work, or anything where the root cause is hidden and the fix is not obvious",
+      "manifest": ".claude/context-manifests/default.md",
+      "skills": ["gm-game-boss-fsm-trace", "live-build-proof"],
+      "gates": ["gdparse", "export", "campaign", "security-sentinel"]
+    },
+    "episode2-3d": {
+      "tier": "opus",
+      "describe": "Episode 2 work: the 3D minecart runner, protocol chambers, the runner-to-chamber loop, GLB assets, or the Gold Mine economy",
+      "manifest": ".claude/context-manifests/default.md",
+      "skills": ["gm-game-episode2-gold-mine-runner", "ep2-state-transition-audit"],
+      "gates": ["gdparse", "export", "security-sentinel"]
+    },
+    "security-or-deploy": {
+      "tier": "opus",
+      "describe": "touching secrets, wallet or crypto UI, dynamic execution, file IO, CI configuration, or the deploy and export pipeline",
+      "manifest": "docs/security/GAME_SECURITY_CHECKLIST.md",
+      "skills": ["game-security-sentinel", "itch-deploy"],
+      "gates": ["security-sentinel", "export"]
+    },
+    "art-or-audio": {
+      "tier": "sonnet",
+      "describe": "generating or wiring sprites, backgrounds, sound effects or voiceover assets",
+      "manifest": "none",
+      "skills": ["game-aesthetics-forge", "game-audio-forge"],
+      "gates": ["export"]
+    },
+    "unknown": {
+      "tier": "opus",
+      "describe": "does not clearly fit any other class, or the request is ambiguous",
+      "manifest": ".claude/context-manifests/default.md",
+      "gates": ["gdparse", "security-sentinel"]
+    }
+  }
+}

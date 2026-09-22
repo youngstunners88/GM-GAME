@@ -2,7 +2,15 @@
   "mcpServers": {
     "repowise": {
       "command": "repowise",
-      "args": ["mcp"]
+      "args": [
+        "mcp"
+      ]
+    },
+    "gm-toolkit": {
+      "command": "python3",
+      "args": [
+        "tools/mcp/gm_toolkit.py"
+      ]
     }
   }
 }

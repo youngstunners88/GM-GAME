@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "gm-game/tools/farm/routes.schema.json",
+  "title": "Task Routing Table",
+  "description": "Maps a task class to a model tier, a skill, and a context manifest. Jev picks the class; this table is the only thing that turns a class into an action.",
+  "type": "object",
+  "required": ["version", "default_class", "classes"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "integer", "minimum": 1 },
+    "default_class": { "type": "string" },
+    "classes": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["tier", "describe", "manifest"],
+        "additionalProperties": false,
+        "properties": {
+          "tier": { "enum": ["haiku", "sonnet", "opus"] },
+          "describe": { "type": "string", "minLength": 10, "description": "Sent to Jev verbatim as the choice criterion. Changing this changes routing." },
+          "manifest": { "type": "string", "description": "Context manifest to load. The token-efficiency lever." },
+          "skills": { "type": "array", "items": { "type": "string" } },
+          "gates": { "type": "array", "items": { "type": "string" }, "description": "Verification that must pass before claiming done." }
+        }
+      }
+    }
+  }
+}

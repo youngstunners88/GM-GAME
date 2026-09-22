@@ -3,6 +3,50 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/sleepy-sagan-edqti4`
 
+**🧰 TOOLCHAIN AUDIT — 31 tools evaluated, 2 adopted, 22 rejected; task router live (2026-09-22).**
+
+You sent ~28 repos/links and asked which are useful and credible, plus four systems and
+less token burn. Three researchers ran in parallel; everything below is recorded at real
+paths.
+
+**Verdict: 2 ADOPT, 7 patterns copied without taking a dependency, 22 rejected.** The win
+here was mostly *not* installing things — you already have ~150 skills, and bolting on
+more multiplies trigger collisions and raises burn.
+
+**1. "Jev" is now wired in as the router.** `pijev` (TypeLLM) is a calibrated option-picker.
+`python3 scripts/farm/route.py "<task>"` returns the model tier, the context manifest, the
+skills and the gates. Verified live: a README typo → haiku with **no manifest loaded**; the
+GLB part-mesh problem → opus + the Episode 2 skills; a CI key change → opus + the security
+checklist. **The manifest line is the actual saving** — a typo fix no longer drags in the
+architecture set. If the key or network is gone it routes to opus, never silently cheaper.
+
+**2. I could not verify a single star count.** The GitHub API here is scoped to your own
+repos, and the researchers contradicted each other on method — one claimed API access, two
+said it was blocked, and several figures were implausible (one claimed 290k stars). So
+popularity was removed from the decision entirely, and the registry marks it untrusted. The
+validator now **refuses** to let anything be marked ADOPT unless it was actually run in this
+container.
+
+**3. Two rejections worth your attention.** *OmniRoute* — reported npm block over obfuscated
+code, a conceded credential-overwrite path, plaintext credentials by default, guardrails
+failing open. That cannot coexist with your SECURITY-GATE RULE at any popularity.
+*freebuff* — an unattributed, ad-funded tool that wants your codebase. Treated as
+supply-chain risk, not productivity.
+
+**4. Most of the list doesn't apply to a Godot game.** IMSI-catcher (cell surveillance),
+turboquant_plus (LLM inference internals, not trading despite the name), Starknet, kapso
+(WhatsApp), Crucix (OSINT), unsloth (fine-tuning with no data/GPU), and one 404. I didn't
+invent reasons to keep them.
+
+**5. New MCP server, zero dependencies.** `gm-toolkit` fronts the sentinel, the router and
+the registry as typed calls, so a gate is one call instead of reading a skill to recall the
+incantation. It adapts the existing scripts — it never reimplements a check, so CI and the
+agent can't drift.
+
+Everything is schema-validated and fails closed; I negative-tested the gate to confirm it
+actually rejects. Details: `docs/architecture/adr-0002-agent-toolchain.md`, or
+`node scripts/farm/farm.mjs why <id>` for any single tool.
+
 ---
 
 **📌 EPISODE 2 FOUNDATIONS LOCKED — asset generators decided, PlayCanvas answered, provenance now tracked (2026-09-22).**

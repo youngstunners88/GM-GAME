@@ -191,3 +191,6 @@ scratchpad/
 # leaving it in place and gitignoring it is the sanctioned cleanup.
 web_verify/
 .dream-loop/
+
+# Tool-farm runtime state (never committed — config lives in tools/farm/*.json)
+.farm/
