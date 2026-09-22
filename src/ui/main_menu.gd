@@ -332,7 +332,7 @@ func _setup_backdrop() -> void:
     if overlay:
         # Green-black, not pure black: a neutral darkener drains the plate to
         # grey and loses the realm colour the founder wants the menu to carry.
-        overlay.color = Color(0.02, 0.08, 0.05, 0.52)
+        overlay.color = Color(0.02, 0.08, 0.05, 0.40)
         overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
         move_child(overlay, 1)
 
