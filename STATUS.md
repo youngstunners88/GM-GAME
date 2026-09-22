@@ -5,6 +5,45 @@
 
 ---
 
+**✅ DEPLOY PIPELINE FIXED AND PROVEN LIVE (2026-09-22).**
+
+CI run 325 is green end to end, including the two steps that were broken:
+"Commit exported files" (was failing) and **"Deploy to itch.io via butler"**
+(was being skipped). The live build now reads **`BUILD 2026-09-22-c1544a4`** —
+the real commit SHA, on screen, for the first time. From now on your screenshot
+proves which build you are on.
+
+Live: `https://html-classic.itch.zone/html/18305533-2003022/index.html`
+
+**The axe report is still OPEN, and I want to be exact about why.**
+
+I have now tried three times to photograph Lil Blunt's Stage 1 projectile and
+been wrong twice, because Stage 1 contains two things that look like a thrown
+axe and are not:
+
+1. **Tax Collector enemies hold `sprite_item_pickaxe.png`** — brown handle,
+   steel head, parked in mid-frame. That is what I wrongly called "confirmed".
+2. **`src/enemies/gnome_arrow.gd`** draws an arrow from primitives in the exact
+   axe palette — wood `(0.55,0.38,0.20)`, steel `(0.86,0.88,0.92)`, feather
+   `(0.90,0.76,0.42)`. That is the object I zoomed on the second attempt. It
+   was flying *toward* the player, so it was an enemy's.
+
+Input is confirmed working (5.1% of the play area changes while walking), but
+I have not yet isolated the player's own throw. `scripts/verify-stage1-weapon.mjs`
+now carries both decoys and the rule that replaces eyeballing: identify the
+throw by **motion** — spawning at the player and travelling in the facing
+direction at ~640 px/s — never by how it looks. The colour test only applies
+once the right object is in hand: smoke bomb = dark green body + lighter wrap
++ orange fuse; axe = the pale steel pickaxe sprite.
+
+So: **your report is not disproved, and I am not claiming Stage 1 is fine.**
+It is unresolved, with a documented instrument for the next attempt.
+
+**Blotches and the Level 1 background: unchanged and still open.** No artwork
+was touched in this pass or the previous one.
+
+---
+
 **🔴 I BROKE YOUR DEPLOY PIPELINE. FIXED (2026-09-22, nineteenth pass).**
 
 You were right that I made things worse. Here is exactly what I did, with the
