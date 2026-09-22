@@ -263,6 +263,23 @@ jobs:
             exit 1
           fi
 
+      - name: Stamp the build tag
+        run: |
+          # BUILD_TAG's whole job is to let the founder PROVE, from a screenshot,
+          # which build they are running. As a hand-edited constant it silently
+          # rotted: it read "2026-08-26e" for a month of daily ships, so every
+          # screenshot he sent carried a stamp that was a month stale and told us
+          # nothing. A stamp nobody bumps is worse than no stamp — it reads as
+          # evidence while being noise. CI owns it now: date + short SHA, written
+          # immediately before the export so it cannot drift from what ships.
+          STAMP="$(date -u +%Y-%m-%d)-${GITHUB_SHA::7}"
+          sed -i -E "s|^const BUILD_TAG := \".*\"|const BUILD_TAG := \"$STAMP\"|" src/autoload/game_manager.gd
+          grep -n 'const BUILD_TAG' src/autoload/game_manager.gd
+          if ! grep -q "const BUILD_TAG := \"$STAMP\"" src/autoload/game_manager.gd; then
+            echo "::error::BUILD_TAG stamp failed to apply"
+            exit 1
+          fi
+
       - name: Export game to Web
         run: |
           # pipefail is LOAD-BEARING: without it the step's exit code is `tail`'s

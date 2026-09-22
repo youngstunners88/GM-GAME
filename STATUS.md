@@ -5,6 +5,64 @@
 
 ---
 
+**🔬 THE SMUDGES — MEASURED, AND THEY ARE NOT COMING FROM THE BUILD (2026-09-22, seventeenth pass).**
+
+You sent two screenshots. I stopped guessing and measured them. Here is
+everything I can now state as fact, with the numbers.
+
+**What the smudge physically is.** In the Blaze Rush sunset it multiplies the
+sky by **R x0.86, G x0.89, B x0.83** — a near-neutral *darkening*, not a green
+tint. It only reads green because a neutral dark patch on saturated orange
+looks olive. This is why a month of detectors reported "clean": every one of
+them searched for pixels where green beat red and blue, and there are none.
+Three patches, at 1280x720 canvas coordinates: (328,146) 79x69, (168,163)
+61x27, (253,244) 13x8.
+
+**It is not in the background art.** I high-passed the plate (a smooth painted
+gradient flattens to noise; a real blob survives). The sky is flat — std 4.12,
+no blob anywhere. I repeated it against *every* historical version of that
+plate, not just the current one. Nothing.
+
+**It is not in the build's output.** I captured the live itch build — the exact
+one you are playing, `18305533-1999670` — at the same stage, and measured it
+the same way. Your frame: std 7.18, 1st-percentile -19.8. Mine: std 5.02,
+-8.0. Clean. I then re-ran it at **your** window size (1496x847) and across 80
+seconds of repeated attempts, because your capture was on ATTEMPT 7 and mine
+was on ATTEMPT 1. Clean every time.
+
+**Ruled out, each by measurement rather than opinion:** the backdrop art (all
+versions); the `COLOR_HAZE` blobs I removed last pass (they would *raise* blue,
+yours lowers it); sprite alpha fringing (Godot's `fix_alpha_border` is already
+on); node accumulation across attempts; and VRAM texture compression
+(`compress/mode=0`, no GPU-side compression in play).
+
+**What that leaves.** The defect is real pixels in your framebuffer, but it is
+not in the artwork and not in what this build renders here. The remaining
+difference between your machine and mine is your GPU/driver, your browser's
+compositing of the canvas, or your screen-capture path. **There is a ten-second
+test that settles it**, and it costs nothing: open a blank white page
+(`about:blank`) in the same window, same size, and screenshot it with the same
+tool. If the patches are there in the same place on a blank page, they are not
+in the game and no change to the game can remove them. If that page is clean,
+it is the game on your hardware, and the capture becomes the first artifact I
+can actually match against mine.
+
+**What I changed this pass** (no artwork touched — I said I would stop
+modifying plates I cannot prove are at fault, and I did):
+
+- **`BUILD_TAG` is now stamped by CI**, date + commit SHA, written immediately
+  before the export. It read `2026-08-26e` in your Level 1 screenshot — and it
+  has read that on *every* build shipped for a month, because it was a
+  hand-edited constant nobody bumped. Its entire purpose was to prove you are
+  not on a stale cache, and it was quietly worth nothing. Now it cannot drift
+  from what shipped.
+- **`scripts/smudge-forensics.py`** — the whole analysis above in one command:
+  high-pass, plate matching across versions, and per-channel multiply ratios
+  for each patch. Next time you report one of these, this answers "art, overlay,
+  or not-our-render" in about a minute instead of a month.
+
+---
+
 **🟢 THE GREEN SMUDGES — FOUND. IT WAS NEVER THE BACKDROPS (2026-09-21, sixteenth pass).**
 
 You said the green was in stages 1, 2 AND 3, in the Blaze Rush of 1 and 3, and
