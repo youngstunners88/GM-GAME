@@ -106,6 +106,31 @@ only console errors left are `ERR_CERT_AUTHORITY_INVALID` on the game's
 outbound price/backend fetches — this sandbox's browser not trusting external
 certs, not a game defect; the build falls back to OFFLINE MODE as designed.
 
+**📦 CORRECTION + a real size finding.** I said re-encoding the key art from
+PNG to JPEG "reclaims pck headroom". **That was wrong**, and the next CI run
+proved it: the pack stayed at exactly **186 MB** before and after removing
+2.4 MB of PNG. The reason is that the web export has
+`vram_texture_compression/for_desktop=true`, so Godot **re-encodes every
+texture** into a fixed-rate GPU format on the way into the pack. The source
+being PNG or JPEG changes the git repo size — which is still worth having —
+but it does not change what ships. Keeping the JPEG (it matches every other
+backdrop here), with the rationale corrected.
+
+**The headroom problem is therefore still open, and it is closer than it
+looks:** 186 MB against a 190 MB CI gate and itch's 200 MB hard per-file
+limit. Measured: 114.3 MB of source assets become a 186 MB pack — about
+**72 MB of pure expansion**, and 89 PNGs are what gets re-encoded. The
+biggest single lever is almost certainly that `for_desktop=true` flag, which
+is a desktop GPU format being produced for a **browser** target.
+
+I have **not** changed it. Export settings are the most regression-prone
+surface in this project — the non-threaded rule exists because of exactly
+this class of change — and it is your call. The test is cheap and
+self-measuring: flip it to `false` on a branch, push, and read the
+`index.pck = NNN MB` line the CI already prints. If it drops, we verify the
+build still renders correctly in a browser before it goes anywhere near
+master.
+
 **🎨 YOUR KEY ART IS NOW THE TITLE BACKDROP.** You asked twice. The honest
 reason it took two rounds: **your image never arrives as a file.** I checked
 the session transcript directly — your chat messages are logged as plain text
