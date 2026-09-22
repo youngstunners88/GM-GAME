@@ -112,6 +112,35 @@ func _ready() -> void:
 	_check("every layer preprocessed a full lifetime",
 			preprocessed == parts.size(), "%d/%d" % [preprocessed, parts.size()])
 
+	# 4b. SMOKE IS ACTUALLY VISIBLE. This is the assertion that matters most,
+	#     and the one whose absence let a real bug ship: the layers were first
+	#     given z_index = -1, which drew all three BEHIND the opaque backdrop
+	#     JPEG. Every check above still passed — the particles existed, emitted,
+	#     swirled and were preprocessed — and the menu rendered an empty sky.
+	#     "The node is configured correctly" and "a player can see it" are
+	#     different claims, and only the second one is the feature.
+	#
+	#     Draw order for same-parent CanvasItems is z_index first, then tree
+	#     order. So the smoke must (a) never sit below the backdrop's z_index,
+	#     and (b) come after the backdrop in tree order but before the menu
+	#     VBox, so it drifts over the art without fogging the title.
+	var bd_node := menu.get_node_or_null("Backdrop") as CanvasItem
+	var vbox_node := menu.get_node_or_null("VBoxContainer") as Node
+	if bd_node and vbox_node:
+		var above_bd := 0
+		var between := 0
+		for p in parts:
+			var cp := p as CPUParticles2D
+			if cp.z_index >= bd_node.z_index:
+				above_bd += 1
+			if cp.get_index() > bd_node.get_index() \
+					and cp.get_index() < vbox_node.get_index():
+				between += 1
+		_check("smoke never drawn below the backdrop (z_index)",
+				above_bd == parts.size(), "%d/%d" % [above_bd, parts.size()])
+		_check("smoke sits above backdrop, below the menu UI (tree order)",
+				between == parts.size(), "%d/%d" % [between, parts.size()])
+
 	# 5. MUSIC — the founder's track must resolve AND be the thing playing.
 	#    Asserting only that the file exists would pass even if nothing wired
 	#    it up, which is the whole failure class this project keeps hitting.

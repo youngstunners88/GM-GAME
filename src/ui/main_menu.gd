@@ -455,9 +455,17 @@ func _make_smoke_line(text: String, size: int, core: Color, phase_bias: float) -
         ghost.add_theme_color_override("font_color", SMOKE_TITLE_GHOST)
         ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
         ghost.show_behind_parent = true
-        ghost.pivot_offset = Vector2(w * 0.5, float(size) * 0.55)
-        ghost.scale = Vector2(1.32, 1.46)
-        ghost.position = Vector2(0, -float(size) * 0.06)
+        # Pivot on the ghost's OWN centre, taken after it has computed a
+        # minimum size, so the scale-up expands evenly around the glyph. The
+        # first version pivoted on a guessed (w*0.5, size*0.55) and scaled
+        # 1.32x1.46, which pushed the enlarged copy down and to the right —
+        # on screen that read as double vision / a drop shadow, not smoke.
+        # A tighter scale and a true centre make it a halo the glyph sits
+        # inside, which is the look intended.
+        var gsize := ghost.get_combined_minimum_size()
+        ghost.pivot_offset = gsize * 0.5
+        ghost.scale = Vector2(1.14, 1.22)
+        ghost.position = Vector2(0, -float(size) * 0.03)
         glyph.add_child(ghost)
 
         # Per-letter waver. Durations are derived from the index so adjacent
@@ -568,8 +576,17 @@ func _add_smoke_layer(y: float, half_w: float, amount: int, lifetime: float,
     smoke.scale_amount_min = scale_min
     smoke.scale_amount_max = scale_max
     smoke.color = Color(0.74, 0.90, 0.77, alpha)
-    smoke.z_index = -1
     add_child(smoke)
+    # Draw order, and the bug this replaces: z_index = -1 put every layer
+    # BEHIND the backdrop, which is an opaque JPEG sibling at the default
+    # z_index 0 — so all three layers rendered and were completely invisible.
+    # Headless gates could not see it (the particles existed, emitted and
+    # swirled exactly as asserted); only a screenshot showed an empty sky.
+    # Ordering by TREE POSITION instead: index 2 sits above the backdrop (0)
+    # and its darkening overlay (1), and below the menu VBox, which gets
+    # pushed down to 3. Smoke therefore drifts over the art but never over
+    # the title or the buttons.
+    move_child(smoke, 2)
 
 
 ## Buttons brighten on hover/focus (keyboard AND mouse per UI rules).
