@@ -61,10 +61,50 @@ line was findable.
 `SCRIPT_COMPILE: ALL PASS` (82 apparent failures on the first run were a cold
 asset-import artifact, not a regression — they cleared after `--import`).
 
-**Honest limit:** this is proven **headlessly**. I could not run a local web
-export in this session (the sandbox blocked it), so it has **not been seen in
-a browser yet** — that needs the CI export to land, then a look at the live
-page.
+**✅ SEEN IN A BROWSER — and the screenshot caught three real bugs.** The CI
+export landed, I pulled the build and drove it in a real browser. Every
+headless gate was green and the screen was still wrong. What the picture
+showed that no assertion could:
+
+1. **The smoke was completely invisible.** The three layers had `z_index = -1`
+   and the backdrop is an opaque JPEG at 0, so all three rendered *behind* it.
+   The gate passed happily — the particles existed, emitted, swirled and were
+   preprocessed exactly as asserted. "Configured correctly" and "you can see
+   it" are different claims, and only the second one is the feature you asked
+   for.
+2. **Then it was far too heavy.** With the layers actually visible, ~46 big
+   soft blobs stacked into near-opaque fog that washed the art out. You asked
+   for "a subtle bit of smoke", so density is now about a third of that.
+3. **An ETH ring sat on top of the PLAY LEVEL 1 button**, drawn straight
+   through the label. Pre-existing placement, not new — the ring formula put
+   one at (620, 480) and the button is at (640, 462). Rings are now
+   viewport-relative and kept clear of both UI columns.
+
+Also fixed: the per-glyph ghost read as a hard double-image because its pivot
+was computed from an un-parented node (which cannot resolve a theme font and
+returns a near-zero size, collapsing the pivot to the corner). It now derives
+from the font's real line height and haloes the glyph instead.
+
+**New dev tool: `tests/menu_capture_tool`.** Renders the real menu under a
+virtual display and saves a PNG in ~30 seconds, instead of a ~10 minute CI
+export plus a 200MB artifact download. Two of the bugs above were invisible to
+every property check and obvious in one screenshot; this makes that check
+cheap enough to do every time. It lives under `tests/` so the web export's
+filter keeps it out of the shipped build.
+
+**Browser gate re-calibrated.** `scripts/verify-game.mjs` clicked PLAY at
+y=0.71 of the viewport; the new title lockup is a different height and moved
+every button up ~49px, so the click landed in dead space and the gate reported
+"PLAYING state never reached" — which reads as "the game is broken" but was
+really "the gate clicked the backdrop". Re-measured to 0.642 from actual pixel
+bounds, and the single click is now a short ordered sweep, because this
+constant has drifted four times with the same misleading symptom.
+
+Browser result on the CI build: canvas attached, **engine booted**, **no Godot
+script errors**, **non-threaded confirmed**, **Level 1 reached PLAYING**. The
+only console errors left are `ERR_CERT_AUTHORITY_INVALID` on the game's
+outbound price/backend fetches — this sandbox's browser not trusting external
+certs, not a game defect; the build falls back to OFFLINE MODE as designed.
 
 **🛠️ NEW SKILL: `jev-astra-taskforge`.** Dispatches task-spec authoring to
 **GPT-6 Astra** on OpenRouter (verified live: `openai/gpt-6-astra`, $10/1M in,

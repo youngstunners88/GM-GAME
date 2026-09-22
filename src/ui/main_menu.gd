@@ -33,7 +33,7 @@ const MENU_MUSIC := "res://src/assets/music/menu_mist_theme.mp3"
 ## smoke-green in the ghost behind it — the same hot-core/cool-edge read as
 ## the cigar smoke in the key art.
 const SMOKE_TITLE_CORE := Color(1.0, 0.93, 0.72, 1.0)
-const SMOKE_TITLE_GHOST := Color(0.62, 0.88, 0.68, 0.20)
+const SMOKE_TITLE_GHOST := Color(0.62, 0.88, 0.68, 0.16)
 const SMOKE_SUB_CORE := Color(0.80, 0.96, 0.82, 0.95)
 const SMOKE_TITLE_EDGE := Color(0.04, 0.11, 0.07, 0.92)
 
@@ -414,6 +414,13 @@ func _make_smoke_line(text: String, size: int, core: Color, phase_bias: float) -
     var font: Font = title.get_theme_font("font")
     if font == null:
         font = ThemeDB.fallback_font
+    # Real line height for this font/size. The ghost's pivot is derived from
+    # this rather than from ghost.get_combined_minimum_size(): that call was
+    # made BEFORE the ghost was added to the tree, where it cannot resolve a
+    # theme font and returns a near-zero size, so the pivot collapsed to the
+    # top-left corner and the scale-up pushed the copy down and to the right —
+    # visibly a double-image again, the exact thing it was meant to fix.
+    var line_h := font.get_height(size)
     var tracking := float(size) * 0.06
     var widths: Array[float] = []
     var total := 0.0
@@ -462,10 +469,9 @@ func _make_smoke_line(text: String, size: int, core: Color, phase_bias: float) -
         # on screen that read as double vision / a drop shadow, not smoke.
         # A tighter scale and a true centre make it a halo the glyph sits
         # inside, which is the look intended.
-        var gsize := ghost.get_combined_minimum_size()
-        ghost.pivot_offset = gsize * 0.5
-        ghost.scale = Vector2(1.14, 1.22)
-        ghost.position = Vector2(0, -float(size) * 0.03)
+        ghost.pivot_offset = Vector2(w * 0.5, line_h * 0.5)
+        ghost.scale = Vector2(1.10, 1.10)
+        ghost.position = Vector2.ZERO
         glyph.add_child(ghost)
 
         # Per-letter waver. Durations are derived from the index so adjacent
@@ -500,11 +506,24 @@ func _setup_ambience() -> void:
     _setup_smoke_layers()
 
     var ring_tex: Texture2D = load("res://src/assets/sprites/sprite_item_eth-ring.png")
+    # Explicit positions, all clear of the two UI columns. The old formula
+    # Vector2(200 + i * 420, 160 + (i % 2) * 320) put ring #1 at (620, 480) —
+    # directly on top of the PLAY LEVEL 1 button, so the ring was drawn
+    # through the button's own label. Keeping them in the upper band and the
+    # bottom-right corner leaves the left menu column and the centre play
+    # column untouched, and being viewport-relative they stay clear at other
+    # window sizes instead of only at 1280x720.
+    var vp_size := get_viewport().get_visible_rect().size
+    var ring_spots: Array[Vector2] = [
+        Vector2(vp_size.x * 0.16, vp_size.y * 0.20),
+        Vector2(vp_size.x * 0.81, vp_size.y * 0.21),
+        Vector2(vp_size.x * 0.88, vp_size.y * 0.78),
+    ]
     for i in range(3):
         var ring := Sprite2D.new()
         ring.texture = ring_tex
         ring.modulate = Color(1, 1, 1, 0.55)
-        ring.position = Vector2(200 + i * 420, 160 + (i % 2) * 320)
+        ring.position = ring_spots[i]
         add_child(ring)
         var tw := ring.create_tween().set_loops()
         tw.tween_property(ring, "position:y", ring.position.y - 26.0, 2.2 + i * 0.4) \
@@ -535,9 +554,9 @@ func _setup_ambience() -> void:
 func _setup_smoke_layers() -> void:
     var vp := get_viewport().get_visible_rect().size
     # y,        half_w,     amount, life, v_min, v_max, s_min, s_max, alpha, swirl
-    _add_smoke_layer(vp.y - 30.0, vp.x * 0.62, 20, 9.0, 8.0, 22.0, 54.0, 120.0, 0.055, 14.0)
-    _add_smoke_layer(vp.y * 0.72, vp.x * 0.55, 16, 11.0, 12.0, 30.0, 38.0, 88.0, 0.045, 34.0)
-    _add_smoke_layer(vp.y * 0.38, vp.x * 0.48, 10, 13.0, 6.0, 18.0, 26.0, 62.0, 0.030, 22.0)
+    _add_smoke_layer(vp.y - 30.0, vp.x * 0.62, 13, 9.0, 8.0, 22.0, 34.0, 76.0, 0.020, 14.0)
+    _add_smoke_layer(vp.y * 0.72, vp.x * 0.55, 10, 11.0, 12.0, 30.0, 26.0, 58.0, 0.016, 34.0)
+    _add_smoke_layer(vp.y * 0.38, vp.x * 0.48, 7, 13.0, 6.0, 18.0, 18.0, 42.0, 0.011, 22.0)
 
 
 ## One smoke band.
@@ -548,9 +567,13 @@ func _setup_smoke_layers() -> void:
 ## emission point, which is what the founder asked for — smoke that is
 ## constantly swirling rather than merely drifting upward.
 ##
-## Alphas are deliberately tiny (0.03-0.06). These layers stack, and they sit
-## UNDER the title; anything heavier turns the lockup muddy and costs
-## readability, which is the trap this screen was already in.
+## Alphas are deliberately tiny (0.011-0.020), and the first pass at
+## 0.030-0.055 with particle scales up to 120 was WRONG in the other
+## direction: once the layers were actually visible, ~46 large soft blobs
+## stacked into near-opaque fog that washed the backdrop out completely. The
+## founder asked for "a subtle bit of smoke", so density is now roughly a
+## third of that — fewer particles, smaller, fainter. These layers stack and
+## they sit UNDER the title; anything heavier turns the art muddy.
 func _add_smoke_layer(y: float, half_w: float, amount: int, lifetime: float,
         vel_min: float, vel_max: float, scale_min: float, scale_max: float,
         alpha: float, swirl: float) -> void:
