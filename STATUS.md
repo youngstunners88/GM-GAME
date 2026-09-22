@@ -1,7 +1,79 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/audit-tool-references-8y0zkt`
+**Branch:** `claude/amazing-fermat-kwatsg`
+
+---
+
+**🎬 TITLE SCREEN REBUILT FOR THE SMOKE THEME (2026-09-22).**
+
+You said the opening title section "does not evoke the theme of marijuana or
+smoke." You were right, and it was worse than a styling miss: the menu was a
+**flat white label on the Level 1 forest plate, with no music at all.** Nothing
+on that screen said SmokeRing.
+
+**Four things changed together**, because any one of them alone still reads wrong:
+
+1. **Music.** Your `MistMenu` track now plays on the menu
+   (`src/assets/music/menu_mist_theme.mp3`). It is routed through
+   `AudioManager.play_music`, not a local player, so it uses the Music bus, the
+   duck-in fade, and stops properly when Level 1 starts — a bare player there
+   would have ignored your volume settings and played over the first level.
+2. **The letters are now smoke.** The title is built **one glyph at a time**,
+   each letter drifting on its own clock, each with a larger, barely-there
+   smoke ghost curling behind it on a slower clock. That mismatch between the
+   crisp letter and the smear is what reads as smoke instead of as a drop
+   shadow. Palette is hot brand gold at the core cooling to pale smoke-green —
+   the same read as the cigar smoke in your key art.
+3. **Smoke swirls constantly, and is already there on frame one.** Three
+   layers at different depths (floor bank, mid swirl, high wisp) rather than
+   one emitter, which only ever reads as a single puff from one spot. The
+   swirl specifically comes from tangential acceleration — with gravity alone
+   particles rise in straight parallel lines and look like steam off a vent.
+   All three are preprocessed a full lifetime so the screen opens full of
+   smoke instead of filling in over ten seconds.
+4. **The backdrop is art, not a colour plate**, and it falls through a
+   priority list rather than a single hardcoded path.
+
+**One thing is NOT done, and it needs you.** The GM key art you showed me —
+Lil Blunt at the trading counter with the $GOLD nuggets and the $DIAMONDS
+tub — **renders into my chat but does not land as a file in this container.**
+Your MP3 did land, because it came through the attach-as-file flow; the image
+did not. So the backdrop currently falls back to `bg_blaze_l1_smoke.jpg`,
+which is at least on-theme rather than the forest plate you rejected.
+
+To finish it: **send that image the same way you sent the MP3** (attach as a
+file). It then drops straight in — the code already looks for
+`src/assets/backgrounds/bg_menu_gm_keyart.png` (or `.jpg`) **first**, ahead of
+every fallback. No code change needed, just the file.
+
+**New gate: `menu_smoke_title_test` (18/18).** The entire lockup is built in
+code at `_ready()`, so a compile pass proves only that the *builder* parses —
+it proves nothing about whether glyphs, particles, backdrop or music actually
+materialised. Every one of those can no-op silently and still boot clean.
+This gate asserts the **result** on a real instantiated menu: two lines, one
+Label per non-space character, a ghost behind every glyph, three particle
+layers that all swirl and are all preprocessed, and a music player that is
+actually playing. It caught a real bug while being written — both title lines
+were named `SmokeLine`, so Godot silently renamed the second one and only one
+line was findable.
+
+`SCRIPT_COMPILE: ALL PASS` (82 apparent failures on the first run were a cold
+asset-import artifact, not a regression — they cleared after `--import`).
+
+**Honest limit:** this is proven **headlessly**. I could not run a local web
+export in this session (the sandbox blocked it), so it has **not been seen in
+a browser yet** — that needs the CI export to land, then a look at the live
+page.
+
+**🛠️ NEW SKILL: `jev-astra-taskforge`.** Dispatches task-spec authoring to
+**GPT-6 Astra** on OpenRouter (verified live: `openai/gpt-6-astra`, $10/1M in,
+$50/1M out, 1.05M context) and browser-truth verification to **Jev**. One
+correction worth knowing: **Jev is not an OpenRouter model** — it is TypeSafe's
+browser-action policy driven by `browser-use/jev-ultrafast`, and OpenRouter
+only supplies the small model that types text. The skill documents both paths,
+the env-var name mismatch that would otherwise look like a missing key, and the
+proxy bug that makes `or-call.mjs` look offline when it is not.
 
 ---
 
