@@ -281,6 +281,7 @@ jobs:
           fi
 
       - name: Export game to Web
+        id: export
         run: |
           # pipefail is LOAD-BEARING: without it the step's exit code is `tail`'s
           # (always 0), so a FAILED export (missing template, resource error) was
@@ -302,6 +303,25 @@ jobs:
             cat export.log
             exit 1
           fi
+
+      - name: Restore the stamped source
+        # MUST run, and must run BEFORE any step that touches git.
+        #
+        # "Stamp the build tag" edits a TRACKED file. The "Commit exported
+        # files" step does `git pull --rebase`, and rebase REFUSES to run with
+        # unstaged changes — so the stamp made all five push attempts fail, the
+        # job exited 1, and `Deploy to itch.io via butler` (if: success()) was
+        # SKIPPED. Result: two green exports that never reached the founder,
+        # while he was playing a build that predated them and reporting the
+        # bugs they were meant to fix. The export was never the problem; the
+        # bookkeeping commit after it was.
+        #
+        # The stamp only ever needed to exist for the duration of the export.
+        # The .pck on disk already carries it; the repo does not need it.
+        if: always()
+        run: |
+          git checkout -- src/autoload/game_manager.gd || true
+          git status --porcelain
 
       - name: Verify export output
         run: |
@@ -500,7 +520,7 @@ jobs:
           retention-days: 7
 
       - name: Package itch.io build (index.html at zip root)
-        if: success()
+        if: steps.export.outcome == 'success' && steps.secaudit.outcome == 'success'
         run: |
           cd web/game
           zip -r ../../lil-blunt-itch.zip .
@@ -508,7 +528,7 @@ jobs:
           ls -lh lil-blunt-itch.zip
 
       - name: Upload itch.io-ready zip (manual-upload fallback)
-        if: success()
+        if: steps.export.outcome == 'success' && steps.secaudit.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: itch-build
@@ -516,7 +536,7 @@ jobs:
           retention-days: 14
 
       - name: Deploy to itch.io via butler
-        if: success()
+        if: steps.export.outcome == 'success' && steps.secaudit.outcome == 'success'
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
           # itch.io target: <username>/<game-slug>:<channel>

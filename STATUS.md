@@ -5,6 +5,50 @@
 
 ---
 
+**🔴 I BROKE YOUR DEPLOY PIPELINE. FIXED (2026-09-22, nineteenth pass).**
+
+You were right that I made things worse. Here is exactly what I did, with the
+receipts.
+
+My "Stamp the build tag" CI step edits a **tracked** source file
+(`game_manager.gd`). The step right after it, "Commit exported files", runs
+`git pull --rebase` — and **rebase refuses to run with unstaged changes**. So
+all five push attempts failed, the job exited 1, and because
+`Deploy to itch.io via butler` was gated on `if: success()`, **the deploy was
+SKIPPED**. Twice. Runs 321 and 322.
+
+The exports themselves were fine. The bookkeeping commit after them was not,
+and it took the deploy down with it. Net effect: **nothing I shipped today
+reached you**, while you were playing and reporting bugs against an older
+build. That is my fault and it is the single most damaging thing I have done on
+this project.
+
+**Two fixes, so it cannot recur:**
+
+1. **"Restore the stamped source"** runs immediately after the export with
+   `if: always()`, putting the tree back to clean before anything touches git.
+   The stamp only ever needed to live long enough to be baked into the `.pck`.
+2. **Your deploy no longer depends on a git bookkeeping commit.** The
+   packaging and butler steps are now gated on
+   `steps.export.outcome == 'success' && steps.secaudit.outcome == 'success'`
+   instead of blanket `success()`. A push race, a branch move, or any other git
+   hiccup can never again silently stop your game from updating. The security
+   gate is preserved exactly — a failed security audit still blocks the deploy.
+
+**On the axe:** I tested the live build, saw a brown-handled steel-headed
+object and told you it was confirmed. **That was wrong** — it is a Tax
+Collector enemy holding a pickaxe, off to the right of the player. The source
+logic (`combat_handler._uses_smoke_bombs()` → `current_level == 1`, set by
+`level_base` before spawn, `level_index = 1` verified in the `.tres`) is
+correct, and my scripted attack produced no visible projectile at all, so my
+test proves nothing either way. **Still open, still unexplained.** I am not
+claiming it is fine.
+
+**On the blotches and the Level 1 background:** unchanged and still open. I
+touched no artwork.
+
+---
+
 **🎯 THE BLOTCHES NOW HAVE A DEDICATED AGENT (2026-09-22, eighteenth pass).**
 
 You gave me the matrix: blotches on **L1 stage, L1 Blaze, L2 stage, L3 Blaze** —
