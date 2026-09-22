@@ -5,6 +5,42 @@
 
 ---
 
+**🎯 STAGE 1 CAN NO LONGER THROW AN AXE (2026-09-22).**
+
+You never asked for axes. The axe was the original base attack from earlier
+work; you asked for smoke bombs in Stage 1 and that landed on 2026-09-14
+(`ea84479`). **Nothing ever removed it** — only two commits have ever touched
+the smoke bomb, and both added to it. That is why reading the source kept
+saying "this is correct" while your game kept doing the wrong thing.
+
+**The actual bug: the weapon hung off a mutable global.**
+
+`_uses_smoke_bombs()` read `GameManager.current_level`. That value is written
+by level loading, by save loading (`load_game()` clamps it straight out of the
+save file) and by level progression — and it was read at THROW time, long
+after whoever set it last. Any path that left it stale silently handed Lil
+Blunt an axe in Stage 1, with no code change to blame. That is precisely why
+this survived two rounds of review and why you had to report it twice.
+
+**Fixed three ways:**
+
+1. **The stage is resolved from the LEVEL IN FRONT OF YOU**, not a global. The
+   level node's `level_data.level_index` is baked into the scene and cannot go
+   stale. The global is now only a fallback for scenes that have no level to
+   ask (Blaze Rush, the vaults, Episode 2 — none of which use this throw).
+2. **It fails toward the smoke bomb.** If neither source can name a stage, the
+   answer is Stage 1. A wrong smoke bomb in Stage 2 is a cosmetic mismatch; a
+   wrong axe in Stage 1 is a weapon you have now asked to be rid of twice.
+3. **`scripts/check-stage1-weapon.py` runs in CI** and blocks the build. It
+   does not check "is the smoke bomb still referenced" — it was, the whole
+   time. It checks the three structural properties that make an axe in Stage 1
+   impossible: the smoke bomb is tested before any axe branch, the stage comes
+   from the level scene, and the unknown-stage fallback is Stage 1. Verified
+   in both directions: it passes the fix and fails a deliberately regressed
+   copy.
+
+---
+
 **✅ DEPLOY PIPELINE FIXED AND PROVEN LIVE (2026-09-22).**
 
 CI run 325 is green end to end, including the two steps that were broken:

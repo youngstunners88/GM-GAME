@@ -91,11 +91,40 @@ func _facing() -> float:
 ## scene, its three weight tiers and every power-up that feeds them are
 ## untouched — this only chooses which projectile the base throw spawns.
 ##
-## `GameManager.current_level` is authoritative here: level_base.gd sets it
-## from `level_data.level_index` BEFORE entities spawn, so it is correct on a
-## fresh start, a checkpoint resume and a `?stage=N` warp alike.
+## STAGE RESOLUTION READS THE LEVEL, NOT A GLOBAL (founder, 2026-09-22:
+## "Lil Blunt is throwing axes in the beginning instead of smoke bombs").
+##
+## This used to be `GameManager.current_level == 1` alone. That value is a
+## mutable global written by level_base, by save-loading (`load_game()` clamps
+## it out of the save file) and by level progression, and it is read here at
+## THROW time — long after whoever set it last. Any path that leaves it stale
+## silently hands Lil Blunt an axe in Stage 1: the exact weapon the founder
+## removed on 2026-09-14, reappearing with no code change to blame, which is
+## why it kept surviving source review.
+##
+## The level in front of the player cannot be stale. `current_scene` IS the
+## level node here (it is the same node the projectiles get parented to, see
+## `_spawn_smoke_bomb`), and its `level_data.level_index` is baked into the
+## scene. Ask it first; fall back to the global only when there is no level
+## to ask (Blaze Rush, the vault realms, Episode 2 — none of which use this
+## base throw anyway).
+##
+## AND IT FAILS TOWARD THE SMOKE BOMB. If neither source can name a stage, the
+## answer is the smoke bomb, not the axe. A wrong smoke bomb in Stage 2 is a
+## cosmetic mismatch; a wrong axe in Stage 1 is a weapon the founder has now
+## asked to be rid of twice.
+func _stage_index() -> int:
+	var scene: Node = player.get_tree().current_scene
+	if scene != null and "level_data" in scene and scene.level_data != null:
+		var idx: int = int(scene.level_data.level_index)
+		if idx >= 1:
+			return idx
+	if GameManager.current_level >= 1:
+		return GameManager.current_level
+	return 1  # unknown -> Stage 1 -> smoke bomb, never the axe
+
 func _uses_smoke_bombs() -> bool:
-	return GameManager.current_level == 1
+	return _stage_index() == 1
 
 ## STAGE 3 FIRES THE GOLDEN REVOLVER — UNLESS HE'S HOLDING THE AXE OR HAMMER.
 ##
@@ -122,7 +151,7 @@ func _uses_smoke_bombs() -> bool:
 func _uses_revolver() -> bool:
 	if GameManager.has_power_up("bigaxe") or GameManager.has_power_up("pickaxe"):
 		return false
-	return GameManager.current_level == 3
+	return _stage_index() == 3
 
 func _throw_axe() -> void:
 	if _axe_cd > 0.0:

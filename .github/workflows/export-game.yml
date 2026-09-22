@@ -93,6 +93,15 @@ jobs:
       # a blemished plate from ever being committed again. Deliberately
       # dependency-light: the check runs on Pillow + numpy, no OpenCV (that is
       # only needed by the one-off repair pass).
+      - name: Stage 1 weapon gate
+        run: |
+          # The founder has asked twice for Stage 1 to throw smoke bombs, not
+          # axes, and both times the source looked correct on review while the
+          # live game did the wrong thing. This gate checks the structure that
+          # makes the wrong thing impossible, not the presence of the right
+          # scene file. See the script header.
+          python3 scripts/check-stage1-weapon.py
+
       - name: Background art gate
         run: |
           python3 -m pip install --quiet --disable-pip-version-check pillow numpy
