@@ -5,6 +5,33 @@
 
 ---
 
+**✅ SMOKE BOMBS CONFIRMED LIVE — WITH PROOF (2026-09-22).**
+
+Live build **`BUILD 2026-09-22-a79d3db`**. Stage 1, attack pressed, projectile
+in flight beside Lil Blunt. Its pixels:
+
+| colour | count | `smoke_bomb.tscn` |
+|---|---|---|
+| `(56, 74, 51)` | 179 px | Body |
+| `(107, 153, 92)` | 89 px | Wrap |
+| `(255, 184, 77)` | 15 px | Fuse |
+
+Byte-exact, all three. **That is the smoke bomb.** The axe is the pale steel
+pickaxe *sprite* — anti-aliased, no flat palette — and it is not there.
+
+`scripts/verify-stage1-weapon-live.mjs` re-runs this against any live build in
+one command, and carries the three traps that cost a full session:
+
+1. **Never identify the weapon by eye.** Stage 1 has two decoys that look like
+   a thrown axe — Tax Collectors drawn *holding* `sprite_item_pickaxe.png`, and
+   `gnome_arrow.gd` drawn in the axe palette. Both fooled a capture pass.
+2. **Never trust a frame-diff against a pre-attack frame.** The camera scrolls,
+   so every static prop registers as moving and the diff fills with noise.
+3. **Identify it by exact colour.** The bomb is drawn from primitives, so its
+   three colours are byte-exact and unique in the level.
+
+---
+
 **🎯 STAGE 1 CAN NO LONGER THROW AN AXE (2026-09-22).**
 
 You never asked for axes. The axe was the original base attack from earlier
