@@ -5,6 +5,61 @@
 
 ---
 
+**🎯 THE BLOTCHES NOW HAVE A DEDICATED AGENT (2026-09-22, eighteenth pass).**
+
+You gave me the matrix: blotches on **L1 stage, L1 Blaze, L2 stage, L3 Blaze** —
+but **NOT L2 Blaze**. That one clean scene is the most useful thing anyone has
+produced on this bug, and it **overturns my previous conclusion**. I had said it
+looked like your GPU or your screenshot path. No hardware, monitor or capture
+tool skips exactly one scene and dirties the other five. It is in the build.
+I was wrong, and your matrix is what proved it.
+
+Your report is also a **labelled test set**, so it is now the calibration oracle
+for every detector this project will ever write:
+
+| scene | you graded | our detector |
+|---|---|---|
+| l1_stage | blotched | not measurable by plate-diff |
+| l1_blaze | blotched | **agrees** |
+| l2_stage | blotched | not measurable by plate-diff |
+| **l2_blaze** | **CLEAN** | **agrees** |
+| l3_stage | blotched | not measurable by plate-diff |
+| l3_blaze | blotched | **disagrees — the open question** |
+
+**What you asked for, built:**
+
+- **`blotch-hunter` agent** (`.claude/agents/blotch-hunter.md`) — owns this
+  report end to end. It carries the measured signature, the six-row oracle, the
+  full ruled-out list so no future session re-burns your credits re-deriving
+  them, and the hard prohibitions (never modify art on a theory; never soften
+  something you asked to be removed; never write FIXED without live proof).
+- **`blotch-forensics` skill** — how to locate a blotch: artwork, runtime
+  overlay, or not-in-our-render.
+- **`blotch-repair-gate` skill** — what may be changed once it is localised, and
+  what FIXED requires.
+- **`bash scripts/blotch-hunt.sh`** — one command: find the live build, capture
+  all six scenes at your window size, measure, and grade itself against your
+  matrix. **It exits non-zero when the detector disagrees with you**, so a
+  miscalibrated scan can never again be reported as "clean".
+
+**Why it grades itself.** Five detectors were written for this bug and all five
+said the game was clean. Every one tested "is green greater than red and blue" —
+and the patches are a near-neutral *darkening* (R ×0.86, G ×0.89, B ×0.83) that
+only *reads* green on a warm sky. They were looking for the wrong thing and
+nobody ever checked them against a frame you had already graded. Now that check
+is mandatory and automatic.
+
+It also refuses readings it cannot justify: on the three main stages, foreground
+art covers the backdrop, so "darker than the plate" measures scenery rather than
+blotches. It reports those as **not measurable** instead of guessing. Without
+that gate it scored 5/6 against you — three of them by accident.
+
+**Honest status: not fixed.** `l3_blaze` is the one scene where our render and
+yours still disagree, and that is now the single named open question rather than
+a vague hunt. No artwork was touched this pass.
+
+---
+
 **🔬 THE SMUDGES — MEASURED, AND THEY ARE NOT COMING FROM THE BUILD (2026-09-22, seventeenth pass).**
 
 You sent two screenshots. I stopped guessing and measured them. Here is

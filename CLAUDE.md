@@ -46,6 +46,7 @@ same commit — a manifest that lies is worse than none.
 | Create art/audio specs or style guide | /assets | CONTEXT.md | pixel-art-skill |
 | Write code, build scenes, configure engine | /src | `.claude/context-manifests/default.md` | gdscript-skill |
 | Write docs, marketing, or changelogs | /docs | CONTEXT.md | — |
+| **Founder reports smudges / blotches / blemishes** | **`blotch-hunter` agent** | `scripts/blotch-oracle.json` | `blotch-forensics`, `blotch-repair-gate` |
 
 ## Naming Conventions
 - Levels: `level-[number]_[realm-name].tscn` (e.g., `level-01_smoke-realm.tscn`)
@@ -87,6 +88,34 @@ After **every significant** change to the game, in the same working session:
    always visible there, not hidden on a feature branch.
 This is mandatory, not optional — the client relies on always-current state.
 The Stop hook re-checks for uncommitted/unpushed work as a backstop.
+
+## ⭐ BLOTCH RULE (the founder's longest-running bug — read before touching art)
+
+The "green smudges" report has recurred since 2026-08-20. It cost a month, two
+destroyed background plates, and five detectors that all reported the game
+clean. It has a **dedicated agent** — `blotch-hunter` — and two skills,
+`blotch-forensics` (where does it live) and `blotch-repair-gate` (what you may
+do, and what FIXED requires). Route every smudge/blotch/blemish/smear report to
+them instead of improvising.
+
+Three things that must never be re-litigated:
+
+1. **It is not green.** Measured, the patches multiply the sky by R ×0.86,
+   G ×0.89, B ×0.83 — a near-neutral darkening that only *reads* green on a
+   warm sky. Every detector that tested `G > R and G > B` found nothing and was
+   wrong. Test channel ratios, never a colour name.
+2. **`scripts/blotch-oracle.json` is the founder's graded matrix**, and
+   `l2_blaze` is graded CLEAN while the other five scenes are blotched. That
+   single row kills any theory blaming his GPU, monitor, browser or screenshot
+   tool — none of those skip exactly one scene. `scripts/blotch-analyze.py`
+   self-grades against it and exits non-zero when uncalibrated. An uncalibrated
+   detector has no opinion.
+3. **Measure before you change.** Never modify a plate, sprite or VFX without a
+   measurement naming that exact file as the carrier, and never soften or blur
+   something the founder asked to have removed — that was done once and bought a
+   month of re-reports.
+
+One command: `bash scripts/blotch-hunt.sh`.
 
 ## ⭐ SECURITY-GATE RULE (autonomous — no prompt required)
 Security scanning runs **without being asked, every time**, at three layers:
