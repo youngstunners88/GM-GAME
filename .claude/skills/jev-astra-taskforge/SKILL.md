@@ -14,41 +14,82 @@ Neither model may land a change unreviewed. They produce a *spec* and an
 
 ---
 
-## ⚠️ Read this before you route anything
+## ⚠️ Resolve Jev's endpoint before you route anything — do not assume
 
-The brief that created this skill said "call on Jev and GPT-6 Astra **on
-OpenRouter**." That is half right, and the wrong half costs a session:
+There are **two** ways to reach Jev, and they are easy to conflate because
+both involve an OpenRouter key. Run the discovery step; do not trust this
+file's snapshot, and do not tell the user something is unavailable without
+having run it.
 
-| Head | Where it actually lives | Key | Verified |
-|---|---|---|---|
-| **GPT-6 Astra** | OpenRouter, `openai/gpt-6-astra` | `OPENROUTER_API_KEY` | ✅ live-tested 2026-09-22 |
-| **Jev** | **NOT on OpenRouter.** TypeSafe's action policy, driven by [`browser-use/jev-ultrafast`](https://github.com/browser-use/jev-ultrafast) | `TYPESAFE_API` (this container) / `TYPESAFE_API_KEY` (upstream's name) | ⚠️ path documented, not yet run here |
-
-**Jev is not a chat model and has no OpenRouter model ID.** Searching
-OpenRouter's 444-model catalogue for "jev", "browser-use" or "ultrafast"
-returns nothing — checked, not assumed. Jev emits one of eight browser
-operations (`CLICK`, `TYPE_TEXT`, `SELECT`, `SCROLL_UP`, `SCROLL_DOWN`,
-`WAIT`, `DONE`, `BLOCKED`) plus a target index against an observed element
-table. Asking it to "write a design brief" is a category error.
-
-OpenRouter *does* appear in the Jev loop, but only in a small supporting
-role: `TEXT_MODEL_API_KEY` is an OpenRouter key supplying the tiny model that
-writes the string when — and only when — the chosen operation is `TYPE_TEXT`.
-Upstream's default is `inception/mercury-2.5` with reasoning disabled.
-
-### Live model facts (re-verify, do not trust this table blind)
-
-`openai/gpt-6-astra` — $10/1M in, $50/1M out, 1,050,000-token context.
-Related IDs that exist and are cheaper or stronger:
-`openai/gpt-6-astra:batch` (half price, batch latency),
-`openai/gpt-6-astra-pro`, `openai/gpt-6-astra-pro:batch`.
+### Step 0 — discovery (always run this first)
 
 ```bash
+# 1. Is there a Jev chat-completions model on this account right now?
 curl -s https://openrouter.ai/api/v1/models \
-  -H "Authorization: Bearer $OPENROUTER_API_KEY" | jq -r '.data[].id' | grep astra
+  -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+| python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+ms=d['data']
+print('models:',len(ms),'total_count:',d.get('total_count'),'next:',(d.get('links') or {}).get('next'))
+hits=[m['id'] for m in ms if any(t in (m['id']+' '+m.get('name','')).lower()
+      for t in ('jev','typesafe','browser'))]
+print('JEV CANDIDATES:', hits or 'none listed')
+"
 ```
 
----
+If that prints a candidate, **use it as an ordinary OpenRouter model** and
+ignore the TypeSafe path below. If it prints `none listed`, confirm with a
+direct call before concluding anything — a model can be reachable without
+being listed:
+
+```bash
+curl -s https://openrouter.ai/api/v1/chat/completions \
+  -H "Authorization: Bearer $OPENROUTER_API_KEY" -H "Content-Type: application/json" \
+  -d '{"model":"<candidate-id>","max_tokens":20,"messages":[{"role":"user","content":"hi"}]}'
+```
+
+A reply means it exists. `{"error":{"message":"<id> is not a valid model ID","code":400}}`
+means that exact ID does not.
+
+**Snapshot, 2026-09-22, this account:** the listing returned 444 models with
+`total_count: 444` and `links.next: null` (so it was complete, not a first
+page), and the string `jev` appeared nowhere in the raw JSON including
+descriptions. Direct calls to `typesafe/jev`, `typesafe/jev-ultrafast`,
+`browser-use/jev`, `jev`, `typesafe/jev-1` and `browseruse/jev-ultrafast` each
+returned `is not a valid model ID`. **Re-run discovery rather than repeating
+that snapshot** — catalogues change, and access can be account-gated.
+
+### The other path, which also uses an OpenRouter key
+
+This is the likely source of "Jev is on OpenRouter": running
+[`browser-use/jev-ultrafast`](https://github.com/browser-use/jev-ultrafast)
+**requires an OpenRouter key**, so the workflow genuinely is "use Jev, pay
+OpenRouter." In that repo the two keys do different jobs:
+
+| Env var | What it powers |
+|---|---|
+| `TYPESAFE_API_KEY` | Jev itself — the action policy that picks the operation and the target element |
+| `TEXT_MODEL_API_KEY` | **an OpenRouter key**, for the small model that writes the string when the chosen operation is `TYPE_TEXT` (upstream default `inception/mercury-2.5`, reasoning disabled — both IDs are live on OpenRouter) |
+
+So OpenRouter is in the loop either way. What differs is whether Jev's
+*decisions* come from an OpenRouter chat-completions model or from TypeSafe's
+endpoint. Discovery settles it; build for whichever answer comes back.
+
+> **Container note:** this machine sets **`TYPESAFE_API`**, while upstream
+> reads **`TYPESAFE_API_KEY`**. Copy the value across explicitly. A session
+> that greps for `TYPESAFE_API_KEY`, finds nothing and reports "no TypeSafe
+> key" is wrong — it is there under the other name. Never print either value.
+
+### The planning head
+
+| Head | Endpoint | Verified |
+|---|---|---|
+| **GPT-6 Astra** | OpenRouter, `openai/gpt-6-astra` | ✅ live-tested 2026-09-22 — replied, `finish_reason: stop`, $0.00056 |
+
+Live facts: $10/1M in, $50/1M out, 1,050,000-token context. Cheaper and
+stronger siblings exist: `openai/gpt-6-astra:batch` (half price),
+`openai/gpt-6-astra-pro`, `openai/gpt-6-astra-pro:batch`.
 
 ## When to use this skill
 
@@ -189,7 +230,7 @@ person actually see this happen.* This repo has already shipped a feature
 that was logically perfect, fully gated, and completely unreachable — see
 the Episode 2 write-up in `STATUS.md`. That is the failure class Jev covers.
 
-### Prerequisites
+### Prerequisites (only for the TypeSafe path — skip if discovery found a model ID)
 
 ```bash
 git clone https://github.com/browser-use/jev-ultrafast.git
