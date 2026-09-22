@@ -51,8 +51,15 @@ than routing them through a paid external generator.
 2. Get a part-count assertion in `tests/ep2_glb_pipeline_test.gd`, matching the
    `>= 5` pattern already guarding the minecart. A part requirement that isn't
    gated will silently regress the first time the mesh is re-exported.
-3. Keep the web-export pack budget in view — the `index.pck` size gate
-   (190 MB) tightens as 3D assets land, per ADR-0001.
+3. Keep the web-export pack budget in view — and it is tighter than it sounds.
+   **Measured 2026-09-22 (CI run 323): `index.pck` = 191,899,440 B = 183 MiB
+   against a 190 MiB CI gate — roughly 7 MiB of headroom**, before a single 3D
+   chamber asset lands. The gate exists because itch.io rejects the whole HTML
+   embed if any zipped file exceeds 200 MB, so this is a hard ship blocker, not
+   a warning. **Budget every incoming GLB against that 7 MiB**, and expect to
+   re-encode existing media (`tools/reencode_media.sh`) before the Bull, the
+   Winchester and the furnace can all ship. This is the outstanding risk
+   ADR-0001 flagged under "Negative / accepted trade-offs".
 
 ---
 
