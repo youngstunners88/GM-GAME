@@ -1,7 +1,73 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/audit-tool-references-8y0zkt`
+**Branch:** `claude/sleepy-sagan-edqti4`
+
+---
+
+**📌 EPISODE 2 FOUNDATIONS LOCKED — asset generators decided, PlayCanvas answered, provenance now tracked (2026-09-22).**
+
+You sent two foundation docs: the **3D-AI roundup takeaways** and the
+**PlayCanvas takeaways**. Both are filed verbatim where they asked to be
+(`artifacts/PROMPT_EPISODE2_*_TAKEAWAYS.md`) and annotated in
+`artifacts/episode2-gold-mine/spec/FOUNDER_PROMPT_V5_ADDENDUM.md`. Nothing was
+rebuilt and no new integration was stood up — both docs say not to, and there is
+nothing to integrate against until a mesh is actually commissioned.
+
+**What's now locked, in your words: Tripo for the game, Meshy for the statue,
+Astra for the motion. Godot for the game itself.**
+
+**1. PlayCanvas — answered without reopening the engine debate.**
+Your verdict (mature engine, best web splat stack, *not* the runtime) matches
+what the runtime ADR already said about Three.js. Rather than add a
+PlayCanvas-shaped exception, ADR-0001 §3 is now a **class rule**: no browser
+engine is the runtime, and each new one is permitted as a throwaway
+preview/lookdev/splat/teaser layer only. So the next web engine that shows up
+gets answered by pointing at the ADR instead of re-running the comparison.
+PlayCanvas preview folder: granted if you ask for it, not started speculatively.
+
+**2. Generator choice is no longer a free-for-all.** The pipeline doc had listed
+"Meshy / Tripo / Rodin / Hunyuan3D" as interchangeable since 2026-09-05. It now
+names one default per asset class — Tripo P2 + Smart UV for props, Meshy Ultra
+4K for hero sculpts only (decimated, never raw into the runner), Hunyuan UV
+explicitly not primary, Miura parked, HKTex watch-only.
+
+**One correction to your flow diagram, and it's in your favour:** not every prop
+should route through Tripo. Rails, beams, crates and nuggets stay on the
+in-container `bpy` path — it's free, deterministic, re-runnable from a script in
+git, and already gate-verified. Paying an external service for a *worse,
+non-reproducible* rail segment would be a step backwards. **Tripo becomes the
+default the moment an asset is organic or detail-dense enough that primitive
+assembly can't author it** — which is most of what's left.
+
+**3. "Parts, not welded blobs" was already enforced for the cart.** Not planned —
+gated. `tests/ep2_glb_pipeline_test.gd` fails the build if the minecart collapses
+below 5 meshes; it currently imports as 7 (hull/rim/wheels/emblem). The furnace
+doors and Winchester lever aren't built yet, so they're recorded as build
+requirements with the same assertion pre-committed — a lever that can't animate
+apart from the receiver is useless to the Winchester hand-off beat.
+
+**4. The scene-kit notes you asked for didn't exist. They do now.**
+`src/episode2/assets/GODOT_NOTES.md` — per-asset generator, file size, part
+count and gate status for the three shipping GLBs, plus pending rows for the
+Bull, Winchester and furnace with their generator already assigned. **No Episode
+2 mesh counts as done without a row in it.**
+
+**5. Fixed a stale rail that would have cost you this argument again.** The
+Episode 2 skill still described the engine as "recommended… founder's call, not a
+default" — nine sessions after you settled it. Any session loading that skill
+could have reopened the engine question in good faith. Now corrected to point at
+the Accepted ADR, with the generator lock added as rail 7.
+
+**One thing to flag:** both docs reference skills under `.grok/skills/…`. There's
+no `.grok/` directory in this repo — the prompts read as written in a separate
+Grok workspace with its own skill tree, which matches a note already in the
+Episode 2 skill. I didn't invent skills to fill the gap; every lock lives at a
+real path here instead. Say the word if you want them mirrored as Claude skills.
+
+**Not done, deliberately:** no Tripo/Meshy/Astra/PlayCanvas API wiring, no
+preview project, no animation work. Docs and one skill only — no game code
+changed, so no gameplay regression risk.
 
 ---
 

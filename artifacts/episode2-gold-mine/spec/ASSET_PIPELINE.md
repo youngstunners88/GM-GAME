@@ -35,6 +35,45 @@ agree, and a Python primitive-assembly script cannot author an organic hero.
 The community `blender-mcp` addon is still a GUI dead end here (below); Path E
 bypasses it by scripting `bpy` directly.
 
+## ✅ LOCK (2026-09-22) — which generator authors which asset
+
+Path D previously named "Meshy / Tripo / Rodin / Hunyuan3D" as interchangeable.
+They are not. The founder's 3D-AI roundup intake
+(`artifacts/PROMPT_EPISODE2_3D_AI_ROUNDUP_TAKEAWAYS.md`, annotated in
+`FOUNDER_PROMPT_V5_ADDENDUM.md` §2) locks the choice:
+
+| Asset class | Tool | Notes |
+|---|---|---|
+| **Parametric hard-surface props** — rails, beams, crates, nuggets, simple rock | **Path E (`bpy`)** ✅ | Stays the default. Free, deterministic, scripted in version control, gate-verified |
+| **Props `bpy` can't author** — organic, sculpted, detail-dense (lanterns, pickaxe, furnace pieces, cart detailing) | **Tripo P2 + Smart UV** → GLB | The Path D default. Smart UV handles organic *and* hard surface |
+| **Hero sculpts only** — Inferno Bull, Fort Knox ornamental plates | **Meshy 7.1 Ultra 4K** → decimate → Smart UV if needed → GLB | **Never drop raw Ultra 4K into the runner.** Displacement/sculpt source, not runtime geometry |
+| **Animation** | **Astra**, only after a GLB exists | Mesh first. Animation never blocks chamber authoring |
+| **Rigged hero character** | Still needs a human Blender pass | Unchanged finding — image-to-3D drifts off-model on a rigged hero |
+
+**UV rule:** Smart UV unless a human unwrap is specifically justified.
+**Hunyuan Studio UV is not primary** — slower and unstable.
+
+**Parked:** Miura 3D (no quality leap over Tripo/Meshy — ignore). HKTex
+(heat-kernel textures, no UVs — research only; Smart UV remains the game-engine
+answer today). Kai Ninja / Snap3D (part-splitting — model not fully public,
+license unclear; do not wait on public weights).
+
+### Parts, not welded blobs
+
+The mine cart, furnace doors, and Winchester lever must import as **separate
+part meshes**, never one fused mesh — a lever that can't animate independently
+of its receiver is useless to the Winchester hand-off beat.
+
+This is **already enforced, not just intended**: `tests/ep2_glb_pipeline_test.gd`
+fails if the minecart collapses below 5 meshes. Current: minecart 7,
+rail_segment 9, gold_nugget 1 (correct — no moving parts). The furnace and the
+Winchester get the same assertion when they are authored.
+
+### Per-asset provenance is mandatory
+
+Every Episode 2 mesh records its generator in
+`src/episode2/assets/GODOT_NOTES.md` before it counts as done.
+
 ## The hard fact that shapes everything
 
 The popular community **`ahujasid/blender-mcp`** addon **requires Blender's
@@ -56,8 +95,7 @@ configuration.
 | **A. Local GPU desktop** (research doc's "only reliable path today") | Founder runs Blender 4.5 LTS + community addon on their own RTX/Apple-Silicon machine; agent connects over `BLENDER_HOST`/`BLENDER_PORT` on a trusted LAN | Founder's machine | Highest (Cycles) | Founder time; trusted-network only (socket has no auth) |
 | **B. Cloud GPU VM + virtual desktop** | RunPod/Paperspace RTX VM running Blender GUI under Xvfb or VNC/KASM | Cloud | Highest (Cycles) | Hourly GPU $$$; setup |
 | **C. Official Blender-Lab MCP server** | Anthropic+Blender official connector, **supports background mode** (synchronous-only), Blender **5.1+** | A host with Blender 5.1+ | High | Newer; still needs Blender+GPU host, but headless-capable |
-| **D. External generators → GLB** (no MCP at all) | Meshy / Tripo / Rodin(Hyper3D) / Hunyuan3D generate hero + props, export GLB; import to engine directly | Web services | Prototype→near-production; hero rigs still need human cleanup | Meshy ~$20/mo; per-asset |
-
+| **D. External generators → GLB** (no MCP at all) | **Tripo P2 + Smart UV** for props, **Meshy 7.1 Ultra 4K** for hero sculpts only — export GLB, import to engine directly. Generator choice is **locked** — see §"LOCK (2026-09-22)" above | Web services | Prototype→near-production; hero rigs still need human cleanup | Tripo ~20 credits/asset; Meshy ~$20/mo |
 | **E. In-container headless `bpy`** ✅ VERIFIED | Script `bpy` directly (no MCP, no GUI); build parametric/hard-surface props + export GLB in this sandbox | **This container** | Stylized props (not organic hero) | **Free, in-session, zero infra** |
 
 ## Recommendation (for founder sign-off)
@@ -68,7 +106,9 @@ configuration.
 - **Props (minecart, beams, rails, lanterns, rocks):** **Path E** (in-container
   headless `bpy` → GLB → import) is now the fast pragmatic route — **verified
   working this session**; Path D (external generators) or blender-mcp assembly
-  remain options for higher-fidelity or organic props.
+  remain options for higher-fidelity or organic props — and when Path D is used,
+  the generator is **not** a free choice: **Tripo P2 + Smart UV** for props,
+  **Meshy Ultra 4K** for hero sculpts only, per the LOCK section above.
 - **This agent's role:** own the **runtime integration** (the runner↔chamber
   loop, controls, camera, protocol logic, GLB import + placement, gates,
   web-export) — all of which is doable here with **zero Blender dependency**

@@ -13,6 +13,7 @@ rendering path.
 
 ## Read first
 - `artifacts/episode2-gold-mine/spec/FOUNDER_PROMPT.md` — verbatim founder brief, single source of truth.
+- `artifacts/episode2-gold-mine/spec/FOUNDER_PROMPT_V2..V5_ADDENDUM.md` — the later founder prompts, annotated with what was verified vs. still open. **V5 carries the asset-generator lock and the PlayCanvas verdict.**
 - `artifacts/episode2-gold-mine/spec/00_ARCHITECTURE.md` — the engineering plan, the environment blockers (§5), open design questions (§6), and the multi-model design review (§7a).
 - `artifacts/episode2-gold-mine/chambers/01..06_CHAMBER_*.md` — the six 3D encounter briefs.
 - `docs/whitepapers/GoldMine.md` + `src/autoload/goldmine_system.gd` — the REAL economics. Every number comes from here.
@@ -31,19 +32,32 @@ rendering path.
    GPU — verified). The hero character needs a human Blender pass or handed-over
    GLBs; image-to-3D is for prop blockouts only. Do not claim a Blender scene
    was produced here.
-4. **Engine: Godot 4.3 3D is the recommended path** (one engine, reuse the
-   existing economy/CI/export). Three.js means a second runtime — founder's
-   call, not a default. Do not start a second engine without explicit sign-off.
+4. **Engine: DECIDED — Godot 4.3. Do not reopen this.** Settled by the founder
+   2026-09-08 in `docs/architecture/adr-episode2-runtime-engine.md` (Accepted),
+   re-affirmed 2026-09-22 against PlayCanvas. §3 of that ADR is a **class rule**:
+   no browser engine is the runtime. Three.js, PlayCanvas, and any successor are
+   permitted as throwaway preview / lookdev / splat / teaser layers only, and
+   are explicitly not on the path to shipping. Pascal Editor is authoring-side
+   only. A new web engine appearing in a prompt is not a new decision — point at
+   the ADR rather than re-running the comparison.
 5. **The runner↔chamber loop:** persistent session root + separate scenes +
    explicit transition states; economy/progression live outside disposable
    scenes. Guard: double-triggered rewards, stale input, duplicate player,
    wrong resume position, mobile memory.
 6. **Do not touch Episode 1 residuals** while doing Episode 2 planning.
-7. Standing project rules still apply: multi-model dispatch on substantial
+7. **Asset generator is locked per asset class** — not a free choice. Parametric
+   hard-surface props → headless `bpy` (Path E, in-container, reproducible).
+   Organic/sculpted props → **Tripo P2 + Smart UV**. Hero sculpts only → **Meshy
+   7.1 Ultra 4K**, decimated before Godot. Animation → **Astra**, only after a
+   GLB exists. Cart / furnace doors / Winchester lever must import as **separate
+   part meshes** and carry a part-count gate assertion. Full table:
+   `artifacts/episode2-gold-mine/spec/ASSET_PIPELINE.md` §LOCK (2026-09-22);
+   per-asset provenance: `src/episode2/assets/GODOT_NOTES.md`.
+8. Standing project rules still apply: multi-model dispatch on substantial
    design decisions, security sentinel, gates before "works", STATUS + commit
    + push every session.
 
-## Next build step (when founder confirms engine)
+## Next build step (engine is confirmed — Godot 4.3)
 A Godot graybox vertical slice: short minecart run → one chamber (basic
 move/combat + one real protocol interaction) → return to saved track
 position. Engine primitives only, clearly temporary, phone-tested, wired to

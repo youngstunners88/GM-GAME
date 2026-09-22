@@ -10,7 +10,7 @@ Accepted
 
 ## Last Verified
 
-2026-09-08
+2026-09-22 (re-affirmed against the PlayCanvas evaluation; decision unchanged)
 
 ## Decision Makers
 
@@ -26,7 +26,9 @@ runtime genuinely ambiguous across four sessions. The founder has now settled
 it: **Episode 2 runs on Godot 4.3.** The runner is not to be rebuilt in
 Three.js; Pascal Editor is a layout/authoring tool only (its GLB output is
 imported into Godot); Three.js is permitted for optional future web
-prototypes but is explicitly **not** the game runtime.
+prototypes but is explicitly **not** the game runtime. Re-affirmed 2026-09-22
+against PlayCanvas, which lands in the same permitted-preview class rather than
+reopening the decision — §3 is now a class rule covering any web engine.
 
 ## Engine Compatibility
 
@@ -85,9 +87,12 @@ Three.js, because the chamber pipeline works identically either way.
 2. **Pascal Editor is a layout/architecture tool only.** Chambers are authored
    in Pascal, exported to GLB via its browser step, and imported into Godot.
    Pascal never runs as part of the game.
-3. **Three.js is not the game runtime.** It remains permissible for optional,
-   throwaway web prototypes only, and any such prototype is explicitly not on
-   the path to shipping.
+3. **No browser engine is the game runtime — as a class rule, not per-engine.**
+   Three.js, PlayCanvas, and any successor web engine remain permissible for
+   optional, throwaway preview / lookdev / splat / teaser layers only, and any
+   such prototype is explicitly **not** on the path to shipping. The rule is
+   stated as a class so that each new web engine does not re-litigate this
+   decision from scratch (see "PlayCanvas (2026-09-22)" under Notes).
 4. Godot 4.3 remains the single engine across both episodes, so the existing
    economy autoload (`goldmine_system.gd`), CI export, security gates, and
    itch.io deployment continue to serve Episode 2 unchanged.
@@ -120,9 +125,53 @@ Three.js, because the chamber pipeline works identically either way.
 Episode 2 runner + chamber loop (`artifacts/episode2-gold-mine/spec/00_ARCHITECTURE.md`
 §3); chamber asset pipeline (`spec/CHAMBER_ARCHITECTURE_PLAN.md` §0-§1).
 
-## Notes
+## Notes — outstanding verification
 
 The outstanding verification item is real: a Godot **3D** web export has not
 yet been performance-tested on target phones. The 2D Episode 1 export passing
 on mobile is not evidence for the 3D one. That measurement should happen
 before any art production is authorised, per the original multi-model review.
+
+## Notes — PlayCanvas (2026-09-22)
+
+The founder evaluated **PlayCanvas** (https://github.com/playcanvas/engine) and
+reached the same verdict this ADR already carried for Three.js, so the decision
+above is unchanged and §3 was generalised rather than rewritten.
+
+The evaluation of the engine itself was not the deciding factor and is not in
+dispute: PlayCanvas is a mature MIT entity-component engine (WebGL2 production
+plus a WebGPU path, glTF 2.0 with Draco/Basis streaming, ammo.js physics, Web
+Audio, WebXR, a browser editor) and it has the strongest **3D Gaussian
+Splatting** stack on the web via SuperSplat. It is closer to
+"Unity-for-the-browser" than to raw Three.js.
+
+None of that changes the outcome, because the argument against a second runtime
+was never about engine quality:
+
+- Both engines load the **same GLB**, so a second runtime buys no fidelity.
+- It would cost a second deploy, input layer, and economy integration, and the
+  economy must stay authoritative in `goldmine_system.gd`.
+- The runner, its hazard model, and the chamber loop are already built and gated
+  in Godot. Rebuilding cart physics is pure re-work.
+
+**Permitted PlayCanvas uses,** on the same authoring-side footing as Pascal
+Editor (V4) and the Three.js smelting demo:
+
+1. **Splat preview** — if a Gaussian capture of the smelting facility or Fort
+   Knox is produced, PlayCanvas/SuperSplat is the viewer. It feeds the asset
+   pipeline (TRELLIS / Tripo), not the game.
+2. **GLB lookdev** — orbiting a Tripo/Meshy GLB in a small page without opening
+   Godot.
+3. **itch teaser** — a short browser walk, not the runner.
+
+If built, a preview is confined to a single folder
+(`artifacts/episode2-gold-mine/playcanvas-preview/`) loading existing refs and
+GLBs, and introduces no new art pipeline.
+
+**Explicitly forbidden:** replacing Godot; reopening the engine debate;
+implementing cart physics in PlayCanvas; standing up a parallel Episode 2
+codebase in it.
+
+Source prompt filed verbatim at
+`artifacts/PROMPT_EPISODE2_PLAYCANVAS_TAKEAWAYS.md`; annotated intake in
+`artifacts/episode2-gold-mine/spec/FOUNDER_PROMPT_V5_ADDENDUM.md` §1.
