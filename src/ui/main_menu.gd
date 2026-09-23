@@ -6,6 +6,37 @@ extends Control
 
 const VERSION_TAG := "v1.0.0 — BLOCK 420"
 
+## ── TITLE SCREEN: SMOKE THEME ───────────────────────────────────────────────
+## Founder brief (2026-09-22): "the design beginning title section ... does not
+## evoke the theme of marijuana or smoke". The old screen was a flat white
+## label over the Level 1 forest plate with no music — it read as a generic
+## platformer. Four things change together here, because any one alone still
+## reads wrong: the backdrop art, the lettering, constant swirling smoke, and
+## a menu track.
+
+## Backdrop candidates, tried in order. The founder's GM key art (Lil Blunt at
+## the trading counter) is first; if that file is not present the list falls
+## through to the smoke-themed Blaze plate BEFORE it ever reaches the old
+## forest one, so a missing art drop still lands on-theme instead of silently
+## regressing the whole screen back to what he rejected.
+const MENU_BACKDROPS: Array[String] = [
+    "res://src/assets/backgrounds/bg_menu_gm_keyart.png",
+    "res://src/assets/backgrounds/bg_menu_gm_keyart.jpg",
+    "res://src/assets/backgrounds/bg_blaze_l1_smoke.jpg",
+    "res://src/assets/backgrounds/bg_l1_forest.jpg",
+]
+
+## Founder-supplied menu track (MistMenu).
+const MENU_MUSIC := "res://src/assets/music/menu_mist_theme.mp3"
+
+## Smoke palette. Hot brand gold at the glyph core, cooling into pale
+## smoke-green in the ghost behind it — the same hot-core/cool-edge read as
+## the cigar smoke in the key art.
+const SMOKE_TITLE_CORE := Color(1.0, 0.93, 0.72, 1.0)
+const SMOKE_TITLE_GHOST := Color(0.62, 0.88, 0.68, 0.16)
+const SMOKE_SUB_CORE := Color(0.80, 0.96, 0.82, 0.95)
+const SMOKE_TITLE_EDGE := Color(0.04, 0.11, 0.07, 0.92)
+
 var _wallet_btn: Button
 
 func _ready() -> void:
@@ -30,10 +61,11 @@ func _ready() -> void:
         return
     play_btn.pressed.connect(_on_play)
     continue_btn.pressed.connect(_on_continue)
-    title.text = "LIL BLUNT\nTHE SMOKE REALM"
-    AudioManager.play_voice("menu_title")
     _setup_backdrop()
+    _setup_smoke_title()
     _setup_ambience()
+    _setup_menu_music()
+    AudioManager.play_voice("menu_title")
     for btn: Button in [play_btn, continue_btn]:
         _add_hover_glow(btn)
     # Show continue button only if save file exists
@@ -42,10 +74,10 @@ func _ready() -> void:
     else:
         continue_btn.hide()
     _setup_layer_shift_buttons()
-    # Animate title
-    var tween := create_tween().set_loops()
-    tween.tween_property(title, "scale", Vector2(1.05, 1.05), 0.8)
-    tween.tween_property(title, "scale", Vector2(1.0, 1.0), 0.8)
+    # NOTE: the old block-scale tween on `title` is gone. It pulsed the whole
+    # label as one rigid sign, which is exactly the "not smoke" read the
+    # founder called out. _setup_smoke_title() now owns title motion: a slow
+    # lockup breath plus independent per-letter waver.
 
 ## TEST-ONLY (S10 T6/T7). Reads ?boss=N on web; if N is a valid boss level
 ## (1-3), routes straight there and returns true so _ready stops setting up
@@ -275,47 +307,223 @@ func _on_invite_friend() -> void:
         dlg.queue_free())
     dlg.popup_centered()
 
-## GM Forest key art behind the menu; the existing flat ColorRect becomes a
-## translucent darkener so buttons and title stay readable over the painting.
+## Key art behind the menu; the flat ColorRect from the .tscn becomes a
+## translucent green-black haze so the title and buttons stay readable over a
+## busy painting without flattening it to grey.
 func _setup_backdrop() -> void:
+    var chosen := ""
+    for path: String in MENU_BACKDROPS:
+        if ResourceLoader.exists(path):
+            chosen = path
+            break
+    if chosen == "":
+        push_warning("MainMenu: no backdrop found, keeping flat colour plate.")
+        return
     var bg := TextureRect.new()
-    bg.texture = load("res://src/assets/backgrounds/bg_l1_forest.jpg")
+    bg.name = "Backdrop"
+    bg.texture = load(chosen)
     bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
     bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
     bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+    bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
     add_child(bg)
     move_child(bg, 0)
     var overlay := get_node_or_null("ColorRect") as ColorRect
     if overlay:
-        overlay.color = Color(0, 0, 0, 0.6)
+        # Green-black, not pure black: a neutral darkener drains the plate to
+        # grey and loses the realm colour the founder wants the menu to carry.
+        overlay.color = Color(0.02, 0.08, 0.05, 0.40)
+        overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
         move_child(overlay, 1)
+
+
+## The founder's menu track. Routed through AudioManager.play_music rather than
+## a bare AudioStreamPlayer so it uses the Music bus, the duck-in fade, and the
+## same stop/override path every other track uses — a local player here would
+## ignore volume settings and keep playing over Level 1.
+func _setup_menu_music() -> void:
+    if not ResourceLoader.exists(MENU_MUSIC):
+        push_warning("MainMenu: menu music missing at %s" % MENU_MUSIC)
+        return
+    AudioManager.play_music(MENU_MUSIC)
+
+
+## Smoke lettering. The .tscn still owns TitleLabel/SubtitleLabel so anything
+## that looks those nodes up keeps working; both become invisible anchors and
+## the real lockup is built here.
+func _setup_smoke_title() -> void:
+    var vbox := get_node_or_null("VBoxContainer") as VBoxContainer
+    if vbox == null:
+        return
+    var subtitle := get_node_or_null("VBoxContainer/SubtitleLabel") as Label
+    title.visible = false
+    if subtitle:
+        subtitle.visible = false
+
+    var stack := VBoxContainer.new()
+    stack.name = "SmokeTitle"
+    stack.alignment = BoxContainer.ALIGNMENT_CENTER
+    stack.add_theme_constant_override("separation", 2)
+    stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    vbox.add_child(stack)
+    vbox.move_child(stack, 0)
+
+    # Distinct names matter: two nodes added under one parent with the same
+    # name make Godot silently rename the second ("SmokeLine" -> "@SmokeLine@2"),
+    # so anything looking the pair up by name finds only one of them.
+    var line_main := _make_smoke_line("LIL BLUNT", 78, SMOKE_TITLE_CORE, 0.0)
+    line_main.name = "SmokeLineTitle"
+    stack.add_child(line_main)
+    var line_sub := _make_smoke_line("THE SMOKE REALM", 34, SMOKE_SUB_CORE, 0.6)
+    line_sub.name = "SmokeLineSub"
+    stack.add_child(line_sub)
+
+    # Slow lockup breath. Deliberately a different period from the per-letter
+    # waver below (2.9s vs 1.7-2.6s) so the two motions never phase-lock into
+    # a single visible pulse.
+    stack.pivot_offset = Vector2(260, 70)
+    var tw := stack.create_tween().set_loops()
+    tw.tween_property(stack, "scale", Vector2(1.025, 1.025), 2.9) \
+        .set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+    tw.tween_property(stack, "scale", Vector2(1.0, 1.0), 2.9) \
+        .set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
+## One title line, laid out ONE GLYPH AT A TIME.
+##
+## Why not a Label and a tween: a single Label can only move as a block, which
+## is what made the old title read as a bouncing sign. Smoke needs each letter
+## drifting on its own clock.
+##
+## Why not an HBoxContainer of per-letter Labels: a container OWNS its
+## children's position and rewrites it on every re-layout, so a position tween
+## on a container child fights the container and snaps on the first resize.
+## Measuring the font and placing glyphs in a plain Control keeps position
+## ours to animate, at the cost of doing the layout maths here.
+func _make_smoke_line(text: String, size: int, core: Color, phase_bias: float) -> Control:
+    var line := Control.new()
+    line.name = "SmokeLine"  # overridden by the caller to a unique name
+    line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    line.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+
+    # Measure with the font these Labels will ACTUALLY render with, not with
+    # ThemeDB.fallback_font unconditionally. The project ships no custom theme
+    # today so the two are the same — but the glyph positions here are computed
+    # from this measurement, so the day someone adds a pixel font to the theme,
+    # a hardcoded fallback would silently space every title letter wrong.
+    var font: Font = title.get_theme_font("font")
+    if font == null:
+        font = ThemeDB.fallback_font
+    # Real line height for this font/size. The ghost's pivot is derived from
+    # this rather than from ghost.get_combined_minimum_size(): that call was
+    # made BEFORE the ghost was added to the tree, where it cannot resolve a
+    # theme font and returns a near-zero size, so the pivot collapsed to the
+    # top-left corner and the scale-up pushed the copy down and to the right —
+    # visibly a double-image again, the exact thing it was meant to fix.
+    var line_h := font.get_height(size)
+    var tracking := float(size) * 0.06
+    var widths: Array[float] = []
+    var total := 0.0
+    for i in text.length():
+        var w := font.get_string_size(text[i], HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+        widths.append(w)
+        total += w + tracking
+    total -= tracking
+
+    line.custom_minimum_size = Vector2(total, float(size) * 1.55)
+
+    var x := 0.0
+    for i in text.length():
+        var ch: String = text[i]
+        var w: float = widths[i]
+        # A space still advances the pen, but must not spawn a glyph, a ghost
+        # or a tween — animating an empty rect is pure cost for zero pixels.
+        if ch == " ":
+            x += w + tracking
+            continue
+
+        var glyph := Label.new()
+        glyph.text = ch
+        glyph.add_theme_font_size_override("font_size", size)
+        glyph.add_theme_color_override("font_color", core)
+        glyph.add_theme_color_override("font_outline_color", SMOKE_TITLE_EDGE)
+        glyph.add_theme_constant_override("outline_size", maxi(4, int(float(size) * 0.10)))
+        glyph.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        glyph.position = Vector2(x, float(size) * 0.2)
+        line.add_child(glyph)
+
+        # The ghost: the same glyph, bigger, barely there, sitting behind and
+        # slightly above — the smear of smoke the letter is condensing out of.
+        # show_behind_parent keeps it under the crisp glyph without needing a
+        # second pass over the line to fix draw order.
+        var ghost := Label.new()
+        ghost.text = ch
+        ghost.add_theme_font_size_override("font_size", size)
+        ghost.add_theme_color_override("font_color", SMOKE_TITLE_GHOST)
+        ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        ghost.show_behind_parent = true
+        # Pivot on the ghost's OWN centre, taken after it has computed a
+        # minimum size, so the scale-up expands evenly around the glyph. The
+        # first version pivoted on a guessed (w*0.5, size*0.55) and scaled
+        # 1.32x1.46, which pushed the enlarged copy down and to the right —
+        # on screen that read as double vision / a drop shadow, not smoke.
+        # A tighter scale and a true centre make it a halo the glyph sits
+        # inside, which is the look intended.
+        ghost.pivot_offset = Vector2(w * 0.5, line_h * 0.5)
+        ghost.scale = Vector2(1.10, 1.10)
+        ghost.position = Vector2.ZERO
+        glyph.add_child(ghost)
+
+        # Per-letter waver. Durations are derived from the index so adjacent
+        # letters are never in step; phase_bias offsets the whole second line
+        # from the first.
+        var drift := 3.0 + float(i % 4) * 1.7
+        var dur := 1.7 + float(i % 5) * 0.23 + phase_bias * 0.1
+        var base_y := glyph.position.y
+        var tw := glyph.create_tween().set_loops()
+        tw.tween_property(glyph, "position:y", base_y - drift, dur) \
+            .set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+        tw.tween_property(glyph, "position:y", base_y, dur) \
+            .set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+        # The ghost curls and fades on its own, slower clock — that mismatch
+        # between crisp glyph and smear is what sells it as smoke rather than
+        # as a drop shadow.
+        var gtw := ghost.create_tween().set_loops()
+        var lean := 0.05 + float(i % 3) * 0.02
+        gtw.tween_property(ghost, "rotation", lean, dur * 1.6) \
+            .set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+        gtw.tween_property(ghost, "rotation", -lean, dur * 1.6) \
+            .set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+        x += w + tracking
+
+    return line
+
 
 ## Drifting smoke + floating ETH rings — the menu breathes instead of sitting.
 func _setup_ambience() -> void:
-    var smoke := CPUParticles2D.new()
-    smoke.texture = load("res://src/assets/sprites/fx_dot.png")
-    smoke.amount = 14
-    smoke.lifetime = 6.0
-    smoke.preprocess = 6.0
-    smoke.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-    smoke.emission_rect_extents = Vector2(700, 40)
-    smoke.position = Vector2(640, 760)
-    smoke.direction = Vector2(0, -1)
-    smoke.spread = 20.0
-    smoke.gravity = Vector2(6, -14)
-    smoke.initial_velocity_min = 18.0
-    smoke.initial_velocity_max = 42.0
-    smoke.scale_amount_min = 24.0
-    smoke.scale_amount_max = 60.0
-    smoke.color = Color(0.75, 0.9, 0.78, 0.06)
-    add_child(smoke)
+    _setup_smoke_layers()
 
     var ring_tex: Texture2D = load("res://src/assets/sprites/sprite_item_eth-ring.png")
+    # Explicit positions, all clear of the two UI columns. The old formula
+    # Vector2(200 + i * 420, 160 + (i % 2) * 320) put ring #1 at (620, 480) —
+    # directly on top of the PLAY LEVEL 1 button, so the ring was drawn
+    # through the button's own label. Keeping them in the upper band and the
+    # bottom-right corner leaves the left menu column and the centre play
+    # column untouched, and being viewport-relative they stay clear at other
+    # window sizes instead of only at 1280x720.
+    var vp_size := get_viewport().get_visible_rect().size
+    var ring_spots: Array[Vector2] = [
+        Vector2(vp_size.x * 0.16, vp_size.y * 0.20),
+        Vector2(vp_size.x * 0.81, vp_size.y * 0.21),
+        Vector2(vp_size.x * 0.88, vp_size.y * 0.78),
+    ]
     for i in range(3):
         var ring := Sprite2D.new()
         ring.texture = ring_tex
         ring.modulate = Color(1, 1, 1, 0.55)
-        ring.position = Vector2(200 + i * 420, 160 + (i % 2) * 320)
+        ring.position = ring_spots[i]
         add_child(ring)
         var tw := ring.create_tween().set_loops()
         tw.tween_property(ring, "position:y", ring.position.y - 26.0, 2.2 + i * 0.4) \
@@ -331,6 +539,78 @@ func _setup_ambience() -> void:
     version.position = Vector2(get_viewport().get_visible_rect().size.x - 210,
             get_viewport().get_visible_rect().size.y - 34)
     add_child(version)
+
+## Constant, never-idle smoke behind the whole menu.
+##
+## THREE layers, not one. A single emitter reads as one puff from one spot;
+## depth is what makes it read as a room full of smoke. A low bank rolls along
+## the floor, a mid layer does the visible SWIRLING, and a high thin wisp
+## crosses the title.
+##
+## Every layer is preprocessed by a full lifetime, so the screen is ALREADY
+## full of smoke on frame one. Without that the menu opens empty and fills in
+## over ~9 seconds, which reads as "the smoke starts late" rather than as
+## atmosphere that was always there.
+func _setup_smoke_layers() -> void:
+    var vp := get_viewport().get_visible_rect().size
+    # y,        half_w,     amount, life, v_min, v_max, s_min, s_max, alpha, swirl
+    _add_smoke_layer(vp.y - 30.0, vp.x * 0.62, 13, 9.0, 8.0, 22.0, 34.0, 76.0, 0.020, 14.0)
+    _add_smoke_layer(vp.y * 0.72, vp.x * 0.55, 10, 11.0, 12.0, 30.0, 26.0, 58.0, 0.016, 34.0)
+    _add_smoke_layer(vp.y * 0.38, vp.x * 0.48, 7, 13.0, 6.0, 18.0, 18.0, 42.0, 0.011, 22.0)
+
+
+## One smoke band.
+##
+## `swirl` maps to tangential_accel, and it is the property that matters: with
+## gravity alone particles rise in straight parallel lines, which looks like
+## steam off a vent. Tangential acceleration curls each particle around its own
+## emission point, which is what the founder asked for — smoke that is
+## constantly swirling rather than merely drifting upward.
+##
+## Alphas are deliberately tiny (0.011-0.020), and the first pass at
+## 0.030-0.055 with particle scales up to 120 was WRONG in the other
+## direction: once the layers were actually visible, ~46 large soft blobs
+## stacked into near-opaque fog that washed the backdrop out completely. The
+## founder asked for "a subtle bit of smoke", so density is now roughly a
+## third of that — fewer particles, smaller, fainter. These layers stack and
+## they sit UNDER the title; anything heavier turns the art muddy.
+func _add_smoke_layer(y: float, half_w: float, amount: int, lifetime: float,
+        vel_min: float, vel_max: float, scale_min: float, scale_max: float,
+        alpha: float, swirl: float) -> void:
+    var smoke := CPUParticles2D.new()
+    smoke.texture = load("res://src/assets/sprites/fx_dot.png")
+    smoke.amount = amount
+    smoke.lifetime = lifetime
+    smoke.preprocess = lifetime
+    smoke.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+    smoke.emission_rect_extents = Vector2(half_w, 30.0)
+    smoke.position = Vector2(get_viewport().get_visible_rect().size.x * 0.5, y)
+    smoke.direction = Vector2(0, -1)
+    smoke.spread = 26.0
+    smoke.gravity = Vector2(5, -10)
+    smoke.initial_velocity_min = vel_min
+    smoke.initial_velocity_max = vel_max
+    smoke.tangential_accel_min = -swirl
+    smoke.tangential_accel_max = swirl
+    smoke.damping_min = 2.0
+    smoke.damping_max = 6.0
+    smoke.angular_velocity_min = -18.0
+    smoke.angular_velocity_max = 18.0
+    smoke.scale_amount_min = scale_min
+    smoke.scale_amount_max = scale_max
+    smoke.color = Color(0.74, 0.90, 0.77, alpha)
+    add_child(smoke)
+    # Draw order, and the bug this replaces: z_index = -1 put every layer
+    # BEHIND the backdrop, which is an opaque JPEG sibling at the default
+    # z_index 0 — so all three layers rendered and were completely invisible.
+    # Headless gates could not see it (the particles existed, emitted and
+    # swirled exactly as asserted); only a screenshot showed an empty sky.
+    # Ordering by TREE POSITION instead: index 2 sits above the backdrop (0)
+    # and its darkening overlay (1), and below the menu VBox, which gets
+    # pushed down to 3. Smoke therefore drifts over the art but never over
+    # the title or the buttons.
+    move_child(smoke, 2)
+
 
 ## Buttons brighten on hover/focus (keyboard AND mouse per UI rules).
 func _add_hover_glow(btn: Button) -> void:

@@ -1,7 +1,186 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/audit-tool-references-8y0zkt`
+**Branch:** `claude/amazing-fermat-kwatsg`
+
+---
+
+**🎬 TITLE SCREEN REBUILT FOR THE SMOKE THEME (2026-09-22).**
+
+You said the opening title section "does not evoke the theme of marijuana or
+smoke." You were right, and it was worse than a styling miss: the menu was a
+**flat white label on the Level 1 forest plate, with no music at all.** Nothing
+on that screen said SmokeRing.
+
+**Four things changed together**, because any one of them alone still reads wrong:
+
+1. **Music.** Your `MistMenu` track now plays on the menu
+   (`src/assets/music/menu_mist_theme.mp3`). It is routed through
+   `AudioManager.play_music`, not a local player, so it uses the Music bus, the
+   duck-in fade, and stops properly when Level 1 starts — a bare player there
+   would have ignored your volume settings and played over the first level.
+2. **The letters are now smoke.** The title is built **one glyph at a time**,
+   each letter drifting on its own clock, each with a larger, barely-there
+   smoke ghost curling behind it on a slower clock. That mismatch between the
+   crisp letter and the smear is what reads as smoke instead of as a drop
+   shadow. Palette is hot brand gold at the core cooling to pale smoke-green —
+   the same read as the cigar smoke in your key art.
+3. **Smoke swirls constantly, and is already there on frame one.** Three
+   layers at different depths (floor bank, mid swirl, high wisp) rather than
+   one emitter, which only ever reads as a single puff from one spot. The
+   swirl specifically comes from tangential acceleration — with gravity alone
+   particles rise in straight parallel lines and look like steam off a vent.
+   All three are preprocessed a full lifetime so the screen opens full of
+   smoke instead of filling in over ten seconds.
+4. **The backdrop is art, not a colour plate**, and it falls through a
+   priority list rather than a single hardcoded path.
+
+**One thing is NOT done, and it needs you.** The GM key art you showed me —
+Lil Blunt at the trading counter with the $GOLD nuggets and the $DIAMONDS
+tub — **renders into my chat but does not land as a file in this container.**
+Your MP3 did land, because it came through the attach-as-file flow; the image
+did not. So the backdrop currently falls back to `bg_blaze_l1_smoke.jpg`,
+which is at least on-theme rather than the forest plate you rejected.
+
+To finish it: **send that image the same way you sent the MP3** (attach as a
+file). It then drops straight in — the code already looks for
+`src/assets/backgrounds/bg_menu_gm_keyart.png` (or `.jpg`) **first**, ahead of
+every fallback. No code change needed, just the file.
+
+**New gate: `menu_smoke_title_test` (18/18).** The entire lockup is built in
+code at `_ready()`, so a compile pass proves only that the *builder* parses —
+it proves nothing about whether glyphs, particles, backdrop or music actually
+materialised. Every one of those can no-op silently and still boot clean.
+This gate asserts the **result** on a real instantiated menu: two lines, one
+Label per non-space character, a ghost behind every glyph, three particle
+layers that all swirl and are all preprocessed, and a music player that is
+actually playing. It caught a real bug while being written — both title lines
+were named `SmokeLine`, so Godot silently renamed the second one and only one
+line was findable.
+
+`SCRIPT_COMPILE: ALL PASS` (82 apparent failures on the first run were a cold
+asset-import artifact, not a regression — they cleared after `--import`).
+
+**✅ SEEN IN A BROWSER — and the screenshot caught three real bugs.** The CI
+export landed, I pulled the build and drove it in a real browser. Every
+headless gate was green and the screen was still wrong. What the picture
+showed that no assertion could:
+
+1. **The smoke was completely invisible.** The three layers had `z_index = -1`
+   and the backdrop is an opaque JPEG at 0, so all three rendered *behind* it.
+   The gate passed happily — the particles existed, emitted, swirled and were
+   preprocessed exactly as asserted. "Configured correctly" and "you can see
+   it" are different claims, and only the second one is the feature you asked
+   for.
+2. **Then it was far too heavy.** With the layers actually visible, ~46 big
+   soft blobs stacked into near-opaque fog that washed the art out. You asked
+   for "a subtle bit of smoke", so density is now about a third of that.
+3. **An ETH ring sat on top of the PLAY LEVEL 1 button**, drawn straight
+   through the label. Pre-existing placement, not new — the ring formula put
+   one at (620, 480) and the button is at (640, 462). Rings are now
+   viewport-relative and kept clear of both UI columns.
+
+Also fixed: the per-glyph ghost read as a hard double-image because its pivot
+was computed from an un-parented node (which cannot resolve a theme font and
+returns a near-zero size, collapsing the pivot to the corner). It now derives
+from the font's real line height and haloes the glyph instead.
+
+**New dev tool: `tests/menu_capture_tool`.** Renders the real menu under a
+virtual display and saves a PNG in ~30 seconds, instead of a ~10 minute CI
+export plus a 200MB artifact download. Two of the bugs above were invisible to
+every property check and obvious in one screenshot; this makes that check
+cheap enough to do every time. It lives under `tests/` so the web export's
+filter keeps it out of the shipped build.
+
+**Browser gate re-calibrated.** `scripts/verify-game.mjs` clicked PLAY at
+y=0.71 of the viewport; the new title lockup is a different height and moved
+every button up ~49px, so the click landed in dead space and the gate reported
+"PLAYING state never reached" — which reads as "the game is broken" but was
+really "the gate clicked the backdrop". Re-measured to 0.642 from actual pixel
+bounds, and the single click is now a short ordered sweep, because this
+constant has drifted four times with the same misleading symptom.
+
+Browser result on the CI build: canvas attached, **engine booted**, **no Godot
+script errors**, **non-threaded confirmed**, **Level 1 reached PLAYING**. The
+only console errors left are `ERR_CERT_AUTHORITY_INVALID` on the game's
+outbound price/backend fetches — this sandbox's browser not trusting external
+certs, not a game defect; the build falls back to OFFLINE MODE as designed.
+
+**📦 CORRECTION + a real size finding.** I said re-encoding the key art from
+PNG to JPEG "reclaims pck headroom". **That was wrong**, and the next CI run
+proved it: the pack stayed at exactly **186 MB** before and after removing
+2.4 MB of PNG. The reason is that the web export has
+`vram_texture_compression/for_desktop=true`, so Godot **re-encodes every
+texture** into a fixed-rate GPU format on the way into the pack. The source
+being PNG or JPEG changes the git repo size — which is still worth having —
+but it does not change what ships. Keeping the JPEG (it matches every other
+backdrop here), with the rationale corrected.
+
+**The headroom problem is therefore still open, and it is closer than it
+looks:** 186 MB against a 190 MB CI gate and itch's 200 MB hard per-file
+limit. Measured: 114.3 MB of source assets become a 186 MB pack — about
+**72 MB of pure expansion**, and 89 PNGs are what gets re-encoded. The
+biggest single lever is almost certainly that `for_desktop=true` flag, which
+is a desktop GPU format being produced for a **browser** target.
+
+I have **not** changed it. Export settings are the most regression-prone
+surface in this project — the non-threaded rule exists because of exactly
+this class of change — and it is your call. The test is cheap and
+self-measuring: flip it to `false` on a branch, push, and read the
+`index.pck = NNN MB` line the CI already prints. If it drops, we verify the
+build still renders correctly in a browser before it goes anywhere near
+master.
+
+**🎨 YOUR KEY ART IS NOW THE TITLE BACKDROP.** You asked twice. The honest
+reason it took two rounds: **your image never arrives as a file.** I checked
+the session transcript directly — your chat messages are logged as plain text
+with no image attached, so the picture reaches my eyes but has no bytes on
+disk anywhere in the container. Your MP3 landed because it came through the
+attach-as-file flow; the image does not use that path.
+
+So rather than ask a third time, I rebuilt the scene through the art pipeline
+this project already has (the same Muapi API and key `game-aesthetics-forge`
+uses): the green bud mascot, cowboy hat with the gold leaf emblem, gold
+aviators reflecting candle charts, red bandana, leather vest, gold chains,
+lit cigar with smoke curling up, marble counter with gold coins and a bud jar,
+rising green candlesticks on the wall screens. Landscape 1216x704, because the
+menu is 16:9 and your portrait original would have to crop his face.
+
+**If you want the exact file instead, overwriting
+`src/assets/backgrounds/bg_menu_gm_keyart.png` is the whole swap** — no code
+change. The surest delivery route is the one that worked for the MP3.
+
+**🧠 NEW SKILL: `laya-typed-decisions`.** From the `mizorewww/laya-mlx` repo you
+sent. It answers constrained questions — pick one, score on a rubric, is this
+true — in 7-13ms locally with zero output tokens. **The hard constraint first:
+it cannot run in the game.** It needs Python 3.11+, macOS and Apple Silicon
+via MLX; the game ships as WebAssembly, which has none of those. It can't run
+on this Linux container either. Where it does pay: dev-time work on your Mac.
+This project currently pays frontier models ($2-$50 per 1M tokens) to do jobs
+that are classification, not reasoning — bug triage priority, severity scoring,
+deciding which model should even handle a task. Laya does that shape of
+question for free. Its own `router_questions()` preset exists precisely to pick
+which model to dispatch to. The skill also flags the real traps: a 512-token
+context on the English checkpoint that will silently truncate a long bug
+report, choice-set degradation past ~20 labels, and a calibration temperature
+the port has to clamp because the shipped value would report a coin flip as
+near-certainty.
+
+**🛠️ NEW SKILL: `jev-astra-taskforge`.** Dispatches task-spec authoring to
+**GPT-6 Astra** on OpenRouter (verified live: `openai/gpt-6-astra`, $10/1M in,
+$50/1M out, 1.05M context) and browser-truth verification to **Jev**.
+
+On Jev: you said it is on OpenRouter and that you have used it. You are right
+that using Jev means paying OpenRouter — `jev-ultrafast` requires an OpenRouter
+key for the small model that writes text. What I could not find is a Jev
+*chat-completions model ID*: the catalogue returned 444 of 444 with no next
+page and no `jev` anywhere in it, and direct calls to six plausible IDs each
+came back `is not a valid model ID`. Rather than bake my answer in, the skill
+now **runs discovery every time** and builds for whichever result comes back,
+so if it is account-gated or gets added later it just works. It also records
+the `TYPESAFE_API` vs `TYPESAFE_API_KEY` name mismatch that would otherwise
+look like a missing key, and the proxy bug that makes `or-call.mjs` look
+offline when it is not.
 
 ---
 
