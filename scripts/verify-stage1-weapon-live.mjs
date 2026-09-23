@@ -22,9 +22,10 @@
 //     steel pickaxe SPRITE — anti-aliased, no flat palette.
 //
 // Verified this way on build 2026-09-22-a79d3db: 179 body px, 89 wrap px,
-// 15 fuse px in one blob beside the player. Smoke bomb, confirmed.
+// 15 fuse px in one blob beside the player. Usage: <url> [stage 1-3].
+// Pair with: python3 scripts/weapon-colour-check.py artifacts/weapon-verify-sN
 import { chromium } from 'playwright'; import fs from 'fs';
-const OUT='artifacts/weapon-verify'; fs.rmSync(OUT,{recursive:true,force:true}); fs.mkdirSync(OUT,{recursive:true});
+const OUT=`artifacts/weapon-verify-s${process.argv[3]||"1"}`; fs.rmSync(OUT,{recursive:true,force:true}); fs.mkdirSync(OUT,{recursive:true});
 const PIN=['/opt/pw-browsers/chromium-1194/chrome-linux/chrome','/opt/pw-browsers/chromium/chrome-linux/chrome'];
 const o={args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage','--no-sandbox','--ignore-certificate-errors']};
 for(const p of PIN){if(fs.existsSync(p)){o.executablePath=p;break;}}
@@ -32,29 +33,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const b=await chromium.launch(o);
 const ctx=await b.newContext({viewport:{width:1280,height:720},ignoreHTTPSErrors:true});
 const pg=await ctx.newPage();
-await pg.goto(`${process.argv[2]}?v=${Date.now()}&stage=1`,{waitUntil:'domcontentloaded',timeout:120000});
-await pg.waitForSelector('canvas',{timeout:120000});
-await pg.waitForFunction(()=>{const c=document.querySelector('canvas');return c&&c.width>100&&c.height>100;},{timeout:180000});
-await sleep(9000);
-const cv=await pg.$('canvas'); await cv.click({position:{x:640,y:660}}).catch(()=>{}); await sleep(300);
-await pg.keyboard.down('KeyD'); await sleep(450); await pg.keyboard.up('KeyD'); await sleep(500);
-for (let r=0;r<4;r++){
-  await pg.screenshot({path:`${OUT}/r${r}_pre.png`});
-  await pg.keyboard.press('KeyJ');
-  for(let i=0;i<4;i++){ await sleep(33); await pg.screenshot({path:`${OUT}/r${r}_f${i}.png`}); }
-  await sleep(800);
-}
-await ctx.close(); await b.close(); console.log('DONE');
-import { chromium } from 'playwright'; import fs from 'fs';
-const OUT='artifacts/weapon-verify'; fs.rmSync(OUT,{recursive:true,force:true}); fs.mkdirSync(OUT,{recursive:true});
-const PIN=['/opt/pw-browsers/chromium-1194/chrome-linux/chrome','/opt/pw-browsers/chromium/chrome-linux/chrome'];
-const o={args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage','--no-sandbox','--ignore-certificate-errors']};
-for(const p of PIN){if(fs.existsSync(p)){o.executablePath=p;break;}}
-const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-const b=await chromium.launch(o);
-const ctx=await b.newContext({viewport:{width:1280,height:720},ignoreHTTPSErrors:true});
-const pg=await ctx.newPage();
-await pg.goto(`${process.argv[2]}?v=${Date.now()}&stage=1`,{waitUntil:'domcontentloaded',timeout:120000});
+await pg.goto(`${process.argv[2]}?v=${Date.now()}&stage=${process.argv[3]||"1"}`,{waitUntil:'domcontentloaded',timeout:120000});
 await pg.waitForSelector('canvas',{timeout:120000});
 await pg.waitForFunction(()=>{const c=document.querySelector('canvas');return c&&c.width>100&&c.height>100;},{timeout:180000});
 await sleep(9000);
