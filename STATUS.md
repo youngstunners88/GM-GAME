@@ -5,6 +5,20 @@
 
 ---
 
+**💨 SMOKE BOMBS ARE THE DEFAULT WEAPON EVERYWHERE + SKY BLOCKS REMOVED (2026-09-23).**
+
+- **Smoke bomb is now the default throw in every stage.** The plain axe (the old
+  Stage 2 fallthrough, never requested) is gone. Axes only appear when you grab
+  the axe/hammer pickup; Stage 3 keeps the golden revolver. CI gate
+  `check-stage1-weapon.py` blocks any plain axe from coming back (proven to fail
+  on a regressed copy).
+- **Background skies de-blocked** (founder approved). JPEG 8x8 block artifacts in
+  the smooth sky of all 6 plates removed — blaze L3 1.77→1.02, L1 1.58→1.06,
+  L2 1.56→1.07. Trees, sun, mountains **untouched** (0.00 pixel change in all
+  detailed areas). All background CI gates pass.
+
+---
+
 **✅ SMOKE BOMBS CONFIRMED LIVE — WITH PROOF (2026-09-22).**
 
 Live build **`BUILD 2026-09-22-a79d3db`**. Stage 1, attack pressed, projectile
