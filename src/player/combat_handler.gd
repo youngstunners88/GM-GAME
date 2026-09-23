@@ -186,32 +186,20 @@ func _throw_flame() -> void:
 	player.get_tree().current_scene.add_child(flame)
 	AudioManager.play_sfx("torch_throw")
 
-## The base throw. SMOKE BOMB IS THE DEFAULT, EVERYWHERE.
-##
-## Founder, 2026-09-22/23: "i didnt ever mention the axes and you put them in
-## there!!! then when I told you to go back to the smoke bombs you ignored me"
-## and "bring back the smoke bombs ... How many times must i tell you the
-## fucking same thing". The plain thrown axe was never his request. It was the
-## Stage 2 fallthrough of the old router (`else: _spawn_axe`), so every stage
-## that was not 1 or 3 silently armed Lil Blunt with a weapon nobody asked for.
-##
-## Only the weapons the founder DID ask for override the smoke bomb:
-##   * holding the axe / hammer pickup (pickaxe, bigaxe) outside Stage 1 ->
-##     throw THAT ("when Lil Blunt grabs the axe or the hammer ... throwing the
-##     axe or hammer", 2026-09-16);
-##   * Stage 3 with no tool -> the golden revolver (2026-09-16 reference art).
-## Stage 1 is always the smoke bomb: the pickaxe is its boss REWARD, so a tool
-## there would be a weapon he does not own yet.
+## The base throw, per stage (founder, 2026-09-23: "The smoke bombs are only
+## for the fucking stage 1!!!"):
+##   Stage 1 -> SMOKE BOMB, always.
+##   Stage 3 -> golden revolver, unless holding the axe/hammer pickup.
+##   otherwise (Stage 2, or a tool held in Stage 3) -> the axe.
+## Stage comes from _stage_index(), which reads the LEVEL SCENE (never a stale
+## global) and falls back to 1 — that is what keeps Stage 1 on smoke bombs.
 func _spawn_projectile(spread: float) -> void:
-	var stage: int = _stage_index()
-	var holding_tool: bool = GameManager.has_power_up("bigaxe") \
-		or GameManager.has_power_up("pickaxe")
-	if stage != 1 and holding_tool:
-		_spawn_axe(spread)
+	if _uses_smoke_bombs():
+		_spawn_smoke_bomb(spread)
 	elif _uses_revolver():
 		_spawn_revolver_bullet(spread)
 	else:
-		_spawn_smoke_bomb(spread)
+		_spawn_axe(spread)
 
 
 func _spawn_smoke_bomb(spread: float) -> void:
