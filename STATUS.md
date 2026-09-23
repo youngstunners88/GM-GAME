@@ -1,9 +1,30 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/amazing-fermat-kwatsg`
+**Branch:** `master` (title screen merged via #75, deploy fix via #76)
 
 ---
+
+**✅ YOUR TITLE SCREEN IS LIVE — and why it kept vanishing (2026-09-23).**
+
+You were right that the live page wasn't showing it. It wasn't a problem with
+your image or the code. **Every branch was deploying to your one public itch
+page, and the last push won.** My branch deployed your title screen at 03:59.
+Another session's branch, which didn't have it, deployed over it at 04:54.
+None of it had been merged to master.
+
+Fixed two ways:
+1. **Merged to master** (#75), so your title screen is now the real game, not a
+   branch.
+2. **Only master can deploy to itch now** (#76). Branches still build, run
+   every check and produce a downloadable test build, but they can no longer
+   overwrite what players see. Verified: the branch run built everything and
+   skipped the deploy; master deployed at 10:53, and it was the last deploy.
+
+**One thing only you can do for full protection:** branches created before
+this fix still carry the old deploy rule until they merge master. To shut that
+off completely, move `BUTLER_API_KEY` into a GitHub Environment limited to
+`master` (repo Settings → Environments). That's a settings change, not code.
 
 **🎬 TITLE SCREEN REBUILT FOR THE SMOKE THEME (2026-09-22).**
 
