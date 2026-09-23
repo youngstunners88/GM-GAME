@@ -5,6 +5,28 @@
 
 ---
 
+**💨 FLOWING SMOKE + 🔒 FRONT PAGE LOCKED (2026-09-23).**
+
+**Smoke that never stops.** The title screen now has smoke curling and rising
+across the whole screen, the entire time the menu is open. It's a shader
+built on the smoke effect the Smoke Lounge already uses (proven in the web
+build), made see-through so your key art shows between the wisps: thicker
+near the bottom, thinning as it rises, never over the title or buttons.
+
+**Your front page is locked.** It can't be changed by any of your other
+sessions unless you say so, three ways at once:
+1. **In every Claude session on this repo**: touching a locked file (the menu,
+   your key art, your MistMenu track, the smoke) pops up a permission prompt
+   that you have to approve. Tested: 14/14 cases — every kind of write is
+   caught, normal reading is not.
+2. **In CI**: if a locked file changes anyway, the build fails — and a failed
+   master build never deploys, so a changed title screen can't reach players.
+   Tested failing-first: clean passes, a changed file fails and names it.
+3. **In CLAUDE.md**: the written rule every session reads at start.
+
+To change the front page later, just tell a session to — you approving the
+prompt is the unlock.
+
 **✅ YOUR TITLE SCREEN IS LIVE — and why it kept vanishing (2026-09-23).**
 
 You were right that the live page wasn't showing it. It wasn't a problem with

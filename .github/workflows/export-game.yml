@@ -48,6 +48,9 @@ on:
       # scripts/** and so still triggered CI on its own, which is exactly how
       # this went unnoticed for one full commit.
       - '.claude/skills/secure-build-checklist/**'
+      # Founder-locked front page: a change to the lock manifest alone must
+      # still run the front-page check, not slip through untriggered.
+      - '.claude/locks/**'
   workflow_dispatch:
 
 permissions:
@@ -85,6 +88,17 @@ jobs:
 
       - name: Security Sentinel
         run: ./scripts/security-sentinel.sh --fail-on=high
+
+      # FOUNDER-LOCKED FRONT PAGE. The founder builds in several sessions in
+      # parallel; his approved title screen must not change unless he says so.
+      # This fails the build if any locked file differs from the fingerprints in
+      # .claude/locks/front-page.lock — and on master a failed build is a build
+      # that does not deploy, so a changed or reverted title screen can never
+      # reach players. Runs before the export so a violation fails fast.
+      # An approved change re-fingerprints in the same commit:
+      #   scripts/front-page-lock.sh update
+      - name: Front-page lock (founder-approved title screen)
+        run: bash scripts/front-page-lock.sh check
 
       - name: Download Godot editor + export templates
         run: |

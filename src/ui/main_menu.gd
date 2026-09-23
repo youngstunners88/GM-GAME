@@ -29,6 +29,11 @@ const MENU_BACKDROPS: Array[String] = [
 ## Founder-supplied menu track (MistMenu).
 const MENU_MUSIC := "res://src/assets/music/menu_mist_theme.mp3"
 
+## Constantly flowing smoke over the key art (founder, 2026-09-23: "Add smoke
+## that is constantly flowing"). A shader, not particles: see the header of the
+## .gdshader for why particles never read as one continuous body of smoke.
+const TITLE_SMOKE_SHADER := "res://src/assets/shaders/title_smoke_flow.gdshader"
+
 ## Smoke palette. Hot brand gold at the glyph core, cooling into pale
 ## smoke-green in the ghost behind it — the same hot-core/cool-edge read as
 ## the cigar smoke in the key art.
@@ -503,6 +508,7 @@ func _make_smoke_line(text: String, size: int, core: Color, phase_bias: float) -
 
 ## Drifting smoke + floating ETH rings — the menu breathes instead of sitting.
 func _setup_ambience() -> void:
+    _setup_smoke_flow()
     _setup_smoke_layers()
 
     var ring_tex: Texture2D = load("res://src/assets/sprites/sprite_item_eth-ring.png")
@@ -539,6 +545,30 @@ func _setup_ambience() -> void:
     version.position = Vector2(get_viewport().get_visible_rect().size.x - 210,
             get_viewport().get_visible_rect().size.y - 34)
     add_child(version)
+
+## Full-screen flowing smoke, drawn over the key art and under the menu UI.
+##
+## Tree position 2 — above the backdrop (0) and its darkening overlay (1),
+## below the VBox with the title and buttons — so the smoke curls across the
+## art without ever fogging the text or the PLAY button. The same draw-order
+## rule the particle layers follow (their z_index = -1 once hid them entirely
+## behind the opaque backdrop), which is why it is set by tree order here too.
+func _setup_smoke_flow() -> void:
+    if not ResourceLoader.exists(TITLE_SMOKE_SHADER):
+        push_warning("MainMenu: smoke shader missing at %s" % TITLE_SMOKE_SHADER)
+        return
+    var mat := ShaderMaterial.new()
+    mat.shader = load(TITLE_SMOKE_SHADER)
+    var vp := get_viewport().get_visible_rect().size
+    mat.set_shader_parameter("aspect", vp.x / maxf(vp.y, 1.0))
+    var flow := ColorRect.new()
+    flow.name = "SmokeFlow"
+    flow.material = mat
+    flow.set_anchors_preset(Control.PRESET_FULL_RECT)
+    flow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    add_child(flow)
+    move_child(flow, 2)
+
 
 ## Constant, never-idle smoke behind the whole menu.
 ##
