@@ -66,7 +66,13 @@ func _raise_silhouettes(rows: Variant) -> void:
 		var col := ColorRect.new()
 		col.size = Vector2(14, 34 + (10 - i) * 3)
 		col.position = Vector2(-120 + i * 26, -20 - col.size.y)
-		col.color = Color(0.3, 0.9, 0.5, 0.55)
+		# Founder named the Hall of Blaze as one of the places still showing
+		# "green smudges". These leaderboard bars were Color(0.3, 0.9, 0.5, 0.55)
+		# — translucent and strongly green-dominant, so they washed over the room
+		# behind them and read as blotches rather than as bars. Same defect class
+		# as the Blaze Mode smoke puff (see effects/smoke_puff.gd). Now solid and
+		# on the project's mint/teal accent, so they read as a chart.
+		col.color = Color(0.35, 0.85, 0.78, 0.95)
 		add_child(col)
 		if i < 3:
 			var tag := Label.new()

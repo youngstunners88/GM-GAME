@@ -45,6 +45,13 @@ const LADDER_TOP_OUT_MARGIN: float = 44.0
 ## ~15% less airtime, kills the floaty feel.
 @export var fall_gravity_mult: float = 1.65
 @export var max_fall_speed: float = 720.0
+## Downward px/s held while grounded so every frame is a REAL floor-contact
+## test instead of a zero-length move_and_slide that just re-latches
+## is_on_floor(). See the FLOOR LIVENESS PROBE block in _physics_process —
+## this is what stops a vanishing floor from welding the player in mid-air.
+## Small enough to be absorbed by any real floor collision in one frame, so it
+## is invisible in normal play.
+const FLOOR_PROBE_SPEED: float = 8.0
 ## px/s² — ~0.1s from standstill to full run on the ground.
 @export var ground_accel: float = 2000.0
 @export var ground_decel: float = 2800.0
@@ -246,6 +253,38 @@ func _physics_process(delta: float) -> void:
 	else:
 		input_handler.is_wall_sliding = false
 		wall_sparks.emitting = false
+		# FLOOR LIVENESS PROBE — the actual "blue block freeze" (founder
+		# 2026-08-26 and again 2026-09-16: "it disappears and then the game
+		# freezes", music still playing).
+		#
+		# `is_on_floor()` is LATCHED from the last move_and_slide(). Standing
+		# still, velocity is (0,0), so the next move_and_slide() is a
+		# zero-length move that never re-tests the contact — the flag stays
+		# true. That is fine while the floor exists, and catastrophic the
+		# instant it stops existing: a breakable smashed under his feet or a
+		# timed gate opening beneath him disables its collider, but the player
+		# keeps reporting is_on_floor() == true, so the gravity branch above is
+		# never entered, velocity.y stays 0, the next move is zero-length
+		# again, and he is welded in mid-air forever.
+		#
+		# MEASURED, not theorised: with the gate's collider already disabled and
+		# its body at a healthy scale 1.0, the player held y=508.0 with
+		# is_on_floor()==true for 50 straight physics frames.
+		#
+		# This is why the three earlier hardenings never fixed the report —
+		# every one of them fixed the BLOCK (no degenerate collider, pound
+		# watchdog, _force_unstick) and none touched the latch on the PLAYER.
+		# The heartbeat in _physics_process only fires when he is TRYING to
+		# move, so a player standing still was never rescued at all.
+		#
+		# A hair of downward velocity makes every grounded frame a real contact
+		# test. On a real floor the collision absorbs it and nothing changes;
+		# with the floor gone, move_and_slide finds no contact, is_on_floor()
+		# drops, and he simply falls. Applied only when not already moving
+		# upward so a jump (below, and the buffered jump just after) is never
+		# clipped.
+		if velocity.y >= 0.0:
+			velocity.y = FLOOR_PROBE_SPEED
 		var had_buffer := input_handler.jump_buffer_timer > 0
 		# First frame back on the ground after a hard fall → landing squash.
 		if input_handler.coyote_timer <= 0 and _last_fall_speed > 380.0 and not had_buffer:
@@ -374,13 +413,40 @@ func _update_fly(delta: float, direction: float) -> void:
 	GameManager.player_position = global_position
 
 ## With the pickaxe out, walking into a breakable block smashes it.
+##
+## NEVER THE BLOCK HE IS STANDING ON (founder 2026-09-16, P0 re-report: "the
+## blue block disappears when one jumps on it and then the game freezes").
+## `get_slide_collision()` reports EVERY contact from the last move_and_slide —
+## including the FLOOR. So with the pickaxe out this loop used to smash the
+## ledge under his own feet on the first frame he landed on it, which is
+## exactly what the founder sees. In Stage 3 both "blue blocks" (secret walls,
+## the only things that draw tile_block-chain untinted, hence cyan) sit INSIDE
+## pits — (620,624) spans the 560-700 gap, (1260,624) spans 1220-1320 — so
+## deleting his own floor drops him straight into the hole it was bridging.
+##
+## The earlier 2026-08-26 pass hardened the block's TEARDOWN (no degenerate
+## zero-scale collider) and `breakable_block_no_freeze_test` still covers that,
+## but that gate calls `break_block()` by hand — it never asked whether the
+## block should be breaking at all. The trigger was the unfixed half.
+##
+## Floor contacts are skipped; WALL and CEILING contacts still smash, so the
+## feature keeps working exactly as documented: walk sideways into a block, or
+## jump up into one of Level 1's overhead walls. Big Mode's ground pound is a
+## separate path (`_resolve_ground_pound`) and deliberately still breaks what
+## is underneath — slamming through a floor is that move's whole point.
 func _check_pickaxe_breaks() -> void:
 	if not GameManager.has_power_up("pickaxe"):
 		return
 	for i in range(get_slide_collision_count()):
-		var collider := get_slide_collision(i).get_collider()
-		if collider and collider.is_in_group("breakable") and collider.has_method("break_block"):
-			collider.break_block()
+		var contact := get_slide_collision(i)
+		var collider := contact.get_collider()
+		if collider == null or not collider.is_in_group("breakable") \
+				or not collider.has_method("break_block"):
+			continue
+		# A floor contact's normal points along up_direction (0,-1 by default).
+		if contact.get_normal().dot(up_direction) > 0.5:
+			continue
+		collider.break_block()
 
 # ---- Big Mode ground pound (brief correction F) ---------------------------
 var _ground_pounding: bool = false
@@ -451,6 +517,17 @@ func _update_tool_visual() -> void:
 		sprite.set_tool("res://src/assets/sprites/sprite_item_pickaxe.png")
 	elif GameManager.has_power_up("torch"):
 		sprite.set_tool("res://src/assets/sprites/sprite_item_torch.png")
+	elif GameManager.current_level == 3:
+		# GOLDEN REVOLVER (founder, 2026-09-16, reference art): "the gun needs
+		# to be in his hand for this to make sense" — Stage 3's base weapon
+		# is the revolver (see combat_handler.gd::_uses_revolver), so it's
+		# the default held tool there, same as every other stage's base
+		# weapon is implicitly "no held tool, just the thrown/fired
+		# projectile" — except here the founder specifically wants the gun
+		# VISIBLE in hand at all times, not only mid-throw. A pickaxe/bigaxe
+		# pickup still overrides this above, exactly as it already overrode
+		# the (invisible) base axe in Stage 2/3 before this change.
+		sprite.set_tool("res://src/assets/sprites/sprite_item_golden_revolver.png", 0.9)
 	else:
 		sprite.set_tool("")
 

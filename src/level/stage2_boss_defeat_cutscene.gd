@@ -1,30 +1,69 @@
 class_name Stage2BossDefeatCutscene
 extends CanvasLayer
 ## Stage 2 boss-defeat cutscene: Distributor (Crystalline Bureaucrat)
-## shattered by the pickaxe -> Fort Knox vault door opens -> Gold Rush
-## (Stage 3). Plays after the Distributor's own death tween (see
-## distributor.gd::die()) and replaces its plain 3s "LEVEL COMPLETE!" Label
-## wait — the queue_free() + SceneRouter.load_scene() that follows is
-## untouched.
+## shattered by the pickaxe -> Fort Knox vault door opens -> chest reveal ->
+## golden revolver claimed -> Gold Rush (Stage 3). Plays after the
+## Distributor's own death tween (see distributor.gd::die()) and replaces its
+## plain 3s "LEVEL COMPLETE!" Label wait — the queue_free() +
+## SceneRouter.load_scene() that follows is untouched.
 ##
 ## Same architecture as src/level/stage1_boss_defeat_cutscene.gd: a real
-## Seedance-2-generated video (shot list: docs/model-responses/2026-09-05-
-## astra-stage2-defeat-cutscene.md; reference still: artifacts/founder-art/
-## references/stage2_boss_defeat_cutscene_reference.jpg), encoded to Ogg
-## Theora+Vorbis with its dialogue baked into the video's own audio track —
-## no separate AudioStreamPlayer needed. Plays at normal volume; the Smoke
-## Lounge brand video (secret_realm.gd) ships muted by specific founder
-## request for that ambient asset, not because this engine can't play
-## Theora+Vorbis audio.
+## generated video, encoded to Ogg Theora+Vorbis with its dialogue baked into
+## the video's own audio track — no separate AudioStreamPlayer needed. Plays
+## at normal volume; the Smoke Lounge brand video (secret_realm.gd) ships
+## muted by specific founder request for that ambient asset, not because this
+## engine can't play Theora+Vorbis audio.
+##
+## EXTENDED (founder, 2026-09-16): the original ~15.1s cut (Seedance-2, shot
+## list docs/model-responses/2026-09-05-astra-stage2-defeat-cutscene.md;
+## reference artifacts/founder-art/references/stage2_boss_defeat_cutscene_
+## reference.jpg) ended on the vault door opening. Lil Blunt then finds a
+## treasure chest bearing the real GM logo (artifacts/founder-art/references/
+## gm_logo.png, pulled from the founder's own Drive link), opens it, and
+## lifts out the golden revolver — the same weapon Stage 3 now fires (see
+## combat_handler.gd::_uses_revolver) and visibly holds (see
+## player.gd::_update_tool_visual).
+##
+## CORRECTED (founder, 2026-09-16, 2nd pass — furious, all caps): "the video
+## scene is an extension! Not a replacement! It is a continuation!" The FIRST
+## attempt used Muapi's seedance-2.5-video-extend directly, which does not
+## append — it regenerates its own version of the source clip's tail and
+## blends into it, so the shipped ~18s result had already re-cut/altered the
+## original vault-door footage by its first few seconds (confirmed by frame
+## diffing against the true original: the AI output's very first frame is
+## already a different shot, not a continuation of the last frame). That is
+## a partial REPLACEMENT of founder-approved footage, not an extension, and
+## is exactly what the correction rejects.
+##
+## The fix: the true original 15.104s file (recovered byte-for-byte from git
+## history, commit 6df635c, pre-dating the first extend attempt) is now
+## concatenated (ffmpeg concat filter, re-encoded once to a single Theora/
+## Vorbis stream) with the SAME already-generated chest/revolver AI footage
+## used the first time — no new paid generation call. The splice is a hard
+## cut at 15.104s (verified frame-by-frame: t=15.5s is still the untouched
+## vault-door footage, t=16.0s is already the new chest shot) — original
+## footage first, unmodified, new footage appended after it. A hard cut
+## between two shots is a normal edit; the founder's objection was to the
+## ORIGINAL being altered, not to a scene change existing at all. Final
+## duration is ~33.1s (15.104s original + 18.0s new, unchanged from the
+## first attempt). The earlier same-day in-engine "bus smash" reveal beat
+## (a placeholder built before this video pipeline was available) stays
+## removed from distributor.gd — still redundant with this video's own
+## reveal, unrelated to which cut of the video ships.
 ##
 ## Failure-safety: a missing/corrupt video asset degrades to an immediate
-## `finished` rather than hanging the boss-death sequence, and a 20s hard
-## deadline covers a stalled decode or a browser that silently blocks
-## autoplay-with-sound.
+## `finished` rather than hanging the boss-death sequence, and a hard
+## deadline (see _DEADLINE_SEC below) covers a stalled decode or a browser
+## that silently blocks autoplay-with-sound.
 
 signal finished
 
 const VIDEO := "res://src/assets/video/cutscenes/stage2_boss_defeat.ogv"
+## Real video length is ~33.1s (15.104s true original + 18.0s appended reveal
+## footage — see the class comment's CORRECTED section). Must stay above that
+## with real margin: the OLD 20.0s deadline predates the true-concatenation
+## fix and would have silently cut the video off ~13s early.
+const _DEADLINE_SEC := 40.0
 
 var _video_player: VideoStreamPlayer = null
 var _done := false
@@ -69,7 +108,7 @@ func play() -> void:
 	_mute_stage_music()
 	vid.play()
 
-	get_tree().create_timer(20.0, true, false, true).timeout.connect(_finish)
+	get_tree().create_timer(_DEADLINE_SEC, true, false, true).timeout.connect(_finish)
 
 func _exit_tree() -> void:
 	if is_instance_valid(_video_player):

@@ -41,8 +41,8 @@ var facing_right: bool = true:
 			_anim.flip_h = not value
 		if _tool:
 			_tool.flip_h = not value
-			_tool.position.x = TOOL_HAND_X if value else -TOOL_HAND_X
-			_tool.rotation = 0.35 if value else -0.35
+			_tool.position.x = _tool_x_offset if value else -_tool_x_offset
+			_tool.rotation = _tool_hold_angle if value else -_tool_hold_angle
 
 ## Ground-movement flag driven by the player each physics frame; while true
 ## the sprite gets a light run-bob (rotation + hop) so walking reads as
@@ -58,6 +58,17 @@ var _tool_path: String = ""
 ## doesn't drift relative to the hand while walking (_tool is a sibling of
 ## _spr, not a child, so it gets none of _spr's bob for free).
 var _tool_base_y: float = 0.0
+## Tilt applied to the held tool (radians, mirrored by facing). 0.35 (~20deg)
+## suits a tall pole; a wide sidearm uses a much shallower angle — see
+## set_tool()'s is_sidearm branch. Read by the facing_right setter and by
+## _process()'s walk-bob so a re-flip or a walk cycle never reverts to the
+## pole angle on a held gun.
+var _tool_hold_angle: float = 0.35
+## Unsigned X offset from node centre to where the tool is anchored, mirrored
+## by facing. TOOL_HAND_X for a pole gripped at the hand; a sidearm adds a
+## forward offset so its grip (not its geometric centre) sits at the hand —
+## see set_tool(). Read by the facing_right setter so a re-flip preserves it.
+var _tool_x_offset: float = TOOL_HAND_X
 ## Local-Y of the TOP and the FEET of the sprite's actual opaque pixels,
 ## measured from the real texture in set_outfit(). Everything that has to sit
 ## "on the character" (the held tool) is derived from these, never from an
@@ -160,7 +171,7 @@ func _process(delta: float) -> void:
 		# visibly drifts from the hand while walking (see tool-hold-anchor).
 		if _tool:
 			_tool.position.y = _tool_base_y - lift
-			_tool.rotation = (0.35 if facing_right else -0.35) + sin(stride) * 0.05 * dir
+			_tool.rotation = (_tool_hold_angle if facing_right else -_tool_hold_angle) + sin(stride) * 0.05 * dir
 	else:
 		if _bob_time != 0.0:
 			_bob_time = 0.0
@@ -168,7 +179,7 @@ func _process(delta: float) -> void:
 			_spr.position.y = feet_y
 			if _tool:
 				_tool.position.y = _tool_base_y
-				_tool.rotation = 0.35 if facing_right else -0.35
+				_tool.rotation = _tool_hold_angle if facing_right else -_tool_hold_angle
 
 ## Show/hide the held tool. Pass "" to clear. Path is cached so calling
 ## every frame is free.
@@ -185,30 +196,57 @@ func set_tool(path: String, tool_scale: float = 1.0) -> void:
 	if _tool == null:
 		_tool = Sprite2D.new()
 		add_child(_tool)
-	_tool.rotation = 0.35 if facing_right else -0.35
+	# Sidearms (the golden revolver) are wide/landscape art — 56x31, WIDER
+	# than tall — meant to be held roughly level at hip height with the grip
+	# near the hand and the barrel pointing outward. The pole math below
+	# (built for a 56x tall, ~34-36px pickaxe/torch) anchors the sprite's
+	# vertical CENTER at 55%-down-the-art ("hand_y", near the neck/chest
+	# line) and tilts it 20deg — fine for a pole whose short axis is what's
+	# centered there, but for an image whose LONG axis is horizontal, half
+	# its width swings up and over on that tilt and visually swallows the
+	# head. That was the literal "his entire head is the gun" defect
+	# (founder, 2026-09-16, screenshotted). Detected by filename, same
+	# pattern as the torch glow special-case below.
+	var is_sidearm := path.contains("revolver")
+	_tool_hold_angle = 0.12 if is_sidearm else 0.35
+	_tool.rotation = _tool_hold_angle if facing_right else -_tool_hold_angle
 	_tool.texture = load(path)
 	_tool.scale = Vector2(tool_scale, tool_scale)
 	_tool.flip_h = not facing_right
-	# Tool sprites (pickaxe, torch) are tall thin poles (~34-36px) drawn
-	# CENTERED on this node's position by default. Anchoring the geometric
-	# CENTER at hand height put ~18px of sprite BELOW the hand — on a 32px-tall
-	# player whose feet sit at local y=+16, that dragged the far end of the
-	# torch (and its flame-topped silhouette) right down onto the ground,
-	# reading as "carried at the feet" instead of held up. Anchor the GRIP
-	# instead: about a quarter of the way up from the sprite's bottom edge,
-	# which puts most of a held pole above the hand (flame above the head)
-	# and only a short handle stub below it — how you'd actually grip one.
 	var tex_height := float(_tool.texture.get_height()) if _tool.texture else 0.0
-	var grip_from_bottom := tex_height * 0.25
-	# Hand height = 55% down the VISIBLE art, measured from the real texture
-	# (see _art_top_local/_art_feet_local). The old code used a hardcoded
-	# +2.0 that assumed a 32px sprite whose feet were at the collision line;
-	# against the real 49x72 art that put the torch's lower half BELOW his
-	# feet, which is the "torch at the feet" defect that survived two fixes.
-	var hand_y := _art_top_local + (_art_feet_local - _art_top_local) * 0.55
-	_tool_base_y = hand_y - (tex_height / 2.0 - grip_from_bottom)
+	var tex_width := float(_tool.texture.get_width()) if _tool.texture else 0.0
+	if is_sidearm:
+		# Anchor near hip height (78% down the visible art — well below the
+		# pole's chest-height anchor) and shift the sprite forward along X so
+		# its GRIP (the rear third of the image, away from the muzzle) sits
+		# at the hand instead of the image's geometric center — otherwise
+		# half the barrel's width sits back over the body/head instead of
+		# pointing forward and away from it.
+		var hip_y := _art_top_local + (_art_feet_local - _art_top_local) * 0.78
+		_tool_base_y = hip_y
+		var forward_offset := tex_width * tool_scale * 0.3
+		_tool_x_offset = TOOL_HAND_X + forward_offset
+	else:
+		# Tool sprites (pickaxe, torch) are tall thin poles (~34-36px) drawn
+		# CENTERED on this node's position by default. Anchoring the geometric
+		# CENTER at hand height put ~18px of sprite BELOW the hand — on a 32px-tall
+		# player whose feet sit at local y=+16, that dragged the far end of the
+		# torch (and its flame-topped silhouette) right down onto the ground,
+		# reading as "carried at the feet" instead of held up. Anchor the GRIP
+		# instead: about a quarter of the way up from the sprite's bottom edge,
+		# which puts most of a held pole above the hand (flame above the head)
+		# and only a short handle stub below it — how you'd actually grip one.
+		var grip_from_bottom := tex_height * 0.25
+		# Hand height = 55% down the VISIBLE art, measured from the real texture
+		# (see _art_top_local/_art_feet_local). The old code used a hardcoded
+		# +2.0 that assumed a 32px sprite whose feet were at the collision line;
+		# against the real 49x72 art that put the torch's lower half BELOW his
+		# feet, which is the "torch at the feet" defect that survived two fixes.
+		var hand_y := _art_top_local + (_art_feet_local - _art_top_local) * 0.55
+		_tool_base_y = hand_y - (tex_height / 2.0 - grip_from_bottom)
+		_tool_x_offset = TOOL_HAND_X
 	_tool.position = Vector2(
-		TOOL_HAND_X if facing_right else -TOOL_HAND_X,
+		_tool_x_offset if facing_right else -_tool_x_offset,
 		_tool_base_y)
 	if path.contains("torch"):
 		_show_glow(tex_height)

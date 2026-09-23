@@ -73,8 +73,14 @@ if tool in ("Edit", "Write", "MultiEdit", "NotebookEdit"):
         hit = target
 elif tool == "Bash":
     cmd = ti.get("command", "") or ""
+    # Re-fingerprinting IS the unlock. Without this, a session could bring a
+    # locked file in by a route no heuristic sees (a merge, a checkout of another
+    # branch) and then run `update` to make CI agree with it — the CI layer would
+    # pass a change the founder never approved. So `update` always needs him.
+    if re.search(r"front-page-lock\.sh\S*\s+update\b", cmd):
+        hit = "scripts/front-page-lock.sh update (re-fingerprints the lock)"
     mentioned = [p for p in guarded if p in cmd or os.path.basename(p) in cmd]
-    if mentioned:
+    if mentioned and not hit:
         writes = re.search(
             r"(\bsed\s+(-[a-zA-Z]*\s+)*-[a-zA-Z]*i|\bperl\s+-[a-zA-Z]*i|\bcp\b|\bmv\b|\brm\b|"
             r"\btee\b|\btruncate\b|\bdd\b|\binstall\b|\bln\b|"

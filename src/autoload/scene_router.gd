@@ -7,7 +7,7 @@ extends Node
 signal load_progress(progress: float)
 signal load_finished(scene_path: String)
 
-enum Transition { INSTANT, FADE, SLIDE, SMOKE, DIAMOND }
+enum Transition { INSTANT, FADE, SLIDE, SMOKE, DIAMOND, GOLD }
 
 var _loading_path: String = ""
 var _transition_type: Transition = Transition.INSTANT
@@ -16,6 +16,22 @@ var _node_count_before: int = 0
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
     set_process(false)
+
+## Which wipe pattern matches a campaign realm's own palette. Shared by every
+## Blaze Rush entry/exit so the dissolve never clashes with the scene it's
+## covering (founder, 2026-09-17: the SMOKE pattern's green/purple tint,
+## hardcoded for all three realms, flashed over the cyan Crystal Caverns and
+## the amber Gold Rush canyon alike — read as a stray green/purple blemish
+## rather than a themed transition). L1 is the actual Smoke Realm, so SMOKE
+## is correct there, not a fallback.
+static func blaze_transition_for_level(level_index: int) -> Transition:
+    match level_index:
+        2:
+            return Transition.DIAMOND
+        3:
+            return Transition.GOLD
+        _:
+            return Transition.SMOKE
 
 func load_scene(path: String, transition_type: Transition = Transition.FADE) -> void:
     if _loading_path != "":
@@ -66,6 +82,9 @@ func load_scene(path: String, transition_type: Transition = Transition.FADE) -> 
         Transition.DIAMOND:
             SceneTransition.wipe_out("diamond")
             await get_tree().create_timer(0.45).timeout
+        Transition.GOLD:
+            SceneTransition.wipe_out("gold")
+            await get_tree().create_timer(0.45).timeout
         _:
             pass
 
@@ -112,7 +131,7 @@ func _abort_load() -> void:
 ## covered it — wipes reverse their dissolve, everything else lifts the fade.
 func _play_in_transition() -> void:
     match _transition_type:
-        Transition.SMOKE, Transition.DIAMOND:
+        Transition.SMOKE, Transition.DIAMOND, Transition.GOLD:
             SceneTransition.wipe_in()
         _:
             SceneTransition.fade_in()

@@ -293,12 +293,57 @@ func _setup_backdrop() -> void:
 		var layer := ParallaxLayer.new()
 		var tex: Texture2D = load(path)
 		layer.motion_scale = Vector2(0.4, 0.0)  # horizontal parallax, vertically screen-locked
-		layer.motion_mirroring = Vector2(tex.get_width(), 0)
+		# THE "DIVIDING LINE" DOWN THE VAULT (founder 2026-09-16: "there is a
+		# dividing line as if the scene was cutoff and a new background pasted
+		# from a different design").
+		#
+		# It was exactly that, and the cause is one missing multiply. The
+		# backdrop is 1024x576 scaled by `s` (=1.25 at 720p) so it RENDERS
+		# 1280px wide, but the mirroring repeated every 1024px — the UNSCALED
+		# width. Each repeat therefore restarted 256px before the previous copy
+		# had finished, slicing the painting mid-image and butting an unrelated
+		# part of it against the cut. Mirroring must be the SCALED width, which
+		# is what level_base._setup_background() already does correctly.
+		var view_h: float = get_viewport_rect().size.y
+		# And fill from the LIVE viewport height, never a hardcoded 720:
+		# project.godot stretches with aspect="expand", so a window taller than
+		# 16:9 gives a viewport taller than 720 and the art stops short, leaving
+		# the flat uncovered strip along the bottom of the founder's screenshot.
+		# Same lesson, same fix as the level backdrop.
+		# WIDTH MATTERS TOO (founder 2026-09-20: "There's a dividing line in the
+		# diamond vault. It's very subtle"). Scaling from height alone leaves the
+		# drawn plate exactly viewport-wide (1024 * 720/576 = 1280) with zero
+		# margin, so float rounding in the parallax scroll exposes the clear
+		# colour as a near-black bar down the edge. The seam-smudge gate measured
+		# it on the live build: void_frac 0.56 at x=4. Same knife-edge, same fix
+		# as level_base/blaze_rush — satisfy the WIDTH too, pad it, and round the
+		# drawn width up to a whole pixel so the repeat period can never disagree
+		# with the drawn tile by a fraction.
+		var view_w: float = get_viewport_rect().size.x
+		var s: float = maxf(
+			(view_h + 2.0) / float(tex.get_height()),
+			(view_w + 2.0) / float(tex.get_width()))
+		var drawn_w: float = ceilf(tex.get_width() * s)
+		s = drawn_w / float(tex.get_width())
+		# TILE-WRAP SEAM (founder 2026-09-18, Fable 5.1 diagnosis). The vault
+		# plates are ~viewport-wide, so `motion_mirroring = width*scale` puts the
+		# repeat join on screen at every camera position. On the DIAMOND plate the
+		# two edges meet in dark crystal and read fine, but the FORT KNOX (gold)
+		# plate's right edge is dense machinery and its left edge is the bright
+		# cave-mouth sky — bright-next-to-dark can never be edge-healed, so the
+		# join always showed as a hard vertical line. Fix: the gold plate is now
+		# widened (1480px, machinery-only extension fading into shadow so no mirror
+		# reads) to cover the whole camera travel, and tiling is turned OFF for it
+		# — no repeat, no join. Diamond keeps its working mirrored parallax.
+		if _diamonds:
+			# drawn_w, not width*s recomputed — the period must equal the drawn
+			# tile EXACTLY, to the pixel.
+			layer.motion_mirroring = Vector2(drawn_w, 0.0)
+		else:
+			layer.motion_mirroring = Vector2.ZERO
 		var spr := Sprite2D.new()
 		spr.texture = tex
 		spr.centered = false
-		# Scale the art to fill viewport height (~720); tint slightly for depth.
-		var s: float = 720.0 / float(tex.get_height())
 		spr.scale = Vector2(s, s)
 		spr.modulate = Color(0.9, 0.9, 0.95, 1.0)
 		layer.add_child(spr)

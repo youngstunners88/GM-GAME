@@ -1,6 +1,6 @@
 ---
 name: jev-astra-taskforge
-description: Turn a founder request into a verified, executable task spec using GPT-6 Astra on OpenRouter as the planning head, and Jev (TypeSafe's browser-action policy, via browser-use/jev-ultrafast) as the browser-execution head. Use when a request needs a structured task built before any code is written, or when a task's verification step requires actually driving a real browser (checking the live itch.io build, a store page, a dashboard) rather than reading files.
+description: Turn a founder request into a verified, executable task spec using GPT-6 Astra on OpenRouter as the planning head, and Jev (TypeSafe's decisions model, also on OpenRouter) as the numeric ship/block gate. Use when a request needs a structured task built before any code is written, or when a task's verification step requires actually driving a real browser (checking the live itch.io build, a store page, a dashboard) rather than reading files.
 user-invocable: true
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ---
@@ -14,72 +14,44 @@ Neither model may land a change unreviewed. They produce a *spec* and an
 
 ---
 
-## ⚠️ Resolve Jev's endpoint before you route anything — do not assume
+## ✅ Jev IS on OpenRouter — on the DECISIONS endpoint, not chat
 
-There are **two** ways to reach Jev, and they are easy to conflate because
-both involve an OpenRouter key. Run the discovery step; do not trust this
-file's snapshot, and do not tell the user something is unavailable without
-having run it.
-
-### Step 0 — discovery (always run this first)
-
-```bash
-# 1. Is there a Jev chat-completions model on this account right now?
-curl -s https://openrouter.ai/api/v1/models \
-  -H "Authorization: Bearer $OPENROUTER_API_KEY" \
-| python3 -c "
-import sys,json
-d=json.load(sys.stdin)
-ms=d['data']
-print('models:',len(ms),'total_count:',d.get('total_count'),'next:',(d.get('links') or {}).get('next'))
-hits=[m['id'] for m in ms if any(t in (m['id']+' '+m.get('name','')).lower()
-      for t in ('jev','typesafe','browser'))]
-print('JEV CANDIDATES:', hits or 'none listed')
-"
-```
-
-If that prints a candidate, **use it as an ordinary OpenRouter model** and
-ignore the TypeSafe path below. If it prints `none listed`, confirm with a
-direct call before concluding anything — a model can be reachable without
-being listed:
+**Correction (2026-09-23).** An earlier version of this skill said Jev was not
+on OpenRouter, because `GET /v1/models` never lists it and
+`/v1/chat/completions` rejects every Jev ID. Both observations were true and the
+conclusion was wrong: Jev is a *decisions* model, served at a different endpoint
+that `/v1/models` does not catalogue. The founder said it was on OpenRouter and
+that he had used it; he was right. Verified live:
 
 ```bash
-curl -s https://openrouter.ai/api/v1/chat/completions \
+curl -s -X POST https://openrouter.ai/api/alpha/decisions \
   -H "Authorization: Bearer $OPENROUTER_API_KEY" -H "Content-Type: application/json" \
-  -d '{"model":"<candidate-id>","max_tokens":20,"messages":[{"role":"user","content":"hi"}]}'
+  -d '{"model":"~typesafe/jev-latest",
+       "state":"<the facts / numbers to judge>",
+       "questions":{"ready":{"type":"noul","instructions":"Is this ready to ship?"}}}'
+# -> {"model":"typesafe/jev-1.13-20260917","answers":{"ready":{"type":"noul","noul":0.51}},
+#     "usage":{...,"cost":0.000012096},"provider":"TypeSafe"}   (HTTP 200)
 ```
 
-A reply means it exists. `{"error":{"message":"<id> is not a valid model ID","code":400}}`
-means that exact ID does not.
-
-**Snapshot, 2026-09-22, this account:** the listing returned 444 models with
-`total_count: 444` and `links.next: null` (so it was complete, not a first
-page), and the string `jev` appeared nowhere in the raw JSON including
-descriptions. Direct calls to `typesafe/jev`, `typesafe/jev-ultrafast`,
-`browser-use/jev`, `jev`, `typesafe/jev-1` and `browseruse/jev-ultrafast` each
-returned `is not a valid model ID`. **Re-run discovery rather than repeating
-that snapshot** — catalogues change, and access can be account-gated.
-
-### The other path, which also uses an OpenRouter key
-
-This is the likely source of "Jev is on OpenRouter": running
-[`browser-use/jev-ultrafast`](https://github.com/browser-use/jev-ultrafast)
-**requires an OpenRouter key**, so the workflow genuinely is "use Jev, pay
-OpenRouter." In that repo the two keys do different jobs:
-
-| Env var | What it powers |
+| | |
 |---|---|
-| `TYPESAFE_API_KEY` | Jev itself — the action policy that picks the operation and the target element |
-| `TEXT_MODEL_API_KEY` | **an OpenRouter key**, for the small model that writes the string when the chosen operation is `TYPE_TEXT` (upstream default `inception/mercury-2.5`, reasoning disabled — both IDs are live on OpenRouter) |
+| Model | `~typesafe/jev-latest` (pins to `typesafe/jev-1.13`) |
+| Endpoint | `POST https://openrouter.ai/api/alpha/decisions` — **not** `/v1/chat/completions` |
+| Question types | `noul` (0-1 likelihood), `choice` (+ `criteria`), `score` — every question needs `instructions` |
+| Cost | ~$0.00001-0.00002 per call |
+| Key | `OPENROUTER_API_KEY` |
 
-So OpenRouter is in the loop either way. What differs is whether Jev's
-*decisions* come from an OpenRouter chat-completions model or from TypeSafe's
-endpoint. Discovery settles it; build for whichever answer comes back.
+**Rules learned the hard way (see CLAUDE.md → MODEL ROLE SPLIT):**
+- The model catalogue is **not proof of absence**. Only a real call to the right
+  endpoint is. A `400` from `/api/alpha/decisions` is a schema error that names
+  the missing field — never "model does not exist".
+- **Jev is text-only.** It does not see images; a screenshot's number tracks the
+  base64 string length, not the picture. Feed it numeric metrics (e.g. from
+  `scripts/seam-smudge-gate.py`), never a screenshot, or the verdict is fake.
+- For the full ship/block workflow use the **`jev-decision-gate`** skill.
 
-> **Container note:** this machine sets **`TYPESAFE_API`**, while upstream
-> reads **`TYPESAFE_API_KEY`**. Copy the value across explicitly. A session
-> that greps for `TYPESAFE_API_KEY`, finds nothing and reports "no TypeSafe
-> key" is wrong — it is there under the other name. Never print either value.
+Separately, `browser-use/jev-ultrafast` is a *browser agent* built on TypeSafe's
+policy; it is a different product and not what this skill routes to.
 
 ### The planning head
 

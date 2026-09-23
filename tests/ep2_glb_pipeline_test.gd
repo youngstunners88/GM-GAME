@@ -7,11 +7,36 @@ extends Node
 ##
 ## Run: .godot-cache/Godot_v4.3-stable_linux.x86_64 --headless res://tests/ep2_glb_pipeline_test.tscn
 
+## Every prop the builder emits. Kept in lockstep with BUILDERS in
+## tools/blender/build_asset.py: a prop that ships without a line here is a prop
+## nothing ever proved Godot can open.
 const ASSETS := {
 	"minecart": "res://src/episode2/assets/minecart.glb",
 	"gold_nugget": "res://src/episode2/assets/gold_nugget.glb",
+	"gold_pile": "res://src/episode2/assets/gold_pile.glb",
 	"rail_segment": "res://src/episode2/assets/rail_segment.glb",
+	"lantern": "res://src/episode2/assets/lantern.glb",
+	"wood_beam": "res://src/episode2/assets/wood_beam.glb",
+	"boulder": "res://src/episode2/assets/boulder.glb",
+	"rock_chunk": "res://src/episode2/assets/rock_chunk.glb",
+	"lil_blunt_placeholder": "res://src/episode2/assets/lil_blunt_placeholder.glb",
 }
+
+## A GLB that imports with no MATERIAL is the silent failure this gate exists to
+## catch second: it loads, it has meshes, every assertion above passes, and it
+## renders as an untextured white blob — which is indistinguishable from "art
+## not done yet" and is exactly how the last blown-out build read.
+func _count_materials(n: Node) -> int:
+	var c := 0
+	if n is MeshInstance3D:
+		var mi := n as MeshInstance3D
+		if mi.mesh != null:
+			for i in mi.mesh.get_surface_count():
+				if mi.mesh.surface_get_material(i) != null or mi.get_surface_override_material(i) != null:
+					c += 1
+	for child in n.get_children():
+		c += _count_materials(child)
+	return c
 
 var _fail: int = 0
 
@@ -48,6 +73,9 @@ func _ready() -> void:
 		var meshes := _count_meshes(inst)
 		_check("%s instantiates with real mesh(es) (found %d)" % [name, meshes], meshes >= 1,
 			"no MeshInstance3D with a mesh under the loaded scene")
+		var mats := _count_materials(inst)
+		_check("%s carries materials (%d surfaces)" % [name, mats], mats >= 1,
+			"imported untextured — it would render as a white blob")
 		inst.queue_free()
 	# The minecart is the hero prop — expect several parts (hull/rim/wheels/emblem).
 	var cart = load(ASSETS["minecart"])
@@ -55,7 +83,7 @@ func _ready() -> void:
 		var ci: Node = cart.instantiate()
 		add_child(ci)
 		var m := _count_meshes(ci)
-		_check("minecart has multiple parts (%d meshes: hull/rim/wheels/emblem)" % m, m >= 5)
+		_check("minecart has multiple parts (%d meshes: hull/bands/wheels/emblem)" % m, m >= 20)
 		ci.queue_free()
 	print("EP2_GLB_PIPELINE: %s" % ("ALL PASS" if _fail == 0 else "%d FAILURE(S)" % _fail))
 	get_tree().quit(_fail)

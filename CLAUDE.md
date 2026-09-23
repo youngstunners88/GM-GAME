@@ -46,6 +46,7 @@ same commit — a manifest that lies is worse than none.
 | Create art/audio specs or style guide | /assets | CONTEXT.md | pixel-art-skill |
 | Write code, build scenes, configure engine | /src | `.claude/context-manifests/default.md` | gdscript-skill |
 | Write docs, marketing, or changelogs | /docs | CONTEXT.md | — |
+| **Founder reports smudges / blotches / blemishes** | **`blotch-hunter` agent** | `scripts/blotch-oracle.json` | `blotch-forensics`, `blotch-repair-gate` |
 
 ## Naming Conventions
 - Levels: `level-[number]_[realm-name].tscn` (e.g., `level-01_smoke-realm.tscn`)
@@ -113,6 +114,34 @@ commit message that the founder approved it. Never "fix" a failing lock check
 by re-fingerprinting unrequested changes — restore the files instead:
 `git checkout origin/master -- $(scripts/front-page-lock.sh list)`.
 
+## ⭐ BLOTCH RULE (the founder's longest-running bug — read before touching art)
+
+The "green smudges" report has recurred since 2026-08-20. It cost a month, two
+destroyed background plates, and five detectors that all reported the game
+clean. It has a **dedicated agent** — `blotch-hunter` — and two skills,
+`blotch-forensics` (where does it live) and `blotch-repair-gate` (what you may
+do, and what FIXED requires). Route every smudge/blotch/blemish/smear report to
+them instead of improvising.
+
+Three things that must never be re-litigated:
+
+1. **It is not green.** Measured, the patches multiply the sky by R ×0.86,
+   G ×0.89, B ×0.83 — a near-neutral darkening that only *reads* green on a
+   warm sky. Every detector that tested `G > R and G > B` found nothing and was
+   wrong. Test channel ratios, never a colour name.
+2. **`scripts/blotch-oracle.json` is the founder's graded matrix**, and
+   `l2_blaze` is graded CLEAN while the other five scenes are blotched. That
+   single row kills any theory blaming his GPU, monitor, browser or screenshot
+   tool — none of those skip exactly one scene. `scripts/blotch-analyze.py`
+   self-grades against it and exits non-zero when uncalibrated. An uncalibrated
+   detector has no opinion.
+3. **Measure before you change.** Never modify a plate, sprite or VFX without a
+   measurement naming that exact file as the carrier, and never soften or blur
+   something the founder asked to have removed — that was done once and bought a
+   month of re-reports.
+
+One command: `bash scripts/blotch-hunt.sh`.
+
 ## ⭐ SECURITY-GATE RULE (autonomous — no prompt required)
 Security scanning runs **without being asked, every time**, at three layers:
 1. **Mid-session, proactively**: the `game-security-sentinel` skill
@@ -145,6 +174,61 @@ architecture doesn't have the surface yet, not permanently.
 `/security-audit` (full mode) is the deeper engine-level companion — run it
 before major milestones, not just routine ships. See the sentinel skill's
 "Relationship to /security-audit" section for how the two divide labor.
+
+## ⭐ MODEL ROLE SPLIT (cost-aware — read before dispatching anything)
+
+Claude owns the repo, the commits, STATUS.md and every gate. Other models
+produce **advice that must be verified**, never changes that land unreviewed.
+
+| Model | OpenRouter ID | Use it for | Rate |
+|---|---|---|---|
+| **GPT-6 Astra** | `openai/gpt-6-astra` | **Art-direction fidelity review only** — grading a REAL screenshot against the founder references — plus world-building brainstorming where a second creative opinion earns its cost. Accepts image input. | **$10 / $50** per 1M |
+| **DeepSeek V4.1 Flash** | `deepseek/deepseek-v4.1-flash` | **Cheap first-pass diagnosis/triage** — combing long logs, big diffs, or a stack of screenshots for candidates before Claude spends its own context verifying them; rubber-duck audits of a script Claude already wrote. Its output is a lead, not a fact — Claude re-derives and confirms every claim against the real files/live build before it informs any commit or STATUS entry. Verified live 2026-09-19 (real dispatch through `scripts/or-call.mjs`, real OpenRouter catalog entry, not assumed). | **$0.15 / $0.60** per 1M |
+| **claude-sonnet-5** | — | Pipeline scaffolding, skill authoring, headless scripts (bpy/trimesh), Godot integration, test gates. Most of the asset-pipeline work. | — |
+| **claude-opus-4-8 / Opus tier** | — | Asset-pipeline debugging with hidden coupling: a GLB importing with flipped normals, a rig deforming wrong, an API returning malformed data. | — |
+
+**Astra is 5-10x Sonnet per token. Do not use it for routine code, tests, or
+mechanical plumbing.** A four-image fidelity review costs ~$0.14-0.20; that is
+worth it, and a code review at those rates is not.
+
+**DeepSeek V4.1 Flash is ~65x cheaper than Astra and has a 1M-token context** —
+reach for it whenever a task is mostly *volume* (scan every frame, every log
+line, every diff hunk) rather than judgment. It never touches the repo and
+never gets the final word: Claude still owns the diagnosis, the fix, the
+commit, and every "FIXED" claim, per the rule at the top of this section. This
+does not relax `live-build-proof` — a DeepSeek read of a screenshot is not a
+substitute for Claude's own live-itch verification.
+
+| **Jev (TypeSafe)** | `~typesafe/jev-latest` (pins to `typesafe/jev-1.13`) | **Ship/block DECISIONS on numbers.** Not a chat model — it answers structured questions and is called at `POST https://openrouter.ai/api/alpha/decisions`, NOT `/v1/chat/completions`. Question types: `noul` (0-1 likelihood), `choice` (+`criteria`), `score`. Every question needs `instructions`. Costs ~$0.00002 a call. | ~$0.00002/call |
+
+**CORRECTION (2026-09-20).** A previous version of this file stated that no
+"typesafe"/"jev" model existed, on the strength of a `GET /v1/models` grep. That
+was WRONG and it cost the founder real time. Decisions models are NOT listed in
+`/v1/models`. The catalog is not proof of absence — only a real HTTP call to the
+right endpoint is. Verified working; a 400 from that endpoint is a SCHEMA error
+(it names the missing field), never "model does not exist".
+
+**Jev is text-only — it does NOT see images.** Control-tested 2026-09-20: an
+image with a black bar scored `noul` 0.22, an identical image without one scored
+0.19, and the token count tracked the base64 STRING length, not the picture. So
+never hand Jev a screenshot and treat the number as a verdict on the pixels —
+that is fake verification. Feed it the NUMERIC METRICS from
+`scripts/seam-smudge-gate.py`; let DeepSeek V4.1 Flash (real vision, verified
+same day) do the looking.
+
+Dispatch with `scripts/or-call.mjs`, which carries every guard that matters —
+`@include` file inlining, abort-before-spending on a missing path, live `/models`
+pricing with `--dry-run`, HTTPS_PROXY handling, and an input-modality check so an
+image never gets silently dropped by a text-only model:
+
+```bash
+node scripts/or-call.mjs openai/gpt-6-astra <prompt.md> <out.md> --image <shot.png> --image <ref.jpg>
+```
+
+`OPENROUTER_API_KEY` lives in the environment's **Environment Variables** field.
+Never inline a key in a script, a committed file, or a log line.
+
+Full workflow: the `art-direction-fidelity-check` skill.
 
 ## ⭐ MODEL-ADVICE RULE
 End **every** response to the client with a one-line recommendation of which

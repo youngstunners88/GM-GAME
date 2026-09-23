@@ -15,6 +15,14 @@ func _ready() -> void:
 	value = 0
 	vesting_complete = false
 
+	# A ProgressBar draws its OWN percentage string by default, centred on the
+	# bar — so it was printing "0%" directly on top of the custom
+	# "VESTING: 0/100" label below, and the two have been overlapping into an
+	# unreadable smear in every Stage 3 screenshot the founder has sent. The
+	# custom label carries the real number (n/100, plus the RESET and COMPLETE
+	# states), so the built-in one is pure noise.
+	show_percentage = false
+
 	# Add label
 	label.text = "VESTING: %d/100" % gold_collected
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

@@ -100,6 +100,61 @@ jobs:
       - name: Front-page lock (founder-approved title screen)
         run: bash scripts/front-page-lock.sh check
 
+      # Background art gate (founder 2026-09-16, "blemishes throughout different
+      # stages"). Nearly every shipped backdrop carried a horizontally-smeared
+      # band along its right edge, and because the backdrops TILE, that band
+      # repeated across the whole level. Now that they are repaired this keeps
+      # a blemished plate from ever being committed again. Deliberately
+      # dependency-light: the check runs on Pillow + numpy, no OpenCV (that is
+      # only needed by the one-off repair pass).
+      - name: Stage 1 weapon gate
+        run: |
+          # The founder has asked twice for Stage 1 to throw smoke bombs, not
+          # axes, and both times the source looked correct on review while the
+          # live game did the wrong thing. This gate checks the structure that
+          # makes the wrong thing impossible, not the presence of the right
+          # scene file. See the script header.
+          python3 scripts/check-stage1-weapon.py
+
+      - name: Background art gate
+        run: |
+          python3 -m pip install --quiet --disable-pip-version-check pillow numpy
+          # TILE-JOIN GATE (founder 2026-09-20, "why more dividing lines").
+          # Every plate drawn on a mirrored ParallaxLayer butt-joins its own
+          # right edge against its own left edge forever. If those do not match,
+          # that join IS the dividing line. Measured as a STEP ratio normalised
+          # by the plate's own column-to-column variation, so a legitimate
+          # left-to-right gradient does not trip it. ~1 = seamless, >=3 = hard
+          # join. Repair with: python3 scripts/make-plate-seamless.py <plate>
+          python3 scripts/make-plate-seamless.py --check --max-wrap 3.0 \
+            src/assets/backgrounds/bg_l1_forest.jpg \
+            src/assets/backgrounds/bg_l2_crystal.jpg \
+            src/assets/backgrounds/bg_l3_goldrush.jpg \
+            src/assets/backgrounds/bg_blaze_l1_smoke_v2.jpg \
+            src/assets/backgrounds/bg_blaze_l2_crystal_v2.jpg \
+            src/assets/backgrounds/bg_blaze_l3_gold_v2.jpg
+          # GREEN VFX GATE (founder 2026-09-21: green smudges "in each of the
+          # stages 1, 2 and 3 as well as the Blaze Rush sections" and the Hall
+          # of Blaze). Root cause was NOT backdrop art - it was
+          # effects/smoke_puff.gd drawing the Blaze Mode auto-puff as a soft
+          # TRANSLUCENT GREEN rect straight onto the current scene, so it washed
+          # over every backdrop in the game. An image gate cannot catch that
+          # reliably (the puff only exists while the player holds Blaze Mode), so
+          # it is caught at the source instead.
+          python3 scripts/check-green-vfx.py
+          python3 scripts/repair-backgrounds.py --check
+          # Founder 2026-09-18 + Fable 5.1 diagnosis. The real defect behind the
+          # "sliver / dividing line / seam" was the parallax TILE-WRAP join of
+          # plates that are ~viewport-wide, cutting through a dark structure. The
+          # earlier tone "edge-heal" only smeared it. Real fixes:
+          #  - L1/L2: ROLL the plate by ~W/2 (wrap becomes natively seamless) then
+          #    REPAINT the now-interior discontinuity (repaint-wrap-seam.py). Gate
+          #    = make-bg-seamless.py --check (wrap seamless, no full-height join).
+          #  - Fort Knox: widen the gold plate + turn tiling OFF for it (no join).
+          #    Gate = repair-fort-knox-backdrop.py --check (wide enough, no smear).
+          python3 scripts/repair-fort-knox-backdrop.py --check
+          python3 scripts/make-bg-seamless.py --check
+
       - name: Download Godot editor + export templates
         run: |
           set -euo pipefail
@@ -197,7 +252,7 @@ jobs:
           custom_features=""
           export_filter="all_resources"
           include_filter="config.json,src/autoload/share_taglines.json"
-          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*"
+          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,node_modules/*,.godot-cache/*,artifacts/*"
           export_path="web/game/index.html"
           script_export_mode=1
           script_encryption_key=""
@@ -231,7 +286,25 @@ jobs:
             exit 1
           fi
 
+      - name: Stamp the build tag
+        run: |
+          # BUILD_TAG's whole job is to let the founder PROVE, from a screenshot,
+          # which build they are running. As a hand-edited constant it silently
+          # rotted: it read "2026-08-26e" for a month of daily ships, so every
+          # screenshot he sent carried a stamp that was a month stale and told us
+          # nothing. A stamp nobody bumps is worse than no stamp — it reads as
+          # evidence while being noise. CI owns it now: date + short SHA, written
+          # immediately before the export so it cannot drift from what ships.
+          STAMP="$(date -u +%Y-%m-%d)-${GITHUB_SHA::7}"
+          sed -i -E "s|^const BUILD_TAG := \".*\"|const BUILD_TAG := \"$STAMP\"|" src/autoload/game_manager.gd
+          grep -n 'const BUILD_TAG' src/autoload/game_manager.gd
+          if ! grep -q "const BUILD_TAG := \"$STAMP\"" src/autoload/game_manager.gd; then
+            echo "::error::BUILD_TAG stamp failed to apply"
+            exit 1
+          fi
+
       - name: Export game to Web
+        id: export
         run: |
           # pipefail is LOAD-BEARING: without it the step's exit code is `tail`'s
           # (always 0), so a FAILED export (missing template, resource error) was
@@ -253,6 +326,25 @@ jobs:
             cat export.log
             exit 1
           fi
+
+      - name: Restore the stamped source
+        # MUST run, and must run BEFORE any step that touches git.
+        #
+        # "Stamp the build tag" edits a TRACKED file. The "Commit exported
+        # files" step does `git pull --rebase`, and rebase REFUSES to run with
+        # unstaged changes — so the stamp made all five push attempts fail, the
+        # job exited 1, and `Deploy to itch.io via butler` (if: success()) was
+        # SKIPPED. Result: two green exports that never reached the founder,
+        # while he was playing a build that predated them and reporting the
+        # bugs they were meant to fix. The export was never the problem; the
+        # bookkeeping commit after it was.
+        #
+        # The stamp only ever needed to exist for the duration of the export.
+        # The .pck on disk already carries it; the repo does not need it.
+        if: always()
+        run: |
+          git checkout -- src/autoload/game_manager.gd || true
+          git status --porcelain
 
       - name: Verify export output
         run: |
@@ -451,7 +543,7 @@ jobs:
           retention-days: 7
 
       - name: Package itch.io build (index.html at zip root)
-        if: success()
+        if: steps.export.outcome == 'success' && steps.secaudit.outcome == 'success'
         run: |
           cd web/game
           zip -r ../../lil-blunt-itch.zip .
@@ -459,7 +551,7 @@ jobs:
           ls -lh lil-blunt-itch.zip
 
       - name: Upload itch.io-ready zip (manual-upload fallback)
-        if: success()
+        if: steps.export.outcome == 'success' && steps.secaudit.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: itch-build
@@ -481,7 +573,12 @@ jobs:
         # Branch runs still export, still run every gate, and still upload the
         # itch-ready zip as an artifact for testing — they just no longer
         # overwrite what players see. Only a merge to master/main ships.
-        if: success() && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
+        #
+        # Gated on the export + security audit outcomes rather than blanket
+        # success(): a failed git bookkeeping commit ("Commit exported files")
+        # once silently skipped the deploy twice in a row. The security gate is
+        # unchanged — a failed audit still blocks.
+        if: steps.export.outcome == 'success' && steps.secaudit.outcome == 'success' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
           # itch.io target: <username>/<game-slug>:<channel>

@@ -49,6 +49,11 @@
       "duration_seconds": 0.6
     },
     {
+      "id": "gunshot",
+      "prompt": "Retro 16-bit videogame revolver gunshot, cartoonish pop-bang, round and punchy not harsh, quick bright crack with a tiny metallic ring, playful arcade Western feel, no distortion, fast decay",
+      "duration_seconds": 0.5
+    },
+    {
       "id": "explosion",
       "prompt": "Retro 16-bit videogame small explosion, crunchy pixelated boom, round and cartoonish, soft low thump body, quick decay, playful arcade style, no harsh distortion",
       "duration_seconds": 1.0
