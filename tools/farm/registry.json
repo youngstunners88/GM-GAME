@@ -8,8 +8,12 @@
       "kind": "library",
       "verdict": "ADOPT",
       "reason": "Calibrated option-picker (Jev + permutation averaging). Used as the task->model-tier router. Ran live here: routed a trivial README edit to haiku at 1.0 confidence. A classifier call is far cheaper than asking a frontier model to reason about its own tier.",
-      "verified": { "installable": "yes", "method": "ran-it-here", "note": "pip install pijev; client.system_one(state, questions={'tier': Choice(...)}) returned a valid ChoiceAnswer." },
-      "popularity_claim": "19 stars / 3 commits as rendered on the repo page — thin and young. Adopted on WORKING EVIDENCE, not popularity; pinned, and the router degrades to a static table if it breaks.",
+      "verified": {
+        "installable": "yes",
+        "method": "ran-it-here",
+        "note": "pip install pijev; client.system_one(state, questions={'tier': Choice(...)}) returned a valid ChoiceAnswer."
+      },
+      "popularity_claim": "19 stars / 3 commits as rendered on the repo page \u2014 thin and young. Adopted on WORKING EVIDENCE, not popularity; pinned, and the router degrades to a static table if it breaks.",
       "requires_secret": "TYPESAFE_API",
       "license": "Apache-2.0"
     },
@@ -19,8 +23,26 @@
       "kind": "skill",
       "verdict": "ADOPT",
       "reason": "Already installed in this harness as anthropic-skills:skill-creator. With ~150 skills the real failure mode is description collision and mis-triggering; this is the only candidate that MEASURES trigger accuracy. Better triggering is a direct token saving.",
-      "verified": { "installable": "yes", "method": "ran-it-here", "note": "Present in this session's skill list already — zero install cost." },
+      "verified": {
+        "installable": "yes",
+        "method": "ran-it-here",
+        "note": "Present in this session's skill list already \u2014 zero install cost."
+      },
       "license": "see repo"
+    },
+    {
+      "id": "meshy-api",
+      "source": "https://docs.meshy.ai/en/api/image-to-3d",
+      "kind": "service",
+      "verdict": "ADOPT",
+      "reason": "Image-to-3D for organic characters. Ran twice here (Lil Blunt, bear archer): both came back on-model from a single reference image in minutes. Output is ~90% texture by bytes, so every GLB goes through tools/meshy/shrink_glb.py before it touches the pack budget.",
+      "verified": {
+        "installable": "yes",
+        "method": "ran-it-here",
+        "note": "tools/meshy/meshy_gen.py -> 2 SUCCEEDED tasks; GLBs import in Godot 4.3 and render in a web export."
+      },
+      "requires_secret": "MESHY_API_KEY",
+      "license": "commercial API"
     },
     {
       "id": "fastmcp",
@@ -28,7 +50,11 @@
       "kind": "library",
       "verdict": "STEAL-IDEAS-ONLY",
       "reason": "pip-installable here, but our MCP toolkit needs no framework: a stdlib JSON-RPC server has zero supply-chain surface, no install step in CI, and starts instantly. We took the typed-tool-decorator shape without the dependency.",
-      "verified": { "installable": "yes", "method": "ran-it-here", "note": "pip --dry-run resolved cleanly." },
+      "verified": {
+        "installable": "yes",
+        "method": "ran-it-here",
+        "note": "pip --dry-run resolved cleanly."
+      },
       "pattern_taken": "Typed tool declarations with JSON Schema per tool -> tools/mcp/gm_toolkit.py",
       "license": "Apache-2.0"
     },
@@ -37,8 +63,11 @@
       "source": "https://github.com/Portkey-AI/gateway",
       "kind": "service",
       "verdict": "STEAL-IDEAS-ONLY",
-      "reason": "Config-as-JSON conditional routing is the right shape, but it is a proxy server for multi-provider API traffic. We do not make raw provider calls from the game repo — Claude Code is the client. Running a gateway would add a process to route traffic that does not flow through us.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" },
+      "reason": "Config-as-JSON conditional routing is the right shape, but it is a proxy server for multi-provider API traffic. We do not make raw provider calls from the game repo \u2014 Claude Code is the client. Running a gateway would add a process to route traffic that does not flow through us.",
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      },
       "pattern_taken": "Declarative routes.json with conditions + explicit fallback -> tools/farm/routes.json",
       "license": "MIT"
     },
@@ -47,8 +76,11 @@
       "source": "https://github.com/obra/superpowers",
       "kind": "skill",
       "verdict": "STEAL-IDEAS-ONLY",
-      "reason": "Dispatcher/subagent-delegation patterns are sound, but adding ~50 opinionated workflow skills on top of our ~150 multiplies trigger collisions and RAISES token burn — the opposite of the goal.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" },
+      "reason": "Dispatcher/subagent-delegation patterns are sound, but adding ~50 opinionated workflow skills on top of our ~150 multiplies trigger collisions and RAISES token burn \u2014 the opposite of the goal.",
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      },
       "pattern_taken": "Compressed-handback subagent delegation (strict word budget + fixed output format) -> used for this very evaluation",
       "license": "MIT"
     },
@@ -58,7 +90,10 @@
       "kind": "service",
       "verdict": "STEAL-IDEAS-ONLY",
       "reason": "Path-addressed context store is the closest match to our farm/routing/state goals, but AGPL plus an external service is disproportionate for a ~120-file static-hosted game.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" },
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      },
       "pattern_taken": "Path-addressed, gated context loading -> extends existing .claude/context-manifests/",
       "license": "AGPL-3.0 core"
     },
@@ -68,8 +103,11 @@
       "kind": "cli",
       "verdict": "STEAL-IDEAS-ONLY",
       "reason": "Its 61 detectors are DOM/CSS-based and cannot see a Godot canvas. The valuable part is the shape, not the rules.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" },
-      "pattern_taken": "Deterministic script pre-filters; the model only reads findings. Already how security-sentinel.sh works — now the stated standard for all new gates.",
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      },
+      "pattern_taken": "Deterministic script pre-filters; the model only reads findings. Already how security-sentinel.sh works \u2014 now the stated standard for all new gates.",
       "license": "Apache-2.0"
     },
     {
@@ -78,8 +116,11 @@
       "kind": "mcp",
       "verdict": "STEAL-IDEAS-ONLY",
       "reason": "Index-and-query-instead-of-read targets our exact token problem, but its token-reduction figures are self-reported, it is young, and AGPL + a local vector DB is heavy for ~120 files that ripgrep searches instantly.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" },
-      "pattern_taken": "Query, do not read whole files — enforced by context-manifests and the grep-first rule",
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      },
+      "pattern_taken": "Query, do not read whole files \u2014 enforced by context-manifests and the grep-first rule",
       "license": "AGPL-3.0"
     },
     {
@@ -87,8 +128,11 @@
       "source": "https://github.com/stanfordnlp/dspy",
       "kind": "library",
       "verdict": "STEAL-IDEAS-ONLY",
-      "reason": "Credible, but it optimizes your own Python LLM programs against a metric — it cannot optimize Claude Code skills or hooks, and we have no eval set. Optimizer runs would ADD token spend.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" },
+      "reason": "Credible, but it optimizes your own Python LLM programs against a metric \u2014 it cannot optimize Claude Code skills or hooks, and we have no eval set. Optimizer runs would ADD token spend.",
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      },
       "pattern_taken": "Metric-first discipline: define the measurable win before tuning a prompt",
       "license": "MIT"
     },
@@ -98,7 +142,10 @@
       "kind": "mcp",
       "verdict": "IGNORE",
       "reason": "Duplicates the Exa MCP we already have, and adds a paid key.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" }
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      }
     },
     {
       "id": "firecrawl",
@@ -106,7 +153,10 @@
       "kind": "service",
       "verdict": "IGNORE",
       "reason": "Overlaps Exa for search/fetch. The non-duplicate part (deep site crawl) is not a need this project has.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" }
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      }
     },
     {
       "id": "omniroute",
@@ -114,7 +164,11 @@
       "kind": "service",
       "verdict": "IGNORE",
       "reason": "SECURITY BLOCKER. Reported npm block over obfuscated code and install scripts, a conceded credential-overwrite path, plaintext credentials unless an encryption key is set, and guardrails that fail open. Incompatible with this repo's SECURITY-GATE RULE. Not adopted regardless of popularity.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page", "note": "Security claims are second-hand from research and were NOT reproduced here; they are disqualifying enough that no trial was run." }
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page",
+        "note": "Security claims are second-hand from research and were NOT reproduced here; they are disqualifying enough that no trial was run."
+      }
     },
     {
       "id": "frontend-design",
@@ -122,7 +176,10 @@
       "kind": "skill",
       "verdict": "IGNORE",
       "reason": "HTML/CSS/web-UI guidance; does not map to Godot Control nodes or pixel-art HUD work.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" }
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      }
     },
     {
       "id": "ui-ux-pro-max-skill",
@@ -130,7 +187,10 @@
       "kind": "skill",
       "verdict": "IGNORE",
       "reason": "None of its supported stacks is Godot, and a large in-context style corpus is a token liability.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" }
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      }
     },
     {
       "id": "claude-deep-research-skill",
@@ -138,7 +198,10 @@
       "kind": "skill",
       "verdict": "IGNORE",
       "reason": "Deliberately token-EXPENSIVE (multi-thousand-word reports, many concurrent searches). Directly opposed to the stated goal.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" }
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      }
     },
     {
       "id": "agent-skills-for-context-engineering",
@@ -146,7 +209,10 @@
       "kind": "skill",
       "verdict": "IGNORE",
       "reason": "Advice about context budgeting, not a mechanism. Our context-manifest rule already implements the gating it describes.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" }
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      }
     },
     {
       "id": "owl",
@@ -154,7 +220,10 @@
       "kind": "library",
       "verdict": "IGNORE",
       "reason": "A competing agent runtime. A second orchestrator alongside Claude Code adds burn rather than cutting it.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" }
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      }
     },
     {
       "id": "n8n",
@@ -162,7 +231,10 @@
       "kind": "service",
       "verdict": "IGNORE",
       "reason": "For a one-repo Godot pipeline, GitHub Actions + shell scripts already win on zero hosting and reviewable diffs. n8n means running a server to do what a YAML file does. Also fair-code, not OSI open source.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" }
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      }
     },
     {
       "id": "huginn",
@@ -170,7 +242,10 @@
       "kind": "service",
       "verdict": "IGNORE",
       "reason": "Heavier and lower-momentum than n8n at the same job; cron + Actions beats it here.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" }
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      }
     },
     {
       "id": "unsloth",
@@ -178,7 +253,10 @@
       "kind": "library",
       "verdict": "IGNORE",
       "reason": "LLM fine-tuning. No training data, no metric, and no GPU in this container. Fine-tuning would not make a Godot platformer ship faster.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" }
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      }
     },
     {
       "id": "agent-reach",
@@ -186,7 +264,11 @@
       "kind": "cli",
       "verdict": "IGNORE",
       "reason": "Payload is social-media scraping, which is not a game-dev need; and the repo is too young to depend on. Its tool-selection router was noted as a pattern only.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page", "note": "Redirects to a blog post; real repo appears to be Panniantong/Agent-Reach." }
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page",
+        "note": "Redirects to a blog post; real repo appears to be Panniantong/Agent-Reach."
+      }
     },
     {
       "id": "unbrowse-openclaw",
@@ -194,7 +276,10 @@
       "kind": "cli",
       "verdict": "IGNORE",
       "reason": "Unlicensed, ~7 commits, and targets a harness we do not run.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" }
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      }
     },
     {
       "id": "socraticode-alt-nomad",
@@ -202,7 +287,10 @@
       "kind": "unknown",
       "verdict": "IGNORE",
       "reason": "Link resolves to a different project (a self-hosted travel planner). Whatever NOMAD was meant to be, this URL does not point at it.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" }
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      }
     },
     {
       "id": "crucix",
@@ -210,7 +298,10 @@
       "kind": "service",
       "verdict": "IGNORE",
       "reason": "OSINT/monitoring dashboard. No game-dev use.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" }
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      }
     },
     {
       "id": "turboquant-plus",
@@ -218,15 +309,21 @@
       "kind": "library",
       "verdict": "IGNORE",
       "reason": "KV-cache compression for LLM inference engines (not trading, despite the name). Only relevant if we self-hosted inference, which we do not.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" }
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      }
     },
     {
       "id": "helios",
       "source": "https://github.com/joedhawan/Helios",
       "kind": "unknown",
       "verdict": "IGNORE",
-      "reason": "404 — dead link, wrong username, or private. Not evaluable; contents deliberately not inferred from the name.",
-      "verified": { "installable": "no", "method": "fetched-page" }
+      "reason": "404 \u2014 dead link, wrong username, or private. Not evaluable; contents deliberately not inferred from the name.",
+      "verified": {
+        "installable": "no",
+        "method": "fetched-page"
+      }
     },
     {
       "id": "imsi-catcher",
@@ -234,7 +331,10 @@
       "kind": "cli",
       "verdict": "IGNORE",
       "reason": "Cellular surveillance tool requiring SDR radio hardware. Zero connection to building a Godot game, and operating one is legally fraught in most jurisdictions.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" }
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      }
     },
     {
       "id": "starknet",
@@ -242,7 +342,10 @@
       "kind": "site",
       "verdict": "IGNORE",
       "reason": "The Gold Mine economy is fiction in a client-only static build with no wallet custody or payments. Revisit only if real value ever goes on-chain, which is out of scope today.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" }
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      }
     },
     {
       "id": "freebuff",
@@ -250,7 +353,10 @@
       "kind": "site",
       "verdict": "IGNORE",
       "reason": "SUPPLY-CHAIN RISK. Unattributed, ad-funded competitor to the harness we already run, with no disclosed provenance, that wants access to the codebase. Not a productivity win.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" }
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      }
     },
     {
       "id": "kapso",
@@ -258,7 +364,10 @@
       "kind": "service",
       "verdict": "IGNORE",
       "reason": "WhatsApp Business messaging platform. No intersection with a Godot itch.io game.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" }
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      }
     },
     {
       "id": "socraticode-blogpost",
@@ -266,7 +375,10 @@
       "kind": "site",
       "verdict": "IGNORE",
       "reason": "A promotional blog post, not a project; the underlying repo was not reachable from it.",
-      "verified": { "installable": "not-attempted", "method": "fetched-page" }
+      "verified": {
+        "installable": "not-attempted",
+        "method": "fetched-page"
+      }
     }
   ]
 }

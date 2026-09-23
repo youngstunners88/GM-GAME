@@ -105,7 +105,9 @@ func _enter_runner() -> void:
 	r.setup(
 		float(seg.get("chamber_z", 200.0)),
 		seg.get("obstacles", []),
-		seg.get("zip_segments", [])
+		seg.get("zip_segments", []),
+		seg.get("archers", []),
+		bool(seg.get("armed", false))
 	)
 	r.chamber_reached.connect(_on_chamber_reached, CONNECT_ONE_SHOT)
 	r.run_failed.connect(_on_run_failed, CONNECT_ONE_SHOT)
@@ -243,6 +245,11 @@ func runner_duck_end() -> void:
 	if _mode == Mode.RUNNER and _active:
 		_active.duck_end()
 
+## Fire the Winchester at the nearest archer ahead (no-op on unarmed legs).
+func runner_shoot() -> void:
+	if _mode == Mode.RUNNER and _active:
+		_active.shoot()
+
 func chamber_start_rig(payment: String = "eth") -> bool:
 	if _mode == Mode.CHAMBER and _active:
 		return _active.start_rig(payment)
@@ -321,6 +328,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				runner_duck_start()
 			elif event.is_action_released("move_down"):
 				runner_duck_end()
+			elif event.is_action_pressed("attack"):
+				runner_shoot()
 		Mode.CHAMBER:
 			if event.is_action_pressed("attack"):
 				chamber_shoot()

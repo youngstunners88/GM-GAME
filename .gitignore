@@ -194,3 +194,6 @@ web_verify/
 
 # Tool-farm runtime state (never committed — config lives in tools/farm/*.json)
 .farm/
+
+# Textures Godot extracts from Meshy GLBs at import time (derived; CI regenerates them)
+src/episode2/assets/*_Image_*.jpg

@@ -1,53 +1,47 @@
-[gd_scene load_steps=8 format=3 uid="uid://ep2runnergraybox01"]
+[gd_scene load_steps=4 format=3 uid="uid://ep2runnergraybox01"]
 
 [ext_resource type="Script" path="res://src/episode2/runner/runner_graybox.gd" id="1"]
+[ext_resource type="Script" path="res://src/episode2/runner/runner_view.gd" id="2"]
 
-[sub_resource type="BoxMesh" id="BoxMesh_cart"]
-size = Vector3(1.6, 1.0, 2.2)
-
-[sub_resource type="BoxMesh" id="BoxMesh_ground"]
-size = Vector3(9, 0.2, 400)
-
-[sub_resource type="Environment" id="Environment_runner"]
+[sub_resource type="Environment" id="Environment_mine"]
 background_mode = 1
-background_color = Color(0.06, 0.05, 0.08, 1)
+background_color = Color(0.055, 0.035, 0.02, 1)
 ambient_light_source = 2
-ambient_light_color = Color(0.45, 0.40, 0.52, 1)
-ambient_light_energy = 0.35
+ambient_light_color = Color(0.55, 0.42, 0.30, 1)
+ambient_light_energy = 0.3
 tonemap_mode = 2
-tonemap_white = 3.0
-
-[sub_resource type="StandardMaterial3D" id="Mat_ground"]
-albedo_color = Color(0.13, 0.11, 0.10, 1)
-roughness = 0.95
-
-[sub_resource type="StandardMaterial3D" id="Mat_accent"]
-albedo_color = Color(0.30, 0.62, 0.35, 1)
-roughness = 0.6
+tonemap_exposure = 1.1
+tonemap_white = 4.0
+glow_enabled = true
+glow_intensity = 0.9
+glow_strength = 1.1
+glow_bloom = 0.08
+glow_hdr_threshold = 0.9
+fog_enabled = true
+fog_light_color = Color(0.30, 0.20, 0.10, 1)
+fog_light_energy = 0.7
+fog_density = 0.02
+adjustment_enabled = true
+adjustment_saturation = 1.12
 
 [node name="RunnerGraybox" type="Node3D"]
 script = ExtResource("1")
 
-[node name="Ground" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.6, 200)
-mesh = SubResource("BoxMesh_ground")
-material_override = SubResource("Mat_ground")
-
+; Rider anchor. The sim writes Lil Blunt's position here (x = rail he is on or
+; hopping between, y = jump/zip height, z = distance). No mesh: the view draws him.
 [node name="Cart" type="Node3D" parent="."]
 
-[node name="CartMesh" type="MeshInstance3D" parent="Cart"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
-mesh = SubResource("BoxMesh_cart")
-material_override = SubResource("Mat_accent")
+; Presentation layer — reads the sim, never written back to. See runner_view.gd.
+[node name="View" type="Node3D" parent="."]
+script = ExtResource("2")
 
-[node name="Camera3D" type="Camera3D" parent="Cart"]
-transform = Transform3D(1, 0, 0, 0, 0.94, 0.34, 0, -0.34, 0.94, 0, 4, -6)
-
-; Graybox lighting. Without a light and an environment a 3D scene renders unlit/black in the web export.
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource("Environment_runner")
+environment = SubResource("Environment_mine")
 
+; Dim warm shaft of light from far above. Shadows off: the cave is lit by lanterns
+; and gold glow, and shadow maps are the most expensive thing on a phone.
 [node name="Sun" type="DirectionalLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.6, 0.8, 0, -0.8, 0.6, 0, 12, -4)
-light_energy = 0.75
-shadow_enabled = true
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.866, 0, -0.866, 0.5, 0, 20, 0)
+light_color = Color(1, 0.82, 0.6, 1)
+light_energy = 0.45
+shadow_enabled = false

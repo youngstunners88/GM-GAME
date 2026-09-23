@@ -12,7 +12,8 @@ extends Node
 ## docs/model-responses/2026-09-06-grok-ep2-runner-hazards.md): (7) a held
 ## duck clears an "arrow" hazard, (8) jumping does NOT clear an "arrow"
 ## (opposite of "box"), (9) ducking does NOT clear a "boulder" hazard,
-## (10) jumping DOES clear a "boulder" (same rule as legacy "box"),
+## (10) jumping does NOT clear a "boulder" — only hopping carts does (rule
+## changed by the founder 2026-09-23; 10b proves the hop),
 ## (11) ziplining suspends cart-phase hazard checks entirely, (12) lane
 ## switch / jump / duck are all no-ops while ziplining.
 ## Regression coverage for the Kimi K3 code audit
@@ -52,6 +53,11 @@ func _run_to_distance(r: Node3D, target: float, dt: float = 0.05, cap: int = 100
 		r.step(dt)
 		i += 1
 
+## Ziplines must now be EARNED: be airborne as you reach the cable. Jump 3m out.
+func _catch_zip(r: Node3D, start_z: float) -> void:
+	_run_to_distance(r, start_z - 3.0)
+	r.jump()
+
 func _ready() -> void:
 	await get_tree().process_frame
 	print("EP2 RUNNER GRAYBOX:")
@@ -74,7 +80,8 @@ func _ready() -> void:
 	for _i in range(20):
 		r.step(0.05)
 	_check("rail switch moves cart in X (%.2f → %.2f, lane %d)" % [x_before, r.get_cart_x(), r.get_lane()],
-		r.get_cart_x() > x_before + 1.0 and r.get_lane() == 2)
+		is_equal_approx(r.get_cart_x(), float(RunnerGraybox.LANE_X[2])) and r.get_lane() == 2
+		and absf(r.get_cart_x() - x_before) > 1.0)
 	r.queue_free()
 
 	# 4. Un-jumped obstacle in the starting lane (centre) registers ONE hit.
@@ -140,21 +147,34 @@ func _ready() -> void:
 	r7.duck_end()
 	r7.queue_free()
 
-	# 10. Jumping DOES clear a "boulder" (same rule as legacy "box").
+	# 10. RULE CHANGE (founder, 2026-09-23): a boulder is too big to jump — the
+	#     only answer is hopping into the cart on another rail. This assertion
+	#     used to say "jumping clears a boulder"; it now proves the opposite.
 	var r8 := _spawn()
 	r8.setup(200.0, [{"z": 10.0, "lane": 1, "type": "boulder"}])
 	_run_to_distance(r8, 6.8)
 	r8.jump()
 	_run_to_distance(r8, 13.0)
-	_check("jumping clears a boulder (health unchanged=%d)" % r8.get_health(),
-		r8.get_health() == 3, "cart was not above clear-height across the boulder window")
+	_check("jumping does NOT clear a boulder (health=%d)" % r8.get_health(),
+		r8.get_health() == 2, "a boulder must only be escapable by hopping carts")
 	r8.queue_free()
+
+	# 10b. Hopping to another rail's cart DOES escape a boulder.
+	var r8b := _spawn()
+	r8b.setup(200.0, [{"z": 10.0, "lane": 1, "type": "boulder"}])
+	_run_to_distance(r8b, 5.0)
+	r8b.switch_lane_left()
+	_run_to_distance(r8b, 13.0)
+	_check("hopping carts escapes a boulder (health unchanged=%d)" % r8b.get_health(),
+		r8b.get_health() == 3)
+	r8b.queue_free()
 
 	# 11. Ziplining suspends cart-phase hazard checks entirely — a boulder
 	#     sitting inside the zip segment never registers a hit, and the cart
 	#     is held at ZIP_HEIGHT for the duration.
 	var r9 := _spawn()
 	r9.setup(200.0, [{"z": 10.0, "lane": 1, "type": "boulder"}], [{"start_z": 8.0, "end_z": 14.0}])
+	_catch_zip(r9, 8.0)
 	_run_to_distance(r9, 10.0)
 	_check("cart is ziplining mid-segment", r9.is_ziplining())
 	_run_to_distance(r9, 20.0)
@@ -165,6 +185,7 @@ func _ready() -> void:
 	# 12. Lane switch, jump, and duck are all no-ops while ziplining.
 	var r10 := _spawn()
 	r10.setup(200.0, [], [{"start_z": 8.0, "end_z": 14.0}])
+	_catch_zip(r10, 8.0)
 	_run_to_distance(r10, 10.0)
 	var lane_before: int = r10.get_lane()
 	r10.switch_lane_right()
@@ -199,6 +220,7 @@ func _ready() -> void:
 	var r12 := _spawn()
 	r12.setup(200.0, [{"z": 10.3, "lane": 1, "type": "arrow"}], [{"start_z": 5.0, "end_z": 10.0}])
 	r12.duck_start()
+	_catch_zip(r12, 5.0)
 	_run_to_distance(r12, 20.0)
 	_check("duck held through a zip does NOT carry cover past it (health=%d)" % r12.get_health(),
 		r12.get_health() == 2, "duck hold time must reset while ziplining")
@@ -210,6 +232,7 @@ func _ready() -> void:
 	#      to the rail floor immediately (Kimi audit #5a).
 	var r13 := _spawn()
 	r13.setup(200.0, [{"z": 10.3, "lane": 1, "type": "box"}], [{"start_z": 5.0, "end_z": 10.0}])
+	_catch_zip(r13, 5.0)
 	_run_to_distance(r13, 20.0)
 	_check("hazard just past zip-end is NOT free-cleared (health=%d)" % r13.get_health(),
 		r13.get_health() == 2, "dismount should land on the rail, not linger airborne")
@@ -223,6 +246,7 @@ func _ready() -> void:
 	#      fire — a dead no-op window (Kimi audit #5a).
 	var r14 := _spawn()
 	r14.setup(200.0, [], [{"start_z": 5.0, "end_z": 10.0}])
+	_catch_zip(r14, 5.0)
 	_run_to_distance(r14, 10.1)
 	var y_at_dismount: float = r14.get_cart_y()
 	_check("cart is grounded immediately after zip-end (cart_y=%.4f)" % y_at_dismount,
@@ -232,6 +256,100 @@ func _ready() -> void:
 	_check("jump raises the cart once grounded post-zip (cart_y=%.2f)" % r14.get_cart_y(),
 		r14.get_cart_y() > 0.3)
 	r14.queue_free()
+
+
+	# 16. A zipline reached WITHOUT jumping is missed: one health, stay on the rails,
+	#     and the rest of that chain is not judged again (one hit per chain, not per cable).
+	var chain := [{"start_z": 5.0, "end_z": 10.0}, {"start_z": 14.0, "end_z": 20.0}]
+	var r15 := _spawn()
+	r15.setup(200.0, [], chain)
+	_run_to_distance(r15, 7.0)
+	_check("walking under a zipline does NOT hook it", not r15.is_ziplining())
+	_run_to_distance(r15, 25.0)
+	_check("a missed zip chain costs exactly ONE health (health=%d)" % r15.get_health(),
+		r15.get_health() == 2, "a miss must not cascade into one hit per cable")
+	r15.queue_free()
+
+	# 17. Chained cables: jump near the end of one to swing onto the next.
+	var r16 := _spawn()
+	r16.setup(200.0, [], chain)
+	_catch_zip(r16, 5.0)
+	_run_to_distance(r16, 7.0)
+	_check("jumping to a zipline hooks it", r16.is_ziplining())
+	r16.jump()                                  # 3m from the end: inside the transfer window
+	_run_to_distance(r16, 12.0)
+	_check("still airborne in the gap between chained cables", r16.is_ziplining())
+	_run_to_distance(r16, 17.0)
+	_check("swung onto the second cable (index=%d)" % r16.get_zip_index(), r16.get_zip_index() == 1)
+	_run_to_distance(r16, 25.0)
+	_check("a clean chain costs nothing (health=%d)" % r16.get_health(), r16.get_health() == 3)
+	_check("dismounted onto the rails after the chain", not r16.is_ziplining() and is_zero_approx(r16.get_cart_y()))
+	r16.queue_free()
+
+	# 18. Riding a chained cable to its end WITHOUT the transfer jump drops you.
+	var r17 := _spawn()
+	r17.setup(200.0, [], chain)
+	_catch_zip(r17, 5.0)
+	_run_to_distance(r17, 12.0)
+	_check("no transfer jump = dropped at the end of the cable", not r17.is_ziplining())
+	_run_to_distance(r17, 25.0)
+	_check("a dropped chain costs exactly ONE health (health=%d)" % r17.get_health(), r17.get_health() == 2)
+	r17.queue_free()
+
+	# 19. A jump early on a cable (outside the window) does NOT arm the transfer.
+	var r18 := _spawn()
+	r18.setup(200.0, [], [{"start_z": 5.0, "end_z": 20.0}, {"start_z": 24.0, "end_z": 30.0}])
+	_catch_zip(r18, 5.0)
+	_run_to_distance(r18, 8.0)                  # 12m from the end: outside the 6m window
+	r18.jump()
+	_check("an early jump on the cable does not arm the swing", not r18.is_zip_transfer_armed())
+	r18.queue_free()
+
+	# 20. Hooking a cable carries the rider to the centre rail (the cable is over it).
+	var r19 := _spawn()
+	r19.setup(200.0, [], [{"start_z": 8.0, "end_z": 20.0}])
+	r19.switch_lane_left()
+	_catch_zip(r19, 8.0)
+	_run_to_distance(r19, 18.0)
+	_check("ziplining pulls the rider over the centre rail (x=%.2f)" % r19.get_cart_x(),
+		absf(r19.get_cart_x()) < 0.05 and r19.get_lane() == 1)
+	r19.queue_free()
+
+	# 21. SHOOTING. Unarmed legs cannot shoot (the Winchester comes in Chamber 0).
+	var bear := [{"id": "b1", "z": 30.0, "side": 1}]
+	var volley := [{"z": 30.0, "lane": 1, "type": "arrow", "archer": "b1"}]
+	var r20 := _spawn()
+	r20.setup(200.0, volley, [], bear, false)
+	_check("shoot() is a no-op before the Winchester is granted", not r20.shoot() and r20.archers_alive() == 1)
+	r20.queue_free()
+
+	# 22. Armed: shooting the archer ahead drops it AND cancels its arrows — the
+	#     volley then passes harmlessly with no duck at all.
+	var r21 := _spawn()
+	r21.setup(200.0, volley, [], bear, true)
+	_check("shooting an archer in range drops it", r21.shoot() and r21.archers_alive() == 0)
+	_run_to_distance(r21, 40.0)
+	_check("a dropped archer's arrows never land (health unchanged=%d)" % r21.get_health(),
+		r21.get_health() == 3, "shooting the bear must cancel its volley")
+	r21.queue_free()
+
+	# 23. Out of range (too far ahead) is a miss; the lever cooldown blocks spam.
+	var r22 := _spawn()
+	r22.setup(200.0, [], [], [{"id": "far", "z": 90.0, "side": -1}, {"id": "near", "z": 20.0, "side": 1}], true)
+	_run_to_distance(r22, 1.0)
+	var first: bool = r22.shoot()
+	_check("the nearest archer in range is the one hit", first and r22.archers_alive() == 1)
+	_check("the lever-action cooldown blocks an immediate second shot", not r22.shoot())
+	r22.step(RunnerGraybox.SHOOT_COOLDOWN + 0.01)
+	_check("an archer beyond range cannot be hit", not r22.shoot() and r22.archers_alive() == 1)
+	r22.queue_free()
+
+	# 24. Unshot archers still hurt: an armed player who neither shoots nor ducks is hit.
+	var r23 := _spawn()
+	r23.setup(200.0, volley, [], bear, true)
+	_run_to_distance(r23, 40.0)
+	_check("an unanswered volley still lands (health=%d)" % r23.get_health(), r23.get_health() == 2)
+	r23.queue_free()
 
 	print("EP2_RUNNER_GRAYBOX: %s" % ("ALL PASS" if _fail == 0 else "%d FAILURE(S)" % _fail))
 	get_tree().quit(_fail)

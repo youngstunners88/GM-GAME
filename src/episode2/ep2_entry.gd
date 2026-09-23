@@ -19,31 +19,21 @@ extends Node
 const SESSION_ROOT := preload("res://src/episode2/session/ep2_session_root.tscn")
 const MENU_SCENE := "res://src/ui/main_menu.tscn"
 
-## Graybox track. `gold_principal` is NOT a protocol constant (none exists in
+## Track layout lives in src/episode2/runner/tracks/episode2_tracks.gd (pure data).
+## `gold_principal` there is NOT a protocol constant (none exists in
 ## goldmine_system.gd or the white paper) — it is a caller-supplied placeholder,
 ## same as everywhere else Episode 2 needs one.
-const TRACK_PLAN: Array = [
-	{
-		"chamber_z": 180.0,
-		# Spacing is deliberately generous for a FIRST run. Browser playtest of
-		# the earlier, tighter track ended in RUN FAILED inside ~13 seconds:
-		# hazards arrived every ~2s at RUN_SPEED 12, which is not learnable when
-		# you are also discovering the controls. Each hazard now gets ~3s of
-		# reaction time, and the first two are in side lanes so simply holding
-		# the centre rail survives the opening.
-		"obstacles": [
-			{"z": 45.0, "lane": 0, "type": "box"},
-			{"z": 80.0, "lane": 2, "type": "box"},
-			{"z": 118.0, "lane": 1, "type": "boulder"},
-			{"z": 155.0, "lane": 0, "type": "arrow"},
-		],
-		"zip_segments": [{"start_z": 100.0, "end_z": 120.0}],
-		"gold_principal": 1000,
-		"bears": [{"z": 4.0}, {"z": -6.0}],
-	},
-]
+const TRACK_PLAN: Array = Episode2Tracks.LEGS
 
 var _root: Node = null
+## TEST-ONLY distance probe. With ?ep2probe=1 on web, prints "[EP2] d=<m>" each
+## metre so a browser harness can time inputs by track position, not wall-clock
+## (software-rendered CI browsers run the sim well below real time). Off otherwise.
+var _probe: bool = false
+## TEST-ONLY. ?ep2leg=N on web starts the session at leg N (e.g. the armed leg)
+## without replaying earlier legs and chambers. 0 in normal play.
+var _leg_offset: int = 0
+var _probe_last: int = -1
 var _ended: bool = false
 var _hud: Label = null
 var _hint: Label = null
@@ -51,6 +41,13 @@ var _banner: Label = null
 
 func _ready() -> void:
 	_build_hud()
+	if OS.has_feature("web"):
+		var q: Variant = JavaScriptBridge.eval(
+			"new URLSearchParams(window.location.search).get('ep2probe') || ''", true)
+		_probe = str(q) == "1"
+		var lq: Variant = JavaScriptBridge.eval(
+			"new URLSearchParams(window.location.search).get('ep2leg') || '0'", true)
+		_leg_offset = clampi(int(str(lq)), 0, TRACK_PLAN.size() - 1)
 
 	_root = SESSION_ROOT.instantiate()
 	add_child(_root)
@@ -66,7 +63,7 @@ func _ready() -> void:
 func _start_session() -> void:
 	_ended = false
 	_banner.text = ""
-	_root.configure(TRACK_PLAN, true)      # commit_to_economy: real GOLD in play
+	_root.configure(TRACK_PLAN.slice(_leg_offset), true)   # commit_to_economy: real GOLD in play
 	_root.start()
 
 func _restart() -> void:
@@ -74,6 +71,13 @@ func _restart() -> void:
 
 func _process(_delta: float) -> void:
 	_refresh_hud()
+	if _probe and _root and _root.get_mode() == Ep2SessionRoot.Mode.RUNNER:
+		var a: Node = _root.get_active()
+		if a and a.has_method("get_distance"):
+			var d: int = int(a.get_distance())
+			if d != _probe_last:
+				_probe_last = d
+				print("[EP2] d=%d hp=%d" % [d, a.get_health()])
 
 func _unhandled_input(event: InputEvent) -> void:
 	# Always an exit. A mode with no visible way out is how a tester gets stuck
@@ -126,16 +130,21 @@ func _refresh_hud() -> void:
 	if _root == null or _hud == null:
 		return
 	var a: Node = _root.get_active()
-	var lines := "EPISODE 2 — GOLD MINE  (graybox)\n"
+	var lines := "EPISODE 2 — GOLD MINE\n"
 	match _root.get_mode():
 		Ep2SessionRoot.Mode.RUNNER:
 			if a:
-				lines += "MINECART RUN   dist %.0f m / %.0f\n" % [a.get_distance(), 180.0]
-				lines += "health %d   lane %d%s" % [
-					a.get_health(), a.get_lane(),
-					"   ZIPLINE" if a.is_ziplining() else ("   DUCKING" if a.is_ducking() else ""),
+				var leg: Dictionary = TRACK_PLAN[clampi(_root.get_segment() + _leg_offset, 0, TRACK_PLAN.size() - 1)]
+				lines += "%s   %.0f / %.0f m\n" % [str(leg.get("name", "Minecart Run")).to_upper(),
+					a.get_distance(), a.get_chamber_z()]
+				lines += "health %d/%d%s%s" % [
+					a.get_health(), RunnerGraybox.START_HEALTH,
+					("   bears %d" % a.archers_alive()) if a.can_shoot() else "",
+					"   ON THE ZIPLINE" if a.is_ziplining() else ("   DUCKING" if a.is_ducking() else ""),
 				]
-			_hint.text = "A / D  switch rail        SPACE  jump\nS  duck (hold)            ESC  back to menu"
+			_hint.text = ("A / D  hop carts     SPACE  jump / grab zipline     S  duck (hold)\n"
+				+ ("J / ENTER  shoot bears     " if a and a.can_shoot() else "")
+				+ "ESC  back to menu")
 		Ep2SessionRoot.Mode.CHAMBER:
 			if a:
 				lines += "MINER SHAFT\n"
@@ -145,7 +154,7 @@ func _refresh_hud() -> void:
 						"   IN COVER" if a.is_in_cover() else ""]
 				else:
 					lines += "rig idle — press E to start a Miner"
-			_hint.text = "E  start Miner (hold SHIFT to pay ETH+Diamonds)\nLMB/CTRL  shoot     S  cover (hold)\nSHIFT+X / dash  EARLY CLAIM (take partial GOLD now)\nESC  back to menu"
+			_hint.text = "E  start Miner (hold SHIFT to pay ETH+Diamonds)\nJ / ENTER  shoot     S  cover (hold)\nSHIFT+X / dash  EARLY CLAIM (take partial GOLD now)\nESC  back to menu"
 		Ep2SessionRoot.Mode.TRANSITION:
 			lines += "loading…"
 		_:
@@ -158,8 +167,12 @@ func _bar(f: float) -> String:
 
 # --- Session events -----------------------------------------------------------
 
-func _on_mode_changed(_mode: int) -> void:
+func _on_mode_changed(mode: int) -> void:
 	_banner.text = ""
+	# Console marker so browser playtest harnesses can time inputs to the run
+	# instead of guessing boot time (scripts / live-build-proof).
+	if mode == Ep2SessionRoot.Mode.RUNNER:
+		print("[EP2] leg start %d" % (_root.get_segment() + _leg_offset))
 
 func _on_chamber_committed(_index: int, result: Dictionary) -> void:
 	_banner.text = "CLAIMED  %d GOLD   (forfeited %d to the auction pool)" % [

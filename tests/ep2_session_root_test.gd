@@ -220,9 +220,14 @@ func _ready() -> void:
 	var saw_zip := false
 	var zip_dist := 0.0
 	var dt := 1.0 / 60.0
+	var jumped := false
 	for i in 360:                     # 6s: covers the 60m to the chamber
 		r5.step(dt)
 		var a: Node = r5.get_active()
+		# Ziplines are earned now: jump ~3m before the cable (zip starts at 20m).
+		if not jumped and a is RunnerGraybox and a.get_distance() >= 17.0:
+			r5.runner_jump()
+			jumped = true
 		if a is RunnerGraybox and a.is_ziplining():
 			saw_zip = true
 			zip_dist = a.get_distance()

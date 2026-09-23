@@ -3,6 +3,55 @@
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
 **Branch:** `claude/sleepy-sagan-edqti4`
 
+---
+
+**🚂 EPISODE 2 RUNNER IS BUILT — two legs, real 3D characters, every verb from your brief, proven in a browser (2026-09-23).**
+
+What you asked for, and where it stands:
+
+| You asked | Now |
+|---|---|
+| Clear that Lil Blunt is in a mine cart | Three open ore carts roll side by side; he stands in one |
+| Duck in the cart from bears' arrows | Bears on scaffolds, headlamps lit, loose glowing arrows. Hold S |
+| Hop into another cart to escape boulders | Boulders roll down a rail. **Only** a hop saves you (A / D) |
+| Shoot the bears | J / ENTER drops the nearest bear and cancels its volley — from leg 2, once he has the Winchester |
+| Jump and hook the zipline with his axe | Space as you reach the cable. Miss = one hit, back on the rails |
+| Jump to the next zipline | Space again near the end of each cable. Leg 2 has a three-cable chain |
+| Runner leads him into the chambers and back | Leg 1 → chamber → Leg 2 → chamber |
+
+**Real 3D characters from Meshy**, generated from your reference images: Lil Blunt
+(from IMG_2492) and the balaclava bear archer (from its turnaround). Both came back
+on-model. They were 4.3 MB and 4.5 MB raw — together more than all the space left in
+the web build — so a new tool shrinks their textures, and they cost 3.1 MB.
+
+**Readable:** every hazard gets a glowing strip in its lane and a big word over it
+(JUMP / DUCK / HOP / SHOOT), colour-coded by the action that saves you.
+
+**Proof it actually plays:** I built the real web export locally and played both legs
+in Chromium with scripted inputs. **Leg 1 and Leg 2 each cleared at full health.**
+
+**A bug the old version had that would have made it feel broken:** pressing A (left)
+hopped Lil Blunt to the cart on the *right*. The camera mirrors world X, and no headless
+test could see it. Fixed — only caught by actually playing in a browser.
+
+**Also fixed on the way:** the chamber screen said shoot with mouse / Ctrl, which do
+nothing — it's J / ENTER.
+
+**Not done yet, honestly:**
+- **Characters don't animate.** Static poses; hop, duck and zipline are shown by moving
+  and leaning them. Animation comes after rigging (the asset plan routes that to Astra).
+- **Phone frame rate is unmeasured.** The only browser here renders on the CPU at about
+  a third of real speed, which says nothing about a phone. Needs a test on your phone.
+- **Pack budget: ~3.9 MB left** before itch's limit. The Chamber 0 set (Inferno Bull,
+  Winchester, furnace) will need room — expect to re-encode some older media first.
+- Chamber 0 (where he gets the Winchester) isn't built yet, so for now the gun simply
+  arrives after the first chamber.
+
+Try it: add `?ep2=1` to the game URL to jump straight in, or `?ep2=1&ep2leg=1` to start
+on the armed leg.
+
+---
+
 **🧰 TOOLCHAIN AUDIT — 31 tools evaluated, 2 adopted, 22 rejected; task router live (2026-09-22).**
 
 You sent ~28 repos/links and asked which are useful and credible, plus four systems and
