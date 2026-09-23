@@ -206,3 +206,9 @@ artifacts/itch-blaze/
 artifacts/blotch-matrix/
 artifacts/blotch-attempts/
 artifacts/blaze-attempts/
+artifacts/weapon-verify*/
+artifacts/weapon-verify/
+artifacts/attack-test*/
+artifacts/stage1-weapon/
+artifacts/wtest/
+artifacts/verify-deploy/
