@@ -58,7 +58,11 @@ ALPHA_MIN = 0.01      # alpha 0.0 is a tween start value, invisible, not a smudg
 
 def main() -> int:
     bad = []
-    for path in sorted(glob.glob("src/**/*.gd", recursive=True)):
+    # .tscn too: a month of green smudges survived because this gate only read
+    # .gd code, while smoke_cloud_platform.tscn and dash_trail.tscn set their
+    # translucent green in the SCENE file (founder, 2026-09-23).
+    paths = glob.glob("src/**/*.gd", recursive=True) + glob.glob("src/**/*.tscn", recursive=True)
+    for path in sorted(paths):
         norm = path.replace("\\", "/")
         if norm in ALLOW or norm.startswith(SKIP_DIRS):
             continue
@@ -73,8 +77,21 @@ def main() -> int:
                             and g - r >= GREEN_MARGIN and g - b >= GREEN_MARGIN):
                         bad.append((path, lineno, r, g, b, a, line.strip()[:88]))
 
+    # IDLE TRANSITION OVERLAY MUST BE INVISIBLE. scene_transition.gd is an
+    # autoload CanvasLayer in front of EVERY screen. Its wipe shader used to
+    # leave permanent smoke blobs at progress == 0 (smoothstep edge0 < 0 where
+    # the noise mask is low) - the founder's "green smudges", 2026-08-20..09-23.
+    sh = open("src/effects/transition_wipe.gdshader", encoding="utf-8").read()
+    st = open("src/autoload/scene_transition.gd", encoding="utf-8").read()
+    if "step(0.001, progress)" not in sh:
+        bad.append(("src/effects/transition_wipe.gdshader", 0, 0, 0, 0, 0,
+                    "idle wipe not forced to alpha 0 at progress 0 (missing step guard)"))
+    if "_wipe_rect.visible = false" not in st or "_wipe_rect.visible = v > 0.001" not in st:
+        bad.append(("src/autoload/scene_transition.gd", 0, 0, 0, 0, 0,
+                    "wipe overlay is drawn while idle (must be hidden at progress 0)"))
+
     if not bad:
-        print("[green-vfx] OK - no soft translucent green-dominant VFX colours")
+        print("[green-vfx] OK - no soft translucent green-dominant VFX colours; idle transition overlay hidden")
         return 0
 
     print("[green-vfx] FAIL - soft translucent GREEN VFX will read as a smudge "

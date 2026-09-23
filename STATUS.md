@@ -205,6 +205,21 @@ offline when it is not.
 
 ---
 
+**🎯 THE GREEN SMUDGES — ACTUAL ROOT CAUSE FIXED (2026-09-23).**
+
+- **Cause:** the scene-transition overlay (an always-on-top layer on every
+  screen, menu included) wasn't fully clear when idle — its smoke/gold shader
+  left permanent dark blobs at fixed screen spots, positioned by a GPU-dependent
+  noise hash (why they sat in your sky but hid under the HUD in our test
+  renderer, and why L2 Blaze — diamond wipe, dark blue on dark blue — looked
+  clean). Now forced invisible when idle, two ways, and CI-gated.
+- **Also fixed:** L1 floating cloud platforms and the dash trail were
+  translucent green — now neutral smoke-white. The gate that missed them only
+  read code files, not scene files; it now reads both.
+- **Weapon:** smoke bombs Stage 1 only; Stage 2 axe; Stage 3 revolver.
+
+---
+
 **💨 SMOKE BOMBS ARE THE DEFAULT WEAPON EVERYWHERE + SKY BLOCKS REMOVED (2026-09-23).**
 
 - **Smoke bomb is now the default throw in every stage.** The plain axe (the old
