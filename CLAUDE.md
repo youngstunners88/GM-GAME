@@ -89,6 +89,31 @@ After **every significant** change to the game, in the same working session:
 This is mandatory, not optional — the client relies on always-current state.
 The Stop hook re-checks for uncommitted/unpushed work as a backstop.
 
+## ⭐ FOUNDER-LOCKED FRONT PAGE RULE (never change without his say-so)
+The title screen is **founder-approved and locked**. It stays exactly as it is
+**no matter what, unless the founder explicitly says otherwise** — he builds in
+several sessions in parallel, and it has already been lost once to another
+session's branch deploying over it.
+
+Locked files (single source: `scripts/front-page-lock.sh list`):
+`src/ui/main_menu.gd`, `src/ui/main_menu.tscn`,
+`src/assets/backgrounds/bg_menu_gm_keyart.jpg` (his GM key art),
+`src/assets/music/menu_mist_theme.mp3` (his MistMenu track),
+`src/assets/shaders/title_smoke_flow.gdshader` (the flowing smoke).
+
+Enforced three ways — do not work around any of them:
+1. **Session hook** (`.claude/hooks/guard-front-page.sh`): any edit to a locked
+   file raises a permission prompt. Only approve it if the founder asked.
+2. **CI** (`scripts/front-page-lock.sh check` in `export-game.yml`): a changed
+   locked file fails the build, and a failed master build never deploys.
+3. **This rule.**
+
+If the founder *does* ask for a front-page change: make it, run
+`scripts/front-page-lock.sh update` in the **same commit**, and say in the
+commit message that the founder approved it. Never "fix" a failing lock check
+by re-fingerprinting unrequested changes — restore the files instead:
+`git checkout origin/master -- $(scripts/front-page-lock.sh list)`.
+
 ## ⭐ BLOTCH RULE (the founder's longest-running bug — read before touching art)
 
 The "green smudges" report has recurred since 2026-08-20. It cost a month, two

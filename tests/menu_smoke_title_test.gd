@@ -141,6 +141,22 @@ func _ready() -> void:
 		_check("smoke sits above backdrop, below the menu UI (tree order)",
 				between == parts.size(), "%d/%d" % [between, parts.size()])
 
+	# 4c. FLOWING SMOKE SHADER — the full-screen smoke the founder asked for on
+	#     2026-09-23. Same visibility rule as the particles: it must sit ABOVE the
+	#     opaque backdrop in draw order or it renders and nobody sees it.
+	var flow := menu.get_node_or_null("SmokeFlow") as ColorRect
+	_check("SmokeFlow overlay exists", flow != null)
+	if flow:
+		var fm := flow.material as ShaderMaterial
+		_check("SmokeFlow has a shader material", fm != null and fm.shader != null)
+		var bd2 := menu.get_node_or_null("Backdrop")
+		var vb2 := menu.get_node_or_null("VBoxContainer")
+		if bd2 and vb2:
+			_check("SmokeFlow drawn over backdrop, under menu UI",
+					flow.get_index() > bd2.get_index() and flow.get_index() < vb2.get_index(),
+					"idx %d (backdrop %d, ui %d)" % [flow.get_index(), bd2.get_index(), vb2.get_index()])
+		_check("SmokeFlow never eats clicks", flow.mouse_filter == Control.MOUSE_FILTER_IGNORE)
+
 	# 5. MUSIC — the founder's track must resolve AND be the thing playing.
 	#    Asserting only that the file exists would pass even if nothing wired
 	#    it up, which is the whole failure class this project keeps hitting.

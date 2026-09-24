@@ -5,6 +5,28 @@
 
 ---
 
+**💨 FLOWING SMOKE + 🔒 FRONT PAGE LOCKED (2026-09-23).**
+
+**Smoke that never stops.** The title screen now has smoke curling and rising
+across the whole screen, the entire time the menu is open. It's a shader
+built on the smoke effect the Smoke Lounge already uses (proven in the web
+build), made see-through so your key art shows between the wisps: thicker
+near the bottom, thinning as it rises, never over the title or buttons.
+
+**Your front page is locked.** It can't be changed by any of your other
+sessions unless you say so, three ways at once:
+1. **In every Claude session on this repo**: touching a locked file (the menu,
+   your key art, your MistMenu track, the smoke) pops up a permission prompt
+   that you have to approve. Tested: 14/14 cases — every kind of write is
+   caught, normal reading is not.
+2. **In CI**: if a locked file changes anyway, the build fails — and a failed
+   master build never deploys, so a changed title screen can't reach players.
+   Tested failing-first: clean passes, a changed file fails and names it.
+3. **In CLAUDE.md**: the written rule every session reads at start.
+
+To change the front page later, just tell a session to — you approving the
+prompt is the unlock.
+
 **✅ YOUR TITLE SCREEN IS LIVE — and why it kept vanishing (2026-09-23).**
 
 You were right that the live page wasn't showing it. It wasn't a problem with
@@ -191,17 +213,7 @@ near-certainty.
 **GPT-6 Astra** on OpenRouter (verified live: `openai/gpt-6-astra`, $10/1M in,
 $50/1M out, 1.05M context) and browser-truth verification to **Jev**.
 
-On Jev: you said it is on OpenRouter and that you have used it. You are right
-that using Jev means paying OpenRouter — `jev-ultrafast` requires an OpenRouter
-key for the small model that writes text. What I could not find is a Jev
-*chat-completions model ID*: the catalogue returned 444 of 444 with no next
-page and no `jev` anywhere in it, and direct calls to six plausible IDs each
-came back `is not a valid model ID`. Rather than bake my answer in, the skill
-now **runs discovery every time** and builds for whichever result comes back,
-so if it is account-gated or gets added later it just works. It also records
-the `TYPESAFE_API` vs `TYPESAFE_API_KEY` name mismatch that would otherwise
-look like a missing key, and the proxy bug that makes `or-call.mjs` look
-offline when it is not.
+**Correction on Jev: you were right.** Jev *is* on OpenRouter — `~typesafe/jev-latest`, served at OpenRouter's decisions endpoint (`/api/alpha/decisions`), which the model list I searched does not include. I tested the wrong endpoint and told you twice you were wrong. Verified live 2026-09-23 (HTTP 200, `typesafe/jev-1.13`, ~$0.00001 a call), and the skill now says so and points at the `jev-decision-gate` skill.
 
 ---
 
