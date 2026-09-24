@@ -5,6 +5,16 @@
 
 ---
 
+**🪜 PROTOCOL PORTALS step 2 — glowing ladders built, NOT yet shipped (OPEN, 2026-09-24).**
+One downward glowing ladder per stage, on the boss-approach path: Stage 1 x=2100 (green),
+Stage 2 x=3300 (cyan), Stage 3 x=3100 (gold), each 200+ px clear of Blaze/Lounge/Vault/
+Reserve/Knox doors and left of the boss trigger. Tests pass. The first gameplay-zoom captures
+showed a broken arrow glyph, weak glow and low gold contrast. A fix is applied, but the
+re-export was blocked in-session, so the Jev vote has not run. Per the gate it stays OPEN and
+off master. Detail: `portals/STATUS.md`.
+
+---
+
 **📚 PROTOCOL PORTALS — step 1 of 10 done: session core + the three locked quiz banks (2026-09-24).**
 
 Built from your PROTOCOL_PORTALS spec under the delegation charter: DeepSeek V4.1 Flash

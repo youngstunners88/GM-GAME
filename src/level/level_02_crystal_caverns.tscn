@@ -1,9 +1,10 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://src/level/level_02_crystal_caverns.gd" id="1_lvl"]
 [ext_resource type="PackedScene" uid="uid://hud001" path="res://src/ui/hud.tscn" id="2_hud"]
 [ext_resource type="PackedScene" uid="uid://touch001" path="res://src/ui/touch_controls.tscn" id="3_touch"]
 [ext_resource type="Resource" path="res://src/resources/level_02_data.tres" id="4_level02_data"]
+[ext_resource type="PackedScene" path="res://src/protocol_portals/PortalLadder.tscn" id="5_portalladder"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_trigger"]
 size = Vector2(200, 800)
@@ -47,3 +48,8 @@ position = Vector2(4050, 550)
 z_index = 11
 
 [node name="TouchControls" parent="." instance=ExtResource("3_touch")]
+
+[node name="PortalLadderDiamonds" parent="." instance=ExtResource("5_portalladder")]
+position = Vector2(3300, 500)
+protocol = "diamonds"
+stage_id = 2

@@ -1,0 +1,4 @@
+Three gameplay screenshots (1280x720, real game camera zoom) from a 2D platformer, in order: Stage 1 (should show a NEON GREEN glowing downward ladder/hatch), Stage 2 (CYAN glow), Stage 3 (GOLD glow). Each portal is a glowing shaft opening in the ground with a pulsing halo, rising particles and a label "▼ STUDY". The player character is spawned ~250 px to its left.
+For EACH image answer strictly as JSON, one object per image, in an array:
+{"stage":N,"portal_visible":true/false,"glow_colour_seen":"...","label_text_readable":true/false,"label_text":"...","approx_screen_position":"x%,y%","contrast_vs_background":"high|medium|low","occluded_by":"none|HUD|foliage|other: ...","would_a_first_time_player_notice_it_within_2s":0.0-1.0,"visual_defects":"..."}
+Be literal and skeptical: if you cannot see the portal, say so. No prose outside the JSON.
