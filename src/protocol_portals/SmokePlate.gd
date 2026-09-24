@@ -64,13 +64,15 @@ func _draw() -> void:
 		])
 		draw_colored_polygon(tri, accent)
 
-	# 6. Word marks. draw_string with a width centres the text for us.
+	# 6. Word marks. Kept high and well inside the disc, clear of the sink-hole
+	#    bars and of the lower rim, so nothing can crop the sub-line.
+	#    draw_string with a width centres the text for us.
 	var font: Font = ThemeDB.fallback_font
 	if font == null:
 		return
-	draw_string(font, Vector2(0.0, CENTRE.y - 26.0), "SMOKE",
+	draw_string(font, Vector2(0.0, CENTRE.y - 64.0), "SMOKE",
 		HORIZONTAL_ALIGNMENT_CENTER, DESIGN_SIZE, 44, accent)
-	draw_string(font, Vector2(0.0, CENTRE.y + 12.0), "culture + sink",
+	draw_string(font, Vector2(0.0, CENTRE.y - 28.0), "culture + sink",
 		HORIZONTAL_ALIGNMENT_CENTER, DESIGN_SIZE, 28, rim)
 
 	# 7. Four corner ticks on the outer ring at the 45-degree marks.

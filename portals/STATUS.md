@@ -9,3 +9,13 @@
   `ladder_unmissable`/`ship` vote recorded here, then ship-to-master. The re-export command
   was denied in-session, so the gate has not run on the fixed build. NOT on master.
 - Cost so far step 2: DeepSeek $0.0084 draft + $0.0009 vision + $0.0066 fix.
+
+- IN FLIGHT — step 3: three learning pits (Reading Ring / Pressure Study / Claim Office) reachable
+  from the ladders (E), whitepaper plate (founder Drive art for diamonds/gold, drawn SMOKE certificate),
+  video shrine (official X URL, DONE after 8 s), examiner, 11-question quiz, result retry/proceed,
+  climb back to the same world x, ScorecardGrant eligibility (no mint). Copy: Opus 5.5 (Muse blocked by
+  OpenRouter 18+ setting). Qwen FACT_LOCK: PASS (0 defects).
+  Jev round 2 (evidence 10_ladders/step3c, votes 90_gates/*.jev.txt):
+  smoke BLOCK (examiner figure invisible on green) · diamonds SHIP 0.73 · gold SHIP 0.63.
+  Round 3 (Ember redraw + trio spacing) in flight. Not on master until all three ship.
+- Spend step 3: DeepSeek ~$0.075, Opus copy $0.104, Qwen audit $0.137, Jev $0.0001.
