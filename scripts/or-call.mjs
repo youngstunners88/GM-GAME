@@ -285,6 +285,10 @@ const body = {
   ],
   temperature: MODEL.includes('kimi') ? 0.2 : 0.5,
   max_tokens: MAX_OUTPUT,
+  // OR_REASONING_EFFORT=low|medium|high caps a reasoning model's hidden
+  // thinking so it cannot spend the whole output budget before answering.
+  ...(process.env.OR_REASONING_EFFORT
+    ? { reasoning: { effort: process.env.OR_REASONING_EFFORT } } : {}),
 };
 
 async function dispatch(attempt = 1) {

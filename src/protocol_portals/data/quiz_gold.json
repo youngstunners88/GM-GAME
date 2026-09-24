@@ -1,0 +1,127 @@
+{
+    "protocol": "gold",
+    "examiner": "The Claim Recorder",
+    "questions": [
+        {
+            "id": "G01",
+            "fact_id": "G01",
+            "prompt": "What does the mining vest look like?",
+            "options": [
+                "About 100 days, about 1% per day.",
+                "About 10 days, about 10% per day.",
+                "About 365 days with no release at all."
+            ],
+            "correct": 0
+        },
+        {
+            "id": "G02",
+            "fact_id": "G02",
+            "prompt": "What happens if you claim early?",
+            "options": [
+                "You receive double the unvested GOLD.",
+                "You forfeit the unvested GOLD.",
+                "Nothing changes and the vest continues as normal."
+            ],
+            "correct": 1
+        },
+        {
+            "id": "G03",
+            "fact_id": "G03",
+            "prompt": "What does Fort Knox pay on staked GOLD?",
+            "options": [
+                "XAUT.",
+                "SMOKE.",
+                "wBTC."
+            ],
+            "correct": 2
+        },
+        {
+            "id": "G04",
+            "fact_id": "G04",
+            "prompt": "What does the Melt Bonus do?",
+            "options": [
+                "It burns extra GOLD for a large share multiplier.",
+                "It refunds GOLD and lowers the share multiplier.",
+                "It converts GOLD into Diamonds instantly."
+            ],
+            "correct": 0
+        },
+        {
+            "id": "G05",
+            "fact_id": "G05",
+            "prompt": "What do Gold Rush auctions compete for?",
+            "options": [
+                "wBTC.",
+                "XAUT.",
+                "Diamonds."
+            ],
+            "correct": 1
+        },
+        {
+            "id": "G06",
+            "fact_id": "G06",
+            "prompt": "What can the mint path include?",
+            "options": [
+                "Only SMOKE.",
+                "Only wBTC.",
+                "ETH, or ETH plus Diamonds."
+            ],
+            "correct": 2
+        },
+        {
+            "id": "G07",
+            "fact_id": "G07",
+            "prompt": "Who administers the test in the GOLD room?",
+            "options": [
+                "The Claim Recorder.",
+                "The Assay Trio.",
+                "Ember the Archivist."
+            ],
+            "correct": 0
+        },
+        {
+            "id": "G08",
+            "fact_id": "G08",
+            "prompt": "What is this GOLD room?",
+            "options": [
+                "Fort Knox itself.",
+                "A study room, not Fort Knox.",
+                "A Gold Rush auction house."
+            ],
+            "correct": 1
+        },
+        {
+            "id": "G09",
+            "fact_id": "G09",
+            "prompt": "What do long locks do?",
+            "options": [
+                "They remove all share weight.",
+                "They only affect SMOKE burns.",
+                "They weight commitment and shares."
+            ],
+            "correct": 2
+        },
+        {
+            "id": "G10",
+            "fact_id": "G10",
+            "prompt": "Is the video study path allowed?",
+            "options": [
+                "Yes, the video path is allowed.",
+                "No, only the Whitepaper can be studied.",
+                "Only after the vest fully completes."
+            ],
+            "correct": 0
+        },
+        {
+            "id": "G11",
+            "fact_id": "G11",
+            "prompt": "What does completing this room grant?",
+            "options": [
+                "A Diamonds scorecard NFT on ICP.",
+                "A Gold scorecard NFT on ICP.",
+                "Guaranteed XAUT from the next auction."
+            ],
+            "correct": 1
+        }
+    ]
+}

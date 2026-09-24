@@ -5,6 +5,24 @@
 
 ---
 
+**📚 PROTOCOL PORTALS — step 1 of 10 done: session core + the three locked quiz banks (2026-09-24).**
+
+Built from your PROTOCOL_PORTALS spec under the delegation charter: DeepSeek V4.1 Flash
+drafted every file, Qwen 3.8 Max Prime fact-checked the banks, Claude only applied and tested.
+- `src/protocol_portals/`: `PortalSignals` (states, pass bar 7/11, token ids
+  `portal_smoke` / `portal_diamonds` / `portal_gold`), `PortalSession` (the room loop,
+  legal transitions only, grade, retry, proceed-with-score, scorecard eligibility on any
+  completion), `QuizBank` (loads + validates a bank).
+- `data/quiz_{smoke,diamonds,gold}.json`: 11 questions each, one per locked fact
+  S01–S11 / D01–D11 / G01–G11, 3 options, correct answer spread across positions.
+  Qwen fact-check: **0 problems in 33 questions**.
+- Test `tests/protocol_portals_test.gd`: **155 checks, ALL PASS**.
+- Cost of the delegated calls: DeepSeek $0.011, Qwen $0.055.
+- Nothing is visible in the game yet. **Next:** step 2, the three glowing ladders on each
+  boss-approach path, with screenshots.
+
+---
+
 **🔀 RUNNER IS BACK — merged into master's Episode 2, plus fixes so sessions stop overwriting each other (2026-09-24).**
 
 Why it vanished: only `master` deploys now, and my runner was only on its branch. Worse,
