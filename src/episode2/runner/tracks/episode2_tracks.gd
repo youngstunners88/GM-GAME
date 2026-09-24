@@ -20,7 +20,7 @@ extends RefCounted
 ## a second JUMP near the end of each to swing to the next.
 
 ## Leg 1 — THE DESCENT. Unarmed: the Winchester is handed over in Chamber 0
-## (STORY_OUTLINE.md), so this leg teaches the four movement verbs one at a time,
+## (the Smelting Facility, which this leg ends at), so this leg teaches the four movement verbs one at a time,
 ## each introduced alone with ~3 s of warning before any combination.
 const LEG_DESCENT := {
 	"name": "The Descent",
@@ -61,9 +61,9 @@ const LEG_DESCENT := {
 		{"start_z": 250.0, "end_z": 262.0},
 		{"start_z": 268.0, "end_z": 278.0},
 	],
-	# Chamber-side data (consumed by the chamber, not the runner).
-	"gold_principal": 1000,
-	"bears": [{"z": 4.0}, {"z": -6.0}],
+	# CHAMBER 0 — the Smelting Facility: Inferno Bull hands over the Winchester.
+	# A story set-piece, so it mints nothing (no gold_principal, no bears).
+	"chamber": "smelting_facility",
 }
 
 ## Leg 2 — DEEPER RAILS. Armed. Every volley now has a second answer: shoot its
@@ -112,8 +112,10 @@ const LEG_DEEPER := {
 		{"start_z": 213.0, "end_z": 225.0},
 		{"start_z": 231.0, "end_z": 242.0},
 	],
-	"gold_principal": 1500,
-	"bears": [{"z": 4.0}, {"z": -6.0}, {"z": -12.0}],
+	# First PROTOCOL chamber — the Miner Shaft vesting mechanic.
+	"chamber": "miner_shaft",
+	"gold_principal": 1000,
+	"bears": [{"z": 4.0}, {"z": -6.0}],
 }
 
 ## Play order. Each leg ends at a chamber; after the last chamber the session ends.

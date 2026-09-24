@@ -71,5 +71,23 @@ if [ -f "$STATE_FILE" ]; then
     echo "=== END SESSION STATE PREVIEW ==="
 fi
 
+
+# --- Parallel-session drift check ------------------------------------------------
+# Only master deploys. Several sessions work on separate branches, so show how far
+# this branch is from master and whether it holds work players can't see yet.
+BR_NOW=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+if [ -n "$BR_NOW" ] && [ "$BR_NOW" != "master" ] && [ "$BR_NOW" != "main" ]; then
+    timeout 4 git fetch -q origin master 2>/dev/null
+    if git rev-parse -q --verify origin/master >/dev/null 2>&1; then
+        BEHIND=$(git rev-list --count HEAD..origin/master 2>/dev/null)
+        AHEAD=$(git rev-list --count origin/master..HEAD 2>/dev/null)
+        echo ""
+        echo "=== LIVE-BUILD CHECK: only master deploys ==="
+        echo "  $BR_NOW is $BEHIND behind master, $AHEAD commit(s) not on master."
+        [ "${BEHIND:-0}" -gt 0 ] && echo "  → Merge first: git merge origin/master   (other sessions shipped work)"
+        [ "${AHEAD:-0}" -gt 0 ] && echo "  → Not live until shipped: scripts/ship-to-master.sh"
+    fi
+fi
+
 echo "==================================="
 exit 0

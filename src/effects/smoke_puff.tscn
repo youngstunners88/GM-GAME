@@ -14,7 +14,7 @@ script = ExtResource("1_puff")
 anchors_preset = 0
 offset_right = 20.0
 offset_bottom = 20.0
-color = Color(0.8, 0.9, 0.8, 0.6)
+color = Color(0.86, 0.86, 0.88, 0.55)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(10, 10)

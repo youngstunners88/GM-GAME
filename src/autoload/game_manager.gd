@@ -25,11 +25,23 @@ signal crypto_balance_updated(token: String, balance: float)
 signal wallet_address_changed(address: String)
 
 # Persistent player data only — no state booleans (those live in StateMachine).
-## Visible build identity — bump on every ship. Shown on the HUD (top-left under
-## the score) and printed once at boot, so a founder hard-refresh can PROVE it is
-## running the new build and not a stale itch/browser cache (the merged
-## 2026-08-26 residual's Phase 0: "Without this, every other step is invalid").
-const BUILD_TAG := "2026-08-26e"
+## Visible build identity — shown on the HUD (bottom-left) and printed once at
+## boot, so a founder hard-refresh can PROVE it is running the new build and not
+## a stale itch/browser cache (the merged 2026-08-26 residual's Phase 0:
+## "Without this, every other step is invalid").
+##
+## DO NOT hand-edit this to date a ship. CI rewrites it to "<UTC date>-<short
+## SHA>" in the "Stamp the build tag" step immediately before the export, so the
+## string on screen is always the commit that produced the running build.
+##
+## It used to be a hand-bumped constant, and it rotted exactly the way such
+## things do: it read "2026-08-26e" through a month of daily ships. On
+## 2026-09-22 the founder sent a screenshot of a defect stamped "BUILD
+## 2026-08-26e" — the stamp looked like proof of a month-old build and was
+## worth nothing, because it was the same string on every build ever shipped.
+## A freshness signal nobody updates is not a weak signal, it is a false one.
+## The value below is only the local-run fallback; CI overwrites it.
+const BUILD_TAG := "dev-local"
 
 var total_score: int = 0
 var coins_collected: int = 0

@@ -2,83 +2,133 @@ class_name RunnerView
 extends Node3D
 ## Episode 2 runner — PRESENTATION layer.
 ##
-## Draws the gold-mine descent from the reference art (artifacts/episode2-gold-mine/
-## references/IMG_2492 + IMG_2479): parallel rails on timber trestles over a pit,
-## one cart per rail rolling as a convoy, Lil Blunt riding and hopping between them,
-## balaclava bear archers on scaffolds beside the track, boulders rolled down the
-## rails, overhead ziplines, gold veins and lanterns in the rock.
+## Draws the gold-mine descent from the reference art: parallel rails on timber
+## trestles over a pit, one cart per rail rolling as a convoy, Lil Blunt riding and
+## hopping between them, balaclava bear archers on scaffolds beside the track,
+## boulders rolled down the rails, overhead ziplines, gold veins and lanterns in
+## the rock of an enclosed, segmented tunnel.
 ##
 ## Separation of concerns: this node only READS the simulation (the parent
 ## RunnerGraybox) and listens to its signals. Nothing in the sim reads anything
 ## back from here, so every gameplay rule stays headless-testable and this file can
 ## be restyled freely without touching a single gate.
 ##
-## Readability is the priority over spectacle: each hazard is announced by a
-## glowing floor strip in its lane and a floating verb (JUMP / DUCK / HOP / SHOOT),
-## colour-coded by the action that clears it. The founder's bar was "so that it's
-## clear" what Lil Blunt must do.
+## Art direction: every mine surface comes from the Episode 2 palette
+## (src/episode2/art/ep2_palette.gd: make(), make_environment(), make_key_light(),
+## make_lantern_light()), which traces each value to the founder references.
+## The palette is resolved at RUNTIME by path, never by class_name and never by
+## preload. So this script parses even when the global class cache is stale or the
+## palette script can't be compiled. If the palette is unavailable, the view
+## degrades to a mirrored fallback table instead of taking the whole runner down
+## with a parse error.
+## The only colours owned here are the READABILITY layer — telegraph strips and
+## verbs (JUMP / DUCK / HOP / SHOOT), colour-coded by the action that clears a
+## hazard. The founder's bar was "so that it's clear" what Lil Blunt must do.
 ##
-## Web budget: everything repeated (sleepers, posts, rocks, gold, lanterns) is a
-## MultiMesh; only a handful of real OmniLights exist and they leapfrog along the
-## track; the only textured assets are two small Meshy GLBs.
+## Props: minecart.glb (open cart; its "Wheel*"/"Hub*" nodes spin), lantern.glb,
+## boulder.glb, gold_pile.glb and rock_chunk.glb. Every GLB prop has a primitive
+## fallback — a prop that fails to load must degrade to a visible shape, never to
+## nothing, because an invisible hazard is the worst bug this episode has shipped.
+##
+## Web budget: repeated geometry (sleepers, posts, veins, frames) is a MultiMesh;
+## only a small pool of real OmniLights exists and it leapfrogs along the lanterns.
 
+const Sim := preload("res://src/episode2/runner/runner_graybox.gd")
 const RIDER_SCENE := preload("res://src/episode2/assets/lil_blunt.glb")
 const ARCHER_SCENE := preload("res://src/episode2/assets/bear_archer.glb")
+const PALETTE_PATH := "res://src/episode2/art/ep2_palette.gd"
+const CART_MODEL := "res://src/episode2/assets/minecart.glb"
+const LANTERN_MODEL := "res://src/episode2/assets/lantern.glb"
+const BOULDER_MODEL := "res://src/episode2/assets/boulder.glb"
+const GOLD_PILE_MODEL := "res://src/episode2/assets/gold_pile.glb"
+const ROCK_CHUNK_MODEL := "res://src/episode2/assets/rock_chunk.glb"
 
 # --- Layout constants (view-only; the sim owns every gameplay number) ---------
 const TRACK_PAD := 60.0            # track drawn past the portal so the end isn't a cliff
 const TIE_SPACING := 1.1
 const POST_SPACING := 5.5
 const PIT_DEPTH := 14.0            # trestle legs vanish into the dark below
-const WALL_X := 11.0               # cave wall inner face
 const ARCHER_X := 5.4              # scaffold distance from track centre (just past the outer cart)
 const ARCHER_Y := 2.2
 const ARROW_Y := 1.45              # head height — the duck line
 const ARROW_LEAD := 22.0           # arrow is loosed this far before it reaches its z
 const BOULDER_ROLL := 0.85         # boulders close at (1 + this) x run speed
 const BOULDER_R := 1.35
+const BOULDER_MODEL_R := 0.75      # boulder.glb's native radius (master's fallback sphere)
 const TELEGRAPH_RANGE := 42.0      # verb labels appear this far ahead
 const RIDER_HEIGHT := 1.75         # hero scale: head, shoulders and pickaxe clear the rim
 const RIDER_FLOOR := 0.1           # standing on the cart floor
 const RIDER_YAW := 0.0             # Meshy faces +Z == away from camera; flip to PI if not
 const HOP_ARC := 1.1               # peak height of a cart-to-cart hop
 const CABLE_CLEARANCE := 1.55      # cable above the rider's hanging point
+const CART_Y := -0.3               # cart root height: wheels sit on the rail tops
+const CART_MODEL_LIFT := 0.17      # minecart.glb's lowest point is below its origin
+const CART_WHEEL_R := 0.42         # minecart.glb wheel radius (Blender build)
+const TUNNEL_SEG := 20.0           # wall segment length (master's tunnel)
+const TUNNEL_HEADROOM := 3.0       # added to master's wall heights: cable + gantries clear the roof
+const FRAME_TOP := 7.4             # timber support beams ride above the zip gantries
+const LANTERN_SPACING := 14.0
+const LANTERN_Y := 3.4
 
-# --- Palette ------------------------------------------------------------------
-const C_ROCK := Color(0.13, 0.10, 0.085)
-const C_TIMBER := Color(0.36, 0.23, 0.12)
-const C_TIMBER_DARK := Color(0.22, 0.14, 0.08)
-const C_IRON := Color(0.30, 0.29, 0.30)
-const C_GOLD := Color(1.0, 0.72, 0.18)
-const C_LANTERN := Color(1.0, 0.62, 0.22)
+# --- Readability colours (gameplay verbs, not mine surfaces) -------------------
 const C_JUMP := Color(1.0, 0.82, 0.18)     # yellow — jump
 const C_DUCK := Color(1.0, 0.22, 0.20)     # red — duck
 const C_HOP := Color(1.0, 0.50, 0.10)      # orange — hop carts
 const C_SHOOT := Color(0.35, 0.85, 1.0)    # cyan — shoot
 const C_ZIP := Color(0.95, 0.85, 0.40)
+const C_HEADLAMP := Color(1.0, 0.92, 0.6)
+
+## Fallback ONLY: mirrors ep2_palette.gd's albedos (hex converted to floats) for
+## the case where the palette script can't be loaded. The palette stays the
+## source of truth.
+const FALLBACK_ALBEDO := {
+	"rock": Color(0.173, 0.180, 0.200),
+	"rock_deep": Color(0.122, 0.129, 0.149),
+	"gold_vein": Color(0.851, 0.675, 0.282),
+	"wood": Color(0.318, 0.196, 0.110),
+	"wood_light": Color(0.420, 0.290, 0.184),
+	"brass": Color(0.604, 0.439, 0.224),
+	"iron": Color(0.608, 0.627, 0.659),
+	"steel_cable": Color(0.467, 0.486, 0.514),
+	"gold": Color(0.929, 0.765, 0.373),
+	"lantern": Color(1.0, 0.757, 0.439),
+	"spark": Color(1.0, 0.698, 0.349),
+	"boulder": Color(0.467, 0.467, 0.451),
+	"crate": Color(0.478, 0.322, 0.153),
+	"arrow": Color(0.678, 0.502, 0.314),
+	"arrow_head": Color(0.467, 0.475, 0.486),
+	"gate": Color(0.306, 0.788, 0.478),
+	"bandit_cloth": Color(0.431, 0.388, 0.314),
+}
+const FALLBACK_EMISSIVE := {"lantern": 1.1, "spark": 2.2, "gate": 0.9, "gold": 0.5}
 
 var _sim: Node = null
 var _world: Node3D = null          # rebuilt per track
 var _carts: Array[Node3D] = []
-var _cart_wheels: Array = []       # per cart: Array[Node3D]
+var _cart_wheels: Array = []       # per cart: Array of {"node", "rest", "axis"}
 var _rider: Node3D = null
 var _rider_model: Node3D = null
 var _hook: MeshInstance3D = null
 var _camera: Camera3D = null
 var _sparks: CPUParticles3D = null
 var _lights: Array[OmniLight3D] = []
-var _lantern_z: PackedFloat32Array = PackedFloat32Array()
+var _lantern_pos: PackedVector3Array = PackedVector3Array()
 var _archer_nodes: Dictionary = {}     # id -> Node3D
 var _archer_fall: Dictionary = {}      # id -> seconds since down
 var _arrow_nodes: Array = []           # parallel to sim obstacles (null for non-arrows)
 var _boulder_nodes: Array = []
-var _labels: Array = []                # [{"node": Label3D, "z": float, "strip": MeshInstance3D}]
+var _labels: Array = []                # [{"node": Label3D, "z": float, "strips": Array, ...}]
 var _zip_markers: Array = []           # [{"ring": MeshInstance3D, "z": float}]
+var _pocket_segs: Dictionary = {}      # tunnel segment index -> true where an archer needs room
 var _tracer: MeshInstance3D = null
 var _tracer_t: float = 0.0
 var _flash: OmniLight3D = null
 var _shake: float = 0.0
 var _mats: Dictionary = {}
+var _scenes: Dictionary = {}
+var _palette: Script = null
+var _palette_loaded: bool = false
+var _palette_methods: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
 var _prev_x: float = 0.0
 var _hop_from_x: float = 0.0
@@ -91,10 +141,13 @@ var _last_lane: int = 1
 # ------------------------------------------------------------------------------
 
 ## Called by the sim's setup(). Tears down the previous track and builds this one.
+## Safe to call repeatedly on the same instance.
 func rebuild(sim: Node) -> void:
 	_sim = sim
-	_rng.seed = 20260923                # same track, same rocks — no shimmer between retries
+	_rng.seed = 20260923                # same track, same look — no shimmer between retries
 	if _world and is_instance_valid(_world):
+		if _world.get_parent() == self:
+			remove_child(_world)
 		_world.queue_free()
 	_world = Node3D.new()
 	_world.name = "World"
@@ -108,17 +161,29 @@ func rebuild(sim: Node) -> void:
 	_labels.clear()
 	_zip_markers.clear()
 	_lights.clear()
+	_pocket_segs.clear()
+	_tracer_t = 0.0
+	_shake = 0.0
 
-	var length: float = float(_sim.get_chamber_z()) + TRACK_PAD
+	# Archers stand in wide bays of the tunnel so their scaffolds never clip rock.
+	for a in _sim.get_archers():
+		var az: float = float(a["z"])
+		for dz in [-3.0, 0.0, 3.0]:
+			_pocket_segs[_seg_index(az + float(dz))] = true
+
+	var chamber_z: float = float(_sim.get_chamber_z())
+	var length: float = chamber_z + TRACK_PAD
+	_apply_art()
 	_build_track(length)
-	_build_cave(length)
+	_build_tunnel(length)
 	_build_lanterns(length)
+	_build_dressing(chamber_z)
 	_build_carts()
 	_build_rider()
 	_build_archers()
 	_build_hazards()
 	_build_ziplines()
-	_build_portal(float(_sim.get_chamber_z()))
+	_build_portal(chamber_z)
 	_build_camera()
 	_build_fx()
 	_connect_sim()
@@ -141,7 +206,7 @@ func _connect_sim() -> void:
 			_sim.connect(sig, cb)
 
 func _process(delta: float) -> void:
-	if _sim == null or _world == null:
+	if _sim == null or _world == null or not is_instance_valid(_world):
 		return
 	var dist: float = float(_sim.get_distance())
 	_update_convoy(dist)
@@ -155,12 +220,83 @@ func _process(delta: float) -> void:
 	_update_fx(delta)
 
 # ------------------------------------------------------------------------------
-# Materials + mesh helpers
+# Palette (runtime-resolved)
 # ------------------------------------------------------------------------------
 
+func _palette_script() -> Script:
+	if _palette_loaded:
+		return _palette
+	_palette_loaded = true
+	if not ResourceLoader.exists(PALETTE_PATH):
+		return null
+	var s: Script = load(PALETTE_PATH) as Script
+	if s == null or not s.can_instantiate():
+		return null
+	for md in s.get_script_method_list():
+		var d: Dictionary = md
+		_palette_methods[str(d.get("name", ""))] = true
+	_palette = s
+	return _palette
+
+## Call a static palette function, or return null if the palette is unavailable.
+func _palette_call(method: String, args: Array) -> Variant:
+	var s: Script = _palette_script()
+	if s == null or not _palette_methods.has(method):
+		return null
+	return s.callv(method, args)
+
+## Palette surface (shared, cached). Never mutate what this returns.
+func _pal(key: String) -> StandardMaterial3D:
+	var ck: String = "pal:" + key
+	if _mats.has(ck):
+		var cached: StandardMaterial3D = _mats[ck]
+		return cached
+	var m: StandardMaterial3D = null
+	var r: Variant = _palette_call("make", [key])
+	if r is StandardMaterial3D:
+		m = r
+	if m == null:
+		m = _fallback_mat(key)
+	_mats[ck] = m
+	return m
+
+func _fallback_mat(key: String) -> StandardMaterial3D:
+	var c: Color = FALLBACK_ALBEDO.get(key, Color(0.5, 0.5, 0.5))
+	var m := StandardMaterial3D.new()
+	m.albedo_color = c
+	m.roughness = 0.8
+	if FALLBACK_EMISSIVE.has(key):
+		var ee: float = FALLBACK_EMISSIVE[key]
+		m.emission_enabled = true
+		m.emission = c
+		m.emission_energy_multiplier = ee
+	return m
+
+func _make_lantern_light() -> OmniLight3D:
+	var v: Variant = _palette_call("make_lantern_light", [])
+	if v is OmniLight3D:
+		var pl: OmniLight3D = v
+		return pl
+	if v is Node:
+		var stray: Node = v
+		stray.free()
+	var o := OmniLight3D.new()
+	o.light_color = Color(1.0, 0.718, 0.396)
+	o.light_energy = 3.6
+	o.omni_range = 17.0
+	o.omni_attenuation = 1.5
+	o.shadow_enabled = false
+	return o
+
+# ------------------------------------------------------------------------------
+# Materials, meshes, props
+# ------------------------------------------------------------------------------
+
+## Custom emissive material for readability/FX elements that are not mine surfaces.
 func _mat(key: String, c: Color, emit: float = 0.0, rough: float = 0.85, metal: float = 0.0) -> StandardMaterial3D:
 	if _mats.has(key):
-		return _mats[key]
+		var cached: StandardMaterial3D = _mats[key]
+		return cached
 	var m := StandardMaterial3D.new()
 	m.albedo_color = c
 	m.roughness = rough
@@ -174,7 +310,8 @@ func _mat(key: String, c: Color, emit: float = 0.0, rough: float = 0.85, metal: 
 
 func _glow_mat(key: String, c: Color, alpha: float) -> StandardMaterial3D:
 	if _mats.has(key):
-		return _mats[key]
+		var cached: StandardMaterial3D = _mats[key]
+		return cached
 	var m := StandardMaterial3D.new()
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -209,47 +346,68 @@ func _multi(mesh: Mesh, mat: Material, xforms: Array[Transform3D]) -> MultiMeshI
 	_world.add_child(mmi)
 	return mmi
 
-## Low-poly faceted rock: a UV sphere pushed around by noise, flat-shaded. Built
-## once per track and instanced, so it costs one mesh however many rocks there are.
-## The sphere is generated with plain math on the CPU rather than read back from a
-## PrimitiveMesh, so building it never depends on what the renderer keeps around.
-func _rock_mesh(seed_val: int, jag: float) -> Mesh:
-	const SEGS := 10
-	const RINGS := 7
-	var noise := FastNoiseLite.new()
-	noise.seed = seed_val
-	noise.frequency = 1.3
-	var grid: Array[PackedVector3Array] = []
-	for r in RINGS + 1:
-		var phi: float = PI * float(r) / float(RINGS)
-		var row := PackedVector3Array()
-		for sgi in SEGS + 1:
-			var theta: float = TAU * float(sgi % SEGS) / float(SEGS)   # wrap: seam verts identical
-			var v := Vector3(sin(phi) * cos(theta), cos(phi), sin(phi) * sin(theta))
-			row.append(v * (1.0 + jag * noise.get_noise_3dv(v)))
-		grid.append(row)
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for r in RINGS:
-		for sgi in SEGS:
-			var a: Vector3 = grid[r][sgi]
-			var b: Vector3 = grid[r][sgi + 1]
-			var c: Vector3 = grid[r + 1][sgi]
-			var d: Vector3 = grid[r + 1][sgi + 1]
-			if r > 0:                          # skip degenerate triangles at the poles
-				st.add_vertex(a); st.add_vertex(b); st.add_vertex(c)
-			if r < RINGS - 1:
-				st.add_vertex(b); st.add_vertex(d); st.add_vertex(c)
-	st.generate_normals()                      # un-indexed, so normals come out flat
-	return st.commit()
+func _scene(path: String) -> PackedScene:
+	if _scenes.has(path):
+		var cached: PackedScene = _scenes[path]
+		return cached
+	var ps: PackedScene = null
+	if ResourceLoader.exists(path):
+		ps = load(path) as PackedScene
+	_scenes[path] = ps
+	return ps
+
+## Instance a GLB prop, or return null so the caller can fall back to a primitive.
+func _prop(path: String, pos: Vector3, scale: float = 1.0, yaw: float = 0.0, parent: Node3D = null) -> Node3D:
+	var ps: PackedScene = _scene(path)
+	if ps == null:
+		return null
+	var n: Node3D = ps.instantiate() as Node3D
+	if n == null:
+		return null
+	n.position = pos
+	n.scale = Vector3.ONE * scale
+	if yaw != 0.0:
+		n.rotate_y(yaw)
+	(parent if parent else _world).add_child(n)
+	return n
 
 func _lane_xs() -> Array:
-	return RunnerGraybox.LANE_X
+	return Sim.LANE_X
 
 ## Archer data uses side -1 = screen-left, +1 = screen-right. The camera looks down
 ## +Z, so screen-left is world +X — hence the minus sign.
 func _side_x(side: float, dist_from_centre: float) -> float:
 	return -side * dist_from_centre
+
+# ------------------------------------------------------------------------------
+# Art pass: environment + key light (moved here from the sim)
+# ------------------------------------------------------------------------------
+
+## Push the shared Episode 2 art direction onto the scene's WorldEnvironment and
+## Sun (direct children of the sim root). Done in code so the palette stays the ONE
+## place a surface/atmosphere is defined. Without a palette, the .tscn values stand.
+func _apply_art() -> void:
+	var root: Node = get_parent()
+	if root == null:
+		return
+	var we := root.get_node_or_null("WorldEnvironment") as WorldEnvironment
+	if we:
+		var env_v: Variant = _palette_call("make_environment", [])
+		if env_v is Environment:
+			var env: Environment = env_v
+			we.environment = env
+	var key_v: Variant = _palette_call("make_key_light", [])
+	if key_v is DirectionalLight3D:
+		var key: DirectionalLight3D = key_v
+		var sun := root.get_node_or_null("Sun") as DirectionalLight3D
+		if sun:
+			sun.light_color = key.light_color
+			sun.light_energy = key.light_energy
+			sun.shadow_enabled = key.shadow_enabled
+		key.free()
+	elif key_v is Node:
+		var stray: Node = key_v
+		stray.free()
 
 # ------------------------------------------------------------------------------
 # Static world
@@ -280,119 +438,182 @@ func _build_track(length: float) -> void:
 		beams.append(Transform3D(Basis.IDENTITY, Vector3(0.0, -0.75, z2)))
 		beams.append(Transform3D(Basis.IDENTITY, Vector3(0.0, -4.5, z2 + POST_SPACING * 0.5)))
 		z2 += POST_SPACING
-	_multi(_box(Vector3(2.0, 0.14, 0.34)), _mat("tie", C_TIMBER_DARK), ties)
-	_multi(_box(Vector3(0.12, 0.14, 1.0)), _mat("rail", C_IRON, 0.0, 0.35, 0.8), rails)
-	_multi(_box(Vector3(0.26, PIT_DEPTH, 0.26)), _mat("post", C_TIMBER), posts)
-	_multi(_box(Vector3(7.8, 0.22, 0.28)), _mat("beam", C_TIMBER), beams)
+	_multi(_box(Vector3(2.0, 0.14, 0.34)), _pal("wood"), ties)
+	_multi(_box(Vector3(0.12, 0.14, 1.0)), _pal("iron"), rails)
+	_multi(_box(Vector3(0.26, PIT_DEPTH, 0.26)), _pal("wood"), posts)
+	_multi(_box(Vector3(7.8, 0.22, 0.28)), _pal("wood"), beams)
 
-func _build_cave(length: float) -> void:
-	var rock := _rock_mesh(7, 0.32)
-	var walls: Array[Transform3D] = []
-	var golds: Array[Transform3D] = []
-	var z := -30.0
-	while z < length + 20.0:
+func _seg_index(z: float) -> int:
+	return int(floor((z + 20.0) / TUNNEL_SEG))
+
+func _is_pocket(i: int) -> bool:
+	return (i % 4) == 2 or _pocket_segs.has(i)
+
+## Half width (wall centre line) of tunnel segment i — master's segmented tunnel,
+## plus extra pockets wherever an archer's scaffold needs room.
+func _half_w_at_seg(i: int) -> float:
+	if _is_pocket(i):
+		return 8.4
+	return 5.6 + float(i % 3) * 0.35
+
+## Inner reference x of the wall at a given z — the veins, lanterns and frames have
+## to follow the segmented wall or they float in mid-air where a bay opens out.
+func _wall_x_at(z: float) -> float:
+	return _half_w_at_seg(_seg_index(z)) - 0.06
+
+## Enclose the track in rock (master's tunnel). Segmented walls, not two long
+## boxes — the references are a cavern with uneven openings and tall pockets.
+## Deterministic per-segment offsets (index arithmetic, no RNG) so two captures of
+## the same track are comparable. Walls run down into the pit (the track here is
+## on trestles) and are lifted by TUNNEL_HEADROOM so the ziplines clear the roof.
+func _build_tunnel(length: float) -> void:
+	var segs: int = int(ceil((length + 20.0) / TUNNEL_SEG))
+	var bottom: float = -PIT_DEPTH - 0.6
+	for i in segs:
+		var z0: float = -20.0 + float(i) * TUNNEL_SEG
+		var pocket: bool = _is_pocket(i)
+		var half_w: float = _half_w_at_seg(i)
+		var h: float = (9.0 if pocket else (7.0 + float(i % 2) * 0.8)) + TUNNEL_HEADROOM
+		var top: float = h - 0.8
 		for side in [-1.0, 1.0]:
-			# Wall: a stack of big rocks, jittered, from the pit up to the ceiling.
-			for tier in 4:
-				var s: float = _rng.randf_range(2.6, 4.6)
-				var pos := Vector3(side * (WALL_X + _rng.randf_range(0.0, 3.5)),
-					-6.0 + tier * 4.6 + _rng.randf_range(-1.0, 1.0), z + _rng.randf_range(-1.5, 1.5))
-				var b := Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3(s, s * 1.2, s))
-				walls.append(Transform3D(b, pos))
-			# Gold veins glinting on the inner face of the wall.
-			for _g in 5:
-				var gs: float = _rng.randf_range(0.05, 0.16)
-				var gp := Vector3(side * (WALL_X - 1.4 + _rng.randf_range(-0.6, 0.6)),
-					_rng.randf_range(-2.0, 9.0), z + _rng.randf_range(-2.0, 2.0))
-				golds.append(Transform3D(Basis(Vector3(_rng.randf(), _rng.randf(), _rng.randf()).normalized(),
-					_rng.randf() * TAU).scaled(Vector3(gs, gs * 1.6, gs)), gp))
-		# Ceiling — the descent is enclosed, not an open canyon.
-		var cs: float = _rng.randf_range(4.0, 6.5)
-		walls.append(Transform3D(Basis(Vector3.UP, _rng.randf() * TAU).scaled(Vector3(cs, cs * 0.7, cs)),
-			Vector3(_rng.randf_range(-8.0, 8.0), 13.0 + _rng.randf_range(0.0, 2.0), z)))
-		z += 5.0
-	_multi(rock, _mat("rock", C_ROCK, 0.0, 0.95), walls)
-	_multi(_rock_mesh(11, 0.45), _mat("gold", C_GOLD, 1.3, 0.25, 0.9), golds)
+			_mesh_node(_box(Vector3(0.6, top - bottom, TUNNEL_SEG)), _pal("rock"),
+				Vector3(half_w * float(side), (top + bottom) * 0.5, z0 + TUNNEL_SEG * 0.5))
+		_mesh_node(_box(Vector3(half_w * 2.0 + 1.2, 0.6, TUNNEL_SEG)), _pal("rock_deep"),
+			Vector3(0.0, top, z0 + TUNNEL_SEG * 0.5))
+		if pocket:
+			# A rock shelf in each wide bay, so the pocket reads as a worked-out
+			# chamber rather than a gap in the wall (and loose rock has a floor).
+			for side in [-1.0, 1.0]:
+				var shelf_w: float = half_w - 5.0
+				_mesh_node(_box(Vector3(shelf_w, 0.6, TUNNEL_SEG)), _pal("rock"),
+					Vector3(float(side) * (half_w + 5.0) * 0.5, -0.75, z0 + TUNNEL_SEG * 0.5))
+			if (i % 4) == 2 and not _pocket_segs.has(i):
+				_prop(ROCK_CHUNK_MODEL, Vector3(6.6 * (1.0 if (i % 8) == 2 else -1.0), -0.45, z0 + 9.0), 2.2)
 
-	# Faint warm floor far below — the pit has a bottom, lit by the mine's glow.
-	var pit := _box(Vector3(WALL_X * 2.4, 0.2, length + 60.0))
-	_mesh_node(pit, _mat("pit", Color(0.10, 0.06, 0.03)), Vector3(0.0, -PIT_DEPTH - 0.6, (length - 20.0) * 0.5))
+	# The pit has a bottom.
+	_mesh_node(_box(Vector3(20.0, 0.2, length + 60.0)), _pal("rock_deep"),
+		Vector3(0.0, bottom, (length - 20.0) * 0.5))
 
+	# Gold veins: many SMALL veins (scattered glitter), deterministic placement,
+	# set into the inner wall face.
+	var veins: Array[Transform3D] = []
+	var z: float = 6.0
+	var i2: int = 0
+	while z < length - 40.0:
+		var side2: float = 1.0 if (i2 % 2 == 0) else -1.0
+		for k in 3:
+			var vz: float = z + float(k) * 1.3
+			var s: float = 0.22 + float((i2 + k) % 3) * 0.14
+			veins.append(Transform3D(Basis.IDENTITY.scaled(Vector3(0.12, s, s * 1.6)),
+				Vector3((_wall_x_at(vz) - 0.24) * side2, 0.9 + float((i2 * 3 + k) % 5) * 1.05, vz)))
+		z += 4.5
+		i2 += 1
+	_multi(_box(Vector3.ONE), _pal("gold_vein"), veins)
+
+	# Timber support frames, per every reference — they also sell speed.
+	var posts: Array[Transform3D] = []
+	var beams: Array[Transform3D] = []
+	var post_h: float = FRAME_TOP - bottom
+	var bz: float = 10.0
+	while bz < length - 40.0:
+		var wx: float = _wall_x_at(bz) - 0.55
+		for side3 in [-1.0, 1.0]:
+			posts.append(Transform3D(Basis.IDENTITY.scaled(Vector3(0.45, post_h, 0.45)),
+				Vector3(wx * float(side3), (FRAME_TOP + bottom) * 0.5, bz)))
+		beams.append(Transform3D(Basis.IDENTITY.scaled(Vector3(wx * 2.0 + 0.5, 0.45, 0.45)),
+			Vector3(0.0, FRAME_TOP, bz)))
+		bz += 18.0
+	_multi(_box(Vector3.ONE), _pal("wood"), posts)
+	_multi(_box(Vector3.ONE), _pal("wood"), beams)
+
+## Lanterns on the wall (master's spacing/placement, lantern.glb), lit by a small
+## pool of real lights that leapfrogs along the ones nearest the rider.
 func _build_lanterns(length: float) -> void:
-	var lanterns: Array[Transform3D] = []
-	var hangers: Array[Transform3D] = []
-	_lantern_z = PackedFloat32Array()
-	var z := 6.0
-	var side := 1.0
-	while z < length:
-		var p := Vector3(side * 4.3, 2.4, z)
-		lanterns.append(Transform3D(Basis.IDENTITY, p))
-		hangers.append(Transform3D(Basis.IDENTITY, p + Vector3(0.0, 1.6, 0.0)))
-		_lantern_z.append(z)
-		z += 11.0
+	_lantern_pos = PackedVector3Array()
+	var arms: Array[Transform3D] = []
+	var z: float = 12.0
+	var side: float = 1.0
+	while z < length - 20.0:
+		var wx: float = _wall_x_at(z)
+		var p := Vector3((wx - 1.1) * side, LANTERN_Y, z)
+		_lantern_pos.append(p)
+		if _prop(LANTERN_MODEL, p - Vector3(0.0, 0.42, 0.0), 1.15) == null:
+			var sm := SphereMesh.new()
+			sm.radius = 0.2
+			sm.height = 0.4
+			_mesh_node(sm, _pal("lantern"), p)
+		# Bracket from the rock face to the lamp.
+		var arm_len: float = 0.96
+		arms.append(Transform3D(Basis.IDENTITY.scaled(Vector3(arm_len, 0.12, 0.12)),
+			Vector3(side * (wx - 1.1 + arm_len * 0.5), LANTERN_Y + 0.55, z)))
+		z += LANTERN_SPACING
 		side = -side
-	_multi(_box(Vector3(0.32, 0.46, 0.32)), _mat("lantern", C_LANTERN, 4.0), lanterns)
-	_multi(_box(Vector3(0.1, 3.0, 0.1)), _mat("hanger", C_TIMBER_DARK), hangers)
-	# A small pool of real lights leapfrogs along the lanterns nearest the rider.
-	for i in 4:
-		var l := OmniLight3D.new()
-		l.light_color = C_LANTERN
-		l.light_energy = 3.2
-		l.omni_range = 12.0
-		l.omni_attenuation = 1.4
-		l.shadow_enabled = false
+	_multi(_box(Vector3.ONE), _pal("wood"), arms)
+	for _i in 4:
+		var l: OmniLight3D = _make_lantern_light()
 		_world.add_child(l)
 		_lights.append(l)
 
-## Open wooden ore cart, built from parts: floor, four walls, iron corner bands,
-## four wheels. Open-topped so Lil Blunt reads as standing IN it (the bpy
-## minecart.glb is a closed box, which read as him poking out of a crate).
-## Parametric and free, per the asset lock's "bpy/procedural for hard-surface".
-func _make_cart() -> Node3D:
-	var c := Node3D.new()
-	var wood := _mat("cart_wood", Color(0.34, 0.21, 0.11), 0.0, 0.8)
-	var wood_dark := _mat("cart_wood_dark", Color(0.20, 0.12, 0.06), 0.0, 0.9)
-	var iron := _mat("cart_iron", Color(0.22, 0.21, 0.20), 0.0, 0.45, 0.85)
-	const W := 1.7     # outer width
-	const L := 2.1     # outer length
-	const H := 1.0     # wall height
-	const T := 0.09    # plank thickness
-	const FLOOR_Y := 0.35
-	_mesh_node(_box(Vector3(W, T, L)), wood_dark, Vector3(0, FLOOR_Y, 0), c)
-	for sx in [-1.0, 1.0]:
-		_mesh_node(_box(Vector3(T, H, L)), wood, Vector3(sx * (W - T) * 0.5, FLOOR_Y + H * 0.5, 0), c)
-	for sz in [-1.0, 1.0]:
-		_mesh_node(_box(Vector3(W, H, T)), wood, Vector3(0, FLOOR_Y + H * 0.5, sz * (L - T) * 0.5), c)
-	# Iron: top rim band all round, and a vertical strap at each corner.
-	for sx in [-1.0, 1.0]:
-		_mesh_node(_box(Vector3(T * 1.6, T * 1.4, L + 0.04)), iron, Vector3(sx * (W - T) * 0.5, FLOOR_Y + H, 0), c)
-	for sz in [-1.0, 1.0]:
-		_mesh_node(_box(Vector3(W + 0.04, T * 1.4, T * 1.6)), iron, Vector3(0, FLOOR_Y + H, sz * (L - T) * 0.5), c)
-	for sx in [-1.0, 1.0]:
-		for sz in [-1.0, 1.0]:
-			_mesh_node(_box(Vector3(0.13, H + 0.05, 0.13)), iron,
-				Vector3(sx * (W * 0.5 - 0.02), FLOOR_Y + H * 0.5, sz * (L * 0.5 - 0.02)), c)
-	var wheels: Array = []
-	for sx in [-1.0, 1.0]:
-		for sz in [-0.62, 0.62]:
-			var wm := CylinderMesh.new()
-			wm.top_radius = 0.3
-			wm.bottom_radius = 0.3
-			wm.height = 0.12
-			wm.radial_segments = 12
-			var w := _mesh_node(wm, iron, Vector3(sx * (W * 0.5 - 0.1), 0.2, sz * L * 0.5), c)
-			w.rotation.z = PI * 0.5
-			wheels.append(w)
-	c.set_meta("wheels", wheels)
-	return c
+## Gold heaped as scenery (master's placements), on timber ledges bolted to the
+## trestle so they don't float over the pit. Off the rails: never reads as collectible.
+func _build_dressing(chamber_z: float) -> void:
+	for gp in [Vector3(-4.3, -0.4, chamber_z * 0.35), Vector3(4.3, -0.4, chamber_z * 0.62),
+			Vector3(-4.3, -0.4, chamber_z * 0.88)]:
+		var p: Vector3 = gp
+		_mesh_node(_box(Vector3(2.0, 0.25, 2.2)), _pal("wood"), Vector3(p.x, p.y - 0.15, p.z))
+		_prop(GOLD_PILE_MODEL, p, 1.6)
 
+## Relative transform of `n` expressed in `ancestor`'s space.
+func _rel_xform(ancestor: Node, n: Node) -> Transform3D:
+	var t := Transform3D.IDENTITY
+	var cur: Node = n
+	while cur != null and cur != ancestor:
+		var c3 := cur as Node3D
+		if c3:
+			t = c3.transform * t
+		cur = cur.get_parent()
+	return t
+
+## Collect every node named "Wheel..." / "Hub..." under the cart model, with the
+## cart's lateral (axle) axis expressed in each node's parent space. A Hub parented
+## under a Wheel is skipped — it already turns with its wheel.
+func _collect_wheels(root: Node, cart: Node3D, out: Array) -> void:
+	for ch in root.get_children():
+		var n3 := ch as Node3D
+		var nm: String = String(ch.name)
+		if n3 and (nm.begins_with("Wheel") or nm.begins_with("Hub")):
+			var rel: Transform3D = _rel_xform(cart, n3.get_parent())
+			var axis: Vector3 = rel.basis.inverse() * Vector3.RIGHT
+			if axis.length_squared() < 0.000001:
+				axis = Vector3.RIGHT
+			out.append({"node": n3, "rest": n3.basis, "axis": axis.normalized()})
+			continue
+		_collect_wheels(ch, cart, out)
+
+## One open minecart.glb per rail (master's orientation/lift); fallback is a box.
 func _build_carts() -> void:
 	for lx in _lane_xs():
-		var c := _make_cart()
-		c.position = Vector3(float(lx), -0.3, 0.0)
+		var c := Node3D.new()
+		c.name = "Cart"
+		c.position = Vector3(float(lx), CART_Y, 0.0)
 		_world.add_child(c)
+		var wheels: Array = []
+		# Blender +Y is the cart's forward; glTF turns that into -Z and the runner
+		# travels +Z — so it needs a half turn or the cart rides backwards.
+		var model: Node3D = _prop(CART_MODEL, Vector3(0.0, CART_MODEL_LIFT, 0.0), 1.0, PI, c)
+		if model:
+			_collect_wheels(model, c, wheels)
+			# The cart's rear-end emblem faces the chase camera and, at this range,
+			# reads as a blank disc that hides Lil Blunt (browser capture 2026-09-24).
+			# Side emblems stay.
+			for n in model.find_children("*", "Node3D", true, false):
+				var nm: String = String(n.name)
+				if nm.begins_with("EmblemDisc_y") or nm.begins_with("Leaflet_y"):
+					(n as Node3D).visible = false
+		else:
+			_mesh_node(_box(Vector3(1.6, 1.0, 2.2)), _pal("wood_light"), Vector3(0.0, 0.8, 0.0), c)
 		_carts.append(c)
-		_cart_wheels.append(c.get_meta("wheels"))
+		_cart_wheels.append(wheels)
 
 func _build_rider() -> void:
 	_rider = Node3D.new()
@@ -407,7 +628,7 @@ func _build_rider() -> void:
 	hook.top_radius = 0.05
 	hook.bottom_radius = 0.05
 	hook.height = CABLE_CLEARANCE - 0.2
-	_hook = _mesh_node(hook, _mat("iron_bright", Color(0.7, 0.7, 0.72), 0.0, 0.3, 0.9),
+	_hook = _mesh_node(hook, _pal("iron"),
 		Vector3(0.15, RIDER_HEIGHT + (CABLE_CLEARANCE - 0.2) * 0.5, 0.0), _rider)
 	_hook.visible = false
 
@@ -421,7 +642,7 @@ func _build_archers() -> void:
 		for dx in [-1.0, 1.0]:
 			for dz in [-1.0, 1.0]:
 				scaffold_posts.append(Transform3D(Basis.IDENTITY,
-					Vector3(x + dx * 1.1, ARCHER_Y - 0.1 - (ARCHER_Y + PIT_DEPTH) * 0.5, z + dz * 1.0)))
+					Vector3(x + float(dx) * 1.1, ARCHER_Y - 0.1 - (ARCHER_Y + PIT_DEPTH) * 0.5, z + float(dz) * 1.0)))
 		decks.append(Transform3D(Basis.IDENTITY, Vector3(x, ARCHER_Y - 0.1, z)))
 		var bear: Node3D = ARCHER_SCENE.instantiate()
 		bear.scale = Vector3.ONE * 2.6
@@ -432,22 +653,23 @@ func _build_archers() -> void:
 		_world.add_child(bear)
 		# Miner's headlamp, as in the reference art: makes each bear pop out of the
 		# dark and tells the player where the next volley is coming from.
-		var lamp := SphereMesh.new()
-		lamp.radius = 0.06
-		lamp.height = 0.12
-		_mesh_node(lamp, _mat("headlamp", Color(1.0, 0.92, 0.6), 8.0), Vector3(0.0, 1.07, 0.16), bear)
+		var lamp_mesh := SphereMesh.new()
+		lamp_mesh.radius = 0.06
+		lamp_mesh.height = 0.12
+		_mesh_node(lamp_mesh, _mat("headlamp", C_HEADLAMP, 8.0), Vector3(0.0, 1.07, 0.16), bear)
 		var ll := OmniLight3D.new()
 		ll.light_color = Color(1.0, 0.8, 0.5)
 		ll.light_energy = 1.6
 		ll.omni_range = 4.5
 		ll.position = Vector3(0.0, 1.2, 0.5)
 		bear.add_child(ll)
-		_mesh_node(_box(Vector3(0.3, 0.42, 0.3)), _mat("lantern", C_LANTERN, 4.0),
-			Vector3(x + signf(x) * 1.0, ARCHER_Y + 0.3, z + 0.9))
+		var lp := Vector3(x + signf(x) * 1.0, ARCHER_Y + 0.3, z + 0.9)
+		if _prop(LANTERN_MODEL, lp - Vector3(0.0, 0.3, 0.0), 0.9) == null:
+			_mesh_node(_box(Vector3(0.3, 0.42, 0.3)), _pal("lantern"), lp)
 		_archer_nodes[str(a["id"])] = bear
 	if scaffold_posts.size() > 0:
-		_multi(_box(Vector3(0.24, ARCHER_Y + PIT_DEPTH, 0.24)), _mat("post", C_TIMBER), scaffold_posts)
-		_multi(_box(Vector3(2.8, 0.22, 2.6)), _mat("beam", C_TIMBER), decks)
+		_multi(_box(Vector3(0.24, ARCHER_Y + PIT_DEPTH, 0.24)), _pal("wood"), scaffold_posts)
+		_multi(_box(Vector3(2.8, 0.22, 2.6)), _pal("wood"), decks)
 
 func _arrow_mesh_node() -> Node3D:
 	var root := Node3D.new()
@@ -455,25 +677,23 @@ func _arrow_mesh_node() -> Node3D:
 	shaft.top_radius = 0.06
 	shaft.bottom_radius = 0.06
 	shaft.height = 1.9
-	var s := _mesh_node(shaft, _mat("arrow_shaft", Color(0.85, 0.70, 0.45), 0.6), Vector3.ZERO, root)
+	var s := _mesh_node(shaft, _pal("arrow"), Vector3.ZERO, root)
 	s.rotation.z = PI * 0.5
 	var head := CylinderMesh.new()
 	head.top_radius = 0.0
 	head.bottom_radius = 0.14
 	head.height = 0.38
-	var h := _mesh_node(head, _mat("arrow_head", C_DUCK, 3.0, 0.4, 0.6), Vector3(1.1, 0.0, 0.0), root)
+	var h := _mesh_node(head, _pal("arrow_head"), Vector3(1.1, 0.0, 0.0), root)
 	h.rotation.z = -PI * 0.5
-	var fletch := _mesh_node(_box(Vector3(0.28, 0.2, 0.02)), _mat("fletch", Color(0.85, 0.15, 0.12), 0.6),
+	var fletch := _mesh_node(_box(Vector3(0.28, 0.2, 0.02)), _pal("bandit_cloth"),
 		Vector3(-0.7, 0.0, 0.0), root)
 	fletch.rotation.x = 0.4
-	# Streak behind the arrow so its flight line is readable at speed.
+	# Streak behind the arrow so its flight line is readable at speed (readability layer).
 	_mesh_node(_box(Vector3(2.6, 0.05, 0.05)), _glow_mat("arrow_trail", C_DUCK, 0.45), Vector3(-2.2, 0.0, 0.0), root)
 	_world.add_child(root)
 	return root
 
 func _build_hazards() -> void:
-	var boulder_mesh := _rock_mesh(23, 0.28)
-	var crate_mat := _mat("crate", Color(0.55, 0.36, 0.18))
 	var obs_all: Array = _sim.get_obstacles()
 	for oi in obs_all.size():
 		var o: Dictionary = obs_all[oi]
@@ -489,14 +709,20 @@ func _build_hazards() -> void:
 				arrow_node.visible = false
 				_add_telegraph(x, z, C_DUCK, "DUCK" if not _sim.can_shoot() else "DUCK / SHOOT", oi)
 			"boulder":
-				boulder_node = _mesh_node(boulder_mesh, _mat("boulder", Color(0.66, 0.60, 0.52), 0.0, 0.85),
-					Vector3(x, BOULDER_R - 0.35, z))
-				boulder_node.scale = Vector3.ONE * BOULDER_R
+				# Pivot at the boulder's centre so it rolls true.
+				var pivot := Node3D.new()
+				pivot.position = Vector3(x, BOULDER_R - 0.35, z)
+				_world.add_child(pivot)
+				if _prop(BOULDER_MODEL, Vector3.ZERO, BOULDER_R / BOULDER_MODEL_R, 0.0, pivot) == null:
+					var sm := SphereMesh.new()
+					sm.radius = BOULDER_R
+					sm.height = BOULDER_R * 2.0
+					_mesh_node(sm, _pal("boulder"), Vector3.ZERO, pivot)
+				boulder_node = pivot
 				_add_telegraph(x, z, C_HOP, "HOP!")
 			_:
-				var crate := _mesh_node(_box(Vector3(1.4, 1.0, 1.0)), crate_mat, Vector3(x, 0.15, z))
-				_mesh_node(_box(Vector3(1.46, 0.14, 1.06)), _mat("crate_band", C_TIMBER_DARK),
-					Vector3(0.0, 0.3, 0.0), crate)
+				var crate := _mesh_node(_box(Vector3(1.4, 1.0, 1.0)), _pal("crate"), Vector3(x, 0.15, z))
+				_mesh_node(_box(Vector3(1.46, 0.14, 1.06)), _pal("brass"), Vector3(0.0, 0.3, 0.0), crate)
 				_add_telegraph(x, z, C_JUMP, "JUMP")
 		_arrow_nodes.append(arrow_node)
 		_boulder_nodes.append(boulder_node)
@@ -547,7 +773,7 @@ func _add_telegraph(x: float, z: float, c: Color, verb: String, obs_index: int =
 
 func _build_ziplines() -> void:
 	var segs: Array = _sim.get_zip_segments()
-	var cable_y: float = RunnerGraybox.ZIP_HEIGHT + RIDER_HEIGHT + CABLE_CLEARANCE - 0.2
+	var cable_y: float = Sim.ZIP_HEIGHT + RIDER_HEIGHT + CABLE_CLEARANCE - 0.2
 	for i in segs.size():
 		var s0: float = float(segs[i]["start_z"])
 		var s1: float = float(segs[i]["end_z"])
@@ -557,16 +783,15 @@ func _build_ziplines() -> void:
 		cable.top_radius = 0.045
 		cable.bottom_radius = 0.045
 		cable.height = s1 - s0 + 4.0
-		var cm := _mesh_node(cable, _mat("cable", Color(0.55, 0.52, 0.48), 0.0, 0.4, 0.8),
-			Vector3(0.0, cable_y, (s0 + s1) * 0.5))
+		var cm := _mesh_node(cable, _pal("steel_cable"), Vector3(0.0, cable_y, (s0 + s1) * 0.5))
 		cm.rotation.x = PI * 0.5
 		# Gantry at each end: legs OUTSIDE the outer rails, crossbeam overhead. The
 		# first version stood a pole on the centre rail — the camera flew through it.
 		for pz in [s0 - 2.0, s1 + 2.0]:
 			for gx in [-4.6, 4.6]:
-				_mesh_node(_box(Vector3(0.45, cable_y + PIT_DEPTH + 0.8, 0.45)), _mat("post", C_TIMBER),
+				_mesh_node(_box(Vector3(0.45, cable_y + PIT_DEPTH + 0.8, 0.45)), _pal("wood"),
 					Vector3(float(gx), (cable_y - PIT_DEPTH) * 0.5 + 0.4, float(pz)))
-			_mesh_node(_box(Vector3(9.8, 0.4, 0.45)), _mat("beam", C_TIMBER),
+			_mesh_node(_box(Vector3(9.8, 0.4, 0.45)), _pal("wood"),
 				Vector3(0.0, cable_y + 0.45, float(pz)))
 		# Catch ring: the glowing spot to be airborne under.
 		var ring := TorusMesh.new()
@@ -575,7 +800,7 @@ func _build_ziplines() -> void:
 		var rm := _mesh_node(ring, _mat("zip_ring", C_ZIP, 1.4, 0.3, 0.8), Vector3(0.0, cable_y, s0))
 		rm.rotation.x = PI * 0.5
 		_zip_markers.append({"ring": rm, "z": s0})
-		var chained: bool = i > 0 and s0 - float(segs[i - 1]["end_z"]) <= RunnerGraybox.ZIP_CHAIN_GAP
+		var chained: bool = i > 0 and s0 - float(segs[i - 1]["end_z"]) <= Sim.ZIP_CHAIN_GAP
 		var verb := "JUMP → next line" if chained else "JUMP → ZIPLINE"
 		var lbl := _label(verb, C_ZIP)
 		lbl.font_size = 72
@@ -586,18 +811,20 @@ func _build_ziplines() -> void:
 func _build_portal(z: float) -> void:
 	var h := 7.5
 	for x in [-4.8, 4.8]:
-		_mesh_node(_box(Vector3(0.9, h + PIT_DEPTH, 0.9)), _mat("post", C_TIMBER),
+		_mesh_node(_box(Vector3(0.9, h + PIT_DEPTH, 0.9)), _pal("wood"),
 			Vector3(float(x), (h - PIT_DEPTH) * 0.5, z))
-	_mesh_node(_box(Vector3(11.0, 0.9, 1.0)), _mat("beam", C_TIMBER), Vector3(0.0, h, z))
-	_mesh_node(_box(Vector3(9.0, h + 0.5, 0.2)), _mat("portal_glow", Color(0.85, 0.5, 0.12), 0.9, 0.5),
-		Vector3(0.0, h * 0.5 - 0.4, z + 3.0))
+	_mesh_node(_box(Vector3(11.0, 0.9, 1.0)), _pal("wood"), Vector3(0.0, h, z))
+	# The chamber gate: palette "gate" — Lil Blunt's own green, so it reads as "yours".
+	_mesh_node(_box(Vector3(9.0, h + 0.5, 0.2)), _pal("gate"), Vector3(0.0, h * 0.5 - 0.4, z + 3.0))
+	var gold_mat: StandardMaterial3D = _pal("gold")
+	var gold: Color = gold_mat.albedo_color
 	var l := OmniLight3D.new()
-	l.light_color = C_GOLD
+	l.light_color = gold
 	l.light_energy = 6.0
 	l.omni_range = 26.0
 	l.position = Vector3(0.0, 3.5, z - 1.0)
 	_world.add_child(l)
-	var plate := _label("GOLD MINE PROTOCOL", C_GOLD)
+	var plate := _label("GOLD MINE PROTOCOL", gold)
 	plate.position = Vector3(0.0, h + 1.2, z - 0.6)
 	plate.billboard = BaseMaterial3D.BILLBOARD_DISABLED
 	plate.rotation.y = PI
@@ -631,7 +858,7 @@ func _build_fx() -> void:
 	sm.radial_segments = 4
 	sm.rings = 2
 	_sparks.mesh = sm
-	_sparks.material_override = _mat("spark", Color(1.0, 0.75, 0.3), 6.0)
+	_sparks.material_override = _pal("spark")
 	_world.add_child(_sparks)
 
 	var tracer := CylinderMesh.new()
@@ -651,15 +878,21 @@ func _build_fx() -> void:
 # ------------------------------------------------------------------------------
 
 func _update_convoy(dist: float) -> void:
-	var spin: float = -dist / 0.3     # wheel radius ~0.3
+	var spin: float = dist / CART_WHEEL_R   # positive about +X rolls toward +Z
 	for i in _carts.size():
 		var c: Node3D = _carts[i]
 		c.position.z = dist
 		# Carts jostle a little on the rails — sells speed at almost no cost.
-		c.position.y = -0.3 + sin(dist * 1.7 + i * 2.1) * 0.025
+		c.position.y = CART_Y + sin(dist * 1.7 + i * 2.1) * 0.025
 		c.rotation.z = sin(dist * 1.1 + i) * 0.015
-		for w in _cart_wheels[i]:
-			(w as Node3D).rotation = Vector3(spin, 0.0, PI * 0.5)
+		var wheels: Array = _cart_wheels[i]
+		for w in wheels:
+			var wn: Node3D = w["node"]
+			if wn == null or not is_instance_valid(wn):
+				continue
+			var axis: Vector3 = w["axis"]
+			var rest: Basis = w["rest"]
+			wn.basis = Basis(axis, spin) * rest
 
 func _update_rider(dist: float, delta: float) -> void:
 	var x: float = float(_sim.get_cart_x())
@@ -684,7 +917,7 @@ func _update_rider(dist: float, delta: float) -> void:
 	var target_y: float = RIDER_FLOOR + y + arc
 	var sy: float = 1.0
 	if zipping:
-		target_y = RunnerGraybox.ZIP_HEIGHT
+		target_y = Sim.ZIP_HEIGHT
 	elif ducking:
 		target_y = RIDER_FLOOR - 0.45
 		sy = 0.5
@@ -727,7 +960,7 @@ func _update_archers(dist: float, delta: float) -> void:
 
 func _update_arrows(dist: float) -> void:
 	var obs: Array = _sim.get_obstacles()
-	for i in obs.size():
+	for i in mini(obs.size(), _arrow_nodes.size()):
 		var node: Node3D = _arrow_nodes[i]
 		if node == null:
 			continue
@@ -758,7 +991,7 @@ func _archer_side(id: String) -> float:
 
 func _update_boulders(dist: float) -> void:
 	var obs: Array = _sim.get_obstacles()
-	for i in obs.size():
+	for i in mini(obs.size(), _boulder_nodes.size()):
 		var node: Node3D = _boulder_nodes[i]
 		if node == null:
 			continue
@@ -766,9 +999,11 @@ func _update_boulders(dist: float) -> void:
 		var vz: float = z + (z - dist) * BOULDER_ROLL
 		node.position.z = vz
 		node.visible = vz - dist < 70.0 and vz - dist > -12.0
-		node.rotation.x = -vz / BOULDER_R
+		# Rolling toward the camera (-Z): angle falls as vz falls.
+		node.rotation.x = vz / BOULDER_R
 
 func _update_labels(dist: float) -> void:
+	var obs: Array = _sim.get_obstacles()
 	for e in _labels:
 		var z: float = float(e["z"])
 		var ahead: float = z - dist
@@ -781,7 +1016,12 @@ func _update_labels(dist: float) -> void:
 		if linked.size() > 0:
 			live = false
 			for i in linked:
-				if not bool(_sim.get_obstacles()[int(i)].get("cancelled", false)):
+				var idx: int = int(i)
+				if idx >= obs.size():
+					live = true
+					break
+				var od: Dictionary = obs[idx]
+				if not bool(od.get("cancelled", false)):
 					live = true
 					break
 		show = show and live
@@ -803,15 +1043,14 @@ func _archer_alive(id: String) -> bool:
 func _update_lights(dist: float) -> void:
 	# Park the light pool on the lanterns just behind and ahead of the rider.
 	var first := 0
-	while first < _lantern_z.size() and _lantern_z[first] < dist - 8.0:
+	while first < _lantern_pos.size() and _lantern_pos[first].z < dist - 8.0:
 		first += 1
 	for i in _lights.size():
 		var idx := first + i
 		var l: OmniLight3D = _lights[i]
-		if idx < _lantern_z.size():
-			var lz: float = _lantern_z[idx]
-			var side: float = 1.0 if idx % 2 == 0 else -1.0
-			l.position = Vector3(side * 4.3, 2.2, lz)
+		if idx < _lantern_pos.size():
+			var lp: Vector3 = _lantern_pos[idx]
+			l.position = lp - Vector3(0.0, 0.2, 0.0)
 			l.visible = true
 		else:
 			l.visible = false
@@ -846,18 +1085,24 @@ func _on_hit(_remaining: int) -> void:
 	_shake = 1.0
 
 func _on_shot() -> void:
+	if _flash == null or _rider == null:
+		return
 	_flash.position = _rider.position + Vector3(0.3, 1.2, 0.8)
 	_flash.light_energy = 5.0
 
 func _on_archer_down(id: String) -> void:
 	_archer_fall[id] = 0.0
 	var n: Node3D = _archer_nodes.get(id)
-	if n == null:
+	if n == null or _rider == null or _tracer == null:
 		return
 	var from: Vector3 = _rider.position + Vector3(0.3, 1.2, 0.8)
 	var to: Vector3 = n.position + Vector3(0.0, 1.5, 0.0)
+	if from.is_equal_approx(to):
+		return
 	var mid: Vector3 = (from + to) * 0.5
 	_tracer.position = mid
+	if not _tracer.is_inside_tree():
+		return
 	_tracer.look_at(to, Vector3.UP if absf((to - from).normalized().dot(Vector3.UP)) < 0.95 else Vector3.FORWARD)
 	_tracer.rotate_object_local(Vector3.RIGHT, PI * 0.5)
 	_tracer.scale = Vector3(1.0, from.distance_to(to), 1.0)   # after look_at, which resets scale

@@ -2,19 +2,19 @@ class_name RunnerGraybox
 extends Node3D
 ## Episode 2 — Gold Mine Runner: SIMULATION. (File/class keep the "graybox"
 ## name so the session root, tests and scene uid don't churn; the art now lives
-## in runner_view.gd and the layout in tracks/*.json.)
+## in runner_view.gd, the surfaces in src/episode2/art/ep2_palette.gd, and the
+## layout in tracks/*.json.)
 ##
-## This is the throwaway proving-ground for the runner half of the runner↔
-## chamber loop (see artifacts/episode2-gold-mine/spec/00_ARCHITECTURE.md §7a
-## and the multi-model design review). NO art, NO Blender assets — box meshes
-## and pure logic, so the *gameplay* is proven and phone-tested before any GPU
-## hour or Blender session is spent. When real GLBs arrive they drop into the
-## same node slots without touching this logic.
+## This script is pure gameplay logic: it contains NO rendering code at all.
+## Everything visible (tunnel, carts, props, hazards, telegraphs, camera,
+## environment/sun art pass) is built by the child "View" node, which only
+## reads this sim through its accessors and signals. So every rule here stays
+## headless-testable with no renderer, and the art can be restyled freely.
 ##
 ## Deliberately self-contained: it pulls in none of the Episode-1-specific
-## gameplay autoloads (StateMachine, GameManager, etc.) so the graybox can be
+## gameplay autoloads (StateMachine, GameManager, etc.) so the runner can be
 ## reasoned about and headless-tested in isolation. Economy wiring to
-## goldmine_system.gd comes when the loop is proven, not in the graybox.
+## goldmine_system.gd comes when the loop is proven, not here.
 ## `AudioManager` is the one exception — it's a project-wide music/audio
 ## singleton already used across every episode/level (not Episode-1-only
 ## gameplay state), so using it here is consistent with existing convention,
@@ -84,7 +84,7 @@ signal shot_fired
 ## Emitted when a shot drops an archer; its pending arrows are already cancelled.
 signal archer_down(archer_id: String)
 
-# --- Tuning (graybox values; feel is tuned later, not law) --------------------
+# --- Tuning (feel is tuned later, not law) ------------------------------------
 const RUN_SPEED := 12.0            # forward units/sec (+Z)
 ## Three rails. The camera looks down +Z, so world +X is SCREEN-LEFT: lane 0
 ## (reached with move_left / A) must be at +X. The original [-2.5, 0, 2.5] made
@@ -126,8 +126,7 @@ var _chamber_z: float = 200.0      # entrance distance
 ## `type` in {"box", "arrow", "boulder"} — defaults to "box" (legacy: cleared
 ## by jump only) when a caller/test omits it, so the original 7 assertions
 ## keep their original meaning. Plain Array (not Array[Dictionary]) to avoid
-## typed-array assignment friction from untyped `[]` / literal callers — this
-## is a graybox, kept forgiving.
+## typed-array assignment friction from untyped `[]` / literal callers.
 var _obstacles: Array = []
 
 # --- Duck (arrow defense) -----------------------------------------------------
@@ -135,9 +134,9 @@ var _duck_held: bool = false
 var _duck_hold_time: float = 0.0
 
 # --- Zipline (a different plane of movement, not a rail) ----------------------
-## Each {"start_z": float, "end_z": float}. While `_distance` is inside any
-## segment, `_ziplining` is true and cart-phase logic (lane-switch, duck,
-## jump, box/arrow/boulder hazards) is suspended.
+## Each {"start_z": float, "end_z": float}. While hooked, `_ziplining` is true
+## and cart-phase logic (lane-switch, duck, jump, box/arrow/boulder hazards)
+## is suspended.
 var _zip_segments: Array = []      # sorted by start_z in setup()
 var _ziplining: bool = false
 var _was_ziplining: bool = false  # edge-detects the zip→cart dismount frame

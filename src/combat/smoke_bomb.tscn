@@ -1,0 +1,39 @@
+[gd_scene load_steps=2 format=3 uid="uid://ep1smokebomb01"]
+
+[ext_resource type="Script" path="res://src/combat/smoke_bomb.gd" id="1_bomb"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_bomb"]
+radius = 11.0
+
+; Drawn from primitives rather than a sprite, per this project's standing
+; procedural-drawing rule for anything without art yet. A dark bundle with a
+; lit fuse reads as a bomb at 1280x720 and cannot be mistaken for the pale
+; steel pickaxe sprite the axe reuses.
+[node name="SmokeBomb" type="Area2D"]
+collision_layer = 64
+collision_mask = 164
+script = ExtResource("1_bomb")
+
+[node name="Body" type="ColorRect" parent="."]
+offset_left = -9.0
+offset_top = -9.0
+offset_right = 9.0
+offset_bottom = 9.0
+color = Color(0.22, 0.29, 0.2, 1)
+
+[node name="Wrap" type="ColorRect" parent="."]
+offset_left = -9.0
+offset_top = -3.0
+offset_right = 9.0
+offset_bottom = 2.0
+color = Color(0.42, 0.6, 0.36, 1)
+
+[node name="Fuse" type="ColorRect" parent="."]
+offset_left = -2.0
+offset_top = -14.0
+offset_right = 2.0
+offset_bottom = -8.0
+color = Color(1, 0.72, 0.3, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_bomb")

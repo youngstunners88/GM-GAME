@@ -63,8 +63,31 @@ func _ready() -> void:
 func _start_session() -> void:
 	_ended = false
 	_banner.text = ""
-	_root.configure(TRACK_PLAN.slice(_leg_offset), true)   # commit_to_economy: real GOLD in play
+	_root.configure(_plan().slice(_leg_offset), true)   # commit_to_economy: real GOLD in play
 	_root.start()
+
+
+## TEST-ONLY warp. `?ep2chamber=1` on web shortens the first runner stretch to a
+## few metres so the Smelting Facility is reachable in about a second.
+##
+## Matches the existing `?stage=N` / `?boss=N` / `?ep2=1` warp convention rather
+## than inventing a new one. It exists because a browser capture of Chamber 0
+## otherwise has to survive 180 m of hazards first — which makes the screenshot
+## a test of the runner, not of the chamber, and makes a failed capture
+## ambiguous. Story content is unchanged; only the distance to it shrinks.
+func _plan() -> Array:
+	var warp: bool = false
+	if OS.has_feature("web"):
+		var q = JavaScriptBridge.eval(
+			"new URLSearchParams(window.location.search).get('ep2chamber') || ''", true)
+		warp = str(q) == "1"
+	if not warp:
+		return TRACK_PLAN
+	var short_plan: Array = TRACK_PLAN.duplicate(true)
+	short_plan[0]["chamber_z"] = 8.0
+	short_plan[0]["obstacles"] = []
+	short_plan[0]["zip_segments"] = []
+	return short_plan
 
 func _restart() -> void:
 	_start_session()
@@ -146,7 +169,22 @@ func _refresh_hud() -> void:
 				+ ("J / ENTER  shoot bears     " if a and a.can_shoot() else "")
 				+ "ESC  back to menu")
 		Ep2SessionRoot.Mode.CHAMBER:
-			if a:
+			# Chamber 0 is a story beat with a completely different HUD from a
+			# protocol chamber: no vest, no ammo, no bear count — just where you
+			# are in the meeting and what you can do about it. Branched on
+			# capability, not on a chamber id, so a future chamber picks the
+			# right HUD by what it actually is.
+			if a and a.has_method("get_beat_name"):
+				lines += "THE SMELTING FACILITY\n"
+				lines += "Inferno Bull   ·   %s\n" % a.get_beat_name().capitalize()
+				if a.has_winchester():
+					lines += "WINCHESTER 1886 acquired"
+					if a.get_molds_left() > 0:
+						lines += "   ·   %d molds left" % a.get_molds_left()
+				else:
+					lines += "walk to the Bull"
+				_hint.text = "A / D  walk        E  talk / take the rifle\nLMB/CTRL  fire the Winchester        ESC  back to menu"
+			elif a:
 				lines += "MINER SHAFT\n"
 				lines += "health %d   ammo %d   bears %d\n" % [a.get_health(), a.get_ammo(), a.get_live_bear_count()]
 				if a.is_rig_started():
@@ -154,7 +192,13 @@ func _refresh_hud() -> void:
 						"   IN COVER" if a.is_in_cover() else ""]
 				else:
 					lines += "rig idle — press E to start a Miner"
-			_hint.text = "E  start Miner (hold SHIFT to pay ETH+Diamonds)\nJ / ENTER  shoot     S  cover (hold)\nSHIFT+X / dash  EARLY CLAIM (take partial GOLD now)\nESC  back to menu"
+				# INSIDE the elif, not after it. When this assignment sat at the
+				# end of the CHAMBER branch it ran unconditionally and stamped
+				# the Miner Shaft's controls over the Smelting Facility's — the
+				# first browser capture of Chamber 0 showed a story beat telling
+				# the player to "start Miner" and "EARLY CLAIM", neither of
+				# which exists in that room.
+				_hint.text = "E  start Miner (hold SHIFT to pay ETH+Diamonds)\nJ / ENTER  shoot     S  cover (hold)\nSHIFT+X / dash  EARLY CLAIM (take partial GOLD now)\nESC  back to menu"
 		Ep2SessionRoot.Mode.TRANSITION:
 			lines += "loading…"
 		_:

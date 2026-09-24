@@ -16,11 +16,21 @@ func _ready() -> void:
     _wipe_rect.material = _wipe_mat
     _wipe_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
     _wipe_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    # Not drawn at all while idle - belt and braces with the shader's own
+    # progress guard. See transition_wipe.gdshader: the idle wipe used to leave
+    # permanent smoke blobs on every screen (the founder's "green smudges").
+    _wipe_rect.visible = false
     add_child(_wipe_rect)
 
-## Cover the screen with a patterned dissolve ("smoke" or "diamond").
+## Cover the screen with a patterned dissolve ("smoke", "diamond", or "gold" —
+## see transition_wipe.gdshader for what each pattern/tint actually is).
 func wipe_out(pattern: String = "smoke", duration: float = 0.45) -> void:
-    _wipe_mat.set_shader_parameter("pattern", 1 if pattern == "diamond" else 0)
+    var pattern_id := 0
+    if pattern == "diamond":
+        pattern_id = 1
+    elif pattern == "gold":
+        pattern_id = 2
+    _wipe_mat.set_shader_parameter("pattern", pattern_id)
     var tween := create_tween()
     tween.tween_method(_set_wipe, _get_wipe(), 1.0, duration)
     await tween.finished
@@ -33,6 +43,7 @@ func wipe_in(duration: float = 0.45) -> void:
 
 func _set_wipe(v: float) -> void:
     _wipe_mat.set_shader_parameter("progress", v)
+    _wipe_rect.visible = v > 0.001
 
 func _get_wipe() -> float:
     return _wipe_mat.get_shader_parameter("progress")

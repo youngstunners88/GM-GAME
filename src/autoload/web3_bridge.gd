@@ -301,7 +301,14 @@ func _backend(method: String, path: String, body: Dictionary, on_done: Callable)
 			var parsed: Variant = JSON.parse_string(data.get_string_from_utf8())
 			if typeof(parsed) in [TYPE_DICTIONARY, TYPE_ARRAY]:
 				out = parsed
-		on_done.call(out)
+		# The requester can be GONE by the time the reply lands — a secret wall
+		# that starts a community-lore fetch in break_block() queue_free()s
+		# itself ~0.25s later, well inside the 8s timeout, and calling a
+		# Callable bound to a freed object throws "Attempt to call function
+		# '...' on a null instance" every time. Harmless to gameplay but it is
+		# a real console error, and verify-game.mjs fails its gate on those.
+		if on_done.is_valid():
+			on_done.call(out)
 		http.queue_free())
 	var url: String = config["backend_base_url"].rstrip("/") + path
 	var headers := ["Content-Type: application/json"]
@@ -309,7 +316,8 @@ func _backend(method: String, path: String, body: Dictionary, on_done: Callable)
 		HTTPClient.METHOD_POST if method == "POST" else HTTPClient.METHOD_GET,
 		JSON.stringify(body) if method == "POST" else "")
 	if err != OK:
-		on_done.call({})
+		if on_done.is_valid():
+			on_done.call({})
 		http.queue_free()
 
 func ask_oracle(question: String, on_answer: Callable) -> void:

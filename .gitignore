@@ -197,3 +197,23 @@ web_verify/
 
 # Textures Godot extracts from Meshy GLBs at import time (derived; CI regenerates them)
 src/episode2/assets/*_Image_*.jpg
+# 2026-09-17 seam/sliver/smudge verification sweeps (proofs curated into docs/captures/)
+artifacts/stage-shots/
+artifacts/vault-shots/
+artifacts/vault-shots-fixed/
+artifacts/warp/
+artifacts/warp-fixed/
+artifacts/itch-live/
+artifacts/verify2/
+artifacts/verify2fk/
+artifacts/blaze/
+artifacts/itch-blaze/
+artifacts/blotch-matrix/
+artifacts/blotch-attempts/
+artifacts/blaze-attempts/
+artifacts/weapon-verify*/
+artifacts/weapon-verify/
+artifacts/attack-test*/
+artifacts/stage1-weapon/
+artifacts/wtest/
+artifacts/verify-deploy/

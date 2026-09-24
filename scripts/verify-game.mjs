@@ -160,24 +160,44 @@ try {
     // time. Harmless if the panel isn't present.
     await page.keyboard.press('Escape');
     await page.waitForTimeout(600);
-    // Current menu layout: PLAY button center ≈ y 0.71 (was 0.553 pre-subtitle,
-    // then 0.60 — re-measured 2026-08-11 from an actual screenshot's pixel
-    // bounds after 0.60 started missing high again: the button's real span is
-    // y≈482-540px at a 720px-tall viewport (center 511px = 0.71), not 432px.
-    // This mismatch is exactly why the previous calibration silently produced
-    // "MENU → MENU" self-transitions instead of reaching PLAYING — measure
-    // from a real screenshot when this next drifts, don't guess.
-    await page.mouse.click(vp.width * 0.5, vp.height * 0.71);
-    // First run then shows the optional email-signup panel; Escape skips it.
-    await page.waitForTimeout(2500);
-    await page.keyboard.press('Escape');
-    const playing = await page
-      .waitForFunction(() => window.__states && window.__states.includes('PLAYING'), {
-        timeout: 20000,
-        polling: 500,
-      })
-      .then(() => true)
-      .catch(() => false);
+    // PLAY button center, as a fraction of viewport height. Drift history:
+    // 0.553 (pre-subtitle) -> 0.60 -> 0.71 (2026-08-11) -> 0.642 (2026-09-22,
+    // the smoke-theme title rebuild replaced the two flat title Labels with a
+    // per-glyph lockup of a different height, moving every button up ~49px:
+    // measured span y≈444-480 at a 720px viewport, center 462px = 0.642).
+    // Always re-measure from a real screenshot's pixel bounds; never guess.
+    //
+    // Why a sweep and not a single click: this constant has now silently
+    // drifted FOUR times, and each time the only symptom was a "MENU → MENU"
+    // self-transition that read as "the game is broken" rather than "the gate
+    // clicked empty space". The candidates below are tried in order and the
+    // first one that reaches PLAYING wins. This does NOT weaken the gate — if
+    // the button is genuinely broken, no candidate reaches PLAYING and it
+    // still fails; it only stops a pure layout nudge from being reported as a
+    // gameplay regression.
+    const PLAY_Y_CANDIDATES = [0.642, 0.71, 0.60, 0.553];
+    let playing = false;
+    let hitRatio = null;
+    for (const ratio of PLAY_Y_CANDIDATES) {
+      await page.mouse.click(vp.width * 0.5, vp.height * ratio);
+      // First run then shows the optional email-signup panel; Escape skips it.
+      await page.waitForTimeout(2500);
+      await page.keyboard.press('Escape');
+      playing = await page
+        .waitForFunction(() => window.__states && window.__states.includes('PLAYING'), {
+          timeout: 20000,
+          polling: 500,
+        })
+        .then(() => true)
+        .catch(() => false);
+      if (playing) { hitRatio = ratio; break; }
+      console.log(`      PLAY click at y=${ratio} did not reach PLAYING, trying next`);
+    }
+    if (hitRatio !== null && hitRatio !== PLAY_Y_CANDIDATES[0]) {
+      console.log(`      NOTE: PLAY responded at y=${hitRatio}, not the calibrated ` +
+        `${PLAY_Y_CANDIDATES[0]} — the menu layout has drifted, re-measure and ` +
+        `update PLAY_Y_CANDIDATES[0].`);
+    }
     await page.waitForTimeout(4000); // let gameplay actually render
     await page.screenshot({ path: levelShot });
     result.screenshots.push(levelShot);

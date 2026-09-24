@@ -1,0 +1,36 @@
+{
+  "_comment": [
+    "GROUND TRUTH, graded by the founder on 2026-09-22. This is a LABELLED TEST",
+    "SET, not documentation. Any blotch detector must reproduce this matrix before",
+    "its verdict on an ungraded frame means anything.",
+    "",
+    "l2_blaze is the load-bearing NEGATIVE. It is the reason the 'it is your GPU /",
+    "your monitor / your screenshot tool' theory is dead: none of those skip",
+    "exactly one scene and render the other five dirty. Any future theory must",
+    "explain this row or it is wrong.",
+    "",
+    "l3_stage is graded from the founder's earlier report that the green was in",
+    "'each of the stages from 1 2 and three'. It is marked lower confidence",
+    "because he did not re-state it in the 2026-09-22 matrix."
+  ],
+  "graded_by": "founder",
+  "graded_on": "2026-09-22",
+  "build": "18305533-1999670",
+  "scenes": {
+    "l1_stage": { "blotched": true,  "confidence": "high" },
+    "l1_blaze": { "blotched": true,  "confidence": "high" },
+    "l2_stage": { "blotched": true,  "confidence": "high" },
+    "l2_blaze": { "blotched": false, "confidence": "high",
+                  "note": "THE NEGATIVE CONTROL. Explain this row or the theory is wrong." },
+    "l3_stage": { "blotched": true,  "confidence": "medium",
+                  "note": "from the earlier 'stages 1 2 and three' report, not the 2026-09-22 matrix" },
+    "l3_blaze": { "blotched": true,  "confidence": "high" }
+  },
+  "measured_signature": {
+    "_comment": "Measured off the founder's own 1496x847 capture of l3_blaze.",
+    "multiply_rgb": [0.86, 0.89, 0.83],
+    "reads_as": "green",
+    "actually_is": "near-neutral darkening on a saturated orange sky",
+    "patches_canvas_xywh": [[328, 146, 79, 69], [168, 163, 61, 27], [253, 244, 13, 8]]
+  }
+}
