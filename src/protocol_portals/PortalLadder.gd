@@ -1,7 +1,7 @@
 extends Node2D
 class_name PortalLadder
 ## Protocol Portal — a DOWNWARD glowing ladder that reads as a hatch into a
-## study room (the room itself does not exist yet; build step 3 wires it).
+## study room.
 ##
 ## This is NOT the climbable ladder from src/level/ladder.gd. It shares no code,
 ## no scene, no behaviour: it is a decorative + request-only marker. It has NO
@@ -30,13 +30,14 @@ class_name PortalLadder
 ##     of the Fort Knox vault door at 2690, 500px clear of the Blaze Portal at
 ##     2600, and 600px left of the boss trigger.
 
-## Which protocol this portal belongs to. Drives the glow colour only for now.
+const Travel := preload("res://src/protocol_portals/PortalTravel.gd")
+
+## Which protocol this portal belongs to. Drives the glow colour.
 @export var protocol: String = "smoke"  # "smoke" | "diamonds" | "gold"
-## Stage identity, forwarded with the request so step 3 can open the right room.
+## Stage identity, forwarded to the study room.
 @export var stage_id: int = 1
 
 ## Emitted when a player stands in the shaft mouth and presses "interact".
-## Deliberately does NOT change scene / warp / create a PortalSession.
 signal portal_requested(protocol: String, stage_id: int)
 
 const COLOR_SMOKE: Color = Color(0.35, 1.0, 0.45)      # neon green
@@ -52,6 +53,9 @@ const HALO_SIZE: Vector2 = Vector2(260.0, 260.0)
 const RING_RADIUS: Vector2 = Vector2(42.0, 24.0)
 const PULSE_HZ: float = 1.4
 const Z_LEVEL: int = 5  # over background art and ground tiles.
+
+## How far right / up of the ladder the returning player is placed.
+const RETURN_OFFSET: Vector2 = Vector2(70.0, -48.0)
 
 var _color: Color = COLOR_SMOKE
 var _glow: Sprite2D = null
@@ -86,6 +90,7 @@ func _process(delta: float) -> void:
 	# 0.45..1.0 alpha and 0.92..1.08 scale at ~1.4 Hz. Plain sin on a counter
 	# instead of a Tween loop, so nothing keeps running once this node is freed.
 	_pulse_time += delta
+	_poll_interact()
 	var t: float = 0.5 + 0.5 * sin(_pulse_time * TAU * PULSE_HZ)
 	var a: float = 0.45 + 0.55 * t
 	var s: float = 0.92 + 0.16 * t
@@ -100,15 +105,36 @@ func _process(delta: float) -> void:
 
 ## Walk up the parent chain to whatever node owns the runtime ground (LevelBase
 ## exposes `_floor_y_at(x: float) -> float`). If nothing owns one, the authored
-## position is kept as-is.
+## position is kept as-is. Runs once, then places a returning player.
 func _snap_to_floor() -> void:
 	var node: Node = get_parent()
 	while node != null:
 		if node.has_method("_floor_y_at"):
 			var floor_y: float = node.call("_floor_y_at", global_position.x)
 			global_position.y = floor_y
-			return
+			break
 		node = node.get_parent()
+	_place_returning_player()
+
+## If this ladder is the one the player just came back through (the study room
+## called PortalTravel.ascend()), drop them next to the shaft mouth instead of
+## inside it, so the EnterZone cannot instantly re-trigger.
+func _place_returning_player() -> void:
+	var scene_path: String = ""
+	var tree: SceneTree = get_tree()
+	if tree != null and tree.current_scene != null:
+		scene_path = tree.current_scene.scene_file_path
+	if not Travel.consume_return(scene_path, protocol):
+		return
+	for node in get_tree().get_nodes_in_group("player"):
+		var body := node as Node2D
+		if body == null:
+			continue
+		body.global_position = Vector2(
+			global_position.x + RETURN_OFFSET.x,
+			global_position.y + RETURN_OFFSET.y)
+		if body is CharacterBody2D:
+			(body as CharacterBody2D).velocity = Vector2.ZERO
 
 # ---- Visuals (all built in code; the .tscn stays minimal) -------------------
 
@@ -387,11 +413,18 @@ func _update_prompt() -> void:
 		return
 	_label.text = "STUDY  [E]" if _player_inside else "STUDY"
 
-func _unhandled_input(event: InputEvent) -> void:
-	if not _player_inside or not _has_interact_action:
+## Polled in _process rather than _unhandled_input: other nodes (NPC dialogue,
+## the HUD) handle "interact" first and mark it handled, which silently ate the
+## key here — the first web capture showed "STUDY [E]" but never descended.
+var _descending: bool = false
+
+func _poll_interact() -> void:
+	if _descending or not _player_inside or not _has_interact_action:
 		return
-	if event.is_action_pressed("interact"):
+	if Input.is_action_just_pressed("interact"):
+		_descending = true
 		portal_requested.emit(protocol, stage_id)
-		# One line only — no scene change, no warp, no PortalSession. Study
-		# rooms are step 3's job.
 		print("[PortalLadder] study requested: protocol=%s stage=%d" % [protocol, stage_id])
+		# Hand the run to the travel bookkeeper: it stores the return point,
+		# opens the PortalSession and fades into the matching study room.
+		Travel.descend(protocol, stage_id, get_tree().current_scene.scene_file_path, global_position.x)

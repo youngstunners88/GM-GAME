@@ -1,0 +1,36 @@
+SMOKE S01–S11 (facts)
+S01 SMOKE is the culture + sink / burn token.
+S02 Lounge LP basket can strengthen buy/burn as pairs rise.
+S03 Arb is captured and recycled, not ignored.
+S04 Rising Lounge pairs can increase burn power.
+S05 This room is a classroom, not a DEX.
+S06 Whitepaper teaches the real rules before the quiz.
+S07 A burn removes tokens from circulating supply.
+S08 Multi-chain supply frames the arb question.
+S09 Ember the Archivist administers the test.
+S10 Video path is allowed.
+S11 Pass returns to Stage 1 and records the NFT.
+DIAMONDS D01–D11 (facts)
+D01 BLAZE is on the Diamond mint path.
+D02 Emission ending + sinks create scarcity.
+D03 Vault is staking Diamonds for shares/rewards.
+D04 Crush Bonus forfeits extra Diamonds for more shares.
+D05 Diamonds are required to mint GOLD.
+D06 Handler absorbs first-cycle mint-side Diamonds instead of dumping the chart.
+D07 Assay Trio administers the test.
+D08 This room is not the Diamond Vault set-piece.
+D09 Certificates flavour = mine ownership / exclusive access (keep high-level).
+D10 Video path is allowed.
+D11 Completion grants Diamonds scorecard NFT on ICP.
+GOLD G01–G11 (facts)
+G01 ~100-day vest, ~1% per day.
+G02 Early claim forfeits unvested GOLD.
+G03 Fort Knox pays wBTC on staked GOLD.
+G04 Melt Bonus burns extra GOLD for a large share multiplier.
+G05 Gold Rush auctions compete for XAUT.
+G06 Mint path can include ETH or ETH + Diamonds.
+G07 Claim Recorder administers the test.
+G08 This room is not Fort Knox.
+G09 Long locks weight commitment / shares.
+G10 Video path is allowed.
+G11 Completion grants Gold scorecard NFT on ICP.

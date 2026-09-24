@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/protocol_portals/StudyRoom.gd" id="1_studyroom"]
+
+[node name="StudyRoom" type="Node2D"]
+script = ExtResource("1_studyroom")
+protocol = "smoke"
+stage_id = 1
