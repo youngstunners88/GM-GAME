@@ -364,12 +364,23 @@ func _build_floor_and_walls() -> void:
 ## One crisp 3px line splitting LEFT (paper) from RIGHT (video). Deliberately a
 ## single Line2D with two points: no second edge, no seam, no taper.
 func _build_divider() -> void:
+	# Faint wide glow copy underneath — sits below the crisp line so no doubled
+	# hard edge shows.
+	var glow_line := Line2D.new()
+	glow_line.name = "DividerGlow"
+	glow_line.width = 12.0
+	glow_line.default_color = Color(_glow.r, _glow.g, _glow.b, 0.18)
+	glow_line.joint_mode = Line2D.LINE_JOINT_SHARP
+	glow_line.points = PackedVector2Array([Vector2(640.0, 372.0), Vector2(640.0, FLOOR_Y)])
+	glow_line.z_index = -41
+	add_child(glow_line)
+
 	var line := Line2D.new()
 	line.name = "Divider"
-	line.width = 3.0
-	line.default_color = Color(_glow.r, _glow.g, _glow.b, 0.6)
+	line.width = 4.0
+	line.default_color = Color(_glow.r, _glow.g, _glow.b, 0.85)
 	line.joint_mode = Line2D.LINE_JOINT_SHARP
-	line.points = PackedVector2Array([Vector2(640.0, 140.0), Vector2(640.0, FLOOR_Y)])
+	line.points = PackedVector2Array([Vector2(640.0, 372.0), Vector2(640.0, FLOOR_Y)])
 	line.z_index = -40
 	add_child(line)
 
@@ -392,15 +403,16 @@ func _build_ascent_shaft() -> void:
 		rail.name = "Rail%d" % i
 		rail.width = 4.0
 		rail.default_color = shaft_color
+		# Rails stop at y=360 so the ladder never crosses the Divider below.
 		rail.points = PackedVector2Array([
 			Vector2(640.0 + offsets[i], -40.0),
-			Vector2(640.0 + offsets[i], 560.0),
+			Vector2(640.0 + offsets[i], 360.0),
 		])
 		rails.add_child(rail)
 
 	var y: float = -30.0
 	var rung_index: int = 0
-	while y < 552.0:
+	while y < 352.0:
 		var rung := Line2D.new()
 		rung.name = "Rung%d" % rung_index
 		rung.width = 4.0
@@ -414,7 +426,8 @@ func _build_ascent_shaft() -> void:
 	label.name = "AscentLabel"
 	label.text = "CLIMB BACK  [E]"
 	label.size = Vector2(240.0, 38.0)
-	label.position = Vector2(376.0, 540.0)
+	# Sits just above the top of the visible rails, centred on the shaft.
+	label.position = Vector2(520.0, 91.0)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.add_theme_font_size_override("font_size", 22)
@@ -429,11 +442,13 @@ func _build_ascent_shaft() -> void:
 	area.name = "AscentShaft"
 	area.collision_layer = 0
 	area.collision_mask = 2
-	area.position = Vector2(640.0, 570.0)
+	# Anchored at the shaft base (y ~ 350) with the rect stretched down to the
+	# floor, so a player standing under the shaft can still interact.
+	area.position = Vector2(640.0, 350.0)
 	var shape := CollisionShape2D.new()
 	shape.name = "CollisionShape2D"
 	var rect := RectangleShape2D.new()
-	rect.size = Vector2(100.0, 130.0)
+	rect.size = Vector2(100.0, 540.0)
 	shape.shape = rect
 	area.add_child(shape)
 	area.body_entered.connect(_on_ascent_body_entered)
@@ -446,7 +461,7 @@ func _build_ascent_shaft() -> void:
 	motes.amount = 16
 	motes.lifetime = 2.0
 	motes.local_coords = false
-	motes.position = Vector2(640.0, 560.0)
+	motes.position = Vector2(640.0, 340.0)
 	motes.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
 	motes.emission_rect_extents = Vector2(28.0, 16.0)
 	motes.direction = Vector2(0.0, -1.0)
@@ -793,27 +808,110 @@ func _build_assay_trio(parent: Node2D) -> void:
 		]), Color(0.75, 0.9, 1.0, 0.8))
 
 
-## The Claim Recorder: clerk behind a small desk with a ledger and a stamp.
+## The Claim Recorder: a readable clerk (green eyeshade, two dot eyes, sleeves
+## with arm garters, a vest pocket-watch chain) behind a desk holding an open
+## two-page ledger with ruled lines and a red rubber stamp. Slate-blue uniform
+## so the silhouette reads against the brown/gold room. ~140 px tall overall.
 func _build_claim_recorder(parent: Node2D) -> void:
-	var clerk := Color(0.22, 0.15, 0.09)
-	var desk := Color(0.30, 0.20, 0.11)
-	_add_poly(parent, "ClerkBody", PackedVector2Array([
-		Vector2(-22.0, -70.0), Vector2(26.0, -70.0),
-		Vector2(20.0, -142.0), Vector2(-14.0, -142.0),
-	]), clerk)
-	_add_poly(parent, "ClerkHead", _circle_polygon(16.0, 18), clerk.lightened(0.18), Vector2(4.0, -160.0))
-	_add_poly(parent, "Desk", PackedVector2Array([
+	var coat := Color(0.13, 0.17, 0.26)
+	var coat_light := Color(0.19, 0.25, 0.36)
+	var skin := Color(0.88, 0.74, 0.60)
+	var visor := Color(0.18, 0.62, 0.38)
+	var wood := Color(0.20, 0.13, 0.07)
+	var wood_top := Color(0.32, 0.22, 0.11)
+	var paper := Color(0.90, 0.87, 0.74)
+	var rule := Color(0.42, 0.46, 0.52)
+	var stamp_red := Color(0.76, 0.18, 0.15)
+	var watch_gold := Color(0.88, 0.74, 0.32)
+
+	# --- clerk torso, shoulders, neck, head (drawn first, behind the desk) ---
+	_add_poly(parent, "ClerkTorso", PackedVector2Array([
+		Vector2(-30.0, -28.0), Vector2(30.0, -28.0),
+		Vector2(28.0, -110.0), Vector2(-28.0, -110.0),
+	]), coat)
+	_add_poly(parent, "ClerkCollar", PackedVector2Array([
+		Vector2(-28.0, -110.0), Vector2(28.0, -110.0),
+		Vector2(19.0, -98.0), Vector2(-19.0, -98.0),
+	]), coat_light)
+	_add_poly(parent, "ClerkNeck", PackedVector2Array([
+		Vector2(-6.0, -108.0), Vector2(6.0, -108.0),
+		Vector2(6.0, -118.0), Vector2(-6.0, -118.0),
+	]), skin.darkened(0.14))
+	_add_poly(parent, "ClerkHead", _circle_polygon(15.0, 20), skin, Vector2(0.0, -124.0))
+	# Green eyeshade / visor across the brow.
+	_add_poly(parent, "ClerkVisor", PackedVector2Array([
+		Vector2(-19.0, -136.0), Vector2(19.0, -136.0),
+		Vector2(19.0, -126.0), Vector2(14.0, -122.0),
+		Vector2(-14.0, -122.0), Vector2(-19.0, -126.0),
+	]), visor)
+	# Two dot eyes under the shade.
+	_add_poly(parent, "ClerkEyeL", _circle_polygon(2.4, 10), Color(0.08, 0.08, 0.10), Vector2(-5.5, -116.0))
+	_add_poly(parent, "ClerkEyeR", _circle_polygon(2.4, 10), Color(0.08, 0.08, 0.10), Vector2(5.5, -116.0))
+
+	# --- desk in front ---
+	_add_poly(parent, "DeskFront", PackedVector2Array([
 		Vector2(-84.0, 0.0), Vector2(84.0, 0.0),
-		Vector2(84.0, -72.0), Vector2(-84.0, -72.0),
-	]), desk)
-	_add_poly(parent, "Ledger", PackedVector2Array([
-		Vector2(-46.0, -76.0), Vector2(14.0, -76.0),
-		Vector2(14.0, -66.0), Vector2(-46.0, -66.0),
-	]), Color(0.85, 0.80, 0.62))
-	_add_poly(parent, "Stamp", PackedVector2Array([
-		Vector2(48.0, -96.0), Vector2(64.0, -96.0),
-		Vector2(64.0, -84.0), Vector2(48.0, -84.0),
-	]), Color(_glow.r, _glow.g, _glow.b, 0.95))
+		Vector2(84.0, -38.0), Vector2(-84.0, -38.0),
+	]), wood)
+	_add_poly(parent, "DeskTop", PackedVector2Array([
+		Vector2(-88.0, -38.0), Vector2(88.0, -38.0),
+		Vector2(88.0, -46.0), Vector2(-88.0, -46.0),
+	]), wood_top)
+	_add_line(parent, "DeskDrawer", Vector2(-80.0, -20.0), Vector2(80.0, -20.0), wood.lightened(0.18), 2.0)
+
+	# --- sleeves reaching to the ledger, with arm garters ---
+	_add_poly(parent, "SleeveL", PackedVector2Array([
+		Vector2(-16.0, -106.0), Vector2(-30.0, -106.0),
+		Vector2(-46.0, -46.0), Vector2(-32.0, -46.0),
+	]), coat_light)
+	_add_poly(parent, "SleeveR", PackedVector2Array([
+		Vector2(16.0, -106.0), Vector2(30.0, -106.0),
+		Vector2(46.0, -46.0), Vector2(32.0, -46.0),
+	]), coat_light)
+	_add_poly(parent, "GarterL", PackedVector2Array([
+		Vector2(-35.0, -90.0), Vector2(-22.0, -88.0),
+		Vector2(-20.0, -81.0), Vector2(-33.0, -83.0),
+	]), visor.darkened(0.12))
+	_add_poly(parent, "GarterR", PackedVector2Array([
+		Vector2(35.0, -90.0), Vector2(22.0, -88.0),
+		Vector2(20.0, -81.0), Vector2(33.0, -83.0),
+	]), visor.darkened(0.12))
+	_add_poly(parent, "HandL", _circle_polygon(5.0, 12), skin, Vector2(-42.0, -52.0))
+	_add_poly(parent, "HandR", _circle_polygon(5.0, 12), skin, Vector2(42.0, -52.0))
+
+	# --- open ledger on the desk, two pages with ruled lines ---
+	_add_poly(parent, "LedgerL", PackedVector2Array([
+		Vector2(-36.0, -46.0), Vector2(-3.0, -46.0),
+		Vector2(-3.0, -76.0), Vector2(-36.0, -76.0),
+	]), paper)
+	_add_poly(parent, "LedgerR", PackedVector2Array([
+		Vector2(3.0, -46.0), Vector2(36.0, -46.0),
+		Vector2(36.0, -76.0), Vector2(3.0, -76.0),
+	]), paper.darkened(0.08))
+	_add_poly(parent, "LedgerSpine", PackedVector2Array([
+		Vector2(-3.0, -46.0), Vector2(3.0, -46.0),
+		Vector2(3.0, -76.0), Vector2(-3.0, -76.0),
+	]), Color(0.30, 0.25, 0.18))
+	for i in range(3):
+		var ly: float = -54.0 - float(i) * 7.0
+		_add_line(parent, "LedgerRuleL%d" % i, Vector2(-30.0, ly), Vector2(-8.0, ly), rule, 2.0)
+		_add_line(parent, "LedgerRuleR%d" % i, Vector2(8.0, ly), Vector2(30.0, ly), rule, 2.0)
+
+	# --- red rubber stamp on the desk ---
+	_add_poly(parent, "StampBody", PackedVector2Array([
+		Vector2(52.0, -46.0), Vector2(68.0, -46.0),
+		Vector2(68.0, -58.0), Vector2(52.0, -58.0),
+	]), stamp_red)
+	_add_poly(parent, "StampHandle", PackedVector2Array([
+		Vector2(56.0, -58.0), Vector2(64.0, -58.0),
+		Vector2(64.0, -72.0), Vector2(56.0, -72.0),
+	]), Color(0.24, 0.16, 0.10))
+
+	# --- vest pocket-watch chain ---
+	_add_line(parent, "WatchChain", Vector2(-10.0, -100.0), Vector2(8.0, -92.0), watch_gold, 2.0)
+	_add_line(parent, "WatchChainTail", Vector2(8.0, -92.0), Vector2(14.0, -84.0), watch_gold, 2.0)
+	_add_poly(parent, "PocketWatch", _circle_polygon(4.5, 12), watch_gold, Vector2(15.0, -80.0))
+	_add_poly(parent, "PocketWatchFace", _circle_polygon(2.6, 10), Color(0.95, 0.93, 0.82), Vector2(15.0, -80.0))
 
 
 func _add_poly(parent: Node2D, node_name: String, points: PackedVector2Array, color: Color, offset: Vector2 = Vector2.ZERO) -> Polygon2D:
@@ -824,6 +922,16 @@ func _add_poly(parent: Node2D, node_name: String, points: PackedVector2Array, co
 	poly.position = offset
 	parent.add_child(poly)
 	return poly
+
+
+func _add_line(parent: Node2D, node_name: String, from: Vector2, to: Vector2, color: Color, width: float = 2.0) -> Line2D:
+	var line := Line2D.new()
+	line.name = node_name
+	line.points = PackedVector2Array([from, to])
+	line.default_color = color
+	line.width = width
+	parent.add_child(line)
+	return line
 
 
 func _circle_polygon(radius: float, segments: int = 20) -> PackedVector2Array:
