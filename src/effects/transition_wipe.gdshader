@@ -53,5 +53,15 @@ void fragment() {
 				vnoise(UV * 4.0 + progress));
 	}
 	float a = smoothstep(mask - 0.12, mask + 0.12, progress * 1.24);
+	// IDLE MUST BE INVISIBLE. At progress = 0 the smoothstep above is NOT zero
+	// wherever mask < 0.12 (edge0 goes negative), so the "clear" overlay painted
+	// permanent dark green/purple smoke blobs at fixed screen positions, up to
+	// 50% alpha, on EVERY screen - this node is an autoload CanvasLayer that sits
+	// in front of the menu, every level and every Blaze Rush. The blob positions
+	// come from a sin()-hash whose output is GPU-precision dependent, so they
+	// landed in the founder's sky on his GPU and under the HUD on the capture
+	// bot's software renderer - which is why a month of captures looked clean.
+	// These were "the green smudges": founder 2026-08-20 .. 2026-09-23.
+	a *= step(0.001, progress);
 	COLOR = vec4(tint, a);
 }

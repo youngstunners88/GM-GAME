@@ -123,6 +123,19 @@ clean. It has a **dedicated agent** — `blotch-hunter` — and two skills,
 do, and what FIXED requires). Route every smudge/blotch/blemish/smear report to
 them instead of improvising.
 
+**ROOT CAUSE FOUND 2026-09-23:** the fixed-position smudges were the IDLE
+scene-transition overlay (`scene_transition.gd` autoload + `transition_wipe.gdshader`).
+At `progress = 0` its smoothstep was non-zero wherever the noise mask < 0.12,
+so it painted permanent dark green/purple (smoke) or amber (gold) blobs on
+EVERY screen, menu included. Blob positions come from a GPU-precision-dependent
+sin() hash — on the founder's GPU they sat in the sky; on the bot's software
+renderer they hid under the HUD. L2 Blaze looked clean because its DIAMOND wipe
+residue is dark blue on a dark blue scene. Fixed (shader `step` guard + rect
+hidden while idle) and gated in `check-green-vfx.py`, which now also scans
+`.tscn` files (the L1 cloud platforms and dash trail were translucent green in
+scene files the gate never read). If smudges are ever reported again, check
+every full-screen autoload overlay's IDLE state first.
+
 Three things that must never be re-litigated:
 
 1. **It is not green.** Measured, the patches multiply the sky by R ×0.86,
