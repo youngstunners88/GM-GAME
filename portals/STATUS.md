@@ -19,3 +19,14 @@
   smoke BLOCK (examiner figure invisible on green) · diamonds SHIP 0.73 · gold SHIP 0.63.
   Round 3 (Ember redraw + trio spacing) in flight. Not on master until all three ship.
 - Spend step 3: DeepSeek ~$0.075, Opus copy $0.104, Qwen audit $0.137, Jev $0.0001.
+
+- OPEN — step 3 gauntlet stopped after 3 repair rounds (gauntlet-loop max). Final votes on build web7
+  (evidence 10_ladders/step3e, votes 90_gates/*T*.jev.txt):
+  smoke SHIP (0.51) · gold SHIP (0.66) · diamonds BLOCK (0.92).
+  Diamonds blockers: (1) a debug spawn at exactly x=3050 in Stage 2 renders a fully black frame,
+  reproducible twice on this build (x=2950/3150 are fine; the same spot was fine on web6) —
+  unexplained, must be root-caused before shipping; (2) Assay Trio reads as three identical flat
+  shapes, centre one overlapping the player; label crowds the divider.
+  Per the rules nothing ships to master until all three are Jev SHIP.
+- Lanes: Muse blocked (OpenRouter 18+ confirmation needed at openrouter.ai/settings/preferences);
+  Opus 5.5 (non-batch) used for copy per founder.

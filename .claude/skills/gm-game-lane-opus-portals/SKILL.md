@@ -1,14 +1,13 @@
 ---
 name: gm-game-lane-opus-portals
-description: Opus 5.5 on OpenRouter does dangerous multi-file Godot merges when DeepSeek truncates or stage .tscn surgery can strand the player. Slug anthropic/claude-opus-5.5, prefer :batch.
+description: Opus 5.5 on OpenRouter does dangerous multi-file Godot merges when DeepSeek truncates or stage .tscn surgery can strand the player. Slug anthropic/claude-opus-5.5, plain Opus 5.5 only (founder: never the batch model).
 ---
 
 
 # Opus lane — heavy merge only
 
 
-Slug: `anthropic/claude-opus-5.5:batch` first.
-Live `anthropic/claude-opus-5.5` only if batch cannot return in-session.
+Slug: `anthropic/claude-opus-5.5` — founder rule 2026-09-24: do NOT use the `:batch` model at all (it also cannot be called through chat/completions).
 Wrapper: `node scripts/opus-offload.mjs` with a verify command (script compile + protocol_portals_test + new ladder/room test).
 
 

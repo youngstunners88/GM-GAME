@@ -1,3 +1,12 @@
+<!-- dispatched: deepseek/deepseek-v4.1-flash
+     prompt: prompts/portals/step3d_ember_fix_deepseek.md
+     files inlined: 1
+     images attached: 0
+     tokens: 15858 in / 32277 out
+     cost: $0.0217
+     NOTE: unvalidated model output. Claude must verify every claim
+     against the real files before any of it informs code. -->
+=== FILE: src/protocol_portals/StudyRoom.gd ===
 extends Node2D
 ## Protocol Portals step 3 — the study room underneath a glowing ladder.
 ##
@@ -375,20 +384,10 @@ func _build_divider() -> void:
 	glow_line.z_index = -41
 	add_child(glow_line)
 
-	# Dark backing stroke: gold-on-dark-brown read as "barely visible" in the
-	# Jev round-3 capture, so the crisp line now sits on a near-black band.
-	var backing := Line2D.new()
-	backing.name = "DividerBacking"
-	backing.width = 8.0
-	backing.default_color = Color(0.02, 0.02, 0.03, 0.9)
-	backing.points = PackedVector2Array([Vector2(640.0, 372.0), Vector2(640.0, FLOOR_Y)])
-	backing.z_index = -41
-	add_child(backing)
-
 	var line := Line2D.new()
 	line.name = "Divider"
 	line.width = 4.0
-	line.default_color = _glow.lerp(Color.WHITE, 0.35)
+	line.default_color = Color(_glow.r, _glow.g, _glow.b, 0.85)
 	line.joint_mode = Line2D.LINE_JOINT_SHARP
 	line.points = PackedVector2Array([Vector2(640.0, 372.0), Vector2(640.0, FLOOR_Y)])
 	line.z_index = -40
@@ -1460,3 +1459,4 @@ func _handle_overlay_input(event: InputEvent) -> void:
 				_on_option(1)
 			KEY_3:
 				_on_option(2)
+=== END ===

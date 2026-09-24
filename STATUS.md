@@ -5,11 +5,11 @@
 
 ---
 
-**🏛️ PROTOCOL PORTALS step 3 — all three learning pits built; Jev: Diamonds SHIP, Gold SHIP, Smoke BLOCK (OPEN, 2026-09-24).**
+**🏛️ PROTOCOL PORTALS step 3 — all three learning pits built; final Jev: Smoke SHIP, Gold SHIP, Diamonds BLOCK (OPEN, 2026-09-24).**
 Ladder → press E → a one-screen classroom in every stage: whitepaper plate (your Drive art for
 Diamonds and Gold, a drawn SMOKE ash-ring certificate), official X video shrine, examiner, 11-question
-quiz, retry / keep-score, climb back to where you went down. Qwen fact-lock PASS. Smoke is blocked
-because Ember's figure doesn't show on the green room; repair round 3 is running. Nothing goes to
+quiz, retry / keep-score, climb back to where you went down. Qwen fact-lock PASS. Diamonds is blocked: an unexplained
+black frame when spawning at one spot in Stage 2, and plain Assay Trio figures. 3 repair rounds used. Nothing goes to
 master until all three are Jev SHIP. Detail: `portals/STATUS.md`.
 
 ---

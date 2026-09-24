@@ -1,0 +1,6 @@
+model: typesafe/jev-1.13-20260917   cost: $0.000035
+  ladder_unmissable_defect: probability=0.920 -> yes
+  room_has_dividing_line_defect: probability=0.050 -> no
+  ship: block (confidence 0.91) {"ship":0.04,"block":0.96}
+
+JEV VERDICT: BLOCK

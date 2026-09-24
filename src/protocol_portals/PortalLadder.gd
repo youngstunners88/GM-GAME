@@ -286,6 +286,16 @@ func _build_ring() -> void:
 		pts.append(Vector2(cos(ang) * RING_RADIUS.x, sin(ang) * RING_RADIUS.y))
 	_ring.points = pts
 	_ring.position = Vector2.ZERO
+	# Near-black outline ring behind the bright one: the gold ring vanished into
+	# gold platform tiles (Jev round-3 block), and a dark edge fixes any palette.
+	var ring_outline := Line2D.new()
+	ring_outline.name = "MouthRingOutline"
+	ring_outline.width = 10.0
+	ring_outline.default_color = Color(0.03, 0.02, 0.05, 0.85)
+	ring_outline.closed = true
+	ring_outline.points = pts
+	_ring.add_child(ring_outline)
+	ring_outline.show_behind_parent = true
 	add_child(_ring)
 
 ## Down arrow drawn as a Polygon2D chevron (the "▼" glyph is missing from the
