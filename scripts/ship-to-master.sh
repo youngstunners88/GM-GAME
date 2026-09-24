@@ -52,19 +52,35 @@ default_gates() {
   echo "✓ security sentinel"
 }
 
-for attempt in 1 2 3; do
-  git fetch -q origin master "$BR" 2>/dev/null || git fetch -q origin master
-  behind=$(git rev-list --count HEAD..origin/master)
-  if [ "$behind" -gt 0 ]; then
-    echo "→ merging $behind master commit(s) into $BR"
-    if ! git merge --no-edit -q origin/master; then
-      echo "✗ Merge conflict with master. Aborted — nothing was pushed. Conflicting files:"
-      git diff --name-only --diff-filter=U
-      git merge --abort
-      echo "Resolve by running: git merge origin/master  (keep BOTH sides' features), commit, re-run this."
-      exit 3
-    fi
+# Merge a ref into HEAD. Conflicts confined to web/game/ (CI's generated export,
+# rebuilt on every run) resolve to the incoming side; any other conflict aborts.
+merge_ref() {
+  local ref="$1"
+  git rev-parse -q --verify "$ref" >/dev/null || return 0
+  local n; n=$(git rev-list --count "HEAD..$ref")
+  [ "$n" -eq 0 ] && return 0
+  echo "→ merging $n commit(s) from $ref"
+  if git merge --no-edit -q "$ref" 2>/dev/null; then return 0; fi
+  local bad; bad=$(git diff --name-only --diff-filter=U | grep -v '^web/game/' || true)
+  if [ -z "$bad" ]; then
+    git diff --name-only --diff-filter=U | xargs -r git checkout --theirs -- 
+    git diff --name-only --diff-filter=U | xargs -r git add --
+    git commit -q --no-edit
+    echo "  (web/game/ conflicts taken from $ref — CI regenerates them)"
+    return 0
   fi
+  echo "✗ Merge conflict with $ref. Aborted — nothing was pushed. Conflicting files:"
+  echo "$bad"
+  git merge --abort
+  echo "Resolve with: git merge $ref  (keep BOTH sides' features), commit, re-run this."
+  exit 3
+}
+
+for attempt in 1 2 3; do
+  git fetch -q origin master 2>/dev/null
+  git fetch -q origin "$BR" 2>/dev/null || true
+  merge_ref "origin/$BR"      # CI's export commits land on the branch too
+  merge_ref "origin/master"
   if [ -n "$GATES" ]; then bash -c "$GATES" || { echo "✗ gates failed — not shipping"; exit 4; }
   else default_gates || { echo "✗ gates failed — not shipping"; exit 4; }; fi
 
