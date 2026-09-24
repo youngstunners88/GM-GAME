@@ -1,0 +1,98 @@
+{
+  "smoke": {
+    "room_title": "The Reading Ring",
+    "examiner_name": "Ember the Archivist",
+    "examiner_intro": [
+      "Welcome to the Reading Ring. Mind the lamp, it's older than me.",
+      "Read it before you claim you know it. That's the only rule here.",
+      "Pick the paper or the video. Then we talk. Eleven questions."
+    ],
+    "study_choice_prompt": "How do you like to learn today, Lil Blunt?",
+    "paper_label": "Read the whitepaper",
+    "video_label": "Watch the video",
+    "video_wait_line": "Take your time. The ring isn't going anywhere.",
+    "quiz_intro": "Eleven questions. Seven to pass. No rush, just honesty.",
+    "pass_line": "You read it. It shows. Your scorecard is stamped.",
+    "fail_line": "Close, but the ring wants more. Retry, or carry your score up.",
+    "retry_label": "Retry the quiz",
+    "proceed_label": "Proceed with score",
+    "ascent_line": "The ladder's lit green. Head up when you're ready, little one.",
+    "plate": {
+      "title": "SMOKE",
+      "subtitle": "culture + sink",
+      "design_notes": "Circular ash-ring certificate hung on the archive wall behind Ember's desk, centred at eye level. Green desk lamp casts a soft cone from upper-left; neon rim adds a slow 3s glow pulse. Stamp hierarchy: 1) SMOKE title arc, 2) central Lounge-basket sink mark, 3) 'culture + sink' subtitle arc, 4) inward burn arrows as supporting motion. Plate bobs 2px on a 4s loop. No cigarette, no DEX UI, no QR, no numbers.",
+      "draw_spec": {
+        "background": "#141614",
+        "rim": "#39ff14",
+        "accent": "#b8b3a8",
+        "shapes": [
+          "Fill 512x512 with background color",
+          "Outer ring: circle at 256,256 r240, rim stroke 10px, glow blur 18",
+          "Ash band: annulus r200-236, accent at 35% alpha, light speckle noise",
+          "Certificate edge: 48 small scallop arcs along r236, accent stroke 2px",
+          "Inner hairline ring: circle r196, rim stroke 1px at 50% alpha",
+          "Sink hole: circle r58 at centre, radial gradient #000000 to background",
+          "Basket mark in hole: bowl arc r40 lower half, rim stroke 4px",
+          "Basket weave: 4 vertical + 2 horizontal short lines in bowl, rim 2px",
+          "Basket rim: horizontal line across bowl top, rim stroke 4px",
+          "Burn arrows: 8 arrows at r185 pointing to centre, 45 deg apart, rim",
+          "Arrow tails: gradient from accent to transparent, extending outward",
+          "Title SMOKE: bold caps arced along top at r150, rim color with glow",
+          "Subtitle 'culture + sink': small caps arced along bottom r150, accent",
+          "Wisps: 3 faint bezier curves rising from hole, accent at 18% alpha",
+          "Vignette: radial darken outside r245 to canvas edge"
+        ]
+      }
+    }
+  },
+  "diamonds": {
+    "room_title": "The Pressure Study",
+    "examiner_name": "The Assay Trio",
+    "examiner_intro": [
+      "CUT: Welcome to the Pressure Study. Sit. Breathe. Stay sharp.",
+      "WEIGH: We measure what you learned, not what you guessed.",
+      "STAMP: Read or watch. Then eleven questions. Then our mark."
+    ],
+    "study_choice_prompt": "CUT: Choose your facet, Lil Blunt. Paper or picture?",
+    "paper_label": "Read the whitepaper",
+    "video_label": "Watch the video",
+    "video_wait_line": "WEIGH: Watch it through. We're patient. We're literally rocks.",
+    "quiz_intro": "STAMP: Eleven questions. Seven clear cuts earns the pass.",
+    "pass_line": "STAMP: Clear and bright. Scorecard sealed. Well done.",
+    "fail_line": "WEIGH: A little cloudy. Polish and retry, or take your score.",
+    "retry_label": "Recut: retry",
+    "proceed_label": "Proceed with score",
+    "ascent_line": "CUT: The shaft is open. Shine on up, little one.",
+    "plate": {
+      "title": "DIAMONDS",
+      "subtitle": "The Pressure Study",
+      "design_notes": "Use founder art 1 unaltered as the plate texture. Keep its energy: scroll floating upper-centre with slight tilt, dark cave walls framing it, chasm below, crystal clusters in the foreground. Frame: thin faceted silver-blue bevel, cut-corner octagon so the cave edges read as part of the frame. Lighting: cool top-down key from the cave opening, soft blue sparkle particles drifting near the scroll glyphs, slow mist loop along the bottom edge, occasional white glint travelling across one crystal. Stamp hierarchy: 1) the art's DIAMONDS title (never overlay text on the scroll), 2) small engraved plaque below the frame reading 'The Pressure Study', 3) three tiny facet seals bottom-right for CUT / WEIGH / STAMP that light in sequence when the quiz starts.",
+      "draw_spec": null
+    }
+  },
+  "gold": {
+    "room_title": "The Claim Office",
+    "examiner_name": "The Claim Recorder",
+    "examiner_intro": [
+      "Claim Office. Take a number. Yours is the only one today.",
+      "I record what you know. Read or watch the official material first.",
+      "Then eleven questions. I stamp the ledger either way."
+    ],
+    "study_choice_prompt": "Form one: select study method, please.",
+    "paper_label": "Read the whitepaper",
+    "video_label": "Watch the video",
+    "video_wait_line": "The clock's running, but not against you. Watch at your pace.",
+    "quiz_intro": "Eleven questions. Seven correct files a passing claim.",
+    "pass_line": "Claim approved. Stamped and filed. Scorecard issued.",
+    "fail_line": "Claim incomplete. Refile now, or proceed with score on record.",
+    "retry_label": "Refile: retry",
+    "proceed_label": "Proceed with score",
+    "ascent_line": "Paperwork's done. Exit is up the lift. Mind the step.",
+    "plate": {
+      "title": "GOLD MINE",
+      "subtitle": "The Claim Office",
+      "design_notes": "Use founder art 2 unaltered as the plate texture. Keep its energy: floating scroll upper-centre, cave arch framing it, gold nuggets and coins heaped low-left and low-right, stone shaft in the middle. Frame: plain riveted brass rectangle over dark mine-timber backing; procedural, no ornament. Lighting: warm lamp key from below-left matching the gold pile, cool blue fill from the cave top, a slow warm glint sweeping across the coin heaps every few seconds, faint dust motes. Stamp hierarchy: 1) the art's GOLD MINE title (no overlays on the scroll), 2) brass nameplate under the frame reading 'The Claim Office', 3) Recorder's ink stamp bottom-right that thumps on when the scorecard is issued, 4) small vest-clock icon top-right as the office mark. Coin emblems are in the founder art as-is; confirm with the founder that they are approved before shipping.",
+      "draw_spec": null
+    }
+  }
+}
