@@ -30,3 +30,5 @@
   Per the rules nothing ships to master until all three are Jev SHIP.
 - Lanes: Muse blocked (OpenRouter 18+ confirmation needed at openrouter.ai/settings/preferences);
   Opus 5.5 (non-batch) used for copy per founder.
+
+- SHIPPED d035f52 (founder override, 2026-09-25) — step 3 on master. Diamonds fixes in flight with Opus 5.5.

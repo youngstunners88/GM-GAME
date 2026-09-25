@@ -5,6 +5,10 @@
 
 ---
 
+**🚀 PROTOCOL PORTALS SHIPPED to master (d035f52, 2026-09-25) — founder order.** All three learning pits are in the build CI is deploying to itch. Jev had Diamonds BLOCKED (a black frame at one Stage 2 spot + plain Assay Trio); those two fixes are with Opus 5.5 now and ship the moment tests pass.
+
+---
+
 **🏛️ PROTOCOL PORTALS step 3 — all three learning pits built; final Jev: Smoke SHIP, Gold SHIP, Diamonds BLOCK (OPEN, 2026-09-24).**
 Ladder → press E → a one-screen classroom in every stage: whitepaper plate (your Drive art for
 Diamonds and Gold, a drawn SMOKE ash-ring certificate), official X video shrine, examiner, 11-question
