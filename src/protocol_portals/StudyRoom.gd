@@ -38,6 +38,12 @@ const FLOOR_Y: float = 620.0
 const PLAYER_SCENE: String = "res://src/player/player.tscn"
 const COPY_PATH: String = "res://src/protocol_portals/data/portal_copy.json"
 
+## Divider x (the crisp line splitting paper from video).
+const DIVIDER_X: float = 640.0
+## Diamonds-room player spawn: left of the divider so the Assay Trio
+## (x 700..860) never overlaps the player at load.
+const DIAMONDS_SPAWN_X: float = 560.0
+
 ## Official study links. EXACTLY these, nothing else, ever.
 const PAPER_URLS: Dictionary = {
 	"smoke": "https://richs-crypto-projects.gitbook.io/smokering",
@@ -726,13 +732,13 @@ func _build_video_shrine() -> void:
 
 ## A protocol-specific Polygon2D prop plus the examiner's name. Smoke: Ember,
 ## a robed archivist with a green lamp. Diamonds: the Assay Trio, three crystal
-## figures. Gold: the Claim Recorder at a small desk with a stamp and ledger.
+## jurors. Gold: the Claim Recorder at a small desk with a stamp and ledger.
 ## Purely decorative plus an interaction zone — no minting anywhere near it.
 ##
-## Anchor x is 760 so the widest prop (the Assay Trio, +/-96 px) and the label
-## both stay clear of the video shrine: the shrine screen's left edge sits at
-## 980 - 90 = 890, leaving >= 34 px of empty floor between the trio and the
-## panel edge.
+## Anchor x is 760. The Assay Trio spans world x 700..860 (local -60..+100),
+## so it stays clear of the video shrine screen (left edge 890) and of the
+## divider (640). Its label is centred over the trio at world x 780 and its
+## left edge sits at 680, 40 px right of the divider.
 func _build_examiner() -> void:
 	var holder := Node2D.new()
 	holder.name = "Examiner"
@@ -754,7 +760,13 @@ func _build_examiner() -> void:
 	label.name = "ExaminerLabel"
 	label.text = _s("examiner_name", "Examiner")
 	label.size = Vector2(200.0, 34.0)
-	label.position = Vector2(-100.0, -262.0)
+	if protocol == "diamonds":
+		# Centred on the trio (world x 780 = local +20), just above the tallest
+		# juror (CUT, top at -136). Left edge local -80 = world 680, i.e. 40 px
+		# from the divider; any overflow grows to the right, away from it.
+		label.position = Vector2(-80.0, -214.0)
+	else:
+		label.position = Vector2(-100.0, -262.0)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.add_theme_font_size_override("font_size", 20)
@@ -903,25 +915,145 @@ func _build_ember(parent: Node2D) -> void:
 	parent.add_child(glow)
 
 
-## The Assay Trio: three crystal figures side by side, CUT / WEIGH / STAMP.
+## The Assay Trio: three DISTINCT crystal jurors standing in a row on the floor
+## between world x 700 and 860 (local -60..+100 around the x=760 anchor):
+##   CUT   — tall faceted sapphire blue, holding a chisel   (local -60..-18)
+##   WEIGH — wide violet, a small balance scale on its crown (local  -8..+48)
+##   STAMP — short pale cyan, holding an assay stamp         (local +56..+100)
+## Each has a dark outline, a lighter facet plane and two outlined eyes.
 func _build_assay_trio(parent: Node2D) -> void:
-	var body_color := Color(0.10, 0.22, 0.32)
-	var xs: Array[float] = [-76.0, 0.0, 76.0]
-	for i in range(xs.size()):
-		var x: float = xs[i]
-		var tint: float = 0.10 + 0.06 * float(i)
-		_add_poly(parent, "Crystal%d" % i, PackedVector2Array([
-			Vector2(x, 0.0),
-			Vector2(x + 20.0, -48.0),
-			Vector2(x, -118.0),
-			Vector2(x - 20.0, -48.0),
-		]), body_color.lightened(tint))
-		_add_poly(parent, "Head%d" % i, _circle_polygon(12.0, 16),
-			Color(_glow.r, _glow.g, _glow.b, 0.9), Vector2(x, -132.0))
-		_add_poly(parent, "Rune%d" % i, PackedVector2Array([
-			Vector2(x - 6.0, -70.0), Vector2(x + 6.0, -70.0),
-			Vector2(x + 6.0, -62.0), Vector2(x - 6.0, -62.0),
-		]), Color(0.75, 0.9, 1.0, 0.8))
+	var ink := Color(0.03, 0.04, 0.10)
+
+	# --- CUT: tall faceted blue, chisel in its left hand ---
+	var cut_x: float = -36.0
+	var cut_body := PackedVector2Array([
+		Vector2(-14.0, 0.0), Vector2(14.0, 0.0),
+		Vector2(18.0, -70.0), Vector2(10.0, -120.0),
+		Vector2(0.0, -136.0), Vector2(-10.0, -120.0),
+		Vector2(-18.0, -70.0),
+	])
+	var cut_facet := PackedVector2Array([
+		Vector2(-18.0, -70.0), Vector2(-10.0, -120.0),
+		Vector2(0.0, -136.0), Vector2(0.0, -70.0),
+	])
+	_build_juror(parent, 0, cut_x, cut_body, cut_facet,
+		Color(0.22, 0.45, 0.95), -104.0, 18.0, ink)
+	_add_line(parent, "CutFacetLine", Vector2(cut_x - 18.0, -70.0), Vector2(cut_x + 18.0, -70.0),
+		Color(0.55, 0.75, 1.0, 0.8), 1.5)
+	_add_line(parent, "CutFacetLine2", Vector2(cut_x, -70.0), Vector2(cut_x, 0.0),
+		Color(0.55, 0.75, 1.0, 0.6), 1.5)
+	# Chisel: wooden handle up top, steel blade pointing down.
+	_add_poly(parent, "ChiselHandle", PackedVector2Array([
+		Vector2(cut_x - 26.0, -78.0), Vector2(cut_x - 18.0, -78.0),
+		Vector2(cut_x - 18.0, -56.0), Vector2(cut_x - 26.0, -56.0),
+	]), Color(0.50, 0.32, 0.16))
+	_add_poly(parent, "ChiselBlade", PackedVector2Array([
+		Vector2(cut_x - 25.0, -56.0), Vector2(cut_x - 19.0, -56.0),
+		Vector2(cut_x - 19.0, -36.0), Vector2(cut_x - 22.0, -30.0),
+		Vector2(cut_x - 25.0, -36.0),
+	]), Color(0.80, 0.84, 0.90))
+	_add_outline(parent, "ChiselOutline", PackedVector2Array([
+		Vector2(cut_x - 26.0, -78.0), Vector2(cut_x - 18.0, -78.0),
+		Vector2(cut_x - 18.0, -56.0), Vector2(cut_x - 19.0, -56.0),
+		Vector2(cut_x - 19.0, -36.0), Vector2(cut_x - 22.0, -30.0),
+		Vector2(cut_x - 25.0, -36.0), Vector2(cut_x - 25.0, -56.0),
+		Vector2(cut_x - 26.0, -56.0),
+	]), ink, 1.5)
+	_add_poly(parent, "CutHand", _circle_polygon(4.0, 10), Color(0.35, 0.58, 1.0), Vector2(cut_x - 17.0, -60.0))
+
+	# --- WEIGH: wide violet, balance scale on its crown ---
+	var weigh_x: float = 20.0
+	var weigh_body := PackedVector2Array([
+		Vector2(-24.0, 0.0), Vector2(24.0, 0.0),
+		Vector2(28.0, -40.0), Vector2(14.0, -78.0),
+		Vector2(-14.0, -78.0), Vector2(-28.0, -40.0),
+	])
+	var weigh_facet := PackedVector2Array([
+		Vector2(-28.0, -40.0), Vector2(-14.0, -78.0),
+		Vector2(14.0, -78.0), Vector2(0.0, -40.0),
+	])
+	_build_juror(parent, 1, weigh_x, weigh_body, weigh_facet,
+		Color(0.55, 0.32, 0.88), -56.0, 26.0, ink)
+	_add_line(parent, "WeighFacetLine", Vector2(weigh_x - 28.0, -40.0), Vector2(weigh_x + 28.0, -40.0),
+		Color(0.80, 0.65, 1.0, 0.8), 1.5)
+	var brass := Color(0.92, 0.80, 0.40)
+	_add_line(parent, "ScalePost", Vector2(weigh_x, -78.0), Vector2(weigh_x, -100.0), brass, 2.5)
+	_add_line(parent, "ScaleBeam", Vector2(weigh_x - 18.0, -100.0), Vector2(weigh_x + 18.0, -100.0), brass, 2.5)
+	_add_line(parent, "ScaleCordL", Vector2(weigh_x - 18.0, -100.0), Vector2(weigh_x - 18.0, -90.0), brass, 1.5)
+	_add_line(parent, "ScaleCordR", Vector2(weigh_x + 18.0, -100.0), Vector2(weigh_x + 18.0, -90.0), brass, 1.5)
+	for side in range(2):
+		var pan_x: float = weigh_x - 18.0 if side == 0 else weigh_x + 18.0
+		var pan_pts := PackedVector2Array([
+			Vector2(pan_x - 7.0, -90.0), Vector2(pan_x + 7.0, -90.0),
+			Vector2(pan_x + 4.0, -85.0), Vector2(pan_x - 4.0, -85.0),
+		])
+		_add_poly(parent, "ScalePan%d" % side, pan_pts, brass)
+		_add_outline(parent, "ScalePanOutline%d" % side, pan_pts, ink, 1.2)
+	_add_poly(parent, "ScalePivot", _circle_polygon(2.5, 10), brass, Vector2(weigh_x, -101.0))
+
+	# --- STAMP: short pale cyan, assay stamp in its right hand ---
+	var stamp_x: float = 74.0
+	var stamp_body := PackedVector2Array([
+		Vector2(-15.0, 0.0), Vector2(15.0, 0.0),
+		Vector2(18.0, -30.0), Vector2(0.0, -56.0),
+		Vector2(-18.0, -30.0),
+	])
+	var stamp_facet := PackedVector2Array([
+		Vector2(-18.0, -30.0), Vector2(0.0, -56.0), Vector2(0.0, -30.0),
+	])
+	_build_juror(parent, 2, stamp_x, stamp_body, stamp_facet,
+		Color(0.66, 0.92, 1.0), -30.0, 18.0, ink)
+	_add_line(parent, "StampFacetLine", Vector2(stamp_x - 18.0, -30.0), Vector2(stamp_x + 18.0, -30.0),
+		Color(0.95, 1.0, 1.0, 0.8), 1.5)
+	_add_poly(parent, "StampKnob", _circle_polygon(4.0, 12), Color(0.30, 0.20, 0.12), Vector2(stamp_x + 21.0, -40.0))
+	_add_poly(parent, "StampShaft", PackedVector2Array([
+		Vector2(stamp_x + 19.0, -37.0), Vector2(stamp_x + 23.0, -37.0),
+		Vector2(stamp_x + 23.0, -26.0), Vector2(stamp_x + 19.0, -26.0),
+	]), Color(0.30, 0.20, 0.12))
+	var stamp_head := PackedVector2Array([
+		Vector2(stamp_x + 14.0, -26.0), Vector2(stamp_x + 26.0, -26.0),
+		Vector2(stamp_x + 26.0, -18.0), Vector2(stamp_x + 14.0, -18.0),
+	])
+	_add_poly(parent, "StampHead", stamp_head, Color(0.80, 0.20, 0.18))
+	_add_outline(parent, "StampHeadOutline", stamp_head, ink, 1.5)
+	_add_poly(parent, "StampHand", _circle_polygon(3.5, 10), Color(0.80, 0.97, 1.0), Vector2(stamp_x + 16.0, -32.0))
+
+
+## One juror: ground shadow, crystal body (named Crystal<i>), lighter facet
+## plane, dark outline and two outlined eyes at `eye_y`.
+func _build_juror(parent: Node2D, index: int, cx: float, body: PackedVector2Array,
+		facet: PackedVector2Array, color: Color, eye_y: float, half_w: float, ink: Color) -> void:
+	var shadow := _add_poly(parent, "JurorShadow%d" % index, _circle_polygon(half_w + 4.0, 20),
+		Color(0.0, 0.0, 0.0, 0.45), Vector2(cx, 2.0))
+	shadow.scale = Vector2(1.0, 0.25)
+	_add_poly(parent, "Crystal%d" % index, _shift(body, cx), color)
+	_add_poly(parent, "Facet%d" % index, _shift(facet, cx), color.lightened(0.35))
+	_add_outline(parent, "CrystalOutline%d" % index, _shift(body, cx), ink, 2.5)
+	for side in range(2):
+		var ex: float = cx - 5.0 if side == 0 else cx + 5.0
+		_add_poly(parent, "EyeRim%d_%d" % [index, side], _circle_polygon(4.6, 12), ink, Vector2(ex, eye_y))
+		_add_poly(parent, "EyeWhite%d_%d" % [index, side], _circle_polygon(3.4, 12),
+			Color(0.97, 0.98, 1.0), Vector2(ex, eye_y))
+		_add_poly(parent, "Pupil%d_%d" % [index, side], _circle_polygon(1.7, 8), ink, Vector2(ex + 0.6, eye_y + 0.4))
+
+
+func _shift(points: PackedVector2Array, dx: float) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for p in points:
+		out.append(Vector2(p.x + dx, p.y))
+	return out
+
+
+func _add_outline(parent: Node2D, node_name: String, points: PackedVector2Array, color: Color, width: float = 2.0) -> Line2D:
+	var line := Line2D.new()
+	line.name = node_name
+	line.points = points
+	line.closed = true
+	line.joint_mode = Line2D.LINE_JOINT_ROUND
+	line.default_color = color
+	line.width = width
+	parent.add_child(line)
+	return line
 
 
 ## The Claim Recorder: a readable clerk (green eyeshade, two dot eyes, sleeves
@@ -1072,7 +1204,10 @@ func _build_player() -> void:
 		return
 	var player: Node2D = packed.instantiate()
 	player.name = "Player"
-	player.position = Vector2(640.0, 560.0)
+	# Diamonds: spawn left of the divider so the Assay Trio (700..860) is never
+	# drawn over the player at load. Other rooms keep the shaft-base spawn.
+	var spawn_x: float = DIAMONDS_SPAWN_X if protocol == "diamonds" else DIVIDER_X
+	player.position = Vector2(spawn_x, 560.0)
 	player.add_to_group("player")
 	# Explicitly pausable: StudyRoom itself processes always so it can keep
 	# handling overlay input, and PROCESS_MODE_INHERIT would drag the player

@@ -60,6 +60,7 @@ const RETURN_OFFSET: Vector2 = Vector2(70.0, -48.0)
 var _color: Color = COLOR_SMOKE
 var _glow: Sprite2D = null
 var _ring: Line2D = null
+var _ring_outline: Line2D = null
 var _label: Label = null
 var _zone: Area2D = null
 var _player_inside: bool = false
@@ -100,6 +101,11 @@ func _process(delta: float) -> void:
 	if _ring != null:
 		_ring.modulate = Color(1.0, 1.0, 1.0, a)
 		_ring.scale = Vector2(s, s)
+	# The outline is a sibling now (see _build_ring), so it pulses explicitly
+	# to stay locked to the bright ring.
+	if _ring_outline != null:
+		_ring_outline.modulate = Color(1.0, 1.0, 1.0, a)
+		_ring_outline.scale = Vector2(s, s)
 
 # ---- Floor snap -------------------------------------------------------------
 
@@ -111,7 +117,11 @@ func _snap_to_floor() -> void:
 	while node != null:
 		if node.has_method("_floor_y_at"):
 			var floor_y: float = node.call("_floor_y_at", global_position.x)
-			global_position.y = floor_y
+			# Defensive: never write a non-finite y (a "no floor here" answer)
+			# into the transform — a NaN/INF canvas transform blanks the whole
+			# GL Compatibility frame. Keep the authored y instead.
+			if is_finite(floor_y):
+				global_position.y = floor_y
 			break
 		node = node.get_parent()
 	_place_returning_player()
@@ -269,8 +279,48 @@ func _make_radial_glow_texture() -> GradientTexture2D:
 	tex.height = int(HALO_SIZE.y)
 	return tex
 
-## Thin bright ring around the mouth, pulsing in sync with the halo.
+## Thin bright ring around the mouth, pulsing in sync with the halo, with a
+## near-black outline ring underneath it.
+##
+## BLACK-FRAME FIX (Stage 2, `?stage=2&spawn_x=3050`, web / GL Compatibility):
+## Root cause is the previous version of this function, not gameplay code. The
+## gameplay suspects were ruled out by reading them:
+##   - PortalTravel.consume_return() is false on a fresh warp load
+##     (pending_return is only set by ascend()), so no return placement fires;
+##   - the EnterZone is +/-32px around x=3300, far from a player at 3050, and
+##     descent needs "interact" pressed inside it, so no descent fires;
+##   - the floor snap only moves THIS node, never the player or the camera,
+##     and this script touches no camera limits;
+##   - level_02 geometry / secret walls / kill zones near 3000-3100 are
+##     unchanged since the build where 3050 rendered fine.
+## The only delta is the MouthRingOutline Line2D that was parented to _ring
+## with show_behind_parent = true. That is a behind-parent child under a
+## parent whose scale + modulate are rewritten every frame; on the web GL
+## Compatibility canvas renderer that draw only goes wrong at the one camera
+## framing where the ring straddles the view edge culling boundary — which is
+## the 3050 warp (2950 culls the ring entirely, 3150 has it fully on screen),
+## and the result is a fully black frame. Fix: no show_behind_parent at all.
+## The outline is a plain sibling added BEFORE _ring, so ordinary tree order
+## draws it underneath, and _process pulses it alongside the ring.
 func _build_ring() -> void:
+	var pts := PackedVector2Array()
+	var segments: int = 40
+	for i in range(segments):
+		var ang: float = TAU * float(i) / float(segments)
+		pts.append(Vector2(cos(ang) * RING_RADIUS.x, sin(ang) * RING_RADIUS.y))
+
+	# Near-black outline ring behind the bright one: the gold ring vanished into
+	# gold platform tiles (Jev round-3 block), and a dark edge fixes any palette.
+	_ring_outline = Line2D.new()
+	_ring_outline.name = "MouthRingOutline"
+	_ring_outline.width = 10.0
+	_ring_outline.default_color = Color(0.03, 0.02, 0.05, 0.85)
+	_ring_outline.closed = true
+	_ring_outline.joint_mode = Line2D.LINE_JOINT_ROUND
+	_ring_outline.points = pts
+	_ring_outline.position = Vector2.ZERO
+	add_child(_ring_outline)
+
 	_ring = Line2D.new()
 	_ring.name = "MouthRing"
 	_ring.width = 4.0
@@ -279,23 +329,8 @@ func _build_ring() -> void:
 	_ring.joint_mode = Line2D.LINE_JOINT_ROUND
 	_ring.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	_ring.end_cap_mode = Line2D.LINE_CAP_ROUND
-	var pts := PackedVector2Array()
-	var segments: int = 40
-	for i in range(segments):
-		var ang: float = TAU * float(i) / float(segments)
-		pts.append(Vector2(cos(ang) * RING_RADIUS.x, sin(ang) * RING_RADIUS.y))
 	_ring.points = pts
 	_ring.position = Vector2.ZERO
-	# Near-black outline ring behind the bright one: the gold ring vanished into
-	# gold platform tiles (Jev round-3 block), and a dark edge fixes any palette.
-	var ring_outline := Line2D.new()
-	ring_outline.name = "MouthRingOutline"
-	ring_outline.width = 10.0
-	ring_outline.default_color = Color(0.03, 0.02, 0.05, 0.85)
-	ring_outline.closed = true
-	ring_outline.points = pts
-	_ring.add_child(ring_outline)
-	ring_outline.show_behind_parent = true
 	add_child(_ring)
 
 ## Down arrow drawn as a Polygon2D chevron (the "▼" glyph is missing from the

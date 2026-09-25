@@ -32,3 +32,4 @@
   Opus 5.5 (non-batch) used for copy per founder.
 
 - SHIPPED d035f52 (founder override, 2026-09-25) — step 3 on master. Diamonds fixes in flight with Opus 5.5.
+- FIXED (verified on web export) — Stage 2 x=3050 black frame: MouthRingOutline was parented to the ring with show_behind_parent; now a sibling (Opus 5.5, $1.03). Frame luma 0.5 -> 67.0. Assay Trio redrawn as three distinct jurors.
