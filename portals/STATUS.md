@@ -33,3 +33,10 @@
 
 - SHIPPED d035f52 (founder override, 2026-09-25) — step 3 on master. Diamonds fixes in flight with Opus 5.5.
 - FIXED (verified on web export) — Stage 2 x=3050 black frame: MouthRingOutline was parented to the ring with show_behind_parent; now a sibling (Opus 5.5, $1.03). Frame luma 0.5 -> 67.0. Assay Trio redrawn as three distinct jurors.
+
+- IN FLIGHT — TOUR REBUILD (founder brief 2026-09-25, docs/founder_briefs/2026-09-25/):
+  part 1 DONE (a3 commit): PortalLadder is a real climb shaft — no E, uses enter/exit_ladder_zone + move_down,
+  descends only at the shaft bottom (Opus 5.5, $1.63). Leader stills cut out in src/assets/portals/leaders/.
+  part 2 (walkable tour + Companion + TourStop) and part 3 (tests) BLOCKED: OpenRouter HTTP 402
+  "in_flight_budget_exhausted" — account at $71.95 of $75 used. Needs credits added. Not shipped; Jev not voted.
+  Brief file: prompts/portals/tour_rebuild_opus_part2.md — rerun unchanged once credits are added.

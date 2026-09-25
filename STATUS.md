@@ -5,6 +5,10 @@
 
 ---
 
+**🪜 PORTAL TOUR REBUILD — part 1 done, parts 2-3 blocked on OpenRouter credits (2026-09-25).** The ladder is now a real climb (Down arrow, no E). The walkable companion tour is written up and ready for Opus 5.5, but OpenRouter refused with HTTP 402: $71.95 of $75 is used. Add credits and it resumes. Nothing new is on master yet.
+
+---
+
 **🚀 PROTOCOL PORTALS SHIPPED to master (d035f52, 2026-09-25) — founder order.** All three learning pits are in the build CI is deploying to itch. Jev had Diamonds BLOCKED (a black frame at one Stage 2 spot + plain Assay Trio); those two fixes are with Opus 5.5 now and ship the moment tests pass.
 
 ---
