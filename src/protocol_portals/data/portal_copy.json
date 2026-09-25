@@ -17,6 +17,14 @@
     "retry_label": "Retry the quiz",
     "proceed_label": "Proceed with score",
     "ascent_line": "The ladder's lit green. Head up when you're ready, little one.",
+    "stops": [
+      {"id": "ash_ring", "name": "Ash Ring", "line": "SMOKE is culture plus a sink. This is where the burn lives."},
+      {"id": "lounge_basket", "name": "Lounge Basket", "line": "LP pairs in the Lounge basket strengthen the burn."},
+      {"id": "arb_well", "name": "Arb Recycle Well", "line": "Captured arb comes here and returns to the ecosystem."},
+      {"id": "paper", "name": "Read the whitepaper", "line": "The official whitepaper. Jump on the plate to read it."},
+      {"id": "video", "name": "Watch the video", "line": "The official X video. Stand at the shrine and press E."},
+      {"id": "exam", "name": "Ember's Desk", "line": "My desk. Eleven questions when you are ready. Press E."}
+    ],
     "plate": {
       "title": "SMOKE",
       "subtitle": "culture + sink",
@@ -63,6 +71,15 @@
     "retry_label": "Recut: retry",
     "proceed_label": "Proceed with score",
     "ascent_line": "CUT: The shaft is open. Shine on up, little one.",
+    "stops": [
+      {"id": "blaze_gate", "name": "BLAZE Mint Gate", "line": "CUT: BLAZE sits on the diamond mint path. This is the gate."},
+      {"id": "tight_float", "name": "Tight Float", "line": "WEIGH: The waves end. The float stays tight. That is scarcity."},
+      {"id": "vault_crush", "name": "Vault / Crush", "line": "STAMP: Stake in the Vault. Crush Bonus forfeits extra for shares."},
+      {"id": "handler_bridge", "name": "Handler Bridge", "line": "CUT: Diamonds are required to mint GOLD. This bridge carries it."},
+      {"id": "paper", "name": "Read the whitepaper", "line": "WEIGH: The official whitepaper. Jump on the plate to read it."},
+      {"id": "video", "name": "Watch the video", "line": "STAMP: The official X video. Stand at the shrine and press E."},
+      {"id": "exam", "name": "Assay Bench", "line": "CUT: The Assay Bench. Eleven questions. Press E to begin."}
+    ],
     "plate": {
       "title": "DIAMONDS",
       "subtitle": "The Pressure Study",
@@ -88,6 +105,15 @@
     "retry_label": "Refile: retry",
     "proceed_label": "Proceed with score",
     "ascent_line": "Paperwork's done. Exit is up the lift. Mind the step.",
+    "stops": [
+      {"id": "vest_clock", "name": "Vest Clock", "line": "About 100 days, about 1% a day. Claim early, forfeit the rest."},
+      {"id": "knox_window", "name": "Knox Window", "line": "That is Fort Knox through the glass. This room is not Knox."},
+      {"id": "melt_stamp", "name": "Melt Stamp", "line": "Burn extra GOLD here for a share multiplier."},
+      {"id": "rush_board", "name": "Rush Board", "line": "The weekly Rush: forfeited GOLD for XAUT. Posted here."},
+      {"id": "paper", "name": "Read the whitepaper", "line": "The official whitepaper. Jump on the plate to read it."},
+      {"id": "video", "name": "Watch the video", "line": "The official X video. Stand at the shrine and press E."},
+      {"id": "exam", "name": "Recorder Desk", "line": "Recorder Desk. Eleven questions, stamped either way. Press E."}
+    ],
     "plate": {
       "title": "GOLD MINE",
       "subtitle": "The Claim Office",
