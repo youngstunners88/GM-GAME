@@ -5,6 +5,10 @@
 
 ---
 
+**🪜 PORTAL TOUR REBUILD SHIPPED — Jev SHIP on all three stages (2026-09-25).** The E-key classroom is gone. Hold Down at the glowing STUDY shaft and Lil Blunt climbs down on screen. At the bottom, a walkable tour with your leader beside him (Ember, the miner + two escorts, the prospector): named stops (Ash Ring, Lounge Basket, BLAZE Mint Gate, Vest Clock, ...), whitepaper and video stops, and the same 11 locked quiz questions at the leader's desk. Climb back up the same shaft.
+
+---
+
 **🪜 PORTAL TOUR REBUILD — part 1 done, parts 2-3 blocked on OpenRouter credits (2026-09-25).** The ladder is now a real climb (Down arrow, no E). The walkable companion tour is written up and ready for Opus 5.5, but OpenRouter refused with HTTP 402: $71.95 of $75 is used. Add credits and it resumes. Nothing new is on master yet.
 
 ---

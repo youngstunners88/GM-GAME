@@ -40,3 +40,14 @@
   part 2 (walkable tour + Companion + TourStop) and part 3 (tests) BLOCKED: OpenRouter HTTP 402
   "in_flight_budget_exhausted" — account at $71.95 of $75 used. Needs credits added. Not shipped; Jev not voted.
   Brief file: prompts/portals/tour_rebuild_opus_part2.md — rerun unchanged once credits are added.
+
+- SHIPPED (Jev SHIP x3, legal) — TOUR REBUILD per founder brief 2026-09-25. Down-arrow climb through a tall
+  shaft (no E), walkable tour strips with named stops, founder leader stills as companions, quiz at the
+  last stop. Root cause of the failed first capture: player.gd's anti-deadlock heartbeat cleared the ladder
+  state while down was held; the descent is now driven by PortalLadder (Opus 5.5, $1.25).
+  Evidence 10_ladders/tour_r1b, votes 90_gates/tour_r1c_*.jev.txt: smoke 0.03/0.04/0.04, diamonds
+  0.08/0.05/0.06, gold 0.04/0.06/0.05 (climb/tour/companion defect), all SHIP.
+  Note: the r1b vote (same evidence) was re-cast because my Jev state put the approach shot's
+  "not mid-shaft" flag next to the climb question; per-shot fields fixed, one re-vote, recorded.
+  Capture console errors (8-12) are sandbox-proxy cert/fetch failures + an existing MENU->MENU warning.
+  Spend: Opus 5.5 ~$4.50 total for the rebuild; DeepSeek ~$0.01; Jev <$0.001.
