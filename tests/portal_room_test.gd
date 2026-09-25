@@ -15,7 +15,7 @@ const SignalsScript := preload("res://src/protocol_portals/PortalSignals.gd")
 const PORTAL_DIR: String = "res://src/protocol_portals"
 const SAVE_PATH: String = "user://portal_scorecards.json"
 const MIN_STRIP_W: float = 1800.0
-const LEADER_FRAGMENT: String = "leaders/leader_stage"
+const LEADER_FRAGMENT: String = "portals/companions/"
 
 const SKINS: Array = [
 	{

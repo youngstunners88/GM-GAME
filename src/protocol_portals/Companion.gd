@@ -1,94 +1,108 @@
 extends Node2D
-## Tour companion: the founder leader still as a Sprite2D standing on the
-## floor, trailing the player's x, facing him, bobbing while walking, with a
-## name label and a talk balloon. Stage 2 adds two small tinted escorts of the
-## same still so it reads as the Assay Trio. No Polygon2D figure.
+## Tour guide: one figure per protocol. It walks after the player every physics
+## frame, faces him, bobs while moving, and says stop lines in a talk balloon.
+
+const NAMES: Dictionary = {
+	"smoke": "Pauly The Smokest",
+	"diamonds": "Kane The Blaze Mechanic",
+	"gold": "Rich the Claim Recorder",
+}
+const TEXTURES: Dictionary = {
+	"smoke": "res://src/assets/portals/companions/pauly_the_smokest.png",
+	"diamonds": "res://src/assets/portals/companions/kane_the_blaze_mechanic.png",
+	"gold": "res://src/assets/portals/companions/rich_the_claim_recorder.png",
+}
 
 const DISPLAY_H: float = 110.0
-const FOLLOW_OFFSET: float = 90.0
-const FOLLOW_RATE: float = 4.0
-const ESCORT_SCALE: float = 0.7
+const FOLLOW_OFFSET: float = -90.0
+const FOLLOW_RATE: float = 5.0
 const PLAYER_HALF: float = 16.0
-const BALLOON_W: float = 320.0
-const BALLOON_H: float = 64.0
+const BALLOON_W: float = 340.0
+const BALLOON_H: float = 84.0
+const TALK_SEC: float = 4.0
 
 var target: Node2D = null
 var display_name: String = ""
 var texture_path: String = ""
+## Kept for API compatibility; the guide is always a single figure.
 var trio: bool = false
+var protocol: String = "smoke"
 var glow: Color = Color(0.35, 1.0, 0.45)
 var min_x: float = 40.0
 var max_x: float = 100000.0
 
-var _sprite: Sprite2D = null
-var _sprite_base_y: float = 0.0
-var _escorts: Array[Sprite2D] = []
-var _escort_base_y: float = 0.0
+var _visual: Node2D = null
 var _name_label: Label = null
 var _balloon: Panel = null
 var _balloon_label: Label = null
+var _voice: AudioStreamPlayer = null
 var _balloon_left: float = 0.0
 var _bob_t: float = 0.0
 var _bob: float = 0.0
-var _side: float = 1.0
+var _facing: float = 1.0
 var _last_tx: float = 0.0
 var _has_last: bool = false
 
 
-func setup(path: String, name_text: String, color: Color, is_trio: bool) -> void:
+static func name_for(protocol_id: String) -> String:
+	return String(NAMES.get(protocol_id, NAMES["smoke"]))
+
+
+static func texture_for(protocol_id: String) -> String:
+	return String(TEXTURES.get(protocol_id, TEXTURES["smoke"]))
+
+
+func setup(path: String, name_text: String, color: Color, _is_trio: bool) -> void:
 	texture_path = path
 	display_name = name_text
 	glow = color
-	trio = is_trio
+	trio = false
+
+
+func setup_for(protocol_id: String, color: Color) -> void:
+	protocol = protocol_id
+	texture_path = texture_for(protocol_id)
+	display_name = name_for(protocol_id)
+	glow = color
+	trio = false
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_PAUSABLE
+	if display_name.is_empty():
+		display_name = name_for(protocol)
+	if texture_path.is_empty():
+		texture_path = texture_for(protocol)
 	_build()
 
 
 func _build() -> void:
+	_build_shadow()
+	_visual = Node2D.new()
+	_visual.name = "Visual"
+	add_child(_visual)
 	var tex: Texture2D = null
 	if ResourceLoader.exists(texture_path):
 		tex = load(texture_path) as Texture2D
 	else:
-		push_warning("Companion: leader still missing: %s" % texture_path)
-	var s: float = 0.2
+		push_warning("Companion: texture missing: %s" % texture_path)
 	if tex != null and tex.get_height() > 0:
-		s = DISPLAY_H / float(tex.get_height())
-
-	_build_shadow()
-
-	if trio and tex != null:
-		var tints: Array[Color] = [Color(0.55, 0.95, 1.0), Color(0.8, 0.62, 1.0)]
-		var xs: Array[float] = [-40.0, 40.0]
-		_escort_base_y = -DISPLAY_H * ESCORT_SCALE * 0.5
-		for i in range(2):
-			var e := Sprite2D.new()
-			e.name = "Escort%d" % (i + 1)
-			e.texture = tex
-			e.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-			e.scale = Vector2(s * ESCORT_SCALE, s * ESCORT_SCALE)
-			e.position = Vector2(xs[i], _escort_base_y)
-			e.modulate = tints[i]
-			e.z_index = -1
-			add_child(e)
-			_escorts.append(e)
-
-	_sprite = Sprite2D.new()
-	_sprite.name = "Sprite"
-	_sprite.texture = tex
-	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	_sprite.scale = Vector2(s, s)
-	_sprite_base_y = -DISPLAY_H * 0.5
-	_sprite.position = Vector2(0.0, _sprite_base_y)
-	add_child(_sprite)
+		var s: float = DISPLAY_H / float(tex.get_height())
+		var sprite := Sprite2D.new()
+		sprite.name = "Sprite"
+		sprite.texture = tex
+		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		sprite.scale = Vector2(s, s)
+		sprite.position = Vector2(0.0, -DISPLAY_H * 0.5)
+		_visual.add_child(sprite)
+	else:
+		_build_fallback_figure()
 
 	_name_label = Label.new()
 	_name_label.name = "NameLabel"
 	_name_label.text = display_name
-	_name_label.size = Vector2(240.0, 30.0)
-	_name_label.position = Vector2(-120.0, -DISPLAY_H - 38.0)
+	_name_label.size = Vector2(260.0, 30.0)
+	_name_label.position = Vector2(-130.0, -DISPLAY_H - 38.0)
 	_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_name_label.add_theme_font_size_override("font_size", 16)
@@ -102,7 +116,7 @@ func _build() -> void:
 	_balloon = Panel.new()
 	_balloon.name = "TalkBalloon"
 	_balloon.size = Vector2(BALLOON_W, BALLOON_H)
-	_balloon.position = Vector2(-BALLOON_W * 0.5, -DISPLAY_H - 48.0 - BALLOON_H)
+	_balloon.position = Vector2(-BALLOON_W * 0.5, -DISPLAY_H - 46.0 - BALLOON_H)
 	_balloon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var sb: StyleBoxFlat = _dark_style(0.9, 12)
 	sb.border_color = Color(glow.r, glow.g, glow.b, 0.9)
@@ -119,10 +133,41 @@ func _build() -> void:
 	_balloon_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_balloon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_balloon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_balloon_label.add_theme_font_size_override("font_size", 16)
+	_balloon_label.add_theme_font_size_override("font_size", 15)
 	_balloon_label.add_theme_color_override("font_color", Color(0.94, 0.97, 0.97))
 	_balloon_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_balloon.add_child(_balloon_label)
+
+	_voice = AudioStreamPlayer.new()
+	_voice.name = "Voice"
+	add_child(_voice)
+
+
+## Simple code-drawn stand-in used only when the texture is missing.
+func _build_fallback_figure() -> void:
+	var body := Polygon2D.new()
+	body.name = "FallbackBody"
+	body.polygon = PackedVector2Array([
+		Vector2(-20.0, 0.0), Vector2(20.0, 0.0), Vector2(16.0, -70.0), Vector2(-16.0, -70.0),
+	])
+	body.color = glow.darkened(0.45)
+	_visual.add_child(body)
+	var head := Polygon2D.new()
+	head.name = "FallbackHead"
+	var pts := PackedVector2Array()
+	for i in range(20):
+		var a: float = TAU * float(i) / 20.0
+		pts.append(Vector2(cos(a) * 18.0, -90.0 + sin(a) * 18.0))
+	head.polygon = pts
+	head.color = Color(0.85, 0.72, 0.58)
+	_visual.add_child(head)
+	var eye := Polygon2D.new()
+	eye.name = "FallbackEye"
+	eye.polygon = PackedVector2Array([
+		Vector2(6.0, -94.0), Vector2(11.0, -94.0), Vector2(11.0, -89.0), Vector2(6.0, -89.0),
+	])
+	eye.color = Color(0.05, 0.05, 0.05)
+	_visual.add_child(eye)
 
 
 func _build_shadow() -> void:
@@ -139,7 +184,7 @@ func _build_shadow() -> void:
 	var shadow := Sprite2D.new()
 	shadow.name = "Shadow"
 	shadow.texture = tex
-	shadow.scale = Vector2(2.2 if trio else 1.4, 0.3)
+	shadow.scale = Vector2(1.4, 0.3)
 	shadow.z_index = -2
 	add_child(shadow)
 
@@ -153,7 +198,7 @@ func _dark_style(alpha: float, radius: int) -> StyleBoxFlat:
 
 
 ## Show a line in the talk balloon for `seconds`.
-func say(text: String, seconds: float = 5.5) -> void:
+func say(text: String, seconds: float = TALK_SEC) -> void:
 	if _balloon == null or text.is_empty():
 		return
 	_balloon_label.text = text
@@ -161,44 +206,49 @@ func say(text: String, seconds: float = 5.5) -> void:
 	_balloon_left = seconds
 
 
+## Plays an optional VO clip; silently does nothing if it does not exist.
+func play_voice(path: String) -> void:
+	if _voice == null or path.is_empty() or not ResourceLoader.exists(path):
+		return
+	var stream: AudioStream = load(path) as AudioStream
+	if stream == null:
+		return
+	_voice.stream = stream
+	_voice.play()
+
+
 func is_talking() -> bool:
 	return _balloon != null and _balloon.visible
 
 
-func _process(delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	var moving: bool = false
 	if target != null and is_instance_valid(target):
 		var tx: float = target.global_position.x + PLAYER_HALF
 		if _has_last:
 			var dx: float = tx - _last_tx
-			if dx > 1.5:
-				_side = -1.0
-			elif dx < -1.5:
-				_side = 1.0
+			if dx > 0.5:
+				_facing = 1.0
+			elif dx < -0.5:
+				_facing = -1.0
 		_last_tx = tx
 		_has_last = true
-		var desired: float = clampf(tx + _side * FOLLOW_OFFSET, min_x, max_x)
+		var desired: float = clampf(tx + FOLLOW_OFFSET * _facing, min_x, max_x)
 		var before: float = position.x
 		position.x = lerpf(position.x, desired, 1.0 - exp(-FOLLOW_RATE * delta))
-		var speed: float = absf(position.x - before) / maxf(delta, 0.0001)
-		moving = speed > 12.0
-		if absf(tx - position.x) > 4.0 and _sprite != null:
-			var face_left: bool = tx < position.x
-			_sprite.flip_h = face_left
-			for e in _escorts:
-				e.flip_h = face_left
-
+		moving = absf(position.x - before) > 0.3
+		if _visual != null and absf(tx - position.x) > 4.0:
+			_visual.scale.x = -1.0 if tx < position.x else 1.0
 	if moving:
 		_bob_t += delta * 10.0
 		_bob = -absf(sin(_bob_t)) * 3.0
 	else:
 		_bob = lerpf(_bob, 0.0, clampf(delta * 10.0, 0.0, 1.0))
-	if _sprite != null:
-		_sprite.position.y = _sprite_base_y + _bob
-	for i in range(_escorts.size()):
-		var phase: float = -absf(sin(_bob_t + 1.3 * float(i + 1))) * 2.0 if moving else 0.0
-		_escorts[i].position.y = _escort_base_y + phase
+	if _visual != null:
+		_visual.position.y = _bob
 
+
+func _process(delta: float) -> void:
 	if _balloon != null and _balloon.visible:
 		_balloon_left -= delta
 		if _balloon_left <= 0.0:

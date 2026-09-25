@@ -61,9 +61,9 @@ const VIDEO_URLS: Dictionary = {
 	"gold": "https://x.com/richland100/status/2070925446124839334",
 }
 const LEADER_TEXTURES: Dictionary = {
-	"smoke": "res://src/assets/portals/leaders/leader_stage1.png",
-	"diamonds": "res://src/assets/portals/leaders/leader_stage2.png",
-	"gold": "res://src/assets/portals/leaders/leader_stage3.png",
+	"smoke": "res://src/assets/portals/companions/pauly_the_smokest.png",
+	"diamonds": "res://src/assets/portals/companions/kane_the_blaze_mechanic.png",
+	"gold": "res://src/assets/portals/companions/rich_the_claim_recorder.png",
 }
 
 # ---- State ------------------------------------------------------------------
@@ -914,6 +914,13 @@ func _build_player() -> void:
 
 func _on_arrival_done() -> void:
 	_arriving = false
+	# FREEZE FIX (founder playtest 2026-09-25): player.gd returns early from
+	# _physics_process unless StateMachine.is_playing(). LevelBase sets PLAYING on
+	# load; this room is not a LevelBase, so the player never moved. Looked up at
+	# runtime so the headless tests (no autoloads) still compile.
+	var sm: Node = get_tree().root.get_node_or_null("StateMachine")
+	if sm != null and not sm.call("is_playing"):
+		sm.call("change_state", 1)  # StateMachine.State.PLAYING
 	if _player != null and is_instance_valid(_player):
 		if _player is CharacterBody2D:
 			(_player as CharacterBody2D).velocity = Vector2.ZERO
@@ -943,7 +950,7 @@ func _build_companion() -> void:
 	comp.position = Vector2(SHAFT_X + 90.0, FLOOR_Y)
 	comp.z_index = -1
 	var tex_path: String = String(LEADER_TEXTURES.get(protocol, LEADER_TEXTURES["smoke"]))
-	comp.call("setup", tex_path, _s("examiner_name", "Guide"), _glow, protocol == "diamonds")
+	comp.call("setup", tex_path, _s("examiner_name", "Guide"), _glow, false)  # founder: Kane is ONE figure, no escorts
 	comp.set("target", _player)
 	comp.set("min_x", 60.0)
 	comp.set("max_x", strip_width - 60.0)
