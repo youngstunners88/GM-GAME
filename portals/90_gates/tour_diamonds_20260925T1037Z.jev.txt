@@ -1,0 +1,7 @@
+model: typesafe/jev-1.13-20260917   cost: $0.000025
+  ladder_is_climb_defect: probability=0.280 -> uncertain
+  tour_is_walkable_defect: probability=0.900 -> yes
+  companion_is_leader_art_defect: probability=0.980 -> yes
+  ship: block (confidence 0.01) {"ship":0.49,"block":0.51}
+
+JEV VERDICT: BLOCK

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// capture-portals.mjs — capture each protocol portal ladder, then the study
-// room it opens, without any walking.
+// capture-portals.mjs — capture each protocol portal ladder, the visible climb
+// down its shaft, and the tour strip it opens.
 // Usage: node scripts/capture-portals.mjs <base-url> <out-dir>
 import fs from 'fs';
 import { chromium } from 'playwright';
@@ -20,6 +20,9 @@ for (const p of PINNED) { if (fs.existsSync(p)) { launchOpts.executablePath = p;
 // stage id, ladder x in the level, protocol id
 const STAGES = [ [1, 2100, 'smoke'], [2, 3300, 'diamonds'], [3, 3100, 'gold'] ];
 const ERR_RE = /USER SCRIPT ERROR|Parse Error|SCRIPT ERROR/i;
+const DESCEND_RE = /\[PortalLadder\] shaft bottom reached/;
+const TOUR_WAIT_MS = 8000;
+const FADE_SETTLE_MS = 1500;
 
 async function waitForBoot(page) {
   await page.waitForSelector('canvas', { timeout: 120000 });
@@ -30,8 +33,26 @@ async function waitForBoot(page) {
 async function openPage(browser) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   const errors = [];
-  page.on('console', (m) => { const t = m.text(); if (ERR_RE.test(t)) errors.push(t); });
-  return { page, errors };
+  const consoleErrors = [];
+  const lines = [];
+  page.on('console', (m) => {
+    const t = m.text();
+    lines.push(t);
+    if (ERR_RE.test(t)) errors.push(t);
+    if (m.type() === 'error') consoleErrors.push(t);
+  });
+  page.on('pageerror', (e) => { consoleErrors.push(String(e)); });
+  return { page, errors, consoleErrors, lines };
+}
+
+async function focusCanvas(page) {
+  try { await page.locator('canvas').first().focus({ timeout: 2000 }); } catch (_) { /* keyboard still reaches the page */ }
+}
+
+function logErrors(label, errors, consoleErrors) {
+  console.log(`  ${label}: script errors ${errors.length}, console errors ${consoleErrors.length}`);
+  for (const e of errors.slice(0, 5)) console.log('    !', e);
+  for (const e of consoleErrors.slice(0, 6)) console.log('    console:', e.slice(0, 200));
 }
 
 let failures = 0;
@@ -41,34 +62,62 @@ try {
   for (const [stage, x, proto] of STAGES) {
     // (a) the ladder in situ, approached from the left
     {
-      const { page, errors } = await openPage(browser);
+      const { page, errors, consoleErrors } = await openPage(browser);
       const url = `${URL_BASE}?stage=${stage}&spawn_x=${x - 250}`;
       console.log('opening', url);
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 120000 });
       await waitForBoot(page);
       const f = `${OUT_DIR}/${proto}_ladder.png`;
       await page.screenshot({ path: f });
-      console.log('  ->', f, 'errs', errors.length);
+      console.log('  ->', f);
+      logErrors(`${proto} ladder`, errors, consoleErrors);
       await page.close();
     }
 
-    // (b) stand in the shaft, press E, land in the study room
+    // (b) stand at the mouth, hold down, climb the shaft, land in the tour
     {
-      const { page, errors } = await openPage(browser);
+      const { page, errors, consoleErrors, lines } = await openPage(browser);
       const url = `${URL_BASE}?stage=${stage}&spawn_x=${x}`;
       console.log('opening', url);
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 120000 });
       await waitForBoot(page);
-      for (let i = 0; i < 3; i += 1) {
-        await page.keyboard.down('KeyE');
-        await sleep(150);
-        await page.keyboard.up('KeyE');
-        await sleep(400);
+      await focusCanvas(page);
+
+      await page.keyboard.down('ArrowDown');
+      await sleep(700);
+      const climb = `${OUT_DIR}/${proto}_climb.png`;
+      await page.screenshot({ path: climb });
+      console.log('  ->', climb, '(mid-shaft, still holding down)');
+
+      // Keep holding until the ladder reports the shaft bottom, then give the
+      // fade + scene load a moment. Cap the whole hold at TOUR_WAIT_MS.
+      const holdStart = Date.now();
+      let descended = false;
+      while (Date.now() - holdStart < TOUR_WAIT_MS) {
+        if (lines.some((t) => DESCEND_RE.test(t))) { descended = true; break; }
+        await sleep(100);
       }
-      await sleep(5000);
-      const f = `${OUT_DIR}/${proto}_room.png`;
-      await page.screenshot({ path: f });
-      console.log('  ->', f, 'errs', errors.length);
+      if (descended) {
+        const left = TOUR_WAIT_MS - (Date.now() - holdStart);
+        await sleep(Math.max(0, Math.min(FADE_SETTLE_MS, left)));
+      }
+      await page.keyboard.up('ArrowDown');
+      console.log(`  descend ${descended ? 'reported' : 'NOT reported'} after ${Date.now() - holdStart} ms`);
+
+      await sleep(3000);
+      const start = `${OUT_DIR}/${proto}_tour_start.png`;
+      await page.screenshot({ path: start });
+      console.log('  ->', start);
+
+      await page.keyboard.down('ArrowRight');
+      await sleep(2500);
+      await page.keyboard.up('ArrowRight');
+      await sleep(300);
+      const mid = `${OUT_DIR}/${proto}_tour_mid.png`;
+      await page.screenshot({ path: mid });
+      console.log('  ->', mid);
+
+      logErrors(`${proto} climb+tour`, errors, consoleErrors);
       await page.close();
     }
   }
