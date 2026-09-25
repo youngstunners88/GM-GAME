@@ -1,0 +1,202 @@
+﻿---
+name: gm-game-portal-tour-rebuild
+description: Rebuild Protocol Portals as visible down-climbs plus Warcraft-style companion tours. TRIGGER on portal, ladder, study room, examiner, companion, education section. Opus 5.5 implements. Jev votes. Do not polish the one-screen classroom.
+---
+
+
+# Kill the kiosk. Build the tour.
+
+
+## Banned (this is the live trash)
+- `Input.is_action_just_pressed("interact")` on a protocol ladder
+- label text `STUDY [E]`
+- fade / SceneRouter wipe as the descent
+- `StudyRoom.gd` "One screen, no platforming"
+- Polygon2D Ember / Assay Trio / Claim Recorder as the companion
+- Shipping over a Jev block
+- Drawing new placeholder leaders
+
+
+## Required — all 3 stages
+### A. Shaft
+Protocol ladder MUST call the existing climb handshake:
+  player.enter_ladder_zone(self) / exit_ladder_zone(self)
+Input is `move_down` / `move_up` (already in player.gd).
+On move_down at the mouth: Lil Blunt is ON SCREEN climbing down a tall shaft
+(≥ 4 player-heights of visible rungs). Camera follows him down.
+At the bottom he steps off into the tour map. Same shaft climbs back up.
+Do not reuse `src/level/ladder.tscn` as the scene (destructible climb),
+but DO reuse its player API.
+
+
+### B. Tour map (Warcraft, not a menu)
+A short walkable strip per protocol, one screen tall is fine, TWO+ screens wide.
+Named stops the player can walk to. Companion walks beside Lil Blunt
+and speaks at each stop. Stops are places, not buttons.
+
+
+SMOKE — The Reading Ring
+  1. Ash Ring          — culture + sink / burn
+  2. Lounge Basket     — LP pairs strengthen the burn
+  3. Arb Recycle Well  — captured arb returns to the ecosystem
+  4. Ember's Desk      — quiz (existing 11 locked questions)
+
+
+DIAMONDS — The Pressure Study
+  1. BLAZE Mint Gate   — BLAZE on the diamond mint path
+  2. Tight Float       — waves end, scarcity
+  3. Vault / Crush     — stake; Crush Bonus forfeits extra for shares
+  4. Handler Bridge    — Diamonds required to mint GOLD
+  5. Assay Bench       — quiz
+
+
+GOLD MINE — The Claim Office
+  1. Vest Clock        — ~100 days, ~1%/day; early claim forfeits rest
+  2. Knox Window       — look at Fort Knox; this room IS NOT Knox
+  3. Melt Stamp        — burn extra GOLD for share multiplier
+  4. Rush Board        — weekly forfeit GOLD for XAUT
+  5. Recorder Desk     — quiz
+
+
+Official Gitbook plate and official X video are STOPS on this walk
+(jump-on paper / shrine), not the whole room.
+
+
+### C. Companion
+Walks with the player (follow-X, same floor, talk balloon at stops).
+Art = founder leader stills, not polygons:
+  Stage 1 Ember          — Drive "Stage 1 leader.PNG"
+  Stage 2 Assay Trio     — Drive "Stage 2 leader.PNG" (three figures if the still has three; else one sprite + two escorts)
+  Stage 3 Claim Recorder — Drive "Stage 3 leader.PNG"
+Use MUAPI only to cut / scale / palette-fit those stills into Godot sprites.
+Never invent a new face.
+
+
+### D. Keep from current master
+- PortalSession state machine + 7/11 + retry/proceed
+- quiz_{smoke,diamonds,gold}.json (Qwen already fact-locked)
+- token ids portal_smoke / portal_diamonds / portal_gold
+- ScorecardGrant eligibility on any completion
+- official Gitbook + X URLs
+- do not touch Vault, Knox, Blaze Rush, Lounge entries
+- do not touch src/level/ladder.tscn
+
+
+### E. Done
+Per stage, ALL of:
+1. Down arrow climb visible in a gameplay-zoom capture (player mid-shaft)
+2. Tour walk with ≥3 named stops + talking companion in frame
+3. Paper stop + video stop still work
+4. Quiz still 11 locked questions
+5. Ascent back up the same shaft to the same world x
+6. Jev ship on ladder_is_climb AND tour_is_walkable AND companion_is_leader_art
+No Jev ship → task stays OPEN. Founder override is not a substitute.
+
+
+You are implementing gm-game-portal-tour-rebuild against
+https://github.com/youngstunners88/GM-GAME.git origin/master.
+
+
+The live feature is WRONG. Do not polish it.
+
+
+WRONG (delete or gut):
+  src/protocol_portals/PortalLadder.gd
+    _poll_interact() + Input.is_action_just_pressed("interact")
+    "STUDY [E]"
+  src/protocol_portals/PortalTravel.gd
+    fade-to-room as the descent (may keep it ONLY as a last-resort
+    load after the climb animation reaches the pit)
+  src/protocol_portals/StudyRoom.gd
+    "One screen, no platforming" layout
+    _build_ember / _build_assay_trio / _build_claim_recorder polygons
+
+
+RIGHT:
+  Protocol ladder is a TALL climb zone.
+  On body_entered: player.enter_ladder_zone(self)
+  On body_exited: player.exit_ladder_zone(self)
+  Player already reads move_down / move_up in _update_climb.
+  Show Lil Blunt climbing down the shaft. Camera follows.
+  Bottom of shaft opens into a WALKABLE tour strip.
+
+
+  Companion (Sprite2D from founder leader PNG) follows player.x
+  on the floor and plays stop-dialogue at each named place.
+
+
+  @include these so you do not break the game:
+    src/player/player.gd
+    src/level/ladder.gd
+    src/level/level_base.gd
+    src/level/level_01_smoke_realm.tscn
+    src/level/level_02_crystal_caverns.tscn
+    src/level/level_03_gold_rush.tscn
+    src/protocol_portals/PortalSession.gd
+    src/protocol_portals/PortalSignals.gd
+    src/protocol_portals/QuizBank.gd
+    src/protocol_portals/StudyRoom.gd
+    src/protocol_portals/PortalLadder.gd
+    src/protocol_portals/PortalTravel.gd
+
+
+  Founder brief (requirements only, ignore any API key names in the doc):
+    https://docs.google.com/document/d/1uZkyiN55xF_ZNgzLJ6II0xC_CTuRbDiq9jBw-Hmiz0c/edit
+
+
+Verify:
+  godot headless compile
+  tests/protocol_portals_test.gd still 155+
+  NEW test: protocol ladder has no "interact" press path
+  NEW test: tour scene width > 1800px (not a 1280 kiosk)
+  NEW test: companion node exists in each room skin
+Do not commit. Return full files.
+Do not mint. Do not call Meshy for heroes. Do not touch Vault/Knox.
+
+
+Vote ship|block on each:
+
+
+ladder_is_climb
+  ship only if the notes say the player is drawn mid-shaft using
+  move_down, and the word "interact" / "STUDY [E]" is absent
+  from the ladder control path.
+
+
+tour_is_walkable
+  ship only if the notes say the camera can pan across named
+  stops (Ash Ring / Lounge / Vault-Crush / Vest Clock etc.)
+  and the room is not a single 1280x720 kiosk.
+
+
+companion_is_leader_art
+  ship only if the companion is a sprite from the founder
+  leader still, walking beside the player, not a Polygon2D doll.
+
+
+ship
+  ship only if all three above are ship.
+  block if any defect score >= 0.6
+  block if notes mention fade-on-E as the descent
+
+
+Record the vote in portals/90_gates/. Unrecorded = did not happen.
+A founder "ship anyway" is not a legal Jev ship.
+
+
+The itch portals build is rejected. It is a menu. The founder doc is a climb + tour.
+
+
+Load gm-game-portal-tour-rebuild.
+Opus 5.5 does the rewrite via scripts/opus-offload.mjs.
+Jev votes via scripts/jev.mjs. You may not override a block.
+Do not polish StudyRoom polygons.
+Do not use E to enter.
+Down arrow, visible Lil Blunt, companion tour, all three stages.
+Push the branch before you talk. Export to a new folder. No rm -rf.
+Keep quiz banks and PortalSession.
+
+
+
+
+---

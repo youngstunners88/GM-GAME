@@ -1,0 +1,5 @@
+Images attached, in order: (1) Stage 1 leader still (companion "Ember", SMOKE), (2) Stage 2 leader still ("The Assay Trio", DIAMONDS), (3) Stage 3 leader still ("The Claim Recorder", GOLD MINE), (4) and (5) the founder's reference images for how the education section should look (Warcraft-style walking tour with a companion).
+The three leader stills will become in-game Sprite2D companions in a Godot 4.3 2D platformer at 1280x720 gameplay zoom (player ~64-80 px tall). Reply with ONLY JSON:
+{"leaders":[{"stage":1,"figures_count":N,"background":"transparent|solid colour #rrggbb|scene","needs_cutout":true/false,"figure_bbox_pct":[x0,y0,x1,y1],"suggested_display_height_px":N,"facing":"left|right|front","description":"one line"}, ...3],
+ "reference_takeaways":["short bullets describing what images 4 and 5 show that the tour must copy: camera, layout, companion placement, stop markers, UI"],
+ "tour_layout_advice":"3-5 sentences for a walkable 2-3 screen wide strip per protocol with named stops"}
