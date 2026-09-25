@@ -5,7 +5,7 @@
 
 ---
 
-**🔧 PORTAL TOUR REPAIR — walking fixed, names fixed, voices added; Jev BLOCK so it stays OPEN, not shipped (2026-09-25).** Lil Blunt now walks with the arrows in all three tours, Pauly The Smokest / Kane The Blaze Mechanic / Rich the Claim Recorder follow and talk (voiced), and the facts passed Qwen. Jev blocked the overall ship, most likely on the balloon and labels clipped at the screen edge. That is the next fix. The live itch build is unchanged.
+**🚀 PORTAL TOUR REPAIR SHIPPED to master on founder order (2026-09-25; Jev had voted BLOCK).** Lil Blunt now walks with the arrows in all three tours, Pauly The Smokest / Kane The Blaze Mechanic / Rich the Claim Recorder follow and talk (voiced), and the facts passed Qwen. Jev blocked the overall ship, most likely on the balloon and labels clipped at the screen edge. That is the next fix. The live itch build is unchanged.
 
 ---
 

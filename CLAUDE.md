@@ -269,3 +269,8 @@ Claude model to use for the likely next task, with a short reason. Guide:
 - **claude-sonnet-5** — well-scoped implementation: new levels from existing
   patterns, tuning constants, docs, routine asset wiring.
 - **claude-haiku-4-5** — trivial one-file tweaks, copy edits, quick questions.
+
+## ⭐ FOUNDER SHIP RULE (2026-09-25)
+The founder is the final authority on shipping. When he says ship, every verified
+build is committed, pushed and shipped to master with `scripts/ship-to-master.sh`.
+Jev votes are advisory, so record them, but a Jev BLOCK does not stop a ship the founder ordered.
