@@ -51,3 +51,4 @@
   "not mid-shaft" flag next to the climb question; per-shot fields fixed, one re-vote, recorded.
   Capture console errors (8-12) are sandbox-proxy cert/fetch failures + an existing MENU->MENU warning.
   Spend: Opus 5.5 ~$4.50 total for the rebuild; DeepSeek ~$0.01; Jev <$0.001.
+- FIX: master CI for 371b736 failed the 190 MB pck gate — portals/ evidence PNGs (55 MB) were being packed. Added portals/.gdignore: pck 150.1 MB, 0 script errors.

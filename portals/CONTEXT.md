@@ -20,3 +20,4 @@ Evidence: `10_ladders/` (gameplay-zoom captures), `90_gates/` (vision notes + Je
 Traps: fresh `--import` before trusting a failure (stale class cache); DeepSeek
 sometimes wraps output in ``` fences — strip before applying; the game font has
 no "▼" glyph (renders as a box).
+- PACK TRAP: portals/ holds screenshot evidence; portals/.gdignore keeps it out of index.pck. Without it the pck hit the 190 MB CI gate (371b736 failed; 150 MB after).
