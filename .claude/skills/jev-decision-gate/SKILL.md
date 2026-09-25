@@ -111,3 +111,12 @@ conclusion got committed to CLAUDE.md and cost the founder real time.
   evidence the live build is clean; capture the live frames first.
 - On screenshots (see the rule at the top).
 - For open-ended design questions. It decides; it does not ideate.
+
+## Standing rules (founder, 2026-09-25)
+- Route stays OpenRouter: `POST https://openrouter.ai/api/alpha/decisions`, model
+  `~typesafe/jev-latest` (or pin `typesafe/jev-1.13`). Never `/chat/completions`, never
+  generation work, never a direct TypeSafe endpoint.
+- A `noul` score is a signal, not authorization.
+- HTTP 401 / 422 / 429 / 529 / timeout = stop. No auto-continue.
+- At most 2 continues on a gate, then ping the founder.
+- A founder "ship anyway" is not a recorded Jev ship.
