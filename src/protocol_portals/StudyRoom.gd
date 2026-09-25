@@ -689,6 +689,8 @@ func _on_stop_reached(stop_id: String) -> void:
 		return
 	var line: String = String(_stop_lines.get(stop_id, ""))
 	_companion.call("say", line)
+	# Optional ElevenLabs bark of the same locked line; silent if no clip exists.
+	_companion.call("play_voice", "res://src/assets/portals/vo/%s_%s.mp3" % [protocol, stop_id])
 
 
 ## Jump-on plate: a low solid slab with the WhitepaperJump zone on top of it.

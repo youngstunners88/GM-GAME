@@ -1,0 +1,6 @@
+Audit this in-game copy file for a crypto-education platformer against the LOCKED pillars below. First line exactly `FACT_LOCK: PASS` or `FACT_LOCK: FAIL`, then a JSON array of defects [{"path":"","text":"","problem":"","fix":""}] (empty if none). Rules: every factual statement must restate only a locked pillar; no numbers except "~100 days" / "~1% per day"; no APYs, addresses, chains, dates, seed phrases, prices; companion names must be exactly Pauly The Smokest / Kane The Blaze Mechanic / Rich the Claim Recorder; "this room is not the Vault / not Fort Knox / not a DEX" framing is allowed.
+LOCKED PILLARS:
+SMOKE: culture + sink/burn token; Smoke Lounge multi-asset LP basket strengthens the burn as pairs rise; multi-chain arb is captured and recycled into the ecosystem.
+DIAMONDS: BLAZE mints Diamonds; waves end, float is tight; Vault staking + Crush Bonus forfeits extra Diamonds for more shares; Diamonds required to mint GOLD; Handler absorbs first-cycle mint-side Diamonds.
+GOLD MINE: ~100-day vest ~1%/day, early claim forfeits the rest; Fort Knox stakes GOLD for wBTC, Melt Bonus burns extra GOLD for a large share multiplier; weekly Gold Rush auctions forfeit GOLD to compete for XAUT.
+@include src/protocol_portals/data/portal_copy.json

@@ -52,3 +52,13 @@
   Capture console errors (8-12) are sandbox-proxy cert/fetch failures + an existing MENU->MENU warning.
   Spend: Opus 5.5 ~$4.50 total for the rebuild; DeepSeek ~$0.01; Jev <$0.001.
 - FIX: master CI for 371b736 failed the 190 MB pck gate — portals/ evidence PNGs (55 MB) were being packed. Added portals/.gdignore: pck 150.1 MB, 0 script errors.
+
+- OPEN (Jev BLOCK 0.72, one vote per founder rule) — REPAIR 2026-09-25, branch only, NOT shipped.
+  Fixed + verified on fresh web export (walk3): player walks with arrows in all 3 tours (root cause:
+  tour room never set StateMachine PLAYING, player.gd physics returns early); names exactly Pauly The
+  Smokest / Kane The Blaze Mechanic (one figure) / Rich the Claim Recorder; companion follows + speaks;
+  rooms read as places. Qwen FACT_LOCK PASS on copy after 4 passes (count wording + Gold Rush line).
+  11 ElevenLabs stop barks (src/assets/portals/vo). Jev defects: frozen 0.14, names 0.08, guide 0.06,
+  void 0.05, but ship=block 0.72 — notes cite start-frame balloon/name clipped at the left edge and
+  truncated stop labels. Next: fix the clipping, then one new vote.
+  Spend: Opus $1.01 (cap $1.20), Qwen $0.19, DeepSeek ~$0.01, ElevenLabs 11 clips.

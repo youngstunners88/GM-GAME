@@ -1,0 +1,8 @@
+model: typesafe/jev-1.13-20260917   cost: $0.000038
+  player_frozen_defect: probability=0.140 -> no
+  wrong_names_defect: probability=0.080 -> no
+  companion_not_guiding_defect: probability=0.060 -> no
+  room_is_void_defect: probability=0.050 -> no
+  ship: block (confidence 0.45) {"block":0.72,"ship":0.28}
+
+JEV VERDICT: BLOCK

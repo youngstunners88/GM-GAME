@@ -5,6 +5,10 @@
 
 ---
 
+**🔧 PORTAL TOUR REPAIR — walking fixed, names fixed, voices added; Jev BLOCK so it stays OPEN, not shipped (2026-09-25).** Lil Blunt now walks with the arrows in all three tours, Pauly The Smokest / Kane The Blaze Mechanic / Rich the Claim Recorder follow and talk (voiced), and the facts passed Qwen. Jev blocked the overall ship, most likely on the balloon and labels clipped at the screen edge. That is the next fix. The live itch build is unchanged.
+
+---
+
 **🪜 PORTAL TOUR REBUILD SHIPPED — Jev SHIP on all three stages (2026-09-25).** The E-key classroom is gone. Hold Down at the glowing STUDY shaft and Lil Blunt climbs down on screen. At the bottom, a walkable tour with your leader beside him (Ember, the miner + two escorts, the prospector): named stops (Ash Ring, Lounge Basket, BLAZE Mint Gate, Vest Clock, ...), whitepaper and video stops, and the same 11 locked quiz questions at the leader's desk. Climb back up the same shaft.
 
 ---

@@ -5,13 +5,13 @@
     "examiner_intro": [
       "Welcome to the Reading Ring. Mind the lamp, it's older than me.",
       "Read it before you claim you know it. That's the only rule here.",
-      "Pick the paper or the video. Then we talk. Eleven questions."
+      "A short set of questions."
     ],
     "study_choice_prompt": "How do you like to learn today, Lil Blunt?",
     "paper_label": "Read the whitepaper",
     "video_label": "Watch the video",
     "video_wait_line": "Take your time. The ring isn't going anywhere.",
-    "quiz_intro": "Eleven questions. Seven to pass. No rush, just honesty.",
+    "quiz_intro": "A short quiz. Most correct to pass.",
     "pass_line": "You read it. It shows. Your scorecard is stamped.",
     "fail_line": "Close, but the ring wants more. Retry, or carry your score up.",
     "retry_label": "Retry the quiz",
@@ -46,7 +46,7 @@
       {
         "id": "exam",
         "name": "Ember's Desk",
-        "line": "My desk. Eleven questions when you are ready. Press E."
+        "line": "My desk. A quiz when you are ready. Press E."
       }
     ],
     "plate": {
@@ -83,13 +83,13 @@
     "examiner_intro": [
       "Welcome to the Pressure Study. Sit. Breathe. Stay sharp.",
       "We measure what you learned, not what you guessed.",
-      "Read or watch. Then eleven questions. Then our mark."
+      "Read or watch. Then a quiz. Then our mark."
     ],
     "study_choice_prompt": "Choose your facet, Lil Blunt. Paper or picture?",
     "paper_label": "Read the whitepaper",
     "video_label": "Watch the video",
     "video_wait_line": "Watch it through. We're patient. We're literally rocks.",
-    "quiz_intro": "Eleven questions. Seven clear cuts earns the pass.",
+    "quiz_intro": "A short quiz. Most clear cuts earns the pass.",
     "pass_line": "Clear and bright. Scorecard sealed. Well done.",
     "fail_line": "A little cloudy. Polish and retry, or take your score.",
     "retry_label": "Recut: retry",
@@ -104,7 +104,7 @@
       {
         "id": "tight_float",
         "name": "Tight Float",
-        "line": "The waves end. The float stays tight. That is scarcity."
+        "line": "The waves end. The float stays tight."
       },
       {
         "id": "vault_crush",
@@ -129,7 +129,7 @@
       {
         "id": "exam",
         "name": "Assay Bench",
-        "line": "The Assay Bench. Eleven questions. Press E to begin."
+        "line": "The Assay Bench. A quiz awaits. Press E to begin."
       }
     ],
     "plate": {
@@ -145,13 +145,13 @@
     "examiner_intro": [
       "Claim Office. Take a number. Yours is the only one today.",
       "I record what you know. Read or watch the official material first.",
-      "Then eleven questions. I stamp the ledger either way."
+      "Then a quiz. I stamp the ledger either way."
     ],
     "study_choice_prompt": "Form one: select study method, please.",
     "paper_label": "Read the whitepaper",
     "video_label": "Watch the video",
     "video_wait_line": "The clock's running, but not against you. Watch at your pace.",
-    "quiz_intro": "Eleven questions. Seven correct files a passing claim.",
+    "quiz_intro": "A short quiz. Most correct files a passing claim.",
     "pass_line": "Claim approved. Stamped and filed. Scorecard issued.",
     "fail_line": "Claim incomplete. Refile now, or proceed with score on record.",
     "retry_label": "Refile: retry",
@@ -176,7 +176,7 @@
       {
         "id": "rush_board",
         "name": "Rush Board",
-        "line": "The weekly Rush: forfeited GOLD for XAUT. Posted here."
+        "line": "The weekly Gold Rush: forfeit GOLD to compete for XAUT. Posted here."
       },
       {
         "id": "paper",
@@ -191,7 +191,7 @@
       {
         "id": "exam",
         "name": "Recorder Desk",
-        "line": "Recorder Desk. Eleven questions, stamped either way. Press E."
+        "line": "Recorder Desk. A quiz, stamped either way. Press E."
       }
     ],
     "plate": {
