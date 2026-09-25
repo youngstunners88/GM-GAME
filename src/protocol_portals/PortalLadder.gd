@@ -1,43 +1,46 @@
 extends Node2D
 class_name PortalLadder
-## Protocol Portal — a DOWNWARD glowing ladder that reads as a hatch into a
-## study room.
+## Protocol Portal: a TALL glowing climb shaft that drops through the floor
+## into the protocol's tour strip.
 ##
-## This is NOT the climbable ladder from src/level/ladder.gd. It shares no code,
-## no scene, no behaviour: it is a decorative + request-only marker. It has NO
-## StaticBody2D and NO solid collision of any kind, so it can never block the
-## player or the boss chase.
+## CONTROL PATH (founder tour rebuild, 2026-09-25):
+##   * The EnterZone Area2D covers the mouth and the whole shaft. On
+##     body_entered it calls player.enter_ladder_zone(self); on body_exited it
+##     calls player.exit_ladder_zone(self). This is the same handshake
+##     src/level/ladder.gd uses, and the player reads move_down / move_up
+##     itself in player.gd::_update_climb.
+##   * This node exposes top_y(), bottom_y() and top_exit_position(), the
+##     three things player.gd calls back into on its active ladder.
+##   * Holding move_down at the mouth starts the player's own climb. This
+##     script then lets him pass through the ground by clearing his
+##     collision_mask for the length of the shaft, keeps him centred on the
+##     rails, draws him above the ground tiles and lowers his Camera2D bottom
+##     limit so the camera follows him DOWN the shaft. Everything is
+##     restored the moment he is back on the floor.
+##   * The BottomTrigger Area2D at the foot of the shaft is the only thing
+##     that calls PortalTravel.descend(). The fade into the tour scene is the
+##     last step, after the visible climb, never the descent itself.
 ##
-## CHOSEN X POSITIONS (founder placement spec: on the boss-approach path,
-## readable BEFORE the fight, never inside the boss trigger/hitbox, >=200px
-## horizontal clearance from the Blaze Portal, Smoke Lounge door, Hall of
-## Blaze, Diamond Vault door, Gold Rush Reserve and Fort Knox entries, aimed
-## ~250-450px left of the boss trigger where the door layout permits):
-##   Level 1 — x = 2100. BossTrigger CollisionShape2D sits at x = 2700, but the
-##     Smoke Lounge secret door (2350) and the Blaze Portal (1450) make the
-##     whole 2250-2450 window illegal: >=200px clearance around 2350 excludes
-##     2150..2550. 2100 clears the lounge door by 250px, the Blaze Portal by
-##     650px and the boss trigger by 600px. (Hall of Blaze at 3250 is beyond
-##     the trigger and untouched.)
-##   Level 2 — x = 3300. BossTrigger CollisionShape2D is at x = 3700, so 3300
-##     is 400px left of it — inside the 250-450 aim. It also clears the
-##     Diamond Vault door at 2450 by 850px and never touches the x=3468 secret
-##     wall (portal right edge 3332 vs wall left edge 3452).
-##   Level 3 — x = 3100. BossTrigger node is at x = 3700 (its CollisionShape2D
-##     sits at local 0,0) but the Gold Rush Reserve at 3420 blocks the
-##     3250-3450 window (>=200px clearance excludes 3220..3620), so 3100 is
-##     the legal spot on the approach: 320px clear of the Reserve, 410px clear
-##     of the Fort Knox vault door at 2690, 500px clear of the Blaze Portal at
-##     2600, and 600px left of the boss trigger.
+## It still has NO StaticBody2D and NO solid collision, so it can never block
+## the player or the boss chase.
+##
+## CHOSEN X POSITIONS (unchanged; the instances stay where they were in the
+## three stage scenes):
+##   Level 1 - x = 2100, clear of the Smoke Lounge door (2350), the Blaze
+##     Portal (1450) and the boss trigger (2700).
+##   Level 2 - x = 3300, 400px left of the boss trigger (3700), clear of the
+##     Diamond Vault door (2450) and the x=3468 secret wall.
+##   Level 3 - x = 3100, clear of the Gold Rush Reserve (3420), the Fort Knox
+##     door (2690), the Blaze Portal (2600) and the boss trigger (3700).
 
 const Travel := preload("res://src/protocol_portals/PortalTravel.gd")
 
 ## Which protocol this portal belongs to. Drives the glow colour.
 @export var protocol: String = "smoke"  # "smoke" | "diamonds" | "gold"
-## Stage identity, forwarded to the study room.
+## Stage identity, forwarded to the tour scene.
 @export var stage_id: int = 1
 
-## Emitted when a player stands in the shaft mouth and presses "interact".
+## Emitted once, when the player reaches the bottom of the shaft.
 signal portal_requested(protocol: String, stage_id: int)
 
 const COLOR_SMOKE: Color = Color(0.35, 1.0, 0.45)      # neon green
@@ -48,11 +51,25 @@ const COLOR_GOLD: Color = Color(1.0, 0.78, 0.25)       # gold lantern
 const COLOR_GOLD_BRIGHT: Color = Color(1.0, 0.9, 0.45)
 
 const SHAFT_WIDTH: float = 64.0
-const SHAFT_DEPTH: float = 120.0
+## Visible depth below the mouth. >= 4 player-heights (the brief asks for
+## at least 320px) so the climb reads on screen before the fade.
+const SHAFT_DEPTH: float = 360.0
+const RUNG_SPACING: float = 20.0
 const HALO_SIZE: Vector2 = Vector2(260.0, 260.0)
 const RING_RADIUS: Vector2 = Vector2(42.0, 24.0)
 const PULSE_HZ: float = 1.4
 const Z_LEVEL: int = 5  # over background art and ground tiles.
+
+## Climb zone: narrow (so walking past does not grab much) and reaching a
+## little above the mouth so a standing player is inside it.
+const ZONE_WIDTH: float = 40.0
+const ZONE_ABOVE: float = 40.0
+## Foot-of-shaft trigger height.
+const BOTTOM_TRIGGER_H: float = 40.0
+## Player collision box side (top-left anchored 32x32, see player.gd).
+const PLAYER_BOX: float = 32.0
+## Extra room under the shaft bottom for the camera limit while climbing.
+const CAMERA_BOTTOM_PAD: float = 220.0
 
 ## How far right / up of the ladder the returning player is placed.
 const RETURN_OFFSET: Vector2 = Vector2(70.0, -48.0)
@@ -62,18 +79,29 @@ var _glow: Sprite2D = null
 var _ring: Line2D = null
 var _ring_outline: Line2D = null
 var _label: Label = null
+var _hint: Label = null
 var _zone: Area2D = null
+var _bottom: Area2D = null
 var _player_inside: bool = false
-var _has_interact_action: bool = false
 var _pulse_time: float = 0.0
+
+## The player currently using this shaft (null when nobody is near it).
+var _player: CharacterBody2D = null
+## True while the player is travelling through the ground inside the shaft.
+var _shaft_mode: bool = false
+var _saved_mask: int = 0
+var _saved_z: int = 0
+var _saved_limit_bottom: int = 10000000
+var _descending: bool = false
+
 
 func _ready() -> void:
 	add_to_group("protocol_portal")
-	# 5 so the whole rig (hole, rails, rungs, halo, label) draws over the
-	# backdrop and the runtime-built ground tiles.
 	z_index = Z_LEVEL
+	# Run the shaft guard BEFORE the player's own physics step each frame, so
+	# the collision mask is already cleared when his climb moves him down.
+	process_physics_priority = -10
 	_color = _glow_color()
-	_has_interact_action = InputMap.has_action("interact")
 	_build_shaft()
 	_build_mouth_backing()
 	_build_glow_halo()
@@ -82,16 +110,15 @@ func _ready() -> void:
 	_build_label()
 	_build_particles()
 	_build_zone()
+	_build_bottom_trigger()
 	# The parent level (extends LevelBase) builds its ground at runtime and its
 	# _ready runs AFTER this child's _ready, so global_position.y is snapped
 	# one frame later, once _floor_y_at() can actually answer.
 	call_deferred("_snap_to_floor")
 
+
 func _process(delta: float) -> void:
-	# 0.45..1.0 alpha and 0.92..1.08 scale at ~1.4 Hz. Plain sin on a counter
-	# instead of a Tween loop, so nothing keeps running once this node is freed.
 	_pulse_time += delta
-	_poll_interact()
 	var t: float = 0.5 + 0.5 * sin(_pulse_time * TAU * PULSE_HZ)
 	var a: float = 0.45 + 0.55 * t
 	var s: float = 0.92 + 0.16 * t
@@ -101,34 +128,141 @@ func _process(delta: float) -> void:
 	if _ring != null:
 		_ring.modulate = Color(1.0, 1.0, 1.0, a)
 		_ring.scale = Vector2(s, s)
-	# The outline is a sibling now (see _build_ring), so it pulses explicitly
-	# to stay locked to the bright ring.
 	if _ring_outline != null:
 		_ring_outline.modulate = Color(1.0, 1.0, 1.0, a)
 		_ring_outline.scale = Vector2(s, s)
 
+
+# ---- Player climb API (called back by player.gd) ----------------------------
+
+## World Y of the shaft mouth (the floor line).
+func top_y() -> float:
+	return global_position.y
+
+
+## World Y of the shaft bottom.
+func bottom_y() -> float:
+	return global_position.y + SHAFT_DEPTH
+
+
+## Where the player stands after topping out: on the floor, just OUTSIDE the
+## climb zone on the side he is already on, so the zone cannot re-grab him.
+func top_exit_position() -> Vector2:
+	var side: float = 1.0
+	if _player != null and is_instance_valid(_player):
+		if _player.global_position.x + PLAYER_BOX * 0.5 < global_position.x:
+			side = -1.0
+	var x: float = global_position.x + 30.0
+	if side < 0.0:
+		x = global_position.x - 30.0 - PLAYER_BOX
+	return Vector2(x, global_position.y - PLAYER_BOX - 2.0)
+
+
+# ---- Shaft guard ------------------------------------------------------------
+
+func _physics_process(_delta: float) -> void:
+	if _player == null:
+		return
+	if not is_instance_valid(_player):
+		_player = null
+		_shaft_mode = false
+		return
+	var climbing: bool = bool(_player.get("_climbing"))
+	if not _shaft_mode:
+		if _player_inside and climbing and Input.is_action_pressed("move_down"):
+			_enter_shaft_mode()
+		return
+
+	var feet_y: float = _player.global_position.y + PLAYER_BOX
+	if not climbing:
+		if feet_y <= global_position.y + 2.0:
+			# Back on the floor (topped out or climbed out): normal physics.
+			_leave_shaft_mode()
+			return
+		# Below the floor line but not climbing (a hop off the rungs, or the
+		# anti-freeze heartbeat cleared the flag): he is inside solid ground
+		# with no collision, so put him straight back on the rungs.
+		if int(_player.get("_ladder_zones")) <= 0 and _player.has_method("enter_ladder_zone"):
+			_player.call("enter_ladder_zone", self)
+		_player.set("_climbing", true)
+		_player.velocity = Vector2.ZERO
+
+	# Keep him on the rails and never below the shaft floor.
+	var home_x: float = global_position.x - PLAYER_BOX * 0.5
+	_player.global_position.x = clampf(_player.global_position.x, home_x - 6.0, home_x + 6.0)
+	var max_y: float = global_position.y + SHAFT_DEPTH - PLAYER_BOX
+	if _player.global_position.y > max_y:
+		_player.global_position.y = max_y
+		if _player.velocity.y > 0.0:
+			_player.velocity.y = 0.0
+
+
+func _enter_shaft_mode() -> void:
+	if _player == null or _shaft_mode:
+		return
+	_shaft_mode = true
+	_saved_mask = _player.collision_mask
+	_saved_z = _player.z_index
+	_player.collision_mask = 0
+	# Drawn over the ground tiles and the dark shaft hole, so he is visible
+	# the whole way down.
+	_player.z_index = Z_LEVEL + 2
+	_player.global_position.x = global_position.x - PLAYER_BOX * 0.5
+	var cam: Camera2D = _player.get_node_or_null("Camera2D") as Camera2D
+	if cam != null:
+		_saved_limit_bottom = cam.limit_bottom
+		var needed: int = int(global_position.y + SHAFT_DEPTH + CAMERA_BOTTOM_PAD)
+		cam.limit_bottom = maxi(cam.limit_bottom, needed)
+	if _hint != null:
+		_hint.visible = false
+
+
+func _leave_shaft_mode() -> void:
+	if not _shaft_mode:
+		return
+	_shaft_mode = false
+	if _player != null and is_instance_valid(_player):
+		_player.collision_mask = _saved_mask
+		_player.z_index = _saved_z
+		var cam: Camera2D = _player.get_node_or_null("Camera2D") as Camera2D
+		if cam != null:
+			cam.limit_bottom = _saved_limit_bottom
+	if not _player_inside:
+		_player = null
+	_update_prompt()
+
+
+func _descend() -> void:
+	if _descending:
+		return
+	_descending = true
+	portal_requested.emit(protocol, stage_id)
+	print("[PortalLadder] shaft bottom reached: protocol=%s stage=%d" % [protocol, stage_id])
+	var scene_path: String = ""
+	var tree: SceneTree = get_tree()
+	if tree != null and tree.current_scene != null:
+		scene_path = tree.current_scene.scene_file_path
+	# The climb already happened on screen; the scene load is the last step.
+	Travel.descend(protocol, stage_id, scene_path, global_position.x)
+
+
 # ---- Floor snap -------------------------------------------------------------
 
-## Walk up the parent chain to whatever node owns the runtime ground (LevelBase
-## exposes `_floor_y_at(x: float) -> float`). If nothing owns one, the authored
-## position is kept as-is. Runs once, then places a returning player.
 func _snap_to_floor() -> void:
 	var node: Node = get_parent()
 	while node != null:
 		if node.has_method("_floor_y_at"):
 			var floor_y: float = node.call("_floor_y_at", global_position.x)
-			# Defensive: never write a non-finite y (a "no floor here" answer)
-			# into the transform — a NaN/INF canvas transform blanks the whole
-			# GL Compatibility frame. Keep the authored y instead.
+			# Never write a non-finite y into the transform (blanks the frame).
 			if is_finite(floor_y):
 				global_position.y = floor_y
 			break
 		node = node.get_parent()
 	_place_returning_player()
 
-## If this ladder is the one the player just came back through (the study room
-## called PortalTravel.ascend()), drop them next to the shaft mouth instead of
-## inside it, so the EnterZone cannot instantly re-trigger.
+
+## If this is the shaft the player just climbed back up (the tour called
+## PortalTravel.ascend()), stand him next to the mouth at the same world x.
 func _place_returning_player() -> void:
 	var scene_path: String = ""
 	var tree: SceneTree = get_tree()
@@ -146,7 +280,8 @@ func _place_returning_player() -> void:
 		if body is CharacterBody2D:
 			(body as CharacterBody2D).velocity = Vector2.ZERO
 
-# ---- Visuals (all built in code; the .tscn stays minimal) -------------------
+
+# ---- Visuals ----------------------------------------------------------------
 
 func _glow_color() -> Color:
 	match protocol:
@@ -157,36 +292,40 @@ func _glow_color() -> Color:
 		_:
 			return COLOR_SMOKE
 
-## Rails + rungs tint. Gold gets the brighter, whiter gold so the ladder does
-## not disappear into the orange mine rock.
+
 func _rail_color() -> Color:
 	if protocol == "gold":
 		return COLOR_GOLD_BRIGHT
 	return Color(_color.r, _color.g, _color.b, 0.9).darkened(0.25)
 
-## Ring tint. Same brighter gold rule as the rails.
+
 func _ring_color() -> Color:
 	if protocol == "gold":
 		return COLOR_GOLD_BRIGHT
 	return _color
 
-## Shaft opening at floor level (y = 0) and the rails + rungs dropping away
-## below it. Drawn as plain ColorRects on this Node2D — no collision. Every
-## bright line gets a 2px near-black outline drawn under it so the ladder reads
-## against warm/gold backgrounds too.
+
+## The tall shaft: a dark hole cut into the ground from the mouth down to
+## SHAFT_DEPTH, two outlined rails and a rung every RUNG_SPACING px, plus a
+## faint glow pool at the bottom where the tour opens.
 func _build_shaft() -> void:
-	# Dark hole, drawn a few px BELOW the floor line so the lip stays visible.
 	var hole := ColorRect.new()
 	hole.name = "ShaftHole"
 	hole.position = Vector2(-SHAFT_WIDTH * 0.5, -4.0)
 	hole.size = Vector2(SHAFT_WIDTH, SHAFT_DEPTH + 14.0)
-	hole.color = Color(0.02, 0.03, 0.04, 0.95)
+	hole.color = Color(0.02, 0.03, 0.04, 0.97)
 	add_child(hole)
+
+	var pool := ColorRect.new()
+	pool.name = "ShaftBottomGlow"
+	pool.position = Vector2(-SHAFT_WIDTH * 0.5, SHAFT_DEPTH - 30.0)
+	pool.size = Vector2(SHAFT_WIDTH, 40.0)
+	pool.color = Color(_color.r, _color.g, _color.b, 0.28)
+	add_child(pool)
 
 	var outline_color: Color = Color(0.02, 0.02, 0.03, 0.95)
 	var rail_color: Color = _rail_color()
 
-	# Left rail: 2px dark outline first, bright line on top.
 	var rail_l_out := ColorRect.new()
 	rail_l_out.name = "RailLOutline"
 	rail_l_out.position = Vector2(-26.0, -1.0)
@@ -201,7 +340,6 @@ func _build_shaft() -> void:
 	rail_l.color = rail_color
 	add_child(rail_l)
 
-	# Right rail: same outline treatment.
 	var rail_r_out := ColorRect.new()
 	rail_r_out.name = "RailROutline"
 	rail_r_out.position = Vector2(17.0, -1.0)
@@ -216,9 +354,9 @@ func _build_shaft() -> void:
 	rail_r.color = rail_color
 	add_child(rail_r)
 
-	var rung_count: int = int(SHAFT_DEPTH / 20.0)
+	var rung_count: int = int(SHAFT_DEPTH / RUNG_SPACING)
 	for i in range(rung_count):
-		var y: float = 10.0 + float(i) * 20.0
+		var y: float = 10.0 + float(i) * RUNG_SPACING
 		var rung_out := ColorRect.new()
 		rung_out.name = "RungOutline%d" % i
 		rung_out.position = Vector2(-26.0, y - 2.0)
@@ -233,38 +371,34 @@ func _build_shaft() -> void:
 		rung.color = rail_color
 		add_child(rung)
 
-## Near-black rounded panel sitting at the shaft mouth, drawn UNDER the glow so
-## the additive halo always has something dark to read against (Stage 3's gold
-## glow used to blend straight into the orange mine).
+
 func _build_mouth_backing() -> void:
 	var backing := Panel.new()
 	backing.name = "MouthBacking"
 	backing.position = Vector2(-60.0, -30.0)
-	backing.size = Vector2(120.0, 60.0)
+	backing.size = Vector2(120.0, 30.0)
+	backing.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.03, 0.02, 0.05, 0.85)
 	sb.corner_radius_top_left = 30
 	sb.corner_radius_top_right = 30
-	sb.corner_radius_bottom_left = 30
-	sb.corner_radius_bottom_right = 30
 	backing.add_theme_stylebox_override("panel", sb)
 	add_child(backing)
 
-## Additive halo ~260x260px, centred on the shaft mouth. No PointLight2D: the
-## Compatibility renderer's light cost is not worth it here, an additive sprite
-## reads the same in a side-scroller. The radial falloff is baked into a
-## GradientTexture2D (RADIAL, opaque centre -> transparent edge) so the Sprite2D
-## only needs a modulate tint, which _process pulses.
+
+## Additive halo centred on the mouth. Radial falloff baked into a
+## GradientTexture2D, pulsed by _process through modulate.
 func _build_glow_halo() -> void:
 	_glow = Sprite2D.new()
 	_glow.name = "GlowHalo"
 	_glow.texture = _make_radial_glow_texture()
-	_glow.position = Vector2.ZERO  # centred on the shaft mouth
+	_glow.position = Vector2.ZERO
 	var mat := CanvasItemMaterial.new()
 	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	_glow.material = mat
 	_glow.modulate = _color
 	add_child(_glow)
+
 
 func _make_radial_glow_texture() -> GradientTexture2D:
 	var grad := Gradient.new()
@@ -279,29 +413,10 @@ func _make_radial_glow_texture() -> GradientTexture2D:
 	tex.height = int(HALO_SIZE.y)
 	return tex
 
-## Thin bright ring around the mouth, pulsing in sync with the halo, with a
-## near-black outline ring underneath it.
-##
-## BLACK-FRAME FIX (Stage 2, `?stage=2&spawn_x=3050`, web / GL Compatibility):
-## Root cause is the previous version of this function, not gameplay code. The
-## gameplay suspects were ruled out by reading them:
-##   - PortalTravel.consume_return() is false on a fresh warp load
-##     (pending_return is only set by ascend()), so no return placement fires;
-##   - the EnterZone is +/-32px around x=3300, far from a player at 3050, and
-##     descent needs "interact" pressed inside it, so no descent fires;
-##   - the floor snap only moves THIS node, never the player or the camera,
-##     and this script touches no camera limits;
-##   - level_02 geometry / secret walls / kill zones near 3000-3100 are
-##     unchanged since the build where 3050 rendered fine.
-## The only delta is the MouthRingOutline Line2D that was parented to _ring
-## with show_behind_parent = true. That is a behind-parent child under a
-## parent whose scale + modulate are rewritten every frame; on the web GL
-## Compatibility canvas renderer that draw only goes wrong at the one camera
-## framing where the ring straddles the view edge culling boundary — which is
-## the 3050 warp (2950 culls the ring entirely, 3150 has it fully on screen),
-## and the result is a fully black frame. Fix: no show_behind_parent at all.
-## The outline is a plain sibling added BEFORE _ring, so ordinary tree order
-## draws it underneath, and _process pulses it alongside the ring.
+
+## Bright ring around the mouth with a near-black outline ring drawn as a
+## plain sibling before it (no show_behind_parent: that was the Stage 2
+## black-frame root cause on web GL Compatibility).
 func _build_ring() -> void:
 	var pts := PackedVector2Array()
 	var segments: int = 40
@@ -309,8 +424,6 @@ func _build_ring() -> void:
 		var ang: float = TAU * float(i) / float(segments)
 		pts.append(Vector2(cos(ang) * RING_RADIUS.x, sin(ang) * RING_RADIUS.y))
 
-	# Near-black outline ring behind the bright one: the gold ring vanished into
-	# gold platform tiles (Jev round-3 block), and a dark edge fixes any palette.
 	_ring_outline = Line2D.new()
 	_ring_outline.name = "MouthRingOutline"
 	_ring_outline.width = 10.0
@@ -318,7 +431,6 @@ func _build_ring() -> void:
 	_ring_outline.closed = true
 	_ring_outline.joint_mode = Line2D.LINE_JOINT_ROUND
 	_ring_outline.points = pts
-	_ring_outline.position = Vector2.ZERO
 	add_child(_ring_outline)
 
 	_ring = Line2D.new()
@@ -330,12 +442,10 @@ func _build_ring() -> void:
 	_ring.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	_ring.end_cap_mode = Line2D.LINE_CAP_ROUND
 	_ring.points = pts
-	_ring.position = Vector2.ZERO
 	add_child(_ring)
 
-## Down arrow drawn as a Polygon2D chevron (the "▼" glyph is missing from the
-## game font and rendered as a tofu box). ~26x18px, glow colour, with a 2px
-## near-black outline so it holds up over bright sky.
+
+## Down chevron drawn as Polygon2D (the arrow glyph is missing from the font).
 func _build_chevron() -> void:
 	var outline := Polygon2D.new()
 	outline.name = "DownChevronOutline"
@@ -359,22 +469,41 @@ func _build_chevron() -> void:
 	chevron.position = Vector2(-68.0, -52.0)
 	add_child(chevron)
 
-## "STUDY" always visible (readable at gameplay zoom), 22px with an 8px
-## near-black outline on a dark rounded backing panel so it survives the busy
-## sky. Swaps to the prompt form while the player is in the zone. ASCII only —
-## the arrow is the Polygon2D chevron built above.
+
+## "STUDY" always visible, plus a small "HOLD DOWN" hint while the player
+## stands at the mouth. ASCII only.
 func _build_label() -> void:
 	_label = Label.new()
 	_label.name = "StudyLabel"
 	_label.text = "STUDY"
 	_label.size = Vector2(160.0, 36.0)
-	_label.position = Vector2(-80.0, -70.0)  # ~70px above the shaft mouth
+	_label.position = Vector2(-80.0, -70.0)
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_label.add_theme_font_size_override("font_size", 22)
 	_label.add_theme_color_override("font_color", _color)
 	_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.95))
 	_label.add_theme_constant_override("outline_size", 8)
+	_label.add_theme_stylebox_override("normal", _dark_style())
+	add_child(_label)
+
+	_hint = Label.new()
+	_hint.name = "HintLabel"
+	_hint.text = "HOLD DOWN"
+	_hint.size = Vector2(160.0, 26.0)
+	_hint.position = Vector2(-80.0, -102.0)
+	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_hint.add_theme_font_size_override("font_size", 15)
+	_hint.add_theme_color_override("font_color", Color(0.92, 0.96, 0.96))
+	_hint.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.95))
+	_hint.add_theme_constant_override("outline_size", 6)
+	_hint.add_theme_stylebox_override("normal", _dark_style())
+	_hint.visible = false
+	add_child(_hint)
+
+
+func _dark_style() -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.0, 0.0, 0.0, 0.6)
 	sb.corner_radius_top_left = 6
@@ -385,12 +514,10 @@ func _build_label() -> void:
 	sb.content_margin_right = 8.0
 	sb.content_margin_top = 4.0
 	sb.content_margin_bottom = 4.0
-	_label.add_theme_stylebox_override("normal", sb)
-	add_child(_label)
+	return sb
 
-## Rising glow motes. CPUParticles2D (not GPU) — the HTML5 non-threaded export
-## target has no reliable GPU particle support. Denser, bigger and faster than
-## the first pass, with the alpha fade baked into color_ramp.
+
+## Rising glow motes (CPU particles only, web-safe).
 func _build_particles() -> void:
 	var p := CPUParticles2D.new()
 	p.name = "RisingGlow"
@@ -415,16 +542,16 @@ func _build_particles() -> void:
 	p.color_ramp = ramp
 	add_child(p)
 
+
 func _make_square_texture(side: int) -> ImageTexture:
 	var img: Image = Image.create(side, side, false, Image.FORMAT_RGBA8)
 	img.fill(Color(1.0, 1.0, 1.0, 1.0))
 	return ImageTexture.create_from_image(img)
 
-# ---- Interaction zone -------------------------------------------------------
 
-## Detection only: layer 0 (nothing detects this), mask 2 (the player).
-## The body is additionally required to be in the "player" group, so stray
-## layer-2 bodies cannot trigger a study request.
+# ---- Climb zone + bottom trigger --------------------------------------------
+
+## Climb zone over the mouth AND the whole shaft. Layer 0, mask 2 (player).
 func _build_zone() -> void:
 	_zone = Area2D.new()
 	_zone.name = "EnterZone"
@@ -433,43 +560,63 @@ func _build_zone() -> void:
 	var shape := CollisionShape2D.new()
 	shape.name = "CollisionShape2D"
 	var rect := RectangleShape2D.new()
-	rect.size = Vector2(64.0, 80.0)
+	rect.size = Vector2(ZONE_WIDTH, ZONE_ABOVE + SHAFT_DEPTH)
 	shape.shape = rect
-	shape.position = Vector2(0.0, 0.0)  # centred on the shaft mouth
+	shape.position = Vector2(0.0, (SHAFT_DEPTH - ZONE_ABOVE) * 0.5)
 	_zone.add_child(shape)
 	_zone.body_entered.connect(_on_body_entered)
 	_zone.body_exited.connect(_on_body_exited)
 	add_child(_zone)
 
+
+func _build_bottom_trigger() -> void:
+	_bottom = Area2D.new()
+	_bottom.name = "BottomTrigger"
+	_bottom.collision_layer = 0
+	_bottom.collision_mask = 2
+	var shape := CollisionShape2D.new()
+	shape.name = "CollisionShape2D"
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(SHAFT_WIDTH, BOTTOM_TRIGGER_H)
+	shape.shape = rect
+	shape.position = Vector2(0.0, SHAFT_DEPTH - BOTTOM_TRIGGER_H * 0.5)
+	_bottom.add_child(shape)
+	_bottom.body_entered.connect(_on_bottom_body_entered)
+	add_child(_bottom)
+
+
 func _on_body_entered(body: Node2D) -> void:
 	if not body.is_in_group("player"):
 		return
 	_player_inside = true
+	if body is CharacterBody2D:
+		_player = body as CharacterBody2D
+	if body.has_method("enter_ladder_zone"):
+		body.call("enter_ladder_zone", self)
 	_update_prompt()
+
 
 func _on_body_exited(body: Node2D) -> void:
 	if not body.is_in_group("player"):
 		return
 	_player_inside = false
+	if body.has_method("exit_ladder_zone"):
+		body.call("exit_ladder_zone", self)
+	if not _shaft_mode:
+		_player = null
 	_update_prompt()
 
+
+func _on_bottom_body_entered(body: Node2D) -> void:
+	if body == null or body != _player:
+		return
+	if not _shaft_mode:
+		return
+	_descend()
+
+
 func _update_prompt() -> void:
-	if _label == null:
-		return
-	_label.text = "STUDY  [E]" if _player_inside else "STUDY"
-
-## Polled in _process rather than _unhandled_input: other nodes (NPC dialogue,
-## the HUD) handle "interact" first and mark it handled, which silently ate the
-## key here — the first web capture showed "STUDY [E]" but never descended.
-var _descending: bool = false
-
-func _poll_interact() -> void:
-	if _descending or not _player_inside or not _has_interact_action:
-		return
-	if Input.is_action_just_pressed("interact"):
-		_descending = true
-		portal_requested.emit(protocol, stage_id)
-		print("[PortalLadder] study requested: protocol=%s stage=%d" % [protocol, stage_id])
-		# Hand the run to the travel bookkeeper: it stores the return point,
-		# opens the PortalSession and fades into the matching study room.
-		Travel.descend(protocol, stage_id, get_tree().current_scene.scene_file_path, global_position.x)
+	if _label != null:
+		_label.text = "STUDY"
+	if _hint != null:
+		_hint.visible = _player_inside and not _shaft_mode and not _descending
