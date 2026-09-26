@@ -5,6 +5,10 @@
 
 ---
 
+**🔊 EPISODE 2 RUNNER AUDIO — wired, waiting on the VARCO key (2026-09-26).** The runner now has a sound player for all 10 stems in `runner.json`: mine bed, cart rails and score drone as loops (score on Music, the rest on SFX), plus zipline rush, duck thud, landing, alternating arrow flybys, boulder roll and a distant bear growl, each triggered by what happens on the track. A new generator `scripts/varco-text2sound.mjs` takes 3 samples per stem, keeps every take, and promotes the one you pick. The gun-layer prompts are in `revolver.json`. **Blocked:** `VARCO_API_KEY` is not in the environment, so no stems are generated yet. The runner stays silent in those slots until they are. Gates: all runner tests pass, including the new audio test.
+
+---
+
 **🔫 EPISODE 2 RUNNER — GOLDEN REVOLVER + MESHY PBR TUNNEL (2026-09-26).** Lil Blunt now holds his golden revolver in his off hand. Move the mouse to aim the reticle and press LMB to fire at the bear archers. He has 6 rounds, reloads automatically when empty or when you press R (the gun breaks open, with a click), and dry-fires when empty. Press F or RMB to swing the pickaxe at bears that leap onto the cart. The tunnel is no longer grey: it has Meshy PBR models (revolver, Lil Blunt, bear archer, ore cart, boulder, pickaxe) and seamless rock, gold-vein, timber and gravel textures. There are new SFX for the shot, reload, empty click, bear hit and pickaxe swing. It was checked in a browser: a mouse-aimed shot killed a bear, reload works, 3/3 hp. New skills: `ep2-asset-forge` (one command regenerates every asset) and `ep2-browser-playtest`.
 
 ---

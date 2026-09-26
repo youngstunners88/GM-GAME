@@ -1,5 +1,7 @@
 # Episode 2 Audio — VARCO Sound setup
 
+> **2026-09-26: use `scripts/varco-text2sound.mjs`** (skill `gm-game-varco-ep2`, real endpoint `openapi.ai.nc.com/.../text2sound`, header `OPENAPI_KEY`). `varco-sound.mjs` below used a guessed endpoint. Takes go to `takes/<stem_id>/`, promoted WAVs to `src/episode2/assets/audio/`, played by `src/episode2/runner/runner_audio.gd`.
+
 Source brief: `artifacts/PROMPT_EPISODE2_VARCO_SOUND_INTEGRATION.md` (founder).
 Runtime stays **Godot 4.3**; every stem lands as an `AudioStream` on a Godot bus.
 

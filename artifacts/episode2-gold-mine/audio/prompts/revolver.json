@@ -1,0 +1,21 @@
+{
+  "section": "revolver",
+  "version": 1,
+  "authored": "2026-09-26",
+  "source": ".claude/skills/gm-game-varco-ep2/SKILL.md (gun layer)",
+  "note": "Gun + bear-contact layer for the Episode 2 runner. Re-version, never edit in place after a good take.",
+  "stems": [
+    { "id": "ep2_revolver_fire_01", "layer": "action", "loop": false,
+      "prompt": "Single shot from an old western six-shooter revolver inside a stone mine tunnel, sharp crack, brass ring, short rocky reverb tail, close perspective" },
+    { "id": "ep2_revolver_dry_01", "layer": "action", "loop": false,
+      "prompt": "Revolver hammer falling on an empty chamber, one crisp small metallic click, no gunshot, quiet tunnel room tone" },
+    { "id": "ep2_revolver_reload_open_01", "layer": "action", "loop": false,
+      "prompt": "Old revolver breaking open, cylinder swinging out with a ratchet click, empty brass casings tinkling onto wooden planks" },
+    { "id": "ep2_revolver_reload_close_01", "layer": "action", "loop": false,
+      "prompt": "Six cartridges pushed into a revolver cylinder one by one, then the cylinder snapped shut with a firm metallic lock and a quick spin" },
+    { "id": "ep2_bear_hit_01", "layer": "threat", "loop": false,
+      "prompt": "Large bear struck and knocked back, short pained grunt, heavy body falling onto rock and gravel, not gory, not cartoonish" },
+    { "id": "ep2_bear_board_cart_01", "layer": "threat", "loop": false,
+      "prompt": "Heavy bear leaping and landing on a moving wooden mine cart, planks creak and bang, claws scrape iron, short aggressive snort" }
+  ]
+}

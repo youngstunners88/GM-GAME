@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3 uid="uid://ep2runnergraybox01"]
+[gd_scene load_steps=5 format=3 uid="uid://ep2runnergraybox01"]
 
 [ext_resource type="Script" path="res://src/episode2/runner/runner_graybox.gd" id="1"]
 [ext_resource type="Script" path="res://src/episode2/runner/runner_view.gd" id="2"]
+[ext_resource type="Script" path="res://src/episode2/runner/runner_audio.gd" id="3"]
 
 [sub_resource type="Environment" id="Environment_mine"]
 background_mode = 1
@@ -36,6 +37,10 @@ script = ExtResource("1")
 ; nodes below, so the values here are the editor/fallback look.
 [node name="View" type="Node3D" parent="."]
 script = ExtResource("2")
+
+; VARCO stems (runner.json). Reads the sim only; missing WAVs stay silent.
+[node name="Audio" type="Node" parent="."]
+script = ExtResource("3")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_mine")
