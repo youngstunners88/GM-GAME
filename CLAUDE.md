@@ -48,6 +48,8 @@ same commit — a manifest that lies is worse than none.
 | Write docs, marketing, or changelogs | /docs | CONTEXT.md | — |
 | **Founder reports smudges / blotches / blemishes** | **`blotch-hunter` agent** | `scripts/blotch-oracle.json` | `blotch-forensics`, `blotch-repair-gate` |
 
+Episode 2 sessions load gm-game-tool-roster + gm-game-episode2-runner-combat.
+
 ## Naming Conventions
 - Levels: `level-[number]_[realm-name].tscn` (e.g., `level-01_smoke-realm.tscn`)
 - Scripts: `snake_case.gd`
