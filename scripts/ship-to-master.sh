@@ -41,6 +41,9 @@ fi
 default_gates() {
   local G=".godot-cache/Godot_v4.3-stable_linux.x86_64"
   if [ -x "$G" ]; then
+    # Refresh the global class cache first. Merging master brings new class_name
+    # scripts; a stale cache makes correct code fail to compile (hit twice).
+    timeout 600 "$G" --headless --editor --quit >/dev/null 2>&1 || true
     timeout 400 "$G" --headless res://tests/script_compile_test.tscn >/tmp/ship_compile.log 2>&1 \
       || { echo "✗ script compile failed"; grep -E "FAIL|SCRIPT ERROR|Parse Error" /tmp/ship_compile.log | head -20; return 1; }
     echo "✓ script compile"
