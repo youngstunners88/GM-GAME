@@ -35,6 +35,8 @@ def main() -> int:
     ap.add_argument("dst")
     ap.add_argument("--max", type=int, default=1024, help="max texture edge in px")
     ap.add_argument("--quality", type=int, default=82)
+    ap.add_argument("--aux-max", type=int, default=512,
+                    help="max edge for NON-base-colour maps (normal, metallic-roughness, AO)")
     a = ap.parse_args()
 
     raw = open(a.src, "rb").read()
@@ -51,6 +53,17 @@ def main() -> int:
 
     views = gltf["bufferViews"]
     image_views = {img["bufferView"]: i for i, img in enumerate(gltf.get("images", [])) if "bufferView" in img}
+    # Which images are base colour? Those keep --max; PBR detail maps (normal,
+    # metallic-roughness, occlusion) get --aux-max — they read fine at lower res
+    # and are most of a PBR GLB's bytes.
+    tex = gltf.get("textures", [])
+    base_imgs = set()
+    for m in gltf.get("materials", []):
+        bc = (m.get("pbrMetallicRoughness") or {}).get("baseColorTexture")
+        if bc is not None and bc.get("index", -1) < len(tex):
+            src = tex[bc["index"]].get("source")
+            if src is not None:
+                base_imgs.add(src)
 
     # Rebuild the BIN chunk view by view, preserving order and 4-byte alignment.
     out = bytearray()
@@ -62,7 +75,8 @@ def main() -> int:
             im = Image.open(io.BytesIO(data))
             im.load()
             w, h = im.size
-            scale = min(1.0, a.max / max(w, h))
+            limit = a.max if image_views[vi] in base_imgs else a.aux_max
+            scale = min(1.0, limit / max(w, h))
             if scale < 1.0:
                 im = im.resize((max(1, int(w * scale)), max(1, int(h * scale))), Image.LANCZOS)
             if im.mode not in ("RGB", "L"):

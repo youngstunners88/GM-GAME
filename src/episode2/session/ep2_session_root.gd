@@ -12,82 +12,45 @@ extends Node
 ## Rail #5 names five specific guards. Each is implemented and each has a
 ## headless assertion in tests/ep2_session_root_test.gd:
 ##
-##   1. Double-triggered rewards → `_rewarded_chambers`. A chamber's payout
-##      commits at most once per chamber index, even if `chamber_cleared`
-##      is emitted twice (re-entrancy, a duplicated connection, or a full-vest
-##      tick landing on the same frame as an Early Claim lever pull).
+##   1. Double-triggered rewards → `_rewarded_chambers`.
 ##   2. Stale input → `_mode`. Input verbs are routed by mode and are hard
-##      no-ops during TRANSITION, so a button pressed on the last frame of the
-##      runner cannot drive a chamber that is mid-load (or vice versa).
+##      no-ops during TRANSITION.
 ##   3. Duplicate player → `_teardown_active()` frees and NULLS the outgoing
-##      scene before the incoming one is instantiated, and `_active` is a
-##      single slot. There is no path that leaves two player-bearing scenes
-##      in the tree.
+##      scene before the incoming one is instantiated.
 ##   4. Wrong resume position → `_completed_distance` accumulates the runner's
-##      distance at the moment the chamber was entered, so the post-chamber
-##      segment continues the track instead of restarting it. The runner scene
-##      legitimately resets its own `_distance` to 0 on setup(); continuity is
-##      this root's job, not the disposable scene's.
-##   5. Mobile memory → the outgoing scene is `queue_free()`d, never hidden and
-##      kept resident. Two 3D scenes alive at once is the single easiest way to
-##      blow a phone's memory budget on this project.
+##      distance at the moment the chamber was entered.
+##   5. Mobile memory → the outgoing scene is `queue_free()`d, never hidden.
 ##
 ## ECONOMY: the chamber computes its outcome and emits it; THIS is where it is
-## committed to GoldMineSystem (mine_gold / forfeit_to_auction). Keeping the
-## write here is what makes guard #1 possible — a scene that credits itself
-## cannot be made idempotent by its caller.
+## committed to GoldMineSystem (mine_gold / auction pool credit).
 
 signal mode_changed(mode: int)
-## Emitted after a chamber's payout has actually been committed. Carries the
-## chamber index and the committed result — the HUD/telemetry hook.
 signal chamber_committed(index: int, result: Dictionary)
-## Emitted when the whole planned track is finished.
 signal session_complete
-## Emitted when a run ends badly (runner out of health, or chamber failed).
 signal session_failed
 
 enum Mode { IDLE, RUNNER, CHAMBER, TRANSITION }
 
 const RUNNER_SCENE := preload("res://src/episode2/runner/runner_graybox.tscn")
-## Chambers, by the id a track-plan segment names in its "chamber" key.
-##
-## Was a single `CHAMBER_SCENE` const pointing at the Miner Shaft. Episode 2
-## has seven designed chambers and the FIRST thing the player reaches is not a
-## protocol chamber at all — it is the Smelting Facility, where the Inferno Bull
-## hands over the Winchester (chambers/00_SMELTING_FACILITY.md). A segment that
-## names no chamber still gets the Miner Shaft, so every existing plan and gate
-## keeps its exact previous behaviour.
 const CHAMBER_SCENES := {
 	"smelting_facility": preload("res://src/episode2/chamber/smelting_facility.tscn"),
 	"miner_shaft": preload("res://src/episode2/chamber/miner_shaft.tscn"),
 }
 const DEFAULT_CHAMBER := "miner_shaft"
 
-## Default GOLD principal for a graybox miner. NOT a protocol constant — no
-## such value exists in goldmine_system.gd or the white paper (see the
-## PROTOCOL NUMBERS note in miner_shaft.gd), so it is a caller-supplied
-## placeholder, overridable per segment in the track plan.
 const DEFAULT_GOLD_PRINCIPAL := 1000
 
 var _mode: int = Mode.IDLE
 var _active: Node = null
-var _plan: Array = []              # [{chamber_z, obstacles, zip_segments, gold_principal, diamonds_paid}]
+var _plan: Array = []
 var _segment: int = 0
 var _completed_distance: float = 0.0
 var _rewarded_chambers: Dictionary = {}   # index -> true, guard #1
-## The segment index the CURRENTLY-LOADED chamber belongs to, captured at
-## entry. Guard #1 must key on this and not on `_segment`: `_advance_segment()`
-## increments `_segment` as part of handling the first payout, so a duplicate
-## `chamber_cleared` arriving afterwards would be attributed to the NEXT
-## segment's index, find no flag there, and pay out a second time. Keying on
-## the owning segment makes the guard hold no matter when the duplicate lands.
+## The segment index the CURRENTLY-LOADED chamber belongs to (guard #1 key).
 var _chamber_segment: int = -1
 var _commit_to_economy: bool = true
 var _totals: Dictionary = {"gold_awarded": 0, "gold_forfeited": 0, "diamonds_burned": 0}
 
-## `commit_to_economy` exists so a headless gate can exercise the whole loop
-## without mutating the real GoldMineSystem singleton and leaking state into
-## other tests in the same run. Production callers leave it true.
 func configure(plan: Array, commit_to_economy: bool = true) -> void:
 	_plan = plan.duplicate(true)
 	_commit_to_economy = commit_to_economy
@@ -99,7 +62,6 @@ func configure(plan: Array, commit_to_economy: bool = true) -> void:
 	_teardown_active()
 	_mode = Mode.IDLE
 
-## Begin the session at segment 0.
 func start() -> void:
 	if _plan.is_empty():
 		return
@@ -109,7 +71,7 @@ func start() -> void:
 
 func _enter_runner() -> void:
 	_mode = Mode.TRANSITION
-	_teardown_active()                      # guard #3 + #5: free BEFORE instantiate
+	_teardown_active()
 	var seg: Dictionary = _plan[_segment]
 	var r: Node = RUNNER_SCENE.instantiate()
 	add_child(r)
@@ -124,20 +86,18 @@ func _enter_runner() -> void:
 	r.chamber_reached.connect(_on_chamber_reached, CONNECT_ONE_SHOT)
 	r.run_failed.connect(_on_run_failed, CONNECT_ONE_SHOT)
 	_mode = Mode.RUNNER
+	_sync_mouse_mode()
 	mode_changed.emit(_mode)
 
 func _enter_chamber() -> void:
 	_mode = Mode.TRANSITION
-	# Banked BEFORE teardown — the runner's distance dies with the scene.
+	_sync_mouse_mode()
 	if _active and _active.has_method("get_distance"):
 		_completed_distance += float(_active.get_distance())
-	_teardown_active()                      # guard #3 + #5
+	_teardown_active()
 	var seg: Dictionary = _plan[_segment]
 	var chamber_id: String = str(seg.get("chamber", DEFAULT_CHAMBER))
 	if not CHAMBER_SCENES.has(chamber_id):
-		# Loud, not silent. A typo'd chamber id that quietly fell back to the
-		# Miner Shaft would put the player in the wrong room with the right
-		# economy attached to it — a story bug wearing a working chamber's face.
 		push_error("Ep2SessionRoot: unknown chamber id \"%s\"; falling back to %s" % [chamber_id, DEFAULT_CHAMBER])
 		chamber_id = DEFAULT_CHAMBER
 	var c: Node = CHAMBER_SCENES[chamber_id].instantiate()
@@ -148,10 +108,6 @@ func _enter_chamber() -> void:
 		seg.get("bears", []),
 		int(seg.get("diamonds_paid", 0))
 	)
-	# CONNECT_ONE_SHOT is belt-and-braces only. The real idempotency guarantee
-	# is `_rewarded_chambers` in _on_chamber_cleared — a one-shot connection
-	# still fires once per *connection*, and nothing structurally prevents a
-	# future caller from connecting twice.
 	c.chamber_cleared.connect(_on_chamber_cleared, CONNECT_ONE_SHOT)
 	c.chamber_failed.connect(_on_chamber_failed, CONNECT_ONE_SHOT)
 	_chamber_segment = _segment
@@ -167,15 +123,10 @@ func _teardown_active() -> void:
 
 func _on_chamber_reached() -> void:
 	if _mode != Mode.RUNNER:
-		return                              # guard #2: stale/duplicate signal
+		return
 	_enter_chamber()
 
 func _on_chamber_cleared(result: Dictionary) -> void:
-	# Guard #1. Keyed per-chamber (not a bare bool) so a later multi-chamber
-	# plan can't have chamber 2's payout suppressed by chamber 1's flag, and
-	# keyed on `_chamber_segment` (not `_segment`) so a duplicate arriving
-	# after the segment has already advanced is still recognised — see the
-	# declaration comment on `_chamber_segment`.
 	var owner_segment: int = _chamber_segment
 	if owner_segment < 0 or _rewarded_chambers.has(owner_segment):
 		return
@@ -191,31 +142,15 @@ func _on_chamber_cleared(result: Dictionary) -> void:
 	if _commit_to_economy:
 		var gm: Node = get_node_or_null("/root/GoldMineSystem")
 		if gm:
-			# Credit the vested portion — the GOLD the player actually earned.
 			if awarded > 0 and gm.has_method("mine_gold"):
 				gm.mine_gold(awarded)
-			# Route the UNVESTED remainder into the auction pool.
-			#
-			# Deliberately NOT gm.forfeit_to_auction(). Despite the name, that
-			# function is a TRANSFER OUT OF the player's balance, not a credit
-			# into the pool: it clamps `amount` to `gold_balance` and then does
-			# `gold_balance -= amount`. Calling it here clawed back the GOLD
-			# mine_gold() had just legitimately credited — a half-vested 1000
-			# miner paid 499, then immediately lost all 499 to the clamp, so
-			# the player ended a successful early claim with a zero balance.
-			# Caught by tests/ep2_session_root_test.gd test 15.
-			#
-			# The unvested remainder was never in the player's balance (it is
-			# GOLD they never earned), so the correct operation is a pool
-			# credit with no debit. `auction_gold_pool` is a plain public var
-			# on the autoload and is incremented directly elsewhere in that
-			# same script (distribute_treasury_revenue, on_player_death).
+			# Deliberately NOT gm.forfeit_to_auction() — that debits the player
+			# (tests/ep2_session_root_test.gd test 15). The unvested remainder
+			# was never in the balance, so it is a plain pool credit.
 			if forfeited > 0:
 				gm.auction_gold_pool += forfeited
 
 	chamber_committed.emit(owner_segment, result)
-	# Clear the slot BEFORE advancing: from here on there is no live chamber,
-	# so any further chamber_cleared is by definition stale.
 	_chamber_segment = -1
 	_advance_segment()
 
@@ -223,11 +158,13 @@ func _on_chamber_failed() -> void:
 	_chamber_segment = -1
 	_mode = Mode.IDLE
 	_teardown_active()
+	_sync_mouse_mode()
 	session_failed.emit()
 
 func _on_run_failed() -> void:
 	_mode = Mode.IDLE
 	_teardown_active()
+	_sync_mouse_mode()
 	session_failed.emit()
 
 func _advance_segment() -> void:
@@ -235,14 +172,12 @@ func _advance_segment() -> void:
 	if _segment >= _plan.size():
 		_mode = Mode.IDLE
 		_teardown_active()
+		_sync_mouse_mode()
 		session_complete.emit()
 		return
 	_enter_runner()
 
 # --- Input routing (guard #2) -------------------------------------------------
-# Every verb is a no-op unless the matching mode is active. During TRANSITION
-# nothing is routed anywhere, which is the whole point of having an explicit
-# transition state rather than swapping scenes inline.
 
 func runner_switch_lane_left() -> void:
 	if _mode == Mode.RUNNER and _active:
@@ -264,10 +199,27 @@ func runner_duck_end() -> void:
 	if _mode == Mode.RUNNER and _active:
 		_active.duck_end()
 
-## Fire the Winchester at the nearest archer ahead (no-op on unarmed legs).
+## Keyboard auto-aim shot at the nearest archer ahead (no-op on unarmed legs).
 func runner_shoot() -> void:
 	if _mode == Mode.RUNNER and _active:
 		_active.shoot()
+
+## Mouse-aimed revolver shot through the given screen position.
+func runner_fire_at_screen(pos: Vector2) -> void:
+	if _mode != Mode.RUNNER or _active == null:
+		return
+	var cam := get_viewport().get_camera_3d()
+	if cam:
+		_active.fire_ray(cam.project_ray_origin(pos), cam.project_ray_normal(pos))
+
+func runner_reload() -> void:
+	if _mode == Mode.RUNNER and _active:
+		_active.reload()
+
+## Pickaxe swipe — knocks a boarding bear off the cart.
+func runner_swipe() -> void:
+	if _mode == Mode.RUNNER and _active:
+		_active.swipe()
 
 func chamber_start_rig(payment: String = "eth") -> bool:
 	if _mode == Mode.CHAMBER and _active:
@@ -284,9 +236,6 @@ func chamber_early_claim() -> bool:
 		return _active.early_claim()
 	return false
 
-## Walk the player through a chamber that supports it. `has_method` rather than
-## an id check: the Miner Shaft legitimately has no walk verb, and adding an
-## empty one to it just to satisfy a caller would be worse than asking.
 func chamber_walk(direction: float) -> void:
 	if _mode == Mode.CHAMBER and _active and _active.has_method("walk"):
 		_active.walk(direction)
@@ -305,8 +254,6 @@ func chamber_leave_cover() -> void:
 	if _mode == Mode.CHAMBER and _active:
 		_active.leave_cover()
 
-## Drive the active mode deterministically — the headless-test entry point,
-## mirroring RunnerGraybox.step()/MinerShaftChamber.step().
 func step(delta: float) -> void:
 	if _active and (_mode == Mode.RUNNER or _mode == Mode.CHAMBER):
 		_active.step(delta)
@@ -316,33 +263,38 @@ func get_mode() -> int: return _mode
 func get_segment() -> int: return _segment
 func get_active() -> Node: return _active
 func get_totals() -> Dictionary: return _totals.duplicate()
-## Cumulative track distance across every runner segment this session — the
-## value that must NOT reset when a chamber is entered (guard #4).
 func get_total_distance() -> float:
 	var live: float = 0.0
 	if _mode == Mode.RUNNER and _active and _active.has_method("get_distance"):
 		live = float(_active.get_distance())
 	return _completed_distance + live
 
+# --- Mouse cursor ---------------------------------------------------------------
+# The runner view draws its own reticle, so the OS cursor is hidden in RUNNER
+# mode and visible everywhere else (chambers, menus, after the session ends).
+
+func _process(_delta: float) -> void:
+	_sync_mouse_mode()
+
+func _sync_mouse_mode() -> void:
+	var want: Input.MouseMode = Input.MOUSE_MODE_HIDDEN if _mode == Mode.RUNNER else Input.MOUSE_MODE_VISIBLE
+	if Input.mouse_mode != want:
+		Input.mouse_mode = want
+
+func _exit_tree() -> void:
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
 # --- Live player input (guard #2 still applies) --------------------------------
 #
-# Until this block existed, Episode 2 had NO input handling anywhere: the verbs
-# above were callable only from code, so the headless gates drove the whole loop
-# while a human pressing keys did nothing. Every gate was green and the feature
-# was unplayable — instantiating a scene directly and calling step() proves the
-# LOGIC, never the REACHABILITY.
-#
-# Input maps onto the existing Episode 1 actions rather than adding new ones, so
-# the mobile touch controls (which emit these same actions) work here for free:
-#
 #   Runner   move_left/move_right = switch rail · jump = jump · move_down = duck (hold)
+#            LMB = fire revolver at the reticle · RMB / F = pickaxe swipe
+#            R = reload · attack (J/Enter) = auto-aim shot
 #   Chamber  attack = shoot · interact = start the Miner Rig
 #            move_down = take cover (hold) · dash = pull the Early Claim lever
 #
-# Routing still goes through the mode-gated verbs above, so a key pressed on the
-# runner's last frame cannot drive a chamber that is mid-load.
+# The revolver/pickaxe/reload bindings read raw mouse buttons and physical keys
+# so no project.godot input-map edits are needed.
 
-## Set false to drive this root purely from a test harness.
 @export var input_enabled: bool = true
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -350,6 +302,25 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	match _mode:
 		Mode.RUNNER:
+			if event is InputEventMouseButton:
+				var mb: InputEventMouseButton = event
+				if mb.pressed:
+					if mb.button_index == MOUSE_BUTTON_LEFT:
+						runner_fire_at_screen(mb.position)
+					elif mb.button_index == MOUSE_BUTTON_RIGHT:
+						runner_swipe()
+				# Mouse buttons never fall through to actions (an "attack" mapped
+				# to LMB would otherwise fire twice).
+				return
+			if event is InputEventKey:
+				var k: InputEventKey = event
+				if k.pressed:
+					if k.physical_keycode == KEY_R:
+						runner_reload()
+						return
+					if k.physical_keycode == KEY_F:
+						runner_swipe()
+						return
 			if event.is_action_pressed("move_left"):
 				runner_switch_lane_left()
 			elif event.is_action_pressed("move_right"):
@@ -366,7 +337,6 @@ func _unhandled_input(event: InputEvent) -> void:
 			if event.is_action_pressed("attack"):
 				chamber_shoot()
 			elif event.is_action_pressed("interact"):
-				# Diamonds cost more but spin a heavier miner; hold sprint to opt in.
 				chamber_start_rig("eth_diamonds" if Input.is_action_pressed("sprint") else "eth")
 			elif event.is_action_pressed("dash"):
 				chamber_early_claim()
@@ -374,10 +344,6 @@ func _unhandled_input(event: InputEvent) -> void:
 				chamber_take_cover()
 			elif event.is_action_released("move_down"):
 				chamber_leave_cover()
-			# Walking. Only the Smelting Facility moves the player on foot; the
-			# Miner Shaft holds position at the rig, so the verb is routed by
-			# capability rather than by chamber id — a chamber that cannot walk
-			# simply does not answer to it.
 			elif event.is_action_pressed("move_right"):
 				chamber_walk(1.0)
 			elif event.is_action_pressed("move_left"):

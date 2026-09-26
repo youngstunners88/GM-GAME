@@ -52,6 +52,8 @@ def main() -> int:
     ap.add_argument("--polycount", type=int, default=8000)
     ap.add_argument("--pose", default="keep", choices=["keep", "a-pose", "t-pose"])
     ap.add_argument("--texture-prompt", default="")
+    ap.add_argument("--pbr", action="store_true",
+                    help="also generate normal + metallic/roughness maps (the surface detail)")
     a = ap.parse_args()
 
     key = os.environ.get("MESHY_API_KEY")
@@ -70,7 +72,7 @@ def main() -> int:
         "target_polycount": a.polycount,
         "should_texture": True,
         "texture_resolution": "2k",
-        "enable_pbr": False,          # base colour only: normal/rough maps would triple texture bytes
+        "enable_pbr": bool(a.pbr),    # normal + metallic/roughness; shrink_glb sizes them down
         "pose_mode": "" if a.pose == "keep" else a.pose,
         "target_formats": ["glb"],
         "auto_size": True,

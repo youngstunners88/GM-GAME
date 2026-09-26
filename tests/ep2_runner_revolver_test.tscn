@@ -1,0 +1,4 @@
+[gd_scene load_steps=2 format=3 uid="uid://ep2runnerrevolvertest01"]
+[ext_resource type="Script" path="res://tests/ep2_runner_revolver_test.gd" id="1"]
+[node name="Ep2RunnerRevolverTest" type="Node"]
+script = ExtResource("1")

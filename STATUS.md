@@ -5,6 +5,10 @@
 
 ---
 
+**🔫 EPISODE 2 RUNNER — GOLDEN REVOLVER + MESHY PBR TUNNEL (2026-09-26).** Lil Blunt now holds his golden revolver in his off hand. Move the mouse to aim the reticle and press LMB to fire at the bear archers. He has 6 rounds, reloads automatically when empty or when you press R (the gun breaks open, with a click), and dry-fires when empty. Press F or RMB to swing the pickaxe at bears that leap onto the cart. The tunnel is no longer grey: it has Meshy PBR models (revolver, Lil Blunt, bear archer, ore cart, boulder, pickaxe) and seamless rock, gold-vein, timber and gravel textures. There are new SFX for the shot, reload, empty click, bear hit and pickaxe swing. It was checked in a browser: a mouse-aimed shot killed a bear, reload works, 3/3 hp. New skills: `ep2-asset-forge` (one command regenerates every asset) and `ep2-browser-playtest`.
+
+---
+
 **🚀 PORTAL TOUR REPAIR SHIPPED to master on founder order (2026-09-25; Jev had voted BLOCK).** Lil Blunt now walks with the arrows in all three tours, Pauly The Smokest / Kane The Blaze Mechanic / Rich the Claim Recorder follow and talk (voiced), and the facts passed Qwen. Jev blocked the overall ship, most likely on the balloon and labels clipped at the screen edge. That is the next fix. The live itch build is unchanged.
 
 ---

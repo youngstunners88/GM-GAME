@@ -1,0 +1,104 @@
+{
+  "golden_revolver": {
+    "name": "golden_revolver",
+    "ok": true,
+    "file": "src/episode2/assets/golden_revolver.glb",
+    "bytes": 726720,
+    "meshy_task": "01a0dc7d-d40f-76ef-9a0c-07af648d5e1e",
+    "source": "muapi:single ornate golden six-shooter revolver, engraved gold frame and cylinder, dark walnut grip, side view, isolated on pure white background, centered, entire gun visible, studio lighting, game asset",
+    "polycount": 9000,
+    "pbr": true,
+    "base_px": 1024,
+    "detail_px": 512,
+    "secs": 97
+  },
+  "lil_blunt": {
+    "name": "lil_blunt",
+    "ok": true,
+    "file": "src/episode2/assets/lil_blunt.glb",
+    "bytes": 1044692,
+    "meshy_task": "01a0dc79-e030-7514-aba5-f08785c96f67",
+    "source": "crop:IMG_2492_cart-jump_bears-arrows-boulders.jpg:660,200,975,540",
+    "polycount": 12000,
+    "pbr": true,
+    "base_px": 1024,
+    "detail_px": 512,
+    "secs": 181
+  },
+  "bear_archer": {
+    "name": "bear_archer",
+    "ok": true,
+    "file": "src/episode2/assets/bear_archer.glb",
+    "bytes": 1145748,
+    "meshy_task": "01a0dc79-df38-7493-b2d5-a1633d1d1f29",
+    "source": "ref:REF_balaclava-bear-archer_turnaround.jpg",
+    "polycount": 12000,
+    "pbr": true,
+    "base_px": 1024,
+    "detail_px": 512,
+    "secs": 212
+  },
+  "ore_cart": {
+    "name": "ore_cart",
+    "ok": true,
+    "file": "src/episode2/assets/ore_cart.glb",
+    "bytes": 722540,
+    "meshy_task": "01a0dc79-e0a4-75cd-9a07-83128f257241",
+    "source": "crop:IMG_2492_cart-jump_bears-arrows-boulders.jpg:830,515,1275,800",
+    "polycount": 8000,
+    "pbr": true,
+    "base_px": 1024,
+    "detail_px": 512,
+    "secs": 160
+  },
+  "boulder_rock": {
+    "name": "boulder_rock",
+    "ok": true,
+    "file": "src/episode2/assets/boulder_rock.glb",
+    "bytes": 221400,
+    "meshy_task": "01a0dc7d-d3d7-7582-b440-da847ad4a596",
+    "source": "muapi:single large rough grey granite boulder, round, faint gold flecks, isolated on pure white background, centered, whole rock visible, game asset",
+    "polycount": 3000,
+    "pbr": true,
+    "base_px": 512,
+    "detail_px": 256,
+    "secs": 138
+  },
+  "pickaxe": {
+    "name": "pickaxe",
+    "ok": true,
+    "file": "src/episode2/assets/pickaxe.glb",
+    "bytes": 266272,
+    "meshy_task": "01a0dc7a-0093-724b-a07e-7d438fdb7022",
+    "source": "muapi:single miner's pickaxe, iron head, worn wooden handle, isolated on pure white background, centered, full object visible, studio lighting, game asset",
+    "polycount": 4000,
+    "pbr": true,
+    "base_px": 512,
+    "detail_px": 256,
+    "secs": 139
+  },
+  "rock_wall": {
+    "name": "rock_wall",
+    "ok": true,
+    "file": "src/episode2/assets/textures/tex_rock_wall.jpg",
+    "bytes": 76166
+  },
+  "gold_vein": {
+    "name": "gold_vein",
+    "ok": true,
+    "file": "src/episode2/assets/textures/tex_gold_vein.jpg",
+    "bytes": 84897
+  },
+  "timber": {
+    "name": "timber",
+    "ok": true,
+    "file": "src/episode2/assets/textures/tex_timber.jpg",
+    "bytes": 63617
+  },
+  "gravel": {
+    "name": "gravel",
+    "ok": true,
+    "file": "src/episode2/assets/textures/tex_gravel.jpg",
+    "bytes": 93470
+  }
+}

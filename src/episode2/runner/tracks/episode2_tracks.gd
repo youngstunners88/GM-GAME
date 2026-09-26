@@ -14,17 +14,21 @@ extends RefCounted
 ## A const in a script always ships. Edit the numbers here; no logic lives in it.
 ##
 ## Units: z is metres along the track; RUN_SPEED is 12 m/s, so 12 m ≈ 1 second.
-## Lanes: 0 = left rail, 1 = centre, 2 = right. Archer side: -1 left, +1 right.
+## Lanes: 0 = left rail, 1 = centre, 2 = right; -1 = "whichever cart the rider
+## is in" (boarders only). Archer side: -1 left, +1 right.
 ## Hazard verbs: box = JUMP, arrow = DUCK (or SHOOT its archer once armed),
-## boulder = HOP to another cart. Zipline = JUMP to hook it; chained cables need
-## a second JUMP near the end of each to swing to the next.
+## boulder = HOP to another cart, boarder = SWIPE (pickaxe: F / right-click).
+## Zipline = JUMP to hook it; chained cables need a second JUMP near the end of
+## each to swing to the next.
 
-## Leg 1 — THE DESCENT. Unarmed: the Winchester is handed over in Chamber 0
-## (the Smelting Facility, which this leg ends at), so this leg teaches the four movement verbs one at a time,
-## each introduced alone with ~3 s of warning before any combination.
+## Leg 1 — THE DESCENT. Armed from the start: the golden revolver is Lil
+## Blunt's own gun (founder, 2026-09-26), so every volley here can be answered
+## by ducking OR by shooting its archer. The leg ends at Chamber 0, the Smelting
+## Facility. It teaches the movement verbs one at a time, each introduced alone
+## with ~3 s of warning before any combination.
 const LEG_DESCENT := {
 	"name": "The Descent",
-	"armed": false,
+	"armed": true,
 	"chamber_z": 330.0,
 	"archers": [
 		{"id": "d_a1", "z": 138.0, "side": 1},
@@ -37,7 +41,8 @@ const LEG_DESCENT := {
 		{"z": 66.0, "lane": 1, "type": "box"},
 		# HOP — a boulder down your rail; nothing but another cart saves you.
 		{"z": 100.0, "lane": 1, "type": "boulder"},
-		# DUCK — a full volley across all three rails, so the only answer is duck.
+		# DUCK — a full volley across all three rails, so the only answer is duck
+		# (or shoot the bear).
 		{"z": 138.0, "lane": 0, "type": "arrow", "archer": "d_a1"},
 		{"z": 138.0, "lane": 1, "type": "arrow", "archer": "d_a1"},
 		{"z": 138.0, "lane": 2, "type": "arrow", "archer": "d_a1"},
@@ -53,6 +58,9 @@ const LEG_DESCENT := {
 		{"z": 285.0, "lane": 1, "type": "box"},
 		{"z": 300.0, "lane": 0, "type": "arrow", "archer": "d_a3"},
 		{"z": 300.0, "lane": 1, "type": "arrow", "archer": "d_a3"},
+		# BOARDER — a bear leaps onto YOUR cart (lane -1 = whichever cart you're in).
+		# Only the pickaxe swipe (F / right-click) knocks it off.
+		{"z": 320.0, "lane": -1, "type": "boarder"},
 	],
 	"zip_segments": [
 		# ZIPLINE — one cable to learn the catch.
@@ -61,12 +69,12 @@ const LEG_DESCENT := {
 		{"start_z": 250.0, "end_z": 262.0},
 		{"start_z": 268.0, "end_z": 278.0},
 	],
-	# CHAMBER 0 — the Smelting Facility: Inferno Bull hands over the Winchester.
-	# A story set-piece, so it mints nothing (no gold_principal, no bears).
+	# CHAMBER 0 — the Smelting Facility: a story set-piece, so it mints nothing
+	# (no gold_principal, no bears).
 	"chamber": "smelting_facility",
 }
 
-## Leg 2 — DEEPER RAILS. Armed. Every volley now has a second answer: shoot its
+## Leg 2 — DEEPER RAILS. Armed. Every volley has a second answer: shoot its
 ## archer before it looses. Hazards arrive tighter and in combinations.
 const LEG_DEEPER := {
 	"name": "Deeper Rails",
@@ -99,6 +107,7 @@ const LEG_DEEPER := {
 		{"z": 250.0, "lane": 0, "type": "arrow", "archer": "r_a4"},
 		{"z": 250.0, "lane": 1, "type": "arrow", "archer": "r_a4"},
 		{"z": 250.0, "lane": 2, "type": "arrow", "archer": "r_a4"},
+		{"z": 272.0, "lane": -1, "type": "boarder"},
 		{"z": 290.0, "lane": 0, "type": "boulder"},
 		{"z": 290.0, "lane": 1, "type": "boulder"},
 		{"z": 318.0, "lane": 0, "type": "arrow", "archer": "r_a5"},

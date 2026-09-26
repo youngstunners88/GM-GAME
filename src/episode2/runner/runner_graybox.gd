@@ -7,67 +7,45 @@ extends Node3D
 ##
 ## This script is pure gameplay logic: it contains NO rendering code at all.
 ## Everything visible (tunnel, carts, props, hazards, telegraphs, camera,
-## environment/sun art pass) is built by the child "View" node, which only
-## reads this sim through its accessors and signals. So every rule here stays
-## headless-testable with no renderer, and the art can be restyled freely.
+## environment/sun art pass, reticle/ammo HUD) is built by the child "View"
+## node, which only reads this sim through its accessors and signals. So every
+## rule here stays headless-testable with no renderer.
 ##
 ## Deliberately self-contained: it pulls in none of the Episode-1-specific
 ## gameplay autoloads (StateMachine, GameManager, etc.) so the runner can be
-## reasoned about and headless-tested in isolation. Economy wiring to
-## goldmine_system.gd comes when the loop is proven, not here.
+## reasoned about and headless-tested in isolation.
 ## `AudioManager` is the one exception — it's a project-wide music/audio
-## singleton already used across every episode/level (not Episode-1-only
-## gameplay state), so using it here is consistent with existing convention,
-## not a break of the isolation goal above.
+## singleton already used across every episode/level.
 ##
-## Mode model (per Astra's reviewed architecture): the runner is one of the
-## two modes under a future persistent session root. Here it runs standalone
-## and emits `chamber_reached` at the chamber entrance — the signal the
-## session root will use to swap to the 3D chamber scene, carrying player
-## state across. The runner does NOT load the chamber itself.
+## Mode model: the runner is one of the two modes under the persistent session
+## root. It emits `chamber_reached` at the chamber entrance; it does NOT load
+## the chamber itself.
 ##
-## Hazard model (per multi-model design review,
-## docs/model-responses/2026-09-06-grok-ep2-runner-hazards.md): arrow and
-## boulder hazards are deliberately OPPOSITE, not palette swaps of the
-## legacy box obstacle:
-##   - "box"     (legacy/default): cleared by jump. Unchanged behaviour —
-##                the 7 pre-existing headless assertions keep meaning what
-##                they meant before this hazard-type field existed.
-##   - "arrow"   (balaclava bears firing down the lane): a flying projectile
-##                — jumping does NOT clear it. Only ducking inside the cart
-##                (cart walls block it) or being in a different lane clears
-##                it. Ducking must be held for DUCK_MIN_HOLD before it counts,
-##                so a one-frame duck-on-contact can't cheese the window.
-##   - "boulder" (bears rolling rocks down a rail): too big to jump and it
-##                crushes low, so neither jump NOR duck clears it. The ONLY
-##                answer is to hop into the cart on another rail (founder
-##                direction 2026-09-23, matching IMG_2492: one cart per rail,
-##                Lil Blunt leaps between them). Changed from the earlier
-##                "jump clears a boulder" rule; tests updated to match.
+## Hazard model (docs/model-responses/2026-09-06-grok-ep2-runner-hazards.md):
+##   - "box"     (legacy/default): cleared by jump.
+##   - "arrow"   : only ducking (held DUCK_MIN_HOLD) or another lane clears it —
+##                 or shooting its archer first.
+##   - "boulder" : neither jump nor duck: hop to another rail's cart.
+##   - "boarder" : a bear leaps INTO the rider's cart. `"lane": -1` means
+##                 "whichever cart the rider is in". Only the pickaxe swipe
+##                 (swipe(), SWIPE_WINDOW) knocks it off; jump/duck/hop don't.
 ##
-## Carts: there is one cart per rail, running as a convoy. A "lane switch" is
-## Lil Blunt HOPPING between carts, not one cart sliding sideways. The sim is
-## unchanged by this (it only ever tracked the rider's x); it is a statement
-## about what `$Cart` means — the RIDER anchor — and what the view draws.
+## Carts: one cart per rail, running as a convoy; a lane switch is Lil Blunt
+## HOPPING between carts. `$Cart` is the RIDER anchor.
 ##
-## Zipline: a different plane of movement (overhead cable), not a fourth rail.
-## It must be EARNED (founder direction 2026-09-23 — "jump and connect onto the
-## zipline using his axe; jump to the next zipline"):
-##   - Crossing a zip segment's start_z while airborne (cart_y >= ZIP_CATCH_MIN_Y)
-##     hooks the axe onto the cable. Crossing it on the rails is a miss.
-##   - Segments whose gap is <= ZIP_CHAIN_GAP form a chain. Jumping within
-##     ZIP_TRANSFER_WINDOW of a segment's end arms the swing to the next cable;
-##     reaching the end un-armed drops you.
-##   - A miss or a drop costs ONE health for the whole remaining chain (never
-##     one per cable) and puts you back on the rails, so it can't cascade.
+## Zipline: earned by being airborne at a segment's start_z; chained cables
+## need a transfer jump near each end; a miss/drop costs ONE health per chain.
 ## While hooked, lane-switching and duck are suspended and cart-phase hazards
-## don't apply — you're off the rails, not dodging on them.
+## don't apply.
 ##
-## Archers: balaclava bears on the scaffolding beside the track. Each "arrow"
-## hazard may name the archer that fires it. Once armed (the Winchester is
-## granted in Chamber 0 — see STORY_OUTLINE.md), `shoot()` drops the nearest
-## living archer ahead within range and cancels its arrows. So an arrow volley
-## has two answers: duck through it, or shoot the bear first.
+## Archers + the GOLDEN REVOLVER (founder lock 2026-09-26): balaclava bears on
+## scaffolds beside the track. The sim OWNS their world placement
+## (archer_world_pos) so the mouse ray test and the drawn bear agree exactly.
+## The revolver holds CYLINDER rounds; empty auto-reloads over RELOAD_TIME, R
+## reloads manually. Two ways to fire:
+##   - fire_ray(origin, dir): mouse aim — ray-sphere against living archers.
+##   - shoot(): keyboard auto-aim at the nearest archer ahead (J/Enter).
+## Both obey the same cylinder/reload/cooldown rules and consume a round.
 
 ## Emitted once when the cart reaches the chamber entrance; the run halts.
 signal chamber_reached
@@ -83,13 +61,24 @@ signal zip_missed(segment_index: int)
 signal shot_fired
 ## Emitted when a shot drops an archer; its pending arrows are already cancelled.
 signal archer_down(archer_id: String)
+## Emitted after every fired shot with the archer hit ("" for a miss) and the
+## point the bullet ended at (hit point, or far along the ray).
+signal shot_resolved(hit_id: String, point: Vector3)
+## Trigger pulled on an empty cylinder (a reload starts automatically).
+signal dry_fire
+## Rounds left in the cylinder changed.
+signal ammo_changed(ammo: int)
+signal reload_started
+signal reload_finished
+## A boarder was knocked off the cart by the pickaxe.
+signal boarder_repelled
+## The pickaxe swipe was started.
+signal pickaxe_swing
 
 # --- Tuning (feel is tuned later, not law) ------------------------------------
 const RUN_SPEED := 12.0            # forward units/sec (+Z)
 ## Three rails. The camera looks down +Z, so world +X is SCREEN-LEFT: lane 0
-## (reached with move_left / A) must be at +X. The original [-2.5, 0, 2.5] made
-## every hop go the opposite way to the key pressed — found in a browser playtest
-## 2026-09-23; headless tests could never see it because they only read x.
+## (reached with move_left / A) must be at +X.
 const LANE_X := [2.5, 0.0, -2.5]
 const LANE_SWITCH_SPEED := 12.0    # how fast the cart slides between rails
 const GRAVITY := 30.0
@@ -99,19 +88,29 @@ const OBSTACLE_HIT_Z := 1.0        # z-window for a hit
 const OBSTACLE_HIT_X := 0.8        # x-window (same-lane) for a hit
 const START_HEALTH := 3
 const DUCK_MIN_HOLD := 0.10        # seconds a duck must be held to block an arrow
-## Float-accumulation slack for the duck-hold comparison: `delta` sums (e.g.
-## 6× double(1/60)) can land a couple of ULPs *below* the nominal target
-## (double(1/60)*6 ≈ 0.09999999999999999), which would wrongly read as "not
-## yet held long enough" on the exact intended frame. Found by Kimi K3 code
-## audit, docs/model-responses/2026-09-06-kimi-ep2-runner-hazards-audit.md #1.
+## Float-accumulation slack for the duck-hold comparison (Kimi audit #1).
 const DUCK_HOLD_EPSILON := 0.001
 const ZIP_HEIGHT := 2.5            # rider Y while ziplining (above jump-clear height)
 const ZIP_CATCH_MIN_Y := 0.6       # must be at least this high crossing start_z to hook the cable
 const ZIP_TRANSFER_WINDOW := 6.0   # jump within this many units of a cable's end to swing on
 const ZIP_CHAIN_GAP := 8.0         # cables closer than this form a chain (swing between them)
-const SHOOT_RANGE_MIN := 4.0       # an archer closer than this is already beside/behind you
+const SHOOT_RANGE_MIN := 4.0       # auto-aim: an archer closer than this is already beside/behind you
 const SHOOT_RANGE_MAX := 45.0      # ~3.75s ahead at RUN_SPEED — visible on the scaffold
-const SHOOT_COOLDOWN := 0.35       # lever-action cadence; also stops shoot-spam trivialising volleys
+const SHOOT_COOLDOWN := 0.35       # hammer cadence; also stops shoot-spam trivialising volleys
+
+# --- Revolver -----------------------------------------------------------------
+const CYLINDER := 6
+const RELOAD_TIME := 1.3
+const RELOAD_EPSILON := 0.0001
+## Archer placement — the ONE definition; the view reads these.
+const ARCHER_X := 5.4              # scaffold distance from track centre
+const ARCHER_Y := 2.2              # scaffold deck height (bear's feet)
+const ARCHER_CHEST := 1.4          # chest above the deck — the ray target
+const ARCHER_HIT_R := 1.1          # generous sphere: mouse aim at speed
+const SHOT_MISS_RANGE := 60.0      # where a missed bullet is drawn to
+
+# --- Pickaxe --------------------------------------------------------------------
+const SWIPE_WINDOW := 0.6
 
 # --- Live state --------------------------------------------------------------
 var _lane: int = 1                 # index into LANE_X; start centre
@@ -123,20 +122,14 @@ var _running: bool = true
 var _chamber_z: float = 200.0      # entrance distance
 
 ## Obstacles ahead: each {"z": float, "lane": int, "hit": bool, "type": String}.
-## `type` in {"box", "arrow", "boulder"} — defaults to "box" (legacy: cleared
-## by jump only) when a caller/test omits it, so the original 7 assertions
-## keep their original meaning. Plain Array (not Array[Dictionary]) to avoid
-## typed-array assignment friction from untyped `[]` / literal callers.
+## `type` in {"box", "arrow", "boulder", "boarder"} — defaults to "box".
 var _obstacles: Array = []
 
 # --- Duck (arrow defense) -----------------------------------------------------
 var _duck_held: bool = false
 var _duck_hold_time: float = 0.0
 
-# --- Zipline (a different plane of movement, not a rail) ----------------------
-## Each {"start_z": float, "end_z": float}. While hooked, `_ziplining` is true
-## and cart-phase logic (lane-switch, duck, jump, box/arrow/boulder hazards)
-## is suspended.
+# --- Zipline ------------------------------------------------------------------
 var _zip_segments: Array = []      # sorted by start_z in setup()
 var _ziplining: bool = false
 var _was_ziplining: bool = false  # edge-detects the zip→cart dismount frame
@@ -147,28 +140,17 @@ var _zip_resolved: Dictionary = {} # segment index -> true once caught/missed (j
 # --- Archers + shooting -------------------------------------------------------
 ## Each {"id": String, "z": float, "side": int(-1 left / +1 right), "alive": bool}.
 var _archers: Array = []
-var _can_shoot: bool = false       # true once the Winchester is in hand
+var _can_shoot: bool = false       # true once the revolver is in hand
 var _shoot_cd: float = 0.0
+var _ammo: int = CYLINDER
+var _reloading: bool = false
+var _reload_t: float = 0.0
 
-## Runner-section music. Founder direction (2026-09-09) supersedes the
-## 2026-09-06 direction that goldmine_dreams/goldmine_high shuffle here
-## "until further notice" — these two tracks are that further notice, and
-## were delivered for the runner specifically. The previous two tracks are
-## left on disk and in assets/audio-manifest.json (they are real client
-## assets) but are no longer wired to any scene.
-##
-## Sequencing: `AudioManager.play_playlist()` already advances to the next
-## track on each track's natural end and shuffles with no-immediate-repeat
-## (see `_play_next_in_playlist`), which with a 2-track list means Run and
-## Run_1 alternate and then continue indefinitely — the founder's option (b)
-## "sequence into Run_1 once Run finishes", with zero new plumbing. It also
-## routes playback through the **Music** bus (`current_music_player.bus =
-## "Music"`), so the existing volume sliders/settings keep working; a bespoke
-## AudioStreamPlayer here would have bypassed them.
-##
-## `force_first = true` so the runner always OPENS on Run.mp3 (the founder's
-## "plays Run.mp3 during runner segments"), then shuffles from there —
-## without it, play_playlist picks its first track at random.
+# --- Pickaxe ------------------------------------------------------------------
+var _swipe_t: float = 0.0
+
+## Runner-section music (founder direction 2026-09-09). Routed through
+## AudioManager so the Music bus and volume settings keep working.
 const RUNNER_MUSIC_PLAYLIST := [
 	"res://src/assets/music/runner_run.mp3",
 	"res://src/assets/music/runner_run_1.mp3",
@@ -176,25 +158,16 @@ const RUNNER_MUSIC_PLAYLIST := [
 
 @onready var _cart: Node3D = $Cart
 
-# Presentation lives in runner_view.gd (child node "View"). This script is the
-# SIMULATION only: it never reads anything back from the view, so every rule
-# here stays headless-testable with no renderer. The view reads get_obstacles(),
-# get_archers(), get_zip_segments() and the signals above.
-
 func _ready() -> void:
 	if _cart:
 		_cart.position = Vector3(LANE_X[_lane], 0.0, 0.0)
 	AudioManager.play_playlist(RUNNER_MUSIC_PLAYLIST, true)
 
-## Configure the segment before/at spawn. Call before the run advances.
-## `obstacles` entries missing "type" default to "box" (legacy jump-clears).
-## Also resets all run state — safe to call again on a reused instance
-## (Kimi audit #5c: a stale `_running = false` from a prior run_failed/
-## chamber_reached would otherwise make every step() silently a no-op).
+## Configure the segment before/at spawn. Also resets all run state — safe to
+## call again on a reused instance.
 ##
 ## `archers`: [{"id": String, "z": float, "side": -1|1}]. `can_shoot`: whether the
-## Winchester is in hand for this leg. Both default off, so every pre-existing
-## caller keeps its exact behaviour.
+## revolver is in hand for this leg.
 func setup(chamber_z: float, obstacles: Array = [], zip_segments: Array = [],
 		archers: Array = [], can_shoot: bool = false) -> void:
 	_chamber_z = chamber_z
@@ -202,6 +175,7 @@ func setup(chamber_z: float, obstacles: Array = [], zip_segments: Array = [],
 	for o in _obstacles:
 		o["hit"] = false
 		o["cancelled"] = false
+		o["repelled"] = false
 		if not o.has("type"):
 			o["type"] = "box"
 	_zip_segments = zip_segments.duplicate(true)
@@ -217,6 +191,10 @@ func setup(chamber_z: float, obstacles: Array = [], zip_segments: Array = [],
 		})
 	_can_shoot = can_shoot
 	_shoot_cd = 0.0
+	_ammo = CYLINDER
+	_reloading = false
+	_reload_t = 0.0
+	_swipe_t = 0.0
 
 	_lane = 1
 	_cart_y = 0.0
@@ -242,8 +220,7 @@ func _physics_process(delta: float) -> void:
 		return
 	_advance(delta)
 
-## Split out so a headless test can step the sim deterministically without a
-## real frame clock: call `step(delta)` directly.
+## Split out so a headless test can step the sim deterministically.
 func step(delta: float) -> void:
 	if _running:
 		_advance(delta)
@@ -252,24 +229,20 @@ func _advance(delta: float) -> void:
 	# Forward auto-run.
 	_distance += RUN_SPEED * delta
 	_shoot_cd = maxf(0.0, _shoot_cd - delta)
+	_swipe_t = maxf(0.0, _swipe_t - delta)
+	_advance_reload(delta)
 
 	_update_zipline()
 	if not _running:
 		return  # a zip drop just cost the last health point
 
-	# Duck hold time does NOT accumulate while ziplining — you let go of duck
-	# to grab the cable, so a duck held before/through a zip segment can't
-	# carry effective cover out the other side (Kimi audit #5b: the doc
-	# comment always claimed duck was suspended during zip, but only
-	# duck_start() was actually gated — the timer kept counting regardless).
+	# Duck hold time does NOT accumulate while ziplining (Kimi audit #5b).
 	if _duck_held and not _ziplining:
 		_duck_hold_time += delta
 	else:
 		_duck_hold_time = 0.0
 
 	if _ziplining:
-		# A different plane of movement (overhead cable) — lane, duck, and
-		# jump are all suspended; cart-phase hazards don't apply here.
 		_cart_y = ZIP_HEIGHT
 		_vy = 0.0
 		# The cable runs over the centre rail: slide to it, and land in that cart.
@@ -280,12 +253,7 @@ func _advance(delta: float) -> void:
 		_was_ziplining = true
 	else:
 		if _was_ziplining:
-			# Clean dismount: land back on the rail immediately rather than
-			# falling from ZIP_HEIGHT under gravity. Without this, ~0.3s of
-			# residual fall time after zip-exit both free-clears any
-			# box/boulder in that window (still "airborne" above
-			# OBSTACLE_CLEAR_HEIGHT) and makes jump() a dead no-op (Kimi
-			# audit #5a).
+			# Clean dismount: land back on the rail immediately (Kimi audit #5a).
 			_cart_y = 0.0
 			_vy = 0.0
 			_was_ziplining = false
@@ -308,10 +276,20 @@ func _advance(delta: float) -> void:
 
 		_check_obstacles(cur_x)
 
-	# Chamber entrance reached → stop and signal the (future) session root.
 	if _distance >= _chamber_z:
 		_running = false
 		chamber_reached.emit()
+
+func _advance_reload(delta: float) -> void:
+	if not _reloading:
+		return
+	_reload_t += delta
+	if _reload_t + RELOAD_EPSILON >= RELOAD_TIME:
+		_reloading = false
+		_reload_t = 0.0
+		_ammo = CYLINDER
+		reload_finished.emit()
+		ammo_changed.emit(_ammo)
 
 ## Zipline state machine. Runs before the cart-phase logic each frame.
 func _update_zipline() -> void:
@@ -321,7 +299,7 @@ func _update_zipline() -> void:
 			var nxt := _zip_index + 1
 			if _is_chained(_zip_index, nxt):
 				if _zip_transfer_armed:
-					_zip_index = nxt           # swing onto the next cable; still airborne in the gap
+					_zip_index = nxt
 					_zip_transfer_armed = false
 					_zip_resolved[nxt] = true
 					zip_caught.emit(nxt)
@@ -333,14 +311,14 @@ func _update_zipline() -> void:
 					zip_missed.emit(dropped)
 					_take_hit()
 			else:
-				_zip_index = -1                # end of the chain: clean dismount below
+				_zip_index = -1
 				_zip_transfer_armed = false
 	else:
 		for i in _zip_segments.size():
 			if _zip_resolved.has(i):
 				continue
 			if _distance < float(_zip_segments[i]["start_z"]):
-				break                          # sorted: nothing later has started either
+				break
 			_zip_resolved[i] = true
 			if _cart_y >= ZIP_CATCH_MIN_Y:
 				_zip_index = i
@@ -358,8 +336,6 @@ func _is_chained(a: int, b: int) -> bool:
 		return false
 	return float(_zip_segments[b]["start_z"]) - float(_zip_segments[a]["end_z"]) <= ZIP_CHAIN_GAP
 
-## Mark every cable from `start` to the end of its chain as judged, so one miss
-## costs one health point — not one per remaining cable.
 func _resolve_chain_from(start: int) -> void:
 	var i := start
 	while i < _zip_segments.size():
@@ -378,61 +354,60 @@ func _take_hit() -> void:
 		_running = false
 		run_failed.emit()
 
-## Effective duck: held for at least DUCK_MIN_HOLD, so a one-frame duck
-## exactly on hazard contact can't cheese the window (per design review).
-## Epsilon-guarded — see DUCK_HOLD_EPSILON.
 func _is_ducking_effective() -> bool:
 	return _duck_held and _duck_hold_time + DUCK_HOLD_EPSILON >= DUCK_MIN_HOLD
 
 func _check_obstacles(cur_x: float) -> void:
 	for o in _obstacles:
-		if o.get("hit", false) or o.get("cancelled", false):
+		if o.get("hit", false) or o.get("cancelled", false) or o.get("repelled", false):
 			continue
 		if absf(_distance - float(o["z"])) > OBSTACLE_HIT_Z:
 			continue
-		if absf(cur_x - LANE_X[int(o["lane"])]) > OBSTACLE_HIT_X:
+		var lane_i: int = int(o["lane"])
+		# lane -1 = "whichever cart the rider is in" (boarders): no x check.
+		if lane_i >= 0 and absf(cur_x - LANE_X[lane_i]) > OBSTACLE_HIT_X:
 			continue
-		if _is_cleared(o.get("type", "box")):
+		var hazard_type: String = str(o.get("type", "box"))
+		if hazard_type == "boarder":
+			if _swipe_t > 0.0:
+				o["repelled"] = true
+				boarder_repelled.emit()
+				continue
+		elif _is_cleared(hazard_type):
 			continue
 		o["hit"] = true
 		_take_hit()
 		if not _running:
-			return  # stop scanning this frame — don't double-emit on a
-			        # second same-frame hit after death (Kimi audit #5d)
+			return  # don't double-emit after death (Kimi audit #5d)
 
-## Clear rules, one verb per hazard so each reads instantly:
-## "box"     — jump over it.
-## "arrow"   — duck inside the cart (or shoot its archer first).
-## "boulder" — nothing clears it in-lane: hop to another rail's cart.
-## Only reached for a hazard in the rider's own lane (see _check_obstacles).
+## Clear rules, one verb per hazard:
+## "box" — jump. "arrow" — duck (or shoot its archer first).
+## "boulder" — hop to another rail. "boarder" — pickaxe swipe.
 func _is_cleared(hazard_type: String) -> bool:
 	match hazard_type:
 		"arrow":
 			return _is_ducking_effective()
 		"boulder":
 			return false
+		"boarder":
+			return _swipe_t > 0.0
 		_: # "box"
 			return _cart_y >= OBSTACLE_CLEAR_HEIGHT
 
-# --- Input-facing API (driven by real input later; tests call directly) ------
+# --- Input-facing API ---------------------------------------------------------
 
-## Move one rail left (toward index 0) if possible. No-op while ziplining —
-## a different plane of movement, not a rail.
 func switch_lane_left() -> void:
 	if _ziplining:
 		return
 	_lane = maxi(0, _lane - 1)
 
-## Move one rail right (toward index 2) if possible. No-op while ziplining.
 func switch_lane_right() -> void:
 	if _ziplining:
 		return
 	_lane = mini(LANE_X.size() - 1, _lane + 1)
 
-## Jump, only from the ground (no double-jump). Also how a zipline is caught:
-## be airborne as you reach the cable. While hooked, jump only matters inside
-## ZIP_TRANSFER_WINDOW of the cable's end, where it arms the swing to the next
-## cable in the chain; anywhere else on the cable it is a no-op.
+## Jump, only from the ground. While hooked, arms the swing to the next cable
+## inside ZIP_TRANSFER_WINDOW of the end; otherwise a no-op on the cable.
 func jump() -> void:
 	if _ziplining:
 		if _zip_index >= 0 and _is_chained(_zip_index, _zip_index + 1):
@@ -443,28 +418,145 @@ func jump() -> void:
 	if is_zero_approx(_cart_y) and is_zero_approx(_vy):
 		_vy = JUMP_VELOCITY
 
-## Start ducking (holds until duck_end()). No-op while ziplining. Must be
-## held for DUCK_MIN_HOLD before it counts as effective cover — see
-## _is_ducking_effective().
 func duck_start() -> void:
 	if _ziplining:
 		return
 	_duck_held = true
 
-## Release duck. Effective-duck timer resets immediately (no cover on release).
 func duck_end() -> void:
 	_duck_held = false
 	_duck_hold_time = 0.0
 
-## Fire the Winchester at the nearest living archer ahead within range. Returns
-## true if an archer went down. No-op before the gun is granted, during the
-## lever cooldown, or once the run has ended. Allowed while ziplining — you can
-## shoot from the cable.
-func shoot() -> bool:
-	if not _running or not _can_shoot or _shoot_cd > 0.0:
+## Pickaxe swipe: opens SWIPE_WINDOW during which a boarder is knocked off.
+func swipe() -> void:
+	if not _running:
+		return
+	_swipe_t = SWIPE_WINDOW
+	pickaxe_swing.emit()
+
+## Manual reload (R). No-op while already reloading or with a full cylinder.
+func reload() -> void:
+	if _reloading or _ammo == CYLINDER:
+		return
+	_start_reload()
+
+func _start_reload() -> void:
+	if _reloading:
+		return
+	_reloading = true
+	_reload_t = 0.0
+	reload_started.emit()
+
+## Shared trigger rules for fire_ray() and shoot(). Returns true when a round
+## was actually fired (and consumed).
+func _try_fire_round() -> bool:
+	if not _running or not _can_shoot:
 		return false
+	if _reloading:
+		return false
+	if _shoot_cd > 0.0:
+		return false
+	if _ammo <= 0:
+		dry_fire.emit()
+		_start_reload()
+		return false
+	_ammo -= 1
 	_shoot_cd = SHOOT_COOLDOWN
 	shot_fired.emit()
+	ammo_changed.emit(_ammo)
+	return true
+
+func _after_shot() -> void:
+	if _ammo <= 0:
+		_start_reload()
+
+## Drop archer `index`: dead, its un-hit arrows cancelled. Returns its id.
+func _kill_archer(index: int) -> String:
+	var hit: Dictionary = _archers[index]
+	hit["alive"] = false
+	var id: String = str(hit["id"])
+	for o in _obstacles:
+		if str(o.get("archer", "")) == id and not o.get("hit", false):
+			o["cancelled"] = true
+	archer_down.emit(id)
+	return id
+
+## World position of an archer's chest — the one placement rule shared by the
+## ray test and the view. side -1 = screen-left = world +X.
+func archer_world_pos(a: Dictionary) -> Vector3:
+	var side: float = float(a.get("side", 1))
+	return Vector3(-side * ARCHER_X, ARCHER_Y + ARCHER_CHEST, float(a.get("z", 0.0)))
+
+## Nearest living archer (within SHOOT_RANGE_MAX ahead) whose hit sphere the ray
+## crosses. Returns {"index": int (-1 = none), "t": float}.
+func _ray_pick(origin: Vector3, dir: Vector3) -> Dictionary:
+	var best: int = -1
+	var best_t: float = INF
+	if dir.length_squared() < 0.000001:
+		return {"index": best, "t": best_t}
+	var d: Vector3 = dir.normalized()
+	var r2: float = ARCHER_HIT_R * ARCHER_HIT_R
+	for i in _archers.size():
+		var a: Dictionary = _archers[i]
+		if not a["alive"]:
+			continue
+		var dz: float = float(a["z"]) - _distance
+		if dz < 0.0 or dz > SHOOT_RANGE_MAX:
+			continue
+		var c: Vector3 = archer_world_pos(a)
+		var oc: Vector3 = c - origin
+		var tc: float = oc.dot(d)
+		var d2: float = oc.length_squared() - tc * tc
+		if d2 > r2:
+			continue
+		var thc: float = sqrt(maxf(0.0, r2 - d2))
+		var t_hit: float = tc - thc
+		if t_hit < 0.0:
+			t_hit = tc + thc       # origin inside the sphere
+		if t_hit < 0.0:
+			continue               # sphere is behind the ray
+		if t_hit < best_t:
+			best_t = t_hit
+			best = i
+	return {"index": best, "t": best_t}
+
+## Mouse-aimed shot. Returns {"fired": bool, "hit": String, "point": Vector3}.
+func fire_ray(origin: Vector3, dir: Vector3) -> Dictionary:
+	var result: Dictionary = {"fired": false, "hit": "", "point": origin}
+	if not _try_fire_round():
+		return result
+	var d: Vector3 = dir.normalized() if dir.length_squared() > 0.000001 else Vector3.BACK
+	var pick: Dictionary = _ray_pick(origin, d)
+	var idx: int = int(pick["index"])
+	var hit_id: String = ""
+	var point: Vector3 = origin + d * SHOT_MISS_RANGE
+	if idx >= 0:
+		var t_hit: float = float(pick["t"])
+		point = origin + d * t_hit
+		hit_id = _kill_archer(idx)
+	result["fired"] = true
+	result["hit"] = hit_id
+	result["point"] = point
+	shot_resolved.emit(hit_id, point)
+	_after_shot()
+	return result
+
+## Pure query: which archer the ray would hit right now ("" for none). No side
+## effects — the reticle uses it to turn red over a bear.
+func ray_hits_archer(origin: Vector3, dir: Vector3) -> String:
+	var pick: Dictionary = _ray_pick(origin, dir)
+	var idx: int = int(pick["index"])
+	if idx < 0:
+		return ""
+	var a: Dictionary = _archers[idx]
+	return str(a["id"])
+
+## Keyboard auto-aim (J/Enter): the nearest living archer ahead within range.
+## Returns true if an archer went down. Obeys the cylinder exactly like
+## fire_ray(). Allowed while ziplining.
+func shoot() -> bool:
+	if not _try_fire_round():
+		return false
 	var best := -1
 	var best_dz := INF
 	for i in _archers.size():
@@ -475,19 +567,17 @@ func shoot() -> bool:
 		if dz >= SHOOT_RANGE_MIN and dz <= SHOOT_RANGE_MAX and dz < best_dz:
 			best = i
 			best_dz = dz
-	if best < 0:
-		return false
-	var hit: Dictionary = _archers[best]
-	hit["alive"] = false
-	for o in _obstacles:
-		if str(o.get("archer", "")) == hit["id"] and not o.get("hit", false):
-			o["cancelled"] = true
-	archer_down.emit(hit["id"])
-	return true
+	var hit_id: String = ""
+	var point: Vector3 = Vector3(get_cart_x(), _cart_y + 1.2, _distance + SHOT_MISS_RANGE)
+	if best >= 0:
+		var target: Dictionary = _archers[best]
+		point = archer_world_pos(target)
+		hit_id = _kill_archer(best)
+	shot_resolved.emit(hit_id, point)
+	_after_shot()
+	return best >= 0
 
 # --- Read-only accessors for tests / HUD / view --------------------------------
-## The live arrays are returned by reference for the view to read each frame
-## without allocating. Treat them as read-only; the sim is their only writer.
 func get_obstacles() -> Array: return _obstacles
 func get_archers() -> Array: return _archers
 func get_zip_segments() -> Array: return _zip_segments
@@ -508,6 +598,12 @@ func get_cart_y() -> float: return _cart_y
 func get_health() -> int: return _health
 func is_running() -> bool: return _running
 func is_ducking() -> bool: return _is_ducking_effective()
-## Raw input state (for the view to crouch instantly); is_ducking() is what counts.
 func is_duck_held() -> bool: return _duck_held
 func is_ziplining() -> bool: return _ziplining
+func get_ammo() -> int: return _ammo
+func is_reloading() -> bool: return _reloading
+func get_reload_progress() -> float:
+	if not _reloading:
+		return 0.0
+	return clampf(_reload_t / RELOAD_TIME, 0.0, 1.0)
+func is_swiping() -> bool: return _swipe_t > 0.0

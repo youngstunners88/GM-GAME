@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "voice_id": "N2lVS1w4EtoT3dr4eOWO",
-  "voice_note": "Callum (ElevenLabs premade) — warm, laid-back, lightly gravelly storyteller. One announcer for the whole game. Lil Blunt's own character barks (vo_*) use a per-line voice_id override pointing at the custom 'Lil Blunt' voice HMGfKwZCRujgXyRDUW0b.",
+  "voice_note": "Callum (ElevenLabs premade) \u2014 warm, laid-back, lightly gravelly storyteller. One announcer for the whole game. Lil Blunt's own character barks (vo_*) use a per-line voice_id override pointing at the custom 'Lil Blunt' voice HMGfKwZCRujgXyRDUW0b.",
   "sfx": [
     {
       "id": "jump",
@@ -102,41 +102,66 @@
       "id": "bigaxe_impact",
       "prompt": "Retro 16-bit videogame heavy axe impact, a deep meaty metal cleave with a low crunching thud and a bright steel ring on top, powerful and weighty, much heavier than a light hit, punchy attack with a short tail",
       "duration_seconds": 0.9
+    },
+    {
+      "id": "ep2_revolver_shot",
+      "prompt": "Single punchy gunshot from a heavy golden six-shooter revolver in a wooden mine tunnel, sharp crack with a short cave echo, no music",
+      "duration_seconds": 0.9
+    },
+    {
+      "id": "ep2_revolver_reload",
+      "prompt": "Revolver reload: cylinder swings open with a metallic clack, brass shells rattle out, six rounds clicked in, cylinder snapped shut with a spin ratchet, crisp foley, no music",
+      "duration_seconds": 1.6
+    },
+    {
+      "id": "ep2_revolver_empty",
+      "prompt": "Dry fire click of an empty revolver hammer falling on a spent chamber, single crisp metallic click, no echo",
+      "duration_seconds": 0.5
+    },
+    {
+      "id": "ep2_bear_hit",
+      "prompt": "Cartoon bear grunts and yelps as it is knocked off a wooden scaffold, short comedic roar then a thud, family friendly, no gore",
+      "duration_seconds": 1.2
+    },
+    {
+      "id": "ep2_pickaxe_swing",
+      "prompt": "Heavy pickaxe whoosh swing followed by a solid thwack against fur and leather, short cartoon impact",
+      "duration_seconds": 0.7
     }
   ],
   "music": [
     {
       "id": "smoke_lounge",
       "source": "client-supplied",
-      "note": "REAL CLIENT TRACK — SL.mp3, delivered 2026-07-29. 65.9s, VBR MP3. This replaced a 20s ElevenLabs stand-in. The generator SKIPS client-supplied entries even under --force-all so this file can never be silently regenerated over. To intentionally replace it, delete the file first.",
+      "note": "REAL CLIENT TRACK \u2014 SL.mp3, delivered 2026-07-29. 65.9s, VBR MP3. This replaced a 20s ElevenLabs stand-in. The generator SKIPS client-supplied entries even under --force-all so this file can never be silently regenerated over. To intentionally replace it, delete the file first.",
       "prompt": "UNUSED while source=client-supplied. Kept only as the fallback brief if the client track is ever withdrawn: ambient chill lounge soundscape, low warm synth drone, soft slow pad, gentle 420-vibe atmosphere, no beat, no melody hook, seamless loopable texture, relaxed and hazy",
       "duration_seconds": 20.0
     },
     {
       "id": "goldmine_dreams",
       "source": "client-supplied",
-      "note": "REAL CLIENT TRACK — GoldMineDreams.mp3, delivered 2026-09-06. 140.8s, VBR MP3 (~190kbps). Episode 2 runner-section music, shuffled with goldmine_high via AudioManager.play_playlist() in src/episode2/runner/runner_graybox.gd. Founder direction: plays on shuffle 'until further notice'. The generator SKIPS client-supplied entries even under --force-all so this file can never be silently regenerated over. To intentionally replace it, delete the file first. SUPERSEDED 2026-09-09: no longer wired to the runner — the founder delivered Run.mp3/Run_1.mp3 for the runner specifically, which is the 'further notice' this entry anticipated. File and entry retained (real client asset, may be reused elsewhere); asserted unwired by tests/ep2_runner_music_test.gd.",
+      "note": "REAL CLIENT TRACK \u2014 GoldMineDreams.mp3, delivered 2026-09-06. 140.8s, VBR MP3 (~190kbps). Episode 2 runner-section music, shuffled with goldmine_high via AudioManager.play_playlist() in src/episode2/runner/runner_graybox.gd. Founder direction: plays on shuffle 'until further notice'. The generator SKIPS client-supplied entries even under --force-all so this file can never be silently regenerated over. To intentionally replace it, delete the file first. SUPERSEDED 2026-09-09: no longer wired to the runner \u2014 the founder delivered Run.mp3/Run_1.mp3 for the runner specifically, which is the 'further notice' this entry anticipated. File and entry retained (real client asset, may be reused elsewhere); asserted unwired by tests/ep2_runner_music_test.gd.",
       "prompt": "UNUSED while source=client-supplied.",
       "duration_seconds": 140.8
     },
     {
       "id": "goldmine_high",
       "source": "client-supplied",
-      "note": "REAL CLIENT TRACK — GoldMineHigh.mp3, delivered 2026-09-06. 95.5s, VBR MP3 (~203kbps). Episode 2 runner-section music, shuffled with goldmine_dreams via AudioManager.play_playlist() in src/episode2/runner/runner_graybox.gd. Founder direction: plays on shuffle 'until further notice'. The generator SKIPS client-supplied entries even under --force-all so this file can never be silently regenerated over. To intentionally replace it, delete the file first. SUPERSEDED 2026-09-09: no longer wired to the runner — the founder delivered Run.mp3/Run_1.mp3 for the runner specifically, which is the 'further notice' this entry anticipated. File and entry retained (real client asset, may be reused elsewhere); asserted unwired by tests/ep2_runner_music_test.gd.",
+      "note": "REAL CLIENT TRACK \u2014 GoldMineHigh.mp3, delivered 2026-09-06. 95.5s, VBR MP3 (~203kbps). Episode 2 runner-section music, shuffled with goldmine_dreams via AudioManager.play_playlist() in src/episode2/runner/runner_graybox.gd. Founder direction: plays on shuffle 'until further notice'. The generator SKIPS client-supplied entries even under --force-all so this file can never be silently regenerated over. To intentionally replace it, delete the file first. SUPERSEDED 2026-09-09: no longer wired to the runner \u2014 the founder delivered Run.mp3/Run_1.mp3 for the runner specifically, which is the 'further notice' this entry anticipated. File and entry retained (real client asset, may be reused elsewhere); asserted unwired by tests/ep2_runner_music_test.gd.",
       "prompt": "UNUSED while source=client-supplied.",
       "duration_seconds": 95.5
     },
     {
       "id": "runner_run",
       "source": "client-supplied",
-      "note": "REAL CLIENT TRACK — Run.mp3, delivered 2026-09-09. 168.6s, stereo MP3 48kHz (~201kbps). Episode 2 runner-section music, sequenced with runner_run_1 via AudioManager.play_playlist(..., force_first=true) in src/episode2/runner/runner_graybox.gd — routed through the Music bus so volume settings apply. Supersedes goldmine_dreams/goldmine_high for the runner. Delivered with an embedded mjpeg cover-art frame, stripped on import with `ffmpeg -map 0:a -c copy` so Godot's importer sees only the audio stream. The generator SKIPS client-supplied entries even under --force-all so this file can never be silently regenerated over. To intentionally replace it, delete the file first. Plays FIRST in every runner segment (force_first).",
+      "note": "REAL CLIENT TRACK \u2014 Run.mp3, delivered 2026-09-09. 168.6s, stereo MP3 48kHz (~201kbps). Episode 2 runner-section music, sequenced with runner_run_1 via AudioManager.play_playlist(..., force_first=true) in src/episode2/runner/runner_graybox.gd \u2014 routed through the Music bus so volume settings apply. Supersedes goldmine_dreams/goldmine_high for the runner. Delivered with an embedded mjpeg cover-art frame, stripped on import with `ffmpeg -map 0:a -c copy` so Godot's importer sees only the audio stream. The generator SKIPS client-supplied entries even under --force-all so this file can never be silently regenerated over. To intentionally replace it, delete the file first. Plays FIRST in every runner segment (force_first).",
       "prompt": "UNUSED while source=client-supplied.",
       "duration_seconds": 168.6
     },
     {
       "id": "runner_run_1",
       "source": "client-supplied",
-      "note": "REAL CLIENT TRACK — Run_1.mp3, delivered 2026-09-09. 139.68s, stereo MP3 48kHz (~213kbps). Episode 2 runner-section music, sequenced with runner_run via AudioManager.play_playlist(..., force_first=true) in src/episode2/runner/runner_graybox.gd — routed through the Music bus so volume settings apply. Supersedes goldmine_dreams/goldmine_high for the runner. Delivered with an embedded mjpeg cover-art frame, stripped on import with `ffmpeg -map 0:a -c copy` so Godot's importer sees only the audio stream. The generator SKIPS client-supplied entries even under --force-all so this file can never be silently regenerated over. To intentionally replace it, delete the file first.",
+      "note": "REAL CLIENT TRACK \u2014 Run_1.mp3, delivered 2026-09-09. 139.68s, stereo MP3 48kHz (~213kbps). Episode 2 runner-section music, sequenced with runner_run via AudioManager.play_playlist(..., force_first=true) in src/episode2/runner/runner_graybox.gd \u2014 routed through the Music bus so volume settings apply. Supersedes goldmine_dreams/goldmine_high for the runner. Delivered with an embedded mjpeg cover-art frame, stripped on import with `ffmpeg -map 0:a -c copy` so Godot's importer sees only the audio stream. The generator SKIPS client-supplied entries even under --force-all so this file can never be silently regenerated over. To intentionally replace it, delete the file first.",
       "prompt": "UNUSED while source=client-supplied.",
       "duration_seconds": 139.68
     }
@@ -144,23 +169,23 @@
   "voice": [
     {
       "id": "menu_title",
-      "text": "Lil Blunt… The Smoke Realm."
+      "text": "Lil Blunt\u2026 The Smoke Realm."
     },
     {
       "id": "stage1_intro",
-      "text": "Level One… The Smoke Realm. Stay chill, Lil Blunt."
+      "text": "Level One\u2026 The Smoke Realm. Stay chill, Lil Blunt."
     },
     {
       "id": "stage2_intro",
-      "text": "Level Two… Crystal Caverns. Diamonds in the deep."
+      "text": "Level Two\u2026 Crystal Caverns. Diamonds in the deep."
     },
     {
       "id": "stage3_intro",
-      "text": "Level Three… GoldMine Rush. Strike it rich, partner."
+      "text": "Level Three\u2026 GoldMine Rush. Strike it rich, partner."
     },
     {
       "id": "boss1_intro",
-      "text": "Uh oh… the Tax Auditor wants his cut!"
+      "text": "Uh oh\u2026 the Tax Auditor wants his cut!"
     },
     {
       "id": "boss2_intro",
@@ -176,169 +201,169 @@
     },
     {
       "id": "game_complete",
-      "text": "Game complete! One chill nugget… one giant win."
+      "text": "Game complete! One chill nugget\u2026 one giant win."
     },
     {
       "id": "vo_hurt",
-      "text": "Ow— okay.",
+      "text": "Ow\u2014 okay.",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
-      "note": "Lil Blunt character bark — soft wince, quick recovery, flat-chill",
+      "note": "Lil Blunt character bark \u2014 soft wince, quick recovery, flat-chill",
       "voice_status": "LIVE on the real custom 'Lil Blunt' voice. Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
     },
     {
       "id": "vo_death",
       "text": "Welp. I'm out.",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
-      "note": "Lil Blunt character bark — good-natured shrug, falling pitch",
+      "note": "Lil Blunt character bark \u2014 good-natured shrug, falling pitch",
       "voice_status": "LIVE on the real custom 'Lil Blunt' voice. Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
     },
     {
       "id": "cutscene_s1_defeat_taxcollector",
       "text": "No... the vault...!",
       "voice_id": "jcg9W9tUWJjBuX5zV0dL",
-      "note": "Stage 1 boss-defeat cutscene — Tax Collector reacting to the GOV VAULT being looted. Same custom 'IRS Auditor' voice already used for the tax boss's taunt/death lines (see assets/boss-voices.json); this is a one-off narrative line, not part of the randomized taunt pool, so it lives here rather than in boss-voices.json/BossVoiceData.COUNTS.",
+      "note": "Stage 1 boss-defeat cutscene \u2014 Tax Collector reacting to the GOV VAULT being looted. Same custom 'IRS Auditor' voice already used for the tax boss's taunt/death lines (see assets/boss-voices.json); this is a one-off narrative line, not part of the randomized taunt pool, so it lives here rather than in boss-voices.json/BossVoiceData.COUNTS.",
       "voice_status": "Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
     },
     {
       "id": "cutscene_s1_defeat_lilblunt",
       "text": "Tax season's over, big man.",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
-      "note": "Stage 1 boss-defeat cutscene — Lil Blunt claiming the mining gear before the shaft jump into Crystal Caverns. Same custom 'Lil Blunt' voice as the other vo_* barks.",
+      "note": "Stage 1 boss-defeat cutscene \u2014 Lil Blunt claiming the mining gear before the shaft jump into Crystal Caverns. Same custom 'Lil Blunt' voice as the other vo_* barks.",
       "voice_status": "LIVE on the real custom 'Lil Blunt' voice. Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
     },
     {
       "id": "cutscene_s2_defeat_lilblunt",
       "text": "Nice diamonds. Mine now.",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
-      "note": "Stage 2 boss-defeat cutscene — Lil Blunt's cocky line after the pickaxe finishing blow on the Distributor (Crystalline Bureaucrat), before the Fort Knox vault door opens into Gold Rush (Stage 3). Same custom 'Lil Blunt' voice as the other vo_*/cutscene_* barks. The Crystal boss's own defeat reaction uses its EXISTING 'death' line (boss_voice_system.gd / boss-voices.json, voice_id VtsQlMLXxJPBwTtPTtoc) which already fires at the top of distributor.gd::die() — no new boss line needed here.",
+      "note": "Stage 2 boss-defeat cutscene \u2014 Lil Blunt's cocky line after the pickaxe finishing blow on the Distributor (Crystalline Bureaucrat), before the Fort Knox vault door opens into Gold Rush (Stage 3). Same custom 'Lil Blunt' voice as the other vo_*/cutscene_* barks. The Crystal boss's own defeat reaction uses its EXISTING 'death' line (boss_voice_system.gd / boss-voices.json, voice_id VtsQlMLXxJPBwTtPTtoc) which already fires at the top of distributor.gd::die() \u2014 no new boss line needed here.",
       "voice_status": "LIVE on the real custom 'Lil Blunt' voice. Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
     },
     {
       "id": "cutscene_s3_resist_bandit",
       "text": "This claim's mine!",
       "voice_id": "LEQxdWqt02nZ8lXoPL0Y",
-      "note": "Stage 3 FINAL boss-defeat cutscene (Episode 1 close) — Claim Jumper's opening aggression line, selling that he's still dangerous before Lil Blunt outthinks him. Same custom 'Bandit' voice already used for the bandit boss's taunt/death lines (see assets/boss-voices.json); this is a one-off narrative line, not part of the randomized taunt pool.",
+      "note": "Stage 3 FINAL boss-defeat cutscene (Episode 1 close) \u2014 Claim Jumper's opening aggression line, selling that he's still dangerous before Lil Blunt outthinks him. Same custom 'Bandit' voice already used for the bandit boss's taunt/death lines (see assets/boss-voices.json); this is a one-off narrative line, not part of the randomized taunt pool.",
       "voice_status": "Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
     },
     {
       "id": "cutscene_s3_defeat_lilblunt",
       "text": "Bitcoin beats dynamite.",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
-      "note": "Stage 3 FINAL boss-defeat cutscene — Lil Blunt's payoff line right after the Bitcoin-token detonation wrecks the Claim Jumper's minecart. Same custom 'Lil Blunt' voice as the other vo_*/cutscene_* barks.",
+      "note": "Stage 3 FINAL boss-defeat cutscene \u2014 Lil Blunt's payoff line right after the Bitcoin-token detonation wrecks the Claim Jumper's minecart. Same custom 'Lil Blunt' voice as the other vo_*/cutscene_* barks.",
       "voice_status": "LIVE on the real custom 'Lil Blunt' voice. Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
     },
     {
       "id": "cutscene_s3_defeat_bandit",
-      "text": "The tokens—!",
+      "text": "The tokens\u2014!",
       "voice_id": "LEQxdWqt02nZ8lXoPL0Y",
-      "note": "Stage 3 FINAL boss-defeat cutscene — Claim Jumper's shocked reaction to the Bitcoin-token detonation. Distinct from his EXISTING randomized 'death' lines (boss-voices.json — 'Ya blew it all up... good for you... greenhorn...' / 'My gold... my claim... my... hat...'), which already fire separately at the top of bandit_boss.gd::die() before this cutscene starts; this is a new one-off tied to this specific beat, same pattern as the Stage 1/Stage 2 cutscenes.",
+      "note": "Stage 3 FINAL boss-defeat cutscene \u2014 Claim Jumper's shocked reaction to the Bitcoin-token detonation. Distinct from his EXISTING randomized 'death' lines (boss-voices.json \u2014 'Ya blew it all up... good for you... greenhorn...' / 'My gold... my claim... my... hat...'), which already fire separately at the top of bandit_boss.gd::die() before this cutscene starts; this is a new one-off tied to this specific beat, same pattern as the Stage 1/Stage 2 cutscenes.",
       "voice_status": "Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
     },
     {
       "id": "cutscene_s3_exit_lilblunt",
       "text": "Going deeper.",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
-      "note": "Stage 3 FINAL boss-defeat cutscene — Lil Blunt's line as he boards the mining cart heading deeper into the mine, closing Episode 1. Same custom 'Lil Blunt' voice as the other vo_*/cutscene_* barks.",
+      "note": "Stage 3 FINAL boss-defeat cutscene \u2014 Lil Blunt's line as he boards the mining cart heading deeper into the mine, closing Episode 1. Same custom 'Lil Blunt' voice as the other vo_*/cutscene_* barks.",
       "voice_status": "LIVE on the real custom 'Lil Blunt' voice. Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
     },
     {
       "id": "vo_attack",
       "text": "Yo! Got 'em!",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
-      "note": "Lil Blunt character bark — bright hit of hype, clipped rise",
+      "note": "Lil Blunt character bark \u2014 bright hit of hype, clipped rise",
       "voice_status": "LIVE on the real custom 'Lil Blunt' voice. Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
     },
     {
       "id": "vo_collect_major",
       "text": "Ohh, nice.",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
-      "note": "Lil Blunt character bark — warm, pleased, slight smile in voice",
+      "note": "Lil Blunt character bark \u2014 warm, pleased, slight smile in voice",
       "voice_status": "LIVE on the real custom 'Lil Blunt' voice. Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
     },
     {
       "id": "vo_boss_hype",
-      "text": "Heh— let's gooo.",
+      "text": "Heh\u2014 let's gooo.",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
-      "note": "Lil Blunt character bark — low chuckle into short hype lift",
+      "note": "Lil Blunt character bark \u2014 low chuckle into short hype lift",
       "voice_status": "LIVE on the real custom 'Lil Blunt' voice. Requires the ELEVENLABS_API key (that workspace owns this voice); the legacy ELEVENLABS_API_KEY workspace cannot see it and returns voice_not_found."
     },
     {
       "id": "vo_hurt_2",
-      "text": "Oof— my bad.",
+      "text": "Oof\u2014 my bad.",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
-      "note": "Lil Blunt hurt variant 2 — chill shrug-off, quick recovery"
+      "note": "Lil Blunt hurt variant 2 \u2014 chill shrug-off, quick recovery"
     },
     {
       "id": "vo_hurt_3",
       "text": "Easy, easy.",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
-      "note": "Lil Blunt hurt variant 3 — unbothered, mellow"
+      "note": "Lil Blunt hurt variant 3 \u2014 unbothered, mellow"
     },
     {
       "id": "vo_attack_2",
-      "text": "Boom— down!",
+      "text": "Boom\u2014 down!",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
-      "note": "Lil Blunt enemy-defeat variant 2 — playful pop, not aggressive"
+      "note": "Lil Blunt enemy-defeat variant 2 \u2014 playful pop, not aggressive"
     },
     {
       "id": "vo_attack_3",
       "text": "Easy dub.",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
-      "note": "Lil Blunt enemy-defeat variant 3 — chill win (Kimi swap for 'too easy', kept on-brand)"
+      "note": "Lil Blunt enemy-defeat variant 3 \u2014 chill win (Kimi swap for 'too easy', kept on-brand)"
     },
     {
       "id": "vo_collect_major_2",
       "text": "Sweet, that's mine.",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
-      "note": "Lil Blunt major-pickup variant 2 — warm, pleased"
+      "note": "Lil Blunt major-pickup variant 2 \u2014 warm, pleased"
     },
     {
       "id": "vo_collect_major_3",
       "text": "Stackin' up!",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
-      "note": "Lil Blunt major-pickup variant 3 — satisfied little grin"
+      "note": "Lil Blunt major-pickup variant 3 \u2014 satisfied little grin"
     },
     {
       "id": "vo_boss_hype_2",
       "text": "Alright, big guy.",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
-      "note": "Lil Blunt boss-start variant 2 — relaxed confidence"
+      "note": "Lil Blunt boss-start variant 2 \u2014 relaxed confidence"
     },
     {
       "id": "vo_boss_hype_3",
       "text": "Show time.",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
-      "note": "Lil Blunt boss-start variant 3 — cool, ready"
+      "note": "Lil Blunt boss-start variant 3 \u2014 cool, ready"
     },
     {
       "id": "vo_death_2",
-      "text": "Aw, man…",
+      "text": "Aw, man\u2026",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
-      "note": "Lil Blunt death variant 2 — good-natured, falling pitch"
+      "note": "Lil Blunt death variant 2 \u2014 good-natured, falling pitch"
     },
     {
       "id": "vo_death_3",
       "text": "Catch me next round.",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
-      "note": "Lil Blunt death variant 3 — easy-going, no sting"
+      "note": "Lil Blunt death variant 3 \u2014 easy-going, no sting"
     },
     {
       "id": "vo_blaze_hype",
-      "text": "Ohhh yeah— blaze mode!",
+      "text": "Ohhh yeah\u2014 blaze mode!",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
-      "note": "Lil Blunt weed-leaf celebration — eccentric, delighted, stoner-chill"
+      "note": "Lil Blunt weed-leaf celebration \u2014 eccentric, delighted, stoner-chill"
     },
     {
       "id": "vo_blaze_hype_2",
       "text": "Now we're vibin'!",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
-      "note": "Lil Blunt weed-leaf celebration — eccentric, delighted, stoner-chill"
+      "note": "Lil Blunt weed-leaf celebration \u2014 eccentric, delighted, stoner-chill"
     },
     {
       "id": "vo_blaze_hype_3",
       "text": "Woo! That's the good stuff.",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
-      "note": "Lil Blunt weed-leaf celebration — eccentric, delighted, stoner-chill"
+      "note": "Lil Blunt weed-leaf celebration \u2014 eccentric, delighted, stoner-chill"
     },
     {
       "id": "vo_bull_made_it",
@@ -350,7 +375,7 @@
         "style": 0.15,
         "speed": 0.8
       },
-      "note": "Inferno Bull (Episode 2 companion). ORIGINAL VOICE, OWNED BY THIS PROJECT — designed via ElevenLabs Voice Design (text-to-voice) from the character profile, not a stock voice. voice_id uWE48TmsTuIjyh2ifoNL, name 'Inferno Bull', category 'generated'. Chosen from 3 design previews by measurement, not guesswork: median F0 77.4 Hz vs 111.9 / 128.9 for the other two, darkest timbre (spectral centroid 1060), and 21.8% of energy below 300 Hz vs 9.5% / 11.8% — i.e. the deepest and thickest of the three, per the founder's 'deep and thick and western old school'. OPERATIONAL NOTE: like the custom 'Lil Blunt' voice, a generated voice is owned by ONE workspace — it requires the ELEVENLABS_API key. generate_audio.py already prefers that key over the legacy ELEVENLABS_API_KEY, so this works, but the legacy workspace would return voice_not_found."
+      "note": "Inferno Bull (Episode 2 companion). ORIGINAL VOICE, OWNED BY THIS PROJECT \u2014 designed via ElevenLabs Voice Design (text-to-voice) from the character profile, not a stock voice. voice_id uWE48TmsTuIjyh2ifoNL, name 'Inferno Bull', category 'generated'. Chosen from 3 design previews by measurement, not guesswork: median F0 77.4 Hz vs 111.9 / 128.9 for the other two, darkest timbre (spectral centroid 1060), and 21.8% of energy below 300 Hz vs 9.5% / 11.8% \u2014 i.e. the deepest and thickest of the three, per the founder's 'deep and thick and western old school'. OPERATIONAL NOTE: like the custom 'Lil Blunt' voice, a generated voice is owned by ONE workspace \u2014 it requires the ELEVENLABS_API key. generate_audio.py already prefers that key over the legacy ELEVENLABS_API_KEY, so this works, but the legacy workspace would return voice_not_found."
     },
     {
       "id": "vo_bull_take_rifle",

@@ -113,11 +113,23 @@ async function price() {
   return pricing;
 }
 async function call(messages) {
-  const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, messages, max_tokens: MAX_OUT, temperature: 0.2 }),
-  });
+  // Retry transport failures (the proxy has dropped long streams mid-round: "other side
+  // closed"), never HTTP errors — a 4xx is a bug to fix, not a reason to pay again.
+  let r;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: MODEL, messages, max_tokens: MAX_OUT, temperature: 0.2 }),
+      });
+      break;
+    } catch (e) {
+      if (attempt >= 3) throw e;
+      console.log(`  network error (${e.cause?.code || e.message}); retry ${attempt}/2 in ${attempt * 15}s`);
+      await new Promise(res => setTimeout(res, attempt * 15000));
+    }
+  }
   if (!r.ok) throw new Error(`OpenRouter HTTP ${r.status}: ${(await r.text()).slice(0, 300)}`);
   const j = await r.json();
   const p = await price();

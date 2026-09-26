@@ -165,8 +165,8 @@ func _refresh_hud() -> void:
 					("   bears %d" % a.archers_alive()) if a.can_shoot() else "",
 					"   ON THE ZIPLINE" if a.is_ziplining() else ("   DUCKING" if a.is_ducking() else ""),
 				]
-			_hint.text = ("A / D  hop carts     SPACE  jump / grab zipline     S  duck (hold)\n"
-				+ ("J / ENTER  shoot bears     " if a and a.can_shoot() else "")
+			_hint.text = ("MOUSE aim   LMB fire   R reload   F / RMB pickaxe\n"
+				+ "A / D hop carts   SPACE jump / grab zipline   S duck   "
 				+ "ESC  back to menu")
 		Ep2SessionRoot.Mode.CHAMBER:
 			# Chamber 0 is a story beat with a completely different HUD from a
