@@ -1,0 +1,16 @@
+{
+  "model": "gemini-3.5-flash",
+  "version": 1,
+  "pick": "v1_s3",
+  "best": 3,
+  "scores": [
+    7,
+    5,
+    9
+  ],
+  "notes": [
+    "Good wood texture but sounds more like continuous footsteps than a distinct jump and landing.",
+    "Too light and hollow; lacks the heavy impact and wood strain required by the brief.",
+    "Excellent heavy impact with realistic wood creak and strain, perfect for a runner landing."
+  ]
+}

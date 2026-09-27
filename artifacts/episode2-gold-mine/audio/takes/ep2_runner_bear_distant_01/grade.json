@@ -1,0 +1,16 @@
+{
+  "model": "gemini-3.5-flash",
+  "version": 1,
+  "pick": "v1_s1",
+  "best": 1,
+  "scores": [
+    9,
+    7,
+    6
+  ],
+  "notes": [
+    "Excellent deep chest growl with perfect spacious tunnel reverberation.",
+    "Good realistic growl but too dry and close for a distant tunnel.",
+    "Too close and breathy, lacks the required distance and reverb."
+  ]
+}

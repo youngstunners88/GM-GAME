@@ -1,0 +1,16 @@
+{
+  "model": "gemini-3.5-flash",
+  "version": 1,
+  "pick": "v1_s2",
+  "best": 2,
+  "scores": [
+    8,
+    10,
+    6
+  ],
+  "notes": [
+    "Very dark and industrial, but lacks the distinct male choir element.",
+    "Perfect blend of low male choir and industrial resonance; very atmospheric.",
+    "Too bright and synth-like with a prominent harmonic interval."
+  ]
+}

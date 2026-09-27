@@ -64,14 +64,47 @@ if (argv.includes('--list')) {
   process.exit(0);
 }
 
+/** A 16-bit PCM WAV made loop-seamless: the last `secs` are crossfaded into the
+ *  first `secs` and then dropped, so sample N-1 flows into sample 0. Other
+ *  formats are returned untouched (Godot then loops the raw take). */
+function seamless(buf, secs) {
+  let off = 12, fmt = null, dataOff = -1, dataLen = 0;
+  while (off + 8 <= buf.length) {
+    const id = buf.toString('ascii', off, off + 4), len = buf.readUInt32LE(off + 4);
+    if (id === 'fmt ') fmt = { ch: buf.readUInt16LE(off + 10), rate: buf.readUInt32LE(off + 12), bits: buf.readUInt16LE(off + 22), tag: buf.readUInt16LE(off + 8) };
+    if (id === 'data') { dataOff = off + 8; dataLen = Math.min(len, buf.length - off - 8); break; }
+    off += 8 + len + (len & 1);
+  }
+  if (!fmt || fmt.bits !== 16 || fmt.tag !== 1 || dataOff < 0) return buf;
+  const frames = Math.floor(dataLen / (2 * fmt.ch)), x = Math.min(Math.floor(fmt.rate * secs), Math.floor(frames / 3));
+  const outFrames = frames - x, out = Buffer.alloc(44 + outFrames * 2 * fmt.ch);
+  out.write('RIFF', 0); out.writeUInt32LE(36 + outFrames * 2 * fmt.ch, 4); out.write('WAVE', 8); out.write('fmt ', 12);
+  out.writeUInt32LE(16, 16); out.writeUInt16LE(1, 20); out.writeUInt16LE(fmt.ch, 22); out.writeUInt32LE(fmt.rate, 24);
+  out.writeUInt32LE(fmt.rate * 2 * fmt.ch, 28); out.writeUInt16LE(2 * fmt.ch, 32); out.writeUInt16LE(16, 34);
+  out.write('data', 36); out.writeUInt32LE(outFrames * 2 * fmt.ch, 40);
+  const rd = (f, c) => buf.readInt16LE(dataOff + (f * fmt.ch + c) * 2);
+  for (let f = 0; f < outFrames; f++) for (let c = 0; c < fmt.ch; c++) {
+    let v = rd(f, c);
+    if (f < x) { const t = f / x; v = Math.round(v * Math.sqrt(t) + rd(outFrames + f, c) * Math.sqrt(1 - t)); }
+    out.writeInt16LE(Math.max(-32768, Math.min(32767, v)), 44 + (f * fmt.ch + c) * 2);
+  }
+  return out;
+}
+
 const promote = opt('--promote', '');
 if (promote) {
   const [id, take] = promote.split('=');
   const src = join(TAKES, id, `${take}.wav`);
   if (!existsSync(src)) { console.error(`no take: ${src}`); process.exit(2); }
   mkdirSync(GAME, { recursive: true });
-  copyFileSync(src, join(GAME, `${id}.wav`));
-  log(`PROMOTE ${id} <- takes/${id}/${take}.wav`);
+  const isLoop = readdirSync(PROMPTS).filter(f => f.endsWith('.json'))
+    .some(f => JSON.parse(readFileSync(join(PROMPTS, f), 'utf8')).stems.some(x => x.id === id && x.loop));
+  if (isLoop) {
+    writeFileSync(join(GAME, `${id}.wav`), seamless(readFileSync(src), 0.6));
+  } else {
+    copyFileSync(src, join(GAME, `${id}.wav`));
+  }
+  log(`PROMOTE ${id} <- takes/${id}/${take}.wav${isLoop ? ' (seamless loop: 0.6 s tail->head crossfade)' : ''}`);
   console.log(`promoted ${id} <- ${take}`);
   process.exit(0);
 }

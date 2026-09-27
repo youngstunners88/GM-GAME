@@ -1,0 +1,16 @@
+{
+  "model": "gemini-3.5-flash",
+  "version": 1,
+  "pick": "v1_s3",
+  "best": 3,
+  "scores": [
+    3,
+    4,
+    9
+  ],
+  "notes": [
+    "Too slow and sounds like plastic scraping; lacks the fast rush and final jolt.",
+    "Rhythmic and slow clatter; lacks the high-speed tension and ending impact.",
+    "Great high-speed metallic friction ending with a solid, well-defined jolt."
+  ]
+}

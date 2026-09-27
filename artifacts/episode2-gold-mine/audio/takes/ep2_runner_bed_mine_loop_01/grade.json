@@ -1,0 +1,16 @@
+{
+  "model": "gemini-3.8-flash",
+  "version": 1,
+  "pick": "v1_s1",
+  "best": 1,
+  "scores": [
+    9,
+    5,
+    6
+  ],
+  "notes": [
+    "Rich, dark underground texture with distant furnace rumble, subtle drips, and excellent bed consistency.",
+    "Too empty and muffled; lacks the dripping, lantern hiss, and detailed cave elements requested.",
+    "Excessive rushing air noise creates an overly aggressive wash rather than a settled cavern bed."
+  ]
+}

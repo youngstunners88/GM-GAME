@@ -1,0 +1,16 @@
+{
+  "model": "gemini-3.5-flash",
+  "version": 1,
+  "pick": "v1_s2",
+  "best": 2,
+  "scores": [
+    5,
+    9,
+    6
+  ],
+  "notes": [
+    "Too slow and airy, lacks the metallic ricochet and fast-paced energy.",
+    "Perfect tight whistle and sharp metallic ricochet with great spatial tail.",
+    "Good flyby speed but the impact is a dull thud instead of a metallic ricochet."
+  ]
+}

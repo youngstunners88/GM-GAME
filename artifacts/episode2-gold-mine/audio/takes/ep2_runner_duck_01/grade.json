@@ -1,0 +1,16 @@
+{
+  "model": "gemini-3.5-flash",
+  "version": 2,
+  "pick": "v2_s1",
+  "best": 1,
+  "scores": [
+    9,
+    6,
+    5
+  ],
+  "notes": [
+    "Perfect heavy impact with realistic leather scuff and muffled boxy resonance.",
+    "Too light and clattery, lacks the weight of a body dropping.",
+    "Lacks a clear initial impact transient, sounds like slow shuffling."
+  ]
+}

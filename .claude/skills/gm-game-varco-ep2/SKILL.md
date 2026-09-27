@@ -93,12 +93,17 @@ Do not block a gameplay commit on a Varco 429.
 
 # How it is wired in this repo (added 2026-09-26)
   node scripts/varco-text2sound.mjs --section runner [--only id,id] [--dry-run]
-  node scripts/varco-text2sound.mjs --promote ep2_runner_duck_01=v1_s2
+  node scripts/varco-grade.mjs --section runner --promote     # Gemini LISTENS, picks, promotes
+  node scripts/varco-text2sound.mjs --promote ep2_runner_duck_01=v1_s2   # manual overrule
   src/episode2/runner/runner_audio.gd plays whatever is promoted:
     beds loop (Music: score drone; SFX: mine bed, cart rails), one-shots fire off
     sim state/signals. Missing WAV = silent slot, never an error.
     Gun-layer stems (revolver.json) are generated + promoted but NOT wired yet: runner_view.gd
     still plays the ElevenLabs placeholders. Swapping them is a gun-code change — founder's call.
+  Loop stems are made seamless on promote (0.6 s tail->head crossfade, 16-bit PCM).
+  Grades land in takes/<id>/grade.json (model, scores, notes) — overrule by promoting another take.
+  runner.json v2 adds the cart-attrition layer (smash, spawn, gold, hop_blocked), wired to sim signals.
+  Credits: VARCO returned 402 "No available credits" on 2026-09-27 after 51 takes — top up before v3.
   scripts/varco-sound.mjs is the OLDER helper with a guessed endpoint — do not use it.
 
 # Banned

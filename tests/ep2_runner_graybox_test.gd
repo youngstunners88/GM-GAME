@@ -95,8 +95,10 @@ func _ready() -> void:
 	# 5. Jumping clears the same obstacle — no hit.
 	var r3 := _spawn()
 	r3.setup(200.0, [{"z": 10.0, "lane": 1}])
-	_run_to_distance(r3, 6.8)          # approach
-	r3.jump()                          # airborne before the z-window [9,11]
+	# Rise to clear height takes ~0.11 s; at RUN_SPEED that is a few metres, so
+	# jump early enough to be above it for the whole z-window [9,11].
+	_run_to_distance(r3, 9.0 - RunnerGraybox.RUN_SPEED * 0.18)
+	r3.jump()
 	_run_to_distance(r3, 13.0)         # pass over it
 	_check("jumping clears the obstacle (health unchanged=%d)" % r3.get_health(),
 		r3.get_health() == 3, "cart was not above clear-height across the obstacle window")
@@ -203,7 +205,9 @@ func _ready() -> void:
 	#     DUCK_HOLD_EPSILON). Hazard z chosen so its hit-window only opens on
 	#     exactly the 6th step, isolating the frame under test.
 	var r11 := _spawn()
-	r11.setup(200.0, [{"z": 2.1, "lane": 1, "type": "arrow"}])
+	# Window opens at z - OBSTACLE_HIT_Z; place it just inside the 6th step.
+	var z11: float = RunnerGraybox.RUN_SPEED * 6.0 / 60.0 + RunnerGraybox.OBSTACLE_HIT_Z - 0.1
+	r11.setup(200.0, [{"z": z11, "lane": 1, "type": "arrow"}])
 	r11.duck_start()
 	for _i in range(6):
 		r11.step(1.0 / 60.0)

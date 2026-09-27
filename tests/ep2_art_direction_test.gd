@@ -153,11 +153,18 @@ func _ready() -> void:
 	var runner_lamps: int = _count_type(runner, "OmniLight3D")
 	_check("runner is lit by warm lantern lights (not just raised ambient)",
 		runner_lamps >= 2, "(%d omni lights)" % runner_lamps)
-	var ground := runner.get_node_or_null("Ground") as MeshInstance3D
-	_check("runner ground wears the palette rock surface",
-		ground != null and ground.material_override != null
-			and ground.material_override.albedo_color.is_equal_approx(t["rock_deep"].albedo),
-		str(ground.material_override.albedo_color if ground and ground.material_override else "none"))
+	# The graybox "Ground" plane is gone since the sim/view split (ADR-0003): the
+	# tunnel and track bed are built by the View with textured rock. Gate the thing
+	# the founder actually complained about — flat grey — by requiring the rock
+	# texture on a real surface.
+	var textured_rock := false
+	for mi in runner.find_children("*", "MeshInstance3D", true, false):
+		var m3 := mi as MeshInstance3D
+		var mat := m3.material_override as StandardMaterial3D
+		if mat and mat.albedo_texture and mat.albedo_texture.resource_path.contains("tex_rock_wall"):
+			textured_rock = true
+			break
+	_check("runner tunnel wears the textured rock surface (not flat grey)", textured_rock)
 	# --- CAMERA FACES THE GAME ------------------------------------------------
 	#
 	# This assertion exists because of a defect that survived every gate in the
@@ -169,7 +176,12 @@ func _ready() -> void:
 	# never visible. That is a complete explanation for "the cart is not in
 	# frame" and for a playtest dying in thirteen seconds, and no logic gate
 	# could see it because positions, health and collisions were all correct.
-	var rcam := runner.get_node_or_null("Cart/Camera3D") as Camera3D
+	# The camera moved into the View in the sim/view split; find the live one.
+	var rcam: Camera3D = null
+	for c in runner.find_children("*", "Camera3D", true, false):
+		if (c as Camera3D).current:
+			rcam = c
+	await get_tree().process_frame
 	var rfwd: Vector3 = -rcam.global_transform.basis.z if rcam else Vector3.ZERO
 	var to_ahead: Vector3 = (Vector3(0.0, 0.5, 20.0) - rcam.global_position).normalized() if rcam else Vector3.ZERO
 	_check("runner camera looks down the track, not back up it",

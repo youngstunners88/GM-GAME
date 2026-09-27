@@ -1,0 +1,16 @@
+{
+  "model": "gemini-3.5-flash",
+  "version": 1,
+  "pick": "v1_s2",
+  "best": 2,
+  "scores": [
+    7,
+    9,
+    6
+  ],
+  "notes": [
+    "Good clatter but has prominent thuds that would repeat obviously in a loop.",
+    "Excellent even texture, great wet rail hiss, highly loopable and fits the brief perfectly.",
+    "A bit too slow and clunky with uneven squeaks that disrupt the loop."
+  ]
+}

@@ -23,6 +23,14 @@ extends Node3D
 ## HUD: the view owns a CanvasLayer with the reticle (gold; red over a bear),
 ## six bullet pips, the reload bar and hints. Mouse cursor visibility is the
 ## session root's job.
+##
+## MOTION + EMOTION (2026-09-27): Lil Blunt and the bears are Meshy-RIGGED
+## skeletal characters. RunnerMotion (runner_motion.gd) decides the clip from the
+## sim; this view only plays it. The revolver and pickaxe follow the real hand
+## bones. Carts are drawn per rail with a life cycle — rolling, WRECKED (tumbles
+## into the pit where the boulder hit), dead (gone), and SPAWNING (rolls in on a
+## siding / drops from a chute). Gold nuggets, buffer stops, speed streaks and a
+## HUD cart strip make the attrition rules readable at 20-30 m/s.
 
 const Sim := preload("res://src/episode2/runner/runner_graybox.gd")
 const PALETTE_PATH := "res://src/episode2/art/ep2_palette.gd"
@@ -38,6 +46,7 @@ const BOULDER_MODEL := "res://src/episode2/assets/boulder.glb"
 const GOLD_PILE_MODEL := "res://src/episode2/assets/gold_pile.glb"
 const ROCK_CHUNK_MODEL := "res://src/episode2/assets/rock_chunk.glb"
 const TEX_DIR := "res://src/episode2/assets/textures/"
+const Motion := preload("res://src/episode2/runner/runner_motion.gd")
 const TEX_ROCK := "tex_rock_wall.jpg"
 const TEX_VEIN := "tex_gold_vein.jpg"
 const TEX_TIMBER := "tex_timber.jpg"
@@ -135,7 +144,22 @@ const FALLBACK_ALBEDO := {
 	"bandit": Color(0.169, 0.165, 0.157),
 	"bandit_cloth": Color(0.431, 0.388, 0.314),
 }
+# --- Cart life cycle / gold / speed (view-only) ---------------------------------
+const WRECK_TIME := 1.6            # a smashed cart tumbles into the pit this long
+const SPAWN_LEAD := 26.0           # an incoming cart is visible on its siding this far ahead
+const SIDING_OFFSET := 3.6         # siding rail runs this far outside its lane
+const CHUTE_HEIGHT := 5.0          # centre spawns drop from an ore chute
+const GOLD_Y := 0.95
+const FOV_BASE := 66.0
+const FOV_PER_MS := 1.1            # +deg per m/s above 20
+const C_DANGER := Color(1.0, 0.25, 0.15)
+const C_GOLD_HUD := Color(1.0, 0.84, 0.3)
 const FALLBACK_EMISSIVE := {"lantern": 1.1, "spark": 2.2, "gate": 0.9, "gold": 0.5, "gold_vein": 0.12}
+
+## TEST-ONLY render bisection switches, filled from ?ep2off= by ep2_entry.gd.
+## Keys: boulders, shadows, streaks, rig, strips, gold, halo, stress. Always
+## empty in normal play.
+static var debug_off: Dictionary = {}
 
 var _sim: Node = null
 var _world: Node3D = null
@@ -199,6 +223,33 @@ var _hint_label: Label = null
 # SFX players (persist across rebuilds).
 var _sfx: Dictionary = {}
 
+# Motion + emotion (rigged characters).
+var _rider_anim: RefCounted = null         # RunnerMotion.Anim
+var _rider_skel: Skeleton3D = null
+var _bone_r: int = -1
+var _bone_l: int = -1
+var _bone_head: int = -1
+var _t_hit: float = 99.0
+var _t_shot: float = 99.0
+var _t_swipe: float = 99.0
+var _t_hop: float = 99.0
+var _t_cheer: float = 99.0
+var _archer_anims: Dictionary = {}          # id -> RunnerMotion.Anim
+var _emote: Label3D = null
+var _popups: Array = []                     # [{"node": Label3D, "t": float}]
+# Carts: per-lane life cycle. {"state": "roll"|"wreck"|"dead"|"spawn", "t", "z", "spin"}
+var _cart_fx: Array = []
+var _debris: CPUParticles3D = null
+var _gold_nodes: Array = []                 # parallel to obstacles (null when not gold)
+var _gold_burst: CPUParticles3D = null
+var _streaks: CPUParticles3D = null
+# HUD additions.
+var _cart_strip: Control = null
+var _gold_label: Label = null
+var _blocked_t: float = 99.0
+var _blocked_lane: int = -1
+var _danger_t: float = INF
+
 
 # ------------------------------------------------------------------------------
 # Lifecycle
@@ -226,6 +277,18 @@ func rebuild(sim: Node) -> void:
 	_zip_markers.clear()
 	_lights.clear()
 	_pocket_segs.clear()
+	_archer_anims.clear()
+	_popups.clear()
+	_cart_fx.clear()
+	_gold_nodes.clear()
+	_rider_anim = null
+	_rider_skel = null
+	_t_hit = 99.0
+	_t_shot = 99.0
+	_t_swipe = 99.0
+	_t_hop = 99.0
+	_t_cheer = 99.0
+	_blocked_t = 99.0
 	_tracer_t = 0.0
 	_shake = 0.0
 	_axe_t = 99.0
@@ -257,6 +320,15 @@ func rebuild(sim: Node) -> void:
 	_build_archers()
 	_build_hazards()
 	_build_boarders()
+	_build_gold()
+	_build_rail_events()
+	if debug_off.has("stress"):
+		# TEST-ONLY: 1500 extra instances. Godot 4.3 non-threaded web builds drew
+		# NO 3D above 1000 instances (godotengine/godot#96968) until
+		# project.godot raised threaded_cull_minimum_instances; this proves it.
+		var sb := _box(Vector3(0.2, 0.2, 0.2))
+		for k in 1500:
+			_mesh_node(sb, _timber_mat(), Vector3(-6.5 if k % 2 == 0 else 6.5, 3.0 + float(k % 7) * 0.4, float(k) * 0.6))
 	_build_ziplines()
 	_build_portal(chamber_z)
 	_build_camera()
@@ -281,6 +353,11 @@ func _connect_sim() -> void:
 		"reload_started": _on_reload_started,
 		"boarder_repelled": _on_boarder_repelled,
 		"pickaxe_swing": _on_pickaxe_swing,
+		"cart_wrecked": _on_cart_wrecked,
+		"cart_spawned": _on_cart_spawned,
+		"hop_blocked": _on_hop_blocked,
+		"rider_bailed": _on_rider_bailed,
+		"gold_collected": _on_gold_collected,
 	}
 	for sig in pairs:
 		var cb: Callable = pairs[sig]
@@ -304,6 +381,8 @@ func _process(delta: float) -> void:
 	_update_gun(delta)
 	_update_axe(delta)
 	_update_fx(delta)
+	_update_gold(dist, delta)
+	_update_popups(delta)
 	_update_hud()
 
 # ------------------------------------------------------------------------------
@@ -524,6 +603,22 @@ func _rel_xform(ancestor: Node, n: Node) -> Transform3D:
 		cur = cur.get_parent()
 	return t
 
+## Height box of a Meshy-RIGGED character. A skinned mesh's own AABB is already
+## in metres; its Armature node can carry a 0.01 scale (the bear's does, Lil
+## Blunt's doesn't), so _measure()'s node-chain transform made the bear read
+## 100x too small and drew it 130x too big — off-screen above the scaffold.
+func _measure_rig(root: Node3D) -> AABB:
+	var out := AABB()
+	var first := true
+	for n in root.find_children("*", "MeshInstance3D", true, false):
+		var mi := n as MeshInstance3D
+		if mi == null or mi.mesh == null:
+			continue
+		var bb: AABB = mi.get_aabb()
+		out = bb if first else out.merge(bb)
+		first = false
+	return out
+
 ## Model-space AABB of every mesh under `root` (root's own transform excluded).
 ## Returns an empty AABB if nothing could be measured (e.g. dummy renderer).
 func _measure(root: Node3D) -> AABB:
@@ -551,8 +646,21 @@ func _side_x(side: float, dist_from_centre: float) -> float:
 
 ## A bear (bear_archer.glb scaled to `height`) under a plain root node, so the
 ## fall/leap animation and the headlamp work regardless of model scale.
+## A bear: the Meshy-RIGGED bear when present (its RunnerMotion.Anim is stored
+## as meta "anim"), else the static model, else a capsule.
 func _bear(height: float) -> Node3D:
 	var root := Node3D.new()
+	var rig: Node3D = _inst(Motion.BEAR_RIG) if not debug_off.has("rig") else null
+	if rig:
+		var rb: AABB = _measure_rig(rig)
+		var rh: float = rb.size.y if rb.size.y > 0.01 else BEAR_NATIVE_H
+		rig.scale = Vector3.ONE * (height / rh)
+		root.add_child(rig)
+		var an: RefCounted = Motion.Anim.new(rig, Motion.BEAR_CLIPS)
+		if an.ok():
+			root.set_meta("anim", an)
+			an.want("idle", 0.0)
+		return root
 	var model: Node3D = _inst(ARCHER_MODEL)
 	if model:
 		var bb: AABB = _measure(model)
@@ -587,7 +695,7 @@ func _apply_art() -> void:
 		if sun:
 			sun.light_color = key.light_color
 			sun.light_energy = key.light_energy
-			sun.shadow_enabled = key.shadow_enabled
+			sun.shadow_enabled = key.shadow_enabled and not debug_off.has("shadows")
 		key.free()
 	elif key_v is Node:
 		var stray: Node = key_v
@@ -773,14 +881,30 @@ func _build_carts() -> void:
 				_mesh_node(_box(Vector3(1.6, 1.0, 2.2)), _timber_mat(), Vector3(0.0, 0.8, 0.0), c)
 		_carts.append(c)
 		_cart_wheels.append(wheels)
+		var alive: bool = not _sim.has_method("is_cart_alive") or bool(_sim.is_cart_alive(_carts.size() - 1))
+		_cart_fx.append({"state": "roll" if alive else "dead", "t": 0.0, "z": 0.0, "spin": 0.0})
+		c.visible = alive
 
 func _build_rider() -> void:
 	_rider = Node3D.new()
 	_rider.name = "Rider"
 	_world.add_child(_rider)
-	_rider_model = _inst(RIDER_MODEL)
+	_rider_model = _inst(Motion.RIDER_RIG) if not debug_off.has("rig") else null
 	if _rider_model:
-		var bb: AABB = _measure(_rider_model)
+		var an: RefCounted = Motion.Anim.new(_rider_model, Motion.RIDER_CLIPS)
+		if an.ok():
+			_rider_anim = an
+			an.want("idle", 0.0)
+			var sks: Array = _rider_model.find_children("*", "Skeleton3D", true, false)
+			if not sks.is_empty():
+				_rider_skel = sks[0]
+				_bone_r = _rider_skel.find_bone("RightHand")
+				_bone_l = _rider_skel.find_bone("LeftHand")
+				_bone_head = _rider_skel.find_bone("Head")
+	else:
+		_rider_model = _inst(RIDER_MODEL)
+	if _rider_model:
+		var bb: AABB = _measure_rig(_rider_model) if _rider_anim else _measure(_rider_model)
 		var h: float = bb.size.y if bb.size.y > 0.01 else RIDER_NATIVE_H
 		_rider_scale = RIDER_HEIGHT / h
 	else:
@@ -800,6 +924,19 @@ func _build_rider() -> void:
 	_hook = _mesh_node(hook, _pal("iron"),
 		Vector3(0.15, RIDER_HEIGHT + (CABLE_CLEARANCE - 0.2) * 0.5, 0.0), _rider)
 	_hook.visible = false
+	# Emotion bubble: "!" when his own cart is about to be destroyed.
+	_emote = Label3D.new()
+	_emote.text = "!"
+	_emote.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	_emote.font_size = 140
+	_emote.pixel_size = 0.01
+	_emote.outline_size = 22
+	_emote.modulate = C_DANGER
+	_emote.outline_modulate = Color(0.1, 0.02, 0.0, 0.95)
+	_emote.no_depth_test = true
+	_emote.position = Vector3(0.0, RIDER_HEIGHT + 0.55, 0.0)
+	_emote.visible = false
+	_rider.add_child(_emote)
 
 ## Golden revolver in the screen-right hand, pickaxe in the other.
 ## Gun rig: pivot (aim, -Z = muzzle) → spin node (barrel-axis spin on reload) → model.
@@ -882,6 +1019,8 @@ func _build_archers() -> void:
 		if _prop(LANTERN_MODEL, lp - Vector3(0.0, 0.3, 0.0), 0.9) == null:
 			_mesh_node(_box(Vector3(0.3, 0.42, 0.3)), _pal("lantern"), lp)
 		_archer_nodes[str(a["id"])] = bear
+		if bear.has_meta("anim"):
+			_archer_anims[str(a["id"])] = bear.get_meta("anim")
 	if scaffold_posts.size() > 0:
 		_multi(_box(Vector3(0.24, Sim.ARCHER_Y + PIT_DEPTH, 0.24)), _timber_mat(), scaffold_posts)
 		_multi(_box(Vector3(2.8, 0.22, 2.6)), _timber_mat(), decks)
@@ -955,8 +1094,8 @@ func _build_hazards() -> void:
 			"boulder":
 				boulder_node = _boulder_node(x, z)
 				_add_telegraph(x, z, C_HOP, "HOP!")
-			"boarder":
-				pass                        # built by _build_boarders()
+			"boarder", "gold":
+				pass                        # built by _build_boarders() / _build_gold()
 			_:
 				var crate := _mesh_node(_box(Vector3(1.4, 1.0, 1.0)), _tex_mat(TEX_TIMBER, "crate", 0.9), Vector3(x, 0.15, z))
 				_mesh_node(_box(Vector3(1.46, 0.14, 1.06)), _pal("brass"), Vector3(0.0, 0.3, 0.0), crate)
@@ -1071,6 +1210,131 @@ func _build_ziplines() -> void:
 		lbl.position = Vector3(0.0, cable_y - 0.6, s0 - (2.0 if chained else 0.0))
 		_labels.append({"node": lbl, "z": s0, "strip": null, "archer": "", "near": 9.0})
 
+## Gold nuggets: glowing, spinning pickups on their rail (bait toward risk).
+##
+## UNSHADED on purpose. The first version reused gold_pile.glb (metallic 0.85,
+## roughness 0.22, emissive) at pickup scale, spinning on the rail — and in the
+## web build (Compatibility / WebGL2) every frame with one in view rendered NO 3D
+## AT ALL: HUD only, for ~3 s per gold cluster. Bisected in Chromium with
+## ?ep2off=: gold off → zero blank frames; halo off → still blank. Unshaded
+## pickups have no lighting maths to go wrong; they read as gold from colour,
+## silhouette, spin and the halo.
+func _build_gold() -> void:
+	var obs_all: Array = _sim.get_obstacles()
+	var nug := SphereMesh.new()
+	nug.radius = 0.3
+	nug.height = 0.46
+	nug.radial_segments = 7
+	nug.rings = 4
+	var gm := StandardMaterial3D.new()
+	gm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	gm.albedo_color = Color(1.0, 0.8, 0.28)
+	var cap := SphereMesh.new()
+	cap.radius = 0.14
+	cap.height = 0.2
+	var cm := StandardMaterial3D.new()
+	cm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	cm.albedo_color = Color(1.0, 0.96, 0.75)
+	for oi in obs_all.size():
+		var o: Dictionary = obs_all[oi]
+		if str(o.get("type", "")) != "gold":
+			_gold_nodes.append(null)
+			continue
+		var lane: int = clampi(int(o["lane"]), 0, _lane_xs().size() - 1)
+		var n := Node3D.new()
+		n.position = Vector3(float(_lane_xs()[lane]), GOLD_Y, float(o["z"]))
+		_world.add_child(n)
+		_mesh_node(nug, gm, Vector3.ZERO, n)
+		_mesh_node(cap, cm, Vector3(0.12, 0.14, -0.2), n)      # glint facet
+		if not debug_off.has("halo"):
+			_mesh_node(nug, _glow_mat("gold_halo", Color(1.0, 0.8, 0.3), 0.22), Vector3.ZERO, n).scale = Vector3.ONE * 1.8
+		_gold_nodes.append(n)
+
+## Rail events drawn where they happen: a siding (outer rails) or ore chute
+## (centre) for every replacement cart, a buffer stop for every rail end.
+func _build_rail_events() -> void:
+	if not _sim.has_method("get_rail_events"):
+		return
+	for e in _sim.get_rail_events():
+		var lane: int = clampi(int(e["lane"]), 0, _lane_xs().size() - 1)
+		var lx: float = float(_lane_xs()[lane])
+		var z: float = float(e["z"])
+		if str(e["type"]) == "end":
+			var buf := _mesh_node(_box(Vector3(1.8, 0.9, 0.6)), _timber_mat(), Vector3(lx, 0.05, z + 0.8))
+			_mesh_node(_box(Vector3(1.9, 0.12, 0.66)), _pal("iron"), Vector3(0.0, 0.3, 0.0), buf)
+			var lamp := SphereMesh.new()
+			lamp.radius = 0.16
+			lamp.height = 0.32
+			_mesh_node(lamp, _mat("buffer_lamp", C_DANGER, 6.0), Vector3(0.0, 0.8, 0.0), buf)
+			_add_telegraph(lx, z, C_DANGER, "RAIL ENDS")
+		else:
+			if absf(lx) < 0.1:
+				var chute := _mesh_node(_box(Vector3(2.2, 0.25, 4.0)), _timber_mat(),
+					Vector3(lx, CHUTE_HEIGHT + 1.4, z - 2.0))
+				chute.rotation.x = 0.35
+				for px in [-1.2, 1.2]:
+					_mesh_node(_box(Vector3(0.22, CHUTE_HEIGHT + 2.0, 0.22)), _timber_mat(),
+						Vector3(lx + float(px), (CHUTE_HEIGHT + 2.0) * 0.5 - 0.4, z - 0.5))
+			else:
+				var side: float = signf(lx)
+				var z0: float = z - SPAWN_LEAD - 8.0
+				var a := Vector3(lx + side * SIDING_OFFSET, -0.36, z0)
+				var b := Vector3(lx, -0.36, z)
+				for rail_dx in [-0.55, 0.55]:
+					var rail := _mesh_node(_box(Vector3(0.1, 0.12, a.distance_to(b))), _pal("iron"),
+						(a + b) * 0.5 + Vector3(float(rail_dx), 0.0, 0.0))
+					rail.rotation.y = atan2(b.x - a.x, b.z - a.z)
+			var lbl := _label("NEW CART ▸", Color(0.55, 1.0, 0.55))
+			lbl.font_size = 64
+			lbl.position = Vector3(lx, 2.9, z)
+			_labels.append({"node": lbl, "z": z, "strip": null, "archer": "", "near": 2.0})
+
+func _update_gold(dist: float, delta: float) -> void:
+	var obs: Array = _sim.get_obstacles()
+	for i in mini(_gold_nodes.size(), obs.size()):
+		var n: Node3D = _gold_nodes[i]
+		if n == null:
+			continue
+		var o: Dictionary = obs[i]
+		if bool(o.get("taken", false)):
+			if n.visible:
+				n.visible = false
+				if _gold_burst:
+					_gold_burst.position = n.position
+					_gold_burst.restart()
+					_gold_burst.emitting = true
+				_popup("+1 GOLD", C_GOLD_HUD, n.position + Vector3(0.0, 1.2, 1.5))
+			continue
+		var ahead: float = float(o["z"]) - dist
+		n.visible = ahead > -2.0 and ahead < 90.0 and not debug_off.has("gold")
+		n.rotation.y += delta * 3.0
+		n.position.y = GOLD_Y + sin(Time.get_ticks_msec() * 0.004 + float(i)) * 0.12
+
+func _popup(text: String, c: Color, pos: Vector3) -> void:
+	var l := _label(text, c)
+	l.font_size = 72
+	l.position = pos
+	l.visible = true
+	_popups.append({"node": l, "t": 0.0})
+
+func _update_popups(delta: float) -> void:
+	var keep: Array = []
+	for pd in _popups:
+		var d: Dictionary = pd
+		var l: Label3D = d["node"]
+		if l == null or not is_instance_valid(l):
+			continue
+		var t: float = float(d["t"]) + delta
+		d["t"] = t
+		l.position.y += delta * 1.4
+		l.position.z = float(_sim.get_distance()) + 4.0 if _sim else l.position.z
+		l.modulate.a = clampf(1.2 - t, 0.0, 1.0)
+		if t > 1.2:
+			l.queue_free()
+		else:
+			keep.append(d)
+	_popups = keep
+
 func _build_portal(z: float) -> void:
 	var h := 7.5
 	for x in [-4.8, 4.8]:
@@ -1135,6 +1399,71 @@ func _build_fx() -> void:
 	_flash.light_energy = 0.0
 	_world.add_child(_flash)
 
+	# Cart smash: splintered planks + iron bits.
+	_debris = CPUParticles3D.new()
+	_debris.one_shot = true
+	_debris.emitting = false
+	_debris.amount = 36
+	_debris.lifetime = 1.2
+	_debris.explosiveness = 0.95
+	_debris.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+	_debris.emission_box_extents = Vector3(0.8, 0.4, 1.0)
+	_debris.direction = Vector3(0.0, 1.0, 0.3)
+	_debris.spread = 70.0
+	_debris.initial_velocity_min = 5.0
+	_debris.initial_velocity_max = 11.0
+	_debris.angular_velocity_min = -540.0
+	_debris.angular_velocity_max = 540.0
+	_debris.gravity = Vector3(0.0, -22.0, 0.0)
+	_debris.scale_amount_min = 0.6
+	_debris.scale_amount_max = 1.4
+	_debris.mesh = _box(Vector3(0.5, 0.08, 0.16))
+	_debris.material_override = _timber_mat()
+	_world.add_child(_debris)
+
+	# Gold pickup sparkle.
+	_gold_burst = CPUParticles3D.new()
+	_gold_burst.one_shot = true
+	_gold_burst.emitting = false
+	_gold_burst.amount = 18
+	_gold_burst.lifetime = 0.5
+	_gold_burst.explosiveness = 1.0
+	_gold_burst.direction = Vector3(0.0, 1.0, 0.0)
+	_gold_burst.spread = 180.0
+	_gold_burst.initial_velocity_min = 2.5
+	_gold_burst.initial_velocity_max = 5.0
+	_gold_burst.gravity = Vector3(0.0, -6.0, 0.0)
+	_gold_burst.scale_amount_min = 0.06
+	_gold_burst.scale_amount_max = 0.12
+	var gs := SphereMesh.new()
+	gs.radius = 0.5
+	gs.height = 1.0
+	gs.radial_segments = 4
+	gs.rings = 2
+	_gold_burst.mesh = gs
+	_gold_burst.material_override = _mat("gold_spark", Color(1.0, 0.85, 0.35), 4.0)
+	_world.add_child(_gold_burst)
+
+	# Speed streaks rushing past the camera (camera-local, scale with speed).
+	_streaks = CPUParticles3D.new()
+	_streaks.local_coords = true
+	_streaks.amount = 48
+	_streaks.lifetime = 0.55
+	_streaks.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+	_streaks.emission_box_extents = Vector3(7.0, 4.0, 3.0)
+	_streaks.position = Vector3(0.0, 0.0, -26.0)
+	_streaks.direction = Vector3(0.0, 0.0, 1.0)
+	_streaks.spread = 2.0
+	_streaks.gravity = Vector3.ZERO
+	_streaks.initial_velocity_min = 42.0
+	_streaks.initial_velocity_max = 58.0
+	_streaks.mesh = _box(Vector3(0.025, 0.025, 1.8))
+	_streaks.material_override = _glow_mat("speed_streak", Color(1.0, 0.9, 0.7), 0.35)
+	if _camera:
+		_camera.add_child(_streaks)
+	else:
+		_world.add_child(_streaks)
+
 # ------------------------------------------------------------------------------
 # HUD + audio (built once, persist across rebuilds)
 # ------------------------------------------------------------------------------
@@ -1171,6 +1500,13 @@ func _ensure_hud() -> void:
 	_hud.add_child(_reload_fill)
 	_reload_label = _hud_label("RELOADING", C_PIP)
 	_hint_label = _hud_label("R — reload", Color(1.0, 0.95, 0.85))
+	_gold_label = _hud_label("GOLD 0", C_GOLD_HUD)
+	_gold_label.add_theme_font_size_override("font_size", 26)
+	_cart_strip = Control.new()
+	_cart_strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_cart_strip.size = Vector2(220.0, 70.0)
+	_cart_strip.draw.connect(_draw_cart_strip)
+	_hud.add_child(_cart_strip)
 
 func _hud_label(text: String, c: Color) -> Label:
 	var l := Label.new()
@@ -1231,6 +1567,55 @@ func _update_hud() -> void:
 	_reload_label.position = bar_pos + Vector2(0.0, -30.0)
 	_hint_label.visible = armed and not reloading and ammo <= 2
 	_hint_label.position = Vector2(vs.x - 150.0, vs.y - 92.0)
+	if _gold_label:
+		_gold_label.visible = true
+		var spd: float = float(_sim.get_speed()) if _sim.has_method("get_speed") else Sim.RUN_SPEED
+		var g: int = int(_sim.get_gold()) if _sim.has_method("get_gold") else 0
+		_gold_label.text = "GOLD  %d      %d m/s" % [g, int(round(spd))]
+		_gold_label.position = Vector2(24.0, 18.0)
+	if _cart_strip:
+		_cart_strip.position = Vector2(vs.x * 0.5 - _cart_strip.size.x * 0.5, vs.y - 84.0)
+		_cart_strip.queue_redraw()
+
+## Bottom-centre convoy readout, laid out like the screen (lane 0 = left):
+## live carts gold, wrecked carts dark with a red X, your cart outlined, a green
+## "+" over a dead rail whose replacement is coming, a red "!" over a rail about
+## to be destroyed, and a red flash when a hop is refused.
+func _draw_cart_strip() -> void:
+	if _cart_strip == null or _sim == null or not _sim.has_method("is_cart_alive"):
+		return
+	var dist: float = float(_sim.get_distance())
+	var spd: float = maxf(float(_sim.get_speed()), 1.0)
+	var lane: int = int(_sim.get_lane())
+	var font: Font = ThemeDB.fallback_font
+	for i in 3:
+		var r := Rect2(Vector2(8.0 + float(i) * 70.0, 28.0), Vector2(58.0, 30.0))
+		var alive: bool = bool(_sim.is_cart_alive(i))
+		_cart_strip.draw_rect(r, C_PIP if alive else Color(0.18, 0.12, 0.1, 0.8))
+		_cart_strip.draw_circle(r.position + Vector2(12.0, 32.0), 5.0, Color(0.15, 0.12, 0.1))
+		_cart_strip.draw_circle(r.position + Vector2(46.0, 32.0), 5.0, Color(0.15, 0.12, 0.1))
+		if not alive:
+			_cart_strip.draw_line(r.position + Vector2(8, 4), r.end - Vector2(8, 4), C_DANGER, 4.0)
+			_cart_strip.draw_line(Vector2(r.end.x - 8, r.position.y + 4), Vector2(r.position.x + 8, r.end.y - 4), C_DANGER, 4.0)
+		if i == lane and not bool(_sim.is_ziplining()):
+			_cart_strip.draw_rect(r.grow(4.0), Color(1, 1, 1, 0.95), false, 3.0)
+		if i == _blocked_lane and _blocked_t < 0.4:
+			_cart_strip.draw_rect(r.grow(6.0), C_DANGER, false, 4.0)
+		var mark := ""
+		var mc := Color.WHITE
+		if alive and Motion.danger_eta(_sim, i, dist, spd) < Motion.DANGER_SECS:
+			mark = "!"
+			mc = C_DANGER
+		elif not alive:
+			for e in _sim.get_rail_events():
+				if int(e["lane"]) == i and str(e["type"]) == "spawn" and not bool(e["done"]) \
+						and float(e["z"]) - dist < 80.0:
+					mark = "+"
+					mc = Color(0.55, 1.0, 0.55)
+					break
+		if mark != "" and font:
+			_cart_strip.draw_string(font, r.position + Vector2(22.0, -4.0), mark,
+				HORIZONTAL_ALIGNMENT_LEFT, -1.0, 28, mc)
 
 func _ensure_audio() -> void:
 	if not _sfx.is_empty():
@@ -1255,13 +1640,38 @@ func _play(key: String) -> void:
 # Per-frame
 # ------------------------------------------------------------------------------
 
+## Each rail's cart: rolling with the convoy, WRECKED (tumbles into the pit where
+## it was hit and falls behind), dead (hidden unless a replacement is rolling in
+## on its siding / dropping from the chute), then rolling again once spawned.
 func _update_convoy(dist: float) -> void:
 	var spin: float = dist / CART_WHEEL_R
+	var xs: Array = _lane_xs()
+	var dt: float = get_process_delta_time()
 	for i in _carts.size():
 		var c: Node3D = _carts[i]
-		c.position.z = dist
-		c.position.y = CART_Y + sin(dist * 1.7 + i * 2.1) * 0.025
-		c.rotation.z = sin(dist * 1.1 + i) * 0.015
+		var lx: float = float(xs[i])
+		var st: String = "roll"
+		if i < _cart_fx.size():
+			var fx: Dictionary = _cart_fx[i]
+			st = str(fx["state"])
+			if st == "wreck":
+				var t: float = float(fx["t"]) + dt
+				fx["t"] = t
+				var out: float = signf(lx) if absf(lx) > 0.1 else float(fx["spin"])
+				c.position = Vector3(lx + out * 2.4 * t, CART_Y + 3.2 * t - 11.0 * t * t, float(fx["z"]) + 5.0 * t)
+				c.rotation = Vector3(-2.2 * t, 0.9 * out * t, -out * 3.6 * t)
+				c.visible = t < WRECK_TIME
+				if t >= WRECK_TIME:
+					fx["state"] = "dead"
+				continue
+			if st == "dead":
+				c.visible = _spawn_preview(i, c, lx, dist)
+				if not c.visible:
+					continue
+		if st == "roll":
+			c.visible = true
+			c.position = Vector3(lx, CART_Y + sin(dist * 1.7 + i * 2.1) * 0.025, dist)
+			c.rotation = Vector3(0.0, 0.0, sin(dist * 1.1 + i) * 0.015)
 		var wheels: Array = _cart_wheels[i]
 		for w in wheels:
 			var wn: Node3D = w["node"]
@@ -1271,17 +1681,57 @@ func _update_convoy(dist: float) -> void:
 			var rest: Basis = w["rest"]
 			wn.basis = Basis(axis, spin) * rest
 
+## A replacement cart approaching its spawn z: outer rails roll in along an
+## angled siding, the centre drops from an ore chute. Returns true while shown.
+func _spawn_preview(lane: int, c: Node3D, lx: float, dist: float) -> bool:
+	if not _sim.has_method("get_rail_events"):
+		return false
+	for e in _sim.get_rail_events():
+		if int(e["lane"]) != lane or str(e["type"]) != "spawn" or bool(e["done"]):
+			continue
+		var ahead: float = float(e["z"]) - dist
+		if ahead < 0.0 or ahead > SPAWN_LEAD:
+			continue
+		var u: float = 1.0 - ahead / SPAWN_LEAD
+		var ease: float = 1.0 - (1.0 - u) * (1.0 - u)
+		if absf(lx) < 0.1:
+			c.position = Vector3(lx, CART_Y + CHUTE_HEIGHT * (1.0 - ease), dist)
+			c.rotation = Vector3(0.25 * (1.0 - u), 0.0, 0.0)
+		else:
+			var side: float = signf(lx)
+			c.position = Vector3(lx + side * SIDING_OFFSET * (1.0 - ease), CART_Y, dist)
+			c.rotation = Vector3(0.0, -side * 0.3 * (1.0 - ease), 0.0)
+		return true
+	return false
+
 func _update_rider(dist: float, delta: float) -> void:
 	var x: float = float(_sim.get_cart_x())
 	var y: float = float(_sim.get_cart_y())
 	var zipping: bool = _sim.is_ziplining()
 	var ducking: bool = _sim.is_duck_held() and not zipping
 
+	_t_hit += delta
+	_t_shot += delta
+	_t_swipe += delta
+	_t_hop += delta
+	_t_cheer += delta
+	_blocked_t += delta
 	var lane: int = int(_sim.get_lane())
 	if lane != _last_lane:
 		_hop_from_x = x
 		_hop_to_x = float(_lane_xs()[lane])
 		_last_lane = lane
+		_t_hop = 0.0
+	if _rider_anim:
+		var mood: String = Motion.pick_rider(zipping, ducking, y > 0.05 and not zipping,
+			bool(_sim.is_reloading()), _t_hit, _t_shot, _t_swipe, _t_hop, _t_cheer)
+		_rider_anim.want(mood)
+	var spd: float = float(_sim.get_speed()) if _sim.has_method("get_speed") else Sim.RUN_SPEED
+	_danger_t = Motion.danger_eta(_sim, lane, dist, spd) if not zipping else INF
+	if _emote:
+		_emote.visible = _danger_t < Motion.DANGER_SECS and _sim.is_running()
+		var pulse: float = 1.0 + 0.25 * sin(Time.get_ticks_msec() * 0.03)
+		_emote.scale = Vector3.ONE * pulse
 	var arc := 0.0
 	var span: float = absf(_hop_to_x - _hop_from_x)
 	if span > 0.01 and not zipping:
@@ -1293,17 +1743,30 @@ func _update_rider(dist: float, delta: float) -> void:
 	if zipping:
 		target_y = Sim.ZIP_HEIGHT
 	elif ducking:
-		target_y = RIDER_FLOOR - 0.45
-		sy = 0.5
+		# The rigged crouch clip already folds him to ~65 % height; the squash is
+		# only the fallback for an un-rigged model.
+		target_y = RIDER_FLOOR - (0.25 if _rider_anim else 0.45)
+		sy = 0.9 if _rider_anim else 0.5
 	_rider.position = Vector3(x, target_y, dist)
 	_rider_model.scale = _rider_model.scale.lerp(Vector3(_rider_scale, _rider_scale * sy, _rider_scale),
 		clampf(delta * 18.0, 0.0, 1.0))
-	# Hands follow the crouch.
-	var crouch: float = _rider_model.scale.y / _rider_scale if _rider_scale > 0.0 else 1.0
-	if _gun_pivot:
-		_gun_pivot.position = Vector3(GUN_HAND.x, GUN_HAND.y * crouch, GUN_HAND.z)
-	if _axe_pivot:
-		_axe_pivot.position = Vector3(AXE_HAND.x, AXE_HAND.y * crouch, AXE_HAND.z)
+	# Upper body turns toward where he's aiming (clamped; he stays facing the run).
+	if _aim_ok and _rider_model:
+		var yaw_t: float = clampf(atan2(_aim_point.x - x, maxf(_aim_point.z - dist, 1.0)), -0.6, 0.6)
+		_rider_model.rotation.y = lerp_angle(_rider_model.rotation.y, RIDER_YAW + yaw_t, clampf(delta * 8.0, 0.0, 1.0))
+	# Weapons ride the real hand bones when rigged; else the fixed hand offsets.
+	if _rider_skel and _bone_r >= 0 and _rider_skel.is_inside_tree():
+		var inv: Transform3D = _rider.global_transform.affine_inverse()
+		if _gun_pivot:
+			_gun_pivot.position = inv * (_rider_skel.global_transform * _rider_skel.get_bone_global_pose(_bone_r)).origin
+		if _axe_pivot and _bone_l >= 0:
+			_axe_pivot.position = inv * (_rider_skel.global_transform * _rider_skel.get_bone_global_pose(_bone_l)).origin
+	else:
+		var crouch: float = _rider_model.scale.y / _rider_scale if _rider_scale > 0.0 else 1.0
+		if _gun_pivot:
+			_gun_pivot.position = Vector3(GUN_HAND.x, GUN_HAND.y * crouch, GUN_HAND.z)
+		if _axe_pivot:
+			_axe_pivot.position = Vector3(AXE_HAND.x, AXE_HAND.y * crouch, AXE_HAND.z)
 	_hook.visible = zipping
 	_rider.rotation.z = (-(x - _prev_x) * 6.0) if not zipping else sin(dist * 0.6) * 0.12
 	_prev_x = x
@@ -1324,6 +1787,10 @@ func _update_archers(dist: float, delta: float) -> void:
 			continue
 		var t: float = float(_archer_fall[id]) + delta
 		_archer_fall[id] = t
+		if _archer_anims.has(id):
+			(_archer_anims[id] as RefCounted).want("die", 0.08)
+			n.visible = t < 2.6
+			continue
 		n.rotation.x = minf(t * 5.0, 1.5)
 		n.position.y = Sim.ARCHER_Y - t * t * 6.0
 		if t > 1.2:
@@ -1332,6 +1799,13 @@ func _update_archers(dist: float, delta: float) -> void:
 		if not a["alive"]:
 			continue
 		var n2: Node3D = _archer_nodes.get(str(a["id"]))
+		var an2: RefCounted = _archer_anims.get(str(a["id"]))
+		if n2 and an2:
+			var spd2: float = float(_sim.get_speed()) if _sim.has_method("get_speed") else Sim.RUN_SPEED
+			var ahead2: float = float(a["z"]) - dist
+			var to_rel: float = (ahead2 - ARROW_LEAD) / maxf(spd2, 1.0)
+			an2.want(Motion.pick_archer(true, to_rel, ahead2))
+			continue
 		if n2:
 			var dz: float = float(a["z"]) - dist
 			n2.position.y = Sim.ARCHER_Y + (sin(dist * 4.0) * 0.04 if dz < ARROW_LEAD * 1.5 and dz > -4.0 else 0.0)
@@ -1375,7 +1849,7 @@ func _update_boulders(dist: float) -> void:
 		var z: float = float(obs[i]["z"])
 		var vz: float = z + (z - dist) * BOULDER_ROLL
 		node.position.z = vz
-		node.visible = vz - dist < 70.0 and vz - dist > -12.0
+		node.visible = vz - dist < 70.0 and vz - dist > -12.0 and not debug_off.has("boulders")
 		node.rotation.x = vz / BOULDER_R
 
 ## Boarder states: idle (on the scaffold → leaping in) · riding (hit: it landed
@@ -1414,6 +1888,15 @@ func _update_boarders(dist: float, delta: float) -> void:
 			bd["state"] = state
 		var t: float = float(bd["t"]) + delta
 		bd["t"] = t
+		if node.has_meta("anim"):
+			var ban: RefCounted = node.get_meta("anim")
+			match state:
+				"idle":
+					ban.want("leap" if z - dist < BOARDER_LEAP_LEAD else "stomp")
+				"riding":
+					ban.want("stomp")
+				_:
+					ban.want("flinch")
 		match state:
 			"idle":
 				var u: float = clampf(1.0 - (z - dist) / BOARDER_LEAP_LEAD, 0.0, 1.0)
@@ -1468,7 +1951,8 @@ func _update_labels(dist: float) -> void:
 		show = show and live
 		(e["node"] as Label3D).visible = show
 		for st in e.get("strips", []):
-			(st as MeshInstance3D).visible = live and ahead > -2.0 and ahead < TELEGRAPH_RANGE + 10.0
+			(st as MeshInstance3D).visible = live and ahead > -2.0 and ahead < TELEGRAPH_RANGE + 10.0 \
+				and not debug_off.has("strips")
 	for m in _zip_markers:
 		var r: MeshInstance3D = m["ring"]
 		var pulse: float = 1.0 + 0.25 * sin(Time.get_ticks_msec() * 0.008)
@@ -1509,6 +1993,12 @@ func _update_camera(dist: float, delta: float) -> void:
 		p += Vector3(_rng.randf_range(-1, 1), _rng.randf_range(-1, 1), 0.0) * _shake * 0.25
 		_shake = maxf(0.0, _shake - delta * 3.0)
 	_camera.position = p
+	var spd: float = float(_sim.get_speed()) if _sim.has_method("get_speed") else Sim.RUN_SPEED
+	var fov_t: float = FOV_BASE + maxf(0.0, spd - 20.0) * FOV_PER_MS + (5.0 if _sim.is_ziplining() else 0.0)
+	_camera.fov = lerpf(_camera.fov, fov_t, clampf(delta * 3.0, 0.0, 1.0))
+	if _streaks:
+		_streaks.emitting = _sim.is_running() and not debug_off.has("streaks")
+		_streaks.speed_scale = spd / 20.0
 	if _camera.is_inside_tree():
 		_camera.look_at(Vector3(rx * 0.4, 1.9, dist + 11.0), Vector3.UP)
 
@@ -1570,11 +2060,15 @@ func _update_axe(delta: float) -> void:
 		return
 	_axe_t += delta
 	var swinging: bool = _axe_t < AXE_SWING_TIME + 0.08
-	_axe_pivot.visible = swinging
+	# The pickaxe is always in his other hand (founder: revolver in one, axe in
+	# the other); it only sweeps on a swipe.
+	_axe_pivot.visible = _sim == null or not bool(_sim.is_ziplining())
 	if swinging:
 		var u: float = clampf(_axe_t / AXE_SWING_TIME, 0.0, 1.0)
 		var e: float = 1.0 - (1.0 - u) * (1.0 - u)     # ease-out: fast strike
 		_axe_pivot.rotation = Vector3(-0.4, 0.0, AXE_START - AXE_ARC * e)
+	else:
+		_axe_pivot.rotation = _axe_pivot.rotation.lerp(Vector3(0.35, 0.0, 0.55), clampf(delta * 8.0, 0.0, 1.0))
 
 func _muzzle_pos() -> Vector3:
 	if _gun_pivot and _gun_pivot.is_inside_tree():
@@ -1609,9 +2103,11 @@ func _draw_tracer(from: Vector3, to: Vector3) -> void:
 
 func _on_hit(_remaining: int) -> void:
 	_shake = 1.0
+	_t_hit = 0.0
 
 func _on_shot() -> void:
 	_play("shot")
+	_t_shot = 0.0
 	if _flash == null or _rider == null:
 		return
 	_flash.position = _muzzle_pos()
@@ -1625,6 +2121,7 @@ func _on_shot_resolved(_hit_id: String, point: Vector3) -> void:
 func _on_archer_down(id: String) -> void:
 	_archer_fall[id] = 0.0
 	_play("bear_hit")
+	_t_cheer = 0.0
 
 func _on_dry_fire() -> void:
 	_play("empty")
@@ -1638,7 +2135,44 @@ func _on_boarder_repelled() -> void:
 
 func _on_pickaxe_swing() -> void:
 	_axe_t = 0.0
+	_t_swipe = 0.0
 	_play("swing")
+
+func _on_cart_wrecked(lane: int, cause: String) -> void:
+	if lane < 0 or lane >= _cart_fx.size():
+		return
+	var fx: Dictionary = _cart_fx[lane]
+	fx["state"] = "wreck"
+	fx["t"] = 0.0
+	fx["z"] = float(_sim.get_distance())
+	fx["spin"] = 1.0 if _rng.randf() < 0.5 else -1.0
+	var lx: float = float(_lane_xs()[lane])
+	if _debris:
+		_debris.position = Vector3(lx, 0.4, float(_sim.get_distance()) + 0.5)
+		_debris.restart()
+		_debris.emitting = true
+	var mine: bool = lane == int(_sim.get_lane())
+	_shake = maxf(_shake, 1.3 if mine else 0.6)
+	_popup("CART SMASHED" if cause == "boulder" else "RAIL ENDS", C_DANGER,
+		Vector3(lx, 2.6, float(_sim.get_distance()) + 3.0))
+
+func _on_cart_spawned(lane: int) -> void:
+	if lane < 0 or lane >= _cart_fx.size():
+		return
+	var fx: Dictionary = _cart_fx[lane]
+	fx["state"] = "roll"
+	_popup("NEW CART", Color(0.55, 1.0, 0.55), Vector3(float(_lane_xs()[lane]), 2.4, float(_sim.get_distance()) + 4.0))
+
+func _on_hop_blocked(lane: int) -> void:
+	_blocked_t = 0.0
+	_blocked_lane = lane
+
+func _on_rider_bailed(_from: int, _to: int) -> void:
+	_t_hit = 0.0
+	_shake = maxf(_shake, 1.4)
+
+func _on_gold_collected(_total: int) -> void:
+	_t_cheer = minf(_t_cheer, Motion.CHEER_HOLD * 0.6)
 
 func _on_zip_caught(_i: int) -> void:
 	_shake = maxf(_shake, 0.25)

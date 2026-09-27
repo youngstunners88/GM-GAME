@@ -13,113 +13,189 @@ extends RefCounted
 ## exactly the "works in tests, broken live" class this repo keeps documenting.
 ## A const in a script always ships. Edit the numbers here; no logic lives in it.
 ##
-## Units: z is metres along the track; RUN_SPEED is 12 m/s, so 12 m ≈ 1 second.
+## Units: z is metres along the track. Speed ramps 20 → 30 m/s over 900 m, so
+## early on 20 m ≈ 1 s and late in a leg 30 m ≈ 1 s. Leave >= 40 m (~1.5 s) between
+## a telegraphed hazard and the one that punishes the answer to it.
 ## Lanes: 0 = left rail, 1 = centre, 2 = right; -1 = "whichever cart the rider
 ## is in" (boarders only). Archer side: -1 left, +1 right.
 ## Hazard verbs: box = JUMP, arrow = DUCK (or SHOOT its archer once armed),
 ## boulder = HOP to another cart, boarder = SWIPE (pickaxe: F / right-click).
 ## Zipline = JUMP to hook it; chained cables need a second JUMP near the end of
 ## each to swing to the next.
+##
+## CART ATTRITION (founder, 2026-09-27): a boulder SMASHES the cart on its rail
+## whether you are in it or not; a smashed rail stays dead until a "spawn" rail
+## event rolls a fresh cart in from a siding. An "end" rail event is a buffer
+## stop: that rail's cart is destroyed there. Hops only reach an ADJACENT live
+## cart, so losing the centre cart splits the convoy. No live cart = derailed.
+## Design rule: every boulder/end must leave at least one live cart the rider
+## can REACH in time; ep2_track_solvability_test plays every leg to prove it.
+## "gold" = pickup (collected by passing through), used as bait toward risk.
 
-## Leg 1 — THE DESCENT. Armed from the start: the golden revolver is Lil
-## Blunt's own gun (founder, 2026-09-26), so every volley here can be answered
-## by ducking OR by shooting its archer. The leg ends at Chamber 0, the Smelting
-## Facility. It teaches the movement verbs one at a time, each introduced alone
-## with ~3 s of warning before any combination.
+## Leg 1 — THE DESCENT (~960 m, ~40 s). Teaches attrition: first you WATCH a
+## cart die, then you lose your own, then the convoy splits and a rail ends.
 const LEG_DESCENT := {
 	"name": "The Descent",
 	"armed": true,
-	"chamber_z": 330.0,
+	"chamber_z": 960.0,
+	"speed": {"base": 20.0, "max": 28.0},
+	"carts_start": [true, true, true],
+	"start_lane": 1,
 	"archers": [
-		{"id": "d_a1", "z": 138.0, "side": 1},
-		{"id": "d_a2", "z": 236.0, "side": -1},
-		{"id": "d_a3", "z": 300.0, "side": 1},
+		{"id": "d_a1", "z": 320.0, "side": 1},
+		{"id": "d_a2", "z": 560.0, "side": -1},
+		{"id": "d_a3", "z": 880.0, "side": 1},
+	],
+	"rail_events": [
+		{"z": 240.0, "lane": 2, "type": "spawn"},   # right rail rebuilt from a siding
+		{"z": 400.0, "lane": 1, "type": "spawn"},   # centre rail back: the convoy rejoins
+		{"z": 600.0, "lane": 1, "type": "spawn"},
+		{"z": 610.0, "lane": 2, "type": "spawn"},
+		{"z": 680.0, "lane": 0, "type": "end"},     # left rail hits a buffer stop
+		{"z": 760.0, "lane": 0, "type": "spawn"},
+		{"z": 770.0, "lane": 2, "type": "spawn"},
 	],
 	"obstacles": [
-		# JUMP — first one off-centre, so holding the middle rail survives it.
-		{"z": 34.0, "lane": 0, "type": "box"},
-		{"z": 66.0, "lane": 1, "type": "box"},
-		# HOP — a boulder down your rail; nothing but another cart saves you.
-		{"z": 100.0, "lane": 1, "type": "boulder"},
-		# DUCK — a full volley across all three rails, so the only answer is duck
-		# (or shoot the bear).
-		{"z": 138.0, "lane": 0, "type": "arrow", "archer": "d_a1"},
-		{"z": 138.0, "lane": 1, "type": "arrow", "archer": "d_a1"},
-		{"z": 138.0, "lane": 2, "type": "arrow", "archer": "d_a1"},
-		# Combo: the zipline drops you on the centre rail — straight into two
-		# boulders. Hop left, the only clear cart.
-		{"z": 212.0, "lane": 1, "type": "boulder"},
-		{"z": 212.0, "lane": 2, "type": "boulder"},
-		# Volley again, other side of the track.
-		{"z": 236.0, "lane": 0, "type": "arrow", "archer": "d_a2"},
-		{"z": 236.0, "lane": 1, "type": "arrow", "archer": "d_a2"},
-		{"z": 236.0, "lane": 2, "type": "arrow", "archer": "d_a2"},
-		# Final approach: jump, then a two-rail volley (safe lane = hop to it OR duck).
-		{"z": 285.0, "lane": 1, "type": "box"},
-		{"z": 300.0, "lane": 0, "type": "arrow", "archer": "d_a3"},
-		{"z": 300.0, "lane": 1, "type": "arrow", "archer": "d_a3"},
-		# BOARDER — a bear leaps onto YOUR cart (lane -1 = whichever cart you're in).
-		# Only the pickaxe swipe (F / right-click) knocks it off.
-		{"z": 320.0, "lane": -1, "type": "boarder"},
+		# Warm-up: a gold line down the centre, then two jumps.
+		{"z": 40.0, "lane": 1, "type": "gold"},
+		{"z": 48.0, "lane": 1, "type": "gold"},
+		{"z": 56.0, "lane": 1, "type": "gold"},
+		{"z": 90.0, "lane": 0, "type": "box"},
+		{"z": 120.0, "lane": 1, "type": "box"},
+		# WATCH a cart die: a boulder down the EMPTY right rail smashes that cart.
+		{"z": 160.0, "lane": 2, "type": "boulder"},
+		# ...and the gold on the right rail is now out of reach.
+		{"z": 200.0, "lane": 2, "type": "gold"},
+		{"z": 208.0, "lane": 2, "type": "gold"},
+		# LOSE yours: a boulder down the centre. Left or right (respawned at 240)?
+		{"z": 290.0, "lane": 1, "type": "boulder"},
+		# The convoy is now SPLIT (no centre cart): whichever side you chose, you
+		# stay there. A full volley: duck or shoot.
+		{"z": 320.0, "lane": 0, "type": "arrow", "archer": "d_a1"},
+		{"z": 320.0, "lane": 1, "type": "arrow", "archer": "d_a1"},
+		{"z": 320.0, "lane": 2, "type": "arrow", "archer": "d_a1"},
+		{"z": 360.0, "lane": 0, "type": "box"},
+		{"z": 360.0, "lane": 2, "type": "box"},
+		# Zipline over the pit; it drops you on the centre cart (back since 400).
+		# Right after landing, boulders on centre AND right: hop LEFT, now.
+		{"z": 500.0, "lane": 1, "type": "boulder"},
+		{"z": 500.0, "lane": 2, "type": "boulder"},
+		{"z": 535.0, "lane": 0, "type": "gold"},
+		{"z": 543.0, "lane": 0, "type": "gold"},
+		{"z": 560.0, "lane": 0, "type": "arrow", "archer": "d_a2"},
+		{"z": 560.0, "lane": 1, "type": "arrow", "archer": "d_a2"},
+		{"z": 560.0, "lane": 2, "type": "arrow", "archer": "d_a2"},
+		{"z": 640.0, "lane": -1, "type": "boarder"},
+		# The left rail ENDS at 680: get off it (centre is back since 600).
+		# Then a boulder down the right: stay centre — it's the only cart left.
+		{"z": 720.0, "lane": 2, "type": "boulder"},
+		{"z": 745.0, "lane": 1, "type": "gold"},
+		{"z": 860.0, "lane": 1, "type": "box"},
+		# Last volley covers left + centre only: hop right, or duck, or shoot.
+		{"z": 880.0, "lane": 0, "type": "arrow", "archer": "d_a3"},
+		{"z": 880.0, "lane": 1, "type": "arrow", "archer": "d_a3"},
+		{"z": 915.0, "lane": 0, "type": "gold"},
+		{"z": 915.0, "lane": 1, "type": "gold"},
+		{"z": 915.0, "lane": 2, "type": "gold"},
 	],
 	"zip_segments": [
-		# ZIPLINE — one cable to learn the catch.
-		{"start_z": 165.0, "end_z": 190.0},
-		# ZIPLINE CHAIN — jump to hook, jump again to swing to the next cable.
-		{"start_z": 250.0, "end_z": 262.0},
-		{"start_z": 268.0, "end_z": 278.0},
+		{"start_z": 430.0, "end_z": 470.0},
+		# Chain: jump to hook, jump again near the end to swing on.
+		{"start_z": 790.0, "end_z": 812.0},
+		{"start_z": 818.0, "end_z": 836.0},
 	],
 	# CHAMBER 0 — the Smelting Facility: a story set-piece, so it mints nothing
 	# (no gold_principal, no bears).
 	"chamber": "smelting_facility",
 }
 
-## Leg 2 — DEEPER RAILS. Armed. Every volley has a second answer: shoot its
-## archer before it looses. Hazards arrive tighter and in combinations.
+## Leg 2 — DEEPER RAILS (~1180 m). Starts a cart short (right rail empty) and
+## never gives the convoy back for long: bait gold toward rails about to die,
+## boarders inside volleys, and one stretch where a single cart carries you.
 const LEG_DEEPER := {
 	"name": "Deeper Rails",
 	"armed": true,
-	"chamber_z": 360.0,
+	"chamber_z": 1180.0,
+	"speed": {"base": 22.0, "max": 30.0},
+	"carts_start": [true, true, false],
+	"start_lane": 1,
 	"archers": [
 		{"id": "r_a1", "z": 60.0, "side": 1},
-		{"id": "r_a2", "z": 118.0, "side": -1},
-		{"id": "r_a3", "z": 170.0, "side": 1},
-		{"id": "r_a4", "z": 250.0, "side": -1},
-		{"id": "r_a5", "z": 318.0, "side": 1},
+		{"id": "r_a2", "z": 300.0, "side": -1},
+		{"id": "r_a3", "z": 580.0, "side": 1},
+		{"id": "r_a4", "z": 670.0, "side": -1},
+		{"id": "r_a5", "z": 820.0, "side": 1},
+		{"id": "r_a6", "z": 1040.0, "side": -1},
+	],
+	"rail_events": [
+		{"z": 150.0, "lane": 2, "type": "spawn"},
+		{"z": 200.0, "lane": 1, "type": "spawn"},
+		{"z": 360.0, "lane": 0, "type": "spawn"},
+		{"z": 530.0, "lane": 1, "type": "spawn"},
+		{"z": 560.0, "lane": 2, "type": "end"},
+		{"z": 600.0, "lane": 0, "type": "spawn"},
+		{"z": 700.0, "lane": 1, "type": "spawn"},
+		{"z": 705.0, "lane": 2, "type": "spawn"},
+		{"z": 890.0, "lane": 0, "type": "spawn"},
+		{"z": 1000.0, "lane": 1, "type": "spawn"},
+		{"z": 1005.0, "lane": 2, "type": "spawn"},
 	],
 	"obstacles": [
-		# First armed volley — shoot the bear or duck, your call.
 		{"z": 60.0, "lane": 0, "type": "arrow", "archer": "r_a1"},
 		{"z": 60.0, "lane": 1, "type": "arrow", "archer": "r_a1"},
 		{"z": 60.0, "lane": 2, "type": "arrow", "archer": "r_a1"},
-		{"z": 88.0, "lane": 1, "type": "boulder"},
-		{"z": 88.0, "lane": 2, "type": "boulder"},
-		{"z": 118.0, "lane": 0, "type": "arrow", "archer": "r_a2"},
-		{"z": 118.0, "lane": 1, "type": "arrow", "archer": "r_a2"},
-		{"z": 118.0, "lane": 2, "type": "arrow", "archer": "r_a2"},
-		{"z": 140.0, "lane": 0, "type": "box"},
-		{"z": 140.0, "lane": 2, "type": "box"},
-		# Boulder into a volley: hop first, then shoot/duck.
-		{"z": 158.0, "lane": 1, "type": "boulder"},
-		{"z": 170.0, "lane": 0, "type": "arrow", "archer": "r_a3"},
-		{"z": 170.0, "lane": 1, "type": "arrow", "archer": "r_a3"},
-		{"z": 170.0, "lane": 2, "type": "arrow", "archer": "r_a3"},
-		{"z": 250.0, "lane": 0, "type": "arrow", "archer": "r_a4"},
-		{"z": 250.0, "lane": 1, "type": "arrow", "archer": "r_a4"},
-		{"z": 250.0, "lane": 2, "type": "arrow", "archer": "r_a4"},
-		{"z": 272.0, "lane": -1, "type": "boarder"},
-		{"z": 290.0, "lane": 0, "type": "boulder"},
-		{"z": 290.0, "lane": 1, "type": "boulder"},
-		{"z": 318.0, "lane": 0, "type": "arrow", "archer": "r_a5"},
-		{"z": 318.0, "lane": 1, "type": "arrow", "archer": "r_a5"},
-		{"z": 318.0, "lane": 2, "type": "arrow", "archer": "r_a5"},
-		{"z": 340.0, "lane": 1, "type": "box"},
+		# Centre smashed with the right rail still empty: left is the only way.
+		{"z": 110.0, "lane": 1, "type": "boulder"},
+		# Bait: gold on the right rail you can no longer cross to.
+		{"z": 170.0, "lane": 2, "type": "gold"},
+		{"z": 178.0, "lane": 2, "type": "gold"},
+		# Left dies at 240; the centre is back since 200.
+		{"z": 240.0, "lane": 0, "type": "boulder"},
+		{"z": 270.0, "lane": 1, "type": "box"},
+		{"z": 270.0, "lane": 2, "type": "box"},
+		{"z": 300.0, "lane": 1, "type": "arrow", "archer": "r_a2"},
+		{"z": 300.0, "lane": 2, "type": "arrow", "archer": "r_a2"},
+		{"z": 330.0, "lane": -1, "type": "boarder"},
+		# After the chain, boulders on left + centre: hop RIGHT.
+		{"z": 470.0, "lane": 0, "type": "boulder"},
+		{"z": 470.0, "lane": 1, "type": "boulder"},
+		{"z": 500.0, "lane": 2, "type": "gold"},
+		{"z": 508.0, "lane": 2, "type": "gold"},
+		# The right rail ENDS at 560: centre is back at 530 — take it.
+		{"z": 580.0, "lane": 0, "type": "arrow", "archer": "r_a3"},
+		{"z": 580.0, "lane": 1, "type": "arrow", "archer": "r_a3"},
+		{"z": 580.0, "lane": 2, "type": "arrow", "archer": "r_a3"},
+		# The centre is the ONLY cart; left rolls in at 600, just in time.
+		{"z": 630.0, "lane": 1, "type": "boulder"},
+		# Boarder inside a volley: swipe it, then duck/shoot.
+		{"z": 660.0, "lane": -1, "type": "boarder"},
+		{"z": 670.0, "lane": 0, "type": "arrow", "archer": "r_a4"},
+		{"z": 670.0, "lane": 1, "type": "arrow", "archer": "r_a4"},
+		# Full convoy again at 705 — then both outer carts die: centre.
+		{"z": 750.0, "lane": 0, "type": "boulder"},
+		{"z": 750.0, "lane": 2, "type": "boulder"},
+		{"z": 780.0, "lane": 1, "type": "box"},
+		{"z": 820.0, "lane": 0, "type": "arrow", "archer": "r_a5"},
+		{"z": 820.0, "lane": 1, "type": "arrow", "archer": "r_a5"},
+		{"z": 820.0, "lane": 2, "type": "arrow", "archer": "r_a5"},
+		# Off the zipline onto the centre, boulder: the left cart arrived at 890.
+		{"z": 930.0, "lane": 1, "type": "boulder"},
+		{"z": 955.0, "lane": 0, "type": "gold"},
+		{"z": 963.0, "lane": 0, "type": "gold"},
+		{"z": 975.0, "lane": -1, "type": "boarder"},
+		{"z": 1040.0, "lane": 1, "type": "arrow", "archer": "r_a6"},
+		{"z": 1040.0, "lane": 2, "type": "arrow", "archer": "r_a6"},
+		{"z": 1080.0, "lane": 0, "type": "boulder"},
+		{"z": 1120.0, "lane": 1, "type": "box"},
+		{"z": 1150.0, "lane": 1, "type": "gold"},
+		{"z": 1150.0, "lane": 2, "type": "gold"},
 	],
 	"zip_segments": [
 		# Three-cable chain over the pit — the set piece of the leg.
-		{"start_z": 195.0, "end_z": 207.0},
-		{"start_z": 213.0, "end_z": 225.0},
-		{"start_z": 231.0, "end_z": 242.0},
+		{"start_z": 395.0, "end_z": 412.0},
+		{"start_z": 418.0, "end_z": 432.0},
+		{"start_z": 438.0, "end_z": 452.0},
+		{"start_z": 860.0, "end_z": 900.0},
 	],
 	# First PROTOCOL chamber — the Miner Shaft vesting mechanic.
 	"chamber": "miner_shaft",

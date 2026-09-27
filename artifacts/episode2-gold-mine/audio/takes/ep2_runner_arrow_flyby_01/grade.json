@@ -1,0 +1,16 @@
+{
+  "model": "gemini-3.5-flash",
+  "version": 1,
+  "pick": "v1_s1",
+  "best": 1,
+  "scores": [
+    9,
+    7,
+    4
+  ],
+  "notes": [
+    "Perfect execution of the brief with a sharp whistle and a distinct, dry wooden impact.",
+    "Good whoosh but the impact thud is too soft and lacks the sharp wooden characteristic.",
+    "Nice airy flyby but completely missing the required impact thud at the end."
+  ]
+}

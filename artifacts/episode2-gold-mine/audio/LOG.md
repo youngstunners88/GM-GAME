@@ -3,3 +3,40 @@
 Appended by `scripts/varco-text2sound.mjs` (takes, promotions, 404/429/failures). Key values never appear here.
 
 - 2026-09-26 BLOCKED runner.json generation: VARCO_API_KEY and OPENAPI_KEY both absent from the session environment (checked by name). Wiring + script + revolver.json committed; run `node scripts/varco-text2sound.mjs --section runner` once the key is set.
+- 2026-09-27T11:46:08.646Z OK ep2_runner_duck_01 catalog runner@v1 -> takes/ep2_runner_duck_01/v1_s1..3.wav
+- 2026-09-27T11:46:28.956Z OK ep2_runner_bed_mine_loop_01 catalog runner@v1 -> takes/ep2_runner_bed_mine_loop_01/v1_s1..3.wav
+- 2026-09-27T11:46:42.516Z OK ep2_runner_cart_rails_loop_01 catalog runner@v1 -> takes/ep2_runner_cart_rails_loop_01/v1_s1..3.wav
+- 2026-09-27T11:46:56.357Z OK ep2_runner_zipline_rush_01 catalog runner@v1 -> takes/ep2_runner_zipline_rush_01/v1_s1..3.wav
+- 2026-09-27T11:47:06.322Z OK ep2_runner_duck_01 catalog runner@v1 -> takes/ep2_runner_duck_01/v2_s1..3.wav
+- 2026-09-27T11:47:18.124Z OK ep2_runner_jump_land_01 catalog runner@v1 -> takes/ep2_runner_jump_land_01/v1_s1..3.wav
+- 2026-09-27T11:47:28.123Z OK ep2_runner_arrow_flyby_01 catalog runner@v1 -> takes/ep2_runner_arrow_flyby_01/v1_s1..3.wav
+- 2026-09-27T11:47:39.307Z OK ep2_runner_arrow_flyby_02 catalog runner@v1 -> takes/ep2_runner_arrow_flyby_02/v1_s1..3.wav
+- 2026-09-27T11:47:51.459Z OK ep2_runner_boulder_roll_01 catalog runner@v1 -> takes/ep2_runner_boulder_roll_01/v1_s1..3.wav
+- 2026-09-27T11:48:05.013Z OK ep2_runner_bear_distant_01 catalog runner@v1 -> takes/ep2_runner_bear_distant_01/v1_s1..3.wav
+- 2026-09-27T11:48:20.219Z OK ep2_runner_score_drone_loop_01 catalog runner@v1 -> takes/ep2_runner_score_drone_loop_01/v1_s1..3.wav
+- 2026-09-27T11:48:31.071Z OK ep2_revolver_fire_01 catalog revolver@v1 -> takes/ep2_revolver_fire_01/v1_s1..3.wav
+- 2026-09-27T11:48:43.877Z OK ep2_revolver_dry_01 catalog revolver@v1 -> takes/ep2_revolver_dry_01/v1_s1..3.wav
+- 2026-09-27T11:48:55.321Z OK ep2_revolver_reload_open_01 catalog revolver@v1 -> takes/ep2_revolver_reload_open_01/v1_s1..3.wav
+- 2026-09-27T11:49:07.571Z OK ep2_revolver_reload_close_01 catalog revolver@v1 -> takes/ep2_revolver_reload_close_01/v1_s1..3.wav
+- 2026-09-27T11:49:19.419Z OK ep2_bear_hit_01 catalog revolver@v1 -> takes/ep2_bear_hit_01/v1_s1..3.wav
+- 2026-09-27T11:49:30.038Z OK ep2_bear_board_cart_01 catalog revolver@v1 -> takes/ep2_bear_board_cart_01/v1_s1..3.wav
+- 2026-09-27T12:45:51.908Z PROMOTE ep2_runner_bed_mine_loop_01 <- takes/ep2_runner_bed_mine_loop_01/v1_s1.wav
+- 2026-09-27T12:45:58.858Z PROMOTE ep2_runner_cart_rails_loop_01 <- takes/ep2_runner_cart_rails_loop_01/v1_s3.wav
+- 2026-09-27T12:47:47.637Z PROMOTE ep2_runner_cart_rails_loop_01 <- takes/ep2_runner_cart_rails_loop_01/v1_s2.wav
+- 2026-09-27T12:48:58.342Z PROMOTE ep2_runner_duck_01 <- takes/ep2_runner_duck_01/v2_s1.wav
+- 2026-09-27T12:49:59.980Z PROMOTE ep2_runner_jump_land_01 <- takes/ep2_runner_jump_land_01/v1_s3.wav
+- 2026-09-27T12:51:28.566Z PROMOTE ep2_runner_arrow_flyby_01 <- takes/ep2_runner_arrow_flyby_01/v1_s1.wav
+- 2026-09-27T12:51:57.320Z PROMOTE ep2_runner_arrow_flyby_02 <- takes/ep2_runner_arrow_flyby_02/v1_s2.wav
+- 2026-09-27T12:52:44.446Z PROMOTE ep2_runner_boulder_roll_01 <- takes/ep2_runner_boulder_roll_01/v1_s1.wav
+- 2026-09-27T12:53:06.531Z PROMOTE ep2_runner_bear_distant_01 <- takes/ep2_runner_bear_distant_01/v1_s1.wav
+- 2026-09-27T12:53:28.081Z PROMOTE ep2_runner_bed_mine_loop_01 <- takes/ep2_runner_bed_mine_loop_01/v1_s1.wav
+- 2026-09-27T12:53:48.861Z PROMOTE ep2_runner_bed_mine_loop_01 <- takes/ep2_runner_bed_mine_loop_01/v1_s1.wav
+- 2026-09-27T12:53:49.010Z PROMOTE ep2_runner_cart_rails_loop_01 <- takes/ep2_runner_cart_rails_loop_01/v1_s2.wav
+- 2026-09-27T12:54:08.296Z PROMOTE ep2_runner_bed_mine_loop_01 <- takes/ep2_runner_bed_mine_loop_01/v1_s1.wav (seamless loop: 0.6 s tail->head crossfade)
+- 2026-09-27T12:54:08.448Z PROMOTE ep2_runner_cart_rails_loop_01 <- takes/ep2_runner_cart_rails_loop_01/v1_s2.wav (seamless loop: 0.6 s tail->head crossfade)
+- 2026-09-27T12:57:13.298Z PROMOTE ep2_runner_score_drone_loop_01 <- takes/ep2_runner_score_drone_loop_01/v1_s2.wav (seamless loop: 0.6 s tail->head crossfade)
+- 2026-09-27T12:59:09.700Z OK ep2_runner_cart_smash_01 catalog runner@v2 -> takes/ep2_runner_cart_smash_01/v1_s1..3.wav
+- 2026-09-27T12:59:23.065Z OK ep2_runner_cart_spawn_01 catalog runner@v2 -> takes/ep2_runner_cart_spawn_01/v1_s1..3.wav
+- 2026-09-27T12:59:36.720Z OK ep2_runner_gold_pickup_01 catalog runner@v2 -> takes/ep2_runner_gold_pickup_01/v1_s1..3.wav
+- 2026-09-27T12:59:37.904Z FAIL ep2_runner_hop_blocked_01 HTTP 402: {"error":"No available credits to process the request"}
+- 2026-09-27T13:00:50.994Z PROMOTE ep2_runner_zipline_rush_01 <- takes/ep2_runner_zipline_rush_01/v1_s3.wav

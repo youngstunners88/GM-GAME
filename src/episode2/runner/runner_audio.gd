@@ -22,6 +22,11 @@ const STEMS := {
 	"ep2_runner_arrow_flyby_02": ["SFX", false],
 	"ep2_runner_boulder_roll_01": ["SFX", false],
 	"ep2_runner_bear_distant_01": ["SFX", false],
+	# v2 — cart attrition layer (2026-09-27).
+	"ep2_runner_cart_smash_01": ["SFX", false],
+	"ep2_runner_cart_spawn_01": ["SFX", false],
+	"ep2_runner_gold_pickup_01": ["SFX", false],
+	"ep2_runner_hop_blocked_01": ["SFX", false],
 }
 
 ## Mix levels in dB; beds sit under the action.
@@ -62,6 +67,11 @@ func _ready() -> void:
 		_players[id] = p
 	if _sim and _sim.has_signal("zip_caught"):
 		_sim.zip_caught.connect(func(_i: int) -> void: _play("ep2_runner_zipline_rush_01"))
+	if _sim and _sim.has_signal("cart_wrecked"):
+		_sim.cart_wrecked.connect(func(_l: int, _c: String) -> void: _play("ep2_runner_cart_smash_01"))
+		_sim.cart_spawned.connect(func(_l: int) -> void: _play("ep2_runner_cart_spawn_01"))
+		_sim.gold_collected.connect(func(_n: int) -> void: _play("ep2_runner_gold_pickup_01"))
+		_sim.hop_blocked.connect(func(_l: int) -> void: _play("ep2_runner_hop_blocked_01"))
 
 ## Loop a 10 s VARCO take in Godot (the skill's fallback when the API loop is absent).
 func _make_loop(s: AudioStream, p: AudioStreamPlayer) -> void:

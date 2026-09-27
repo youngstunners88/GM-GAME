@@ -24,7 +24,7 @@ func _ready() -> void:
 	if audio == null:
 		_finish()
 		return
-	_check("one player per runner.json stem", audio._players.size() == 10, str(audio._players.size()))
+	_check("one player per runner.json stem", audio._players.size() == audio.STEMS.size() and audio.STEMS.size() >= 14, str(audio._players.size()))
 	for id in audio._players:
 		var p: AudioStreamPlayer = audio._players[id]
 		var path: String = audio.AUDIO_DIR + str(id) + ".wav"

@@ -81,7 +81,13 @@ func _enter_runner() -> void:
 		seg.get("obstacles", []),
 		seg.get("zip_segments", []),
 		seg.get("archers", []),
-		bool(seg.get("armed", false))
+		bool(seg.get("armed", false)),
+		{
+			"rail_events": seg.get("rail_events", []),
+			"carts_start": seg.get("carts_start", [true, true, true]),
+			"start_lane": int(seg.get("start_lane", 1)),
+			"speed": seg.get("speed", {}),
+		}
 	)
 	r.chamber_reached.connect(_on_chamber_reached, CONNECT_ONE_SHOT)
 	r.run_failed.connect(_on_run_failed, CONNECT_ONE_SHOT)

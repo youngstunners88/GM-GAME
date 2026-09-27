@@ -33,6 +33,18 @@ extends Node3D
 ## Carts: one cart per rail, running as a convoy; a lane switch is Lil Blunt
 ## HOPPING between carts. `$Cart` is the RIDER anchor.
 ##
+## CART ATTRITION (founder, 2026-09-27 — "a smashed cart is no more available"):
+## a boulder SMASHES whatever cart is on its rail, rider or not. A wrecked rail is
+## dead: you cannot hop onto it, and a hop can only reach an ADJACENT live cart,
+## so a dead centre cart splits the convoy. A rail comes back only when the track
+## rolls a fresh cart in from a siding ("rail_events" type "spawn"); a rail can
+## also END at a buffer stop ("end"), wrecking any cart still on it. If the
+## rider's own cart is wrecked he takes a hit and is thrown to the nearest live
+## cart; with no live cart left he is DERAILED and the run fails.
+##
+## SPEED ramps from the leg's base to its max over SPEED_RAMP_DIST metres.
+## GOLD: "gold" obstacles are pickups, collected by passing through them.
+##
 ## Zipline: earned by being airborne at a segment's start_z; chained cables
 ## need a transfer jump near each end; a miss/drop costs ONE health per chain.
 ## While hooked, lane-switching and duck are suspended and cart-phase hazards
@@ -74,15 +86,27 @@ signal reload_finished
 signal boarder_repelled
 ## The pickaxe swipe was started.
 signal pickaxe_swing
+## A rail's cart was destroyed. cause: "boulder" | "rail_end".
+signal cart_wrecked(lane: int, cause: String)
+## A fresh cart rolled onto a dead rail from a siding.
+signal cart_spawned(lane: int)
+## A hop was refused: the target rail has no cart (or is off the track).
+signal hop_blocked(lane: int)
+## The rider's cart was wrecked under him and he was thrown to another cart.
+signal rider_bailed(from_lane: int, to_lane: int)
+## Gold nugget picked up; carries the leg total.
+signal gold_collected(total: int)
 
 # --- Tuning (feel is tuned later, not law) ------------------------------------
-const RUN_SPEED := 12.0            # forward units/sec (+Z)
+const RUN_SPEED := 20.0            # BASE forward speed m/s (+Z); ramps to MAX_SPEED
+const MAX_SPEED := 30.0
+const SPEED_RAMP_DIST := 900.0     # metres from base to max speed
 ## Three rails. The camera looks down +Z, so world +X is SCREEN-LEFT: lane 0
 ## (reached with move_left / A) must be at +X.
 const LANE_X := [2.5, 0.0, -2.5]
-const LANE_SWITCH_SPEED := 12.0    # how fast the cart slides between rails
-const GRAVITY := 30.0
-const JUMP_VELOCITY := 11.0        # ~0.73s airtime — clears an obstacle
+const LANE_SWITCH_SPEED := 22.0    # hop speed between rails (~0.11 s per rail)
+const GRAVITY := 36.0
+const JUMP_VELOCITY := 12.0        # ~0.67s airtime — clears an obstacle
 const OBSTACLE_CLEAR_HEIGHT := 1.2 # cart y above this = jumped over it
 const OBSTACLE_HIT_Z := 1.0        # z-window for a hit
 const OBSTACLE_HIT_X := 0.8        # x-window (same-lane) for a hit
@@ -95,7 +119,7 @@ const ZIP_CATCH_MIN_Y := 0.6       # must be at least this high crossing start_z
 const ZIP_TRANSFER_WINDOW := 6.0   # jump within this many units of a cable's end to swing on
 const ZIP_CHAIN_GAP := 8.0         # cables closer than this form a chain (swing between them)
 const SHOOT_RANGE_MIN := 4.0       # auto-aim: an archer closer than this is already beside/behind you
-const SHOOT_RANGE_MAX := 45.0      # ~3.75s ahead at RUN_SPEED — visible on the scaffold
+const SHOOT_RANGE_MAX := 60.0      # ~2.5s ahead at speed — visible on the scaffold
 const SHOOT_COOLDOWN := 0.35       # hammer cadence; also stops shoot-spam trivialising volleys
 
 # --- Revolver -----------------------------------------------------------------
@@ -111,6 +135,15 @@ const SHOT_MISS_RANGE := 60.0      # where a missed bullet is drawn to
 
 # --- Pickaxe --------------------------------------------------------------------
 const SWIPE_WINDOW := 0.6
+
+# --- Carts / rails ----------------------------------------------------------------
+var _cart_alive: Array = [true, true, true]
+## [{"z": float, "lane": int, "type": "spawn"|"end", "done": bool}], sorted by z.
+var _rail_events: Array = []
+var _speed: float = RUN_SPEED
+var _base_speed: float = RUN_SPEED
+var _max_speed: float = MAX_SPEED
+var _gold: int = 0
 
 # --- Live state --------------------------------------------------------------
 var _lane: int = 1                 # index into LANE_X; start centre
@@ -168,9 +201,27 @@ func _ready() -> void:
 ##
 ## `archers`: [{"id": String, "z": float, "side": -1|1}]. `can_shoot`: whether the
 ## revolver is in hand for this leg.
+## `opts` (all optional): "rail_events" [{"z","lane","type":"spawn"|"end"}],
+## "carts_start" [bool,bool,bool], "start_lane" int, "speed" {"base","max"}.
 func setup(chamber_z: float, obstacles: Array = [], zip_segments: Array = [],
-		archers: Array = [], can_shoot: bool = false) -> void:
+		archers: Array = [], can_shoot: bool = false, opts: Dictionary = {}) -> void:
 	_chamber_z = chamber_z
+	var cs: Array = opts.get("carts_start", [true, true, true])
+	_cart_alive = []
+	for i in LANE_X.size():
+		_cart_alive.append(bool(cs[i]) if i < cs.size() else true)
+	_rail_events = []
+	var evs: Array = opts.get("rail_events", [])
+	for e in evs:
+		var ed: Dictionary = e
+		_rail_events.append({"z": float(ed.get("z", 0.0)), "lane": int(ed.get("lane", 1)),
+			"type": str(ed.get("type", "spawn")), "done": false})
+	_rail_events.sort_custom(func(a, b): return float(a["z"]) < float(b["z"]))
+	var sp: Dictionary = opts.get("speed", {})
+	_base_speed = float(sp.get("base", RUN_SPEED))
+	_max_speed = float(sp.get("max", MAX_SPEED))
+	_speed = _base_speed
+	_gold = 0
 	_obstacles = obstacles.duplicate(true)
 	for o in _obstacles:
 		o["hit"] = false
@@ -196,7 +247,9 @@ func setup(chamber_z: float, obstacles: Array = [], zip_segments: Array = [],
 	_reload_t = 0.0
 	_swipe_t = 0.0
 
-	_lane = 1
+	_lane = int(opts.get("start_lane", 1))
+	if not _cart_alive[_lane]:
+		_lane = _nearest_live_lane(_lane)
 	_cart_y = 0.0
 	_vy = 0.0
 	_distance = 0.0
@@ -226,8 +279,9 @@ func step(delta: float) -> void:
 		_advance(delta)
 
 func _advance(delta: float) -> void:
-	# Forward auto-run.
-	_distance += RUN_SPEED * delta
+	# Forward auto-run, ramping from base to max speed along the leg.
+	_speed = lerpf(_base_speed, _max_speed, clampf(_distance / SPEED_RAMP_DIST, 0.0, 1.0))
+	_distance += _speed * delta
 	_shoot_cd = maxf(0.0, _shoot_cd - delta)
 	_swipe_t = maxf(0.0, _swipe_t - delta)
 	_advance_reload(delta)
@@ -242,11 +296,18 @@ func _advance(delta: float) -> void:
 	else:
 		_duck_hold_time = 0.0
 
+	_update_rails()
+	if not _running:
+		return
+
 	if _ziplining:
 		_cart_y = ZIP_HEIGHT
 		_vy = 0.0
-		# The cable runs over the centre rail: slide to it, and land in that cart.
-		_lane = 1
+		# The cable runs over the centre rail: slide to it, and land in that cart
+		# (or the nearest live one when the centre cart is wrecked).
+		var zl: int = 1 if _cart_alive[1] else _nearest_live_lane(1)
+		if zl >= 0:
+			_lane = zl
 		if _cart:
 			var zx: float = move_toward(_cart.position.x, float(LANE_X[1]), LANE_SWITCH_SPEED * delta)
 			_cart.position = Vector3(zx, _cart_y, _distance)
@@ -257,6 +318,9 @@ func _advance(delta: float) -> void:
 			_cart_y = 0.0
 			_vy = 0.0
 			_was_ziplining = false
+			if not _cart_alive[_lane]:
+				_derail()
+				return
 
 		# Vertical (jump/gravity), clamped to the rail floor.
 		if _cart_y > 0.0 or _vy != 0.0:
@@ -357,9 +421,90 @@ func _take_hit() -> void:
 func _is_ducking_effective() -> bool:
 	return _duck_held and _duck_hold_time + DUCK_HOLD_EPSILON >= DUCK_MIN_HOLD
 
+## Rail events (spawn / end) and boulder cart-smashing, judged once each as the
+## convoy passes their z. Runs every frame, including on the zipline (the carts
+## keep rolling under the cable).
+func _update_rails() -> void:
+	for e in _rail_events:
+		if e["done"] or _distance < float(e["z"]):
+			continue
+		e["done"] = true
+		var ln: int = int(e["lane"])
+		if ln < 0 or ln >= LANE_X.size():
+			continue
+		if str(e["type"]) == "spawn":
+			if not _cart_alive[ln]:
+				_cart_alive[ln] = true
+				cart_spawned.emit(ln)
+		else:
+			_wreck(ln, "rail_end")
+			if not _running:
+				return
+	for o in _obstacles:
+		if str(o.get("type", "")) != "boulder" or o.get("smashed", false):
+			continue
+		if _distance < float(o["z"]):
+			continue
+		o["smashed"] = true
+		var bl: int = int(o["lane"])
+		if bl >= 0 and bl < LANE_X.size() and _cart_alive[bl]:
+			_wreck(bl, "boulder")
+			if not _running:
+				return
+
+## Destroy lane's cart. The rider's own cart: he's thrown to the nearest live
+## cart (the boulder's hit is judged by _check_obstacles; a rail end costs a hit
+## here), or derailed when none is left.
+func _wreck(lane: int, cause: String) -> void:
+	if not _cart_alive[lane]:
+		return
+	_cart_alive[lane] = false
+	cart_wrecked.emit(lane, cause)
+	if _ziplining or lane != _lane:
+		return
+	var to: int = _nearest_live_lane(lane)
+	if cause == "rail_end":
+		_take_hit()
+		if not _running:
+			return
+	if to < 0:
+		_derail()
+		return
+	_lane = to
+	rider_bailed.emit(lane, to)
+
+## No cart left under the rider: the run ends.
+func _derail() -> void:
+	if not _running:
+		return
+	_health = 0
+	obstacle_hit.emit(_health)
+	_running = false
+	run_failed.emit()
+
+## Nearest live lane to `from` (ties prefer the centre), or -1 when none.
+func _nearest_live_lane(from: int) -> int:
+	var best: int = -1
+	var best_d: int = 99
+	for i in LANE_X.size():
+		if not _cart_alive[i]:
+			continue
+		var d: int = absi(i - from)
+		if d < best_d or (d == best_d and i == 1):
+			best = i
+			best_d = d
+	return best
+
 func _check_obstacles(cur_x: float) -> void:
 	for o in _obstacles:
 		if o.get("hit", false) or o.get("cancelled", false) or o.get("repelled", false):
+			continue
+		if str(o.get("type", "")) == "gold":
+			if not o.get("taken", false) and absf(_distance - float(o["z"])) <= OBSTACLE_HIT_Z \
+					and absf(cur_x - LANE_X[clampi(int(o["lane"]), 0, LANE_X.size() - 1)]) <= OBSTACLE_HIT_X:
+				o["taken"] = true
+				_gold += 1
+				gold_collected.emit(_gold)
 			continue
 		if absf(_distance - float(o["z"])) > OBSTACLE_HIT_Z:
 			continue
@@ -389,6 +534,8 @@ func _is_cleared(hazard_type: String) -> bool:
 			return _is_ducking_effective()
 		"boulder":
 			return false
+		"gold":
+			return true
 		"boarder":
 			return _swipe_t > 0.0
 		_: # "box"
@@ -397,14 +544,19 @@ func _is_cleared(hazard_type: String) -> bool:
 # --- Input-facing API ---------------------------------------------------------
 
 func switch_lane_left() -> void:
-	if _ziplining:
-		return
-	_lane = maxi(0, _lane - 1)
+	_try_hop(_lane - 1)
 
 func switch_lane_right() -> void:
-	if _ziplining:
+	_try_hop(_lane + 1)
+
+## A hop reaches only the ADJACENT rail, and only if it still has a cart.
+func _try_hop(to: int) -> void:
+	if _ziplining or not _running:
 		return
-	_lane = mini(LANE_X.size() - 1, _lane + 1)
+	if to < 0 or to >= LANE_X.size() or not _cart_alive[to]:
+		hop_blocked.emit(to)
+		return
+	_lane = to
 
 ## Jump, only from the ground. While hooked, arms the swing to the next cable
 ## inside ZIP_TRANSFER_WINDOW of the end; otherwise a no-op on the cable.
@@ -592,6 +744,11 @@ func archers_alive() -> int:
 			n += 1
 	return n
 func get_distance() -> float: return _distance
+func get_speed() -> float: return _speed
+func is_cart_alive(lane: int) -> bool: return lane >= 0 and lane < _cart_alive.size() and bool(_cart_alive[lane])
+func get_carts_alive() -> Array: return _cart_alive.duplicate()
+func get_rail_events() -> Array: return _rail_events
+func get_gold() -> int: return _gold
 func get_lane() -> int: return _lane
 func get_cart_x() -> float: return _cart.position.x if _cart else LANE_X[_lane]
 func get_cart_y() -> float: return _cart_y

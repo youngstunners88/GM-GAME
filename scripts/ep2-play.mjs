@@ -32,4 +32,6 @@ const bad = logs.filter(l => /SCRIPT|Parse|pageerror|ERROR:/i.test(l));
 console.log('final leg', leg, 'd', d, 'hp', hp, '| script/page errors:', bad.length);
 bad.slice(0, 10).forEach(l => console.log('  ', l.slice(0, 200)));
 hpLog.forEach(h => console.log('  ', h));
+if (process.env.EP2_DUMP_LOG) require_log();
+function require_log() { logs.filter(l => !/\[EP2\] d=/.test(l)).slice(0, 400).forEach(l => console.log('LOG', l.slice(0, 220))); }
 await browser.close();

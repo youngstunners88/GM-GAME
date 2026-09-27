@@ -49,6 +49,7 @@ same commit — a manifest that lies is worse than none.
 | **Founder reports smudges / blotches / blemishes** | **`blotch-hunter` agent** | `scripts/blotch-oracle.json` | `blotch-forensics`, `blotch-repair-gate` |
 
 Episode 2 sessions load gm-game-tool-roster + gm-game-episode2-runner-combat.
+Episode 2 feature work follows `ep2-layered-production` (illustration → wire spec → design imagery → 3D → motion/emotion, each gated); unknowns go to `ep2-3d-strategy-research` before a second bisection round.
 
 ## Naming Conventions
 - Levels: `level-[number]_[realm-name].tscn` (e.g., `level-01_smoke-realm.tscn`)

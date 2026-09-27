@@ -34,6 +34,9 @@ var _probe: bool = false
 ## without replaying earlier legs and chambers. 0 in normal play.
 var _leg_offset: int = 0
 var _probe_last: int = -1
+## TEST-ONLY. ?ep2bot=1 on web hands the runner to RunnerAutopilot (the same
+## player the solvability gate uses), so a browser capture shows clean play.
+var _bot: bool = false
 var _ended: bool = false
 var _hud: Label = null
 var _hint: Label = null
@@ -48,6 +51,15 @@ func _ready() -> void:
 		var lq: Variant = JavaScriptBridge.eval(
 			"new URLSearchParams(window.location.search).get('ep2leg') || '0'", true)
 		_leg_offset = clampi(int(str(lq)), 0, TRACK_PLAN.size() - 1)
+		var bq: Variant = JavaScriptBridge.eval(
+			"new URLSearchParams(window.location.search).get('ep2bot') || ''", true)
+		_bot = str(bq) == "1"
+		# TEST-ONLY render bisection: ?ep2off=boulders,shadows,... switches named
+		# view features off (see RunnerView.debug_off). Empty in normal play.
+		var oq: Variant = JavaScriptBridge.eval(
+			"new URLSearchParams(window.location.search).get('ep2off') || ''", true)
+		for f in str(oq).split(",", false):
+			RunnerView.debug_off[f.strip_edges()] = true
 
 	_root = SESSION_ROOT.instantiate()
 	add_child(_root)
@@ -92,6 +104,13 @@ func _plan() -> Array:
 func _restart() -> void:
 	_start_session()
 
+func _physics_process(_delta: float) -> void:
+	# Runs before the runner's own _physics_process (parents tick first).
+	if _bot and _root and _root.get_mode() == Ep2SessionRoot.Mode.RUNNER:
+		var a: Node = _root.get_active()
+		if a and a.has_method("get_carts_alive") and a.is_running():
+			RunnerAutopilot.tick(a)
+
 func _process(_delta: float) -> void:
 	_refresh_hud()
 	if _probe and _root and _root.get_mode() == Ep2SessionRoot.Mode.RUNNER:
@@ -100,7 +119,10 @@ func _process(_delta: float) -> void:
 			var d: int = int(a.get_distance())
 			if d != _probe_last:
 				_probe_last = d
-				print("[EP2] d=%d hp=%d" % [d, a.get_health()])
+				var extra: String = ""
+				if a.has_method("get_carts_alive"):
+					extra = " lane=%d carts=%s gold=%d v=%d" % [a.get_lane(), str(a.get_carts_alive()), a.get_gold(), int(a.get_speed())]
+				print("[EP2] d=%d hp=%d%s" % [d, a.get_health(), extra])
 
 func _unhandled_input(event: InputEvent) -> void:
 	# Always an exit. A mode with no visible way out is how a tester gets stuck

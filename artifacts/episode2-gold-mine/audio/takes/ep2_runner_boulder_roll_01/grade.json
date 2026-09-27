@@ -1,0 +1,16 @@
+{
+  "model": "gemini-3.5-flash",
+  "version": 1,
+  "pick": "v1_s1",
+  "best": 1,
+  "scores": [
+    6,
+    4,
+    5
+  ],
+  "notes": [
+    "Decent initial weight and tumbling texture, but lacks a heavy final impact.",
+    "Sounds too small and lightweight, like wooden blocks rather than a large boulder.",
+    "Good grinding texture in the middle, but ends abruptly with a weak clatter."
+  ]
+}
