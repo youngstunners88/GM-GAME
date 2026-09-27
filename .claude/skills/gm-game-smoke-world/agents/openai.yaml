@@ -1,0 +1,14 @@
+interface:
+  display_name: GM GAME — Smoke World
+  short_description: Build smoky, explorable education landscapes
+  default_prompt: Use $gm-game-smoke-world to improve the Reading Ring using the founder
+    references and current portal map.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

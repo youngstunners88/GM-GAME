@@ -203,6 +203,18 @@ func _test_skin(skin: Dictionary) -> void:
 
 
 func _test_structure(room: Node, protocol: String) -> void:
+	# The opaque top-down floor fills the whole map. It must not cover the
+	# backdrop; this regressed when the side-on floor became a full-map slab.
+	var substrate := room.get_node_or_null("FloorSlab") as ColorRect
+	var backdrop := room.get_node_or_null("Backdrop") as Node2D
+	_check(substrate != null and backdrop != null,
+		"%s: ground substrate and backdrop exist" % protocol)
+	if substrate != null and backdrop != null:
+		_check(substrate.get_parent() == backdrop.get_parent()
+			and substrate.z_as_relative == backdrop.z_as_relative
+			and substrate.z_index < backdrop.z_index,
+			"%s: opaque ground stays behind the visible backdrop" % protocol)
+
 	# Strip width.
 	var width: float = 0.0
 	if room.has_method("get_strip_width"):

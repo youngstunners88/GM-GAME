@@ -8932,3 +8932,5 @@ browsers. Fixes shipped:
   `/playtest-web`, `/export-deploy` skills.
 
 </details>
+
+- IN REVIEW 2026-09-27 — education-world skills and backdrop occlusion patch. Three reference-grounded skills plus route proposals in portals/20_rooms/world-design; FloorSlab moved below Backdrop. Godot 4.3 portal room test: 90 PASS; baseline layer order fails 3 new checks. New terrain assets, exported visual evidence and release gates remain OPEN.

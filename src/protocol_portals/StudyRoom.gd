@@ -592,7 +592,9 @@ func _build_floor_and_walls() -> void:
 	slab.position = Vector2.ZERO
 	slab.size = Vector2(strip_width, ROOM_H)
 	slab.color = _slab_color()
-	slab.z_index = -50
+	# Keep the opaque substrate behind Backdrop (-100). The top-down
+	# floor spans the whole map; at -50 it concealed the entire backdrop.
+	slab.z_index = -110
 	add_child(slab)
 
 	var trim := ColorRect.new()
