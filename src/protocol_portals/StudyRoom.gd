@@ -535,7 +535,9 @@ func _build_smoke_landmarks(layer: Node2D) -> void:
 		layer.add_child(ring)
 	for x in [1850.0, 2410.0]:
 		var plume := Polygon2D.new()
-		plume.color = Color(0.25, 0.85, 0.45, 0.13)
+		# Neutral archive vapour: protocol-green translucent fills are rejected by
+		# the cross-stage smudge gate because they wash over every backdrop.
+		plume.color = Color(0.72, 0.74, 0.76, 0.18)
 		plume.polygon = PackedVector2Array([Vector2(x - 120.0, FLOOR_Y), Vector2(x + 120.0, FLOOR_Y), Vector2(x + 55.0, 170.0), Vector2(x - 35.0, 260.0)])
 		layer.add_child(plume)
 
