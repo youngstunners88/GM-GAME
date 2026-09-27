@@ -236,6 +236,10 @@ func _physics_process(delta: float) -> void:
 		var desired: float = clampf(tx + FOLLOW_OFFSET * _facing, min_x, max_x)
 		var before: float = position.x
 		position.x = lerpf(position.x, desired, 1.0 - exp(-FOLLOW_RATE * delta))
+		# Protocol maps are top-down spaces: follow along both axes rather than
+		# remaining pinned to the old classroom floor line.
+		position.y = lerpf(position.y, target.global_position.y + 26.0,
+			1.0 - exp(-FOLLOW_RATE * delta))
 		moving = absf(position.x - before) > 0.3
 		if _visual != null and absf(tx - position.x) > 4.0:
 			_visual.scale.x = -1.0 if tx < position.x else 1.0

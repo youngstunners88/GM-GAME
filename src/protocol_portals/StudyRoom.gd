@@ -29,13 +29,13 @@ const CompanionScript := preload("res://src/protocol_portals/Companion.gd")
 @export var protocol: String = "smoke"
 @export var stage_id: int = 1
 
-const ROOM_H: float = 720.0
-const FLOOR_Y: float = 620.0
-const PLAYER_SCENE: String = "res://src/player/player.tscn"
+const ROOM_H: float = 1100.0
+const FLOOR_Y: float = 900.0
+const PLAYER_SCENE: String = "res://src/protocol_portals/PortalExplorer.tscn"
 const COPY_PATH: String = "res://src/protocol_portals/data/portal_copy.json"
 
 ## Arrival / ascent shaft.
-const SHAFT_X: float = 160.0
+const SHAFT_X: float = 240.0
 const SHAFT_TOP_Y: float = 90.0
 const SHAFT_WIDTH: float = 64.0
 const RUNG_SPACING: float = 20.0
@@ -46,9 +46,29 @@ const PLAYER_BOX: float = 32.0
 
 ## Stops.
 const FIRST_STOP_X: float = 620.0
-const STOP_SPACING: float = 560.0
+const STOP_SPACING: float = 360.0
 const END_PAD: float = 480.0
-const MIN_STRIP_W: float = 2560.0
+const MIN_STRIP_W: float = 2800.0
+
+const MAP_POSITIONS: Dictionary = {
+	"smoke": {
+		"ash_ring": Vector2(720.0, 310.0), "lounge_basket": Vector2(1120.0, 760.0),
+		"arb_well": Vector2(1560.0, 300.0), "paper": Vector2(2050.0, 720.0),
+		"video": Vector2(2380.0, 330.0), "exam": Vector2(1450.0, 610.0),
+	},
+	"diamonds": {
+		"blaze_gate": Vector2(690.0, 740.0), "tight_float": Vector2(1050.0, 270.0),
+		"vault_crush": Vector2(1580.0, 730.0), "handler_bridge": Vector2(2070.0, 280.0),
+		"paper": Vector2(2410.0, 760.0), "video": Vector2(2360.0, 360.0),
+		"exam": Vector2(1430.0, 490.0),
+	},
+	"gold": {
+		"vest_clock": Vector2(700.0, 280.0), "knox_window": Vector2(1020.0, 760.0),
+		"melt_stamp": Vector2(1600.0, 280.0), "rush_board": Vector2(2050.0, 760.0),
+		"paper": Vector2(2410.0, 300.0), "video": Vector2(2390.0, 730.0),
+		"exam": Vector2(1450.0, 570.0),
+	},
+}
 
 const PAPER_URLS: Dictionary = {
 	"smoke": "https://richs-crypto-projects.gitbook.io/smokering",
@@ -78,6 +98,9 @@ var _data: Dictionary = {}
 var _glow: Color = Color(0.35, 1.0, 0.45)
 var _stop_plan: Array[Dictionary] = []
 var _stop_lines: Dictionary = {}
+var _visited_learning_stops: Dictionary = {}
+var _required_learning_stops: Array[String] = []
+var _objective_label: Label = null
 
 var _player: Node2D = null
 var _companion: Node2D = null
@@ -125,6 +148,8 @@ func _ready() -> void:
 		_data = raw
 	_plan_stops()
 	_build_backdrop()
+	_build_protocol_landmarks()
+	_build_map_paths()
 	_build_floor_and_walls()
 	_build_shaft()
 	_build_stops()
@@ -307,6 +332,8 @@ func _plan_stops() -> void:
 		if id == "exam":
 			exam = d
 			continue
+		if id != "paper" and id != "video":
+			_required_learning_stops.append(id)
 		if id == "paper":
 			has_paper = true
 		elif id == "video":
@@ -322,8 +349,7 @@ func _plan_stops() -> void:
 		exam = {"id": "exam", "name": _s("examiner_name", "Examiner"),
 			"line": _s("quiz_intro")}
 	_stop_plan.append(exam)
-	var last_x: float = FIRST_STOP_X + STOP_SPACING * float(_stop_plan.size() - 1)
-	strip_width = maxf(MIN_STRIP_W, last_x + END_PAD)
+	strip_width = MIN_STRIP_W
 
 
 # ---- Backdrop ---------------------------------------------------------------
@@ -359,14 +385,14 @@ func _build_backdrop() -> void:
 	while x < strip_width:
 		var pillar := ColorRect.new()
 		pillar.name = "Pillar%d" % i
-		pillar.position = Vector2(x, 150.0)
-		pillar.size = Vector2(44.0, FLOOR_Y - 150.0)
+		pillar.position = Vector2(x, 80.0)
+		pillar.size = Vector2(44.0, ROOM_H - 160.0)
 		pillar.color = Color(_slab_color().r, _slab_color().g, _slab_color().b, 0.8).lightened(0.05)
 		layer.add_child(pillar)
 		var trim := ColorRect.new()
 		trim.name = "PillarTrim%d" % i
-		trim.position = Vector2(x, 150.0)
-		trim.size = Vector2(44.0, 3.0)
+		trim.position = Vector2(x, 80.0)
+		trim.size = Vector2(3.0, ROOM_H - 160.0)
 		trim.color = Color(_glow.r, _glow.g, _glow.b, 0.25)
 		layer.add_child(trim)
 		x += 420.0
@@ -440,21 +466,137 @@ func _build_backdrop() -> void:
 	vig_layer.add_child(title)
 
 
+## Large, protocol-specific landmarks turn the shared tour shell into three
+## recognisable explorable places rather than three recoloured classrooms.
+func _build_protocol_landmarks() -> void:
+	var layer := Node2D.new()
+	layer.name = "ProtocolLandmarks"
+	layer.z_index = -30
+	add_child(layer)
+	match protocol:
+		"smoke":
+			_build_smoke_landmarks(layer)
+		"diamonds":
+			_build_diamond_landmarks(layer)
+		"gold":
+			_build_gold_landmarks(layer)
+
+
+func _build_map_paths() -> void:
+	var raw_layout: Variant = MAP_POSITIONS.get(protocol, {})
+	if typeof(raw_layout) != TYPE_DICTIONARY:
+		return
+	var layout: Dictionary = raw_layout
+	var hub: Vector2 = layout.get("exam", Vector2(1450.0, 550.0))
+	var layer := Node2D.new()
+	layer.name = "QuestPaths"
+	layer.z_index = -35
+	add_child(layer)
+	var entry_path := Line2D.new()
+	entry_path.width = 54.0
+	entry_path.default_color = Color(_glow.r, _glow.g, _glow.b, 0.10)
+	entry_path.points = PackedVector2Array([Vector2(SHAFT_X, FLOOR_Y - 80.0), hub])
+	layer.add_child(entry_path)
+	for stop_id in layout.keys():
+		if stop_id == "exam":
+			continue
+		var path := Line2D.new()
+		path.width = 42.0
+		path.default_color = Color(_glow.r, _glow.g, _glow.b, 0.075)
+		path.points = PackedVector2Array([hub, layout[stop_id]])
+		layer.add_child(path)
+
+
+func _landmark_label(parent: Node, text: String, pos: Vector2, color: Color) -> void:
+	var label := Label.new()
+	label.text = text
+	label.position = pos
+	label.size = Vector2(320.0, 42.0)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", 25)
+	label.add_theme_color_override("font_color", color)
+	label.add_theme_color_override("font_outline_color", Color.BLACK)
+	label.add_theme_constant_override("outline_size", 7)
+	parent.add_child(label)
+
+
+func _build_smoke_landmarks(layer: Node2D) -> void:
+	_landmark_label(layer, "THE ASH-RING ARCHIVE", Vector2(370.0, 115.0), _glow)
+	for i in range(7):
+		var ring := Line2D.new()
+		ring.width = 5.0
+		ring.default_color = Color(_glow.r, _glow.g, _glow.b, 0.18 + i * 0.035)
+		ring.closed = true
+		var points := PackedVector2Array()
+		for p in range(40):
+			var a: float = TAU * float(p) / 40.0
+			points.append(Vector2(1180.0, 360.0) + Vector2(cos(a), sin(a)) * (80.0 + i * 28.0))
+		ring.points = points
+		layer.add_child(ring)
+	for x in [1850.0, 2410.0]:
+		var plume := Polygon2D.new()
+		plume.color = Color(0.25, 0.85, 0.45, 0.13)
+		plume.polygon = PackedVector2Array([Vector2(x - 120.0, FLOOR_Y), Vector2(x + 120.0, FLOOR_Y), Vector2(x + 55.0, 170.0), Vector2(x - 35.0, 260.0)])
+		layer.add_child(plume)
+
+
+func _build_diamond_landmarks(layer: Node2D) -> void:
+	_landmark_label(layer, "THE PRESSURE WORKS", Vector2(370.0, 115.0), _glow)
+	for i in range(12):
+		var x: float = 650.0 + float(i) * 360.0
+		var h: float = 100.0 + float((i * 47) % 180)
+		var crystal := Polygon2D.new()
+		crystal.color = Color(0.25, 0.8, 1.0, 0.18 + 0.03 * float(i % 3))
+		crystal.polygon = PackedVector2Array([Vector2(x - 52.0, FLOOR_Y), Vector2(x + 48.0, FLOOR_Y), Vector2(x + 28.0, FLOOR_Y - h * 0.62), Vector2(x, FLOOR_Y - h), Vector2(x - 30.0, FLOOR_Y - h * 0.55)])
+		layer.add_child(crystal)
+	var bridge := Line2D.new()
+	bridge.points = PackedVector2Array([Vector2(2050.0, 270.0), Vector2(3000.0, 270.0)])
+	bridge.width = 12.0
+	bridge.default_color = Color(0.45, 0.95, 1.0, 0.32)
+	layer.add_child(bridge)
+
+
+func _build_gold_landmarks(layer: Node2D) -> void:
+	_landmark_label(layer, "THE CLAIM SETTLEMENT", Vector2(370.0, 115.0), _glow)
+	for i in range(9):
+		var x: float = 620.0 + float(i) * 510.0
+		var beam := ColorRect.new()
+		beam.position = Vector2(x, 90.0)
+		beam.size = Vector2(28.0, FLOOR_Y - 90.0)
+		beam.color = Color(0.25, 0.13, 0.045, 0.85)
+		layer.add_child(beam)
+	var clock := Line2D.new()
+	clock.closed = true
+	clock.width = 9.0
+	clock.default_color = Color(1.0, 0.72, 0.18, 0.55)
+	var points := PackedVector2Array()
+	for p in range(48):
+		var a: float = TAU * float(p) / 48.0
+		points.append(Vector2(1200.0, 330.0) + Vector2(cos(a), sin(a)) * 145.0)
+	clock.points = points
+	layer.add_child(clock)
+	var hand := Line2D.new()
+	hand.points = PackedVector2Array([Vector2(1200.0, 330.0), Vector2(1275.0, 245.0)])
+	hand.width = 8.0
+	hand.default_color = _glow
+	layer.add_child(hand)
+
+
 # ---- Floor ------------------------------------------------------------------
 
 func _build_floor_and_walls() -> void:
 	var slab := ColorRect.new()
 	slab.name = "FloorSlab"
-	slab.position = Vector2(0.0, FLOOR_Y)
-	slab.size = Vector2(strip_width, ROOM_H - FLOOR_Y)
+	slab.position = Vector2.ZERO
+	slab.size = Vector2(strip_width, ROOM_H)
 	slab.color = _slab_color()
 	slab.z_index = -50
 	add_child(slab)
 
 	var trim := ColorRect.new()
 	trim.name = "FloorTrim"
-	trim.position = Vector2(0.0, FLOOR_Y - 3.0)
-	trim.size = Vector2(strip_width, 3.0)
+	trim.position = Vector2.ZERO
+	trim.size = Vector2(strip_width, 8.0)
 	trim.color = Color(_glow.r, _glow.g, _glow.b, 0.55)
 	trim.z_index = -49
 	add_child(trim)
@@ -463,7 +605,7 @@ func _build_floor_and_walls() -> void:
 	floor_body.name = "Floor"
 	floor_body.collision_layer = 1
 	floor_body.collision_mask = 0
-	floor_body.position = Vector2(strip_width * 0.5, FLOOR_Y + 20.0)
+	floor_body.position = Vector2(strip_width * 0.5, ROOM_H + 20.0)
 	var floor_shape := CollisionShape2D.new()
 	floor_shape.name = "CollisionShape2D"
 	var floor_rect := RectangleShape2D.new()
@@ -476,14 +618,19 @@ func _build_floor_and_walls() -> void:
 	walls.name = "Walls"
 	walls.collision_layer = 1
 	walls.collision_mask = 0
-	var wall_xs: Array[float] = [-20.0, strip_width + 20.0]
-	for i in range(wall_xs.size()):
+	var wall_specs: Array[Dictionary] = [
+		{"position": Vector2(-20.0, ROOM_H * 0.5), "size": Vector2(40.0, ROOM_H)},
+		{"position": Vector2(strip_width + 20.0, ROOM_H * 0.5), "size": Vector2(40.0, ROOM_H)},
+		{"position": Vector2(strip_width * 0.5, -20.0), "size": Vector2(strip_width, 40.0)},
+		{"position": Vector2(strip_width * 0.5, ROOM_H + 20.0), "size": Vector2(strip_width, 40.0)},
+	]
+	for i in range(wall_specs.size()):
 		var wall_shape := CollisionShape2D.new()
 		wall_shape.name = "WallShape%d" % i
 		var wall_rect := RectangleShape2D.new()
-		wall_rect.size = Vector2(40.0, ROOM_H + 400.0)
+		wall_rect.size = wall_specs[i]["size"]
 		wall_shape.shape = wall_rect
-		wall_shape.position = Vector2(wall_xs[i], ROOM_H * 0.5)
+		wall_shape.position = wall_specs[i]["position"]
 		walls.add_child(wall_shape)
 	add_child(walls)
 
@@ -638,7 +785,7 @@ func _do_ascend() -> void:
 		push_warning("StudyRoom: no return scene (room loaded directly); staying.")
 		_ascending = false
 		if _player != null:
-			_player.global_position = Vector2(SHAFT_X - PLAYER_BOX * 0.5, FLOOR_Y - PLAYER_BOX - 1.0)
+			_player.global_position = Vector2(SHAFT_X, FLOOR_Y - 80.0)
 		return
 	if _player != null and is_instance_valid(_player):
 		if _player is CharacterBody2D:
@@ -652,11 +799,19 @@ func _do_ascend() -> void:
 func _build_stops() -> void:
 	for i in range(_stop_plan.size()):
 		var entry: Dictionary = _stop_plan[i]
-		var x: float = FIRST_STOP_X + STOP_SPACING * float(i)
-		_build_stop(entry, x)
+		_build_stop(entry, _map_position(String(entry.get("id", "")), i))
 
 
-func _build_stop(entry: Dictionary, x: float) -> void:
+func _map_position(stop_id: String, fallback_index: int) -> Vector2:
+	var raw_layout: Variant = MAP_POSITIONS.get(protocol, {})
+	if typeof(raw_layout) == TYPE_DICTIONARY:
+		var layout: Dictionary = raw_layout
+		if layout.has(stop_id):
+			return layout[stop_id]
+	return Vector2(FIRST_STOP_X + STOP_SPACING * float(fallback_index), FLOOR_Y - 80.0)
+
+
+func _build_stop(entry: Dictionary, map_position: Vector2) -> void:
 	var id: String = _s2(entry, "id")
 	var line: String = _s2(entry, "line")
 	_stop_lines[id] = line
@@ -671,7 +826,7 @@ func _build_stop(entry: Dictionary, x: float) -> void:
 			pedestal = false
 	var stop: Node2D = TourStopScript.new()
 	stop.name = "Stop_%s" % id
-	stop.position = Vector2(x, FLOOR_Y)
+	stop.position = map_position
 	stop.call("setup", id, _s2(entry, "name", id), line, _glow, pedestal, label_y)
 	add_child(stop)
 	stop.connect("reached", _on_stop_reached)
@@ -685,6 +840,9 @@ func _build_stop(entry: Dictionary, x: float) -> void:
 
 
 func _on_stop_reached(stop_id: String) -> void:
+	if stop_id in _required_learning_stops:
+		_visited_learning_stops[stop_id] = true
+		_update_objective()
 	if _companion == null or _overlay_open:
 		return
 	var line: String = String(_stop_lines.get(stop_id, ""))
@@ -892,8 +1050,8 @@ func _build_player() -> void:
 		return
 	var player: Node2D = packed.instantiate()
 	player.name = "Player"
-	var land_y: float = FLOOR_Y - PLAYER_BOX - 1.0
-	player.position = Vector2(SHAFT_X - PLAYER_BOX * 0.5, land_y - ARRIVAL_DROP)
+	var land_y: float = FLOOR_Y - 80.0
+	player.position = Vector2(SHAFT_X, land_y - ARRIVAL_DROP)
 	player.add_to_group("player")
 	player.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(player)
@@ -968,6 +1126,20 @@ func _build_ui() -> void:
 	_ui_layer.layer = 20
 	_ui_layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(_ui_layer)
+
+	_objective_label = Label.new()
+	_objective_label.name = "KnowledgeQuest"
+	_objective_label.position = Vector2(28.0, 28.0)
+	_objective_label.size = Vector2(390.0, 78.0)
+	_objective_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_objective_label.add_theme_font_size_override("font_size", 18)
+	_objective_label.add_theme_color_override("font_color", _glow)
+	_objective_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	_objective_label.add_theme_constant_override("outline_size", 6)
+	_objective_label.add_theme_stylebox_override("normal", _backing_style())
+	_objective_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_ui_layer.add_child(_objective_label)
+	_update_objective()
 
 	_overlay_root = Control.new()
 	_overlay_root.name = "OverlayRoot"
@@ -1094,8 +1266,12 @@ func open_whitepaper() -> void:
 	_add_label(_s("paper_label", "Read the Whitepaper"), 26, _glow)
 	_add_label(_s2(plate, "title"), 22, Color(0.95, 0.98, 0.98))
 	_add_label(_s2(plate, "subtitle"), 20, Color(0.78, 0.84, 0.84))
+	_add_label("FIELD GUIDE", 18, _glow)
+	for stop_id in _required_learning_stops:
+		_add_label("• %s" % String(_stop_lines.get(stop_id, "")), 17, Color(0.84, 0.9, 0.88))
 	_add_button("OPEN WHITEPAPER", _on_open_paper)
 	_add_button("EXIT", close_overlay)
+	_update_objective()
 
 
 func _on_open_paper() -> void:
@@ -1114,20 +1290,21 @@ func close_overlay() -> void:
 func open_video() -> void:
 	if _overlay_open or session == null:
 		return
-	if session.state == SignalsScript.State.STUDY_CHOICE:
-		session.choose_study("video")
 	_open_overlay()
 	_add_label(_s("video_label", "Watch the Video"), 26, _glow)
 	_add_label(_s("video_wait_line"), 20, Color(0.85, 0.90, 0.90))
 	_add_button("WATCH ON X", _on_open_video)
 	_done_button = _add_button("DONE", close_overlay)
 	_done_button.disabled = true
-	if _watch_timer != null:
-		_watch_timer.start(SignalsScript.VIDEO_MIN_WATCH_SEC)
 
 
 func _on_open_video() -> void:
 	OS.shell_open(String(VIDEO_URLS.get(protocol, "")))
+	if session != null and session.state == SignalsScript.State.STUDY_CHOICE:
+		session.choose_study("video")
+	if _watch_timer != null:
+		_watch_timer.start(SignalsScript.VIDEO_MIN_WATCH_SEC)
+	_update_objective()
 
 
 func _on_watch_timeout() -> void:
@@ -1140,12 +1317,30 @@ func _on_watch_timeout() -> void:
 func start_exam() -> void:
 	if _overlay_open or session == null:
 		return
+	if _visited_learning_stops.size() < _required_learning_stops.size() or session.study_path.is_empty():
+		_show_exam_locked()
+		return
 	if bank == null:
 		bank = QuizBankScript.load_bank(protocol)
 	if session.state == SignalsScript.State.STUDY_CHOICE:
 		session.transition(SignalsScript.State.EXAMINER_INTRO)
 	_intro_index = 0
 	_show_intro()
+
+
+func _show_exam_locked() -> void:
+	_open_overlay()
+	_add_label("KNOWLEDGE GATE", 28, _glow)
+	_add_label("Explore every protocol mechanism, then study either the field guide or official video before taking the exam.", 21, Color(0.92, 0.95, 0.95))
+	_add_label("Mechanisms: %d / %d   Study source: %s" % [_visited_learning_stops.size(), _required_learning_stops.size(), "complete" if session != null and not session.study_path.is_empty() else "needed"], 19, Color(0.75, 0.84, 0.84))
+	_add_button("RETURN TO THE MAP", _close_overlay_ui)
+
+
+func _update_objective() -> void:
+	if _objective_label == null:
+		return
+	var studied: bool = session != null and not session.study_path.is_empty()
+	_objective_label.text = "PROTOCOL QUEST\nDiscover mechanisms  %d/%d   |   Study source  %s" % [_visited_learning_stops.size(), _required_learning_stops.size(), "DONE" if studied else "0/1"]
 
 
 func _show_intro() -> void:
