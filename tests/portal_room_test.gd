@@ -49,6 +49,7 @@ func _initialize() -> void:
 	_test_room_scene_map()
 	_test_consume_return()
 	_test_forbidden_tokens()
+	_test_exploration_contract()
 
 	for skin in SKINS:
 		await _test_skin(skin)
@@ -105,6 +106,19 @@ func _test_forbidden_tokens() -> void:
 				hits += 1
 				_fail("%s contains forbidden token '%s'" % [files[i], forbidden[j]])
 	_check(hits == 0, "no forbidden tokens in %d portal .gd files" % files.size())
+
+
+func _test_exploration_contract() -> void:
+	var source: String = _read_text("res://src/protocol_portals/StudyRoom.gd")
+	_check(source.contains("_build_smoke_landmarks"), "SMOKE has a distinct explorable landmark set")
+	_check(source.contains("_build_diamond_landmarks"), "DIAMONDS has a distinct explorable landmark set")
+	_check(source.contains("_build_gold_landmarks"), "GOLD has a distinct explorable landmark set")
+	_check(source.contains("KNOWLEDGE GATE"), "exam is protected by the knowledge gate")
+	_check(source.contains("_visited_learning_stops"), "learning-stop progress is tracked")
+	_check(source.contains("FIELD GUIDE"), "whitepaper interaction includes an in-game field guide")
+	_check(source.contains("MAP_POSITIONS"), "protocol stops use authored two-dimensional map positions")
+	_check(source.contains("_build_map_paths"), "maps contain hub-and-spoke exploration paths")
+	_check(source.contains("PortalExplorer.tscn"), "portal maps use the four-direction explorer")
 
 
 # ---- Per-skin checks --------------------------------------------------------
