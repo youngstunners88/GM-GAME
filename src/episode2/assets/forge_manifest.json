@@ -100,5 +100,31 @@
     "ok": true,
     "file": "src/episode2/assets/textures/tex_gravel.jpg",
     "bytes": 93470
+  },
+  "lil_blunt_v2": {
+    "name": "lil_blunt_v2",
+    "ok": true,
+    "file": "(rig source only \u2014 static GLB kept out of the web pack; rigged: src/episode2/assets/lil_blunt_rigged.glb)",
+    "bytes": 1332052,
+    "meshy_task": "01a0e359-1742-7460-932f-e402c8273aba",
+    "source": "file:artifacts/episode2-gold-mine/references/STILL_lil-blunt_apose_v2.png",
+    "polycount": 15000,
+    "pbr": true,
+    "base_px": 1024,
+    "detail_px": 512,
+    "secs": 170
+  },
+  "bear_archer_v2": {
+    "name": "bear_archer_v2",
+    "ok": true,
+    "file": "(rig source only \u2014 static GLB kept out of the web pack; rigged: src/episode2/assets/bear_rigged.glb)",
+    "bytes": 1214456,
+    "meshy_task": "01a0e359-1652-74fc-bc3c-8fd0b263ca16",
+    "source": "file:artifacts/episode2-gold-mine/references/STILL_bear-archer_apose_v2.png",
+    "polycount": 15000,
+    "pbr": true,
+    "base_px": 1024,
+    "detail_px": 512,
+    "secs": 159
   }
 }

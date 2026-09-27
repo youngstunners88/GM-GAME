@@ -27,7 +27,8 @@ func _ready() -> void:
 	_check("duck while held", M.pick_rider(false, true, false, false, 99, 99, 99, 99, 99) == "duck")
 	_check("airborne = jump", M.pick_rider(false, false, true, false, 99, 99, 99, 99, 99) == "jump")
 	_check("fresh hop = hop", M.pick_rider(false, false, false, false, 99, 99, 99, 0.1, 99) == "hop")
-	_check("shot then reload then cheer", M.pick_rider(false, false, false, true, 99, 0.1, 99, 99, 0.1) == "shoot"
+	_check("a shot does not hijack the body (aim modifier owns it); reload then cheer",
+		M.pick_rider(false, false, false, false, 99, 0.1, 99, 99, 99) == "idle"
 		and M.pick_rider(false, false, false, true, 99, 99, 99, 99, 0.1) == "reload"
 		and M.pick_rider(false, false, false, false, 99, 99, 99, 99, 0.1) == "cheer")
 	_check("calm = idle", M.pick_rider(false, false, false, false, 99, 99, 99, 99, 99) == "idle")
@@ -56,6 +57,36 @@ func _ready() -> void:
 					_check("%s: %s loops" % [path.get_file(), lc], an.player.get_animation(lc).loop_mode == Animation.LOOP_LINEAR)
 		n.free()
 
+	# Gun-arm aim: on the real rig, shoulder→hand must end up pointing at the target
+	# (left and right), i.e. the modifier really overrides the playing clip.
+	if ResourceLoader.exists(M.RIDER_RIG):
+		var rig: Node3D = (load(M.RIDER_RIG) as PackedScene).instantiate()
+		add_child(rig)
+		var ran: RefCounted = M.Anim.new(rig, M.RIDER_CLIPS)
+		ran.want("idle", 0.0)
+		var sk: Skeleton3D = rig.find_children("*", "Skeleton3D", true, false)[0]
+		var am := RunnerAimModifier.new()
+		sk.add_child(am)
+		am.influence = 1.0
+		for tgt in [Vector3(-6.0, 1.2, 6.0), Vector3(6.0, 2.5, 6.0)]:
+			am.target = rig.global_position + tgt
+			# Godot 4.3 exposes the MODIFIED pose only during skeleton_updated.
+			var got: Array = []
+			var cb := func() -> void:
+				got.append([(sk.global_transform * sk.get_bone_global_pose(sk.find_bone("RightArm"))).origin,
+					(sk.global_transform * sk.get_bone_global_pose(sk.find_bone("RightHand"))).origin])
+			sk.skeleton_updated.connect(cb)
+			for _f in 4:
+				await get_tree().process_frame
+			sk.skeleton_updated.disconnect(cb)
+			var dot: float = -1.0
+			if not got.is_empty():
+				var sh: Vector3 = got[-1][0]
+				var hd: Vector3 = got[-1][1]
+				dot = (hd - sh).normalized().dot((am.target - sh).normalized())
+			_check("gun arm points at the reticle target %s (dot %.2f)" % [str(tgt), dot], dot > 0.9)
+		rig.queue_free()
+
 	# danger_eta on a real sim.
 	var r: Node3D = SCENE.instantiate()
 	add_child(r)
@@ -76,6 +107,7 @@ func _ready() -> void:
 		await get_tree().process_frame
 	var view: Node = live.get_node("View")
 	_check("rider rig is driven by RunnerMotion", view._rider_anim != null and view._rider_anim.ok())
+	_check("gun-arm aim modifier sits on the rider skeleton", view._aim_mod != null and view._aim_mod.get_parent() is Skeleton3D)
 	_check("the leg advanced with the view live (d=%.0f)" % live.get_distance(), live.get_distance() > 20.0)
 	# Regression: the bear rig's Armature carries a 0.01 scale, and measuring it
 	# through the node chain drew it 130x too big (off-screen) on the web build.

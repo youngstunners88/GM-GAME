@@ -47,6 +47,8 @@ const GOLD_PILE_MODEL := "res://src/episode2/assets/gold_pile.glb"
 const ROCK_CHUNK_MODEL := "res://src/episode2/assets/rock_chunk.glb"
 const TEX_DIR := "res://src/episode2/assets/textures/"
 const Motion := preload("res://src/episode2/runner/runner_motion.gd")
+const AimMod := preload("res://src/episode2/runner/runner_aim_modifier.gd")
+const TEX_BTC := "tex_btc_coin.png"
 const TEX_ROCK := "tex_rock_wall.jpg"
 const TEX_VEIN := "tex_gold_vein.jpg"
 const TEX_TIMBER := "tex_timber.jpg"
@@ -72,7 +74,7 @@ const BOULDER_R := 1.35
 const BOULDER_MODEL_R := 0.75      # boulder.glb's native radius
 const BOULDER_ROCK_NATIVE := 1.2   # boulder_rock.glb's widest native extent
 const TELEGRAPH_RANGE := 42.0
-const RIDER_HEIGHT := 1.75
+const RIDER_HEIGHT := 2.0            # founder: "I can't see Lil Blunt" — bigger + hero-lit
 const RIDER_NATIVE_H := 0.9        # lil_blunt.glb if its AABB can't be measured
 const RIDER_FLOOR := 0.1
 const RIDER_YAW := 0.0             # Meshy faces +Z == away from camera
@@ -85,7 +87,7 @@ const ORE_CART_NATIVE_LEN := 2.24  # ore_cart.glb long axis (X), x ±1.12
 const ORE_CART_LEN := 2.1
 const ORE_CART_Y := -0.15          # its baked rail piece sits on our rail bottom
 const BEAR_NATIVE_H := 1.8
-const ARCHER_HEIGHT := 2.3
+const ARCHER_HEIGHT := 2.9           # founder: bears need to read at 20-30 m/s
 const BOARDER_HEIGHT := 1.9
 const BOARDER_LEAP_LEAD := 14.0    # the leap starts this far before the cart reaches z
 const BOARDER_ARC := 1.6
@@ -157,7 +159,8 @@ const C_GOLD_HUD := Color(1.0, 0.84, 0.3)
 const FALLBACK_EMISSIVE := {"lantern": 1.1, "spark": 2.2, "gate": 0.9, "gold": 0.5, "gold_vein": 0.12}
 
 ## TEST-ONLY render bisection switches, filled from ?ep2off= by ep2_entry.gd.
-## Keys: boulders, shadows, streaks, rig, strips, gold, halo, stress. Always
+## Keys: boulders, shadows, streaks, rig, strips, gold, halo, stress, hero,
+## detail, dust. Always
 ## empty in normal play.
 static var debug_off: Dictionary = {}
 
@@ -229,6 +232,8 @@ var _rider_skel: Skeleton3D = null
 var _bone_r: int = -1
 var _bone_l: int = -1
 var _bone_head: int = -1
+var _aim_mod: Node = null                   # RunnerAimModifier on the rider's skeleton
+var _dust: CPUParticles3D = null
 var _t_hit: float = 99.0
 var _t_shot: float = 99.0
 var _t_swipe: float = 99.0
@@ -283,6 +288,7 @@ func rebuild(sim: Node) -> void:
 	_gold_nodes.clear()
 	_rider_anim = null
 	_rider_skel = null
+	_aim_mod = null
 	_t_hit = 99.0
 	_t_shot = 99.0
 	_t_swipe = 99.0
@@ -321,6 +327,8 @@ func rebuild(sim: Node) -> void:
 	_build_hazards()
 	_build_boarders()
 	_build_gold()
+	if not debug_off.has("detail"):
+		_build_mine_detail(length)
 	_build_rail_events()
 	if debug_off.has("stress"):
 		# TEST-ONLY: 1500 extra instances. Godot 4.3 non-threaded web builds drew
@@ -901,6 +909,12 @@ func _build_rider() -> void:
 				_bone_r = _rider_skel.find_bone("RightHand")
 				_bone_l = _rider_skel.find_bone("LeftHand")
 				_bone_head = _rider_skel.find_bone("Head")
+				_rider_skel.skeleton_updated.connect(_place_weapons)
+				if _bone_r >= 0:
+					_aim_mod = AimMod.new()
+					_aim_mod.name = "GunArmAim"
+					_aim_mod.influence = 0.0
+					_rider_skel.add_child(_aim_mod)
 	else:
 		_rider_model = _inst(RIDER_MODEL)
 	if _rider_model:
@@ -924,6 +938,22 @@ func _build_rider() -> void:
 	_hook = _mesh_node(hook, _pal("iron"),
 		Vector3(0.15, RIDER_HEIGHT + (CABLE_CLEARANCE - 0.2) * 0.5, 0.0), _rider)
 	_hook.visible = false
+	# Hero lighting: a warm key from behind-above (the side the camera sees) and a
+	# cool rim from the front, so he reads against the dark tunnel at any speed.
+	var key := OmniLight3D.new()
+	key.visible = not debug_off.has("hero")
+	key.light_color = Color(1.0, 0.86, 0.62)
+	key.light_energy = 1.6
+	key.omni_range = 5.0
+	key.position = Vector3(0.7, RIDER_HEIGHT + 0.7, -1.7)
+	_rider.add_child(key)
+	var rim := OmniLight3D.new()
+	rim.visible = not debug_off.has("hero")
+	rim.light_color = Color(0.62, 0.78, 1.0)
+	rim.light_energy = 1.0
+	rim.omni_range = 4.0
+	rim.position = Vector3(-0.4, RIDER_HEIGHT + 0.4, 1.4)
+	_rider.add_child(rim)
 	# Emotion bubble: "!" when his own cart is about to be destroyed.
 	_emote = Label3D.new()
 	_emote.text = "!"
@@ -1015,6 +1045,13 @@ func _build_archers() -> void:
 		ll.omni_range = 4.5
 		ll.position = Vector3(0.0, ARCHER_HEIGHT * 0.9, 0.6)
 		bear.add_child(ll)
+		# Key light from the track side so the bear pops out of the dark bay.
+		var bk := OmniLight3D.new()
+		bk.light_color = Color(1.0, 0.7, 0.45)
+		bk.light_energy = 2.6
+		bk.omni_range = 6.5
+		bk.position = Vector3(-signf(x) * 2.2, ARCHER_HEIGHT * 0.7, -1.8)
+		bear.add_child(bk)
 		var lp := Vector3(x + signf(x) * 1.0, Sim.ARCHER_Y + 0.3, z + 0.9)
 		if _prop(LANTERN_MODEL, lp - Vector3(0.0, 0.3, 0.0), 0.9) == null:
 			_mesh_node(_box(Vector3(0.3, 0.42, 0.3)), _pal("lantern"), lp)
@@ -1220,21 +1257,34 @@ func _build_ziplines() -> void:
 ## pickups have no lighting maths to go wrong; they read as gold from colour,
 ## silhouette, spin and the halo.
 func _build_gold() -> void:
+	# BITCOIN coins (founder 2026-09-27: "I like the gold coins. Lets make them
+	# Bitcoin branded"). A gold rim + the ₿ face texture on both sides + a soft
+	# halo: 4 unshaded instances per coin.
 	var obs_all: Array = _sim.get_obstacles()
-	var nug := SphereMesh.new()
-	nug.radius = 0.3
-	nug.height = 0.46
-	nug.radial_segments = 7
-	nug.rings = 4
-	var gm := StandardMaterial3D.new()
-	gm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	gm.albedo_color = Color(1.0, 0.8, 0.28)
-	var cap := SphereMesh.new()
-	cap.radius = 0.14
-	cap.height = 0.2
-	var cm := StandardMaterial3D.new()
-	cm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	cm.albedo_color = Color(1.0, 0.96, 0.75)
+	var face_mat := StandardMaterial3D.new()
+	face_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	face_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+	face_mat.alpha_scissor_threshold = 0.5
+	var tex_path: String = TEX_DIR + TEX_BTC
+	if ResourceLoader.exists(tex_path):
+		face_mat.albedo_texture = load(tex_path) as Texture2D
+	else:
+		face_mat.albedo_color = Color(1.0, 0.8, 0.28)
+	var face := QuadMesh.new()
+	face.size = Vector2(0.9, 0.9)
+	var rim := CylinderMesh.new()
+	rim.top_radius = 0.44
+	rim.bottom_radius = 0.44
+	rim.height = 0.07
+	rim.radial_segments = 20
+	var rim_mat := StandardMaterial3D.new()
+	rim_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	rim_mat.albedo_color = Color(0.86, 0.62, 0.16)
+	var halo := SphereMesh.new()
+	halo.radius = 0.5
+	halo.height = 1.0
+	halo.radial_segments = 8
+	halo.rings = 4
 	for oi in obs_all.size():
 		var o: Dictionary = obs_all[oi]
 		if str(o.get("type", "")) != "gold":
@@ -1244,11 +1294,102 @@ func _build_gold() -> void:
 		var n := Node3D.new()
 		n.position = Vector3(float(_lane_xs()[lane]), GOLD_Y, float(o["z"]))
 		_world.add_child(n)
-		_mesh_node(nug, gm, Vector3.ZERO, n)
-		_mesh_node(cap, cm, Vector3(0.12, 0.14, -0.2), n)      # glint facet
+		var rm := _mesh_node(rim, rim_mat, Vector3.ZERO, n)
+		rm.rotation.x = PI * 0.5
+		_mesh_node(face, face_mat, Vector3(0.0, 0.0, -0.037), n).rotation.y = PI
+		_mesh_node(face, face_mat, Vector3(0.0, 0.0, 0.037), n)
 		if not debug_off.has("halo"):
-			_mesh_node(nug, _glow_mat("gold_halo", Color(1.0, 0.8, 0.3), 0.22), Vector3.ZERO, n).scale = Vector3.ONE * 1.8
+			_mesh_node(halo, _glow_mat("gold_halo", Color(1.0, 0.8, 0.3), 0.16), Vector3.ZERO, n).scale = Vector3.ONE * 1.5
 		_gold_nodes.append(n)
+
+## Gold-mine dressing from the founder key art: gold ore glinting in the walls,
+## wall lanterns, timber walkways with lanterns high on the walls, and glowing
+## gold heaps + parked, gold-filled ore carts on the ledges. MultiMesh-heavy so
+## the web build stays cheap (and well clear of research/001).
+func _build_mine_detail(length: float) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7701
+	# 1. Ore clusters in the walls.
+	var ore: Array[Transform3D] = []
+	var z: float = 4.0
+	while z < length - 10.0:
+		for side in [-1.0, 1.0]:
+			if rng.randf() < 0.5:
+				var wx: float = _wall_x_at(z) - 0.3
+				var cy: float = rng.randf_range(0.2, 6.2)
+				for _k in rng.randi_range(2, 5):
+					# Glints, not blobs: first capture read as yellow popcorn at 0.08-0.22.
+					var sc: float = rng.randf_range(0.035, 0.09)
+					var b := Basis(Vector3(rng.randf(), rng.randf(), rng.randf()).normalized(), rng.randf() * TAU).scaled(Vector3.ONE * sc)
+					ore.append(Transform3D(b, Vector3(wx * float(side), cy + rng.randf_range(-0.35, 0.35), z + rng.randf_range(-0.5, 0.5))))
+		z += rng.randf_range(1.2, 2.4)
+	var nug := SphereMesh.new()
+	nug.radius = 1.0
+	nug.height = 2.0
+	nug.radial_segments = 5
+	nug.rings = 3
+	_multi(nug, _mat("wall_ore", Color(0.95, 0.68, 0.2), 1.1, 0.35, 0.7), ore)
+	# 2. Wall lantern glows between the real lantern props.
+	var glows: Array[Transform3D] = []
+	var brackets: Array[Transform3D] = []
+	z = 5.0
+	var sd: float = -1.0
+	while z < length - 10.0:
+		var wx2: float = _wall_x_at(z) - 0.45
+		glows.append(Transform3D(Basis.IDENTITY.scaled(Vector3(0.16, 0.22, 0.16)), Vector3(wx2 * sd, 2.6, z)))
+		brackets.append(Transform3D(Basis.IDENTITY.scaled(Vector3(0.5, 0.08, 0.08)), Vector3((wx2 + 0.2) * sd, 2.85, z)))
+		z += 7.0
+		sd = -sd
+	_multi(nug, _mat("wall_lantern", Color(1.0, 0.72, 0.36), 5.0), glows)
+	_multi(_box(Vector3.ONE), _timber_mat(), brackets)
+	# 3. Timber walkways high on the walls, each with a lantern.
+	var decks: Array[Transform3D] = []
+	var legs: Array[Transform3D] = []
+	var rails: Array[Transform3D] = []
+	var lamps: Array[Transform3D] = []
+	z = 30.0
+	var ws: float = 1.0
+	while z < length - 20.0:
+		var wx3: float = _wall_x_at(z) - 1.0
+		var y3: float = 4.6
+		decks.append(Transform3D(Basis.IDENTITY.scaled(Vector3(1.6, 0.14, 7.0)), Vector3(wx3 * ws, y3, z)))
+		rails.append(Transform3D(Basis.IDENTITY.scaled(Vector3(0.08, 0.08, 7.0)), Vector3((wx3 - 0.75) * ws, y3 + 0.8, z)))
+		for dz in [-3.2, 0.0, 3.2]:
+			legs.append(Transform3D(Basis.IDENTITY.scaled(Vector3(0.14, 0.9, 0.14)), Vector3((wx3 - 0.75) * ws, y3 + 0.45, z + float(dz))))
+			legs.append(Transform3D(Basis.IDENTITY.scaled(Vector3(0.16, 1.4, 0.16)), Vector3((wx3 - 0.6) * ws, y3 - 0.7, z + float(dz))))
+		lamps.append(Transform3D(Basis.IDENTITY.scaled(Vector3(0.18, 0.24, 0.18)), Vector3((wx3 - 0.6) * ws, y3 + 1.1, z + 2.0)))
+		z += rng.randf_range(34.0, 52.0)
+		ws = -ws
+	_multi(_box(Vector3.ONE), _timber_mat(), decks)
+	_multi(_box(Vector3.ONE), _timber_mat(), legs)
+	_multi(_box(Vector3.ONE), _timber_mat(), rails)
+	_multi(nug, _mat("wall_lantern", Color(1.0, 0.72, 0.36), 5.0), lamps)
+	# 4. Gold heaps on the ledges; a gold-filled ore cart parked every ~90 m.
+	var heap: Array[Transform3D] = []
+	z = 22.0
+	var hs: float = 1.0
+	var n_cart: int = 0
+	while z < length - 20.0:
+		var hx: float = (_wall_x_at(z) - 1.0) * hs
+		var cart_here: bool = n_cart % 3 == 0
+		if cart_here:
+			var cart: Node3D = _inst(ORE_CART_MODEL)
+			if cart:
+				cart.scale = Vector3.ONE * (ORE_CART_LEN / ORE_CART_NATIVE_LEN)
+				cart.rotation.y = PI * 0.5
+				cart.position = Vector3(hx, -0.2, z)
+				_world.add_child(cart)
+		for _k in 22:
+			var r: float = rng.randf_range(0.0, 0.6)
+			var a: float = rng.randf() * TAU
+			var sc2: float = rng.randf_range(0.06, 0.13)
+			var top: float = (0.75 if cart_here else 0.0) + (0.55 - r) * 0.7
+			heap.append(Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * sc2),
+				Vector3(hx + cos(a) * r * 0.8, top - 0.2, z + sin(a) * r * (1.4 if cart_here else 0.9))))
+		z += rng.randf_range(26.0, 38.0)
+		hs = -hs
+		n_cart += 1
+	_multi(nug, _mat("ledge_gold", Color(0.98, 0.74, 0.26), 0.9, 0.3, 0.7), heap)
 
 ## Rail events drawn where they happen: a siding (outer rails) or ore chute
 ## (centre) for every replacement cart, a buffer stop for every rail end.
@@ -1303,7 +1444,7 @@ func _update_gold(dist: float, delta: float) -> void:
 					_gold_burst.position = n.position
 					_gold_burst.restart()
 					_gold_burst.emitting = true
-				_popup("+1 GOLD", C_GOLD_HUD, n.position + Vector3(0.0, 1.2, 1.5))
+				_popup("+1 BTC", C_GOLD_HUD, n.position + Vector3(0.0, 1.2, 1.5))
 			continue
 		var ahead: float = float(o["z"]) - dist
 		n.visible = ahead > -2.0 and ahead < 90.0 and not debug_off.has("gold")
@@ -1459,7 +1600,29 @@ func _build_fx() -> void:
 	_streaks.initial_velocity_max = 58.0
 	_streaks.mesh = _box(Vector3(0.025, 0.025, 1.8))
 	_streaks.material_override = _glow_mat("speed_streak", Color(1.0, 0.9, 0.7), 0.35)
-	if _camera:
+	# Gold dust drifting in the lantern light (world-space, spawned around the camera).
+	_dust = CPUParticles3D.new()
+	_dust.amount = 70
+	_dust.lifetime = 3.5
+	_dust.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+	_dust.emission_box_extents = Vector3(5.0, 3.0, 9.0)
+	_dust.position = Vector3(0.0, 0.0, -10.0)
+	_dust.direction = Vector3(0.0, 0.3, 0.0)
+	_dust.spread = 180.0
+	_dust.gravity = Vector3(0.0, -0.05, 0.0)
+	_dust.initial_velocity_min = 0.05
+	_dust.initial_velocity_max = 0.3
+	_dust.scale_amount_min = 0.015
+	_dust.scale_amount_max = 0.04
+	var dm := SphereMesh.new()
+	dm.radius = 0.5
+	dm.height = 1.0
+	dm.radial_segments = 4
+	dm.rings = 2
+	_dust.mesh = dm
+	_dust.material_override = _glow_mat("gold_dust", Color(1.0, 0.85, 0.5), 0.55)
+	if _camera and not debug_off.has("dust"):
+		_camera.add_child(_dust)
 		_camera.add_child(_streaks)
 	else:
 		_world.add_child(_streaks)
@@ -1500,7 +1663,7 @@ func _ensure_hud() -> void:
 	_hud.add_child(_reload_fill)
 	_reload_label = _hud_label("RELOADING", C_PIP)
 	_hint_label = _hud_label("R — reload", Color(1.0, 0.95, 0.85))
-	_gold_label = _hud_label("GOLD 0", C_GOLD_HUD)
+	_gold_label = _hud_label("BTC 0", C_GOLD_HUD)
 	_gold_label.add_theme_font_size_override("font_size", 26)
 	_cart_strip = Control.new()
 	_cart_strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -1571,7 +1734,7 @@ func _update_hud() -> void:
 		_gold_label.visible = true
 		var spd: float = float(_sim.get_speed()) if _sim.has_method("get_speed") else Sim.RUN_SPEED
 		var g: int = int(_sim.get_gold()) if _sim.has_method("get_gold") else 0
-		_gold_label.text = "GOLD  %d      %d m/s" % [g, int(round(spd))]
+		_gold_label.text = "BTC  %d      %d m/s" % [g, int(round(spd))]
 		_gold_label.position = Vector2(24.0, 18.0)
 	if _cart_strip:
 		_cart_strip.position = Vector2(vs.x * 0.5 - _cart_strip.size.x * 0.5, vs.y - 84.0)
@@ -1754,13 +1917,21 @@ func _update_rider(dist: float, delta: float) -> void:
 	if _aim_ok and _rider_model:
 		var yaw_t: float = clampf(atan2(_aim_point.x - x, maxf(_aim_point.z - dist, 1.0)), -0.6, 0.6)
 		_rider_model.rotation.y = lerp_angle(_rider_model.rotation.y, RIDER_YAW + yaw_t, clampf(delta * 8.0, 0.0, 1.0))
-	# Weapons ride the real hand bones when rigged; else the fixed hand offsets.
-	if _rider_skel and _bone_r >= 0 and _rider_skel.is_inside_tree():
-		var inv: Transform3D = _rider.global_transform.affine_inverse()
-		if _gun_pivot:
-			_gun_pivot.position = inv * (_rider_skel.global_transform * _rider_skel.get_bone_global_pose(_bone_r)).origin
-		if _axe_pivot and _bone_l >= 0:
-			_axe_pivot.position = inv * (_rider_skel.global_transform * _rider_skel.get_bone_global_pose(_bone_l)).origin
+	# Gun arm aims at the reticle (RunnerAimModifier), eased off whenever the
+	# hands are busy: reload, pickaxe swipe, duck, zipline, hit reaction.
+	if _aim_mod:
+		var armed_now: bool = bool(_sim.can_shoot())
+		var busy: bool = zipping or ducking or bool(_sim.is_reloading()) or _t_swipe < Motion.SWIPE_HOLD \
+			or _t_hit < Motion.HIT_HOLD * 0.6
+		var w: float = 1.0 if armed_now and not busy else 0.0
+		_aim_mod.influence = move_toward(float(_aim_mod.influence), w, delta * 6.0)
+		_aim_mod.target = _aim_point if _aim_ok else Vector3(x, 1.8, dist + 30.0)
+		_aim_mod.kick = maxf(0.0, float(_aim_mod.kick) - delta * 3.0)
+	# Weapons ride the real hand bones when rigged (placed in _place_weapons on
+	# skeleton_updated — the only time Godot 4.3 exposes the AIMED pose);
+	# otherwise the fixed hand offsets.
+	if _rider_skel and _bone_r >= 0:
+		pass
 	else:
 		var crouch: float = _rider_model.scale.y / _rider_scale if _rider_scale > 0.0 else 1.0
 		if _gun_pivot:
@@ -1772,6 +1943,16 @@ func _update_rider(dist: float, delta: float) -> void:
 	_prev_x = x
 	_sparks.position = Vector3(x, -0.2, dist - 0.8)
 	_sparks.emitting = not zipping and _sim.is_running()
+
+## Revolver and pickaxe onto the hand bones, AFTER the aim modifier ran.
+func _place_weapons() -> void:
+	if _rider == null or _rider_skel == null or not _rider_skel.is_inside_tree():
+		return
+	var inv: Transform3D = _rider.global_transform.affine_inverse()
+	if _gun_pivot and _bone_r >= 0:
+		_gun_pivot.position = inv * (_rider_skel.global_transform * _rider_skel.get_bone_global_pose(_bone_r)).origin
+	if _axe_pivot and _bone_l >= 0:
+		_axe_pivot.position = inv * (_rider_skel.global_transform * _rider_skel.get_bone_global_pose(_bone_l)).origin
 
 func _nearest_lane_x(x: float) -> float:
 	var best: float = float(_lane_xs()[0])
@@ -1795,6 +1976,16 @@ func _update_archers(dist: float, delta: float) -> void:
 		n.position.y = Sim.ARCHER_Y - t * t * 6.0
 		if t > 1.2:
 			n.visible = false
+	# Bear lights only near the rider: the web (Compatibility) renderer draws an
+	# extra pass per light per object, and six bears x two lights stalled leg 2
+	# in a software-rendered browser.
+	for a0 in _sim.get_archers():
+		var ln: Node3D = _archer_nodes.get(str(a0["id"]))
+		if ln:
+			var near: bool = float(a0["z"]) - dist > -6.0 and float(a0["z"]) - dist < 60.0
+			for c in ln.get_children():
+				if c is OmniLight3D:
+					(c as OmniLight3D).visible = near
 	for a in _sim.get_archers():
 		if not a["alive"]:
 			continue
@@ -1805,6 +1996,10 @@ func _update_archers(dist: float, delta: float) -> void:
 			var ahead2: float = float(a["z"]) - dist
 			var to_rel: float = (ahead2 - ARROW_LEAD) / maxf(spd2, 1.0)
 			an2.want(Motion.pick_archer(true, to_rel, ahead2))
+			# Track the rider: a bear that turns to follow you reads as a threat.
+			if _rider and ahead2 > -6.0 and ahead2 < 80.0:
+				var to_r: Vector3 = _rider.global_position - n2.global_position
+				n2.rotation.y = lerp_angle(n2.rotation.y, atan2(to_r.x, to_r.z), clampf(delta * 5.0, 0.0, 1.0))
 			continue
 		if n2:
 			var dz: float = float(a["z"]) - dist
@@ -1981,7 +2176,7 @@ func _update_lights(dist: float) -> void:
 
 func _update_camera(dist: float, delta: float) -> void:
 	var rx: float = float(_sim.get_cart_x())
-	var target := Vector3(rx * 0.6, 3.1, dist - 5.4)
+	var target := Vector3(rx * 0.6, 2.8, dist - 4.6)
 	if _sim.is_ziplining():
 		target.y = 4.1
 	var k: float = clampf(delta * 6.0, 0.0, 1.0)
@@ -2000,7 +2195,7 @@ func _update_camera(dist: float, delta: float) -> void:
 		_streaks.emitting = _sim.is_running() and not debug_off.has("streaks")
 		_streaks.speed_scale = spd / 20.0
 	if _camera.is_inside_tree():
-		_camera.look_at(Vector3(rx * 0.4, 1.9, dist + 11.0), Vector3.UP)
+		_camera.look_at(Vector3(rx * 0.45, 1.75, dist + 10.0), Vector3.UP)
 
 ## Mouse ray from the camera: what the reticle is over, and where the gun aims
 ## (the archer it would hit, or AIM_FALLBACK metres along the ray).
@@ -2108,6 +2303,8 @@ func _on_hit(_remaining: int) -> void:
 func _on_shot() -> void:
 	_play("shot")
 	_t_shot = 0.0
+	if _aim_mod:
+		_aim_mod.kick = 0.32
 	if _flash == null or _rider == null:
 		return
 	_flash.position = _muzzle_pos()

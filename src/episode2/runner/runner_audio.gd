@@ -29,6 +29,19 @@ const STEMS := {
 	"ep2_runner_hop_blocked_01": ["SFX", false],
 }
 
+## ElevenLabs takes used when a slot has no promoted VARCO WAV (VARCO ran out
+## of credits 2026-09-27) — or, for the coin, INSTEAD of it: the coins are
+## Bitcoin-branded now and the VARCO "nugget in a glove" take doesn't fit.
+const ELEVEN := "res://src/assets/sounds/"
+const FALLBACK := {
+	"ep2_runner_hop_blocked_01": "ep2_runner_hop_blocked.mp3",
+	"ep2_runner_cart_smash_01": "ep2_cart_smash.mp3",
+	"ep2_runner_cart_spawn_01": "ep2_cart_spawn.mp3",
+}
+const PREFER := {
+	"ep2_runner_gold_pickup_01": "ep2_bitcoin_coin.mp3",
+}
+
 ## Mix levels in dB; beds sit under the action.
 const VOLUME_DB := {
 	"ep2_runner_bed_mine_loop_01": -10.0,
@@ -58,6 +71,10 @@ func _ready() -> void:
 		p.bus = bus if AudioServer.get_bus_index(bus) != -1 else "Master"
 		p.volume_db = float(VOLUME_DB.get(id, 0.0))
 		var path: String = AUDIO_DIR + str(id) + ".wav"
+		if PREFER.has(id) and ResourceLoader.exists(ELEVEN + str(PREFER[id])):
+			path = ELEVEN + str(PREFER[id])
+		elif not ResourceLoader.exists(path) and FALLBACK.has(id):
+			path = ELEVEN + str(FALLBACK[id])
 		if ResourceLoader.exists(path):
 			var s: AudioStream = load(path) as AudioStream
 			if bool(STEMS[id][1]):

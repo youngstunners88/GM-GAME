@@ -127,6 +127,26 @@
       "id": "ep2_pickaxe_swing",
       "prompt": "Heavy pickaxe whoosh swing followed by a solid thwack against fur and leather, short cartoon impact",
       "duration_seconds": 0.7
+    },
+    {
+      "id": "ep2_runner_hop_blocked",
+      "prompt": "Boots skidding to a sudden stop on wooden mine cart planks, short scrape and a dull knock, quick refusal, very short, no voice",
+      "duration_seconds": 0.6
+    },
+    {
+      "id": "ep2_bitcoin_coin",
+      "prompt": "Collecting a shiny gold bitcoin coin in an arcade game, bright metallic coin chime with a soft digital sparkle tail, satisfying, very short",
+      "duration_seconds": 0.7
+    },
+    {
+      "id": "ep2_cart_smash",
+      "prompt": "Huge boulder smashing a wooden mine cart to pieces, planks splintering, iron bands clanging, wheels screeching, debris raining down in a rocky tunnel",
+      "duration_seconds": 1.6
+    },
+    {
+      "id": "ep2_cart_spawn",
+      "prompt": "Empty iron-wheeled mine cart rattling fast down a side track and clunking onto the main rails with a metallic latch",
+      "duration_seconds": 1.2
     }
   ],
   "music": [

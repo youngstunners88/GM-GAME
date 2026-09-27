@@ -1,7 +1,7 @@
 {
-  "source_task": "01a0dc79-e030-7514-aba5-f08785c96f67",
-  "rig_task": "01a0e2ae-597c-7029-a0a7-ea87c3f7b587",
-  "anim_task": "01a0e2ae-e724-75b9-a2fa-d6684b726ba1",
+  "source_task": "01a0e359-1742-7460-932f-e402c8273aba",
+  "rig_task": "01a0e35b-b0eb-760b-9aae-f7662acdabee",
+  "anim_task": "01a0e35c-4716-74df-9aa5-01886305aba9",
   "actions": [
     89,
     466,
@@ -15,6 +15,6 @@
     13
   ],
   "fps": 30,
-  "height_m": 0.9,
+  "height_m": 1.0,
   "credits": 30
 }

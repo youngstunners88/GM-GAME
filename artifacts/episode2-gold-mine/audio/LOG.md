@@ -40,3 +40,4 @@ Appended by `scripts/varco-text2sound.mjs` (takes, promotions, 404/429/failures)
 - 2026-09-27T12:59:36.720Z OK ep2_runner_gold_pickup_01 catalog runner@v2 -> takes/ep2_runner_gold_pickup_01/v1_s1..3.wav
 - 2026-09-27T12:59:37.904Z FAIL ep2_runner_hop_blocked_01 HTTP 402: {"error":"No available credits to process the request"}
 - 2026-09-27T13:00:50.994Z PROMOTE ep2_runner_zipline_rush_01 <- takes/ep2_runner_zipline_rush_01/v1_s3.wav
+- 2026-09-27T14:57:54.617Z PROMOTE ep2_runner_gold_pickup_01 <- takes/ep2_runner_gold_pickup_01/v1_s1.wav

@@ -17,7 +17,7 @@ const until = async (fn, ms) => { const end = Date.now() + ms; while (Date.now()
 await until(() => leg >= 0, 120000);
 await page.mouse.click(640, 360);
 for (const s of plan) {                      // {leg, d, key?/down?/up?, shot?}
-  const ok = await until(() => leg > s.leg || (leg === s.leg && d >= s.d), 180000);
+  const ok = await until(() => leg > s.leg || (leg === s.leg && d >= s.d), 900000);
   if (!ok) { console.log('TIMEOUT waiting for', JSON.stringify(s), 'at leg', leg, 'd', d); break; }
   if (s.down) await page.keyboard.down(s.down);
   if (s.up) await page.keyboard.up(s.up);

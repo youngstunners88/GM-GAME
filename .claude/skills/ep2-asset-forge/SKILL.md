@@ -43,3 +43,18 @@ Meshy builds **whatever is in the picture**. Learned the expensive way:
   `bash scripts/ep2-local-export.sh`.
 - ElevenLabs sound generation rejects durations under 0.5 s.
 - Any name you replace is overwritten in place; delete retired GLBs — every file under res:// ships.
+
+
+## Source stills — which image model (founder, 2026-09-27)
+Characters and hero props start from a still, and the still decides the model.
+1. **Nano Banana Pro via OpenRouter** (`google/gemini-3-pro-image`) with the founder KEY ART
+   as the reference image — `node scripts/ref-image.mjs google/gemini-3-pro-image prompt.txt
+   artifacts/episode2-gold-mine/references/KEYART_zipline-revolver-pickaxe_bears.jpg out.png`.
+   Best match to the key art (~$0.14). **Default for characters.**
+2. **ChatGPT image** (`openai/gpt-5.4-image-2`) — same script; more detail, lankier
+   proportions (~$0.24). Use as the second opinion; keep the alt in references/.
+3. MuAPI Flux (`scripts/generate_art.py`) — text-only; fine for textures and isolated props
+   (coin, rock), clearly worse for characters.
+Direct Gemini API image calls hit 429 quota on 2026-09-27; OpenRouter is the working route.
+For rigging, ask for ONE full-body FRONT view, neutral A-pose, empty hands, white background.
+Then: forge (`--only name`, `file:` source) → Meshy thumbnail review → `ep2-motion-emotion` rig.

@@ -28,7 +28,10 @@ func _ready() -> void:
 	for id in audio._players:
 		var p: AudioStreamPlayer = audio._players[id]
 		var path: String = audio.AUDIO_DIR + str(id) + ".wav"
-		_check("%s stream matches file presence" % id, (p.stream != null) == ResourceLoader.exists(path))
+		var any_src: bool = ResourceLoader.exists(path) \
+			or (audio.FALLBACK.has(id) and ResourceLoader.exists(audio.ELEVEN + str(audio.FALLBACK[id]))) \
+			or (audio.PREFER.has(id) and ResourceLoader.exists(audio.ELEVEN + str(audio.PREFER[id])))
+		_check("%s stream matches source presence" % id, (p.stream != null) == any_src)
 		var want: String = "Music" if id == "ep2_runner_score_drone_loop_01" else "SFX"
 		_check("%s on %s bus" % [id, want], p.bus == want or (p.bus == "Master" and AudioServer.get_bus_index(want) == -1), p.bus)
 		if p.stream is AudioStreamWAV and bool(audio.STEMS[id][1]):

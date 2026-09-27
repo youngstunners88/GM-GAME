@@ -1,0 +1,31 @@
+{
+  "model": "gemini-3.5-flash",
+  "version": 1,
+  "pick": "v1_s1",
+  "best": 1,
+  "scores": [
+    {
+      "take": 1,
+      "matches_brief": 9,
+      "clean": 10,
+      "usable": 9
+    },
+    {
+      "take": 2,
+      "matches_brief": 6,
+      "clean": 9,
+      "usable": 5
+    },
+    {
+      "take": 3,
+      "matches_brief": 7,
+      "clean": 7,
+      "usable": 8
+    }
+  ],
+  "notes": [
+    "Take 1: Excellent bright transient with a clean, rapid decay; fits the fast-paced collection perfectly.",
+    "Take 2: Ring-out is too long; will cause audio buildup and clutter during rapid pickups.",
+    "Take 3: Good duration, but lacks the bright metallic chime and sounds slightly muffled."
+  ]
+}

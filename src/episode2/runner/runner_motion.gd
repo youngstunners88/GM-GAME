@@ -29,7 +29,6 @@ const RIDER_CLIPS := {
 	"jump": ["Regular_Jump", 0.35, 1.35],
 	"hop": ["Regular_Jump", 0.45, 2.0],
 	"hit": ["Hit_Reaction", 0.0, 1.6],
-	"shoot": ["Side_Shot", 0.7, 2.0],
 	"reload": ["Standing_Reload", 0.0, 2.55],
 	"swipe": ["Charged_Axe_Chop", 1.6, 2.2],
 	"cheer": ["Victory_Fist_Pump", 0.0, 1.2],
@@ -55,6 +54,7 @@ const DANGER_SECS := 1.6
 
 ## Rider mood from sim state + event timers (seconds since each event; big = long ago).
 ## Priority: the most urgent physical state wins, then reactions, then attitude.
+## `t_shot` is kept for API stability; shooting is the aim modifier's job.
 static func pick_rider(zipping: bool, ducking: bool, airborne: bool, reloading: bool,
 		t_hit: float, t_shot: float, t_swipe: float, t_hop: float, t_cheer: float) -> String:
 	if zipping:
@@ -69,8 +69,9 @@ static func pick_rider(zipping: bool, ducking: bool, airborne: bool, reloading: 
 		return "jump"
 	if t_hop < HOP_HOLD:
 		return "hop"
-	if t_shot < SHOOT_HOLD:
-		return "shoot"
+	# No full-body "shoot" clip: RunnerAimModifier points the gun arm at the
+	# reticle on top of the idle, so the body stays square in the cart with the
+	# revolver in one hand and the pickaxe in the other (founder 2026-09-27).
 	if reloading:
 		return "reload"
 	if t_cheer < CHEER_HOLD:

@@ -61,6 +61,14 @@ MODELS = {
     "pickaxe": ("muapi:single miner's pickaxe, iron head, worn wooden handle, isolated on pure white "
                 "background, centered, full object visible, studio lighting, game asset", 4000, 512, 256,
                 "forged dark iron pickaxe head, worn oak handle with leather wrap"),
+    # v2 characters (founder key art 2026-09-27: cowboy hat, leaf body, vest; helmeted
+    # snarling bears with red bandanas). A-pose stills so Meshy auto-rigging succeeds.
+    "lil_blunt_v2": ("file:artifacts/episode2-gold-mine/references/STILL_lil-blunt_apose_v2.png", 15000, 1024, 512,
+                     "bright green layered cannabis leaves body, brown leather cowboy hat with leaf badge, brown leather "
+                     "vest with brass rivets, gold round belt buckle, blue denim jeans, brown leather boots and gloves"),
+    "bear_archer_v2": ("file:artifacts/episode2-gold-mine/references/STILL_bear-archer_apose_v2.png", 15000, 1024, 512,
+                       "brown grizzly fur, brass miner helmet with glowing lamp, red bandana, worn leather vest and "
+                       "straps, leather quiver with arrows, leather bracers"),
 }
 
 # name -> prompt. Made tileable after generation.
@@ -86,6 +94,8 @@ def still_for(name: str, spec: str) -> Path:
     kind, rest = spec.split(":", 1)
     if kind == "founder":
         return FREF / rest
+    if kind == "file":
+        return ROOT / rest
     if kind == "ref":
         return REF / rest
     if kind == "crop":
