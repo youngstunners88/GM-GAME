@@ -16,7 +16,7 @@
     "fail_line": "Close, but the ring wants more. Retry, or carry your score up.",
     "retry_label": "Retry the quiz",
     "proceed_label": "Proceed with score",
-    "ascent_line": "The ladder's lit green. Head up when you're ready, little one.",
+    "ascent_line": "The return waystone is ready. Press E there when you want to head back.",
     "stops": [
       {
         "id": "ash_ring",
@@ -36,12 +36,12 @@
       {
         "id": "paper",
         "name": "Read the whitepaper",
-        "line": "The official whitepaper. Jump on the plate to read it."
+        "line": "The official whitepaper. Approach the lectern and press E."
       },
       {
         "id": "video",
         "name": "Watch the video",
-        "line": "The official X video. Stand at the shrine and press E."
+        "line": "The official X video. Approach the viewing instrument and press E."
       },
       {
         "id": "exam",
@@ -94,7 +94,7 @@
     "fail_line": "A little cloudy. Polish and retry, or take your score.",
     "retry_label": "Recut: retry",
     "proceed_label": "Proceed with score",
-    "ascent_line": "The shaft is open. Shine on up, little one.",
+    "ascent_line": "The return waystone is ready. Shine on back, little one.",
     "stops": [
       {
         "id": "blaze_gate",
@@ -119,12 +119,12 @@
       {
         "id": "paper",
         "name": "Read the whitepaper",
-        "line": "The official whitepaper. Jump on the plate to read it."
+        "line": "The official whitepaper. Approach the lectern and press E."
       },
       {
         "id": "video",
         "name": "Watch the video",
-        "line": "The official X video. Stand at the shrine and press E."
+        "line": "The official X video. Approach the viewing instrument and press E."
       },
       {
         "id": "exam",
@@ -181,12 +181,12 @@
       {
         "id": "paper",
         "name": "Read the whitepaper",
-        "line": "The official whitepaper. Jump on the plate to read it."
+        "line": "The official whitepaper. Approach the lectern and press E."
       },
       {
         "id": "video",
         "name": "Watch the video",
-        "line": "The official X video. Stand at the shrine and press E."
+        "line": "The official X video. Approach the viewing instrument and press E."
       },
       {
         "id": "exam",

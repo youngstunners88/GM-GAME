@@ -1,30 +1,15 @@
 extends Node2D
-## Protocol Portals tour strip (founder tour rebuild, 2026-09-25).
-##
-## A walkable strip, several screens wide, one screen tall. Far left: the
-## arrival shaft; the player is shown climbing down its last rungs, and
-## climbing UP it (same enter/exit_ladder_zone handshake as the level ladder)
-## to the top trigger calls PortalTravel.ascend(). Along the floor: named
-## stops (TourStop) from portal_copy.json, then the whitepaper plate (jump on
-## it), the video shrine, and the examiner's desk LAST, where the quiz starts.
-## The companion (leader still) follows the player and speaks at each stop.
-##
-## Session loop is unchanged:
-##   STUDY_CHOICE -> WHITEPAPER | VIDEO -> STUDY_CHOICE
-##   STUDY_CHOICE -> EXAMINER_INTRO -> QUIZ -> RESULT -> QUIZ | ASCENT
-## Never mints, never networks.
+## Painted protocol maps. Props, approach zones and movement share authored
+## ground coordinates; learning, study and quiz progression remain room-owned.
 
 const SignalsScript := preload("res://src/protocol_portals/PortalSignals.gd")
 const PortalSessionScript := preload("res://src/protocol_portals/PortalSession.gd")
 const QuizBankScript := preload("res://src/protocol_portals/QuizBank.gd")
 const Travel := preload("res://src/protocol_portals/PortalTravel.gd")
 const Grant := preload("res://src/protocol_portals/ScorecardGrant.gd")
-const SmokePlateScript := preload("res://src/protocol_portals/SmokePlate.gd")
-const WhitepaperJumpScript := preload("res://src/protocol_portals/WhitepaperJump.gd")
-const VideoShrineScript := preload("res://src/protocol_portals/VideoShrine.gd")
-const ExaminerScript := preload("res://src/protocol_portals/Examiner.gd")
 const TourStopScript := preload("res://src/protocol_portals/TourStop.gd")
 const CompanionScript := preload("res://src/protocol_portals/Companion.gd")
+const Layout := preload("res://src/protocol_portals/RoomLayout.gd")
 const FixtureScript := preload("res://src/protocol_portals/RoomFixture.gd")
 
 @export var protocol: String = "smoke"
@@ -35,15 +20,7 @@ const FLOOR_Y: float = 900.0
 const PLAYER_SCENE: String = "res://src/protocol_portals/PortalExplorer.tscn"
 const COPY_PATH: String = "res://src/protocol_portals/data/portal_copy.json"
 
-## Arrival / ascent shaft.
-const SHAFT_X: float = 240.0
-const SHAFT_TOP_Y: float = 90.0
-const SHAFT_WIDTH: float = 64.0
-const RUNG_SPACING: float = 20.0
-const TOP_REACH: float = 40.0
-const ARRIVAL_DROP: float = 200.0
-const ARRIVAL_TIME: float = 0.9
-const PLAYER_BOX: float = 32.0
+const ARRIVAL_TIME: float = 0.5
 
 ## Stops.
 const FIRST_STOP_X: float = 620.0
@@ -51,25 +28,7 @@ const STOP_SPACING: float = 360.0
 const END_PAD: float = 480.0
 const MIN_STRIP_W: float = 2800.0
 
-const MAP_POSITIONS: Dictionary = {
-	"smoke": {
-		"ash_ring": Vector2(720.0, 310.0), "lounge_basket": Vector2(1120.0, 760.0),
-		"arb_well": Vector2(1560.0, 300.0), "paper": Vector2(2050.0, 720.0),
-		"video": Vector2(2380.0, 330.0), "exam": Vector2(1450.0, 610.0),
-	},
-	"diamonds": {
-		"blaze_gate": Vector2(690.0, 740.0), "tight_float": Vector2(1050.0, 270.0),
-		"vault_crush": Vector2(1580.0, 730.0), "handler_bridge": Vector2(2070.0, 280.0),
-		"paper": Vector2(2410.0, 760.0), "video": Vector2(2360.0, 360.0),
-		"exam": Vector2(1430.0, 490.0),
-	},
-	"gold": {
-		"vest_clock": Vector2(700.0, 280.0), "knox_window": Vector2(1020.0, 760.0),
-		"melt_stamp": Vector2(1600.0, 280.0), "rush_board": Vector2(2050.0, 760.0),
-		"paper": Vector2(2410.0, 300.0), "video": Vector2(2390.0, 730.0),
-		"exam": Vector2(1450.0, 570.0),
-	},
-}
+const MAP_POSITIONS: Dictionary = Layout.STOPS
 
 const PAPER_URLS: Dictionary = {
 	"smoke": "https://richs-crypto-projects.gitbook.io/smokering",
@@ -105,8 +64,6 @@ var _objective_label: Label = null
 
 var _player: Node2D = null
 var _companion: Node2D = null
-var _shaft: TourShaft = null
-var _player_in_shaft: bool = false
 var _arriving: bool = false
 var _ascending: bool = false
 
@@ -124,22 +81,6 @@ var _q_index: int = 0
 var _grant_recorded: bool = false
 
 
-## The tour shaft handed to player.enter_ladder_zone(). Its global_position is
-## the shaft top, like PortalLadder; it exposes the three methods player.gd
-## calls back into on its active ladder.
-class TourShaft extends Node2D:
-	var floor_y: float = 620.0
-
-	func top_y() -> float:
-		return global_position.y
-
-	func bottom_y() -> float:
-		return floor_y
-
-	func top_exit_position() -> Vector2:
-		return Vector2(global_position.x - 16.0, global_position.y - 34.0)
-
-
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_glow = _glow_color()
@@ -150,10 +91,8 @@ func _ready() -> void:
 	_plan_stops()
 	_build_backdrop()
 	_add_painted_map()
-	_build_protocol_landmarks()
-	_build_map_paths()
 	_build_floor_and_walls()
-	_build_shaft()
+	_build_return_waystone()
 	_build_stops()
 	_build_player()
 	_build_companion()
@@ -343,7 +282,7 @@ func _plan_stops() -> void:
 		_stop_plan.append(d)
 	if not has_paper:
 		_stop_plan.append({"id": "paper", "name": _s("paper_label", "Read the whitepaper"),
-			"line": "The official whitepaper. Jump on the plate to read it."})
+			"line": "The official whitepaper. Approach the lectern and press E."})
 	if not has_video:
 		_stop_plan.append({"id": "video", "name": _s("video_label", "Watch the video"),
 			"line": "The official X video. Stand at the shrine, press E."})
@@ -367,112 +306,22 @@ const PAINTED_MAPS: Dictionary = {
 }
 
 func _add_painted_map() -> void:
-	var path: String = String(PAINTED_MAPS.get(protocol, ""))
-	var layer: Node = get_node_or_null("Backdrop")
-	if path.is_empty() or layer == null or not ResourceLoader.exists(path):
-		return
-	var map := TextureRect.new()
+	var map := Sprite2D.new()
 	map.name = "PaintedMap"
-	map.texture = load(path)
-	map.position = Vector2.ZERO
-	map.size = Vector2(strip_width, ROOM_H)
-	map.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	map.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	map.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	layer.add_child(map)
+	map.texture = load(String(PAINTED_MAPS[protocol]))
+	map.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	map.centered = false
+	map.region_enabled = true
+	# Explicit crop keeps every authored landmark coordinate stable.
+	map.region_rect = Rect2(0, 50, strip_width, ROOM_H)
+	get_node("Backdrop").add_child(map)
+
 
 func _build_backdrop() -> void:
 	var layer := Node2D.new()
 	layer.name = "Backdrop"
 	layer.z_index = -100
 	add_child(layer)
-
-	var grad := Gradient.new()
-	grad.set_color(0, _top_color())
-	grad.set_color(1, _bottom_color())
-	var grad_tex := GradientTexture2D.new()
-	grad_tex.gradient = grad
-	grad_tex.fill = GradientTexture2D.FILL_LINEAR
-	grad_tex.fill_from = Vector2(0.0, 0.0)
-	grad_tex.fill_to = Vector2(0.0, 1.0)
-	grad_tex.width = 8
-	grad_tex.height = 256
-	var bg := TextureRect.new()
-	bg.name = "Gradient"
-	bg.texture = grad_tex
-	bg.position = Vector2.ZERO
-	bg.size = Vector2(strip_width, ROOM_H)
-	bg.stretch_mode = TextureRect.STRETCH_SCALE
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	layer.add_child(bg)
-
-	# Stone courses give the four-direction map a continuous, readable surface.
-	# Keep all scenery above FloorSlab; an opaque slab above this layer used to
-	# erase the whole room while every node-existence test still passed.
-	var masonry := Node2D.new()
-	masonry.name = "Masonry"
-	layer.add_child(masonry)
-	for row in range(1, 12):
-		var seam := Line2D.new()
-		seam.width = 2.0
-		seam.default_color = Color(0.65, 0.69, 0.67, 0.12)
-		seam.points = PackedVector2Array([Vector2(0, row * 96), Vector2(strip_width, row * 96)])
-		masonry.add_child(seam)
-		for col in range(12):
-			var joint := Line2D.new()
-			var px: float = col * 256.0 + (128.0 if row % 2 else 0.0)
-			joint.width = 2.0
-			joint.default_color = seam.default_color
-			joint.points = PackedVector2Array([Vector2(px, (row - 1) * 96), Vector2(px, row * 96)])
-			masonry.add_child(joint)
-
-	# Distant pillars so the camera pan reads as movement.
-	var x: float = 360.0
-	var i: int = 0
-	while x < strip_width:
-		var pillar := ColorRect.new()
-		pillar.name = "Pillar%d" % i
-		pillar.position = Vector2(x, 80.0)
-		pillar.size = Vector2(44.0, ROOM_H - 160.0)
-		pillar.color = Color(_slab_color().r, _slab_color().g, _slab_color().b, 0.8).lightened(0.05)
-		layer.add_child(pillar)
-		var trim := ColorRect.new()
-		trim.name = "PillarTrim%d" % i
-		trim.position = Vector2(x, 80.0)
-		trim.size = Vector2(3.0, ROOM_H - 160.0)
-		trim.color = Color(_glow.r, _glow.g, _glow.b, 0.25)
-		layer.add_child(trim)
-		x += 420.0
-		i += 1
-
-	var ceiling := ColorRect.new()
-	ceiling.name = "Ceiling"
-	ceiling.position = Vector2(0.0, 0.0)
-	ceiling.size = Vector2(strip_width, 40.0)
-	ceiling.color = _slab_color()
-	layer.add_child(ceiling)
-
-	var motes := CPUParticles2D.new()
-	motes.name = "Motes"
-	motes.texture = _make_square_texture(2)
-	motes.amount = 60
-	motes.lifetime = 9.0
-	motes.local_coords = false
-	motes.position = Vector2(strip_width * 0.5, ROOM_H * 0.5)
-	motes.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-	motes.emission_rect_extents = Vector2(strip_width * 0.5, ROOM_H * 0.4)
-	motes.direction = Vector2(0.0, -1.0)
-	motes.spread = 40.0
-	motes.gravity = Vector2.ZERO
-	motes.initial_velocity_min = 5.0
-	motes.initial_velocity_max = 18.0
-	motes.scale_amount_min = 2.0
-	motes.scale_amount_max = 4.0
-	var ramp := Gradient.new()
-	ramp.set_color(0, Color(_glow.r, _glow.g, _glow.b, 0.0))
-	ramp.set_color(1, Color(_glow.r, _glow.g, _glow.b, 0.35))
-	motes.color_ramp = ramp
-	layer.add_child(motes)
 
 	# Screen-space vignette + room title.
 	var vig_layer := CanvasLayer.new()
@@ -513,135 +362,9 @@ func _build_backdrop() -> void:
 	vig_layer.add_child(title)
 
 
-## Large, protocol-specific landmarks turn the shared tour shell into three
-## recognisable explorable places rather than three recoloured classrooms.
-func _build_protocol_landmarks() -> void:
-	var layer := Node2D.new()
-	layer.name = "ProtocolLandmarks"
-	layer.z_index = -30
-	add_child(layer)
-	match protocol:
-		"smoke":
-			_build_smoke_landmarks(layer)
-		"diamonds":
-			_build_diamond_landmarks(layer)
-		"gold":
-			_build_gold_landmarks(layer)
-
-
-func _build_map_paths() -> void:
-	var raw_layout: Variant = MAP_POSITIONS.get(protocol, {})
-	if typeof(raw_layout) != TYPE_DICTIONARY:
-		return
-	var layout: Dictionary = raw_layout
-	var hub: Vector2 = layout.get("exam", Vector2(1450.0, 550.0))
-	var layer := Node2D.new()
-	layer.name = "QuestPaths"
-	layer.z_index = -35
-	add_child(layer)
-	var entry_path := Line2D.new()
-	entry_path.width = 54.0
-	entry_path.default_color = Color(_glow.r, _glow.g, _glow.b, 0.10)
-	entry_path.points = PackedVector2Array([Vector2(SHAFT_X, FLOOR_Y - 80.0), hub])
-	layer.add_child(entry_path)
-	for stop_id in layout.keys():
-		if stop_id == "exam":
-			continue
-		var path := Line2D.new()
-		path.width = 42.0
-		path.default_color = Color(_glow.r, _glow.g, _glow.b, 0.075)
-		path.points = PackedVector2Array([hub, layout[stop_id]])
-		layer.add_child(path)
-
-
-func _landmark_label(parent: Node, text: String, pos: Vector2, color: Color) -> void:
-	var label := Label.new()
-	label.text = text
-	label.position = pos
-	label.size = Vector2(320.0, 42.0)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", 25)
-	label.add_theme_color_override("font_color", color)
-	label.add_theme_color_override("font_outline_color", Color.BLACK)
-	label.add_theme_constant_override("outline_size", 7)
-	parent.add_child(label)
-
-
-func _build_smoke_landmarks(layer: Node2D) -> void:
-	_landmark_label(layer, "THE ASH-RING ARCHIVE", Vector2(370.0, 115.0), _glow)
-	for i in range(7):
-		var ring := Line2D.new()
-		ring.width = 5.0
-		ring.default_color = Color(_glow.r, _glow.g, _glow.b, 0.18 + i * 0.035)
-		ring.closed = true
-		var points := PackedVector2Array()
-		for p in range(40):
-			var a: float = TAU * float(p) / 40.0
-			points.append(Vector2(1180.0, 360.0) + Vector2(cos(a), sin(a)) * (80.0 + i * 28.0))
-		ring.points = points
-		layer.add_child(ring)
-	# Archive shelves frame the reading area instead of giant opaque-looking
-	# vapor wedges. The furniture is visible from the whitepaper/video stops.
-	for x in [1810.0, 2120.0, 2500.0]:
-		var shelf := Node2D.new()
-		shelf.name = "ArchiveShelf%d" % int(x)
-		shelf.position = Vector2(x, 190.0)
-		layer.add_child(shelf)
-		for row in range(3):
-			var board := ColorRect.new()
-			board.position = Vector2(-105, row * 62)
-			board.size = Vector2(210, 10)
-			board.color = Color("80644d")
-			shelf.add_child(board)
-			for col in range(10):
-				var book := ColorRect.new()
-				var height: float = 30.0 + float((col * 7 + row * 3) % 17)
-				book.position = Vector2(-98 + col * 20, row * 62 - height)
-				book.size = Vector2(15, height)
-				book.color = [Color("718a7b"), Color("bda777"), Color("805e53"), Color("64818e")][(col + row) % 4]
-				shelf.add_child(book)
-
-
-func _build_diamond_landmarks(layer: Node2D) -> void:
-	_landmark_label(layer, "THE PRESSURE WORKS", Vector2(370.0, 115.0), _glow)
-	for i in range(12):
-		var x: float = 650.0 + float(i) * 360.0
-		var h: float = 100.0 + float((i * 47) % 180)
-		var crystal := Polygon2D.new()
-		crystal.color = Color(0.25, 0.8, 1.0, 0.18 + 0.03 * float(i % 3))
-		crystal.polygon = PackedVector2Array([Vector2(x - 52.0, FLOOR_Y), Vector2(x + 48.0, FLOOR_Y), Vector2(x + 28.0, FLOOR_Y - h * 0.62), Vector2(x, FLOOR_Y - h), Vector2(x - 30.0, FLOOR_Y - h * 0.55)])
-		layer.add_child(crystal)
-	var bridge := Line2D.new()
-	bridge.points = PackedVector2Array([Vector2(2050.0, 270.0), Vector2(3000.0, 270.0)])
-	bridge.width = 12.0
-	bridge.default_color = Color(0.45, 0.95, 1.0, 0.32)
-	layer.add_child(bridge)
-
-
-func _build_gold_landmarks(layer: Node2D) -> void:
-	_landmark_label(layer, "THE CLAIM SETTLEMENT", Vector2(370.0, 115.0), _glow)
-	for i in range(9):
-		var x: float = 620.0 + float(i) * 510.0
-		var beam := ColorRect.new()
-		beam.position = Vector2(x, 90.0)
-		beam.size = Vector2(28.0, FLOOR_Y - 90.0)
-		beam.color = Color(0.25, 0.13, 0.045, 0.85)
-		layer.add_child(beam)
-	var clock := Line2D.new()
-	clock.closed = true
-	clock.width = 9.0
-	clock.default_color = Color(1.0, 0.72, 0.18, 0.55)
-	var points := PackedVector2Array()
-	for p in range(48):
-		var a: float = TAU * float(p) / 48.0
-		points.append(Vector2(1200.0, 330.0) + Vector2(cos(a), sin(a)) * 145.0)
-	clock.points = points
-	layer.add_child(clock)
-	var hand := Line2D.new()
-	hand.points = PackedVector2Array([Vector2(1200.0, 330.0), Vector2(1275.0, 245.0)])
-	hand.width = 8.0
-	hand.default_color = _glow
-	layer.add_child(hand)
+## Movement uses the same ground map as the stop placement.
+func constrain_to_ground(point: Vector2) -> Vector2:
+	return Layout.constrain(protocol, point)
 
 
 # ---- Floor ------------------------------------------------------------------
@@ -655,14 +378,6 @@ func _build_floor_and_walls() -> void:
 	# This is the map's base, not a foreground overlay. Backdrop is at -100.
 	slab.z_index = -110
 	add_child(slab)
-
-	var trim := ColorRect.new()
-	trim.name = "FloorTrim"
-	trim.position = Vector2.ZERO
-	trim.size = Vector2(strip_width, 8.0)
-	trim.color = Color(_glow.r, _glow.g, _glow.b, 0.55)
-	trim.z_index = -49
-	add_child(trim)
 
 	var floor_body := StaticBody2D.new()
 	floor_body.name = "Floor"
@@ -698,162 +413,19 @@ func _build_floor_and_walls() -> void:
 	add_child(walls)
 
 
-# ---- Arrival / ascent shaft -------------------------------------------------
+# ---- Return to the campaign -------------------------------------------------
 
-## Rails from the ceiling to the floor at SHAFT_X. ClimbZone uses the player's
-## own climb (move_up / move_down); the TopTrigger near the top calls ascend.
-func _build_shaft() -> void:
-	_shaft = TourShaft.new()
-	_shaft.name = "AscentShaft"
-	_shaft.floor_y = FLOOR_Y
-	_shaft.position = Vector2(SHAFT_X, SHAFT_TOP_Y)
-	_shaft.z_index = -20
-	add_child(_shaft)
+func _build_return_waystone() -> void:
+	_build_stop({"id": "exit", "name": "Return waystone", "line": "Return to the adventure."}, Layout.WAYSTONES[protocol])
 
-	var depth: float = FLOOR_Y - SHAFT_TOP_Y
-	var top_local: float = -SHAFT_TOP_Y
-	var full: float = FLOOR_Y
-
-	var hole := ColorRect.new()
-	hole.name = "ShaftHole"
-	hole.position = Vector2(-SHAFT_WIDTH * 0.5, top_local)
-	hole.size = Vector2(SHAFT_WIDTH, full)
-	hole.color = Color(0.02, 0.03, 0.04, 0.9)
-	_shaft.add_child(hole)
-
-	var rail_color: Color = Color(_glow.r, _glow.g, _glow.b, 0.9).darkened(0.2)
-	var outline_color: Color = Color(0.02, 0.02, 0.03, 0.95)
-	var rail_xs: Array[float] = [-24.0, 19.0]
-	for i in range(rail_xs.size()):
-		var ro := ColorRect.new()
-		ro.name = "RailOutline%d" % i
-		ro.position = Vector2(rail_xs[i] - 2.0, top_local)
-		ro.size = Vector2(9.0, full)
-		ro.color = outline_color
-		_shaft.add_child(ro)
-		var r := ColorRect.new()
-		r.name = "Rail%d" % i
-		r.position = Vector2(rail_xs[i], top_local)
-		r.size = Vector2(5.0, full)
-		r.color = rail_color
-		_shaft.add_child(r)
-
-	var y: float = top_local + 10.0
-	var n: int = 0
-	while y < depth - 4.0:
-		var rung := ColorRect.new()
-		rung.name = "Rung%d" % n
-		rung.position = Vector2(-24.0, y)
-		rung.size = Vector2(48.0, 4.0)
-		rung.color = rail_color
-		_shaft.add_child(rung)
-		y += RUNG_SPACING
-		n += 1
-
-	var label := Label.new()
-	label.name = "AscentLabel"
-	label.text = "CLIMB UP"
-	label.size = Vector2(160.0, 34.0)
-	label.position = Vector2(46.0, 60.0)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.add_theme_font_size_override("font_size", 20)
-	label.add_theme_color_override("font_color", _glow)
-	label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.95))
-	label.add_theme_constant_override("outline_size", 6)
-	label.add_theme_stylebox_override("normal", _backing_style())
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_shaft.add_child(label)
-
-	var hint := Label.new()
-	hint.name = "AscentHint"
-	hint.text = "HOLD UP IN THE SHAFT"
-	hint.size = Vector2(220.0, 26.0)
-	hint.position = Vector2(46.0, 100.0)
-	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hint.add_theme_font_size_override("font_size", 14)
-	hint.add_theme_color_override("font_color", Color(0.9, 0.95, 0.95))
-	hint.add_theme_stylebox_override("normal", _backing_style())
-	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_shaft.add_child(hint)
-
-	var zone := Area2D.new()
-	zone.name = "ClimbZone"
-	zone.collision_layer = 0
-	zone.collision_mask = 2
-	var shape := CollisionShape2D.new()
-	shape.name = "CollisionShape2D"
-	var rect := RectangleShape2D.new()
-	rect.size = Vector2(40.0, depth + 30.0)
-	shape.shape = rect
-	shape.position = Vector2(0.0, (depth + 30.0) * 0.5 - 20.0)
-	zone.add_child(shape)
-	zone.body_entered.connect(_on_shaft_body_entered)
-	zone.body_exited.connect(_on_shaft_body_exited)
-	_shaft.add_child(zone)
-
-	var top := Area2D.new()
-	top.name = "TopTrigger"
-	top.collision_layer = 0
-	top.collision_mask = 2
-	var tshape := CollisionShape2D.new()
-	tshape.name = "CollisionShape2D"
-	var trect := RectangleShape2D.new()
-	trect.size = Vector2(SHAFT_WIDTH, 60.0)
-	tshape.shape = trect
-	tshape.position = Vector2(0.0, 20.0)
-	top.add_child(tshape)
-	top.body_entered.connect(_on_top_body_entered)
-	_shaft.add_child(top)
-
-
-func _on_shaft_body_entered(body: Node2D) -> void:
-	if not body.is_in_group("player"):
-		return
-	_player_in_shaft = true
-	if body.has_method("enter_ladder_zone"):
-		body.call("enter_ladder_zone", _shaft)
-
-
-func _on_shaft_body_exited(body: Node2D) -> void:
-	if not body.is_in_group("player"):
-		return
-	_player_in_shaft = false
-	if body.has_method("exit_ladder_zone"):
-		body.call("exit_ladder_zone", _shaft)
-
-
-func _on_top_body_entered(body: Node2D) -> void:
-	if body == null or body != _player or _arriving:
-		return
-	if bool(body.get("_climbing")):
-		_do_ascend()
-
-
-func _physics_process(_delta: float) -> void:
-	if _ascending or _arriving or _player == null or not is_instance_valid(_player):
-		return
-	if get_tree().paused or not _player_in_shaft:
-		return
-	if bool(_player.get("_climbing")) and _player.global_position.y <= SHAFT_TOP_Y + TOP_REACH:
-		_do_ascend()
-
-
-## Top of the shaft reached: freeze the player and go home.
 func _do_ascend() -> void:
-	if _ascending:
+	if _ascending or _arriving:
+		return
+	if Travel.return_scene.is_empty():
+		if _companion != null:
+			_companion.call("say", "Enter this room from the adventure to return through the waystone.")
 		return
 	_ascending = true
-	if Travel.return_scene.is_empty():
-		push_warning("StudyRoom: no return scene (room loaded directly); staying.")
-		_ascending = false
-		if _player != null:
-			_player.global_position = Vector2(SHAFT_X, FLOOR_Y - 80.0)
-		return
-	if _player != null and is_instance_valid(_player):
-		if _player is CharacterBody2D:
-			(_player as CharacterBody2D).velocity = Vector2.ZERO
-		_player.set_physics_process(false)
 	Travel.ascend()
 
 
@@ -878,36 +450,35 @@ func _build_stop(entry: Dictionary, map_position: Vector2) -> void:
 	var id: String = _s2(entry, "id")
 	var line: String = _s2(entry, "line")
 	_stop_lines[id] = line
-	var label_y: float = 220.0
-	var pedestal: bool = true
-	match id:
-		"paper":
-			label_y = 380.0
-			pedestal = false
-		"video":
-			label_y = 280.0
-			pedestal = false
-	var stop: Node2D = TourStopScript.new()
+	var stop := TourStopScript.new()
 	stop.name = "Stop_%s" % id
 	stop.position = map_position
-	stop.call("setup", id, _s2(entry, "name", id), line, _glow, pedestal, label_y)
+	stop.z_index = int(map_position.y)
+	stop.setup(id, _s2(entry, "name", id), line, _glow, false, 150.0)
 	add_child(stop)
-	stop.connect("reached", _on_stop_reached)
-	if id in _required_learning_stops or id == "exam":
-		var fixture := FixtureScript.new()
-		fixture.name = "Fixture"
-		fixture.kind = id
-		fixture.accent = _glow
-		# Above paths/landmarks, below the actors and labels.
-		fixture.z_index = -2
-		stop.add_child(fixture)
+	stop.reached.connect(_on_stop_reached)
+	stop.activated.connect(_activate_stop)
+	var fixture := FixtureScript.new()
+	fixture.name = "Fixture"
+	fixture.kind = id
+	fixture.protocol = protocol
+	fixture.target_width = 145.0 if id in ["arb_well", "exam", "vault_crush"] else 125.0
+	stop.add_child(fixture)
+
+
+func _activate_stop(id: String) -> void:
 	match id:
-		"paper":
-			_dress_paper(stop)
-		"video":
-			_dress_video(stop)
-		"exam":
-			_dress_exam(stop)
+		"paper": open_whitepaper()
+		"video": open_video()
+		"exam": start_exam()
+		"exit": _do_ascend()
+		_:
+			_on_stop_reached(id)
+			_open_overlay()
+			var stop := get_node("Stop_" + id)
+			_add_label(String(stop.stop_name), 26, _glow)
+			_add_label(String(_stop_lines[id]), 22, Color("eee1c3"))
+			_add_button("CONTINUE EXPLORING", _close_overlay_ui)
 
 
 func _on_stop_reached(stop_id: String) -> void:
@@ -919,198 +490,13 @@ func _on_stop_reached(stop_id: String) -> void:
 	var line: String = String(_stop_lines.get(stop_id, ""))
 	_companion.call("say", line)
 	# Optional ElevenLabs bark of the same locked line; silent if no clip exists.
-	_companion.call("play_voice", "res://src/assets/portals/vo/%s_%s.mp3" % [protocol, stop_id])
-
-
-## Jump-on plate: a low solid slab with the WhitepaperJump zone on top of it.
-func _dress_paper(stop: Node2D) -> void:
-	var slab_w: float = 150.0
-	var slab_h: float = 30.0
-	var vis := ColorRect.new()
-	vis.name = "PlateSlab"
-	vis.position = Vector2(-slab_w * 0.5, -slab_h)
-	vis.size = Vector2(slab_w, slab_h)
-	vis.color = _slab_color().lightened(0.12)
-	stop.add_child(vis)
-	var trim := ColorRect.new()
-	trim.name = "PlateSlabTrim"
-	trim.position = Vector2(-slab_w * 0.5, -slab_h)
-	trim.size = Vector2(slab_w, 3.0)
-	trim.color = Color(_glow.r, _glow.g, _glow.b, 0.9)
-	stop.add_child(trim)
-
-	var body := StaticBody2D.new()
-	body.name = "PlateStep"
-	body.collision_layer = 1
-	body.collision_mask = 0
-	body.position = Vector2(0.0, -slab_h * 0.5)
-	var bshape := CollisionShape2D.new()
-	bshape.name = "CollisionShape2D"
-	var brect := RectangleShape2D.new()
-	brect.size = Vector2(slab_w, slab_h)
-	bshape.shape = brect
-	body.add_child(bshape)
-	stop.add_child(body)
-
-	if protocol == "smoke":
-		var plate := Node2D.new()
-		plate.name = "PlateArt"
-		plate.set_script(SmokePlateScript)
-		plate.position = Vector2(0.0, -220.0)
-		plate.scale = Vector2(0.4, 0.4)
-		var spec: Variant = _plate().get("draw_spec", {})
-		if typeof(spec) == TYPE_DICTIONARY:
-			plate.set("draw_spec", spec)
-		stop.add_child(plate)
-	else:
-		stop.add_child(_build_plate_art(
-			"res://src/assets/portals/plate_%s_whitepaper.jpg" % protocol,
-			Vector2(0.0, -220.0), 240.0))
-
-	var zone := Area2D.new()
-	zone.set_script(WhitepaperJumpScript)
-	zone.name = "WhitepaperJumpZone"
-	zone.collision_layer = 0
-	zone.collision_mask = 2
-	zone.position = Vector2(0.0, -slab_h - 25.0)
-	zone.set("room", self)
-	var zshape := CollisionShape2D.new()
-	zshape.name = "CollisionShape2D"
-	var zrect := RectangleShape2D.new()
-	zrect.size = Vector2(slab_w, 50.0)
-	zshape.shape = zrect
-	zone.add_child(zshape)
-	stop.add_child(zone)
-
-
-func _build_plate_art(texture_path: String, centre: Vector2, target_width: float) -> Node2D:
-	var holder := Node2D.new()
-	holder.name = "PlateArt"
-	holder.position = centre
-	var art_size := Vector2(target_width, 160.0)
-	var sprite: Sprite2D = null
-	if ResourceLoader.exists(texture_path):
-		var tex: Texture2D = load(texture_path)
-		if tex != null and tex.get_width() > 0:
-			sprite = Sprite2D.new()
-			sprite.name = "PlateTexture"
-			sprite.texture = tex
-			sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-			var factor: float = target_width / float(tex.get_width())
-			sprite.scale = Vector2(factor, factor)
-			art_size = Vector2(float(tex.get_width()) * factor, float(tex.get_height()) * factor)
-	else:
-		push_warning("StudyRoom: plate texture missing: %s" % texture_path)
-	var half := art_size * 0.5
-	var shadow := ColorRect.new()
-	shadow.name = "PlateShadow"
-	shadow.position = Vector2(-half.x + 10.0, -half.y + 12.0)
-	shadow.size = art_size
-	shadow.color = Color(0.0, 0.0, 0.0, 0.45)
-	holder.add_child(shadow)
-	if sprite != null:
-		holder.add_child(sprite)
-	else:
-		var card := ColorRect.new()
-		card.name = "PlateFallback"
-		card.position = -half
-		card.size = art_size
-		card.color = _slab_color().lightened(0.05)
-		holder.add_child(card)
-	var frame := Line2D.new()
-	frame.name = "PlateFrame"
-	frame.width = 3.0
-	frame.default_color = Color(_glow.r, _glow.g, _glow.b, 0.85)
-	frame.closed = true
-	frame.points = PackedVector2Array([
-		Vector2(-half.x, -half.y), Vector2(half.x, -half.y),
-		Vector2(half.x, half.y), Vector2(-half.x, half.y),
-	])
-	holder.add_child(frame)
-	return holder
-
-
-## Video shrine: arch, screen, drawn play triangle, VideoShrine zone.
-func _dress_video(stop: Node2D) -> void:
-	var arch := Polygon2D.new()
-	arch.name = "Arch"
-	arch.polygon = PackedVector2Array([
-		Vector2(-80.0, 0.0), Vector2(80.0, 0.0), Vector2(80.0, -140.0),
-		Vector2(0.0, -200.0), Vector2(-80.0, -140.0),
-	])
-	arch.color = _slab_color().lightened(0.06)
-	stop.add_child(arch)
-	var screen_pts := PackedVector2Array([
-		Vector2(-90.0, -150.0), Vector2(90.0, -150.0),
-		Vector2(90.0, -30.0), Vector2(-90.0, -30.0),
-	])
-	var screen := Polygon2D.new()
-	screen.name = "Screen"
-	screen.polygon = screen_pts
-	screen.color = Color(0.02, 0.03, 0.05, 0.95)
-	stop.add_child(screen)
-	var frame := Line2D.new()
-	frame.name = "ScreenFrame"
-	frame.width = 3.0
-	frame.default_color = Color(_glow.r, _glow.g, _glow.b, 0.85)
-	frame.closed = true
-	frame.points = screen_pts
-	stop.add_child(frame)
-	var play := Polygon2D.new()
-	play.name = "PlayTriangle"
-	play.polygon = PackedVector2Array([
-		Vector2(-16.0, -26.0), Vector2(-16.0, 26.0), Vector2(26.0, 0.0),
-	])
-	play.color = Color(_glow.r, _glow.g, _glow.b, 0.95)
-	play.position = Vector2(0.0, -90.0)
-	stop.add_child(play)
-
-	var zone := Area2D.new()
-	zone.set_script(VideoShrineScript)
-	zone.name = "VideoShrineZone"
-	zone.collision_layer = 0
-	zone.collision_mask = 2
-	zone.position = Vector2(0.0, -100.0)
-	zone.set("room", self)
-	var zshape := CollisionShape2D.new()
-	zshape.name = "CollisionShape2D"
-	var zrect := RectangleShape2D.new()
-	zrect.size = Vector2(200.0, 200.0)
-	zshape.shape = zrect
-	zone.add_child(zshape)
-	stop.add_child(zone)
-
-
-## Examiner's desk / bench: the last stop, where the quiz starts.
-func _dress_exam(stop: Node2D) -> void:
-	var ledger := ColorRect.new()
-	ledger.name = "Ledger"
-	ledger.position = Vector2(-30.0, -108.0)
-	ledger.size = Vector2(60.0, 10.0)
-	ledger.color = Color(0.9, 0.87, 0.74)
-	stop.add_child(ledger)
-
-	var zone := Area2D.new()
-	zone.set_script(ExaminerScript)
-	zone.name = "ExaminerZone"
-	zone.collision_layer = 0
-	zone.collision_mask = 2
-	zone.position = Vector2(0.0, -100.0)
-	zone.set("room", self)
-	zone.set("protocol", protocol)
-	var zshape := CollisionShape2D.new()
-	zshape.name = "CollisionShape2D"
-	var zrect := RectangleShape2D.new()
-	zrect.size = Vector2(180.0, 200.0)
-	zshape.shape = zrect
-	zone.add_child(zshape)
-	stop.add_child(zone)
+	if stop_id in _required_learning_stops:
+		_companion.call("play_voice", "res://src/assets/portals/vo/%s_%s.mp3" % [protocol, stop_id])
 
 
 # ---- Player + companion -----------------------------------------------------
 
-## Spawns the player on the last rungs of the shaft and slides him down to
-## the floor, so the arrival reads as the end of the climb down.
+## Arrive along the painted entrance path, beside the return waystone.
 func _build_player() -> void:
 	if not ResourceLoader.exists(PLAYER_SCENE):
 		push_error("StudyRoom: player scene missing: %s" % PLAYER_SCENE)
@@ -1121,8 +507,8 @@ func _build_player() -> void:
 		return
 	var player: Node2D = packed.instantiate()
 	player.name = "Player"
-	var land_y: float = FLOOR_Y - 80.0
-	player.position = Vector2(SHAFT_X, land_y - ARRIVAL_DROP)
+	var entrance: Vector2 = Layout.ENTRANCES[protocol]
+	player.position = entrance + Vector2(0, 35)
 	player.add_to_group("player")
 	player.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(player)
@@ -1139,7 +525,7 @@ func _build_player() -> void:
 	_arriving = true
 	player.set_physics_process(false)
 	var tween: Tween = create_tween()
-	tween.tween_property(player, "position:y", land_y, ARRIVAL_TIME)
+	tween.tween_property(player, "position", entrance, ARRIVAL_TIME)
 	tween.finished.connect(_on_arrival_done)
 
 
@@ -1178,8 +564,7 @@ func _find_camera(root: Node) -> Camera2D:
 func _build_companion() -> void:
 	var comp: Node2D = CompanionScript.new()
 	comp.name = "Companion"
-	comp.position = Vector2(SHAFT_X + 90.0, FLOOR_Y)
-	comp.z_index = -1
+	comp.position = Layout.constrain(protocol, Layout.ENTRANCES[protocol] + Vector2(-40, 20))
 	var tex_path: String = String(LEADER_TEXTURES.get(protocol, LEADER_TEXTURES["smoke"]))
 	comp.call("setup", tex_path, _s("examiner_name", "Guide"), _glow, false)  # founder: Kane is ONE figure, no escorts
 	comp.set("target", _player)
@@ -1201,7 +586,7 @@ func _build_ui() -> void:
 	_objective_label = Label.new()
 	_objective_label.name = "KnowledgeQuest"
 	_objective_label.position = Vector2(28.0, 28.0)
-	_objective_label.size = Vector2(390.0, 78.0)
+	_objective_label.size = Vector2(430.0, 96.0)
 	_objective_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_objective_label.add_theme_font_size_override("font_size", 18)
 	_objective_label.add_theme_color_override("font_color", _glow)
@@ -1411,7 +796,7 @@ func _update_objective() -> void:
 	if _objective_label == null:
 		return
 	var studied: bool = session != null and not session.study_path.is_empty()
-	_objective_label.text = "PROTOCOL QUEST\nDiscover mechanisms  %d/%d   |   Study source  %s" % [_visited_learning_stops.size(), _required_learning_stops.size(), "DONE" if studied else "0/1"]
+	_objective_label.text = "PROTOCOL QUEST\nDiscover mechanisms  %d/%d   |   Study source  %s\nWASD / arrows to walk · E to interact" % [_visited_learning_stops.size(), _required_learning_stops.size(), "DONE" if studied else "0/1"]
 
 
 func _show_intro() -> void:
@@ -1508,7 +893,7 @@ func _show_result() -> void:
 		_add_button(_s("proceed_label", "Keep Score and Go"), _on_proceed)
 	else:
 		_add_label(_s("ascent_line"), 20, Color(0.80, 0.88, 0.88))
-		_add_button("CLIMB BACK", _on_climb_back)
+		_add_button("RETURN TO ADVENTURE", _on_climb_back)
 		_add_button("KEEP EXPLORING", _close_overlay_ui)
 
 
@@ -1536,13 +921,32 @@ func _on_climb_back() -> void:
 
 # ---- Input ------------------------------------------------------------------
 
-## Only overlay input lives here. Leaving the tour is the shaft climb.
+## One dispatcher chooses the nearest prop, so one press opens one interaction.
 func _unhandled_input(event: InputEvent) -> void:
 	if _overlay_open:
 		_handle_overlay_input(event)
+		return
+	if _arriving or not event.is_action_pressed("interact"):
+		return
+	var nearest: Node2D = null
+	var distance := TourStopScript.INTERACT_RADIUS
+	for stop in get_tree().get_nodes_in_group("portal_stop"):
+		if not is_ancestor_of(stop):
+			continue
+		var d: float = _player.global_position.distance_to(stop.global_position + TourStopScript.APPROACH)
+		if d < distance:
+			distance = d
+			nearest = stop
+	if nearest != null:
+		get_viewport().set_input_as_handled()
+		nearest.activate()
 
 
 func _handle_overlay_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		close_overlay()
+		get_viewport().set_input_as_handled()
+		return
 	if InputMap.has_action("interact") and event.is_action_pressed("interact") and _primary_action.is_valid():
 		_primary_action.call()
 		return

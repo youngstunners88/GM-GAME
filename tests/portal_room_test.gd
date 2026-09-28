@@ -110,14 +110,10 @@ func _test_forbidden_tokens() -> void:
 
 func _test_exploration_contract() -> void:
 	var source: String = _read_text("res://src/protocol_portals/StudyRoom.gd")
-	_check(source.contains("_build_smoke_landmarks"), "SMOKE has a distinct explorable landmark set")
-	_check(source.contains("_build_diamond_landmarks"), "DIAMONDS has a distinct explorable landmark set")
-	_check(source.contains("_build_gold_landmarks"), "GOLD has a distinct explorable landmark set")
 	_check(source.contains("KNOWLEDGE GATE"), "exam is protected by the knowledge gate")
 	_check(source.contains("_visited_learning_stops"), "learning-stop progress is tracked")
 	_check(source.contains("FIELD GUIDE"), "whitepaper interaction includes an in-game field guide")
 	_check(source.contains("MAP_POSITIONS"), "protocol stops use authored two-dimensional map positions")
-	_check(source.contains("_build_map_paths"), "maps contain hub-and-spoke exploration paths")
 	_check(source.contains("PortalExplorer.tscn"), "portal maps use the four-direction explorer")
 
 
@@ -148,6 +144,7 @@ func _test_skin(skin: Dictionary) -> void:
 		return
 
 	_test_structure(room, protocol)
+	_test_ground_routes(room, protocol)
 	await _test_exploration(room, protocol)
 
 	_check(room.has_method("test_run"), "%s: room exposes test_run()" % protocol)
@@ -263,16 +260,95 @@ func _test_exploration(room: Node, protocol: String) -> void:
 	player.set_physics_process(false)
 	for stop_id in room.get("_required_learning_stops"):
 		var stop := room.get_node("Stop_%s" % stop_id) as Node2D
-		player.global_position = stop.global_position + Vector2(0, -80)
+		# Approach with real movement and collide with the prop's ground footprint.
+		player.global_position = stop.global_position + Vector2(0, 65)
+		player.set_physics_process(true)
+		Input.action_press("move_up")
+		for frame in range(30): await physics_frame
+		Input.action_release("move_up")
+		_check(player.position.y >= stop.position.y + 14, "%s: %s footprint blocks walking through furniture" % [protocol, stop_id])
+		_check(player.position.distance_to(stop.position + Vector2(0, 28)) < 100,
+			"%s: %s can be approached on foot" % [protocol, stop_id])
+		player.set_physics_process(false)
+		player.global_position = stop.global_position + Vector2(0, 28)
 		for frame in range(4):
 			await physics_frame
+		var inspect := InputEventAction.new()
+		inspect.action = "interact"
+		inspect.pressed = true
+		root.push_input(inspect)
+		await process_frame
+		_check(bool(room.call("is_overlay_open")), "%s: E inspects %s" % [protocol, stop_id])
+		room.call("close_overlay")
+		inspect.pressed = false
+		root.push_input(inspect)
 	var visited: Dictionary = room.get("_visited_learning_stops")
 	var required: Array = room.get("_required_learning_stops")
 	_check(visited.size() == required.size(), "%s: every furnished stop is reachable" % protocol)
-	room.call("open_whitepaper")
+	# Drive the same E dispatcher used in play for both study sources.
+	for study_id in ["video", "paper"]:
+		var stop := room.get_node("Stop_" + study_id) as Node2D
+		player.position = stop.position + Vector2(0, 28)
+		for frame in range(3): await physics_frame
+		var interact := InputEventAction.new()
+		interact.action = "interact"
+		interact.pressed = true
+		root.push_input(interact)
+		await process_frame
+		_check(bool(room.call("is_overlay_open")), "%s: E opens %s" % [protocol, study_id])
+		interact.pressed = false
+		root.push_input(interact)
+		room.call("close_overlay")
 	var session: RefCounted = room.get("session")
 	_check(String(session.get("study_path")) == "whitepaper", "%s: study still records progress" % protocol)
+	player.position = room.get_node("Stop_exam").position + Vector2(0, 28)
+	var exam := InputEventAction.new()
+	exam.action = "interact"
+	exam.pressed = true
+	root.push_input(exam)
+	await process_frame
+	_check(session.get("state") == SignalsScript.State.EXAMINER_INTRO, "%s: E unlocks exam after exploration and study" % protocol)
+	exam.pressed = false
+	root.push_input(exam)
 	room.call("close_overlay")
+
+
+## Sample actual walkable ground, then check connected routes from spawn to
+## each approach zone. This catches furniture painted over unreachable cliffs.
+func _test_ground_routes(room: Node, protocol: String) -> void:
+	var layout = load("res://src/protocol_portals/RoomLayout.gd")
+	var grid := AStarGrid2D.new()
+	grid.region = Rect2i(0, 0, 141, 56)
+	grid.cell_size = Vector2(20, 20)
+	grid.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_ONLY_IF_NO_OBSTACLES
+	grid.update()
+	for x in range(141):
+		for y in range(56):
+			grid.set_point_solid(Vector2i(x, y), not layout.contains(protocol, Vector2(x * 20, y * 20)))
+	var spawn: Vector2 = layout.ENTRANCES[protocol]
+	var start := Vector2i((spawn / 20).round())
+	_check(not grid.is_point_solid(start), "%s: spawn is on painted ground" % protocol)
+	for stop in get_nodes_in_group("portal_stop"):
+		if not room.is_ancestor_of(stop):
+			continue
+		var approach: Vector2 = layout.constrain(protocol, stop.position + Vector2(0, 28))
+		var target := Vector2i((approach / 20).round())
+		# Pick a nearby solid-ground grid point inside the real interaction range.
+		var reachable := false
+		for dx in range(-2, 3):
+			for dy in range(-2, 3):
+				var cell := target + Vector2i(dx, dy)
+				if not grid.region.has_point(cell) or grid.is_point_solid(cell):
+					continue
+				if (Vector2(cell) * 20).distance_to(stop.position + Vector2(0, 28)) > 70:
+					continue
+				if not grid.get_id_path(start, cell).is_empty():
+					reachable = true
+		_check(reachable, "%s: ground route to %s" % [protocol, stop.stop_id])
+		_check(stop.get_node_or_null("Fixture/PaintedProp") != null, "%s: %s has painted art" % [protocol, stop.stop_id])
+		_check(stop.get_node_or_null("PlateGlow") == null, "%s: no neon pedestal at %s" % [protocol, stop.stop_id])
+	_check(room.get_node_or_null("QuestPaths") == null and room.get_node_or_null("ProtocolLandmarks") == null,
+		"%s: procedural overlays cannot obscure the painting" % protocol)
 
 
 func _leader_texture_path(node: Node) -> String:
