@@ -286,6 +286,34 @@ jobs:
             exit 1
           fi
 
+      - name: Portal room gameplay and rendered visibility
+        run: |
+          set -euo pipefail
+          timeout 90 "$GODOT_BIN" --headless --script res://tests/portal_room_test.gd 2>&1 | tee portal-tests.log
+          grep -q 'PORTAL ROOMS: ALL PASS' portal-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' portal-tests.log; then exit 1; fi
+          # A headless renderer cannot catch a foreground rectangle hiding the
+          # background. Render the real scenes with the web-compatible driver.
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1-mesa-dri
+          mkdir -p portal-captures
+          SHOT_OUT="$PWD/portal-captures" timeout 90 xvfb-run -a "$GODOT_BIN" \
+            --rendering-method gl_compatibility --rendering-driver opengl3 \
+            --resolution 1280x720 res://tests/portal_capture_tool.tscn 2>&1 | tee portal-render.log
+          test "$(grep -c 'PORTAL VISIBILITY:' portal-render.log)" -eq 3
+          if grep -E 'SCRIPT ERROR|Parse Error' portal-render.log; then exit 1; fi
+
+      - name: Upload portal room proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portal-room-proof
+          path: |
+            portal-captures/
+            portal-tests.log
+            portal-render.log
+          retention-days: 14
+
       - name: Stamp the build tag
         run: |
           # BUILD_TAG's whole job is to let the founder PROVE, from a screenshot,
