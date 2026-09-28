@@ -1,0 +1,114 @@
+{
+  "document_url": "https://docs.google.com/document/d/1HSqakFkrnyASYnzLRghu2q3nVTiJr7UzknQlwMkkdDM/edit",
+  "inspected_at": "2026-09-27",
+  "images": [
+    {
+      "section": "$SMOKE",
+      "id": "kix.2l8bbhtiuu2b",
+      "image_number": 1,
+      "sha512": "1e907a633aa11a7d2ee21433616ab4063c9b6b26ba300a0f28adf9ddad764e66a65801eda73e12c98302d432409595726819f5a34a7d9f383d427bc84047cdc0"
+    },
+    {
+      "section": "$SMOKE",
+      "id": "kix.7bbi1r9cu3gs",
+      "image_number": 2,
+      "sha512": "7f3899fea11ff125ff644192c1a7d4896298a8544424ba60ff2d2404051a106b435d6fa85b6e8d4e993aab20d3e9170d8477681fa9765f06996b7f305bc7146c"
+    },
+    {
+      "section": "$SMOKE",
+      "id": "kix.mzrav8iaopyu",
+      "image_number": 3,
+      "sha512": "9829dffa71b7c1c2672e30cfd18fac20042f82dc983c368bd6c497c4314af6eeb56e2352405a5705835abd7a7485e8af26b88e5b12f7ff1fc93c8b3f17d92a53"
+    },
+    {
+      "section": "$SMOKE",
+      "id": "kix.p371ofv10es0",
+      "image_number": 4,
+      "sha512": "21c4c6bf1a00c79225d85665193734df8492cb3f9f5c438637256b92629b70c0e8acc14e84b70c70f470e6118e541e5046967c98c82f0a6175a77892d60e8e36"
+    },
+    {
+      "section": "$DIAMONDS",
+      "id": "kix.fwfpfrz3m9cd",
+      "image_number": 5,
+      "sha512": "4340eb92979ae770f73c524b1a26f647efd3758a667960b461e65c72a4244546d7761e633c0bf597cdcb509f91694fa417c3aff2a3d46a3568b8c291bdae46d6"
+    },
+    {
+      "section": "$DIAMONDS",
+      "id": "kix.tcvesdoej7qa",
+      "image_number": 6,
+      "sha512": "6779b9f00415a6b05d26a30fb847087a537a4a792dc317fd73a4350eccf587d821cbcc89e741f22784dcded5d829a6028fb4ca9004681bd0d6e136aebf619547"
+    },
+    {
+      "section": "$DIAMONDS",
+      "id": "kix.xlg8k3jeyvzo",
+      "image_number": 7,
+      "sha512": "32dee5b94f6b263c1f90157f0eb63d6434847e4cf4eb721a427e211cb513b2c71def69c296867f22179f9a27ccefc0d6d6e8154b54b30374052ca09719e13bb9"
+    },
+    {
+      "section": "$DIAMONDS",
+      "id": "kix.p1hqxxhyjr38",
+      "image_number": 8,
+      "sha512": "1e907a633aa11a7d2ee21433616ab4063c9b6b26ba300a0f28adf9ddad764e66a65801eda73e12c98302d432409595726819f5a34a7d9f383d427bc84047cdc0"
+    },
+    {
+      "section": "$DIAMONDS",
+      "id": "kix.hekzvcvt5wx9",
+      "image_number": 9,
+      "sha512": "cfcd26c9d02aa0cbf4cc7ff1082240b1fa9f7b7d9df7b99e6f55bf08cae02efdfeb63f098bfab7f0ab0e4d04652958497654684f2b82f98b98a3fdab5c629561"
+    },
+    {
+      "section": "$DIAMONDS",
+      "id": "kix.62ive5djo5uf",
+      "image_number": 10,
+      "sha512": "6b30da0eac3121e2362002d151d5d9d2c80bf1323ccb02ad8ab5b4df725fe029dc7b6b61af8ea969e89670367fe73682b41bd38c20ee615bcdac4f9f68179505"
+    },
+    {
+      "section": "$GOLD MINE",
+      "id": "kix.676lso63xpsm",
+      "image_number": 11,
+      "sha512": "8a1e4fa0f06c3527a35c4a5d009101fed7844260338b47e79523a548dbff52846571370f8ef7dcd590d30e42c2f713be11759a392cfeade36d1fe703c6e0db9a"
+    },
+    {
+      "section": "$GOLD MINE",
+      "id": "kix.kn68g2ok740o",
+      "image_number": 12,
+      "sha512": "c67851148b7e46bca2e2e19fb99317e72575548a5bd9757a997b600e5ea91c38c9b6cfdaa6d8d95db02fa704e3f1b3b2f20a1f4fb1d09be15cc662d4f18e50f4"
+    },
+    {
+      "section": "$GOLD MINE",
+      "id": "kix.83swfoj478l",
+      "image_number": 13,
+      "sha512": "1e907a633aa11a7d2ee21433616ab4063c9b6b26ba300a0f28adf9ddad764e66a65801eda73e12c98302d432409595726819f5a34a7d9f383d427bc84047cdc0"
+    },
+    {
+      "section": "$GOLD MINE",
+      "id": "kix.if8tpk35xxxj",
+      "image_number": 14,
+      "sha512": "e58b5facc2e898e2b1dbc4e6872026f244964bf2acc36c783bcfac52303e88dc408b265b51048a4a5a1558a4b0f6a2d967ee9c278dd608b4e251c10663351095"
+    },
+    {
+      "section": "$GOLD MINE",
+      "id": "kix.q9kb4lch73bl",
+      "image_number": 15,
+      "sha512": "f915542a30285d47363c4b43f60e868243d66f8bd248b95c7f01f48002359d8ad7f0fb7357bccc3dc2a7b8f016c6a112e4e94b7519ce230b5adc3576db95a0fe"
+    },
+    {
+      "section": "$GOLD MINE",
+      "id": "kix.1awi1kler2ab",
+      "image_number": 16,
+      "sha512": "c67851148b7e46bca2e2e19fb99317e72575548a5bd9757a997b600e5ea91c38c9b6cfdaa6d8d95db02fa704e3f1b3b2f20a1f4fb1d09be15cc662d4f18e50f4"
+    },
+    {
+      "section": "$GOLD MINE",
+      "id": "kix.167tcj57e7c9",
+      "image_number": 17,
+      "sha512": "c7c1933dea9b0719b3b1945e7d5834a222073f6f36191557cd29f7d1c4c31dded83cbb8fbec419189382318751c2aeba2e14dda0c89b034359c90efedab9fbff"
+    },
+    {
+      "section": "$GOLD MINE",
+      "id": "kix.9q9kf3mwp50s",
+      "image_number": 18,
+      "sha512": "aa091d6588a793c2004c311e3ee36b946d9294555ed9faaae11532ead07b5e1761c75abf34234f5ce5867a4067e4724819706b3a583e661d850ec55a9658b7eb"
+    }
+  ]
+}

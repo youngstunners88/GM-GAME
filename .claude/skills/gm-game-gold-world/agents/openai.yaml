@@ -1,0 +1,14 @@
+interface:
+  display_name: GM GAME — Gold World
+  short_description: Design explorable gold education maps
+  default_prompt: Use $gm-game-gold-world to improve The Claim Office from the founder
+    references and current portal map.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

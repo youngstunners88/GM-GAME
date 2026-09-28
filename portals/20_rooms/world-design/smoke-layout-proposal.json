@@ -1,0 +1,66 @@
+{
+  "schema": "gm-game.education-layout-proposal.v1",
+  "status": "design proposal; not runtime geometry or human-approved layout",
+  "base_commit": "aa5e1f5a12387abbd8c98e46f57e745dc0ebd798",
+  "protocol": "smoke",
+  "bounds_px": [
+    2800,
+    1100
+  ],
+  "arrival": [
+    240,
+    820
+  ],
+  "shaft_top": [
+    240,
+    90
+  ],
+  "anchors": {
+    "ash_ring": [
+      720.0,
+      310.0
+    ],
+    "lounge_basket": [
+      1120.0,
+      760.0
+    ],
+    "arb_well": [
+      1560.0,
+      300.0
+    ],
+    "paper": [
+      2050.0,
+      720.0
+    ],
+    "video": [
+      2380.0,
+      330.0
+    ],
+    "exam": [
+      1450.0,
+      610.0
+    ]
+  },
+  "route_order": [
+    "arrival",
+    "ash_ring",
+    "arb_well",
+    "video",
+    "paper",
+    "lounge_basket",
+    "arrival"
+  ],
+  "exam_spur": "Connect central examiner to nearest clear loop segment after routing around all station envelopes",
+  "primary_path_width_px": 128,
+  "minimum_clear_width_px": 96,
+  "tour_stop_envelope_px": {
+    "width": 180,
+    "height": 220,
+    "anchor": "bottom centre"
+  },
+  "instructions": [
+    "Do not draw straight segments through prop or interaction footprints.",
+    "Preserve stop IDs and current gameplay; validate both study choices and return.",
+    "Author peripheral scenery inside camera coverage and keep all four map extremes materialized."
+  ]
+}
