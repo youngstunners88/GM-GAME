@@ -1,0 +1,4 @@
+model: typesafe/jev-1.13-20260917   cost: $0.000023
+  pick_gold: v0 (confidence 0.11) {"v1":0.44,"v0":0.56}
+
+JEV VERDICT: BLOCK

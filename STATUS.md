@@ -5,6 +5,10 @@
 
 ---
 
+**🗺️ PORTAL ROOMS ARE NOW PAINTED WARCRAFT-STYLE MAPS (2026-09-28).** Each learning room walks over a detailed painted overhead map made from your references: a smoky purple-green forest lounge, a crystal citadel, a golden canyon mining town. Jev picked the best variant of each. Also shipped Codex's room work, which had been blocked from itch by a CI check. New skill: `gm-game-portal-map-art`.
+
+---
+
 **🤠 EPISODE 2 — NEW LIL BLUNT + BEARS FROM YOUR KEY ART, GUNSLINGER AIM, BITCOIN COINS (2026-09-27).** Lil Blunt and the bear archers were rebuilt from your zipline key art. The character pictures were made with **Nano Banana Pro**, which takes the key art as its reference. ChatGPT image was tried too; its Lil Blunt came out lankier. Meshy then made 3D models (PBR) and rigged them with their animation sets. Lil Blunt now has the leaf body, the cowboy hat with the leaf badge, the vest, jeans and spurs. The bears are snarling grizzlies with brass miner helmets and lamps, red bandanas and quivers. They are bigger, lit by their own lights, and turn to track you. **Shooting:** his gun arm now points straight at your reticle and kicks on each shot, with the revolver in that hand and the pickaxe in the other. It no longer plays a full-body shooting animation. **Visibility:** he is bigger, closer to the camera, and lit by his own warm and cool lights. **Coins are Bitcoin-branded** (₿ face, gold rim), with a coin chime and a BTC counter. **Mine detail:** gold glints in the walls, wall lanterns, timber walkways with lamps, glowing gold heaps, and gold-filled carts parked on the ledges. **Sound:** VARCO is out of credits, so four sounds now come from ElevenLabs: blocked hop, Bitcoin coin, cart smash and new cart. Checks: every runner test, art-direction, GLB and audio-bus test passes, including a new test that the gun arm points at the target. Both legs were played to the end in Chromium at 3/3 health. The web package is 182.9 MB. Known issue: in software rendering the runner plays at about a tenth of real speed, so weak devices may struggle.
 
 ---

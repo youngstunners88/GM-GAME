@@ -149,6 +149,7 @@ func _ready() -> void:
 		_data = raw
 	_plan_stops()
 	_build_backdrop()
+	_add_painted_map()
 	_build_protocol_landmarks()
 	_build_map_paths()
 	_build_floor_and_walls()
@@ -354,6 +355,31 @@ func _plan_stops() -> void:
 
 
 # ---- Backdrop ---------------------------------------------------------------
+
+## Founder 2026-09-28: "expansive like Warcraft, walking on a mapped-out section".
+## A painted overhead map (MuAPI Flux, Jev-picked, scripts/gen_portal_maps.py) is
+## laid over the procedural backdrop inside the Backdrop layer, so stops, props,
+## the companion and the player all still draw on top of it.
+const PAINTED_MAPS: Dictionary = {
+	"smoke": "res://src/assets/portals/maps/map_smoke.jpg",
+	"diamonds": "res://src/assets/portals/maps/map_diamonds.jpg",
+	"gold": "res://src/assets/portals/maps/map_gold.jpg",
+}
+
+func _add_painted_map() -> void:
+	var path: String = String(PAINTED_MAPS.get(protocol, ""))
+	var layer: Node = get_node_or_null("Backdrop")
+	if path.is_empty() or layer == null or not ResourceLoader.exists(path):
+		return
+	var map := TextureRect.new()
+	map.name = "PaintedMap"
+	map.texture = load(path)
+	map.position = Vector2.ZERO
+	map.size = Vector2(strip_width, ROOM_H)
+	map.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	map.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	map.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(map)
 
 func _build_backdrop() -> void:
 	var layer := Node2D.new()
