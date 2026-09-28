@@ -289,6 +289,9 @@ jobs:
       - name: Portal room gameplay and rendered visibility
         run: |
           set -euo pipefail
+          # The first-pass import above quits before textures/class_names finish
+          # importing; tests on a half-imported project fail with bogus parse errors.
+          timeout 600 "$GODOT_BIN" --headless --import >/dev/null 2>&1 || true
           timeout 90 "$GODOT_BIN" --headless --script res://tests/portal_room_test.gd 2>&1 | tee portal-tests.log
           grep -q 'PORTAL ROOMS: ALL PASS' portal-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' portal-tests.log; then exit 1; fi
