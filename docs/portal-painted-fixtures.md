@@ -16,6 +16,8 @@ The previous stop coordinates and procedural decorations were authored for an em
 
 Built-in imagegen generated three RGBA atlases at 1774×887. Alpha is retained; Godot uses fractional 4×2 AtlasTexture regions with filtering clipped to each cell. The originals are copied unchanged into `src/assets/portals/fixtures/`. Cell assignments and display widths are in `RoomFixture.gd`.
 
+The three checked-in texture import presets use Godot's high-quality lossy WebP mode at 0.92, retaining alpha and original resolution. Source PNGs remain unchanged. CI captures stay under runner.temp, outside res://, and the export also excludes portal-captures so review screenshots cannot inflate the playable pack.
+
 ## Verification
 
 The portal room suite exercises real approach movement, solid prop footprints, E interactions, connected ground routes, study selection, exam gating, pass/fail grading and scorecard persistence. The capture tool records all three overview frames and every individual station at gameplay resolution. The full project script/scene compile test also runs locally.
