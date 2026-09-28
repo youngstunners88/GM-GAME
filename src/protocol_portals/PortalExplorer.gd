@@ -18,8 +18,12 @@ func _ready() -> void:
 	if _sprite != null and ResourceLoader.exists(ART_PATH):
 		_sprite.texture = load(ART_PATH) as Texture2D
 		if _sprite.texture != null and _sprite.texture.get_height() > 0:
-			var scale_to: float = 68.0 / float(_sprite.texture.get_height())
+			var bounds := _sprite.texture.get_image().get_used_rect()
+			_sprite.region_enabled = true
+			_sprite.region_rect = bounds
+			var scale_to: float = 68.0 / float(bounds.size.y)
 			_sprite.scale = Vector2(scale_to, scale_to)
+			_sprite.position.y = -34.0
 	queue_redraw()
 
 
@@ -33,6 +37,9 @@ func _physics_process(_delta: float) -> void:
 	if _sprite != null and absf(input.x) > 0.05:
 		_sprite.flip_h = input.x < 0.0
 	move_and_slide()
+	if get_parent().has_method("constrain_to_ground"):
+		position = get_parent().constrain_to_ground(position)
+	z_index = int(position.y)
 
 
 func enter_ladder_zone(_ladder: Node2D) -> void:
