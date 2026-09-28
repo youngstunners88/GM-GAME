@@ -12,3 +12,4 @@ is either **VERIFIED** (reproduced or fixed in this repo, with the proof named) 
 | 004 | [Gemini hears WAVs — use it as the "listen" step before promoting audio takes](004_gemini_audio_grading.md) | VERIFIED | audio | `scripts/varco-grade.mjs`, `takes/*/grade.json` |
 | 005 | [Reference-guided stills (Nano Banana Pro / GPT image via OpenRouter) beat Flux for characters](005_reference_guided_stills.md) | VERIFIED | 1 illustration | `scripts/ref-image.mjs`; STILL_*_v2.png → lil_blunt_v2 / bear_archer_v2 Meshy thumbnails |
 | 006 | [Godot 4.3 exposes a SkeletonModifier3D's pose only during `skeleton_updated`](006_modifier_pose_timing.md) | VERIFIED | 5 motion | `RunnerAimModifier`; motion test "gun arm points" dot 1.00 |
+| 007 | [Founder Meshy share links resolve to task ids our API key can read, remesh and download](007_founder_meshy_share_links.md) | VERIFIED | 4 3D | `founder_meshy_sources.json`; 4 models pulled, remeshed (5 cr each), cut/split |

@@ -89,5 +89,12 @@ if [ -n "$BR_NOW" ] && [ "$BR_NOW" != "master" ] && [ "$BR_NOW" != "main" ]; the
     fi
 fi
 
+# Meshy CLI (founder, 2026-09-28): containers are fresh each session, so reinstall the
+# pinned CLI in the background when it's missing. It authenticates from MESHY_API_KEY
+# in the environment — never a key in a file or in chat.
+if ! command -v meshy >/dev/null 2>&1; then
+  (npm install -g meshy-cli@0.4.0 >/dev/null 2>&1 &)
+fi
+
 echo "==================================="
 exit 0

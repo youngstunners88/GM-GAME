@@ -17,21 +17,23 @@ const RIDER_RIG := "res://src/episode2/assets/lil_blunt_rigged.glb"
 const BEAR_RIG := "res://src/episode2/assets/bear_rigged.glb"
 
 ## Loop these; everything else is a one-shot that returns to the base clip.
-const LOOPING := ["Combat_Stance", "CrouchLookAroundBow", "Rope_Hang_Idle", "Idle",
+const LOOPING := ["Combat_Stance", "CrouchLookAroundBow", "Chair_Sit_Idle_M", "Sit_Dodge", "Rope_Hang_Idle", "Idle",
 	"Archery_Aim_with_Lateral_Scan"]
 
 ## clip -> [start offset s, playback speed]. Offsets skip wind-up so the key
 ## moment lands right after the sim event (shot 0.08 s, chop 0.19 s, apex ~0.33 s).
 const RIDER_CLIPS := {
-	"idle": ["Combat_Stance", 0.0, 1.0],
+	# SEATED in the cart, like the founder's "Lil Blunt in the cart" Meshy model
+	# (2026-09-28): Meshy library 33 / 361 / 300 baked onto the existing rig.
+	"idle": ["Chair_Sit_Idle_M", 0.0, 1.0],
 	"zip": ["Rope_Hang_Idle", 0.0, 1.0],
-	"duck": ["CrouchLookAroundBow", 0.4, 1.0],
+	"duck": ["Sit_Dodge", 4.6, 1.4],        # dodge low point measured at 5.1 s
 	"jump": ["Regular_Jump", 0.35, 1.35],
 	"hop": ["Regular_Jump", 0.45, 2.0],
 	"hit": ["Hit_Reaction", 0.0, 1.6],
 	"reload": ["Standing_Reload", 0.0, 2.55],
 	"swipe": ["Charged_Axe_Chop", 1.6, 2.2],
-	"cheer": ["Victory_Fist_Pump", 0.0, 1.2],
+	"cheer": ["Sit_Cheer_with_Left_Hand", 0.3, 1.2],
 }
 const BEAR_CLIPS := {
 	"idle": ["Idle", 0.0, 1.0],

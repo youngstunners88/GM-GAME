@@ -5,6 +5,18 @@
 
 ---
 
+**⛏️ EPISODE 2 — YOUR MESHY MODELS ARE NOW THE STAGE (2026-09-28).** The four models behind your links were pulled with the project key, remeshed for the web (from up to 173 MB each down to 0.2–2.4 MB) and put in the game.
+- **Tunnel:** your "Three Track Gold Mine Stage" tunnel now runs the whole length of each leg. Its dead-end wall and built-in floor were cut out, so it is open at both ends and sits over the game's own three rails.
+- **Carts:** the leaf-emblem carts from your "Gold Mine Stage" are now the convoy carts and the parked carts. When a cart is smashed it breaks into two halves that fly apart.
+- **Riding:** Lil Blunt now sits in the cart like your model, using new seated animations from Meshy's library, with his hat and leaves above the rim. When he ducks he sinks into the cart.
+- **Zipline:** your "Hanging Mine Gunslinger" is his zipline pose, with the pickaxe on the cable. He turns to point the revolver at your reticle.
+- **Bears** now stand on wall ledges inside the tunnel.
+- **Not used:** the corridor model, because it has only two tracks.
+
+**Tooling:** the Meshy CLI 0.4.0 is installed and signs in from the environment key (613 credits). Meshy's official `meshy-3d-generation` and `meshy-3d-printing` skills are installed. The Meshy MCP server (24 tools) is set up in `.mcp.json` and reads `${MESHY_API_KEY}`, so no key is stored in any file. New skill: `ep2-meshy-studio`, which covers the steps from a Meshy share link to an in-game asset and a roadmap of Meshy features. New tool: `scripts/glb-shot.mjs`, which renders six views of any model.
+
+---
+
 **🤠 EPISODE 2 — NEW LIL BLUNT + BEARS FROM YOUR KEY ART, GUNSLINGER AIM, BITCOIN COINS (2026-09-27).** Lil Blunt and the bear archers were rebuilt from your zipline key art. The character pictures were made with **Nano Banana Pro**, which takes the key art as its reference. ChatGPT image was tried too; its Lil Blunt came out lankier. Meshy then made 3D models (PBR) and rigged them with their animation sets. Lil Blunt now has the leaf body, the cowboy hat with the leaf badge, the vest, jeans and spurs. The bears are snarling grizzlies with brass miner helmets and lamps, red bandanas and quivers. They are bigger, lit by their own lights, and turn to track you. **Shooting:** his gun arm now points straight at your reticle and kicks on each shot, with the revolver in that hand and the pickaxe in the other. It no longer plays a full-body shooting animation. **Visibility:** he is bigger, closer to the camera, and lit by his own warm and cool lights. **Coins are Bitcoin-branded** (₿ face, gold rim), with a coin chime and a BTC counter. **Mine detail:** gold glints in the walls, wall lanterns, timber walkways with lamps, glowing gold heaps, and gold-filled carts parked on the ledges. **Sound:** VARCO is out of credits, so four sounds now come from ElevenLabs: blocked hop, Bitcoin coin, cart smash and new cart. Checks: every runner test, art-direction, GLB and audio-bus test passes, including a new test that the gun arm points at the target. Both legs were played to the end in Chromium at 3/3 health. The web package is 182.9 MB. Known issue: in software rendering the runner plays at about a tenth of real speed, so weak devices may struggle.
 
 ---

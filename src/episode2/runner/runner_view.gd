@@ -46,6 +46,12 @@ const BOULDER_MODEL := "res://src/episode2/assets/boulder.glb"
 const GOLD_PILE_MODEL := "res://src/episode2/assets/gold_pile.glb"
 const ROCK_CHUNK_MODEL := "res://src/episode2/assets/rock_chunk.glb"
 const TEX_DIR := "res://src/episode2/assets/textures/"
+# Founder-made Meshy models (2026-09-28; src/episode2/assets/founder_meshy_sources.json).
+const TUNNEL_SHELL_MODEL := "res://src/episode2/assets/mine_tunnel_shell.glb"
+const LEAF_CART_MODEL := "res://src/episode2/assets/leaf_cart.glb"
+const WRECK_A_MODEL := "res://src/episode2/assets/leaf_cart_wreck_a.glb"
+const WRECK_B_MODEL := "res://src/episode2/assets/leaf_cart_wreck_b.glb"
+const ZIP_POSE_MODEL := "res://src/episode2/assets/lil_blunt_zipline.glb"
 const Motion := preload("res://src/episode2/runner/runner_motion.gd")
 const AimMod := preload("res://src/episode2/runner/runner_aim_modifier.gd")
 const TEX_BTC := "tex_btc_coin.png"
@@ -76,7 +82,7 @@ const BOULDER_ROCK_NATIVE := 1.2   # boulder_rock.glb's widest native extent
 const TELEGRAPH_RANGE := 42.0
 const RIDER_HEIGHT := 2.0            # founder: "I can't see Lil Blunt" — bigger + hero-lit
 const RIDER_NATIVE_H := 0.9        # lil_blunt.glb if its AABB can't be measured
-const RIDER_FLOOR := 0.1
+const RIDER_FLOOR := 0.62           # seated: head + hat clear the leaf cart rim (founder model)
 const RIDER_YAW := 0.0             # Meshy faces +Z == away from camera
 const HOP_ARC := 1.1
 const CABLE_CLEARANCE := 1.55
@@ -87,6 +93,15 @@ const ORE_CART_NATIVE_LEN := 2.24  # ore_cart.glb long axis (X), x ±1.12
 const ORE_CART_LEN := 2.1
 const ORE_CART_Y := -0.15          # its baked rail piece sits on our rail bottom
 const BEAR_NATIVE_H := 1.8
+# Tunnel shell: native floor cut at y -0.34, open both ends, 1.87 long; stretched
+# in X so its inner walls land on SHELL_WALL_X while its 3-track spacing matches ours.
+const SHELL_SCALE := Vector3(11.9, 11.0, 8.3)  # Y raised so the zip cable (5.85 m) clears the timber beams
+const SHELL_NATIVE_FLOOR := -0.34
+const SHELL_STEP := 15.2            # slight overlap of the 15.5 m module
+const SHELL_WALL_X := 5.5
+const RAIL_TOP := -0.31
+const LEAF_CART_LEN := 1.85
+const ZIP_POSE_H := 2.9             # zipline pose incl. the raised pickaxe
 const ARCHER_HEIGHT := 2.9           # founder: bears need to read at 20-30 m/s
 const BOARDER_HEIGHT := 1.9
 const BOARDER_LEAP_LEAD := 14.0    # the leap starts this far before the cart reaches z
@@ -234,6 +249,11 @@ var _bone_l: int = -1
 var _bone_head: int = -1
 var _aim_mod: Node = null                   # RunnerAimModifier on the rider's skeleton
 var _dust: CPUParticles3D = null
+var _shell_mode: bool = false
+var _zip_model: Node3D = null
+var _zip_top: float = 0.0            # zip pose's native top (pickaxe) height
+var _zip_scale: float = 1.0
+var _wreck_pieces: Array = []        # [{"node", "vel", "spin", "t"}]
 var _t_hit: float = 99.0
 var _t_shot: float = 99.0
 var _t_swipe: float = 99.0
@@ -289,6 +309,9 @@ func rebuild(sim: Node) -> void:
 	_rider_anim = null
 	_rider_skel = null
 	_aim_mod = null
+	_zip_model = null
+	_wreck_pieces.clear()
+	_shell_mode = ResourceLoader.exists(TUNNEL_SHELL_MODEL) and not debug_off.has("shell")
 	_t_hit = 99.0
 	_t_shot = 99.0
 	_t_swipe = 99.0
@@ -390,6 +413,7 @@ func _process(delta: float) -> void:
 	_update_axe(delta)
 	_update_fx(delta)
 	_update_gold(dist, delta)
+	_update_wrecks(delta)
 	_update_popups(delta)
 	_update_hud()
 
@@ -749,9 +773,13 @@ func _seg_index(z: float) -> int:
 	return int(floor((z + 20.0) / TUNNEL_SEG))
 
 func _is_pocket(i: int) -> bool:
+	if _shell_mode:
+		return false
 	return (i % 4) == 2 or _pocket_segs.has(i)
 
 func _half_w_at_seg(i: int) -> float:
+	if _shell_mode:
+		return SHELL_WALL_X + 0.06
 	if _is_pocket(i):
 		return 8.4
 	return 5.6 + float(i % 3) * 0.35
@@ -764,6 +792,8 @@ func _wall_x_at(z: float) -> float:
 func _build_tunnel(length: float) -> void:
 	var segs: int = int(ceil((length + 20.0) / TUNNEL_SEG))
 	var bottom: float = -PIT_DEPTH - 0.6
+	if _shell_mode and _build_tunnel_shell(length, bottom):
+		return
 	for i in segs:
 		var z0: float = -20.0 + float(i) * TUNNEL_SEG
 		var pocket: bool = _is_pocket(i)
@@ -815,6 +845,31 @@ func _build_tunnel(length: float) -> void:
 		bz += 18.0
 	_multi(_box(Vector3.ONE), _timber_mat(), posts)
 	_multi(_box(Vector3.ONE), _timber_mat(), beams)
+
+## The founder's Meshy tunnel ("Three Track Gold Mine Stage") with its dead end
+## and floor cut away, tiled down the whole run over our 3-rail trestle and pit.
+## Returns false (procedural tunnel instead) if the model can't load.
+func _build_tunnel_shell(length: float, bottom: float) -> bool:
+	var probe: Node3D = _inst(TUNNEL_SHELL_MODEL)
+	if probe == null:
+		return false
+	probe.free()
+	var y0: float = RAIL_TOP - 0.1 - SHELL_NATIVE_FLOOR * SHELL_SCALE.y
+	var z: float = -24.0
+	var k: int = 0
+	while z < length + 20.0:
+		var sh: Node3D = _inst(TUNNEL_SHELL_MODEL)
+		sh.scale = SHELL_SCALE
+		# Alternate 180-degree turns so the repeat reads less like a tile.
+		if k % 2 == 1:
+			sh.rotation.y = PI
+		sh.position = Vector3(0.0, y0, z + SHELL_STEP * 0.5)
+		_world.add_child(sh)
+		z += SHELL_STEP
+		k += 1
+	_mesh_node(_box(Vector3(20.0, 0.2, length + 60.0)), _rock_deep_mat(),
+		Vector3(0.0, bottom, (length - 20.0) * 0.5))
+	return true
 
 func _build_lanterns(length: float) -> void:
 	_lantern_pos = PackedVector3Array()
@@ -870,8 +925,12 @@ func _build_carts() -> void:
 		c.position = Vector3(float(lx), CART_Y, 0.0)
 		_world.add_child(c)
 		var wheels: Array = []
-		var ore: Node3D = _inst(ORE_CART_MODEL)
-		if ore:
+		var leaf: Node3D = _inst(LEAF_CART_MODEL)
+		var ore: Node3D = null if leaf else _inst(ORE_CART_MODEL)
+		if leaf:
+			_fit_on_rail(leaf, LEAF_CART_LEN, CART_Y)
+			c.add_child(leaf)
+		elif ore:
 			ore.scale = Vector3.ONE * (ORE_CART_LEN / ORE_CART_NATIVE_LEN)
 			ore.rotation.y = PI * 0.5
 			ore.position = Vector3(0.0, ORE_CART_Y, 0.0)
@@ -892,6 +951,16 @@ func _build_carts() -> void:
 		var alive: bool = not _sim.has_method("is_cart_alive") or bool(_sim.is_cart_alive(_carts.size() - 1))
 		_cart_fx.append({"state": "roll" if alive else "dead", "t": 0.0, "z": 0.0, "spin": 0.0})
 		c.visible = alive
+
+## Scale a Meshy prop so its long (Z) side is `length` and set it centred with its
+## wheels on the rail top, relative to a parent at height `parent_y`.
+func _fit_on_rail(n: Node3D, length: float, parent_y: float) -> void:
+	var bb: AABB = _measure(n)
+	var s: float = length / bb.size.z if bb.size.z > 0.01 else 1.0
+	n.scale = Vector3.ONE * s
+	var cx: float = bb.position.x + bb.size.x * 0.5
+	var cz: float = bb.position.z + bb.size.z * 0.5
+	n.position = Vector3(-cx * s, RAIL_TOP - parent_y - bb.position.y * s, -cz * s)
 
 func _build_rider() -> void:
 	_rider = Node3D.new()
@@ -967,6 +1036,16 @@ func _build_rider() -> void:
 	_emote.position = Vector3(0.0, RIDER_HEIGHT + 0.55, 0.0)
 	_emote.visible = false
 	_rider.add_child(_emote)
+	# Founder's zipline pose (pickaxe hooked on the cable, golden revolver aimed):
+	# shown instead of the rigged body while he rides a cable.
+	_zip_model = _inst(ZIP_POSE_MODEL)
+	if _zip_model:
+		var zb: AABB = _measure(_zip_model)
+		_zip_scale = ZIP_POSE_H / zb.size.y if zb.size.y > 0.01 else 1.0
+		_zip_top = zb.position.y + zb.size.y
+		_zip_model.scale = Vector3.ONE * _zip_scale
+		_zip_model.visible = false
+		_rider.add_child(_zip_model)
 
 ## Golden revolver in the screen-right hand, pickaxe in the other.
 ## Gun rig: pivot (aim, -Z = muzzle) → spin node (barrel-axis spin on reload) → model.
@@ -1063,6 +1142,14 @@ func _build_archers() -> void:
 		_multi(_box(Vector3(2.8, 0.22, 2.6)), _timber_mat(), decks)
 
 func _scaffold_at(x: float, z: float, posts: Array[Transform3D], decks: Array[Transform3D]) -> void:
+	if _shell_mode:
+		# Wall ledge inside the tunnel shell: two struts under the outer edge only,
+		# so nothing stands between the ledge and the outer rail's cart.
+		for dz0 in [-1.0, 1.0]:
+			posts.append(Transform3D(Basis.IDENTITY, Vector3(x + signf(x) * 0.7,
+				Sim.ARCHER_Y - 0.1 - (Sim.ARCHER_Y + PIT_DEPTH) * 0.5, z + float(dz0) * 1.0)))
+		decks.append(Transform3D(Basis.IDENTITY.scaled(Vector3(0.65, 1.0, 1.0)), Vector3(x + signf(x) * 0.35, Sim.ARCHER_Y - 0.1, z)))
+		return
 	for dx in [-1.0, 1.0]:
 		for dz in [-1.0, 1.0]:
 			posts.append(Transform3D(Basis.IDENTITY,
@@ -1373,12 +1460,13 @@ func _build_mine_detail(length: float) -> void:
 		var hx: float = (_wall_x_at(z) - 1.0) * hs
 		var cart_here: bool = n_cart % 3 == 0
 		if cart_here:
-			var cart: Node3D = _inst(ORE_CART_MODEL)
+			var cart: Node3D = _inst(LEAF_CART_MODEL)
 			if cart:
-				cart.scale = Vector3.ONE * (ORE_CART_LEN / ORE_CART_NATIVE_LEN)
-				cart.rotation.y = PI * 0.5
-				cart.position = Vector3(hx, -0.2, z)
-				_world.add_child(cart)
+				var holder := Node3D.new()
+				holder.position = Vector3(hx, 0.0, z)
+				_world.add_child(holder)
+				_fit_on_rail(cart, LEAF_CART_LEN, 0.1)
+				holder.add_child(cart)
 		for _k in 22:
 			var r: float = rng.randf_range(0.0, 0.6)
 			var a: float = rng.randf() * TAU
@@ -1908,7 +1996,7 @@ func _update_rider(dist: float, delta: float) -> void:
 	elif ducking:
 		# The rigged crouch clip already folds him to ~65 % height; the squash is
 		# only the fallback for an un-rigged model.
-		target_y = RIDER_FLOOR - (0.25 if _rider_anim else 0.45)
+		target_y = RIDER_FLOOR - (0.8 if _rider_anim else 0.45)   # sink below the rim
 		sy = 0.9 if _rider_anim else 0.5
 	_rider.position = Vector3(x, target_y, dist)
 	_rider_model.scale = _rider_model.scale.lerp(Vector3(_rider_scale, _rider_scale * sy, _rider_scale),
@@ -1938,7 +2026,18 @@ func _update_rider(dist: float, delta: float) -> void:
 			_gun_pivot.position = Vector3(GUN_HAND.x, GUN_HAND.y * crouch, GUN_HAND.z)
 		if _axe_pivot:
 			_axe_pivot.position = Vector3(AXE_HAND.x, AXE_HAND.y * crouch, AXE_HAND.z)
-	_hook.visible = zipping
+	_hook.visible = zipping and _zip_model == null
+	if _zip_model:
+		_zip_model.visible = zipping
+		_rider_model.visible = not zipping
+		if zipping:
+			# Pickaxe head on the cable; turn so the revolver (model -X) faces the aim.
+			var cable_y: float = Sim.ZIP_HEIGHT + RIDER_HEIGHT + CABLE_CLEARANCE - 0.2
+			_zip_model.position = Vector3(0.0, cable_y - target_y - _zip_top * _zip_scale, 0.0)
+			var aim_d: Vector3 = (_aim_point - Vector3(x, target_y + 1.5, dist)) if _aim_ok else Vector3(-1.0, 0.0, 1.0)
+			var yaw: float = clampf(atan2(aim_d.z, -aim_d.x), 0.35, PI - 0.35)
+			_zip_model.rotation.y = lerp_angle(_zip_model.rotation.y, yaw, clampf(delta * 8.0, 0.0, 1.0))
+			_zip_model.rotation.z = sin(dist * 0.6) * 0.1
 	_rider.rotation.z = (-(x - _prev_x) * 6.0) if not zipping else sin(dist * 0.6) * 0.12
 	_prev_x = x
 	_sparks.position = Vector3(x, -0.2, dist - 0.8)
@@ -2226,7 +2325,7 @@ func _update_aim() -> void:
 func _update_gun(delta: float) -> void:
 	if _gun_pivot == null or _rider == null:
 		return
-	_gun_pivot.visible = bool(_sim.can_shoot())
+	_gun_pivot.visible = bool(_sim.can_shoot()) and not (_zip_model != null and bool(_sim.is_ziplining()))
 	var k: float = clampf(delta * 20.0, 0.0, 1.0)
 	var reloading: bool = bool(_sim.is_reloading())
 	var target_q: Quaternion = Quaternion.IDENTITY
@@ -2344,6 +2443,7 @@ func _on_cart_wrecked(lane: int, cause: String) -> void:
 	fx["z"] = float(_sim.get_distance())
 	fx["spin"] = 1.0 if _rng.randf() < 0.5 else -1.0
 	var lx: float = float(_lane_xs()[lane])
+	_spawn_wreck_halves(lane, lx)
 	if _debris:
 		_debris.position = Vector3(lx, 0.4, float(_sim.get_distance()) + 0.5)
 		_debris.restart()
@@ -2352,6 +2452,50 @@ func _on_cart_wrecked(lane: int, cause: String) -> void:
 	_shake = maxf(_shake, 1.3 if mine else 0.6)
 	_popup("CART SMASHED" if cause == "boulder" else "RAIL ENDS", C_DANGER,
 		Vector3(lx, 2.6, float(_sim.get_distance()) + 3.0))
+
+## The founder's cart scene shipped two broken halves; a smashed cart becomes those
+## halves flying apart (the whole-cart tumble stays as the fallback).
+func _spawn_wreck_halves(lane: int, lx: float) -> void:
+	if not ResourceLoader.exists(WRECK_A_MODEL) or lane >= _carts.size():
+		return
+	(_carts[lane] as Node3D).visible = false
+	(_cart_fx[lane] as Dictionary)["state"] = "dead"
+	var d: float = float(_sim.get_distance())
+	var k: int = 0
+	for path in [WRECK_A_MODEL, WRECK_B_MODEL]:
+		var n: Node3D = _inst(path)
+		if n == null:
+			continue
+		var holder := Node3D.new()
+		holder.position = Vector3(lx, CART_Y, d)
+		_world.add_child(holder)
+		_fit_on_rail(n, LEAF_CART_LEN, CART_Y)
+		holder.add_child(n)
+		var side: float = -1.0 if k == 0 else 1.0
+		_wreck_pieces.append({"node": holder, "t": 0.0,
+			"vel": Vector3(side * _rng.randf_range(2.5, 4.5), _rng.randf_range(4.0, 6.5), _rng.randf_range(3.0, 7.0)),
+			"spin": Vector3(_rng.randf_range(-6, 6), _rng.randf_range(-4, 4), side * _rng.randf_range(4, 8))})
+		k += 1
+
+func _update_wrecks(delta: float) -> void:
+	var keep: Array = []
+	for w in _wreck_pieces:
+		var wd: Dictionary = w
+		var n: Node3D = wd["node"]
+		if n == null or not is_instance_valid(n):
+			continue
+		var t: float = float(wd["t"]) + delta
+		wd["t"] = t
+		var v: Vector3 = wd["vel"]
+		v.y -= 20.0 * delta
+		wd["vel"] = v
+		n.position += v * delta
+		n.rotation += (wd["spin"] as Vector3) * delta
+		if t > 2.2:
+			n.queue_free()
+		else:
+			keep.append(wd)
+	_wreck_pieces = keep
 
 func _on_cart_spawned(lane: int) -> void:
 	if lane < 0 or lane >= _cart_fx.size():
