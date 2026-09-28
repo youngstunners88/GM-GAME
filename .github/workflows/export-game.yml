@@ -252,7 +252,7 @@ jobs:
           custom_features=""
           export_filter="all_resources"
           include_filter="config.json,src/autoload/share_taglines.json"
-          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,portals/*,node_modules/*,.godot-cache/*,artifacts/*"
+          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*"
           export_path="web/game/index.html"
           script_export_mode=1
           script_encryption_key=""
@@ -299,8 +299,10 @@ jobs:
           # background. Render the real scenes with the web-compatible driver.
           sudo apt-get update -qq
           sudo apt-get install -y xvfb libgl1-mesa-dri
-          mkdir -p portal-captures
-          SHOT_OUT="$PWD/portal-captures" timeout 90 xvfb-run -a "$GODOT_BIN" \
+          # Review PNGs must stay outside res://: all_resources also packages
+          # generated images, and the complete station proofs exceed 20 MB.
+          mkdir -p "$RUNNER_TEMP/portal-captures"
+          SHOT_OUT="$RUNNER_TEMP/portal-captures" timeout 90 xvfb-run -a "$GODOT_BIN" \
             --rendering-method gl_compatibility --rendering-driver opengl3 \
             --resolution 1280x720 res://tests/portal_capture_tool.tscn 2>&1 | tee portal-render.log
           test "$(grep -c 'PORTAL VISIBILITY:' portal-render.log)" -eq 3
@@ -312,7 +314,7 @@ jobs:
         with:
           name: portal-room-proof
           path: |
-            portal-captures/
+            ${{ runner.temp }}/portal-captures/
             portal-tests.log
             portal-render.log
           retention-days: 14
