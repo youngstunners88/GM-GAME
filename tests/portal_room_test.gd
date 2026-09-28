@@ -148,6 +148,7 @@ func _test_skin(skin: Dictionary) -> void:
 		return
 
 	_test_structure(room, protocol)
+	await _test_exploration(room, protocol)
 
 	_check(room.has_method("test_run"), "%s: room exposes test_run()" % protocol)
 	var passed_result: Dictionary = room.call("test_run", key)
@@ -203,6 +204,18 @@ func _test_skin(skin: Dictionary) -> void:
 
 
 func _test_structure(room: Node, protocol: String) -> void:
+	# Regression: the old full-map slab at -50 hid all backdrop art at -100.
+	var backdrop := room.get_node("Backdrop") as Node2D
+	var slab := room.get_node("FloorSlab") as ColorRect
+	_check(slab.z_index < backdrop.z_index,
+		"%s: opaque map base is behind the visible scenery" % protocol)
+	for stop_id in room.get("_required_learning_stops"):
+		var fixture := room.get_node_or_null("Stop_%s/Fixture" % stop_id) as Node2D
+		_check(fixture != null and fixture.is_visible_in_tree(),
+			"%s: %s has visible mechanism furniture" % [protocol, stop_id])
+	_check(room.get_node_or_null("Stop_exam/Fixture") != null,
+		"%s: examiner has a desk" % protocol)
+
 	# Strip width.
 	var width: float = 0.0
 	if room.has_method("get_strip_width"):
@@ -237,6 +250,29 @@ func _test_structure(room: Node, protocol: String) -> void:
 	_check(has_video, "%s: video stop exists" % protocol)
 
 	_check(_room_has_player(room), "%s: player is in the group and in the room" % protocol)
+
+
+func _test_exploration(room: Node, protocol: String) -> void:
+	# Exercise the real arrival Areas after the spawn tween completes. Furniture
+	# must not prevent reaching a stop or alter the learning/quiz gate.
+	await create_timer(1.0).timeout
+	room.call("start_exam")
+	_check(bool(room.call("is_overlay_open")), "%s: unexplored exam shows gate" % protocol)
+	room.call("_close_overlay_ui")
+	var player := room.get_node("Player") as Node2D
+	player.set_physics_process(false)
+	for stop_id in room.get("_required_learning_stops"):
+		var stop := room.get_node("Stop_%s" % stop_id) as Node2D
+		player.global_position = stop.global_position + Vector2(0, -80)
+		for frame in range(4):
+			await physics_frame
+	var visited: Dictionary = room.get("_visited_learning_stops")
+	var required: Array = room.get("_required_learning_stops")
+	_check(visited.size() == required.size(), "%s: every furnished stop is reachable" % protocol)
+	room.call("open_whitepaper")
+	var session: RefCounted = room.get("session")
+	_check(String(session.get("study_path")) == "whitepaper", "%s: study still records progress" % protocol)
+	room.call("close_overlay")
 
 
 func _leader_texture_path(node: Node) -> String:

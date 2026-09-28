@@ -1,0 +1,95 @@
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+PORTAL ROOMS: starting
+[PASS] room_scene_for(smoke)
+[PASS] room_scene_for(diamonds)
+[PASS] room_scene_for(gold)
+[PASS] room_scene_for(unknown) falls back to smoke
+[PASS] consume_return refuses a mismatched protocol
+[PASS] consume_return accepts the matching return once
+[PASS] consume_return is one-shot
+[PASS] portal scripts found to scan (14)
+[PASS] no forbidden tokens in 14 portal .gd files
+[PASS] SMOKE has a distinct explorable landmark set
+[PASS] DIAMONDS has a distinct explorable landmark set
+[PASS] GOLD has a distinct explorable landmark set
+[PASS] exam is protected by the knowledge gate
+[PASS] learning-stop progress is tracked
+[PASS] whitepaper interaction includes an in-game field guide
+[PASS] protocol stops use authored two-dimensional map positions
+[PASS] maps contain hub-and-spoke exploration paths
+[PASS] portal maps use the four-direction explorer
+[PASS] skin scene exists: res://src/protocol_portals/rooms/smoke/ReadingRing.tscn
+[PASS] smoke: answer key has 11 entries
+[BUILD] Lil Blunt Adventure — build dev-local
+[PASS] smoke: ground substrate and backdrop exist
+[PASS] smoke: opaque ground stays behind the visible backdrop
+[PASS] smoke: strip width 2800 >= 1800
+[PASS] smoke: Companion node exists
+[PASS] smoke: Companion Sprite2D uses a leader still (res://src/assets/portals/companions/pauly_the_smokest.png)
+[PASS] smoke: >= 3 portal_stop nodes (found 6)
+[PASS] smoke: whitepaper stop exists
+[PASS] smoke: video stop exists
+[PASS] smoke: player is in the group and in the room
+[PASS] smoke: room exposes test_run()
+[PASS] smoke: perfect run passes
+[PASS] smoke: perfect run scores 11/11 (got 11/11)
+[PASS] smoke: completion pins token id portal_smoke
+[PASS] smoke: all-wrong run fails
+[PASS] smoke: all-wrong run scores 0
+[PASS] smoke: proceed_without_pass makes the run scorecard-eligible
+[PASS] smoke: mark_eligible writes a record
+[PASS] smoke: record carries token id portal_smoke
+[PASS] smoke: record is marked eligible
+[PASS] smoke: record is marked minted=false
+[PASS] smoke: scorecard table contains portal_smoke
+[PASS] smoke: stored record is minted=false
+[PASS] skin scene exists: res://src/protocol_portals/rooms/diamonds/PressureStudy.tscn
+[PASS] diamonds: answer key has 11 entries
+[PASS] diamonds: ground substrate and backdrop exist
+[PASS] diamonds: opaque ground stays behind the visible backdrop
+[PASS] diamonds: strip width 2800 >= 1800
+[PASS] diamonds: Companion node exists
+[PASS] diamonds: Companion Sprite2D uses a leader still (res://src/assets/portals/companions/kane_the_blaze_mechanic.png)
+[PASS] diamonds: >= 3 portal_stop nodes (found 7)
+[PASS] diamonds: whitepaper stop exists
+[PASS] diamonds: video stop exists
+[PASS] diamonds: player is in the group and in the room
+[PASS] diamonds: room exposes test_run()
+[PASS] diamonds: perfect run passes
+[PASS] diamonds: perfect run scores 11/11 (got 11/11)
+[PASS] diamonds: completion pins token id portal_diamonds
+[PASS] diamonds: all-wrong run fails
+[PASS] diamonds: all-wrong run scores 0
+[PASS] diamonds: proceed_without_pass makes the run scorecard-eligible
+[PASS] diamonds: mark_eligible writes a record
+[PASS] diamonds: record carries token id portal_diamonds
+[PASS] diamonds: record is marked eligible
+[PASS] diamonds: record is marked minted=false
+[PASS] diamonds: scorecard table contains portal_diamonds
+[PASS] diamonds: stored record is minted=false
+[PASS] skin scene exists: res://src/protocol_portals/rooms/gold/ClaimOffice.tscn
+[PASS] gold: answer key has 11 entries
+[PASS] gold: ground substrate and backdrop exist
+[PASS] gold: opaque ground stays behind the visible backdrop
+[PASS] gold: strip width 2800 >= 1800
+[PASS] gold: Companion node exists
+[PASS] gold: Companion Sprite2D uses a leader still (res://src/assets/portals/companions/rich_the_claim_recorder.png)
+[PASS] gold: >= 3 portal_stop nodes (found 7)
+[PASS] gold: whitepaper stop exists
+[PASS] gold: video stop exists
+[PASS] gold: player is in the group and in the room
+[PASS] gold: room exposes test_run()
+[PASS] gold: perfect run passes
+[PASS] gold: perfect run scores 11/11 (got 11/11)
+[PASS] gold: completion pins token id portal_gold
+[PASS] gold: all-wrong run fails
+[PASS] gold: all-wrong run scores 0
+[PASS] gold: proceed_without_pass makes the run scorecard-eligible
+[PASS] gold: mark_eligible writes a record
+[PASS] gold: record carries token id portal_gold
+[PASS] gold: record is marked eligible
+[PASS] gold: record is marked minted=false
+[PASS] gold: scorecard table contains portal_gold
+[PASS] gold: stored record is minted=false
+PORTAL ROOMS: ALL PASS

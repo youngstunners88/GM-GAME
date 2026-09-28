@@ -62,3 +62,5 @@
   void 0.05, but ship=block 0.72 — notes cite start-frame balloon/name clipped at the left edge and
   truncated stop labels. Next: fix the clipping, then one new vote.
   Spend: Opus $1.01 (cap $1.20), Qwen $0.19, DeepSeek ~$0.01, ElevenLabs 11 clips.
+
+- IN REVIEW 2026-09-27 — education-world skills and backdrop occlusion patch. Three reference-grounded skills plus route proposals in portals/20_rooms/world-design; FloorSlab moved below Backdrop. Godot 4.3 portal room test: 90 PASS; baseline layer order fails 3 new checks. New terrain assets, exported visual evidence and release gates remain OPEN.

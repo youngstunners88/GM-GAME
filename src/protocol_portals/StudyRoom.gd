@@ -25,6 +25,7 @@ const VideoShrineScript := preload("res://src/protocol_portals/VideoShrine.gd")
 const ExaminerScript := preload("res://src/protocol_portals/Examiner.gd")
 const TourStopScript := preload("res://src/protocol_portals/TourStop.gd")
 const CompanionScript := preload("res://src/protocol_portals/Companion.gd")
+const FixtureScript := preload("res://src/protocol_portals/RoomFixture.gd")
 
 @export var protocol: String = "smoke"
 @export var stage_id: int = 1
@@ -148,6 +149,7 @@ func _ready() -> void:
 		_data = raw
 	_plan_stops()
 	_build_backdrop()
+	_add_painted_map()
 	_build_protocol_landmarks()
 	_build_map_paths()
 	_build_floor_and_walls()
@@ -268,21 +270,21 @@ func _glow_color() -> Color:
 func _top_color() -> Color:
 	match protocol:
 		"diamonds":
-			return Color(0.03, 0.07, 0.17)
+			return Color(0.12, 0.18, 0.28)
 		"gold":
-			return Color(0.14, 0.09, 0.05)
+			return Color(0.27, 0.21, 0.14)
 		_:
-			return Color(0.05, 0.13, 0.09)
+			return Color(0.16, 0.22, 0.19)
 
 
 func _bottom_color() -> Color:
 	match protocol:
 		"diamonds":
-			return Color(0.01, 0.02, 0.06)
+			return Color(0.07, 0.10, 0.16)
 		"gold":
-			return Color(0.05, 0.03, 0.02)
+			return Color(0.14, 0.10, 0.07)
 		_:
-			return Color(0.02, 0.05, 0.04)
+			return Color(0.08, 0.12, 0.10)
 
 
 func _slab_color() -> Color:
@@ -354,6 +356,31 @@ func _plan_stops() -> void:
 
 # ---- Backdrop ---------------------------------------------------------------
 
+## Founder 2026-09-28: "expansive like Warcraft, walking on a mapped-out section".
+## A painted overhead map (MuAPI Flux, Jev-picked, scripts/gen_portal_maps.py) is
+## laid over the procedural backdrop inside the Backdrop layer, so stops, props,
+## the companion and the player all still draw on top of it.
+const PAINTED_MAPS: Dictionary = {
+	"smoke": "res://src/assets/portals/maps/map_smoke.jpg",
+	"diamonds": "res://src/assets/portals/maps/map_diamonds.jpg",
+	"gold": "res://src/assets/portals/maps/map_gold.jpg",
+}
+
+func _add_painted_map() -> void:
+	var path: String = String(PAINTED_MAPS.get(protocol, ""))
+	var layer: Node = get_node_or_null("Backdrop")
+	if path.is_empty() or layer == null or not ResourceLoader.exists(path):
+		return
+	var map := TextureRect.new()
+	map.name = "PaintedMap"
+	map.texture = load(path)
+	map.position = Vector2.ZERO
+	map.size = Vector2(strip_width, ROOM_H)
+	map.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	map.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	map.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(map)
+
 func _build_backdrop() -> void:
 	var layer := Node2D.new()
 	layer.name = "Backdrop"
@@ -378,6 +405,26 @@ func _build_backdrop() -> void:
 	bg.stretch_mode = TextureRect.STRETCH_SCALE
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(bg)
+
+	# Stone courses give the four-direction map a continuous, readable surface.
+	# Keep all scenery above FloorSlab; an opaque slab above this layer used to
+	# erase the whole room while every node-existence test still passed.
+	var masonry := Node2D.new()
+	masonry.name = "Masonry"
+	layer.add_child(masonry)
+	for row in range(1, 12):
+		var seam := Line2D.new()
+		seam.width = 2.0
+		seam.default_color = Color(0.65, 0.69, 0.67, 0.12)
+		seam.points = PackedVector2Array([Vector2(0, row * 96), Vector2(strip_width, row * 96)])
+		masonry.add_child(seam)
+		for col in range(12):
+			var joint := Line2D.new()
+			var px: float = col * 256.0 + (128.0 if row % 2 else 0.0)
+			joint.width = 2.0
+			joint.default_color = seam.default_color
+			joint.points = PackedVector2Array([Vector2(px, (row - 1) * 96), Vector2(px, row * 96)])
+			masonry.add_child(joint)
 
 	# Distant pillars so the camera pan reads as movement.
 	var x: float = 360.0
@@ -434,7 +481,7 @@ func _build_backdrop() -> void:
 	add_child(vig_layer)
 	var vig_grad := Gradient.new()
 	vig_grad.set_color(0, Color(0.0, 0.0, 0.0, 0.0))
-	vig_grad.set_color(1, Color(0.0, 0.0, 0.0, 0.55))
+	vig_grad.set_color(1, Color(0.0, 0.0, 0.0, 0.22))
 	var vig_tex := GradientTexture2D.new()
 	vig_tex.gradient = vig_grad
 	vig_tex.fill = GradientTexture2D.FILL_RADIAL
@@ -533,13 +580,26 @@ func _build_smoke_landmarks(layer: Node2D) -> void:
 			points.append(Vector2(1180.0, 360.0) + Vector2(cos(a), sin(a)) * (80.0 + i * 28.0))
 		ring.points = points
 		layer.add_child(ring)
-	for x in [1850.0, 2410.0]:
-		var plume := Polygon2D.new()
-		# Neutral archive vapour: protocol-green translucent fills are rejected by
-		# the cross-stage smudge gate because they wash over every backdrop.
-		plume.color = Color(0.72, 0.74, 0.76, 0.18)
-		plume.polygon = PackedVector2Array([Vector2(x - 120.0, FLOOR_Y), Vector2(x + 120.0, FLOOR_Y), Vector2(x + 55.0, 170.0), Vector2(x - 35.0, 260.0)])
-		layer.add_child(plume)
+	# Archive shelves frame the reading area instead of giant opaque-looking
+	# vapor wedges. The furniture is visible from the whitepaper/video stops.
+	for x in [1810.0, 2120.0, 2500.0]:
+		var shelf := Node2D.new()
+		shelf.name = "ArchiveShelf%d" % int(x)
+		shelf.position = Vector2(x, 190.0)
+		layer.add_child(shelf)
+		for row in range(3):
+			var board := ColorRect.new()
+			board.position = Vector2(-105, row * 62)
+			board.size = Vector2(210, 10)
+			board.color = Color("80644d")
+			shelf.add_child(board)
+			for col in range(10):
+				var book := ColorRect.new()
+				var height: float = 30.0 + float((col * 7 + row * 3) % 17)
+				book.position = Vector2(-98 + col * 20, row * 62 - height)
+				book.size = Vector2(15, height)
+				book.color = [Color("718a7b"), Color("bda777"), Color("805e53"), Color("64818e")][(col + row) % 4]
+				shelf.add_child(book)
 
 
 func _build_diamond_landmarks(layer: Node2D) -> void:
@@ -592,7 +652,8 @@ func _build_floor_and_walls() -> void:
 	slab.position = Vector2.ZERO
 	slab.size = Vector2(strip_width, ROOM_H)
 	slab.color = _slab_color()
-	slab.z_index = -50
+	# This is the map's base, not a foreground overlay. Backdrop is at -100.
+	slab.z_index = -110
 	add_child(slab)
 
 	var trim := ColorRect.new()
@@ -832,6 +893,14 @@ func _build_stop(entry: Dictionary, map_position: Vector2) -> void:
 	stop.call("setup", id, _s2(entry, "name", id), line, _glow, pedestal, label_y)
 	add_child(stop)
 	stop.connect("reached", _on_stop_reached)
+	if id in _required_learning_stops or id == "exam":
+		var fixture := FixtureScript.new()
+		fixture.name = "Fixture"
+		fixture.kind = id
+		fixture.accent = _glow
+		# Above paths/landmarks, below the actors and labels.
+		fixture.z_index = -2
+		stop.add_child(fixture)
 	match id:
 		"paper":
 			_dress_paper(stop)
