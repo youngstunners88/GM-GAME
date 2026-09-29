@@ -58,6 +58,10 @@ var _data: Dictionary = {}
 var _glow: Color = Color(0.35, 1.0, 0.45)
 var _stop_plan: Array[Dictionary] = []
 var _stop_lines: Dictionary = {}
+## Several aspects per stop so a returning player hears something new, not a repeat.
+var _stop_aspects: Dictionary = {}
+var _stop_visits: Dictionary = {}
+var _stop_current: Dictionary = {}
 var _visited_learning_stops: Dictionary = {}
 var _required_learning_stops: Array[String] = []
 var _objective_label: Label = null
@@ -634,6 +638,9 @@ func _build_stop(entry: Dictionary, map_position: Vector2) -> void:
 	var id: String = _s2(entry, "id")
 	var line: String = _s2(entry, "line")
 	_stop_lines[id] = line
+	var aspects: Variant = entry.get("aspects", [])
+	if typeof(aspects) == TYPE_ARRAY and not (aspects as Array).is_empty():
+		_stop_aspects[id] = aspects
 	var stop := TourStopScript.new()
 	stop.name = "Stop_%s" % id
 	stop.position = map_position
@@ -666,7 +673,7 @@ func _activate_stop(id: String) -> void:
 			_open_overlay()
 			var stop := get_node("Stop_" + id)
 			_add_label(String(stop.stop_name), 26, _glow)
-			_add_label(String(_stop_lines[id]), 22, Color("eee1c3"))
+			_add_label(_current_aspect(id), 21, Color("eee1c3"))
 			_add_button("CONTINUE EXPLORING", _close_overlay_ui)
 
 
@@ -676,11 +683,29 @@ func _on_stop_reached(stop_id: String) -> void:
 		_update_objective()
 	if _companion == null or _overlay_open:
 		return
-	var line: String = String(_stop_lines.get(stop_id, ""))
-	_companion.call("say", line)
-	# Optional ElevenLabs bark of the same locked line; silent if no clip exists.
-	if stop_id in _required_learning_stops:
-		_companion.call("play_voice", "res://src/assets/portals/vo/%s_%s.mp3" % [protocol, stop_id])
+	var idx := _next_aspect(stop_id)
+	var text := _current_aspect(stop_id)
+	_companion.call("say", text, clampf(3.0 + float(text.length()) / 14.0, 5.0, 14.0))
+	# ElevenLabs read of the same aspect (Pauly / Kane / Rich); silent if no clip exists.
+	_companion.call("play_voice", "res://src/assets/portals/vo/%s_%s_%d.mp3" % [protocol, stop_id, idx])
+
+
+## Advance to the next aspect of this stop (wraps), so revisits bring a new angle.
+func _next_aspect(stop_id: String) -> int:
+	var aspects: Array = _stop_aspects.get(stop_id, [])
+	if aspects.is_empty():
+		return 0
+	var visits: int = int(_stop_visits.get(stop_id, 0))
+	_stop_visits[stop_id] = visits + 1
+	_stop_current[stop_id] = visits % aspects.size()
+	return int(_stop_current[stop_id])
+
+
+func _current_aspect(stop_id: String) -> String:
+	var aspects: Array = _stop_aspects.get(stop_id, [])
+	if aspects.is_empty():
+		return String(_stop_lines.get(stop_id, ""))
+	return String(aspects[int(_stop_current.get(stop_id, 0)) % aspects.size()])
 
 
 # ---- Player + companion -----------------------------------------------------
