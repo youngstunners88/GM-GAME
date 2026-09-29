@@ -58,6 +58,7 @@ export_presets.cfg
 # These three authored presets preserve alpha and use high-quality WebP in the
 # web pack; regenerating lossless defaults adds several MB near itch's cap.
 !src/assets/portals/fixtures/*.png.import
+!src/assets/portals/maps/map_diamonds_courtyard.png.import
 
 # === Engine: Unity ===
 [Ll]ibrary/

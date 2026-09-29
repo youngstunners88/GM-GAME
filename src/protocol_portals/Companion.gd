@@ -231,22 +231,31 @@ func is_talking() -> bool:
 func _physics_process(delta: float) -> void:
 	if not is_instance_valid(target):
 		return
-	# Follow the player's recent footsteps instead of cutting across hedges or
-	# the chasm on the inside of a bend. Keep roughly 85px of walking distance.
-	if _trail.is_empty() or _trail.back().distance_to(target.position) > 10.0:
-		_trail.append(target.position)
+	# Record only safe footsteps, using exactly the explorer's ground constraint.
+	var room := get_parent()
+	var footstep: Vector2 = target.position
+	if room.has_method("constrain_to_ground"):
+		footstep = room.constrain_to_ground(footstep)
+	if _trail.is_empty() or _trail.back().distance_to(footstep) > 8.0:
+		_trail.append(footstep)
 	var length := position.distance_to(_trail[0])
 	for i in range(1, _trail.size()):
 		length += _trail[i - 1].distance_to(_trail[i])
 	var before := position
-	if length > 85.0:
-		position = position.move_toward(_trail[0], 250.0 * delta)
-		if position.distance_to(_trail[0]) < 4.0 and _trail.size() > 1:
+	# Spend the whole movement budget across short trail segments. The previous
+	# one-node-per-frame follower lost speed on turns and lagged behind forever.
+	var budget := minf(maxf(length - 78.0, 0.0), (310.0 if length > 180.0 else 250.0) * delta)
+	while budget > 0.01 and not _trail.is_empty():
+		var next: Vector2 = _trail[0]
+		var step := minf(budget, position.distance_to(next))
+		position = position.move_toward(next, step)
+		budget -= step
+		if position.distance_to(next) < 0.5:
 			_trail.pop_front()
-	if _trail.size() > 120:
-		_trail.pop_front()
-	if get_parent().has_method("constrain_to_ground"):
-		position = get_parent().constrain_to_ground(position)
+		else:
+			break
+	if room.has_method("constrain_to_ground"):
+		position = room.constrain_to_ground(position)
 	z_index = int(position.y)
 	if _visual != null:
 		if absf(target.position.x - position.x) > 4.0:
