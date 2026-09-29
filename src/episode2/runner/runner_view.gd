@@ -205,6 +205,8 @@ static var debug_off: Dictionary = {}
 ## TEST-ONLY (tools/ep2_shots): when set, [pos, look_at] replaces the gameplay camera, so a
 ## capture can look straight at one prop (a bear on its ledge, a coin) from any angle.
 static var debug_cam: Array = []
+## TEST-ONLY (tools/ep2_shots): force one rider clip by name (contact-sheet of every clip from the game camera).
+static var debug_clip: String = ""
 
 var _sim: Node = null
 var _world: Node3D = null
@@ -2248,7 +2250,11 @@ func _update_rider(dist: float, delta: float) -> void:
 	if _rider_anim:
 		var mood: String = Motion.pick_rider(zipping, ducking, y > 0.05 and not zipping,
 			bool(_sim.is_reloading()), _t_hit, _t_shot, _t_swipe, _t_hop, _t_cheer)
-		_rider_anim.want(mood)
+		if debug_clip != "":
+			if _rider_anim.player and _rider_anim.player.current_animation != debug_clip and _rider_anim.player.has_animation(debug_clip):
+				_rider_anim.player.play(debug_clip)
+		else:
+			_rider_anim.want(mood)
 	var spd: float = float(_sim.get_speed()) if _sim.has_method("get_speed") else Sim.RUN_SPEED
 	_danger_t = Motion.danger_eta(_sim, lane, dist, spd) if not zipping else INF
 	if _emote:

@@ -61,10 +61,15 @@ func _ready() -> void:
 		if frames % 2 == 0:
 			get_viewport().warp_mouse(Vector2(float(aim[0]), float(aim[1])))
 		if live.get_distance() >= marks[next]:
+			var cl: PackedStringArray = str(args.get("clips", "")).split(",", false)
+			if next < cl.size():
+				RunnerView.debug_clip = cl[next]
+				for _i in 30:
+					await get_tree().process_frame
 			for _i in 4:
 				await get_tree().process_frame
 			var img: Image = get_viewport().get_texture().get_image()
-			var path: String = "%s/d%04d.png" % [out, int(marks[next])]
+			var path: String = ("%s/d%04d.png" % [out, int(marks[next])]) if str(args.get("clips", "")) == "" else ("%s/c%02d_%s.png" % [out, next, RunnerView.debug_clip])
 			img.save_png(path)
 			print("SHOT ", path, " ", img.get_size())
 			next += 1
