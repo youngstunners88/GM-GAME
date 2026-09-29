@@ -55,6 +55,9 @@ export_presets.cfg
 # from the source assets on every run and only ever commits web/game/, so
 # nothing depends on them being in the repo.
 *.import
+# These three authored presets preserve alpha and use high-quality WebP in the
+# web pack; regenerating lossless defaults adds several MB near itch's cap.
+!src/assets/portals/fixtures/*.png.import
 
 # === Engine: Unity ===
 [Ll]ibrary/

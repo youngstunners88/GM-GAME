@@ -19,7 +19,7 @@ const FOLLOW_RATE: float = 5.0
 const PLAYER_HALF: float = 16.0
 const BALLOON_W: float = 340.0
 const BALLOON_H: float = 84.0
-const TALK_SEC: float = 4.0
+const TALK_SEC: float = 6.0
 
 var target: Node2D = null
 var display_name: String = ""
@@ -42,6 +42,7 @@ var _bob: float = 0.0
 var _facing: float = 1.0
 var _last_tx: float = 0.0
 var _has_last: bool = false
+var _trail: Array[Vector2] = []
 
 
 static func name_for(protocol_id: String) -> String:
@@ -111,12 +112,13 @@ func _build() -> void:
 	_name_label.add_theme_constant_override("outline_size", 6)
 	_name_label.add_theme_stylebox_override("normal", _dark_style(0.75, 8))
 	_name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_name_label.visible = false
 	add_child(_name_label)
 
 	_balloon = Panel.new()
 	_balloon.name = "TalkBalloon"
-	_balloon.size = Vector2(BALLOON_W, BALLOON_H)
-	_balloon.position = Vector2(-BALLOON_W * 0.5, -DISPLAY_H - 46.0 - BALLOON_H)
+	_balloon.size = Vector2(540, 100)
+	_balloon.position = Vector2(28, 582)
 	_balloon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var sb: StyleBoxFlat = _dark_style(0.9, 12)
 	sb.border_color = Color(glow.r, glow.g, glow.b, 0.9)
@@ -124,14 +126,19 @@ func _build() -> void:
 	_balloon.add_theme_stylebox_override("panel", sb)
 	_balloon.z_index = 60
 	_balloon.visible = false
-	add_child(_balloon)
+	# Dialogue lives below the map view, not across the prop and its prompt.
+	var dialogue := CanvasLayer.new()
+	dialogue.name = "DialogueLayer"
+	dialogue.layer = 10
+	add_child(dialogue)
+	dialogue.add_child(_balloon)
 
 	_balloon_label = Label.new()
 	_balloon_label.name = "BalloonText"
 	_balloon_label.position = Vector2(10.0, 6.0)
-	_balloon_label.size = Vector2(BALLOON_W - 20.0, BALLOON_H - 12.0)
+	_balloon_label.size = Vector2(516, 84)
 	_balloon_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_balloon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_balloon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_balloon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_balloon_label.add_theme_font_size_override("font_size", 15)
 	_balloon_label.add_theme_color_override("font_color", Color(0.94, 0.97, 0.97))
@@ -201,7 +208,7 @@ func _dark_style(alpha: float, radius: int) -> StyleBoxFlat:
 func say(text: String, seconds: float = TALK_SEC) -> void:
 	if _balloon == null or text.is_empty():
 		return
-	_balloon_label.text = text
+	_balloon_label.text = display_name + "\n" + text
 	_balloon.visible = true
 	_balloon_left = seconds
 
@@ -222,33 +229,33 @@ func is_talking() -> bool:
 
 
 func _physics_process(delta: float) -> void:
-	var moving: bool = false
-	if target != null and is_instance_valid(target):
-		var tx: float = target.global_position.x + PLAYER_HALF
-		if _has_last:
-			var dx: float = tx - _last_tx
-			if dx > 0.5:
-				_facing = 1.0
-			elif dx < -0.5:
-				_facing = -1.0
-		_last_tx = tx
-		_has_last = true
-		var desired: float = clampf(tx + FOLLOW_OFFSET * _facing, min_x, max_x)
-		var before: float = position.x
-		position.x = lerpf(position.x, desired, 1.0 - exp(-FOLLOW_RATE * delta))
-		# Protocol maps are top-down spaces: follow along both axes rather than
-		# remaining pinned to the old classroom floor line.
-		position.y = lerpf(position.y, target.global_position.y + 26.0,
-			1.0 - exp(-FOLLOW_RATE * delta))
-		moving = absf(position.x - before) > 0.3
-		if _visual != null and absf(tx - position.x) > 4.0:
-			_visual.scale.x = -1.0 if tx < position.x else 1.0
-	if moving:
-		_bob_t += delta * 10.0
-		_bob = -absf(sin(_bob_t)) * 3.0
-	else:
-		_bob = lerpf(_bob, 0.0, clampf(delta * 10.0, 0.0, 1.0))
+	if not is_instance_valid(target):
+		return
+	# Follow the player's recent footsteps instead of cutting across hedges or
+	# the chasm on the inside of a bend. Keep roughly 85px of walking distance.
+	if _trail.is_empty() or _trail.back().distance_to(target.position) > 10.0:
+		_trail.append(target.position)
+	var length := position.distance_to(_trail[0])
+	for i in range(1, _trail.size()):
+		length += _trail[i - 1].distance_to(_trail[i])
+	var before := position
+	if length > 85.0:
+		position = position.move_toward(_trail[0], 250.0 * delta)
+		if position.distance_to(_trail[0]) < 4.0 and _trail.size() > 1:
+			_trail.pop_front()
+	if _trail.size() > 120:
+		_trail.pop_front()
+	if get_parent().has_method("constrain_to_ground"):
+		position = get_parent().constrain_to_ground(position)
+	z_index = int(position.y)
 	if _visual != null:
+		if absf(target.position.x - position.x) > 4.0:
+			_visual.scale.x = -1.0 if target.position.x < position.x else 1.0
+		if position.distance_to(before) > 0.3:
+			_bob_t += delta * 10.0
+			_bob = -absf(sin(_bob_t)) * 2.0
+		else:
+			_bob = lerpf(_bob, 0.0, clampf(delta * 10.0, 0.0, 1.0))
 		_visual.position.y = _bob
 
 
