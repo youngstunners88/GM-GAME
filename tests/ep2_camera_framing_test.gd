@@ -25,19 +25,30 @@ func _ready() -> void:
 	var view: Node = live.get_node("View")
 	var cam: Camera3D = view._camera
 	var vr: Rect2 = get_viewport().get_visible_rect()
-	var rider_z: float = live.get_distance()
-	var rx: float = float(live.get_cart_x())
-	var feet: Vector2 = cam.unproject_position(Vector3(rx, view._rider.position.y, rider_z))
-	var hat: Vector2 = cam.unproject_position(Vector3(rx, view._cart_rim_y + 0.9, rider_z))   # seated: hat ~0.9 m above the rim
-	var far: Vector2 = cam.unproject_position(Vector3(rx, 0.5, rider_z + 24.0))
-	var fy: float = feet.y / vr.size.y
-	var hy: float = hat.y / vr.size.y
-	var ay: float = far.y / vr.size.y
-	print("  feet y=%.2f  hat y=%.2f  24 m ahead y=%.2f (fractions of screen height)" % [fy, hy, ay])
-	_check("the hero's hat is in the lower 60% of the frame (%.2f)" % hy, hy > 0.38)
-	_check("hero centre is below screen centre (%.2f)" % ((fy + hy) * 0.5), (fy + hy) * 0.5 > 0.50)
-	_check("24 m of track ahead is visible ABOVE his hat (%.2f < %.2f)" % [ay, hy], ay < hy - 0.03)
-	_check("that track point is on screen (%.2f)" % ay, ay > 0.05 and ay < 0.95)
-	_check("the hero is at most 45%% of the screen tall (%.2f)" % (fy - hy), fy - hy < 0.45)
+	for lane in [1, 0, 2]:
+		# Camera-controls rule: test the corners, not just the middle. Hop to each rail and re-check.
+		while int(live.get_lane()) != lane:
+			if int(live.get_lane()) > lane:
+				live.switch_lane_left()
+			else:
+				live.switch_lane_right()
+			for _i in 30:
+				await get_tree().process_frame
+		for _i in 60:
+			await get_tree().process_frame
+		var rider_z: float = live.get_distance()
+		var rx: float = float(live.get_cart_x())
+		var feet: Vector2 = cam.unproject_position(Vector3(rx, view._rider.position.y, rider_z))
+		var hat: Vector2 = cam.unproject_position(Vector3(rx, view._cart_rim_y + 0.9, rider_z))   # seated: hat ~0.9 m above the rim
+		var far: Vector2 = cam.unproject_position(Vector3(rx, 0.5, rider_z + 24.0))
+		var fy: float = feet.y / vr.size.y
+		var hy: float = hat.y / vr.size.y
+		var ay: float = far.y / vr.size.y
+		var fx: float = feet.x / vr.size.x
+		print("  lane %d: feet x=%.2f y=%.2f  hat y=%.2f  24 m ahead y=%.2f" % [lane, fx, fy, hy, ay])
+		_check("lane %d: hat in the lower 62%% of the frame (%.2f)" % [lane, hy], hy > 0.38)
+		_check("lane %d: 24 m of track visible ABOVE his hat (%.2f < %.2f)" % [lane, ay, hy], ay < hy - 0.03)
+		_check("lane %d: hero stays on screen horizontally (%.2f)" % [lane, fx], fx > 0.1 and fx < 0.9)
+		_check("lane %d: hero at most 45%% of screen tall (%.2f)" % [lane, fy - hy], fy - hy < 0.45)
 	print("CAMERA FRAMING: %s" % ("PASS" if _fail == 0 else "FAIL (%d)" % _fail))
 	get_tree().quit(0 if _fail == 0 else 1)

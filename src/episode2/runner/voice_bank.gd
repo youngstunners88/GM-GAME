@@ -18,4 +18,6 @@ const CATEGORIES := {
 	"dry": {"gap": 3.0, "priority": 35, "ids": ["ep2_vo_dry_1", "ep2_vo_dry_2"]},
 	"cart_spawn": {"gap": 4.0, "priority": 25, "ids": ["ep2_vo_cart_spawn_1", "ep2_vo_cart_spawn_2"]},
 	"hop_blocked": {"gap": 2.0, "priority": 45, "ids": ["ep2_vo_hop_blocked_1", "ep2_vo_hop_blocked_2"]},
+	"run_failed": {"gap": 0.0, "priority": 110, "ids": ["ep2_vo_run_failed_1", "ep2_vo_run_failed_2", "ep2_vo_run_failed_3", "ep2_vo_run_failed_4"]},
+	"chamber_reached": {"gap": 0.0, "priority": 85, "ids": ["ep2_vo_chamber_reached_1", "ep2_vo_chamber_reached_2", "ep2_vo_chamber_reached_3", "ep2_vo_chamber_reached_4"]},
 }

@@ -300,6 +300,7 @@ var _debris: CPUParticles3D = null
 var _gold_nodes: Array = []                 # parallel to obstacles (null when not gold)
 var _gold_burst: CPUParticles3D = null
 var _streaks: CPUParticles3D = null
+var _look_x: float = 0.0
 # HUD additions.
 var _cart_strip: Control = null
 var _gold_label: Label = null
@@ -1253,6 +1254,10 @@ func _bind_hero_weapons() -> void:
 		ba.add_child(_gun_pivot)
 		_gun_pivot.position = Vector3(0.0, 0.12, 0.0)
 		_gun_pivot.scale = Vector3.ONE * 100.0 / HERO_SCALE      # armature is 0.01 scaled
+		if _gun_spin_node:
+			_gun_spin_node.visible = false
+		if _axe_pivot:
+			_axe_pivot.visible = false
 		return
 	_hero_body.add_child(_gun_pivot)
 	_gun_pivot.position = HERO_MUZZLE
@@ -1687,19 +1692,13 @@ func _build_mine_detail(length: float) -> void:
 	orb.height = 2.0
 	orb.radial_segments = 8
 	orb.rings = 4
-	# 2. Wall lantern glows between the real lantern props.
+	# 2. Lantern flame glows — ONLY on the real lantern props (`_lantern_pos`). A light needs a visible
+	# emitter (skill ep2-runner-camera-light): the old glows floated between the lanterns on stub
+	# brackets and read as white orbs hanging in the air.
 	var glows: Array[Transform3D] = []
-	var brackets: Array[Transform3D] = []
-	z = 5.0
-	var sd: float = -1.0
-	while z < length - 10.0:
-		var wx2: float = _wall_x_at(z) - 0.45
-		glows.append(Transform3D(Basis.IDENTITY.scaled(Vector3(0.16, 0.22, 0.16)), Vector3(wx2 * sd, 2.6, z)))
-		brackets.append(Transform3D(Basis.IDENTITY.scaled(Vector3(0.5, 0.08, 0.08)), Vector3((wx2 + 0.2) * sd, 2.85, z)))
-		z += 7.0
-		sd = -sd
-	_multi(orb, _mat("wall_lantern", Color(1.0, 0.72, 0.36), 5.0), glows)
-	_multi(_box(Vector3.ONE), _timber_mat(), brackets)
+	for lp in _lantern_pos:
+		glows.append(Transform3D(Basis.IDENTITY.scaled(Vector3(0.11, 0.16, 0.11)), lp))
+	_multi(orb, _mat("wall_lantern", Color(1.0, 0.68, 0.32), 2.4), glows)
 	# 3. Timber walkways high on the walls, each with a lantern.
 	var decks: Array[Transform3D] = []
 	var legs: Array[Transform3D] = []
@@ -2590,7 +2589,12 @@ func _update_camera(dist: float, delta: float) -> void:
 		_streaks.emitting = _sim.is_running() and not debug_off.has("streaks")
 		_streaks.speed_scale = spd / 20.0
 	if _camera.is_inside_tree():
-		_camera.look_at(Vector3(rx * CAM_LOOK_X, CAM_LOOK_Y, dist + CAM_LOOK_AHEAD), Vector3.UP)
+		# Smooth the look-at target on its own (camera-controls rule: position and target ease
+		# independently) so lane hops don't snap the horizon.
+		var look_t := Vector3(rx * CAM_LOOK_X, CAM_LOOK_Y, dist + CAM_LOOK_AHEAD)
+		_look_x = lerpf(_look_x, look_t.x, clampf(delta * 5.0, 0.0, 1.0))
+		look_t.x = _look_x
+		_camera.look_at(look_t, Vector3.UP)
 
 ## Mouse ray from the camera: what the reticle is over, and where the gun aims
 ## (the archer it would hit, or AIM_FALLBACK metres along the ray).
