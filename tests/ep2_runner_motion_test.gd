@@ -39,7 +39,9 @@ func _ready() -> void:
 	_check("archer idles far away", M.pick_archer(true, 9.0, 200.0) == "idle")
 
 	# Rig contract: every named clip exists in the shipped GLB.
-	for pair in [[M.RIDER_RIG, M.RIDER_CLIPS], [M.BEAR_RIG, M.BEAR_CLIPS]]:
+	# The rigged rider (seated clips) was retired 2026-09-29 for the founder's posed hero;
+	# its clip tables stay valid if the rig is ever restored, so only bears are contract-checked.
+	for pair in [[M.BEAR_RIG, M.BEAR_CLIPS]]:
 		var path: String = pair[0]
 		var table: Dictionary = pair[1]
 		_check("%s exists" % path.get_file(), ResourceLoader.exists(path))
@@ -56,6 +58,18 @@ func _ready() -> void:
 				if an.player.has_animation(lc):
 					_check("%s: %s loops" % [path.get_file(), lc], an.player.get_animation(lc).loop_mode == Animation.LOOP_LINEAR)
 		n.free()
+
+	# Hero body language (procedural, pure): recoil kicks back, chop leans forward, duck sinks.
+	var calm: Dictionary = M.hero_pose(99, 99, 99, 99, 99, false, false, false, 20.0, 0.0)
+	var shot: Dictionary = M.hero_pose(99, 0.0, 99, 99, 99, false, false, false, 20.0, 0.0)
+	var chop: Dictionary = M.hero_pose(99, 99, 0.22, 99, 99, false, false, false, 20.0, 0.0)
+	var duck: Dictionary = M.hero_pose(99, 99, 99, 99, 99, true, false, false, 20.0, 0.0)
+	var hit: Dictionary = M.hero_pose(0.0, 99, 99, 99, 99, false, false, false, 20.0, 0.0)
+	_check("hero: a shot kicks the body BACK (pitch %.2f < %.2f)" % [shot["pitch"], calm["pitch"]], float(shot["pitch"]) < float(calm["pitch"]) - 0.1)
+	_check("hero: the pickaxe chop leans FORWARD (%.2f)" % chop["pitch"], float(chop["pitch"]) > float(calm["pitch"]) + 0.5)
+	_check("hero: a duck sinks him ~a metre into the cart (%.2f)" % duck["sink"], float(duck["sink"]) > 0.8 and float(calm["sink"]) == 0.0)
+	_check("hero: a hit throws him back and drops him", float(hit["pitch"]) < -0.3 and float(hit["sink"]) > 0.1)
+	_check("hero: impulses decay (shot 0.6 s ago ~ calm)", absf(float(M.hero_pose(99, 0.6, 99, 99, 99, false, false, false, 20.0, 0.0)["pitch"]) - float(calm["pitch"])) < 0.01)
 
 	# Gun-arm aim: on the real rig, shoulder→hand must end up pointing at the target
 	# (left and right), i.e. the modifier really overrides the playing clip.
@@ -106,16 +120,65 @@ func _ready() -> void:
 	for _i in 240:
 		await get_tree().process_frame
 	var view: Node = live.get_node("View")
-	_check("rider rig is driven by RunnerMotion", view._rider_anim != null and view._rider_anim.ok())
-	_check("gun-arm aim modifier sits on the rider skeleton", view._aim_mod != null and view._aim_mod.get_parent() is Skeleton3D)
+	_check("rider is driven (rigged clips or the posed hero)", view._hero_mode or (view._rider_anim != null and view._rider_anim.ok()))
+	# REGRESSION (founder 2026-09-29: "He doesn't even have his golden revolver nor his
+	# pick axe"): the rider must BE the posed hero — a visible, textured model whose
+	# baked revolver + pickaxe stick out of the cart — and the muzzle pivot must ride it.
+	_check("the rider is the founder's posed hero (revolver + pickaxe baked in)", view._hero_mode and view._hero_body != null)
+	if view._hero_mode:
+		var hb: AABB = view._measure(view._hero_body)
+		_check("hero mesh spans a real body incl. raised pickaxe (h=%.2f)" % hb.size.y, hb.size.y > 1.7 and hb.size.x > 1.0)
+		var top_world: float = view._rider.position.y + view._hero_body.position.y + hb.position.y * view._hero_body.scale.y + hb.size.y * view._hero_body.scale.y
+		_check("the pickaxe head clears the cart rim by >1 m (top %.2f, rim %.2f)" % [top_world, view._cart_rim_y], top_world > view._cart_rim_y + 1.0)
+		var mz: Vector3 = view._muzzle_pos()
+		_check("muzzle flash point is out in front of the body (%s)" % str(mz), mz.distance_to(view._rider.global_position) > 1.0)
+		_check("the separate revolver/pickaxe meshes are NOT drawn on top of the baked ones",
+			not view._gun_spin_node.visible and not view._axe_pivot.visible)
+	else:
+		_check("gun-arm aim modifier sits on the rider skeleton", view._aim_mod != null and view._aim_mod.get_parent() is Skeleton3D)
 	_check("the leg advanced with the view live (d=%.0f)" % live.get_distance(), live.get_distance() > 20.0)
+	# REGRESSION (founder 2026-09-29: "the bitcoin gold coins are masked with a stupid filter"):
+	# a coin must be solid geometry with the Bitcoin face — lit metal, NO alpha/transparency,
+	# NO translucent halo shell.
+	var coin_n: Node3D = null
+	for gn in view._gold_nodes:
+		if gn != null:
+			coin_n = gn
+			break
+	_check("the leg has coins", coin_n != null)
+	if coin_n:
+		var faces := 0
+		var see_through := false
+		for mi in coin_n.find_children("*", "MeshInstance3D", true, false):
+			var mat := (mi as MeshInstance3D).material_override as StandardMaterial3D
+			if mat == null:
+				continue
+			if mat.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED or mat.albedo_color.a < 0.99:
+				see_through = true
+			if mat.albedo_texture != null:
+				faces += 1
+		_check("coin has two textured Bitcoin faces (%d)" % faces, faces == 2)
+		_check("coin has no transparent/halo parts", not see_through)
+		# Regression: metallic > 0.5 with no reflections renders BLACK in the web build (coins were invisible).
+		var mats_ok := true
+		for mi2 in coin_n.find_children("*", "MeshInstance3D", true, false):
+			var m2 := (mi2 as MeshInstance3D).material_override as StandardMaterial3D
+			if m2 != null and (m2.metallic > 0.5 or not m2.emission_enabled):
+				mats_ok = false
+		_check("coin stays visible without reflections (low metallic + emission)", mats_ok)
+		_check("coin is lit metal (not unshaded)", (coin_n.find_children("*", "MeshInstance3D", true, false)[1] as MeshInstance3D).material_override.shading_mode != BaseMaterial3D.SHADING_MODE_UNSHADED)
+
 	# Regression: the bear rig's Armature carries a 0.01 scale, and measuring it
 	# through the node chain drew it 130x too big (off-screen) on the web build.
 	var rs: float = view._rider_model.scale.y
-	_check("rider rig scale sane (%.2f)" % rs, rs > 0.5 and rs < 5.0)
+	_check("rider scale sane (%.2f)" % rs, rs > 0.5 and rs < 5.0)
 	for id in view._archer_nodes:
 		var bear: Node3D = view._archer_nodes[id]
 		for c in bear.get_children():
+			if bear.has_meta("statue"):
+				var sbb: AABB = view._measure(bear)
+				_check("archer statue %s is ledge-sized (h=%.2f)" % [id, sbb.size.y], sbb.size.y > 2.0 and sbb.size.y < 3.2)
+				break
 			if c is Node3D and String(c.name).contains("rigged"):
 				var bs: float = (c as Node3D).scale.y
 				_check("archer %s rig scale sane (%.2f)" % [id, bs], bs > 0.5 and bs < 5.0)
