@@ -13,14 +13,17 @@ What went wrong on 2026-09-29 (all three founder complaints at once): a T-pose m
 clips folded into the cart; the separate revolver/pickaxe meshes rode hand bones that sat inside the cart and
 were never drawn. The founder's own posed model had both weapons already. **Check what a candidate model
 already contains before adding anything to it** (`scripts/glb-shot.mjs`).
-**UPDATE 2026-09-29 (founder: "his left hand just remains up"):** a posed mesh with a raised arm cannot lower it. The
-hero IS now rigged: `meshy remesh` (≤300k faces is Meshy's rig limit; the raw share has 1.87 M) at 30k tris →
-`tools/meshy/meshy_rig.py <remesh_task_id> out.glb --height 1.9 --actions 33,361,466,178,300,237,477,403,89,170`
-(~35 credits) → `shrink_glb.py --max 1024 --aux-max 256` (24 MB → 3.5 MB). The baked pickaxe/revolver skin with the
-hands, so the seated clip lowers the pick arm and the aim modifier (`LeftArm` chain, mirrored model) swings the gun
-arm. Rig origin is at the FEET (`HERO_SEAT_DROP` lifts the seated body over the rim). The model is mirrored
-(`scale.x < 0`) so the revolver is in his RIGHT hand. `hero_pose()` still adds recoil/lean on top.
-Static fallback kept in `.farm/hero_static_backup.glb` (regenerate with `pull_share.py DL2PTu`).
+**UPDATE 2026-09-29 (founder: "his left hand just remains up", then "a creature from a failed lab"):** the hero is rigged
+(`meshy remesh` to 30k tris — Meshy's rig limit is 320k faces and the raw share has 1.87 M — then
+`tools/meshy/meshy_rig.py <remesh_task_id> out.glb --height 1.9 --actions ...`, ~35 credits, then `shrink_glb.py`),
+BUT **NO library clip is played**. Every clip was captured from the game camera (`tools/ep2_shots/shoot.sh ... clips=`):
+seated clips hunch him horizontally over the cart at any seat height, standing clips float him above it with splayed legs.
+Library clips are authored for a T-pose character; this is a posed figure with props baked into the hands.
+What works: keep the founder's bind pose (his own Meshy pose, feet-origin, `HERO_SEAT_DROP 0`), pose ONE arm with
+`runner_arm_rest.gd` (axis-free two-bone modifier: upper arm out/down, forearm up, pick upright beside him; influence → 0
+for the zipline hang and the chop), aim the gun arm with `runner_aim_modifier.gd` (anatomical LEFT arm, the model is
+mirrored so it reads as his right), and let `RunnerMotion.hero_pose()` add recoil/lean/hop/hit. Rule: **capture a
+clip from the game camera before trusting it on a posed model** (`debug_clip`, `clip@seconds`, `none`).
 
 Posed-hero placement rules (all measured, see `runner_view.gd` HERO_*): feet-origin pivot; chest 0.55 m ABOVE
 the cart rim so torso, hat, leaves and both weapons read; yaw the whole figure so the baked barrel (model +X)

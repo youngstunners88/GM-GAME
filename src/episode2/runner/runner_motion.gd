@@ -37,21 +37,9 @@ const RIDER_CLIPS := {
 	"swipe": ["Charged_Axe_Chop", 1.6, 2.2],
 	"cheer": ["Sit_Cheer_with_Left_Hand", 0.3, 1.2],
 }
-## The rigged HERO (2026-09-29) is SEATED in the cart. The standing clips (Regular_Jump, Hit_Reaction, Standing_Reload,
-## Charged_Axe_Chop, Combat_Stance, Victory_Fist_Pump) put a standing skeleton on a seat-height origin: he floated above the
-## cart with splayed legs ("a creature from a failed lab"). Only seated clips play; every other emotion is the
-## procedural hero_pose() (recoil, chop lean, hop arc, hit throw, cheer bounce) layered on the seated idle.
-const HERO_CLIPS := {
-	"idle": ["Chair_Sit_Idle_M", 0.0, 1.0],
-	"zip": ["Rope_Hang_Idle", 0.0, 1.0],
-	"duck": ["Sit_Dodge", 4.6, 1.4],
-	"jump": ["Chair_Sit_Idle_M", 0.0, 1.0],
-	"hop": ["Chair_Sit_Idle_M", 0.0, 1.0],
-	"hit": ["Chair_Sit_Idle_M", 0.0, 1.0],
-	"reload": ["Chair_Sit_Idle_M", 0.0, 1.0],
-	"swipe": ["Chair_Sit_Idle_M", 0.0, 1.0],
-	"cheer": ["Chair_Sit_Idle_M", 0.0, 1.0],
-}
+## NOTE (2026-09-29): the rigged hero plays NO clips. Seated clips hunched him over the cart and standing clips floated him
+## above it ("a creature from a failed lab"); every clip was tried from the game camera. He keeps the founder's bind pose,
+## RunnerArmRest lowers the pickaxe arm, RunnerAimModifier swings the gun arm, hero_pose() adds recoil/lean/hop/hit.
 const BEAR_CLIPS := {
 	"idle": ["Idle", 0.0, 1.0],
 	"aim": ["Archery_Aim_with_Lateral_Scan", 0.0, 1.0],
