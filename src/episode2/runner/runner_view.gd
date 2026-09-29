@@ -1092,7 +1092,7 @@ func _build_rider() -> void:
 		# rig's origin is at his FEET; the old static model was centred on his chest.
 		hero.position = Vector3.ZERO
 		_rider_model.add_child(hero)
-		var han: RefCounted = Motion.Anim.new(hero, Motion.RIDER_CLIPS)
+		var han: RefCounted = Motion.Anim.new(hero, Motion.HERO_CLIPS)
 		if han.ok():
 			_rider_anim = han
 			han.want("idle", 0.0)
@@ -1108,7 +1108,7 @@ func _build_rider() -> void:
 				_aim_mod.hand_bone = "LeftHand"
 				_aim_mod.influence = 0.0
 				sk.add_child(_aim_mod)
-		_self_light(hero, 0.05, Color(1.0, 0.9, 0.75))
+		_self_light(hero, 0.32, Color(1.0, 0.88, 0.7))
 		_hero_body = hero
 		# Chest (model origin) just below the cart rim: hat, leaves, both weapons above it.
 		_rider_floor = _cart_rim_y - HERO_SINK_REST - HERO_H * 0.5 * HERO_SCALE + HERO_SEAT_DROP
