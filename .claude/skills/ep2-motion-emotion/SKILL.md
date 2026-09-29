@@ -13,6 +13,15 @@ What went wrong on 2026-09-29 (all three founder complaints at once): a T-pose m
 clips folded into the cart; the separate revolver/pickaxe meshes rode hand bones that sat inside the cart and
 were never drawn. The founder's own posed model had both weapons already. **Check what a candidate model
 already contains before adding anything to it** (`scripts/glb-shot.mjs`).
+**UPDATE 2026-09-29 (founder: "his left hand just remains up"):** a posed mesh with a raised arm cannot lower it. The
+hero IS now rigged: `meshy remesh` (≤300k faces is Meshy's rig limit; the raw share has 1.87 M) at 30k tris →
+`tools/meshy/meshy_rig.py <remesh_task_id> out.glb --height 1.9 --actions 33,361,466,178,300,237,477,403,89,170`
+(~35 credits) → `shrink_glb.py --max 1024 --aux-max 256` (24 MB → 3.5 MB). The baked pickaxe/revolver skin with the
+hands, so the seated clip lowers the pick arm and the aim modifier (`LeftArm` chain, mirrored model) swings the gun
+arm. Rig origin is at the FEET (`HERO_SEAT_DROP` lifts the seated body over the rim). The model is mirrored
+(`scale.x < 0`) so the revolver is in his RIGHT hand. `hero_pose()` still adds recoil/lean on top.
+Static fallback kept in `.farm/hero_static_backup.glb` (regenerate with `pull_share.py DL2PTu`).
+
 Posed-hero placement rules (all measured, see `runner_view.gd` HERO_*): feet-origin pivot; chest 0.55 m ABOVE
 the cart rim so torso, hat, leaves and both weapons read; yaw the whole figure so the baked barrel (model +X)
 points at the reticle, clamped to [-1.6, -0.2] rad; muzzle-flash pivot parented to the barrel tip

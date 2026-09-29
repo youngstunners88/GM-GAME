@@ -2579,7 +2579,13 @@ All 18 of your marked-up images landed as real files this time. They are
 committed to `artifacts/founder-art/references/` so no future session has to
 recover them or ask you to resend anything.
 
-### 🎙️ EPISODE 2 — LIL BLUNT SPEAKS, BEARS GROWL, POSE FIXED (2026-09-29)
+### 🎥 EPISODE 2 — CAMERA, LIGHTING, LOWERED ARM (2026-09-29)
+- **Placement:** the founder's "hard to see what's going on" was the hero filling the screen centre. Researched shipped runners (Subway Surfers, Temple Run, GMTK camera talk, readability/lighting articles) → new skill `ep2-runner-camera-light`, notes in `docs/research/3d/011_*`. Camera is higher/further back looking 12 m down the track; he sits in the lower part of the frame with the rails and hazards visible above his hat. Gate: `tests/ep2_camera_framing_test`.
+- **Lighting:** the orange ambient + exposure + saturation + emission stack that made a brown wash is removed; neutral-warm ambient, darker fog, less rock/hero emission.
+- **Arm:** Lil Blunt is now rigged (Meshy rig, 10 clips) so the pickaxe arm rests instead of staying up; revolver arm still swings to the reticle; model mirrored so the gun is in his right hand.
+- Firecrawl key still returns 401 inside this session's tools.
+
+## 🎙️ EPISODE 2 — LIL BLUNT SPEAKS, BEARS GROWL, POSE FIXED (2026-09-29)
 - **Gun in his RIGHT hand:** the founder's hero model is mirrored, back to the camera, turned only slightly toward the aim (was turned sideways and looked spastic).
 - **"White swords" gone:** the long white speed streaks and the arrow glow trails were the swords. Streaks cut to a few short warm ones, arrow trail removed, crystals halved in size/count.
 - **He talks:** 60+ ElevenLabs lines in his own voice, reacting to boulder wrecks (alarm), hits, hops (10 celebrations), jump clears, ducks, zips, coins, reloads, bear kills. Shuffled so nothing repeats until all are used. Skill `ep2-voice-barks`, gate `tests/ep2_runner_voice_test`.
