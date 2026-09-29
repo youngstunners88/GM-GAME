@@ -19,3 +19,7 @@ Data lives in `src/protocol_portals/data/portal_copy.json` -> `<protocol>.stops[
   phrases, contract addresses or unverified numbers. Quiz facts in `data/quiz_*.json` must stay true.
 - Voice: chill, confident teacher in the governor's own voice (Pauly new-school, Kane mechanic, Rich recorder).
 - After editing text run `python3 scripts/gen_portal_vo.py` (see `gm-game-portal-voice`), then the room test + captures.
+
+## Facts the founder corrected
+- **SMOKE chains:** Solana, Robinhood Chain, Ethereum, BASE, BSC. NOT PulseChain. Check chain lists with him before writing them.
+- The crate stop is named "Stash From The Smoke Lounge" (it is the weed stash, not the lounge itself).

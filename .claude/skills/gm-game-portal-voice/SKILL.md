@@ -12,3 +12,7 @@ description: ElevenLabs voice for the three governors (Pauly the Smokest, Kane t
   (mp3_44100_64, ~100 KB each, 50 clips ~5 MB) for every aspect, skipping existing files. Change text -> `--force`.
 - Playback: `StudyRoom._on_stop_reached` -> `Companion.play_voice(path)`; silent if a clip is missing.
 - Keep the pack under the 190 MB gate; do not switch to higher bitrates.
+
+## Loudness (founder 2026-09-30: "drowned by the music")
+`Companion.play_voice` plays at +10 dB (`VOICE_GAIN_DB`) and ducks the **Music bus** by 14 dB while a clip plays,
+restoring it after (and in `_exit_tree`). Tune those two constants, not the mp3s.

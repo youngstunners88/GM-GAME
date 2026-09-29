@@ -30,10 +30,10 @@
       },
       {
         "id": "lounge_basket",
-        "name": "The Smoke Lounge",
+        "name": "Stash From The Smoke Lounge",
         "line": "Welcome to the Smoke Lounge, where SMOKE is paired with a basket of other assets in liquidity pools.",
         "aspects": [
-          "Welcome to the Smoke Lounge, where SMOKE is paired with a basket of other assets in liquidity pools. When those pairs rise in value, the basket strengthens the buy and burn. So the more the lounge grows, the harder the burn engine can work.",
+          "This stash comes straight from the Smoke Lounge, where SMOKE is paired with a basket of other assets in liquidity pools. When those pairs rise in value, the basket strengthens the buy and burn. So the more the lounge grows, the harder the burn engine can work.",
           "The main pairs are SMOKE with X28 on BASE and Ethereum, and SMOKE with BNB on BSC. Steady liquidity lets people move in and out without wrecking the price. The pairing is what gives the lounge its weight.",
           "The big liquidity positions on BASE and Ethereum are locked for ten years. That lock is a commitment, not a promise on a poster. A lounge you cannot walk away from with the furniture is a good lounge."
         ]
@@ -41,9 +41,9 @@
       {
         "id": "arb_well",
         "name": "The Omni-Chain Hub",
-        "line": "SMOKE lives on four chains, BASE, Ethereum, BSC and PulseChain, bridged natively as one omni-chain token.",
+        "line": "SMOKE lives on five chains: Solana, Robinhood Chain, Ethereum, BASE and BSC, bridged natively as one omni-chain token.",
         "aspects": [
-          "SMOKE lives on four chains, BASE, Ethereum, BSC and PulseChain, bridged natively as one omni-chain token. Prices can drift between chains, and that gap is an arbitrage. The protocol captures that arb and recycles the value back into the ecosystem instead of ignoring it.",
+          "SMOKE lives on five chains: Solana, Robinhood Chain, Ethereum, BASE and BSC, bridged natively as one omni-chain token. Prices can drift between chains, and that gap is an arbitrage. The protocol captures that arb and recycles the value back into the ecosystem instead of ignoring it.",
           "One token across every chain, with no wrapped copies to worry about. That is what omni-chain means here. Value moving between chains stays inside the family.",
           "Recycled arb is why multi-chain supply is a strength. Every chain is another door into the same lounge. Value that gets captured comes back to work for holders."
         ]

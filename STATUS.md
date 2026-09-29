@@ -5,6 +5,8 @@
 
 ---
 
+**🔊 SMOKE FACTS + VOICE VOLUME (2026-09-30).** SMOKE chains corrected to Solana, Robinhood Chain, Ethereum, BASE, BSC (no PulseChain). The crate is now "Stash From The Smoke Lounge". Governor voices are +10 dB louder and the music ducks while they speak. All 51 clips re-recorded.
+
 **🗣️ EDUCATION ROOMS — GOVERNORS TEACH (2026-09-30).** All three rooms:
 - Every stop has 3 different explanations (2-3 sentences each), so walking past again never repeats; pressing E shows the full text, not a single line.
 - Real protocol names: Burn Engine, Smoke Lounge, Omni-Chain Hub (Smoke); BLAZE Forge, Scarcity Scale, Vault & Crush Press, Handler Bridge (Diamonds); Vesting Clock, Fort Knox Window, Melt Bonus Press, Gold Rush Board (Gold). No more "Arb Recycle Well".
