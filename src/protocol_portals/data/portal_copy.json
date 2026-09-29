@@ -1,6 +1,6 @@
 {
   "smoke": {
-    "room_title": "The Reading Ring",
+    "room_title": "SMOKE 101: The 420 Lounge",
     "examiner_name": "Pauly The Smokest",
     "examiner_intro": [
       "Welcome to the Reading Ring. Mind the lamp, it's older than me.",
@@ -20,33 +20,60 @@
     "stops": [
       {
         "id": "ash_ring",
-        "name": "Ash Ring",
-        "line": "SMOKE is culture plus a sink. This is where the burn lives."
+        "name": "The Burn Engine",
+        "line": "This is the buy-and-burn engine, the heart of SMOKE.",
+        "aspects": [
+          "This is the buy-and-burn engine, the heart of SMOKE. When holders convert their original SMOKE into OFT SMOKE, 100% of the original SMOKE goes straight to the burn contract. A burn removes tokens from circulation for good, so SMOKE works as culture plus a sink.",
+          "Think of the burn as a slow, steady fire. Every conversion feeds it, and whatever goes in never comes back out. Fewer tokens in circulation is the whole point of a sink.",
+          "SMOKE is a culture token first, which is why the sink is built in from day one. The community keeps the fire going just by using the token. That is the difference between a mascot coin and a mechanism."
+        ]
       },
       {
         "id": "lounge_basket",
-        "name": "Lounge Basket",
-        "line": "LP pairs in the Lounge basket strengthen the burn."
+        "name": "The Smoke Lounge",
+        "line": "Welcome to the Smoke Lounge, where SMOKE is paired with a basket of other assets in liquidity pools.",
+        "aspects": [
+          "Welcome to the Smoke Lounge, where SMOKE is paired with a basket of other assets in liquidity pools. When those pairs rise in value, the basket strengthens the buy and burn. So the more the lounge grows, the harder the burn engine can work.",
+          "The main pairs are SMOKE with X28 on BASE and Ethereum, and SMOKE with BNB on BSC. Steady liquidity lets people move in and out without wrecking the price. The pairing is what gives the lounge its weight.",
+          "The big liquidity positions on BASE and Ethereum are locked for ten years. That lock is a commitment, not a promise on a poster. A lounge you cannot walk away from with the furniture is a good lounge."
+        ]
       },
       {
         "id": "arb_well",
-        "name": "Arb Recycle Well",
-        "line": "Captured arb comes here and returns to the ecosystem."
+        "name": "The Omni-Chain Hub",
+        "line": "SMOKE lives on four chains, BASE, Ethereum, BSC and PulseChain, bridged natively as one omni-chain token.",
+        "aspects": [
+          "SMOKE lives on four chains, BASE, Ethereum, BSC and PulseChain, bridged natively as one omni-chain token. Prices can drift between chains, and that gap is an arbitrage. The protocol captures that arb and recycles the value back into the ecosystem instead of ignoring it.",
+          "One token across every chain, with no wrapped copies to worry about. That is what omni-chain means here. Value moving between chains stays inside the family.",
+          "Recycled arb is why multi-chain supply is a strength. Every chain is another door into the same lounge. Value that gets captured comes back to work for holders."
+        ]
       },
       {
         "id": "paper",
-        "name": "Read the whitepaper",
-        "line": "The official whitepaper. Approach the lectern and press E."
+        "name": "The SMOKE Whitepaper",
+        "line": "The official SMOKE whitepaper is pinned on this board.",
+        "aspects": [
+          "The official SMOKE whitepaper is pinned on this board. It teaches the real rules before the quiz, so read it once and the questions get easy. Press E to open it.",
+          "Still unsure about the burn, the lounge or the hub? The whitepaper is the source of truth. Everything I have told you in this courtyard comes from it."
+        ]
       },
       {
         "id": "video",
-        "name": "Watch the video",
-        "line": "The official X video. Approach the viewing instrument and press E."
+        "name": "The SMOKE Video",
+        "line": "This is the official SMOKE video on the big screen.",
+        "aspects": [
+          "This is the official SMOKE video on the big screen. Watch a few seconds and it counts as study. Press E to open it.",
+          "Prefer watching to reading? The video path is a fully valid way to prepare for the quiz. You can always come back for the whitepaper."
+        ]
       },
       {
         "id": "exam",
         "name": "Pauly's Desk",
-        "line": "My desk. A quiz when you are ready. Press E."
+        "line": "This is my desk.",
+        "aspects": [
+          "This is my desk. The quiz has eleven questions with three answers each, and seven right is a pass. Press E whenever you are ready.",
+          "No rush. Walk the courtyard again if you want another pass at the burn, the lounge or the hub. Your score is stamped either way."
+        ]
       }
     ],
     "plate": {
@@ -78,7 +105,7 @@
     }
   },
   "diamonds": {
-    "room_title": "The Pressure Study",
+    "room_title": "DIAMONDS 101: The Pressure Study",
     "examiner_name": "Kane The Blaze Mechanic",
     "examiner_intro": [
       "Welcome to the Pressure Study. Sit. Breathe. Stay sharp.",
@@ -98,38 +125,70 @@
     "stops": [
       {
         "id": "blaze_gate",
-        "name": "BLAZE Forge",
-        "line": "BLAZE sits on the diamond mint path. The forge burns beside the way in - follow the glow through the arch."
+        "name": "The BLAZE Forge",
+        "line": "This forge is where BLAZE meets DIAMONDS.",
+        "aspects": [
+          "This forge is where BLAZE meets DIAMONDS. BLAZE sits on the Diamond mint path, so the flame feeds the supply. Follow the glow through the arch to see where it leads.",
+          "DIAMONDS was built to support BLAZE and X28 on Ethereum at the same time. The only liquidity pool is with X28. Keeping it simple keeps the forge honest.",
+          "A forge only burns while it has fuel, and BLAZE emissions end in waves. That is what makes every Diamond minted count. I will show you the scale next."
+        ]
       },
       {
         "id": "tight_float",
-        "name": "Tight Float",
-        "line": "The waves end. The float stays tight."
+        "name": "The Scarcity Scale",
+        "line": "The waves end, and that is the whole point.",
+        "aspects": [
+          "The waves end, and that is the whole point. Emission stops, sinks keep pulling Diamonds out, and the float stays tight. Fewer Diamonds around means each one carries more weight.",
+          "Scarcity here is designed, not hoped for. The mint path closes on a schedule, and staking absorbs what is left. Read the scale as supply against demand.",
+          "DIAMONDS pays rewards in ETH, which gives the token a real use besides selling. Three independent ETH payout pools share those rewards. A tight float keeps them meaningful."
+        ]
       },
       {
         "id": "vault_crush",
-        "name": "Vault / Crush",
-        "line": "Stake in the Vault. Crush Bonus forfeits extra for shares."
+        "name": "The Vault & Crush Press",
+        "line": "Stake your Diamonds in the Vault to earn shares and rewards.",
+        "aspects": [
+          "Stake your Diamonds in the Vault to earn shares and rewards. The Crush Bonus lets you forfeit extra Diamonds in exchange for more shares. It is a trade: give up some Diamonds now for a bigger slice later.",
+          "The press is a commitment device. The more you are willing to put under it, the larger your share multiplier. It is always your choice and never automatic.",
+          "Diamond Mine Certificates open exclusive access to the 28-day payout pool. Certificates are about ownership and access, and we keep the detail high level here. The Vault is where patient holders live."
+        ]
       },
       {
         "id": "handler_bridge",
-        "name": "Handler Bridge",
-        "line": "Diamonds are required to mint GOLD. This bridge carries it."
+        "name": "The Handler Bridge",
+        "line": "Diamonds are required to mint GOLD, and this bridge carries them across.",
+        "aspects": [
+          "Diamonds are required to mint GOLD, and this bridge carries them across. The Handler absorbs first-cycle mint-side Diamonds so the chart does not get dumped on. Think of it as a shock absorber between two protocols.",
+          "Every GOLD mint that uses Diamonds pulls demand toward this bridge. That ties DIAMONDS and GOLD MINE together instead of leaving them as two separate games. Walk it and you are travelling the ecosystem.",
+          "The Handler smooths the first cycle so no single day of minting can crash the price. That protects holders on both sides of the bridge. Stability is a feature."
+        ]
       },
       {
         "id": "paper",
-        "name": "Read the whitepaper",
-        "line": "The official whitepaper. Approach the lectern and press E."
+        "name": "The DIAMONDS Whitepaper",
+        "line": "The official DIAMONDS whitepaper is on this lectern.",
+        "aspects": [
+          "The official DIAMONDS whitepaper is on this lectern. It lays out the real rules before the quiz. Press E to open it.",
+          "If the vault, the crush or the handler feel fuzzy, the whitepaper is where they are spelled out. Everything I say here is anchored to it."
+        ]
       },
       {
         "id": "video",
-        "name": "Watch the video",
-        "line": "The official X video. Approach the viewing instrument and press E."
+        "name": "The DIAMONDS Video",
+        "line": "This orb plays the official DIAMONDS video.",
+        "aspects": [
+          "This orb plays the official DIAMONDS video. Watch a few seconds and it counts as study. Press E to open it.",
+          "Video-only is a valid path to the quiz. You can still read the whitepaper afterwards for the detail."
+        ]
       },
       {
         "id": "exam",
-        "name": "Assay Bench",
-        "line": "The Assay Bench. A quiz awaits. Press E to begin."
+        "name": "The Assay Bench",
+        "line": "This is the Assay Bench.",
+        "aspects": [
+          "This is the Assay Bench. Eleven questions, three answers each, and seven right is a pass. Press E to begin.",
+          "Take another lap of the terrace first if you like. Forge, scale, press and bridge are all fair game."
+        ]
       }
     ],
     "plate": {
@@ -140,7 +199,7 @@
     }
   },
   "gold": {
-    "room_title": "The Claim Office",
+    "room_title": "GOLD MINE 101: The Claim Office",
     "examiner_name": "Rich the Claim Recorder",
     "examiner_intro": [
       "Claim Office. Take a number. Yours is the only one today.",
@@ -160,38 +219,70 @@
     "stops": [
       {
         "id": "vest_clock",
-        "name": "Vest Clock",
-        "line": "About 100 days, about 1% a day. Claim early, forfeit the rest."
+        "name": "The Vesting Clock",
+        "line": "Mined GOLD does not arrive all at once.",
+        "aspects": [
+          "Mined GOLD does not arrive all at once. It vests over about 100 days, roughly 1% a day. Claim early and you forfeit the part that has not vested yet.",
+          "Patience is the mechanism. Waiting out the full hundred days collects everything, and leaving early gives the remainder up. That forfeited GOLD feeds the weekly auctions.",
+          "You can mine GOLD with ETH, or with ETH plus Diamonds. Either way the same vest clock starts ticking. One rule for everyone."
+        ]
       },
       {
         "id": "knox_window",
-        "name": "Knox Window",
-        "line": "That is Fort Knox through the glass. This room is not Knox."
+        "name": "The Fort Knox Window",
+        "line": "Through the glass is Fort Knox, where you stake GOLD to earn wBTC.",
+        "aspects": [
+          "Through the glass is Fort Knox, where you stake GOLD to earn wBTC. Locks can run as long as 2,888 days, and longer locks weigh more in the share calculation. This room is a classroom, not the vault itself.",
+          "Staking pays out in wBTC, earned simply by locking your GOLD. The longer you commit, the more your shares count. Commitment is what gets rewarded.",
+          "Stakers also share in the Gold Vein pools, which pay out Tether Gold, XAUT, backed by physical gold in Swiss vaults. That is a second stream on top of wBTC. Knox is where the long-term holders sit."
+        ]
       },
       {
         "id": "melt_stamp",
-        "name": "Melt Stamp",
-        "line": "Burn extra GOLD here for a share multiplier."
+        "name": "The Melt Bonus Press",
+        "line": "The Melt Bonus lets you burn extra GOLD to boost your share multiplier.",
+        "aspects": [
+          "The Melt Bonus lets you burn extra GOLD to boost your share multiplier. You can burn up to three times your staked amount. Combined with a maximum-term stake, the multiplier can reach up to 1,000%.",
+          "Burning is permanent, so the melt press is for people who believe in the long game. Every burn shrinks supply for everyone else. It is a bet on yourself and on scarcity.",
+          "Melt is optional and never automatic. You choose how much to feed the press and when. The stamp only records what you decided."
+        ]
       },
       {
         "id": "rush_board",
-        "name": "Rush Board",
-        "line": "The weekly Gold Rush: forfeit GOLD to compete for XAUT. Posted here."
+        "name": "The Gold Rush Board",
+        "line": "Every week the Gold Rush auction is posted on this board.",
+        "aspects": [
+          "Every week the Gold Rush auction is posted on this board. Players forfeit GOLD to compete for a prize paid in XAUT, tokenised gold. Bid smart, because forfeited GOLD is gone.",
+          "The auction gives forfeited GOLD a purpose. Early claimers feed it, and competitors win from it. The system turns lost vesting into prizes.",
+          "Auctions run weekly, so there is always another shot. Check the board before you decide to claim early. Knowing the board is half the game."
+        ]
       },
       {
         "id": "paper",
-        "name": "Read the whitepaper",
-        "line": "The official whitepaper. Approach the lectern and press E."
+        "name": "The GOLD MINE Whitepaper",
+        "line": "The official GOLD MINE whitepaper is on this desk.",
+        "aspects": [
+          "The official GOLD MINE whitepaper is on this desk. It sets out vesting, Fort Knox and the auctions before the quiz. Press E to open it.",
+          "When a rule feels slippery, the whitepaper is the ledger of record. I read from it every day."
+        ]
       },
       {
         "id": "video",
-        "name": "Watch the video",
-        "line": "The official X video. Approach the viewing instrument and press E."
+        "name": "The GOLD MINE Video",
+        "line": "This viewer plays the official GOLD MINE video.",
+        "aspects": [
+          "This viewer plays the official GOLD MINE video. Watch a few seconds and it counts as study. Press E to open it.",
+          "Prefer the picture show to the paperwork? Video-only is a valid road to the quiz."
+        ]
       },
       {
         "id": "exam",
-        "name": "Recorder Desk",
-        "line": "Recorder Desk. A quiz, stamped either way. Press E."
+        "name": "The Recorder Desk",
+        "line": "This is the Recorder Desk.",
+        "aspects": [
+          "This is the Recorder Desk. Eleven questions, three answers each, seven right to pass, and I stamp your card either way. Press E to begin.",
+          "Walk the street once more if you want. The clock, the window, the press and the board are all on the exam."
+        ]
       }
     ],
     "plate": {

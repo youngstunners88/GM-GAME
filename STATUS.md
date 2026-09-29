@@ -5,6 +5,13 @@
 
 ---
 
+**🗣️ EDUCATION ROOMS — GOVERNORS TEACH (2026-09-30).** All three rooms:
+- Every stop has 3 different explanations (2-3 sentences each), so walking past again never repeats; pressing E shows the full text, not a single line.
+- Real protocol names: Burn Engine, Smoke Lounge, Omni-Chain Hub (Smoke); BLAZE Forge, Scarcity Scale, Vault & Crush Press, Handler Bridge (Diamonds); Vesting Clock, Fort Knox Window, Melt Bonus Press, Gold Rush Board (Gold). No more "Arb Recycle Well".
+- Rooms titled "SMOKE 101: The 420 Lounge", "DIAMONDS 101: The Pressure Study", "GOLD MINE 101: The Claim Office".
+- Pauly, Kane and Rich now speak every explanation in your ElevenLabs voices (50 clips).
+- New skills: portal educator dialogue, portal voice.
+
 **🌉 EDUCATION ROOMS — FREEDOM PASS (2026-09-30).** From your "improve education" doc:
 - **Smoke:** you can now walk into all three lounges (main door, west and east pergolas).
 - **Diamonds:** the bridge flows onto the plateau with no pinch point; walk off the edge and Lil Blunt falls and loses a life (respawns on the bridge). The advisor can't fall. Props spread out more.

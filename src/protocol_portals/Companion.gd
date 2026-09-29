@@ -117,8 +117,8 @@ func _build() -> void:
 
 	_balloon = Panel.new()
 	_balloon.name = "TalkBalloon"
-	_balloon.size = Vector2(540, 100)
-	_balloon.position = Vector2(28, 582)
+	_balloon.size = Vector2(640, 150)
+	_balloon.position = Vector2(28, 540)
 	_balloon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var sb: StyleBoxFlat = _dark_style(0.9, 12)
 	sb.border_color = Color(glow.r, glow.g, glow.b, 0.9)
@@ -136,7 +136,7 @@ func _build() -> void:
 	_balloon_label = Label.new()
 	_balloon_label.name = "BalloonText"
 	_balloon_label.position = Vector2(10.0, 6.0)
-	_balloon_label.size = Vector2(516, 84)
+	_balloon_label.size = Vector2(616, 138)
 	_balloon_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_balloon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	_balloon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
