@@ -1,0 +1,4 @@
+[gd_scene load_steps=2 format=3 uid="uid://ep2cameraframingtest1"]
+[ext_resource type="Script" path="res://tests/ep2_camera_framing_test.gd" id="1"]
+[node name="Ep2CameraFramingTest" type="Node"]
+script = ExtResource("1")

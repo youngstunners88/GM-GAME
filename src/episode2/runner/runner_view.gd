@@ -99,20 +99,29 @@ const BEAR_NATIVE_H := 1.8
 # in X so its inner walls land on SHELL_WALL_X while its 3-track spacing matches ours.
 const SHELL_SCALE := Vector3(11.9, 11.0, 8.3)  # Y raised so the zip cable (5.85 m) clears the timber beams
 const SHELL_NATIVE_FLOOR := -0.34
-const SHELL_EMISSION := 0.16
+const SHELL_EMISSION := 0.09
 const SHELL_STEP := 15.2            # slight overlap of the 15.5 m module
 const SHELL_WALL_X := 5.5
 const RAIL_TOP := -0.31
 const LEAF_CART_LEN := 1.85
 # Founder's posed Lil Blunt (2026-09-29): pickaxe up, golden revolver out, both baked in.
 # Native size 1.18 x 1.90 x 1.03, origin at the chest; gun barrel tip / pickaxe top measured.
-const HERO_SCALE := 1.35
+## Camera framing (skill ep2-runner-camera-light): the hero sits in the LOWER THIRD of the frame and
+## the camera looks far down the track, so the vanishing point and the rails ahead stay clear.
+const CAM_HEIGHT := 3.2
+const CAM_BACK := 4.2
+const CAM_FOLLOW_X := 0.35
+const CAM_LOOK_X := 0.2
+const CAM_LOOK_Y := 1.1
+const CAM_LOOK_AHEAD := 12.0
+const HERO_SCALE := 1.45
 const HERO_H := 1.9
 const HERO_MUZZLE := Vector3(0.45, 0.05, 0.48)     # a little behind the barrel tip (0.59)
 const HERO_YAW_BASE := 0.25         # mirrored model: +yaw swings the revolver forward
 const HERO_YAW_GAIN := 0.5
 const HERO_YAW_MIN := -0.5
 const HERO_YAW_MAX := 0.7
+const HERO_SEAT_DROP := 1.2         # extra floor offset for the seated clip (tuned by eye)
 const HERO_SINK_REST := -0.55       # chest sits this far ABOVE the cart rim (founder target: torso visible over the rim)
 const COIN_SPIN := 3.2
 const ARCHER_STATUE_H := 2.5          # drawn-bow bear incl. bow, standing on the ledge
@@ -291,6 +300,7 @@ var _debris: CPUParticles3D = null
 var _gold_nodes: Array = []                 # parallel to obstacles (null when not gold)
 var _gold_burst: CPUParticles3D = null
 var _streaks: CPUParticles3D = null
+var _look_x: float = 0.0
 # HUD additions.
 var _cart_strip: Control = null
 var _gold_label: Label = null
@@ -772,10 +782,10 @@ func _apply_art() -> void:
 			var env: Environment = env_v
 			# Founder target look 2026-09-29: warm amber glow, bright enough to read. The palette
 			# keeps ambient ENERGY (a gate pins it); colour + exposure are the view's to warm.
-			env.ambient_light_color = Color(0.95, 0.66, 0.42)
-			env.tonemap_exposure = 1.05
+			env.ambient_light_color = Color(0.72, 0.60, 0.50)
+			env.tonemap_exposure = 1.0
 			env.adjustment_enabled = true
-			env.adjustment_saturation = 1.15
+			env.adjustment_saturation = 1.0
 			we.environment = env
 	var key_v: Variant = _palette_call("make_key_light", [])
 	if key_v is DirectionalLight3D:
@@ -1076,12 +1086,30 @@ func _build_rider() -> void:
 		_hero_mode = true
 		_rider_model = Node3D.new()
 		hero.scale = Vector3(-HERO_SCALE, HERO_SCALE, HERO_SCALE)   # mirrored: revolver in his RIGHT hand, pickaxe in his left
-		hero.position = Vector3(0.0, HERO_H * 0.5 * HERO_SCALE, 0.0)
+		# The hero is now RIGGED (Meshy rig, 10 library clips, weapons baked into the mesh). The
+		# rig's origin is at his FEET; the old static model was centred on his chest.
+		hero.position = Vector3.ZERO
 		_rider_model.add_child(hero)
-		_self_light(hero, 0.18, Color(1.0, 0.85, 0.65))
+		var han: RefCounted = Motion.Anim.new(hero, Motion.RIDER_CLIPS)
+		if han.ok():
+			_rider_anim = han
+			han.want("idle", 0.0)
+			# The revolver is baked into his anatomical LEFT hand; the model is mirrored, so it
+			# reads as his right. The aim modifier swings that arm to the reticle.
+			var hsk: Array = hero.find_children("*", "Skeleton3D", true, false)
+			if not hsk.is_empty():
+				var sk: Skeleton3D = hsk[0]
+				_aim_mod = AimMod.new()
+				_aim_mod.name = "GunArmAim"
+				_aim_mod.arm_bone = "LeftArm"
+				_aim_mod.fore_bone = "LeftForeArm"
+				_aim_mod.hand_bone = "LeftHand"
+				_aim_mod.influence = 0.0
+				sk.add_child(_aim_mod)
+		_self_light(hero, 0.05, Color(1.0, 0.9, 0.75))
 		_hero_body = hero
 		# Chest (model origin) just below the cart rim: hat, leaves, both weapons above it.
-		_rider_floor = _cart_rim_y - HERO_SINK_REST - HERO_H * 0.5 * HERO_SCALE
+		_rider_floor = _cart_rim_y - HERO_SINK_REST - HERO_H * 0.5 * HERO_SCALE + HERO_SEAT_DROP
 	else:
 		_rider_model = _inst(Motion.RIDER_RIG) if not debug_off.has("rig") else null
 	if _rider_model and not _hero_mode:
@@ -1216,6 +1244,21 @@ func _bind_hero_weapons() -> void:
 		return
 	if _gun_pivot.get_parent():
 		_gun_pivot.get_parent().remove_child(_gun_pivot)
+	var sks: Array = _hero_body.find_children("*", "Skeleton3D", true, false)
+	if not sks.is_empty():
+		# Rigged hero: ride the gun hand so the muzzle flash follows the aimed arm.
+		var ba := BoneAttachment3D.new()
+		ba.name = "GunHand"
+		ba.bone_name = "LeftHand"
+		(sks[0] as Skeleton3D).add_child(ba)
+		ba.add_child(_gun_pivot)
+		_gun_pivot.position = Vector3(0.0, 0.12, 0.0)
+		_gun_pivot.scale = Vector3.ONE * 100.0 / HERO_SCALE      # armature is 0.01 scaled
+		if _gun_spin_node:
+			_gun_spin_node.visible = false
+		if _axe_pivot:
+			_axe_pivot.visible = false
+		return
 	_hero_body.add_child(_gun_pivot)
 	_gun_pivot.position = HERO_MUZZLE
 	_gun_pivot.rotation = Vector3(0.0, -PI * 0.5, 0.0)      # pivot -Z (muzzle) -> model +X
@@ -1649,19 +1692,13 @@ func _build_mine_detail(length: float) -> void:
 	orb.height = 2.0
 	orb.radial_segments = 8
 	orb.rings = 4
-	# 2. Wall lantern glows between the real lantern props.
+	# 2. Lantern flame glows — ONLY on the real lantern props (`_lantern_pos`). A light needs a visible
+	# emitter (skill ep2-runner-camera-light): the old glows floated between the lanterns on stub
+	# brackets and read as white orbs hanging in the air.
 	var glows: Array[Transform3D] = []
-	var brackets: Array[Transform3D] = []
-	z = 5.0
-	var sd: float = -1.0
-	while z < length - 10.0:
-		var wx2: float = _wall_x_at(z) - 0.45
-		glows.append(Transform3D(Basis.IDENTITY.scaled(Vector3(0.16, 0.22, 0.16)), Vector3(wx2 * sd, 2.6, z)))
-		brackets.append(Transform3D(Basis.IDENTITY.scaled(Vector3(0.5, 0.08, 0.08)), Vector3((wx2 + 0.2) * sd, 2.85, z)))
-		z += 7.0
-		sd = -sd
-	_multi(orb, _mat("wall_lantern", Color(1.0, 0.72, 0.36), 5.0), glows)
-	_multi(_box(Vector3.ONE), _timber_mat(), brackets)
+	for lp in _lantern_pos:
+		glows.append(Transform3D(Basis.IDENTITY.scaled(Vector3(0.11, 0.16, 0.11)), lp))
+	_multi(orb, _mat("wall_lantern", Color(1.0, 0.68, 0.32), 2.4), glows)
 	# 3. Timber walkways high on the walls, each with a lantern.
 	var decks: Array[Transform3D] = []
 	var legs: Array[Transform3D] = []
@@ -2529,9 +2566,9 @@ func _update_lights(dist: float) -> void:
 
 func _update_camera(dist: float, delta: float) -> void:
 	var rx: float = float(_sim.get_cart_x())
-	var target := Vector3(rx * 0.6, 2.35, dist - 3.4)
+	var target := Vector3(rx * CAM_FOLLOW_X, CAM_HEIGHT, dist - CAM_BACK)
 	if _sim.is_ziplining():
-		target.y = 4.1
+		target.y = CAM_HEIGHT + 1.7
 	var k: float = clampf(delta * 6.0, 0.0, 1.0)
 	var p: Vector3 = _camera.position
 	p.x = lerpf(p.x, target.x, k)
@@ -2552,7 +2589,12 @@ func _update_camera(dist: float, delta: float) -> void:
 		_streaks.emitting = _sim.is_running() and not debug_off.has("streaks")
 		_streaks.speed_scale = spd / 20.0
 	if _camera.is_inside_tree():
-		_camera.look_at(Vector3(rx * 0.45, 1.55, dist + 9.0), Vector3.UP)
+		# Smooth the look-at target on its own (camera-controls rule: position and target ease
+		# independently) so lane hops don't snap the horizon.
+		var look_t := Vector3(rx * CAM_LOOK_X, CAM_LOOK_Y, dist + CAM_LOOK_AHEAD)
+		_look_x = lerpf(_look_x, look_t.x, clampf(delta * 5.0, 0.0, 1.0))
+		look_t.x = _look_x
+		_camera.look_at(look_t, Vector3.UP)
 
 ## Mouse ray from the camera: what the reticle is over, and where the gun aims
 ## (the archer it would hit, or AIM_FALLBACK metres along the ray).

@@ -857,6 +857,54 @@
       "text": "Nope, that's a gap!",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
       "note": "Episode 2 runner bark [hop_blocked] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_run_failed_1",
+      "text": "Welp. That's the ride.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [run_failed] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_run_failed_2",
+      "text": "Okay, okay, my bad!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [run_failed] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_run_failed_3",
+      "text": "Ouch. Let's go again.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [run_failed] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_run_failed_4",
+      "text": "Still smiling. One more?",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [run_failed] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_chamber_reached_1",
+      "text": "Made it! Vault time!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [chamber_reached] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_chamber_reached_2",
+      "text": "We're through, baby!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [chamber_reached] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_chamber_reached_3",
+      "text": "Ha! Wasn't so hard.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [chamber_reached] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_chamber_reached_4",
+      "text": "Chamber ahead. Let's cook.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [chamber_reached] (skill ep2-voice-barks)"
     }
   ]
 }

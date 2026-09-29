@@ -2,28 +2,209 @@
   "voice_id": "HMGfKwZCRujgXyRDUW0b",
   "note": "SOURCE OF TRUTH for Lil Blunt's Episode 2 runner barks + bear sounds (skill ep2-voice-barks). Run tools/ep2_voice/build_bank.py after editing: it writes the manifest entries, src/episode2/runner/voice_bank.gd, and (with --generate) the ElevenLabs takes.",
   "categories": {
-    "boulder_smash": {"gap": 0.0, "priority": 100, "lines": ["Whoa whoa WHOA!", "That boulder almost flattened us!", "Nope! Nope! Nope!", "Yikes, that cart is toast!", "Not the cart, bro!", "Okay, that was way too close!", "Who let a boulder loose?!"]},
-    "boulder_warning": {"gap": 4.0, "priority": 60, "lines": ["Boulder! Boulder!", "Rock incoming!", "Heads up, big one!", "Move, move, move!"]},
-    "hit": {"gap": 0.0, "priority": 90, "lines": ["Ow! Rude.", "Ahh, that stung!", "Okay, ouch!", "Not cool, man!", "Hey! Watch the hat!", "Oof!"]},
-    "hop_success": {"gap": 0.8, "priority": 80, "lines": ["Yeah! Smooth!", "Hop hop hooray!", "Nailed it!", "Ha! Too easy!", "That's how it's done!", "Woo! Look at me go!", "Smooth like butter.", "Boom! Cart to cart!", "Ha ha, still got it!", "Ooh, stylish!"]},
-    "jump_clear": {"gap": 2.5, "priority": 70, "lines": ["Whee, over we go!", "Up and over!", "Like it was nothing!", "Air time, baby!", "Yes! Cleared it!"]},
-    "duck": {"gap": 3.0, "priority": 50, "lines": ["Duck! Duck!", "Low bridge!", "Under we go!", "Whoops, head down!"]},
-    "bear_down": {"gap": 1.5, "priority": 65, "lines": ["Gotcha, bear!", "Bullseye!", "Sit down, buddy.", "Nighty night, fuzzball!", "One less archer!", "Bear down!"]},
-    "bear_sighted": {"gap": 6.0, "priority": 55, "lines": ["Bears ahead!", "Archer on the ledge!", "Incoming arrows!"]},
-    "zip_catch": {"gap": 0.0, "priority": 75, "lines": ["Wheeeee!", "Zipline time!", "Hang on, hang on!", "Here we go!"]},
-    "coin_streak": {"gap": 5.0, "priority": 30, "lines": ["Cha-ching!", "Bitcoin, baby!", "Stack those sats!", "Number go up!", "Shiny!"]},
-    "reload": {"gap": 3.0, "priority": 20, "lines": ["Fresh chamber.", "Reloading!", "Locked and loaded."]},
-    "dry": {"gap": 3.0, "priority": 35, "lines": ["Click. Uh oh.", "Out of bullets!"]},
-    "cart_spawn": {"gap": 4.0, "priority": 25, "lines": ["New ride, let's go!", "Fresh cart!"]},
-    "hop_blocked": {"gap": 2.0, "priority": 45, "lines": ["Whoa, no cart there!", "Nope, that's a gap!"]}
+    "boulder_smash": {
+      "gap": 0.0,
+      "priority": 100,
+      "lines": [
+        "Whoa whoa WHOA!",
+        "That boulder almost flattened us!",
+        "Nope! Nope! Nope!",
+        "Yikes, that cart is toast!",
+        "Not the cart, bro!",
+        "Okay, that was way too close!",
+        "Who let a boulder loose?!"
+      ]
+    },
+    "boulder_warning": {
+      "gap": 4.0,
+      "priority": 60,
+      "lines": [
+        "Boulder! Boulder!",
+        "Rock incoming!",
+        "Heads up, big one!",
+        "Move, move, move!"
+      ]
+    },
+    "hit": {
+      "gap": 0.0,
+      "priority": 90,
+      "lines": [
+        "Ow! Rude.",
+        "Ahh, that stung!",
+        "Okay, ouch!",
+        "Not cool, man!",
+        "Hey! Watch the hat!",
+        "Oof!"
+      ]
+    },
+    "hop_success": {
+      "gap": 0.8,
+      "priority": 80,
+      "lines": [
+        "Yeah! Smooth!",
+        "Hop hop hooray!",
+        "Nailed it!",
+        "Ha! Too easy!",
+        "That's how it's done!",
+        "Woo! Look at me go!",
+        "Smooth like butter.",
+        "Boom! Cart to cart!",
+        "Ha ha, still got it!",
+        "Ooh, stylish!"
+      ]
+    },
+    "jump_clear": {
+      "gap": 2.5,
+      "priority": 70,
+      "lines": [
+        "Whee, over we go!",
+        "Up and over!",
+        "Like it was nothing!",
+        "Air time, baby!",
+        "Yes! Cleared it!"
+      ]
+    },
+    "duck": {
+      "gap": 3.0,
+      "priority": 50,
+      "lines": [
+        "Duck! Duck!",
+        "Low bridge!",
+        "Under we go!",
+        "Whoops, head down!"
+      ]
+    },
+    "bear_down": {
+      "gap": 1.5,
+      "priority": 65,
+      "lines": [
+        "Gotcha, bear!",
+        "Bullseye!",
+        "Sit down, buddy.",
+        "Nighty night, fuzzball!",
+        "One less archer!",
+        "Bear down!"
+      ]
+    },
+    "bear_sighted": {
+      "gap": 6.0,
+      "priority": 55,
+      "lines": [
+        "Bears ahead!",
+        "Archer on the ledge!",
+        "Incoming arrows!"
+      ]
+    },
+    "zip_catch": {
+      "gap": 0.0,
+      "priority": 75,
+      "lines": [
+        "Wheeeee!",
+        "Zipline time!",
+        "Hang on, hang on!",
+        "Here we go!"
+      ]
+    },
+    "coin_streak": {
+      "gap": 5.0,
+      "priority": 30,
+      "lines": [
+        "Cha-ching!",
+        "Bitcoin, baby!",
+        "Stack those sats!",
+        "Number go up!",
+        "Shiny!"
+      ]
+    },
+    "reload": {
+      "gap": 3.0,
+      "priority": 20,
+      "lines": [
+        "Fresh chamber.",
+        "Reloading!",
+        "Locked and loaded."
+      ]
+    },
+    "dry": {
+      "gap": 3.0,
+      "priority": 35,
+      "lines": [
+        "Click. Uh oh.",
+        "Out of bullets!"
+      ]
+    },
+    "cart_spawn": {
+      "gap": 4.0,
+      "priority": 25,
+      "lines": [
+        "New ride, let's go!",
+        "Fresh cart!"
+      ]
+    },
+    "hop_blocked": {
+      "gap": 2.0,
+      "priority": 45,
+      "lines": [
+        "Whoa, no cart there!",
+        "Nope, that's a gap!"
+      ]
+    },
+    "run_failed": {
+      "gap": 0.0,
+      "priority": 110,
+      "lines": [
+        "Welp. That's the ride.",
+        "Okay, okay, my bad!",
+        "Ouch. Let's go again.",
+        "Still smiling. One more?"
+      ]
+    },
+    "chamber_reached": {
+      "gap": 0.0,
+      "priority": 85,
+      "lines": [
+        "Made it! Vault time!",
+        "We're through, baby!",
+        "Ha! Wasn't so hard.",
+        "Chamber ahead. Let's cook."
+      ]
+    }
   },
   "bear_sfx": [
-    {"id": "ep2_bear_growl_1", "prompt": "Low menacing bear growl echoing down a long stone mine tunnel, distant, gravelly, short", "duration_seconds": 2.0},
-    {"id": "ep2_bear_growl_2", "prompt": "Angry bear snarl and huff, rumbling chest growl, echoing in a cave, short", "duration_seconds": 2.0},
-    {"id": "ep2_bear_growl_3", "prompt": "Deep grizzly bear rumble with a wet snort, cave reverb, short", "duration_seconds": 1.8},
-    {"id": "ep2_bear_roar", "prompt": "Big grizzly bear roar echoing through a mine tunnel, aggressive, one roar", "duration_seconds": 2.4},
-    {"id": "ep2_bow_creak", "prompt": "Wooden hunting bow being drawn back, tense creak of wood and string, short", "duration_seconds": 0.9},
-    {"id": "ep2_bow_loose", "prompt": "Bowstring release twang and arrow whoosh, short and sharp", "duration_seconds": 0.6},
-    {"id": "ep2_bear_fall", "prompt": "Bear yelp of pain then heavy thud of a large animal falling onto wooden planks, short", "duration_seconds": 1.4}
+    {
+      "id": "ep2_bear_growl_1",
+      "prompt": "Low menacing bear growl echoing down a long stone mine tunnel, distant, gravelly, short",
+      "duration_seconds": 2.0
+    },
+    {
+      "id": "ep2_bear_growl_2",
+      "prompt": "Angry bear snarl and huff, rumbling chest growl, echoing in a cave, short",
+      "duration_seconds": 2.0
+    },
+    {
+      "id": "ep2_bear_growl_3",
+      "prompt": "Deep grizzly bear rumble with a wet snort, cave reverb, short",
+      "duration_seconds": 1.8
+    },
+    {
+      "id": "ep2_bear_roar",
+      "prompt": "Big grizzly bear roar echoing through a mine tunnel, aggressive, one roar",
+      "duration_seconds": 2.4
+    },
+    {
+      "id": "ep2_bow_creak",
+      "prompt": "Wooden hunting bow being drawn back, tense creak of wood and string, short",
+      "duration_seconds": 0.9
+    },
+    {
+      "id": "ep2_bow_loose",
+      "prompt": "Bowstring release twang and arrow whoosh, short and sharp",
+      "duration_seconds": 0.6
+    },
+    {
+      "id": "ep2_bear_fall",
+      "prompt": "Bear yelp of pain then heavy thud of a large animal falling onto wooden planks, short",
+      "duration_seconds": 1.4
+    }
   ]
 }

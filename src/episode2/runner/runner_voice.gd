@@ -24,6 +24,7 @@ const BEAR_HEAR := 46.0
 const BEAR_LOUD := 8.0
 const COIN_EVERY := 6
 const BOULDER_WARN := 22.0
+const ARROW_CREAK := 26.0        # bow creak = the windup, ~1.2 s before the arrow arrives
 const BEAR_SIGHT := 34.0
 const VOICE_DB := 2.0
 
@@ -93,6 +94,7 @@ var _announced: Dictionary = {}
 var _bear_players: Dictionary = {}     # archer id -> AudioStreamPlayer3D
 var _bear_next: Dictionary = {}        # archer id -> next growl time
 var _bear_fx: Dictionary = {}          # sfx id -> stream
+var _creak: AudioStreamPlayer
 var spoken: Array = []                 # test hook: every id said, in order
 
 func _ready() -> void:
@@ -117,6 +119,12 @@ func _ready() -> void:
 	_sim.cart_spawned.connect(func(_l: int) -> void: say("cart_spawn"))
 	_sim.rider_bailed.connect(func(_a: int, _b: int) -> void: _bail_t = _now)
 	_sim.gold_collected.connect(_on_gold)
+	_sim.run_failed.connect(func() -> void: say("run_failed"))
+	_sim.chamber_reached.connect(func() -> void: say("chamber_reached"))
+	_creak = AudioStreamPlayer.new()
+	_creak.bus = _voice.bus
+	_creak.volume_db = -7.0
+	add_child(_creak)
 
 func _on_gold(_total: int) -> void:
 	_coins += 1
@@ -189,6 +197,13 @@ func _process(delta: float) -> void:
 		if ahead >= 0.0 and ahead <= BOULDER_WARN and str(o.get("type", "")) == "boulder" and not _announced.has("b%d" % i):
 			_announced["b%d" % i] = true
 			say("boulder_warning")
+		# Windup telegraph: the bow creaks before the arrow arrives (combat rule: telegraph before contact).
+		if ahead >= 0.0 and ahead <= ARROW_CREAK and str(o.get("type", "")) == "arrow" and not _announced.has("c%d" % i):
+			_announced["c%d" % i] = true
+			var cs: AudioStream = _fx("ep2_bow_creak")
+			if cs and _creak:
+				_creak.stream = cs
+				_creak.play()
 	_update_bears(d)
 
 ## Each living bear grumbles from its ledge; quiet far away, louder as we close in.
