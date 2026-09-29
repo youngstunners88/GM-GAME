@@ -57,9 +57,9 @@ func _ready() -> void:
 	var ao := Sprite2D.new()
 	ao.name = "ContactShadow"
 	ao.texture = _contact_blob()
-	ao.scale = Vector2(target_width * 0.80 / 128.0, target_width * 0.24 / 128.0)
+	ao.scale = Vector2(target_width * 0.95 / 128.0, target_width * 0.32 / 128.0)
 	ao.position = Vector2(0, -2)
-	ao.modulate = Color(1, 1, 1, float(light["ao"]))
+	ao.modulate = Color(1, 1, 1, minf(float(light["ao"]) * 1.35, 0.85))
 	ao.z_index = -2
 	add_child(ao)
 
@@ -90,7 +90,7 @@ func _ready() -> void:
 	sprite.texture = atlas
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	sprite.scale = Vector2.ONE * factor
-	sprite.position.y = lift
+	sprite.position.y = lift + 5.0  # sunk into the ground so nothing hovers
 	var grade := ShaderMaterial.new()
 	grade.shader = GradeShader
 	grade.set_shader_parameter("tint", light["tint"])

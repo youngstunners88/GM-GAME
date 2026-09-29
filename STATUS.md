@@ -5,6 +5,12 @@
 
 ---
 
+**🌉 EDUCATION ROOMS — FREEDOM PASS (2026-09-30).** From your "improve education" doc:
+- **Smoke:** you can now walk into all three lounges (main door, west and east pergolas).
+- **Diamonds:** the bridge flows onto the plateau with no pinch point; walk off the edge and Lil Blunt falls and loses a life (respawns on the bridge). The advisor can't fall. Props spread out more.
+- **Gold:** props spaced along the whole street. **All rooms:** props sink into the ground with bigger contact shadows so nothing hovers.
+- New skills: portal traversal, portal ledge fall.
+
 **🌿💎🪙 EDUCATION ROOMS — ALL THREE UPGRADED (2026-09-29).** Your doc feedback, done:
 - **Smoke = a 420 lounge courtyard.** Your courtyard concept is the room now (no more Hogwarts): one big open plaza, seven spread-out stops, the whitepaper is a single notice board you can walk straight to. Pauly the Smokest is new-school with the bong. Haze drifts across the plaza and smoke breathes out of the lounge door.
 - **Diamonds.** The balance scale is off the cliff edge and sits inland on the terrace. The gate prop is gone: the archway you can already see now glows warm with rising embers, a BLAZE forge burns beside it, and the crystals pulse cyan.

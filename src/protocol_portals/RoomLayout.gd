@@ -2,8 +2,8 @@ extends RefCounted
 ## Ground contacts authored on the paintings after the 50px vertical crop.
 const STOPS := {
 	"smoke": {"ash_ring": Vector2(906, 681), "lounge_basket": Vector2(1929, 681), "arb_well": Vector2(1403, 593), "paper": Vector2(760, 418), "video": Vector2(2104, 440), "exam": Vector2(1403, 388)},
-	"diamonds": {"blaze_gate": Vector2(1690, 500), "tight_float": Vector2(1830, 590), "vault_crush": Vector2(2215, 472), "handler_bridge": Vector2(1100, 790), "paper": Vector2(1300, 490), "video": Vector2(2100, 345), "exam": Vector2(2015, 505)},
-	"gold": {"vest_clock": Vector2(1500, 430), "knox_window": Vector2(1120, 800), "melt_stamp": Vector2(1620, 545), "rush_board": Vector2(1520, 830), "paper": Vector2(1640, 265), "video": Vector2(1330, 950), "exam": Vector2(1400, 640)},
+	"diamonds": {"blaze_gate": Vector2(1680, 495), "tight_float": Vector2(1800, 600), "vault_crush": Vector2(2215, 455), "handler_bridge": Vector2(1100, 790), "paper": Vector2(1300, 490), "video": Vector2(2100, 325), "exam": Vector2(2040, 545)},
+	"gold": {"vest_clock": Vector2(1520, 400), "knox_window": Vector2(1110, 850), "melt_stamp": Vector2(1650, 560), "rush_board": Vector2(1540, 890), "paper": Vector2(1640, 250), "video": Vector2(1310, 1010), "exam": Vector2(1370, 715)},
 }
 const ENTRANCES := {"smoke": Vector2(1439, 1039), "diamonds": Vector2(650, 1010), "gold": Vector2(1090, 1020)}
 const WAYSTONES := {"smoke": Vector2(1286, 1061), "diamonds": Vector2(505, 1060), "gold": Vector2(940, 1060)}
@@ -11,13 +11,19 @@ const WAYSTONES := {"smoke": Vector2(1286, 1061), "diamonds": Vector2(505, 1060)
 const GROUND := {
 	"smoke": [
 		[Vector2(570, 301), Vector2(1220, 274), Vector2(1225, 236), Vector2(1581, 236), Vector2(1586, 274), Vector2(2280, 301), Vector2(2327, 388), Vector2(2321, 710), Vector2(2280, 827), Vector2(2104, 878), Vector2(1651, 885), Vector2(1605, 944), Vector2(1605, 1119), Vector2(1187, 1119), Vector2(1184, 944), Vector2(1154, 841), Vector2(818, 841), Vector2(614, 812), Vector2(529, 739), Vector2(504, 535), Vector2(526, 388)],
+		# the three lounges are walk-in (founder 2026-09-30): main doorway, west and east pergola lounges
+		[Vector2(1240, 262), Vector2(1575, 262), Vector2(1575, 70), Vector2(1240, 70)],
+		[Vector2(90, 230), Vector2(470, 200), Vector2(560, 300), Vector2(570, 520), Vector2(480, 520), Vector2(120, 470)],
+		[Vector2(2320, 380), Vector2(2520, 330), Vector2(2780, 330), Vector2(2780, 620), Vector2(2560, 640), Vector2(2320, 600)],
 	],
 	"diamonds": [
 		[Vector2(430,1100), Vector2(660,1100), Vector2(1450,610), Vector2(1350,530)],
 		[Vector2(1250,665), Vector2(1420,660), Vector2(1640,460), Vector2(1550,370)],
 		[Vector2(1110,415), Vector2(1230,370), Vector2(1510,450), Vector2(1440,575), Vector2(1240,600), Vector2(1130,535)],
+		# wide junction so the bridge flows onto the plateau with no pinch point
+		[Vector2(1380,560), Vector2(1500,470), Vector2(1700,470), Vector2(1760,610), Vector2(1560,700), Vector2(1400,660)],
 		# the castle-front plateau: one open terrace, kept 60+ px in from the cliff lip
-		[Vector2(1633,446), Vector2(1693,481), Vector2(2020,481), Vector2(2023,270), Vector2(2087,267), Vector2(2260,446), Vector2(2231,553), Vector2(2160,574), Vector2(1900,651), Vector2(1633,674), Vector2(1533,681), Vector2(1413,630), Vector2(1533,503), Vector2(1580,457)],
+		[Vector2(1633,446), Vector2(1693,481), Vector2(2020,481), Vector2(2023,270), Vector2(2087,267), Vector2(2260,446), Vector2(2231,553), Vector2(2160,574), Vector2(1900,662), Vector2(1633,690), Vector2(1533,696), Vector2(1413,630), Vector2(1533,503), Vector2(1580,457)],
 	],
 	"gold": [
 		[Vector2(760,1100), Vector2(1500,1100), Vector2(1730,710), Vector2(1560,490), Vector2(1370,535), Vector2(1100,710)],
@@ -81,6 +87,15 @@ const ATMOSPHERE := {
 		],
 	},
 }
+
+## Rooms with a real drop: walking off the ground by more than this many px is a fall
+## (the player loses a life; the advisor never does). Founder 2026-09-30.
+const FALL_MARGIN := {"diamonds": 46.0}
+
+static func overhang(protocol: String, point: Vector2) -> float:
+	if contains(protocol, point):
+		return 0.0
+	return point.distance_to(constrain(protocol, point))
 
 static func prop_width(protocol: String, kind: String) -> float:
 	var table: Dictionary = PROP_WIDTH.get(protocol, {})
