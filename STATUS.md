@@ -2579,7 +2579,14 @@ All 18 of your marked-up images landed as real files this time. They are
 committed to `artifacts/founder-art/references/` so no future session has to
 recover them or ask you to resend anything.
 
-### The three title complaints were one complaint
+### 🎙️ EPISODE 2 — LIL BLUNT SPEAKS, BEARS GROWL, POSE FIXED (2026-09-29)
+- **Gun in his RIGHT hand:** the founder's hero model is mirrored, back to the camera, turned only slightly toward the aim (was turned sideways and looked spastic).
+- **"White swords" gone:** the long white speed streaks and the arrow glow trails were the swords. Streaks cut to a few short warm ones, arrow trail removed, crystals halved in size/count.
+- **He talks:** 60+ ElevenLabs lines in his own voice, reacting to boulder wrecks (alarm), hits, hops (10 celebrations), jump clears, ducks, zips, coins, reloads, bear kills. Shuffled so nothing repeats until all are used. Skill `ep2-voice-barks`, gate `tests/ep2_runner_voice_test`.
+- **Bears are heard:** ElevenLabs growls/roar/fall on each ledge in 3D, audible from ~46 m and louder as the cart approaches.
+- Firecrawl MCP + CLI installed; the key in the session is still rejected (401) — see chat.
+
+## The three title complaints were one complaint
 
 "TOO SMALL", "you fucked it up by having the text above", and the empty tab you
 circled with your own mockup underneath were being treated as three separate

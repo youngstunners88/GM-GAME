@@ -109,8 +109,10 @@ const LEAF_CART_LEN := 1.85
 const HERO_SCALE := 1.35
 const HERO_H := 1.9
 const HERO_MUZZLE := Vector3(0.45, 0.05, 0.48)     # a little behind the barrel tip (0.59)
-const HERO_YAW_MIN := -1.6          # gun swings from forward (-pi/2) ...
-const HERO_YAW_MAX := -0.2          # ... to almost square across the tunnel
+const HERO_YAW_BASE := 0.25         # mirrored model: +yaw swings the revolver forward
+const HERO_YAW_GAIN := 0.5
+const HERO_YAW_MIN := -0.5
+const HERO_YAW_MAX := 0.7
 const HERO_SINK_REST := -0.55       # chest sits this far ABOVE the cart rim (founder target: torso visible over the rim)
 const COIN_SPIN := 3.2
 const ARCHER_STATUE_H := 2.5          # drawn-bow bear incl. bow, standing on the ledge
@@ -1073,7 +1075,7 @@ func _build_rider() -> void:
 		# existing rider maths (feet at _rider.position) still holds.
 		_hero_mode = true
 		_rider_model = Node3D.new()
-		hero.scale = Vector3.ONE * HERO_SCALE
+		hero.scale = Vector3(-HERO_SCALE, HERO_SCALE, HERO_SCALE)   # mirrored: revolver in his RIGHT hand, pickaxe in his left
 		hero.position = Vector3(0.0, HERO_H * 0.5 * HERO_SCALE, 0.0)
 		_rider_model.add_child(hero)
 		_self_light(hero, 0.18, Color(1.0, 0.85, 0.65))
@@ -1217,7 +1219,7 @@ func _bind_hero_weapons() -> void:
 	_hero_body.add_child(_gun_pivot)
 	_gun_pivot.position = HERO_MUZZLE
 	_gun_pivot.rotation = Vector3(0.0, -PI * 0.5, 0.0)      # pivot -Z (muzzle) -> model +X
-	_gun_pivot.scale = Vector3.ONE / HERO_SCALE
+	_gun_pivot.scale = Vector3(-1.0, 1.0, 1.0) / HERO_SCALE
 	if _gun_spin_node:
 		_gun_spin_node.visible = false
 	if _axe_pivot:
@@ -1290,7 +1292,6 @@ func _arrow_mesh_node() -> Node3D:
 	var fletch := _mesh_node(_box(Vector3(0.28, 0.2, 0.02)), _pal("bandit_cloth"),
 		Vector3(-0.7, 0.0, 0.0), root)
 	fletch.rotation.x = 0.4
-	_mesh_node(_box(Vector3(2.6, 0.05, 0.05)), _glow_mat("arrow_trail", C_DUCK, 0.45), Vector3(-2.2, 0.0, 0.0), root)
 	_world.add_child(root)
 	return root
 
@@ -1613,8 +1614,8 @@ func _build_mine_detail(length: float) -> void:
 				var ln := Vector3(float(pts[i + 3]), float(pts[i + 4]), float(pts[i + 5]))
 				var wp: Vector3 = tile * lp
 				var wn: Vector3 = (rot * ln).normalized()
-				for _k in 3:
-					var sc: float = rng.randf_range(0.16, 0.5)
+				for _k in 2:
+					var sc: float = rng.randf_range(0.09, 0.26)
 					var tilt := Vector3(rng.randf_range(-0.5, 0.5), 0.0, rng.randf_range(-0.5, 0.5))
 					var dir: Vector3 = (wn + tilt * 0.6).normalized()
 					var q := Quaternion(Vector3.UP, dir)
@@ -1910,7 +1911,7 @@ func _build_fx() -> void:
 	# Speed streaks rushing past the camera (camera-local, scale with speed).
 	_streaks = CPUParticles3D.new()
 	_streaks.local_coords = true
-	_streaks.amount = 48
+	_streaks.amount = 10
 	_streaks.lifetime = 0.55
 	_streaks.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
 	_streaks.emission_box_extents = Vector3(7.0, 4.0, 3.0)
@@ -1920,8 +1921,8 @@ func _build_fx() -> void:
 	_streaks.gravity = Vector3.ZERO
 	_streaks.initial_velocity_min = 42.0
 	_streaks.initial_velocity_max = 58.0
-	_streaks.mesh = _box(Vector3(0.025, 0.025, 1.8))
-	_streaks.material_override = _glow_mat("speed_streak", Color(1.0, 0.9, 0.7), 0.35)
+	_streaks.mesh = _box(Vector3(0.012, 0.012, 0.6))
+	_streaks.material_override = _glow_mat("speed_streak", Color(1.0, 0.7, 0.4), 0.12)
 	# Gold dust drifting in the lantern light (world-space, spawned around the camera).
 	_dust = CPUParticles3D.new()
 	_dust.amount = 70
@@ -2252,7 +2253,9 @@ func _update_rider(dist: float, delta: float) -> void:
 	if _hero_mode:
 		var aim_t: Vector3 = _aim_point if _aim_ok else Vector3(x, 1.5, dist + 30.0)
 		var dv: Vector3 = aim_t - Vector3(x, 0.0, dist)
-		var th: float = clampf(atan2(-dv.z, dv.x), HERO_YAW_MIN, HERO_YAW_MAX)
+		# Back to the camera, turned a little toward the aim (target art: seen from behind,
+		# revolver arm out on his right). Never square-on sideways — that read as spastic.
+		var th: float = clampf(HERO_YAW_BASE + HERO_YAW_GAIN * atan2(dv.x, maxf(dv.z, 1.0)), HERO_YAW_MIN, HERO_YAW_MAX)
 		_rider_model.rotation.y = lerp_angle(_rider_model.rotation.y, th, clampf(delta * 10.0, 0.0, 1.0))
 	# Upper body turns toward where he's aiming (clamped; he stays facing the run).
 	elif _aim_ok and _rider_model:

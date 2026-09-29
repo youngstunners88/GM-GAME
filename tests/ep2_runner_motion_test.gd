@@ -125,6 +125,7 @@ func _ready() -> void:
 	# pick axe"): the rider must BE the posed hero — a visible, textured model whose
 	# baked revolver + pickaxe stick out of the cart — and the muzzle pivot must ride it.
 	_check("the rider is the founder's posed hero (revolver + pickaxe baked in)", view._hero_mode and view._hero_body != null)
+	_check("revolver is in his RIGHT hand: the posed model is mirrored (founder 2026-09-29)", view._hero_body != null and view._hero_body.scale.x < 0.0)
 	if view._hero_mode:
 		var hb: AABB = view._measure(view._hero_body)
 		_check("hero mesh spans a real body incl. raised pickaxe (h=%.2f)" % hb.size.y, hb.size.y > 1.7 and hb.size.x > 1.0)
