@@ -20,6 +20,8 @@ const PLAYER_HALF: float = 16.0
 const BALLOON_W: float = 340.0
 const BALLOON_H: float = 84.0
 const TALK_SEC: float = 6.0
+const VOICE_GAIN_DB: float = 10.0
+const MUSIC_DUCK_DB: float = -14.0
 
 var target: Node2D = null
 var display_name: String = ""
@@ -37,6 +39,7 @@ var _balloon: Panel = null
 var _balloon_label: Label = null
 var _voice: AudioStreamPlayer = null
 var _balloon_left: float = 0.0
+var _music_base_db: float = INF
 var _bob_t: float = 0.0
 var _bob: float = 0.0
 var _facing: float = 1.0
@@ -220,8 +223,41 @@ func play_voice(path: String) -> void:
 	var stream: AudioStream = load(path) as AudioStream
 	if stream == null:
 		return
+	# Founder 2026-09-30: the governors were "drowned by the music". Boost the read and duck
+	# the Music bus while it plays (restored when the clip ends).
+	_voice.volume_db = VOICE_GAIN_DB
 	_voice.stream = stream
 	_voice.play()
+	_duck_music(true)
+	if not _voice.finished.is_connected(_on_voice_finished):
+		_voice.finished.connect(_on_voice_finished)
+
+
+func _on_voice_finished() -> void:
+	_duck_music(false)
+
+
+func _duck_music(on: bool) -> void:
+	var idx := AudioServer.get_bus_index("Music")
+	if idx < 0:
+		return
+	if on and _music_base_db == INF:
+		_music_base_db = AudioServer.get_bus_volume_db(idx)
+	if _music_base_db == INF:
+		return
+	var target: float = _music_base_db + MUSIC_DUCK_DB if on else _music_base_db
+	var tw := create_tween()
+	tw.tween_method(func(v: float) -> void: AudioServer.set_bus_volume_db(idx, v), AudioServer.get_bus_volume_db(idx), target, 0.25)
+	if not on:
+		tw.tween_callback(func() -> void: _music_base_db = INF)
+
+
+func _exit_tree() -> void:
+	if _music_base_db != INF:
+		var idx := AudioServer.get_bus_index("Music")
+		if idx >= 0:
+			AudioServer.set_bus_volume_db(idx, _music_base_db)
+		_music_base_db = INF
 
 
 func is_talking() -> bool:
