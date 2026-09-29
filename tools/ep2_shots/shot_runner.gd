@@ -72,6 +72,10 @@ func _ready() -> void:
 			var path: String = ("%s/d%04d.png" % [out, int(marks[next])]) if str(args.get("clips", "")) == "" else ("%s/c%02d_%s.png" % [out, next, RunnerView.debug_clip])
 			img.save_png(path)
 			print("SHOT ", path, " ", img.get_size())
+			var vw: Node = live.get_node("View")
+			if vw._hero_body:
+				var pl: AnimationPlayer = vw._rider_anim.player if vw._rider_anim else null
+				print("DBG rider.rot=", vw._rider.rotation, " model.rot=", vw._rider_model.rotation, " model.scale=", vw._rider_model.scale, " hero.scale=", vw._hero_body.scale, " anim=", pl.current_animation if pl else "-", " t=", pl.current_animation_position if pl else 0.0, " mood=", vw._rider_anim.current if vw._rider_anim else "-", " rider.y=", vw._rider.position.y, " rim=", vw._cart_rim_y)
 			next += 1
 		elif frames % 3 == 0:
 			await get_tree().process_frame

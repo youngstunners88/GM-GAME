@@ -303,6 +303,7 @@ var _gold_nodes: Array = []                 # parallel to obstacles (null when n
 var _gold_burst: CPUParticles3D = null
 var _streaks: CPUParticles3D = null
 var _look_x: float = 0.0
+var _dbg_clip_applied: String = ""
 # HUD additions.
 var _cart_strip: Control = null
 var _gold_label: Label = null
@@ -1099,7 +1100,7 @@ func _build_rider() -> void:
 			# The revolver is baked into his anatomical LEFT hand; the model is mirrored, so it
 			# reads as his right. The aim modifier swings that arm to the reticle.
 			var hsk: Array = hero.find_children("*", "Skeleton3D", true, false)
-			if not hsk.is_empty():
+			if not hsk.is_empty() and not debug_off.has("aimmod"):
 				var sk: Skeleton3D = hsk[0]
 				_aim_mod = AimMod.new()
 				_aim_mod.name = "GunArmAim"
@@ -1108,7 +1109,7 @@ func _build_rider() -> void:
 				_aim_mod.hand_bone = "LeftHand"
 				_aim_mod.influence = 0.0
 				sk.add_child(_aim_mod)
-		_self_light(hero, 0.32, Color(1.0, 0.88, 0.7))
+		_self_light(hero, 0.05, Color(1.0, 0.9, 0.75))
 		_hero_body = hero
 		# Chest (model origin) just below the cart rim: hat, leaves, both weapons above it.
 		_rider_floor = _cart_rim_y - HERO_SINK_REST - HERO_H * 0.5 * HERO_SCALE + HERO_SEAT_DROP
@@ -1247,7 +1248,7 @@ func _bind_hero_weapons() -> void:
 	if _gun_pivot.get_parent():
 		_gun_pivot.get_parent().remove_child(_gun_pivot)
 	var sks: Array = _hero_body.find_children("*", "Skeleton3D", true, false)
-	if not sks.is_empty():
+	if not sks.is_empty() and not debug_off.has("gunhand"):
 		# Rigged hero: ride the gun hand so the muzzle flash follows the aimed arm.
 		var ba := BoneAttachment3D.new()
 		ba.name = "GunHand"
@@ -2251,8 +2252,13 @@ func _update_rider(dist: float, delta: float) -> void:
 		var mood: String = Motion.pick_rider(zipping, ducking, y > 0.05 and not zipping,
 			bool(_sim.is_reloading()), _t_hit, _t_shot, _t_swipe, _t_hop, _t_cheer)
 		if debug_clip != "":
-			if _rider_anim.player and _rider_anim.player.current_animation != debug_clip and _rider_anim.player.has_animation(debug_clip):
-				_rider_anim.player.play(debug_clip)
+			var dc: PackedStringArray = debug_clip.split("@")
+			if _rider_anim.player and _rider_anim.player.has_animation(dc[0]) and _dbg_clip_applied != debug_clip:
+				_dbg_clip_applied = debug_clip
+				_rider_anim.player.play(dc[0])
+				if dc.size() > 1:
+					_rider_anim.player.seek(float(dc[1]), true)
+					_rider_anim.player.pause()
 		else:
 			_rider_anim.want(mood)
 	var spd: float = float(_sim.get_speed()) if _sim.has_method("get_speed") else Sim.RUN_SPEED
