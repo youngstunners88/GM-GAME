@@ -16,3 +16,7 @@ Read [runtime contract](references/runtime-contract.md) before edits and [region
 7. **Integrate and review.** Keep decoration modular and below actors. Verify the whole study/test/ascent journey in all three protocols after shared code changes. Produce before/after captures, record remaining defects and install no unverified art into a live build.
 
 Deliver a region layout, prop briefs, provenance, concrete code/assets when authorized and available, and a concise evidence-based status. Do not describe a skill or a concept as a redesigned live world.
+
+
+## Founder feedback 2026-09-29 (applied)
+The town plate was praised ("brilliant"); the icons felt crowbarred in. Props are now photoreal, graded to the golden-hour plate, with sun-radial cast shadows and coin-heap glints. See `gm-game-portal-prop-integration` and `gm-game-portal-atmosphere`.

@@ -1,28 +1,23 @@
 extends RefCounted
 ## Ground contacts authored on the paintings after the 50px vertical crop.
 const STOPS := {
-	"smoke": {"ash_ring": Vector2(1220, 990), "lounge_basket": Vector2(1740, 780), "arb_well": Vector2(2070, 930), "paper": Vector2(1320, 650), "video": Vector2(1590, 970), "exam": Vector2(1950, 800)},
-	"diamonds": {"blaze_gate": Vector2(1540, 440), "tight_float": Vector2(1210, 510), "vault_crush": Vector2(2130, 535), "handler_bridge": Vector2(1050, 805), "paper": Vector2(1630, 650), "video": Vector2(2070, 345), "exam": Vector2(1890, 590)},
-	"gold": {"vest_clock": Vector2(1400, 450), "knox_window": Vector2(1000, 790), "melt_stamp": Vector2(1740, 510), "rush_board": Vector2(1510, 820), "paper": Vector2(1640, 265), "video": Vector2(1330, 950), "exam": Vector2(1630, 620)},
+	"smoke": {"ash_ring": Vector2(906, 681), "lounge_basket": Vector2(1929, 681), "arb_well": Vector2(1403, 593), "paper": Vector2(760, 418), "video": Vector2(2104, 440), "exam": Vector2(1403, 388)},
+	"diamonds": {"blaze_gate": Vector2(1690, 500), "tight_float": Vector2(1830, 590), "vault_crush": Vector2(2215, 472), "handler_bridge": Vector2(1100, 790), "paper": Vector2(1300, 490), "video": Vector2(2100, 345), "exam": Vector2(2015, 505)},
+	"gold": {"vest_clock": Vector2(1500, 430), "knox_window": Vector2(1120, 800), "melt_stamp": Vector2(1620, 545), "rush_board": Vector2(1520, 830), "paper": Vector2(1640, 265), "video": Vector2(1330, 950), "exam": Vector2(1400, 640)},
 }
-const ENTRANCES := {"smoke": Vector2(1500, 1040), "diamonds": Vector2(650, 1010), "gold": Vector2(1090, 1020)}
-const WAYSTONES := {"smoke": Vector2(1400, 1080), "diamonds": Vector2(505, 1060), "gold": Vector2(940, 1060)}
+const ENTRANCES := {"smoke": Vector2(1439, 1039), "diamonds": Vector2(650, 1010), "gold": Vector2(1090, 1020)}
+const WAYSTONES := {"smoke": Vector2(1286, 1061), "diamonds": Vector2(505, 1060), "gold": Vector2(940, 1060)}
 ## Overlapping pieces follow garden paths, bridge/terrace, and town street.
 const GROUND := {
 	"smoke": [
-		[Vector2(1360,1100), Vector2(1570,1100), Vector2(1780,850), Vector2(1560,790)],
-		[Vector2(1090,890), Vector2(1210,1030), Vector2(1500,1100), Vector2(1460,990), Vector2(1260,925), Vector2(1180,810)],
-		[Vector2(1130,880), Vector2(1240,860), Vector2(1570,730), Vector2(1550,655), Vector2(1360,690), Vector2(1160,780)],
-		[Vector2(950,440), Vector2(1050,430), Vector2(1180,535), Vector2(1430,625), Vector2(1510,745), Vector2(1330,725), Vector2(1130,605)],
-		[Vector2(1550,780), Vector2(1740,670), Vector2(2000,730), Vector2(2110,870), Vector2(1930,905), Vector2(1810,820)],
-		[Vector2(1590,990), Vector2(1750,1080), Vector2(2150,980), Vector2(2150,850), Vector2(2030,890), Vector2(1950,970)],
+		[Vector2(570, 301), Vector2(1220, 274), Vector2(1225, 236), Vector2(1581, 236), Vector2(1586, 274), Vector2(2280, 301), Vector2(2327, 388), Vector2(2321, 710), Vector2(2280, 827), Vector2(2104, 878), Vector2(1651, 885), Vector2(1605, 944), Vector2(1605, 1119), Vector2(1187, 1119), Vector2(1184, 944), Vector2(1154, 841), Vector2(818, 841), Vector2(614, 812), Vector2(529, 739), Vector2(504, 535), Vector2(526, 388)],
 	],
 	"diamonds": [
 		[Vector2(430,1100), Vector2(660,1100), Vector2(1450,610), Vector2(1350,530)],
 		[Vector2(1250,665), Vector2(1420,660), Vector2(1640,460), Vector2(1550,370)],
 		[Vector2(1110,415), Vector2(1230,370), Vector2(1510,450), Vector2(1440,575), Vector2(1240,600), Vector2(1130,535)],
-		[Vector2(1420,565), Vector2(1740,480), Vector2(2140,460), Vector2(2230,560), Vector2(1930,655), Vector2(1530,690)],
-		[Vector2(2010,265), Vector2(2160,265), Vector2(2270,450), Vector2(2220,555), Vector2(1990,515)],
+		# the castle-front plateau: one open terrace, kept 60+ px in from the cliff lip
+		[Vector2(1633,446), Vector2(1693,481), Vector2(2020,481), Vector2(2023,270), Vector2(2087,267), Vector2(2260,446), Vector2(2231,553), Vector2(2160,574), Vector2(1900,651), Vector2(1633,674), Vector2(1533,681), Vector2(1413,630), Vector2(1533,503), Vector2(1580,457)],
 	],
 	"gold": [
 		[Vector2(760,1100), Vector2(1500,1100), Vector2(1730,710), Vector2(1560,490), Vector2(1370,535), Vector2(1100,710)],
@@ -30,6 +25,66 @@ const GROUND := {
 		[Vector2(1480,375), Vector2(1730,375), Vector2(1820,90), Vector2(1650,40), Vector2(1510,200)],
 	],
 }
+
+## Cell width (room px) of each painted prop. Smoke props are photoreal and sized
+## against the painted lounge furniture (a chair + table set reads ~290 px wide).
+const PROP_WIDTH := {
+	"smoke": {"ash_ring": 210.0, "lounge_basket": 200.0, "arb_well": 230.0, "paper": 200.0,
+		"video": 220.0, "exam": 315.0, "exit": 150.0},
+	"diamonds": {"blaze_gate": 200.0, "tight_float": 195.0, "vault_crush": 225.0, "handler_bridge": 190.0,
+		"paper": 200.0, "video": 190.0, "exam": 250.0, "exit": 150.0},
+	"gold": {"vest_clock": 235.0, "knox_window": 215.0, "melt_stamp": 225.0, "rush_board": 245.0,
+		"paper": 215.0, "video": 225.0, "exam": 290.0, "exit": 170.0},
+}
+const DEFAULT_PROP_WIDTH := 125.0
+
+## Atmosphere per room. haze = drifting fog shaders (far one behind the props, near one
+## in front for depth); sources = particle wisps. "kind": door = smoke blowing out of the
+## lounge, rise = a curling column, drift = wide horizontal breeze. Neutral colours only
+## (never green-dominant: the blotch rule).
+const ATMOSPHERE := {
+	"smoke": {
+		"haze": Color(0.86, 0.80, 0.94), "far": 0.36, "near": 0.10,
+		"sources": [
+			{"kind": "door", "pos": Vector2(1403, 245)},
+			{"kind": "rise", "pos": Vector2(906, 640)},
+			{"kind": "rise", "pos": Vector2(250, 360)},
+			{"kind": "rise", "pos": Vector2(2540, 470)},
+			{"kind": "drift", "pos": Vector2(1400, 760)},
+		],
+	},
+	"diamonds": {
+		"haze": Color(0.66, 0.90, 0.96), "far": 0.16, "near": 0.05,
+		"sources": [{"kind": "drift", "pos": Vector2(1500, 500)}],
+		# Accent what the painting already shows: the archway is the way in, so it glows
+		# warm (no separate gate prop); the crystals pulse cyan (never green-dominant).
+		"accents": [
+			{"kind": "glow", "pos": Vector2(1613, 415), "size": Vector2(300, 340), "color": Color(1.0, 0.72, 0.32), "strength": 0.55, "pulse": 2.6},
+			{"kind": "glow", "pos": Vector2(1690, 380), "size": Vector2(160, 170), "color": Color(1.0, 0.66, 0.26), "strength": 0.45, "pulse": 0.45},
+			{"kind": "glow", "pos": Vector2(1267, 340), "size": Vector2(150, 260), "color": Color(0.40, 0.90, 0.95), "strength": 0.34, "pulse": 3.4},
+			{"kind": "glow", "pos": Vector2(1777, 470), "size": Vector2(170, 290), "color": Color(0.40, 0.90, 0.95), "strength": 0.30, "pulse": 4.0},
+			{"kind": "glow", "pos": Vector2(2093, 300), "size": Vector2(140, 240), "color": Color(0.40, 0.90, 0.95), "strength": 0.30, "pulse": 3.0},
+			{"kind": "rise", "pos": Vector2(1613, 470), "extent": Vector2(36, 8), "color": Color(1.0, 0.80, 0.45), "amount": 10},
+			{"kind": "rise", "pos": Vector2(1690, 420), "extent": Vector2(22, 6), "color": Color(1.0, 0.75, 0.35), "amount": 8},
+		],
+	},
+	"gold": {
+		"haze": Color(0.97, 0.84, 0.58), "far": 0.15, "near": 0.05,
+		"sources": [{"kind": "drift", "pos": Vector2(1300, 600)}],
+		# Golden-hour sun bloom from the canyon mouth, and sun glints on the coin heaps.
+		"accents": [
+			{"kind": "glow", "pos": Vector2(1500, 140), "size": Vector2(760, 520), "color": Color(1.0, 0.82, 0.45), "strength": 0.24, "pulse": 5.0},
+			{"kind": "glints", "pos": Vector2(880, 700), "extent": Vector2(110, 70), "color": Color(1.0, 0.88, 0.5), "amount": 9},
+			{"kind": "glints", "pos": Vector2(770, 960), "extent": Vector2(110, 60), "color": Color(1.0, 0.88, 0.5), "amount": 8},
+			{"kind": "glints", "pos": Vector2(1855, 745), "extent": Vector2(150, 70), "color": Color(1.0, 0.88, 0.5), "amount": 10},
+			{"kind": "glints", "pos": Vector2(1590, 940), "extent": Vector2(100, 80), "color": Color(1.0, 0.88, 0.5), "amount": 8},
+		],
+	},
+}
+
+static func prop_width(protocol: String, kind: String) -> float:
+	var table: Dictionary = PROP_WIDTH.get(protocol, {})
+	return float(table.get(kind, DEFAULT_PROP_WIDTH))
 
 static func polygons(protocol: String) -> Array[PackedVector2Array]:
 	var result: Array[PackedVector2Array] = []

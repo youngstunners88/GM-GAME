@@ -5,6 +5,13 @@
 
 ---
 
+**🌿💎🪙 EDUCATION ROOMS — ALL THREE UPGRADED (2026-09-29).** Your doc feedback, done:
+- **Smoke = a 420 lounge courtyard.** Your courtyard concept is the room now (no more Hogwarts): one big open plaza, seven spread-out stops, the whitepaper is a single notice board you can walk straight to. Pauly the Smokest is new-school with the bong. Haze drifts across the plaza and smoke breathes out of the lounge door.
+- **Diamonds.** The balance scale is off the cliff edge and sits inland on the terrace. The gate prop is gone: the archway you can already see now glows warm with rising embers, a BLAZE forge burns beside it, and the crystals pulse cyan.
+- **Gold.** Same town you loved. Every icon is now a realistic prop in the town's own light with grounded shadows that fan away from the sun, plus glints on the coin heaps, so nothing feels dropped in.
+- **New skills:** portal prop integration, portal atmosphere, Smoke 420 lounge.
+- Tests all green (rooms, ladders, protocol portals, compile, green-VFX). Ships to master now.
+
 **⛏️ EPISODE 2 — YOUR MESHY MODELS ARE NOW THE STAGE (2026-09-28).** The four models behind your links were pulled with the project key, remeshed for the web (from up to 173 MB each down to 0.2–2.4 MB) and put in the game.
 - **Tunnel:** your "Three Track Gold Mine Stage" tunnel now runs the whole length of each leg. Its dead-end wall and built-in floor were cut out, so it is open at both ends and sits over the game's own three rails.
 - **Carts:** the leaf-emblem carts from your "Gold Mine Stage" are now the convoy carts and the parked carts. When a cart is smashed it breaks into two halves that fly apart.

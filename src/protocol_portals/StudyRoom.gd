@@ -91,6 +91,7 @@ func _ready() -> void:
 	_plan_stops()
 	_build_backdrop()
 	_add_painted_map()
+	_build_atmosphere()
 	_build_floor_and_walls()
 	_build_return_waystone()
 	_build_stops()
@@ -317,6 +318,187 @@ func _add_painted_map() -> void:
 	get_node("Backdrop").add_child(map)
 
 
+# ---- Atmosphere -------------------------------------------------------------
+
+const HazeShader := preload("res://src/assets/shaders/portal_haze.gdshader")
+static var _puff_tex: GradientTexture2D = null
+
+func _puff_texture() -> GradientTexture2D:
+	if _puff_tex == null:
+		var grad := Gradient.new()
+		grad.set_color(0, Color(1, 1, 1, 0.85))
+		grad.set_color(1, Color(1, 1, 1, 0.0))
+		_puff_tex = GradientTexture2D.new()
+		_puff_tex.gradient = grad
+		_puff_tex.fill = GradientTexture2D.FILL_RADIAL
+		_puff_tex.fill_from = Vector2(0.5, 0.5)
+		_puff_tex.fill_to = Vector2(1.0, 0.5)
+		_puff_tex.width = 96
+		_puff_tex.height = 96
+	return _puff_tex
+
+
+## Founder 2026-09-29: "haze smoke appearing or blowing in the house or wherever".
+## Two drifting haze layers (behind and in front of the props) plus particle wisps.
+func _build_atmosphere() -> void:
+	var cfg: Dictionary = Layout.ATMOSPHERE.get(protocol, {})
+	if cfg.is_empty():
+		return
+	var tint: Color = cfg["haze"]
+	_add_haze_layer("HazeFar", -90, tint, float(cfg["far"]), 3.0, Vector2(0.035, -0.006))
+	_add_haze_layer("HazeNear", 3000, tint, float(cfg["near"]), 1.7, Vector2(-0.05, -0.010))
+	for src in cfg["sources"]:
+		_add_wisps(String(src["kind"]), src["pos"], tint)
+	var accents: Array = cfg.get("accents", [])
+	for i in accents.size():
+		var acc: Dictionary = accents[i]
+		match String(acc["kind"]):
+			"glow": _add_accent_glow(i, acc)
+			_: _add_accent_sparks(i, acc)
+
+
+## Accents make what the painting ALREADY shows glow (founder on Diamonds: "the gate seems
+## redundant as we see the entrance already, so lets just accentuate what's already
+## there"): an additive bloom that breathes, sitting over the painting and under the props.
+func _add_accent_glow(index: int, acc: Dictionary) -> void:
+	var col: Color = acc["color"]
+	var strength := float(acc["strength"])
+	var glow := Sprite2D.new()
+	glow.name = "AccentGlow_%d" % index
+	glow.texture = _puff_texture()
+	glow.position = acc["pos"]
+	glow.scale = Vector2(acc["size"]) / 96.0
+	glow.z_index = -80
+	glow.modulate = Color(col.r, col.g, col.b, strength)
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	glow.material = mat
+	add_child(glow)
+	var half := float(acc.get("pulse", 3.0))
+	var tween := create_tween().set_loops()
+	tween.tween_interval(randf() * half)  # desynchronise the glows
+	tween.tween_property(glow, "modulate:a", strength * 0.5, half).set_trans(Tween.TRANS_SINE)
+	tween.tween_property(glow, "modulate:a", strength, half).set_trans(Tween.TRANS_SINE)
+
+
+## Tiny additive motes: "rise" = embers lifting off a doorway/brazier, otherwise glints
+## twinkling in place (sun catching a coin heap).
+func _add_accent_sparks(index: int, acc: Dictionary) -> void:
+	var col: Color = acc["color"]
+	var p := CPUParticles2D.new()
+	p.name = "AccentSparks_%d" % index
+	p.position = acc["pos"]
+	p.z_index = 1500
+	p.texture = _puff_texture()
+	p.local_coords = true  # the node never moves; global coords stray when the room opens
+	p.amount = int(acc.get("amount", 10))
+	p.randomness = 0.8
+	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	p.emission_rect_extents = acc["extent"]
+	var ramp := Gradient.new()
+	ramp.colors = PackedColorArray([Color(col.r, col.g, col.b, 0.0), Color(col.r, col.g, col.b, 0.9), Color(col.r, col.g, col.b, 0.0)])
+	ramp.offsets = PackedFloat32Array([0.0, 0.4, 1.0])
+	p.color_ramp = ramp
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	p.material = mat
+	if String(acc["kind"]) == "rise":
+		p.gravity = Vector2(4, -6)  # CPUParticles2D defaults to 98 px/s^2 of gravity: motes would fall
+		p.lifetime = 3.2
+		p.direction = Vector2(0.1, -1.0)
+		p.spread = 22.0
+		p.initial_velocity_min = 14.0
+		p.initial_velocity_max = 34.0
+		p.scale_amount_min = 0.05
+		p.scale_amount_max = 0.11
+	else:
+		p.gravity = Vector2.ZERO
+		p.lifetime = 1.8
+		p.direction = Vector2(0, -1)
+		p.spread = 180.0
+		p.initial_velocity_min = 0.0
+		p.initial_velocity_max = 3.0
+		p.scale_amount_min = 0.07
+		p.scale_amount_max = 0.16
+	p.preprocess = p.lifetime
+	p.emitting = true
+	add_child(p)
+
+
+func _add_haze_layer(node_name: String, z: int, tint: Color, density: float, scale_k: float, drift: Vector2) -> void:
+	var rect := ColorRect.new()
+	rect.name = node_name
+	rect.position = Vector2.ZERO
+	rect.size = Vector2(strip_width, ROOM_H)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rect.z_index = z
+	var mat := ShaderMaterial.new()
+	mat.shader = HazeShader
+	mat.set_shader_parameter("haze_color", tint)
+	mat.set_shader_parameter("density", density)
+	mat.set_shader_parameter("scale", scale_k)
+	mat.set_shader_parameter("aspect", strip_width / ROOM_H)
+	mat.set_shader_parameter("drift", drift)
+	rect.material = mat
+	add_child(rect)
+
+
+func _add_wisps(kind: String, pos: Vector2, tint: Color) -> void:
+	var p := CPUParticles2D.new()
+	p.name = "Wisps_%s" % kind
+	p.position = pos
+	p.z_index = 2000
+	p.texture = _puff_texture()
+	p.local_coords = false
+	p.lifetime = 5.5
+	p.preprocess = 5.5  # already drifting when the room opens
+	p.randomness = 0.6
+	p.angular_velocity_min = -12.0
+	p.angular_velocity_max = 12.0
+	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	var ramp := Gradient.new()
+	ramp.colors = PackedColorArray([Color(tint.r, tint.g, tint.b, 0.0), Color(tint.r, tint.g, tint.b, 0.30), Color(tint.r, tint.g, tint.b, 0.0)])
+	ramp.offsets = PackedFloat32Array([0.0, 0.35, 1.0])
+	p.color_ramp = ramp
+	match kind:
+		"door":  # the open lounge doorway breathing smoke out onto the plaza
+			p.amount = 14
+			p.emission_rect_extents = Vector2(120, 8)
+			p.direction = Vector2(0.15, 1.0)
+			p.spread = 32.0
+			p.initial_velocity_min = 22.0
+			p.initial_velocity_max = 44.0
+			p.gravity = Vector2(14, 0)
+			p.scale_amount_min = 1.6
+			p.scale_amount_max = 3.2
+			p.lifetime = 7.0
+			p.preprocess = 7.0
+		"rise":  # a slow curling column
+			p.amount = 10
+			p.emission_rect_extents = Vector2(24, 6)
+			p.direction = Vector2(0, -1)
+			p.spread = 24.0
+			p.initial_velocity_min = 16.0
+			p.initial_velocity_max = 34.0
+			p.gravity = Vector2(10, -6)
+			p.scale_amount_min = 0.8
+			p.scale_amount_max = 2.0
+		_:  # "drift": a wide horizontal breeze
+			p.amount = 8
+			p.emission_rect_extents = Vector2(900, 200)
+			p.direction = Vector2(1, -0.1)
+			p.spread = 20.0
+			p.initial_velocity_min = 10.0
+			p.initial_velocity_max = 24.0
+			p.gravity = Vector2(6, 0)
+			p.scale_amount_min = 2.4
+			p.scale_amount_max = 4.6
+			p.lifetime = 9.0
+			p.preprocess = 9.0
+	p.emitting = true
+	add_child(p)
+
+
 func _build_backdrop() -> void:
 	var layer := Node2D.new()
 	layer.name = "Backdrop"
@@ -462,7 +644,8 @@ func _build_stop(entry: Dictionary, map_position: Vector2) -> void:
 	fixture.name = "Fixture"
 	fixture.kind = id
 	fixture.protocol = protocol
-	fixture.target_width = 145.0 if id in ["arb_well", "exam", "vault_crush"] else 125.0
+	fixture.target_width = Layout.prop_width(protocol, id) if Layout.PROP_WIDTH.has(protocol) \
+			else (145.0 if id in ["arb_well", "exam", "vault_crush"] else 125.0)
 	stop.add_child(fixture)
 
 

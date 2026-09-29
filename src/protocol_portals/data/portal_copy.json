@@ -98,8 +98,8 @@
     "stops": [
       {
         "id": "blaze_gate",
-        "name": "BLAZE Mint Gate",
-        "line": "BLAZE sits on the diamond mint path. This is the gate."
+        "name": "BLAZE Forge",
+        "line": "BLAZE sits on the diamond mint path. The forge burns beside the way in - follow the glow through the arch."
       },
       {
         "id": "tight_float",
