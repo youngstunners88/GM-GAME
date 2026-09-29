@@ -13,6 +13,8 @@ extends RefCounted
 ##   0.80 s · CrouchLookAroundBow head at 65 % height · Archery_Shot release 1.16 s.
 ## Re-measure with the probe in .claude/skills/ep2-motion-emotion/SKILL.md after any re-rig.
 
+## RETIRED 2026-09-29: the founder's posed hero replaced the rigged rider (assets in .farm/retired,
+## regenerate with tools/meshy/meshy_rig.py). Kept so the fallback path and clip tables still compile.
 const RIDER_RIG := "res://src/episode2/assets/lil_blunt_rigged.glb"
 const BEAR_RIG := "res://src/episode2/assets/bear_rigged.glb"
 
@@ -89,6 +91,49 @@ static func pick_archer(alive: bool, to_release: float, ahead: float) -> String:
 	if ahead > -4.0 and ahead < 70.0:
 		return "aim"
 	return "idle"
+
+## PROCEDURAL body language for the founder's POSED hero (lil_blunt_hero.glb: pickaxe
+## raised, golden revolver aimed — both baked into the mesh, so a skeletal clip would
+## deform them; founder 2026-09-29: "he doesn't even have his golden revolver nor his
+## pick axe"). Returns {"pitch": rad forward-lean about the rider's feet (+ = forward),
+## "sink": metres down into the cart, "squash": vertical scale, "bob": metres}.
+## Every term is a short decaying/bell impulse from the event timers, so it is pure,
+## deterministic and headless-testable.
+static func hero_pose(t_hit: float, t_shot: float, t_swipe: float, t_hop: float, t_cheer: float,
+		ducking: bool, reloading: bool, airborne: bool, speed: float, time: float) -> Dictionary:
+	var pitch: float = 0.0
+	var sink: float = 0.0
+	var squash: float = 1.0
+	var run: float = clampf(speed / 20.0, 0.0, 1.6)
+	var bob: float = sin(time * 9.0) * 0.025 * run + sin(time * 5.3) * 0.015 * run
+	pitch += sin(time * 6.1) * 0.012 * run
+	# Revolver recoil: the whole body kicks back and up.
+	pitch -= 0.15 * exp(-t_shot * 14.0)
+	bob += 0.035 * exp(-t_shot * 14.0)
+	# Pickaxe chop: lean hard into it and back.
+	if t_swipe < SWIPE_HOLD:
+		var u: float = t_swipe / SWIPE_HOLD
+		pitch += 0.85 * sin(PI * u)
+		bob -= 0.06 * sin(PI * u)
+	# Hit: thrown back, dropped.
+	if t_hit < HIT_HOLD:
+		pitch -= 0.42 * exp(-t_hit * 6.0)
+		sink += 0.16 * exp(-t_hit * 8.0)
+	# Hop: lean into the sideways jump.
+	if t_hop < HOP_HOLD:
+		pitch += 0.13 * sin(PI * t_hop / HOP_HOLD)
+	# Cheer: two little bounces.
+	if t_cheer < CHEER_HOLD:
+		bob += 0.13 * absf(sin(PI * 2.0 * t_cheer / CHEER_HOLD))
+	if reloading:
+		pitch += 0.10
+	if airborne:
+		squash = 1.05
+	if ducking:
+		sink += 0.95
+		squash = 0.88
+		pitch += 0.12
+	return {"pitch": pitch, "sink": sink, "squash": squash, "bob": bob}
 
 ## Seconds until a hazard that would destroy the rider's own cart, or INF.
 static func danger_eta(sim: Object, lane: int, dist: float, speed: float) -> float:

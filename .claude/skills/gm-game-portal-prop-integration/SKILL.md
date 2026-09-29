@@ -26,12 +26,10 @@ the Diamonds balance scale "sits awkwardly on the edge as if it's hanging off". 
   (raise the pocket rule) or a glass highlight (accept).
 
 ## 3. Integrate in the room (`RoomFixture.gd`)
-- `LIGHT[protocol]`: tint / saturation / contrast / `darken` (grade toward the plate), `ao` contact pool,
-  `shadow` strength, `skew`. Positive skew leans the cast shadow LEFT, negative RIGHT. Back-lit rooms (Gold)
-  use `sun_x` + `spread`: shadows fan away from the sun by the prop's x.
-- Shaders: `prop_integrate.gdshader` (grade + ground darkening), `prop_shadow.gdshader` (silhouette shadow).
-- Size per prop in `RoomLayout.PROP_WIDTH` (cell width in room px; tall props like clocks need ~235, wide
-  desks ~250-315). A player is ~90 px tall: anything you walk to should read 1.5-3x that.
+- Share one ground anchor for the opaque feet, compact contact shadow and collider. Current admitted atlas feet land at approximately y=410 in each 443px cell; verify this if replacing the atlas.
+- Keep the contact shadow tight (about 14px high). Detached flattened silhouettes and giant dark pools were rejected as floating furniture; do not restore them.
+- Grade toward the room with `prop_integrate.gdshader`. Keep highlights restrained rather than bleaching the top of every object.
+- Size props against nearby painted furniture and the character. Gold/ Diamonds now use roughly 120-200px cell widths; making every prop 235-315px caused crowding.
 
 ## 4. Place props (`RoomLayout.STOPS` + `GROUND`)
 - Keep every prop base **>= 80 px inside** any cliff lip/parapet/bridge edge, and never on a low wall.
@@ -39,9 +37,11 @@ the Diamonds balance scale "sits awkwardly on the edge as if it's hanging off". 
 - Space props so half-widths do not overlap (prop fill is ~0.75-0.86 of `PROP_WIDTH`).
 - Keep the ground polygon narrower than the walkable painting, not wider, so the player can't stand on air.
 - If the painting already shows the thing (an archway, a door), do NOT add a duplicate prop on it:
-  put a different prop beside it and accent the painted feature (see `gm-game-portal-atmosphere`).
+  use an interaction hotspot on the painted feature without additional furniture (see `gm-game-portal-atmosphere`).
 
 ## 5. Prove it
 `SHOT_OUT=<new dir> xvfb-run -a -s "-screen 0 1280x720x24" .godot-cache/Godot_v4.3-stable_linux.x86_64 --rendering-method gl_compatibility --rendering-driver opengl3 --path . res://tests/portal_capture_tool.tscn`
 then LOOK at `<protocol>-overview.png` and every per-stop close-up. `tests/portal_room_test.gd` must pass
-(reachability, footprints block walking, `Fixture/PaintedProp` at every stop). Never `rm -rf` old captures; use a new dir.
+(reachability, footprints block walking, painted props or the existing doorway hotspot). Never `rm -rf` old captures; use a new dir.
+
+Run `tests/portal_traversal_test.gd` too: walk collision-aware routes using real input, press E at each station, and verify the advisor stays nearby.

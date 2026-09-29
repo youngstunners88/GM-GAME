@@ -49,7 +49,7 @@ same commit — a manifest that lies is worse than none.
 | **Founder reports smudges / blotches / blemishes** | **`blotch-hunter` agent** | `scripts/blotch-oracle.json` | `blotch-forensics`, `blotch-repair-gate` |
 
 Episode 2 sessions load gm-game-tool-roster + gm-game-episode2-runner-combat.
-Episode 2 feature work follows `ep2-layered-production` (illustration → wire spec → design imagery → 3D → motion/emotion, each gated); unknowns go to `ep2-3d-strategy-research` before a second bisection round. Any 3D model or meshy.ai link goes through `ep2-meshy-studio` (Meshy CLI + MCP, key from env).
+Episode 2 feature work follows `ep2-layered-production` (illustration → wire spec → design imagery → 3D → motion/emotion, each gated); unknowns go to `ep2-3d-strategy-research` before a second bisection round. Any 3D model or meshy.ai link goes through `ep2-meshy-studio` (Meshy CLI + MCP, key from env). A founder feedback doc / Drive images / meshy.ai links go through `ep2-founder-intake`; a visual change is proven with `ep2-reference-match-loop` (screen vs his target image on one board) before it is called done. Voice/creature sounds and reactions go through `ep2-voice-barks`.
 
 ## Naming Conventions
 - Levels: `level-[number]_[realm-name].tscn` (e.g., `level-01_smoke-realm.tscn`)

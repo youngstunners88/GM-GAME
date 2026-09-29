@@ -12,6 +12,12 @@
 - Pauly, Kane and Rich now speak every explanation in your ElevenLabs voices (50 clips).
 - New skills: portal educator dialogue, portal voice.
 
+**🤠 EPISODE 2 — YOUR NEW LIL BLUNT, BEAR AND COINS (2026-09-29).** From your "Ep 2 Rails" doc: Lil Blunt is now your "Smiling Zipline Hero" model, with the golden revolver and the pickaxe already in his hands. The old rider was a rigged model with separate weapons, and those weapons were hidden inside the cart, so they were never drawn. He sits with the torso above the cart rim, and the whole figure swings so the revolver points at your reticle. He kicks back on each shot, leans into a pickaxe chop, sinks into the cart when he ducks and is thrown back when hit. On the zipline the same model hangs from the pickaxe. The bears are your "Mine Bear Archer" (drawn bow, nocked arrow) on ledges. They turn to follow you and fall when shot. I found one was half inside the tunnel rock, so the ledges are now out in the open. The Bitcoin coins are real solid coins with the ₿ on both faces and a milled edge. The "filter" was a see-through glow shell and a cut-out face. My first fix used a very metallic material, which draws black in the web build, so the coins vanished until I fixed it. **Look:** the camera is closer and lower, the lighting is warmer, the tunnel rock lights itself and has glowing crystal shards planted on the measured rock surface, and the rails are copper. **Still short of your target:** the rock is softer and blurrier than the sharp faceted rock in your image, and the crystals read as loose orange shards rather than embedded crystal. This is listed as the next fix in `docs/founder-feedback/2026-09-29_ep2-rails.md`. **New skills:** `ep2-founder-intake` (feedback doc → references → assets → ledger with proof) and `ep2-reference-match-loop` (real capture next to your target image on one board, checked against your list). **New tools:** `tools/meshy/pull_share.py` (a Meshy share link to a game-ready model in one command), `scripts/ref_compare.py` (the side-by-side board and grade), and `tools/ep2_shots/` (a local one-minute screenshot rig instead of a 15-minute web export). Checks: 10 test suites pass, including new ones that fail if the revolver or pickaxe go missing again or the coins go black. The web package is under the size limit.
+
+---
+
+---
+
 **🌉 EDUCATION ROOMS — FREEDOM PASS (2026-09-30).** From your "improve education" doc:
 - **Smoke:** you can now walk into all three lounges (main door, west and east pergolas).
 - **Diamonds:** the bridge flows onto the plateau with no pinch point; walk off the edge and Lil Blunt falls and loses a life (respawns on the bridge). The advisor can't fall. Props spread out more.
@@ -2580,7 +2586,14 @@ All 18 of your marked-up images landed as real files this time. They are
 committed to `artifacts/founder-art/references/` so no future session has to
 recover them or ask you to resend anything.
 
-### The three title complaints were one complaint
+### 🎙️ EPISODE 2 — LIL BLUNT SPEAKS, BEARS GROWL, POSE FIXED (2026-09-29)
+- **Gun in his RIGHT hand:** the founder's hero model is mirrored, back to the camera, turned only slightly toward the aim (was turned sideways and looked spastic).
+- **"White swords" gone:** the long white speed streaks and the arrow glow trails were the swords. Streaks cut to a few short warm ones, arrow trail removed, crystals halved in size/count.
+- **He talks:** 60+ ElevenLabs lines in his own voice, reacting to boulder wrecks (alarm), hits, hops (10 celebrations), jump clears, ducks, zips, coins, reloads, bear kills. Shuffled so nothing repeats until all are used. Skill `ep2-voice-barks`, gate `tests/ep2_runner_voice_test`.
+- **Bears are heard:** ElevenLabs growls/roar/fall on each ledge in 3D, audible from ~46 m and louder as the cart approaches.
+- Firecrawl MCP + CLI installed; the key in the session is still rejected (401) — see chat.
+
+## The three title complaints were one complaint
 
 "TOO SMALL", "you fucked it up by having the text above", and the empty tab you
 circled with your own mockup underneath were being treated as three separate

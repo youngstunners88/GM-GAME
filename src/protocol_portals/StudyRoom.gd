@@ -306,7 +306,7 @@ func _plan_stops() -> void:
 ## the companion and the player all still draw on top of it.
 const PAINTED_MAPS: Dictionary = {
 	"smoke": "res://src/assets/portals/maps/map_smoke.jpg",
-	"diamonds": "res://src/assets/portals/maps/map_diamonds.jpg",
+	"diamonds": "res://src/assets/portals/maps/map_diamonds_courtyard.png",
 	"gold": "res://src/assets/portals/maps/map_gold.jpg",
 }
 
@@ -318,7 +318,9 @@ func _add_painted_map() -> void:
 	map.centered = false
 	map.region_enabled = true
 	# Explicit crop keeps every authored landmark coordinate stable.
-	map.region_rect = Rect2(0, 50, strip_width, ROOM_H)
+	var source_scale := map.texture.get_size() / Vector2(2800, 1200)
+	map.region_rect = Rect2(Vector2(0, 50) * source_scale, Vector2(strip_width, ROOM_H) * source_scale)
+	map.scale = Vector2.ONE / source_scale
 	get_node("Backdrop").add_child(map)
 
 
@@ -553,19 +555,6 @@ func constrain_to_ground(point: Vector2) -> Vector2:
 	return Layout.constrain(protocol, point)
 
 
-## The player (not the advisor) may step off a ledge: he can overhang the ground by the room's
-## fall margin, and PortalExplorer turns a lingering overhang into a fall.
-func constrain_player(point: Vector2) -> Vector2:
-	var margin: float = float(Layout.FALL_MARGIN.get(protocol, 0.0))
-	if margin <= 0.0:
-		return Layout.constrain(protocol, point)
-	var nearest: Vector2 = Layout.constrain(protocol, point)
-	var gap: float = point.distance_to(nearest)
-	if gap <= margin:
-		return point
-	return nearest + (point - nearest) / gap * margin
-
-
 # ---- Floor ------------------------------------------------------------------
 
 func _build_floor_and_walls() -> void:
@@ -660,6 +649,10 @@ func _build_stop(entry: Dictionary, map_position: Vector2) -> void:
 	add_child(stop)
 	stop.reached.connect(_on_stop_reached)
 	stop.activated.connect(_activate_stop)
+	# The painted entrance is the mint gate; do not block it with another prop.
+	if protocol == "diamonds" and id == "blaze_gate":
+		stop.label_height = 90.0
+		return
 	var fixture := FixtureScript.new()
 	fixture.name = "Fixture"
 	fixture.kind = id

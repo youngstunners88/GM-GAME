@@ -19,7 +19,18 @@ model of it exists or can be made; procedural geometry is only for things Meshy 
 - **Balance**: `meshy balance --output-schema v1 --format json --no-update-check` (613 on 2026-09-28).
   Costs: image→3D 30 (Meshy-7 textured), +5 ultra, 8K +5, remesh 5, rig 5, animate 3/clip.
 
-# Founder share link → in-game asset
+# Founder share link → in-game asset (one command since 2026-09-29)
+`python3 tools/meshy/pull_share.py <code|url> --remesh 25000 --name <n> [--tex 1024 --aux 512]` does steps 1–5
+below and leaves `.farm/share/<n>/{meta.json,thumb.png,game.glb,sheet.png}`. LOOK at `sheet.png` before installing.
+Surface props for a tunnel from the mesh itself: `python3 tools/meshy/shell_surface_points.py <shell.glb>
+src/episode2/art/shell_crystals.gd` (generated const; the view plants glowing crystals ON the measured wall).
+### Pack budget (learned 2026-09-29 — pck hit 198.4 MB of 199.2)
+Godot imports textures LOSSLESS with mipmaps, so a GLB costs far more in the pack than on disk: a 0.7 MB cart GLB
+with three 1024 maps was **9 MB** in the pck; the hero (1.9 MB GLB) 7 MB; the tunnel shell 5 MB. Before adding
+a model: `shrink_glb.py --max 1024 --aux-max 256` (normal + metal-rough maps at 256 saved 8 MB on one cart), and
+RETIRE what it replaces (`git rm` + move to `.farm/retired/`). `scripts/ep2-local-export.sh` prints the pck size.
+
+# Founder share link → in-game asset (manual steps)
 1. `curl -sSL https://www.meshy.ai/s/<code>` → the redirect URL ends in the **task uuid**.
 2. `GET /openapi/v1/image-to-3d/<uuid>` (or text-to-3d / multi-image-to-3d) with our key works
    for the founder's own models → `model_urls.glb`, `thumbnail_url`, prompts.
@@ -41,6 +52,9 @@ model of it exists or can be made; procedural geometry is only for things Meshy 
 | NrZuH8 "Gold Mine Stage" | `leaf_cart.glb` convoy + parked carts; `leaf_cart_wreck_a/b.glb` debris | kmeans split of 6 carts; the two half-carts become the smash |
 | uKupoa "Hanging Mine Gunslinger" | `lil_blunt_zipline.glb` — shown while on a cable, yawed so the revolver (model −X) faces the reticle | none |
 | 2SbhCb corridor | not used — only 2 tracks | — |
+| DL2PTu "Smiling Zipline Hero" | **the rider**, in the cart AND on the zipline (`lil_blunt_hero.glb`) — pickaxe + golden revolver baked in | none; posed-hero rules in `ep2-motion-emotion` |
+| W2TyUS "Mine Bear Archer" | the archers on the wall ledges (`mine_bear_archer.glb`), static drawn-bow statue | none |
+| HUbTbv "Three Track Rail Section" | recorded, not used (founder: our tracks already look good) | — |
 
 # Push the quality further (in priority order)
 1. **Set pieces from key art**: `meshy image-to-3d create --image-url <keyart crop> --ai-model meshy-7

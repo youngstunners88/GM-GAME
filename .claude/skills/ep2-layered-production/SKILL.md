@@ -22,7 +22,9 @@ too simple" report so far came from skipping a layer: 3D props with no wire spec
 | 5 | **Motion + emotion** — rigged skeletal clips chosen from sim state, reactions, camera feel | `src/episode2/runner/runner_motion.gd` (pure), view plays it | `ep2-motion-emotion` skill, `tools/meshy/meshy_rig.py` | `ep2_runner_motion_test` (priorities, rig clip contract, rig scale sane, live leg has no script errors) |
 
 Then the **proof layer** over all five: `ep2-browser-playtest` with `?ep2bot=1` (the autopilot
-plays; you only take screenshots) — look at every frame yourself before saying it works.
+plays; you only take screenshots), then **`ep2-reference-match-loop`**: the capture goes on one board beside the
+founder's target image and passes his checklist. Founder feedback docs enter through `ep2-founder-intake`.
+Look at every frame yourself before saying it works.
 
 # Separation of concerns (hard rules)
 - **Sim owns numbers, view owns pixels, motion owns clip choice.** The view reads the sim and

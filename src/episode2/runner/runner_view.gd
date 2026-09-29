@@ -51,10 +51,12 @@ const TUNNEL_SHELL_MODEL := "res://src/episode2/assets/mine_tunnel_shell.glb"
 const LEAF_CART_MODEL := "res://src/episode2/assets/leaf_cart.glb"
 const WRECK_A_MODEL := "res://src/episode2/assets/leaf_cart_wreck_a.glb"
 const WRECK_B_MODEL := "res://src/episode2/assets/leaf_cart_wreck_b.glb"
-const ZIP_POSE_MODEL := "res://src/episode2/assets/lil_blunt_zipline.glb"
+const HERO_MODEL := "res://src/episode2/assets/lil_blunt_hero.glb"        # "Smiling Zipline Hero"
+const BEAR_STATUE_MODEL := "res://src/episode2/assets/mine_bear_archer.glb"  # "Mine Bear Archer"
 const Motion := preload("res://src/episode2/runner/runner_motion.gd")
 const AimMod := preload("res://src/episode2/runner/runner_aim_modifier.gd")
 const TEX_BTC := "tex_btc_coin.png"
+const CRYSTAL_SHADER := "res://src/episode2/art/crystal_glow.gdshader"
 const TEX_ROCK := "tex_rock_wall.jpg"
 const TEX_VEIN := "tex_gold_vein.jpg"
 const TEX_TIMBER := "tex_timber.jpg"
@@ -97,11 +99,23 @@ const BEAR_NATIVE_H := 1.8
 # in X so its inner walls land on SHELL_WALL_X while its 3-track spacing matches ours.
 const SHELL_SCALE := Vector3(11.9, 11.0, 8.3)  # Y raised so the zip cable (5.85 m) clears the timber beams
 const SHELL_NATIVE_FLOOR := -0.34
+const SHELL_EMISSION := 0.16
 const SHELL_STEP := 15.2            # slight overlap of the 15.5 m module
 const SHELL_WALL_X := 5.5
 const RAIL_TOP := -0.31
 const LEAF_CART_LEN := 1.85
-const ZIP_POSE_H := 2.9             # zipline pose incl. the raised pickaxe
+# Founder's posed Lil Blunt (2026-09-29): pickaxe up, golden revolver out, both baked in.
+# Native size 1.18 x 1.90 x 1.03, origin at the chest; gun barrel tip / pickaxe top measured.
+const HERO_SCALE := 1.35
+const HERO_H := 1.9
+const HERO_MUZZLE := Vector3(0.45, 0.05, 0.48)     # a little behind the barrel tip (0.59)
+const HERO_YAW_BASE := 0.25         # mirrored model: +yaw swings the revolver forward
+const HERO_YAW_GAIN := 0.5
+const HERO_YAW_MIN := -0.5
+const HERO_YAW_MAX := 0.7
+const HERO_SINK_REST := -0.55       # chest sits this far ABOVE the cart rim (founder target: torso visible over the rim)
+const COIN_SPIN := 3.2
+const ARCHER_STATUE_H := 2.5          # drawn-bow bear incl. bow, standing on the ledge
 const ARCHER_HEIGHT := 2.9           # founder: bears need to read at 20-30 m/s
 const BOARDER_HEIGHT := 1.9
 const BOARDER_LEAP_LEAD := 14.0    # the leap starts this far before the cart reaches z
@@ -166,7 +180,8 @@ const WRECK_TIME := 1.6            # a smashed cart tumbles into the pit this lo
 const SPAWN_LEAD := 26.0           # an incoming cart is visible on its siding this far ahead
 const SIDING_OFFSET := 3.6         # siding rail runs this far outside its lane
 const CHUTE_HEIGHT := 5.0          # centre spawns drop from an ore chute
-const GOLD_Y := 0.95
+const GOLD_Y := 1.0
+const COIN_R := 0.42
 const FOV_BASE := 66.0
 const FOV_PER_MS := 1.1            # +deg per m/s above 20
 const C_DANGER := Color(1.0, 0.25, 0.15)
@@ -175,9 +190,12 @@ const FALLBACK_EMISSIVE := {"lantern": 1.1, "spark": 2.2, "gate": 0.9, "gold": 0
 
 ## TEST-ONLY render bisection switches, filled from ?ep2off= by ep2_entry.gd.
 ## Keys: boulders, shadows, streaks, rig, strips, gold, halo, stress, hero,
-## detail, dust. Always
+## detail, dust, nospin. Always
 ## empty in normal play.
 static var debug_off: Dictionary = {}
+## TEST-ONLY (tools/ep2_shots): when set, [pos, look_at] replaces the gameplay camera, so a
+## capture can look straight at one prop (a bear on its ledge, a coin) from any angle.
+static var debug_cam: Array = []
 
 var _sim: Node = null
 var _world: Node3D = null
@@ -250,9 +268,14 @@ var _bone_head: int = -1
 var _aim_mod: Node = null                   # RunnerAimModifier on the rider's skeleton
 var _dust: CPUParticles3D = null
 var _shell_mode: bool = false
-var _zip_model: Node3D = null
-var _zip_top: float = 0.0            # zip pose's native top (pickaxe) height
+var _shell_tiles: Array[Transform3D] = []    # each shell tile's transform (crystals are placed through it)
+var _zip_model: Node3D = null        # unused since the hero is one model (kept for fallbacks)
+var _zip_top: float = 0.0
 var _zip_scale: float = 1.0
+var _hero_mode: bool = false         # the posed founder hero is the rider
+var _hero_body: Node3D = null
+var _rider_floor: float = RIDER_FLOOR
+var _cart_rim_y: float = 1.2         # world y of the leaf cart rim (measured at build)
 var _wreck_pieces: Array = []        # [{"node", "vel", "spin", "t"}]
 var _t_hit: float = 99.0
 var _t_shot: float = 99.0
@@ -310,8 +333,12 @@ func rebuild(sim: Node) -> void:
 	_rider_skel = null
 	_aim_mod = null
 	_zip_model = null
+	_hero_mode = false
+	_hero_body = null
+	_rider_floor = RIDER_FLOOR
 	_wreck_pieces.clear()
 	_shell_mode = ResourceLoader.exists(TUNNEL_SHELL_MODEL) and not debug_off.has("shell")
+	_shell_tiles.clear()
 	_t_hit = 99.0
 	_t_shot = 99.0
 	_t_swipe = 99.0
@@ -346,6 +373,7 @@ func rebuild(sim: Node) -> void:
 	_build_carts()
 	_build_rider()
 	_build_hands()
+	_bind_hero_weapons()
 	_build_archers()
 	_build_hazards()
 	_build_boarders()
@@ -678,6 +706,29 @@ func _side_x(side: float, dist_from_centre: float) -> float:
 
 ## A bear (bear_archer.glb scaled to `height`) under a plain root node, so the
 ## fall/leap animation and the headlamp work regardless of model scale.
+## The founder's "Mine Bear Archer" (2026-09-29): a fully drawn bow, nocked arrow,
+## snarling face, helmet and lamp. A STATIC pose whose arrow points along model +X;
+## the sim's archers stand on ledges and turn (yaw only) to track the rider, and
+## fall over procedurally when shot. Boarders keep the rigged bear (leap/stomp clips).
+func _bear_statue(height: float) -> Node3D:
+	var root := Node3D.new()
+	var m: Node3D = _inst(BEAR_STATUE_MODEL)
+	if m == null:
+		return root
+	var bb: AABB = _measure(m)
+	var sc: float = height / bb.size.y if bb.size.y > 0.01 else 1.0
+	m.scale = Vector3.ONE * sc
+	m.position = Vector3(-(bb.position.x + bb.size.x * 0.5) * sc, -bb.position.y * sc,
+		-(bb.position.z + bb.size.z * 0.5) * sc)
+	root.add_child(m)
+	_self_light(m, 0.22, Color(1.0, 0.8, 0.6))     # near-black fur otherwise (founder: bears need improvement)
+	root.set_meta("statue", true)
+	return root
+
+## Yaw that points a statue's +X (arrow) along horizontal direction d.
+static func _statue_yaw(d: Vector3) -> float:
+	return atan2(-d.z, d.x)
+
 ## A bear: the Meshy-RIGGED bear when present (its RunnerMotion.Anim is stored
 ## as meta "anim"), else the static model, else a capsule.
 func _bear(height: float) -> Node3D:
@@ -719,6 +770,12 @@ func _apply_art() -> void:
 		var env_v: Variant = _palette_call("make_environment", [])
 		if env_v is Environment:
 			var env: Environment = env_v
+			# Founder target look 2026-09-29: warm amber glow, bright enough to read. The palette
+			# keeps ambient ENERGY (a gate pins it); colour + exposure are the view's to warm.
+			env.ambient_light_color = Color(0.95, 0.66, 0.42)
+			env.tonemap_exposure = 1.05
+			env.adjustment_enabled = true
+			env.adjustment_saturation = 1.15
 			we.environment = env
 	var key_v: Variant = _palette_call("make_key_light", [])
 	if key_v is DirectionalLight3D:
@@ -765,9 +822,26 @@ func _build_track(length: float) -> void:
 		beams.append(Transform3D(Basis.IDENTITY, Vector3(0.0, -4.5, z2 + POST_SPACING * 0.5)))
 		z2 += POST_SPACING
 	_multi(_box(Vector3(2.0, 0.14, 0.34)), _timber_mat(), ties)
-	_multi(_box(Vector3(0.12, 0.14, 1.0)), _pal("iron"), rails)
+	_multi(_box(Vector3(0.14, 0.16, 1.0)), _rail_mat(), rails)
 	_multi(_box(Vector3(0.26, PIT_DEPTH, 0.26)), _timber_mat(), posts)
 	_multi(_box(Vector3(7.8, 0.22, 0.28)), _timber_mat(), beams)
+
+## Rails as in the founder's target: warm copper-steel that catches the lantern light
+## (matte grey iron read as dull in the reference grade). Mildly metallic only — without
+## a reflection probe a fully metallic surface renders black in the web build.
+func _rail_mat() -> StandardMaterial3D:
+	if _mats.has("rail"):
+		var cached: StandardMaterial3D = _mats["rail"]
+		return cached
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color(0.78, 0.52, 0.34)
+	m.metallic = 0.35
+	m.roughness = 0.3
+	m.emission_enabled = true
+	m.emission = Color(0.55, 0.32, 0.14)
+	m.emission_energy_multiplier = 0.35
+	_mats["rail"] = m
+	return m
 
 func _seg_index(z: float) -> int:
 	return int(floor((z + 20.0) / TUNNEL_SEG))
@@ -846,6 +920,31 @@ func _build_tunnel(length: float) -> void:
 	_multi(_box(Vector3.ONE), _timber_mat(), posts)
 	_multi(_box(Vector3.ONE), _timber_mat(), beams)
 
+## The shell's rock texture carries amber veins, but its base colour is near-black, so in
+## the game the walls vanished and the glowing crystals looked like they hovered in the
+## dark. Feed the albedo back as a warm emission: the rock reads, the veins glow.
+func _light_shell_rock(n: Node3D) -> void:
+	_self_light(n, SHELL_EMISSION, Color(1.0, 0.72, 0.42))
+
+## Feed a model's own albedo texture back as a warm emission so it reads in a dark tunnel
+## without adding lights (the web renderer pays per light per object).
+func _self_light(n: Node3D, energy: float, tint: Color) -> void:
+	for mi in n.find_children("*", "MeshInstance3D", true, false):
+		var m3 := mi as MeshInstance3D
+		if m3.mesh == null:
+			continue
+		for i in m3.mesh.get_surface_count():
+			var src := m3.mesh.surface_get_material(i) as StandardMaterial3D
+			if src == null:
+				continue
+			var mat: StandardMaterial3D = src.duplicate()
+			mat.emission_enabled = true
+			mat.emission = tint
+			if mat.albedo_texture:
+				mat.emission_texture = mat.albedo_texture
+			mat.emission_energy_multiplier = energy
+			m3.set_surface_override_material(i, mat)
+
 ## The founder's Meshy tunnel ("Three Track Gold Mine Stage") with its dead end
 ## and floor cut away, tiled down the whole run over our 3-rail trestle and pit.
 ## Returns false (procedural tunnel instead) if the model can't load.
@@ -860,11 +959,13 @@ func _build_tunnel_shell(length: float, bottom: float) -> bool:
 	while z < length + 20.0:
 		var sh: Node3D = _inst(TUNNEL_SHELL_MODEL)
 		sh.scale = SHELL_SCALE
+		_light_shell_rock(sh)
 		# Alternate 180-degree turns so the repeat reads less like a tile.
 		if k % 2 == 1:
 			sh.rotation.y = PI
 		sh.position = Vector3(0.0, y0, z + SHELL_STEP * 0.5)
 		_world.add_child(sh)
+		_shell_tiles.append(Transform3D(Basis(Vector3.UP, sh.rotation.y).scaled(SHELL_SCALE), sh.position))
 		z += SHELL_STEP
 		k += 1
 	_mesh_node(_box(Vector3(20.0, 0.2, length + 60.0)), _rock_deep_mat(),
@@ -930,6 +1031,8 @@ func _build_carts() -> void:
 		if leaf:
 			_fit_on_rail(leaf, LEAF_CART_LEN, CART_Y)
 			c.add_child(leaf)
+			var lb: AABB = _measure(leaf)
+			_cart_rim_y = CART_Y + leaf.position.y + (lb.position.y + lb.size.y) * leaf.scale.y
 		elif ore:
 			ore.scale = Vector3.ONE * (ORE_CART_LEN / ORE_CART_NATIVE_LEN)
 			ore.rotation.y = PI * 0.5
@@ -966,8 +1069,22 @@ func _build_rider() -> void:
 	_rider = Node3D.new()
 	_rider.name = "Rider"
 	_world.add_child(_rider)
-	_rider_model = _inst(Motion.RIDER_RIG) if not debug_off.has("rig") else null
-	if _rider_model:
+	var hero: Node3D = _inst(HERO_MODEL) if not debug_off.has("herom") else null
+	if hero:
+		# The founder's posed Lil Blunt. The pivot's origin is at his FEET so the
+		# existing rider maths (feet at _rider.position) still holds.
+		_hero_mode = true
+		_rider_model = Node3D.new()
+		hero.scale = Vector3(-HERO_SCALE, HERO_SCALE, HERO_SCALE)   # mirrored: revolver in his RIGHT hand, pickaxe in his left
+		hero.position = Vector3(0.0, HERO_H * 0.5 * HERO_SCALE, 0.0)
+		_rider_model.add_child(hero)
+		_self_light(hero, 0.18, Color(1.0, 0.85, 0.65))
+		_hero_body = hero
+		# Chest (model origin) just below the cart rim: hat, leaves, both weapons above it.
+		_rider_floor = _cart_rim_y - HERO_SINK_REST - HERO_H * 0.5 * HERO_SCALE
+	else:
+		_rider_model = _inst(Motion.RIDER_RIG) if not debug_off.has("rig") else null
+	if _rider_model and not _hero_mode:
 		var an: RefCounted = Motion.Anim.new(_rider_model, Motion.RIDER_CLIPS)
 		if an.ok():
 			_rider_anim = an
@@ -984,9 +1101,11 @@ func _build_rider() -> void:
 					_aim_mod.name = "GunArmAim"
 					_aim_mod.influence = 0.0
 					_rider_skel.add_child(_aim_mod)
-	else:
+	elif not _hero_mode:
 		_rider_model = _inst(RIDER_MODEL)
-	if _rider_model:
+	if _hero_mode:
+		_rider_scale = 1.0
+	elif _rider_model:
 		var bb: AABB = _measure_rig(_rider_model) if _rider_anim else _measure(_rider_model)
 		var h: float = bb.size.y if bb.size.y > 0.01 else RIDER_NATIVE_H
 		_rider_scale = RIDER_HEIGHT / h
@@ -1036,16 +1155,6 @@ func _build_rider() -> void:
 	_emote.position = Vector3(0.0, RIDER_HEIGHT + 0.55, 0.0)
 	_emote.visible = false
 	_rider.add_child(_emote)
-	# Founder's zipline pose (pickaxe hooked on the cable, golden revolver aimed):
-	# shown instead of the rigged body while he rides a cable.
-	_zip_model = _inst(ZIP_POSE_MODEL)
-	if _zip_model:
-		var zb: AABB = _measure(_zip_model)
-		_zip_scale = ZIP_POSE_H / zb.size.y if zb.size.y > 0.01 else 1.0
-		_zip_top = zb.position.y + zb.size.y
-		_zip_model.scale = Vector3.ONE * _zip_scale
-		_zip_model.visible = false
-		_rider.add_child(_zip_model)
 
 ## Golden revolver in the screen-right hand, pickaxe in the other.
 ## Gun rig: pivot (aim, -Z = muzzle) → spin node (barrel-axis spin on reload) → model.
@@ -1100,6 +1209,22 @@ func _build_hands() -> void:
 			Vector3(0.0, AXE_LENGTH - 0.14, 0.0), _axe_pivot)
 	_axe_pivot.visible = false
 
+## Hero mode: the muzzle-flash pivot rides the baked revolver's barrel; the separate
+## gun and pickaxe meshes are never drawn (they would double the baked ones).
+func _bind_hero_weapons() -> void:
+	if not _hero_mode or _gun_pivot == null or _hero_body == null:
+		return
+	if _gun_pivot.get_parent():
+		_gun_pivot.get_parent().remove_child(_gun_pivot)
+	_hero_body.add_child(_gun_pivot)
+	_gun_pivot.position = HERO_MUZZLE
+	_gun_pivot.rotation = Vector3(0.0, -PI * 0.5, 0.0)      # pivot -Z (muzzle) -> model +X
+	_gun_pivot.scale = Vector3(-1.0, 1.0, 1.0) / HERO_SCALE
+	if _gun_spin_node:
+		_gun_spin_node.visible = false
+	if _axe_pivot:
+		_axe_pivot.visible = false
+
 func _build_archers() -> void:
 	var scaffold_posts: Array[Transform3D] = []
 	var decks: Array[Transform3D] = []
@@ -1108,16 +1233,18 @@ func _build_archers() -> void:
 		var z: float = float(a["z"])
 		var x: float = _side_x(side, Sim.ARCHER_X)
 		_scaffold_at(x, z, scaffold_posts, decks)
-		var bear: Node3D = _bear(ARCHER_HEIGHT)
+		var use_statue: bool = ResourceLoader.exists(BEAR_STATUE_MODEL) and not debug_off.has("statue")
+		var bear: Node3D = _bear_statue(ARCHER_STATUE_H) if use_statue else _bear(ARCHER_HEIGHT)
 		bear.position = Vector3(x, Sim.ARCHER_Y, z)
 		var to_track := Vector3(-signf(x), 0.0, -0.55).normalized()
-		bear.rotation.y = atan2(to_track.x, to_track.z)
+		bear.rotation.y = _statue_yaw(to_track) if use_statue else atan2(to_track.x, to_track.z)
 		_world.add_child(bear)
-		var lamp_mesh := SphereMesh.new()
-		lamp_mesh.radius = 0.08
-		lamp_mesh.height = 0.16
-		_mesh_node(lamp_mesh, _mat("headlamp", C_HEADLAMP, 8.0),
-			Vector3(0.0, ARCHER_HEIGHT * 0.86, 0.25), bear)
+		if not use_statue:
+			var lamp_mesh := SphereMesh.new()
+			lamp_mesh.radius = 0.08
+			lamp_mesh.height = 0.16
+			_mesh_node(lamp_mesh, _mat("headlamp", C_HEADLAMP, 8.0),
+				Vector3(0.0, ARCHER_HEIGHT * 0.86, 0.25), bear)
 		var ll := OmniLight3D.new()
 		ll.light_color = Color(1.0, 0.8, 0.5)
 		ll.light_energy = 1.6
@@ -1127,8 +1254,8 @@ func _build_archers() -> void:
 		# Key light from the track side so the bear pops out of the dark bay.
 		var bk := OmniLight3D.new()
 		bk.light_color = Color(1.0, 0.7, 0.45)
-		bk.light_energy = 2.6
-		bk.omni_range = 6.5
+		bk.light_energy = 2.8
+		bk.omni_range = 8.0
 		bk.position = Vector3(-signf(x) * 2.2, ARCHER_HEIGHT * 0.7, -1.8)
 		bear.add_child(bk)
 		var lp := Vector3(x + signf(x) * 1.0, Sim.ARCHER_Y + 0.3, z + 0.9)
@@ -1142,14 +1269,6 @@ func _build_archers() -> void:
 		_multi(_box(Vector3(2.8, 0.22, 2.6)), _timber_mat(), decks)
 
 func _scaffold_at(x: float, z: float, posts: Array[Transform3D], decks: Array[Transform3D]) -> void:
-	if _shell_mode:
-		# Wall ledge inside the tunnel shell: two struts under the outer edge only,
-		# so nothing stands between the ledge and the outer rail's cart.
-		for dz0 in [-1.0, 1.0]:
-			posts.append(Transform3D(Basis.IDENTITY, Vector3(x + signf(x) * 0.7,
-				Sim.ARCHER_Y - 0.1 - (Sim.ARCHER_Y + PIT_DEPTH) * 0.5, z + float(dz0) * 1.0)))
-		decks.append(Transform3D(Basis.IDENTITY.scaled(Vector3(0.65, 1.0, 1.0)), Vector3(x + signf(x) * 0.35, Sim.ARCHER_Y - 0.1, z)))
-		return
 	for dx in [-1.0, 1.0]:
 		for dz in [-1.0, 1.0]:
 			posts.append(Transform3D(Basis.IDENTITY,
@@ -1173,7 +1292,6 @@ func _arrow_mesh_node() -> Node3D:
 	var fletch := _mesh_node(_box(Vector3(0.28, 0.2, 0.02)), _pal("bandit_cloth"),
 		Vector3(-0.7, 0.0, 0.0), root)
 	fletch.rotation.x = 0.4
-	_mesh_node(_box(Vector3(2.6, 0.05, 0.05)), _glow_mat("arrow_trail", C_DUCK, 0.45), Vector3(-2.2, 0.0, 0.0), root)
 	_world.add_child(root)
 	return root
 
@@ -1270,8 +1388,8 @@ func _label(text: String, c: Color) -> Label3D:
 	var l := Label3D.new()
 	l.text = text
 	l.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	l.font_size = 96
-	l.pixel_size = 0.012
+	l.font_size = 72
+	l.pixel_size = 0.011
 	l.outline_size = 18
 	l.modulate = c
 	l.outline_modulate = Color(0.05, 0.03, 0.02, 0.9)
@@ -1344,34 +1462,44 @@ func _build_ziplines() -> void:
 ## pickups have no lighting maths to go wrong; they read as gold from colour,
 ## silhouette, spin and the halo.
 func _build_gold() -> void:
-	# BITCOIN coins (founder 2026-09-27: "I like the gold coins. Lets make them
-	# Bitcoin branded"). A gold rim + the ₿ face texture on both sides + a soft
-	# halo: 4 unshaded instances per coin.
+	# BITCOIN coins (founder 2026-09-27; 09-29: "masked with a stupid filter" — the
+	# first version was an alpha-cut quad wrapped in a translucent halo shell). Now a
+	# REAL coin: a lit metallic cylinder, the Bitcoin face on both caps, a plain gold
+	# milled rim, no halo, no transparency. It spins about the vertical so the face
+	# flashes as it turns.
 	var obs_all: Array = _sim.get_obstacles()
 	var face_mat := StandardMaterial3D.new()
-	face_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	face_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
-	face_mat.alpha_scissor_threshold = 0.5
+	# NOT very metallic: with no sky/reflection probe (web Compatibility renderer) a metallic
+	# surface renders BLACK — the first version of this coin was invisible against the tunnel.
+	# Gold reads from albedo + a texture-driven emission instead.
+	face_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	face_mat.albedo_color = Color(1.0, 0.9, 0.55)
+	face_mat.metallic = 0.2
+	face_mat.roughness = 0.35
+	face_mat.emission_enabled = true
+	face_mat.emission = Color(1.0, 0.7, 0.2)
+	face_mat.emission_energy_multiplier = 0.85
 	var tex_path: String = TEX_DIR + TEX_BTC
 	if ResourceLoader.exists(tex_path):
 		face_mat.albedo_texture = load(tex_path) as Texture2D
-	else:
-		face_mat.albedo_color = Color(1.0, 0.8, 0.28)
-	var face := QuadMesh.new()
-	face.size = Vector2(0.9, 0.9)
-	var rim := CylinderMesh.new()
-	rim.top_radius = 0.44
-	rim.bottom_radius = 0.44
-	rim.height = 0.07
-	rim.radial_segments = 20
+		face_mat.emission_texture = face_mat.albedo_texture
 	var rim_mat := StandardMaterial3D.new()
-	rim_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	rim_mat.albedo_color = Color(0.86, 0.62, 0.16)
-	var halo := SphereMesh.new()
-	halo.radius = 0.5
-	halo.height = 1.0
-	halo.radial_segments = 8
-	halo.rings = 4
+	rim_mat.albedo_color = Color(1.0, 0.75, 0.25)
+	rim_mat.metallic = 0.2
+	rim_mat.roughness = 0.4
+	rim_mat.emission_enabled = true
+	rim_mat.emission = Color(0.9, 0.6, 0.15)
+	rim_mat.emission_energy_multiplier = 0.7
+	# CylinderMesh is ONE surface in Godot 4.3 (per-cap materials threw "Index p_idx = 2 out
+	# of bounds" in the web build), so: a rim cylinder + two real textured disc meshes.
+	var rim := CylinderMesh.new()
+	rim.top_radius = COIN_R
+	rim.bottom_radius = COIN_R
+	rim.height = COIN_R * 0.16
+	rim.radial_segments = 28
+	rim.rings = 1
+	var disc: ArrayMesh = _disc_mesh(COIN_R * 0.985, 28)
+	var half: float = COIN_R * 0.08 + 0.002
 	for oi in obs_all.size():
 		var o: Dictionary = obs_all[oi]
 		if str(o.get("type", "")) != "gold":
@@ -1381,13 +1509,87 @@ func _build_gold() -> void:
 		var n := Node3D.new()
 		n.position = Vector3(float(_lane_xs()[lane]), GOLD_Y, float(o["z"]))
 		_world.add_child(n)
-		var rm := _mesh_node(rim, rim_mat, Vector3.ZERO, n)
-		rm.rotation.x = PI * 0.5
-		_mesh_node(face, face_mat, Vector3(0.0, 0.0, -0.037), n).rotation.y = PI
-		_mesh_node(face, face_mat, Vector3(0.0, 0.0, 0.037), n)
-		if not debug_off.has("halo"):
-			_mesh_node(halo, _glow_mat("gold_halo", Color(1.0, 0.8, 0.3), 0.16), Vector3.ZERO, n).scale = Vector3.ONE * 1.5
+		var spin := Node3D.new()
+		n.add_child(spin)
+		var rmi := MeshInstance3D.new()
+		rmi.mesh = rim
+		rmi.material_override = rim_mat
+		rmi.rotation.x = PI * 0.5            # cylinder axis Y -> Z: faces look down the track
+		spin.add_child(rmi)
+		for sgn in [-1.0, 1.0]:
+			var fmi := MeshInstance3D.new()
+			fmi.mesh = disc
+			fmi.material_override = face_mat
+			fmi.position = Vector3(0.0, 0.0, half * float(sgn))
+			if sgn < 0.0:
+				fmi.rotation.y = PI
+			spin.add_child(fmi)
+		n.set_meta("spin", spin)
 		_gold_nodes.append(n)
+
+## A 6-sided crystal: base ring at y=0, apex at y=+1, blunt root at y=-0.4 (buried in the
+## rock). Flat normals per facet + vertex colours (dark root -> bright tip).
+func _crystal_mesh() -> ArrayMesh:
+	var verts := PackedVector3Array()
+	var norms := PackedVector3Array()
+	var cols := PackedColorArray()
+	var ring: Array = []
+	for i in 6:
+		var a: float = TAU * float(i) / 6.0
+		ring.append(Vector3(cos(a) * 0.5, 0.0, sin(a) * 0.5))
+	var top := Vector3(0.0, 1.0, 0.0)
+	var bot := Vector3(0.0, -0.4, 0.0)
+	var c_dark := Color(0.30, 0.13, 0.02)
+	var c_mid := Color(0.85, 0.5, 0.1)
+	var c_tip := Color(1.0, 0.86, 0.36)
+	for i in 6:
+		var p0: Vector3 = ring[i]
+		var p1: Vector3 = ring[(i + 1) % 6]
+		var nu: Vector3 = (p1 - p0).cross(top - p0).normalized()
+		for v in [p0, p1, top]:
+			verts.append(v)
+			norms.append(nu)
+		cols.append_array([c_mid, c_mid, c_tip])
+		var nl: Vector3 = (bot - p0).cross(p1 - p0).normalized()
+		for v2 in [p0, bot, p1]:
+			verts.append(v2)
+			norms.append(nl)
+		cols.append_array([c_mid, c_dark, c_mid])
+	var arr: Array = []
+	arr.resize(Mesh.ARRAY_MAX)
+	arr[Mesh.ARRAY_VERTEX] = verts
+	arr[Mesh.ARRAY_NORMAL] = norms
+	arr[Mesh.ARRAY_COLOR] = cols
+	var m := ArrayMesh.new()
+	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
+	return m
+
+## A flat triangle-fan disc in the XY plane facing +Z, with planar UVs (circle inscribed
+## in the texture) — a genuinely round coin face, no alpha cut-out.
+func _disc_mesh(radius: float, segs: int) -> ArrayMesh:
+	var verts := PackedVector3Array()
+	var uvs := PackedVector2Array()
+	var norms := PackedVector3Array()
+	var idx := PackedInt32Array()
+	verts.append(Vector3.ZERO)
+	uvs.append(Vector2(0.5, 0.5))
+	norms.append(Vector3.BACK)
+	for i in segs + 1:
+		var a: float = TAU * float(i) / float(segs)
+		verts.append(Vector3(cos(a) * radius, sin(a) * radius, 0.0))
+		uvs.append(Vector2(0.5 + cos(a) * 0.5, 0.5 - sin(a) * 0.5))
+		norms.append(Vector3.BACK)
+		if i > 0:
+			idx.append_array([0, i + 1, i])       # Godot front faces are CLOCKWISE
+	var arr: Array = []
+	arr.resize(Mesh.ARRAY_MAX)
+	arr[Mesh.ARRAY_VERTEX] = verts
+	arr[Mesh.ARRAY_NORMAL] = norms
+	arr[Mesh.ARRAY_TEX_UV] = uvs
+	arr[Mesh.ARRAY_INDEX] = idx
+	var m := ArrayMesh.new()
+	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
+	return m
 
 ## Gold-mine dressing from the founder key art: gold ore glinting in the walls,
 ## wall lanterns, timber walkways with lanterns high on the walls, and glowing
@@ -1396,26 +1598,57 @@ func _build_gold() -> void:
 func _build_mine_detail(length: float) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7701
-	# 1. Ore clusters in the walls.
+	# 1. GLOWING GOLD CRYSTALS (founder target 2026-09-29: dark faceted rock, amber crystals lit
+	# from inside). In shell mode they are planted ON the measured wall surface
+	# (ShellCrystals, generated from the mesh) — the first pass scattered them at a guessed wall
+	# x and they hung in mid-air. Elongated 4-sided shards, 3 per point, fanned around the normal.
 	var ore: Array[Transform3D] = []
-	var z: float = 4.0
-	while z < length - 10.0:
-		for side in [-1.0, 1.0]:
-			if rng.randf() < 0.5:
-				var wx: float = _wall_x_at(z) - 0.3
-				var cy: float = rng.randf_range(0.2, 6.2)
-				for _k in rng.randi_range(2, 5):
-					# Glints, not blobs: first capture read as yellow popcorn at 0.08-0.22.
-					var sc: float = rng.randf_range(0.035, 0.09)
-					var b := Basis(Vector3(rng.randf(), rng.randf(), rng.randf()).normalized(), rng.randf() * TAU).scaled(Vector3.ONE * sc)
-					ore.append(Transform3D(b, Vector3(wx * float(side), cy + rng.randf_range(-0.35, 0.35), z + rng.randf_range(-0.5, 0.5))))
-		z += rng.randf_range(1.2, 2.4)
-	var nug := SphereMesh.new()
+	var z: float = 3.0
+	if _shell_mode and not _shell_tiles.is_empty():
+		var pts: Array = ShellCrystals.POINTS
+		for tile in _shell_tiles:
+			var tb: Basis = tile.basis
+			var rot: Basis = tb.orthonormalized()
+			for i in range(0, pts.size(), 12):     # every other sampled point: chunkier + sparser
+				var lp := Vector3(float(pts[i]), float(pts[i + 1]), float(pts[i + 2]))
+				var ln := Vector3(float(pts[i + 3]), float(pts[i + 4]), float(pts[i + 5]))
+				var wp: Vector3 = tile * lp
+				var wn: Vector3 = (rot * ln).normalized()
+				for _k in 2:
+					var sc: float = rng.randf_range(0.09, 0.26)
+					var tilt := Vector3(rng.randf_range(-0.5, 0.5), 0.0, rng.randf_range(-0.5, 0.5))
+					var dir: Vector3 = (wn + tilt * 0.6).normalized()
+					var q := Quaternion(Vector3.UP, dir)
+					var b := Basis(q) * Basis(Vector3.UP, rng.randf() * TAU) * Basis.from_scale(Vector3(sc * 0.9, sc * 1.5, sc * 0.9))
+					ore.append(Transform3D(b, wp - wn * 0.04 + Vector3(rng.randf_range(-0.12, 0.12), rng.randf_range(-0.12, 0.12), rng.randf_range(-0.12, 0.12))))
+	else:
+		while z < length - 10.0:
+			for side in [-1.0, 1.0]:
+				if rng.randf() < 0.75:
+					var wx: float = _wall_x_at(z) - 0.25
+					var cy: float = rng.randf_range(0.3, 6.6)
+					for _k in rng.randi_range(4, 8):
+						var sc2: float = rng.randf_range(0.07, 0.24)
+						var axis := Vector3(rng.randf_range(-1, 1), rng.randf_range(-1, 1), rng.randf_range(-1, 1)).normalized()
+						var b2 := Basis(axis, rng.randf() * TAU).scaled(Vector3(sc2 * 0.55, sc2 * 1.7, sc2 * 0.55))
+						ore.append(Transform3D(b2, Vector3((wx - rng.randf() * 0.25) * float(side),
+							cy + rng.randf_range(-0.5, 0.5), z + rng.randf_range(-0.7, 0.7))))
+			z += rng.randf_range(1.0, 2.0)
+	var nug := SphereMesh.new()      # octahedron (used by the heaps below)
 	nug.radius = 1.0
 	nug.height = 2.0
-	nug.radial_segments = 5
-	nug.rings = 3
-	_multi(nug, _mat("wall_ore", Color(0.95, 0.68, 0.2), 1.1, 0.35, 0.7), ore)
+	nug.radial_segments = 4
+	nug.rings = 2
+	# Faceted, flat-shaded, dark-base -> bright-tip shards with a low emission: they catch the
+	# lanterns and glow at the tips instead of reading as flat yellow decals.
+	var cmat := ShaderMaterial.new()
+	cmat.shader = load(CRYSTAL_SHADER) as Shader
+	_multi(_crystal_mesh(), cmat, ore)
+	var orb := SphereMesh.new()      # round glows for lantern flames
+	orb.radius = 1.0
+	orb.height = 2.0
+	orb.radial_segments = 8
+	orb.rings = 4
 	# 2. Wall lantern glows between the real lantern props.
 	var glows: Array[Transform3D] = []
 	var brackets: Array[Transform3D] = []
@@ -1427,7 +1660,7 @@ func _build_mine_detail(length: float) -> void:
 		brackets.append(Transform3D(Basis.IDENTITY.scaled(Vector3(0.5, 0.08, 0.08)), Vector3((wx2 + 0.2) * sd, 2.85, z)))
 		z += 7.0
 		sd = -sd
-	_multi(nug, _mat("wall_lantern", Color(1.0, 0.72, 0.36), 5.0), glows)
+	_multi(orb, _mat("wall_lantern", Color(1.0, 0.72, 0.36), 5.0), glows)
 	_multi(_box(Vector3.ONE), _timber_mat(), brackets)
 	# 3. Timber walkways high on the walls, each with a lantern.
 	var decks: Array[Transform3D] = []
@@ -1450,7 +1683,7 @@ func _build_mine_detail(length: float) -> void:
 	_multi(_box(Vector3.ONE), _timber_mat(), decks)
 	_multi(_box(Vector3.ONE), _timber_mat(), legs)
 	_multi(_box(Vector3.ONE), _timber_mat(), rails)
-	_multi(nug, _mat("wall_lantern", Color(1.0, 0.72, 0.36), 5.0), lamps)
+	_multi(orb, _mat("wall_lantern", Color(1.0, 0.72, 0.36), 5.0), lamps)
 	# 4. Gold heaps on the ledges; a gold-filled ore cart parked every ~90 m.
 	var heap: Array[Transform3D] = []
 	z = 22.0
@@ -1536,7 +1769,9 @@ func _update_gold(dist: float, delta: float) -> void:
 			continue
 		var ahead: float = float(o["z"]) - dist
 		n.visible = ahead > -2.0 and ahead < 90.0 and not debug_off.has("gold")
-		n.rotation.y += delta * 3.0
+		var sp: Node3D = n.get_meta("spin") if n.has_meta("spin") else null
+		if sp and not debug_off.has("nospin"):
+			sp.rotation.y += delta * COIN_SPIN
 		n.position.y = GOLD_Y + sin(Time.get_ticks_msec() * 0.004 + float(i)) * 0.12
 
 func _popup(text: String, c: Color, pos: Vector3) -> void:
@@ -1676,7 +1911,7 @@ func _build_fx() -> void:
 	# Speed streaks rushing past the camera (camera-local, scale with speed).
 	_streaks = CPUParticles3D.new()
 	_streaks.local_coords = true
-	_streaks.amount = 48
+	_streaks.amount = 10
 	_streaks.lifetime = 0.55
 	_streaks.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
 	_streaks.emission_box_extents = Vector3(7.0, 4.0, 3.0)
@@ -1686,8 +1921,8 @@ func _build_fx() -> void:
 	_streaks.gravity = Vector3.ZERO
 	_streaks.initial_velocity_min = 42.0
 	_streaks.initial_velocity_max = 58.0
-	_streaks.mesh = _box(Vector3(0.025, 0.025, 1.8))
-	_streaks.material_override = _glow_mat("speed_streak", Color(1.0, 0.9, 0.7), 0.35)
+	_streaks.mesh = _box(Vector3(0.012, 0.012, 0.6))
+	_streaks.material_override = _glow_mat("speed_streak", Color(1.0, 0.7, 0.4), 0.12)
 	# Gold dust drifting in the lantern light (world-space, spawned around the camera).
 	_dust = CPUParticles3D.new()
 	_dust.amount = 70
@@ -1989,9 +2224,21 @@ func _update_rider(dist: float, delta: float) -> void:
 		var t: float = clampf(absf(x - _hop_from_x) / span, 0.0, 1.0)
 		arc = 4.0 * HOP_ARC * t * (1.0 - t)
 
-	var target_y: float = RIDER_FLOOR + y + arc
+	var target_y: float = _rider_floor + y + arc
 	var sy: float = 1.0
-	if zipping:
+	var hero_pitch: float = 0.0
+	if _hero_mode:
+		var hp: Dictionary = Motion.hero_pose(_t_hit, _t_shot, _t_swipe, _t_hop, _t_cheer, ducking,
+			bool(_sim.is_reloading()), y > 0.05 and not zipping, spd, Time.get_ticks_msec() * 0.001)
+		target_y += float(hp["bob"]) - float(hp["sink"])
+		sy = float(hp["squash"])
+		hero_pitch = float(hp["pitch"])
+		if zipping:
+			# Hang from the pickaxe: its head (model top) on the cable.
+			var cable_top: float = Sim.ZIP_HEIGHT + RIDER_HEIGHT + CABLE_CLEARANCE - 0.2
+			target_y = cable_top - HERO_H * HERO_SCALE + float(hp["bob"]) * 0.5
+			sy = 1.0
+	elif zipping:
 		target_y = Sim.ZIP_HEIGHT
 	elif ducking:
 		# The rigged crouch clip already folds him to ~65 % height; the squash is
@@ -2001,8 +2248,17 @@ func _update_rider(dist: float, delta: float) -> void:
 	_rider.position = Vector3(x, target_y, dist)
 	_rider_model.scale = _rider_model.scale.lerp(Vector3(_rider_scale, _rider_scale * sy, _rider_scale),
 		clampf(delta * 18.0, 0.0, 1.0))
+	# HERO: swing the whole figure so the baked revolver (model +X) points at the
+	# reticle, clamped so he never turns his back on the run completely.
+	if _hero_mode:
+		var aim_t: Vector3 = _aim_point if _aim_ok else Vector3(x, 1.5, dist + 30.0)
+		var dv: Vector3 = aim_t - Vector3(x, 0.0, dist)
+		# Back to the camera, turned a little toward the aim (target art: seen from behind,
+		# revolver arm out on his right). Never square-on sideways — that read as spastic.
+		var th: float = clampf(HERO_YAW_BASE + HERO_YAW_GAIN * atan2(dv.x, maxf(dv.z, 1.0)), HERO_YAW_MIN, HERO_YAW_MAX)
+		_rider_model.rotation.y = lerp_angle(_rider_model.rotation.y, th, clampf(delta * 10.0, 0.0, 1.0))
 	# Upper body turns toward where he's aiming (clamped; he stays facing the run).
-	if _aim_ok and _rider_model:
+	elif _aim_ok and _rider_model:
 		var yaw_t: float = clampf(atan2(_aim_point.x - x, maxf(_aim_point.z - dist, 1.0)), -0.6, 0.6)
 		_rider_model.rotation.y = lerp_angle(_rider_model.rotation.y, RIDER_YAW + yaw_t, clampf(delta * 8.0, 0.0, 1.0))
 	# Gun arm aims at the reticle (RunnerAimModifier), eased off whenever the
@@ -2018,7 +2274,7 @@ func _update_rider(dist: float, delta: float) -> void:
 	# Weapons ride the real hand bones when rigged (placed in _place_weapons on
 	# skeleton_updated — the only time Godot 4.3 exposes the AIMED pose);
 	# otherwise the fixed hand offsets.
-	if _rider_skel and _bone_r >= 0:
+	if _hero_mode or (_rider_skel and _bone_r >= 0):
 		pass
 	else:
 		var crouch: float = _rider_model.scale.y / _rider_scale if _rider_scale > 0.0 else 1.0
@@ -2026,19 +2282,9 @@ func _update_rider(dist: float, delta: float) -> void:
 			_gun_pivot.position = Vector3(GUN_HAND.x, GUN_HAND.y * crouch, GUN_HAND.z)
 		if _axe_pivot:
 			_axe_pivot.position = Vector3(AXE_HAND.x, AXE_HAND.y * crouch, AXE_HAND.z)
-	_hook.visible = zipping and _zip_model == null
-	if _zip_model:
-		_zip_model.visible = zipping
-		_rider_model.visible = not zipping
-		if zipping:
-			# Pickaxe head on the cable; turn so the revolver (model -X) faces the aim.
-			var cable_y: float = Sim.ZIP_HEIGHT + RIDER_HEIGHT + CABLE_CLEARANCE - 0.2
-			_zip_model.position = Vector3(0.0, cable_y - target_y - _zip_top * _zip_scale, 0.0)
-			var aim_d: Vector3 = (_aim_point - Vector3(x, target_y + 1.5, dist)) if _aim_ok else Vector3(-1.0, 0.0, 1.0)
-			var yaw: float = clampf(atan2(aim_d.z, -aim_d.x), 0.35, PI - 0.35)
-			_zip_model.rotation.y = lerp_angle(_zip_model.rotation.y, yaw, clampf(delta * 8.0, 0.0, 1.0))
-			_zip_model.rotation.z = sin(dist * 0.6) * 0.1
+	_hook.visible = zipping and not _hero_mode
 	_rider.rotation.z = (-(x - _prev_x) * 6.0) if not zipping else sin(dist * 0.6) * 0.12
+	_rider.rotation.x = hero_pitch
 	_prev_x = x
 	_sparks.position = Vector3(x, -0.2, dist - 0.8)
 	_sparks.emitting = not zipping and _sim.is_running()
@@ -2089,6 +2335,14 @@ func _update_archers(dist: float, delta: float) -> void:
 		if not a["alive"]:
 			continue
 		var n2: Node3D = _archer_nodes.get(str(a["id"]))
+		if n2 and n2.has_meta("statue"):
+			var ahead3: float = float(a["z"]) - dist
+			if _rider and ahead3 > -6.0 and ahead3 < 80.0:
+				var dr: Vector3 = _rider.global_position + Vector3(0.0, 1.0, 0.0) - n2.global_position
+				dr.y = 0.0
+				n2.rotation.y = lerp_angle(n2.rotation.y, _statue_yaw(dr), clampf(delta * 4.0, 0.0, 1.0))
+			n2.position.y = Sim.ARCHER_Y + (sin(dist * 4.0) * 0.03 if ahead3 < ARROW_LEAD * 1.5 and ahead3 > -4.0 else 0.0)
+			continue
 		var an2: RefCounted = _archer_anims.get(str(a["id"]))
 		if n2 and an2:
 			var spd2: float = float(_sim.get_speed()) if _sim.has_method("get_speed") else Sim.RUN_SPEED
@@ -2275,7 +2529,7 @@ func _update_lights(dist: float) -> void:
 
 func _update_camera(dist: float, delta: float) -> void:
 	var rx: float = float(_sim.get_cart_x())
-	var target := Vector3(rx * 0.6, 2.8, dist - 4.6)
+	var target := Vector3(rx * 0.6, 2.35, dist - 3.4)
 	if _sim.is_ziplining():
 		target.y = 4.1
 	var k: float = clampf(delta * 6.0, 0.0, 1.0)
@@ -2287,6 +2541,10 @@ func _update_camera(dist: float, delta: float) -> void:
 		p += Vector3(_rng.randf_range(-1, 1), _rng.randf_range(-1, 1), 0.0) * _shake * 0.25
 		_shake = maxf(0.0, _shake - delta * 3.0)
 	_camera.position = p
+	if debug_cam.size() == 2 and _camera.is_inside_tree():
+		_camera.global_position = debug_cam[0]
+		_camera.look_at(debug_cam[1], Vector3.UP)
+		return
 	var spd: float = float(_sim.get_speed()) if _sim.has_method("get_speed") else Sim.RUN_SPEED
 	var fov_t: float = FOV_BASE + maxf(0.0, spd - 20.0) * FOV_PER_MS + (5.0 if _sim.is_ziplining() else 0.0)
 	_camera.fov = lerpf(_camera.fov, fov_t, clampf(delta * 3.0, 0.0, 1.0))
@@ -2294,7 +2552,7 @@ func _update_camera(dist: float, delta: float) -> void:
 		_streaks.emitting = _sim.is_running() and not debug_off.has("streaks")
 		_streaks.speed_scale = spd / 20.0
 	if _camera.is_inside_tree():
-		_camera.look_at(Vector3(rx * 0.45, 1.75, dist + 10.0), Vector3.UP)
+		_camera.look_at(Vector3(rx * 0.45, 1.55, dist + 9.0), Vector3.UP)
 
 ## Mouse ray from the camera: what the reticle is over, and where the gun aims
 ## (the archer it would hit, or AIM_FALLBACK metres along the ray).
@@ -2325,7 +2583,9 @@ func _update_aim() -> void:
 func _update_gun(delta: float) -> void:
 	if _gun_pivot == null or _rider == null:
 		return
-	_gun_pivot.visible = bool(_sim.can_shoot()) and not (_zip_model != null and bool(_sim.is_ziplining()))
+	_gun_pivot.visible = bool(_sim.can_shoot())
+	if _hero_mode:
+		return          # the revolver is baked into the hero; the pivot only carries the muzzle flash
 	var k: float = clampf(delta * 20.0, 0.0, 1.0)
 	var reloading: bool = bool(_sim.is_reloading())
 	var target_q: Quaternion = Quaternion.IDENTITY
@@ -2353,6 +2613,9 @@ func _update_axe(delta: float) -> void:
 	if _axe_pivot == null:
 		return
 	_axe_t += delta
+	if _hero_mode:
+		_axe_pivot.visible = false      # the pickaxe is baked into the hero (chop = body lean)
+		return
 	var swinging: bool = _axe_t < AXE_SWING_TIME + 0.08
 	# The pickaxe is always in his other hand (founder: revolver in one, axe in
 	# the other); it only sweeps on a swipe.

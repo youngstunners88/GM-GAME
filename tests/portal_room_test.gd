@@ -207,6 +207,9 @@ func _test_structure(room: Node, protocol: String) -> void:
 	_check(slab.z_index < backdrop.z_index,
 		"%s: opaque map base is behind the visible scenery" % protocol)
 	for stop_id in room.get("_required_learning_stops"):
+		if protocol == "diamonds" and stop_id == "blaze_gate":
+			_check(room.has_node("Backdrop/PaintedMap"), "diamonds: mint gate is the painted entrance")
+			continue
 		var fixture := room.get_node_or_null("Stop_%s/Fixture" % stop_id) as Node2D
 		_check(fixture != null and fixture.is_visible_in_tree(),
 			"%s: %s has visible mechanism furniture" % [protocol, stop_id])
@@ -266,7 +269,8 @@ func _test_exploration(room: Node, protocol: String) -> void:
 		Input.action_press("move_up")
 		for frame in range(30): await physics_frame
 		Input.action_release("move_up")
-		_check(player.position.y >= stop.position.y + 14, "%s: %s footprint blocks walking through furniture" % [protocol, stop_id])
+		if stop.has_node("Fixture"):
+			_check(player.position.y >= stop.position.y + 14, "%s: %s footprint blocks walking through furniture" % [protocol, stop_id])
 		_check(player.position.distance_to(stop.position + Vector2(0, 28)) < 100,
 			"%s: %s can be approached on foot" % [protocol, stop_id])
 		player.set_physics_process(false)
@@ -345,7 +349,10 @@ func _test_ground_routes(room: Node, protocol: String) -> void:
 				if not grid.get_id_path(start, cell).is_empty():
 					reachable = true
 		_check(reachable, "%s: ground route to %s" % [protocol, stop.stop_id])
-		_check(stop.get_node_or_null("Fixture/PaintedProp") != null, "%s: %s has painted art" % [protocol, stop.stop_id])
+		if protocol == "diamonds" and stop.stop_id == "blaze_gate":
+			_check(not stop.has_node("Fixture"), "diamonds: painted gate stays unobstructed")
+		else:
+			_check(stop.get_node_or_null("Fixture/PaintedProp") != null, "%s: %s has painted art" % [protocol, stop.stop_id])
 		_check(stop.get_node_or_null("PlateGlow") == null, "%s: no neon pedestal at %s" % [protocol, stop.stop_id])
 	_check(room.get_node_or_null("QuestPaths") == null and room.get_node_or_null("ProtocolLandmarks") == null,
 		"%s: procedural overlays cannot obscure the painting" % protocol)

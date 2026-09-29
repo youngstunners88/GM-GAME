@@ -295,6 +295,9 @@ jobs:
           timeout 90 "$GODOT_BIN" --headless --script res://tests/portal_room_test.gd 2>&1 | tee portal-tests.log
           grep -q 'PORTAL ROOMS: ALL PASS' portal-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' portal-tests.log; then exit 1; fi
+          timeout 90 "$GODOT_BIN" --headless --script res://tests/portal_traversal_test.gd 2>&1 | tee portal-traversal.log
+          grep -q 'PORTAL TRAVERSAL: ALL PASS' portal-traversal.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' portal-traversal.log; then exit 1; fi
           # A headless renderer cannot catch a foreground rectangle hiding the
           # background. Render the real scenes with the web-compatible driver.
           sudo apt-get update -qq
@@ -316,6 +319,7 @@ jobs:
           path: |
             ${{ runner.temp }}/portal-captures/
             portal-tests.log
+            portal-traversal.log
             portal-render.log
           retention-days: 14
 

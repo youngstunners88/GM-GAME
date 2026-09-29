@@ -14,4 +14,4 @@ Walkable space = `RoomLayout.GROUND[protocol]` polygons (union). The map paintin
 4. Space stops by half-widths (see `gm-game-portal-prop-integration`); use the whole walkable area, and
    keep each base >= 70 px from a lip.
 5. Verify: `tests/portal_room_test.gd` (A* reaches every stop) + capture overview.
-Only the player (`constrain_player`) and advisor (`constrain_to_ground`) rules differ; see `gm-game-portal-ledge-fall`.
+Player and advisor share `constrain_to_ground`; education falls were withdrawn by the founder. Run `tests/portal_traversal_test.gd`: collision-aware routes must be walked with actual inputs, every station must respond to E, and the advisor must keep up. Never count a teleported interaction or a point-only path search as proof of traversability.

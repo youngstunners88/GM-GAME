@@ -127,7 +127,7 @@ const CYLINDER := 6
 const RELOAD_TIME := 1.3
 const RELOAD_EPSILON := 0.0001
 ## Archer placement — the ONE definition; the view reads these.
-const ARCHER_X := 4.6              # wall-ledge distance from track centre (inside the founder's tunnel shell, 2026-09-28)
+const ARCHER_X := 3.3              # ledge distance from track centre: clear of the tunnel rock (inner wall 4.2-5.8 m), above the outer cart
 const ARCHER_Y := 2.2              # scaffold deck height (bear's feet)
 const ARCHER_CHEST := 1.4          # chest above the deck — the ray target
 const ARCHER_HIT_R := 1.1          # generous sphere: mouse aim at speed
