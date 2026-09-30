@@ -5,6 +5,8 @@
 
 ---
 
+**🎚️ EDUCATION ROOMS — SCALE, SOUND, TITLES (2026-09-30).** Lil Blunt and every governor are ~50% bigger so they match the props. Room titles removed from all three stages (they covered the item labels). Music no longer ducks when a governor talks; voices are loudness-normalised and louder instead. Gold voice swap (faxBRsvZBmi6q2wL3MQs) is waiting: that voice isn't in the ElevenLabs account yet (add it to My Voices, then it's one command).
+
 **🔊 SMOKE FACTS + VOICE VOLUME (2026-09-30).** SMOKE chains corrected to Solana, Robinhood Chain, Ethereum, BASE, BSC (no PulseChain). The crate is now "Stash From The Smoke Lounge". Governor voices are +10 dB louder and the music ducks while they speak. All 51 clips re-recorded.
 
 **🗣️ EDUCATION ROOMS — GOVERNORS TEACH (2026-09-30).** All three rooms:
