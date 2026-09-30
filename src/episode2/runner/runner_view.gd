@@ -73,6 +73,7 @@ const SFX_FILES := {
 
 # --- Layout constants (view-only; the sim owns every gameplay number) ---------
 const TRACK_PAD := 60.0
+const CLIFF_RAIL_OVERHANG := 3.0     # the rails run out onto a snapped trestle this far past the mouth
 const TIE_SPACING := 1.1
 const POST_SPACING := 5.5
 const PIT_DEPTH := 14.0
@@ -390,10 +391,12 @@ func rebuild(sim: Node) -> void:
 				_pocket_segs[_seg_index(bz + float(dz2))] = true
 
 	var chamber_z: float = float(_sim.get_chamber_z())
-	var length: float = chamber_z + TRACK_PAD
+	var cliff: bool = _sim.has_method("ends_at_cliff") and bool(_sim.ends_at_cliff())
+	# A cliff leg: the tunnel, rails and dressing STOP at the mouth; the gorge opens beyond it.
+	var length: float = chamber_z + (CLIFF_RAIL_OVERHANG if cliff else TRACK_PAD)
 	_apply_art()
 	_build_track(length)
-	_build_tunnel(length)
+	_build_tunnel(chamber_z - 30.0 if cliff else length)
 	_build_lanterns(length)
 	_build_dressing(chamber_z)
 	_build_carts()
@@ -416,7 +419,10 @@ func rebuild(sim: Node) -> void:
 		for k in 1500:
 			_mesh_node(sb, _timber_mat(), Vector3(-6.5 if k % 2 == 0 else 6.5, 3.0 + float(k % 7) * 0.4, float(k) * 0.6))
 	_build_ziplines()
-	_build_portal(chamber_z)
+	if cliff:
+		_build_cliff_mouth(chamber_z)
+	else:
+		_build_portal(chamber_z)
 	_build_camera()
 	_build_fx()
 	_ensure_hud()
@@ -749,7 +755,7 @@ func _bear_statue(height: float) -> Node3D:
 	m.position = Vector3(-(bb.position.x + bb.size.x * 0.5) * sc, -bb.position.y * sc,
 		-(bb.position.z + bb.size.z * 0.5) * sc)
 	root.add_child(m)
-	_self_light(m, 0.22, Color(1.0, 0.8, 0.6))     # near-black fur otherwise (founder: bears need improvement)
+	self_light(m, 0.22, Color(1.0, 0.8, 0.6))     # near-black fur otherwise (founder: bears need improvement)
 	root.set_meta("statue", true)
 	return root
 
@@ -964,13 +970,13 @@ func _build_tunnel(length: float) -> void:
 ## the game the walls vanished and the glowing crystals looked like they hovered in the
 ## dark. Feed the albedo back as a warm emission: the rock reads, the veins glow.
 func _light_shell_rock(n: Node3D) -> void:
-	_self_light(n, SHELL_EMISSION, Color(1.0, 0.72, 0.42))
+	self_light(n, SHELL_EMISSION, Color(1.0, 0.72, 0.42))
 
 ## Founder 2026-09-30: "his revolver is GOLDEN" and "he is looking too dark". The Meshy hero ships a
 ## metallic map: in the web Compatibility renderer metals with no reflection source draw BLACK, which
 ## turned the golden revolver and the brass buckles dark. Drop the metallic map (the gold is in the
 ## albedo) and lift the albedo so leather, leaves and gold read in the dim tunnel.
-func _brighten_hero(n: Node3D) -> void:
+static func brighten_hero(n: Node3D) -> void:
 	for mi in n.find_children("*", "MeshInstance3D", true, false):
 		var m3 := mi as MeshInstance3D
 		if m3.mesh == null:
@@ -990,7 +996,7 @@ func _brighten_hero(n: Node3D) -> void:
 
 ## Feed a model's own albedo texture back as a warm emission so it reads in a dark tunnel
 ## without adding lights (the web renderer pays per light per object).
-func _self_light(n: Node3D, energy: float, tint: Color) -> void:
+static func self_light(n: Node3D, energy: float, tint: Color) -> void:
 	for mi in n.find_children("*", "MeshInstance3D", true, false):
 		var m3 := mi as MeshInstance3D
 		if m3.mesh == null:
@@ -1045,7 +1051,7 @@ func _build_lanterns(length: float) -> void:
 		_lantern_pos.append(p)
 		var lprop: Node3D = _prop(LANTERN_MODEL, p - Vector3(0.0, 0.42, 0.0), 1.15)
 		if lprop != null:
-			_self_light(lprop, 1.1, Color(1.0, 0.72, 0.38))     # Jev 0.91: lanterns read unlit
+			self_light(lprop, 1.1, Color(1.0, 0.72, 0.38))     # Jev 0.91: lanterns read unlit
 		if lprop == null:
 			var sm := SphereMesh.new()
 			sm.radius = 0.2
@@ -1169,8 +1175,8 @@ func _build_rider() -> void:
 				_aim_mod.barrel_local = _arm_rest.barrel_local if _arm_rest else Vector3(0.265, 0.90, -0.33)
 				_aim_mod.influence = 0.0
 				sk.add_child(_aim_mod)
-		_self_light(hero, 0.08, Color(1.0, 0.86, 0.66))
-		_brighten_hero(hero)
+		self_light(hero, 0.08, Color(1.0, 0.86, 0.66))
+		brighten_hero(hero)
 		# Key light on the hero (camera-light skill: three-point). A lantern-warm omni above and behind
 		# him lights his back and hat so he reads against the dark rock; the rim comes from the far lanterns.
 		var key := OmniLight3D.new()
@@ -1990,6 +1996,122 @@ func _build_portal(z: float) -> void:
 	plate.rotation.y = PI
 	plate.visible = true
 	plate.no_depth_test = false
+
+## THE END OF THE LINE (founder 2026-09-30): "the end of it must lead to a cliff that has a gap to the other
+## side where Inferno Bull is situated". From ~150 m out the player sees light at the end of the tunnel: the
+## gorge glowing orange from the molten gold below, the far ledge, and the Smelting Facility's furnace
+## doorway where the Bull waits. Warning boards say the track ends. The cliff-jump film takes over at z.
+func _build_cliff_mouth(z: float) -> void:
+	var sky := StandardMaterial3D.new()
+	sky.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	sky.disable_fog = true
+	var grad := Gradient.new()
+	grad.set_color(0, Color(0.03, 0.022, 0.02))
+	grad.set_color(1, Color(0.95, 0.46, 0.14))
+	grad.add_point(0.62, Color(0.32, 0.15, 0.07))
+	var gt := GradientTexture2D.new()
+	gt.gradient = grad
+	gt.fill_from = Vector2(0.5, 0.0)
+	gt.fill_to = Vector2(0.5, 1.0)
+	sky.albedo_texture = gt
+	var q := QuadMesh.new()
+	q.size = Vector2(140.0, 70.0)
+	var back := _mesh_node(q, sky, Vector3(0.0, 14.0, z + 70.0))
+	back.rotation.y = PI
+	# The far ledge (1 m lower than the rails) and the facility's rock face behind it.
+	var far_mat: StandardMaterial3D = _rock_deep_mat()
+	_mesh_node(_box(Vector3(80.0, 40.0, 40.0)), far_mat, Vector3(0.0, -21.3, z + 16.0 + 20.0))
+	# Low back wall: the glowing cavern shows above it (a tall wall read as "the tunnel ends at a wall").
+	_mesh_node(_box(Vector3(80.0, 9.0, 4.0)), far_mat, Vector3(0.0, 3.2, z + 52.0))
+	# THE GAP must read from the cart: molten light far below, embers rising out of it.
+	var melt := StandardMaterial3D.new()
+	melt.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	melt.disable_fog = true
+	var mg := Gradient.new()
+	mg.set_color(0, Color(1.0, 0.72, 0.3))
+	mg.set_color(1, Color(0.35, 0.08, 0.02))
+	var mgt := GradientTexture2D.new()
+	mgt.gradient = mg
+	mgt.fill = GradientTexture2D.FILL_RADIAL
+	mgt.fill_from = Vector2(0.5, 0.5)
+	mgt.fill_to = Vector2(0.5, 0.0)
+	melt.albedo_texture = mgt
+	var pool := QuadMesh.new()
+	pool.size = Vector2(70.0, 16.0)
+	var pool_mi := _mesh_node(pool, melt, Vector3(0.0, -14.0, z + 10.0))
+	pool_mi.rotation.x = -PI * 0.5
+	var embers := CPUParticles3D.new()
+	embers.amount = 90
+	embers.lifetime = 5.0
+	embers.preprocess = 5.0
+	embers.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+	embers.emission_box_extents = Vector3(20.0, 6.0, 6.0)
+	embers.position = Vector3(0.0, -7.0, z + 10.0)
+	embers.direction = Vector3.UP
+	embers.spread = 20.0
+	embers.gravity = Vector3(0.0, 1.0, 0.0)
+	embers.initial_velocity_min = 0.8
+	embers.initial_velocity_max = 2.4
+	var eq := QuadMesh.new()
+	eq.size = Vector2(0.09, 0.09)
+	var em := StandardMaterial3D.new()
+	em.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	em.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	em.albedo_color = Color(1.0, 0.6, 0.2)
+	eq.material = em
+	embers.mesh = eq
+	embers.emitting = true
+	_world.add_child(embers)
+	# A rocky far lip and lanterns on the path to the furnace door.
+	for bx in [-13.0, -8.5, -5.2, 5.0, 8.8, 12.5]:
+		var b: Node3D = _inst(BOULDER_ROCK_MODEL)
+		if b:
+			var bsz: float = 1.8 + fmod(absf(bx) * 0.7, 1.6)
+			b.scale = Vector3.ONE * bsz
+			b.position = Vector3(bx, -1.1, z + 16.6 + fmod(absf(bx), 2.0))
+			b.rotation.y = bx
+			self_light(b, 0.08, Color(1.0, 0.72, 0.45))
+			_world.add_child(b)
+	for lsx in [-3.2, 3.2]:
+		var lp: Node3D = _inst(LANTERN_MODEL)
+		if lp:
+			lp.position = Vector3(lsx, 0.6, z + 30.0)
+			self_light(lp, 1.1, Color(1.0, 0.72, 0.38))
+			_world.add_child(lp)
+	var door := StandardMaterial3D.new()
+	door.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	door.disable_fog = true
+	door.albedo_color = Color(1.0, 0.56, 0.18)
+	_mesh_node(_box(Vector3(8.0, 6.0, 0.3)), door, Vector3(0.0, 1.7, z + 49.8))
+	for sx in [-4.4, 4.4]:
+		_mesh_node(_box(Vector3(0.6, 7.0, 0.6)), _timber_mat(), Vector3(float(sx), 2.2, z + 49.6))
+	_mesh_node(_box(Vector3(9.6, 0.7, 0.7)), _timber_mat(), Vector3(0.0, 5.6, z + 49.6))
+	# The gorge light: molten gold far below, lighting the last stretch of tunnel from underneath.
+	var up := OmniLight3D.new()
+	up.light_color = Color(1.0, 0.5, 0.18)
+	up.light_energy = 9.0
+	up.omni_range = 60.0
+	up.position = Vector3(0.0, -14.0, z + 9.0)
+	_world.add_child(up)
+	var doorlight := OmniLight3D.new()
+	doorlight.light_color = Color(1.0, 0.55, 0.2)
+	doorlight.light_energy = 5.0
+	doorlight.omni_range = 22.0
+	doorlight.position = Vector3(0.0, 3.0, z + 46.0)
+	_world.add_child(doorlight)
+	# The snapped trestle end.
+	for tx in [-3.1, -0.6, 0.6, 3.1]:
+		_mesh_node(_box(Vector3(0.28, 6.0, 0.28)), _timber_mat(), Vector3(float(tx), -3.5, z + 1.5))
+	# Warning boards on the approach.
+	for spec in [[z - 150.0, "TRACK ENDS AHEAD"], [z - 70.0, "DANGER - NO TRACK"], [z - 25.0, "!!! CLIFF !!!"]]:
+		var sz: float = float(spec[0])
+		_mesh_node(_box(Vector3(5.2, 1.3, 0.2)), _timber_mat(), Vector3(0.0, 4.3, sz))
+		var lab := _label(str(spec[1]), Color(1.0, 0.32, 0.22))
+		lab.position = Vector3(0.0, 4.3, sz - 0.15)
+		lab.billboard = BaseMaterial3D.BILLBOARD_DISABLED
+		lab.rotation.y = PI
+		lab.visible = true
+		lab.no_depth_test = false
 
 func _build_camera() -> void:
 	_camera = Camera3D.new()

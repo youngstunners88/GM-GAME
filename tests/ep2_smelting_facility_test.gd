@@ -57,6 +57,7 @@ func _ready() -> void:
 
 	var c = SMELT.instantiate()
 	add_child(c)
+	c.intro_film = false          # the conversation on its own; the film has tests/ep2_cinematic_test.gd
 	c.setup(0, [], 0)
 	await get_tree().process_frame
 
@@ -104,6 +105,12 @@ func _ready() -> void:
 	_check("the rifle is granted", c.has_winchester())
 	_check("weapon_granted fired with the Winchester", granted == ["winchester_1886"], str(granted))
 	_run(c, 6.0)
+	# Founder 2026-09-30: "this is where Lil Blunt now gets his Gun and helmet".
+	var gear: Array = []
+	c.gear_granted.connect(func(g): gear.append(g))
+	_check("interact -> HELMET", c.start_rig() and c.get_beat() == c.Beat.HELMET, c.get_beat_name())
+	_check("the miner's helmet is granted", c.has_helmet() and gear == ["miner_helmet"], str(gear))
+	_run(c, 7.0)
 	_check("interact -> VERB_TEACH", c.start_rig() and c.get_beat() == c.Beat.VERB_TEACH,
 		c.get_beat_name())
 
@@ -189,6 +196,22 @@ func _ready() -> void:
 	_check("...and it is the smelting scene, not the Miner Shaft",
 		active != null and active.has_method("has_winchester"))
 	root.queue_free()
+
+	# --- 10. the real game order (founder 2026-09-30): cliff-jump film -> wake at the Bull's boots with the
+	# whiskey line -> the meeting.
+	var f = SMELT.instantiate()
+	add_child(f)
+	var said: Array = []
+	f.line_spoken.connect(func(id): said.append(id))
+	f.setup(0, [], 0)
+	_check("the facility opens on the cliff-jump film", f.get_beat() == f.Beat.CINEMATIC and f.get_film() != null, f.get_beat_name())
+	_run(f, 13.0)
+	_check("after the film he wakes up (-> WAKE)", f.get_beat() == f.Beat.WAKE, f.get_beat_name())
+	_check("...at the Bull's boots", f.get_distance_to_bull() <= f.TALK_RANGE, "%.2f" % f.get_distance_to_bull())
+	_run(f, 16.0)
+	_check("Lil Blunt groans, then the Bull nurses him with whiskey", said.slice(0, 2) == ["vo_lb_wake", "vo_bull_wake"], str(said))
+	_check("...and the meeting follows (-> DRINK)", f.get_beat() == f.Beat.DRINK, f.get_beat_name())
+	f.queue_free()
 
 	await get_tree().process_frame
 	if _fail == 0:

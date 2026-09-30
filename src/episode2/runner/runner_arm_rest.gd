@@ -31,6 +31,11 @@ extends SkeletonModifier3D
 ## chase camera, so from behind he reads as a HAT on a leaf collar (target), not a bush with a brim through it.
 @export var head_back: float = 0.9
 @export var spine_back: float = 0.12
+## Aim limbs in the BODY's frame instead of the world's: for a body that rolls or lies down (the cliff-jump
+## tumble, waking on the floor), where world-up would drive the legs into the ground.
+@export var body_frame: bool = false
+## Legs straight down under the hips (standing / walking in a chamber) instead of seated.
+@export var standing: bool = false
 
 func _process_modification() -> void:
 	var sk: Skeleton3D = get_skeleton()
@@ -40,8 +45,8 @@ func _process_modification() -> void:
 	if hips < 0:
 		return
 	var inv: Basis = sk.global_transform.basis.inverse()
-	var up: Vector3 = (inv * Vector3.UP).normalized()
-	var fwd: Vector3 = (inv * Vector3.BACK).normalized()       # world +Z = down the track
+	var up: Vector3 = Vector3.UP if body_frame else (inv * Vector3.UP).normalized()
+	var fwd: Vector3 = Vector3.BACK if body_frame else (inv * Vector3.BACK).normalized()   # world +Z = down the track
 	fwd = (fwd - up * fwd.dot(up)).normalized()
 	var lat: Vector3 = fwd.cross(up).normalized()               # rotating +angle about this tips "up" backward
 	var hips_p: Vector3 = sk.get_bone_global_pose(hips).origin
@@ -52,9 +57,14 @@ func _process_modification() -> void:
 	for side in ["Left", "Right"]:
 		var root_p: Vector3 = sk.get_bone_global_pose(sk.find_bone(side + "UpLeg")).origin
 		var out: Vector3 = _outward(root_p - hips_p, up, fwd)
-		# Legs: thigh forward (a touch outward), shin straight down, foot forward.
-		_chain(sk, side + "UpLeg", side + "Leg", (fwd * 0.95 - up * 0.30 + out * 0.10).normalized())
-		_chain(sk, side + "Leg", side + "Foot", (-up * 1.0 - fwd * 0.10).normalized())
+		if standing:
+			# Legs straight under the hips, feet a little apart.
+			_chain(sk, side + "UpLeg", side + "Leg", (-up * 1.0 + out * 0.12 + fwd * 0.04).normalized())
+			_chain(sk, side + "Leg", side + "Foot", (-up * 1.0 - fwd * 0.04).normalized())
+		else:
+			# Legs: thigh forward (a touch outward), shin straight down, foot forward.
+			_chain(sk, side + "UpLeg", side + "Leg", (fwd * 0.95 - up * 0.30 + out * 0.10).normalized())
+			_chain(sk, side + "Leg", side + "Foot", (-up * 1.0 - fwd * 0.10).normalized())
 		if sk.find_bone(side + "ToeBase") >= 0:
 			_chain(sk, side + "Foot", side + "ToeBase", (fwd * 0.9 - up * 0.15).normalized())
 		# Arms.

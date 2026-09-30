@@ -153,6 +153,7 @@ var _distance: float = 0.0         # world z travelled
 var _health: int = START_HEALTH
 var _running: bool = true
 var _chamber_z: float = 200.0      # entrance distance
+var _ends_at_cliff: bool = false
 
 ## Obstacles ahead: each {"z": float, "lane": int, "hit": bool, "type": String}.
 ## `type` in {"box", "arrow", "boulder", "boarder"} — defaults to "box".
@@ -217,6 +218,7 @@ func setup(chamber_z: float, obstacles: Array = [], zip_segments: Array = [],
 		_rail_events.append({"z": float(ed.get("z", 0.0)), "lane": int(ed.get("lane", 1)),
 			"type": str(ed.get("type", "spawn")), "done": false})
 	_rail_events.sort_custom(func(a, b): return float(a["z"]) < float(b["z"]))
+	_ends_at_cliff = bool(opts.get("ends_at_cliff", false))
 	var sp: Dictionary = opts.get("speed", {})
 	_base_speed = float(sp.get("base", RUN_SPEED))
 	_max_speed = float(sp.get("max", MAX_SPEED))
@@ -738,6 +740,8 @@ func get_obstacles() -> Array: return _obstacles
 func get_archers() -> Array: return _archers
 func get_zip_segments() -> Array: return _zip_segments
 func get_chamber_z() -> float: return _chamber_z
+## The leg ends at a cliff (the tracks run out; the cliff-jump film follows), not at a chamber gate.
+func ends_at_cliff() -> bool: return _ends_at_cliff
 func can_shoot() -> bool: return _can_shoot
 func get_zip_index() -> int: return _zip_index
 func is_zip_transfer_armed() -> bool: return _zip_transfer_armed

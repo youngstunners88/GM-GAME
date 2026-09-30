@@ -5,6 +5,29 @@
 
 ---
 
+**🎬🐂 EPISODE 2 — LONGER STAGE, CLIFF-JUMP FILM, INFERNO BULL'S SMELTER (2026-09-30).** What you asked for:
+- **Stage almost twice as long:** The Descent now runs 1800 m instead of 960 m. Three new sections: The Gallery, a second shovel line, and The Runaway. There are 3 more bear archers, more boulders, arrow volleys and gold lines, and 3 new ziplines. A test bot finishes it with health to spare.
+- **It ends at a cliff:** warning boards ("TRACK ENDS AHEAD", "DANGER - NO TRACK", "!!! CLIFF !!!"), a snapped trestle, and a molten-gold gorge. Inferno Bull's glowing furnace door is visible across the gap for the last 150 m.
+- **The film (about 12 s, hold SPACE to skip):**
+  - The cart bursts out of the tunnel and flies off the lip.
+  - Lil Blunt jumps out in the nick of time (4.4 m clear).
+  - **Slow-mo:** the camera orbits him at full speed while the world moves at 30%. Embers hang in the air, the sound goes low, and a heartbeat plays.
+  - The cart smashes into the far wall below, and the speed snaps back to normal on impact.
+  - He lands, rolls, tumbles and hits his head on a rock (screen shake and a flash), then blacks out. As his eyes close, a blurry, double-vision Inferno Bull stands over him.
+  - It's letterboxed with a Modern Warfare-style colour grade, and has 10 new sound effects and 6 voiced lines ("The tracks end! Jump… JUMP!", "Whoooa!", "Ow… my head…").
+- **The story carries on:** he wakes on the smelter floor ("Where am I?"). The Bull: "Easy there, little fella… Here. Whiskey. For the pain." Then Lil Blunt gets the **Winchester** and a **miner's helmet** with a working lamp.
+- **The smelter is rebuilt around your "Bull Mine Gunslinger" model:** a molten-gold channel that flows and lights the room, pouring crucibles, forge glow and steam, ingot racks, gold piles, lanterns, timber frames and rock walls, a whisky table, and the "FORT KNOX" exit door.
+- **New skills:**
+  - `ep2-cinematic-cutscene`: the recipe for action-packed in-game films, researched from bullet-time and camera-shake techniques and what works in web builds.
+  - `ep2-western-world-forge`: builds the world region by region, using the Modern Warfare mission types: breach, mentor stealth, overwatch, holdout, chase and escape.
+  - A **World Bible v0** (`design/world/WORLD_BIBLE.md`): factions, plus a 10-region route from The Descent through the Gorge and the smelter to Fort Knox, the Gold Vein, the frontier canyon and Diamond territory. Regions 4–10 are outlines waiting for your OK.
+
+**Still to do:**
+- Your Bull model is a statue (it has no skeleton), so he can't move his arms to pour or hand things over. Rigging it on Meshy is the fix and costs credits.
+- The helmet sits on top of the cowboy hat.
+
+All 18 Episode 2 test suites pass, including a new film test: he clears the gap, the slow-mo never leaks into gameplay, and skip ends it cleanly.
+
 **🎵 EDUCATION SONGS + LEVEL-1 SONG RULE (2026-09-30).** Your three songs now play in the education rooms (Stage 1 = Smoke, 2 = Diamonds, 3 = Gold): they fade in as Lil Blunt enters and fade out as he leaves. The Level-1 "Song A first" rule now means what you meant: it plays first when the game is started from the title screen, not every time Level 1 loads. Coming out of Blaze Rush, the Smoke Lounge or an education room, the music just carries on / shuffles.
 
 **🎩 EPISODE 2 — HAT ON TOP OF THE LEAVES (2026-09-30).** As you asked, I corrected his hat and hair. The leaves on top of his head were taller than the hat, so from behind they burst up through the brim. I lowered those leaves (780 points on the model) so they sit under the hat crown, leaving the hat, face and weapons untouched. From the game camera the hat now sits on top with the leaves around and under it, and from the front the mane is neater. No Meshy credits spent; all 9 Episode 2 test suites pass.

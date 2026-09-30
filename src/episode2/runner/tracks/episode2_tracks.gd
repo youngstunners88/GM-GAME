@@ -32,12 +32,17 @@ extends RefCounted
 ## can REACH in time; ep2_track_solvability_test plays every leg to prove it.
 ## "gold" = pickup (collected by passing through), used as bait toward risk.
 
-## Leg 1 — THE DESCENT (~960 m, ~40 s). Teaches attrition: first you WATCH a
+## Leg 1 — THE DESCENT (~1800 m, ~70 s). Teaches attrition: first you WATCH a
 ## cart die, then you lose your own, then the convoy splits and a rail ends.
+## Founder 2026-09-30: "it needs to be longer ... the end of it must lead to a cliff that has a gap to the
+## other side where Inferno Bull is situated". 960-1800 m adds the Gallery, a second shovel line, a chain
+## and THE RUNAWAY, and the tracks run out at the cliff edge (chamber_z): the cliff-jump film takes over
+## (src/episode2/cinematic/cliff_jump_cinematic.gd, played by the Smelting Facility).
 const LEG_DESCENT := {
 	"name": "The Descent",
 	"armed": true,
-	"chamber_z": 960.0,
+	"chamber_z": 1800.0,
+	"ends_at_cliff": true,
 	"speed": {"base": 20.0, "max": 28.0},
 	"carts_start": [true, true, true],
 	"start_lane": 1,
@@ -45,6 +50,9 @@ const LEG_DESCENT := {
 		{"id": "d_a1", "z": 320.0, "side": 1},
 		{"id": "d_a2", "z": 560.0, "side": -1},
 		{"id": "d_a3", "z": 880.0, "side": 1},
+		{"id": "d_a4", "z": 1060.0, "side": -1},
+		{"id": "d_a5", "z": 1380.0, "side": 1},
+		{"id": "d_a6", "z": 1640.0, "side": -1},
 	],
 	"rail_events": [
 		{"z": 240.0, "lane": 2, "type": "spawn"},   # right rail rebuilt from a siding
@@ -54,6 +62,10 @@ const LEG_DESCENT := {
 		{"z": 680.0, "lane": 0, "type": "end"},     # left rail hits a buffer stop
 		{"z": 760.0, "lane": 0, "type": "spawn"},
 		{"z": 770.0, "lane": 2, "type": "spawn"},
+		{"z": 1170.0, "lane": 1, "type": "spawn"},  # centre back after the Gallery boulder
+		{"z": 1340.0, "lane": 0, "type": "spawn"},  # both outer carts back after the landing boulders
+		{"z": 1345.0, "lane": 2, "type": "spawn"},
+		{"z": 1590.0, "lane": 0, "type": "spawn"},
 	],
 	"obstacles": [
 		# Warm-up: a gold line down the centre, then two jumps.
@@ -102,12 +114,51 @@ const LEG_DESCENT := {
 		{"z": 915.0, "lane": 0, "type": "gold"},
 		{"z": 915.0, "lane": 1, "type": "gold"},
 		{"z": 915.0, "lane": 2, "type": "gold"},
+		# --- THE GALLERY (960-1200): the cavern widens, archers on both walls.
+		{"z": 980.0, "lane": 1, "type": "gold"},
+		{"z": 988.0, "lane": 1, "type": "gold"},
+		{"z": 996.0, "lane": 1, "type": "gold"},
+		{"z": 1030.0, "lane": 0, "type": "box"},
+		{"z": 1030.0, "lane": 2, "type": "box"},
+		{"z": 1060.0, "lane": 0, "type": "arrow", "archer": "d_a4"},
+		{"z": 1060.0, "lane": 1, "type": "arrow", "archer": "d_a4"},
+		{"z": 1060.0, "lane": 2, "type": "arrow", "archer": "d_a4"},
+		# Centre smashed: hop to a side (both outer carts live since 760/770).
+		{"z": 1110.0, "lane": 1, "type": "boulder"},
+		{"z": 1150.0, "lane": -1, "type": "boarder"},
+		# --- SECOND SHOVEL LINE (1200-1340): only the zipline (1230-1275) clears it.
+		{"z": 1255.0, "lane": 0, "type": "shovels"},
+		{"z": 1255.0, "lane": 1, "type": "shovels"},
+		{"z": 1255.0, "lane": 2, "type": "shovels"},
+		# The zipline drops you on the centre cart (back since 1170); both outer rails die under you.
+		{"z": 1315.0, "lane": 0, "type": "boulder"},
+		{"z": 1315.0, "lane": 2, "type": "boulder"},
+		# --- VOLLEY + CHAIN (1340-1520)
+		{"z": 1380.0, "lane": 1, "type": "arrow", "archer": "d_a5"},
+		{"z": 1380.0, "lane": 2, "type": "arrow", "archer": "d_a5"},
+		{"z": 1500.0, "lane": 0, "type": "gold"},
+		{"z": 1500.0, "lane": 1, "type": "gold"},
+		{"z": 1500.0, "lane": 2, "type": "gold"},
+		# --- THE RUNAWAY (1520-1800): full speed, the last gauntlet, then the rails run out.
+		{"z": 1545.0, "lane": 0, "type": "boulder"},
+		{"z": 1580.0, "lane": 1, "type": "box"},
+		{"z": 1610.0, "lane": -1, "type": "boarder"},
+		{"z": 1640.0, "lane": 0, "type": "arrow", "archer": "d_a6"},
+		{"z": 1640.0, "lane": 1, "type": "arrow", "archer": "d_a6"},
+		{"z": 1690.0, "lane": 1, "type": "gold"},
+		{"z": 1700.0, "lane": 1, "type": "gold"},
+		{"z": 1710.0, "lane": 1, "type": "gold"},
+		{"z": 1720.0, "lane": 1, "type": "gold"},
 	],
 	"zip_segments": [
 		{"start_z": 430.0, "end_z": 470.0},
 		# Chain: jump to hook, jump again near the end to swing on.
 		{"start_z": 790.0, "end_z": 812.0},
 		{"start_z": 818.0, "end_z": 836.0},
+		{"start_z": 1230.0, "end_z": 1275.0},   # over the second shovel line
+		# Chain over the pit after the volley.
+		{"start_z": 1420.0, "end_z": 1440.0},
+		{"start_z": 1446.0, "end_z": 1464.0},
 	],
 	# CHAMBER 0 — the Smelting Facility: a story set-piece, so it mints nothing
 	# (no gold_principal, no bears).

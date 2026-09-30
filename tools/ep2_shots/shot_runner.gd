@@ -41,6 +41,10 @@ func _ready() -> void:
 		leg = {"chamber_z": 200.0, "zip_segments": [], "archers": [], "obstacles": [
 			{"z": 9.0, "lane": 1, "type": "gold"}, {"z": 13.0, "lane": 1, "type": "gold"},
 			{"z": 11.0, "lane": 2, "type": "gold"}, {"z": 15.0, "lane": 2, "type": "gold"}], "start_lane": 0}
+	if str(args.get("custom", "")) == "cliff":
+		# Inspection leg: a short run that ends at the cliff mouth (the real Descent is 1800 m long).
+		leg = {"chamber_z": 240.0, "zip_segments": [], "archers": [], "obstacles": [], "start_lane": 1,
+			"ends_at_cliff": true}
 	if str(args.get("custom", "")) == "shovels":
 		# Inspection leg: the shovel line ahead of a rider who never zips (he will get smacked - fine).
 		leg = {"chamber_z": 200.0, "zip_segments": [{"start_z": 20.0, "end_z": 60.0}], "archers": [], "obstacles": [
@@ -50,7 +54,7 @@ func _ready() -> void:
 	add_child(live)
 	live.setup(float(leg["chamber_z"]), leg["obstacles"], leg["zip_segments"], leg["archers"], true,
 		{"rail_events": leg.get("rail_events", []), "carts_start": leg.get("carts_start", [true, true, true]),
-		"start_lane": int(leg.get("start_lane", 1)), "speed": leg.get("speed", {})})
+		"start_lane": int(leg.get("start_lane", 1)), "speed": leg.get("speed", {}), "ends_at_cliff": bool(leg.get("ends_at_cliff", false))})
 	live.set_physics_process(false)
 	var aim: PackedStringArray = str(args["aim"]).split(",")
 	var next: int = 0
