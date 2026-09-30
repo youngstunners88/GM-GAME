@@ -5,6 +5,17 @@
 
 ---
 
+**🤠 EPISODE 2 — LIL BLUNT RE-POSED, CHECKED WITH MY OWN EYES (2026-09-30).** You said he still looked trash, so I captured him myself from the game camera and from six sides of the same frozen frame. That showed what the tests never had: his **revolver pointed at the ceiling**, the **pickaxe was held up like a club**, he **crouched with his belt above the rim**, and a **clump of leaves was stuck to his arm bones** and got dragged over his hat. Fixed:
+- He **sits** in the cart: hips just under the rim, only chest, arms and hat above it.
+- The **gold revolver points down the track** at your reticle, arm out on his right.
+- The **pickaxe leans up at his left side**, like your target image.
+- Head tipped back, so the hat sits on top.
+- **Camera closer**: he's 27–40% bigger on screen.
+- **Glossier leather and a side light**: his shading has highlights and shadow now, without making him darker than before (your "too dark" note).
+- The 3,600 leaf vertices that followed his arms now follow his neck and chest.
+
+Two new automatic checks fail if the gun ever points up again or he stands up in the cart. **Still not your target:** from behind, this model's big lion-mane leaves rise above the hat. Your picture has a small leaf collar tucked under the hat. That's the shape of the model itself, not the pose. The fix is a model with the mane under the brim (Meshy, costs credits: your call). **Also found:** in the left lane, the bear-archer ledge can hide him (this was already true with the old camera). **New skill:** `see-it-yourself` (capture, zoom, orbit, measure, A/B test, then judge), built on research into where vision AIs fail on game screenshots. **Firecrawl:** your new key works; the one saved in the environment settings is dead. Paste the new key into the Environment Variables field as `FIRECRAWL_API_KEY`. Checks: 8 Episode 2 test suites pass.
+
 **👋 GREETINGS AND GOODBYES (2026-09-30).** The moment Lil Blunt arrives, the governor welcomes him and Lil Blunt answers (in his ElevenLabs voice). When he leaves, the governor says goodbye and Lil Blunt replies before he climbs out. All three rooms, fully voiced.
 
 **📣 PROTOCOL UPDATES IN THE EDUCATION ROOMS (2026-09-30).** Auctions removed from Gold and Diamonds. Gold now teaches sweeper bots capturing XAUT into two Gold Vein pools: stakers get two payouts (wBTC from Fort Knox + XAUT from the Gold Vein) on the same stake share. Diamonds teaches swept ETH going to Diamond Certificate holders. Smoke Lounge is just the SMOKE NFT and bong parties (no Gold/Diamonds/Blaze NFTs). "Gold Rush Board" is now "The Gold Vein Board"; quiz questions and 9 voice clips updated.

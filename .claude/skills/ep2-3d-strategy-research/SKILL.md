@@ -18,7 +18,7 @@ bug (2026-09-27); one Exa query named it (godot#96968, research/001). Local bise
 | Grounded quick answer | Gemini `google_search` tool (`gemini-3.5-flash`) | quota 429s happen — back off |
 | Long logs / many pages to triage | DeepSeek V4.1 Flash via `scripts/or-call.mjs` | a lead, never a fact |
 | JS-heavy page / interactive site | Tinyfish (`TINYFISH_API_KEY`) or Browser Use (`BROWSER_USE_API_KEY`) | reachable, not yet exercised |
-| ✗ Firecrawl | key returns **401 Invalid token** (v1 and v2) | ask the founder to refresh it; don't route here |
+| Firecrawl search/scrape (v2) | env `FIRECRAWL_API_KEY` still returns **401**; the founder's NEW key returns 200 (verified 2026-09-30) | the founder must paste the new key into the environment's Environment Variables field; until then it only works in the session he pasted it in. Never commit it. |
 
 # Separation of concerns
 1. **Question** — one sentence, with the exact engine version (Godot 4.3, Compatibility/WebGL2,

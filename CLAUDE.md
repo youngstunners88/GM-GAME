@@ -47,6 +47,7 @@ same commit — a manifest that lies is worse than none.
 | Write code, build scenes, configure engine | /src | `.claude/context-manifests/default.md` | gdscript-skill |
 | Write docs, marketing, or changelogs | /docs | CONTEXT.md | — |
 | **Founder reports smudges / blotches / blemishes** | **`blotch-hunter` agent** | `scripts/blotch-oracle.json` | `blotch-forensics`, `blotch-repair-gate` |
+| **Founder says something LOOKS wrong / "check for yourself"** | capture it yourself first | `.claude/skills/see-it-yourself/SKILL.md` | `see-it-yourself`, `ep2-reference-match-loop` |
 
 Episode 2 sessions load gm-game-tool-roster + gm-game-episode2-runner-combat.
 Episode 2 feature work follows `ep2-layered-production` (illustration → wire spec → design imagery → 3D → motion/emotion, each gated); unknowns go to `ep2-3d-strategy-research` before a second bisection round. Any 3D model or meshy.ai link goes through `ep2-meshy-studio` (Meshy CLI + MCP, key from env). A founder feedback doc / Drive images / meshy.ai links go through `ep2-founder-intake`; a visual change is proven with `ep2-reference-match-loop` (screen vs his target image on one board) before it is called done. Voice/creature sounds and reactions go through `ep2-voice-barks`.

@@ -36,3 +36,7 @@ proved files existed; nothing compared the screen to the picture he had given us
 | 09-29 | coins masked by a filter | coin = lit metallic cylinder, no halo/alpha (rubric 5) |
 | 09-29 | only tracks + carts looked good | keep leaf cart + rail geometry untouched |
 | 09-27 | grey / cheap environment | glowing crystals, warm light (rubric 7, 8) |
+| 09-30 | "still trash": revolver pointing at the ceiling, pickaxe held up like a club, crouching (belt over the rim), leaves dragged over the hat by the arm bones | motion test: barrel on the aim target + not up, hips at/below the rim; `tools/meshy/reweight_mane.py` (skill `see-it-yourself`) |
+
+**Before this loop, get eyes on it:** skill `see-it-yourself` (orbit views of the frozen frame, subject crop, hero mask
++ metrics, live A/B with `vary=`). A full-frame look misses what the crop and the orbit show.

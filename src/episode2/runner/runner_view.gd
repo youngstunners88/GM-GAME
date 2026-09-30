@@ -109,8 +109,8 @@ const LEAF_CART_LEN := 1.85
 # Native size 1.18 x 1.90 x 1.03, origin at the chest; gun barrel tip / pickaxe top measured.
 ## Camera framing (skill ep2-runner-camera-light): the hero sits in the LOWER THIRD of the frame and
 ## the camera looks far down the track, so the vanishing point and the rails ahead stay clear.
-const CAM_HEIGHT := 3.2
-const CAM_BACK := 4.2
+const CAM_HEIGHT := 2.7            # closer + lower (founder target: Lil Blunt big in frame)
+const CAM_BACK := 3.4
 const CAM_FOLLOW_X := 0.35
 const CAM_LOOK_X := 0.2
 const CAM_LOOK_Y := 1.1
@@ -121,12 +121,15 @@ const SHOVEL_SWING := 7.0          # m before the row: the smack comes down
 const HERO_SCALE := 1.45
 const HERO_H := 1.9
 const HERO_MUZZLE := Vector3(0.45, 0.05, 0.48)     # a little behind the barrel tip (0.59)
-const HERO_YAW_BASE := 0.5         # mirrored model: +yaw swings the revolver forward
-const HERO_YAW_GAIN := 0.9
-const HERO_YAW_MIN := -0.5
-const HERO_YAW_MAX := 1.0
-const HERO_SEAT_DROP := 0.0         # extra floor offset for the seated clip (tuned by eye)
-const HERO_SINK_REST := -0.55       # chest sits this far ABOVE the cart rim (founder target: torso visible over the rim)
+# Body yaw toward the aim. Small now: RunnerArmRest/RunnerAimModifier aim the revolver BARREL, so the
+# body no longer has to twist to point the baked gun (the twist hid the gun arm behind his back).
+const HERO_YAW_BASE := -0.2       # turned a little left: his gun arm swings out where the camera sees it
+const HERO_YAW_GAIN := 0.35
+const HERO_YAW_MIN := -0.6
+const HERO_YAW_MAX := 0.3
+const HERO_SEAT_DROP := 0.0         # extra floor offset (tuned by eye)
+const HERO_HIP_H := 0.773           # bind-pose hip height of lil_blunt_hero.glb (model units, feet at 0)
+const HERO_HIP_OVER_RIM := -0.05    # founder target: belt AT the rim, only chest/arms/hat above it
 const COIN_SPIN := 3.2
 const ARCHER_STATUE_H := 2.5          # drawn-bow bear incl. bow, standing on the ledge
 const ARCHER_HEIGHT := 2.9           # founder: bears need to read at 20-30 m/s
@@ -289,6 +292,9 @@ var _zip_top: float = 0.0
 var _zip_scale: float = 1.0
 var _hero_mode: bool = false         # the posed founder hero is the rider
 var _hero_body: Node3D = null
+var hero_yaw_base: float = HERO_YAW_BASE   # vars (not consts) so the eyes rig can A/B them live
+var cam_height: float = CAM_HEIGHT
+var cam_back: float = CAM_BACK
 var _rider_floor: float = RIDER_FLOOR
 var _cart_rim_y: float = 1.2         # world y of the leaf cart rim (measured at build)
 var _wreck_pieces: Array = []        # [{"node", "vel", "spin", "t"}]
@@ -975,8 +981,12 @@ func _brighten_hero(n: Node3D) -> void:
 				continue
 			mat.metallic_texture = null
 			mat.metallic = 0.12
-			mat.roughness = 0.7
-			mat.albedo_color = Color(1.55, 1.5, 1.4)
+			# Glossier leather + leaves (was roughness 0.7: flat, "plastic"); the brightness comes from the
+			# lights more than from self-glow so the shading survives. Tuned on the hero pixel mask (skill
+			# see-it-yourself, Jev pick W2): lum 92 (old 82-93), contrast 0.535 (old 0.41-0.55), gold px 1401.
+			mat.roughness = 0.45
+			mat.metallic_specular = 0.6
+			mat.albedo_color = Color(1.6, 1.58, 1.5)
 
 ## Feed a model's own albedo texture back as a warm emission so it reads in a dark tunnel
 ## without adding lights (the web renderer pays per light per object).
@@ -1153,22 +1163,26 @@ func _build_rider() -> void:
 				_aim_mod.arm_bone = "LeftArm"
 				_aim_mod.fore_bone = "LeftForeArm"
 				_aim_mod.hand_bone = "LeftHand"
+				# Keep RunnerArmRest's arm-out-to-the-side (visible from behind) and aim the BARREL.
+				_aim_mod.follow = 0.2
+				_aim_mod.reset_fore = false
+				_aim_mod.barrel_local = _arm_rest.barrel_local if _arm_rest else Vector3(0.265, 0.90, -0.33)
 				_aim_mod.influence = 0.0
 				sk.add_child(_aim_mod)
-		_self_light(hero, 0.14, Color(1.0, 0.86, 0.66))
+		_self_light(hero, 0.08, Color(1.0, 0.86, 0.66))
 		_brighten_hero(hero)
 		# Key light on the hero (camera-light skill: three-point). A lantern-warm omni above and behind
 		# him lights his back and hat so he reads against the dark rock; the rim comes from the far lanterns.
 		var key := OmniLight3D.new()
 		key.name = "HeroKey"
 		key.light_color = Color(1.0, 0.82, 0.58)
-		key.light_energy = 1.7
+		key.light_energy = 2.6
 		key.omni_range = 5.5
 		key.position = Vector3(0.3, 2.9, -1.6)
 		_rider.add_child(key)
 		_hero_body = hero
-		# Chest (model origin) just below the cart rim: hat, leaves, both weapons above it.
-		_rider_floor = _cart_rim_y - HERO_SINK_REST - HERO_H * 0.5 * HERO_SCALE + HERO_SEAT_DROP
+		# Seated (RunnerArmRest): hips at the rim, so only chest, arms and hat show above it.
+		_rider_floor = _cart_rim_y + HERO_HIP_OVER_RIM - HERO_HIP_H * HERO_SCALE + HERO_SEAT_DROP
 	else:
 		_rider_model = _inst(Motion.RIDER_RIG) if not debug_off.has("rig") else null
 	if _rider_model and not _hero_mode:
@@ -1216,6 +1230,7 @@ func _build_rider() -> void:
 	# Hero lighting: a warm key from behind-above (the side the camera sees) and a
 	# cool rim from the front, so he reads against the dark tunnel at any speed.
 	var key := OmniLight3D.new()
+	key.name = "HeroFill"
 	key.visible = not debug_off.has("hero")
 	key.light_color = Color(1.0, 0.86, 0.62)
 	key.light_energy = 1.6
@@ -1223,12 +1238,22 @@ func _build_rider() -> void:
 	key.position = Vector3(0.7, RIDER_HEIGHT + 0.7, -1.7)
 	_rider.add_child(key)
 	var rim := OmniLight3D.new()
+	rim.name = "HeroRim"
 	rim.visible = not debug_off.has("hero")
 	rim.light_color = Color(0.62, 0.78, 1.0)
 	rim.light_energy = 1.0
 	rim.omni_range = 4.0
 	rim.position = Vector3(-0.4, RIDER_HEIGHT + 0.4, 1.4)
 	_rider.add_child(rim)
+	if _hero_mode:
+		# Founder hero: the fill becomes a SIDE key grazing his back from his right (screen right) and the
+		# rim a warm lantern from ahead-left, so the hat, arm and leaves get edges instead of a flat
+		# camera-flash look. The tunnel has almost no ambient: keep a light on the camera side (HeroKey).
+		key.position = Vector3(-1.6, 2.6, 0.2)
+		key.light_energy = 2.8
+		rim.position = Vector3(1.0, 3.0, 1.2)
+		rim.light_energy = 1.6
+		rim.light_color = Color(1.0, 0.78, 0.5)
 	# Emotion bubble: "!" when his own cart is about to be destroyed.
 	_emote = Label3D.new()
 	_emote.text = "!"
@@ -2415,7 +2440,7 @@ func _update_rider(dist: float, delta: float) -> void:
 		var dv: Vector3 = aim_t - Vector3(x, 0.0, dist)
 		# Back to the camera, turned a little toward the aim (target art: seen from behind,
 		# revolver arm out on his right). Never square-on sideways — that read as spastic.
-		var th: float = clampf(HERO_YAW_BASE + HERO_YAW_GAIN * atan2(dv.x, maxf(dv.z, 1.0)), HERO_YAW_MIN, HERO_YAW_MAX)
+		var th: float = clampf(hero_yaw_base + HERO_YAW_GAIN * atan2(dv.x, maxf(dv.z, 1.0)), HERO_YAW_MIN, HERO_YAW_MAX)
 		_rider_model.rotation.y = lerp_angle(_rider_model.rotation.y, th, clampf(delta * 10.0, 0.0, 1.0))
 	# Upper body turns toward where he's aiming (clamped; he stays facing the run).
 	elif _aim_ok and _rider_model:
@@ -2695,9 +2720,9 @@ func _update_lights(dist: float) -> void:
 
 func _update_camera(dist: float, delta: float) -> void:
 	var rx: float = float(_sim.get_cart_x())
-	var target := Vector3(rx * CAM_FOLLOW_X, CAM_HEIGHT, dist - CAM_BACK)
+	var target := Vector3(rx * CAM_FOLLOW_X, cam_height, dist - cam_back)
 	if _sim.is_ziplining():
-		target.y = CAM_HEIGHT + 1.7
+		target.y = cam_height + 1.7
 	var k: float = clampf(delta * 6.0, 0.0, 1.0)
 	var p: Vector3 = _camera.position
 	p.x = lerpf(p.x, target.x, k)
