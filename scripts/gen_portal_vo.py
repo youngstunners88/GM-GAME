@@ -14,10 +14,14 @@ force = "--force" in sys.argv
 only = sys.argv[sys.argv.index("--only") + 1] if "--only" in sys.argv else None
 
 
-def normalise(path):
+# Rich Miner (Storytellin' Cowboy) drawls; speed the Gold reads up (pitch preserved) - founder: "speaks very slow".
+TEMPO = {"gold": 1.3}
+
+
+def normalise(path, proto=None):
     """Loudness-normalise (-14 LUFS, -1 dBTP) so every governor is equally present over the music."""
     tmp = path + ".norm.mp3"
-    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", path, "-af", "loudnorm=I=-14:TP=-1:LRA=9", "-b:a", "96k", tmp], check=True)
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", path, "-af", (f"atempo={TEMPO[proto]}," if proto in TEMPO else "") + "loudnorm=I=-14:TP=-1:LRA=9", "-b:a", "96k", tmp], check=True)
     os.replace(tmp, path)
 
 copy = json.load(open("src/protocol_portals/data/portal_copy.json"))
@@ -36,11 +40,11 @@ for proto, data in copy.items():
                 data=json.dumps({"text": text, "model_id": "eleven_multilingual_v2"}).encode(),
                 headers={"xi-api-key": KEY, "Content-Type": "application/json"})
             try:
-                open(out, "wb").write(urllib.request.urlopen(req, timeout=90).read()); normalise(out); made += 1; print("ok", out)
+                open(out, "wb").write(urllib.request.urlopen(req, timeout=90).read()); normalise(out, proto); made += 1; print("ok", out)
             except Exception as e:
                 print("FAIL", out, getattr(e, "code", type(e).__name__)); sys.exit(2)
 # Greetings and goodbyes: governor line + Lil Blunt's reply, once per room.
-def tts(voice, text, out):
+def tts(voice, text, out, proto=None):
     global made
     if os.path.exists(out) and not force:
         return
@@ -48,13 +52,13 @@ def tts(voice, text, out):
         f"https://api.elevenlabs.io/v1/text-to-speech/{voice}?output_format=mp3_44100_64",
         data=json.dumps({"text": text, "model_id": "eleven_multilingual_v2"}).encode(),
         headers={"xi-api-key": KEY, "Content-Type": "application/json"})
-    open(out, "wb").write(urllib.request.urlopen(req, timeout=90).read()); normalise(out); made += 1; print("ok", out)
+    open(out, "wb").write(urllib.request.urlopen(req, timeout=90).read()); normalise(out, proto); made += 1; print("ok", out)
 
 for proto, data in copy.items():
     if only and proto != only:
         continue
     for phase in ("welcome", "farewell"):
         if phase in data:
-            tts(VOICES[proto], data[phase]["gov"], f"src/assets/portals/vo/{proto}_{phase}_gov.mp3")
+            tts(VOICES[proto], data[phase]["gov"], f"src/assets/portals/vo/{proto}_{phase}_gov.mp3", proto)
             tts(LIL_BLUNT, data[phase]["lb"], f"src/assets/portals/vo/{proto}_{phase}_lb.mp3")
 print("new clips", made)
