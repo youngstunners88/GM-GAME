@@ -55,6 +55,7 @@ const HERO_MODEL := "res://src/episode2/assets/lil_blunt_hero.glb"        # "Smi
 const BEAR_STATUE_MODEL := "res://src/episode2/assets/mine_bear_archer.glb"  # "Mine Bear Archer"
 const Motion := preload("res://src/episode2/runner/runner_motion.gd")
 const AimMod := preload("res://src/episode2/runner/runner_aim_modifier.gd")
+const ArmRest := preload("res://src/episode2/runner/runner_arm_rest.gd")
 const TEX_BTC := "tex_btc_coin.png"
 const CRYSTAL_SHADER := "res://src/episode2/art/crystal_glow.gdshader"
 const TEX_ROCK := "tex_rock_wall.jpg"
@@ -121,7 +122,7 @@ const HERO_YAW_BASE := 0.25         # mirrored model: +yaw swings the revolver f
 const HERO_YAW_GAIN := 0.5
 const HERO_YAW_MIN := -0.5
 const HERO_YAW_MAX := 0.7
-const HERO_SEAT_DROP := 1.2         # extra floor offset for the seated clip (tuned by eye)
+const HERO_SEAT_DROP := 0.0         # extra floor offset for the seated clip (tuned by eye)
 const HERO_SINK_REST := -0.55       # chest sits this far ABOVE the cart rim (founder target: torso visible over the rim)
 const COIN_SPIN := 3.2
 const ARCHER_STATUE_H := 2.5          # drawn-bow bear incl. bow, standing on the ledge
@@ -205,6 +206,8 @@ static var debug_off: Dictionary = {}
 ## TEST-ONLY (tools/ep2_shots): when set, [pos, look_at] replaces the gameplay camera, so a
 ## capture can look straight at one prop (a bear on its ledge, a coin) from any angle.
 static var debug_cam: Array = []
+## TEST-ONLY (tools/ep2_shots): force one rider clip by name (contact-sheet of every clip from the game camera).
+static var debug_clip: String = ""
 
 var _sim: Node = null
 var _world: Node3D = null
@@ -301,6 +304,8 @@ var _gold_nodes: Array = []                 # parallel to obstacles (null when n
 var _gold_burst: CPUParticles3D = null
 var _streaks: CPUParticles3D = null
 var _look_x: float = 0.0
+var _arm_rest: SkeletonModifier3D = null
+var _dbg_clip_applied: String = ""
 # HUD additions.
 var _cart_strip: Control = null
 var _gold_label: Label = null
@@ -1090,15 +1095,19 @@ func _build_rider() -> void:
 		# rig's origin is at his FEET; the old static model was centred on his chest.
 		hero.position = Vector3.ZERO
 		_rider_model.add_child(hero)
-		var han: RefCounted = Motion.Anim.new(hero, Motion.RIDER_CLIPS)
-		if han.ok():
-			_rider_anim = han
-			han.want("idle", 0.0)
-			# The revolver is baked into his anatomical LEFT hand; the model is mirrored, so it
-			# reads as his right. The aim modifier swings that arm to the reticle.
-			var hsk: Array = hero.find_children("*", "Skeleton3D", true, false)
-			if not hsk.is_empty():
-				var sk: Skeleton3D = hsk[0]
+		# NO clips: the seated/standing clips hunch him over the cart (see runner_motion HERO_CLIPS). He
+		# keeps the founder's bind pose; only the pickaxe arm is posed (RunnerArmRest) and the gun arm
+		# aims (RunnerAimModifier, his anatomical LEFT arm; the model is mirrored so it reads as his right).
+		var hsk: Array = hero.find_children("*", "Skeleton3D", true, false)
+		if not hsk.is_empty():
+			var sk: Skeleton3D = hsk[0]
+			for ap in hero.find_children("*", "AnimationPlayer", true, false):
+				(ap as AnimationPlayer).stop()
+			if not debug_off.has("armrest"):
+				_arm_rest = ArmRest.new()
+				_arm_rest.name = "PickArmRest"
+				sk.add_child(_arm_rest)
+			if not debug_off.has("aimmod"):
 				_aim_mod = AimMod.new()
 				_aim_mod.name = "GunArmAim"
 				_aim_mod.arm_bone = "LeftArm"
@@ -1106,7 +1115,7 @@ func _build_rider() -> void:
 				_aim_mod.hand_bone = "LeftHand"
 				_aim_mod.influence = 0.0
 				sk.add_child(_aim_mod)
-		_self_light(hero, 0.05, Color(1.0, 0.9, 0.75))
+		_self_light(hero, 0.12, Color(1.0, 0.9, 0.75))
 		_hero_body = hero
 		# Chest (model origin) just below the cart rim: hat, leaves, both weapons above it.
 		_rider_floor = _cart_rim_y - HERO_SINK_REST - HERO_H * 0.5 * HERO_SCALE + HERO_SEAT_DROP
@@ -1245,7 +1254,7 @@ func _bind_hero_weapons() -> void:
 	if _gun_pivot.get_parent():
 		_gun_pivot.get_parent().remove_child(_gun_pivot)
 	var sks: Array = _hero_body.find_children("*", "Skeleton3D", true, false)
-	if not sks.is_empty():
+	if not sks.is_empty() and not debug_off.has("gunhand"):
 		# Rigged hero: ride the gun hand so the muzzle flash follows the aimed arm.
 		var ba := BoneAttachment3D.new()
 		ba.name = "GunHand"
@@ -2248,7 +2257,22 @@ func _update_rider(dist: float, delta: float) -> void:
 	if _rider_anim:
 		var mood: String = Motion.pick_rider(zipping, ducking, y > 0.05 and not zipping,
 			bool(_sim.is_reloading()), _t_hit, _t_shot, _t_swipe, _t_hop, _t_cheer)
-		_rider_anim.want(mood)
+		if debug_clip == "none":
+			if _rider_anim.player and _dbg_clip_applied != "none":
+				_dbg_clip_applied = "none"
+				_rider_anim.player.stop()
+				for sk0 in _hero_body.find_children("*", "Skeleton3D", true, false):
+					(sk0 as Skeleton3D).reset_bone_poses()
+		elif debug_clip != "":
+			var dc: PackedStringArray = debug_clip.split("@")
+			if _rider_anim.player and _rider_anim.player.has_animation(dc[0]) and _dbg_clip_applied != debug_clip:
+				_dbg_clip_applied = debug_clip
+				_rider_anim.player.play(dc[0])
+				if dc.size() > 1:
+					_rider_anim.player.seek(float(dc[1]), true)
+					_rider_anim.player.pause()
+		else:
+			_rider_anim.want(mood)
 	var spd: float = float(_sim.get_speed()) if _sim.has_method("get_speed") else Sim.RUN_SPEED
 	_danger_t = Motion.danger_eta(_sim, lane, dist, spd) if not zipping else INF
 	if _emote:
@@ -2298,6 +2322,11 @@ func _update_rider(dist: float, delta: float) -> void:
 	elif _aim_ok and _rider_model:
 		var yaw_t: float = clampf(atan2(_aim_point.x - x, maxf(_aim_point.z - dist, 1.0)), -0.6, 0.6)
 		_rider_model.rotation.y = lerp_angle(_rider_model.rotation.y, RIDER_YAW + yaw_t, clampf(delta * 8.0, 0.0, 1.0))
+	# Pickaxe arm: rested normally; raised (bind pose) while he hangs from the pick on the zipline and
+	# for the chop, so the swing/hang reads.
+	if _arm_rest:
+		var raise: bool = zipping or _t_swipe < Motion.SWIPE_HOLD
+		_arm_rest.influence = move_toward(float(_arm_rest.influence), 0.0 if raise else 1.0, delta * 7.0)
 	# Gun arm aims at the reticle (RunnerAimModifier), eased off whenever the
 	# hands are busy: reload, pickaxe swipe, duck, zipline, hit reaction.
 	if _aim_mod:

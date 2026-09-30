@@ -127,11 +127,11 @@ func _ready() -> void:
 	_check("the rider is the founder's posed hero (revolver + pickaxe baked in)", view._hero_mode and view._hero_body != null)
 	_check("revolver is in his RIGHT hand: the posed model is mirrored (founder 2026-09-29)", view._hero_body != null and view._hero_body.scale.x < 0.0)
 	if view._hero_mode:
-		# RIGGED hero (2026-09-29, founder: "his left hand just remains up"): clips drive the arms, the
-		# aim modifier swings the gun arm, weapons are baked into the skinned mesh.
-		_check("the hero is rigged with the seated clip set", view._rider_anim != null and view._rider_anim.ok() and view._rider_anim.player.has_animation("Chair_Sit_Idle_M"))
+		# RIGGED hero, NO clips (every clip hunched or floated him — founder: "a creature from a failed lab"):
+		# bind pose + a resting pickaxe arm + an aimed gun arm.
+		_check("the hero keeps the bind pose: no rider clip player driving him", view._rider_anim == null)
 		_check("gun-arm aim modifier sits on the hero skeleton", view._aim_mod != null and view._aim_mod.get_parent() is Skeleton3D)
-		_check("the pickaxe arm is a clip pose, not the baked overhead pose: an idle clip is playing", view._rider_anim.current == "idle" or view._rider_anim.current != "")
+		_check("pickaxe arm is rested by RunnerArmRest (the arm does not stay up)", view._arm_rest != null and view._arm_rest.get_parent() is Skeleton3D)
 		var mz: Vector3 = view._muzzle_pos()
 		_check("muzzle flash point is out in front of the body (%s)" % str(mz), mz.distance_to(view._rider.global_position) > 1.0)
 		_check("the separate revolver/pickaxe meshes are NOT drawn on top of the baked ones",

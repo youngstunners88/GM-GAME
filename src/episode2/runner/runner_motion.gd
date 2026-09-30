@@ -37,6 +37,9 @@ const RIDER_CLIPS := {
 	"swipe": ["Charged_Axe_Chop", 1.6, 2.2],
 	"cheer": ["Sit_Cheer_with_Left_Hand", 0.3, 1.2],
 }
+## NOTE (2026-09-29): the rigged hero plays NO clips. Seated clips hunched him over the cart and standing clips floated him
+## above it ("a creature from a failed lab"); every clip was tried from the game camera. He keeps the founder's bind pose,
+## RunnerArmRest lowers the pickaxe arm, RunnerAimModifier swings the gun arm, hero_pose() adds recoil/lean/hop/hit.
 const BEAR_CLIPS := {
 	"idle": ["Idle", 0.0, 1.0],
 	"aim": ["Archery_Aim_with_Lateral_Scan", 0.0, 1.0],
