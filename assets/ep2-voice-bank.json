@@ -12,7 +12,12 @@
         "Yikes, that cart is toast!",
         "Not the cart, bro!",
         "Okay, that was way too close!",
-        "Who let a boulder loose?!"
+        "Who let a boulder loose?!",
+        "Holy moly, that boulder is huge!",
+        "My cart! My poor cart!",
+        "Okay, that could've been me!",
+        "Whoa, whoa, whoa, rocks!",
+        "Somebody call a mechanic!"
       ]
     },
     "boulder_warning": {
@@ -22,7 +27,10 @@
         "Boulder! Boulder!",
         "Rock incoming!",
         "Heads up, big one!",
-        "Move, move, move!"
+        "Move, move, move!",
+        "Rock! Big rock!",
+        "Boulder incoming, move!",
+        "Uh oh, here it comes!"
       ]
     },
     "hit": {
@@ -34,7 +42,12 @@
         "Okay, ouch!",
         "Not cool, man!",
         "Hey! Watch the hat!",
-        "Oof!"
+        "Oof!",
+        "Ow, my hat!",
+        "Ooh, that one hurt.",
+        "Hey, rude!",
+        "Not the face!",
+        "Ow ow ow, okay!"
       ]
     },
     "hop_success": {
@@ -50,7 +63,15 @@
         "Smooth like butter.",
         "Boom! Cart to cart!",
         "Ha ha, still got it!",
-        "Ooh, stylish!"
+        "Ooh, stylish!",
+        "Smooth hop!",
+        "Cart to cart, baby!",
+        "Stuck the landing!",
+        "Look at that footwork!",
+        "Yes! Nice and easy.",
+        "Hop, skip, gold!",
+        "And he sticks it!",
+        "Too smooth, too smooth!"
       ]
     },
     "jump_clear": {
@@ -61,7 +82,12 @@
         "Up and over!",
         "Like it was nothing!",
         "Air time, baby!",
-        "Yes! Cleared it!"
+        "Yes! Cleared it!",
+        "Cleared it, easy!",
+        "Whoo, flying!",
+        "Hop over, nothing to it!",
+        "Bam! Right over!",
+        "Airborne, baby!"
       ]
     },
     "duck": {
@@ -71,7 +97,11 @@
         "Duck! Duck!",
         "Low bridge!",
         "Under we go!",
-        "Whoops, head down!"
+        "Whoops, head down!",
+        "Heads up, heads down!",
+        "Ducking, ducking!",
+        "Not today, arrows!",
+        "Low and slow!"
       ]
     },
     "bear_down": {
@@ -83,7 +113,13 @@
         "Sit down, buddy.",
         "Nighty night, fuzzball!",
         "One less archer!",
-        "Bear down!"
+        "Bear down!",
+        "Timber! Bear down!",
+        "That's one grumpy bear less!",
+        "Right between the eyes!",
+        "Nap time, big guy!",
+        "Sorry, bear, nothing personal!",
+        "Gotcha, fuzzy!"
       ]
     },
     "bear_sighted": {
@@ -92,7 +128,10 @@
       "lines": [
         "Bears ahead!",
         "Archer on the ledge!",
-        "Incoming arrows!"
+        "Incoming arrows!",
+        "Bear on the ledge!",
+        "I see you, fuzzball!",
+        "Archers up ahead!"
       ]
     },
     "zip_catch": {
@@ -102,7 +141,12 @@
         "Wheeeee!",
         "Zipline time!",
         "Hang on, hang on!",
-        "Here we go!"
+        "Here we go!",
+        "Zipline, here we go!",
+        "Weeeee, this is the way!",
+        "Hold on tight!",
+        "Flying like a pro!",
+        "Swinging in style!"
       ]
     },
     "coin_streak": {
@@ -113,7 +157,12 @@
         "Bitcoin, baby!",
         "Stack those sats!",
         "Number go up!",
-        "Shiny!"
+        "Shiny!",
+        "Bitcoin rain!",
+        "Stackin' sats!",
+        "Look at that gold glow!",
+        "Ching ching, more coins!",
+        "Wallet's getting heavy!"
       ]
     },
     "reload": {
@@ -122,7 +171,10 @@
       "lines": [
         "Fresh chamber.",
         "Reloading!",
-        "Locked and loaded."
+        "Locked and loaded.",
+        "Six more, coming up.",
+        "Fresh rounds, let's go.",
+        "Reload, reload!"
       ]
     },
     "dry": {
@@ -130,7 +182,10 @@
       "priority": 35,
       "lines": [
         "Click. Uh oh.",
-        "Out of bullets!"
+        "Out of bullets!",
+        "Uh oh, empty!",
+        "Click, click, nothing!",
+        "Out of rounds!"
       ]
     },
     "cart_spawn": {
@@ -138,7 +193,10 @@
       "priority": 25,
       "lines": [
         "New ride, let's go!",
-        "Fresh cart!"
+        "Fresh cart!",
+        "Ooh, a new cart!",
+        "Rolling in fresh!",
+        "Look, a spare ride!"
       ]
     },
     "hop_blocked": {
@@ -146,7 +204,10 @@
       "priority": 45,
       "lines": [
         "Whoa, no cart there!",
-        "Nope, that's a gap!"
+        "Nope, that's a gap!",
+        "Nothing there, whoops!",
+        "No cart, no hop!",
+        "Empty rail, nope!"
       ]
     },
     "run_failed": {
@@ -156,7 +217,10 @@
         "Welp. That's the ride.",
         "Okay, okay, my bad!",
         "Ouch. Let's go again.",
-        "Still smiling. One more?"
+        "Still smiling. One more?",
+        "Well, that was a ride.",
+        "Crashed and burned. Again?",
+        "Alright, alright, one more go!"
       ]
     },
     "chamber_reached": {
@@ -166,7 +230,68 @@
         "Made it! Vault time!",
         "We're through, baby!",
         "Ha! Wasn't so hard.",
-        "Chamber ahead. Let's cook."
+        "Chamber ahead. Let's cook.",
+        "Vault door, here we come!",
+        "We made it through!",
+        "Chamber time, let's roll!"
+      ]
+    },
+    "shoot": {
+      "gap": 7.0,
+      "priority": 15,
+      "lines": [
+        "Take that!",
+        "Bang!",
+        "Say hello to my little friend!",
+        "Eat gold!",
+        "Pow, right on target!",
+        "Yeehaw!"
+      ]
+    },
+    "swipe": {
+      "gap": 2.5,
+      "priority": 42,
+      "lines": [
+        "Pickaxe time!",
+        "Hi-yah!",
+        "Swing, swing!",
+        "Down you go!",
+        "Get off my cart!"
+      ]
+    },
+    "shovel_alert": {
+      "gap": 0.0,
+      "priority": 62,
+      "lines": [
+        "That's a lot of bears!",
+        "No way through that lot!",
+        "Time to fly, zipline!",
+        "Bears with shovels? Rude!",
+        "Nope, we're going over!",
+        "Up we go, zipline!"
+      ]
+    },
+    "shovel_pass": {
+      "gap": 0.0,
+      "priority": 58,
+      "lines": [
+        "See ya, suckers!",
+        "Over your heads, boys!",
+        "Too slow, shovel boys!",
+        "Ha! Have fun down there!",
+        "Zip zip, hooray!"
+      ]
+    },
+    "idle": {
+      "gap": 18.0,
+      "priority": 10,
+      "lines": [
+        "Nice mine, honestly.",
+        "Love a good tunnel.",
+        "Ride's smooth today.",
+        "Gold everywhere, life is good.",
+        "Keep it chill, keep it rolling.",
+        "Bitcoin in a gold mine, why not?"
       ]
     }
   },
@@ -205,6 +330,46 @@
       "id": "ep2_bear_fall",
       "prompt": "Bear yelp of pain then heavy thud of a large animal falling onto wooden planks, short",
       "duration_seconds": 1.4
+    },
+    {
+      "id": "ep2_bear_death_1",
+      "prompt": "Big bear dying groan, a long pained moaning roar fading out, then a heavy thud, cave echo",
+      "duration_seconds": 2.2
+    },
+    {
+      "id": "ep2_bear_death_2",
+      "prompt": "Wounded grizzly bear pained howl and death rattle, low mournful groan, mine tunnel echo",
+      "duration_seconds": 2.4
+    },
+    {
+      "id": "ep2_bear_death_3",
+      "prompt": "Bear shot, short agonised yelp then a long sad dying groan, echoing",
+      "duration_seconds": 2.0
+    },
+    {
+      "id": "ep2_bear_attack_1",
+      "prompt": "Furious bear attack snarl and roar as it charges, aggressive, deep and raspy, cave reverb",
+      "duration_seconds": 1.6
+    },
+    {
+      "id": "ep2_bear_attack_2",
+      "prompt": "Angry bear barking growl, teeth-baring snarl, short and vicious",
+      "duration_seconds": 1.4
+    },
+    {
+      "id": "ep2_bear_attack_3",
+      "prompt": "Roaring grizzly bear lunging to attack, guttural roar with a huff, echoing tunnel",
+      "duration_seconds": 1.8
+    },
+    {
+      "id": "ep2_shovel_swing",
+      "prompt": "Heavy iron shovel swung fast through the air, deep whoosh, short",
+      "duration_seconds": 0.6
+    },
+    {
+      "id": "ep2_shovel_smack",
+      "prompt": "Iron shovel smacking hard against wood and a body, clanging thud impact, short",
+      "duration_seconds": 0.8
     }
   ]
 }

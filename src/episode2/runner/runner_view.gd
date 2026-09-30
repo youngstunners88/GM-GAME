@@ -115,13 +115,16 @@ const CAM_FOLLOW_X := 0.35
 const CAM_LOOK_X := 0.2
 const CAM_LOOK_Y := 1.1
 const CAM_LOOK_AHEAD := 12.0
+const SHOVEL_BEAR_H := 2.7
+const SHOVEL_WINDUP := 16.0        # m before the row: shovels rise and the bears start to snarl
+const SHOVEL_SWING := 7.0          # m before the row: the smack comes down
 const HERO_SCALE := 1.45
 const HERO_H := 1.9
 const HERO_MUZZLE := Vector3(0.45, 0.05, 0.48)     # a little behind the barrel tip (0.59)
-const HERO_YAW_BASE := 0.25         # mirrored model: +yaw swings the revolver forward
-const HERO_YAW_GAIN := 0.5
+const HERO_YAW_BASE := 0.5         # mirrored model: +yaw swings the revolver forward
+const HERO_YAW_GAIN := 0.9
 const HERO_YAW_MIN := -0.5
-const HERO_YAW_MAX := 0.7
+const HERO_YAW_MAX := 1.0
 const HERO_SEAT_DROP := 0.0         # extra floor offset for the seated clip (tuned by eye)
 const HERO_SINK_REST := -0.55       # chest sits this far ABOVE the cart rim (founder target: torso visible over the rim)
 const COIN_SPIN := 3.2
@@ -304,6 +307,7 @@ var _gold_nodes: Array = []                 # parallel to obstacles (null when n
 var _gold_burst: CPUParticles3D = null
 var _streaks: CPUParticles3D = null
 var _look_x: float = 0.0
+var _shovel_bears: Array = []        # {z, node, shovel, obs}
 var _arm_rest: SkeletonModifier3D = null
 var _dbg_clip_applied: String = ""
 # HUD additions.
@@ -336,6 +340,7 @@ func rebuild(sim: Node) -> void:
 	_arrow_nodes.clear()
 	_boulder_nodes.clear()
 	_boarders.clear()
+	_shovel_bears.clear()
 	_labels.clear()
 	_zip_markers.clear()
 	_lights.clear()
@@ -392,6 +397,7 @@ func rebuild(sim: Node) -> void:
 	_build_archers()
 	_build_hazards()
 	_build_boarders()
+	_build_shovel_bears()
 	_build_gold()
 	if not debug_off.has("detail"):
 		_build_mine_detail(length)
@@ -448,6 +454,7 @@ func _process(delta: float) -> void:
 	_update_arrows(dist)
 	_update_boulders(dist)
 	_update_boarders(dist, delta)
+	_update_shovel_bears(dist, delta)
 	_update_labels(dist)
 	_update_lights(dist)
 	_update_camera(dist, delta)
@@ -814,15 +821,25 @@ func _build_track(length: float) -> void:
 	var rails: Array[Transform3D] = []
 	var posts: Array[Transform3D] = []
 	var beams: Array[Transform3D] = []
+	var shines: Array[Transform3D] = []
+	var bolts: Array[Transform3D] = []
 	for lx in _lane_xs():
 		var x: float = float(lx)
 		var z := -20.0
+		var tie_i: int = 0
 		while z < length:
 			ties.append(Transform3D(Basis.IDENTITY, Vector3(x, -0.5, z)))
+			if tie_i % 2 == 0:               # ...and brass bolts where the rail meets the sleeper (target art)
+				for bs in [-0.55, 0.55]:
+					bolts.append(Transform3D(Basis.IDENTITY, Vector3(x + float(bs), -0.4, z)))
+			tie_i += 1
 			z += TIE_SPACING
 		for side in [-0.55, 0.55]:
 			rails.append(Transform3D(Basis.IDENTITY.scaled(Vector3(1.0, 1.0, length + 20.0)),
 				Vector3(x + float(side), -0.38, (length - 20.0) * 0.5)))
+			# Jev 2026-09-30 (0.81): rails read dull. A bright steel line along the head of each rail...
+			shines.append(Transform3D(Basis.IDENTITY.scaled(Vector3(1.0, 1.0, length + 20.0)),
+				Vector3(x + float(side), -0.295, (length - 20.0) * 0.5)))
 		z = -20.0
 		while z < length:
 			for side in [-0.85, 0.85]:
@@ -838,6 +855,8 @@ func _build_track(length: float) -> void:
 		z2 += POST_SPACING
 	_multi(_box(Vector3(2.0, 0.14, 0.34)), _timber_mat(), ties)
 	_multi(_box(Vector3(0.14, 0.16, 1.0)), _rail_mat(), rails)
+	_multi(_box(Vector3(0.05, 0.02, 1.0)), _mat("rail_shine", Color(0.96, 0.86, 0.7), 1.0), shines)
+	_multi(_box(Vector3(0.11, 0.07, 0.11)), _mat("rail_bolt", Color(0.9, 0.66, 0.3), 0.7), bolts)
 	_multi(_box(Vector3(0.26, PIT_DEPTH, 0.26)), _timber_mat(), posts)
 	_multi(_box(Vector3(7.8, 0.22, 0.28)), _timber_mat(), beams)
 
@@ -941,6 +960,24 @@ func _build_tunnel(length: float) -> void:
 func _light_shell_rock(n: Node3D) -> void:
 	_self_light(n, SHELL_EMISSION, Color(1.0, 0.72, 0.42))
 
+## Founder 2026-09-30: "his revolver is GOLDEN" and "he is looking too dark". The Meshy hero ships a
+## metallic map: in the web Compatibility renderer metals with no reflection source draw BLACK, which
+## turned the golden revolver and the brass buckles dark. Drop the metallic map (the gold is in the
+## albedo) and lift the albedo so leather, leaves and gold read in the dim tunnel.
+func _brighten_hero(n: Node3D) -> void:
+	for mi in n.find_children("*", "MeshInstance3D", true, false):
+		var m3 := mi as MeshInstance3D
+		if m3.mesh == null:
+			continue
+		for i in m3.mesh.get_surface_count():
+			var mat := m3.get_surface_override_material(i) as StandardMaterial3D
+			if mat == null:
+				continue
+			mat.metallic_texture = null
+			mat.metallic = 0.12
+			mat.roughness = 0.7
+			mat.albedo_color = Color(1.55, 1.5, 1.4)
+
 ## Feed a model's own albedo texture back as a warm emission so it reads in a dark tunnel
 ## without adding lights (the web renderer pays per light per object).
 func _self_light(n: Node3D, energy: float, tint: Color) -> void:
@@ -996,7 +1033,10 @@ func _build_lanterns(length: float) -> void:
 		var wx: float = _wall_x_at(z)
 		var p := Vector3((wx - 1.1) * side, LANTERN_Y, z)
 		_lantern_pos.append(p)
-		if _prop(LANTERN_MODEL, p - Vector3(0.0, 0.42, 0.0), 1.15) == null:
+		var lprop: Node3D = _prop(LANTERN_MODEL, p - Vector3(0.0, 0.42, 0.0), 1.15)
+		if lprop != null:
+			_self_light(lprop, 1.1, Color(1.0, 0.72, 0.38))     # Jev 0.91: lanterns read unlit
+		if lprop == null:
 			var sm := SphereMesh.new()
 			sm.radius = 0.2
 			sm.height = 0.4
@@ -1115,7 +1155,8 @@ func _build_rider() -> void:
 				_aim_mod.hand_bone = "LeftHand"
 				_aim_mod.influence = 0.0
 				sk.add_child(_aim_mod)
-		_self_light(hero, 0.2, Color(1.0, 0.86, 0.66))
+		_self_light(hero, 0.14, Color(1.0, 0.86, 0.66))
+		_brighten_hero(hero)
 		# Key light on the hero (camera-light skill: three-point). A lantern-warm omni above and behind
 		# him lights his back and hat so he reads against the dark rock; the rim comes from the far lanterns.
 		var key := OmniLight3D.new()
@@ -1399,6 +1440,9 @@ func _build_hazards() -> void:
 				_add_telegraph(x, z, C_HOP, "HOP!")
 			"boarder", "gold":
 				pass                        # built by _build_boarders() / _build_gold()
+			"shovels":
+				if lane == 1:
+					_add_telegraph(x, z, C_SHOOT, "BEAR LINE - JUMP TO THE ZIPLINE!")
 			_:
 				var crate := _mesh_node(_box(Vector3(1.4, 1.0, 1.0)), _tex_mat(TEX_TIMBER, "crate", 0.9), Vector3(x, 0.15, z))
 				_mesh_node(_box(Vector3(1.46, 0.14, 1.06)), _pal("brass"), Vector3(0.0, 0.3, 0.0), crate)
@@ -1444,6 +1488,52 @@ func _build_boarders() -> void:
 	if posts.size() > 0:
 		_multi(_box(Vector3(0.24, Sim.ARCHER_Y + PIT_DEPTH, 0.24)), _timber_mat(), posts)
 		_multi(_box(Vector3(2.8, 0.22, 2.6)), _timber_mat(), decks)
+
+## THE SHOVEL LINE (founder 2026-09-30: "the bears should have shovels ready to smack Lil Blunt", and the
+## zipline must be the only solution): one bear per rail, standing on the ties, shovel raised. The sim hit
+## check is `_is_cleared("shovels")` = "are you on the zipline". Skill: ep2-bear-design.
+func _build_shovel_bears() -> void:
+	var obs_all: Array = _sim.get_obstacles()
+	for oi in obs_all.size():
+		var o: Dictionary = obs_all[oi]
+		if str(o.get("type", "")) != "shovels":
+			continue
+		var lane: int = clampi(int(o["lane"]), 0, _lane_xs().size() - 1)
+		var x: float = float(_lane_xs()[lane])
+		var z: float = float(o["z"])
+		var bear: Node3D = _bear(SHOVEL_BEAR_H)
+		bear.position = Vector3(x, RAIL_TOP, z)
+		bear.rotation.y = PI                       # facing the oncoming cart
+		_world.add_child(bear)
+		var shovel := Node3D.new()
+		shovel.position = Vector3(0.55, 1.55, 0.35)      # in the bear's raised paw, in front of him
+		bear.add_child(shovel)
+		_mesh_node(_box(Vector3(0.09, 1.9, 0.09)), _timber_mat(), Vector3(0.0, 0.55, 0.0), shovel)     # handle
+		_mesh_node(_box(Vector3(0.5, 0.62, 0.06)), _pal("arrow_head"), Vector3(0.0, 1.62, 0.0), shovel)  # steel blade
+		_mesh_node(_box(Vector3(0.56, 0.08, 0.1)), _pal("brass"), Vector3(0.0, 1.28, 0.0), shovel)       # blade collar
+		shovel.rotation.x = -0.9                          # raised behind the shoulder, blade back
+		_shovel_bears.append({"z": z, "node": bear, "shovel": shovel, "obs": oi, "lane": lane, "t": 0.0, "struck": false})
+
+func _update_shovel_bears(dist: float, delta: float) -> void:
+	for b in _shovel_bears:
+		var bd: Dictionary = b
+		var node: Node3D = bd["node"]
+		var shovel: Node3D = bd["shovel"]
+		var ahead: float = float(bd["z"]) - dist
+		node.visible = ahead < 90.0 and ahead > -8.0
+		if not node.visible:
+			continue
+		bd["t"] = float(bd["t"]) + delta
+		var zipping: bool = _sim.is_ziplining()
+		var target: float = -0.9                                # raised, ready
+		if ahead < SHOVEL_SWING and ahead > -1.5 and not zipping:
+			target = 1.05                                       # the smack comes DOWN
+		elif ahead < SHOVEL_WINDUP:
+			target = -1.35 + 0.15 * sin(float(bd["t"]) * 14.0)   # shovel quivers overhead, bears snarl
+		shovel.rotation.x = lerpf(shovel.rotation.x, target, clampf(delta * (16.0 if target > 0.0 else 7.0), 0.0, 1.0))
+		if node.has_meta("anim"):
+			var an: RefCounted = node.get_meta("anim")
+			an.want("stomp" if ahead < SHOVEL_WINDUP else "idle")
 
 func _label(text: String, c: Color) -> Label3D:
 	var l := Label3D.new()

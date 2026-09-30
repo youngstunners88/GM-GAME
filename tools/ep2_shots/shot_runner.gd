@@ -41,6 +41,11 @@ func _ready() -> void:
 		leg = {"chamber_z": 200.0, "zip_segments": [], "archers": [], "obstacles": [
 			{"z": 9.0, "lane": 1, "type": "gold"}, {"z": 13.0, "lane": 1, "type": "gold"},
 			{"z": 11.0, "lane": 2, "type": "gold"}, {"z": 15.0, "lane": 2, "type": "gold"}], "start_lane": 0}
+	if str(args.get("custom", "")) == "shovels":
+		# Inspection leg: the shovel line ahead of a rider who never zips (he will get smacked - fine).
+		leg = {"chamber_z": 200.0, "zip_segments": [{"start_z": 20.0, "end_z": 60.0}], "archers": [], "obstacles": [
+			{"z": 60.0, "lane": 0, "type": "shovels"}, {"z": 60.0, "lane": 1, "type": "shovels"},
+			{"z": 60.0, "lane": 2, "type": "shovels"}], "start_lane": 1}
 	var live: Node3D = SCENE.instantiate()
 	add_child(live)
 	live.setup(float(leg["chamber_z"]), leg["obstacles"], leg["zip_segments"], leg["archers"], true,

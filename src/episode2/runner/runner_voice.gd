@@ -19,6 +19,13 @@ const Bank := preload("res://src/episode2/runner/voice_bank.gd")
 
 const BEAR_DIR := "res://src/assets/sounds/"
 const BEAR_GROWLS := ["ep2_bear_growl_1", "ep2_bear_growl_2", "ep2_bear_growl_3"]
+## Founder 2026-09-30: bears "express their death groans when they get shot and their growls when they attack".
+const BEAR_DEATHS := ["ep2_bear_death_1", "ep2_bear_death_2", "ep2_bear_death_3"]
+const BEAR_ATTACKS := ["ep2_bear_attack_1", "ep2_bear_attack_2", "ep2_bear_attack_3"]
+const SHOVEL_ALERT_M := 34.0
+const SHOVEL_GROWL_M := 18.0
+const SHOVEL_SWING_M := 7.5
+const IDLE_AFTER := 14.0
 ## Bears become audible inside this range (m) and grow louder as the cart closes in.
 const BEAR_HEAR := 46.0
 const BEAR_LOUD := 8.0
@@ -95,6 +102,8 @@ var _bear_players: Dictionary = {}     # archer id -> AudioStreamPlayer3D
 var _bear_next: Dictionary = {}        # archer id -> next growl time
 var _bear_fx: Dictionary = {}          # sfx id -> stream
 var _creak: AudioStreamPlayer
+var _row_player: AudioStreamPlayer3D
+var _last_spoke: float = 0.0
 var spoken: Array = []                 # test hook: every id said, in order
 
 func _ready() -> void:
@@ -119,8 +128,15 @@ func _ready() -> void:
 	_sim.cart_spawned.connect(func(_l: int) -> void: say("cart_spawn"))
 	_sim.rider_bailed.connect(func(_a: int, _b: int) -> void: _bail_t = _now)
 	_sim.gold_collected.connect(_on_gold)
+	_sim.pickaxe_swing.connect(func() -> void: say("swipe"))
+	_sim.shot_fired.connect(func() -> void: say("shoot"))
 	_sim.run_failed.connect(func() -> void: say("run_failed"))
 	_sim.chamber_reached.connect(func() -> void: say("chamber_reached"))
+	_row_player = AudioStreamPlayer3D.new()
+	_row_player.bus = _voice.bus
+	_row_player.unit_size = 12.0
+	_row_player.max_distance = 60.0
+	add_child(_row_player)
 	_creak = AudioStreamPlayer.new()
 	_creak.bus = _voice.bus
 	_creak.volume_db = -7.0
@@ -147,6 +163,7 @@ func say(cat: String) -> String:
 	if id == "":
 		return ""
 	_last_by_cat[cat] = _now
+	_last_spoke = _now
 	_cur_priority = int(Bank.CATEGORIES[cat]["priority"])
 	spoken.append(id)
 	var s: AudioStream = _stream(id)
@@ -159,10 +176,10 @@ func _on_archer_down(id: String) -> void:
 	say("bear_down")
 	var p: AudioStreamPlayer3D = _bear_players.get(id)
 	if p:
-		var fall: AudioStream = _fx("ep2_bear_fall")
+		var fall: AudioStream = _fx(str(BEAR_DEATHS[randi() % BEAR_DEATHS.size()]))
 		if fall:
 			p.stream = fall
-			p.volume_db = 0.0
+			p.volume_db = 3.0
 			p.play()
 	_bear_next.erase(id)
 
@@ -204,6 +221,10 @@ func _process(delta: float) -> void:
 			if cs and _creak:
 				_creak.stream = cs
 				_creak.play()
+			_bear_attack_growl(d)
+	_update_shovel_row(d, obstacles)
+	if _now - _last_spoke > IDLE_AFTER and not _voice.playing:
+		say("idle")
 	_update_bears(d)
 
 ## Each living bear grumbles from its ledge; quiet far away, louder as we close in.
@@ -241,3 +262,59 @@ func _update_bears(d: float) -> void:
 				p.volume_db = bear_db(maxf(ahead, 1.0)) * 0.35
 				p.play()
 			_bear_next[id] = _now + randf_range(2.6, 5.0)
+
+## The nearest living archer ahead snarls as it looses (attack growl, 3D at the bear).
+func _bear_attack_growl(d: float) -> void:
+	var best: Dictionary = {}
+	var best_dz: float = 1e9
+	for a in _sim.get_archers():
+		var ad: Dictionary = a
+		if not bool(ad.get("alive", false)):
+			continue
+		var dz: float = float(ad.get("z", 0.0)) - d
+		if dz > -4.0 and dz < best_dz:
+			best_dz = dz
+			best = ad
+	if best.is_empty():
+		return
+	var p: AudioStreamPlayer3D = _bear_players.get(str(best.get("id", "")))
+	var snd: AudioStream = _fx(str(BEAR_ATTACKS[randi() % BEAR_ATTACKS.size()]))
+	if p and snd and not p.playing:
+		p.stream = snd
+		p.volume_db = 2.0
+		p.play()
+
+## THE SHOVEL LINE: alert line (once per row), the snarl as the shovels rise, the swing whoosh,
+## the smack if it lands, and the taunt if he flies over.
+func _update_shovel_row(d: float, obstacles: Array) -> void:
+	for i in obstacles.size():
+		var o: Dictionary = obstacles[i]
+		if str(o.get("type", "")) != "shovels" or int(o.get("lane", 0)) != 1:
+			continue
+		var z: float = float(o.get("z", 0.0))
+		var ahead: float = z - d
+		var key: String = "sv%d" % i
+		if ahead <= SHOVEL_ALERT_M and ahead > 0.0 and not _announced.has(key + "a"):
+			_announced[key + "a"] = true
+			say("shovel_alert")
+		if ahead <= SHOVEL_GROWL_M and ahead > 0.0 and not _announced.has(key + "g"):
+			_announced[key + "g"] = true
+			_row_shot(str(BEAR_ATTACKS[randi() % BEAR_ATTACKS.size()]), z, 3.0)
+		if ahead <= SHOVEL_SWING_M and ahead > 0.0 and not _announced.has(key + "s"):
+			_announced[key + "s"] = true
+			_row_shot("ep2_shovel_swing", z, 0.0)
+		if ahead <= 0.0 and ahead > -3.0 and not _announced.has(key + "r"):
+			_announced[key + "r"] = true
+			if _sim.is_ziplining():
+				say("shovel_pass")
+			else:
+				_row_shot("ep2_shovel_smack", z, 4.0)
+
+func _row_shot(id: String, z: float, db: float) -> void:
+	var st: AudioStream = _fx(id)
+	if st == null or _row_player == null:
+		return
+	_row_player.global_position = Vector3(0.0, 1.5, z)
+	_row_player.stream = st
+	_row_player.volume_db = db
+	_row_player.play()

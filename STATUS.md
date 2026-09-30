@@ -2594,7 +2594,14 @@ All 18 of your marked-up images landed as real files this time. They are
 committed to `artifacts/founder-art/references/` so no future session has to
 recover them or ask you to resend anything.
 
-### 🧍 EPISODE 2 — LIL BLUNT SITS LIKE A NORMAL PERSON (2026-09-30)
+### 🐻 EPISODE 2 — SHOVEL BEARS, ZIPLINE WITH A PURPOSE, MORE WORDS (2026-09-30)
+- **Shovel line:** a row of three bears across every rail, shovels raised. Nothing on the rails gets past — the zipline is the ONLY answer (Descent z=452, Deeper z=880). Test proves plain rails and jumping both get smacked, zipline doesn't.
+- **Bear sounds:** ElevenLabs death groans (3), attack growls (3), shovel swing + smack; archers snarl as they loose.
+- **Lil Blunt talks a lot more:** 166 distinct lines (hops alone: 18), plus lines for shooting, pickaxe, the shovel line, idle chatter.
+- **Look:** revolver reads GOLD again (the metal map drew it black in the web build), hero brighter, lanterns lit, rails have steel shine + bolts, hero turned 3/4 so the gun shows. Jev + vision assessment in `docs/research/3d/013_*`.
+- New skill `ep2-bear-design`.
+
+## 🧍 EPISODE 2 — LIL BLUNT SITS LIKE A NORMAL PERSON (2026-09-30)
 - Founder: boots poking out of the cart, an arm "behind his back", both arms must be in front. Fixed by posing the whole skeleton by direction: legs inside the cart, both arms forward, pickaxe upright in front of his left shoulder, revolver hand aimed at the reticle. Zipline still uses the founder's own hang pose. Gate in `ep2_runner_motion_test` (feet inside the cart, hands in front of shoulders).
 - Warm key light on him so he reads against the rock.
 

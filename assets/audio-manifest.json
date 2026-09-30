@@ -182,6 +182,46 @@
       "id": "ep2_bear_fall",
       "prompt": "Bear yelp of pain then heavy thud of a large animal falling onto wooden planks, short",
       "duration_seconds": 1.4
+    },
+    {
+      "id": "ep2_bear_death_1",
+      "prompt": "Big bear dying groan, a long pained moaning roar fading out, then a heavy thud, cave echo",
+      "duration_seconds": 2.2
+    },
+    {
+      "id": "ep2_bear_death_2",
+      "prompt": "Wounded grizzly bear pained howl and death rattle, low mournful groan, mine tunnel echo",
+      "duration_seconds": 2.4
+    },
+    {
+      "id": "ep2_bear_death_3",
+      "prompt": "Bear shot, short agonised yelp then a long sad dying groan, echoing",
+      "duration_seconds": 2.0
+    },
+    {
+      "id": "ep2_bear_attack_1",
+      "prompt": "Furious bear attack snarl and roar as it charges, aggressive, deep and raspy, cave reverb",
+      "duration_seconds": 1.6
+    },
+    {
+      "id": "ep2_bear_attack_2",
+      "prompt": "Angry bear barking growl, teeth-baring snarl, short and vicious",
+      "duration_seconds": 1.4
+    },
+    {
+      "id": "ep2_bear_attack_3",
+      "prompt": "Roaring grizzly bear lunging to attack, guttural roar with a huff, echoing tunnel",
+      "duration_seconds": 1.8
+    },
+    {
+      "id": "ep2_shovel_swing",
+      "prompt": "Heavy iron shovel swung fast through the air, deep whoosh, short",
+      "duration_seconds": 0.6
+    },
+    {
+      "id": "ep2_shovel_smack",
+      "prompt": "Iron shovel smacking hard against wood and a body, clanging thud impact, short",
+      "duration_seconds": 0.8
     }
   ],
   "music": [
@@ -905,6 +945,576 @@
       "text": "Chamber ahead. Let's cook.",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
       "note": "Episode 2 runner bark [chamber_reached] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_boulder_smash_8",
+      "text": "Holy moly, that boulder is huge!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [boulder_smash] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_boulder_smash_9",
+      "text": "My cart! My poor cart!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [boulder_smash] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_boulder_smash_10",
+      "text": "Okay, that could've been me!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [boulder_smash] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_boulder_smash_11",
+      "text": "Whoa, whoa, whoa, rocks!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [boulder_smash] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_boulder_smash_12",
+      "text": "Somebody call a mechanic!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [boulder_smash] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_boulder_warning_5",
+      "text": "Rock! Big rock!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [boulder_warning] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_boulder_warning_6",
+      "text": "Boulder incoming, move!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [boulder_warning] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_boulder_warning_7",
+      "text": "Uh oh, here it comes!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [boulder_warning] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_hit_7",
+      "text": "Ow, my hat!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [hit] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_hit_8",
+      "text": "Ooh, that one hurt.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [hit] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_hit_9",
+      "text": "Hey, rude!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [hit] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_hit_10",
+      "text": "Not the face!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [hit] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_hit_11",
+      "text": "Ow ow ow, okay!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [hit] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_hop_success_11",
+      "text": "Smooth hop!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [hop_success] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_hop_success_12",
+      "text": "Cart to cart, baby!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [hop_success] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_hop_success_13",
+      "text": "Stuck the landing!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [hop_success] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_hop_success_14",
+      "text": "Look at that footwork!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [hop_success] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_hop_success_15",
+      "text": "Yes! Nice and easy.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [hop_success] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_hop_success_16",
+      "text": "Hop, skip, gold!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [hop_success] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_hop_success_17",
+      "text": "And he sticks it!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [hop_success] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_hop_success_18",
+      "text": "Too smooth, too smooth!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [hop_success] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_jump_clear_6",
+      "text": "Cleared it, easy!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [jump_clear] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_jump_clear_7",
+      "text": "Whoo, flying!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [jump_clear] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_jump_clear_8",
+      "text": "Hop over, nothing to it!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [jump_clear] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_jump_clear_9",
+      "text": "Bam! Right over!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [jump_clear] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_jump_clear_10",
+      "text": "Airborne, baby!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [jump_clear] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_duck_5",
+      "text": "Heads up, heads down!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [duck] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_duck_6",
+      "text": "Ducking, ducking!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [duck] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_duck_7",
+      "text": "Not today, arrows!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [duck] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_duck_8",
+      "text": "Low and slow!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [duck] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_bear_down_7",
+      "text": "Timber! Bear down!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [bear_down] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_bear_down_8",
+      "text": "That's one grumpy bear less!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [bear_down] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_bear_down_9",
+      "text": "Right between the eyes!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [bear_down] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_bear_down_10",
+      "text": "Nap time, big guy!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [bear_down] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_bear_down_11",
+      "text": "Sorry, bear, nothing personal!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [bear_down] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_bear_down_12",
+      "text": "Gotcha, fuzzy!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [bear_down] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_bear_sighted_4",
+      "text": "Bear on the ledge!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [bear_sighted] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_bear_sighted_5",
+      "text": "I see you, fuzzball!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [bear_sighted] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_bear_sighted_6",
+      "text": "Archers up ahead!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [bear_sighted] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_zip_catch_5",
+      "text": "Zipline, here we go!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [zip_catch] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_zip_catch_6",
+      "text": "Weeeee, this is the way!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [zip_catch] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_zip_catch_7",
+      "text": "Hold on tight!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [zip_catch] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_zip_catch_8",
+      "text": "Flying like a pro!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [zip_catch] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_zip_catch_9",
+      "text": "Swinging in style!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [zip_catch] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_coin_streak_6",
+      "text": "Bitcoin rain!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [coin_streak] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_coin_streak_7",
+      "text": "Stackin' sats!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [coin_streak] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_coin_streak_8",
+      "text": "Look at that gold glow!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [coin_streak] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_coin_streak_9",
+      "text": "Ching ching, more coins!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [coin_streak] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_coin_streak_10",
+      "text": "Wallet's getting heavy!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [coin_streak] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_reload_4",
+      "text": "Six more, coming up.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [reload] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_reload_5",
+      "text": "Fresh rounds, let's go.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [reload] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_reload_6",
+      "text": "Reload, reload!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [reload] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_dry_3",
+      "text": "Uh oh, empty!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [dry] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_dry_4",
+      "text": "Click, click, nothing!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [dry] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_dry_5",
+      "text": "Out of rounds!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [dry] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_cart_spawn_3",
+      "text": "Ooh, a new cart!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [cart_spawn] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_cart_spawn_4",
+      "text": "Rolling in fresh!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [cart_spawn] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_cart_spawn_5",
+      "text": "Look, a spare ride!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [cart_spawn] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_hop_blocked_3",
+      "text": "Nothing there, whoops!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [hop_blocked] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_hop_blocked_4",
+      "text": "No cart, no hop!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [hop_blocked] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_hop_blocked_5",
+      "text": "Empty rail, nope!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [hop_blocked] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_run_failed_5",
+      "text": "Well, that was a ride.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [run_failed] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_run_failed_6",
+      "text": "Crashed and burned. Again?",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [run_failed] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_run_failed_7",
+      "text": "Alright, alright, one more go!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [run_failed] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_chamber_reached_5",
+      "text": "Vault door, here we come!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [chamber_reached] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_chamber_reached_6",
+      "text": "We made it through!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [chamber_reached] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_chamber_reached_7",
+      "text": "Chamber time, let's roll!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [chamber_reached] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_shoot_1",
+      "text": "Take that!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [shoot] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_shoot_2",
+      "text": "Bang!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [shoot] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_shoot_3",
+      "text": "Say hello to my little friend!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [shoot] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_shoot_4",
+      "text": "Eat gold!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [shoot] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_shoot_5",
+      "text": "Pow, right on target!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [shoot] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_shoot_6",
+      "text": "Yeehaw!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [shoot] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_swipe_1",
+      "text": "Pickaxe time!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [swipe] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_swipe_2",
+      "text": "Hi-yah!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [swipe] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_swipe_3",
+      "text": "Swing, swing!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [swipe] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_swipe_4",
+      "text": "Down you go!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [swipe] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_swipe_5",
+      "text": "Get off my cart!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [swipe] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_shovel_alert_1",
+      "text": "That's a lot of bears!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [shovel_alert] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_shovel_alert_2",
+      "text": "No way through that lot!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [shovel_alert] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_shovel_alert_3",
+      "text": "Time to fly, zipline!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [shovel_alert] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_shovel_alert_4",
+      "text": "Bears with shovels? Rude!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [shovel_alert] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_shovel_alert_5",
+      "text": "Nope, we're going over!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [shovel_alert] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_shovel_alert_6",
+      "text": "Up we go, zipline!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [shovel_alert] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_shovel_pass_1",
+      "text": "See ya, suckers!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [shovel_pass] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_shovel_pass_2",
+      "text": "Over your heads, boys!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [shovel_pass] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_shovel_pass_3",
+      "text": "Too slow, shovel boys!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [shovel_pass] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_shovel_pass_4",
+      "text": "Ha! Have fun down there!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [shovel_pass] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_shovel_pass_5",
+      "text": "Zip zip, hooray!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [shovel_pass] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_idle_1",
+      "text": "Nice mine, honestly.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [idle] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_idle_2",
+      "text": "Love a good tunnel.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [idle] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_idle_3",
+      "text": "Ride's smooth today.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [idle] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_idle_4",
+      "text": "Gold everywhere, life is good.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [idle] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_idle_5",
+      "text": "Keep it chill, keep it rolling.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [idle] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "ep2_vo_idle_6",
+      "text": "Bitcoin in a gold mine, why not?",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Episode 2 runner bark [idle] (skill ep2-voice-barks)"
     }
   ]
 }
