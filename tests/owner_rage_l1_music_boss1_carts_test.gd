@@ -73,8 +73,8 @@ func _check_alt_song_gone() -> void:
 		src.find("\"res://src/assets/music/level01_theme_alt.ogg\"") == -1)
 	_check("level01_theme_oxbow.mp3 (the founder's 'also feature' track) is wired",
 		src.find("level01_theme_oxbow.mp3") != -1)
-	_check("level01_theme_always_first.mp3 is wired with force_first=true",
-		src.find("level01_theme_always_first.mp3") != -1 and src.find("], true)") != -1)
+	_check("level01_theme_always_first.mp3 is wired first, forced only when launched from the title",
+		src.find("level01_theme_always_first.mp3") != -1 and src.find("launched_from_title()") != -1)
 
 func _check_auditor_size() -> void:
 	var boss: Node = AUDITOR.instantiate()

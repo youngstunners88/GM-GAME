@@ -277,3 +277,10 @@ Claude model to use for the likely next task, with a short reason. Guide:
 SHIP EVERYTHING. Every change is committed, pushed and shipped to master via
 `scripts/ship-to-master.sh`, every time. No gate votes block a ship, and none are
 reported to the founder. Keep replies to the founder short (token budget).
+
+## ⭐ LEVEL-1 SONG RULE (clarified by the founder, 2026-09-30)
+"Song A first" (`level01_theme_always_first.mp3`) means: whenever the game is **played from the title
+screen**, that song plays first. It does NOT mean every time Level 1 loads. Coming back out of Blaze Rush, the
+Smoke Lounge, an education room or any other side area resumes/shuffles whatever music is appropriate.
+Implemented by `AudioManager.launched_from_title()` in `level_01_smoke_realm.gd`. Education rooms play the
+founder's `education_stage1/2/3.mp3` with a fade in on entry and a fade out on leaving.

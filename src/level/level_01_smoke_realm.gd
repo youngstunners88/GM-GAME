@@ -23,12 +23,15 @@ func _ready() -> void:
     # already confirmed in rotation. level01_theme_alt.ogg (the track the
     # founder asked removed) is deleted from the project entirely, not just
     # dropped from this array.
+    # 2026-09-30 founder clarification: "Song A first" applies when the game is PLAYED FROM THE
+    # TITLE SCREEN, not every time Level 1 loads. Returning from Blaze Rush, the Smoke Lounge or
+    # an education room just shuffles on (AudioManager.launched_from_title()).
     AudioManager.play_playlist([
         "res://src/assets/music/level01_theme_always_first.mp3",
         "res://src/assets/music/level01_theme_oxbow.mp3",
         "res://src/assets/music/level01_theme.ogg",
         "res://src/assets/music/lil_blunt_theme.mp3",
-    ], true)
+    ], AudioManager.launched_from_title())
     AudioManager.play_voice("stage1_intro")
 
 ## Task #23 — three routes per section (ground y=650, plats y=300..500):

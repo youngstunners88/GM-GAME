@@ -109,6 +109,22 @@ func set_reverb_profile(profile: String) -> void:
 var _playlist: Array = []
 var _last_track: String = ""
 
+## True when the game was started from the title screen (or cold-started): nothing has played
+## yet, or the last track was the menu's. Level 1 uses it so its "Song A first" rule applies
+## to a game START only (founder 2026-09-30) - not to coming back out of Blaze Rush, the
+## Smoke Lounge or an education room, where music just shuffles on / resumes.
+func launched_from_title() -> bool:
+    return _last_track.is_empty() or _last_track.find("menu") != -1
+
+## Education-room track: slow fade in on entering the stage, on repeat.
+func play_room_music(path: String, fade_seconds: float = 2.5) -> void:
+    play_playlist([path], true, fade_seconds)
+
+## Fade the current music out over `seconds` and stop (leaving a stage).
+func fade_out_music(seconds: float = 1.6) -> void:
+    _playlist = []
+    _duck_out_music(seconds)
+
 ## Play a single track on repeat (routed through the shuffle system).
 func play_music(path: String) -> void:
     play_playlist([path])
@@ -130,7 +146,7 @@ func play_music(path: String) -> void:
 ## Scoped to level_01_smoke_realm.gd's own call (per-caller, not global) so
 ## Level 2/3/boss arenas keep their existing random-shuffle-on-entry feel —
 ## only Level 1's specific "always this song first" ask changes behaviour.
-func play_playlist(paths: Array, force_first: bool = false) -> void:
+func play_playlist(paths: Array, force_first: bool = false, fade_seconds: float = 1.0) -> void:
     var found: Array = []
     for p in paths:
         # Tracks may be absent in dev builds — degrade silently instead of
@@ -145,7 +161,7 @@ func play_playlist(paths: Array, force_first: bool = false) -> void:
     _playlist = found
     if _playlist.is_empty():
         return
-    _play_next_in_playlist(true, force_first)
+    _play_next_in_playlist(true, force_first, fade_seconds)
 
 ## Players that are mid-fade-out. UNTRACKED before, which is the whole bug:
 ## _duck_out_music() detached the outgoing player and relied on a tween to
@@ -166,7 +182,7 @@ func _purge_retiring() -> void:
     _retiring.clear()
 
 ## Fade the current track out and free it — replaces the old hard stop.
-func _duck_out_music() -> void:
+func _duck_out_music(seconds: float = 0.45) -> void:
     _purge_retiring()
     if current_music_player and is_instance_valid(current_music_player):
         var old := current_music_player
@@ -174,7 +190,7 @@ func _duck_out_music() -> void:
         var tween := old.create_tween()
         # 0.45s, not 0.8s: shorter overlap with the incoming track's fade-in,
         # so a switch reads as a transition rather than two songs playing.
-        tween.tween_property(old, "volume_db", -32.0, 0.45)
+        tween.tween_property(old, "volume_db", -32.0 if seconds <= 0.45 else -60.0, seconds)
         tween.finished.connect(func() -> void:
             _retiring.erase(old)
             if is_instance_valid(old):
@@ -188,7 +204,7 @@ func _stop_music() -> void:
         current_music_player.queue_free()
     current_music_player = null
 
-func _play_next_in_playlist(fade_in: bool = false, force_first: bool = false) -> void:
+func _play_next_in_playlist(fade_in: bool = false, force_first: bool = false, fade_seconds: float = 1.0) -> void:
     var path: String
     if force_first and not _playlist.is_empty():
         path = _playlist[0]
@@ -206,9 +222,9 @@ func _play_next_in_playlist(fade_in: bool = false, force_first: bool = false) ->
     current_music_player.stream = stream
     add_child(current_music_player)
     if fade_in:
-        current_music_player.volume_db = -12.0
+        current_music_player.volume_db = -12.0 if fade_seconds <= 1.0 else -50.0
         var tween := current_music_player.create_tween()
-        tween.tween_property(current_music_player, "volume_db", 0.0, 1.0)
+        tween.tween_property(current_music_player, "volume_db", 0.0, fade_seconds)
     current_music_player.play()
     current_music_player.finished.connect(_on_music_track_finished)
 

@@ -5,6 +5,8 @@
 
 ---
 
+**🎵 EDUCATION SONGS + LEVEL-1 SONG RULE (2026-09-30).** Your three songs now play in the education rooms (Stage 1 = Smoke, 2 = Diamonds, 3 = Gold): they fade in as Lil Blunt enters and fade out as he leaves. The Level-1 "Song A first" rule now means what you meant: it plays first when the game is started from the title screen, not every time Level 1 loads. Coming out of Blaze Rush, the Smoke Lounge or an education room, the music just carries on / shuffles.
+
 **👋 GREETINGS AND GOODBYES (2026-09-30).** The moment Lil Blunt arrives, the governor welcomes him and Lil Blunt answers (in his ElevenLabs voice). When he leaves, the governor says goodbye and Lil Blunt replies before he climbs out. All three rooms, fully voiced.
 
 **📣 PROTOCOL UPDATES IN THE EDUCATION ROOMS (2026-09-30).** Auctions removed from Gold and Diamonds. Gold now teaches sweeper bots capturing XAUT into two Gold Vein pools: stakers get two payouts (wBTC from Fort Knox + XAUT from the Gold Vein) on the same stake share. Diamonds teaches swept ETH going to Diamond Certificate holders. Smoke Lounge is just the SMOKE NFT and bong parties (no Gold/Diamonds/Blaze NFTs). "Gold Rush Board" is now "The Gold Vein Board"; quiz questions and 9 voice clips updated.

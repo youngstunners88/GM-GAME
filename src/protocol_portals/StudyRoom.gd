@@ -96,6 +96,7 @@ func _ready() -> void:
 	_build_backdrop()
 	_add_painted_map()
 	_build_atmosphere()
+	_start_room_music()
 	_build_floor_and_walls()
 	_build_return_waystone()
 	_build_stops()
@@ -605,6 +606,10 @@ func _do_ascend() -> void:
 	if _player != null and is_instance_valid(_player):
 		_player.set_physics_process(false)
 	await _converse("farewell")
+	var am: Node = get_tree().root.get_node_or_null("AudioManager")
+	if am != null:
+		am.call("fade_out_music", 1.6)
+		await get_tree().create_timer(1.6).timeout
 	Travel.ascend()
 
 
@@ -749,6 +754,20 @@ func _on_arrival_done() -> void:
 		_player.set_physics_process(true)
 	if _companion != null:
 		_converse("welcome")
+
+
+## The founder's education-stage songs: fade in as Lil Blunt enters, fade out as he leaves.
+const ROOM_MUSIC := {
+	"smoke": "res://src/assets/music/education_stage1.mp3",
+	"diamonds": "res://src/assets/music/education_stage2.mp3",
+	"gold": "res://src/assets/music/education_stage3.mp3",
+}
+
+
+func _start_room_music() -> void:
+	var am: Node = get_tree().root.get_node_or_null("AudioManager")
+	if am != null and ROOM_MUSIC.has(protocol):
+		am.call("play_room_music", String(ROOM_MUSIC[protocol]), 2.5)
 
 
 ## Greeting / goodbye exchange: the governor speaks, then Lil Blunt answers, each with voice.
