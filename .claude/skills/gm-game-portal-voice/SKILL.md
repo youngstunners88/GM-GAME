@@ -31,3 +31,8 @@ restoring it after (and in `_exit_tree`). Tune those two constants, not the mp3s
 line then Lil Blunt's reply (voice `HMGfKwZCRujgXyRDUW0b`) via `Companion.speak()`: welcome on arrival, farewell when
 leaving (`_do_ascend` awaits it, player frozen, then `Travel.ascend()`). Clips: `vo/<protocol>_<welcome|farewell>_<gov|lb>.mp3`
 (made by `gen_portal_vo.py`).
+
+## Gold pace (founder: "he speaks very slow")
+Rich Miner (Storytellin' Cowboy) drawls. `TEMPO = {"gold": 1.3}` in `gen_portal_vo.py` speeds Gold governor clips with
+ffmpeg `atempo` (pitch preserved) before loudnorm. The requested voice `faxBRsvZBmi6q2wL3MQs` is still not visible to
+either env key nor in the shared library, so it must be added to the account by the founder first.
