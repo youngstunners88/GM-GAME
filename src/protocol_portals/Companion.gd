@@ -206,12 +206,25 @@ func _dark_style(alpha: float, radius: int) -> StyleBoxFlat:
 
 
 ## Show a line in the talk balloon for `seconds`.
-func say(text: String, seconds: float = TALK_SEC) -> void:
+func say(text: String, seconds: float = TALK_SEC, speaker: String = "") -> void:
 	if _balloon == null or text.is_empty():
 		return
-	_balloon_label.text = display_name + "\n" + text
+	_balloon_label.text = (speaker if not speaker.is_empty() else display_name) + "\n" + text
 	_balloon.visible = true
 	_balloon_left = seconds
+
+
+## One spoken line in the shared balloon under `speaker`'s name, with its VO clip. Returns
+## how many seconds the caller should wait before the next line (clip length, or a text estimate).
+func speak(text: String, path: String, speaker: String) -> float:
+	var length: float = clampf(1.8 + float(text.length()) / 16.0, 2.5, 12.0)
+	if not path.is_empty() and ResourceLoader.exists(path):
+		var stream: AudioStream = load(path) as AudioStream
+		if stream != null:
+			length = stream.get_length() + 0.35
+	say(text, length + 0.4, speaker)
+	play_voice(path)
+	return length
 
 
 ## Plays an optional VO clip; silently does nothing if it does not exist.

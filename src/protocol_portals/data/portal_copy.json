@@ -102,6 +102,14 @@
           "Vignette: radial darken outside r245 to canvas edge"
         ]
       }
+    },
+    "welcome": {
+      "gov": "Yo, Lil Blunt! Welcome to the 420 Lounge. Kick back, take a walk around the courtyard, and I'll show you how SMOKE really works.",
+      "lb": "Hey Pauly! Nice spot, the vibes are immaculate. Show me the burn, I'm ready to learn."
+    },
+    "farewell": {
+      "gov": "Alright Lil Blunt, that's the tour. You know the burn, the lounge and the hub now. Come back anytime, and keep it chill.",
+      "lb": "Thanks Pauly! Learned a ton. Peace, and pass the good vibes."
     }
   },
   "diamonds": {
@@ -196,6 +204,14 @@
       "subtitle": "The Pressure Study",
       "design_notes": "Use founder art 1 unaltered as the plate texture. Keep its energy: scroll floating upper-centre with slight tilt, dark cave walls framing it, chasm below, crystal clusters in the foreground. Frame: thin faceted silver-blue bevel, cut-corner octagon so the cave edges read as part of the frame. Lighting: cool top-down key from the cave opening, soft blue sparkle particles drifting near the scroll glyphs, slow mist loop along the bottom edge, occasional white glint travelling across one crystal. Stamp hierarchy: 1) the art's DIAMONDS title (never overlay text on the scroll), 2) small engraved plaque below the frame reading 'The Pressure Study', 3) three tiny facet seals bottom-right for CUT / WEIGH / STAMP that light in sequence when the quiz starts.",
       "draw_spec": null
+    },
+    "welcome": {
+      "gov": "Lil Blunt! Good, you made it across the bridge. Welcome to the Pressure Study, where I'll show you how DIAMONDS holds its shape.",
+      "lb": "Thanks Kane! That was a long bridge. I'm ready to learn how the pressure works."
+    },
+    "farewell": {
+      "gov": "That's the forge, the scale, the press and the bridge. Carry that with you, Lil Blunt. Stay sharp out there.",
+      "lb": "Will do, Kane. Thanks for the lesson. See you on the other side!"
     }
   },
   "gold": {
@@ -290,6 +306,14 @@
       "subtitle": "The Claim Office",
       "design_notes": "Use founder art 2 unaltered as the plate texture. Keep its energy: floating scroll upper-centre, cave arch framing it, gold nuggets and coins heaped low-left and low-right, stone shaft in the middle. Frame: plain riveted brass rectangle over dark mine-timber backing; procedural, no ornament. Lighting: warm lamp key from below-left matching the gold pile, cool blue fill from the cave top, a slow warm glint sweeping across the coin heaps every few seconds, faint dust motes. Stamp hierarchy: 1) the art's GOLD MINE title (no overlays on the scroll), 2) brass nameplate under the frame reading 'The Claim Office', 3) Recorder's ink stamp bottom-right that thumps on when the scorecard is issued, 4) small vest-clock icon top-right as the office mark. Coin emblems are in the founder art as-is; confirm with the founder that they are approved before shipping.",
       "draw_spec": null
+    },
+    "welcome": {
+      "gov": "Well, howdy Lil Blunt! Welcome to the Claim Office. Take a stroll down Main Street and I'll walk you through how GOLD MINE pays.",
+      "lb": "Howdy Rich! Love the town. Lead the way, I'm ready to learn."
+    },
+    "farewell": {
+      "gov": "That's the vest, the vault and the Vein, partner. Now go put it to work. Safe travels, Lil Blunt.",
+      "lb": "Thanks Rich! Great lesson. Catch you later!"
     }
   }
 }
