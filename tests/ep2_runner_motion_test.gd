@@ -132,6 +132,26 @@ func _ready() -> void:
 		_check("the hero keeps the bind pose: no rider clip player driving him", view._rider_anim == null)
 		_check("gun-arm aim modifier sits on the hero skeleton", view._aim_mod != null and view._aim_mod.get_parent() is Skeleton3D)
 		_check("pickaxe arm is rested by RunnerArmRest (the arm does not stay up)", view._arm_rest != null and view._arm_rest.get_parent() is Skeleton3D)
+		# REGRESSION (founder 2026-09-30: "his foot is out of the cart ... both arms must be in front like a
+		# normal person"): boots inside the cart, hands in front (down-track of the shoulders).
+		var hsk: Skeleton3D = view._hero_body.find_children("*", "Skeleton3D", true, false)[0]
+		# Godot 4.3: a SkeletonModifier3D pose is only readable inside `skeleton_updated`.
+		var cap: Dictionary = {}
+		var names: Array = ["LeftFoot", "RightFoot", "LeftArm", "LeftHand", "RightArm", "RightHand"]
+		hsk.skeleton_updated.connect(func() -> void:
+			for bn in names:
+				cap[bn] = hsk.global_transform * hsk.get_bone_global_pose(hsk.find_bone(str(bn))).origin)
+		for _i in 4:
+			await get_tree().process_frame
+		var rider_x: float = view._rider.global_position.x
+		for fname in ["LeftFoot", "RightFoot"]:
+			var fp: Vector3 = cap.get(fname, Vector3.ZERO)
+			_check("%s inside the cart (dx %.2f, y %.2f, rim %.2f)" % [fname, fp.x - rider_x, fp.y, view._cart_rim_y],
+				cap.has(fname) and absf(fp.x - rider_x) < 0.85 and fp.y < view._cart_rim_y + 0.1)
+		for hname in ["LeftHand", "RightHand"]:
+			var sh: Vector3 = cap.get(hname.replace("Hand", "Arm"), Vector3.ZERO)
+			var hp: Vector3 = cap.get(hname, Vector3.ZERO)
+			_check("%s is in FRONT of its shoulder (dz %.2f)" % [hname, hp.z - sh.z], cap.has(hname) and hp.z - sh.z > 0.1)
 		var mz: Vector3 = view._muzzle_pos()
 		_check("muzzle flash point is out in front of the body (%s)" % str(mz), mz.distance_to(view._rider.global_position) > 1.0)
 		_check("the separate revolver/pickaxe meshes are NOT drawn on top of the baked ones",

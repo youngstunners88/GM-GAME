@@ -19,6 +19,13 @@ already contains before adding anything to it** (`scripts/glb-shot.mjs`).
 BUT **NO library clip is played**. Every clip was captured from the game camera (`tools/ep2_shots/shoot.sh ... clips=`):
 seated clips hunch him horizontally over the cart at any seat height, standing clips float him above it with splayed legs.
 Library clips are authored for a T-pose character; this is a posed figure with props baked into the hands.
+**2026-09-30 (founder: "his foot is out of the cart ... his arm is looking spastic behind his back ... BOTH arms must be in
+front like a normal person"):** `runner_arm_rest.gd` now poses the WHOLE body by direction (world up/forward, so it survives
+the mirror and yaw): thighs forward, shins down, feet forward (boots inside the cart), upper arms forward-down, forearms
+forward, pickaxe fist forward with the pick upright, gun arm rests forward until the aim modifier takes over. Gate:
+`ep2_runner_motion_test` (feet inside the cart, both hands in front of their shoulders). **Trap: a SkeletonModifier3D pose is only
+readable inside `skeleton_updated`** — reading `get_bone_global_pose` from a test/_process gives the UNMODIFIED pose and sent
+me hunting a phantom bug for ten minutes.
 What works: keep the founder's bind pose (his own Meshy pose, feet-origin, `HERO_SEAT_DROP 0`), pose ONE arm with
 `runner_arm_rest.gd` (axis-free two-bone modifier: upper arm out/down, forearm up, pick upright beside him; influence → 0
 for the zipline hang and the chop), aim the gun arm with `runner_aim_modifier.gd` (anatomical LEFT arm, the model is

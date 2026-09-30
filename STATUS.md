@@ -2588,7 +2588,11 @@ All 18 of your marked-up images landed as real files this time. They are
 committed to `artifacts/founder-art/references/` so no future session has to
 recover them or ask you to resend anything.
 
-### 🎥 EPISODE 2 — CAMERA, LIGHTING, LOWERED ARM (2026-09-29)
+### 🧍 EPISODE 2 — LIL BLUNT SITS LIKE A NORMAL PERSON (2026-09-30)
+- Founder: boots poking out of the cart, an arm "behind his back", both arms must be in front. Fixed by posing the whole skeleton by direction: legs inside the cart, both arms forward, pickaxe upright in front of his left shoulder, revolver hand aimed at the reticle. Zipline still uses the founder's own hang pose. Gate in `ep2_runner_motion_test` (feet inside the cart, hands in front of shoulders).
+- Warm key light on him so he reads against the rock.
+
+## 🎥 EPISODE 2 — CAMERA, LIGHTING, LOWERED ARM (2026-09-29)
 - **Placement:** the founder's "hard to see what's going on" was the hero filling the screen centre. Researched shipped runners (Subway Surfers, Temple Run, GMTK camera talk, readability/lighting articles) → new skill `ep2-runner-camera-light`, notes in `docs/research/3d/011_*`. Camera is higher/further back looking 12 m down the track; he sits in the lower part of the frame with the rails and hazards visible above his hat. Gate: `tests/ep2_camera_framing_test`.
 - **Lighting:** the orange ambient + exposure + saturation + emission stack that made a brown wash is removed; neutral-warm ambient, darker fog, less rock/hero emission.
 - **Arm:** Lil Blunt is now rigged (Meshy rig, 10 clips) so the pickaxe arm rests instead of staying up; revolver arm still swings to the reticle; model mirrored so the gun is in his right hand.

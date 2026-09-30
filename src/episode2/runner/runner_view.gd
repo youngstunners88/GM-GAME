@@ -1115,7 +1115,16 @@ func _build_rider() -> void:
 				_aim_mod.hand_bone = "LeftHand"
 				_aim_mod.influence = 0.0
 				sk.add_child(_aim_mod)
-		_self_light(hero, 0.12, Color(1.0, 0.9, 0.75))
+		_self_light(hero, 0.2, Color(1.0, 0.86, 0.66))
+		# Key light on the hero (camera-light skill: three-point). A lantern-warm omni above and behind
+		# him lights his back and hat so he reads against the dark rock; the rim comes from the far lanterns.
+		var key := OmniLight3D.new()
+		key.name = "HeroKey"
+		key.light_color = Color(1.0, 0.82, 0.58)
+		key.light_energy = 1.7
+		key.omni_range = 5.5
+		key.position = Vector3(0.3, 2.9, -1.6)
+		_rider.add_child(key)
 		_hero_body = hero
 		# Chest (model origin) just below the cart rim: hat, leaves, both weapons above it.
 		_rider_floor = _cart_rim_y - HERO_SINK_REST - HERO_H * 0.5 * HERO_SCALE + HERO_SEAT_DROP
@@ -2322,11 +2331,12 @@ func _update_rider(dist: float, delta: float) -> void:
 	elif _aim_ok and _rider_model:
 		var yaw_t: float = clampf(atan2(_aim_point.x - x, maxf(_aim_point.z - dist, 1.0)), -0.6, 0.6)
 		_rider_model.rotation.y = lerp_angle(_rider_model.rotation.y, RIDER_YAW + yaw_t, clampf(delta * 8.0, 0.0, 1.0))
-	# Pickaxe arm: rested normally; raised (bind pose) while he hangs from the pick on the zipline and
-	# for the chop, so the swing/hang reads.
+	# Seated pose (RunnerArmRest): legs in the cart, both arms in front. Blended to the bind pose (his own
+	# zipline hang) while he is on the cable; the pickaxe arm swings overhead for the chop.
 	if _arm_rest:
-		var raise: bool = zipping or _t_swipe < Motion.SWIPE_HOLD
-		_arm_rest.influence = move_toward(float(_arm_rest.influence), 0.0 if raise else 1.0, delta * 7.0)
+		_arm_rest.influence = move_toward(float(_arm_rest.influence), 0.0 if zipping else 1.0, delta * 7.0)
+		var chop_t: float = 1.0 - clampf(_t_swipe / Motion.SWIPE_HOLD, 0.0, 1.0)
+		_arm_rest.pick_raise = move_toward(float(_arm_rest.pick_raise), sin(chop_t * PI) if _t_swipe < Motion.SWIPE_HOLD else 0.0, delta * 12.0)
 	# Gun arm aims at the reticle (RunnerAimModifier), eased off whenever the
 	# hands are busy: reload, pickaxe swipe, duck, zipline, hit reaction.
 	if _aim_mod:
