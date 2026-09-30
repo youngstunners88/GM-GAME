@@ -49,11 +49,11 @@
         {
             "id": "G05",
             "fact_id": "G05",
-            "prompt": "What do Gold Rush auctions compete for?",
+            "prompt": "How do Fort Knox stakers earn XAUT?",
             "options": [
-                "wBTC.",
-                "XAUT.",
-                "Diamonds."
+                "Only by winning a weekly auction.",
+                "Through the Gold Vein pools, on the same stake share as wBTC.",
+                "Only by claiming early."
             ],
             "correct": 1
         },
@@ -86,7 +86,7 @@
             "options": [
                 "Fort Knox itself.",
                 "A study room, not Fort Knox.",
-                "A Gold Rush auction house."
+                "A sweeper-bot control room."
             ],
             "correct": 1
         },
@@ -119,7 +119,7 @@
             "options": [
                 "A Diamonds scorecard NFT on ICP.",
                 "A Gold scorecard NFT on ICP.",
-                "Guaranteed XAUT from the next auction."
+                "Guaranteed XAUT from the Gold Vein."
             ],
             "correct": 1
         }

@@ -23,3 +23,11 @@ Data lives in `src/protocol_portals/data/portal_copy.json` -> `<protocol>.stops[
 ## Facts the founder corrected
 - **SMOKE chains:** Solana, Robinhood Chain, Ethereum, BASE, BSC. NOT PulseChain. Check chain lists with him before writing them.
 - The crate stop is named "Stash From The Smoke Lounge" (it is the weed stash, not the lounge itself).
+
+## Protocol changes from the founder (2026-09-30, relayed message) - supersede the whitepapers
+- **Auctions are removed** from GOLD and DIAMONDS (UI pages repurposed). Never mention auctions.
+- **Sweeper bots** capture XAUT on GOLD and ETH on DIAMONDS.
+- GOLD: swept XAUT goes to **2 Gold Vein payout pools** for Fort Knox stakers. Stakers get **two payouts**: wBTC (Fort Knox) + XAUT (Gold Vein); the **same stake share** decides both.
+- DIAMONDS: swept ETH goes to **Diamond Certificate holders**.
+- **NFT ideas dropped** for Gold, Diamonds and Blaze. The Smoke Lounge only has the **SMOKE NFT and bong parties**.
+- The stop `rush_board` is now "The Gold Vein Board". Quiz G05/G08/G11 and S11 were updated to match.

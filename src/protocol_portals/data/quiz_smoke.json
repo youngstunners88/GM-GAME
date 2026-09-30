@@ -118,7 +118,7 @@
             "prompt": "What happens when you pass in the SMOKE room?",
             "options": [
                 "You return to Stage 1 and the NFT is recorded.",
-                "You skip straight to the Gold Rush auction.",
+                "You skip straight to Stage 3.",
                 "You leave the room without any record."
             ],
             "correct": 0
