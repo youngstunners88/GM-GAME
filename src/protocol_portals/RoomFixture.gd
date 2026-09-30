@@ -54,14 +54,32 @@ func _ready() -> void:
 	var art_offset := (cell_size * 0.5 - contact) * factor
 
 	# 1. Soft ambient-occlusion pool where the prop meets the ground.
-	var ao := Sprite2D.new()
-	ao.name = "ContactShadow"
-	ao.texture = _contact_blob()
-	ao.scale = Vector2(target_width * 0.60 / 128.0, 14.0 / 128.0)
-	ao.position = Vector2(0, -3)
-	ao.modulate = Color(1, 1, 1, 0.34)
-	ao.z_index = -2
-	add_child(ao)
+	var contacts: Array = [Vector4(0, -3, target_width * 0.60, 14)]
+	if protocol == "gold":
+		# Measured feet in 443px atlas cells: avoid shadows in empty space between legs.
+		var pads := {
+			"vest_clock": [Vector4(220, 377, 185, 52)],
+			"knox_window": [Vector4(222, 377, 225, 50)],
+			"melt_stamp": [Vector4(220, 380, 230, 48)],
+			"rush_board": [Vector4(73, 315, 34, 16), Vector4(326, 405, 34, 16)],
+			"paper": [Vector4(88, 345, 32, 16), Vector4(272, 408, 36, 16), Vector4(345, 340, 28, 14)],
+			"video": [Vector4(143, 402, 30, 14), Vector4(281, 403, 30, 14)],
+			"exam": [Vector4(88, 326, 34, 16), Vector4(239, 372, 36, 16), Vector4(315, 405, 42, 18)],
+			"exit": [Vector4(230, 400, 58, 22)],
+		}
+		contacts = []
+		for pad in pads[kind]:
+			contacts.append(Vector4((pad.x - 221.5) * target_width / 443.0, (pad.y - 410.0) * target_width / 443.0, pad.z * target_width / 443.0, pad.w * target_width / 443.0))
+	for i in contacts.size():
+		var pad: Vector4 = contacts[i]
+		var ao := Sprite2D.new()
+		ao.name = "ContactShadow" if i == 0 else "ContactShadow%d" % i
+		ao.texture = _contact_blob()
+		ao.scale = Vector2(pad.z, pad.w) / 128.0
+		ao.position = Vector2(pad.x, pad.y)
+		ao.modulate = Color(0.40, 0.27, 0.16, 0.40) if protocol == "gold" else Color(1, 1, 1, 0.34)
+		ao.z_index = -2
+		add_child(ao)
 
 	# A detached flattened silhouette reads as levitation. Keep the small contact
 	# shadow directly under the feet; the painting supplies the broad sunlight.

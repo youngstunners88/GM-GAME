@@ -307,7 +307,7 @@ func _plan_stops() -> void:
 const PAINTED_MAPS: Dictionary = {
 	"smoke": "res://src/assets/portals/maps/map_smoke.jpg",
 	"diamonds": "res://src/assets/portals/maps/map_diamonds_courtyard.png",
-	"gold": "res://src/assets/portals/maps/map_gold.jpg",
+	"gold": "res://src/assets/portals/maps/map_gold_square.png",
 }
 
 func _add_painted_map() -> void:
