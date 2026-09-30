@@ -35,7 +35,7 @@
         "aspects": [
           "This stash comes straight from the Smoke Lounge, where SMOKE is paired with a basket of other assets in liquidity pools. When those pairs rise in value, the basket strengthens the buy and burn. So the more the lounge grows, the harder the burn engine can work.",
           "The main pairs are SMOKE with X28 on BASE and Ethereum, and SMOKE with BNB on BSC. Steady liquidity lets people move in and out without wrecking the price. The pairing is what gives the lounge its weight.",
-          "The big liquidity positions on BASE and Ethereum are locked for ten years. That lock is a commitment, not a promise on a poster. A lounge you cannot walk away from with the furniture is a good lounge."
+          "The big liquidity positions on BASE and Ethereum are locked for ten years. That lock is a commitment, not a promise on a poster. A lounge you cannot walk away from with the furniture is a good lounge. The Lounge itself now hosts just the SMOKE NFT and the bong parties."
         ]
       },
       {
@@ -150,7 +150,7 @@
         "aspects": [
           "Stake your Diamonds in the Vault to earn shares and rewards. The Crush Bonus lets you forfeit extra Diamonds in exchange for more shares. It is a trade: give up some Diamonds now for a bigger slice later.",
           "The press is a commitment device. The more you are willing to put under it, the larger your share multiplier. It is always your choice and never automatic.",
-          "Diamond Mine Certificates open exclusive access to the 28-day payout pool. Certificates are about ownership and access, and we keep the detail high level here. The Vault is where patient holders live."
+          "Sweeper bots capture ETH and send it to Diamond Certificate holders. Certificates are about ownership and access, including the 28-day payout pool, and we keep the detail high level here. The Vault is where patient holders live."
         ]
       },
       {
@@ -223,7 +223,7 @@
         "line": "Mined GOLD does not arrive all at once.",
         "aspects": [
           "Mined GOLD does not arrive all at once. It vests over about 100 days, roughly 1% a day. Claim early and you forfeit the part that has not vested yet.",
-          "Patience is the mechanism. Waiting out the full hundred days collects everything, and leaving early gives the remainder up. That forfeited GOLD feeds the weekly auctions.",
+          "Patience is the mechanism. Waiting out the full hundred days collects everything, and leaving early gives the remainder up. Vest, claim, then stake: those are the three moves that matter.",
           "You can mine GOLD with ETH, or with ETH plus Diamonds. Either way the same vest clock starts ticking. One rule for everyone."
         ]
       },
@@ -233,8 +233,8 @@
         "line": "Through the glass is Fort Knox, where you stake GOLD to earn wBTC.",
         "aspects": [
           "Through the glass is Fort Knox, where you stake GOLD to earn wBTC. Locks can run as long as 2,888 days, and longer locks weigh more in the share calculation. This room is a classroom, not the vault itself.",
-          "Staking pays out in wBTC, earned simply by locking your GOLD. The longer you commit, the more your shares count. Commitment is what gets rewarded.",
-          "Stakers also share in the Gold Vein pools, which pay out Tether Gold, XAUT, backed by physical gold in Swiss vaults. That is a second stream on top of wBTC. Knox is where the long-term holders sit."
+          "Fort Knox pays stakers in wBTC, and the same stake share also earns XAUT from the Gold Vein, so stakers get two payouts. One stake share decides both. The longer you commit, the more your shares count.",
+          "Sweeper bots capture XAUT and send it to two Gold Vein payout pools for Fort Knox stakers. XAUT is Tether Gold, backed by physical gold in Swiss vaults. That is a second stream on top of wBTC."
         ]
       },
       {
@@ -249,12 +249,12 @@
       },
       {
         "id": "rush_board",
-        "name": "The Gold Rush Board",
-        "line": "Every week the Gold Rush auction is posted on this board.",
+        "name": "The Gold Vein Board",
+        "line": "This board tracks the Gold Vein, where stakers earn a second payout.",
         "aspects": [
-          "Every week the Gold Rush auction is posted on this board. Players forfeit GOLD to compete for a prize paid in XAUT, tokenised gold. Bid smart, because forfeited GOLD is gone.",
-          "The auction gives forfeited GOLD a purpose. Early claimers feed it, and competitors win from it. The system turns lost vesting into prizes.",
-          "Auctions run weekly, so there is always another shot. Check the board before you decide to claim early. Knowing the board is half the game."
+          "This board tracks the Gold Vein, where stakers earn a second payout. Sweeper bots capture XAUT and send it to two payout pools for Fort Knox stakers. The same stake share that earns your wBTC also earns your XAUT.",
+          "There are no auctions to bid in anymore. Instead of competing, stakers simply earn: wBTC from Fort Knox and XAUT from the Gold Vein. Two payouts, one stake.",
+          "XAUT is Tether Gold, backed by physical gold in Swiss vaults. The sweeper bots keep collecting it and the Vein pays it out to stakers. Check the board to see how one share works twice."
         ]
       },
       {
@@ -262,7 +262,7 @@
         "name": "The GOLD MINE Whitepaper",
         "line": "The official GOLD MINE whitepaper is on this desk.",
         "aspects": [
-          "The official GOLD MINE whitepaper is on this desk. It sets out vesting, Fort Knox and the auctions before the quiz. Press E to open it.",
+          "The official GOLD MINE whitepaper is on this desk. It sets out vesting, Fort Knox and the Gold Vein before the quiz. Press E to open it.",
           "When a rule feels slippery, the whitepaper is the ledger of record. I read from it every day."
         ]
       },

@@ -5,6 +5,8 @@ extends CharacterBody2D
 ## top-down RPG zone.
 
 const SPEED: float = 235.0
+## Lil Blunt reads bigger against the map props (founder 2026-09-30).
+const PLAYER_H: float = 104.0
 const ART_PATH: String = "res://src/assets/sprites/sprite_lil-blunt_cowboy.png"
 
 var _climbing: bool = false
@@ -21,9 +23,9 @@ func _ready() -> void:
 			var bounds := _sprite.texture.get_image().get_used_rect()
 			_sprite.region_enabled = true
 			_sprite.region_rect = bounds
-			var scale_to: float = 68.0 / float(bounds.size.y)
+			var scale_to: float = PLAYER_H / float(bounds.size.y)
 			_sprite.scale = Vector2(scale_to, scale_to)
-			_sprite.position.y = -34.0
+			_sprite.position.y = -PLAYER_H * 0.5
 	queue_redraw()
 
 

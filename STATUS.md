@@ -5,6 +5,10 @@
 
 ---
 
+**📣 PROTOCOL UPDATES IN THE EDUCATION ROOMS (2026-09-30).** Auctions removed from Gold and Diamonds. Gold now teaches sweeper bots capturing XAUT into two Gold Vein pools: stakers get two payouts (wBTC from Fort Knox + XAUT from the Gold Vein) on the same stake share. Diamonds teaches swept ETH going to Diamond Certificate holders. Smoke Lounge is just the SMOKE NFT and bong parties (no Gold/Diamonds/Blaze NFTs). "Gold Rush Board" is now "The Gold Vein Board"; quiz questions and 9 voice clips updated.
+
+**🎚️ EDUCATION ROOMS — SCALE, SOUND, TITLES (2026-09-30).** Lil Blunt and every governor are ~50% bigger so they match the props. Room titles removed from all three stages (they covered the item labels). Music no longer ducks when a governor talks; voices are loudness-normalised and louder instead. Gold voice swap (faxBRsvZBmi6q2wL3MQs) is waiting: that voice isn't in the ElevenLabs account yet (add it to My Voices, then it's one command).
+
 **🔊 SMOKE FACTS + VOICE VOLUME (2026-09-30).** SMOKE chains corrected to Solana, Robinhood Chain, Ethereum, BASE, BSC (no PulseChain). The crate is now "Stash From The Smoke Lounge". Governor voices are +10 dB louder and the music ducks while they speak. All 51 clips re-recorded.
 
 **🗣️ EDUCATION ROOMS — GOVERNORS TEACH (2026-09-30).** All three rooms:

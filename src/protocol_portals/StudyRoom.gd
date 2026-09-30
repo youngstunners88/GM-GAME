@@ -534,20 +534,7 @@ func _build_backdrop() -> void:
 	vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	vig_layer.add_child(vignette)
 
-	var title := Label.new()
-	title.name = "RoomTitle"
-	title.text = _s("room_title", "Study")
-	title.position = Vector2(440.0, 48.0)
-	title.size = Vector2(400.0, 36.0)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 20)
-	title.add_theme_color_override("font_color", _glow)
-	title.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.95))
-	title.add_theme_constant_override("outline_size", 6)
-	title.add_theme_stylebox_override("normal", _backing_style())
-	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	vig_layer.add_child(title)
+	# No room title: it sat over the stop labels (founder 2026-09-30).
 
 
 ## Movement uses the same ground map as the stop placement.

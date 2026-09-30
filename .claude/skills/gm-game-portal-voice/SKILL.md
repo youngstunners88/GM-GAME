@@ -16,3 +16,12 @@ description: ElevenLabs voice for the three governors (Pauly the Smokest, Kane t
 ## Loudness (founder 2026-09-30: "drowned by the music")
 `Companion.play_voice` plays at +10 dB (`VOICE_GAIN_DB`) and ducks the **Music bus** by 14 dB while a clip plays,
 restoring it after (and in `_exit_tree`). Tune those two constants, not the mp3s.
+
+## Update 2026-09-30
+- **No music ducking** (founder: "I didn't ask for that"). Clips are loudness-normalised to -14 LUFS by
+  `gen_portal_vo.py` (ffmpeg loudnorm) and played at +8 dB; the music is never touched.
+- Gold voice requested: `faxBRsvZBmi6q2wL3MQs`. It returns `voice_not_found` on both env keys, so it must be
+  added to the account first (ElevenLabs Voice Library -> Add to My Voices); until then Gold uses Rich Miner `LNV6...`.
+  `python3 scripts/gen_portal_vo.py --force --only gold` after swapping the ID.
+- Room titles were removed from all three rooms (they masked stop labels). Characters were enlarged
+  (`PortalExplorer.PLAYER_H` 104, `Companion.DISPLAY_H` 158) to match the props.
