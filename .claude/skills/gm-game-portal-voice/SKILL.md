@@ -25,3 +25,9 @@ restoring it after (and in `_exit_tree`). Tune those two constants, not the mp3s
   `python3 scripts/gen_portal_vo.py --force --only gold` after swapping the ID.
 - Room titles were removed from all three rooms (they masked stop labels). Characters were enlarged
   (`PortalExplorer.PLAYER_H` 104, `Companion.DISPLAY_H` 158) to match the props.
+
+## Greetings and goodbyes (founder 2026-09-30)
+`portal_copy.json` -> `<protocol>.welcome` / `.farewell` = `{gov, lb}`. `StudyRoom._converse(phase)` plays the governor
+line then Lil Blunt's reply (voice `HMGfKwZCRujgXyRDUW0b`) via `Companion.speak()`: welcome on arrival, farewell when
+leaving (`_do_ascend` awaits it, player frozen, then `Travel.ascend()`). Clips: `vo/<protocol>_<welcome|farewell>_<gov|lb>.mp3`
+(made by `gen_portal_vo.py`).

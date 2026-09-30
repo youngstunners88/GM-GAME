@@ -7,6 +7,7 @@ Reads ELEVENLABS_API (founder account, has the voices) or ELEVENLABS_API_KEY fro
 import json, os, subprocess, sys, urllib.request
 # Founder wants Gold on voice faxBRsvZBmi6q2wL3MQs, but neither env key can see it (voice_not_found):
 # it must first be added to the account (Voice Library -> Add to My Voices). Then swap it in here and rerun with --force --only gold.
+LIL_BLUNT = "HMGfKwZCRujgXyRDUW0b"  # Lil Blunt (founder account)
 VOICES = {"smoke": "h5iQzu1FcYr7bBjBGL1i", "diamonds": "6v1vvHruJAwMrJgRpd5c", "gold": "LNV6ahDtkAOqwn1X3R7a"}
 KEY = os.environ.get("ELEVENLABS_API") or os.environ["ELEVENLABS_API_KEY"]  # ELEVENLABS_API = founder account (owns the character voices)
 force = "--force" in sys.argv
@@ -38,4 +39,22 @@ for proto, data in copy.items():
                 open(out, "wb").write(urllib.request.urlopen(req, timeout=90).read()); normalise(out); made += 1; print("ok", out)
             except Exception as e:
                 print("FAIL", out, getattr(e, "code", type(e).__name__)); sys.exit(2)
+# Greetings and goodbyes: governor line + Lil Blunt's reply, once per room.
+def tts(voice, text, out):
+    global made
+    if os.path.exists(out) and not force:
+        return
+    req = urllib.request.Request(
+        f"https://api.elevenlabs.io/v1/text-to-speech/{voice}?output_format=mp3_44100_64",
+        data=json.dumps({"text": text, "model_id": "eleven_multilingual_v2"}).encode(),
+        headers={"xi-api-key": KEY, "Content-Type": "application/json"})
+    open(out, "wb").write(urllib.request.urlopen(req, timeout=90).read()); normalise(out); made += 1; print("ok", out)
+
+for proto, data in copy.items():
+    if only and proto != only:
+        continue
+    for phase in ("welcome", "farewell"):
+        if phase in data:
+            tts(VOICES[proto], data[phase]["gov"], f"src/assets/portals/vo/{proto}_{phase}_gov.mp3")
+            tts(LIL_BLUNT, data[phase]["lb"], f"src/assets/portals/vo/{proto}_{phase}_lb.mp3")
 print("new clips", made)

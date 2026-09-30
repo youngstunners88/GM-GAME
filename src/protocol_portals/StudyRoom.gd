@@ -601,6 +601,10 @@ func _do_ascend() -> void:
 			_companion.call("say", "Enter this room from the adventure to return through the waystone.")
 		return
 	_ascending = true
+	# The governor says goodbye and Lil Blunt answers before he climbs out (founder 2026-09-30).
+	if _player != null and is_instance_valid(_player):
+		_player.set_physics_process(false)
+	await _converse("farewell")
 	Travel.ascend()
 
 
@@ -744,12 +748,24 @@ func _on_arrival_done() -> void:
 			(_player as CharacterBody2D).velocity = Vector2.ZERO
 		_player.set_physics_process(true)
 	if _companion != null:
-		var intro: Array = []
-		var raw: Variant = _data.get("examiner_intro", [])
-		if typeof(raw) == TYPE_ARRAY:
-			intro = raw
-		if intro.size() > 0:
-			_companion.call("say", String(intro[0]))
+		_converse("welcome")
+
+
+## Greeting / goodbye exchange: the governor speaks, then Lil Blunt answers, each with voice.
+func _converse(phase: String) -> void:
+	var lines: Variant = _data.get(phase, {})
+	if _companion == null or typeof(lines) != TYPE_DICTIONARY or (lines as Dictionary).is_empty():
+		return
+	var dict: Dictionary = lines
+	var base := "res://src/assets/portals/vo/%s_%s_" % [protocol, phase]
+	var wait: float = float(_companion.call("speak", String(dict.get("gov", "")), base + "gov.mp3", String(_companion.get("display_name"))))
+	if not is_inside_tree():
+		return
+	await get_tree().create_timer(wait).timeout
+	if not is_inside_tree() or _companion == null:
+		return
+	wait = float(_companion.call("speak", String(dict.get("lb", "")), base + "lb.mp3", "Lil Blunt"))
+	await get_tree().create_timer(wait).timeout
 
 
 func _find_camera(root: Node) -> Camera2D:

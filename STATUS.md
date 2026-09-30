@@ -5,6 +5,8 @@
 
 ---
 
+**👋 GREETINGS AND GOODBYES (2026-09-30).** The moment Lil Blunt arrives, the governor welcomes him and Lil Blunt answers (in his ElevenLabs voice). When he leaves, the governor says goodbye and Lil Blunt replies before he climbs out. All three rooms, fully voiced.
+
 **📣 PROTOCOL UPDATES IN THE EDUCATION ROOMS (2026-09-30).** Auctions removed from Gold and Diamonds. Gold now teaches sweeper bots capturing XAUT into two Gold Vein pools: stakers get two payouts (wBTC from Fort Knox + XAUT from the Gold Vein) on the same stake share. Diamonds teaches swept ETH going to Diamond Certificate holders. Smoke Lounge is just the SMOKE NFT and bong parties (no Gold/Diamonds/Blaze NFTs). "Gold Rush Board" is now "The Gold Vein Board"; quiz questions and 9 voice clips updated.
 
 **🎚️ EDUCATION ROOMS — SCALE, SOUND, TITLES (2026-09-30).** Lil Blunt and every governor are ~50% bigger so they match the props. Room titles removed from all three stages (they covered the item labels). Music no longer ducks when a governor talks; voices are loudness-normalised and louder instead. Gold voice swap (faxBRsvZBmi6q2wL3MQs) is waiting: that voice isn't in the ElevenLabs account yet (add it to My Voices, then it's one command).
