@@ -14,6 +14,12 @@ page.on('console', m => { const t = m.text(); logs.push(`[${m.type()}] ${t}`);
 page.on('pageerror', e => logs.push(`[pageerror] ${e.message}`));
 await page.goto('http://localhost:8899/game/index.html?ep2=1&ep2probe=1' + (process.argv[4] ? '&' + process.argv[4] : ''));
 const until = async (fn, ms) => { const end = Date.now() + ms; while (Date.now() < end) { if (fn()) return true; await page.waitForTimeout(15); } return false; };
+// Episode 2 is behind an access code (ep2_entry.gd). The code is NOT in the repo: pass it as EP2_CODE.
+await until(() => leg >= 0 || logs.some(l => l.includes('[EP2] code prompt')), 120000);
+if (leg < 0 && logs.some(l => l.includes('[EP2] code prompt'))) {
+  if (!process.env.EP2_CODE) { console.log('Episode 2 asks for its access code: set EP2_CODE'); process.exit(2); }
+  await page.keyboard.type(process.env.EP2_CODE); await page.keyboard.press('Enter');
+}
 await until(() => leg >= 0, 120000);
 await page.mouse.click(640, 360);
 for (const s of plan) {                      // {leg, d, key?/down?/up?, shot?}

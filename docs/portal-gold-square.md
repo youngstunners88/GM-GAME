@@ -1,0 +1,11 @@
+# Gold education town square
+
+The third room now has a broad, connected square rather than a narrow street. Stations sit along its edges, with an open central route. The replacement painting removes static people and their long cast shadows so movable furniture cannot overlap baked-in figures. Existing dialogue, voices and character sizes are preserved.
+
+Gold furniture uses measured per-foot contact shadows instead of a generic oval between its legs. Short, soft grounding matches the diffuse canyon light. Coin glints follow the new perimeter heaps.
+
+Art: built-in imagegen edit of the previous Gold map, saved unchanged to `src/assets/portals/maps/map_gold_square.png`, with a 0.90 lossy Godot import. The former JPEG is removed from the export.
+
+## Final imagegen prompt
+
+Use case: precise-object-edit. Edit this overhead painterly golden canyon mining-town game map. Preserve its detailed realistic painted timber buildings, gold coin heaps, amber sandstone, warm palette, elevated camera and 2800x1200 wide composition. Rebuild the cramped central street into a spacious open town square: push the two left buildings toward the left outer quarter and the two right buildings toward the right outer quarter; shrink their foreground footprint. Continuous FLAT walkable sandy stone ground should occupy x28%-76%, y30%-96%, connected to the existing upper canyon road. Plenty of quiet paved/sandy ground with subtle wheel ruts, small worn flagstone patches by storefronts and natural texture for separately placed interactive furniture. Keep building fronts and porches along perimeter only, no raised platforms or cliffs within square. Remove ALL painted people and their shadows, no characters anywhere. Replace harsh long diagonal shadows across the playable plaza with warm diffuse late-afternoon light and soft short contact shadows immediately beneath buildings; light comes from upper right consistently. Keep visible mining-town atmosphere and gold heaps confined to outer boardwalk edges, never filling the walkable square. No furniture, machines, desks, signboards, text or UI in the open space; gameplay props will be added later. Detailed environment matching the reference, not an empty flat rectangle. The expansive square and absence of baked people/shadow silhouettes are essential.

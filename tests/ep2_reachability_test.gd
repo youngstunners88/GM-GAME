@@ -61,10 +61,23 @@ func _ready() -> void:
 	# 3. The entry scene must stand up on its own and reach a PLAYABLE mode —
 	#    not merely load. A scene that loads and then sits in IDLE is still
 	#    untestable by a human.
+	#    Founder 2026-09-30: Episode 2 sits behind an access code. A fresh device must get the code
+	#    screen (and no run behind it); a device that already entered the code must reach RUNNER.
+	var Entry: GDScript = load("res://src/episode2/ep2_entry.gd")
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(Entry.UNLOCK_FILE))
+	var locked: Node = load(gm.EPISODE2_SCENE).instantiate()
+	add_child(locked)
+	await get_tree().process_frame
+	_check("a fresh device gets the access-code screen, not a run", locked._gate != null and locked._root == null)
+	locked.queue_free()
+	var cf := ConfigFile.new()
+	cf.set_value("ep2", "key", Entry.ACCESS_SHA256)
+	cf.save(Entry.UNLOCK_FILE)
 	var entry: Node = load(gm.EPISODE2_SCENE).instantiate()
 	add_child(entry)
 	await get_tree().process_frame
 	await get_tree().process_frame
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(Entry.UNLOCK_FILE))
 
 	var root: Node = null
 	for c in entry.get_children():

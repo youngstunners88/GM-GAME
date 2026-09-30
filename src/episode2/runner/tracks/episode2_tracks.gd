@@ -76,6 +76,11 @@ const LEG_DESCENT := {
 		{"z": 320.0, "lane": 2, "type": "arrow", "archer": "d_a1"},
 		{"z": 360.0, "lane": 0, "type": "box"},
 		{"z": 360.0, "lane": 2, "type": "box"},
+		# THE SHOVEL LINE: three bears across every rail, shovels raised. No rail, hop, jump or duck
+		# gets past them - the zipline (430-470) goes over their heads. That is the zipline's job.
+		{"z": 452.0, "lane": 0, "type": "shovels"},
+		{"z": 452.0, "lane": 1, "type": "shovels"},
+		{"z": 452.0, "lane": 2, "type": "shovels"},
 		# Zipline over the pit; it drops you on the centre cart (back since 400).
 		# Right after landing, boulders on centre AND right: hop LEFT, now.
 		{"z": 500.0, "lane": 1, "type": "boulder"},
@@ -178,6 +183,10 @@ const LEG_DEEPER := {
 		{"z": 820.0, "lane": 0, "type": "arrow", "archer": "r_a5"},
 		{"z": 820.0, "lane": 1, "type": "arrow", "archer": "r_a5"},
 		{"z": 820.0, "lane": 2, "type": "arrow", "archer": "r_a5"},
+		# SECOND SHOVEL LINE, under the long cable: the zipline again is the only way through.
+		{"z": 880.0, "lane": 0, "type": "shovels"},
+		{"z": 880.0, "lane": 1, "type": "shovels"},
+		{"z": 880.0, "lane": 2, "type": "shovels"},
 		# Off the zipline onto the centre, boulder: the left cart arrived at 890.
 		{"z": 930.0, "lane": 1, "type": "boulder"},
 		{"z": 955.0, "lane": 0, "type": "gold"},

@@ -19,14 +19,20 @@ func _ready() -> void:
 	# Vocabulary depth: the founder asked for variation.
 	for cat in ["boulder_smash", "hit", "hop_success", "jump_clear", "bear_down", "zip_catch", "coin_streak"]:
 		_check("%s has >=4 distinct lines" % cat, Bank.CATEGORIES[cat]["ids"].size() >= 4, cat)
-	_check("hop celebration has >=8 lines", Bank.CATEGORIES["hop_success"]["ids"].size() >= 8)
+	_check("hop celebration has >=15 lines (founder: increased vocabulary)", Bank.CATEGORIES["hop_success"]["ids"].size() >= 15)
+	var total_lines: int = 0
+	for cat in Bank.CATEGORIES:
+		total_lines += Bank.CATEGORIES[cat]["ids"].size()
+	_check("Lil Blunt has >=140 distinct lines (%d)" % total_lines, total_lines >= 140)
+	for cat in ["shovel_alert", "shovel_pass", "shoot", "swipe", "idle", "run_failed", "chamber_reached"]:
+		_check("category %s exists" % cat, Bank.CATEGORIES.has(cat))
 	var missing: Array = []
 	for cat in Bank.CATEGORIES:
 		for id in Bank.CATEGORIES[cat]["ids"]:
 			if not ResourceLoader.exists(Bank.DIR + str(id) + ".mp3"):
 				missing.append(id)
 	_check("every bark has an ElevenLabs take on disk", missing.is_empty(), str(missing))
-	for id in Voice.BEAR_GROWLS + ["ep2_bear_roar", "ep2_bear_fall"]:
+	for id in Voice.BEAR_GROWLS + Voice.BEAR_DEATHS + Voice.BEAR_ATTACKS + ["ep2_bear_roar", "ep2_bear_fall", "ep2_shovel_swing", "ep2_shovel_smack"]:
 		_check("bear sound %s on disk" % id, ResourceLoader.exists(Voice.BEAR_DIR + id + ".mp3"))
 
 	# No repeats inside a bag, and never the same line twice in a row across bags.
@@ -64,6 +70,10 @@ func _ready() -> void:
 		last = db
 	_check("bear gets louder as the cart approaches", mono and Voice.bear_db(8.0) > Voice.bear_db(40.0) + 12.0)
 	_check("bear silent beyond hearing range", Voice.bear_db(60.0) <= -60.0)
+	# REGRESSION (founder 2026-09-30 "I still don't hear the bears"): a growl 20 m ahead was ~-16 dB with 3D
+	# falloff stacked on top of a quiet recording. It must now play at or above -6 dB, fade applied once.
+	_check("bear growl 20 m ahead is audible (%.1f dB >= -6)" % (Voice.bear_db(20.0) + Voice.BEAR_GAIN_DB),
+		Voice.bear_db(20.0) + Voice.BEAR_GAIN_DB >= -6.0)
 
 	# Wired into the runner: a boulder wreck makes him scream, a hop makes him cheer.
 	var r: Node3D = SCENE.instantiate()

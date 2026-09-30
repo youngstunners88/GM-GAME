@@ -528,12 +528,16 @@ func _check_obstacles(cur_x: float) -> void:
 ## Clear rules, one verb per hazard:
 ## "box" — jump. "arrow" — duck (or shoot its archer first).
 ## "boulder" — hop to another rail. "boarder" — pickaxe swipe.
+## "shovels" — a ROW of bears across all three rails, shovels raised: nothing on the rails gets past;
+## the only answer is to be on the zipline (founder 2026-09-30: "jumping on the zipline becomes the only solution").
 func _is_cleared(hazard_type: String) -> bool:
 	match hazard_type:
 		"arrow":
 			return _is_ducking_effective()
 		"boulder":
 			return false
+		"shovels":
+			return _ziplining          # a row of shovel bears across every rail: only the zipline goes over them
 		"gold":
 			return true
 		"boarder":

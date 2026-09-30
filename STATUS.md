@@ -7,6 +7,21 @@
 
 **🎵 EDUCATION SONGS + LEVEL-1 SONG RULE (2026-09-30).** Your three songs now play in the education rooms (Stage 1 = Smoke, 2 = Diamonds, 3 = Gold): they fade in as Lil Blunt enters and fade out as he leaves. The Level-1 "Song A first" rule now means what you meant: it plays first when the game is started from the title screen, not every time Level 1 loads. Coming out of Blaze Rush, the Smoke Lounge or an education room, the music just carries on / shuffles.
 
+**🎩 EPISODE 2 — HAT ON TOP OF THE LEAVES (2026-09-30).** As you asked, I corrected his hat and hair. The leaves on top of his head were taller than the hat, so from behind they burst up through the brim. I lowered those leaves (780 points on the model) so they sit under the hat crown, leaving the hat, face and weapons untouched. From the game camera the hat now sits on top with the leaves around and under it, and from the front the mane is neater. No Meshy credits spent; all 9 Episode 2 test suites pass.
+
+**🔐🐻 EPISODE 2 — ACCESS CODE + LOUDER BEARS (2026-09-30).** Episode 2 now asks for your access code before anything loads, whether players come from the menu or from finishing Episode 1. You type it once per device and it's remembered. Wrong codes, including wrong capitals, are refused, and there's always a Back-to-menu button. Only a scrambled fingerprint of the code is stored, never the code itself. It keeps casual players out, but it's not bank-grade: the game runs entirely in the browser, so a determined hacker could get round it. **Bears:** you couldn't hear them because the growls were quiet recordings, faded twice by distance, under the music. Now a growl 20 m away plays about 20 dB louder, death groans and attack snarls are louder, and they still come from the bear's side. Tests pass, including a new access-code test and a new "bears are audible" check.
+
+**🤠 EPISODE 2 — LIL BLUNT RE-POSED, CHECKED WITH MY OWN EYES (2026-09-30).** You said he still looked trash, so I captured him myself from the game camera and from six sides of the same frozen frame. That showed what the tests never had: his **revolver pointed at the ceiling**, the **pickaxe was held up like a club**, he **crouched with his belt above the rim**, and a **clump of leaves was stuck to his arm bones** and got dragged over his hat. Fixed:
+- He **sits** in the cart: hips just under the rim, only chest, arms and hat above it.
+- The **gold revolver points down the track** at your reticle, arm out on his right.
+- The **pickaxe leans up at his left side**, like your target image.
+- Head tipped back, so the hat sits on top.
+- **Camera closer**: he's 27–40% bigger on screen.
+- **Glossier leather and a side light**: his shading has highlights and shadow now, without making him darker than before (your "too dark" note).
+- The 3,600 leaf vertices that followed his arms now follow his neck and chest.
+
+Two new automatic checks fail if the gun ever points up again or he stands up in the cart. **Still not your target:** from behind, this model's big lion-mane leaves rise above the hat. Your picture has a small leaf collar tucked under the hat. That's the shape of the model itself, not the pose. The fix is a model with the mane under the brim (Meshy, costs credits: your call). **Also found:** in the left lane, the bear-archer ledge can hide him (this was already true with the old camera). **New skill:** `see-it-yourself` (capture, zoom, orbit, measure, A/B test, then judge), built on research into where vision AIs fail on game screenshots. **Firecrawl:** your new key works; the one saved in the environment settings is dead. Paste the new key into the Environment Variables field as `FIRECRAWL_API_KEY`. Checks: 8 Episode 2 test suites pass.
+
 **👋 GREETINGS AND GOODBYES (2026-09-30).** The moment Lil Blunt arrives, the governor welcomes him and Lil Blunt answers (in his ElevenLabs voice). When he leaves, the governor says goodbye and Lil Blunt replies before he climbs out. All three rooms, fully voiced.
 
 **📣 PROTOCOL UPDATES IN THE EDUCATION ROOMS (2026-09-30).** Auctions removed from Gold and Diamonds. Gold now teaches sweeper bots capturing XAUT into two Gold Vein pools: stakers get two payouts (wBTC from Fort Knox + XAUT from the Gold Vein) on the same stake share. Diamonds teaches swept ETH going to Diamond Certificate holders. Smoke Lounge is just the SMOKE NFT and bong parties (no Gold/Diamonds/Blaze NFTs). "Gold Rush Board" is now "The Gold Vein Board"; quiz questions and 9 voice clips updated.
@@ -2596,7 +2611,14 @@ All 18 of your marked-up images landed as real files this time. They are
 committed to `artifacts/founder-art/references/` so no future session has to
 recover them or ask you to resend anything.
 
-### 🧍 EPISODE 2 — LIL BLUNT SITS LIKE A NORMAL PERSON (2026-09-30)
+### 🐻 EPISODE 2 — SHOVEL BEARS, ZIPLINE WITH A PURPOSE, MORE WORDS (2026-09-30)
+- **Shovel line:** a row of three bears across every rail, shovels raised. Nothing on the rails gets past — the zipline is the ONLY answer (Descent z=452, Deeper z=880). Test proves plain rails and jumping both get smacked, zipline doesn't.
+- **Bear sounds:** ElevenLabs death groans (3), attack growls (3), shovel swing + smack; archers snarl as they loose.
+- **Lil Blunt talks a lot more:** 166 distinct lines (hops alone: 18), plus lines for shooting, pickaxe, the shovel line, idle chatter.
+- **Look:** revolver reads GOLD again (the metal map drew it black in the web build), hero brighter, lanterns lit, rails have steel shine + bolts, hero turned 3/4 so the gun shows. Jev + vision assessment in `docs/research/3d/013_*`.
+- New skill `ep2-bear-design`.
+
+## 🧍 EPISODE 2 — LIL BLUNT SITS LIKE A NORMAL PERSON (2026-09-30)
 - Founder: boots poking out of the cart, an arm "behind his back", both arms must be in front. Fixed by posing the whole skeleton by direction: legs inside the cart, both arms forward, pickaxe upright in front of his left shoulder, revolver hand aimed at the reticle. Zipline still uses the founder's own hang pose. Gate in `ep2_runner_motion_test` (feet inside the cart, hands in front of shoulders).
 - Warm key light on him so he reads against the rock.
 

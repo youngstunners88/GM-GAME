@@ -33,9 +33,41 @@ func _run_to(r: Node3D, target: float) -> void:
 		r.step(DT)
 		i += 1
 
+## THE SHOVEL LINE (founder 2026-09-30): a row of bears across every rail. Rails, hops, jumps and
+## ducks do not get past; the zipline does. Proves the zipline has a REASON to exist.
+func _shovels() -> void:
+	var row: Array = [{"z": 60.0, "lane": 0, "type": "shovels"}, {"z": 60.0, "lane": 1, "type": "shovels"},
+		{"z": 60.0, "lane": 2, "type": "shovels"}]
+	var plain: Node3D = _spawn()
+	plain.setup(200.0, row, [], [], true, {})
+	var h0: int = plain.get_health()
+	_run_to(plain, 80.0)
+	_check("shovel line: plain rails take a smack (health %d -> %d)" % [h0, plain.get_health()], plain.get_health() < h0)
+	var jumper: Node3D = _spawn()
+	jumper.setup(200.0, row, [], [], true, {})
+	var hj: int = jumper.get_health()
+	var i := 0
+	while jumper.get_distance() < 80.0 and jumper.is_running() and i < 20000:
+		if jumper.get_distance() > 50.0 and jumper.get_distance() < 58.0:
+			jumper.jump()
+		jumper.step(DT)
+		i += 1
+	_check("shovel line: jumping the rails does not get past (health %d -> %d)" % [hj, jumper.get_health()], jumper.get_health() < hj)
+	var flyer: Node3D = _spawn()
+	flyer.setup(200.0, row, [{"start_z": 30.0, "end_z": 90.0}], [], true, {})
+	var hf: int = flyer.get_health()
+	i = 0
+	while flyer.get_distance() < 100.0 and flyer.is_running() and i < 20000:
+		if flyer.get_distance() > 24.0 and flyer.get_distance() < 29.0:
+			flyer.jump()
+		flyer.step(DT)
+		i += 1
+	_check("shovel line: the zipline goes over them untouched (health %d -> %d)" % [hf, flyer.get_health()], flyer.get_health() == hf)
+
 func _ready() -> void:
 	print("EP2_RUNNER_CARTS:")
 	_rules()
+	_shovels()
 	_legs()
 	print("EP2_RUNNER_CARTS: " + ("ALL PASS" if _fail == 0 else "%d FAILURE(S)" % _fail))
 	get_tree().quit(1 if _fail else 0)
