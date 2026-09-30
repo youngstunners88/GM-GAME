@@ -5,6 +5,8 @@
 
 ---
 
+**🔐🐻 EPISODE 2 — ACCESS CODE + LOUDER BEARS (2026-09-30).** Episode 2 now asks for your access code before anything loads, whether players come from the menu or from finishing Episode 1. You type it once per device and it's remembered. Wrong codes, including wrong capitals, are refused, and there's always a Back-to-menu button. Only a scrambled fingerprint of the code is stored, never the code itself. It keeps casual players out, but it's not bank-grade: the game runs entirely in the browser, so a determined hacker could get round it. **Bears:** you couldn't hear them because the growls were quiet recordings, faded twice by distance, under the music. Now a growl 20 m away plays about 20 dB louder, death groans and attack snarls are louder, and they still come from the bear's side. Tests pass, including a new access-code test and a new "bears are audible" check.
+
 **🤠 EPISODE 2 — LIL BLUNT RE-POSED, CHECKED WITH MY OWN EYES (2026-09-30).** You said he still looked trash, so I captured him myself from the game camera and from six sides of the same frozen frame. That showed what the tests never had: his **revolver pointed at the ceiling**, the **pickaxe was held up like a club**, he **crouched with his belt above the rim**, and a **clump of leaves was stuck to his arm bones** and got dragged over his hat. Fixed:
 - He **sits** in the cart: hips just under the rim, only chest, arms and hat above it.
 - The **gold revolver points down the track** at your reticle, arm out on his right.

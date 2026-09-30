@@ -29,6 +29,8 @@ const IDLE_AFTER := 14.0
 ## Bears become audible inside this range (m) and grow louder as the cart closes in.
 const BEAR_HEAR := 46.0
 const BEAR_LOUD := 8.0
+## The growl/groan recordings sit ~8 dB under Lil Blunt's lines; this lifts them over the music.
+const BEAR_GAIN_DB := 6.0
 const COIN_EVERY := 6
 const BOULDER_WARN := 22.0
 const ARROW_CREAK := 26.0        # bow creak = the windup, ~1.2 s before the arrow arrives
@@ -82,7 +84,9 @@ static func bear_db(d: float) -> float:
 	if d >= BEAR_HEAR:
 		return -80.0
 	var t: float = clampf((BEAR_HEAR - d) / (BEAR_HEAR - BEAR_LOUD), 0.0, 1.0)
-	return lerpf(-30.0, 0.0, t * t)
+	# Founder 2026-09-30 "I still don't hear the bears": was -30..0 dB on t^2, then 3D falloff on top and a
+	# -18 dB-mean growl file under the music. Now one gentle curve; the 3D player only pans (attenuation off).
+	return lerpf(-14.0, 4.0, t)
 
 ## ---- node ----------------------------------------------------------------------
 
@@ -179,7 +183,7 @@ func _on_archer_down(id: String) -> void:
 		var fall: AudioStream = _fx(str(BEAR_DEATHS[randi() % BEAR_DEATHS.size()]))
 		if fall:
 			p.stream = fall
-			p.volume_db = 3.0
+			p.volume_db = BEAR_GAIN_DB + 4.0
 			p.play()
 	_bear_next.erase(id)
 
@@ -243,7 +247,7 @@ func _update_bears(d: float) -> void:
 			p.bus = "SFX" if AudioServer.get_bus_index("SFX") != -1 else "Master"
 			p.unit_size = 14.0
 			p.max_distance = BEAR_HEAR + 4.0
-			p.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_SQUARE_DISTANCE
+			p.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED   # bear_db does the distance fade
 			add_child(p)
 			_bear_players[id] = p
 			_bear_next[id] = _now + randf_range(0.2, 1.2)
@@ -259,7 +263,7 @@ func _update_bears(d: float) -> void:
 			var s: AudioStream = _fx(sid)
 			if s:
 				p.stream = s
-				p.volume_db = bear_db(maxf(ahead, 1.0)) * 0.35
+				p.volume_db = bear_db(maxf(ahead, 1.0)) + BEAR_GAIN_DB
 				p.play()
 			_bear_next[id] = _now + randf_range(2.6, 5.0)
 
@@ -281,7 +285,7 @@ func _bear_attack_growl(d: float) -> void:
 	var snd: AudioStream = _fx(str(BEAR_ATTACKS[randi() % BEAR_ATTACKS.size()]))
 	if p and snd and not p.playing:
 		p.stream = snd
-		p.volume_db = 2.0
+		p.volume_db = BEAR_GAIN_DB + 4.0
 		p.play()
 
 ## THE SHOVEL LINE: alert line (once per row), the snarl as the shovels rise, the swing whoosh,
@@ -299,7 +303,7 @@ func _update_shovel_row(d: float, obstacles: Array) -> void:
 			say("shovel_alert")
 		if ahead <= SHOVEL_GROWL_M and ahead > 0.0 and not _announced.has(key + "g"):
 			_announced[key + "g"] = true
-			_row_shot(str(BEAR_ATTACKS[randi() % BEAR_ATTACKS.size()]), z, 3.0)
+			_row_shot(str(BEAR_ATTACKS[randi() % BEAR_ATTACKS.size()]), z, BEAR_GAIN_DB + 4.0)
 		if ahead <= SHOVEL_SWING_M and ahead > 0.0 and not _announced.has(key + "s"):
 			_announced[key + "s"] = true
 			_row_shot("ep2_shovel_swing", z, 0.0)
@@ -308,7 +312,7 @@ func _update_shovel_row(d: float, obstacles: Array) -> void:
 			if _sim.is_ziplining():
 				say("shovel_pass")
 			else:
-				_row_shot("ep2_shovel_smack", z, 4.0)
+				_row_shot("ep2_shovel_smack", z, 14.0)   # the smack file is quiet (-31 dB mean)
 
 func _row_shot(id: String, z: float, db: float) -> void:
 	var st: AudioStream = _fx(id)

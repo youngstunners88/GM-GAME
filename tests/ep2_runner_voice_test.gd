@@ -70,6 +70,10 @@ func _ready() -> void:
 		last = db
 	_check("bear gets louder as the cart approaches", mono and Voice.bear_db(8.0) > Voice.bear_db(40.0) + 12.0)
 	_check("bear silent beyond hearing range", Voice.bear_db(60.0) <= -60.0)
+	# REGRESSION (founder 2026-09-30 "I still don't hear the bears"): a growl 20 m ahead was ~-16 dB with 3D
+	# falloff stacked on top of a quiet recording. It must now play at or above -6 dB, fade applied once.
+	_check("bear growl 20 m ahead is audible (%.1f dB >= -6)" % (Voice.bear_db(20.0) + Voice.BEAR_GAIN_DB),
+		Voice.bear_db(20.0) + Voice.BEAR_GAIN_DB >= -6.0)
 
 	# Wired into the runner: a boulder wreck makes him scream, a hop makes him cheer.
 	var r: Node3D = SCENE.instantiate()

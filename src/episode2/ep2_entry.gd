@@ -42,8 +42,92 @@ var _hud: Label = null
 var _hint: Label = null
 var _banner: Label = null
 
+## Founder 2026-09-30: Episode 2 is behind an access code ("I want to still access it simply but restrict
+## others"). Only the SHA-256 of the code is stored - the plaintext is not in the repo or the build. This is
+## a casual lock for a client-only static web game: anyone who reverse-engineers the web pack can skip it.
+## A correct code is remembered on that device (user://), so the founder types it once.
+## base64 of the SHA-256 (not hex: a 64-hex literal is exactly what the sentinel's SEC-005 private-key check flags)
+const ACCESS_SHA256 := "oNnp3gYj9AxoCW/G7jmhAtt4RK0pxyT2xg4gDl8Eajs="
+const UNLOCK_FILE := "user://ep2_unlock.cfg"
+var _gate: Control = null
+var _gate_input: LineEdit = null
+var _gate_msg: Label = null
+
 func _ready() -> void:
 	_build_hud()
+	if _is_unlocked():
+		_begin()
+	else:
+		_show_gate()
+
+static func code_ok(code: String) -> bool:
+	return Marshalls.raw_to_base64(code.strip_edges().sha256_buffer()) == ACCESS_SHA256
+
+func _is_unlocked() -> bool:
+	var cf := ConfigFile.new()
+	return cf.load(UNLOCK_FILE) == OK and str(cf.get_value("ep2", "key", "")) == ACCESS_SHA256
+
+func _show_gate() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 20
+	add_child(layer)
+	_gate = ColorRect.new()
+	(_gate as ColorRect).color = Color(0.05, 0.03, 0.02, 0.96)
+	_gate.set_anchors_preset(Control.PRESET_FULL_RECT)
+	layer.add_child(_gate)
+	var box := VBoxContainer.new()
+	box.set_anchors_preset(Control.PRESET_CENTER)
+	box.position = Vector2(-220, -110)
+	box.custom_minimum_size = Vector2(440, 220)
+	box.add_theme_constant_override("separation", 14)
+	_gate.add_child(box)
+	var title := Label.new()
+	title.text = "EPISODE 2 — GOLD MINE
+Enter the access code"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 26)
+	title.add_theme_color_override("font_color", Color(1, 0.85, 0.3))
+	box.add_child(title)
+	_gate_input = LineEdit.new()
+	_gate_input.secret = true
+	_gate_input.placeholder_text = "access code"
+	_gate_input.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_gate_input.add_theme_font_size_override("font_size", 24)
+	_gate_input.text_submitted.connect(_try_code)
+	box.add_child(_gate_input)
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 16)
+	box.add_child(row)
+	var go := Button.new()
+	go.text = "ENTER"
+	go.pressed.connect(func() -> void: _try_code(_gate_input.text))
+	row.add_child(go)
+	var back := Button.new()
+	back.text = "BACK TO MENU"
+	back.pressed.connect(func() -> void: SceneRouter.load_scene(MENU_SCENE, SceneRouter.Transition.DIAMOND))
+	row.add_child(back)
+	_gate_msg = Label.new()
+	_gate_msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_gate_msg.add_theme_color_override("font_color", Color(1, 0.45, 0.35))
+	box.add_child(_gate_msg)
+	_gate_input.grab_focus()
+	print("[EP2] code prompt")
+
+func _try_code(code: String) -> void:
+	if not code_ok(code):
+		_gate_msg.text = "Wrong code."
+		_gate_input.clear()
+		_gate_input.grab_focus()
+		return
+	var cf := ConfigFile.new()
+	cf.set_value("ep2", "key", ACCESS_SHA256)
+	cf.save(UNLOCK_FILE)
+	_gate.get_parent().queue_free()
+	_gate = null
+	_begin()
+
+func _begin() -> void:
 	if OS.has_feature("web"):
 		var q: Variant = JavaScriptBridge.eval(
 			"new URLSearchParams(window.location.search).get('ep2probe') || ''", true)
@@ -125,6 +209,10 @@ func _process(_delta: float) -> void:
 				print("[EP2] d=%d hp=%d%s" % [d, a.get_health(), extra])
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _gate != null:
+		if event.is_action_pressed("ui_cancel"):
+			SceneRouter.load_scene(MENU_SCENE, SceneRouter.Transition.DIAMOND)
+		return
 	# Always an exit. A mode with no visible way out is how a tester gets stuck
 	# and reports the whole episode as broken.
 	if event.is_action_pressed("ui_cancel"):
