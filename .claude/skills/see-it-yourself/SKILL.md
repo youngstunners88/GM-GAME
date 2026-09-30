@@ -61,6 +61,12 @@ prove the code does what the code says. Only eyes prove it looks like the pictur
 - **Meshy auto-rig binds hair/leaves to ARM bones.** Invisible in the bind pose; the moment the arm is posed it drags
   a clump of leaves. Check: `python3 tools/meshy/reweight_mane.py <glb> --dry-run` (re-skins leaf-green verts farther
   than the arm's own skin radius onto neck/Spine; idempotent; bind pose unchanged). Re-import after: `$G --headless --import`.
+- **Hair/mane taller than the hat** is geometry, not pose: `python3 tools/meshy/tuck_mane_under_hat.py <glb>`
+  squashes head-mane leaves above the head joint (spreading through connected triangles, never into the brown hat
+  or the hands; folding by a per-direction BRIM estimate failed because the hat is tilted and its "outer ring" is
+  partly crown). Order: original GLB -> reweight_mane.py -> tuck_mane_under_hat.py -> `$G --headless --import`.
+  Always look at the IN-GAME orbit after a bind-pose sheet: the bind sheet still looked bushy from behind while the
+  posed game view (head tilted back) read hat-on-top.
 - **A clip-free skeleton modifier cannot turn a held prop** unless it rotates the HAND: `_chain` aims a bone by the
   shortest arc and leaves the roll free, so the baked revolver pointed wherever the wrist faced. `_aim_hand` aligns
   the measured barrel/handle axis (hand-local, from skin-weight PCA) to a world direction.
@@ -77,6 +83,5 @@ prove the code does what the code says. Only eyes prove it looks like the pictur
 Fixed and measured: seated (hips 8 cm under the rim), barrel on the aim target (dot 1.00), pickaxe leaning at his side,
 closer camera (+27-40 % screen area, framing gate green), glossier material + side key (RMS contrast 0.53-0.63 vs old
 0.41-0.55, highlights p95 188 vs 157-166, brightness equal to the old build), 3,603 mane-leaf verts re-skinned off the
-arms. **Still not the target:** from behind, the model's big lion's-mane leaves rise over the hat; the founder's target
-has a compact leaf collar UNDER the hat. That is the model's shape, not the pose - the fix is a model whose mane sits
-under the brim (Meshy retexture/remesh or image-to-3D from his target; costs credits, his call).
+arms. Later the same day (founder: "correct Lil Blunt's hat with his hair"): 780 head-mane verts squashed under the hat
+crown, no Meshy credits spent; from the chase camera the hat now reads on top with the leaves around/under it.

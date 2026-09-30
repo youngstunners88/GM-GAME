@@ -9,8 +9,8 @@ upper-arm and FOREARM bones. In the bind pose (the zipline hang, pickaxe arm str
 lowers the pickaxe arm, the arm drags a clump of leaves up over his hat - from the chase camera he read
 as "a bush with a hat brim through it". Measured with the see-it-yourself orbit rig.
 
-What it does: a vertex is MANE if its texture colour is leaf-green AND its dominant joint is a shoulder/
-arm bone AND it sits farther from that arm's bone line than the arm's own skin (> ~0.11 m; the arm skin
+What it does: a vertex is MANE/HAT if it is leaf-green OR sits in the head region (the hat), AND its
+dominant joint is a shoulder/arm bone (never a hand: the revolver and pickaxe are skinned to the hands) AND it sits farther from that arm's bone line than the arm's own skin (> ~0.11 m; the arm skin
 radius measures 0.07-0.10 m). Its weights are blended (smoothstep over 0.10-0.14 m, so there is no seam)
 toward the torso: neck near the head, Spine near the shoulders. Positions, UVs and the bind pose are
 untouched - the model looks identical until an arm moves; then the leaves stay with his body.
@@ -73,10 +73,13 @@ def main(path, dry):
         return np.linalg.norm(p - (a + t[:, None] * ab), axis=1)
 
     dom = J[np.arange(len(J)), W.argmax(1)]
+    # The HAT (and whatever sits on his head) is also bound to the raised pickaxe arm - ~400 hat verts on
+    # RightForeArm, ~180 on RightArm. Anything in the head region counts, whatever its colour.
+    head_region = (np.linalg.norm(P - jp["Head"], axis=1) < 0.42) & (P[:, 1] > jp["neck"][1])
     moved = 0
     for bone in ARM_BONES:
         side = "Right" if bone.startswith("Right") else "Left"
-        sel = np.nonzero(green & (dom == idx[bone]))[0]
+        sel = np.nonzero((green | head_region) & (dom == idx[bone]))[0]
         if sel.size == 0:
             continue
         d = np.minimum(np.minimum(segdist(P[sel], jp[side + "Arm"], jp[side + "ForeArm"]),
