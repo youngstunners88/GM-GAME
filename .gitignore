@@ -221,3 +221,5 @@ artifacts/attack-test*/
 artifacts/stage1-weapon/
 artifacts/wtest/
 artifacts/verify-deploy/
+
+!src/assets/portals/maps/map_gold_square.png.import
