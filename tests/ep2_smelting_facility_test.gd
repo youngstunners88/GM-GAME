@@ -213,6 +213,53 @@ func _ready() -> void:
 	_check("...and the meeting follows (-> DRINK)", f.get_beat() == f.Beat.DRINK, f.get_beat_name())
 	f.queue_free()
 
+	# --- 11. the hangout (founder target 2026-10-01): dressed room + acted hand-overs ------------------------
+	var h = SMELT.instantiate()
+	add_child(h)
+	h.intro_film = false
+	h.setup(0, [], 0)
+	await get_tree().process_frame
+	_check("the hangout is dressed: poster, Gatling and flame lights exist",
+		h._dressing.get("poster") != null and h._dressing.get("gatling") != null and (h._dressing.get("flames") as Array).size() >= 3)
+	_check("the armory + trophies are in the scene tree", h.find_child("ColtGatling", true, false) != null)
+	for tex in ["tex_pinup_poster.jpg", "tex_cowhide.jpg"]:
+		_check("hideout texture on disk: " + tex, ResourceLoader.exists("res://src/episode2/assets/textures/" + tex))
+	for glb in ["bear_head_trophy.glb", "mine_bear_archer.glb", "winchester_1886.glb"]:
+		_check("hideout prop on disk: " + glb, ResourceLoader.exists("res://src/episode2/assets/" + glb))
+	# the helmet is HANDED OVER: it travels via the Bull's hand, it does not teleport onto his head
+	h._beat = h.Beat.HELMET
+	h._has_helmet = true
+	h._helmet_t = 0.0
+	_run(h, 0.3)
+	_check("helmet is not on his head the instant it is granted", not h._helmet_on_head)
+	var near_hand := false
+	for i in 140:
+		h.step(1.0 / 60.0)
+		var hand: Vector3 = h._bull_pivot.to_global(h.BULL_HAND_OUT)
+		if h._helmet_node.position.distance_to(hand) < 0.35:
+			near_hand = true
+	_check("the helmet passes through the Bull's outstretched hand", near_hand)
+	_run(h, 2.0)
+	_check("then it lands on Lil Blunt's head", h._helmet_on_head)
+	_check("...and he hops for joy", h._hop_y > 0.0 or h._hop_v != 0.0 or h._anim_t > 0.0)
+	# the rifle too
+	h._beat = h.Beat.HANDOFF
+	h._has_winchester = true
+	h._rifle_t = 0.0
+	var rifle_near_hand := false
+	for i in 200:
+		h.step(1.0 / 60.0)
+		if h._rifle_node.position.distance_to(h._bull_pivot.to_global(h.BULL_HAND_OUT)) < 0.35:
+			rifle_near_hand = true
+	_check("the Winchester passes through the Bull's hand", rifle_near_hand)
+	_check("...and ends in Lil Blunt's hands", h._rifle_in_hands)
+	# the Bull leans in while handing over, and breathes otherwise
+	h._beat = h.Beat.HANDOFF
+	h._rifle_t = 1.0
+	_run(h, 0.8)
+	_check("the Bull leans toward Lil Blunt during a hand-over", h._lean > 0.05, "%.3f" % h._lean)
+	h.queue_free()
+
 	await get_tree().process_frame
 	if _fail == 0:
 		print("EP2_SMELTING_FACILITY: ALL PASS")

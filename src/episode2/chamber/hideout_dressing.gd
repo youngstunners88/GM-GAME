@@ -1,0 +1,480 @@
+class_name HideoutDressing
+extends RefCounted
+## Inferno Bull's HANGOUT, as the founder's target image shows it (design/ep2/inferno_bull_hideout_target.jpg,
+## design/ep2/INFERNO_BULL_HIDEOUT_design.md): a timber-panelled alcove off the smelter, 1800s Western
+## dressing, heat and flame everywhere. All of it is code-built from primitives + the committed GLBs so it
+## costs almost nothing in package size and every prop has a visible primitive fallback.
+##
+## Built into the facility's `Visuals` node by `build()`. Returns the handles the facility animates:
+##   flames   - OmniLight3D list (the facility flickers them)
+##   gatling  - the Colt Gatling (its barrels spin lazily)
+##   poster   - the pin-up poster mesh
+## Dressing is pure set decoration: nothing here is collidable or part of the beat sheet.
+
+const BEAR_FULL := "res://src/episode2/assets/mine_bear_archer.glb"
+const BEAR_HEAD := "res://src/episode2/assets/bear_head_trophy.glb"
+const RIFLE := "res://src/episode2/assets/winchester_1886.glb"
+const POSTER_TEX := "res://src/episode2/assets/textures/tex_pinup_poster.jpg"
+const HIDE_TEX := "res://src/episode2/assets/textures/tex_cowhide.jpg"
+const TIMBER_TEX := "res://src/episode2/assets/textures/tex_timber.jpg"
+const LANTERN := "res://src/episode2/assets/lantern.glb"
+const INGOT_RACK := "res://src/episode2/assets/ingot_rack.glb"
+const GOLD_PILE := "res://src/episode2/assets/gold_pile.glb"
+const CART := "res://src/episode2/assets/minecart.glb"
+
+## Inside faces of the alcove walls. The Bull stands at x=1.6, so the room is ~14 m wide and the walls hold
+## the gun wall (right) and the trophies (left).
+const WALL_X := 7.1
+const ALCOVE_Z0 := -1.0
+const ALCOVE_Z1 := 13.5
+
+var _v: Node3D
+var _timber: StandardMaterial3D
+var _dark_wood: StandardMaterial3D
+var _iron: StandardMaterial3D
+var _brass: StandardMaterial3D
+var _gold: StandardMaterial3D
+var _leather: StandardMaterial3D
+var _flames: Array = []
+
+
+static func build(visuals: Node3D) -> Dictionary:
+	var d := HideoutDressing.new()
+	return d._build(visuals)
+
+
+func _build(visuals: Node3D) -> Dictionary:
+	_v = visuals
+	_timber = _tex_mat(TIMBER_TEX, Color(0.62, 0.44, 0.30), 0.5)
+	_dark_wood = _tex_mat(TIMBER_TEX, Color(0.30, 0.20, 0.13), 0.5)
+	_iron = Ep2Palette.make("iron")
+	_brass = Ep2Palette.make("brass")
+	_gold = _plain(Color(0.92, 0.66, 0.2), 0.32, 0.55)
+	_gold.emission_enabled = true
+	_gold.emission = Color(1.0, 0.6, 0.15)
+	_gold.emission_energy_multiplier = 0.12
+	_leather = _plain(Color(0.28, 0.15, 0.09), 0.7, 0.0)
+	_alcove()
+	var poster := _poster()
+	_trophies()
+	var gat: Node3D = _gatling(Vector3(-3.9, 0.0, 7.4), -1.15)
+	_gun_wall()
+	_whiskey_table(Vector3(4.2, 0.0, 2.8))
+	_rug(Vector3(1.0, 0.012, 4.6))
+	_bull_skull(Vector3(0.0, 6.3, 15.4))
+	_braziers()
+	_gold_and_cart()
+	_hanging_chains()
+	return {"flames": _flames, "gatling": gat, "poster": poster}
+
+
+# --- small builders ------------------------------------------------------------------------------
+
+func _plain(c: Color, rough: float, metal: float) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = c
+	m.roughness = rough
+	m.metallic = metal
+	return m
+
+
+func _tex_mat(path: String, tint: Color, uv: float) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = tint
+	m.roughness = 0.85
+	if ResourceLoader.exists(path):
+		m.albedo_texture = load(path)
+		m.uv1_triplanar = true
+		m.uv1_scale = Vector3.ONE * uv
+	return m
+
+
+func _add(mesh: Mesh, mat: Material, pos: Vector3, rot_deg: Vector3 = Vector3.ZERO, parent: Node3D = null) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	mi.material_override = mat
+	mi.position = pos
+	mi.rotation_degrees = rot_deg
+	(parent if parent else _v).add_child(mi)
+	return mi
+
+
+func _box(size: Vector3, pos: Vector3, mat: Material, rot_deg: Vector3 = Vector3.ZERO, parent: Node3D = null) -> MeshInstance3D:
+	var b := BoxMesh.new()
+	b.size = size
+	return _add(b, mat, pos, rot_deg, parent)
+
+
+func _cyl(r_top: float, r_bot: float, h: float, pos: Vector3, mat: Material, rot_deg: Vector3 = Vector3.ZERO, parent: Node3D = null) -> MeshInstance3D:
+	var c := CylinderMesh.new()
+	c.top_radius = r_top
+	c.bottom_radius = r_bot
+	c.height = h
+	c.radial_segments = 14
+	return _add(c, mat, pos, rot_deg, parent)
+
+
+func _glb(path: String, pos: Vector3, scale: float, yaw_deg: float, parent: Node3D = null) -> Node3D:
+	if not ResourceLoader.exists(path):
+		return null
+	var n: Node3D = (load(path) as PackedScene).instantiate()
+	n.position = pos
+	n.scale = Vector3.ONE * scale
+	n.rotation_degrees.y = yaw_deg
+	(parent if parent else _v).add_child(n)
+	return n
+
+
+func _fire(pos: Vector3, energy: float, rng: float) -> OmniLight3D:
+	var l := OmniLight3D.new()
+	l.light_color = Color(1.0, 0.52, 0.16)
+	l.light_energy = energy
+	l.omni_range = rng
+	l.position = pos
+	_v.add_child(l)
+	_flames.append(l)
+	return l
+
+
+func _flame_particles(pos: Vector3, scale: float) -> CPUParticles3D:
+	var p := CPUParticles3D.new()
+	p.amount = 34
+	p.lifetime = 0.9
+	var q := QuadMesh.new()
+	q.size = Vector2(0.34, 0.34) * scale
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	m.vertex_color_use_as_albedo = true
+	m.albedo_color = Color(1.0, 0.7, 0.25, 0.9)
+	m.albedo_texture = _soft_blob()
+	q.material = m
+	p.mesh = q
+	var g := Gradient.new()
+	g.set_color(0, Color(1.0, 0.92, 0.55, 1.0))
+	g.add_point(0.45, Color(1.0, 0.45, 0.1, 0.8))
+	g.set_color(g.get_point_count() - 1, Color(0.4, 0.05, 0.0, 0.0))
+	p.color_ramp = g
+	p.direction = Vector3.UP
+	p.spread = 14.0
+	p.initial_velocity_min = 0.7 * scale
+	p.initial_velocity_max = 1.5 * scale
+	p.gravity = Vector3(0.0, 0.6, 0.0)
+	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	p.emission_sphere_radius = 0.16 * scale
+	p.preprocess = 1.0
+	p.position = pos
+	_v.add_child(p)
+	return p
+
+
+# --- the alcove ----------------------------------------------------------------------------------
+
+## Timber-panelled side walls with a rock backing, so the vast cavern reads as a lived-in room.
+func _alcove() -> void:
+	var len_z: float = ALCOVE_Z1 - ALCOVE_Z0
+	var mid_z: float = (ALCOVE_Z0 + ALCOVE_Z1) * 0.5
+	for sx in [-1.0, 1.0]:
+		_box(Vector3(0.5, 6.4, len_z), Vector3((WALL_X + 0.25) * sx, 3.2, mid_z), _dark_wood)
+		# vertical planks and a dado rail break up the flat wall
+		var z: float = ALCOVE_Z0 + 0.4
+		while z < ALCOVE_Z1:
+			_box(Vector3(0.12, 6.0, 0.14), Vector3((WALL_X - 0.02) * sx, 3.2, z), _timber)
+			z += 1.2
+		_box(Vector3(0.2, 0.2, len_z), Vector3((WALL_X - 0.05) * sx, 1.35, mid_z), _timber)
+		_box(Vector3(0.24, 0.3, len_z), Vector3((WALL_X - 0.05) * sx, 6.15, mid_z), _timber)
+	# a low ceiling run of beams so the alcove has a roof line
+	var bz: float = ALCOVE_Z0 + 0.5
+	while bz < ALCOVE_Z1:
+		_box(Vector3(WALL_X * 2.0, 0.34, 0.34), Vector3(0.0, 6.35, bz), _timber)
+		bz += 2.6
+	# lanterns along both walls
+	for lz in [1.0, 6.0, 11.0]:
+		for sx in [-1.0, 1.0]:
+			var lamp := Ep2Palette.make_lantern_light()
+			lamp.position = Vector3((WALL_X - 0.6) * sx, 3.9, lz)
+			_v.add_child(lamp)
+			var lp: Node3D = _glb(LANTERN, Vector3((WALL_X - 0.45) * sx, 3.5, lz), 1.1, 0.0)
+			if lp:
+				RunnerView.self_light(lp, 0.7, Color(1.0, 0.72, 0.38))
+
+
+# --- the poster ----------------------------------------------------------------------------------
+
+func _poster() -> MeshInstance3D:
+	# A framed 1890s revue poster on the back wall, left of the Fort Knox door, lit by its own warm lamp.
+	var pos := Vector3(6.2, 3.9, 16.0)
+	_box(Vector3(2.7, 3.8, 0.12), pos, _dark_wood)
+	var q := QuadMesh.new()
+	q.size = Vector2(2.4, 3.5)
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color(1.0, 0.92, 0.82)
+	m.roughness = 0.8
+	m.emission_enabled = true
+	m.emission = Color(1.0, 0.7, 0.45)
+	m.emission_energy_multiplier = 0.55
+	if ResourceLoader.exists(POSTER_TEX):
+		m.albedo_texture = load(POSTER_TEX)
+		m.emission_texture = load(POSTER_TEX)
+	var mi := _add(q, m, pos + Vector3(0.0, 0.0, -0.08), Vector3(0.0, 180.0, 0.0))
+	var lamp := OmniLight3D.new()
+	lamp.light_color = Color(1.0, 0.78, 0.5)
+	lamp.light_energy = 1.4
+	lamp.omni_range = 5.5
+	lamp.position = pos + Vector3(0.0, 0.4, -1.8)
+	_v.add_child(lamp)
+	return mi
+
+
+# --- trophies: mounted heads on both walls + the taxidermist's full bear ----------------------------
+
+func _trophies() -> void:
+	# Wall mounts: head-and-shoulders on a shield plaque, snarling into the room.
+	for spec in [[1.0, 3.3, 3.6, 1.5], [1.0, 3.7, 10.2, 1.3], [-1.0, 5.3, 11.4, 1.2]]:
+		var sx: float = spec[0]
+		var plaque_pos := Vector3((WALL_X - 0.15) * sx, spec[1], spec[2])
+		_box(Vector3(0.16, 1.8 * spec[3], 1.5 * spec[3]), plaque_pos, _dark_wood)
+		var head: Node3D = _glb(BEAR_HEAD, plaque_pos + Vector3(-0.35 * sx, -0.12, 0.0), 0.95 * spec[3], 90.0 + 90.0 * sx)
+		if head:
+			RunnerView.self_light(head, 0.1, Color(1.0, 0.8, 0.6))
+		else:
+			_cyl(0.4, 0.5, 0.7, plaque_pos + Vector3(-0.4 * sx, 0.0, 0.0), _leather, Vector3(0, 0, 90))
+	# The full taxidermy bear, reared up on a plinth in the left front corner.
+	var plinth_pos := Vector3(5.4, 0.12, 8.2)
+	_box(Vector3(2.0, 0.24, 1.7), plinth_pos, _dark_wood)
+	var bear: Node3D = _glb(BEAR_FULL, plinth_pos + Vector3(0.0, 0.24 + 0.91 * 1.5, 0.0), 1.5, 205.0)
+	if bear:
+		RunnerView.self_light(bear, 0.12, Color(1.0, 0.8, 0.6))
+	else:
+		_box(Vector3(1.2, 2.6, 1.0), plinth_pos + Vector3(0.0, 1.5, 0.0), _leather)
+	# A second, smaller full bear on the right, beside the gun wall.
+	var p2 := Vector3(-6.0, 0.1, 12.0)
+	_box(Vector3(1.6, 0.2, 1.4), p2, _dark_wood)
+	var bear2: Node3D = _glb(BEAR_FULL, p2 + Vector3(0.0, 0.2 + 0.91 * 1.0, 0.0), 1.0, 150.0)
+	if bear2:
+		RunnerView.self_light(bear2, 0.12, Color(1.0, 0.8, 0.6))
+
+
+# --- the armory: 1800s rifles + revolvers on the right wall ----------------------------------------
+
+func _gun_wall() -> void:
+	var wx: float = -(WALL_X - 0.12)
+	_box(Vector3(0.14, 3.4, 6.2), Vector3(wx - 0.05, 3.2, 6.8), _dark_wood)
+	# Winchester 1886 rack: the committed GLB, lying along the wall, three rows.
+	var z0: float = 6.8
+	for row in 3:
+		var y: float = 4.3 - 0.62 * float(row)
+		var rifle: Node3D = _glb(RIFLE, Vector3(wx + 0.08, y, z0 + (0.15 if row % 2 else -0.15)), 1.9, 0.0)
+		if rifle:
+			RunnerView.self_light(rifle, 0.3, Color(1.0, 0.82, 0.6))
+		else:
+			_box(Vector3(0.08, 0.08, 2.2), Vector3(wx + 0.08, y, z0), _leather)
+		for pz in [-1.0, 1.0]:
+			_box(Vector3(0.12, 0.12, 0.12), Vector3(wx + 0.02, y - 0.1, z0 + pz * 1.0), _iron)
+	# Colt Single Action revolvers on pegs (barrel, cylinder, frame, walnut grip), two rows of three.
+	for r in 2:
+		for i in 3:
+			var rp := Vector3(wx + 0.1, 2.5 - 0.5 * float(r), 4.6 + float(i) * 1.5 + 0.2 * float(r))
+			_revolver(rp)
+	# Shell belts + powder horns + a lasso, and a "WANTED" notice.
+	for i in 6:
+		_cyl(0.03, 0.03, 0.12, Vector3(wx + 0.1, 1.55, 4.6 + 0.09 * float(i)), _brass, Vector3(0, 0, 0))
+	_box(Vector3(0.04, 0.9, 0.7), Vector3(wx + 0.06, 2.0, 9.4), _plain(Color(0.55, 0.46, 0.32), 0.9, 0.0))
+
+
+func _revolver(pos: Vector3) -> void:
+	var root := Node3D.new()
+	root.position = pos
+	_v.add_child(root)
+	_cyl(0.025, 0.025, 0.42, Vector3(0.0, 0.0, 0.2), _iron, Vector3(90, 0, 0), root)            # barrel
+	_cyl(0.055, 0.055, 0.1, Vector3(0.0, 0.0, -0.04), _iron, Vector3(90, 0, 0), root)            # cylinder
+	_box(Vector3(0.05, 0.12, 0.16), Vector3(0.0, -0.05, -0.16), _iron, Vector3(0, 0, 0), root)    # frame
+	_box(Vector3(0.05, 0.2, 0.09), Vector3(0.0, -0.13, -0.24), _plain(Color(0.45, 0.22, 0.10), 0.5, 0.0), Vector3(18, 0, 0), root)  # grip
+
+
+## The Colt Gatling: tripod, brass frame, six-barrel cluster, crank, hopper and a draped ammo belt.
+## `yaw_deg` turns the muzzle; the node spins its barrel cluster (see facility `_animate_set`).
+func _gatling(pos: Vector3, yaw_deg: float) -> Node3D:
+	var g := Node3D.new()
+	g.name = "ColtGatling"
+	g.position = pos
+	g.rotation_degrees.y = rad_to_deg(yaw_deg)
+	g.scale = Vector3.ONE * 1.35
+	_v.add_child(g)
+	# tripod
+	for a in [0.0, 120.0, 240.0]:
+		var leg_dir := Vector3(sin(deg_to_rad(a)), 0.0, cos(deg_to_rad(a)))
+		_cyl(0.04, 0.05, 1.3, Vector3(leg_dir.x * 0.42, 0.55, leg_dir.z * 0.42), _dark_wood,
+			Vector3(rad_to_deg(leg_dir.z) * 0.0 + leg_dir.z * 18.0, 0, -leg_dir.x * 18.0), g)
+	_cyl(0.14, 0.18, 0.18, Vector3(0.0, 1.12, 0.0), _brass, Vector3.ZERO, g)       # pintle
+	# receiver + barrel cluster pointing -Z (local)
+	_box(Vector3(0.3, 0.26, 0.5), Vector3(0.0, 1.32, 0.0), _brass, Vector3.ZERO, g)
+	var spinner := Node3D.new()
+	spinner.name = "Barrels"
+	spinner.position = Vector3(0.0, 1.32, -0.28)
+	g.add_child(spinner)
+	for i in 6:
+		var a2: float = float(i) / 6.0 * TAU
+		_cyl(0.026, 0.026, 1.0, Vector3(cos(a2) * 0.1, sin(a2) * 0.1, -0.5), _iron, Vector3(90, 0, 0), spinner)
+	_cyl(0.16, 0.16, 0.06, Vector3(0.0, 0.0, -0.12), _brass, Vector3(90, 0, 0), spinner)     # barrel clamps
+	_cyl(0.16, 0.16, 0.06, Vector3(0.0, 0.0, -0.62), _brass, Vector3(90, 0, 0), spinner)
+	_cyl(0.18, 0.18, 0.05, Vector3(0.0, 0.0, -0.98), _brass, Vector3(90, 0, 0), spinner)
+	# crank on the right side
+	_cyl(0.015, 0.015, 0.3, Vector3(0.27, 1.32, 0.12), _iron, Vector3(0, 0, 90), g)
+	_cyl(0.015, 0.015, 0.22, Vector3(0.42, 1.2, 0.12), _iron, Vector3.ZERO, g)
+	_cyl(0.035, 0.035, 0.1, Vector3(0.42, 1.08, 0.12), _leather, Vector3.ZERO, g)
+	# the Accles drum feed on top, and a belt of brass cartridges sagging from it
+	_cyl(0.18, 0.18, 0.2, Vector3(0.0, 1.58, 0.06), _brass, Vector3.ZERO, g)
+	for i in 14:
+		var t: float = float(i) / 13.0
+		_cyl(0.02, 0.02, 0.1, Vector3(-0.22 - 0.1 * sin(t * PI), 1.5 - 0.9 * t, 0.06 + 0.04 * t), _gold, Vector3(0, 0, 8), g)
+	return g
+
+
+func _whiskey_table(pos: Vector3) -> void:
+	# A plank table with a checked cloth, a cut-glass decanter, two tumblers, an ashtray, the pickaxe leaning.
+	_box(Vector3(2.2, 0.12, 1.1), pos + Vector3(0.0, 0.95, 0.0), _timber)
+	for lx in [-0.95, 0.95]:
+		for lz in [-0.4, 0.4]:
+			_box(Vector3(0.12, 0.95, 0.12), pos + Vector3(lx, 0.47, lz), _dark_wood)
+	_box(Vector3(1.7, 0.02, 0.9), pos + Vector3(0.1, 1.02, 0.0), _plain(Color(0.55, 0.12, 0.10), 0.95, 0.0))
+	var amber := StandardMaterial3D.new()
+	amber.albedo_color = Color(0.80, 0.40, 0.08, 0.78)
+	amber.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	amber.roughness = 0.08
+	amber.emission_enabled = true
+	amber.emission = Color(0.9, 0.4, 0.06)
+	amber.emission_energy_multiplier = 0.5
+	_cyl(0.16, 0.2, 0.34, pos + Vector3(-0.5, 1.2, -0.05), amber)                         # decanter body
+	_cyl(0.05, 0.1, 0.22, pos + Vector3(-0.5, 1.48, -0.05), amber)                        # neck
+	_cyl(0.07, 0.07, 0.07, pos + Vector3(-0.5, 1.63, -0.05), amber)                       # stopper
+	for gx in [0.1, 0.42]:
+		_cyl(0.075, 0.06, 0.15, pos + Vector3(gx, 1.1, 0.12), amber)                      # tumblers
+	_cyl(0.12, 0.12, 0.04, pos + Vector3(0.72, 1.04, -0.12), _iron)                       # ashtray
+	_fire(pos + Vector3(0.0, 1.5, 0.0), 0.9, 3.5)
+	# the pickaxe leaning on the table
+	_cyl(0.025, 0.025, 1.4, pos + Vector3(1.25, 0.72, 0.2), _timber, Vector3(0, 0, 14))
+	_box(Vector3(0.55, 0.07, 0.07), pos + Vector3(1.0, 1.4, 0.2), _iron, Vector3(0, 0, 14))
+
+
+func _rug(pos: Vector3) -> void:
+	var q := QuadMesh.new()
+	q.size = Vector2(4.0, 2.7)
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color(0.5, 0.42, 0.36)
+	m.roughness = 1.0
+	if ResourceLoader.exists(HIDE_TEX):
+		m.albedo_texture = load(HIDE_TEX)
+	_add(q, m, pos, Vector3(-90, 0, 0))
+
+
+## A bleached longhorn skull with horns over the Fort Knox door.
+func _bull_skull(pos: Vector3) -> void:
+	var bone := _plain(Color(0.92, 0.86, 0.74), 0.8, 0.0)
+	bone.emission_enabled = true
+	bone.emission = Color(0.5, 0.4, 0.28)
+	bone.emission_energy_multiplier = 0.45
+	var hollow := _plain(Color(0.05, 0.03, 0.02), 1.0, 0.0)
+	var s := Node3D.new()
+	s.position = pos
+	s.scale = Vector3.ONE * 1.5
+	_v.add_child(s)
+	var cranium := SphereMesh.new()
+	cranium.radius = 0.3
+	cranium.height = 0.6
+	_add(cranium, bone, Vector3.ZERO, Vector3.ZERO, s)
+	var snout := CapsuleMesh.new()
+	snout.radius = 0.15
+	snout.height = 0.7
+	_add(snout, bone, Vector3(0.0, -0.4, 0.04), Vector3.ZERO, s)
+	for side in [-1.0, 1.0]:
+		var eye := SphereMesh.new()
+		eye.radius = 0.085
+		eye.height = 0.17
+		_add(eye, hollow, Vector3(0.13 * side, -0.02, -0.25), Vector3.ZERO, s)
+		var prev := Vector3(0.22 * side, 0.1, 0.0)
+		for i in 7:
+			var t: float = float(i + 1) / 7.0
+			var nxt := Vector3((0.22 + 1.5 * t) * side, 0.1 + 0.5 * sin(t * 1.5), 0.0)
+			var mid: Vector3 = (prev + nxt) * 0.5
+			var dir: Vector3 = nxt - prev
+			var c := _cyl(0.05 * (1.0 - 0.75 * t), 0.075 * (1.0 - 0.6 * t), dir.length() + 0.03, mid, bone, Vector3.ZERO, s)
+			c.rotation.z = atan2(dir.y, dir.x) - PI * 0.5
+			prev = nxt
+
+
+## Braziers either side of the Bull's seat: heat and flame in the frame, as the brief asks.
+func _braziers() -> void:
+	for p in [Vector3(3.6, 0.0, 8.6), Vector3(-2.2, 0.0, 8.4), Vector3(-5.6, 0.0, 1.8)]:
+		_cyl(0.42, 0.28, 0.5, p + Vector3(0.0, 0.85, 0.0), _dark_iron())
+		for a in [0.0, 120.0, 240.0]:
+			_cyl(0.03, 0.03, 0.9, p + Vector3(sin(deg_to_rad(a)) * 0.28, 0.42, cos(deg_to_rad(a)) * 0.28), _dark_iron())
+		_flame_particles(p + Vector3(0.0, 1.15, 0.0), 1.2)
+		_fire(p + Vector3(0.0, 1.5, 0.0), 2.4, 7.0)
+
+
+func _gold_and_cart() -> void:
+	# Gold bars stacked in the right foreground and on the left, plus an ingot cart.
+	for stack in [Vector3(-2.7, 0.0, 2.4), Vector3(5.6, 0.0, 12.2)]:
+		for row in 4:
+			var cols: int = 5 - row
+			for c in cols:
+				var x: float = stack.x - float(cols - 1) * 0.28 + float(c) * 0.56
+				_box(Vector3(0.5, 0.2, 0.28), Vector3(x, 0.1 + 0.21 * float(row), stack.z), _gold)
+	# An iron-banded ore cart heaped with gold (the committed minecart/gold-pile GLBs read as pale slabs here).
+	var cart := Vector3(-4.9, 0.0, 3.8)
+	_box(Vector3(1.0, 0.7, 1.7), cart + Vector3(0.0, 0.7, 0.0), _dark_wood)
+	_box(Vector3(1.08, 0.08, 1.78), cart + Vector3(0.0, 1.07, 0.0), _dark_iron())
+	_box(Vector3(0.85, 0.2, 1.5), cart + Vector3(0.0, 1.12, 0.0), _gold)
+	for wz in [-0.6, 0.6]:
+		for wx in [-0.55, 0.55]:
+			_cyl(0.28, 0.28, 0.1, cart + Vector3(wx, 0.28, wz), _dark_iron(), Vector3(0, 0, 90))
+	_glb(INGOT_RACK, Vector3(-3.0, 0.0, 12.4), 1.4, 0.0)
+
+
+func _dark_iron() -> StandardMaterial3D:
+	return _plain(Color(0.16, 0.15, 0.15), 0.5, 0.3)
+
+
+func _hanging_chains() -> void:
+	# Iron chains with hooks from the ceiling beams, heavier on the Bull's side.
+	for cx in [-5.2, -2.6, 4.6, 6.2]:
+		for cz in [2.0, 8.0]:
+			var length: float = 2.4 + fmod(absf(cx * cz), 1.6)
+			_cyl(0.05, 0.05, length, Vector3(cx, 6.2 - length * 0.5, cz), _dark_iron())
+			_cyl(0.09, 0.09, 0.08, Vector3(cx, 6.2 - length, cz), _iron, Vector3(90, 0, 0))
+
+
+var _blob: GradientTexture2D = null
+
+func _soft_blob() -> GradientTexture2D:
+	if _blob == null:
+		var g := Gradient.new()
+		g.set_color(0, Color(1, 1, 1, 1))
+		g.set_color(1, Color(1, 1, 1, 0))
+		_blob = GradientTexture2D.new()
+		_blob.gradient = g
+		_blob.fill = GradientTexture2D.FILL_RADIAL
+		_blob.fill_from = Vector2(0.5, 0.5)
+		_blob.fill_to = Vector2(1.0, 0.5)
+		_blob.width = 64
+		_blob.height = 64
+	return _blob
+
+
+## A riveted iron smelting cauldron brimming with molten gold, on a stand: replaces the flat cream crucible
+## GLB (it read as a table). `molten` is the flowing-gold ShaderMaterial the facility already uses.
+static func add_cauldron(visuals: Node3D, pos: Vector3, molten: Material) -> void:
+	var d := HideoutDressing.new()
+	d._v = visuals
+	d._brass = Ep2Palette.make("brass")
+	var iron: StandardMaterial3D = d._dark_iron()
+	d._cyl(0.95, 0.78, 1.5, pos + Vector3(0.0, 1.05, 0.0), iron)
+	d._cyl(1.02, 1.02, 0.1, pos + Vector3(0.0, 1.82, 0.0), iron)
+	d._cyl(0.97, 0.97, 0.07, pos + Vector3(0.0, 1.45, 0.0), d._brass)
+	d._cyl(0.84, 0.84, 0.07, pos + Vector3(0.0, 0.7, 0.0), d._brass)
+	d._cyl(0.88, 0.88, 0.02, pos + Vector3(0.0, 1.83, 0.0), molten)
+	for a in [0.0, 120.0, 240.0]:
+		d._box(Vector3(0.14, 0.4, 0.14), pos + Vector3(sin(deg_to_rad(a)) * 0.6, 0.2, cos(deg_to_rad(a)) * 0.6), iron)

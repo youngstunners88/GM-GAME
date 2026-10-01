@@ -55,4 +55,29 @@ func _ready() -> void:
 			f._camera.make_current()
 			eye.queue_free()
 			print("SHOT helmet_close")
+	# Close-ups for the hideout review (skill ep2-hideout-polish): each is [name, camera pos, look-at].
+	f._beat = f.Beat.DRINK
+	f._has_winchester = true
+	f._has_helmet = true
+	for _i in 200:
+		f.step(1.0 / 60.0)
+		f._hold = 99.0
+		await get_tree().process_frame
+	var eye2 := Camera3D.new()
+	add_child(eye2)
+	eye2.fov = 55.0
+	eye2.make_current()
+	var bp: Vector3 = f.BULL_POSITION
+	for cu in [["bull_face", bp + Vector3(0.4, 2.5, -2.4), bp + Vector3(0.0, 2.3, 0.0)],
+			["bull_hands", bp + Vector3(1.0, 1.6, -3.0), bp + Vector3(0.3, 1.4, 0.0)],
+			["gatling", Vector3(-1.5, 1.7, 5.0), Vector3(-4.3, 1.3, 8.2)],
+			["gunwall", Vector3(-1.0, 2.6, 5.5), Vector3(-7.0, 2.8, 6.8)],
+			["trophies", Vector3(1.0, 2.6, 4.0), Vector3(6.4, 3.0, 7.0)],
+			["door", Vector3(0.0, 3.0, 7.0), Vector3(0.0, 4.6, 16.0)]]:
+		eye2.global_position = cu[1]
+		eye2.look_at(cu[2], Vector3.UP)
+		for _j in 4:
+			await get_tree().process_frame
+		get_viewport().get_texture().get_image().save_png("%s/cu_%s.png" % [out, cu[0]])
+		print("SHOT cu_", cu[0])
 	get_tree().quit()

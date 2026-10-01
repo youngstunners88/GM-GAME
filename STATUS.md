@@ -5,6 +5,14 @@
 
 ---
 
+**🐂🔥 EPISODE 2 — INFERNO BULL'S HANGOUT REDESIGNED TO YOUR TARGET IMAGE (2026-10-01).** The empty cave is now his lived-in hideout, built from your picture:
+- **The room:** timber-panelled alcove, a 1800s gun wall (Winchester 1886s and Colt revolvers), a **Colt Gatling** in the background, mounted bear heads and full taxidermy bears, a pin-up revue poster beside the FORT KNOX door (longhorn skull above it), whiskey table with decanter and glasses, cowhide rug, gold bars and an ingot cart, hanging chains and lanterns.
+- **Heat and flame:** three flaming braziers, iron cauldrons pouring molten gold, a flowing molten furnace mouth, embers rising off the Bull, flickering firelight, a warmer and brighter room overall.
+- **Movement:** items are no longer teleported. The Winchester and the miner's helmet travel from the crate to the Bull's outstretched hand and then to Lil Blunt; the Bull leans in, breathes, sips whiskey and puffs his cigar; Lil Blunt reaches up, hops for joy when the helmet lands, bobs when he walks, and turns three-quarters to the camera while he talks. New low three-quarter hand-over camera.
+- **Also fixed:** steam and smoke were hard square blocks; they are soft round puffs now.
+- **Honest limits:** the Bull is a statue model without a skeleton, so his arms and head cannot move yet (rigging on Meshy is 5 credits, your call). The poster, rug and Gatling are code-drawn stylised art, not photoreal models.
+- New skills `ep2-hideout-set-dressing` and `ep2-character-performance`; new test section covers the dressing and the hand-overs. Target image saved in `design/ep2/`.
+
 **✅ 🔫🪝 EPISODE 2 — GUN SOUND, SHOOTABLE BEARS, FAIR ZIPLINE (2026-10-01, shipped to master).** Your four notes, done, all 11 test suites pass, now deployed to CI for export:
 - **Revolver sound:** the old shot sound was nearly silent (about 40 dB quieter than the pickaxe, which is why you never heard it). It's replaced by three new revolver blasts, loud and punchy, shuffled so a volley never repeats one sound.
 - **Shoot the blocking bear:** each shovel-row bear can now be shot. One bullet kills the bear on your rail and you keep going with no damage, even if you never catch the zipline. The bears on the other two rails still smack you. The sign now reads "SHOOT YOUR BEAR or ZIPLINE!".

@@ -116,6 +116,22 @@ var _has_helmet: bool = false
 var _helmet_node: Node3D = null
 var _player_skel: Skeleton3D = null
 var _player_pose: RunnerArmRest = null
+## Set dressing handles + the procedural performance (see _animate). The Bull model is a statue (no skeleton),
+## so his acting is whole-body: breathing, weight shift, a lean into the hand-off, a raised glass, cigar puffs.
+var _dressing: Dictionary = {}
+var _bull_pivot: Node3D = null
+var _glass_node: Node3D = null
+var _cigar_tip: MeshInstance3D = null
+var _cigar_smoke: CPUParticles3D = null
+var _anim_t: float = 0.0
+var _rifle_t: float = 0.0             # seconds since the Winchester hand-off began
+var _helmet_t: float = 0.0            # seconds since the helmet hand-over began
+var _helmet_on_head: bool = false
+var _rifle_in_hands: bool = false
+var _hop_y: float = 0.0               # Lil Blunt's little joy-hop after the helmet
+var _hop_v: float = 0.0
+var _walk_phase: float = 0.0
+var _lean: float = 0.0
 
 ## Camera framing per beat. A browser capture of the first build showed the
 ## whole encounter playing at postage-stamp scale from the wide establishing
@@ -131,17 +147,21 @@ var _player_pose: RunnerArmRest = null
 ## by arithmetic — see deepseek-scenes/01_smelting_facility/_VERIFICATION.md.
 ## It survived a browser capture because "the wide shot looks empty" reads as
 ## graybox rather than as a camera outside the room.
-const CAM_WIDE := [Vector3(0.0, 4.2, -11.0), -14.0]
-const CAM_CLOSE := [Vector3(1.1, 2.3, 1.4), -8.0]
-const CAM_TEACH := [Vector3(-1.0, 3.2, -3.0), -12.0]
+const CAM_WIDE := [Vector3(0.0, 4.2, -11.0), -14.0, 180.0]
+const CAM_CLOSE := [Vector3(1.1, 2.3, 1.4), -8.0, 180.0]
+## The founder's target framing (design/ep2/inferno_bull_hideout_target.jpg): low, from the left front, so Bull
+## and Lil Blunt play the hand-off in three-quarter view with the forge, the Fort Knox door and the poster behind.
+const CAM_HAND := [Vector3(-0.3, 1.8, -1.2), -4.0, 184.0]
+const CAM_TEACH := [Vector3(-1.0, 3.2, -3.0), -12.0, 180.0]
 ## Coming to: high and to the side, so he is IN frame on the floor with the Bull standing over him.
-const CAM_WAKE := [Vector3(2.1, 2.7, 0.4), -26.0]
+const CAM_WAKE := [Vector3(2.1, 2.7, 0.4), -26.0, 180.0]
 const CAM_LERP := 1.8          # units/sec — a push-in, not a snap
 
 var _visuals: Node3D = null
 var _camera: Camera3D = null
 var _cam_target_pos: Vector3 = CAM_WIDE[0]
 var _cam_target_pitch: float = float(CAM_WIDE[1])
+var _cam_target_yaw: float = 180.0
 var _player_node: Node3D = null
 var _mold_nodes: Array = []
 var _rifle_node: Node3D = null
@@ -180,6 +200,13 @@ func setup(_gold_principal: int = 0, _bears: Array = [], _diamonds_paid: int = 0
 	_beat = Beat.CINEMATIC if intro_film else Beat.ARRIVAL
 	_wake_i = 0
 	_has_helmet = false
+	_helmet_on_head = false
+	_rifle_in_hands = false
+	_rifle_t = 0.0
+	_helmet_t = 0.0
+	_hop_y = 0.0
+	_hop_v = 0.0
+	_lean = 0.0
 	_resolved = false
 	_running = true
 	_player_pos = ENTRY_POSITION
@@ -283,6 +310,7 @@ func step(delta: float) -> void:
 		_:
 			pass
 	_sync_visuals()
+	_animate(delta)
 
 
 # --- Player verbs ----------------------------------------------------------------
@@ -418,20 +446,24 @@ func _update_camera(delta: float) -> void:
 	match _beat:
 		Beat.WAKE:
 			want = CAM_WAKE
-		Beat.DRINK, Beat.SIZING, Beat.HANDOFF, Beat.HELMET, Beat.TERMS, Beat.PROMISE:
+		Beat.DRINK, Beat.SIZING, Beat.TERMS, Beat.PROMISE:
 			want = CAM_CLOSE
+		Beat.HANDOFF, Beat.HELMET:
+			want = CAM_HAND
 		Beat.VERB_TEACH:
 			want = CAM_TEACH
 		_:
 			want = CAM_WIDE
 	_cam_target_pos = want[0]
 	_cam_target_pitch = float(want[1])
+	_cam_target_yaw = float(want[2])
 	var t: float = clampf(CAM_LERP * delta, 0.0, 1.0)
 	_camera.position = _camera.position.lerp(_cam_target_pos, t)
 	var pitch: float = lerpf(_camera.rotation_degrees.x, _cam_target_pitch, t)
 	# Yaw 180 keeps the camera looking down +Z, the orientation both Episode 2
 	# cameras had to be corrected to after they were found facing backwards.
-	_camera.rotation_degrees = Vector3(pitch, 180.0, 0.0)
+	var yaw: float = lerpf(_camera.rotation_degrees.y, _cam_target_yaw, t)
+	_camera.rotation_degrees = Vector3(pitch, yaw, 0.0)
 
 
 func _distance_to_bull() -> float:
@@ -534,9 +566,6 @@ func _build_visuals() -> void:
 		for sx2 in [-1.0, 1.0]:
 			_box(Vector3(0.55, 10.2, 0.55), Vector3(9.4 * sx2, 5.0, fz), timber)
 		_box(Vector3(19.4, 0.6, 0.6), Vector3(0.0, 9.9, fz), timber)
-		for cx in [-4.0, 3.2]:
-			var chain_len: float = 2.5 + fmod(absf(fz) * 0.9, 2.5)
-			_box(Vector3(0.06, chain_len, 0.06), Vector3(cx, 9.6 - chain_len * 0.5, fz), iron)
 		fz += 5.0
 
 	# --- THE MOLTEN CHANNEL: gold running across the room behind the Bull; the room's key light.
@@ -572,13 +601,7 @@ func _build_visuals() -> void:
 
 	# --- crucibles pouring into the channel, steam rising.
 	for spec in [Vector3(-6.5, 0.0, CHANNEL_Z + 2.4), Vector3(6.2, 0.0, CHANNEL_Z + 2.2), Vector3(-1.6, 0.0, CHANNEL_Z + 3.4)]:
-		var crucible: Node3D = _prop(CRUCIBLE_MODEL, spec, 1.25)
-		if crucible == null:
-			var cm := CylinderMesh.new()
-			cm.top_radius = 0.9
-			cm.bottom_radius = 0.9
-			cm.height = 1.6
-			_mesh(cm, Ep2Palette.make("gold"), spec + Vector3(0, 0.8, 0))
+		HideoutDressing.add_cauldron(_visuals, spec, channel)
 		var pour := CylinderMesh.new()
 		pour.top_radius = 0.07
 		pour.bottom_radius = 0.12
@@ -607,8 +630,8 @@ func _build_visuals() -> void:
 	_box(Vector3(7.0, 6.5, 2.6), Vector3(0.0, 3.25, 17.4), rock_dark)
 	var mouth := StandardMaterial3D.new()
 	mouth.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mouth.albedo_color = Color(1.0, 0.72, 0.34)
-	_box(Vector3(3.2, 2.4, 0.2), Vector3(0.0, 1.9, 16.05), mouth)
+	mouth.albedo_color = Color(1.0, 0.45, 0.12)
+	_box(Vector3(3.2, 2.4, 0.2), Vector3(0.0, 1.9, 16.05), channel)
 	var fl := OmniLight3D.new()
 	fl.light_color = Color(1.0, 0.6, 0.25)
 	fl.light_energy = 4.0
@@ -649,13 +672,29 @@ func _build_visuals() -> void:
 	bull_key.position = BULL_POSITION + Vector3(-1.8, 2.8, -2.2)
 	_visuals.add_child(bull_key)
 	var bs: float = BULL_HEIGHT / BULL_NATIVE_H
-	var bull: Node3D = _prop(BULL_MODEL, BULL_POSITION + Vector3(0.0, BULL_NATIVE_FEET * bs, 0.0), bs, PI)
+	# The pivot sits at his feet so a lean rotates him about his boots, not about his belly.
+	_bull_pivot = Node3D.new()
+	_bull_pivot.name = "BullPivot"
+	_bull_pivot.position = BULL_POSITION
+	_visuals.add_child(_bull_pivot)
+	var bull: Node3D = null
+	if ResourceLoader.exists(BULL_MODEL):
+		bull = (load(BULL_MODEL) as PackedScene).instantiate() as Node3D
 	if bull:
+		bull.position = Vector3(0.0, BULL_NATIVE_FEET * bs, 0.0)
+		bull.scale = Vector3.ONE * bs
+		bull.rotate_y(PI)
+		_bull_pivot.add_child(bull)
 		RunnerView.self_light(bull, 0.12, Color(1.0, 0.82, 0.62))
 	else:
 		var bm := BoxMesh.new()
 		bm.size = Vector3(1.4, 2.4, 1.0)
-		_mesh(bm, Ep2Palette.make("bandit"), BULL_POSITION + Vector3(0, 1.2, 0))
+		var fb := MeshInstance3D.new()
+		fb.mesh = bm
+		fb.material_override = Ep2Palette.make("bandit")
+		fb.position = Vector3(0, 1.2, 0)
+		_bull_pivot.add_child(fb)
+	_build_bull_props()
 	# His whiskey table: a crate, the glass, the bottle.
 	_box(Vector3(0.9, 0.9, 0.9), BULL_POSITION + Vector3(-1.4, 0.45, -0.5), timber)
 	_prop(WHISKEY_MODEL, BULL_POSITION + Vector3(-1.4, 0.92, -0.5), 1.4)
@@ -692,6 +731,9 @@ func _build_visuals() -> void:
 	_helmet_node = _build_helmet()
 	_helmet_node.position = BULL_POSITION + Vector3(-1.65, 1.05, -0.75)
 	_visuals.add_child(_helmet_node)
+
+	# --- the hangout: alcove, trophies, armory, Gatling, poster, braziers (see HideoutDressing).
+	_dressing = HideoutDressing.build(_visuals)
 
 	# --- the exit toward Fort Knox: a timber doorway in the left wall's end, lit.
 	for dsx in [-2.4, 2.4]:
@@ -816,7 +858,7 @@ func _build_helmet() -> Node3D:
 
 ## Godot 4.3 exposes the MODIFIED pose only inside skeleton_updated: sit the helmet on the real head bone.
 func _on_player_skeleton_updated() -> void:
-	if not _has_helmet or _helmet_node == null or not is_instance_valid(_helmet_node) or _player_skel == null:
+	if not _has_helmet or not _helmet_on_head or _helmet_node == null or not is_instance_valid(_helmet_node) or _player_skel == null:
 		return
 	var hb: int = _player_skel.find_bone("Head")
 	if hb < 0:
@@ -874,6 +916,7 @@ func _particles(amount: int, lifetime: float, color: Color, size: float) -> CPUP
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	m.albedo_color = color
 	m.vertex_color_use_as_albedo = true
+	m.albedo_texture = _soft_blob()
 	q.material = m
 	p.mesh = q
 	var fade := Gradient.new()
@@ -890,6 +933,10 @@ func _apply_art() -> void:
 	var we := get_node_or_null("WorldEnvironment") as WorldEnvironment
 	if we:
 		we.environment = Ep2Palette.make_forge_environment()
+		# The hangout is the warmest, brightest room in the episode (founder target image): lift the fill and bloom.
+		we.environment.ambient_light_energy = 0.95
+		we.environment.glow_intensity = 0.85
+		we.environment.glow_hdr_threshold = 0.95
 	var sun := get_node_or_null("Sun") as DirectionalLight3D
 	if sun:
 		var key := Ep2Palette.make_key_light()
@@ -928,10 +975,235 @@ func _sync_visuals() -> void:
 		var m: StandardMaterial3D = mi.material_override
 		if m:
 			m.albedo_color = Color(0.20, 0.19, 0.19) if broken else Ep2Palette.table()["iron"].albedo
-	# The rifle physically changes hands.
-	if _rifle_node and is_instance_valid(_rifle_node):
-		if _has_winchester:
-			_rifle_node.position = Vector3(_player_pos.x + 0.55, 0.95, _player_pos.z + 0.2)
-			_rifle_node.rotation = Vector3(0.0, 0.0, deg_to_rad(-18.0))
+
+
+# --- The Bull's props: whiskey glass in hand, lit cigar, embers (founder target image) -----------------------
+# Positions are in the Bull pivot's local space (feet origin, he faces -Z). Tuned against real captures.
+const BULL_GLASS_REST := Vector3(0.74, 0.95, -0.45)
+const BULL_GLASS_LIP := Vector3(0.22, 2.38, -0.62)
+const BULL_MOUTH := Vector3(0.0, 2.43, -0.58)
+const BULL_HAND_OUT := Vector3(0.45, 1.65, -1.25)
+const CRATE_OFFSET := Vector3(-1.4, 1.0, -0.2)
+
+
+func _build_bull_props() -> void:
+	var amber := StandardMaterial3D.new()
+	amber.albedo_color = Color(0.82, 0.42, 0.08, 0.8)
+	amber.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	amber.roughness = 0.08
+	amber.emission_enabled = true
+	amber.emission = Color(0.95, 0.45, 0.06)
+	amber.emission_energy_multiplier = 0.7
+	var tumbler := CylinderMesh.new()
+	tumbler.top_radius = 0.11
+	tumbler.bottom_radius = 0.09
+	tumbler.height = 0.22
+	_glass_node = Node3D.new()
+	_glass_node.name = "BullGlass"
+	_glass_node.position = BULL_GLASS_REST
+	_bull_pivot.add_child(_glass_node)
+	var gm := MeshInstance3D.new()
+	gm.mesh = tumbler
+	gm.material_override = amber
+	_glass_node.add_child(gm)
+	# The Bull's own model already holds the cigar in his teeth; we add only its ember glow and the smoke.
+	var tip := SphereMesh.new()
+	tip.radius = 0.03
+	tip.height = 0.06
+	var tm := StandardMaterial3D.new()
+	tm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	tm.albedo_color = Color(1.0, 0.5, 0.15)
+	_cigar_tip = MeshInstance3D.new()
+	_cigar_tip.mesh = tip
+	_cigar_tip.material_override = tm
+	_cigar_tip.position = Vector3(0.05, 2.4, -0.75)
+	_bull_pivot.add_child(_cigar_tip)
+	_cigar_smoke = _particles(22, 3.0, Color(0.82, 0.8, 0.78, 0.3), 0.14)
+	_cigar_smoke.position = _cigar_tip.position
+	_cigar_smoke.direction = Vector3.UP
+	_cigar_smoke.spread = 22.0
+	_cigar_smoke.initial_velocity_min = 0.18
+	_cigar_smoke.initial_velocity_max = 0.45
+	_cigar_smoke.gravity = Vector3(0.05, 0.12, 0.0)
+	_cigar_smoke.scale_amount_min = 0.7
+	_cigar_smoke.scale_amount_max = 2.6
+	_cigar_smoke.preprocess = 3.0
+	_bull_pivot.add_child(_cigar_smoke)
+	# Heat: embers lifting off his shoulders (he is associated with flame).
+	var embers := _particles(40, 2.6, Color(1.0, 0.55, 0.15), 0.04)
+	embers.position = Vector3(0.0, 1.7, -0.1)
+	embers.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+	embers.emission_box_extents = Vector3(0.7, 0.9, 0.35)
+	embers.direction = Vector3.UP
+	embers.spread = 25.0
+	embers.initial_velocity_min = 0.2
+	embers.initial_velocity_max = 0.7
+	embers.gravity = Vector3(0.0, 0.25, 0.0)
+	embers.preprocess = 2.6
+	_bull_pivot.add_child(embers)
+
+
+func _hideout_plain(c: Color) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = c
+	m.roughness = 0.7
+	return m
+
+
+# --- Performance ----------------------------------------------------------------------------------------
+# Neither actor has a clip for this scene (the Bull model is a statue; Lil Blunt's rig only carries the
+# runner's poses), so the acting is procedural: small, readable, deterministic motions driven by the beat.
+
+func _animate(delta: float) -> void:
+	if _visuals == null or not is_instance_valid(_visuals) or not is_inside_tree():
+		return
+	_anim_t += delta
+	_animate_bull(delta)
+	_animate_hero(delta)
+	_animate_gear(delta)
+	_animate_set(delta)
+
+
+func _smooth(t: float) -> float:
+	var c: float = clampf(t, 0.0, 1.0)
+	return c * c * (3.0 - 2.0 * c)
+
+
+## Breathing, weight shift, a lean toward Lil Blunt while he hands something over, the raised glass and a
+## cigar puff every few seconds.
+func _animate_bull(delta: float) -> void:
+	if _bull_pivot == null or not is_instance_valid(_bull_pivot):
+		return
+	var handing: bool = (_beat == Beat.HANDOFF and _rifle_t > 0.4 and _rifle_t < 2.8) \
+		or (_beat == Beat.HELMET and _helmet_t > 0.4 and _helmet_t < 3.0)
+	_lean = lerpf(_lean, 0.15 if handing else 0.0, clampf(4.0 * delta, 0.0, 1.0))
+	var breath: float = sin(_anim_t * 1.7)
+	_bull_pivot.rotation = Vector3(_lean + 0.008 * breath, 0.0, 0.014 * sin(_anim_t * 0.55))
+	_bull_pivot.scale = Vector3(1.0, 1.0 + 0.006 * breath, 1.0)
+	# The glass: up to his lip, a pause (the puff), back to his hip. One cycle every 9 s.
+	if _glass_node:
+		var ph: float = fmod(_anim_t, 9.0)
+		var up: float = _smooth(ph / 1.0) - _smooth((ph - 2.4) / 1.1)
+		if handing:
+			up = 0.0
+		_glass_node.position = BULL_GLASS_REST.lerp(BULL_GLASS_LIP, up)
+		_glass_node.rotation_degrees.z = -22.0 * up
+	# The cigar tip glows brighter on the puff, which follows the sip.
+	if _cigar_tip:
+		var pp: float = fmod(_anim_t + 4.5, 9.0)
+		var puff: float = _smooth(pp / 0.6) - _smooth((pp - 1.4) / 0.9)
+		(_cigar_tip.material_override as StandardMaterial3D).albedo_color = Color(1.0, 0.42, 0.1).lerp(Color(1.0, 0.85, 0.45), puff)
+		_cigar_tip.scale = Vector3.ONE * (1.0 + 0.5 * puff)
+
+
+## Lil Blunt: breathing and weight shift when still, a bob-and-sway while walking, three-quarter turn toward the
+## camera while the Bull talks, a reach forward when something is handed over, and a hop for joy after the helmet.
+func _animate_hero(delta: float) -> void:
+	if _player_node == null or not is_instance_valid(_player_node) or _beat <= Beat.WAKE:
+		return
+	var walking: bool = absf(_walk_input) > 0.01
+	if walking:
+		_walk_phase += delta * 9.5
+	var bob: float = absf(sin(_walk_phase)) * 0.075 if walking else 0.0
+	var sway: float = sin(_walk_phase) * 0.07 if walking else 0.02 * sin(_anim_t * 0.9)
+	var breath: float = 0.010 * sin(_anim_t * 2.1)
+	var talking: bool = _beat >= Beat.DRINK and _beat <= Beat.PROMISE
+	var yaw: float = 1.15 if talking and not walking else 0.0
+	var reach: float = 0.0
+	if _beat == Beat.HANDOFF:
+		reach = _smooth((_rifle_t - 1.6) / 0.6) * (1.0 - _smooth((_rifle_t - 3.2) / 0.6))
+	elif _beat == Beat.HELMET:
+		reach = _smooth((_helmet_t - 1.8) / 0.6) * (1.0 - _smooth((_helmet_t - 3.2) / 0.6))
+		yaw = 1.3 if reach > 0.0 else yaw
+	# joy hop
+	if _hop_v != 0.0 or _hop_y > 0.0:
+		_hop_v -= 15.0 * delta
+		_hop_y = maxf(0.0, _hop_y + _hop_v * delta)
+		if _hop_y <= 0.0:
+			_hop_v = 0.0
+	var pitch: float = 0.16 * reach
+	_player_node.basis = Basis.from_euler(Vector3(pitch, yaw, sway))
+	_player_node.basis = _player_node.basis.scaled(Vector3(1.0, 1.0 + breath, 1.0))
+	_player_node.position.y = (0.35 if _in_cover else 0.0) + bob + _hop_y + 0.05 * reach
+
+
+## The rifle and the helmet travel by hand: crate -> the Bull's outstretched hand -> Lil Blunt, rather than
+## teleporting.
+func _animate_gear(delta: float) -> void:
+	if _beat >= Beat.HANDOFF:
+		if _beat == Beat.HANDOFF:
+			_rifle_t += delta
+		elif not _rifle_in_hands:
+			_rifle_t = 99.0
+	if _beat >= Beat.HELMET:
+		if _beat == Beat.HELMET:
+			_helmet_t += delta
+		elif not _helmet_on_head:
+			_helmet_t = 99.0
+	var crate: Vector3 = BULL_POSITION + CRATE_OFFSET
+	var hand: Vector3 = _bull_pivot.to_global(BULL_HAND_OUT) if _bull_pivot else crate
+	# --- rifle
+	if _rifle_node and is_instance_valid(_rifle_node) and _has_winchester:
+		var held: Vector3 = Vector3(_player_pos.x + 0.55, 0.95 + _player_node.position.y, _player_pos.z + 0.2)
+		var t: float = _rifle_t
+		var pos: Vector3 = held
+		if t < 0.9:
+			pos = crate.lerp(hand, _smooth(t / 0.9)) + Vector3(0.0, 0.35 * sin(_smooth(t / 0.9) * PI), 0.0)
+		elif t < 2.1:
+			pos = hand + Vector3(0.0, 0.03 * sin(_anim_t * 3.0), 0.0)
+		elif t < 3.0:
+			pos = hand.lerp(held, _smooth((t - 2.1) / 0.9))
 		else:
-			_rifle_node.position = BULL_POSITION + Vector3(-1.4, 1.0, -0.2)
+			_rifle_in_hands = true
+		_rifle_node.position = pos
+		var held_rot := Vector3(0.0, 0.0, deg_to_rad(-18.0))
+		_rifle_node.rotation = Vector3(0.0, PI * 0.5, 0.0).lerp(held_rot, _smooth((t - 2.1) / 0.9)) if t < 3.0 else held_rot
+	# --- helmet
+	if _helmet_node and is_instance_valid(_helmet_node) and _has_helmet and not _helmet_on_head:
+		var t2: float = _helmet_t
+		var head: Vector3 = _player_node.global_position + Vector3(0.0, 1.95, 0.0) if _player_node else hand
+		var p2: Vector3 = hand
+		if t2 < 0.9:
+			p2 = crate.lerp(hand, _smooth(t2 / 0.9)) + Vector3(0.0, 0.3 * sin(_smooth(t2 / 0.9) * PI), 0.0)
+		elif t2 < 2.2:
+			p2 = hand + Vector3(0.0, 0.02 * sin(_anim_t * 3.0), 0.0)
+		elif t2 < 3.2:
+			p2 = hand.lerp(head + Vector3(0.0, 0.25, 0.0), _smooth((t2 - 2.2) / 1.0))
+		else:
+			_helmet_on_head = true
+			_hop_v = 3.4       # joy
+		_helmet_node.position = p2
+		_helmet_node.rotation = Vector3.ZERO
+		_helmet_node.scale = Vector3.ONE * HELMET_SCALE
+
+
+## Fire and lamp flicker, so the room breathes with heat.
+func _animate_set(_delta: float) -> void:
+	var flames: Array = _dressing.get("flames", [])
+	for i in flames.size():
+		var l: OmniLight3D = flames[i]
+		if not is_instance_valid(l):
+			continue
+		if not l.has_meta("e0"):
+			l.set_meta("e0", l.light_energy)
+		var e0: float = l.get_meta("e0")
+		l.light_energy = e0 * (0.82 + 0.16 * sin(_anim_t * 13.0 + float(i) * 1.7) + 0.1 * sin(_anim_t * 29.0 + float(i) * 3.1))
+
+
+var _blob_tex: GradientTexture2D = null
+
+## One shared round soft-edged sprite for every smoke / steam / ember particle: untextured quads render as hard
+## squares (the pixelated steam the first facility capture showed).
+func _soft_blob() -> GradientTexture2D:
+	if _blob_tex == null:
+		var g := Gradient.new()
+		g.set_color(0, Color(1, 1, 1, 1))
+		g.set_color(1, Color(1, 1, 1, 0))
+		_blob_tex = GradientTexture2D.new()
+		_blob_tex.gradient = g
+		_blob_tex.fill = GradientTexture2D.FILL_RADIAL
+		_blob_tex.fill_from = Vector2(0.5, 0.5)
+		_blob_tex.fill_to = Vector2(1.0, 0.5)
+		_blob_tex.width = 64
+		_blob_tex.height = 64
+	return _blob_tex
