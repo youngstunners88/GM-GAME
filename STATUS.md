@@ -5,6 +5,16 @@
 
 ---
 
+**🎮🐂 EPISODE 2 — KEYS FIXED, BULL RIGGED, HIDEOUT REBUILT WITH MESHY MODELS (2026-10-01, evening).** You rejected the grey, primitive version: you were right.
+- **Keys (this is "the code"):** in the hideout, **Up / W = forward, Down / S = back, Left / A = left, Right / D = right, Space = jump (press again in the air for a double jump), Shift = run, mouse = look around** (click once to lock the mouse, ESC to release it), E = talk / take, left click = fire. Movement follows where you look. The old bug: Left/Right used to walk you along the room and Up did nothing. The cinematic camera only takes over while Lil Blunt is waking up and during the two hand-overs, then gives control straight back. The cart runner keeps Left/Right = hop rails, Space = jump, mouse = aim.
+- **Inferno Bull is rigged (Meshy).** His arms and head now move: he drinks his whiskey, talks with open hands, rests a hand on his gun for "I don't do sidekicks", and leans in to hand over the Winchester and the helmet from his own hand. He turns to keep Lil Blunt in front of him.
+- **Lil Blunt walks for real**, with his own walk and run cycles from his Meshy rig.
+- **The room, rebuilt to your picture with Meshy models:** a roaring standing grizzly, a second grizzly, four mounted bear heads, a Colt Gatling, an ore cart heaped with gold, iron cauldrons of molten gold with pours from hanging ladles, the pin-up poster (now a painted Miss Goldie in a red dress, like yours), a real cowhide rug, gold bars, the longhorn skull over the FORT KNOX door, braziers, a plank floor, and a bridge over the molten channel. The colour grade is warmer and more saturated (no more grey look).
+- **He sits on his crate like your picture:** seated with his whiskey while you talk, then he stands up when he "takes your measure", ready to hand over the gear.
+- **Meshy spend: all 101 credits.** Bull rig 5, Bull clips 21 (idle, drink, talk, hand-on-gun, seated drink, sit-to-stand, seated idle), five props 75 (Gatling, standing bear, bear head, ore cart, cauldron).
+- **Access code:** the Episode 2 code gate is unchanged since you set it (same stored fingerprint), so your code still opens it. The code itself is not written anywhere in the repo on purpose (only its fingerprint), so I am not printing it here.
+- New skill `ep2-free-roam-controls` locks the key map; `ep2-hideout-set-dressing` and `ep2-character-performance` now follow the Meshy-first pipeline. New tests cover every key, mouse look, jump, collisions, the Bull's clips and the walk cycle.
+
 **🐂🔥 EPISODE 2 — INFERNO BULL'S HANGOUT REDESIGNED TO YOUR TARGET IMAGE (2026-10-01).** The empty cave is now his lived-in hideout, built from your picture:
 - **The room:** timber-panelled alcove, a 1800s gun wall (Winchester 1886s and Colt revolvers), a **Colt Gatling** in the background, mounted bear heads and full taxidermy bears, a pin-up revue poster beside the FORT KNOX door (longhorn skull above it), whiskey table with decanter and glasses, cowhide rug, gold bars and an ingot cart, hanging chains and lanterns.
 - **Heat and flame:** three flaming braziers, iron cauldrons pouring molten gold, a flowing molten furnace mouth, embers rising off the Bull, flickering firelight, a warmer and brighter room overall.

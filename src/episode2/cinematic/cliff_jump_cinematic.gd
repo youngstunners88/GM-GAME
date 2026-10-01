@@ -20,7 +20,8 @@ signal finished
 ## Story events, for tests and the owner: launch, slowmo, cart_crash, land, head_hit, blackout.
 signal event(name: String)
 
-const BULL_MODEL := "res://src/episode2/assets/inferno_bull.glb"
+## The rigged Bull (origin at his feet, 2.4 m native); its rest pose is the founder's statue pose.
+const BULL_MODEL := "res://src/episode2/assets/inferno_bull_rigged.glb"
 const CRUCIBLE_MODEL := "res://src/episode2/assets/crucible.glb"
 const ROCK_TEX := "res://src/episode2/assets/textures/tex_rock_wall.jpg"
 const TIMBER_TEX := "res://src/episode2/assets/textures/tex_timber.jpg"
@@ -411,7 +412,7 @@ func _update_camera(_delta: float) -> void:
 			var k: float = clampf(u / (BLACKOUT_LEN * 0.8), 0.0, 1.0)
 			k = k * k * (3.0 - 2.0 * k)
 			var head: Vector3 = _head_pos()
-			var bull_head: Vector3 = _bull.position + Vector3(0.0, 1.25, 0.0) if _bull else head + Vector3(0, 2, 2)
+			var bull_head: Vector3 = _bull.position + Vector3(0.0, 2.7, 0.0) if _bull else head + Vector3(0, 2, 2)
 			# Over his face first; then down at his eye line, looking UP at the Bull standing over him.
 			pos = (head + Vector3(0.9, 1.5, -0.9)).lerp(head + Vector3(-0.5, 0.25, -0.6), k)
 			look = head.lerp(bull_head, k)
@@ -708,9 +709,9 @@ func _place_far_side() -> void:
 	# INFERNO BULL, the founder's "Bull Mine Gunslinger", waiting in the furnace light.
 	_bull = _inst(BULL_MODEL)
 	if _bull:
-		var s: float = 2.9 / 1.898
+		var s: float = 2.9 / 2.4
 		_bull.scale = Vector3.ONE * s
-		_bull.position = Vector3(1.7, FAR_Y + 0.947 * s, rock_z - 0.4)
+		_bull.position = Vector3(1.7, FAR_Y, rock_z - 0.4)
 		_bull.rotation.y = PI + 0.9      # turned toward the boy at his boots
 		RunnerView.self_light(_bull, 0.12, Color(1.0, 0.8, 0.6))
 		_set.add_child(_bull)
@@ -718,7 +719,7 @@ func _place_far_side() -> void:
 		rim.light_color = Color(1.0, 0.6, 0.28)
 		rim.light_energy = 3.0
 		rim.omni_range = 7.0
-		rim.position = _bull.position + Vector3(-1.2, 2.2, 2.0)
+		rim.position = _bull.position + Vector3(-1.2, 3.65, 2.0)
 		_set.add_child(rim)
 
 

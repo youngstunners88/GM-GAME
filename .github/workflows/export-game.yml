@@ -239,6 +239,9 @@ jobs:
           #   exclude_filter docs/,tests/,prompts/,scripts/,portals/ -> dev-only dirs that
           #        all_resources would otherwise sweep into the .pck (docs/
           #        captures alone was ~15MB of dead weight).
+          #   design/,work-notes/,tools/,assets/keyart/,web_verify/,web/game/ -> reference
+          #        images, notes, capture rigs and local export output nothing loads at runtime
+          #        (2026-10-01: ~14 MB; the Episode 2 hideout's Meshy models pushed the pck over 190 MB).
           #   variant/thread_support=false -> non-threaded: no SharedArrayBuffer/
           #        COOP/COEP needed, so it boots on itch.io/iframes/mobile.
           #   html/head_include            -> loads web/web3.js (copied beside
@@ -252,7 +255,7 @@ jobs:
           custom_features=""
           export_filter="all_resources"
           include_filter="config.json,src/autoload/share_taglines.json"
-          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*"
+          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*,design/*,work-notes/*,tools/*,assets/keyart/*,web_verify/*,web/game/*"
           export_path="web/game/index.html"
           script_export_mode=1
           script_encryption_key=""

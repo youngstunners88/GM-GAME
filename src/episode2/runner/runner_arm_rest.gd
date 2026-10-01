@@ -36,6 +36,8 @@ extends SkeletonModifier3D
 @export var body_frame: bool = false
 ## Legs straight down under the hips (standing / walking in a chamber) instead of seated.
 @export var standing: bool = false
+## Leave the legs to the playing clip (the walk / run cycle in a chamber); arms, spine and head stay posed.
+@export var legs_free: bool = false
 
 func _process_modification() -> void:
 	var sk: Skeleton3D = get_skeleton()
@@ -57,7 +59,9 @@ func _process_modification() -> void:
 	for side in ["Left", "Right"]:
 		var root_p: Vector3 = sk.get_bone_global_pose(sk.find_bone(side + "UpLeg")).origin
 		var out: Vector3 = _outward(root_p - hips_p, up, fwd)
-		if standing:
+		if legs_free:
+			pass
+		elif standing:
 			# Legs straight under the hips, feet a little apart.
 			_chain(sk, side + "UpLeg", side + "Leg", (-up * 1.0 + out * 0.12 + fwd * 0.04).normalized())
 			_chain(sk, side + "Leg", side + "Foot", (-up * 1.0 - fwd * 0.04).normalized())
@@ -65,7 +69,7 @@ func _process_modification() -> void:
 			# Legs: thigh forward (a touch outward), shin straight down, foot forward.
 			_chain(sk, side + "UpLeg", side + "Leg", (fwd * 0.95 - up * 0.30 + out * 0.10).normalized())
 			_chain(sk, side + "Leg", side + "Foot", (-up * 1.0 - fwd * 0.10).normalized())
-		if sk.find_bone(side + "ToeBase") >= 0:
+		if sk.find_bone(side + "ToeBase") >= 0 and not legs_free:
 			_chain(sk, side + "Foot", side + "ToeBase", (fwd * 0.9 - up * 0.15).normalized())
 		# Arms.
 		var sh_p: Vector3 = sk.get_bone_global_pose(sk.find_bone(side + "Arm")).origin

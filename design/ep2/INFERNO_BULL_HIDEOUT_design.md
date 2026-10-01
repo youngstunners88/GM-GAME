@@ -26,7 +26,18 @@ No modern weapons or props.
 WAKE (nursed with whiskey) -> DRINK (sip + puff) -> HANDOFF (Winchester 1886 passes through his hand) -> HELMET
 (miner's helmet lands on Lil Blunt, joy hop) -> VERB_TEACH -> EXIT through the Fort Knox door.
 
-## Still to do (needs founder OK / credits)
-- Rig the Bull on Meshy (5 credits) for real arm/head acting (see `ep2-character-performance`).
-- A painted poster from Meshy text-to-image instead of the PIL-drawn one.
-- The poster, rug and Gatling are code-built stylised art; replace with Meshy models if the founder wants photoreal.
+## Models (2026-10-01 rebuild, founder: "spend what we have on Meshy")
+| Prop | Source | File |
+|---|---|---|
+| Inferno Bull | his Meshy model, rigged + 4 clips (idle, drink, open-hands talk, hand on gun) | `assets/inferno_bull_rigged.glb` |
+| Lil Blunt walk / run | free clips from his Meshy rig | `assets/lil_blunt_{walking,running}_clip.glb` |
+| Gatling, standing grizzly, bear head, ore cart, cauldron | Flux concept -> Meshy image-to-3d (smart topology) | `assets/hideout/*.glb` (`sources.json`) |
+| Poster, cowhide | Flux | `textures/tex_pinup_poster.jpg`, `tex_cowhide.png` |
+
+## Controls (locked, skill `ep2-free-roam-controls`)
+Up/W forward, Down/S back, Left/A + Right/D strafe, Space jump (double), Shift run, mouse look (click to lock),
+E talk/take, LMB fire. Scripted camera only while waking and during the two hand-overs.
+
+## Still open
+- Seated: done (Sit_and_Drink on his crate until SIZING, then Sit_to_Stand_Transition_M at 1.8x, root drift corrected).
+- Whiskey table, revolvers, braziers and gold-bar stacks are still code-built.

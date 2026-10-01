@@ -222,10 +222,30 @@ func _ready() -> void:
 	_check("the hangout is dressed: poster, Gatling and flame lights exist",
 		h._dressing.get("poster") != null and h._dressing.get("gatling") != null and (h._dressing.get("flames") as Array).size() >= 3)
 	_check("the armory + trophies are in the scene tree", h.find_child("ColtGatling", true, false) != null)
-	for tex in ["tex_pinup_poster.jpg", "tex_cowhide.jpg"]:
+	for tex in ["tex_pinup_poster.jpg", "tex_cowhide.png"]:
 		_check("hideout texture on disk: " + tex, ResourceLoader.exists("res://src/episode2/assets/textures/" + tex))
-	for glb in ["bear_head_trophy.glb", "mine_bear_archer.glb", "winchester_1886.glb"]:
-		_check("hideout prop on disk: " + glb, ResourceLoader.exists("res://src/episode2/assets/" + glb))
+	for glb in ["hideout/gatling.glb", "hideout/bear_standing.glb", "hideout/bear_head.glb", "hideout/ore_cart.glb",
+			"hideout/cauldron.glb", "winchester_1886.glb", "inferno_bull_rigged.glb", "lil_blunt_walking_clip.glb",
+			"lil_blunt_running_clip.glb"]:
+		_check("hideout model on disk: " + glb, ResourceLoader.exists("res://src/episode2/assets/" + glb))
+	# The Bull is RIGGED (Meshy) and acts by beat; Lil Blunt has a real walk cycle.
+	_check("the Bull is the rigged model with his clips", h._bull_anim != null and h._bull_anim.has_animation(h.BULL_DRINK)
+		and h._bull_anim.has_animation(h.BULL_TALK) and h._bull_anim.has_animation(h.BULL_GUN))
+	_check("his offering hand is a real bone (hand-overs follow his arm)", h._bull_hand != null
+		and h._bull_hand.bone_name == "RightHand" and h._glass_node.get_parent() == h._bull_left_hand)
+	# He sits on his crate drinking (the target image), and stands up when he takes your measure.
+	_check("the Bull starts seated on his crate", h.is_bull_seated() and h.find_child("BullSeat", true, false) != null)
+	h._beat = h.Beat.DRINK
+	_run(h, 0.1)
+	_check("...drinking while seated", h._bull_clip == h.BULL_SIT, h._bull_clip)
+	h._beat = h.Beat.SIZING
+	_run(h, 0.2)
+	_check("SIZING: he stands up", not h.is_bull_seated() and h._bull_clip == h.BULL_STAND_UP, h._bull_clip)
+	_run(h, 4.0)
+	_check("...and is standing when the hand-over comes", h._bull_clip != h.BULL_STAND_UP and h._stand_t >= 99.0,
+		h._bull_clip)
+	_check("Lil Blunt carries a walk + run cycle", h._hero_anim != null and h._hero_anim.has_animation("walk")
+		and h._hero_anim.has_animation("run"))
 	# the helmet is HANDED OVER: it travels via the Bull's hand, it does not teleport onto his head
 	h._beat = h.Beat.HELMET
 	h._has_helmet = true
@@ -235,7 +255,7 @@ func _ready() -> void:
 	var near_hand := false
 	for i in 140:
 		h.step(1.0 / 60.0)
-		var hand: Vector3 = h._bull_pivot.to_global(h.BULL_HAND_OUT)
+		var hand: Vector3 = h.get_bull_hand()
 		if h._helmet_node.position.distance_to(hand) < 0.35:
 			near_hand = true
 	_check("the helmet passes through the Bull's outstretched hand", near_hand)
@@ -249,7 +269,7 @@ func _ready() -> void:
 	var rifle_near_hand := false
 	for i in 200:
 		h.step(1.0 / 60.0)
-		if h._rifle_node.position.distance_to(h._bull_pivot.to_global(h.BULL_HAND_OUT)) < 0.35:
+		if h._rifle_node.position.distance_to(h.get_bull_hand()) < 0.35:
 			rifle_near_hand = true
 	_check("the Winchester passes through the Bull's hand", rifle_near_hand)
 	_check("...and ends in Lil Blunt's hands", h._rifle_in_hands)
@@ -258,7 +278,117 @@ func _ready() -> void:
 	h._rifle_t = 1.0
 	_run(h, 0.8)
 	_check("the Bull leans toward Lil Blunt during a hand-over", h._lean > 0.05, "%.3f" % h._lean)
+	_check("...and plays his open-hands offer clip for it", h._bull_clip == h.BULL_TALK, h._bull_clip)
+	h._beat = h.Beat.TERMS
+	h._hold = 2.0
+	_run(h, 0.1)
+	_check("his terms come with the hand-on-gun gesture", h._bull_clip == h.BULL_GUN, h._bull_clip)
+	h._beat = h.Beat.DRINK
+	h._hold = 2.0
+	_run(h, 0.1)
+	_check("the drink beat plays Stand_and_Drink", h._bull_clip == h.BULL_DRINK, h._bull_clip)
 	h.queue_free()
+
+	# --- 12. free roam (founder 2026-10-01): Up fwd, Down back, Left/Right strafe, Space jump, mouse look ------
+	var g = SMELT.instantiate()
+	add_child(g)
+	g.intro_film = false
+	g.setup(0, [], 0)
+	await get_tree().process_frame
+	_run(g, 1.2)                                   # ARRIVAL -> APPROACH: control handed over
+	_check("the player has control after arrival", g.has_player_control())
+	var p0: Vector3 = g.get_player_position()
+	g.set_move_input(Vector2(0.0, 1.0))           # Up arrow / W
+	_run(g, 0.5)
+	_check("walking plays his walk cycle (legs from the clip)", g._hero_clip == "walk" and g._player_pose.legs_free, g._hero_clip)
+	g.set_move_input(Vector2.ZERO)
+	var p1: Vector3 = g.get_player_position()
+	_check("Up moves Lil Blunt forward (+Z, toward the Bull)", p1.z > p0.z + 1.0 and absf(p1.x - p0.x) < 0.05, str(p1))
+	g.set_move_input(Vector2(0.0, -1.0))          # Down arrow / S
+	_run(g, 0.3)
+	g.set_move_input(Vector2.ZERO)
+	_check("Down moves him back", g.get_player_position().z < p1.z - 0.5)
+	var p2: Vector3 = g.get_player_position()
+	g.set_move_input(Vector2(1.0, 0.0))           # Right arrow / D: screen-right is world -X here
+	_run(g, 0.3)
+	g.set_move_input(Vector2.ZERO)
+	_check("Right strafes him to screen-right", g.get_player_position().x < p2.x - 0.5, str(g.get_player_position()))
+	g.set_move_input(Vector2(-1.0, 0.0))          # Left arrow / A
+	_run(g, 0.6)
+	g.set_move_input(Vector2.ZERO)
+	_check("Left strafes him to screen-left", g.get_player_position().x > p2.x + 0.3, str(g.get_player_position()))
+	# mouse look turns the view; forward follows the view
+	g.look(Vector2(-490.0, 0.0))                  # mouse left ~90 degrees
+	_check("mouse look turns the view", absf(g.get_look_yaw()) > 1.3, "%.2f" % g.get_look_yaw())
+	var p3: Vector3 = g.get_player_position()
+	g.set_move_input(Vector2(0.0, 1.0))
+	_run(g, 0.4)
+	g.set_move_input(Vector2.ZERO)
+	var d3: Vector3 = g.get_player_position() - p3
+	_check("Up walks where he is looking", absf(d3.x) > absf(d3.z) and absf(d3.x) > 0.5, str(d3))
+	g.look(Vector2(490.0, 0.0))
+	# Space: jump, double jump, no triple
+	_check("Space jumps", g.jump())
+	_run(g, 0.15)
+	_check("...he leaves the floor", g.get_player_position().y > 0.3, "%.2f" % g.get_player_position().y)
+	_check("Space again = double jump", g.jump())
+	_check("no triple jump", not g.jump())
+	_run(g, 1.5)
+	_check("...and lands", g.get_player_position().y == 0.0)
+	# walls, the Bull and the molten channel block him
+	g.set_move_input(Vector2(-1.0, 0.0))
+	_run(g, 6.0)
+	g.set_move_input(Vector2.ZERO)
+	_check("the alcove wall stops him", g.get_player_position().x <= g.ROOM_X + 0.001, str(g.get_player_position()))
+	g._player_pos = Vector3(g.BULL_POSITION.x, 0.0, g.BULL_POSITION.z - 3.0)
+	g.set_move_input(Vector2(0.0, 1.0))
+	_run(g, 2.0)
+	g.set_move_input(Vector2.ZERO)
+	_check("he cannot walk through the Bull", g.get_player_position().distance_to(g.BULL_POSITION) > 0.8,
+		str(g.get_player_position()))
+	g._player_pos = Vector3(4.0, 0.0, g.CHANNEL_Z - 2.0)
+	g.set_move_input(Vector2(0.0, 1.0))
+	_run(g, 2.0)
+	g.set_move_input(Vector2.ZERO)
+	_check("the molten channel is only crossable on the bridge", g.get_player_position().z < g.CHANNEL_Z - 1.0,
+		str(g.get_player_position()))
+	# the scripted hand-over owns control, then gives it back
+	g._beat = g.Beat.SIZING
+	g._hold = 0.0
+	g.start_rig()
+	_check("hand-over: the camera/script owns control", not g.has_player_control())
+	var mark: Vector3 = g.get_player_position()
+	g.set_move_input(Vector2(0.0, 1.0))
+	_run(g, 1.0)
+	_check("...movement is ignored during it", g.get_player_position().distance_to(mark) < 0.01)
+	_run(g, 3.0)
+	_check("...and control returns when the rifle is in his hands", g.has_player_control())
+	g.set_move_input(Vector2.ZERO)
+	# the session root routes the real keys
+	var root2 = ROOT.instantiate()
+	add_child(root2)
+	root2._active = g
+	root2._mode = Ep2SessionRoot.Mode.CHAMBER
+	var before: Vector3 = g.get_player_position()
+	Input.action_press("move_up")
+	root2._poll_free_roam()
+	_run(g, 0.5)
+	Input.action_release("move_up")
+	root2._poll_free_roam()
+	_check("session root: the Up arrow / W walks him forward", g.get_player_position().z > before.z + 0.5,
+		str(g.get_player_position()))
+	var space := InputEventKey.new()
+	space.physical_keycode = KEY_SPACE
+	space.pressed = true
+	_check("session root: Space is jump", root2._route_free_roam(space) and g.get_player_position().y >= 0.0 and g._vel_y > 0.0)
+	var mm := InputEventMouseMotion.new()
+	mm.relative = Vector2(120.0, 0.0)
+	var yaw0: float = g.get_look_yaw()
+	root2._route_free_roam(mm)
+	_check("session root: mouse motion turns the view", g.get_look_yaw() < yaw0 - 0.2)
+	root2._active = null
+	root2.queue_free()
+	g.queue_free()
 
 	await get_tree().process_frame
 	if _fail == 0:

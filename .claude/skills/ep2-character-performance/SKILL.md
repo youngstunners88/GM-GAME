@@ -37,8 +37,21 @@ done in code, small and readable, driven by the beat sheet.
 - Test what you animate: the helmet is NOT on the head the instant it is granted, it passes within 0.35 m of the hand,
   it lands, the rifle ends in the hands, the lean exceeds 0.05 during a hand-over (section 11 of the facility test).
 
-# The real fix, when the founder wants it (ask first - costs credits)
-Procedural acting cannot move the Bull's arms or head. A Meshy `meshy_rig` pass (5 credits, includes walk/run) on
-`inferno_bull.glb` plus `meshy_animate` (3 credits per clip: pour, offer, sip, laugh) gives true limb animation. Present
-the cost and get confirmation before spending (Meshy rule 1); after rigging, replace `_animate_bull`'s whole-body lean
-with `AnimationPlayer` clips and keep the pivot/props code.
+# DONE 2026-10-01: the Bull is rigged (founder: "of course you must spend what we have on Meshy")
+- Rig the REMESHED task (`meshy_rig input_task_id=<remesh id>`, 5 credits; the 30k-tri remesh is under the 300k cap),
+  then bake clips onto that rig in ONE call: `python3 tools/meshy/meshy_rig.py <task> out.glb --rig-task <rig id>
+  --actions 11,342,313,292` (3 credits each) -> `inferno_bull_rigged.glb` (Idle_02, Stand_and_Drink,
+  Talk_with_Hands_Open, Gesture_with_Hand_on_Gun). Shrink with `shrink_glb.py` (23.7 MB -> 3.2 MB). The rig drops the
+  normal map (known trap). Origin at his feet, 2.4 m tall.
+- Action ids: scrape `https://docs.meshy.ai/en/api/animation-library` into `.farm/meshy_actions.txt` (656 rows) and
+  grep (drink 342/343, talk 308-314, gesture 292, sit 32/33, sit-to-stand 52/53, walks 30/106/115...).
+- Clips import NON-looping: set `loop_mode = LOOP_LINEAR` on idle/talk/drink. Crossfade with `play(clip, 0.4)`.
+- Props ride bones: `BoneAttachment3D` children of the Skeleton3D (`RightHand`, `LeftHand`, `headfront`). Find out
+  EMPIRICALLY which hand a clip lifts: on Stand_and_Drink he lifts the hand that holds his baked rifle, so the glass
+  goes on that hand and the hand-overs use the free hand (`get_bull_hand()`).
+- Clip by beat: drink on WAKE/DRINK lines, open-hands talk on the hand-overs and other lines, hand-on-gun for his
+  terms, idle otherwise with a sip every 16 s. He also turns (max 60 degrees) to keep Lil Blunt in front of him.
+- Lil Blunt's free walk/run: every Meshy rig result carries `basic_animations.walking_armature_glb_url` (armature
+  only, ~65 KB). Same track paths as the hero (`Armature/Skeleton3D:<bone>`), so copy the Animation into his
+  AnimationPlayer library at runtime (`_add_hero_clip`) and set `RunnerArmRest.legs_free` while it plays so the clip
+  drives the legs and the pose modifier keeps the arms/weapons.

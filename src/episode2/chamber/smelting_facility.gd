@@ -69,6 +69,22 @@ const EXIT_POSITION := Vector3(0.0, 0.0, 15.0)
 const TALK_RANGE := 3.2
 const WALK_SPEED := 3.4
 
+# --- Free roam (founder 2026-10-01: "up = forward, back = backwards, left = left, right = right, space = jump,
+# the mouse lets him view different directions"). Movement is relative to where the camera looks.
+const RUN_SPEED := 5.6
+const JUMP_VELOCITY := 5.4
+const GRAVITY := 15.0
+const MAX_AIR_JUMPS := 1              # Lil Blunt's double jump
+const LOOK_SENSITIVITY := 0.0032      # radians per pixel of mouse travel
+const LOOK_PITCH_MIN := -0.85
+const LOOK_PITCH_MAX := 0.45
+const CAM_DISTANCE := 3.9
+const CAM_TARGET_HEIGHT := 1.45
+## Where Lil Blunt stands for the scripted hand-overs (the camera cuts to CAM_HAND, so the snap is invisible).
+const HAND_MARK := Vector3(-0.3, 0.0, 5.0)
+## Room bounds for walking, inside the timber alcove walls.
+const ROOM_X := 6.3
+
 # --- Verb teach ---------------------------------------------------------------
 ## Empty casting molds on a rack. A SAFE target: per the spec's open question,
 ## Chamber 0 has no live enemies — the gun's first real use should have stakes,
@@ -106,7 +122,16 @@ var _elapsed: float = 0.0
 var _has_winchester: bool = false
 var _molds_left: int = MOLD_TARGETS
 var _in_cover: bool = false
-var _walk_input: float = 0.0         # -1..1 along Z, set by walk_forward/back
+var _move_input: Vector2 = Vector2.ZERO   # x = strafe right, y = forward (relative to the camera's look)
+var _run_input: bool = false
+var _look_yaw: float = 0.0            # 0 = looking down +Z, toward the Bull and Fort Knox
+var _look_pitch: float = -0.22
+var _player_yaw: float = 0.0          # Lil Blunt's facing (0 = +Z)
+var _vel_y: float = 0.0
+var _air_jumps: int = 0
+var _moving: bool = false
+var _blockers: Array = []             # [Vector2 centre (x, z), radius] the player cannot walk through
+var _cauldron_spots: Array = []
 ## Play the cliff-jump film + wake-up before the meeting. The game always does; the beat-sheet test turns
 ## it off to drive the conversation on its own (tests/ep2_cinematic_test.gd covers the film).
 var intro_film: bool = true
@@ -132,6 +157,16 @@ var _hop_y: float = 0.0               # Lil Blunt's little joy-hop after the hel
 var _hop_v: float = 0.0
 var _walk_phase: float = 0.0
 var _lean: float = 0.0
+var _bull_anim: AnimationPlayer = null
+var _bull_clip: String = ""
+var _bull_model: Node3D = null
+var _stand_t: float = -1.0            # seconds since he began to stand (-1 = still seated, 99 = standing)
+var _settle: float = 0.0
+var _bull_hand: BoneAttachment3D = null
+var _bull_left_hand: BoneAttachment3D = null
+var _bull_face: BoneAttachment3D = null
+var _hero_anim: AnimationPlayer = null
+var _hero_clip: String = ""
 
 ## Camera framing per beat. A browser capture of the first build showed the
 ## whole encounter playing at postage-stamp scale from the wide establishing
@@ -151,7 +186,7 @@ const CAM_WIDE := [Vector3(0.0, 4.2, -11.0), -14.0, 180.0]
 const CAM_CLOSE := [Vector3(1.1, 2.3, 1.4), -8.0, 180.0]
 ## The founder's target framing (design/ep2/inferno_bull_hideout_target.jpg): low, from the left front, so Bull
 ## and Lil Blunt play the hand-off in three-quarter view with the forge, the Fort Knox door and the poster behind.
-const CAM_HAND := [Vector3(-0.3, 1.8, -1.2), -4.0, 184.0]
+const CAM_HAND := [Vector3(0.65, 1.6, 2.0), 0.0, 181.0]
 const CAM_TEACH := [Vector3(-1.0, 3.2, -3.0), -12.0, 180.0]
 ## Coming to: high and to the side, so he is IN frame on the floor with the Bull standing over him.
 const CAM_WAKE := [Vector3(2.1, 2.7, 0.4), -26.0, 180.0]
@@ -166,9 +201,12 @@ var _player_node: Node3D = null
 var _mold_nodes: Array = []
 var _rifle_node: Node3D = null
 
-const BULL_MODEL := "res://src/episode2/assets/inferno_bull.glb"   # founder's "Bull Mine Gunslinger"
-const BULL_NATIVE_H := 1.898         # model height (origin at its centre)
-const BULL_NATIVE_FEET := 0.947      # centre -> feet in model units
+## The same model rigged on Meshy (2026-10-01) with four library clips; origin at his feet, 2.4 m tall.
+const BULL_RIG_MODEL := "res://src/episode2/assets/inferno_bull_rigged.glb"
+const BULL_RIG_H := 2.4
+## Lil Blunt's free walk / run cycles from his Meshy rig (armature-only GLBs, same track paths as the hero).
+const HERO_WALK_CLIP := "res://src/episode2/assets/lil_blunt_walking_clip.glb"
+const HERO_RUN_CLIP := "res://src/episode2/assets/lil_blunt_running_clip.glb"
 const BULL_HEIGHT := 2.9             # he towers over Lil Blunt
 const PLAYER_SCALE := 0.95           # Lil Blunt stands ~1.8 m here (the runner scales him up to read at speed)
 const HELMET_SCALE := 0.72
@@ -215,7 +253,13 @@ func setup(_gold_principal: int = 0, _bears: Array = [], _diamonds_paid: int = 0
 	_has_winchester = false
 	_molds_left = MOLD_TARGETS
 	_in_cover = false
-	_walk_input = 0.0
+	_move_input = Vector2.ZERO
+	_run_input = false
+	_look_yaw = 0.0
+	_look_pitch = -0.22
+	_player_yaw = 0.0
+	_vel_y = 0.0
+	_air_jumps = 0
 	_build_visuals()
 	_sync_visuals()
 	if _beat == Beat.CINEMATIC:
@@ -276,11 +320,12 @@ func step(delta: float) -> void:
 	if _film and is_instance_valid(_film):
 		_film.step(delta)          # the fade back in after the film
 
+	if has_player_control():
+		_move_player(delta)
+	else:
+		_moving = false
+	_update_vertical(delta)
 	_update_camera(delta)
-
-	if absf(_walk_input) > 0.01 and _beat != Beat.WAKE:
-		_player_pos.z += _walk_input * WALK_SPEED * delta
-		_player_pos.z = clampf(_player_pos.z, ENTRY_POSITION.z, EXIT_POSITION.z)
 
 	match _beat:
 		Beat.WAKE:
@@ -366,13 +411,110 @@ func early_claim() -> bool:
 	return false
 
 
-## Walking. -1 back toward the runner tunnel, +1 on toward Fort Knox.
+## Legacy single-axis walk (tests, older callers): -1 back toward the runner tunnel, +1 forward.
 func walk(direction: float) -> void:
-	_walk_input = clampf(direction, -1.0, 1.0)
+	set_move_input(Vector2(0.0, clampf(direction, -1.0, 1.0)))
 
 
 func walk_stop() -> void:
-	_walk_input = 0.0
+	set_move_input(Vector2.ZERO)
+
+
+## Free-roam movement from the session root: x = strafe right (+) / left (-), y = forward (+) / back (-),
+## relative to where the camera is looking. `run` = Shift held.
+func set_move_input(v: Vector2, run: bool = false) -> void:
+	_move_input = v.limit_length(1.0)
+	_run_input = run
+
+
+## Mouse look: `relative` is the mouse motion in pixels (right/down positive).
+func look(relative: Vector2) -> void:
+	if not has_player_control():
+		return
+	_look_yaw -= relative.x * LOOK_SENSITIVITY
+	_look_pitch = clampf(_look_pitch - relative.y * LOOK_SENSITIVITY, LOOK_PITCH_MIN, LOOK_PITCH_MAX)
+
+
+## Space. Jump from the floor, or Lil Blunt's double jump in the air. Returns true when he jumped.
+func jump() -> bool:
+	if not has_player_control():
+		return false
+	if _player_pos.y <= 0.001:
+		_vel_y = JUMP_VELOCITY
+		_air_jumps = 0
+		return true
+	if _air_jumps < MAX_AIR_JUMPS:
+		_air_jumps += 1
+		_vel_y = JUMP_VELOCITY * 0.85
+		return true
+	return false
+
+
+## True whenever the player drives Lil Blunt and the camera. False during the film, while he is out cold, and
+## during the two scripted hand-overs (the Winchester, the helmet) - control returns the moment each ends.
+func has_player_control() -> bool:
+	if not _running or _resolved:
+		return false
+	if _beat <= Beat.WAKE or _beat >= Beat.DONE:
+		return false
+	return not _in_scripted_handover()
+
+
+func _in_scripted_handover() -> bool:
+	return (_beat == Beat.HANDOFF and _rifle_t < 3.2) or (_beat == Beat.HELMET and _helmet_t < 3.6)
+
+
+## The session root captures the mouse for look only while the player has control.
+func wants_mouse_capture() -> bool:
+	return has_player_control()
+
+
+func _move_player(delta: float) -> void:
+	var fwd := Vector3(sin(_look_yaw), 0.0, cos(_look_yaw))
+	var right := Vector3(-fwd.z, 0.0, fwd.x)          # screen-right for a camera looking along `fwd`
+	var wish: Vector3 = fwd * _move_input.y + right * _move_input.x
+	if wish.length_squared() > 1.0:
+		wish = wish.normalized()
+	_moving = wish.length_squared() > 0.0025
+	if not _moving:
+		return
+	var speed: float = RUN_SPEED if _run_input else WALK_SPEED
+	var next: Vector3 = _collide(_player_pos + wish * speed * delta)
+	_player_pos.x = next.x
+	_player_pos.z = next.z
+	_player_yaw = lerp_angle(_player_yaw, atan2(wish.x, wish.z), clampf(12.0 * delta, 0.0, 1.0))
+	_walk_phase += delta * (13.0 if _run_input else 9.5)
+
+
+func _update_vertical(delta: float) -> void:
+	if _player_pos.y <= 0.0 and _vel_y <= 0.0:
+		_player_pos.y = 0.0
+		_vel_y = 0.0
+		return
+	_vel_y -= GRAVITY * delta
+	_player_pos.y += _vel_y * delta
+	if _player_pos.y <= 0.0:
+		_player_pos.y = 0.0
+		_vel_y = 0.0
+		_air_jumps = 0
+
+
+## Keep Lil Blunt in the room and out of the props and the molten channel (crossable only on the bridge).
+func _collide(p: Vector3) -> Vector3:
+	var q := p
+	q.z = clampf(q.z, ENTRY_POSITION.z, EXIT_POSITION.z)
+	q.x = clampf(q.x, -ROOM_X, ROOM_X)
+	if absf(q.z - CHANNEL_Z) < 1.1 and absf(q.x) > 1.0:
+		q.z = CHANNEL_Z - 1.1 if _player_pos.z < CHANNEL_Z else CHANNEL_Z + 1.1
+	for b in _blockers:
+		var c: Vector2 = b[0]
+		var r: float = b[1]
+		var d := Vector2(q.x - c.x, q.z - c.y)
+		if d.length() < r:
+			var out: Vector2 = (d.normalized() if d.length_squared() > 1e-6 else Vector2(1.0, 0.0)) * r
+			q.x = c.x + out.x
+			q.z = c.y + out.y
+	return q
 
 
 # --- Beats -------------------------------------------------------------------------
@@ -395,9 +537,11 @@ func _on_beat_entered(beat: int) -> void:
 	if beat == Beat.HANDOFF:
 		_has_winchester = true
 		weapon_granted.emit(WINCHESTER_ID)
+		_to_hand_mark()
 	if beat == Beat.HELMET:
 		_has_helmet = true
 		gear_granted.emit(HELMET_ID)
+		_to_hand_mark()
 	if BEAT_LINES.has(beat):
 		var line: Dictionary = BEAT_LINES[beat]
 		_hold = float(line["hold"])
@@ -438,16 +582,18 @@ func _resolve() -> void:
 	})
 
 
-## Choose the framing this beat wants, and ease toward it.
+## Choose the framing: the player's follow camera whenever he has control (mouse look), the scripted
+## shots only while a scripted beat owns the view (waking up, the two hand-overs, the verb-teach intro).
 func _update_camera(delta: float) -> void:
 	if _camera == null or not is_instance_valid(_camera):
+		return
+	if has_player_control():
+		_follow_camera(delta)
 		return
 	var want: Array
 	match _beat:
 		Beat.WAKE:
 			want = CAM_WAKE
-		Beat.DRINK, Beat.SIZING, Beat.TERMS, Beat.PROMISE:
-			want = CAM_CLOSE
 		Beat.HANDOFF, Beat.HELMET:
 			want = CAM_HAND
 		Beat.VERB_TEACH:
@@ -459,15 +605,37 @@ func _update_camera(delta: float) -> void:
 	_cam_target_yaw = float(want[2])
 	var t: float = clampf(CAM_LERP * delta, 0.0, 1.0)
 	_camera.position = _camera.position.lerp(_cam_target_pos, t)
-	var pitch: float = lerpf(_camera.rotation_degrees.x, _cam_target_pitch, t)
-	# Yaw 180 keeps the camera looking down +Z, the orientation both Episode 2
-	# cameras had to be corrected to after they were found facing backwards.
-	var yaw: float = lerpf(_camera.rotation_degrees.y, _cam_target_yaw, t)
-	_camera.rotation_degrees = Vector3(pitch, yaw, 0.0)
+	# Slerp the orientation (Euler lerps spin the long way round after a look_at from the follow camera).
+	var goal := Basis.from_euler(Vector3(deg_to_rad(_cam_target_pitch), deg_to_rad(_cam_target_yaw), 0.0))
+	_camera.basis = Basis(_camera.basis.orthonormalized().get_rotation_quaternion().slerp(goal.get_rotation_quaternion(), t))
+
+
+## Third-person camera behind Lil Blunt, orbiting with the mouse, kept inside the room.
+func _follow_camera(delta: float) -> void:
+	var target: Vector3 = Vector3(_player_pos.x, _player_pos.y + CAM_TARGET_HEIGHT, _player_pos.z)
+	var cp: float = cos(_look_pitch)
+	var dir := Vector3(sin(_look_yaw) * cp, sin(_look_pitch), cos(_look_yaw) * cp)
+	var want: Vector3 = target - dir * CAM_DISTANCE + Vector3(0.0, 0.25, 0.0)
+	want.x = clampf(want.x, -(ROOM_X + 0.5), ROOM_X + 0.5)
+	want.y = clampf(want.y, 0.5, 5.8)
+	want.z = clampf(want.z, ENTRY_POSITION.z - 3.0, 17.0)
+	_camera.position = _camera.position.lerp(want, clampf(10.0 * delta, 0.0, 1.0))
+	var look_at_p: Vector3 = target + dir * 2.0
+	if _camera.position.distance_squared_to(look_at_p) > 1e-4:
+		_camera.look_at(look_at_p, Vector3.UP)
 
 
 func _distance_to_bull() -> float:
-	return absf(BULL_POSITION.z - _player_pos.z)
+	return Vector2(BULL_POSITION.x - _player_pos.x, BULL_POSITION.z - _player_pos.z).length()
+
+
+## The hand-overs are staged: Lil Blunt steps onto his mark in front of the Bull (the camera cuts, so it is not a
+## visible teleport) and stops; control returns when the item is in his hands.
+func _to_hand_mark() -> void:
+	_player_pos = HAND_MARK
+	_vel_y = 0.0
+	_move_input = Vector2.ZERO
+	_player_yaw = atan2(BULL_POSITION.x - HAND_MARK.x, BULL_POSITION.z - HAND_MARK.z)
 
 
 # --- Getters (HUD + tests) ---------------------------------------------------------
@@ -483,6 +651,9 @@ func is_in_cover() -> bool: return _in_cover
 func get_player_z() -> float: return _player_pos.z
 func get_line_hold() -> float: return _hold
 func get_distance_to_bull() -> float: return _distance_to_bull()
+func get_player_position() -> Vector3: return _player_pos
+func get_look_yaw() -> float: return _look_yaw
+func is_moving() -> bool: return _moving
 ## Chamber 0 has no health and no fail state. Reported as full so a shared HUD
 ## does not have to special-case it.
 func get_health() -> int: return 3
@@ -530,6 +701,7 @@ func _build_visuals() -> void:
 	_visuals.name = "Visuals"
 	add_child(_visuals)
 	_mold_nodes.clear()
+	_cauldron_spots.clear()
 	_rifle_node = null
 	_helmet_node = null
 	_apply_art()
@@ -602,20 +774,26 @@ func _build_visuals() -> void:
 	# --- crucibles pouring into the channel, steam rising.
 	for spec in [Vector3(-6.5, 0.0, CHANNEL_Z + 2.4), Vector3(6.2, 0.0, CHANNEL_Z + 2.2), Vector3(-1.6, 0.0, CHANNEL_Z + 3.4)]:
 		HideoutDressing.add_cauldron(_visuals, spec, channel)
+		_cauldron_spots.append(spec)
+		# Molten gold pouring from a chain-hung ladle into the cauldron (the target's glowing pour columns).
 		var pour := CylinderMesh.new()
-		pour.top_radius = 0.07
-		pour.bottom_radius = 0.12
-		pour.height = 1.9
+		pour.top_radius = 0.09
+		pour.bottom_radius = 0.14
+		pour.height = 3.2
 		var pour_mi := MeshInstance3D.new()
 		pour_mi.mesh = pour
 		pour_mi.material_override = channel
-		pour_mi.position = spec + Vector3(0.0, 1.0, -1.3)
+		pour_mi.position = spec + Vector3(0.25, 2.8, 0.0)
 		_visuals.add_child(pour_mi)
+		var ladle_iron := _hideout_plain(Color(0.13, 0.11, 0.10))
+		var ladle := _box(Vector3(0.9, 0.5, 0.9), spec + Vector3(0.55, 4.6, 0.0), ladle_iron)
+		ladle.rotation.z = deg_to_rad(32.0)
+		_box(Vector3(0.06, 1.6, 0.06), spec + Vector3(0.7, 5.6, 0.0), ladle_iron)
 		var glow := Ep2Palette.make_forge_light()
-		glow.position = spec + Vector3(0.0, 1.8, 0.0)
+		glow.position = spec + Vector3(0.0, 2.2, -0.6)
 		_visuals.add_child(glow)
 		var steam := _particles(26, 3.0, Color(0.75, 0.68, 0.62, 0.22), 1.1)
-		steam.position = spec + Vector3(0.0, 1.8, 0.0)
+		steam.position = spec + Vector3(0.0, 1.5, 0.0)
 		steam.direction = Vector3.UP
 		steam.spread = 18.0
 		steam.initial_velocity_min = 0.4
@@ -671,20 +849,30 @@ func _build_visuals() -> void:
 	bull_key.omni_range = 9.0
 	bull_key.position = BULL_POSITION + Vector3(-1.8, 2.8, -2.2)
 	_visuals.add_child(bull_key)
-	var bs: float = BULL_HEIGHT / BULL_NATIVE_H
 	# The pivot sits at his feet so a lean rotates him about his boots, not about his belly.
 	_bull_pivot = Node3D.new()
 	_bull_pivot.name = "BullPivot"
 	_bull_pivot.position = BULL_POSITION
 	_visuals.add_child(_bull_pivot)
+	_bull_anim = null
+	_bull_clip = ""
 	var bull: Node3D = null
-	if ResourceLoader.exists(BULL_MODEL):
-		bull = (load(BULL_MODEL) as PackedScene).instantiate() as Node3D
+	if ResourceLoader.exists(BULL_RIG_MODEL):
+		# Rigged (Meshy, 2026-10-01): origin at his feet.
+		bull = (load(BULL_RIG_MODEL) as PackedScene).instantiate() as Node3D
+		if bull:
+			bull.scale = Vector3.ONE * (BULL_HEIGHT / BULL_RIG_H)
+			bull.rotate_y(PI)
+			_bull_pivot.add_child(bull)
+			_bull_model = bull
+			_stand_t = -1.0
+			_setup_bull_rig(bull)
+			# His seat: a sturdy crate under the Sit_and_Drink hips (0.70 model units -> 0.85 m).
+			var seat := _box(Vector3(1.0, 0.66, 0.9), Vector3.ZERO, timber)
+			seat.reparent(_bull_pivot, false)
+			seat.position = Vector3(0.0, 0.33, 0.18)
+			seat.name = "BullSeat"
 	if bull:
-		bull.position = Vector3(0.0, BULL_NATIVE_FEET * bs, 0.0)
-		bull.scale = Vector3.ONE * bs
-		bull.rotate_y(PI)
-		_bull_pivot.add_child(bull)
 		RunnerView.self_light(bull, 0.12, Color(1.0, 0.82, 0.62))
 	else:
 		var bm := BoxMesh.new()
@@ -696,8 +884,8 @@ func _build_visuals() -> void:
 		_bull_pivot.add_child(fb)
 	_build_bull_props()
 	# His whiskey table: a crate, the glass, the bottle.
-	_box(Vector3(0.9, 0.9, 0.9), BULL_POSITION + Vector3(-1.4, 0.45, -0.5), timber)
-	_prop(WHISKEY_MODEL, BULL_POSITION + Vector3(-1.4, 0.92, -0.5), 1.4)
+	_box(Vector3(0.9, 0.9, 0.9), BULL_POSITION + CRATE_OFFSET + Vector3(0.0, -0.55, -0.3), timber)
+	_prop(WHISKEY_MODEL, BULL_POSITION + CRATE_OFFSET + Vector3(0.0, -0.08, -0.3), 1.4)
 	var glass_mat := StandardMaterial3D.new()
 	glass_mat.albedo_color = Color(0.45, 0.22, 0.06, 0.85)
 	glass_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -707,12 +895,12 @@ func _build_visuals() -> void:
 	body.top_radius = 0.075
 	body.bottom_radius = 0.08
 	body.height = 0.26
-	_mesh(body, glass_mat, BULL_POSITION + Vector3(-1.15, 1.03, -0.3))
+	_mesh(body, glass_mat, BULL_POSITION + CRATE_OFFSET + Vector3(0.25, 0.03, -0.1))
 	var neck := CylinderMesh.new()
 	neck.top_radius = 0.022
 	neck.bottom_radius = 0.06
 	neck.height = 0.16
-	_mesh(neck, glass_mat, BULL_POSITION + Vector3(-1.15, 1.24, -0.3))
+	_mesh(neck, glass_mat, BULL_POSITION + CRATE_OFFSET + Vector3(0.25, 0.24, -0.1))
 
 	# --- the verb-teach target: a rack of EMPTY casting molds (safe by design; see the spec).
 	for i in MOLD_TARGETS:
@@ -726,14 +914,24 @@ func _build_visuals() -> void:
 	# --- LIL BLUNT: the real hero (not the old primitive), standing in the room, lying when he comes to.
 	_player_node = _build_player()
 	# The rifle starts on the Bull's crate and moves to the player's hands on hand-off.
-	_rifle_node = _prop(RIFLE_MODEL, BULL_POSITION + Vector3(-1.4, 1.0, -0.2), 1.0, PI * 0.5)
+	_rifle_node = _prop(RIFLE_MODEL, BULL_POSITION + CRATE_OFFSET, 1.0, PI * 0.5)
 	# The helmet waits on the crate too.
 	_helmet_node = _build_helmet()
-	_helmet_node.position = BULL_POSITION + Vector3(-1.65, 1.05, -0.75)
+	_helmet_node.position = BULL_POSITION + CRATE_OFFSET + Vector3(-0.25, 0.05, -0.55)
 	_visuals.add_child(_helmet_node)
 
 	# --- the hangout: alcove, trophies, armory, Gatling, poster, braziers (see HideoutDressing).
 	_dressing = HideoutDressing.build(_visuals)
+	_blockers = (_dressing.get("blockers", []) as Array).duplicate()
+	_blockers.append([Vector2(BULL_POSITION.x, BULL_POSITION.z), 0.95])
+	_blockers.append([Vector2(BULL_POSITION.x + CRATE_OFFSET.x, BULL_POSITION.z + CRATE_OFFSET.z), 0.55])
+	for cs in _cauldron_spots:
+		_blockers.append([Vector2(cs.x, cs.z), 1.1])
+	for mz in [-1.2, 0.0, 1.2]:
+		_blockers.append([Vector2(MOLD_RACK_POSITION.x, MOLD_RACK_POSITION.z + mz), 0.7])
+	# A plank bridge over the molten channel: the only way across to Fort Knox.
+	var bridge := _box(Vector3(2.0, 0.1, 2.8), Vector3(0.0, 0.06, CHANNEL_Z), timber)
+	bridge.name = "ChannelBridge"
 
 	# --- the exit toward Fort Knox: a timber doorway in the left wall's end, lit.
 	for dsx in [-2.4, 2.4]:
@@ -773,8 +971,17 @@ func _build_player() -> Node3D:
 		return root
 	hero.scale = Vector3(-PLAYER_SCALE, PLAYER_SCALE, PLAYER_SCALE)
 	root.add_child(hero)
+	_hero_anim = null
+	_hero_clip = ""
 	for ap in hero.find_children("*", "AnimationPlayer", true, false):
 		(ap as AnimationPlayer).stop()
+		if _hero_anim == null:
+			_hero_anim = ap
+	if _hero_anim:
+		_add_hero_clip("walk", HERO_WALK_CLIP)
+		_add_hero_clip("run", HERO_RUN_CLIP)
+		if not _hero_anim.has_animation("walk"):
+			_hero_anim = null          # no walk cycle: fall back to the procedural bob
 	var sks: Array = hero.find_children("*", "Skeleton3D", true, false)
 	if not sks.is_empty():
 		_player_skel = sks[0]
@@ -800,6 +1007,24 @@ func _build_player() -> Node3D:
 	key.position = Vector3(0.8, 2.2, -1.2)
 	root.add_child(key)
 	return root
+
+
+## Copy a clip out of an armature-only Meshy GLB (same rig, same track paths) into Lil Blunt's player.
+func _add_hero_clip(clip_name: String, path: String) -> void:
+	if _hero_anim == null or not ResourceLoader.exists(path):
+		return
+	var src: Node = (load(path) as PackedScene).instantiate()
+	var aps: Array = src.find_children("*", "AnimationPlayer", true, false)
+	if not aps.is_empty():
+		var sp: AnimationPlayer = aps[0]
+		var list: PackedStringArray = sp.get_animation_list()
+		if not list.is_empty():
+			var anim: Animation = sp.get_animation(list[0]).duplicate(true)
+			anim.loop_mode = Animation.LOOP_LINEAR
+			var lib: AnimationLibrary = _hero_anim.get_animation_library("")
+			if lib and not lib.has_animation(clip_name):
+				lib.add_animation(clip_name, anim)
+	src.free()
 
 
 ## A brass miner's helmet with a working lamp - the one the Bull hands over.
@@ -937,6 +1162,11 @@ func _apply_art() -> void:
 		we.environment.ambient_light_energy = 0.95
 		we.environment.glow_intensity = 0.85
 		we.environment.glow_hdr_threshold = 0.95
+		# Founder 2026-10-01: "I don't like the greyscale" - push the grade toward the target's saturated gold.
+		we.environment.adjustment_enabled = true
+		we.environment.adjustment_saturation = 1.2
+		we.environment.adjustment_contrast = 1.08
+		we.environment.adjustment_brightness = 1.05
 	var sun := get_node_or_null("Sun") as DirectionalLight3D
 	if sun:
 		var key := Ep2Palette.make_key_light()
@@ -950,17 +1180,15 @@ func _sync_visuals() -> void:
 	if _visuals == null or not is_instance_valid(_visuals):
 		return
 	if _player_node and is_instance_valid(_player_node):
-		_player_node.position.x = _player_pos.x
-		_player_node.position.z = _player_pos.z
 		var lying: bool = _beat <= Beat.WAKE
+		if not lying:
+			_player_node.position = Vector3(_player_pos.x, _player_pos.y, _player_pos.z)
 		if lying:
 			# Out cold on his back at the Bull's boots, head toward him (the film ended here).
 			_player_node.basis = Basis(Vector3(-1.0, 0.0, 0.0), Vector3(0.0, 0.0, 1.0), Vector3(0.0, 1.0, 0.0))
 			_player_node.position.y = 0.3
 			_player_node.position.z = _player_pos.z - 1.1
-		else:
-			_player_node.basis = Basis.IDENTITY
-			_player_node.position.y = 0.35 if _in_cover else 0.0
+			_player_node.position.x = _player_pos.x
 		if _player_pose:
 			_player_pose.influence = 0.35 if lying else 1.0
 	# Broken molds drop and go dark — the verb teach needs visible feedback or
@@ -978,12 +1206,76 @@ func _sync_visuals() -> void:
 
 
 # --- The Bull's props: whiskey glass in hand, lit cigar, embers (founder target image) -----------------------
-# Positions are in the Bull pivot's local space (feet origin, he faces -Z). Tuned against real captures.
+# Statue fallback positions are in the Bull pivot's local space (feet origin, he faces -Z). With the rig the glass
+# rides his LEFT hand bone and the cigar ember rides the `headfront` bone, so they move with his clips.
 const BULL_GLASS_REST := Vector3(0.74, 0.95, -0.45)
-const BULL_GLASS_LIP := Vector3(0.22, 2.38, -0.62)
-const BULL_MOUTH := Vector3(0.0, 2.43, -0.58)
+const BULL_MOUTH := Vector3(0.05, 2.4, -0.75)
 const BULL_HAND_OUT := Vector3(0.45, 1.65, -1.25)
-const CRATE_OFFSET := Vector3(-1.4, 1.0, -0.2)
+const CRATE_OFFSET := Vector3(1.55, 1.0, 0.3)
+## Clip names inside inferno_bull_rigged.glb (Meshy library ids 11, 342, 313, 292).
+const BULL_IDLE := "Idle_02"
+const BULL_DRINK := "Stand_and_Drink"
+const BULL_TALK := "Talk_with_Hands_Open"
+const BULL_GUN := "Gesture_with_Hand_on_Gun"
+## Seated clips on the same rig (library ids 343, 53; 33 kept as a spare), in their own GLB: the target image has
+## him sitting on a crate. He sits until "SIZING" (he takes your measure), then stands for the hand-overs.
+const BULL_SIT_CLIPS := "res://src/episode2/assets/inferno_bull_sit_clips.glb"
+const BULL_SIT := "Sit_and_Drink"
+const BULL_STAND_UP := "Sit_to_Stand_Transition_M"
+const STAND_UP_SPEED := 1.8
+## Root drift between Meshy clips (model units, measured with a skeleton probe): Sit_to_Stand starts from a chair
+## 1.24 back and 0.25 higher than Sit_and_Drink's seat and ends 0.49 back of the standing clips' hips. The model is
+## offset by a correction blended across the stand-up so he rises from HIS crate and ends on his mark.
+const STAND_CORR_START := Vector3(0.02, -0.25, 1.24)
+const STAND_CORR_END := Vector3(-0.16, 0.0, 0.49)
+
+
+## Loop the idle/talk clips (Meshy clips import non-looping) and hang attachment points on his bones.
+func _setup_bull_rig(bull: Node3D) -> void:
+	var aps: Array = bull.find_children("*", "AnimationPlayer", true, false)
+	if not aps.is_empty():
+		_bull_anim = aps[0]
+		if ResourceLoader.exists(BULL_SIT_CLIPS):
+			var src: Node = (load(BULL_SIT_CLIPS) as PackedScene).instantiate()
+			var saps: Array = src.find_children("*", "AnimationPlayer", true, false)
+			var lib: AnimationLibrary = _bull_anim.get_animation_library("")
+			if not saps.is_empty() and lib:
+				for clip_name in (saps[0] as AnimationPlayer).get_animation_list():
+					if not lib.has_animation(clip_name):
+						lib.add_animation(clip_name, (saps[0] as AnimationPlayer).get_animation(clip_name).duplicate(true))
+			src.free()
+		for clip in [BULL_IDLE, BULL_TALK, BULL_DRINK, BULL_SIT]:
+			if _bull_anim.has_animation(clip):
+				_bull_anim.get_animation(clip).loop_mode = Animation.LOOP_LINEAR
+		_bull_play(BULL_IDLE)
+	var sks: Array = bull.find_children("*", "Skeleton3D", true, false)
+	if sks.is_empty():
+		return
+	var sk: Skeleton3D = sks[0]
+	_bull_hand = _bone_attachment(sk, "RightHand")
+	_bull_left_hand = _bone_attachment(sk, "LeftHand")
+	_bull_face = _bone_attachment(sk, "headfront")
+
+
+func _bone_attachment(sk: Skeleton3D, bone: String) -> BoneAttachment3D:
+	if sk.find_bone(bone) < 0:
+		return null
+	var ba := BoneAttachment3D.new()
+	ba.name = "Att_" + bone
+	ba.bone_name = bone
+	sk.add_child(ba)
+	return ba
+
+
+func _bull_play(clip: String, speed: float = 1.0) -> void:
+	if _bull_anim == null or not is_instance_valid(_bull_anim) or clip == _bull_clip or not _bull_anim.has_animation(clip):
+		return
+	_bull_clip = clip
+	_bull_anim.play(clip, 0.4, speed)
+
+
+func is_bull_seated() -> bool:
+	return _bull_anim != null and _stand_t < 0.0 and _bull_anim.has_animation(BULL_SIT)
 
 
 func _build_bull_props() -> void:
@@ -995,31 +1287,33 @@ func _build_bull_props() -> void:
 	amber.emission = Color(0.95, 0.45, 0.06)
 	amber.emission_energy_multiplier = 0.7
 	var tumbler := CylinderMesh.new()
-	tumbler.top_radius = 0.11
-	tumbler.bottom_radius = 0.09
-	tumbler.height = 0.22
+	tumbler.top_radius = 0.09
+	tumbler.bottom_radius = 0.075
+	tumbler.height = 0.17
 	_glass_node = Node3D.new()
 	_glass_node.name = "BullGlass"
-	_glass_node.position = BULL_GLASS_REST
-	_bull_pivot.add_child(_glass_node)
 	var gm := MeshInstance3D.new()
 	gm.mesh = tumbler
 	gm.material_override = amber
 	_glass_node.add_child(gm)
-	# The Bull's own model already holds the cigar in his teeth; we add only its ember glow and the smoke.
+	if _bull_left_hand:
+		# Meshy's "LeftHand" is the hand holding his rifle - the one the drink clips lift to his mouth.
+		_bull_left_hand.add_child(_glass_node)
+		_glass_node.position = Vector3(0.0, 0.08, 0.04)
+	else:
+		_glass_node.position = BULL_GLASS_REST
+		_bull_pivot.add_child(_glass_node)
+	# The model already holds the cigar in his teeth; we add only its ember glow and the smoke.
 	var tip := SphereMesh.new()
-	tip.radius = 0.03
-	tip.height = 0.06
+	tip.radius = 0.025
+	tip.height = 0.05
 	var tm := StandardMaterial3D.new()
 	tm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	tm.albedo_color = Color(1.0, 0.5, 0.15)
 	_cigar_tip = MeshInstance3D.new()
 	_cigar_tip.mesh = tip
 	_cigar_tip.material_override = tm
-	_cigar_tip.position = Vector3(0.05, 2.4, -0.75)
-	_bull_pivot.add_child(_cigar_tip)
 	_cigar_smoke = _particles(22, 3.0, Color(0.82, 0.8, 0.78, 0.3), 0.14)
-	_cigar_smoke.position = _cigar_tip.position
 	_cigar_smoke.direction = Vector3.UP
 	_cigar_smoke.spread = 22.0
 	_cigar_smoke.initial_velocity_min = 0.18
@@ -1028,7 +1322,17 @@ func _build_bull_props() -> void:
 	_cigar_smoke.scale_amount_min = 0.7
 	_cigar_smoke.scale_amount_max = 2.6
 	_cigar_smoke.preprocess = 3.0
-	_bull_pivot.add_child(_cigar_smoke)
+	_cigar_smoke.local_coords = false
+	if _bull_face:
+		_bull_face.add_child(_cigar_tip)
+		_bull_face.add_child(_cigar_smoke)
+		_cigar_tip.position = Vector3(0.06, -0.05, 0.12)
+		_cigar_smoke.position = _cigar_tip.position
+	else:
+		_cigar_tip.position = BULL_MOUTH
+		_cigar_smoke.position = BULL_MOUTH
+		_bull_pivot.add_child(_cigar_tip)
+		_bull_pivot.add_child(_cigar_smoke)
 	# Heat: embers lifting off his shoulders (he is associated with flame).
 	var embers := _particles(40, 2.6, Color(1.0, 0.55, 0.15), 0.04)
 	embers.position = Vector3(0.0, 1.7, -0.1)
@@ -1050,9 +1354,22 @@ func _hideout_plain(c: Color) -> StandardMaterial3D:
 	return m
 
 
+## Where the Bull presents an item right now: between his two open hands (Talk_with_Hands_Open spreads them
+## ~0.8 m to each side at chest height), a little in front of his chest, so it is visible and moves with his arms.
+func get_bull_hand() -> Vector3:
+	if _bull_hand and is_instance_valid(_bull_hand) and _bull_hand.is_inside_tree() and _bull_left_hand \
+			and is_instance_valid(_bull_left_hand):
+		var mid: Vector3 = (_bull_hand.global_position + _bull_left_hand.global_position) * 0.5
+		var fwd: Vector3 = -_bull_pivot.global_transform.basis.z.normalized()
+		return mid + fwd * 0.45 + Vector3(0.0, 0.05, 0.0)
+	if _bull_pivot and is_instance_valid(_bull_pivot) and _bull_pivot.is_inside_tree():
+		return _bull_pivot.to_global(BULL_HAND_OUT)
+	return BULL_POSITION + BULL_HAND_OUT
+
+
 # --- Performance ----------------------------------------------------------------------------------------
-# Neither actor has a clip for this scene (the Bull model is a statue; Lil Blunt's rig only carries the
-# runner's poses), so the acting is procedural: small, readable, deterministic motions driven by the beat.
+# The Bull plays his Meshy clips by beat (drink, talk with open hands for the hand-overs, hand-on-gun for his
+# terms); Lil Blunt plays his walk/run cycle when he moves, and the props travel hand to hand.
 
 func _animate(delta: float) -> void:
 	if _visuals == null or not is_instance_valid(_visuals) or not is_inside_tree():
@@ -1069,62 +1386,116 @@ func _smooth(t: float) -> float:
 	return c * c * (3.0 - 2.0 * c)
 
 
-## Breathing, weight shift, a lean toward Lil Blunt while he hands something over, the raised glass and a
-## cigar puff every few seconds.
+func _bull_handing() -> bool:
+	return (_beat == Beat.HANDOFF and _rifle_t > 0.3 and _rifle_t < 3.0) \
+		or (_beat == Beat.HELMET and _helmet_t > 0.3 and _helmet_t < 3.4)
+
+
 func _animate_bull(delta: float) -> void:
 	if _bull_pivot == null or not is_instance_valid(_bull_pivot):
 		return
-	var handing: bool = (_beat == Beat.HANDOFF and _rifle_t > 0.4 and _rifle_t < 2.8) \
-		or (_beat == Beat.HELMET and _helmet_t > 0.4 and _helmet_t < 3.0)
-	_lean = lerpf(_lean, 0.15 if handing else 0.0, clampf(4.0 * delta, 0.0, 1.0))
-	var breath: float = sin(_anim_t * 1.7)
-	_bull_pivot.rotation = Vector3(_lean + 0.008 * breath, 0.0, 0.014 * sin(_anim_t * 0.55))
-	_bull_pivot.scale = Vector3(1.0, 1.0 + 0.006 * breath, 1.0)
-	# The glass: up to his lip, a pause (the puff), back to his hip. One cycle every 9 s.
-	if _glass_node:
-		var ph: float = fmod(_anim_t, 9.0)
-		var up: float = _smooth(ph / 1.0) - _smooth((ph - 2.4) / 1.1)
+	var handing: bool = _bull_handing()
+	_lean = lerpf(_lean, 0.12 if handing else 0.0, clampf(4.0 * delta, 0.0, 1.0))
+	# He turns to keep Lil Blunt in front of him (at most 60 degrees off his post).
+	var to_p := Vector2(_player_pos.x - BULL_POSITION.x, _player_pos.z - BULL_POSITION.z)
+	var want_yaw: float = 0.0
+	if _in_scripted_handover() or is_bull_seated():
+		want_yaw = 0.3          # square to the camera (and his crate), free hand on Lil Blunt's side for the offer
+	elif to_p.length() < 9.0 and _beat > Beat.WAKE:
+		want_yaw = clampf(wrapf(atan2(-to_p.x, -to_p.y), -PI, PI), -1.05, 1.05)
+	var cur_yaw: float = lerp_angle(_bull_pivot.rotation.y, want_yaw, clampf(2.5 * delta, 0.0, 1.0))
+	if _bull_anim:
+		_bull_pivot.rotation = Vector3(_lean, cur_yaw, 0.0)
+		# Seated until he takes your measure; any later beat finds him already standing.
+		if _stand_t < 0.0 and _bull_anim.has_animation(BULL_SIT):
+			if _beat == Beat.SIZING:
+				_stand_t = 0.0
+			elif _beat > Beat.SIZING:
+				_stand_t = 99.0
+		var stand_len: float = (_bull_anim.get_animation(BULL_STAND_UP).length / STAND_UP_SPEED) \
+			if _bull_anim.has_animation(BULL_STAND_UP) else 0.0
+		var corr := Vector3.ZERO
+		if is_bull_seated():
+			_bull_play(BULL_SIT)
+			_bull_model.position = Basis(Vector3.UP, PI) * (corr * _bull_model.scale.x)
+			return
+		if _stand_t >= 0.0 and _stand_t < stand_len:
+			_stand_t += delta
+			var u: float = clampf(_stand_t / stand_len, 0.0, 1.0)
+			corr = STAND_CORR_START.lerp(STAND_CORR_END, _smooth(u))
+			_bull_play(BULL_STAND_UP, STAND_UP_SPEED)
+			_bull_model.position = Basis(Vector3.UP, PI) * (corr * _bull_model.scale.x)
+			return
+		if _stand_t < 99.0 and _stand_t >= 0.0:
+			_stand_t = 99.0
+			_settle = 0.4           # crossfade window into the standing clips
+		_settle = maxf(0.0, _settle - delta)
+		# During the 0.4 s crossfade the correction eases out at the same rate the stand-up pose fades: no pop.
+		_bull_model.position = Basis(Vector3.UP, PI) * (STAND_CORR_END * (_settle / 0.4) * _bull_model.scale.x)
+		var clip: String = BULL_IDLE
 		if handing:
-			up = 0.0
-		_glass_node.position = BULL_GLASS_REST.lerp(BULL_GLASS_LIP, up)
-		_glass_node.rotation_degrees.z = -22.0 * up
-	# The cigar tip glows brighter on the puff, which follows the sip.
+			clip = BULL_TALK
+		elif _beat == Beat.WAKE or (_beat == Beat.DRINK and _hold > 0.0):
+			clip = BULL_DRINK
+		elif _beat == Beat.TERMS and _hold > 0.0:
+			clip = BULL_GUN
+		elif _hold > 0.0:
+			clip = BULL_TALK
+		elif fmod(_anim_t, 16.0) > 7.0 and fmod(_anim_t, 16.0) < 15.9:
+			clip = BULL_DRINK           # between lines he nurses his whiskey
+		_bull_play(clip)
+	else:
+		# Statue fallback: whole-body breathing and sway.
+		var breath: float = sin(_anim_t * 1.7)
+		_bull_pivot.rotation = Vector3(_lean + 0.008 * breath, cur_yaw, 0.014 * sin(_anim_t * 0.55))
+		_bull_pivot.scale = Vector3(1.0, 1.0 + 0.006 * breath, 1.0)
 	if _cigar_tip:
 		var pp: float = fmod(_anim_t + 4.5, 9.0)
 		var puff: float = _smooth(pp / 0.6) - _smooth((pp - 1.4) / 0.9)
 		(_cigar_tip.material_override as StandardMaterial3D).albedo_color = Color(1.0, 0.42, 0.1).lerp(Color(1.0, 0.85, 0.45), puff)
-		_cigar_tip.scale = Vector3.ONE * (1.0 + 0.5 * puff)
+		_cigar_tip.scale = Vector3.ONE * (1.0 + 0.6 * puff)
 
 
-## Lil Blunt: breathing and weight shift when still, a bob-and-sway while walking, three-quarter turn toward the
-## camera while the Bull talks, a reach forward when something is handed over, and a hop for joy after the helmet.
+## Lil Blunt: walk / run cycle while moving, faces where he walks; in a conversation he turns to the Bull; reach
+## for each item on the hand-over; a hop for joy when the helmet lands.
 func _animate_hero(delta: float) -> void:
 	if _player_node == null or not is_instance_valid(_player_node) or _beat <= Beat.WAKE:
 		return
-	var walking: bool = absf(_walk_input) > 0.01
-	if walking:
-		_walk_phase += delta * 9.5
-	var bob: float = absf(sin(_walk_phase)) * 0.075 if walking else 0.0
-	var sway: float = sin(_walk_phase) * 0.07 if walking else 0.02 * sin(_anim_t * 0.9)
-	var breath: float = 0.010 * sin(_anim_t * 2.1)
 	var talking: bool = _beat >= Beat.DRINK and _beat <= Beat.PROMISE
-	var yaw: float = 1.15 if talking and not walking else 0.0
+	if (talking or _in_scripted_handover()) and not _moving:
+		var to_bull: float = atan2(BULL_POSITION.x - _player_pos.x, BULL_POSITION.z - _player_pos.z)
+		# On the hand-over mark he turns three-quarters toward the camera, looking up at the Bull (target image).
+		var want: float = to_bull + (1.35 if _in_scripted_handover() else 0.0)
+		_player_yaw = lerp_angle(_player_yaw, want, clampf(5.0 * delta, 0.0, 1.0))
 	var reach: float = 0.0
 	if _beat == Beat.HANDOFF:
 		reach = _smooth((_rifle_t - 1.6) / 0.6) * (1.0 - _smooth((_rifle_t - 3.2) / 0.6))
 	elif _beat == Beat.HELMET:
 		reach = _smooth((_helmet_t - 1.8) / 0.6) * (1.0 - _smooth((_helmet_t - 3.2) / 0.6))
-		yaw = 1.3 if reach > 0.0 else yaw
-	# joy hop
 	if _hop_v != 0.0 or _hop_y > 0.0:
 		_hop_v -= 15.0 * delta
 		_hop_y = maxf(0.0, _hop_y + _hop_v * delta)
 		if _hop_y <= 0.0:
 			_hop_v = 0.0
-	var pitch: float = 0.16 * reach
-	_player_node.basis = Basis.from_euler(Vector3(pitch, yaw, sway))
-	_player_node.basis = _player_node.basis.scaled(Vector3(1.0, 1.0 + breath, 1.0))
-	_player_node.position.y = (0.35 if _in_cover else 0.0) + bob + _hop_y + 0.05 * reach
+	var breath: float = 0.010 * sin(_anim_t * 2.1)
+	var sway: float = 0.0 if _hero_anim else (sin(_walk_phase) * 0.07 if _moving else 0.02 * sin(_anim_t * 0.9))
+	var bob: float = 0.0 if _hero_anim or not _moving else absf(sin(_walk_phase)) * 0.075
+	_player_node.basis = Basis.from_euler(Vector3(0.16 * reach, _player_yaw, sway)).scaled(Vector3(1.0, 1.0 + breath, 1.0))
+	_player_node.position = Vector3(_player_pos.x, (0.35 if _in_cover else 0.0) + _player_pos.y + bob + _hop_y + 0.05 * reach,
+		_player_pos.z)
+	if _hero_anim:
+		var clip: String = ""
+		if _moving and _player_pos.y <= 0.001:
+			clip = "run" if _run_input else "walk"
+		if clip != _hero_clip:
+			_hero_clip = clip
+			if clip == "":
+				_hero_anim.pause()
+			else:
+				_hero_anim.play(clip, 0.15)
+				_hero_anim.speed_scale = 1.25 if clip == "run" else 1.7
+		if _player_pose:
+			_player_pose.legs_free = clip != ""
 
 
 ## The rifle and the helmet travel by hand: crate -> the Bull's outstretched hand -> Lil Blunt, rather than
@@ -1141,10 +1512,11 @@ func _animate_gear(delta: float) -> void:
 		elif not _helmet_on_head:
 			_helmet_t = 99.0
 	var crate: Vector3 = BULL_POSITION + CRATE_OFFSET
-	var hand: Vector3 = _bull_pivot.to_global(BULL_HAND_OUT) if _bull_pivot else crate
+	var hand: Vector3 = get_bull_hand()
+	var body := Basis(Vector3.UP, _player_yaw)
 	# --- rifle
 	if _rifle_node and is_instance_valid(_rifle_node) and _has_winchester:
-		var held: Vector3 = Vector3(_player_pos.x + 0.55, 0.95 + _player_node.position.y, _player_pos.z + 0.2)
+		var held: Vector3 = _player_node.position + body * Vector3(0.5, 0.95, 0.2) if _player_node else hand
 		var t: float = _rifle_t
 		var pos: Vector3 = held
 		if t < 0.9:
@@ -1156,7 +1528,7 @@ func _animate_gear(delta: float) -> void:
 		else:
 			_rifle_in_hands = true
 		_rifle_node.position = pos
-		var held_rot := Vector3(0.0, 0.0, deg_to_rad(-18.0))
+		var held_rot := Vector3(0.0, _player_yaw, deg_to_rad(-18.0))
 		_rifle_node.rotation = Vector3(0.0, PI * 0.5, 0.0).lerp(held_rot, _smooth((t - 2.1) / 0.9)) if t < 3.0 else held_rot
 	# --- helmet
 	if _helmet_node and is_instance_valid(_helmet_node) and _has_helmet and not _helmet_on_head:

@@ -1,6 +1,6 @@
 ---
 name: ep2-hideout-set-dressing
-description: Redesign an Episode 2 interior (Inferno Bull's hangout, later the Fort Knox vault, saloon, armory) to match a founder TARGET IMAGE using code-built set dressing - trophies, 1800s armory, Gatling gun, pin-up poster, braziers, cowhide rug - without adding megabytes or new Meshy credits. TRIGGER when the founder sends a scene image and says "this is what it should look like", "polish the environment", "decorate / redesign the room", or asks for props (guns, trophies, posters, whiskey, flames) in an Episode 2 chamber.
+description: Redesign an Episode 2 interior (Inferno Bull's hangout, later the Fort Knox vault, saloon, armory) to match a founder TARGET IMAGE - Flux concept per prop -> Meshy image-to-3d (spend the credits, founder-authorised) -> shrink -> place by measured native size; pin-up poster and cowhide from Flux; heat and flame; full colour, never grey primitives. TRIGGER when the founder sends a scene image and says "this is what it should look like", "polish the environment", "decorate / redesign the room", or asks for props (guns, trophies, posters, whiskey, flames) in an Episode 2 chamber.
 ---
 
 # Why this exists
@@ -9,22 +9,38 @@ timber alcove, bear trophies (mounted heads + a full taxidermy bear), a gun wall
 Colt Gatling, a pin-up poster, a whiskey table, cowhide rug, gold bars, braziers/forge flame, FORT KNOX door with a
 longhorn skull. The old room was a 24 x 32 m empty cave with floating cream boxes. This skill is the recipe that fixed it.
 
-# Recipe (in this order)
+# FOUNDER CORRECTION 2026-10-01 (read first)
+The first pass built the room from code primitives + PIL drawings to "save credits". The founder rejected it:
+"Of course you must spend what we have on Meshy! I don't like the greyscale. This looks nothing like what I gave
+you. I want high quality!!!" **Never ask whether to spend Meshy credits on an Episode 2 set; spend them.**
+Primitives are only for things Meshy cannot make (walls, beams, bridges, gold-bar stacks, light sources).
+
+# The prop pipeline that worked (2026-10-01, ~90 credits for the Bull rig + 4 clips + 5 props)
+1. `python3 tools/ep2_forge/hideout_concepts.py [id]` - Muapi Flux concept per prop, ISOLATED on white, in the
+   target's style (warm firelight, saturated). Look at a contact sheet; regenerate a bad one (the first Gatling came
+   out head-on and mangled - a "side profile view" prompt fixed it). Flux is cents; Meshy is credits: fix the image first.
+2. Meshy `image_to_3d` with `model_type: smart-topology`, `ai_model: meshy-t2`, textured, glb (15 credits each).
+3. `python3 tools/meshy/pull_hideout_props.py name=task ...` downloads, shrinks (1024 / 256 maps, ~0.3-0.4 MB each)
+   and writes `src/episode2/assets/hideout/sources.json`.
+4. `node scripts/glb-shot.mjs <glb> sheet.png` and LOOK (views: front = +Z camera, back, left, right, top, 3/4).
+   Meshy normalises every model to a unit box centred on the origin; record [height, lowest y] in
+   `HideoutDressing.NATIVE` (probe: `godot --headless -s tools/ep2_shots/glb_probe.gd -- res://...glb`) and place with
+   `_prop(name, base, height, yaw)` - no runtime AABB (the headless dummy renderer returns empty mesh AABBs).
+5. Facing from the sheet: bears and heads face +Z, the Gatling's muzzle is -X, the cart's long axis is X. A model
+   facing +Z turned by yaw faces (sin yaw, 0, cos yaw).
+6. Flat art (poster, rug texture) comes straight from Flux; give the rug a real hide silhouette (alpha-scissor PNG),
+   not a rectangle.
+
+# Earlier recipe notes (still true)
 1. **Save the target** into `design/ep2/` first (ep2-founder-intake). Everything is judged against it (ep2-reference-match-loop).
 2. **Read the orientation before placing anything.** In the facility the camera looks +Z with yaw 180, so
    **screen-LEFT is world +X** and screen-right is -X. The first build put the gun wall on the wrong side. Write the
    target's left/right layout as +X/-X in the design doc before touching code.
 3. **Dress in a separate module** (`src/episode2/chamber/hideout_dressing.gd`, `HideoutDressing.build(visuals)`),
    never inline in the 1000-line chamber script. It returns handles (`flames`, `gatling`, `poster`) the chamber animates.
-4. **Build from primitives + committed GLBs.** Zero new packages: Gatling, revolvers, braziers, skull, plinths, tables,
-   cauldrons are box/cylinder/sphere meshes; rifles reuse `winchester_1886.glb`; bears reuse `mine_bear_archer.glb`.
-   Every prop must still show something if its GLB fails to load.
-5. **Trophy heads = a sliced GLB**, not a new Meshy model: `trimesh`, keep faces whose centroid is above the neck
-   (`y > 0.30`), drop the bow (`|x| < 0.55`), shrink the baked texture to 512 px, export, then
-   `godot --headless --import`. Check facing numerically/visually (the archer bear's base forward is +X; wall yaw =
-   `90 + 90*sx`). Remember trimesh exports may be alpha-blended: bears looked ghostly until opaque.
-6. **Painted textures from PIL** (`scripts/make_hideout_textures.py`): poster and cowhide. Deterministic, rerunnable.
-   Ceiling: they read as stylised flat art. A better poster is a Meshy text-to-image job (credits: ask first).
+4. Every prop must still show something if its GLB fails to load (primitive fallback in `_prop` callers).
+5. Light-grey palette metals (`Ep2Palette.make("iron")`) read as CREAM blocks under forge light - ladles, revolvers
+   and chains need a dark iron (0.13-0.2 albedo). That was the "greyscale" look as much as the primitives were.
 7. **Heat and flame** (Inferno Bull's identity): braziers with additive soft-sprite flame particles + flickering
    OmniLights (`_animate_set`), forge-glow cauldrons with the flowing molten shader, ember particles off his shoulders.
 8. **Lift the room's light, not the props'.** Forge env ambient 0.95, glow 0.85/0.95 threshold; keep `self_light` on

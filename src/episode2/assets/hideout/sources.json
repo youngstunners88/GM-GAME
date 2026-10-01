@@ -1,0 +1,32 @@
+{
+  "bear_standing.glb": {
+    "task": "01a0f7fb-fc97-706e-9e7e-83e8949de08c",
+    "kind": "image-to-3d smart-topology (meshy-t2), textured",
+    "concept": "tools/ep2_forge/hideout_concepts.py -> bear_standing",
+    "credits": 15
+  },
+  "bear_head.glb": {
+    "task": "01a0f7fc-02a8-733a-8fad-a6298f2f3efb",
+    "kind": "image-to-3d smart-topology (meshy-t2), textured",
+    "concept": "tools/ep2_forge/hideout_concepts.py -> bear_head",
+    "credits": 15
+  },
+  "ore_cart.glb": {
+    "task": "01a0f7fc-0936-761f-9880-6789bd118294",
+    "kind": "image-to-3d smart-topology (meshy-t2), textured",
+    "concept": "tools/ep2_forge/hideout_concepts.py -> ore_cart",
+    "credits": 15
+  },
+  "cauldron.glb": {
+    "task": "01a0f7fd-48e5-7730-a40b-c53d39456478",
+    "kind": "image-to-3d smart-topology (meshy-t2), textured",
+    "concept": "tools/ep2_forge/hideout_concepts.py -> cauldron",
+    "credits": 15
+  },
+  "gatling.glb": {
+    "task": "01a0f7fe-12d8-72ab-920a-bdd94b64b1a1",
+    "kind": "image-to-3d smart-topology (meshy-t2), textured",
+    "concept": "tools/ep2_forge/hideout_concepts.py -> gatling",
+    "credits": 15
+  }
+}

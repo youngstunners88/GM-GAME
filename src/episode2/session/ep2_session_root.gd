@@ -282,11 +282,62 @@ func get_total_distance() -> float:
 
 func _process(_delta: float) -> void:
 	_sync_mouse_mode()
+	_poll_free_roam()
 
 func _sync_mouse_mode() -> void:
+	if _mode == Mode.CHAMBER and _free_roam() and _active.wants_mouse_capture():
+		return      # the player captured it for mouse look (click); leave it, ESC/the browser releases it
 	var want: Input.MouseMode = Input.MOUSE_MODE_HIDDEN if _mode == Mode.RUNNER else Input.MOUSE_MODE_VISIBLE
 	if Input.mouse_mode != want:
 		Input.mouse_mode = want
+
+# --- Free roam (the Smelting Facility hideout) -------------------------------------------------------------
+# Founder 2026-10-01: Up / W = forward, Down / S = back, Left / A = left, Right / D = right, Space = jump,
+# mouse = look. Movement is polled (held keys), forwarded only when it changes so a test driving walk()
+# directly is never overwritten by an idle keyboard.
+var _last_move: Vector2 = Vector2.ZERO
+var _last_run: bool = false
+
+func _free_roam() -> bool:
+	return _active != null and is_instance_valid(_active) and _active.has_method("set_move_input")
+
+func _poll_free_roam() -> void:
+	if not input_enabled or _mode != Mode.CHAMBER or not _free_roam():
+		_last_move = Vector2.ZERO
+		_last_run = false
+		return
+	var v := Vector2(Input.get_axis("move_left", "move_right"), Input.get_axis("move_down", "move_up"))
+	var run: bool = InputMap.has_action("sprint") and Input.is_action_pressed("sprint")
+	if v != _last_move or run != _last_run:
+		_last_move = v
+		_last_run = run
+		_active.set_move_input(v, run)
+
+## Mouse + Space + E/LMB for the hideout. Returns true when the event was used.
+func _route_free_roam(event: InputEvent) -> bool:
+	if event is InputEventMouseMotion:
+		_active.look((event as InputEventMouseMotion).relative)
+		return true
+	if event is InputEventMouseButton:
+		var mb: InputEventMouseButton = event
+		if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+			# First click locks the pointer for mouse look (browsers need a click for that), and still fires.
+			if _active.wants_mouse_capture() and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+				Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+			chamber_shoot()
+			return true
+		return false
+	if event is InputEventKey:
+		var k: InputEventKey = event
+		if k.pressed and k.physical_keycode == KEY_SPACE:
+			_active.jump()
+			return true
+		# W / S / arrows are movement here, never "jump" or "take cover": swallow them so the shaft bindings
+		# (move_down = cover, move_left/right = walk) cannot fire on top of free roam.
+		if event.is_action("move_up") or event.is_action("move_down") or event.is_action("move_left") \
+				or event.is_action("move_right"):
+			return true
+	return false
 
 func _exit_tree() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -296,6 +347,8 @@ func _exit_tree() -> void:
 #   Runner   move_left/move_right = switch rail · jump = jump · move_down = duck (hold)
 #            LMB = fire revolver at the reticle · RMB / X = pickaxe swipe (F toggled the browser's fullscreen/resized the screen)
 #            R = reload · attack (J/Enter) = auto-aim shot
+#   Hideout  Up/W forward · Down/S back · Left/A + Right/D strafe · Space jump (double) · Shift run
+#            mouse = look (click locks the pointer) · E talk / take · LMB fire
 #   Chamber  attack = shoot · interact = start the Miner Rig
 #            move_down = take cover (hold) · dash = pull the Early Claim lever
 #
@@ -341,6 +394,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			elif event.is_action_pressed("attack"):
 				runner_shoot()
 		Mode.CHAMBER:
+			if _free_roam() and _route_free_roam(event):
+				return
 			if event.is_action_pressed("attack"):
 				chamber_shoot()
 			elif event.is_action_pressed("interact"):

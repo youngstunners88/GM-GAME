@@ -36,6 +36,28 @@
   "refs": [
    "references/founder_2026-09-30/REF_inferno-bull-with-rifle.jpg",
    "references/founder_2026-09-30/REF_inferno-bull-with-drink.jpg"
-  ]
+  ],
+  "retired": "2026-10-01: replaced in game by inferno_bull_rigged.glb (same model, rigged); statue + its 3 maps removed from the pack"
+ },
+ "inferno_bull_rigged.glb": {
+  "source": "inferno_bull.glb remesh 01a0f29b-2e22-726f-b4d4-f966e19c5608",
+  "rig_task": "01a0f7f8-8b06-71a7-b7dd-79d20aa5fd3d",
+  "anim_task": "01a0f7fa-4955-7535-93ff-ffe201d6e833",
+  "actions": [
+   11,
+   342,
+   313,
+   292
+  ],
+  "credits": 17,
+  "edit": "shrink_glb 1024/256 (23.7 MB -> 3.2 MB)"
+ },
+ "lil_blunt_walking_clip.glb": {
+  "rig_task": "01a0ed1a-0f73-7232-bdc4-185c273a3957",
+  "edit": "basic_animations walking_armature_glb (free with the rig)"
+ },
+ "lil_blunt_running_clip.glb": {
+  "rig_task": "01a0ed1a-0f73-7232-bdc4-185c273a3957",
+  "edit": "basic_animations running_armature_glb (free with the rig)"
  }
 }

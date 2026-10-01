@@ -297,8 +297,9 @@ func _refresh_hud() -> void:
 					if a.get_molds_left() > 0:
 						lines += "   ·   %d molds left" % a.get_molds_left()
 				else:
-					lines += "walk to the Bull"
-				_hint.text = "A / D  walk        E  talk / take the rifle\nLMB/CTRL  fire the Winchester        ESC  back to menu"
+					lines += "walk to the Bull (arrows / WASD, mouse to look)"
+				_hint.text = ("ARROWS / WASD  move      SPACE  jump      MOUSE  look (click to lock)      SHIFT  run\n"
+					+ "E  talk / take the rifle      LMB  fire the Winchester      ESC  back to menu")
 			elif a:
 				lines += "MINER SHAFT\n"
 				lines += "health %d   ammo %d   bears %d\n" % [a.get_health(), a.get_ammo(), a.get_live_bear_count()]

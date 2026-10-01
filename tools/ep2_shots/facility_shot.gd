@@ -16,6 +16,9 @@ func _ready() -> void:
 	f.intro_film = false
 	add_child(f)
 	f.setup(0, [], 0)
+	# Deterministic: only this loop steps the scene (software GL renders slowly, so the facility's own
+	# _physics_process would catch up many ticks per frame and the shot would land after the beat it is for).
+	f.set_physics_process(false)
 	await get_tree().process_frame
 	for spec in [["wake", f.Beat.WAKE, false, false], ["drink", f.Beat.DRINK, false, false],
 			["helmet", f.Beat.HELMET, true, true], ["teach", f.Beat.VERB_TEACH, true, true], ["wide", f.Beat.EXIT, true, true]]:
@@ -24,11 +27,14 @@ func _ready() -> void:
 		f._has_helmet = bool(spec[3])
 		if spec[0] == "wake":
 			f._on_beat_entered(f.Beat.WAKE)
+		elif spec[0] == "helmet":
+			f._helmet_t = 0.0
+			f._to_hand_mark()
 		else:
 			f._player_pos = Vector3(0.4, 0.0, 3.4)
 		if spec[0] == "wide":
 			f._camera.position = Vector3(0.0, 4.2, -11.0)
-		for _i in 150:
+		for _i in (80 if spec[0] == "helmet" else 150):
 			f.step(1.0 / 60.0)
 			f._hold = 99.0
 			await get_tree().process_frame
@@ -59,6 +65,9 @@ func _ready() -> void:
 	f._beat = f.Beat.DRINK
 	f._has_winchester = true
 	f._has_helmet = true
+	f._stand_t = -1.0              # seated on his crate again, like the target image
+	f._bull_clip = ""
+	f._player_pos = f.HAND_MARK
 	for _i in 200:
 		f.step(1.0 / 60.0)
 		f._hold = 99.0
@@ -68,7 +77,8 @@ func _ready() -> void:
 	eye2.fov = 55.0
 	eye2.make_current()
 	var bp: Vector3 = f.BULL_POSITION
-	for cu in [["bull_face", bp + Vector3(0.4, 2.5, -2.4), bp + Vector3(0.0, 2.3, 0.0)],
+	for cu in [["target", Vector3(0.7, 1.55, 1.6), Vector3(0.6, 1.35, 6.0)],
+			["bull_face", bp + Vector3(0.4, 2.5, -2.4), bp + Vector3(0.0, 2.3, 0.0)],
 			["bull_hands", bp + Vector3(1.0, 1.6, -3.0), bp + Vector3(0.3, 1.4, 0.0)],
 			["gatling", Vector3(-1.5, 1.7, 5.0), Vector3(-4.3, 1.3, 8.2)],
 			["gunwall", Vector3(-1.0, 2.6, 5.5), Vector3(-7.0, 2.8, 6.8)],
