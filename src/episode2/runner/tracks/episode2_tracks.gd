@@ -49,7 +49,7 @@ const LEG_DESCENT := {
 	"archers": [
 		{"id": "d_a1", "z": 320.0, "side": 1},
 		{"id": "d_a2", "z": 560.0, "side": -1},
-		{"id": "d_a3", "z": 880.0, "side": 1},
+		{"id": "d_a3", "z": 930.0, "side": 1},
 		{"id": "d_a4", "z": 1060.0, "side": -1},
 		{"id": "d_a5", "z": 1380.0, "side": 1},
 		{"id": "d_a6", "z": 1640.0, "side": -1},
@@ -107,13 +107,15 @@ const LEG_DESCENT := {
 		# Then a boulder down the right: stay centre — it's the only cart left.
 		{"z": 720.0, "lane": 2, "type": "boulder"},
 		{"z": 745.0, "lane": 1, "type": "gold"},
-		{"z": 860.0, "lane": 1, "type": "box"},
+		# The chain (790-836) lands you in the centre: nothing for 50 m (founder 2026-10-01: the 2nd
+		# zipline "kills Lil Blunt" - the landing used to be a box 24 m on and a volley 20 m after it).
+		{"z": 885.0, "lane": 1, "type": "box"},
 		# Last volley covers left + centre only: hop right, or duck, or shoot.
-		{"z": 880.0, "lane": 0, "type": "arrow", "archer": "d_a3"},
-		{"z": 880.0, "lane": 1, "type": "arrow", "archer": "d_a3"},
-		{"z": 915.0, "lane": 0, "type": "gold"},
-		{"z": 915.0, "lane": 1, "type": "gold"},
-		{"z": 915.0, "lane": 2, "type": "gold"},
+		{"z": 930.0, "lane": 0, "type": "arrow", "archer": "d_a3"},
+		{"z": 930.0, "lane": 1, "type": "arrow", "archer": "d_a3"},
+		{"z": 955.0, "lane": 0, "type": "gold"},
+		{"z": 955.0, "lane": 1, "type": "gold"},
+		{"z": 955.0, "lane": 2, "type": "gold"},
 		# --- THE GALLERY (960-1200): the cavern widens, archers on both walls.
 		{"z": 980.0, "lane": 1, "type": "gold"},
 		{"z": 988.0, "lane": 1, "type": "gold"},

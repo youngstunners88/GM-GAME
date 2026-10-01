@@ -73,6 +73,8 @@ signal zip_missed(segment_index: int)
 signal shot_fired
 ## Emitted when a shot drops an archer; its pending arrows are already cancelled.
 signal archer_down(archer_id: String)
+## A shovel bear in the row was shot dead (obstacle index): its rail is open, no hit when you reach it.
+signal shovel_bear_down(obstacle_index: int)
 ## Emitted after every fired shot with the archer hit ("" for a miss) and the
 ## point the bullet ended at (hit point, or far along the ray).
 signal shot_resolved(hit_id: String, point: Vector3)
@@ -131,6 +133,8 @@ const ARCHER_X := 3.3              # ledge distance from track centre: clear of 
 const ARCHER_Y := 2.2              # scaffold deck height (bear's feet)
 const ARCHER_CHEST := 1.4          # chest above the deck — the ray target
 const ARCHER_HIT_R := 1.1          # generous sphere: mouse aim at speed
+const SHOVEL_CHEST_Y := 1.0        # shovel bear chest (rail-level bear, ~2.7 m tall) - the ray target
+const SHOVEL_HIT_R := 1.3          # generous sphere: the bear is big and the mouse is fast
 const SHOT_MISS_RANGE := 60.0      # where a missed bullet is drawn to
 
 # --- Pickaxe --------------------------------------------------------------------
@@ -229,6 +233,7 @@ func setup(chamber_z: float, obstacles: Array = [], zip_segments: Array = [],
 		o["hit"] = false
 		o["cancelled"] = false
 		o["repelled"] = false
+		o["bear_dead"] = false
 		if not o.has("type"):
 			o["type"] = "box"
 	_zip_segments = zip_segments.duplicate(true)
@@ -520,6 +525,8 @@ func _check_obstacles(cur_x: float) -> void:
 				o["repelled"] = true
 				boarder_repelled.emit()
 				continue
+		elif hazard_type == "shovels" and o.get("bear_dead", false):
+			continue                     # shot dead: his rail is open, keep going (founder 2026-10-01)
 		elif _is_cleared(hazard_type):
 			continue
 		o["hit"] = true
@@ -530,8 +537,9 @@ func _check_obstacles(cur_x: float) -> void:
 ## Clear rules, one verb per hazard:
 ## "box" — jump. "arrow" — duck (or shoot its archer first).
 ## "boulder" — hop to another rail. "boarder" — pickaxe swipe.
-## "shovels" — a ROW of bears across all three rails, shovels raised: nothing on the rails gets past;
-## the only answer is to be on the zipline (founder 2026-09-30: "jumping on the zipline becomes the only solution").
+## "shovels" — a ROW of bears across all three rails, shovels raised: nothing on the rails gets past
+## except the zipline (founder 2026-09-30) OR SHOOTING the bear on your rail (founder 2026-10-01: he dies
+## and you keep going, even if you never catch the zipline). One shot, one bear; the other rails still hit.
 func _is_cleared(hazard_type: String) -> bool:
 	match hazard_type:
 		"arrow":
@@ -564,14 +572,15 @@ func _try_hop(to: int) -> void:
 		return
 	_lane = to
 
-## Jump, only from the ground. While hooked, arms the swing to the next cable
-## inside ZIP_TRANSFER_WINDOW of the end; otherwise a no-op on the cable.
+## Jump, only from the ground. While hooked on a chained cable it arms the swing to
+## the next cable at ANY point of the ride (founder 2026-10-01: "the 2nd zipline kills Lil Blunt").
+## It used to count only inside the last ZIP_TRANSFER_WINDOW m of the cable - about a quarter of
+## a second at speed - so nearly every human dropped, lost a health, and then met the box and the
+## arrow volley right after the landing.
 func jump() -> void:
 	if _ziplining:
 		if _zip_index >= 0 and _is_chained(_zip_index, _zip_index + 1):
-			var to_end: float = float(_zip_segments[_zip_index]["end_z"]) - _distance
-			if to_end <= ZIP_TRANSFER_WINDOW:
-				_zip_transfer_armed = true
+			_zip_transfer_armed = true
 		return
 	if is_zero_approx(_cart_y) and is_zero_approx(_vy):
 		_vy = JUMP_VELOCITY
@@ -678,17 +687,62 @@ func _ray_pick(origin: Vector3, dir: Vector3) -> Dictionary:
 			best = i
 	return {"index": best, "t": best_t}
 
+## World position of a shovel bear's chest (the row's bear on `o`'s rail).
+func shovel_world_pos(o: Dictionary) -> Vector3:
+	var ln: int = clampi(int(o.get("lane", 1)), 0, LANE_X.size() - 1)
+	return Vector3(LANE_X[ln], SHOVEL_CHEST_Y, float(o.get("z", 0.0)))
+
+## Nearest living shovel bear ahead whose hit sphere the ray crosses: {"index": obstacle index or -1, "t"}.
+func _ray_pick_shovel(origin: Vector3, d: Vector3) -> Dictionary:
+	var best: int = -1
+	var best_t: float = INF
+	if d.length_squared() < 0.000001:
+		return {"index": best, "t": best_t}
+	var r2: float = SHOVEL_HIT_R * SHOVEL_HIT_R
+	for i in _obstacles.size():
+		var o: Dictionary = _obstacles[i]
+		if str(o.get("type", "")) != "shovels" or o.get("bear_dead", false) or o.get("hit", false):
+			continue
+		var dz: float = float(o["z"]) - _distance
+		if dz < 0.0 or dz > SHOOT_RANGE_MAX:
+			continue
+		var oc: Vector3 = shovel_world_pos(o) - origin
+		var tc: float = oc.dot(d)
+		var d2: float = oc.length_squared() - tc * tc
+		if d2 > r2:
+			continue
+		var t_hit: float = tc - sqrt(maxf(0.0, r2 - d2))
+		if t_hit < 0.0:
+			t_hit = tc
+		if t_hit < 0.0:
+			continue
+		if t_hit < best_t:
+			best_t = t_hit
+			best = i
+	return {"index": best, "t": best_t}
+
+func _kill_shovel_bear(oi: int) -> String:
+	_obstacles[oi]["bear_dead"] = true
+	shovel_bear_down.emit(oi)
+	return "shovel:%d" % oi
+
 ## Mouse-aimed shot. Returns {"fired": bool, "hit": String, "point": Vector3}.
+## Works on the rails AND on the zipline. Hits the nearest of: an archer, a shovel bear.
 func fire_ray(origin: Vector3, dir: Vector3) -> Dictionary:
 	var result: Dictionary = {"fired": false, "hit": "", "point": origin}
 	if not _try_fire_round():
 		return result
 	var d: Vector3 = dir.normalized() if dir.length_squared() > 0.000001 else Vector3.BACK
 	var pick: Dictionary = _ray_pick(origin, d)
+	var spick: Dictionary = _ray_pick_shovel(origin, d)
 	var idx: int = int(pick["index"])
+	var sidx: int = int(spick["index"])
 	var hit_id: String = ""
 	var point: Vector3 = origin + d * SHOT_MISS_RANGE
-	if idx >= 0:
+	if sidx >= 0 and (idx < 0 or float(spick["t"]) < float(pick["t"])):
+		point = origin + d * float(spick["t"])
+		hit_id = _kill_shovel_bear(sidx)
+	elif idx >= 0:
 		var t_hit: float = float(pick["t"])
 		point = origin + d * t_hit
 		hit_id = _kill_archer(idx)
@@ -703,7 +757,11 @@ func fire_ray(origin: Vector3, dir: Vector3) -> Dictionary:
 ## effects — the reticle uses it to turn red over a bear.
 func ray_hits_archer(origin: Vector3, dir: Vector3) -> String:
 	var pick: Dictionary = _ray_pick(origin, dir)
+	var spick: Dictionary = _ray_pick_shovel(origin, dir.normalized() if dir.length_squared() > 0.000001 else Vector3.BACK)
 	var idx: int = int(pick["index"])
+	var sidx: int = int(spick["index"])
+	if sidx >= 0 and (idx < 0 or float(spick["t"]) < float(pick["t"])):
+		return "shovel:%d" % sidx
 	if idx < 0:
 		return ""
 	var a: Dictionary = _archers[idx]
@@ -725,15 +783,34 @@ func shoot() -> bool:
 		if dz >= SHOOT_RANGE_MIN and dz <= SHOOT_RANGE_MAX and dz < best_dz:
 			best = i
 			best_dz = dz
+	# A shovel bear blocking the rider's own rail counts too, if it is nearer than any archer.
+	var sbest := -1
+	var sbest_dz := INF
+	for j in _obstacles.size():
+		var so: Dictionary = _obstacles[j]
+		if str(so.get("type", "")) != "shovels" or so.get("bear_dead", false) or so.get("hit", false):
+			continue
+		if int(so["lane"]) != _lane:
+			continue
+		var sdz: float = float(so["z"]) - _distance
+		if sdz >= 0.0 and sdz <= SHOOT_RANGE_MAX and sdz < sbest_dz:
+			sbest = j
+			sbest_dz = sdz
 	var hit_id: String = ""
 	var point: Vector3 = Vector3(get_cart_x(), _cart_y + 1.2, _distance + SHOT_MISS_RANGE)
-	if best >= 0:
+	var downed := false
+	if sbest >= 0 and (best < 0 or sbest_dz <= best_dz):
+		point = shovel_world_pos(_obstacles[sbest])
+		hit_id = _kill_shovel_bear(sbest)
+		downed = true
+	elif best >= 0:
 		var target: Dictionary = _archers[best]
 		point = archer_world_pos(target)
 		hit_id = _kill_archer(best)
+		downed = true
 	shot_resolved.emit(hit_id, point)
 	_after_shot()
-	return best >= 0
+	return downed
 
 # --- Read-only accessors for tests / HUD / view --------------------------------
 func get_obstacles() -> Array: return _obstacles

@@ -7,6 +7,15 @@
 
 **🚦 WHY THE LAST FEW UPDATES NEVER REACHED ITCH (2026-10-01).** The game package was 195 MB, over our 190 MB safety limit, so CI refused to deploy (three builds in a row). Audio and the Stage 2 cutscene are re-encoded smaller; the size check now passes. Also shipped in this build: education songs with fade in/out, voiced greetings and goodbyes, governors that know what Lil Blunt actually visited, and the Level-1 song rule (title screen only).
 
+**🔫🪝 EPISODE 2 — GUN SOUND, SHOOTABLE BEARS, FAIR ZIPLINE (2026-10-01).** Your four notes, done:
+- **Revolver sound:** the old shot sound was nearly silent (about 40 dB quieter than the pickaxe, which is why you never heard it). It's replaced by three new revolver blasts, loud and punchy, shuffled so a volley never repeats one sound.
+- **Shoot the blocking bear:** each shovel-row bear can now be shot. One bullet kills the bear on your rail and you keep going with no damage, even if you never catch the zipline. The bears on the other two rails still smack you. The sign now reads "SHOOT YOUR BEAR or ZIPLINE!".
+- **Shoot while ziplining:** he hangs from the pickaxe with one hand and fires with the other. This was blocked in the animation, not in the rules.
+- **Keys:** the axe is now **X** (F was triggering the browser's fullscreen and resizing the screen) and **right-click** also strikes. The on-screen hint is updated.
+- **"The 2nd zipline kills Lil Blunt":** the chained zipline (790–836 m) only counted your second jump in its last quarter-second, so almost everyone dropped and lost health, then hit a box 24 m on and an arrow volley 20 m after that: dead. Now the second jump counts anywhere on the cable, and the landing is followed by 50 m of quiet track.
+- **Access code:** Episode 2 still asks for your code (checked in a real browser build); I did not remove it.
+- New skill `ep2-gunplay-feel` captures all of this (measure every weapon sound's loudness, shoot every blocker, never bind keys the browser owns, human-sized timing windows). New tests cover shooting bears, firing from the cable and the new sounds.
+
 **🎬🐂 EPISODE 2 — LONGER STAGE, CLIFF-JUMP FILM, INFERNO BULL'S SMELTER (2026-09-30).** What you asked for:
 - **Stage almost twice as long:** The Descent now runs 1800 m instead of 960 m. Three new sections: The Gallery, a second shovel line, and The Runaway. There are 3 more bear archers, more boulders, arrow volleys and gold lines, and 3 new ziplines. A test bot finishes it with health to spare.
 - **It ends at a cliff:** warning boards ("TRACK ENDS AHEAD", "DANGER - NO TRACK", "!!! CLIFF !!!"), a snapped trestle, and a molten-gold gorge. Inferno Bull's glowing furnace door is visible across the gap for the last 150 m.

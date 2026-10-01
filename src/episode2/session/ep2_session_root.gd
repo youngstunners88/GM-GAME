@@ -294,7 +294,7 @@ func _exit_tree() -> void:
 # --- Live player input (guard #2 still applies) --------------------------------
 #
 #   Runner   move_left/move_right = switch rail · jump = jump · move_down = duck (hold)
-#            LMB = fire revolver at the reticle · RMB / F = pickaxe swipe
+#            LMB = fire revolver at the reticle · RMB / X = pickaxe swipe (F toggled the browser's fullscreen/resized the screen)
 #            R = reload · attack (J/Enter) = auto-aim shot
 #   Chamber  attack = shoot · interact = start the Miner Rig
 #            move_down = take cover (hold) · dash = pull the Early Claim lever
@@ -325,7 +325,7 @@ func _unhandled_input(event: InputEvent) -> void:
 					if k.physical_keycode == KEY_R:
 						runner_reload()
 						return
-					if k.physical_keycode == KEY_F:
+					if k.physical_keycode == KEY_X:
 						runner_swipe()
 						return
 			if event.is_action_pressed("move_left"):

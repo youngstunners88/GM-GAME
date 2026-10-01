@@ -28,7 +28,7 @@ purpose. The gate proves it: `ep2_runner_carts_test::_shovels` (plain rails hit,
 - Bear height 2.6-2.7 m so the row reads as a wall next to a 1.9 m hero; zipline cable clears them (5.85 m).
 
 ## 3. Three-stage telegraph (every bear, every time)
-1. **See** - label ("BEAR LINE - JUMP TO THE ZIPLINE!"), shovels quiver overhead inside `SHOVEL_WINDUP` 16 m, swing down inside `SHOVEL_SWING` 7 m.
+1. **See** - label ("BEAR LINE - SHOOT YOUR BEAR or ZIPLINE!"), shovels quiver overhead inside `SHOVEL_WINDUP` 16 m, swing down inside `SHOVEL_SWING` 7 m.
 2. **Hear** - Lil Blunt's alert line at 34 m (`shovel_alert`), attack growl at 18 m, swing whoosh at 7.5 m.
 3. **Feel** - smack + hit reaction (`ep2_shovel_smack`, `hit` bark, camera shake) if it lands; taunt (`shovel_pass`) if he flies over.
 
@@ -49,3 +49,7 @@ sound the same in a row. Nobody here can hear: judge by the founder's ear, regen
 telegraph. 4. Sounds generated + wired in `RunnerVoice` + covered by `ep2_runner_voice_test`. 5. Solvability: the autopilot must
 still clear every leg (`ep2_runner_carts_test`). 6. Capture from the game camera AND a `cam=` close-up
 (`bash tools/ep2_shots/shoot.sh out 0 44 700,300 shovels "" 0,4.5,0,0,1.0,14`). 7. STATUS.md entry.
+
+## Update 2026-10-01: shovel bears can be shot
+The row's answer is no longer ONLY the zipline: one bullet kills the bear on your rail (`bear_dead`), the rail opens and you keep
+going with no hit; bears on other rails still smack. See `ep2-gunplay-feel`.

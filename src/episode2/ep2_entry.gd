@@ -275,7 +275,7 @@ func _refresh_hud() -> void:
 					("   bears %d" % a.archers_alive()) if a.can_shoot() else "",
 					"   ON THE ZIPLINE" if a.is_ziplining() else ("   DUCKING" if a.is_ducking() else ""),
 				]
-			_hint.text = ("MOUSE aim   LMB fire   R reload   F / RMB pickaxe\n"
+			_hint.text = ("MOUSE aim   LMB fire   R reload   X / RMB axe\n"
 				+ "A / D hop carts   SPACE jump / grab zipline   S duck   "
 				+ "ESC  back to menu")
 		Ep2SessionRoot.Mode.CHAMBER:

@@ -282,6 +282,21 @@
       "prompt": "Cinematic trailer bass impact hit, deep braam boom with sub drop",
       "duration_seconds": 1.5,
       "note": "Episode 2 cliff-jump film (skill ep2-cinematic-cutscene)"
+    },
+    {
+      "id": "ep2_gun_fire_1",
+      "prompt": "A single LOUD, sharp gunshot from a big .44 Magnum western revolver: a huge cracking bang with a punchy low thump, close-up, dry, short metallic ring-out, no music",
+      "duration_seconds": 1.2
+    },
+    {
+      "id": "ep2_gun_fire_2",
+      "prompt": "Heavy single revolver gunshot BOOM, wild-west six-shooter fired close to the microphone, explosive crack then a short rocky canyon echo, very loud and punchy, no music",
+      "duration_seconds": 1.2
+    },
+    {
+      "id": "ep2_gun_fire_3",
+      "prompt": "One powerful western revolver blast, deep thunderous bang with a bright snap on top and a quick metallic ricochet whine, cinematic gunfire sound effect, no music",
+      "duration_seconds": 1.2
     }
   ],
   "music": [

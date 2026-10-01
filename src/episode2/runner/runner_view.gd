@@ -64,7 +64,9 @@ const TEX_TIMBER := "tex_timber.jpg"
 const TEX_GRAVEL := "tex_gravel.jpg"
 const SFX_DIR := "res://src/assets/sounds/"
 const SFX_FILES := {
-	"shot": "ep2_revolver_shot.mp3",
+	"shot": "ep2_gun_fire_1.mp3",
+	"shot2": "ep2_gun_fire_2.mp3",
+	"shot3": "ep2_gun_fire_3.mp3",
 	"reload": "ep2_revolver_reload.mp3",
 	"empty": "ep2_revolver_empty.mp3",
 	"bear_hit": "ep2_bear_hit.mp3",
@@ -438,6 +440,7 @@ func _connect_sim() -> void:
 		"obstacle_hit": _on_hit,
 		"shot_fired": _on_shot,
 		"archer_down": _on_archer_down,
+		"shovel_bear_down": _on_shovel_bear_down,
 		"zip_caught": _on_zip_caught,
 		"zip_missed": _on_zip_missed,
 		"shot_resolved": _on_shot_resolved,
@@ -1473,7 +1476,7 @@ func _build_hazards() -> void:
 				pass                        # built by _build_boarders() / _build_gold()
 			"shovels":
 				if lane == 1:
-					_add_telegraph(x, z, C_SHOOT, "BEAR LINE - JUMP TO THE ZIPLINE!")
+					_add_telegraph(x, z, C_SHOOT, "BEAR LINE - SHOOT YOUR BEAR or ZIPLINE!")
 			_:
 				var crate := _mesh_node(_box(Vector3(1.4, 1.0, 1.0)), _tex_mat(TEX_TIMBER, "crate", 0.9), Vector3(x, 0.15, z))
 				_mesh_node(_box(Vector3(1.46, 0.14, 1.06)), _pal("brass"), Vector3(0.0, 0.3, 0.0), crate)
@@ -1552,6 +1555,18 @@ func _update_shovel_bears(dist: float, delta: float) -> void:
 		var shovel: Node3D = bd["shovel"]
 		var ahead: float = float(bd["z"]) - dist
 		node.visible = ahead < 90.0 and ahead > -8.0
+		if bd.has("dead_t"):
+			# Shot dead: topples backwards off the rail and is gone.
+			var dt: float = float(bd["dead_t"]) + delta
+			bd["dead_t"] = dt
+			if node.has_meta("anim"):
+				(node.get_meta("anim") as RefCounted).want("die", 0.08)
+				node.visible = node.visible and dt < 2.4
+			else:
+				node.rotation.x = -minf(dt * 4.0, 1.5)
+				node.visible = node.visible and dt < 1.4
+			shovel.rotation.x = lerpf(shovel.rotation.x, -0.2, clampf(delta * 8.0, 0.0, 1.0))
+			continue
 		if not node.visible:
 			continue
 		bd["t"] = float(bd["t"]) + delta
@@ -2575,10 +2590,11 @@ func _update_rider(dist: float, delta: float) -> void:
 		var chop_t: float = 1.0 - clampf(_t_swipe / Motion.SWIPE_HOLD, 0.0, 1.0)
 		_arm_rest.pick_raise = move_toward(float(_arm_rest.pick_raise), sin(chop_t * PI) if _t_swipe < Motion.SWIPE_HOLD else 0.0, delta * 12.0)
 	# Gun arm aims at the reticle (RunnerAimModifier), eased off whenever the
-	# hands are busy: reload, pickaxe swipe, duck, zipline, hit reaction.
+	# hands are busy: reload, pickaxe swipe, duck, hit reaction (the zipline is NOT busy: he shoots from the cable).
 	if _aim_mod:
 		var armed_now: bool = bool(_sim.can_shoot())
-		var busy: bool = zipping or ducking or bool(_sim.is_reloading()) or _t_swipe < Motion.SWIPE_HOLD \
+		# NOT while zipping any more: he hangs from the pickaxe with one hand and fires with the other.
+		var busy: bool = ducking or bool(_sim.is_reloading()) or _t_swipe < Motion.SWIPE_HOLD \
 			or _t_hit < Motion.HIT_HOLD * 0.6
 		var w: float = 1.0 if armed_now and not busy else 0.0
 		_aim_mod.influence = move_toward(float(_aim_mod.influence), w, delta * 6.0)
@@ -2888,7 +2904,12 @@ func _update_aim() -> void:
 	_aim_point = _aim_origin + _aim_dir * AIM_FALLBACK
 	if _sim.has_method("ray_hits_archer"):
 		_aim_hit = str(_sim.ray_hits_archer(_aim_origin, _aim_dir))
-	if _aim_hit != "":
+	if _aim_hit.begins_with("shovel:"):
+		var so: int = int(_aim_hit.substr(7))
+		var obs_list: Array = _sim.get_obstacles()
+		if so >= 0 and so < obs_list.size():
+			_aim_point = _sim.shovel_world_pos(obs_list[so])
+	elif _aim_hit != "":
 		for a in _sim.get_archers():
 			if str(a["id"]) == _aim_hit:
 				var ap: Vector3 = _sim.archer_world_pos(a)
@@ -2981,7 +3002,14 @@ func _on_hit(_remaining: int) -> void:
 	_t_hit = 0.0
 
 func _on_shot() -> void:
-	_play("shot")
+	# Three different recorded revolver blasts, shuffled, each a touch different in pitch so a volley
+	# never machine-guns the same sample. (The original shot sample peaked at -39 dB: you could not hear it.)
+	var key: String = ["shot", "shot2", "shot3"][randi() % 3]
+	var sp: AudioStreamPlayer = _sfx.get(key)
+	if sp:
+		sp.pitch_scale = randf_range(0.94, 1.06)
+		sp.volume_db = 3.0
+	_play(key)
 	_t_shot = 0.0
 	if _aim_mod:
 		_aim_mod.kick = 0.32
@@ -2997,6 +3025,14 @@ func _on_shot_resolved(_hit_id: String, point: Vector3) -> void:
 
 func _on_archer_down(id: String) -> void:
 	_archer_fall[id] = 0.0
+	_play("bear_hit")
+	_t_cheer = 0.0
+
+## A bear in the shovel row was shot: it drops, its rail is open.
+func _on_shovel_bear_down(oi: int) -> void:
+	for b in _shovel_bears:
+		if int(b["obs"]) == oi:
+			b["dead_t"] = 0.0
 	_play("bear_hit")
 	_t_cheer = 0.0
 

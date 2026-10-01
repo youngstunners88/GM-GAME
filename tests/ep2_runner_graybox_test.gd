@@ -300,13 +300,15 @@ func _ready() -> void:
 	_check("a dropped chain costs exactly ONE health (health=%d)" % r17.get_health(), r17.get_health() == 2)
 	r17.queue_free()
 
-	# 19. A jump early on a cable (outside the window) does NOT arm the transfer.
+	# 19. A jump ANYWHERE on a chained cable arms the swing (the old 6 m window was a quarter of a second).
 	var r18 := _spawn()
 	r18.setup(200.0, [], [{"start_z": 5.0, "end_z": 20.0}, {"start_z": 24.0, "end_z": 30.0}])
 	_catch_zip(r18, 5.0)
-	_run_to_distance(r18, 8.0)                  # 12m from the end: outside the 6m window
+	_run_to_distance(r18, 8.0)                  # 12m from the end: used to be outside the window
 	r18.jump()
-	_check("an early jump on the cable does not arm the swing", not r18.is_zip_transfer_armed())
+	_check("an early jump on the cable arms the swing", r18.is_zip_transfer_armed())
+	_run_to_distance(r18, 27.0)
+	_check("and it swings onto the next cable (index=%d)" % r18.get_zip_index(), r18.get_zip_index() == 1)
 	r18.queue_free()
 
 	# 20. Hooking a cable carries the rider to the centre rail (the cable is over it).
@@ -354,6 +356,50 @@ func _ready() -> void:
 	_run_to_distance(r23, 40.0)
 	_check("an unanswered volley still lands (health=%d)" % r23.get_health(), r23.get_health() == 2)
 	r23.queue_free()
+
+	# 25. SHOVEL BEARS can be shot (founder 2026-10-01): the bear on your rail dies, you keep going, and you
+	#     never needed the zipline. The other rails' bears still smack you.
+	var row := [{"z": 60.0, "lane": 0, "type": "shovels"}, {"z": 60.0, "lane": 1, "type": "shovels"}, {"z": 60.0, "lane": 2, "type": "shovels"}]
+	var rs0 := _spawn()
+	rs0.setup(200.0, row, [], [], true)
+	_run_to_distance(rs0, 62.0)
+	_check("with no shot the shovel row smacks the rider (health=%d)" % rs0.get_health(), rs0.get_health() == 2)
+	rs0.queue_free()
+	var rs1 := _spawn()
+	rs1.setup(200.0, row, [], [], true)
+	_run_to_distance(rs1, 20.0)
+	var dead_ids: Array = []
+	rs1.shovel_bear_down.connect(func(oi: int) -> void: dead_ids.append(oi))
+	_check("the reticle sees the bear on the rider's rail",
+		rs1.ray_hits_archer(Vector3(0, 2, 20), (rs1.shovel_world_pos(row[1]) - Vector3(0, 2, 20)).normalized()).begins_with("shovel:"))
+	var res: Dictionary = rs1.fire_ray(Vector3(0, 2, 20), (rs1.shovel_world_pos(row[1]) - Vector3(0, 2, 20)).normalized())
+	_check("a mouse shot at the bear kills it (hit=%s)" % str(res["hit"]), str(res["hit"]).begins_with("shovel:") and dead_ids.size() == 1)
+	_run_to_distance(rs1, 66.0)
+	_check("and the rider keeps going with NO hit and no zipline (health=%d)" % rs1.get_health(), rs1.get_health() == 3 and rs1.is_running())
+	rs1.queue_free()
+	var rs2 := _spawn()
+	rs2.setup(200.0, row, [], [], true)
+	_run_to_distance(rs2, 20.0)
+	_check("keyboard auto-aim also drops the blocking bear", rs2.shoot())
+	rs2.switch_lane_left()
+	_run_to_distance(rs2, 66.0)
+	_check("a bear on ANOTHER rail still hits (health=%d)" % rs2.get_health(), rs2.get_health() == 2)
+	rs2.queue_free()
+
+	# 26. SHOOTING WHILE ON THE ZIPLINE (founder 2026-10-01).
+	var rz := _spawn()
+	rz.setup(300.0, [], [{"start_z": 100.0, "end_z": 140.0}], [{"id": "zb", "z": 150.0, "side": 1}], true)
+	_catch_zip(rz, 100.0)
+	_run_to_distance(rz, 110.0)
+	_check("hooked on the cable", rz.is_ziplining())
+	var zr: Dictionary = rz.fire_ray(Vector3(0, 3, 110), (rz.archer_world_pos(rz.get_archers()[0]) - Vector3(0, 3, 110)).normalized())
+	_check("a shot fired from the zipline lands (hit=%s)" % str(zr["hit"]), bool(zr["fired"]) and str(zr["hit"]) == "zb")
+	rz.queue_free()
+
+	# 27. The revolver blasts are audible (the old sample peaked at -39 dB: nobody heard it).
+	for i in range(1, 4):
+		var f := FileAccess.open("res://src/assets/sounds/ep2_gun_fire_%d.mp3" % i, FileAccess.READ)
+		_check("ep2_gun_fire_%d.mp3 exists and is a real sample" % i, f != null and f.get_length() > 8000)
 
 	print("EP2_RUNNER_GRAYBOX: %s" % ("ALL PASS" if _fail == 0 else "%d FAILURE(S)" % _fail))
 	get_tree().quit(_fail)

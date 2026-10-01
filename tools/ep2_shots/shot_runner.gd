@@ -50,6 +50,11 @@ func _ready() -> void:
 		leg = {"chamber_z": 200.0, "zip_segments": [{"start_z": 20.0, "end_z": 60.0}], "archers": [], "obstacles": [
 			{"z": 60.0, "lane": 0, "type": "shovels"}, {"z": 60.0, "lane": 1, "type": "shovels"},
 			{"z": 60.0, "lane": 2, "type": "shovels"}], "start_lane": 1}
+	if str(args.get("custom", "")) == "shovels_nozip":
+		# Inspection leg: the shovel row with NO zipline - the rider can only shoot the bears (fire=1).
+		leg = {"chamber_z": 200.0, "zip_segments": [], "archers": [], "obstacles": [
+			{"z": 60.0, "lane": 0, "type": "shovels"}, {"z": 60.0, "lane": 1, "type": "shovels"},
+			{"z": 60.0, "lane": 2, "type": "shovels"}], "start_lane": 1}
 	var live: Node3D = SCENE.instantiate()
 	add_child(live)
 	live.setup(float(leg["chamber_z"]), leg["obstacles"], leg["zip_segments"], leg["archers"], true,
@@ -62,6 +67,10 @@ func _ready() -> void:
 	var frames: int = 0
 	while next < marks.size() and live.is_running() and frames < 200000:
 		RunnerAutopilot.tick(live)
+		# fire=1: pull the trigger at the mouse every 14 frames (aim=<px,py>), like a player would.
+		if str(args.get("fire", "")) == "1" and frames % 14 == 0 and live.get_distance() > 18.0:
+			var fv: Node = live.get_node("View")
+			live.fire_ray(fv._aim_origin, fv._aim_dir)
 		live.step(1.0 / 60.0)
 		frames += 1
 		if RunnerView.debug_cam.size() == 2:
