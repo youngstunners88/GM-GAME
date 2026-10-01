@@ -1,13 +1,11 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
-**Branch:** `claude/sleepy-sagan-edqti4`
+**Branch:** master (just shipped)
 
 ---
 
-**🚦 WHY THE LAST FEW UPDATES NEVER REACHED ITCH (2026-10-01).** The game package was 195 MB, over our 190 MB safety limit, so CI refused to deploy (three builds in a row). Audio and the Stage 2 cutscene are re-encoded smaller; the size check now passes. Also shipped in this build: education songs with fade in/out, voiced greetings and goodbyes, governors that know what Lil Blunt actually visited, and the Level-1 song rule (title screen only).
-
-**🔫🪝 EPISODE 2 — GUN SOUND, SHOOTABLE BEARS, FAIR ZIPLINE (2026-10-01).** Your four notes, done:
+**✅ 🔫🪝 EPISODE 2 — GUN SOUND, SHOOTABLE BEARS, FAIR ZIPLINE (2026-10-01, shipped to master).** Your four notes, done, all 11 test suites pass, now deployed to CI for export:
 - **Revolver sound:** the old shot sound was nearly silent (about 40 dB quieter than the pickaxe, which is why you never heard it). It's replaced by three new revolver blasts, loud and punchy, shuffled so a volley never repeats one sound.
 - **Shoot the blocking bear:** each shovel-row bear can now be shot. One bullet kills the bear on your rail and you keep going with no damage, even if you never catch the zipline. The bears on the other two rails still smack you. The sign now reads "SHOOT YOUR BEAR or ZIPLINE!".
 - **Shoot while ziplining:** he hangs from the pickaxe with one hand and fires with the other. This was blocked in the animation, not in the rules.
