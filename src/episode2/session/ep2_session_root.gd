@@ -87,6 +87,7 @@ func _enter_runner() -> void:
 			"carts_start": seg.get("carts_start", [true, true, true]),
 			"start_lane": int(seg.get("start_lane", 1)),
 			"speed": seg.get("speed", {}),
+			"ends_at_cliff": bool(seg.get("ends_at_cliff", false)),
 		}
 	)
 	r.chamber_reached.connect(_on_chamber_reached, CONNECT_ONE_SHOT)

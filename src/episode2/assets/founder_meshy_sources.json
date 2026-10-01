@@ -1,9 +1,41 @@
 {
-  "note": "Founder-made Meshy models (2026-09-28), pulled by task id with the project key, remeshed via `meshy remesh` and cut/split locally (see .claude/skills/ep2-meshy-studio).",
-  "mine_tunnel_shell.glb": {"share": "https://www.meshy.ai/s/NW7Dog", "task": "f5135aaa-ba1d-43d9-a3c3-5f9473fb2a42", "remesh": "01a0e877-473c-74d1-8b9f-86c6a9570bc0", "edit": "floor (y<-0.29, |x|<0.5) and dead-end back wall (z<-0.52, |x|<0.47) removed -> open shell, tiled along the track"},
-  "leaf_cart.glb": {"share": "https://www.meshy.ai/s/NrZuH8", "task": "0576ef11-4029-4a37-8728-dc85a48e8a6a", "remesh": "01a0e877-44fd-7264-a797-e7bcb491dcee", "edit": "kmeans cluster 2 of 6 (empty leaf-emblem cart)"},
-  "leaf_cart_wreck_a.glb": {"source": "same scene, cluster 3 (half cart) - used as wreck debris"},
-  "leaf_cart_wreck_b.glb": {"source": "same scene, cluster 5 (half cart) - used as wreck debris"},
-  "lil_blunt_zipline.glb": {"share": "https://www.meshy.ai/s/uKupoa", "task": "3eb284ae-cb6f-40b7-8dee-60abfa83d2cb", "remesh": "01a0e877-42ca-70ab-aeed-e74cee5bb685", "edit": "none - the zipline pose (pickaxe up on the cable, revolver aimed)"},
-  "not_used": {"https://www.meshy.ai/s/2SbhCb": "ee9d6898 corridor - only two tracks (founder note); kept out of the build"}
+ "note": "Founder-made Meshy models (2026-09-28), pulled by task id with the project key, remeshed via `meshy remesh` and cut/split locally (see .claude/skills/ep2-meshy-studio).",
+ "mine_tunnel_shell.glb": {
+  "share": "https://www.meshy.ai/s/NW7Dog",
+  "task": "f5135aaa-ba1d-43d9-a3c3-5f9473fb2a42",
+  "remesh": "01a0e877-473c-74d1-8b9f-86c6a9570bc0",
+  "edit": "floor (y<-0.29, |x|<0.5) and dead-end back wall (z<-0.52, |x|<0.47) removed -> open shell, tiled along the track"
+ },
+ "leaf_cart.glb": {
+  "share": "https://www.meshy.ai/s/NrZuH8",
+  "task": "0576ef11-4029-4a37-8728-dc85a48e8a6a",
+  "remesh": "01a0e877-44fd-7264-a797-e7bcb491dcee",
+  "edit": "kmeans cluster 2 of 6 (empty leaf-emblem cart)"
+ },
+ "leaf_cart_wreck_a.glb": {
+  "source": "same scene, cluster 3 (half cart) - used as wreck debris"
+ },
+ "leaf_cart_wreck_b.glb": {
+  "source": "same scene, cluster 5 (half cart) - used as wreck debris"
+ },
+ "lil_blunt_zipline.glb": {
+  "share": "https://www.meshy.ai/s/uKupoa",
+  "task": "3eb284ae-cb6f-40b7-8dee-60abfa83d2cb",
+  "remesh": "01a0e877-42ca-70ab-aeed-e74cee5bb685",
+  "edit": "none - the zipline pose (pickaxe up on the cable, revolver aimed)"
+ },
+ "not_used": {
+  "https://www.meshy.ai/s/2SbhCb": "ee9d6898 corridor - only two tracks (founder note); kept out of the build"
+ },
+ "inferno_bull.glb": {
+  "drive": "https://drive.google.com/file/d/1z2UDNyDH0sMl8t1mInMQyKrcG5Ru14zz",
+  "task": "e89910f1-ed34-4689-8863-de291c21f50d",
+  "name": "Bull Mine Gunslinger",
+  "remesh": "01a0f29b-2e22-726f-b4d4-f966e19c5608",
+  "edit": "remesh 30k tris, textures shrunk (57 MB -> 2.1 MB); origin at the model centre (feet at y=-0.947)",
+  "refs": [
+   "references/founder_2026-09-30/REF_inferno-bull-with-rifle.jpg",
+   "references/founder_2026-09-30/REF_inferno-bull-with-drink.jpg"
+  ]
+ }
 }

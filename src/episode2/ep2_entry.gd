@@ -284,6 +284,11 @@ func _refresh_hud() -> void:
 			# are in the meeting and what you can do about it. Branched on
 			# capability, not on a chamber id, so a future chamber picks the
 			# right HUD by what it actually is.
+			if a and a.has_method("get_film") and a.get_beat_name() == "CINEMATIC":
+				# The cliff-jump film owns the screen (it draws its own skip hint).
+				_hud.text = ""
+				_hint.text = ""
+				return
 			if a and a.has_method("get_beat_name"):
 				lines += "THE SMELTING FACILITY\n"
 				lines += "Inferno Bull   ·   %s\n" % a.get_beat_name().capitalize()

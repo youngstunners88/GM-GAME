@@ -73,7 +73,7 @@ prove the code does what the code says. Only eyes prove it looks like the pictur
 - **"Before" in a worktree** needs the untracked `*.import` files copied in, or every texture fails to load.
 - **Pose from behind**: a forward-pointing gun is foreshortened to a stub for a chase camera; body yaw a little away
   from the gun side swings the arm out where the camera sees it.
-- **Firecrawl**: the key in the environment's `FIRECRAWL_API_KEY` returns 401; the founder's new key returns 200
+- **Firecrawl**: use env `FIRECRAWL` / `FIRECRAWLAPIKEY` (200, 2026-09-30); `FIRECRAWL_API_KEY` / `FIRECRAWL_SKILL` hold the dead key (401)
   (verified 2026-09-30). The environment variable must be updated by the founder (Environment Variables field) - never
   commit a key. **TinyFish** Browser API (`POST https://api.browser.tinyfish.ai`, header `X-API-Key`, body `{url}` ->
   `cdp_url` for Playwright `connect_over_cdp`) is the route to see the LIVE itch page from outside this sandbox; the

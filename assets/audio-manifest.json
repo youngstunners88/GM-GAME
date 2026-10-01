@@ -222,6 +222,66 @@
       "id": "ep2_shovel_smack",
       "prompt": "Iron shovel smacking hard against wood and a body, clanging thud impact, short",
       "duration_seconds": 0.8
+    },
+    {
+      "id": "ep2_film_cart_rumble",
+      "prompt": "Runaway mine cart racing on iron rails at high speed, rattling steel wheels, screeching sparks, frantic clatter, intense",
+      "duration_seconds": 2.5,
+      "note": "Episode 2 cliff-jump film (skill ep2-cinematic-cutscene)"
+    },
+    {
+      "id": "ep2_film_trestle_snap",
+      "prompt": "Wooden rail trestle splintering and cracking apart, iron rail snapping under load, violent crunch",
+      "duration_seconds": 1.2,
+      "note": "Episode 2 cliff-jump film (skill ep2-cinematic-cutscene)"
+    },
+    {
+      "id": "ep2_film_whoosh_slowmo",
+      "prompt": "Deep cinematic slow motion whoosh, low wind rumble, time slowing down, dreamy airborne, no music",
+      "duration_seconds": 3.5,
+      "note": "Episode 2 cliff-jump film (skill ep2-cinematic-cutscene)"
+    },
+    {
+      "id": "ep2_film_heartbeat",
+      "prompt": "Two slow heavy cinematic heartbeats, deep muffled bass thumps",
+      "duration_seconds": 2.0,
+      "note": "Episode 2 cliff-jump film (skill ep2-cinematic-cutscene)"
+    },
+    {
+      "id": "ep2_film_land_thud",
+      "prompt": "Body slamming hard into dirt and gravel, heavy thud, rocks scattering",
+      "duration_seconds": 1.0,
+      "note": "Episode 2 cliff-jump film (skill ep2-cinematic-cutscene)"
+    },
+    {
+      "id": "ep2_film_tumble",
+      "prompt": "Body tumbling and rolling over rocky ground, gravel scraping and pebbles skittering",
+      "duration_seconds": 1.6,
+      "note": "Episode 2 cliff-jump film (skill ep2-cinematic-cutscene)"
+    },
+    {
+      "id": "ep2_film_head_clonk",
+      "prompt": "Head hitting a rock, hard hollow clonk, painful, slightly cartoonish",
+      "duration_seconds": 0.8,
+      "note": "Episode 2 cliff-jump film (skill ep2-cinematic-cutscene)"
+    },
+    {
+      "id": "ep2_film_tinnitus",
+      "prompt": "High pitched ear ringing tinnitus tone after a hard hit, slowly fading out",
+      "duration_seconds": 3.2,
+      "note": "Episode 2 cliff-jump film (skill ep2-cinematic-cutscene)"
+    },
+    {
+      "id": "ep2_film_cart_crash_far",
+      "prompt": "Distant mine cart smashing at the bottom of a deep canyon, metal and wood crashing, echoing boom off canyon walls",
+      "duration_seconds": 2.6,
+      "note": "Episode 2 cliff-jump film (skill ep2-cinematic-cutscene)"
+    },
+    {
+      "id": "ep2_film_impact_boom",
+      "prompt": "Cinematic trailer bass impact hit, deep braam boom with sub drop",
+      "duration_seconds": 1.5,
+      "note": "Episode 2 cliff-jump film (skill ep2-cinematic-cutscene)"
     }
   ],
   "music": [
@@ -1515,6 +1575,54 @@
       "text": "Bitcoin in a gold mine, why not?",
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
       "note": "Episode 2 runner bark [idle] (skill ep2-voice-barks)"
+    },
+    {
+      "id": "vo_lb_cliff_yell",
+      "text": "The tracks end! Jump... jump... JUMP!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Lil Blunt - panic as the rails run out at the cliff (film)"
+    },
+    {
+      "id": "vo_lb_airborne",
+      "text": "Whoooaaaaaa!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Lil Blunt - mid-air in slow motion over the gap (film)"
+    },
+    {
+      "id": "vo_lb_head_ow",
+      "text": "Ow... my head...",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Lil Blunt - groggy, after hitting his head on the rock (film)"
+    },
+    {
+      "id": "vo_lb_wake",
+      "text": "Ugh... where am I? Did I... make it?",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "note": "Lil Blunt - waking up in the Smelting Facility"
+    },
+    {
+      "id": "vo_bull_wake",
+      "text": "Easy there, little fella. You flew clean over the gorge... then kissed my rock with your head. Here. Whiskey. For the pain.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "note": "Inferno Bull nursing Lil Blunt after the cliff jump - same owned voice/settings as vo_bull_made_it.",
+      "voice_settings": {
+        "stability": 0.75,
+        "similarity_boost": 0.75,
+        "style": 0.15,
+        "speed": 0.8
+      }
+    },
+    {
+      "id": "vo_bull_helmet",
+      "text": "And wear this. That skull of yours ain't bulletproof. Neither is that hat.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "note": "Inferno Bull hands Lil Blunt a miner's helmet - same owned voice/settings as vo_bull_made_it.",
+      "voice_settings": {
+        "stability": 0.75,
+        "similarity_boost": 0.75,
+        "style": 0.15,
+        "speed": 0.8
+      }
     }
   ]
 }
