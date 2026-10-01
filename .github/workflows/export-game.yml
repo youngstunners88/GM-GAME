@@ -529,11 +529,15 @@ jobs:
             # branch, so this should be rare; the retry covers what remains.
             pushed=""
             for attempt in 1 2 3 4 5; do
-              if git pull --rebase origin "${GITHUB_REF_NAME}" && git push -u origin HEAD; then
+              # -X theirs: while rebasing, "theirs" is OUR export commit, so a conflict in the generated
+              # web/game/index.html (another session's export landed first) resolves to the fresh export
+              # instead of failing 5 times and silently skipping the itch deploy (cost the founder 3 deploys).
+              if git pull --rebase -X theirs origin "${GITHUB_REF_NAME}" && git push -u origin HEAD; then
                 pushed="yes"
                 echo "Export pushed (attempt ${attempt})"
                 break
               fi
+              git rebase --abort 2>/dev/null || true
               echo "Push attempt ${attempt} failed (branch moved?) — retrying in $((attempt * 3))s"
               sleep $((attempt * 3))
             done
