@@ -26,6 +26,8 @@
 - Your Bull model is a statue (it has no skeleton), so he can't move his arms to pour or hand things over. Rigging it on Meshy is the fix and costs credits.
 - The helmet sits on top of the cowboy hat.
 
+**Why the game hadn't updated since the hat fix:** the education songs pushed the game file over the size limit, so the build stopped deploying. I fixed it by re-encoding the Stage 2 boss video (it was double the bitrate of the others; same picture and sound) and 5 music tracks to the standard 128k. The title music is untouched. **Firecrawl works now** (your `FIRECRAWL` variable).
+
 All 18 Episode 2 test suites pass, including a new film test: he clears the gap, the slow-mo never leaks into gameplay, and skip ends it cleanly.
 
 **🎵 EDUCATION SONGS + LEVEL-1 SONG RULE (2026-09-30).** Your three songs now play in the education rooms (Stage 1 = Smoke, 2 = Diamonds, 3 = Gold): they fade in as Lil Blunt enters and fade out as he leaves. The Level-1 "Song A first" rule now means what you meant: it plays first when the game is started from the title screen, not every time Level 1 loads. Coming out of Blaze Rush, the Smoke Lounge or an education room, the music just carries on / shuffles.
