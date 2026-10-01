@@ -17,6 +17,7 @@ func _ready() -> void:
 	_test_v1_save_self_heals_history()
 	_test_round_trip_preserves_progression()
 	_test_hostile_save_is_clamped()
+	_test_wrong_shape_save_does_not_abort_load()
 	_test_crypto_state_is_not_persisted()
 
 	if _failures == 0:
@@ -117,6 +118,32 @@ func _test_hostile_save_is_clamped() -> void:
 		not ("" in GameManager.progression_state["bosses_defeated"]))
 	_check("negative play time floored",
 		GameManager.progression_state["total_play_time"] == 0.0)
+
+## A hand-edited (or half-written) save can be VALID JSON of the WRONG SHAPE: a
+## section that should be an object is a number, a count is an array, a
+## checkpoint entry is a string. GDScript raises a runtime error on the typed
+## `Dictionary` parameter / `var x: Dictionary = raw[k]` and the error aborts
+## load_session() part-way, leaving the session half-restored. The load must
+## degrade to defaults for the bad fields and still finish.
+func _test_wrong_shape_save_does_not_abort_load() -> void:
+	print("wrong-shape save degrades to defaults, never aborts the load:")
+	var evil := _v1_save()
+	evil["blaze_rush"] = 5
+	evil["checkpoints"] = {"1": "not-a-dict", "2": {"id": "x", "x": [], "y": null}}
+	evil["goldmine"] = [1, 2, 3]
+	evil["coins"] = [9]
+	evil["lives"] = {"a": 1}
+	evil["wallet_address"] = null
+	evil["progression_state"] = "oops"
+	_write_save(evil)
+	var ok: bool = GameManager.load_session()
+	_check("load_session still returns true", ok)
+	_check("a numeric field given an array falls back to 0", GameManager.coins_collected == 0,
+		"coins=%s" % str(GameManager.coins_collected))
+	_check("wallet_address null becomes an empty string", GameManager.wallet_address == "",
+		"got %s" % str(GameManager.wallet_address))
+	_check("later sections were still reached (progression survives)",
+		typeof(GameManager.progression_state) == TYPE_DICTIONARY)
 
 func _test_crypto_state_is_not_persisted() -> void:
 	print("crypto_state stays a live cache:")

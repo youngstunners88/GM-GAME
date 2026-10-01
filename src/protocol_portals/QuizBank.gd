@@ -7,6 +7,11 @@ class_name QuizBank
 ## Each question: {"id", "fact_id", "prompt", "options"[3 strings], "correct"(0..2)}
 
 const Signals := preload("res://src/protocol_portals/PortalSignals.gd")
+const BANK_PATHS := {
+    "smoke": "res://src/protocol_portals/data/quiz_smoke.json",
+    "diamonds": "res://src/protocol_portals/data/quiz_diamonds.json",
+    "gold": "res://src/protocol_portals/data/quiz_gold.json",
+}
 
 var _protocol: String = ""
 var _examiner: String = ""
@@ -16,12 +21,16 @@ var _questions: Array[Dictionary] = []
 ## Reads res://src/protocol_portals/data/quiz_<protocol>.json.
 ## Returns null and pushes an error when the bank is missing or malformed.
 static func load_bank(protocol: String) -> QuizBank:
-    var path: String = "res://src/protocol_portals/data/quiz_%s.json" % protocol
+    # Only the three known banks can be opened: the protocol id never builds a path.
+    if not BANK_PATHS.has(protocol):
+        push_error("QuizBank: unknown protocol '%s'" % protocol)
+        return null
+    var path: String = BANK_PATHS[protocol]
     if not FileAccess.file_exists(path):
         push_error("QuizBank: bank file not found: %s" % path)
         return null
 
-    var file: FileAccess = FileAccess.open(path, FileAccess.READ)
+    var file: FileAccess = FileAccess.open(BANK_PATHS[protocol], FileAccess.READ)
     if file == null:
         push_error("QuizBank: could not open %s (err %d)" % [path, FileAccess.get_open_error()])
         return null
