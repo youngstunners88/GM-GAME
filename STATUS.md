@@ -1,6 +1,6 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
-**Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
+**Play it:** https://youngstunners88.itch.io/smokerealm
 **Branch:** master (just shipped)
 
 ---
@@ -14,6 +14,16 @@
 - **Meshy spend: all 101 credits.** Bull rig 5, Bull clips 21 (idle, drink, talk, hand-on-gun, seated drink, sit-to-stand, seated idle), five props 75 (Gatling, standing bear, bear head, ore cart, cauldron).
 - **Access code:** the Episode 2 code gate is unchanged since you set it (same stored fingerprint), so your code still opens it. The code itself is not written anywhere in the repo on purpose (only its fingerprint), so I am not printing it here.
 - New skill `ep2-free-roam-controls` locks the key map; `ep2-hideout-set-dressing` and `ep2-character-performance` now follow the Meshy-first pipeline. New tests cover every key, mouse look, jump, collisions, the Bull's clips and the walk cycle.
+
+**🔎 DEEP DIVE — BUGS AND VULNERABILITIES (2026-10-01).** Ran every one of the 115 test suites, the security sentinel and a review of the web bridge and save loading. Fixed what was real:
+- **Broken saves no longer half-load.** A save file with a wrong-shaped value (a count that is a list, an empty section) used to crash `load_session()` part-way and leave the session half-restored. Every value read from disk now goes through `SaveSafe` and falls back to its default. New test in `save_compat_test`.
+- **Security sentinel back to 18/18.** The quiz loader now reads from a fixed table of three files instead of a built path. The sentinel check was also taught to accept that safe pattern.
+- **Web overlay hardened.** `web/launcher.js` only accepts numbers for combo, score and coins from the game, and treats achievement ids as plain text.
+- **Smoke Lounge backdrop.** The two lounge plates repeated with a hard vertical join (3.4x the art's own detail). They are now drawn as a plate plus its mirror, so every join is the same column. No artwork was edited. (The lounge video normally covers them; this is the fallback when a browser cannot play it.)
+- **Five out-of-date tests corrected**, none were game bugs: boss voice level (2nd boss is deliberately quieter), vault music (each vault plays its own track, never the stage theme), Blaze Rush boss timing, the background seam list, and two checks that hit a script error and silently skipped while printing ALL PASS.
+- **Found, not fixed (needs your call): the magic skateboard.** The Blaze Rush board stretch is marked FIXED in an old report, but there is no code for it in the game. Only its test and level data exist. It looks like it was lost long ago. Say the word and I will rebuild it.
+- **Not a bug:** `icp_contract_test` needs a local mock server; the capture tools and the 2000-cycle stress soak are not CI gates.
+Checks: sentinel 18/18, front-page lock OK, green-VFX gate OK, script compile gate 270 scripts and 205 scenes OK.
 
 **🐂🔥 EPISODE 2 — INFERNO BULL'S HANGOUT REDESIGNED TO YOUR TARGET IMAGE (2026-10-01).** The empty cave is now his lived-in hideout, built from your picture:
 - **The room:** timber-panelled alcove, a 1800s gun wall (Winchester 1886s and Colt revolvers), a **Colt Gatling** in the background, mounted bear heads and full taxidermy bears, a pin-up revue poster beside the FORT KNOX door (longhorn skull above it), whiskey table with decanter and glasses, cowhide rug, gold bars and an ingot cart, hanging chains and lanterns.
@@ -7273,11 +7283,11 @@ confirmed — only that it's proven in-engine and deployed.
 ## ✅ DEPLOYED LIVE TO ITCH (2026-08-08b)
 
 With your go-ahead, I pushed this exact fixed build to
-`youngstunners88/lil-blunt-adventure:html5` via butler. It **patched from the
+`youngstunners88/smokerealm:html5` via butler. It **patched from the
 previous build #1850922 → #1850949 (version 66)** — which confirms the live
 page really was stale (that's why Blaze Rush "stayed broken" no matter what I
 committed). It's processing now and should be live within a few minutes at
-https://youngstunners88.itch.io/lil-blunt-adventure — please hard-refresh
+https://youngstunners88.itch.io/smokerealm — please hard-refresh
 (Ctrl/Cmd-Shift-R) and playtest Blaze Rush finish/ESC and a full-life wipe.
 
 Note: this was a manual push from a session key. For it to auto-update on
@@ -8723,7 +8733,7 @@ itch.io hides drafts from everyone except you. Final step, ~10 seconds:
    **"This file will be played in the browser"** if it isn't already
 3. Set **Visibility → Public** and Save
 
-Then https://youngstunners88.itch.io/lil-blunt-adventure is live for the
+Then https://youngstunners88.itch.io/smokerealm is live for the
 world. Every future push to the branch auto-deploys — no more manual steps,
 ever.
 

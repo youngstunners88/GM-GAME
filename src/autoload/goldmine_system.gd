@@ -354,21 +354,21 @@ func get_save_data() -> Dictionary:
 ## server/chain-side authority; it is the floor that keeps impossible states out
 ## of the ledger. See .claude/skills/ep2-security-and-trust-audit/SKILL.md.
 func load_save_data(data: Dictionary) -> void:
-	gold_balance = maxi(0, int(data.get("gold", 0)))
-	diamonds_balance = maxi(0, int(data.get("diamonds", 0)))
-	wbtc_balance = maxi(0, int(data.get("wbtc", 0)))
-	xaut_balance = maxi(0, int(data.get("xaut", 0)))
-	fort_knox_shares = maxi(0, int(data.get("fort_knox_shares", 0)))
-	gold_certificates = maxi(0, int(data.get("gold_certificates", 0)))
-	diamond_shares = maxi(0, int(data.get("diamond_shares", 0)))
+	gold_balance = maxi(0, SaveSafe.to_int(data.get("gold", 0), 0))
+	diamonds_balance = maxi(0, SaveSafe.to_int(data.get("diamonds", 0), 0))
+	wbtc_balance = maxi(0, SaveSafe.to_int(data.get("wbtc", 0), 0))
+	xaut_balance = maxi(0, SaveSafe.to_int(data.get("xaut", 0), 0))
+	fort_knox_shares = maxi(0, SaveSafe.to_int(data.get("fort_knox_shares", 0), 0))
+	gold_certificates = maxi(0, SaveSafe.to_int(data.get("gold_certificates", 0), 0))
+	diamond_shares = maxi(0, SaveSafe.to_int(data.get("diamond_shares", 0), 0))
 	# Default-guarded so a save written BEFORE session 6 (no blaze_diamonds key)
 	# loads as 0 instead of crashing (DeepSeek s6 regression risk #4), and
 	# clamped to the stack limit the crush flow assumes — add_blaze_diamonds()
 	# enforces that ceiling, so a save must not be able to walk around it.
-	blaze_diamonds = clampi(int(data.get("blaze_diamonds", 0)), 0, BLAZE_DIAMOND_STACK_LIMIT)
-	lifetime_gold_mined = maxi(0, int(data.get("lifetime_gold_mined", 0)))
-	lifetime_diamonds_burned = maxi(0, int(data.get("lifetime_diamonds_burned", 0)))
-	lifetime_gold_settled = maxi(0, int(data.get("lifetime_gold_settled", 0)))
+	blaze_diamonds = clampi(SaveSafe.to_int(data.get("blaze_diamonds", 0), 0), 0, BLAZE_DIAMOND_STACK_LIMIT)
+	lifetime_gold_mined = maxi(0, SaveSafe.to_int(data.get("lifetime_gold_mined", 0), 0))
+	lifetime_diamonds_burned = maxi(0, SaveSafe.to_int(data.get("lifetime_diamonds_burned", 0), 0))
+	lifetime_gold_settled = maxi(0, SaveSafe.to_int(data.get("lifetime_gold_settled", 0), 0))
 	gold_changed.emit(gold_balance)
 	diamonds_changed.emit(diamonds_balance)
 	wbtc_changed.emit(wbtc_balance)

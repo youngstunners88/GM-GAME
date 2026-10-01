@@ -211,8 +211,9 @@ fi
 # a string literal.
 fa_hits=$(grep -rn "FileAccess\.open(" src/ --include="*.gd" 2>/dev/null || true)
 # Allowed first args: an ALL-CAPS const identifier (the documented intent —
-# SAVE_PATH, SHOWN_FLAG, PLAYER_ID_PATH...), a string literal, or a user:// path.
-fa_dynamic=$(echo "$fa_hits" | grep -vE 'FileAccess\.open\(([A-Z][A-Z0-9_]*[,)]|"[^"]*"|user://)' || true)
+# SAVE_PATH, SHOWN_FLAG, PLAYER_ID_PATH...), a lookup into such a const table
+# (BANK_PATHS[protocol], keys whitelisted by the caller), a string literal, or a user:// path.
+fa_dynamic=$(echo "$fa_hits" | grep -vE 'FileAccess\.open\(([A-Z][A-Z0-9_]*(\[[^]]*\])?[,)]|"[^"]*"|user://)' || true)
 if [ -z "$fa_dynamic" ]; then
   record "INJ-004" "medium" "PASS" "FileAccess.open never takes a runtime-built path" "$(echo "$fa_hits" | grep -c . || echo 0) site(s), all const/literal"
 else

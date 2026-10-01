@@ -8,7 +8,7 @@ let GAME='';
 for(let attempt=1; attempt<=3 && !GAME; attempt++){
   const c0=await b.newContext({viewport:{width:1280,height:800},ignoreHTTPSErrors:true}); const p0=await c0.newPage();
   try{
-    await p0.goto('https://youngstunners88.itch.io/lil-blunt-adventure',{waitUntil:'domcontentloaded',timeout:120000});
+    await p0.goto('https://youngstunners88.itch.io/smokerealm',{waitUntil:'domcontentloaded',timeout:120000});
     await p0.waitForSelector('[data-iframe], iframe[src*="itch.zone"]',{timeout:30000});
     await sleep(1500);
     GAME=await p0.evaluate(()=>{const f=document.querySelector('iframe[src*="itch.zone"]');if(f&&f.src)return f.src;const ph=document.querySelector('[data-iframe]');if(ph){const m=(ph.getAttribute('data-iframe')||'').match(/src="([^"]+)"/);if(m)return m[1].replace(/&amp;/g,'&');}return '';});

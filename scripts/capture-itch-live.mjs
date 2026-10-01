@@ -11,7 +11,7 @@ const b=await chromium.launch(o);
 // 1) get the current game iframe URL
 const ctx0=await b.newContext({viewport:{width:1280,height:800},ignoreHTTPSErrors:true});
 const pg0=await ctx0.newPage();
-await pg0.goto('https://youngstunners88.itch.io/lil-blunt-adventure',{waitUntil:'domcontentloaded',timeout:120000});
+await pg0.goto('https://youngstunners88.itch.io/smokerealm',{waitUntil:'domcontentloaded',timeout:120000});
 await sleep(5000);
 let GAME=await pg0.evaluate(()=>{
   const f=document.querySelector('iframe[src*="itch.zone"]');

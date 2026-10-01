@@ -169,7 +169,7 @@ func _test_boss_backdrop_covers_whole_level() -> void:
 				% str(layer.motion_mirroring if layer else "?"))
 		_check("backdrop is world-locked (motion_scale 1) so it cannot drift",
 			layer != null and layer.motion_scale == Vector2(1.0, 1.0))
-		var skirt: ColorRect = level.get("_boss_backdrop_skirt")
+		var skirt: Control = level.get("_boss_backdrop_skirt")  # a TextureRect now, not a ColorRect
 		_check("opaque under-floor skirt exists", is_instance_valid(skirt))
 	level.queue_free()
 
@@ -206,17 +206,27 @@ func _test_blaze_landing_runway_is_clear() -> void:
 	GameManager.dash_return = {"level_index": 3}
 	var run: Node = preload("res://src/dashmode/blaze_rush.tscn").instantiate()
 	add_child(run)
-	var zone3: Dictionary = run.get("_board_zone")
-	var ze: float = float(zone3.get("end"))
-	var still_there := 0
-	for child in run.get_children():
-		# Candles are Area2Ds tagged with the "hazard" meta by _make_candle.
-		if child is Area2D and child.has_meta("hazard"):
-			var x: float = (child as Area2D).position.x
-			if x >= ze - 40.0 and x <= ze + runway:
-				still_there += 1
-	_check("no lethal candle survives inside L3's landing runway", still_there == 0,
-		"%d candle(s) still in the touchdown window" % still_there)
+	# The hoverboard section has since been REMOVED from blaze_rush.gd, so the
+	# runtime `_board_zone` no longer exists and `board_zone` in the layouts is
+	# dead data. Typing this as a Dictionary used to hit a script error that
+	# aborted the function while the suite still printed ALL PASS — a vacuous
+	# check. Say so explicitly and only run the runtime half if the feature is
+	# ever brought back.
+	var zone3_v: Variant = run.get("_board_zone")
+	if not (zone3_v is Dictionary):
+		_info("runtime landing-runway guard", "n/a — board section no longer exists in blaze_rush.gd")
+	else:
+		var zone3: Dictionary = zone3_v
+		var ze: float = float(zone3.get("end"))
+		var still_there := 0
+		for child in run.get_children():
+			# Candles are Area2Ds tagged with the "hazard" meta by _make_candle.
+			if child is Area2D and child.has_meta("hazard"):
+				var x: float = (child as Area2D).position.x
+				if x >= ze - 40.0 and x <= ze + runway:
+					still_there += 1
+		_check("no lethal candle survives inside L3's landing runway", still_there == 0,
+			"%d candle(s) still in the touchdown window" % still_there)
 	run.queue_free()
 	GameManager.dash_return = {}
 

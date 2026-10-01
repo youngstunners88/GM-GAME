@@ -394,22 +394,24 @@ function startComboSystem() {
 		// Only the same-origin game iframe may drive state — reject forged
 		// events from any other window (security audit finding #3).
 		if (e.origin !== window.location.origin) return;
+		// Numbers only: a string value would concatenate into the totals instead of adding.
+		const num = Number.isFinite(e.data?.value) ? e.data.value : 0;
 		if (e.data?.type === 'combo') {
-			handleCombo(e.data.value);
+			handleCombo(num);
 		} else if (e.data?.type === 'score') {
-			if (e.data.value > state.highScore) {
-				state.highScore = e.data.value;
+			if (num > state.highScore) {
+				state.highScore = num;
 				saveState();
 			}
 		} else if (e.data?.type === 'achievement') {
-			unlockAchievement(e.data.id);
+			unlockAchievement(String(e.data.id));
 		} else if (e.data?.type === 'coins') {
-			state.totalCoins += e.data.value;
+			state.totalCoins += num;
 			if (state.totalCoins >= 50) unlockAchievement('coin_50');
 			if (state.totalCoins >= 500) unlockAchievement('coin_500');
 			saveState();
 		} else if (e.data?.type === 'diamond') {
-			state.totalDiamonds += e.data.value;
+			state.totalDiamonds += num;
 			saveState();
 		}
 	});

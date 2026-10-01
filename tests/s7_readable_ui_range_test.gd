@@ -171,11 +171,18 @@ func _test_s2_boss_tracks_a_weaving_player() -> void:
 	hb.monitoring = false
 	var player := _stub_player(Vector2(600, 220))
 	await get_tree().physics_frame
-	# Phase 1: player far to the +x for 2.5s so the boss builds up +x velocity.
-	for i in range(150):
+	# Phase 1: player far to the +x for 1s so the boss is MID-PURSUIT. It must
+	# stay short: the boss now holds a standoff (STANDOFF_X) beside the player
+	# and at ~345 px/s covers the 600px gap in ~1.7s, so sampling at 2.5s found
+	# it parked (vx ~ 0) and the test blamed the boss for "not pursuing". Track
+	# the PEAK +x velocity rather than the last frame for the same reason.
+	var vx_before: float = 0.0
+	for i in range(60):
 		player.global_position = Vector2(600, 220)
 		await get_tree().physics_frame
-	var vx_before: float = (boss.get("velocity") as Vector2).x
+		vx_before = maxf(vx_before, (boss.get("velocity") as Vector2).x)
+	var vx_now: float = (boss.get("velocity") as Vector2).x
+	vx_before = maxf(vx_before, vx_now)
 	# Phase 2: player HARD-reverses to the far -x. Time how long the boss's
 	# velocity.x stays positive (coasting the wrong way) before it turns around.
 	var frames_wrong: int = 0

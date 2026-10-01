@@ -66,7 +66,7 @@ Once BUTLER_API_KEY is set, push again (or just let CI re-run):
 ```bash
 git push origin claude/setup-game-dev-environment-itWJv
 # CI auto-exports and auto-deploys to itch.io via butler
-# Game live at https://youngstunners88.itch.io/lil-blunt-adventure
+# Game live at https://youngstunners88.itch.io/smokerealm
 ```
 
 ## Timeline
@@ -139,7 +139,7 @@ git push origin claude/setup-game-dev-environment-itWJv
 
 4. git push origin claude/setup-game-dev-environment-itWJv
    # CI auto-exports and auto-deploys to itch.io
-   # Game now live at https://youngstunners88.itch.io/lil-blunt-adventure
+   # Game now live at https://youngstunners88.itch.io/smokerealm
 
 5. Merge to master (after owner confirms the itch.io build works)
    # Keeps repo homepage current with full project
@@ -169,7 +169,7 @@ git push origin claude/setup-game-dev-environment-itWJv
 - [ ] STATUS.md updated with verification entry + screenshot reference
 - [ ] Owner creates itch.io page + adds BUTLER_API_KEY secret
 - [ ] Next push auto-deploys to itch.io
-- [ ] Game playable at https://youngstunners88.itch.io/lil-blunt-adventure
+- [ ] Game playable at https://youngstunners88.itch.io/smokerealm
 
 ---
 

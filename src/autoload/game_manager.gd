@@ -681,25 +681,25 @@ func load_session() -> bool:
     # unclamped values (9999 health, level 42) corrupt the session state.
     # max_health loads FIRST so the health clamp uses the loaded ceiling
     # (the old order clamped against the previous session's value).
-    total_score = maxi(0, int(data.get("total_score", 0)))
-    coins_collected = maxi(0, int(data.get("coins", 0)))
-    ethereum_rings_collected = maxi(0, int(data.get("rings", 0)))
-    smoke_collected = maxi(0, int(data.get("smoke", 0)))
-    titanx_collected = maxi(0, int(data.get("titanx", 0)))
-    _deserialize_blaze_completions(data.get("blaze_rush", {}))
-    max_health = clampi(int(data.get("max_health", 3)), 1, 10)
-    player_health = clampi(int(data.get("health", max_health)), 1, max_health)
+    total_score = maxi(0, SaveSafe.to_int(data.get("total_score", 0), 0))
+    coins_collected = maxi(0, SaveSafe.to_int(data.get("coins", 0), 0))
+    ethereum_rings_collected = maxi(0, SaveSafe.to_int(data.get("rings", 0), 0))
+    smoke_collected = maxi(0, SaveSafe.to_int(data.get("smoke", 0), 0))
+    titanx_collected = maxi(0, SaveSafe.to_int(data.get("titanx", 0), 0))
+    _deserialize_blaze_completions(SaveSafe.to_dict(data.get("blaze_rush", {})))
+    max_health = clampi(SaveSafe.to_int(data.get("max_health", 3), 3), 1, 10)
+    player_health = clampi(SaveSafe.to_int(data.get("health", max_health), max_health), 1, max_health)
     # Lives persist; no upper cap — add_life() is uncapped, so saves may
     # carry more lives than max_lives.
-    lives = maxi(0, int(data.get("lives", max_lives)))
+    lives = maxi(0, SaveSafe.to_int(data.get("lives", max_lives), max_lives))
     lives_changed.emit(lives)
-    current_level = clampi(int(data.get("current_level", 1)), 1, 3)
-    highest_unlocked_level = clampi(int(data.get("highest_unlocked_level", 1)), 1, LEVEL_SEQUENCE.size())
-    _deserialize_checkpoints(data.get("checkpoints", {}))
+    current_level = clampi(SaveSafe.to_int(data.get("current_level", 1), 1), 1, 3)
+    highest_unlocked_level = clampi(SaveSafe.to_int(data.get("highest_unlocked_level", 1), 1), 1, LEVEL_SEQUENCE.size())
+    _deserialize_checkpoints(SaveSafe.to_dict(data.get("checkpoints", {})))
     if data.has("goldmine"):
-        GoldMineSystem.load_save_data(data.get("goldmine", {}))
+        GoldMineSystem.load_save_data(SaveSafe.to_dict(data.get("goldmine", {})))
     _deserialize_progression(data.get("progression_state", {}))
-    wallet_address = str(data.get("wallet_address", ""))
+    wallet_address = SaveSafe.to_str(data.get("wallet_address", ""))
     return true
 
 ## Merge saved progression over the defaults, key by key.
@@ -717,7 +717,7 @@ func _deserialize_progression(raw: Variant) -> void:
 
     var completed: Array = []
     for v in _as_array(data.get("levels_completed", [])):
-        var idx := int(v)
+        var idx: int = SaveSafe.to_int(v)
         # Clamp to the real campaign: a hand-edited save must not inject
         # level 99 and trick the unlock logic into thinking it's finished.
         if idx >= 1 and idx <= LEVEL_SEQUENCE.size() and not idx in completed:
@@ -727,7 +727,7 @@ func _deserialize_progression(raw: Variant) -> void:
 
     var bosses: Array = []
     for v in _as_array(data.get("bosses_defeated", [])):
-        var boss_id := str(v)
+        var boss_id: String = SaveSafe.to_str(v)
         if boss_id != "" and not boss_id in bosses:
             bosses.append(boss_id)
     progression_state["bosses_defeated"] = bosses
@@ -735,7 +735,7 @@ func _deserialize_progression(raw: Variant) -> void:
     progression_state["shooter_unlocked"] = bool(data.get("shooter_unlocked", false))
     progression_state["space_unlocked"] = bool(data.get("space_unlocked", false))
     progression_state["total_play_time"] = maxf(
-        float(data.get("total_play_time", 0.0)), 0.0)
+        SaveSafe.to_float(data.get("total_play_time", 0.0)), 0.0)
 
     # Self-heal for v1.0 saves: they have no levels_completed but they DO have
     # highest_unlocked_level. Reconstruct the history from it so a long-time
@@ -767,15 +767,15 @@ func _serialize_blaze_completions() -> Dictionary:
 func _deserialize_blaze_completions(raw: Dictionary) -> void:
     blaze_rush_completed.clear()
     for k in raw.keys():
-        blaze_rush_completed[int(k)] = bool(raw[k])
+        blaze_rush_completed[SaveSafe.to_int(k)] = bool(raw[k])
 
 func _deserialize_checkpoints(raw: Dictionary) -> void:
     level_checkpoints.clear()
     for k in raw.keys():
-        var entry: Dictionary = raw[k]
-        level_checkpoints[int(k)] = {
-            "id": int(entry.get("id", 0)),
-            "pos": Vector2(float(entry.get("x", 0.0)), float(entry.get("y", 0.0))),
+        var entry: Dictionary = SaveSafe.to_dict(raw[k])
+        level_checkpoints[SaveSafe.to_int(k)] = {
+            "id": SaveSafe.to_int(entry.get("id", 0)),
+            "pos": Vector2(SaveSafe.to_float(entry.get("x", 0.0)), SaveSafe.to_float(entry.get("y", 0.0))),
         }
 
 # ---- Offline mode (task: offline-mode skill, Video-Game Layer) -------------

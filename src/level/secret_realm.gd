@@ -220,13 +220,27 @@ func _add_layer(pbg: ParallaxBackground, path: String, speed: float, mod: Color)
 	var fill: float = maxf(1.0, view_h / float(tex.get_height()))
 	var layer := ParallaxLayer.new()
 	layer.motion_scale = Vector2(speed, 0.0)
-	layer.motion_mirroring = Vector2(tex.get_width() * fill, 0.0)
-	var spr := Sprite2D.new()
-	spr.texture = tex
-	spr.centered = false
-	spr.scale = Vector2(fill, fill)
-	spr.modulate = mod
-	layer.add_child(spr)
+	# MIRRORED PAIR, NOT A RAW REPEAT. motion_mirroring REPEATS the texture, so
+	# a plate that was never authored to tile butts its last column against its
+	# first at every repeat — measured 3.4x (room) / 1.9x (skyline) the art's own
+	# column step, a hard vertical line through the plant and the mountain.
+	# These plates are narrower than the 1280 viewport, so that join is on screen
+	# at EVERY camera position. Drawing the plate and its horizontal flip side
+	# by side makes the wrap seamless by construction: the pixels meeting at
+	# every join are the same column. No art is edited, nothing is cross-faded
+	# or repainted (both were tried on other plates and rejected as the
+	# "sellotape sliver"), and the repeat period is the pair's exact width.
+	var tile_w: float = float(tex.get_width()) * fill
+	layer.motion_mirroring = Vector2(tile_w * 2.0, 0.0)
+	for i in 2:
+		var spr := Sprite2D.new()
+		spr.texture = tex
+		spr.centered = false
+		spr.flip_h = (i == 1)
+		spr.position = Vector2(tile_w * i, 0.0)
+		spr.scale = Vector2(fill, fill)
+		spr.modulate = mod
+		layer.add_child(spr)
 	pbg.add_child(layer)
 
 func _setup_floor() -> void:

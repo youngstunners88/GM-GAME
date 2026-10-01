@@ -36,8 +36,12 @@ func _ready() -> void:
 				_bad("%s/%s: player has no stream (missing/failed clip)" % [boss, cat])
 			if not p.playing:
 				_bad("%s/%s: player not playing (silent)" % [boss, cat])
-			if p.volume_db < 8.0:
-				_bad("%s/%s: player volume_db=%s below +8 dB" % [boss, cat, p.volume_db])
+			# Expected gain = shared base + this boss's own trim (the founder
+			# asked for the 2nd boss to be quieter, so crystal sits at -4 dB
+			# relative to the base). Read both from the system, never hardcode.
+			var want: float = sys.PLAYER_VOLUME_DB + float(sys.BOSS_GAIN_DB.get(boss, 0.0))
+			if p.volume_db < want - 0.01 or p.volume_db < 4.0:
+				_bad("%s/%s: player volume_db=%s below expected %s dB" % [boss, cat, p.volume_db, want])
 	print("  playback: every boss/category plays a real stream at +%s dB OK" % sys._player.volume_db)
 
 	# (d): no immediate repeats across a long taunt run (uses tax taunt pool = 8).
