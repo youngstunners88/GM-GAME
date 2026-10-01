@@ -159,7 +159,7 @@ echo "✅ RELEASE SUCCESSFUL"
 echo "📸 Screenshot: game-verify.png"
 echo "📄 Result: $RESULT_FILE"
 echo "🎮 Play: https://lil-blunt-game.vercel.app"
-echo "🎯 itch.io: https://youngstunners88.itch.io/lil-blunt-adventure (awaiting owner setup)"
+echo "🎯 itch.io: https://youngstunners88.itch.io/smokerealm (awaiting owner setup)"
 echo ""
 
 exit 0

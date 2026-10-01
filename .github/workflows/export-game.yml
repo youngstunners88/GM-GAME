@@ -623,7 +623,7 @@ jobs:
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
           # itch.io target: <username>/<game-slug>:<channel>
-          ITCH_TARGET: youngstunners88/lil-blunt-adventure:html5
+          ITCH_TARGET: youngstunners88/smokerealm:html5
         run: |
           if [ -z "$BUTLER_API_KEY" ]; then
             echo "::notice::BUTLER_API_KEY secret not set — skipping itch.io deploy."
@@ -641,4 +641,4 @@ jobs:
           chmod +x butler
           ./butler push web/game "$ITCH_TARGET" \
             --userversion "$(git rev-parse --short HEAD)-$(date -u +%Y%m%d%H%M)"
-          echo "::notice::Pushed to https://youngstunners88.itch.io/lil-blunt-adventure"
+          echo "::notice::Pushed to https://youngstunners88.itch.io/smokerealm"

@@ -1,6 +1,6 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
-**Play it:** https://youngstunners88.itch.io/lil-blunt-adventure
+**Play it:** https://youngstunners88.itch.io/smokerealm
 **Branch:** master (just shipped)
 
 ---
@@ -7273,11 +7273,11 @@ confirmed — only that it's proven in-engine and deployed.
 ## ✅ DEPLOYED LIVE TO ITCH (2026-08-08b)
 
 With your go-ahead, I pushed this exact fixed build to
-`youngstunners88/lil-blunt-adventure:html5` via butler. It **patched from the
+`youngstunners88/smokerealm:html5` via butler. It **patched from the
 previous build #1850922 → #1850949 (version 66)** — which confirms the live
 page really was stale (that's why Blaze Rush "stayed broken" no matter what I
 committed). It's processing now and should be live within a few minutes at
-https://youngstunners88.itch.io/lil-blunt-adventure — please hard-refresh
+https://youngstunners88.itch.io/smokerealm — please hard-refresh
 (Ctrl/Cmd-Shift-R) and playtest Blaze Rush finish/ESC and a full-life wipe.
 
 Note: this was a manual push from a session key. For it to auto-update on
@@ -8723,7 +8723,7 @@ itch.io hides drafts from everyone except you. Final step, ~10 seconds:
    **"This file will be played in the browser"** if it isn't already
 3. Set **Visibility → Public** and Save
 
-Then https://youngstunners88.itch.io/lil-blunt-adventure is live for the
+Then https://youngstunners88.itch.io/smokerealm is live for the
 world. Every future push to the branch auto-deploys — no more manual steps,
 ever.
 

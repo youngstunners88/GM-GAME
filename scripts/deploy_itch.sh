@@ -2,7 +2,7 @@
 # Deploy the exported web build to itch.io using butler (itch.io's official CLI).
 #
 # Prereqs:
-#   1. itch.io project page exists: https://youngstunners88.itch.io/lil-blunt-adventure
+#   1. itch.io project page exists: https://youngstunners88.itch.io/smokerealm
 #      (Kind: HTML, "This file will be played in the browser" on the html5 channel)
 #   2. BUTLER_API_KEY env var set — get one at https://itch.io/user/settings/api-keys
 #   3. web/game/ contains a fresh export (CI produces it, or run scripts/export-web.sh)
@@ -11,7 +11,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-ITCH_TARGET="${ITCH_TARGET:-youngstunners88/lil-blunt-adventure:html5}"
+ITCH_TARGET="${ITCH_TARGET:-youngstunners88/smokerealm:html5}"
 BUILD_DIR="web/game"
 
 if [ -z "${BUTLER_API_KEY:-}" ]; then
@@ -42,4 +42,4 @@ fi
 VERSION="$(git rev-parse --short HEAD)-$(date -u +%Y%m%d%H%M)"
 echo "Pushing $BUILD_DIR → $ITCH_TARGET (version $VERSION)"
 "$BUTLER" push "$BUILD_DIR" "$ITCH_TARGET" --userversion "$VERSION"
-echo "Done → https://youngstunners88.itch.io/lil-blunt-adventure"
+echo "Done → https://youngstunners88.itch.io/smokerealm"

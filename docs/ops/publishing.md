@@ -15,7 +15,7 @@ BUTLER_API_KEY=xxxx ./scripts/deploy_itch.sh
 ```
 
 Prereqs (all already true in this repo):
-- itch.io project page exists: https://youngstunners88.itch.io/lil-blunt-adventure
+- itch.io project page exists: https://youngstunners88.itch.io/smokerealm
   (Kind: HTML, "This file will be played in the browser" on the `html5` channel)
 - `web/game/` contains a fresh export (`scripts/export-web.sh`, or let CI
   produce it)
@@ -25,7 +25,7 @@ Prereqs (all already true in this repo):
 installed, then runs:
 
 ```bash
-butler push web/game youngstunners88/lil-blunt-adventure:html5 \
+butler push web/game youngstunners88/smokerealm:html5 \
   --userversion "$(git rev-parse --short HEAD)-$(date -u +%Y%m%d%H%M)"
 ```
 

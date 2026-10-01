@@ -68,11 +68,16 @@ Episode 2 feature work follows `ep2-layered-production` (illustration → wire s
 - The game must feel fun, polished, and true to Lil Blunt's chill personality.
 
 ## Deployment (itch.io is primary)
-- **Primary platform: itch.io** — https://youngstunners88.itch.io/lil-blunt-adventure
+- **Primary platform: itch.io** — https://youngstunners88.itch.io/smokerealm
   Game-native CDN, no cold starts, discovery + analytics. Vercel is a mirror only.
 - CI (`.github/workflows/export-game.yml`) exports on every push to
   `master`/`claude/**`, packages an itch-ready zip artifact, and auto-deploys
   via butler when the `BUTLER_API_KEY` repo secret is set.
+- **ITCH URL CHANGED (founder, 2026-10-01):** the game page is now
+  **https://youngstunners88.itch.io/smokerealm** (butler target
+  `youngstunners88/smokerealm:html5`). The old `lil-blunt-adventure` slug no
+  longer exists; butler fails with `invalid game` if anything still points at it.
+  Never reintroduce the old slug.
 - **Web export MUST stay non-threaded** (`variant/thread_support=false`).
   Threaded builds need SharedArrayBuffer and silently fail to boot on itch.io,
   in iframes, and on some mobile browsers. This was the root cause of the
