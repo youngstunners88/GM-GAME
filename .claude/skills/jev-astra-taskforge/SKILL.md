@@ -234,7 +234,7 @@ Chrome connects through [Browser Harness](https://github.com/browser-use/browser
 from jev_ultrafast import Agent
 
 with Agent(
-    "https://youngstunners88.itch.io/lil-blunt-adventure",
+    "https://youngstunners88.itch.io/smokerealm",
     "Start the game and stop once the title screen is fully visible.",
 ) as agent:
     for state in agent.run():

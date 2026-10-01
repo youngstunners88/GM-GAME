@@ -17,7 +17,7 @@ useful than a general "it felt off" — it tells us exactly where to look.
 ## Setup
 
 **Option A — play the live build (easiest):**
-https://youngstunners88.itch.io/lil-blunt-adventure
+https://youngstunners88.itch.io/smokerealm
 
 **Option B — play the exact PR branch build** (if you want to be sure
 you're testing this branch and not an older deploy): ask for a fresh export

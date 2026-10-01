@@ -13,7 +13,7 @@
 - **He sits on his crate like your picture:** seated with his whiskey while you talk, then he stands up when he "takes your measure", ready to hand over the gear.
 - **Meshy spend: all 101 credits.** Bull rig 5, Bull clips 21 (idle, drink, talk, hand-on-gun, seated drink, sit-to-stand, seated idle), five props 75 (Gatling, standing bear, bear head, ore cart, cauldron).
 - **Access code:** the Episode 2 code gate is unchanged since you set it (same stored fingerprint), so your code still opens it. The code itself is not written anywhere in the repo on purpose (only its fingerprint), so I am not printing it here.
-- **Build:** shipped to master as `0e81fb9`; on itch look for a build tag ending in `0e81fb9` or later (hard refresh). Pack 179.6 MiB (CI limit 190 MiB): design notes, work-notes, tools and key-art photos are no longer bundled into the game download.
+- **Build: LIVE.** Master `0e81fb9` deployed to https://youngstunners88.itch.io/smokerealm (butler push confirmed 16:01 UTC); hard refresh. Pack 179.6 MiB (CI limit 190 MiB): design notes, work-notes, tools and key-art photos are no longer bundled into the game download.
 - New skill `ep2-free-roam-controls` locks the key map; `ep2-hideout-set-dressing` and `ep2-character-performance` now follow the Meshy-first pipeline. New tests cover every key, mouse look, jump, collisions, the Bull's clips and the walk cycle.
 
 **🔎 DEEP DIVE — BUGS AND VULNERABILITIES (2026-10-01).** Ran every one of the 115 test suites, the security sentinel and a review of the web bridge and save loading. Fixed what was real:
