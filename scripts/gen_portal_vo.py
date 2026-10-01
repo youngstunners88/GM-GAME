@@ -21,7 +21,7 @@ TEMPO = {"gold": 1.3}
 def normalise(path, proto=None):
     """Loudness-normalise (-14 LUFS, -1 dBTP) so every governor is equally present over the music."""
     tmp = path + ".norm.mp3"
-    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", path, "-af", (f"atempo={TEMPO[proto]}," if proto in TEMPO else "") + "loudnorm=I=-14:TP=-1:LRA=9", "-b:a", "96k", tmp], check=True)
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", path, "-af", (f"atempo={TEMPO[proto]}," if proto in TEMPO else "") + "loudnorm=I=-14:TP=-1:LRA=9", "-ac", "1", "-b:a", "48k", tmp], check=True)
     os.replace(tmp, path)
 
 copy = json.load(open("src/protocol_portals/data/portal_copy.json"))
