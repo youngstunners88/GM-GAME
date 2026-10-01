@@ -279,6 +279,12 @@ Claude model to use for the likely next task, with a short reason. Guide:
   patterns, tuning constants, docs, routine asset wiring.
 - **claude-haiku-4-5** — trivial one-file tweaks, copy edits, quick questions.
 
+## ⭐ ALWAYS-SHIP-LIVE GATE (founder, 2026-10-01 — "you must ALWAYS ship")
+Every turn that touches the repo ends with skill `always-ship-live`: `bash scripts/ship-check.sh` (it prints the
+current itch URL and fails on uncommitted work, unpushed commits and retired slugs), commit, push,
+`scripts/ship-to-master.sh`, then PROVE master's CI deployed (GitHub MCP: run success + "Deploy to itch.io via
+butler" success + log "Pushed to ..."). Say "live" only after that proof; before it say "pushed / deploying".
+
 ## ⭐ FOUNDER SHIP RULE (ALWAYS — founder, 2026-09-25)
 SHIP EVERYTHING. Every change is committed, pushed and shipped to master via
 `scripts/ship-to-master.sh`, every time. No gate votes block a ship, and none are

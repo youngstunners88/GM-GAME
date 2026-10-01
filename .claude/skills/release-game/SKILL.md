@@ -85,7 +85,7 @@ jobs:
     "docs_update": { "status": "PASS", "files_updated": 1 }
   },
   "vercel_url": "https://lil-blunt-game.vercel.app",
-  "itch_url": "https://youngstunners88.itch.io/lil-blunt-adventure (requires BUTLER_API_KEY secret)",
+  "itch_url": "https://youngstunners88.itch.io/smokerealm (requires BUTLER_API_KEY secret)",
   "next_steps": "Owner: create itch.io page + add BUTLER_API_KEY secret; re-run to auto-deploy"
 }
 ```

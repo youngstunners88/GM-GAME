@@ -73,11 +73,11 @@ unzip -oq butler.zip; chmod +x butler
 
 # 3. Push. Use whichever key name env-secrets-and-apis found present.
 LD_LIBRARY_PATH=/tmp/butler-bin BUTLER_API_KEY="$ITCH_API_KEY" \
-  ./butler push /tmp/itch-deploy youngstunners88/lil-blunt-adventure:html5
+  ./butler push /tmp/itch-deploy youngstunners88/smokerealm:html5
 
 # 4. Confirm it actually landed (don't just trust "push" exiting 0).
 LD_LIBRARY_PATH=/tmp/butler-bin BUTLER_API_KEY="$ITCH_API_KEY" \
-  ./butler status youngstunners88/lil-blunt-adventure:html5
+  ./butler status youngstunners88/smokerealm:html5
 ```
 
 `butler status` showing a NEW build number that differs from before the

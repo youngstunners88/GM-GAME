@@ -15,7 +15,7 @@ const week = (() => {
 
 const drafts = await kimi(
   "You draft X posts for @smokering25, the account of a chill crypto gaming protocol whose free browser platformer stars Lil Blunt. Voice: laid-back, funny, community-first, never shilling price.",
-  "Draft 5 X posts. Topics: new leaderboard, community lore, token utility in-game, game update, invite-a-friend. Each under 280 chars, each includes @smokering25 and #SMOKE, each ends with the game link https://youngstunners88.itch.io/lil-blunt-adventure . Number them 1-5, one per line block.");
+  "Draft 5 X posts. Topics: new leaderboard, community lore, token utility in-game, game update, invite-a-friend. Each under 280 chars, each includes @smokering25 and #SMOKE, each ends with the game link https://youngstunners88.itch.io/smokerealm . Number them 1-5, one per line block.");
 
 mkdirSync("marketing/assets", { recursive: true });
 const out = `marketing/assets/x_drafts_week_${week}.md`;

@@ -176,7 +176,7 @@ security-audit.ts → browser-verify (PLAYING state) → butler deploy
 5. **Butler deploy** — pushes to itch.io (when BUTLER_API_KEY secret is set)
 
 ### Deploy Targets:
-- **itch.io** (primary): https://youngstunners88.itch.io/lil-blunt-adventure
+- **itch.io** (primary): https://youngstunners88.itch.io/smokerealm
 - **Vercel** (mirror): https://lil-blunt-game.vercel.app
 - **Backend**: Cloudflare Workers (`wrangler deploy`)
 

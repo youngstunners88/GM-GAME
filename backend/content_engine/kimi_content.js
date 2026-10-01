@@ -13,7 +13,7 @@ export async function kimi(system, user, maxTokens = 1500) {
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${key}`,
-      "HTTP-Referer": "https://youngstunners88.itch.io/lil-blunt-adventure",
+      "HTTP-Referer": "https://youngstunners88.itch.io/smokerealm",
       "X-Title": "Lil Blunt Content Engine",
     },
     body: JSON.stringify({

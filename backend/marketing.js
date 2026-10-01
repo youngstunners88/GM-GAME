@@ -30,7 +30,7 @@ import { sendEmail, draftThenSend, createDraft, labelMessage, suppress, isSuppre
 import * as T from "./email_templates.js";
 import { kimiChat } from "./kimi_client.js";
 
-const GAME_URL = "https://youngstunners88.itch.io/lil-blunt-adventure";
+const GAME_URL = "https://youngstunners88.itch.io/smokerealm";
 const BOSS_TIPS = {
   tax: "double-jump over his charge, then hit him while he's dizzy.",
   crystal: "his orbs home in — bait them into a wall, then close in.",

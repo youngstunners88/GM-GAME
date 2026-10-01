@@ -17,7 +17,7 @@ export async function kimiChat(env, system, user, maxTokens) {
         "Content-Type": "application/json",
         Authorization: `Bearer ${env.OPENROUTER_API_KEY}`,
         // OpenRouter attribution headers (optional, aids their moderation).
-        "HTTP-Referer": "https://youngstunners88.itch.io/lil-blunt-adventure",
+        "HTTP-Referer": "https://youngstunners88.itch.io/smokerealm",
         "X-Title": "Lil Blunt: The Smoke Realm",
       },
       body: JSON.stringify({

@@ -28,7 +28,7 @@ touching `src/**` or `project.godot`:
 4. Zips `web/game/` → `lil-blunt-itch.zip` artifact (index.html at zip ROOT —
    itch.io rejects nested zips)
 5. If the `BUTLER_API_KEY` repo secret is set: pushes `web/game/` to
-   `youngstunners88/lil-blunt-adventure:html5` via butler
+   `youngstunners88/smokerealm:html5` via butler
 
 ## 2. Deploy paths (in order of preference)
 
@@ -68,7 +68,7 @@ always prefer it over manual zip upload.
 
 - STATUS.md: note version, itch URL, verification result
 - Commit + push; merge to master after the milestone verifies
-- The client-facing link is https://youngstunners88.itch.io/lil-blunt-adventure
+- The client-facing link is https://youngstunners88.itch.io/smokerealm
 
 ## Gotchas learned the hard way
 

@@ -29,7 +29,7 @@ const stats = SAMPLE || !BACKEND
 
 const draft = await kimi(
   "You write the weekly Smoke Realm newsletter in Lil Blunt's voice: chill, crypto-savvy, warm, funny, zero financial advice. Plain text, ~150 words, with a subject line on the first line prefixed 'SUBJECT: '.",
-  `Write this week's newsletter. Top player: ${stats.top_player}, score: ${stats.top_score}. Most deaths: ${stats.top_death_cause}. Funniest moment: ${stats.community_event}. Include a CTA to play (https://youngstunners88.itch.io/lil-blunt-adventure) and to join Telegram (t.me/LilBluntdotWin).`);
+  `Write this week's newsletter. Top player: ${stats.top_player}, score: ${stats.top_score}. Most deaths: ${stats.top_death_cause}. Funniest moment: ${stats.community_event}. Include a CTA to play (https://youngstunners88.itch.io/smokerealm) and to join Telegram (t.me/LilBluntdotWin).`);
 
 const subject = (draft.match(/^SUBJECT:\s*(.+)$/m) || [, "Smoke Realm weekly"])[1].trim();
 const body = draft.replace(/^SUBJECT:.*$/m, "").trim();

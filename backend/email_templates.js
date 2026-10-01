@@ -4,7 +4,7 @@
 // you got this, and a working one-click Unsubscribe link (CAN-SPAM basics).
 // Templates never receive raw user HTML — all interpolations are escaped.
 
-const GAME_URL = "https://youngstunners88.itch.io/lil-blunt-adventure";
+const GAME_URL = "https://youngstunners88.itch.io/smokerealm";
 
 const esc = (s) => String(s == null ? "" : s)
   .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
