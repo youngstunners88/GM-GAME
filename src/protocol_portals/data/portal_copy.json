@@ -3,7 +3,7 @@
     "room_title": "SMOKE 101: The 420 Lounge",
     "examiner_name": "Pauly The Smokest",
     "examiner_intro": [
-      "Welcome to the Reading Ring. Mind the lamp, it's older than me.",
+      "Welcome to the 420 Lounge. Pull up a chair.",
       "Read it before you claim you know it. That's the only rule here.",
       "A short set of questions."
     ],
@@ -110,6 +110,14 @@
     "farewell": {
       "gov": "Alright Lil Blunt, that's the tour. You know the burn, the lounge and the hub now. Come back anytime, and keep it chill.",
       "lb": "Thanks Pauly! Learned a ton. Peace, and pass the good vibes."
+    },
+    "farewell_partial": {
+      "gov": "Leaving already, Lil Blunt? You haven't seen everything yet. Come back anytime and I'll show you the rest.",
+      "lb": "Yeah, I'll be back. I still have plenty left to learn."
+    },
+    "farewell_none": {
+      "gov": "Heading out already? We barely got started. Come back whenever you're ready and we'll go through it properly.",
+      "lb": "Sorry Pauly, something came up. I'll be back for the full tour."
     }
   },
   "diamonds": {
@@ -212,6 +220,14 @@
     "farewell": {
       "gov": "That's the forge, the scale, the press and the bridge. Carry that with you, Lil Blunt. Stay sharp out there.",
       "lb": "Will do, Kane. Thanks for the lesson. See you on the other side!"
+    },
+    "farewell_partial": {
+      "gov": "Already crossing back? You've only seen part of the Study, Lil Blunt. The rest will keep. Come back when you're ready.",
+      "lb": "Got it, Kane. I'll be back for the rest."
+    },
+    "farewell_none": {
+      "gov": "Leaving before we've begun? The pressure will still be here. Come back and I'll show you everything.",
+      "lb": "Sorry Kane, I'll come back for the full lesson."
     }
   },
   "gold": {
@@ -314,6 +330,14 @@
     "farewell": {
       "gov": "That's the vest, the vault and the Vein, partner. Now go put it to work. Safe travels, Lil Blunt.",
       "lb": "Thanks Rich! Great lesson. Catch you later!"
+    },
+    "farewell_partial": {
+      "gov": "Leaving so soon, partner? You've only seen part of town. Come back and I'll show you the rest of the ledger.",
+      "lb": "Will do, Rich. I'll be back to finish up."
+    },
+    "farewell_none": {
+      "gov": "Not even a look around, partner? The Claim Office will be here when you're ready.",
+      "lb": "Sorry Rich, I'll be back for the full tour."
     }
   }
 }

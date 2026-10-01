@@ -605,7 +605,7 @@ func _do_ascend() -> void:
 	# The governor says goodbye and Lil Blunt answers before he climbs out (founder 2026-09-30).
 	if _player != null and is_instance_valid(_player):
 		_player.set_physics_process(false)
-	await _converse("farewell")
+	await _converse(_farewell_phase())
 	var am: Node = get_tree().root.get_node_or_null("AudioManager")
 	if am != null:
 		am.call("fade_out_music", 1.6)
@@ -768,6 +768,15 @@ func _start_room_music() -> void:
 	var am: Node = get_tree().root.get_node_or_null("AudioManager")
 	if am != null and ROOM_MUSIC.has(protocol):
 		am.call("play_room_music", String(ROOM_MUSIC[protocol]), 2.5)
+
+
+## Governors are AWARE of what Lil Blunt actually did: the "that's the whole tour" goodbye is only
+## said when he has seen every mechanism. Otherwise they say he has more to see (founder 2026-10-01).
+func _farewell_phase() -> String:
+	var seen: int = _visited_learning_stops.size()
+	if seen >= _required_learning_stops.size() and not _required_learning_stops.is_empty():
+		return "farewell"
+	return "farewell_partial" if seen > 0 else "farewell_none"
 
 
 ## Greeting / goodbye exchange: the governor speaks, then Lil Blunt answers, each with voice.

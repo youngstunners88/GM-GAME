@@ -31,3 +31,13 @@ Data lives in `src/protocol_portals/data/portal_copy.json` -> `<protocol>.stops[
 - DIAMONDS: swept ETH goes to **Diamond Certificate holders**.
 - **NFT ideas dropped** for Gold, Diamonds and Blaze. The Smoke Lounge only has the **SMOKE NFT and bong parties**.
 - The stop `rush_board` is now "The Gold Vein Board". Quiz G05/G08/G11 and S11 were updated to match.
+
+## Governors must be AWARE (founder 2026-10-01)
+A governor may never claim Lil Blunt "now knows everything / that's the tour" unless he has visited every mechanism stop.
+`StudyRoom._farewell_phase()` picks `farewell` (all seen), `farewell_partial` (some) or `farewell_none` (nothing) from
+`_visited_learning_stops`. Any new "you've covered it" line must be gated on the same state.
+
+## Size gate (cost a deploy)
+`index.pck` must stay < 190 MB or CI's "Verify export output" fails and NOTHING deploys (master builds #428/#435/#448 failed
+at 195 MB, so the education music/voices never reached itch). Encode new audio small: music 96k mp3, voice 48k mono; re-encode
+heavy video with `tools/reencode_media.sh`. After shipping, check the CI run actually went green before saying "shipped".

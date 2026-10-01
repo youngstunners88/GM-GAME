@@ -57,7 +57,7 @@ def tts(voice, text, out, proto=None):
 for proto, data in copy.items():
     if only and proto != only:
         continue
-    for phase in ("welcome", "farewell"):
+    for phase in ("welcome", "farewell", "farewell_partial", "farewell_none"):
         if phase in data:
             tts(VOICES[proto], data[phase]["gov"], f"src/assets/portals/vo/{proto}_{phase}_gov.mp3", proto)
             tts(LIL_BLUNT, data[phase]["lb"], f"src/assets/portals/vo/{proto}_{phase}_lb.mp3")
