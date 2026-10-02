@@ -41,6 +41,12 @@ var _ended: bool = false
 var _hud: Label = null
 var _hint: Label = null
 var _banner: Label = null
+## Founder 2026-10-02: no always-on banner or key strip. K shows the controls for 3 seconds; the facility gets a
+## film-title card that fades away (skill ep2-hud-title-card).
+const KEYS_SHOW_SECONDS := 3.0
+var _keys_t: float = 0.0
+var _title: Label = null
+var _title_done_for: int = 0
 
 ## Founder 2026-09-30: Episode 2 is behind an access code ("I want to still access it simply but restrict
 ## others"). Only the SHA-256 of the code is stored - the plaintext is not in the repo or the build. This is
@@ -195,8 +201,10 @@ func _physics_process(_delta: float) -> void:
 		if a and a.has_method("get_carts_alive") and a.is_running():
 			RunnerAutopilot.tick(a)
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_keys_t = maxf(0.0, _keys_t - delta)
 	_refresh_hud()
+	_update_title_card()
 	if _probe and _root and _root.get_mode() == Ep2SessionRoot.Mode.RUNNER:
 		var a: Node = _root.get_active()
 		if a and a.has_method("get_distance"):
@@ -213,6 +221,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.is_action_pressed("ui_cancel"):
 			SceneRouter.load_scene(MENU_SCENE, SceneRouter.Transition.DIAMOND)
 		return
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_K:
+		_keys_t = KEYS_SHOW_SECONDS          # shows the control list; changes no binding
 	# Always an exit. A mode with no visible way out is how a tester gets stuck
 	# and reports the whole episode as broken.
 	if event.is_action_pressed("ui_cancel"):
@@ -250,6 +260,18 @@ func _build_hud() -> void:
 	_hint.add_theme_constant_override("outline_size", 5)
 	layer.add_child(_hint)
 
+	_title = Label.new()
+	_title.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_title.add_theme_font_size_override("font_size", 54)
+	_title.add_theme_color_override("font_color", Color(1.0, 0.86, 0.5))
+	_title.add_theme_color_override("font_outline_color", Color(0.12, 0.04, 0.0))
+	_title.add_theme_constant_override("outline_size", 12)
+	_title.modulate.a = 0.0
+	_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(_title)
+
 	_banner = Label.new()
 	_banner.position = Vector2(24, 250)
 	_banner.add_theme_font_size_override("font_size", 26)
@@ -263,7 +285,7 @@ func _refresh_hud() -> void:
 	if _root == null or _hud == null:
 		return
 	var a: Node = _root.get_active()
-	var lines := "EPISODE 2 — GOLD MINE\n"
+	var lines := ""
 	match _root.get_mode():
 		Ep2SessionRoot.Mode.RUNNER:
 			if a:
@@ -323,6 +345,11 @@ func _refresh_hud() -> void:
 		_:
 			lines += "idle"
 	_hud.text = lines
+	# Facility: no beat/inventory text at all (the room tells the story). Elsewhere the run stats stay.
+	if _root.get_mode() == Ep2SessionRoot.Mode.CHAMBER and a and a.has_method("get_beat_name"):
+		_hud.text = ""
+	if _keys_t <= 0.0:
+		_hint.text = ""
 
 func _bar(f: float) -> String:
 	var filled := int(clampf(f, 0.0, 1.0) * 20.0)
@@ -349,3 +376,20 @@ func _on_session_complete() -> void:
 func _on_session_failed() -> void:
 	_ended = true
 	_banner.text = "RUN FAILED\nSPACE / R  try again        ESC  menu"
+
+
+## "THE SMELTING FACILITY": plays once when the room appears after the cliff film, fades off like a film title.
+func _update_title_card() -> void:
+	if _root == null or _title == null or _root.get_mode() != Ep2SessionRoot.Mode.CHAMBER:
+		return
+	var a: Node = _root.get_active()
+	if a == null or not a.has_method("get_beat_name") or a.get_beat_name() == "CINEMATIC":
+		return
+	if _title_done_for == a.get_instance_id():
+		return
+	_title_done_for = a.get_instance_id()
+	_title.text = "THE SMELTING FACILITY"
+	var tw := create_tween()
+	tw.tween_property(_title, "modulate:a", 1.0, 0.6)
+	tw.tween_interval(1.8)
+	tw.tween_property(_title, "modulate:a", 0.0, 1.2)

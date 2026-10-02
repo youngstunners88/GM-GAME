@@ -66,6 +66,8 @@ enum Beat {
 # runner tunnel at -Z, the Bull is seated among the crucibles at +Z.
 const ENTRY_POSITION := Vector3(0.0, 0.0, -8.0)
 const BULL_POSITION := Vector3(1.6, 0.0, 6.0)
+## Where he stands at rest once the gear is handed over (beside his crate, not following Lil Blunt).
+const BULL_REST := Vector3(2.6, 0.0, 6.3)
 const MOLD_RACK_POSITION := Vector3(-4.2, 0.0, 2.0)
 const EXIT_POSITION := Vector3(0.0, 0.0, 15.0)
 ## How close you must be for the meeting to start. Generous — this is a
@@ -164,7 +166,7 @@ var _stand_t: float = -1.0            # seconds since he began to stand (-1 = st
 var _stand_len: float = 0.0
 var _settle: float = 0.0
 var btc_paid: int = 0
-var _coin: MeshInstance3D = null
+var _coin: Node3D = null
 var _pay_t: float = -1.0
 var _vo_lens: Dictionary = {}
 var _bull_blocker_i: int = -1
@@ -226,6 +228,9 @@ const RIFLE_MODEL := "res://src/episode2/assets/winchester_1886.glb"
 const CRUCIBLE_MODEL := "res://src/episode2/assets/crucible.glb"
 const INGOT_RACK_MODEL := "res://src/episode2/assets/ingot_rack.glb"
 const WHISKEY_MODEL := "res://src/episode2/assets/whiskey_glass.glb"
+const COIN_MODEL := "res://src/episode2/assets/btc_coin.glb"
+const GLASS_MODEL := WHISKEY_MODEL
+const GLASS_HEIGHT := 0.26
 const LANTERN_MODEL := "res://src/episode2/assets/lantern.glb"
 const PLAYER_MODEL := "res://src/episode2/assets/lil_blunt_placeholder.glb"
 
@@ -657,20 +662,12 @@ func item_target(item: String) -> Vector3:
 func _begin_payment() -> void:
 	_pay_t = 0.0
 	if _coin == null or not is_instance_valid(_coin):
-		var cyl := CylinderMesh.new()
-		cyl.top_radius = 0.17
-		cyl.bottom_radius = 0.17
-		cyl.height = 0.035
-		var m := StandardMaterial3D.new()
-		m.albedo_color = Color(1.0, 0.8, 0.3)
-		m.metallic = 0.3
-		m.roughness = 0.35
-		m.emission_enabled = true
-		m.emission = Color(1.0, 0.7, 0.2)
-		m.emission_energy_multiplier = 0.9
-		_coin = MeshInstance3D.new()
-		_coin.mesh = cyl
-		_coin.material_override = m
+		# The founder's Bitcoin (Meshy oLKt9Y): unit-diameter GLB, face normal +Z, scaled to 0.34 m.
+		_coin = Node3D.new()
+		_coin.name = "BitcoinCoin"
+		var cm: Node3D = (load(COIN_MODEL) as PackedScene).instantiate()
+		cm.scale = Vector3.ONE * 0.34
+		_coin.add_child(cm)
 		_visuals.add_child(_coin)
 	_coin.visible = true
 	_coin.global_position = _player_pos + Vector3(0.0, 1.1, 0.0)
@@ -688,7 +685,7 @@ func _animate_payment(delta: float) -> void:
 	var from: Vector3 = _player_pos + Vector3(0.0, 1.1, 0.0)
 	var to: Vector3 = _bull.hand_world("Right") if _bull else BULL_POSITION + Vector3(0.0, 1.6, 0.0)
 	_coin.global_position = from.lerp(to, k) + Vector3(0.0, 0.5 * sin(k * PI), 0.0)
-	_coin.rotation = Vector3(deg_to_rad(90.0), _pay_t * 14.0, 0.0)
+	_coin.rotation = Vector3(0.0, _pay_t * 14.0, 0.0)
 	if k >= 1.0:
 		_coin.visible = false
 		_pay_t = -1.0
@@ -1064,6 +1061,21 @@ func _build_visuals() -> void:
 			MOLD_RACK_POSITION + Vector3(0.0, 1.05, float(i) * 1.1 - 1.1))
 		_mold_nodes.append(mi)
 	_box(Vector3(1.1, 0.8, 3.6), MOLD_RACK_POSITION + Vector3(0.0, 0.4, 0.0), timber)
+	# TARGET PRACTICE IS A STUB (founder 2026-10-02: he is still designing the range): a marked lane on the floor and a
+	# "locked" sign. No new set dressing; the mold rack stays the working verb-teach target until his art lands.
+	var lane_mat := StandardMaterial3D.new()
+	lane_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	lane_mat.albedo_color = Color(1.0, 0.62, 0.15, 1.0)
+	_box(Vector3(0.7, 0.02, 5.6), MOLD_RACK_POSITION + Vector3(0.0, 0.015, -4.4), lane_mat)
+	var lock := Label3D.new()
+	lock.text = "RANGE LOCKED - founder art incoming"
+	lock.font_size = 40
+	lock.pixel_size = 0.006
+	lock.modulate = Color(1.0, 0.75, 0.3)
+	lock.outline_size = 12
+	lock.position = MOLD_RACK_POSITION + Vector3(0.0, 2.2, 0.0)
+	lock.rotation.y = PI * 0.5
+	_visuals.add_child(lock)
 
 	# --- LIL BLUNT: the real hero (not the old primitive), standing in the room, lying when he comes to.
 	_player_node = _build_player()
@@ -1184,11 +1196,8 @@ func _add_hero_clip(clip_name: String, path: String) -> void:
 const HELMET_MODEL := "res://src/episode2/assets/miner_helmet.glb"
 
 
-## The hero helmet is a real mesh (tools/ep2_forge/make_handoff_props.py): lathed hard hat, brass lamp, comb.
-## The old primitive bowl stays as the fallback so a missing GLB still shows something.
+## The founder's own helmet (Meshy tVC8jD), baked by tools/ep2_forge/install_founder_props.py.
 func _build_helmet() -> Node3D:
-	if not ResourceLoader.exists(HELMET_MODEL):
-		return _build_helmet_primitive()
 	var h := Node3D.new()
 	h.name = "MinerHelmet"
 	h.add_child((load(HELMET_MODEL) as PackedScene).instantiate())
@@ -1202,58 +1211,6 @@ func _build_helmet() -> Node3D:
 	h.add_child(beam)
 	return h
 
-
-func _build_helmet_primitive() -> Node3D:
-	var h := Node3D.new()
-	h.name = "MinerHelmet"
-	var brass := Ep2Palette.make_unique("brass")
-	brass.metallic = 0.25
-	brass.roughness = 0.4
-	var dome := SphereMesh.new()
-	dome.radius = 0.24
-	dome.height = 0.24
-	dome.is_hemisphere = true
-	var d := MeshInstance3D.new()
-	d.mesh = dome
-	d.material_override = brass
-	h.add_child(d)
-	var brim := CylinderMesh.new()
-	brim.top_radius = 0.33
-	brim.bottom_radius = 0.34
-	brim.height = 0.035
-	var b := MeshInstance3D.new()
-	b.mesh = brim
-	b.material_override = brass
-	h.add_child(b)
-	var ridge := BoxMesh.new()
-	ridge.size = Vector3(0.05, 0.05, 0.46)
-	var r := MeshInstance3D.new()
-	r.mesh = ridge
-	r.material_override = brass
-	r.position = Vector3(0.0, 0.2, 0.0)
-	h.add_child(r)
-	var lamp := CylinderMesh.new()
-	lamp.top_radius = 0.07
-	lamp.bottom_radius = 0.07
-	lamp.height = 0.08
-	var lens := StandardMaterial3D.new()
-	lens.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	lens.albedo_color = Color(1.0, 0.92, 0.6)
-	var l := MeshInstance3D.new()
-	l.mesh = lamp
-	l.material_override = lens
-	l.rotation.x = PI * 0.5
-	l.position = Vector3(0.0, 0.12, 0.23)
-	h.add_child(l)
-	var beam := SpotLight3D.new()
-	beam.light_color = Color(1.0, 0.9, 0.65)
-	beam.light_energy = 2.0
-	beam.spot_range = 9.0
-	beam.spot_angle = 22.0
-	beam.position = Vector3(0.0, 0.12, 0.28)
-	beam.rotation = Vector3(0.0, PI, 0.0)       # SpotLight shines down -Z; the lamp faces +Z
-	h.add_child(beam)
-	return h
 
 
 ## Godot 4.3 exposes the MODIFIED pose only inside skeleton_updated: sit the helmet on the real head bone.
@@ -1475,6 +1432,17 @@ func _begin_stand_up() -> void:
 		return
 	_stand_t = 0.0
 	_bull.play(BULL_STAND_UP, STAND_UP_SPEED, 0.3)
+	_set_glass_on_table()
+
+
+## When he stands the whiskey goes down on the table (a separate glass, never skinned to his arm: founder
+## 2026-10-02 "liquid arm"). The tumbler stays there for the rest of the scene.
+func _set_glass_on_table() -> void:
+	if _glass_node == null or not is_instance_valid(_glass_node):
+		return
+	_glass_node.reparent(_visuals, false)
+	_glass_node.position = Vector3(4.15, 1.03 + GLASS_HEIGHT * 0.5, 5.6)
+	_glass_node.rotation = Vector3.ZERO
 
 
 func _stand_up_done() -> bool:
@@ -1490,35 +1458,13 @@ func _build_bull_props() -> void:
 	# The WHISKEY: a real tumbler in his left hand (the hand Stand_and_Drink / Sit_and_Drink lift to his mouth),
 	# sized in METRES in a bone holder. (The first version was parented in rig units and was ~2 mm tall:
 	# "I don't see his whiskey".)
-	var glass_mat := StandardMaterial3D.new()
-	glass_mat.albedo_color = Color(0.85, 0.9, 1.0, 0.28)
-	glass_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	glass_mat.roughness = 0.05
-	glass_mat.metallic_specular = 0.9
-	var liquid := StandardMaterial3D.new()
-	liquid.albedo_color = Color(0.86, 0.42, 0.07)
-	liquid.emission_enabled = true
-	liquid.emission = Color(1.0, 0.5, 0.08)
-	liquid.emission_energy_multiplier = 0.9
-	var shell := CylinderMesh.new()
-	shell.top_radius = 0.1
-	shell.bottom_radius = 0.085
-	shell.height = 0.24
-	var fill := CylinderMesh.new()
-	fill.top_radius = 0.088
-	fill.bottom_radius = 0.075
-	fill.height = 0.15
+	# The founder's own tumbler (Meshy LKhotS): unit-height GLB scaled to 0.26 m; its base sits on y = 0.
 	_glass_node = Node3D.new()
 	_glass_node.name = "BullGlass"
-	var shell_mi := MeshInstance3D.new()
-	shell_mi.mesh = shell
-	shell_mi.material_override = glass_mat
-	_glass_node.add_child(shell_mi)
-	var fill_mi := MeshInstance3D.new()
-	fill_mi.mesh = fill
-	fill_mi.material_override = liquid
-	fill_mi.position = Vector3(0.0, -0.035, 0.0)
-	_glass_node.add_child(fill_mi)
+	var gm: Node3D = (load(GLASS_MODEL) as PackedScene).instantiate()
+	gm.scale = Vector3.ONE * GLASS_HEIGHT
+	gm.position = Vector3(0.0, -GLASS_HEIGHT * 0.5, 0.0)
+	_glass_node.add_child(gm)
 	var lh: Node3D = _bull.holder("LeftHand")
 	if lh:
 		lh.add_child(_glass_node)
@@ -1630,12 +1576,7 @@ func _animate_bull(delta: float) -> void:
 	if not _bull.is_walking() and _bull.reach_weight("Right") < 0.05 and _bull.current_clip() != BULL_IDLE \
 			and _bull.current_clip() != "walk" and _bull.current_clip() != BULL_SIP:
 		_bull.play(BULL_IDLE)
-	# Between actions in a long pause he sips his whiskey (an action, not a wave).
-	var pause: bool = not _bull.is_walking() and _bull.reach_weight("Right") < 0.05 and not _show_blocks_control
-	if pause and fmod(_anim_t, 18.0) > 12.0 and fmod(_anim_t, 18.0) < 12.0 + 0.5:
-		_bull.play(BULL_SIP)
-	elif _bull.current_clip() == BULL_SIP and fmod(_anim_t, 18.0) > 12.0 + 9.2 - 18.0 + 18.0:
-		pass
+	# Rest means REST: no idle sips, no waving. Arms only move for an action beat (grab, hand-over).
 	_follow_player_in_fps(delta)
 	if _bull_blocker_i >= 0 and _bull_blocker_i < _blockers.size():
 		_blockers[_bull_blocker_i] = [Vector2(_bull.position.x, _bull.position.z), 0.95]
@@ -1647,9 +1588,10 @@ func _animate_bull(delta: float) -> void:
 		_cigar_tip.scale = Vector3.ONE * (1.0 + 0.6 * puff)
 
 
-## First person: Inferno Bull walks beside you (GTA-style companion), turning to where you look.
+## He stays at his rest mark in the hideout and only moves for the show beats. The companion walk starts on the
+## EXIT beat (founder 2026-10-02: "he follows Lil Blunt too much; no companion leash in the hideout").
 func _follow_player_in_fps(_delta: float) -> void:
-	if not _fps or (_show and _show.running) or _bull == null:
+	if not _fps or (_show and _show.running) or _bull == null or _beat != Beat.EXIT:
 		return
 	var spot: Vector3 = companion_spot()
 	var d: float = Vector2(_bull.position.x - spot.x, _bull.position.z - spot.z).length()

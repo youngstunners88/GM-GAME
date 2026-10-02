@@ -51,6 +51,10 @@ func _ready() -> void:
 	await _until_cap(func(): return f.get_beat() == f.Beat.TERMS, 4.0, "13_fps_terms", 0.2, func(): f.aim_at(f.get_mold_position(0)); f.shoot(); f.aim_at(f.get_mold_position(1)); f.shoot(); f.aim_at(f.get_mold_position(2)); f.shoot())
 	_run(6.0)
 	await _cap("14_terms_companion")
+	# REST proof: five seconds apart, his arms must not have moved (founder 2026-10-02 "liquid arm")
+	await _cap("15_rest_a")
+	_run(5.0)
+	await _cap("16_rest_b")
 	get_tree().quit()
 
 

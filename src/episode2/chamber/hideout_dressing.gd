@@ -346,7 +346,9 @@ func _whiskey_table(pos: Vector3) -> void:
 	_cyl(0.05, 0.1, 0.22, pos + Vector3(-0.5, 1.48, -0.05), amber)                        # neck
 	_cyl(0.07, 0.07, 0.07, pos + Vector3(-0.5, 1.63, -0.05), amber)                       # stopper
 	for gx in [0.1, 0.42]:
-		_cyl(0.075, 0.06, 0.15, pos + Vector3(gx, 1.1, 0.12), amber)                      # tumblers
+		# the founder's tumblers (Meshy LKhotS), unit-height GLB on the cloth
+		if _glb("res://src/episode2/assets/whiskey_glass.glb", pos + Vector3(gx, 1.03, 0.12), 0.16, 0.0) == null:
+			_cyl(0.075, 0.06, 0.15, pos + Vector3(gx, 1.1, 0.12), amber)
 	_cyl(0.12, 0.12, 0.04, pos + Vector3(0.72, 1.04, -0.12), _iron)                       # ashtray
 	_fire(pos + Vector3(0.0, 1.5, 0.0), 0.9, 3.5)
 	# the pickaxe leaning on the table

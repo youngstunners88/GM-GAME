@@ -196,10 +196,12 @@ static func steps_for(f: Node, beat: int) -> Array:
 				{"do": "lb_hop", "v": 3.6},
 				{"do": "release", "ramp": 0.5, "t": 0.4},
 				_say("vo_lb_thanks", 0.2),
+				# back to rest at his mark: he does not trail Lil Blunt around the room
+				{"do": "walk", "to": f.BULL_REST},
+				{"do": "face", "at": f.HAND_MARK},
 				{"do": "wait", "t": 0.3}]
 		B.TERMS:
-			return [{"do": "walk", "to": f.companion_spot()}, {"do": "face", "at": f.get_player_position()},
-				_say("vo_bull_bears", 0.3)]
+			return [{"do": "face", "at": f.get_player_position()}, _say("vo_bull_bears", 0.3)]
 		B.PROMISE:
 			return [_say("vo_bull_partner", 0.3), _say("vo_lb_partner_ok", 0.2)]
 		B.EXIT:
