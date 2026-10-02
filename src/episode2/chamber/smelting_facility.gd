@@ -827,7 +827,7 @@ func _to_hand_mark() -> void:
 func companion_spot() -> Vector3:
 	var fwd := Vector3(sin(_look_yaw), 0.0, cos(_look_yaw))
 	var right := Vector3(-fwd.z, 0.0, fwd.x)
-	return Vector3(_player_pos.x, 0.0, _player_pos.z) + fwd * 1.6 + right * 1.5
+	return Vector3(_player_pos.x, 0.0, _player_pos.z) + fwd * 2.4 + right * 2.7
 
 
 # --- Getters (HUD + tests) ---------------------------------------------------------
@@ -1055,7 +1055,12 @@ func _build_visuals() -> void:
 	for i in MOLD_TARGETS:
 		var mold := BoxMesh.new()
 		mold.size = Vector3(0.7, 0.45, 0.5)
-		var mi := _mesh(mold, Ep2Palette.make_unique("iron"),
+		var mold_mat := Ep2Palette.make_unique("iron")
+		mold_mat.albedo_color = Color(0.16, 0.12, 0.10)       # forged iron, not a cream block
+		mold_mat.emission_enabled = true
+		mold_mat.emission = Color(1.0, 0.45, 0.12)
+		mold_mat.emission_energy_multiplier = 0.25
+		var mi := _mesh(mold, mold_mat,
 			MOLD_RACK_POSITION + Vector3(0.0, 1.05, float(i) * 1.1 - 1.1))
 		_mold_nodes.append(mi)
 	_box(Vector3(1.1, 0.8, 3.6), MOLD_RACK_POSITION + Vector3(0.0, 0.4, 0.0), timber)
@@ -1176,7 +1181,29 @@ func _add_hero_clip(clip_name: String, path: String) -> void:
 
 
 ## A brass miner's helmet with a working lamp - the one the Bull hands over.
+const HELMET_MODEL := "res://src/episode2/assets/miner_helmet.glb"
+
+
+## The hero helmet is a real mesh (tools/ep2_forge/make_handoff_props.py): lathed hard hat, brass lamp, comb.
+## The old primitive bowl stays as the fallback so a missing GLB still shows something.
 func _build_helmet() -> Node3D:
+	if not ResourceLoader.exists(HELMET_MODEL):
+		return _build_helmet_primitive()
+	var h := Node3D.new()
+	h.name = "MinerHelmet"
+	h.add_child((load(HELMET_MODEL) as PackedScene).instantiate())
+	var beam := SpotLight3D.new()
+	beam.light_color = Color(1.0, 0.9, 0.65)
+	beam.light_energy = 2.0
+	beam.spot_range = 9.0
+	beam.spot_angle = 22.0
+	beam.position = Vector3(0.0, 0.14, 0.3)
+	beam.rotation = Vector3(0.0, PI, 0.0)
+	h.add_child(beam)
+	return h
+
+
+func _build_helmet_primitive() -> Node3D:
 	var h := Node3D.new()
 	h.name = "MinerHelmet"
 	var brass := Ep2Palette.make_unique("brass")
@@ -1350,7 +1377,8 @@ func _sync_visuals() -> void:
 		mi.rotation.z = deg_to_rad(72.0) if broken else 0.0
 		var m: StandardMaterial3D = mi.material_override
 		if m:
-			m.albedo_color = Color(0.20, 0.19, 0.19) if broken else Ep2Palette.table()["iron"].albedo
+			m.albedo_color = Color(0.08, 0.07, 0.07) if broken else Color(0.16, 0.12, 0.10)
+			m.emission_energy_multiplier = 0.0 if broken else 0.25
 
 
 # --- Inferno Bull: rigged, walks, reaches, drinks (founder 2026-10-02) -------------------------------------
@@ -1402,8 +1430,10 @@ func _build_bull(timber: StandardMaterial3D) -> void:
 	_fix_bull_materials(_bull.model)
 	# His seat: a sturdy crate under the Sit_and_Drink hips (0.70 rig units -> 0.85 m), behind him.
 	var seat := _box(Vector3(1.0, 0.66, 0.9), Vector3.ZERO, timber)
-	seat.reparent(_bull, false)
-	seat.position = Vector3(0.0, 0.33, -0.18)
+	# Parented to the ROOM, never to the rig: a seat on the actor walked across the hideout behind him
+	# (founder 2026-10-02 "a box follows Inferno Bull"). It stays where he sat.
+	seat.reparent(_visuals, false)
+	seat.position = BULL_POSITION + Vector3(0.0, 0.33, 0.18)
 	seat.name = "BullSeat"
 	_build_bull_props()
 
@@ -1726,8 +1756,8 @@ func _enter_fps() -> void:
 	fps_started.emit()
 
 
-const FPS_RIFLE_POS := Vector3(0.26, -0.2, -0.62)
-const FPS_RIFLE_ROT := Vector3(0.0, 3.1416, 0.0)
+const FPS_RIFLE_POS := Vector3(0.22, -0.17, -0.42)
+const FPS_RIFLE_ROT := Vector3(0.05, 3.2416, 0.0)
 
 
 ## Muzzle flash, recoil kick and the shot itself.

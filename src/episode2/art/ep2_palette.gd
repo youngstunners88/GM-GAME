@@ -75,8 +75,8 @@ static func table() -> Dictionary:
 		# hue comes from albedo, the brightness comes from the lighting rig
 		# (ambient 0.42, key 0.7), not from lifting the albedo of the thing gold
 		# is supposed to out-read.
-		"rock": Surface.new(_hex("#2C2E33"), 0.0, 0.78),
-		"rock_deep": Surface.new(_hex("#1F2126"), 0.0, 0.92),
+		"rock": Surface.new(_hex("#3B2D25"), 0.0, 0.78),
+		"rock_deep": Surface.new(_hex("#2B1F18"), 0.0, 0.92),
 		# Gold in the wall glitters in all three refs. Modest emission stands in
 		# for the specular sparkle a flat box cannot produce.
 		# Emission dropped from 0.35: at 0.35 the veins read as flat yellow

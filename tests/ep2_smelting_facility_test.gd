@@ -91,6 +91,14 @@ func _ready() -> void:
 	# --- 1. arrival hands over control --------------------------------------
 	_check("starts on ARRIVAL", c.get_beat() == c.Beat.ARRIVAL, c.get_beat_name())
 	_check("no rifle at the start", not c.has_winchester())
+	# Regression (founder 2026-10-02 "a box follows Inferno Bull"): the seat crate was parented to the walking actor.
+	var stray: Array = []
+	for ch in c.get_bull().get_children():
+		if ch is MeshInstance3D:
+			stray.append(ch.name)
+	_check("no mesh is parented directly to the Bull actor (nothing follows him)", stray.is_empty(), str(stray))
+	_check("his seat is scenery in the room, not a child of the actor", c.get_bull().get_node_or_null("BullSeat") == null
+		and c._visuals.get_node_or_null("BullSeat") != null)
 	_check("shoot() refuses before the hand-off", c.shoot() == false)
 	_check("the Bull is the rigged actor, seated on his crate", c.get_bull() != null and c.is_bull_seated()
 		and c.find_child("BullSeat", true, false) != null)

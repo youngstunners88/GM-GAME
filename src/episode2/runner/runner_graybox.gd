@@ -62,7 +62,7 @@ extends Node3D
 ## Emitted once when the cart reaches the chamber entrance; the run halts.
 signal chamber_reached
 ## Cliff segments only: Lil Blunt sees the track run out and freaks out. Level 1..4 as the edge nears
-## (-150 m, -110 m, -70 m, -35 m before the mouth). Drives the panic barks and the camera.
+## (120, 90, 60, 30 m before the mouth). Drives the panic barks and the camera.
 signal cliff_panic(level: int)
 ## Emitted each time an obstacle is struck; carries remaining health.
 signal obstacle_hit(remaining_health: int)
@@ -103,7 +103,7 @@ signal rider_bailed(from_lane: int, to_lane: int)
 signal gold_collected(total: int)
 
 # --- Tuning (feel is tuned later, not law) ------------------------------------
-const PANIC_AT := [150.0, 110.0, 70.0, 35.0]   # metres before the mouth; see cliff_panic
+const PANIC_AT := [120.0, 90.0, 60.0, 30.0]   # metres before the mouth; see cliff_panic
 const CLIFF_HANDOFF := 14.0        # the film takes over this far short of the mouth (match-cut)
 const RUN_SPEED := 20.0            # BASE forward speed m/s (+Z); ramps to MAX_SPEED
 const MAX_SPEED := 30.0

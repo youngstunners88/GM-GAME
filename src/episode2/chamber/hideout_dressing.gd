@@ -279,18 +279,20 @@ func _gun_wall() -> void:
 	_box(Vector3(0.14, 3.0, 7.4), Vector3(wx - 0.05, 2.5, 7.4), _dark_wood)
 	# Winchester 1886 rack: the committed GLB lying along the wall at a REACHABLE height (Inferno Bull takes the
 	# middle one down: rows y = 2.9 / 2.45 / 2.0). Real size for a 2.9 m Bull: ~1.3 m.
-	var z0: float = 6.8
-	for row in 3:
-		var y: float = 2.9 - 0.45 * float(row)
-		var rifle: Node3D = _glb(RIFLE, Vector3(wx + 0.08, y, z0), 1.1, 0.0)
-		if rifle:
-			RunnerView.self_light(rifle, 0.05, Color(1.0, 0.82, 0.6))
-			if row == 1:
-				_rack_rifle = rifle
-		else:
-			_box(Vector3(0.08, 0.08, 1.3), Vector3(wx + 0.08, y, z0), _leather)
-		for pz in [-0.5, 0.5]:
-			_box(Vector3(0.12, 0.12, 0.12), Vector3(wx + 0.02, y - 0.1, z0 + pz * 1.0), _iron)
+	# Three columns of three (9 rifles) so the wall reads as an armory from the doorway; the middle column's middle
+	# rifle is the one Inferno Bull takes down.
+	for z0 in [5.3, 6.8, 8.7]:
+		for row in 3:
+			var y: float = 2.9 - 0.45 * float(row)
+			var rifle: Node3D = _glb(RIFLE, Vector3(wx + 0.08, y, z0), 1.1, 0.0)
+			if rifle:
+				RunnerView.self_light(rifle, 0.12, Color(1.0, 0.82, 0.6))
+				if row == 1 and z0 == 6.8:
+					_rack_rifle = rifle
+			else:
+				_box(Vector3(0.08, 0.08, 1.3), Vector3(wx + 0.08, y, z0), _leather)
+			for pz in [-0.5, 0.5]:
+				_box(Vector3(0.12, 0.12, 0.12), Vector3(wx + 0.02, y - 0.1, z0 + pz * 1.0), _iron)
 	# Colt Single Action revolvers on pegs (barrel, cylinder, frame, walnut grip), two rows of three, below the rifles.
 	for r in 2:
 		for i in 3:

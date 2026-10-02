@@ -2094,6 +2094,25 @@ func _build_cliff_mouth(z: float) -> void:
 	melt.albedo_texture = mgt
 	var pool := QuadMesh.new()
 	pool.size = Vector2(70.0, 16.0)
+	# THE RAILS VISIBLY RUN OUT (founder 2026-10-02): the last 3 m of track is gone - a glowing fissure where the
+	# rails stop - with red warning lamps and chevron posts leading up to it. Readable from 100 m.
+	var fissure := StandardMaterial3D.new()
+	fissure.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	fissure.albedo_color = Color(0.85, 0.22, 0.04)
+	_mesh_node(_box(Vector3(9.0, 0.12, 3.2)), fissure, Vector3(0.0, 0.04, z - 1.6))
+	var lamp_mat := StandardMaterial3D.new()
+	lamp_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	lamp_mat.albedo_color = Color(1.0, 0.25, 0.1)
+	for lx in [-3.4, 0.0, 3.4]:
+		_mesh_node(_box(Vector3(0.14, 1.5, 0.14)), _timber_mat(), Vector3(float(lx), 0.75, z - 6.0))
+		var lamp := _mesh_node(_box(Vector3(0.34, 0.34, 0.34)), lamp_mat, Vector3(float(lx), 1.6, z - 6.0))
+		lamp.name = "EdgeLamp"
+		var ll := OmniLight3D.new()
+		ll.light_color = Color(1.0, 0.3, 0.12)
+		ll.light_energy = 2.2
+		ll.omni_range = 9.0
+		ll.position = Vector3(float(lx), 1.6, z - 6.5)
+		_world.add_child(ll)
 	var pool_mi := _mesh_node(pool, melt, Vector3(0.0, -14.0, z + 10.0))
 	pool_mi.rotation.x = -PI * 0.5
 	var embers := CPUParticles3D.new()
@@ -2592,7 +2611,8 @@ func _update_rider(dist: float, delta: float) -> void:
 	var hero_pitch: float = 0.0
 	if _hero_mode:
 		var hp: Dictionary = Motion.hero_pose(_t_hit, _t_shot, _t_swipe, _t_hop, _t_cheer, ducking,
-			bool(_sim.is_reloading()), y > 0.05 and not zipping, spd, Time.get_ticks_msec() * 0.001)
+			bool(_sim.is_reloading()), y > 0.05 and not zipping, spd, Time.get_ticks_msec() * 0.001,
+			_panic_now())
 		target_y += float(hp["bob"]) - float(hp["sink"])
 		sy = float(hp["squash"])
 		hero_pitch = float(hp["pitch"])
@@ -2636,7 +2656,7 @@ func _update_rider(dist: float, delta: float) -> void:
 		var armed_now: bool = bool(_sim.can_shoot())
 		# NOT while zipping any more: he hangs from the pickaxe with one hand and fires with the other.
 		var busy: bool = ducking or bool(_sim.is_reloading()) or _t_swipe < Motion.SWIPE_HOLD \
-			or _t_hit < Motion.HIT_HOLD * 0.6
+			or _t_hit < Motion.HIT_HOLD * 0.6 or _panic_now() > 0.25
 		var w: float = 1.0 if armed_now and not busy else 0.0
 		_aim_mod.influence = move_toward(float(_aim_mod.influence), w, delta * 6.0)
 		_aim_mod.target = _aim_point if _aim_ok else Vector3(x, 1.8, dist + 30.0)
@@ -3178,6 +3198,10 @@ func _on_rider_bailed(_from: int, _to: int) -> void:
 ## Every BTC is a fist-pump (founder 2026-10-02: "make Lil Blunt react to collecting the BTC").
 func _on_gold_collected(_total: int) -> void:
 	_t_cheer = 0.0
+
+## 0..1 how close the cliff edge is (cliff legs only): drives the hunch-and-grab pose and the camera.
+func _panic_now() -> float:
+	return float(_sim.get_panic()) if _sim and _sim.has_method("get_panic") else 0.0
 
 ## The track is running out: a shudder per mark, on top of the continuous panic shake in _update_camera.
 func _on_cliff_panic(level: int) -> void:

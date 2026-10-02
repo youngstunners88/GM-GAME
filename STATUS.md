@@ -5,6 +5,14 @@
 
 ---
 
+**🔧 EPISODE 2 — RESIDUALS AFTER 514e221 (2026-10-02, evening).** Fixed from your list; each was checked in a real capture except where noted.
+- **Box following Inferno Bull: found and fixed.** It was his seat crate, attached to him, so it walked with him. It now stays in the room where he sat (capture of the walk: nothing follows him). A test guards it. Skill `ep2-bull-debug-mesh`.
+- **Rifle and helmet rebuilt as real props** (Meshy balance is 0, so they are built by `tools/ep2_forge/make_handoff_props.py`): a lever-action Winchester 1886 with stock, receiver, barrel, magazine tube, lever and brass; a miner helmet with brim, comb and brass lamp. The old rifle was loose boxes. They are used on the rack (now 9 rifles), in the hand-off, on Lil Blunt's head, and as the first-person rifle (moved up and in; Bull now walks beside you further away so he does not fill the screen). Skill `ep2-handoff-props`.
+- **Player-eye view of the hideout** captured through the game's own camera and walk input (arrival, mid-room, left, right, back, up): bears, trophy heads, poster, gun wall, whiskey table, cowhide rug, gold and ore cart, braziers, molten gold, Fort Knox door and skull all show. The cream casting-mold blocks are now forged iron. Skill `ep2-hideout-player-view`.
+- **Cart end:** panic now starts 120 m out and Lil Blunt hunches over the cart rim with his hands on the side and his head down, shaking; the film still takes over 14 m before the edge at the same speed. The last 3 m of rail is now a glowing fissure with red warning lamps so the end of the track reads from the cart. Skills `ep2-jump-sync`.
+- **Grey:** the rock palette is now warm brown instead of cool charcoal (art-direction and framing tests still pass). Skill `ep2-runner-grade`.
+- **Still NOT captured:** the cart-end film running start to finish, the 1-Bitcoin payment, the rails-vs-cable zipline choice. The runner floor corners still read dark grey in places.
+
 **🎬🐂 EPISODE 2 — ZIPLINE FIX, CART-END FILM, BULL HAND-OFF, FIRST-PERSON EXIT (2026-10-02).** Build tag: see the `[BUILD]` line in the console after hard refresh (CI stamps it per push).
 - **Zipline life bug (fixed):** missing a zipline never costs a life any more. The punish is now a visible gap in the track (a "NO TRACK - JUMP TO THE ZIPLINE!" pit with hazard stripes and lamps). Skip the cable and ride into the pit = -1; hook the cable = 0. A test checks every Descent zipline is covered by one visible hazard.
 - **Cart-end film:** the track thins out and warning boards appear, Lil Blunt freaks out for the last 150 m (rising shake, lens widening, four panic shouts), the film takes over 14 m before the edge at the same speed (no replay of the approach, no dead pause), and the next scene is loaded in the background beforehand.

@@ -103,7 +103,7 @@ static func pick_archer(alive: bool, to_release: float, ahead: float) -> String:
 ## Every term is a short decaying/bell impulse from the event timers, so it is pure,
 ## deterministic and headless-testable.
 static func hero_pose(t_hit: float, t_shot: float, t_swipe: float, t_hop: float, t_cheer: float,
-		ducking: bool, reloading: bool, airborne: bool, speed: float, time: float) -> Dictionary:
+		ducking: bool, reloading: bool, airborne: bool, speed: float, time: float, panic: float = 0.0) -> Dictionary:
 	var pitch: float = 0.0
 	var sink: float = 0.0
 	var squash: float = 1.0
@@ -130,6 +130,13 @@ static func hero_pose(t_hit: float, t_shot: float, t_swipe: float, t_hop: float,
 		bob += 0.13 * absf(sin(PI * 2.0 * t_cheer / CHEER_HOLD))
 	if reloading:
 		pitch += 0.10
+	# PANIC (the track is running out): he hunches over the cart rim, head down toward the missing track,
+	# both hands clamped on the side, and shakes. Founder 2026-10-02: "he must grab the cart and look down".
+	if panic > 0.0:
+		pitch += 0.55 * panic
+		sink += 0.38 * panic
+		bob += sin(time * 38.0) * 0.022 * panic
+		squash *= 1.0 - 0.06 * panic
 	if airborne:
 		squash = 1.05
 	if ducking:
