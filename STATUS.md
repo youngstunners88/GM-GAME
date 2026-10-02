@@ -5,6 +5,14 @@
 
 ---
 
+**🧰 EPISODE 2 — YOUR ASSETS, BULL AT REST, CLEAN HUD (2026-10-02, night).**
+- **Your models are in:** the Winchester (Meshy wUN2J2), the miner helmet (tVC8jD), the whiskey glass (LKhotS) and the Bitcoin coin (oLKt9Y) replace my stand-ins on the gun wall, in the hand-off, on Lil Blunt's head, in first person, on the whiskey table, in Bull's hand and in the one-Bitcoin payment. The forged helmet/glass/coin code and the forge script are deleted. Captured: the first-person rifle is your Winchester.
+- **NOT in: Lil Blunt (Rodin) and Inferno Bull (Tripo).** The Tripo key in the environment is rejected ("Invalid API key", it looks like an expired CLI login) and the Rodin page needs your login, so I could not download either. Re-run `tripo login` or export the GLBs and I will drop them in.
+- **Bull at rest:** the idle sip loop is gone (that bent arm holding the yellow glass was most likely it); when he stands the glass goes down on the table; arm IK only runs inside grab/hand-over; after the helmet he walks back to his rest mark and stays. He no longer trails Lil Blunt: the companion walk starts only on the exit beat. I could not reproduce your circled frame exactly, so please confirm on a hard refresh.
+- **HUD:** no Episode banner, no beat/inventory text in the facility, no key strip. "THE SMELTING FACILITY" plays as a title card and fades. K shows the controls for 3 seconds (bindings unchanged). This is code-tested only; I have not seen the card on screen.
+- **Target practice is a stub:** an amber lane and a "RANGE LOCKED - founder art incoming" sign by the existing mold rack. No range dressing.
+- Skills: `ep2-bull-rest-pose`, `ep2-founder-asset-swap`, `ep2-hud-title-card`.
+
 **🔧 EPISODE 2 — RESIDUALS AFTER 514e221 (2026-10-02, evening).** Fixed from your list; each was checked in a real capture except where noted.
 - **Box following Inferno Bull: found and fixed.** It was his seat crate, attached to him, so it walked with him. It now stays in the room where he sat (capture of the walk: nothing follows him). A test guards it. Skill `ep2-bull-debug-mesh`.
 - **Rifle and helmet rebuilt as real props** (Meshy balance is 0, so they are built by `tools/ep2_forge/make_handoff_props.py`): a lever-action Winchester 1886 with stock, receiver, barrel, magazine tube, lever and brass; a miner helmet with brim, comb and brass lamp. The old rifle was loose boxes. They are used on the rack (now 9 rifles), in the hand-off, on Lil Blunt's head, and as the first-person rifle (moved up and in; Bull now walks beside you further away so he does not fill the screen). Skill `ep2-handoff-props`.

@@ -1070,7 +1070,7 @@ func _build_visuals() -> void:
 	var lock := Label3D.new()
 	lock.text = "RANGE LOCKED - founder art incoming"
 	lock.font_size = 40
-	lock.pixel_size = 0.006
+	lock.pixel_size = 0.004
 	lock.modulate = Color(1.0, 0.75, 0.3)
 	lock.outline_size = 12
 	lock.position = MOLD_RACK_POSITION + Vector3(0.0, 2.2, 0.0)
