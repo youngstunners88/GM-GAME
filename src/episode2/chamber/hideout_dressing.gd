@@ -41,6 +41,7 @@ var _gold: StandardMaterial3D
 var _leather: StandardMaterial3D
 var _flames: Array = []
 var _blockers: Array = []
+var _rack_rifle: Node3D = null
 
 
 static func build(visuals: Node3D) -> Dictionary:
@@ -64,14 +65,14 @@ func _build(visuals: Node3D) -> Dictionary:
 	_trophies()
 	var gat: Node3D = _gatling(Vector3(-4.0, 0.0, 7.2), -2.21)
 	_gun_wall()
-	_whiskey_table(Vector3(3.5, 0.0, 4.0))
+	_whiskey_table(Vector3(3.6, 0.0, 5.4))
 	_rug(Vector3(0.9, 0.045, 4.4))
 	_bull_skull(Vector3(0.0, 6.3, 15.4))
 	_braziers()
 	_gold_and_cart()
 	_hanging_chains()
-	_blockers.append([Vector2(3.5, 4.0), 1.35])          # whiskey table
-	return {"flames": _flames, "gatling": gat, "poster": poster, "blockers": _blockers}
+	_blockers.append([Vector2(3.6, 5.4), 1.35])          # whiskey table
+	return {"flames": _flames, "gatling": gat, "poster": poster, "blockers": _blockers, "rack_rifle": _rack_rifle}
 
 
 ## Instance a Meshy prop, scaled so its HEIGHT is `height` m, standing on `base` (y = floor), turned `yaw` rad.
@@ -275,26 +276,31 @@ func _trophies() -> void:
 
 func _gun_wall() -> void:
 	var wx: float = -(WALL_X - 0.12)
-	_box(Vector3(0.14, 3.4, 6.2), Vector3(wx - 0.05, 3.2, 6.8), _dark_wood)
-	# Winchester 1886 rack: the committed GLB, lying along the wall, three rows.
+	_box(Vector3(0.14, 3.0, 7.4), Vector3(wx - 0.05, 2.5, 7.4), _dark_wood)
+	# Winchester 1886 rack: the committed GLB lying along the wall at a REACHABLE height (Inferno Bull takes the
+	# middle one down: rows y = 2.9 / 2.45 / 2.0). Real size for a 2.9 m Bull: ~1.3 m.
 	var z0: float = 6.8
 	for row in 3:
-		var y: float = 4.3 - 0.62 * float(row)
-		var rifle: Node3D = _glb(RIFLE, Vector3(wx + 0.08, y, z0 + (0.15 if row % 2 else -0.15)), 1.9, 0.0)
+		var y: float = 2.9 - 0.45 * float(row)
+		var rifle: Node3D = _glb(RIFLE, Vector3(wx + 0.08, y, z0), 1.1, 0.0)
 		if rifle:
 			RunnerView.self_light(rifle, 0.05, Color(1.0, 0.82, 0.6))
+			if row == 1:
+				_rack_rifle = rifle
 		else:
-			_box(Vector3(0.08, 0.08, 2.2), Vector3(wx + 0.08, y, z0), _leather)
-		for pz in [-1.0, 1.0]:
+			_box(Vector3(0.08, 0.08, 1.3), Vector3(wx + 0.08, y, z0), _leather)
+		for pz in [-0.5, 0.5]:
 			_box(Vector3(0.12, 0.12, 0.12), Vector3(wx + 0.02, y - 0.1, z0 + pz * 1.0), _iron)
-	# Colt Single Action revolvers on pegs (barrel, cylinder, frame, walnut grip), two rows of three.
+	# Colt Single Action revolvers on pegs (barrel, cylinder, frame, walnut grip), two rows of three, below the rifles.
 	for r in 2:
 		for i in 3:
-			var rp := Vector3(wx + 0.1, 2.5 - 0.5 * float(r), 4.6 + float(i) * 1.5 + 0.2 * float(r))
+			var rp := Vector3(wx + 0.1, 1.55 - 0.45 * float(r), 4.9 + float(i) * 1.5 + 0.2 * float(r))
 			_revolver(rp)
-	# Shell belts + powder horns + a lasso, and a "WANTED" notice.
 	for i in 6:
-		_cyl(0.03, 0.03, 0.12, Vector3(wx + 0.1, 1.55, 4.6 + 0.09 * float(i)), _brass, Vector3(0, 0, 0))
+		_cyl(0.03, 0.03, 0.12, Vector3(wx + 0.1, 1.0, 4.9 + 0.09 * float(i)), _brass, Vector3(0, 0, 0))
+	# The miner's helmet hangs on its own peg at the end of the rack (Inferno Bull takes it down for Lil Blunt).
+	_box(Vector3(0.1, 0.9, 0.9), Vector3(wx - 0.02, 2.15, 10.2), _timber)
+	_cyl(0.03, 0.03, 0.3, Vector3(wx + 0.12, 2.2, 10.2), _iron, Vector3(0, 0, 90))
 
 
 func _revolver(pos: Vector3) -> void:

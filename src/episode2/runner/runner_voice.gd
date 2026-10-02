@@ -136,6 +136,8 @@ func _ready() -> void:
 	_sim.shot_fired.connect(func() -> void: say("shoot"))
 	_sim.run_failed.connect(func() -> void: say("run_failed"))
 	_sim.chamber_reached.connect(func() -> void: say("chamber_reached"))
+	if _sim.has_signal("cliff_panic"):
+		_sim.cliff_panic.connect(func(_l: int) -> void: say("panic"))
 	_row_player = AudioStreamPlayer3D.new()
 	_row_player.bus = _voice.bus
 	_row_player.unit_size = 12.0
@@ -150,6 +152,8 @@ func _on_gold(_total: int) -> void:
 	_coins += 1
 	if _coins % COIN_EVERY == 0:
 		say("coin_streak")
+	else:
+		say("btc")
 
 func _stream(id: String) -> AudioStream:
 	if not _streams.has(id):

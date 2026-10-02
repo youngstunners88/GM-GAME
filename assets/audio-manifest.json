@@ -543,7 +543,7 @@
         "stability": 0.75,
         "similarity_boost": 0.75,
         "style": 0.15,
-        "speed": 0.8
+        "speed": 1.08
       },
       "note": "Inferno Bull (Episode 2 companion). ORIGINAL VOICE, OWNED BY THIS PROJECT — designed via ElevenLabs Voice Design (text-to-voice) from the character profile, not a stock voice. voice_id uWE48TmsTuIjyh2ifoNL, name 'Inferno Bull', category 'generated'. Chosen from 3 design previews by measurement, not guesswork: median F0 77.4 Hz vs 111.9 / 128.9 for the other two, darkest timbre (spectral centroid 1060), and 21.8% of energy below 300 Hz vs 9.5% / 11.8% — i.e. the deepest and thickest of the three, per the founder's 'deep and thick and western old school'. OPERATIONAL NOTE: like the custom 'Lil Blunt' voice, a generated voice is owned by ONE workspace — it requires the ELEVENLABS_API key. generate_audio.py already prefers that key over the legacy ELEVENLABS_API_KEY, so this works, but the legacy workspace would return voice_not_found."
     },
@@ -555,7 +555,7 @@
         "stability": 0.75,
         "similarity_boost": 0.75,
         "style": 0.15,
-        "speed": 0.8
+        "speed": 1.08
       },
       "note": "Inferno Bull companion line - same owned voice/settings as vo_bull_made_it."
     },
@@ -567,7 +567,7 @@
         "stability": 0.75,
         "similarity_boost": 0.75,
         "style": 0.15,
-        "speed": 0.8
+        "speed": 1.08
       },
       "note": "Inferno Bull companion line - same owned voice/settings as vo_bull_made_it."
     },
@@ -579,7 +579,7 @@
         "stability": 0.75,
         "similarity_boost": 0.75,
         "style": 0.15,
-        "speed": 0.8
+        "speed": 1.08
       },
       "note": "Inferno Bull companion line - same owned voice/settings as vo_bull_made_it."
     },
@@ -591,7 +591,7 @@
         "stability": 0.75,
         "similarity_boost": 0.75,
         "style": 0.15,
-        "speed": 0.8
+        "speed": 1.08
       },
       "note": "Inferno Bull companion line - same owned voice/settings as vo_bull_made_it."
     },
@@ -1616,18 +1616,6 @@
       "note": "Lil Blunt - waking up in the Smelting Facility"
     },
     {
-      "id": "vo_bull_wake",
-      "text": "Easy there, little fella. You flew clean over the gorge... then kissed my rock with your head. Here. Whiskey. For the pain.",
-      "voice_id": "uWE48TmsTuIjyh2ifoNL",
-      "note": "Inferno Bull nursing Lil Blunt after the cliff jump - same owned voice/settings as vo_bull_made_it.",
-      "voice_settings": {
-        "stability": 0.75,
-        "similarity_boost": 0.75,
-        "style": 0.15,
-        "speed": 0.8
-      }
-    },
-    {
       "id": "vo_bull_helmet",
       "text": "And wear this. That skull of yours ain't bulletproof. Neither is that hat.",
       "voice_id": "uWE48TmsTuIjyh2ifoNL",
@@ -1636,8 +1624,284 @@
         "stability": 0.75,
         "similarity_boost": 0.75,
         "style": 0.15,
-        "speed": 0.8
+        "speed": 1.08
       }
+    },
+    {
+      "id": "vo_bull_wake",
+      "text": "Easy there, little fella. Take a pull of this. It'll put the fire back in your belly.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.08
+      },
+      "note": "Inferno Bull, natural Western pace (speed 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
+    },
+    {
+      "id": "vo_bull_intro1",
+      "text": "Name's Inferno Bull. I come out of the Blaze protocol, the forge where all this fire starts.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.08
+      },
+      "note": "Inferno Bull, natural Western pace (speed 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
+    },
+    {
+      "id": "vo_bull_intro2",
+      "text": "Folks call me the coolest bull in the blockchain rodeo. I'm bullish on Blaze, and Blaze keeps my furnace lit.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.08
+      },
+      "note": "Inferno Bull, natural Western pace (speed 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
+    },
+    {
+      "id": "vo_bull_intro3",
+      "text": "Every Inferno I mint burns TitanX, and ninety percent gets bought and burned. Heat and debt, son. That's how this smelter runs.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.08
+      },
+      "note": "Inferno Bull, natural Western pace (speed 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
+    },
+    {
+      "id": "vo_lb_intro_reply",
+      "text": "Inferno Bull... I'm Lil Blunt. Thanks for catching me, big guy.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.45,
+        "speed": 1.05
+      },
+      "note": "Lil Blunt. "
+    },
+    {
+      "id": "vo_bull_deal1",
+      "text": "You've got a pickaxe and a hat. That won't cut it down here. I've got a Winchester and a miner's lamp for you.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.08
+      },
+      "note": "Inferno Bull, natural Western pace (speed 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
+    },
+    {
+      "id": "vo_bull_deal2",
+      "text": "Price is one Bitcoin, for the rifle and the helmet together. Fire doesn't come free, friend.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.08
+      },
+      "note": "Inferno Bull, natural Western pace (speed 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
+    },
+    {
+      "id": "vo_lb_deal_ok",
+      "text": "One Bitcoin? Deal! Here you go.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.45,
+        "speed": 1.05
+      },
+      "note": "Lil Blunt. "
+    },
+    {
+      "id": "vo_bull_rifle",
+      "text": "Hold still. This Winchester eighteen eighty-six has hung on my wall since the first claim. Take her.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.08
+      },
+      "note": "Inferno Bull, natural Western pace (speed 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
+    },
+    {
+      "id": "vo_bull_helmet2",
+      "text": "And this lamp will keep your skull in the light. Put it on.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.08
+      },
+      "note": "Inferno Bull, natural Western pace (speed 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
+    },
+    {
+      "id": "vo_lb_thanks",
+      "text": "Whoa, it fits! Thanks, Bull!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.45,
+        "speed": 1.05
+      },
+      "note": "Lil Blunt. "
+    },
+    {
+      "id": "vo_bull_bears",
+      "text": "Here's the trouble. The bears have moved into the Gold Mine. Every claim, every tunnel. Which makes this the perfect time to go bear hunting with me.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.08
+      },
+      "note": "Inferno Bull, natural Western pace (speed 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
+    },
+    {
+      "id": "vo_bull_partner",
+      "text": "We go deeper, down into Fort Knox. Clear the bears, haul out the gold, and stake it. You and me, partner. The split is fair.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.08
+      },
+      "note": "Inferno Bull, natural Western pace (speed 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
+    },
+    {
+      "id": "vo_lb_partner_ok",
+      "text": "Bear hunting with Inferno Bull? Let's do it!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.45,
+        "speed": 1.05
+      },
+      "note": "Lil Blunt. "
+    },
+    {
+      "id": "vo_bull_exit",
+      "text": "Keep that rifle up and stay close. Fort Knox is this way.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.08
+      },
+      "note": "Inferno Bull, natural Western pace (speed 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
+    },
+    {
+      "id": "vo_lb_panic_1",
+      "text": "Uh... where's the track?",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.45,
+        "speed": 1.05
+      },
+      "note": "Lil Blunt. "
+    },
+    {
+      "id": "vo_lb_panic_2",
+      "text": "The rails! The rails stop!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.45,
+        "speed": 1.05
+      },
+      "note": "Lil Blunt. "
+    },
+    {
+      "id": "vo_lb_panic_3",
+      "text": "Brake! Is there a brake?!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.45,
+        "speed": 1.05
+      },
+      "note": "Lil Blunt. "
+    },
+    {
+      "id": "vo_lb_panic_4",
+      "text": "Oh no no no no no!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.45,
+        "speed": 1.05
+      },
+      "note": "Lil Blunt. "
+    },
+    {
+      "id": "vo_lb_btc_1",
+      "text": "Bitcoin!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.45,
+        "speed": 1.05
+      },
+      "note": "Lil Blunt. "
+    },
+    {
+      "id": "vo_lb_btc_2",
+      "text": "Ooh, shiny!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.45,
+        "speed": 1.05
+      },
+      "note": "Lil Blunt. "
+    },
+    {
+      "id": "vo_lb_btc_3",
+      "text": "Mine!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.45,
+        "speed": 1.05
+      },
+      "note": "Lil Blunt. "
+    },
+    {
+      "id": "vo_lb_btc_4",
+      "text": "Cha-ching!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.45,
+        "speed": 1.05
+      },
+      "note": "Lil Blunt. "
     }
   ]
 }

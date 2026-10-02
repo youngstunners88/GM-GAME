@@ -33,8 +33,10 @@ const LIP_Z := 3.0              # the broken trestle ends here
 const FAR_LIP_Z := 19.0         # the far ledge starts here
 const FAR_Y := -1.0             # far ledge surface (a little lower: the leap arcs DOWN into the landing)
 const CHASM_Y := -34.0
-const CART_START_Z := -45.0
-const CART_SPEED := 23.0
+## The film picks the cart up where the runner leaves it: RunnerGraybox.CLIFF_HANDOFF m short of the mouth, at
+## cruising speed - a match-cut, with no replay of the approach.
+const CART_START_Z := -14.0
+const CART_SPEED := 28.0
 const CART_FLY_V := Vector3(0.0, -1.0, 12.0)   # the front wheels catch the snapped rail: the cart pitches and loses speed
 const CART_SPIN := 2.3                          # rad / action-second, nose down
 const HERO_LEAP_V := Vector3(0.0, 6.5, 17.0)   # ...and its rider keeps his: he is thrown/leaps out forward
@@ -381,7 +383,7 @@ func _update_camera(_delta: float) -> void:
 	match _shot:
 		"emerge":
 			# Wide from the far ledge: the dark tunnel mouth in the cliff, sparks coming out of the black.
-			pos = Vector3(4.2, 2.3, 14.5).lerp(Vector3(2.9, 1.5, 11.0), clampf(u / 2.0, 0.0, 1.0))
+			pos = Vector3(4.2, 2.3, 14.5).lerp(Vector3(2.9, 1.5, 11.0), clampf(u / 0.6, 0.0, 1.0))
 			look = Vector3(0.0, 1.8, -4.0).lerp(_cart.position + Vector3(0.0, 1.2, 0.0), 0.5)
 			fov = 56.0
 			_trauma = maxf(_trauma, 0.12 + 0.2 * clampf(u / 2.0, 0.0, 1.0))

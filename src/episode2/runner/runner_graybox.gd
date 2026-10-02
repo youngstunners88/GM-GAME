@@ -61,6 +61,9 @@ extends Node3D
 
 ## Emitted once when the cart reaches the chamber entrance; the run halts.
 signal chamber_reached
+## Cliff segments only: Lil Blunt sees the track run out and freaks out. Level 1..4 as the edge nears
+## (-150 m, -110 m, -70 m, -35 m before the mouth). Drives the panic barks and the camera.
+signal cliff_panic(level: int)
 ## Emitted each time an obstacle is struck; carries remaining health.
 signal obstacle_hit(remaining_health: int)
 ## Emitted when health hits zero.
@@ -100,6 +103,8 @@ signal rider_bailed(from_lane: int, to_lane: int)
 signal gold_collected(total: int)
 
 # --- Tuning (feel is tuned later, not law) ------------------------------------
+const PANIC_AT := [150.0, 110.0, 70.0, 35.0]   # metres before the mouth; see cliff_panic
+const CLIFF_HANDOFF := 14.0        # the film takes over this far short of the mouth (match-cut)
 const RUN_SPEED := 20.0            # BASE forward speed m/s (+Z); ramps to MAX_SPEED
 const MAX_SPEED := 30.0
 const SPEED_RAMP_DIST := 900.0     # metres from base to max speed
@@ -158,6 +163,7 @@ var _health: int = START_HEALTH
 var _running: bool = true
 var _chamber_z: float = 200.0      # entrance distance
 var _ends_at_cliff: bool = false
+var _panic_level: int = 0
 
 ## Obstacles ahead: each {"z": float, "lane": int, "hit": bool, "type": String}.
 ## `type` in {"box", "arrow", "boulder", "boarder"} — defaults to "box".
@@ -347,7 +353,19 @@ func _advance(delta: float) -> void:
 
 		_check_obstacles(cur_x)
 
-	if _distance >= _chamber_z:
+	if _ends_at_cliff:
+		var left: float = _chamber_z - _distance
+		var lvl: int = 0
+		for i in PANIC_AT.size():
+			if left <= float(PANIC_AT[i]):
+				lvl = i + 1
+		if lvl > _panic_level:
+			_panic_level = lvl
+			cliff_panic.emit(lvl)
+	# The cliff film's cart starts CLIFF_HANDOFF m short of the mouth at this same speed: cutting there is a
+	# match-cut, not a replay (founder 2026-10-02: "ridiculously delayed").
+	var trigger_z: float = _chamber_z - (CLIFF_HANDOFF if _ends_at_cliff else 0.0)
+	if _distance >= trigger_z:
 		_running = false
 		chamber_reached.emit()
 
@@ -397,8 +415,10 @@ func _update_zipline() -> void:
 			else:
 				if _is_chained(i, i + 1):
 					_resolve_chain_from(i + 1)
+				# NOT a hit (founder 2026-10-02: "even if he doesn't take the zipline he loses a life... I don't see
+				# the obstacle"). Skipping a cable used to cost health on its own with nothing in the way. The
+				# punish now lives in a VISIBLE hazard under the cable (shovel bears, or a "pit" gap).
 				zip_missed.emit(i)
-				_take_hit()
 			break
 	_ziplining = _zip_index >= 0
 
@@ -537,6 +557,8 @@ func _check_obstacles(cur_x: float) -> void:
 ## Clear rules, one verb per hazard:
 ## "box" — jump. "arrow" — duck (or shoot its archer first).
 ## "boulder" — hop to another rail. "boarder" — pickaxe swipe.
+## "pit" — a collapsed stretch of trestle across every rail (drawn as a black gap with hazard stripes and a sign):
+## only the zipline over it is safe; on the rails you fall in and lose one health.
 ## "shovels" — a ROW of bears across all three rails, shovels raised: nothing on the rails gets past
 ## except the zipline (founder 2026-09-30) OR SHOOTING the bear on your rail (founder 2026-10-01: he dies
 ## and you keep going, even if you never catch the zipline). One shot, one bear; the other rails still hit.
@@ -548,6 +570,8 @@ func _is_cleared(hazard_type: String) -> bool:
 			return false
 		"shovels":
 			return _ziplining          # a row of shovel bears across every rail: only the zipline goes over them
+		"pit":
+			return _ziplining          # the trestle is gone across all three rails: only the cable crosses it
 		"gold":
 			return true
 		"boarder":
@@ -817,6 +841,12 @@ func get_obstacles() -> Array: return _obstacles
 func get_archers() -> Array: return _archers
 func get_zip_segments() -> Array: return _zip_segments
 func get_chamber_z() -> float: return _chamber_z
+## 0..1 how close the cliff edge is (0 until the first panic mark). Cliff segments only.
+func get_panic() -> float:
+	if not _ends_at_cliff:
+		return 0.0
+	var span: float = float(PANIC_AT[0]) - CLIFF_HANDOFF
+	return clampf((float(PANIC_AT[0]) - (_chamber_z - _distance)) / span, 0.0, 1.0)
 ## The leg ends at a cliff (the tracks run out; the cliff-jump film follows), not at a chamber gate.
 func ends_at_cliff() -> bool: return _ends_at_cliff
 func can_shoot() -> bool: return _can_shoot

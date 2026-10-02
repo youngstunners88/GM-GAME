@@ -5,6 +5,16 @@
 
 ---
 
+**🎬🐂 EPISODE 2 — ZIPLINE FIX, CART-END FILM, BULL HAND-OFF, FIRST-PERSON EXIT (2026-10-02).** Build tag: see the `[BUILD]` line in the console after hard refresh (CI stamps it per push).
+- **Zipline life bug (fixed):** missing a zipline never costs a life any more. The punish is now a visible gap in the track (a "NO TRACK - JUMP TO THE ZIPLINE!" pit with hazard stripes and lamps). Skip the cable and ride into the pit = -1; hook the cable = 0. A test checks every Descent zipline is covered by one visible hazard.
+- **Cart-end film:** the track thins out and warning boards appear, Lil Blunt freaks out for the last 150 m (rising shake, lens widening, four panic shouts), the film takes over 14 m before the edge at the same speed (no replay of the approach, no dead pause), and the next scene is loaded in the background beforehand.
+- **Inferno Bull:** rebuilt as a real performance. Matte, textured leather (no more "oil patch" or ghost look), the rifle that was fused to his hand is cut out of the model, a visible whiskey glass. He stands, walks to the gun wall, takes the Winchester off the rack, walks to Lil Blunt and hands it over; then the helmet. Natural speech speed. He introduces himself as Inferno Bull out of the Blaze protocol, charges **one Bitcoin** for the rifle and helmet (the coin visibly leaves Lil Blunt), says the bears have taken the Gold Mine and it is time to hunt, and proposes the Fort Knox partnership. No Diamonds mechanic.
+- **First-person exit:** they leave together; the camera becomes Lil Blunt's eyes, the Winchester becomes a viewmodel with a crosshair, Bull walks beside him. One `Episode2Mode` (runner / hideout / fps) is read by damage, input and camera. Keys are unchanged.
+- **BTC reaction:** every coin Lil Blunt collects gets a fist-pump and a voice line.
+- **Skills added:** `ep2-zipline-choice-damage`, `ep2-cart-end-film`, `ep2-bull-handoff-walk`, `ep2-fps-exit`.
+- Economy unchanged: the facility still mints nothing; the Bitcoin is a ledger line.
+
+
 **🎮🐂 EPISODE 2 — KEYS FIXED, BULL RIGGED, HIDEOUT REBUILT WITH MESHY MODELS (2026-10-01, evening).** You rejected the grey, primitive version: you were right.
 - **Keys (this is "the code"):** in the hideout, **Up / W = forward, Down / S = back, Left / A = left, Right / D = right, Space = jump (press again in the air for a double jump), Shift = run, mouse = look around** (click once to lock the mouse, ESC to release it), E = talk / take, left click = fire. Movement follows where you look. The old bug: Left/Right used to walk you along the room and Up did nothing. The cinematic camera only takes over while Lil Blunt is waking up and during the two hand-overs, then gives control straight back. The cart runner keeps Left/Right = hop rails, Space = jump, mouse = aim.
 - **Inferno Bull is rigged (Meshy).** His arms and head now move: he drinks his whiskey, talks with open hands, rests a hand on his gun for "I don't do sidekicks", and leans in to hand over the Winchester and the helmet from his own hand. He turns to keep Lil Blunt in front of him.

@@ -49,7 +49,7 @@ var _rewarded_chambers: Dictionary = {}   # index -> true, guard #1
 ## The segment index the CURRENTLY-LOADED chamber belongs to (guard #1 key).
 var _chamber_segment: int = -1
 var _commit_to_economy: bool = true
-var _totals: Dictionary = {"gold_awarded": 0, "gold_forfeited": 0, "diamonds_burned": 0}
+var _totals: Dictionary = {"gold_awarded": 0, "gold_forfeited": 0, "diamonds_burned": 0, "btc_paid": 0}
 
 func configure(plan: Array, commit_to_economy: bool = true) -> void:
 	_plan = plan.duplicate(true)
@@ -58,7 +58,7 @@ func configure(plan: Array, commit_to_economy: bool = true) -> void:
 	_completed_distance = 0.0
 	_rewarded_chambers.clear()
 	_chamber_segment = -1
-	_totals = {"gold_awarded": 0, "gold_forfeited": 0, "diamonds_burned": 0}
+	_totals = {"gold_awarded": 0, "gold_forfeited": 0, "diamonds_burned": 0, "btc_paid": 0}
 	_teardown_active()
 	_mode = Mode.IDLE
 
@@ -91,6 +91,8 @@ func _enter_runner() -> void:
 		}
 	)
 	r.chamber_reached.connect(_on_chamber_reached, CONNECT_ONE_SHOT)
+	if r.has_signal("cliff_panic"):
+		r.cliff_panic.connect(_warm_chamber_assets, CONNECT_ONE_SHOT)
 	r.run_failed.connect(_on_run_failed, CONNECT_ONE_SHOT)
 	_mode = Mode.RUNNER
 	_sync_mouse_mode()
@@ -121,6 +123,16 @@ func _enter_chamber() -> void:
 	_mode = Mode.CHAMBER
 	mode_changed.emit(_mode)
 
+## The next scene's models are requested on a worker thread while Lil Blunt is still panicking on the cart, so
+## the cut to the film and the hideout never stalls on a disk read (the "ridiculously delayed" film).
+const WARM_DIRS := ["res://src/episode2/assets/", "res://src/episode2/assets/hideout/"]
+
+func _warm_chamber_assets(_level: int = 0) -> void:
+	for d in WARM_DIRS:
+		for f in DirAccess.get_files_at(d):
+			if f.ends_with(".glb"):
+				ResourceLoader.load_threaded_request(d + f)
+
 func _teardown_active() -> void:
 	if _active:
 		_active.queue_free()
@@ -145,6 +157,8 @@ func _on_chamber_cleared(result: Dictionary) -> void:
 	_totals["gold_awarded"] = int(_totals["gold_awarded"]) + awarded
 	_totals["gold_forfeited"] = int(_totals["gold_forfeited"]) + forfeited
 	_totals["diamonds_burned"] = int(_totals["diamonds_burned"]) + burned
+	# The narrative price of the gear (ONE Bitcoin, Inferno Bull). A ledger line only: GoldMine is not touched.
+	_totals["btc_paid"] = int(_totals.get("btc_paid", 0)) + int(result.get("btc_paid", 0))
 
 	if _commit_to_economy:
 		var gm: Node = get_node_or_null("/root/GoldMineSystem")
@@ -270,6 +284,15 @@ func get_mode() -> int: return _mode
 func get_segment() -> int: return _segment
 func get_active() -> Node: return _active
 func get_totals() -> Dictionary: return _totals.duplicate()
+
+## Which Episode 2 mode we are in (skill ep2-fps-exit): the cart RUNNER, the story HIDEOUT, or first-person FPS.
+## Damage, input hints and the camera read this, so there is exactly one place that knows.
+func get_episode_mode() -> int:
+	if _mode == Mode.CHAMBER and _active != null and is_instance_valid(_active) and _active.has_method("get_episode_mode"):
+		return int(_active.get_episode_mode())
+	if _mode == Mode.CHAMBER:
+		return Episode2Mode.Mode.HIDEOUT
+	return Episode2Mode.Mode.RUNNER
 func get_total_distance() -> float:
 	var live: float = 0.0
 	if _mode == Mode.RUNNER and _active and _active.has_method("get_distance"):

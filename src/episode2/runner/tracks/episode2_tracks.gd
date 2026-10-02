@@ -19,7 +19,7 @@ extends RefCounted
 ## Lanes: 0 = left rail, 1 = centre, 2 = right; -1 = "whichever cart the rider
 ## is in" (boarders only). Archer side: -1 left, +1 right.
 ## Hazard verbs: box = JUMP, arrow = DUCK (or SHOOT its archer once armed),
-## boulder = HOP to another cart, boarder = SWIPE (pickaxe: F / right-click).
+## boulder = HOP to another cart, boarder = SWIPE (pickaxe: X / right-click).
 ## Zipline = JUMP to hook it; chained cables need a second JUMP near the end of
 ## each to swing to the next.
 ##
@@ -107,6 +107,12 @@ const LEG_DESCENT := {
 		# Then a boulder down the right: stay centre — it's the only cart left.
 		{"z": 720.0, "lane": 2, "type": "boulder"},
 		{"z": 745.0, "lane": 1, "type": "gold"},
+		# THE PIT under the first chain (790-836): the trestle is gone across all three rails (a black gap with
+		# hazard stripes and a sign). Rails = fall in, -1 health. The cable = safe. Nothing else is hidden:
+		# skipping a cable on its own costs nothing any more (founder 2026-10-02).
+		{"z": 800.0, "lane": 0, "type": "pit"},
+		{"z": 800.0, "lane": 1, "type": "pit"},
+		{"z": 800.0, "lane": 2, "type": "pit"},
 		# The chain (790-836) lands you in the centre: nothing for 50 m (founder 2026-10-01: the 2nd
 		# zipline "kills Lil Blunt" - the landing used to be a box 24 m on and a volley 20 m after it).
 		{"z": 885.0, "lane": 1, "type": "box"},
@@ -136,6 +142,10 @@ const LEG_DESCENT := {
 		{"z": 1315.0, "lane": 0, "type": "boulder"},
 		{"z": 1315.0, "lane": 2, "type": "boulder"},
 		# --- VOLLEY + CHAIN (1340-1520)
+		# THE PIT under the second chain (1420-1464): same rule, same look.
+		{"z": 1430.0, "lane": 0, "type": "pit"},
+		{"z": 1430.0, "lane": 1, "type": "pit"},
+		{"z": 1430.0, "lane": 2, "type": "pit"},
 		{"z": 1380.0, "lane": 1, "type": "arrow", "archer": "d_a5"},
 		{"z": 1380.0, "lane": 2, "type": "arrow", "archer": "d_a5"},
 		{"z": 1500.0, "lane": 0, "type": "gold"},
@@ -214,6 +224,10 @@ const LEG_DEEPER := {
 		{"z": 300.0, "lane": 1, "type": "arrow", "archer": "r_a2"},
 		{"z": 300.0, "lane": 2, "type": "arrow", "archer": "r_a2"},
 		{"z": 330.0, "lane": -1, "type": "boarder"},
+		# THE PIT under the three-cable chain (395-452): rails = fall in, cable = safe.
+		{"z": 405.0, "lane": 0, "type": "pit"},
+		{"z": 405.0, "lane": 1, "type": "pit"},
+		{"z": 405.0, "lane": 2, "type": "pit"},
 		# After the chain, boulders on left + centre: hop RIGHT.
 		{"z": 470.0, "lane": 0, "type": "boulder"},
 		{"z": 470.0, "lane": 1, "type": "boulder"},

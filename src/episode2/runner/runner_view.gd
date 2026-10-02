@@ -453,6 +453,7 @@ func _connect_sim() -> void:
 		"hop_blocked": _on_hop_blocked,
 		"rider_bailed": _on_rider_bailed,
 		"gold_collected": _on_gold_collected,
+		"cliff_panic": _on_cliff_panic,
 	}
 	for sig in pairs:
 		var cb: Callable = pairs[sig]
@@ -1477,6 +1478,10 @@ func _build_hazards() -> void:
 			"shovels":
 				if lane == 1:
 					_add_telegraph(x, z, C_SHOOT, "BEAR LINE - SHOOT YOUR BEAR or ZIPLINE!")
+			"pit":
+				if lane == 1:
+					_build_pit(z)
+					_add_telegraph(x, z, C_DANGER, "NO TRACK - JUMP TO THE ZIPLINE!")
 			_:
 				var crate := _mesh_node(_box(Vector3(1.4, 1.0, 1.0)), _tex_mat(TEX_TIMBER, "crate", 0.9), Vector3(x, 0.15, z))
 				_mesh_node(_box(Vector3(1.46, 0.14, 1.06)), _pal("brass"), Vector3(0.0, 0.3, 0.0), crate)
@@ -1488,6 +1493,42 @@ func _build_hazards() -> void:
 			var lbl := _label("SHOOT", C_SHOOT)
 			lbl.position = Vector3(_side_x(float(a["side"]), Sim.ARCHER_X), Sim.ARCHER_Y + 3.6, float(a["z"]))
 			_labels.append({"node": lbl, "z": float(a["z"]), "strip": null, "archer": str(a["id"])})
+
+## THE PIT: the trestle is gone across all three rails. A black gap you can SEE from far off (it hides the
+## rails and ties), hazard-striped edges, broken rail stubs and flashing lamps. Safe only on the cable above it.
+## Replaces the old invisible penalty for skipping a cable (founder 2026-10-02). Skill ep2-zipline-choice-damage.
+func _build_pit(z: float) -> void:
+	var xs: Array = _lane_xs()
+	var half_w: float = absf(float(xs[0])) + 1.6
+	var len_z: float = 5.0
+	var void_mat := StandardMaterial3D.new()
+	void_mat.albedo_color = Color(0.0, 0.0, 0.0)
+	void_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_mesh_node(_box(Vector3(half_w * 2.0, 0.12, len_z)), void_mat, Vector3(0.0, 0.1, z))
+	var warn := _mat("pit_warn", Color(1.0, 0.72, 0.1), 1.2)
+	var dark := _mat("pit_dark", Color(0.08, 0.06, 0.05))
+	for edge in [-1.0, 1.0]:
+		var ez: float = z + edge * (len_z * 0.5 + 0.2)
+		var n: int = 9
+		for i in n:
+			var seg: float = half_w * 2.0 / float(n)
+			var sx: float = -half_w + seg * (float(i) + 0.5)
+			_mesh_node(_box(Vector3(seg * 0.96, 0.18, 0.4)), warn if i % 2 == 0 else dark, Vector3(sx, 0.2, ez))
+	for xr in xs:
+		for edge in [-1.0, 1.0]:
+			var stub := _mesh_node(_box(Vector3(0.14, 0.14, 0.9)), _pal("iron"),
+				Vector3(float(xr), 0.12, z + edge * (len_z * 0.5 - 0.1)))
+			stub.rotation.x = deg_to_rad(-26.0) * edge
+	for sx2 in [-1.0, 1.0]:
+		var lamp := OmniLight3D.new()
+		lamp.light_color = Color(1.0, 0.35, 0.1)
+		lamp.light_energy = 2.2
+		lamp.omni_range = 9.0
+		lamp.position = Vector3(sx2 * (half_w - 0.4), 1.8, z - len_z * 0.5 - 1.0)
+		_world.add_child(lamp)
+		_mesh_node(_box(Vector3(0.18, 1.7, 0.18)), dark, Vector3(sx2 * (half_w - 0.4), 0.9, z - len_z * 0.5 - 1.0))
+		_mesh_node(_box(Vector3(0.34, 0.34, 0.34)), _mat("pit_lamp", Color(1.0, 0.3, 0.1), 3.0),
+			Vector3(sx2 * (half_w - 0.4), 1.9, z - len_z * 0.5 - 1.0))
 
 ## Each boarder: a bear on the nearest side's scaffold that leaps into the
 ## rider's cart, plus its SWIPE telegraph (which follows the rider's rail).
@@ -1514,7 +1555,7 @@ func _build_boarders() -> void:
 		var bear: Node3D = _bear(BOARDER_HEIGHT)
 		bear.position = Vector3(sx, Sim.ARCHER_Y, z)
 		_world.add_child(bear)
-		var lbl := _label("SWIPE! F / right-click", C_SWIPE)
+		var lbl := _label("SWIPE! X / right-click", C_SWIPE)
 		lbl.font_size = 80
 		lbl.position = Vector3(0.0, 3.3, z)
 		_boarders.append({"obs": oi, "z": z, "node": bear, "label": lbl, "start_x": sx,
@@ -2869,6 +2910,10 @@ func _update_camera(dist: float, delta: float) -> void:
 	if _shake > 0.0:
 		p += Vector3(_rng.randf_range(-1, 1), _rng.randf_range(-1, 1), 0.0) * _shake * 0.25
 		_shake = maxf(0.0, _shake - delta * 3.0)
+	var panic: float = float(_sim.get_panic()) if _sim.has_method("get_panic") else 0.0
+	if panic > 0.0:
+		# Freaking out: a rising tremble and the lens pulling wide as the edge rushes up.
+		p += Vector3(_rng.randf_range(-1, 1), _rng.randf_range(-1, 1), 0.0) * panic * panic * 0.11
 	_camera.position = p
 	if debug_cam.size() == 2 and _camera.is_inside_tree():
 		_camera.global_position = debug_cam[0]
@@ -2876,6 +2921,7 @@ func _update_camera(dist: float, delta: float) -> void:
 		return
 	var spd: float = float(_sim.get_speed()) if _sim.has_method("get_speed") else Sim.RUN_SPEED
 	var fov_t: float = FOV_BASE + maxf(0.0, spd - 20.0) * FOV_PER_MS + (5.0 if _sim.is_ziplining() else 0.0)
+	fov_t += panic * 9.0
 	_camera.fov = lerpf(_camera.fov, fov_t, clampf(delta * 3.0, 0.0, 1.0))
 	if _streaks:
 		_streaks.emitting = _sim.is_running() and not debug_off.has("streaks")
@@ -3129,8 +3175,13 @@ func _on_rider_bailed(_from: int, _to: int) -> void:
 	_t_hit = 0.0
 	_shake = maxf(_shake, 1.4)
 
+## Every BTC is a fist-pump (founder 2026-10-02: "make Lil Blunt react to collecting the BTC").
 func _on_gold_collected(_total: int) -> void:
-	_t_cheer = minf(_t_cheer, Motion.CHEER_HOLD * 0.6)
+	_t_cheer = 0.0
+
+## The track is running out: a shudder per mark, on top of the continuous panic shake in _update_camera.
+func _on_cliff_panic(level: int) -> void:
+	_shake = maxf(_shake, 0.35 + 0.15 * float(level))
 
 func _on_zip_caught(_i: int) -> void:
 	_shake = maxf(_shake, 0.25)

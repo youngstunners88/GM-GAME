@@ -262,17 +262,50 @@ func _ready() -> void:
 	r14.queue_free()
 
 
-	# 16. A zipline reached WITHOUT jumping is missed: one health, stay on the rails,
-	#     and the rest of that chain is not judged again (one hit per chain, not per cable).
+	# 16. A zipline reached WITHOUT jumping is missed: NO health lost (founder 2026-10-02: skipping a cable used to
+	#     cost a life with nothing in the way), he stays on the rails, and the rest of the chain is not judged again.
 	var chain := [{"start_z": 5.0, "end_z": 10.0}, {"start_z": 14.0, "end_z": 20.0}]
 	var r15 := _spawn()
 	r15.setup(200.0, [], chain)
 	_run_to_distance(r15, 7.0)
 	_check("walking under a zipline does NOT hook it", not r15.is_ziplining())
 	_run_to_distance(r15, 25.0)
-	_check("a missed zip chain costs exactly ONE health (health=%d)" % r15.get_health(),
-		r15.get_health() == 2, "a miss must not cascade into one hit per cable")
+	_check("skipping a zip chain costs NOTHING by itself (health=%d)" % r15.get_health(),
+		r15.get_health() == 3, "an invisible penalty is a bug: the punish must be a visible obstacle")
 	r15.queue_free()
+
+	# 16b. The PIT: a visible gap under a chain. Rails = fall in (-1 once); cable = safe; skipping the cable
+	#      with no pit = 0.
+	var pit_obs := [{"z": 12.0, "lane": 0, "type": "pit"}, {"z": 12.0, "lane": 1, "type": "pit"},
+		{"z": 12.0, "lane": 2, "type": "pit"}]
+	var rp1 := _spawn()
+	rp1.setup(200.0, pit_obs, chain)
+	_run_to_distance(rp1, 30.0)
+	_check("pit: staying on the rails drops him in, exactly -1 (health=%d)" % rp1.get_health(), rp1.get_health() == 2)
+	rp1.queue_free()
+	var rp2 := _spawn()
+	rp2.setup(200.0, pit_obs, chain)
+	_catch_zip(rp2, 5.0)
+	_run_to_distance(rp2, 7.0)
+	rp2.jump()                                  # swing onto the second cable
+	_run_to_distance(rp2, 30.0)
+	_check("pit: the zipline crosses it for 0 health (health=%d)" % rp2.get_health(), rp2.get_health() == 3)
+	rp2.queue_free()
+	var descent: Dictionary = Episode2Tracks.LEGS[0]
+	var pit_z: Array = []
+	for o in descent["obstacles"]:
+		if str(o["type"]) == "pit" and int(o["lane"]) == 1:
+			pit_z.append(float(o["z"]))
+	var every_chain_has_pit := true
+	for zs in descent["zip_segments"]:
+		var covered := false
+		for o2 in descent["obstacles"]:
+			if str(o2["type"]) in ["pit", "shovels"] and float(o2["z"]) >= float(zs["start_z"]) - 40.0 \
+					and float(o2["z"]) <= float(zs["end_z"]) + 30.0:
+				covered = true
+		if not covered:
+			every_chain_has_pit = false
+	_check("every Descent zipline sits over a visible hazard (pit or bear line)", every_chain_has_pit and pit_z.size() == 2, str(pit_z))
 
 	# 17. Chained cables: jump near the end of one to swing onto the next.
 	var r16 := _spawn()

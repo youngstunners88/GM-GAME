@@ -298,8 +298,11 @@ func _refresh_hud() -> void:
 						lines += "   ·   %d molds left" % a.get_molds_left()
 				else:
 					lines += "walk to the Bull (arrows / WASD, mouse to look)"
+				var mode: int = a.get_episode_mode() if a.has_method("get_episode_mode") else Episode2Mode.Mode.HIDEOUT
+				if Episode2Mode.is_first_person(mode):
+					lines += "\nFIRST-PERSON SHOOTER   ·   Inferno Bull rides with you   ·   BTC paid: %d" % a.get_btc_paid()
 				_hint.text = ("ARROWS / WASD  move      SPACE  jump      MOUSE  look (click to lock)      SHIFT  run\n"
-					+ "E  talk / take the rifle      LMB  fire the Winchester      ESC  back to menu")
+					+ "E  talk / take      LMB  fire the Winchester      ESC  back to menu")
 			elif a:
 				lines += "MINER SHAFT\n"
 				lines += "health %d   ammo %d   bears %d\n" % [a.get_health(), a.get_ammo(), a.get_live_bear_count()]

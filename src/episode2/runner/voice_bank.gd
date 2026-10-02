@@ -24,5 +24,7 @@ const CATEGORIES := {
 	"swipe": {"gap": 2.5, "priority": 42, "ids": ["ep2_vo_swipe_1", "ep2_vo_swipe_2", "ep2_vo_swipe_3", "ep2_vo_swipe_4", "ep2_vo_swipe_5"]},
 	"shovel_alert": {"gap": 0.0, "priority": 62, "ids": ["ep2_vo_shovel_alert_1", "ep2_vo_shovel_alert_2", "ep2_vo_shovel_alert_3", "ep2_vo_shovel_alert_4", "ep2_vo_shovel_alert_5", "ep2_vo_shovel_alert_6"]},
 	"shovel_pass": {"gap": 0.0, "priority": 58, "ids": ["ep2_vo_shovel_pass_1", "ep2_vo_shovel_pass_2", "ep2_vo_shovel_pass_3", "ep2_vo_shovel_pass_4", "ep2_vo_shovel_pass_5"]},
+	"btc": {"gap": 2.5, "priority": 28, "ids": ["vo_lb_btc_1", "vo_lb_btc_2", "vo_lb_btc_3", "vo_lb_btc_4"]},
+	"panic": {"gap": 0.0, "priority": 90, "ids": ["vo_lb_panic_1", "vo_lb_panic_2", "vo_lb_panic_3", "vo_lb_panic_4"]},
 	"idle": {"gap": 18.0, "priority": 10, "ids": ["ep2_vo_idle_1", "ep2_vo_idle_2", "ep2_vo_idle_3", "ep2_vo_idle_4", "ep2_vo_idle_5", "ep2_vo_idle_6"]},
 }
