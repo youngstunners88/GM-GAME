@@ -16,6 +16,8 @@
 - **Build: LIVE.** Master `0e81fb9` deployed to https://youngstunners88.itch.io/smokerealm (butler push confirmed 16:01 UTC); hard refresh. Pack 179.6 MiB (CI limit 190 MiB): design notes, work-notes, tools and key-art photos are no longer bundled into the game download.
 - New skill `ep2-free-roam-controls` locks the key map; `ep2-hideout-set-dressing` and `ep2-character-performance` now follow the Meshy-first pipeline. New tests cover every key, mouse look, jump, collisions, the Bull's clips and the walk cycle.
 
+**📝 QUIZ FIXED (2026-10-02).** (1) Every quiz question is now about the protocol. The ones about the game itself ("Who administers the test?", "Is the video path allowed?", "What kind of room is this?") are gone from all three rooms and replaced with real facts from the rooms (burn, chains, lounge lock, ETH payout pools, XAUT, vest, Melt Bonus). (2) The quiz box fits: long answers wrap inside the box, and the box shrinks to its content and centres.
+
 **🔎 DEEP DIVE — BUGS AND VULNERABILITIES (2026-10-01).** Ran every one of the 115 test suites, the security sentinel and a review of the web bridge and save loading. Fixed what was real:
 - **Broken saves no longer half-load.** A save file with a wrong-shaped value (a count that is a list, an empty section) used to crash `load_session()` part-way and leave the session half-restored. Every value read from disk now goes through `SaveSafe` and falls back to its default. New test in `save_compat_test`.
 - **Security sentinel back to 18/18.** The quiz loader now reads from a fixed table of three files instead of a built path. The sentinel check was also taught to accept that safe pattern.

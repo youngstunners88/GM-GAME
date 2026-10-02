@@ -905,6 +905,8 @@ func _button_style(hovered: bool) -> StyleBoxFlat:
 
 func _open_overlay() -> void:
 	_clear_overlay()
+	_overlay_panel.size = Vector2(760.0, 520.0)
+	_overlay_panel.position = Vector2(260.0, 100.0)
 	_overlay_open = true
 	_overlay_root.visible = true
 	get_tree().paused = true
@@ -943,7 +945,19 @@ func _add_button(text: String, action: Callable) -> Button:
 	var button := Button.new()
 	button.text = text
 	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	button.custom_minimum_size = Vector2(0.0, 46.0)
+	# Wrap long answers INSIDE the box. A Button never wraps by default, so a
+	# long option grew past the panel's right edge. Pin the width to the box
+	# column (same 704 the labels use) and let the text wrap to extra lines.
+	button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	button.clip_text = false
+	button.size_flags_horizontal = Control.SIZE_FILL
+	# A wrapping Button does not grow to fit its extra lines on its own, so
+	# measure the wrapped text (box width minus the 10px content margins and
+	# 2px borders on each side) and size the button to it.
+	var font: Font = button.get_theme_font("font")
+	var wrapped: Vector2 = font.get_multiline_string_size(
+		text, HORIZONTAL_ALIGNMENT_LEFT, 704.0 - 24.0, 22)
+	button.custom_minimum_size = Vector2(704.0, maxf(46.0, wrapped.y + 24.0))
 	button.add_theme_font_size_override("font_size", 22)
 	button.add_theme_color_override("font_color", Color(0.92, 0.96, 0.96))
 	button.add_theme_stylebox_override("normal", _button_style(false))
@@ -1092,6 +1106,18 @@ func _show_question() -> void:
 		_add_button("%d) %s" % [i + 1, String(options[i])], _on_option.bind(i))
 	_primary_action = Callable()
 	_quiz_active = true
+	_fit_panel_to_content.call_deferred()
+
+
+## Shrink the overlay panel to hug the question + answers and centre it, so
+## short questions don't float in a big empty box and long ones still fit.
+func _fit_panel_to_content() -> void:
+	if _overlay_panel == null or _overlay_box == null or not _overlay_open:
+		return
+	var need: float = _overlay_box.get_combined_minimum_size().y + 56.0
+	var h: float = clampf(need, 260.0, 600.0)
+	_overlay_panel.size = Vector2(760.0, h)
+	_overlay_panel.position = Vector2(260.0, (720.0 - h) * 0.5)
 
 
 func _on_option(index: int) -> void:

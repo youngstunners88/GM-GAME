@@ -38,33 +38,33 @@
         {
             "id": "S04",
             "fact_id": "S04",
-            "prompt": "What can rising Lounge pairs do?",
+            "prompt": "What happens to the original SMOKE when holders convert it into OFT SMOKE?",
             "options": [
-                "They reduce burn power.",
-                "They replace the burn engine with the Vault.",
-                "They can increase burn power."
+                "It is locked in the Lounge for ten years.",
+                "100% of it goes straight to the burn contract.",
+                "It is sent to Fort Knox stakers."
             ],
-            "correct": 2
+            "correct": 1
         },
         {
             "id": "S05",
             "fact_id": "S05",
-            "prompt": "What kind of room is this?",
+            "prompt": "Which chains does SMOKE live on?",
             "options": [
-                "A classroom.",
-                "A DEX where you trade tokens.",
-                "A staking vault."
+                "Only Ethereum and BASE.",
+                "Bitcoin, Solana and Dogecoin.",
+                "Solana, Robinhood Chain, Ethereum, BASE and BSC."
             ],
-            "correct": 0
+            "correct": 2
         },
         {
             "id": "S06",
             "fact_id": "S06",
-            "prompt": "What does the Whitepaper prop do in this room?",
+            "prompt": "How long are the big BASE and Ethereum liquidity positions locked?",
             "options": [
-                "It mints the scorecard NFT.",
-                "It teaches the real rules before the quiz.",
-                "It replaces the quiz entirely."
+                "One year.",
+                "Ten years.",
+                "They are not locked."
             ],
             "correct": 1
         },
@@ -82,44 +82,44 @@
         {
             "id": "S08",
             "fact_id": "S08",
-            "prompt": "What does multi-chain supply frame?",
+            "prompt": "What are the main Smoke Lounge pairs?",
             "options": [
-                "The arbitrage question.",
-                "The GOLD vesting schedule.",
-                "The quiz pass bar."
-            ],
-            "correct": 0
-        },
-        {
-            "id": "S09",
-            "fact_id": "S09",
-            "prompt": "Who administers the test in the SMOKE room?",
-            "options": [
-                "The Assay Trio.",
-                "Ember the Archivist.",
-                "The Claim Recorder."
+                "SMOKE with XAUT on Solana only.",
+                "SMOKE with X28 on BASE and Ethereum, and SMOKE with BNB on BSC.",
+                "SMOKE with wBTC on every chain."
             ],
             "correct": 1
         },
         {
-            "id": "S10",
-            "fact_id": "S10",
-            "prompt": "Is the video study path allowed?",
+            "id": "S09",
+            "fact_id": "S09",
+            "prompt": "What does omni-chain mean for SMOKE?",
             "options": [
-                "No, only the Whitepaper counts.",
-                "No, video is blocked until you pass.",
-                "Yes, the video path is allowed."
+                "A separate wrapped copy on each chain.",
+                "A token that works on only one chain.",
+                "One token across every chain, with no wrapped copies."
             ],
             "correct": 2
         },
         {
+            "id": "S10",
+            "fact_id": "S10",
+            "prompt": "What does the Smoke Lounge host now?",
+            "options": [
+                "Auctions and Gold NFTs.",
+                "Just the SMOKE NFT and the bong parties.",
+                "A staking vault for GOLD."
+            ],
+            "correct": 1
+        },
+        {
             "id": "S11",
             "fact_id": "S11",
-            "prompt": "What happens when you pass in the SMOKE room?",
+            "prompt": "Why does SMOKE have a sink built in from day one?",
             "options": [
-                "You return to Stage 1 and the NFT is recorded.",
-                "You skip straight to Stage 3.",
-                "You leave the room without any record."
+                "It is a culture token first, so using it keeps feeding the burn.",
+                "It pays stakers wBTC.",
+                "It is pegged to physical gold."
             ],
             "correct": 0
         }

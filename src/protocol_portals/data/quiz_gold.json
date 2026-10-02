@@ -71,24 +71,24 @@
         {
             "id": "G07",
             "fact_id": "G07",
-            "prompt": "Who administers the test in the GOLD room?",
+            "prompt": "How long can Fort Knox locks run?",
             "options": [
-                "The Claim Recorder.",
-                "The Assay Trio.",
-                "Ember the Archivist."
+                "Up to 30 days.",
+                "Up to 2,888 days.",
+                "Exactly 100 days."
             ],
-            "correct": 0
+            "correct": 1
         },
         {
             "id": "G08",
             "fact_id": "G08",
-            "prompt": "What is this GOLD room?",
+            "prompt": "What is XAUT?",
             "options": [
-                "Fort Knox itself.",
-                "A study room, not Fort Knox.",
-                "A sweeper-bot control room."
+                "Tether Gold, backed by physical gold in Swiss vaults.",
+                "A SMOKE bridge token.",
+                "A Diamonds reward."
             ],
-            "correct": 1
+            "correct": 0
         },
         {
             "id": "G09",
@@ -104,24 +104,24 @@
         {
             "id": "G10",
             "fact_id": "G10",
-            "prompt": "Is the video study path allowed?",
+            "prompt": "How high can the multiplier reach with the Melt Bonus and a maximum-term stake?",
             "options": [
-                "Yes, the video path is allowed.",
-                "No, only the Whitepaper can be studied.",
-                "Only after the vest fully completes."
+                "Up to 10%.",
+                "Up to 100%.",
+                "Up to 1,000%."
             ],
-            "correct": 0
+            "correct": 2
         },
         {
             "id": "G11",
             "fact_id": "G11",
-            "prompt": "What does completing this room grant?",
+            "prompt": "How much can you burn in the Melt Bonus?",
             "options": [
-                "A Diamonds scorecard NFT on ICP.",
-                "A Gold scorecard NFT on ICP.",
-                "Guaranteed XAUT from the Gold Vein."
+                "Up to three times your staked amount.",
+                "Only half your staked amount.",
+                "An unlimited amount."
             ],
-            "correct": 1
+            "correct": 0
         }
     ]
 }

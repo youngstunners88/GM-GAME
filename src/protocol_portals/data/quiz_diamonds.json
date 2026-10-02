@@ -71,24 +71,24 @@
         {
             "id": "D07",
             "fact_id": "D07",
-            "prompt": "Who administers the test in the DIAMONDS room?",
+            "prompt": "What does DIAMONDS pay its rewards in?",
             "options": [
-                "The Assay Trio.",
-                "Ember the Archivist.",
-                "The Claim Recorder."
+                "wBTC.",
+                "ETH.",
+                "XAUT."
             ],
-            "correct": 0
+            "correct": 1
         },
         {
             "id": "D08",
             "fact_id": "D08",
-            "prompt": "What is this DIAMONDS room?",
+            "prompt": "What is the only liquidity pool for DIAMONDS?",
             "options": [
-                "The Diamond Vault set-piece itself.",
-                "A study room, not the Diamond Vault set-piece.",
-                "Fort Knox."
+                "A pool with SMOKE.",
+                "A pool with GOLD.",
+                "A pool with X28."
             ],
-            "correct": 1
+            "correct": 2
         },
         {
             "id": "D09",
@@ -104,24 +104,24 @@
         {
             "id": "D10",
             "fact_id": "D10",
-            "prompt": "Is the video study path allowed?",
+            "prompt": "What do sweeper bots do for Diamond Certificate holders?",
             "options": [
-                "Yes, the video path is allowed.",
-                "No, video-only players cannot reach the quiz.",
-                "Only if you hold a certificate."
+                "They burn the certificates.",
+                "They capture ETH and send it to Diamond Certificate holders.",
+                "They mint GOLD for them."
             ],
-            "correct": 0
+            "correct": 1
         },
         {
             "id": "D11",
             "fact_id": "D11",
-            "prompt": "What does completing this room grant?",
+            "prompt": "How many independent ETH payout pools share the DIAMONDS rewards?",
             "options": [
-                "A testnet SMOKE faucet.",
-                "A Diamonds scorecard NFT on ICP.",
-                "An automatic GOLD allocation."
+                "One.",
+                "Two.",
+                "Three."
             ],
-            "correct": 1
+            "correct": 2
         }
     ]
 }
