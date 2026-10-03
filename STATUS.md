@@ -5,6 +5,12 @@
 
 ---
 
+**🐂 EPISODE 2 — YOUR TRIPO INFERNO BULL AND BEAR ARCHER ARE IN (2026-10-03).** Lil Blunt stays as he is.
+- **Inferno Bull is your Tripo minotaur** (horned helmet, red bandana, pack, belts). It was an unrigged 1-million-vertex mesh, so I cut it to ~73k triangles with its texture, fitted it onto the existing Bull skeleton (the two bodies match to ~2 cm in the torso and legs) and copied the skin weights over. Every clip keeps working: seated drink, stand-up, walk, hand-over reach, idle. The rifle he carried in his left hand is cut out of the mesh so he can take the Winchester off the wall. Captured in the real hideout: seated, standing up, walking to the wall, offering the rifle.
+- **The bear archers on the ledges are your Tripo bear archer** (decimated, same size and pose as before). Not re-captured in the runner yet.
+- Old Meshy versions are kept in `.farm/retired/` (not shipped). Pipeline and skill: `ep2-founder-asset-swap` (`decimate_textured.py`, `retarget_bull.py`).
+- **Not done:** deformation was only checked in the frames above; elbows and shoulders on the hand-over reach may still stretch a little. The pack grew by about 3.4 MB; CI's 190 MB gate decides.
+
 **🧰 EPISODE 2 — YOUR ASSETS, BULL AT REST, CLEAN HUD (2026-10-02, night).**
 - **Your models are in:** the Winchester (Meshy wUN2J2), the miner helmet (tVC8jD), the whiskey glass (LKhotS) and the Bitcoin coin (oLKt9Y) replace my stand-ins on the gun wall, in the hand-off, on Lil Blunt's head, in first person, on the whiskey table, in Bull's hand and in the one-Bitcoin payment. The forged helmet/glass/coin code and the forge script are deleted. Captured: the first-person rifle is your Winchester.
 - **NOT in: Lil Blunt (Rodin) and Inferno Bull (Tripo).** The Tripo key in the environment is rejected ("Invalid API key", it looks like an expired CLI login) and the Rodin page needs your login, so I could not download either. Re-run `tripo login` or export the GLBs and I will drop them in.
