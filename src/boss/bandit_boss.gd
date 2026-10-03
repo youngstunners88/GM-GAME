@@ -120,6 +120,9 @@ func take_damage(amount: int) -> void:
 
 func die() -> void:
 	is_dead = true
+	# Episode 2 starts after this boss: begin loading it NOW, a little per frame, so the death tween and the 15 s
+	# film hide the work (TransitionDirector; skill ep2-seamless-transition).
+	TransitionDirector.prewarm(GameManager.EPISODE2_SCENE)
 	set_physics_process(false)
 	GameManager.add_score(2000)
 	ScreenShake.shake(0.8, 12.0)
@@ -154,7 +157,8 @@ func die() -> void:
 	await cutscene.finished
 	# Founder 2026-10-03: Episode 2 BEGINS after the 3rd boss. Win -> the defeat film -> straight into Episode 2
 	# (GameManager.next_level_scene(3) is EPISODE2_SCENE; it used to dump the player at the menu).
-	SceneRouter.load_scene(GameManager.next_level_scene(3), SceneRouter.Transition.DIAMOND)
+	GameManager.ep2_story_unlocked = true    # earned by beating the boss: no code screen in the middle of the hand-off
+	TransitionDirector.go(GameManager.next_level_scene(3))
 	queue_free()
 
 func _on_hitbox_body_entered(body: Node2D) -> void:

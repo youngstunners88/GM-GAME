@@ -941,6 +941,9 @@ func take_damage(amount: int) -> void:
 
 func die() -> void:
 	is_dead = true
+	# Episode 2 starts after this boss: begin loading it NOW, a little per frame, so the death tween and the 15 s
+	# film hide the work (TransitionDirector; skill ep2-seamless-transition).
+	TransitionDirector.prewarm(GameManager.EPISODE2_SCENE)
 	BossVoiceSystem.say(self, BOSS_ID, "death", true)
 	BossVoiceSystem.clear_active()
 	set_physics_process(false)
@@ -990,7 +993,8 @@ func die() -> void:
 	await cutscene.finished
 	# Kimi audit ordering: free BEFORE the scene load.
 	queue_free()
-	SceneRouter.load_scene(GameManager.next_level_scene(3), SceneRouter.Transition.DIAMOND)
+	GameManager.ep2_story_unlocked = true    # earned by beating the boss: no code screen in the middle of the hand-off
+	TransitionDirector.go(GameManager.next_level_scene(3))
 
 func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("take_damage"):

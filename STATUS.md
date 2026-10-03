@@ -5,6 +5,11 @@
 
 ---
 
+**🎞️ BOSS 3 -> EPISODE 2 HAND-OFF REBUILT: NO BLUE SCREEN, NO LONG WAIT (2026-10-03).** The blue screen was the old dark-blue diamond wipe sitting in front of a one-shot load of all of Episode 2 (about 40 models, textures, sounds, and the game code), and then a code screen. New system, `TransitionDirector` (skill `ep2-seamless-transition`):
+- The moment boss 3 dies, Episode 2 starts loading a little per frame behind the death animation and your 15-second video (no frame in front of you stalls over 250 ms in the test). When the video ends a dark loading card ("EPISODE 2 - THE GOLD MINE" with a bar) comes up, the last heavy pieces load behind it, the scene swaps from memory, and the card fades away. States and the global game state follow along and recover if anything fails.
+- Beating boss 3 skips Episode 2's access-code screen for that session (earned); the menu button still asks for the code. One switch reverts it.
+- Measured in a real render (software graphics, slower than a normal PC): hand-off 1.9 s from video end to gameplay, no blue. **Not checked:** the real boss fight and the itch page in a browser; web is slower than my test machine, so the card will stay up longer there while it loads, but it is a calm card with a bar, not a frozen wipe. The menu's Episode 2 button is part of the locked front page, so it still uses the old route (tell me if you want it changed).
+
 **🔧 BOSS 3 -> EPISODE 2 WAS NOT REACHING (2026-10-03, fix).** You were right. Level 3's real final boss is the Claim Jumper, and I had wired the video and the hand-off only to a different boss script that level 3 never uses, so a win showed a text card and went to the menu. Now the Claim Jumper's death plays your "defeating Boss 3" video (hold Space to skip) and then starts Episode 2; a test checks both boss scripts. Checked by code and tests only; I have not played boss 3 to the end in a browser, so please confirm on a hard refresh.
 
 **➡️ EPISODE 2 NOW BEGINS AFTER BOSS 3 (2026-10-03).** Beating the 3rd boss plays the defeat film and then goes straight into Episode 2 (it used to drop to the menu). Tested: the routing, and the final film still plays and finishes.

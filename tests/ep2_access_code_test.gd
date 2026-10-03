@@ -31,5 +31,15 @@ func _ready() -> void:
 		_check("the right code opens Episode 2 (session running, code screen gone)", e._gate == null and e._root != null)
 	e.queue_free()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(ENTRY.UNLOCK_FILE))
+	# Earned by beating boss 3 (founder 2026-10-03): the seamless hand-off skips the code screen, in memory only.
+	GameManager.ep2_story_unlocked = true
+	var e2: Node = load("res://src/episode2/ep2_entry.tscn").instantiate()
+	add_child(e2)
+	for _i in 30:
+		await get_tree().process_frame
+	_check("story hand-off: no code screen after beating boss 3", e2._gate == null and e2._root != null)
+	_check("...and nothing was written to disk", not FileAccess.file_exists(ENTRY.UNLOCK_FILE))
+	e2.queue_free()
+	GameManager.ep2_story_unlocked = false
 	print("EP2_ACCESS_CODE: %s" % ("ALL PASS" if _fail == 0 else "FAIL (%d)" % _fail))
 	get_tree().quit(0 if _fail == 0 else 1)

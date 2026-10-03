@@ -84,6 +84,11 @@ const LEVEL_SEQUENCE: Array[String] = [
     "res://src/level/level_03_gold_rush.tscn",
 ]
 const MENU_SCENE := "res://src/ui/main_menu.tscn"
+## Set (in memory only, never saved) when the player EARNS Episode 2 by beating boss 3. Episode 2's access-code
+## screen is skipped for that session so the story hand-off is seamless; entering from the menu still asks for the
+## code. One switch to revert: EP2_STORY_BYPASSES_CODE.
+const EP2_STORY_BYPASSES_CODE := true
+var ep2_story_unlocked: bool = false
 ## Episode 2 (3D Gold Mine runner + Protocol Chambers) — the destination after
 ## the Episode 1 campaign is cleared. Deliberately NOT an entry in
 ## LEVEL_SEQUENCE: that array means "the Episode 1 levels" and is also used for

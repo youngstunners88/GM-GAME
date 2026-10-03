@@ -71,6 +71,8 @@ static func code_ok(code: String) -> bool:
 
 func _is_unlocked() -> bool:
 	var cf := ConfigFile.new()
+	if GameManager.EP2_STORY_BYPASSES_CODE and GameManager.ep2_story_unlocked:
+		return true         # earned: boss 3 was just beaten (founder 2026-10-03: the hand-off must be seamless)
 	return cf.load(UNLOCK_FILE) == OK and str(cf.get_value("ep2", "key", "")) == ACCESS_SHA256
 
 func _show_gate() -> void:
