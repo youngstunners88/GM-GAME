@@ -10,6 +10,7 @@ description: The founder's own 3D models (Drive doc "3D Assets": Meshy share lin
 `curl -sL -o f.glb "https://drive.google.com/uc?export=download&id=<fileId>&confirm=t"` works for big files the Drive MCP refuses (>10 MB).
 Tripo Studio ids are NOT API task ids ("Task not found"); ask for a GLB export instead.
 - Unrigged hero (Inferno Bull, Tripo minotaur 1M verts): `tools/ep2_forge/decimate_textured.py` (pymeshlab, keeps UVs; needs `apt-get install libopengl0`) then `tools/ep2_forge/retarget_bull.py` puts it on the existing Meshy skeleton (nearest-vertex skin transfer, core-fit alignment, deletes the rifle fused to the left hand) so every existing clip keeps working. Keep the old GLBs in `.farm/retired/`.
+- Studio-rigged export (Tripo, UE-style 60 joints): `tools/ep2_forge/build_bull_from_tripo_rig.py <pristine meshy rig> <tripo rig> out.glb clip glbs...` keeps the Meshy bone names/rotations (clips + holders unchanged), moves joints to the Tripo positions, folds fingers/twists into the 24 joints, strips the rifle, shifts clip Hips; `Ep2Actor` drops per-bone translation keys at runtime. Check a rigged export with `scripts/glb-shot.mjs` first - a broken skin shows as stretched shards (the rigged bear did).
 - Static statues (bear archer): decimate, scale to the old model's bounds, drop in.
 # Slots
 Rifle wUN2J2, Helmet tVC8jD, Whiskey LKhotS, Bitcoin oLKt9Y (done). Inferno Bull (Tripo minotaur GLB) and the bear archer are in. Lil Blunt stays as he is (founder 2026-10-03). Never paste a key anywhere.

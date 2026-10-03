@@ -5,6 +5,12 @@
 
 ---
 
+**🐂 EPISODE 2 — YOUR TRIPO-RIGGED INFERNO BULL IS IN (2026-10-03).** You rigged him in Tripo Studio and sent the GLB; he is now built from your rig:
+- Your Tripo skeleton's joint positions and skin weights drive the model. I kept the game's bone names and rotations so every clip, the glass, the cigar and the hand-over reach keep working, and shifted the hips of each clip to his proportions. The rifle in his left hand is cut out. Captured in the real hideout: seated, walking to the wall, reaching, offering the rifle; no stretching or tearing visible.
+- Tripo API credits: the key still shows 0 (the Studio subscription does not fund the API), so nothing was spent; your Studio rig made it unnecessary.
+- **Bear archer rig not used:** your rigged bear export renders as a tangle of stretched triangles (the skin data is broken in the export), so the ledge archers keep the earlier static Tripo bear. If you want archers that draw and release, re-run Auto-Rig on the bear in Studio and send it again.
+- Pipeline and skill: `ep2-founder-asset-swap` (`build_bull_from_tripo_rig.py`).
+
 **🐂 EPISODE 2 — YOUR TRIPO INFERNO BULL AND BEAR ARCHER ARE IN (2026-10-03).** Lil Blunt stays as he is.
 - **Inferno Bull is your Tripo minotaur** (horned helmet, red bandana, pack, belts). It was an unrigged 1-million-vertex mesh, so I cut it to ~73k triangles with its texture, fitted it onto the existing Bull skeleton (the two bodies match to ~2 cm in the torso and legs) and copied the skin weights over. Every clip keeps working: seated drink, stand-up, walk, hand-over reach, idle. The rifle he carried in his left hand is cut out of the mesh so he can take the Winchester off the wall. Captured in the real hideout: seated, standing up, walking to the wall, offering the rifle.
 - **The bear archers on the ledges are your Tripo bear archer** (decimated, same size and pose as before). Not re-captured in the runner yet.
