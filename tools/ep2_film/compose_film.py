@@ -5,7 +5,7 @@ lay dialogue + foley on a timeline (NO MUSIC, ever) and encode Ogg Theora/Vorbis
   python3 tools/ep2_film/compose_film.py            # -> src/assets/video/cutscenes/ep2_cliff_to_hideout.ogv
   python3 tools/ep2_film/compose_film.py --check    # prints the timeline only
 
-Timeline entries are (file, global start seconds, gain). Clip starts: A 0, B 10, C 15, D 25 (see film.json durations).
+Timeline entries are (file, global start seconds, gain). Clip starts: S1 0, S2 5, S3 10, S4 15, S5 25 (see film.json durations).
 """
 import json, subprocess, sys
 from pathlib import Path
@@ -19,7 +19,7 @@ OUT = ROOT / "src/assets/video/cutscenes/ep2_cliff_to_hideout.ogv"
 MIX = FILM / "film_mix.wav"
 JOIN = FILM / "film_picture.mp4"
 
-CLIPS = ["A_cliff", "B_wound", "C_give", "D_teach"]
+CLIPS = ["S1_exit", "S2_fly", "S3_wound", "S4_give", "S5_teach"]
 TIMELINE = json.loads((ROOT / "tools/ep2_film/timeline.json").read_text())
 
 
@@ -56,11 +56,11 @@ def main():
         chain += f",volume={g},adelay={int(at * 1000)}|{int(at * 1000)}[a{i}]"
         flt.append(chain)
         labels.append(f"[a{i}]")
-    flt.append("".join(labels) + f"amix=inputs={len(entries)}:normalize=0,alimiter=limit=0.95,apad=whole_dur={total:.2f},atrim=0:{total:.2f}[m]")
+    flt.append("".join(labels) + f"amix=inputs={len(entries)}:normalize=0,alimiter=limit=0.95,loudnorm=I=-14:TP=-1.5:LRA=11,apad=whole_dur={total:.2f},atrim=0:{total:.2f}[m]")
     subprocess.check_call(["ffmpeg", "-v", "error", "-y", *args, "-filter_complex", ";".join(flt), "-map", "[m]", "-ar", "44100", str(MIX)])
     OUT.parent.mkdir(parents=True, exist_ok=True)
     subprocess.check_call(["ffmpeg", "-v", "error", "-y", "-i", str(JOIN), "-i", str(MIX), "-map", "0:v", "-map", "1:a",
-                           "-vf", "scale=960:540", "-c:v", "libtheora", "-q:v", str(TIMELINE.get("theora_q", 2)), "-r", "24",
+                           "-vf", "scale=1024:576", "-c:v", "libtheora", "-q:v", str(TIMELINE.get("theora_q", 2)), "-r", "24",
                            "-c:a", "libvorbis", "-q:a", "2", str(OUT)])
     print(f"wrote {OUT.relative_to(ROOT)}  {OUT.stat().st_size / 1e6:.1f} MB  {total:.1f}s")
 

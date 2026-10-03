@@ -371,8 +371,8 @@ func _ready() -> void:
 		_check("the Seedance film is playing from frame 0 (no delay)", f.get_video_film().elapsed() == 0.0 and not f._room_built)
 		_run(f, 0.5)
 		_check("...the room does not delay it: still not built at 0.5 s", not f._room_built and f.get_beat() == f.Beat.CINEMATIC)
-		_run(f, 1.0)
-		_check("...it is built behind the picture shortly after", f._room_built)
+		_run(f, 8.0)
+		_check("...and NOTHING is built while the film plays (no mid-film hitch / glitch)", not f._room_built and f.get_beat() == f.Beat.CINEMATIC)
 		var got_btc: Array = []
 		f.payment_made.connect(func(n): got_btc.append(n))
 		var got_w: Array = []

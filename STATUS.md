@@ -5,6 +5,16 @@
 
 ---
 
+**🎬 EPISODE 2 — FILM REDONE IN THE BOSS-CUT LOOK, REVOLVER + ZIPLINE SOUND, HEARTS, ZIPLINE SAFE (2026-10-03, evening).** You were right: the first film's Lil Blunt was a different character.
+- **Film:** remade from scratch. Every keyframe was rebuilt with Lil Blunt taken from your three boss-defeat cuts (goggles cowboy hat, leaf crest, red bandana), then five new Seedance shots: cart out of the mine, the flight and the head bonk on the stump (stars), Bull cleaning the wound, the Bitcoin / helmet / Winchester deal, target practice. 30 s, no music, dialogue and effects mixed at normal broadcast loudness. **Glitch:** the old film built the whole hideout while it was playing, which stuttered the picture; now nothing is built during the film, it ends on black, the hideout is built behind the black and fades in. Checked in a real render of the engine (frame 0, 6 s, 12 s, skip, first person with the rifle). Cost about $9.2 of Muapi in total for both attempts. Not checked: your browser.
+- **Revolver:** every shot now plays a hammer click and a full report with tunnel echo (6 overlapping voices), peak-normalised; a test starts three shots and checks three samples play.
+- **Zipline sound:** a loud looping cable rush for the whole ride, 13 dB above the rail loop.
+- **Zipline is safe:** nothing on the rails touches him while he is on the cable, and letting go of a chained cable no longer costs a life. Tested over every hazard type.
+- **Three hearts** on the Descent (600 m left rail, 1014 m centre, 1746 m centre): big red glowing hearts, +1 life up to 3, gone once taken.
+- **Up arrow jumps in the cart.** **Not done, needs your call:** in the hideout and first person Up/W is walk-forward (your locked scheme), so I did not make Up jump there; say if you want it anyway and where forward moves.
+- **Pack size:** the film grew (6.8 MB); I deleted six unused texture duplicates (about 5 MB, nothing referenced them) to stay under CI's 190 MB gate. CI decides.
+- **Target practice** is the existing mold-rack range, not a new shooting gallery.
+
 **🎬 EPISODE 2 — THE TRANSITION IS NOW A SEEDANCE 2 FILM (2026-10-03).** The cart-over-the-gap scene is a 30-second film made from your Google Doc, with **no music** in it (dialogue and sound effects only; you add the score).
 - **What you see:** Lil Blunt rides the cart out of the mine, hits the dead end and flies the gap into the woods, bonks his head on a stump and is out cold. Inferno Bull cleans the wound with whiskey, introduces himself, trades the Winchester 1886 and the helmet for one Bitcoin, says "time for the bull market... it's bear huntin' season, the memes must unite" and starts target practice. Then you play: first person at the mold rack with the Winchester.
 - **The delay is gone:** the film file is loaded in the background at the first panic; the cut starts the film on the same frame (measured 10 ms) and the hideout is built behind the picture a second later. Hold SPACE to skip. If the file were ever missing, the old in-engine film plays instead.

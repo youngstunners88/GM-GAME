@@ -330,7 +330,7 @@ func _ready() -> void:
 	_run_to_distance(r17, 12.0)
 	_check("no transfer jump = dropped at the end of the cable", not r17.is_ziplining())
 	_run_to_distance(r17, 25.0)
-	_check("a dropped chain costs exactly ONE health (health=%d)" % r17.get_health(), r17.get_health() == 2)
+	_check("a dropped chain costs NOTHING (founder 2026-10-03: the cable never hurts) (health=%d)" % r17.get_health(), r17.get_health() == 3)
 	r17.queue_free()
 
 	# 19. A jump ANYWHERE on a chained cable arms the swing (the old 6 m window was a quarter of a second).
@@ -433,6 +433,38 @@ func _ready() -> void:
 	for i in range(1, 4):
 		var f := FileAccess.open("res://src/assets/sounds/ep2_gun_fire_%d.mp3" % i, FileAccess.READ)
 		_check("ep2_gun_fire_%d.mp3 exists and is a real sample" % i, f != null and f.get_length() > 8000)
+
+	# 28. Nothing on the rails touches him on the cable: boxes, volleys, boulders, boarders (founder 2026-10-03).
+	var rzh := _spawn()
+	var zhaz: Array = [
+		{"z": 12.0, "lane": 1, "type": "arrow"}, {"z": 14.0, "lane": 1, "type": "boulder"},
+		{"z": 16.0, "lane": 1, "type": "box"}, {"z": 18.0, "lane": -1, "type": "boarder"},
+		{"z": 20.0, "lane": 1, "type": "shovels"}, {"z": 22.0, "lane": 1, "type": "pit"}]
+	rzh.setup(200.0, zhaz, [{"start_z": 5.0, "end_z": 40.0}])
+	_catch_zip(rzh, 5.0)
+	_run_to_distance(rzh, 30.0)
+	_check("a clean zipline over every hazard type costs 0 HP (health=%d)" % rzh.get_health(), rzh.is_ziplining() and rzh.get_health() == 3)
+	rzh.queue_free()
+
+	# 29. Three hearts on the Descent: each restores one life (max 3), once.
+	var tr = load("res://src/episode2/runner/tracks/episode2_tracks.gd")
+	var descent_leg: Dictionary = tr.LEG_DESCENT
+	var heart_rows: Array = []
+	for o in descent_leg["obstacles"]:
+		if str(o.get("type", "")) == "heart":
+			heart_rows.append(o)
+	_check("exactly three hearts on the Descent", heart_rows.size() == 3, str(heart_rows.size()))
+	var rh := _spawn()
+	rh.setup(300.0, [{"z": 10.0, "lane": 1, "type": "box"}, {"z": 40.0, "lane": 1, "type": "heart"}, {"z": 60.0, "lane": 1, "type": "heart"}])
+	var got: Array = []
+	rh.heart_collected.connect(func(h): got.append(h))
+	_run_to_distance(rh, 11.0)
+	_check("a box costs a life (health=%d)" % rh.get_health(), rh.get_health() == 2)
+	_run_to_distance(rh, 45.0)
+	_check("a heart restores one life (3)", rh.get_health() == 3 and got == [3], str(got))
+	_run_to_distance(rh, 70.0)
+	_check("a heart at full health is claimed and gone, health stays 3 (claimed=%d)" % rh.get_hearts_claimed(), rh.get_health() == 3 and rh.get_hearts_claimed() == 2)
+	rh.queue_free()
 
 	print("EP2_RUNNER_GRAYBOX: %s" % ("ALL PASS" if _fail == 0 else "%d FAILURE(S)" % _fail))
 	get_tree().quit(_fail)

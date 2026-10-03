@@ -66,6 +66,8 @@ signal chamber_reached
 signal cliff_panic(level: int)
 ## Emitted each time an obstacle is struck; carries remaining health.
 signal obstacle_hit(remaining_health: int)
+## A heart pickup was claimed (founder 2026-10-03): carries the new health. Three hearts on the Descent, each once.
+signal heart_collected(health: int)
 ## Emitted when health hits zero.
 signal run_failed
 ## Emitted when the axe hooks a cable (first cable of a chain, or a swing to the next).
@@ -160,6 +162,7 @@ var _cart_y: float = 0.0
 var _vy: float = 0.0
 var _distance: float = 0.0         # world z travelled
 var _health: int = START_HEALTH
+var _hearts_claimed: int = 0
 var _running: bool = true
 var _chamber_z: float = 200.0      # entrance distance
 var _ends_at_cliff: bool = false
@@ -267,6 +270,7 @@ func setup(chamber_z: float, obstacles: Array = [], zip_segments: Array = [],
 	_vy = 0.0
 	_distance = 0.0
 	_health = START_HEALTH
+	_hearts_claimed = 0
 	_running = true
 	_duck_held = false
 	_duck_hold_time = 0.0
@@ -397,8 +401,9 @@ func _update_zipline() -> void:
 					_zip_index = -1
 					_zip_transfer_armed = false
 					_resolve_chain_from(nxt)
+					# NOT a hit (founder 2026-10-03: "he loses health on the zipline, that is wrong"). Letting go of a
+					# cable costs nothing by itself; if the pit is under him he falls into IT (a visible hazard).
 					zip_missed.emit(dropped)
-					_take_hit()
 			else:
 				_zip_index = -1
 				_zip_transfer_armed = false
@@ -533,6 +538,16 @@ func _check_obstacles(cur_x: float) -> void:
 				_gold += 1
 				gold_collected.emit(_gold)
 			continue
+		if str(o.get("type", "")) == "heart":
+			# A heart restores ONE life (up to START_HEALTH) and is gone for the run. Claimed by passing through it,
+			# on the rails or on the cable alike (same rule as the BTC).
+			if not o.get("taken", false) and absf(_distance - float(o["z"])) <= OBSTACLE_HIT_Z \
+					and absf(cur_x - LANE_X[clampi(int(o["lane"]), 0, LANE_X.size() - 1)]) <= OBSTACLE_HIT_X:
+				o["taken"] = true
+				_hearts_claimed += 1
+				_health = mini(_health + 1, START_HEALTH)
+				heart_collected.emit(_health)
+			continue
 		if absf(_distance - float(o["z"])) > OBSTACLE_HIT_Z:
 			continue
 		var lane_i: int = int(o["lane"])
@@ -540,6 +555,8 @@ func _check_obstacles(cur_x: float) -> void:
 		if lane_i >= 0 and absf(cur_x - LANE_X[lane_i]) > OBSTACLE_HIT_X:
 			continue
 		var hazard_type: String = str(o.get("type", "box"))
+		if _ziplining:
+			continue    # the cable is the safe line (founder 2026-10-03): nothing on the rails touches him up there
 		if hazard_type == "boarder":
 			if _swipe_t > 0.0:
 				o["repelled"] = true
@@ -868,6 +885,7 @@ func get_lane() -> int: return _lane
 func get_cart_x() -> float: return _cart.position.x if _cart else LANE_X[_lane]
 func get_cart_y() -> float: return _cart_y
 func get_health() -> int: return _health
+func get_hearts_claimed() -> int: return _hearts_claimed
 func is_running() -> bool: return _running
 func is_ducking() -> bool: return _is_ducking_effective()
 func is_duck_held() -> bool: return _duck_held

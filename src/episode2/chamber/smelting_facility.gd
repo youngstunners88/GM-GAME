@@ -118,9 +118,7 @@ const WAKE_POSITION := Vector3(0.4, 0.0, 3.6)
 ## gap, Lil Blunt is knocked out, Inferno Bull patches him up, sells him the Winchester + helmet for a Bitcoin and
 ## starts target practice. NO MUSIC in it (the founder scores it later). Built by tools/ep2_film/compose_film.sh.
 const FILM_VIDEO := "res://src/assets/video/cutscenes/ep2_cliff_to_hideout.ogv"
-const FILM_SECONDS := 30.3
-## The hideout is built this far into the film (the picture is already moving, so the hitch hides behind it).
-const FILM_BUILD_AT := 1.2
+const FILM_SECONDS := 30.4
 const FILM_OFFSET := Vector3(4000.0, 0.0, 0.0)   # the film set lives far from the room: no shared light, no overlap
 const COMPANION_ID := "inferno_bull"
 
@@ -344,7 +342,7 @@ func _on_video_film_finished() -> void:
 	if _camera and is_instance_valid(_camera):
 		_camera.make_current()
 	if _vfilm and is_instance_valid(_vfilm):
-		_vfilm.queue_free()
+		_vfilm.release(0.8)         # the room was built behind its black: fade the black away, then it frees itself
 	_vfilm = null
 	_beat = Beat.HELMET
 	_advance()      # -> VERB_TEACH: first person, the mold rack
@@ -402,8 +400,6 @@ func step(delta: float) -> void:
 
 	if _beat == Beat.CINEMATIC:
 		if _vfilm and is_instance_valid(_vfilm):
-			if _elapsed >= FILM_BUILD_AT:
-				_ensure_room()
 			_vfilm.step(delta)      # the facility owns the film's clock (physics time), never both
 			return
 		if _film and is_instance_valid(_film):

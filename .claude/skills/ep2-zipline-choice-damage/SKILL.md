@@ -12,3 +12,8 @@ description: Episode 2 runner - a zipline choice must have ONE safe path and ONE
 # Proof
 `tests/ep2_runner_graybox_test.tscn`: skipped chain = 0 HP; pit on rails = -1; pit via cable = 0.
 Capture both choices (rails vs cable) before saying fixed.
+
+# Update 2026-10-03 (founder: "he loses health on the zipline, that is wrong")
+While `_ziplining` NOTHING costs health: not boxes, arrows (he cannot duck up there), boulders, boarders, and not letting go of a chained cable (it used to `_take_hit()`). The only punish is the visible pit he then falls into. Tests: "a clean zipline over every hazard type costs 0 HP", "a dropped chain costs NOTHING".
+# Hearts
+Three `"type": "heart"` rows on the Descent (z 600 lane 0, 1014 lane 1, 1746 lane 1): claimed by passing through (rails or cable), +1 life up to START_HEALTH, gone for the run; `heart_collected(health)`; red glowing pickup in `runner_view._heart_pickup_node`.

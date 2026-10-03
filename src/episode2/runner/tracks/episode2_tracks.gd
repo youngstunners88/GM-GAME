@@ -98,6 +98,8 @@ const LEG_DESCENT := {
 		{"z": 500.0, "lane": 1, "type": "boulder"},
 		{"z": 500.0, "lane": 2, "type": "boulder"},
 		{"z": 535.0, "lane": 0, "type": "gold"},
+		# HEART 1 of 3 (founder 2026-10-03): a visible red heart on the left rail, clear of every hazard around it.
+		{"z": 600.0, "lane": 0, "type": "heart"},
 		{"z": 543.0, "lane": 0, "type": "gold"},
 		{"z": 560.0, "lane": 0, "type": "arrow", "archer": "d_a2"},
 		{"z": 560.0, "lane": 1, "type": "arrow", "archer": "d_a2"},
@@ -126,6 +128,8 @@ const LEG_DESCENT := {
 		{"z": 980.0, "lane": 1, "type": "gold"},
 		{"z": 988.0, "lane": 1, "type": "gold"},
 		{"z": 996.0, "lane": 1, "type": "gold"},
+		# HEART 2 of 3 (centre, after the gold line, before the Gallery boxes).
+		{"z": 1014.0, "lane": 1, "type": "heart"},
 		{"z": 1030.0, "lane": 0, "type": "box"},
 		{"z": 1030.0, "lane": 2, "type": "box"},
 		{"z": 1060.0, "lane": 0, "type": "arrow", "archer": "d_a4"},
@@ -161,6 +165,8 @@ const LEG_DESCENT := {
 		{"z": 1700.0, "lane": 1, "type": "gold"},
 		{"z": 1710.0, "lane": 1, "type": "gold"},
 		{"z": 1720.0, "lane": 1, "type": "gold"},
+		# HEART 3 of 3 (the last breather before the cliff).
+		{"z": 1746.0, "lane": 1, "type": "heart"},
 	],
 	"zip_segments": [
 		{"start_z": 430.0, "end_z": 470.0},

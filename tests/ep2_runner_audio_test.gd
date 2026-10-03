@@ -46,6 +46,31 @@ func _ready() -> void:
 	_check("arrow/boulder/bear announced once each", audio._announced.size() == 3, str(audio._announced))
 	audio._process(0.016)
 	_check("no re-announce", audio._announced.size() == 3)
+
+	# THE REVOLVER IS AUDIBLE (founder 2026-10-03): every shot starts a hammer click and a report sample, and a
+	# volley overlaps instead of cutting itself off.
+	for f in audio.GUN_BLASTS:
+		var st: AudioStream = load(audio.ELEVEN + str(f)) as AudioStream
+		_check("%s loads and is a real sample" % f, st != null and st.get_length() > 1.0)
+	_check("revolver pool built", audio._gun_players.size() == audio.GUN_POOL and audio._hammer != null and audio._hammer.stream != null)
+	r.setup(200.0, [], [], [], true)
+	var before: int = audio.shots_played
+	r.shot_fired.emit()
+	r.shot_fired.emit()
+	r.shot_fired.emit()
+	_check("three shots start three report samples", audio.shots_played == before + 3, str(audio.shots_played))
+	var playing: int = 0
+	for gp in audio._gun_players:
+		if (gp as AudioStreamPlayer).playing:
+			playing += 1
+	_check("they overlap (volley does not cut itself off)", playing >= 2, str(playing))
+	_check("the report is louder than +0 dB", audio._gun_players[0].volume_db >= 3.0)
+
+	# THE ZIPLINE IS LOUD: a looping cable rush, louder than the rail loop, only while hooked.
+	var zp: AudioStreamPlayer = audio._players.get("ep2_runner_zipline_rush_loop_02")
+	_check("zipline rush loop player exists with a stream", zp != null and zp.stream != null)
+	_check("zipline rush loops", zp != null and zp.stream is AudioStreamMP3 and (zp.stream as AudioStreamMP3).loop)
+	_check("zipline rush is much louder than the rail loop", zp != null and zp.volume_db >= audio.VOLUME_DB["ep2_runner_cart_rails_loop_01"] + 10.0)
 	_finish()
 
 func _finish() -> void:

@@ -407,6 +407,10 @@ func _unhandled_input(event: InputEvent) -> void:
 					if k.physical_keycode == KEY_X:
 						runner_swipe()
 						return
+					if k.physical_keycode == KEY_UP:
+						# Founder 2026-10-03: Up arrow jumps in the cart, same as Space (lanes stay on A/D / Left/Right).
+						runner_jump()
+						return
 			if event.is_action_pressed("move_left"):
 				runner_switch_lane_left()
 			elif event.is_action_pressed("move_right"):

@@ -40,3 +40,6 @@ ziplining too; pressing F changes the screen size, make it X, and right-click st
   works while ziplining; sound files exist. Then the track solvability bot (`ep2_session_root_test`).
 - Sound: measured loudness, variants, bus = SFX. Never add runtime bus effects (web silence trap).
 - Input: only keys safe in a browser embed; hint text updated.
+
+# Update 2026-10-03 (founder: "the revolver has no sound... it's a fucking REVOLVER")
+The gun layer now ALSO lives in `runner_audio.gd`: `shot_fired` -> hammer click + a report from a 6-player pool (volleys overlap), samples `ep2_revolver_blast_1..3.mp3` (ElevenLabs, peak-normalised to -1 dB: one take came out at -16 dB peak, ALWAYS measure with `ffmpeg -af volumedetect`) at +4 dB. The zipline has a looping `ep2_zipline_rush_loud.mp3` at +5 dB while hooked (rails loop is -8 dB and is off then). Test: tests/ep2_runner_audio_test.gd. `generate_audio.py` regenerates missing files; film_* voice lines belong in tools/ep2_film/voice/, delete the copies it writes to src/.

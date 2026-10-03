@@ -297,6 +297,36 @@
       "id": "ep2_gun_fire_3",
       "prompt": "One powerful western revolver blast, deep thunderous bang with a bright snap on top and a quick metallic ricochet whine, cinematic gunfire sound effect, no music",
       "duration_seconds": 1.2
+    },
+    {
+      "id": "ep2_revolver_blast_1",
+      "prompt": "Single .357 magnum revolver gunshot fired inside a stone mine tunnel: razor-sharp loud crack, deep chest-thumping boom, then a long booming echo reverberating down the tunnel, close microphone, realistic, no music",
+      "duration_seconds": 2.0,
+      "prompt_influence": 0.5
+    },
+    {
+      "id": "ep2_revolver_blast_2",
+      "prompt": "One loud western revolver shot in a cave, sharp metallic bang with heavy low thump and a long stone-tunnel echo tail with ricochet, cinematic, very loud, no music",
+      "duration_seconds": 2.0,
+      "prompt_influence": 0.5
+    },
+    {
+      "id": "ep2_revolver_blast_3",
+      "prompt": "Big single-action revolver blast, explosive crack and boom, then slap-back echo off rock walls fading, realistic gunshot sound effect, no music",
+      "duration_seconds": 2.0,
+      "prompt_influence": 0.5
+    },
+    {
+      "id": "ep2_revolver_hammer",
+      "prompt": "Revolver hammer being cocked back, crisp mechanical double click of a single action Colt, metallic, close, no music",
+      "duration_seconds": 0.6,
+      "prompt_influence": 0.5
+    },
+    {
+      "id": "ep2_zipline_rush_loud",
+      "prompt": "Zipline ride: a steel pulley wheel screaming along a taut metal cable, loud rising metallic whine and rattle with rushing wind, fast and thrilling, continuous, no music",
+      "duration_seconds": 8.0,
+      "prompt_influence": 0.5
     }
   ],
   "music": [

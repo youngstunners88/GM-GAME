@@ -453,6 +453,7 @@ func _connect_sim() -> void:
 		"hop_blocked": _on_hop_blocked,
 		"rider_bailed": _on_rider_bailed,
 		"gold_collected": _on_gold_collected,
+		"heart_collected": _on_heart_collected,
 		"cliff_panic": _on_cliff_panic,
 	}
 	for sig in pairs:
@@ -1473,7 +1474,7 @@ func _build_hazards() -> void:
 			"boulder":
 				boulder_node = _boulder_node(x, z)
 				_add_telegraph(x, z, C_HOP, "HOP!")
-			"boarder", "gold":
+			"boarder", "gold", "heart":
 				pass                        # built by _build_boarders() / _build_gold()
 			"shovels":
 				if lane == 1:
@@ -1740,6 +1741,14 @@ func _build_gold() -> void:
 	var half: float = COIN_R * 0.08 + 0.002
 	for oi in obs_all.size():
 		var o: Dictionary = obs_all[oi]
+		if str(o.get("type", "")) == "heart":
+			# A HEART (founder 2026-10-03): big, red, glowing and spinning, in the rider's lane, impossible to miss.
+			var hl: int = clampi(int(o["lane"]), 0, _lane_xs().size() - 1)
+			var hn := _heart_pickup_node()
+			hn.position = Vector3(float(_lane_xs()[hl]), GOLD_Y + 0.3, float(o["z"]))
+			_world.add_child(hn)
+			_gold_nodes.append(hn)
+			continue
 		if str(o.get("type", "")) != "gold":
 			_gold_nodes.append(null)
 			continue
@@ -1983,6 +1992,48 @@ func _build_rail_events() -> void:
 			lbl.position = Vector3(lx, 2.9, z)
 			_labels.append({"node": lbl, "z": z, "strip": null, "archer": "", "near": 2.0})
 
+## The heart pickup: two lobes and a point, red and self-lit (Compatibility renderer: emission, not reflections),
+## with a soft red light so it reads in the dark tunnel from 90 m out.
+func _heart_pickup_node() -> Node3D:
+	var n := Node3D.new()
+	n.name = "HeartPickup"
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(1.0, 0.12, 0.2)
+	mat.emission_enabled = true
+	mat.emission = Color(1.0, 0.1, 0.18)
+	mat.emission_energy_multiplier = 1.6
+	mat.roughness = 0.3
+	var spin := Node3D.new()
+	spin.scale = Vector3.ONE * 1.35
+	n.add_child(spin)
+	for sx in [-1.0, 1.0]:
+		var lobe := MeshInstance3D.new()
+		var sm := SphereMesh.new()
+		sm.radius = 0.3
+		sm.height = 0.6
+		lobe.mesh = sm
+		lobe.material_override = mat
+		lobe.position = Vector3(0.22 * float(sx), 0.14, 0.0)
+		spin.add_child(lobe)
+	var tip := MeshInstance3D.new()
+	var cm := CylinderMesh.new()
+	cm.top_radius = 0.46
+	cm.bottom_radius = 0.0
+	cm.height = 0.62
+	cm.radial_segments = 4
+	tip.mesh = cm
+	tip.material_override = mat
+	tip.position = Vector3(0.0, -0.2, 0.0)
+	tip.rotation.y = PI * 0.25
+	spin.add_child(tip)
+	var glow := OmniLight3D.new()
+	glow.light_color = Color(1.0, 0.25, 0.3)
+	glow.light_energy = 2.2
+	glow.omni_range = 7.0
+	n.add_child(glow)
+	n.set_meta("spin", spin)
+	return n
+
 func _update_gold(dist: float, delta: float) -> void:
 	var obs: Array = _sim.get_obstacles()
 	for i in mini(_gold_nodes.size(), obs.size()):
@@ -1993,11 +2044,13 @@ func _update_gold(dist: float, delta: float) -> void:
 		if bool(o.get("taken", false)):
 			if n.visible:
 				n.visible = false
+				var is_heart: bool = str(o.get("type", "")) == "heart"
 				if _gold_burst:
 					_gold_burst.position = n.position
 					_gold_burst.restart()
 					_gold_burst.emitting = true
-				_popup("+1 BTC", C_GOLD_HUD, n.position + Vector3(0.0, 1.2, 1.5))
+				_popup("+1 LIFE" if is_heart else "+1 BTC", Color(1.0, 0.3, 0.38) if is_heart else C_GOLD_HUD,
+					n.position + Vector3(0.0, 1.2, 1.5))
 			continue
 		var ahead: float = float(o["z"]) - dist
 		n.visible = ahead > -2.0 and ahead < 90.0 and not debug_off.has("gold")
@@ -3197,6 +3250,10 @@ func _on_rider_bailed(_from: int, _to: int) -> void:
 
 ## Every BTC is a fist-pump (founder 2026-10-02: "make Lil Blunt react to collecting the BTC").
 func _on_gold_collected(_total: int) -> void:
+	_t_cheer = 0.0
+
+## A heart is a bigger cheer than a coin.
+func _on_heart_collected(_health: int) -> void:
 	_t_cheer = 0.0
 
 ## 0..1 how close the cliff edge is (cliff legs only): drives the hunch-and-grab pose and the camera.

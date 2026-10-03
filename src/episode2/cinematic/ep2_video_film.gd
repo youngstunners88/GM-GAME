@@ -31,6 +31,10 @@ var _done: bool = false
 var _music_muted: bool = false
 var _hint: Label = null
 var _driven_externally: bool = false
+var _bg: ColorRect = null
+var _finishing: bool = false       # the picture is gone and black is on screen; `finished` follows two frames later
+var _black_frames: int = 0
+var _black_steps: int = 0
 
 
 ## Build the player. Returns false (and emits nothing) when the stream is missing or not decodable, so the caller
@@ -49,6 +53,7 @@ func prepare(path: String, length_seconds: float) -> bool:
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
+	_bg = bg
 	_video = VideoStreamPlayer.new()
 	_video.name = "Ep2Film"
 	_video.stream = stream
@@ -97,6 +102,10 @@ func start() -> void:
 
 
 func _process(delta: float) -> void:
+	if _finishing:
+		_black_frames += 1
+		_try_emit_finished()
+		return
 	if not _driven_externally:
 		step(delta)
 	if _hint:
@@ -105,6 +114,10 @@ func _process(delta: float) -> void:
 
 ## Advance the clock; the skip hold and the stall guard both live here.
 func step(delta: float) -> void:
+	if _finishing:
+		_black_steps += 1
+		_try_emit_finished()
+		return
 	if _done:
 		return
 	_t += delta
@@ -125,6 +138,7 @@ func drive_externally() -> void:
 
 
 func is_done() -> bool: return _done
+func is_finishing() -> bool: return _finishing
 func elapsed() -> float: return _t
 
 
@@ -132,14 +146,37 @@ func skip() -> void:
 	_finish()
 
 
+## The film ends on BLACK, never on a frozen frame: the picture is hidden first and `finished` is emitted two
+## rendered frames later (or three clock steps in a headless run), so whatever the owner builds in response (the
+## whole hideout, ~1 s on the web) happens behind black and cannot stutter the film's picture or sound. The film
+## itself NEVER does heavy work while it plays (the glitch the founder saw was the room being built mid-film).
 func _finish() -> void:
 	if _done:
 		return
 	_done = true
 	if _video and is_instance_valid(_video):
 		_video.stop()
+		_video.visible = false
+	if _hint:
+		_hint.visible = false
 	_unmute_music()
-	finished.emit()
+	_finishing = true
+
+
+func _try_emit_finished() -> void:
+	if _black_frames >= 2 or _black_steps >= 3:
+		_finishing = false
+		finished.emit()
+
+
+## After the owner has built its scene behind the black: fade the black out and free the film.
+func release(seconds: float = 0.8) -> void:
+	if _bg == null or not is_inside_tree():
+		queue_free()
+		return
+	var tw := create_tween()
+	tw.tween_property(_bg, "color:a", 0.0, seconds)
+	tw.finished.connect(queue_free)
 
 
 func _mute_music() -> void:

@@ -1,15 +1,47 @@
 {
-  "style": "Cinematic 3D-animated feature-film look, warm golden-hour firelight, rich amber and copper colour grade, shallow depth of field, same characters and art style as the reference image. Silent film: absolutely no music, no score, no singing, no soundtrack.",
-  "resolution": "720p",
-  "quality": "basic",
-  "shots": [
-    {"id": "A_cliff", "duration": 10, "images": [".farm/film/kf1_exit.png"],
-     "prompt": "Lil Blunt, a small green weed-nugget hero in a cowboy hat, rides the wooden mine cart down the tracks out of the mine mouth. The camera follows from behind. The tracks end at a dead end; the cart launches off the broken rails and flies in a slow arc over a wide gap into a sunlit woods plain with rocks and tree stumps. He tumbles, bonks his head hard on a tree stump and lies knocked out, little stars circling, dust settling."},
-    {"id": "B_wound", "duration": 5, "images": [".farm/film/kf2a_wound.png"],
-     "prompt": "Inside the gold-and-guns hideout, the huge black bull Inferno Bull, cigar in his mouth, kneels and gently dabs a cloth soaked in whiskey on the bump on the unconscious Lil Blunt's forehead. Lil Blunt winces and slowly stirs awake. Smoke drifts, molten gold glows behind."},
-    {"id": "C_give", "duration": 10, "images": [".farm/film/kf2_give.png"],
-     "prompt": "Inferno Bull, seated, introduces himself with a confident gruff gesture, lifts the Winchester 1886 rifle and the glowing mining helmet and holds them out. Lil Blunt, grinning, hands over a small golden bitcoin coin in exchange, takes the helmet and puts it on, then grabs the rifle. Cigar smoke curls, lamplight flickers."},
-    {"id": "D_teach", "duration": 5, "images": [".farm/film/kf3_teach.png"],
-     "prompt": "Inferno Bull stands behind Lil Blunt and shows him how to hold the Winchester, adjusting the aim toward a target in the hideout. Lil Blunt fires once, a bright muzzle flash, and the bull nods proudly and points toward the mine exit."}
-  ]
+ "style": "Painterly cinematic 3D-animated adventure film, same look and same characters as the reference image: chunky chibi Lil Blunt (green creature, big round eyes, spiky green leaf crest, brown cowboy hat with aviator goggles, red bandana), dynamic trailer-style camera, warm saturated golden light, rich amber colour grade. Silent film: absolutely no music, no score, no singing.",
+ "resolution": "720p",
+ "quality": "basic",
+ "shots": [
+  {
+   "id": "S1_exit",
+   "duration": 5,
+   "images": [
+    ".farm/film/v2/k1.png"
+   ],
+   "prompt": "The camera chases the wooden mine cart down the three rails out of the mine mouth; Lil Blunt grips the rim, stares ahead as the rails end at a dead end, his eyes go wide, the cart hits the broken rail end and launches into the air in a slow-motion arc over the gap."
+  },
+  {
+   "id": "S2_fly",
+   "duration": 5,
+   "images": [
+    ".farm/film/v2/k2.png"
+   ],
+   "prompt": "Lil Blunt flies over the gap in the cart, panicking, the cart tumbles away, he spins through the air and slams his head hard on a big tree stump, stars circle above him, he lies knocked out, dust settling, golden hour light."
+  },
+  {
+   "id": "S3_wound",
+   "duration": 5,
+   "images": [
+    ".farm/film/v2/k3.png"
+   ],
+   "prompt": "Inferno Bull gently dabs the whiskey-soaked cloth on the bump on Lil Blunt's forehead; Lil Blunt winces and groans and slowly opens one eye, steam and embers drifting, molten gold glowing behind them."
+  },
+  {
+   "id": "S4_give",
+   "duration": 10,
+   "images": [
+    ".farm/film/v2/k4.png"
+   ],
+   "prompt": "Inferno Bull, seated, introduces himself with a proud gruff gesture, lifts the Winchester rifle and the glowing miner helmet toward Lil Blunt; Lil Blunt grins, hands over a small golden bitcoin coin, takes the helmet and puts it on, then grabs the rifle with a big happy bounce. Cigar smoke curls."
+  },
+  {
+   "id": "S5_teach",
+   "duration": 5,
+   "images": [
+    ".farm/film/v2/k5.png"
+   ],
+   "prompt": "Inferno Bull stands behind Lil Blunt guiding the Winchester toward the targets; Lil Blunt fires, bright muzzle flash and a target is hit, Bull nods proudly and points ahead."
+  }
+ ]
 }
