@@ -55,6 +55,10 @@ func setup(scene_path: String, native_height: float, height: float, clips: Dicti
 	for cn in clips:
 		add_clip(str(cn), str(clips[cn]))
 	if anim:
+		var own_lib: AnimationLibrary = anim.get_animation_library("")
+		if own_lib:
+			for an in own_lib.get_animation_list():
+				_drop_bone_translations(own_lib.get_animation(an))
 		for c in loops:
 			if anim.has_animation(c):
 				anim.get_animation(c).loop_mode = Animation.LOOP_LINEAR
@@ -74,6 +78,14 @@ func setup(scene_path: String, native_height: float, height: float, clips: Dicti
 	return true
 
 
+## The Meshy clips are baked with a translation key on EVERY bone (the old skeleton's bone lengths). A character rigged
+## on different proportions (the founder's Tripo Bull) must keep its own bone lengths, so only the Hips keeps moving.
+static func _drop_bone_translations(a: Animation) -> void:
+	for i in range(a.get_track_count() - 1, -1, -1):
+		if a.track_get_type(i) == Animation.TYPE_POSITION_3D and not str(a.track_get_path(i)).ends_with(":Hips"):
+			a.remove_track(i)
+
+
 ## Copy the first animation of an armature-only Meshy GLB into this actor's player under `clip_name`.
 func add_clip(clip_name: String, path: String) -> void:
 	if anim == null or not ResourceLoader.exists(path):
@@ -85,7 +97,9 @@ func add_clip(clip_name: String, path: String) -> void:
 		var names: PackedStringArray = sp.get_animation_list()
 		var lib: AnimationLibrary = anim.get_animation_library("")
 		if not names.is_empty() and lib and not lib.has_animation(clip_name):
-			lib.add_animation(clip_name, sp.get_animation(names[0]).duplicate(true))
+			var cl: Animation = sp.get_animation(names[0]).duplicate(true)
+			_drop_bone_translations(cl)
+			lib.add_animation(clip_name, cl)
 	src.free()
 
 
@@ -133,7 +147,9 @@ func add_all_clips(path: String) -> void:
 		var lib: AnimationLibrary = anim.get_animation_library("")
 		for cn in sp.get_animation_list():
 			if lib and not lib.has_animation(cn):
-				lib.add_animation(cn, sp.get_animation(cn).duplicate(true))
+				var cl: Animation = sp.get_animation(cn).duplicate(true)
+				_drop_bone_translations(cl)
+				lib.add_animation(cn, cl)
 	src.free()
 
 
