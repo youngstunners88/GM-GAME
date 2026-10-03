@@ -1,0 +1,47 @@
+{
+  "source_sha": "3469b642d085b80be2ce947214eb9d2e516f53bc",
+  "build_id": "2026-10-03-3469b64",
+  "play_url": "https://youngstunners88.itch.io/smokerealm",
+  "checks": {
+    "export": true,
+    "gameplay": true,
+    "visual": true,
+    "security": true,
+    "deployment": true,
+    "live_input": true
+  },
+  "deployment": {
+    "run_url": "https://github.com/youngstunners88/GM-GAME/actions/runs/37141122366",
+    "outcome": "success",
+    "deploy_step": "success",
+    "observed_build_id": "2026-10-03-3469b64"
+  },
+  "evidence": [
+    {
+      "kind": "visual",
+      "path": "17_film_resume_hands.jpg"
+    },
+    {
+      "kind": "visual",
+      "path": "live-bull.jpg"
+    },
+    {
+      "kind": "gameplay",
+      "path": "test-results.json"
+    },
+    {
+      "kind": "export",
+      "path": "ci-deployment.json"
+    },
+    {
+      "kind": "live",
+      "path": "browser-live.json"
+    }
+  ],
+  "open_blockers": [],
+  "limitations": [
+    "Cinematic reference fidelity remains partial.",
+    "Desktop smoke test; mobile and long soak not verified.",
+    "Browser test uses an HTML-only saved-unlock fixture after independently verifying rejection of an invalid code. Backend and telemetry requests were blocked; original PCK unchanged."
+  ]
+}
