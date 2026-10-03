@@ -1,0 +1,64 @@
+{
+  "source_sha": "5fa78b99ffadcedd3a5011e03a542470475589ef",
+  "build_id": "2026-10-03-5fa78b9",
+  "play_url": "https://youngstunners88.itch.io/smokerealm",
+  "checks": {
+    "export": true,
+    "gameplay": true,
+    "visual": true,
+    "security": true,
+    "deployment": true,
+    "live_input": true
+  },
+  "deployment": {
+    "run_url": "https://github.com/youngstunners88/GM-GAME/actions/runs/37117579633",
+    "outcome": "success",
+    "deploy_step": "success",
+    "observed_build_id": "2026-10-03-5fa78b9"
+  },
+  "evidence": [
+    {
+      "kind": "visual",
+      "path": "cliff-before-after.jpg"
+    },
+    {
+      "kind": "visual",
+      "path": "hideout-entry-before-after.jpg"
+    },
+    {
+      "kind": "visual",
+      "path": "hideout-gold-before-after.jpg"
+    },
+    {
+      "kind": "visual",
+      "path": "release-evidence/live-runner.png"
+    },
+    {
+      "kind": "gameplay",
+      "path": "test-results.json"
+    },
+    {
+      "kind": "gameplay",
+      "path": "release-evidence/gameplay.json"
+    },
+    {
+      "kind": "export",
+      "path": "release-evidence/export.json"
+    },
+    {
+      "kind": "live",
+      "path": "release-evidence/live.json"
+    },
+    {
+      "kind": "live",
+      "path": "release-evidence/deployment.json"
+    }
+  ],
+  "open_blockers": [],
+  "limitations": [
+    "External service calls blocked during final browser QA; backend/telemetry not certified",
+    "QA-only saved-unlock/chamber-shortcut fixtures used; shipped access gate unchanged",
+    "Full film-to-exit, stress soak, mobile controls and before/after FPS benchmark not repeated",
+    "Exact painterly reference fidelity remains partial; no external art grade claimed"
+  ]
+}

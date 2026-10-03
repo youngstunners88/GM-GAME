@@ -1,0 +1,93 @@
+{
+  "source_sha": "36515d5836a00200d5c3c32406a1b3944221f89d",
+  "retrieved": "2026-10-03",
+  "references": [
+    {
+      "role": "mine-exit",
+      "drive_id": "1qeoltTn7hETQpXPZ6J-G8pdk5p-So7_G",
+      "title": "Lil Blunt exiting",
+      "bytes": 2721304,
+      "sha512": "d40278761793492039d568b63ee78877bedfa4cdecf8b48590c43b82050c2eace73a3a1b6a19deb6b5446ec365b46e7a15c327c450fb3fc1723101f48f1a8095"
+    },
+    {
+      "role": "handover",
+      "drive_id": "15JDO5CYVjACVWXJpC-s6PfSiubYzNGxH",
+      "title": "Inferno Giving Lil Blunt",
+      "bytes": 2713958,
+      "sha512": "d66295402633995249db2ff6b4f5a35978fa63390cb2fa5c4915e5a6c938aad1c365774f758128ba2dc8444e83d88e4b64114684d55024cc256f0bb560b64ce4"
+    },
+    {
+      "role": "practice",
+      "drive_id": "1Alq_TCqo1Jj2GIcxNWy6vbaM7AXHmv8f",
+      "title": "Inferno Teaching Lil Blunt",
+      "bytes": 2870003,
+      "sha512": "ebcd7941c153fc514c7cffd60c30aca0630ef6433ef5ae11822eb8801b85293e215c61b65e6a434e50851bcff5fddec9ede748c7c62cfb3c71acf526f6f57dfc"
+    }
+  ],
+  "captures": {
+    "native_renderer": "Compatibility GL, Mesa software",
+    "before_source": "36515d5836a00200d5c3c32406a1b3944221f89d",
+    "mine": {
+      "resolution": [
+        1280,
+        720
+      ],
+      "leg": 0,
+      "metres": [
+        20,
+        100
+      ],
+      "aim": [
+        800,
+        300
+      ]
+    },
+    "cliff": {
+      "resolution": [
+        1280,
+        720
+      ],
+      "leg": 0,
+      "custom": "cliff,240m",
+      "metres": [
+        155,
+        205,
+        225
+      ],
+      "aim": [
+        800,
+        300
+      ]
+    },
+    "hideout": {
+      "resolution": [
+        960,
+        540
+      ],
+      "scene": "tools/ep2_shots/player_view_shot.tscn",
+      "intro_film": false,
+      "views": [
+        "arrival",
+        "forward",
+        "midroom",
+        "left",
+        "right",
+        "back",
+        "up"
+      ]
+    },
+    "after_visual_source": "e9a89251ab7093618e67126acd0f17b801fef1f6",
+    "final_browser_note": "Final HUD layout is captured in the final release receipt; scenery comparison boards precede that layout-only follow-up."
+  },
+  "brief": "https://docs.google.com/document/d/1R4jePFGb_OUNAD05sCpxudPl70VRQtbSdpS11gqJZiA/edit",
+  "asset_sources": "https://docs.google.com/document/d/17PRzuRjmLdSboIDT-zMWOipB6j2pK1YPO2QZru2jadE/edit",
+  "new_environment_asset": {
+    "path": "src/episode2/assets/textures/tex_cliff_woods.jpg",
+    "method": "Built-in image generation; environment only, then JPEG encoding at quality 88",
+    "intent": "Painterly golden-hour pine forest and rocky gorge beyond the mine mouth; no characters, carts, rails, buildings or text",
+    "bytes": 444788,
+    "sha512": "6da434f3fbe89c5d5e36c8dc8a714c71e8833667e63e00b301737bc5c7b9ae4a873dc34e8bdeb274546961f6d3c81c0128d619dd6568613e4208ccb1f06760d7",
+    "import": "Lossy WebP, quality 0.82, mipmaps enabled, no VRAM compression dependency",
+    "imported_bytes": 465858
+  }
+}

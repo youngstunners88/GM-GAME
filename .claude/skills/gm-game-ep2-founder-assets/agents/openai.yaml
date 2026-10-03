@@ -1,0 +1,14 @@
+interface:
+  display_name: Episode 2 Founder Assets
+  short_description: Preserve, inspect and integrate founder models
+  default_prompt: Use $gm-game-ep2-founder-assets to inspect and integrate the founder’s
+    Episode 2 assets without changing Lil Blunt.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

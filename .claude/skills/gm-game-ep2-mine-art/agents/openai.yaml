@@ -1,0 +1,14 @@
+interface:
+  display_name: Episode 2 Mine Art
+  short_description: Polish the mine and cliff from the player camera
+  default_prompt: Use $gm-game-ep2-mine-art to improve Episode 2 mine and cliff visuals
+    and verify the playable build.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

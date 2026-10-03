@@ -1,0 +1,18 @@
+{
+  "source_sha": "5fa78b99ffadcedd3a5011e03a542470475589ef",
+  "engine": "Godot 4.3 stable",
+  "preset": "CI-identical Web; nonthreaded; Compatibility",
+  "local_build_tag": "dev-local",
+  "pack_bytes": 197016800,
+  "pack_mib": 187.88986206054688,
+  "maximum_bytes": 199229440,
+  "pack_sha512": "8414e9cc5a736dc6e923292fc95f17b318d184034885a132dd3807f07554da65883ab3738cf656897142fe0dbda695eb35486db7bda4961420d20d8aae455d5d",
+  "script_or_parse_errors": 0,
+  "compile": {
+    "scripts": 277,
+    "scenes": 205,
+    "passed": true
+  },
+  "security_sentinel": "18/18; post-staging",
+  "front_page": "5 protected files pass"
+}

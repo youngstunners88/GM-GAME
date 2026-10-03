@@ -1,0 +1,14 @@
+interface:
+  display_name: Episode 2 Hideout Art
+  short_description: Match Inferno Bull’s hideout from the player view
+  default_prompt: Use $gm-game-ep2-hideout-art to improve Inferno Bull’s hideout against
+    the founder references.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

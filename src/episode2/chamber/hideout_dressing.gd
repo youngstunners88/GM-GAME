@@ -61,6 +61,7 @@ func _build(visuals: Node3D) -> Dictionary:
 	_gold.emission_energy_multiplier = 0.18
 	_leather = _plain(Color(0.28, 0.15, 0.09), 0.7, 0.0)
 	_alcove()
+	_entry_wall()
 	var poster := _poster()
 	_trophies()
 	var gat: Node3D = _gatling(Vector3(-4.0, 0.0, 7.2), -2.21)
@@ -224,6 +225,35 @@ func _alcove() -> void:
 			var lp: Node3D = _glb(LANTERN, Vector3((WALL_X - 0.45) * sx, 3.5, lz), 1.1, 0.0)
 			if lp:
 				RunnerView.self_light(lp, 0.25, Color(1.0, 0.72, 0.38))
+
+## Arrival-side rock face. Looking back previously exposed only the flat forge
+## background colour. The framed old mine remains beyond the walk boundary;
+## dressing adds no collision, exit or change to the film/entry beat.
+func _entry_wall() -> void:
+	var rock: StandardMaterial3D = _tex_mat(
+		"res://src/episode2/assets/textures/tex_rock_wall.jpg", Color(0.48, 0.38, 0.31), 0.25)
+	var stonework := Node3D.new()
+	stonework.name = "MineEntryRockFace"
+	_v.add_child(stonework)
+	for side in [-1.0, 1.0]:
+		_box(Vector3(8.2, 10.0, 2.0), Vector3(7.5 * side, 4.8, -12.0), rock, Vector3.ZERO, stonework)
+		_box(Vector3(0.5, 5.7, 0.5), Vector3(3.15 * side, 2.7, -10.9), _timber, Vector3.ZERO, stonework)
+		for k in 4:
+			_glb(RunnerView.BOULDER_ROCK_MODEL, Vector3((4.2 + 1.7 * float(k)) * side, -0.2, -10.3),
+				1.7 + 0.3 * float(k % 2), float(k) * 1.7, stonework)
+		var lp: Node3D = _glb(LANTERN, Vector3(3.05 * side, 3.2, -10.55), 1.0, 0.0, stonework)
+		if lp:
+			RunnerView.self_light(lp, 0.25, Color(1.0, 0.72, 0.38))
+		_fire(Vector3(2.8 * side, 3.5, -10.0), 1.8, 8.0)
+	_box(Vector3(6.9, 5.2, 2.0), Vector3(0.0, 7.3, -12.0), rock, Vector3.ZERO, stonework)
+	_box(Vector3(6.9, 0.5, 0.6), Vector3(0.0, 5.35, -10.9), _timber, Vector3.ZERO, stonework)
+	# An iron gate closes the abandoned entrance instead of implying a playable
+	# passage through the existing movement clamp.
+	_box(Vector3(6.0, 5.0, 0.2), Vector3(0.0, 2.3, -15.2), _dark_wood, Vector3.ZERO, stonework)
+	for x in range(-5, 6):
+		_cyl(0.035, 0.035, 4.7, Vector3(float(x) * 0.5, 2.3, -11.1), _iron, Vector3.ZERO, stonework)
+	for y in [0.6, 3.7]:
+		_box(Vector3(5.9, 0.10, 0.12), Vector3(0.0, y, -11.0), _iron, Vector3.ZERO, stonework)
 
 
 # --- the poster ----------------------------------------------------------------------------------
@@ -417,18 +447,60 @@ func _braziers() -> void:
 
 func _gold_and_cart() -> void:
 	# Gold bars stacked in the right foreground and at the back, plus the Meshy ore cart heaped with gold.
+	var ingot_mesh: ArrayMesh = _beveled_ingot()
+	var stacks := Node3D.new()
+	stacks.name = "BeveledGoldStacks"
+	_v.add_child(stacks)
 	for stack in [Vector3(-2.3, 0.0, 4.3), Vector3(5.6, 0.0, 12.2)]:
 		for row in 4:
 			var cols: int = 5 - row
 			for c in cols:
 				var x: float = stack.x - float(cols - 1) * 0.28 + float(c) * 0.56
-				_box(Vector3(0.5, 0.2, 0.28), Vector3(x, 0.1 + 0.21 * float(row), stack.z), _gold)
+				_add(ingot_mesh, _gold, Vector3(x, 0.1 + 0.21 * float(row), stack.z), Vector3.ZERO, stacks)
 		_blockers.append([Vector2(stack.x, stack.z), 1.0])
 	var cart_pos := Vector3(-3.9, 0.0, 1.4)
 	if _prop("ore_cart", cart_pos, 1.6, 0.35) == null:
 		_box(Vector3(1.0, 0.7, 1.7), cart_pos + Vector3(0.0, 0.7, 0.0), _dark_wood)
 	_blockers.append([Vector2(cart_pos.x, cart_pos.z), 1.1])
 	_glb(INGOT_RACK, Vector3(-3.0, 0.0, 12.4), 1.4, 0.0)
+
+## A cast bar with inset crown, bevel shoulders and eight corner faces.
+## Shared by all stacks: 48 triangles per bar, no new texture or GLB payload.
+func _beveled_ingot() -> ArrayMesh:
+	var ring := PackedVector2Array([
+		Vector2(-0.22, -0.14), Vector2(0.22, -0.14), Vector2(0.25, -0.11), Vector2(0.25, 0.11),
+		Vector2(0.22, 0.14), Vector2(-0.22, 0.14), Vector2(-0.25, 0.11), Vector2(-0.25, -0.11)])
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for i in ring.size():
+		var j: int = (i + 1) % ring.size()
+		var a := Vector3(ring[i].x, -0.1, ring[i].y)
+		var b := Vector3(ring[j].x, -0.1, ring[j].y)
+		var c := Vector3(ring[j].x, 0.055, ring[j].y)
+		var d := Vector3(ring[i].x, 0.055, ring[i].y)
+		var e := Vector3(ring[j].x * 0.85, 0.1, ring[j].y * 0.85)
+		var f := Vector3(ring[i].x * 0.85, 0.1, ring[i].y * 0.85)
+		_ingot_triangle(st, a, b, c)
+		_ingot_triangle(st, a, c, d)
+		_ingot_triangle(st, d, c, e)
+		_ingot_triangle(st, d, e, f)
+		_ingot_triangle(st, Vector3(0.0, 0.1, 0.0), f, e)
+		_ingot_triangle(st, Vector3(0.0, -0.1, 0.0), b, a)
+	return st.commit()
+
+func _ingot_triangle(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3) -> void:
+	var normal: Vector3 = (b - a).cross(c - a).normalized()
+	# Godot front faces wind clockwise. Explicit outward normals keep the bevel
+	# visibly shaded instead of the flat box colour of the previous stacks.
+	if normal.dot((a + b + c) / 3.0) < 0.0:
+		normal = -normal
+	else:
+		var swap: Vector3 = b
+		b = c
+		c = swap
+	for point in [a, b, c]:
+		st.set_normal(normal)
+		st.add_vertex(point)
 
 
 func _dark_iron() -> StandardMaterial3D:

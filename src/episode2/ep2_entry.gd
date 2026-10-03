@@ -245,7 +245,9 @@ func _build_hud() -> void:
 	add_child(layer)
 
 	_hud = Label.new()
-	_hud.position = Vector2(24, 20)
+	# Leave the offline banner clear; RunnerView's BTC/speed row sits below
+	# this two-line progress/health block instead of drawing over its title.
+	_hud.position = Vector2(24, 44)
 	_hud.add_theme_font_size_override("font_size", 20)
 	_hud.add_theme_color_override("font_color", Color(1, 0.93, 0.7))
 	_hud.add_theme_color_override("font_outline_color", Color(0, 0, 0))

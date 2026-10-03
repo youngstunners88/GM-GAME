@@ -1,0 +1,58 @@
+{
+  "scope": "Bounded Episode 2 scenery and desktop keyboard/mouse presentation; not a full reference-perfect remake",
+  "scores": [
+    {
+      "dimension": "Orientation",
+      "score": 2,
+      "observation": "Cliff warning/rail end remain visible; rear mine gate marks a closed boundary; access screen has a visible return button."
+    },
+    {
+      "dimension": "Material world",
+      "score": 2,
+      "observation": "Textured outer shoulders, forest exit plate and rock/timber arrival face replace the three identified bare views; actual same-camera boards inspected."
+    },
+    {
+      "dimension": "Visual hierarchy",
+      "score": 1,
+      "observation": "Hero, rails and warnings stay readable; exact painterly reference fidelity remains partial and bright vein/forge effects still dominate some views."
+    },
+    {
+      "dimension": "Interaction",
+      "score": 2,
+      "observation": "No new collision or gameplay triggers; bounded runner, facility, reachability and session gates pass."
+    },
+    {
+      "dimension": "Readability",
+      "score": 2,
+      "observation": "Final local Web capture separates progress/health and BTC/speed below offline banner; first-person K hint is visible."
+    },
+    {
+      "dimension": "Input",
+      "score": 1,
+      "observation": "Keyboard/mouse exercised in runner and first person; mobile controls not verified."
+    },
+    {
+      "dimension": "Feedback",
+      "score": 2,
+      "observation": "Health/ammo/coin readouts remain state-driven; invalid-code rejection seen; access and session regressions pass."
+    },
+    {
+      "dimension": "Performance",
+      "score": 1,
+      "observation": "Fresh PCK 187.89 MiB meets 190 MiB gate; no before/after FPS benchmark performed."
+    },
+    {
+      "dimension": "Release",
+      "score": 2,
+      "observation": "Final master CI and butler push succeeded; public BUILD matches source; manual arrow inputs changed lanes, wrong code rejected and standard menu route returned."
+    }
+  ],
+  "reference_verdicts": {
+    "identified_bare_views": "PASS",
+    "protected_models_and_rules": "PASS",
+    "HUD_overlap_repair": "PASS",
+    "full_painterly_reference_match": "PARTIAL",
+    "full_film_to_exit_playthrough": "PARTIAL"
+  },
+  "release": "PASS: 2026-10-03-5fa78b9; exact proof and scope in release-receipt.json"
+}

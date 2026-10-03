@@ -1,0 +1,17 @@
+{
+  "hud_before": {
+    "file": "hud-before.png",
+    "source": "e9a89251ab7093618e67126acd0f17b801fef1f6",
+    "runtime": "live itch Chromium WebGL, QA saved-unlock fixture"
+  },
+  "hud_after_local": {
+    "file": "hud-after-local.png",
+    "source": "5fa78b99ffadcedd3a5011e03a542470475589ef",
+    "runtime": "exact final local export; service calls blocked; QA saved-unlock fixture; autopilot on"
+  },
+  "hideout_browser": {
+    "file": "hideout-browser.png",
+    "source": "e9a89251ab7093618e67126acd0f17b801fef1f6",
+    "runtime": "exact local export before HUD-only follow-up; saved-unlock/chamber-shortcut fixture; keyboard/mouse first-person input"
+  }
+}

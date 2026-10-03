@@ -1,0 +1,256 @@
+[
+  {
+    "path": "src/episode2/assets/lil_blunt_hero.glb",
+    "bytes": 3562764,
+    "sha512": "56009ba3bd7462e5c1c74f30ee1d91cc13bef12f2fb1a3db1aa282eac8d125c376086d646f8fa3ff258588ebc3a32d7814aa0a441b8b0f2bd49b780e5eed63e3",
+    "meshes": 1,
+    "triangles_per_mesh_set_estimate": 31155,
+    "nodes": 26,
+    "skins": 1,
+    "animations": [
+      "Chair_Sit_Idle_M",
+      "Sit_Dodge",
+      "Regular_Jump",
+      "Hit_Reaction",
+      "Sit_Cheer_with_Left_Hand",
+      "Charged_Axe_Chop",
+      "Rope_Hang_Idle",
+      "Victory_Fist_Pump",
+      "Combat_Stance",
+      "Standing_Reload"
+    ],
+    "position_accessor_bounds": [
+      {
+        "min": [
+          -0.5918753743171692,
+          -1.3400320142409328e-07,
+          -0.513217031955719
+        ],
+        "max": [
+          0.5918753743171692,
+          1.899999976158142,
+          0.5132169723510742
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "name": "Material_1",
+        "alphaMode": "OPAQUE",
+        "doubleSided": true,
+        "metallicFactor": 1,
+        "roughnessFactor": 0.4100847542285919
+      }
+    ],
+    "limits": "Bounds are accessor-local, not posed/world bounds; counts do not certify skin or visual quality."
+  },
+  {
+    "path": "src/episode2/assets/inferno_bull_rigged.glb",
+    "bytes": 5649756,
+    "sha512": "db76d55ac8347bff5705249e9dc54592f3c32c24ace603897d3d639e3ce814f22bf0ae6e77d48ad96774d43e9be5e13676504ecdfbd23d29ef9a894945fc9bb9",
+    "meshes": 1,
+    "triangles_per_mesh_set_estimate": 86620,
+    "nodes": 26,
+    "skins": 1,
+    "animations": [
+      "Idle_02",
+      "Stand_and_Drink",
+      "Talk_with_Hands_Open",
+      "Gesture_with_Hand_on_Gun"
+    ],
+    "position_accessor_bounds": [
+      {
+        "min": [
+          -0.7023401856422424,
+          0.0,
+          -0.5274572968482971
+        ],
+        "max": [
+          0.7023407816886902,
+          2.4000000953674316,
+          0.5274572372436523
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "name": "bull",
+        "alphaMode": "OPAQUE",
+        "doubleSided": false,
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.8
+      }
+    ],
+    "limits": "Bounds are accessor-local, not posed/world bounds; counts do not certify skin or visual quality."
+  },
+  {
+    "path": "src/episode2/assets/winchester_1886.glb",
+    "bytes": 816044,
+    "sha512": "5b56f0968f98fde71a07b61902544b12f0a35bc0c6280b9ae064d152fcd73565922d642a4447d83fbbbe07c3cdc01b7427688f2f2e9475432b17769b68746a94",
+    "meshes": 1,
+    "triangles_per_mesh_set_estimate": 14279,
+    "nodes": 1,
+    "skins": 0,
+    "animations": [],
+    "position_accessor_bounds": [
+      {
+        "min": [
+          -0.5,
+          -0.08864899724721909,
+          -0.013482999987900257
+        ],
+        "max": [
+          0.5,
+          0.0751269981265068,
+          0.012858999893069267
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "name": "",
+        "alphaMode": "OPAQUE",
+        "doubleSided": true,
+        "metallicFactor": 1.0,
+        "roughnessFactor": 1.0
+      }
+    ],
+    "limits": "Bounds are accessor-local, not posed/world bounds; counts do not certify skin or visual quality."
+  },
+  {
+    "path": "src/episode2/assets/miner_helmet.glb",
+    "bytes": 767324,
+    "sha512": "b119e9da5902a745980432b0fc5996197a417551929e1201b9353a789ef18a3d2d4f6dd1c5602ae900918386e0ae5edc4837571600c4ce7ccdc0c1a718bb745d",
+    "meshes": 1,
+    "triangles_per_mesh_set_estimate": 15948,
+    "nodes": 1,
+    "skins": 0,
+    "animations": [],
+    "position_accessor_bounds": [
+      {
+        "min": [
+          -0.4460110068321228,
+          -0.4456369876861572,
+          -0.5
+        ],
+        "max": [
+          0.4472860097885132,
+          0.44200199842453003,
+          0.5
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "name": "",
+        "alphaMode": "OPAQUE",
+        "doubleSided": true,
+        "metallicFactor": 1.0,
+        "roughnessFactor": 1.0
+      }
+    ],
+    "limits": "Bounds are accessor-local, not posed/world bounds; counts do not certify skin or visual quality."
+  },
+  {
+    "path": "src/episode2/assets/whiskey_glass.glb",
+    "bytes": 709584,
+    "sha512": "1267b732222f69cef733248fb66d58308efd2c62caa5d25212a72b78162321f6412d0619a7b0986a8c3961b8c29d1cb5ca22fbb5ee6f44b354e19772ee73d44e",
+    "meshes": 1,
+    "triangles_per_mesh_set_estimate": 16481,
+    "nodes": 1,
+    "skins": 0,
+    "animations": [],
+    "position_accessor_bounds": [
+      {
+        "min": [
+          -0.47184398770332336,
+          -0.5,
+          -0.4703809916973114
+        ],
+        "max": [
+          0.47099000215530396,
+          0.5,
+          0.4693410098552704
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "name": "",
+        "alphaMode": "OPAQUE",
+        "doubleSided": true,
+        "metallicFactor": 1.0,
+        "roughnessFactor": 1.0
+      }
+    ],
+    "limits": "Bounds are accessor-local, not posed/world bounds; counts do not certify skin or visual quality."
+  },
+  {
+    "path": "src/episode2/assets/btc_coin.glb",
+    "bytes": 667036,
+    "sha512": "59949a5f631b57756c8b4fe9fe2c15044f592ea24704163bbeaa6de982a3ec4f8d3796d4336e229c7aba41064d80503e4237eaaad5e256144713efc2f588d66d",
+    "meshes": 1,
+    "triangles_per_mesh_set_estimate": 14862,
+    "nodes": 1,
+    "skins": 0,
+    "animations": [],
+    "position_accessor_bounds": [
+      {
+        "min": [
+          -0.5,
+          -0.5,
+          -0.030595000833272934
+        ],
+        "max": [
+          0.5,
+          0.5,
+          0.03577199950814247
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "name": "",
+        "alphaMode": "OPAQUE",
+        "doubleSided": true,
+        "metallicFactor": 1.0,
+        "roughnessFactor": 1.0
+      }
+    ],
+    "limits": "Bounds are accessor-local, not posed/world bounds; counts do not certify skin or visual quality."
+  },
+  {
+    "path": "src/episode2/assets/mine_tunnel_shell.glb",
+    "bytes": 1330584,
+    "sha512": "b72243ef641fc7b56ce03012a98f78b480140e0ecb5ca61b06d42eab5886315a6c2a493c15e8bc6c6ef9867fd6bd537e0b3fff5a3825e22f07f10d0dcebd9d01",
+    "meshes": 1,
+    "triangles_per_mesh_set_estimate": 22324,
+    "nodes": 1,
+    "skins": 0,
+    "animations": [],
+    "position_accessor_bounds": [
+      {
+        "min": [
+          -0.744488000869751,
+          -0.47313591837882996,
+          -0.9208009839057922
+        ],
+        "max": [
+          0.746537983417511,
+          0.4665740132331848,
+          0.9486280083656311
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "name": "BakedMaterial",
+        "alphaMode": "OPAQUE",
+        "doubleSided": true,
+        "metallicFactor": 1,
+        "roughnessFactor": 1
+      }
+    ],
+    "limits": "Bounds are accessor-local, not posed/world bounds; counts do not certify skin or visual quality."
+  }
+]

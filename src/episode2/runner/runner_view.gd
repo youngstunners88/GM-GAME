@@ -62,6 +62,7 @@ const TEX_ROCK := "tex_rock_wall.jpg"
 const TEX_VEIN := "tex_gold_vein.jpg"
 const TEX_TIMBER := "tex_timber.jpg"
 const TEX_GRAVEL := "tex_gravel.jpg"
+const CLIFF_WOODS_TEX := "res://src/episode2/assets/textures/tex_cliff_woods.jpg"
 const SFX_DIR := "res://src/assets/sounds/"
 const SFX_FILES := {
 	"shot": "ep2_gun_fire_1.mp3",
@@ -1043,7 +1044,37 @@ func _build_tunnel_shell(length: float, bottom: float) -> bool:
 		k += 1
 	_mesh_node(_box(Vector3(20.0, 0.2, length + 60.0)), _rock_deep_mat(),
 		Vector3(0.0, bottom, (length - 20.0) * 0.5))
+	_build_rock_shoulders(length)
 	return true
+
+## Textured banks outside the three ballast decks. The shell has no floor here;
+## seeing the distant pit plane made these margins read as flat grey wedges.
+## Leave the lane gaps and all hazard pits open; decoration never feeds the sim.
+func _build_rock_shoulders(length: float) -> void:
+	var banks: Array[Transform3D] = []
+	var stones: Array[Transform3D] = []
+	var z: float = -18.0
+	var i: int = 0
+	while z < length - 3.0:
+		for side in [-1.0, 1.0]:
+			banks.append(Transform3D(Basis.IDENTITY.scaled(Vector3(1.8, 0.4, 5.7)),
+				Vector3(4.55 * side, -0.85, z)))
+			for k in 3:
+				var size: float = 0.25 + float((i + k) % 4) * 0.09
+				var b := Basis(Vector3.UP, float(i + k) * 1.7).scaled(Vector3(size * 1.6, size, size * 1.3))
+				stones.append(Transform3D(b, Vector3((4.75 + 0.2 * sin(float(i + k))) * side,
+					-0.62, z + float(k) * 1.6 - 1.6)))
+		z += 5.5
+		i += 1
+	var bank: MultiMeshInstance3D = _multi(_box(Vector3.ONE), _gravel_mat(), banks)
+	bank.name = "RockShoulders"
+	var stone := SphereMesh.new()
+	stone.radius = 1.0
+	stone.height = 2.0
+	stone.radial_segments = 7
+	stone.rings = 3
+	var rubble: MultiMeshInstance3D = _multi(stone, _rock_mat(), stones)
+	rubble.name = "ShoulderRubble"
 
 func _build_lanterns(length: float) -> void:
 	_lantern_pos = PackedVector3Array()
@@ -2123,15 +2154,22 @@ func _build_cliff_mouth(z: float) -> void:
 	gt.fill_from = Vector2(0.5, 0.0)
 	gt.fill_to = Vector2(0.5, 1.0)
 	sky.albedo_texture = gt
+	# Distant golden-hour woods link the playable approach to the founder's film.
+	# This plate is scenery only; the gorge, warnings and rail end remain 3D.
+	if ResourceLoader.exists(CLIFF_WOODS_TEX):
+		sky.albedo_texture = load(CLIFF_WOODS_TEX) as Texture2D
 	var q := QuadMesh.new()
 	q.size = Vector2(140.0, 70.0)
 	var back := _mesh_node(q, sky, Vector3(0.0, 14.0, z + 70.0))
+	back.name = "CliffWoodsBackdrop"
 	back.rotation.y = PI
 	# The far ledge (1 m lower than the rails) and the facility's rock face behind it.
 	var far_mat: StandardMaterial3D = _rock_deep_mat()
 	_mesh_node(_box(Vector3(80.0, 40.0, 40.0)), far_mat, Vector3(0.0, -21.3, z + 16.0 + 20.0))
 	# Low back wall: the glowing cavern shows above it (a tall wall read as "the tunnel ends at a wall").
-	_mesh_node(_box(Vector3(80.0, 9.0, 4.0)), far_mat, Vector3(0.0, 3.2, z + 52.0))
+	# Keep the skyline open. The previous solid wall + orange square filled the
+	# opening and made the mine exit read as a furnace/UI rectangle. The existing
+	# boulders below provide the far lip without rectangular skyline blockers.
 	# THE GAP must read from the cart: molten light far below, embers rising out of it.
 	var melt := StandardMaterial3D.new()
 	melt.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -2210,10 +2248,11 @@ func _build_cliff_mouth(z: float) -> void:
 	door.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	door.disable_fog = true
 	door.albedo_color = Color(1.0, 0.56, 0.18)
-	_mesh_node(_box(Vector3(8.0, 6.0, 0.3)), door, Vector3(0.0, 1.7, z + 49.8))
+	# Recessed forge light stays low on the far ledge, below the forest skyline.
+	_mesh_node(_box(Vector3(3.0, 2.4, 0.3)), door, Vector3(11.0, 0.1, z + 49.8))
 	for sx in [-4.4, 4.4]:
-		_mesh_node(_box(Vector3(0.6, 7.0, 0.6)), _timber_mat(), Vector3(float(sx), 2.2, z + 49.6))
-	_mesh_node(_box(Vector3(9.6, 0.7, 0.7)), _timber_mat(), Vector3(0.0, 5.6, z + 49.6))
+		_mesh_node(_box(Vector3(0.4, 3.2, 0.4)), _timber_mat(), Vector3(11.0 + float(sx) * 0.4, 0.4, z + 49.6))
+	_mesh_node(_box(Vector3(3.8, 0.4, 0.4)), _timber_mat(), Vector3(11.0, 2.0, z + 49.6))
 	# The gorge light: molten gold far below, lighting the last stretch of tunnel from underneath.
 	var up := OmniLight3D.new()
 	up.light_color = Color(1.0, 0.5, 0.18)
@@ -2225,7 +2264,7 @@ func _build_cliff_mouth(z: float) -> void:
 	doorlight.light_color = Color(1.0, 0.55, 0.2)
 	doorlight.light_energy = 5.0
 	doorlight.omni_range = 22.0
-	doorlight.position = Vector3(0.0, 3.0, z + 46.0)
+	doorlight.position = Vector3(11.0, 1.8, z + 46.0)
 	_world.add_child(doorlight)
 	# The snapped trestle end.
 	for tx in [-3.1, -0.6, 0.6, 3.1]:
@@ -2478,7 +2517,9 @@ func _update_hud() -> void:
 		var spd: float = float(_sim.get_speed()) if _sim.has_method("get_speed") else Sim.RUN_SPEED
 		var g: int = int(_sim.get_gold()) if _sim.has_method("get_gold") else 0
 		_gold_label.text = "BTC  %d      %d m/s" % [g, int(round(spd))]
-		_gold_label.position = Vector2(24.0, 18.0)
+		# Episode entry owns progress/health at y=44..98. Keep these stats in
+		# their own row, above the temporary K controls hint at y=150.
+		_gold_label.position = Vector2(24.0, 110.0)
 	if _cart_strip:
 		_cart_strip.position = Vector2(vs.x * 0.5 - _cart_strip.size.x * 0.5, vs.y - 84.0)
 		_cart_strip.queue_redraw()

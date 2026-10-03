@@ -1,0 +1,163 @@
+{
+  "source_sha": "5fa78b99ffadcedd3a5011e03a542470475589ef",
+  "build_id": "2026-10-03-5fa78b9",
+  "run_id": 37117579633,
+  "run_url": "https://github.com/youngstunners88/GM-GAME/actions/runs/37117579633",
+  "job_id": 111187260097,
+  "outcome": "success",
+  "deploy_step": "success",
+  "proof": [
+    "2026-10-03T10:52:25.3319372Z 44:const BUILD_TAG := \"2026-10-03-5fa78b9\"",
+    "2026-10-03T10:52:33.4311037Z index.pck = 187 MB (itch per-file limit: 200 MB; CI gate: 190 MB)",
+    "2026-10-03T10:53:19.1115132Z ✓ Re-used 87.79% of old, added 27.12 MiB fresh data",
+    "2026-10-03T10:53:19.1134768Z • Build is now processing, should be up in a bit.",
+    "2026-10-03T10:53:19.1139427Z ##[notice]Pushed to https://youngstunners88.itch.io/smokerealm"
+  ],
+  "steps": [
+    {
+      "name": "Set up job",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Checkout code",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Secret scan (gitleaks)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Security Sentinel",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Front-page lock (founder-approved title screen)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Stage 1 weapon gate",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Background art gate",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Download Godot editor + export templates",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Verify Godot runs",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Create export preset",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Import project (first pass)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Portal room gameplay and rendered visibility",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Upload portal room proof",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Stamp the build tag",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Export game to Web",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Restore the stamped source",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Verify export output",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Bundle browser Web3 bridge (Layer Shift)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Security audit (secure-build-checklist)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Upload security report",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Comment blockers on PR",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "name": "Commit exported files",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Refresh gh-pages mirror",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Upload artifacts (always, for debugging)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Package itch.io build (index.html at zip root)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Upload itch.io-ready zip (manual-upload fallback)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Deploy to itch.io via butler",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Post Checkout code",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "name": "Complete job",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ]
+}

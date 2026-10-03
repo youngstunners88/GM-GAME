@@ -1,0 +1,121 @@
+[
+  {
+    "scene": "tests/ep2_access_code_test.tscn",
+    "exit": 0,
+    "script_or_assertion_errors": [],
+    "passed": true,
+    "pass_assertions": 9
+  },
+  {
+    "scene": "tests/ep2_art_direction_test.tscn",
+    "exit": 0,
+    "script_or_assertion_errors": [],
+    "passed": true,
+    "pass_assertions": 21
+  },
+  {
+    "scene": "tests/ep2_audio_buses_test.tscn",
+    "exit": 0,
+    "script_or_assertion_errors": [],
+    "passed": true,
+    "pass_assertions": 34
+  },
+  {
+    "scene": "tests/ep2_camera_framing_test.tscn",
+    "exit": 0,
+    "script_or_assertion_errors": [],
+    "passed": true,
+    "pass_assertions": 12
+  },
+  {
+    "scene": "tests/ep2_cinematic_test.tscn",
+    "exit": 0,
+    "script_or_assertion_errors": [],
+    "passed": true,
+    "pass_assertions": 12
+  },
+  {
+    "scene": "tests/ep2_glb_pipeline_test.tscn",
+    "exit": 0,
+    "script_or_assertion_errors": [],
+    "passed": true,
+    "pass_assertions": 28
+  },
+  {
+    "scene": "tests/ep2_miner_shaft_test.tscn",
+    "exit": 0,
+    "script_or_assertion_errors": [],
+    "passed": true,
+    "pass_assertions": 35
+  },
+  {
+    "scene": "tests/ep2_reachability_test.tscn",
+    "exit": 0,
+    "script_or_assertion_errors": [],
+    "passed": true,
+    "pass_assertions": 14
+  },
+  {
+    "scene": "tests/ep2_runner_audio_test.tscn",
+    "exit": 0,
+    "script_or_assertion_errors": [],
+    "passed": true,
+    "pass_assertions": 48
+  },
+  {
+    "scene": "tests/ep2_runner_carts_test.tscn",
+    "exit": 0,
+    "script_or_assertion_errors": [],
+    "passed": true,
+    "pass_assertions": 22
+  },
+  {
+    "scene": "tests/ep2_runner_graybox_test.tscn",
+    "exit": 0,
+    "script_or_assertion_errors": [],
+    "passed": true,
+    "pass_assertions": 60
+  },
+  {
+    "scene": "tests/ep2_runner_motion_test.tscn",
+    "exit": 0,
+    "script_or_assertion_errors": [],
+    "passed": true,
+    "pass_assertions": 58
+  },
+  {
+    "scene": "tests/ep2_runner_music_test.tscn",
+    "exit": 0,
+    "script_or_assertion_errors": [],
+    "passed": true,
+    "pass_assertions": 9
+  },
+  {
+    "scene": "tests/ep2_runner_revolver_test.tscn",
+    "exit": 0,
+    "script_or_assertion_errors": [],
+    "passed": true,
+    "pass_assertions": 22
+  },
+  {
+    "scene": "tests/ep2_runner_voice_test.tscn",
+    "exit": 0,
+    "script_or_assertion_errors": [],
+    "passed": true,
+    "pass_assertions": 42
+  },
+  {
+    "scene": "tests/ep2_session_root_test.tscn",
+    "exit": 0,
+    "script_or_assertion_errors": [],
+    "passed": true,
+    "pass_assertions": 26
+  },
+  {
+    "scene": "tests/ep2_smelting_facility_test.tscn",
+    "exit": 0,
+    "script_or_assertion_errors": [],
+    "passed": true,
+    "pass_assertions": 96
+  }
+]
