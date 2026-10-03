@@ -5,6 +5,12 @@
 
 ---
 
+**🎬 BOSS 3 FILM -> MINE CART: NO MORE BLACK (2026-10-03, late).** I measured it instead of guessing, and ran the options through Jev:
+- **Cause:** even with everything loaded, the first time Episode 2 is drawn the browser has to compile its shaders and upload its textures, and that freeze (about 1 second on my test machine, longer on web) used to happen behind a black loading card. So you saw black, then the cart.
+- **Fix:** the film's last frame (Lil Blunt in the cart, from behind, in the tunnel) now STAYS on screen; Episode 2 is built and drawn for the first time underneath it, then it dissolves (0.6 s) into the live runner where he is in the same cart. Before that, the game compiles Episode 2's code while the boss dies and draws every model once, a little at a time, while your video plays, so the freeze at the cut is about 40% shorter. Measured in a real render: **0 black frames** from the end of the film to gameplay.
+- **Jev (simulation):** ranked the old black card worst (0.01) and was unsure between the simple frozen-frame dissolve (0.34) and the version that also compiles early (0.29), confidence 0.18, which Jev's own bands label UNCERTAIN, so I took the low-risk parts of both. Numbers are in `docs/ep2_transition_simulation_2026-10-03.txt`.
+- **Not fixed:** a short still moment on the last frame (about 0.5-1.5 s on a normal PC, longer on a slow one) while the first draw happens; it cannot be removed on web without rebuilding the mine as a progressive build. **Not checked:** your browser.
+
 **🎞️ BOSS 3 -> EPISODE 2 HAND-OFF REBUILT: NO BLUE SCREEN, NO LONG WAIT (2026-10-03).** The blue screen was the old dark-blue diamond wipe sitting in front of a one-shot load of all of Episode 2 (about 40 models, textures, sounds, and the game code), and then a code screen. New system, `TransitionDirector` (skill `ep2-seamless-transition`):
 - The moment boss 3 dies, Episode 2 starts loading a little per frame behind the death animation and your 15-second video (no frame in front of you stalls over 250 ms in the test). When the video ends a dark loading card ("EPISODE 2 - THE GOLD MINE" with a bar) comes up, the last heavy pieces load behind it, the scene swaps from memory, and the card fades away. States and the global game state follow along and recover if anything fails.
 - Beating boss 3 skips Episode 2's access-code screen for that session (earned); the menu button still asks for the code. One switch reverts it.

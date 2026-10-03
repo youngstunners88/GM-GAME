@@ -1,0 +1,12 @@
+A_black_card_current               black=3.24s  frozen_on_content=0.00s  mid_film_stall=0ms  continuity=false  risk=low (shipped)
+B_freeze_hold_dissolve             black=0.00s  frozen_on_content=1.92s  mid_film_stall=0ms  continuity=true  risk=low
+C_freeze_hold_plus_gpu_warm        black=0.00s  frozen_on_content=1.47s  mid_film_stall=40ms  continuity=true  risk=low
+D_C_plus_scripts_early             black=0.00s  frozen_on_content=0.65s  mid_film_stall=500ms  continuity=true  risk=medium (one visible blip mid film, runner builds under video)
+E_D_plus_dissolve_matched_cart     black=0.00s  frozen_on_content=0.65s  mid_film_stall=500ms  continuity=true  risk=medium-high (new video, $0.75-1.5, 1 more day)
+
+JEV exit 1 
+model: typesafe/jev-1.13-20260917   cost: $0.000030
+  best: B_freeze_hold_dissolve (confidence 0.17) {"E_D_plus_dissolve_matched_cart":0.15,"A_black_card_current":0,"C_freeze_hold_plus_gpu_warm":0.24,"B_freeze_hold_dissolve":0.34,"D_C_plus_scripts_early":0.27}
+
+JEV VERDICT: BLOCK
+

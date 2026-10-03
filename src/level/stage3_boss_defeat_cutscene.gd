@@ -39,6 +39,10 @@ const SKIP_HOLD := 1.0
 const DEADLINE_SEC := 120.0
 var VIDEO: String = VIDEO_EP2 if ResourceLoader.exists(VIDEO_EP2) else VIDEO_OLD
 var _skip_held := 0.0
+## When true the node is NOT freed at the end: the boss takes `make_cover()` (the film's last frame) and hands it to
+## TransitionDirector.go() so the cut into Episode 2 never shows black (skill ep2-seamless-transition).
+var keep_cover := false
+var _cover_rect: Rect2 = Rect2()
 
 var _video_player: VideoStreamPlayer = null
 var _done := false
@@ -72,6 +76,7 @@ func play() -> void:
 	vid.volume_db = 0.0  # NOT muted — the video's own dialogue is the point.
 	vid.position = Vector2((vp.x - w) * 0.5, (vp.y - h) * 0.5)
 	vid.size = Vector2(w, h)
+	_cover_rect = Rect2(vid.position, vid.size)
 	vid.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(vid)
 	_video_player = vid
@@ -117,10 +122,37 @@ func _restore_stage_music() -> void:
 		AudioServer.set_bus_mute(bus, false)
 	_music_muted = false
 
+## The film's last frame as a full-screen Control (a still image of the final video frame on black), for the
+## seamless hand-off. Null if the video never produced a frame.
+func make_cover() -> Control:
+	var root := Control.new()
+	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_STOP
+	var bg := ColorRect.new()
+	bg.color = Color.BLACK
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(bg)
+	if is_instance_valid(_video_player):
+		var tex: Texture2D = _video_player.get_video_texture()
+		if tex != null:
+			var img: Image = tex.get_image()
+			if img != null and not img.is_empty():
+				var tr := TextureRect.new()
+				tr.texture = ImageTexture.create_from_image(img)
+				tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+				tr.stretch_mode = TextureRect.STRETCH_SCALE
+				tr.position = _cover_rect.position
+				tr.size = _cover_rect.size
+				tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				root.add_child(tr)
+	return root
+
 func _finish() -> void:
 	if _done:
 		return
 	_done = true
 	_restore_stage_music()
 	finished.emit()
-	queue_free()
+	if not keep_cover:
+		queue_free()

@@ -84,11 +84,42 @@ func _ready() -> void:
 	_check("StateMachine went TRANSITIONING then PLAYING", bool(seen["transitioning"]) and StateMachine.get_current_state() == "PLAYING")
 	_check("the director can run again", not td.is_busy())
 
+	# 2b. SEAMLESS MODE: the film's last frame is the cover; the loading card must NEVER show.
+	var cover := ColorRect.new()
+	cover.color = Color(0.7, 0.3, 0.1)
+	cover.set_anchors_preset(Control.PRESET_FULL_RECT)
+	var card_ever: Dictionary = {"shown": false, "cover_alpha_min": 1.0}
+	td.go(target, "", "", cover)
+	var guard := 0
+	while td.state != td.S.IDLE or td._going:
+		await get_tree().process_frame
+		if td._card.visible:
+			card_ever["shown"] = true
+		if is_instance_valid(cover) and cover.is_inside_tree():
+			card_ever["cover_alpha_min"] = minf(float(card_ever["cover_alpha_min"]), cover.modulate.a)
+		guard += 1
+		if guard > 2000:
+			break
+	_check("cover mode: the black loading card never appeared", not bool(card_ever["shown"]))
+	_check("cover mode: the film's frame stayed fully opaque until the scene was ready, then dissolved (min alpha %.2f)" % float(card_ever["cover_alpha_min"]),
+		float(card_ever["cover_alpha_min"]) < 0.5)
+	_check("cover mode: the cover is freed after the dissolve", not is_instance_valid(cover) or not cover.is_inside_tree())
+
+	# 2c. prewarm(compile_now) pays the script compile immediately and leaves the queue free of scripts.
+	td.prewarm(ep2, true)
+	var scripts_left: int = 0
+	for q in td._queue:
+		if str(q).get_extension() in ["gd", "tscn", "scn"]:
+			scripts_left += 1
+	_check("prewarm(compile_now) leaves no script/scene in the film-phase queue (%d left)" % scripts_left, scripts_left == 0)
+	td._reset_warm()
+
 	# 3. Routing: bosses use the director, never the blue diamond wipe, for the Episode 2 hand-off.
 	for bp in ["res://src/boss/claim_jumper.gd", "res://src/boss/bandit_boss.gd"]:
 		var src: String = FileAccess.get_file_as_string(bp)
 		_check("%s prewarms on death and hands off through TransitionDirector.go" % bp.get_file(),
-			src.contains("TransitionDirector.prewarm(GameManager.EPISODE2_SCENE)") and src.contains("TransitionDirector.go(GameManager.next_level_scene(3))")
+			src.contains("TransitionDirector.prewarm(GameManager.EPISODE2_SCENE, true)") and src.contains("TransitionDirector.go(GameManager.next_level_scene(3)")
+			and src.contains("make_cover()")
 			and not src.contains("next_level_scene(3), SceneRouter.Transition.DIAMOND"))
 	var card_bg: Color = td._bg.color
 	_check("the loading card is black-violet, not blue (b - r < 0.05: %s)" % str(card_bg), card_bg.b - card_bg.r < 0.05)

@@ -40,6 +40,11 @@ const MIN_CARD_SECONDS := 0.55
 const SETTLE_FRAMES := 3
 ## Never wait forever: past this the swap happens anyway (and a failed load recovers).
 const MAX_WAIT_SECONDS := 30.0
+const MAX_SETTLE_SECONDS := 3.0
+## A frame longer than this is "the stall" (shader compile / texture upload at the first draw).
+const STALL_MS := 250.0
+## Film-frame -> live runner dissolve.
+const DISSOLVE_SECONDS := 0.6
 
 ## Named warm-up lists: directories whose resources are loaded ahead of the swap, besides the scene's own
 ## dependency tree. Episode 2 = every model/texture/sound of the runner, the hideout and the film.
@@ -68,6 +73,7 @@ var _bar_bg: ColorRect = null
 var _title: Label = null
 var _subtitle: Label = null
 var _bg: ColorRect = null
+var _cover: Control = null      # the film's last frame, when it is used as the cover instead of the card
 var _going: bool = false
 var _waited: float = 0.0
 var _shown_for: float = 0.0
@@ -80,6 +86,18 @@ var _fade_active: bool = false
 var _progress_shown: float = 0.0
 ## Diagnostics: [ms, path] of every warm-up item that took long (a long item stalls one frame of the film).
 var slow_items: Array = []
+
+# --- GPU warm-up (measured 2026-10-03: after everything is loaded, the FIRST DRAW of Episode 2 still stalls for
+# 2.2-3.7 s (software GL; shader compiles + texture uploads run on the main thread). Loading cannot fix that, drawing
+# can: every warmed model is drawn once, one at a time with a gap, in a tiny hidden SubViewport while the film plays,
+# so the compile cost is paid as single-frame blips instead of one long freeze at the cut.)
+const RENDER_GAP_SECONDS := 0.3
+var _render_queue: Array = []   # PackedScenes (from .glb) still to be drawn once
+var _warm_vp: SubViewport = null
+var _warm_cam: Camera3D = null
+var _warm_holder: Node3D = null
+var _render_cooldown: float = 0.0
+var rendered_count: int = 0
 
 
 func _ready() -> void:
@@ -162,7 +180,7 @@ func warm_fraction() -> float:
 
 ## Start loading `path` and everything it needs, a little per frame. Safe to call repeatedly (a second call for the
 ## same path does nothing; a different path while idle restarts for the new one).
-func prewarm(path: String) -> void:
+func prewarm(path: String, compile_now: bool = false) -> void:
 	if is_busy():
 		return
 	if path == target_path and state in [S.WARMING, S.READY]:
@@ -173,11 +191,26 @@ func prewarm(path: String) -> void:
 	_total = _queue.size()
 	_set_state(S.WARMING)
 	set_process(true)
+	if compile_now:
+		# Script/scene compiles are the ONE multi-hundred-ms stall (453 ms measured). Pay it right now, at a moment
+		# nobody is watching a moving picture (boss death tween), instead of at the cut.
+		var keep: Array = []
+		for p in _queue:
+			if str(p).get_extension().to_lower() in ["gd", "tscn", "scn"]:
+				var r: Resource = ResourceLoader.load(str(p))
+				if r != null:
+					_hold.append(r)
+					if str(p) == path and r is PackedScene:
+						_packed = r
+			else:
+				keep.append(p)
+		_queue = keep
 
 
 func _reset_warm() -> void:
 	_queue.clear()
 	_late.clear()
+	_render_queue.clear()
 	_hold.clear()
 	_packed = null
 	_total = 0
@@ -229,6 +262,10 @@ func _collect_deps(path: String, seen: Dictionary) -> Array:
 
 
 func _process(delta: float) -> void:
+	if state == S.WARMING or state == S.READY:
+		_pump_render(delta)
+		if state == S.READY and _render_queue.is_empty() and not _going:
+			set_process(false)
 	if state == S.WARMING or state == S.COVERING or state == S.LOADING:
 		_pump_warm(BUDGET_COVERED_MS if state >= S.COVERING else BUDGET_MS)
 	if _fade_active:
@@ -265,6 +302,8 @@ func _pump_warm(budget_ms: float) -> void:
 			_hold.append(r)
 			if p == target_path and r is PackedScene:
 				_packed = r
+			elif r is PackedScene and p.get_extension().to_lower() == "glb":
+				_render_queue.append(r)
 		if float(Time.get_ticks_usec() - t0) / 1000.0 >= budget_ms:
 			break
 	if covered and _queue.is_empty() and not _late.is_empty():
@@ -272,8 +311,66 @@ func _pump_warm(budget_ms: float) -> void:
 		_late.clear()
 	if _queue.is_empty() and _late.is_empty() and state == S.WARMING:
 		_set_state(S.READY)
-		if not _going:
+		if not _going and _render_queue.is_empty():
 			set_process(false)
+
+
+## Draw one warmed model into the hidden viewport (compiling its shaders / uploading its textures), at most one per
+## RENDER_GAP_SECONDS, so the film only ever sees a one-frame blip.
+func _pump_render(delta: float) -> void:
+	_render_cooldown -= delta
+	if _render_cooldown > 0.0 or _render_queue.is_empty():
+		return
+	_ensure_warm_viewport()
+	for c in _warm_holder.get_children():
+		c.queue_free()
+	var ps: PackedScene = _render_queue.pop_front()
+	var inst: Node = ps.instantiate()
+	_warm_holder.add_child(inst)
+	var box: AABB = _aabb_of(inst)
+	var centre: Vector3 = box.get_center()
+	var radius: float = maxf(box.size.length() * 0.5, 0.25)
+	_warm_cam.position = centre + Vector3(0.0, radius * 0.35, radius * 2.4)
+	_warm_cam.look_at(centre)
+	_warm_vp.render_target_update_mode = SubViewport.UPDATE_ONCE
+	rendered_count += 1
+	_render_cooldown = RENDER_GAP_SECONDS
+
+
+func _ensure_warm_viewport() -> void:
+	if _warm_vp != null:
+		return
+	_warm_vp = SubViewport.new()
+	_warm_vp.size = Vector2i(64, 64)
+	_warm_vp.transparent_bg = true
+	_warm_vp.own_world_3d = true
+	_warm_vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	add_child(_warm_vp)               # never shown: it has no TextureRect; it only has to DRAW
+	_warm_holder = Node3D.new()
+	_warm_vp.add_child(_warm_holder)
+	_warm_cam = Camera3D.new()
+	_warm_cam.far = 200.0
+	_warm_vp.add_child(_warm_cam)
+	var sun := DirectionalLight3D.new()
+	sun.rotation_degrees = Vector3(-50.0, 30.0, 0.0)
+	_warm_vp.add_child(sun)
+
+
+func _aabb_of(n: Node) -> AABB:
+	var out := AABB()
+	var first := true
+	var stack: Array = [n]
+	while not stack.is_empty():
+		var cur: Node = stack.pop_back()
+		if cur is MeshInstance3D:
+			var mi: MeshInstance3D = cur
+			if mi.mesh != null:
+				var a: AABB = mi.global_transform * mi.mesh.get_aabb()
+				out = a if first else out.merge(a)
+				first = false
+		for c in cur.get_children():
+			stack.append(c)
+	return out if not first else AABB(Vector3(-0.5, -0.5, -0.5), Vector3.ONE)
 
 
 func _update_bar(delta: float) -> void:
@@ -288,7 +385,7 @@ func _update_bar(delta: float) -> void:
 
 ## Cover, finish loading, swap, settle, reveal. Returns immediately (the work runs over frames; await `finished`).
 ## `card_title` / `card_subtitle` override the preset's wording.
-func go(path: String, card_title: String = "", card_subtitle: String = "") -> void:
+func go(path: String, card_title: String = "", card_subtitle: String = "", cover: Control = null) -> void:
 	if _going:
 		return                             # one hand-off at a time
 	if not ResourceLoader.exists(path):
@@ -309,6 +406,13 @@ func go(path: String, card_title: String = "", card_subtitle: String = "") -> vo
 	_title.text = card_title if card_title != "" else str(preset.get("title", ""))
 	_subtitle.text = card_subtitle if card_subtitle != "" else str(preset.get("subtitle", ""))
 	StateMachine.change_state(StateMachine.State.TRANSITIONING)
+	_cover = cover
+	if _cover != null:
+		# SEAMLESS MODE: the film's own last frame (Lil Blunt in the cart) IS the cover. No card, no black: the
+		# frame stays on screen while Episode 2 loads, builds and draws for the first time behind it, then dissolves
+		# into the live runner. (Jev simulation 2026-10-03 ranked this above the black card: tools/ep2_sim.)
+		add_child(_cover)
+		_cover.modulate.a = 1.0
 	set_process(true)
 	_run(path)
 
@@ -316,10 +420,13 @@ func go(path: String, card_title: String = "", card_subtitle: String = "") -> vo
 func _run(path: String) -> void:
 	# 1. COVER: the card comes up fast. It is black-violet, not the blue wipe.
 	_set_state(S.COVERING)
-	_card.visible = true
-	_card.modulate.a = 0.0
-	_start_fade(0.0, 1.0, COVER_SECONDS)
-	await get_tree().create_timer(COVER_SECONDS).timeout
+	if _cover == null:
+		_card.visible = true
+		_card.modulate.a = 0.0
+		_start_fade(0.0, 1.0, COVER_SECONDS)
+		await get_tree().create_timer(COVER_SECONDS).timeout
+	else:
+		_shown_for = MIN_CARD_SECONDS            # the frame was already on screen: no minimum hold
 	# 2. LOAD whatever the pre-warm did not finish, behind the card, with a visible bar.
 	_set_state(S.LOADING)
 	while (not _queue.is_empty() or not _late.is_empty()) and _waited < MAX_WAIT_SECONDS:
@@ -340,16 +447,40 @@ func _run(path: String) -> void:
 		ErrorReporter.report("scene_load_failed", {"path": path, "err": err, "route": "transition_director"})
 		_abort()
 		return
-	# 4. SETTLE: the new scene runs its _ready and draws a few frames under the card.
+	# 4. SETTLE: the new scene runs its _ready and does its FIRST DRAW (the long stall: shader compiles + texture
+	# uploads) under the cover. Wait until the frames are smooth again (4 in a row under 50 ms), never longer than
+	# MAX_SETTLE_SECONDS, so the cover lifts on a scene that is already running smoothly.
 	_settle = 0
-	while _settle < SETTLE_FRAMES:
+	var calm_after_stall: int = 0
+	var saw_stall: bool = false
+	var t_settle: int = Time.get_ticks_msec()
+	var last_us: int = Time.get_ticks_usec()
+	while float(Time.get_ticks_msec() - t_settle) / 1000.0 < MAX_SETTLE_SECONDS:
 		await get_tree().process_frame
+		var now_us: int = Time.get_ticks_usec()
+		var frame_ms: float = float(now_us - last_us) / 1000.0
+		last_us = now_us
 		_settle += 1
+		if frame_ms > STALL_MS:
+			saw_stall = true                  # the first draw's compile/upload hitch happened (hidden under the cover)
+			calm_after_stall = 0
+		elif saw_stall:
+			calm_after_stall += 1
+		# Done once the hitch is behind us (2 normal frames after it), or nothing stalled for a few frames.
+		if (saw_stall and calm_after_stall >= 2) or (not saw_stall and _settle >= SETTLE_FRAMES + 3):
+			break
 	# 5. REVEAL
 	_set_state(S.REVEALING)
 	StateMachine.change_state(StateMachine.State.PLAYING)
-	_start_fade(1.0, 0.0, REVEAL_SECONDS)
-	await get_tree().create_timer(REVEAL_SECONDS).timeout
+	if _cover != null:
+		var tw := create_tween()
+		tw.tween_property(_cover, "modulate:a", 0.0, DISSOLVE_SECONDS)
+		await tw.finished
+		_cover.queue_free()
+		_cover = null
+	else:
+		_start_fade(1.0, 0.0, REVEAL_SECONDS)
+		await get_tree().create_timer(REVEAL_SECONDS).timeout
 	_finish(path)
 
 

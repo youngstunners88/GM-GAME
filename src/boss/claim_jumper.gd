@@ -943,7 +943,7 @@ func die() -> void:
 	is_dead = true
 	# Episode 2 starts after this boss: begin loading it NOW, a little per frame, so the death tween and the 15 s
 	# film hide the work (TransitionDirector; skill ep2-seamless-transition).
-	TransitionDirector.prewarm(GameManager.EPISODE2_SCENE)
+	TransitionDirector.prewarm(GameManager.EPISODE2_SCENE, true)
 	BossVoiceSystem.say(self, BOSS_ID, "death", true)
 	BossVoiceSystem.clear_active()
 	set_physics_process(false)
@@ -989,12 +989,15 @@ func die() -> void:
 	get_tree().current_scene.add_child(victory)
 	var cutscene := preload("res://src/level/stage3_boss_defeat_cutscene.gd").new()
 	get_tree().current_scene.add_child(cutscene)
+	cutscene.keep_cover = true        # its last frame (Lil Blunt in the cart) covers the cut into Episode 2
 	cutscene.play()
 	await cutscene.finished
+	var cover: Control = cutscene.make_cover()
+	cutscene.queue_free()
 	# Kimi audit ordering: free BEFORE the scene load.
 	queue_free()
 	GameManager.ep2_story_unlocked = true    # earned by beating the boss: no code screen in the middle of the hand-off
-	TransitionDirector.go(GameManager.next_level_scene(3))
+	TransitionDirector.go(GameManager.next_level_scene(3), "", "", cover)
 
 func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("take_damage"):
