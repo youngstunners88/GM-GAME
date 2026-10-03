@@ -1,0 +1,127 @@
+{
+  "tests": [
+    {
+      "test": "ep2_audio_buses_test",
+      "assertions": 34,
+      "failures": 0,
+      "script_errors": 0,
+      "all_pass": true
+    },
+    {
+      "test": "ep2_runner_carts_test",
+      "assertions": 22,
+      "failures": 0,
+      "script_errors": 0,
+      "all_pass": true
+    },
+    {
+      "test": "ep2_camera_framing_test",
+      "assertions": 12,
+      "failures": 0,
+      "script_errors": 0,
+      "all_pass": false
+    },
+    {
+      "test": "ep2_miner_shaft_test",
+      "assertions": 35,
+      "failures": 0,
+      "script_errors": 0,
+      "all_pass": true
+    },
+    {
+      "test": "ep2_runner_motion_test",
+      "assertions": 58,
+      "failures": 0,
+      "script_errors": 0,
+      "all_pass": true
+    },
+    {
+      "test": "ep2_runner_audio_test",
+      "assertions": 48,
+      "failures": 0,
+      "script_errors": 0,
+      "all_pass": true
+    },
+    {
+      "test": "ep2_runner_revolver_test",
+      "assertions": 22,
+      "failures": 0,
+      "script_errors": 0,
+      "all_pass": true
+    },
+    {
+      "test": "ep2_runner_graybox_test",
+      "assertions": 60,
+      "failures": 0,
+      "script_errors": 0,
+      "all_pass": true
+    },
+    {
+      "test": "ep2_reachability_test",
+      "assertions": 16,
+      "failures": 0,
+      "script_errors": 0,
+      "all_pass": true
+    },
+    {
+      "test": "ep2_runner_music_test",
+      "assertions": 9,
+      "failures": 0,
+      "script_errors": 0,
+      "all_pass": true
+    },
+    {
+      "test": "ep2_cinematic_test",
+      "assertions": 12,
+      "failures": 0,
+      "script_errors": 0,
+      "all_pass": true
+    },
+    {
+      "test": "ep2_runner_voice_test",
+      "assertions": 42,
+      "failures": 0,
+      "script_errors": 0,
+      "all_pass": false
+    },
+    {
+      "test": "ep2_access_code_test",
+      "assertions": 11,
+      "failures": 0,
+      "script_errors": 0,
+      "all_pass": true
+    },
+    {
+      "test": "ep2_smelting_facility_test",
+      "assertions": 100,
+      "failures": 0,
+      "script_errors": 0,
+      "all_pass": true
+    },
+    {
+      "test": "ep2_session_root_test",
+      "assertions": 26,
+      "failures": 0,
+      "script_errors": 0,
+      "all_pass": true
+    },
+    {
+      "test": "ep2_art_direction_test",
+      "assertions": 21,
+      "failures": 0,
+      "script_errors": 0,
+      "all_pass": true
+    },
+    {
+      "test": "ep2_glb_pipeline_test",
+      "assertions": 28,
+      "failures": 0,
+      "script_errors": 0,
+      "all_pass": true
+    }
+  ],
+  "assertions": 556,
+  "compile": "280 scripts / 207 scenes pass",
+  "web_pck_bytes": 197183504,
+  "nonthreaded": true
+}

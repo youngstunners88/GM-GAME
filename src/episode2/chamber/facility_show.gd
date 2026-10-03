@@ -115,6 +115,7 @@ func _grab(name: String) -> void:
 	if hand == null:
 		return
 	_item.reparent(hand, false)
+	_item.top_level = name == "rifle"
 	_item.position = f.RIFLE_IN_HAND_POS if name == "rifle" else f.HELMET_IN_HAND_POS
 	_item.rotation = f.RIFLE_IN_HAND_ROT if name == "rifle" else Vector3.ZERO
 	_item.scale = Vector3.ONE * (f.RIFLE_HAND_SCALE if name == "rifle" else f.HELMET_SCALE)
@@ -177,6 +178,7 @@ static func steps_for(f: Node, beat: int) -> Array:
 				{"do": "walk", "to": offer_spot},
 				{"do": "face", "at": lb},
 				{"do": "reach", "at": offer_hand, "ramp": 0.6, "hold": 0.2, "lean": 0.35},
+				{"do": "wait", "t": 1.1},
 				{"do": "give", "item": "rifle", "t": 0.7},
 				{"do": "lb_hop", "v": 2.6},
 				{"do": "release", "ramp": 0.5, "t": 0.5},

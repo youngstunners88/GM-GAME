@@ -24,3 +24,9 @@
 b244bd3fb53cc744d0eb4886894bdfcfee15dd8b:docs/architecture/adr-combat-system.md:generic-api-key:69
 ef2866e62207a8c3c6789a00d839fc5143bd7934:.gitleaksignore:generic-api-key:4
 71361998b54e88465f1360fdd9e78505d5bcc012:docs/founder-prompts/PROMPT_SESSION6_VAULT_UTILITY_BOSSES_BAI.md:generic-api-key:24
+
+# Verified prose false positive: REVIEW line 13 lists preserved game systems.
+# The generic-api-key rule interpreted the literal phrase simulation/economy
+# after access-code wording as a key. No credential value exists on that line.
+# Exact historical finding only; rewritten prose and every source path remain scanned.
+8375692d8dc52a4f9059f103aece9e028d1ec327:docs/episode2-quality/bull-hideout-repair/REVIEW.md:generic-api-key:13
