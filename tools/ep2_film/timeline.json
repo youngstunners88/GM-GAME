@@ -1,5 +1,5 @@
 {
-  "theora_q": 4,
+  "theora_q": 2,
   "audio": [
     {"file": "ep2_film_cart_rumble",   "at": 0.0,  "gain": 0.8, "trim": 3.0, "fade_out": 0.8},
     {"file": "ep2_film_trestle_snap",  "at": 2.0,  "gain": 0.7},

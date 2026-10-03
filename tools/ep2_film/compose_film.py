@@ -12,7 +12,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 FILM = ROOT / ".farm/film"
-VOICE = ROOT / "src/assets/sounds/voice"
+VOICE = ROOT / "tools/ep2_film/voice"      # film_* lines live OUTSIDE src/: they are baked into the .ogv, shipping them too costs pck MB
+GAME_VOICE = ROOT / "src/assets/sounds/voice"
 SND = ROOT / "src/assets/sounds"
 OUT = ROOT / "src/assets/video/cutscenes/ep2_cliff_to_hideout.ogv"
 MIX = FILM / "film_mix.wav"
@@ -29,7 +30,7 @@ def dur(p):
 def main():
     entries = []
     for e in TIMELINE["audio"]:
-        base = VOICE if e["file"].startswith(("film_", "vo_")) else SND
+        base = VOICE if e["file"].startswith("film_") else GAME_VOICE if e["file"].startswith("vo_") else SND
         f = base / (e["file"] + ".mp3")
         entries.append((f, float(e["at"]), float(e.get("gain", 1.0)), e.get("fade_out"), e.get("trim")))
     for f, at, g, _, _ in entries:
@@ -59,8 +60,8 @@ def main():
     subprocess.check_call(["ffmpeg", "-v", "error", "-y", *args, "-filter_complex", ";".join(flt), "-map", "[m]", "-ar", "44100", str(MIX)])
     OUT.parent.mkdir(parents=True, exist_ok=True)
     subprocess.check_call(["ffmpeg", "-v", "error", "-y", "-i", str(JOIN), "-i", str(MIX), "-map", "0:v", "-map", "1:a",
-                           "-vf", "scale=960:540", "-c:v", "libtheora", "-q:v", str(TIMELINE.get("theora_q", 4)), "-r", "24",
-                           "-c:a", "libvorbis", "-q:a", "3", str(OUT)])
+                           "-vf", "scale=960:540", "-c:v", "libtheora", "-q:v", str(TIMELINE.get("theora_q", 2)), "-r", "24",
+                           "-c:a", "libvorbis", "-q:a", "2", str(OUT)])
     print(f"wrote {OUT.relative_to(ROOT)}  {OUT.stat().st_size / 1e6:.1f} MB  {total:.1f}s")
 
 
