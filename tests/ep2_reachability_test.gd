@@ -52,6 +52,11 @@ func _ready() -> void:
 	_check("the Episode 2 entry scene actually exists on disk (%s)" % gm.EPISODE2_SCENE,
 		ResourceLoader.exists(gm.EPISODE2_SCENE))
 
+	# 1b. The REAL boss-3 death path uses that routing (founder 2026-10-03: win -> film -> Episode 2, not the menu).
+	var boss_src: String = FileAccess.get_file_as_string("res://src/boss/bandit_boss.gd")
+	_check("boss 3's defeat hands off through next_level_scene(3), not to the menu",
+		boss_src.contains("GameManager.next_level_scene(3)") and not boss_src.contains('load_scene("res://src/ui/main_menu.tscn"'))
+
 	# 2. Clearing an EARLIER level must still route to the next level, not skip
 	#    the rest of Episode 1.
 	var mid: String = gm.next_level_scene(1)

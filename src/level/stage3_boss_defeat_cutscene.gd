@@ -30,7 +30,15 @@ extends CanvasLayer
 
 signal finished
 
-const VIDEO := "res://src/assets/video/cutscenes/stage3_boss_defeat.ogv"
+const VIDEO_OLD := "res://src/assets/video/cutscenes/stage3_boss_defeat.ogv"
+## Founder 2026-10-03: "defeating Boss 3" is THE transition into Episode 2. When this file is in the build it plays
+## instead of the old cut; the boss then hands straight to Episode 2 (bandit_boss.gd).
+const VIDEO_EP2 := "res://src/assets/video/cutscenes/stage3_boss_defeat_to_ep2.ogv"
+## Hold JUMP this long to skip; a hard deadline well past the film's length covers a stalled decode.
+const SKIP_HOLD := 1.0
+const DEADLINE_SEC := 120.0
+var VIDEO: String = VIDEO_EP2 if ResourceLoader.exists(VIDEO_EP2) else VIDEO_OLD
+var _skip_held := 0.0
 
 var _video_player: VideoStreamPlayer = null
 var _done := false
@@ -75,7 +83,17 @@ func play() -> void:
 	_mute_stage_music()
 	vid.play()
 
-	get_tree().create_timer(20.0, true, false, true).timeout.connect(_finish)
+	get_tree().create_timer(DEADLINE_SEC, true, false, true).timeout.connect(_finish)
+
+func _process(delta: float) -> void:
+	if _done:
+		return
+	if Input.is_action_pressed("jump"):
+		_skip_held += delta
+		if _skip_held >= SKIP_HOLD:
+			_finish()
+	else:
+		_skip_held = 0.0
 
 func _exit_tree() -> void:
 	if is_instance_valid(_video_player):

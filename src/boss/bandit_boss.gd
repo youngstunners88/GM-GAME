@@ -152,7 +152,9 @@ func die() -> void:
 	get_tree().current_scene.add_child(cutscene)
 	cutscene.play()
 	await cutscene.finished
-	SceneRouter.load_scene("res://src/ui/main_menu.tscn", SceneRouter.Transition.DIAMOND)
+	# Founder 2026-10-03: Episode 2 BEGINS after the 3rd boss. Win -> the defeat film -> straight into Episode 2
+	# (GameManager.next_level_scene(3) is EPISODE2_SCENE; it used to dump the player at the menu).
+	SceneRouter.load_scene(GameManager.next_level_scene(3), SceneRouter.Transition.DIAMOND)
 	queue_free()
 
 func _on_hitbox_body_entered(body: Node2D) -> void:

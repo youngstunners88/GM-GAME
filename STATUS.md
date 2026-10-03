@@ -5,6 +5,10 @@
 
 ---
 
+**➡️ EPISODE 2 NOW BEGINS AFTER BOSS 3 (2026-10-03).** Beating the 3rd boss plays the defeat film and then goes straight into Episode 2 (it used to drop to the menu). Tested: the routing, and the final film still plays and finishes.
+- **Your new video is NOT in the game yet.** The Drive link "defeating Boss 3" is private (Google asks for a sign-in; my connector cannot download files over 10 MB). Until I have the file, boss 3's existing defeat cut plays and then Episode 2 starts. To finish it: set the file to "Anyone with the link: Viewer" (or put the .mp4 into the repo), and I will encode it to Ogg Theora, drop it in as the Boss 3 defeat film (it plays automatically when the file `stage3_boss_defeat_to_ep2.ogv` exists; hold Space to skip) and ship it.
+- **Pack size warning:** the new video will add roughly 6-10 MB; the pack is already close to CI's 190 MB limit, so I will replace the old Boss 3 cut with it rather than keep both.
+
 **🎬 EPISODE 2 — FILM REDONE IN THE BOSS-CUT LOOK, REVOLVER + ZIPLINE SOUND, HEARTS, ZIPLINE SAFE (2026-10-03, evening).** You were right: the first film's Lil Blunt was a different character.
 - **Film:** remade from scratch. Every keyframe was rebuilt with Lil Blunt taken from your three boss-defeat cuts (goggles cowboy hat, leaf crest, red bandana), then five new Seedance shots: cart out of the mine, the flight and the head bonk on the stump (stars), Bull cleaning the wound, the Bitcoin / helmet / Winchester deal, target practice. 30 s, no music, dialogue and effects mixed at normal broadcast loudness. **Glitch:** the old film built the whole hideout while it was playing, which stuttered the picture; now nothing is built during the film, it ends on black, the hideout is built behind the black and fades in. Checked in a real render of the engine (frame 0, 6 s, 12 s, skip, first person with the rifle). Cost about $9.2 of Muapi in total for both attempts. Not checked: your browser.
 - **Revolver:** every shot now plays a hammer click and a full report with tunnel echo (6 overlapping voices), peak-normalised; a test starts three shots and checks three samples play.
