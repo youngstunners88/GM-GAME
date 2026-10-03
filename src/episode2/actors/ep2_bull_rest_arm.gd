@@ -2,6 +2,7 @@ class_name Ep2BullRestArm
 extends SkeletonModifier3D
 ## Keep the Tripo right arm relaxed when the mismatched Meshy idle curls it into the coat.
 ## Imported local bone poses use the imported rest rotation, not an identity quaternion.
+## Enabled only at standing idle; walk, seated clips and hand-over IK retain their own poses.
 var resting: bool = false
 
 
