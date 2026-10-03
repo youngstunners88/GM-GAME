@@ -41,3 +41,7 @@ The 2,000-cycle stress soak was not repeated. External model graders were unavai
 Publication must be confirmed separately by master's CI export, the butler deploy step and its successful push log, followed by a matching live BUILD identity and browser input check. Source commits alone do not prove a live release.
 
 The live scenery build `2026-10-03-e9a8925` was observed after CI/butler success. Its screenshot exposed the overlapping runner labels, repaired in the follow-up. Final browser QA restricts requests to the game/page/CDN and blocks backend, analytics and error-reporting services; it does not certify those external services. Final release identity is recorded separately in the release receipt.
+
+## Final release
+
+Master source `5fa78b99ffadcedd3a5011e03a542470475589ef` is live as `2026-10-03-5fa78b9`. [CI run](https://github.com/youngstunners88/GM-GAME/actions/runs/37117579633) completed successfully; the deploy step and butler push log agree. The public game reported the matching BUILD, rejected invalid code, returned through the normal menu route, and responded to manual left/right lane changes, Up, mouse aim and fire without script errors. The one-shot test entry query was cleared before checking menu return; no PCK or production behavior was changed by that QA fixture. See `release-receipt.json` and `release-evidence/` for scope and actual captures.

@@ -1,0 +1,43 @@
+{
+  "bounded_episode2_suites": 17,
+  "pass_assertions": 548,
+  "all_pass": true,
+  "followup": [
+    "access code 9/9",
+    "session 26/26",
+    "whole project compile 277 scripts / 205 scenes"
+  ],
+  "local_runner": {
+    "mode": "exact exported PCK, QA-seeded existing unlocked-device save; gate also checked fresh",
+    "runner_started": true,
+    "input_events": [
+      "ArrowLeft",
+      "ArrowRight",
+      "ArrowUp",
+      "mouse aim",
+      "fire"
+    ],
+    "script_errors": [],
+    "visual_observation": "Actual browser capture has progress and health at y=44, BTC/speed at y=110, no overlap, offline banner clear."
+  },
+  "local_hideout": {
+    "mode": "exact exported PCK, QA-only persisted unlock and existing chamber-shortcut query",
+    "runner_started": true,
+    "input_events": [
+      "hold Space skip film",
+      "ArrowUp walk",
+      "ArrowLeft strafe",
+      "mouse look",
+      "K controls",
+      "fire"
+    ],
+    "script_errors": [],
+    "visual_observation": "Film renders; hold-Space skip enters first person; later input capture shows camera movement and the K controls hint."
+  },
+  "limits": [
+    "2,000-cycle stress soak not repeated",
+    "Full film-to-exit traversal not repeated",
+    "No mobile-input or before/after FPS benchmark claim",
+    "Backend, telemetry and third-party service traffic blocked in final browser QA"
+  ]
+}

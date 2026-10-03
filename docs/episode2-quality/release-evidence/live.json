@@ -1,0 +1,76 @@
+{
+  "checkedAt": "2026-10-03T11:04:20.202Z",
+  "page": "https://youngstunners88.itch.io/smokerealm",
+  "gameURL": "https://html-classic.itch.zone/html/18305533-2057071/index.html?v=1791025097",
+  "buildID": "2026-10-03-5fa78b9",
+  "observedBuildLine": "[BUILD] Lil Blunt Adventure \u2014 build 2026-10-03-5fa78b9",
+  "sourceSHA": "5fa78b99ffadcedd3a5011e03a542470475589ef",
+  "gatePrompt": true,
+  "invalidCodeSubmitted": true,
+  "menuReturnInput": true,
+  "menuReturnFixture": "Cleared one-shot ep2 entry query before exit, matching the standard production URL",
+  "runnerStarted": true,
+  "leftChangedLane": true,
+  "rightChangedLane": true,
+  "input": [
+    "ArrowLeft",
+    "ArrowRight",
+    "ArrowUp",
+    "mouse aim",
+    "fire"
+  ],
+  "qaFixture": "Owner QA: preloaded existing unlocked-device save into HTML response only; live PCK and published gate unchanged; runner driven by manual input",
+  "probeCount": 20,
+  "probeTail": [
+    "[EP2] d=20 hp=3 lane=1 carts=[true, true, true] gold=0 v=20",
+    "[EP2] d=23 hp=3 lane=1 carts=[true, true, true] gold=0 v=20",
+    "[EP2] d=26 hp=3 lane=1 carts=[true, true, true] gold=0 v=20",
+    "[EP2] d=28 hp=3 lane=1 carts=[true, true, true] gold=0 v=20",
+    "[EP2] d=31 hp=3 lane=1 carts=[true, true, true] gold=0 v=20",
+    "[EP2] d=34 hp=3 lane=1 carts=[true, true, true] gold=0 v=20",
+    "[EP2] d=36 hp=3 lane=1 carts=[true, true, true] gold=0 v=20",
+    "[EP2] d=39 hp=3 lane=1 carts=[true, true, true] gold=1 v=20",
+    "[EP2] d=42 hp=3 lane=1 carts=[true, true, true] gold=1 v=20",
+    "[EP2] d=45 hp=3 lane=1 carts=[true, true, true] gold=1 v=20",
+    "[EP2] d=47 hp=3 lane=1 carts=[true, true, true] gold=2 v=20",
+    "[EP2] d=50 hp=3 lane=1 carts=[true, true, true] gold=2 v=20"
+  ],
+  "externalCallsBlocked": [
+    {
+      "host": "www.googletagmanager.com",
+      "path": "/gtag/js",
+      "method": "GET"
+    },
+    {
+      "host": "itch.io",
+      "path": "/html-callback",
+      "method": "POST"
+    },
+    {
+      "host": "browser.sentry-cdn.com",
+      "path": "/8.42.0/bundle.tracing.min.js",
+      "method": "GET"
+    },
+    {
+      "host": "lil-blunt-backend.teacherchris37.workers.dev",
+      "path": "/health",
+      "method": "GET"
+    },
+    {
+      "host": "itch.io",
+      "path": "/html-callback",
+      "method": "POST"
+    },
+    {
+      "host": "browser.sentry-cdn.com",
+      "path": "/8.42.0/bundle.tracing.min.js",
+      "method": "GET"
+    },
+    {
+      "host": "lil-blunt-backend.teacherchris37.workers.dev",
+      "path": "/health",
+      "method": "GET"
+    }
+  ],
+  "scriptErrors": []
+}
