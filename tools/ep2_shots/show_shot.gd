@@ -55,6 +55,17 @@ func _ready() -> void:
 	await _cap("15_rest_a")
 	_run(5.0)
 	await _cap("16_rest_b")
+	# Fresh facility: the default film resume must not inherit destroyed molds/show state.
+	f.visible = false
+	f = SMELT.instantiate()
+	f.intro_film = false
+	add_child(f)
+	f.setup(0, [], 0)
+	f.set_physics_process(false)
+	f._on_video_film_finished()
+	f._look_yaw = atan2(f.BULL_REST.x - f._player_pos.x, f.BULL_REST.z - f._player_pos.z)
+	_run(2.0)
+	await _cap("17_film_resume")
 	get_tree().quit()
 
 
@@ -93,3 +104,16 @@ func _cap(name: String) -> void:
 	var path := "%s/%s.png" % [_out, name]
 	get_viewport().get_texture().get_image().save_png(path)
 	print("SHOT ", path, " beat=", f.get_beat_name(), " bull=", f.get_bull().position, " clip=", f.get_bull().current_clip())
+
+	if name in ["1_seated", "6_carry_rifle", "7_offer_rifle", "17_film_resume"]:
+		var eye := Camera3D.new()
+		eye.fov = 48.0
+		add_child(eye)
+		eye.global_position = f.get_bull().global_position + Vector3(1.7, 1.85, -3.4)
+		eye.look_at(f.get_bull().global_position + Vector3(0.0, 1.45, 0.0))
+		eye.make_current()
+		for i in 3:
+			await get_tree().process_frame
+		get_viewport().get_texture().get_image().save_png("%s/%s_hands.png" % [_out, name])
+		f._camera.make_current()
+		eye.queue_free()

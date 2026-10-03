@@ -5,6 +5,11 @@
 
 ---
 
+
+**EPISODE 2 — BULL HAND PROPS AND STRUCTURAL SCENERY REPAIR (Codex, 2026-10-03).** The prior scenery pass did not fix Bull's hand props. Now the existing whiskey returns to his left hand after the default film, and a separate personal Winchester remains visible in his right hand while the traded rifle stays owned by Lil Blunt. Imported rest rotations keep his idle right arm out of the coat; carry/offer use final bone transforms rather than incorrect attachment axes. No founder GLB is edited. The furnace moves beside Fort Knox; the hideout gains pegged timber, chains/lanterns and textured rock relief; larger staggered MultiMesh pressure bents and ore outcrops break up the repeated mine shell. Claude's Boss 3/TransitionDirector changes are retained.
+- Native before/after and actual film-resume / offer hand crops: `docs/episode2-quality/bull-hideout-repair/`. All 17 bounded suites pass **556 assertions**; compile **280 scripts / 207 scenes**; staged security, front-page lock and green VFX pass. Fresh nonthreaded Web PCK **197,183,504 bytes**. Browser local PASS: film -> FPS, mouse yaw, W movement, LMB/pointer lock and K controls; zero script/page errors. Live deployment is pending. Full cinematic reference fidelity remains partial; no provider grade, long soak or mobile validation claimed.
+
+
 **🎞️ BOSS 3 -> EPISODE 2 HAND-OFF REBUILT: NO BLUE SCREEN, NO LONG WAIT (2026-10-03).** The blue screen was the old dark-blue diamond wipe sitting in front of a one-shot load of all of Episode 2 (about 40 models, textures, sounds, and the game code), and then a code screen. New system, `TransitionDirector` (skill `ep2-seamless-transition`):
 - The moment boss 3 dies, Episode 2 starts loading a little per frame behind the death animation and your 15-second video (no frame in front of you stalls over 250 ms in the test). When the video ends a dark loading card ("EPISODE 2 - THE GOLD MINE" with a bar) comes up, the last heavy pieces load behind it, the scene swaps from memory, and the card fades away. States and the global game state follow along and recover if anything fails.
 - Beating boss 3 skips Episode 2's access-code screen for that session (earned); the menu button still asks for the code. One switch reverts it.

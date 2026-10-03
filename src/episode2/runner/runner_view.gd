@@ -1045,7 +1045,50 @@ func _build_tunnel_shell(length: float, bottom: float) -> bool:
 	_mesh_node(_box(Vector3(20.0, 0.2, length + 60.0)), _rock_deep_mat(),
 		Vector3(0.0, bottom, (length - 20.0) * 0.5))
 	_build_rock_shoulders(length)
+	_build_mine_bents(length)
 	return true
+
+## Timber pressure bents break up repeated shell seams without adding collisions or lights.
+## Shared MultiMeshes keep the long runner cheap and leave rails, threats and cables readable.
+func _build_mine_bents(length: float) -> void:
+	var timber: Array[Transform3D] = []
+	var straps: Array[Transform3D] = []
+	var relief: Array[Transform3D] = []
+	var ore: Array[Transform3D] = []
+	var z: float = 10.0
+	while z < length - 14.0:
+		for side in [-1.0, 1.0]:
+			var x: float = side * 4.65
+			timber.append(Transform3D(Basis.IDENTITY.scaled(Vector3(0.72, 7.1, 0.72)), Vector3(x, 3.5, z)))
+			for y in [0.4, 3.6, 6.9]:
+				straps.append(Transform3D(Basis.IDENTITY.scaled(Vector3(0.80, 0.22, 0.80)), Vector3(x, y, z)))
+			timber.append(Transform3D(Basis(Vector3.FORWARD, side * 0.6).scaled(Vector3(0.44, 2.4, 0.50)), Vector3(x - side * 0.6, 6.2, z)))
+			for i in 3:
+				var h: float = 2.0 + float(i) * 2.0
+				relief.append(Transform3D(Basis(Vector3.UP, z * 0.11 + float(i)).scaled(Vector3(0.8, 1.5 + float(i % 2) * 0.25, 1.7)), Vector3(side * 5.0, h, z + 1.2)))
+		timber.append(Transform3D(Basis.IDENTITY.scaled(Vector3(9.8, 0.6, 0.72)), Vector3(0, 6.9, z)))
+		ore.append(Transform3D(Basis(Vector3.UP, z * 0.1).scaled(Vector3(0.55, 1.4, 1.0)), Vector3(4.55 if int(z / SHELL_STEP) % 2 == 0 else -4.55, 2.8, z + 5.0)))
+		z += SHELL_STEP
+	var wood: StandardMaterial3D = _timber_mat().duplicate()
+	wood.albedo_color = Color(0.92, 0.74, 0.52)
+	# Stretch grain along the posts instead of tiling the plank texture into brick-like bands.
+	wood.uv1_scale = Vector3(1.4, 0.08, 1.4)
+	wood.emission_enabled = true
+	wood.emission_texture = wood.albedo_texture
+	wood.emission = Color(0.9, 0.74, 0.55)
+	wood.emission_energy_multiplier = 0.08
+	_multi(_box(Vector3.ONE), wood, timber).name = "MinePressureBents"
+	var iron: StandardMaterial3D = _pal("iron").duplicate()
+	iron.albedo_color = Color(0.18, 0.16, 0.14)
+	iron.metallic = 0.15
+	_multi(_box(Vector3.ONE), iron, straps).name = "MineBentStraps"
+	var stone := SphereMesh.new()
+	stone.radius = 1.0
+	stone.height = 2.0
+	stone.radial_segments = 7
+	stone.rings = 3
+	_multi(stone, _rock_mat(), relief).name = "MineRockRelief"
+	_multi(stone, _vein_wall_mat(), ore).name = "MineOreOutcrops"
 
 ## Textured banks outside the three ballast decks. The shell has no floor here;
 ## seeing the distant pit plane made these margins read as flat grey wedges.

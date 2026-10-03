@@ -34,6 +34,7 @@ var _probe: bool = false
 ## without replaying earlier legs and chambers. 0 in normal play.
 var _leg_offset: int = 0
 var _probe_last: int = -1
+var _probe_chamber_t: float = 0.0
 ## TEST-ONLY. ?ep2bot=1 on web hands the runner to RunnerAutopilot (the same
 ## player the solvability gate uses), so a browser capture shows clean play.
 var _bot: bool = false
@@ -207,6 +208,13 @@ func _process(delta: float) -> void:
 	_keys_t = maxf(0.0, _keys_t - delta)
 	_refresh_hud()
 	_update_title_card()
+	if _probe and _root:
+		var chamber: Node = _root.get_active()
+		if chamber and chamber.has_method("get_beat_name") and chamber.has_method("is_fps"):
+			_probe_chamber_t += delta
+			if _probe_chamber_t >= 1.0:
+				_probe_chamber_t = 0.0
+				print("[EP2] chamber beat=%s fps=%s control=%s pos=%s yaw=%.3f" % [chamber.get_beat_name(), chamber.is_fps(), chamber.has_player_control(), chamber.get_player_position(), chamber.get_look_yaw()])
 	if _probe and _root and _root.get_mode() == Ep2SessionRoot.Mode.RUNNER:
 		var a: Node = _root.get_active()
 		if a and a.has_method("get_distance"):

@@ -24,6 +24,7 @@ const POSTER_TEX := "res://src/episode2/assets/textures/tex_pinup_poster.jpg"
 const HIDE_TEX := "res://src/episode2/assets/textures/tex_cowhide.png"
 const TIMBER_TEX := "res://src/episode2/assets/textures/tex_timber.jpg"
 const LANTERN := "res://src/episode2/assets/lantern.glb"
+const WHISKEY_TABLE_POS := Vector3(4.8, 0.0, 4.4)
 const INGOT_RACK := "res://src/episode2/assets/ingot_rack.glb"
 
 ## Inside faces of the alcove walls. The Bull stands at x=1.6, so the room is ~14 m wide and the walls hold
@@ -58,21 +59,22 @@ func _build(visuals: Node3D) -> Dictionary:
 	_gold = _plain(Color(1.0, 0.76, 0.28), 0.28, 0.45)
 	_gold.emission_enabled = true
 	_gold.emission = Color(1.0, 0.7, 0.2)
-	_gold.emission_energy_multiplier = 0.18
+	_gold.emission_energy_multiplier = 0.06
 	_leather = _plain(Color(0.28, 0.15, 0.09), 0.7, 0.0)
 	_alcove()
+	_joinery_and_lanterns()
 	_entry_wall()
 	var poster := _poster()
 	_trophies()
 	var gat: Node3D = _gatling(Vector3(-4.0, 0.0, 7.2), -2.21)
 	_gun_wall()
-	_whiskey_table(Vector3(3.6, 0.0, 5.4))
+	_whiskey_table(WHISKEY_TABLE_POS)
 	_rug(Vector3(0.9, 0.045, 4.4))
 	_bull_skull(Vector3(0.0, 6.3, 15.4))
 	_braziers()
 	_gold_and_cart()
 	_hanging_chains()
-	_blockers.append([Vector2(3.6, 5.4), 1.35])          # whiskey table
+	_blockers.append([Vector2(WHISKEY_TABLE_POS.x, WHISKEY_TABLE_POS.z), 1.35])          # whiskey table
 	return {"flames": _flames, "gatling": gat, "poster": poster, "blockers": _blockers, "rack_rifle": _rack_rifle}
 
 
@@ -535,12 +537,75 @@ func _soft_blob() -> GradientTexture2D:
 
 ## The Meshy cast-iron cauldron brimming with molten gold, on its stone base (2 m across). `molten` adds a
 ## flowing-gold surface on top so the pour reads as live. Returns the node for the facility's blockers.
-static func add_cauldron(visuals: Node3D, pos: Vector3, molten: Material) -> void:
+static func add_cauldron(visuals: Node3D, pos: Vector3, molten: Material, height: float = 1.35) -> void:
 	var d := HideoutDressing.new()
 	d._v = visuals
 	d._brass = Ep2Palette.make("brass")
-	var c: Node3D = d._prop("cauldron", pos, 1.35, 0.0)
+	var c: Node3D = d._prop("cauldron", pos, height, 0.0)
+	if c:
+		for mesh in c.find_children("*", "MeshInstance3D", true, false):
+			var iron := StandardMaterial3D.new()
+			iron.albedo_color = Color(0.48, 0.40, 0.32)
+			iron.metallic = 0.15
+			iron.roughness = 0.7
+			mesh.material_override = iron
 	if c == null:
 		var iron: StandardMaterial3D = d._dark_iron()
 		d._cyl(0.95, 0.78, 1.5, pos + Vector3(0.0, 1.05, 0.0), iron)
-	d._cyl(0.66, 0.66, 0.02, pos + Vector3(0.0, 1.16, 0.0), molten)
+	d._cyl(height * 0.49, height * 0.49, 0.02, pos + Vector3(0.0, height * 0.86, 0.0), molten)
+
+
+## Pegged load-bearing timber, hanging lanterns and an open vault frame the existing walk route.
+## All solid dressing stays at the walls, above the route or beyond the exit trigger.
+func _joinery_and_lanterns() -> void:
+	var root := Node3D.new()
+	root.name = "HideoutTimberJoinery"
+	_v.add_child(root)
+	var stone := _tex_mat("res://src/episode2/assets/textures/tex_rock_wall.jpg", Color(0.56, 0.48, 0.39), 0.35)
+	for z in [0.0, 3.5, 7.0, 10.5, 13.2]:
+		for side in [-1.0, 1.0]:
+			var x: float = (WALL_X - 0.35) * side
+			_box(Vector3(0.55, 5.7, 0.55), Vector3(x, 3.0, z), _timber, Vector3.ZERO, root)
+			_box(Vector3(0.85, 0.42, 0.85), Vector3(x, 0.21, z), stone, Vector3.ZERO, root)
+			for y in [0.7, 3.1, 5.4]:
+				_box(Vector3(0.61, 0.16, 0.61), Vector3(x, y, z), _iron, Vector3.ZERO, root)
+				for dz in [-0.18, 0.18]:
+					_cyl(0.035, 0.035, 0.05, Vector3(x - side * 0.32, y, z + dz), _brass, Vector3(0, 0, 90), root)
+			_box(Vector3(0.3, 1.8, 0.3), Vector3(x - side * 0.55, 5.25, z), _timber, Vector3(0, 0, -side * 38), root)
+		_box(Vector3(WALL_X * 2.0, 0.55, 0.6), Vector3(0.0, 5.95, z), _timber, Vector3.ZERO, root)
+	for z in [1.7, 7.0, 12.0]:
+		for side in [-1.0, 1.0]:
+			var x: float = side * 4.6
+			for i in 9:
+				var link := TorusMesh.new()
+				link.inner_radius = 0.045
+				link.outer_radius = 0.072
+				link.rings = 8
+				link.ring_segments = 6
+				_add(link, _iron, Vector3(x, 5.8 - float(i) * 0.10, z), Vector3(90, float(i % 2) * 90, 0), root)
+			var lp: Node3D = _glb(LANTERN, Vector3(x, 4.3, z), 0.65, 0.0, root)
+			if lp:
+				RunnerView.self_light(lp, 0.28, Color(1.0, 0.72, 0.38))
+			_fire(Vector3(x, 4.6, z), 1.2, 5.0)
+	# Dark open Fort Knox passage; the furnace is beside it, never across its mouth.
+	for side in [-1.0, 1.0]:
+		_box(Vector3(0.65, 4.7, 0.9), Vector3(side * 2.6, 2.25, 16.4), stone, Vector3.ZERO, root)
+		var door := Node3D.new()
+		door.position = Vector3(side * 2.3, 0.0, 16.1)
+		door.rotation.y = side * 0.48
+		root.add_child(door)
+		_box(Vector3(1.45, 3.95, 0.25), Vector3(-side * 0.72, 1.98, 0), _dark_wood, Vector3.ZERO, door)
+		for y in [0.5, 1.98, 3.45]:
+			_box(Vector3(1.42, 0.18, 0.31), Vector3(-side * 0.72, y, -0.03), _iron, Vector3.ZERO, door)
+			for dx in [0.2, 1.2]:
+				_cyl(0.04, 0.04, 0.05, Vector3(-side * dx, y, -0.20), _brass, Vector3(90, 0, 0), door)
+	_box(Vector3(4.3, 4.2, 0.15), Vector3(0, 2.1, 18.2), _plain(Color(0.05, 0.035, 0.025), 1.0, 0.0), Vector3.ZERO, root)
+	for i in 11:
+		var a: float = float(i) / 10.0 * PI
+		_box(Vector3(0.65, 0.75, 0.95), Vector3(cos(a) * 2.55, 4.3 + sin(a) * 0.75, 16.4), stone, Vector3(0, 0, rad_to_deg(a) - 90), root)
+	for x in [-8.0, -4.3, 4.4, 8.2]:
+		for i in 3:
+			var rock: Node3D = _glb(RunnerView.BOULDER_ROCK_MODEL, Vector3(x, 2.4 + float(i) * 1.7, 17.6), 1.9, x, root)
+			if rock:
+				for mesh in rock.find_children("*", "MeshInstance3D", true, false):
+					mesh.material_override = stone

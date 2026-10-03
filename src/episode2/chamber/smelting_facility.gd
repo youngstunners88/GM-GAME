@@ -161,6 +161,8 @@ var _show: FacilityShow = null        # the scripted performance (data-driven se
 var _show_active: bool = false        # a scripted beat owns Lil Blunt and the camera
 var _show_blocks_control: bool = false
 var _glass_node: Node3D = null
+var _bull_guard_rifle: Node3D = null # Bull's own gun, separate from the traded reward
+var _bull_rest_arm: Ep2BullRestArm = null
 var _cigar_tip: MeshInstance3D = null
 var _cigar_smoke: CPUParticles3D = null
 var _anim_t: float = 0.0
@@ -326,12 +328,13 @@ func _ensure_room() -> void:
 func _on_video_film_finished() -> void:
 	_ensure_room()
 	_stand_t = 99.0
-	_set_glass_on_table()
+	_return_bull_glass()
 	if _bull:
 		_bull.position = BULL_REST
 		_bull.facing = PI
 		_bull.rotation.y = PI
 		_bull.play(BULL_IDLE, 1.0, 0.0)
+		_bull_rest_arm.resting = true
 	_player_pos = HAND_MARK
 	_item_delivered("rifle")
 	_item_delivered("helmet")
@@ -680,6 +683,8 @@ func _on_beat_entered(beat: int) -> void:
 
 ## The show for the current beat finished: move the story on.
 func _on_show_done() -> void:
+	if _beat == Beat.HELMET:
+		_return_bull_glass()
 	_show_active = false
 	_show_blocks_control = false
 	match _beat:
@@ -1047,8 +1052,8 @@ func _build_visuals() -> void:
 	_visuals.add_child(channel_embers)
 
 	# --- crucibles pouring into the channel, steam rising.
-	for spec in [Vector3(-6.5, 0.0, CHANNEL_Z + 2.4), Vector3(6.2, 0.0, CHANNEL_Z + 2.2), Vector3(-1.6, 0.0, CHANNEL_Z + 3.4)]:
-		HideoutDressing.add_cauldron(_visuals, spec, channel)
+	for spec in [Vector3(-4.8, 0.0, CHANNEL_Z + 2.0), Vector3(4.8, 0.0, CHANNEL_Z + 1.8), Vector3(-2.8, 0.0, CHANNEL_Z + 3.4)]:
+		HideoutDressing.add_cauldron(_visuals, spec, channel, 1.85)
 		_cauldron_spots.append(spec)
 		# Molten gold pouring from a chain-hung ladle into the cauldron (the target's glowing pour columns).
 		var pour := CylinderMesh.new()
@@ -1065,6 +1070,8 @@ func _build_visuals() -> void:
 		ladle.rotation.z = deg_to_rad(32.0)
 		_box(Vector3(0.06, 1.6, 0.06), spec + Vector3(0.7, 5.6, 0.0), ladle_iron)
 		var glow := Ep2Palette.make_forge_light()
+		glow.light_energy = 2.8
+		glow.omni_range = 7.0
 		glow.position = spec + Vector3(0.0, 2.2, -0.6)
 		_visuals.add_child(glow)
 		var steam := _particles(26, 3.0, Color(0.75, 0.68, 0.62, 0.22), 1.1)
@@ -1080,16 +1087,16 @@ func _build_visuals() -> void:
 		_visuals.add_child(steam)
 
 	# --- the furnace in the back wall: a brick mass with a white-hot mouth.
-	_box(Vector3(7.0, 6.5, 2.6), Vector3(0.0, 3.25, 17.4), rock_dark)
+	_box(Vector3(4.8, 4.6, 2.6), Vector3(-6.3, 2.3, 17.4), rock_dark)
 	var mouth := StandardMaterial3D.new()
 	mouth.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mouth.albedo_color = Color(1.0, 0.45, 0.12)
-	_box(Vector3(3.2, 2.4, 0.2), Vector3(0.0, 1.9, 16.05), channel)
+	_box(Vector3(2.5, 2.2, 0.2), Vector3(-6.3, 1.7, 16.05), channel)
 	var fl := OmniLight3D.new()
 	fl.light_color = Color(1.0, 0.6, 0.25)
 	fl.light_energy = 4.0
-	fl.omni_range = 14.0
-	fl.position = Vector3(0.0, 2.0, 14.8)
+	fl.omni_range = 6.5
+	fl.position = Vector3(-6.3, 2.0, 14.8)
 	_visuals.add_child(fl)
 
 	# --- the gold: ingot racks, piles, crates.
@@ -1121,7 +1128,9 @@ func _build_visuals() -> void:
 	# --- INFERNO BULL: the founder's "Bull Mine Gunslinger" (Drive, 2026-09-30), standing by his whiskey.
 	var bull_key := Ep2Palette.make_forge_light()
 	bull_key.light_energy = 3.2
-	bull_key.omni_range = 9.0
+	bull_key.omni_range = 6.0
+	bull_key.light_color = Color(1.0, 0.87, 0.70)
+	bull_key.shadow_enabled = true
 	bull_key.position = BULL_POSITION + Vector3(-1.8, 2.8, -2.2)
 	_visuals.add_child(bull_key)
 	_build_bull(timber)
@@ -1336,6 +1345,9 @@ func _boulder(pos: Vector3, size: float) -> void:
 	b.position = pos - Vector3(0.0, 0.1 * size, 0.0)
 	b.rotation.y = pos.x * 1.3 + pos.z * 0.7
 	RunnerView.self_light(b, 0.05, Color(1.0, 0.75, 0.5))
+	var rock_material: StandardMaterial3D = _tex(ROCK_TEX, Color(0.46, 0.38, 0.30), 0.28)
+	for mesh in b.find_children("*", "MeshInstance3D", true, false):
+		mesh.material_override = rock_material
 	_visuals.add_child(b)
 
 
@@ -1369,12 +1381,13 @@ func _apply_art() -> void:
 	if we:
 		we.environment = Ep2Palette.make_forge_environment()
 		# The hangout is the warmest, brightest room in the episode (founder target image): lift the fill and bloom.
-		we.environment.ambient_light_energy = 0.95
+		we.environment.ambient_light_energy = 0.75
+		we.environment.ambient_light_color = Color(0.74, 0.72, 0.68)
 		we.environment.glow_intensity = 0.85
 		we.environment.glow_hdr_threshold = 0.95
 		# Founder 2026-10-01: "I don't like the greyscale" - push the grade toward the target's saturated gold.
 		we.environment.adjustment_enabled = true
-		we.environment.adjustment_saturation = 1.2
+		we.environment.adjustment_saturation = 1.0
 		we.environment.adjustment_contrast = 1.08
 		we.environment.adjustment_brightness = 1.05
 	var sun := get_node_or_null("Sun") as DirectionalLight3D
@@ -1471,6 +1484,9 @@ func _build_bull(timber: StandardMaterial3D) -> void:
 	seat.position = BULL_POSITION + Vector3(0.0, 0.33, 0.18)
 	seat.name = "BullSeat"
 	_build_bull_props()
+	_bull_rest_arm = Ep2BullRestArm.new()
+	_bull.skeleton.add_child(_bull_rest_arm)
+	_bull.skeleton.skeleton_updated.connect(_sync_bull_hand_props)
 
 
 ## "He looks like an oil patch melting" (founder 2026-10-02): Meshy's rig drops the metallic-roughness texture, so
@@ -1514,13 +1530,48 @@ func _begin_stand_up() -> void:
 
 
 ## When he stands the whiskey goes down on the table (a separate glass, never skinned to his arm: founder
-## 2026-10-02 "liquid arm"). The tumbler stays there for the rest of the scene.
+## 2026-10-02 "liquid arm"). Return it to his hand once the hand-over is finished.
 func _set_glass_on_table() -> void:
 	if _glass_node == null or not is_instance_valid(_glass_node):
 		return
 	_glass_node.reparent(_visuals, false)
-	_glass_node.position = Vector3(4.15, 1.03 + GLASS_HEIGHT * 0.5, 5.6)
+	_glass_node.top_level = false
+	_glass_node.position = HideoutDressing.WHISKEY_TABLE_POS + Vector3(0.55, 1.03 + GLASS_HEIGHT * 0.5, 0.2)
 	_glass_node.rotation = Vector3.ZERO
+
+
+## Restore his glass after the traded equipment leaves his hands. No idle sipping or IK loop.
+func _return_bull_glass() -> void:
+	if _glass_node and _bull:
+		_glass_node.reparent(_bull.holder("LeftHand"), false)
+		_glass_node.top_level = true
+		_glass_node.scale = Vector3.ONE
+
+
+## Place rigid props from the final modified bone pose, after animation and IK.
+## The complete Winchester GLB node matrix maps its long axis onto scene -Z.
+func _sync_bull_hand_props() -> void:
+	if _bull == null or _bull.skeleton == null:
+		return
+	var sk: Skeleton3D = _bull.skeleton
+	var forward: Vector3 = Basis(Vector3.UP, _bull.facing) * Vector3.FORWARD
+	var across: Vector3 = Basis(Vector3.UP, _bull.facing) * Vector3.RIGHT
+	var left: int = sk.find_bone("LeftHand")
+	if left >= 0 and _glass_node and _glass_node.get_parent() != _visuals:
+		var palm: Vector3 = (sk.global_transform * sk.get_bone_global_pose(left)).origin
+		_glass_node.global_transform = Transform3D(Basis.IDENTITY, palm + Vector3.UP * 0.06 - forward * 0.10)
+	var carrying_trade: bool = _rifle_node != null and _rifle_node.get_parent() == _bull.holder("RightHand")
+	if _bull_guard_rifle:
+		_bull_guard_rifle.visible = (_stand_t < 0.0 or _has_helmet) and not carrying_trade
+	var gun: Node3D = _rifle_node if carrying_trade else _bull_guard_rifle
+	var right: int = sk.find_bone("RightHand")
+	if gun == null or not gun.visible or right < 0:
+		return
+	var palm: Vector3 = (sk.global_transform * sk.get_bone_global_pose(right)).origin
+	var stock_axis: Vector3 = Vector3(-1.0, 0.15, -0.10).normalized() if carrying_trade else (across * 0.72 - Vector3.UP * 0.69).normalized()
+	var depth: Vector3 = stock_axis.cross(Vector3.UP).normalized()
+	var up: Vector3 = depth.cross(stock_axis).normalized()
+	gun.global_transform = Transform3D(Basis(-depth, up, -stock_axis).scaled(Vector3.ONE * 1.05), palm - stock_axis * 0.12 - forward * 0.05)
 
 
 func _stand_up_done() -> bool:
@@ -1542,14 +1593,34 @@ func _build_bull_props() -> void:
 	var gm: Node3D = (load(GLASS_MODEL) as PackedScene).instantiate()
 	gm.scale = Vector3.ONE * GLASS_HEIGHT
 	gm.position = Vector3(0.0, -GLASS_HEIGHT * 0.5, 0.0)
+	for mesh in gm.find_children("*", "MeshInstance3D", true, false):
+		for i in mesh.mesh.get_surface_count():
+			var source: Material = mesh.mesh.surface_get_material(i)
+			if source is StandardMaterial3D:
+				var mat: StandardMaterial3D = source.duplicate()
+				mat.metallic = 0.0
+				mat.metallic_texture = null
+				mat.roughness = 0.25
+				mat.emission_enabled = true
+				mat.emission_texture = mat.albedo_texture
+				mat.emission = Color(1.0, 0.85, 0.62)
+				mat.emission_energy_multiplier = 0.22
+				mesh.set_surface_override_material(i, mat)
 	_glass_node.add_child(gm)
 	var lh: Node3D = _bull.holder("LeftHand")
 	if lh:
 		lh.add_child(_glass_node)
+		_glass_node.top_level = true
 		_glass_node.position = GLASS_IN_HAND_POS
 	else:
 		_glass_node.position = BULL_POSITION + Vector3(0.7, 1.2, -0.3)
 		_visuals.add_child(_glass_node)
+	_bull_guard_rifle = (load(RIFLE_MODEL) as PackedScene).instantiate()
+	_bull_guard_rifle.name = "BullPersonalWinchester"
+	_bull.holder("RightHand").add_child(_bull_guard_rifle)
+	_bull_guard_rifle.top_level = true
+	RunnerView.self_light(_bull_guard_rifle, 0.12, Color(1.0, 0.88, 0.72))
+	_fix_bull_materials(_bull_guard_rifle)
 	# The cigar the model already holds in his teeth: add the ember glow and the smoke at the bone `headfront`.
 	var tip := SphereMesh.new()
 	tip.radius = 0.028
@@ -1648,12 +1719,17 @@ func _animate_bull(delta: float) -> void:
 			_bull.play(BULL_IDLE, 1.0, 0.4)
 		_bull.step(delta)
 		return
+	if _rifle_node and _rifle_node.get_parent() == _bull.holder("RightHand") and _bull.is_walking():
+		var front: Vector3 = Basis(Vector3.UP, _bull.facing) * Vector3.BACK
+		_bull.reach("Right", _bull.position + front * 0.62 + Vector3.UP * 1.55, 0.35)
 	# Standing: the offset eases out over the crossfade into the standing clips.
 	_settle = maxf(0.0, _settle - delta)
 	_bull.model.position = STAND_CORR_END * (_settle / 0.4) * _bull.model.scale.x
 	if not _bull.is_walking() and _bull.reach_weight("Right") < 0.05 and _bull.current_clip() != BULL_IDLE \
 			and _bull.current_clip() != "walk" and _bull.current_clip() != BULL_SIP:
 		_bull.play(BULL_IDLE)
+	if _bull_rest_arm:
+		_bull_rest_arm.resting = not _bull.is_walking() and _bull.reach_weight("Right") < 0.01 and _bull.current_clip() == BULL_IDLE
 	# Rest means REST: no idle sips, no waving. Arms only move for an action beat (grab, hand-over).
 	_follow_player_in_fps(delta)
 	if _bull_blocker_i >= 0 and _bull_blocker_i < _blockers.size():
@@ -1749,6 +1825,7 @@ func _enter_fps() -> void:
 		_helmet_node.visible = false
 	if _rifle_node and is_instance_valid(_rifle_node) and _camera:
 		_rifle_node.reparent(_camera, false)
+		_rifle_node.top_level = false
 		_rifle_node.position = FPS_RIFLE_POS
 		_rifle_node.rotation = FPS_RIFLE_ROT
 		_rifle_node.scale = Vector3.ONE * 0.85
