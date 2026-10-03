@@ -228,6 +228,7 @@ const HELMET_LIFT := 0.2             # head bone -> the hat crown, in model metr
 const CHANNEL_Z := 10.5
 const GOLD_PILE_MODEL := "res://src/episode2/assets/gold_pile.glb"
 const MOLTEN_SHADER := "res://src/episode2/art/molten_flow.gdshader"
+const MOLTEN_SURFACE_ENERGY := 1.3   # broad flowing gold keeps colour variation; local lights supply the heat
 const ROCK_TEX := "res://src/episode2/assets/textures/tex_rock_wall.jpg"
 const GRAVEL_TEX := "res://src/episode2/assets/textures/tex_gravel.jpg"
 const TIMBER_TEX := "res://src/episode2/assets/textures/tex_timber.jpg"
@@ -1014,6 +1015,9 @@ func _build_visuals() -> void:
 	# --- THE MOLTEN CHANNEL: gold running across the room behind the Bull; the room's key light.
 	var channel := ShaderMaterial.new()
 	channel.shader = load(MOLTEN_SHADER)
+	# Actual player-view furnace pixels clipped both R/G on 16.5% of its face at
+	# energy 2.2, erasing the flowing crust. Keep the shader and its lights intact.
+	channel.set_shader_parameter("energy", MOLTEN_SURFACE_ENERGY)
 	var trench := _box(Vector3(19.0, 0.2, 2.2), Vector3(0.0, 0.02, CHANNEL_Z), rock_dark)
 	trench.visible = true
 	var melt_mesh := PlaneMesh.new()

@@ -1,0 +1,13 @@
+---
+name: gm-game-ep2-hideout-art
+description: Improve Inferno Bull’s Episode 2 hideout and target-practice presentation from Lil Blunt’s actual camera. Use for bare corners, missing or obscured trophies/guns/gold/whiskey, flat forge light, prop clipping and mismatch with founder hand-over or practice images. Preserve models, beats, controls and progression.
+---
+# Episode 2 hideout art
+Read [source and runtime contract](references/contract.md) and repository `ep2-hideout-player-view`, `ep2-hideout-set-dressing`, `ep2-hud-title-card`.
+
+1. Run `tools/ep2_shots/player_view_shot.tscn -- out=<dir>` in Compatibility GL: arrival, walk forward, mid-room, look left/right/back/up. Confirm the rig uses real movement and follow camera. Inspect cinematic/closeup captures separately for hand-over poses; a cinematic cannot substitute for player-view proof.
+2. Match the hand-over image's hierarchy: Bull and Lil Blunt in the foreground; molten channel/pours behind Bull; firelight on textured timber and rock. Track a visibility matrix across gameplay views for rifles/Gatling, bears/trophies, poster, rug, whiskey glass/table, ingots/ore cart, cauldrons/pours, beams/chains, Fort Knox door/skull. All required items need at least one natural view; do not require every prop in every frame.
+3. Diagnose occlusion, scale, orientation, floor contact and material alpha before adding props. Camera looking +Z makes screen-left world +X. Distinguish opaque fur/leather/wood from actual glass/particle transparency. Pale iron under warm lights can look like cream plastic; saturated emission can flatten organic models. Fix the carrier, not the whole scene tint.
+4. Dress through `hideout_dressing.gd`; preserve blockers and clear walk/interaction space. Reuse founder props and existing five Meshy hideout models. Keep build work out of film playback. Touch no actor rig or gameplay beat without a separate scoped reason.
+5. Practice image is a visual reference, not authority to introduce Diamonds economy or redesign the existing mold-range mechanics. Improve wood/iron backing and local presentation only if shots reveal a defect; preserve targets, hit semantics and equipment hand-over. Keep clean HUD/title card and K controls hint.
+6. Compare same-camera before/after; check Bull at rest, hand-over, film frame 0/mid/skip and first-person viewmodel. Run facility/session/art-direction/GLB/controls tests and fresh web export; ship with honest proof from the contract. Report missing provider reviews separately from your own actual pixel inspection.
