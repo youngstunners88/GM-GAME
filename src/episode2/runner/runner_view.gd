@@ -2517,7 +2517,9 @@ func _update_hud() -> void:
 		var spd: float = float(_sim.get_speed()) if _sim.has_method("get_speed") else Sim.RUN_SPEED
 		var g: int = int(_sim.get_gold()) if _sim.has_method("get_gold") else 0
 		_gold_label.text = "BTC  %d      %d m/s" % [g, int(round(spd))]
-		_gold_label.position = Vector2(24.0, 18.0)
+		# Episode entry owns progress/health at y=44..98. Keep these stats in
+		# their own row, above the temporary K controls hint at y=150.
+		_gold_label.position = Vector2(24.0, 110.0)
 	if _cart_strip:
 		_cart_strip.position = Vector2(vs.x * 0.5 - _cart_strip.size.x * 0.5, vs.y - 84.0)
 		_cart_strip.queue_redraw()

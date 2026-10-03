@@ -10,6 +10,7 @@ Reviewed the founder's design brief and three actual reference images against Cl
 | A solid wall and orange rectangle block the cliff opening | Open forest skyline, distant golden-hour woods, forge light recessed below the skyline | `cliff-before-after.jpg` |
 | Looking back exposes an empty brown hideout background | Rock arrival face, timber frame, lamps and closed iron mine gate | `hideout-entry-before-after.jpg` |
 | Plain rectangular gold bars and clipped molten colour | Shared beveled ingot mesh; channel energy 2.2 → 1.3 | `hideout-gold-before-after.jpg` |
+| Web-only overlapping progress/health and BTC/speed text | Separate vertical rows at y=44 and y=110; clear the offline banner | Final Chromium export capture |
 
 Comparison boards use actual Godot Compatibility GL renders at the same camera positions. Native captures include mine 20/100 m, a 240 m inspection cliff leg at 155/205/225 m, and arrival/forward/midroom/left/right/back/up in the hideout. The shortened cliff inspection leg is not a full campaign traversal.
 
@@ -31,10 +32,12 @@ Three installed personal skills are mirrored under `.claude/skills/`: `gm-game-e
 - Whole-project compile gate: 277 scripts and 205 scenes pass.
 - Security sentinel: 18/18 after staging; front-page and green-VFX gates pass.
 - Fresh CI-preset nonthreaded Web export: 197,017,040 bytes (187.89 MiB), below the 190 MiB gate; zero script/parse errors.
-- Chromium exact-export test: fresh access prompt and invalid-code rejection; runner start and arrow/mouse input using a QA-only preloaded existing unlocked-device save. The PCK and published gate are unchanged by that fixture.
+- Chromium exact-export test: fresh access prompt and invalid-code rejection; runner start and arrow/mouse input using a QA-only preloaded existing unlocked-device save. A second run used the existing chamber shortcut, observed the film, held Space to skip, then walked, strafed, looked, displayed K controls and fired in first person. The PCK and published gate are unchanged by those fixtures.
 
 ## Limits and release evidence
 
 The 2,000-cycle stress soak was not repeated. External model graders were unavailable because this runtime does not expose their environment credentials. `blotch-hunt.sh` could not complete its live browser matrix in the initial container browser setup, so no calibrated detector pass or external art score is claimed. Native views prove the bounded scenery changes; they do not prove every frame of Bull's animation or a full film-to-exit browser playthrough.
 
 Publication must be confirmed separately by master's CI export, the butler deploy step and its successful push log, followed by a matching live BUILD identity and browser input check. Source commits alone do not prove a live release.
+
+The live scenery build `2026-10-03-e9a8925` was observed after CI/butler success. Its screenshot exposed the overlapping runner labels, repaired in the follow-up. Final browser QA restricts requests to the game/page/CDN and blocks backend, analytics and error-reporting services; it does not certify those external services. Final release identity is recorded separately in the release receipt.
