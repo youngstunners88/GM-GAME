@@ -365,13 +365,32 @@ func _ready() -> void:
 	var said2: Array = []
 	f.line_spoken.connect(func(id): said2.append(id))
 	f.setup(0, [], 0)
-	_check("the facility opens on the cliff-jump film", f.get_beat() == f.Beat.CINEMATIC and f.get_film() != null, f.get_beat_name())
-	_run(f, 13.0)
-	_check("after the film he wakes up (-> WAKE)", f.get_beat() == f.Beat.WAKE, f.get_beat_name())
-	_until(f, 40.0, func(): return f.get_beat() == f.Beat.ARRIVAL or f.get_beat() == f.Beat.APPROACH)
-	_check("Lil Blunt groans, then the Bull nurses him with whiskey", said2.slice(0, 2) == ["vo_lb_wake", "vo_bull_wake"], str(said2))
-	_check("...and control comes back to the player", _until(f, 5.0, func(): return f.has_player_control()))
-	f.queue_free()
+	_check("the facility opens on a film", f.get_beat() == f.Beat.CINEMATIC and (f.get_video_film() != null or f.get_film() != null), f.get_beat_name())
+	if f.get_video_film() != null:
+		# The Seedance transition film: it starts on the same frame and the hideout is NOT built yet (no hitch).
+		_check("the Seedance film is playing from frame 0 (no delay)", f.get_video_film().elapsed() == 0.0 and not f._room_built)
+		_run(f, 0.5)
+		_check("...the room does not delay it: still not built at 0.5 s", not f._room_built and f.get_beat() == f.Beat.CINEMATIC)
+		_run(f, 1.0)
+		_check("...it is built behind the picture shortly after", f._room_built)
+		var got_btc: Array = []
+		f.payment_made.connect(func(n): got_btc.append(n))
+		var got_w: Array = []
+		f.weapon_granted.connect(func(id): got_w.append(id))
+		_until(f, SmeltingFacilityChamber.FILM_SECONDS + 5.0, func(): return f.get_beat() != f.Beat.CINEMATIC)
+		_check("when the film ends the story it told is in the game: Winchester + helmet + 1 BTC",
+			f.has_winchester() and f.has_helmet() and f.get_btc_paid() == 1 and got_btc == [1] and got_w == ["winchester_1886"], str(got_btc))
+		_check("...and play resumes at target practice in first person", f.get_beat() == f.Beat.VERB_TEACH and f.is_fps() and f.has_player_control(), f.get_beat_name())
+		_check("...with the Bull standing at his mark", f.get_bull().position.distance_to(f.BULL_REST) < 0.05)
+		_check("...and the film node is gone", f.get_video_film() == null)
+		f.queue_free()
+	else:
+		_run(f, 13.0)
+		_check("after the film he wakes up (-> WAKE)", f.get_beat() == f.Beat.WAKE, f.get_beat_name())
+		_until(f, 40.0, func(): return f.get_beat() == f.Beat.ARRIVAL or f.get_beat() == f.Beat.APPROACH)
+		_check("Lil Blunt groans, then the Bull nurses him with whiskey", said2.slice(0, 2) == ["vo_lb_wake", "vo_bull_wake"], str(said2))
+		_check("...and control comes back to the player", _until(f, 5.0, func(): return f.has_player_control()))
+		f.queue_free()
 
 	await get_tree().process_frame
 	if _fail == 0:

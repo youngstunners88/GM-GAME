@@ -1,0 +1,19 @@
+{
+  "theora_q": 4,
+  "audio": [
+    {"file": "ep2_film_cart_rumble",   "at": 0.0,  "gain": 0.8, "trim": 3.0, "fade_out": 0.8},
+    {"file": "ep2_film_trestle_snap",  "at": 2.0,  "gain": 0.7},
+    {"file": "ep2_film_whoosh_slowmo", "at": 2.6,  "gain": 0.7},
+    {"file": "ep2_film_tumble",        "at": 5.2,  "gain": 0.6, "trim": 1.8, "fade_out": 0.4},
+    {"file": "ep2_film_head_clonk",    "at": 6.9,  "gain": 1.0},
+    {"file": "ep2_film_land_thud",     "at": 6.9,  "gain": 0.6},
+    {"file": "ep2_film_tinnitus",      "at": 7.2,  "gain": 0.35, "trim": 3.2, "fade_out": 1.2},
+    {"file": "ep2_film_heartbeat",     "at": 7.6,  "gain": 0.5, "trim": 3.0, "fade_out": 1.2},
+    {"file": "film_lb_groan",          "at": 10.2, "gain": 1.0},
+    {"file": "film_bull_wound",        "at": 11.0, "gain": 1.0},
+    {"file": "film_bull_intro",        "at": 15.4, "gain": 1.0},
+    {"file": "film_lb_deal",           "at": 21.2, "gain": 1.0},
+    {"file": "film_bull_market",       "at": 22.9, "gain": 1.0},
+    {"file": "film_bull_unite",        "at": 25.4, "gain": 1.0}
+  ]
+}

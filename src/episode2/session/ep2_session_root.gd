@@ -128,6 +128,9 @@ func _enter_chamber() -> void:
 const WARM_DIRS := ["res://src/episode2/assets/", "res://src/episode2/assets/hideout/"]
 
 func _warm_chamber_assets(_level: int = 0) -> void:
+	# The Seedance transition film first: it is what the very next cut shows, and it must start the frame it is asked to.
+	if ResourceLoader.exists(SmeltingFacilityChamber.FILM_VIDEO):
+		ResourceLoader.load_threaded_request(SmeltingFacilityChamber.FILM_VIDEO)
 	for d in WARM_DIRS:
 		for f in DirAccess.get_files_at(d):
 			if f.ends_with(".glb"):

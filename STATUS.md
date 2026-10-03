@@ -5,6 +5,14 @@
 
 ---
 
+**🎬 EPISODE 2 — THE TRANSITION IS NOW A SEEDANCE 2 FILM (2026-10-03).** The cart-over-the-gap scene is a 30-second film made from your Google Doc, with **no music** in it (dialogue and sound effects only; you add the score).
+- **What you see:** Lil Blunt rides the cart out of the mine, hits the dead end and flies the gap into the woods, bonks his head on a stump and is out cold. Inferno Bull cleans the wound with whiskey, introduces himself, trades the Winchester 1886 and the helmet for one Bitcoin, says "time for the bull market... it's bear huntin' season, the memes must unite" and starts target practice. Then you play: first person at the mold rack with the Winchester.
+- **The delay is gone:** the film file is loaded in the background at the first panic; the cut starts the film on the same frame (measured 10 ms) and the hideout is built behind the picture a second later. Hold SPACE to skip. If the file were ever missing, the old in-engine film plays instead.
+- **Inferno Bull speaks faster:** ElevenLabs speed 1.08 -> 1.2 (its maximum) on all 17 Bull lines, regenerated. Lines are about 17-20% shorter. If it still feels slow, the next step is time-stretching the files.
+- **Cost:** about $4.50 of Muapi (four clips, 720p) plus $0.12 for the one keyframe I had to generate (Bull cleaning the wound).
+- **Checked:** real render in the Godot engine (frame 0, the room building behind the film, skip into first person); all Episode 2 tests pass. **Not checked:** playing it in the live itch build in a browser (CI deploy decides; Godot web plays only Ogg Theora, which is what I shipped). The film's file is about 8 MB (960x540), so the pack grows by that much; CI's 190 MB gate decides.
+- Skills: `ep2-seedance-film`, `ep2-instant-transition`. Tools: `tools/ep2_film/`.
+
 **🐂 EPISODE 2 — YOUR TRIPO-RIGGED INFERNO BULL IS IN (2026-10-03).** You rigged him in Tripo Studio and sent the GLB; he is now built from your rig:
 - Your Tripo skeleton's joint positions and skin weights drive the model. I kept the game's bone names and rotations so every clip, the glass, the cigar and the hand-over reach keep working, and shifted the hips of each clip to his proportions. The rifle in his left hand is cut out. Captured in the real hideout: seated, walking to the wall, reaching, offering the rifle; no stretching or tearing visible.
 - Tripo API credits: the key still shows 0 (the Studio subscription does not fund the API), so nothing was spent; your Studio rig made it unnecessary.

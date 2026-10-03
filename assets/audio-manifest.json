@@ -543,7 +543,7 @@
         "stability": 0.75,
         "similarity_boost": 0.75,
         "style": 0.15,
-        "speed": 1.08
+        "speed": 1.2
       },
       "note": "Inferno Bull (Episode 2 companion). ORIGINAL VOICE, OWNED BY THIS PROJECT — designed via ElevenLabs Voice Design (text-to-voice) from the character profile, not a stock voice. voice_id uWE48TmsTuIjyh2ifoNL, name 'Inferno Bull', category 'generated'. Chosen from 3 design previews by measurement, not guesswork: median F0 77.4 Hz vs 111.9 / 128.9 for the other two, darkest timbre (spectral centroid 1060), and 21.8% of energy below 300 Hz vs 9.5% / 11.8% — i.e. the deepest and thickest of the three, per the founder's 'deep and thick and western old school'. OPERATIONAL NOTE: like the custom 'Lil Blunt' voice, a generated voice is owned by ONE workspace — it requires the ELEVENLABS_API key. generate_audio.py already prefers that key over the legacy ELEVENLABS_API_KEY, so this works, but the legacy workspace would return voice_not_found."
     },
@@ -555,7 +555,7 @@
         "stability": 0.75,
         "similarity_boost": 0.75,
         "style": 0.15,
-        "speed": 1.08
+        "speed": 1.2
       },
       "note": "Inferno Bull companion line - same owned voice/settings as vo_bull_made_it."
     },
@@ -567,7 +567,7 @@
         "stability": 0.75,
         "similarity_boost": 0.75,
         "style": 0.15,
-        "speed": 1.08
+        "speed": 1.2
       },
       "note": "Inferno Bull companion line - same owned voice/settings as vo_bull_made_it."
     },
@@ -579,7 +579,7 @@
         "stability": 0.75,
         "similarity_boost": 0.75,
         "style": 0.15,
-        "speed": 1.08
+        "speed": 1.2
       },
       "note": "Inferno Bull companion line - same owned voice/settings as vo_bull_made_it."
     },
@@ -591,7 +591,7 @@
         "stability": 0.75,
         "similarity_boost": 0.75,
         "style": 0.15,
-        "speed": 1.08
+        "speed": 1.2
       },
       "note": "Inferno Bull companion line - same owned voice/settings as vo_bull_made_it."
     },
@@ -1624,7 +1624,7 @@
         "stability": 0.75,
         "similarity_boost": 0.75,
         "style": 0.15,
-        "speed": 1.08
+        "speed": 1.2
       }
     },
     {
@@ -1635,9 +1635,9 @@
         "stability": 0.62,
         "similarity_boost": 0.75,
         "style": 0.28,
-        "speed": 1.08
+        "speed": 1.2
       },
-      "note": "Inferno Bull, natural Western pace (speed 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
+      "note": "Inferno Bull, natural Western pace (speed 1.2 = ElevenLabs maximum, 2026-10-03 founder: still too slow at 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
     },
     {
       "id": "vo_bull_intro1",
@@ -1647,9 +1647,9 @@
         "stability": 0.62,
         "similarity_boost": 0.75,
         "style": 0.28,
-        "speed": 1.08
+        "speed": 1.2
       },
-      "note": "Inferno Bull, natural Western pace (speed 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
+      "note": "Inferno Bull, natural Western pace (speed 1.2 = ElevenLabs maximum, 2026-10-03 founder: still too slow at 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
     },
     {
       "id": "vo_bull_intro2",
@@ -1659,9 +1659,9 @@
         "stability": 0.62,
         "similarity_boost": 0.75,
         "style": 0.28,
-        "speed": 1.08
+        "speed": 1.2
       },
-      "note": "Inferno Bull, natural Western pace (speed 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
+      "note": "Inferno Bull, natural Western pace (speed 1.2 = ElevenLabs maximum, 2026-10-03 founder: still too slow at 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
     },
     {
       "id": "vo_bull_intro3",
@@ -1671,9 +1671,9 @@
         "stability": 0.62,
         "similarity_boost": 0.75,
         "style": 0.28,
-        "speed": 1.08
+        "speed": 1.2
       },
-      "note": "Inferno Bull, natural Western pace (speed 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
+      "note": "Inferno Bull, natural Western pace (speed 1.2 = ElevenLabs maximum, 2026-10-03 founder: still too slow at 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
     },
     {
       "id": "vo_lb_intro_reply",
@@ -1695,9 +1695,9 @@
         "stability": 0.62,
         "similarity_boost": 0.75,
         "style": 0.28,
-        "speed": 1.08
+        "speed": 1.2
       },
-      "note": "Inferno Bull, natural Western pace (speed 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
+      "note": "Inferno Bull, natural Western pace (speed 1.2 = ElevenLabs maximum, 2026-10-03 founder: still too slow at 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
     },
     {
       "id": "vo_bull_deal2",
@@ -1707,9 +1707,9 @@
         "stability": 0.62,
         "similarity_boost": 0.75,
         "style": 0.28,
-        "speed": 1.08
+        "speed": 1.2
       },
-      "note": "Inferno Bull, natural Western pace (speed 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
+      "note": "Inferno Bull, natural Western pace (speed 1.2 = ElevenLabs maximum, 2026-10-03 founder: still too slow at 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
     },
     {
       "id": "vo_lb_deal_ok",
@@ -1731,9 +1731,9 @@
         "stability": 0.62,
         "similarity_boost": 0.75,
         "style": 0.28,
-        "speed": 1.08
+        "speed": 1.2
       },
-      "note": "Inferno Bull, natural Western pace (speed 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
+      "note": "Inferno Bull, natural Western pace (speed 1.2 = ElevenLabs maximum, 2026-10-03 founder: still too slow at 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
     },
     {
       "id": "vo_bull_helmet2",
@@ -1743,9 +1743,9 @@
         "stability": 0.62,
         "similarity_boost": 0.75,
         "style": 0.28,
-        "speed": 1.08
+        "speed": 1.2
       },
-      "note": "Inferno Bull, natural Western pace (speed 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
+      "note": "Inferno Bull, natural Western pace (speed 1.2 = ElevenLabs maximum, 2026-10-03 founder: still too slow at 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
     },
     {
       "id": "vo_lb_thanks",
@@ -1767,9 +1767,9 @@
         "stability": 0.62,
         "similarity_boost": 0.75,
         "style": 0.28,
-        "speed": 1.08
+        "speed": 1.2
       },
-      "note": "Inferno Bull, natural Western pace (speed 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
+      "note": "Inferno Bull, natural Western pace (speed 1.2 = ElevenLabs maximum, 2026-10-03 founder: still too slow at 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
     },
     {
       "id": "vo_bull_partner",
@@ -1779,9 +1779,9 @@
         "stability": 0.62,
         "similarity_boost": 0.75,
         "style": 0.28,
-        "speed": 1.08
+        "speed": 1.2
       },
-      "note": "Inferno Bull, natural Western pace (speed 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
+      "note": "Inferno Bull, natural Western pace (speed 1.2 = ElevenLabs maximum, 2026-10-03 founder: still too slow at 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
     },
     {
       "id": "vo_lb_partner_ok",
@@ -1803,9 +1803,9 @@
         "stability": 0.62,
         "similarity_boost": 0.75,
         "style": 0.28,
-        "speed": 1.08
+        "speed": 1.2
       },
-      "note": "Inferno Bull, natural Western pace (speed 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
+      "note": "Inferno Bull, natural Western pace (speed 1.2 = ElevenLabs maximum, 2026-10-03 founder: still too slow at 1.08; the old 0.8 was the 'speaks way too slowly' bug). "
     },
     {
       "id": "vo_lb_panic_1",
@@ -1902,6 +1902,78 @@
         "speed": 1.05
       },
       "note": "Lil Blunt. "
+    },
+    {
+      "id": "film_lb_groan",
+      "text": "Ughh... my head...",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.45,
+        "speed": 1.1
+      },
+      "note": "Episode 2 Seedance transition film (ep2-seedance-film): baked into the .ogv by tools/ep2_film/compose_film.sh; no music."
+    },
+    {
+      "id": "film_bull_wound",
+      "text": "Easy there, little fella. This'll sting, but it'll clean you right up.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Episode 2 Seedance transition film (ep2-seedance-film): baked into the .ogv by tools/ep2_film/compose_film.sh; no music."
+    },
+    {
+      "id": "film_bull_intro",
+      "text": "Name's Inferno Bull. Winchester and a miner's lamp. One Bitcoin, partner.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Episode 2 Seedance transition film (ep2-seedance-film): baked into the .ogv by tools/ep2_film/compose_film.sh; no music."
+    },
+    {
+      "id": "film_lb_deal",
+      "text": "Deal! Thanks, big guy.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.45,
+        "speed": 1.1
+      },
+      "note": "Episode 2 Seedance transition film (ep2-seedance-film): baked into the .ogv by tools/ep2_film/compose_film.sh; no music."
+    },
+    {
+      "id": "film_bull_market",
+      "text": "Time for the bull market.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Episode 2 Seedance transition film (ep2-seedance-film): baked into the .ogv by tools/ep2_film/compose_film.sh; no music."
+    },
+    {
+      "id": "film_bull_unite",
+      "text": "It's bear huntin' season. The memes must unite.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Episode 2 Seedance transition film (ep2-seedance-film): baked into the .ogv by tools/ep2_film/compose_film.sh; no music."
     }
   ]
 }

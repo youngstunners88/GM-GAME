@@ -114,6 +114,13 @@ const HELMET_ID := "miner_helmet"
 const WAKE_LINES := ["vo_lb_wake", "vo_bull_wake"]
 ## Where he comes to: on the floor at the Bull's boots (inside TALK_RANGE, so the meeting follows).
 const WAKE_POSITION := Vector3(0.4, 0.0, 3.6)
+## The Seedance 2 transition film (founder 2026-10-03, skill ep2-seedance-film): the cart leaves the mine, flies the
+## gap, Lil Blunt is knocked out, Inferno Bull patches him up, sells him the Winchester + helmet for a Bitcoin and
+## starts target practice. NO MUSIC in it (the founder scores it later). Built by tools/ep2_film/compose_film.sh.
+const FILM_VIDEO := "res://src/assets/video/cutscenes/ep2_cliff_to_hideout.ogv"
+const FILM_SECONDS := 30.3
+## The hideout is built this far into the film (the picture is already moving, so the hitch hides behind it).
+const FILM_BUILD_AT := 1.2
 const FILM_OFFSET := Vector3(4000.0, 0.0, 0.0)   # the film set lives far from the room: no shared light, no overlap
 const COMPANION_ID := "inferno_bull"
 
@@ -140,7 +147,9 @@ var _cauldron_spots: Array = []
 ## Play the cliff-jump film + wake-up before the meeting. The game always does; the beat-sheet test turns
 ## it off to drive the conversation on its own (tests/ep2_cinematic_test.gd covers the film).
 var intro_film: bool = true
-var _film: CliffJumpCinematic = null
+var _film: CliffJumpCinematic = null            # the in-engine fallback film (used only if the video is missing)
+var _vfilm: Ep2VideoFilm = null                 # the Seedance film
+var _room_built: bool = false
 var _wake_i: int = 0
 var _has_helmet: bool = false
 var _helmet_node: Node3D = null
@@ -276,11 +285,69 @@ func setup(_gold_principal: int = 0, _bears: Array = [], _diamonds_paid: int = 0
 	_mold_broken = []
 	for _m in MOLD_TARGETS:
 		_mold_broken.append(false)
+	_room_built = false
+	if _beat == Beat.CINEMATIC and _start_video_film():
+		# The film starts THIS frame; the room is built a moment later (step), never before it.
+		beat_changed.emit(_beat)
+		return
 	_build_visuals()
+	_room_built = true
 	_sync_visuals()
 	if _beat == Beat.CINEMATIC:
 		_start_film()
 	beat_changed.emit(_beat)
+
+
+## Start the pre-rendered transition film. False when the video is not in the build (-> the in-engine film).
+func _start_video_film() -> bool:
+	var vf := Ep2VideoFilm.new()
+	vf.name = "Ep2VideoFilm"
+	if not vf.prepare(FILM_VIDEO, FILM_SECONDS):
+		vf.free()
+		return false
+	_vfilm = vf
+	vf.drive_externally()
+	add_child(vf)
+	vf.finished.connect(_on_video_film_finished, CONNECT_ONE_SHOT)
+	vf.start()
+	return true
+
+
+## Make sure the hideout exists (idempotent).
+func _ensure_room() -> void:
+	if _room_built:
+		return
+	_room_built = true
+	_build_visuals()
+	_sync_visuals()
+
+
+## The film ends where target practice begins: the story the film told (patched up, introductions, the Winchester
+## and the helmet for one Bitcoin) is applied to the game state, and play resumes in first person at the mold rack.
+func _on_video_film_finished() -> void:
+	_ensure_room()
+	_stand_t = 99.0
+	_set_glass_on_table()
+	if _bull:
+		_bull.position = BULL_REST
+		_bull.facing = PI
+		_bull.rotation.y = PI
+		_bull.play(BULL_IDLE, 1.0, 0.0)
+	_player_pos = HAND_MARK
+	_item_delivered("rifle")
+	_item_delivered("helmet")
+	btc_paid += BTC_PRICE
+	payment_made.emit(BTC_PRICE)
+	var sun := get_node_or_null("Sun") as DirectionalLight3D
+	if sun:
+		sun.visible = true
+	if _camera and is_instance_valid(_camera):
+		_camera.make_current()
+	if _vfilm and is_instance_valid(_vfilm):
+		_vfilm.queue_free()
+	_vfilm = null
+	_beat = Beat.HELMET
+	_advance()      # -> VERB_TEACH: first person, the mold rack
 
 
 ## The film is a child far away from the room; the room's sun is off while it plays (a directional light
@@ -309,10 +376,14 @@ func _on_film_finished() -> void:
 
 
 func _ready() -> void:
-	if not _running:
-		# Instantiated without setup() — still show the room rather than a void.
-		_build_visuals()
-		_sync_visuals()
+	# Instantiated without setup() — still show the room rather than a void. Deferred: the session root calls
+	# setup() in the same frame as add_child, and setup() decides when the room is built (after the film starts).
+	_ready_fallback.call_deferred()
+
+
+func _ready_fallback() -> void:
+	if not _running and not _room_built:
+		_ensure_room()
 
 
 func _physics_process(delta: float) -> void:
@@ -330,6 +401,11 @@ func step(delta: float) -> void:
 		_hold = maxf(0.0, _hold - delta)
 
 	if _beat == Beat.CINEMATIC:
+		if _vfilm and is_instance_valid(_vfilm):
+			if _elapsed >= FILM_BUILD_AT:
+				_ensure_room()
+			_vfilm.step(delta)      # the facility owns the film's clock (physics time), never both
+			return
 		if _film and is_instance_valid(_film):
 			_film.step(delta)
 		return
@@ -833,6 +909,7 @@ func get_beat_name() -> String: return Beat.keys()[clampi(_beat, 0, Beat.size() 
 func has_winchester() -> bool: return _has_winchester
 func has_helmet() -> bool: return _has_helmet
 func get_film() -> CliffJumpCinematic: return _film if _film and is_instance_valid(_film) else null
+func get_video_film() -> Ep2VideoFilm: return _vfilm if _vfilm and is_instance_valid(_vfilm) else null
 func get_molds_left() -> int: return _molds_left
 func is_resolved() -> bool: return _resolved
 func is_running() -> bool: return _running
@@ -892,6 +969,7 @@ func _mesh(m: Mesh, mat: StandardMaterial3D, pos: Vector3) -> MeshInstance3D:
 
 
 func _build_visuals() -> void:
+	_room_built = true
 	if _visuals and is_instance_valid(_visuals):
 		_visuals.queue_free()
 	_visuals = Node3D.new()
