@@ -973,21 +973,24 @@ func die() -> void:
 	tween.parallel().tween_property(self, "rotation", PI * 4, 1.0)
 	tween.parallel().tween_property(self, "modulate:a", 0.0, 1.0)
 	await tween.finished
-	var victory := Label.new()
-	# Final boss (brief G): the campaign ends here — back to the menu, which
-	# now offers every unlocked realm via Continue.
-	victory.text = "SMOKE REALM COMPLETE!\nXAUT payout: %d\nFort Knox shares: %d\nYou beat all three realms." % [xaut_won, GoldMineSystem.fort_knox_shares]
-	victory.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	victory.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	victory.position = global_position - Vector2(150, 75)
-	victory.add_theme_font_size_override("font_size", 28)
-	get_tree().current_scene.add_child(victory)
 	# Mark the whole campaign cleared (unlocks all realms for Continue/select).
 	GameManager.highest_unlocked_level = GameManager.LEVEL_SEQUENCE.size()
-	await get_tree().create_timer(3.5).timeout
+	# Founder 2026-10-03: Lil Blunt wins -> the "defeating Boss 3" film plays -> Episode 2 begins. (This was the
+	# real final boss all along: the film was only wired to bandit_boss.gd, which level 3 never spawns, so the
+	# player saw a text card and the menu.) The settlement summary is kept as a short caption under the film.
+	var victory := Label.new()
+	victory.text = "SMOKE REALM COMPLETE!  XAUT payout: %d  Fort Knox shares: %d" % [xaut_won, GoldMineSystem.fort_knox_shares]
+	victory.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	victory.position = global_position - Vector2(150, 75)
+	victory.add_theme_font_size_override("font_size", 20)
+	get_tree().current_scene.add_child(victory)
+	var cutscene := preload("res://src/level/stage3_boss_defeat_cutscene.gd").new()
+	get_tree().current_scene.add_child(cutscene)
+	cutscene.play()
+	await cutscene.finished
 	# Kimi audit ordering: free BEFORE the scene load.
 	queue_free()
-	SceneRouter.load_scene("res://src/ui/main_menu.tscn", SceneRouter.Transition.DIAMOND)
+	SceneRouter.load_scene(GameManager.next_level_scene(3), SceneRouter.Transition.DIAMOND)
 
 func _on_hitbox_body_entered(body: Node2D) -> void:
 	if body.is_in_group("player") and body.has_method("take_damage"):

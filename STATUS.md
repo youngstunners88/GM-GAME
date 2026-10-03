@@ -5,6 +5,8 @@
 
 ---
 
+**🔧 BOSS 3 -> EPISODE 2 WAS NOT REACHING (2026-10-03, fix).** You were right. Level 3's real final boss is the Claim Jumper, and I had wired the video and the hand-off only to a different boss script that level 3 never uses, so a win showed a text card and went to the menu. Now the Claim Jumper's death plays your "defeating Boss 3" video (hold Space to skip) and then starts Episode 2; a test checks both boss scripts. Checked by code and tests only; I have not played boss 3 to the end in a browser, so please confirm on a hard refresh.
+
 **➡️ EPISODE 2 NOW BEGINS AFTER BOSS 3 (2026-10-03).** Beating the 3rd boss plays the defeat film and then goes straight into Episode 2 (it used to drop to the menu). Tested: the routing, and the final film still plays and finishes.
 - **Your "defeating Boss 3" video is already the Boss 3 defeat cut in the game** (checked frame by frame: same 15 s video). It plays when boss 3 dies, then Episode 2 starts. Hold Space skips it. Live: master `a771784`, CI run 495, butler push succeeded.
 
