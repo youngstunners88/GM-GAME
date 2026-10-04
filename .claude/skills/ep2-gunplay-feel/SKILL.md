@@ -10,6 +10,8 @@ ziplining too; pressing F changes the screen size, make it X, and right-click st
 2nd zipline kill Lil Blunt". Every one of these was a gap between what the tests proved and what a human felt.
 
 # Rules (each one cost real time)
+0. **A long gun is not a revolver.** The hideout Winchester has its own layered samples, pool and lever rack -
+   skill `ep2-winchester-sound` (founder 2026-10-04: "horrid ... not like a toy").
 1. **A sound you never measured may be silent.** `ep2_revolver_shot.mp3` shipped for weeks with a peak of -39 dB
    (mean -54 dB) next to a pickaxe swing at -0.1 dB. Tests only checked the file existed. Always run
    `ffmpeg -i f.mp3 -af volumedetect -f null -` on a new weapon sound: peak must be about -1 dB, mean above -25 dB.

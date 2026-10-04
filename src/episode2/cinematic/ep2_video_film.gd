@@ -28,6 +28,8 @@ var seconds: float = 30.0
 ## skipped) the game must CONTINUE that song from the matching position. `continue_track` empty = no hand-off.
 var continue_track: String = ""
 var song_video_offset: float = 26.53
+## The song position the last hand-off continued from (tests and the shot rig read it).
+var last_song_position: float = -1.0
 var _video: VideoStreamPlayer = null
 var _t: float = 0.0
 var _skip_held: float = 0.0
@@ -158,26 +160,45 @@ func _finish() -> void:
 	if _done:
 		return
 	_done = true
+	# Read where the film IS before stopping it: VideoStreamPlayer.stop() rewinds the Theora clock to 0, and reading
+	# it afterwards restarted the stage theme from bar one (founder 2026-10-04: "supposed to continue and not start
+	# again"). `film_end_position()` is the single source of truth for the hand-off position.
+	var video_t: float = film_end_position()
 	if _video and is_instance_valid(_video):
 		_video.stop()
 		_video.visible = false
 	if _hint:
 		_hint.visible = false
-	var video_t: float = _t
-	if _video and is_instance_valid(_video):
-		video_t = maxf(_video.stream_position, 0.0)
 	_unmute_music()
 	_continue_song(video_t)
 	_finishing = true
 
 
+## Where the film's picture/sound is right now, in film seconds. Uses the decoder's own clock while it is still
+## running; when the decoder reports nothing useful (already rewound, web decoder not started, headless run) it
+## falls back to the wall clock `_t`, capped at the film length. Never returns 0 for a film that played to the end.
+func film_end_position() -> float:
+	var pos: float = 0.0
+	if _video and is_instance_valid(_video):
+		pos = maxf(_video.stream_position, 0.0)
+	if pos < 0.25:
+		pos = minf(_t, seconds)
+	return pos
+
+
+## The song position the game continues from when the film ends at `video_t` film seconds.
+func song_position_for(video_t: float) -> float:
+	return maxf(video_t - song_video_offset, 0.0)
+
+
 ## Start the stage theme where the film's own copy of it is (or would be) right now, so it never restarts or jumps.
 func _continue_song(video_t: float) -> void:
+	last_song_position = song_position_for(video_t)
 	if continue_track == "":
 		return
 	var am: Node = get_node_or_null("/root/AudioManager")
 	if am and am.has_method("play_track_from"):
-		am.play_track_from(continue_track, maxf(video_t - song_video_offset, 0.0), 0.12)
+		am.play_track_from(continue_track, last_song_position, 0.12)
 
 
 func _try_emit_finished() -> void:

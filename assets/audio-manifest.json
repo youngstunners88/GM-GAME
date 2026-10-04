@@ -327,6 +327,34 @@
       "prompt": "Zipline ride: a steel pulley wheel screaming along a taut metal cable, loud rising metallic whine and rattle with rushing wind, fast and thrilling, continuous, no music",
       "duration_seconds": 8.0,
       "prompt_influence": 0.5
+    },
+    {
+      "id": "ep2_winchester_shot_1",
+      "prompt": "Single gunshot from a heavy Winchester 1886 lever-action rifle firing a .45-70 cartridge indoors in a wooden mine cavern: a violent, deafening BOOM with a deep chest-thumping low end, a sharp supersonic crack on top, then a long rolling echo tail off rock walls. Dangerous, powerful, realistic, close to the microphone, no music",
+      "duration_seconds": 2.8,
+      "prompt_influence": 0.6,
+      "note": "Ep2 FPS Winchester (skill ep2-winchester-sound): heavy, dangerous, never a toy"
+    },
+    {
+      "id": "ep2_winchester_shot_2",
+      "prompt": "Big-bore hunting rifle shot, Winchester lever action, enormous explosive report with heavy low-frequency blast and thunderous reverberation rolling through an underground cave, realistic and terrifying, very loud, no music",
+      "duration_seconds": 2.8,
+      "prompt_influence": 0.6,
+      "note": "Ep2 FPS Winchester (skill ep2-winchester-sound)"
+    },
+    {
+      "id": "ep2_winchester_shot_3",
+      "prompt": "Powerful old western rifle gunshot, a deep thunderclap boom with a hard cracking snap, followed by a long booming echo in a mine shaft, heavy and dangerous, cinematic realism, no music",
+      "duration_seconds": 2.8,
+      "prompt_influence": 0.6,
+      "note": "Ep2 FPS Winchester (skill ep2-winchester-sound)"
+    },
+    {
+      "id": "ep2_winchester_lever",
+      "prompt": "Winchester lever-action rifle being cycled: heavy steel lever snapped down and back up, a solid mechanical clack-clack, the spent brass casing ejecting and clinking on a wooden floor, close-up, realistic, no music",
+      "duration_seconds": 1.0,
+      "prompt_influence": 0.6,
+      "note": "Ep2 FPS Winchester lever cycle after each shot (skill ep2-winchester-sound)"
     }
   ],
   "music": [
