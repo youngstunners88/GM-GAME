@@ -2,6 +2,8 @@
 name: ep2-seedance-film
 description: Make, compose and wire an Episode 2 story film with Seedance 2 on Muapi - keyframes (nano-banana-pro-edit) -> i2v clips -> silent concat -> dialogue + foley (NO MUSIC) -> Ogg Theora -> Godot. TRIGGER on "film", "Seedance", "Muapi", "transition video", "cutscene video", edits to tools/ep2_film/, ep2_cliff_to_hideout.ogv, ep2_video_film.gd.
 ---
+# 2026-10-04: THE FOUNDER'S OWN FILM REPLACED THE GENERATED ONE
+The Seedance transition was rejected ("absolute trash"). `ep2_cliff_to_hideout.ogv` is now the founder's 60 s video (Drive 1wLXAPHq..., encoded by `founder-video-intake`) with the stage theme in its audio (`ep2-theme-song-handoff`). The Seedance pipeline below stays for future generated shots; never ship a generated film over a founder-supplied one.
 # STYLE GATE (founder 2026-10-03: "the videos are so shit, not the same style as the three boss fights")
 Lil Blunt in every shot MUST be the boss-cut Lil Blunt: chunky chibi, big round eyes, spiky leaf crest, cowboy hat with aviator goggles, red bandana, vest with a leaf buckle. Never feed Seedance the doc keyframes raw: their Lil Blunt is a different (muppet) character. Extract clean frames of him from `src/assets/video/cutscenes/stage{1,2,3}_boss_defeat.ogv` (`ffmpeg -ss 9 ...`), upload them, and rebuild EVERY keyframe with `muapi_film.py edit out.png "<prompt>" <doc keyframe> <lb_ref_a> <lb_ref_c>` ("Lil Blunt exactly as references 2 and 3, painterly style of references 2 and 3"). Review a contact sheet of the clips against the boss-cut sheet before accepting. Shots are short (5 s) and dynamic like the boss cuts.
 # GLITCH GATE

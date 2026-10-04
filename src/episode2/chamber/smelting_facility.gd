@@ -118,7 +118,11 @@ const WAKE_POSITION := Vector3(0.4, 0.0, 3.6)
 ## gap, Lil Blunt is knocked out, Inferno Bull patches him up, sells him the Winchester + helmet for a Bitcoin and
 ## starts target practice. NO MUSIC in it (the founder scores it later). Built by tools/ep2_film/compose_film.sh.
 const FILM_VIDEO := "res://src/assets/video/cutscenes/ep2_cliff_to_hideout.ogv"
-const FILM_SECONDS := 30.4
+const FILM_SECONDS := 60.9
+## The stage theme ("Deep mining 2"). The founder's film carries it from FILM_SONG_OFFSET seconds in; the game continues it
+## from the matching position when the film ends (measured by chroma correlation: video 26.53 s == song 0 s).
+const STAGE_THEME := "res://src/assets/music/ep2_deep_mining_theme.mp3"
+const FILM_SONG_OFFSET := 26.53
 const FILM_OFFSET := Vector3(4000.0, 0.0, 0.0)   # the film set lives far from the room: no shared light, no overlap
 const COMPANION_ID := "inferno_bull"
 
@@ -307,6 +311,8 @@ func _start_video_film() -> bool:
 		vf.free()
 		return false
 	_vfilm = vf
+	vf.continue_track = STAGE_THEME
+	vf.song_video_offset = FILM_SONG_OFFSET
 	vf.drive_externally()
 	add_child(vf)
 	vf.finished.connect(_on_video_film_finished, CONNECT_ONE_SHOT)

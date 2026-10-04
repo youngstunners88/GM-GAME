@@ -125,6 +125,33 @@ func fade_out_music(seconds: float = 1.6) -> void:
     _playlist = []
     _duck_out_music(seconds)
 
+## CONTINUE a song from `position` seconds (a film already played the earlier part, founder 2026-10-04: the stage
+## theme must carry on from where the video lifted off). Hard-stops any previous music first (it was faded out
+## beforehand), starts at `position` with a very short fade-in, and loops the track afterwards. Skill
+## ep2-theme-song-handoff.
+func play_track_from(path: String, position: float = 0.0, fade_in_seconds: float = 0.15) -> void:
+    if not ResourceLoader.exists(path):
+        return
+    _drop_override_for_new_music()
+    _stop_ambient()
+    _stop_music()
+    var stream: AudioStream = load(path)
+    if stream == null:
+        return
+    _playlist = [path]
+    _last_track = path
+    current_music_player = AudioStreamPlayer.new()
+    current_music_player.bus = "Music"
+    current_music_player.stream = stream
+    add_child(current_music_player)
+    var start_at: float = clampf(position, 0.0, maxf(stream.get_length() - 0.5, 0.0))
+    current_music_player.volume_db = -30.0 if fade_in_seconds > 0.0 else 0.0
+    if fade_in_seconds > 0.0:
+        var tw := current_music_player.create_tween()
+        tw.tween_property(current_music_player, "volume_db", 0.0, fade_in_seconds)
+    current_music_player.play(start_at)
+    current_music_player.finished.connect(_on_music_track_finished)
+
 ## Play a single track on repeat (routed through the shuffle system).
 func play_music(path: String) -> void:
     play_playlist([path])

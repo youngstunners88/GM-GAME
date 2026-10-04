@@ -5,6 +5,12 @@
 
 ---
 
+**🎞️ YOUR 60-SECOND FILM REPLACES MINE, AND THE SONG CARRIES ON (2026-10-04).** My generated film is gone; the cart-exit-to-Inferno-Bull film is now your video (Drive "1wLXAPHq...", encoded to the web format, 8.5 MB, plays after the cart ride exactly where mine did; hold Space to skip). 
+- **Music:** the mine music now fades out over 3 seconds as the track runs out (about 3.5 s before the cliff), the film brings in the stage theme ("Deep mining 2") from its own soundtrack, and when the film ends the game continues the song from the matching position instead of restarting it. Measured, not guessed: I matched the song against the film's audio (two independent windows agree) and the song begins 26.5 s into the video, so at the end of the film the game starts the song at 34.3 s. You wrote that it starts "about 3/4 in" (45.6 s); my measurement says 26.5 s. If it sounds wrong, tell me which and I change one number. After that the song loops as the stage theme.
+- **Pack size:** your video (8.5 MB) and the song (3.7 MB) replace my 6.8 MB film; to stay under CI's 190 MB limit I removed 8 MB of files nothing uses (two old `fresh_boost` sounds, six unused art images).
+- **Skills made:** `ep2-theme-song-handoff` (how to measure and wire a song across a cut), `founder-video-intake` (Drive video to shipped film within the size gate).
+- **Not checked:** your browser; the audio crossing the cut on web (a stall at the cut can gap sound for a moment).
+
 **🎬 BOSS 3 FILM -> MINE CART: NO MORE BLACK (2026-10-03, late).** I measured it instead of guessing, and ran the options through Jev:
 - **Cause:** even with everything loaded, the first time Episode 2 is drawn the browser has to compile its shaders and upload its textures, and that freeze (about 1 second on my test machine, longer on web) used to happen behind a black loading card. So you saw black, then the cart.
 - **Fix:** the film's last frame (Lil Blunt in the cart, from behind, in the tunnel) now STAYS on screen; Episode 2 is built and drawn for the first time underneath it, then it dissolves (0.6 s) into the live runner where he is in the same cart. Before that, the game compiles Episode 2's code while the boss dies and draws every model once, a little at a time, while your video plays, so the freeze at the cut is about 40% shorter. Measured in a real render: **0 black frames** from the end of the film to gameplay.

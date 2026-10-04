@@ -53,7 +53,7 @@ const PRESETS := {
 		"dirs": ["res://src/episode2/assets/", "res://src/episode2/assets/hideout/", "res://src/episode2/assets/textures/",
 			"res://src/episode2/assets/audio/"],
 		"exts": ["glb", "jpg", "png", "wav", "mp3"],
-		"files": ["res://src/assets/video/cutscenes/ep2_cliff_to_hideout.ogv"],
+		"files": ["res://src/assets/video/cutscenes/ep2_cliff_to_hideout.ogv", "res://src/assets/music/ep2_deep_mining_theme.mp3"],
 		"title": "EPISODE 2",
 		"subtitle": "THE GOLD MINE",
 	},

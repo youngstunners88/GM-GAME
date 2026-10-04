@@ -93,6 +93,8 @@ func _enter_runner() -> void:
 	r.chamber_reached.connect(_on_chamber_reached, CONNECT_ONE_SHOT)
 	if r.has_signal("cliff_panic"):
 		r.cliff_panic.connect(_warm_chamber_assets, CONNECT_ONE_SHOT)
+		_runner_music_faded = false
+		r.cliff_panic.connect(_on_cliff_panic_music)
 	r.run_failed.connect(_on_run_failed, CONNECT_ONE_SHOT)
 	_mode = Mode.RUNNER
 	_sync_mouse_mode()
@@ -135,6 +137,16 @@ func _warm_chamber_assets(_level: int = 0) -> void:
 		for f in DirAccess.get_files_at(d):
 			if f.ends_with(".glb"):
 				ResourceLoader.load_threaded_request(d + f)
+
+## Founder 2026-10-04: the mine music must phase out BEFORE Lil Blunt goes into the film (the film brings the stage
+## theme in itself). Panic level 2 is ~90 m before the mouth (~3.5 s at speed): a 3 s fade ends right at the cut.
+const RUNNER_MUSIC_FADE_LEVEL := 2
+const RUNNER_MUSIC_FADE_SECONDS := 3.0
+var _runner_music_faded: bool = false
+func _on_cliff_panic_music(level: int) -> void:
+	if level >= RUNNER_MUSIC_FADE_LEVEL and not _runner_music_faded and has_node("/root/AudioManager"):
+		_runner_music_faded = true
+		get_node("/root/AudioManager").fade_out_music(RUNNER_MUSIC_FADE_SECONDS)
 
 func _teardown_active() -> void:
 	if _active:

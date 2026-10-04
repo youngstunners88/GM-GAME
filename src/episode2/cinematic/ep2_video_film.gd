@@ -24,6 +24,10 @@ const SKIP_HOLD := 0.9
 const SKIP_ACTION := "jump"
 
 var seconds: float = 30.0
+## Founder 2026-10-04: the film carries the stage theme from `song_video_offset` seconds in; when it ends (or is
+## skipped) the game must CONTINUE that song from the matching position. `continue_track` empty = no hand-off.
+var continue_track: String = ""
+var song_video_offset: float = 26.53
 var _video: VideoStreamPlayer = null
 var _t: float = 0.0
 var _skip_held: float = 0.0
@@ -159,8 +163,21 @@ func _finish() -> void:
 		_video.visible = false
 	if _hint:
 		_hint.visible = false
+	var video_t: float = _t
+	if _video and is_instance_valid(_video):
+		video_t = maxf(_video.stream_position, 0.0)
 	_unmute_music()
+	_continue_song(video_t)
 	_finishing = true
+
+
+## Start the stage theme where the film's own copy of it is (or would be) right now, so it never restarts or jumps.
+func _continue_song(video_t: float) -> void:
+	if continue_track == "":
+		return
+	var am: Node = get_node_or_null("/root/AudioManager")
+	if am and am.has_method("play_track_from"):
+		am.play_track_from(continue_track, maxf(video_t - song_video_offset, 0.0), 0.12)
 
 
 func _try_emit_finished() -> void:
