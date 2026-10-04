@@ -30,3 +30,6 @@ ef2866e62207a8c3c6789a00d839fc5143bd7934:.gitleaksignore:generic-api-key:4
 # after access-code wording as a key. No credential value exists on that line.
 # Exact historical finding only; rewritten prose and every source path remain scanned.
 8375692d8dc52a4f9059f103aece9e028d1ec327:docs/episode2-quality/bull-hideout-repair/REVIEW.md:generic-api-key:13
+# NFT contract doc: a made-up 32-hex EXAMPLE player_key (not a credential). Exact historical finding only;
+# the sample was replaced with a placeholder, and every source path remains scanned.
+cd8961adcdf787c5f7b8d52b5b8bc7eb19facd1a:docs/nft/NFT_CONTRACT.md:generic-api-key:36

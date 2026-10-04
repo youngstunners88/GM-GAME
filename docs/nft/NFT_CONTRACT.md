@@ -33,7 +33,7 @@ Base URL `https://<canister-id>.icp0.io` (id comes from `config.json -> icp.nft_
 ### POST /issue   (Content-Type: application/json, body <= 2 KB)
 Request:
 ```json
-{"nft_id":"boss_auditor","player_key":"0123456789abcdef0123456789abcdef",
+{"nft_id":"boss_auditor","player_key":"<32 lowercase hex characters>",
  "meta":{"stage":1,"score":null,"total":null,"passed":null,"build":"2026-10-04-abc1234"}}
 ```
 `http_request` must return `upgrade = true` for POST so the write runs in `http_request_update`.
