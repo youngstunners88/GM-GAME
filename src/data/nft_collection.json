@@ -1,5 +1,5 @@
 {
-    "_note": "THE six NFTs. Single source for the game; must match docs/nft/NFT_CONTRACT.md and the nft_ledger canister. Soulbound, one per player per id. Do not add or rename ids.",
+    "_note": "THE six NFTs. Single source for the game; must match docs/nft/NFT_CONTRACT.md and the nft_ledger canister (skills gm-game-nft-collection / -icp-issuance / -congrats). Soulbound, one per player per id. Do not add or rename ids. The three test art plates are the founder's Blaze Rush plates until he supplies dedicated ones.",
     "version": 1,
     "nfts": [
         {"id": "boss_auditor", "name": "Tax Evader", "kind": "boss", "stage": 1, "protocol": "smoke",
