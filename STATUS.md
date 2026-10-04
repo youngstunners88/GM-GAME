@@ -5,6 +5,17 @@
 
 ---
 
+**🎯 PROTOCOL-LOGO TARGET WALL + SMOOTH TRANSITION + SPEECH OVER MUSIC + A MEMORY LAYER (2026-10-04, night).**
+- **The range is practical now, against the back wall.** Target practice faces the open back of the room. Five glowing-green-ring plaques hang on a timber wall like your "Minotaur Mentors Leafy Sharpshooter" picture: the four protocol logos (TitanX, Gold Mine, Diamonds, Blaze Diamonds) and the archer **bear** as a wanted-poster target. You shoot down a lit lane from a firing bench with cartridge boxes; Inferno coaches from your side.
+- **The hideout is much richer.** Glowing gold-bar stacks and an ore cart, cowhide rug, bear trophies, framed posters, bottle shelves, a gun rack, lit chain lanterns, braziers, ember haze and warm fill light — the forge-hideout from your reference, not a brown box. (A second Claude worked this in parallel.)
+- **No more blank-screen delay after the video.** The whole hideout used to be BUILT after the film ended, on a frozen black screen — that was the "long delay for no reason." It is now built *while the film plays over it*, so the cut into target practice is instant.
+- **Music no longer talks over Inferno.** It used to duck for each line then rise again between lines while he kept speaking. Now it stays down for his whole speech and only comes back a beat after his last word. Tested with a monitor.
+- **He doesn't repeat the bear-hunt line** that's already in your video. I built the **memory layer** you asked for: a file of what each cutscene already establishes, and the dialogue drops anything that just repeats it. It's reusable for this kind of continuity, not a one-off.
+- **Louder again:** the film's dialogue is now +14 dB over your original (music kept matched so the song still continues seamlessly).
+- **Fixed a regression I caused:** I'd deleted a texture the bear model needs, which left the runner's bear untextured. Restored, and I added a rule so it never happens again.
+- **New skills:** `ep2-narrative-canon` (the memory layer), `ep2-voice-duck`, plus `ep2-range-lesson` / `ep2-film-loudness` updated; `ep2-environment-legibility` (hideout). Tests: range lesson (5 targets), transition pre-build, voice duck, narrative canon — all green.
+- **Not checked:** your browser; the exact feel of the transition and the mix on web.
+
 **🎯 TARGET PRACTICE LESSON + MODERN-WARFARE-STYLE RIFLE + LOUDER FILM (2026-10-04, evening).**
 - **Film louder:** the film was loud overall but the TALKING (seconds 6-25) was 10-20 dB quieter than the rest. I lifted only the dialogue by about 13 dB (music untouched, so the song hand-off still lines up, no clipping, same 60.8 s). Overall loudness -16 to -13 LUFS.
 - **Inferno leads, demonstrates, teaches:** after the film he says "follow me" and walks to a new target range (three steel plates at 6, 9 and 12 m). At the line he demonstrates: loads shells one by one, shoulders the rifle, aims, fires (you hear and see it, and a plate rings). Then YOU do each step: **R** loads (shell by shell), **hold right mouse** aims down the sights, **left click** fires. **The rifle is locked until he has taught it**: clicking early gets "Easy, hotshot." 13 new Bull lines + 3 new sounds.

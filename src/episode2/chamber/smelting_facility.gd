@@ -68,7 +68,7 @@ const ENTRY_POSITION := Vector3(0.0, 0.0, -8.0)
 const BULL_POSITION := Vector3(1.6, 0.0, 6.0)
 ## Where he stands at rest once the gear is handed over (beside his crate, not following Lil Blunt).
 const BULL_REST := Vector3(2.6, 0.0, 6.3)
-const MOLD_RACK_POSITION := Vector3(RangeDressing.LANE_X, 0.0, 3.0)   # the middle plate's floor spot (tests, rigs)
+const MOLD_RACK_POSITION := Vector3(RangeDressing.LANE_X, 2.85, -9.3)   # the middle plaque, for aim rigs/tests
 const EXIT_POSITION := Vector3(0.0, 0.0, 15.0)
 ## How close you must be for the meeting to start. Generous — this is a
 ## breather, not a precision-platforming beat.
@@ -109,7 +109,7 @@ const ROOM_X := 6.3
 ## Empty casting molds on a rack. A SAFE target: per the spec's open question,
 ## Chamber 0 has no live enemies — the gun's first real use should have stakes,
 ## and those stakes belong on the approach to Fort Knox.
-const MOLD_TARGETS := 3
+const MOLD_TARGETS := 5   # four protocol-logo plaques + one bear, on the back wall (founder 2026-10-04 round 2)
 const WINCHESTER_ID := "winchester_1886"
 const HELMET_ID := "miner_helmet"
 ## The wake-up exchange: Lil Blunt's groggy line, then the Bull's whiskey line (measured clip lengths).
@@ -125,6 +125,8 @@ const FILM_SECONDS := 60.9
 ## from the matching position when the film ends (measured by chroma correlation: video 26.53 s == song 0 s).
 const STAGE_THEME := "res://src/assets/music/ep2_deep_mining_theme.mp3"
 const FILM_SONG_OFFSET := 26.53
+## Build the hideout this many seconds into the film (hidden behind it), so the film->range cut is instant.
+const PREBUILD_AT := 3.0
 const FILM_OFFSET := Vector3(4000.0, 0.0, 0.0)   # the film set lives far from the room: no shared light, no overlap
 const COMPANION_ID := "inferno_bull"
 
@@ -154,6 +156,7 @@ var intro_film: bool = true
 var _film: CliffJumpCinematic = null            # the in-engine fallback film (used only if the video is missing)
 var _vfilm: Ep2VideoFilm = null                 # the Seedance film
 var _room_built: bool = false
+var _film_played: bool = false   # the founder's cliff-to-hideout film actually ran this session (Ep2Canon gating)
 var _wake_i: int = 0
 var _has_helmet: bool = false
 var _helmet_node: Node3D = null
@@ -195,7 +198,7 @@ var _hud_ctl: Ep2FpsHud = null
 ## he has taught it (founder 2026-10-04: "the rifle doesn't fire until Inferno teaches Lil Blunt to load it, aim
 ## and fire").
 enum Lesson { OFF, LEAD, DEMO, LOAD, AIM, FIRE, PRACTICE, DONE }
-const BULL_DEMO := Vector3(-2.2, 0.0, -1.6)         # where Inferno stands to demonstrate: ~4.7 m ahead and right of the line, seen 3/4 from behind, fully in frame
+const BULL_DEMO := RangeDressing.BULL_LINE         # beside the firing line, facing the target wall (range_dressing owns the spot)
 const LESSON_ARRIVE_RADIUS := 2.6                   # how close to the firing line starts the demo
 const AIM_HOLD_SECONDS := 0.7                       # ADS must be held this long to count as "aimed"
 const NAG_SECONDS := 14.0
@@ -340,6 +343,7 @@ func setup(_gold_principal: int = 0, _bears: Array = [], _diamonds_paid: int = 0
 	_hit_first = false
 	_later_calls.clear()
 	_room_built = false
+	_film_played = false
 	if _beat == Beat.CINEMATIC and _start_video_film():
 		# The film starts THIS frame; the room is built a moment later (step), never before it.
 		beat_changed.emit(_beat)
@@ -381,6 +385,7 @@ func _ensure_room() -> void:
 ## The film ends where target practice begins: the story the film told (patched up, introductions, the Winchester
 ## and the helmet for one Bitcoin) is applied to the game state, and play resumes in first person at the mold rack.
 func _on_video_film_finished() -> void:
+	_film_played = true
 	_ensure_room()
 	_stand_t = 99.0
 	_return_bull_glass()
@@ -405,7 +410,7 @@ func _on_video_film_finished() -> void:
 	if _camera and is_instance_valid(_camera):
 		_camera.make_current()
 	if _vfilm and is_instance_valid(_vfilm):
-		_vfilm.release(0.8)         # the room was built behind its black: fade the black away, then it frees itself
+		_vfilm.release(0.6)         # the room is already built behind the film: a quick clean dissolve, no blank wait
 	_vfilm = null
 	_beat = Beat.HELMET
 	_advance()      # -> VERB_TEACH: first person, the mold rack
@@ -464,6 +469,13 @@ func step(delta: float) -> void:
 	if _beat == Beat.CINEMATIC:
 		if _vfilm and is_instance_valid(_vfilm):
 			_vfilm.step(delta)      # the facility owns the film's clock (physics time), never both
+			# Build the hideout WHILE the film plays over it, not after. The room (walls, furnace, the rigged
+			# Bull, the five-target range, all the dressing) used to be built only when the film ended, on black
+			# - a 1-2 s frozen blank screen at the cut (founder 2026-10-04: "a long period of blank screen that
+			# delays for no reason"). The film is a full-screen CanvasLayer, so building the 3D behind it is
+			# invisible; a brief hitch a few seconds into a 60 s film is unnoticeable next to a freeze at the cut.
+			if not _room_built and _vfilm.elapsed() >= PREBUILD_AT:
+				_ensure_room()
 			return
 		if _film and is_instance_valid(_film):
 			_film.step(delta)
@@ -1032,6 +1044,8 @@ func get_player_position() -> Vector3: return _player_pos
 func get_look_yaw() -> float: return _look_yaw
 func is_moving() -> bool: return _moving
 func is_fps() -> bool: return _fps
+## Whether the founder's film ran this session (the narrative-canon memory uses it to drop lines the film covered).
+func film_played() -> bool: return _film_played
 func get_btc_paid() -> int: return btc_paid
 func get_bull() -> Ep2Actor: return _bull
 func get_show() -> FacilityShow: return _show
@@ -1505,7 +1519,7 @@ func _sync_visuals() -> void:
 	# from a miss. RangeDressing owns how a plate looks standing or hit.
 	for i in _mold_nodes.size():
 		var broken: bool = bool(_mold_broken[i]) if i < _mold_broken.size() else i >= _molds_left
-		RangeDressing.set_target_state(_mold_nodes[i] as MeshInstance3D, broken)
+		RangeDressing.set_target_state(_mold_nodes[i] as Node3D, broken)
 
 
 # --- Inferno Bull: rigged, walks, reaches, drinks (founder 2026-10-02) -------------------------------------
@@ -2425,7 +2439,7 @@ func _lesson_objective() -> String:
 		Lesson.FIRE:
 			return "AIM, THEN PRESS  LEFT CLICK  TO FIRE"
 		Lesson.PRACTICE:
-			return "BREAK ALL 3 PLATES   (%d left)   R = reload" % _molds_left
+			return "SHOOT THE TARGETS   (%d left)   R = reload" % _molds_left
 	return ""
 
 
@@ -2447,6 +2461,7 @@ func _start_demo() -> void:
 	_lesson_t = 0.0
 	_move_input = Vector2.ZERO
 	_gun.set_aim(false)
+	_look_yaw = PI           # face the target wall (-Z); _frame_demo refines it
 	_show_blocks_control = true
 	_show_active = true
 	if _show == null:
@@ -2533,8 +2548,8 @@ func debug_skip_lesson() -> void:
 	_lesson = Lesson.PRACTICE
 	_gun.locked = false
 	_gun.reload_locked = false
-	_gun.rounds = Ep2Winchester.MAG
-	_gun.reserve = Ep2Winchester.RESERVE_START - Ep2Winchester.MAG
+	_gun.rounds = maxi(Ep2Winchester.MAG, MOLD_TARGETS + 1)   # test hook: clear every target (+ a deliberate miss) without a mid-run reload
+	_gun.reserve = Ep2Winchester.RESERVE_START
 	_lead_done = true
 
 

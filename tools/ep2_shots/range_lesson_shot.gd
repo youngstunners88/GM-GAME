@@ -29,9 +29,16 @@ func _ready() -> void:
 	_until(func(): return f._lead_done, 25.0)
 	await _cap("r02_bull_at_range")
 	f._player_pos = Vector3(RangeDressing.LINE.x, 0.0, RangeDressing.LINE.z + 0.4)
-	f._look_yaw = 0.0
-	_run(1.0)
+	f._look_yaw = PI      # face the target wall (-Z)
+	f._look_pitch = -0.05
+	_run(0.3)
 	await _cap("r03_demo_start")
+	# a wide, level look straight at the wall so all five targets (incl. the bear) are in frame
+	f.debug_skip_lesson()
+	f._look_yaw = PI
+	f._look_pitch = 0.02
+	_run(0.3)
+	await _cap("r03b_wall_wide")
 	_run(9.3 + 3.0)
 	await _cap("r04_demo_raise_load")
 	_run(7.65 + 0.35 - 3.0 + 3.0)

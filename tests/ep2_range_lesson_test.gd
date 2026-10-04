@@ -132,7 +132,7 @@ func _lesson() -> void:
 		order == ["vo_bull_range_intro", "vo_bull_range_load", "vo_bull_range_aim", "vo_bull_range_fire", "vo_bull_range_your_turn"], str(order))
 	_check("he FIRES the Winchester in the demo (the report plays)", c.winchester_shots_played == shots0 + 1)
 	_check("...and his shot knocks a plate down", saw_plate_down)
-	_check("the plates are reset for the player", c.get_molds_left() == 3 and not c._mold_broken[1])
+	_check("the targets are reset for the player", c.get_molds_left() == 5 and not c._mold_broken[1])
 	_check("your gun is still empty and locked after watching", gun.rounds == 0 and gun.locked)
 	# --- LOAD ------------------------------------------------------------------------------------------------
 	_check("LOAD: the player has control again", c.has_player_control())
@@ -172,11 +172,15 @@ func _lesson() -> void:
 	_check("...and he reminds you to reload", said.has("vo_bull_range_empty"))
 	_check("reload refills it", c.reload())
 	_until(c, 6.0, func(): return gun.rounds >= Ep2Winchester.MAG)
-	for i in [1, 2]:
+	# break the remaining four targets (1..4), reloading when the tube runs dry
+	for i in [1, 2, 3, 4]:
+		if gun.rounds == 0:
+			c.reload()
+			_until(c, 6.0, func(): return gun.rounds >= Ep2Winchester.MAG)
 		c.aim_at(c.get_mold_position(i))
-		_check("plate %d goes down" % i, c.shoot() == true and c._mold_broken[i])
+		_check("target %d goes down" % i, c.shoot() == true and c._mold_broken[i])
 		_run(c, 0.8)
-	_check("all three plates down", c.get_molds_left() == 0)
+	_check("all five targets down", c.get_molds_left() == 0)
 	_until(c, 8.0, func(): return c.get_beat_name() != "VERB_TEACH")
 	_check("his closing line, then on to the story (-> TERMS)", said.has("vo_bull_range_done") and c.get_beat_name() == "TERMS", c.get_beat_name())
 	c.queue_free()

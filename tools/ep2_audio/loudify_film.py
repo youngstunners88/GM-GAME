@@ -15,8 +15,8 @@ import sys
 import numpy as np
 import scipy.io.wavfile as w
 
-TARGET_LUFS = -12.0       # where the dialogue should sit (the film's own loud parts are -13..-17; speech must lead)
-MAX_UP_DB = 20.0
+TARGET_LUFS = -9.0   # founder round 2: louder still       # where the dialogue should sit (the film's own loud parts are -13..-17; speech must lead)
+MAX_UP_DB = 24.0
 GATE_LUFS = -50.0         # below this it is silence/room tone: do not ride noise up
 SONG_START, SONG_FULL = 25.0, 27.0
 HOP, WIN = 0.1, 0.4

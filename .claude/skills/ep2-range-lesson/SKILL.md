@@ -11,6 +11,10 @@ State machine (`SmeltingFacilityChamber.Lesson`): LEAD -> DEMO -> LOAD -> AIM ->
 4. AIM: hold RMB steadily for 0.7 s -> "Steady..." -> the rifle UNLOCKS -> FIRE.
 5. FIRE: first hit -> praise -> PRACTICE; 3 plates, R to reload, dry-fire click + his reminder when empty -> DONE -> his closing line -> story continues.
 Locked rifle behaviour: click = "WAIT FOR INFERNO" toast + (rate-limited) `vo_bull_range_hold`; R before the demo = "WATCH INFERNO FIRST".
+# The target wall (founder 2026-10-04 round 2)
+"Make the target practice area more practical. There is a lot of room in the back so let's have it against the empty wall. The targets must be the protocol logos in an interesting way [ref 'Minotaur Mentors Leafy Sharpshooter'] ... one target must be a bear." So the range faces the EMPTY -Z entry hall: a timber back wall holds FIVE glowing-green-ring plaques - TitanX, Gold Mine, Diamonds, Blaze Diamonds (the four protocol logos, `src/episode2/assets/textures/logos/logo_*.png`, 256px alpha) and the archer BEAR (rendered from `mine_bear_archer.glb` to `logo_bear.png` by `tools/ep2_shots/render_bear_poster.tscn`). Player shoots down a lit lane from a firing bench with cartridge boxes; Inferno stands beside him as a coach (`RangeDressing.BULL_LINE`). `MOLD_TARGETS = 5`. The TorusMesh ring lies flat by default - stand it up (`rotation.x = PI/2`) to face the player or it reads as a line.
+GREEN-VFX note: these rings ARE intentionally bright green (protocol brand), unlike the blotch rule's "it is not green". They are emissive UI-style target rings, not environment smudges.
+
 # Contract with the range's visual owner
 `range_dressing.gd` owns how the range looks; gameplay reads only: `LINE`, `BULL_LINE`, `LANE_X`, `TARGET_SPOTS`, `PLATE_RADIUS`, `build() -> {targets, blockers, line}` and `set_target_state(plate, broken)`. A plate node's origin is its visual centre (hit test). Nothing may be built in the lane strip x in [LANE_X-0.6, LANE_X+0.6], z in [LINE.z, 7.5].
 # Voice + sound

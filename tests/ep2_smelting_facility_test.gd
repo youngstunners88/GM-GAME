@@ -219,22 +219,22 @@ func _ready() -> void:
 	_check("first person: the camera is his eye", c.is_fps() and c.get_episode_mode() == Episode2Mode.Mode.FPS)
 	_check("...the player has control again (WASD + mouse)", c.has_player_control())
 	_check("...and the hero model is hidden (no body in first person)", not c._player_node.visible)
-	_check("three molds to break", c.get_molds_left() == 3)
+	_check("five wall targets to break", c.get_molds_left() == 5)
 	# The rifle is LOCKED until Inferno has taught it (founder 2026-10-04); tests/ep2_range_lesson_test.gd plays the
 	# whole lesson. Here the facility's skip hook stands in for it, with a perfectly steady hand.
 	c.aim_at(c.get_mold_position(0))
-	_check("the rifle does NOT fire before the lesson", c.shoot() == false and c.get_molds_left() == 3 and c.get_gun().shots_fired == 0)
+	_check("the rifle does NOT fire before the lesson", c.shoot() == false and c.get_molds_left() == 5 and c.get_gun().shots_fired == 0)
 	c.debug_skip_lesson()
 	c.spread_scale = 0.0
 	c.aim_at(c.get_mold_position(0) + Vector3(6.0, 3.0, 0.0))        # far off the targets
-	_check("firing at nothing breaks nothing", c.shoot() == false and c.get_molds_left() == 3)
+	_check("firing at nothing breaks nothing", c.shoot() == false and c.get_molds_left() == 5)
 	_run(c, 0.8)                                                      # the lever cycles between shots
-	for i in 3:
+	for i in 5:
 		c.aim_at(c.get_mold_position(i))
-		_check("a shot on plate %d breaks exactly that plate" % i, c.shoot() == true and c._mold_broken[i])
+		_check("a shot on target %d breaks exactly that target" % i, c.shoot() == true and c._mold_broken[i])
 		_run(c, 0.8)
 	_check("shooting does not break more than exist", c.get_molds_left() == 0)
-	_until(c, 8.0, func(): return c.get_beat() != c.Beat.VERB_TEACH)    # his "three plates down" line, then on
+	_until(c, 8.0, func(): return c.get_beat() != c.Beat.VERB_TEACH)    # his closing line, then on
 	_check("clearing the rack advances (-> TERMS)", c.get_beat() == c.Beat.TERMS, c.get_beat_name())
 
 	# --- 9. TERMS + PROMISE: the bears, the partnership -----------------------------------------------------------------
@@ -378,9 +378,13 @@ func _ready() -> void:
 		# The Seedance transition film: it starts on the same frame and the hideout is NOT built yet (no hitch).
 		_check("the Seedance film is playing from frame 0 (no delay)", f.get_video_film().elapsed() == 0.0 and not f._room_built)
 		_run(f, 0.5)
-		_check("...the room does not delay it: still not built at 0.5 s", not f._room_built and f.get_beat() == f.Beat.CINEMATIC)
+		_check("...the film's first second is not delayed by a build: still not built at 0.5 s", not f._room_built and f.get_beat() == f.Beat.CINEMATIC)
 		_run(f, 8.0)
-		_check("...and NOTHING is built while the film plays (no mid-film hitch / glitch)", not f._room_built and f.get_beat() == f.Beat.CINEMATIC)
+		# Founder 2026-10-04: "a long period of blank screen that delays for no reason. Fix it." The hideout is now
+		# built WHILE THE FILM PLAYS OVER IT (hidden behind the full-screen film), a few seconds in, so the cut to
+		# target practice is instant instead of a frozen blank build after the film. tests/ep2_transition_prebuild_test
+		# gates the whole behaviour; here we just confirm it happened behind the still-playing film.
+		_check("...the hideout is pre-built behind the film (no blank-screen build at the cut)", f._room_built and f.get_beat() == f.Beat.CINEMATIC)
 		var got_btc: Array = []
 		f.payment_made.connect(func(n): got_btc.append(n))
 		var got_w: Array = []

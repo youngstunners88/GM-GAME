@@ -161,8 +161,24 @@ static func _say(id: String, gap: float = 0.18) -> Dictionary:
 	return {"do": "say", "id": id, "gap": gap}
 
 
-## Steps for a beat (empty = no script). `f` supplies the marks.
+## Steps for a beat (empty = no script). `f` supplies the marks. After the founder's film has played, any line the
+## film already established (Ep2Canon) is dropped - the memory layer that stops Inferno repeating the bear-hunt
+## invite (founder 2026-10-04). An otherwise-emptied dialogue beat keeps a short wait so it still advances.
 static func steps_for(f: Node, beat: int) -> Array:
+	var raw: Array = _steps_for_raw(f, beat)
+	if not (f.has_method("film_played") and f.film_played()):
+		return raw
+	var kept: Array = []
+	for step in raw:
+		if step is Dictionary and str(step.get("do", "")) == "say" and Ep2Canon.is_redundant_after_film(str(step.get("id", ""))):
+			continue
+		kept.append(step)
+	if kept.is_empty() and not raw.is_empty():
+		kept.append({"do": "wait", "t": 0.2})
+	return kept
+
+
+static func _steps_for_raw(f: Node, beat: int) -> Array:
 	var B = f.Beat
 	var lb: Vector3 = f.HAND_MARK
 	var offer_spot: Vector3 = lb + Vector3(-1.05, 0.0, 0.0)

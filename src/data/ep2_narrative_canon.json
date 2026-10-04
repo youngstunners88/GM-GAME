@@ -1,0 +1,12 @@
+{
+  "_comment": "Episode 2 narrative-continuity MEMORY (founder 2026-10-04: 'build a memory layer that helps with these kinds of logical nuances'). What the founder's cliff-to-hideout film ALREADY establishes, so in-game dialogue never repeats it. The dialogue system (FacilityShow via Ep2Canon) drops any line listed in redundant_after_film once the film has played. Extend this file as the story grows; it is the single source of truth for 'the game already told the player this'.",
+  "film": "ep2_cliff_to_hideout",
+  "film_establishes": [
+    { "id": "revive", "fact": "Inferno Bull pulls Lil Blunt from the cliff wreck and revives him with whiskey." },
+    { "id": "gear_deal", "fact": "Bull hands over the Winchester and the miner helmet for one Bitcoin." },
+    { "id": "bears_took_goldmine", "fact": "The bears have overrun the Gold Mine, and Bull invites Lil Blunt to go bear hunting with him. THIS IS THE FILM'S CLOSING BEAT - do not restate it in the hideout." }
+  ],
+  "redundant_after_film": {
+    "vo_bull_bears": "bears_took_goldmine"
+  }
+}

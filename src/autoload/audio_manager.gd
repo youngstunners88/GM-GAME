@@ -252,6 +252,8 @@ func _play_next_in_playlist(fade_in: bool = false, force_first: bool = false, fa
         current_music_player.volume_db = -12.0 if fade_seconds <= 1.0 else -50.0
         var tween := current_music_player.create_tween()
         tween.tween_property(current_music_player, "volume_db", 0.0, fade_seconds)
+    if _voice_ducking:
+        current_music_player.volume_db = VOICE_DUCK_DB     # a track that loops mid-speech stays under the voice
     current_music_player.play()
     current_music_player.finished.connect(_on_music_track_finished)
 
@@ -420,6 +422,11 @@ func play_sfx(name: String) -> void:
 ## the line plays so the words always read, then restores. One line at a
 ## time: a new call replaces the current one.
 var _voice_player: AudioStreamPlayer
+## Voice-duck state (founder 2026-10-04): music stays down for a whole speech, not per line.
+const VOICE_DUCK_DB := -16.0
+const VOICE_RESTORE_GRACE := 0.7
+var _voice_gen: int = 0
+var _voice_ducking: bool = false
 
 func play_voice(name: String) -> void:
     var path := _resolve_audio("res://src/assets/sounds/voice/" + name)
@@ -440,19 +447,40 @@ func play_voice(name: String) -> void:
     _voice_player.volume_db = 6.0
     _voice_player.stream = stream
     add_child(_voice_player)
-    if current_music_player and is_instance_valid(current_music_player):
-        var duck := current_music_player.create_tween()
-        duck.tween_property(current_music_player, "volume_db", -14.0, 0.2)
+    # Hold the music duck for the WHOLE speech, not per line. Founder 2026-10-04: "while he was speaking the music
+    # subsided, but then it went up again while he was speaking." Each line used to restore the music on its own
+    # `finished`, so between consecutive lines (Inferno speaks many in a row) the music pumped back up. Now a voice
+    # bumps a generation counter and ducks; the restore waits VOICE_RESTORE_GRACE after the LAST line and is
+    # cancelled if another line starts, so the music stays down from the first word to a beat after the last.
+    _voice_gen += 1
+    _voice_ducking = true
+    _duck_music_for_voice(VOICE_DUCK_DB, 0.15)
     _voice_player.play()
     _voice_player.finished.connect(_on_voice_finished)
+
+## Set the current music player's volume for the voice duck (tweened). Also remembered so a music track that LOOPS
+## mid-speech (new player) starts already ducked instead of blasting back to full.
+func _duck_music_for_voice(db: float, seconds: float) -> void:
+    if current_music_player and is_instance_valid(current_music_player):
+        var tw := current_music_player.create_tween()
+        tw.tween_property(current_music_player, "volume_db", db, seconds)
 
 func _on_voice_finished() -> void:
     if _voice_player and is_instance_valid(_voice_player):
         _voice_player.queue_free()
     _voice_player = null
-    if current_music_player and is_instance_valid(current_music_player):
-        var restore := current_music_player.create_tween()
-        restore.tween_property(current_music_player, "volume_db", 0.0, 0.5)
+    var gen: int = _voice_gen
+    var t := get_tree().create_timer(VOICE_RESTORE_GRACE)
+    t.timeout.connect(func() -> void:
+        # Only lift the duck if no newer line started and nothing is still speaking.
+        if gen != _voice_gen:
+            return
+        if _voice_player and is_instance_valid(_voice_player) and _voice_player.playing:
+            return
+        _voice_ducking = false
+        if current_music_player and is_instance_valid(current_music_player):
+            var restore := current_music_player.create_tween()
+            restore.tween_property(current_music_player, "volume_db", 0.0, 0.5))
 
 ## Dedicated player for Lil Blunt's character barks. Deliberately a SEPARATE
 ## node from _voice_player: play_voice() is the ANNOUNCER (stage/boss intros,
