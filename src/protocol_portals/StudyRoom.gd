@@ -1140,6 +1140,9 @@ func _finish_quiz() -> void:
 	if session.state == SignalsScript.State.QUIZ:
 		session.transition(SignalsScript.State.RESULT)
 	_grant_once()
+	# Passing the protocol exam (>= PASS_BAR) issues this stage's test NFT. A fail issues nothing.
+	if session.passed:
+		NftIssuer.on_test_passed(protocol, session.score_correct, SignalsScript.QUESTION_COUNT)
 	_show_result()
 
 

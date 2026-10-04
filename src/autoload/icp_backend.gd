@@ -23,6 +23,8 @@ signal prices_ready(prices: Dictionary, source: String)
 ## Populated from config.json → icp.leaderboard_canister_id.
 var canister_id: String = ""
 var price_feed_canister_id: String = ""
+## nft_ledger canister (NFT issuance + on-chain date/time). config.json -> icp.nft_canister_id. Empty = inert.
+var nft_canister_id: String = ""
 var gateway: String = "icp0.io"
 ## "https" on mainnet, "http" against a local replica.
 var scheme: String = "https"
@@ -56,6 +58,7 @@ func _load_config() -> void:
 	var cfg: Dictionary = icp
 	canister_id = str(cfg.get("leaderboard_canister_id", ""))
 	price_feed_canister_id = str(cfg.get("price_feed_canister_id", ""))
+	nft_canister_id = str(cfg.get("nft_canister_id", ""))
 	gateway = str(cfg.get("gateway", "icp0.io"))
 	# Only http/https are permitted. config.json is shipped in the export, so a
 	# tampered file must not be able to point the client at an arbitrary scheme.
@@ -116,6 +119,10 @@ func endpoint(id: String, path: String, query: Dictionary = {}) -> String:
 		parts.append("%s=%s" % [
 			String(k).uri_encode(), String(str(params[k])).uri_encode()])
 	return url + "?" + "&".join(parts)
+
+## True only when the nft_ledger canister id is configured and well-formed (NftIssuer then POSTs /issue).
+func has_nft_ledger() -> bool:
+	return _is_valid_canister_id(nft_canister_id)
 
 func has_price_feed() -> bool:
 	return _is_valid_canister_id(price_feed_canister_id)

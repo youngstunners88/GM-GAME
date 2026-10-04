@@ -290,6 +290,12 @@ SHIP EVERYTHING. Every change is committed, pushed and shipped to master via
 `scripts/ship-to-master.sh`, every time. No gate votes block a ship, and none are
 reported to the founder. Keep replies to the founder short (token budget).
 
+## ⭐ NFT RULE (founder, 2026-10-04)
+Six soulbound NFTs: per stage one for defeating the boss, one for passing the protocol test. Issuance date/time is recorded on
+**ICP** (canister clock) and shown only after the canister confirms it. One contract for game + canister + smokegame.win:
+`docs/nft/NFT_CONTRACT.md`; skills `gm-game-nft-collection`, `gm-game-nft-icp-issuance`, `gm-game-nft-congrats`. Never add/rename ids,
+never fake a chain time, never publish Caffeine builds for the founder.
+
 ## ⭐ LEVEL-1 SONG RULE (clarified by the founder, 2026-09-30)
 "Song A first" (`level01_theme_always_first.mp3`) means: whenever the game is **played from the title
 screen**, that song plays first. It does NOT mean every time Level 1 loads. Coming back out of Blaze Rush, the

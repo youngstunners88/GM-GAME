@@ -5,6 +5,8 @@ description: Grant and mint 3D ICP scorecard NFTs for portal completions — sou
 
 # ICP Scorecard NFTs
 
+> 2026-10-04: the founder's six NFTs (boss + test per stage) are specified in `gm-game-nft-collection`, issued by `NftIssuer` and recorded on ICP per `gm-game-nft-icp-issuance`. This older skill covers only the local portal scorecard bookkeeping (`ScorecardGrant`).
+
 ## 0. Rules
 - Token ids: `portal_smoke`, `portal_diamonds`, `portal_gold`. Do NOT collide
   with the `s1_boss` / `s1_blaze_rush` family. Grep the repo for existing ids

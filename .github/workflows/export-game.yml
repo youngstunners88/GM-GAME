@@ -299,6 +299,8 @@ jobs:
           grep -q 'PORTAL ROOMS: ALL PASS' portal-tests.log
           timeout 60 "$GODOT_BIN" --headless --script res://tests/quiz_protocol_only_test.gd 2>&1 | tee quiz-tests.log
           grep -q 'QUIZ_PROTOCOL_ONLY: ALL PASS' quiz-tests.log
+          timeout 90 "$GODOT_BIN" --headless res://tests/nft_issuer_test.tscn 2>&1 | tee nft-tests.log
+          grep -q 'NFT_ISSUER: ALL PASS' nft-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' portal-tests.log; then exit 1; fi
           timeout 90 "$GODOT_BIN" --headless --script res://tests/portal_traversal_test.gd 2>&1 | tee portal-traversal.log
           grep -q 'PORTAL TRAVERSAL: ALL PASS' portal-traversal.log

@@ -947,6 +947,7 @@ func _update_phase() -> void:
 
 func die() -> void:
 	current_state = State.DEFEATED
+	GameManager.mark_boss_defeated("auditor")  # progression + the boss NFT
 	# Free the bar explicitly: it is a CanvasLayer child, so it would otherwise
 	# linger on screen through the whole death tween and the level transition.
 	if _health_bar:

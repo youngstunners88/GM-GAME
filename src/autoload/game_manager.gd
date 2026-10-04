@@ -186,6 +186,8 @@ func mark_boss_defeated(boss_id: String) -> void:
         return
     defeated.append(boss_id)
     save_session()
+    # Founder (2026-10-04): beating a stage boss issues that stage's boss NFT (see docs/nft/NFT_CONTRACT.md).
+    NftIssuer.on_boss_defeated(boss_id)
 
 ## Unlock a content tier. Emits so menus can reveal entries without polling.
 func unlock_content(content: String) -> void:

@@ -15,6 +15,7 @@
     "leaderboard_canister_id": "",
     "price_feed_canister_id": "",
     "player_registry_canister_id": "",
+    "nft_canister_id": "",
     "gateway": "icp0.io",
     "scheme": "https",
     "port": 0

@@ -1211,6 +1211,7 @@ func take_damage(amount: int) -> void:
 
 func die() -> void:
 	is_dead = true
+	GameManager.mark_boss_defeated("distributor")  # progression + the boss NFT
 	BossVoiceSystem.say(self, BOSS_ID, "death", true)
 	BossVoiceSystem.clear_active()
 	set_physics_process(false)
