@@ -1,0 +1,128 @@
+{
+  "generated": "2026-10-04",
+  "plates": [
+    5.8,
+    8.8,
+    11.8
+  ],
+  "plateRadius": 0.34,
+  "profiles": {
+    "arcade_current": {
+      "note": "what shipped: fire at will from the hip, a 0.7 m forgiving tolerance, 1.2 deg aim jitter, no ADS, no cycle, no reload",
+      "ads": false,
+      "hipSigmaDeg": 1.2,
+      "tolM": 0.7,
+      "fireInterval": 0.05,
+      "kickDeg": 0,
+      "magazine": 99,
+      "reloadPerShell": 0,
+      "adsTime": 0,
+      "adsSigmaDeg": 0
+    },
+    "cod_lever": {
+      "note": "Modern-Warfare-style lever action: hip is loose, ADS is tight, 0.24 s ADS, 0.65 s lever cycle, shell-by-shell reload",
+      "ads": true,
+      "hipSigmaDeg": 2.6,
+      "tolM": 0.34,
+      "adsSigmaDeg": 0.62,
+      "adsTime": 0.24,
+      "fireInterval": 0.65,
+      "kickDeg": 2,
+      "kickRecoverS": 0.32,
+      "magazine": 4,
+      "reloadPerShell": 0.5
+    },
+    "heavy_realism": {
+      "note": "slower and heavier: 0.38 s ADS, 1.0 s cycle, 4.0 deg kick, 0.7 s per shell",
+      "ads": true,
+      "hipSigmaDeg": 3.4,
+      "tolM": 0.34,
+      "adsSigmaDeg": 0.75,
+      "adsTime": 0.38,
+      "fireInterval": 1,
+      "kickDeg": 4,
+      "kickRecoverS": 0.55,
+      "magazine": 4,
+      "reloadPerShell": 0.7
+    }
+  },
+  "rows": [
+    {
+      "profile": "arcade_current",
+      "strategy": "hip",
+      "timeToClearS": 2.33,
+      "shotsPerDrill": 3.02,
+      "hitRate": {
+        "5.8": 1,
+        "8.8": 1,
+        "11.8": 0.98
+      }
+    },
+    {
+      "profile": "cod_lever",
+      "strategy": "hip",
+      "timeToClearS": 25.71,
+      "shotsPerDrill": 20.23,
+      "hitRate": {
+        "5.8": 0.57,
+        "8.8": 0.3,
+        "11.8": 0.18
+      }
+    },
+    {
+      "profile": "cod_lever",
+      "strategy": "ads",
+      "timeToClearS": 5.54,
+      "shotsPerDrill": 4.53,
+      "hitRate": {
+        "5.8": 1,
+        "8.8": 1,
+        "11.8": 0.97
+      }
+    },
+    {
+      "profile": "cod_lever",
+      "strategy": "mixed",
+      "timeToClearS": 7.86,
+      "shotsPerDrill": 6.46,
+      "hitRate": {
+        "5.8": 1,
+        "8.8": 1,
+        "11.8": 0.97
+      }
+    },
+    {
+      "profile": "heavy_realism",
+      "strategy": "hip",
+      "timeToClearS": 57.2,
+      "shotsPerDrill": 31.96,
+      "hitRate": {
+        "5.8": 0.38,
+        "8.8": 0.2,
+        "11.8": 0.12
+      }
+    },
+    {
+      "profile": "heavy_realism",
+      "strategy": "ads",
+      "timeToClearS": 42.5,
+      "shotsPerDrill": 22.95,
+      "hitRate": {
+        "5.8": 1,
+        "8.8": 0.99,
+        "11.8": 0.9
+      }
+    },
+    {
+      "profile": "heavy_realism",
+      "strategy": "mixed",
+      "timeToClearS": 54.24,
+      "shotsPerDrill": 29.82,
+      "hitRate": {
+        "5.8": 1,
+        "8.8": 0.99,
+        "11.8": 0.91
+      }
+    }
+  ]
+}

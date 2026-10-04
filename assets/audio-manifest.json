@@ -355,6 +355,27 @@
       "duration_seconds": 1.0,
       "prompt_influence": 0.6,
       "note": "Ep2 FPS Winchester lever cycle after each shot (skill ep2-winchester-sound)"
+    },
+    {
+      "id": "ep2_winchester_shell_load",
+      "prompt": "A single brass rifle cartridge being pushed into the loading gate of a Winchester lever-action rifle: a crisp metallic click-clack of brass on steel, close-up, dry, no music",
+      "duration_seconds": 0.7,
+      "prompt_influence": 0.6,
+      "note": "Ep2 range lesson (skill ep2-range-lesson)"
+    },
+    {
+      "id": "ep2_winchester_dry",
+      "prompt": "Dry fire click of an empty lever-action rifle hammer falling on no cartridge, a sharp small metallic click, close-up, dry, no music",
+      "duration_seconds": 0.5,
+      "prompt_influence": 0.6,
+      "note": "Ep2 range lesson (skill ep2-range-lesson)"
+    },
+    {
+      "id": "ep2_plate_clang",
+      "prompt": "A rifle bullet striking a hanging steel target plate: a loud bright metallic CLANG with a ringing decay, outdoors range, close, no music",
+      "duration_seconds": 1.4,
+      "prompt_influence": 0.6,
+      "note": "Ep2 range lesson (skill ep2-range-lesson)"
     }
   ],
   "music": [
@@ -2032,6 +2053,162 @@
         "speed": 1.2
       },
       "note": "Episode 2 Seedance transition film (ep2-seedance-film): baked into the .ogv by tools/ep2_film/compose_film.sh; no music."
+    },
+    {
+      "id": "vo_bull_range_follow",
+      "text": "Follow me, little fella. Best way to learn a rifle is to throw some lead down my range.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull teaches the Winchester at his range (skill ep2-range-lesson); same owned voice/settings as vo_bull_wake."
+    },
+    {
+      "id": "vo_bull_range_nag",
+      "text": "Down here, son. The range don't come to you.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull teaches the Winchester at his range (skill ep2-range-lesson); same owned voice/settings as vo_bull_wake."
+    },
+    {
+      "id": "vo_bull_range_intro",
+      "text": "This here's my range. Three steel plates, six, nine and twelve paces out. A rifle's only a question, kid, and lead's the answer. Watch me first.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull teaches the Winchester at his range (skill ep2-range-lesson); same owned voice/settings as vo_bull_wake."
+    },
+    {
+      "id": "vo_bull_range_load",
+      "text": "Step one, you load her. Shells go in through the gate on the side, one at a time. Thumb it in. Tap, tap, tap, tap.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull teaches the Winchester at his range (skill ep2-range-lesson); same owned voice/settings as vo_bull_wake."
+    },
+    {
+      "id": "vo_bull_range_aim",
+      "text": "Step two, you aim. Shoulder her tight, put your eye down the sights, and breathe out slow.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull teaches the Winchester at his range (skill ep2-range-lesson); same owned voice/settings as vo_bull_wake."
+    },
+    {
+      "id": "vo_bull_range_fire",
+      "text": "Step three, you squeeze. Don't jerk it. Squeeze.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull teaches the Winchester at his range (skill ep2-range-lesson); same owned voice/settings as vo_bull_wake."
+    },
+    {
+      "id": "vo_bull_range_your_turn",
+      "text": "That's all there is to it. Your turn, little fella. Load her up. Tap R.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull teaches the Winchester at his range (skill ep2-range-lesson); same owned voice/settings as vo_bull_wake."
+    },
+    {
+      "id": "vo_bull_range_good_load",
+      "text": "That's a full gate. Now shoulder her. Hold the right mouse button and look down the sights.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull teaches the Winchester at his range (skill ep2-range-lesson); same owned voice/settings as vo_bull_wake."
+    },
+    {
+      "id": "vo_bull_range_good_aim",
+      "text": "Steady. See the sights sit on the plate? Now squeeze. Left click.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull teaches the Winchester at his range (skill ep2-range-lesson); same owned voice/settings as vo_bull_wake."
+    },
+    {
+      "id": "vo_bull_range_first_hit",
+      "text": "Ha! That rang like a church bell. Break the other two.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull teaches the Winchester at his range (skill ep2-range-lesson); same owned voice/settings as vo_bull_wake."
+    },
+    {
+      "id": "vo_bull_range_hold",
+      "text": "Easy, hotshot. Not until I say so.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull teaches the Winchester at his range (skill ep2-range-lesson); same owned voice/settings as vo_bull_wake."
+    },
+    {
+      "id": "vo_bull_range_empty",
+      "text": "Gate's empty. Thumb some more shells in. Tap R.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull teaches the Winchester at his range (skill ep2-range-lesson); same owned voice/settings as vo_bull_wake."
+    },
+    {
+      "id": "vo_bull_range_done",
+      "text": "Three plates down. Not bad for a nugget.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull teaches the Winchester at his range (skill ep2-range-lesson); same owned voice/settings as vo_bull_wake."
     }
   ]
 }

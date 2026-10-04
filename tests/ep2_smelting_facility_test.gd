@@ -220,13 +220,21 @@ func _ready() -> void:
 	_check("...the player has control again (WASD + mouse)", c.has_player_control())
 	_check("...and the hero model is hidden (no body in first person)", not c._player_node.visible)
 	_check("three molds to break", c.get_molds_left() == 3)
+	# The rifle is LOCKED until Inferno has taught it (founder 2026-10-04); tests/ep2_range_lesson_test.gd plays the
+	# whole lesson. Here the facility's skip hook stands in for it, with a perfectly steady hand.
+	c.aim_at(c.get_mold_position(0))
+	_check("the rifle does NOT fire before the lesson", c.shoot() == false and c.get_molds_left() == 3 and c.get_gun().shots_fired == 0)
+	c.debug_skip_lesson()
+	c.spread_scale = 0.0
 	c.aim_at(c.get_mold_position(0) + Vector3(6.0, 3.0, 0.0))        # far off the targets
 	_check("firing at nothing breaks nothing", c.shoot() == false and c.get_molds_left() == 3)
+	_run(c, 0.8)                                                      # the lever cycles between shots
 	for i in 3:
 		c.aim_at(c.get_mold_position(i))
-		_check("a shot on mold %d breaks exactly that mold" % i, c.shoot() == true and c._mold_broken[i])
+		_check("a shot on plate %d breaks exactly that plate" % i, c.shoot() == true and c._mold_broken[i])
+		_run(c, 0.8)
 	_check("shooting does not break more than exist", c.get_molds_left() == 0)
-	_run(c, 0.2)
+	_until(c, 8.0, func(): return c.get_beat() != c.Beat.VERB_TEACH)    # his "three plates down" line, then on
 	_check("clearing the rack advances (-> TERMS)", c.get_beat() == c.Beat.TERMS, c.get_beat_name())
 
 	# --- 9. TERMS + PROMISE: the bears, the partnership -----------------------------------------------------------------

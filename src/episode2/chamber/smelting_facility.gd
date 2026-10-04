@@ -68,7 +68,7 @@ const ENTRY_POSITION := Vector3(0.0, 0.0, -8.0)
 const BULL_POSITION := Vector3(1.6, 0.0, 6.0)
 ## Where he stands at rest once the gear is handed over (beside his crate, not following Lil Blunt).
 const BULL_REST := Vector3(2.6, 0.0, 6.3)
-const MOLD_RACK_POSITION := Vector3(-4.2, 0.0, 2.0)
+const MOLD_RACK_POSITION := Vector3(RangeDressing.LANE_X, 0.0, 3.0)   # the middle plate's floor spot (tests, rigs)
 const EXIT_POSITION := Vector3(0.0, 0.0, 15.0)
 ## How close you must be for the meeting to start. Generous — this is a
 ## breather, not a precision-platforming beat.
@@ -169,6 +169,7 @@ var _show_blocks_control: bool = false
 var _glass_node: Node3D = null
 var _bull_guard_rifle: Node3D = null # Bull's own gun, separate from the traded reward
 var _bull_rest_arm: Ep2BullRestArm = null
+var _bull_rifle_ready: bool = false
 var _cigar_tip: MeshInstance3D = null
 var _cigar_smoke: CPUParticles3D = null
 var _anim_t: float = 0.0
@@ -187,6 +188,38 @@ var _vo_lens: Dictionary = {}
 var _bull_blocker_i: int = -1
 var _fps: bool = false
 var _fps_hud: CanvasLayer = null
+var _hud_ctl: Ep2FpsHud = null
+# --- the target-practice lesson (skill ep2-range-lesson) ---
+## Inferno leads Lil Blunt to the range (LEAD), DEMONSTRATES load / aim / fire (DEMO), then the player does each
+## step in turn: LOAD (R), AIM (hold RMB), FIRE (LMB) and PRACTICE on all three plates. The rifle is locked until
+## he has taught it (founder 2026-10-04: "the rifle doesn't fire until Inferno teaches Lil Blunt to load it, aim
+## and fire").
+enum Lesson { OFF, LEAD, DEMO, LOAD, AIM, FIRE, PRACTICE, DONE }
+const BULL_DEMO := Vector3(-2.2, 0.0, -1.6)         # where Inferno stands to demonstrate: ~4.7 m ahead and right of the line, seen 3/4 from behind, fully in frame
+const LESSON_ARRIVE_RADIUS := 2.6                   # how close to the firing line starts the demo
+const AIM_HOLD_SECONDS := 0.7                       # ADS must be held this long to count as "aimed"
+const NAG_SECONDS := 14.0
+const LESSON_STEPS := 4
+var _gun: Ep2Winchester = Ep2Winchester.new()
+var _lesson: int = Lesson.OFF
+var _lesson_t: float = 0.0
+var _lead_done: bool = false
+var _aim_held: float = 0.0
+var _nag_t: float = 0.0
+var _hold_line_cd: float = 0.0
+var _empty_line_cd: float = 0.0
+var _cam_kick: float = 0.0
+var _vm_low: float = 0.0
+var _vm_lag: Vector2 = Vector2.ZERO
+var _look_delta: Vector2 = Vector2.ZERO
+var _sight_h: float = 0.0
+var _flash_t: float = 0.0
+var _muzzle_flash: MeshInstance3D = null
+var _later_calls: Array = []                        # [seconds_left, Callable]
+var _rng := RandomNumberGenerator.new()
+## Test hook: 0 = a perfectly steady hand (headless gates aim and expect a hit); 1 = the real spread.
+var spread_scale: float = 1.0
+var _hit_first: bool = false
 var _flash_light: OmniLight3D = null
 var _recoil: float = 0.0
 var _mold_broken: Array = []
@@ -212,6 +245,9 @@ const CAM_WIDE := [Vector3(0.0, 4.2, -11.0), -14.0, 180.0]
 const CAM_WAKE := [Vector3(2.1, 2.7, 0.4), -26.0, 180.0]
 const FPS_EYE_HEIGHT := 1.55
 const FPS_FOV := 78.0
+const FPS_ADS_FOV := 58.0              # aimed down the sights: a ~1.3x zoom, the Modern Warfare ADS feel
+const ADS_LOOK_SCALE := 0.55           # mouse look slows while aimed
+const ADS_MOVE_SCALE := 0.55           # ...and so does walking
 const CAM_LERP := 1.8          # units/sec — a push-in, not a snap
 
 var _visuals: Node3D = null
@@ -221,6 +257,7 @@ var _cam_target_pitch: float = float(CAM_WIDE[1])
 var _cam_target_yaw: float = 180.0
 var _player_node: Node3D = null
 var _mold_nodes: Array = []
+var _range_blockers: Array = []
 var _rifle_node: Node3D = null
 
 ## The same model rigged on Meshy (2026-10-01) with four library clips; origin at his feet, 2.4 m tall.
@@ -292,6 +329,16 @@ func setup(_gold_principal: int = 0, _bears: Array = [], _diamonds_paid: int = 0
 	_mold_broken = []
 	for _m in MOLD_TARGETS:
 		_mold_broken.append(false)
+	_gun = Ep2Winchester.new()
+	_connect_gun()
+	_lesson = Lesson.OFF
+	_lesson_t = 0.0
+	_lead_done = false
+	_aim_held = 0.0
+	_nag_t = 0.0
+	_cam_kick = 0.0
+	_hit_first = false
+	_later_calls.clear()
 	_room_built = false
 	if _beat == Beat.CINEMATIC and _start_video_film():
 		# The film starts THIS frame; the room is built a moment later (step), never before it.
@@ -433,6 +480,9 @@ func step(delta: float) -> void:
 
 	if _show and _show.running:
 		_show.step(delta)
+	_gun.sprinting = _run_input and _moving
+	_gun.step(delta)
+	_tick_later(delta)
 	match _beat:
 		Beat.WAKE:
 			if _hold <= 0.0:
@@ -451,8 +501,7 @@ func step(delta: float) -> void:
 			if _distance_to_bull() <= TALK_RANGE:
 				_advance()
 		Beat.VERB_TEACH:
-			if _molds_left <= 0:
-				_advance()
+			_tick_lesson(delta)
 		Beat.EXIT:
 			# They leave TOGETHER: the Bull leads to the Fort Knox door and you follow in first person.
 			# Resolve once you reach the door, never before his line has finished.
@@ -485,21 +534,62 @@ func start_rig(_payment: String = "") -> bool:
 	return false
 
 
-## `attack` (LMB). On foot with the Winchester it fires: a muzzle flash, a kick, a shot. During the verb teach
-## the shot breaks the casting mold under the crosshair. Returns true when a mold broke.
+## `attack` (LMB). On foot with the Winchester it fires, once Inferno has taught it: the trigger goes through the
+## Ep2Winchester logic (locked / empty / lever cycling), then a ray with the weapon's spread tests the three steel
+## plates. Returns true when a plate went down.
 func shoot() -> bool:
-	if not _running or _resolved or not _has_winchester or _show_active:
+	if not _running or _resolved or not _has_winchester:
 		return false
-	_fire_fx()
+	if _show_active and _beat != Beat.VERB_TEACH:
+		return false
+	if _gun.trigger() != Ep2Winchester.Shot.OK:
+		return false
 	if _beat != Beat.VERB_TEACH or _molds_left <= 0:
 		return false
-	var idx: int = _mold_under_crosshair()
+	var idx: int = _plate_on_ray(_fire_dir())
 	if idx < 0:
 		return false
+	_break_plate(idx)
+	return true
+
+
+func _break_plate(idx: int) -> void:
 	_mold_broken[idx] = true
 	_molds_left -= 1
+	if _hud_ctl:
+		_hud_ctl.hit_marker(true)
+	_play_clang()
+	if not _hit_first:
+		_hit_first = true
 	_sync_visuals()
-	return true
+
+
+## The camera's aim direction with the weapon's current spread applied (a gaussian cone: wide from the hip, tight
+## when aimed, wider while moving or airborne). `spread_scale` 0 is the test hook for a perfectly steady hand.
+func _fire_dir() -> Vector3:
+	var sigma: float = _gun.spread_deg(_moving, _player_pos.y > 0.05) * spread_scale
+	var yaw: float = _look_yaw + deg_to_rad(_rng.randfn(0.0, sigma)) if sigma > 0.0 else _look_yaw
+	var pitch: float = _look_pitch + deg_to_rad(_rng.randfn(0.0, sigma)) if sigma > 0.0 else _look_pitch
+	var cp: float = cos(pitch)
+	return Vector3(sin(yaw) * cp, sin(pitch), cos(yaw) * cp)
+
+
+## Nearest standing plate the ray passes within a plate's radius of, or -1.
+func _plate_on_ray(dir: Vector3) -> int:
+	var eye: Vector3 = _eye_position()
+	var best: int = -1
+	var best_t: float = 1.0e9
+	for i in _mold_nodes.size():
+		if _mold_broken[i] or not is_instance_valid(_mold_nodes[i]):
+			continue
+		var c: Vector3 = (_mold_nodes[i] as Node3D).global_position
+		var t: float = (c - eye).dot(dir)
+		if t < 0.5 or t > 40.0 or t >= best_t:
+			continue
+		if (c - (eye + dir * t)).length() <= RangeDressing.PLATE_RADIUS + 0.03:
+			best_t = t
+			best = i
+	return best
 
 
 ## Which unbroken mold is the crosshair on (index) or -1. A forgiving cone: this is a tutorial, not a test.
@@ -573,8 +663,10 @@ func set_move_input(v: Vector2, run: bool = false) -> void:
 func look(relative: Vector2) -> void:
 	if not has_player_control():
 		return
-	_look_yaw -= relative.x * LOOK_SENSITIVITY
-	_look_pitch = clampf(_look_pitch - relative.y * LOOK_SENSITIVITY, LOOK_PITCH_MIN, LOOK_PITCH_MAX)
+	var k: float = LOOK_SENSITIVITY * lerpf(1.0, ADS_LOOK_SCALE, _gun.ads)
+	_look_yaw -= relative.x * k
+	_look_pitch = clampf(_look_pitch - relative.y * k, LOOK_PITCH_MIN, LOOK_PITCH_MAX)
+	_look_delta += relative
 
 
 ## Space. Jump from the floor, or Lil Blunt's double jump in the air. Returns true when he jumped.
@@ -620,7 +712,7 @@ func _move_player(delta: float) -> void:
 	_moving = wish.length_squared() > 0.0025
 	if not _moving:
 		return
-	var speed: float = RUN_SPEED if _run_input else WALK_SPEED
+	var speed: float = (RUN_SPEED if _run_input else WALK_SPEED) * lerpf(1.0, ADS_MOVE_SCALE, _gun.ads)
 	var next: Vector3 = _collide(_player_pos + wish * speed * delta)
 	_player_pos.x = next.x
 	_player_pos.z = next.z
@@ -680,6 +772,7 @@ func _on_beat_entered(beat: int) -> void:
 		_to_hand_mark()
 	if beat == Beat.VERB_TEACH:
 		_enter_fps()
+		_begin_lesson()
 	if beat == Beat.TERMS or beat == Beat.PROMISE:
 		_move_input = Vector2.ZERO
 	var steps: Array = FacilityShow.steps_for(self, beat)
@@ -702,6 +795,8 @@ func _on_show_done() -> void:
 	match _beat:
 		Beat.DRINK, Beat.SIZING, Beat.HANDOFF, Beat.HELMET, Beat.TERMS, Beat.PROMISE:
 			_advance()
+		Beat.VERB_TEACH:
+			_on_lesson_show_done()
 		_:
 			pass
 
@@ -887,12 +982,14 @@ func _follow_camera(delta: float) -> void:
 
 ## FIRST PERSON (the shooter/RPG mode, Episode2Mode.FPS): the camera IS Lil Blunt's eye, mouse look, fov 78.
 func _fps_camera(delta: float) -> void:
-	var bob: float = sin(_walk_phase) * 0.035 if _moving else 0.0
+	var bob: float = (sin(_walk_phase) * 0.035 if _moving else 0.0) * lerpf(1.0, 0.25, _gun.ads)
 	_camera.position = _eye_position() + Vector3(0.0, bob, 0.0)
-	var cp: float = cos(_look_pitch)
-	var dir := Vector3(sin(_look_yaw) * cp, sin(_look_pitch), cos(_look_yaw) * cp)
+	var pitch: float = clampf(_look_pitch + _cam_kick, -1.4, 1.4)         # the kick lifts the VIEW, not the aim point
+	var cp: float = cos(pitch)
+	var dir := Vector3(sin(_look_yaw) * cp, sin(pitch), cos(_look_yaw) * cp)
 	_camera.look_at(_camera.position + dir, Vector3.UP)
-	_camera.fov = lerpf(_camera.fov, FPS_FOV, clampf(6.0 * delta, 0.0, 1.0))
+	var ads_k: float = _gun.ads * _gun.ads * (3.0 - 2.0 * _gun.ads)        # smoothstep: eases in and out
+	_camera.fov = lerpf(FPS_FOV, FPS_ADS_FOV, ads_k)
 
 
 func _distance_to_bull() -> float:
@@ -945,7 +1042,7 @@ func get_episode_mode() -> int:
 ## Chamber 0 has no health and no fail state. Reported as full so a shared HUD
 ## does not have to special-case it.
 func get_health() -> int: return 3
-func get_ammo() -> int: return 8
+func get_ammo() -> int: return _gun.rounds
 func get_live_bear_count() -> int: return 0
 func get_vest() -> float: return 0.0
 func is_rig_started() -> bool: return _has_winchester
@@ -1147,34 +1244,12 @@ func _build_visuals() -> void:
 	_visuals.add_child(bull_key)
 	_build_bull(timber)
 
-	# --- the verb-teach target: a rack of EMPTY casting molds (safe by design; see the spec).
-	for i in MOLD_TARGETS:
-		var mold := BoxMesh.new()
-		mold.size = Vector3(0.7, 0.45, 0.5)
-		var mold_mat := Ep2Palette.make_unique("iron")
-		mold_mat.albedo_color = Color(0.16, 0.12, 0.10)       # forged iron, not a cream block
-		mold_mat.emission_enabled = true
-		mold_mat.emission = Color(1.0, 0.45, 0.12)
-		mold_mat.emission_energy_multiplier = 0.25
-		var mi := _mesh(mold, mold_mat,
-			MOLD_RACK_POSITION + Vector3(0.0, 1.05, float(i) * 1.1 - 1.1))
-		_mold_nodes.append(mi)
-	_box(Vector3(1.1, 0.8, 3.6), MOLD_RACK_POSITION + Vector3(0.0, 0.4, 0.0), timber)
-	# TARGET PRACTICE IS A STUB (founder 2026-10-02: he is still designing the range): a marked lane on the floor and a
-	# "locked" sign. No new set dressing; the mold rack stays the working verb-teach target until his art lands.
-	var lane_mat := StandardMaterial3D.new()
-	lane_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	lane_mat.albedo_color = Color(1.0, 0.62, 0.15, 1.0)
-	_box(Vector3(0.7, 0.02, 5.6), MOLD_RACK_POSITION + Vector3(0.0, 0.015, -4.4), lane_mat)
-	var lock := Label3D.new()
-	lock.text = "RANGE LOCKED - founder art incoming"
-	lock.font_size = 40
-	lock.pixel_size = 0.004
-	lock.modulate = Color(1.0, 0.75, 0.3)
-	lock.outline_size = 12
-	lock.position = MOLD_RACK_POSITION + Vector3(0.0, 2.2, 0.0)
-	lock.rotation.y = PI * 0.5
-	_visuals.add_child(lock)
+	# --- TARGET PRACTICE (skill ep2-range-lesson): three steel plates at 5.8 / 8.8 / 11.8 m down a marked lane.
+	# RangeDressing owns how it looks; this scene owns the lesson and only reads the contract.
+	var range_parts: Dictionary = RangeDressing.build(_visuals, timber)
+	for plate in range_parts["targets"]:
+		_mold_nodes.append(plate)
+	_range_blockers = (range_parts["blockers"] as Array).duplicate()
 
 	# --- LIL BLUNT: the real hero (not the old primitive), standing in the room, lying when he comes to.
 	_player_node = _build_player()
@@ -1191,8 +1266,8 @@ func _build_visuals() -> void:
 	_blockers.append([Vector2(BULL_POSITION.x, BULL_POSITION.z), 0.95])
 	for cs in _cauldron_spots:
 		_blockers.append([Vector2(cs.x, cs.z), 1.1])
-	for mz in [-1.2, 0.0, 1.2]:
-		_blockers.append([Vector2(MOLD_RACK_POSITION.x, MOLD_RACK_POSITION.z + mz), 0.7])
+	for rb in _range_blockers:
+		_blockers.append(rb)
 	# A plank bridge over the molten channel: the only way across to Fort Knox.
 	var bridge := _box(Vector3(2.0, 0.1, 2.8), Vector3(0.0, 0.06, CHANNEL_Z), timber)
 	bridge.name = "ChannelBridge"
@@ -1426,19 +1501,11 @@ func _sync_visuals() -> void:
 			_player_node.position.x = _player_pos.x
 		if _player_pose:
 			_player_pose.influence = 0.35 if lying else 1.0
-	# Broken molds drop and go dark — the verb teach needs visible feedback or
-	# the player cannot tell a hit from a miss.
+	# Hit plates swing back and go dark - the verb teach needs visible feedback or the player cannot tell a hit
+	# from a miss. RangeDressing owns how a plate looks standing or hit.
 	for i in _mold_nodes.size():
-		var mi: MeshInstance3D = _mold_nodes[i]
-		if not is_instance_valid(mi):
-			continue
 		var broken: bool = bool(_mold_broken[i]) if i < _mold_broken.size() else i >= _molds_left
-		mi.position.y = 0.25 if broken else 1.05
-		mi.rotation.z = deg_to_rad(72.0) if broken else 0.0
-		var m: StandardMaterial3D = mi.material_override
-		if m:
-			m.albedo_color = Color(0.08, 0.07, 0.07) if broken else Color(0.16, 0.12, 0.10)
-			m.emission_energy_multiplier = 0.0 if broken else 0.25
+		RangeDressing.set_target_state(_mold_nodes[i] as MeshInstance3D, broken)
 
 
 # --- Inferno Bull: rigged, walks, reaches, drinks (founder 2026-10-02) -------------------------------------
@@ -1585,6 +1652,15 @@ func _sync_bull_hand_props() -> void:
 		var depth: Vector3 = stock_axis.cross(Vector3.UP).normalized()
 		var up: Vector3 = depth.cross(stock_axis).normalized()
 		gun.global_transform = Transform3D(Basis(-depth, up, -stock_axis).scaled(Vector3.ONE * 1.05), palm - stock_axis * 0.12 - forward * 0.05)
+		return
+	if _bull_rifle_ready:
+		# DEMO / ready: both hands on the rifle, muzzle pointing where he faces (slightly up), stock at his shoulder.
+		var fwd_front: Vector3 = -forward
+		var muz: Vector3 = (fwd_front + Vector3.UP * 0.06).normalized()
+		var sd: Vector3 = muz.cross(Vector3.UP).normalized()
+		var lf: Vector3 = sd.cross(muz).normalized()
+		gun.global_transform = Transform3D(Basis(sd, lf, muz).scaled(Vector3.ONE * BULL_RIFLE_SCALE),
+			palm + muz * (0.30 * BULL_RIFLE_SCALE))
 		return
 	# His OWN Winchester: shoulder carry. Muzzle up past his right shoulder, tipped a little out and back, gripped
 	# at the wrist of the stock, so its whole silhouette stands clear of his body from the front and both sides.
@@ -1940,23 +2016,17 @@ func _enter_fps() -> void:
 	if _rifle_node and is_instance_valid(_rifle_node) and _camera:
 		_rifle_node.reparent(_camera, false)
 		_rifle_node.top_level = false
-		_rifle_node.position = FPS_RIFLE_POS
-		_rifle_node.rotation = FPS_RIFLE_ROT
-		_rifle_node.scale = Vector3.ONE * 0.85
+		_rifle_node.position = VM_HIP_POS
+		_rifle_node.rotation = VM_HIP_ROT
+		_rifle_node.scale = Vector3.ONE * VM_SCALE
+		_build_muzzle_flash()
 	if _fps_hud == null:
 		_fps_hud = CanvasLayer.new()
 		_fps_hud.layer = 12
 		add_child(_fps_hud)
-		var cross := Control.new()
-		cross.set_anchors_preset(Control.PRESET_FULL_RECT)
-		cross.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		cross.draw.connect(func() -> void:
-			var c: Vector2 = cross.size * 0.5
-			var col := Color(1.0, 0.9, 0.5, 0.95)
-			for d in [Vector2(-14, 0), Vector2(14, 0), Vector2(0, -14), Vector2(0, 14)]:
-				cross.draw_line(c + d * 0.45, c + d, col, 2.5)
-			cross.draw_circle(c, 2.0, col))
-		_fps_hud.add_child(cross)
+		_hud_ctl = Ep2FpsHud.new()
+		_hud_ctl.mag = Ep2Winchester.MAG
+		_fps_hud.add_child(_hud_ctl)
 	_flash_light = OmniLight3D.new()
 	_flash_light.light_color = Color(1.0, 0.8, 0.5)
 	_flash_light.light_energy = 0.0
@@ -1967,17 +2037,69 @@ func _enter_fps() -> void:
 	fps_started.emit()
 
 
-const FPS_RIFLE_POS := Vector3(0.22, -0.17, -0.42)
-const FPS_RIFLE_ROT := Vector3(0.05, 3.2416, 0.0)
+## --- the first-person VIEWMODEL (skill ep2-fps-shooter-feel) --------------------------------------------------
+## Camera space: -Z is forward, the rifle's muzzle is +Z in its own frame so a yaw of PI points it forward.
+## Hip: low and right, the muzzle angled in toward the centre (the Modern Warfare carry), the stock near the
+## shoulder and off-screen. ADS: centred, the sight line on the screen centre. Low ready: down and away while
+## Inferno is still talking.
+const VM_SCALE := 0.8
+const VM_HIP_POS := Vector3(0.17, -0.21, -0.5)
+const VM_HIP_ROT := Vector3(0.03, PI + 0.07, 0.0)
+const VM_LOW_POS := Vector3(0.2, -0.3, -0.46)
+const VM_LOW_ROT := Vector3(-0.42, PI + 0.62, -0.28)
+const VM_SPRINT_POS := Vector3(0.1, -0.3, -0.42)
+const VM_SPRINT_ROT := Vector3(-0.35, PI + 0.5, 0.45)
+const VM_ADS_DEPTH := -0.46
+const VM_ADS_SIGHT_DROP := 0.012            # the front post sits a hair below the centre so the target stays visible
 
 
 ## Muzzle flash, recoil kick and the shot itself.
 func _fire_fx() -> void:
 	_recoil = 1.0
+	_flash_t = 0.06
+	if _gun:
+		_cam_kick += _gun.kick_rad()
 	if _flash_light:
 		_flash_light.light_energy = 4.0
 	_play_winchester()
 
+
+func _build_muzzle_flash() -> void:
+	if _muzzle_flash and is_instance_valid(_muzzle_flash):
+		return
+	var q := QuadMesh.new()
+	q.size = Vector2(0.5, 0.5)
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	m.albedo_color = Color(1.0, 0.75, 0.35, 1.0)
+	m.albedo_texture = _soft_blob()
+	m.no_depth_test = true
+	q.material = m
+	_muzzle_flash = MeshInstance3D.new()
+	_muzzle_flash.mesh = q
+	_muzzle_flash.position = Vector3(0.0, 0.03, 0.66)
+	_muzzle_flash.visible = false
+	_rifle_node.add_child(_muzzle_flash)
+
+
+## Height of the rifle's highest point (the sights) in its own frame, measured from its meshes once.
+func _rifle_sight_height() -> float:
+	if _sight_h > 0.0:
+		return _sight_h
+	var top: float = 0.0
+	if _rifle_node and is_instance_valid(_rifle_node) and _rifle_node.is_inside_tree():
+		var inv: Transform3D = _rifle_node.global_transform.affine_inverse()
+		for mi in _rifle_node.find_children("*", "MeshInstance3D", true, false):
+			var m := mi as MeshInstance3D
+			if m == _muzzle_flash or m.mesh == null:
+				continue
+			var bb: AABB = (inv * m.global_transform) * m.get_aabb()
+			top = maxf(top, bb.end.y)
+	_sight_h = clampf(top, 0.03, 0.2) if top > 0.0 else 0.06
+	return _sight_h
 
 ## The Winchester report (skill ep2-winchester-sound). Founder 2026-10-04: "horrid ... needs to sound dangerous,
 ## not like a toy". It used the runner's 1.2 s revolver samples through play_sfx at 0 dB. Now: three layered rifle
@@ -2046,13 +2168,374 @@ func _animate_fps(delta: float) -> void:
 	if not _fps:
 		return
 	_tick_winchester_lever(delta)
-	_recoil = maxf(0.0, _recoil - delta * 7.0)
+	_recoil = maxf(0.0, _recoil - delta * 6.0)
+	_cam_kick = lerpf(_cam_kick, 0.0, 1.0 - exp(-delta / 0.14))
+	_flash_t = maxf(0.0, _flash_t - delta)
+	if _muzzle_flash and is_instance_valid(_muzzle_flash):
+		_muzzle_flash.visible = _flash_t > 0.0
+		_muzzle_flash.scale = Vector3.ONE * (0.7 + 0.8 * (_flash_t / 0.06))
 	if _flash_light:
 		_flash_light.light_energy = maxf(0.0, _flash_light.light_energy - delta * 30.0)
-	if _rifle_node and is_instance_valid(_rifle_node) and _rifle_node.get_parent() == _camera:
-		var sway: float = sin(_anim_t * 1.6) * 0.004 + (sin(_walk_phase * 2.0) * 0.012 if _moving else 0.0)
-		_rifle_node.position = FPS_RIFLE_POS + Vector3(0.0, sway, 0.0) + Vector3(0.0, 0.03 * _recoil, 0.1 * _recoil)
-		_rifle_node.rotation = FPS_RIFLE_ROT + Vector3(0.12 * _recoil, 0.0, 0.0)
+	_push_hud(delta)
+	if not (_rifle_node and is_instance_valid(_rifle_node) and _rifle_node.get_parent() == _camera):
+		return
+	var ads: float = _gun.ads
+	var ads_k: float = ads * ads * (3.0 - 2.0 * ads)
+	var lowered: float = 1.0 if (_lesson == Lesson.LEAD or _lesson == Lesson.DEMO) else 0.0
+	_vm_low = move_toward(_vm_low, lowered, delta * 2.6)
+	var sprint: float = 1.0 if (_run_input and _moving and ads < 0.1) else 0.0
+	var pos: Vector3 = VM_HIP_POS.lerp(VM_LOW_POS, _vm_low).lerp(VM_SPRINT_POS, sprint * (1.0 - _vm_low))
+	var rot: Vector3 = VM_HIP_ROT.lerp(VM_LOW_ROT, _vm_low).lerp(VM_SPRINT_ROT, sprint * (1.0 - _vm_low))
+	# aimed: centred with the sight line on the screen centre
+	var ads_pos := Vector3(0.0, -(VM_ADS_SIGHT_DROP + _rifle_sight_height() * VM_SCALE), VM_ADS_DEPTH)
+	pos = pos.lerp(ads_pos, ads_k)
+	rot = rot.lerp(Vector3(0.0, PI, 0.0), ads_k)
+	# breathing + walk bob (both nearly vanish aimed), and the rifle LAGS the mouse a little
+	var calm: float = lerpf(1.0, 0.18, ads_k)
+	pos += Vector3(sin(_anim_t * 1.3) * 0.0035, sin(_anim_t * 1.9) * 0.004, 0.0) * calm
+	if _moving:
+		pos += Vector3(sin(_walk_phase) * 0.011, -absf(sin(_walk_phase)) * 0.013, 0.0) * calm
+	var lag_target := Vector2(clampf(-_look_delta.x * 0.00045, -0.05, 0.05), clampf(_look_delta.y * 0.00045, -0.05, 0.05))
+	_look_delta = Vector2.ZERO
+	_vm_lag = _vm_lag.lerp(lag_target, 1.0 - exp(-delta * 12.0))
+	pos += Vector3(_vm_lag.x, _vm_lag.y, 0.0) * calm
+	rot.y += _vm_lag.x * 1.6
+	# recoil: the rifle jumps back and its muzzle lifts, then settles
+	pos += Vector3(0.0, 0.016, 0.085) * _recoil * lerpf(1.0, 0.55, ads_k)
+	rot.x += 0.12 * _recoil * lerpf(1.0, 0.6, ads_k)
+	# the lever cycle: after each shot the rifle dips and rolls as the lever is racked
+	var cp: float = _gun.cycle_progress()
+	if cp < 1.0:
+		var k: float = sin(cp * PI)
+		rot.z += 0.34 * k
+		rot.x -= 0.2 * k
+		pos.y -= 0.025 * k
+	# the shell-by-shell reload: the rifle tilts to show the loading gate and taps once per shell
+	if _gun.reloading:
+		var tap: float = absf(sin(_anim_t * PI / Ep2Winchester.RELOAD_PER_SHELL))
+		rot.z += -0.55
+		rot.x += 0.28
+		pos += Vector3(-0.05, -0.05 - 0.02 * tap, 0.04)
+	_rifle_node.position = pos
+	_rifle_node.rotation = rot
+
+
+## Push the weapon and lesson state into the HUD every frame.
+func _push_hud(_delta: float) -> void:
+	if _hud_ctl == null:
+		return
+	_hud_ctl.spread_deg = _gun.spread_deg(_moving, _player_pos.y > 0.05)
+	_hud_ctl.ads = _gun.ads
+	_hud_ctl.set_ammo(_gun.rounds, _gun.reserve, Ep2Winchester.MAG)
+	_hud_ctl.show_ammo = _has_winchester and (_lesson == Lesson.OFF or _lesson >= Lesson.LOAD)
+	_hud_ctl.objective = _lesson_objective()
+	var stepping: bool = _lesson >= Lesson.LOAD and _lesson <= Lesson.PRACTICE
+	_hud_ctl.step_index = _lesson - Lesson.LOAD + 1 if stepping else 0
+	_hud_ctl.step_total = LESSON_STEPS if stepping else 0
+
+
+# --- The weapon's public verbs + the target-practice lesson (skill ep2-range-lesson) -------------------------------
+
+## RMB held: aim down the sights. (The session root maps the mouse button; the gun clamps it while sprinting.)
+func set_aim(on: bool) -> void:
+	if not _fps or _show_blocks_control:
+		_gun.set_aim(false)
+		return
+	_gun.set_aim(on)
+
+
+## R: load shells one at a time. Returns true when a reload started.
+func reload() -> bool:
+	if not _fps or not _has_winchester or _show_blocks_control:
+		return false
+	return _gun.start_reload()
+
+
+func get_gun() -> Ep2Winchester: return _gun
+func get_reserve() -> int: return _gun.reserve
+func get_lesson() -> int: return _lesson
+func get_lesson_name() -> String: return Lesson.keys()[clampi(_lesson, 0, Lesson.size() - 1)]
+func is_ads() -> bool: return _gun.ads > 0.5
+
+
+func _connect_gun() -> void:
+	_gun.fired.connect(_fire_fx)
+	_gun.dry_fired.connect(_on_dry_fired)
+	_gun.shell_loaded.connect(_on_shell_loaded)
+	_gun.reload_finished.connect(_on_reload_finished)
+	_gun.blocked.connect(_on_gun_blocked)
+
+
+func _sfx(name: String) -> void:
+	var am: Node = get_node_or_null("/root/AudioManager")
+	if am and am.has_method("play_sfx"):
+		am.play_sfx(name)
+
+
+func _play_clang() -> void:
+	_sfx("ep2_plate_clang")
+
+
+func _toast(text: String, seconds: float = 1.6) -> void:
+	if _hud_ctl:
+		_hud_ctl.toast(text, seconds)
+
+
+func _on_dry_fired() -> void:
+	_sfx("ep2_winchester_dry")
+	_toast("OUT OF ROUNDS  -  PRESS R")
+	if _empty_line_cd <= 0.0 and _lesson >= Lesson.FIRE and _gun.reserve > 0:
+		_empty_line_cd = 12.0
+		_speak("vo_bull_range_empty")
+
+
+func _on_shell_loaded(_n: int) -> void:
+	_sfx("ep2_winchester_shell_load")
+
+
+func _on_reload_finished() -> void:
+	if _lesson == Lesson.LOAD:
+		_lesson = Lesson.AIM
+		_lesson_t = 0.0
+		_aim_held = 0.0
+		_speak("vo_bull_range_good_load")
+
+
+func _on_gun_blocked(reason: String) -> void:
+	if reason == "locked":
+		_toast("WAIT FOR INFERNO")
+		if _hold_line_cd <= 0.0 and _lesson >= Lesson.LEAD and _lesson <= Lesson.AIM:
+			_hold_line_cd = 9.0
+			_speak("vo_bull_range_hold")
+	else:
+		_toast("WATCH INFERNO FIRST")
+
+
+## Delay a call by `seconds` of facility time (driven by step, so the headless gates see it too).
+func _later(seconds: float, fn: Callable) -> void:
+	_later_calls.append([seconds, fn])
+
+
+func _tick_later(delta: float) -> void:
+	var i: int = 0
+	while i < _later_calls.size():
+		_later_calls[i][0] -= delta
+		if _later_calls[i][0] <= 0.0:
+			var fn: Callable = _later_calls[i][1]
+			_later_calls.remove_at(i)
+			fn.call()
+		else:
+			i += 1
+
+
+func _begin_lesson() -> void:
+	_lesson = Lesson.LEAD
+	_lesson_t = 0.0
+	_lead_done = false
+	_aim_held = 0.0
+	_nag_t = 0.0
+	_gun.locked = true
+	_gun.reload_locked = true
+	_gun.rounds = 0
+	_gun.reserve = Ep2Winchester.RESERVE_START
+	_add_line_marker()
+
+
+## A pulsing ring on the floor at the firing line while Inferno is leading the way there.
+var _line_marker: MeshInstance3D = null
+func _add_line_marker() -> void:
+	if _line_marker and is_instance_valid(_line_marker):
+		return
+	var tm := TorusMesh.new()
+	tm.inner_radius = 0.7
+	tm.outer_radius = 0.82
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.albedo_color = Color(1.0, 0.7, 0.2, 0.9)
+	_line_marker = MeshInstance3D.new()
+	_line_marker.mesh = tm
+	_line_marker.material_override = m
+	_line_marker.position = Vector3(RangeDressing.LINE.x, 0.04, RangeDressing.LINE.z)
+	if _visuals:
+		_visuals.add_child(_line_marker)
+
+
+func _player_near_line() -> bool:
+	return Vector2(_player_pos.x - RangeDressing.LINE.x, _player_pos.z - RangeDressing.LINE.z).length() <= LESSON_ARRIVE_RADIUS
+
+
+func _tick_lesson(delta: float) -> void:
+	_lesson_t += delta
+	_hold_line_cd = maxf(0.0, _hold_line_cd - delta)
+	_empty_line_cd = maxf(0.0, _empty_line_cd - delta)
+	if _line_marker and is_instance_valid(_line_marker):
+		_line_marker.visible = _lesson == Lesson.LEAD
+		_line_marker.scale = Vector3.ONE * (1.0 + 0.12 * sin(_anim_t * 4.0))
+	match _lesson:
+		Lesson.LEAD:
+			# "Follow me": for the first 2.2 s the view eases round to him as he sets off (the player stays in
+			# control after that), so the lesson never starts with Inferno walking away behind your back.
+			if _lesson_t < 2.2 and _bull and not _show_blocks_control:
+				var d: Vector3 = _bull.position - _eye_position()
+				_look_yaw = lerp_angle(_look_yaw, atan2(d.x, d.z), 1.0 - exp(-delta * 2.5))
+				_look_pitch = lerpf(_look_pitch, -0.12, 1.0 - exp(-delta * 2.5))
+			if _lead_done:
+				if _player_near_line():
+					_start_demo()
+				else:
+					_nag_t += delta
+					if _nag_t >= NAG_SECONDS:
+						_nag_t = 0.0
+						_speak("vo_bull_range_nag")
+		Lesson.DEMO:
+			_frame_demo(delta)
+		Lesson.AIM:
+			_aim_held = _aim_held + delta if _gun.ads >= 0.95 else 0.0
+			if _aim_held >= AIM_HOLD_SECONDS:
+				_lesson = Lesson.FIRE
+				_lesson_t = 0.0
+				_gun.locked = false
+				_speak("vo_bull_range_good_aim")
+		Lesson.FIRE:
+			if _hit_first:
+				_lesson = Lesson.PRACTICE
+				_lesson_t = 0.0
+				_speak("vo_bull_range_first_hit")
+		Lesson.PRACTICE:
+			if _molds_left <= 0:
+				_lesson = Lesson.DONE
+				_speak("vo_bull_range_done")
+				_hold = _vo_len("vo_bull_range_done") + 0.4
+		Lesson.DONE:
+			if _hold <= 0.0:
+				_advance()
+
+
+func _lesson_objective() -> String:
+	match _lesson:
+		Lesson.LEAD:
+			return "FOLLOW INFERNO BULL TO THE FIRING LINE"
+		Lesson.DEMO:
+			return "WATCH INFERNO"
+		Lesson.LOAD:
+			return "PRESS  R  TO LOAD THE WINCHESTER   (%d / %d)" % [_gun.rounds, Ep2Winchester.MAG]
+		Lesson.AIM:
+			return "HOLD  RIGHT MOUSE  TO AIM DOWN THE SIGHTS"
+		Lesson.FIRE:
+			return "AIM, THEN PRESS  LEFT CLICK  TO FIRE"
+		Lesson.PRACTICE:
+			return "BREAK ALL 3 PLATES   (%d left)   R = reload" % _molds_left
+	return ""
+
+
+## The Bull has reached the demo spot (LEAD) or finished the demonstration (DEMO).
+func _on_lesson_show_done() -> void:
+	match _lesson:
+		Lesson.LEAD:
+			_lead_done = true
+		Lesson.DEMO:
+			_demo_end()
+			_lesson = Lesson.LOAD
+			_lesson_t = 0.0
+			_gun.reload_locked = false
+			_show_blocks_control = false
+
+
+func _start_demo() -> void:
+	_lesson = Lesson.DEMO
+	_lesson_t = 0.0
+	_move_input = Vector2.ZERO
+	_gun.set_aim(false)
+	_show_blocks_control = true
+	_show_active = true
+	if _show == null:
+		_show = FacilityShow.new()
+		_show.f = self
+	_show.start(FacilityShow.demo_steps(self))
+
+
+## While Inferno demonstrates, the camera frames him and the plates (the player is locked, so this is a cut-scene
+## look, not a fight with the mouse).
+func _frame_demo(delta: float) -> void:
+	if _bull == null:
+		return
+	var eye: Vector3 = _eye_position()
+	var to_plate: Vector3 = get_mold_position(1) - eye
+	var to_bull: Vector3 = _bull.position + Vector3(0.0, 1.6, 0.0) - eye
+	var yaw: float = lerp_angle(atan2(to_plate.x, to_plate.z), atan2(to_bull.x, to_bull.z), 0.45)
+	_look_yaw = lerp_angle(_look_yaw, yaw, 1.0 - exp(-delta * 3.0))
+	_look_pitch = lerpf(_look_pitch, -0.04, 1.0 - exp(-delta * 3.0))
+
+
+func _bull_front() -> Vector3:
+	return Basis(Vector3.UP, _bull.facing) * Vector3.BACK
+
+
+## "ready" = two-handed shooting hold (the demo), "carry" = shoulder carry (rest).
+func _set_bull_rifle_mode(mode: String) -> void:
+	_bull_rifle_ready = mode == "ready"
+
+
+# --- the demonstration, one beat at a time (called by FacilityShow.demo_steps) ---
+func _demo_shell() -> void:
+	_sfx("ep2_winchester_shell_load")
+
+
+func _demo_raise() -> void:
+	if _bull == null:
+		return
+	_set_bull_rifle_mode("ready")
+	var front: Vector3 = _bull_front()
+	var across: Vector3 = Basis(Vector3.UP, _bull.facing) * Vector3.RIGHT      # his LEFT
+	_bull.reach("Right", _bull.position + front * 0.5 - across * 0.15 + Vector3.UP * 2.12, 0.5, 0.1)
+	_bull.reach("Left", _bull.position + front * 1.15 + across * 0.05 + Vector3.UP * 2.02, 0.5, 0.1)
+
+
+func _demo_fire() -> void:
+	_play_winchester()
+	if _bull:
+		var muzzle: Vector3 = _bull.position + _bull_front() * 1.5 + Vector3.UP * 2.1
+		var lt := OmniLight3D.new()
+		lt.light_color = Color(1.0, 0.8, 0.5)
+		lt.light_energy = 5.0
+		lt.omni_range = 6.0
+		lt.position = muzzle
+		_visuals.add_child(lt)
+		_later(0.09, lt.queue_free)
+	_later(0.3, _demo_hit)
+
+
+func _demo_hit() -> void:
+	_mold_broken[1] = true
+	_play_clang()
+	_sync_visuals()
+
+
+func _demo_end() -> void:
+	if _bull:
+		_bull.release("Right", 0.5)
+		_bull.release("Left", 0.5)
+	_set_bull_rifle_mode("carry")
+	for i in _mold_broken.size():
+		_mold_broken[i] = false
+	_molds_left = MOLD_TARGETS
+	_sync_visuals()
+
+
+## Test / skip hook: jump straight to free practice with a loaded, unlocked rifle.
+func debug_skip_lesson() -> void:
+	if _show:
+		_show.running = false
+	_show_active = false
+	_show_blocks_control = false
+	_demo_end()
+	_lesson = Lesson.PRACTICE
+	_gun.locked = false
+	_gun.reload_locked = false
+	_gun.rounds = Ep2Winchester.MAG
+	_gun.reserve = Ep2Winchester.RESERVE_START - Ep2Winchester.MAG
+	_lead_done = true
 
 
 ## Fire and lamp flicker, so the room breathes with heat.

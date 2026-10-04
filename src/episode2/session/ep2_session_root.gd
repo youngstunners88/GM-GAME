@@ -364,11 +364,19 @@ func _route_free_roam(event: InputEvent) -> bool:
 				Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 			chamber_shoot()
 			return true
+		# RMB held = aim down the sights (Modern Warfare style); released = back to the hip.
+		if mb.button_index == MOUSE_BUTTON_RIGHT and _active.has_method("set_aim"):
+			_active.set_aim(mb.pressed)
+			return true
 		return false
 	if event is InputEventKey:
 		var k: InputEventKey = event
 		if k.pressed and k.physical_keycode == KEY_SPACE:
 			_active.jump()
+			return true
+		# R = load shells, one at a time (the Winchester's tube magazine).
+		if k.pressed and k.physical_keycode == KEY_R and _active.has_method("reload"):
+			_active.reload()
 			return true
 		# W / S / arrows are movement here, never "jump" or "take cover": swallow them so the shaft bindings
 		# (move_down = cover, move_left/right = walk) cannot fire on top of free roam.

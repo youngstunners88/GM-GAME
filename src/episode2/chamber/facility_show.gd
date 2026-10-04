@@ -50,6 +50,7 @@ func _begin(s: Dictionary) -> void:
 		"say":
 			var id: String = str(s["id"])
 			s["len"] = f._vo_len(id) + float(s.get("gap", 0.18))
+			s["_ev"] = 0
 			f._hold = float(s["len"])
 			f._speak(id)
 		"walk":
@@ -81,6 +82,14 @@ func _begin(s: Dictionary) -> void:
 func _tick(s: Dictionary, delta: float) -> bool:
 	match str(s["do"]):
 		"say":
+			# `events`: [[seconds_into_the_line, Callable], ...] fire in order while the line plays (shell clicks,
+			# raising the rifle, the shot) so the Bull's hands do what his words say.
+			var evs: Array = s.get("events", [])
+			var ei: int = int(s.get("_ev", 0))
+			while ei < evs.size() and _t >= float(evs[ei][0]):
+				(evs[ei][1] as Callable).call()
+				ei += 1
+			s["_ev"] = ei
 			return _t >= float(s["len"])
 		"wait":
 			return _t >= float(s["t"])
@@ -208,4 +217,24 @@ static func steps_for(f: Node, beat: int) -> Array:
 			return [_say("vo_bull_partner", 0.3), _say("vo_lb_partner_ok", 0.2)]
 		B.EXIT:
 			return [_say("vo_bull_exit", 0.1)]
+		B.VERB_TEACH:
+			# He leads Lil Blunt to the range: the line plays while he walks (the player is free and follows).
+			return [{"do": "call", "fn": f._speak.bind("vo_bull_range_follow")},
+				{"do": "walk", "to": f.BULL_DEMO, "speed": 3.4},
+				{"do": "face", "at": Vector3(RangeDressing.LANE_X, 1.4, RangeDressing.TARGET_SPOTS[1].z)}]
 	return []
+
+
+## The demonstration at the firing line: load (shells one at a time), aim, squeeze; then "your turn".
+## Every beat is tied to a moment of the Bull's own line so the picture matches the words.
+static func demo_steps(f: Node) -> Array:
+	var lane_pt := Vector3(RangeDressing.LANE_X, 1.4, RangeDressing.TARGET_SPOTS[1].z)
+	return [
+		{"do": "face", "at": lane_pt},
+		_say("vo_bull_range_intro", 0.3),
+		{"do": "say", "id": "vo_bull_range_load", "gap": 0.35, "events": [
+			[0.2, f._demo_raise], [2.2, f._demo_shell], [3.3, f._demo_shell], [4.4, f._demo_shell], [5.5, f._demo_shell]]},
+		{"do": "say", "id": "vo_bull_range_aim", "gap": 0.45},
+		{"do": "say", "id": "vo_bull_range_fire", "gap": 0.2, "events": [[1.7, f._demo_fire]]},
+		{"do": "wait", "t": 1.3},
+		_say("vo_bull_range_your_turn", 0.1)]

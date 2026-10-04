@@ -1,0 +1,24 @@
+---
+name: ep2-fps-shooter-feel
+description: Make Episode 2's first-person Winchester handle like Modern Warfare - viewmodel placement relative to the camera, aim-down-sights, spread, lever cycle, shell-by-shell reload, view kick, dynamic crosshair and ammo HUD - with every number chosen by a seeded bot simulation and Jev's decision, and proven by real-render captures. TRIGGER on "the rifle is nothing like Modern Warfare / Call of Duty", "ADS", "aim down sights", "recoil", "reload", "crosshair", "ammo", "the gun feels cheap / floaty", any edit to ep2_winchester.gd, ep2_fps_hud.gd, the VM_* constants or _animate_fps in smelting_facility.gd, or a new first-person weapon.
+---
+# Why (founder 2026-10-04)
+"The gameplay of the rifle is nothing like Modern Warfare Call of Duty ... let Jev play shooter games so you can understand placement of the rifle in respect to the camera and gameplay graphics." The old rifle was a model glued to the camera that fired on click: no aim state, no ammo, no reload, an instant re-fire, a fixed crosshair, a 0.7 m forgiving hit cone.
+
+# Honest note on "Jev plays shooters"
+Jev (`~typesafe/jev-latest`, `scripts/jev.mjs`) is a TEXT-ONLY decisions model. It cannot play, watch or see a game. The legitimate version of the request is `tools/ep2_sim/fps_feel_sim.mjs`: a seeded bot-player runs the real range drill (plates at 5.8 / 8.8 / 11.8 m, radius 0.34 m, 4000 runs per row) against candidate handling profiles, and the table goes to Jev as `state` with `noul` and `choice` questions (`--jev`). Result 2026-10-04 (docs/ep2_fps_feel_simulation.json): hip fire at the far plate hits 18 %, ADS 97 %; the ADS drill clears in 5.5 s, the 1.0 s-cycle "heavy" profile takes 42 s (a chore). Jev chose `cod_lever` (confidence 0.98). The callofdutyapi GitHub repo is a stats wrapper (profile / match history): it holds NO weapon-handling data, do not mine it. Web research (Infinity Ward animation blog, MW coverage): ADS reload keeps the weapon on target, tactical reloads differ from empty reloads, idle animations breathe, muzzle sparks/smoke vary by weapon, a viewmodel sits low and to the right.
+
+# The numbers (Ep2Winchester constants; change them only via the sim)
+MAG 4 (lesson tube), reserve 24, ADS 0.24 s, lever cycle 0.65 s (lever sound at 0.34 s), reload 0.5 s per shell, spread sigma hip 2.6 deg / ADS 0.62 deg, x1.6 moving, x2.5 airborne, view kick 2.0 deg (65 % aimed) recovering in ~0.14 s, ADS FOV 58 vs 78, mouse look x0.55 and walking x0.55 while aimed, sprinting drops aim.
+
+# Viewmodel rules (camera space, -Z forward, rifle muzzle is +Z so yaw PI points it forward)
+- Hip: `VM_HIP_POS` low-right (0.17, -0.21, -0.5), muzzle angled in, stock off-screen, scale 0.8.
+- ADS: centred; the sight line is placed from the rifle's MEASURED highest point (`_rifle_sight_height`), depth -0.46, front post a hair below centre; crosshair becomes a dot; ADS vignette.
+- Low ready (`VM_LOW_*`) while Inferno talks (LEAD / DEMO); sprint pose when running.
+- Layers that must all exist: breathing + walk bob (x0.18 aimed), mouse lag, recoil jump + muzzle lift, lever-cycle dip and roll, reload tilt with a tap per shell, muzzle flash quad + light, camera kick that lifts the VIEW but not the aim point.
+- Hit test: a gaussian cone from the CAMERA aim at fire time (pre-kick), plate radius + 0.03. `spread_scale = 0` is the headless test hook.
+
+# Gate
+`tests/ep2_range_lesson_test.tscn` (gun rules + whole lesson), `tests/ep2_smelting_facility_test.tscn`. Look at the real thing: `tools/ep2_shots/range_lesson_shot.tscn -- out=.farm/range` writes 15 stages (low ready, demo, loading, hip, ADS, flash, hit); open them. Re-run `node tools/ep2_sim/fps_feel_sim.mjs --jev` after ANY number change and commit the JSON.
+# Never
+Ship a tuning number a sim did not rank; let the rifle fire with an empty tube, a cycling lever, or before the lesson unlocks it; hide the crosshair gap logic behind a fixed reticle; draw the ADS vignette over the HUD.
