@@ -575,7 +575,21 @@ jobs:
           git rm -q --cached index.pck 2>/dev/null || true
           git -c user.name="Claude Code Bot" -c user.email="claude@anthropic.com" \
             commit -qm "pages: web build @ ${GITHUB_SHA::7}"
-          git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}" gh-pages
+          # The mirror is SECONDARY (itch is primary). Two runs finishing at the same moment race on the
+          # gh-pages ref ("cannot lock ref ... is at X but expected Y") and that used to FAIL this step, which
+          # skipped the butler deploy (2026-10-04, NFT build). Retry, and if it still loses, warn and carry on
+          # so a mirror hiccup can never stop the itch deploy.
+          pushed=""
+          for attempt in 1 2 3 4; do
+            if git push -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}" gh-pages; then
+              pushed=1; break
+            fi
+            echo "gh-pages push attempt ${attempt} lost a race - retrying in $((attempt * 4))s"
+            sleep $((attempt * 4))
+          done
+          if [ -z "$pushed" ]; then
+            echo "::warning::gh-pages mirror could not be refreshed (ref race); continuing - itch deploy is unaffected."
+          fi
           rm -rf .git
         env:
           GITHUB_TOKEN: ${{ github.token }}
