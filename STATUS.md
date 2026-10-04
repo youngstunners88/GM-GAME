@@ -5,6 +5,17 @@
 
 ---
 
+**🔁 SONG CONTINUES, WINCHESTER SOUNDS DANGEROUS, BULL'S RIFLE AND WHISKEY VISIBLE (2026-10-04, later).**
+- **Song restarted (my bug):** the timing was right, but when the film ended the game stopped the video first and only then asked how far it had got. Stopping rewinds the video to 0, so the song started from the top every time. It now reads the position before stopping, so the theme continues from 34.3 s, where the film leaves it. I also re-checked the timing sample-by-sample: the song starts 26.53 s into your video, and the match is exact in every window up to the last second (99%). A new test runs the real end-of-film path.
+- **Winchester:** it was playing the runner's short revolver sounds. It now has its own 3 rifle shots: a sharp crack, a heavy boom (about 65% low end) and a 2.4 s echo through the mine. Each is louder than before, and a lever rack follows every shot. Rapid shots no longer cut each other's echo off.
+- **Inferno Bull:** after your film he stood side-on to Lil Blunt, with his rifle hidden behind his body. Your Meshy glass also looked like a white beer mug from across the room. Now:
+  - He faces Lil Blunt and turns in place to keep facing him. He still never follows him around.
+  - He carries his own Winchester on his right shoulder, muzzle up and 30% bigger.
+  - The glass is clear with glowing amber whiskey, an ice cube and a bright rim. I kept your glass's shape and only changed how it looks.
+  - Checked in a real render from 2 angles (`.farm/bullprops`).
+- **Skills:** new `ep2-winchester-sound` and `ep2-bull-props-visible`; `ep2-theme-song-handoff`, `ep2-bull-rest-pose` and `ep2-gunplay-feel` updated.
+- **Not checked:** your browser, and the sound in a browser.
+
 **🎞️ YOUR 60-SECOND FILM REPLACES MINE, AND THE SONG CARRIES ON (2026-10-04).** My generated film is gone; the cart-exit-to-Inferno-Bull film is now your video (Drive "1wLXAPHq...", encoded to the web format, 8.5 MB, plays after the cart ride exactly where mine did; hold Space to skip). 
 - **Music:** the mine music now fades out over 3 seconds as the track runs out (about 3.5 s before the cliff), the film brings in the stage theme ("Deep mining 2") from its own soundtrack, and when the film ends the game continues the song from the matching position instead of restarting it. Measured, not guessed: I matched the song against the film's audio (two independent windows agree) and the song begins 26.5 s into the video, so at the end of the film the game starts the song at 34.3 s. You wrote that it starts "about 3/4 in" (45.6 s); my measurement says 26.5 s. If it sounds wrong, tell me which and I change one number. After that the song loops as the stage theme.
 - **Pack size:** your video (8.5 MB) and the song (3.7 MB) replace my 6.8 MB film; to stay under CI's 190 MB limit I removed 8 MB of files nothing uses (two old `fresh_boost` sounds, six unused art images).

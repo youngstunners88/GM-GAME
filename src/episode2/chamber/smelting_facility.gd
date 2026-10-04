@@ -99,6 +99,8 @@ const BTC_PRICE := 1                                   # one Bitcoin buys the ri
 const RIFLE_IN_HAND_POS := Vector3(0.0, 0.12, 0.05)
 const RIFLE_IN_HAND_ROT := Vector3(-1.5708, 0.0, 0.0)
 const RIFLE_HAND_SCALE := 1.0
+## The Bull's own shoulder-carried Winchester: bigger than the traded one so it reads on his 2.5 m frame.
+const BULL_RIFLE_SCALE := 1.3
 const HELMET_IN_HAND_POS := Vector3(0.0, 0.18, 0.1)
 ## Room bounds for walking, inside the timber alcove walls.
 const ROOM_X := 6.3
@@ -244,7 +246,7 @@ const INGOT_RACK_MODEL := "res://src/episode2/assets/ingot_rack.glb"
 const WHISKEY_MODEL := "res://src/episode2/assets/whiskey_glass.glb"
 const COIN_MODEL := "res://src/episode2/assets/btc_coin.glb"
 const GLASS_MODEL := WHISKEY_MODEL
-const GLASS_HEIGHT := 0.26
+const GLASS_HEIGHT := 0.31
 const LANTERN_MODEL := "res://src/episode2/assets/lantern.glb"
 const PLAYER_MODEL := "res://src/episode2/assets/lil_blunt_placeholder.glb"
 
@@ -337,8 +339,12 @@ func _on_video_film_finished() -> void:
 	_return_bull_glass()
 	if _bull:
 		_bull.position = BULL_REST
-		_bull.facing = PI
-		_bull.rotation.y = PI
+		# He faces Lil Blunt, not the wall: in profile his Winchester and his whiskey were hidden behind his own
+		# body (founder 2026-10-04 "we still can't see his rifle or the whiskey glass"; skill ep2-bull-props-visible).
+		var to_hero: float = atan2(HAND_MARK.x - BULL_REST.x, HAND_MARK.z - BULL_REST.z)
+		_bull.facing = to_hero
+		_bull.rotation.y = to_hero
+		_bull.face_yaw(to_hero)
 		_bull.play(BULL_IDLE, 1.0, 0.0)
 		_bull_rest_arm.resting = true
 	_player_pos = HAND_MARK
@@ -1574,10 +1580,24 @@ func _sync_bull_hand_props() -> void:
 	if gun == null or not gun.visible or right < 0:
 		return
 	var palm: Vector3 = (sk.global_transform * sk.get_bone_global_pose(right)).origin
-	var stock_axis: Vector3 = Vector3(-1.0, 0.15, -0.10).normalized() if carrying_trade else (across * 0.72 - Vector3.UP * 0.69).normalized()
-	var depth: Vector3 = stock_axis.cross(Vector3.UP).normalized()
-	var up: Vector3 = depth.cross(stock_axis).normalized()
-	gun.global_transform = Transform3D(Basis(-depth, up, -stock_axis).scaled(Vector3.ONE * 1.05), palm - stock_axis * 0.12 - forward * 0.05)
+	if carrying_trade:
+		var stock_axis: Vector3 = Vector3(-1.0, 0.15, -0.10).normalized()
+		var depth: Vector3 = stock_axis.cross(Vector3.UP).normalized()
+		var up: Vector3 = depth.cross(stock_axis).normalized()
+		gun.global_transform = Transform3D(Basis(-depth, up, -stock_axis).scaled(Vector3.ONE * 1.05), palm - stock_axis * 0.12 - forward * 0.05)
+		return
+	# His OWN Winchester: shoulder carry. Muzzle up past his right shoulder, tipped a little out and back, gripped
+	# at the wrist of the stock, so its whole silhouette stands clear of his body from the front and both sides.
+	# (The old low diagonal hid it behind his hip: founder 2026-10-04 "we still can't see his rifle".)
+	# Rifle GLB: 1.2 m, muzzle +Z, centred (skill ep2-handoff-props). `across` is his LEFT, `forward` his BACK.
+	var muzzle: Vector3 = (Vector3.UP * 0.94 - across * 0.20 + forward * 0.16).normalized()
+	var side: Vector3 = muzzle.cross(-across).normalized()
+	if side.dot(forward) < 0.0:
+		side = -side
+	var lift: Vector3 = muzzle.cross(side).normalized()     # right-handed: side x lift = muzzle
+	var s: float = BULL_RIFLE_SCALE
+	gun.global_transform = Transform3D(Basis(side, lift, muzzle).scaled(Vector3.ONE * s),
+		palm + muzzle * (0.26 * s) - across * 0.02)
 
 
 func _stand_up_done() -> bool:
@@ -1589,30 +1609,103 @@ func _bull_play(clip: String, speed: float = 1.0) -> void:
 		_bull.play(clip, speed)
 
 
+## Outer radius (metres, in the glass node's frame) of the scaled tumbler model, from its mesh AABBs.
+func _glass_radius(gm: Node3D) -> float:
+	var r: float = 0.0
+	for mi in gm.find_children("*", "MeshInstance3D", true, false):
+		var xf: Transform3D = Transform3D(Basis.from_scale(gm.scale), Vector3.ZERO)
+		var chain: Array[Node3D] = []
+		var n: Node = mi
+		while n != gm and n is Node3D:
+			chain.push_front(n as Node3D)
+			n = n.get_parent()
+		for c in chain:
+			xf = xf * c.transform
+		var bb: AABB = xf * (mi as MeshInstance3D).get_aabb()
+		r = maxf(r, maxf(bb.size.x, bb.size.z) * 0.5)
+	return r if r > 0.01 else GLASS_HEIGHT * 0.4
+
+
+## Whiskey, ice and a rim inside the glass node (the glass base sits at y = -GLASS_HEIGHT / 2).
+func _add_whiskey_inside(holder: Node3D, radius: float) -> void:
+	var base_y: float = -GLASS_HEIGHT * 0.5
+	var liquid_h: float = GLASS_HEIGHT * 0.62
+	var liquid := MeshInstance3D.new()
+	liquid.name = "Whiskey"
+	var cm := CylinderMesh.new()
+	cm.top_radius = radius * 0.86
+	cm.bottom_radius = radius * 0.80
+	cm.height = liquid_h
+	cm.radial_segments = 20
+	liquid.mesh = cm
+	var lm := StandardMaterial3D.new()
+	lm.albedo_color = Color(0.80, 0.33, 0.02)
+	lm.roughness = 0.08
+	lm.emission_enabled = true
+	lm.emission = Color(1.0, 0.52, 0.10)
+	lm.emission_energy_multiplier = 1.6
+	liquid.material_override = lm
+	liquid.position = Vector3(0.0, base_y + GLASS_HEIGHT * 0.10 + liquid_h * 0.5, 0.0)
+	holder.add_child(liquid)
+	var ice := MeshInstance3D.new()
+	ice.name = "Ice"
+	var bm := BoxMesh.new()
+	bm.size = Vector3.ONE * radius * 0.85
+	ice.mesh = bm
+	var im := StandardMaterial3D.new()
+	im.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	im.albedo_color = Color(0.92, 0.97, 1.0, 0.55)
+	im.roughness = 0.1
+	im.emission_enabled = true
+	im.emission = Color(1.0, 0.85, 0.6)
+	im.emission_energy_multiplier = 0.25
+	ice.material_override = im
+	ice.position = Vector3(radius * 0.12, base_y + GLASS_HEIGHT * 0.10 + liquid_h * 0.92, 0.0)
+	ice.rotation = Vector3(0.35, 0.6, 0.2)
+	holder.add_child(ice)
+	var rim := MeshInstance3D.new()
+	rim.name = "Rim"
+	var tm := TorusMesh.new()
+	tm.inner_radius = radius * 0.93
+	tm.outer_radius = radius * 1.0
+	tm.rings = 24
+	rim.mesh = tm
+	var rm := StandardMaterial3D.new()
+	rm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	rm.albedo_color = Color(1.0, 0.95, 0.85, 0.85)
+	rm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	rim.material_override = rm
+	rim.position = Vector3(0.0, GLASS_HEIGHT * 0.5 - 0.004, 0.0)
+	holder.add_child(rim)
+
+
 func _build_bull_props() -> void:
 	# The WHISKEY: a real tumbler in his left hand (the hand Stand_and_Drink / Sit_and_Drink lift to his mouth),
 	# sized in METRES in a bone holder. (The first version was parented in rig units and was ~2 mm tall:
 	# "I don't see his whiskey".)
-	# The founder's own tumbler (Meshy LKhotS): unit-height GLB scaled to 0.26 m; its base sits on y = 0.
+	# The founder's own tumbler (Meshy LKhotS): unit-height GLB scaled to GLASS_HEIGHT (0.31 m); its base sits on y = 0.
 	_glass_node = Node3D.new()
 	_glass_node.name = "BullGlass"
 	var gm: Node3D = (load(GLASS_MODEL) as PackedScene).instantiate()
 	gm.scale = Vector3.ONE * GLASS_HEIGHT
 	gm.position = Vector3(0.0, -GLASS_HEIGHT * 0.5, 0.0)
+	# The founder's tumbler SHAPE stays; its baked texture (opaque white with orange flecks) read as a beer mug at
+	# room distance (founder 2026-10-04 "we still can't see ... the whiskey glass"). It becomes clear glass with
+	# real whiskey inside: an amber liquid that glows in the dim room, an ice cube and a bright rim.
+	var glass_mat := StandardMaterial3D.new()
+	glass_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	glass_mat.albedo_color = Color(0.86, 0.93, 1.0, 0.22)
+	glass_mat.roughness = 0.05
+	glass_mat.metallic_specular = 1.0
+	glass_mat.rim_enabled = true
+	glass_mat.rim = 0.9
+	glass_mat.rim_tint = 0.2
+	glass_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	for mesh in gm.find_children("*", "MeshInstance3D", true, false):
 		for i in mesh.mesh.get_surface_count():
-			var source: Material = mesh.mesh.surface_get_material(i)
-			if source is StandardMaterial3D:
-				var mat: StandardMaterial3D = source.duplicate()
-				mat.metallic = 0.0
-				mat.metallic_texture = null
-				mat.roughness = 0.25
-				mat.emission_enabled = true
-				mat.emission_texture = mat.albedo_texture
-				mat.emission = Color(1.0, 0.85, 0.62)
-				mat.emission_energy_multiplier = 0.22
-				mesh.set_surface_override_material(i, mat)
+			mesh.set_surface_override_material(i, glass_mat)
 	_glass_node.add_child(gm)
+	_add_whiskey_inside(_glass_node, _glass_radius(gm))
 	var lh: Node3D = _bull.holder("LeftHand")
 	if lh:
 		lh.add_child(_glass_node)
@@ -1751,7 +1844,10 @@ func _animate_bull(delta: float) -> void:
 ## He stays at his rest mark in the hideout and only moves for the show beats. The companion walk starts on the
 ## EXIT beat (founder 2026-10-02: "he follows Lil Blunt too much; no companion leash in the hideout").
 func _follow_player_in_fps(_delta: float) -> void:
-	if not _fps or (_show and _show.running) or _bull == null or _beat != Beat.EXIT:
+	if not _fps or (_show and _show.running) or _bull == null:
+		return
+	if _beat != Beat.EXIT:
+		_face_player_at_rest()
 		return
 	var spot: Vector3 = companion_spot()
 	var d: float = Vector2(_bull.position.x - spot.x, _bull.position.z - spot.z).length()
@@ -1769,6 +1865,18 @@ func _follow_player_in_fps(_delta: float) -> void:
 		_bull.walk_to(spot, minf(2.0 + d * 0.5, 4.6))
 	elif d <= 1.4 and not _bull.is_walking():
 		_bull.face_point(_player_pos + Vector3(sin(_look_yaw), 0.0, cos(_look_yaw)) * 4.0)
+
+
+## At rest he stays put (no follow, skill ep2-bull-rest-pose) but turns in place to keep Lil Blunt in front of
+## him, so his rifle and his whiskey stay on the player's side of his body. Turns only past REST_FACE_SLACK so he
+## is not twitching after every mouse move.
+const REST_FACE_SLACK := 0.45
+func _face_player_at_rest() -> void:
+	if _bull.is_walking():
+		return
+	var yaw: float = atan2(_player_pos.x - _bull.position.x, _player_pos.z - _bull.position.z)
+	if absf(angle_difference(_bull.facing, yaw)) > REST_FACE_SLACK:
+		_bull.face_yaw(yaw)
 
 
 ## Lil Blunt: walk / run cycle while moving, faces where he walks; faces the Bull when talking; hops for joy.
@@ -1868,14 +1976,76 @@ func _fire_fx() -> void:
 	_recoil = 1.0
 	if _flash_light:
 		_flash_light.light_energy = 4.0
-	var am: Node = get_node_or_null("/root/AudioManager")
-	if am and am.has_method("play_sfx"):
-		am.play_sfx("ep2_gun_fire_%d" % (1 + int(Time.get_ticks_msec()) % 3))
+	_play_winchester()
+
+
+## The Winchester report (skill ep2-winchester-sound). Founder 2026-10-04: "horrid ... needs to sound dangerous,
+## not like a toy". It used the runner's 1.2 s revolver samples through play_sfx at 0 dB. Now: three layered rifle
+## samples (crack + heavy body + 2.4 s cavern echo, tools/ep2_audio/build_winchester.py) round-robin on their own
+## pool so a quick follow-up shot never cuts the previous echo, then the lever cycle racks after each shot.
+const WINCHESTER_SHOTS := ["ep2_winchester_shot_1.mp3", "ep2_winchester_shot_2.mp3", "ep2_winchester_shot_3.mp3"]
+const WINCHESTER_LEVER := "ep2_winchester_lever.mp3"
+const WINCHESTER_DB := 4.0
+const WINCHESTER_LEVER_DB := 0.0
+const WINCHESTER_LEVER_DELAY := 0.38
+var _win_players: Array[AudioStreamPlayer] = []
+var _win_lever: AudioStreamPlayer = null
+var _win_next: int = 0
+var _lever_due: float = -1.0
+var winchester_shots_played: int = 0
+var winchester_levers_played: int = 0
+
+
+func _build_winchester_audio() -> void:
+	if not _win_players.is_empty():
+		return
+	var bus: String = "SFX" if AudioServer.get_bus_index("SFX") >= 0 else "Master"
+	for i in WINCHESTER_SHOTS.size():
+		var p := AudioStreamPlayer.new()
+		p.name = "WinchesterShot%d" % i
+		p.bus = bus
+		p.volume_db = WINCHESTER_DB
+		var path: String = "res://src/assets/sounds/" + str(WINCHESTER_SHOTS[i])
+		if ResourceLoader.exists(path):
+			p.stream = load(path) as AudioStream
+		add_child(p)
+		_win_players.append(p)
+	_win_lever = AudioStreamPlayer.new()
+	_win_lever.name = "WinchesterLever"
+	_win_lever.bus = bus
+	_win_lever.volume_db = WINCHESTER_LEVER_DB
+	if ResourceLoader.exists("res://src/assets/sounds/" + WINCHESTER_LEVER):
+		_win_lever.stream = load("res://src/assets/sounds/" + WINCHESTER_LEVER) as AudioStream
+	add_child(_win_lever)
+
+
+func _play_winchester() -> void:
+	_build_winchester_audio()
+	var p: AudioStreamPlayer = _win_players[_win_next % _win_players.size()]
+	_win_next += 1
+	if p.stream:
+		p.pitch_scale = randf_range(0.96, 1.03)
+		p.play()
+		winchester_shots_played += 1
+	_lever_due = WINCHESTER_LEVER_DELAY
+
+
+## Racks the lever WINCHESTER_LEVER_DELAY after the shot (driven by the facility's own clock, so headless too).
+func _tick_winchester_lever(delta: float) -> void:
+	if _lever_due < 0.0:
+		return
+	_lever_due -= delta
+	if _lever_due <= 0.0:
+		_lever_due = -1.0
+		if _win_lever and _win_lever.stream:
+			_win_lever.play()
+			winchester_levers_played += 1
 
 
 func _animate_fps(delta: float) -> void:
 	if not _fps:
 		return
+	_tick_winchester_lever(delta)
 	_recoil = maxf(0.0, _recoil - delta * 7.0)
 	if _flash_light:
 		_flash_light.light_energy = maxf(0.0, _flash_light.light_energy - delta * 30.0)
