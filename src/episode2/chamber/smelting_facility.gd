@@ -2218,7 +2218,7 @@ func _animate_fps(delta: float) -> void:
 	var pos: Vector3 = VM_HIP_POS.lerp(VM_LOW_POS, _vm_low).lerp(VM_SPRINT_POS, sprint * (1.0 - _vm_low))
 	var rot: Vector3 = VM_HIP_ROT.lerp(VM_LOW_ROT, _vm_low).lerp(VM_SPRINT_ROT, sprint * (1.0 - _vm_low))
 	# aimed: centred with the sight line on the screen centre
-	var ads_pos := Vector3(0.0, -(VM_ADS_SIGHT_DROP + _rifle_sight_height() * VM_SCALE), VM_ADS_DEPTH)
+	var ads_pos := Vector3(0.0, -(VM_ADS_SIGHT_DROP + _rifle_sight_height() * VM_SCALE), float(_rifle_node.get_meta("ads_depth", VM_ADS_DEPTH)))
 	pos = pos.lerp(ads_pos, ads_k)
 	rot = rot.lerp(Vector3(0.0, PI, 0.0), ads_k)
 	# breathing + walk bob (both nearly vanish aimed), and the rifle LAGS the mouse a little
