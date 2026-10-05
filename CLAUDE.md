@@ -47,6 +47,7 @@ same commit — a manifest that lies is worse than none.
 | Write code, build scenes, configure engine | /src | `.claude/context-manifests/default.md` | gdscript-skill |
 | Write docs, marketing, or changelogs | /docs | CONTEXT.md | — |
 | **Founder reports smudges / blotches / blemishes** | **`blotch-hunter` agent** | `scripts/blotch-oracle.json` | `blotch-forensics`, `blotch-repair-gate` |
+| **Founder's Winchester GLB / hand-on-gun clips** | Drive GLB -> Blender | `.claude/skills/ep2-founder-weapon-glb/SKILL.md`, `ep2-blender-handling-clips/SKILL.md` | `ep2-founder-weapon-glb`, `ep2-blender-handling-clips` |
 | **Hands/targets/wall look cheap** | Blender GLBs | `.claude/skills/ep2-blender-props/SKILL.md` | `ep2-blender-props` |
 | **Founder says something LOOKS wrong / "check for yourself"** | capture it yourself first | `.claude/skills/see-it-yourself/SKILL.md` | `see-it-yourself`, `ep2-reference-match-loop` |
 

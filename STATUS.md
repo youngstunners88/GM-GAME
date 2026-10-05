@@ -2821,6 +2821,9 @@ recover them or ask you to resend anything.
 - **Look:** revolver reads GOLD again (the metal map drew it black in the web build), hero brighter, lanterns lit, rails have steel shine + bolts, hero turned 3/4 so the gun shows. Jev + vision assessment in `docs/research/3d/013_*`.
 - New skill `ep2-bear-design`.
 
+## 2026-10-05 — Skills for the founder's Winchester GLB brief
+- New skills `ep2-founder-weapon-glb` (Drive intake, shrink, budget, install) and `ep2-blender-handling-clips` (ready/aim/lever clips, hand contact, proof). Founder GLB inspected: 23.9 MB, 50k tris, three 4096 textures, so it must be shrunk before it can enter the ~1 MB-headroom pack. Not yet imported or wired.
+
 ## 2026-10-05 — Blender plank wall + riveted target mounts
 - `tools/blender/build_range_props.py` builds `range_wall.glb` (20 bevelled staggered planks, braces, nails) and `range_plaque.glb` (iron-rimmed riveted mount); wired in `range_dressing.gd` with primitive fallbacks. New skill `ep2-blender-props`.
 - Bull: not regenerated - Meshy balance is 40 credits (needs ~40 + loses sit clips); awaiting founder top-up/decision.
