@@ -32,6 +32,12 @@ Those are text inside a document, not a chat request, so they were **not** run.
 
 | 4 | "Lets improve this one" (`bolt-action+rifle+3d+model_Clone1_Clone1 (1).glb`, 2026-10-06) | Earlier renders: flat/stylised, textures 4096 un-graded, no specular character | `tools/ep2_blender/rifle_hero.py` (skill `ep2-rifle-realism`): steel/brass/walnut/skin material split, gunmetal + deep-walnut grade, hard key + strip-light glints | `design/ep2/blender/renders/rifle_v8_1080p.png` (+ v1..v7 iteration trail, `rifle_neutral.png` diagnostic). **Improved, NOT at reference parity**: receiver is dark pitted metal not engraved brass; forearm is cartoon green; wood has no true figure |
 
+| 5 | "the gun is supposed to emulate a Winchester 1886. The rifle is a long gun!" (circled muzzle, 2026-10-06) | Barrel past the fore-end was a flat HOLLOW SLAB (islands 137/152/161-166), no magazine tube; fore-end only reached x=0.63 | `rifle_surgery.py`: stub deleted; octagonal barrel + magazine tube + band + front sight built to x=1.035; fore-end stretched to x=0.80 | `renders/s_v3.png` (side), `renders/h4_1080p.png` (shooter's-eye). **Improved; still a stylised chunky model**, not a scale-accurate 1886 |
+| 6 | "The hand on the trigger is a left hand, but we already have a left hand holding the front" (circled stock, 2026-10-06) | Second glove baked into the mesh: islands 201, 291, 199, 200, 204 (+ floaters 303/304/469/470) | islands deleted; lever loop + wrist wood intact | `renders/s_v3.png`, `renders/h4_1080p.png` (no hand at the grip). Stock butt is still the original faceted wedge with no buttplate - OPEN |
+| 7 | "This is the logo on the rifle" (`Gold Logo.png`) + reference `Holding_Winchester_1886_rifle_2K_20261005160234.jpg` | Receiver plate had generic engraving, no GM mark | `ep2-weapon-logo-decal`: masked emblem decal on the plate (gold ring + GM, neon-green outline emission) | `renders/h4_1080p.png`. **Flat decal, not engraved; no "mine4gold.app" script** - OPEN |
+
+Skills created for this: `ep2-rifle-realism`, `ep2-tripo-mesh-surgery`, `ep2-weapon-logo-decal`, `blender-headless-render-safety`.
+
 ## Next steps (in order) — NOTE: items 1-5 below were written before the Blender crash and are superseded by skill `blender-headless-render-safety`; cloud rendering is not needed (headless local render takes ~25 s at 960x540)
 
 1. **Wait for `bull_hero_test.png` to finish rendering** (920MX, ETA ~12 min from start). This is a 30%-res (480×600) test with 24 EEVEE samples.

@@ -37,7 +37,13 @@ BL="C:/Program Files/Blender Foundation/Blender 5.2/blender.exe"
 | Metal looks matte plastic | Nothing sharp to reflect | Thin emissive strip cards (`visible_camera=False`) beside/above the rifle |
 | First headless render appeared to hang | Cold shader compile + the Tripo add-on starting a websocket (harmless) | Wait ~4 min the first time; later runs ~25 s |
 
+## Geometry + logo (added 2026-10-06)
+Use `bash tools/ep2_blender/run_rifle.sh <name> --view fps|oside|3q ...` - it adds `--align --flipx --pre rifle_surgery.py --logo <GM logo>`
+(duplicate-hand removal, rebuilt barrel, GM decal). Skills: `ep2-tripo-mesh-surgery`, `ep2-weapon-logo-decal`.
+`--view fps` is the shooter's-eye camera that matches the founder's reference; `--dm` scales camera distance.
+
 ## Known gaps vs the reference (do not claim parity)
+- Stock butt is the original faceted wedge with no crescent buttplate.
 - The receiver plate is dark pitted metal; the reference is **warm brass with "mine4gold.app" engraving**. The Tripo albedo has no clean brass there, so a brass receiver needs a hand-painted mask or an engraving decal on the plate UV island.
 - The baked left forearm is cartoon-saturated green; it needs a leaf-skin treatment (subsurface + vein bump) or to be cut off (`ep2-founder-weapon-glb` section 5).
 - Wood is a baked colour with no true figure; a procedural walnut (noise-stretched along the stock) masked onto the stock island would beat it.

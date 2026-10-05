@@ -13,6 +13,9 @@ argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 def arg(n, d=None): return argv[argv.index(n) + 1] if n in argv else d
 GLB = arg("--glb"); OUT = arg("--out"); W = int(arg("--w", 960)); H = int(arg("--h", 540))
 NEUTRAL = "--neutral" in argv
+OC = [float(t) for t in arg("--oc", "").split(",")] if arg("--oc") else None; OS = float(arg("--os", 0) or 0)
+ROLL = float(arg("--roll", 46.4))
+ALIGN = "--align" in argv; FLIPX = "--flipx" in argv; FLIPZ = "--flipz" in argv; PRE = arg("--pre"); POST = arg("--post")
 SAMPLES = int(arg("--samples", 24)); TEX = int(arg("--tex", 2048)); SAVE = arg("--save"); VIEW = arg("--view", "3q")
 
 def log(*a): print("[rifle_hero]", *a, flush=True)
@@ -38,6 +41,20 @@ for img in bpy.data.images:
 
 # --- orientation via PCA: long axis = barrel
 import numpy as np
+from mathutils import Matrix
+if ALIGN:   # barrel -> +X, width -> Y, up -> Z (sign flips are chosen by looking at an ortho render, then passed as --flipx / --flipz)
+    _v = np.array([tuple(p.co) for p in rifle.data.vertices]); _c = _v.mean(0)
+    _u, _s, _vt = np.linalg.svd(_v - _c, full_matrices=False)
+    ex = Vector(_vt[0]); ey = Vector(_vt[2]); ez = ex.cross(ey)
+    if FLIPX: ex = -ex; ez = ex.cross(ey)
+    if FLIPZ: ez = -ez; ey = ez.cross(ex)
+    R = Matrix((ex, ey, ez))   # rows = new axes
+    rifle.data.transform(R.to_4x4())
+    # PCA is pulled off-axis by the diagonal forearm: measured on the receiver side plate, the rifle comes out rolled ~46 deg about the barrel.
+    rifle.data.transform(Matrix.Rotation(math.radians(ROLL), 4, 'X')); rifle.data.update()
+    log("aligned; extents", [round(x, 3) for x in rifle.dimensions])
+if PRE:     # geometry-surgery hook, runs on the aligned mesh before materials/camera (shares this script's globals)
+    exec(open(PRE).read(), globals()); log("pre-hook done", PRE)
 v = np.array([tuple(p.co) for p in rifle.data.vertices]); c = v.mean(0)
 u, s, vt = np.linalg.svd(v - c, full_matrices=False)
 long_axis = Vector(vt[0]).normalized()
@@ -126,7 +143,8 @@ if nrm_out: L(nrm_out, bm.inputs['Normal'])
 L(bm.outputs['Normal'], bsdf.inputs['Normal'])
 for o in bpy.data.objects:
     if o.type == 'MESH':
-        for p in o.data.polygons: p.use_smooth = True
+        for p in o.data.polygons:
+            if p.material_index == 0 and o.name != "LogoDecal": p.use_smooth = True   # keep the octagonal barrel flats hard
 
 # --- stage: dark glossy floor + gradient world
 S.world = bpy.data.worlds.new("W"); S.world.use_nodes = True
@@ -141,10 +159,20 @@ floor.data.materials.append(fm)
 cam_d = bpy.data.cameras.new("Cam"); cam = bpy.data.objects.new("Cam", cam_d); S.collection.objects.link(cam); S.camera = cam
 cam_d.lens = 85; cam_d.dof.use_dof = True; cam_d.dof.aperture_fstop = 5.6
 side = Vector((0, 0, 1)).cross(long_axis).normalized()      # horizontal-ish perpendicular to the barrel
-dist = size * 1.9
-view = {"3q": (side * 0.8 + long_axis * 0.55, 0.42), "side": (side, 0.12), "top": (side * 0.2, 1.4)}[VIEW]
+dist = size * 1.9 * float(arg("--dm", 1.0))
+view = {"3q": (side * 0.8 + long_axis * 0.55, 0.42), "side": (side, 0.12), "top": (side * 0.2, 1.4)}.get(VIEW, (side, 0.12))
+aim = ctr
+if VIEW == "fps" and ALIGN:      # shooter's-eye: behind and slightly beside the stock, looking down the barrel (matches the founder's FPS reference)
+    view = (Vector((-1.0, -0.55, 0.0)), 0.22); aim = ctr + Vector((0.22 * size, 0, 0))
 cam.location = ctr + view[0].normalized() * dist + Vector((0, 0, view[1] * size))
-cam.rotation_euler = (ctr - cam.location).to_track_quat('-Z', 'Y').to_euler()
+cam.rotation_euler = (aim - cam.location).to_track_quat('-Z', 'Y').to_euler()
+if VIEW in ("oside", "otop", "obot"):   # orthographic inspection views in the aligned frame
+    cam_d.type = 'ORTHO'; cam_d.ortho_scale = (mxv[0] - mn[0]) * 1.3; cam_d.dof.use_dof = False
+    off = {"oside": Vector((0, -5, 0)), "otop": Vector((0, 0, 5)), "obot": Vector((0, 0, -5))}[VIEW]
+    cam.location = ctr + off
+    if OS: cam_d.ortho_scale = OS
+    if OC: cam.location = Vector(OC) + off
+    cam.rotation_euler = {"oside": (math.pi / 2, 0, 0), "otop": (0, 0, 0), "obot": (math.pi, 0, 0)}[VIEW]
 cam_d.dof.focus_distance = (ctr - cam.location).length
 S.render.resolution_x = W; S.render.resolution_y = H
 
@@ -156,7 +184,8 @@ def area(name, loc, energy, color, sz):
 k = size
 # lights are placed from the ACTUAL camera direction: key front-left of camera, rim/kick BEHIND the subject.
 # (An earlier version put the orange rim on the camera side, front-lighting the gun orange and tinting every metal copper.)
-dcam = cam.location - ctr; dcam.z = 0; dcam.normalize()
+dcam = cam.location - ctr; dcam.z = 0
+dcam = dcam.normalized() if dcam.length > 1e-6 else Vector((0, -1, 0))
 right_ = Vector((0, 0, 1)).cross(dcam).normalized()      # camera-right
 up_ = Vector((0, 0, 1))
 area("Key", ctr + dcam * 0.8 * k - right_ * 0.8 * k + up_ * 1.0 * k, 320 * k * k, (1.0, 0.93, 0.84), 0.35 * k)
@@ -183,6 +212,8 @@ if NEUTRAL:
 else:
     S.view_settings.view_transform = 'AgX'; S.view_settings.look = 'None'; S.view_settings.exposure = 0.5
 S.render.image_settings.file_format = 'PNG'
+if POST:
+    exec(open(POST).read(), globals()); log("post-hook done", POST)
 if SAVE: bpy.ops.wm.save_as_mainfile(filepath=SAVE); log("saved", SAVE)
 if OUT:
     S.render.filepath = OUT; log("render start", W, H, SAMPLES)
