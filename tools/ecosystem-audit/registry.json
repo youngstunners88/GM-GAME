@@ -1,0 +1,1015 @@
+{
+  "generated": "2026-10-05T14:57:23.339Z",
+  "pages": [
+    "https://app.titanblaze.win/auction",
+    "https://diamonds1111.win/",
+    "https://mine4gold.app/"
+  ],
+  "contracts": [
+    {
+      "address": "0x200ed69de20Fe522d08dF5d7CE3d69aba4e02e74",
+      "name": "BlazeAuction",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": "renounced(0x0)",
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0x72AB9dcAc1BE635e83D0E458D2aA1FbF439B44f7",
+      "name": "BlazeBonfire",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0.06408,
+      "isToken": false,
+      "owner": "renounced(0x0)",
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0x6A865a915aA14f92AC3e2d5FDFD4CC2918fD550e",
+      "name": "BlazeBurner",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": "renounced(0x0)",
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0x27D80441831252950C528343a4F5CcC6b1E0EA95",
+      "name": "BlazeBuyAndBurn",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": "renounced(0x0)",
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0xfcd7cceE4071aA4ecFAC1683b7CC0aFeCAF42A36",
+      "name": "BlazeERC20",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": true,
+      "token": {
+        "symbol": "BLAZE",
+        "type": "ERC-20",
+        "holders": 557,
+        "decimals": 18,
+        "supply": "4264575369518293804070114",
+        "price": "0.02891819",
+        "mcap": "123264.10772981167"
+      },
+      "owner": "0x200ed69de20fe522d08df5d7ce3d69aba4e02e74",
+      "sources": [
+        "app.titanblaze.win",
+        "diamonds1111.win",
+        "mine4gold.app"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0xBc0043bc5b0c394D9d05d49768f9548F8CF9587b",
+      "name": "BlazeStaking",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 7.126457,
+      "isToken": false,
+      "owner": "renounced(0x0)",
+      "sources": [
+        "app.titanblaze.win",
+        "diamonds1111.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0xaa8CA61694f305BD24670a7da2E24c91f822dC2a",
+      "name": "Diamond Certificates",
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": true,
+      "token": {
+        "symbol": "DICERT",
+        "type": "ERC-721",
+        "holders": 63,
+        "decimals": 0,
+        "supply": "1729",
+        "price": null,
+        "mcap": null
+      },
+      "owner": "0x764e20d3f541ade79b33797ab30c5f236e40c0a1",
+      "sources": [
+        "diamonds1111.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0xe249C7a82573F55EB2B215CD6695800cfdfa4AcC",
+      "name": "DiamondHand",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 132.340039,
+      "isToken": false,
+      "owner": "0x42d8c5f127932936fa101688f8d9506d090b396f",
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0x45D4E2D184F7EcB94Ff2011858335eCFdd7f08fb",
+      "name": "DiamondHandWrapper",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": "0x4663ed2815ab09b04cbdb094f578cf57b6fdee3a",
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0xd645250EdbE9d57c12fbbB24DEf3153E5F19Df08",
+      "name": "Diamonds",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": true,
+      "token": {
+        "symbol": "DIAMONDS",
+        "type": "ERC-20",
+        "holders": 81,
+        "decimals": 18,
+        "supply": "778240650647837574181767",
+        "price": null,
+        "mcap": null
+      },
+      "owner": "0x764e20d3f541ade79b33797ab30c5f236e40c0a1",
+      "sources": [
+        "diamonds1111.win",
+        "mine4gold.app"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0x26C53Ad9C26be222953DD519B8536d40b1fee560",
+      "name": "DiamondsLpInjector",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0.002667,
+      "isToken": false,
+      "owner": "0x764e20d3f541ade79b33797ab30c5f236e40c0a1",
+      "sources": [
+        "diamonds1111.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0x2CC861aA34C7311CD18fCd145f7f7E04dF76F4a3",
+      "name": "DistributionWrapper",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": null,
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0xfF5FAB9b60955dA5726A5787b9cbf2B4B298A197",
+      "name": "GoldMine",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": true,
+      "token": {
+        "symbol": "GOLD",
+        "type": "ERC-20",
+        "holders": 30,
+        "decimals": 18,
+        "supply": "74242000256288997683760",
+        "price": null,
+        "mcap": null
+      },
+      "owner": "renounced(0x0)",
+      "sources": [
+        "mine4gold.app"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0x56522D00C410a43BFfDF00a9A569489297385790",
+      "name": null,
+      "kind": "EOA",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0x1E4C8C9eD8bD30CE900d7c7c72a2F575bdA5a1e9",
+      "name": null,
+      "kind": "EOA",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0x9642f96A04180E37a45De917c396c22eeCC709C0",
+      "name": null,
+      "kind": "EOA",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0x495834C3Ae3782Cee1923b7947dbA5F326063252",
+      "name": null,
+      "kind": "EOA",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0x3B6819d937c94359D73cd1BdB0457cEd090977F8",
+      "name": null,
+      "kind": "EOA",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0x8cB2391A13661a1A1dB5ea4628a750267d6A3417",
+      "name": null,
+      "kind": "EOA",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0xBe69b2d0Ef2C083c6d22e0612A5a661128537205",
+      "name": null,
+      "kind": "EOA",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0xf2d3802dB3a80c52e6A8BB42F492AA90cB779dDd",
+      "name": null,
+      "kind": "EOA",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0xBb8AC75Eeb7f998E5187B63F7c1259DC6442D747",
+      "name": null,
+      "kind": "EOA",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0x0F5fDB6B970b94185A7E296D3a2F6Cb76aAe72D3",
+      "name": null,
+      "kind": "EOA",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0xfFf9976782d46CC05630D1f6eBAb18b2324d6B14",
+      "name": null,
+      "kind": "EOA",
+      "verified": false,
+      "proxy": null,
+      "eth": 0.125466,
+      "isToken": false,
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0x565E7e96f472C786399281a2dC8fe5034Fc28590",
+      "name": null,
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": "0x764e20d3f541ade79b33797ab30c5f236e40c0a1",
+      "sources": [
+        "diamonds1111.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0xd3d041f71a68B553685a00bF2006836Cd67E6fbc",
+      "name": null,
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 1.882914,
+      "isToken": false,
+      "owner": "0x764e20d3f541ade79b33797ab30c5f236e40c0a1",
+      "sources": [
+        "diamonds1111.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0x654009ED0633CfeCb63b97db92DC6294419e1C11",
+      "name": null,
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 0.012807,
+      "isToken": false,
+      "owner": "0x764e20d3f541ade79b33797ab30c5f236e40c0a1",
+      "sources": [
+        "diamonds1111.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0xa4e977609DD50ec5058A57cB6d14C35861D5A768",
+      "name": null,
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": "0x764e20d3f541ade79b33797ab30c5f236e40c0a1",
+      "sources": [
+        "diamonds1111.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0x391dfF546Afe47cEFe31C415364A7C1da4Bf34AC",
+      "name": null,
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 0.028749,
+      "isToken": false,
+      "owner": "0x764e20d3f541ade79b33797ab30c5f236e40c0a1",
+      "sources": [
+        "diamonds1111.win"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0x99a4611791Cd17d72D00c2829dA096a4D7640731",
+      "name": null,
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 0.087799,
+      "isToken": false,
+      "owner": "0x764e20d3f541ade79b33797ab30c5f236e40c0a1",
+      "sources": [
+        "diamonds1111.win",
+        "mine4gold.app"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0xFB51F1a5caE9a819F52C8A016c0F6cAB81555914",
+      "name": null,
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": "0x442c2e09d387814d6c6cc6729f9819abbb8afbbe",
+      "sources": [
+        "diamonds1111.win",
+        "mine4gold.app"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0xFc4244733e845228AbBB3E327c18758FF9A36318",
+      "name": null,
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": "0x442c2e09d387814d6c6cc6729f9819abbb8afbbe",
+      "sources": [
+        "mine4gold.app"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0x23e65EF31506C2a2B859d78D557d49b0eAb8555D",
+      "name": null,
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": "0x442c2e09d387814d6c6cc6729f9819abbb8afbbe",
+      "sources": [
+        "mine4gold.app"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0x33b3b537dF0d63908932B90cc8633B28E61dC84b",
+      "name": null,
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": "0x442c2e09d387814d6c6cc6729f9819abbb8afbbe",
+      "sources": [
+        "mine4gold.app"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0x54dB65dA7A33281f1D9323f059493416ba920c74",
+      "name": null,
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": "0x442c2e09d387814d6c6cc6729f9819abbb8afbbe",
+      "sources": [
+        "mine4gold.app"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0x0A2322017AE96e72445DA37412AA62B8038B6E2c",
+      "name": null,
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": null,
+      "sources": [
+        "mine4gold.app"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0xF96F2b270774371179Fc3CA323eeD14171b06024",
+      "name": "SmokeNftsStaging",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": "0x442c2e09d387814d6c6cc6729f9819abbb8afbbe",
+      "sources": [
+        "diamonds1111.win",
+        "mine4gold.app"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0xF19308F923582A6f7c465e5CE7a9Dc1BEC6665B1",
+      "name": "TITANX",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 134.471976,
+      "isToken": true,
+      "token": {
+        "symbol": "TITANX",
+        "type": "ERC-20",
+        "holders": 19892,
+        "decimals": 18,
+        "supply": "99153393313675846988383164173359",
+        "price": "5.2028E-8",
+        "mcap": "0"
+      },
+      "owner": null,
+      "sources": [
+        "diamonds1111.win",
+        "mine4gold.app"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0x68749665FF8D2d112Fa859AA293F07A622782F38",
+      "name": "TransparentUpgradeableProxy",
+      "kind": "contract",
+      "verified": true,
+      "proxy": "eip1967",
+      "eth": 0,
+      "isToken": true,
+      "token": {
+        "symbol": "XAUT",
+        "type": "ERC-20",
+        "holders": 61492,
+        "decimals": 6,
+        "supply": "827417630000",
+        "price": "4140.99",
+        "mcap": "3350602637.646878"
+      },
+      "owner": "0xc6cde7c39eb2f0f0095f41570af89efc2c1ea828",
+      "sources": [
+        "mine4gold.app"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "name": "USDC",
+      "kind": "contract",
+      "verified": true,
+      "proxy": "eip1967_oz",
+      "eth": 0,
+      "isToken": true,
+      "token": {
+        "symbol": "USDC",
+        "type": "ERC-20",
+        "holders": 9441626,
+        "decimals": 6,
+        "supply": "48878198867131611",
+        "price": "0.999918",
+        "mcap": "73958304908.84918"
+      },
+      "owner": "0xfcb19e6a322b27c06842a71e8c725399f049ae3a",
+      "sources": [
+        "mine4gold.app"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0x5c47902c8C80779CB99235E42C354E53F38C3B0d",
+      "name": "X28",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": true,
+      "token": {
+        "symbol": "X28",
+        "type": "ERC-20",
+        "holders": 1159,
+        "decimals": 18,
+        "supply": "10965167922771647895343531020107",
+        "price": null,
+        "mcap": null
+      },
+      "owner": "0x10129f3fe44dd32745d6e64e5d84cb84a524f114",
+      "sources": [
+        "diamonds1111.win",
+        "mine4gold.app"
+      ],
+      "infra": false
+    },
+    {
+      "address": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",
+      "name": "EntryPoint",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 328.851777,
+      "isToken": false,
+      "owner": null,
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": true
+    },
+    {
+      "address": "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
+      "name": "EntryPoint",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 57.411919,
+      "isToken": false,
+      "owner": null,
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": true
+    },
+    {
+      "address": "0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108",
+      "name": "EntryPoint",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 7.037233,
+      "isToken": false,
+      "owner": null,
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": true
+    },
+    {
+      "address": "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",
+      "name": "QuoterV2",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": null,
+      "sources": [
+        "diamonds1111.win",
+        "mine4gold.app"
+      ],
+      "infra": true
+    },
+    {
+      "address": "0xE592427A0AEce92De3Edee1F18E0157C05861564",
+      "name": "SwapRouter",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": null,
+      "sources": [
+        "diamonds1111.win",
+        "mine4gold.app"
+      ],
+      "infra": true
+    },
+    {
+      "address": "0x4d3a10d4792dd12ececc5f3034c8e264b28485d1",
+      "name": "Uniswap V2",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": true,
+      "token": {
+        "symbol": "UNI-V2",
+        "type": "ERC-20",
+        "holders": 2,
+        "decimals": 18,
+        "supply": "43776392806655931496574352",
+        "price": null,
+        "mcap": null
+      },
+      "owner": null,
+      "sources": [
+        "app.titanblaze.win",
+        "diamonds1111.win"
+      ],
+      "infra": true
+    },
+    {
+      "address": "0xec39353d2946aDB8FA43255201F5fa449a80804F",
+      "name": "UniswapV2Pair",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": true,
+      "token": {
+        "symbol": "UNI-V2",
+        "type": "ERC-20",
+        "holders": 1,
+        "decimals": 18,
+        "supply": "24062974981627544327088",
+        "price": null,
+        "mcap": null
+      },
+      "owner": null,
+      "sources": [
+        "diamonds1111.win"
+      ],
+      "infra": true
+    },
+    {
+      "address": "0xe876D2e85B72D6F27bB7Ac23918a4f4c565Dd08b",
+      "name": "UniswapV2Pair",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": true,
+      "token": {
+        "symbol": "UNI-V2",
+        "type": "ERC-20",
+        "holders": 1,
+        "decimals": 18,
+        "supply": "14390049511456785110064576",
+        "price": null,
+        "mcap": null
+      },
+      "owner": null,
+      "sources": [
+        "diamonds1111.win"
+      ],
+      "infra": true
+    },
+    {
+      "address": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+      "name": "UniswapV2Router02",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0.025,
+      "isToken": false,
+      "owner": null,
+      "sources": [
+        "diamonds1111.win",
+        "mine4gold.app"
+      ],
+      "infra": true
+    },
+    {
+      "address": "0x11b815efb8f581194ae79006d24e0d814b7697f6",
+      "name": "UniswapV3Pool",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": null,
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": true
+    },
+    {
+      "address": "0x34ADD241D1ddc0BAA5d7a17f75fd3820247C8ac2",
+      "name": "UniswapV3Pool",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": null,
+      "sources": [
+        "diamonds1111.win",
+        "mine4gold.app"
+      ],
+      "infra": true
+    },
+    {
+      "address": "0xd8ae4eC44cF18ab1063786F827f2FbaA6b7f84eF",
+      "name": "UniswapV3Pool",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": null,
+      "sources": [
+        "diamonds1111.win",
+        "mine4gold.app"
+      ],
+      "infra": true
+    },
+    {
+      "address": "0x7bD5A99FAcFB9bB042b1F0eff5ACB5bE49a04af4",
+      "name": "UniswapV3Pool",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": null,
+      "sources": [
+        "diamonds1111.win"
+      ],
+      "infra": true
+    },
+    {
+      "address": "0x229378dC7A227B4bAB347DB48372c37d7a3519e3",
+      "name": "UniswapV3Pool",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": null,
+      "sources": [
+        "diamonds1111.win"
+      ],
+      "infra": true
+    },
+    {
+      "address": "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640",
+      "name": "UniswapV3Pool",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": null,
+      "sources": [
+        "mine4gold.app"
+      ],
+      "infra": true
+    },
+    {
+      "address": "0xc45A81BC23A64eA556ab4CdF08A86B61cdcEEA8b",
+      "name": "UniswapV3Pool",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": null,
+      "sources": [
+        "mine4gold.app"
+      ],
+      "infra": true
+    },
+    {
+      "address": "0x4585FE77225b41b697C938B018E2Ac67Ac5a20c0",
+      "name": "UniswapV3Pool",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": null,
+      "sources": [
+        "mine4gold.app"
+      ],
+      "infra": true
+    },
+    {
+      "address": "0x99f60479da6A49D55eBA34893958cdAACc710eE9",
+      "name": "UniswapV3Pool",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": null,
+      "sources": [
+        "mine4gold.app"
+      ],
+      "infra": true
+    },
+    {
+      "address": "0xE8a1F39C16EEA2844E98f951D711Bb4Bb31557aD",
+      "name": "UniswapV3Pool",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": null,
+      "sources": [
+        "mine4gold.app"
+      ],
+      "infra": true
+    },
+    {
+      "address": "0x1d237D75D916E2b1123e7e1735D6ed0347453Ac7",
+      "name": "UniswapV3Pool",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": null,
+      "sources": [
+        "mine4gold.app"
+      ],
+      "infra": true
+    },
+    {
+      "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "name": "WETH9",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 2114794.723303,
+      "isToken": true,
+      "token": {
+        "symbol": "WETH",
+        "type": "ERC-20",
+        "holders": 3354096,
+        "decimals": 18,
+        "supply": "2114797734065008187609708",
+        "price": "2704.45",
+        "mcap": "5677975619.546848"
+      },
+      "owner": null,
+      "sources": [
+        "app.titanblaze.win",
+        "diamonds1111.win",
+        "mine4gold.app"
+      ],
+      "infra": true
+    },
+    {
+      "address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+      "name": "Wrapped BTC",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": true,
+      "token": {
+        "symbol": "WBTC",
+        "type": "ERC-20",
+        "holders": 202190,
+        "decimals": 8,
+        "supply": "11613218273262",
+        "price": "85718",
+        "mcap": "9951469007.551933"
+      },
+      "owner": "0xca06411bd7a7296d7dbdd0050dfc846e95febeb7",
+      "sources": [
+        "mine4gold.app"
+      ],
+      "infra": true
+    }
+  ]
+}

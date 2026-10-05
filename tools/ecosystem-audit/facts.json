@@ -1,0 +1,1418 @@
+{
+  "generated": "2026-10-05T15:08:11.747Z",
+  "contracts": [
+    {
+      "address": "0x200ed69de20Fe522d08dF5d7CE3d69aba4e02e74",
+      "name": "BlazeAuction",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": "renounced(0x0)",
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": true,
+        "name": "BlazeAuction",
+        "compiler": "0.8.24+commit.e11b9ed9",
+        "proxy": null,
+        "ownable": true,
+        "upgradeable": false,
+        "delegatecall": true,
+        "selfdestruct": false,
+        "setters": [
+          "setStakingContract",
+          "setBuyBurnContract",
+          "setUSDCPriceTwa",
+          "setFeeProtocol"
+        ],
+        "bytes": 161263
+      },
+      "balance": {
+        "days": 11,
+        "first": {
+          "date": "2026-09-25",
+          "eth": 0.02
+        },
+        "last": {
+          "date": "2026-10-05",
+          "eth": 0
+        },
+        "perDay": -0.002
+      },
+      "flows": {
+        "complete": false,
+        "partial": false,
+        "recent": [
+          {
+            "month": "2026-09",
+            "ethIn": 0.632,
+            "ethOut": 0.276,
+            "nIn": 42,
+            "senders": 9
+          },
+          {
+            "month": "2026-10",
+            "ethIn": 0.212,
+            "ethOut": 0.212,
+            "nIn": 14,
+            "senders": 6
+          }
+        ]
+      }
+    },
+    {
+      "address": "0x72AB9dcAc1BE635e83D0E458D2aA1FbF439B44f7",
+      "name": "BlazeBonfire",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0.06408,
+      "isToken": false,
+      "owner": "renounced(0x0)",
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": true,
+        "name": "BlazeBonfire",
+        "compiler": "0.8.24+commit.e11b9ed9",
+        "proxy": null,
+        "ownable": true,
+        "upgradeable": false,
+        "delegatecall": true,
+        "selfdestruct": false,
+        "setters": [
+          "setBlazeBurnerAddress"
+        ],
+        "bytes": 31667
+      },
+      "balance": {
+        "days": 11,
+        "first": {
+          "date": "2026-09-25",
+          "eth": 0.04616
+        },
+        "last": {
+          "date": "2026-10-05",
+          "eth": 0.06408
+        },
+        "perDay": 0.0018
+      },
+      "flows": {
+        "complete": false,
+        "partial": false,
+        "recent": [
+          {
+            "month": "2026-09",
+            "ethIn": 0.0467,
+            "ethOut": 0.0304,
+            "nIn": 53,
+            "senders": 1
+          },
+          {
+            "month": "2026-10",
+            "ethIn": 0.0085,
+            "ethOut": 0,
+            "nIn": 9,
+            "senders": 1
+          }
+        ]
+      }
+    },
+    {
+      "address": "0x6A865a915aA14f92AC3e2d5FDFD4CC2918fD550e",
+      "name": "BlazeBurner",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": "renounced(0x0)",
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": true,
+        "name": "BlazeBurner",
+        "compiler": "0.8.24+commit.e11b9ed9",
+        "proxy": null,
+        "ownable": true,
+        "upgradeable": false,
+        "delegatecall": true,
+        "selfdestruct": false,
+        "setters": [
+          "setBonfireAddress",
+          "setBuyNBurnAddress",
+          "setUniswapAnchorViewAddress",
+          "setTitanPriceTwa",
+          "setFeeProtocol",
+          "withdraw"
+        ],
+        "bytes": 106058
+      },
+      "balance": null,
+      "flows": {
+        "complete": false,
+        "partial": false,
+        "recent": [
+          {
+            "month": "2026-09",
+            "ethIn": 0.0113,
+            "ethOut": 0.0113,
+            "nIn": 7,
+            "senders": 1
+          }
+        ]
+      }
+    },
+    {
+      "address": "0x27D80441831252950C528343a4F5CcC6b1E0EA95",
+      "name": "BlazeBuyAndBurn",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": "renounced(0x0)",
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": true,
+        "name": "BlazeBuyAndBurn",
+        "compiler": "0.8.24+commit.e11b9ed9",
+        "proxy": null,
+        "ownable": true,
+        "upgradeable": false,
+        "delegatecall": false,
+        "selfdestruct": false,
+        "setters": [
+          "setAdminForSlippage",
+          "setBonFireAddress",
+          "setBlazeAuctionAddress",
+          "setUniswapAnchorViewAddress",
+          "setSlippage",
+          "setTitanPriceTwa",
+          "setUSDCPriceTwa",
+          "setFeeTo",
+          "setFeeToSetter",
+          "setFeeProtocol",
+          "withdraw"
+        ],
+        "bytes": 107151
+      },
+      "balance": {
+        "days": 11,
+        "first": {
+          "date": "2026-09-25",
+          "eth": 0
+        },
+        "last": {
+          "date": "2026-10-05",
+          "eth": 0
+        },
+        "perDay": 0
+      },
+      "flows": {
+        "complete": false,
+        "partial": false,
+        "recent": [
+          {
+            "month": "2026-10",
+            "ethIn": 0.0215,
+            "ethOut": 0.0215,
+            "nIn": 8,
+            "senders": 2
+          }
+        ]
+      }
+    },
+    {
+      "address": "0xfcd7cceE4071aA4ecFAC1683b7CC0aFeCAF42A36",
+      "name": "BlazeERC20",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": true,
+      "token": {
+        "symbol": "BLAZE",
+        "type": "ERC-20",
+        "holders": 557,
+        "decimals": 18,
+        "supply": "4264575369518293804070114",
+        "price": "0.02891819",
+        "mcap": "123264.10772981167"
+      },
+      "owner": "0x200ed69de20fe522d08df5d7ce3d69aba4e02e74",
+      "sources": [
+        "app.titanblaze.win",
+        "diamonds1111.win",
+        "mine4gold.app"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": true,
+        "name": "BlazeERC20",
+        "compiler": "0.8.24+commit.e11b9ed9",
+        "proxy": null,
+        "ownable": false,
+        "upgradeable": false,
+        "delegatecall": false,
+        "selfdestruct": false,
+        "setters": [],
+        "bytes": 79259
+      },
+      "balance": {
+        "days": 11,
+        "first": {
+          "date": "2026-09-25",
+          "eth": 0
+        },
+        "last": {
+          "date": "2026-10-05",
+          "eth": 0
+        },
+        "perDay": 0
+      },
+      "flows": {
+        "complete": false,
+        "partial": false,
+        "recent": []
+      }
+    },
+    {
+      "address": "0xBc0043bc5b0c394D9d05d49768f9548F8CF9587b",
+      "name": "BlazeStaking",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 7.126457,
+      "isToken": false,
+      "owner": "renounced(0x0)",
+      "sources": [
+        "app.titanblaze.win",
+        "diamonds1111.win"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": true,
+        "name": "BlazeStaking",
+        "compiler": "0.8.24+commit.e11b9ed9",
+        "proxy": null,
+        "ownable": true,
+        "upgradeable": false,
+        "delegatecall": true,
+        "selfdestruct": false,
+        "setters": [
+          "setLastDistributionAddress",
+          "setFeeRewardsForAllCycle"
+        ],
+        "bytes": 54901
+      },
+      "balance": {
+        "days": 11,
+        "first": {
+          "date": "2026-09-25",
+          "eth": 7.149717
+        },
+        "last": {
+          "date": "2026-10-05",
+          "eth": 7.126457
+        },
+        "perDay": -0.0023
+      },
+      "flows": {
+        "complete": false,
+        "partial": false,
+        "recent": [
+          {
+            "month": "2026-09",
+            "ethIn": 0.1203,
+            "ethOut": 0.229,
+            "nIn": 5,
+            "senders": 1
+          },
+          {
+            "month": "2026-10",
+            "ethIn": 0.1357,
+            "ethOut": 0.0749,
+            "nIn": 9,
+            "senders": 1
+          }
+        ]
+      }
+    },
+    {
+      "address": "0xaa8CA61694f305BD24670a7da2E24c91f822dC2a",
+      "name": "Diamond Certificates",
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": true,
+      "token": {
+        "symbol": "DICERT",
+        "type": "ERC-721",
+        "holders": 63,
+        "decimals": 0,
+        "supply": "1729",
+        "price": null,
+        "mcap": null
+      },
+      "owner": "0x764e20d3f541ade79b33797ab30c5f236e40c0a1",
+      "sources": [
+        "diamonds1111.win"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": false
+      },
+      "balance": null,
+      "flows": {
+        "complete": false,
+        "partial": true,
+        "recent": [
+          {
+            "month": "2025-11",
+            "ethIn": 13.86,
+            "ethOut": 0,
+            "nIn": 64,
+            "senders": 31
+          },
+          {
+            "month": "2025-12",
+            "ethIn": 0.056,
+            "ethOut": 0,
+            "nIn": 2,
+            "senders": 2
+          },
+          {
+            "month": "2026-02",
+            "ethIn": 0.532,
+            "ethOut": 0,
+            "nIn": 4,
+            "senders": 1
+          },
+          {
+            "month": "2026-05",
+            "ethIn": 0.504,
+            "ethOut": 0,
+            "nIn": 1,
+            "senders": 1
+          }
+        ]
+      }
+    },
+    {
+      "address": "0xe249C7a82573F55EB2B215CD6695800cfdfa4AcC",
+      "name": "DiamondHand",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 132.340039,
+      "isToken": false,
+      "owner": "0x42d8c5f127932936fa101688f8d9506d090b396f",
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": true,
+        "name": "DiamondHand",
+        "compiler": "0.8.24+commit.e11b9ed9",
+        "proxy": null,
+        "ownable": true,
+        "upgradeable": false,
+        "delegatecall": false,
+        "selfdestruct": false,
+        "setters": [
+          "setFeeRewardsForAllCycle"
+        ],
+        "bytes": 14884
+      },
+      "balance": {
+        "days": 11,
+        "first": {
+          "date": "2026-09-25",
+          "eth": 132.284113
+        },
+        "last": {
+          "date": "2026-10-05",
+          "eth": 132.340039
+        },
+        "perDay": 0.0056
+      },
+      "flows": {
+        "complete": false,
+        "partial": true,
+        "recent": []
+      }
+    },
+    {
+      "address": "0x45D4E2D184F7EcB94Ff2011858335eCFdd7f08fb",
+      "name": "DiamondHandWrapper",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": "0x4663ed2815ab09b04cbdb094f578cf57b6fdee3a",
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": true,
+        "name": "DiamondHandWrapper",
+        "compiler": "0.8.24+commit.e11b9ed9",
+        "proxy": null,
+        "ownable": true,
+        "upgradeable": false,
+        "delegatecall": false,
+        "selfdestruct": false,
+        "setters": [
+          "updateNFTContractAddress"
+        ],
+        "bytes": 22307
+      },
+      "balance": null,
+      "flows": {
+        "complete": false,
+        "partial": true,
+        "recent": []
+      }
+    },
+    {
+      "address": "0xd645250EdbE9d57c12fbbB24DEf3153E5F19Df08",
+      "name": "Diamonds",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": true,
+      "token": {
+        "symbol": "DIAMONDS",
+        "type": "ERC-20",
+        "holders": 81,
+        "decimals": 18,
+        "supply": "778240650647837574181767",
+        "price": null,
+        "mcap": null
+      },
+      "owner": "0x764e20d3f541ade79b33797ab30c5f236e40c0a1",
+      "sources": [
+        "diamonds1111.win",
+        "mine4gold.app"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": true,
+        "name": "Diamonds",
+        "compiler": "0.8.28+commit.7893614a",
+        "proxy": null,
+        "ownable": true,
+        "upgradeable": false,
+        "delegatecall": false,
+        "selfdestruct": false,
+        "setters": [
+          "setProtocolAddresses",
+          "setOracle",
+          "withdraw"
+        ],
+        "bytes": 65215
+      },
+      "balance": {
+        "days": 10,
+        "first": {
+          "date": "2026-09-25",
+          "eth": 0
+        },
+        "last": {
+          "date": "2026-10-05",
+          "eth": 0
+        },
+        "perDay": 0
+      },
+      "flows": {
+        "complete": false,
+        "partial": false,
+        "recent": [
+          {
+            "month": "2026-08",
+            "ethIn": 0.0893,
+            "ethOut": 0,
+            "nIn": 2,
+            "senders": 2
+          },
+          {
+            "month": "2026-09",
+            "ethIn": 0.5445,
+            "ethOut": 0,
+            "nIn": 7,
+            "senders": 6
+          },
+          {
+            "month": "2026-10",
+            "ethIn": 0.0044,
+            "ethOut": 0.0044,
+            "nIn": 1,
+            "senders": 1
+          }
+        ]
+      }
+    },
+    {
+      "address": "0x26C53Ad9C26be222953DD519B8536d40b1fee560",
+      "name": "DiamondsLpInjector",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0.002667,
+      "isToken": false,
+      "owner": "0x764e20d3f541ade79b33797ab30c5f236e40c0a1",
+      "sources": [
+        "diamonds1111.win"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": true,
+        "name": "DiamondsLpInjector",
+        "compiler": "v0.8.28+commit.7893614a",
+        "proxy": null,
+        "ownable": true,
+        "upgradeable": false,
+        "delegatecall": false,
+        "selfdestruct": false,
+        "setters": [
+          "setSwapParams",
+          "setOracle",
+          "setApprovalForAll",
+          "withdraw"
+        ],
+        "bytes": 62203
+      },
+      "balance": {
+        "days": 2,
+        "first": {
+          "date": "2026-10-04",
+          "eth": 0.002667
+        },
+        "last": {
+          "date": "2026-10-05",
+          "eth": 0.002667
+        },
+        "perDay": 0
+      },
+      "flows": {
+        "complete": false,
+        "partial": false,
+        "recent": [
+          {
+            "month": "2026-09",
+            "ethIn": 0.1322,
+            "ethOut": 0.1986,
+            "nIn": 4,
+            "senders": 1
+          },
+          {
+            "month": "2026-10",
+            "ethIn": 0.0027,
+            "ethOut": 0,
+            "nIn": 1,
+            "senders": 1
+          }
+        ]
+      }
+    },
+    {
+      "address": "0x2CC861aA34C7311CD18fCd145f7f7E04dF76F4a3",
+      "name": "DistributionWrapper",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": null,
+      "sources": [
+        "app.titanblaze.win"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": true,
+        "name": "DistributionWrapper",
+        "compiler": "0.8.24+commit.e11b9ed9",
+        "proxy": null,
+        "ownable": false,
+        "upgradeable": false,
+        "delegatecall": false,
+        "selfdestruct": false,
+        "setters": [
+          "setFeeRewardsForAllCycle"
+        ],
+        "bytes": 5680
+      },
+      "balance": {
+        "days": 10,
+        "first": {
+          "date": "2026-09-25",
+          "eth": 0
+        },
+        "last": {
+          "date": "2026-10-05",
+          "eth": 0
+        },
+        "perDay": 0
+      },
+      "flows": {
+        "complete": false,
+        "partial": false,
+        "recent": [
+          {
+            "month": "2026-09",
+            "ethIn": 0.0004,
+            "ethOut": 0.0005,
+            "nIn": 7,
+            "senders": 1
+          },
+          {
+            "month": "2026-10",
+            "ethIn": 0.0004,
+            "ethOut": 0.0004,
+            "nIn": 9,
+            "senders": 1
+          }
+        ]
+      }
+    },
+    {
+      "address": "0xfF5FAB9b60955dA5726A5787b9cbf2B4B298A197",
+      "name": "GoldMine",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": true,
+      "token": {
+        "symbol": "GOLD",
+        "type": "ERC-20",
+        "holders": 30,
+        "decimals": 18,
+        "supply": "74242000256288997683760",
+        "price": null,
+        "mcap": null
+      },
+      "owner": "renounced(0x0)",
+      "sources": [
+        "mine4gold.app"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": true,
+        "name": "GoldMine",
+        "compiler": "v0.8.28+commit.7893614a",
+        "proxy": null,
+        "ownable": true,
+        "upgradeable": false,
+        "delegatecall": false,
+        "selfdestruct": false,
+        "setters": [
+          "update",
+          "withdraw"
+        ],
+        "bytes": 69746
+      },
+      "balance": {
+        "days": 5,
+        "first": {
+          "date": "2026-09-25",
+          "eth": 0
+        },
+        "last": {
+          "date": "2026-10-05",
+          "eth": 0
+        },
+        "perDay": 0
+      },
+      "flows": {
+        "complete": false,
+        "partial": false,
+        "recent": [
+          {
+            "month": "2026-09",
+            "ethIn": 9.2395,
+            "ethOut": 0.019,
+            "nIn": 14,
+            "senders": 7
+          },
+          {
+            "month": "2026-10",
+            "ethIn": 0.0188,
+            "ethOut": 0.0188,
+            "nIn": 1,
+            "senders": 1
+          }
+        ]
+      }
+    },
+    {
+      "address": "0x565E7e96f472C786399281a2dC8fe5034Fc28590",
+      "name": null,
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": "0x764e20d3f541ade79b33797ab30c5f236e40c0a1",
+      "sources": [
+        "diamonds1111.win"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": false
+      },
+      "balance": {
+        "days": 11,
+        "first": {
+          "date": "2026-09-25",
+          "eth": 0
+        },
+        "last": {
+          "date": "2026-10-05",
+          "eth": 0
+        },
+        "perDay": 0
+      },
+      "flows": {
+        "complete": false,
+        "partial": false,
+        "recent": []
+      }
+    },
+    {
+      "address": "0xd3d041f71a68B553685a00bF2006836Cd67E6fbc",
+      "name": null,
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 1.882914,
+      "isToken": false,
+      "owner": "0x764e20d3f541ade79b33797ab30c5f236e40c0a1",
+      "sources": [
+        "diamonds1111.win"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": false
+      },
+      "balance": {
+        "days": 4,
+        "first": {
+          "date": "2026-09-27",
+          "eth": 1.865366
+        },
+        "last": {
+          "date": "2026-10-05",
+          "eth": 1.882914
+        },
+        "perDay": 0.0058
+      },
+      "flows": {
+        "complete": false,
+        "partial": true,
+        "recent": []
+      }
+    },
+    {
+      "address": "0x654009ED0633CfeCb63b97db92DC6294419e1C11",
+      "name": null,
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 0.012807,
+      "isToken": false,
+      "owner": "0x764e20d3f541ade79b33797ab30c5f236e40c0a1",
+      "sources": [
+        "diamonds1111.win"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": false
+      },
+      "balance": {
+        "days": 3,
+        "first": {
+          "date": "2026-09-26",
+          "eth": 0
+        },
+        "last": {
+          "date": "2026-10-05",
+          "eth": 0.012807
+        },
+        "perDay": 0.0064
+      },
+      "flows": {
+        "complete": false,
+        "partial": true,
+        "recent": []
+      }
+    },
+    {
+      "address": "0xa4e977609DD50ec5058A57cB6d14C35861D5A768",
+      "name": null,
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": "0x764e20d3f541ade79b33797ab30c5f236e40c0a1",
+      "sources": [
+        "diamonds1111.win"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": false
+      },
+      "balance": {
+        "days": 2,
+        "first": {
+          "date": "2026-09-27",
+          "eth": 0
+        },
+        "last": {
+          "date": "2026-10-05",
+          "eth": 0
+        },
+        "perDay": 0
+      },
+      "flows": {
+        "complete": false,
+        "partial": true,
+        "recent": []
+      }
+    },
+    {
+      "address": "0x391dfF546Afe47cEFe31C415364A7C1da4Bf34AC",
+      "name": null,
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 0.028749,
+      "isToken": false,
+      "owner": "0x764e20d3f541ade79b33797ab30c5f236e40c0a1",
+      "sources": [
+        "diamonds1111.win"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": false
+      },
+      "balance": {
+        "days": 2,
+        "first": {
+          "date": "2026-10-04",
+          "eth": 0.028749
+        },
+        "last": {
+          "date": "2026-10-05",
+          "eth": 0.028749
+        },
+        "perDay": 0
+      },
+      "flows": {
+        "complete": false,
+        "partial": true,
+        "recent": []
+      }
+    },
+    {
+      "address": "0x99a4611791Cd17d72D00c2829dA096a4D7640731",
+      "name": null,
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 0.087799,
+      "isToken": false,
+      "owner": "0x764e20d3f541ade79b33797ab30c5f236e40c0a1",
+      "sources": [
+        "diamonds1111.win",
+        "mine4gold.app"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": false
+      },
+      "balance": {
+        "days": 3,
+        "first": {
+          "date": "2026-09-26",
+          "eth": 0.087266
+        },
+        "last": {
+          "date": "2026-10-05",
+          "eth": 0.087799
+        },
+        "perDay": 0.0003
+      },
+      "flows": {
+        "complete": false,
+        "partial": true,
+        "recent": []
+      }
+    },
+    {
+      "address": "0xFB51F1a5caE9a819F52C8A016c0F6cAB81555914",
+      "name": null,
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": "0x442c2e09d387814d6c6cc6729f9819abbb8afbbe",
+      "sources": [
+        "diamonds1111.win",
+        "mine4gold.app"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": false
+      },
+      "balance": {
+        "days": 3,
+        "first": {
+          "date": "2026-09-28",
+          "eth": 0
+        },
+        "last": {
+          "date": "2026-10-05",
+          "eth": 0
+        },
+        "perDay": 0
+      },
+      "flows": {
+        "complete": false,
+        "partial": true,
+        "recent": []
+      }
+    },
+    {
+      "address": "0xFc4244733e845228AbBB3E327c18758FF9A36318",
+      "name": null,
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": "0x442c2e09d387814d6c6cc6729f9819abbb8afbbe",
+      "sources": [
+        "mine4gold.app"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": false
+      },
+      "balance": null,
+      "flows": {
+        "complete": false,
+        "partial": false,
+        "recent": []
+      }
+    },
+    {
+      "address": "0x23e65EF31506C2a2B859d78D557d49b0eAb8555D",
+      "name": null,
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": "0x442c2e09d387814d6c6cc6729f9819abbb8afbbe",
+      "sources": [
+        "mine4gold.app"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": false
+      },
+      "balance": null,
+      "flows": {
+        "complete": false,
+        "partial": true,
+        "recent": []
+      }
+    },
+    {
+      "address": "0x33b3b537dF0d63908932B90cc8633B28E61dC84b",
+      "name": null,
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": "0x442c2e09d387814d6c6cc6729f9819abbb8afbbe",
+      "sources": [
+        "mine4gold.app"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": false
+      },
+      "balance": {
+        "days": 3,
+        "first": {
+          "date": "2026-09-28",
+          "eth": 0
+        },
+        "last": {
+          "date": "2026-10-05",
+          "eth": 0
+        },
+        "perDay": 0
+      },
+      "flows": {
+        "complete": false,
+        "partial": true,
+        "recent": []
+      }
+    },
+    {
+      "address": "0x54dB65dA7A33281f1D9323f059493416ba920c74",
+      "name": null,
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": "0x442c2e09d387814d6c6cc6729f9819abbb8afbbe",
+      "sources": [
+        "mine4gold.app"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": false
+      },
+      "balance": null,
+      "flows": {
+        "complete": false,
+        "partial": true,
+        "recent": []
+      }
+    },
+    {
+      "address": "0x0A2322017AE96e72445DA37412AA62B8038B6E2c",
+      "name": null,
+      "kind": "contract",
+      "verified": false,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": null,
+      "sources": [
+        "mine4gold.app"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": false
+      },
+      "balance": {
+        "days": 4,
+        "first": {
+          "date": "2026-09-25",
+          "eth": 0
+        },
+        "last": {
+          "date": "2026-10-05",
+          "eth": 0
+        },
+        "perDay": 0
+      },
+      "flows": {
+        "complete": false,
+        "partial": false,
+        "recent": []
+      }
+    },
+    {
+      "address": "0xF96F2b270774371179Fc3CA323eeD14171b06024",
+      "name": "SmokeNftsStaging",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": false,
+      "owner": "0x442c2e09d387814d6c6cc6729f9819abbb8afbbe",
+      "sources": [
+        "diamonds1111.win",
+        "mine4gold.app"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": true,
+        "name": "SmokeNftsStaging",
+        "compiler": "0.8.28+commit.7893614a",
+        "proxy": null,
+        "ownable": true,
+        "upgradeable": false,
+        "delegatecall": false,
+        "selfdestruct": false,
+        "setters": [
+          "setNftContracts"
+        ],
+        "bytes": 29202
+      },
+      "balance": null,
+      "flows": {
+        "complete": true,
+        "partial": false,
+        "recent": []
+      }
+    },
+    {
+      "address": "0xF19308F923582A6f7c465e5CE7a9Dc1BEC6665B1",
+      "name": "TITANX",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 134.471976,
+      "isToken": true,
+      "token": {
+        "symbol": "TITANX",
+        "type": "ERC-20",
+        "holders": 19892,
+        "decimals": 18,
+        "supply": "99153393313675846988383164173359",
+        "price": "5.2028E-8",
+        "mcap": "0"
+      },
+      "owner": null,
+      "sources": [
+        "diamonds1111.win",
+        "mine4gold.app"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": true,
+        "name": "TITANX",
+        "compiler": "0.8.21+commit.d9974bed",
+        "proxy": null,
+        "ownable": true,
+        "upgradeable": false,
+        "delegatecall": false,
+        "selfdestruct": false,
+        "setters": [
+          "setBuyAndBurnContractAddress",
+          "setNewGenesisAddress"
+        ],
+        "bytes": 125400
+      },
+      "balance": {
+        "days": 11,
+        "first": {
+          "date": "2026-09-25",
+          "eth": 134.863922
+        },
+        "last": {
+          "date": "2026-10-05",
+          "eth": 134.471976
+        },
+        "perDay": -0.0392
+      },
+      "flows": {
+        "complete": false,
+        "partial": false,
+        "recent": []
+      }
+    },
+    {
+      "address": "0x68749665FF8D2d112Fa859AA293F07A622782F38",
+      "name": "TransparentUpgradeableProxy",
+      "kind": "contract",
+      "verified": true,
+      "proxy": "eip1967",
+      "eth": 0,
+      "isToken": true,
+      "token": {
+        "symbol": "XAUT",
+        "type": "ERC-20",
+        "holders": 61492,
+        "decimals": 6,
+        "supply": "827417630000",
+        "price": "4140.99",
+        "mcap": "3350602637.646878"
+      },
+      "owner": "0xc6cde7c39eb2f0f0095f41570af89efc2c1ea828",
+      "sources": [
+        "mine4gold.app"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": true,
+        "name": "TransparentUpgradeableProxy",
+        "compiler": "0.8.2+commit.661d1103",
+        "proxy": "eip1967",
+        "ownable": true,
+        "upgradeable": true,
+        "delegatecall": true,
+        "selfdestruct": false,
+        "setters": [],
+        "bytes": 35023
+      },
+      "balance": {
+        "days": 11,
+        "first": {
+          "date": "2026-09-25",
+          "eth": 0
+        },
+        "last": {
+          "date": "2026-10-05",
+          "eth": 0
+        },
+        "perDay": 0
+      },
+      "flows": {
+        "complete": false,
+        "partial": false,
+        "recent": []
+      }
+    },
+    {
+      "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "name": "USDC",
+      "kind": "contract",
+      "verified": true,
+      "proxy": "eip1967_oz",
+      "eth": 0,
+      "isToken": true,
+      "token": {
+        "symbol": "USDC",
+        "type": "ERC-20",
+        "holders": 9441626,
+        "decimals": 6,
+        "supply": "48878198867131611",
+        "price": "0.999918",
+        "mcap": "73958304908.84918"
+      },
+      "owner": "0xfcb19e6a322b27c06842a71e8c725399f049ae3a",
+      "sources": [
+        "mine4gold.app"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": true,
+        "name": "FiatTokenProxy",
+        "compiler": "v0.4.24+commit.e67f0147",
+        "proxy": "eip1967_oz",
+        "ownable": false,
+        "upgradeable": true,
+        "delegatecall": true,
+        "selfdestruct": false,
+        "setters": [],
+        "bytes": 11012
+      },
+      "balance": {
+        "days": 11,
+        "first": {
+          "date": "2026-09-25",
+          "eth": 0
+        },
+        "last": {
+          "date": "2026-10-05",
+          "eth": 0
+        },
+        "perDay": 0
+      },
+      "flows": {
+        "complete": false,
+        "partial": false,
+        "recent": []
+      }
+    },
+    {
+      "address": "0x5c47902c8C80779CB99235E42C354E53F38C3B0d",
+      "name": "X28",
+      "kind": "contract",
+      "verified": true,
+      "proxy": null,
+      "eth": 0,
+      "isToken": true,
+      "token": {
+        "symbol": "X28",
+        "type": "ERC-20",
+        "holders": 1159,
+        "decimals": 18,
+        "supply": "10965167922771647895343531020107",
+        "price": null,
+        "mcap": null
+      },
+      "owner": "0x10129f3fe44dd32745d6e64e5d84cb84a524f114",
+      "sources": [
+        "diamonds1111.win",
+        "mine4gold.app"
+      ],
+      "infra": false,
+      "flags": {
+        "verified": true,
+        "name": "X28",
+        "compiler": "0.8.26+commit.8a97fa7a",
+        "proxy": null,
+        "ownable": true,
+        "upgradeable": false,
+        "delegatecall": true,
+        "selfdestruct": false,
+        "setters": [
+          "setNewGenesisAddress",
+          "setBuyAndBurnContractAddress",
+          "setDefaultSendLibrary",
+          "setDefaultReceiveLibrary",
+          "setDefaultReceiveLibraryTimeout",
+          "setSendLibrary",
+          "setReceiveLibrary",
+          "setReceiveLibraryTimeout",
+          "setConfig",
+          "setPreCrime",
+          "setEnforcedOptions",
+          "setPeer",
+          "setDelegate",
+          "setTreasury",
+          "withdrawFee",
+          "withdrawLzTokenFee",
+          "setMsgInspector",
+          "setLzToken"
+        ],
+        "bytes": 152479
+      },
+      "balance": {
+        "days": 11,
+        "first": {
+          "date": "2026-09-25",
+          "eth": 0
+        },
+        "last": {
+          "date": "2026-10-05",
+          "eth": 0
+        },
+        "perDay": 0
+      },
+      "flows": {
+        "complete": false,
+        "partial": false,
+        "recent": [
+          {
+            "month": "2026-09",
+            "ethIn": 0.0027,
+            "ethOut": 0,
+            "nIn": 13,
+            "senders": 5
+          }
+        ]
+      }
+    }
+  ]
+}
