@@ -5,6 +5,8 @@
 
 ---
 
+**BLENDER CHARACTER + HIDEOUT INTEGRATION (2026-10-05).** Restored Inferno Bull's source PBR maps in Blender after verifying the atlas match, retaining his runtime rig and animations. Added a Blender-authored floor, fitted rifle cabinet and stone vault architecture (five meshes), with editable `.blend` sources and reproducible scripts. Integrated current master's range, hands, narration and lighting work. [Comparison and verification notes](docs/episode2-quality/blender-2026-10-05/README.md). Installed `smokerealm-episode2-art` and `smokerealm-ship` skills and a repository `AGENTS.md` recording the owner's Blender/Jev and always-ship instructions. Local web startup reaches the protected Episode 2 entry; native camera captures exercise the room. Public Episode 2 playthrough still requires its access code. Release completion is reported only after the source commit's export and butler job succeed.
+
 **🎯 ROUND 3 — HANDS ON THE GUN, BIG TAXIDERMY BEAR, SHOT-UP WALL, SIDE BY SIDE (2026-10-04, late).** From your "Copy of Traget Practice" doc:
 - **Lil Blunt's hands are on the gun** now (leafy green hands, leather bracers with brass bands: right hand on the wrist of the stock, left hand under the fore-end) like your IMG_3070 reference. They ride the rifle, so they follow aim, recoil, the lever and reload. They are stylised (procedural); a rigged hand model is the next step.
 - **Inferno stands side by side with you** (a step ahead on your right) and you step up to the firing line next to him during the demo; the view widens so he and the targets are both in frame. The "see-through arm" was the camera sitting inside his body when you got close; his walk blocker is bigger now.

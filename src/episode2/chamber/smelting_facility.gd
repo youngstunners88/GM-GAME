@@ -1290,18 +1290,15 @@ func _build_visuals() -> void:
 	var bridge := _box(Vector3(2.0, 0.1, 2.8), Vector3(0.0, 0.06, CHANNEL_Z), timber)
 	bridge.name = "ChannelBridge"
 
-	# --- the exit toward Fort Knox: a timber doorway in the left wall's end, lit.
-	for dsx in [-2.4, 2.4]:
-		_box(Vector3(0.5, 5.0, 0.5), Vector3(dsx, 2.5, EXIT_POSITION.z + 1.0), timber)
-	_box(Vector3(5.4, 0.5, 0.5), Vector3(0.0, 5.0, EXIT_POSITION.z + 1.0), timber)
+	# The Blender stone arch frames this exit; keep its opening unobstructed.
 	# A brass plate, not the old bright-green bar (it hung across the furnace like a UI element).
-	_box(Vector3(3.2, 0.6, 0.15), Vector3(0.0, 4.6, EXIT_POSITION.z + 0.7), Ep2Palette.make("brass"))
+	_box(Vector3(3.2, 0.6, 0.15), Vector3(0.0, 5.9, EXIT_POSITION.z + 0.7), Ep2Palette.make("brass"))
 	var sign := Label3D.new()
 	sign.text = "FORT KNOX"
 	sign.font_size = 64
 	sign.pixel_size = 0.008
 	sign.modulate = Color(0.12, 0.07, 0.03)
-	sign.position = Vector3(0.0, 4.6, EXIT_POSITION.z + 0.6)
+	sign.position = Vector3(0.0, 5.9, EXIT_POSITION.z + 0.6)
 	sign.rotation.y = PI
 	_visuals.add_child(sign)
 
@@ -1486,7 +1483,7 @@ func _apply_art() -> void:
 	if we:
 		we.environment = Ep2Palette.make_forge_environment()
 		# The hangout is the warmest, brightest room in the episode (founder target image): lift the fill and bloom.
-		we.environment.ambient_light_energy = 0.75
+		we.environment.ambient_light_energy = 0.52
 		we.environment.ambient_light_color = Color(0.74, 0.72, 0.68)
 		we.environment.glow_intensity = 0.85
 		we.environment.glow_hdr_threshold = 0.95
@@ -1572,7 +1569,7 @@ func _build_bull(timber: StandardMaterial3D) -> void:
 	_bull.facing = PI                 # he faces the room (-Z), seated on his crate
 	_bull.rotation.y = PI
 	_bull.play(BULL_SIT if _bull.anim and _bull.anim.has_animation(BULL_SIT) else BULL_IDLE, 1.0, 0.0)
-	_fix_bull_materials(_bull.model)
+	_fix_bull_materials(_bull.model, true)
 	# His seat: a sturdy crate under the Sit_and_Drink hips (0.70 rig units -> 0.85 m), behind him.
 	var seat := _box(Vector3(1.0, 0.66, 0.9), Vector3.ZERO, timber)
 	# Parented to the ROOM, never to the rig: a seat on the actor walked across the hideout behind him
@@ -1589,7 +1586,7 @@ func _build_bull(timber: StandardMaterial3D) -> void:
 ## "He looks like an oil patch melting" (founder 2026-10-02): Meshy's rig drops the metallic-roughness texture, so
 ## glTF's default metallic = 1.0 made every surface a black mirror in a renderer with no reflections. Matte,
 ## non-metal leather and fur, a warm rim from the forge, and a little self-light so shadows are never pure black.
-func _fix_bull_materials(root: Node) -> void:
+func _fix_bull_materials(root: Node, restored_bull: bool = false) -> void:
 	for mi in root.find_children("*", "MeshInstance3D", true, false):
 		var m: MeshInstance3D = mi
 		for i in m.mesh.get_surface_count():
@@ -1601,13 +1598,27 @@ func _fix_bull_materials(root: Node) -> void:
 				d.roughness = 0.78
 				d.metallic_texture = null
 				d.roughness_texture = null
+				# Source UVs verified in Blender against the runtime color map.
+				# Restore PBR detail without replacing the animated rig or mesh.
+				if restored_bull:
+					d.resource_name = "InfernoBullRestoredPBR"
+					d.albedo_texture = preload("res://src/episode2/assets/textures/bull_albedo.jpg")
+					d.metallic_texture = preload("res://src/episode2/assets/textures/bull_metal_rough.png")
+					d.roughness_texture = d.metallic_texture
+					d.metallic_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_BLUE
+					d.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_GREEN
+					d.metallic = 0.65
+					d.roughness = 1.0
+					d.normal_enabled = true
+					d.normal_texture = preload("res://src/episode2/assets/textures/bull_normal.png")
+					d.normal_scale = 0.65
 				d.rim_enabled = true
 				d.rim = 0.12
 				d.rim_tint = 0.5
 				d.emission_enabled = true
 				d.emission = Color(1.0, 0.78, 0.55)
 				d.emission_texture = d.albedo_texture
-				d.emission_energy_multiplier = 0.12
+				d.emission_energy_multiplier = 0.06 if restored_bull else 0.12
 				d.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 				m.set_surface_override_material(i, d)
 
@@ -2594,3 +2605,4 @@ func _soft_blob() -> GradientTexture2D:
 		_blob_tex.width = 64
 		_blob_tex.height = 64
 	return _blob_tex
+

@@ -67,6 +67,7 @@ func _build(visuals: Node3D) -> Dictionary:
 	_gold.metallic_specular = 0.7
 	_leather = _plain(Color(0.28, 0.15, 0.09), 0.7, 0.0)
 	_alcove()
+	_authored_architecture()
 	_joinery_and_lanterns()
 	_entry_wall()
 	var poster := _poster()
@@ -75,7 +76,6 @@ func _build(visuals: Node3D) -> Dictionary:
 	_gun_wall()
 	_whiskey_table(WHISKEY_TABLE_POS)
 	_rug(Vector3(0.9, 0.045, 4.4))
-	_bull_skull(Vector3(0.0, 6.3, 15.4))
 	_braziers()
 	_gold_and_cart()
 	_hanging_chains()
@@ -254,8 +254,7 @@ func _alcove() -> void:
 			z += 1.2
 		_box(Vector3(0.2, 0.2, len_z), Vector3((WALL_X - 0.05) * sx, 1.35, mid_z), _timber)
 		_box(Vector3(0.24, 0.3, len_z), Vector3((WALL_X - 0.05) * sx, 6.15, mid_z), _timber)
-	# warm plank floor across the hangout (the cave gravel stays outside it)
-	_box(Vector3(WALL_X * 2.0, 0.06, len_z), Vector3(0.0, 0.0, mid_z), _tex_mat(TIMBER_TEX, Color(0.44, 0.27, 0.15), 0.9))
+	# Individual bevelled floorboards are supplied by the Blender architecture kit.
 	# a low ceiling run of beams so the alcove has a roof line
 	var bz: float = ALCOVE_Z0 + 0.5
 	while bz < ALCOVE_Z1:
@@ -265,9 +264,41 @@ func _alcove() -> void:
 	for lz in [1.0, 6.0, 11.0]:
 		for sx in [-1.0, 1.0]:
 			var lamp := Ep2Palette.make_lantern_light()
+			lamp.light_energy = 1.65
+			lamp.omni_range = 8.0
 			lamp.position = Vector3((WALL_X - 0.6) * sx, 3.9, lz)
 			_v.add_child(lamp)
 			_lantern(Vector3((WALL_X - 0.45) * sx, 3.5, lz), 1.1)
+
+## Blender-authored boards, dressed-stone vault and fitted rifle cabinet.
+## Five merged meshes keep hundreds of bevelled pieces inexpensive to submit.
+func _authored_architecture() -> void:
+	var kit := preload("res://src/episode2/assets/hideout/armory_architecture.glb").instantiate()
+	kit.name = "ArmoryArchitecture"
+	_v.add_child(kit)
+	# Local lamp pools expose the stone bevels against the dark passage.
+	for side in [-1.0, 1.0]:
+		var pos := Vector3(side * 3.5, 3.65, 15.25)
+		_lantern(pos, 0.75)
+		_fire(pos + Vector3(-side * 0.3, 0.3, -0.3), 2.0, 5.5)
+	for child in kit.find_children("*", "MeshInstance3D", true, false):
+		var mi: MeshInstance3D = child
+		for i in mi.mesh.get_surface_count():
+			var src: StandardMaterial3D = mi.mesh.surface_get_material(i)
+			var mat: StandardMaterial3D = src.duplicate()
+			if src.resource_name.begins_with("ArmoryOak"):
+				mat.albedo_color = Color(0.44, 0.27, 0.15) if src.resource_name == "ArmoryOak" else Color(0.36, 0.20, 0.10)
+				mat.albedo_texture = load(TIMBER_TEX)
+				mat.uv1_triplanar = true
+				mat.uv1_scale = Vector3(0.65, 0.65, 0.65)
+			elif src.resource_name.begins_with("ArmoryStone"):
+				mat.albedo_color = Color(0.68, 0.62, 0.53)
+				mat.albedo_texture = load("res://src/episode2/assets/textures/tex_rock_wall.jpg")
+				mat.uv1_triplanar = true
+				mat.uv1_scale = Vector3.ONE * 0.4
+			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+			mi.set_surface_override_material(i, mat)
+
 
 ## Arrival-side rock face. Looking back previously exposed only the flat forge
 ## background colour. The framed old mine remains beyond the walk boundary;
@@ -923,7 +954,6 @@ func _joinery_and_lanterns() -> void:
 			_fire(Vector3(x, 4.6, z), 1.2, 5.0)
 	# Dark open Fort Knox passage; the furnace is beside it, never across its mouth.
 	for side in [-1.0, 1.0]:
-		_box(Vector3(0.65, 4.7, 0.9), Vector3(side * 2.6, 2.25, 16.4), stone, Vector3.ZERO, root)
 		var door := Node3D.new()
 		door.position = Vector3(side * 2.3, 0.0, 16.1)
 		door.rotation.y = side * 0.48
@@ -934,12 +964,10 @@ func _joinery_and_lanterns() -> void:
 			for dx in [0.2, 1.2]:
 				_cyl(0.04, 0.04, 0.05, Vector3(-side * dx, y, -0.20), _brass, Vector3(90, 0, 0), door)
 	_box(Vector3(4.3, 4.2, 0.15), Vector3(0, 2.1, 18.2), _plain(Color(0.05, 0.035, 0.025), 1.0, 0.0), Vector3.ZERO, root)
-	for i in 11:
-		var a: float = float(i) / 10.0 * PI
-		_box(Vector3(0.65, 0.75, 0.95), Vector3(cos(a) * 2.55, 4.3 + sin(a) * 0.75, 16.4), stone, Vector3(0, 0, rad_to_deg(a) - 90), root)
 	for x in [-8.0, -4.3, 4.4, 8.2]:
 		for i in 3:
 			var rock: Node3D = _glb(RunnerView.BOULDER_ROCK_MODEL, Vector3(x, 2.4 + float(i) * 1.7, 17.6), 1.9, x, root)
 			if rock:
 				for mesh in rock.find_children("*", "MeshInstance3D", true, false):
 					mesh.material_override = stone
+
