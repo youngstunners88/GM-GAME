@@ -41,7 +41,7 @@
             "prompt": "What happens to the original SMOKE when holders convert it into OFT SMOKE?",
             "options": [
                 "It is locked in the Lounge for ten years.",
-                "100% of it goes straight to the burn contract.",
+                "90% of it goes straight to the burn contract.",
                 "It is sent to Fort Knox stakers."
             ],
             "correct": 1
@@ -82,11 +82,11 @@
         {
             "id": "S08",
             "fact_id": "S08",
-            "prompt": "What are the main Smoke Lounge pairs?",
+            "prompt": "Why does steady liquidity in the Smoke Lounge pools matter?",
             "options": [
-                "SMOKE with XAUT on Solana only.",
-                "SMOKE with X28 on BASE and Ethereum, and SMOKE with BNB on BSC.",
-                "SMOKE with wBTC on every chain."
+                "It lets holders mint new SMOKE whenever they like.",
+                "It lets people move in and out without wrecking the price.",
+                "It pays Fort Knox stakers in wBTC."
             ],
             "correct": 1
         },
