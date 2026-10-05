@@ -10,6 +10,7 @@ extends RefCounted
 ## lever dip, the reload tilt. Stylised, procedural, no new textures: a leafy green mitten with leaf-shaped
 ## fingers, a leather bracer with a brass band on each forearm.
 
+const HANDS_GLB := "res://src/episode2/assets/fp_hands.glb"
 const GREEN := Color(0.30, 0.62, 0.17)
 const GREEN_DARK := Color(0.18, 0.42, 0.10)
 const LEATHER := Color(0.30, 0.17, 0.09)
@@ -24,6 +25,13 @@ static func attach(rifle: Node3D) -> Node3D:
 	var root := Node3D.new()
 	root.name = "Hands"
 	rifle.add_child(root)
+	# Preferred: the Blender-built model (tools/blender/build_fp_hands.py): knitted green mittens, studded bracers.
+	var packed: PackedScene = load(HANDS_GLB) as PackedScene if ResourceLoader.exists(HANDS_GLB) else null
+	if packed:
+		var model: Node3D = packed.instantiate() as Node3D
+		model.name = "HandsModel"        # the GLB holds both arms (right/left hand + bracer meshes)
+		root.add_child(model)
+		return root
 	var skin := _mat(GREEN, 0.95, 0.10)
 	var skin_dark := _mat(GREEN_DARK, 0.95, 0.06)
 	var leather := _mat(LEATHER, 0.8, 0.0)

@@ -46,7 +46,7 @@ func _ready() -> void:
 	c._on_video_film_finished()
 	for i in 20: c.step(1.0 / 60.0)
 	_check("first-person: Lil Blunt's HANDS are on the rifle", c._rifle_node.get_node_or_null("Hands") != null)
-	_check("...both arms (right on the stock wrist, left under the fore-end)", c._rifle_node.get_node("Hands").get_node_or_null("RightArm") != null and c._rifle_node.get_node("Hands").get_node_or_null("LeftArm") != null)
+	_check("...both arms (right on the stock wrist, left under the fore-end)", c._rifle_node.get_node("Hands").get_node_or_null("HandsModel") != null or (c._rifle_node.get_node("Hands").get_node_or_null("RightArm") != null and c._rifle_node.get_node("Hands").get_node_or_null("LeftArm") != null))
 	# a ray at the bear's chest hits it (large target), a shot well off does not
 	c.debug_skip_lesson()
 	c.spread_scale = 0.0

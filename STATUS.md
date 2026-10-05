@@ -2821,6 +2821,10 @@ recover them or ask you to resend anything.
 - **Look:** revolver reads GOLD again (the metal map drew it black in the web build), hero brighter, lanterns lit, rails have steel shine + bolts, hero turned 3/4 so the gun shows. Jev + vision assessment in `docs/research/3d/013_*`.
 - New skill `ep2-bear-design`.
 
+## 2026-10-05 — Blender-built first-person hands
+- New `tools/blender/build_fp_hands.py` (headless bpy): knitted-yarn green mittens, studded leather bracers with brass band + concho, exported to `src/episode2/assets/fp_hands.glb` (~0.6 MB). `Ep2ViewHands` loads it (procedural hands remain as fallback).
+- Still to do: Blender target plaques/wall, and Bull re-generation (Meshy balance is 40 credits; a full Bull regen + rig needs ~40 and loses sit clips - needs a top-up or a decision).
+
 ## 🧍 EPISODE 2 — LIL BLUNT SITS LIKE A NORMAL PERSON (2026-09-30)
 - Founder: boots poking out of the cart, an arm "behind his back", both arms must be in front. Fixed by posing the whole skeleton by direction: legs inside the cart, both arms forward, pickaxe upright in front of his left shoulder, revolver hand aimed at the reticle. Zipline still uses the founder's own hang pose. Gate in `ep2_runner_motion_test` (feet inside the cart, hands in front of shoulders).
 - Warm key light on him so he reads against the rock.
