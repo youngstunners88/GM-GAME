@@ -17,7 +17,7 @@ the quiz, the pass bar, the scorecard, stages or navigation. Wrong options must 
 # Source of truth (never invent)
 Only facts already taught in `src/protocol_portals/data/portal_copy.json` stops/aspects, or in the founder's
 protocol updates in STATUS.md. Current facts:
-- SMOKE: culture + sink token; 100% of original SMOKE converted to OFT SMOKE goes to the burn contract; five chains
+- SMOKE: culture + sink token; 90% of original SMOKE converted to OFT SMOKE goes to the burn contract (the other 10% goes to the H420 buy-and-burn - the founder said NOT to mention that, it confuses people); five chains
   (Solana, Robinhood Chain, Ethereum, BASE, BSC), omni-chain, no wrapped copies; arb captured and recycled; main
   Lounge pairs X28 (BASE/Ethereum) and BNB (BSC); big BASE/Ethereum LP locked 10 years; Lounge hosts only the SMOKE NFT
   and bong parties. (SMOKE is NOT on PulseChain.)
