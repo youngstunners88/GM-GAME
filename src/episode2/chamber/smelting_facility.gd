@@ -156,6 +156,9 @@ var intro_film: bool = true
 var _film: CliffJumpCinematic = null            # the in-engine fallback film (used only if the video is missing)
 var _vfilm: Ep2VideoFilm = null                 # the Seedance film
 var _room_built: bool = false
+var _room_ready: bool = false       # the room is COMPLETELY built (a sliced pre-build sets _room_built first)
+var _build_slice: bool = false       # spread _build_visuals over frames (only while the film covers the screen)
+signal room_ready
 var _film_played: bool = false   # the founder's cliff-to-hideout film actually ran this session (Ep2Canon gating)
 var _wake_i: int = 0
 var _has_helmet: bool = false
@@ -351,6 +354,7 @@ func setup(_gold_principal: int = 0, _bears: Array = [], _diamonds_paid: int = 0
 		return
 	_build_visuals()
 	_room_built = true
+	_room_ready = true
 	_sync_visuals()
 	if _beat == Beat.CINEMATIC:
 		_start_film()
@@ -374,6 +378,19 @@ func _start_video_film() -> bool:
 	return true
 
 
+## Build the hideout BEHIND the film, one slice per frame (the room used to be one ~0.8 s synchronous build, which froze
+## and stuttered the film picture and sound - founder 2026-10-05 "the video glitches"; skill ep2-seamless-transition).
+func _prebuild_room() -> void:
+	if _room_built:
+		return
+	_build_slice = true
+	await _build_visuals()
+	_build_slice = false
+	_sync_visuals()
+	_room_ready = true
+	room_ready.emit()
+
+
 ## Make sure the hideout exists (idempotent).
 func _ensure_room() -> void:
 	if _room_built:
@@ -381,12 +398,15 @@ func _ensure_room() -> void:
 	_room_built = true
 	_build_visuals()
 	_sync_visuals()
+	_room_ready = true
 
 
 ## The film ends where target practice begins: the story the film told (patched up, introductions, the Winchester
 ## and the helmet for one Bitcoin) is applied to the game state, and play resumes in first person at the mold rack.
 func _on_video_film_finished() -> void:
 	_film_played = true
+	if _room_built and not _room_ready:
+		await room_ready              # the sliced pre-build is still finishing: wait, never build twice
 	_ensure_room()
 	_stand_t = 99.0
 	_return_bull_glass()
@@ -476,7 +496,7 @@ func step(delta: float) -> void:
 			# delays for no reason"). The film is a full-screen CanvasLayer, so building the 3D behind it is
 			# invisible; a brief hitch a few seconds into a 60 s film is unnoticeable next to a freeze at the cut.
 			if not _room_built and _vfilm.elapsed() >= PREBUILD_AT:
-				_ensure_room()
+				_prebuild_room()
 			return
 		if _film and is_instance_valid(_film):
 			_film.step(delta)
@@ -1099,6 +1119,7 @@ func _mesh(m: Mesh, mat: StandardMaterial3D, pos: Vector3) -> MeshInstance3D:
 
 func _build_visuals() -> void:
 	_room_built = true
+	_room_ready = false
 	if _visuals and is_instance_valid(_visuals):
 		_visuals.queue_free()
 	_visuals = Node3D.new()
@@ -1260,24 +1281,28 @@ func _build_visuals() -> void:
 	bull_key.shadow_enabled = true
 	bull_key.position = BULL_POSITION + Vector3(-1.8, 2.8, -2.2)
 	_visuals.add_child(bull_key)
-	_build_bull(timber)
+	if _build_slice: await get_tree().process_frame
+	await _build_bull(timber)
+	if _build_slice: await get_tree().process_frame
 
 	# --- TARGET PRACTICE (skill ep2-range-lesson): three steel plates at 5.8 / 8.8 / 11.8 m down a marked lane.
 	# RangeDressing owns how it looks; this scene owns the lesson and only reads the contract.
 	var range_parts: Dictionary = RangeDressing.build(_visuals, timber)
+	if _build_slice: await get_tree().process_frame
 	for plate in range_parts["targets"]:
 		_mold_nodes.append(plate)
 	_range_blockers = (range_parts["blockers"] as Array).duplicate()
 
 	# --- LIL BLUNT: the real hero (not the old primitive), standing in the room, lying when he comes to.
 	_player_node = _build_player()
+	if _build_slice: await get_tree().process_frame
 	# The helmet hangs on its peg at the end of the gun wall; the Winchester is the middle rifle on the rack.
 	_helmet_node = _build_helmet()
 	_helmet_node.position = HELMET_PEG + Vector3(0.3, -0.05, 0.0)
 	_visuals.add_child(_helmet_node)
 
 	# --- the hangout: alcove, trophies, armory, Gatling, poster, braziers (see HideoutDressing).
-	_dressing = HideoutDressing.build(_visuals)
+	_dressing = await HideoutDressing.build(_visuals, _build_slice)
 	_blockers = (_dressing.get("blockers", []) as Array).duplicate()
 	_rifle_node = _dressing.get("rack_rifle") as Node3D
 	_bull_blocker_i = _blockers.size()
@@ -1549,6 +1574,7 @@ func _build_bull(timber: StandardMaterial3D) -> void:
 	_settle = 0.0
 	var ok: bool = _bull.setup(BULL_RIG_MODEL, BULL_RIG_H, BULL_HEIGHT,
 		{"walk": BULL_WALK_CLIP, "run": BULL_RUN_CLIP}, [BULL_IDLE, BULL_SIT, BULL_SIP])
+	if _build_slice: await get_tree().process_frame
 	if not ok:
 		# No model: a visible stand-in, never nothing.
 		var bm := BoxMesh.new()
@@ -1560,6 +1586,7 @@ func _build_bull(timber: StandardMaterial3D) -> void:
 		_bull.add_child(fb)
 		return
 	_bull.add_all_clips(BULL_SIT_CLIPS)
+	if _build_slice: await get_tree().process_frame
 	if _bull.anim:
 		for c in [BULL_SIT, BULL_STAND_UP]:
 			if _bull.anim.has_animation(c) and c == BULL_SIT:
@@ -1569,7 +1596,9 @@ func _build_bull(timber: StandardMaterial3D) -> void:
 	_bull.facing = PI                 # he faces the room (-Z), seated on his crate
 	_bull.rotation.y = PI
 	_bull.play(BULL_SIT if _bull.anim and _bull.anim.has_animation(BULL_SIT) else BULL_IDLE, 1.0, 0.0)
+	if _build_slice: await get_tree().process_frame
 	_fix_bull_materials(_bull.model, true)
+	if _build_slice: await get_tree().process_frame
 	# His seat: a sturdy crate under the Sit_and_Drink hips (0.70 rig units -> 0.85 m), behind him.
 	var seat := _box(Vector3(1.0, 0.66, 0.9), Vector3.ZERO, timber)
 	# Parented to the ROOM, never to the rig: a seat on the actor walked across the hideout behind him

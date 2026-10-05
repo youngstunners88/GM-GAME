@@ -2823,6 +2823,9 @@ recover them or ask you to resend anything.
 - **Look:** revolver reads GOLD again (the metal map drew it black in the web build), hero brighter, lanterns lit, rails have steel shine + bolts, hero turned 3/4 so the gun shows. Jev + vision assessment in `docs/research/3d/013_*`.
 - New skill `ep2-bear-design`.
 
+## 2026-10-05 — Film glitch fix: the hideout builds in slices behind the film
+- Root cause found by measurement: at film second 3 the whole hideout (Bull rig, hero, ~80 props) was built in ONE synchronous ~0.9 s block (more on the web/his machine), freezing the video picture and crackling its sound. The pre-build is now sliced one step per frame (Bull load, clips, materials, hero, each dressing group): worst frame while building 349 -> 213 ms, gated in `tests/ep2_transition_prebuild_test.gd` (< 450 ms). The film end waits for `room_ready` instead of building twice.
+
 ## 2026-10-05 — Founder's Winchester is the first-person rifle
 - Rebuilt headless from the Cowork pipeline (`rifle_hero.py` + `rifle_surgery.py` + new `rifle_export_game.py`): long barrel, magazine tube, walnut/gunmetal PBR baked to plain textures, GM logo on the receiver, gloved hand + green forearm. 0.9 MB GLB at `src/episode2/assets/weapons/winchester_1886_founder.glb`; viewmodel wiring in `ep2_view_hands.gd`, ADS tuned from real-render captures. Replaces the procedural/Blender hands GLB (deleted for pack budget). Open: right hand, lever clip, brass receiver; Inferno Bull redesign not started.
 

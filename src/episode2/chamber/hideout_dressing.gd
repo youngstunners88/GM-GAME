@@ -45,9 +45,20 @@ var _blockers: Array = []
 var _rack_rifle: Node3D = null
 
 
-static func build(visuals: Node3D) -> Dictionary:
+## `slice` = spread the build over several frames (one `await process_frame` between groups) so it can run
+## BEHIND the founder's film without freezing the video (skill ep2-seamless-transition). Callers `await` it.
+static func build(visuals: Node3D, slice: bool = false) -> Dictionary:
 	var d := HideoutDressing.new()
-	return d._build(visuals)
+	d._slice = slice
+	return await d._build(visuals)
+
+
+var _slice: bool = false
+
+
+func _breathe() -> void:
+	if _slice and _v and _v.is_inside_tree():
+		await _v.get_tree().process_frame
 
 
 func _build(visuals: Node3D) -> Dictionary:
@@ -67,22 +78,36 @@ func _build(visuals: Node3D) -> Dictionary:
 	_gold.metallic_specular = 0.7
 	_leather = _plain(Color(0.28, 0.15, 0.09), 0.7, 0.0)
 	_alcove()
+	await _breathe()
 	_authored_architecture()
+	await _breathe()
 	_joinery_and_lanterns()
+	await _breathe()
 	_entry_wall()
+	await _breathe()
 	var poster := _poster()
 	_trophies()
+	await _breathe()
 	var gat: Node3D = _gatling(Vector3(-4.0, 0.0, 7.2), -2.21)
 	_gun_wall()
+	await _breathe()
 	_whiskey_table(WHISKEY_TABLE_POS)
+	await _breathe()
 	_rug(Vector3(0.9, 0.045, 4.4))
 	_braziers()
+	await _breathe()
 	_gold_and_cart()
+	await _breathe()
 	_hanging_chains()
+	await _breathe()
 	_crates_and_ammo()
+	await _breathe()
 	_wall_props()
+	await _breathe()
 	_bottle_shelf()
+	await _breathe()
 	_fill_lights()
+	await _breathe()
 	_atmosphere()
 	_blockers.append([Vector2(WHISKEY_TABLE_POS.x, WHISKEY_TABLE_POS.z), 1.35])          # whiskey table
 	return {"flames": _flames, "gatling": gat, "poster": poster, "blockers": _blockers, "rack_rifle": _rack_rifle}
