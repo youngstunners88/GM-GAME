@@ -27,6 +27,8 @@ const LANE_X := 0.0
 const LINE := Vector3(0.0, 0.0, -2.0)
 const BULL_LINE := Vector3(1.9, 0.0, -3.3)   # side by side with the player, a step ahead on the RIGHT (founder round 3: 'Bull being side by side with Lil Blunt'); clear of every line of fire
 const TARGET_Z := -9.3
+const WALL_GLB := "res://src/episode2/assets/hideout/range_wall.glb"
+const PLAQUE_GLB := "res://src/episode2/assets/hideout/range_plaque.glb"
 const PLATE_RADIUS := 0.42
 ## Hit radius per target (same order): the logo plaques use PLATE_RADIUS; the taxidermy bear is big.
 const TARGET_RADII := [0.42, 0.42, 0.42, 0.42, 0.9]
@@ -70,26 +72,34 @@ static func _build_wall_and_bench(parent: Node3D, timber: Material) -> void:
 	wood.emission_enabled = true
 	wood.emission = Color(0.5, 0.33, 0.18)
 	wood.emission_energy_multiplier = 0.10      # a touch of warmth so it never reads as a dead grey slab
-	# backing wall panel
-	var wall := MeshInstance3D.new()
-	var wm := BoxMesh.new()
-	wm.size = Vector3(11.0, 6.4, 0.4)
-	wall.mesh = wm
-	wall.material_override = wood
-	wall.position = Vector3(0.0, 3.0, TARGET_Z - 0.6)      # front face at TARGET_Z-0.4 (holes sit on it)
-	parent.add_child(wall)
-	# vertical plank seams
-	var plank := StandardMaterial3D.new()
-	plank.albedo_color = Color(0.21, 0.13, 0.08)
-	plank.roughness = 0.9
-	for px in range(-5, 6):
-		var seam := MeshInstance3D.new()
-		var sm := BoxMesh.new()
-		sm.size = Vector3(0.08, 6.2, 0.06)
-		seam.mesh = sm
-		seam.material_override = plank
-		seam.position = Vector3(float(px) * 1.0, 3.0, TARGET_Z - 0.14)
-		parent.add_child(seam)
+	# Blender-built plank wall (tools/blender/build_range_props.py); the box + seams below are the fallback.
+	var wall_scene: PackedScene = load(WALL_GLB) as PackedScene if ResourceLoader.exists(WALL_GLB) else null
+	if wall_scene:
+		var wall_model: Node3D = wall_scene.instantiate() as Node3D
+		wall_model.name = "PlankWall"
+		wall_model.position = Vector3(0.0, 0.0, TARGET_Z - 0.4)     # planks' front face = where the holes sit
+		parent.add_child(wall_model)
+	else:
+		# backing wall panel
+		var wall := MeshInstance3D.new()
+		var wm := BoxMesh.new()
+		wm.size = Vector3(11.0, 6.4, 0.4)
+		wall.mesh = wm
+		wall.material_override = wood
+		wall.position = Vector3(0.0, 3.0, TARGET_Z - 0.6)      # front face at TARGET_Z-0.4 (holes sit on it)
+		parent.add_child(wall)
+		# vertical plank seams
+		var plank := StandardMaterial3D.new()
+		plank.albedo_color = Color(0.21, 0.13, 0.08)
+		plank.roughness = 0.9
+		for px in range(-5, 6):
+			var seam := MeshInstance3D.new()
+			var sm := BoxMesh.new()
+			sm.size = Vector3(0.08, 6.2, 0.06)
+			seam.mesh = sm
+			seam.material_override = plank
+			seam.position = Vector3(float(px) * 1.0, 3.0, TARGET_Z - 0.14)
+			parent.add_child(seam)
 	# two wall lamps so the plaques are lit
 	for lx in [-3.6, 3.6]:
 		var lamp := OmniLight3D.new()
@@ -183,17 +193,24 @@ static func _build_logo_plaque(parent: Node3D, centre: Vector3, kind: String) ->
 	root.position = centre
 	parent.add_child(root)
 	var r: float = PLATE_RADIUS
-	# board behind the logo
-	var board := MeshInstance3D.new()
-	var bm := BoxMesh.new()
-	bm.size = Vector3(r * 2.5, r * 2.5, 0.08)
-	board.mesh = bm
-	var board_mat := StandardMaterial3D.new()
-	board_mat.albedo_color = Color(0.26, 0.17, 0.10)
-	board_mat.roughness = 0.85
-	board.material_override = board_mat
-	board.position = Vector3(0.0, 0.0, -0.06)
-	root.add_child(board)
+	# board + riveted iron rim: the Blender mount (tools/blender/build_range_props.py), else a plain box
+	var mount_scene: PackedScene = load(PLAQUE_GLB) as PackedScene if ResourceLoader.exists(PLAQUE_GLB) else null
+	if mount_scene:
+		var mount: Node3D = mount_scene.instantiate() as Node3D
+		mount.name = "Mount"
+		mount.position = Vector3(0.0, 0.0, -0.01)
+		root.add_child(mount)
+	else:
+		var board := MeshInstance3D.new()
+		var bm := BoxMesh.new()
+		bm.size = Vector3(r * 2.5, r * 2.5, 0.08)
+		board.mesh = bm
+		var board_mat := StandardMaterial3D.new()
+		board_mat.albedo_color = Color(0.26, 0.17, 0.10)
+		board_mat.roughness = 0.85
+		board.material_override = board_mat
+		board.position = Vector3(0.0, 0.0, -0.06)
+		root.add_child(board)
 	# the logo quad, facing +Z (toward the player at the firing line)
 	var logo := MeshInstance3D.new()
 	var qm := QuadMesh.new()

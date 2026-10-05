@@ -2821,6 +2821,10 @@ recover them or ask you to resend anything.
 - **Look:** revolver reads GOLD again (the metal map drew it black in the web build), hero brighter, lanterns lit, rails have steel shine + bolts, hero turned 3/4 so the gun shows. Jev + vision assessment in `docs/research/3d/013_*`.
 - New skill `ep2-bear-design`.
 
+## 2026-10-05 — Blender plank wall + riveted target mounts
+- `tools/blender/build_range_props.py` builds `range_wall.glb` (20 bevelled staggered planks, braces, nails) and `range_plaque.glb` (iron-rimmed riveted mount); wired in `range_dressing.gd` with primitive fallbacks. New skill `ep2-blender-props`.
+- Bull: not regenerated - Meshy balance is 40 credits (needs ~40 + loses sit clips); awaiting founder top-up/decision.
+
 ## 2026-10-05 — Blender-built first-person hands
 - New `tools/blender/build_fp_hands.py` (headless bpy): knitted-yarn green mittens, studded leather bracers with brass band + concho, exported to `src/episode2/assets/fp_hands.glb` (~0.6 MB). `Ep2ViewHands` loads it (procedural hands remain as fallback).
 - Still to do: Blender target plaques/wall, and Bull re-generation (Meshy balance is 40 credits; a full Bull regen + rig needs ~40 and loses sit clips - needs a top-up or a decision).
