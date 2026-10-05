@@ -26,6 +26,9 @@ Check the byte count equals Drive's `fileSize` and the first 4 bytes are `glTF`.
 - Used raw as the first-person viewmodel it fails: the left forearm lies in the rifle's vertical plane, so from the camera behind the stock it fills the middle of the screen and in ADS the right glove hides the sights (tried Z shifts 0.24/0.52/0.85, all bad). Do not wire it as the viewmodel. Use it as the **reference for hand placement** and take the rifle geometry from it.
 - `tools/ep2_blender/shrink_founder_rifle.py` bakes it to a 567 KB skin-less GLB (10k tris, 1024/512 textures), oriented muzzle +Z / up +Y (verified by `tools/ep2_shots/glb_axes_shot.tscn`). It is NOT committed because nothing uses it yet (pack headroom ~1 MB).
 
+## 2c. Realism upgrade (2026-10-06)
+For the hero/marketing render of this rifle use skill `ep2-rifle-realism` (`tools/ep2_blender/rifle_hero.py`); render only headless (`blender-headless-render-safety`).
+
 ## 3. Budget (hard)
 | Limit | Value |
 |---|---|
