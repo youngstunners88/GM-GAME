@@ -48,9 +48,11 @@ var _black_steps: int = 0
 func prepare(path: String, length_seconds: float) -> bool:
 	seconds = length_seconds
 	if not ResourceLoader.exists(path):
+		print("[VIDEO] Ep2 film: file missing from the build: %s (falling back to the in-engine film)" % path)
 		return false
 	var stream: VideoStream = ResourceLoader.load(path) as VideoStream
 	if stream == null:
+		print("[VIDEO] Ep2 film: not decodable as a VideoStream: %s (falling back to the in-engine film)" % path)
 		return false
 	layer = 40                       # above the HUD and every gameplay layer
 	process_mode = Node.PROCESS_MODE_ALWAYS

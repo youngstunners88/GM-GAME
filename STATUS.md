@@ -2823,6 +2823,10 @@ recover them or ask you to resend anything.
 - **Look:** revolver reads GOLD again (the metal map drew it black in the web build), hero brighter, lanterns lit, rails have steel shine + bolts, hero turned 3/4 so the gun shows. Jev + vision assessment in `docs/research/3d/013_*`.
 - New skill `ep2-bear-design`.
 
+## 2026-10-05 — "Video not playing" investigation
+- Reproduced in the REAL web build (Chromium, CI preset, bot to the cart end): the founder's 60 s film plays, then the hideout and range load. All five .ogv files decode natively (Theora/Vorbis, correct sizes) and sit in the pack. No defect found in the shipped film path.
+- Added loud `[VIDEO]` console reasons where a film used to be skipped SILENTLY (stage 1/2/3 boss-defeat cutscenes, the Ep2 film), plus `scripts/ep2-film-web-probe.mjs` and `tools/ep2_shots/video_probe.tscn`. Need from the founder: which video, what he sees (black/frozen/skipped) and the browser console line.
+
 ## 2026-10-05 — Founder Winchester GLB analysed (not wired)
 - The Drive GLB is a lever-action Winchester with Lil Blunt's green arms/gloves baked in (a pose reference), not a bolt-action. Raw as a viewmodel it covers the screen, so it was NOT wired. Tooling: `tools/ep2_blender/shrink_founder_rifle.py`, `tools/ep2_shots/glb_axes_shot.tscn`; evidence in `docs/episode2-quality/founder-rifle/`. Tripo API balance is 0, so no Tripo calls were made. Next: split rifle from arms, rebuild gloves to match.
 

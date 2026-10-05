@@ -73,10 +73,12 @@ func play() -> void:
 	layer = 5  # above HUD/gameplay, below the level-transition wipe (layer 10)
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	if not ResourceLoader.exists(VIDEO):
+		print("[VIDEO] %s: file missing from the build: %s (skipping the film)" % [name, VIDEO])
 		_finish()
 		return
 	var stream: VideoStream = load(VIDEO) as VideoStream
 	if stream == null:
+		print("[VIDEO] %s: not decodable as a VideoStream: %s (skipping the film)" % [name, VIDEO])
 		_finish()
 		return
 
