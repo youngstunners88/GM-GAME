@@ -29,6 +29,27 @@ func _ready() -> void:
 		c.queue_free()
 		get_tree().quit(_fail)
 		return
+	# a JUMP key still held from the runner must NOT skip the film (founder: "the video isn't playing")
+	Input.action_press("jump")
+	for i in 150:                                  # 2.5 s of held jump
+		c.step(1.0 / 60.0)
+	_check("a JUMP held from the runner does not skip the film", c.get_beat_name() == "CINEMATIC" and c.get_video_film() != null and not c.get_video_film().is_done())
+	Input.action_release("jump")
+	var vf0 = c.get_video_film()
+	for i in 90:
+		c.step(1.0 / 60.0)
+	Input.action_press("jump")
+	for i in 70:                                   # a deliberate NEW hold (> 0.9 s) after releasing does skip
+		c.step(1.0 / 60.0)
+	Input.action_release("jump")
+	_check("...but releasing and holding JUMP again (the hint) still skips it", vf0.is_done() or vf0.is_finishing() or c.get_beat_name() != "CINEMATIC")
+	c.queue_free()
+	c = SMELT.instantiate()
+	c.intro_film = true
+	add_child(c)
+	c.setup(0, [], 0)
+	c.set_physics_process(false)
+	await get_tree().process_frame
 	_check("while the film plays, the room is NOT built yet (first second)", not c._room_built)
 	# drive the film a few seconds (its own clock) - the room must build behind it
 	var worst_ms: float = 0.0

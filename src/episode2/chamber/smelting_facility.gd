@@ -2102,15 +2102,15 @@ func _enter_fps() -> void:
 ## Hip: low and right, the muzzle angled in toward the centre (the Modern Warfare carry), the stock near the
 ## shoulder and off-screen. ADS: centred, the sight line on the screen centre. Low ready: down and away while
 ## Inferno is still talking.
-const VM_SCALE := 0.8
-const VM_HIP_POS := Vector3(0.17, -0.21, -0.5)
-const VM_HIP_ROT := Vector3(0.03, PI + 0.07, 0.0)
+var VM_SCALE := 0.8
+var VM_HIP_POS := Vector3(0.17, -0.16, -0.5)
+var VM_HIP_ROT := Vector3(0.03, PI + 0.07, 0.0)
 const VM_LOW_POS := Vector3(0.2, -0.3, -0.46)
 const VM_LOW_ROT := Vector3(-0.42, PI + 0.62, -0.28)
 const VM_SPRINT_POS := Vector3(0.1, -0.3, -0.42)
 const VM_SPRINT_ROT := Vector3(-0.35, PI + 0.5, 0.45)
-const VM_ADS_DEPTH := -0.46
-const VM_ADS_SIGHT_DROP := 0.012            # the front post sits a hair below the centre so the target stays visible
+var VM_ADS_DEPTH := -0.46
+var VM_ADS_SIGHT_DROP := 0.012            # the front post sits a hair below the centre so the target stays visible
 
 
 ## Muzzle flash, recoil kick and the shot itself.
@@ -2248,6 +2248,11 @@ func _animate_fps(delta: float) -> void:
 	var rot: Vector3 = VM_HIP_ROT.lerp(VM_LOW_ROT, _vm_low).lerp(VM_SPRINT_ROT, sprint * (1.0 - _vm_low))
 	# aimed: centred with the sight line on the screen centre
 	var ads_pos := Vector3(0.0, -(VM_ADS_SIGHT_DROP + _rifle_sight_height() * VM_SCALE), float(_rifle_node.get_meta("ads_depth", VM_ADS_DEPTH)))
+	if _rifle_node.has_meta("ads_cam"):
+		# the eye in the rifle's own frame (founder rifle): the node sits so that point lands on the camera; the rifle is yawed
+		# PI toward the player, so its +Z points forward and its +Y up: node = (-cam.y * s, +cam.z * s) in camera space.
+		var ec: Vector3 = _rifle_node.get_meta("ads_cam")
+		ads_pos = Vector3(0.0, -ec.y * VM_SCALE - VM_ADS_SIGHT_DROP, ec.z * VM_SCALE)
 	pos = pos.lerp(ads_pos, ads_k)
 	rot = rot.lerp(Vector3(0.0, PI, 0.0), ads_k)
 	# breathing + walk bob (both nearly vanish aimed), and the rifle LAGS the mouse a little

@@ -2823,6 +2823,10 @@ recover them or ask you to resend anything.
 - **Look:** revolver reads GOLD again (the metal map drew it black in the web build), hero brighter, lanterns lit, rails have steel shine + bolts, hero turned 3/4 so the gun shows. Jev + vision assessment in `docs/research/3d/013_*`.
 - New skill `ep2-bear-design`.
 
+## 2026-10-05 — Rifle placement by simulation + the film no longer skips itself
+- Placement: `tools/ep2_sim/vm_placement_sim.mjs` (real-render, per-vertex metrics) replaced hand-placement. Shouldered, the eye now sits over the barrel (stock/receiver behind the camera): nothing blocks the targets (was 42 % of the gun in the target window), front sight on the crosshair. Hip: gun tight to the lower right, muzzle toward the centre. Jev's overall verdict was BLOCK on the final numbers while its two specific risk questions passed - logged in `docs/ep2_vm_placement_simulation.json`; I checked the screenshots myself.
+- "The video isn't playing": found a second cause - JUMP is also the skip key, and a Space still held from the runner / boss fight skipped the film within 0.9 s. Skips now need the key released first (`ep2_video_film.gd`, `stage3_boss_defeat_cutscene.gd`); test added. New skill `ep2-film-always-plays`.
+
 ## 2026-10-05 — Film glitch fix: the hideout builds in slices behind the film
 - Root cause found by measurement: at film second 3 the whole hideout (Bull rig, hero, ~80 props) was built in ONE synchronous ~0.9 s block (more on the web/his machine), freezing the video picture and crackling its sound. The pre-build is now sliced one step per frame (Bull load, clips, materials, hero, each dressing group): worst frame while building 349 -> 213 ms, gated in `tests/ep2_transition_prebuild_test.gd` (< 450 ms). The film end waits for `room_ready` instead of building twice.
 

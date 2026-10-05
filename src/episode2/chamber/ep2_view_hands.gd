@@ -13,9 +13,13 @@ extends RefCounted
 ## The founder's rifle (his Tripo GLB, surgery + graded PBR baked by tools/ep2_blender/rifle_export_game.py): lever-action
 ## Winchester with the GM logo on the receiver and Lil Blunt's gloved left hand + green forearm on the fore-end.
 const FOUNDER_GLB := "res://src/episode2/assets/weapons/winchester_1886_founder.glb"
-const FOUNDER_ADS_DEPTH := -0.46
-const FOUNDER_DROP := 0.045       # model sits a little lower than the forge sight line so the stock comb never blocks the view in ADS
-const FOUNDER_Z_SHIFT := 0.34
+static var founder_ads_depth: float = -0.46
+## Where the eye sits in the MODEL frame when shouldered (measured from the model: barrel top 0.15, receiver 0.195, comb 0.22,
+## so the camera must sit FORWARD of the receiver, just above the barrel, behind the rear sight - the stock and receiver are then
+## behind the camera and never block the target; skill ep2-fps-shooter-feel, placement sim).
+static var founder_ads_cam: Vector3 = Vector3(0.0, 0.155, 0.14)
+static var founder_drop: float = 0.11        # model sits a little lower than the forge sight line so the stock comb never blocks the view in ADS
+static var founder_z_shift: float = -0.15
 const HANDS_GLB := "res://src/episode2/assets/fp_hands.glb"
 const GREEN := Color(0.30, 0.62, 0.17)
 const GREEN_DARK := Color(0.18, 0.42, 0.10)
@@ -42,8 +46,9 @@ static func attach(rifle: Node3D) -> Node3D:
 		var fm: Node3D = founder.instantiate() as Node3D
 		fm.name = "HandsModel"
 		root.add_child(fm)
-		fm.position = Vector3(0.0, forge_top - _top_y(fm, rifle) - FOUNDER_DROP, FOUNDER_Z_SHIFT)
-		rifle.set_meta("ads_depth", FOUNDER_ADS_DEPTH)      # the longer stock needs the camera pulled behind the butt
+		fm.position = Vector3(0.0, forge_top - _top_y(fm, rifle) - founder_drop, founder_z_shift)
+		rifle.set_meta("ads_cam", fm.position + founder_ads_cam)
+		rifle.set_meta("ads_depth", founder_ads_depth)      # the longer stock needs the camera pulled behind the butt
 		return root
 	# Next: the Blender-built model (tools/blender/build_fp_hands.py): knitted green mittens, studded bracers.
 	var packed: PackedScene = load(HANDS_GLB) as PackedScene if ResourceLoader.exists(HANDS_GLB) else null

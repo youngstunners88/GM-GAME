@@ -33,6 +33,7 @@ var last_song_position: float = -1.0
 var _video: VideoStreamPlayer = null
 var _t: float = 0.0
 var _skip_held: float = 0.0
+var _skip_armed: bool = false      # JUMP must be RELEASED once (after the first second) before a hold can skip the film
 var _done: bool = false
 var _music_muted: bool = false
 var _hint: Label = null
@@ -129,13 +130,19 @@ func step(delta: float) -> void:
 	if _done:
 		return
 	_t += delta
+	# Founder 2026-10-05 "the video isn't playing": Space is also JUMP, and the player is often still holding it (or
+	# mashing it) when the cart runs out - the film saw a held JUMP at frame 0 and skipped itself within 0.9 s. A skip now
+	# needs the key to have been released first (and the hint on screen), i.e. a deliberate NEW hold.
 	if Input.is_action_pressed(SKIP_ACTION):
-		_skip_held += delta
-		if _skip_held >= SKIP_HOLD:
-			_finish()
-			return
+		if _skip_armed:
+			_skip_held += delta
+			if _skip_held >= SKIP_HOLD:
+				_finish()
+				return
 	else:
 		_skip_held = 0.0
+		if _t >= 1.0:
+			_skip_armed = true
 	if _t >= seconds + GRACE:
 		_finish()
 
