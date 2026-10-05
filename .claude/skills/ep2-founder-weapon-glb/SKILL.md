@@ -19,6 +19,13 @@ Check the byte count equals Drive's `fileSize` and the first 4 bytes are `glTF`.
 - Carries a 65-bone **Mixamo humanoid** skin and an Icosphere helper; the mesh is a rifle (not a character). Dimensions come out ~0.88 x 0.89 x 0.74 m in raw import, so the rest scale/orientation is NOT metres/muzzle +Z: measure the barrel axis from the vertex bounds, do not trust node scale.
 - Headless `bpy` import works (`bpy.ops.import_scene.gltf`); the process segfaults on interpreter exit - harmless, print results first and ignore exit 139.
 
+## 2b. What the file REALLY is (rendered 2026-10-05, see docs/episode2-quality/founder-rifle/)
+- It is **not a bolt-action**: it is already a lever-action Winchester with engraved receiver, walnut stock and a lever loop - no bolt-to-lever conversion needed.
+- It is a **pose/design reference**: a rifle with Lil Blunt's arms baked into the same mesh (green forearms, brown leather gloves, red-and-brass studded cuffs with a leaf badge). The right glove grips the wrist of the stock; the left glove cups the fore-end; the left forearm hangs down toward the stock.
+- The 65-bone Mixamo skeleton is a ~0.2 m default auto-rig that does NOT match the mesh. Ignore it; do not animate through it.
+- Used raw as the first-person viewmodel it fails: the left forearm lies in the rifle's vertical plane, so from the camera behind the stock it fills the middle of the screen and in ADS the right glove hides the sights (tried Z shifts 0.24/0.52/0.85, all bad). Do not wire it as the viewmodel. Use it as the **reference for hand placement** and take the rifle geometry from it.
+- `tools/ep2_blender/shrink_founder_rifle.py` bakes it to a 567 KB skin-less GLB (10k tris, 1024/512 textures), oriented muzzle +Z / up +Y (verified by `tools/ep2_shots/glb_axes_shot.tscn`). It is NOT committed because nothing uses it yet (pack headroom ~1 MB).
+
 ## 3. Budget (hard)
 | Limit | Value |
 |---|---|
@@ -32,8 +39,8 @@ Retiring the forge/Meshy rifle (`winchester_1886.glb` + its textures) and any ot
 - Re-point `RIFLE_MODEL` in `smelting_facility.gd` and `RIFLE` in `hideout_dressing.gd`; keep the forge path as a fallback only until the new GLB loads, then delete the forge rifle.
 - Orientation contract the code expects: muzzle +Z, stock -Z, centred, ~1.2 m long (`ep2-handoff-props`). Normalise in Blender, not in GDScript.
 
-## 5. Bolt -> lever
-The founder mesh is bolt-action; the story gun is a lever 1886. Keep stock, barrel, grip silhouette; replace the bolt handle with a lever loop under the receiver (Blender, see `ep2-blender-handling-clips`). Never swap in a different gun.
+## 5. Next step (not done)
+Separate the rifle from the arms (delete arm/glove faces below the receiver line, keep the lever loop; check no hole in the stock wrist) for the rack/hand-over/viewmodel rifle, and rebuild gloves + cuffs to match the reference in `tools/blender/build_fp_hands.py`, posed from `ep2-blender-handling-clips`. Never swap in a different gun.
 
 ## Prove
 `node scripts/glb-shot.mjs <glb> sheet.png` (look for loose parts), then the range capture rig (`ep2-blender-props`), then the three range tests.

@@ -2823,6 +2823,9 @@ recover them or ask you to resend anything.
 - **Look:** revolver reads GOLD again (the metal map drew it black in the web build), hero brighter, lanterns lit, rails have steel shine + bolts, hero turned 3/4 so the gun shows. Jev + vision assessment in `docs/research/3d/013_*`.
 - New skill `ep2-bear-design`.
 
+## 2026-10-05 — Founder Winchester GLB analysed (not wired)
+- The Drive GLB is a lever-action Winchester with Lil Blunt's green arms/gloves baked in (a pose reference), not a bolt-action. Raw as a viewmodel it covers the screen, so it was NOT wired. Tooling: `tools/ep2_blender/shrink_founder_rifle.py`, `tools/ep2_shots/glb_axes_shot.tscn`; evidence in `docs/episode2-quality/founder-rifle/`. Tripo API balance is 0, so no Tripo calls were made. Next: split rifle from arms, rebuild gloves to match.
+
 ## 2026-10-05 — Skills for the founder's Winchester GLB brief
 - New skills `ep2-founder-weapon-glb` (Drive intake, shrink, budget, install) and `ep2-blender-handling-clips` (ready/aim/lever clips, hand contact, proof). Founder GLB inspected: 23.9 MB, 50k tris, three 4096 textures, so it must be shrunk before it can enter the ~1 MB-headroom pack. Not yet imported or wired.
 
