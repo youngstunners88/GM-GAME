@@ -309,11 +309,33 @@ func _ready() -> void:
 		hb.step(1.0 / 60.0)
 	_check("...and back out", hb.reach_weight("Right") <= 0.01)
 	var matte := true
+	var body_materials := 0
 	for mi in hb.model.find_children("*", "MeshInstance3D", true, false):
 		var sm: Material = (mi as MeshInstance3D).get_surface_override_material(0)
-		if sm is StandardMaterial3D and (sm as StandardMaterial3D).metallic > 0.01:
-			matte = false
-	_check("no mirror-black 'oil patch' materials on the Bull (metallic 0)", matte)
+		if sm is StandardMaterial3D:
+			var material := sm as StandardMaterial3D
+			# Hand-attached rifle/glass meshes also live under this skeleton.
+			# Their separate metal/glass materials are not the Bull skin atlas.
+			if material.resource_name != "InfernoBullRestoredPBR":
+				continue
+			body_materials += 1
+			# Mapped armor can be metal; fur/leather must not inherit glTF's
+			# missing-map metallic=1 default that caused the original oil patch.
+			matte = matte and material.metallic <= 0.651 and material.metallic_texture != null
+			matte = matte and material.roughness_texture != null and material.normal_enabled
+			if material.metallic_texture:
+				# Headless Dummy rendering cannot read GPU texture pixels. Read
+				# the authored map for this source-level material regression gate.
+				var pixels: Image = Image.load_from_file("res://src/episode2/assets/textures/bull_metal_rough.png")
+				if pixels.is_compressed():
+					pixels.decompress()
+				var nonmetal := 0
+				for y in range(0, pixels.get_height(), 32):
+					for x in range(0, pixels.get_width(), 32):
+						if pixels.get_pixel(x, y).b < 0.1:
+							nonmetal += 1
+				matte = matte and nonmetal > 700
+	_check("Bull PBR keeps fur/leather nonmetal with bounded armor highlights", matte and body_materials > 0)
 	var gs: Vector3 = h._glass_node.global_transform.basis.get_scale()
 	_check("his whiskey glass is real-sized (world scale ~1 in the hand-bone holder, not 2 mm)", absf(gs.x - 1.0) < 0.15, str(gs))
 	_check("the glass rides his hand bone", h._glass_node.get_parent().get_parent().name == "Att_LeftHand")
