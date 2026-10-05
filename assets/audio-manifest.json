@@ -2080,7 +2080,7 @@
     },
     {
       "id": "vo_bull_range_intro",
-      "text": "This here's my range. Three steel plates, six, nine and twelve paces out. A rifle's only a question, kid, and lead's the answer. Watch me first.",
+      "text": "This here's my range. Five targets on the wall: the protocol plaques and the big old bear. A rifle's only a question, kid, and lead's the answer. Watch me first.",
       "voice_id": "uWE48TmsTuIjyh2ifoNL",
       "voice_settings": {
         "stability": 0.62,
@@ -2164,7 +2164,7 @@
     },
     {
       "id": "vo_bull_range_first_hit",
-      "text": "Ha! That rang like a church bell. Break the other two.",
+      "text": "Ha! That rang like a church bell. Now break the other four.",
       "voice_id": "uWE48TmsTuIjyh2ifoNL",
       "voice_settings": {
         "stability": 0.62,
@@ -2200,7 +2200,7 @@
     },
     {
       "id": "vo_bull_range_done",
-      "text": "Three plates down. Not bad for a nugget.",
+      "text": "All five down. Not bad for a nugget.",
       "voice_id": "uWE48TmsTuIjyh2ifoNL",
       "voice_settings": {
         "stability": 0.62,

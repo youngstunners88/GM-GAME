@@ -217,6 +217,7 @@ var _vm_lag: Vector2 = Vector2.ZERO
 var _look_delta: Vector2 = Vector2.ZERO
 var _sight_h: float = 0.0
 var _flash_t: float = 0.0
+var _fov_extra: float = 0.0
 var _muzzle_flash: MeshInstance3D = null
 var _later_calls: Array = []                        # [seconds_left, Callable]
 var _rng := RandomNumberGenerator.new()
@@ -598,7 +599,8 @@ func _plate_on_ray(dir: Vector3) -> int:
 		var t: float = (c - eye).dot(dir)
 		if t < 0.5 or t > 40.0 or t >= best_t:
 			continue
-		if (c - (eye + dir * t)).length() <= RangeDressing.PLATE_RADIUS + 0.03:
+		var rad: float = float(RangeDressing.TARGET_RADII[i]) if i < RangeDressing.TARGET_RADII.size() else RangeDressing.PLATE_RADIUS
+		if (c - (eye + dir * t)).length() <= rad + 0.03:
 			best_t = t
 			best = i
 	return best
@@ -1001,7 +1003,9 @@ func _fps_camera(delta: float) -> void:
 	var dir := Vector3(sin(_look_yaw) * cp, sin(pitch), cos(_look_yaw) * cp)
 	_camera.look_at(_camera.position + dir, Vector3.UP)
 	var ads_k: float = _gun.ads * _gun.ads * (3.0 - 2.0 * _gun.ads)        # smoothstep: eases in and out
-	_camera.fov = lerpf(FPS_FOV, FPS_ADS_FOV, ads_k)
+	# during the demonstration the view widens so Inferno (beside you) AND the targets are both in frame
+	_fov_extra = lerpf(_fov_extra, 14.0 if _lesson == Lesson.DEMO else 0.0, 1.0 - exp(-delta * 3.0))
+	_camera.fov = lerpf(FPS_FOV + _fov_extra, FPS_ADS_FOV, ads_k)
 
 
 func _distance_to_bull() -> float:
@@ -1277,7 +1281,7 @@ func _build_visuals() -> void:
 	_blockers = (_dressing.get("blockers", []) as Array).duplicate()
 	_rifle_node = _dressing.get("rack_rifle") as Node3D
 	_bull_blocker_i = _blockers.size()
-	_blockers.append([Vector2(BULL_POSITION.x, BULL_POSITION.z), 0.95])
+	_blockers.append([Vector2(BULL_POSITION.x, BULL_POSITION.z), 1.5])
 	for cs in _cauldron_spots:
 		_blockers.append([Vector2(cs.x, cs.z), 1.1])
 	for rb in _range_blockers:
@@ -1922,7 +1926,7 @@ func _animate_bull(delta: float) -> void:
 	# Rest means REST: no idle sips, no waving. Arms only move for an action beat (grab, hand-over).
 	_follow_player_in_fps(delta)
 	if _bull_blocker_i >= 0 and _bull_blocker_i < _blockers.size():
-		_blockers[_bull_blocker_i] = [Vector2(_bull.position.x, _bull.position.z), 0.95]
+		_blockers[_bull_blocker_i] = [Vector2(_bull.position.x, _bull.position.z), 1.5]
 	_bull.step(delta)
 	if _cigar_tip:
 		var pp: float = fmod(_anim_t + 4.5, 9.0)
@@ -2034,6 +2038,8 @@ func _enter_fps() -> void:
 		_rifle_node.rotation = VM_HIP_ROT
 		_rifle_node.scale = Vector3.ONE * VM_SCALE
 		_build_muzzle_flash()
+		_rifle_sight_height()                 # measure the sights BEFORE the hands are added (they must not count)
+		Ep2ViewHands.attach(_rifle_node)      # Lil Blunt's hands + bracers on the rifle (founder round 3)
 	if _fps_hud == null:
 		_fps_hud = CanvasLayer.new()
 		_fps_hud.layer = 12
@@ -2108,7 +2114,7 @@ func _rifle_sight_height() -> float:
 		var inv: Transform3D = _rifle_node.global_transform.affine_inverse()
 		for mi in _rifle_node.find_children("*", "MeshInstance3D", true, false):
 			var m := mi as MeshInstance3D
-			if m == _muzzle_flash or m.mesh == null:
+			if m == _muzzle_flash or m.mesh == null or _rifle_node.get_node_or_null("Hands") and _rifle_node.get_node("Hands").is_ancestor_of(m):
 				continue
 			var bb: AABB = (inv * m.global_transform) * m.get_aabb()
 			top = maxf(top, bb.end.y)
@@ -2478,8 +2484,13 @@ func _frame_demo(delta: float) -> void:
 	var eye: Vector3 = _eye_position()
 	var to_plate: Vector3 = get_mold_position(1) - eye
 	var to_bull: Vector3 = _bull.position + Vector3(0.0, 1.6, 0.0) - eye
-	var yaw: float = lerp_angle(atan2(to_plate.x, to_plate.z), atan2(to_bull.x, to_bull.z), 0.45)
+	var yaw: float = lerp_angle(atan2(to_plate.x, to_plate.z), atan2(to_bull.x, to_bull.z), 0.55)
 	_look_yaw = lerp_angle(_look_yaw, yaw, 1.0 - exp(-delta * 3.0))
+	# Step up beside him: ease onto the firing line so the two stand side by side (founder round 3: "why am I not
+	# standing closer forward next to him").
+	var k: float = 1.0 - exp(-delta * 2.5)
+	_player_pos.x = lerpf(_player_pos.x, RangeDressing.LINE.x, k)
+	_player_pos.z = lerpf(_player_pos.z, RangeDressing.LINE.z, k)
 	_look_pitch = lerpf(_look_pitch, -0.04, 1.0 - exp(-delta * 3.0))
 
 

@@ -28,7 +28,7 @@ func _ready() -> void:
 	await _cap("r01_lead_low_ready")
 	_until(func(): return f._lead_done, 25.0)
 	await _cap("r02_bull_at_range")
-	f._player_pos = Vector3(RangeDressing.LINE.x, 0.0, RangeDressing.LINE.z + 0.4)
+	f._player_pos = Vector3(RangeDressing.LINE.x + 0.6, 0.0, RangeDressing.LINE.z + 1.8)     # where a player really stops (inside the arrive radius)
 	f._look_yaw = PI      # face the target wall (-Z)
 	f._look_pitch = -0.05
 	_run(0.3)

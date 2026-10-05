@@ -5,6 +5,16 @@
 
 ---
 
+**🎯 ROUND 3 — HANDS ON THE GUN, BIG TAXIDERMY BEAR, SHOT-UP WALL, SIDE BY SIDE (2026-10-04, late).** From your "Copy of Traget Practice" doc:
+- **Lil Blunt's hands are on the gun** now (leafy green hands, leather bracers with brass bands: right hand on the wrist of the stock, left hand under the fore-end) like your IMG_3070 reference. They ride the rifle, so they follow aim, recoil, the lever and reload. They are stylised (procedural); a rigged hand model is the next step.
+- **Inferno stands side by side with you** (a step ahead on your right) and you step up to the firing line next to him during the demo; the view widens so he and the targets are both in frame. The "see-through arm" was the camera sitting inside his body when you got close; his walk blocker is bigger now.
+- **The bear is a LARGE taxidermy grizzly** (the taxidermist's bear, 3.6 m, on a plinth, roaring, close on the left) with a target ring on its chest.
+- **The wall is already shot up:** ~100 bullet holes with splintered rims, clustered round each plaque like your reference.
+- **He no longer says "three"**: his lines now say five targets / "break the other four" / "all five down" (re-voiced).
+- **Jev "can play games" links:** both X posts return HTTP 402 (X blocks my fetch), so I could not read them. The CoD World at War note is useful context (the game scripts were data-driven, the engine was not), but we have no engine source; what Jev can do remains ranking numbers. If you paste the post text I will use it.
+- **Not done:** a rigged first-person hand model with a reload hand animation (the hands currently stay fixed on the rifle during reload).
+- Tests: new `ep2_range_v3_test`; the range lesson, facility, transition, voice and canon suites all pass. Skills updated: `ep2-range-lesson`, `ep2-fps-shooter-feel`.
+
 **🎯 PROTOCOL-LOGO TARGET WALL + SMOOTH TRANSITION + SPEECH OVER MUSIC + A MEMORY LAYER (2026-10-04, night).**
 - **The range is practical now, against the back wall.** Target practice faces the open back of the room. Five glowing-green-ring plaques hang on a timber wall like your "Minotaur Mentors Leafy Sharpshooter" picture: the four protocol logos (TitanX, Gold Mine, Diamonds, Blaze Diamonds) and the archer **bear** as a wanted-poster target. You shoot down a lit lane from a firing bench with cartridge boxes; Inferno coaches from your side.
 - **The hideout is much richer.** Glowing gold-bar stacks and an ore cart, cowhide rug, bear trophies, framed posters, bottle shelves, a gun rack, lit chain lanterns, braziers, ember haze and warm fill light — the forge-hideout from your reference, not a brown box. (A second Claude worked this in parallel.)

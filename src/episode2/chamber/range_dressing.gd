@@ -25,17 +25,21 @@ extends RefCounted
 const LANE_X := 0.0
 ## The firing line faces -Z (into the open entry hall), the "lots of room in the back" the founder asked for.
 const LINE := Vector3(0.0, 0.0, -2.0)
-const BULL_LINE := Vector3(2.5, 0.0, -2.2)   # beside the player at the firing line (a coach), not downrange where he hides the targets
+const BULL_LINE := Vector3(1.9, 0.0, -3.3)   # side by side with the player, a step ahead on the RIGHT (founder round 3: 'Bull being side by side with Lil Blunt'); clear of every line of fire
 const TARGET_Z := -9.3
 const PLATE_RADIUS := 0.42
+## Hit radius per target (same order): the logo plaques use PLATE_RADIUS; the taxidermy bear is big.
+const TARGET_RADII := [0.42, 0.42, 0.42, 0.42, 0.9]
+const BEAR_PROP := "res://src/episode2/assets/hideout/bear_standing.glb"
+const BEAR_HEIGHT := 3.6
 
 ## Hit centres. The four logos are wall plaques; the bear stands on the floor in front of the wall.
 const TARGET_SPOTS := [
-	Vector3(-3.2, 2.5, -9.3),      # TitanX (top left)
-	Vector3(-1.05, 2.85, -9.3),    # Gold Mine (top middle, the hero medallion)
-	Vector3(1.05, 2.85, -9.3),     # Diamonds (top right)
-	Vector3(-2.2, 1.45, -9.3),     # Blaze Diamonds (lower left)
-	Vector3(2.8, 1.5, -9.3),       # the BEAR archer (wall poster, lower right)
+	Vector3(-1.5, 2.65, -9.3),     # TitanX
+	Vector3(0.1, 2.95, -9.3),      # Gold Mine (the hero medallion)
+	Vector3(1.7, 2.65, -9.3),      # Diamonds
+	Vector3(-0.6, 1.45, -9.3),     # Blaze Diamonds
+	Vector3(-3.4, 1.9, -6.6),      # the BEAR: a LARGE taxidermy grizzly, close and to the left (chest = hit centre)
 ]
 const TARGET_KINDS := ["titanx", "gold_mine", "diamonds", "blaze_diamonds", "bear"]
 const LOGO_DIR := "res://src/episode2/assets/textures/logos/"
@@ -50,9 +54,10 @@ static func build(parent: Node3D, timber: Material) -> Dictionary:
 	for i in TARGET_SPOTS.size():
 		var kind: String = str(TARGET_KINDS[i])
 		var spot: Vector3 = TARGET_SPOTS[i]
-		var node: Node3D = _build_logo_plaque(parent, spot, kind)
+		var node: Node3D = _build_taxidermy_bear(parent, spot) if kind == "bear" else _build_logo_plaque(parent, spot, kind)
 		node.name = "Target_%d_%s" % [i, kind]
 		targets.append(node)
+	_build_damage(parent)
 	return {"targets": targets, "blockers": blockers, "line": LINE}
 
 
@@ -71,7 +76,7 @@ static func _build_wall_and_bench(parent: Node3D, timber: Material) -> void:
 	wm.size = Vector3(11.0, 6.4, 0.4)
 	wall.mesh = wm
 	wall.material_override = wood
-	wall.position = Vector3(0.0, 3.0, TARGET_Z - 0.35)
+	wall.position = Vector3(0.0, 3.0, TARGET_Z - 0.6)      # front face at TARGET_Z-0.4 (holes sit on it)
 	parent.add_child(wall)
 	# vertical plank seams
 	var plank := StandardMaterial3D.new()
@@ -96,7 +101,7 @@ static func _build_wall_and_bench(parent: Node3D, timber: Material) -> void:
 	# firing bench at the line
 	var bench := MeshInstance3D.new()
 	var bm := BoxMesh.new()
-	bm.size = Vector3(2.6, 0.18, 0.75)          # a table TOP, not a solid slab
+	bm.size = Vector3(1.9, 0.14, 0.7)          # a table TOP, not a solid slab
 	bench.mesh = bm
 	var top_mat := StandardMaterial3D.new()
 	top_mat.albedo_color = Color(0.5, 0.34, 0.2)
@@ -105,16 +110,16 @@ static func _build_wall_and_bench(parent: Node3D, timber: Material) -> void:
 	top_mat.emission = Color(0.55, 0.37, 0.2)
 	top_mat.emission_energy_multiplier = 0.12
 	bench.material_override = top_mat
-	bench.position = Vector3(LANE_X, 0.9, LINE.z - 0.55)
+	bench.position = Vector3(LANE_X, 0.78, LINE.z - 0.7)
 	parent.add_child(bench)
-	for lx in [-1.15, 1.15]:
+	for lx in [-0.85, 0.85]:
 		for lz in [-0.3, 0.3]:
 			var leg := MeshInstance3D.new()
 			var lgm := BoxMesh.new()
-			lgm.size = Vector3(0.12, 0.9, 0.12)
+			lgm.size = Vector3(0.12, 0.78, 0.12)
 			leg.mesh = lgm
 			leg.material_override = wood
-			leg.position = Vector3(LANE_X + lx, 0.45, LINE.z - 0.55 + lz)
+			leg.position = Vector3(LANE_X + lx, 0.39, LINE.z - 0.7 + lz)
 			parent.add_child(leg)
 	# a small warm lamp over the bench so the viewmodel and the bench read
 	var blamp := OmniLight3D.new()
@@ -123,17 +128,7 @@ static func _build_wall_and_bench(parent: Node3D, timber: Material) -> void:
 	blamp.omni_range = 4.5
 	blamp.position = Vector3(LANE_X, 2.2, LINE.z - 0.2)
 	parent.add_child(blamp)
-	# a sandbag rest + two cartridge boxes on the bench
-	var sandbag := StandardMaterial3D.new()
-	sandbag.albedo_color = Color(0.45, 0.39, 0.26)
-	sandbag.roughness = 1.0
-	var sb := MeshInstance3D.new()
-	var sbm := BoxMesh.new()
-	sbm.size = Vector3(1.4, 0.3, 0.5)
-	sb.mesh = sbm
-	sb.material_override = sandbag
-	sb.position = Vector3(LANE_X, 1.14, LINE.z - 0.55)
-	parent.add_child(sb)
+	# two cartridge boxes on the bench
 	var brass := StandardMaterial3D.new()
 	brass.albedo_color = Color(0.72, 0.52, 0.18)
 	brass.metallic = 0.8
@@ -141,13 +136,13 @@ static func _build_wall_and_bench(parent: Node3D, timber: Material) -> void:
 	brass.emission_enabled = true
 	brass.emission = Color(0.8, 0.55, 0.2)
 	brass.emission_energy_multiplier = 0.12
-	for bx in [-1.1, 1.1]:
+	for bx in [-0.7, 0.7]:
 		var box := MeshInstance3D.new()
 		var bxm := BoxMesh.new()
 		bxm.size = Vector3(0.44, 0.2, 0.3)
 		box.mesh = bxm
 		box.material_override = wood
-		box.position = Vector3(LANE_X + bx, 1.1, LINE.z - 0.7)
+		box.position = Vector3(LANE_X + bx, 0.95, LINE.z - 0.85)
 		parent.add_child(box)
 		# a few cartridges standing in the box
 		for cx in [-0.1, 0.0, 0.1]:
@@ -158,7 +153,7 @@ static func _build_wall_and_bench(parent: Node3D, timber: Material) -> void:
 			cm.height = 0.18
 			shell.mesh = cm
 			shell.material_override = brass
-			shell.position = Vector3(LANE_X + bx + cx, 1.26, LINE.z - 0.7)
+			shell.position = Vector3(LANE_X + bx + cx, 1.1, LINE.z - 0.85)
 			parent.add_child(shell)
 	# lane floor markings down to the wall
 	var lane_mat := StandardMaterial3D.new()
@@ -268,3 +263,108 @@ static func set_target_state(target: Node3D, broken: bool) -> void:
 		hole.rotation.x = PI * 0.5
 		hole.position = Vector3(0.08, 0.05, 0.03)
 		holes.add_child(hole)
+
+
+## A LARGE taxidermy grizzly (the same Meshy taxidermist bear as the hideout), reared up on a plinth in front of the
+## wall (founder round 3: "The bear target must be a large actual bear from the taxidermist"). Origin = chest.
+static func _build_taxidermy_bear(parent: Node3D, centre: Vector3) -> Node3D:
+	var root := Node3D.new()
+	root.position = centre
+	parent.add_child(root)
+	# plinth
+	var plinth := MeshInstance3D.new()
+	var pm := CylinderMesh.new()
+	pm.top_radius = 0.9
+	pm.bottom_radius = 1.0
+	pm.height = 0.3
+	plinth.mesh = pm
+	var wood := StandardMaterial3D.new()
+	wood.albedo_color = Color(0.36, 0.22, 0.12)
+	wood.roughness = 0.8
+	plinth.material_override = wood
+	plinth.position = Vector3(0.0, 0.15 - centre.y, 0.0)
+	root.add_child(plinth)
+	var packed: PackedScene = load(BEAR_PROP) as PackedScene if ResourceLoader.exists(BEAR_PROP) else null
+	if packed:
+		var bear: Node3D = packed.instantiate()
+		bear.name = "Bear"
+		var sc: float = BEAR_HEIGHT / 1.0                 # the Meshy GLB is a unit box (height 1.0, lowest y -0.5)
+		bear.scale = Vector3.ONE * sc
+		bear.rotation.y = 0.0                              # the GLB's front already faces +Z (the firing line)
+		bear.position = Vector3(0.0, 0.3 + 0.5 * sc - centre.y, 0.0)
+		root.add_child(bear)
+	else:
+		var box := MeshInstance3D.new()
+		var bxm := BoxMesh.new()
+		bxm.size = Vector3(1.4, 2.6, 1.0)
+		box.mesh = bxm
+		box.material_override = wood
+		box.name = "Bear"
+		root.add_child(box)
+	# a green target ring on the bear's chest so it reads as a TARGET like the plaques
+	var ring := MeshInstance3D.new()
+	var tm := TorusMesh.new()
+	tm.inner_radius = 0.55
+	tm.outer_radius = 0.64
+	ring.mesh = tm
+	var rm := StandardMaterial3D.new()
+	rm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	rm.albedo_color = RING_COLOR
+	rm.emission_enabled = true
+	rm.emission = RING_COLOR
+	rm.emission_energy_multiplier = 1.6
+	ring.material_override = rm
+	ring.name = "Ring"
+	ring.rotation.x = PI * 0.5
+	ring.position = Vector3(0.0, 0.0, 0.62)
+	root.add_child(ring)
+	root.set_meta("kind", "bear")
+	return root
+
+
+## The wall is already SHOT UP when you arrive (founder round 3: "It's too fresh. Look at how my reference is
+## damaged with holes"): ~90 bullet holes with a pale splinter rim, clustered around the plaques and scattered over
+## the planks, deterministic so every run looks the same. One MultiMesh draw call.
+static func _build_damage(parent: Node3D) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 20261004
+	var g := Gradient.new()
+	g.colors = PackedColorArray([Color(0.02, 0.015, 0.01, 1.0), Color(0.02, 0.015, 0.01, 0.95), Color(0.85, 0.7, 0.45, 0.55), Color(0.85, 0.7, 0.45, 0.0)])
+	g.offsets = PackedFloat32Array([0.0, 0.34, 0.5, 1.0])
+	var gt := GradientTexture2D.new()
+	gt.gradient = g
+	gt.fill = GradientTexture2D.FILL_RADIAL
+	gt.fill_from = Vector2(0.5, 0.5)
+	gt.fill_to = Vector2(1.0, 0.5)
+	gt.width = 64
+	gt.height = 64
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.albedo_texture = gt
+	var q := QuadMesh.new()
+	q.size = Vector2(1.0, 1.0)
+	q.material = m
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.mesh = q
+	var spots: Array = []
+	# clusters around every plaque (like the reference), then a loose scatter over the planks
+	for sp in TARGET_SPOTS:
+		for k in 9:
+			var a: float = rng.randf() * TAU
+			var r: float = rng.randf_range(0.2, 0.95)
+			if sp.z > TARGET_Z + 0.5:
+				continue      # the standing bear is not on the wall
+			spots.append(Vector3(sp.x + cos(a) * r, sp.y + sin(a) * r, TARGET_Z - 0.4))
+	for k in 70:
+		spots.append(Vector3(rng.randf_range(-5.0, 5.0), rng.randf_range(0.6, 4.8), TARGET_Z - 0.4))
+	mm.instance_count = spots.size()
+	for i in spots.size():
+		var sz: float = rng.randf_range(0.14, 0.34)
+		var t := Transform3D(Basis.from_euler(Vector3(0.0, 0.0, rng.randf() * TAU)).scaled(Vector3(sz, sz, 1.0)), spots[i])
+		mm.set_instance_transform(i, t)
+	var mmi := MultiMeshInstance3D.new()
+	mmi.name = "WallDamage"
+	mmi.multimesh = mm
+	parent.add_child(mmi)

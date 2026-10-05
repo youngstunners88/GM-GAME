@@ -23,3 +23,10 @@ Bull lines are ElevenLabs (voice `uWE48TmsTuIjyh2ifoNL`, speed 1.2) in `assets/a
 `tests/ep2_range_lesson_test.tscn` plays the whole lesson with only player verbs (follow, watch, R, hold RMB, LMB) and checks order of lines, locks, reserve accounting, dry-fire, TERMS hand-off. `debug_skip_lesson()` is the hook other tests use; never ship code that calls it.
 # Never
 Let a click fire before AIM completes; start the demo while the player is far away; teach out of order; let the lesson dead-end (the nag + the floor ring are the guard); change a plate's origin.
+
+# Round 3 corrections (founder, 2026-10-04) - what each one cost us
+- **Count the targets in the SCRIPT.** Voice lines said "three plates", "six, nine and twelve paces", "break the other two", "three plates down" while the wall had FIVE targets. Any number in a spoken line must come from the layout; `tests/ep2_range_v3_test` fails if the lines say three/other two/twelve and requires five/four. Regenerate lines (ElevenLabs) whenever the target count changes.
+- **The bear is a LARGE taxidermy grizzly** (`hideout/bear_standing.glb`, 3.6 m, on a plinth, close on the left, roaring at the player) with a green ring on the chest and a 0.9 m hit radius (`TARGET_RADII`), NOT a poster.
+- **The wall is already shot up.** `_build_damage()` scatters ~106 deterministic bullet holes (one MultiMesh, radial dark-core + pale splinter-rim texture), clustered around each plaque like the reference, ON the wall face (z = TARGET_Z-0.4; a first version put them behind the wall, invisible). QuadMesh faces +Z: do not yaw it.
+- **Bull stands side by side with the player**, a step ahead on the RIGHT (`BULL_LINE`), clear of every line of fire; the demo camera widens FOV +14 and eases the player onto the firing line so both are in frame. The see-through-arm bug = camera inside his mesh: his walk blocker radius is now 1.5 m.
+- Layout rule: nothing the player must see may sit behind Inferno's silhouette from the firing line; he is 2.9 m tall and fills ~35 degrees at 3 m.
