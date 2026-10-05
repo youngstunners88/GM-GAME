@@ -17,6 +17,26 @@ OUT = arg("--out"); PCT = int(arg("--pct", 40)); SAMPLES = int(arg("--samples", 
 SAVE = "--save" in argv; RT = arg("--rt", "1") == "1"
 
 random.seed(7)
+for _img in bpy.data.images:
+    if _img.size[0] > 2048: _img.scale(2048, 2048)      # 8 GB box: never keep 4096 maps resident
+
+# --- re-pose through the Tripo armature (measured with bull_pose_test.py): lift the bowed head so the aviators/cigar show,
+#     and bring the viewer-left arm in so the hanging flap reads as a relaxed arm, not a glitch. "Bone:axis:degrees,..."
+import math as _m
+from mathutils import Euler as _E
+_POSE = arg("--pose", "Head:x:-25,RightArm:z:-30")
+_arm = bpy.data.objects["Armature"]
+if _POSE != "none" and _arm.animation_data and _arm.animation_data.action:
+    _ev = _arm.evaluated_get(bpy.context.evaluated_depsgraph_get())
+    _baked = {pb.name: pb.matrix_basis.copy() for pb in _ev.pose.bones}     # frame-1 pose of the Idle_02 action
+    _arm.animation_data.action = None
+    for pb in _arm.pose.bones:
+        pb.rotation_mode = 'QUATERNION'; _l, _r, _s = _baked[pb.name].decompose(); pb.location = _l; pb.rotation_quaternion = _r; pb.scale = _s
+    for _t in _POSE.split(","):
+        _b, _ax, _dg = _t.split(":"); _a = _m.radians(float(_dg))
+        pb = _arm.pose.bones[_b]; pb.rotation_quaternion = pb.rotation_quaternion @ _E((_a if _ax == "x" else 0, _a if _ax == "y" else 0, _a if _ax == "z" else 0)).to_quaternion()
+    bpy.context.view_layer.update()
+    print("[bull_hero] pose applied:", _POSE, flush=True)
 S = bpy.context.scene
 
 # ---------------------------------------------------------------- clean previous run
@@ -88,7 +108,7 @@ def floor_mat():
     br = N(nt, "ShaderNodeTexBrick", offset=0.5, offset_frequency=2)
     for k, v in (('Scale', 1.0), ('Mortar Size', 0.012), ('Bias', 0), ('Brick Width', 2.2), ('Row Height', 0.34), ('Mortar Smooth', 0.3)):
         br.inputs[k].default_value = v
-    br.inputs['Color1'].default_value = (0.11, 0.06, 0.03, 1); br.inputs['Color2'].default_value = (0.05, 0.028, 0.015, 1)
+    br.inputs['Color1'].default_value = (0.035, 0.02, 0.012, 1); br.inputs['Color2'].default_value = (0.015, 0.009, 0.006, 1)
     link(nt, vec, br.inputs['Vector'])
     nz = noise(nt, vec, 24, 10)
     col_ = mix_rgb(nt, nz.outputs['Fac'], br.outputs['Color'], (0.17, 0.10, 0.055, 1))
@@ -131,7 +151,7 @@ def emit_mat(name, color, strength, gradient=False):
         nz = N(nt, "ShaderNodeTexNoise"); nz.inputs['Scale'].default_value = 3.5; nz.inputs['Detail'].default_value = 8; nz.inputs['Distortion'].default_value = 0.6
         link(nt, vec, nz.inputs['Vector'])
         add = N(nt, "ShaderNodeMath", operation='ADD'); link(nt, sep.outputs['Z'], add.inputs[0]); link(nt, nz.outputs['Fac'], add.inputs[1])
-        r = ramp(nt, [(0.55, (0.9, 0.12, 0.01, 1)), (0.9, (1.0, 0.45, 0.05, 1)), (1.25, (1.0, 0.85, 0.45, 1))]); link(nt, add.outputs['Value'], r.inputs['Fac'])
+        r = ramp(nt, [(0.7, (0.35, 0.02, 0.0, 1)), (1.1, (1.0, 0.22, 0.02, 1)), (1.7, (1.0, 0.5, 0.08, 1))]); link(nt, add.outputs['Value'], r.inputs['Fac'])
         link(nt, r.outputs['Color'], em.inputs['Color'])
     else:
         em.inputs['Color'].default_value = color
@@ -146,9 +166,9 @@ MAT = {"floor": floor_mat(), "rock": rock_mat(), "gold": gold_mat(), "iron": iro
        "woodZ": wood_mat("HS_WoodPost", 'Z', (0.09, 0.045, 0.02), (0.28, 0.15, 0.07)),
        "woodX": wood_mat("HS_WoodBeam", 'X', (0.09, 0.045, 0.02), (0.28, 0.15, 0.07)),
        "woodC": wood_mat("HS_WoodCrate", 'X', (0.06, 0.03, 0.014), (0.2, 0.105, 0.05)),
-       "furnace": emit_mat("HS_Furnace", None, 45, gradient=True),
-       "lantern": emit_mat("HS_Lantern", (1.0, 0.52, 0.14, 1), 60),
-       "ember": emit_mat("HS_Ember", (1.0, 0.4, 0.06, 1), 90)}
+       "furnace": emit_mat("HS_Furnace", None, 1.4, gradient=True),
+       "lantern": emit_mat("HS_Lantern", (1.0, 0.45, 0.1, 1), 9),
+       "ember": emit_mat("HS_Ember", (1.0, 0.4, 0.06, 1), 40)}
 
 # ---------------------------------------------------------------- geometry helpers
 def add_obj(o):
@@ -197,11 +217,11 @@ for i, (x, y) in enumerate(posts[:4]):
 lantern_pts = [(-3.6, 1.4, 2.7), (-5.6, 4.2, 3.6), (-1.8, 6.0, 3.3), (1.9, 5.4, 3.9), (4.4, 3.3, 2.9),
                (6.1, 6.6, 3.4), (-7.0, 7.4, 2.6), (0.2, 8.6, 4.2), (3.3, 8.2, 2.6), (-2.2, 3.0, 4.4)]
 for i, p in enumerate(lantern_pts):
-    sphere(f"HS_LanternBulb{i}", p, 0.13, MAT["lantern"])
+    sphere(f"HS_LanternBulb{i}", p, 0.09, MAT["lantern"])
     box(f"HS_LanternCap{i}", (p[0], p[1], p[2] + 0.2), (0.3, 0.3, 0.06), MAT["iron"])
     bpy.ops.object.light_add(type='POINT', location=p)
     L = bpy.context.active_object; L.name = f"HS_LanternLight{i}"
-    L.data.energy = 140; L.data.color = (1.0, 0.55, 0.2); L.data.shadow_soft_size = 0.15; add_obj(L)
+    L.data.energy = 45; L.data.color = (1.0, 0.55, 0.2); L.data.shadow_soft_size = 0.15; add_obj(L)
 
 for i, (x, y, rz, s) in enumerate([(-2.3, 3.2, 12, 0.9), (-2.9, 3.0, -18, 0.7), (2.7, 3.6, 8, 1.0), (3.4, 4.6, -24, 0.8), (-4.4, 5.2, 30, 1.2)]):
     box(f"HS_Crate{i}", (x, y, s / 2), (s, s, s), MAT["woodC"], rot=(0, 0, math.radians(rz)), bevel=0.02)
@@ -230,12 +250,14 @@ vm, vnt, vout = new_mat("HS_HazeVol")
 pv = N(vnt, "ShaderNodeVolumePrincipled"); pv.inputs['Color'].default_value = (1.0, 0.72, 0.5, 1); pv.inputs['Anisotropy'].default_value = 0.45
 nz = N(vnt, "ShaderNodeTexNoise"); nz.inputs['Scale'].default_value = 0.35; nz.inputs['Detail'].default_value = 4
 link(vnt, N(vnt, "ShaderNodeTexCoord").outputs['Object'], nz.inputs['Vector'])
-mul = N(vnt, "ShaderNodeMath", operation='MULTIPLY'); mul.inputs[1].default_value = 0.08
+mul = N(vnt, "ShaderNodeMath", operation='MULTIPLY'); mul.inputs[1].default_value = 0.012
 link(vnt, nz.outputs['Fac'], mul.inputs[0]); link(vnt, mul.outputs['Value'], pv.inputs['Density'])
 link(vnt, pv.outputs['Volume'], vout.inputs['Volume']); v.data.materials.append(vm)
 
 # ---------------------------------------------------------------- character material upgrade
 cm = bpy.data.materials["InfernoBull_RestoredPBR"]; nt = cm.node_tree
+for _n in nt.nodes:
+    if _n.bl_idname == 'ShaderNodeHueSaturation': _n.inputs['Saturation'].default_value = 1.0; _n.inputs['Value'].default_value = 1.0
 if not any(n.label == "HERO_MASKS" for n in nt.nodes):
     bsdf = nt.nodes["Principled BSDF"]
     def src(sock):
@@ -250,8 +272,11 @@ if not any(n.label == "HERO_MASKS" for n in nt.nodes):
     def mul(a, b):
         n = N(nt, "ShaderNodeMath", operation='MULTIPLY', use_clamp=True); link(nt, a, n.inputs[0]); link(nt, b, n.inputs[1]); return n.outputs['Value']
     def mixv(fac, a, b):   # float mix via Math: a + (b-a)*fac
-        sub = N(nt, "ShaderNodeMath", operation='SUBTRACT'); link(nt, b, sub.inputs[0]); link(nt, a, sub.inputs[1]) if not isinstance(a, float) else None
+        sub = N(nt, "ShaderNodeMath", operation='SUBTRACT')
+        if isinstance(b, float): sub.inputs[0].default_value = b      # b may be a plain number (e.g. 0.28 brass roughness) or a socket
+        else: link(nt, b, sub.inputs[0])
         if isinstance(a, float): sub.inputs[1].default_value = a
+        else: link(nt, a, sub.inputs[1])
         m_ = N(nt, "ShaderNodeMath", operation='MULTIPLY'); link(nt, sub.outputs['Value'], m_.inputs[0]); link(nt, fac, m_.inputs[1])
         ad = N(nt, "ShaderNodeMath", operation='ADD'); link(nt, m_.outputs['Value'], ad.inputs[0])
         if isinstance(a, float): ad.inputs[1].default_value = a
@@ -294,7 +319,7 @@ mn_ = Vector((min(p.x for p in pts), min(p.y for p in pts), min(p.z for p in pts
 mx_v = Vector((max(p.x for p in pts), max(p.y for p in pts), max(p.z for p in pts)))
 tgt = Vector(((mn_.x + mx_v.x) / 2, (mn_.y + mx_v.y) / 2, mn_.z + (mx_v.z - mn_.z) * 0.52))
 
-cam = bpy.data.objects["HeroCam"]; cam.data.lens = 50; cam.location = (0.55, -5.9, 0.95)
+cam = bpy.data.objects["HeroCam"]; cam.data.lens = 55; cam.location = (0.45, -5.0, 1.0)
 d = tgt - cam.location; cam.rotation_euler = d.to_track_quat('-Z', 'Y').to_euler()
 cam.data.dof.use_dof = True; cam.data.dof.focus_distance = d.length - 0.15; cam.data.dof.aperture_fstop = 2.2; cam.data.clip_end = 200
 
@@ -304,17 +329,17 @@ def setl(name, loc, energy, color=None, size=None):
     if color: o.data.color = color
     if size: o.data.size = size
     o.rotation_euler = (tgt - o.location).to_track_quat('-Z', 'Y').to_euler()
-setl("Key", (-2.6, -4.2, 2.8), 700, (1.0, 0.78, 0.55), 2.2)
-setl("Fill", (1.8, -4.0, 0.7), 90, (1.0, 0.7, 0.45), 2.5)
-setl("Rim_Ember", (3.0, 3.2, 2.4), 1500)
+setl("Key", (-2.6, -4.2, 2.8), 520, (1.0, 0.9, 0.78), 0.9)
+setl("Fill", (1.8, -4.0, 0.7), 70, (1.0, 0.85, 0.7), 2.5)
+setl("Rim_Ember", (3.0, 3.2, 2.4), 2600)
 setl("Rim_Cool", (-3.4, 2.8, 2.4), 260, (0.55, 0.65, 1.0))
 bpy.ops.object.light_add(type='AREA', location=(-0.5, -3.2, 0.55)); fk = bpy.context.active_object; fk.name = "FaceKicker"
-fk.data.energy = 85; fk.data.color = (1.0, 0.68, 0.38); fk.data.size = 0.9
+fk.data.energy = 140; fk.data.color = (1.0, 0.68, 0.38); fk.data.size = 0.9
 fk.rotation_euler = (Vector((0, 0, 1.75)) - fk.location).to_track_quat('-Z', 'Y').to_euler()
 for c in list(fk.users_collection): c.objects.unlink(fk)
 S.collection.children["Presentation"].objects.link(fk)
 
-bg = S.world.node_tree.nodes["Background"]; bg.inputs[0].default_value = (0.045, 0.026, 0.014, 1); bg.inputs[1].default_value = 0.6
+bg = S.world.node_tree.nodes["Background"]; bg.inputs[0].default_value = (0.045, 0.026, 0.014, 1); bg.inputs[1].default_value = 0.2
 
 e = S.eevee
 S.render.engine = 'BLENDER_EEVEE'
@@ -324,7 +349,7 @@ e.use_shadows = True; e.shadow_ray_count = 2; e.shadow_step_count = 6
 e.volumetric_start = 0.5; e.volumetric_end = 40; e.volumetric_samples = 48; e.volumetric_tile_size = '4'
 e.use_volumetric_shadows = False
 e.fast_gi_method = 'GLOBAL_ILLUMINATION'; e.gi_diffuse_bounces = 2; e.bokeh_max_size = 48
-S.view_settings.view_transform = 'AgX'; S.view_settings.look = 'AgX - Medium High Contrast'
+S.view_settings.view_transform = 'AgX'; S.view_settings.look = 'None'; S.view_settings.exposure = -0.6
 S.render.resolution_x = 1600; S.render.resolution_y = 2000; S.render.resolution_percentage = PCT
 S.render.image_settings.file_format = 'PNG'
 
