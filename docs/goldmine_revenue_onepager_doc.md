@@ -1,43 +1,47 @@
-# GoldMine income: one page for the captain (v2, system view)
+# Rich's ecosystem: income, one page for the captain (v3)
 
-**Problem.** GoldMine's income depends on new miners and there are almost none. Stakers are paid from new miners'
-ETH, there is no outside revenue, and GOLD has no market to sell into. The protocol is not insolvent, because
-payouts come from funded pots. It is a **demand problem**: the average miner gets back about 60% of what they pay.
+**Problem.** SMOKE, DIAMONDS and GOLD are one stack: GOLD needs DIAMONDS, DIAMONDS needs BLAZE/X28, all of it rides
+TitanX activity. Income in every layer is new-entrant money, and the base has gone quiet. The Diamond Certificates
+failed because payouts depended on BLAZE-stake ETH nobody controls. Waiting for a TitanX resurgence is not a plan.
 
-## The system in one line
+**Scale (leads, re-check on-chain).** All four tokens together: ~$263k market cap, ~$80k pool liquidity, ~$700 of daily
+volume. LP fees across the whole ecosystem: about **$2 a day**.
+
+## What this means for the plan
+- **Sweeper bots** are fine plumbing, but they move ETH between pots; they don't create it. Publish which pot loses.
+- **Smoke Lounge / Bong Party / NFT sales** is the right direction, with one change: **do not sell on a fee-share yield.**
+  To pay a 10% yield on the $50k Claims Office target the pools need ~$4.6k/day of volume, 6.6x the *entire* ecosystem today.
+  That is how the certificates failed. Sell access and status instead.
+- **The existing community can absorb about $40k of NFTs once** (assuming 300 active wallets). After that every sale must
+  be a **new wallet**, and only the game reaches new wallets.
+
+## The system
 ```
 Income = Audience x Monetisation x Credibility - Run-rate
+Credibility = Exit depth x Value to buyer x Track record
 ```
-- **Credibility** ("can I get value out if I put money in?") is about **0.04 out of 1** today: the pool holds
-  ~$8k and miners get back ~60%. We control this, it is cheap, and fixing it multiplies everything else.
-- **Audience** is the dominant lever and the unknown. Financial design cannot create it.
-- **Run-rate** (monthly cost) sets how much audience is needed.
+1. **Funding Ledger:** every promise across all three protocols against its real funding, published monthly.
+2. **External Spine:** all outside money goes to one ETH-denominated venue (the Lounge), never into X28/BLAZE.
+3. **Ladder:** the game's three levels are the on-ramp (Smoke Realm to SMOKE, Crystal Caverns to DIAMONDS, Gold Rush to GOLD).
+   Free soulbound proof-of-play badges capture new wallets; the first paid rung is a Lounge pass.
+4. **Governor:** a published rule for each outside dollar: ops, then a capped make-whole for certificate holders, then
+   pool depth, then top-ups.
+5. **Gates and kill rules:** no yield-promising product until three straight cycles with payouts fully funded.
 
 ## What the simulation says (assumptions, not a forecast)
-- Fixing credibility (depth first, bonuses funded only by outside income) gives **5x to 25x** more income than doing nothing.
-- Even then the base case is only about **$700 a month** at month 24. Audience growth is the biggest lever.
-- Audience needed to cover costs by month 24: **~45k** (at $2k/mo), **~110k** ($5k/mo), **~210k** ($10k/mo).
-- So there is a fork: **grow the audience to that range, or shrink the costs to fit.** Measured data picks the branch.
+- The captain's plan lifts income but not mints: nothing yet fixes credibility. Adding depth, a ledger and the ladder
+  gives about 15x more mints (month 24: $219 to $3,221 a month).
+- Audience is still the biggest lever. To cover costs by month 24 needs ~45k monthly players at $2k/mo, ~110k at $5k,
+  ~212k at $10k. **Either grow the audience or shrink costs to fit.**
+- Cover a $5k/mo cost with Gold Panners ($450) = about 11 new buyers a month.
 
-## The operating system: four loops
-1. **Measure:** one weekly scoreboard (audience, funnel, mints, depth, outside income, miner payback, run-rate coverage).
-2. **Gate:** no audience spending until the truth is known (G1), depth is about $80k and LP is locked (G2), and 60 days of conversion data exist (G3).
-3. **Allocate:** every dollar of outside income follows a published rule: depth first, then staker top-ups, then reserve. Never pay bonuses from new-miner ETH.
-4. **Review:** quarterly kill rules. If income isn't rising once depth is funded and measured, it is an audience problem, and costs get cut to fit.
+## Questions for the captain
+1. Certificates: how many sold, ETH raised, ETH paid per 28-day cycle for six cycles?
+2. What exactly do the sweeper bots sweep, from which pool, on what rule?
+3. What are Smoke Lounge and Bong Party (product, price, supply, split)?
+4. X28's price and depth, and the rules binding the ~800B X28? Is BLAZE Rich's own?
+5. The real monthly run-rate, active wallet count, and six months of mint ETH per protocol?
 
-## The game's role
-The audience engine and monetisation point. "Cosmetics" means visual-only items (skins, hats, cart effects) that never
-change gameplay. They are the one thing a game can sell without pay-to-win or promising returns, and they are small money.
-
-## Build first
-The scoreboard: a read-only on-chain and funnel analytics server. It clears the unknowns and runs the whole system.
-
-## Questions for Rich
-1. What is the real monthly cost of running GoldMine and its team?
-2. How many people visit the mining app each month, and how many wallets have minted? What was monthly mint ETH for six months?
-3. Does 5% or 10% of mint ETH go to liquidity? Who holds the LP tokens?
-4. May the $50k presale go to pool depth first?
-5. Do the mint and staking contracts have an owner or upgrade key?
-
-**Caveats.** Inputs are assumptions and the run-rate is a placeholder. Not financial or legal advice. Detail:
-`docs/goldmine_revenue_system_doc.md`; model: `tools/goldmine-model/system_sim.py`.
+**Caveats.** Inputs are assumptions; the run-rate is a placeholder. The captain's plan row is my reading of one message.
+NFT revenue-share has securities risk; get counsel. Not financial or legal advice.
+Detail: `docs/goldmine_ecosystem_system_doc.md`. Models: `tools/goldmine-model/ecosystem_check.py`, `system_sim.py`.

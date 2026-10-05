@@ -57,6 +57,12 @@ class P:
     depth_first: bool = False
     depth_target: float = 200_000
     run_rate: float = 10_000         # ASSUMPTION: monthly cost to run the whole effort
+    # Track record: share of past payout promises that were kept. The Diamond
+    # Certificates under-paid (captain, 2026-10-05), so buyers discount every new
+    # product. ASSUMPTION: starts at 0.5; recovers only when a published funding
+    # ledger shows promises being met.
+    trust0: float = 0.5
+    trust_recovery: float = 0.0      # per month, added while the ledger policy is on
 
 
 def run(p: P) -> list[dict]:
@@ -73,7 +79,8 @@ def run(p: P) -> list[dict]:
         payback = min(1.0, PAID_BACK + (recent_t / recent_m if recent_m > 1 else 0.0))
         exit_f = depth / (depth + p.depth_half)
         value_f = min(1.0, payback / 0.90) ** 2
-        mints = audience * p.base_conv * exit_f * value_f * p.ticket
+        trust = min(1.0, p.trust0 + p.trust_recovery * t)
+        mints = audience * p.base_conv * exit_f * value_f * trust * p.ticket
 
         game_net = (mau * p.pay_conv * p.arppu * (1 - p.platform_fee)) if p.storefront else 0.0
         game_to_pool = game_net * p.game_share
@@ -111,7 +118,11 @@ def run(p: P) -> list[dict]:
 
 
 STATUS_QUO = P(storefront=False, funnel=0.01, depth_first=False, top_up=False, presale_to_depth=0.0)
-SYSTEM = P(storefront=True, funnel=0.03, depth_first=True, top_up=True, presale_to_depth=0.6)
+# My reading of the captain's stated plan: sweeper bots (they move ETH between pots, they do
+# not create it) then 100% focus on NFT sales. Storefront on, nothing else changes.
+CAPTAIN_PLAN = P(storefront=True, funnel=0.01, depth_first=False, top_up=False, presale_to_depth=0.0)
+SYSTEM = P(storefront=True, funnel=0.03, depth_first=True, top_up=True, presale_to_depth=0.6,
+           trust_recovery=0.03)
 
 
 def first_month(rows: list[dict], threshold: float) -> str:
@@ -133,9 +144,10 @@ def main() -> None:
     print("=== Policy vs status quo, by how fast the game audience grows ===")
     for label, g in (("slow 3%/mo", 0.03), ("base 8%/mo", 0.08), ("fast 15%/mo", 0.15)):
         print(f"Game audience growth {label} (start {STATUS_QUO.game_mau0:,.0f} MAU):")
-        a, b = deepcopy(STATUS_QUO), deepcopy(SYSTEM)
-        a.game_growth = b.game_growth = g
+        a, c, b = deepcopy(STATUS_QUO), deepcopy(CAPTAIN_PLAN), deepcopy(SYSTEM)
+        a.game_growth = c.game_growth = b.game_growth = g
         report("status quo", a)
+        report("captain plan", c)
         report("system", b)
     print()
 
@@ -143,7 +155,7 @@ def main() -> None:
     base = run(SYSTEM)[-1]["ops_income"]
     print(f"Baseline operating income/mo: ${base:,.0f}")
     knobs = ["game_mau0", "game_growth", "funnel", "organic", "base_conv", "ticket",
-             "depth_half", "pay_conv", "arppu", "game_share", "turnover"]
+             "depth_half", "pay_conv", "arppu", "game_share", "turnover", "trust0"]
     rows = []
     for k in knobs:
         out = []
@@ -171,6 +183,15 @@ def main() -> None:
                     lo = mid
             print(f"  run-rate ${run_rate:>6,}/mo, growth {g:.0%}/mo: need ~{hi:>8,.0f} starting MAU "
                   f"(=> {hi * (1 + g) ** MONTHS:>9,.0f} by month 24)")
+    print()
+
+    print("=== Track record: cumulative 24-month operating income, base growth ===")
+    print("(trust starts at 0.5 after the Diamond Certificate shortfall; recovers only with a published funding ledger)")
+    for label, rec, t0 in (("no recovery", 0.0, 0.5), ("ledger, +0.03/mo", 0.03, 0.5), ("never burned", 0.0, 1.0)):
+        q = deepcopy(SYSTEM)
+        q.trust_recovery, q.trust0 = rec, t0
+        r = run(q)
+        print(f"  {label:<18} cumulative ${sum(x['ops_income'] for x in r):>8,.0f}   cumulative mints ${sum(x['mints'] for x in r):>9,.0f}")
     print()
 
     print("=== Exit first? Same system, depth program on vs off (base growth) ===")

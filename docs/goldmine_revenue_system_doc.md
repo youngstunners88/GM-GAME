@@ -1,5 +1,7 @@
 # GoldMine income: the system view
 
+> **Superseded in scope (2026-10-05):** GoldMine is one layer of a three-protocol stack. See `goldmine_ecosystem_system_doc.md`.
+
 Prepared 2026-10-05. Supersedes the idea list in `goldmine_revenue_solution_doc.md`, which stays as the evidence
 file. Numbers come from `tools/goldmine-model/system_sim.py` (run it). **The simulation is not a forecast.** Its
 behavioural inputs are assumptions, so trust the *ranking* of levers more than any dollar figure.
