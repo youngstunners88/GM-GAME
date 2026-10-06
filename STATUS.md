@@ -2823,6 +2823,11 @@ recover them or ask you to resend anything.
 - **Look:** revolver reads GOLD again (the metal map drew it black in the web build), hero brighter, lanterns lit, rails have steel shine + bolts, hero turned 3/4 so the gun shows. Jev + vision assessment in `docs/research/3d/013_*`.
 - New skill `ep2-bear-design`.
 
+## 2026-10-06 — Why the video "isn't playing": the hidden 3D room starved the decoder
+- Measured (real render, software GL = weak-GPU stand-in): with the hideout rendering behind the full-screen film the film ran at 8 render fps, 134 picture updates in 16 s, worst freeze 1.4 s. The 3D pass is now OFF while the film plays: 53 fps, 850 updates, worst gap 168 ms (Jev: SHIP). In a clean web build the film played all 59.5 of 61 s (real 61.7 s).
+- A corner line after the film now states how it ended (end / skip_hold / stall / decoder_early); `[VIDEO]` console lines carry real time + picture position.
+- Rifle: the GM logo's dark disc is now an opaque enamel disc (it was keyed transparent and showed a black hole in the receiver).
+
 ## 2026-10-06 — Solid rifle + solid Bull + film watchdog
 - Rifle (shouldered): the "random square" was the front-sight dovetail box and a flat barrel cap; the "hollow" look was the eye sitting 1 cm inside the barrel-top shell (back faces). Rebuilt: sight box removed, barrel/tube start inside the receiver, materials double-sided, eye raised to 0.19. Ray audit before/after: 10 back-face hits + 6 lens-clip hits -> 0 + 0; Jev: SHIP (`tools/ep2_sim/rifle_solid_jev.mjs`, logs in `docs/ep2_rifle_rays_*.log`).
 - Inferno Bull see-through: Tripo/Meshy head/hat shells are open at the back; with back-face culling the camera looked through the head (he turns away in the demo). Body materials are now double-sided + opaque (`_fix_bull_materials`).

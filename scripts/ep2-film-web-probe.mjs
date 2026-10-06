@@ -9,11 +9,11 @@ fs.mkdirSync(out, { recursive: true });
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
   args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'] });
 const page = await browser.newPage({ viewport: { width: 640, height: 360 } });
-const lines = []; let leg = -1, d = -1;
+const T0 = Date.now(); const lines = []; let leg = -1, d = -1;
 page.on('console', m => { const t = m.text(); lines.push(t);
   let r = t.match(/\[EP2\] leg start (\d+)/); if (r) leg = +r[1];
   r = t.match(/\[EP2\] d=(\d+)/); if (r) d = +r[1];
-  if (/film|video|theora|ogv|error|failed/i.test(t) && !/Failed to fetch|CERT/.test(t)) console.log('CONSOLE:', t.slice(0, 200)); });
+  if (/film|video|theora|ogv|error|failed/i.test(t) && !/Failed to fetch|CERT/.test(t)) console.log('CONSOLE@' + ((Date.now() - T0) / 1000).toFixed(0) + 's:', t.slice(0, 220)); });
 page.on('pageerror', e => console.log('PAGEERROR:', String(e).slice(0, 300)));
 await page.goto('http://localhost:8899/game/index.html?ep2=1&ep2probe=1&ep2bot=1&ep2chamber=1' + q);
 const t0 = Date.now();
@@ -26,8 +26,8 @@ while (leg < 0 && Date.now() - t0 < 150000) await page.waitForTimeout(100);
 console.log('leg started', leg, 'after', ((Date.now() - t0) / 1000).toFixed(0), 's');
 await page.mouse.click(320, 180);
 let i = 0; let lastMean = -1, same = 0;
-while (Date.now() - t0 < 420000) {
-  await page.waitForTimeout(4000);
+while (Date.now() - t0 < 200000) {
+  await page.waitForTimeout(i < 30 ? 2500 : 5000);
   const buf = await page.screenshot();
   const mean = await page.evaluate(async (b64) => { const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode();
     const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const x = c.getContext('2d'); x.drawImage(img, 0, 0);

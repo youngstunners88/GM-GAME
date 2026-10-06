@@ -155,6 +155,7 @@ var _cauldron_spots: Array = []
 var intro_film: bool = true
 var _film: CliffJumpCinematic = null            # the in-engine fallback film (used only if the video is missing)
 var _vfilm: Ep2VideoFilm = null                 # the Seedance film
+var _film_3d_off: bool = false       # the viewport 3D pass is disabled while the film covers the screen
 var _room_built: bool = false
 var _room_ready: bool = false       # the room is COMPLETELY built (a sliced pre-build sets _room_built first)
 var _build_slice: bool = false       # spread _build_visuals over frames (only while the film covers the screen)
@@ -358,6 +359,7 @@ func setup(_gold_principal: int = 0, _bears: Array = [], _diamonds_paid: int = 0
 	_sync_visuals()
 	if _beat == Beat.CINEMATIC:
 		_start_film()
+		_show_film_proof("FILM in-engine fallback | the video file was missing or not decodable (see console [VIDEO])")
 	beat_changed.emit(_beat)
 
 
@@ -375,6 +377,11 @@ func _start_video_film() -> bool:
 	add_child(vf)
 	vf.finished.connect(_on_video_film_finished, CONNECT_ONE_SHOT)
 	vf.start()
+	# The film covers the whole screen, so the 3D world behind it is invisible - but it was still being RENDERED every frame
+	# (lights, shadows, the half-built hideout). On a weak GPU / the web that starves the Theora decoder: the film stutters or
+	# crawls ("the video isn't playing"). Switch the 3D pass off while the film plays; it comes back the moment it ends.
+	_film_3d_off = true
+	get_viewport().disable_3d = true
 	return true
 
 
@@ -391,6 +398,28 @@ func _prebuild_room() -> void:
 	room_ready.emit()
 
 
+## A small corner line right after the film saying how it ended (end / skip_hold / stall / decoder_early ...), so "the video
+## isn't playing" can be settled from a screenshot instead of guessing (skill ep2-film-always-plays). Fades after 12 s.
+func _show_film_proof(override: String = "") -> void:
+	var text: String = override
+	if text == "":
+		text = _vfilm.summary() if _vfilm and is_instance_valid(_vfilm) else "FILM ? | no video node"
+	var layer := CanvasLayer.new()
+	layer.layer = 60
+	add_child(layer)
+	var lab := Label.new()
+	lab.text = text
+	lab.add_theme_font_size_override("font_size", 13)
+	lab.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
+	lab.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	lab.position = Vector2(10.0, -26.0)
+	layer.add_child(lab)
+	var tw := create_tween()
+	tw.tween_interval(10.0)
+	tw.tween_property(lab, "modulate:a", 0.0, 2.0)
+	tw.tween_callback(layer.queue_free)
+
+
 ## Make sure the hideout exists (idempotent).
 func _ensure_room() -> void:
 	if _room_built:
@@ -403,8 +432,21 @@ func _ensure_room() -> void:
 
 ## The film ends where target practice begins: the story the film told (patched up, introductions, the Winchester
 ## and the helmet for one Bitcoin) is applied to the game state, and play resumes in first person at the mold rack.
+func _restore_3d_after_film() -> void:
+	if _film_3d_off:
+		_film_3d_off = false
+		if is_inside_tree():
+			get_viewport().disable_3d = false
+
+
+func _exit_tree() -> void:
+	_restore_3d_after_film()
+
+
 func _on_video_film_finished() -> void:
+	_restore_3d_after_film()
 	_film_played = true
+	_show_film_proof()
 	if _room_built and not _room_ready:
 		await room_ready              # the sliced pre-build is still finishing: wait, never build twice
 	_ensure_room()

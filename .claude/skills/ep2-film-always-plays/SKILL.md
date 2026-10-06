@@ -10,6 +10,11 @@ allowed-tools: Bash, Read, Edit, Grep
 2. **A synchronous build mid-film.** The hideout (Bull rig, hero, ~80 props) was built in one ~0.9 s block at film second 3 -> frozen picture + crackling audio ("glitches"). Now sliced one step per frame (`_prebuild_room`, `await process_frame`), gated by `tests/ep2_transition_prebuild_test.gd` (worst frame < 450 ms; it was ~213 ms).
 3. **Silent fallback.** A missing/undecodable .ogv used to just `finish()`. Every skip path now prints a `[VIDEO] ... reason` line.
 
+4. **The hidden 3D room starves the decoder (the real cause on weak hardware, measured 2026-10-06).** The film covers the screen, but the hideout built behind it was still RENDERED every frame (lights, shadows). On a software/weak GPU the Theora decoder got ~8 render fps: 134 picture updates in 16 s and a 1.4 s freeze = a slideshow that "isn't playing". `get_viewport().disable_3d = true` while the film plays (restored on finish / `_exit_tree`) -> 53 fps, 850 updates, worst gap 168 ms. Probe: `tools/ep2_shots/film_fps_probe.tscn -- force3d=1|0`; Jev rules on the numbers with `tools/ep2_sim/film_fps_jev.mjs` (SHIP). Gate: `tests/ep2_transition_prebuild_test.gd` (3D off during the film, on after).
+
+# Proof on screen
+After every film the hideout shows a bottom-left line for 10 s: `FILM end | picture reached 59.5 s of 61 | real 61.7 s | clock ...` (or skip_hold / stall / decoder_early / clock_guard / "in-engine fallback"). The founder can screenshot it; do not guess. The game clock lags the decoder on slow machines (clock 6.8 s while the picture ran 61 s) - that is expected, never a reason to call the film early.
+
 # Gates (all must pass before saying a film works)
 - `tests/ep2_transition_prebuild_test.tscn`: held JUMP does not skip, a NEW hold does, build never stalls a frame > 450 ms.
 - `tools/ep2_shots/video_probe.tscn -- path=res://...ogv`: the file decodes and the clock advances.

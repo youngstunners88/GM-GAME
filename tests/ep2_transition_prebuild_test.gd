@@ -71,6 +71,7 @@ func _ready() -> void:
 	print("PREBUILD worst frame while building behind the film: %.0f ms" % worst_ms)
 	_check("...and no single frame while building stalled the film for more than 450 ms (was ~900 ms in one block)", worst_ms < 450.0, "%.0f ms" % worst_ms)
 	_check("...and the film is still playing over it (still CINEMATIC)", c.get_beat_name() == "CINEMATIC")
+	_check("while the film covers the screen the 3D pass is OFF (it starved the decoder on weak GPUs)", c.get_viewport().disable_3d)
 	_check("the five-target range exists behind the film", c._mold_nodes.size() == 5)
 	# finish the film: the cut must be immediate (room already there), landing in the lesson
 	var vf = c.get_video_film()
@@ -78,6 +79,7 @@ func _ready() -> void:
 	for i in 8:
 		c.step(1.0 / 60.0)
 		await get_tree().process_frame
+	_check("...and the 3D pass is back on once the film is over", not c.get_viewport().disable_3d)
 	_check("the film ends straight into the range lesson (VERB_TEACH / LEAD)",
 		c.get_beat_name() == "VERB_TEACH", c.get_beat_name())
 	c.queue_free()

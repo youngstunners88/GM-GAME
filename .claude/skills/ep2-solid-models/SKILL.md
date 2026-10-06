@@ -17,3 +17,6 @@ allowed-tools: Bash, Read, Edit, Grep
 - Never "fix" see-through by adding alpha or a second mesh; close the culling/lens cause.
 - Every new first-person prop gets the ray audit before it ships; every NPC mesh gets `BULLMAT`-style counts (`cull_back` must be 0 on body surfaces).
 - Pack budget: rebuilding a GLB must not grow it (rifle 0.86 MB); CI pck headroom was ~2 MiB.
+
+# 4. A decal keyed transparent shows the hole under it (2026-10-06)
+The GM logo's dark disc was keyed TRANSPARENT and showed the open receiver shell beneath (a black see-through hole in the side plate). It is now an OPAQUE dark gunmetal enamel disc cut to a circle with a hard alpha mask (`blend_method CLIP` -> glTF MASK), never alpha-blend. Same rule for any decal on a Tripo/Meshy body.

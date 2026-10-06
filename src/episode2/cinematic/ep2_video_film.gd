@@ -35,6 +35,8 @@ var _t: float = 0.0
 var _skip_held: float = 0.0
 var _stall_at: float = -1.0       # clock time the stall banner was raised (the picture never advanced)
 var _diag: Label = null
+var _last_pos: float = 0.0        # last decoder position seen while playing (stream_position reads 0 once it has stopped)
+var finish_reason: String = ""        # why the film ended: end / skip / decoder_early / stall / clock_guard (shown on screen after it)
 var _real_start_ms: int = 0       # wall clock at start(): the stall check must not trust the (test-driven) film clock
 var _skip_armed: bool = false      # JUMP must be RELEASED once (after the first second) before a hold can skip the film
 var _done: bool = false
@@ -141,17 +143,22 @@ func step(delta: float) -> void:
 		if _skip_armed:
 			_skip_held += delta
 			if _skip_held >= SKIP_HOLD:
+				finish_reason = "skip_hold"
 				_finish()
 				return
 	else:
 		_skip_held = 0.0
 		if _t >= 1.0:
 			_skip_armed = true
+	if _video and is_instance_valid(_video) and _video.is_playing():
+		_last_pos = maxf(_last_pos, _video.stream_position)
 	_check_stall()
 	if _stall_at >= 0.0 and _t >= _stall_at + 2.5:
+		finish_reason = "stall"
 		_finish()
 		return
 	if _t >= seconds + GRACE:
+		finish_reason = "clock_guard"
 		_finish()
 
 
@@ -160,12 +167,20 @@ func drive_externally() -> void:
 	_driven_externally = true
 
 
+## One line for the on-screen proof the founder can screenshot ("what did the film do?").
+func summary() -> String:
+	var pos: float = _video.stream_position if _video and is_instance_valid(_video) else -1.0
+	return "FILM %s | picture reached %.1f s of %.0f | real %.1f s | clock %.1f s" % [finish_reason if finish_reason != "" else "?", maxf(_last_pos, pos), seconds, float(Time.get_ticks_msec() - _real_start_ms) / 1000.0, _t]
+
+
 func is_done() -> bool: return _done
 func is_finishing() -> bool: return _finishing
 func elapsed() -> float: return _t
 
 
 func skip() -> void:
+	if finish_reason == "":
+		finish_reason = "skip_call"
 	_finish()
 
 
@@ -176,9 +191,10 @@ func skip() -> void:
 ## The decoder says it is done. If that happens long before the film's length the picture ended EARLY (a corrupt
 ## stream or a decoder fault) - say so in the console instead of silently jumping to the hideout.
 func _on_player_finished() -> void:
-	var pos: float = _video.stream_position if _video and is_instance_valid(_video) else -1.0
-	if _t < seconds - 4.0:
-		print("[VIDEO] Ep2 film: the decoder ended EARLY at clock %.1f s (stream pos %.1f of %.0f s)" % [_t, pos, seconds])
+	var real_s: float = float(Time.get_ticks_msec() - _real_start_ms) / 1000.0
+	var early: bool = _last_pos < seconds - 4.0
+	print("[VIDEO] Ep2 film: decoder finished | real %.1f s | last picture pos %.1f of %.0f s | game clock %.1f s | %s" % [real_s, _last_pos, seconds, _t, "EARLY" if early else "ok"])
+	finish_reason = "decoder_early" if early else "end"
 	_finish()
 
 

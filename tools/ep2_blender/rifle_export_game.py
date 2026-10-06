@@ -75,12 +75,19 @@ if dec is not None and arg("--logo"):
     arr = np.asarray(crop).astype(np.float32) / 255.0; yy, xx = np.mgrid[0:256, 0:256] / 255.0
     r = np.sqrt((xx - 0.5) ** 2 + (yy - 0.5) ** 2) / 0.72   # crop is 0.72 wide in uv; normalised radius
     radial = np.clip((0.37 / 0.72 * 1.0 - r) / ((0.37 - 0.352) / 0.72), 0, 1)
-    val = arr[..., :3].max(-1); key = np.clip((val - 0.16) / 0.14, 0, 1); alpha = radial * key
+    val = arr[..., :3].max(-1)
+    # The dark disc behind the emblem used to be keyed TRANSPARENT; on the rifle that showed whatever lay under the decal
+    # (the receiver's open shell = a black see-through hole - founder 2026-10-06 "we see through the rifle"). It is now an
+    # OPAQUE dark gunmetal enamel disc, cut to a circle with a hard alpha-mask (no blend sorting).
+    key = np.clip((val - 0.16) / 0.14, 0, 1)
+    enamel = np.array([0.075, 0.072, 0.068], dtype=np.float32)
+    rgb = arr[..., :3] * key[..., None] + enamel * (1.0 - key[..., None])
+    alpha = (radial > 0.5).astype(np.float32)
     gl = np.clip(((arr[..., 1] - arr[..., 0] * 1.15) - 0.05) / 0.30, 0, 1)
-    emit = np.clip(arr[..., :3] * 0.45 + gl[..., None] * np.array([0.2, 1.0, 0.08]) * 0.9, 0, 1)
-    Image.fromarray((np.dstack([arr[..., :3], alpha]) * 255).astype(np.uint8), "RGBA").save(os.path.join(tex_dir, "logo_color.png"))
+    emit = np.clip(arr[..., :3] * key[..., None] * 0.45 + gl[..., None] * np.array([0.2, 1.0, 0.08]) * 0.9, 0, 1)
+    Image.fromarray((np.dstack([rgb, alpha]) * 255).astype(np.uint8), "RGBA").save(os.path.join(tex_dir, "logo_color.png"))
     Image.fromarray((emit * 255).astype(np.uint8)).save(os.path.join(tex_dir, "logo_emit.png"))
-    dm_ = bpy.data.materials.new("GM_Logo"); dm_.use_nodes = True; t = dm_.node_tree; b1 = t.nodes["Principled BSDF"]; dm_.blend_method = 'BLEND'
+    dm_ = bpy.data.materials.new("GM_Logo"); dm_.use_nodes = True; t = dm_.node_tree; b1 = t.nodes["Principled BSDF"]; dm_.blend_method = 'CLIP'; dm_.alpha_threshold = 0.5
     tc2 = tex(os.path.join(tex_dir, "logo_color.png"), 'sRGB'); t.links.new(tc2.outputs['Color'], b1.inputs['Base Color']); t.links.new(tc2.outputs['Alpha'], b1.inputs['Alpha'])
     te2 = tex(os.path.join(tex_dir, "logo_emit.png"), 'sRGB'); t.links.new(te2.outputs['Color'], b1.inputs['Emission Color']); b1.inputs['Emission Strength'].default_value = 1.0
     b1.inputs['Metallic'].default_value = 0.55; b1.inputs['Roughness'].default_value = 0.3
