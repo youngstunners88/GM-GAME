@@ -39,6 +39,7 @@ const SKIP_HOLD := 1.0
 const DEADLINE_SEC := 120.0
 var VIDEO: String = VIDEO_EP2 if ResourceLoader.exists(VIDEO_EP2) else VIDEO_OLD
 var _skip_held := 0.0
+var _skip_armed := false
 ## When true the node is NOT freed at the end: the boss takes `make_cover()` (the film's last frame) and hands it to
 ## TransitionDirector.go() so the cut into Episode 2 never shows black (skill ep2-seamless-transition).
 var keep_cover := false
@@ -95,12 +96,16 @@ func play() -> void:
 func _process(delta: float) -> void:
 	if _done:
 		return
+	# A JUMP still held from the boss fight must never skip the film (founder 2026-10-05 "the video isn't playing"):
+	# the key has to be RELEASED once before a hold counts.
 	if Input.is_action_pressed("jump"):
-		_skip_held += delta
-		if _skip_held >= SKIP_HOLD:
-			_finish()
+		if _skip_armed:
+			_skip_held += delta
+			if _skip_held >= SKIP_HOLD:
+				_finish()
 	else:
 		_skip_held = 0.0
+		_skip_armed = true
 
 func _exit_tree() -> void:
 	if is_instance_valid(_video_player):

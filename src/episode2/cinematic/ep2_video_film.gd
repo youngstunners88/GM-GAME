@@ -33,6 +33,12 @@ var last_song_position: float = -1.0
 var _video: VideoStreamPlayer = null
 var _t: float = 0.0
 var _skip_held: float = 0.0
+var _stall_at: float = -1.0       # clock time the stall banner was raised (the picture never advanced)
+var _diag: Label = null
+var _last_pos: float = 0.0        # last decoder position seen while playing (stream_position reads 0 once it has stopped)
+var finish_reason: String = ""        # why the film ended: end / skip / decoder_early / stall / clock_guard (shown on screen after it)
+var _real_start_ms: int = 0       # wall clock at start(): the stall check must not trust the (test-driven) film clock
+var _skip_armed: bool = false      # JUMP must be RELEASED once (after the first second) before a hold can skip the film
 var _done: bool = false
 var _music_muted: bool = false
 var _hint: Label = null
@@ -70,7 +76,7 @@ func prepare(path: String, length_seconds: float) -> bool:
 	_video.volume_db = 0.0
 	_video.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_video.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_video.finished.connect(_finish)
+	_video.finished.connect(_on_player_finished)
 	add_child(_video)
 	_hint = Label.new()
 	_hint.text = "HOLD SPACE TO SKIP"
@@ -106,6 +112,7 @@ func start() -> void:
 		return
 	_mute_music()
 	_letterbox()
+	_real_start_ms = Time.get_ticks_msec()
 	_video.play()
 
 
@@ -129,14 +136,29 @@ func step(delta: float) -> void:
 	if _done:
 		return
 	_t += delta
+	# Founder 2026-10-05 "the video isn't playing": Space is also JUMP, and the player is often still holding it (or
+	# mashing it) when the cart runs out - the film saw a held JUMP at frame 0 and skipped itself within 0.9 s. A skip now
+	# needs the key to have been released first (and the hint on screen), i.e. a deliberate NEW hold.
 	if Input.is_action_pressed(SKIP_ACTION):
-		_skip_held += delta
-		if _skip_held >= SKIP_HOLD:
-			_finish()
-			return
+		if _skip_armed:
+			_skip_held += delta
+			if _skip_held >= SKIP_HOLD:
+				finish_reason = "skip_hold"
+				_finish()
+				return
 	else:
 		_skip_held = 0.0
+		if _t >= 1.0:
+			_skip_armed = true
+	if _video and is_instance_valid(_video) and _video.is_playing():
+		_last_pos = maxf(_last_pos, _video.stream_position)
+	_check_stall()
+	if _stall_at >= 0.0 and _t >= _stall_at + 2.5:
+		finish_reason = "stall"
+		_finish()
+		return
 	if _t >= seconds + GRACE:
+		finish_reason = "clock_guard"
 		_finish()
 
 
@@ -145,12 +167,20 @@ func drive_externally() -> void:
 	_driven_externally = true
 
 
+## One line for the on-screen proof the founder can screenshot ("what did the film do?").
+func summary() -> String:
+	var pos: float = _video.stream_position if _video and is_instance_valid(_video) else -1.0
+	return "FILM %s | picture reached %.1f s of %.0f | real %.1f s | clock %.1f s" % [finish_reason if finish_reason != "" else "?", maxf(_last_pos, pos), seconds, float(Time.get_ticks_msec() - _real_start_ms) / 1000.0, _t]
+
+
 func is_done() -> bool: return _done
 func is_finishing() -> bool: return _finishing
 func elapsed() -> float: return _t
 
 
 func skip() -> void:
+	if finish_reason == "":
+		finish_reason = "skip_call"
 	_finish()
 
 
@@ -158,10 +188,38 @@ func skip() -> void:
 ## rendered frames later (or three clock steps in a headless run), so whatever the owner builds in response (the
 ## whole hideout, ~1 s on the web) happens behind black and cannot stutter the film's picture or sound. The film
 ## itself NEVER does heavy work while it plays (the glitch the founder saw was the room being built mid-film).
+## The decoder says it is done. If that happens long before the film's length the picture ended EARLY (a corrupt
+## stream or a decoder fault) - say so in the console instead of silently jumping to the hideout.
+func _on_player_finished() -> void:
+	var real_s: float = float(Time.get_ticks_msec() - _real_start_ms) / 1000.0
+	var early: bool = _last_pos < seconds - 4.0
+	print("[VIDEO] Ep2 film: decoder finished | real %.1f s | last picture pos %.1f of %.0f s | game clock %.1f s | %s" % [real_s, _last_pos, seconds, _t, "EARLY" if early else "ok"])
+	finish_reason = "decoder_early" if early else "end"
+	_finish()
+
+
+## The picture never moved although the clock did (a web decoder that did not start, a blocked audio context): show it
+## on screen and carry on after a moment, never leave the player on a frozen first frame.
+func _check_stall() -> void:
+	if _video == null or not is_instance_valid(_video) or _stall_at >= 0.0:
+		return
+	var real_s: float = float(Time.get_ticks_msec() - _real_start_ms) / 1000.0
+	if _real_start_ms > 0 and real_s >= 5.0 and _video.stream_position < 0.3:
+		_stall_at = _t
+		print("[VIDEO] Ep2 film: STALLED - clock %.1f s but the stream position is %.2f (playing=%s). Continuing." % [_t, _video.stream_position, str(_video.is_playing())])
+		_diag = Label.new()
+		_diag.text = "VIDEO COULD NOT PLAY IN THIS BROWSER - continuing"
+		_diag.add_theme_font_size_override("font_size", 22)
+		_diag.set_anchors_preset(Control.PRESET_CENTER)
+		_diag.position = Vector2(-260.0, 0.0)
+		add_child(_diag)
+
+
 func _finish() -> void:
 	if _done:
 		return
 	_done = true
+	print("[VIDEO] Ep2 film: finished at clock %.1f s, stream pos %.1f s" % [_t, _video.stream_position if _video and is_instance_valid(_video) else -1.0])
 	# Read where the film IS before stopping it: VideoStreamPlayer.stop() rewinds the Theora clock to 0, and reading
 	# it afterwards restarted the stage theme from bar one (founder 2026-10-04: "supposed to continue and not start
 	# again"). `film_end_position()` is the single source of truth for the hand-off position.

@@ -10,6 +10,16 @@ extends RefCounted
 ## lever dip, the reload tilt. Stylised, procedural, no new textures: a leafy green mitten with leaf-shaped
 ## fingers, a leather bracer with a brass band on each forearm.
 
+## The founder's rifle (his Tripo GLB, surgery + graded PBR baked by tools/ep2_blender/rifle_export_game.py): lever-action
+## Winchester with the GM logo on the receiver and Lil Blunt's gloved left hand + green forearm on the fore-end.
+const FOUNDER_GLB := "res://src/episode2/assets/weapons/winchester_1886_founder.glb"
+static var founder_ads_depth: float = -0.46
+## Where the eye sits in the MODEL frame when shouldered (measured from the model: barrel top 0.15, receiver 0.195, comb 0.22,
+## so the camera must sit FORWARD of the receiver, just above the barrel, behind the rear sight - the stock and receiver are then
+## behind the camera and never block the target; skill ep2-fps-shooter-feel, placement sim).
+static var founder_ads_cam: Vector3 = Vector3(0.0, 0.19, 0.14)
+static var founder_drop: float = 0.11        # model sits a little lower than the forge sight line so the stock comb never blocks the view in ADS
+static var founder_z_shift: float = -0.15
 const HANDS_GLB := "res://src/episode2/assets/fp_hands.glb"
 const GREEN := Color(0.30, 0.62, 0.17)
 const GREEN_DARK := Color(0.18, 0.42, 0.10)
@@ -25,7 +35,22 @@ static func attach(rifle: Node3D) -> Node3D:
 	var root := Node3D.new()
 	root.name = "Hands"
 	rifle.add_child(root)
-	# Preferred: the Blender-built model (tools/blender/build_fp_hands.py): knitted green mittens, studded bracers.
+	# Best: the founder's rifle (hand included). The forge rifle meshes are hidden and the model's top is matched to
+	# the forge rifle's so the ADS sight line still lands on the crosshair.
+	var founder: PackedScene = load(FOUNDER_GLB) as PackedScene if ResourceLoader.exists(FOUNDER_GLB) else null
+	if founder:
+		var forge_top: float = _top_y(rifle, rifle)
+		for mi in rifle.find_children("*", "MeshInstance3D", true, false):
+			if not root.is_ancestor_of(mi) and not String((mi as Node).name).begins_with("Muzzle"):
+				(mi as MeshInstance3D).visible = false
+		var fm: Node3D = founder.instantiate() as Node3D
+		fm.name = "HandsModel"
+		root.add_child(fm)
+		fm.position = Vector3(0.0, forge_top - _top_y(fm, rifle) - founder_drop, founder_z_shift)
+		rifle.set_meta("ads_cam", fm.position + founder_ads_cam)
+		rifle.set_meta("ads_depth", founder_ads_depth)      # the longer stock needs the camera pulled behind the butt
+		return root
+	# Next: the Blender-built model (tools/blender/build_fp_hands.py): knitted green mittens, studded bracers.
 	var packed: PackedScene = load(HANDS_GLB) as PackedScene if ResourceLoader.exists(HANDS_GLB) else null
 	if packed:
 		var model: Node3D = packed.instantiate() as Node3D
@@ -155,3 +180,18 @@ static func _orient_along(mi: MeshInstance3D, dir: Vector3, dist: float) -> void
 	if axis.length() < 0.0001:
 		axis = Vector3.RIGHT
 	mi.transform = Transform3D(Basis(axis.normalized(), angle), dir * dist)
+
+
+## Highest point (in `space`'s local frame) of every mesh under `node`, ignoring the Hands subtree on the rifle itself.
+static func _top_y(node: Node3D, space: Node3D) -> float:
+	var top: float = -1.0e9
+	var inv: Transform3D = space.global_transform.affine_inverse()
+	for mi in node.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		if m.mesh == null or (node == space and space.get_node_or_null("Hands") and space.get_node("Hands").is_ancestor_of(m)):
+			continue
+		var aabb: AABB = m.mesh.get_aabb()
+		var xf: Transform3D = inv * m.global_transform
+		for i in 8:
+			top = maxf(top, (xf * aabb.get_endpoint(i)).y)
+	return top

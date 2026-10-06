@@ -47,3 +47,24 @@ Separate the rifle from the arms (delete arm/glove faces below the receiver line
 
 ## Prove
 `node scripts/glb-shot.mjs <glb> sheet.png` (look for loose parts), then the range capture rig (`ep2-blender-props`), then the three range tests.
+
+
+## 6. SHIPPED PATH (2026-10-05): the Cowork rifle, rebuilt headless and wired as the first-person viewmodel
+The Cowork (desktop Blender) session cannot commit, and a GLB cannot carry its shader graph. The repo's scripts reproduce the same
+rifle headless (bpy 4.2, CPU only, ~1 min): surgery (second hand, broken barrel replaced, GM logo decal) from `rifle_surgery.py`, graded
+materials from `rifle_hero.py`, then `rifle_export_game.py` bakes colour / roughness / metallic with Cycles CPU, packs glTF metal-rough
+(256 px), re-creates the logo alpha+emission with PIL, decimates to 12k tris, centres the lateral axis on the BARREL (not the bounding box:
+the gloved forearm drags it off-axis), turns it to muzzle +Z / up +Y and exports `winchester_1886_founder.glb` (~0.9 MB).
+```bash
+python3 - <<'PY'
+import sys,runpy
+sys.argv=["x","--","--glb","/tmp/w.glb","--align","--flipx","--pre","tools/ep2_blender/rifle_surgery.py","--logo",
+ "artifacts/episode2-gold-mine/references/founder_2026-10-06/GOLD_LOGO.png","--tex","1024",
+ "--post","tools/ep2_blender/rifle_export_game.py","--game-out","src/episode2/assets/weapons/winchester_1886_founder.glb"]
+runpy.run_path("tools/ep2_blender/rifle_hero.py",run_name="__main__")
+PY
+```
+Then delete `src/episode2/assets/weapons/textures_tmp/` (embedded in the GLB). Wiring: `Ep2ViewHands.attach` prefers this GLB (hides the forge rifle meshes in the viewmodel, matches the sight top,
+`FOUNDER_Z_SHIFT 0.34`, `FOUNDER_DROP 0.045`); the rack, Bull and hand-over still use the forge rifle. Pack budget: CI pck was 188 MiB of 190 -
+the normal map (1 MB) is OFF (`--normal` to enable); the superseded Blender hands GLB was deleted to pay for this one.
+Open: a right hand is not in the model (only the left glove + forearm), no lever animation, receiver not brass.

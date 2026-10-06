@@ -402,11 +402,15 @@ func _ready() -> void:
 		_run(f, 0.5)
 		_check("...the film's first second is not delayed by a build: still not built at 0.5 s", not f._room_built and f.get_beat() == f.Beat.CINEMATIC)
 		_run(f, 8.0)
+		var _guard: int = 0
+		while not f._room_ready and _guard < 600:      # the pre-build is sliced over frames behind the film
+			_guard += 1
+			await get_tree().process_frame
 		# Founder 2026-10-04: "a long period of blank screen that delays for no reason. Fix it." The hideout is now
 		# built WHILE THE FILM PLAYS OVER IT (hidden behind the full-screen film), a few seconds in, so the cut to
 		# target practice is instant instead of a frozen blank build after the film. tests/ep2_transition_prebuild_test
 		# gates the whole behaviour; here we just confirm it happened behind the still-playing film.
-		_check("...the hideout is pre-built behind the film (no blank-screen build at the cut)", f._room_built and f.get_beat() == f.Beat.CINEMATIC)
+		_check("...the hideout is pre-built behind the film (no blank-screen build at the cut)", f._room_ready and f.get_beat() == f.Beat.CINEMATIC)
 		var got_btc: Array = []
 		f.payment_made.connect(func(n): got_btc.append(n))
 		var got_w: Array = []

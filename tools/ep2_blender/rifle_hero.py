@@ -202,9 +202,14 @@ card("Card_Top", ctr + Vector((0, 0, 1.3 * k)), (1.6 * k, 0.07 * k), 9.0, (1.0, 
 card("Card_Side", ctr + dcam * 0.4 * k - right_ * 1.3 * k + Vector((0, 0, 0.25 * k)), (0.06 * k, 0.9 * k), 5.0, (1.0, 0.7, 0.4, 1))
 
 # --- render settings
-e = S.eevee; S.render.engine = 'BLENDER_EEVEE'
-e.taa_render_samples = SAMPLES; e.use_raytracing = True; e.ray_tracing_method = 'SCREEN'
-e.use_shadows = True; e.fast_gi_method = 'GLOBAL_ILLUMINATION'
+e = S.eevee
+try:
+    S.render.engine = 'BLENDER_EEVEE'
+except TypeError:      # Blender 4.2 (the cloud/headless wheel) names it EEVEE_NEXT; the hero look is the 5.x desktop path
+    S.render.engine = 'BLENDER_EEVEE_NEXT'
+for _k, _v in (("taa_render_samples", SAMPLES), ("use_raytracing", True), ("ray_tracing_method", 'SCREEN'), ("use_shadows", True), ("fast_gi_method", 'GLOBAL_ILLUMINATION')):
+    try: setattr(e, _k, _v)
+    except (AttributeError, TypeError): pass
 if NEUTRAL:
     S.view_settings.view_transform = 'Standard'
     for o in S.objects:

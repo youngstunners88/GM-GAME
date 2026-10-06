@@ -2823,6 +2823,26 @@ recover them or ask you to resend anything.
 - **Look:** revolver reads GOLD again (the metal map drew it black in the web build), hero brighter, lanterns lit, rails have steel shine + bolts, hero turned 3/4 so the gun shows. Jev + vision assessment in `docs/research/3d/013_*`.
 - New skill `ep2-bear-design`.
 
+## 2026-10-06 — Why the video "isn't playing": the hidden 3D room starved the decoder
+- Measured (real render, software GL = weak-GPU stand-in): with the hideout rendering behind the full-screen film the film ran at 8 render fps, 134 picture updates in 16 s, worst freeze 1.4 s. The 3D pass is now OFF while the film plays: 53 fps, 850 updates, worst gap 168 ms (Jev: SHIP). In a clean web build the film played all 59.5 of 61 s (real 61.7 s).
+- A corner line after the film now states how it ended (end / skip_hold / stall / decoder_early); `[VIDEO]` console lines carry real time + picture position.
+- Rifle: the GM logo's dark disc is now an opaque enamel disc (it was keyed transparent and showed a black hole in the receiver).
+
+## 2026-10-06 — Solid rifle + solid Bull + film watchdog
+- Rifle (shouldered): the "random square" was the front-sight dovetail box and a flat barrel cap; the "hollow" look was the eye sitting 1 cm inside the barrel-top shell (back faces). Rebuilt: sight box removed, barrel/tube start inside the receiver, materials double-sided, eye raised to 0.19. Ray audit before/after: 10 back-face hits + 6 lens-clip hits -> 0 + 0; Jev: SHIP (`tools/ep2_sim/rifle_solid_jev.mjs`, logs in `docs/ep2_rifle_rays_*.log`).
+- Inferno Bull see-through: Tripo/Meshy head/hat shells are open at the back; with back-face culling the camera looked through the head (he turns away in the demo). Body materials are now double-sided + opaque (`_fix_bull_materials`).
+- Film: stall/early-end watchdog with an on-screen message and `[VIDEO]` console reasons. Still unconfirmed on the founder's machine; skills `ep2-solid-models`, `ep2-film-always-plays`.
+
+## 2026-10-05 — Rifle placement by simulation + the film no longer skips itself
+- Placement: `tools/ep2_sim/vm_placement_sim.mjs` (real-render, per-vertex metrics) replaced hand-placement. Shouldered, the eye now sits over the barrel (stock/receiver behind the camera): nothing blocks the targets (was 42 % of the gun in the target window), front sight on the crosshair. Hip: gun tight to the lower right, muzzle toward the centre. Jev's overall verdict was BLOCK on the final numbers while its two specific risk questions passed - logged in `docs/ep2_vm_placement_simulation.json`; I checked the screenshots myself.
+- "The video isn't playing": found a second cause - JUMP is also the skip key, and a Space still held from the runner / boss fight skipped the film within 0.9 s. Skips now need the key released first (`ep2_video_film.gd`, `stage3_boss_defeat_cutscene.gd`); test added. New skill `ep2-film-always-plays`.
+
+## 2026-10-05 — Film glitch fix: the hideout builds in slices behind the film
+- Root cause found by measurement: at film second 3 the whole hideout (Bull rig, hero, ~80 props) was built in ONE synchronous ~0.9 s block (more on the web/his machine), freezing the video picture and crackling its sound. The pre-build is now sliced one step per frame (Bull load, clips, materials, hero, each dressing group): worst frame while building 349 -> 213 ms, gated in `tests/ep2_transition_prebuild_test.gd` (< 450 ms). The film end waits for `room_ready` instead of building twice.
+
+## 2026-10-05 — Founder's Winchester is the first-person rifle
+- Rebuilt headless from the Cowork pipeline (`rifle_hero.py` + `rifle_surgery.py` + new `rifle_export_game.py`): long barrel, magazine tube, walnut/gunmetal PBR baked to plain textures, GM logo on the receiver, gloved hand + green forearm. 0.9 MB GLB at `src/episode2/assets/weapons/winchester_1886_founder.glb`; viewmodel wiring in `ep2_view_hands.gd`, ADS tuned from real-render captures. Replaces the procedural/Blender hands GLB (deleted for pack budget). Open: right hand, lever clip, brass receiver; Inferno Bull redesign not started.
+
 ## 2026-10-05 — "Video not playing" investigation
 - Reproduced in the REAL web build (Chromium, CI preset, bot to the cart end): the founder's 60 s film plays, then the hideout and range load. All five .ogv files decode natively (Theora/Vorbis, correct sizes) and sit in the pack. No defect found in the shipped film path.
 - Added loud `[VIDEO]` console reasons where a film used to be skipped SILENTLY (stage 1/2/3 boss-defeat cutscenes, the Ep2 film), plus `scripts/ep2-film-web-probe.mjs` and `tools/ep2_shots/video_probe.tscn`. Need from the founder: which video, what he sees (black/frozen/skipped) and the browser console line.
