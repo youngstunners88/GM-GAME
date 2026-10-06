@@ -85,6 +85,11 @@ if dec is not None and arg("--logo"):
     te2 = tex(os.path.join(tex_dir, "logo_emit.png"), 'sRGB'); t.links.new(te2.outputs['Color'], b1.inputs['Emission Color']); b1.inputs['Emission Strength'].default_value = 1.0
     b1.inputs['Metallic'].default_value = 0.55; b1.inputs['Roughness'].default_value = 0.3
     dec.data.materials.clear(); dec.data.materials.append(dm_)
+# 4b. SOLID from every side (founder 2026-10-05 "make the rifle solid"): the Tripo body is a set of single-sided shells; with
+#     back-face culling the shouldered camera looked INTO open shells (dark boxes, a thin barrel sheet). Double-sided = glTF doubleSided.
+for _m in rifle.data.materials: _m.use_backface_culling = False
+if dec is not None:
+    for _m in dec.data.materials: _m.use_backface_culling = False
 # 5. frame: muzzle +X,up +Z  ->  Godot muzzle +Z, up +Y;  length 1.2 m, centred
 parts = [rifle] + ([dec] if dec else [])
 for o in parts: o.data.transform(Matrix.Rotation(math.radians(-90), 4, 'Z'))
@@ -96,6 +101,18 @@ _bv = np.array([tuple(rifle.data.vertices[v].co) for pl in rifle.data.polygons i
 cen[0] = float(_bv[:, 0].mean()); log("game: barrel axis x", round(cen[0], 4))
 for o in parts: o.data.transform(Matrix.Scale(sc, 4) @ Matrix.Translation(-Vector(cen)))
 log("game: scale", round(sc, 3), "extent", [round(float(x * sc), 3) for x in (mx_ - mn_)])
+if "--rays" in argv:      # DEBUG: what does the shouldered camera actually SEE? (Blender frame now: muzzle -Y, up +Z)
+    from mathutils.bvhtree import BVHTree
+    bvh = BVHTree.FromObject(rifle, bpy.context.evaluated_depsgraph_get())
+    camp = Vector((0.0, -0.14, 0.19)); t29 = math.tan(math.radians(29))
+    for py in (150, 250, 350, 450, 520):
+        for px in (300, 480, 660):
+            nx = (px - 480) / 270.0; ny = (270 - py) / 270.0
+            d = Vector((nx * t29, -1.0, ny * t29)).normalized()
+            h = bvh.ray_cast(camp, d)
+            if h[0] is None: log("ray", px, py, "miss"); continue
+            poly = rifle.data.polygons[h[2]]
+            log("ray", px, py, "hit mat", poly.material_index, "dist", round(h[3], 3), "n.d", round(h[1].dot(d), 2), "at", [round(c, 3) for c in h[0]])
 bpy.ops.object.select_all(action='DESELECT')
 for o in parts: o.select_set(True)
 os.makedirs(os.path.dirname(os.path.abspath(GAME_OUT)), exist_ok=True)

@@ -1622,6 +1622,12 @@ func _fix_bull_materials(root: Node, restored_bull: bool = false) -> void:
 			var src: Material = m.mesh.surface_get_material(i)
 			if src is StandardMaterial3D:
 				var d: StandardMaterial3D = (src as StandardMaterial3D).duplicate()
+				# SOLID from every side (founder 2026-10-05 "Inferno Bull is see-through at various occasions"): the Tripo/Meshy
+				# head, hat and mask are single-sided shells that are open at the back, so with back-face culling the camera looked
+				# through the head to whatever stood behind it (the whiskey glass). Double-sided + opaque + depth-writing closes it.
+				d.cull_mode = BaseMaterial3D.CULL_DISABLED
+				d.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+				d.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_OPAQUE_ONLY
 				d.metallic = 0.0
 				d.metallic_specular = 0.25
 				d.roughness = 0.78

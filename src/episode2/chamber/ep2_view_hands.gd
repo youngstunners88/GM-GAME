@@ -17,7 +17,7 @@ static var founder_ads_depth: float = -0.46
 ## Where the eye sits in the MODEL frame when shouldered (measured from the model: barrel top 0.15, receiver 0.195, comb 0.22,
 ## so the camera must sit FORWARD of the receiver, just above the barrel, behind the rear sight - the stock and receiver are then
 ## behind the camera and never block the target; skill ep2-fps-shooter-feel, placement sim).
-static var founder_ads_cam: Vector3 = Vector3(0.0, 0.155, 0.14)
+static var founder_ads_cam: Vector3 = Vector3(0.0, 0.19, 0.14)
 static var founder_drop: float = 0.11        # model sits a little lower than the forge sight line so the stock comb never blocks the view in ADS
 static var founder_z_shift: float = -0.15
 const HANDS_GLB := "res://src/episode2/assets/fp_hands.glb"

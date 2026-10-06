@@ -57,14 +57,14 @@ def add_box(x0, x1, y0, y1, z0, z1):
         f.material_index = 1; f.smooth = False
 R_B = 0.031                                          # barrel across-corners radius (octagon, 8 segs)
 OCT = math.radians(22.5)
-add_cone(R_B, R_B, 0.60, MUZZLE_X - 0.012, 8, rot_z=OCT)
+add_cone(R_B, R_B, 0.36, MUZZLE_X - 0.012, 8, rot_z=OCT)             # starts INSIDE the receiver/fore-end: its flat rear cap was the "random black square" seen when shouldered
 add_cone(R_B, R_B * 0.9, MUZZLE_X - 0.012, MUZZLE_X, 8, rot_z=OCT)                    # crown chamfer
-add_cone(0.0155, 0.0155, 0.60, 0.985, 24, z=BZ - 0.0475)                              # magazine tube
+add_cone(0.0155, 0.0155, 0.40, 0.985, 24, z=BZ - 0.0475)                              # magazine tube
 add_cone(0.0185, 0.0185, 0.972, 0.990, 24, z=BZ - 0.0475)                             # tube end cap
 add_cone(R_B + 0.0045, R_B + 0.0045, 0.885, 0.903, 8, rot_z=OCT)                      # barrel band
 add_cone(0.0215, 0.0215, 0.885, 0.903, 24, z=BZ - 0.0475)                             # band round the tube
-add_box(0.955, 0.995, BY - 0.011, BY + 0.011, BZ + 0.025, BZ + 0.036)                 # front-sight dovetail base
-add_box(0.968, 0.980, BY - 0.0038, BY + 0.0038, BZ + 0.036, BZ + 0.066)               # front-sight blade
+# (founder 2026-10-05: the front-sight dovetail box + blade read as "a random square at the front" when shouldered - removed;
+#  the crosshair is the sight)
 bm.to_mesh(rifle.data); bm.free()
 if len(rifle.data.materials) < 2:
     bs = bpy.data.materials.new("Barrel_Steel"); bs.use_nodes = True; t = bs.node_tree; b = t.nodes["Principled BSDF"]

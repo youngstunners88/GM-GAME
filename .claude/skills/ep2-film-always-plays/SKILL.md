@@ -15,3 +15,6 @@ allowed-tools: Bash, Read, Edit, Grep
 - `tools/ep2_shots/video_probe.tscn -- path=res://...ogv`: the file decodes and the clock advances.
 - Real web build: `bash scripts/ep2-local-export.sh` (use a THROWAWAY access hash locally, never commit it), then `EP2_CODE=<throwaway> node scripts/ep2-film-web-probe.mjs .farm/filmweb` - open the first screenshots: they must show film frames, then the hideout.
 - Any NEW film player: copy the arming pattern; never read `Input.is_action_pressed("jump")` for a skip without it.
+
+# Added 2026-10-06: watchdog + reasons
+`ep2_video_film.gd` now logs `[VIDEO] Ep2 film: finished ... / ended EARLY ... / STALLED ...` and, if the picture has not moved after 5 REAL seconds (the stall check uses wall time, never the test-driven film clock), shows "VIDEO COULD NOT PLAY IN THIS BROWSER - continuing" and carries on after 2.5 s instead of freezing. If the founder says the video still does not play, ask for that banner / the `[VIDEO]` console line first - it names the cause (stall vs early end vs missing file vs skipped).

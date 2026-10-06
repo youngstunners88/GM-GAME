@@ -48,6 +48,8 @@ same commit — a manifest that lies is worse than none.
 | Write docs, marketing, or changelogs | /docs | CONTEXT.md | — |
 | **Founder reports smudges / blotches / blemishes** | **`blotch-hunter` agent** | `scripts/blotch-oracle.json` | `blotch-forensics`, `blotch-repair-gate` |
 | **Founder's Winchester GLB / hand-on-gun clips** | Drive GLB -> Blender | `.claude/skills/ep2-founder-weapon-glb/SKILL.md`, `ep2-blender-handling-clips/SKILL.md` | `ep2-founder-weapon-glb`, `ep2-blender-handling-clips` |
+| **Model looks see-through / hollow / a black square at the lens** | double-sided + ray audit + Jev | `.claude/skills/ep2-solid-models/SKILL.md` | `ep2-solid-models` |
+| **Film does not play / skips / glitches** | films must always play | `.claude/skills/ep2-film-always-plays/SKILL.md` | `ep2-film-always-plays` |
 | **Hands/targets/wall look cheap** | Blender GLBs | `.claude/skills/ep2-blender-props/SKILL.md` | `ep2-blender-props` |
 | **Rifle/prop "not photoreal", improve a Tripo/Meshy GLB in Blender** | headless render only (GUI MCP froze + crashed Blender) | `.claude/skills/ep2-rifle-realism/SKILL.md`, `blender-headless-render-safety/SKILL.md` | `ep2-rifle-realism`, `blender-headless-render-safety` |
 | **Founder says something LOOKS wrong / "check for yourself"** | capture it yourself first | `.claude/skills/see-it-yourself/SKILL.md` | `see-it-yourself`, `ep2-reference-match-loop` |

@@ -2823,6 +2823,11 @@ recover them or ask you to resend anything.
 - **Look:** revolver reads GOLD again (the metal map drew it black in the web build), hero brighter, lanterns lit, rails have steel shine + bolts, hero turned 3/4 so the gun shows. Jev + vision assessment in `docs/research/3d/013_*`.
 - New skill `ep2-bear-design`.
 
+## 2026-10-06 — Solid rifle + solid Bull + film watchdog
+- Rifle (shouldered): the "random square" was the front-sight dovetail box and a flat barrel cap; the "hollow" look was the eye sitting 1 cm inside the barrel-top shell (back faces). Rebuilt: sight box removed, barrel/tube start inside the receiver, materials double-sided, eye raised to 0.19. Ray audit before/after: 10 back-face hits + 6 lens-clip hits -> 0 + 0; Jev: SHIP (`tools/ep2_sim/rifle_solid_jev.mjs`, logs in `docs/ep2_rifle_rays_*.log`).
+- Inferno Bull see-through: Tripo/Meshy head/hat shells are open at the back; with back-face culling the camera looked through the head (he turns away in the demo). Body materials are now double-sided + opaque (`_fix_bull_materials`).
+- Film: stall/early-end watchdog with an on-screen message and `[VIDEO]` console reasons. Still unconfirmed on the founder's machine; skills `ep2-solid-models`, `ep2-film-always-plays`.
+
 ## 2026-10-05 — Rifle placement by simulation + the film no longer skips itself
 - Placement: `tools/ep2_sim/vm_placement_sim.mjs` (real-render, per-vertex metrics) replaced hand-placement. Shouldered, the eye now sits over the barrel (stock/receiver behind the camera): nothing blocks the targets (was 42 % of the gun in the target window), front sight on the crosshair. Hip: gun tight to the lower right, muzzle toward the centre. Jev's overall verdict was BLOCK on the final numbers while its two specific risk questions passed - logged in `docs/ep2_vm_placement_simulation.json`; I checked the screenshots myself.
 - "The video isn't playing": found a second cause - JUMP is also the skip key, and a Space still held from the runner / boss fight skipped the film within 0.9 s. Skips now need the key released first (`ep2_video_film.gd`, `stage3_boss_defeat_cutscene.gd`); test added. New skill `ep2-film-always-plays`.
