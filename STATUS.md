@@ -5,6 +5,11 @@
 
 ---
 
+**🎯 BLENDER SOURCES BACKED UP INTO THE REPO (2026-10-06).** Every Blender source that existed only on the desktop is now in `design/ep2/blender/` so nothing depends on one PC:
+- **Winchester rifle:** Cowork's final `rifle_hero_v4_final.blend` (+ v3 merged, the working file `rifle/bolt-action-rifle_work.blend`, source GLB, previews, its handoff skill) and my v1/v2 headless versions. Real GM logo and a long barrel are in; the engraved brass receiver and a stock buttplate are still open.
+- **Inferno Bull:** `inferno-bull-pbr_v5.blend`, plus the Minotaur/Bull sources from ChatGPT in `character-work/`. **The Bull is NOT resolved** (founder: "still trash"): head pose and arm are fixed, but the soft Tripo sculpt and my forge set are not at the reference; a higher-detail regenerate is the likely next step.
+- Skills: `ep2-rifle-realism`, `ep2-tripo-mesh-surgery`, `ep2-weapon-logo-decal`, `ep2-bull-repose-hero`, `blender-headless-render-safety`. No game code changed in this entry.
+
 **🎯 ROUND 3 — HANDS ON THE GUN, BIG TAXIDERMY BEAR, SHOT-UP WALL, SIDE BY SIDE (2026-10-04, late).** From your "Copy of Traget Practice" doc:
 - **Lil Blunt's hands are on the gun** now (leafy green hands, leather bracers with brass bands: right hand on the wrist of the stock, left hand under the fore-end) like your IMG_3070 reference. They ride the rifle, so they follow aim, recoil, the lever and reload. They are stylised (procedural); a rigged hand model is the next step.
 - **Inferno stands side by side with you** (a step ahead on your right) and you step up to the firing line next to him during the demo; the view widens so he and the targets are both in frame. The "see-through arm" was the camera sitting inside his body when you got close; his walk blocker is bigger now.
