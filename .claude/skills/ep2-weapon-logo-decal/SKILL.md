@@ -57,3 +57,10 @@ Subdividing + displacing the Tripo receiver plate did NOT work: the Tripo emblem
 collapsing them onto one profile gives coplanar shards, ragged gold, 36k polys / 2.2 MB. Patch kept in
 `tools/ep2_blender/experiments/rifle_socket_carve_attempt.patch`. A real engraving needs the plate region DELETED (all layers) and rebuilt
 as clean geometry in Blender (or a Tripo regeneration of the receiver), not displaced. Shipped state = flush gold-ringed inlay (commit 6d4dfe6).
+
+## 2026-10-09 (WORKS): clean rebuild of the emblem plate, one mesh
+`rifle_export_game.py` step 3b: ray-cast the visible plate, DELETE every Tripo face (ALL normals - the shell undersides render double-sided
+and swirl the logo) inside the emblem cylinder, and build one clean polar-grid patch in the SAME mesh: dark steel ring -> gold rim ->
+engraved socket floor with the GM logo (planar UV, verified linear in the exported GLB). Facts that cost hours: the plate's top edge is only
+~0.075 above the emblem centre, so keep the emblem inside it (`--lz 0.443 --sr 0.05`); the Tripo boss is a 1.7-unit mound; bake atlas at 1024
+(`--bake 1024`) to hold the pack budget. Command in `ep2-founder-weapon-glb` plus `--lz 0.443 --sr 0.05 --bake 1024`.

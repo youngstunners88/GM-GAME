@@ -148,55 +148,102 @@ bs = rifle.data.materials[1]; bs.node_tree.nodes.clear(); o_ = bs.node_tree.node
 bb.inputs['Base Color'].default_value = (0.13, 0.135, 0.15, 1); bb.inputs['Metallic'].default_value = 0.95; bb.inputs['Roughness'].default_value = 0.34
 bs.node_tree.links.new(bb.outputs['BSDF'], o_.inputs['Surface'])
 
-# 3b. THE BADGE (founder 2026-10-09: "it mustn't look painted on - it must be like a badge or engraving"): REAL geometry. A raised, bevelled gold
-#     bezel ring seated in the worn plate, an inset enamel face carrying the GM logo (with its own chain ring), lit and parallaxing like metal.
+# 3b. CLEAN REBUILD OF THE EMBLEM PLATE (founder 2026-10-09: "one with the rifle - badge or engraving"). Tripo's emblem is several overlapping relief shells,
+#     so displacing its vertices makes shards. Instead: sample the visible top surface by ray-casting, DELETE every Tripo face in the emblem cylinder, and
+#     build ONE clean polar-grid patch in the same mesh: steel inset ring -> gold rim -> engraved socket floor carrying the GM logo. Same object, same surface.
+BADGE_OBJS = []
 if arg("--logo") and 'BADGE' in globals():
+    import bmesh
+    from mathutils.bvhtree import BVHTree as _BVH2
     from PIL import Image as _I2
-    _lg = _I2.open(os.path.join(work, "emblem_color.png")).convert("RGB"); _lg.save(os.path.join(tex_dir, "emblem_color.jpg"), quality=86)
+    _I2.open(os.path.join(work, "emblem_color.png")).convert("RGB").save(os.path.join(tex_dir, "emblem_color.jpg"), quality=86)
     _I2.open(os.path.join(work, "emblem_emit.png")).convert("RGB").resize((256, 256), _I2.LANCZOS).save(os.path.join(tex_dir, "emblem_emit.png"), optimize=True)
-    BX, BZ, Y0 = BADGE['PX'], BADGE['PZ'], BADGE['Y0']
-    RO, RI, H = float(arg("--br", 0.088)), None, 0.0018
-    RI = RO * 0.80
-    SEAT = Y0 + 0.0012
-    prof = [(RI, Y0 - 0.006), (RI, Y0 + H * 0.55), (RI + 0.0035, Y0 + H), (RO - 0.004, Y0 + H), (RO - 0.0008, Y0 + H * 0.55), (RO, Y0 - 0.0005)]
-    SEG = 72; verts = []; faces = []
-    for si in range(SEG):
-        a = math.tau * si / SEG
-        for (r, y) in prof: verts.append((BX + r * math.cos(a), y, BZ + r * math.sin(a)))
-    n = len(prof)
-    for si in range(SEG):
-        s2 = (si + 1) % SEG
-        for pi in range(n - 1): faces.append((si * n + pi, s2 * n + pi, s2 * n + pi + 1, si * n + pi + 1))
-    bez = bpy.data.meshes.new("BadgeBezel"); bez.from_pydata(verts, [], faces); bez.update()
-    # face disc (slightly below the bezel crown), UV = planar through the logo, viewer on +Y sees -X to the right
-    fv = [(BX, SEAT, BZ)] + [(BX + RI * math.cos(math.tau * i / SEG), SEAT, BZ + RI * math.sin(math.tau * i / SEG)) for i in range(SEG)]
-    ff = [(0, 1 + i, 1 + (i + 1) % SEG) for i in range(SEG)]
-    fc = bpy.data.meshes.new("BadgeFace"); fc.from_pydata(fv, [], ff); fc.update()
-    uvf = fc.uv_layers.new(name="UVMap")
-    for pl_ in fc.polygons:
-        for li_ in pl_.loop_indices:
-            co = fc.vertices[fc.loops[li_].vertex_index].co
-            uvf.data[li_].uv = (0.5 - (co.x - BX) / (2 * RI), 0.5 + (co.z - BZ) / (2 * RI))
-    for me_ in (bez, fc):
-        for pl_ in me_.polygons:
-            if pl_.normal.y < 0: pl_.flip()
-        me_.update()
+    BX, BZ, YP = BADGE['PX'], BADGE['PZ'], BADGE['Y0']
+    RI = float(arg("--sr", 0.066)); RO = RI + 0.016; RH = float(arg("--rh", 0.088)); RP = RH + 0.008; DEPTH = 0.0065; SEG = 120
+    bvh2 = _BVH2.FromObject(rifle, bpy.context.evaluated_depsgraph_get())
+    def top_y(x, z):
+        h = bvh2.ray_cast(Vector((x, 1.0, z)), Vector((0, -1, 0)))
+        return h[0].y if h[0] else None
+    def prof(r):          # height above the plate plane
+        if r < RI - 0.002: return -DEPTH                                                                                   # socket floor
+        if r < RI + 0.003: t = (r - (RI - 0.002)) / 0.005; t = t * t * (3 - 2 * t); return -DEPTH + (DEPTH + 0.0016) * t   # inner wall up to the rim
+        if r < RO - 0.002: return 0.0016                                                                                   # gold rim crown
+        if r < RO + 0.003: t = (r - (RO - 0.002)) / 0.005; t = t * t * (3 - 2 * t); return 0.0016 * (1 - t)               # rim rolls back to the plate
+        return 0.0
+    # the plate is not level (it follows the receiver): fit a plane y = a + b*x + c*z to the visible surface in a ring OUTSIDE the old emblem boss
+    _pts = []
+    for _r in (0.125, 0.14, 0.155):
+        for _k in range(36):
+            _a = math.tau * _k / 36; _x = BX - _r * math.cos(_a); _z = BZ + _r * math.sin(_a); _y = top_y(_x, _z)
+            if _y is not None and abs(_y - YP) < 0.03: _pts.append((_x, _z, _y))
+    if len(_pts) > 20:
+        _A = np.array([[1.0, p_[0], p_[1]] for p_ in _pts]); _b = np.array([p_[2] for p_ in _pts]); _co = np.linalg.lstsq(_A, _b, rcond=None)[0]
+        PLANE = lambda x, z: _co[0] + _co[1] * x + _co[2] * z
+    else: PLANE = lambda x, z: YP
+    log("game: plate plane coef", [round(float(c), 4) for c in (_co if len(_pts) > 20 else [YP, 0, 0])], "from", len(_pts), "samples")
+    radii = [0.0] + [RI * k / 8.0 for k in range(1, 9)]
+    r_ = RI
+    while r_ < RO + 0.012: r_ += 0.0032; radii.append(r_)
+    while r_ < RP: r_ += 0.007; radii.append(min(r_, RP))
+    # sampled outer heights (None = off the plate)
+    ys = {}
+    for ri, r in enumerate(radii):
+        for si in range(SEG):
+            a = math.tau * si / SEG; x = BX - r * math.cos(a); z = BZ + r * math.sin(a)
+            if r < RO + 0.012: ys[(ri, si)] = PLANE(x, z) + prof(r)
+            else:
+                t_ = top_y(x, z)
+                if t_ is None: ys[(ri, si)] = None
+                else:
+                    k = min(1.0, (r - (RO + 0.012)) / max(1e-6, (RP - (RO + 0.012))) * 1.6); k = k * k * (3 - 2 * k)
+                    ys[(ri, si)] = (PLANE(x, z) + prof(r)) * (1 - k) + (t_ - 0.0008) * k
+    bm = bmesh.new(); bm.from_mesh(rifle.data)
+    kill = [f for f in bm.faces if math.hypot(f.calc_center_median().x - BX, f.calc_center_median().z - BZ) < RH
+            and YP - 0.03 < f.calc_center_median().y < YP + 0.05]
+    bmesh.ops.delete(bm, geom=kill, context='FACES_ONLY')
+    gold_i = len(rifle.data.materials); face_i = gold_i + 1; steel_i = gold_i + 2
     gm_ = bpy.data.materials.new("Badge_Gold"); gm_.use_nodes = True; gb = gm_.node_tree.nodes["Principled BSDF"]
-    gb.inputs['Base Color'].default_value = (0.62, 0.40, 0.08, 1); gb.inputs['Metallic'].default_value = 0.6; gb.inputs['Roughness'].default_value = 0.42
+    gb.inputs['Base Color'].default_value = (0.74, 0.50, 0.11, 1); gb.inputs['Metallic'].default_value = 0.65; gb.inputs['Roughness'].default_value = 0.34
     fm_ = bpy.data.materials.new("Badge_Face"); fm_.use_nodes = True; t = fm_.node_tree; fb = t.nodes["Principled BSDF"]
     tcf = tex(os.path.join(tex_dir, "emblem_color.jpg"), 'sRGB'); t.links.new(tcf.outputs['Color'], fb.inputs['Base Color'])
-    tef = tex(os.path.join(tex_dir, "emblem_emit.png"), 'sRGB'); t.links.new(tef.outputs['Color'], fb.inputs['Emission Color']); fb.inputs['Emission Strength'].default_value = 1.2
-    fb.inputs['Metallic'].default_value = 0.45; fb.inputs['Roughness'].default_value = 0.34
-    bez.materials.append(gm_); fc.materials.append(fm_)
-    badge_b = bpy.data.objects.new("BadgeBezel", bez); badge_f = bpy.data.objects.new("BadgeFace", fc)
-    S.collection.objects.link(badge_b); S.collection.objects.link(badge_f)
-    for _o in (badge_b, badge_f):
-        for _m in _o.data.materials: _m.use_backface_culling = False
-    BADGE_OBJS = [badge_b, badge_f]
-    for _o in BADGE_OBJS: bpy.data.objects[_o.name].select_set(False)
-    log("game: badge built r", RO, "at", round(BX, 3), round(BZ, 3), "y", round(Y0, 4))
-else:
-    BADGE_OBJS = []
+    tef = tex(os.path.join(tex_dir, "emblem_emit.png"), 'sRGB'); t.links.new(tef.outputs['Color'], fb.inputs['Emission Color']); fb.inputs['Emission Strength'].default_value = 1.1
+    fb.inputs['Metallic'].default_value = 0.4; fb.inputs['Roughness'].default_value = 0.34
+    sm_ = bpy.data.materials.new("Badge_Steel"); sm_.use_nodes = True; sb = sm_.node_tree.nodes["Principled BSDF"]
+    sb.inputs['Base Color'].default_value = (0.07, 0.065, 0.06, 1); sb.inputs["Metallic"].default_value = 0.7; sb.inputs["Roughness"].default_value = 0.55
+    for _m in (gm_, fm_, sm_): _m.use_backface_culling = False
+    for _m in (gm_, fm_, sm_): rifle.data.materials.append(_m)
+    uvl_ = bm.loops.layers.uv.verify()
+    vgrid = {}
+    def getv(ri, si):
+        key = (ri, si % SEG)
+        if key in vgrid: return vgrid[key]
+        y = ys[key]
+        if y is None: vgrid[key] = None; return None
+        r = radii[ri]; a = math.tau * (si % SEG) / SEG
+        v = bm.verts.new((BX - r * math.cos(a), y, BZ + r * math.sin(a))); vgrid[key] = v; return v
+    nfl = nrm = nst = 0
+    def mkface(vs, mat, rmid):
+        global nfl, nrm, nst
+        try: f = bm.faces.new(vs)
+        except ValueError: return
+        if f.normal.y < 0: f.normal_flip()
+        f.material_index = mat
+        for lp in f.loops:
+            co = lp.vert.co
+            lp[uvl_].uv = (0.5 - (co.x - BX) / (2 * (RI - 0.002)), 0.5 + (co.z - BZ) / (2 * (RI - 0.002))) if mat == face_i else (0.0, 0.0)
+    for ri in range(len(radii) - 1):
+        rmid = (radii[ri] + radii[ri + 1]) / 2
+        mat = face_i if rmid < RI - 0.003 else (gold_i if rmid < RO + 0.0035 else steel_i)
+        for si in range(SEG):
+            if ri == 0:
+                vs = [getv(0, 0), getv(1, si), getv(1, si + 1)]
+            else:
+                vs = [getv(ri, si), getv(ri + 1, si), getv(ri + 1, si + 1), getv(ri, si + 1)]
+            if any(v is None for v in vs): continue
+            if ri == 0 and len(set(map(id, vs))) < 3: continue
+            mkface(vs, mat, rmid)
+    bm.normal_update(); bm.to_mesh(rifle.data); bm.free(); rifle.data.update()
+    log("game: plate rebuilt - removed", len(kill), "Tripo faces; total polys", len(rifle.data.polygons))
 # 4b. SOLID from every side (founder 2026-10-05 "make the rifle solid"): the Tripo body is a set of single-sided shells; with
 #     back-face culling the shouldered camera looked INTO open shells (dark boxes, a thin barrel sheet). Double-sided = glTF doubleSided.
 for _m in rifle.data.materials: _m.use_backface_culling = False
