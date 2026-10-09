@@ -29,3 +29,10 @@ Camera at -Y sees +X to the right, +Z up: the quad's UV runs u along +X, v along
 
 ## Check
 Render `--view fps` and `--view oside`; the logo must (a) sit flush on the plate, (b) be fully inside the plate bounds, (c) show gold AND green at 960 px width.
+
+## 2026-10-09 lesson: "the GM logo on the rifle is unclear"
+- The decal had been on the **unseen side** (glTF -X); the founder only ever saw Tripo's own baked emblem. The shooter sees the rifle's glTF +X side = **+Y in the aligned frame** (`rifle_surgery.py --lside` default; ray from +Y).
+- Never ship the raw logo: `tools/ep2_blender/make_gm_emblem.py <GOLD_LOGO.png> <dir>` crops tight on G+M+pickaxe+mountain, erases the chain ring, lifts the gold, thickens the neon, adds a thick gold bezel on an opaque enamel disc (`emblem_color.png` + `emblem_emit.png`). `rifle_export_game.py` calls it.
+- Blender 4.2 writes alphaMode BLEND for the decal; the export patches the GLB JSON to MASK (cutoff 0.5) or it sorts wrong/disappears.
+- UVs `((1,0),(0,0),(0,1),(1,1))` read un-mirrored on the +Y side (verified with `glb_axes_shot`, CAMSIZE=0.7, absolute `glb=` path).
+- Pack budget: emblem PNGs + GLB ≈ +0.2 MB; keep it that way.

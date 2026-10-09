@@ -14,7 +14,7 @@ func _ready() -> void:
 	add_child(vp); vp.add_child(root)
 	var l := DirectionalLight3D.new(); l.rotation_degrees = Vector3(-40, 30, 0); vp.add_child(l)
 	var env := WorldEnvironment.new(); env.environment = Environment.new(); env.environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR; env.environment.ambient_light_color = Color(0.6,0.6,0.6); vp.add_child(env)
-	var cam := Camera3D.new(); cam.projection = Camera3D.PROJECTION_ORTHOGONAL; cam.size = 1.6; vp.add_child(cam)
+	var cam := Camera3D.new(); cam.projection = Camera3D.PROJECTION_ORTHOGONAL; cam.size = float(OS.get_environment("CAMSIZE") if OS.get_environment("CAMSIZE") != "" else "1.6"); vp.add_child(cam)
 	for view in [["side", Vector3(3,0,0), Vector3.UP], ["top", Vector3(0,3,0.001), Vector3.FORWARD]]:
 		cam.position = view[1]; cam.look_at(Vector3.ZERO, view[2])
 		await RenderingServer.frame_post_draw; await RenderingServer.frame_post_draw

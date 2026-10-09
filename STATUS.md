@@ -2823,6 +2823,10 @@ recover them or ask you to resend anything.
 - **Look:** revolver reads GOLD again (the metal map drew it black in the web build), hero brighter, lanterns lit, rails have steel shine + bolts, hero turned 3/4 so the gun shows. Jev + vision assessment in `docs/research/3d/013_*`.
 - New skill `ep2-bear-design`.
 
+## 2026-10-09 — Clearer GM logo on the Winchester
+- Rebuilt the GM emblem (tight crop, bolder neon, lifted gold, thick bezel) and moved it to the side of the receiver the shooter actually sees (it was on the hidden side before). Verified un-mirrored in a real render and in the hip view; tests pass (range v3, range lesson, smelting facility, GLB pipeline).
+- Video playback: no new feedback yet; the on-screen proof line still reports the finish reason.
+
 ## 2026-10-06 — Why the video "isn't playing": the hidden 3D room starved the decoder
 - Measured (real render, software GL = weak-GPU stand-in): with the hideout rendering behind the full-screen film the film ran at 8 render fps, 134 picture updates in 16 s, worst freeze 1.4 s. The 3D pass is now OFF while the film plays: 53 fps, 850 updates, worst gap 168 ms (Jev: SHIP). In a clean web build the film played all 59.5 of 61 s (real 61.7 s).
 - A corner line after the film now states how it ended (end / skip_hold / stall / decoder_early); `[VIDEO]` console lines carry real time + picture position.

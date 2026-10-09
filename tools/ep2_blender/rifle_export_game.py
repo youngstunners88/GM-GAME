@@ -3,7 +3,7 @@
 #   blender -b --python tools/ep2_blender/rifle_hero.py -- --glb <tripo.glb> --align --flipx --pre tools/ep2_blender/rifle_surgery.py \
 #       --logo <GOLD_LOGO.png> --tex 1024 --post tools/ep2_blender/rifle_export_game.py --game-out src/episode2/assets/weapons/winchester_1886_founder.glb
 # Output frame: muzzle +Z, up +Y, ~1.2 m long, centred (skill ep2-founder-weapon-glb). Never touches the GUI session.
-import os, tempfile
+import os, sys, tempfile
 GAME_OUT = arg("--game-out"); BAKE = int(arg("--bake", 1024)); TRIS = int(arg("--tris", 12000))
 work = tempfile.mkdtemp(prefix="rifle_bake_")
 def clean_stage():
@@ -70,26 +70,15 @@ bb.inputs['Base Color'].default_value = (0.13, 0.135, 0.15, 1); bb.inputs['Metal
 bs.node_tree.links.new(bb.outputs['BSDF'], o_.inputs['Surface'])
 # 4. GM logo decal: PIL re-creation of the node math (circle mask * value key; green-outline emission)
 if dec is not None and arg("--logo"):
-    L_ = Image.open(arg("--logo")).convert("RGBA"); w, h = L_.size
-    crop = L_.crop((int(0.14 * w), int((1 - 0.926) * h), int(0.86 * w), int((1 - 0.186) * h))).resize((256, 256))
-    arr = np.asarray(crop).astype(np.float32) / 255.0; yy, xx = np.mgrid[0:256, 0:256] / 255.0
-    r = np.sqrt((xx - 0.5) ** 2 + (yy - 0.5) ** 2) / 0.72   # crop is 0.72 wide in uv; normalised radius
-    radial = np.clip((0.37 / 0.72 * 1.0 - r) / ((0.37 - 0.352) / 0.72), 0, 1)
-    val = arr[..., :3].max(-1)
-    # The dark disc behind the emblem used to be keyed TRANSPARENT; on the rifle that showed whatever lay under the decal
-    # (the receiver's open shell = a black see-through hole - founder 2026-10-06 "we see through the rifle"). It is now an
-    # OPAQUE dark gunmetal enamel disc, cut to a circle with a hard alpha-mask (no blend sorting).
-    key = np.clip((val - 0.16) / 0.14, 0, 1)
-    enamel = np.array([0.075, 0.072, 0.068], dtype=np.float32)
-    rgb = arr[..., :3] * key[..., None] + enamel * (1.0 - key[..., None])
-    alpha = (radial > 0.5).astype(np.float32)
-    gl = np.clip(((arr[..., 1] - arr[..., 0] * 1.15) - 0.05) / 0.30, 0, 1)
-    emit = np.clip(arr[..., :3] * key[..., None] * 0.45 + gl[..., None] * np.array([0.2, 1.0, 0.08]) * 0.9, 0, 1)
-    Image.fromarray((np.dstack([rgb, alpha]) * 255).astype(np.uint8), "RGBA").save(os.path.join(tex_dir, "logo_color.png"))
-    Image.fromarray((emit * 255).astype(np.uint8)).save(os.path.join(tex_dir, "logo_emit.png"))
+    # CLEAR emblem (founder 2026-10-09 "how unclear the logo is"): tight crop, lifted gold, thick neon outline, gold bezel.
+    import subprocess
+    subprocess.run([sys.executable, "-I", os.path.join(os.path.dirname(os.path.abspath(__file__)), "make_gm_emblem.py"), arg("--logo"), tex_dir], check=True)
+    for _pl in dec.data.polygons:                       # the decal quad now maps the WHOLE emblem texture (0..1), not a logo crop
+        for _li, _uv in zip(_pl.loop_indices, ((1, 0), (0, 0), (0, 1), (1, 1))):
+            dec.data.uv_layers.active.data[_li].uv = _uv
     dm_ = bpy.data.materials.new("GM_Logo"); dm_.use_nodes = True; t = dm_.node_tree; b1 = t.nodes["Principled BSDF"]; dm_.blend_method = 'CLIP'; dm_.alpha_threshold = 0.5
-    tc2 = tex(os.path.join(tex_dir, "logo_color.png"), 'sRGB'); t.links.new(tc2.outputs['Color'], b1.inputs['Base Color']); t.links.new(tc2.outputs['Alpha'], b1.inputs['Alpha'])
-    te2 = tex(os.path.join(tex_dir, "logo_emit.png"), 'sRGB'); t.links.new(te2.outputs['Color'], b1.inputs['Emission Color']); b1.inputs['Emission Strength'].default_value = 1.0
+    tc2 = tex(os.path.join(tex_dir, "emblem_color.png"), 'sRGB'); t.links.new(tc2.outputs['Color'], b1.inputs['Base Color']); t.links.new(tc2.outputs['Alpha'], b1.inputs['Alpha'])
+    te2 = tex(os.path.join(tex_dir, "emblem_emit.png"), 'sRGB'); t.links.new(te2.outputs['Color'], b1.inputs['Emission Color']); b1.inputs['Emission Strength'].default_value = 1.6
     b1.inputs['Metallic'].default_value = 0.55; b1.inputs['Roughness'].default_value = 0.3
     dec.data.materials.clear(); dec.data.materials.append(dm_)
 # 4b. SOLID from every side (founder 2026-10-05 "make the rifle solid"): the Tripo body is a set of single-sided shells; with
@@ -124,4 +113,17 @@ bpy.ops.object.select_all(action='DESELECT')
 for o in parts: o.select_set(True)
 os.makedirs(os.path.dirname(os.path.abspath(GAME_OUT)), exist_ok=True)
 bpy.ops.export_scene.gltf(filepath=GAME_OUT, export_format="GLB", use_selection=True, export_apply=True, export_image_format="AUTO", export_jpeg_quality=78, export_texcoords=True, export_normals=True, export_materials="EXPORT")
+# Blender 4.2 writes alphaMode BLEND for any material with a linked alpha even when blend_method is CLIP. A blended decal sorts
+# against the body and shows the receiver's inside; patch the JSON chunk to MASK (alpha scissor, opaque pass).
+import json as _json, struct as _struct
+_raw = open(GAME_OUT, "rb").read()
+_jl = _struct.unpack("<I", _raw[12:16])[0]
+_j = _json.loads(_raw[20:20 + _jl])
+for _m in _j.get("materials", []):
+    if _m.get("name") == "GM_Logo":
+        _m["alphaMode"] = "MASK"; _m["alphaCutoff"] = 0.5
+_jb = _json.dumps(_j, separators=(",", ":")).encode()
+_jb += b" " * ((4 - len(_jb) % 4) % 4)
+_rest = _raw[20 + _jl:]
+open(GAME_OUT, "wb").write(_raw[:8] + _struct.pack("<I", 12 + 8 + len(_jb) + len(_rest)) + _struct.pack("<I", len(_jb)) + b"JSON" + _jb + _rest)
 log("game: wrote", GAME_OUT, os.path.getsize(GAME_OUT) // 1024, "KB"); log("render done (game export)")

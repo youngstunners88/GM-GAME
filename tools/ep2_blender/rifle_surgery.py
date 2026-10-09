@@ -84,11 +84,14 @@ rifle.data.update()
 LOGO = arg("--logo")
 if LOGO:
     bvh = BVHTree.FromObject(rifle, bpy.context.evaluated_depsgraph_get())
-    PX, PZ, D = float(arg("--lx", -0.075)), float(arg("--lz", 0.45)), float(arg("--ld", 0.12))
-    hit = bvh.ray_cast(Vector((PX, -1.0, PZ)), Vector((0, 1, 0)))
+    PX, PZ, D = float(arg("--lx", -0.075)), float(arg("--lz", 0.45)), float(arg("--ld", 0.185))
+    # The shooter sees the rifle's +X (glTF) side = the +Y side in this aligned frame. The decal used to go on the -Y side, i.e. on
+# the side NOBODY sees in first person, so the founder only ever saw the Tripo mesh's own baked emblem ("how unclear the logo is").
+    SIDE = -1.0 if arg("--lside") == "-y" else 1.0
+    hit = bvh.ray_cast(Vector((PX, SIDE, PZ)), Vector((0, -SIDE, 0)))
     py = hit[0].y if hit[0] else 0.262
     log("decal: plate surface y at", PX, PZ, "=", round(py, 4))
-    me = bpy.data.meshes.new("LogoDecal"); h = D / 2; yy = py - 0.0012
+    me = bpy.data.meshes.new("LogoDecal"); h = D / 2; yy = py + SIDE * 0.0012
     me.from_pydata([(PX - h, yy, PZ - h), (PX + h, yy, PZ - h), (PX + h, yy, PZ + h), (PX - h, yy, PZ + h)], [], [(0, 1, 2, 3)])
     uv = me.uv_layers.new(name="UVMap"); u0, u1, v0, v1 = 0.14, 0.86, 0.186, 0.926   # crop of Gold Logo.png around the emblem
     for li, (u, v) in zip(me.polygons[0].loop_indices, ((u0, v0), (u1, v0), (u1, v1), (u0, v1))): uv.data[li].uv = (u, v)
