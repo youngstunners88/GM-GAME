@@ -1256,8 +1256,12 @@ func _build_visuals() -> void:
 		pour_mi.position = spec + Vector3(0.25, 2.8, 0.0)
 		_visuals.add_child(pour_mi)
 		var ladle_iron := _hideout_plain(Color(0.13, 0.11, 0.10))
-		var ladle := _box(Vector3(0.9, 0.5, 0.9), spec + Vector3(0.55, 4.6, 0.0), ladle_iron)
+		var ladle_scene: PackedScene = preload("res://src/episode2/assets/hideout/pour_ladle.glb")
+		var ladle: Node3D = ladle_scene.instantiate()
+		HideoutDressing.finish_materials(ladle)
+		ladle.position = spec + Vector3(0.55, 4.6, 0.0)
 		ladle.rotation.z = deg_to_rad(32.0)
+		_visuals.add_child(ladle)
 		_box(Vector3(0.06, 1.6, 0.06), spec + Vector3(0.7, 5.6, 0.0), ladle_iron)
 		var glow := Ep2Palette.make_forge_light()
 		glow.light_energy = 2.8
@@ -1308,7 +1312,7 @@ func _build_visuals() -> void:
 			_visuals.add_child(lamp)
 			var lp: Node3D = _prop(LANTERN_MODEL, Vector3(8.9 * lsx, 3.2, lz), 1.2)
 			if lp:
-				RunnerView.self_light(lp, 1.1, Color(1.0, 0.72, 0.38))
+				HideoutDressing.finish_lantern(lp)
 
 	_camera = get_node_or_null("Camera3D") as Camera3D
 	if _camera:

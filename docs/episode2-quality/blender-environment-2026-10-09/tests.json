@@ -1,0 +1,56 @@
+[
+  {
+    "suite": "ep2_range_v3_test",
+    "exit": 0,
+    "failures": false,
+    "passes": 16
+  },
+  {
+    "suite": "ep2_range_lesson_test",
+    "exit": 0,
+    "failures": false,
+    "passes": 64
+  },
+  {
+    "suite": "ep2_smelting_facility_test",
+    "exit": 0,
+    "failures": false,
+    "passes": 103
+  },
+  {
+    "suite": "ep2_hideout_corrections_test",
+    "exit": 0,
+    "failures": false,
+    "passes": 25
+  },
+  {
+    "suite": "ep2_session_root_test",
+    "exit": 0,
+    "failures": false,
+    "passes": 26
+  },
+  {
+    "suite": "ep2_art_direction_test",
+    "exit": 0,
+    "failures": false,
+    "passes": 21
+  },
+  {
+    "suite": "ep2_glb_pipeline_test",
+    "exit": 0,
+    "failures": false,
+    "passes": 28
+  },
+  {
+    "suite": "ep2_transition_prebuild_test",
+    "exit": 0,
+    "failures": false,
+    "passes": 10
+  },
+  {
+    "suite": "script_compile_test",
+    "exit": 0,
+    "failures": false,
+    "passes": 2
+  }
+]

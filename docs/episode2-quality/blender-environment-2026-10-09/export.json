@@ -1,0 +1,9 @@
+{
+  "engine": "Godot 4.3 stable",
+  "renderer": "Compatibility",
+  "threaded_web": false,
+  "pck_bytes": 198702624,
+  "limit_bytes": 199229440,
+  "script_errors": 0,
+  "merged_master": "905568043f07539ef9b66c4ef36fbbb0bbb8855d"
+}

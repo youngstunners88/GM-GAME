@@ -76,6 +76,7 @@ static func _build_wall_and_bench(parent: Node3D, timber: Material) -> void:
 	var wall_scene: PackedScene = load(WALL_GLB) as PackedScene if ResourceLoader.exists(WALL_GLB) else null
 	if wall_scene:
 		var wall_model: Node3D = wall_scene.instantiate() as Node3D
+		HideoutDressing.finish_materials(wall_model)
 		wall_model.name = "PlankWall"
 		wall_model.position = Vector3(0.0, 0.0, TARGET_Z - 0.4)     # planks' front face = where the holes sit
 		parent.add_child(wall_model)
@@ -108,29 +109,38 @@ static func _build_wall_and_bench(parent: Node3D, timber: Material) -> void:
 		lamp.omni_range = 7.0
 		lamp.position = Vector3(lx, 3.9, TARGET_Z + 1.4)
 		parent.add_child(lamp)
-	# firing bench at the line
-	var bench := MeshInstance3D.new()
-	var bm := BoxMesh.new()
-	bm.size = Vector3(1.9, 0.14, 0.7)          # a table TOP, not a solid slab
-	bench.mesh = bm
-	var top_mat := StandardMaterial3D.new()
-	top_mat.albedo_color = Color(0.5, 0.34, 0.2)
-	top_mat.roughness = 0.75
-	top_mat.emission_enabled = true
-	top_mat.emission = Color(0.55, 0.37, 0.2)
-	top_mat.emission_energy_multiplier = 0.12
-	bench.material_override = top_mat
-	bench.position = Vector3(LANE_X, 0.78, LINE.z - 0.7)
-	parent.add_child(bench)
-	for lx in [-0.85, 0.85]:
-		for lz in [-0.3, 0.3]:
-			var leg := MeshInstance3D.new()
-			var lgm := BoxMesh.new()
-			lgm.size = Vector3(0.12, 0.78, 0.12)
-			leg.mesh = lgm
-			leg.material_override = wood
-			leg.position = Vector3(LANE_X + lx, 0.39, LINE.z - 0.7 + lz)
-			parent.add_child(leg)
+	# Authored trestle joinery, end bindings and worn planks replace the flat block bench.
+	var bench_scene: PackedScene = preload("res://src/episode2/assets/hideout/firing_bench.glb")
+	if bench_scene:
+		var bench_model: Node3D = bench_scene.instantiate()
+		HideoutDressing.finish_materials(bench_model)
+		bench_model.name = "BlenderFiringBench"
+		bench_model.position = Vector3(LANE_X, 0.0, LINE.z - 0.7)
+		parent.add_child(bench_model)
+	else:
+		# firing bench at the line
+		var bench := MeshInstance3D.new()
+		var bm := BoxMesh.new()
+		bm.size = Vector3(1.9, 0.14, 0.7)          # a table TOP, not a solid slab
+		bench.mesh = bm
+		var top_mat := StandardMaterial3D.new()
+		top_mat.albedo_color = Color(0.5, 0.34, 0.2)
+		top_mat.roughness = 0.75
+		top_mat.emission_enabled = true
+		top_mat.emission = Color(0.55, 0.37, 0.2)
+		top_mat.emission_energy_multiplier = 0.12
+		bench.material_override = top_mat
+		bench.position = Vector3(LANE_X, 0.78, LINE.z - 0.7)
+		parent.add_child(bench)
+		for lx in [-0.85, 0.85]:
+			for lz in [-0.3, 0.3]:
+				var leg := MeshInstance3D.new()
+				var lgm := BoxMesh.new()
+				lgm.size = Vector3(0.12, 0.78, 0.12)
+				leg.mesh = lgm
+				leg.material_override = wood
+				leg.position = Vector3(LANE_X + lx, 0.39, LINE.z - 0.7 + lz)
+				parent.add_child(leg)
 	# a small warm lamp over the bench so the viewmodel and the bench read
 	var blamp := OmniLight3D.new()
 	blamp.light_color = Color(1.0, 0.82, 0.55)
@@ -178,11 +188,11 @@ static func _build_wall_and_bench(parent: Node3D, timber: Material) -> void:
 	parent.add_child(lane)
 	var sign := Label3D.new()
 	sign.text = "TARGET PRACTICE"
-	sign.font_size = 64
-	sign.pixel_size = 0.004
+	sign.font_size = 72
+	sign.pixel_size = 0.008
 	sign.modulate = Color(1.0, 0.75, 0.3)
 	sign.outline_size = 14
-	sign.position = Vector3(LANE_X, 5.1, TARGET_Z + 0.2)
+	sign.position = Vector3(LANE_X, 4.9, TARGET_Z + 0.3)
 	parent.add_child(sign)
 
 
@@ -346,7 +356,7 @@ static func _build_damage(parent: Node3D) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 20261004
 	var g := Gradient.new()
-	g.colors = PackedColorArray([Color(0.02, 0.015, 0.01, 1.0), Color(0.02, 0.015, 0.01, 0.95), Color(0.85, 0.7, 0.45, 0.55), Color(0.85, 0.7, 0.45, 0.0)])
+	g.colors = PackedColorArray([Color(0.02, 0.015, 0.01, 1.0), Color(0.02, 0.015, 0.01, 0.95), Color(0.44, 0.28, 0.13, 0.55), Color(0.44, 0.28, 0.13, 0.0)])
 	g.offsets = PackedFloat32Array([0.0, 0.34, 0.5, 1.0])
 	var gt := GradientTexture2D.new()
 	gt.gradient = g
@@ -373,15 +383,29 @@ static func _build_damage(parent: Node3D) -> void:
 			var r: float = rng.randf_range(0.2, 0.95)
 			if sp.z > TARGET_Z + 0.5:
 				continue      # the standing bear is not on the wall
-			spots.append(Vector3(sp.x + cos(a) * r, sp.y + sin(a) * r, TARGET_Z - 0.4))
+			var pos := Vector3(sp.x + cos(a) * r, sp.y + sin(a) * r, 0.0)
+			pos.z = _damage_wall_face(pos)
+			spots.append(pos)
 	for k in 70:
-		spots.append(Vector3(rng.randf_range(-5.0, 5.0), rng.randf_range(0.6, 4.8), TARGET_Z - 0.4))
+		var pos := Vector3(rng.randf_range(-4.7, 4.7), rng.randf_range(0.6, 4.8), 0.0)
+		pos.z = _damage_wall_face(pos)
+		spots.append(pos)
 	mm.instance_count = spots.size()
 	for i in spots.size():
-		var sz: float = rng.randf_range(0.14, 0.34)
+		var sz: float = rng.randf_range(0.09, 0.18)
 		var t := Transform3D(Basis.from_euler(Vector3(0.0, 0.0, rng.randf() * TAU)).scaled(Vector3(sz, sz, 1.0)), spots[i])
 		mm.set_instance_transform(i, t)
 	var mmi := MultiMeshInstance3D.new()
 	mmi.name = "WallDamage"
 	mmi.multimesh = mm
 	parent.add_child(mmi)
+
+
+## Place scars on the authored plank or brace face, never behind the backing mesh.
+static func _damage_wall_face(pos: Vector3) -> float:
+	var index: int = clampi(int(floor((pos.x + 5.5) / 0.5)), 0, 21)
+	var relief: float = 0.11 - float(index % 3) * 0.012
+	for brace_y in [0.20, 4.38, 6.05]:
+		if absf(pos.y - brace_y) < 0.12:
+			relief = 0.25
+	return TARGET_Z - 0.4 + relief + 0.006

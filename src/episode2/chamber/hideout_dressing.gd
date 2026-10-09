@@ -74,12 +74,13 @@ func _build(visuals: Node3D) -> Dictionary:
 	_gold = _plain(Color(1.0, 0.80, 0.33), 0.26, 0.40)
 	_gold.emission_enabled = true
 	_gold.emission = Color(1.0, 0.72, 0.24)
-	_gold.emission_energy_multiplier = 0.16
+	_gold.emission_energy_multiplier = 0.035
 	_gold.metallic_specular = 0.7
 	_leather = _plain(Color(0.28, 0.15, 0.09), 0.7, 0.0)
 	_alcove()
 	await _breathe()
 	_authored_architecture()
+	_finish_forge()
 	await _breathe()
 	_joinery_and_lanterns()
 	await _breathe()
@@ -147,6 +148,9 @@ func _tex_mat(path: String, tint: Color, uv: float) -> StandardMaterial3D:
 		m.albedo_texture = load(path)
 		m.uv1_triplanar = true
 		m.uv1_scale = Vector3.ONE * uv
+		if path == TIMBER_TEX:
+			m.normal_enabled = true
+			m.normal_texture = load(PROP_DIR + "finish_oak_normal.png")
 	return m
 
 
@@ -182,8 +186,31 @@ func _glb(path: String, pos: Vector3, scale: float, yaw_deg: float, parent: Node
 	n.position = pos
 	n.scale = Vector3.ONE * scale
 	n.rotation_degrees.y = yaw_deg
+	finish_materials(n)
 	(parent if parent else _v).add_child(n)
 	return n
+
+
+## Keep authored PBR relief, with measured albedo values for the warm Web renderer.
+## Source materials use linear Blender colours; these palette values are Godot sRGB.
+static func finish_materials(root: Node3D) -> void:
+	for child in root.find_children("*", "MeshInstance3D", true, false):
+		var mi: MeshInstance3D = child
+		for i in mi.mesh.get_surface_count():
+			var src: Material = mi.mesh.surface_get_material(i)
+			if not src is StandardMaterial3D or not src.resource_name.begins_with("Finish_"):
+				continue
+			var mat: StandardMaterial3D = src.duplicate()
+			match src.resource_name:
+				"Finish_HammeredIron": mat.albedo_color = Color(0.13, 0.12, 0.10)
+				"Finish_RubbedIron": mat.albedo_color = Color(0.24, 0.21, 0.17)
+				"Finish_OldBrass": mat.albedo_color = Color(0.34, 0.24, 0.08)
+				"Finish_CastGold": mat.albedo_color = Color(0.65, 0.43, 0.12)
+				"Finish_WornOak": mat.albedo_color = Color(0.65, 0.47, 0.30)
+				"Finish_SootStone": mat.albedo_color = Color(0.48, 0.45, 0.39)
+			mat.emission_enabled = false
+			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+			mi.set_surface_override_material(i, mat)
 
 
 ## A lantern that reads as a LIT lantern, not a flat white disc. The committed
@@ -196,14 +223,31 @@ func _lantern(pos: Vector3, scale: float, parent: Node3D = null) -> Node3D:
 	var lp: Node3D = _glb(LANTERN, pos, scale, 0.0, parent)
 	if lp == null:
 		return null
-	for mi in lp.find_children("*", "MeshInstance3D", true, false):
-		var mat: Material = mi.get_active_material(0)
-		var a: Color = (mat as StandardMaterial3D).albedo_color if mat is StandardMaterial3D else Color(1, 1, 1)
-		# The glass is the only near-white surface; the brass cage sits well below this.
-		if a.r + a.g + a.b > 2.2:
-			mi.material_override = _lantern_glass()
-	RunnerView.self_light(lp, 0.22, Color(1.0, 0.72, 0.38))
+	finish_lantern(lp)
 	return lp
+
+
+## Fix individual cage and globe surfaces, preserving their imported geometry.
+## Warm local lights illuminate the brass; self-emission belongs only to the globe.
+static func finish_lantern(root: Node3D) -> void:
+	for child in root.find_children("*", "MeshInstance3D", true, false):
+		var mi: MeshInstance3D = child
+		for i in mi.mesh.get_surface_count():
+			var source: Material = mi.mesh.surface_get_material(i)
+			if not source is StandardMaterial3D:
+				continue
+			var mat: StandardMaterial3D = source.duplicate()
+			mat.metallic = 0.25
+			mat.roughness = 0.48
+			if source.resource_name.contains("Glow"):
+				mat.albedo_color = Color(0.72, 0.31, 0.05)
+				mat.emission_enabled = true
+				mat.emission = Color(1.0, 0.42, 0.06)
+				mat.emission_energy_multiplier = 0.75
+			else:
+				mat.albedo_color = Color(0.25, 0.17, 0.07)
+				mat.emission_enabled = false
+			mi.set_surface_override_material(i, mat)
 
 
 var _glass_mat: StandardMaterial3D = null
@@ -314,6 +358,8 @@ func _authored_architecture() -> void:
 			if src.resource_name.begins_with("ArmoryOak"):
 				mat.albedo_color = Color(0.44, 0.27, 0.15) if src.resource_name == "ArmoryOak" else Color(0.36, 0.20, 0.10)
 				mat.albedo_texture = load(TIMBER_TEX)
+				mat.normal_enabled = true
+				mat.normal_texture = load(PROP_DIR + "finish_oak_normal.png")
 				mat.uv1_triplanar = true
 				mat.uv1_scale = Vector3(0.65, 0.65, 0.65)
 			elif src.resource_name.begins_with("ArmoryStone"):
@@ -323,6 +369,14 @@ func _authored_architecture() -> void:
 				mat.uv1_scale = Vector3.ONE * 0.4
 			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 			mi.set_surface_override_material(i, mat)
+
+
+## Blender finish kit: deep masonry frames the existing furnace light plane.
+## Geometry stays outside the walk route; progression and the opening are unchanged.
+func _finish_forge() -> void:
+	var forge := _glb(PROP_DIR + "furnace_stonework.glb", Vector3(-6.3, 0.0, 16.05), 1.0, 0.0)
+	if forge:
+		forge.name = "BlenderFurnaceStonework"
 
 
 ## Arrival-side rock face. Looking back previously exposed only the flat forge
@@ -338,8 +392,11 @@ func _entry_wall() -> void:
 		_box(Vector3(8.2, 10.0, 2.0), Vector3(7.5 * side, 4.8, -12.0), rock, Vector3.ZERO, stonework)
 		_box(Vector3(0.5, 5.7, 0.5), Vector3(3.15 * side, 2.7, -10.9), _timber, Vector3.ZERO, stonework)
 		for k in 4:
-			_glb(RunnerView.BOULDER_ROCK_MODEL, Vector3((4.2 + 1.7 * float(k)) * side, -0.2, -10.3),
+			var rubble := _glb(RunnerView.BOULDER_ROCK_MODEL, Vector3((4.2 + 1.7 * float(k)) * side, -0.2, -10.3),
 				1.7 + 0.3 * float(k % 2), float(k) * 1.7, stonework)
+			if rubble:
+				for mi in rubble.find_children("*", "MeshInstance3D", true, false):
+					mi.material_override = rock
 		_lantern(Vector3(3.05 * side, 3.2, -10.55), 1.0, stonework)
 		_fire(Vector3(2.8 * side, 3.5, -10.0), 1.8, 8.0)
 	_box(Vector3(6.9, 5.2, 2.0), Vector3(0.0, 7.3, -12.0), rock, Vector3.ZERO, stonework)
@@ -545,6 +602,7 @@ func _braziers() -> void:
 func _gold_and_cart() -> void:
 	# Gold bars stacked in the right foreground and at the back, plus the Meshy ore cart heaped with gold.
 	var ingot_mesh: ArrayMesh = _beveled_ingot()
+	var cast_scene: PackedScene = load(PROP_DIR + "cast_ingot.glb") as PackedScene
 	var stacks := Node3D.new()
 	stacks.name = "BeveledGoldStacks"
 	_v.add_child(stacks)
@@ -553,7 +611,15 @@ func _gold_and_cart() -> void:
 			var cols: int = 5 - row
 			for c in cols:
 				var x: float = stack.x - float(cols - 1) * 0.28 + float(c) * 0.56
-				_add(ingot_mesh, _gold, Vector3(x, 0.1 + 0.21 * float(row), stack.z), Vector3.ZERO, stacks)
+				if cast_scene:
+					var bar: Node3D = cast_scene.instantiate()
+					finish_materials(bar)
+					bar.scale = Vector3(1.0, 1.35, 1.4)
+					bar.position = Vector3(x, 0.176 * float(row), stack.z)
+					bar.rotation_degrees.y = float((row + c) % 3 - 1) * 1.8
+					stacks.add_child(bar)
+				else:
+					_add(ingot_mesh, _gold, Vector3(x, 0.1 + 0.21 * float(row), stack.z), Vector3.ZERO, stacks)
 		_blockers.append([Vector2(stack.x, stack.z), 1.0])
 	var cart_pos := Vector3(-3.9, 0.0, 1.4)
 	if _prop("ore_cart", cart_pos, 1.6, 0.35) == null:
@@ -933,14 +999,16 @@ static func add_cauldron(visuals: Node3D, pos: Vector3, molten: Material, height
 	var d := HideoutDressing.new()
 	d._v = visuals
 	d._brass = Ep2Palette.make("brass")
-	var c: Node3D = d._prop("cauldron", pos, height, 0.0)
-	if c:
-		for mesh in c.find_children("*", "MeshInstance3D", true, false):
-			var iron := StandardMaterial3D.new()
-			iron.albedo_color = Color(0.48, 0.40, 0.32)
-			iron.metallic = 0.15
-			iron.roughness = 0.7
-			mesh.material_override = iron
+	var c: Node3D = d._glb(PROP_DIR + "forge_crucible.glb", pos, height / 1.70, 0.0)
+	if c == null:
+		c = d._prop("cauldron", pos, height, 0.0)
+		if c:
+			for mesh in c.find_children("*", "MeshInstance3D", true, false):
+				var iron := StandardMaterial3D.new()
+				iron.albedo_color = Color(0.22, 0.18, 0.14)
+				iron.metallic = 0.25
+				iron.roughness = 0.65
+				mesh.material_override = iron
 	if c == null:
 		var iron: StandardMaterial3D = d._dark_iron()
 		d._cyl(0.95, 0.78, 1.5, pos + Vector3(0.0, 1.05, 0.0), iron)

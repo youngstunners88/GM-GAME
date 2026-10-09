@@ -1,0 +1,38 @@
+{
+  "generator": "Blender 4.0.2",
+  "basis": "Godot metres; glTF Y-up",
+  "license": "project-authored geometry; existing project texture sources",
+  "kits": {
+    "forge_crucible": {
+      "triangles": 5380,
+      "meshes": 3,
+      "bytes": 291120
+    },
+    "pour_ladle": {
+      "triangles": 948,
+      "meshes": 2,
+      "bytes": 37044
+    },
+    "firing_bench": {
+      "triangles": 1036,
+      "meshes": 3,
+      "bytes": 179664
+    },
+    "furnace_stonework": {
+      "triangles": 1568,
+      "meshes": 2,
+      "bytes": 232840
+    },
+    "range_wall": {
+      "triangles": 6696,
+      "meshes": 3,
+      "bytes": 718032
+    },
+    "cast_ingot": {
+      "triangles": 132,
+      "meshes": 2,
+      "bytes": 10904
+    }
+  },
+  "source": "design/ep2/blender/hideout_finish.blend"
+}

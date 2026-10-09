@@ -5,6 +5,9 @@
 
 ---
 
+
+**EPISODE 2 — BLENDER HIDEOUT AND TARGET RANGE FINISH (Codex, 2026-10-09).** New packed Blender source and reproducible authoring script produce forged hollow crucibles/ladles, furnace stonework, beveled stamped gold bars, a trestle bench and weathered range backstop. Calibrated iron and lantern materials avoid pale overlit props; shared textures and import presets keep the full geometry inside the Web pack gate. The five-target lesson and founder character/film work are retained. Nine suites pass 295 checks; compilation covers 294 scripts / 215 scenes. Fresh nonthreaded Web PCK: 198,702,624 bytes. Actual gameplay-camera comparisons: `docs/episode2-quality/blender-environment-2026-10-09/`. Publication/live verification pending. Bull's underlying sculpt remains a separate unresolved task.
+
 **🎯 BLENDER SOURCES BACKED UP INTO THE REPO (2026-10-06).** Every Blender source that existed only on the desktop is now in `design/ep2/blender/` so nothing depends on one PC:
 - **Winchester rifle:** Cowork's final `rifle_hero_v4_final.blend` (+ v3 merged, the working file `rifle/bolt-action-rifle_work.blend`, source GLB, previews, its handoff skill) and my v1/v2 headless versions. Real GM logo and a long barrel are in; the engraved brass receiver and a stock buttplate are still open.
 - **Inferno Bull:** `inferno-bull-pbr_v5.blend`, plus the Minotaur/Bull sources from ChatGPT in `character-work/`. **The Bull is NOT resolved** (founder: "still trash"): head pose and arm are fixed, but the soft Tripo sculpt and my forge set are not at the reference; a higher-detail regenerate is the likely next step.
