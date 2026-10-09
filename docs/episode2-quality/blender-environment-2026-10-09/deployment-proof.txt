@@ -1,0 +1,10 @@
+Source: e380e63e4b991d786ada057addf548dc235c8299
+Run: https://github.com/youngstunners88/GM-GAME/actions/runs/37934980430
+Job: 113835618869
+Outcome: success
+Deploy to itch.io via butler: success
+
+2026-10-09T13:17:11.2349832Z 44:const BUILD_TAG := "2026-10-09-e380e63"
+2026-10-09T13:17:18.3056580Z index.pck = 189 MB (itch per-file limit: 200 MB; CI gate: 190 MB)
+2026-10-09T13:17:53.8179786Z • For channel `html5`: last build is 2093358, downloading its signature
+2026-10-09T13:17:56.8449511Z ##[notice]Pushed to https://youngstunners88.itch.io/smokerealm
