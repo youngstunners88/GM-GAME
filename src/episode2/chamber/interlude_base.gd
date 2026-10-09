@@ -7,8 +7,12 @@ extends Node3D
 ## This base owns what every walk-around story room needs, so each chamber is only its set, its beats and its script:
 ##   * the session-root contract (setup / step / chamber_cleared / chamber_failed + the free-roam verbs set_move_input,
 ##     look, jump, shoot ... that Ep2SessionRoot routes), so a chamber drops into the same loop as the facility;
+##   * FIRST PERSON (founder 2026-10-09: "this is a 1st player shooter game ... why would Lil Blunt not have the rifle that
+##     Inferno Bull gave him"): the camera is Lil Blunt's eye and the Winchester is in his hands - the hideout's viewmodel
+##     (Ep2Viewmodel: hands, ADS, recoil, lever, reload, ammo HUD). The third-person body only shows while a DIRECTOR shot
+##     is on (the hidden lever, the leaves coming off), holding the rifle at his hip;
 ##   * Lil Blunt (the rigged hero with walk / run clips) and Inferno Bull (Ep2Actor with walk / run / idle), a
-##     third-person follow camera with a director override, jump + double jump, a ground height that a lift can move;
+##     director camera override, jump + double jump, a ground height that a lift can move;
 ##   * the SHOW: the same data-driven step sequencer the hideout uses (FacilityShow) - say / walk / face / reach / hop /
 ##     until / call - driven by step(delta) so a headless test plays a whole chamber without a frame clock.
 ## Skill: ep2-interlude-chain.
@@ -34,6 +38,17 @@ const BULL_RIG_H := 2.4
 const BULL_IDLE := "Idle_02"
 const NO_FOCUS := Vector3(INF, INF, INF)
 
+# --- first person (the same numbers as the hideout's range: skill ep2-fps-shooter-feel) --------------------------------
+const FPS_EYE_HEIGHT := 1.55
+const FPS_FOV := 78.0
+const FPS_ADS_FOV := 58.0              # aimed down the sights: a ~1.3x zoom, the Modern Warfare ADS feel
+const FPS_PITCH_MIN := -1.35
+const FPS_PITCH_MAX := 1.35
+const ADS_LOOK_SCALE := 0.55           # mouse look slows while aimed
+const ADS_MOVE_SCALE := 0.55           # ...and so does walking
+const HELD_RIFLE_POS := Vector3(0.45, 1.05, 0.25)       # the rifle at his hip in a director shot (the hideout's third-person carry)
+const HELD_RIFLE_ROT := Vector3(0.0, 0.0, -0.314)
+
 const ROCK_TEX := "res://src/episode2/assets/textures/tex_rock_wall.jpg"
 const GRAVEL_TEX := "res://src/episode2/assets/textures/tex_gravel.jpg"
 const TIMBER_TEX := "res://src/episode2/assets/textures/tex_timber.jpg"
@@ -47,6 +62,11 @@ var title_card: String = ""
 var music_path: String = ""
 var camera_min: Vector3 = Vector3(-60.0, 0.4, -60.0)
 var camera_max: Vector3 = Vector3(60.0, 40.0, 60.0)
+## First person is the DEFAULT of every story room (the game is a shooter). A chamber may turn it off to be shot third-person.
+var fps_mode: bool = true
+var eye_height: float = FPS_EYE_HEIGHT
+## Scales the rifle's albedo for a very bright scene (daylight makes its metal read cream): 1.0 in a lamp-lit mine, ~0.7 in the open.
+var viewmodel_exposure: float = 1.0
 
 # --- live state -----------------------------------------------------------------------------------------------------
 var _beat: int = 0
@@ -72,6 +92,16 @@ var _player_pose: RunnerArmRest = null
 var _hero_anim: AnimationPlayer = null
 var _hero_clip: String = ""
 var _bull: Ep2Actor = null
+var _vm: Ep2Viewmodel = null                  # the Winchester in his hands (first person)
+var _held_rifle: Node3D = null                # ...and the same rifle on the third-person body, seen only in a director shot
+var _hud_layer: CanvasLayer = null
+var _hud: Ep2FpsHud = null
+var _look_goal_on: bool = false               # a scripted beat turns his view toward `_look_goal` (he keeps the rifle in his hands)
+var _look_goal: Vector3 = Vector3.ZERO
+var _look_goal_rate: float = 2.4
+var _scope_k: float = 0.0                     # 0..1 blend toward `_scope_fov` (the woods' spyglass)
+var _scope_fov: float = 16.0
+var _fps_view_on: bool = false                # whether the eye camera (not a director shot) is showing right now
 
 var _player_pos: Vector3 = Vector3.ZERO      # feet, absolute world height
 var _ground_y: float = 0.0                   # what he stands on right now (a rising lift moves this)
@@ -134,6 +164,8 @@ func _ensure_room() -> void:
 		add_child(_sun)
 	_build_room()
 	_player_node = _build_player()
+	if fps_mode:
+		_build_first_person()
 	_sync_visuals()
 
 
@@ -180,6 +212,7 @@ func step(delta: float) -> void:
 	_tick(delta)
 	if _bull != null and is_instance_valid(_bull):
 		_bull.step(delta)
+	_tick_viewmodel(delta)
 	_update_camera(delta)
 	_animate(delta)
 	_sync_visuals()
@@ -211,6 +244,16 @@ func _collide(p: Vector3) -> Vector3:
 
 func _beat_label(b: int) -> String:
 	return str(b)
+
+
+## A round left the Winchester (first person). A chamber decides what a shot means: noise in the woods, nothing in the shaft.
+func _on_player_shot() -> void:
+	pass
+
+
+## True while the rifle should be at low ready (the woods' spyglass is up).
+func _viewmodel_lowered() -> bool:
+	return false
 
 
 # --- the show -------------------------------------------------------------------------------------------------------
@@ -330,8 +373,15 @@ func walk_stop() -> void:
 func look(relative: Vector2) -> void:
 	if not has_player_control():
 		return
-	_look_yaw -= relative.x * LOOK_SENSITIVITY
-	_look_pitch = clampf(_look_pitch - relative.y * LOOK_SENSITIVITY, LOOK_PITCH_MIN, LOOK_PITCH_MAX)
+	var ads: float = _vm.gun.ads if _vm != null else 0.0
+	var k: float = LOOK_SENSITIVITY * lerpf(1.0, ADS_LOOK_SCALE, ads) * lerpf(1.0, 0.22, _scope_k)
+	_look_yaw -= relative.x * k
+	if fps_mode:
+		_look_pitch = clampf(_look_pitch - relative.y * k, FPS_PITCH_MIN, FPS_PITCH_MAX)
+	else:
+		_look_pitch = clampf(_look_pitch - relative.y * k, LOOK_PITCH_MIN, LOOK_PITCH_MAX)
+	if _vm != null:
+		_vm.add_look(relative)
 
 
 func jump() -> bool:
@@ -352,14 +402,33 @@ func _can_jump() -> bool:
 	return true
 
 
-## The interlude has no weapon verbs (the rifle is slung): the root's click / E / cover verbs are accepted and ignored.
-func shoot() -> bool: return false
+## LMB: a round out of the Winchester in his hands. True when a shot left the barrel (not while a scripted beat has the
+## controls, not mid lever-cycle, not on an empty chamber). What the shot MEANS is the chamber's `_on_player_shot()`.
+func shoot() -> bool:
+	if _vm == null or not has_player_control():
+		return false
+	return _vm.fire()
+
+
+## RMB (held): aim down the sights. The woods' spy point overrides this with the spyglass.
+func set_aim(on: bool) -> void:
+	if _vm == null:
+		return
+	_vm.set_aim(on and has_player_control())
+
+
+## R: load shells one at a time.
+func reload() -> bool:
+	if _vm == null or not has_player_control():
+		return false
+	return _vm.reload()
+
+
+## The miner-rig / cover verbs belong to the protocol chambers: the root's E / S / dash are accepted and ignored here.
 func start_rig(_payment: String = "") -> bool: return false
 func early_claim() -> bool: return false
 func take_cover() -> void: pass
 func leave_cover() -> void: pass
-func set_aim(_on: bool) -> void: pass
-func reload() -> bool: return false
 
 # State the entry host / HUD read (the facility's vocabulary, so the host treats an interlude like any story room).
 func get_beat() -> int: return _beat
@@ -368,14 +437,19 @@ func get_title_card() -> String: return title_card
 func has_winchester() -> bool: return true
 func get_molds_left() -> int: return 0
 func get_btc_paid() -> int: return 1
-func get_health() -> int: return 3
-func get_ammo() -> int: return 0
+func get_health() -> int: return 3        # the hideout's cap; nothing in the story rooms hurts (no second health system)
+func get_ammo() -> int: return _vm.gun.rounds if _vm != null else 0
+func get_reserve() -> int: return _vm.gun.reserve if _vm != null else 0
+func get_gun() -> Ep2Winchester: return _vm.gun if _vm != null else null
+func get_viewmodel() -> Ep2Viewmodel: return _vm
+func get_hud() -> Ep2FpsHud: return _hud
 func get_live_bear_count() -> int: return 0
 func get_vest() -> float: return 0.0
 func is_rig_started() -> bool: return false
 func is_in_cover() -> bool: return false
-func is_fps() -> bool: return false
-func get_episode_mode() -> int: return Episode2Mode.Mode.HIDEOUT
+func is_fps() -> bool: return fps_mode
+func is_ads() -> bool: return _vm != null and _vm.is_ads()
+func get_episode_mode() -> int: return Episode2Mode.Mode.FPS if fps_mode else Episode2Mode.Mode.HIDEOUT
 func get_player_position() -> Vector3: return _player_pos
 func get_look_yaw() -> float: return _look_yaw
 func get_bull() -> Ep2Actor: return _bull
@@ -431,7 +505,8 @@ func _move_player(delta: float) -> void:
 
 
 func _current_speed() -> float:
-	return RUN_SPEED if _run_input else walk_speed
+	var base: float = RUN_SPEED if _run_input else walk_speed
+	return base * lerpf(1.0, ADS_MOVE_SCALE, _vm.gun.ads if _vm != null else 0.0)
 
 
 func _update_vertical(delta: float) -> void:
@@ -462,6 +537,8 @@ func _update_camera(delta: float) -> void:
 	if _camera == null or not is_instance_valid(_camera):
 		return
 	if _cam_goal_active:
+		# a DIRECTOR shot (the hidden lever, the leaves coming off): the cinema camera sees Lil Blunt's body, rifle at his hip
+		_set_eye_view(false)
 		var t: float = 1.0 if _cam_snap else clampf(2.4 * delta, 0.0, 1.0)
 		_camera.position = _camera.position.lerp(_cam_goal_pos, t)
 		_camera.fov = lerpf(_camera.fov, _cam_goal_fov, clampf(4.0 * delta, 0.0, 1.0) if not _cam_snap else 1.0)
@@ -469,7 +546,103 @@ func _update_camera(delta: float) -> void:
 			_camera.look_at(_cam_goal_look, Vector3.UP)
 		_cam_snap = false
 		return
+	if fps_mode:
+		_set_eye_view(true)
+		_apply_look_goal(delta)
+		_fps_camera(delta)
+		return
 	_follow_camera(delta)
+
+
+## SCRIPTED BEATS STAY IN FIRST PERSON: instead of cutting away to a cinema camera (the rifle would vanish), the eye is
+## turned toward the action - Inferno at the hidden lever, the leaves coming off the quad - while the controls are held.
+## Call `release_look()` when the beat ends. Only use it while `_show_blocks_control` is on (the mouse would fight it).
+func look_toward(p: Vector3, rate: float = 2.4) -> void:
+	_look_goal_on = true
+	_look_goal = p
+	_look_goal_rate = rate
+
+
+func release_look() -> void:
+	_look_goal_on = false
+
+
+func _apply_look_goal(delta: float) -> void:
+	if not _look_goal_on:
+		return
+	var eye := Vector3(_player_pos.x, _player_pos.y + eye_height, _player_pos.z)
+	var d: Vector3 = _look_goal - eye
+	if d.length() < 0.5:
+		return
+	var k: float = 1.0 - exp(-_look_goal_rate * delta)
+	_look_yaw = lerp_angle(_look_yaw, atan2(d.x, d.z), k)
+	_look_pitch = lerpf(_look_pitch, clampf(atan2(d.y, Vector2(d.x, d.z).length()), FPS_PITCH_MIN, FPS_PITCH_MAX), k)
+
+
+## FIRST PERSON: the camera IS Lil Blunt's eye (mouse look, the kick lifts the view, a little walk bob), fov 78, ADS ~1.3x.
+func _fps_camera(_delta: float) -> void:
+	var ads: float = _vm.gun.ads if _vm != null else 0.0
+	var bob: float = (sin(_walk_phase) * 0.035 if _moving else 0.0) * lerpf(1.0, 0.25, ads)
+	_camera.position = Vector3(_player_pos.x, _player_pos.y + eye_height, _player_pos.z) + Vector3(0.0, bob, 0.0)
+	var kick: float = _vm.cam_kick if _vm != null else 0.0
+	var pitch: float = clampf(_look_pitch + kick, -1.4, 1.4)         # the kick lifts the VIEW, not the aim point
+	var cp: float = cos(pitch)
+	var dir := Vector3(sin(_look_yaw) * cp, sin(pitch), cos(_look_yaw) * cp)
+	_camera.look_at(_camera.position + dir, Vector3.UP)
+	var ads_k: float = ads * ads * (3.0 - 2.0 * ads)
+	var fov: float = lerpf(FPS_FOV, FPS_ADS_FOV, ads_k)
+	if _scope_k > 0.0:
+		fov = lerpf(fov, _scope_fov, _scope_k)
+	_camera.fov = fov
+
+
+## Eye camera (rifle + HUD, no body) versus director camera (body + held rifle, no viewmodel, no HUD).
+func _set_eye_view(on: bool) -> void:
+	_fps_view_on = on
+	if _player_node != null and is_instance_valid(_player_node):
+		_player_node.visible = not on
+	if _vm != null:
+		_vm.set_shown(on)
+	if _hud != null:
+		_hud.visible = on
+
+
+## Build the Winchester viewmodel on the camera and the first-person HUD (ammo, crosshair).
+func _build_first_person() -> void:
+	if _vm != null or _camera == null:
+		return
+	_vm = Ep2Viewmodel.new()
+	_vm.name = "Viewmodel"
+	add_child(_vm)
+	_vm.attach(_camera)
+	_vm.set_exposure(viewmodel_exposure)
+	_vm.fired.connect(_on_player_shot)
+	_vm.dry_fired.connect(func() -> void:
+		if _hud != null:
+			_hud.toast("OUT OF ROUNDS  -  PRESS R", 1.6))
+	_hud_layer = CanvasLayer.new()
+	_hud_layer.layer = 12
+	add_child(_hud_layer)
+	_hud = Ep2FpsHud.new()
+	_hud.mag = Ep2Winchester.MAG
+	_hud.show_ammo = true
+	_hud.show_crosshair = true
+	_hud_layer.add_child(_hud)
+
+
+## One physics step of the rifle and the HUD numbers.
+func _tick_viewmodel(delta: float) -> void:
+	if _vm == null:
+		return
+	_vm.lowered = _viewmodel_lowered()
+	_vm.step(delta, _moving, _run_input and _moving, _walk_phase)
+	if _hud != null:
+		_hud.spread_deg = _vm.gun.spread_deg(_moving, _player_pos.y > _ground_y + 0.05)
+		_hud.ads = maxf(_vm.gun.ads, _scope_k)
+		_hud.set_ammo(_vm.gun.rounds, _vm.gun.reserve, Ep2Winchester.MAG)
+		_hud.health = 3
+		_hud.health_max = 3
+		_hud.show_health = false
 
 
 func _follow_camera(delta: float) -> void:
@@ -504,7 +677,9 @@ func release_camera() -> void:
 func _animate(delta: float) -> void:
 	if _player_node == null or not is_instance_valid(_player_node):
 		return
-	if _show_active and not _moving and _bull != null:
+	if fps_mode and _fps_view_on:
+		_player_yaw = _look_yaw                       # the body (hidden now) already faces where he is looking
+	elif _show_active and not _moving and _bull != null:
 		var to_bull: float = atan2(_bull.position.x - _player_pos.x, _bull.position.z - _player_pos.z)
 		_player_yaw = lerp_angle(_player_yaw, to_bull, clampf(5.0 * delta, 0.0, 1.0))
 	if _hop_v != 0.0 or _hop_y > 0.0:
@@ -588,23 +763,25 @@ func _build_player() -> Node3D:
 	key.omni_range = 4.5
 	key.position = Vector3(0.8, 2.2, -1.2)
 	root.add_child(key)
-	_sling_rifle(root)
+	_hold_rifle(root)
 	return root
 
 
-## The founder's Winchester across his back (Lil Blunt keeps it slung: this part of the story is sneaking, not shooting).
-func _sling_rifle(root: Node3D) -> void:
+## The founder's Winchester IN HIS HAND at the hip. First person hides this body; a DIRECTOR shot (the hidden lever, the
+## leaves coming off) shows it, and it must never be slung on his back again - he carries the rifle Inferno Bull gave him.
+func _hold_rifle(root: Node3D) -> void:
 	var path: String = "res://src/episode2/assets/weapons/winchester_1886_founder.glb"
 	if not ResourceLoader.exists(path):
 		return
 	var rifle: Node3D = (load(path) as PackedScene).instantiate() as Node3D
 	if rifle == null:
 		return
-	rifle.name = "SlungRifle"
+	rifle.name = "HeldRifle"
 	rifle.scale = Vector3.ONE * 0.8
-	rifle.position = Vector3(-0.2, 1.05, -0.28)
-	rifle.rotation = Vector3(0.0, 0.0, deg_to_rad(-62.0))      # muzzle up over the shoulder, stock low on the hip
+	rifle.position = HELD_RIFLE_POS
+	rifle.rotation = HELD_RIFLE_ROT
 	root.add_child(rifle)
+	_held_rifle = rifle
 
 
 func _add_hero_clip(clip_name: String, path: String) -> void:

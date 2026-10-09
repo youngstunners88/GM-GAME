@@ -1,0 +1,17 @@
+{
+ "request_id": "b076f226-91b7-4d2e-adac-ed4632d063ce",
+ "endpoint": "gpt-image-2-text-to-image",
+ "payload": {
+  "prompt": "Photorealistic cinematic concept still for a first-person western shooter, 'western Modern Warfare' art direction: warm low sun key light with teal-blue shadow fill, thin atmospheric haze, physically based materials (weathered timber, rusted riveted steel, packed dirt, gravel, bark, dust), natural film grain, 35mm lens at human eye height (1.6 m), high dynamic range, sharp detail, believable scale. No text, no lettering, no watermark, no logos, no user interface, no people, no close-up characters. Looking OUT of a rough rock mine mouth at dawn onto a packed-dirt forest service road wide enough for an off-road quad bike (about 4.5 metres), deep tyre ruts, pine forest on both sides, low mist on the ground, the road curving gently left and rising over a far ridge. In the foreground an old narrow-gauge rail track ends at the mine mouth, a rusted chain and a spoked cart wheel lean on the rock wall, fallen needles and leaf litter underfoot.",
+  "aspect_ratio": "16:9",
+  "resolution": "2K",
+  "quality": "high"
+ },
+ "url": "https://cdn.muapi.ai/outputs/generated/b076f226-91b7-4d2e-adac-ed4632d063ce_badfa59b.png",
+ "cost_usd": 0.09,
+ "size": [
+  1600,
+  900
+ ],
+ "made": "2026-10-09"
+}

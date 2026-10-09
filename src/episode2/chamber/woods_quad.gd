@@ -33,6 +33,8 @@ const HEARING := 19.0                              # a bear hears a running Lil 
 const SPY_ZOOM_FOV := 16.0
 const SPY_SPOT_ANGLE := 0.075                      # radians (~4.3 deg): how close to a bear the spyglass must be
 const SPY_TIMEOUT := 70.0
+const SHOT_HEARING := 46.0                         # a Winchester shot carries far further than boots on gravel (the camp is ~34 m from the ridge)
+const SEAT_SIDE := 0.55                            # the back seat is wide: he sits to the right of Inferno's axis and sees the road past his shoulder
 
 var _ground_mat: StandardMaterial3D = null
 var _leaf_mats: Array = []
@@ -65,15 +67,15 @@ var _zoom: float = 0.0
 var _aim_on: bool = false
 var _spy_t: float = 0.0
 var _spy_done: bool = false
-var _hud_layer: CanvasLayer = null
-var _hud: Ep2FpsHud = null
 var _bear_clips: Dictionary = {}
+var _quad_yaw_prev: float = 0.0
 
 
 func _init() -> void:
 	title_card = "THE BEAR WOODS"
 	music_path = ""                                  # the lift's song carries on until the quad starts (Deep Mining 3 begins at MOUNT)
 	walk_speed = 2.3                                 # a sneak: walking IS the stealth
+	viewmodel_exposure = 0.82                        # open daylight: the rifle's metal would read cream
 	camera_min = Vector3(-80.0, 0.4, -30.0)
 	camera_max = Vector3(80.0, 30.0, 240.0)
 
@@ -459,27 +461,12 @@ func _on_setup() -> void:
 	_player_pos = SPAWN
 	_ground_y = 0.0
 	_look_yaw = 0.0
-	_look_pitch = -0.2
+	_look_pitch = -0.04
 	_player_yaw = 0.0
 	if _bull == null:
 		_bull = _build_bull(Vector3(1.6, 0.0, 4.0), 0.0)
 	_engine = _loop_player(QUAD_LOOP, -7.0)
-	_build_hud()
-	if _camera:
-		_camera.position = SPAWN + Vector3(0.0, 2.6, -3.4)
 	_on_beat_entered(Beat.SNEAK)
-
-
-func _build_hud() -> void:
-	if _hud_layer != null:
-		return
-	_hud_layer = CanvasLayer.new()
-	_hud_layer.layer = 12
-	add_child(_hud_layer)
-	_hud = Ep2FpsHud.new()
-	_hud.show_ammo = false
-	_hud.show_crosshair = false
-	_hud_layer.add_child(_hud)
 
 
 func _on_beat_entered(b: int) -> void:
@@ -504,11 +491,13 @@ func _on_beat_entered(b: int) -> void:
 				{"do": "release", "ramp": 0.5, "t": 0.4},
 				FacilityShow._say("vo_lb_quad_ok", 0.2),
 				{"do": "wait", "t": 0.5}], true)
-			set_camera_shot(QUAD_POS + Vector3(6.0, 3.6, -9.5), QUAD_POS + Vector3(0.0, 1.3, 0.0), 56.0)
+			look_toward(QUAD_POS + Vector3(0.0, 1.3, 0.0), 2.2)
 		Beat.MOUNT:
 			_start_show([
 				FacilityShow._say("vo_bull_quad_mount", 0.15),
-				{"do": "call", "fn": _mount}], true)
+				{"do": "call", "fn": _mount},
+				{"do": "call", "fn": func() -> void: _fade(1.0, 0.35)},          # a blink while he climbs on behind Inferno
+				{"do": "wait", "t": 0.45}], true)
 		Beat.RIDE:
 			_begin_ride()
 		Beat.SPY:
@@ -541,20 +530,29 @@ func _mount() -> void:
 		_quad_light.light_energy = 6.0
 
 
+func _fade(goal: float, seconds: float) -> void:
+	if _hud:
+		_hud.fade_to(goal, seconds)
+
+
 func _begin_ride() -> void:
+	release_look()
 	release_camera()
 	_riding = true
 	_ride_done = false
 	cam_distance = 7.5
 	cam_height = 2.4
-	_look_pitch = -0.18
+	_look_pitch = -0.08
 	_bull.stop()
 	_build_ride_path()
+	_quad_yaw_prev = _quad_yaw
+	_look_yaw = _quad_yaw
 	_ride_s = 0.0
 	_ride_speed = 0.0
 	if _engine:
 		_engine.play()
 	_seat_riders()
+	_fade(0.0, 0.7)
 	if _hud:
 		_hud.objective = ""
 
@@ -605,12 +603,10 @@ func _seat_riders() -> void:
 	_bull.position = base + f * 0.55 + Vector3(0.0, 0.62, 0.0)
 	_bull.facing = _quad_yaw
 	_bull.rotation.y = _quad_yaw
-	_player_pos = base - f * 2.1 + Vector3(0.0, 1.1, 0.0)
+	_player_pos = base - f * 2.1 + r * SEAT_SIDE + Vector3(0.0, 1.1, 0.0)
 	_player_yaw = _quad_yaw
 	_ground_y = _player_pos.y
 	_vel_y = 0.0
-	if r.length() < 0.0:
-		pass
 
 
 func _begin_spy() -> void:
@@ -659,8 +655,6 @@ func _tick(delta: float) -> void:
 			_tick_ride(delta)
 		Beat.SPY:
 			_tick_spy(delta)
-	if _hud:
-		_hud.ads = _zoom
 
 
 func _tick_sneak(_delta: float) -> void:
@@ -747,7 +741,9 @@ func _tick_ride(delta: float) -> void:
 	for w in _quad_wheels:
 		(w as Node3D).rotation.x += _ride_speed * delta / 0.68
 	_seat_riders()
-	_look_yaw = lerp_angle(_look_yaw, _quad_yaw, clampf(1.6 * delta, 0.0, 1.0))
+	# a passenger's view rides the quad: when it turns, the view turns with it (and the mouse still looks around freely)
+	_look_yaw += angle_difference(_quad_yaw_prev, _quad_yaw)
+	_quad_yaw_prev = _quad_yaw
 	if _engine:
 		_engine.pitch_scale = 0.85 + 0.35 * clampf(_ride_speed / RIDE_SPEED, 0.0, 1.0)
 	if _ride_s >= _ride_total - 0.01:
@@ -756,7 +752,14 @@ func _tick_ride(delta: float) -> void:
 
 
 func set_aim(on: bool) -> void:
-	_aim_on = on and _beat == Beat.SPY
+	if _beat == Beat.SPY:
+		# at the spy point RMB is the SPYGLASS: the rifle drops to low ready while it is up
+		_aim_on = on and has_player_control()
+		if _vm != null:
+			_vm.set_aim(false)
+		return
+	_aim_on = false
+	super.set_aim(on)
 
 
 func _tick_spy(delta: float) -> void:
@@ -765,7 +768,8 @@ func _tick_spy(delta: float) -> void:
 	var eye: Vector3 = SPY_EYE
 	var cp: float = cos(_look_pitch)
 	var dir := Vector3(sin(_look_yaw) * cp, sin(_look_pitch), cos(_look_yaw) * cp)
-	set_camera_shot(eye, eye + dir * 10.0, lerpf(62.0, SPY_ZOOM_FOV, _zoom), true)
+	_scope_fov = SPY_ZOOM_FOV
+	_scope_k = _zoom                        # the first-person camera narrows to the spyglass (see Ep2Interlude._fps_camera)
 	# marking: the spyglass up and a bear in the middle of it
 	if _zoom > 0.6:
 		for i in _camp_bears.size():
@@ -854,12 +858,37 @@ func has_player_control() -> bool:
 	return _running and not _resolved and not _show_blocks_control and _beat != Beat.DONE
 
 
-func is_fps() -> bool:
-	return _beat == Beat.SPY
+## The rifle drops to low ready while the spyglass is up.
+func _viewmodel_lowered() -> bool:
+	return _beat == Beat.SPY and _aim_on
 
 
-func get_episode_mode() -> int:
-	return Episode2Mode.Mode.FPS if _beat == Beat.SPY else Episode2Mode.Mode.HIDEOUT
+## THE RIFLE IS IN HIS HANDS NOW, so a shot is a fact of the wood (skill ep2-interlude-chain): every bear within earshot
+## turns to look, Inferno hisses, the noise counter ticks. On the quad ride the engine drowns it; in the lift there is nobody
+## to hear. (The claim run - shooting bears from the back seat - is NOT built until the founder opens the prep pass.)
+func _on_player_shot() -> void:
+	if _beat != Beat.SNEAK and _beat != Beat.SPY:
+		return
+	var heard: bool = false
+	var listeners: Array = []
+	for pb in _patrols:
+		listeners.append(pb[0])
+	if _beat == Beat.SPY:
+		listeners.append_array(_camp_bears)
+	for lb in listeners:
+		var bear: Ep2Actor = lb
+		if Vector2(bear.position.x - _player_pos.x, bear.position.z - _player_pos.z).length() < SHOT_HEARING:
+			bear.face_point(_player_pos)
+			heard = true
+	if not heard:
+		return
+	_noise_hits += 1
+	if _warn_cd <= 0.0:
+		_warn_cd = 7.0
+		if _hud:
+			_hud.toast("A SHOT CARRIES!", 2.0)
+		if _hold <= 0.0:
+			_begin_carry_line("vo_bull_spy_shot" if _beat == Beat.SPY else "vo_bull_woods_shot")
 
 
 ## Trunks are solid; the ridge fern bank is the limit of the world until the spy beat.

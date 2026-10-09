@@ -1,0 +1,17 @@
+{
+ "request_id": "243b4dfd-51ee-4835-bca9-a441fdf285fa",
+ "endpoint": "gpt-image-2-text-to-image",
+ "payload": {
+  "prompt": "Photorealistic cinematic concept still for a first-person western shooter, 'western Modern Warfare' art direction: warm low sun key light with teal-blue shadow fill, thin atmospheric haze, physically based materials (weathered timber, rusted riveted steel, packed dirt, gravel, bark, dust), natural film grain, 35mm lens at human eye height (1.6 m), high dynamic range, sharp detail, believable scale. No text, no lettering, no watermark, no logos, no user interface, no people, no close-up characters. A weathered two-storey timber-and-stone supply and fuel storehouse standing alone at a road junction in open scrubland, late afternoon: wide double barn doors big enough for a vehicle to drive through, a loading platform, a row of rusty fuel drums and two propane tanks stacked along the side wall, hay bales, a sagging shingle roof with a stone chimney, a wooden water tower behind. Eye-level view from the road, the building fills the frame, everything crisp and believable.",
+  "aspect_ratio": "16:9",
+  "resolution": "2K",
+  "quality": "high"
+ },
+ "url": "https://cdn.muapi.ai/outputs/generated/243b4dfd-51ee-4835-bca9-a441fdf285fa_344e6af2.png",
+ "cost_usd": 0.18,
+ "size": [
+  1600,
+  900
+ ],
+ "made": "2026-10-09"
+}

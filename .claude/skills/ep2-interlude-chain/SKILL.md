@@ -14,7 +14,8 @@ TO BE CONTINUED after the spy beat.
 
 | Thing | File |
 |---|---|
-| Shared base: session-root contract, free roam, follow camera + director shots, Lil Blunt, Inferno, the step() show runner | `src/episode2/chamber/interlude_base.gd` (`Ep2Interlude`) |
+| Shared base: session-root contract, free roam, **first-person eye camera**, `look_toward` for scripted beats, director shots (rare), Lil Blunt's body (director shots only), Inferno, the step() show runner | `src/episode2/chamber/interlude_base.gd` (`Ep2Interlude`) |
+| **The Winchester in his hands** (viewmodel: hands, ADS, recoil, lever, reload, muzzle flash, report) | `src/episode2/chamber/ep2_viewmodel.gd` (`Ep2Viewmodel`) - the hideout's VM_* numbers lifted into a component |
 | Chamber 1: the lift (ARRIVE, BOARD, LEVER, RISE, SURFACE) | `src/episode2/chamber/mine_lift.gd` (+ `.tscn`) |
 | Chamber 2: the woods (SNEAK, REVEAL, MOUNT, RIDE, SPY) | `src/episode2/chamber/woods_quad.gd` (+ `.tscn`) |
 | Lava river (EXIT beat of the hideout) | `smelting_facility.gd` (`_lava_*`, `LAVA_HALF`, `burned` signal), script in `facility_show.gd` (`B.EXIT`) |
@@ -42,11 +43,27 @@ TO BE CONTINUED after the spy beat.
 5. **Stealth = walking.** Default speed is a sneak; RUNNING inside `HEARING` (19 m) of a patrol bear is heard (a noise hit, Inferno
    shushes, the bear turns). Nothing fails; Inferno waits if Lil Blunt falls more than 6.5 m behind.
 6. **Next scene is not the runner** - never route the hideout result back into a runner leg (`next_chamber` wins over `_advance_segment`).
+7. **IT IS A FIRST-PERSON SHOOTER - THE RIFLE IS IN HIS HANDS** (founder 2026-10-09, furious: "Why would Lil Blunt not have the fucking rifle
+   that Inferno Bull gave him"). Every story room is first person by default (`fps_mode = true`): the camera is his eye (1.55 m, FOV 78,
+   ADS 58), the Winchester + Lil Blunt's leafy hands are a child of the CAMERA (`Ep2Viewmodel`), the HUD shows the ammo tube and
+   crosshair, LMB fires / RMB aims / R reloads. **Never sling the rifle on his back again, never move the story to a third-person
+   follow camera.** The body is only seen in a director shot (`set_camera_shot`), holding the rifle at the hip (`HELD_RIFLE_*`).
+   - **Scripted beats stay in his eyes**: the hidden-lever reveal and the leaves coming off the quad use `look_toward(point)` (the view
+     turns to the action while the controls are held) - not a cinema cut that makes the rifle vanish. Release with `release_look()`.
+   - **A shot is a fact of the world.** In the woods (SNEAK) and at the spy point a shot is noise: bears within `SHOT_HEARING` (46 m)
+     turn, a noise hit counts, Inferno hisses (`vo_bull_woods_shot` / `vo_bull_spy_shot`). On the quad ride the engine covers it.
+   - **At the spy point RMB is the SPYGLASS** (rifle drops to low ready, view narrows to 16 deg), not the iron sights.
+   - **Daylight chambers set `viewmodel_exposure` (~0.82)**: under a bright sky the rifle's metal read cream; the lamp-lit mine is 1.0.
+   - The quad ride is a passenger view: the view yaw rides the quad's heading; he sits on the back seat (`SEAT_SIDE`), a black blink
+     (`Ep2FpsHud.fade_to`) covers the climb on. The CLAIM RUN (shooting bears from the back seat) is NOT built: founder's foundation
+     doc says the prep pass is closed until he opens it (`ep2-fort-knox-arc`).
+   - Health: nothing in the story rooms hurts; `get_health()` is the hideout's 3-heart cap. Never add a second health system.
 
 ## Adding another chamber to the chain
 
 1. `class_name FooChamber extends Ep2Interlude`; override `_build_room`, `_on_setup`, `_tick`, `_on_beat_entered`, `_show_finished`,
-   `_collide`, `_chamber_id`, `_beat_label`; set `title_card`, `music_path`, camera bounds in `_init`.
+   `_collide`, `_chamber_id`, `_beat_label`; set `title_card`, `music_path`, `viewmodel_exposure` in `_init`. Optional hooks:
+   `_on_player_shot()` (what a shot means here), `_viewmodel_lowered()` (rifle at low ready). Objectives go in `_hud.objective`.
 2. Script dialogue as FacilityShow steps (`say`, `walk`, `face`, `reach`, `call`, `wait`, `hop`, `until`); never use real time.
 3. Register the scene in `Ep2SessionRoot.CHAMBER_SCENES`; resolve with `_resolve({"next_chamber": "foo"})` or `{"end_session": true}`.
 4. Add it to `tests/ep2_interlude_test.gd` and capture it with `tools/ep2_shots/interlude_shot.gd`; LOOK at the pngs.
@@ -59,4 +76,9 @@ TO BE CONTINUED after the spy beat.
 - A cage / shaft camera sits OUTSIDE the cage: a solid roof or thick white bars hide the player. Use thin dark bars, dark steel (the
   palette `iron` is a white mirror with no reflections).
 - Trees in front of the spy view blocked the bears: keep a sight lane (`|x| < 13`, z 140-175) and raise the spy eye above the ferns.
+- **`generate_audio.py --force <id>` also generates every OTHER missing clip** (the six `film_*` ids have no mp3 on purpose - the founder's
+  film carries them). After a `--force` run `git status` and delete any stray `film_*.mp3`.
+- `Ep2ViewHands.attach` measures the forge rifle INCLUDING the muzzle-flash quad: build the flash BEFORE attaching the hands (as the
+  hideout does) or the founder rifle sits at a different height.
+- A new `class_name` is invisible to a headless run until `godot --headless --path . --import` has rewritten the class cache.
 - Pack budget: songs and VO add MBs; the stage theme was re-encoded 128k -> 80k mp3 to pay for them. Check `index.pck` < 190 MiB.

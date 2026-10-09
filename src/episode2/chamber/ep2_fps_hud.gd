@@ -35,6 +35,10 @@ var health: int = 3
 var health_max: int = 3
 var show_health: bool = false
 var _hurt_t: float = 0.0
+## Fade to black and back (a seat change, a cut): 0 clear .. 1 black. `fade_to` ramps it; drawn over everything.
+var fade: float = 0.0
+var _fade_goal: float = 0.0
+var _fade_rate: float = 0.0
 
 
 func _ready() -> void:
@@ -79,9 +83,16 @@ func _process(delta: float) -> void:
 	_toast_t = maxf(0.0, _toast_t - delta)
 	_hit_t = maxf(0.0, _hit_t - delta)
 	_hurt_t = maxf(0.0, _hurt_t - delta)
+	fade = move_toward(fade, _fade_goal, _fade_rate * delta)
 	if _vignette:
 		_vignette.modulate.a = ads * 0.85
 	queue_redraw()
+
+
+## Ramp the black cover to `goal` (0..1) over `seconds`.
+func fade_to(goal: float, seconds: float) -> void:
+	_fade_goal = clampf(goal, 0.0, 1.0)
+	_fade_rate = absf(_fade_goal - fade) / maxf(seconds, 0.01)
 
 
 func toast(text: String, seconds: float = 1.6) -> void:
@@ -179,6 +190,8 @@ func _draw() -> void:
 		var a2: float = clampf(_toast_t / 0.4, 0.0, 1.0)
 		draw_string_outline(_font, p, toast_text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs2, 8, Color(0, 0, 0, 0.85 * a2))
 		draw_string(_font, p, toast_text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs2, Color(1.0, 0.85, 0.5, a2))
+	if fade > 0.001:
+		draw_rect(Rect2(Vector2.ZERO, size), Color(0.0, 0.0, 0.0, fade))
 
 
 ## A heart from two circles and a triangle (no font glyph needed, so it also draws in the web build).

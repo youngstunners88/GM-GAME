@@ -9,6 +9,8 @@ extends Node
 ##  * THE SONGS: "Inferno Bull 2" in the shaft, "Deep Mining 3" once they are on the quad - never the other way round.
 ##  * THE QUAD IS HIDDEN under leaves until Inferno throws them off; stealth: walking is free, running near a bear is heard.
 ##  * THE SESSION CHAINS: hideout result -> mine_lift -> woods_quad -> session_complete, each commit guarded (no double pay).
+##  * IT IS A FIRST-PERSON SHOOTER (founder 2026-10-09): the Winchester is IN LIL BLUNT'S HANDS - on the camera, hands on it, loaded,
+##    firing, aiming, reloading - in the lift, the woods, the quad ride and the spy point. It is never slung on his back again.
 ## Run: godot --headless res://tests/ep2_interlude_test.tscn
 
 const LIFT := preload("res://src/episode2/chamber/mine_lift.tscn")
@@ -78,8 +80,36 @@ func _ready() -> void:
 	await get_tree().process_frame
 	_check("starts at ARRIVE with Lil Blunt in the tunnel and control his", lift.get_beat_name() == "ARRIVE" and lift.has_player_control(), lift.get_beat_name())
 	_check("Inferno Bull 2 starts the moment they are in the shaft", "inferno_bull2" in _music_path(), _music_path())
-	_check("the interlude exposes the host's story-room vocabulary (title card, no weapon verbs)", lift.get_title_card() == "THE MINE LIFT"
-		and lift.shoot() == false and lift.start_rig() == false and lift.get_episode_mode() == Episode2Mode.Mode.HIDEOUT)
+	_check("the interlude exposes the host's story-room vocabulary (title card, FPS mode, no miner-rig verbs)", lift.get_title_card() == "THE MINE LIFT"
+		and lift.start_rig() == false and lift.get_episode_mode() == Episode2Mode.Mode.FPS and lift.is_fps())
+	# --- FIRST PERSON: the rifle is in his hands
+	_run(lift, 0.3)
+	var vm: Ep2Viewmodel = lift.get_viewmodel()
+	_check("the Winchester viewmodel exists and sits on the camera (it IS the player's view)", vm != null and vm.rifle != null and vm.rifle.get_parent() == lift.get_camera())
+	_check("Lil Blunt's hands and the founder's rifle are on it", vm != null and vm.rifle.get_node_or_null("Hands/HandsModel") != null)
+	_check("the rifle is loaded: full tube and the reserve", lift.get_ammo() == Ep2Winchester.MAG and lift.get_reserve() == Ep2Winchester.RESERVE_START, "%d/%d" % [lift.get_ammo(), lift.get_reserve()])
+	_check("the third-person body is hidden in first person (the eye is his)", not lift._player_node.visible and vm.rifle.visible)
+	_check("the rifle is NEVER slung on his back: the body carries it in the hand, nothing is slung", lift._player_node.find_child("SlungRifle", true, false) == null and lift._player_node.find_child("HeldRifle", true, false) != null)
+	_check("the camera is his eye (about 1.55 m above his feet), not a boom behind him",
+		absf(lift.get_camera().position.y - (lift.get_player_position().y + Ep2Interlude.FPS_EYE_HEIGHT)) < 0.12
+		and Vector2(lift.get_camera().position.x - lift.get_player_position().x, lift.get_camera().position.z - lift.get_player_position().z).length() < 0.2,
+		str(lift.get_camera().position) + " vs " + str(lift.get_player_position()))
+	_check("the HUD shows the ammo and the crosshair", lift.get_hud() != null and lift.get_hud().show_ammo and lift.get_hud().show_crosshair and lift.get_hud().rounds == Ep2Winchester.MAG)
+	var hip_fov: float = lift.get_camera().fov
+	lift.set_aim(true)
+	_run(lift, 0.5)
+	_check("RMB aims down the sights (the view narrows)", lift.is_ads() and lift.get_camera().fov < hip_fov - 10.0, "%.1f -> %.1f" % [hip_fov, lift.get_camera().fov])
+	lift.set_aim(false)
+	_run(lift, 0.5)
+	var rounds0: int = lift.get_ammo()
+	var shot_ok: bool = lift.shoot()
+	_check("LMB fires a round: the tube drops by one, the muzzle report plays", shot_ok and lift.get_ammo() == rounds0 - 1 and vm.shots_played == 1, "%s %d shots %d" % [shot_ok, lift.get_ammo(), vm.shots_played])
+	_check("...and the lever must be racked before the next shot", lift.shoot() == false and lift.get_ammo() == rounds0 - 1)
+	_run(lift, 1.0)
+	_check("the lever clack follows the shot", vm.levers_played >= 1)
+	var cam_kick_seen: bool = vm.cam_kick >= 0.0
+	_check("R loads shells back into the tube, one at a time", lift.reload() and (_until(lift, 3.0, func(): return lift.get_ammo() == Ep2Winchester.MAG)) and lift.get_reserve() == Ep2Winchester.RESERVE_START - 1, "%d/%d" % [lift.get_ammo(), lift.get_reserve()])
+	_check("the first-person control hint names aim and reload", cam_kick_seen and "RMB" in Episode2Mode.control_hint(Episode2Mode.Mode.FPS) and "reload" in Episode2Mode.control_hint(Episode2Mode.Mode.FPS))
 	# --- the disguise
 	var lv: Node3D = lift.get_lever_node()
 	_check("a lever exists in the west wall, at knee height", lv != null and lv.position.x < -4.0 and lv.position.y < 1.4)
@@ -109,10 +139,18 @@ func _ready() -> void:
 	# --- LEVER: Inferno says there is no use looking, walks to it and pulls it
 	_until(lift, 4.0, func(): return lift.get_beat_name() == "LEVER")
 	_check("-> LEVER; control is his show", lift.get_beat_name() == "LEVER" and not lift.has_player_control())
+	_run(lift, 2.0)
+	var eye_p: Vector3 = lift.get_player_position() + Vector3(0.0, Ep2Interlude.FPS_EYE_HEIGHT, 0.0)
+	var to_lever: Vector3 = lift.get_lever_position() - eye_p
+	_check("the scripted beat STAYS in first person (no cut to a body): the rifle is on screen and his eye turns to the lever Inferno walks to",
+		not lift._player_node.visible and vm.rifle.visible and lift.get_hud().visible and absf(angle_difference(lift.get_look_yaw(), atan2(to_lever.x, to_lever.z))) < 0.6,
+		"yaw %.2f want %.2f" % [lift.get_look_yaw(), atan2(to_lever.x, to_lever.z)])
 	_until(lift, 30.0, func(): return lift.get_beat_name() == "RISE")
 	_check("he tells Lil Blunt not to bother looking for it - THEN the cage starts", said.has("vo_bull_lift_lever") and lift.get_beat_name() == "RISE", str(said))
 	_check("the lever swung (he actually pulled it)", lift._lever_t >= 1.0)
 	_check("control returns to the player for the ride", lift.has_player_control())
+	_run(lift, 0.2)
+	_check("...and so does his eye: the rifle is back in his hands on screen", not lift._player_node.visible and vm.rifle.visible and lift.get_hud().visible)
 	# --- RISE: two floors
 	var st: Dictionary = {"mid": false, "prev": 0.0, "mono": true}      # a lambda captures plain values by copy: mutate a Dictionary
 	var ride_ok: bool = _until(lift, MineLiftChamber.RISE_SECONDS + 40.0, func():
@@ -132,7 +170,7 @@ func _ready() -> void:
 	_check("the gate slides open at the top", lift.is_gate_open())
 	_check("Inferno announces the surface", said.has("vo_bull_lift_arrive"))
 	_until(lift, 10.0, func(): return not lift.is_show_active())
-	lift.look(Vector2.ZERO)
+	lift._look_yaw = 0.0                                # he turns from the lever wall to the daylight (the mouse, in play)
 	lift.set_move_input(Vector2(0.0, 1.0))
 	_until(lift, 12.0, func(): return results.size() == 1)
 	lift.set_move_input(Vector2.ZERO)
@@ -154,6 +192,11 @@ func _ready() -> void:
 	w.setup(0, [], 0)
 	await get_tree().process_frame
 	_check("starts at SNEAK", w.get_beat_name() == "SNEAK" and w.has_player_control(), w.get_beat_name())
+	_run(w, 0.3)
+	var wvm: Ep2Viewmodel = w.get_viewmodel()
+	_check("the woods are first person too: the Winchester in his hands, his body hidden, ammo on the HUD",
+		w.is_fps() and w.get_episode_mode() == Episode2Mode.Mode.FPS and wvm != null and wvm.rifle.get_parent() == w.get_camera()
+		and wvm.rifle.get_node_or_null("Hands/HandsModel") != null and not w._player_node.visible and w.get_hud().show_ammo and w.get_ammo() == Ep2Winchester.MAG)
 	_check("the quad is hidden under leaves and branches (a real pile of them)", w.is_quad_hidden() and w.get_cover_bit_count() >= 80, str(w.get_cover_bit_count()))
 	var quad_aabb: Vector3 = Vector3.ZERO
 	for mi in w.get_quad_node().find_children("*", "MeshInstance3D", true, false):
@@ -175,11 +218,25 @@ func _ready() -> void:
 		w.step(1.0 / 60.0)
 	w.set_move_input(Vector2.ZERO)
 	_check("following Inferno at a walk brings them to the thicket (-> REVEAL) with no bear alerted", w.get_beat_name() == "REVEAL" and w.get_noise_hits() == 0, "%s hits %d" % [w.get_beat_name(), w.get_noise_hits()])
+	_run(w, 2.5)
+	var to_quad: Vector3 = (WoodsQuadChamber.QUAD_POS + Vector3(0.0, 1.3, 0.0)) - (w.get_player_position() + Vector3(0.0, Ep2Interlude.FPS_EYE_HEIGHT, 0.0))
+	_check("the reveal is seen through HIS eyes with the rifle in his hands: his view turns to the quad, no cut to a cinema camera",
+		not w._player_node.visible and wvm.rifle.visible and w.get_hud().visible and absf(angle_difference(w.get_look_yaw(), atan2(to_quad.x, to_quad.z))) < 0.6,
+		"yaw %.2f want %.2f" % [w.get_look_yaw(), atan2(to_quad.x, to_quad.z)])
 	_until(w, 40.0, func(): return w.get_beat_name() == "MOUNT" or w.get_beat_name() == "RIDE")
 	_check("the leaves come off (the quad is revealed)", not w.is_quad_hidden() and said2.has("vo_bull_quad_reveal") and said2.has("vo_lb_quad_ok"))
 	_check("Deep Mining 3 only now (the moment they mount)", "deep_mining3" in _music_path() or w.get_beat_name() == "MOUNT", _music_path() + " " + w.get_beat_name())
+	_until(w, 20.0, func(): return w.get_hud().fade > 0.9 or w.get_beat_name() == "RIDE")
+	_check("he climbs on behind Inferno with a blink (the screen dips to black, never a raw teleport)", w.get_hud().fade > 0.5 or w.get_beat_name() == "RIDE", "%.2f" % w.get_hud().fade)
 	_until(w, 20.0, func(): return w.get_beat_name() == "RIDE")
 	_check("-> RIDE, the quad is on the road", w.get_beat_name() == "RIDE" and w.is_riding() and said2.has("vo_bull_quad_mount"))
+	_run(w, 1.5)
+	_check("...and the screen comes back up on the back seat", w.get_hud().fade < 0.2, "%.2f" % w.get_hud().fade)
+	_check("on the back seat he is still first person, the rifle in his hands (\"hold that rifle steady\")", w.is_fps() and wvm.rifle.visible and not w._player_node.visible and w.get_hud().visible)
+	_run(w, 2.5)
+	_check("the passenger's view rides the quad: it turns with the heading", absf(angle_difference(w._look_yaw, w._quad_yaw)) < 0.2, "look %.2f quad %.2f" % [w._look_yaw, w._quad_yaw])
+	var ride_hits: int = w.get_noise_hits()
+	_check("he can fire from the back seat (the engine covers it: no stealth penalty)", w.shoot() and w.get_noise_hits() == ride_hits)
 	_until(w, 4.0, func(): return "deep_mining3" in _music_path())
 	_check("Deep Mining 3 is playing on the quad", "deep_mining3" in _music_path(), _music_path())
 	var q0: Vector3 = w.get_quad_node().position
@@ -190,6 +247,15 @@ func _ready() -> void:
 	_check("the ride ends on the ridge (-> SPY) in first person", w.get_beat_name() == "SPY" and w.is_fps())
 	_until(w, 12.0, func(): return not w.is_show_active())
 	_check("Inferno tells him to get down and look", said2.has("vo_bull_spy1"))
+	var spy_hits: int = w.get_noise_hits()
+	_check("a shot from the ridge carries to the camp (a noise hit, Inferno holds him back)", w.shoot() and w.get_noise_hits() == spy_hits + 1)
+	_run(w, 1.2)
+	w.set_aim(true)
+	_run(w, 0.6)
+	_check("RMB at the spy point raises the SPYGLASS (narrow view) and drops the rifle to low ready - not the iron sights", w.get_camera().fov < 20.0 and wvm.lowered and not w.is_ads(), "fov %.1f" % w.get_camera().fov)
+	w.set_aim(false)
+	_run(w, 0.6)
+	_check("lowering the spyglass returns the wide view and the rifle", w.get_camera().fov > 50.0 and not wvm.lowered)
 	# spyglass: look at every bear with RMB held
 	var eye: Vector3 = WoodsQuadChamber.SPY_EYE
 	for b in w.get_camp_bears():
@@ -221,6 +287,13 @@ func _ready() -> void:
 	w2.set_move_input(Vector2(0.0, 1.0), false)
 	_run(w2, 2.0)
 	_check("...walking next to the same bear is free", w2.get_noise_hits() == hits)
+	var said3: Array = []
+	w2.line_spoken.connect(func(id): said3.append(id))
+	w2.set_move_input(Vector2.ZERO)
+	_run(w2, 8.0)
+	hits = w2.get_noise_hits()
+	_check("FIRING the Winchester in the stealth wood is noise too: bears within earshot turn, Inferno hisses",
+		w2.shoot() and w2.get_noise_hits() == hits + 1 and said3.has("vo_bull_woods_shot"), "%d %s" % [w2.get_noise_hits(), str(said3)])
 	w2.queue_free()
 
 	# ---------------------------------------------------------------- 4. the session chain
@@ -255,7 +328,7 @@ func _ready() -> void:
 	var all_ok: bool = true
 	var natural: bool = true
 	var clean: bool = true
-	var ids: Array = ["vo_bull_lava1", "vo_bull_lava2", "vo_bull_lava_nudge", "vo_bull_lava_made_it", "vo_bull_lift1", "vo_bull_lift_lever", "vo_bull_plan1",
+	var ids: Array = ["vo_bull_woods_shot", "vo_bull_spy_shot", "vo_bull_lava1", "vo_bull_lava2", "vo_bull_lava_nudge", "vo_bull_lava_made_it", "vo_bull_lift1", "vo_bull_lift_lever", "vo_bull_plan1",
 		"vo_bull_plan2", "vo_bull_plan3", "vo_lb_plan_reply", "vo_bull_lift_arrive", "vo_bull_woods_sneak", "vo_bull_woods_quiet", "vo_bull_quad_reveal",
 		"vo_lb_quad_ok", "vo_bull_quad_mount", "vo_bull_spy1", "vo_bull_spy2", "vo_lb_spy_reply"]
 	for id in ids:

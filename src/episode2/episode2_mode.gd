@@ -45,7 +45,7 @@ static func camera_style(m: int) -> String:
 static func control_hint(m: int) -> String:
 	match m:
 		Mode.FPS:
-			return "WASD / ARROWS move   MOUSE look   LMB fire   SPACE jump   SHIFT run   ESC menu"
+			return "WASD / ARROWS move   MOUSE look   LMB fire   RMB aim   R reload   SPACE jump   SHIFT run   ESC menu"
 		Mode.HIDEOUT:
 			return "WASD / ARROWS move   MOUSE look (click to lock)   SPACE jump   SHIFT run   ESC menu"
 		_:

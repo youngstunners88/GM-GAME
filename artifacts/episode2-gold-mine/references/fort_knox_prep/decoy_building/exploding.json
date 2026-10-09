@@ -1,0 +1,17 @@
+{
+ "request_id": "cdc7d1fd-1686-4a75-8d9d-90874221db4c",
+ "endpoint": "gpt-image-2-image-to-image",
+ "payload": {
+  "prompt": "Photorealistic cinematic concept still for a first-person western shooter, 'western Modern Warfare' art direction: warm low sun key light with teal-blue shadow fill, thin atmospheric haze, physically based materials (weathered timber, rusted riveted steel, packed dirt, gravel, bark, dust), natural film grain, 35mm lens at human eye height (1.6 m), high dynamic range, sharp detail, believable scale. No text, no lettering, no watermark, no logos, no user interface, no people, no close-up characters. The very same building a moment after a quad bike has crashed through the double doors: a huge orange-and-yellow fuel explosion bursts out of the doors and windows, a fireball and a shockwave dust ring, planks and shingles flying, secondary explosions from the fuel drums, a thick black smoke column climbing into the sky, embers everywhere, a hot glow on the ground. A real explosion, not a grey box. Same camera position and framing as the reference.",
+  "aspect_ratio": "16:9",
+  "resolution": "2K",
+  "quality": "high"
+ },
+ "url": "https://cdn.muapi.ai/outputs/generated/cdc7d1fd-1686-4a75-8d9d-90874221db4c_3b19629c.png",
+ "cost_usd": 0.36,
+ "size": [
+  1600,
+  900
+ ],
+ "made": "2026-10-09"
+}

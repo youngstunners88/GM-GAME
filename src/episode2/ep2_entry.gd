@@ -324,7 +324,7 @@ func _refresh_hud() -> void:
 				_hint.text = ""
 				return
 			if a and a.has_method("get_beat_name"):
-				lines += "THE SMELTING FACILITY\n"
+				lines += (str(a.get_title_card()) if a.has_method("get_title_card") else "THE SMELTING FACILITY") + "\n"
 				lines += "Inferno Bull   ·   %s\n" % a.get_beat_name().capitalize()
 				if a.has_winchester():
 					lines += "WINCHESTER 1886 acquired"

@@ -172,7 +172,7 @@ if arg("--logo") and 'BADGE' in globals():
     _I2.open(os.path.join(work, "emblem_color.png")).convert("RGB").save(os.path.join(tex_dir, "emblem_color.jpg"), quality=86)
     _I2.open(os.path.join(work, "emblem_emit.png")).convert("RGB").resize((256, 256), _I2.LANCZOS).save(os.path.join(tex_dir, "emblem_emit.png"), optimize=True)
     BX, BZ, YP = BADGE['PX'], BADGE['PZ'], BADGE['Y0']
-    RI = float(arg("--sr", 0.056)); RO = RI + 0.010; RH = float(arg("--rh", 0.1)); RP = RH + 0.012; DEPTH = 0.0065; SEG = 120
+    RI = float(arg("--sr", 0.05)); RO = RI + 0.010; RH = float(arg("--rh", 0.1)); RP = RH + 0.012; DEPTH = 0.0065; SEG = 120
     bvh2 = _BVH2.FromObject(rifle, bpy.context.evaluated_depsgraph_get())
     def top_y(x, z):
         h = bvh2.ray_cast(Vector((x, 1.0, z)), Vector((0, -1, 0)))
@@ -262,6 +262,36 @@ if arg("--logo") and 'BADGE' in globals():
 for _m in rifle.data.materials: _m.use_backface_culling = False
 if dec is not None:
     for _m in dec.data.materials: _m.use_backface_culling = False
+# 4c. SHARD SWEEP (founder 2026-10-09: "fix this little thing on the rifle"). The decimate in step 1 leaves sub-centimetre floaters: a closed
+#     4-face tetrahedron 6 mm tall stood above the fore-end at the muzzle like a thorn (found by splitting the FINAL glb into connected components - the
+#     pre-decimate surgery rule could never see it, it did not exist yet). Delete every island that is tiny relative to the rifle: <= 2 faces and <= 1.15 %
+#     of its length anywhere (~1.2 cm of 1.05 m), or <= 4 faces in the front quarter (the muzzle and fore-end are the most-looked-at part).
+import bmesh as _bm4
+_bx = _bm4.new(); _bx.from_mesh(rifle.data); _bx.verts.ensure_lookup_table(); _bx.faces.ensure_lookup_table()
+_cos = np.array([tuple(v.co) for v in _bx.verts]); _L = float((_cos.max(0) - _cos.min(0)).max()); _x0 = float(_cos[:, 0].min())
+_isl_id = {}; _isls = []
+for _f0 in _bx.faces:
+    if _f0.index in _isl_id: continue
+    _stack = [_f0]; _comp = []; _isl_id[_f0.index] = len(_isls)
+    while _stack:
+        _cur = _stack.pop(); _comp.append(_cur)
+        for _v in _cur.verts:
+            for _nf in _v.link_faces:
+                if _nf.index not in _isl_id: _isl_id[_nf.index] = len(_isls); _stack.append(_nf)
+    _isls.append(_comp)
+_kill_faces = []; _kill_isl = 0
+for _comp in _isls:
+    _vs = {v for f in _comp for v in f.verts}
+    _co = np.array([tuple(v.co) for v in _vs]); _ext = float((_co.max(0) - _co.min(0)).max()); _tx = (float(_co[:, 0].mean()) - _x0) / _L
+    _small = _ext <= 0.0115 * _L
+    if _small and (len(_comp) <= 2 or (len(_comp) <= 4 and _tx >= 0.75)):
+        _kill_faces += _comp; _kill_isl += 1
+if _kill_faces:
+    _bm4.ops.delete(_bx, geom=_kill_faces, context='FACES')
+    _bm4.ops.delete(_bx, geom=[v for v in _bx.verts if not v.link_faces], context='VERTS')
+    _bx.to_mesh(rifle.data); rifle.data.update()
+_bx.free()
+log("game: shard sweep removed", _kill_isl, "floating islands (", len(_kill_faces), "faces ) of", len(_isls))
 # 5. frame: muzzle +X,up +Z  ->  Godot muzzle +Z, up +Y;  length 1.2 m, centred
 parts = [rifle] + BADGE_OBJS
 for o in parts: o.data.transform(Matrix.Rotation(math.radians(-90), 4, 'Z'))

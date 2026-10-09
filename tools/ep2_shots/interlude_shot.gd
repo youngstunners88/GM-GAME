@@ -3,8 +3,8 @@ extends Node
 ## the player's view at the story's key moments.
 ##   xvfb-run -a -s "-screen 0 1280x720x24" godot --rendering-driver opengl3 --rendering-method gl_compatibility \
 ##       --resolution 1280x720 res://tools/ep2_shots/interlude_shot.tscn -- chamber=lift out=.farm/interlude
-##   chamber=lift  -> arrive, lever (director shot), rise (mid shaft), surface
-##   chamber=woods -> start, trail, quad hidden, reveal, ride, spy (hip + spyglass)
+##   chamber=lift  -> arrive (first person, rifle in hands), ADS, lever (director shot: body + held rifle), rise, surface
+##   chamber=woods -> start, trail, FIRE (muzzle flash), quad hidden, reveal, ride (back seat), spy (hip + spyglass)
 const LIFT := preload("res://src/episode2/chamber/mine_lift.tscn")
 const WOODS := preload("res://src/episode2/chamber/woods_quad.tscn")
 var _out := ".farm/interlude"
@@ -48,6 +48,11 @@ func _lift() -> void:
 	var l: MineLiftChamber = c
 	_run(1.5)
 	await _cap("lift_1_arrive")
+	c.set_aim(true)
+	_run(0.6)
+	await _cap("lift_1b_ads")
+	c.set_aim(false)
+	_run(0.6)
 	l._player_pos = Vector3(0.0, 0.0, -1.0)
 	var guard := 0
 	while l.get_beat_name() != "LEVER" and guard < 600:
@@ -78,6 +83,10 @@ func _woods() -> void:
 	w._bull.position = Vector3(1.0, 0.0, 33.0)
 	_run(1.0)
 	await _cap("woods_2_trail")
+	w.shoot()
+	_run(0.03)
+	await _cap("woods_2b_fire")
+	_run(1.0)
 	w._advance_to(WoodsQuadChamber.Beat.REVEAL)
 	_run(0.5)
 	await _cap("woods_3_hidden")

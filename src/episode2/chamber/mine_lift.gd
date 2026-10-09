@@ -273,16 +273,16 @@ func _on_setup() -> void:
 	_ground_y = 0.0
 	_player_yaw = 0.0
 	_look_yaw = 0.0
-	_look_pitch = -0.22
+	_look_pitch = -0.04                       # first person, eyes level: the shaft opens straight ahead
 	if _bull == null:
 		_bull = _build_bull(START_POS + Vector3(-1.2, 0.0, 4.0), 0.0)
 	_loop = _loop_player(LOOP_SFX, -8.0)
-	if _camera:
-		_camera.position = START_POS + Vector3(0.0, 2.6, -4.2)
 	_on_beat_entered(Beat.ARRIVE)
 
 
 func _on_beat_entered(b: int) -> void:
+	if _hud:
+		_hud.objective = ["Follow Inferno onto the lift", "", "", "", "Head out into the wood", ""][clampi(b, 0, 5)]
 	match b:
 		Beat.ARRIVE:
 			_start_show([
@@ -294,7 +294,7 @@ func _on_beat_entered(b: int) -> void:
 		Beat.LEVER:
 			_bull_on_cage = false
 			_start_show([
-				{"do": "call", "fn": func() -> void: set_camera_shot(Vector3(2.9, 2.1, -4.6), Vector3(-2.2, 1.0, -0.4), 60.0)},
+				{"do": "call", "fn": func() -> void: look_toward(LEVER_POS + Vector3(0.3, 0.2, 0.0), 2.6)},
 				{"do": "call", "fn": func() -> void: _begin_carry_line("vo_bull_lift_lever")},
 				{"do": "walk", "to": LEVER_STAND, "speed": 2.6},
 				{"do": "face", "at": LEVER_POS},
@@ -305,7 +305,7 @@ func _on_beat_entered(b: int) -> void:
 				{"do": "walk", "to": CAGE_STAND_BULL, "speed": 2.8},
 				{"do": "face", "at": Vector3(0.0, 0.0, -4.0)}], true)
 		Beat.RISE:
-			release_camera()
+			release_look()
 			_rise_t = 0.0
 			_bull_on_cage = true
 			if _loop and not _loop.playing:

@@ -2402,6 +2402,30 @@
       "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
     },
     {
+      "id": "vo_bull_woods_shot",
+      "text": "Whoa, easy with that rifle! A shot carries a mile out here. Keep it quiet, little fella.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Fired in the stealth woods - the rifle is in Lil Blunt's hands now, a shot is noise (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_spy_shot",
+      "text": "Hold your fire, little fella! We look today. We shoot when I say.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Fired at the spy point - the bears are far but a shot carries (founder 2026-10-09)."
+    },
+    {
       "id": "vo_bull_quad_reveal",
       "text": "Meet my baby. A flame designer quad, hand painted. Nobody has ever found her under those leaves.",
       "voice_id": "uWE48TmsTuIjyh2ifoNL",

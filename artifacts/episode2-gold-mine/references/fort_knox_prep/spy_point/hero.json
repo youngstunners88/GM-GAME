@@ -1,0 +1,17 @@
+{
+ "request_id": "fc906c89-3b2d-4b0d-b2c6-0fd7f006b559",
+ "endpoint": "gpt-image-2-text-to-image",
+ "payload": {
+  "prompt": "Photorealistic cinematic concept still for a first-person western shooter, 'western Modern Warfare' art direction: warm low sun key light with teal-blue shadow fill, thin atmospheric haze, physically based materials (weathered timber, rusted riveted steel, packed dirt, gravel, bark, dust), natural film grain, 35mm lens at human eye height (1.6 m), high dynamic range, sharp detail, believable scale. No text, no lettering, no watermark, no logos, no user interface, no people, no close-up characters. A prone first-person view from behind a bank of ferns and a fallen mossy log on a wooded ridge crest at golden hour, looking down a long gentle slope. In the middle distance on the left, beside a gravel road junction, stands an old timber-and-stone storehouse with big double doors facing the road and fuel drums stacked against its wall, with a clear unobstructed line of sight to it. Straight ahead and further away the gravel road runs dead straight across open ground to a massive fortified vault compound of riveted steel and granite with watchtowers, the road and the gate approach clearly visible. Smoke from a bear camp's campfires rises in the valley below. Foreground ferns frame the bottom edge of the shot.",
+  "aspect_ratio": "16:9",
+  "resolution": "2K",
+  "quality": "high"
+ },
+ "url": "https://cdn.muapi.ai/outputs/generated/fc906c89-3b2d-4b0d-b2c6-0fd7f006b559_e420a102.png",
+ "cost_usd": 0.45,
+ "size": [
+  1600,
+  900
+ ],
+ "made": "2026-10-09"
+}
