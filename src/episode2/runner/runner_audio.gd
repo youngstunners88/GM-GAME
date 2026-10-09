@@ -156,6 +156,12 @@ func _make_loop(s: AudioStream, p: AudioStreamPlayer) -> void:
 		w.loop_mode = AudioStreamWAV.LOOP_FORWARD
 		w.loop_begin = 0
 		w.loop_end = w.data.size() / frame_bytes
+	elif w and w.format == AudioStreamWAV.FORMAT_IMA_ADPCM:
+		# The SFX WAVs are imported as IMA-ADPCM (4:1) to pay for the interlude songs inside the 190 MiB pack: 2 samples per
+		# byte, per channel.
+		w.loop_mode = AudioStreamWAV.LOOP_FORWARD
+		w.loop_begin = 0
+		w.loop_end = w.data.size() * 2 / (2 if w.stereo else 1)
 	else:
 		p.finished.connect(p.play)
 
