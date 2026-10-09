@@ -17,7 +17,7 @@ if "--classic" in sys.argv:
     # the founder's logo AS DESIGNED - gold chain ring, gold lettering, restrained neon - cut to a circle, gold gently lifted.
     NN = 512
     im = Image.open(SRC).convert("RGB")
-    CX, CY, R = 512, 452, 372
+    CX, CY, R = 512, 452, 340
     c = im.crop((CX - R, CY - R, CX + R, CY + R)).resize((NN, NN), Image.LANCZOS)
     a = np.asarray(c).astype(np.float32) / 255.0
     a = np.clip(a ** 0.9 * 1.08, 0, 1)

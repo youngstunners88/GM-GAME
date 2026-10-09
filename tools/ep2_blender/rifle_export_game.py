@@ -67,12 +67,17 @@ if arg("--logo"):
     log("game: plate y", PLATE_Y)
     # Tripo's emblem relief is a faceted, rippled surface (y 0.10..0.13); a texture painted on ripples reads as shattered glass. Flatten the
     # relief into a plain plate at the ray-hit plane (blend out over a ring) so the emblem is a flat inlay and reads cleanly.
-    _y0 = PLATE_Y[1.0] + 0.001; _r0, _r1 = DD * 0.5, DD * 0.62; _n = 0
+    # level of the SURROUNDING plate (the Tripo boss stands ~1.7 cm proud of it; flattening the boss at its own top made the badge look like a fat coin)
+    _ring = sorted(v.co.y for v in rifle.data.vertices if 0.105 < math.hypot(v.co.x - PX, v.co.z - PZ) < 0.14 and 0.09 < v.co.y < 0.125)
+    _y0 = _ring[len(_ring) // 2] if _ring else PLATE_Y[1.0] - 0.015; _r0, _r1 = 0.108, 0.134; _n = 0
+    PLATE_Y[1.0] = _y0
     for v in rifle.data.vertices:
         r_ = math.hypot(v.co.x - PX, v.co.z - PZ)
-        if r_ < _r1 and 0.095 < v.co.y < 0.14:
+        if r_ < _r1 and _y0 - 0.03 < v.co.y < 0.14:
             k_ = 1.0 if r_ < _r0 else 1.0 - (r_ - _r0) / (_r1 - _r0); k_ = k_ * k_ * (3 - 2 * k_)
-            v.co.y = v.co.y * (1 - k_) + _y0 * k_; _n += 1
+            _sd_ = r_ < 0.092; _ss = 1.0 if r_ < 0.074 else (max(0.0, 1.0 - (r_ - 0.074) / 0.018) if _sd_ else 0.0); _ss = _ss * _ss * (3 - 2 * _ss)
+            _tgt = _y0                                  # ENGRAVED: the seat is sunk into the plate, the bezel stands flush with it
+            v.co.y = v.co.y * (1 - k_) + _tgt * k_; _n += 1
     rifle.data.update(); log("game: flattened", _n, "relief verts to y", round(_y0, 4))
     done = 0
     for pl in rifle.data.polygons:
@@ -150,9 +155,10 @@ if arg("--logo") and 'BADGE' in globals():
     _lg = _I2.open(os.path.join(work, "emblem_color.png")).convert("RGB"); _lg.save(os.path.join(tex_dir, "emblem_color.jpg"), quality=86)
     _I2.open(os.path.join(work, "emblem_emit.png")).convert("RGB").resize((256, 256), _I2.LANCZOS).save(os.path.join(tex_dir, "emblem_emit.png"), optimize=True)
     BX, BZ, Y0 = BADGE['PX'], BADGE['PZ'], BADGE['Y0']
-    RO, RI, H = float(arg("--br", 0.092)), None, 0.0048
+    RO, RI, H = float(arg("--br", 0.088)), None, 0.0018
     RI = RO * 0.80
-    prof = [(RI, Y0 - 0.002), (RI, Y0 + H * 0.55), (RI + 0.0035, Y0 + H), (RO - 0.004, Y0 + H), (RO - 0.0008, Y0 + H * 0.55), (RO, Y0 - 0.002)]
+    SEAT = Y0 + 0.0012
+    prof = [(RI, Y0 - 0.006), (RI, Y0 + H * 0.55), (RI + 0.0035, Y0 + H), (RO - 0.004, Y0 + H), (RO - 0.0008, Y0 + H * 0.55), (RO, Y0 - 0.0005)]
     SEG = 72; verts = []; faces = []
     for si in range(SEG):
         a = math.tau * si / SEG
@@ -163,7 +169,7 @@ if arg("--logo") and 'BADGE' in globals():
         for pi in range(n - 1): faces.append((si * n + pi, s2 * n + pi, s2 * n + pi + 1, si * n + pi + 1))
     bez = bpy.data.meshes.new("BadgeBezel"); bez.from_pydata(verts, [], faces); bez.update()
     # face disc (slightly below the bezel crown), UV = planar through the logo, viewer on +Y sees -X to the right
-    fv = [(BX, Y0 + H * 0.35, BZ)] + [(BX + RI * math.cos(math.tau * i / SEG), Y0 + H * 0.35, BZ + RI * math.sin(math.tau * i / SEG)) for i in range(SEG)]
+    fv = [(BX, SEAT, BZ)] + [(BX + RI * math.cos(math.tau * i / SEG), SEAT, BZ + RI * math.sin(math.tau * i / SEG)) for i in range(SEG)]
     ff = [(0, 1 + i, 1 + (i + 1) % SEG) for i in range(SEG)]
     fc = bpy.data.meshes.new("BadgeFace"); fc.from_pydata(fv, [], ff); fc.update()
     uvf = fc.uv_layers.new(name="UVMap")
