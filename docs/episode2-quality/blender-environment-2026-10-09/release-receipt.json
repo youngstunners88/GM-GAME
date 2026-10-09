@@ -1,0 +1,46 @@
+{
+  "source_sha": "e380e63e4b991d786ada057addf548dc235c8299",
+  "build_id": "2026-10-09-e380e63",
+  "play_url": "https://youngstunners88.itch.io/smokerealm",
+  "checks": {
+    "export": true,
+    "gameplay": true,
+    "visual": true,
+    "security": true,
+    "deployment": true,
+    "live_input": true
+  },
+  "deployment": {
+    "run_url": "https://github.com/youngstunners88/GM-GAME/actions/runs/37934980430",
+    "outcome": "success",
+    "deploy_step": "success",
+    "observed_build_id": "2026-10-09-e380e63"
+  },
+  "evidence": [
+    {
+      "kind": "visual",
+      "path": "hideout-before-after.jpg"
+    },
+    {
+      "kind": "visual",
+      "path": "range-before-after.jpg"
+    },
+    {
+      "kind": "gameplay",
+      "path": "tests.json"
+    },
+    {
+      "kind": "export",
+      "path": "export.json"
+    },
+    {
+      "kind": "live",
+      "path": "live.json"
+    },
+    {
+      "kind": "live",
+      "path": "deployment-proof.txt"
+    }
+  ],
+  "open_blockers": []
+}

@@ -295,7 +295,31 @@ bevel(o,.013)
 for x in [-.11,.11]:box('Stamp impression',(.06,.002,.025),(x,.1305,0),brass,.002)
 finish('cast_ingot')
 
-# Save all kits together, with names and local origins suitable for editing.
+# Runtime exports above retain their original pivots. The editable source opens
+# as a spaced workbench, with a labelled root for each kit, rather than six
+# overlapping assets. Root custom properties preserve the runtime origin.
+layout = {'ForgeCrucible': (-6, 0, 0), 'PourLadle': (-3, 0, 1),
+          'FiringBench': (1, 0, 0), 'FurnaceStonework': (7, 1, 0),
+          'RangeBackstop': (0, 6, 0), 'CastIngot': (-1, -2, 0)}
+for name, offset in layout.items():
+    col = bpy.data.collections.get(name)
+    root = bpy.data.objects.new(name + '_EDIT_ROOT', None)
+    col.objects.link(root)
+    root.location = offset
+    root['runtime_origin'] = 'Each GLB exports before this source-only layout'
+    for ob in list(col.objects):
+        if ob != root:
+            ob.parent = root
+    root.empty_display_type = 'PLAIN_AXES'
+    root.empty_display_size = .3
+for screen in bpy.data.screens:
+    for area in screen.areas:
+        if area.type == 'VIEW_3D':
+            area.spaces.active.region_3d.view_distance = 25
+            area.spaces.active.region_3d.view_location = (0, 1, 2)
+bpy.ops.object.select_all(action='DESELECT')
+
+# Pack images so the editable source opens on another PC.
 for image in bpy.data.images:
     if image.type=='IMAGE':image.pack()
 bpy.ops.wm.save_as_mainfile(filepath=SOURCE)

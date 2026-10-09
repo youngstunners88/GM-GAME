@@ -1,0 +1,47 @@
+{
+  "glb_version": 2,
+  "models": [
+    {
+      "asset": "forge_crucible.glb",
+      "triangles": 5380,
+      "normals": true,
+      "texture_references": "local and present",
+      "bytes": 291120
+    },
+    {
+      "asset": "pour_ladle.glb",
+      "triangles": 948,
+      "normals": true,
+      "texture_references": "local and present",
+      "bytes": 37044
+    },
+    {
+      "asset": "firing_bench.glb",
+      "triangles": 1036,
+      "normals": true,
+      "texture_references": "local and present",
+      "bytes": 179664
+    },
+    {
+      "asset": "furnace_stonework.glb",
+      "triangles": 1568,
+      "normals": true,
+      "texture_references": "local and present",
+      "bytes": 232840
+    },
+    {
+      "asset": "range_wall.glb",
+      "triangles": 6696,
+      "normals": true,
+      "texture_references": "local and present",
+      "bytes": 718032
+    },
+    {
+      "asset": "cast_ingot.glb",
+      "triangles": 132,
+      "normals": true,
+      "texture_references": "local and present",
+      "bytes": 10904
+    }
+  ]
+}

@@ -1,14 +1,24 @@
 {
-  "observed_remote_sha": "0522aad8ee263492bad76583f80c7ddcca31da4b",
-  "objective": "Improve Episode 2 Bull and hideout in Blender; preserve Claude work and ship verified changes.",
-  "task_paths": ["src/episode2", "design/ep2/blender", "tests/ep2_smelting_facility_test.gd", "CLAUDE.md", "AGENTS.md"],
+  "observed_remote_sha": "cbc90b14fa2bc554ea56186d0d80643e8e8a170c",
+  "objective": "Blender hideout and target-range finish shipped; preserve founder character/film and concurrent Claude rifle work.",
+  "task_paths": [
+    "src/episode2",
+    "design/ep2/blender",
+    "tests/ep2_smelting_facility_test.gd",
+    "CLAUDE.md",
+    "AGENTS.md"
+  ],
   "evidence": {
-    "blender_release_source": "486dec24d0ccefe885d709f33070363430bb821d",
-    "ci_run": "https://github.com/youngstunners88/GM-GAME/actions/runs/37261516145",
-    "upload": "Job 111609556604 logged successful butler upload to smokerealm at 2026-10-05T04:02:26Z.",
-    "native_tests": "Eight suites passed at 486dec2; historical after overlapping Claude changes.",
-    "visuals": "docs/episode2-quality/blender-2026-10-05/README.md"
+    "blender_release_source": "e380e63e4b991d786ada057addf548dc235c8299",
+    "ci_run": "https://github.com/youngstunners88/GM-GAME/actions/runs/37934980430",
+    "upload": "Job 113835618869 logged successful butler upload at 2026-10-09T13:17:56Z.",
+    "native_tests": "Nine suites: 295 checks, 294 scripts / 215 scenes.",
+    "visuals": "docs/episode2-quality/blender-environment-2026-10-09/README.md",
+    "receipt": "docs/episode2-quality/blender-environment-2026-10-09/release-receipt.json"
   },
-  "unresolved": ["Founder realism target remains unresolved per later Bull commit 555e435.", "Public BUILD and protected Episode 2 flow not verified in this session.", "Jev credential absent in this process; no Jev call made."],
-  "next_action": "Fetch master and run resume digest; inspect latest founder feedback and Bull/rifle changes before more art edits. Verify current deployed BUILD."
+  "unresolved": [
+    "Bull sculpt and full cinematic reference fidelity remain separate unresolved work.",
+    "No mobile or long-soak validation; public capture reaches aim stage, native suites cover complete lesson."
+  ],
+  "next_action": "Fetch master, run resume digest, inspect latest founder feedback and concurrent commits. Do not redo the shipped finish kit; use its packed Blender workbench and evidence for further improvements."
 }
