@@ -2831,6 +2831,15 @@ recover them or ask you to resend anything.
 - **Look:** revolver reads GOLD again (the metal map drew it black in the web build), hero brighter, lanterns lit, rails have steel shine + bolts, hero turned 3/4 so the gun shows. Jev + vision assessment in `docs/research/3d/013_*`.
 - New skill `ep2-bear-design`.
 
+## 2026-10-09 — The scene after the hideout: lava river, mine lift, bear woods (groundwork) + rifle badge polish
+- **Lava river really hurts.** From Inferno's exit beat the molten channel burns (a heart, kicked back to the bank, red-orange flash, yelp). The plank bridge is gone. Inferno walks to the bank, warns Lil Blunt, **hops across**, then tells him to hop over (nags every 11 s until he does). Hearts show only while the lava is armed; no game over.
+- **Mine lift (new chamber).** A mine shaft that climbs **two floors** to the surface on a timber cage. The lever is **inconspicuous**: a stub of the wall's own rock, in a boulder, at knee height (test-locked: same material as the wall, no glow) - Inferno says "don't bother looking for it" and pulls it on camera. While it rises Inferno lays out the plan (sneak through the wood, ride my quad: I drive, you shoot, spy on the bears first). **"Inferno Bull 2" starts when they enter the shaft.**
+- **Bear woods (new chamber).** Dusk forest. Stealth: walk soft, running near a bear is heard (Inferno shushes). His **flame-designer quad is hidden under a pile of leaves** in a thicket; he throws them off. **"Deep Mining 3" starts when they mount it.** On-rails ride down the wood road to a ridge, then a first-person **spyglass** (hold right mouse) to spot the six bears in their camp. The slice ends there with **TO BE CONTINUED** (next: Lil Blunt shoots from the quad while Inferno drives).
+- **Plumbing:** the session root chains chambers (`next_chamber` / `end_session`), each commit guarded; the hideout now hands over to the lift instead of a runner leg. 19 new Inferno / Lil Blunt lines + 7 new sound effects generated; the two songs added as Vorbis, and the stage theme re-encoded 128k -> 80k to pay for them.
+- **Rifle:** the "brown outer layer" around the GM badge is gone - the old Tripo emblem area is repainted in plain gunmetal, the gold rim is thinner, the logo is larger and flush.
+- Gates: `tests/ep2_interlude_test` (new), `ep2_smelting_facility_test` (lava), renders in `.farm/interlude`. Skill: `ep2-interlude-chain`.
+- Known: the quad and the camp are graybox-grade (blocky quad, prism tents); bears glide while patrolling (no walk clip on the rig); the woods are low-poly. This is the foundation, not the final art.
+
 ## 2026-10-09 — GM logo engraved INTO the rifle (rebuilt plate)
 - Rebuilt the receiver's emblem area as clean geometry in the same mesh: gold-rimmed engraved socket with the full GM logo (chain ring, neon) - no sticker, no overlay object. Pack impact ~+0.1 MB.
 

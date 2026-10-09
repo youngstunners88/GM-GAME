@@ -3,7 +3,7 @@
 set -e
 cd "$(dirname "$0")/.."
 G=.godot-cache/Godot_v4.3-stable_linux.x86_64
-for t in ep2_range_lesson_test ep2_smelting_facility_test ep2_hideout_corrections_test ep2_runner_audio_test; do
+for t in ep2_range_lesson_test ep2_smelting_facility_test ep2_interlude_test ep2_hideout_corrections_test ep2_runner_audio_test; do
   echo "== $t"; timeout 600 $G --headless res://tests/$t.tscn 2>&1 | grep -E "\[FAIL\]|ALL PASS|FAIL \(" | tee /tmp/g.$$ ; grep -q "ALL PASS" /tmp/g.$$ && ! grep -q FAIL /tmp/g.$$
 done
 node tools/ep2_sim/fps_feel_sim.mjs > /dev/null

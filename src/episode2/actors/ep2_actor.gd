@@ -32,6 +32,7 @@ var _face_goal: float = NAN
 var _clip: String = ""
 var _reach: Dictionary = {}      # side -> {"ik": Ep2ArmIK, "w": float, "goal": float, "ramp": float}
 var _attachments: Dictionary = {}
+var _hop: Dictionary = {}          # a scripted jump arc: {from, to, t, dur, h}
 
 
 ## Instance `scene_path`, scale it so `native_height` becomes `height`, and register extra clips.
@@ -182,6 +183,16 @@ func stop() -> void:
 	_walking = false
 
 
+## A scripted HOP: leap from where he stands to `p` over `duration` seconds along a parabola `height` metres high
+## (the lava river, a ledge). Emits `arrived` on landing. Skill: ep2-lava-hop.
+func hop_to(p: Vector3, duration: float = 0.9, height: float = 1.5) -> void:
+	_walking = false
+	_hop = {"from": position, "to": Vector3(p.x, position.y, p.z), "t": 0.0, "dur": maxf(duration, 0.1), "h": height}
+
+
+func is_hopping() -> bool: return not _hop.is_empty()
+
+
 ## Turn (smoothly) to look at world point `p`.
 func face_point(p: Vector3) -> void:
 	var d: Vector3 = p - global_position
@@ -248,6 +259,9 @@ func reach_shortfall(side: String) -> float:
 # --- per-frame -------------------------------------------------------------------------------------------
 
 func step(delta: float) -> void:
+	if not _hop.is_empty():
+		_step_hop(delta)
+		return
 	var heading: float = facing
 	if _walking:
 		var to: Vector3 = _goal - position
@@ -288,3 +302,21 @@ func step(delta: float) -> void:
 		ik.influence = w
 		if w <= 0.0 and goal <= 0.0:
 			ik.reaching = false
+
+
+func _step_hop(delta: float) -> void:
+	_hop["t"] = float(_hop["t"]) + delta
+	var k: float = clampf(float(_hop["t"]) / float(_hop["dur"]), 0.0, 1.0)
+	var a: Vector3 = _hop["from"]
+	var b: Vector3 = _hop["to"]
+	position = a.lerp(b, k) + Vector3(0.0, float(_hop["h"]) * 4.0 * k * (1.0 - k), 0.0)
+	var d: Vector3 = b - a
+	if Vector2(d.x, d.z).length() > 0.01:
+		facing = lerp_angle(facing, atan2(d.x, d.z), clampf(TURN_RATE * 2.0 * delta, 0.0, 1.0))
+	rotation.y = facing
+	if anim and anim.has_animation(run_clip):
+		play(run_clip, 0.7, 0.15)
+	if k >= 1.0:
+		position = b
+		_hop = {}
+		arrived.emit()

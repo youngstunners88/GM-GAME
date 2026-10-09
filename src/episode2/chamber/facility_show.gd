@@ -75,6 +75,8 @@ func _begin(s: Dictionary) -> void:
 			(s["fn"] as Callable).call()
 		"unseat":
 			f._begin_stand_up()
+		"hop":
+			f._bull.hop_to(s["to"], float(s.get("t", 0.95)), float(s.get("h", 1.6)))
 		_:
 			pass
 
@@ -109,6 +111,18 @@ func _tick(s: Dictionary, delta: float) -> bool:
 			return f._payment_done()
 		"unseat":
 			return f._stand_up_done()
+		"hop":
+			return not f._bull.is_hopping()
+		"until":
+			# Wait for a condition (`pred`), repeating a nudge line every `every` seconds meanwhile.
+			if (s["pred"] as Callable).call():
+				return true
+			var every: float = float(s.get("every", 0.0))
+			var n: int = int(s.get("_n", 0))
+			if every > 0.0 and _t >= every * float(n + 1):
+				s["_n"] = n + 1
+				f._begin_carry_line(str(s["nudge"]))
+			return false
 		_:
 			return true
 
@@ -232,7 +246,20 @@ static func _steps_for_raw(f: Node, beat: int) -> Array:
 		B.PROMISE:
 			return [_say("vo_bull_partner", 0.3), _say("vo_lb_partner_ok", 0.2)]
 		B.EXIT:
-			return [_say("vo_bull_exit", 0.1)]
+			# THE LAVA RIVER (founder 2026-10-09): it really burns. Inferno walks to the bank, warns him, HOPS across,
+			# then tells Lil Blunt to hop over; he nags until it is done, then leads on to the lift.
+			var near := Vector3(-2.4, 0.0, f.CHANNEL_Z - f.LAVA_HALF - 1.2)   # off to the side, so his body never blocks the landing
+			var far := Vector3(-2.4, 0.0, f.CHANNEL_Z + f.LAVA_HALF + 1.2)
+			return [
+				{"do": "call", "fn": f._lava_begin},
+				{"do": "walk", "to": near, "speed": 3.2},
+				{"do": "face", "at": far},
+				_say("vo_bull_lava1", 0.25),
+				{"do": "hop", "to": far, "t": 0.95, "h": 1.7},
+				{"do": "face", "at": near},
+				_say("vo_bull_lava2", 0.2),
+				{"do": "until", "pred": f._lava_crossed, "nudge": "vo_bull_lava_nudge", "every": 11.0},
+				_say("vo_bull_lava_made_it", 0.2)]
 		B.VERB_TEACH:
 			# He leads Lil Blunt to the range: the line plays while he walks (the player is free and follows).
 			return [{"do": "call", "fn": f._speak.bind("vo_bull_range_follow")},

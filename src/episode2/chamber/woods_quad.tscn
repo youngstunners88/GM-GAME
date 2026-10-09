@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://ep2woodsquad01"]
+
+[ext_resource type="Script" path="res://src/episode2/chamber/woods_quad.gd" id="1"]
+
+[node name="WoodsQuad" type="Node3D"]
+script = ExtResource("1")

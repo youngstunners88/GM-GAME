@@ -376,6 +376,41 @@
       "duration_seconds": 1.4,
       "prompt_influence": 0.6,
       "note": "Ep2 range lesson (skill ep2-range-lesson)"
+    },
+    {
+      "id": "ep2_lava_burn",
+      "prompt": "Short sharp sizzle and hiss of a boot burned by molten lava, a quick whoosh of flame flare-up, steam spit, no music, no voice",
+      "duration_seconds": 1.2
+    },
+    {
+      "id": "ep2_lift_start",
+      "prompt": "Heavy old iron mine elevator lever being pulled with a hidden metallic clunk, chains rattling taut, a deep mechanical groan as the lift begins to rise, no music",
+      "duration_seconds": 3.0
+    },
+    {
+      "id": "ep2_lift_loop",
+      "prompt": "Old wooden mine elevator cage rising steadily in a stone shaft, creaking timber, chain links clanking, rope squeak, distant rumble, seamless loop, no music",
+      "duration_seconds": 6.0
+    },
+    {
+      "id": "ep2_lift_arrive",
+      "prompt": "Mine elevator cage slowing and stopping at the surface, chains going slack, a heavy clunk, wooden gate sliding open, fresh air whoosh, no music",
+      "duration_seconds": 3.0
+    },
+    {
+      "id": "ep2_quad_start",
+      "prompt": "Powerful quad bike engine cranking and roaring to life, a throaty two-stroke rev then settling to an idle, in an open forest, no music",
+      "duration_seconds": 3.0
+    },
+    {
+      "id": "ep2_quad_loop",
+      "prompt": "Quad bike engine cruising steadily over rough forest ground, gravel crunch and suspension rattle, seamless loop, no music",
+      "duration_seconds": 6.0
+    },
+    {
+      "id": "ep2_leaves_pull",
+      "prompt": "Armfuls of dry and green leaves and branches being pulled and thrown off a vehicle, rustling foliage, twigs snapping, no music",
+      "duration_seconds": 2.5
     }
   ],
   "music": [
@@ -2209,6 +2244,234 @@
         "speed": 1.2
       },
       "note": "Inferno Bull teaches the Winchester at his range (skill ep2-range-lesson); same owned voice/settings as vo_bull_wake."
+    },
+    {
+      "id": "vo_bull_lava1",
+      "text": "That river is liquid fire, son. Step in it and it cooks you where you stand. Watch me.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_lava2",
+      "text": "Now you. Hop over! Take a run at it and use that double jump.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_lava_nudge",
+      "text": "Don't just stand there, little fella. Run, jump, and jump again. Hop over!",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_lava_made_it",
+      "text": "That's the way! Light on your feet. Now the lift is just through this door.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_lift1",
+      "text": "Step on the lift. It runs up two floors, all the way to the surface. Hold on.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_lift_lever",
+      "text": "Don't bother looking for the lever, kid. Took me a year to hide it that well.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_plan1",
+      "text": "Here's the plan. The wood up top is crawling with bears, and we don't fight them in the open. We sneak.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_plan2",
+      "text": "My quad is stashed deeper in the wood. I drive, you shoot. You keep that rifle steady and I keep us moving.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_plan3",
+      "text": "First we ride to a spot where we can spy on those bears and work out a proper plan. Know your enemy, little fella.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_lb_plan_reply",
+      "text": "You drive, I shoot. Chill. I like it.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.45,
+        "speed": 1.05
+      },
+      "note": "Lil Blunt. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_lift_arrive",
+      "text": "Surface. Keep low and keep quiet from here on. Bears hear everything.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_woods_sneak",
+      "text": "Stay low and follow my steps. Walk soft.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_woods_quiet",
+      "text": "Easy, easy! Running makes noise. Walk soft, little fella.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_quad_reveal",
+      "text": "Meet my baby. A flame designer quad, hand painted. Nobody has ever found her under those leaves.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_lb_quad_ok",
+      "text": "Whoa! That is the coolest ride I've ever seen!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.45,
+        "speed": 1.05
+      },
+      "note": "Lil Blunt. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_quad_mount",
+      "text": "Hop on the back and hold that rifle steady. Here we go.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_spy1",
+      "text": "This is the spot. Down on your belly and look through the ferns.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_spy2",
+      "text": "Count them, little fella. Where they stand, where they sleep, which way they look. Then we make our plan.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_lb_spy_reply",
+      "text": "That's a lot of bears. A whole lot of bears.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.45,
+        "speed": 1.05
+      },
+      "note": "Lil Blunt. Episode 2 lift/woods interlude (founder 2026-10-09)."
     }
   ]
 }

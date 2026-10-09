@@ -35,6 +35,9 @@ const RUNNER_SCENE := preload("res://src/episode2/runner/runner_graybox.tscn")
 const CHAMBER_SCENES := {
 	"smelting_facility": preload("res://src/episode2/chamber/smelting_facility.tscn"),
 	"miner_shaft": preload("res://src/episode2/chamber/miner_shaft.tscn"),
+	# The INTERLUDE chain (founder 2026-10-09): after the hideout the runner is paused - a mine lift, then the bear woods.
+	"mine_lift": preload("res://src/episode2/chamber/mine_lift.tscn"),
+	"woods_quad": preload("res://src/episode2/chamber/woods_quad.tscn"),
 }
 const DEFAULT_CHAMBER := "miner_shaft"
 
@@ -48,6 +51,10 @@ var _completed_distance: float = 0.0
 var _rewarded_chambers: Dictionary = {}   # index -> true, guard #1
 ## The segment index the CURRENTLY-LOADED chamber belongs to (guard #1 key).
 var _chamber_segment: int = -1
+## Which chamber of the current segment is loaded ("" = the segment's own). Interlude chambers chain: a chamber's result
+## may carry `next_chamber` (load that one next, in the same segment) or `end_session` (the playable slice ends here).
+var _chain_id: String = ""
+var _chain_n: int = 0
 var _commit_to_economy: bool = true
 var _totals: Dictionary = {"gold_awarded": 0, "gold_forfeited": 0, "diamonds_burned": 0, "btc_paid": 0}
 
@@ -58,6 +65,8 @@ func configure(plan: Array, commit_to_economy: bool = true) -> void:
 	_completed_distance = 0.0
 	_rewarded_chambers.clear()
 	_chamber_segment = -1
+	_chain_id = ""
+	_chain_n = 0
 	_totals = {"gold_awarded": 0, "gold_forfeited": 0, "diamonds_burned": 0, "btc_paid": 0}
 	_teardown_active()
 	_mode = Mode.IDLE
@@ -107,7 +116,7 @@ func _enter_chamber() -> void:
 		_completed_distance += float(_active.get_distance())
 	_teardown_active()
 	var seg: Dictionary = _plan[_segment]
-	var chamber_id: String = str(seg.get("chamber", DEFAULT_CHAMBER))
+	var chamber_id: String = _chain_id if _chain_id != "" else str(seg.get("chamber", DEFAULT_CHAMBER))
 	if not CHAMBER_SCENES.has(chamber_id):
 		push_error("Ep2SessionRoot: unknown chamber id \"%s\"; falling back to %s" % [chamber_id, DEFAULT_CHAMBER])
 		chamber_id = DEFAULT_CHAMBER
@@ -122,6 +131,20 @@ func _enter_chamber() -> void:
 	c.chamber_cleared.connect(_on_chamber_cleared, CONNECT_ONE_SHOT)
 	c.chamber_failed.connect(_on_chamber_failed, CONNECT_ONE_SHOT)
 	_chamber_segment = _segment
+	_mode = Mode.CHAMBER
+	mode_changed.emit(_mode)
+
+## Load the next chamber of a chain in the same segment (no runner in between).
+func _enter_chamber_chained(segment: int) -> void:
+	_mode = Mode.TRANSITION
+	_teardown_active()
+	var c: Node = CHAMBER_SCENES[_chain_id].instantiate()
+	add_child(c)
+	_active = c
+	c.setup(0, [], 0)
+	c.chamber_cleared.connect(_on_chamber_cleared, CONNECT_ONE_SHOT)
+	c.chamber_failed.connect(_on_chamber_failed, CONNECT_ONE_SHOT)
+	_chamber_segment = segment
 	_mode = Mode.CHAMBER
 	mode_changed.emit(_mode)
 
@@ -162,9 +185,12 @@ func _on_chamber_reached() -> void:
 
 func _on_chamber_cleared(result: Dictionary) -> void:
 	var owner_segment: int = _chamber_segment
-	if owner_segment < 0 or _rewarded_chambers.has(owner_segment):
+	# Guard #1 is keyed per chamber: a chained interlude gets its own key (segment * 100 + its place in the chain), so the
+	# first chamber's payout can never be paid twice and a chained one is never swallowed by it.
+	var key: int = owner_segment + _chain_n * 100
+	if owner_segment < 0 or _rewarded_chambers.has(key):
 		return
-	_rewarded_chambers[owner_segment] = true
+	_rewarded_chambers[key] = true
 
 	var awarded: int = int(result.get("gold_awarded", 0))
 	var forfeited: int = int(result.get("gold_forfeited", 0))
@@ -187,6 +213,24 @@ func _on_chamber_cleared(result: Dictionary) -> void:
 				gm.auction_gold_pool += forfeited
 
 	chamber_committed.emit(owner_segment, result)
+	var next_chamber: String = str(result.get("next_chamber", ""))
+	if bool(result.get("end_session", false)):
+		_chain_id = ""
+		_chain_n = 0
+		_chamber_segment = -1
+		_mode = Mode.IDLE
+		_teardown_active()
+		_sync_mouse_mode()
+		session_complete.emit()
+		return
+	if next_chamber != "" and CHAMBER_SCENES.has(next_chamber):
+		_chain_id = next_chamber
+		_chain_n += 1
+		_chamber_segment = -1
+		_enter_chamber_chained(owner_segment)
+		return
+	_chain_id = ""
+	_chain_n = 0
 	_chamber_segment = -1
 	_advance_segment()
 

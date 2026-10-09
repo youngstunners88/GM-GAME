@@ -45,6 +45,8 @@ signal gear_granted(gear_id: String)
 signal payment_made(amount: int)
 ## The scene flipped to first person (the shooter/RPG mode starts here; see Episode2Mode).
 signal fps_started
+## The lava river burned Lil Blunt (founder 2026-10-09: it must really hurt); carries the health left.
+signal burned(health_left: int)
 
 enum Beat {
 	CINEMATIC,    # the cliff-jump film (founder 2026-09-30): the cart flies, he jumps, rolls, hits his head
@@ -129,6 +131,21 @@ const FILM_SONG_OFFSET := 26.53
 const PREBUILD_AT := 3.0
 const FILM_OFFSET := Vector3(4000.0, 0.0, 0.0)   # the film set lives far from the room: no shared light, no overlap
 const COMPANION_ID := "inferno_bull"
+
+# --- THE LAVA RIVER (founder 2026-10-09: "make sure the lava river actually hurts so that Inferno Bull hops over and
+# tells Lil Blunt to hop over"). The molten channel across the room is real: from the EXIT beat on, standing in it
+# burns (a heart, a kick back to the bank, a flash, a yelp). The plank bridge is gone; the way out is a HOP.
+const LAVA_HALF := 0.85              # burn zone is |z - CHANNEL_Z| < LAVA_HALF (the trench is 2.2 m; a little forgiveness)
+const LAVA_SAFE_Y := 0.35            # feet this high clear the lava
+const MAX_HEALTH := 3
+const BURN_COOLDOWN := 0.9
+## The interlude that follows the hideout: the mine lift up two floors to the surface (skill ep2-interlude-chain).
+const NEXT_CHAMBER := "mine_lift"
+var _health: int = MAX_HEALTH
+var _lava_on: bool = false
+var _lava_bank: float = -1.0        # which bank he last stood on: -1 near (hideout) side, +1 far (lift) side
+var _burn_cd: float = 0.0
+var _burns: int = 0
 
 # --- Live state ----------------------------------------------------------------
 var _beat: int = Beat.ARRIVAL
@@ -555,6 +572,7 @@ func step(delta: float) -> void:
 
 	if _show and _show.running:
 		_show.step(delta)
+	_tick_lava(delta)
 	_gun.sprinting = _run_input and _moving
 	_gun.step(delta)
 	_tick_later(delta)
@@ -580,7 +598,7 @@ func step(delta: float) -> void:
 		Beat.EXIT:
 			# They leave TOGETHER: the Bull leads to the Fort Knox door and you follow in first person.
 			# Resolve once you reach the door, never before his line has finished.
-			if _hold <= 0.0 and _player_pos.z >= EXIT_POSITION.z - 1.0:
+			if _hold <= 0.0 and not _show_active and _player_pos.z >= EXIT_POSITION.z - 1.0:
 				_resolve()
 		_:
 			pass
@@ -814,7 +832,8 @@ func _collide(p: Vector3) -> Vector3:
 	var q := p
 	q.z = clampf(q.z, ENTRY_POSITION.z, EXIT_POSITION.z)
 	q.x = clampf(q.x, -ROOM_X, ROOM_X)
-	if absf(q.z - CHANNEL_Z) < 1.1 and absf(q.x) > 1.0:
+	# Until the EXIT beat the channel is a wall (the choreography owns the room); from EXIT on it is a hazard, not a barrier.
+	if _beat < Beat.EXIT and absf(q.z - CHANNEL_Z) < 1.1:
 		q.z = CHANNEL_Z - 1.1 if _player_pos.z < CHANNEL_Z else CHANNEL_Z + 1.1
 	for b in _blockers:
 		var c: Vector2 = b[0]
@@ -990,8 +1009,65 @@ func _resolve() -> void:
 		"companion": COMPANION_ID,
 		"weapon": WINCHESTER_ID,
 		"next_mode": "fps",
+		"next_chamber": NEXT_CHAMBER,
 		"seconds": _elapsed,
 	})
+
+
+# --- the lava river ------------------------------------------------------------------------------------------
+
+## The EXIT show arms the river (before that the channel is a wall and nothing can burn).
+func _lava_begin() -> void:
+	_lava_on = true
+
+
+## True once Lil Blunt stands on the far bank (past the burn zone), so Inferno can stop nagging and lead on.
+func _lava_crossed() -> bool:
+	return _player_pos.z > CHANNEL_Z + LAVA_HALF + 0.4
+
+
+## Is Lil Blunt's body in the molten channel right now (feet below LAVA_SAFE_Y inside the burn zone)?
+func in_lava() -> bool:
+	return _lava_on and absf(_player_pos.z - CHANNEL_Z) < LAVA_HALF and _player_pos.y < LAVA_SAFE_Y
+
+
+func _tick_lava(delta: float) -> void:
+	if not _lava_on:
+		return
+	_burn_cd = maxf(0.0, _burn_cd - delta)
+	var dz: float = _player_pos.z - CHANNEL_Z
+	if absf(dz) >= LAVA_HALF:
+		_lava_bank = 1.0 if dz > 0.0 else -1.0
+	if in_lava() and _burn_cd <= 0.0:
+		_burn()
+
+
+## One burn: lose a heart, get kicked back to the bank he came from (with a hop so he can try again), flash, yelp.
+## Out of hearts he is simply restored (the hideout is a story room: there is no game over, only a sore bottom).
+func _burn() -> void:
+	_burn_cd = BURN_COOLDOWN
+	_burns += 1
+	_health -= 1
+	var out_of_hearts: bool = _health <= 0
+	if out_of_hearts:
+		_health = MAX_HEALTH
+	_player_pos.z = CHANNEL_Z + _lava_bank * (LAVA_HALF + 0.55)
+	_vel_y = JUMP_VELOCITY * 0.85
+	_air_jumps = 0
+	if _hud_ctl:
+		_hud_ctl.hurt()
+		_hud_ctl.toast("TRY AGAIN: RUN, JUMP, JUMP AGAIN" if out_of_hearts else "HOT! THE LAVA BURNS. HOP OVER IT", 2.2)
+	var am: Node = get_node_or_null("/root/AudioManager")
+	if am and am.has_method("play_sfx"):
+		am.play_sfx("ep2_lava_burn")
+	_yelp()
+	burned.emit(_health)
+
+
+## Lil Blunt's pain bark: any line of the voice bank's "hit" category (his alarm reactions).
+func _yelp() -> void:
+	var ids: Array = VoiceBank.CATEGORIES["hit"]["ids"]
+	_speak(str(ids[_burns % ids.size()]))
 
 
 ## Choose the framing: first person from the verb teach on; the player's follow camera whenever he has control
@@ -1121,7 +1197,7 @@ func get_episode_mode() -> int:
 	return Episode2Mode.Mode.FPS if _fps else Episode2Mode.Mode.HIDEOUT
 ## Chamber 0 has no health and no fail state. Reported as full so a shared HUD
 ## does not have to special-case it.
-func get_health() -> int: return 3
+func get_health() -> int: return _health
 func get_ammo() -> int: return _gun.rounds
 func get_live_bear_count() -> int: return 0
 func get_vest() -> float: return 0.0
@@ -1357,9 +1433,7 @@ func _build_visuals() -> void:
 		_blockers.append([Vector2(cs.x, cs.z), 1.1])
 	for rb in _range_blockers:
 		_blockers.append(rb)
-	# A plank bridge over the molten channel: the only way across to Fort Knox.
-	var bridge := _box(Vector3(2.0, 0.1, 2.8), Vector3(0.0, 0.06, CHANNEL_Z), timber)
-	bridge.name = "ChannelBridge"
+	# (The plank bridge is gone, founder 2026-10-09: the lava burns and the way across is a hop.)
 
 	# The Blender stone arch frames this exit; keep its opening unobstructed.
 	# A brass plate, not the old bright-green bar (it hung across the furnace like a UI element).
@@ -2349,6 +2423,9 @@ func _push_hud(_delta: float) -> void:
 	var stepping: bool = _lesson >= Lesson.LOAD and _lesson <= Lesson.PRACTICE
 	_hud_ctl.step_index = _lesson - Lesson.LOAD + 1 if stepping else 0
 	_hud_ctl.step_total = LESSON_STEPS if stepping else 0
+	_hud_ctl.health = _health
+	_hud_ctl.health_max = MAX_HEALTH
+	_hud_ctl.show_health = _lava_on
 
 
 # --- The weapon's public verbs + the target-practice lesson (skill ep2-range-lesson) -------------------------------

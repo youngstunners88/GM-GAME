@@ -4,7 +4,7 @@
 #       --logo <GOLD_LOGO.png> --tex 1024 --post tools/ep2_blender/rifle_export_game.py --game-out src/episode2/assets/weapons/winchester_1886_founder.glb
 # Output frame: muzzle +Z, up +Y, ~1.2 m long, centred (skill ep2-founder-weapon-glb). Never touches the GUI session.
 import os, sys, tempfile
-GAME_OUT = arg("--game-out"); BAKE = int(arg("--bake", 2048)); TRIS = int(arg("--tris", 12000))
+GAME_OUT = arg("--game-out"); BAKE = int(arg("--bake", 1024)); TRIS = int(arg("--tris", 12000))
 work = tempfile.mkdtemp(prefix="rifle_bake_")
 def clean_stage():
     for o in list(bpy.data.objects):
@@ -57,7 +57,7 @@ if arg("--logo"):
     EN = emb.shape[0]
     base = np.asarray(_I.open(pc).convert("RGB")).astype(np.float32) / 255.0
     emit_img = np.zeros_like(base)
-    PX, PZ, DD = float(arg("--lx", -0.09)), float(arg("--lz", 0.455)), float(arg("--ld", 0.22))
+    PX, PZ, DD = float(arg("--lx", -0.09)), float(arg("--lz", 0.443)), float(arg("--ld", 0.30))
     N_ = base.shape[0]; uvl = rifle.data.uv_layers.active.data
     from mathutils.bvhtree import BVHTree as _BVH
     _bvh = _BVH.FromObject(rifle, bpy.context.evaluated_depsgraph_get())
@@ -79,9 +79,22 @@ if arg("--logo"):
             _tgt = _y0                                  # ENGRAVED: the seat is sunk into the plate, the bezel stands flush with it
             v.co.y = v.co.y * (1 - k_) + _tgt * k_; _n += 1
     rifle.data.update(); log("game: flattened", _n, "relief verts to y", round(_y0, 4))
+    # THE PLATE'S OWN COLOUR (founder 2026-10-09: "a nasty brown outer layer kills it"): the old seat was the Tripo smudge darkened to 0.42,
+    # which read as a wide olive-brown ring around the gold. Fill the whole emblem footprint with the average colour of the real plate just outside it.
+    _cols = []
+    for pl in rifle.data.polygons:
+        if pl.material_index != 0 or pl.normal.y < 0.35: continue
+        _c = pl.center
+        _r = math.hypot(_c.x - PX, _c.z - PZ)
+        if 0.125 < _r < 0.18 and abs(_c.y - PLATE_Y[1.0]) < 0.03:
+            _u = sum((uvl[i].uv for i in pl.loop_indices), Vector((0, 0))) / len(pl.loop_indices)
+            _cols.append(base[min(N_ - 1, max(0, int((1 - _u.y) * N_))), min(N_ - 1, max(0, int(_u.x * N_)))])
+    PLATE_AVG = (np.median(np.array(_cols), axis=0) * 0.85) if len(_cols) > 8 else np.array([0.20, 0.19, 0.18], np.float32)   # x0.55: the engraved plate is darker than the lever-frame texels around it
+    log("game: plate colour", [round(float(c), 3) for c in PLATE_AVG], "from", len(_cols), "faces")
+    _rng_ = np.random.RandomState(7)
     done = 0
     for pl in rifle.data.polygons:
-        if pl.material_index != 0 or abs(pl.normal.y) < 0.35: continue
+        if pl.material_index != 0 or abs(pl.normal.y) < 0.08: continue
         side = 1.0 if pl.normal.y > 0 else -1.0
         if side < 0 and "--both" not in argv: continue      # only the side the shooter sees (the -Y plate shares UV texels with it)
         vs = [rifle.data.vertices[v].co for v in pl.vertices]
@@ -98,7 +111,7 @@ if arg("--logo"):
             ins = (w0 >= -0.12) & (w1 >= -0.12) & (w2 >= -0.12)   # 1-2 texel dilation so charts have no unpainted gaps (those bled black slivers)
             X3 = w0 * P3[0, 0] + w1 * P3[1, 0] + w2 * P3[2, 0]; Z3 = w0 * P3[0, 2] + w1 * P3[1, 2] + w2 * P3[2, 2]
             Y3 = w0 * P3[0, 1] + w1 * P3[1, 1] + w2 * P3[2, 1]
-            ins = ins & (np.abs(Y3 - PLATE_Y[side]) < 0.03)
+            ins = ins & (np.abs(Y3 - PLATE_Y[side]) < 0.07)
             u = (-(X3 - PX) * side) / DD + 0.5; v = 0.5 - (Z3 - PZ) / DD       # viewer on +Y sees -X to the right; on -Y sees +X to the right
             rr = np.hypot(u - 0.5, v - 0.5) * 2
             m = ins & (rr < 1.0)
@@ -109,7 +122,7 @@ if arg("--logo"):
             py_, px_ = (gy - 0.5).astype(int), (gx - 0.5).astype(int)
             orig = base[py_, px_]; lum = orig.mean(-1, keepdims=True)
             wear = np.clip(0.90 + 0.30 * lum, 0.90, 1.10)                    # the plate's own scratches/grime show through the emblem
-            newc = np.clip(orig * 0.42 * wear, 0, 1)      # a darkened, worn seat: the old Tripo emblem is gone, the plate grain stays
+            newc = np.clip(PLATE_AVG[None, None, :] * (0.88 + 0.24 * _rng_.rand(*rr.shape))[..., None] * wear, 0, 1)   # the old emblem is gone: plain plate colour + grain
             sel = m[..., None]
             base[py_, px_] = np.where(sel, orig * (1 - alpha) + newc * alpha, orig)
             emit_img[py_, px_] = np.where(sel, ee * alpha * feather[..., None], emit_img[py_, px_])
@@ -159,7 +172,7 @@ if arg("--logo") and 'BADGE' in globals():
     _I2.open(os.path.join(work, "emblem_color.png")).convert("RGB").save(os.path.join(tex_dir, "emblem_color.jpg"), quality=86)
     _I2.open(os.path.join(work, "emblem_emit.png")).convert("RGB").resize((256, 256), _I2.LANCZOS).save(os.path.join(tex_dir, "emblem_emit.png"), optimize=True)
     BX, BZ, YP = BADGE['PX'], BADGE['PZ'], BADGE['Y0']
-    RI = float(arg("--sr", 0.066)); RO = RI + 0.016; RH = float(arg("--rh", 0.088)); RP = RH + 0.008; DEPTH = 0.0065; SEG = 120
+    RI = float(arg("--sr", 0.056)); RO = RI + 0.010; RH = float(arg("--rh", 0.1)); RP = RH + 0.012; DEPTH = 0.0065; SEG = 120
     bvh2 = _BVH2.FromObject(rifle, bpy.context.evaluated_depsgraph_get())
     def top_y(x, z):
         h = bvh2.ray_cast(Vector((x, 1.0, z)), Vector((0, -1, 0)))
@@ -193,8 +206,8 @@ if arg("--logo") and 'BADGE' in globals():
             if r < RO + 0.012: ys[(ri, si)] = PLANE(x, z) + prof(r)
             else:
                 t_ = top_y(x, z)
-                if t_ is None: ys[(ri, si)] = None
-                else:
+                if t_ is None or abs(t_ - PLANE(x, z)) > 0.02: t_ = PLANE(x, z)      # never leave a hole (holes made the staircase edge)
+                if True:
                     k = min(1.0, (r - (RO + 0.012)) / max(1e-6, (RP - (RO + 0.012))) * 1.6); k = k * k * (3 - 2 * k)
                     ys[(ri, si)] = (PLANE(x, z) + prof(r)) * (1 - k) + (t_ - 0.0008) * k
     bm = bmesh.new(); bm.from_mesh(rifle.data)
@@ -209,7 +222,7 @@ if arg("--logo") and 'BADGE' in globals():
     tef = tex(os.path.join(tex_dir, "emblem_emit.png"), 'sRGB'); t.links.new(tef.outputs['Color'], fb.inputs['Emission Color']); fb.inputs['Emission Strength'].default_value = 1.1
     fb.inputs['Metallic'].default_value = 0.4; fb.inputs['Roughness'].default_value = 0.34
     sm_ = bpy.data.materials.new("Badge_Steel"); sm_.use_nodes = True; sb = sm_.node_tree.nodes["Principled BSDF"]
-    sb.inputs['Base Color'].default_value = (0.07, 0.065, 0.06, 1); sb.inputs["Metallic"].default_value = 0.7; sb.inputs["Roughness"].default_value = 0.55
+    _lin = [float(max(c, 0.0)) ** 2.2 for c in PLATE_AVG]; sb.inputs['Base Color'].default_value = (_lin[0], _lin[1], _lin[2], 1); sb.inputs["Metallic"].default_value = 0.4; sb.inputs["Roughness"].default_value = 0.55
     for _m in (gm_, fm_, sm_): _m.use_backface_culling = False
     for _m in (gm_, fm_, sm_): rifle.data.materials.append(_m)
     uvl_ = bm.loops.layers.uv.verify()

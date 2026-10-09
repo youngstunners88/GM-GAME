@@ -29,6 +29,12 @@ var _hit_kill: bool = false
 var _font: Font = null
 var _vignette: TextureRect = null
 var show_ammo: bool = true
+var show_crosshair: bool = true
+## Hearts (bottom left) + the red hurt flash: only shown while something in the room can hurt (the lava river).
+var health: int = 3
+var health_max: int = 3
+var show_health: bool = false
+var _hurt_t: float = 0.0
 
 
 func _ready() -> void:
@@ -72,6 +78,7 @@ func _process(delta: float) -> void:
 	_fit()
 	_toast_t = maxf(0.0, _toast_t - delta)
 	_hit_t = maxf(0.0, _hit_t - delta)
+	_hurt_t = maxf(0.0, _hurt_t - delta)
 	if _vignette:
 		_vignette.modulate.a = ads * 0.85
 	queue_redraw()
@@ -80,6 +87,11 @@ func _process(delta: float) -> void:
 func toast(text: String, seconds: float = 1.6) -> void:
 	toast_text = text
 	_toast_t = seconds
+
+
+## Lil Blunt got hurt: a hot red-orange flash that fades over half a second.
+func hurt() -> void:
+	_hurt_t = 0.55
 
 
 func hit_marker(kill: bool) -> void:
@@ -98,7 +110,9 @@ func _draw() -> void:
 	var h: float = size.y
 	# --- crosshair ---------------------------------------------------------------------------------------
 	var gap: float = 5.0 + spread_deg * 5.2 * (1.0 - ads * 0.8)
-	if ads > 0.55:
+	if not show_crosshair:
+		pass
+	elif ads > 0.55:
 		draw_circle(c, 2.4, Color(1.0, 0.95, 0.7, 0.95))
 		draw_arc(c, 2.4, 0.0, TAU, 14, Color(0, 0, 0, 0.7), 1.0)
 	else:
@@ -108,6 +122,13 @@ func _draw() -> void:
 			draw_line(c + d * gap + Vector2(1, 1), c + d * (gap + 11.0) + Vector2(1, 1), sh, 3.0)
 			draw_line(c + d * gap, c + d * (gap + 11.0), col, 2.0)
 		draw_circle(c, 1.4, col)
+	# --- hurt flash + hearts ------------------------------------------------------------------------------
+	if _hurt_t > 0.0:
+		var ha: float = clampf(_hurt_t / 0.55, 0.0, 1.0)
+		draw_rect(Rect2(Vector2.ZERO, size), Color(1.0, 0.28, 0.05, 0.42 * ha))
+	if show_health:
+		for i in health_max:
+			_draw_heart(Vector2(46.0 + float(i) * 46.0, size.y - 52.0), 17.0, i < health)
 	# --- hit marker --------------------------------------------------------------------------------------
 	if _hit_t > 0.0:
 		var a: float = clampf(_hit_t / 0.22, 0.0, 1.0)
@@ -158,3 +179,15 @@ func _draw() -> void:
 		var a2: float = clampf(_toast_t / 0.4, 0.0, 1.0)
 		draw_string_outline(_font, p, toast_text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs2, 8, Color(0, 0, 0, 0.85 * a2))
 		draw_string(_font, p, toast_text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs2, Color(1.0, 0.85, 0.5, a2))
+
+
+## A heart from two circles and a triangle (no font glyph needed, so it also draws in the web build).
+func _draw_heart(c: Vector2, r: float, full: bool) -> void:
+	var col: Color = Color(1.0, 0.22, 0.2, 0.95) if full else Color(0.25, 0.12, 0.12, 0.8)
+	var out := Color(0, 0, 0, 0.8)
+	for o in [Vector2(-r * 0.5, -r * 0.25), Vector2(r * 0.5, -r * 0.25)]:
+		draw_circle(c + o, r * 0.58 + 2.0, out)
+	draw_colored_polygon(PackedVector2Array([c + Vector2(-r * 1.08, -r * 0.1), c + Vector2(r * 1.08, -r * 0.1), c + Vector2(0.0, r * 1.15)]), out)
+	for o in [Vector2(-r * 0.5, -r * 0.25), Vector2(r * 0.5, -r * 0.25)]:
+		draw_circle(c + o, r * 0.58, col)
+	draw_colored_polygon(PackedVector2Array([c + Vector2(-r * 1.0, -r * 0.1), c + Vector2(r * 1.0, -r * 0.1), c + Vector2(0.0, r * 1.05)]), col)

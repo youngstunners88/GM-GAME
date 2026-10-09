@@ -377,13 +377,16 @@ func _on_mode_changed(mode: int) -> void:
 		print("[EP2] leg start %d" % (_root.get_segment() + _leg_offset))
 
 func _on_chamber_committed(_index: int, result: Dictionary) -> void:
+	if bool(result.get("story", false)) and int(result.get("gold_awarded", 0)) == 0 and int(result.get("gold_forfeited", 0)) == 0:
+		_banner.text = ""      # a story chamber moves nothing: no "CLAIMED 0 GOLD" banner over the next scene
+		return
 	_banner.text = "CLAIMED  %d GOLD   (forfeited %d to the auction pool)" % [
 		int(result.get("gold_awarded", 0)), int(result.get("gold_forfeited", 0)),
 	]
 
 func _on_session_complete() -> void:
 	_ended = true
-	_banner.text = "EPISODE 2 SLICE COMPLETE\nSPACE / R  run it again        ESC  menu"
+	_banner.text = "TO BE CONTINUED...\nInferno rides, Lil Blunt shoots: the bear hunt is next.\nSPACE / R  play it again        ESC  menu"
 
 func _on_session_failed() -> void:
 	_ended = true
@@ -400,7 +403,7 @@ func _update_title_card() -> void:
 	if _title_done_for == a.get_instance_id():
 		return
 	_title_done_for = a.get_instance_id()
-	_title.text = "THE SMELTING FACILITY"
+	_title.text = str(a.get_title_card()) if a.has_method("get_title_card") else "THE SMELTING FACILITY"
 	var tw := create_tween()
 	tw.tween_property(_title, "modulate:a", 1.0, 0.6)
 	tw.tween_interval(1.8)
