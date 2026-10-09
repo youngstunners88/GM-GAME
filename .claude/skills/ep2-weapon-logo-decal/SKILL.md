@@ -51,3 +51,9 @@ logo with its CHAIN RING, gold, restrained neon). Now: `rifle_export_game.py` fl
 (texture only, no logo), and builds REAL geometry: a bevelled raised gold bezel ring + an inset face disc carrying the classic logo
 (`make_gm_emblem.py --classic`, chain ring included). Tune `--br` (radius), bezel colour is a plain factor (metal reads black without env light
 in the Compatibility renderer; keep metallic <= 0.6, no emission). Pack cost: emblem jpg 92 KB + emit 18 KB.
+
+## 2026-10-09 (failed attempt, do not repeat blindly): carving a socket by vertex displacement
+Subdividing + displacing the Tripo receiver plate did NOT work: the Tripo emblem relief is several OVERLAPPING shells (y 0.09-0.13), so
+collapsing them onto one profile gives coplanar shards, ragged gold, 36k polys / 2.2 MB. Patch kept in
+`tools/ep2_blender/experiments/rifle_socket_carve_attempt.patch`. A real engraving needs the plate region DELETED (all layers) and rebuilt
+as clean geometry in Blender (or a Tripo regeneration of the receiver), not displaced. Shipped state = flush gold-ringed inlay (commit 6d4dfe6).

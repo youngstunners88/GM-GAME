@@ -1,0 +1,120 @@
+diff --git a/tools/ep2_blender/rifle_export_game.py b/tools/ep2_blender/rifle_export_game.py
+index 5b36c49..92aab0b 100644
+--- a/tools/ep2_blender/rifle_export_game.py
++++ b/tools/ep2_blender/rifle_export_game.py
+@@ -148,62 +148,71 @@ bs = rifle.data.materials[1]; bs.node_tree.nodes.clear(); o_ = bs.node_tree.node
+ bb.inputs['Base Color'].default_value = (0.13, 0.135, 0.15, 1); bb.inputs['Metallic'].default_value = 0.95; bb.inputs['Roughness'].default_value = 0.34
+ bs.node_tree.links.new(bb.outputs['BSDF'], o_.inputs['Surface'])
+ 
+-# 3b. THE BADGE (founder 2026-10-09: "it mustn't look painted on - it must be like a badge or engraving"): REAL geometry. A raised, bevelled gold
+-#     bezel ring seated in the worn plate, an inset enamel face carrying the GM logo (with its own chain ring), lit and parallaxing like metal.
++# 3b. CARVED SOCKET (founder 2026-10-09: "it must look one with the rifle - a badge or engraving"): no extra object at all. The receiver plate
++#     mesh itself is subdivided around the emblem and its vertices are displaced into an engraved gold-rimmed round socket; the socket floor
++#     faces get the GM logo (planar UVs), the rim faces a gold material. One mesh, one surface, lit and parallaxing like cut metal.
++BADGE_OBJS = []
+ if arg("--logo") and 'BADGE' in globals():
++    import bmesh
+     from PIL import Image as _I2
+-    _lg = _I2.open(os.path.join(work, "emblem_color.png")).convert("RGB"); _lg.save(os.path.join(tex_dir, "emblem_color.jpg"), quality=86)
++    _I2.open(os.path.join(work, "emblem_color.png")).convert("RGB").save(os.path.join(tex_dir, "emblem_color.jpg"), quality=86)
+     _I2.open(os.path.join(work, "emblem_emit.png")).convert("RGB").resize((256, 256), _I2.LANCZOS).save(os.path.join(tex_dir, "emblem_emit.png"), optimize=True)
+-    BX, BZ, Y0 = BADGE['PX'], BADGE['PZ'], BADGE['Y0']
+-    RO, RI, H = float(arg("--br", 0.088)), None, 0.0018
+-    RI = RO * 0.80
+-    SEAT = Y0 + 0.0012
+-    prof = [(RI, Y0 - 0.006), (RI, Y0 + H * 0.55), (RI + 0.0035, Y0 + H), (RO - 0.004, Y0 + H), (RO - 0.0008, Y0 + H * 0.55), (RO, Y0 - 0.0005)]
+-    SEG = 72; verts = []; faces = []
+-    for si in range(SEG):
+-        a = math.tau * si / SEG
+-        for (r, y) in prof: verts.append((BX + r * math.cos(a), y, BZ + r * math.sin(a)))
+-    n = len(prof)
+-    for si in range(SEG):
+-        s2 = (si + 1) % SEG
+-        for pi in range(n - 1): faces.append((si * n + pi, s2 * n + pi, s2 * n + pi + 1, si * n + pi + 1))
+-    bez = bpy.data.meshes.new("BadgeBezel"); bez.from_pydata(verts, [], faces); bez.update()
+-    # face disc (slightly below the bezel crown), UV = planar through the logo, viewer on +Y sees -X to the right
+-    fv = [(BX, SEAT, BZ)] + [(BX + RI * math.cos(math.tau * i / SEG), SEAT, BZ + RI * math.sin(math.tau * i / SEG)) for i in range(SEG)]
+-    ff = [(0, 1 + i, 1 + (i + 1) % SEG) for i in range(SEG)]
+-    fc = bpy.data.meshes.new("BadgeFace"); fc.from_pydata(fv, [], ff); fc.update()
+-    uvf = fc.uv_layers.new(name="UVMap")
+-    for pl_ in fc.polygons:
+-        for li_ in pl_.loop_indices:
+-            co = fc.vertices[fc.loops[li_].vertex_index].co
+-            uvf.data[li_].uv = (0.5 - (co.x - BX) / (2 * RI), 0.5 + (co.z - BZ) / (2 * RI))
+-    for me_ in (bez, fc):
+-        for pl_ in me_.polygons:
+-            if pl_.normal.y < 0: pl_.flip()
+-        me_.update()
++    BX, BZ, YP = BADGE['PX'], BADGE['PZ'], BADGE['Y0']
++    RI = float(arg("--sr", 0.068)); RO = RI + 0.017; RB = 0.12; DEPTH = 0.0065; CUTS = int(arg("--cuts", 6))
++    def rad(co): return math.hypot(co.x - BX, co.z - BZ)
++    bm = bmesh.new(); bm.from_mesh(rifle.data)
++    reg = [f for f in bm.faces if f.normal.y > 0.35 and any(rad(v.co) < RB and YP - 0.04 < v.co.y < 0.14 for v in f.verts)]
++    TARGET = float(arg("--edge", 0.0042))
++    for _pass in range(8):      # refine ONLY long edges near the emblem (grid-filling the big Tripo triangles blew the mesh up to 56k polys)
++        edges = list({e for f in bm.faces if f.normal.y > 0.35 and any(rad(v.co) < RB and YP - 0.03 < v.co.y < YP + 0.03 for v in f.verts)
++                      for e in f.edges if e.calc_length() > (TARGET if min(rad(e.verts[0].co), rad(e.verts[1].co)) < RO + 0.02 else 0.014) and (rad(e.verts[0].co) < RB + 0.04 or rad(e.verts[1].co) < RB + 0.04)})
++        if not edges: break
++        bmesh.ops.subdivide_edges(bm, edges=edges, cuts=1, use_grid_fill=True, use_single_edge=False)
++        bm.faces.ensure_lookup_table()
++    def prof(r):          # target height relative to the plate plane YP
++        if r < RI - 0.002: return -DEPTH                                              # socket floor
++        if r < RI + 0.003: t = (r - (RI - 0.002)) / 0.005; t = t * t * (3 - 2 * t); return -DEPTH + (DEPTH + 0.0016) * t     # inner wall up to the rim
++        if r < RO - 0.002: return 0.0016                                              # gold rim crown
++        if r < RO + 0.003: t = (r - (RO - 0.002)) / 0.005; t = t * t * (3 - 2 * t); return 0.0016 * (1 - t)               # rim rolls back into the plate
++        return 0.0
++    n_ = 0
++    for v in bm.verts:
++        r = rad(v.co)
++        if r < RB and YP - 0.04 < v.co.y < 0.14:
++            k = 1.0 if r < RB - 0.035 else 1.0 - (r - (RB - 0.035)) / 0.035; k = k * k * (3 - 2 * k)
++            v.co.y = v.co.y * (1 - k) + (YP + prof(r)) * k; n_ += 1
++    bm.normal_update()
++    uvl_ = bm.loops.layers.uv.active
++    gold_i = len(rifle.data.materials); face_i = gold_i + 1
+     gm_ = bpy.data.materials.new("Badge_Gold"); gm_.use_nodes = True; gb = gm_.node_tree.nodes["Principled BSDF"]
+-    gb.inputs['Base Color'].default_value = (0.62, 0.40, 0.08, 1); gb.inputs['Metallic'].default_value = 0.6; gb.inputs['Roughness'].default_value = 0.42
++    gb.inputs['Base Color'].default_value = (0.70, 0.46, 0.10, 1); gb.inputs['Metallic'].default_value = 0.65; gb.inputs['Roughness'].default_value = 0.36
+     fm_ = bpy.data.materials.new("Badge_Face"); fm_.use_nodes = True; t = fm_.node_tree; fb = t.nodes["Principled BSDF"]
+     tcf = tex(os.path.join(tex_dir, "emblem_color.jpg"), 'sRGB'); t.links.new(tcf.outputs['Color'], fb.inputs['Base Color'])
+-    tef = tex(os.path.join(tex_dir, "emblem_emit.png"), 'sRGB'); t.links.new(tef.outputs['Color'], fb.inputs['Emission Color']); fb.inputs['Emission Strength'].default_value = 1.2
+-    fb.inputs['Metallic'].default_value = 0.45; fb.inputs['Roughness'].default_value = 0.34
+-    bez.materials.append(gm_); fc.materials.append(fm_)
+-    badge_b = bpy.data.objects.new("BadgeBezel", bez); badge_f = bpy.data.objects.new("BadgeFace", fc)
+-    S.collection.objects.link(badge_b); S.collection.objects.link(badge_f)
+-    for _o in (badge_b, badge_f):
+-        for _m in _o.data.materials: _m.use_backface_culling = False
+-    BADGE_OBJS = [badge_b, badge_f]
+-    for _o in BADGE_OBJS: bpy.data.objects[_o.name].select_set(False)
+-    log("game: badge built r", RO, "at", round(BX, 3), round(BZ, 3), "y", round(Y0, 4))
+-else:
+-    BADGE_OBJS = []
++    tef = tex(os.path.join(tex_dir, "emblem_emit.png"), 'sRGB'); t.links.new(tef.outputs['Color'], fb.inputs['Emission Color']); fb.inputs['Emission Strength'].default_value = 1.1
++    fb.inputs['Metallic'].default_value = 0.4; fb.inputs['Roughness'].default_value = 0.34
++    for _m in (gm_, fm_): _m.use_backface_culling = False
++    rifle.data.materials.append(gm_); rifle.data.materials.append(fm_)
++    nf = ng = 0
++    for f in bm.faces:
++        if f.normal.y < 0.2: continue
++        c = f.calc_center_median(); r = rad(c); rmax = max(rad(v.co) for v in f.verts)
++        if abs(c.y - YP) > 0.02 or r > RO + 0.004: continue
++        if max(e.calc_length() for e in f.edges) > 0.014: continue          # only the refined faces; big untouched Tripo triangles keep the body material
++        if rmax < RI + 0.001:
++            f.material_index = face_i; nf += 1
++            for lp in f.loops:
++                co = lp.vert.co; lp[uvl_].uv = (0.5 - (co.x - BX) / (2 * (RI - 0.002)), 0.5 + (co.z - BZ) / (2 * (RI - 0.002)))
++        else:
++            f.material_index = gold_i; ng += 1
++    bm.to_mesh(rifle.data); bm.free(); rifle.data.update()
++    log("game: socket carved - verts", n_, "floor faces", nf, "rim faces", ng, "total polys", len(rifle.data.polygons))
+ # 4b. SOLID from every side (founder 2026-10-05 "make the rifle solid"): the Tripo body is a set of single-sided shells; with
+ #     back-face culling the shouldered camera looked INTO open shells (dark boxes, a thin barrel sheet). Double-sided = glTF doubleSided.
+ for _m in rifle.data.materials: _m.use_backface_culling = False
+ if dec is not None:
+     for _m in dec.data.materials: _m.use_backface_culling = False
+ # 5. frame: muzzle +X,up +Z  ->  Godot muzzle +Z, up +Y;  length 1.2 m, centred
+-parts = [rifle] + BADGE_OBJS
++parts = [rifle]
+ for o in parts: o.data.transform(Matrix.Rotation(math.radians(-90), 4, 'Z'))
+ allv = np.array([tuple(p.co) for o in parts for p in o.data.vertices]); mn_, mx_ = allv.min(0), allv.max(0)
+ sc = 1.2 / (mx_[1] - mn_[1]); cen = (mn_ + mx_) / 2
