@@ -12,6 +12,23 @@ import numpy as np
 from PIL import Image, ImageFilter
 
 SRC, OUT = sys.argv[1], sys.argv[2]
+if "--classic" in sys.argv:
+    # CLASSIC (founder 2026-10-09, seeing the Blender hero render rifle_v3_threequarter.png: "look how beautiful and clear that is"):
+    # the founder's logo AS DESIGNED - gold chain ring, gold lettering, restrained neon - cut to a circle, gold gently lifted.
+    NN = 512
+    im = Image.open(SRC).convert("RGB")
+    CX, CY, R = 512, 452, 372
+    c = im.crop((CX - R, CY - R, CX + R, CY + R)).resize((NN, NN), Image.LANCZOS)
+    a = np.asarray(c).astype(np.float32) / 255.0
+    a = np.clip(a ** 0.9 * 1.08, 0, 1)
+    yy, xx = np.mgrid[0:NN, 0:NN].astype(np.float32)
+    rr = np.sqrt((xx - NN / 2) ** 2 + (yy - NN / 2) ** 2)
+    alpha = np.clip((NN / 2 - 1 - rr), 0, 1)
+    gr = np.clip((a[..., 1] - np.maximum(a[..., 0] * 1.2, a[..., 2]) - 0.05) / 0.3, 0, 1)      # neon-green pixels only
+    emit = a * gr[..., None] * 1.0
+    Image.fromarray((np.dstack([a, alpha]) * 255).astype(np.uint8), "RGBA").save(OUT + "/emblem_color.png", optimize=True)
+    Image.fromarray((np.clip(emit, 0, 1) * 255).astype(np.uint8)).save(OUT + "/emblem_emit.png", optimize=True)
+    print("classic emblem written", OUT); sys.exit(0)
 N = 384                                       # 384 px is plenty for ~150 px on screen and keeps the web pack small
 K = N / 512.0
 img = np.asarray(Image.open(SRC).convert("RGB")).astype(np.float32) / 255.0

@@ -51,13 +51,13 @@ EMIT_PATH = None
 if arg("--logo"):
     import subprocess
     from PIL import Image as _I
-    subprocess.run([sys.executable, "-I", os.path.join(os.path.dirname(os.path.abspath(__file__)), "make_gm_emblem.py"), arg("--logo"), work], check=True)
+    subprocess.run([sys.executable, "-I", os.path.join(os.path.dirname(os.path.abspath(__file__)), "make_gm_emblem.py"), arg("--logo"), work] + ([] if "--bold" in argv else ["--classic"]), check=True)
     emb = np.asarray(_I.open(os.path.join(work, "emblem_color.png")).convert("RGBA")).astype(np.float32) / 255.0
     embe = np.asarray(_I.open(os.path.join(work, "emblem_emit.png")).convert("RGB")).astype(np.float32) / 255.0
     EN = emb.shape[0]
     base = np.asarray(_I.open(pc).convert("RGB")).astype(np.float32) / 255.0
     emit_img = np.zeros_like(base)
-    PX, PZ, DD = float(arg("--lx", -0.09)), float(arg("--lz", 0.455)), float(arg("--ld", 0.19))
+    PX, PZ, DD = float(arg("--lx", -0.09)), float(arg("--lz", 0.455)), float(arg("--ld", 0.22))
     N_ = base.shape[0]; uvl = rifle.data.uv_layers.active.data
     from mathutils.bvhtree import BVHTree as _BVH
     _bvh = _BVH.FromObject(rifle, bpy.context.evaluated_depsgraph_get())
@@ -98,21 +98,21 @@ if arg("--logo"):
             rr = np.hypot(u - 0.5, v - 0.5) * 2
             m = ins & (rr < 1.0)
             if not m.any(): continue
-            ei = np.clip((u * EN).astype(int), 0, EN - 1); ej = np.clip((v * EN).astype(int), 0, EN - 1)
-            ec = emb[ej, ei]; ee = embe[ej, ei]
+            ec = np.concatenate([np.zeros(rr.shape + (3,), np.float32), np.ones(rr.shape + (1,), np.float32)], -1); ee = np.zeros(rr.shape + (3,), np.float32)
             feather = np.clip((1.0 - rr) / 0.06, 0, 1)                       # soft edge into the plate, never a hard sticker rim
             alpha = (ec[..., 3] * feather)[..., None]
             py_, px_ = (gy - 0.5).astype(int), (gx - 0.5).astype(int)
             orig = base[py_, px_]; lum = orig.mean(-1, keepdims=True)
             wear = np.clip(0.90 + 0.30 * lum, 0.90, 1.10)                    # the plate's own scratches/grime show through the emblem
-            newc = np.clip(ec[..., :3] * wear, 0, 1)
+            newc = np.clip(orig * 0.42 * wear, 0, 1)      # a darkened, worn seat: the old Tripo emblem is gone, the plate grain stays
             sel = m[..., None]
             base[py_, px_] = np.where(sel, orig * (1 - alpha) + newc * alpha, orig)
             emit_img[py_, px_] = np.where(sel, ee * alpha * feather[..., None], emit_img[py_, px_])
         done += 1
     log("game: painted emblem into", done, "receiver faces")
     _I.fromarray((base * 255).astype(np.uint8)).save(pc)
-    EMIT_PATH = emit_img
+    EMIT_PATH = None        # the glow lives on the badge face now
+    BADGE = dict(PX=PX, PZ=PZ, Y0=_y0)
 # keep the original normal map (downscaled), pack glTF metal-rough (G = roughness, B = metallic)
 from PIL import Image
 a, b = Image.open(pr).convert("RGB"), Image.open(pm).convert("RGB")
@@ -142,13 +142,62 @@ rifle.data.materials[0] = m
 bs = rifle.data.materials[1]; bs.node_tree.nodes.clear(); o_ = bs.node_tree.nodes.new("ShaderNodeOutputMaterial"); bb = bs.node_tree.nodes.new("ShaderNodeBsdfPrincipled")
 bb.inputs['Base Color'].default_value = (0.13, 0.135, 0.15, 1); bb.inputs['Metallic'].default_value = 0.95; bb.inputs['Roughness'].default_value = 0.34
 bs.node_tree.links.new(bb.outputs['BSDF'], o_.inputs['Surface'])
+
+# 3b. THE BADGE (founder 2026-10-09: "it mustn't look painted on - it must be like a badge or engraving"): REAL geometry. A raised, bevelled gold
+#     bezel ring seated in the worn plate, an inset enamel face carrying the GM logo (with its own chain ring), lit and parallaxing like metal.
+if arg("--logo") and 'BADGE' in globals():
+    from PIL import Image as _I2
+    _lg = _I2.open(os.path.join(work, "emblem_color.png")).convert("RGB"); _lg.save(os.path.join(tex_dir, "emblem_color.jpg"), quality=86)
+    _I2.open(os.path.join(work, "emblem_emit.png")).convert("RGB").resize((256, 256), _I2.LANCZOS).save(os.path.join(tex_dir, "emblem_emit.png"), optimize=True)
+    BX, BZ, Y0 = BADGE['PX'], BADGE['PZ'], BADGE['Y0']
+    RO, RI, H = float(arg("--br", 0.092)), None, 0.0048
+    RI = RO * 0.80
+    prof = [(RI, Y0 - 0.002), (RI, Y0 + H * 0.55), (RI + 0.0035, Y0 + H), (RO - 0.004, Y0 + H), (RO - 0.0008, Y0 + H * 0.55), (RO, Y0 - 0.002)]
+    SEG = 72; verts = []; faces = []
+    for si in range(SEG):
+        a = math.tau * si / SEG
+        for (r, y) in prof: verts.append((BX + r * math.cos(a), y, BZ + r * math.sin(a)))
+    n = len(prof)
+    for si in range(SEG):
+        s2 = (si + 1) % SEG
+        for pi in range(n - 1): faces.append((si * n + pi, s2 * n + pi, s2 * n + pi + 1, si * n + pi + 1))
+    bez = bpy.data.meshes.new("BadgeBezel"); bez.from_pydata(verts, [], faces); bez.update()
+    # face disc (slightly below the bezel crown), UV = planar through the logo, viewer on +Y sees -X to the right
+    fv = [(BX, Y0 + H * 0.35, BZ)] + [(BX + RI * math.cos(math.tau * i / SEG), Y0 + H * 0.35, BZ + RI * math.sin(math.tau * i / SEG)) for i in range(SEG)]
+    ff = [(0, 1 + i, 1 + (i + 1) % SEG) for i in range(SEG)]
+    fc = bpy.data.meshes.new("BadgeFace"); fc.from_pydata(fv, [], ff); fc.update()
+    uvf = fc.uv_layers.new(name="UVMap")
+    for pl_ in fc.polygons:
+        for li_ in pl_.loop_indices:
+            co = fc.vertices[fc.loops[li_].vertex_index].co
+            uvf.data[li_].uv = (0.5 - (co.x - BX) / (2 * RI), 0.5 + (co.z - BZ) / (2 * RI))
+    for me_ in (bez, fc):
+        for pl_ in me_.polygons:
+            if pl_.normal.y < 0: pl_.flip()
+        me_.update()
+    gm_ = bpy.data.materials.new("Badge_Gold"); gm_.use_nodes = True; gb = gm_.node_tree.nodes["Principled BSDF"]
+    gb.inputs['Base Color'].default_value = (0.62, 0.40, 0.08, 1); gb.inputs['Metallic'].default_value = 0.6; gb.inputs['Roughness'].default_value = 0.42
+    fm_ = bpy.data.materials.new("Badge_Face"); fm_.use_nodes = True; t = fm_.node_tree; fb = t.nodes["Principled BSDF"]
+    tcf = tex(os.path.join(tex_dir, "emblem_color.jpg"), 'sRGB'); t.links.new(tcf.outputs['Color'], fb.inputs['Base Color'])
+    tef = tex(os.path.join(tex_dir, "emblem_emit.png"), 'sRGB'); t.links.new(tef.outputs['Color'], fb.inputs['Emission Color']); fb.inputs['Emission Strength'].default_value = 1.2
+    fb.inputs['Metallic'].default_value = 0.45; fb.inputs['Roughness'].default_value = 0.34
+    bez.materials.append(gm_); fc.materials.append(fm_)
+    badge_b = bpy.data.objects.new("BadgeBezel", bez); badge_f = bpy.data.objects.new("BadgeFace", fc)
+    S.collection.objects.link(badge_b); S.collection.objects.link(badge_f)
+    for _o in (badge_b, badge_f):
+        for _m in _o.data.materials: _m.use_backface_culling = False
+    BADGE_OBJS = [badge_b, badge_f]
+    for _o in BADGE_OBJS: bpy.data.objects[_o.name].select_set(False)
+    log("game: badge built r", RO, "at", round(BX, 3), round(BZ, 3), "y", round(Y0, 4))
+else:
+    BADGE_OBJS = []
 # 4b. SOLID from every side (founder 2026-10-05 "make the rifle solid"): the Tripo body is a set of single-sided shells; with
 #     back-face culling the shouldered camera looked INTO open shells (dark boxes, a thin barrel sheet). Double-sided = glTF doubleSided.
 for _m in rifle.data.materials: _m.use_backface_culling = False
 if dec is not None:
     for _m in dec.data.materials: _m.use_backface_culling = False
 # 5. frame: muzzle +X,up +Z  ->  Godot muzzle +Z, up +Y;  length 1.2 m, centred
-parts = [rifle] + ([dec] if dec else [])
+parts = [rifle] + BADGE_OBJS
 for o in parts: o.data.transform(Matrix.Rotation(math.radians(-90), 4, 'Z'))
 allv = np.array([tuple(p.co) for o in parts for p in o.data.vertices]); mn_, mx_ = allv.min(0), allv.max(0)
 sc = 1.2 / (mx_[1] - mn_[1]); cen = (mn_ + mx_) / 2

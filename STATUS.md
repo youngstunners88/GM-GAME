@@ -2831,6 +2831,9 @@ recover them or ask you to resend anything.
 - **Look:** revolver reads GOLD again (the metal map drew it black in the web build), hero brighter, lanterns lit, rails have steel shine + bolts, hero turned 3/4 so the gun shows. Jev + vision assessment in `docs/research/3d/013_*`.
 - New skill `ep2-bear-design`.
 
+## 2026-10-09 — Rifle logo is now a real gold badge
+- Founder wanted a badge/engraving, not paint or a sticker. The GM logo (with its chain ring, as designed) now sits in a raised, bevelled gold bezel set into the receiver plate; the old baked emblem is gone.
+
 ## 2026-10-09 — GM logo is now PART of the rifle (not a sticker)
 - Founder: the overlay covered the original logo and read as a sticker. Removed the overlay mesh; the clear GM emblem is painted into the rifle's own texture on the receiver plate (relief flattened so it reads cleanly), with plate wear showing through. Known: slight ragged edge on one side of the bezel.
 

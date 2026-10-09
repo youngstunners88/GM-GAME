@@ -44,3 +44,10 @@ geometry made a painted logo look like shattered glass), (2) planar-projects `ma
 (2048 atlas) + a 1024 emission map, edge-feathered, over the +Y receiver plate only (the -Y plate shares texels; `--both` paints it too),
 (3) texels get 1-2 px dilation, depth-gated to the plate plane. Never float a quad over a baked emblem again. Known: the right edge
 of the bezel is slightly ragged where UV charts are anisotropic - fix by re-packing the plate UV island if the founder objects.
+
+## 2026-10-09 (final): a real BADGE, not paint and not a sticker
+Founder: "It mustn't look like it's painted on. It must be like a badge or engraving." Praised the Blender hero render (rifle_v3: full
+logo with its CHAIN RING, gold, restrained neon). Now: `rifle_export_game.py` flattens Tripo's relief, darkens the old emblem into a worn seat
+(texture only, no logo), and builds REAL geometry: a bevelled raised gold bezel ring + an inset face disc carrying the classic logo
+(`make_gm_emblem.py --classic`, chain ring included). Tune `--br` (radius), bezel colour is a plain factor (metal reads black without env light
+in the Compatibility renderer; keep metallic <= 0.6, no emission). Pack cost: emblem jpg 92 KB + emit 18 KB.
