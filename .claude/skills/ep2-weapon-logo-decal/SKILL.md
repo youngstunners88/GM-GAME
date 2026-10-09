@@ -36,3 +36,11 @@ Render `--view fps` and `--view oside`; the logo must (a) sit flush on the plate
 - Blender 4.2 writes alphaMode BLEND for the decal; the export patches the GLB JSON to MASK (cutoff 0.5) or it sorts wrong/disappears.
 - UVs `((1,0),(0,0),(0,1),(1,1))` read un-mirrored on the +Y side (verified with `glb_axes_shot`, CAMSIZE=0.7, absolute `glb=` path).
 - Pack budget: emblem PNGs + GLB ≈ +0.2 MB; keep it that way.
+
+## 2026-10-09 (later): NOT a sticker - paint it INTO the rifle
+Founder: the overlay "covers over the original logo ... I need it to be one with the rifle. Not a fucking sticker."
+`rifle_export_game.py` no longer builds a decal mesh. It (1) flattens Tripo's rippled emblem relief to the plate plane (rippled
+geometry made a painted logo look like shattered glass), (2) planar-projects `make_gm_emblem.py` output into the BAKED ALBEDO
+(2048 atlas) + a 1024 emission map, edge-feathered, over the +Y receiver plate only (the -Y plate shares texels; `--both` paints it too),
+(3) texels get 1-2 px dilation, depth-gated to the plate plane. Never float a quad over a baked emblem again. Known: the right edge
+of the bezel is slightly ragged where UV charts are anisotropic - fix by re-packing the plate UV island if the founder objects.
