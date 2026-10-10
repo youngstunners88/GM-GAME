@@ -17,9 +17,9 @@ static var founder_ads_depth: float = -0.46
 ## Where the eye sits in the MODEL frame when shouldered (measured from the model: barrel top 0.15, receiver 0.195, comb 0.22,
 ## so the camera must sit FORWARD of the receiver, just above the barrel, behind the rear sight - the stock and receiver are then
 ## behind the camera and never block the target; skill ep2-fps-shooter-feel, placement sim).
-static var founder_ads_cam: Vector3 = Vector3(0.0, 0.19, 0.14)
-static var founder_drop: float = 0.11        # model sits a little lower than the forge sight line so the stock comb never blocks the view in ADS
-static var founder_z_shift: float = 0.05        # Lil Blunt's Tripo rifle (2026-10-10b): forward until the GM logo reads in the hip view
+static var founder_ads_cam: Vector3 = Vector3(0.0, 0.345, -0.05)
+static var founder_drop: float = 0.13        # model sits a little lower than the forge sight line so the stock comb never blocks the view in ADS
+static var founder_z_shift: float = 0.02        # Lil Blunt's Tripo rifle (2026-10-10b): forward until the GM logo reads in the hip view
 const HANDS_GLB := "res://src/episode2/assets/fp_hands.glb"
 const GREEN := Color(0.30, 0.62, 0.17)
 const GREEN_DARK := Color(0.18, 0.42, 0.10)
@@ -47,6 +47,7 @@ static func attach(rifle: Node3D) -> Node3D:
 		fm.name = "HandsModel"
 		root.add_child(fm)
 		fm.position = Vector3(0.0, forge_top - _top_y(fm, rifle) - founder_drop, founder_z_shift)
+		_add_sleeve(fm)
 		rifle.set_meta("ads_cam", fm.position + founder_ads_cam)
 		rifle.set_meta("ads_depth", founder_ads_depth)      # the longer stock needs the camera pulled behind the butt
 		return root
@@ -67,6 +68,37 @@ static func attach(rifle: Node3D) -> Node3D:
 	# LEFT hand: cupped under the fore-end, forearm running back under the rifle toward the left shoulder.
 	_arm(root, "Left", Vector3(0.0, -0.082, 0.22), Vector3(0.68, -0.20, -0.70), skin, skin_dark, leather, brass, true)
 	return root
+
+
+## The founder's rifle model ends Lil Blunt's forearm in a flat cut just below the bracer, and that cut showed at the bottom
+## of the hip view (founder 2026-10-11: "the arm is cut off and you can see that"). A tapered sleeve in the arm's own green
+## (median albedo of the arm texels, measured) continues the forearm along its axis out of frame. Model-frame numbers measured
+## from winchester_1886_founder.glb: cut centre (0.243, -0.004, -0.054), forearm axis (0.297, -0.935, 0.194).
+const SLEEVE_CUT := Vector3(0.243, 0.02, -0.054)
+const SLEEVE_AXIS := Vector3(0.297, -0.935, 0.194)
+const SLEEVE_GREEN := Color(0.218, 0.298, 0.133)
+
+
+static func _add_sleeve(fm: Node3D) -> void:
+	var cm := CylinderMesh.new()
+	cm.top_radius = 0.075
+	cm.bottom_radius = 0.10
+	cm.height = 0.6
+	cm.radial_segments = 12
+	cm.rings = 1
+	var mi := MeshInstance3D.new()
+	mi.name = "ArmSleeve"
+	mi.mesh = cm
+	var m := StandardMaterial3D.new()
+	m.albedo_color = SLEEVE_GREEN
+	m.roughness = 0.88
+	mi.material_override = m
+	var ax: Vector3 = SLEEVE_AXIS.normalized()
+	var up: Vector3 = -ax                                   # the cylinder's +Y runs back up the arm to the cut
+	var side: Vector3 = up.cross(Vector3.FORWARD).normalized()
+	var fwd: Vector3 = side.cross(up).normalized()
+	mi.transform = Transform3D(Basis(side, up, fwd), SLEEVE_CUT + ax * (cm.height * 0.5))
+	fm.add_child(mi)
 
 
 static func _mat(c: Color, rough: float, emit: float) -> StandardMaterial3D:

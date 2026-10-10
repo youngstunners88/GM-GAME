@@ -87,6 +87,25 @@ print("yaw deg", round(math.degrees(yaw), 2), "scale", round(s, 4), "length", ro
       "glTF z range", round(float(-P2[:, 1].max()), 3), round(float(-P2[:, 1].min()), 3),
       "muzzle glTF z", round(float(-(T @ M @ bar).y), 3),
       "logo glTF (x,y,z)", (round(logo_final.x, 3), round(logo_final.z, 3), round(-logo_final.y, 3)))
+# LEVEL THE BARREL (founder 2026-10-11: "when shouldering the rifle it brings the player beneath the viewpoint of the rifle"):
+# the Tripo rifle's barrel rises ~6 deg toward the muzzle, so the sight line climbed above the shouldered eye. Fit the barrel's top
+# line (topmost vertex per 5 cm, glTF z 0.2 .. 0.62 = barrel + magazine tube, in front of the hand) and pitch it level about the
+# logo point, so nothing else moves sideways.
+P3 = np.array([[v.co.x, v.co.y, v.co.z] for v in me.vertices])
+gz = -P3[:, 1]; gy = P3[:, 2]
+cols = []
+for z0 in np.arange(0.20, 0.62, 0.05):
+    m = (np.abs(P3[:, 0]) < 0.03) & (gz >= z0) & (gz < z0 + 0.05)
+    if m.sum():
+        cols.append((z0 + 0.025, gy[m].max()))
+cols = np.array(cols)
+slope = float(np.polyfit(cols[:, 0], cols[:, 1], 1)[0])
+pitch = math.atan(slope)                       # +: muzzle up
+piv = Vector((0.0, LOGO_Z * -1.0, float(logo_final.z)))
+R = Matrix.Translation(piv) @ Matrix.Rotation(pitch, 4, "X") @ Matrix.Translation(-piv)
+me.transform(R)
+me.update()
+print("barrel pitch was", round(math.degrees(pitch), 2), "deg -> levelled")
 # decimate (keeps UVs; the logo is in the texture, the plate under it is flat)
 n0 = len(me.polygons)
 tris0 = sum(len(p.vertices) - 2 for p in me.polygons)

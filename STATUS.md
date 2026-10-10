@@ -11,6 +11,14 @@
 **INFERNO BULL WHISKEY REMOVAL (2026-10-10, release verification pending).** The glass stays on the whiskey table during seating, walking and handover cleanup. It is never attached to Bull’s left hand. His standing idle now restores both arms’ imported rest pose and yields to either hand’s active IK. Native gameplay-camera evidence is in `docs/episode2-quality/whiskey-removal-2026-10-10/`. This focused correction does not complete the outstanding Bull sculpt, archer bear, armory/bullion or molten-river requests.
 
 
+**🎯 RIFLE VIEW FIXES (2026-10-11).** Thank you! From your recording:
+- **Arm no longer cut off:** your rifle model's forearm ended in a flat cut just below the bracer, and it showed at the bottom of the screen. The forearm now continues out of frame in its own green, and the hold is slightly tighter (measured: no arm edge ends inside the frame).
+- **Shouldering fixed:** the rifle model's barrel tilted up 6.7°, so when you aimed, the sight line rose above your eye and you looked from underneath it. The barrel is now level and the eye sits on the rear-sight/front-sight line.
+- **Inferno Bull:** handed to a stronger model as you asked. Fable 5.1 was refused by the account (it needs usage credits at claude.ai/settings/usage), so the same brief is running on Opus with Jev + Microsoft gating. Results ship when reviewed.
+
+---
+
+
 **🔫 LIL BLUNT'S RIFLE IS YOUR RIFLE NOW - LOGO FIXED WITHOUT A RING (2026-10-10, evening).** From your "Ep2 Design Elements" doc:
 - **The rifle:** your `rifle 3d.glb` (his green arm, glove and leaf bracer) is now the first-person rifle everywhere. Its logo was a smeared gold blob sitting in a sunken dish whose raised edge read as a ring. I fixed it **without adding or deleting any geometry**: the real GM emblem (gold chain + glowing green GM) is painted into the gun's own texture, the dish is flattened onto the plate, and the old rim is refilled with the plate's own steel. The logo is 5% SMALLER than the old blob, never larger. Same faces before and after (77,660), so no holes can appear; nothing on top of the gun moved.
 - **Measured:** on the side you see in first person, the band round the logo went from 0.70 to 0.93 of the plate brightness (1.0 = invisible). The far side still shows a faint trace (0.58) - next pass. **Jev and the Microsoft decision model both said yes** to "ring gone / no holes / not enlarged" (0.92/0.91/0.95 and 0.91/0.99/1.00) and "ship". A new test locks all of it.
