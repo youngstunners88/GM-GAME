@@ -6,6 +6,9 @@
 ---
 
 
+**INFERNO BULL WHISKEY REMOVAL (2026-10-10, release verification pending).** The glass stays on the whiskey table during seating, walking and handover cleanup. It is never attached to Bull’s left hand. His standing idle now restores both arms’ imported rest pose and yields to either hand’s active IK. Native gameplay-camera evidence is in `docs/episode2-quality/whiskey-removal-2026-10-10/`. This focused correction does not complete the outstanding Bull sculpt, archer bear, armory/bullion or molten-river requests.
+
+
 **🏍️ THE FLAME QUAD IS A REAL MODEL NOW, AND INFERNO ACTUALLY RIDES IT (2026-10-10).** The quad in the bear woods used to be a handful of red boxes. Now:
 - **A modelled flame-designer quad**, built headless in Blender from the Muapi GPT-Image-2 reference you saw (3/4, side and rear stills): candy-red lacquer with the flame paint traced from the reference, chrome bull bar / rack / handlebar, a wire-guarded headlight, red coil-over springs, a long black bench seat and chunky knobby tyres with mud. `src/episode2/assets/vehicles/flame_quad.glb`, ~32k triangles in just 29 draw calls (164 loose parts merged by material), **0.8 MB in the web pack** (textures shipped small, no LOD/shadow copies).
 - **Inferno sits on it** (seated pose, leaning onto the grips, both hands on them) and **Lil Blunt kneels on the rear rack** looking past Inferno's shoulder with the Winchester in his hands; at the ridge Inferno gets off. I found and fixed a gap while checking from outside the quad: the "sit on the quad" code existed but was never called.
