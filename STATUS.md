@@ -1,7 +1,7 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/smokerealm
-**Branch:** master (just shipped)
+**Branch:** master (AI quad deployed: CI run 38016691615, butler "Pushed to" confirmed)
 
 ---
 
@@ -9334,7 +9334,7 @@ browsers. Fixes shipped:
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/smokerealm
-**Branch:** master (just shipped)
+**Branch:** master (AI quad deployed: CI run 38016691615, butler "Pushed to" confirmed)
 
 ---
 

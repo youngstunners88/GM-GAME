@@ -6,7 +6,7 @@ The itch.io per-file limit is 200 MB; CI fails the build above **190 MiB** (199,
 |---|---|---|
 | 2026-10-09 | master c6fa391 (first-person everywhere) | 187 MB |
 | 2026-10-10 | branch with the modelled flame quad (v1, Blender kit-bash) | 188 MB |
-| 2026-10-10 | AI-built flame quad (Tripo via Muapi) replacing it | see the CI run of the shipping commit |
+| 2026-10-10 | AI-built flame quad (Tripo via Muapi) replacing it | master run 38016691615 passed the 190 MiB gate and deployed (butler pushed 222.85 MiB total, +32.6 MiB fresh) |
 
 Headroom is about **2 MiB**. A hero character (AwesomeX) is 3-5 MB, a building set 1-2 MB, a voice batch 1-2 MB: the next big prep piece does not fit
 without freeing room first.
