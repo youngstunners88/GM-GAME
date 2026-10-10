@@ -38,6 +38,7 @@ Claude owns every verdict: a DeepSeek / Astra / Jev answer is a LEAD or a number
 | `gpt-image-2-image-to-image` | SAME subject again: turnaround views, "after the explosion", a scene built from a character sheet (`images_list` up to 16) | $0.09 |
 | `gpt-image-1.5` / `-edit` | cheaper drafts | $0.054 |
 | `nano-banana-pro(-edit)` | the film's keyframe tool (`ep2-seedance-film`) | $0.12 |
+| `tripo3d-h31-multiview-to-3d`, `meshy-6/7-multi-image-to-3d` | the 3D model from the stills (section below) | $0.2-1.7 |
 
 - Submit `POST https://api.muapi.ai/api/v1/<endpoint>` header `x-api-key: $MUAPI_API_KEY`, body `{prompt, aspect_ratio, resolution, quality, images_list?}`;
   poll `GET /api/v1/predictions/<id>/result` until `completed`; image URL = `outputs[0]`. `tools/ep2_film/muapi_film.py` is the one client (balance, upload, run).
@@ -56,7 +57,7 @@ Claude owns every verdict: a DeepSeek / Astra / Jev answer is a LEAD or a number
 
 | Class | Examples | Route | Budget |
 |---|---|---|---|
-| Hero vehicle / prop (hard surface, paint) | flame quad | GPT hero + side + rear -> **Meshy multi-image-to-3D** (`meshy_multi_image_to_3d`, meshy-6, textured ~30 credits; ASK first: `ep2-meshy-studio`, balance was ~40) -> `meshy_remesh` -> headless Blender cleanup (pivot at the ground between the wheels, +Z forward, 2.4 m long, double-sided, name nodes) -> GLB | <= 25k tris, 1K textures, GLB <= 1.5 MB |
+| Hero vehicle / prop (hard surface, paint) | flame quad | **Muapi image-to-3D** (`tools/ep2_forge/muapi_3d.py`; Tripo H3.1 multiview ~$1, Meshy-6 ~$0.5, Meshy-7 ~$1.7; pay-per-call on the Muapi balance, NOT the native Meshy/Tripo credits) from GPT front/side/back stills -> `tools/ep2_forge/ai_vehicle_to_game.py` -> lossy texture imports. Recipe + numbers in the section below. Kit-bashing a vehicle in Blender scored 4/10 against its photo, the Tripo model 6/10 and reads as a real vehicle in-game. | <= 60k tris, ONE 1024 base + 256 metal-rough, ~1 MB packed |
 | Character | AwesomeX, bears, Bull | Meshy image-to-3D + `meshy_rig` (`ep2-meshy-studio`, `ep2-bull-handoff-walk`); clips by `ep2-motion-emotion`; the rig must not read as a muppet (compare against the design board) | <= 30k tris, 2K body texture |
 | Architecture / terrain | decoy building, vault approach, spy ridge, return trail | **headless Blender (bpy 4.2 via pip)**: kit-bash from boxes/extrudes + tiling PBR (Muapi/Flux seamless textures, `tools/ep2_forge/forge_runner_assets.py`), bevel everything, vertex-colour AO baked in (compat renderer has no SSAO), modular pieces (a wall, a corner, a door bay) instanced in Godot | <= 400k visible tris per region |
 | Destruction | the exploding building | TWO meshes (intact, wreck) + Godot CPU particles (fireball, embers, smoke) + a light flash + camera shake; the wreck swaps in on the flash frame | particles <= 300 |
@@ -65,6 +66,33 @@ Claude owns every verdict: a DeepSeek / Astra / Jev answer is a LEAD or a number
 Blender rules that cost hours already: never the GUI (`blender-headless-render-safety`); `import bpy` before `bmesh`; glTF export `export_apply=True`;
 baked textures live NEXT TO the .glb (never delete them); Tripo/Meshy meshes are shell soups - split the FINAL glb into connected components
 (`trimesh`) to find floaters before blaming the renderer (a 6 mm tetrahedron "thorn" on the rifle was a decimate artifact only visible that way).
+
+# AI image-to-3D through Muapi (found 2026-10-10: the route that took the quad from 4/10 to 6/10)
+
+`GET https://api.muapi.ai/api/v1/models` lists category **Image to 3D**: `tripo3d-h31-multiview-to-3d` ($0.2 base), `tripo3d-h31-image-to-3d`, `meshy-6-(multi-)image-to-3d` ($0.5),
+`meshy-v7-(multi-)image-to-3d` ($1.7), text-to-3D variants. They bill the SAME Muapi balance as GPT Image 2 - so the native pools (Meshy 40 credits, Tripo 0 on 2026-10-10) are not the limit.
+`python3 tools/ep2_forge/muapi_3d.py models | estimate | run` is the client (uploads repo images once, polls, downloads every output, writes a receipt).
+
+**Recipe (hard-surface prop or vehicle)**
+1. Stills first: the hero (t2i) then `front`, `side`, `back` as GPT **i2i of the hero** (`fort_knox_refs.json` views, $0.09 each): consistent paint and parts, straight-on elevations.
+2. `python3 tools/ep2_forge/muapi_3d.py run tripo3d-h31-multiview-to-3d --images front.jpg side.jpg back.jpg --out .farm/3d/<id> --set texture=true --set pbr=true
+   --set texture_quality='"detailed"' --set geometry_quality='"detailed"' --set face_limit=60000`   (~6 min, **$1.00 actual** although `estimate` said $0.5; `.farm/` is gitignored).
+   Tripo returns ONE fused mesh (57k tris / 38k verts), 4096 base colour + ORM + a nearly flat normal map (12 MB GLB), nose along +X, bounds centred. Meshy-6 took >25 min on the same inputs.
+3. `python3 tools/ep2_forge/ai_vehicle_to_game.py --src out_0.glb --out src/episode2/assets/vehicles/<name>.glb [--nose=-x]` does the clean-up: finds the four wheels FROM THE MESH
+   (ground-contact clusters, then a circle fit to the lowest point of each x-bin = the tyre's bottom silhouette; the half-width/hub-height slab method DIVERGES - do not use it), turns the nose to +Z,
+   scales the tyre to 1.0 m, stands it on the ground with the origin between the axles, cuts `Wheel_FL/FR/RL/RR` (face centroid in a cylinder; faces whose corners reach beyond 1.08 R go back to the
+   body, floating pieces < 150 tris are dropped - weld by POSITION before counting pieces, AI meshes split every UV island into its own vertices), re-encodes textures (1024 base, 256 metal-rough,
+   normal DROPPED), writes one material / five meshes. It does NOT decimate: AI UV atlases are confetti, collapsing edges tears the texture.
+4. Verify without importing anything: `glb_hero_shot.tscn -- glb=<file.glb> auto=1 studio=1 spin=40` loads the GLB at run time, orbits it, and `spin` turns the wheels (a loose shard or a body bit riding the wheel shows at once).
+5. Import for the web pack (**this is where the megabytes are**): track `<name>.glb.import` with `meshes/generate_lods=false`, `create_shadow_meshes=false`, `ensure_tangents=false`, and for each extracted
+   texture `<name>_BaseColor.jpg.import` / `_MetalRough.jpg.import` set `compress/mode=1` (lossy WebP), `compress/lossy_quality=0.75`, `detect_3d/compress_to=0`; `git add -f` all three.
+   Packed: scn 0.84 MB + base colour 0.20 MB (lossless/VRAM was 1.65 MB) + metal-rough 0.02 MB = **1.06 MB** for the whole quad.
+6. Landmarks for riders / seats are MEASURED on the mesh (seat top 1.37-1.42, rack deck 1.43, grips x +-0.5 y 1.72 z 0.5 for the quad), then the constants in the chamber are set and a
+   capture from outside (`interlude_shot.gd` woods_6b/6c) + the interlude test prove the seating.
+7. Grade it like everything else (metrics, DeepSeek, one Astra pass): kit-bashed 4/10 -> Tripo 6/10; Astra's remaining notes (soft tyres, plain rear fender, flat lacquer, no grime) are texture-level
+   and can be fixed in the atlas without extra bytes. DeepSeek's grade of the same board was unreliable (called the seat "a short thin pad" and the model "showroom clean") - trust your own look + Astra.
+
+Characters (AwesomeX) go the same way but need `meshy_rig` afterwards (Meshy-7 can rig + animate in the same call: `enable_rigging`, `rigging_height_meters`). Kit-bashing stays for ARCHITECTURE and destruction.
 
 # What reads as hyper-real in Godot 4.3 Compatibility / web (the checklist for step 5)
 
@@ -83,6 +111,7 @@ baked textures live NEXT TO the .glb (never delete them); Tripo/Meshy meshes are
 | Model | Role here | How | Cost |
 |---|---|---|---|
 | **GPT Image 2** (Muapi) | the references | `tools/ep2_forge/muapi_ref.py` | $0.09 / image |
+| **Tripo H3.1 / Meshy 6-7** (Muapi) | stills -> textured 3D model | `tools/ep2_forge/muapi_3d.py` + `ai_vehicle_to_game.py` | $0.5-1.7 / model |
 | **DeepSeek V4.1 Flash** | triage of boards/captures against the brief's constraints; reads many frames cheaply | `python3 scripts/ref_compare.py ref.jpg cap.png board.jpg --grade` or `node scripts/or-call.mjs deepseek/deepseek-v4.1-flash prompt.md out.md --image board.jpg` | ~$0.001 |
 | **Jev** (`~typesafe/jev-latest`) | ship / iterate / pick-one DECISIONS on NUMBERS (it is text-only: never hand it an image) | `python3 tools/ep2_forge/ref_metrics.py ref cap --state` -> `node scripts/jev.mjs --state "<paragraph>" --bool "name=question"` / `--choice "verdict=ship:..|iterate:.."` | ~$0.00002 |
 | **GPT-6 Astra** (`openai/gpt-6-astra`) | the ONE art-direction review of a finished set piece's board (images in) | `node scripts/or-call.mjs openai/gpt-6-astra prompt.md out.md --image board.jpg` (skill `art-direction-fidelity-check`) | ~$0.15 |
@@ -100,7 +129,7 @@ CLAUDE.md FOUNDER SHIP RULE: no gate vote blocks a ship and none is reported to 
 4. Web budgets met; GLB + textures committed; `.import` files force-added where Godot needs them.
 5. `ep2-fort-knox-arc` status table updated; STATUS.md; shipped to master; proven live.
 
-# Lessons from the first built piece (the flame quad, 2026-10-10) - read before building the next one
+# Lessons from the first built piece (the flame quad, kit-bashed in Blender first, 2026-10-10; it was then REPLACED by the AI model above) - these still apply to anything you kit-bash
 
 1. **THE PCK IS THE BINDING BUDGET.** CI printed `index.pck = 187 MB` for master (gate 190 MiB = 199,229,440 B). A new prop gets ~1 MB, not 3. What the pck stores is the
    IMPORTED data, not the GLB: VRAM-compressed textures cost ~1 byte per pixel (a 2048x600 paint = 1.26 MB, a 512^2 map = 0.2-0.3 MB) and the default GLB import

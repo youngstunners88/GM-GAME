@@ -1,0 +1,19 @@
+{
+ "request_id": "6b2eebd1-8622-42fc-90d6-5ce50e7093a3",
+ "endpoint": "tripo3d-h31-multiview-to-3d",
+ "payload": {
+  "texture": true,
+  "pbr": true,
+  "texture_quality": "detailed",
+  "geometry_quality": "detailed",
+  "face_limit": 60000
+ },
+ "n_images": 3,
+ "files": [
+  "out_0.glb",
+  "out_1.png"
+ ],
+ "cost_usd": 1.0,
+ "made": "2026-10-10",
+ "note": "Tripo H3.1 multiview via Muapi (tools/ep2_forge/muapi_3d.py). Inputs: flame_quad front.jpg, side.jpg, back.jpg (artifacts/episode2-gold-mine/references/fort_knox_prep/flame_quad). Raw output was 12.3 MB with 4096 textures; this repo copy has textures shrunk to 2048/1024 (re-run ai_vehicle_to_game.py on it). Cleaned game GLB: src/episode2/assets/vehicles/flame_quad_ai.glb."
+}

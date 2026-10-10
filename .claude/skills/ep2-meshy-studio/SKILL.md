@@ -9,6 +9,12 @@ API key."* Meshy output is the quality bar. Never hand-build a prop out of boxes
 model of it exists or can be made; procedural geometry is only for things Meshy can't make
 (3 parallel rails of exact gauge, pit trestles, ties).
 
+# Pay-per-call route (2026-10-10): Meshy 6/7 and Tripo H3.1 through Muapi
+The native Meshy pool is small (40 credits on 2026-10-10) and Tripo's is 0, but Muapi sells the same models per call on the balance GPT Image 2 already uses:
+`meshy-6-(multi-)image-to-3d` $0.5, `meshy-v7-(multi-)image-to-3d` $1.7 (rigging + animation options), `tripo3d-h31-multiview-to-3d` ~$1 detailed.
+`python3 tools/ep2_forge/muapi_3d.py models|estimate|run` is the client and `ep2-hyperreal-scene-pipeline` ("AI image-to-3D through Muapi") has the recipe, the clean-up tool and the pack numbers.
+Use the native credits for what only they do (remesh, rig, animate on an existing Meshy task); use Muapi to MAKE new models.
+
 # Tooling (installed + verified 2026-09-28)
 - **CLI**: `meshy` 0.4.0 (`npm i -g meshy-cli@0.4.0`; the SessionStart hook reinstalls it).
   Auth is automatic from `MESHY_API_KEY` in the environment (`meshy auth status` → source env,

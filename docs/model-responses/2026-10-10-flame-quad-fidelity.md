@@ -70,3 +70,19 @@ Verdict: **fidelity 4/10, "would a player believe it? no"** - it reads as a flam
 
 Final engine capture on the grey backdrop: closeness 0.70, edge ratio 0.63 (see `ref_metrics.py`). The remaining gap to a photographic quad is mostly SHAPE, which procedural kit-bashing
 cannot cheaply close: that is the honest case for spending Meshy credits (40 available) on this prop - or saving them for AwesomeX, who cannot be kit-bashed at all.
+
+## Increment 3 (same day): the kit-bashed quad is REPLACED by Tripo H3.1 multi-view image-to-3D (Muapi)
+
+Muapi turned out to sell Tripo H3.1 / Meshy 6-7 pay-per-call (`GET /api/v1/models`, category "Image to 3D"). Inputs: the GPT stills `front`, `side`, `back` (i2i of the hero, $0.18);
+Tripo H3.1 multiview, texture + PBR, detailed, face_limit 60000: **$1.00, ~6 minutes**, one fused mesh (57k tris), 4096 base/ORM/normal (12.3 MB GLB). `ai_vehicle_to_game.py` cleaned it
+(wheels found from the mesh, four `Wheel_*` nodes cut for spin, 1024 base / 256 metal-rough JPEG, normal map dropped, no decimation). Packed with lossy-WebP texture imports: scn 0.84 MB + base 0.20 MB +
+metal-rough 0.02 MB = **1.06 MB** (the kit-bashed one was 0.88 MB and is retired from the pack).
+
+| | closeness | edge ratio | Astra | in-game |
+|---|---|---|---|---|
+| kit-bashed Blender quad (v2, baked paint) | 0.70 | 0.63 | **4/10** "toy-like, no" | reads as a painted prop |
+| Tripo H3.1 multiview quad | 0.70 | 0.51 | **6/10** "a player would believe it: yes" | reads as a real vehicle at 5 m, Inferno seated convincingly |
+
+Astra's remaining notes (raw: `2026-10-10-flame-quad-astra-review-ai.md`): flames "blurry, tangled", rear fender mostly plain red, lacquer flat, tyres soft, headlamp a cloudy disc, lower-body grime too clean -
+all texture-level. DeepSeek's grade of the same board was unreliable (it called the long bench "a short thin pad" and the model "showroom clean"); trust the pictures + Astra.
+The edge-density number fell because the web textures are lossy and 1024 (the 4096 original is sharper) - closeness is the same; it is a coarse metric, the pictures decide.

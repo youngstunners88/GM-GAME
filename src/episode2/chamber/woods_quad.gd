@@ -25,22 +25,23 @@ const QUAD_YAW := 0.0                              # nose toward +z
 const RIDE_TRAIL: Array = [Vector2(-7.4, 53.5), Vector2(-2.0, 62.0), Vector2(5.0, 78.0), Vector2(6.0, 98.0), Vector2(0.0, 116.0),
 	Vector2(-3.0, 125.0), Vector2(0.0, 133.0)]
 const RIDE_SPEED := 9.5
-## The modelled quad (tools/ep2_blender/build_flame_quad.py, built from the Muapi GPT-Image-2 reference): nose +Z, origin on the ground
-## between the axles, tyre outer diameter 1.0 m, four Wheel_* nodes (hub-centred, axle = local X), seat top 1.5 m.
-const QUAD_MODEL := "res://src/episode2/assets/vehicles/flame_quad.glb"
+## The modelled quad: Tripo H3.1 multi-view image-to-3D (Muapi) from the GPT-Image-2 stills of the founder's flame-designer quad, cleaned up by
+## tools/ep2_forge/ai_vehicle_to_game.py: nose +Z, origin on the ground midway between the axles, tyre outer diameter 1.0 m, four Wheel_* nodes
+## (hub-centred, axle = local X). Landmarks measured on the mesh: seat top 1.37-1.42, rack deck ~1.43 (z -1.84..-1.05), grips x +-0.5 y 1.72 z 0.5.
+const QUAD_MODEL := "res://src/episode2/assets/vehicles/flame_quad_ai.glb"
 const QUAD_WHEEL_R := 0.5
-const SEAT_TOP := 1.5                               # the rack top (Lil Blunt kneels on it)
-const SEAT_TOP_DRIVER := 1.56                       # the padded bench Inferno sits on, at his hips (it crowns at 1.575 further back)
+const SEAT_TOP := 1.43                              # the rack deck (Lil Blunt kneels on it)
+const SEAT_TOP_DRIVER := 1.38                       # the bench Inferno sits on, at his hips
 ## Inferno rides SEATED (his Chair_Sit_Idle_M clip frozen at 4 s) with both hands on the grips (arm IK); Lil Blunt kneels on the rear of the seat / rack,
 ## eye just above Inferno's head, so he sees the road over him and the rack hoop is his rest (tools/ep2_shots/rider_probe.gd printed these numbers).
 const BULL_SIT_CLIP := "Chair_Sit_Idle_M"
 const BULL_SIT_AT := 4.0
 const BULL_HIPS := Vector3(0.35, 1.10, -0.49)       # his hips in actor space in that pose
-const BULL_SEAT_F := 0.12                           # his hips along the seat (+ = toward the nose)
-const GRIP_F := 0.70
-const GRIP_U := 1.80
-const GRIP_X := 0.58
-const BACK_F := -1.55                               # Lil Blunt's spot on the rear of the seat / rack
+const BULL_SEAT_F := -0.50                          # his hips along the seat (+ = toward the nose)
+const GRIP_F := 0.52
+const GRIP_U := 1.74
+const GRIP_X := 0.56
+const BACK_F := -1.45                               # Lil Blunt's spot on the rear of the seat / rack
 const BACK_SIDE := 0.30                             # ...a little to the right of the centreline: he looks past Inferno's shoulder, not into his back
 const BACK_EYE := 1.40                              # his eye above the seat/rack there (kneeling)
 const BULL_LEAN := 0.55                             # Inferno leans onto the grips (the seated clip alone sits him upright against a chair back)
@@ -293,7 +294,7 @@ func _build_quad() -> void:
 		_quad_light.light_energy = 0.0
 		_quad_light.spot_range = 28.0
 		_quad_light.spot_angle = 30.0
-		_quad_light.position = Vector3(0.0, 1.28, 1.85)
+		_quad_light.position = Vector3(0.0, 1.15, 1.62)
 		_quad_light.rotation = Vector3(0.0, PI, 0.0)
 		_quad.add_child(_quad_light)
 		return

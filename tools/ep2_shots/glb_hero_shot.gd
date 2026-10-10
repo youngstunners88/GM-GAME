@@ -7,11 +7,16 @@ extends Node
 ## `views` = name:camera x,y,z:target x,y,z:fov joined by ';' (GLB frame: +Z nose, +Y up).
 ## `studio=1` swaps the woods sky/ground for the plain mid-grey seamless backdrop the Muapi object references use, so
 ## tools/ep2_forge/ref_metrics.py compares the SUBJECT (a woods backdrop alone drives saturation/warmth off by 3x).
+## `glb=/abs/or/relative/file.glb` (not res://) is loaded AT RUN TIME with GLTFDocument - no import, no project files: for AI-generated candidates in .farm/.
+## `spin=DEG` turns every Wheel_XX node (one underscore) by DEG about its axle (X) - proves the wheels were cut cleanly (no body bits riding along).
+## `auto=1` ignores `views` and orbits the model's own bounds: px / nx / pz / nz / top / q3 (unknown orientation, unknown scale), the model dropped on the ground.
 func _ready() -> void:
 	var glb := ""
 	var out := ".farm/glb_hero"
 	var views := "hero:-3.9,1.9,4.0:0.1,0.8,0.1:42"
 	var studio := false
+	var auto := false
+	var spin := 0.0
 	for a in OS.get_cmdline_user_args():
 		var kv: PackedStringArray = a.split("=", true, 1)
 		if kv.size() != 2:
@@ -21,6 +26,8 @@ func _ready() -> void:
 			"out": out = kv[1]
 			"views": views = kv[1]
 			"studio": studio = kv[1] == "1"
+			"auto": auto = kv[1] == "1"
+			"spin": spin = float(kv[1])
 	DirAccess.make_dir_recursive_absolute(out.get_base_dir())
 	var vp := SubViewport.new()
 	vp.size = Vector2i(get_viewport().get_visible_rect().size)
@@ -70,12 +77,41 @@ func _ready() -> void:
 	gm.roughness = 0.95
 	ground.material_override = gm
 	vp.add_child(ground)
-	var model: Node3D = (load(glb) as PackedScene).instantiate() as Node3D
+	var model: Node3D = null
+	if glb.begins_with("res://"):
+		model = (load(glb) as PackedScene).instantiate() as Node3D
+	else:
+		var gdoc := GLTFDocument.new()
+		var gstate := GLTFState.new()
+		var err: int = gdoc.append_from_file(ProjectSettings.globalize_path(glb) if glb.begins_with("res") else glb, gstate)
+		if err != OK:
+			printerr("GLB load failed: ", glb, " err ", err)
+			get_tree().quit(1)
+			return
+		model = gdoc.generate_scene(gstate) as Node3D
 	vp.add_child(model)
+	if spin != 0.0:
+		for wn in model.find_children("Wheel_*", "Node3D", true, false):
+			if String(wn.name).count("_") == 1:
+				(wn as Node3D).rotation_degrees.x = spin
 	var cam := Camera3D.new()
 	vp.add_child(cam)
 	cam.current = true
 	await get_tree().process_frame
+	if auto:
+		var box := _bounds(model)
+		model.position.y -= box.position.y                      # stand it on the ground
+		box.position.y = 0.0
+		var c: Vector3 = box.get_center()
+		var r: float = maxf(box.size.length() * 0.5, 0.2)
+		var dist: float = r * 2.6
+		var dirs := {"px": Vector3(1, 0.18, 0), "nx": Vector3(-1, 0.18, 0), "pz": Vector3(0, 0.18, 1), "nz": Vector3(0, 0.18, -1), "top": Vector3(0.01, 1, 0.01), "q3": Vector3(1, 0.5, 1)}
+		var vs: PackedStringArray = []
+		for k in dirs:
+			var d: Vector3 = (dirs[k] as Vector3).normalized() * dist + c
+			vs.append("%s:%f,%f,%f:%f,%f,%f:34" % [k, d.x, d.y, d.z, c.x, c.y, c.z])
+		print("BOUNDS size ", box.size, " centre ", c)
+		views = ";".join(vs)
 	for v in views.split(";"):
 		var parts: PackedStringArray = v.split(":")
 		var p: PackedStringArray = parts[1].split(",")
@@ -89,3 +125,17 @@ func _ready() -> void:
 		vp.get_texture().get_image().save_png(path)
 		print("SHOT ", path)
 	get_tree().quit()
+
+
+## World-space bounds of every mesh under `n` (the model, wherever its authoring tool put the origin).
+func _bounds(n: Node) -> AABB:
+	var box := AABB()
+	var first := true
+	for mi in n.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		if m.mesh == null:
+			continue
+		var b: AABB = m.global_transform * m.mesh.get_aabb()
+		box = b if first else box.merge(b)
+		first = false
+	return box
