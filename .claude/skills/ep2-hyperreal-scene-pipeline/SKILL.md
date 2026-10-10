@@ -77,7 +77,9 @@ baked textures live NEXT TO the .glb (never delete them); Tripo/Meshy meshes are
 1. Stills first: the hero (t2i) then `front`, `side`, `back` as GPT **i2i of the hero** (`fort_knox_refs.json` views, $0.09 each): consistent paint and parts, straight-on elevations.
 2. `python3 tools/ep2_forge/muapi_3d.py run tripo3d-h31-multiview-to-3d --images front.jpg side.jpg back.jpg --out .farm/3d/<id> --set texture=true --set pbr=true
    --set texture_quality='"detailed"' --set geometry_quality='"detailed"' --set face_limit=60000`   (~6 min, **$1.00 actual** although `estimate` said $0.5; `.farm/` is gitignored).
-   Tripo returns ONE fused mesh (57k tris / 38k verts), 4096 base colour + ORM + a nearly flat normal map (12 MB GLB), nose along +X, bounds centred. Meshy-6 took >25 min on the same inputs.
+   Tripo returns ONE fused mesh (57k tris / 38k verts), 4096 base colour + ORM + a nearly flat normal map (12 MB GLB), nose along +X, bounds centred.
+   Same four stills through `meshy-6-multi-image-to-3d` ($0.50, **27 minutes**, 41k tris, 17 MB GLB + fbx/obj/stl/usdz + 5 PNG maps): richer mud and sculpt but HALLUCINATED parts (a plain white ball for the
+   headlight, a wooden beam by the rear axle, V-shaped flames on the fender) - Tripo won on fidelity AND speed. Submit-and-poll can outlive a shell: if a log stops, `GET /api/v1/predictions/<id>/result` still returns the finished outputs (expire after 30 days).
 3. `python3 tools/ep2_forge/ai_vehicle_to_game.py --src out_0.glb --out src/episode2/assets/vehicles/<name>.glb [--nose=-x]` does the clean-up: finds the four wheels FROM THE MESH
    (ground-contact clusters, then a circle fit to the lowest point of each x-bin = the tyre's bottom silhouette; the half-width/hub-height slab method DIVERGES - do not use it), turns the nose to +Z,
    scales the tyre to 1.0 m, stands it on the ground with the origin between the axles, cuts `Wheel_FL/FR/RL/RR` (face centroid in a cylinder; faces whose corners reach beyond 1.08 R go back to the
