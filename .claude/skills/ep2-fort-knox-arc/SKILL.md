@@ -62,7 +62,7 @@ Why they are not safe even after the toast: the bears can follow a trail. That f
 | Prep item (the founder's list) | Reference id (`tools/ep2_forge/fort_knox_refs.json`) | Already in the game |
 |---|---|---|
 | Hideout exit onto a road the quad can use | `exit_road` | wood road `WoodsQuadChamber.RIDE_TRAIL` (4.4 m wide) |
-| The quad itself (one quad, then none) | `flame_quad` (+ turnaround) | procedural box quad in `woods_quad.gd` - replace with the modelled one |
+| The quad itself (one quad, then none) | `flame_quad` (+ turnaround) | **MODELLED** (2026-10-10): `src/episode2/assets/vehicles/flame_quad.glb` from `tools/ep2_blender/build_flame_quad.py`; Inferno sits on it (seated clip + hands on the grips), Lil Blunt kneels on the rack. Paint is still side-planar (polish list in `docs/model-responses/2026-10-10-flame-quad-fidelity.md`). The old box quad stays as the fallback `_build_box_quad()` |
 | Spy point: sightline to a neighbouring building AND the vault approach | `spy_point` | ridge + ferns + log, camp only |
 | Building that takes the quad and reads as an EXPLOSION, not a grey box | `decoy_building` (intact + exploding) | - |
 | Vault approach (NOT the door) | `vault_approach` | - |

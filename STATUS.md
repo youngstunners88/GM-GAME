@@ -6,6 +6,20 @@
 ---
 
 
+**🏍️ THE FLAME QUAD IS A REAL MODEL NOW, AND INFERNO ACTUALLY RIDES IT (2026-10-10).** The quad in the bear woods used to be a handful of red boxes. Now:
+- **A modelled flame-designer quad**, built headless in Blender from the Muapi GPT-Image-2 reference you saw (3/4, side and rear stills): candy-red lacquer with the flame paint traced from the reference, chrome bull bar / rack / handlebar, a wire-guarded headlight, red coil-over springs, a long black bench seat and chunky knobby tyres with mud. `src/episode2/assets/vehicles/flame_quad.glb`, ~32k triangles in just 29 draw calls (164 loose parts merged by material), **0.8 MB in the web pack** (textures shipped small, no LOD/shadow copies).
+- **Inferno sits on it** (seated pose, leaning onto the grips, both hands on them) and **Lil Blunt kneels on the rear rack** looking past Inferno's shoulder with the Winchester in his hands; at the ridge Inferno gets off. I found and fixed a gap while checking from outside the quad: the "sit on the quad" code existed but was never called.
+- **Honest verdict: better, not yet hyper-real.** Against the reference on the same grey backdrop: closeness 0.69 (good-match band), fine detail 0.58 of the photo. The vision triage and my own look agree on the gaps: flames only reach the side panels (not the fender tops), the seat is thin, chrome washes white under a bright sky, the panels are too clean. That is the next increment (paint baked per panel). Jev's number said "polish first" at low confidence; I shipped the verified improvement and left the polish on the list.
+- **Heads-up, the web pack is nearly full:** CI prints `index.pck = 187 MB` against the 190 MiB gate. A Meshy/Tripo character like AwesomeX is 3-5 MB, so **before the next big model I need to free about 10 MiB** (candidates: lossy-WebP the big 2D backdrops, trim duplicate music variants - your call on any song). Written into the pipeline skill so no session adds a model blind.
+- **Meshy / Tripo:** Meshy has 40 credits (one textured model is ~30), Tripo has 0. I would spend Meshy on **AwesomeX** (organic, cannot be kit-bashed), not on the quad. Your call.
+- **Reference stills:** 12 of 13 views exist (the furnace entrance for AwesomeX timed out once - retry is queued); new rear-3/4 quad view added.
+- **Skills updated:** `ep2-hyperreal-scene-pipeline` (pack budget rules, studio-backdrop grading, chrome in the Compatibility renderer, the paint-projection trap, seating riders with a probe), `ep2-fort-knox-arc` (quad row). Fidelity record: `docs/model-responses/2026-10-10-flame-quad-fidelity.md`.
+- **Tests:** `ep2_interlude_test` 89 checks (new: it is the modelled quad with four wheels, Inferno seated with both hands on the grips, Lil Blunt's eye above the seat and behind him, Inferno gets off at the ridge) and `ep2_fort_knox_arc_test` (exactly one quad) green.
+- **Not built (on purpose, per your Fort Knox file):** the claim run, decoy, vault, sacrifice, AwesomeX, rescue.
+
+---
+
+
 **🎯 FIRST PERSON EVERYWHERE — THE WINCHESTER IS IN HIS HANDS (2026-10-09, night).** You were right: this is a first-person shooter and Lil Blunt had the rifle merely slung on his back in a third-person view in the new rooms. Fixed in every room after the hideout:
 - **Mine lift, bear woods, quad ride and spy point are all first person now** with the founder's GM Winchester IN HIS HANDS on screen (leafy hands + bracers, ammo tube and crosshair on the HUD). LMB fires, RMB aims down the sights, R reloads shell by shell, Shift runs — the same rifle feel as the target range (it is the same viewmodel, lifted into one reusable component so every future room gets it).
 - **The scripted moments stay in his eyes:** Inferno walking to the hidden lever and pulling it, and the leaves coming off the quad, are seen through Lil Blunt's own eyes (the view turns to the action) — no cut to a camera where the rifle vanishes. Climbing onto the quad is a quick black blink; on the back seat the view rides with the quad.

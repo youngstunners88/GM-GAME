@@ -25,6 +25,24 @@ const QUAD_YAW := 0.0                              # nose toward +z
 const RIDE_TRAIL: Array = [Vector2(-7.4, 53.5), Vector2(-2.0, 62.0), Vector2(5.0, 78.0), Vector2(6.0, 98.0), Vector2(0.0, 116.0),
 	Vector2(-3.0, 125.0), Vector2(0.0, 133.0)]
 const RIDE_SPEED := 9.5
+## The modelled quad (tools/ep2_blender/build_flame_quad.py, built from the Muapi GPT-Image-2 reference): nose +Z, origin on the ground
+## between the axles, tyre outer diameter 1.0 m, four Wheel_* nodes (hub-centred, axle = local X), seat top 1.5 m.
+const QUAD_MODEL := "res://src/episode2/assets/vehicles/flame_quad.glb"
+const QUAD_WHEEL_R := 0.5
+const SEAT_TOP := 1.5
+## Inferno rides SEATED (his Chair_Sit_Idle_M clip frozen at 4 s) with both hands on the grips (arm IK); Lil Blunt kneels on the rear of the seat / rack,
+## eye just above Inferno's head, so he sees the road over him and the rack hoop is his rest (tools/ep2_shots/rider_probe.gd printed these numbers).
+const BULL_SIT_CLIP := "Chair_Sit_Idle_M"
+const BULL_SIT_AT := 4.0
+const BULL_HIPS := Vector3(0.35, 1.10, -0.49)       # his hips in actor space in that pose
+const BULL_SEAT_F := 0.12                           # his hips along the seat (+ = toward the nose)
+const GRIP_F := 0.70
+const GRIP_U := 1.80
+const GRIP_X := 0.58
+const BACK_F := -1.55                               # Lil Blunt's spot on the rear of the seat / rack
+const BACK_SIDE := 0.30                             # ...a little to the right of the centreline: he looks past Inferno's shoulder, not into his back
+const BACK_EYE := 1.40                              # his eye above the seat/rack there (kneeling)
+const BULL_LEAN := 0.55                             # Inferno leans onto the grips (the seated clip alone sits him upright against a chair back)
 const SPY_EYE := Vector3(2.6, 1.55, 147.0)         # prone behind the ferns on the ridge
 const CAMP_CENTRE := Vector3(0.0, 0.0, 188.0)
 const BEAR_SPOTS: Array = [Vector2(-5.5, 183.0), Vector2(-2.0, 192.0), Vector2(4.0, 181.0), Vector2(6.5, 190.0), Vector2(-8.5, 191.0), Vector2(1.5, 197.0)]
@@ -41,6 +59,7 @@ var _leaf_mats: Array = []
 var _trees: Array = []                              # [Vector2 position, radius] for trunk collision
 var _quad: Node3D = null
 var _quad_wheels: Array = []
+var _quad_modelled: bool = false
 var _quad_light: SpotLight3D = null
 var _cover: Node3D = null
 var _cover_bits: Array = []                         # [Node3D, Vector3 outward velocity, float spin]
@@ -258,6 +277,30 @@ func _build_quad() -> void:
 	_quad.position = QUAD_POS
 	_quad.rotation.y = QUAD_YAW
 	_visuals.add_child(_quad)
+	var model: Node3D = null
+	if ResourceLoader.exists(QUAD_MODEL):
+		model = (load(QUAD_MODEL) as PackedScene).instantiate() as Node3D
+	if model != null:
+		model.name = "QuadModel"
+		_quad.add_child(model)
+		_quad_modelled = true
+		for wn in model.find_children("Wheel_*", "Node3D", true, false):
+			if String(wn.name).count("_") == 1:                     # Wheel_FL ... Wheel_RR, not their rims / nuts
+				_quad_wheels.append(wn)
+		_quad_light = SpotLight3D.new()
+		_quad_light.light_color = Color(1.0, 0.92, 0.75)
+		_quad_light.light_energy = 0.0
+		_quad_light.spot_range = 28.0
+		_quad_light.spot_angle = 30.0
+		_quad_light.position = Vector3(0.0, 1.28, 1.85)
+		_quad_light.rotation = Vector3(0.0, PI, 0.0)
+		_quad.add_child(_quad_light)
+		return
+	_build_box_quad()
+
+
+## Fallback when the model is missing from the build: the original boxes (candy red, flame tongues, chrome, headlight).
+func _build_box_quad() -> void:
 	var paint: StandardMaterial3D = _plain(Color(0.45, 0.04, 0.03), 0.25, 0.35)       # deep candy red
 	var black: StandardMaterial3D = _plain(Color(0.05, 0.05, 0.06), 0.6, 0.2)
 	var chrome: StandardMaterial3D = _plain(Color(0.72, 0.70, 0.66), 0.3, 0.6)
@@ -330,6 +373,8 @@ func _build_cover() -> void:
 		_sphere(1.5 + 0.7 * absf(sin(float(i))), QUAD_POS + Vector3(cos(a3) * d * 1.1, 0.7, sin(a3) * d * 1.7), _leaf_mats[i % _leaf_mats.size()], null, 0.8)
 
 
+func is_quad_modelled() -> bool: return _quad_modelled
+func get_quad_wheel_count() -> int: return _quad_wheels.size()
 func get_quad_node() -> Node3D:
 	return _quad
 
@@ -544,6 +589,7 @@ func _begin_ride() -> void:
 	cam_height = 2.4
 	_look_pitch = -0.08
 	_bull.stop()
+	_bull_mount()
 	_build_ride_path()
 	_quad_yaw_prev = _quad_yaw
 	_look_yaw = _quad_yaw
@@ -598,19 +644,51 @@ func _ride_sample(s: float) -> Array:
 
 func _seat_riders() -> void:
 	var f := Vector3(sin(_quad_yaw), 0.0, cos(_quad_yaw))
-	var r := Vector3(-f.z, 0.0, f.x)
+	var r := Vector3(-f.z, 0.0, f.x)                 # the rider's right
 	var base: Vector3 = _quad.position
-	_bull.position = base + f * 0.55 + Vector3(0.0, 0.62, 0.0)
-	_bull.facing = _quad_yaw
-	_bull.rotation.y = _quad_yaw
-	_player_pos = base - f * 2.1 + r * SEAT_SIDE + Vector3(0.0, 1.1, 0.0)
+	if _quad_modelled:
+		var yaw_b := Basis(Vector3.UP, _quad_yaw)
+		var hips_at: Vector3 = base + f * BULL_SEAT_F + Vector3(0.0, SEAT_TOP + 0.10, 0.0)
+		_bull.position = hips_at - yaw_b * BULL_HIPS
+		_bull.clear_face_goal()
+		_bull.facing = _quad_yaw
+		_bull.rotation.y = _quad_yaw
+		_bull.reach("Left", base + f * GRIP_F - r * GRIP_X + Vector3(0.0, GRIP_U, 0.0), 0.5, BULL_LEAN)
+		_bull.reach("Right", base + f * GRIP_F + r * GRIP_X + Vector3(0.0, GRIP_U, 0.0), 0.5, BULL_LEAN)
+		_player_pos = base + f * BACK_F + r * BACK_SIDE + Vector3(0.0, SEAT_TOP, 0.0)
+		eye_height = BACK_EYE
+	else:
+		_bull.position = base + f * 0.55 + Vector3(0.0, 0.62, 0.0)
+		_bull.facing = _quad_yaw
+		_bull.rotation.y = _quad_yaw
+		_player_pos = base - f * 2.1 + r * SEAT_SIDE + Vector3(0.0, 1.1, 0.0)
 	_player_yaw = _quad_yaw
 	_ground_y = _player_pos.y
 	_vel_y = 0.0
 
 
+## Inferno sits on the quad (the seated clip, frozen) the moment the ride starts.
+func _bull_mount() -> void:
+	if not _quad_modelled or _bull == null:
+		return
+	_bull.add_all_clips(SmeltingFacilityChamber.BULL_SIT_CLIPS)
+	if _bull.anim != null and _bull.anim.has_animation(BULL_SIT_CLIP):
+		_bull.play(BULL_SIT_CLIP, 0.0, 0.0)
+		_bull.anim.seek(BULL_SIT_AT, true)
+
+
+## ...and gets off (standing idle, hands free) at the ridge.
+func _bull_dismount() -> void:
+	if _bull == null:
+		return
+	_bull.release("Left", 0.2)
+	_bull.release("Right", 0.2)
+	eye_height = FPS_EYE_HEIGHT
+
+
 func _begin_spy() -> void:
 	_riding = false
+	_bull_dismount()
 	cam_distance = 3.9
 	cam_height = 1.45
 	_ground_y = 0.0
@@ -739,7 +817,7 @@ func _tick_ride(delta: float) -> void:
 	_quad.position = pos + Vector3(0.0, bob, 0.0)
 	_quad.rotation = Vector3(0.02 * sin(_anim_t * 9.0), _quad_yaw, 0.03 * sin(_anim_t * 7.0))
 	for w in _quad_wheels:
-		(w as Node3D).rotation.x += _ride_speed * delta / 0.68
+		(w as Node3D).rotation.x += _ride_speed * delta / (QUAD_WHEEL_R if _quad_modelled else 0.68)
 	_seat_riders()
 	# a passenger's view rides the quad: when it turns, the view turns with it (and the mouse still looks around freely)
 	_look_yaw += angle_difference(_quad_yaw_prev, _quad_yaw)

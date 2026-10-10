@@ -98,11 +98,33 @@ func _woods() -> void:
 	await _cap("woods_4_reveal_a")
 	_run(1.8)
 	await _cap("woods_5_revealed")
+	# the quad as the player sees it: two vantage points the plan puts him at (the trail side, then right beside it)
+	for spec in [["woods_5b_quad_trail", Vector3(3.5, 0.0, -7.0)], ["woods_5c_quad_near", Vector3(2.4, 0.0, -3.4)], ["woods_5d_quad_front", Vector3(0.6, 0.0, 6.5)]]:
+		var at: Vector3 = WoodsQuadChamber.QUAD_POS
+		w._player_pos = at + (spec[1] as Vector3)
+		var d: Vector3 = (at + Vector3(0.0, 0.9, 0.0)) - (w._player_pos + Vector3(0.0, 1.55, 0.0))
+		w._look_yaw = atan2(d.x, d.z)
+		w._look_pitch = atan2(d.y, Vector2(d.x, d.z).length())
+		_run(0.1)
+		await _cap(str(spec[0]))
 	while w.get_beat_name() != "RIDE" and guard < 4000:
 		guard += 1
 		_run(0.1)
 	_run(3.5)
 	await _cap("woods_6_ride")
+	# the same moment from outside (the player never sees this): proves Inferno sits on the seat with both hands on the grips
+	var cam: Camera3D = w.get_camera()
+	var cam_xf: Transform3D = cam.global_transform
+	w.get_viewmodel().set_shown(false)
+	w.get_hud().visible = false
+	var qn: Node3D = w.get_quad_node()
+	for spec2 in [["woods_6b_ride_side", Vector3(3.6, 1.3, 0.6)], ["woods_6c_ride_rear", Vector3(-1.2, 2.2, -4.4)]]:
+		cam.global_position = qn.global_position + Basis(Vector3.UP, w._quad_yaw) * (spec2[1] as Vector3)
+		cam.look_at(qn.global_position + Basis(Vector3.UP, w._quad_yaw) * Vector3(0.0, 1.5, 0.3), Vector3.UP)
+		await _cap(str(spec2[0]))
+	cam.global_transform = cam_xf
+	w.get_viewmodel().set_shown(true)
+	w.get_hud().visible = true
 	while w.get_beat_name() != "SPY" and guard < 8000:
 		guard += 1
 		_run(0.2)

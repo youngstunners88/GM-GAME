@@ -233,6 +233,17 @@ func _ready() -> void:
 	_run(w, 1.5)
 	_check("...and the screen comes back up on the back seat", w.get_hud().fade < 0.2, "%.2f" % w.get_hud().fade)
 	_check("on the back seat he is still first person, the rifle in his hands (\"hold that rifle steady\")", w.is_fps() and wvm.rifle.visible and not w._player_node.visible and w.get_hud().visible)
+	_check("it is the MODELLED flame quad (flame_quad.glb, four spinning Wheel_* nodes), not the box stand-in", w.is_quad_modelled() and w.get_quad_wheel_count() == 4, "%s %d" % [w.is_quad_modelled(), w.get_quad_wheel_count()])
+	var driver: Ep2Actor = w.get_bull()
+	_check("Inferno SITS on the quad (seated clip) with BOTH hands on the grips, he does not stand in the air",
+		driver.current_clip() == WoodsQuadChamber.BULL_SIT_CLIP and driver.reach_weight("Left") > 0.8 and driver.reach_weight("Right") > 0.8,
+		"%s L%.2f R%.2f" % [driver.current_clip(), driver.reach_weight("Left"), driver.reach_weight("Right")])
+	var qn: Node3D = w.get_quad_node()
+	var seat_eye: Vector3 = w.get_camera().global_position
+	var fwd := Vector3(sin(w._quad_yaw), 0.0, cos(w._quad_yaw))
+	_check("Lil Blunt's eye is on the rear of the seat, above the seat and BEHIND Inferno's hips (he looks over the driver, not into him)",
+		seat_eye.y > qn.global_position.y + WoodsQuadChamber.SEAT_TOP + 0.9 and (seat_eye - driver.global_position).dot(fwd) < -0.6,
+		"eye y %.2f behind %.2f" % [seat_eye.y - qn.global_position.y, (seat_eye - driver.global_position).dot(fwd)])
 	_run(w, 2.5)
 	_check("the passenger's view rides the quad: it turns with the heading", absf(angle_difference(w._look_yaw, w._quad_yaw)) < 0.2, "look %.2f quad %.2f" % [w._look_yaw, w._quad_yaw])
 	var ride_hits: int = w.get_noise_hits()
@@ -245,6 +256,10 @@ func _ready() -> void:
 	_check("both ride it: Inferno up front, Lil Blunt behind", absf(w.get_bull().position.distance_to(w.get_quad_node().position)) < 3.0 and absf(w.get_player_position().distance_to(w.get_quad_node().position)) < 4.5)
 	_until(w, 40.0, func(): return w.get_beat_name() == "SPY")
 	_check("the ride ends on the ridge (-> SPY) in first person", w.get_beat_name() == "SPY" and w.is_fps())
+	_run(w, 0.8)
+	_check("Inferno gets OFF the quad at the ridge (standing idle, hands free)",
+		driver.current_clip() != WoodsQuadChamber.BULL_SIT_CLIP and driver.reach_weight("Left") < 0.5 and driver.reach_weight("Right") < 0.5,
+		"%s L%.2f R%.2f" % [driver.current_clip(), driver.reach_weight("Left"), driver.reach_weight("Right")])
 	_until(w, 12.0, func(): return not w.is_show_active())
 	_check("Inferno tells him to get down and look", said2.has("vo_bull_spy1"))
 	var spy_hits: int = w.get_noise_hits()

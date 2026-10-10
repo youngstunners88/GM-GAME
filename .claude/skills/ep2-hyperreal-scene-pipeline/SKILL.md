@@ -99,3 +99,30 @@ CLAUDE.md FOUNDER SHIP RULE: no gate vote blocks a ship and none is reported to 
 3. Numbers recorded (closeness, edge ratio); Astra reviewed the final board once.
 4. Web budgets met; GLB + textures committed; `.import` files force-added where Godot needs them.
 5. `ep2-fort-knox-arc` status table updated; STATUS.md; shipped to master; proven live.
+
+# Lessons from the first built piece (the flame quad, 2026-10-10) - read before building the next one
+
+1. **THE PCK IS THE BINDING BUDGET.** CI printed `index.pck = 187 MB` for master (gate 190 MiB = 199,229,440 B). A new prop gets ~1 MB, not 3. What the pck stores is the
+   IMPORTED data, not the GLB: VRAM-compressed textures cost ~1 byte per pixel (a 2048x600 paint = 1.26 MB, a 512^2 map = 0.2-0.3 MB) and the default GLB import
+   adds LODs + shadow meshes (+60 % on the scn). So: paint big, SHIP small (`SHIP_DIV` in `build_flame_quad.py`: 1024x300 paint, 256^2 rubber/rim, 128^2 steel), and track a
+   `<model>.glb.import` with `meshes/generate_lods=false` + `meshes/create_shadow_meshes=false` (`git add -f`, `*.import` is ignored; the hideout GLBs do the same).
+   The quad went 2.86 MB -> 0.83 MB with no visible change. Measure with `.godot/imported/<name>*` sizes; the LOCAL export reads ~5 MiB higher than CI (stale local imports), so
+   the truth is a branch push: CI logs `index.pck = N MB`.
+2. **Grade the SUBJECT on the reference's own backdrop.** `glb_hero_shot.tscn ... studio=1` renders the GLB on the grey seamless backdrop with the same framing: closeness 0.39 (woods
+   backdrop) -> 0.69 (studio). A coloured backdrop alone drives saturation/warmth off by 3-4x and makes a fair model look wrong.
+3. **Compatibility renderer + chrome**: only the SKY is reflected. A fully metallic part in a sky-less room renders BLACK, and under a bright uniform sky it renders WHITE. Chrome is
+   `metal 0.8 rough 0.2` and reads silver in the woods sky; judge chrome in the game sky, not in the studio.
+4. **Paint projected onto a curved loft smears.** The first quad used one side-planar UV map; the fender crowns (normal up) were slid onto a single texture ROW, so per-pixel flake noise
+   stretched 10:1 into "wood grain" and the flames never reached the crowns. The next iteration (task: baked paint) gives each panel its OWN loft UVs (u = along f, v = around the section)
+   and paints the texels from the 3D position: traced side flames + procedural crown flames blended in MASK space, isotropic flake, mud by height. Never blend UVs across a seam.
+5. **Seat riders with a probe, not by eye**: `tools/ep2_shots/rider_probe.tscn` prints hips/feet/hands/head of each seated clip in actor space; `woods_quad.gd` constants (`BULL_HIPS`,
+   `BULL_SEAT_F`, `GRIP_*`, `BULL_LEAN`, `BACK_F/BACK_SIDE/BACK_EYE`) come from it. The seated clip alone sits him bolt upright against a chair back (his back is 0.5 m from the
+   passenger's eye = a wall of texture): lean him onto the grips with `reach(..., lean)` (radians) and put the passenger a little to the side so he looks PAST the driver's shoulder.
+6. **A defined function nobody calls is not a feature.** `_bull_mount()` existed for a whole session and was never called; only an outside-camera capture
+   (`interlude_shot.gd` woods_6b/6c) and an assertion (`current_clip() == BULL_SIT_CLIP`) exposed it. Every new hook gets a test that observes its EFFECT.
+7. **Triage numbers**: DeepSeek's board grade (rubric `tools/ep2_forge/rubrics/flame_quad.md`) found the same defects Claude saw (chrome, seat, mud, flame coverage) for $0.003; Jev
+   returned `polish_first 0.67 / ship_then_polish 0.33` at confidence 0.34 - low-confidence advice; the ship rule decides (ship the verified improvement, polish next).
+8. **DRAW CALLS, not triangles, are what a web build runs out of.** The first quad export was 164 loose meshes (every tube, bolt and rib its own node) = 164 draw calls, x2 with the shadow
+   pass, for ONE parked vehicle. `merge_parts()` in `build_flame_quad.py` bakes curves/modifiers (`bpy.data.meshes.new_from_object`), then joins by material: 164 -> 29 meshes, same
+   32k triangles, smaller file. Keep only what must move (the four `Wheel_*` hubs keep their names and origins). Give the baked copies their original names back (Blender suffixes `.001`
+   while the originals still exist) and check the node tree with a tiny GLB-JSON dump before importing.

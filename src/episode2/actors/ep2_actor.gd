@@ -193,6 +193,11 @@ func hop_to(p: Vector3, duration: float = 0.9, height: float = 1.5) -> void:
 func is_hopping() -> bool: return not _hop.is_empty()
 
 
+## Forget any earlier face_point() goal (a rider's heading belongs to the vehicle, not to a spot he once looked at).
+func clear_face_goal() -> void:
+	_face_goal = NAN
+
+
 ## Turn (smoothly) to look at world point `p`.
 func face_point(p: Vector3) -> void:
 	var d: Vector3 = p - global_position
