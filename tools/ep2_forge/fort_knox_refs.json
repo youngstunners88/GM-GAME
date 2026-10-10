@@ -353,6 +353,61 @@
      "prompt": "One old weathered wooden mining supply crate made of dark planks with rusted iron corner brackets and rivets, three-quarter view from slightly above, the whole crate in frame."
     }
    ]
+  },
+  {
+   "id": "woods_kit",
+   "title": "Old-growth woods kit (founder target 2026-10-10: woods_exterior_target.jpg)",
+   "constraints": [
+    "photoreal, the founder's forest: giant fir/redwood trunks, moss, ferns, rocks, light shafts",
+    "textures seamless, cards on pure green for keying"
+   ],
+   "views": [
+    {
+     "name": "tex_bark",
+     "kind": "t2i",
+     "lock": "object",
+     "aspect": "1:1",
+     "prompt": "IGNORE the studio backdrop: a perfectly flat, front-on, evenly lit SEAMLESS TILING TEXTURE filling the whole square edge to edge: the deeply furrowed reddish-brown bark of a giant old-growth Douglas fir / redwood trunk, long vertical ridges and fissures, a little green moss in the cracks. No perspective, no border, no shadows from one direction."
+    },
+    {
+     "name": "tex_floor",
+     "kind": "t2i",
+     "lock": "object",
+     "aspect": "1:1",
+     "prompt": "IGNORE the studio backdrop: a perfectly flat, top-down, evenly lit SEAMLESS TILING TEXTURE filling the whole square edge to edge: an old-growth conifer forest floor - patches of bright green moss, brown pine needles, small twigs, a few fallen leaves and small stones, rich detail. No perspective, no border."
+    },
+    {
+     "name": "branch",
+     "kind": "t2i",
+     "lock": "object",
+     "aspect": "1:1",
+     "prompt": "IGNORE the grey studio backdrop: on a perfectly flat uniform pure chroma-green (#00FF00) background, one dense dark-green fir branch seen from below, many needles and twigs, filling most of the frame, sharp edges, natural colours (no green spill), the background around it pure chroma green."
+    },
+    {
+     "name": "fern",
+     "kind": "t2i",
+     "lock": "object",
+     "aspect": "1:1",
+     "prompt": "IGNORE the grey studio backdrop: on a perfectly flat uniform pure magenta (#FF00FF) background, one lush sword fern plant seen from the side and slightly above, fronds arching outward, natural deep green, sharp edges, the whole fern in frame, background pure magenta."
+    },
+    {
+     "name": "rock",
+     "kind": "t2i",
+     "lock": "object",
+     "aspect": "4:3",
+     "prompt": "One large weathered granite boulder half covered in thick green moss, forest-floor rock, three-quarter view, the whole rock in frame."
+    },
+    {
+     "name": "woods_ride",
+     "kind": "i2i",
+     "lock": "env",
+     "aspect": "16:9",
+     "refs": [
+      "artifacts/episode2-gold-mine/references/founder_2026-10-10/woods_exterior_target.jpg"
+     ],
+     "prompt": "Same old-growth forest and lighting as the reference: a dirt trail winding between the giant trunks, ferns and mossy rocks along it, sun shafts through haze, seen from a low vehicle seat moving down the trail. Nobody in the shot, no weapon in view."
+    }
+   ]
   }
  ],
  "style_lock_scene": "Photorealistic cinematic concept still for a first-person western shooter, 'western Modern Warfare' art direction: warm low sun key light with teal-blue shadow fill, thin atmospheric haze, physically based materials (weathered timber, rusted riveted steel, packed dirt, gravel, bark, dust), natural film grain, 35mm lens at human eye height (1.6 m), high dynamic range, sharp detail, believable scale. The named characters in the brief are the only characters. No text, no lettering, no watermark, no logos, no user interface."

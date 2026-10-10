@@ -198,6 +198,21 @@ func _ready() -> void:
 		w.is_fps() and w.get_episode_mode() == Episode2Mode.Mode.FPS and wvm != null and wvm.rifle.get_parent() == w.get_camera()
 		and wvm.rifle.get_node_or_null("Hands/HandsModel") != null and not w._player_node.visible and w.get_hud().show_ammo and w.get_ammo() == Ep2Winchester.MAG)
 	_check("the quad is hidden under leaves and branches (a real pile of them)", w.is_quad_hidden() and w.get_cover_bit_count() >= 80, str(w.get_cover_bit_count()))
+	# the old-growth wood (founder 2026-10-10: "cartoon junk" -> realism; trees in the wind; birds; ElevenLabs soundscape)
+	var trunks: MultiMeshInstance3D = w._visuals.get_node_or_null("ForestTrunks") as MultiMeshInstance3D
+	var crowns: MultiMeshInstance3D = w._visuals.get_node_or_null("ForestCrowns") as MultiMeshInstance3D
+	_check("the wood is the textured old-growth kit (bark trunks + fir-branch crowns), not cones and cylinders",
+		trunks != null and crowns != null and trunks.multimesh.instance_count >= 150 and trunks.multimesh.mesh is ArrayMesh
+		and (trunks.material_override as StandardMaterial3D).albedo_texture != null, str(trunks.multimesh.instance_count if trunks != null else -1))
+	var cm: ShaderMaterial = crowns.material_override as ShaderMaterial if crowns != null else null
+	_check("the crowns sway in the wind (wind shader on the branch cards)", cm != null and cm.shader.resource_path.ends_with("ep2_foliage_wind.gdshader")
+		and float(cm.get_shader_parameter("sway")) > 0.1)
+	var wl: Ep2Wildlife = w._wildlife
+	var bird0: Vector3 = (wl._birds[0][0] as Node3D).position if wl != null and not wl._birds.is_empty() else Vector3.ZERO
+	_run(w, 1.0)
+	_check("birds fly in the wood (a few, moving)", wl != null and wl.get_bird_count() >= 5 and (wl._birds[0][0] as Node3D).position.distance_to(bird0) > 3.0)
+	_check("the ElevenLabs woods soundscape is loaded (ambience loop, gust, 3 bird calls, flutter)", wl != null and wl._ambience.stream != null and wl._gust.stream != null
+		and Ep2Wildlife.CALLS.all(func(p): return ResourceLoader.exists(p)) and ResourceLoader.exists(Ep2Wildlife.FLUTTER))
 	var quad_aabb: Vector3 = Vector3.ZERO
 	for mi in w.get_quad_node().find_children("*", "MeshInstance3D", true, false):
 		quad_aabb = quad_aabb.max((mi as MeshInstance3D).mesh.get_aabb().size)

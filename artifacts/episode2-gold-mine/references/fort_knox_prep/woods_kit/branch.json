@@ -1,0 +1,17 @@
+{
+ "request_id": "ab8c1ceb-9d8d-4c4e-a39e-a1d34962873d",
+ "endpoint": "gpt-image-2-text-to-image",
+ "payload": {
+  "prompt": "Photorealistic product-style reference for 3D modelling: the single subject centred with generous margin on a seamless plain mid-grey studio backdrop, soft even key light with a gentle rim light, sharp focus, true materials (lacquer, chrome, leather, rubber, rust, scale, steel), no text, no logos, no people, only a soft contact shadow. IGNORE the grey studio backdrop: on a perfectly flat uniform pure chroma-green (#00FF00) background, one dense dark-green fir branch seen from below, many needles and twigs, filling most of the frame, sharp edges, natural colours (no green spill), the background around it pure chroma green.",
+  "aspect_ratio": "1:1",
+  "resolution": "2K",
+  "quality": "high"
+ },
+ "url": "https://cdn.muapi.ai/outputs/generated/ab8c1ceb-9d8d-4c4e-a39e-a1d34962873d_6f60f171.png",
+ "cost_usd": 0.54,
+ "size": [
+  1600,
+  1600
+ ],
+ "made": "2026-10-10"
+}

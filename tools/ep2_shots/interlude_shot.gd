@@ -9,6 +9,7 @@ const LIFT := preload("res://src/episode2/chamber/mine_lift.tscn")
 const WOODS := preload("res://src/episode2/chamber/woods_quad.tscn")
 var _out := ".farm/interlude"
 var _which := "lift"
+var _quick := false                                  # quick=1: only the framings graded against the founder's target (woods)
 var c: Ep2Interlude = null
 
 
@@ -19,6 +20,8 @@ func _ready() -> void:
 			_out = kv[1]
 		elif kv.size() == 2 and kv[0] == "chamber":
 			_which = kv[1]
+		elif kv.size() == 2 and kv[0] == "quick":
+			_quick = kv[1] == "1"
 	DirAccess.make_dir_recursive_absolute(_out)
 	c = (LIFT if _which == "lift" else WOODS).instantiate()
 	add_child(c)
@@ -96,6 +99,15 @@ func _woods() -> void:
 	w._bull.position = Vector3(1.0, 0.0, 33.0)
 	_run(1.0)
 	await _cap("woods_2_trail")
+	# the founder's target framing (woods_exterior_target.jpg): standing in the old growth, Inferno ahead, the view tipped up into the canopy
+	var keep_pitch: float = w._look_pitch
+	w._look_pitch = 0.22
+	_run(0.2)
+	await _cap("woods_0_target")
+	w._look_pitch = keep_pitch
+	_run(0.2)
+	if _quick:
+		return
 	w.shoot()
 	_run(0.03)
 	await _cap("woods_2b_fire")

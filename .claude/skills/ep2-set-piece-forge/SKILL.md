@@ -89,5 +89,23 @@ protocol the founder's Fort Knox arc keeps out of this chapter - `ep2_fort_knox_
 4. Materials: cage rust patches (a Muapi rust mask over the Tripo bake), 3 plank tints, larger rock breakup.
 5. Density: 3-4 big gears + 4-6 chain runs above the cage (MOVING with it), more skulls/banners on the widened walls.
 
+## Second run: the BEAR WOODS (outdoor, founder target `founder_2026-10-10/woods_exterior_target.jpg`)
+An outdoor set is a FOREST KIT + materials + life, not hero props:
+- Muapi `woods_kit` item: seamless bark + forest-floor textures, a fir branch on pure green and a fern on pure magenta (keyed to alpha),
+  a mossy rock on grey (-> Tripo image-to-3D $0.30 -> `ai_prop_to_game.py --fit 0,1.2,0 --tex-base 512`), a ride-view scene still.
+- `tools/ep2_blender/build_forest_kit.py`: Trunk (height 1, radius 1, root flare; scaled per instance), Crown (fir-branch cards for a
+  40 m tree, **two cards crossed along each branch** - one lying, one on edge; a single tilted card read as a flat stripe), Fern, Snag.
+- Chamber: one MultiMesh per layer (giants, young firs, ferns, snags, rocks, sun shafts). Bark is WORLD-triplanar (`uv1_world_triplanar`,
+  scale ~0.42 uniform - 0.22 vertical stretched it into stripes) + a normal map derived from the bark still. Crowns/ferns use
+  `src/episode2/art/ep2_foliage_wind.gdshader` (vertex sway grows with local height; per-instance phase from the world root).
+- **Texture imports for tiled/world textures need `mipmaps/generate=true`** (the default import had them off -> shimmer and noise).
+- Young firs must stay >= 7 m off the trails: their low branches otherwise fill the view and hide the giants.
+- Close the horizon: grow the giants past the play area (the camp side showed white sky between trunks), green the sky horizon.
+- Life: `Ep2Wildlife` (`src/episode2/chamber/ep2_wildlife.gd`): birds + ElevenLabs bed/gust/3D calls; the chamber calls `step(delta)`
+  from its tick so tests and captures drive it.
+- Woods results: closeness start 0.67 -> 0.75, trail 0.69 -> 0.76, ride 0.70 -> 0.78. Jev / microsoft-decision-1: better 0.87 / 0.997,
+  `ship_and_iterate`, priority `trunks`. Astra 4/10 "partly" (`docs/model-responses/2026-10-10-woods-astra-pass1.md`); next: an
+  irregular layered conifer (Tripo/Meshy) instead of crossed cards, trunk moss, roots/clutter, stronger dappled sun.
+
 ## 8. Ship
 Tests (`ep2_interlude_test`, `ep2_fort_knox_arc_test`), STATUS.md, `scripts/ship-to-master.sh`, prove the master deploy.

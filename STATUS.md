@@ -1,12 +1,22 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/smokerealm
-**Branch:** master (AI quad deployed: CI run 38016691615, butler "Pushed to" confirmed)
+**Branch:** master (mine lift deployed: CI run 38039573379, butler step success)
 
 ---
 
 
 **INFERNO BULL WHISKEY REMOVAL (2026-10-10, release verification pending).** The glass stays on the whiskey table during seating, walking and handover cleanup. It is never attached to Bull’s left hand. His standing idle now restores both arms’ imported rest pose and yields to either hand’s active IK. Native gameplay-camera evidence is in `docs/episode2-quality/whiskey-removal-2026-10-10/`. This focused correction does not complete the outstanding Bull sculpt, archer bear, armory/bullion or molten-river requests.
+
+
+**🌲 THE BEAR WOODS REBUILT TOWARD YOUR PHOTOREAL FOREST (2026-10-10).** Your picture (giant trunks, light through the canopy, moss floor) is now the woods' reference:
+- **What you'll see:** the cones and cylinders are gone. Giant old-growth conifers 34-48 m tall with real bark, root flares and bark relief; their crowns are fir-branch cards high overhead that **sway in the wind** (gusts roll across the wood every ~25 s, every tree on its own phase); younger firs between them; ferns, mossy boulders (Tripo 3D) and fallen logs on a needle-and-moss floor; soft light shafts through the canopy; a far wood that closes the horizon. The quad's leaf pile is now real fern and fir-branch cards.
+- **Birds:** 7 birds fly random routes over the canopy, one in four swoops down between the trunks, and every 35-70 s a small flock bursts out of a tree.
+- **Soundscape (ElevenLabs):** a seamless forest-ambience loop, wind gusts through the canopy every 14-30 s, three bird calls (songbird, raven, woodpecker) placed in 3D around you, and the wing flutter when a flock flushes.
+- **Scores vs your picture:** start 0.67 -> 0.75, trail 0.69 -> 0.76, your framing 0.75, quad ride 0.70 -> 0.78. **Jev and the Microsoft decision model:** clearly better (0.87 / 0.997), not yet your final quality, ship and iterate; both picked the trunks as the next priority (bark relief added). **Astra: 4/10, "partly"** (it is no longer primitive geometry, but it still reads stylized: canopy cards look planar, light is too even). Next increment: irregular layered canopy (Tripo/Meshy conifer model), moss on trunks, roots and ground clutter, stronger dappled sunlight.
+- Pack cost ~3 MB. Tests: woods/lift suite (now also checks the textured forest, the wind shader, moving birds and the soundscape) and the Fort Knox arc pass. Pictures: `docs/episode2-quality/woods-2026-10-10/`.
+
+---
 
 
 **⛏️ THE MINE LIFT REBUILT TOWARD YOUR TARGET PICTURE (2026-10-10).** Your image (the plank walkway, the rusted cage with gears, chains, lanterns, skulls, banners) is now the room's reference:
@@ -9357,7 +9367,7 @@ browsers. Fixes shipped:
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/smokerealm
-**Branch:** master (AI quad deployed: CI run 38016691615, butler "Pushed to" confirmed)
+**Branch:** master (mine lift deployed: CI run 38039573379, butler step success)
 
 ---
 

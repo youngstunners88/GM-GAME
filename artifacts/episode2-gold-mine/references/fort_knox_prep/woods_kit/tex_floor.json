@@ -1,0 +1,17 @@
+{
+ "request_id": "62268ba7-7a2f-4f12-a3c5-b3c1210a37a6",
+ "endpoint": "gpt-image-2-text-to-image",
+ "payload": {
+  "prompt": "Photorealistic product-style reference for 3D modelling: the single subject centred with generous margin on a seamless plain mid-grey studio backdrop, soft even key light with a gentle rim light, sharp focus, true materials (lacquer, chrome, leather, rubber, rust, scale, steel), no text, no logos, no people, only a soft contact shadow. IGNORE the studio backdrop: a perfectly flat, top-down, evenly lit SEAMLESS TILING TEXTURE filling the whole square edge to edge: an old-growth conifer forest floor - patches of bright green moss, brown pine needles, small twigs, a few fallen leaves and small stones, rich detail. No perspective, no border.",
+  "aspect_ratio": "1:1",
+  "resolution": "2K",
+  "quality": "high"
+ },
+ "url": "https://cdn.muapi.ai/outputs/generated/62268ba7-7a2f-4f12-a3c5-b3c1210a37a6_b1990854.png",
+ "cost_usd": 0.54,
+ "size": [
+  1600,
+  1600
+ ],
+ "made": "2026-10-10"
+}

@@ -56,6 +56,24 @@ const SPY_TIMEOUT := 70.0
 const SHOT_HEARING := 46.0                         # a Winchester shot carries far further than boots on gravel (the camp is ~34 m from the ridge)
 const SEAT_SIDE := 0.55                            # the back seat is wide: he sits to the right of Inferno's axis and sees the road past his shoulder
 
+# --- the old-growth wood (founder target artifacts/episode2-gold-mine/references/founder_2026-10-10/woods_exterior_target.jpg:
+# "it looks like cartoon junk ... the realism edge as a standard ... birds flying randomly and trees moving with the wind";
+# skill ep2-set-piece-forge). Kit from tools/ep2_blender/build_forest_kit.py, textures from Muapi stills (fort_knox_refs.json woods_kit).
+const FOREST_KIT := "res://src/episode2/assets/woods/forest_kit.glb"
+const BARK_TEX := "res://src/episode2/assets/woods/tex_woods_bark.jpg"
+const BARK_NORMAL := "res://src/episode2/assets/woods/tex_woods_bark_n.png"     # derived from the bark still (tools: see skill ep2-set-piece-forge)
+const FLOOR_TEX := "res://src/episode2/assets/woods/tex_woods_floor.jpg"
+const BRANCH_TEX := "res://src/episode2/assets/woods/tex_woods_branch.png"
+const FERN_TEX := "res://src/episode2/assets/woods/tex_woods_fern.png"
+const ROCK_MODEL := "res://src/episode2/assets/woods/woods_rock.glb"
+const FOLIAGE_SHADER := "res://src/episode2/art/ep2_foliage_wind.gdshader"
+const GIANT_SPACING := 10.5                          # metres between the old-growth giants (the target's trunks are 1-3 m across)
+
+var _kit_meshes: Dictionary = {}                     # piece name -> Mesh (Trunk, Crown, Fern, Snag)
+var _bark_mat: StandardMaterial3D = null
+var _crown_mat: ShaderMaterial = null
+var _fern_mat: ShaderMaterial = null
+var _wildlife: Ep2Wildlife = null
 var _ground_mat: StandardMaterial3D = null
 var _leaf_mats: Array = []
 var _trees: Array = []                              # [Vector2 position, radius] for trunk collision
@@ -115,8 +133,12 @@ func _build_room() -> void:
 	_apply_light()
 	_leaf_mats = [_plain(Color(0.13, 0.31, 0.12), 0.95), _plain(Color(0.19, 0.39, 0.14), 0.95), _plain(Color(0.10, 0.25, 0.10), 0.95),
 		_plain(Color(0.27, 0.42, 0.12), 0.95)]
-	_ground_mat = _tex(GRAVEL_TEX, Color(0.38, 0.42, 0.25), 0.35)
-	_box(Vector3(260.0, 0.5, 330.0), Vector3(0.0, -0.25, 105.0), _ground_mat)
+	_load_forest_kit()
+	# the forest floor: moss, needles and twigs (Muapi seamless still), world-tiled every 3.5 m
+	_ground_mat = _tex(FLOOR_TEX, Color(0.82, 0.84, 0.76), 0.28) if ResourceLoader.exists(FLOOR_TEX) else _tex(GRAVEL_TEX, Color(0.38, 0.42, 0.25), 0.35)
+	_ground_mat.uv1_world_triplanar = true
+	_ground_mat.roughness = 0.95
+	_box(Vector3(260.0, 0.5, 380.0), Vector3(0.0, -0.25, 130.0), _ground_mat)
 	_build_trails()
 	_build_forest()
 	_build_mine_hut()
@@ -127,41 +149,53 @@ func _build_room() -> void:
 	_build_patrols()
 
 
+## Old-growth daylight (founder target): a bright, pale sky glowing through the canopy, cool green-grey air between the trunks
+## (fog = depth), a warm high sun breaking through in shafts and dapples, deep but readable shade on the floor.
 func _apply_light() -> void:
 	var env := Environment.new()
 	env.background_mode = Environment.BG_SKY
 	var sky := Sky.new()
 	var psm := ProceduralSkyMaterial.new()
-	psm.sky_top_color = Color(0.20, 0.34, 0.52)
-	psm.sky_horizon_color = Color(0.92, 0.62, 0.38)
-	psm.ground_horizon_color = Color(0.45, 0.36, 0.28)
+	psm.sky_top_color = Color(0.56, 0.68, 0.80)
+	psm.sky_horizon_color = Color(0.62, 0.68, 0.60)
+	psm.sky_energy_multiplier = 1.6
+	psm.ground_horizon_color = Color(0.34, 0.38, 0.30)
 	psm.ground_bottom_color = Color(0.14, 0.16, 0.12)
-	psm.sun_angle_max = 25.0
+	psm.sun_angle_max = 18.0
 	sky.sky_material = psm
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.46, 0.52, 0.56)
-	env.ambient_light_energy = 0.75
+	env.ambient_light_color = Color(0.54, 0.57, 0.50)
+	env.ambient_light_energy = 0.62
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	env.tonemap_exposure = 1.05
 	env.tonemap_white = 6.0
 	env.fog_enabled = true
-	env.fog_light_color = Color(0.58, 0.55, 0.50)
-	env.fog_density = 0.011
+	env.fog_light_color = Color(0.56, 0.58, 0.54)
+	env.fog_light_energy = 1.0
+	env.fog_sun_scatter = 0.25
+	env.fog_density = 0.0085
+	env.fog_sky_affect = 0.25
 	env.glow_enabled = true
-	env.glow_intensity = 0.4
-	env.glow_hdr_threshold = 1.2
+	env.glow_intensity = 0.55
+	env.glow_bloom = 0.08
+	env.glow_hdr_threshold = 1.0
 	env.adjustment_enabled = true
-	env.adjustment_saturation = 1.08
-	env.adjustment_contrast = 1.05
+	env.adjustment_saturation = 0.92
+	env.adjustment_contrast = 1.18
 	_env_node.environment = env
-	_sun.rotation_degrees = Vector3(-22.0, -35.0, 0.0)
-	_sun.light_color = Color(1.0, 0.78, 0.55)
-	_sun.light_energy = 1.35
+	_sun.rotation_degrees = Vector3(-58.0, -25.0, 0.0)
+	_sun.light_color = Color(1.0, 0.90, 0.74)
+	_sun.light_energy = 1.7
 	_sun.shadow_enabled = true
+	_sun.directional_shadow_max_distance = 70.0
+	_sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
 
 
 func _build_trails() -> void:
-	var dirt: StandardMaterial3D = _tex(GRAVEL_TEX, Color(0.50, 0.38, 0.26), 0.5)
+	# a trodden path: the same needle-and-moss floor, darker and browner (a grey gravel slab read as concrete in the old-growth wood)
+	var dirt: StandardMaterial3D = _tex(FLOOR_TEX, Color(0.58, 0.46, 0.36), 0.45) if ResourceLoader.exists(FLOOR_TEX) else _tex(GRAVEL_TEX, Color(0.34, 0.27, 0.20), 0.5)
+	dirt.uv1_world_triplanar = true
 	var all_trails: Array = [SNEAK_TRAIL, RIDE_TRAIL]
 	for tr in all_trails:
 		var w: float = 2.2 if tr == SNEAK_TRAIL else 4.4
@@ -188,51 +222,233 @@ func _distance_to_trails(p: Vector2) -> float:
 	return best
 
 
-## A thousand-tree wood in three MultiMeshes (trunks, lower cones, upper cones): one draw call each.
+## The kit pieces as meshes, and the shared materials: world-triplanar bark (a 40 m trunk never stretches its bark), and the
+## wind shader on the alpha-cut fir branch and fern cards.
+func _load_forest_kit() -> void:
+	if ResourceLoader.exists(FOREST_KIT):
+		var root: Node = (load(FOREST_KIT) as PackedScene).instantiate()
+		for piece in ["Trunk", "Crown", "Fern", "Snag"]:
+			var mi: MeshInstance3D = root.find_child(piece, true, false) as MeshInstance3D
+			if mi != null and mi.mesh != null:
+				_kit_meshes[piece] = mi.mesh
+		root.free()
+	_bark_mat = StandardMaterial3D.new()
+	_bark_mat.albedo_color = Color(0.78, 0.66, 0.60)
+	_bark_mat.roughness = 0.95
+	if ResourceLoader.exists(BARK_TEX):
+		_bark_mat.albedo_texture = load(BARK_TEX)
+		_bark_mat.uv1_triplanar = true
+		_bark_mat.uv1_world_triplanar = true
+		_bark_mat.uv1_scale = Vector3(0.42, 0.36, 0.42)          # ~2.4 m round, ~2.8 m tall per tile (0.22 stretched it into stripes - Astra pass 1)
+	if ResourceLoader.exists(BARK_NORMAL):
+		_bark_mat.normal_enabled = true
+		_bark_mat.normal_texture = load(BARK_NORMAL)                 # bark relief (decision models' top pick, 2026-10-10: "trunks")
+		_bark_mat.normal_scale = 1.4
+	_crown_mat = _foliage_mat(BRANCH_TEX, Color(1.05, 1.15, 0.98), 0.55, 1.0, 40.0, 0.05)
+	_fern_mat = _foliage_mat(FERN_TEX, Color(0.85, 0.95, 0.80), 0.06, 1.6, 1.0, 0.015)
+
+
+func _foliage_mat(tex: String, tint: Color, sway: float, speed: float, bend_h: float, flutter: float) -> ShaderMaterial:
+	var m := ShaderMaterial.new()
+	m.shader = load(FOLIAGE_SHADER)
+	if ResourceLoader.exists(tex):
+		m.set_shader_parameter("albedo_tex", load(tex))
+	m.set_shader_parameter("tint", tint)
+	m.set_shader_parameter("sway", sway)
+	m.set_shader_parameter("speed", speed)
+	m.set_shader_parameter("bend_height", bend_h)
+	m.set_shader_parameter("flutter", flutter)
+	return m
+
+
+## True when nothing may grow at p: the trails (with a margin), the spy sight-line, the bear camp, the quad's hiding place, the lift mouth.
+func _forest_blocked(p: Vector2, margin: float, trees: bool = true) -> bool:
+	return _distance_to_trails(p) < margin or (absf(p.x) < 13.0 and p.y > 140.0 and p.y < 175.0) \
+		or p.distance_to(Vector2(CAMP_CENTRE.x, CAMP_CENTRE.z)) < 24.0 or p.distance_to(Vector2(QUAD_POS.x, QUAD_POS.z)) < 6.0 \
+		or (trees and absf(p.x) < 7.0 and p.y < 8.0 and p.y > -14.0)
+
+
+func _hash01(x: float, z: float, k: float) -> float:
+	var h: float = sin(x * 12.9898 * k + z * 78.233) * 43758.5453
+	return h - floor(h)
+
+
+## THE OLD-GROWTH WOOD (founder target): giant conifers 34-48 m tall and 1.4-2.8 m across with root flares and real bark, their crowns
+## of drooping fir-branch cards high overhead swaying in the wind; young firs between them; a fern understorey; fallen snags and mossy
+## rocks on a needle-and-moss floor. Every layer is one MultiMesh (one draw call) so the web build stays smooth.
+## Fallback to the old primitive wood only if the kit failed to import.
 func _build_forest() -> void:
+	if not _kit_meshes.has("Trunk") or not _kit_meshes.has("Crown"):
+		_build_forest_primitive()
+		return
+	var xf_trunk: Array = []
+	var xf_crown: Array = []
+	var xf_fern: Array = []
+	var xf_snag: Array = []
+	var rocks: Array = []
+	# 1) the giants, on a jittered grid
+	var gx: float = -72.0
+	while gx <= 72.0:
+		var gz: float = -16.0
+		while gz <= 292.0:                                        # past the camp too: the far wood closes the horizon (no white gaps)
+			var r1: float = _hash01(gx, gz, 1.0)
+			var r2: float = _hash01(gz, gx, 2.7)
+			var p := Vector2(gx + (r1 - 0.5) * 7.0, gz + (r2 - 0.5) * 7.0)
+			var rad: float = 0.7 + 0.7 * r2
+			if not _forest_blocked(p, 3.4 + rad * 1.4):
+				var h: float = 34.0 + 14.0 * r1
+				var yaw: float = r1 * TAU
+				xf_trunk.append(Transform3D(Basis(Vector3.UP, yaw) * Basis.from_scale(Vector3(rad, h, rad)), Vector3(p.x, -0.15, p.y)))
+				var cs: float = h / 40.0
+				xf_crown.append(Transform3D(Basis(Vector3.UP, yaw + 1.3) * Basis.from_scale(Vector3.ONE * cs), Vector3(p.x, 0.0, p.y)))
+				_trees.append([p, rad * 1.25 + 0.25])
+			gz += GIANT_SPACING
+		gx += GIANT_SPACING
+	# 2) young firs in the gaps (6-14 m: their crowns come down to eye level and give the mid-ground its green)
+	gx = -66.0
+	while gx <= 66.0:
+		var gz2: float = -10.0
+		while gz2 <= 232.0:
+			var q1: float = _hash01(gx, gz2, 3.3)
+			var q2: float = _hash01(gz2, gx, 5.1)
+			var p2 := Vector2(gx + (q1 - 0.5) * 9.0, gz2 + (q2 - 0.5) * 9.0)
+			if q1 < 0.30 and not _forest_blocked(p2, 7.0):
+				var h2: float = 6.0 + 8.0 * q2
+				var rad2: float = 0.10 + 0.012 * h2
+				xf_trunk.append(Transform3D(Basis.from_scale(Vector3(rad2, h2 * 0.97, rad2)), Vector3(p2.x, 0.0, p2.y)))
+				# the crown model starts its branches at 15/40 of its height: sink it so the young tree's branches start ~1 m up
+				var cs2: float = h2 / 40.0 * 1.55
+				xf_crown.append(Transform3D(Basis(Vector3.UP, q2 * TAU) * Basis.from_scale(Vector3.ONE * cs2), Vector3(p2.x, h2 - 40.5 * cs2, p2.y)))
+				_trees.append([p2, 0.45])
+			gz2 += 7.0
+		gx += 7.0
+	# 3) the fern understorey and the forest-floor clutter (snags, rocks)
+	var fx: float = -60.0
+	while fx <= 60.0:
+		var fz: float = -12.0
+		while fz <= 230.0:
+			var f1: float = _hash01(fx, fz, 7.7)
+			var f2: float = _hash01(fz, fx, 9.1)
+			var p3 := Vector2(fx + (f1 - 0.5) * 3.2, fz + (f2 - 0.5) * 3.2)
+			var near_trail: float = _distance_to_trails(p3)
+			if near_trail > 1.5 and not _forest_blocked(p3, 1.5, false) and p3.distance_to(Vector2(SPAWN.x, SPAWN.z)) > 2.5 and f1 < 0.72 + 0.25 * clampf((near_trail - 2.0) / 6.0, 0.0, 1.0):
+				var s: float = 0.7 + 0.9 * f2
+				xf_fern.append(Transform3D(Basis(Vector3.UP, f1 * TAU) * Basis.from_scale(Vector3(s, s * (0.8 + 0.4 * f1), s)), Vector3(p3.x, -0.05, p3.y)))
+			if f2 > 0.985 and near_trail > 4.0 and not _forest_blocked(p3, 4.0):
+				xf_snag.append(Transform3D(Basis(Vector3.UP, f1 * TAU) * Basis.from_scale(Vector3(0.8 + f1, 0.9 + 0.4 * f2, 0.9 + 0.4 * f2)), Vector3(p3.x, -0.12, p3.y)))
+			elif f2 < 0.03 and near_trail > 2.4 and not _forest_blocked(p3, 2.4):
+				rocks.append(Transform3D(Basis(Vector3.UP, f1 * TAU) * Basis.from_scale(Vector3.ONE * (0.5 + 1.2 * f1)), Vector3(p3.x, -0.1, p3.y)))
+			fz += 2.6
+		fx += 2.6
+	var mm_t := _multi(_kit_meshes["Trunk"], xf_trunk, _bark_mat)
+	var mm_c := _multi(_kit_meshes["Crown"], xf_crown, _crown_mat)
+	if _kit_meshes.has("Fern"):
+		var mm_f := _multi(_kit_meshes["Fern"], xf_fern, _fern_mat)
+		if mm_f != null:
+			mm_f.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	if _kit_meshes.has("Snag"):
+		_multi(_kit_meshes["Snag"], xf_snag, _bark_mat)
+	_scatter_rocks(rocks)
+	if mm_t != null:
+		mm_t.name = "ForestTrunks"
+	if mm_c != null:
+		mm_c.name = "ForestCrowns"
+	_build_sun_shafts()
+
+
+## Mossy boulders: the Tripo rock when it is in the pack, else a squashed low sphere in the floor material.
+func _scatter_rocks(xforms: Array) -> void:
+	if xforms.is_empty():
+		return
+	if ResourceLoader.exists(ROCK_MODEL):
+		var root: Node = (load(ROCK_MODEL) as PackedScene).instantiate()
+		var mi: MeshInstance3D = null
+		for n in root.find_children("*", "MeshInstance3D", true, false):
+			mi = n
+			break
+		if mi != null and mi.mesh != null:
+			var mm := _multi(mi.mesh, xforms, null)
+			if mm != null:
+				mm.material_override = null
+		root.free()
+		return
+	var sm := SphereMesh.new()
+	sm.radius = 0.8
+	sm.height = 0.9
+	sm.radial_segments = 9
+	sm.rings = 5
+	var rock_mat: StandardMaterial3D = _tex(FLOOR_TEX, Color(0.62, 0.66, 0.55), 0.6)
+	_multi(sm, xforms, rock_mat)
+
+
+## Light through the canopy: tall additive shafts, leaning with the sun, faded at both ends (the target's god rays). Unshaded,
+## no depth write - in the Compatibility renderer there is no volumetric fog to do this for us.
+func _build_sun_shafts() -> void:
+	var grad := Gradient.new()
+	grad.set_color(0, Color(1, 1, 1, 0))
+	grad.set_color(1, Color(1, 1, 1, 0))
+	grad.add_point(0.35, Color(1, 1, 1, 1))
+	grad.add_point(0.7, Color(1, 1, 1, 0.6))
+	var gt := GradientTexture2D.new()
+	gt.gradient = grad
+	gt.fill_from = Vector2(0.5, 0.0)
+	gt.fill_to = Vector2(0.5, 1.0)
+	gt.width = 8
+	gt.height = 128
+	var side := Gradient.new()
+	side.set_color(0, Color(1, 1, 1, 0))
+	side.set_color(1, Color(1, 1, 1, 0))
+	side.add_point(0.5, Color(1, 1, 1, 1))
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	m.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+	m.albedo_texture = gt
+	m.albedo_color = Color(1.0, 0.93, 0.78, 0.045)
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_FIXED_Y
+	var qm := QuadMesh.new()
+	qm.size = Vector2(2.6, 30.0)
+	var xfs: Array = []
+	var z: float = 6.0
+	var i: int = 0
+	while z < 150.0:
+		i += 1
+		var r: float = _hash01(float(i), z, 4.4)
+		var p := Vector2((r - 0.5) * 34.0, z + r * 6.0)
+		if not (absf(p.x) < 13.0 and p.y > 140.0):
+			xfs.append(Transform3D(Basis.from_scale(Vector3(0.6 + 1.4 * r, 1.0, 1.0)), Vector3(p.x, 13.0, p.y)))
+		z += 4.5
+	var mm := _multi(qm, xfs, m)
+	if mm != null:
+		mm.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mm.name = "SunShafts"
+
+
+## The old primitive wood (cylinders and cones): kept only as the fallback if the forest kit is missing.
+func _build_forest_primitive() -> void:
 	var bark: StandardMaterial3D = _plain(Color(0.26, 0.18, 0.12), 0.95)
 	var xf_trunk: Array = []
 	var xf_low: Array = []
-	var xf_up: Array = []
-	var xf_bush: Array = []
 	var gx: float = -70.0
-	var idx: int = 0
 	while gx <= 70.0:
 		var gz: float = -14.0
 		while gz <= 236.0:
-			var hs: float = sin(gx * 12.9898 + gz * 78.233) * 43758.5453
-			var r1: float = hs - floor(hs)
-			var hs2: float = sin(gx * 39.346 + gz * 11.135) * 24634.634
-			var r2: float = hs2 - floor(hs2)
-			var px: float = gx + (r1 - 0.5) * 6.0
-			var pz: float = gz + (r2 - 0.5) * 6.0
-			var p := Vector2(px, pz)
-			idx += 1
-			if _distance_to_trails(p) < 4.2 or (absf(px) < 13.0 and pz > 140.0 and pz < 175.0) or p.distance_to(Vector2(CAMP_CENTRE.x, CAMP_CENTRE.z)) < 24.0 or p.distance_to(Vector2(QUAD_POS.x, QUAD_POS.z)) < 6.0 \
-					or (absf(px) < 7.0 and pz < 8.0 and pz > -14.0):
-				gz += 7.5
-				continue
-			var h: float = 8.0 + 6.0 * r1
-			var rad: float = 0.34 + 0.2 * r2
-			xf_trunk.append(Transform3D(Basis.from_scale(Vector3(rad, h, rad)), Vector3(px, h * 0.5, pz)))
-			var cr: float = 2.6 + 1.4 * r2
-			xf_low.append(Transform3D(Basis.from_scale(Vector3(cr, 4.6, cr)), Vector3(px, h * 0.62 + 1.2, pz)))
-			xf_up.append(Transform3D(Basis.from_scale(Vector3(cr * 0.72, 4.0, cr * 0.72)), Vector3(px, h * 0.62 + 3.6, pz)))
-			_trees.append([p, rad + 0.25])
-			if idx % 2 == 0:
-				var bsz: float = 0.8 + 0.7 * r1
-				xf_bush.append(Transform3D(Basis.from_scale(Vector3(bsz * 1.3, bsz * 0.8, bsz * 1.3)), Vector3(px + 1.6 * (r2 - 0.5) * 3.0, bsz * 0.45, pz + 1.4)))
+			var r1: float = _hash01(gx, gz, 1.0)
+			var r2: float = _hash01(gz, gx, 2.7)
+			var p := Vector2(gx + (r1 - 0.5) * 6.0, gz + (r2 - 0.5) * 6.0)
+			if not _forest_blocked(p, 4.2):
+				var h: float = 8.0 + 6.0 * r1
+				var rad: float = 0.34 + 0.2 * r2
+				xf_trunk.append(Transform3D(Basis.from_scale(Vector3(rad, h, rad)), Vector3(p.x, h * 0.5, p.y)))
+				var cr: float = 2.6 + 1.4 * r2
+				xf_low.append(Transform3D(Basis.from_scale(Vector3(cr, 6.0, cr)), Vector3(p.x, h * 0.62 + 1.8, p.y)))
+				_trees.append([p, rad + 0.25])
 			gz += 7.5
 		gx += 7.5
 	_multi(_cyl_mesh(1.0, 1.0, 1.0, 6), xf_trunk, bark)
 	_multi(_cyl_mesh(0.0, 1.0, 1.0, 8), xf_low, _leaf_mats[0])
-	_multi(_cyl_mesh(0.0, 1.0, 1.0, 8), xf_up, _leaf_mats[1])
-	var sm := SphereMesh.new()
-	sm.radius = 1.0
-	sm.height = 2.0
-	sm.radial_segments = 8
-	sm.rings = 4
-	_multi(sm, xf_bush, _leaf_mats[2])
 
 
 func _cyl_mesh(rt: float, rb: float, h: float, sides: int) -> CylinderMesh:
@@ -244,9 +460,9 @@ func _cyl_mesh(rt: float, rb: float, h: float, sides: int) -> CylinderMesh:
 	return cm
 
 
-func _multi(mesh: Mesh, xforms: Array, mat: Material) -> void:
+func _multi(mesh: Mesh, xforms: Array, mat: Material) -> MultiMeshInstance3D:
 	if xforms.is_empty():
-		return
+		return null
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.mesh = mesh
@@ -257,6 +473,7 @@ func _multi(mesh: Mesh, xforms: Array, mat: Material) -> void:
 	mmi.multimesh = mm
 	mmi.material_override = mat
 	_visuals.add_child(mmi)
+	return mmi
 
 
 ## The mine's surface mouth behind the spawn: a rocky mound with a plank door - the lift they just came up.
@@ -350,7 +567,7 @@ func _build_cover() -> void:
 	_cover.name = "LeafCover"
 	_visuals.add_child(_cover)
 	_cover.position = QUAD_POS
-	var branch_mat: StandardMaterial3D = _plain(Color(0.30, 0.20, 0.12), 0.95)
+	var branch_mat: StandardMaterial3D = _bark_mat if _bark_mat != null else _plain(Color(0.30, 0.20, 0.12), 0.95)
 	for i in 150:
 		var a: float = float(i) * 2.399963                        # golden-angle scatter
 		var rr: float = 0.25 + 1.75 * sqrt(fposmod(float(i) * 0.6180339, 1.0))
@@ -358,7 +575,7 @@ func _build_cover() -> void:
 		var z: float = sin(a) * rr * 1.9 - 0.2
 		var y: float = 0.4 + 2.2 * (1.0 - clampf(rr / 2.0, 0.0, 1.0)) + 0.25 * sin(float(i) * 1.7)
 		var sz: float = 0.7 + 0.45 * absf(sin(float(i) * 2.3))
-		var clump := _sphere(sz, Vector3(x, y, z), _leaf_mats[i % _leaf_mats.size()], _cover, 0.72)
+		var clump := _foliage_bit(i, sz, Vector3(x, y, z), _cover)
 		clump.rotation = Vector3(0.3 * sin(float(i)), float(i), 0.2 * cos(float(i)))
 		_cover_bits.append([clump, Vector3(x, 0.4, z).normalized() * (2.0 + 1.5 * absf(sin(float(i) * 3.1))) + Vector3(0.0, 3.0, 0.0), 2.5 * sin(float(i) * 1.3)])
 	for i in 16:
@@ -372,7 +589,7 @@ func _build_cover() -> void:
 		if absf(angle_difference(a3, -0.75)) < 0.75:
 			continue                                               # the trail side stays open (where Inferno and the camera come in)
 		var d: float = 3.0 + 1.0 * absf(sin(float(i) * 2.0))
-		_sphere(1.5 + 0.7 * absf(sin(float(i))), QUAD_POS + Vector3(cos(a3) * d * 1.1, 0.7, sin(a3) * d * 1.7), _leaf_mats[i % _leaf_mats.size()], null, 0.8)
+		_foliage_bit(i, 1.5 + 0.7 * absf(sin(float(i))), QUAD_POS + Vector3(cos(a3) * d * 1.1, 0.0, sin(a3) * d * 1.7), _visuals, true)
 
 
 func is_quad_modelled() -> bool: return _quad_modelled
@@ -387,6 +604,28 @@ func get_cover_node() -> Node3D:
 
 func get_cover_bit_count() -> int:
 	return _cover_bits.size()
+
+
+## One piece of the quad's camouflage / the thicket round it: a fern clump (real alpha-cut fern cards) or a cut fir branch, in the same
+## wind materials as the wood so the pile belongs. Falls back to a leaf ball if the forest kit is missing.
+func _foliage_bit(i: int, sz: float, pos: Vector3, parent: Node3D, grounded: bool = false) -> Node3D:
+	if _crown_mat == null or not _kit_meshes.has("Fern"):
+		return _sphere(sz, pos + Vector3(0.0, 0.7 if grounded else 0.0, 0.0), _leaf_mats[i % _leaf_mats.size()], parent, 0.72)
+	var mi := MeshInstance3D.new()
+	if grounded or i % 3 != 0:
+		mi.mesh = _kit_meshes["Fern"]
+		mi.material_override = _fern_mat
+		var k: float = sz * (1.5 if grounded else 1.25)
+		mi.scale = Vector3(k, k * (1.2 if grounded else 1.0), k)
+		mi.position = pos - Vector3(0.0, 0.0 if grounded else sz * 0.45, 0.0)
+	else:
+		var qm := QuadMesh.new()
+		qm.size = Vector2(sz * 1.8, sz * 2.2)
+		mi.mesh = qm
+		mi.material_override = _crown_mat
+		mi.position = pos
+	parent.add_child(mi)
+	return mi
 
 
 func is_quad_hidden() -> bool:
@@ -456,7 +695,8 @@ func _build_ridge() -> void:
 	for i in 26:
 		var x: float = -10.0 + float(i) * 0.9
 		var z: float = 150.0 + 1.0 * sin(float(i) * 1.9)
-		var f := _sphere(0.6 + 0.25 * absf(sin(float(i) * 2.7)), Vector3(x, 0.3, z), fern, null, 0.7)
+		var f: Node3D = _foliage_bit(i, 0.6 + 0.25 * absf(sin(float(i) * 2.7)), Vector3(x, 0.0, z), _visuals, true) if _fern_mat != null \
+			else _sphere(0.6 + 0.25 * absf(sin(float(i) * 2.7)), Vector3(x, 0.3, z), fern, null, 0.7)
 		f.rotation.y = float(i)
 	var log := _cyl(0.45, 0.45, 9.0, Vector3(1.0, 0.45, 148.6), wood, null, 8)
 	log.rotation = Vector3(0.0, 0.0, PI * 0.5)
@@ -513,6 +753,13 @@ func _on_setup() -> void:
 	if _bull == null:
 		_bull = _build_bull(Vector3(1.6, 0.0, 4.0), 0.0)
 	_engine = _loop_player(QUAD_LOOP, -7.0)
+	# life in the wood: birds on random flights (some swooping between the trunks), flocks flushing, and the ElevenLabs
+	# soundscape (ambience bed, canopy wind gusts, 3D bird calls) - founder 2026-10-10
+	if _wildlife == null:
+		_wildlife = Ep2Wildlife.new()
+		_wildlife.name = "Wildlife"
+		_visuals.add_child(_wildlife)
+		_wildlife.setup(get_camera(), SPAWN, Vector2(45.0, 45.0), 34.0)
 	_on_beat_entered(Beat.SNEAK)
 
 
@@ -728,6 +975,8 @@ func _tick(delta: float) -> void:
 	_stay_cd = maxf(0.0, _stay_cd - delta)
 	_tick_patrols(delta)
 	_tick_cover(delta)
+	if _wildlife != null:
+		_wildlife.step(delta)
 	match _beat:
 		Beat.SNEAK:
 			_tick_sneak(delta)

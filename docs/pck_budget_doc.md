@@ -46,3 +46,9 @@ pack (hideout props, Bull, bears, carts) still use the defaults: re-importing th
 | the 5 cutscene videos | 30 MB total | films must always play (`ep2-film-always-plays`) - do not touch |
 
 `tools/pck_audit.py` lists the candidates and sizes; it is a name-reference scan, so a run-time-built path looks "dead". Never delete a founder asset on that list alone.
+
+## 2026-10-10 bear woods realism
+| added | size (source) |
+|---|---|
+| `src/episode2/assets/woods/` forest kit GLB, bark/floor/branch/fern textures (+ bark normal), Tripo rock | ~2.3 MB (lossy WebP import, mipmaps on) |
+| ElevenLabs woods soundscape (`ep2_woods_ambience_loop.ogg`, gust, 3 bird calls, flutter) | ~0.6 MB |
