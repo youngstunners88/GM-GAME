@@ -55,3 +55,18 @@ Cost: the paint atlas imports to 364 KB (the v1 paint was 276 KB); the whole qua
 
 Still open (not blocking): the reference's fine detail (chrome reflections, mud micro-detail, engine block visible between the wheels, the nose flames), an MR map
 so mud is rough while the lacquer stays glossy, and a Meshy/Tripo image-to-3D comparison if the founder wants to spend credits on it.
+
+## Astra art-direction review (one pass, $0.059; raw answer in `2026-10-10-flame-quad-astra-review.md`)
+
+Verdict: **fidelity 4/10, "would a player believe it? no"** - it reads as a flame-painted quad at five metres but still as a toy-like prop. Its five fixes and what happened:
+
+| Astra fix | Done in the same session? |
+|---|---|
+| Sculpted body: raised sloping cowl, thinner fender lips, deeper arch returns instead of inflated pods | **No** - a real shape redesign; this is what an image-to-3D model (Meshy / Tripo) buys from the reference |
+| Flames: fewer, longer, cleanly tapered tongues, more uninterrupted red | **Yes** - 6 long tongues + 1 fork each, S-curve, red breathing room |
+| Tyres/rims: more rubber, recessed dished rim, matte charcoal rubber (not shiny brown) | **Yes** - rim radius 0.30 -> 0.268, dish 0.07 m deep, rubber 3x less mud and charcoal |
+| Bumper: rounded loop + slotted skid plate instead of a fence of bars | **Yes** - loop + mid bar + angled slotted skid plate |
+| Separate glossy red / rough steel / matte vinyl, lower-body dust and abrasion | **Partly** - mud + chrome + seat done; an MR map (rough mud vs glossy lacquer) is the open part |
+
+Final engine capture on the grey backdrop: closeness 0.70, edge ratio 0.63 (see `ref_metrics.py`). The remaining gap to a photographic quad is mostly SHAPE, which procedural kit-bashing
+cannot cheaply close: that is the honest case for spending Meshy credits (40 available) on this prop - or saving them for AwesomeX, who cannot be kit-bashed at all.

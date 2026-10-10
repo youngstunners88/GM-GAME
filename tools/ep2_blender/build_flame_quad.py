@@ -331,13 +331,12 @@ def build_flame_rasters():
     top_im = Image.new("L", (cols, trows), 0)
     td = ImageDraw.Draw(top_im)
     to_top = lambda p: ((p[0] - SIDE_F0) / MM, p[1] / MM)
-    TOPS = [  # (f, |x|) root, tip, half-width, curl: bold tongues licking back from the nose along each fender, across the tank cowl, forward from the tail
-        ((1.70, 0.16), (0.98, 0.30), 0.085, 0.07), ((1.68, 0.40), (0.80, 0.54), 0.100, 0.11), ((1.60, 0.64), (0.72, 0.80), 0.105, 0.13), ((1.44, 0.86), (0.70, 0.98), 0.085, 0.10),
-        ((1.36, 0.30), (1.00, 0.36), 0.050, 0.05),
-        ((0.84, 0.16), (0.10, 0.26), 0.075, 0.07), ((0.80, 0.34), (0.22, 0.44), 0.060, 0.06),
-        ((-1.78, 0.24), (-0.98, 0.38), 0.085, -0.07), ((-1.76, 0.50), (-0.86, 0.66), 0.105, -0.11), ((-1.66, 0.76), (-0.80, 0.90), 0.090, -0.10)]
+    TOPS = [  # (f, |x|) root, tip, half-width, curl: three long tongues licking back from the nose along each fender, one across the tank cowl, two forward from the tail
+        ((1.70, 0.22), (0.78, 0.36), 0.075, 0.10), ((1.64, 0.52), (0.66, 0.70), 0.090, 0.14), ((1.50, 0.80), (0.64, 0.95), 0.075, 0.12),
+        ((0.84, 0.18), (0.05, 0.28), 0.060, 0.08),
+        ((-1.78, 0.30), (-0.72, 0.46), 0.075, -0.10), ((-1.74, 0.62), (-0.66, 0.82), 0.085, -0.13)]
     for root, tip, w, curl in TOPS:
-        flame_cluster(td, root, tip, w, curl, to_top, forks=2, sway=0.035)
+        flame_cluster(td, root, tip, w, curl, to_top, forks=1, sway=0.022)
     return side, np.asarray(top_im, np.float32) / 255.0
 
 
@@ -433,14 +432,14 @@ def bake_paint(path):
     Image.fromarray((atlas * 255).astype(np.uint8)).save(path, "JPEG", quality=92)
 
 
-def make_grime(path, size=512, base=(0.04, 0.04, 0.045), mud=(0.22, 0.14, 0.07), seed=3, ship=256):
+def make_grime(path, size=512, base=(0.04, 0.04, 0.045), mud=(0.22, 0.14, 0.07), seed=3, ship=256, thr=0.46):
     """A dark rubber / steel base with mud patches (value-noise threshold) and speckle. Generated at `size`, shipped at `ship`."""
     rng = np.random.default_rng(seed)
     def noise(n):
         a = rng.random((n, n)).astype(np.float32)
         return np.asarray(Image.fromarray((a * 255).astype(np.uint8)).resize((size, size), Image.BICUBIC), np.float32) / 255.0
     n = 0.5 * noise(6) + 0.3 * noise(14) + 0.2 * noise(40)
-    patch = np.clip((n - 0.46) * 3.2, 0, 1)[..., None]
+    patch = np.clip((n - thr) * 3.2, 0, 1)[..., None]
     speck = (rng.random((size, size, 1)) < 0.03).astype(np.float32)
     col = np.array(base, np.float32) * (1 - patch) + np.array(mud, np.float32) * patch
     col = col * (1 - 0.5 * speck) + np.array(mud, np.float32) * 0.5 * speck
@@ -453,7 +452,7 @@ PAINT_TEX = os.path.join(TEXDIR, "quad_paint.jpg")
 GRIME_TEX = os.path.join(TEXDIR, "quad_rubber.jpg")
 STEEL_TEX = os.path.join(TEXDIR, "quad_grime_steel.jpg")
 RIM_TEX = os.path.join(TEXDIR, "quad_rim.jpg")
-make_grime(GRIME_TEX)
+make_grime(GRIME_TEX, base=(0.035, 0.035, 0.038), mud=(0.17, 0.135, 0.095), thr=0.585)
 make_grime(STEEL_TEX, base=(0.16, 0.16, 0.17), mud=(0.20, 0.13, 0.07), seed=5, ship=128)
 make_grime(RIM_TEX, base=(0.52, 0.52, 0.54), mud=(0.26, 0.16, 0.08), seed=9, ship=256)
 
@@ -478,8 +477,8 @@ S.collection.objects.link(ROOT_EMPTY)
 # =============================================================================================================================
 # WHEELS
 # =============================================================================================================================
-TIRE_PROFILE = [(-0.170, 0.300), (-0.205, 0.340), (-0.218, 0.400), (-0.205, 0.452), (-0.155, 0.490), (-0.100, 0.500), (0.0, 0.502),
-                (0.100, 0.500), (0.155, 0.490), (0.205, 0.452), (0.218, 0.400), (0.205, 0.340), (0.170, 0.300)]
+TIRE_PROFILE = [(-0.165, 0.268), (-0.200, 0.318), (-0.218, 0.385), (-0.205, 0.448), (-0.155, 0.488), (-0.100, 0.500), (0.0, 0.502),
+                (0.100, 0.500), (0.155, 0.488), (0.205, 0.448), (0.218, 0.385), (0.200, 0.318), (0.165, 0.268)]
 
 
 def make_wheel(name, centre, side):
@@ -552,7 +551,7 @@ def make_wheel(name, centre, side):
     segs = 48
     def ring_at(x, r):
         return [rb.verts.new((x * side, r * math.cos(2 * math.pi * k / segs), r * math.sin(2 * math.pi * k / segs))) for k in range(segs)]
-    stations = [(0.150, 0.300), (0.185, 0.300), (0.195, 0.282), (0.172, 0.262), (0.150, 0.250), (0.128, 0.08), (0.150, 0.075), (0.172, 0.060), (0.172, 0.0)]
+    stations = [(0.145, 0.268), (0.178, 0.268), (0.188, 0.252), (0.168, 0.236), (0.112, 0.222), (0.088, 0.085), (0.118, 0.078), (0.148, 0.062), (0.148, 0.0)]
     rs = []
     for (x, r) in stations[:-1]:
         rs.append(ring_at(x, r))
@@ -561,7 +560,7 @@ def make_wheel(name, centre, side):
             k2 = (k + 1) % segs
             f = rb.faces.new((rs[i][k], rs[i][k2], rs[i + 1][k2], rs[i + 1][k]) if side > 0 else (rs[i + 1][k], rs[i + 1][k2], rs[i][k2], rs[i][k]))
             f.smooth = True
-    cap = rb.verts.new((0.172 * side, 0, 0))
+    cap = rb.verts.new((0.148 * side, 0, 0))
     for k in range(segs):
         k2 = (k + 1) % segs
         rb.faces.new((rs[-1][k], rs[-1][k2], cap) if side > 0 else (cap, rs[-1][k2], rs[-1][k]))
@@ -569,13 +568,13 @@ def make_wheel(name, centre, side):
     for i in range(6):
         a = 2 * math.pi * i / 6
         hole = cyl(name + "_Hole%d" % i, (0, 0, 0), 0.026, 0.006, M_BLACK, "X", ro, segs=12)
-        hole.location = Vector((0.1745 * side, 0.165 * math.cos(a), 0.165 * math.sin(a)))
+        hole.location = Vector((0.106 * side, 0.165 * math.cos(a), 0.165 * math.sin(a)))
     for i in range(5):
         a = 2 * math.pi * i / 5
         nut = cyl(name + "_Nut%d" % i, (0, 0, 0), 0.018, 0.03, M_CHROME, "X", ro, segs=6)
-        nut.location = Vector((0.18 * side, 0.045 * math.cos(a), 0.045 * math.sin(a)))
+        nut.location = Vector((0.158 * side, 0.045 * math.cos(a), 0.045 * math.sin(a)))
     boss = cyl(name + "_Boss", (0, 0, 0), 0.030, 0.045, M_STEEL, "X", ro, segs=16)
-    boss.location = Vector((0.19 * side, 0, 0))
+    boss.location = Vector((0.168 * side, 0, 0))
     return o
 
 
@@ -781,9 +780,11 @@ tube("RearShock", [(0.0, -0.70, 0.85), (0.0, -1.10, 1.10)], 0.03, M_SPRING, pare
 bar = [(-0.50, 1.55, 0.72), (-0.52, 1.88, 0.80), (-0.50, 1.93, 1.05), (0.50, 1.93, 1.05), (0.52, 1.88, 0.80), (0.50, 1.55, 0.72)]
 tube("BullBar_Frame", bar, 0.034, M_CHROME, parent=ROOT_EMPTY, round_r=0.07)
 tube("BullBar_Top", [(-0.46, 1.90, 1.03), (-0.46, 1.60, 1.00), (0.46, 1.60, 1.00), (0.46, 1.90, 1.03)], 0.028, M_CHROME, parent=ROOT_EMPTY, round_r=0.05)
-for k in range(5):
-    x = -0.30 + 0.15 * k
-    tube("BullBar_Slat%d" % k, [(x, 1.91, 0.78), (x, 1.91, 1.03)], 0.016, M_CHROME, parent=ROOT_EMPTY)
+tube("BullBar_Mid", [(-0.50, 1.90, 0.90), (0.50, 1.90, 0.90)], 0.026, M_CHROME, parent=ROOT_EMPTY)
+tube("BullBar_Centre", [(0.0, 1.92, 0.76), (0.0, 1.92, 1.03)], 0.022, M_CHROME, parent=ROOT_EMPTY)
+skid = box("Skid_Plate", (0.0, 1.72, 0.50), (0.74, 0.30, 0.035), M_STEEL, ROOT_EMPTY, bevel=0.012, rot=(math.radians(28), 0, 0))
+for k in range(4):
+    box("Skid_Slot%d" % k, (-0.21 + 0.14 * k, 1.735, 0.515), (0.07, 0.20, 0.012), M_BLACK, ROOT_EMPTY, rot=(math.radians(28), 0, 0))
 tube("BullBar_Mount", [(-0.40, 1.55, 0.72), (-0.40, 1.15, 0.64)], 0.03, M_CHROME, parent=ROOT_EMPTY)
 tube("BullBar_MountR", [(0.40, 1.55, 0.72), (0.40, 1.15, 0.64)], 0.03, M_CHROME, parent=ROOT_EMPTY)
 
