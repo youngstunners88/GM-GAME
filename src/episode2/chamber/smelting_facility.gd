@@ -1792,23 +1792,21 @@ func _begin_stand_up() -> void:
 	_set_glass_on_table()
 
 
-## When he stands the whiskey goes down on the table (a separate glass, never skinned to his arm: founder
-## 2026-10-02 "liquid arm"). Return it to his hand once the hand-over is finished.
+## Founder 2026-10-10: keep the whiskey on the table throughout the encounter.
+## Both hands stay free of the glass during seating, walking and equipment hand-over.
 func _set_glass_on_table() -> void:
 	if _glass_node == null or not is_instance_valid(_glass_node):
 		return
-	_glass_node.reparent(_visuals, false)
+	if _glass_node.get_parent() != _visuals:
+		_glass_node.reparent(_visuals, false)
 	_glass_node.top_level = false
 	_glass_node.position = HideoutDressing.WHISKEY_TABLE_POS + Vector3(0.55, 1.03 + GLASS_HEIGHT * 0.5, 0.2)
 	_glass_node.rotation = Vector3.ZERO
 
 
-## Restore his glass after the traded equipment leaves his hands. No idle sipping or IK loop.
+## Existing choreography calls this after hand-over; the glass stays on the table.
 func _return_bull_glass() -> void:
-	if _glass_node and _bull:
-		_glass_node.reparent(_bull.holder("LeftHand"), false)
-		_glass_node.top_level = true
-		_glass_node.scale = Vector3.ONE
+	_set_glass_on_table()
 
 
 ## Place rigid props from the final modified bone pose, after animation and IK.
@@ -1819,10 +1817,6 @@ func _sync_bull_hand_props() -> void:
 	var sk: Skeleton3D = _bull.skeleton
 	var forward: Vector3 = Basis(Vector3.UP, _bull.facing) * Vector3.FORWARD
 	var across: Vector3 = Basis(Vector3.UP, _bull.facing) * Vector3.RIGHT
-	var left: int = sk.find_bone("LeftHand")
-	if left >= 0 and _glass_node and _glass_node.get_parent() != _visuals:
-		var palm: Vector3 = (sk.global_transform * sk.get_bone_global_pose(left)).origin
-		_glass_node.global_transform = Transform3D(Basis.IDENTITY, palm + Vector3.UP * 0.06 - forward * 0.10)
 	var carrying_trade: bool = _rifle_node != null and _rifle_node.get_parent() == _bull.holder("RightHand")
 	if _bull_guard_rifle:
 		_bull_guard_rifle.visible = (_stand_t < 0.0 or _has_helmet) and not carrying_trade
@@ -1940,10 +1934,7 @@ func _add_whiskey_inside(holder: Node3D, radius: float) -> void:
 
 
 func _build_bull_props() -> void:
-	# The WHISKEY: a real tumbler in his left hand (the hand Stand_and_Drink / Sit_and_Drink lift to his mouth),
-	# sized in METRES in a bone holder. (The first version was parented in rig units and was ~2 mm tall:
-	# "I don't see his whiskey".)
-	# The founder's own tumbler (Meshy LKhotS): unit-height GLB scaled to GLASS_HEIGHT (0.31 m); its base sits on y = 0.
+	# A room prop, never attached to Bull's hand.
 	_glass_node = Node3D.new()
 	_glass_node.name = "BullGlass"
 	var gm: Node3D = (load(GLASS_MODEL) as PackedScene).instantiate()
@@ -1966,14 +1957,8 @@ func _build_bull_props() -> void:
 			mesh.set_surface_override_material(i, glass_mat)
 	_glass_node.add_child(gm)
 	_add_whiskey_inside(_glass_node, _glass_radius(gm))
-	var lh: Node3D = _bull.holder("LeftHand")
-	if lh:
-		lh.add_child(_glass_node)
-		_glass_node.top_level = true
-		_glass_node.position = GLASS_IN_HAND_POS
-	else:
-		_glass_node.position = BULL_POSITION + Vector3(0.7, 1.2, -0.3)
-		_visuals.add_child(_glass_node)
+	_visuals.add_child(_glass_node)
+	_set_glass_on_table()
 	_bull_guard_rifle = (load(RIFLE_MODEL) as PackedScene).instantiate()
 	_bull_guard_rifle.name = "BullPersonalWinchester"
 	_bull.holder("RightHand").add_child(_bull_guard_rifle)
@@ -2088,7 +2073,7 @@ func _animate_bull(delta: float) -> void:
 			and _bull.current_clip() != "walk" and _bull.current_clip() != BULL_SIP:
 		_bull.play(BULL_IDLE)
 	if _bull_rest_arm:
-		_bull_rest_arm.resting = not _bull.is_walking() and _bull.reach_weight("Right") < 0.01 and _bull.current_clip() == BULL_IDLE
+		_bull_rest_arm.resting = not _bull.is_walking() and _bull.reach_weight("Right") < 0.01 and _bull.reach_weight("Left") < 0.01 and _bull.current_clip() == BULL_IDLE
 	# Rest means REST: no idle sips, no waving. Arms only move for an action beat (grab, hand-over).
 	_follow_player_in_fps(delta)
 	if _bull_blocker_i >= 0 and _bull_blocker_i < _blockers.size():

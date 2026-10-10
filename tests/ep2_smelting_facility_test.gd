@@ -366,7 +366,7 @@ func _ready() -> void:
 	_check("Bull PBR keeps fur/leather nonmetal with bounded armor highlights", matte and body_materials > 0)
 	var gs: Vector3 = h._glass_node.global_transform.basis.get_scale()
 	_check("his whiskey glass is real-sized (world scale ~1 in the hand-bone holder, not 2 mm)", absf(gs.x - 1.0) < 0.15, str(gs))
-	_check("the glass rides his hand bone", h._glass_node.get_parent().get_parent().name == "Att_LeftHand")
+	_check("the glass stays on the whiskey table", h._glass_node.get_parent() == h._visuals)
 	h.queue_free()
 
 	# --- 13. the session root loads it and routes the REAL keys ---------------------------------------------------------------
@@ -449,7 +449,7 @@ func _ready() -> void:
 		_check("...and play resumes at target practice in first person", f.get_beat() == f.Beat.VERB_TEACH and f.is_fps() and f.has_player_control(), f.get_beat_name())
 		_check("...with the Bull standing at his mark", f.get_bull().position.distance_to(f.BULL_REST) < 0.05)
 		_check("...and the film node is gone", f.get_video_film() == null)
-		_check("film resume: Bull holds his whiskey", f._glass_node.get_parent() == f.get_bull().holder("LeftHand"))
+		_check("film resume: whiskey stays on the table", f._glass_node.get_parent() == f._visuals)
 		_check("film resume: Bull's own rifle is separate from the sold reward", f._bull_guard_rifle != f._rifle_node and f._bull_guard_rifle.get_parent() == f.get_bull().holder("RightHand"))
 		_check("film resume: player still owns the traded Winchester", f.has_winchester() and f._rifle_node.get_parent() == f._camera)
 		_check("film resume: the rest arm is relaxed without IK", f._bull_rest_arm.resting and f.get_bull().reach_weight("Right") < 0.01)
