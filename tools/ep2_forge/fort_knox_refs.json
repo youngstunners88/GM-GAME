@@ -58,6 +58,22 @@
           "lock": "object",
           "aspect": "4:3",
           "prompt": "The exact same quad bike, identical flame design and parts, rear three-quarter view from the left showing the long leather bench seat, the chrome rear rack and the back of the flame paint."
+        },
+        {
+          "name": "front",
+          "kind": "i2i",
+          "from": "hero_3q",
+          "lock": "object",
+          "aspect": "4:3",
+          "prompt": "The exact same quad bike, identical flame design and parts, shown in a perfect straight-on FRONT elevation (orthographic feel, camera level with the headlight, the vehicle centred and symmetric about the vertical centre line, both front tyres and the bull bar visible), the whole vehicle in frame."
+        },
+        {
+          "name": "back",
+          "kind": "i2i",
+          "from": "hero_3q",
+          "lock": "object",
+          "aspect": "4:3",
+          "prompt": "The exact same quad bike, identical flame design and parts, shown in a perfect straight-on REAR elevation (orthographic feel, camera level with the seat, the vehicle centred and symmetric about the vertical centre line, the rear rack, tail lamp and both rear tyres visible), the whole vehicle in frame."
         }
       ]
     },

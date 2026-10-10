@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://ccq2vrxld6ihc"
-path="res://.godot/imported/flame_quad.glb-ddaf2bad75833cf2bab9c1322195da8c.scn"
+uid="uid://t87pmbhmex70"
+path="res://.godot/imported/flame_quad_ai.glb-ff885612b3d3973291e01105cd5821d4.scn"
 
 [deps]
 
-source_file="res://src/episode2/assets/vehicles/flame_quad.glb"
-dest_files=["res://.godot/imported/flame_quad.glb-ddaf2bad75833cf2bab9c1322195da8c.scn"]
+source_file="res://src/episode2/assets/vehicles/flame_quad_ai.glb"
+dest_files=["res://.godot/imported/flame_quad_ai.glb-ff885612b3d3973291e01105cd5821d4.scn"]
 
 [params]
 
@@ -18,7 +18,7 @@ nodes/root_name=""
 nodes/apply_root_scale=true
 nodes/root_scale=1.0
 nodes/import_as_skeleton_bones=false
-meshes/ensure_tangents=true
+meshes/ensure_tangents=false
 meshes/generate_lods=false
 meshes/create_shadow_meshes=false
 meshes/light_baking=1

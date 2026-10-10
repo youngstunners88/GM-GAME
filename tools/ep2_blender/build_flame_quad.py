@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Inferno Bull's FLAME DESIGNER QUAD, built headless in Blender from the Muapi GPT-Image-2 reference (skill ep2-hyperreal-scene-pipeline).
 
-  python3 tools/ep2_blender/build_flame_quad.py [--out src/episode2/assets/vehicles/flame_quad.glb] [--preview .farm/quad] [--no-render]
+  python3 tools/ep2_blender/build_flame_quad.py [--out design/ep2/blender/quad/flame_quad_procedural.glb] [--preview .farm/quad] [--no-render]
+
+RETIRED 2026-10-10: the game uses the AI-built quad (tools/ep2_forge/ai_vehicle_to_game.py, src/episode2/assets/vehicles/flame_quad_ai.glb). This script stays as the
+reproducible kit-bash fallback and the worked example of per-panel paint baking (bake_paint) and part merging (merge_parts); its output is NOT packed into the web build.
 
 Reference: artifacts/episode2-gold-mine/references/fort_knox_prep/flame_quad/{hero_3q,side,rear_3q}.jpg (proportions measured from the side
 elevation in units of the tyre outer diameter D = 1.0 m: wheelbase 2.43, length 3.87, seat top 1.5, handlebar 1.87, nose fender 1.0-1.36).
@@ -32,7 +35,7 @@ def arg(name, default=None):
     return default
 
 
-OUT = arg("--out", os.path.join(ROOT, "src/episode2/assets/vehicles/flame_quad.glb"))
+OUT = arg("--out", os.path.join(ROOT, "design/ep2/blender/quad/flame_quad_procedural.glb"))
 PREVIEW = arg("--preview", os.path.join(ROOT, ".farm/quad"))
 RENDER = not arg("--no-render", False)
 TEXDIR = os.path.join(PREVIEW, "tex")
