@@ -1,0 +1,17 @@
+{
+ "request_id": "266f08e3-d0f3-422a-9260-8ec0f25e9621",
+ "endpoint": "gpt-image-2-image-to-image",
+ "payload": {
+  "prompt": "Photorealistic cinematic concept still for a first-person western shooter, 'western Modern Warfare' art direction: warm low sun key light with teal-blue shadow fill, thin atmospheric haze, physically based materials (weathered timber, rusted riveted steel, packed dirt, gravel, bark, dust), natural film grain, 35mm lens at human eye height (1.6 m), high dynamic range, sharp detail, believable scale. No text, no lettering, no watermark, no logos, no user interface, no people, no close-up characters. Same place and same art direction as the reference: the player has just walked out of a narrow timber-framed rock tunnel and looks along the plank walkway with wooden rails and sagging chains toward the rusted iron mine lift cage with gears on its roof, hanging chains, oil lanterns glowing orange, bull skulls and tattered bull banners on the timber walls, warm smoky haze. First person eye height, nobody in the shot, no weapon in view.",
+  "aspect_ratio": "16:9",
+  "resolution": "2K",
+  "quality": "high"
+ },
+ "url": "https://cdn.muapi.ai/outputs/generated/266f08e3-d0f3-422a-9260-8ec0f25e9621_89e87e1f.png",
+ "cost_usd": 0.18,
+ "size": [
+  1600,
+  900
+ ],
+ "made": "2026-10-10"
+}

@@ -1,0 +1,17 @@
+{
+ "request_id": "94dc4303-0d40-4d76-83a7-674a9510f1b2",
+ "endpoint": "gpt-image-2-image-to-image",
+ "payload": {
+  "prompt": "Photorealistic product-style reference for 3D modelling: the single subject centred with generous margin on a seamless plain mid-grey studio backdrop, soft even key light with a gentle rim light, sharp focus, true materials (lacquer, chrome, leather, rubber, rust, scale, steel), no text, no logos, no people, only a soft contact shadow. Take the MINE LIFT CAGE from the reference image - the big rusted riveted iron cage in the middle of the picture with vertical iron bars, heavy riveted corner posts and cross beams, lower panels of weathered timber planks, and on its roof the winch headframe with large rusty gear wheels, an axle and pulley wheels - and show ONLY that cage, complete, identical design, three-quarter front view from the left, the whole cage and its roof gears in frame. Square floor plan, tall enough for a 3 m giant to stand inside, one side is a sliding gate.",
+  "aspect_ratio": "4:3",
+  "resolution": "2K",
+  "quality": "high"
+ },
+ "url": "https://cdn.muapi.ai/outputs/generated/94dc4303-0d40-4d76-83a7-674a9510f1b2_499e929f.png",
+ "cost_usd": 0.18,
+ "size": [
+  1600,
+  1200
+ ],
+ "made": "2026-10-10"
+}

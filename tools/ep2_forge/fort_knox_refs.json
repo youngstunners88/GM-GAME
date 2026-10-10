@@ -1,224 +1,359 @@
 {
-  "version": 1,
-  "note": "Reference briefs for the Fort Knox / AwesomeX PREP pass (PROMPT_EPISODE2_FORT_KNOX_AWESOMEX_FOUNDATION.md, skills ep2-fort-knox-arc + ep2-hyperreal-scene-pipeline). Muapi GPT Image 2 renders these; tools/ep2_forge/muapi_ref.py reads this file. The Fort Knox DOOR and the carry-out pile are the Pascal spec and are deliberately NOT here (do not redesign them).",
-  "out_dir": "artifacts/episode2-gold-mine/references/fort_knox_prep",
-  "model_t2i": "gpt-image-2-text-to-image",
-  "model_i2i": "gpt-image-2-image-to-image",
-  "style_lock_env": "Photorealistic cinematic concept still for a first-person western shooter, 'western Modern Warfare' art direction: warm low sun key light with teal-blue shadow fill, thin atmospheric haze, physically based materials (weathered timber, rusted riveted steel, packed dirt, gravel, bark, dust), natural film grain, 35mm lens at human eye height (1.6 m), high dynamic range, sharp detail, believable scale. No text, no lettering, no watermark, no logos, no user interface, no people, no close-up characters.",
-  "style_lock_object": "Photorealistic product-style reference for 3D modelling: the single subject centred with generous margin on a seamless plain mid-grey studio backdrop, soft even key light with a gentle rim light, sharp focus, true materials (lacquer, chrome, leather, rubber, rust, scale, steel), no text, no logos, no people, only a soft contact shadow.",
-  "items": [
+ "version": 1,
+ "note": "Reference briefs for the Fort Knox / AwesomeX PREP pass (PROMPT_EPISODE2_FORT_KNOX_AWESOMEX_FOUNDATION.md, skills ep2-fort-knox-arc + ep2-hyperreal-scene-pipeline). Muapi GPT Image 2 renders these; tools/ep2_forge/muapi_ref.py reads this file. The Fort Knox DOOR and the carry-out pile are the Pascal spec and are deliberately NOT here (do not redesign them).",
+ "out_dir": "artifacts/episode2-gold-mine/references/fort_knox_prep",
+ "model_t2i": "gpt-image-2-text-to-image",
+ "model_i2i": "gpt-image-2-image-to-image",
+ "style_lock_env": "Photorealistic cinematic concept still for a first-person western shooter, 'western Modern Warfare' art direction: warm low sun key light with teal-blue shadow fill, thin atmospheric haze, physically based materials (weathered timber, rusted riveted steel, packed dirt, gravel, bark, dust), natural film grain, 35mm lens at human eye height (1.6 m), high dynamic range, sharp detail, believable scale. No text, no lettering, no watermark, no logos, no user interface, no people, no close-up characters.",
+ "style_lock_object": "Photorealistic product-style reference for 3D modelling: the single subject centred with generous margin on a seamless plain mid-grey studio backdrop, soft even key light with a gentle rim light, sharp focus, true materials (lacquer, chrome, leather, rubber, rust, scale, steel), no text, no logos, no people, only a soft contact shadow.",
+ "items": [
+  {
+   "id": "exit_road",
+   "title": "Hideout exit onto a road the quad can use",
+   "constraints": [
+    "road 4-5 m wide, firm packed dirt",
+    "straight enough to read 100 m",
+    "rock mine mouth in the foreground",
+    "no vehicles in frame"
+   ],
+   "views": [
     {
-      "id": "exit_road",
-      "title": "Hideout exit onto a road the quad can use",
-      "constraints": [
-        "road 4-5 m wide, firm packed dirt",
-        "straight enough to read 100 m",
-        "rock mine mouth in the foreground",
-        "no vehicles in frame"
-      ],
-      "views": [
-        {
-          "name": "hero",
-          "kind": "t2i",
-          "lock": "env",
-          "aspect": "16:9",
-          "prompt": "Looking OUT of a rough rock mine mouth at dawn onto a packed-dirt forest service road wide enough for an off-road quad bike (about 4.5 metres), deep tyre ruts, pine forest on both sides, low mist on the ground, the road curving gently left and rising over a far ridge. In the foreground an old narrow-gauge rail track ends at the mine mouth, a rusted chain and a spoked cart wheel lean on the rock wall, fallen needles and leaf litter underfoot."
-        }
-      ]
-    },
-    {
-      "id": "flame_quad",
-      "title": "Inferno Bull's flame designer quad (one quad, then none)",
-      "constraints": [
-        "carries a 2.9 m bull + a rifleman on a long back seat",
-        "candy red + layered flame paint",
-        "rear seat/rack must read as a shooting position",
-        "real vehicle proportions, chunky tyres"
-      ],
-      "views": [
-        {
-          "name": "hero_3q",
-          "kind": "t2i",
-          "lock": "object",
-          "aspect": "4:3",
-          "prompt": "A custom hand-painted FLAME DESIGNER QUAD bike (all-terrain vehicle) built big enough to carry a huge driver and a rifleman behind him: deep candy-apple red lacquer body, layered airbrushed orange-and-yellow flame tongues licking back from the nose along both flanks and over the front fenders, polished chrome handlebars, bull bar and a long tubular chrome rear rack, a long black leather bench seat, a round chrome headlight with a guard, wide knobby off-road tyres, a little dried mud and honest wear. Three-quarter front view from the left, the whole vehicle in frame."
-        },
-        {
-          "name": "side",
-          "kind": "i2i",
-          "from": "hero_3q",
-          "lock": "object",
-          "aspect": "4:3",
-          "prompt": "The exact same quad bike, identical flame design and parts, shown in a perfect side elevation (orthographic feel, camera level with the axles), the whole vehicle in frame."
-        },
-        {
-          "name": "rear_3q",
-          "kind": "i2i",
-          "from": "hero_3q",
-          "lock": "object",
-          "aspect": "4:3",
-          "prompt": "The exact same quad bike, identical flame design and parts, rear three-quarter view from the left showing the long leather bench seat, the chrome rear rack and the back of the flame paint."
-        },
-        {
-          "name": "front",
-          "kind": "i2i",
-          "from": "hero_3q",
-          "lock": "object",
-          "aspect": "4:3",
-          "prompt": "The exact same quad bike, identical flame design and parts, shown in a perfect straight-on FRONT elevation (orthographic feel, camera level with the headlight, the vehicle centred and symmetric about the vertical centre line, both front tyres and the bull bar visible), the whole vehicle in frame."
-        },
-        {
-          "name": "back",
-          "kind": "i2i",
-          "from": "hero_3q",
-          "lock": "object",
-          "aspect": "4:3",
-          "prompt": "The exact same quad bike, identical flame design and parts, shown in a perfect straight-on REAR elevation (orthographic feel, camera level with the seat, the vehicle centred and symmetric about the vertical centre line, the rear rack, tail lamp and both rear tyres visible), the whole vehicle in frame."
-        }
-      ]
-    },
-    {
-      "id": "spy_point",
-      "title": "Spy point: sightline to the neighbouring building AND the vault approach",
-      "constraints": [
-        "prone eye height 0.5-1 m behind ferns + a log",
-        "building at 80-120 m left, vault road straight ahead",
-        "bear camp smoke in the valley",
-        "nothing blocks either sightline"
-      ],
-      "views": [
-        {
-          "name": "hero",
-          "kind": "t2i",
-          "lock": "env",
-          "aspect": "16:9",
-          "prompt": "A prone first-person view from behind a bank of ferns and a fallen mossy log on a wooded ridge crest at golden hour, looking down a long gentle slope. In the middle distance on the left, beside a gravel road junction, stands an old timber-and-stone storehouse with big double doors facing the road and fuel drums stacked against its wall, with a clear unobstructed line of sight to it. Straight ahead and further away the gravel road runs dead straight across open ground to a massive fortified vault compound of riveted steel and granite with watchtowers, the road and the gate approach clearly visible. Smoke from a bear camp's campfires rises in the valley below. Foreground ferns frame the bottom edge of the shot."
-        }
-      ]
-    },
-    {
-      "id": "decoy_building",
-      "title": "The building that takes the quad and reads as an explosion",
-      "constraints": [
-        "doors wide enough for a quad",
-        "fuel drums + propane visible BEFORE the blast (the player must read it as explosive)",
-        "after: fireball, shockwave, debris, smoke column - not a grey box"
-      ],
-      "views": [
-        {
-          "name": "intact",
-          "kind": "t2i",
-          "lock": "env",
-          "aspect": "16:9",
-          "prompt": "A weathered two-storey timber-and-stone supply and fuel storehouse standing alone at a road junction in open scrubland, late afternoon: wide double barn doors big enough for a vehicle to drive through, a loading platform, a row of rusty fuel drums and two propane tanks stacked along the side wall, hay bales, a sagging shingle roof with a stone chimney, a wooden water tower behind. Eye-level view from the road, the building fills the frame, everything crisp and believable."
-        },
-        {
-          "name": "exploding",
-          "kind": "i2i",
-          "from": "intact",
-          "lock": "env",
-          "aspect": "16:9",
-          "prompt": "The very same building a moment after a quad bike has crashed through the double doors: a huge orange-and-yellow fuel explosion bursts out of the doors and windows, a fireball and a shockwave dust ring, planks and shingles flying, secondary explosions from the fuel drums, a thick black smoke column climbing into the sky, embers everywhere, a hot glow on the ground. A real explosion, not a grey box. Same camera position and framing as the reference."
-        }
-      ]
-    },
-    {
-      "id": "vault_approach",
-      "title": "The Fort Knox approach road (NOT the vault door)",
-      "constraints": [
-        "straight gravel road ~300 m",
-        "cover along the road (wrecked carts, crates)",
-        "gatehouse + towers read as a fortress",
-        "never show the vault door or interior (Pascal spec)"
-      ],
-      "views": [
-        {
-          "name": "hero",
-          "kind": "t2i",
-          "lock": "env",
-          "aspect": "16:9",
-          "prompt": "The approach to Fort Knox at dusk: a long straight gravel road across open ground leading to a massive fortified vault compound of riveted steel plates and rough granite, a floodlit gatehouse, watchtowers, razor wire and sandbags, the silhouette of the vault block against an orange sky, burned-out mine carts and broken crates along the roadside for cover, an eye-level view down the road about 300 metres from the gate. The vault door and the interior are not visible."
-        }
-      ]
-    },
-    {
-      "id": "return_trail",
-      "title": "Return trail wide enough for a bear line behind Lil Blunt",
-      "constraints": [
-        "8-10 m wide",
-        "200 m straight sightline back",
-        "mist + torch line far behind = a pursuing line of bears",
-        "cover logs along the edges"
-      ],
-      "views": [
-        {
-          "name": "hero",
-          "kind": "t2i",
-          "lock": "env",
-          "aspect": "16:9",
-          "prompt": "A very wide forest trail (about ten metres across) at dusk, deep fresh tyre ruts and trampled undergrowth running straight for two hundred metres, tall pines on both sides, fallen logs along the edges, thick low mist. Far down the trail a long line of torches and lanterns carried by a pursuing mob of tiny distant bear silhouettes glows in the haze. Eye-level view looking back along the trail."
-        }
-      ]
-    },
-    {
-      "id": "awesomex_entrance",
-      "title": "AwesomeX the dragon: design + entrance (air or furnace), machine guns visible",
-      "constraints": [
-        "a DRAGON (DragonX / AwesomeX), brand colour GREEN",
-        "machine guns clearly visible",
-        "he leads the bulls and burns things",
-        "not on the quad, not in the vault",
-        "NO text, no logos in the render"
-      ],
-      "views": [
-        {
-          "name": "design",
-          "kind": "t2i",
-          "lock": "object",
-          "aspect": "4:3",
-          "prompt": "Character design for AwesomeX, the heroic DRAGON mascot of a 'burn' protocol: a heavily muscled upright emerald-green dragon with glossy scales and gold-trimmed horns, wearing a western war harness of oiled leather and riveted steel with a belt of brass shells across the chest, two compact belt-fed machine guns mounted on his shoulders (clearly visible), a furnace-orange glow in his throat, folded bat-like wings, a confident grin. Full body, standing, three-quarter view."
-        },
-        {
-          "name": "entrance_air",
-          "kind": "i2i",
-          "from": "design",
-          "lock": "scene",
-          "aspect": "16:9",
-          "prompt": "The same emerald-green dragon in the same war harness swooping low through smoke over a forest trail at dusk, wings spread wide, both shoulder-mounted machine guns firing with bright muzzle flashes and tracer fire, a rolling jet of dragon fire sweeping over a line of charging bears (tiny distant silhouettes), dramatic low angle, embers and sparks, cinematic."
-        },
-        {
-          "name": "entrance_furnace",
-          "kind": "i2i",
-          "from": "design",
-          "lock": "scene",
-          "aspect": "16:9",
-          "prompt": "The same emerald-green dragon in the same war harness bursting out of a giant industrial smelter furnace mouth at night in an explosion of molten sparks and fire, glowing slag chunks flying, steam, the shoulder-mounted machine guns glowing hot and aimed forward, silhouettes of bears scattering in the background, cinematic."
-        }
-      ]
-    },
-    {
-      "id": "bull_rescue_mark",
-      "title": "Where Bull was pinned: down, NOT a corpse",
-      "constraints": [
-        "Inferno Bull is ALIVE: eyes half open, breathing, a fist clenched",
-        "pinned under a fallen beam in a trench by a broken gate",
-        "a rope-and-lantern marker = the rescue mark",
-        "readable at 20 m as 'go back for him'"
-      ],
-      "views": [
-        {
-          "name": "hero",
-          "kind": "i2i",
-          "lock": "scene",
-          "aspect": "16:9",
-          "refs": [
-            "artifacts/episode2-gold-mine/references/founder_2026-09-30/SHEET_inferno-bull-ingame.png",
-            "artifacts/episode2-gold-mine/references/inferno_bull_armed.jpeg"
-          ],
-          "prompt": "Inferno Bull, the huge muscular bull with a miner's helmet with horns and a red bandana exactly as in the reference images, lying DOWN on his side in a trench beside a broken wooden gate, ALIVE and breathing: eyes half open, one fist clenched in the dirt, pinned under a fallen timber beam. A knocked-over lantern still glows beside him, torn sandbags, dust and drifting embers; a rope tied to a lantern post marks the spot. Dusk, low angle, clearly hurt but definitely not dead."
-        }
-      ]
+     "name": "hero",
+     "kind": "t2i",
+     "lock": "env",
+     "aspect": "16:9",
+     "prompt": "Looking OUT of a rough rock mine mouth at dawn onto a packed-dirt forest service road wide enough for an off-road quad bike (about 4.5 metres), deep tyre ruts, pine forest on both sides, low mist on the ground, the road curving gently left and rising over a far ridge. In the foreground an old narrow-gauge rail track ends at the mine mouth, a rusted chain and a spoked cart wheel lean on the rock wall, fallen needles and leaf litter underfoot."
     }
-  ],
-  "style_lock_scene": "Photorealistic cinematic concept still for a first-person western shooter, 'western Modern Warfare' art direction: warm low sun key light with teal-blue shadow fill, thin atmospheric haze, physically based materials (weathered timber, rusted riveted steel, packed dirt, gravel, bark, dust), natural film grain, 35mm lens at human eye height (1.6 m), high dynamic range, sharp detail, believable scale. The named characters in the brief are the only characters. No text, no lettering, no watermark, no logos, no user interface."
+   ]
+  },
+  {
+   "id": "flame_quad",
+   "title": "Inferno Bull's flame designer quad (one quad, then none)",
+   "constraints": [
+    "carries a 2.9 m bull + a rifleman on a long back seat",
+    "candy red + layered flame paint",
+    "rear seat/rack must read as a shooting position",
+    "real vehicle proportions, chunky tyres"
+   ],
+   "views": [
+    {
+     "name": "hero_3q",
+     "kind": "t2i",
+     "lock": "object",
+     "aspect": "4:3",
+     "prompt": "A custom hand-painted FLAME DESIGNER QUAD bike (all-terrain vehicle) built big enough to carry a huge driver and a rifleman behind him: deep candy-apple red lacquer body, layered airbrushed orange-and-yellow flame tongues licking back from the nose along both flanks and over the front fenders, polished chrome handlebars, bull bar and a long tubular chrome rear rack, a long black leather bench seat, a round chrome headlight with a guard, wide knobby off-road tyres, a little dried mud and honest wear. Three-quarter front view from the left, the whole vehicle in frame."
+    },
+    {
+     "name": "side",
+     "kind": "i2i",
+     "from": "hero_3q",
+     "lock": "object",
+     "aspect": "4:3",
+     "prompt": "The exact same quad bike, identical flame design and parts, shown in a perfect side elevation (orthographic feel, camera level with the axles), the whole vehicle in frame."
+    },
+    {
+     "name": "rear_3q",
+     "kind": "i2i",
+     "from": "hero_3q",
+     "lock": "object",
+     "aspect": "4:3",
+     "prompt": "The exact same quad bike, identical flame design and parts, rear three-quarter view from the left showing the long leather bench seat, the chrome rear rack and the back of the flame paint."
+    },
+    {
+     "name": "front",
+     "kind": "i2i",
+     "from": "hero_3q",
+     "lock": "object",
+     "aspect": "4:3",
+     "prompt": "The exact same quad bike, identical flame design and parts, shown in a perfect straight-on FRONT elevation (orthographic feel, camera level with the headlight, the vehicle centred and symmetric about the vertical centre line, both front tyres and the bull bar visible), the whole vehicle in frame."
+    },
+    {
+     "name": "back",
+     "kind": "i2i",
+     "from": "hero_3q",
+     "lock": "object",
+     "aspect": "4:3",
+     "prompt": "The exact same quad bike, identical flame design and parts, shown in a perfect straight-on REAR elevation (orthographic feel, camera level with the seat, the vehicle centred and symmetric about the vertical centre line, the rear rack, tail lamp and both rear tyres visible), the whole vehicle in frame."
+    }
+   ]
+  },
+  {
+   "id": "spy_point",
+   "title": "Spy point: sightline to the neighbouring building AND the vault approach",
+   "constraints": [
+    "prone eye height 0.5-1 m behind ferns + a log",
+    "building at 80-120 m left, vault road straight ahead",
+    "bear camp smoke in the valley",
+    "nothing blocks either sightline"
+   ],
+   "views": [
+    {
+     "name": "hero",
+     "kind": "t2i",
+     "lock": "env",
+     "aspect": "16:9",
+     "prompt": "A prone first-person view from behind a bank of ferns and a fallen mossy log on a wooded ridge crest at golden hour, looking down a long gentle slope. In the middle distance on the left, beside a gravel road junction, stands an old timber-and-stone storehouse with big double doors facing the road and fuel drums stacked against its wall, with a clear unobstructed line of sight to it. Straight ahead and further away the gravel road runs dead straight across open ground to a massive fortified vault compound of riveted steel and granite with watchtowers, the road and the gate approach clearly visible. Smoke from a bear camp's campfires rises in the valley below. Foreground ferns frame the bottom edge of the shot."
+    }
+   ]
+  },
+  {
+   "id": "decoy_building",
+   "title": "The building that takes the quad and reads as an explosion",
+   "constraints": [
+    "doors wide enough for a quad",
+    "fuel drums + propane visible BEFORE the blast (the player must read it as explosive)",
+    "after: fireball, shockwave, debris, smoke column - not a grey box"
+   ],
+   "views": [
+    {
+     "name": "intact",
+     "kind": "t2i",
+     "lock": "env",
+     "aspect": "16:9",
+     "prompt": "A weathered two-storey timber-and-stone supply and fuel storehouse standing alone at a road junction in open scrubland, late afternoon: wide double barn doors big enough for a vehicle to drive through, a loading platform, a row of rusty fuel drums and two propane tanks stacked along the side wall, hay bales, a sagging shingle roof with a stone chimney, a wooden water tower behind. Eye-level view from the road, the building fills the frame, everything crisp and believable."
+    },
+    {
+     "name": "exploding",
+     "kind": "i2i",
+     "from": "intact",
+     "lock": "env",
+     "aspect": "16:9",
+     "prompt": "The very same building a moment after a quad bike has crashed through the double doors: a huge orange-and-yellow fuel explosion bursts out of the doors and windows, a fireball and a shockwave dust ring, planks and shingles flying, secondary explosions from the fuel drums, a thick black smoke column climbing into the sky, embers everywhere, a hot glow on the ground. A real explosion, not a grey box. Same camera position and framing as the reference."
+    }
+   ]
+  },
+  {
+   "id": "vault_approach",
+   "title": "The Fort Knox approach road (NOT the vault door)",
+   "constraints": [
+    "straight gravel road ~300 m",
+    "cover along the road (wrecked carts, crates)",
+    "gatehouse + towers read as a fortress",
+    "never show the vault door or interior (Pascal spec)"
+   ],
+   "views": [
+    {
+     "name": "hero",
+     "kind": "t2i",
+     "lock": "env",
+     "aspect": "16:9",
+     "prompt": "The approach to Fort Knox at dusk: a long straight gravel road across open ground leading to a massive fortified vault compound of riveted steel plates and rough granite, a floodlit gatehouse, watchtowers, razor wire and sandbags, the silhouette of the vault block against an orange sky, burned-out mine carts and broken crates along the roadside for cover, an eye-level view down the road about 300 metres from the gate. The vault door and the interior are not visible."
+    }
+   ]
+  },
+  {
+   "id": "return_trail",
+   "title": "Return trail wide enough for a bear line behind Lil Blunt",
+   "constraints": [
+    "8-10 m wide",
+    "200 m straight sightline back",
+    "mist + torch line far behind = a pursuing line of bears",
+    "cover logs along the edges"
+   ],
+   "views": [
+    {
+     "name": "hero",
+     "kind": "t2i",
+     "lock": "env",
+     "aspect": "16:9",
+     "prompt": "A very wide forest trail (about ten metres across) at dusk, deep fresh tyre ruts and trampled undergrowth running straight for two hundred metres, tall pines on both sides, fallen logs along the edges, thick low mist. Far down the trail a long line of torches and lanterns carried by a pursuing mob of tiny distant bear silhouettes glows in the haze. Eye-level view looking back along the trail."
+    }
+   ]
+  },
+  {
+   "id": "awesomex_entrance",
+   "title": "AwesomeX the dragon: design + entrance (air or furnace), machine guns visible",
+   "constraints": [
+    "a DRAGON (DragonX / AwesomeX), brand colour GREEN",
+    "machine guns clearly visible",
+    "he leads the bulls and burns things",
+    "not on the quad, not in the vault",
+    "NO text, no logos in the render"
+   ],
+   "views": [
+    {
+     "name": "design",
+     "kind": "t2i",
+     "lock": "object",
+     "aspect": "4:3",
+     "prompt": "Character design for AwesomeX, the heroic DRAGON mascot of a 'burn' protocol: a heavily muscled upright emerald-green dragon with glossy scales and gold-trimmed horns, wearing a western war harness of oiled leather and riveted steel with a belt of brass shells across the chest, two compact belt-fed machine guns mounted on his shoulders (clearly visible), a furnace-orange glow in his throat, folded bat-like wings, a confident grin. Full body, standing, three-quarter view."
+    },
+    {
+     "name": "entrance_air",
+     "kind": "i2i",
+     "from": "design",
+     "lock": "scene",
+     "aspect": "16:9",
+     "prompt": "The same emerald-green dragon in the same war harness swooping low through smoke over a forest trail at dusk, wings spread wide, both shoulder-mounted machine guns firing with bright muzzle flashes and tracer fire, a rolling jet of dragon fire sweeping over a line of charging bears (tiny distant silhouettes), dramatic low angle, embers and sparks, cinematic."
+    },
+    {
+     "name": "entrance_furnace",
+     "kind": "i2i",
+     "from": "design",
+     "lock": "scene",
+     "aspect": "16:9",
+     "prompt": "The same emerald-green dragon in the same war harness bursting out of a giant industrial smelter furnace mouth at night in an explosion of molten sparks and fire, glowing slag chunks flying, steam, the shoulder-mounted machine guns glowing hot and aimed forward, silhouettes of bears scattering in the background, cinematic."
+    }
+   ]
+  },
+  {
+   "id": "bull_rescue_mark",
+   "title": "Where Bull was pinned: down, NOT a corpse",
+   "constraints": [
+    "Inferno Bull is ALIVE: eyes half open, breathing, a fist clenched",
+    "pinned under a fallen beam in a trench by a broken gate",
+    "a rope-and-lantern marker = the rescue mark",
+    "readable at 20 m as 'go back for him'"
+   ],
+   "views": [
+    {
+     "name": "hero",
+     "kind": "i2i",
+     "lock": "scene",
+     "aspect": "16:9",
+     "refs": [
+      "artifacts/episode2-gold-mine/references/founder_2026-09-30/SHEET_inferno-bull-ingame.png",
+      "artifacts/episode2-gold-mine/references/inferno_bull_armed.jpeg"
+     ],
+     "prompt": "Inferno Bull, the huge muscular bull with a miner's helmet with horns and a red bandana exactly as in the reference images, lying DOWN on his side in a trench beside a broken wooden gate, ALIVE and breathing: eyes half open, one fist clenched in the dirt, pinned under a fallen timber beam. A knocked-over lantern still glows beside him, torn sandbags, dust and drifting embers; a rope tied to a lantern post marks the spot. Dusk, low angle, clearly hurt but definitely not dead."
+    }
+   ]
+  },
+  {
+   "id": "mine_lift_cage",
+   "title": "The mine lift cage (founder target 2026-10-10: lift_walkway_target.jpg)",
+   "constraints": [
+    "3.8 m square floor, 3.4 m clear inside (Inferno Bull is 2.9 m tall)",
+    "rusted riveted iron frame + vertical bars + lower plank panels",
+    "winch headframe with gears and pulley wheels on the roof",
+    "a sliding gate on one side"
+   ],
+   "views": [
+    {
+     "name": "hero_3q",
+     "kind": "i2i",
+     "lock": "object",
+     "aspect": "4:3",
+     "refs": [
+      "artifacts/episode2-gold-mine/references/founder_2026-10-10/lift_walkway_target.jpg"
+     ],
+     "prompt": "Take the MINE LIFT CAGE from the reference image - the big rusted riveted iron cage in the middle of the picture with vertical iron bars, heavy riveted corner posts and cross beams, lower panels of weathered timber planks, and on its roof the winch headframe with large rusty gear wheels, an axle and pulley wheels - and show ONLY that cage, complete, identical design, three-quarter front view from the left, the whole cage and its roof gears in frame. Square floor plan, tall enough for a 3 m giant to stand inside, one side is a sliding gate."
+    },
+    {
+     "name": "front",
+     "kind": "i2i",
+     "from": "hero_3q",
+     "lock": "object",
+     "aspect": "4:3",
+     "prompt": "The exact same mine lift cage, identical iron bars, rivets, timber panels and roof gears, shown in a perfect straight-on FRONT elevation (orthographic feel, camera at mid height, the cage centred and symmetric about the vertical centre line), the whole cage and the gears on top in frame."
+    },
+    {
+     "name": "side",
+     "kind": "i2i",
+     "from": "hero_3q",
+     "lock": "object",
+     "aspect": "4:3",
+     "prompt": "The exact same mine lift cage, identical iron bars, rivets, timber panels and roof gears, shown in a perfect SIDE elevation from the left (orthographic feel, camera at mid height), the whole cage and the gears on top in frame."
+    },
+    {
+     "name": "back",
+     "kind": "i2i",
+     "from": "hero_3q",
+     "lock": "object",
+     "aspect": "4:3",
+     "prompt": "The exact same mine lift cage, identical iron bars, rivets, timber panels and roof gears, shown in a perfect straight-on REAR elevation (orthographic feel, camera at mid height, centred and symmetric), the whole cage and the gears on top in frame."
+    }
+   ]
+  },
+  {
+   "id": "mine_lift_scene",
+   "title": "The mine lift chamber: walkway in, the rise, the walkway out to the woods (founder target 2026-10-10)",
+   "constraints": [
+    "same art direction as lift_walkway_target.jpg: dark mine timber, rusted iron, chains, lanterns, bull skulls, tattered bull banners, warm haze",
+    "first person at 1.6 m eye height",
+    "Inferno Bull is a 2.9 m bull-headed gunslinger in a wide hat; Lil Blunt is never seen (first person)"
+   ],
+   "views": [
+    {
+     "name": "arrival",
+     "kind": "i2i",
+     "lock": "env",
+     "aspect": "16:9",
+     "refs": [
+      "artifacts/episode2-gold-mine/references/founder_2026-10-10/lift_walkway_target.jpg"
+     ],
+     "prompt": "Same place and same art direction as the reference: the player has just walked out of a narrow timber-framed rock tunnel and looks along the plank walkway with wooden rails and sagging chains toward the rusted iron mine lift cage with gears on its roof, hanging chains, oil lanterns glowing orange, bull skulls and tattered bull banners on the timber walls, warm smoky haze. First person eye height, nobody in the shot, no weapon in view."
+    },
+    {
+     "name": "rise",
+     "kind": "i2i",
+     "from": "arrival",
+     "lock": "env",
+     "aspect": "16:9",
+     "prompt": "Same mine, now seen from INSIDE the rising iron lift cage looking out through its iron bars: the rock shaft wall and timber guide beams sliding past, a timber gallery landing with a lantern passing below, chains running up to a big pulley wheel in the dark above, warm lantern light, dust in the air. First person eye height, nobody in the shot."
+    },
+    {
+     "name": "top_exit",
+     "kind": "i2i",
+     "from": "arrival",
+     "lock": "env",
+     "aspect": "16:9",
+     "prompt": "Same mine and art direction, at the TOP of the lift shaft: the iron cage has arrived and its gate is open onto a plank walkway with wooden rails and chains that leads out through a timber-framed mine mouth into bright warm daylight and a pine forest outside, a bull skull over the mouth, a lantern on a post, dust motes in the shaft of sunlight. First person eye height looking toward the daylight, nobody in the shot."
+    }
+   ]
+  },
+  {
+   "id": "mine_lift_kit",
+   "title": "Mine lift set-dressing kit: textures, banner, skull (founder target 2026-10-10)",
+   "constraints": [
+    "seamless tiling textures, flat even light, no perspective",
+    "banner on a flat pure green backdrop so it can be keyed to alpha"
+   ],
+   "views": [
+    {
+     "name": "tex_planks",
+     "kind": "t2i",
+     "lock": "object",
+     "aspect": "1:1",
+     "prompt": "IGNORE the studio backdrop: a perfectly flat, top-down, evenly lit SEAMLESS TILING TEXTURE that fills the whole square edge to edge: five old dark weathered mine walkway planks running vertically, grey-brown oak with deep grain, splits, worn edges, dark gaps between planks, a few square iron nail heads, grime and soot. No perspective, no shadows from a light direction, no border."
+    },
+    {
+     "name": "tex_rust_iron",
+     "kind": "t2i",
+     "lock": "object",
+     "aspect": "1:1",
+     "prompt": "IGNORE the studio backdrop: a perfectly flat, front-on, evenly lit SEAMLESS TILING TEXTURE that fills the whole square edge to edge: heavily rusted riveted iron plate from an old mine lift, orange-brown rust over dark iron, pitting, flaking paint, two rows of round rivet heads along the top and bottom edges. No perspective, no border."
+    },
+    {
+     "name": "banner",
+     "kind": "t2i",
+     "lock": "object",
+     "aspect": "3:4",
+     "prompt": "IGNORE the grey studio backdrop: on a perfectly flat uniform pure chroma-green (#00FF00) background, front-on, one tattered old western banner of dark brick-red canvas hanging from a short wooden pole at the top, a bleached longhorn bull skull painted on it in faded bone white, the bottom edge torn into ragged strips, dirt and burn marks. The banner is centred, flat to the camera, the whole banner and pole in frame."
+    },
+    {
+     "name": "skull",
+     "kind": "t2i",
+     "lock": "object",
+     "aspect": "4:3",
+     "prompt": "A single bleached longhorn bull skull with long curved horns, weathered bone with cracks and dirt, front three-quarter view, the whole skull and both horn tips in frame."
+    },
+    {
+     "name": "barrel",
+     "kind": "t2i",
+     "lock": "object",
+     "aspect": "1:1",
+     "prompt": "One old weathered wooden mine barrel with three rusted iron hoops, dark grey-brown oak staves, grime and dents, standing upright, three-quarter view from slightly above, the whole barrel in frame."
+    },
+    {
+     "name": "crate",
+     "kind": "t2i",
+     "lock": "object",
+     "aspect": "1:1",
+     "prompt": "One old weathered wooden mining supply crate made of dark planks with rusted iron corner brackets and rivets, three-quarter view from slightly above, the whole crate in frame."
+    }
+   ]
+  }
+ ],
+ "style_lock_scene": "Photorealistic cinematic concept still for a first-person western shooter, 'western Modern Warfare' art direction: warm low sun key light with teal-blue shadow fill, thin atmospheric haze, physically based materials (weathered timber, rusted riveted steel, packed dirt, gravel, bark, dust), natural film grain, 35mm lens at human eye height (1.6 m), high dynamic range, sharp detail, believable scale. The named characters in the brief are the only characters. No text, no lettering, no watermark, no logos, no user interface."
 }

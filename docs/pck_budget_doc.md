@@ -7,6 +7,9 @@ The itch.io per-file limit is 200 MB; CI fails the build above **190 MiB** (199,
 | 2026-10-09 | master c6fa391 (first-person everywhere) | 187 MB |
 | 2026-10-10 | branch with the modelled flame quad (v1, Blender kit-bash) | 188 MB |
 | 2026-10-10 | AI-built flame quad (Tripo via Muapi) replacing it | master run 38016691615 passed the 190 MiB gate and deployed (butler pushed 222.85 MiB total, +32.6 MiB fresh) |
+| 2026-10-10 | master after other sessions' merges | 188 MB (run 38031277359) - effectively full |
+| 2026-10-10 | 14 non-face model textures -> lossy WebP (carts, mine tunnel, forge rifle, helmet, wrecks, whiskey, gatling, ore cart, cauldron, coin, founder rifle @0.9) | -10.0 MB (11.7 -> 1.7 MB packed; PSNR >= 31.5 dB, rifle render 54.8 dB) |
+| 2026-10-10 | mine lift rework (Tripo cage 0.96 MB, kit 0.05, skull/barrel/crate 0.4, textures 0.35) | +1.8 MB |
 
 Headroom is about **2 MiB**. A hero character (AwesomeX) is 3-5 MB, a building set 1-2 MB, a voice batch 1-2 MB: the next big prep piece does not fit
 without freeing room first.

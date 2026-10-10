@@ -1,0 +1,17 @@
+{
+ "request_id": "689a09df-18bf-4d00-baec-0fc7d6b4ffc6",
+ "endpoint": "gpt-image-2-text-to-image",
+ "payload": {
+  "prompt": "Photorealistic product-style reference for 3D modelling: the single subject centred with generous margin on a seamless plain mid-grey studio backdrop, soft even key light with a gentle rim light, sharp focus, true materials (lacquer, chrome, leather, rubber, rust, scale, steel), no text, no logos, no people, only a soft contact shadow. IGNORE the studio backdrop: a perfectly flat, front-on, evenly lit SEAMLESS TILING TEXTURE that fills the whole square edge to edge: heavily rusted riveted iron plate from an old mine lift, orange-brown rust over dark iron, pitting, flaking paint, two rows of round rivet heads along the top and bottom edges. No perspective, no border.",
+  "aspect_ratio": "1:1",
+  "resolution": "2K",
+  "quality": "high"
+ },
+ "url": "https://cdn.muapi.ai/outputs/generated/689a09df-18bf-4d00-baec-0fc7d6b4ffc6_995ad599.png",
+ "cost_usd": 0.36,
+ "size": [
+  1600,
+  1600
+ ],
+ "made": "2026-10-10"
+}

@@ -48,6 +48,11 @@ func _lift() -> void:
 	var l: MineLiftChamber = c
 	_run(1.5)
 	await _cap("lift_1_arrive")
+	var p0: Vector3 = l._player_pos
+	l._player_pos = Vector3(0.0, 0.0, -8.0)             # the founder-target framing: just out of the hideout tunnel, the bridge and cage ahead
+	_run(0.3)
+	await _cap("lift_0_entry")
+	l._player_pos = p0
 	c.set_aim(true)
 	_run(0.6)
 	await _cap("lift_1b_ads")
@@ -72,6 +77,14 @@ func _lift() -> void:
 		_run(0.2)
 	_run(3.0)
 	await _cap("lift_5_surface")
+	var g2 := 0
+	while l.is_show_active() and g2 < 200:              # Inferno walks out first; frame the walkway once he is on his way
+		g2 += 1
+		_run(0.1)
+	l._look_yaw = 0.0                                   # turn to the daylight: the walkway out of the shaft (target view top_exit)
+	l._look_pitch = -0.05
+	_run(1.5)
+	await _cap("lift_6_exit_walkway")
 
 
 func _woods() -> void:
