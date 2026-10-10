@@ -5,6 +5,8 @@
 
 ---
 
+**PERSONAL ARMORY AND LIVING-WOODS SKILLS PREPARED (2026-10-10; gameplay implementation pending).** The founder's Winchester 1886/golden Remington 1875 quick-switch armory, finite ammo and future bear arrows now have a shared convention and six routed skills. They cover bear roaming/patrolling/reading/sleeping, local awareness and claws/arrows, persistent searchable bodies, Inferno's lookout/panic/defensive fire and hand-brushed quad cover, sparse delayed pursuit across the mountain, parking/uphill binocular observation, and atomic retry at the surface elevator exit. This preserves Claude's latest forest/lift/Tripo-bear foundations and the later Fort Knox rescue plot. Read `design/ep2/LIVING_WOODS_CONTRACT.md` via `.claude/skills/ep2-living-woods/SKILL.md`. Jev and Microsoft Decision were both contacted; the OpenRouter proxy returned CONNECT 403 for both, so no model verdict is claimed (`design/ep2/LIVING_WOODS_DECISIONS.md`). This is skills/documentation work, not new playable behavior or a live game release.
+
 
 **INFERNO BULL WHISKEY REMOVAL (2026-10-10, release verification pending).** The glass stays on the whiskey table during seating, walking and handover cleanup. It is never attached to Bull’s left hand. His standing idle now restores both arms’ imported rest pose and yields to either hand’s active IK. Native gameplay-camera evidence is in `docs/episode2-quality/whiskey-removal-2026-10-10/`. This focused correction does not complete the outstanding Bull sculpt, archer bear, armory/bullion or molten-river requests.
 

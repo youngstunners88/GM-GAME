@@ -25,6 +25,7 @@ the next agent hunting for files that were renamed.
 | Level work | `src/level/level_base.gd` + the specific level |
 | UI work | `src/ui/hud.gd` or `src/ui/main_menu.gd` + the target scene |
 | Shooter (v1.2) | → `.claude/context-manifests/shooter.md` |
+| Episode 2 armory / living bears / Bull stealth / corpse arrows / retry / quad pursuit | `.claude/skills/ep2-living-woods/SKILL.md`, `design/ep2/LIVING_WOODS_CONTRACT.md`; then only the component skill and source paths for the task |
 | ICP / canisters | → `.claude/context-manifests/icp.md` |
 | Security / secrets / CI | `docs/security/GAME_SECURITY_CHECKLIST.md`, `scripts/security-sentinel.sh` |
 | Deploy / export | `.github/workflows/export-game.yml`, `scripts/verify-game.mjs` |

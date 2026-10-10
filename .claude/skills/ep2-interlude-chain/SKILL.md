@@ -5,6 +5,10 @@ description: Build, extend or debug the Episode 2 story chain AFTER the hideout 
 
 # Episode 2 interlude chain (founder 2026-10-09)
 
+## Founder clarification, 2026-10-10
+
+For personal armory, living bears, Inferno lookout/panic, physical leaf brushing, surface-exit retry and the noisy quad-to-mountain lookout, route through `.claude/skills/ep2-living-woods/SKILL.md` and `design/ep2/LIVING_WOODS_CONTRACT.md`. That newer request supersedes this skill's older Winchester-only, harmless-rooms, cosmetic detection and flying-leaves conventions for this slice. The current runtime still has those limitations: the new skill package is preparation, not a claim they are fixed. Preserve first-person control, tutorial/acquisition gates, the 3-heart cap and later Fort Knox story. Encounter failure resets the attempt; it does not permanently kill the canonically rescued Bull.
+
 The founder is changing the episode: after the hideout the scene is NOT the cart runner. The chain is
 **hideout -> lava river -> mine lift -> bear woods -> (next: Lil Blunt shoots the bears from the quad while Inferno rides)**.
 "We're laying the ground work" - this is the transition layer plus the external environment. The slice ends with
