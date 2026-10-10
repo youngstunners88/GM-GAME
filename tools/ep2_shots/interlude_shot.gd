@@ -106,6 +106,20 @@ func _woods() -> void:
 	await _cap("woods_0_target")
 	w._look_pitch = keep_pitch
 	_run(0.2)
+	# the founder's bear stills (2026-10-10): a bear in the wood, close, from the player's eye - the first patrol bear from ~6 m
+	var keep_pos: Vector3 = w._player_pos
+	var pb: Node3D = w._patrols[0][0]
+	var to_b: Vector3 = pb.global_position - Vector3(0.0, 0.0, 0.0)
+	w._player_pos = Vector3(to_b.x + 4.0, 0.0, to_b.z - 4.5)
+	var dlook: Vector3 = (pb.global_position + Vector3(0.0, 1.2, 0.0)) - (w._player_pos + Vector3(0.0, 1.55, 0.0))
+	w._look_yaw = atan2(dlook.x, dlook.z)
+	w._look_pitch = atan2(dlook.y, Vector2(dlook.x, dlook.z).length())
+	_run(0.1)
+	await _cap("woods_9_bear_close")
+	w._player_pos = keep_pos
+	w._look_yaw = 0.0
+	w._look_pitch = keep_pitch
+	_run(0.1)
 	if _quick:
 		return
 	w.shoot()

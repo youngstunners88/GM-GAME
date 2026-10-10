@@ -1,12 +1,21 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/smokerealm
-**Branch:** master (mine lift deployed: CI run 38039573379, butler step success)
+**Branch:** master (bear woods deployed: CI run 38040736900, butler "Pushed to" confirmed)
 
 ---
 
 
 **INFERNO BULL WHISKEY REMOVAL (2026-10-10, release verification pending).** The glass stays on the whiskey table during seating, walking and handover cleanup. It is never attached to Bull’s left hand. His standing idle now restores both arms’ imported rest pose and yields to either hand’s active IK. Native gameplay-camera evidence is in `docs/episode2-quality/whiskey-removal-2026-10-10/`. This focused correction does not complete the outstanding Bull sculpt, archer bear, armory/bullion or molten-river requests.
+
+
+**🐻 YOUR TRIPO BEARS ARE IN THE WOODS (2026-10-10).** The Meshy bears are gone:
+- **Every bear outdoors (camp + patrols) is now your Tripo miner bear** (helmet with lamp, red bandana, harness, claws), from your Drive export "Bear warrior 3d model". Tripo Studio links can't be downloaded by the API, so I used your Drive copy of the same model.
+- **Why it never worked before:** that Tripo export's rig is broken (the bones lost their rest positions, so the skin tears into shards). I put the Tripo body onto the existing bear skeleton instead (3 cm fit), so it keeps every bear animation (idle, aim, shot, hit, fall, stomp, leap). Those clips were made for a bow-holding archer, so a small bone modifier lowers the empty arms out of the T into a claws-out stance.
+- **Your Tripo bear archer** (bow drawn, lamp lit, your first still) now stands as two sentries at the camp edge, aiming down the approach. You see them through the spyglass.
+- The runner's rigged bears use the same file, so they are your Tripo bear too. Tests: woods/lift suite (new check: Tripo body + lowered arms + 2 archer sentries), runner motion/graybox, Fort Knox arc all pass. Pack +2.8 MB. Pictures: `docs/episode2-quality/tripo-bears-2026-10-10/`.
+
+---
 
 
 **🌲 THE BEAR WOODS REBUILT TOWARD YOUR PHOTOREAL FOREST (2026-10-10).** Your picture (giant trunks, light through the canopy, moss floor) is now the woods' reference:
@@ -9367,7 +9376,7 @@ browsers. Fixes shipped:
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/smokerealm
-**Branch:** master (mine lift deployed: CI run 38039573379, butler step success)
+**Branch:** master (bear woods deployed: CI run 38040736900, butler "Pushed to" confirmed)
 
 ---
 

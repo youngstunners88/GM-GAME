@@ -211,6 +211,16 @@ func _ready() -> void:
 	var bird0: Vector3 = (wl._birds[0][0] as Node3D).position if wl != null and not wl._birds.is_empty() else Vector3.ZERO
 	_run(w, 1.0)
 	_check("birds fly in the wood (a few, moving)", wl != null and wl.get_bird_count() >= 5 and (wl._birds[0][0] as Node3D).position.distance_to(bird0) > 3.0)
+	# the founder's TRIPO bears, not the Meshy ones (2026-10-10): the rigged bear file is the Tripo body on the bear skeleton,
+	# its bow-less arms lowered out of the archer T, plus two Tripo bear-archer sentries drawing on the approach
+	var cb: Ep2Actor = w.get_camp_bears()[0]
+	var bear_tris: int = 0
+	for mi in cb.find_children("*", "MeshInstance3D", true, false):
+		if (mi as MeshInstance3D).mesh != null:
+			bear_tris += (mi as MeshInstance3D).mesh.get_faces().size() / 3
+	_check("the woods bears are the founder's Tripo bear (dense hyper-real body, arms lowered) + 2 Tripo archer sentries",
+		bear_tris > 30000 and cb.skeleton != null and cb.skeleton.get_node_or_null("ArmsDown") != null
+		and w._visuals.find_children("BearArcherSentry*", "", false, false).size() == 2, "tris %d" % bear_tris)
 	_check("the ElevenLabs woods soundscape is loaded (ambience loop, gust, 3 bird calls, flutter)", wl != null and wl._ambience.stream != null and wl._gust.stream != null
 		and Ep2Wildlife.CALLS.all(func(p): return ResourceLoader.exists(p)) and ResourceLoader.exists(Ep2Wildlife.FLUTTER))
 	var quad_aabb: Vector3 = Vector3.ZERO

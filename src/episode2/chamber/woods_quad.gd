@@ -66,6 +66,7 @@ const FLOOR_TEX := "res://src/episode2/assets/woods/tex_woods_floor.jpg"
 const BRANCH_TEX := "res://src/episode2/assets/woods/tex_woods_branch.png"
 const FERN_TEX := "res://src/episode2/assets/woods/tex_woods_fern.png"
 const ROCK_MODEL := "res://src/episode2/assets/woods/woods_rock.glb"
+const BEAR_ARCHER_MODEL := "res://src/episode2/assets/mine_bear_archer.glb"   # founder's Tripo bear archer (static, bow drawn)
 const FOLIAGE_SHADER := "res://src/episode2/art/ep2_foliage_wind.gdshader"
 const GIANT_SPACING := 10.5                          # metres between the old-growth giants (the target's trunks are 1-3 m across)
 
@@ -640,6 +641,20 @@ func _build_camp() -> void:
 	var cx: float = CAMP_CENTRE.x
 	var cz: float = CAMP_CENTRE.z
 	_box(Vector3(46.0, 0.06, 38.0), Vector3(cx, 0.03, cz), _tex(GRAVEL_TEX, Color(0.40, 0.31, 0.22), 0.5))
+	# two sentries at the camp's edge: the founder's Tripo BEAR ARCHER (bow drawn, miner's lamp lit - his reference still),
+	# aiming down the approach toward the ridge. Static pose; the arrow runs along the model's +X, so a +90 deg yaw aims it at -Z.
+	if ResourceLoader.exists(BEAR_ARCHER_MODEL):
+		var sentries: Array = [Vector3(-6.5, 0.0, 172.0), Vector3(7.5, 0.0, 173.5)]
+		for si in sentries.size():
+			var sp: Vector3 = sentries[si]
+			var archer: Node3D = (load(BEAR_ARCHER_MODEL) as PackedScene).instantiate()
+			archer.name = "BearArcherSentry%d" % si
+			# the imported scene is already 1.69 m tall (inner node x1.9) and CENTRED on y (base at -0.863): lift it onto the ground
+			var k: float = 2.0 / (0.892 * 1.9009)
+			archer.scale = Vector3.ONE * k
+			archer.position = sp + Vector3(0.0, 0.8629 * k, 0.0)
+			archer.rotation.y = PI * 0.5 + (sp.x * 0.012)
+			_visuals.add_child(archer)
 	# tents: prisms
 	for tp in [Vector3(-12.0, 0.0, 186.0), Vector3(11.0, 0.0, 184.0), Vector3(-9.0, 0.0, 199.0), Vector3(9.0, 0.0, 198.0)]:
 		var pm := PrismMesh.new()
@@ -720,6 +735,11 @@ func _make_bear(pos: Vector3) -> Ep2Actor:
 	var ok: bool = b.setup(RunnerMotion.BEAR_RIG, 1.9, 2.2, {}, [])
 	if not ok or b.anim == null:
 		return b
+	# the founder's Tripo bear on the archer clips: lower the bow-less arms out of the T (Ep2BearArmsDown)
+	if b.skeleton != null:
+		var arms := Ep2BearArmsDown.new()
+		arms.name = "ArmsDown"
+		b.skeleton.add_child(arms)
 	var names: PackedStringArray = b.anim.get_animation_list()
 	var idle: String = ""
 	var walk: String = ""
