@@ -1,24 +1,28 @@
 {
-  "observed_remote_sha": "cbc90b14fa2bc554ea56186d0d80643e8e8a170c",
-  "objective": "Blender hideout and target-range finish shipped; preserve founder character/film and concurrent Claude rifle work.",
+  "observed_remote_sha": "aebdee36797cd7f85776ee2e6802ef952dd32f6c",
+  "objective": "Prepare founder-requested personal armory and living-woods skills; preserve concurrent Claude world foundations.",
   "task_paths": [
-    "src/episode2",
-    "design/ep2/blender",
-    "tests/ep2_smelting_facility_test.gd",
+    ".claude/skills/ep2-living-woods",
+    ".claude/skills/ep2-personal-armory",
+    ".claude/skills/ep2-bear-awareness",
+    ".claude/skills/ep2-inferno-stealth",
+    ".claude/skills/ep2-mountain-quad-escape",
+    ".claude/skills/ep2-encounter-checkpoints",
+    "design/ep2/LIVING_WOODS_CONTRACT.md",
+    "design/ep2/LIVING_WOODS_DECISIONS.md",
     "CLAUDE.md",
-    "AGENTS.md"
+    "AGENTS.md",
+    "STATUS.md"
   ],
   "evidence": {
-    "blender_release_source": "e380e63e4b991d786ada057addf548dc235c8299",
-    "ci_run": "https://github.com/youngstunners88/GM-GAME/actions/runs/37934980430",
-    "upload": "Job 113835618869 logged successful butler upload at 2026-10-09T13:17:56Z.",
-    "native_tests": "Nine suites: 295 checks, 294 scripts / 215 scenes.",
-    "visuals": "docs/episode2-quality/blender-environment-2026-10-09/README.md",
-    "receipt": "docs/episode2-quality/blender-environment-2026-10-09/release-receipt.json"
+    "baseline_sha": "aebdee36797cd7f85776ee2e6802ef952dd32f6c",
+    "skill_validation": "Six frontmatters, 28 referenced skill/manifest paths, decision JSON and diff whitespace checked. Runtime untouched.",
+    "decision_attempts": "Jev and Microsoft Decision each denied by proxy CONNECT 403; no returned verdict. See design/ep2/LIVING_WOODS_DECISIONS.md.",
+    "prior_release_reference": "docs/episode2-quality/blender-environment-2026-10-09/release-receipt.json (historical)"
   },
   "unresolved": [
-    "Bull sculpt and full cinematic reference fidelity remain separate unresolved work.",
-    "No mobile or long-soak validation; public capture reaches aim stage, native suites cover complete lesson."
+    "OpenRouter destination access for both requested model reviews.",
+    "Runtime armory, dangerous woods, corpse loot and retry remain implementation work; skills do not claim them playable."
   ],
-  "next_action": "Fetch master, run resume digest, inspect latest founder feedback and concurrent commits. Do not redo the shipped finish kit; use its packed Blender workbench and evidence for further improvements."
+  "next_action": "Refresh master before implementation, read ep2-living-woods, allocate file ownership, retry decision reviews only after network access changes."
 }

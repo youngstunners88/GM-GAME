@@ -16,6 +16,8 @@ geometry the later playable beats need. It is not the playable claim.
 
 # Hard rules (verbatim from the file; tests/ep2_fort_knox_arc_test.gd locks them)
 
+**2026-10-10 scope clarification:** the founder has requested skills/conventions for dangerous woods, quick Winchester/Remington selection, lootable bear bodies, Inferno defensive fire, a noisy quad escape and park/uphill/binocular observation. Use `ep2-living-woods` and `design/ep2/LIVING_WOODS_CONTRACT.md` for that specified slice. This preparation does not implement the later vault/decoy run. Selecting the earned Remington is allowed; an encounter failure involving Bull retries at the surface exit and is not his permanent story death. Do not re-ask whether the explicitly specified escape systems may be prepared. The historical status table below does not establish those systems are implemented.
+
 1. **Do not implement the ride until the founder says the prep pass is open.** (The passive quad ride to the ridge that the founder asked
    for on 10-09 is built; the CLAIM RUN - shooting bears from the back seat - is not.)
 2. **Do not invent a second plot.**
