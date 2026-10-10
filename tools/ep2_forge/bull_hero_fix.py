@@ -13,9 +13,15 @@ behaviour keeps working. What changes (measured 2026-10-11, skill ep2-bull-repos
      (+ the joint it hangs from); the rest is renormalised.
   3. The stub of the deleted fused rifle left in the LEFT fist is removed (islands listed by --report) so the separate
      rifle prop (Ep2BullHeroRifle) sits in a clean fist.
-  4. The embedded base colour is dropped to a 4 px swatch when --tiny-tex: every runtime path overrides it with
-     textures/bull_albedo.jpg (_fix_bull_materials), so the 0.5 MB copy in the GLB is dead weight.
+  4. --tiny-tex (NOT used for the shipped GLB): would drop the embedded base colour. Do not: cliff_jump_cinematic.gd
+     loads this GLB WITHOUT the bull_albedo.jpg override, so it needs the embedded atlas.
+  Also: islands wholly inside --drop-box boxes are deleted (the rifle stub), triangles bridging a hand and the body are
+  cut (--cut-hands), the backpack rides Spine02 rigidly, and weights are smoothed --smooth passes over the welded surface.
 
+  Shipped 2026-10-11 (inferno_bull_rigged.glb, source kept at .farm/retired/inferno_bull_rigged_pre_hero_2026-10-11.glb):
+    python3 tools/ep2_forge/bull_hero_fix.py .farm/retired/inferno_bull_rigged_pre_hero_2026-10-11.glb \
+      src/episode2/assets/inferno_bull_rigged.glb --drop-box 0.42,0.70,0.80,1.30,0.06,0.42 \
+      --drop-box 0.40,0.75,1.43,1.70,0.05,0.40 --drop-box 0.60,0.75,1.20,1.70,0.0,0.40
   python3 tools/ep2_forge/bull_hero_fix.py <in.glb> <out.glb> [--report] [--drop-islands 12,40] [--tiny-tex]
 """
 import argparse, io, json, struct, sys, os
@@ -32,10 +38,11 @@ LIMBS = {
     "rarm": ["RightShoulder", "RightArm", "RightForeArm", "RightHand"],
     "lleg": ["LeftUpLeg", "LeftLeg", "LeftFoot", "LeftToeBase"],
     "rleg": ["RightUpLeg", "RightLeg", "RightFoot", "RightToeBase"],
+    "pack": ["Spine02"],          # the backpack rides the upper spine rigidly (never the head or the arms)
 }
 # bones a limb may borrow at its root (shoulder / hip blend)
-BORROW = {"core": ["LeftShoulder", "RightShoulder", "LeftUpLeg", "RightUpLeg", "LeftArm", "RightArm"],
-          "larm": ["Spine02", "neck"], "rarm": ["Spine02", "neck"], "lleg": ["Hips"], "rleg": ["Hips"]}
+BORROW = {"core": ["LeftShoulder", "RightShoulder", "LeftUpLeg", "RightUpLeg"],
+          "larm": ["Spine02", "neck"], "rarm": ["Spine02", "neck"], "lleg": ["Hips"], "rleg": ["Hips"], "pack": ["Spine01"]}
 
 
 def quat_mat(q):
@@ -160,6 +167,8 @@ def main():
     ap.add_argument("--tiny-tex", action="store_true")
     ap.add_argument("--no-idle", action="store_true")
     ap.add_argument("--no-weights", action="store_true")
+    ap.add_argument("--cut-hands", type=float, default=0.22, help="radius around each hand for bridge cutting (0 = off)")
+    ap.add_argument("--smooth", type=int, default=6, help="weight smoothing passes over the welded surface")
     ap.add_argument("--breath", type=float, default=1.0)
     a = ap.parse_args()
 
@@ -180,7 +189,15 @@ def main():
     nv = len(P)
     # islands
     e = np.concatenate([I[:, [0, 1]], I[:, [1, 2]]])
-    g = coo_matrix((np.ones(len(e)), (e[:, 0], e[:, 1])), shape=(nv, nv))
+    # UV seams split one surface into several vertex islands; weld by position so a seam never tears
+    _, weld = np.unique(np.round(P, 5), axis=0, return_inverse=True)
+    weld = weld.reshape(-1)
+    first = np.full(weld.max() + 1, -1)
+    for v in range(nv):
+        if first[weld[v]] < 0:
+            first[weld[v]] = v
+    ew = np.concatenate([e, np.stack([np.arange(nv), first[weld]], 1)])
+    g = coo_matrix((np.ones(len(e)), (e[:, 0], e[:, 1])), shape=(nv, nv))     # UV islands (drop boxes work on these)
     ncomp, lab = connected_components(g, directed=False)
     sizes = np.bincount(lab, minlength=ncomp)
     order = np.argsort(-sizes)
@@ -240,18 +257,25 @@ def main():
             n = joints[k]
             kids = [c for c in j["nodes"][n].get("children", []) if c in joints]
             tip = W[kids[0]][:3, 3] if kids else jpos[nm]
-            limb = next(L for L, bs in LIMBS.items() if nm in bs)
+            limb = next(L for L, bs in LIMBS.items() if nm in bs and L != "pack")
             if nm in ("head_end", "headfront"):
                 continue
             segs.append((limb, k, jpos[nm], tip))
         D = np.stack([seg_dist(P, s[2], s[3]) for s in segs], 1)
         near = np.array([s[0] for s in segs])[np.argmin(D, 1)]
+        # The backpack (bedroll, lantern, straps) sits BEHIND the shoulders, so nearest-segment calls it "arm" and the
+        # Talk / walk arm swing tore it into shards. Everything clearly behind the torso and between the shoulders is core.
+        back = (P[:, 2] < jpos["Spine02"][2] - 0.16) & (np.abs(P[:, 0]) < 0.52) & (P[:, 1] > 1.15)
+        near = near.astype("<U4")
+        near[back] = "pack"
+        # Belt pouches / holster straps hang beside the hands: below the belt line and inside the hip width they are never
+        # arm (the old weights stretched them into the "melted" flap when the arm moved).
+        belt = (P[:, 1] < 1.30) & (np.abs(P[:, 0]) < 0.44) & np.isin(near, ["larm", "rarm"])
+        hipD = np.stack([D[:, [i for i, sg in enumerate(segs) if sg[0] == L]].min(1) for L in ("core", "lleg", "rleg")], 1)
+        near[belt] = np.array(["core", "lleg", "rleg"])[np.argmin(hipD[belt], 1)]
         limb_of = near.copy()
-        # small islands move as one: majority label
-        for c in np.where(sizes < 3000)[0]:
-            ids = np.where(lab == c)[0]
-            vals, cnt = np.unique(near[ids], return_counts=True)
-            limb_of[ids] = vals[np.argmax(cnt)]
+        # Per-vertex labels (position based, so the two copies of a UV-seam vertex always agree). A per-UV-island
+        # majority vote was tried and tore the seams open when a limb moved.
         allowed = {L: set(jname.index(x) for x in LIMBS[L] + BORROW[L] if x in jname) for L in LIMBS}
         before_bad = 0
         nearest_bone = np.array([s[1] for s in segs])[np.argmin(D, 1)]
@@ -266,7 +290,11 @@ def main():
             jj = J[m]
             # nothing left: bind rigidly to the nearest bone of its own limb
             jj[zero] = 0
-            jj[zero, 0] = nearest_bone[m][zero]
+            if L == "pack":
+                jj[zero, 0] = jname.index("Spine02")
+            else:
+                own = [i for i, sg in enumerate(segs) if sg[0] == L]
+                jj[zero, 0] = np.array([segs[i][1] for i in own])[np.argmin(D[m][zero][:, own], 1)]
             w[zero] = 0
             w[zero, 0] = 1.0
             J[m] = jj
@@ -274,6 +302,24 @@ def main():
         print("weights: %d vertices had >5%% weight from another limb (now 0)" % before_bad)
         for L in LIMBS:
             print("  limb %-4s %6d verts" % (L, int((limb_of == L).sum())))
+        # Smooth the limb-clean weights over the WELDED surface so limb borders blend instead of tearing / stretching.
+        nb = len(jname)
+        dense = np.zeros((nv, nb))
+        np.add.at(dense, (np.repeat(np.arange(nv), 4), J.reshape(-1)), Wt.reshape(-1))
+        A = coo_matrix((np.ones(2 * len(ew)), (np.concatenate([ew[:, 0], ew[:, 1]]), np.concatenate([ew[:, 1], ew[:, 0]]))),
+                       shape=(nv, nv)).tocsr()
+        A.data[:] = 1.0
+        deg = np.asarray(A.sum(1)).reshape(-1, 1)
+        hard = dense.copy()
+        for _ in range(a.smooth):
+            dense = 0.5 * dense + 0.5 * (A @ dense) / np.maximum(deg, 1)
+        pk = limb_of == "pack"           # the backpack stays rigid on the upper spine (smoothing bent it on the sit clip)
+        dense[pk] = hard[pk]
+        top = np.argsort(-dense, 1)[:, :4]
+        Wt = np.take_along_axis(dense, top, 1)
+        Wt[Wt < 0.02] = 0.0
+        Wt /= np.maximum(Wt.sum(1, keepdims=True), 1e-9)
+        J = top
         jc = j["accessors"][prim["attributes"]["JOINTS_0"]]["componentType"]
         jt = {5121: np.uint8, 5123: np.uint16}[jc]
     wr = Writer(j, b)
@@ -281,8 +327,24 @@ def main():
         prim["attributes"]["JOINTS_0"] = wr.add(J.astype(jt), jc, "VEC4", 34962)
         prim["attributes"]["WEIGHTS_0"] = wr.add(Wt.astype(np.float32), 5126, "VEC4", 34962)
 
+    # --- 2b. cut the fused hand: Tripo sculpted the right fist INTO the flask pouch (one surface). Triangles near a hand
+    # whose corners belong to the arm AND to the body stretch into a sheet when the arm moves; delete those bridges.
+    if not a.no_weights and a.cut_hands > 0:
+        lab3 = limb_of[I]
+        arm3 = np.isin(lab3, ["larm", "rarm"])
+        mixed = arm3.any(1) & ~arm3.all(1)
+        near_hand = np.zeros(len(I), bool)
+        for hn in ("RightHand", "LeftHand"):
+            near_hand |= np.linalg.norm(P[I].mean(1) - jpos[hn], axis=1) < a.cut_hands
+        bridge = mixed & near_hand & (P[I].mean(1)[:, 1] < jpos["RightForeArm"][1])
+        I = I[~bridge]
+        print("cut %d hand-to-body bridge triangles" % int(bridge.sum()))
+        drop_tri = True
+    else:
+        drop_tri = False
+
     # --- 3. drop rifle-stub islands ------------------------------------------------------------------------------------
-    if drop:
+    if drop or drop_tri:
         keep = ~np.isin(lab[I[:, 0]], list(drop))
         I2 = I[keep]
         print("dropped islands", sorted(drop), "tris", len(I) - len(I2))

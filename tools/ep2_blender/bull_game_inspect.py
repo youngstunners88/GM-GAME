@@ -14,6 +14,9 @@ ap.add_argument("glb"); ap.add_argument("out")
 ap.add_argument("--clip", default=""); ap.add_argument("--frame", type=float, default=1.0)
 ap.add_argument("--islands", action="store_true"); ap.add_argument("--res", type=int, default=640)
 ap.add_argument("--views", default="front,side,back")
+ap.add_argument("--clip-glb", default="", help="take --clip from this armature-only GLB (walk / run / sit)")
+ap.add_argument("--lock-arms", action="store_true", help="arms at rest (Ep2BullHero locks them at idle/walk)")
+ap.add_argument("--stretch", action="store_true", help="print edge stretch stats (posed vs bind) = the melted-arm measure")
 ap.add_argument("--zoom", default="", help="x,z,ortho_scale: close-up centre (Blender metres)")
 a = ap.parse_args(sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else sys.argv[1:])
 
@@ -21,14 +24,45 @@ bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.gltf(filepath=a.glb)
 arm = next(o for o in bpy.data.objects if o.type == "ARMATURE")
 mesh = next(o for o in bpy.data.objects if o.type == "MESH")
+if a.clip_glb:
+    have = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=a.clip_glb)
+    for o in set(bpy.data.objects) - have:
+        bpy.data.objects.remove(o, do_unlink=True)
+    print("ACTIONS", [x.name for x in bpy.data.actions])
 if arm.animation_data:
     if a.clip:
         act = bpy.data.actions.get(a.clip) or next((x for x in bpy.data.actions if x.name.startswith(a.clip)), None)
         arm.animation_data.action = act
+        # Ep2Actor._drop_bone_translations: only Hips keeps translation keys at runtime
+        for fc in [f for f in act.fcurves if f.data_path.endswith("location") and '"Hips"' not in f.data_path]:
+            act.fcurves.remove(fc)
+        if a.lock_arms:
+            for fc in [f for f in act.fcurves if any('"%s"' % b in f.data_path for b in ("LeftShoulder", "LeftArm", "LeftForeArm",
+                       "LeftHand", "RightShoulder", "RightArm", "RightForeArm", "RightHand"))]:
+                act.fcurves.remove(fc)
     else:
         arm.animation_data.action = None
         for pb in arm.pose.bones:
             pb.matrix_basis.identity()
+if a.stretch:
+    import numpy as np
+    me0 = mesh.data
+    ev = np.array([e.vertices[:] for e in me0.edges])
+    co0 = np.array([v.co[:] for v in me0.vertices])
+    L0 = np.linalg.norm(co0[ev[:, 0]] - co0[ev[:, 1]], axis=1)
+    worst = []
+    rng = bpy.context.scene.frame_end if not arm.animation_data or not arm.animation_data.action else int(arm.animation_data.action.frame_range[1])
+    for f in range(1, max(2, rng), 3):
+        bpy.context.scene.frame_set(f)
+        dg = bpy.context.evaluated_depsgraph_get()
+        me1 = mesh.evaluated_get(dg).to_mesh()
+        co1 = np.array([v.co[:] for v in me1.vertices])
+        L1 = np.linalg.norm(co1[ev[:, 0]] - co1[ev[:, 1]], axis=1)
+        r = L1 / np.maximum(L0, 1e-5)
+        worst.append(((r > 2.0) & (L0 > 1e-4)).sum())
+        mesh.evaluated_get(dg).to_mesh_clear()
+    print("STRETCH frames=%d edges>2x: mean=%.1f max=%d" % (len(worst), float(np.mean(worst)), int(np.max(worst))))
 bpy.context.scene.frame_set(int(a.frame))
 bpy.context.view_layer.update()
 for pb in arm.pose.bones:

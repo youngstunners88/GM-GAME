@@ -14,7 +14,7 @@
 **🎯 RIFLE VIEW FIXES (2026-10-11).** Thank you! From your recording:
 - **Arm no longer cut off:** your rifle model's forearm ended in a flat cut just below the bracer, and it showed at the bottom of the screen. The forearm now continues out of frame in its own green, and the hold is slightly tighter (measured: no arm edge ends inside the frame).
 - **Shouldering fixed:** the rifle model's barrel tilted up 6.7°, so when you aimed, the sight line rose above your eye and you looked from underneath it. The barrel is now level and the eye sits on the rear-sight/front-sight line.
-- **Inferno Bull:** handed to a stronger model as you asked. Fable 5.1 was refused by the account (it needs usage credits at claude.ai/settings/usage), so the same brief is running on Opus with Jev + Microsoft gating. Results ship when reviewed.
+- **Inferno Bull, improved (delegated):** Fable 5.1 was refused by the account (it needs usage credits at claude.ai/settings/usage), so Opus did it. He now stands upright like your character sheet; the "melted" arm is gone (bad skin weights + a leftover rifle stub fixed; stretched edges at idle 6069 -> 0); darker, less muddy fur (brightness 0.32 -> 0.21, matching your sheet); his rifle held upright in his left hand; helmet lamp lit. Astra 5/10 -> 7/10; Jev 0.87 and Microsoft 0.96 "clearly better". Still open: his talk/sit clips stretch the right fist a little (it is sculpted into the flask pouch). Board: `docs/episode2-quality/inferno-bull-2026-10-11/`.
 
 ---
 

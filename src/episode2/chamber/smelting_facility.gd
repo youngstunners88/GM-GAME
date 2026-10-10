@@ -2073,7 +2073,7 @@ func _animate_bull(delta: float) -> void:
 			and _bull.current_clip() != "walk" and _bull.current_clip() != BULL_SIP:
 		_bull.play(BULL_IDLE)
 	if _bull_rest_arm:
-		_bull_rest_arm.resting = not _bull.is_walking() and _bull.reach_weight("Right") < 0.01 and _bull.reach_weight("Left") < 0.01 and _bull.current_clip() == BULL_IDLE
+		_bull_rest_arm.resting = _bull.reach_weight("Right") < 0.01 and _bull.reach_weight("Left") < 0.01 and (_bull.current_clip() == BULL_IDLE or _bull.is_walking())
 	# Rest means REST: no idle sips, no waving. Arms only move for an action beat (grab, hand-over).
 	_follow_player_in_fps(delta)
 	if _bull_blocker_i >= 0 and _bull_blocker_i < _blockers.size():

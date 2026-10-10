@@ -1,0 +1,10 @@
+{
+  "edges_stretched_over_2x": {"idle": [6069, 0], "walk_as_played": [4229, 1366], "sit_quad": [6286, 4186], "talk": [4069, 3048]},
+  "cross_limb_weight_vertices": [26150, 0],
+  "body_crop_vs_scene_ref": {"lum": [0.321, 0.210, "ref 0.210"], "r_over_b": [3.32, 2.44, "ref 1.49"], "sat": [0.324, 0.177, "ref 0.083"]},
+  "ref_metrics_closeness": {"bull_crop": [0.557, 0.605], "woods_frame": [0.719, 0.752]},
+  "astra_fidelity_0_10": [5, 7],
+  "jev": {"better": 0.870, "ship": 0.550, "verdict": "SHIP"},
+  "microsoft_decision_1": {"better": 0.958, "ship": 0.622, "verdict": "SHIP"},
+  "imported_glb_scn_bytes": [2647522, 2265199]
+}

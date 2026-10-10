@@ -823,6 +823,7 @@ func _build_bull(pos: Vector3, facing: float = 0.0) -> Ep2Actor:
 	b.rotation.y = facing
 	b.play(BULL_IDLE, 1.0, 0.0)
 	_fix_bull_materials(b.model)
+	Ep2BullHero.dress(b)    # sheet stance: arms at rest while walking, his rifle vertical in the left fist (ep2-bull-repose-hero)
 	return b
 
 
