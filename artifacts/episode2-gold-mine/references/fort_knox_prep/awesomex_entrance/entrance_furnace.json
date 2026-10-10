@@ -1,0 +1,17 @@
+{
+ "request_id": "b81018cc-ef76-4b82-a11e-ef5f88dfca71",
+ "endpoint": "gpt-image-2-image-to-image",
+ "payload": {
+  "prompt": "Photorealistic cinematic concept still for a first-person western shooter, 'western Modern Warfare' art direction: warm low sun key light with teal-blue shadow fill, thin atmospheric haze, physically based materials (weathered timber, rusted riveted steel, packed dirt, gravel, bark, dust), natural film grain, 35mm lens at human eye height (1.6 m), high dynamic range, sharp detail, believable scale. The named characters in the brief are the only characters. No text, no lettering, no watermark, no logos, no user interface. The same emerald-green dragon in the same war harness bursting out of a giant industrial smelter furnace mouth at night in an explosion of molten sparks and fire, glowing slag chunks flying, steam, the shoulder-mounted machine guns glowing hot and aimed forward, silhouettes of bears scattering in the background, cinematic.",
+  "aspect_ratio": "16:9",
+  "resolution": "2K",
+  "quality": "high"
+ },
+ "url": "https://cdn.muapi.ai/outputs/generated/b81018cc-ef76-4b82-a11e-ef5f88dfca71_e47b2ba2.png",
+ "cost_usd": 0.09,
+ "size": [
+  1600,
+  900
+ ],
+ "made": "2026-10-10"
+}

@@ -186,98 +186,251 @@ def sphere(name, c, r, material, scale=(1, 1, 1), parent=None):
     return o
 
 
-# --- textures (PIL): the side-view flame paint, tyre mud ------------------------------------------------------------------------
-PAINT_F0, PAINT_F1 = -2.05, 1.98       # texture U range along the length
-PAINT_U0, PAINT_U1 = 0.50, 1.65        # texture V range along the height
-PAINT_W, PAINT_H = 2048, 600
-SHIP_DIV = 2                           # painted at PAINT_W x PAINT_H, shipped at 1/SHIP_DIV (web pck budget: VRAM-compressed textures cost ~1 byte/px)
-
-
-def paint_uv(f, u):
-    return ((f - PAINT_F0) / (PAINT_F1 - PAINT_F0), (u - PAINT_U0) / (PAINT_U1 - PAINT_U0))
-
-
-def px(f, u, ss=1):
-    x = (f - PAINT_F0) / (PAINT_F1 - PAINT_F0) * PAINT_W * ss
-    y = (1.0 - (u - PAINT_U0) / (PAINT_U1 - PAINT_U0)) * PAINT_H * ss
-    return (x, y)
-
-
+# --- textures (PIL / numpy): the candy-red paint is BAKED PER PANEL from 3D position --------------------------------------------------------
+# The three red panels (front fender, rear fender, centre tub) are lofts: u runs along the length, v around the section. Each texel is painted by
+# asking "where in 3D is this texel and which way does the surface face there?": the flames TRACED from the Muapi side elevation show where the
+# surface faces sideways, procedural TOP flames where it faces up (the fender crowns), flake and mud come from 3D noise so they are isotropic
+# (the old single side-planar map slid every crown onto one texture row and stretched the flake into "wood grain").
+# Left and right share ONE half (the UV folds at the crown line) and the three panels share ONE 1024x320 atlas at 5 mm per texel: web pck budget.
+ATLAS_W, ATLAS_H = 1024, 320
+MM = 0.005                                                 # metres per texel
+PAD = 3                                                    # texels of edge replication around every panel rect (mip bleed)
+RECTS = {"Body_Tub": (0, 0, 520, 290), "Fender_Front": (520, 0, 230, 260), "Fender_Rear": (750, 0, 254, 260)}
+PANELS = {}                                                # name -> dict(grid, tvals, open, m) filled by shell()
+SIDE_F0, SIDE_F1, SIDE_U0, SIDE_U1 = -2.05, 1.98, 0.50, 1.65   # extent of the side-flame raster (metres: length, height)
+TOP_X1 = 1.05                                              # extent of the top-flame raster across |x|
 REF_SIDE = os.path.join(ROOT, "artifacts/episode2-gold-mine/references/fort_knox_prep/flame_quad/side.jpg")
 PHOTO_AXLE_X, PHOTO_GROUND_Y, PHOTO_D = 400.0, 960.0, 360.0      # measured on the side elevation: front axle pixel, ground line, tyre diameter in px
 
 
+def fold_open(s):
+    """Fender UV fold: 0 on the crown centre line, 1 at the lower (wheel-arch) edge. Left and right edges share one half of the texture."""
+    return abs(2.0 * s - 1.0)
+
+
+def fold_ring(s):
+    """Tub UV fold: 0 on the crown, 0.5 on the equator (the side), 1 under the belly. Mirror-symmetric about the plane x = 0."""
+    s = s % 1.0
+    a = abs(s - 0.25) if s <= 0.5 else 0.5 - abs(s - 0.75)
+    return a / 0.5
+
+
+def atlas_uv(name, t, vf):
+    x0, y0, w, h = RECTS[name]
+    return ((x0 + PAD + t * (w - 2 * PAD)) / ATLAS_W, 1.0 - (y0 + PAD + vf * (h - 2 * PAD)) / ATLAS_H)
+
+
+def smoothstep(a, b, x):
+    t = np.clip((x - a) / (b - a), 0.0, 1.0)
+    return t * t * (3.0 - 2.0 * t)
+
+
+def _hash3(ix, iy, iz, seed=0):
+    h = (ix * 73856093) ^ (iy * 19349663) ^ (iz * 83492791) ^ (seed * 2654435761)
+    h = (h ^ (h >> 13)) * 1274126177
+    h = h ^ (h >> 16)
+    return (h & 0xFFFF).astype(np.float64) / 65535.0
+
+
+def cellnoise(P3, freq, seed=0):
+    """Uniform 0..1 per (1/freq) metre cube: isotropic grain whatever the texture layout is."""
+    ij = np.floor(P3 * freq).astype(np.int64)
+    return _hash3(ij[..., 0], ij[..., 1], ij[..., 2], seed)
+
+
+def vnoise(P3, freq, seed=0):
+    """Smooth 3D value noise 0..1."""
+    q = P3 * freq
+    i = np.floor(q).astype(np.int64)
+    f = q - i
+    f = f * f * (3.0 - 2.0 * f)
+    def c(dx, dy, dz):
+        return _hash3(i[..., 0] + dx, i[..., 1] + dy, i[..., 2] + dz, seed)
+    x00 = c(0, 0, 0) * (1 - f[..., 0]) + c(1, 0, 0) * f[..., 0]
+    x10 = c(0, 1, 0) * (1 - f[..., 0]) + c(1, 1, 0) * f[..., 0]
+    x01 = c(0, 0, 1) * (1 - f[..., 0]) + c(1, 0, 1) * f[..., 0]
+    x11 = c(0, 1, 1) * (1 - f[..., 0]) + c(1, 1, 1) * f[..., 0]
+    y0 = x00 * (1 - f[..., 1]) + x10 * f[..., 1]
+    y1 = x01 * (1 - f[..., 1]) + x11 * f[..., 1]
+    return y0 * (1 - f[..., 2]) + y1 * f[..., 2]
+
+
 def traced_flames():
-    """The flames, TRACED from the GPT-image side elevation (hue/saturation threshold), so the paint job on the model is the reference's:
-    returns a bool mask in photo pixels. (A side view projects onto the body's side-planar UVs 1:1 because the model is built to the same proportions.)"""
+    """The flames, TRACED from the GPT-image side elevation (hue/saturation threshold): a bool mask in photo pixels."""
     from scipy import ndimage as ndi
     im = Image.open(REF_SIDE).convert("RGB")
     hsv = np.asarray(im.convert("HSV"), np.float32) / 255.0
     h, s, v = hsv[..., 0] * 360.0, hsv[..., 1], hsv[..., 2]
-    m = (h > 10) & (h < 64) & (s > 0.52) & (v > 0.55)
+    m = (h > 8) & (h < 64) & (s > 0.50) & (v > 0.45)
     m[:380, :] = False
     m[730:, :] = False
     m[:, :200] = False
     m[:, 1520:] = False
     m = ndi.binary_closing(m, iterations=3)
     m = ndi.binary_opening(m, iterations=1)
+    m = ndi.binary_dilation(m, iterations=2)                 # the airbrushed red-orange rim of every tongue, not just its bright core
     lab, n = ndi.label(m)
     sizes = ndi.sum(m, lab, range(1, n + 1))
     return np.isin(lab, [i + 1 for i, sz in enumerate(sizes) if sz > 260])
 
 
-def make_paint(path):
+def tongue_poly(root, tip, width, curl, to_px, n=40, sway=0.0):
+    """A flame tongue from root to tip (2D metres): sine-shaped width, a curl that grows toward the tip and an S-curve (`sway`, metres) so it
+    licks like fire instead of reading as a stripe. Returns the polygon in raster pixels."""
+    root, tip = np.array(root, float), np.array(tip, float)
+    d = tip - root
+    perp = np.array([-d[1], d[0]]) / max(np.linalg.norm(d), 1e-6)
+    left, right = [], []
+    for i in range(n + 1):
+        t = i / n
+        c = root + d * t + perp * (curl * t ** 2.2 + sway * math.sin(2.0 * math.pi * t * 1.15))
+        wd = width * (math.sin(math.pi * min(t, 1.0) * 0.9 + 0.2) ** 0.9) * (1 - t ** 1.4) * (1 + 0.15 * math.sin(t * 11.0))
+        left.append(to_px(c + perp * wd))
+        right.append(to_px(c - perp * wd * 0.8))
+    return left + right[::-1]
+
+
+def flame_cluster(draw, root, tip, width, curl, to_px, forks=2, sway=0.03):
+    """One main tongue plus short forked licks branching off it (alternating sides) - the classic hot-rod flame."""
+    draw.polygon(tongue_poly(root, tip, width, curl, to_px, sway=sway), fill=255)
+    r, t_ = np.array(root, float), np.array(tip, float)
+    d = t_ - r
+    perp = np.array([-d[1], d[0]]) / max(np.linalg.norm(d), 1e-6)
+    for fi in range(forks):
+        tb = 0.30 + 0.20 * fi
+        base = r + d * tb + perp * (curl * tb ** 2.2 + sway * math.sin(2.0 * math.pi * tb * 1.15))
+        ang = (1 if fi % 2 == 0 else -1) * math.radians(26 + 7 * fi)
+        rot = np.array([[math.cos(ang), -math.sin(ang)], [math.sin(ang), math.cos(ang)]])
+        d2 = (rot @ d) * (0.52 - 0.10 * fi)
+        draw.polygon(tongue_poly(base, base + d2, width * 0.55, curl * 0.5 * (1 if fi % 2 == 0 else -1), to_px, n=24, sway=sway * 0.6), fill=255)
+
+
+def build_flame_rasters():
+    """SIDE raster over (f, u) = the traced photo flames + three procedural tongues; TOP raster over (f, |x|) = the crown flames."""
     from scipy import ndimage as ndi
-    W, H = PAINT_W, PAINT_H
-    rng = np.random.default_rng(11)
-    # candy-apple red base: lighter high on the panels, deep at the bottom, with a fine metallic flake
-    y = np.linspace(0, 1, H)[:, None]
-    base = np.zeros((H, W, 3), np.float32)
-    base[..., 0] = 0.52 - 0.22 * (y ** 1.2)
-    base[..., 1] = 0.035 + 0.02 * (1 - y)
-    base[..., 2] = 0.045 + 0.015 * (1 - y)
-    base = np.clip(base + rng.normal(0, 0.016, (H, W, 1)).astype(np.float32) * np.array([1.0, 0.5, 0.5], np.float32), 0, 1)
-    # texture px -> (f,u) -> photo px, then sample the traced mask
-    f = PAINT_F0 + (np.arange(W) + 0.5) / W * (PAINT_F1 - PAINT_F0)
-    u = PAINT_U1 - (np.arange(H) + 0.5) / H * (PAINT_U1 - PAINT_U0)
-    px_x = PHOTO_AXLE_X - (f - FA) * PHOTO_D
-    px_y = PHOTO_GROUND_Y - u * PHOTO_D
-    gx, gy = np.meshgrid(px_x, px_y)
-    mask = ndi.map_coordinates(traced_flames().astype(np.float32), [gy, gx], order=1, mode="constant", cval=0.0) > 0.5
-    # extra tongues the side photo only half shows (tank cowl, rear fender), drawn procedurally in the same language
-    extra = Image.new("L", (W, H), 0)
+    cols = int(round((SIDE_F1 - SIDE_F0) / MM))
+    rows = int(round((SIDE_U1 - SIDE_U0) / MM))
+    f = SIDE_F0 + (np.arange(cols) + 0.5) * MM
+    u = SIDE_U1 - (np.arange(rows) + 0.5) * MM
+    gf, gu = np.meshgrid(f, u)
+    px_x = PHOTO_AXLE_X - (gf - FA) * PHOTO_D
+    px_y = PHOTO_GROUND_Y - gu * PHOTO_D
+    side = ndi.map_coordinates(traced_flames().astype(np.float32), [px_y, px_x], order=1, mode="constant", cval=0.0)
+    extra = Image.new("L", (cols, rows), 0)
     ed = ImageDraw.Draw(extra)
-    for root, tip, w, curl in [((0.34, 1.20), (-0.20, 1.30), 0.045, 0.06), ((-0.98, 1.00), (-1.30, 1.30), 0.05, 0.10), ((-1.18, 0.96), (-1.55, 1.27), 0.05, 0.11)]:
-        n = 36
-        left, right = [], []
-        for i in range(n + 1):
-            t = i / n
-            ff = root[0] + (tip[0] - root[0]) * t
-            uu = root[1] + (tip[1] - root[1]) * t + curl * t ** 2.2
-            wd = w * (math.sin(math.pi * min(t, 1.0) * 0.9 + 0.2) ** 0.9) * (1 - t ** 1.5) * (1 + 0.15 * math.sin(t * 11.0))
-            left.append(((ff - PAINT_F0) / (PAINT_F1 - PAINT_F0) * W, (1 - (uu + wd - PAINT_U0) / (PAINT_U1 - PAINT_U0)) * H))
-            right.append(((ff - PAINT_F0) / (PAINT_F1 - PAINT_F0) * W, (1 - (uu - wd * 0.8 - PAINT_U0) / (PAINT_U1 - PAINT_U0)) * H))
-        ed.polygon(left + right[::-1], fill=255)
-    mask = mask | (np.asarray(extra) > 127)
-    din = ndi.distance_transform_edt(mask)
-    dout = ndi.distance_transform_edt(~mask)
-    wob = ndi.gaussian_filter(rng.normal(0, 1, (H, W)).astype(np.float32), 6) * 14.0       # airbrush unevenness
-    d = np.clip(din + wob * 0.5, 0, None)
-    ramp_d = [0, 3, 8, 15, 24, 36]
-    ramp = np.array([(205, 40, 12), (240, 85, 12), (255, 135, 18), (255, 190, 44), (255, 225, 110), (255, 244, 170)], np.float32) / 255.0
-    flame = np.stack([np.interp(d, ramp_d, ramp[:, c]) for c in range(3)], -1).astype(np.float32)
-    col = base.copy()
-    col[mask] = flame[mask]
-    pin = (~mask) & (dout <= 5.0)                                         # the dark maroon pinstripe around every tongue
-    k = np.clip(1.0 - (dout[pin] - 1.0) / 4.0, 0, 1)[:, None]
-    col[pin] = col[pin] * (1 - k) + np.array([0.33, 0.02, 0.04], np.float32) * k
-    col = ndi.gaussian_filter(col, sigma=(1.0, 1.0, 0))
-    # worn / muddy lower edge: brown speckle that thickens toward the bottom of the panels
-    yy = np.linspace(1, 0, H)[:, None, None]
-    mud = (rng.random((H, W, 1)) < (0.20 * np.clip(0.50 - (1 - yy), 0, 1) * 2.0)).astype(np.float32)
-    col = col * (1 - 0.7 * mud) + np.array([0.17, 0.10, 0.05], np.float32) * 0.7 * mud
-    im = Image.fromarray((np.clip(col, 0, 1) * 255).astype(np.uint8))
-    im.resize((W // SHIP_DIV, H // SHIP_DIV), Image.LANCZOS).save(path, "JPEG", quality=90)
+    to_side = lambda p: ((p[0] - SIDE_F0) / MM, (SIDE_U1 - p[1]) / MM)
+    SIDES = [  # (f, u) root, tip, half-width, curl: the tank cowl, the rear fender side (rising), the front fender side (licking back from the nose)
+        ((0.34, 1.20), (-0.20, 1.30), 0.050, 0.06), ((-0.98, 1.00), (-1.30, 1.30), 0.055, 0.10), ((-1.18, 0.96), (-1.55, 1.27), 0.055, 0.11),
+        ((-1.45, 0.93), (-1.70, 1.18), 0.045, 0.08),
+        ((1.66, 1.00), (0.95, 1.12), 0.060, 0.07), ((1.58, 1.10), (0.84, 1.24), 0.060, 0.08), ((1.40, 0.96), (0.82, 1.02), 0.045, 0.05)]
+    for root, tip, w, curl in SIDES:
+        flame_cluster(ed, root, tip, w, curl, to_side, forks=1, sway=0.02)
+    side = np.maximum(side, np.asarray(extra, np.float32) / 255.0)
+    # crown flames: roots at the nose / the tail, licking back along each fender and across the tank cowl (x is mirrored: |x|)
+    trows = int(round(TOP_X1 / MM))
+    top_im = Image.new("L", (cols, trows), 0)
+    td = ImageDraw.Draw(top_im)
+    to_top = lambda p: ((p[0] - SIDE_F0) / MM, p[1] / MM)
+    TOPS = [  # (f, |x|) root, tip, half-width, curl: bold tongues licking back from the nose along each fender, across the tank cowl, forward from the tail
+        ((1.70, 0.16), (0.98, 0.30), 0.085, 0.07), ((1.68, 0.40), (0.80, 0.54), 0.100, 0.11), ((1.60, 0.64), (0.72, 0.80), 0.105, 0.13), ((1.44, 0.86), (0.70, 0.98), 0.085, 0.10),
+        ((1.36, 0.30), (1.00, 0.36), 0.050, 0.05),
+        ((0.84, 0.16), (0.10, 0.26), 0.075, 0.07), ((0.80, 0.34), (0.22, 0.44), 0.060, 0.06),
+        ((-1.78, 0.24), (-0.98, 0.38), 0.085, -0.07), ((-1.76, 0.50), (-0.86, 0.66), 0.105, -0.11), ((-1.66, 0.76), (-0.80, 0.90), 0.090, -0.10)]
+    for root, tip, w, curl in TOPS:
+        flame_cluster(td, root, tip, w, curl, to_top, forks=2, sway=0.035)
+    return side, np.asarray(top_im, np.float32) / 255.0
+
+
+def panel_geometry(name):
+    """Texel -> 3D position and OUTWARD normal for the panel's atlas rect, from the loft grid (the same bilinear patches the mesh is built from)."""
+    from scipy import ndimage as ndi
+    P = PANELS[name]
+    x0, y0, w, h = RECTS[name]
+    G = np.array(P["grid"], np.float64)                       # [stations, ring, 3] = (x, f, u)
+    tv = np.array(P["tvals"], np.float64)
+    m, open_b = P["m"], P["open"]
+    tt = np.clip((np.arange(w) + 0.5 - PAD) / (w - 2 * PAD), 0, 1)
+    vv = np.clip((np.arange(h) + 0.5 - PAD) / (h - 2 * PAD), 0, 1)
+    T, VF = np.meshgrid(tt, vv)
+    if open_b:
+        S_ = 0.5 + 0.5 * VF                                   # the right-hand half of the arch: crown (0.5) -> right edge (1.0)
+    else:
+        a = VF * 0.5
+        S_ = np.where(a <= 0.25, 0.25 - a, 1.25 - a)          # the right-hand half of the ring
+    order = np.argsort(tv)
+    tv_s, G_s = tv[order], G[order]
+    k = np.clip(np.searchsorted(tv_s, T, side="right") - 1, 0, len(tv_s) - 2)
+    wk = ((T - tv_s[k]) / (tv_s[k + 1] - tv_s[k]))[..., None]
+    ring_n = G_s.shape[1]
+    sf = S_ * m
+    i0 = np.clip(np.floor(sf).astype(int), 0, m - 1)
+    wi = (sf - i0)[..., None]
+    i1 = i0 + 1 if open_b else (i0 + 1) % ring_n
+    A, B, C, D = G_s[k, i0], G_s[k, i1], G_s[k + 1, i0], G_s[k + 1, i1]
+    P3 = (1 - wk) * ((1 - wi) * A + wi * B) + wk * ((1 - wi) * C + wi * D)
+    dPdt = (1 - wi) * (C - A) + wi * (D - B)
+    dPds = (1 - wk) * (B - A) + wk * (D - C)
+    N = np.cross(dPdt, dPds)
+    zc = 0.85 if open_b else 1.05
+    cen = np.stack([np.zeros_like(P3[..., 0]), P3[..., 1], np.full_like(P3[..., 2], zc)], -1)
+    sgn = np.sign(np.sum(N * (P3 - cen), -1, keepdims=True))
+    N = N * np.where(sgn == 0, 1.0, sgn)
+    N = np.stack([ndi.gaussian_filter(N[..., c], 2.0) for c in range(3)], -1)
+    N = N / np.maximum(np.linalg.norm(N, axis=-1, keepdims=True), 1e-9)
+    return P3, N
+
+
+def bake_panel(name, side, top, rng):
+    from scipy import ndimage as ndi
+    P3, N = panel_geometry(name)
+    X, Fv, Z = P3[..., 0], P3[..., 1], P3[..., 2]
+    sample = lambda ras, r, c: ndi.map_coordinates(ras, [r, c], order=1, mode="constant", cval=0.0)
+    ws = smoothstep(0.35, 0.75, np.abs(N[..., 0]))
+    wt = smoothstep(0.45, 0.80, N[..., 2])
+    ms = sample(side, (SIDE_U1 - Z) / MM - 0.5, (Fv - SIDE_F0) / MM - 0.5) * ws
+    mt = sample(top, np.abs(X) / MM - 0.5, (Fv - SIDE_F0) / MM - 0.5) * wt
+    M = np.maximum(ms, mt) > 0.5
+    # candy-apple base: lighter high on the panels, deep low down, an isotropic metallic flake (a 5 mm cube grain whatever the layout)
+    y = np.clip((1.65 - Z) / 1.15, 0, 1)
+    col = np.stack([0.52 - 0.22 * y ** 1.2, 0.035 + 0.02 * (1 - y), 0.045 + 0.015 * (1 - y)], -1)
+    fl = cellnoise(P3, 1.0 / MM) - 0.5
+    col = col + fl[..., None] * np.array([0.050, 0.012, 0.012])
+    # flames: orange -> yellow -> hot white toward the core, a dark maroon pinstripe around every tongue
+    din = ndi.distance_transform_edt(M, sampling=MM)
+    dout = ndi.distance_transform_edt(~M, sampling=MM)
+    wob = ndi.gaussian_filter(rng.normal(0, 1, M.shape), 3.0) * 0.045
+    d = np.clip(din + wob, 0, None)
+    ramp_d = [0.0, 0.006, 0.016, 0.030, 0.048, 0.072]
+    ramp = np.array([(205, 40, 12), (240, 85, 12), (255, 135, 18), (255, 190, 44), (255, 225, 110), (255, 244, 170)], np.float64) / 255.0
+    flame = np.stack([np.interp(d, ramp_d, ramp[:, c]) for c in range(3)], -1)
+    col = np.where(M[..., None], flame, col)
+    pin = (~M) & (dout <= 0.010)
+    k = np.clip(1.0 - (dout - 0.002) / 0.008, 0, 1)[..., None] * pin[..., None]
+    col = col * (1 - k) + np.array([0.33, 0.02, 0.04]) * k
+    # honest wear: mud thick low on the panels and thrown up behind each wheel (distance to the tyre surface in the f/u plane), broken up by 3D noise
+    hgt = np.clip((1.32 - Z) / 0.55, 0, 1)
+    spray = np.zeros_like(Z)
+    for fa in (FA, RA):
+        dist = np.hypot(Fv - fa, Z - R) - R
+        spray = np.maximum(spray, np.exp(-np.clip(dist, 0, None) / 0.40))
+    amt = np.clip(0.60 * hgt ** 2.2 + 0.45 * spray * hgt ** 1.2, 0, 1)
+    nz = 0.5 * vnoise(P3, 7.0) + 0.3 * vnoise(P3, 21.0, 1) + 0.2 * vnoise(P3, 70.0, 2)
+    cover = smoothstep(0.74 - 0.42 * amt, 0.80 - 0.42 * amt, nz) * (1.0 - 0.55 * M)      # mud sits ON TOP of the paint but flames stay mostly readable
+    mud = np.array([0.20, 0.125, 0.065]) * (0.75 + 0.5 * vnoise(P3, 140.0, 3))[..., None]
+    col = col * (1 - 0.80 * cover[..., None]) + mud * 0.80 * cover[..., None]
+    col = ndi.gaussian_filter(col, sigma=(0.8, 0.8, 0))
+    return np.clip(col, 0, 1)
+
+
+def bake_paint(path):
+    """Paint the whole atlas (called once every red panel has registered its loft in PANELS)."""
+    side, top = build_flame_rasters()
+    rng = np.random.default_rng(11)
+    atlas = np.zeros((ATLAS_H, ATLAS_W, 3), np.float64)
+    atlas[:] = np.array([0.30, 0.03, 0.04])
+    for name, (x0, y0, w, h) in RECTS.items():
+        atlas[y0:y0 + h, x0:x0 + w] = bake_panel(name, side, top, rng)
+    Image.fromarray((atlas * 255).astype(np.uint8)).save(path, "JPEG", quality=92)
 
 
 def make_grime(path, size=512, base=(0.04, 0.04, 0.045), mud=(0.22, 0.14, 0.07), seed=3, ship=256):
@@ -300,14 +453,13 @@ PAINT_TEX = os.path.join(TEXDIR, "quad_paint.jpg")
 GRIME_TEX = os.path.join(TEXDIR, "quad_rubber.jpg")
 STEEL_TEX = os.path.join(TEXDIR, "quad_grime_steel.jpg")
 RIM_TEX = os.path.join(TEXDIR, "quad_rim.jpg")
-make_paint(PAINT_TEX)
 make_grime(GRIME_TEX)
 make_grime(STEEL_TEX, base=(0.16, 0.16, 0.17), mud=(0.20, 0.13, 0.07), seed=5, ship=128)
 make_grime(RIM_TEX, base=(0.52, 0.52, 0.54), mud=(0.26, 0.16, 0.08), seed=9, ship=256)
 
-M_PAINT = mat("Quad_Paint", (1, 1, 1), metal=0.18, rough=0.30, coat=1.0, tex=PAINT_TEX)
+# M_PAINT is created AFTER the red panels exist (bake_paint needs their loft grids), see below
 # NOTE chrome: the Compatibility renderer reflects only the SKY - in a sky-less room a fully metallic surface renders BLACK. The quad lives in the bear woods (a real sky), so 0.8 is right.
-M_CHROME = mat("Quad_Chrome", (0.80, 0.80, 0.83), metal=0.8, rough=0.20)
+M_CHROME = mat("Quad_Chrome", (0.62, 0.62, 0.66), metal=0.92, rough=0.16)
 M_RUBBER = mat("Quad_Rubber", (1, 1, 1), metal=0.0, rough=0.92, tex=GRIME_TEX)
 M_SEAT = mat("Quad_Seat", (0.025, 0.025, 0.028), metal=0.0, rough=0.5, coat=0.4)
 M_STEEL = mat("Quad_Steel", (1, 1, 1), metal=0.5, rough=0.5, tex=STEEL_TEX)
@@ -433,19 +585,20 @@ for nm, (x, f, s) in {"Wheel_FL": (-TRK / 2, FA, -1), "Wheel_FR": (TRK / 2, FA, 
 
 
 # =============================================================================================================================
-# RED BODY PANELS (one side-planar UV space shared with the paint texture)
+# RED BODY PANELS (the paint is baked per panel from 3D position: see bake_paint)
 # =============================================================================================================================
-def shell(name, stations, material, thickness=0.0, open_bottom=False, n=18, parent=None):
+def shell(name, stations, material, thickness=0.0, open_bottom=False, n=18, parent=None, paint=False):
     """Loft a rounded-section shell along f. stations: dict(f, w, top, bot, r, edge) -> a superellipse-ish ring.
-       open_bottom=True builds only the top arch (a fender): its side edges end at `edge` height instead of closing under."""
+       open_bottom=True builds only the top arch (a fender): its side edges end at `edge` height instead of closing under.
+       paint=True registers the loft grid in PANELS and gives every loop its ATLAS UV (u = along the length, v = folded distance from the crown)."""
     rings = []
-    uvs = []
     verts = []
+    grid = []
     for st in stations:
         f, w, top, bot = st["f"], st["w"], st["top"], st["bot"]
-        r = st.get("r", 0.12)
         edge = st.get("edge", bot)
         ring = []
+        row = []
         m = n
         for i in range(m + 1 if open_bottom else m):
             if open_bottom:
@@ -462,8 +615,9 @@ def shell(name, stations, material, thickness=0.0, open_bottom=False, n=18, pare
                 u = u0
             ring.append(len(verts))
             verts.append(V(x, f, u))
-            uvs.append(paint_uv(f, u))
+            row.append((x, f, u))
         rings.append(ring)
+        grid.append(row)
     faces = []
     for a, b in zip(rings[:-1], rings[1:]):
         cnt = len(a)
@@ -474,20 +628,33 @@ def shell(name, stations, material, thickness=0.0, open_bottom=False, n=18, pare
         faces.append(tuple(rings[0][::-1]))
         faces.append(tuple(rings[-1]))
     o = obj_from(name, verts, faces, material, None, True, parent or ROOT_EMPTY)
-    # side-planar UVs, but a vertex whose normal points UP slides to the plain-red band of the paint (no flame smeared across the crown)
     me = o.data
     me.update()
-    uvl = me.uv_layers.new(name="UVMap")
-    plain_v = (1.60 - PAINT_U0) / (PAINT_U1 - PAINT_U0)
-    for poly in me.polygons:
-        for li, vi in zip(poly.loop_indices, poly.vertices):
-            co = me.vertices[vi].co
-            f_, u_ = -co.y, co.z
-            uu, vv = paint_uv(f_, u_)
-            nz = max(0.0, me.vertices[vi].normal.z)
-            wgt = min(1.0, max(0.0, (nz - 0.62) / 0.30))
-            wgt = wgt * wgt * (3 - 2 * wgt)
-            uvl.data[li].uv = (uu, vv * (1 - wgt) + plain_v * wgt)
+    if paint:
+        f_vals = [st["f"] for st in stations]
+        f0, f1 = min(f_vals), max(f_vals)
+        tvals = [(f - f0) / (f1 - f0) for f in f_vals]
+        PANELS[name] = dict(grid=grid, tvals=tvals, open=open_bottom, m=n)
+        fold = fold_open if open_bottom else fold_ring
+        uvl = me.uv_layers.new(name="UVMap")
+        pi = 0
+        for k in range(len(rings) - 1):
+            cnt = len(rings[k])
+            for i in range(cnt - (1 if open_bottom else 0)):
+                poly = me.polygons[pi]
+                pi += 1
+                corners = [(tvals[k], i / n), (tvals[k], (i + 1) / n), (tvals[k + 1], (i + 1) / n), (tvals[k + 1], i / n)]
+                for li, (t, s_) in zip(poly.loop_indices, corners):
+                    uvl.data[li].uv = atlas_uv(name, t, fold(s_))
+        if not open_bottom:                                        # the two end caps (hidden inside the body): the same fold, at the end stations
+            poly = me.polygons[pi]
+            pi += 1
+            for li, idx in zip(poly.loop_indices, list(range(len(rings[0])))[::-1]):
+                uvl.data[li].uv = atlas_uv(name, tvals[0], fold(idx / n))
+            poly = me.polygons[pi]
+            pi += 1
+            for li, idx in zip(poly.loop_indices, range(len(rings[-1]))):
+                uvl.data[li].uv = atlas_uv(name, tvals[-1], fold(idx / n))
     if thickness > 0:
         sol = o.modifiers.new("solid", "SOLIDIFY")
         sol.thickness = thickness
@@ -508,7 +675,7 @@ FRONT = [
     dict(f=0.78, w=0.93, top=1.30, bot=0.93, edge=0.86),
     dict(f=0.62, w=0.78, top=1.25, bot=0.97, edge=1.05),
 ]
-front_fender = shell("Fender_Front", FRONT, M_PAINT, thickness=0.035, open_bottom=True, n=20)
+front_fender = shell("Fender_Front", FRONT, None, thickness=0.035, open_bottom=True, n=20, paint=True)
 
 # rear fender over the back wheels
 REAR = [
@@ -518,7 +685,7 @@ REAR = [
     dict(f=-1.55, w=0.93, top=1.31, bot=0.93, edge=0.88),
     dict(f=-1.82, w=0.78, top=1.27, bot=0.96, edge=1.03),
 ]
-rear_fender = shell("Fender_Rear", REAR, M_PAINT, thickness=0.035, open_bottom=True, n=20)
+rear_fender = shell("Fender_Rear", REAR, None, thickness=0.035, open_bottom=True, n=20, paint=True)
 
 # centre tub + tank (closed loft)
 TUB = [
@@ -531,12 +698,18 @@ TUB = [
     dict(f=-1.30, w=0.38, top=1.29, bot=0.86, r=0.12),
     dict(f=-1.70, w=0.30, top=1.25, bot=0.98, r=0.1),
 ]
-tub = shell("Body_Tub", TUB, M_PAINT, n=24)
+tub = shell("Body_Tub", TUB, None, n=24, paint=True)
+
+# the paint is baked now that all three panels have registered their lofts, then it becomes THE material of those panels
+bake_paint(PAINT_TEX)
+M_PAINT = mat("Quad_Paint", (1, 1, 1), metal=0.18, rough=0.30, coat=1.0, tex=PAINT_TEX)
+for _o in (front_fender, rear_fender, tub):
+    _o.data.materials.append(M_PAINT)
 
 # seat (leather)
-SEAT = [
-    dict(f=0.20, w=0.25, top=1.47, bot=1.30), dict(f=0.05, w=0.30, top=1.50, bot=1.30), dict(f=-0.55, w=0.33, top=1.505, bot=1.28),
-    dict(f=-1.00, w=0.33, top=1.50, bot=1.28), dict(f=-1.28, w=0.30, top=1.46, bot=1.28),
+SEAT = [   # a padded bench wider than the tub under it (visible side roll), 1.575 m at the crown
+    dict(f=0.22, w=0.27, top=1.50, bot=1.28), dict(f=0.05, w=0.38, top=1.56, bot=1.26), dict(f=-0.55, w=0.44, top=1.575, bot=1.25),
+    dict(f=-1.00, w=0.44, top=1.57, bot=1.25), dict(f=-1.30, w=0.36, top=1.50, bot=1.26),
 ]
 seat = shell("Seat", SEAT, M_SEAT, n=24)
 
@@ -623,13 +796,16 @@ for f in (-1.15, -1.40, -1.65, -1.90):
     tube("Rack_Cross%.2f" % f, [(-RK_W, f, RK_U), (RK_W, f, RK_U)], 0.018, M_CHROME, parent=ROOT_EMPTY)
 tube("Rack_Hoop", [(-RK_W, RK_F1, RK_U), (-RK_W + 0.04, RK_F1 - 0.04, RK_U + 0.28), (RK_W - 0.04, RK_F1 - 0.04, RK_U + 0.28), (RK_W, RK_F1, RK_U)], 0.022, M_CHROME, parent=ROOT_EMPTY, round_r=0.08)
 for sx in (-1, 1):
-    tube("Rack_Leg%d" % sx, [(0.46 * sx, -1.0, RK_U), (0.46 * sx, -1.05, 1.28)], 0.022, M_CHROME, parent=ROOT_EMPTY)
-    tube("Rack_LegB%d" % sx, [(0.46 * sx, -1.85, RK_U), (0.50 * sx, -1.65, 1.30)], 0.022, M_CHROME, parent=ROOT_EMPTY)
+    tube("Rack_Leg%d" % sx, [(0.46 * sx, -1.0, RK_U), (0.46 * sx, -1.05, 1.28)], 0.030, M_CHROME, parent=ROOT_EMPTY)
+    tube("Rack_LegB%d" % sx, [(0.46 * sx, -1.85, RK_U), (0.50 * sx, -1.65, 1.30)], 0.030, M_CHROME, parent=ROOT_EMPTY)
+    box("Rack_Bracket%d" % sx, (0.46 * sx, -1.05, 1.285), (0.11, 0.11, 0.035), M_BLACK, ROOT_EMPTY, bevel=0.01)
+    box("Rack_BracketB%d" % sx, (0.50 * sx, -1.65, 1.305), (0.11, 0.11, 0.035), M_BLACK, ROOT_EMPTY, bevel=0.01)
 box("TailLamp", (0.0, -1.99, 1.30), (0.28, 0.04, 0.09), M_TAIL, ROOT_EMPTY, bevel=0.015)
 
 # handlebar: stem, bar with the bend, grips, levers, the black headlight-visor pod and the fuel cap
 HB_F = 0.60
-tube("Steer_Stem", [(0.0, HB_F + 0.02, 1.48), (0.0, HB_F, 1.70)], 0.040, M_CHROME, parent=ROOT_EMPTY)
+tube("Steer_Stem", [(0.0, HB_F + 0.02, 1.42), (0.0, HB_F, 1.76)], 0.045, M_CHROME, parent=ROOT_EMPTY)
+cyl("Steer_Column", (0.0, HB_F + 0.03, 1.56), 0.085, 0.26, M_BLACK, "Z", ROOT_EMPTY, segs=16, r2=0.065)
 tube("Handlebar", [(-0.62, HB_F + 0.10, 1.80), (-0.46, HB_F + 0.02, 1.86), (-0.20, HB_F, 1.86), (0.20, HB_F, 1.86), (0.46, HB_F + 0.02, 1.86), (0.62, HB_F + 0.10, 1.80)], 0.021, M_CHROME, parent=ROOT_EMPTY, round_r=0.07)
 tube("Handlebar_Brace", [(-0.30, HB_F, 1.86), (-0.30, HB_F - 0.02, 1.70), (0.30, HB_F - 0.02, 1.70), (0.30, HB_F, 1.86)], 0.014, M_CHROME, parent=ROOT_EMPTY)
 for sx in (-1, 1):

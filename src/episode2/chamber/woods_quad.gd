@@ -29,7 +29,8 @@ const RIDE_SPEED := 9.5
 ## between the axles, tyre outer diameter 1.0 m, four Wheel_* nodes (hub-centred, axle = local X), seat top 1.5 m.
 const QUAD_MODEL := "res://src/episode2/assets/vehicles/flame_quad.glb"
 const QUAD_WHEEL_R := 0.5
-const SEAT_TOP := 1.5
+const SEAT_TOP := 1.5                               # the rack top (Lil Blunt kneels on it)
+const SEAT_TOP_DRIVER := 1.56                       # the padded bench Inferno sits on, at his hips (it crowns at 1.575 further back)
 ## Inferno rides SEATED (his Chair_Sit_Idle_M clip frozen at 4 s) with both hands on the grips (arm IK); Lil Blunt kneels on the rear of the seat / rack,
 ## eye just above Inferno's head, so he sees the road over him and the rack hoop is his rest (tools/ep2_shots/rider_probe.gd printed these numbers).
 const BULL_SIT_CLIP := "Chair_Sit_Idle_M"
@@ -648,7 +649,7 @@ func _seat_riders() -> void:
 	var base: Vector3 = _quad.position
 	if _quad_modelled:
 		var yaw_b := Basis(Vector3.UP, _quad_yaw)
-		var hips_at: Vector3 = base + f * BULL_SEAT_F + Vector3(0.0, SEAT_TOP + 0.10, 0.0)
+		var hips_at: Vector3 = base + f * BULL_SEAT_F + Vector3(0.0, SEAT_TOP_DRIVER + 0.10, 0.0)
 		_bull.position = hips_at - yaw_b * BULL_HIPS
 		_bull.clear_face_goal()
 		_bull.facing = _quad_yaw

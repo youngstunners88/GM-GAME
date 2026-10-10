@@ -37,3 +37,21 @@ next increment, as the FOUNDER SHIP RULE says gate votes steer work and never st
 2. Seat: thicker bench with a visible padded roll.
 3. Chrome: darker base so a bright sky does not wash it to white.
 4. Rack mounts + handlebar column so nothing reads as floating.
+
+## Increment 2 (same day): paint baked per panel + seat + chrome + steering column
+
+`build_flame_quad.py` now gives each red panel its own loft UVs (u along the length, v folded at the crown) in ONE 1024x320 atlas at 5 mm per texel and paints
+the texels from 3D position (`bake_paint`): the flames traced from the side elevation where the surface faces sideways, procedural forked crown flames where it faces up
+(mirrored left/right), isotropic 3D-noise flake, mud thick low on the panels and behind each wheel. The padded bench overhangs the tub, the chrome base is darker
+(0.62, metal 0.92), a black steering column joins the bars to the tank, the rack legs got visible brackets.
+
+| capture (grey studio backdrop, same framing) | closeness | edge ratio | note |
+|---|---|---|---|
+| v1 side-planar paint | 0.69 | 0.58 | flames only on the side panels, crowns plain, "wood grain" streaks |
+| v2 baked paint | **0.70** | **0.63** | flames across both fender crowns, tub and rear fender; chrome reads silver |
+
+Cost: the paint atlas imports to 364 KB (the v1 paint was 276 KB); the whole quad is ~0.9 MB in the pack. Branch CI (run 562) printed `index.pck = 188 MB` for v1
+(master 187 MB, gate 190 MiB).
+
+Still open (not blocking): the reference's fine detail (chrome reflections, mud micro-detail, engine block visible between the wheels, the nose flames), an MR map
+so mud is rough while the lacquer stays glossy, and a Meshy/Tripo image-to-3D comparison if the founder wants to spend credits on it.

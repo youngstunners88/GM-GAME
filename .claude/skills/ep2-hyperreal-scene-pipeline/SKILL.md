@@ -112,9 +112,11 @@ CLAUDE.md FOUNDER SHIP RULE: no gate vote blocks a ship and none is reported to 
    backdrop) -> 0.69 (studio). A coloured backdrop alone drives saturation/warmth off by 3-4x and makes a fair model look wrong.
 3. **Compatibility renderer + chrome**: only the SKY is reflected. A fully metallic part in a sky-less room renders BLACK, and under a bright uniform sky it renders WHITE. Chrome is
    `metal 0.8 rough 0.2` and reads silver in the woods sky; judge chrome in the game sky, not in the studio.
-4. **Paint projected onto a curved loft smears.** The first quad used one side-planar UV map; the fender crowns (normal up) were slid onto a single texture ROW, so per-pixel flake noise
-   stretched 10:1 into "wood grain" and the flames never reached the crowns. The next iteration (task: baked paint) gives each panel its OWN loft UVs (u = along f, v = around the section)
-   and paints the texels from the 3D position: traced side flames + procedural crown flames blended in MASK space, isotropic flake, mud by height. Never blend UVs across a seam.
+4. **Paint projected onto a curved loft smears - bake it from 3D position instead.** The first quad used one side-planar UV map; the fender crowns (normal up) were slid onto a single
+   texture ROW, so per-pixel flake noise stretched 10:1 into "wood grain" and the flames never reached the crowns. `build_flame_quad.py` now does it properly (`bake_paint`): each red panel
+   is a loft with its OWN UVs (u = along f, v = fold distance from the crown; left and right share one half), all three in ONE 1024x320 atlas at 5 mm/texel; every texel asks "where in 3D
+   am I and which way do I face?" (bilinear patch of the loft grid + outward normal) and is painted from that: traced side flames weighted by |n.x|, procedural forked crown flames weighted
+   by n.z (blend in MASK space, never UV space), `cellnoise` flake and `vnoise` mud keyed to 3D position so grain is isotropic. Reuse this for any lofted/curved hero prop.
 5. **Seat riders with a probe, not by eye**: `tools/ep2_shots/rider_probe.tscn` prints hips/feet/hands/head of each seated clip in actor space; `woods_quad.gd` constants (`BULL_HIPS`,
    `BULL_SEAT_F`, `GRIP_*`, `BULL_LEAN`, `BACK_F/BACK_SIDE/BACK_EYE`) come from it. The seated clip alone sits him bolt upright against a chair back (his back is 0.5 m from the
    passenger's eye = a wall of texture): lean him onto the grips with `reach(..., lean)` (radians) and put the passenger a little to the side so he looks PAST the driver's shoulder.
