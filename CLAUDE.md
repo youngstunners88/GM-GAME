@@ -47,6 +47,7 @@ same commit — a manifest that lies is worse than none.
 | Write code, build scenes, configure engine | /src | `.claude/context-manifests/default.md` | gdscript-skill |
 | Write docs, marketing, or changelogs | /docs | CONTEXT.md | — |
 | **Founder reports smudges / blotches / blemishes** | **`blotch-hunter` agent** | `scripts/blotch-oracle.json` | `blotch-forensics`, `blotch-repair-gate` |
+| **Winchester GM logo ring / brown circle / holes on top of the gun** | delete the ring, never enlarge | `.claude/skills/ep2-winchester-logo/SKILL.md` | `ep2-winchester-logo` |
 | **Founder's Winchester GLB / hand-on-gun clips** | Drive GLB -> Blender | `.claude/skills/ep2-founder-weapon-glb/SKILL.md`, `ep2-blender-handling-clips/SKILL.md` | `ep2-founder-weapon-glb`, `ep2-blender-handling-clips` |
 | **Model looks see-through / hollow / a black square at the lens** | double-sided + ray audit + Jev | `.claude/skills/ep2-solid-models/SKILL.md` | `ep2-solid-models` |
 | **Film does not play / skips / glitches** | films must always play | `.claude/skills/ep2-film-always-plays/SKILL.md` | `ep2-film-always-plays` |

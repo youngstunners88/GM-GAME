@@ -64,3 +64,6 @@ and swirl the logo) inside the emblem cylinder, and build one clean polar-grid p
 engraved socket floor with the GM logo (planar UV, verified linear in the exported GLB). Facts that cost hours: the plate's top edge is only
 ~0.075 above the emblem centre, so keep the emblem inside it (`--lz 0.443 --sr 0.05`); the Tripo boss is a 1.7-unit mound; bake atlas at 1024
 (`--bake 1024`) to hold the pack budget. Command in `ep2-founder-weapon-glb` plus `--lz 0.443 --sr 0.05 --bake 1024`.
+
+## 2026-10-10: SUPERSEDED for the shipped rifle by `ep2-winchester-logo`
+The gold bezel / steel ring described above is REJECTED by the founder ("remove this brown outer circle! NOT EXPAND IT"). The logo is the GM disc only. Follow `ep2-winchester-logo` and its gate `tests/ep2_winchester_logo_test.tscn`.
