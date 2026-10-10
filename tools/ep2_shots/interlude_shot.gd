@@ -9,7 +9,8 @@ const LIFT := preload("res://src/episode2/chamber/mine_lift.tscn")
 const WOODS := preload("res://src/episode2/chamber/woods_quad.tscn")
 var _out := ".farm/interlude"
 var _which := "lift"
-var _quick := false                                  # quick=1: only the framings graded against the founder's target (woods)
+var _quick := false
+var _grade := ""                                     # grade=golden: the woods' golden-hour light                                  # quick=1: only the framings graded against the founder's target (woods)
 var c: Ep2Interlude = null
 
 
@@ -20,10 +21,14 @@ func _ready() -> void:
 			_out = kv[1]
 		elif kv.size() == 2 and kv[0] == "chamber":
 			_which = kv[1]
+		elif kv.size() == 2 and kv[0] == "grade":
+			_grade = kv[1]
 		elif kv.size() == 2 and kv[0] == "quick":
 			_quick = kv[1] == "1"
 	DirAccess.make_dir_recursive_absolute(_out)
 	c = (LIFT if _which == "lift" else WOODS).instantiate()
+	if _grade != "" and "light_grade" in c:
+		c.set("light_grade", _grade)
 	add_child(c)
 	c.setup(0, [], 0)
 	c.set_physics_process(false)

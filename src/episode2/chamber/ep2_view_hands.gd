@@ -19,7 +19,7 @@ static var founder_ads_depth: float = -0.46
 ## behind the camera and never block the target; skill ep2-fps-shooter-feel, placement sim).
 static var founder_ads_cam: Vector3 = Vector3(0.0, 0.19, 0.14)
 static var founder_drop: float = 0.11        # model sits a little lower than the forge sight line so the stock comb never blocks the view in ADS
-static var founder_z_shift: float = -0.15
+static var founder_z_shift: float = 0.05        # Lil Blunt's Tripo rifle (2026-10-10b): forward until the GM logo reads in the hip view
 const HANDS_GLB := "res://src/episode2/assets/fp_hands.glb"
 const GREEN := Color(0.30, 0.62, 0.17)
 const GREEN_DARK := Color(0.18, 0.42, 0.10)

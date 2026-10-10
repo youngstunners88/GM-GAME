@@ -107,5 +107,13 @@ An outdoor set is a FOREST KIT + materials + life, not hero props:
   `ship_and_iterate`, priority `trunks`. Astra 4/10 "partly" (`docs/model-responses/2026-10-10-woods-astra-pass1.md`); next: an
   irregular layered conifer (Tripo/Meshy) instead of crossed cards, trunk moss, roots/clutter, stronger dappled sun.
 
+## Woods increment 2 (founder refs 2026-10-10b)
+- Mine exit ("exiting outside" still): the woods start INSIDE a timbered adit (kit `Deck2m` floor, timber-lined walls, `Beam4m`
+  sets, knee braces) looking out onto a plank bridge with posts, rails and a rope (`Chain2m`) - reuse the lift kit, its materials
+  are assigned by name. Adit walls get collision circles. Start-shot closeness 0.78 vs the founder's still.
+- Light: `light_grade = "golden"` (warm low sun behind the trees, amber-grey haze) - Jev 0.54 / microsoft-decision-1 0.58 picked it
+  over daylight on a 12-number closeness table (bear stills 0.67-0.78 golden vs 0.42-0.69 daylight). The first golden try was far
+  too warm (warmth 2.8-3.4 vs the stills' 1.7-1.8): measure warmth before showing anyone. `grade=` on the capture rig switches it.
+
 ## 8. Ship
 Tests (`ep2_interlude_test`, `ep2_fort_knox_arc_test`), STATUS.md, `scripts/ship-to-master.sh`, prove the master deploy.

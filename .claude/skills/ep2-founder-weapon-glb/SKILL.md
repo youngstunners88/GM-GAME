@@ -68,3 +68,11 @@ Then delete `src/episode2/assets/weapons/textures_tmp/` (embedded in the GLB). W
 `FOUNDER_Z_SHIFT 0.34`, `FOUNDER_DROP 0.045`); the rack, Bull and hand-over still use the forge rifle. Pack budget: CI pck was 188 MiB of 190 -
 the normal map (1 MB) is OFF (`--normal` to enable); the superseded Blender hands GLB was deleted to pay for this one.
 Open: a right hand is not in the model (only the left glove + forearm), no lever animation, receiver not brass.
+
+## 7. SHIPPED (2026-10-10): the founder's "rifle 3d.glb" IS Lil Blunt's rifle
+Drive 1X09DLG2prOs_B-AuNc15AohVZ8lyfAzS (Tripo, 61.6k verts, 4K albedo, Mixamo default rig - ignore it). Logo fixed with
+`ep2-winchester-logo` (third pass), then `tools/ep2_blender/lil_blunt_rifle_to_game.py`: the gun axis is measured by PCA of the
+verts above the hanging arm (the model is turned ~22 deg in plan - a flat 90 deg turn put the logo 0.39 m off the barrel), the thin
+end is the muzzle, scaled to 1.2 m, barrel on x = 0, logo on +X at z -0.246, decimated to 22k tris, albedo 2048 / MR + normal 1024 /
+emission 512. Viewmodel: `Ep2ViewHands.founder_z_shift = 0.05` (forward until the GM logo reads in the hip view; 0.15 hid the arm).
+The previous build is in `.farm/retired/winchester_1886_founder_prev.glb`. Pack +~1.3 MB.

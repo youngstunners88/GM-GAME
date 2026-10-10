@@ -73,3 +73,22 @@ proud (was 15.8); top-strap depth vs untouched model: 0 changed texels on the re
 Jev 0.98 / 0.86 and microsoft/microsoft-decision-1 0.998 / 0.947 (ring gone / holes filled), both "ship"; both chose the dark edge band.
 The Microsoft model is `microsoft/microsoft-decision-1` on the same `/api/alpha/decisions` endpoint: `JEV_MODEL=microsoft/microsoft-decision-1 node scripts/jev.mjs ...`.
 Both are text-only: give them the measurements above, never a screenshot.
+
+## Third pass (2026-10-10, LIL BLUNT'S RIFLE = the founder's Tripo "rifle 3d.glb", green arm baked in) - texture-only, no geometry added
+Founder: "The rifle that I gave you is Lil Blunt's rifle ... fix the issue of the logo on it, but dont fuck it up like before!!!!"
+His Tripo model had the GM logo as a SMEARED GOLD BLOB inside a recessed DISH with a raised LIP (the lip reads as the brown ring).
+`tools/ep2_forge/repaint_rifle_logo.py` (then `tools/ep2_blender/lil_blunt_rifle_to_game.py` for the viewmodel frame):
+1. Find the blob (gold texels on receiver-facing verts), then MEASURE the plate with rays from outside (first hit = what is seen);
+   fit the true plate plane (the blob normal was 1.6 / 5.2 deg off: a disc on it shaded as a dark band).
+2. Flatten the dish: grow from the visible dish faces through mesh edges, per-15-degree sector out to where the hits return to the
+   plate (one side's groove ran to 1.48x on one arc only), within -22/+6 mm, eased over 0.08x radius. A depth-window flatten pulled the
+   panel edge (~10 mm down at 1.3x) into slivers; a first-hit-only flatten left shards - both rejected by render.
+3. Paint, per texel via its 3-D point: emblem inside 0.95x the old blob radius (NEVER larger), emissive green GM, flat normal;
+   the old rim band is refilled with the plate's own colour at that angle (60-bin median, no per-texel copy: it speckled) and lifted
+   to the plate's brightness (band gain ~1.27, tapered).
+4. No face is ever deleted (topology identical) -> no hole can appear. Gate: `tests/ep2_winchester_logo_test.tscn` reads
+   `docs/episode2-quality/lil-blunt-rifle-logo-2026-10-10/logo_fix_report.json`.
+Numbers: band/plate on the first-person side 0.70 -> 0.93; far side 0.67 -> 0.58 (faint trace left - next pass); 77 660 faces before
+and after; 0 verts moved outside the receiver. Jev 0.92 / 0.91 / 0.95, microsoft-decision-1 0.905 / 0.994 / 0.996 (ring gone /
+no holes / not enlarged), both "ship". Close-up render camera: `track_quat('-Z','Y')` - with 'Z' the camera rolled 180 deg and a
+correct logo looked mirrored (cost a round).

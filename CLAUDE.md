@@ -46,6 +46,7 @@ same commit — a manifest that lies is worse than none.
 | Create art/audio specs or style guide | /assets | CONTEXT.md | pixel-art-skill |
 | Write code, build scenes, configure engine | /src | `.claude/context-manifests/default.md` | gdscript-skill |
 | Write docs, marketing, or changelogs | /docs | CONTEXT.md | — |
+| **Keep CONTEXT.md files / routing true; founder setup or toolkit doc** | update the workspace CONTEXT.md + tool roster | `assets/CONTEXT.md`, `src/CONTEXT.md`, `docs/CONTEXT.md` | `context-md-upkeep`, `gm-game-tool-roster` |
 | **Founder reports smudges / blotches / blemishes** | **`blotch-hunter` agent** | `scripts/blotch-oracle.json` | `blotch-forensics`, `blotch-repair-gate` |
 | **Founder sends an aesthetic target for a room ("this is the aesthetic I want", rework the lift / walkway / cave)** | target -> Muapi refs -> Tripo + Blender kit -> graded captures -> Jev + Microsoft decisions | `.claude/skills/ep2-set-piece-forge/SKILL.md` | `ep2-set-piece-forge` |
 | **Winchester GM logo ring / brown circle / holes on top of the gun** | delete the ring, never enlarge | `.claude/skills/ep2-winchester-logo/SKILL.md` | `ep2-winchester-logo` |

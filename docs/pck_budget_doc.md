@@ -52,3 +52,9 @@ pack (hideout props, Bull, bears, carts) still use the defaults: re-importing th
 |---|---|
 | `src/episode2/assets/woods/` forest kit GLB, bark/floor/branch/fern textures (+ bark normal), Tripo rock | ~2.3 MB (lossy WebP import, mipmaps on) |
 | ElevenLabs woods soundscape (`ep2_woods_ambience_loop.ogg`, gust, 3 bird calls, flutter) | ~0.6 MB |
+
+## 2026-10-10 (b) Lil Blunt's rifle + Tripo bears
+| change | size (imported) |
+|---|---|
+| bear_rigged.glb = founder Tripo bear (46.7k tris) + 1024 albedo; old Meshy texture removed | ~+2.8 MB (CI 186 MB after) |
+| winchester_1886_founder.glb = founder "rifle 3d.glb" (22k tris, 2048 albedo, 1024 MR/normal, 512 emissive); old rifle_color/mr/emblem files retired | ~+1.3 MB |

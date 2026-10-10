@@ -1,0 +1,58 @@
+{
+ "source": "founder Drive 'rifle 3d.glb' (id 1X09DLG2prOs_B-AuNc15AohVZ8lyfAzS, Tripo, Lil Blunt's green arm baked in)",
+ "method": "tools/ep2_forge/repaint_rifle_logo.py (texture-only emblem projection + dish flatten, no face deleted) then tools/ep2_blender/lil_blunt_rifle_to_game.py (frame + decimate)",
+ "faces_before": 77660,
+ "faces_after": 77660,
+ "topology_identical": true,
+ "verts_moved": 1109,
+ "verts_moved_outside_receiver": 0,
+ "max_move_mm": 7.15,
+ "moved_max_height_m": 0.2805,
+ "receiver_top_height_m": 0.2976,
+ "sites": [
+  {
+   "side": -1,
+   "blob_radius_mm": 42.0,
+   "logo_radius_mm": 39.9,
+   "dish_end": 1.315,
+   "sector_end_max": 1.477,
+   "plate_tilt_deg": 1.58,
+   "dish_max_move_mm": 7.15,
+   "band_gain": 1.266
+  },
+  {
+   "side": 1,
+   "blob_radius_mm": 44.6,
+   "logo_radius_mm": 42.4,
+   "dish_end": 1.26,
+   "sector_end_max": 1.322,
+   "plate_tilt_deg": 5.24,
+   "dish_max_move_mm": 7.04,
+   "band_gain": 1.277
+  }
+ ],
+ "render_band_over_plate": {
+  "left_side_seen_in_first_person": {
+   "before": 0.702,
+   "after": 0.928
+  },
+  "right_side": {
+   "before": 0.666,
+   "after": 0.583
+  }
+ },
+ "decisions": {
+  "jev": {
+   "ring_gone_visible_side": 0.92,
+   "no_holes": 0.91,
+   "logo_not_enlarged": 0.95,
+   "next": "ship"
+  },
+  "microsoft-decision-1": {
+   "ring_gone_visible_side": 0.905,
+   "no_holes": 0.994,
+   "logo_not_enlarged": 0.996,
+   "next": "ship"
+  }
+ }
+}

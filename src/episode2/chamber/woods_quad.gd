@@ -67,6 +67,9 @@ const BRANCH_TEX := "res://src/episode2/assets/woods/tex_woods_branch.png"
 const FERN_TEX := "res://src/episode2/assets/woods/tex_woods_fern.png"
 const ROCK_MODEL := "res://src/episode2/assets/woods/woods_rock.glb"
 const BEAR_ARCHER_MODEL := "res://src/episode2/assets/mine_bear_archer.glb"   # founder's Tripo bear archer (static, bow drawn)
+const EXIT_KIT_MODEL := "res://src/episode2/assets/mine_lift/mine_lift_kit.glb"
+const EXIT_PLANK_TEX := "res://src/episode2/assets/mine_lift/tex_lift_planks.jpg"
+const EXIT_IRON_TEX := "res://src/episode2/assets/mine_lift/tex_lift_rust_iron.jpg"
 const FOLIAGE_SHADER := "res://src/episode2/art/ep2_foliage_wind.gdshader"
 const GIANT_SPACING := 10.5                          # metres between the old-growth giants (the target's trunks are 1-3 m across)
 
@@ -75,6 +78,10 @@ var _bark_mat: StandardMaterial3D = null
 var _crown_mat: ShaderMaterial = null
 var _fern_mat: ShaderMaterial = null
 var _wildlife: Ep2Wildlife = null
+var _exit_kit: Node3D = null                          # the mine-lift walkway kit, for the mine exit + bridge
+## "golden" = golden hour (founder bear stills 2026-10-10b; Jev 0.54 / microsoft-decision-1 0.58 chose it on the closeness table),
+## "" = the old-growth daylight of the earlier forest target. Set before setup().
+var light_grade: String = "golden"
 var _ground_mat: StandardMaterial3D = null
 var _leaf_mats: Array = []
 var _trees: Array = []                              # [Vector2 position, radius] for trunk collision
@@ -188,6 +195,21 @@ func _apply_light() -> void:
 	_sun.rotation_degrees = Vector3(-58.0, -25.0, 0.0)
 	_sun.light_color = Color(1.0, 0.90, 0.74)
 	_sun.light_energy = 1.7
+	if light_grade == "golden":
+		# GOLDEN HOUR (founder bear stills founder_2026-10-10b/bear_scene_*.jpg): a low warm sun behind the trees, amber haze,
+		# deep cool-green shade - the light the bears are seen in
+		psm.sky_top_color = Color(0.46, 0.52, 0.62)
+		psm.sky_horizon_color = Color(0.92, 0.80, 0.62)
+		psm.ground_horizon_color = Color(0.40, 0.32, 0.22)
+		env.fog_light_color = Color(0.60, 0.58, 0.48)
+		env.fog_sun_scatter = 0.35
+		env.ambient_light_color = Color(0.50, 0.52, 0.46)
+		env.ambient_light_energy = 0.55
+		env.adjustment_saturation = 1.0
+		env.adjustment_contrast = 1.22
+		_sun.rotation_degrees = Vector3(-14.0, 160.0, 0.0)          # low, from ahead of the player's walk (+z): backlight
+		_sun.light_color = Color(1.0, 0.82, 0.62)
+		_sun.light_energy = 2.0
 	_sun.shadow_enabled = true
 	_sun.directional_shadow_max_distance = 70.0
 	_sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
@@ -479,14 +501,83 @@ func _multi(mesh: Mesh, xforms: Array, mat: Material) -> MultiMeshInstance3D:
 
 ## The mine's surface mouth behind the spawn: a rocky mound with a plank door - the lift they just came up.
 func _build_mine_hut() -> void:
-	var rock: StandardMaterial3D = _tex(ROCK_TEX, Color(0.46, 0.40, 0.34), 0.22)
-	var timber: StandardMaterial3D = _tex(TIMBER_TEX, Color(0.62, 0.45, 0.30), 0.6)
+	# THE MINE EXIT (founder reference founder_2026-10-10b/exiting_outside_mine_bull.jpg, "Head out into the woods"): Lil Blunt
+	# starts INSIDE a timbered adit and looks out through its frame onto a plank bridge with rope rails that runs into the
+	# old-growth wood, Inferno waiting on the boards. Built from the mine-lift walkway kit (tools/ep2_blender/build_lift_kit.py)
+	# so the lift's top walkway and this exit are the same carpentry.
+	var rock: StandardMaterial3D = _tex(ROCK_TEX, Color(0.40, 0.36, 0.31), 0.22)
+	var timber: StandardMaterial3D = _tex(TIMBER_TEX, Color(0.56, 0.42, 0.30), 0.6)
 	_box(Vector3(14.0, 7.0, 6.0), Vector3(0.0, 3.5, -9.0), rock)
-	_box(Vector3(3.4, 3.6, 0.5), Vector3(0.0, 1.8, -5.9), timber)
-	_box(Vector3(0.5, 3.6, 0.5), Vector3(-1.9, 1.8, -5.8), timber)
-	_box(Vector3(0.5, 3.6, 0.5), Vector3(1.9, 1.8, -5.8), timber)
-	_box(Vector3(4.4, 0.5, 0.6), Vector3(0.0, 3.8, -5.8), timber)
-	_lantern(Vector3(-2.6, 3.0, -5.3), 2.6, 9.0)
+	for sx in [-1.0, 1.0]:
+		_box(Vector3(7.0, 6.0, 8.6), Vector3(sx * 5.6, 3.0, -1.7), rock)          # the hillside either side of the adit
+	_box(Vector3(4.6, 3.0, 8.6), Vector3(0.0, 4.9, -1.7), rock)                    # over the adit roof
+	if _kit_part("Deck2m") == null:
+		_box(Vector3(3.4, 3.6, 0.5), Vector3(0.0, 1.8, -5.9), timber)
+		_lantern(Vector3(-2.6, 3.0, -5.3), 2.6, 9.0)
+		return
+	# the adit: plank floor, timber-lined walls, sets of posts + cap beams every 2 m, the last set framing the mouth
+	for i in 4:
+		var z: float = -4.0 + float(i) * 2.0
+		_kit_part("Deck2m", Vector3(0.0, 0.06, z + 1.0), Vector3.ZERO, Vector3(1.4, 1.0, 1.0))
+		for sx in [-1.0, 1.0]:
+			_box(Vector3(0.12, 3.3, 2.0), Vector3(sx * 1.78, 1.65, z + 1.0), timber)       # wall planking
+			_kit_part("Beam4m", Vector3(sx * 1.62, 1.6, z + 2.0), Vector3(0.0, 0.0, PI * 0.5), Vector3(0.8, 1.15, 1.15))
+		_kit_part("Beam4m", Vector3(0.0, 3.28, z + 2.0), Vector3.ZERO, Vector3(0.9, 1.2, 1.2))
+	_box(Vector3(3.7, 0.14, 8.0), Vector3(0.0, 3.5, -1.0), timber)                     # lagging over the sets
+	# the portal braces (the diagonal knee braces of the reference)
+	for sx in [-1.0, 1.0]:
+		_kit_part("Beam4m", Vector3(sx * 1.18, 2.95, 4.0), Vector3(0.0, 0.0, sx * 0.78), Vector3(0.24, 0.8, 0.8))
+	_lantern(Vector3(-1.45, 2.5, 0.5), 2.2, 8.0)
+	# the plank bridge out into the wood: 2 m sections with posts, a timber hand rail and a sagging rope rail each side
+	for i in 6:
+		var z2: float = 5.0 + float(i) * 2.0
+		_kit_part("Deck2m", Vector3(0.0, 0.07, z2), Vector3.ZERO, Vector3(0.95, 1.0, 1.0))
+		for sx in [-1.0, 1.0]:
+			_kit_part("Post", Vector3(sx * 1.12, 0.0, z2 - 1.0))
+			_kit_part("Rail2m", Vector3(sx * 1.12, 0.0, z2 - 1.0))
+			_kit_part("Chain2m", Vector3(sx * 1.12, -0.42, z2 - 1.0))
+	for sx in [-1.0, 1.0]:
+		_kit_part("Post", Vector3(sx * 1.12, 0.0, 16.0))
+	# the adit walls are solid (trunk-style collision circles along both sides)
+	for zi in 11:
+		for sx in [-1.0, 1.0]:
+			_trees.append([Vector2(sx * 2.25, -4.0 + float(zi) * 0.8), 0.55])
+
+
+## One piece of the mine-lift walkway kit, with the lift's own triplanar plank / timber / rusted-iron materials (local scale).
+func _kit_part(piece: String, pos: Vector3 = Vector3.ZERO, rot: Vector3 = Vector3.ZERO, scl: Vector3 = Vector3.ONE) -> Node3D:
+	if _exit_kit == null:
+		if not ResourceLoader.exists(EXIT_KIT_MODEL):
+			return null
+		_exit_kit = (load(EXIT_KIT_MODEL) as PackedScene).instantiate() as Node3D
+		var mats: Dictionary = {
+			"Planks": _kit_tex(EXIT_PLANK_TEX, Color(0.90, 0.84, 0.76), 0.77),
+			"Timber": _kit_tex(EXIT_PLANK_TEX, Color(0.60, 0.48, 0.38), 1.4),
+			"RustIron": _kit_tex(EXIT_IRON_TEX, Color(0.95, 0.85, 0.80), 2.2),
+		}
+		(mats["RustIron"] as StandardMaterial3D).metallic = 0.35
+		for mi in _exit_kit.find_children("*", "MeshInstance3D", true, false):
+			var m := mi as MeshInstance3D
+			for si in m.mesh.get_surface_count():
+				var src: Material = m.mesh.surface_get_material(si)
+				var key: String = String(src.resource_name) if src != null else ""
+				if mats.has(key):
+					m.mesh.surface_set_material(si, mats[key])
+	if pos == Vector3.ZERO and rot == Vector3.ZERO and scl == Vector3.ONE:
+		return _exit_kit                                    # probe call: "is the kit there?"
+	var src_node: Node3D = _exit_kit.find_child(piece, true, false) as Node3D
+	if src_node == null:
+		return null
+	var n: Node3D = src_node.duplicate() as Node3D
+	n.transform = Transform3D(Basis.from_euler(rot) * Basis.from_scale(scl), pos)      # LOCAL scale (skill ep2-set-piece-forge)
+	_visuals.add_child(n)
+	return n
+
+
+func _kit_tex(path: String, tint: Color, uv_scale: float) -> StandardMaterial3D:
+	var m: StandardMaterial3D = _tex(path, tint, uv_scale)
+	m.roughness = 0.86
+	return m
 
 
 # --- Inferno's quad, and the leaves that hide it ---------------------------------------------------------------------------

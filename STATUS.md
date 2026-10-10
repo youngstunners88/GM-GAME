@@ -1,12 +1,24 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/smokerealm
-**Branch:** master (bear woods deployed: CI run 38040736900, butler "Pushed to" confirmed)
+**Branch:** master (Tripo bears deployed: CI run 38050846295, butler "Pushed to" confirmed)
 
 ---
 
 
 **INFERNO BULL WHISKEY REMOVAL (2026-10-10, release verification pending).** The glass stays on the whiskey table during seating, walking and handover cleanup. It is never attached to Bull’s left hand. His standing idle now restores both arms’ imported rest pose and yields to either hand’s active IK. Native gameplay-camera evidence is in `docs/episode2-quality/whiskey-removal-2026-10-10/`. This focused correction does not complete the outstanding Bull sculpt, archer bear, armory/bullion or molten-river requests.
+
+
+**🔫 LIL BLUNT'S RIFLE IS YOUR RIFLE NOW - LOGO FIXED WITHOUT A RING (2026-10-10, evening).** From your "Ep2 Design Elements" doc:
+- **The rifle:** your `rifle 3d.glb` (his green arm, glove and leaf bracer) is now the first-person rifle everywhere. Its logo was a smeared gold blob sitting in a sunken dish whose raised edge read as a ring. I fixed it **without adding or deleting any geometry**: the real GM emblem (gold chain + glowing green GM) is painted into the gun's own texture, the dish is flattened onto the plate, and the old rim is refilled with the plate's own steel. The logo is 5% SMALLER than the old blob, never larger. Same faces before and after (77,660), so no holes can appear; nothing on top of the gun moved.
+- **Measured:** on the side you see in first person, the band round the logo went from 0.70 to 0.93 of the plate brightness (1.0 = invisible). The far side still shows a faint trace (0.58) - next pass. **Jev and the Microsoft decision model both said yes** to "ring gone / no holes / not enlarged" (0.92/0.91/0.95 and 0.91/0.99/1.00) and "ship". A new test locks all of it.
+- **The mine exit (your "exiting outside" picture):** the woods now start inside a timbered mine adit with knee braces, looking out onto a plank bridge with posts, rails and rope, Inferno waiting on the boards (closeness 0.78 to your picture).
+- **Golden hour (your bear pictures):** the woods are now lit by a low warm sun through the pines. Jev and the Microsoft model chose it over daylight on the numbers (closeness to your bear stills 0.67-0.78 vs 0.42-0.69).
+- **Your new Inferno Bull GLB:** measured - it is the same body as the Bull already in the game (0.1 cm fit) plus the rifle fused to his hand, and its rig export is broken like the bear's, so I did not swap it (no gain). The Bull character sheet and the furnace picture are logged for the Bull pass.
+- **Your setup doc:** the MuAPI, Monid and ElevenLabs CLIs are installed and wired to the keys already in the environment; the tool skill lists what each is for and how we pair them with Jev. Your coach's MD method is in place: a CONTEXT.md for each workspace (design / assets / src / docs) plus a skill that keeps them true.
+- Tests: rifle logo gate (12 checks), woods/lift suite, range + hideout suites, Fort Knox arc - all pass. Pictures: `docs/episode2-quality/woods-2026-10-10b/board.jpg`, `docs/episode2-quality/lil-blunt-rifle-logo-2026-10-10/`.
+
+---
 
 
 **🐻 YOUR TRIPO BEARS ARE IN THE WOODS (2026-10-10).** The Meshy bears are gone:
@@ -9376,7 +9388,7 @@ browsers. Fixes shipped:
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
 **Play it:** https://youngstunners88.itch.io/smokerealm
-**Branch:** master (bear woods deployed: CI run 38040736900, butler "Pushed to" confirmed)
+**Branch:** master (Tripo bears deployed: CI run 38050846295, butler "Pushed to" confirmed)
 
 ---
 
