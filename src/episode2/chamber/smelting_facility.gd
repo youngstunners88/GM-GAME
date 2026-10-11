@@ -2671,16 +2671,15 @@ func _demo_raise() -> void:
 	if _bull == null:
 		return
 	_set_bull_rifle_mode("ready")
-	var front: Vector3 = _bull_front()
-	var across: Vector3 = Basis(Vector3.UP, _bull.facing) * Vector3.RIGHT      # his LEFT
-	_bull.reach("Right", _bull.position + front * 0.5 - across * 0.15 + Vector3.UP * 2.12, 0.5, 0.1)
-	_bull.reach("Left", _bull.position + front * 1.15 + across * 0.05 + Vector3.UP * 2.02, 0.5, 0.1)
+	# No shoulder-height IK raise: bending his arms that far webbed and melted the elbow on the founder's Tripo body
+	# (founder 2026-10-11, red circle on the range demo). He fires from the hip: arms stay in the rest pose and the
+	# rifle in his hand turns level toward the targets ("ready" mode in _sync_bull_hand_props).
 
 
 func _demo_fire() -> void:
 	_play_winchester()
 	if _bull:
-		var muzzle: Vector3 = _bull.position + _bull_front() * 1.5 + Vector3.UP * 2.1
+		var muzzle: Vector3 = _bull.position + _bull_front() * 1.5 + Vector3.UP * 1.2      # hip fire (no arm raise)
 		var lt := OmniLight3D.new()
 		lt.light_color = Color(1.0, 0.8, 0.5)
 		lt.light_energy = 5.0

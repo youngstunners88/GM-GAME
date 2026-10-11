@@ -18,8 +18,8 @@ static var founder_ads_depth: float = -0.46
 ## so the camera must sit FORWARD of the receiver, just above the barrel, behind the rear sight - the stock and receiver are then
 ## behind the camera and never block the target; skill ep2-fps-shooter-feel, placement sim).
 static var founder_ads_cam: Vector3 = Vector3(0.0, 0.345, -0.05)
-static var founder_drop: float = 0.13        # model sits a little lower than the forge sight line so the stock comb never blocks the view in ADS
-static var founder_z_shift: float = 0.02        # Lil Blunt's Tripo rifle (2026-10-10b): forward until the GM logo reads in the hip view
+static var founder_drop: float = 0.17        # model sits a little lower than the forge sight line so the stock comb never blocks the view in ADS
+static var founder_z_shift: float = -0.03        # Lil Blunt's Tripo rifle (2026-10-10b): forward until the GM logo reads in the hip view
 const HANDS_GLB := "res://src/episode2/assets/fp_hands.glb"
 const GREEN := Color(0.30, 0.62, 0.17)
 const GREEN_DARK := Color(0.18, 0.42, 0.10)
@@ -82,8 +82,8 @@ const SLEEVE_GREEN := Color(0.218, 0.298, 0.133)
 static func _add_sleeve(fm: Node3D) -> void:
 	var cm := CylinderMesh.new()
 	cm.top_radius = 0.075
-	cm.bottom_radius = 0.10
-	cm.height = 0.6
+	cm.bottom_radius = 0.11
+	cm.height = 1.6                                         # long: its far end must never reach the screen, even ultra-wide
 	cm.radial_segments = 12
 	cm.rings = 1
 	var mi := MeshInstance3D.new()

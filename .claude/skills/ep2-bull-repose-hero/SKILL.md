@@ -61,3 +61,10 @@ Fix, all on the GLB in place (skeleton, node names, clip GLBs untouched, so walk
 Traps: never write a CRLF .gd through Python text mode (smelting_facility.gd is CRLF - edit bytes); per-UV-island
 majority labels tore seams (the decimated mesh is ~2200 UV islands but ONE welded shell); the talk/gesture/sit clips
 still stretch the fused hand/pouch and the sit clip is hunched - a re-generated body with a free right hand is the real fix.
+
+## Founder 2026-10-11 round 2 ("rifle hovering - WHY THE SEPARATION", "elbow webbed melting")
+- Bull's rifle MUST be a child of `bull.holder("LeftHand")` (BoneAttachment3D -> follows the final drawn pose, metres frame), placed
+  from the hand bone's rest (grip = wrist + 9 cm along the bone). Never place it from a measured rest point or from
+  `skeleton_updated` + `get_bone_global_pose` (pre-modifier pose) - both left it hovering 0.2 m off his fist.
+- Never IK his arms to shoulder height (the range demo did): the Tripo skin webs and melts at the elbow. Keep arms at rest; turn the
+  rifle instead (hip fire).

@@ -15,6 +15,8 @@ const RIFLE_MODEL := "res://src/episode2/assets/winchester_1886.glb"
 const GRIP_REST := Vector3(56.0, 129.0, 19.0)
 ## Rifle GLB: 1.2 m, muzzle +Z, centred (skill ep2-handoff-props). The fist holds it just below the receiver.
 const GRIP_ALONG := 0.10
+## Wrist -> fist centre along the hand bone, metres (sheet: he grips the rifle in a closed fist).
+const FIST_REACH_M := 0.09
 const RIFLE_SCALE_PER_M := 1.42 / 2.5    # a touch over the hideout BULL_RIFLE_SCALE (1.3 @ 2.5 m): the sheet rifle is chunky
 ## His helmet lamp is LIT on the sheet. Lens centre on the bind pose (skeleton space, rig cm), found from the bright
 ## lens texels of the atlas (bull_hero_fix.py era measurement: x -0.01, y 2.24-2.35, z 0.39 m).
@@ -83,14 +85,25 @@ func _setup(with_rifle: bool) -> void:
 	var lift := Vector3(1.0, 0.0, 0.0)
 	var side := lift.cross(muzzle).normalized()           # right-handed: side x lift = muzzle
 	lift = muzzle.cross(side).normalized()
-	var want := Transform3D(Basis(side, lift, muzzle), GRIP_REST)
-	_rel = sk.get_bone_global_rest(_hand).affine_inverse() * want
+	# GRIP = the hand bone itself (a little past the wrist toward the knuckles), not a measured rest point: the old
+	# GRIP_REST sat ~0.2 m off the drawn fist and the rifle hovered beside him (founder 2026-10-11 "WHY THE SEPARATION").
+	var rest: Transform3D = sk.get_bone_global_rest(_hand)
+	var sk_scale: float = maxf(sk.global_transform.basis.get_scale().x, 0.0001)
+	var grip: Vector3 = rest.origin + rest.basis.y.normalized() * (FIST_REACH_M / sk_scale)
+	grip += muzzle * (GRIP_ALONG * _scale / sk_scale)
 	rifle = (load(RIFLE_MODEL) as PackedScene).instantiate() as Node3D
 	rifle.name = "BullHeroRifle"
-	add_child(rifle)
-	rifle.top_level = true
 	_solid(rifle)
-	sk.skeleton_updated.connect(_sync)
+	# Child of the LeftHand BoneAttachment3D: it follows the FINAL drawn hand (after every modifier), so the rifle can
+	# never part from his fist - no per-frame sync to drift.
+	var hold: Node3D = bull.holder("LeftHand")
+	if hold == null:
+		return
+	hold.add_child(rifle)
+	# The holder is the hand bone's frame in METRES (Ep2Actor.holder undoes the rig's cm scale).
+	var rb: Basis = rest.basis.orthonormalized()
+	rifle.transform = Transform3D(rb.inverse() * Basis(side, lift, muzzle) * Basis.from_scale(Vector3.ONE * _scale),
+		rb.inverse() * (grip - rest.origin) * sk_scale)
 
 
 func _add_lamp(sk: Skeleton3D) -> void:
@@ -134,6 +147,7 @@ func _process(_dt: float) -> void:
 
 
 func _sync() -> void:
+	return                                   # the rifle rides the LeftHand BoneAttachment3D now (see _setup)
 	if rifle == null or not rifle.visible or _hand < 0:
 		return
 	var sk: Skeleton3D = bull.skeleton
@@ -162,3 +176,5 @@ static func _solid(root: Node) -> void:
 				# The sheet's rifle is dark walnut and blued steel; this GLB's orange stock read as a toy at range.
 				d.albedo_color = d.albedo_color * Color(0.42, 0.40, 0.50)
 				m.set_surface_override_material(i, d)
+
+

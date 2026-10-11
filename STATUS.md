@@ -11,6 +11,15 @@
 **INFERNO BULL WHISKEY REMOVAL (2026-10-10, release verification pending).** The glass stays on the whiskey table during seating, walking and handover cleanup. It is never attached to Bull’s left hand. His standing idle now restores both arms’ imported rest pose and yields to either hand’s active IK. Native gameplay-camera evidence is in `docs/episode2-quality/whiskey-removal-2026-10-10/`. This focused correction does not complete the outstanding Bull sculpt, archer bear, armory/bullion or molten-river requests.
 
 
+**🔧 FIXES FROM YOUR SCREENSHOTS (2026-10-11).**
+- **Inferno's rifle no longer hovers:** it was placed from a measured "rest fist" point 0.2 m off his drawn hand. It now rides the bone attachment of his left hand itself (follows the final drawn hand every frame), so it cannot separate.
+- **No more melting elbow in the range demo:** the demo raised both his arms to shoulder height with IK, which webbed and melted the elbow on the founder Tripo body. He now fires from the hip: arms stay in the rest pose and only the rifle turns toward the targets.
+- **Lil Blunt's arm, tighter:** the hold is lower and closer (bracer at the bottom edge) and the forearm extension is long enough that its end can never reach the screen, checked at your ultra-wide 1730x790 window.
+- Still open on Inferno: his talk/sit clips can stretch the right fist (it is sculpted into the flask pouch) - the real fix is a body with a free right hand.
+
+---
+
+
 **🎯 RIFLE VIEW FIXES (2026-10-11).** Thank you! From your recording:
 - **Arm no longer cut off:** your rifle model's forearm ended in a flat cut just below the bracer, and it showed at the bottom of the screen. The forearm now continues out of frame in its own green, and the hold is slightly tighter (measured: no arm edge ends inside the frame).
 - **Shouldering fixed:** the rifle model's barrel tilted up 6.7°, so when you aimed, the sight line rose above your eye and you looked from underneath it. The barrel is now level and the eye sits on the rear-sight/front-sight line.
