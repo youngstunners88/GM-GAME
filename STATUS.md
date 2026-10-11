@@ -11,6 +11,8 @@
 **INFERNO BULL WHISKEY REMOVAL (2026-10-10, release verification pending).** The glass stays on the whiskey table during seating, walking and handover cleanup. It is never attached to Bull’s left hand. His standing idle now restores both arms’ imported rest pose and yields to either hand’s active IK. Native gameplay-camera evidence is in `docs/episode2-quality/whiskey-removal-2026-10-10/`. This focused correction does not complete the outstanding Bull sculpt, archer bear, armory/bullion or molten-river requests.
 
 
+**🔫 RIFLE VISIBLE AGAIN (2026-10-11).** Founder: "why is the rifle invisible" while following Inferno to the firing line. Cause: the spyglass fix reused its below-the-frame pose for the hideout carry pose too. Fix: the carry pose is its own in-frame pose (lower right, clear of the crosshair). The spyglass keeps its own pose, and sprint stays in frame. Measured rifle on screen: broken 23 % (1.8 % of the frame) -> now 71 % (15 % of the frame), 0 % over the aim window. Jev chose the new pose 0.99, microsoft-decision-1 0.93. Gate: `tests/ep2_range_lesson_test`; skill `ep2-rifle-always-visible`; proof `docs/episode2-quality/rifle-visible-2026-10-11/`.
+
 **🔭 SPYGLASS FIX (2026-10-11).** When you raised the spyglass to count the bears, the rifle's "lowered" pose (made for the old rifle) laid your longer rifle diagonally across the whole view. Lowered (and sprint) now drop the rifle below the frame instead of swinging it across - the spyglass view is clear. Picture: `docs/episode2-quality/lil-blunt-rifle-logo-2026-10-10/spyglass_fixed_2026-10-11.jpg`.
 
 ---

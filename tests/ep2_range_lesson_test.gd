@@ -31,9 +31,21 @@ func _until(c: Node, limit: float, pred: Callable) -> bool:
 	return pred.call()
 
 
+## Founder 2026-10-11 ("why is the rifle invisible"): the hideout carry pose (Inferno leads to the firing line) must keep
+## the rifle IN FRAME. The woods spyglass pose (below the frame) lives in ep2_viewmodel.gd and must never be copied here.
+## Measured carry pose: 71 % of the rifle on screen (the below-frame copy that shipped: 23 %).
+func _carry_pose_in_frame() -> void:
+	var low: Vector3 = SmeltingFacilityChamber.VM_LOW_POS
+	var spr: Vector3 = SmeltingFacilityChamber.VM_SPRINT_POS
+	_check("hideout carry pose keeps the rifle in frame (VM_LOW_POS.y >= -0.32)", low.y >= -0.32, str(low))
+	_check("sprint pose keeps the rifle in frame (VM_SPRINT_POS.y >= -0.32)", spr.y >= -0.32, str(spr))
+	_check("sprint pose in the woods keeps the rifle in frame", Ep2Viewmodel.VM_SPRINT_POS.y >= -0.32, str(Ep2Viewmodel.VM_SPRINT_POS))
+
+
 func _ready() -> void:
 	print("EP2 RANGE LESSON:")
 	_gun_logic()
+	_carry_pose_in_frame()
 	await _lesson()
 	print("EP2_RANGE_LESSON: %s" % ("ALL PASS" if _fail == 0 else "FAIL (%d)" % _fail))
 	get_tree().quit(_fail)

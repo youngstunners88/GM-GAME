@@ -10,6 +10,7 @@ var _out := ".farm/range"
 var f: SmeltingFacilityChamber = null
 var _vm: PackedStringArray = PackedStringArray()
 var _quick: bool = false
+var _carry: bool = false
 
 
 func _ready() -> void:
@@ -19,6 +20,8 @@ func _ready() -> void:
 			_out = kv[1]
 		elif kv.size() == 2 and kv[0] == "vm":      # placement sim: hipx,hipy,hipz,scale,zshift,drop,adsdepth[,yaw]
 			_vm = kv[1].split(",")
+		elif kv.size() == 2 and kv[0] == "carry":      # measure only the carry (low-ready) pose while Inferno leads
+			_carry = kv[1] == "1"
 		elif kv.size() == 2 and kv[0] == "quick":
 			_quick = kv[1] == "1"
 	DirAccess.make_dir_recursive_absolute(_out)
@@ -58,7 +61,14 @@ func _ready() -> void:
 		_metric_vm("ads")
 		get_tree().quit()
 		return
+	if _carry:
+		_run(1.2)
+		await _cap("carry")
+		_metric_vm("carry")
+		get_tree().quit()
+		return
 	await _cap("r01_lead_low_ready")
+	_metric_vm("carry")
 	_until(func(): return f._lead_done, 25.0)
 	await _cap("r02_bull_at_range")
 	f._player_pos = Vector3(RangeDressing.LINE.x + 0.6, 0.0, RangeDressing.LINE.z + 1.8)     # where a player really stops (inside the arrive radius)

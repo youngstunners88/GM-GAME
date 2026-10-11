@@ -28,10 +28,10 @@ const RIFLE_BASE := "res://src/episode2/assets/winchester_1886.glb"
 const VM_SCALE := 0.8
 const VM_HIP_POS := Vector3(0.17, -0.16, -0.5)
 const VM_HIP_ROT := Vector3(0.03, PI + 0.07, 0.0)
-const VM_LOW_POS := Vector3(0.22, -0.64, -0.5)    # low ready / spyglass: dropped BELOW the frame (founder 2026-10-11: the old swing laid Lil Blunt's longer rifle across the spyglass view)
+const VM_LOW_POS := Vector3(0.22, -0.64, -0.5)    # spyglass ONLY (woods): dropped below the frame so the rifle never lies across the spyglass view. The hideout carry pose lives in smelting_facility.gd and stays in frame.
 const VM_LOW_ROT := Vector3(-0.28, PI + 0.10, 0.0)
-const VM_SPRINT_POS := Vector3(0.16, -0.40, -0.48)
-const VM_SPRINT_ROT := Vector3(-0.30, PI + 0.18, 0.15)
+const VM_SPRINT_POS := Vector3(0.19, -0.27, -0.48)    # sprint: still in frame (rifle must always be seen), angled less than the old across-the-view swing
+const VM_SPRINT_ROT := Vector3(-0.2, PI + 0.3, 0.12)
 const VM_ADS_DEPTH := -0.46
 const VM_ADS_SIGHT_DROP := 0.012
 
