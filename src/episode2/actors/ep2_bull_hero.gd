@@ -141,7 +141,9 @@ func _process(_dt: float) -> void:
 	var clip: String = bull.current_clip()
 	var seated: bool = clip.contains("Sit") or clip.contains("sit")
 	var reaching: bool = bull.reach_weight("Right") > 0.01 or bull.reach_weight("Left") > 0.01
-	rest_arm.resting = not seated and not reaching
+	# The quad ride's seated clip (Chair_Sit_Idle) swings the sculpted arms into a torn, half-invisible elbow (founder 2026-10-11): only the
+	# drinking clip is allowed to move the arms; every other pose keeps them at the imported rest pose.
+	rest_arm.resting = (not seated or clip.contains("Chair")) and not reaching
 	if rifle:
 		rifle.visible = not seated and bull.is_visible_in_tree()
 

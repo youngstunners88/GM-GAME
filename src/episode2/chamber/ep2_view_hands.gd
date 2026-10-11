@@ -88,17 +88,57 @@ static func _add_sleeve(fm: Node3D) -> void:
 	cm.rings = 1
 	var mi := MeshInstance3D.new()
 	mi.name = "ArmSleeve"
-	mi.mesh = cm
-	var m := StandardMaterial3D.new()
-	m.albedo_color = SLEEVE_GREEN
-	m.roughness = 0.88
-	mi.material_override = m
+	var arrays: Array = cm.get_mesh_arrays()
+	# The sleeve wears the ARM'S OWN material (metallic/roughness/normal/emission maps and all) sampled at ONE arm texel, so it
+	# lights exactly like the arm: a flat lit colour turned a brighter, different green whenever the muzzle flash lit it
+	# (founder 2026-10-11: "a reveal of more green... a detached version of his arm as the color is incorrect").
+	var src: Dictionary = _arm_sample(fm)
+	var mat: Material = src.get("mat") as Material
+	if mat != null:
+		var uv: Vector2 = src["uv"]
+		var uvs := PackedVector2Array()
+		uvs.resize((arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size())
+		uvs.fill(uv)
+		arrays[Mesh.ARRAY_TEX_UV] = uvs
+	var am := ArrayMesh.new()
+	am.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	mi.mesh = am
+	if mat != null:
+		mi.material_override = mat
+	else:
+		var m := StandardMaterial3D.new()
+		m.albedo_color = SLEEVE_GREEN
+		m.roughness = 0.88
+		mi.material_override = m
 	var ax: Vector3 = SLEEVE_AXIS.normalized()
 	var up: Vector3 = -ax                                   # the cylinder's +Y runs back up the arm to the cut
 	var side: Vector3 = up.cross(Vector3.FORWARD).normalized()
 	var fwd: Vector3 = side.cross(up).normalized()
 	mi.transform = Transform3D(Basis(side, up, fwd), SLEEVE_CUT + ax * (cm.height * 0.5))
 	fm.add_child(mi)
+
+
+## The material of the founder rifle's mesh and the UV of the arm vertex nearest the forearm cut (model frame).
+static func _arm_sample(fm: Node3D) -> Dictionary:
+	var best: float = INF
+	var out: Dictionary = {}
+	for node in fm.find_children("*", "MeshInstance3D", true, false):
+		var m := node as MeshInstance3D
+		if m.mesh == null:
+			continue
+		var to_fm: Transform3D = fm.global_transform.affine_inverse() * m.global_transform if fm.is_inside_tree() else m.transform
+		for si in m.mesh.get_surface_count():
+			var arr: Array = m.mesh.surface_get_arrays(si)
+			var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+			var uvs: PackedVector2Array = arr[Mesh.ARRAY_TEX_UV]
+			if uvs.size() != verts.size():
+				continue
+			for i in verts.size():
+				var d: float = (to_fm * verts[i]).distance_to(SLEEVE_CUT)
+				if d < best:
+					best = d
+					out = {"mat": m.mesh.surface_get_material(si), "uv": uvs[i]}
+	return out
 
 
 static func _mat(c: Color, rough: float, emit: float) -> StandardMaterial3D:

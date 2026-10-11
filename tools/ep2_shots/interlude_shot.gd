@@ -156,6 +156,10 @@ func _woods() -> void:
 		_run(0.1)
 	_run(3.5)
 	await _cap("woods_6_ride")
+	w.shoot()
+	_run(0.03)
+	await _cap("woods_6a_ride_fire")
+	_run(1.0)
 	# the same moment from outside (the player never sees this): proves Inferno sits on the seat with both hands on the grips
 	var cam: Camera3D = w.get_camera()
 	var cam_xf: Transform3D = cam.global_transform

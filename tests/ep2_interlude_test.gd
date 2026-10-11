@@ -260,8 +260,10 @@ func _ready() -> void:
 	_check("on the back seat he is still first person, the rifle in his hands (\"hold that rifle steady\")", w.is_fps() and wvm.rifle.visible and not w._player_node.visible and w.get_hud().visible)
 	_check("it is the MODELLED flame quad (flame_quad.glb, four spinning Wheel_* nodes), not the box stand-in", w.is_quad_modelled() and w.get_quad_wheel_count() == 4, "%s %d" % [w.is_quad_modelled(), w.get_quad_wheel_count()])
 	var driver: Ep2Actor = w.get_bull()
-	_check("Inferno SITS on the quad (seated clip) with BOTH hands on the grips, he does not stand in the air",
-		driver.current_clip() == WoodsQuadChamber.BULL_SIT_CLIP and driver.reach_weight("Left") > 0.8 and driver.reach_weight("Right") > 0.8,
+	# Founder 2026-10-11 ("elbow partially invisible"): the arm IK + spine lean tore his sculpted elbow, so the ride has NO reach;
+	# he sits (seated clip) and his arms stay at the imported rest pose.
+	_check("Inferno SITS on the quad (seated clip), arms NOT dragged by IK (the elbow tears), he does not stand in the air",
+		driver.current_clip() == WoodsQuadChamber.BULL_SIT_CLIP and driver.reach_weight("Left") < 0.01 and driver.reach_weight("Right") < 0.01 and not WoodsQuadChamber.BULL_GRIPS_IK,
 		"%s L%.2f R%.2f" % [driver.current_clip(), driver.reach_weight("Left"), driver.reach_weight("Right")])
 	var qn: Node3D = w.get_quad_node()
 	var seat_eye: Vector3 = w.get_camera().global_position

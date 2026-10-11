@@ -45,6 +45,7 @@ const BACK_F := -1.45                               # Lil Blunt's spot on the re
 const BACK_SIDE := 0.30                             # ...a little to the right of the centreline: he looks past Inferno's shoulder, not into his back
 const BACK_EYE := 1.40                              # his eye above the seat/rack there (kneeling)
 const BULL_LEAN := 0.55                             # Inferno leans onto the grips (the seated clip alone sits him upright against a chair back)
+const BULL_GRIPS_IK := false                      # Inferno's hands are NOT dragged to the grips: the skinned elbow cannot take the IK (tears / goes invisible)
 const SPY_EYE := Vector3(2.6, 1.55, 147.0)         # prone behind the ferns on the ridge
 const CAMP_CENTRE := Vector3(0.0, 0.0, 188.0)
 const BEAR_SPOTS: Array = [Vector2(-5.5, 183.0), Vector2(-2.0, 192.0), Vector2(4.0, 181.0), Vector2(6.5, 190.0), Vector2(-8.5, 191.0), Vector2(1.5, 197.0)]
@@ -1013,8 +1014,9 @@ func _seat_riders() -> void:
 		_bull.clear_face_goal()
 		_bull.facing = _quad_yaw
 		_bull.rotation.y = _quad_yaw
-		_bull.reach("Left", base + f * GRIP_F - r * GRIP_X + Vector3(0.0, GRIP_U, 0.0), 0.5, BULL_LEAN)
-		_bull.reach("Right", base + f * GRIP_F + r * GRIP_X + Vector3(0.0, GRIP_U, 0.0), 0.5, BULL_LEAN)
+		if BULL_GRIPS_IK:      # off: arm IK + spine lean tore his sculpted elbow and torso (founder 2026-10-11: "elbow partially invisible"); the seated clip keeps his arms
+			_bull.reach("Left", base + f * GRIP_F - r * GRIP_X + Vector3(0.0, GRIP_U, 0.0), 0.5, BULL_LEAN)
+			_bull.reach("Right", base + f * GRIP_F + r * GRIP_X + Vector3(0.0, GRIP_U, 0.0), 0.5, BULL_LEAN)
 		_player_pos = base + f * BACK_F + r * BACK_SIDE + Vector3(0.0, SEAT_TOP, 0.0)
 		eye_height = BACK_EYE
 	else:
