@@ -403,6 +403,8 @@ func _update_title_card() -> void:
 	if _title_done_for == a.get_instance_id():
 		return
 	_title_done_for = a.get_instance_id()
+	if "handoff_seamless" in a and bool(a.get("handoff_seamless")):
+		return          # a seamless hand-over (lift, woods) carries on in the same motion: no title card, no "checkpoint" feel
 	_title.text = str(a.get_title_card()) if a.has_method("get_title_card") else "THE SMELTING FACILITY"
 	var tw := create_tween()
 	tw.tween_property(_title, "modulate:a", 1.0, 0.6)

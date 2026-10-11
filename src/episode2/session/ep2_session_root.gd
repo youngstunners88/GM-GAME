@@ -123,6 +123,7 @@ func _enter_chamber() -> void:
 	var c: Node = CHAMBER_SCENES[chamber_id].instantiate()
 	add_child(c)
 	_active = c
+	_wire_chamber(c)
 	c.setup(
 		int(seg.get("gold_principal", DEFAULT_GOLD_PRINCIPAL)),
 		seg.get("bears", []),
@@ -134,19 +135,102 @@ func _enter_chamber() -> void:
 	_mode = Mode.CHAMBER
 	mode_changed.emit(_mode)
 
-## Load the next chamber of a chain in the same segment (no runner in between).
+## Load the next chamber of a chain in the same segment (no runner in between). If it was built in the background
+## (`_on_prebuild_requested`), the hand-over is ONE cut in the same frame: the player keeps his gaze and his held keys, there is no
+## freeze, no blackout, no title card (founder 2026-10-11: "one motion").
 func _enter_chamber_chained(segment: int) -> void:
 	_mode = Mode.TRANSITION
-	_teardown_active()
-	var c: Node = CHAMBER_SCENES[_chain_id].instantiate()
-	add_child(c)
+	var gaze: Dictionary = {}
+	if _active != null and _active.has_method("get_handoff"):
+		gaze = _active.get_handoff()
+	var c: Node = null
+	var seamless: bool = false
+	if _pb_node != null and is_instance_valid(_pb_node) and _pb_id == _chain_id:
+		c = _pb_node
+		seamless = true
+	else:
+		if _pb_node != null and is_instance_valid(_pb_node):
+			_pb_node.queue_free()
+			if _pb_vp != null:
+				_pb_vp.queue_free()
+				_pb_vp = null
+		c = CHAMBER_SCENES[_chain_id].instantiate()
+	_pb_node = null
+	_pb_id = ""
+	var old: Node = _active
+	if old != null:
+		if old.get_parent() == self:
+			remove_child(old)             # out of the tree NOW: its WorldEnvironment / camera / lights must not outlive the cut by a frame
+		old.queue_free()
 	_active = c
-	c.setup(0, [], 0)
+	_wire_chamber(c)
+	if seamless:
+		c.call("activate", self, gaze)
+		if _pb_vp != null:
+			_pb_vp.queue_free()
+			_pb_vp = null
+	else:
+		add_child(c)
+		c.setup(0, [], 0)
 	c.chamber_cleared.connect(_on_chamber_cleared, CONNECT_ONE_SHOT)
 	c.chamber_failed.connect(_on_chamber_failed, CONNECT_ONE_SHOT)
 	_chamber_segment = segment
 	_mode = Mode.CHAMBER
 	mode_changed.emit(_mode)
+
+
+# --- background build of the next chamber (skill ep2-interlude-chain: "no blackouts") -------------------------------------------
+
+## Millisecond budget per frame for the background build; raised while the player is already waiting at the hand-over door.
+const PREBUILD_MS := 7.0
+const PREBUILD_MS_WAITING := 40.0
+var _pb_node: Node = null
+var _pb_id: String = ""
+var _pb_vp: SubViewport = null
+
+
+## A chamber asked for the next one to be built behind it: instantiate it hidden and let `_process` build it a few ms per frame.
+func _on_prebuild_requested(chamber_id: String) -> void:
+	if not CHAMBER_SCENES.has(chamber_id) or (_pb_node != null and is_instance_valid(_pb_node)):
+		return
+	var n: Node = CHAMBER_SCENES[chamber_id].instantiate()
+	if n.has_method("prebuild_begin"):
+		# An off-screen viewport with its OWN world: the chamber is built, lit and drawn there (so the GPU compiles its shaders and
+		# uploads its meshes now, a few ms per frame) without touching the camera / environment of the chamber being played.
+		_pb_vp = SubViewport.new()
+		_pb_vp.name = "PrebuildViewport"
+		_pb_vp.size = Vector2i(320, 180)
+		_pb_vp.own_world_3d = true
+		_pb_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+		add_child(_pb_vp)
+		_pb_vp.add_child(n)
+		n.call("prebuild_begin")
+	else:
+		add_child(n)
+	_pb_node = n
+	_pb_id = chamber_id
+
+
+## True once the chamber named `chamber_id` is fully built in the background (the active chamber holds its exit until then).
+func is_prebuilt(chamber_id: String) -> bool:
+	return _pb_node != null and is_instance_valid(_pb_node) and _pb_id == chamber_id and bool(_pb_node.call("is_prebuilt"))
+
+
+## Advance the background build. `step()` (the deterministic tests) finishes it; `_process` spends a few ms per frame.
+func _drive_prebuild(budget_ms: float) -> void:
+	if _pb_node == null or not is_instance_valid(_pb_node):
+		return
+	if budget_ms >= 1.0e8 and _pb_node.has_method("prebuild_finish"):
+		_pb_node.call("prebuild_finish")
+	elif _pb_node.has_method("prebuild_step"):
+		_pb_node.call("prebuild_step", budget_ms)
+
+
+func _wire_chamber(c: Node) -> void:
+	if c.has_signal("prebuild_requested") and not c.prebuild_requested.is_connected(_on_prebuild_requested):
+		c.prebuild_requested.connect(_on_prebuild_requested)
+	if "handoff_ready" in c:
+		c.set("handoff_ready", func() -> bool: return _pb_node == null or not is_instance_valid(_pb_node) or bool(_pb_node.call("is_prebuilt")))
 
 ## The next scene's models are requested on a worker thread while Lil Blunt is still panicking on the cart, so
 ## the cut to the film and the hideout never stalls on a disk read (the "ridiculously delayed" film).
@@ -175,6 +259,13 @@ func _teardown_active() -> void:
 	if _active:
 		_active.queue_free()
 		_active = null
+	if _pb_node != null and is_instance_valid(_pb_node) and _chain_id == "":
+		_pb_node.queue_free()
+		_pb_node = null
+		_pb_id = ""
+		if _pb_vp != null:
+			_pb_vp.queue_free()
+			_pb_vp = null
 
 # --- Signal handlers ----------------------------------------------------------
 
@@ -335,6 +426,7 @@ func chamber_leave_cover() -> void:
 		_active.leave_cover()
 
 func step(delta: float) -> void:
+	_drive_prebuild(1.0e9)      # deterministic callers have no frame clock: the background build simply completes
 	if _active and (_mode == Mode.RUNNER or _mode == Mode.CHAMBER):
 		_active.step(delta)
 
@@ -365,6 +457,8 @@ func get_total_distance() -> float:
 func _process(_delta: float) -> void:
 	_sync_mouse_mode()
 	_poll_free_roam()
+	var waiting: bool = _active != null and _active.has_method("is_waiting_for_handoff") and bool(_active.call("is_waiting_for_handoff"))
+	_drive_prebuild(PREBUILD_MS_WAITING if waiting else PREBUILD_MS)
 
 func _sync_mouse_mode() -> void:
 	if _mode == Mode.CHAMBER and _free_roam() and _active.wants_mouse_capture():

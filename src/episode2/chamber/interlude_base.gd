@@ -23,6 +23,9 @@ signal chamber_cleared(result: Dictionary)
 signal chamber_failed
 signal line_spoken(line_id: String)
 signal beat_changed(beat: int)
+## The chamber asks the session root to build the NEXT chamber in the background (a few ms per frame) so the hand-over is one cut
+## in the same motion, not a frozen/black screen (founder 2026-10-11: "no blackouts ... one motion").
+signal prebuild_requested(chamber_id: String)
 
 # --- free roam (the same feel as the hideout; skill ep2-free-roam-controls) ----------------------------------------
 const RUN_SPEED := 5.6
@@ -74,6 +77,30 @@ var _elapsed: float = 0.0
 var _running: bool = false
 var _resolved: bool = false
 var _room_built: bool = false
+## Background build (see prebuild_begin): the room is built hidden, a few steps per frame, while the previous chamber is still played.
+var _pb_steps: Array = []
+var _pb_i: int = 0
+var _pb_active: bool = false
+var _pb_warm_i: int = 0
+## Set by the session root: the previous chamber's view direction, so the cut keeps the player's gaze (yaw, pitch) and the keys he holds.
+var handoff: Dictionary = {}
+## True once this chamber was handed over seamlessly: no title card, the music and the beats simply carry on.
+var handoff_seamless: bool = false
+## Set by the session root: true once the next chamber is built. Null (tests, a lone room) = always ready.
+var handoff_ready: Callable = Callable()
+
+
+func _handoff_ok() -> bool:
+	return handoff_ready.is_null() or bool(handoff_ready.call())
+
+
+func is_waiting_for_handoff() -> bool:
+	return _running and not _resolved and not _handoff_ok() and _wants_handoff()
+
+
+## A chamber overrides this: true while it is ready to leave but is held for the next chamber's build.
+func _wants_handoff() -> bool:
+	return false
 var _hold: float = 0.0                       # seconds the current spoken line still has to run (FacilityShow reads it)
 var _hop_v: float = 0.0
 var _hop_y: float = 0.0
@@ -141,7 +168,25 @@ func _ready_fallback() -> void:
 func _ensure_room() -> void:
 	if _room_built:
 		return
+	prebuild_begin(false)
+	prebuild_finish()
+
+
+## The ordered build steps (Callables). A chamber overrides `_build_steps` to split its set into slices of a few ms each; the
+## default is the whole `_build_room()` as ONE step. Order: the set, then the player body, the first-person rig, a visuals sync.
+func _build_steps() -> Array:
+	return [Callable(self, "_build_room")]
+
+
+## Begin building the room BACKGROUND-style: the session root hosts it in an off-screen SubViewport with its own world (so its
+## camera, environment and lights never touch the chamber being played), `prebuild_step` advances it a few ms per frame, then
+## `warm_views` render the first views so the GPU compiles every shader and uploads every mesh BEFORE the player sees the room.
+## `activate()` then moves it to the main viewport. (`_ensure_room` is begin + finish in one go: the old synchronous build.)
+func prebuild_begin(_hidden: bool = true) -> void:
+	if _room_built:
+		return
 	_room_built = true
+	_pb_active = true
 	_visuals = Node3D.new()
 	_visuals.name = "Visuals"
 	add_child(_visuals)
@@ -151,7 +196,6 @@ func _ensure_room() -> void:
 		_camera.name = "Camera3D"
 		_camera.fov = 68.0
 		add_child(_camera)
-	_camera.current = true
 	_env_node = get_node_or_null("WorldEnvironment") as WorldEnvironment
 	if _env_node == null:
 		_env_node = WorldEnvironment.new()
@@ -162,11 +206,101 @@ func _ensure_room() -> void:
 		_sun = DirectionalLight3D.new()
 		_sun.name = "Sun"
 		add_child(_sun)
-	_build_room()
-	_player_node = _build_player()
-	if fps_mode:
-		_build_first_person()
-	_sync_visuals()
+	_pb_steps = _build_steps()
+	_pb_steps.append(func() -> void: _player_node = _build_player())
+	_pb_steps.append(func() -> void:
+		if fps_mode:
+			_build_first_person())
+	_pb_steps.append(_sync_visuals)
+	_pb_i = 0
+	_pb_warm_i = 0
+
+
+## Run build steps until `budget_ms` is spent (at least one). Returns true when the room is built AND warmed (one view per call).
+func prebuild_step(budget_ms: float) -> bool:
+	if not _pb_active:
+		return true
+	var t0: int = Time.get_ticks_usec()
+	while _pb_i < _pb_steps.size():
+		(_pb_steps[_pb_i] as Callable).call()
+		_pb_i += 1
+		if float(Time.get_ticks_usec() - t0) / 1000.0 >= budget_ms:
+			return false
+	if _pb_steps.size() > 0:
+		_pb_steps = []
+		_finish_build()
+	# the GPU warm-up: one view per call (= per frame under the session root), so each is really rendered before the next
+	var views: Array = _warm_views()
+	if _pb_warm_i < views.size():
+		_apply_warm_view(views[_pb_warm_i] as Dictionary)
+		_pb_warm_i += 1
+		return false
+	_pb_active = false
+	return true
+
+
+## Finish whatever is left right now (the player reached the hand-over before the background build did).
+func prebuild_finish() -> void:
+	while not prebuild_step(1.0e9):
+		pass
+
+
+func is_prebuilt() -> bool:
+	return _room_built and not _pb_active
+
+
+func is_prebuilding() -> bool:
+	return _pb_active
+
+
+func _finish_build() -> void:
+	if _camera != null:
+		_camera.current = true
+
+
+## Views the camera takes while the room is warmed in the background: [{"eye": Vector3, "yaw": float, "pitch": float}, ...]. A chamber
+## overrides this with the views the player will see first (the more it covers, the less the first draw has left to compile).
+func _warm_views() -> Array:
+	return []
+
+
+func _apply_warm_view(v: Dictionary) -> void:
+	if _camera == null:
+		return
+	var yaw: float = float(v.get("yaw", 0.0))
+	var pitch: float = float(v.get("pitch", 0.0))
+	var eye: Vector3 = v.get("eye", Vector3(0.0, 1.5, 0.0))
+	_camera.global_position = eye
+	_camera.look_at(eye + Vector3(sin(yaw) * cos(pitch), sin(pitch), cos(yaw) * cos(pitch)), Vector3.UP)
+
+
+## Move a room that was built and warmed in the background into the main scene tree under `new_parent` and start it (the seamless
+## hand-over): same frame, its camera current, its HUD on.
+func activate(new_parent: Node, handoff_data: Dictionary = {}) -> void:
+	handoff = handoff_data
+	handoff_seamless = true
+	prebuild_finish()
+	var old_parent: Node = get_parent()
+	if old_parent != null:
+		old_parent.remove_child(self)
+	new_parent.add_child(self)
+	if _camera != null:
+		_camera.current = true
+	setup()
+
+
+## Where the previous chamber leaves the player's gaze, for the next chamber's first frame (same yaw convention everywhere: 0 = +Z).
+func get_handoff() -> Dictionary:
+	return {"yaw": _look_yaw, "pitch": _look_pitch, "run": _run_input}
+
+
+## Apply the previous chamber's gaze (clamped so the cut never lands him facing a wall behind him).
+func _apply_handoff_gaze(default_yaw: float, default_pitch: float, max_yaw: float = 0.9) -> void:
+	_look_yaw = default_yaw
+	_look_pitch = default_pitch
+	if handoff.has("yaw"):
+		_look_yaw = default_yaw + clampf(wrapf(float(handoff["yaw"]) - default_yaw, -PI, PI), -max_yaw, max_yaw)
+		_look_pitch = clampf(float(handoff.get("pitch", default_pitch)), -0.5, 0.35)
 
 
 ## The session root calls this right after add_child (the same signature every chamber has). Never overridden:

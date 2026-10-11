@@ -139,23 +139,40 @@ func _beat_label(b: int) -> String:
 # --- the set ----------------------------------------------------------------------------------------------------------
 
 func _build_room() -> void:
+	for step in _build_steps():
+		(step as Callable).call()
+
+
+## The wood in slices (each a few ms), so it can be built behind the mine lift while the cage is still rising (no blackout at the surface).
+func _build_steps() -> Array:
+	return [_step_light_mats, _load_forest_kit, _step_ground, _build_trails, _build_forest, _build_mine_hut, _build_quad, _build_cover,
+		_build_camp, _build_ridge, _build_patrols, _step_bull]
+
+
+## The first views of the wood (the adit mouth, both sides, up into the canopy, down the trail) for the GPU warm-up.
+func _warm_views() -> Array:
+	var eye: Vector3 = SPAWN + Vector3(0.0, 1.55, 0.0)
+	return [{"eye": eye, "yaw": 0.0, "pitch": -0.04}, {"eye": eye, "yaw": 0.8, "pitch": -0.05}, {"eye": eye, "yaw": -0.8, "pitch": -0.05},
+		{"eye": eye, "yaw": 0.0, "pitch": 0.5}, {"eye": eye + Vector3(0.0, 0.0, 14.0), "yaw": 0.0, "pitch": -0.1}]
+
+
+func _step_bull() -> void:
+	if _bull == null:      # Inferno is built (and his shaders warmed) in the background too, not at the cut
+		_bull = _build_bull(Vector3(1.6, 0.0, 4.0), 0.0)
+
+
+func _step_light_mats() -> void:
 	_apply_light()
 	_leaf_mats = [_plain(Color(0.13, 0.31, 0.12), 0.95), _plain(Color(0.19, 0.39, 0.14), 0.95), _plain(Color(0.10, 0.25, 0.10), 0.95),
 		_plain(Color(0.27, 0.42, 0.12), 0.95)]
-	_load_forest_kit()
+
+
+func _step_ground() -> void:
 	# the forest floor: moss, needles and twigs (Muapi seamless still), world-tiled every 3.5 m
 	_ground_mat = _tex(FLOOR_TEX, Color(0.82, 0.84, 0.76), 0.28) if ResourceLoader.exists(FLOOR_TEX) else _tex(GRAVEL_TEX, Color(0.38, 0.42, 0.25), 0.35)
 	_ground_mat.uv1_world_triplanar = true
 	_ground_mat.roughness = 0.95
 	_box(Vector3(260.0, 0.5, 380.0), Vector3(0.0, -0.25, 130.0), _ground_mat)
-	_build_trails()
-	_build_forest()
-	_build_mine_hut()
-	_build_quad()
-	_build_cover()
-	_build_camp()
-	_build_ridge()
-	_build_patrols()
 
 
 ## Old-growth daylight (founder target): a bright, pale sky glowing through the canopy, cool green-grey air between the trunks
@@ -859,8 +876,7 @@ func _on_setup() -> void:
 	_beat = Beat.SNEAK
 	_player_pos = SPAWN
 	_ground_y = 0.0
-	_look_yaw = 0.0
-	_look_pitch = -0.04
+	_apply_handoff_gaze(0.0, -0.04)           # first person, eyes level (keeps the gaze he had at the previous chamber's exit)
 	_player_yaw = 0.0
 	if _bull == null:
 		_bull = _build_bull(Vector3(1.6, 0.0, 4.0), 0.0)

@@ -29,6 +29,11 @@ extends Node3D
 ## session root's commit path handles a 0/0 result as a no-op, which is exactly
 ## what a story chamber should contribute.
 signal chamber_cleared(result: Dictionary)
+## Asks the session root to build the next chamber (the mine lift) in the background while the range lesson and the lava river play,
+## so leaving the hideout is one motion with no blackout (founder 2026-10-11).
+signal prebuild_requested(chamber_id: String)
+## Set by the session root: true once the next chamber is built. Null (tests, a lone room) = always ready.
+var handoff_ready: Callable = Callable()
 ## Never emitted. There is no fail state in Chamber 0 — no enemies, no timer,
 ## no resource. Declared because the session root connects it unconditionally,
 ## and a missing signal is a hard error at connect time.
@@ -598,7 +603,7 @@ func step(delta: float) -> void:
 		Beat.EXIT:
 			# They leave TOGETHER: the Bull leads to the Fort Knox door and you follow in first person.
 			# Resolve once you reach the door, never before his line has finished.
-			if _hold <= 0.0 and not _show_active and _player_pos.z >= EXIT_POSITION.z - 1.0:
+			if _hold <= 0.0 and not _show_active and _player_pos.z >= EXIT_POSITION.z - 1.0 and _handoff_ok():
 				_resolve()
 		_:
 			pass
@@ -868,6 +873,7 @@ func _on_beat_entered(beat: int) -> void:
 	if beat == Beat.VERB_TEACH:
 		_enter_fps()
 		_begin_lesson()
+		prebuild_requested.emit("mine_lift")
 	if beat == Beat.TERMS or beat == Beat.PROMISE:
 		_move_input = Vector2.ZERO
 	var steps: Array = FacilityShow.steps_for(self, beat)
@@ -1184,6 +1190,19 @@ func get_line_hold() -> float: return _hold
 func get_distance_to_bull() -> float: return _distance_to_bull()
 func get_player_position() -> Vector3: return _player_pos
 func get_look_yaw() -> float: return _look_yaw
+
+
+## The player's gaze for the next chamber's first frame (yaw 0 = +Z in every chamber), and whether the next chamber is built.
+func get_handoff() -> Dictionary:
+	return {"yaw": _look_yaw, "pitch": _look_pitch}
+
+
+func _handoff_ok() -> bool:
+	return handoff_ready.is_null() or bool(handoff_ready.call())
+
+
+func is_waiting_for_handoff() -> bool:
+	return _beat == Beat.EXIT and _player_pos.z >= EXIT_POSITION.z - 1.0 and not _handoff_ok()
 func is_moving() -> bool: return _moving
 func is_fps() -> bool: return _fps
 ## Whether the founder's film ran this session (the narrative-canon memory uses it to drop lines the film covered).

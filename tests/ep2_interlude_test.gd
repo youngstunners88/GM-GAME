@@ -138,7 +138,7 @@ func _ready() -> void:
 	_check("walking onto the cage ends ARRIVE", lift.get_beat_name() in ["BOARD", "LEVER"], lift.get_beat_name())
 	# --- LEVER: Inferno says there is no use looking, walks to it and pulls it
 	_until(lift, 4.0, func(): return lift.get_beat_name() == "LEVER")
-	_check("-> LEVER; control is his show", lift.get_beat_name() == "LEVER" and not lift.has_player_control())
+	_check("-> LEVER; the show runs but does NOT lock the player (one motion: he keeps the rifle and can look around)", lift.get_beat_name() == "LEVER" and lift.has_player_control() and lift.is_show_active())
 	_run(lift, 2.0)
 	var eye_p: Vector3 = lift.get_player_position() + Vector3(0.0, Ep2Interlude.FPS_EYE_HEIGHT, 0.0)
 	var to_lever: Vector3 = lift.get_lever_position() - eye_p
@@ -353,7 +353,50 @@ func _ready() -> void:
 	await get_tree().process_frame
 	_check("the hideout's result loads the MINE LIFT (no runner leg in between)", root.get_mode() == Ep2SessionRoot.Mode.CHAMBER and root.get_active() is MineLiftChamber)
 	_check("a story chamber's result is committed once", commits.size() == 1)
+	# ---- the HIDEOUT -> LIFT cut: the lift is built behind the range lesson / lava river and the exit door holds until it is ready
+	var hf: SmeltingFacilityChamber = load("res://src/episode2/chamber/smelting_facility.tscn").instantiate()
+	hf.intro_film = false
+	var root2: Ep2SessionRoot = ROOT.instantiate()
+	add_child(root2)
+	root2.add_child(hf)
+	root2._active = hf
+	root2._wire_chamber(hf)
+	hf.setup(0, [], 0)
+	hf.set_physics_process(false)
+	await get_tree().process_frame
+	hf._on_video_film_finished()
+	hf.prebuild_requested.emit("mine_lift")
+	_check("the hideout's range lesson starts building the LIFT in the background (off-screen)", root2._pb_node is MineLiftChamber and root2._pb_node.get_parent() is SubViewport)
+	hf._beat = SmeltingFacilityChamber.Beat.EXIT
+	hf._show_active = false
+	hf._hold = 0.0
+	hf._player_pos = SmeltingFacilityChamber.EXIT_POSITION
+	var hf_resolved: Array = []
+	hf.chamber_cleared.connect(func(r): hf_resolved.append(r))
+	hf.step(0.016)
+	_check("at the exit door the hideout WAITS for the lift to be built (a pause at worst, never a blackout)", hf_resolved.is_empty() and hf.is_waiting_for_handoff())
+	hf._look_yaw = 0.3
+	root2.step(0.016)      # (the root is idle in this test: it finishes the background build, the hideout steps itself)
+	hf.step(0.016)
+	_check("...the moment it is built the door opens: the hideout resolves toward the lift", hf_resolved.size() == 1 and str(hf_resolved[0].get("next_chamber", "")) == "mine_lift")
+	root2.queue_free()
+
+	# ---- NO BLACKOUTS (founder 2026-10-11): the wood is built BEHIND the lift, in an off-screen viewport, and the hand-over is one cut
+	var lift_node: MineLiftChamber = root.get_active()
+	_check("entering the lift starts building the WOODS in the background (hosted off-screen, the lift stays the active chamber)",
+		root._pb_node is WoodsQuadChamber and root._pb_node.get_parent() is SubViewport and root.get_active() == lift_node)
+	_check("...and the lift holds its exit until the wood is built (no freeze at the surface)", not root.is_prebuilt("woods_quad") and not lift_node._handoff_ok())
+	root.step(0.016)
+	_check("the background build completes (the deterministic step finishes it)", root.is_prebuilt("woods_quad") and lift_node._handoff_ok())
+	lift_node._look_yaw = 0.5
+	lift_node._look_pitch = 0.1
+	var woods_node: Node = root._pb_node
 	root._on_chamber_cleared({"story": true, "chamber": "mine_lift", "gold_awarded": 0, "gold_forfeited": 0, "next_chamber": "woods_quad"})
+	_check("the hand-over is the SAME instance that was built behind the lift, in the main tree, its camera current",
+		root.get_active() == woods_node and woods_node.get_parent() == root and (woods_node as Ep2Interlude).get_camera().current)
+	_check("the lift is out of the tree in the same frame (its camera / sky / lights cannot linger over the wood)", not lift_node.is_inside_tree())
+	_check("one motion: the gaze carries over (yaw 0.5, pitch 0.1) and no title card is shown",
+		absf((woods_node as Ep2Interlude).get_look_yaw() - 0.5) < 0.01 and (woods_node as Ep2Interlude).handoff_seamless)
 	await get_tree().process_frame
 	_check("the lift chains to the WOODS", root.get_active() is WoodsQuadChamber and commits.size() == 2)
 	var swallowed: int = commits.size()

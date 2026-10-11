@@ -80,34 +80,76 @@ func _beat_label(b: int) -> String:
 
 # --- the set ----------------------------------------------------------------------------------------------------------
 
+var _rock_dark: StandardMaterial3D = null
+var _gravel: StandardMaterial3D = null
+var _iron: StandardMaterial3D = null
+var _timber: StandardMaterial3D = null
+
+
 func _build_room() -> void:
+	for step in _build_steps():
+		(step as Callable).call()
+
+
+## The room in slices (each a few ms), so the session root can build it behind the hideout while Lil Blunt is still crossing the lava.
+func _build_steps() -> Array:
+	return [_build_materials, _step_cavern, _step_shaft, _step_top, _step_pulley, _build_cage_step, _build_lever, _step_bull]
+
+
+func _build_materials() -> void:
 	# FOUNDER TARGET (2026-10-10, artifacts/episode2-gold-mine/references/founder_2026-10-10/lift_walkway_target.jpg; skill ep2-set-piece-forge):
 	# a plank walkway with timber rails and sagging chains over a dark pit, the rusted riveted iron cage with gears on its roof hanging on
 	# chains, oil lanterns, bull skulls and tattered bull banners on timber walls, warm smoky haze. Rebuilt from a modular kit
 	# (mine_lift_kit.glb: Deck2m / Post / Rail2m / Chain2m / Beam4m) + the Tripo cage and skull + Muapi textures and banner.
 	_rock = _tex(ROCK_TEX, Color(0.42, 0.36, 0.31), 0.22)
-	var rock_dark: StandardMaterial3D = _tex(ROCK_TEX, Color(0.22, 0.19, 0.16), 0.16)
-	var gravel: StandardMaterial3D = _tex(GRAVEL_TEX, Color(0.30, 0.26, 0.22), 0.45)
+	_rock_dark = _tex(ROCK_TEX, Color(0.22, 0.19, 0.16), 0.16)
+	_gravel = _tex(GRAVEL_TEX, Color(0.30, 0.26, 0.22), 0.45)
 	_kit_mats = {
 		"Planks": _tex_mat(PLANK_TEX, Color(0.92, 0.86, 0.80), 0.77, 0.88),
 		"Timber": _tex_mat(PLANK_TEX, Color(0.62, 0.50, 0.40), 1.4, 0.85),
 		"RustIron": _tex_mat(IRON_TEX, Color(0.95, 0.85, 0.80), 2.2, 0.62, 0.35),
 	}
-	var iron: StandardMaterial3D = _kit_mats["RustIron"]
-	var timber: StandardMaterial3D = _kit_mats["Timber"]
+	_iron = _kit_mats["RustIron"]
+	_timber = _kit_mats["Timber"]
 	_apply_light()
-	_build_cavern(rock_dark, gravel, iron)
-	_build_shaft(rock_dark, gravel, timber, iron)
-	_build_top(gravel)
+
+
+## The first views of the lift (the tunnel mouth, both sides, the cage from the walkway, the shaft above) for the GPU warm-up.
+func _warm_views() -> Array:
+	var eye: Vector3 = START_POS + Vector3(0.0, 1.55, 0.0)
+	return [{"eye": eye, "yaw": 0.0, "pitch": -0.04}, {"eye": eye, "yaw": 0.7, "pitch": -0.1}, {"eye": eye, "yaw": -0.7, "pitch": -0.1},
+		{"eye": Vector3(0.0, 1.55, -2.0), "yaw": 0.0, "pitch": 0.5}, {"eye": Vector3(0.0, 1.55, 2.0), "yaw": 0.4, "pitch": 0.0}]
+
+
+func _step_bull() -> void:
+	if _bull == null:      # Inferno is built (and his shaders warmed) in the background too, not at the cut
+		_bull = _build_bull(START_POS + Vector3(-1.2, 0.0, 4.0), 0.0)
+
+
+func _step_cavern() -> void:
+	_build_cavern(_rock_dark, _gravel, _iron)
+
+
+func _step_shaft() -> void:
+	_build_shaft(_rock_dark, _gravel, _timber, _iron)
+
+
+func _step_top() -> void:
+	_build_top(_gravel)
+
+
+func _step_pulley() -> void:
 	# pulley wheel + the counterweight that sinks as the cage climbs
-	var wheel := _cyl(1.1, 1.1, 0.5, Vector3(0.0, ROOF_Y - 1.6, 0.0), iron, null, 20)
+	var wheel := _cyl(1.1, 1.1, 0.5, Vector3(0.0, ROOF_Y - 1.6, 0.0), _iron, null, 20)
 	wheel.rotation = Vector3(0.0, 0.0, PI * 0.5)
 	_counter = Node3D.new()
 	_counter.position = Vector3(-3.55, TOP_Y, 3.55)
 	_visuals.add_child(_counter)
-	_box(Vector3(0.9, 1.2, 0.9), Vector3(0.0, 0.0, 0.0), iron, _counter)
-	_build_cage(timber, iron)
-	_build_lever()
+	_box(Vector3(0.9, 1.2, 0.9), Vector3(0.0, 0.0, 0.0), _iron, _counter)
+
+
+func _build_cage_step() -> void:
+	_build_cage(_timber, _iron)
 
 
 ## THE CAVERN (z CAVE_Z0 .. -5.5): the walkway bridge from the hideout tunnel to the shaft, over a pit, with a second gallery on the right.
@@ -615,13 +657,17 @@ func is_gate_open() -> bool:
 
 # --- the story --------------------------------------------------------------------------------------------------------
 
+func _wants_handoff() -> bool:
+	return _beat == Beat.SURFACE and _player_pos.z >= EXIT_Z and not _show_active
+
+
 func _on_setup() -> void:
+	prebuild_requested.emit(NEXT_CHAMBER)      # the bear woods build behind the shaft while the cage is boarded and rises
 	_beat = Beat.ARRIVE
 	_player_pos = START_POS
 	_ground_y = 0.0
 	_player_yaw = 0.0
-	_look_yaw = 0.0
-	_look_pitch = -0.04                       # first person, eyes level: the shaft opens straight ahead
+	_apply_handoff_gaze(0.0, -0.04)           # first person, eyes level (keeps the gaze he had at the previous chamber's exit)
 	if _bull == null:
 		_bull = _build_bull(START_POS + Vector3(-1.2, 0.0, 4.0), 0.0)
 	_loop = _loop_player(LOOP_SFX, -8.0)
@@ -648,10 +694,10 @@ func _on_beat_entered(b: int) -> void:
 				{"do": "face", "at": LEVER_POS},
 				{"do": "reach", "at": LEVER_POS + Vector3(0.3, 0.1, 0.0), "ramp": 0.5, "hold": 0.35, "lean": 0.3},
 				{"do": "call", "fn": _pull_lever},
-				{"do": "wait", "t": 1.0},
+				{"do": "wait", "t": 0.5},
 				{"do": "release", "ramp": 0.5, "t": 0.45},
 				{"do": "walk", "to": CAGE_STAND_BULL, "speed": 2.8},
-				{"do": "face", "at": Vector3(0.0, 0.0, -4.0)}], true)
+				{"do": "face", "at": Vector3(0.0, 0.0, -4.0)}])      # NOT control-locking: he keeps his hands on the rifle and may look around (one motion)
 		Beat.RISE:
 			release_look()
 			_rise_t = 0.0
@@ -722,7 +768,7 @@ func _tick(delta: float) -> void:
 		Beat.SURFACE:
 			_cage_y = TOP_Y
 			_gate_open = minf(1.0, _gate_open + delta / 1.2)
-			if _player_pos.z >= EXIT_Z and not _show_active:
+			if _player_pos.z >= EXIT_Z and not _show_active and _handoff_ok():
 				_advance_to(Beat.DONE)
 				_resolve({"next_chamber": NEXT_CHAMBER, "next_mode": "stealth"})
 	if _cage:
