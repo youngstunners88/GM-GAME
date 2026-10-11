@@ -11,6 +11,11 @@
 **INFERNO BULL WHISKEY REMOVAL (2026-10-10, release verification pending).** The glass stays on the whiskey table during seating, walking and handover cleanup. It is never attached to Bull’s left hand. His standing idle now restores both arms’ imported rest pose and yields to either hand’s active IK. Native gameplay-camera evidence is in `docs/episode2-quality/whiskey-removal-2026-10-10/`. This focused correction does not complete the outstanding Bull sculpt, archer bear, armory/bullion or molten-river requests.
 
 
+**🔭 SPYGLASS FIX (2026-10-11).** When you raised the spyglass to count the bears, the rifle's "lowered" pose (made for the old rifle) laid your longer rifle diagonally across the whole view. Lowered (and sprint) now drop the rifle below the frame instead of swinging it across - the spyglass view is clear. Picture: `docs/episode2-quality/lil-blunt-rifle-logo-2026-10-10/spyglass_fixed_2026-10-11.jpg`.
+
+---
+
+
 **🔧 FIXES FROM YOUR SCREENSHOTS (2026-10-11).**
 - **Inferno's rifle no longer hovers:** it was placed from a measured "rest fist" point 0.2 m off his drawn hand. It now rides the bone attachment of his left hand itself (follows the final drawn hand every frame), so it cannot separate.
 - **No more melting elbow in the range demo:** the demo raised both his arms to shoulder height with IK, which webbed and melted the elbow on the founder Tripo body. He now fires from the hip: arms stay in the rest pose and only the rifle turns toward the targets.

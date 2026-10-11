@@ -2216,10 +2216,10 @@ func _enter_fps() -> void:
 var VM_SCALE := 0.8
 var VM_HIP_POS := Vector3(0.17, -0.16, -0.5)
 var VM_HIP_ROT := Vector3(0.03, PI + 0.07, 0.0)
-const VM_LOW_POS := Vector3(0.2, -0.3, -0.46)
-const VM_LOW_ROT := Vector3(-0.42, PI + 0.62, -0.28)
-const VM_SPRINT_POS := Vector3(0.1, -0.3, -0.42)
-const VM_SPRINT_ROT := Vector3(-0.35, PI + 0.5, 0.45)
+const VM_LOW_POS := Vector3(0.22, -0.64, -0.5)    # low ready / spyglass: dropped BELOW the frame (founder 2026-10-11: the old swing laid Lil Blunt's longer rifle across the spyglass view)
+const VM_LOW_ROT := Vector3(-0.28, PI + 0.10, 0.0)
+const VM_SPRINT_POS := Vector3(0.16, -0.40, -0.48)
+const VM_SPRINT_ROT := Vector3(-0.30, PI + 0.18, 0.15)
 var VM_ADS_DEPTH := -0.46
 var VM_ADS_SIGHT_DROP := 0.012            # the front post sits a hair below the centre so the target stays visible
 
