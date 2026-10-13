@@ -15,6 +15,17 @@ var level_start_ms: int = 0
 ## registered before `_setup_kill_zone()` runs — see `_register_kill_zone_gaps()`.
 var kill_zone_gaps: Array[Vector2] = []
 
+## How far (px) the level-wide kill band reaches PAST each end of the level.
+##
+## The band used to span exactly [0, bounds.x]. The world has no floor outside
+## that range and the band is a thin Area2D, so a player who stepped off the
+## start platform to the LEFT (or was knocked/dashed past either end) fell
+## BESIDE it and never died — measured 2026-10-13 at pos(-1736, 10190), still
+## PLAYING and still falling. Only the fall's few seconds of horizontal drift
+## matter (a fall of ~400px takes ~1s), so 3000px is far more than any plausible
+## air-run; the cost is one extra rectangle per side.
+const KILL_ZONE_EDGE_MARGIN: float = 3000.0
+
 func _ready() -> void:
 	level_start_ms = Time.get_ticks_msec()
 	# Belt-and-braces against a stranded hitstop time_scale (see
@@ -517,6 +528,17 @@ func _setup_kill_zone() -> void:
 	var y_centre: float = level_data.kill_zone_y + 175.0
 	for interval: Vector2 in _kill_zone_strip_intervals(full_width):
 		_build_kill_zone_strip(interval.x, interval.y, y_centre)
+	# The two OUTER strips: the world has no floor beyond [0, bounds.x], so a
+	# player who steps off the start platform to the left (or is knocked/dashed
+	# past either end) must still hit a pit instead of falling forever beside
+	# the band. Built outside `_kill_zone_strip_intervals()` on purpose: that
+	# splitter (and its test, kill_zone_gap_test.gd) keeps its exact contract,
+	# `kill_zone_gaps` stay clamped to the level's own width so a vault
+	# carve-out can never open a hole out here, and the existing interior pits
+	# are untouched. Player-only mask (see _build_kill_zone_strip), so enemies,
+	# bosses and boulders are not affected.
+	_build_kill_zone_strip(-KILL_ZONE_EDGE_MARGIN, 0.0, y_centre)
+	_build_kill_zone_strip(full_width, full_width + KILL_ZONE_EDGE_MARGIN, y_centre)
 
 ## Splits [0, full_width] into strips excluding `kill_zone_gaps`. Gaps are
 ## sorted and clamped to the level bounds first so registration order and

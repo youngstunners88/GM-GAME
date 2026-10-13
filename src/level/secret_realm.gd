@@ -265,13 +265,18 @@ func _setup_floor() -> void:
 	# lounge art itself reaches the bottom of the frame and there is nothing
 	# left to cover.
 
-	# Kill zone below, in case (shouldn't be reachable, but safe).
+	# Kill zone below. It IS reachable: the floor above spans exactly [0, BOUNDS]
+	# and nothing walls either end, so a player who skates off the left of the
+	# room (or past the right end) used to fall beside this band forever. The
+	# band therefore reaches LevelBase.KILL_ZONE_EDGE_MARGIN past both ends (the
+	# same single margin the campaign stages use). Still centred on the room, so
+	# the interior is byte-identical to before.
 	var kz := Area2D.new()
 	kz.collision_layer = 0
 	kz.collision_mask = 2
 	var kc := CollisionShape2D.new()
 	var ks := RectangleShape2D.new()
-	ks.size = Vector2(BOUNDS, 80)
+	ks.size = Vector2(BOUNDS + 2.0 * LevelBase.KILL_ZONE_EDGE_MARGIN, 80)
 	kc.shape = ks
 	kz.add_child(kc)
 	kz.position = Vector2(BOUNDS / 2, 900)
