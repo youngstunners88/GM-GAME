@@ -571,7 +571,9 @@ func get_title_card() -> String: return title_card
 func has_winchester() -> bool: return true
 func get_molds_left() -> int: return 0
 func get_btc_paid() -> int: return 1
-func get_health() -> int: return 3        # the hideout's cap; nothing in the story rooms hurts (no second health system)
+func get_health() -> int: return 3        # the hideout's cap; a story room that can hurt (the bear woods) overrides it - same 3 hearts
+## True in a room where Lil Blunt can be hurt: the HUD shows his hearts.
+func _shows_health() -> bool: return false
 func get_ammo() -> int: return _vm.gun.rounds if _vm != null else 0
 func get_reserve() -> int: return _vm.gun.reserve if _vm != null else 0
 func get_gun() -> Ep2Winchester: return _vm.gun if _vm != null else null
@@ -774,9 +776,9 @@ func _tick_viewmodel(delta: float) -> void:
 		_hud.spread_deg = _vm.gun.spread_deg(_moving, _player_pos.y > _ground_y + 0.05)
 		_hud.ads = maxf(_vm.gun.ads, _scope_k)
 		_hud.set_ammo(_vm.gun.rounds, _vm.gun.reserve, Ep2Winchester.MAG)
-		_hud.health = 3
+		_hud.health = get_health()
 		_hud.health_max = 3
-		_hud.show_health = false
+		_hud.show_health = _shows_health()
 
 
 func _follow_camera(delta: float) -> void:

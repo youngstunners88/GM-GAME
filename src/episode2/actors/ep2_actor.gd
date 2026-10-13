@@ -91,6 +91,9 @@ static func _drop_bone_translations(a: Animation) -> void:
 func add_clip(clip_name: String, path: String) -> void:
 	if anim == null or not ResourceLoader.exists(path):
 		return
+	var own: AnimationLibrary = anim.get_animation_library("")
+	if own != null and own.has_animation(clip_name):
+		return                      # the library is shared by every instance of the rig: a crowd of bears loads the clip once
 	var src: Node = (load(path) as PackedScene).instantiate()
 	var aps: Array = src.find_children("*", "AnimationPlayer", true, false)
 	if not aps.is_empty():
@@ -141,6 +144,9 @@ func holder(bone: String) -> Node3D:
 func add_all_clips(path: String) -> void:
 	if anim == null or not ResourceLoader.exists(path):
 		return
+	var own: AnimationLibrary = anim.get_animation_library("")
+	if own != null and own.has_meta("merged_" + path.md5_text()):
+		return                      # already merged into this (shared) library
 	var src: Node = (load(path) as PackedScene).instantiate()
 	var aps: Array = src.find_children("*", "AnimationPlayer", true, false)
 	if not aps.is_empty():
@@ -151,6 +157,8 @@ func add_all_clips(path: String) -> void:
 				var cl: Animation = sp.get_animation(cn).duplicate(true)
 				_drop_bone_translations(cl)
 				lib.add_animation(cn, cl)
+		if lib:
+			lib.set_meta("merged_" + path.md5_text(), true)
 	src.free()
 
 

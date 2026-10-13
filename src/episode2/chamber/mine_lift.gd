@@ -38,11 +38,14 @@ const CAVE_Z0 := -14.0             # the cavern's back wall (the hideout tunnel 
 const CAGE_TOP := 3.75             # the cage roof (its gears stand ~1.8 m above it)
 const RISE_SECONDS := 22.0
 const START_POS := Vector3(0.0, 0.0, -11.0)
-const CAGE_STAND_BULL := Vector3(-0.9, 0.0, 0.5)
+const CAGE_STAND_BULL := Vector3(-0.95, 0.0, 0.95)    # inside the cage, in the back-left corner beside the lever (not between Lil Blunt and it)
+const CAGE_DOOR_HALF := 1.05        # the doorways' half width (cut out of the Tripo cage by tools/ep2_blender/cage_open_doorways.py)
+const BODY_R := 0.3                  # Lil Blunt's body radius against the cage bars
 const EXIT_Z := 8.0
-## THE HIDDEN LEVER: a stub of rock in the west wall, beside the cage, at knee height and in the shadow of a boulder.
-const LEVER_POS := Vector3(-4.28, 1.0, -1.35)
-const LEVER_STAND := Vector3(-3.1, 0.0, -1.35)
+## THE LEVER IS INSIDE THE CAGE (founder 2026-10-13: "why is the lever not inside the elevator"): an iron handle on the cage's
+## left wall, rusted the same as the cage's own struts so it reads as part of the frame - hidden in plain sight. Cage-local
+## (it rides up with the cage). Inferno pulls it from where he stands; nobody walks out through the bars any more.
+const LEVER_POS := Vector3(-1.62, 1.15, 0.35)
 
 var _rock: StandardMaterial3D = null
 var _kit_root: Node3D = null
@@ -50,6 +53,9 @@ var _kit_mats: Dictionary = {}
 var _halo_tex: GradientTexture2D = null
 var _cage: Node3D = null
 var _gate: Node3D = null
+var _gate_in: Node3D = null          # the walkway-side gate: up (open) until both are aboard, then it drops shut
+var _gate_in_k: float = 1.0          # 1 = raised / open, 0 = down / shut
+var _gate_in_goal: float = 1.0
 var _counter: Node3D = null
 var _lever: Node3D = null
 var _lever_t: float = -1.0
@@ -593,11 +599,22 @@ func _build_cage(timber: StandardMaterial3D, iron: StandardMaterial3D) -> void:
 	_gate.position = Vector3(0.0, 0.0, CAGE_HALF - 0.05)                                             # the surface side: a sliding gate of rusted bars
 	_cage.add_child(_gate)
 	for gy in [0.25, 1.4, 3.2]:
-		_box(Vector3(CAGE_HALF * 2.0 - 0.9, 0.09, 0.07), Vector3(0.0, gy, 0.0), iron, _gate)
-	var gx: float = -CAGE_HALF + 0.55
-	while gx < CAGE_HALF - 0.5:
+		_box(Vector3(CAGE_DOOR_HALF * 2.0 + 0.1, 0.09, 0.07), Vector3(0.0, gy, 0.0), iron, _gate)
+	var gx: float = -CAGE_DOOR_HALF + 0.1
+	while gx < CAGE_DOOR_HALF - 0.05:
 		_box(Vector3(0.05, 3.1, 0.05), Vector3(gx, 1.7, 0.0), iron, _gate)
 		gx += 0.3
+	# the walkway-side gate (-z): a drop gate of the same rusted bars, RAISED (open) while they board, dropped shut behind them
+	_gate_in = Node3D.new()
+	_gate_in.name = "WalkwayGate"
+	_gate_in.position = Vector3(0.0, 0.0, -CAGE_HALF + 0.05)
+	_cage.add_child(_gate_in)
+	for gy in [0.25, 1.4, 3.2]:
+		_box(Vector3(CAGE_DOOR_HALF * 2.0 + 0.1, 0.09, 0.07), Vector3(0.0, gy, 0.0), iron, _gate_in)
+	var gx2: float = -CAGE_DOOR_HALF + 0.1
+	while gx2 < CAGE_DOOR_HALF - 0.05:
+		_box(Vector3(0.05, 3.1, 0.05), Vector3(gx2, 1.7, 0.0), iron, _gate_in)
+		gx2 += 0.3
 	for cx in [-1.0, 1.0]:                                                                           # two heavy chains from the roof gears to the pulley
 		var ch := _cyl(0.05, 0.05, 16.0, Vector3(0.9 * cx, CAGE_TOP + 9.5, 0.0), iron, _cage, 6)
 		ch.name = "Chain"
@@ -620,23 +637,25 @@ func _cage_lantern() -> Node3D:
 	return holder
 
 
-## THE DISGUISE: a short stub of the wall's own rock material, bedded in a boulder at knee height, with a rough stone cap.
-## Nothing about it is lit, coloured or shaped like a lever until Inferno's hand closes on it.
+## THE LEVER, INSIDE THE CAGE: a short iron handle on a bracket on the cage's left wall, the same rusted iron as the cage's struts,
+## no colour, no glow - it reads as part of the frame until Inferno's hand closes on it. A child of the cage, so it rides up.
 func _build_lever() -> void:
 	_lever = Node3D.new()
-	_lever.name = "HiddenLever"
+	_lever.name = "CageLever"
 	_lever.position = LEVER_POS
-	_visuals.add_child(_lever)
-	var arm := _cyl(0.06, 0.07, 0.55, Vector3(0.14, 0.0, 0.0), _rock, _lever, 7)
-	arm.rotation = Vector3(0.0, 0.0, deg_to_rad(-72.0))
-	var cap := _sphere(0.11, Vector3(0.38, 0.12, 0.0), _rock, _lever, 0.8)
-	cap.name = "StoneCap"
-	var nest := _sphere(0.5, Vector3(-0.1, -0.12, 0.05), _rock, _lever, 0.8)       # the boulder it hides in
-	nest.name = "Nest"
+	_cage.add_child(_lever)
+	var iron: StandardMaterial3D = _iron
+	var arm := _cyl(0.025, 0.03, 0.5, Vector3(0.0, 0.0, 0.0), iron, _lever, 7)       # pivots at the bracket, swings in the y-z plane
+	arm.rotation = Vector3(deg_to_rad(-35.0), 0.0, 0.0)
+	var grip := _cyl(0.04, 0.04, 0.14, Vector3(0.0, 0.25, 0.0), iron, arm, 7)
+	grip.rotation = Vector3(0.0, 0.0, PI * 0.5)
+	grip.name = "Grip"
+	var bracket := _box(Vector3(0.06, 0.18, 0.18), Vector3(-0.04, 0.0, 0.0), iron, _lever)
+	bracket.name = "Bracket"
 
 
 func get_lever_position() -> Vector3:
-	return LEVER_POS
+	return _lever.global_position if _lever != null and _lever.is_inside_tree() else LEVER_POS
 
 
 func get_lever_node() -> Node3D:
@@ -679,25 +698,28 @@ func _on_beat_entered(b: int) -> void:
 		_hud.objective = ["Follow Inferno onto the lift", "", "", "", "Head out into the wood", ""][clampi(b, 0, 5)]
 	match b:
 		Beat.ARRIVE:
+			# he walks in through the DOORWAY (centre of the walkway-side opening), never through the bars, and waits by the lever
 			_start_show([
-				{"do": "walk", "to": Vector3(-1.0, 0.0, -3.0), "speed": 3.0},
-				{"do": "face", "at": Vector3(0.0, 0.0, -9.0)},
-				FacilityShow._say("vo_bull_lift1", 0.2),
-				{"do": "walk", "to": CAGE_STAND_BULL, "speed": 3.0},
+				{"do": "call", "fn": func() -> void: _begin_carry_line("vo_bull_lift1")},
+				{"do": "walk", "to": Vector3(0.0, 0.0, -3.4), "speed": 3.0},
+				{"do": "walk", "to": Vector3(0.0, 0.0, -1.0), "speed": 2.4},
+				{"do": "walk", "to": CAGE_STAND_BULL, "speed": 2.0},
 				{"do": "face", "at": Vector3(0.0, 0.0, -4.0)}])
 		Beat.LEVER:
-			_bull_on_cage = false
+			# both aboard: the walkway gate drops shut behind them, Inferno turns to the lever on the cage wall and pulls it. He never
+			# leaves the cage. Not control-locking (one motion): Lil Blunt keeps the rifle and can look around.
+			_bull_on_cage = true
+			_gate_in_goal = 0.0
+			_sfx("ep2_lift_start")
 			_start_show([
-				{"do": "call", "fn": func() -> void: look_toward(LEVER_POS + Vector3(0.3, 0.2, 0.0), 2.6)},
+				{"do": "call", "fn": func() -> void: look_toward(get_lever_position() + Vector3(0.0, 0.1, 0.0), 2.6)},
 				{"do": "call", "fn": func() -> void: _begin_carry_line("vo_bull_lift_lever")},
-				{"do": "walk", "to": LEVER_STAND, "speed": 2.6},
-				{"do": "face", "at": LEVER_POS},
-				{"do": "reach", "at": LEVER_POS + Vector3(0.3, 0.1, 0.0), "ramp": 0.5, "hold": 0.35, "lean": 0.3},
+				{"do": "face", "at": LEVER_POS + Vector3(0.0, 0.0, 0.0)},
+				{"do": "reach", "at": LEVER_POS + Vector3(0.12, 0.2, 0.0), "ramp": 0.45, "hold": 0.3, "lean": 0.0},
 				{"do": "call", "fn": _pull_lever},
-				{"do": "wait", "t": 0.5},
-				{"do": "release", "ramp": 0.5, "t": 0.45},
-				{"do": "walk", "to": CAGE_STAND_BULL, "speed": 2.8},
-				{"do": "face", "at": Vector3(0.0, 0.0, -4.0)}])      # NOT control-locking: he keeps his hands on the rifle and may look around (one motion)
+				{"do": "wait", "t": 0.6},
+				{"do": "release", "ramp": 0.45, "t": 0.4},
+				{"do": "face", "at": Vector3(0.0, 0.0, 1.0)}])
 		Beat.RISE:
 			release_look()
 			_rise_t = 0.0
@@ -724,7 +746,6 @@ func _on_beat_entered(b: int) -> void:
 
 func _pull_lever() -> void:
 	_lever_t = 0.0
-	_sfx("ep2_lift_start")
 
 
 func _show_finished() -> void:
@@ -740,12 +761,16 @@ func _show_finished() -> void:
 
 
 func _tick(delta: float) -> void:
-	# lever animation: the stone arm swings down 50 degrees
+	# lever animation: the iron handle swings from back (-35 deg) to forward (+35 deg) as Inferno pulls it
 	if _lever_t >= 0.0 and _lever_t < 1.0 and _lever:
-		_lever_t = minf(1.0, _lever_t + delta / 0.8)
+		_lever_t = minf(1.0, _lever_t + delta / 0.7)
 		var arm: Node3D = _lever.get_child(0) as Node3D
 		if arm:
-			arm.rotation.z = deg_to_rad(-72.0 + 50.0 * _lever_t)
+			arm.rotation.x = deg_to_rad(-35.0 + 70.0 * _lever_t)
+	# the walkway gate: raised (open) while they board, it drops shut when the lever beat starts
+	_gate_in_k = move_toward(_gate_in_k, _gate_in_goal, delta / 0.6)
+	if _gate_in:
+		_gate_in.position.y = 3.3 * _gate_in_k
 	_on_cage = _player_on_cage()
 	match _beat:
 		Beat.ARRIVE:
@@ -774,7 +799,7 @@ func _tick(delta: float) -> void:
 	if _cage:
 		_cage.position.y = _cage_y
 		if _gate:
-			_gate.position.x = 3.3 * _gate_open             # slid a full gate-width aside, clear of the walkway view
+			_gate.position.x = 2.3 * _gate_open             # slid a full gate-width aside along the cage face, clear of the doorway
 	if _counter:
 		_counter.position.y = TOP_Y - _cage_y + 0.6
 	# the cage carries whoever stands on it
@@ -784,6 +809,37 @@ func _tick(delta: float) -> void:
 		_set_ground(TOP_Y)
 	if _bull_on_cage and _bull != null:
 		_bull.position.y = _cage_y
+
+
+## THE CAGE IS SOLID (founder 2026-10-13: "why are they walking through the pole bars"): from outside, Lil Blunt can only get in
+## through a doorway that is open (the walkway side while its gate is up, the surface side once the top gate has slid aside);
+## from inside, only out through an open doorway. Only applies while he is on the cage's floor level.
+func _cage_bars(old: Vector3, new: Vector3) -> Vector3:
+	if absf(new.y - _cage_y) > 1.2 and absf(old.y - _cage_y) > 1.2:
+		return new
+	var outer: float = CAGE_HALF + BODY_R
+	var inner: float = CAGE_HALF - BODY_R
+	var door: float = CAGE_DOOR_HALF - BODY_R
+	var walk_open: bool = _gate_in_k > 0.8
+	var top_open: bool = _gate_open > 0.9
+	var was_in: bool = absf(old.x) < CAGE_HALF and absf(old.z) < CAGE_HALF
+	var q := new
+	if was_in:
+		var walk_ok: bool = walk_open and absf(q.x) <= door
+		var top_ok: bool = top_open and absf(q.x) <= door
+		if q.z < -inner and not walk_ok:
+			q.z = -inner
+		if q.z > inner and not top_ok:
+			q.z = inner
+		q.x = clampf(q.x, -door, door) if absf(q.z) > inner else clampf(q.x, -inner, inner)
+		return q
+	if absf(q.x) < outer and absf(q.z) < outer:
+		var via_walk: bool = walk_open and old.z <= -CAGE_HALF and absf(q.x) <= door
+		var via_top: bool = top_open and old.z >= CAGE_HALF and absf(q.x) <= door
+		if via_walk or via_top:
+			return q
+		return Vector3(old.x, q.y, old.z)        # blocked by the bars: stay outside
+	return q
 
 
 func _on_cage_xz(p: Vector3) -> bool:
@@ -797,7 +853,7 @@ func _player_on_cage() -> bool:
 # --- walking limits ---------------------------------------------------------------------------------------------------
 
 func _collide(p: Vector3) -> Vector3:
-	var q := p
+	var q := _cage_bars(_player_pos, p)
 	if _beat >= Beat.LEVER and _beat < Beat.SURFACE:
 		# on the rising cage: the railings (the surface side is the gate, shut until the top)
 		q.x = clampf(q.x, -(CAGE_HALF - 0.45), CAGE_HALF - 0.45)      # keep the eye off the cage's plank panels and bars

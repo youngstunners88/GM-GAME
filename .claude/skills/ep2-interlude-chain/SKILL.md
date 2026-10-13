@@ -58,10 +58,16 @@ TO BE CONTINUED after the spy beat.
      turn, a noise hit counts, Inferno hisses (`vo_bull_woods_shot` / `vo_bull_spy_shot`). On the quad ride the engine covers it.
    - **At the spy point RMB is the SPYGLASS** (rifle drops to low ready, view narrows to 16 deg), not the iron sights.
    - **Daylight chambers set `viewmodel_exposure` (~0.82)**: under a bright sky the rifle's metal read cream; the lamp-lit mine is 1.0.
-   - The quad ride is a passenger view: the view yaw rides the quad's heading; he sits on the back seat (`SEAT_SIDE`), a black blink
-     (`Ep2FpsHud.fade_to`) covers the climb on. The CLAIM RUN (shooting bears from the back seat) is NOT built: founder's foundation
-     doc says the prep pass is closed until he opens it (`ep2-fort-knox-arc`).
-   - Health: nothing in the story rooms hurts; `get_health()` is the hideout's 3-heart cap. Never add a second health system.
+   - The quad ride is a passenger view: the view yaw rides the quad's heading; he kneels on the back seat. **No blink any more**
+     (founder 2026-10-13 "improve the transitions"): `_glide_to()` moves his eye onto the seat while Inferno swings onto the saddle
+     (`_bull_swing_on`), and the same in reverse at the ridge (`_bull_swing_off`). The test fails if the fade rises or the eye jumps.
+   - **THE LIVING WOODS (founder 2026-10-13)**: the world is ~1 km - near-wood scouts (~230 m sneak), a ~775 m logging road with 13
+     road pickets, the camp over a ridge at z ~1006 (bears smell a forge: none within 40 m of the mine door). Bears are
+     `Ep2BearKit` actors driven by `Ep2BearBrain` (see `ep2-living-woods` "Implemented"). The road fight IS built (the founder asked
+     for it in plain words: "shooting off bears on the road, some fire back with their arrows"); the later claim/vault runs are not.
+   - Health: the woods can hurt (claws, arrows) - it overrides `get_health()` with the SAME 3-heart cap and `_shows_health()` puts the
+     hearts on the HUD. Out of hearts = retry at the mine exit (`_retry_from_surface`), never a second health system.
+   - Inferno cuts the engine and COASTS the last 75 m below the ridge, or the camp (41 m past it) hears the quad and walks off.
 
 ## Adding another chamber to the chain
 
@@ -85,4 +91,10 @@ TO BE CONTINUED after the spy beat.
 - `Ep2ViewHands.attach` measures the forge rifle INCLUDING the muzzle-flash quad: build the flash BEFORE attaching the hands (as the
   hideout does) or the founder rifle sits at a different height.
 - A new `class_name` is invisible to a headless run until `godot --headless --path . --import` has rewritten the class cache.
+- **`generate_audio.py` also writes `ep2_woods_ambience.mp3`** when it fills gaps (no mp3 of it is committed on purpose): delete it too.
+- The held rifle OUTDOORS: the low golden-hour sun lights it only from some directions (dark navy facing west). Woods calls
+  `Ep2Viewmodel.set_world_shadows(false)` + `set_own_light(VM_KEY_ENERGY, _sun)`; a DIRECTIONAL light's cull mask is ignored by the
+  Compatibility renderer, so the key is an OMNI on the camera. Calibrate with `tools/ep2_shots/vm_outdoor_light_probe.tscn`.
+- A crowd of bears: `Ep2Actor.add_clip/add_all_clips` skip clips already in the (shared) library - instantiating the clip GLB per
+  bear cost ~40 ms each. Time the slices with `tools/ep2_shots/woods_build_probe.tscn`.
 - Pack budget: songs and VO add MBs; the stage theme was re-encoded 128k -> 80k mp3 to pay for them. Check `index.pck` < 190 MiB.

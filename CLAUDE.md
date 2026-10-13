@@ -58,6 +58,8 @@ same commit — a manifest that lies is worse than none.
 | **Film does not play / skips / glitches** | films must always play | `.claude/skills/ep2-film-always-plays/SKILL.md` | `ep2-film-always-plays` |
 | **Hands/targets/wall look cheap** | Blender GLBs | `.claude/skills/ep2-blender-props/SKILL.md` | `ep2-blender-props` |
 | **Rifle/prop "not photoreal", improve a Tripo/Meshy GLB in Blender** | headless render only (GUI MCP froze + crashed Blender) | `.claude/skills/ep2-rifle-realism/SKILL.md`, `blender-headless-render-safety/SKILL.md` | `ep2-rifle-realism`, `blender-headless-render-safety` |
+| **Bears not alive / no awareness / bear personalities / road ambush on the quad / woods too small** | bear kit + brain + woods specs; walking behind Inferno must stay silent (test) | `.claude/skills/ep2-living-woods/SKILL.md` ("Implemented") | `ep2-living-woods`, `ep2-bear-awareness` |
+| **Gun looks darker / dark navy outdoors** | the sun lights the held gun by direction; viewmodel key light, never a colour change | `.claude/skills/ep2-rifle-always-visible/SKILL.md` | `ep2-rifle-always-visible` |
 | **Founder says something LOOKS wrong / "check for yourself"** | capture it yourself first | `.claude/skills/see-it-yourself/SKILL.md` | `see-it-yourself`, `ep2-reference-match-loop` |
 
 **After the hideout (lava river, mine lift, bear woods, quad bike, spy on the bears, "the next scene is not the runner") go through `ep2-interlude-chain`** (`.claude/skills/ep2-interlude-chain/SKILL.md`).
