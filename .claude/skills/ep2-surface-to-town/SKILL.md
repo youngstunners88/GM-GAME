@@ -43,3 +43,14 @@ file disagree, the file is right. Founder references: `artifacts/episode2-gold-m
 
 Tests per beat (sequence, who is present, the line ids, the draw outcomes), real first-person captures of every beat graded against
 `goldmine_town_target.jpg` (`ep2-reference-match-loop`), STATUS.md pointing at the spec file, then `always-ship-live`.
+
+## Implemented (2026-10-14, after Codex d6e32b1)
+- Woods: `WoodsQuadChamber` beats `SNEAK, REVEAL, MOUNT, RIDE, DROPOFF, DONE`; RIDE_TRAIL runs on to `Ep2GoldTown.DROP_POINT`; road pickets stay in the
+  wood (`PICKET_ROAD_LEN`); `_grade_desert` warms the light by road distance; DROPOFF = Bull's two lines, Lil Blunt's eye glides off, Bull rides off
+  (`_bull_ride_off`), then `next_chamber: gold_town` once the town is prebuilt.
+- Shared set: `src/episode2/chamber/ep2_gold_town.gd` (layout, kit materials, signs, collision, `build_desert` - deterministic, so both rooms draw the
+  same scrub/rocks/mesas), kit `tools/ep2_blender/build_town_kit.py`, signs `tools/ep2_forge/paint_town_signs.py`.
+- Town room: `src/episode2/chamber/gold_town.gd` (`GoldTownChamber`): STREET, OFFICE, TO_BAR, BAR, SQUARE_UP, DRAW, WON, DONE. Jake =
+  `src/episode2/assets/town/sheriff_jake.glb` (Tripo multiview, decimated to 9k faces / 1K textures for the pack budget), static with a stride bob.
+- Gate: `tests/ep2_gold_town_test.tscn` (in CI). Captures: `tools/ep2_shots/town_beats_shot.tscn`, `tools/ep2_shots/town_shot.tscn`.
+- Pack budget: keep new textures `compress/mode=1` and FORCE-ADD their `.import` (`*.import` is gitignored; without it CI imports lossless).

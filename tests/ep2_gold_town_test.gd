@@ -1,0 +1,231 @@
+extends Node
+## Gate for the GOLDMINE TOWN (founder lock 2026-10-14, PROMPT_EPISODE2_SURFACE_TO_TOWN_DRAW_SPEC.md; skills ep2-surface-to-town,
+## ep2-sheriff-jake, ep2-quickdraw-duel). Plays the whole room headless: the street, Sheriff Jake's office (certificate rules as the
+## whitepaper has them: in your name, not sellable, not tradeable, bring your share), the saloon (whiskey, a quarter Bitcoin, the
+## stranger's demand VERBATIM), the sheriff as witness, the draw (foul -> redo; too slow -> retry with hearts back; hit first -> the
+## map), Bull walking up afterwards, TO BE CONTINUED.
+## Run: godot --headless res://tests/ep2_gold_town_test.tscn
+
+const TOWN := preload("res://src/episode2/chamber/gold_town.tscn")
+const ROOT := preload("res://src/episode2/session/ep2_session_root.tscn")
+
+var _fail: int = 0
+
+
+func _check(label: String, ok: bool, detail: String = "") -> void:
+	if ok:
+		print("  [PASS] %s" % label)
+	else:
+		_fail += 1
+		print("  [FAIL] %s %s" % [label, detail])
+
+
+func _run(c: GoldTownChamber, seconds: float) -> void:
+	for i in int(seconds * 60.0):
+		c.step(1.0 / 60.0)
+
+
+func _until(c: GoldTownChamber, seconds: float, cond: Callable) -> bool:
+	for i in int(seconds * 60.0):
+		if cond.call():
+			return true
+		c.step(1.0 / 60.0)
+	return bool(cond.call())
+
+
+## Walk Lil Blunt to `goal` (straight line steering, re-aimed each step; the walls push him round corners).
+func _walk_to(c: GoldTownChamber, goal: Vector3, seconds: float = 30.0) -> bool:
+	for i in int(seconds * 60.0):
+		var me: Vector3 = c.get_player_position()
+		var d := Vector2(goal.x - me.x, goal.z - me.z)
+		if d.length() < 0.5:
+			c.set_move_input(Vector2.ZERO)
+			return true
+		c._look_yaw = atan2(d.x, d.y)
+		c.set_move_input(Vector2(0.0, 1.0), true)
+		c.step(1.0 / 60.0)
+	c.set_move_input(Vector2.ZERO)
+	return false
+
+
+func _manifest_text(id: String) -> String:
+	var m = JSON.parse_string(FileAccess.get_file_as_string("res://assets/audio-manifest.json"))
+	var stack: Array = [m]
+	while not stack.is_empty():
+		var o = stack.pop_back()
+		if o is Dictionary:
+			if str(o.get("id", "")) == id:
+				return str(o.get("text", ""))
+			stack.append_array(o.values())
+		elif o is Array:
+			stack.append_array(o)
+	return ""
+
+
+func _aim_at_opp(c: GoldTownChamber) -> void:
+	var eye: Vector3 = c.get_player_position() + Vector3(0.0, c.eye_height, 0.0)
+	var t: Vector3 = c.get_opponent().position + Vector3(0.0, 1.3, 0.0) - eye
+	c._look_yaw = atan2(t.x, t.z)
+	c._look_pitch = atan2(t.y, Vector2(t.x, t.z).length())
+
+
+func _ready() -> void:
+	print("-- GOLDMINE TOWN")
+	var c: GoldTownChamber = TOWN.instantiate()
+	add_child(c)
+	var said: Array = []
+	var res: Array = []
+	c.line_spoken.connect(func(id): said.append(id))
+	c.chamber_cleared.connect(func(r): res.append(r))
+	c.setup(0, [], 0)
+	await get_tree().process_frame
+	_check("starts in the STREET where Bull dropped him, first person, the Winchester in his hands",
+		c.get_beat_name() == "STREET" and c.is_fps() and c.get_viewmodel() != null and c.get_player_position().distance_to(Ep2GoldTown.DROP_POINT) < 4.0,
+		"%s %s" % [c.get_beat_name(), str(c.get_player_position())])
+	_check("the objective sends him to the certificate office", "CERTIFICATES" in c.get_hud().objective, c.get_hud().objective)
+	var bnames: Dictionary = {}
+	for n in c._visuals.find_children("Bldg_*", "", true, false):
+		bnames[str(n.name).get_slice("_", 1)] = true
+	_check("the town is the gold-rush street: certificates office, saloon, treasury and the rest, Fort Knox on its hill",
+		c._visuals.find_child("Bldg_Certificates", true, false) != null and c._visuals.find_child("Bldg_Saloon", true, false) != null
+		and c._visuals.find_child("Bldg_Treasury", true, false) != null and c._visuals.find_child("FortKnox", true, false) != null, str(bnames.keys()))
+	_check("no DIAMONDS anywhere in the town (no sign, no mechanic)", not ResourceLoader.exists("res://src/episode2/assets/town/sign_DIAMONDS.png")
+		and c._visuals.find_children("*DIAMOND*", "", true, false).is_empty())
+	_check("the desert around it is the same one the woods built (scrub, rocks, mesas)", c._visuals.find_child("Mesas", true, false) != null)
+	_check("the open desert light (thin warm haze)", c._env_node.environment.fog_density < 0.004)
+	_check("Bull is gone (he rode off): not in the street", not c.is_bull_here())
+	# walls are solid; the office door is open
+	var wall_probe: Vector3 = Ep2GoldTown.local_to_world("Bldg_Certificates", Vector3(-3.0, 0.0, 0.3))
+	c._player_pos = wall_probe
+	c._look_yaw = atan2((Ep2GoldTown.local_to_world("Bldg_Certificates", Vector3(-3.0, 0.0, -2.0)) - wall_probe).x, (Ep2GoldTown.local_to_world("Bldg_Certificates", Vector3(-3.0, 0.0, -2.0)) - wall_probe).z)
+	c.set_move_input(Vector2(0.0, 1.0))
+	_run(c, 1.5)
+	c.set_move_input(Vector2.ZERO)
+	var lp: Vector3 = Ep2GoldTown.building_xform(Ep2GoldTown.entry("Bldg_Certificates")).affine_inverse() * c.get_player_position()
+	_check("the office front wall is solid beside the door", lp.z > -0.05, "local z %.2f" % lp.z)
+	c._player_pos = Ep2GoldTown.DROP_POINT + Vector3(-2.2, 0.0, 0.6)
+	# ---- the office
+	var at_door: bool = _walk_to(c, Ep2GoldTown.door_world("Bldg_Certificates", 1.2))
+	_walk_to(c, Ep2GoldTown.local_to_world("Bldg_Certificates", GoldTownChamber.OFFICE_SPOT), 4.0)
+	_check("he walks in through the open office door", at_door and c.get_beat_name() == "OFFICE", c.get_beat_name())
+	_check("-> OFFICE: the sheriff is behind the counter", c.get_beat_name() == "OFFICE" and c.get_jake().position.distance_to(Ep2GoldTown.local_to_world("Bldg_Certificates", GoldTownChamber.JAKE_DESK)) < 0.3, c.get_beat_name())
+	var jake: Node3D = c.get_jake()
+	_check("Sheriff Jake has his cigarette in his mouth, smoking", jake.find_child("Cigarette", true, false) != null and (jake.find_child("CigSmoke", true, false) as CPUParticles3D).emitting)
+	_until(c, 60.0, func(): return c.get_beat_name() == "TO_BAR")
+	_check("Jake greets him, Lil Blunt asks for the certificate, Jake lays out the rules and sends him to the saloon - in order",
+		said.find("vo_jake_1") < said.find("vo_lb_cert1") and said.find("vo_lb_cert1") < said.find("vo_jake_2") and said.find("vo_jake_2") < said.find("vo_jake_3") and said.find("vo_jake_1") >= 0, str(said))
+	var rules: String = _manifest_text("vo_jake_2").to_lower()
+	_check("the certificate rules are the whitepaper's: in your name, can't sell it on, can't trade it, bring your share - no invented numbers",
+		"your name" in rules and "sell" in rules and "trade" in rules and "share" in rules and not rules.contains("%") and not rules.contains("0") and not rules.contains("5"), rules)
+	_check("-> TO_BAR, the objective is the saloon", "SALOON" in c.get_hud().objective, c.get_hud().objective)
+	# ---- the saloon
+	var crossed: bool = _walk_to(c, Ep2GoldTown.door_world("Bldg_Certificates", 1.5)) and _walk_to(c, Ep2GoldTown.door_world("Bldg_Saloon", 1.2))
+	_walk_to(c, Ep2GoldTown.local_to_world("Bldg_Saloon", GoldTownChamber.BAR_SPOT), 8.0)
+	_check("he crosses the street and walks up to the bar", crossed and c.get_beat_name() == "BAR", c.get_beat_name())
+	_check("-> BAR (a bear barman behind the bar in an apron)", c.get_beat_name() == "BAR" and c.get_bartender().find_child("Apron", true, false) != null, c.get_beat_name())
+	_until(c, 90.0, func(): return c.get_beat_name() == "SQUARE_UP")
+	var order: Array = ["vo_bar_1", "vo_lb_bar1", "vo_lb_bar2", "vo_bar_2", "vo_opp_1", "vo_opp_2", "vo_lb_draw1", "vo_opp_3", "vo_jake_witness"]
+	var in_order: bool = true
+	for i in range(1, order.size()):
+		if said.find(order[i - 1]) < 0 or said.find(order[i - 1]) > said.find(order[i]):
+			in_order = false
+	_check("the bar scene plays in order: a whiskey, a quarter Bitcoin, the barman's jaw, the stranger, the demand, the refusal, the terms, the witness", in_order, str(said))
+	_check("the whiskey and the coin are on the bar", c.is_glass_on_bar() and c.is_coin_on_bar())
+	_check("the payment is a QUARTER Bitcoin", "quarter" in _manifest_text("vo_lb_bar2").to_lower() and "bitcoin" in _manifest_text("vo_lb_bar2").to_lower())
+	_check("the demand is the founder's line VERBATIM", _manifest_text("vo_opp_2") == "Give me a bitcoin or I give you the map to the auction where they can get more intel.", _manifest_text("vo_opp_2"))
+	_check("the sheriff is the witness, and he walked in (he is in the saloon)", "witness" in _manifest_text("vo_jake_witness")
+		and Ep2GoldTown.building_xform(Ep2GoldTown.entry("Bldg_Saloon")).affine_inverse().origin != Vector3.INF
+		and (Ep2GoldTown.building_xform(Ep2GoldTown.entry("Bldg_Saloon")).affine_inverse() * jake.position).z < 0.0, str(jake.position))
+	_check("the stranger carries a revolver", c.get_opponent().find_child("Revolver", true, false) != null)
+	# ---- square up in the street
+	_check("-> SQUARE_UP: out into the street", "street" in c.get_hud().objective, c.get_hud().objective)
+	_walk_to(c, Ep2GoldTown.door_world("Bldg_Saloon", -1.0))
+	_walk_to(c, Ep2GoldTown.door_world("Bldg_Saloon", 2.0))
+	_walk_to(c, GoldTownChamber.DUEL_MARK)
+	_until(c, 40.0, func(): return c.get_beat_name() == "DRAW")
+	_check("-> DRAW once he is on his mark, the stranger 15 m up the street, the sheriff off to the side",
+		c.get_beat_name() == "DRAW" and c.get_opponent().position.distance_to(GoldTownChamber.OPP_MARK) < 0.6 and jake.position.distance_to(GoldTownChamber.WITNESS_MARK) < 0.6,
+		"%s opp %s jake %s" % [c.get_beat_name(), str(c.get_opponent().position), str(jake.position)])
+	_check("his hearts are on the HUD for the draw", c.get_hud().show_health and c.get_health() == 3)
+	_run(c, 0.3)
+	_check("before the word the rifle is DOWN (low ready)", c.get_viewmodel().lowered and c.get_draw_state() == "wait")
+	_check("the wait before the word is never the same twice-predictable (seeded, between the limits)",
+		c.get_draw_wait() >= GoldTownChamber.DRAW_WAIT_MIN and c.get_draw_wait() <= GoldTownChamber.DRAW_WAIT_MAX, "%.2f" % c.get_draw_wait())
+	var p0: Vector3 = c.get_player_position()
+	c.set_move_input(Vector2(0.0, 1.0), true)
+	_run(c, 0.3)
+	c.set_move_input(Vector2.ZERO)
+	_check("feet planted: he cannot walk during the draw", c.get_player_position().distance_to(p0) < 0.01)
+	# FOUL: fire before the word
+	_check("firing before the word is a FOUL (no shot leaves the barrel)", not c.shoot() and c.get_fouls() == 1 and said.has("vo_jake_foul"))
+	_until(c, 10.0, func(): return c.get_draw_state() == "wait")
+	_check("...and the round is set up again", c.get_draw_state() == "wait" and c.get_opponent().position.distance_to(GoldTownChamber.OPP_MARK) < 0.1)
+	# LOSE: do nothing after the word
+	_until(c, 10.0, func(): return c.get_draw_state() == "go")
+	_check("Jake says DRAW", said.has("vo_jake_draw") and c.get_draw_state() == "go")
+	_check("...and the rifle comes up", not c.get_viewmodel().lowered)
+	_until(c, 5.0, func(): return c.get_draw_state() != "go")
+	_check("too slow: the stranger fires first (a loss, never a death)", c.get_losses() == 1 and c.get_draw_state() == "lost")
+	_until(c, 12.0, func(): return c.get_draw_state() == "wait")
+	_check("...the screen comes back, Jake says do it again, hearts full, back on the mark", said.has("vo_jake_lose") and c.get_health() == 3
+		and c.get_player_position().distance_to(GoldTownChamber.DUEL_MARK) < 0.1 and c.get_hud().fade < 0.05 and c.get_beat_name() == "DRAW")
+	_check("...and he gives a little more time on the next try", c.opp_reaction() > GoldTownChamber.OPP_REACTION)
+	# WIN: aim and fire on the word
+	_until(c, 10.0, func(): return c.get_draw_state() == "go")
+	var fired: bool = false
+	for i in 120:
+		_aim_at_opp(c)
+		c.set_aim(true)
+		if c.shoot():
+			fired = true
+		c.step(1.0 / 60.0)
+		if c.get_draw_state() != "go":
+			break
+	c.set_aim(false)
+	_check("on the word he brings the rifle up and hits the stranger first", fired and c.get_draw_state() == "won", "%s fired %s" % [c.get_draw_state(), fired])
+	_check("a shot that misses wide would not count (the hit is a real ray test)", not c.aim_hits_opponent(c.get_player_position() + Vector3(0, 1.5, 0), Vector3(1.0, 0.0, 0.0)))
+	_until(c, 10.0, func(): return c.get_beat_name() == "WON")
+	_check("-> WON: the map to the auction is his", c.has_map() and c.get_beat_name() == "WON")
+	_check("Bull comes walking up the street afterwards (no line locked for him)", c.is_bull_here())
+	_until(c, 40.0, func(): return res.size() == 1)
+	_check("Jake calls it fair and square", said.has("vo_jake_win"))
+	_check("the room ends the playable slice (TO BE CONTINUED), the map in hand, mints nothing", res.size() == 1 and bool(res[0].get("end_session", false))
+		and bool(res[0].get("to_be_continued", false)) and bool(res[0].get("got_map", false)) and int(res[0].get("gold_awarded", -1)) == 0, str(res))
+	c.queue_free()
+
+	# ---- lines exist; the session chain woods -> town -> end
+	print("-- LINES + CHAIN")
+	var ids: Array = ["vo_bull_drop1", "vo_bull_drop2", "vo_lb_drop", "vo_jake_1", "vo_lb_cert1", "vo_jake_2", "vo_jake_3", "vo_bar_1", "vo_lb_bar1", "vo_lb_bar2",
+		"vo_bar_2", "vo_opp_1", "vo_opp_2", "vo_lb_draw1", "vo_opp_3", "vo_jake_witness", "vo_jake_draw", "vo_jake_foul", "vo_jake_win", "vo_jake_lose"]
+	var missing: Array = []
+	for id in ids:
+		if not ResourceLoader.exists("res://src/assets/sounds/voice/%s.mp3" % id) or _manifest_text(id) == "":
+			missing.append(id)
+	_check("all %d town voice lines are generated and in the manifest" % ids.size(), missing.is_empty(), str(missing))
+	_check("Bull's drop-off: the blonde lady (a wink, nothing shown), the certificate office, the bar for a whiskey",
+		"blonde" in _manifest_text("vo_bull_drop1").to_lower() and "certificate" in _manifest_text("vo_bull_drop2").to_lower() and "whiskey" in _manifest_text("vo_bull_drop2").to_lower())
+	var all_text: String = ""
+	for id in ids:
+		all_text += _manifest_text(id)
+	_check("no Diamonds in the town's speech", not ("iamond" in all_text))
+	var root: Ep2SessionRoot = ROOT.instantiate()
+	add_child(root)
+	root.configure([{"chamber": "woods_quad", "chamber_z": 5.0}], false)
+	var done: Array = []
+	root.session_complete.connect(func(): done.append(true))
+	_check("the session root knows the town", Ep2SessionRoot.CHAMBER_SCENES.has("gold_town"))
+	root._chamber_segment = 0
+	root._on_chamber_cleared({"story": true, "chamber": "woods_quad", "gold_awarded": 0, "gold_forfeited": 0, "next_chamber": "gold_town"})
+	await get_tree().process_frame
+	_check("the woods' result loads the GOLD TOWN", root.get_active() is GoldTownChamber)
+	root._on_chamber_cleared({"story": true, "chamber": "gold_town", "gold_awarded": 0, "gold_forfeited": 0, "end_session": true, "to_be_continued": true})
+	_check("the town ends the session (TO BE CONTINUED)", done.size() == 1)
+	root.queue_free()
+
+	await get_tree().process_frame
+	if _fail == 0:
+		print("EP2_GOLD_TOWN: ALL PASS")
+		get_tree().quit(0)
+	else:
+		print("EP2_GOLD_TOWN: %d FAILED" % _fail)
+		get_tree().quit(1)

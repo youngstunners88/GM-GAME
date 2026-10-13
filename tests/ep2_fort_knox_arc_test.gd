@@ -44,13 +44,17 @@ func _ready() -> void:
 	_check("the scene pipeline skill exists", FileAccess.file_exists("res://.claude/skills/ep2-hyperreal-scene-pipeline/SKILL.md"))
 	_check("the reference spec for the prep set pieces exists", FileAccess.file_exists("res://tools/ep2_forge/fort_knox_refs.json"))
 
-	print("-- PREP ONLY: the playable slice stops at the spy point")
+	print("-- PREP ONLY: the playable slice stops after the draw in the GoldMine town")
 	var woods_beats: Array = WoodsQuadChamber.Beat.keys()
 	_check("the woods chamber has only its groundwork beats (no CLAIM / DECOY / VAULT / SACRIFICE / RESCUE beat)",
-		woods_beats == ["SNEAK", "REVEAL", "MOUNT", "RIDE", "SPY", "DONE"], str(woods_beats))
+		woods_beats == ["SNEAK", "REVEAL", "MOUNT", "RIDE", "DROPOFF", "DONE"], str(woods_beats))
+	var town_beats: Array = GoldTownChamber.Beat.keys()
+	_check("the town chamber has only the founder's 2026-10-14 beats (no CLAIM / DECOY / VAULT / SACRIFICE / RESCUE)",
+		town_beats == ["STREET", "OFFICE", "TO_BAR", "BAR", "SQUARE_UP", "DRAW", "WON", "DONE"], str(town_beats))
 	var lift_beats: Array = MineLiftChamber.Beat.keys()
 	_check("the lift chamber keeps its groundwork beats", lift_beats == ["ARRIVE", "BOARD", "LEVER", "RISE", "SURFACE", "DONE"], str(lift_beats))
-	_check("the session root still ends the slice at the spy point (end_session)", "end_session" in _text("res://src/episode2/chamber/woods_quad.gd"))
+	_check("the woods hand over to the town, and the town ends the slice (end_session)", "\"next_chamber\": \"gold_town\"" in _text("res://src/episode2/chamber/woods_quad.gd")
+		and "end_session" in _text("res://src/episode2/chamber/gold_town.gd"))
 
 	print("-- HEARTS, DIAMONDS, VEHICLES")
 	_check("three hearts max in the hideout (the only health the story has)", SmeltingFacilityChamber.MAX_HEALTH == 3)
@@ -93,7 +97,8 @@ func _ready() -> void:
 					bad = id
 	_check("none of the %d story lines mentions Diamonds, the Auction or a truck" % checked, clean and checked >= 20, bad)
 	var code_clean: bool = true
-	for p in ["res://src/episode2/chamber/interlude_base.gd", "res://src/episode2/chamber/mine_lift.gd", "res://src/episode2/chamber/woods_quad.gd", "res://src/episode2/chamber/ep2_viewmodel.gd"]:
+	for p in ["res://src/episode2/chamber/interlude_base.gd", "res://src/episode2/chamber/mine_lift.gd", "res://src/episode2/chamber/woods_quad.gd", "res://src/episode2/chamber/ep2_viewmodel.gd",
+			"res://src/episode2/chamber/gold_town.gd", "res://src/episode2/chamber/ep2_gold_town.gd"]:
 		var src: String = _text(p).to_lower().replace("_diamonds_paid", "")      # the session-root setup() signature carries that name for every chamber; it is not a mechanic
 		for banned in ["diamond", "pickup_truck", "pickup truck"]:
 			if banned in src:

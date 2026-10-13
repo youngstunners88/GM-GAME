@@ -323,6 +323,10 @@ jobs:
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_character_motion_test.tscn 2>&1 | tee character-motion-tests.log
           grep -q 'EP2_CHARACTER_MOTION: ALL PASS' character-motion-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' character-motion-tests.log; then exit 1; fi
+          # The GoldMine town (founder 2026-10-14): the sheriff's office, the saloon, the draw (foul / retry / win), Bull, the chain.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_gold_town_test.tscn 2>&1 | tee gold-town-tests.log
+          grep -q 'EP2_GOLD_TOWN: ALL PASS' gold-town-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' gold-town-tests.log; then exit 1; fi
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' portal-tests.log; then exit 1; fi
           timeout 90 "$GODOT_BIN" --headless --script res://tests/portal_traversal_test.gd 2>&1 | tee portal-traversal.log
           grep -q 'PORTAL TRAVERSAL: ALL PASS' portal-traversal.log

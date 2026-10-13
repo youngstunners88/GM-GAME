@@ -2,7 +2,7 @@ class_name Ep2Interlude
 extends Node3D
 ## Shared base of the Episode 2 INTERLUDE chambers (founder 2026-10-09): the story that follows the hideout is no longer the
 ## cart runner. Lil Blunt and Inferno Bull ride a mine lift up to the surface (MineLiftChamber), sneak through the woods to
-## Inferno's camouflaged flame quad, and ride it to a ridge where they spy on the bears (WoodsQuadChamber).
+## Inferno's camouflaged flame quad, and ride it out of the woods to the GoldMine town (WoodsQuadChamber -> GoldTownChamber).
 ##
 ## This base owns what every walk-around story room needs, so each chamber is only its set, its beats and its script:
 ##   * the session-root contract (setup / step / chamber_cleared / chamber_failed + the free-roam verbs set_move_input,

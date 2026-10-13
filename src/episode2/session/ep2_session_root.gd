@@ -38,6 +38,8 @@ const CHAMBER_SCENES := {
 	# The INTERLUDE chain (founder 2026-10-09): after the hideout the runner is paused - a mine lift, then the bear woods.
 	"mine_lift": preload("res://src/episode2/chamber/mine_lift.tscn"),
 	"woods_quad": preload("res://src/episode2/chamber/woods_quad.tscn"),
+	# Out of the woods (founder 2026-10-14): Bull drops Lil Blunt in the GoldMine town - the sheriff, the saloon, the draw.
+	"gold_town": preload("res://src/episode2/chamber/gold_town.tscn"),
 }
 const DEFAULT_CHAMBER := "miner_shaft"
 

@@ -194,6 +194,14 @@ func hear(at: Vector3, radius: float, kind: String) -> void:
 			actor.face_point(at)
 
 
+## Where his eyes point. An alert archer stands side-on in the bow stance (his body turned a quarter left of the target, see
+## _step_combat), but his head and the arrow are on the target - so he keeps seeing what he is shooting at.
+func gaze_yaw() -> float:
+	if role() == "archer" and aware == Aware.ALERT:
+		return actor.facing + PI * 0.5
+	return actor.facing
+
+
 ## Called a few times a second by the chamber: can he see Lil Blunt at `eye` (feet `pos`)? `exposure` 0..1 (still / walking /
 ## running), `blocked` = a trunk is in the way.
 func look(pos: Vector3, exposure: float, blocked: bool, delta: float) -> void:
@@ -204,7 +212,7 @@ func look(pos: Vector3, exposure: float, blocked: bool, delta: float) -> void:
 	var d: float = to.length()
 	var sight: float = float(p.get("sight", 24.0)) * _attention()
 	var fov: float = deg_to_rad(float(p.get("fov", 110.0))) * 0.5
-	var fwd := Vector3(sin(actor.facing), 0.0, cos(actor.facing))
+	var fwd := Vector3(sin(gaze_yaw()), 0.0, cos(gaze_yaw()))
 	var in_view: bool = d < sight and d > 0.1 and fwd.angle_to(to / maxf(d, 0.001)) < fov and not blocked
 	if aware == Aware.ALERT:
 		if in_view or d < 4.0:
