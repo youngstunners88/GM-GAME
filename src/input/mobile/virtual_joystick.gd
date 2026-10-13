@@ -46,6 +46,7 @@ const V_CONE := 1.35
 
 var _finger: int = -1
 var _orphan: int = -1                   # finger this stick owned when it was hidden/released from outside
+var _orphan_origin: Vector2 = Vector2.ZERO  # that finger's base centre, restored on resume
 var _rest: Vector2 = Vector2.ZERO       # local coords
 ## LOGICAL base centre (local coords): exactly where the thumb landed (or the rest
 ## spot in FIXED mode). Output is measured from here, so touching down anywhere
@@ -135,9 +136,14 @@ func _gui_input(event: InputEvent) -> void:
 			# while the controls were hidden also produces drags here but its RELEASE
 			# is never delivered (measured), so adopting it would leave the hero
 			# running forever. Hidden controls never adopt either.
+			# Resume with the ORIGINAL base: the thumb has not moved, so its output
+			# must come straight back (a held key resumes after a respawn too). A
+			# fresh neutral at the thumb would leave the hero idle until it moved.
 			_finger = _orphan
 			_orphan = -1
-			_begin(drag.position)
+			_origin = _orphan_origin
+			_animate_active(1.0)
+			_move(drag.position)
 		accept_event()
 
 func _accepts(local_pos: Vector2) -> bool:
@@ -197,6 +203,7 @@ func is_active() -> bool:
 func release() -> void:
 	if _finger != -1:
 		_orphan = _finger
+		_orphan_origin = _origin
 	_reset()
 
 ## Drop the finger and every action. Used directly when the finger itself lifts.

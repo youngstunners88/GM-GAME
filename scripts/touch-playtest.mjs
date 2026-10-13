@@ -162,60 +162,99 @@ async function runProfile(browser, key) {
   });
   const down = async (id, x, y) => { active.set(id, { x, y }); await send('touchStart'); };
   const move = async (id, x, y) => { active.set(id, { x, y }); await send('touchMove'); };
-  const up = async (id) => { active.delete(id); await send('touchEnd'); };
+  // CDP (Chromium, verified with a bare-page probe): 'touchEnd' releases exactly the
+  // points LISTED in it; listing the remaining fingers would release those instead.
+  const up = async (id) => {
+    const at = active.get(id);
+    active.delete(id);
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [{ x: at.x, y: at.y, id }] });
+  };
+  // Full screenshots are slow under software GL and the hero keeps moving while one is
+  // taken, so numeric evidence uses a small clip of the F3 overlay (state, INPUT held, player).
+  const hudClip = p.dpr >= 2 ? { x: 0, y: 36, width: 420, height: 64 } : { x: 0, y: 66, width: 640, height: 96 };
+  const shotHud = async (name) => {
+    const file = path.join(outDir, `${key}-${name}.png`);
+    await page.screenshot({ path: file, clip: hudClip });
+    res.shots.push(file);
+  };
 
   await page.waitForTimeout(500);
   await shot('02-controls-visible');
 
-  // 1. LIGHT tilt first (gentle analog walk, |v| ~ 90)
+  // Software-GL screenshots are slow and the hero keeps moving while one is taken, so every
+  // phase is a short BURST: press, capture the overlay, release, and pair right/left bursts so
+  // he stays on the first platform (its pit is ~400px from the start).
+  const fingerUp = async (...ids) => { for (const id of ids) await up(id); };
+
+  if (process.env.TOUCH_PLAYTEST_ONLY === 'repress') {
+    // Quick lift-and-replace of the stick thumb (a fast direction reversal), 6 times, gaps of 60..400ms.
+    const gaps = (process.env.TOUCH_REPRESS_GAPS || '60,120,200,300,400,60').split(',').map(Number);
+    for (let i = 0; i < gaps.length; i++) {
+      const gap = gaps[i];
+      await down(0, pts.stick.x, pts.stick.y);
+      await move(0, pts.stick.x + 4, pts.stick.y);
+      await move(0, pts.stick.x + pts.radius * (i % 2 ? 1 : -1), pts.stick.y);
+      await shotHud(`R-${String(i).padStart(2, '0')}-press-after-${gap}ms`);
+      await up(0);
+      await page.waitForTimeout(gap);
+    }
+    await context.close();
+    return;
+  }
+  // PHASE A - the founder's combo, hero standing: stick (light tilt) + JUMP + ATK at once
   await down(0, pts.stick.x, pts.stick.y);
   await move(0, pts.stick.x + 4, pts.stick.y);
   await move(0, pts.stick.x + pts.radius * 0.34, pts.stick.y);
-  await page.waitForTimeout(1000);
-  await shot('03-stick-light-tilt');
-  // 2. FIRM push (full walk, |v| ~ 200)
-  await move(0, pts.stick.x + pts.radius, pts.stick.y);
-  await page.waitForTimeout(800);
-  await shot('04-stick-firm-right');
-  // 3. combo: JUMP (finger 1) while the stick is held, then ATK (finger 2)
+  await shotHud('03-stick-light-tilt');                 // right~0.5, |v|~100 (gentle analog walk)
   await down(1, pts.jump.x, pts.jump.y);
-  await page.waitForTimeout(260);
-  await shot('05-stick-plus-jump');
+  await shotHud('04-stick-plus-jump');                  // right~0.5 AND jump=1
+  await shot('04-stick-plus-jump-full');
   await down(2, pts.atk.x, pts.atk.y);
-  await page.waitForTimeout(300);
-  await shot('06-three-fingers');
+  await shotHud('05-three-fingers');                    // right~0.5, jump=1, attack=1
   await up(2); await up(1);
-  // 4. back the other way (analog left), away from the pit
-  await move(0, pts.stick.x - pts.radius, pts.stick.y);
-  await page.waitForTimeout(1300);
-  await shot('07-stick-left');
-  // 5. RUN toggle: tap on, firm right for a moment (sprint |v| ~ 240), tap off
-  await down(3, pts.run.x, pts.run.y); await up(3);
-  await move(0, pts.stick.x + pts.radius, pts.stick.y);
-  await page.waitForTimeout(450);
-  await shot('08-run-toggled-on');
-  await down(3, pts.run.x, pts.run.y); await up(3);
-  // 6. release: hero must stop
+  await shotHud('06-jump-atk-released');                // only the stick direction remains
   await up(0);
-  await page.waitForTimeout(1500);
-  await shot('09-all-released');
-  // 7. DIE WHILE HOLDING: keep the thumb down through the pit death + respawn.
-  //    After the respawn the stick must resume without lifting (orphan adoption).
+  await shotHud('07-stick-released');                   // nothing held
+  await page.waitForTimeout(1200);                      // let him land / settle
+
+  // PHASE B - firm push, sprint toggle, other direction (paired bursts)
   await down(0, pts.stick.x, pts.stick.y);
   await move(0, pts.stick.x + 4, pts.stick.y);
   await move(0, pts.stick.x + pts.radius, pts.stick.y);
-  await page.waitForTimeout(2600);
-  await shot('10-hold-into-pit');
-  await page.waitForTimeout(1500);
-  // a held thumb jitters in real life; send small moves so the stick can re-adopt it
-  for (let i = 0; i < 6; i++) { await move(0, pts.stick.x + pts.radius + (i % 2 ? 2 : -2), pts.stick.y); await page.waitForTimeout(250); }
-  await shot('11-after-respawn-thumb-still-down');
-  await page.waitForTimeout(1200);
-  await shot('12-still-running-after-respawn');
+  await shotHud('08-firm-right');                       // right=1.00, |v|=200
   await up(0);
+  await down(0, pts.stick.x, pts.stick.y);
+  await move(0, pts.stick.x + 4, pts.stick.y);
+  await move(0, pts.stick.x - pts.radius, pts.stick.y);
+  await shotHud('09-firm-left');                        // left=1.00
+  await up(0);
+  await down(3, pts.run.x, pts.run.y); await up(3);     // RUN on
+  await down(0, pts.stick.x, pts.stick.y);
+  await move(0, pts.stick.x + 4, pts.stick.y);
+  await move(0, pts.stick.x + pts.radius, pts.stick.y);
+  await shotHud('10-run-on-firm-right');                // right=1.00 sprint=1.00, |v|=240
+  await up(0);
+  await shotHud('10b-stick-up-run-still-on');           // sprint=1.00 alone: RUN is a toggle
+  await down(3, pts.run.x, pts.run.y); await up(3);     // RUN off
+  await shotHud('11-run-off');                          // nothing held
+  await page.waitForTimeout(1500);
+
+  // PHASE C - DIE WHILE HOLDING: the thumb stays down through pit deaths and jitters like a real
+  // one; after every respawn the stick must give its output straight back.
+  await down(0, pts.stick.x, pts.stick.y);
+  await move(0, pts.stick.x + 4, pts.stick.y);
+  await move(0, pts.stick.x + pts.radius, pts.stick.y);
+  for (let i = 0; i < 24; i++) {
+    await move(0, pts.stick.x + pts.radius + (i % 2 ? 2 : -2), pts.stick.y);
+    await page.waitForTimeout(150);
+    if (i % 3 === 2) await shotHud(`12-hold-through-death-${String(i).padStart(2, '0')}`);
+  }
+  await shot('13-after-deaths-thumb-never-lifted');
+  await up(0);
+  await shotHud('14-released-at-end');                  // nothing held
 
   gate('touch session: no console errors', res.errors.length === 0, res.errors.join(' | '));
-  res.note = 'Read the shots: 01a labels; 02 controls visible; 03 |v|~90 (light); 04 |v|~200; 05/06 airborne with 2-3 fingers; 07 moving left; 08 sprint ~240; 09 |v|=0; 10 pit; 11/12 hero runs again after respawn with the thumb never lifted.';
+  res.note = 'Read the shots (overlay line INPUT held is ground truth): 03 right~0.5; 04 +jump; 05 +attack (3 fingers); 06 only the stick; 07 nothing; 08 right=1; 09 left=1; 10 right+sprint; 10b sprint alone (toggle); 11 nothing; 12-* thumb held through deaths, STATE flips to GAME_OVER (INPUT -) then right=1.00 again after each respawn; 14 nothing held.';
   await context.close();
 }
 

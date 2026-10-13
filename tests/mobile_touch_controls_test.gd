@@ -354,7 +354,10 @@ func _test_visibility_rules() -> void:
 	var radius: float = stick.base_radius_dp * stick.unit
 	var origin: Vector2 = stick.global_position + stick.size * Vector2(0.5, 0.45)
 
-	# pause while a finger is down: everything must release and the controls hide
+	var jump := lay.find_button(&"jump")
+	var run := lay.find_button(&"sprint")
+
+	# PAUSE with a finger down: injection SUSPENDS (controls stay up, dimmed) - nothing may stay held
 	_touch(0, true, origin)
 	await get_tree().process_frame
 	_drag(0, origin + Vector2(radius, 0.0))
@@ -362,38 +365,75 @@ func _test_visibility_rules() -> void:
 	_check("held right before pause", Input.get_axis("move_left", "move_right") > 0.9)
 	StateMachine.change_state(StateMachine.State.PAUSED)
 	await get_tree().process_frame
-	_check("pause hides the controls", not MobileLayoutManager.controls_visible)
+	_check("pause keeps the controls up but SUSPENDED", MobileLayoutManager.controls_visible and MobileLayoutManager.controls_suspended)
 	_check("pause releases every held action", Input.get_axis("move_left", "move_right") == 0.0 and TouchActions.held_count() == 0)
-	_touch(0, false, origin)
+	_touch(0, false, origin)   # the thumb lifts during the pause
+	await get_tree().process_frame
 	StateMachine.change_state(StateMachine.State.PLAYING)
 	await get_tree().process_frame
-	_check("resume shows them again", MobileLayoutManager.controls_visible)
-	_check("the vanished finger did not come back as a held input", Input.get_axis("move_left", "move_right") == 0.0)
+	_check("resume: live again, no longer suspended", MobileLayoutManager.controls_visible and not MobileLayoutManager.controls_suspended)
+	_check("a thumb that lifted during the pause is NOT restored", Input.get_axis("move_left", "move_right") == 0.0)
 
-	# a thumb that stays DOWN across a death / respawn must resume without lifting:
-	# GAME_OVER hides + releases; while hidden its drags press nothing; once the
-	# controls are back the stick adopts the orphaned finger on its next drag.
+	# DEATH with the thumb still down: GAME_OVER suspends, the thumb stays tracked, and its
+	# output comes back the moment the hero respawns - no lift, no re-push, not even a jitter
 	_touch(0, true, origin)
 	await get_tree().process_frame
 	_drag(0, origin + Vector2(radius, 0.0))
 	await get_tree().process_frame
 	StateMachine.change_state(StateMachine.State.GAME_OVER)
 	await get_tree().process_frame
-	_check("death hides the controls and releases the stick", not MobileLayoutManager.controls_visible and Input.get_axis("move_left", "move_right") == 0.0)
+	_check("death keeps the controls up (no flicker), suspended and silent", MobileLayoutManager.controls_visible and MobileLayoutManager.controls_suspended and Input.get_axis("move_left", "move_right") == 0.0)
 	_drag(0, origin + Vector2(radius, 5.0))
 	await get_tree().process_frame
-	_check("while hidden, an orphaned finger's drags press nothing", Input.get_axis("move_left", "move_right") == 0.0)
+	_check("while suspended, the thumb's drags press nothing", Input.get_axis("move_left", "move_right") == 0.0)
 	StateMachine.change_state(StateMachine.State.PLAYING)
 	await get_tree().process_frame
-	_check("respawn: controls back, nothing pressed until the thumb moves", MobileLayoutManager.controls_visible and Input.get_axis("move_left", "move_right") == 0.0)
-	_drag(0, origin + Vector2(radius, 8.0))
-	await get_tree().process_frame
-	_drag(0, origin + Vector2(radius + 40.0, 8.0))
-	await get_tree().process_frame
-	_check("respawn: the still-held thumb is ADOPTED on its next drag (no lift needed)", Input.get_axis("move_left", "move_right") > 0.5, "axis=%f" % Input.get_axis("move_left", "move_right"))
+	_check("respawn: the held thumb's output returns AT ONCE", MobileLayoutManager.controls_visible and Input.get_axis("move_left", "move_right") > 0.95, "axis=%f" % Input.get_axis("move_left", "move_right"))
 	_touch(0, false, origin)
 	await get_tree().process_frame
-	_check("lifting the adopted finger releases it", Input.get_axis("move_left", "move_right") == 0.0)
+	_check("lifting it releases", Input.get_axis("move_left", "move_right") == 0.0)
+
+	# a thumb that touches down DURING the death animation counts (it used to be ignored)
+	StateMachine.change_state(StateMachine.State.GAME_OVER)
+	await get_tree().process_frame
+	_touch(0, true, origin)
+	await get_tree().process_frame
+	_drag(0, origin + Vector2(radius, 0.0))
+	await get_tree().process_frame
+	_check("a press made during the death animation is tracked, nothing pressed yet", stick.is_active() and Input.get_axis("move_left", "move_right") == 0.0)
+	StateMachine.change_state(StateMachine.State.PLAYING)
+	await get_tree().process_frame
+	_check("...and takes effect at respawn", Input.get_axis("move_left", "move_right") > 0.95)
+	_touch(0, false, origin)
+	await get_tree().process_frame
+
+	# a JUMP held through a death must NOT fire on respawn (a held key would not either)
+	StateMachine.change_state(StateMachine.State.GAME_OVER)
+	await get_tree().process_frame
+	_touch(1, true, _centre(jump))
+	await get_tree().process_frame
+	StateMachine.change_state(StateMachine.State.PLAYING)
+	await get_tree().process_frame
+	_check("a button held through a death does not fire on respawn", not Input.is_action_pressed("jump"))
+	_touch(1, false, _centre(jump))
+	await get_tree().process_frame
+
+	# RUN is a toggle: it survives a death (the controls never hid) and still turns off
+	_touch(3, true, _centre(run))
+	await get_tree().process_frame
+	_touch(3, false, _centre(run))
+	await get_tree().process_frame
+	StateMachine.change_state(StateMachine.State.GAME_OVER)
+	await get_tree().process_frame
+	_check("death suspends RUN (sprint released while dead)", not Input.is_action_pressed("sprint") and run.is_on())
+	StateMachine.change_state(StateMachine.State.PLAYING)
+	await get_tree().process_frame
+	_check("RUN comes back on at respawn", Input.is_action_pressed("sprint"))
+	_touch(3, true, _centre(run))
+	await get_tree().process_frame
+	_touch(3, false, _centre(run))
+	await get_tree().process_frame
+	_check("and a tap still turns it off", not Input.is_action_pressed("sprint") and not run.is_on())
 
 	# a lock (modal panel / cutscene) hides + releases, unlock restores
 	MobileLayoutManager.set_locked(&"test_modal", true)
@@ -478,7 +518,7 @@ func _test_stick_edges_and_orphans() -> void:
 	await get_tree().process_frame
 
 	# a finger that PRESSED WHILE HIDDEN gets drags but never a release: it must NOT be adopted
-	StateMachine.change_state(StateMachine.State.GAME_OVER)
+	StateMachine.change_state(StateMachine.State.TRANSITIONING)
 	await get_tree().process_frame
 	_touch(0, true, origin)
 	await get_tree().process_frame
@@ -497,9 +537,9 @@ func _test_stick_edges_and_orphans() -> void:
 	await get_tree().process_frame
 	_drag(0, origin + Vector2(radius, 0.0))
 	await get_tree().process_frame
-	StateMachine.change_state(StateMachine.State.GAME_OVER)
+	StateMachine.change_state(StateMachine.State.TRANSITIONING)
 	await get_tree().process_frame
-	_check("hiding remembers the owned finger", stick._orphan == 0)
+	_check("a real hide (scene transition) remembers the owned finger", stick._orphan == 0)
 	_touch(0, false, origin)
 	await get_tree().process_frame
 	_check("its release (delivered even while hidden) clears the memory", stick._orphan == -1)
@@ -517,7 +557,7 @@ func _test_stick_edges_and_orphans() -> void:
 	# a button pressed then hidden within its press-in tween must not stay DRAWN pressed
 	var jump := lay.find_button(&"jump")
 	_touch(1, true, _centre(jump))
-	StateMachine.change_state(StateMachine.State.GAME_OVER)
+	StateMachine.change_state(StateMachine.State.TRANSITIONING)
 	await get_tree().create_timer(0.25).timeout
 	_check("a press cut short by hiding leaves the button drawn idle", jump._press_amount == 0.0, "press_amount=%f" % jump._press_amount)
 	_touch(1, false, _centre(jump))

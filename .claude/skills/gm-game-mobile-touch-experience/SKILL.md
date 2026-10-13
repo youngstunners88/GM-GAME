@@ -25,7 +25,7 @@ finger -> Godot GUI -> VirtualJoystick / VirtualButton -> TouchActions -> InputM
 |---|---|
 | `mobile_layout_manager.gd` | **Autoload** `MobileLayoutManager`. WHETHER controls exist (touch device, PLAYING, a platformer `Player` or the `touch_controls_wanted` group, not locked, not keyboard-driving), WHICH layout, relayout on `size_changed`, release-on-hide, first-run hint, prefs (`user://touch_controls.cfg`). |
 | `touch_metrics.gd` | Pure device maths: phone/tablet by **smallest side in dp (<600 = phone)**, orientation, `dp` = canvas units per dp, safe area (notch insets + minimum edge margin), `layout_key()`. |
-| `touch_actions.gd` | The injector: `press/release/set_axis/release_all/buzz`. Mirrors `TouchScreenButton`: `Input.action_press(strength)` for polled reads **and** an `InputEventAction` on press/release edges for `_input` handlers. |
+| `touch_actions.gd` | The injector: `press/release/set_axis/release_all/set_suspended/buzz`. Mirrors `TouchScreenButton`: `Input.action_press(strength)` for polled reads **and** an `InputEventAction` on press/release edges for `_input` handlers. |
 | `virtual_control.gd` | Base `Control`: anchor corner + offset in dp + radius in dp, round hit test, theme lookup, label drawing. |
 | `virtual_joystick.gd/.tscn` | Analog stick. FIXED / DYNAMIC (default) / FOLLOWING. Horizontal = **analog strength**; up/down = deliberate, hysteresis-gated digital (ladders, drop-through, ground pound). |
 | `virtual_button.gd/.tscn` | Round thumb button. HOLD (jump, attack, dash) or TOGGLE (run). Vector glyphs, no font dependence. |
@@ -62,20 +62,25 @@ when the window fills the screen; on web it is empty so a 14dp side/top and 18dp
 - **RUN is a toggle** (tap on/off) so the right thumb is free for JUMP while sprinting.
 - **Dash direction uses only the sign** of the move axis (`player.gd:_try_air_dash`): an analog light tilt must
   not weaken the dash (test `light-tilt air dash`, mutation-checked: 178 vs 400 without it).
-- **Hide = release**: pause, transition, lock, keyboard use, focus loss, layout swap all call
-  `TouchActions.release_all()`. Nothing may stay held by a finger that is gone.
-- **A thumb still down across a death / respawn / pause is RESUMED, but only if this stick owned it**: Godot keeps
+- **Hide = release; death/pause = SUSPEND.** Scene transitions, locks, keyboard use, focus loss and layout swaps hide the
+  controls and call `TouchActions.release_all()`. A DEATH (GAME_OVER) or a PAUSE keeps the controls up, dimmed to 0.4:
+  `TouchActions.set_suspended(true)` releases every pressed action but REMEMBERS what the fingers hold, fingers keep being
+  tracked, and on resume the held direction and RUN come straight back (a thumb never has to lift; a press made during the
+  death animation counts; no flicker on every death). Edge actions (jump, attack, dash, interact) are deliberately not
+  restored, so a JUMP held through a death does not fire on respawn (a held key would not either).
+- **After a real hide (scene transition, lock) a thumb still down is RESUMED, but only if this stick owned it**: Godot keeps
   routing a finger's drags AND its release to the control it pressed even while that control is hidden (measured), so
-  `release()` remembers the finger (`_orphan`) and its next drag restarts the stick. A finger that pressed while the
-  controls were hidden also produces drags but its release is NEVER delivered (measured) - adopting it would leave the
-  hero running forever, so it is ignored. The same goes for a rebuilt layout (rotation): the new stick never owned it.
-  (Real-browser playtest found the dead-stick-after-death bug; the adversarial review found the stuck-input hazard of
-  the naive fix.)
+  `release()` remembers the finger and its base (`_orphan`, `_orphan_origin`); its next drag resumes the stick on the SAME base,
+  so a thumb that has not moved gets the same output straight back. A finger that pressed while the controls were hidden also
+  produces drags but its release is NEVER delivered (measured) - adopting it would leave the hero running forever, so it is
+  ignored. The same goes for a rebuilt layout (rotation): the new stick never owned it.
+  (Real-browser playtest found the dead-stick-after-death bug; the adversarial review found the stuck-input hazard of the
+  naive fix; the suspend model then removed the death/pause cases from this machinery.)
 - **The stick measures from where the thumb landed.** Only the DRAWN base is clamped onto the screen near the region
   edge; output is measured from the logical origin, so touch-down alone never reads as a push.
 - **Vertical intent beats sidestep**: while up/down is engaged and |y| > |x| the horizontal axis is 0, otherwise a thumb
   a few degrees off vertical drifts the hero off a ladder (player.gd moves x at 0.6 x climb speed while climbing).
-- RUN switches itself off whenever the controls hide (death, pause); tap it again.
+- RUN survives death and pause (it is suspended, not reset) but switches itself off on a real hide (transition, lock).
 - **Hybrid devices**: a real key press hides the controls, the next screen touch brings them back.
   A real finger also proves a touchscreen even if the platform said no.
 - First time controls appear: labels flash for 4.5 s (`flash_hints()`), once per install.
@@ -127,7 +132,7 @@ node scripts/touch-playtest.mjs http://localhost:8899/game/index.html web_verify
 `touch-playtest.mjs` boots the export in Chromium with a touch-capable mobile context, taps PLAY, then sends real
 multi-finger events over CDP (`Input.dispatchTouchEvent`): light tilt, firm push, JUMP + ATK with the stick held,
 RUN toggle, hold-through-death. Every shot carries the game's own F3 overlay (`?debug=1`: player pos, |v|, floor,
-dying) as hard evidence - read the PNGs. Desktop profile = keyboard only, no touch layer. A console error
+dying, and an `INPUT held:` line listing every action the game really sees held) as hard evidence - read the PNGs, not the button visuals. CDP note: `touchEnd` must carry no points (it ends everything); release ONE finger with a `touchMove` listing the others. Desktop profile = keyboard only, no touch layer. A console error
 `Can't change this state while flushing queries ... area_set_shape_disabled` is PRE-EXISTING game noise (reproduces
 with the keyboard on desktop) and is whitelisted by exact text; anything else fails the gate.
 Phone sizes use DPR 2 and tablet DPR 1 to keep SwiftShader fast; dp (== CSS px) is what the layout sees either way.

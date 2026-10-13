@@ -45,6 +45,13 @@ func _compose() -> String:
 	lines.append("BUILD %s   PAUSED %s   TIME_SCALE %.2f"
 		% [GameManager.BUILD_TAG, str(get_tree().paused), Engine.time_scale])
 	lines.append("STATE %s" % StateMachine.get_current_state())
+	# What the game REALLY sees held (keyboard, gamepad or on-screen touch alike):
+	# the ground truth behind any "the button looks pressed / the hero will not move".
+	var held := ""
+	for act: String in ["move_left", "move_right", "move_up", "move_down", "jump", "attack", "dash", "sprint", "interact"]:
+		if InputMap.has_action(act) and Input.is_action_pressed(act):
+			held += "%s=%.2f " % [act.trim_prefix("move_"), Input.get_action_strength(act)]
+	lines.append("INPUT held: %s" % (held if held != "" else "-"))
 	var pl := get_tree().get_first_node_in_group("player")
 	if pl != null and is_instance_valid(pl):
 		var v: Vector2 = pl.get("velocity") if pl.get("velocity") != null else Vector2.ZERO

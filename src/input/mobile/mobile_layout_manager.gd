@@ -9,9 +9,11 @@ extends Node
 ## Visible only when ALL hold:
 ##   * the device has a touchscreen (or was forced: `--touch-ui` / GM_TOUCH_UI=1)
 ##   * the player is not driving with a keyboard right now (hybrid laptops/iPads)
-##   * the game is PLAYING (not menu / pause / transition / game over / victory)
-##     (a scene that opted in via the group below may also keep them through
-##     LEVEL_COMPLETE, e.g. the skippable Stage 3 defeat film)
+##   * the game is PLAYING (not menu / transition / victory). A death (GAME_OVER) or a
+##     pause keeps visible controls up SUSPENDED (dimmed, nothing injected, fingers
+##     still tracked, direction/run restored on resume). A scene that opted in via
+##     the group below may also keep them through LEVEL_COMPLETE (the skippable
+##     Stage 3 defeat film)
 ##   * the scene holds a platformer `Player`, or opted in via the
 ##     `touch_controls_wanted` group (the extension point for new chambers)
 ##   * nothing has locked it (`set_locked`, e.g. a modal panel or a cutscene)
@@ -29,6 +31,8 @@ const LAYER := 18
 const GROUP_WANTED := &"touch_controls_wanted"
 const REFRESH_SECONDS := 0.2
 const HINT_SECONDS := 4.5
+## Layout opacity while visible but suspended (dead / paused).
+const SUSPENDED_ALPHA := 0.4
 const CONFIG_PATH := "user://touch_controls.cfg"
 const DEFAULT_THEME := preload("res://src/input/mobile/themes/smoke_realm_touch_theme.tres")
 const LAYOUT_SCENES := {
@@ -45,6 +49,8 @@ var is_touch_device: bool = false
 var device_class: StringName = TouchMetrics.CLASS_DESKTOP
 var orientation: StringName = TouchMetrics.LANDSCAPE
 var controls_visible: bool = false
+## Visible but not injecting: the hero is dead (GAME_OVER) or the game is paused.
+var controls_suspended: bool = false
 ## Player preferences (persisted in user://touch_controls.cfg).
 var button_scale: float = 1.0
 var haptics_enabled: bool = true
@@ -95,6 +101,7 @@ func _process(delta: float) -> void:
 ## Re-evaluate visibility now (it also runs 5x a second and on state changes).
 func refresh() -> void:
 	_set_shown(_wants_controls())
+	_set_suspended(controls_visible and _wants_suspended())
 
 ## Hide the controls (and release everything) while `key` is locked: a modal
 ## panel, a dialogue, a cutscene. Re-enable with `set_locked(key, false)`.
@@ -148,13 +155,26 @@ func _wants_controls() -> bool:
 	if not enabled or not is_touch_device or _keyboard_mode or not _locks.is_empty():
 		return false
 	var opted_in: bool = not get_tree().get_nodes_in_group(GROUP_WANTED).is_empty()
-	if StateMachine.is_playing():
+	var state: int = StateMachine.get_state_enum()
+	if state == StateMachine.State.PLAYING:
 		return opted_in or _platformer_player_present()
 	# LEVEL_COMPLETE is the boss-defeat film: it is skipped by HOLDING jump, which
 	# the old always-on overlay allowed. Only a scene that explicitly opted in keeps
 	# the controls through it; the victory / menu screens never opt in, so their
 	# buttons are never covered by the stick region.
-	return opted_in and StateMachine.get_state_enum() == StateMachine.State.LEVEL_COMPLETE
+	if state == StateMachine.State.LEVEL_COMPLETE:
+		return opted_in
+	# A death (GAME_OVER) or a pause keeps already-visible controls up, SUSPENDED:
+	# they stop pressing actions but keep tracking the fingers. Hiding them instead
+	# made them flicker out and back on every death and ignored a thumb that touched
+	# during the ~1 s death animation until it was lifted and re-placed.
+	if controls_visible and _wants_suspended():
+		return opted_in or _platformer_player_present()
+	return false
+
+func _wants_suspended() -> bool:
+	var state: int = StateMachine.get_state_enum()
+	return state == StateMachine.State.GAME_OVER or state == StateMachine.State.PAUSED
 
 ## A platformer Player is on stage.
 func _platformer_player_present() -> bool:
@@ -181,9 +201,23 @@ func _set_shown(shown: bool) -> void:
 			flash_hints()
 	else:
 		_release_everything()
+		controls_suspended = false
+		TouchActions.set_suspended(false)
 		_layer.visible = false
 		_end_hint()
 	controls_visibility_changed.emit(shown)
+
+## Dim + stop injecting (dead / paused) or undim + restore the held direction.
+func _set_suspended(on: bool) -> void:
+	if on == controls_suspended:
+		return
+	controls_suspended = on
+	TouchActions.set_suspended(on)
+	if _layout != null:
+		if _fade != null and _fade.is_valid():
+			_fade.kill()
+		_fade = create_tween()
+		_fade.tween_property(_layout, "modulate:a", SUSPENDED_ALPHA if on else 1.0, 0.15)
 
 func _release_everything() -> void:
 	if _layout != null:
@@ -228,7 +262,7 @@ func _build_layout(key: StringName) -> void:
 		# a swap while showing (rotation): fade the new layout in
 		_layout.modulate.a = 0.0
 		_fade = create_tween()
-		_fade.tween_property(_layout, "modulate:a", 1.0, 0.22)
+		_fade.tween_property(_layout, "modulate:a", SUSPENDED_ALPHA if controls_suspended else 1.0, 0.22)
 	var hint_btn: VirtualControl = _layout.find_role(&"hint")
 	if hint_btn is VirtualButton:
 		(hint_btn as VirtualButton).activated.connect(func() -> void: flash_hints())

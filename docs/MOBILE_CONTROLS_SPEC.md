@@ -44,7 +44,7 @@ Phone vs tablet is decided by the smallest window side in dp (< 600 = phone), ne
 | Centre | "?" | shows labels | bottom-centre r15 | same |
 
 `phone_portrait.tscn` stacks the right-hand buttons in one column up the edge. Idle opacity 0.30, pressed 0.78.
-Layout recomputes on `size_changed` (rotate / resize safe) and releases every held action when it swaps.
+Layout recomputes on `size_changed` (rotate / resize safe) and releases every held action when it swaps. A death or pause keeps the controls up, dimmed and SUSPENDED (nothing pressed, fingers still tracked, direction/run restored on resume); a scene transition or lock hides them and releases everything.
 
 ## ASCII-only labels
 
@@ -79,7 +79,7 @@ Touch (real device, hard refresh first):
 - Hold the stick, tap JUMP (twice = double jump) and ATK together.
 - RUN tap stays on, second tap stops. DASH in the air.
 - Keep the thumb down through a death/respawn: the stick resumes without lifting.
-- Rotate / resize: controls re-lay out, nothing sticks. Pause / resume: nothing keeps running.
+- Rotate / resize: controls re-lay out, nothing sticks. Pause / resume: nothing keeps running while paused.
 - Tablet: bigger buttons set further in from the edge; nothing covers the hero.
 
 Desktop parity: keyboard (WASD/arrows, Space, J, K, Shift, E) plays exactly as before; no touch layer drawn.
