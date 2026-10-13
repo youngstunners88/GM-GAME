@@ -7,6 +7,8 @@ allowed-tools: Bash, Read, Write, Edit
 
 # Inferno Bull: re-pose, de-mud, light (measured 2026-10-06)
 
+**2026-10-14 movement/contact follow-up:** use `.claude/skills/ep2-character-performance/SKILL.md` and `design/ep2/motion/CHARACTER_MOTION_CONTRACT.md`. Rest-arm locks documented here prevent known skin tears; they are a temporary safety measure, not proof of fluid motion or correct firing grip. Do not remove them blindly: first prove a rest-aware, skin-safe action with independent palm/prop contacts. The current woods firing transform shifts the rifle 0.2 m from the hand and needs a grip-preserving authoring pass; no runtime fix is claimed by the new skills.
+
 Source model: Tripo (`tripo_node_*`, texture `Bull_minotaur_3d_model_Clone1_Clone1`), 67,927 verts, 24-bone Mixamo-style armature, action `Idle_02`.
 Design reference: Drive `Inferno Bull with rifle.jpg` (`C:\Users\SAMSUNG\Downloads\Inferno Bull with rifle.jpg`) - visible face (gold aviators, nose ring, cigar), relaxed arm resting at the pouch, rifle in the other hand.
 Run only headless (`blender-headless-render-safety`): the bull script builds ~500 objects.

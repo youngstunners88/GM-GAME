@@ -26,6 +26,7 @@ CONTEXT.md per workspace, kept current by skill `context-md-upkeep`.)
 | image -> 3D | Tripo H3.1 / Meshy via Muapi (`tools/ep2_forge/muapi_3d.py`) | same |
 | modular kit / clean-up / bake | headless Blender (`tools/ep2_blender/*`), `tools/ep2_forge/ai_prop_to_game.py` | `ep2-set-piece-forge` |
 | founder's own GLB (Drive) | curl the Drive id, decimate, retarget broken Tripo rigs onto our skeletons | `ep2-founder-asset-swap` |
+| Bull/bear motion + physical grip | existing founder rigs + approved performance/local Blender authoring; Tripo only when needed and authorized | `ep2-character-performance`, `ep2-rest-aware-retargeting`, `ep2-prop-contact-animation` |
 | SFX / voices / ambience | ElevenLabs (`scripts/generate_audio.py`, `elevenlabs` CLI) | `game-audio-forge`, `ep2-voice-barks` |
 
 ## Import rules (every new asset, same commit)

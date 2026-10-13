@@ -1,28 +1,27 @@
 {
-  "observed_remote_sha": "aebdee36797cd7f85776ee2e6802ef952dd32f6c",
-  "objective": "Prepare founder-requested personal armory and living-woods skills; preserve concurrent Claude world foundations.",
+  "observed_remote_sha": "45f5d1142084baadc926965c54699a8fa0892c41",
+  "objective": "Prepare transcript-based Bull/bear motion, retargeting, prop-contact and QA skills. Latest founder request is skills-only.",
   "task_paths": [
-    ".claude/skills/ep2-living-woods",
-    ".claude/skills/ep2-personal-armory",
-    ".claude/skills/ep2-bear-awareness",
-    ".claude/skills/ep2-inferno-stealth",
-    ".claude/skills/ep2-mountain-quad-escape",
-    ".claude/skills/ep2-encounter-checkpoints",
-    "design/ep2/LIVING_WOODS_CONTRACT.md",
-    "design/ep2/LIVING_WOODS_DECISIONS.md",
+    ".claude/skills/ep2-character-performance",
+    ".claude/skills/ep2-performance-guides",
+    ".claude/skills/ep2-rest-aware-retargeting",
+    ".claude/skills/ep2-prop-contact-animation",
+    ".claude/skills/ep2-character-motion-qa",
+    "design/ep2/motion",
     "CLAUDE.md",
     "AGENTS.md",
     "STATUS.md"
   ],
   "evidence": {
-    "baseline_sha": "aebdee36797cd7f85776ee2e6802ef952dd32f6c",
-    "skill_validation": "Six frontmatters, 28 referenced skill/manifest paths, decision JSON and diff whitespace checked. Runtime untouched.",
-    "decision_attempts": "Jev and Microsoft Decision each denied by proxy CONNECT 403; no returned verdict. See design/ep2/LIVING_WOODS_DECISIONS.md.",
-    "prior_release_reference": "docs/episode2-quality/blender-environment-2026-10-09/release-receipt.json (historical)"
+    "source_baseline": "45f5d1142084baadc926965c54699a8fa0892c41",
+    "transcript": "design/ep2/motion/WORKFLOW_TRANSCRIPT.txt; user attachment read in full, preserved verbatim and SHA512-verified.",
+    "rig_inventory": "Both current GLBs have 24 joints including hands, with no finger joints. Source inspection only.",
+    "validation": "5 skill metadata/routes; draft validator exit 0, input gate exit 2, false-ready and bad-digest exit 1. No runtime edits or new rendered proof.",
+    "legacy_skill": "Original character-performance content retained in references/historical-performance-2026-10-01.md."
   },
   "unresolved": [
-    "OpenRouter destination access for both requested model reviews.",
-    "Runtime armory, dangerous woods, corpse loot and retry remain implementation work; skills do not claim them playable."
+    "Motion performance source, phases and independent contact markers remain future authoring work.",
+    "BFS/model license and provider runs unverified; current Google Doc URL blocked, transcript attachment used instead."
   ],
-  "next_action": "Refresh master before implementation, read ep2-living-woods, allocate file ownership, retry decision reviews only after network access changes."
+  "next_action": "Refresh master; start ep2-character-performance when implementation is requested. Preserve Claude world/mobile work and verify full motion/contact before runtime release."
 }

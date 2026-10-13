@@ -21,21 +21,9 @@ updates that may supersede or adjust what's in `goldmine_protocol_design.md`.
 - Crypto theming is subtle: Collectibles are "Ethereum rings" and coins. Power-ups reference protocols. But the game must be fun even if you know nothing about crypto.
 
 ## Power-Up Specs (Exact Numbers)
-- Weed Leaves / Blunt Buds (SmokeRing/Blaze Mode):
-  - Duration: 12 seconds
-  - Speed multiplier: 1.4x
-  - Jump boost: 1.3x higher
-  - Auto-puff: Every 2 seconds, emits smoke cloud projectile that damages enemies on contact
-  - Visual: Lil Blunt glows green, trailing smoke particles
-- Magic Mushrooms:
-  - Duration: 10 seconds OR until hit
-  - Size scale: 1.5x
-  - Can break BreakableBlock nodes
-  - Visual: Lil Blunt grows, screen shake on block break
-- Diamond Shards (Diamonds Protocol):
-  - Duration: 8 seconds
-  - Invincible + damaging aura (radius ~32px)
-  - Visual: Diamond shield bubble, rainbow shimmer
+- Weed Leaves / Blunt Buds (SmokeRing/Blaze Mode): 12 seconds, 1.4x speed, 1.3x jump; every 2 seconds a defensive smoke projectile damages enemies. Visual: green glow and trailing smoke.
+- Magic Mushrooms: 10 seconds OR until hit, 1.5x size, can break BreakableBlock nodes. Visual: growth and screen shake on block break.
+- Diamond Shards (Diamonds Protocol): 8 seconds, invincibility + damaging aura (~32px radius). Visual: Diamond shield bubble and rainbow shimmer.
 
 ## Enemy Behaviors
 - Greedy Tax Collector: Patrols platform edge-to-edge. Speed 60px/s. Stops at ledges. Contact damage.
@@ -62,6 +50,7 @@ updates that may supersede or adjust what's in `goldmine_protocol_design.md`.
 10. Boss arena
 
 ## Good Work Looks Like
+- Bull/bear acting and grips: `design/ep2/motion/TRANSCRIPT_ADAPTATION.md` + `CHARACTER_MOTION_CONTRACT.md`; skills route from `ep2-character-performance`. Keep performance guides separate from appearance refs and require independent physical contacts.
 - Every mechanic doc includes: purpose, trigger, behavior, numbers, visual/audio cues
 - Level docs describe platform placement in terms of screen sections (16:9, 1920x1080 base)
 - Balance notes explain WHY numbers were chosen

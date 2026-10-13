@@ -6,7 +6,7 @@ coach, "The Lesson 3.1"; kept current by skill `context-md-upkeep`.)
 
 ## Shape of the game
 - Episodes 1 (2-D platformer: Smoke Realm, Blaze, Gold Rush) and Episode 2 (FIRST-PERSON shooter: runner -> cliff film -> hideout
-  range -> mine lift -> bear woods -> quad -> spy point). Lil Blunt ALWAYS holds his Winchester in first person in Episode 2.
+  range -> mine lift -> bear woods -> quad -> spy point). Keep the equipped firearm in first person; personal armory rules are in `CLAUDE.md`.
 - Episode 2 story rooms extend `Ep2Interlude` (`src/episode2/chamber/interlude_base.gd`): viewmodel, HUD, beats, `step(delta)`
   (deterministic; tests and capture rigs drive it). New per-room systems are stepped from the room's `_tick`, never `_process`.
 
@@ -23,6 +23,7 @@ browser check `scripts/touch-playtest.mjs`. Episode 2 first-person rooms do NOT 
 | mine lift | `src/episode2/chamber/mine_lift.gd` |
 | bear woods (forest, wind, birds, mine exit, golden-hour grade) | `src/episode2/chamber/woods_quad.gd`, `ep2_wildlife.gd`, `art/ep2_foliage_wind.gdshader` |
 | characters (Bull, bears) | `src/episode2/actors/` (`ep2_actor.gd`, `ep2_bear_arms_down.gd`) |
+| movement / grip workflow | `.claude/skills/ep2-character-performance/SKILL.md` + `design/ep2/motion/CHARACTER_MOTION_CONTRACT.md`; separate guide timing, rig rest, prop contacts and whole-clip evidence |
 | story arc rules | `.claude/skills/ep2-fort-knox-arc/SKILL.md` + `tests/ep2_fort_knox_arc_test.tscn` |
 
 ## Rules that bite

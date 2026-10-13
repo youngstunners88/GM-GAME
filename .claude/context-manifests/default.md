@@ -28,6 +28,7 @@ the next agent hunting for files that were renamed.
 | Touch / mobile / tablet controls | `.claude/skills/gm-game-mobile-touch-experience/SKILL.md`, then `src/input/mobile/mobile_layout_manager.gd` + the one control/layout you change; gate `tests/mobile_touch_controls_test.tscn`; browser `scripts/touch-playtest.mjs` |
 | Shooter (v1.2) | → `.claude/context-manifests/shooter.md` |
 | Episode 2 armory / living bears / Bull stealth / corpse arrows / retry / quad pursuit | `.claude/skills/ep2-living-woods/SKILL.md`, `design/ep2/LIVING_WOODS_CONTRACT.md`; then only the component skill and source paths for the task |
+| Bull/bear motion / retargeting / rifle, bow, magazine or quad contact | `.claude/skills/ep2-character-performance/SKILL.md`, `design/ep2/motion/CHARACTER_MOTION_CONTRACT.md`; then the needed guide/retarget/contact/QA component |
 | ICP / canisters | → `.claude/context-manifests/icp.md` |
 | Security / secrets / CI | `docs/security/GAME_SECURITY_CHECKLIST.md`, `scripts/security-sentinel.sh` |
 | Deploy / export | `.github/workflows/export-game.yml`, `scripts/verify-game.mjs` |

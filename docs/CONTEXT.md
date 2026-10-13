@@ -11,6 +11,7 @@ coach, "The Lesson 3.1"; kept current by skill `context-md-upkeep`.)
 - `docs/model-responses/<date>-<topic>.md`: raw outside-model answers (Astra, DeepSeek). Advice, never facts.
 - `docs/pck_budget_doc.md`: every pack addition with its size.
 - `docs/security/`: audit log + checklist (security sentinel).
+- Founder motion transcript/archive and adaptation: `design/ep2/motion/`; route through `ep2-character-performance`. Clip-plan validation is input evidence, not a rendered animation/contact approval.
 
 ## Naming
 - Topic docs: `[topic]_doc.md`. Intake of a founder delivery: `docs/episode2-quality/intake_<date>_doc.md`.

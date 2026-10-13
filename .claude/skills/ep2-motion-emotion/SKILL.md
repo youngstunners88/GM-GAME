@@ -4,6 +4,8 @@ description: Layer 5 of Episode 2 — skeletal animation and emotion for Lil Blu
 ---
 
 # FIRST decide: rigged clips, or a POSED hero? (founder 2026-09-29)
+
+**2026-10-14 Bull/bear motion route:** use `.claude/skills/ep2-character-performance/SKILL.md` for the founder's guided-video transcript, stiff walking and incorrect grips. It separates appearance from performance and requires rest-aware retargeting, independent prop contacts and whole-clip runtime proof. The static runner-hero/archer conventions below are historical for those specific assets, not the quality target for living woods characters. A generated video or a permanently locked arm is not a completed movement fix.
 | Situation | Use |
 |---|---|
 | The model has weapons/props **baked into the mesh** in a pose the founder chose (Meshy "Smiling Zipline Hero": pickaxe raised, golden revolver aimed) | **Posed hero + procedural body language** — `RunnerMotion.hero_pose()` (recoil kick, chop lean, duck sink, hit throw, hop lean, cheer bounce, run bob). A skeletal clip would swing the arms and deform the baked weapons. |
