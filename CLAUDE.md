@@ -47,6 +47,7 @@ same commit — a manifest that lies is worse than none.
 | Write code, build scenes, configure engine | /src | `.claude/context-manifests/default.md` | gdscript-skill |
 | Write docs, marketing, or changelogs | /docs | CONTEXT.md | — |
 | **Keep CONTEXT.md files / routing true; founder setup or toolkit doc** | update the workspace CONTEXT.md + tool roster | `assets/CONTEXT.md`, `src/CONTEXT.md`, `docs/CONTEXT.md` | `context-md-upkeep`, `gm-game-tool-roster` |
+| **Touch / mobile / tablet controls, joystick, thumb buttons, "controls cover the screen", cannot play on a phone** | `src/input/mobile/` (`MobileLayoutManager` autoload) | `.claude/skills/gm-game-mobile-touch-experience/SKILL.md`, `docs/architecture/adr-mobile-touch-controls.md` | `gm-game-mobile-touch-experience` |
 | **Founder reports smudges / blotches / blemishes** | **`blotch-hunter` agent** | `scripts/blotch-oracle.json` | `blotch-forensics`, `blotch-repair-gate` |
 | **Founder sends an aesthetic target for a room ("this is the aesthetic I want", rework the lift / walkway / cave)** | target -> Muapi refs -> Tripo + Blender kit -> graded captures -> Jev + Microsoft decisions | `.claude/skills/ep2-set-piece-forge/SKILL.md` | `ep2-set-piece-forge` |
 | **Blackouts / stop-start / checkpoints between hideout, lift and woods; "one motion"** | build the next chamber behind the current one, swap in one frame | `.claude/skills/ep2-no-blackouts/SKILL.md` | `ep2-no-blackouts` |

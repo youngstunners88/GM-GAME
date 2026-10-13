@@ -32,7 +32,7 @@ const SHOWN_FLAG := "user://how_to_play_shown.txt"
 ## initialisation time. Everything else about the table is unchanged.
 func _rows() -> Array:
 	return [
-	["Move", "A / D  or  Arrows", "tap  <  >"],
+	["Move", "A / D  or  Arrows", "thumb stick (push harder = faster)"],
 	["Jump", "Space / W", "tap JUMP  (again midair = double)"],
 	# Stage-aware: the Stage 1 weapon is a thrown SMOKE BOMB, not an axe — Lil
 	# Blunt does not own the pickaxe until he beats the Stage 1 Tax Collector
@@ -40,8 +40,8 @@ func _rows() -> Array:
 	# would describe a weapon the game will not give them.
 	["Attack", "J", "tap ATK  %s  (hold w/ Purple = fire breath)" % _weapon_word()],
 	["Dash", "K", "tap  DASH"],
-	["Run", "Shift  (hold)", "hold  RUN"],
-	["Climb", "W / S  or  Up / Down", "tap UP / DOWN  (on ladders)"],
+	["Run", "Shift  (hold)", "tap  RUN  (stays on, tap again to stop)"],
+	["Climb", "W / S  or  Up / Down", "stick UP / DOWN  (on ladders)"],
 	["Grab", "E", "tap  GRAB  (forges, doors, Oracle)"],
 ]
 

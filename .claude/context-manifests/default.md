@@ -24,6 +24,7 @@ the next agent hunting for files that were renamed.
 | Boss work | `src/boss/boss_base.gd` + the specific boss, `docs/architecture/adr-boss-ai-overhaul.md` |
 | Level work | `src/level/level_base.gd` + the specific level |
 | UI work | `src/ui/hud.gd` or `src/ui/main_menu.gd` + the target scene |
+| Touch / mobile / tablet controls | `.claude/skills/gm-game-mobile-touch-experience/SKILL.md`, then `src/input/mobile/mobile_layout_manager.gd` + the one control/layout you change; gate `tests/mobile_touch_controls_test.tscn`; browser `scripts/touch-playtest.mjs` |
 | Shooter (v1.2) | → `.claude/context-manifests/shooter.md` |
 | Episode 2 armory / living bears / Bull stealth / corpse arrows / retry / quad pursuit | `.claude/skills/ep2-living-woods/SKILL.md`, `design/ep2/LIVING_WOODS_CONTRACT.md`; then only the component skill and source paths for the task |
 | ICP / canisters | → `.claude/context-manifests/icp.md` |

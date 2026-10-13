@@ -144,7 +144,7 @@ func _show_control_hint() -> void:
     # font-audit 2026-08-01). Full controls live in the HOW TO PLAY panel.
     var touch := OS.get_name() in ["Android", "iOS"] or DisplayServer.is_touchscreen_available()
     if touch:
-        hint.text = "MOVE  < >   ·   JUMP   ·   ATK   ·   CLIMB  UP/DOWN"
+        hint.text = "STICK = move  ·  JUMP  ·  ATK  ·  DASH  ·  RUN"
     else:
         hint.text = "MOVE  A/D  ·  JUMP  W/Space  ·  ATTACK  J  ·  DASH  K"
     hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

@@ -1,0 +1,91 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/input/mobile/touch_layout.gd" id="1_layout"]
+[ext_resource type="PackedScene" path="res://src/input/mobile/virtual_joystick.tscn" id="2_stick"]
+[ext_resource type="PackedScene" path="res://src/input/mobile/virtual_button.tscn" id="3_button"]
+
+[node name="TabletLandscape" type="Control"]
+mouse_filter = 2
+script = ExtResource("1_layout")
+tier_scale = 1.2
+layout_name = &"tablet_landscape"
+
+[node name="Stick" parent="." instance=ExtResource("2_stick")]
+layout_mode = 0
+mode = 1
+region = Rect2(0.0, 0.2, 0.46, 0.8)
+rest_offset_dp = Vector2(136, 112)
+base_radius_dp = 58.0
+knob_radius_dp = 27.0
+
+[node name="Jump" parent="." instance=ExtResource("3_button")]
+layout_mode = 0
+anchor_corner = 1
+offset_dp = Vector2(112, 104)
+radius_dp = 40.0
+hit_pad_dp = 10.0
+role = &"jump"
+action = &"jump"
+mode = 0
+glyph = 1
+label = "JUMP"
+
+[node name="Attack" parent="." instance=ExtResource("3_button")]
+layout_mode = 0
+anchor_corner = 1
+offset_dp = Vector2(222, 82)
+radius_dp = 36.0
+hit_pad_dp = 10.0
+role = &"attack"
+action = &"attack"
+mode = 0
+glyph = 2
+label = "ATK"
+
+[node name="Dash" parent="." instance=ExtResource("3_button")]
+layout_mode = 0
+anchor_corner = 1
+offset_dp = Vector2(78, 206)
+radius_dp = 30.0
+hit_pad_dp = 8.0
+role = &"dash"
+action = &"dash"
+mode = 0
+glyph = 3
+label = "DASH"
+
+[node name="Run" parent="." instance=ExtResource("3_button")]
+layout_mode = 0
+anchor_corner = 1
+offset_dp = Vector2(194, 182)
+radius_dp = 28.0
+hit_pad_dp = 8.0
+role = &"run"
+action = &"sprint"
+mode = 1
+glyph = 4
+label = "RUN"
+
+[node name="Grab" parent="." instance=ExtResource("3_button")]
+layout_mode = 0
+anchor_corner = 1
+offset_dp = Vector2(324, 66)
+radius_dp = 28.0
+hit_pad_dp = 8.0
+role = &"grab"
+action = &"interact"
+mode = 0
+glyph = 5
+label = "GRAB"
+
+[node name="Hint" parent="." instance=ExtResource("3_button")]
+layout_mode = 0
+anchor_corner = 2
+offset_dp = Vector2(0, 28)
+radius_dp = 15.0
+hit_pad_dp = 14.0
+role = &"hint"
+action = &""
+mode = 0
+glyph = 6
+label = ""

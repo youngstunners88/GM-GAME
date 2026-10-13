@@ -10,6 +10,12 @@ coach, "The Lesson 3.1"; kept current by skill `context-md-upkeep`.)
 - Episode 2 story rooms extend `Ep2Interlude` (`src/episode2/chamber/interlude_base.gd`): viewmodel, HUD, beats, `step(delta)`
   (deterministic; tests and capture rigs drive it). New per-room systems are stepped from the room's `_tick`, never `_process`.
 
+## Touch controls (Episode 1, phones + tablets)
+Analog stick + thumb buttons live in `src/input/mobile/` and reach gameplay only as InputMap actions (`TouchActions`).
+Autoload `MobileLayoutManager` decides when they show (touch device, PLAYING, a platformer `Player` or group
+`touch_controls_wanted`). Skill `gm-game-mobile-touch-experience`; gate `tests/mobile_touch_controls_test.tscn`;
+browser check `scripts/touch-playtest.mjs`. Episode 2 first-person rooms do NOT opt in (they need a look-stick).
+
 ## Where things are (Episode 2)
 | what | file |
 |---|---|
