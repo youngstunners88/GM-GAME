@@ -199,6 +199,8 @@ var _glass_node: Node3D = null
 var _bull_guard_rifle: Node3D = null # Bull's own gun, separate from the traded reward
 var _bull_rest_arm: Ep2BullRestArm = null
 var _bull_rifle_ready: bool = false
+var _bull_motion: Ep2MotionLayer = null
+var _bull_shot_time: float = -99.0
 var _cigar_tip: MeshInstance3D = null
 var _cigar_smoke: CPUParticles3D = null
 var _anim_t: float = 0.0
@@ -1748,6 +1750,13 @@ func _build_bull(timber: StandardMaterial3D) -> void:
 	_build_bull_props()
 	_bull_rest_arm = Ep2BullRestArm.new()
 	_bull.skeleton.add_child(_bull_rest_arm)
+	_bull_motion = Ep2MotionLayer.new()
+	_bull_motion.actor = _bull
+	_bull_motion.bull_carry = true
+	_bull.skeleton.add_child(_bull_motion)
+	_bull.pose_stepped.connect(func(dt: float) -> void:
+		_bull_motion.aim_weight = move_toward(_bull_motion.aim_weight, 1.0 if _bull_rifle_ready else 0.0, dt * 4.0)
+		_bull_motion.recoil = exp(-maxf(0.0, _bull.motion_time - _bull_shot_time) * 14.0) if _bull.motion_time - _bull_shot_time < 0.5 else 0.0)
 	_bull.skeleton.skeleton_updated.connect(_sync_bull_hand_props)
 
 
@@ -1840,24 +1849,26 @@ func _sync_bull_hand_props() -> void:
 	if _bull_guard_rifle:
 		_bull_guard_rifle.visible = (_stand_t < 0.0 or _has_helmet) and not carrying_trade
 	var gun: Node3D = _rifle_node if carrying_trade else _bull_guard_rifle
-	var right: int = sk.find_bone("RightHand")
-	if gun == null or not gun.visible or right < 0:
+	var hand: int = sk.find_bone("RightHand" if carrying_trade else "LeftHand")
+	if gun == null or not gun.visible or hand < 0:
 		return
-	var palm: Vector3 = (sk.global_transform * sk.get_bone_global_pose(right)).origin
+	var hand_world: Transform3D = sk.global_transform * sk.get_bone_global_pose(hand)
+	var anchor: Vector3 = Ep2BullHero.RIGHT_PALM_M if carrying_trade else Ep2BullHero.LEFT_PALM_M
+	var palm: Vector3 = hand_world * (anchor * _bull.height_m / 2.4 / sk.global_transform.basis.get_scale().x)
 	if carrying_trade:
 		var stock_axis: Vector3 = Vector3(-1.0, 0.15, -0.10).normalized()
 		var depth: Vector3 = stock_axis.cross(Vector3.UP).normalized()
 		var up: Vector3 = depth.cross(stock_axis).normalized()
-		gun.global_transform = Transform3D(Basis(-depth, up, -stock_axis).scaled(Vector3.ONE * 1.05), palm - stock_axis * 0.12 - forward * 0.05)
+		gun.global_transform = Transform3D(Basis(-depth, up, -stock_axis).scaled(Vector3.ONE * 1.05), palm - stock_axis * (Ep2BullHero.GRIP_ALONG * 1.05))
 		return
 	if _bull_rifle_ready:
-		# DEMO / ready: both hands on the rifle, muzzle pointing where he faces (slightly up), stock at his shoulder.
+		# Restrained hip fire: preserve the sculpted fist/pouch; the free left fist holds the rifle.
 		var fwd_front: Vector3 = -forward
 		var muz: Vector3 = (fwd_front + Vector3.UP * 0.06).normalized()
 		var sd: Vector3 = muz.cross(Vector3.UP).normalized()
 		var lf: Vector3 = sd.cross(muz).normalized()
 		gun.global_transform = Transform3D(Basis(sd, lf, muz).scaled(Vector3.ONE * BULL_RIFLE_SCALE),
-			palm + muz * (0.30 * BULL_RIFLE_SCALE))
+			palm + muz * (Ep2BullHero.GRIP_ALONG * BULL_RIFLE_SCALE))
 		return
 	# His OWN Winchester: shoulder carry. Muzzle up past his right shoulder, tipped a little out and back, gripped
 	# at the wrist of the stock, so its whole silhouette stands clear of his body from the front and both sides.
@@ -1870,7 +1881,7 @@ func _sync_bull_hand_props() -> void:
 	var lift: Vector3 = muzzle.cross(side).normalized()     # right-handed: side x lift = muzzle
 	var s: float = BULL_RIFLE_SCALE
 	gun.global_transform = Transform3D(Basis(side, lift, muzzle).scaled(Vector3.ONE * s),
-		palm + muzzle * (0.26 * s) - across * 0.02)
+		palm + muzzle * (Ep2BullHero.GRIP_ALONG * s))
 
 
 func _stand_up_done() -> bool:
@@ -1980,7 +1991,7 @@ func _build_bull_props() -> void:
 	_set_glass_on_table()
 	_bull_guard_rifle = (load(RIFLE_MODEL) as PackedScene).instantiate()
 	_bull_guard_rifle.name = "BullPersonalWinchester"
-	_bull.holder("RightHand").add_child(_bull_guard_rifle)
+	_bull.holder("LeftHand").add_child(_bull_guard_rifle)
 	_bull_guard_rifle.top_level = true
 	RunnerView.self_light(_bull_guard_rifle, 0.12, Color(1.0, 0.88, 0.72))
 	_fix_bull_materials(_bull_guard_rifle)
@@ -2704,7 +2715,8 @@ func _demo_raise() -> void:
 func _demo_fire() -> void:
 	_play_winchester()
 	if _bull:
-		var muzzle: Vector3 = _bull.position + _bull_front() * 1.5 + Vector3.UP * 1.2      # hip fire (no arm raise)
+		_bull_shot_time = _bull.motion_time
+		var muzzle: Vector3 = _bull_guard_rifle.to_global(Vector3(0, 0, 0.60)) if _bull_guard_rifle else _bull.position + _bull_front() * 1.5 + Vector3.UP * 1.2
 		var lt := OmniLight3D.new()
 		lt.light_color = Color(1.0, 0.8, 0.5)
 		lt.light_energy = 5.0

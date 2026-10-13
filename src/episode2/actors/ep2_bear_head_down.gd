@@ -5,7 +5,7 @@ extends SkeletonModifier3D
 ## yaw. `influence` blends it in (Ep2BearKit turns it on only in the sit_read pose).
 ## Angles are radians about the skeleton's lateral axis (+X): positive tips forward / down, negative tips back.
 
-@export var spine_pitch: float = -0.32
+@export var spine_pitch: float = 0.0     # Bear_Read_Seat already keeps the torso upright
 @export var neck_pitch: float = 0.10
 @export var head_pitch: float = 0.30
 

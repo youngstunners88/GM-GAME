@@ -237,8 +237,6 @@ var _bull_alarm: bool = false
 var _bull_calm_t: float = 0.0
 var _bull_fire_cd: float = 0.0
 var _bull_shots: int = 0
-var _bull_rifle_rest: Transform3D = Transform3D.IDENTITY
-var _bull_rifle_t: float = -1.0
 var _flashes: Array = []                            # [Node3D, seconds left]
 var _glide: Dictionary = {}                          # the player's eye moving onto / off the quad
 var _bull_swing: Dictionary = {}                     # Inferno swinging onto / off the saddle
@@ -1796,6 +1794,9 @@ func _tick_bull_defence(delta: float) -> void:
 			_bark_cd = 8.0
 			_begin_carry_line("vo_bull_spotted")
 	_bull.face_point(threat.actor.position)
+	var hero: Ep2BullHero = _bull.get_node_or_null("BullHero")
+	if hero:
+		hero.aim_at(threat.actor.global_position + Vector3.UP * threat.actor.height_m * 0.6)
 	if _bull_fire_cd <= 0.0 and _bull.is_facing(threat.actor.position, 0.35):
 		_bull_fire_cd = 1.6 + _rng.randf() * 0.6
 		_bull_fire_at(threat)
@@ -1804,17 +1805,8 @@ func _tick_bull_defence(delta: float) -> void:
 func _bull_fire_at(br: Ep2BearBrain) -> void:
 	_bull_shots += 1
 	var target: Vector3 = br.actor.position + Vector3(0.0, br.actor.height_m * 0.6, 0.0)
-	var rifle: Node3D = _bull.find_child("BullHeroRifle", true, false) as Node3D
-	var muzzle: Vector3 = _bull.position + Vector3(0.0, 1.5, 0.0)
-	if rifle != null and rifle.visible:
-		if _bull_rifle_t < 0.0:
-			_bull_rifle_rest = rifle.transform
-		var o: Vector3 = rifle.global_position
-		var dir: Vector3 = (target - o).normalized()
-		var sc: Vector3 = rifle.global_transform.basis.get_scale()
-		rifle.global_transform = Transform3D(Basis.looking_at(-dir, Vector3.UP) * Basis.from_scale(sc), o + dir * 0.2)
-		_bull_rifle_t = 0.6
-		muzzle = o + dir * 0.9
+	var hero: Ep2BullHero = _bull.get_node_or_null("BullHero")
+	var muzzle: Vector3 = hero.fire_at(target) if hero else _bull.position + Vector3.UP * 1.5
 	_flash(muzzle)
 	_sfx3d("ep2_winchester_shot_%d" % (1 + _bull_shots % 3), muzzle, -1.0, 0.92, 90.0)
 	if _rng.randf() < 0.55:
@@ -1830,12 +1822,6 @@ func _tick_flashes(delta: float) -> void:
 			if is_instance_valid(f[0]):
 				(f[0] as Node).queue_free()
 			_flashes.remove_at(i)
-	if _bull_rifle_t >= 0.0:
-		_bull_rifle_t -= delta
-		if _bull_rifle_t < 0.0 and _bull != null:
-			var rifle: Node3D = _bull.find_child("BullHeroRifle", true, false) as Node3D
-			if rifle != null:
-				rifle.transform = _bull_rifle_rest
 
 
 func _flash(at: Vector3) -> void:
@@ -2455,7 +2441,6 @@ func _retry_from_surface() -> void:
 	_bull_dismount()
 	_bull_alarm = false
 	_bull_waiting = false
-	_bull_rifle_t = 0.0
 	# Lil Blunt at the mine mouth, whole again, with the rounds he had there
 	_player_pos = SPAWN
 	_prev_player = SPAWN

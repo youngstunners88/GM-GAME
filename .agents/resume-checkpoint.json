@@ -1,27 +1,28 @@
 {
-  "observed_remote_sha": "45f5d1142084baadc926965c54699a8fa0892c41",
-  "objective": "Prepare transcript-based Bull/bear motion, retargeting, prop-contact and QA skills. Latest founder request is skills-only.",
+  "observed_remote_sha": "ac20beace6535262dda0f8a269dbad3eac137ae6",
+  "objective": "Implement Bull/bear motion and physical rifle/bow/book contact from the archived transcript; runtime implementation verified locally and ready for master publication.",
   "task_paths": [
-    ".claude/skills/ep2-character-performance",
-    ".claude/skills/ep2-performance-guides",
-    ".claude/skills/ep2-rest-aware-retargeting",
-    ".claude/skills/ep2-prop-contact-animation",
-    ".claude/skills/ep2-character-motion-qa",
-    "design/ep2/motion",
-    "CLAUDE.md",
-    "AGENTS.md",
+    "src/episode2/actors",
+    "src/episode2/chamber/smelting_facility.gd",
+    "src/episode2/chamber/woods_quad.gd",
+    "src/episode2/assets/bear_rigged.glb",
+    "tests/ep2_character_motion_test.gd",
+    "tools/ep2_forge/repair_bear_arm_bind.py",
+    "tools/ep2_shots",
+    "design/ep2/motion/jobs/2026-10-14-runtime",
+    ".github/workflows/export-game.yml",
     "STATUS.md"
   ],
   "evidence": {
-    "source_baseline": "45f5d1142084baadc926965c54699a8fa0892c41",
-    "transcript": "design/ep2/motion/WORKFLOW_TRANSCRIPT.txt; user attachment read in full, preserved verbatim and SHA512-verified.",
-    "rig_inventory": "Both current GLBs have 24 joints including hands, with no finger joints. Source inspection only.",
-    "validation": "5 skill metadata/routes; draft validator exit 0, input gate exit 2, false-ready and bad-digest exit 1. No runtime edits or new rendered proof.",
-    "legacy_skill": "Original character-performance content retained in references/historical-performance-2026-10-01.md."
+    "source_baseline": "ac20beace6535262dda0f8a269dbad3eac137ae6",
+    "report": "design/ep2/motion/jobs/2026-10-14-runtime/REPORT.md",
+    "validation": "Whole-interval skinned paw contacts and native Episode 2 gates pass. 4.3 nonthreaded web pack under 190 MiB. Five local browser gates pass; overall blocked by remote proxy CA fetch errors.",
+    "release": "GitHub Actions API and itch page are blocked by proxy 403; no live upload proof."
   },
   "unresolved": [
-    "Motion performance source, phases and independent contact markers remain future authoring work.",
-    "BFS/model license and provider runs unverified; current Google Doc URL blocked, transcript attachment used instead."
+    "Bull quad two-hand reach candidate rejected for visible skin tearing; previous posture preserved.",
+    "No finger articulation or full foot/mount/lever/leaf certification.",
+    "Live release verification and external Jev/Microsoft review blocked by outbound policy."
   ],
-  "next_action": "Refresh master; start ep2-character-performance when implementation is requested. Preserve Claude world/mobile work and verify full motion/contact before runtime release."
+  "next_action": "Publish the verified runtime change through the non-forced shipping script, then verify actual butler upload and matching public BUILD when network access permits."
 }

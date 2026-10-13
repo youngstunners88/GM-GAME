@@ -318,6 +318,11 @@ jobs:
           timeout 120 "$GODOT_BIN" --headless res://tests/vault_touch_dialogue_test.tscn 2>&1 | tee vault-touch-tests.log
           grep -q 'VAULT_TOUCH_DIALOGUE: ALL PASS' vault-touch-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' vault-touch-tests.log; then exit 1; fi
+          # Actual skinned paw contacts throughout reading/draw/release, plus
+          # the deterministic actor clock and Bull's grip-preserving recoil.
+          timeout 180 "$GODOT_BIN" --headless res://tests/ep2_character_motion_test.tscn 2>&1 | tee character-motion-tests.log
+          grep -q 'EP2_CHARACTER_MOTION: ALL PASS' character-motion-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' character-motion-tests.log; then exit 1; fi
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' portal-tests.log; then exit 1; fi
           timeout 90 "$GODOT_BIN" --headless --script res://tests/portal_traversal_test.gd 2>&1 | tee portal-traversal.log
           grep -q 'PORTAL TRAVERSAL: ALL PASS' portal-traversal.log

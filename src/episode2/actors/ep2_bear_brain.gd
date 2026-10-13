@@ -357,14 +357,15 @@ func _step_combat(delta: float, player: Vector3) -> void:
 	_cool -= delta
 	if role() == "archer":
 		actor.stop()
-		actor.face_point(player)
+		var to_player: Vector3 = player - actor.position
+		actor.face_yaw(atan2(to_player.x, to_player.z) - PI * 0.5)
 		if _attack_t >= 0.0:
 			_attack_t += delta
 			if _attack_t >= 1.15 and Ep2BearKit.pose_name(actor) == "aim":
 				Ep2BearKit.pose(actor, "shot")
 				arrows -= 1
 				var lead: Vector3 = player + Vector3(0.0, 1.0, 0.0)
-				arrow_loosed.emit(self, actor.position + Vector3(0.0, actor.height_m * 0.62, 0.0), lead)
+				arrow_loosed.emit(self, Ep2BearKit.arrow_origin(actor), lead)
 			if _attack_t >= 1.9:
 				_attack_t = -1.0
 				_cool = float(p.get("reload", 2.2)) + _rng.randf() * 0.8
