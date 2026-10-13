@@ -259,5 +259,3 @@ func _draw() -> void:
 	var knob_alpha: float = lerpf(idle * 0.9, pressed_alpha(), _active_amount)
 	draw_circle(knob_pos, k, Color(col.r, col.g, col.b, knob_alpha * 0.55))
 	draw_arc(knob_pos, k, 0.0, TAU, 40, Color(1, 1, 1, clampf(knob_alpha + 0.1, 0.0, 1.0)), ring_w, true)
-	if hint_active:
-		_draw_label("MOVE", c + Vector2(0.0, -r - 12.0 * unit), (touch_theme.label_size_dp if touch_theme != null else 11.0) * unit, 0.95)

@@ -126,7 +126,7 @@ func apply_theme(theme: TouchTheme) -> void:
 	if _layout != null:
 		_layout.apply_theme(_theme)
 
-## Briefly show labels + stronger opacity on every control.
+## Briefly raise every control's opacity (a wordless pulse showing where they are).
 func flash_hints(seconds: float = HINT_SECONDS) -> void:
 	if _layout == null:
 		return
@@ -271,9 +271,6 @@ func _build_layout(key: StringName) -> void:
 		_layout.modulate.a = 0.0
 		_fade = create_tween()
 		_fade.tween_property(_layout, "modulate:a", SUSPENDED_ALPHA if controls_suspended else 1.0, 0.22)
-	var hint_btn: VirtualControl = _layout.find_role(&"hint")
-	if hint_btn is VirtualButton:
-		(hint_btn as VirtualButton).activated.connect(func() -> void: flash_hints())
 	layout_changed.emit(key)
 
 # --- input mode + safety -----------------------------------------------------

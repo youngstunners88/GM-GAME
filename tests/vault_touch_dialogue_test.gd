@@ -18,7 +18,9 @@ extends Node2D
 ##      balances, same signals) and cannot fire twice
 ##   5. LEAVE does what Escape does and never stakes
 ##   6. the keyboard (E / ui_accept / Escape) behaves exactly as before
-##   7. while a dialogue panel is up the touch layer is locked (so GRAB, which is
+##   7. no key names or keyboard hint lines on a touch device (founder rule 2026-10-13); the
+##      panel buttons keep their words
+##   8. while a dialogue panel is up the touch layer is locked (so GRAB, which is
 ##      the same `interact` action as E, cannot reach the terminal stake), and the
 ##      lock is always released (close, confirm, leave, scene freed while open)
 ##
@@ -50,7 +52,7 @@ func _ready() -> void:
 	await _test_leave_matches_escape()
 	await _test_keyboard_unchanged()
 	await _test_touch_layer_lock()
-	await _test_prompts_name_the_touch_control()
+	await _test_prompts_follow_the_device()
 	await _test_no_leaked_signal_links()
 	print("VAULT_TOUCH_DIALOGUE: %s" % ("ALL PASS" if _fail == 0 else "%d FAILURE(S)" % _fail))
 	MobileLayoutManager.is_touch_device = false
@@ -535,22 +537,72 @@ func _test_touch_layer_lock() -> void:
 	MobileLayoutManager.force_touch_ui = false
 	MobileLayoutManager.is_touch_device = false
 
-# --- prompts -----------------------------------------------------------------
+# --- prompts: founder rule, no key names on a touch device --------------------
 
-func _test_prompts_name_the_touch_control() -> void:
-	print(" prompts:")
+func _test_prompts_follow_the_device() -> void:
+	print(" prompts (no key names / keyboard hint lines on a touch device):")
 	MobileLayoutManager.is_touch_device = false
 	var kb := await _new_realm()
-	_check("keyboard machine: prompts say [E]", _talk_plate(kb).contains("[E] TALK") and _readout(kb).contains("press E to"),
+	kb.call("gideon_open")
+	await _frames(2)
+	_check("keyboard machine: plate and readout name the key",
+		_talk_plate(kb).contains("[E] TALK") and _readout(kb).contains("Walk to an altar, press E to STAKE 25%"),
 		"%s | %s" % [_talk_plate(kb), _readout(kb)])
+	_check("keyboard machine: Gideon's hint line is shown", (kb.get("_gideon_hint") as Label).visible)
 	await _free_realm(kb)
+
 	MobileLayoutManager.is_touch_device = true
 	var touch := await _new_realm()
-	_check("touch device: prompts say [GRAB], not a key that does not exist",
-		_talk_plate(touch).contains("[GRAB] TALK") and _readout(touch).contains("press GRAB to"),
-		"%s | %s" % [_talk_plate(touch), _readout(touch)])
+	touch.call("gideon_open")
+	await _frames(2)
+	_check("touch device: plate says TALK with no key name or button name",
+		_talk_plate(touch).ends_with("\nTALK") and not _talk_plate(touch).contains("[") and not _talk_plate(touch).contains("GRAB"),
+		_talk_plate(touch))
+	_check("touch device: readout has no 'press' / key name",
+		not _readout(touch).contains("press") and _readout(touch).contains("Walk to an altar to STAKE 25%"), _readout(touch))
+	_check("touch device: Gideon's key-hint line is hidden on a mid line", not (touch.get("_gideon_hint") as Label).visible)
+	for _i in range(6):
+		touch.call("gideon_press_next")
+	_check("touch device: ... and on the last line (the buttons carry the words)",
+		_at_end(touch) and not (touch.get("_gideon_hint") as Label).visible
+		and _btn(touch, "confirm").text == "CONFIRM STAKE")
 	await _free_realm(touch)
+
+	# The Diamond Vault clerk's existing "[E] / tap: next" hint follows the same rule.
+	GoldMineSystem.reset_session()
+	var dv: Node = DIAMOND_VAULT.instantiate()
+	add_child(dv)
+	await _frames(2)
+	dv.call("clerk_open")
+	await _frames(2)
+	var found: Array = []
+	_find_labels(dv.get("_clerk_panel"), "[E] / tap: next", found)
+	_check("touch device: the clerk's '[E] / tap: next' hint is hidden",
+		found.size() == 1 and not (found[0] as Label).visible, "found %d" % found.size())
+	dv.call("clerk_close")
+	dv.queue_free()
 	MobileLayoutManager.is_touch_device = false
+	await _frames(2)
+	var dv2: Node = DIAMOND_VAULT.instantiate()
+	add_child(dv2)
+	await _frames(2)
+	dv2.call("clerk_open")
+	await _frames(2)
+	found.clear()
+	_find_labels(dv2.get("_clerk_panel"), "[E] / tap: next", found)
+	_check("keyboard machine: the clerk's hint is shown", found.size() == 1 and (found[0] as Label).visible)
+	dv2.call("clerk_close")
+	dv2.queue_free()
+	GoldMineSystem.reset_session()
+	await _frames(2)
+
+func _find_labels(n: Node, text: String, acc: Array) -> void:
+	if n == null:
+		return
+	if n is Label and (n as Label).text == text:
+		acc.append(n)
+	for c in n.get_children():
+		_find_labels(c, text, acc)
 
 func _talk_plate(realm: Node) -> String:
 	var g := realm.get_node_or_null("GideonVale")

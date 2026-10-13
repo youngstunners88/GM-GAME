@@ -138,15 +138,14 @@ func _on_health_changed(new_health: int) -> void:
 ## Bottom-center controls reminder at level start — attacking was
 ## undiscoverable (no prompt that J / ATK throws). Fades out after 6s.
 func _show_control_hint() -> void:
-    var hint := Label.new()
-    # Input-aware: keyboard players see keys, touch players see tap targets
-    # (showing "A/D · W/Space" on a phone with no keyboard was useless — Kimi
-    # font-audit 2026-08-01). Full controls live in the HOW TO PLAY panel.
+    # Touch players get NO written controls at all (founder, 2026-10-13: a phone
+    # game is played with finger movements, not key names): the on-screen stick
+    # and icon buttons speak for themselves. Only keyboard players see keys.
     var touch := OS.get_name() in ["Android", "iOS"] or DisplayServer.is_touchscreen_available()
     if touch:
-        hint.text = "STICK = move  ·  JUMP  ·  ATK  ·  DASH  ·  RUN"
-    else:
-        hint.text = "MOVE  A/D  ·  JUMP  W/Space  ·  ATTACK  J  ·  DASH  K"
+        return
+    var hint := Label.new()
+    hint.text = "MOVE  A/D  ·  JUMP  W/Space  ·  ATTACK  J  ·  DASH  K"
     hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     hint.add_theme_font_size_override("font_size", 26)
     hint.add_theme_constant_override("outline_size", 5)

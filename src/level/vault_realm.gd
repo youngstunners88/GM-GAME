@@ -324,10 +324,16 @@ func _touch_modal(open: bool) -> void:
 	if MobileLayoutManager and MobileLayoutManager.is_inside_tree():
 		MobileLayoutManager.set_locked(TOUCH_LOCK_KEY, open)
 
-## What the interact control is called on this device, for on-screen prompts:
-## "GRAB" where the touch layer is in use, "E" on a keyboard machine.
-func _interact_name() -> String:
-	return "GRAB" if MobileLayoutManager and MobileLayoutManager.is_touch_device else "E"
+## Whether to print KEY NAMES ("[E]", "[ESC]", "press E") on screen. Founder rule
+## (2026-10-13, touch skill): no key names and no keyboard hint lines on a touch
+## device - phones are played with icons and fingers. The words on a panel's own
+## BUTTONS (NEXT, CONFIRM STAKE, LEAVE) are not key names and stay.
+func _keys_shown() -> bool:
+	return not (MobileLayoutManager and MobileLayoutManager.is_touch_device)
+
+## ", press E" on a keyboard machine, nothing on a touch device (for sentences).
+func _press_e() -> String:
+	return ", press E" if _keys_shown() else ""
 
 # --- Environment ------------------------------------------------------------
 
@@ -650,7 +656,7 @@ func _setup_clerk(x: float) -> void:
 	gtw.tween_property(glow, "modulate:a", 0.25, 1.0).set_trans(Tween.TRANS_SINE)
 
 	var plate := Label.new()
-	plate.text = "MIRA \"LEDGER\" VOSS\n[%s] TALK" % _interact_name()
+	plate.text = "MIRA \"LEDGER\" VOSS\n" + ("[E] TALK" if _keys_shown() else "TALK")
 	plate.position = Vector2(-96, -250)
 	style_label(plate, 26)
 	clerk.add_child(plate)
@@ -855,7 +861,7 @@ func _setup_gideon(x: float, y: float) -> void:
 	g.add_child(spr)
 	_gideon_sprite = spr
 	var plate := Label.new()
-	plate.text = "GIDEON \"GOLDWATER\" VALE\n[%s] TALK" % _interact_name()
+	plate.text = "GIDEON \"GOLDWATER\" VALE\n" + ("[E] TALK" if _keys_shown() else "TALK")
 	plate.position = Vector2(-110, -280)
 	style_label(plate, 26)
 	g.add_child(plate)
@@ -928,6 +934,7 @@ func _gideon_sync_controls() -> void:
 		return
 	var at_end: bool = _gideon_dlg.at_end()
 	if _gideon_hint != null and is_instance_valid(_gideon_hint):
+		_gideon_hint.visible = _keys_shown()
 		if not at_end:
 			_gideon_hint.text = "[E] / NEXT   [ESC] / LEAVE"
 		elif _gideon_staked:
@@ -1185,6 +1192,7 @@ func _build_clerk_panel() -> void:
 	hint.text = "[E] / tap: next"
 	hint.position = Vector2(440, -190)
 	style_label(hint, 22)
+	hint.visible = _keys_shown()   # no key names on a touch device
 	root.add_child(hint)
 
 	_clerk_actions = []
@@ -1463,7 +1471,7 @@ func _build_gold_scale(parent: Node2D, diamonds: bool, interactive: bool = false
 	#    point (Fort Knox). The Diamond Vault scale is informational.
 	if interactive:
 		var hint := Label.new()
-		hint.text = "[%s] WEIGH GOLD" % _interact_name()
+		hint.text = "[E] WEIGH GOLD" if _keys_shown() else "WEIGH GOLD"
 		hint.position = Vector2(-160, 245)
 		hint.custom_minimum_size = Vector2(320, 0)
 		hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -1561,11 +1569,11 @@ func _refresh_readout() -> void:
 	if _readout == null:
 		return
 	if _diamonds:
-		_readout.text = "DIAMONDS %d   |   DIAMOND SHARES %d\nWalk to an altar, press %s to STAKE 25%%" % [
-			GoldMineSystem.diamonds_balance, GoldMineSystem.diamond_shares, _interact_name()]
+		_readout.text = "DIAMONDS %d   |   DIAMOND SHARES %d\nWalk to an altar%s to STAKE 25%%" % [
+			GoldMineSystem.diamonds_balance, GoldMineSystem.diamond_shares, _press_e()]
 	else:
-		_readout.text = "GOLD %d   |   FORT KNOX SHARES %d\nWalk to an altar, press %s to STAKE 25%%" % [
-			GoldMineSystem.gold_balance, GoldMineSystem.fort_knox_shares, _interact_name()]
+		_readout.text = "GOLD %d   |   FORT KNOX SHARES %d\nWalk to an altar%s to STAKE 25%%" % [
+			GoldMineSystem.gold_balance, GoldMineSystem.fort_knox_shares, _press_e()]
 
 func _setup_title_card() -> void:
 	var layer := CanvasLayer.new()
