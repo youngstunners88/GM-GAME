@@ -1,14 +1,29 @@
 class_name WoodsQuadChamber
 extends Ep2Interlude
-## Interlude 2 - THE BEAR WOODS (founder 2026-10-09): they step out of the mine lift into the wood. Inferno Bull is a master
-## of disguise: nothing he owns can be found, least of all his FLAME-DESIGNER QUAD, which sits under a hand-built pile of
-## leaves and branches in a thicket. They sneak there (walk, never run: the bears hear), he throws the leaves off, they ride
-## it down the trail to a ridge, and spy on the bear camp to plan the hunt. Next: Lil Blunt shoots the bears from the quad
-## while Inferno drives (not built yet - this chamber is the groundwork and ends the playable slice with TO BE CONTINUED).
-## The "Deep Mining 3" song starts the moment they mount the quad.
+## Interlude 2 - THE BEAR WOODS (founder 2026-10-09, reworked 2026-10-13). They step out of the mine lift into the wood. Inferno
+## Bull is a master of disguise: nothing he owns can be found, least of all his FLAME-DESIGNER QUAD, hidden under a hand-built pile
+## of leaves and branches in a thicket far from his door.
 ##
-## Beats: SNEAK -> REVEAL (leaves off) -> MOUNT -> RIDE (on rails, 10 s) -> SPY (hold RMB: spyglass, spot 6 bears) -> DONE.
-## Skill: ep2-interlude-chain.
+## Founder 2026-10-13: "the bears are not active ... not walking around, sleeping, reading magazines ... give them movements and
+## awareness. They should all have personality and individual character ... they need to drive for a while before they get to the
+## bear camp as they are shooting off bears on the road. Some bears fire back with their arrows ... I want the world to be much
+## larger - bears being able to smell [the forge] and being so close to Inferno Bull's hideout makes no sense." So:
+##   * THE NEAR WOOD (~230 m of trail): only the bears' SCOUTS roam here, each with a name, a routine and senses of his own
+##     (Ep2BearBrain: Twitch walks a beat with fox ears, Professor Barnaby reads Bear Monthly on a stump, Old Moss snores by a
+##     log, Mumbles roams and grumbles, Hattie keeps watch with her bow, Sniffer patrols by the quad). Inferno names each one as
+##     they pass. Walk behind Inferno and nobody notices; run, shoot or stray into a bear's view and he hears / sees you, comes
+##     to look, roars for help, charges or shoots. Inferno defends you (he fires on a charging bear). Three hearts.
+##   * THE OLD LOGGING ROAD (~750 m on the quad, ~70 s): bear pickets along the road wake to the engine - brawlers run at the
+##     bike and leap, archers draw and loose real arrows (a visible draw = the warning; arrows fly, miss or hit). Lil Blunt
+##     shoots from the back seat while Inferno drives. Dead bears stay where they fell.
+##   * THE RIDGE over the bear camp, ~1 km from the mine: park, hop off, spyglass, spot the camp.
+## Failing (out of hearts) restarts at the mine exit (checkpoint hideout_surface_exit, design/ep2/LIVING_WOODS_CONTRACT.md):
+## bears, quad, ammo and hearts are restored together; Inferno says one line and they go again.
+## Every hand-over inside the chamber is a move, never a blink: he climbs onto the quad (his view glides to the back seat while
+## Inferno swings onto the saddle) and hops off at the ridge the same way (skill ep2-no-blackouts).
+##
+## Beats: SNEAK -> REVEAL (leaves off) -> MOUNT -> RIDE (on rails, the road fight) -> SPY (hold RMB: spyglass, spot 6 bears) -> DONE.
+## Skills: ep2-interlude-chain, ep2-living-woods.
 
 enum Beat { SNEAK, REVEAL, MOUNT, RIDE, SPY, DONE }
 
@@ -17,14 +32,21 @@ const QUAD_LOOP := "res://src/assets/sounds/ep2_quad_loop.mp3"
 
 # --- layout (metres; flat ground, +z is "deeper into the wood") ---
 const SPAWN := Vector3(0.0, 0.0, 2.0)
-## The trail Inferno leads along while they sneak.
-const SNEAK_TRAIL: Array = [Vector2(0.0, 4.0), Vector2(1.0, 17.0), Vector2(-2.5, 30.0), Vector2(-1.5, 43.0), Vector2(-3.8, 51.0)]
-const QUAD_POS := Vector3(-7.4, 0.0, 53.5)         # hidden in the thicket beside the end of the trail
+const BULL_START := Vector3(1.6, 0.0, 4.0)
+## The trail Inferno leads along while they sneak: ~230 m through the near wood, past the scouts.
+const SNEAK_TRAIL: Array = [Vector2(0.0, 4.0), Vector2(1.0, 17.0), Vector2(-2.5, 30.0), Vector2(-1.5, 45.0), Vector2(4.0, 62.0),
+	Vector2(8.0, 80.0), Vector2(5.0, 98.0), Vector2(-3.0, 114.0), Vector2(-8.0, 130.0), Vector2(-6.0, 146.0), Vector2(0.0, 162.0),
+	Vector2(4.0, 178.0), Vector2(2.0, 194.0), Vector2(-4.0, 206.0), Vector2(-7.0, 214.0)]
+const QUAD_POS := Vector3(-11.5, 0.0, 219.0)        # hidden in the thicket beside the end of the trail
 const QUAD_YAW := 0.0                              # nose toward +z
-## The ride (x, z): from the thicket back out onto the wood road and down to the ridge.
-const RIDE_TRAIL: Array = [Vector2(-7.4, 53.5), Vector2(-2.0, 62.0), Vector2(5.0, 78.0), Vector2(6.0, 98.0), Vector2(0.0, 116.0),
-	Vector2(-3.0, 125.0), Vector2(0.0, 133.0)]
-const RIDE_SPEED := 9.5
+## The ride (x, z): out of the thicket onto the old logging road and down it to the ridge over the bear camp (~750 m).
+const RIDE_TRAIL: Array = [Vector2(-11.5, 219.0), Vector2(-6.0, 229.0), Vector2(2.0, 243.0), Vector2(10.0, 263.0), Vector2(14.0, 290.0),
+	Vector2(8.0, 320.0), Vector2(-6.0, 348.0), Vector2(-16.0, 378.0), Vector2(-14.0, 410.0), Vector2(-2.0, 440.0), Vector2(12.0, 470.0),
+	Vector2(20.0, 505.0), Vector2(14.0, 540.0), Vector2(0.0, 570.0), Vector2(-14.0, 600.0), Vector2(-20.0, 635.0), Vector2(-12.0, 668.0),
+	Vector2(2.0, 698.0), Vector2(14.0, 730.0), Vector2(16.0, 765.0), Vector2(6.0, 798.0), Vector2(-8.0, 828.0), Vector2(-12.0, 860.0),
+	Vector2(-5.0, 890.0), Vector2(3.0, 918.0), Vector2(2.0, 942.0), Vector2(1.0, 957.0)]
+const RIDE_SPEED := 12.5                            # the straights
+const RIDE_BEND_SPEED := 7.5                        # Inferno brakes into the bends
 ## The modelled quad: Tripo H3.1 multi-view image-to-3D (Muapi) from the GPT-Image-2 stills of the founder's flame-designer quad, cleaned up by
 ## tools/ep2_forge/ai_vehicle_to_game.py: nose +Z, origin on the ground midway between the axles, tyre outer diameter 1.0 m, four Wheel_* nodes
 ## (hub-centred, axle = local X). Landmarks measured on the mesh: seat top 1.37-1.42, rack deck ~1.43 (z -1.84..-1.05), grips x +-0.5 y 1.72 z 0.5.
@@ -32,8 +54,8 @@ const QUAD_MODEL := "res://src/episode2/assets/vehicles/flame_quad_ai.glb"
 const QUAD_WHEEL_R := 0.5
 const SEAT_TOP := 1.43                              # the rack deck (Lil Blunt kneels on it)
 const SEAT_TOP_DRIVER := 1.38                       # the bench Inferno sits on, at his hips
-## Inferno rides SEATED (his Chair_Sit_Idle_M clip frozen at 4 s) with both hands on the grips (arm IK); Lil Blunt kneels on the rear of the seat / rack,
-## eye just above Inferno's head, so he sees the road over him and the rack hoop is his rest (tools/ep2_shots/rider_probe.gd printed these numbers).
+## Inferno rides SEATED (his Chair_Sit_Idle_M clip frozen at 4 s); Lil Blunt kneels on the rear of the seat / rack, eye just above
+## Inferno's head, so he sees the road over him and the rack hoop is his rest (tools/ep2_shots/rider_probe.gd printed these numbers).
 const BULL_SIT_CLIP := "Chair_Sit_Idle_M"
 const BULL_SIT_AT := 4.0
 const BULL_HIPS := Vector3(0.35, 1.10, -0.49)       # his hips in actor space in that pose
@@ -46,16 +68,76 @@ const BACK_SIDE := 0.30                             # ...a little to the right o
 const BACK_EYE := 1.40                              # his eye above the seat/rack there (kneeling)
 const BULL_LEAN := 0.55                             # Inferno leans onto the grips (the seated clip alone sits him upright against a chair back)
 const BULL_GRIPS_IK := false                      # Inferno's hands are NOT dragged to the grips: the skinned elbow cannot take the IK (tears / goes invisible)
-const SPY_EYE := Vector3(2.6, 1.55, 147.0)         # prone behind the ferns on the ridge
-const CAMP_CENTRE := Vector3(0.0, 0.0, 188.0)
-const BEAR_SPOTS: Array = [Vector2(-5.5, 183.0), Vector2(-2.0, 192.0), Vector2(4.0, 181.0), Vector2(6.5, 190.0), Vector2(-8.5, 191.0), Vector2(1.5, 197.0)]
-const PATROL_BEARS: Array = [Vector2(-15.0, 24.0), Vector2(14.0, 37.0), Vector2(-14.0, 47.0)]
-const HEARING := 19.0                              # a bear hears a running Lil Blunt inside this radius
+const RIDGE_Z := 965.0
+const SPY_EYE := Vector3(2.6, 1.55, RIDGE_Z)       # behind the ferns on the ridge
+const CAMP_CENTRE := Vector3(0.0, 0.0, RIDGE_Z + 41.0)
+## The six camp bears, as offsets from the campfire (spotted through the spyglass at the end).
+const BEAR_SPOTS: Array = [Vector2(-5.5, -5.0), Vector2(-2.0, 4.0), Vector2(4.0, -7.0), Vector2(6.5, 2.0), Vector2(-8.5, 3.0), Vector2(1.5, 9.0)]
+const HEARING := 19.0                              # a RUNNING Lil Blunt is heard inside this radius (x the bear's ears)
+const WALK_NOISE := 4.0                            # ...a walking one only this close
+const SHOT_HEARING := 46.0                         # a Winchester shot carries far further than boots on gravel
+const ENGINE_HEARING := 70.0                       # the quad's engine: every bear inside this turns to it ...
+const ENGINE_ALARM := 40.0                         # ... and inside this (with a clear line) knows it is the enemy
 const SPY_ZOOM_FOV := 16.0
 const SPY_SPOT_ANGLE := 0.075                      # radians (~4.3 deg): how close to a bear the spyglass must be
 const SPY_TIMEOUT := 70.0
-const SHOT_HEARING := 46.0                         # a Winchester shot carries far further than boots on gravel (the camp is ~34 m from the ridge)
 const SEAT_SIDE := 0.55                            # the back seat is wide: he sits to the right of Inferno's axis and sees the road past his shoulder
+const HEALTH_MAX := 3                              # the story's 3-heart cap (no second health system)
+const BEAR_ACTIVE_R := 150.0                       # bears further than this sleep in the engine (hidden, not processed) - the fog hides them anyway
+const ARROW_SPEED := 40.0
+const ARCHERS_AT_ONCE := 2                         # the active-attack budget: at most this many bows drawn on him at a time
+const VM_KEY_ENERGY := 4.7                         # measured: holds the held rifle at 0.34-0.38 mean in every direction (sun-only: 0.03-0.35)
+const COAST_DIST := 75.0                           # the engine is off this far before the ridge (the camp is ~41 m beyond it)
+
+## THE SCOUTS of the near wood (founder: "they should all have personality and individual character"). Positions keep a walker on
+## Inferno's trail out of every bear's sight (sight x attention, field of view) - stealth is possible; straying, running and
+## shooting are not free. `intro_at` = the trail point where Inferno names him.
+const SCOUTS: Array = [
+	{"name": "Twitch", "role": "brawler", "routine": "patrol", "pos": Vector2(33.0, 50.0),
+		"route": [Vector2(33.0, 50.0), Vector2(34.0, 78.0), Vector2(30.0, 100.0)], "sight": 22.0, "fov": 120.0, "eyes": 1.0,
+		"ears": 1.6, "react": 0.6, "walk": 1.25, "run": 4.4, "pause": 1.5, "hp": 2, "height": 2.0, "pitch": 1.15,
+		"intro": "vo_bull_scout_twitch", "intro_at": 3},
+	{"name": "Professor Barnaby", "role": "brawler", "routine": "read", "pos": Vector2(-16.0, 99.0), "face": -1.75,
+		"sight": 18.0, "fov": 100.0, "eyes": 0.8, "ears": 0.9, "react": 1.6, "walk": 0.95, "run": 3.4, "hp": 2, "height": 2.3,
+		"pitch": 0.9, "intro": "vo_bull_scout_barnaby", "intro_at": 5},
+	{"name": "Old Moss", "role": "brawler", "routine": "sleep", "pos": Vector2(15.0, 131.0), "face": 1.2,
+		"sight": 20.0, "fov": 110.0, "ears": 1.0, "react": 1.4, "walk": 0.9, "run": 3.2, "hp": 3, "height": 2.5, "pitch": 0.75,
+		"intro": "vo_bull_scout_moss", "intro_at": 7},
+	{"name": "Mumbles", "role": "brawler", "routine": "roam", "pos": Vector2(-31.0, 160.0), "roam_r": 7.0, "stomp": 0.4,
+		"sight": 20.0, "fov": 110.0, "ears": 1.0, "react": 1.0, "walk": 0.85, "run": 3.8, "hp": 2, "height": 2.2, "pitch": 0.85,
+		"intro": "vo_bull_scout_mumbles", "intro_at": 9},
+	{"name": "Hattie", "role": "archer", "routine": "watch", "pos": Vector2(26.0, 197.0), "face": 0.6, "sweep": 0.6,
+		"sight": 34.0, "fov": 100.0, "eyes": 1.4, "ears": 1.1, "react": 0.8, "hp": 1, "arrows": 8, "range": 40.0, "reload": 2.0,
+		"height": 2.05, "pitch": 1.1, "intro": "vo_bull_scout_hattie", "intro_at": 11},
+	{"name": "Sniffer", "role": "brawler", "routine": "patrol", "pos": Vector2(-31.0, 204.0),
+		"route": [Vector2(-31.0, 204.0), Vector2(-35.0, 234.0)], "sight": 20.0, "fov": 110.0, "ears": 1.3, "react": 0.9,
+		"walk": 1.0, "run": 4.0, "pause": 3.0, "hp": 2, "height": 2.15, "pitch": 1.0},
+]
+## THE ROAD PICKETS: `at` = fraction of the ride, `lat` = metres right (+) / left (-) of the road. They wake to the engine.
+const ROAD_BEARS: Array = [
+	{"name": "Brutus", "role": "brawler", "routine": "road", "at": 0.12, "lat": 7.0, "sight": 26.0, "react": 0.7, "run": 4.6, "hp": 2, "height": 2.4, "pitch": 0.8},
+	{"name": "Pip", "role": "archer", "routine": "watch", "at": 0.15, "lat": -16.0, "sweep": 0.5, "sight": 32.0, "eyes": 1.2, "react": 0.9, "hp": 1, "arrows": 6, "range": 38.0, "reload": 2.4, "height": 1.95, "pitch": 1.2},
+	{"name": "Fletch", "role": "archer", "routine": "watch", "at": 0.27, "lat": 17.0, "sweep": 0.4, "sight": 34.0, "react": 0.6, "hp": 1, "arrows": 8, "range": 40.0, "reload": 1.7, "height": 2.0, "pitch": 1.1},
+	{"name": "Big Tess", "role": "archer", "routine": "road", "at": 0.30, "lat": -19.0, "sight": 34.0, "react": 1.1, "hp": 2, "arrows": 6, "range": 42.0, "reload": 2.8, "height": 2.45, "pitch": 0.85},
+	{"name": "Rumble", "role": "brawler", "routine": "sleep", "at": 0.42, "lat": 10.0, "react": 1.2, "run": 4.2, "hp": 2, "height": 2.3, "pitch": 0.8},
+	{"name": "Grizz", "role": "brawler", "routine": "read", "at": 0.44, "lat": 12.5, "react": 1.4, "run": 4.4, "hp": 3, "height": 2.4, "pitch": 0.7},
+	{"name": "Sarge", "role": "archer", "routine": "watch", "at": 0.56, "lat": -15.0, "sweep": 0.5, "sight": 34.0, "react": 0.7, "hp": 2, "arrows": 8, "range": 40.0, "reload": 2.1, "height": 2.3, "pitch": 0.9},
+	{"name": "Biscuit", "role": "brawler", "routine": "roam", "at": 0.58, "lat": 9.0, "roam_r": 5.0, "react": 0.9, "run": 4.8, "hp": 1, "height": 1.9, "pitch": 1.25},
+	{"name": "Quill", "role": "archer", "routine": "watch", "at": 0.70, "lat": 16.0, "sweep": 0.6, "sight": 34.0, "react": 0.8, "hp": 1, "arrows": 6, "range": 40.0, "reload": 2.2, "height": 2.0, "pitch": 1.15},
+	{"name": "Thorn", "role": "archer", "routine": "watch", "at": 0.72, "lat": -17.0, "sweep": 0.6, "sight": 34.0, "react": 0.8, "hp": 1, "arrows": 6, "range": 40.0, "reload": 2.2, "height": 2.05, "pitch": 1.05},
+	{"name": "Moose", "role": "brawler", "routine": "road", "at": 0.74, "lat": 6.5, "react": 0.8, "run": 4.4, "hp": 3, "height": 2.65, "pitch": 0.65},
+	{"name": "Gnasher", "role": "brawler", "routine": "road", "at": 0.85, "lat": -6.5, "react": 0.6, "run": 4.8, "hp": 2, "height": 2.3, "pitch": 0.85},
+	{"name": "Wren", "role": "archer", "routine": "watch", "at": 0.87, "lat": 19.0, "sweep": 0.5, "sight": 36.0, "react": 0.7, "hp": 1, "arrows": 8, "range": 42.0, "reload": 1.9, "height": 1.95, "pitch": 1.2},
+]
+## THE CAMP (seen from the ridge): around the fire. `off` = offset from the fire = BEAR_SPOTS.
+const CAMP_BEARS: Array = [
+	{"name": "Chief Ironpaw", "role": "brawler", "routine": "roam", "roam_r": 3.0, "hp": 3, "height": 2.7, "pitch": 0.6},
+	{"name": "Dozer", "role": "brawler", "routine": "sleep", "hp": 2, "height": 2.4, "pitch": 0.75},
+	{"name": "Paige", "role": "archer", "routine": "read", "hp": 1, "height": 2.0, "pitch": 1.2},
+	{"name": "Cookie", "role": "brawler", "routine": "read", "hp": 2, "height": 2.3, "pitch": 0.9},
+	{"name": "Bolt", "role": "archer", "routine": "patrol", "route_off": [Vector2(-8.5, 3.0), Vector2(-9.0, -9.0), Vector2(8.0, -10.0)], "hp": 1, "height": 2.05, "pitch": 1.1},
+	{"name": "Hum", "role": "brawler", "routine": "roam", "roam_r": 2.5, "hp": 2, "height": 2.2, "pitch": 1.0},
+]
 
 # --- the old-growth wood (founder target artifacts/episode2-gold-mine/references/founder_2026-10-10/woods_exterior_target.jpg:
 # "it looks like cartoon junk ... the realism edge as a standard ... birds flying randomly and trees moving with the wind";
@@ -73,11 +155,18 @@ const EXIT_PLANK_TEX := "res://src/episode2/assets/mine_lift/tex_lift_planks.jpg
 const EXIT_IRON_TEX := "res://src/episode2/assets/mine_lift/tex_lift_rust_iron.jpg"
 const FOLIAGE_SHADER := "res://src/episode2/art/ep2_foliage_wind.gdshader"
 const GIANT_SPACING := 10.5                          # metres between the old-growth giants (the target's trunks are 1-3 m across)
+## The wood is built in 60 m slices along the trail and the road (each slice its own MultiMeshes with a draw distance), so a
+## 1 km world costs the web build what the old 300 m one did: only the slices near the camera are drawn.
+const CHUNK_Z := 60.0
+const FOREST_Z0 := -16.0
+const FOREST_HALF_W := 70.0                          # the wood runs this far either side of the trail / road
+const TREE_CELL := 8.0                               # spatial grid for trunk collision, sight lines and bullets
 
 var _kit_meshes: Dictionary = {}                     # piece name -> Mesh (Trunk, Crown, Fern, Snag)
 var _bark_mat: StandardMaterial3D = null
 var _crown_mat: ShaderMaterial = null
 var _fern_mat: ShaderMaterial = null
+var _rock_mesh: Mesh = null
 var _wildlife: Ep2Wildlife = null
 var _exit_kit: Node3D = null                          # the mine-lift walkway kit, for the mine exit + bridge
 ## "golden" = golden hour (founder bear stills 2026-10-10b; Jev 0.54 / microsoft-decision-1 0.58 chose it on the closeness table),
@@ -85,13 +174,15 @@ var _exit_kit: Node3D = null                          # the mine-lift walkway ki
 var light_grade: String = "golden"
 var _ground_mat: StandardMaterial3D = null
 var _leaf_mats: Array = []
-var _trees: Array = []                              # [Vector2 position, radius] for trunk collision
+var _trees: Array = []                              # [Vector2 position, radius, height] for trunk collision
+var _tree_grid: Dictionary = {}                     # Vector2i cell -> Array of the same entries
+var _clearings: Array = []                          # [Vector2 a, Vector2 b, radius]: bears' beats (no trunk grows there)
 var _quad: Node3D = null
 var _quad_wheels: Array = []
 var _quad_modelled: bool = false
 var _quad_light: SpotLight3D = null
 var _cover: Node3D = null
-var _cover_bits: Array = []                         # [Node3D, Vector3 outward velocity, float spin]
+var _cover_bits: Array = []                         # [Node3D, Vector3 outward velocity, float spin, Transform3D rest]
 var _reveal_t: float = -1.0
 var _riding: bool = false
 var _ride_pts: PackedVector3Array = PackedVector3Array()
@@ -106,17 +197,55 @@ var _sneak_i: int = 0
 var _bull_waiting: bool = false
 var _warn_cd: float = 0.0
 var _stay_cd: float = 0.0
+var _bark_cd: float = 0.0
 var _noise_hits: int = 0
-var _patrols: Array = []                            # [Ep2Actor, Vector2 a, Vector2 b, bool going_b]
-var _camp_bears: Array = []                         # Ep2Actor
+var _camp_bears: Array = []                         # Ep2Actor (the spyglass targets)
 var _marked: Array = []                             # bool per camp bear
 var _marks: Array = []                              # marker node per camp bear
 var _zoom: float = 0.0
 var _aim_on: bool = false
 var _spy_t: float = 0.0
 var _spy_done: bool = false
-var _bear_clips: Dictionary = {}
+var _spy_intro_pending: bool = false
 var _quad_yaw_prev: float = 0.0
+
+# --- the living wood -----------------------------------------------------------------------------------------------
+var _bears_root: Node3D = null
+var _bears: Array = []                              # Ep2BearBrain (every bear: scouts, road pickets, camp)
+var _specs: Array = []                              # resolved spawn specs (positions, faces, group)
+var _spawned: int = 0
+var _sense_acc: float = 0.0
+var _engine_acc: float = 0.0
+var _step_acc: float = 0.0
+var _intro_done: Dictionary = {}
+var _rng := RandomNumberGenerator.new()
+var _health: int = HEALTH_MAX
+var _invuln: float = 0.0
+var _failing: bool = false
+var _fail_t: float = 0.0
+var _retry_line_pending: bool = false
+var _attempt: int = 0
+var _ammo_snapshot: Array = []
+var _player_vel: Vector3 = Vector3.ZERO
+var _prev_player: Vector3 = Vector3.ZERO
+var _arrows: Array = []                             # Dictionary per arrow in flight / stuck
+var _arrows_loosed: int = 0
+var _arrow_hits: int = 0
+var _kills: int = 0
+var _alerts: int = 0
+var _bull_alarm: bool = false
+var _bull_calm_t: float = 0.0
+var _bull_fire_cd: float = 0.0
+var _bull_shots: int = 0
+var _bull_rifle_rest: Transform3D = Transform3D.IDENTITY
+var _bull_rifle_t: float = -1.0
+var _flashes: Array = []                            # [Node3D, seconds left]
+var _glide: Dictionary = {}                          # the player's eye moving onto / off the quad
+var _bull_swing: Dictionary = {}                     # Inferno swinging onto / off the saddle
+var _road_lines: Dictionary = {}
+var _sounds: Dictionary = {}
+## Tests only: a run through the whole chamber that must not end on the way (the fight itself is tested separately).
+var debug_invulnerable: bool = false
 
 
 func _init() -> void:
@@ -124,8 +253,8 @@ func _init() -> void:
 	music_path = ""                                  # the lift's song carries on until the quad starts (Deep Mining 3 begins at MOUNT)
 	walk_speed = 2.3                                 # a sneak: walking IS the stealth
 	viewmodel_exposure = 0.82                        # open daylight: the rifle's metal would read cream
-	camera_min = Vector3(-80.0, 0.4, -30.0)
-	camera_max = Vector3(80.0, 30.0, 240.0)
+	camera_min = Vector3(-200.0, 0.4, -30.0)
+	camera_max = Vector3(200.0, 60.0, 1120.0)
 
 
 func _chamber_id() -> String:
@@ -143,22 +272,32 @@ func _build_room() -> void:
 		(step as Callable).call()
 
 
-## The wood in slices (each a few ms), so it can be built behind the mine lift while the cage is still rising (no blackout at the surface).
+## The wood in slices (each a few ms), so it can be built behind the mine lift while the cage is still rising (no blackout at
+## the surface): the road first (the wood keeps clear of it), then 60 m slices of forest, the set pieces, and the bears a few at a time.
 func _build_steps() -> Array:
-	return [_step_light_mats, _load_forest_kit, _step_ground, _build_trails, _build_forest, _build_mine_hut, _build_quad, _build_cover,
-		_build_camp, _build_ridge, _build_patrols, _step_bull]
+	var steps: Array = [_step_light_mats, _load_forest_kit, _step_ground, _build_ride_path, _resolve_specs, _build_trails]
+	for i in _forest_chunk_count():
+		steps.append(Callable(self, "_build_forest_chunk").bind(i))
+	steps.append_array([_build_sun_shafts, _build_mine_hut, _build_quad, _build_cover, _build_camp, _build_ridge])
+	var n: int = SCOUTS.size() + ROAD_BEARS.size() + CAMP_BEARS.size()
+	for k in int(ceil(float(n) / 3.0)):
+		steps.append(Callable(self, "_spawn_batch").bind(k, 3))
+	steps.append(_step_bull)
+	return steps
 
 
-## The first views of the wood (the adit mouth, both sides, up into the canopy, down the trail) for the GPU warm-up.
+## The first views of the wood (the adit mouth, both sides, up into the canopy, down the trail, the first scout) for the GPU warm-up.
 func _warm_views() -> Array:
 	var eye: Vector3 = SPAWN + Vector3(0.0, 1.55, 0.0)
+	var to_scout: Vector3 = Vector3(33.0, 1.2, 55.0) - (eye + Vector3(0.0, 0.0, 14.0))
 	return [{"eye": eye, "yaw": 0.0, "pitch": -0.04}, {"eye": eye, "yaw": 0.8, "pitch": -0.05}, {"eye": eye, "yaw": -0.8, "pitch": -0.05},
-		{"eye": eye, "yaw": 0.0, "pitch": 0.5}, {"eye": eye + Vector3(0.0, 0.0, 14.0), "yaw": 0.0, "pitch": -0.1}]
+		{"eye": eye, "yaw": 0.0, "pitch": 0.5}, {"eye": eye + Vector3(0.0, 0.0, 14.0), "yaw": 0.0, "pitch": -0.1},
+		{"eye": eye + Vector3(0.0, 0.0, 14.0), "yaw": atan2(to_scout.x, to_scout.z), "pitch": -0.05}]
 
 
 func _step_bull() -> void:
 	if _bull == null:      # Inferno is built (and his shaders warmed) in the background too, not at the cut
-		_bull = _build_bull(Vector3(1.6, 0.0, 4.0), 0.0)
+		_bull = _build_bull(BULL_START, 0.0)
 
 
 func _step_light_mats() -> void:
@@ -168,11 +307,12 @@ func _step_light_mats() -> void:
 
 
 func _step_ground() -> void:
-	# the forest floor: moss, needles and twigs (Muapi seamless still), world-tiled every 3.5 m
+	# the forest floor: moss, needles and twigs (Muapi seamless still), world-tiled every 3.5 m - now under a 1 km wood
 	_ground_mat = _tex(FLOOR_TEX, Color(0.82, 0.84, 0.76), 0.28) if ResourceLoader.exists(FLOOR_TEX) else _tex(GRAVEL_TEX, Color(0.38, 0.42, 0.25), 0.35)
 	_ground_mat.uv1_world_triplanar = true
 	_ground_mat.roughness = 0.95
-	_box(Vector3(260.0, 0.5, 380.0), Vector3(0.0, -0.25, 130.0), _ground_mat)
+	var z1: float = CAMP_CENTRE.z + 110.0
+	_box(Vector3(440.0, 0.5, z1 + 30.0), Vector3(0.0, -0.25, (z1 - 30.0) * 0.5), _ground_mat)
 
 
 ## Old-growth daylight (founder target): a bright, pale sky glowing through the canopy, cool green-grey air between the trunks
@@ -200,7 +340,7 @@ func _apply_light() -> void:
 	env.fog_light_color = Color(0.56, 0.58, 0.54)
 	env.fog_light_energy = 1.0
 	env.fog_sun_scatter = 0.25
-	env.fog_density = 0.0085
+	env.fog_density = 0.0095                     # a touch denser than the 300 m wood: the far slices fade before they are culled
 	env.fog_sky_affect = 0.25
 	env.glow_enabled = true
 	env.glow_intensity = 0.55
@@ -233,33 +373,93 @@ func _apply_light() -> void:
 	_sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
 
 
+## The trodden trail and the logging road as two smooth ribbons (one mesh each) - the same needle-and-moss floor, darker and
+## browner (a grey gravel slab read as concrete in the old-growth wood). The road follows the quad's own curve exactly.
 func _build_trails() -> void:
-	# a trodden path: the same needle-and-moss floor, darker and browner (a grey gravel slab read as concrete in the old-growth wood)
 	var dirt: StandardMaterial3D = _tex(FLOOR_TEX, Color(0.58, 0.46, 0.36), 0.45) if ResourceLoader.exists(FLOOR_TEX) else _tex(GRAVEL_TEX, Color(0.34, 0.27, 0.20), 0.5)
 	dirt.uv1_world_triplanar = true
-	var all_trails: Array = [SNEAK_TRAIL, RIDE_TRAIL]
-	for tr in all_trails:
-		var w: float = 2.2 if tr == SNEAK_TRAIL else 4.4
-		for i in range(tr.size() - 1):
-			var a: Vector2 = tr[i]
-			var b: Vector2 = tr[i + 1]
-			var mid: Vector2 = (a + b) * 0.5
-			var seg := _box(Vector3(w, 0.04, a.distance_to(b) + 0.6), Vector3(mid.x, 0.02, mid.y), dirt)
-			seg.rotation.y = atan2(b.x - a.x, b.y - a.y)
-	# from the ridge the ride continues as a track to the camp road: a faded ribbon
+	var road: StandardMaterial3D = _tex(FLOOR_TEX, Color(0.50, 0.40, 0.31), 0.4) if ResourceLoader.exists(FLOOR_TEX) else _tex(GRAVEL_TEX, Color(0.32, 0.26, 0.20), 0.5)
+	road.uv1_world_triplanar = true
+	var trail_mi := _ribbon(_smooth(SNEAK_TRAIL, 1.5), 2.2, dirt, 0.021)
+	trail_mi.name = "SneakTrail"
+	var road_mi := _ribbon(_ride_pts, 4.6, road, 0.02)
+	road_mi.name = "LoggingRoad"
 	var spawn_pad := _box(Vector3(6.0, 0.04, 6.0), Vector3(0.0, 0.02, 2.0), dirt)
 	spawn_pad.name = "LiftPad"
 
 
+## Catmull-Rom through `pts` (Vector2 x,z), resampled every ~`step` metres.
+func _smooth(pts: Array, step: float) -> PackedVector3Array:
+	var out := PackedVector3Array()
+	var n: int = pts.size()
+	for i in n - 1:
+		var p0: Vector2 = pts[maxi(i - 1, 0)]
+		var p1: Vector2 = pts[i]
+		var p2: Vector2 = pts[i + 1]
+		var p3: Vector2 = pts[mini(i + 2, n - 1)]
+		var steps: int = maxi(4, int(p1.distance_to(p2) / step))
+		for k in steps:
+			var t: float = float(k) / float(steps)
+			var t2: float = t * t
+			var t3: float = t2 * t
+			var q: Vector2 = 0.5 * ((2.0 * p1) + (-p0 + p2) * t + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t2 + (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * t3)
+			out.append(Vector3(q.x, 0.0, q.y))
+	var last: Vector2 = pts[n - 1]
+	out.append(Vector3(last.x, 0.0, last.y))
+	return out
+
+
+## A flat strip `width` wide along `pts`, `y` above the ground: one ArrayMesh, world-triplanar material.
+func _ribbon(pts: PackedVector3Array, width: float, mat: Material, y: float) -> MeshInstance3D:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var n: int = pts.size()
+	var left := PackedVector3Array()
+	var right := PackedVector3Array()
+	for i in n:
+		var a: Vector3 = pts[maxi(i - 1, 0)]
+		var b: Vector3 = pts[mini(i + 1, n - 1)]
+		var t: Vector3 = b - a
+		t.y = 0.0
+		t = t.normalized() if t.length() > 0.001 else Vector3.FORWARD
+		var side := Vector3(t.z, 0.0, -t.x) * (width * 0.5)
+		left.append(pts[i] - side + Vector3(0.0, y, 0.0))
+		right.append(pts[i] + side + Vector3(0.0, y, 0.0))
+	for i in n - 1:
+		for v in [left[i], right[i], left[i + 1], right[i], right[i + 1], left[i + 1]]:
+			st.set_normal(Vector3.UP)
+			st.add_vertex(v)
+	var mi := MeshInstance3D.new()
+	mi.mesh = st.commit()
+	mi.material_override = mat
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_visuals.add_child(mi)
+	return mi
+
+
 func _distance_to_trails(p: Vector2) -> float:
-	var best: float = 1e9
+	return _dist_segs(p, _segs_near(-1e9, 1e9, 0.0))
+
+
+## The trail / road segments whose z-range comes within `margin` of [z0, z1] (a forest slice only tests its own few).
+func _segs_near(z0: float, z1: float, margin: float) -> Array:
+	var out: Array = []
 	for tr in [SNEAK_TRAIL, RIDE_TRAIL]:
 		for i in range(tr.size() - 1):
 			var a: Vector2 = tr[i]
 			var b: Vector2 = tr[i + 1]
-			var ab: Vector2 = b - a
-			var t: float = clampf((p - a).dot(ab) / maxf(ab.length_squared(), 0.001), 0.0, 1.0)
-			best = minf(best, p.distance_to(a + ab * t))
+			if maxf(a.y, b.y) >= z0 - margin and minf(a.y, b.y) <= z1 + margin:
+				out.append([a, b])
+	return out
+
+
+func _dist_segs(p: Vector2, segs: Array) -> float:
+	var best: float = 1e9
+	for sg in segs:
+		var a: Vector2 = sg[0]
+		var ab: Vector2 = (sg[1] as Vector2) - a
+		var t: float = clampf((p - a).dot(ab) / maxf(ab.length_squared(), 0.001), 0.0, 1.0)
+		best = minf(best, p.distance_to(a + ab * t))
 	return best
 
 
@@ -273,6 +473,13 @@ func _load_forest_kit() -> void:
 			if mi != null and mi.mesh != null:
 				_kit_meshes[piece] = mi.mesh
 		root.free()
+	if ResourceLoader.exists(ROCK_MODEL):
+		var rroot: Node = (load(ROCK_MODEL) as PackedScene).instantiate()
+		for n in rroot.find_children("*", "MeshInstance3D", true, false):
+			if (n as MeshInstance3D).mesh != null:
+				_rock_mesh = (n as MeshInstance3D).mesh
+				break
+		rroot.free()
 	_bark_mat = StandardMaterial3D.new()
 	_bark_mat.albedo_color = Color(0.78, 0.66, 0.60)
 	_bark_mat.roughness = 0.95
@@ -302,11 +509,25 @@ func _foliage_mat(tex: String, tint: Color, sway: float, speed: float, bend_h: f
 	return m
 
 
-## True when nothing may grow at p: the trails (with a margin), the spy sight-line, the bear camp, the quad's hiding place, the lift mouth.
-func _forest_blocked(p: Vector2, margin: float, trees: bool = true) -> bool:
-	return _distance_to_trails(p) < margin or (absf(p.x) < 13.0 and p.y > 140.0 and p.y < 175.0) \
-		or p.distance_to(Vector2(CAMP_CENTRE.x, CAMP_CENTRE.z)) < 24.0 or p.distance_to(Vector2(QUAD_POS.x, QUAD_POS.z)) < 6.0 \
-		or (trees and absf(p.x) < 7.0 and p.y < 8.0 and p.y > -14.0)
+## True when nothing may grow at p: the trails (with a margin), the spy sight-line, the bear camp, the quad's hiding place, the lift
+## mouth, and (for trunks) the bears' beats - a bear on his patrol never walks through a tree.
+func _forest_blocked(p: Vector2, margin: float, trees: bool = true, segs: Array = []) -> bool:
+	var sg: Array = segs if not segs.is_empty() else _segs_near(p.y, p.y, margin + 40.0)
+	if _dist_segs(p, sg) < margin:
+		return true
+	if (absf(p.x) < 13.0 and p.y > RIDGE_Z - 8.0 and p.y < CAMP_CENTRE.z - 14.0) or p.distance_to(Vector2(CAMP_CENTRE.x, CAMP_CENTRE.z)) < 24.0 \
+			or p.distance_to(Vector2(QUAD_POS.x, QUAD_POS.z)) < 6.0:
+		return true
+	if trees:
+		if absf(p.x) < 7.0 and p.y < 8.0 and p.y > -14.0:
+			return true
+		for c in _clearings:
+			var a: Vector2 = c[0]
+			var ab: Vector2 = (c[1] as Vector2) - a
+			var t: float = clampf((p - a).dot(ab) / maxf(ab.length_squared(), 0.001), 0.0, 1.0)
+			if p.distance_to(a + ab * t) < float(c[2]):
+				return true
+	return false
 
 
 func _hash01(x: float, z: float, k: float) -> float:
@@ -314,104 +535,177 @@ func _hash01(x: float, z: float, k: float) -> float:
 	return h - floor(h)
 
 
-## THE OLD-GROWTH WOOD (founder target): giant conifers 34-48 m tall and 1.4-2.8 m across with root flares and real bark, their crowns
-## of drooping fir-branch cards high overhead swaying in the wind; young firs between them; a fern understorey; fallen snags and mossy
-## rocks on a needle-and-moss floor. Every layer is one MultiMesh (one draw call) so the web build stays smooth.
-## Fallback to the old primitive wood only if the kit failed to import.
-func _build_forest() -> void:
+func _forest_chunk_count() -> int:
+	return int(ceil((CAMP_CENTRE.z + 100.0 - FOREST_Z0) / CHUNK_Z))
+
+
+## The x-span of slice [z0, z1): FOREST_HALF_W either side of every trail / road point near it (the camp too at the far end).
+func _chunk_x_span(z0: float, z1: float) -> Vector2:
+	var lo: float = 1e9
+	var hi: float = -1e9
+	for tr in [SNEAK_TRAIL, RIDE_TRAIL]:
+		for pt in tr:
+			var v: Vector2 = pt
+			if v.y >= z0 - 45.0 and v.y <= z1 + 45.0:
+				lo = minf(lo, v.x)
+				hi = maxf(hi, v.x)
+	if z1 > CAMP_CENTRE.z - 70.0:
+		lo = minf(lo, CAMP_CENTRE.x - 25.0)
+		hi = maxf(hi, CAMP_CENTRE.x + 25.0)
+	if lo > hi:
+		lo = 0.0
+		hi = 0.0
+	return Vector2(lo - FOREST_HALF_W, hi + FOREST_HALF_W)
+
+
+## THE OLD-GROWTH WOOD (founder target), one 60 m slice: giant conifers 34-48 m tall and 1.4-2.8 m across with root flares and real
+## bark, their crowns of drooping fir-branch cards high overhead swaying in the wind; young firs between them; a fern understorey;
+## fallen snags and mossy rocks on a needle-and-moss floor. Every layer of a slice is one MultiMesh with a draw distance.
+## The grids are global (anchored at the old origins), so the wood by the mine is the one the founder approved.
+func _build_forest_chunk(ci: int) -> void:
 	if not _kit_meshes.has("Trunk") or not _kit_meshes.has("Crown"):
-		_build_forest_primitive()
+		if ci == 0:
+			_build_forest_primitive()
 		return
+	var z0: float = FOREST_Z0 + float(ci) * CHUNK_Z
+	var z1: float = z0 + CHUNK_Z
+	var span: Vector2 = _chunk_x_span(z0, z1)
+	var segs: Array = _segs_near(z0, z1, 40.0)
 	var xf_trunk: Array = []
 	var xf_crown: Array = []
 	var xf_fern: Array = []
 	var xf_snag: Array = []
 	var rocks: Array = []
 	# 1) the giants, on a jittered grid
-	var gx: float = -72.0
-	while gx <= 72.0:
-		var gz: float = -16.0
-		while gz <= 292.0:                                        # past the camp too: the far wood closes the horizon (no white gaps)
+	var gx: float = -72.0 + ceil((span.x + 72.0) / GIANT_SPACING) * GIANT_SPACING
+	while gx <= span.y:
+		var gz: float = -16.0 + ceil((z0 + 16.0) / GIANT_SPACING) * GIANT_SPACING
+		while gz < z1:
 			var r1: float = _hash01(gx, gz, 1.0)
 			var r2: float = _hash01(gz, gx, 2.7)
 			var p := Vector2(gx + (r1 - 0.5) * 7.0, gz + (r2 - 0.5) * 7.0)
 			var rad: float = 0.7 + 0.7 * r2
-			if not _forest_blocked(p, 3.4 + rad * 1.4):
+			if not _forest_blocked(p, 3.4 + rad * 1.4, true, segs):
 				var h: float = 34.0 + 14.0 * r1
 				var yaw: float = r1 * TAU
 				xf_trunk.append(Transform3D(Basis(Vector3.UP, yaw) * Basis.from_scale(Vector3(rad, h, rad)), Vector3(p.x, -0.15, p.y)))
 				var cs: float = h / 40.0
 				xf_crown.append(Transform3D(Basis(Vector3.UP, yaw + 1.3) * Basis.from_scale(Vector3.ONE * cs), Vector3(p.x, 0.0, p.y)))
-				_trees.append([p, rad * 1.25 + 0.25])
+				_add_tree(p, rad * 1.25 + 0.25, h)
 			gz += GIANT_SPACING
 		gx += GIANT_SPACING
 	# 2) young firs in the gaps (6-14 m: their crowns come down to eye level and give the mid-ground its green)
-	gx = -66.0
-	while gx <= 66.0:
-		var gz2: float = -10.0
-		while gz2 <= 232.0:
+	gx = -66.0 + ceil((span.x + 66.0) / 7.0) * 7.0
+	while gx <= span.y:
+		var gz2: float = -10.0 + ceil((z0 + 10.0) / 7.0) * 7.0
+		while gz2 < z1:
 			var q1: float = _hash01(gx, gz2, 3.3)
 			var q2: float = _hash01(gz2, gx, 5.1)
 			var p2 := Vector2(gx + (q1 - 0.5) * 9.0, gz2 + (q2 - 0.5) * 9.0)
-			if q1 < 0.30 and not _forest_blocked(p2, 7.0):
+			if q1 < 0.30 and not _forest_blocked(p2, 7.0, true, segs):
 				var h2: float = 6.0 + 8.0 * q2
 				var rad2: float = 0.10 + 0.012 * h2
 				xf_trunk.append(Transform3D(Basis.from_scale(Vector3(rad2, h2 * 0.97, rad2)), Vector3(p2.x, 0.0, p2.y)))
 				# the crown model starts its branches at 15/40 of its height: sink it so the young tree's branches start ~1 m up
 				var cs2: float = h2 / 40.0 * 1.55
 				xf_crown.append(Transform3D(Basis(Vector3.UP, q2 * TAU) * Basis.from_scale(Vector3.ONE * cs2), Vector3(p2.x, h2 - 40.5 * cs2, p2.y)))
-				_trees.append([p2, 0.45])
+				_add_tree(p2, 0.45, h2)
 			gz2 += 7.0
 		gx += 7.0
-	# 3) the fern understorey and the forest-floor clutter (snags, rocks)
-	var fx: float = -60.0
-	while fx <= 60.0:
-		var fz: float = -12.0
-		while fz <= 230.0:
+	# 3) the fern understorey and the forest-floor clutter (snags, rocks) - thick along the trail, thinning into the deep wood
+	var fx: float = -60.0 + ceil((span.x + 60.0) / 2.6) * 2.6
+	while fx <= span.y:
+		var fz: float = -12.0 + ceil((z0 + 12.0) / 2.6) * 2.6
+		while fz < z1:
 			var f1: float = _hash01(fx, fz, 7.7)
 			var f2: float = _hash01(fz, fx, 9.1)
 			var p3 := Vector2(fx + (f1 - 0.5) * 3.2, fz + (f2 - 0.5) * 3.2)
-			var near_trail: float = _distance_to_trails(p3)
-			if near_trail > 1.5 and not _forest_blocked(p3, 1.5, false) and p3.distance_to(Vector2(SPAWN.x, SPAWN.z)) > 2.5 and f1 < 0.72 + 0.25 * clampf((near_trail - 2.0) / 6.0, 0.0, 1.0):
-				var s: float = 0.7 + 0.9 * f2
-				xf_fern.append(Transform3D(Basis(Vector3.UP, f1 * TAU) * Basis.from_scale(Vector3(s, s * (0.8 + 0.4 * f1), s)), Vector3(p3.x, -0.05, p3.y)))
-			if f2 > 0.985 and near_trail > 4.0 and not _forest_blocked(p3, 4.0):
-				xf_snag.append(Transform3D(Basis(Vector3.UP, f1 * TAU) * Basis.from_scale(Vector3(0.8 + f1, 0.9 + 0.4 * f2, 0.9 + 0.4 * f2)), Vector3(p3.x, -0.12, p3.y)))
-			elif f2 < 0.03 and near_trail > 2.4 and not _forest_blocked(p3, 2.4):
-				rocks.append(Transform3D(Basis(Vector3.UP, f1 * TAU) * Basis.from_scale(Vector3.ONE * (0.5 + 1.2 * f1)), Vector3(p3.x, -0.1, p3.y)))
+			var near_trail: float = _dist_segs(p3, segs)
+			if near_trail < 58.0:
+				var keep: float = (0.72 + 0.25 * clampf((near_trail - 2.0) / 6.0, 0.0, 1.0)) * (1.0 if near_trail < 30.0 else 0.5)
+				if near_trail > 1.5 and f1 < keep and not _forest_blocked(p3, 1.5, false, segs) and p3.distance_to(Vector2(SPAWN.x, SPAWN.z)) > 2.5:
+					var s: float = 0.7 + 0.9 * f2
+					xf_fern.append(Transform3D(Basis(Vector3.UP, f1 * TAU) * Basis.from_scale(Vector3(s, s * (0.8 + 0.4 * f1), s)), Vector3(p3.x, -0.05, p3.y)))
+				if f2 > 0.985 and near_trail > 4.0 and not _forest_blocked(p3, 4.0, true, segs):
+					xf_snag.append(Transform3D(Basis(Vector3.UP, f1 * TAU) * Basis.from_scale(Vector3(0.8 + f1, 0.9 + 0.4 * f2, 0.9 + 0.4 * f2)), Vector3(p3.x, -0.12, p3.y)))
+				elif f2 < 0.03 and near_trail > 2.4 and not _forest_blocked(p3, 2.4, true, segs):
+					rocks.append(Transform3D(Basis(Vector3.UP, f1 * TAU) * Basis.from_scale(Vector3.ONE * (0.5 + 1.2 * f1)), Vector3(p3.x, -0.1, p3.y)))
 			fz += 2.6
 		fx += 2.6
-	var mm_t := _multi(_kit_meshes["Trunk"], xf_trunk, _bark_mat)
-	var mm_c := _multi(_kit_meshes["Crown"], xf_crown, _crown_mat)
+	var mm_t := _multi(_kit_meshes["Trunk"], xf_trunk, _bark_mat, 240.0)
+	var mm_c := _multi(_kit_meshes["Crown"], xf_crown, _crown_mat, 240.0)
 	if _kit_meshes.has("Fern"):
-		var mm_f := _multi(_kit_meshes["Fern"], xf_fern, _fern_mat)
+		var mm_f := _multi(_kit_meshes["Fern"], xf_fern, _fern_mat, 120.0)
 		if mm_f != null:
 			mm_f.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			mm_f.name = "ForestFerns_%d" % ci
 	if _kit_meshes.has("Snag"):
-		_multi(_kit_meshes["Snag"], xf_snag, _bark_mat)
+		_multi(_kit_meshes["Snag"], xf_snag, _bark_mat, 130.0)
 	_scatter_rocks(rocks)
 	if mm_t != null:
-		mm_t.name = "ForestTrunks"
+		mm_t.name = "ForestTrunks_%d" % ci
 	if mm_c != null:
-		mm_c.name = "ForestCrowns"
-	_build_sun_shafts()
+		mm_c.name = "ForestCrowns_%d" % ci
+
+
+## One trunk for collision, sight lines and bullets (and its grid cell).
+func _add_tree(p: Vector2, r: float, h: float) -> void:
+	var e: Array = [p, r, h]
+	_trees.append(e)
+	var c := Vector2i(int(floor(p.x / TREE_CELL)), int(floor(p.y / TREE_CELL)))
+	if not _tree_grid.has(c):
+		_tree_grid[c] = []
+	(_tree_grid[c] as Array).append(e)
+
+
+## Trunks in the cells around p (radius in cells).
+func _trees_near(p: Vector2, cells: int = 1) -> Array:
+	var out: Array = []
+	var c := Vector2i(int(floor(p.x / TREE_CELL)), int(floor(p.y / TREE_CELL)))
+	for dx in range(-cells, cells + 1):
+		for dz in range(-cells, cells + 1):
+			var k := Vector2i(c.x + dx, c.y + dz)
+			if _tree_grid.has(k):
+				out.append_array(_tree_grid[k])
+	return out
+
+
+## Is the straight line a -> b (ground plane) through a trunk? Sight lines (a bear seeing Lil Blunt) and arrows use it.
+func _los_blocked(a: Vector2, b: Vector2) -> bool:
+	var d: float = a.distance_to(b)
+	if d < 0.5:
+		return false
+	var seen: Dictionary = {}
+	var n: int = int(ceil(d / (TREE_CELL * 0.5)))
+	for i in n + 1:
+		var q: Vector2 = a.lerp(b, float(i) / float(maxi(n, 1)))
+		var c := Vector2i(int(floor(q.x / TREE_CELL)), int(floor(q.y / TREE_CELL)))
+		for dx in range(-1, 2):
+			for dz in range(-1, 2):
+				var k := Vector2i(c.x + dx, c.y + dz)
+				if seen.has(k) or not _tree_grid.has(k):
+					continue
+				seen[k] = true
+				for e in _tree_grid[k]:
+					var tp: Vector2 = e[0]
+					var r: float = float(e[1]) * 0.75
+					if tp.distance_to(a) < r + 0.3 or tp.distance_to(b) < r + 0.3:
+						continue
+					var ab: Vector2 = b - a
+					var t: float = clampf((tp - a).dot(ab) / ab.length_squared(), 0.0, 1.0)
+					if tp.distance_to(a + ab * t) < r:
+						return true
+	return false
 
 
 ## Mossy boulders: the Tripo rock when it is in the pack, else a squashed low sphere in the floor material.
 func _scatter_rocks(xforms: Array) -> void:
 	if xforms.is_empty():
 		return
-	if ResourceLoader.exists(ROCK_MODEL):
-		var root: Node = (load(ROCK_MODEL) as PackedScene).instantiate()
-		var mi: MeshInstance3D = null
-		for n in root.find_children("*", "MeshInstance3D", true, false):
-			mi = n
-			break
-		if mi != null and mi.mesh != null:
-			var mm := _multi(mi.mesh, xforms, null)
-			if mm != null:
-				mm.material_override = null
-		root.free()
+	if _rock_mesh != null:
+		var mm := _multi(_rock_mesh, xforms, null, 130.0)
+		if mm != null:
+			mm.material_override = null
 		return
 	var sm := SphereMesh.new()
 	sm.radius = 0.8
@@ -419,11 +713,11 @@ func _scatter_rocks(xforms: Array) -> void:
 	sm.radial_segments = 9
 	sm.rings = 5
 	var rock_mat: StandardMaterial3D = _tex(FLOOR_TEX, Color(0.62, 0.66, 0.55), 0.6)
-	_multi(sm, xforms, rock_mat)
+	_multi(sm, xforms, rock_mat, 130.0)
 
 
-## Light through the canopy: tall additive shafts, leaning with the sun, faded at both ends (the target's god rays). Unshaded,
-## no depth write - in the Compatibility renderer there is no volumetric fog to do this for us.
+## Light through the canopy: tall additive shafts, leaning with the sun, faded at both ends (the target's god rays), along the trail
+## and the first stretch of the road. Unshaded, no depth write - in the Compatibility renderer there is no volumetric fog for this.
 func _build_sun_shafts() -> void:
 	var grad := Gradient.new()
 	grad.set_color(0, Color(1, 1, 1, 0))
@@ -436,10 +730,6 @@ func _build_sun_shafts() -> void:
 	gt.fill_to = Vector2(0.5, 1.0)
 	gt.width = 8
 	gt.height = 128
-	var side := Gradient.new()
-	side.set_color(0, Color(1, 1, 1, 0))
-	side.set_color(1, Color(1, 1, 1, 0))
-	side.add_point(0.5, Color(1, 1, 1, 1))
 	var m := StandardMaterial3D.new()
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -452,16 +742,22 @@ func _build_sun_shafts() -> void:
 	var qm := QuadMesh.new()
 	qm.size = Vector2(2.6, 30.0)
 	var xfs: Array = []
-	var z: float = 6.0
 	var i: int = 0
-	while z < 150.0:
-		i += 1
-		var r: float = _hash01(float(i), z, 4.4)
-		var p := Vector2((r - 0.5) * 34.0, z + r * 6.0)
-		if not (absf(p.x) < 13.0 and p.y > 140.0):
-			xfs.append(Transform3D(Basis.from_scale(Vector3(0.6 + 1.4 * r, 1.0, 1.0)), Vector3(p.x, 13.0, p.y)))
-		z += 4.5
-	var mm := _multi(qm, xfs, m)
+	for tr in [_smooth(SNEAK_TRAIL, 4.5), _ride_pts]:
+		var pts: PackedVector3Array = tr
+		var stride: int = 1 if pts == _ride_pts else 1
+		var acc: float = 0.0
+		for k in range(1, pts.size(), stride):
+			acc += pts[k].distance_to(pts[k - 1])
+			if acc < 4.5:
+				continue
+			acc = 0.0
+			i += 1
+			var r: float = _hash01(float(i), pts[k].z, 4.4)
+			var p := Vector2(pts[k].x + (r - 0.5) * 34.0, pts[k].z + r * 6.0)
+			if not (absf(p.x) < 13.0 and p.y > RIDGE_Z - 8.0):
+				xfs.append(Transform3D(Basis.from_scale(Vector3(0.6 + 1.4 * r, 1.0, 1.0)), Vector3(p.x, 13.0, p.y)))
+	var mm := _multi(qm, xfs, m, 0.0)
 	if mm != null:
 		mm.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		mm.name = "SunShafts"
@@ -485,11 +781,11 @@ func _build_forest_primitive() -> void:
 				xf_trunk.append(Transform3D(Basis.from_scale(Vector3(rad, h, rad)), Vector3(p.x, h * 0.5, p.y)))
 				var cr: float = 2.6 + 1.4 * r2
 				xf_low.append(Transform3D(Basis.from_scale(Vector3(cr, 6.0, cr)), Vector3(p.x, h * 0.62 + 1.8, p.y)))
-				_trees.append([p, rad + 0.25])
+				_add_tree(p, rad + 0.25, h)
 			gz += 7.5
 		gx += 7.5
-	_multi(_cyl_mesh(1.0, 1.0, 1.0, 6), xf_trunk, bark)
-	_multi(_cyl_mesh(0.0, 1.0, 1.0, 8), xf_low, _leaf_mats[0])
+	_multi(_cyl_mesh(1.0, 1.0, 1.0, 6), xf_trunk, bark, 0.0)
+	_multi(_cyl_mesh(0.0, 1.0, 1.0, 8), xf_low, _leaf_mats[0], 0.0)
 
 
 func _cyl_mesh(rt: float, rb: float, h: float, sides: int) -> CylinderMesh:
@@ -501,7 +797,8 @@ func _cyl_mesh(rt: float, rb: float, h: float, sides: int) -> CylinderMesh:
 	return cm
 
 
-func _multi(mesh: Mesh, xforms: Array, mat: Material) -> MultiMeshInstance3D:
+## One MultiMesh layer; `draw_dist` > 0 culls the whole slice beyond that distance (the fog has swallowed it by then).
+func _multi(mesh: Mesh, xforms: Array, mat: Material, draw_dist: float = 0.0) -> MultiMeshInstance3D:
 	if xforms.is_empty():
 		return null
 	var mm := MultiMesh.new()
@@ -513,6 +810,9 @@ func _multi(mesh: Mesh, xforms: Array, mat: Material) -> MultiMeshInstance3D:
 	var mmi := MultiMeshInstance3D.new()
 	mmi.multimesh = mm
 	mmi.material_override = mat
+	if draw_dist > 0.0:
+		mmi.visibility_range_end = draw_dist
+		mmi.visibility_range_end_margin = 12.0
 	_visuals.add_child(mmi)
 	return mmi
 
@@ -559,7 +859,7 @@ func _build_mine_hut() -> void:
 	# the adit walls are solid (trunk-style collision circles along both sides)
 	for zi in 11:
 		for sx in [-1.0, 1.0]:
-			_trees.append([Vector2(sx * 2.25, -4.0 + float(zi) * 0.8), 0.55])
+			_add_tree(Vector2(sx * 2.25, -4.0 + float(zi) * 0.8), 0.55, 3.5)
 
 
 ## One piece of the mine-lift walkway kit, with the lift's own triplanar plank / timber / rusted-iron materials (local scale).
@@ -605,6 +905,7 @@ func _build_quad() -> void:
 	_quad.name = "FlameQuad"
 	_quad.position = QUAD_POS
 	_quad.rotation.y = QUAD_YAW
+	_quad_yaw = QUAD_YAW
 	_visuals.add_child(_quad)
 	var model: Node3D = null
 	if ResourceLoader.exists(QUAD_MODEL):
@@ -687,12 +988,12 @@ func _build_cover() -> void:
 		var sz: float = 0.7 + 0.45 * absf(sin(float(i) * 2.3))
 		var clump := _foliage_bit(i, sz, Vector3(x, y, z), _cover)
 		clump.rotation = Vector3(0.3 * sin(float(i)), float(i), 0.2 * cos(float(i)))
-		_cover_bits.append([clump, Vector3(x, 0.4, z).normalized() * (2.0 + 1.5 * absf(sin(float(i) * 3.1))) + Vector3(0.0, 3.0, 0.0), 2.5 * sin(float(i) * 1.3)])
+		_cover_bits.append([clump, Vector3(x, 0.4, z).normalized() * (2.0 + 1.5 * absf(sin(float(i) * 3.1))) + Vector3(0.0, 3.0, 0.0), 2.5 * sin(float(i) * 1.3), clump.transform])
 	for i in 16:
 		var a2: float = float(i) * 0.7854
 		var br := _cyl(0.035, 0.05, 2.0 + 0.5 * sin(float(i)), Vector3(cos(a2) * 0.9, 1.5, sin(a2) * 1.6), branch_mat, _cover, 5)
 		br.rotation = Vector3(0.6 * sin(a2 * 2.0), a2, 0.5 * cos(a2))
-		_cover_bits.append([br, Vector3(cos(a2), 1.0, sin(a2)) * 3.0, 3.0])
+		_cover_bits.append([br, Vector3(cos(a2), 1.0, sin(a2)) * 3.0, 3.0, br.transform])
 	# the surrounding thicket (stays): the same leaf materials, so the pile belongs
 	for i in 22:
 		var a3: float = float(i) * 0.2856
@@ -753,7 +1054,7 @@ func _build_camp() -> void:
 	# two sentries at the camp's edge: the founder's Tripo BEAR ARCHER (bow drawn, miner's lamp lit - his reference still),
 	# aiming down the approach toward the ridge. Static pose; the arrow runs along the model's +X, so a +90 deg yaw aims it at -Z.
 	if ResourceLoader.exists(BEAR_ARCHER_MODEL):
-		var sentries: Array = [Vector3(-6.5, 0.0, 172.0), Vector3(7.5, 0.0, 173.5)]
+		var sentries: Array = [Vector3(cx - 6.5, 0.0, cz - 16.0), Vector3(cx + 7.5, 0.0, cz - 14.5)]
 		for si in sentries.size():
 			var sp: Vector3 = sentries[si]
 			var archer: Node3D = (load(BEAR_ARCHER_MODEL) as PackedScene).instantiate()
@@ -762,17 +1063,18 @@ func _build_camp() -> void:
 			var k: float = 2.0 / (0.892 * 1.9009)
 			archer.scale = Vector3.ONE * k
 			archer.position = sp + Vector3(0.0, 0.8629 * k, 0.0)
-			archer.rotation.y = PI * 0.5 + (sp.x * 0.012)
+			archer.rotation.y = PI * 0.5 + ((sp.x - cx) * 0.012)
 			_visuals.add_child(archer)
 	# tents: prisms
-	for tp in [Vector3(-12.0, 0.0, 186.0), Vector3(11.0, 0.0, 184.0), Vector3(-9.0, 0.0, 199.0), Vector3(9.0, 0.0, 198.0)]:
+	for to in [Vector3(-12.0, 0.0, -2.0), Vector3(11.0, 0.0, -4.0), Vector3(-9.0, 0.0, 11.0), Vector3(9.0, 0.0, 10.0)]:
+		var tp: Vector3 = CAMP_CENTRE + (to as Vector3)
 		var pm := PrismMesh.new()
 		pm.size = Vector3(4.6, 3.0, 5.0)
 		var tent := MeshInstance3D.new()
 		tent.mesh = pm
 		tent.material_override = canvas
 		tent.position = tp + Vector3(0.0, 1.5, 0.0)
-		tent.rotation.y = tp.x * 0.1
+		tent.rotation.y = (to as Vector3).x * 0.1
 		_visuals.add_child(tent)
 	# logs round the fire
 	for i in 6:
@@ -794,22 +1096,12 @@ func _build_camp() -> void:
 	smoke.initial_velocity_min = 0.8
 	smoke.initial_velocity_max = 1.4
 	_visuals.add_child(smoke)
-	# a watchtower with a lookout bear
+	# a watchtower
 	for tx in [-1.0, 1.0]:
 		for tz in [-1.0, 1.0]:
-			_box(Vector3(0.35, 7.0, 0.35), Vector3(-17.0 + 1.6 * tx, 3.5, 176.0 + 1.6 * tz), wood)
-	_box(Vector3(4.2, 0.3, 4.2), Vector3(-17.0, 7.0, 176.0), wood)
-	_box(Vector3(4.2, 0.9, 0.2), Vector3(-17.0, 7.6, 174.0), wood)
-	# the bears (a rigged bear on each spot, idle, facing the fire)
-	for i in BEAR_SPOTS.size():
-		var sp: Vector2 = BEAR_SPOTS[i]
-		var b: Ep2Actor = _make_bear(Vector3(sp.x, 0.0, sp.y))
-		b.face_point(Vector3(cx, 0.0, cz))
-		b.facing = atan2(cx - sp.x, cz - sp.y)
-		b.rotation.y = b.facing
-		_camp_bears.append(b)
-		_marked.append(false)
-		_marks.append(null)
+			_box(Vector3(0.35, 7.0, 0.35), Vector3(cx - 17.0 + 1.6 * tx, 3.5, cz - 12.0 + 1.6 * tz), wood)
+	_box(Vector3(4.2, 0.3, 4.2), Vector3(cx - 17.0, 7.0, cz - 12.0), wood)
+	_box(Vector3(4.2, 0.9, 0.2), Vector3(cx - 17.0, 7.6, cz - 14.0), wood)
 
 
 func _build_ridge() -> void:
@@ -818,187 +1110,22 @@ func _build_ridge() -> void:
 	var wood: StandardMaterial3D = _tex(TIMBER_TEX, Color(0.45, 0.33, 0.22), 0.6)
 	for i in 26:
 		var x: float = -10.0 + float(i) * 0.9
-		var z: float = 150.0 + 1.0 * sin(float(i) * 1.9)
+		var z: float = RIDGE_Z + 3.0 + 1.0 * sin(float(i) * 1.9)
 		var f: Node3D = _foliage_bit(i, 0.6 + 0.25 * absf(sin(float(i) * 2.7)), Vector3(x, 0.0, z), _visuals, true) if _fern_mat != null \
 			else _sphere(0.6 + 0.25 * absf(sin(float(i) * 2.7)), Vector3(x, 0.3, z), fern, null, 0.7)
 		f.rotation.y = float(i)
-	var log := _cyl(0.45, 0.45, 9.0, Vector3(1.0, 0.45, 148.6), wood, null, 8)
+	var log := _cyl(0.45, 0.45, 9.0, Vector3(1.0, 0.45, RIDGE_Z + 1.6), wood, null, 8)
 	log.rotation = Vector3(0.0, 0.0, PI * 0.5)
 	log.rotation.y = 0.08
 
 
-func _build_patrols() -> void:
-	for pp in PATROL_BEARS:
-		var p: Vector2 = pp
-		var b: Ep2Actor = _make_bear(Vector3(p.x, 0.0, p.y - 5.0))
-		_patrols.append([b, Vector2(p.x, p.y - 5.0), Vector2(p.x, p.y + 5.0), true])
-		b.walk_to(Vector3(p.x, 0.0, p.y + 5.0), 0.9)
+# --- the living bears -----------------------------------------------------------------------------------------------------
 
-
-## A rigged bear (the runner's bear rig, 1.9 m) with an idle clip looping. Bears are enemies of the story - no weed theming.
-func _make_bear(pos: Vector3) -> Ep2Actor:
-	var b := Ep2Actor.new()
-	b.name = "Bear"
-	b.position = pos
-	_visuals.add_child(b)
-	var ok: bool = b.setup(RunnerMotion.BEAR_RIG, 1.9, 2.2, {}, [])
-	if not ok or b.anim == null:
-		return b
-	# the founder's Tripo bear on the archer clips: lower the bow-less arms out of the T (Ep2BearArmsDown)
-	if b.skeleton != null:
-		var arms := Ep2BearArmsDown.new()
-		arms.name = "ArmsDown"
-		b.skeleton.add_child(arms)
-	var names: PackedStringArray = b.anim.get_animation_list()
-	var idle: String = ""
-	var walk: String = ""
-	for n in names:
-		var ln: String = str(n).to_lower()
-		if idle == "" and (ln.find("idle") >= 0 or ln.find("stand") >= 0 or ln.find("breath") >= 0):
-			idle = str(n)
-		if walk == "" and ln.find("walk") >= 0:
-			walk = str(n)
-	if idle == "" and not names.is_empty():
-		idle = str(names[0])
-	if walk != "":
-		b.walk_clip = walk
-	b.idle_clip = idle
-	if idle != "":
-		b.anim.get_animation(idle).loop_mode = Animation.LOOP_LINEAR
-		b.play(idle, 1.0, 0.0)
-	_bear_clips[b.get_instance_id()] = [idle, walk]
-	return b
-
-
-# --- the story --------------------------------------------------------------------------------------------------------
-
-func _on_setup() -> void:
-	_beat = Beat.SNEAK
-	_player_pos = SPAWN
-	_ground_y = 0.0
-	_apply_handoff_gaze(0.0, -0.04)           # first person, eyes level (keeps the gaze he had at the previous chamber's exit)
-	_player_yaw = 0.0
-	if _bull == null:
-		_bull = _build_bull(Vector3(1.6, 0.0, 4.0), 0.0)
-	_engine = _loop_player(QUAD_LOOP, -7.0)
-	# life in the wood: birds on random flights (some swooping between the trunks), flocks flushing, and the ElevenLabs
-	# soundscape (ambience bed, canopy wind gusts, 3D bird calls) - founder 2026-10-10
-	if _wildlife == null:
-		_wildlife = Ep2Wildlife.new()
-		_wildlife.name = "Wildlife"
-		_visuals.add_child(_wildlife)
-		_wildlife.setup(get_camera(), SPAWN, Vector2(45.0, 45.0), 34.0)
-	_on_beat_entered(Beat.SNEAK)
-
-
-func _on_beat_entered(b: int) -> void:
-	match b:
-		Beat.SNEAK:
-			_sneak_i = 0
-			if _hud:
-				_hud.objective = "Stay close to Inferno. Walk soft - bears hear a runner."
-			_begin_carry_line("vo_bull_woods_sneak")
-		Beat.REVEAL:
-			_bull.stop()
-			if _hud:
-				_hud.objective = ""
-			var bull_at := Vector3(QUAD_POS.x + 3.0, 0.0, QUAD_POS.z - 1.2)
-			_start_show([
-				{"do": "walk", "to": bull_at, "speed": 2.2},
-				{"do": "face", "at": QUAD_POS},
-				FacilityShow._say("vo_bull_quad_reveal", 0.2),
-				{"do": "reach", "at": QUAD_POS + Vector3(0.0, 1.5, 0.0), "ramp": 0.5, "hold": 0.2, "lean": 0.35},
-				{"do": "call", "fn": _reveal_quad},
-				{"do": "wait", "t": 1.2},
-				{"do": "release", "ramp": 0.5, "t": 0.4},
-				FacilityShow._say("vo_lb_quad_ok", 0.2),
-				{"do": "wait", "t": 0.5}], true)
-			look_toward(QUAD_POS + Vector3(0.0, 1.3, 0.0), 2.2)
-		Beat.MOUNT:
-			_start_show([
-				FacilityShow._say("vo_bull_quad_mount", 0.15),
-				{"do": "call", "fn": _mount},
-				{"do": "call", "fn": func() -> void: _fade(1.0, 0.35)},          # a blink while he climbs on behind Inferno
-				{"do": "wait", "t": 0.45}], true)
-		Beat.RIDE:
-			_begin_ride()
-		Beat.SPY:
-			_begin_spy()
-
-
-func _show_finished() -> void:
-	match _beat:
-		Beat.REVEAL:
-			_advance_to(Beat.MOUNT)
-		Beat.MOUNT:
-			_advance_to(Beat.RIDE)
-		Beat.SPY:
-			if _spy_done:
-				_advance_to(Beat.DONE)
-				_resolve({"end_session": true, "to_be_continued": true, "next_mode": "quad_hunt"})
-
-
-func _reveal_quad() -> void:
-	_reveal_t = 0.0
-	_sfx("ep2_leaves_pull")
-
-
-func _mount() -> void:
-	var am: Node = get_node_or_null("/root/AudioManager")
-	if am and am.has_method("play_room_music"):
-		am.play_room_music(MUSIC, 2.0)
-	_sfx("ep2_quad_start")
-	if _quad_light:
-		_quad_light.light_energy = 6.0
-
-
-func _fade(goal: float, seconds: float) -> void:
-	if _hud:
-		_hud.fade_to(goal, seconds)
-
-
-func _begin_ride() -> void:
-	release_look()
-	release_camera()
-	_riding = true
-	_ride_done = false
-	cam_distance = 7.5
-	cam_height = 2.4
-	_look_pitch = -0.08
-	_bull.stop()
-	_bull_mount()
-	_build_ride_path()
-	_quad_yaw_prev = _quad_yaw
-	_look_yaw = _quad_yaw
-	_ride_s = 0.0
-	_ride_speed = 0.0
-	if _engine:
-		_engine.play()
-	_seat_riders()
-	_fade(0.0, 0.7)
-	if _hud:
-		_hud.objective = ""
-
-
-## Catmull-Rom through RIDE_TRAIL, resampled every ~1.5 m: the quad follows this by arc length.
+## The quad's road as a curve: Catmull-Rom through RIDE_TRAIL, resampled every ~1.5 m (built first: the wood keeps clear of it,
+## and the road pickets stand along it).
 func _build_ride_path() -> void:
-	_ride_pts = PackedVector3Array()
+	_ride_pts = _smooth(RIDE_TRAIL, 1.5)
 	_ride_len = PackedFloat32Array()
-	var pts: Array = RIDE_TRAIL
-	var n: int = pts.size()
-	for i in n - 1:
-		var p0: Vector2 = pts[maxi(i - 1, 0)]
-		var p1: Vector2 = pts[i]
-		var p2: Vector2 = pts[i + 1]
-		var p3: Vector2 = pts[mini(i + 2, n - 1)]
-		var steps: int = maxi(4, int(p1.distance_to(p2) / 1.5))
-		for k in steps:
-			var t: float = float(k) / float(steps)
-			var t2: float = t * t
-			var t3: float = t2 * t
-			var q: Vector2 = 0.5 * ((2.0 * p1) + (-p0 + p2) * t + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t2 + (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * t3)
-			_ride_pts.append(Vector3(q.x, 0.0, q.y))
-	_ride_pts.append(Vector3(pts[n - 1].x, 0.0, pts[n - 1].y))
 	var acc: float = 0.0
 	_ride_len.append(0.0)
 	for i in range(1, _ride_pts.size()):
@@ -1019,33 +1146,289 @@ func _ride_sample(s: float) -> Array:
 	return [a.lerp(b, t), atan2(b.x - a.x, b.z - a.z)]
 
 
-func _seat_riders() -> void:
+## Every bear's spawn record: position, facing, group - and the clearing his beat needs (so no trunk stands in his way).
+func _resolve_specs() -> void:
+	_specs.clear()
+	_clearings.clear()
+	for sc in SCOUTS:
+		var d: Dictionary = (sc as Dictionary).duplicate(true)
+		d["group"] = "scout"
+		_specs.append(d)
+	for rb in ROAD_BEARS:
+		var d2: Dictionary = (rb as Dictionary).duplicate(true)
+		var smp: Array = _ride_sample(float(d2["at"]) * _ride_total)
+		var at: Vector3 = smp[0]
+		var yaw: float = float(smp[1])
+		var right := Vector3(-cos(yaw), 0.0, sin(yaw))         # the rider's right (heading yaw: forward = (sin, 0, cos))
+		var p: Vector3 = at + right * float(d2["lat"])
+		d2["pos"] = Vector2(p.x, p.z)
+		if not d2.has("face"):
+			# sentries watch the road coming toward them (a little up-road); readers / sleepers face away into the trees
+			var up_road: Array = _ride_sample(float(d2["at"]) * _ride_total - 25.0)
+			var look: Vector3 = up_road[0]
+			var face: float = atan2(look.x - p.x, look.z - p.z)
+			if str(d2["routine"]) in ["read", "sleep"]:
+				face += PI * 0.6
+			d2["face"] = face
+		d2["group"] = "road"
+		_specs.append(d2)
+	for i in CAMP_BEARS.size():
+		var d3: Dictionary = (CAMP_BEARS[i] as Dictionary).duplicate(true)
+		var off: Vector2 = BEAR_SPOTS[i]
+		d3["pos"] = Vector2(CAMP_CENTRE.x + off.x, CAMP_CENTRE.z + off.y)
+		d3["face"] = atan2(-off.x, -off.y)                     # toward the fire
+		if d3.has("route_off"):
+			var r: Array = []
+			for ro in d3["route_off"]:
+				r.append(Vector2(CAMP_CENTRE.x + (ro as Vector2).x, CAMP_CENTRE.z + (ro as Vector2).y))
+			d3["route"] = r
+		d3["group"] = "camp"
+		_specs.append(d3)
+	for d4 in _specs:
+		var sp: Dictionary = d4
+		var home: Vector2 = sp["pos"]
+		var route: Array = sp.get("route", [])
+		if route.size() >= 2:
+			for i in route.size():
+				_clearings.append([route[i], route[(i + 1) % route.size()], 3.2])
+		else:
+			_clearings.append([home, home, 3.5 + float(sp.get("roam_r", 0.0)) * (1.0 if str(sp["routine"]) == "roam" else 0.0)])
+
+
+## Spawn `count` bears starting at batch `k` (the background build makes a few per frame).
+func _spawn_batch(k: int, count: int) -> void:
+	if _specs.is_empty():
+		_resolve_specs()
+	for i in range(k * count, mini((k + 1) * count, _specs.size())):
+		if i >= _spawned:
+			_spawn_bear(_specs[i], i)
+			_spawned = i + 1
+
+
+func _spawn_bear(spec: Dictionary, idx: int) -> Ep2BearBrain:
+	if _bears_root == null:
+		_bears_root = Node3D.new()
+		_bears_root.name = "Bears"
+		_visuals.add_child(_bears_root)
+	var home: Vector2 = spec["pos"]
+	var h: float = float(spec.get("height", 2.2))
+	var a: Ep2Actor = Ep2BearKit.make_bear(_bears_root, Vector3(home.x, 0.0, home.y), h)
+	a.name = "Bear_" + str(spec["name"]).replace(" ", "")
+	if spec.has("face"):
+		a.facing = float(spec["face"])
+		a.rotation.y = a.facing
+	if str(spec.get("role", "brawler")) == "archer":
+		Ep2BearKit.add_bow(a)
+	var brain := Ep2BearBrain.new(a, (spec as Dictionary).duplicate(true), 1886 + idx * 31 + _attempt * 7)
+	brain.set_meta("group", str(spec["group"]))
+	brain.roared.connect(_on_bear_roared)
+	brain.arrow_loosed.connect(_on_arrow_loosed)
+	brain.swiped.connect(_on_bear_swiped)
+	brain.swing_started.connect(_on_bear_swing)
+	brain.died.connect(_on_bear_died)
+	brain.spotted.connect(_on_bear_spotted)
+	_bears.append(brain)
+	if str(spec["group"]) == "camp":
+		_camp_bears.append(a)
+		_marked.append(false)
+		_marks.append(null)
+	return brain
+
+
+## The bears of one group ("scout", "road", "camp").
+func get_bears(group: String = "") -> Array:
+	if group == "":
+		return _bears.duplicate()
+	return _bears.filter(func(b: Ep2BearBrain) -> bool: return str(b.get_meta("group", "")) == group)
+
+
+func get_bear(bear_name: String) -> Ep2BearBrain:
+	for b in _bears:
+		if (b as Ep2BearBrain).display_name() == bear_name:
+			return b
+	return null
+
+
+func get_scouts() -> Array:
+	return get_bears("scout")
+
+
+# --- the story --------------------------------------------------------------------------------------------------------
+
+func _on_setup() -> void:
+	_beat = Beat.SNEAK
+	_player_pos = SPAWN
+	_prev_player = SPAWN
+	_ground_y = 0.0
+	_apply_handoff_gaze(0.0, -0.04)           # first person, eyes level (keeps the gaze he had at the previous chamber's exit)
+	_player_yaw = 0.0
+	_rng.seed = 1886
+	if _bull == null:
+		_bull = _build_bull(BULL_START, 0.0)
+	_engine = _loop_player(QUAD_LOOP, -7.0)
+	# life in the wood: birds on random flights (some swooping between the trunks), flocks flushing, and the ElevenLabs
+	# soundscape (ambience bed, canopy wind gusts, 3D bird calls) - founder 2026-10-10
+	if _wildlife == null:
+		_wildlife = Ep2Wildlife.new()
+		_wildlife.name = "Wildlife"
+		_visuals.add_child(_wildlife)
+		_wildlife.setup(get_camera(), SPAWN, Vector2(45.0, 45.0), 34.0)
+	if _hud:
+		_hud.show_health = true
+	if _vm != null:
+		# the held Winchester reads the same daylight-bright in every direction (the low sun behind him turned it dark navy):
+		# no tree-shadow patches on it, and its own key light fills what the sun leaves out (see Ep2Viewmodel.set_own_light)
+		_vm.set_world_shadows(false)
+		_vm.set_own_light(VM_KEY_ENERGY, _sun)
+	_on_beat_entered(Beat.SNEAK)
+
+
+func _on_beat_entered(b: int) -> void:
+	match b:
+		Beat.SNEAK:
+			_sneak_i = 0
+			if _hud:
+				_hud.objective = "Stay close to Inferno. Walk soft - the bears' scouts hear a runner."
+			_begin_carry_line("vo_bull_retry" if _retry_line_pending else "vo_bull_woods_sneak")
+			_retry_line_pending = false
+		Beat.REVEAL:
+			_bull.stop()
+			if _hud:
+				_hud.objective = ""
+			var bull_at := Vector3(QUAD_POS.x + 3.0, 0.0, QUAD_POS.z - 1.2)
+			_start_show([
+				{"do": "walk", "to": bull_at, "speed": 2.2},
+				{"do": "face", "at": QUAD_POS},
+				FacilityShow._say("vo_bull_quad_reveal", 0.2),
+				{"do": "reach", "at": QUAD_POS + Vector3(0.0, 1.5, 0.0), "ramp": 0.5, "hold": 0.2, "lean": 0.35},
+				{"do": "call", "fn": _reveal_quad},
+				{"do": "wait", "t": 1.2},
+				{"do": "release", "ramp": 0.5, "t": 0.4},
+				FacilityShow._say("vo_lb_quad_ok", 0.2),
+				{"do": "wait", "t": 0.5}], true)
+			look_toward(QUAD_POS + Vector3(0.0, 1.3, 0.0), 2.2)
+		Beat.MOUNT:
+			# no blink (founder 2026-10-13 "the transitions are not smooth"): his eye climbs onto the back seat while Inferno
+			# swings onto the saddle, in one continuous move
+			_start_show([
+				FacilityShow._say("vo_bull_quad_mount", 0.15),
+				{"do": "call", "fn": _mount},
+				{"do": "wait", "t": 1.05}], true)
+		Beat.RIDE:
+			_begin_ride()
+		Beat.SPY:
+			_begin_spy()
+
+
+func _show_finished() -> void:
+	match _beat:
+		Beat.REVEAL:
+			_advance_to(Beat.MOUNT)
+		Beat.MOUNT:
+			_advance_to(Beat.RIDE)
+		Beat.SPY:
+			if _spy_intro_pending:
+				_spy_intro_pending = false
+				release_look()
+				_start_show([FacilityShow._say("vo_bull_spy1", 0.3)])
+			elif _spy_done:
+				_advance_to(Beat.DONE)
+				_resolve({"end_session": true, "to_be_continued": true, "next_mode": "quad_hunt"})
+
+
+func _reveal_quad() -> void:
+	_reveal_t = 0.0
+	_sfx("ep2_leaves_pull")
+	_noise(QUAD_POS, 10.0, "leaves")
+
+
+func _mount() -> void:
+	var am: Node = get_node_or_null("/root/AudioManager")
+	if am and am.has_method("play_room_music"):
+		am.play_room_music(MUSIC, 2.0)
+	_sfx("ep2_quad_start")
+	if _quad_light:
+		_quad_light.light_energy = 6.0
+	_bull_swing_on()
+	_glide_to(_seat_position(), BACK_EYE, 1.0, 0.35)
+	# while he climbs on his eye turns to the road ahead (a passenger looks where the quad will go)
+	var f := Vector3(sin(_quad_yaw), 0.0, cos(_quad_yaw))
+	look_toward(_seat_position() + f * 25.0 + Vector3(0.0, BACK_EYE, 0.0), 3.2)
+	_noise(QUAD_POS, ENGINE_HEARING, "engine")          # the engine starts: the near wood hears it (Sniffer comes running)
+
+
+func _fade(goal: float, seconds: float) -> void:
+	if _hud:
+		_hud.fade_to(goal, seconds)
+
+
+func _begin_ride() -> void:
+	release_look()
+	release_camera()
+	_riding = true
+	_ride_done = false
+	cam_distance = 7.5
+	cam_height = 2.4
+	_bull.stop()
+	if _bull.current_clip() != BULL_SIT_CLIP:
+		_bull_mount()
+	_bull_swing = {}
+	_glide = {}
+	if _ride_pts.is_empty():
+		_build_ride_path()
+	_quad_yaw_prev = _quad_yaw
+	_ride_s = 0.0
+	_ride_speed = 0.0
+	_road_lines.clear()
+	if _engine:
+		_engine.volume_db = -7.0
+		_engine.play()
+	_seat_riders()
+	if _hud:
+		_hud.objective = "Hold on and shoot back - bears on the road."
+	_start_show([FacilityShow._say("vo_bull_road_start", 0.2), FacilityShow._say("vo_lb_road_go", 0.2)])
+
+
+## Where Lil Blunt kneels on the rack, for the quad's current pose.
+func _seat_position() -> Vector3:
 	var f := Vector3(sin(_quad_yaw), 0.0, cos(_quad_yaw))
 	var r := Vector3(-f.z, 0.0, f.x)                 # the rider's right
 	var base: Vector3 = _quad.position
 	if _quad_modelled:
-		var yaw_b := Basis(Vector3.UP, _quad_yaw)
+		return base + f * BACK_F + r * BACK_SIDE + Vector3(0.0, SEAT_TOP, 0.0)
+	return base - f * 2.1 + r * SEAT_SIDE + Vector3(0.0, 1.1, 0.0)
+
+
+## Inferno's actor origin when he sits on the saddle.
+func _bull_seat_position() -> Vector3:
+	var f := Vector3(sin(_quad_yaw), 0.0, cos(_quad_yaw))
+	var base: Vector3 = _quad.position
+	if _quad_modelled:
 		var hips_at: Vector3 = base + f * BULL_SEAT_F + Vector3(0.0, SEAT_TOP_DRIVER + 0.10, 0.0)
-		_bull.position = hips_at - yaw_b * BULL_HIPS
-		_bull.clear_face_goal()
-		_bull.facing = _quad_yaw
-		_bull.rotation.y = _quad_yaw
+		return hips_at - Basis(Vector3.UP, _quad_yaw) * BULL_HIPS
+	return base + f * 0.55 + Vector3(0.0, 0.62, 0.0)
+
+
+func _seat_riders() -> void:
+	var f := Vector3(sin(_quad_yaw), 0.0, cos(_quad_yaw))
+	var r := Vector3(-f.z, 0.0, f.x)
+	var base: Vector3 = _quad.position
+	_bull.position = _bull_seat_position()
+	_bull.clear_face_goal()
+	_bull.facing = _quad_yaw
+	_bull.rotation.y = _quad_yaw
+	if _quad_modelled:
 		if BULL_GRIPS_IK:      # off: arm IK + spine lean tore his sculpted elbow and torso (founder 2026-10-11: "elbow partially invisible"); the seated clip keeps his arms
 			_bull.reach("Left", base + f * GRIP_F - r * GRIP_X + Vector3(0.0, GRIP_U, 0.0), 0.5, BULL_LEAN)
 			_bull.reach("Right", base + f * GRIP_F + r * GRIP_X + Vector3(0.0, GRIP_U, 0.0), 0.5, BULL_LEAN)
-		_player_pos = base + f * BACK_F + r * BACK_SIDE + Vector3(0.0, SEAT_TOP, 0.0)
 		eye_height = BACK_EYE
-	else:
-		_bull.position = base + f * 0.55 + Vector3(0.0, 0.62, 0.0)
-		_bull.facing = _quad_yaw
-		_bull.rotation.y = _quad_yaw
-		_player_pos = base - f * 2.1 + r * SEAT_SIDE + Vector3(0.0, 1.1, 0.0)
+	_player_pos = _seat_position()
 	_player_yaw = _quad_yaw
 	_ground_y = _player_pos.y
 	_vel_y = 0.0
 
 
-## Inferno sits on the quad (the seated clip, frozen) the moment the ride starts.
+## Inferno sits on the quad (the seated clip, frozen).
 func _bull_mount() -> void:
 	if not _quad_modelled or _bull == null:
 		return
@@ -1061,33 +1444,100 @@ func _bull_dismount() -> void:
 		return
 	_bull.release("Left", 0.2)
 	_bull.release("Right", 0.2)
-	eye_height = FPS_EYE_HEIGHT
+	if _bull.anim != null:
+		_bull.anim.speed_scale = 1.0
+	_bull.play(BULL_IDLE, 1.0, 0.25)
+
+
+## He swings a leg over: from where he stands beside the quad up onto the saddle in one arc, sitting down on the way.
+func _bull_swing_on() -> void:
+	_bull.stop()
+	_bull.clear_face_goal()
+	_bull_swing = {"from": _bull.position, "to": _bull_seat_position(), "t": 0.0, "dur": 0.85, "yaw0": _bull.facing, "yaw1": _quad_yaw,
+		"on": true, "switched": false, "arc": 0.45}
+
+
+## ...and off again at the ridge: down beside the front wheel, standing, then up to the ferns.
+func _bull_swing_off(walk_to_p: Vector3) -> void:
+	var f := Vector3(sin(_quad_yaw), 0.0, cos(_quad_yaw))
+	var r := Vector3(-f.z, 0.0, f.x)
+	var down: Vector3 = _quad.position - r * 1.5 + f * 0.3
+	down.y = 0.0
+	_bull_swing = {"from": _bull.position, "to": down, "t": 0.0, "dur": 0.7, "yaw0": _bull.facing, "yaw1": _quad_yaw - 0.6,
+		"on": false, "switched": false, "arc": 0.25, "then": walk_to_p}
+
+
+func _tick_bull_swing(delta: float) -> void:
+	if _bull_swing.is_empty() or _bull == null:
+		return
+	var t: float = float(_bull_swing["t"]) + delta
+	_bull_swing["t"] = t
+	var k: float = clampf(t / float(_bull_swing["dur"]), 0.0, 1.0)
+	var e: float = k * k * (3.0 - 2.0 * k)
+	var from: Vector3 = _bull_swing["from"]
+	var to: Vector3 = _bull_swing["to"]
+	_bull.position = from.lerp(to, e) + Vector3(0.0, float(_bull_swing["arc"]) * sin(PI * e), 0.0)
+	_bull.facing = lerp_angle(float(_bull_swing["yaw0"]), float(_bull_swing["yaw1"]), e)
+	_bull.rotation.y = _bull.facing
+	if not bool(_bull_swing["switched"]):
+		if bool(_bull_swing["on"]) and k >= 0.55:
+			_bull_swing["switched"] = true
+			_bull_mount()
+		elif not bool(_bull_swing["on"]) and k >= 0.3:
+			_bull_swing["switched"] = true
+			_bull_dismount()
+	if k >= 1.0:
+		var then: Variant = _bull_swing.get("then", null)
+		_bull_swing = {}
+		if then is Vector3:
+			_bull.walk_to(then, 1.4)
+
+
+## The player's eye moves (no cut, no blink) from where he is to `to` with eye height `eye1`: onto the quad, off it at the ridge.
+func _glide_to(to: Vector3, eye1: float, dur: float, arc: float = 0.0) -> void:
+	_glide = {"from": _player_pos, "to": to, "eye0": eye_height, "eye1": eye1, "t": 0.0, "dur": maxf(dur, 0.05), "arc": arc}
+
+
+func _tick_glide(delta: float) -> void:
+	if _glide.is_empty():
+		return
+	var t: float = float(_glide["t"]) + delta
+	_glide["t"] = t
+	var k: float = clampf(t / float(_glide["dur"]), 0.0, 1.0)
+	var e: float = k * k * (3.0 - 2.0 * k)
+	var from: Vector3 = _glide["from"]
+	var to: Vector3 = _glide["to"]
+	_player_pos = from.lerp(to, e) + Vector3(0.0, float(_glide["arc"]) * sin(PI * e), 0.0)
+	eye_height = lerpf(float(_glide["eye0"]), float(_glide["eye1"]), e)
+	_ground_y = _player_pos.y
+	_vel_y = 0.0
+	if k >= 1.0:
+		_glide = {}
+
+
+func is_gliding() -> bool:
+	return not _glide.is_empty()
 
 
 func _begin_spy() -> void:
 	_riding = false
-	_bull_dismount()
 	cam_distance = 3.9
 	cam_height = 1.45
-	_ground_y = 0.0
-	_player_pos = Vector3(SPY_EYE.x, 0.0, SPY_EYE.z)
-	_player_yaw = 0.0
-	_look_yaw = 0.0
-	_look_pitch = 0.0
 	_spy_t = 0.0
 	_spy_done = false
-	_bull.position = Vector3(SPY_EYE.x - 2.4, 0.0, SPY_EYE.z - 1.0)
-	_bull.facing = 0.0
-	_bull.rotation.y = 0.0
-	_bull.play(BULL_IDLE, 1.0, 0.3)
 	if _engine:
 		_engine.stop()
 	if _quad_light:
 		_quad_light.light_energy = 0.0
+	# he hops off the back and creeps up to the ferns; Inferno swings off and walks up beside him (no cut)
+	_glide_to(Vector3(SPY_EYE.x, 0.0, SPY_EYE.z), SPY_EYE.y, 1.4, 0.2)
+	_bull_swing_off(Vector3(SPY_EYE.x - 2.4, 0.0, SPY_EYE.z - 1.0))
+	look_toward(CAMP_CENTRE + Vector3(0.0, 1.2, 0.0), 1.8)
 	if _hud:
 		_hud.show_crosshair = true
 		_hud.objective = "Hold RIGHT MOUSE for the spyglass. Spot the bears: 0 / %d" % BEAR_SPOTS.size()
-	_start_show([FacilityShow._say("vo_bull_spy1", 0.3)])
+	_spy_intro_pending = true
+	_start_show([{"do": "wait", "t": 1.45}], true)
 
 
 func _finish_spy() -> void:
@@ -1102,12 +1552,28 @@ func _finish_spy() -> void:
 func _tick(delta: float) -> void:
 	_warn_cd = maxf(0.0, _warn_cd - delta)
 	_stay_cd = maxf(0.0, _stay_cd - delta)
-	_tick_patrols(delta)
+	_bark_cd = maxf(0.0, _bark_cd - delta)
+	_invuln = maxf(0.0, _invuln - delta)
+	if _ammo_snapshot.is_empty() and _vm != null:
+		_ammo_snapshot = [_vm.gun.rounds, _vm.gun.reserve]
+	_player_vel = (_player_pos - _prev_player) / maxf(delta, 0.0001)
+	_prev_player = _player_pos
+	_tick_flashes(delta)
+	if _failing:
+		_tick_fail(delta)
+		return
+	_tick_glide(delta)
+	_tick_bull_swing(delta)
 	_tick_cover(delta)
+	_tick_bears(delta)
+	_tick_arrows(delta)
+	_tick_footsteps(delta)
 	if _wildlife != null:
+		_wildlife._centre = Vector3(_player_pos.x, 0.0, _player_pos.z)      # the birds keep to the stretch of wood he is in
 		_wildlife.step(delta)
 	match _beat:
 		Beat.SNEAK:
+			_tick_bull_defence(delta)
 			_tick_sneak(delta)
 		Beat.RIDE:
 			_tick_ride(delta)
@@ -1116,6 +1582,8 @@ func _tick(delta: float) -> void:
 
 
 func _tick_sneak(_delta: float) -> void:
+	if _bull_alarm or not _bull_swing.is_empty():
+		return
 	var trail: Array = SNEAK_TRAIL
 	var target2: Vector2 = trail[_sneak_i]
 	var bt := Vector3(target2.x, 0.0, target2.y)
@@ -1137,38 +1605,255 @@ func _tick_sneak(_delta: float) -> void:
 			_bull.walk_to(bt, 1.9)
 	if Vector2(_bull.position.x, _bull.position.z).distance_to(target2) < 0.35:
 		_sneak_i += 1
+		_intro_scout_at(_sneak_i)
 		if _sneak_i >= trail.size():
 			_sneak_i = trail.size() - 1
 			if dist_player < 6.0:
 				_advance_to(Beat.REVEAL)
 			return
-	# noise: a runner near a bear is heard
-	if _moving and _run_input and _warn_cd <= 0.0:
-		for pb in _patrols:
-			var bear: Ep2Actor = pb[0]
-			if Vector2(bear.position.x - _player_pos.x, bear.position.z - _player_pos.z).length() < HEARING:
-				_noise_hits += 1
-				_warn_cd = 7.0
-				bear.face_point(_player_pos)
-				if _hud:
-					_hud.toast("SHH! WALK SOFT", 2.0)
-				if _hold <= 0.0:
-					_begin_carry_line("vo_bull_woods_quiet")
-				break
 
 
-func _tick_patrols(_delta: float) -> void:
-	for pb in _patrols:
-		var b: Ep2Actor = pb[0]
-		if not b.is_walking():
-			var going_b: bool = not bool(pb[3])
-			pb[3] = going_b
-			var t: Vector2 = pb[2] if going_b else pb[1]
-			b.walk_to(Vector3(t.x, 0.0, t.y), 0.9)
+## Inferno names the scout they are passing (a quiet aside, only if that bear is alive and has not noticed them).
+func _intro_scout_at(i: int) -> void:
+	for b in _bears:
+		var br: Ep2BearBrain = b
+		if int(br.p.get("intro_at", -1)) != i or _intro_done.has(br.display_name()):
+			continue
+		_intro_done[br.display_name()] = true
+		if br.is_unaware() and _hold <= 0.0:
+			_begin_carry_line(str(br.p["intro"]))
+
+
+## The bears live: dormant far away (hidden, not processed), awake near Lil Blunt - routine, senses (sight 5x a second with the trees
+## in the way, hearing from the world's noise events), combat. Their snores and page turns are 3D sounds.
+func _tick_bears(delta: float) -> void:
+	_sense_acc += delta
+	var sense: bool = _sense_acc >= 0.2
+	if sense:
+		_sense_acc = 0.0
+	var pl: Vector3 = _player_pos
+	var exposure: float = _exposure()
+	_assign_attack_budget()
+	for b in _bears:
+		var br: Ep2BearBrain = b
+		var a: Ep2Actor = br.actor
+		if a == null or not is_instance_valid(a):
+			continue
+		var d: float = Vector2(a.position.x - pl.x, a.position.z - pl.z).length()
+		var on: bool = d < BEAR_ACTIVE_R
+		if on != a.visible:
+			a.visible = on
+			a.process_mode = Node.PROCESS_MODE_INHERIT if on else Node.PROCESS_MODE_DISABLED
+		if not on:
+			continue
+		br.lead = Vector3(_player_vel.x, 0.0, _player_vel.z) * 0.7 if _riding else Vector3.ZERO
+		if sense and not br.is_dead():
+			var blocked: bool = d > 3.0 and _los_blocked(Vector2(a.position.x, a.position.z), Vector2(pl.x, pl.z))
+			br.has_los = not blocked
+			br.look(pl, exposure, blocked, 0.2)
+		br.step(delta, pl)
+		if not br.is_dead() and a.is_walking():
+			_push_out_of_trees(a)
+		_bear_ambience(br, d)
+
+
+## How visible Lil Blunt is right now (sight meter rate): still / walking / running, on a roaring quad, belly-down on the ridge.
+func _exposure() -> float:
+	if _riding:
+		return 1.0
+	if _beat == Beat.SPY:
+		return 0.25
+	if _moving:
+		return 1.0 if _run_input else 0.55
+	return 0.3
+
+
+## The active-attack budget: only the nearest few archers may draw on him at once (contract: no overlapping attack spam).
+func _assign_attack_budget() -> void:
+	var archers: Array = []
+	for b in _bears:
+		var br: Ep2BearBrain = b
+		if br.role() == "archer" and br.is_alert():
+			archers.append(br)
+	archers.sort_custom(func(x: Ep2BearBrain, y: Ep2BearBrain) -> bool:
+		return x.actor.position.distance_squared_to(_player_pos) < y.actor.position.distance_squared_to(_player_pos))
+	for i in archers.size():
+		(archers[i] as Ep2BearBrain).may_attack = i < ARCHERS_AT_ONCE
+
+
+func _bear_ambience(br: Ep2BearBrain, d: float) -> void:
+	var a: Ep2Actor = br.actor
+	var st: String = Ep2BearKit.pose_name(a)
+	var snore: AudioStreamPlayer3D = a.get_meta("snore") if a.has_meta("snore") else null
+	if st == "sleep" and d < 40.0:
+		if snore == null:
+			var s: AudioStream = _sound("ep2_bear_snore")
+			if s != null:
+				snore = AudioStreamPlayer3D.new()
+				snore.name = "Snore"
+				if s is AudioStreamMP3:
+					(s as AudioStreamMP3).loop = true
+				snore.stream = s
+				snore.bus = "SFX"
+				snore.volume_db = -4.0
+				snore.unit_size = 5.0
+				snore.max_distance = 40.0
+				snore.pitch_scale = float(br.p.get("pitch", 1.0))
+				a.add_child(snore)
+				snore.position = Vector3(0.0, 0.6, 0.0)
+				a.set_meta("snore", snore)
+		if snore != null and not snore.playing:
+			snore.play()
+	elif snore != null and snore.playing:
+		snore.stop()
+	if st == "sit_read" and d < 25.0:
+		var page: int = int(float(a.get_meta("pose_t", 0.0)) / 7.0)
+		if page != int(a.get_meta("page", 0)):
+			a.set_meta("page", page)
+			_sfx3d("ep2_page_flip", a.global_position + Vector3(0.0, 1.0, 0.0), -8.0, 1.0, 25.0)
+
+
+## A bear on the move slides round a trunk instead of walking through it.
+func _push_out_of_trees(a: Ep2Actor) -> void:
+	var q := Vector2(a.position.x, a.position.z)
+	for t in _trees_near(q, 1):
+		var tp: Vector2 = t[0]
+		var r: float = float(t[1]) + 0.45
+		var dv: Vector2 = q - tp
+		if dv.length() < r:
+			q = tp + (dv.normalized() if dv.length_squared() > 1e-6 else Vector2(1.0, 0.0)) * r
+	a.position.x = q.x
+	a.position.z = q.y
+
+
+## Footsteps are world noise: a walker is heard only right beside a bear, a runner across a clearing.
+func _tick_footsteps(delta: float) -> void:
+	if _riding or not _moving or not has_player_control():
+		_step_acc = 0.0
+		return
+	_step_acc += delta
+	var every: float = 0.32 if _run_input else 0.55
+	if _step_acc >= every:
+		_step_acc = 0.0
+		_noise(_player_pos, HEARING if _run_input else WALK_NOISE, "run" if _run_input else "step")
+
+
+## A sound at `at` carrying `radius` metres. Returns how many bears it newly put on guard. In the stealth beats that is a NOISE HIT
+## (Inferno shushes / hisses); on the road it is just the fight.
+func _noise(at: Vector3, radius: float, kind: String) -> int:
+	var n: int = 0
+	for b in _bears:
+		var br: Ep2BearBrain = b
+		if br.is_dead() or not br.actor.visible:
+			continue
+		var was: int = br.aware
+		br.hear(at, radius, kind)
+		if (was == Ep2BearBrain.Aware.UNAWARE or was == Ep2BearBrain.Aware.SEARCH) and br.aware != was:
+			n += 1
+			_sfx3d("ep2_bear_growl_%d" % (1 + (br.actor.get_instance_id() % 3)), br.actor.global_position + Vector3(0.0, 1.6, 0.0),
+				-2.0, float(br.p.get("pitch", 1.0)), 45.0)
+	if n > 0 and kind != "engine" and kind != "leaves" and (_beat == Beat.SNEAK or _beat == Beat.REVEAL or _beat == Beat.SPY):
+		_noise_hits += 1
+		if _warn_cd <= 0.0:
+			_warn_cd = 7.0
+			var shot: bool = kind == "shot"
+			if _hud:
+				_hud.toast("A SHOT CARRIES!" if shot else "SHH! WALK SOFT", 2.0)
+			# a hiss is urgent: it cuts whatever he was saying
+			_begin_carry_line(("vo_bull_spy_shot" if _beat == Beat.SPY else "vo_bull_woods_shot") if shot else "vo_bull_woods_quiet")
+	return n
+
+
+## Inferno defends him: a bear that has seen them and comes on, he levels his rifle and fires (no arm IK - the rifle pivots in his
+## fist, his arm stays as sculpted). His shots are world noise too. When the threat is gone he takes up the trail again.
+func _tick_bull_defence(delta: float) -> void:
+	if _bull == null:
+		return
+	_bull_fire_cd = maxf(0.0, _bull_fire_cd - delta)
+	var threat: Ep2BearBrain = null
+	var best: float = 34.0
+	for b in _bears:
+		var br: Ep2BearBrain = b
+		if not br.is_alert() or br.is_dead():
+			continue
+		var d: float = br.actor.position.distance_to(_bull.position)
+		if d < best and not _los_blocked(Vector2(_bull.position.x, _bull.position.z), Vector2(br.actor.position.x, br.actor.position.z)):
+			best = d
+			threat = br
+	if threat == null:
+		if _bull_alarm:
+			_bull_calm_t += delta
+			if _bull_calm_t > 2.5:
+				_bull_alarm = false
+				_bull_waiting = false
+		return
+	_bull_calm_t = 0.0
+	if not _bull_alarm:
+		_bull_alarm = true
+		_bull.stop()
+		_bull_fire_cd = 0.9
+		if _bark_cd <= 0.0:
+			_bark_cd = 8.0
+			_begin_carry_line("vo_bull_spotted")
+	_bull.face_point(threat.actor.position)
+	if _bull_fire_cd <= 0.0 and _bull.is_facing(threat.actor.position, 0.35):
+		_bull_fire_cd = 1.6 + _rng.randf() * 0.6
+		_bull_fire_at(threat)
+
+
+func _bull_fire_at(br: Ep2BearBrain) -> void:
+	_bull_shots += 1
+	var target: Vector3 = br.actor.position + Vector3(0.0, br.actor.height_m * 0.6, 0.0)
+	var rifle: Node3D = _bull.find_child("BullHeroRifle", true, false) as Node3D
+	var muzzle: Vector3 = _bull.position + Vector3(0.0, 1.5, 0.0)
+	if rifle != null and rifle.visible:
+		if _bull_rifle_t < 0.0:
+			_bull_rifle_rest = rifle.transform
+		var o: Vector3 = rifle.global_position
+		var dir: Vector3 = (target - o).normalized()
+		var sc: Vector3 = rifle.global_transform.basis.get_scale()
+		rifle.global_transform = Transform3D(Basis.looking_at(-dir, Vector3.UP) * Basis.from_scale(sc), o + dir * 0.2)
+		_bull_rifle_t = 0.6
+		muzzle = o + dir * 0.9
+	_flash(muzzle)
+	_sfx3d("ep2_winchester_shot_%d" % (1 + _bull_shots % 3), muzzle, -1.0, 0.92, 90.0)
+	if _rng.randf() < 0.55:
+		br.take_hit(_bull.position)
+	_noise(_bull.position, SHOT_HEARING, "bull_shot")
+
+
+func _tick_flashes(delta: float) -> void:
+	for i in range(_flashes.size() - 1, -1, -1):
+		var f: Array = _flashes[i]
+		f[1] = float(f[1]) - delta
+		if float(f[1]) <= 0.0:
+			if is_instance_valid(f[0]):
+				(f[0] as Node).queue_free()
+			_flashes.remove_at(i)
+	if _bull_rifle_t >= 0.0:
+		_bull_rifle_t -= delta
+		if _bull_rifle_t < 0.0 and _bull != null:
+			var rifle: Node3D = _bull.find_child("BullHeroRifle", true, false) as Node3D
+			if rifle != null:
+				rifle.transform = _bull_rifle_rest
+
+
+func _flash(at: Vector3) -> void:
+	var l := OmniLight3D.new()
+	l.light_color = Color(1.0, 0.8, 0.45)
+	l.light_energy = 5.0
+	l.omni_range = 6.0
+	_visuals.add_child(l)
+	l.global_position = at
+	var s := _sphere(0.12, at, _glow(Color(1.0, 0.85, 0.5), 6.0), null, 1.0)
+	_flashes.append([l, 0.07])
+	_flashes.append([s, 0.05])
 
 
 func _tick_cover(delta: float) -> void:
 	if _reveal_t < 0.0 or _cover == null or not is_instance_valid(_cover):
+		return
+	if _reveal_t >= 1.5:
 		return
 	_reveal_t += delta
 	var k: float = clampf(_reveal_t / 1.5, 0.0, 1.0)
@@ -1187,7 +1872,17 @@ func _tick_ride(delta: float) -> void:
 	if _ride_done:
 		return
 	var remaining: float = _ride_total - _ride_s
-	var target_speed: float = RIDE_SPEED if remaining > 14.0 else maxf(2.0, RIDE_SPEED * remaining / 14.0)
+	# Inferno brakes into the bends and opens up on the straights; he eases to a stop behind the ridge
+	var h0: float = float(_ride_sample(_ride_s)[1])
+	var h1: float = float(_ride_sample(_ride_s + 14.0)[1])
+	var bend: float = clampf(absf(angle_difference(h0, h1)) / 0.55, 0.0, 1.0)
+	var target_speed: float = lerpf(RIDE_SPEED, RIDE_BEND_SPEED, bend)
+	# the last stretch below the ridge Inferno cuts the engine and COASTS in: the camp over the ridge must not hear them
+	var coasting: bool = remaining < COAST_DIST
+	if coasting:
+		target_speed = minf(target_speed, maxf(2.0, 7.0 * remaining / COAST_DIST + 1.0))
+	if remaining < 16.0:
+		target_speed = maxf(1.5, target_speed * remaining / 16.0)
 	_ride_speed = move_toward(_ride_speed, target_speed, 4.5 * delta)
 	_ride_s = minf(_ride_s + _ride_speed * delta, _ride_total)
 	var smp: Array = _ride_sample(_ride_s)
@@ -1204,9 +1899,58 @@ func _tick_ride(delta: float) -> void:
 	_quad_yaw_prev = _quad_yaw
 	if _engine:
 		_engine.pitch_scale = 0.85 + 0.35 * clampf(_ride_speed / RIDE_SPEED, 0.0, 1.0)
+		_engine.volume_db = move_toward(_engine.volume_db, -40.0 if coasting else -7.0, delta * 18.0)
+		if coasting and _engine.volume_db <= -39.0 and _engine.playing:
+			_engine.stop()
+	# the engine is the loudest thing in the wood: bears near the road turn to it, the close ones know it is the enemy
+	_engine_acc += delta
+	if _engine_acc >= 0.25 and not coasting:
+		_engine_acc = 0.0
+		_engine_noise()
+	_road_barks()
 	if _ride_s >= _ride_total - 0.01:
 		_ride_done = true
 		_advance_to(Beat.SPY)
+
+
+func _engine_noise() -> void:
+	var q2 := Vector2(_quad.position.x, _quad.position.z)
+	for b in _bears:
+		var br: Ep2BearBrain = b
+		if br.is_dead() or br.is_alert() or not br.actor.visible:
+			continue
+		var bp := Vector2(br.actor.position.x, br.actor.position.z)
+		var d: float = bp.distance_to(q2)
+		if d < ENGINE_ALARM and not _los_blocked(bp, q2):
+			br.alarm(_quad.position)
+		elif d < ENGINE_HEARING:
+			br.hear(_quad.position, ENGINE_HEARING, "engine")
+
+
+## Inferno calls the road: bows in the trees, a charger, the last picket behind them.
+func _road_barks() -> void:
+	if _hold > 0.0:
+		return
+	var archer_drawing: bool = false
+	var charger: bool = false
+	for b in _bears:
+		var br: Ep2BearBrain = b
+		if not br.is_alert() or br.is_dead() or str(br.get_meta("group", "")) != "road":
+			continue
+		var d: float = br.actor.position.distance_to(_player_pos)
+		if br.role() == "archer" and d < 42.0 and Ep2BearKit.pose_name(br.actor) == "aim":
+			archer_drawing = true
+		elif br.role() == "brawler" and d < 30.0:
+			charger = true
+	if archer_drawing and float(_road_lines.get("bows", -100.0)) < _elapsed - 16.0:
+		_road_lines["bows"] = _elapsed
+		_begin_carry_line("vo_bull_road_bows")
+	elif charger and float(_road_lines.get("charge", -100.0)) < _elapsed - 16.0:
+		_road_lines["charge"] = _elapsed
+		_begin_carry_line("vo_bull_road_charge")
+	elif not _road_lines.has("clear") and _ride_s > (float(ROAD_BEARS[ROAD_BEARS.size() - 1]["at"]) * _ride_total + 70.0):
+		_road_lines["clear"] = _elapsed
+		_begin_carry_line("vo_bull_road_clear")
 
 
 func set_aim(on: bool) -> void:
@@ -1239,6 +1983,10 @@ func _tick_spy(delta: float) -> void:
 				continue
 			if dir.angle_to(to.normalized()) < SPY_SPOT_ANGLE:
 				_mark_bear(i)
+	for i in _marks.size():
+		var mk: Node3D = _marks[i]
+		if mk != null and is_instance_valid(mk):
+			mk.position = (_camp_bears[i] as Ep2Actor).position + Vector3(0.0, 3.0, 0.0)
 	if _spy_done:
 		return
 	if _spy_t > SPY_TIMEOUT:
@@ -1290,30 +2038,47 @@ func get_ride_progress() -> float:
 	return _ride_s / maxf(_ride_total, 0.001)
 
 
+func get_ride_length() -> float:
+	return _ride_total
+
+
 func get_camp_bears() -> Array:
 	return _camp_bears
 
 
+func get_live_bear_count() -> int:
+	return _bears.filter(func(b: Ep2BearBrain) -> bool: return not b.is_dead()).size()
+
+
+func get_kills() -> int: return _kills
+func get_alert_count() -> int: return _alerts
+func get_arrows_loosed() -> int: return _arrows_loosed
+func get_arrow_hits() -> int: return _arrow_hits
+func get_bull_shots() -> int: return _bull_shots
+func get_attempt() -> int: return _attempt
+func is_failing() -> bool: return _failing
+
+
 ## While riding the player does not steer: the quad is on rails and the mouse only looks around.
 func _move_player(delta: float) -> void:
-	if _riding:
+	if _riding or not _glide.is_empty():
 		_moving = false
 		return
 	super._move_player(delta)
 
 
 func _update_vertical(delta: float) -> void:
-	if _riding:
+	if _riding or not _glide.is_empty():
 		return
 	super._update_vertical(delta)
 
 
 func _can_jump() -> bool:
-	return not _riding and _beat != Beat.SPY
+	return not _riding and _beat != Beat.SPY and _glide.is_empty()
 
 
 func has_player_control() -> bool:
-	return _running and not _resolved and not _show_blocks_control and _beat != Beat.DONE
+	return _running and not _resolved and not _show_blocks_control and _beat != Beat.DONE and not _failing
 
 
 ## The rifle drops to low ready while the spyglass is up.
@@ -1321,47 +2086,421 @@ func _viewmodel_lowered() -> bool:
 	return _beat == Beat.SPY and _aim_on
 
 
-## THE RIFLE IS IN HIS HANDS NOW, so a shot is a fact of the wood (skill ep2-interlude-chain): every bear within earshot
-## turns to look, Inferno hisses, the noise counter ticks. On the quad ride the engine drowns it; in the lift there is nobody
-## to hear. (The claim run - shooting bears from the back seat - is NOT built until the founder opens the prep pass.)
+# --- the fight -----------------------------------------------------------------------------------------------------------
+
+## THE RIFLE IS IN HIS HANDS, so a shot is a fact of the wood (skill ep2-interlude-chain): the round flies down his aim (with the
+## Winchester's spread) and hits the first bear on the line unless a trunk is in the way; and the bang is heard far and wide.
 func _on_player_shot() -> void:
-	if _beat != Beat.SNEAK and _beat != Beat.SPY:
-		return
-	var heard: bool = false
-	var listeners: Array = []
-	for pb in _patrols:
-		listeners.append(pb[0])
-	if _beat == Beat.SPY:
-		listeners.append_array(_camp_bears)
-	for lb in listeners:
-		var bear: Ep2Actor = lb
-		if Vector2(bear.position.x - _player_pos.x, bear.position.z - _player_pos.z).length() < SHOT_HEARING:
-			bear.face_point(_player_pos)
-			heard = true
-	if not heard:
-		return
-	_noise_hits += 1
-	if _warn_cd <= 0.0:
-		_warn_cd = 7.0
+	var eye: Vector3 = _player_pos + Vector3(0.0, eye_height, 0.0)
+	var dir: Vector3 = _fire_dir()
+	var hit: Ep2BearBrain = _bear_on_ray(eye, dir)
+	if hit != null:
+		var killed: bool = hit.take_hit(eye)
 		if _hud:
-			_hud.toast("A SHOT CARRIES!", 2.0)
-		if _hold <= 0.0:
-			_begin_carry_line("vo_bull_spy_shot" if _beat == Beat.SPY else "vo_bull_woods_shot")
+			_hud.hit_marker(killed)
+		_sfx3d("ep2_bear_hit", hit.actor.global_position + Vector3(0.0, 1.4, 0.0), 0.0, float(hit.p.get("pitch", 1.0)), 60.0)
+	_noise(_player_pos, SHOT_HEARING, "shot")
 
 
-## Trunks are solid; the ridge fern bank is the limit of the world until the spy beat.
+## The camera's aim with the Winchester's current spread (a gaussian cone: wide from the hip, tight down the sights).
+func _fire_dir() -> Vector3:
+	var sigma: float = _vm.gun.spread_deg(_moving, false) if _vm != null else 0.0
+	var yaw: float = _look_yaw + (deg_to_rad(_rng.randfn(0.0, sigma)) if sigma > 0.0 else 0.0)
+	var pitch: float = _look_pitch + (deg_to_rad(_rng.randfn(0.0, sigma)) if sigma > 0.0 else 0.0)
+	var cp: float = cos(pitch)
+	return Vector3(sin(yaw) * cp, sin(pitch), cos(yaw) * cp)
+
+
+## The nearest living bear the ray passes through (his body as one or two capsules for the pose he is in), unless a trunk is first.
+func _bear_on_ray(eye: Vector3, dir: Vector3) -> Ep2BearBrain:
+	var best: Ep2BearBrain = null
+	var best_t: float = 1e9
+	for b in _bears:
+		var br: Ep2BearBrain = b
+		if br.is_dead() or not br.actor.visible:
+			continue
+		var to: Vector3 = br.actor.position - eye
+		var tc: float = to.dot(dir)
+		if tc < -2.0 or tc > 170.0:
+			continue
+		for sh in _bear_shapes(br):
+			var t: float = _ray_capsule(eye, dir, sh[0], sh[1], float(sh[2]))
+			if t >= 0.3 and t < best_t:
+				best_t = t
+				best = br
+	if best != null and _ray_tree_blocked(eye, dir, best_t):
+		return null
+	return best
+
+
+## Where a bear's body is for a bullet: [a, b, radius] capsules (standing, seated on his stump, or lying down).
+func _bear_shapes(br: Ep2BearBrain) -> Array:
+	var a: Ep2Actor = br.actor
+	var k: float = a.height_m / 2.2
+	var up := Vector3.UP
+	var fwd := Vector3(sin(a.facing), 0.0, cos(a.facing))
+	var p: Vector3 = a.position
+	match Ep2BearKit.pose_name(a):
+		"sleep", "wake", "dead":
+			return [[p + fwd * 0.2 + up * 0.32 * k, p - fwd * 1.55 * k + up * 0.32 * k, 0.5 * k]]
+		"sit_read":
+			return [[p + up * 0.45 * k, p + up * 1.25 * k, 0.55 * k]]
+	return [[p + up * 0.45 * k, p + up * 1.85 * k, 0.52 * k]]
+
+
+## Ray (origin o, unit dir d) against a capsule a-b of radius r: the ray parameter of the hit, or -1.
+static func _ray_capsule(o: Vector3, d: Vector3, a: Vector3, b: Vector3, r: float) -> float:
+	var ab: Vector3 = b - a
+	var ao: Vector3 = o - a
+	var abd: float = ab.dot(d)
+	var aba: float = ab.dot(ab)
+	var denom: float = aba - abd * abd
+	var t: float
+	var s: float
+	if absf(denom) < 1e-6:
+		s = 0.0
+		t = (a - o).dot(d)
+	else:
+		t = (ab.dot(ao) * abd - aba * d.dot(ao)) / denom
+		s = (ab.dot(ao) + t * abd) / aba
+	s = clampf(s, 0.0, 1.0)
+	var on_seg: Vector3 = a + ab * s
+	t = maxf((on_seg - o).dot(d), 0.0)
+	if (o + d * t).distance_to(on_seg) <= r:
+		return t
+	return -1.0
+
+
+## Does a trunk stop the round before `t_max`? (Horizontal ray vs trunk circles, along the grid.)
+func _ray_tree_blocked(eye: Vector3, dir: Vector3, t_max: float) -> bool:
+	var d2 := Vector2(dir.x, dir.z)
+	var l: float = d2.length()
+	if l < 1e-4:
+		return false
+	var e2 := Vector2(eye.x, eye.z)
+	var seen: Dictionary = {}
+	var t: float = 0.0
+	while t <= t_max + TREE_CELL:
+		var q: Vector2 = e2 + d2 * t
+		var c := Vector2i(int(floor(q.x / TREE_CELL)), int(floor(q.y / TREE_CELL)))
+		for dx in range(-1, 2):
+			for dz in range(-1, 2):
+				var k := Vector2i(c.x + dx, c.y + dz)
+				if seen.has(k) or not _tree_grid.has(k):
+					continue
+				seen[k] = true
+				for e in _tree_grid[k]:
+					var tp: Vector2 = e[0]
+					var r: float = float(e[1]) * 0.8
+					# solve |e2 + d2*s - tp| = r for the ray parameter s (3D parameter: d2 already carries the horizontal share)
+					var f: Vector2 = e2 - tp
+					var aa: float = d2.dot(d2)
+					var bb: float = 2.0 * f.dot(d2)
+					var cc: float = f.dot(f) - r * r
+					var disc: float = bb * bb - 4.0 * aa * cc
+					if disc < 0.0:
+						continue
+					var s: float = (-bb - sqrt(disc)) / (2.0 * aa)
+					if s > 0.4 and s < t_max - 0.3 and eye.y + dir.y * s < float(e[2]):
+						return true
+		t += TREE_CELL * 0.5 / l
+	return false
+
+
+func _on_bear_roared(br: Ep2BearBrain, at: Vector3) -> void:
+	_sfx3d("ep2_bear_roar", at + Vector3(0.0, 1.8, 0.0), 2.0, float(br.p.get("pitch", 1.0)), 90.0)
+	for b in _bears:
+		var o: Ep2BearBrain = b
+		if o != br and not o.is_dead() and o.actor.visible:
+			o.ally_roar(at)
+
+
+func _on_bear_spotted(br: Ep2BearBrain) -> void:
+	_alerts += 1
+	if (_beat == Beat.SNEAK or _beat == Beat.REVEAL) and str(br.get_meta("group", "")) != "road" and _bark_cd <= 0.0 and _hold <= 0.0:
+		_bark_cd = 8.0
+		_begin_carry_line("vo_bull_spotted")
+
+
+func _on_bear_swing(br: Ep2BearBrain) -> void:
+	_sfx3d("ep2_bear_attack_%d" % (1 + (br.actor.get_instance_id() % 3)), br.actor.global_position + Vector3(0.0, 1.6, 0.0), 0.0,
+		float(br.p.get("pitch", 1.0)), 50.0)
+
+
+func _on_bear_swiped(br: Ep2BearBrain) -> void:
+	var d: float = Vector2(br.actor.position.x - _player_pos.x, br.actor.position.z - _player_pos.z).length()
+	if d < 2.9:
+		_hurt("claw")
+
+
+func _on_bear_died(br: Ep2BearBrain) -> void:
+	_kills += 1
+	_sfx3d("ep2_bear_death_%d" % (1 + _kills % 3), br.actor.global_position + Vector3(0.0, 1.2, 0.0), 0.0, float(br.p.get("pitch", 1.0)), 70.0)
+	var snore: AudioStreamPlayer3D = br.actor.get_meta("snore") if br.actor.has_meta("snore") else null
+	if snore != null:
+		snore.stop()
+	if _hold <= 0.0 and _bark_cd <= 4.0:
+		_bark_cd = 6.0
+		_begin_carry_line("ep2_vo_bear_down_%d" % (1 + (_kills * 5) % 12))
+
+
+## An archer let fly: a real arrow, aimed where Lil Blunt will be when it arrives (the quad moves), that hits or whistles past.
+func _on_arrow_loosed(br: Ep2BearBrain, from: Vector3, _to: Vector3) -> void:
+	_arrows_loosed += 1
+	_sfx3d("ep2_bow_loose", from, 0.0, 1.0, 60.0)
+	var chest: Vector3 = _player_pos + Vector3(0.0, maxf(eye_height - 0.3, 0.6), 0.0)
+	var d: float = from.distance_to(chest)
+	var flight: float = d / ARROW_SPEED
+	var lead: Vector3 = chest + _player_vel * flight
+	var p_hit: float = clampf(0.30 - d * 0.0045, 0.10, 0.28)
+	if not _riding and _moving and _run_input:
+		p_hit *= 0.5                                     # a sprinting target is hard to lead
+	var hit: bool = _rng.randf() < p_hit
+	var aim: Vector3 = lead
+	if not hit:
+		var to_t: Vector3 = (lead - from).normalized()
+		var side := Vector3(-to_t.z, 0.0, to_t.x)
+		aim = lead + side * (1.0 if _rng.randf() < 0.5 else -1.0) * (1.1 + 1.6 * _rng.randf()) + Vector3(0.0, _rng.randf() * 0.9 - 0.3, 0.0)
+	var g: float = 3.4
+	var v: Vector3 = (aim - from) / maxf(flight, 0.05) + Vector3(0.0, 0.5 * g * flight, 0.0)
+	var node := _arrow_mesh()
+	_visuals.add_child(node)
+	node.global_position = from
+	_arrows.append({"node": node, "pos": from, "v": v, "g": g, "t": 0.0, "flight": flight, "hit": hit, "stuck": false,
+		"life": 0.0, "whizz": false, "from": br})
+
+
+func _arrow_mesh() -> Node3D:
+	var root := Node3D.new()
+	root.name = "Arrow"
+	var shaft := MeshInstance3D.new()
+	var cm := CylinderMesh.new()
+	cm.top_radius = 0.012
+	cm.bottom_radius = 0.012
+	cm.height = 0.85
+	cm.radial_segments = 5
+	shaft.mesh = cm
+	shaft.material_override = _plain(Color(0.55, 0.40, 0.24), 0.8)
+	shaft.rotation.x = PI * 0.5                    # along the arrow's +Z
+	root.add_child(shaft)
+	var tip := MeshInstance3D.new()
+	var tm := CylinderMesh.new()
+	tm.top_radius = 0.0
+	tm.bottom_radius = 0.03
+	tm.height = 0.09
+	tm.radial_segments = 5
+	tip.mesh = tm
+	tip.material_override = _plain(Color(0.35, 0.36, 0.38), 0.4, 0.6)
+	tip.rotation.x = PI * 0.5
+	tip.position = Vector3(0.0, 0.0, 0.46)
+	root.add_child(tip)
+	for k in 3:
+		var fl := MeshInstance3D.new()
+		var bm := BoxMesh.new()
+		bm.size = Vector3(0.003, 0.06, 0.14)
+		fl.mesh = bm
+		fl.material_override = _plain(Color(0.85, 0.82, 0.76), 0.9)
+		fl.position = Vector3(0.0, 0.0, -0.36)
+		fl.rotation.z = float(k) * TAU / 3.0
+		root.add_child(fl)
+	return root
+
+
+func _tick_arrows(delta: float) -> void:
+	var chest: Vector3 = _player_pos + Vector3(0.0, maxf(eye_height - 0.3, 0.6), 0.0)
+	for i in range(_arrows.size() - 1, -1, -1):
+		var ar: Dictionary = _arrows[i]
+		var node: Node3D = ar["node"]
+		if not is_instance_valid(node):
+			_arrows.remove_at(i)
+			continue
+		ar["life"] = float(ar["life"]) + delta
+		if bool(ar["stuck"]):
+			if float(ar["life"]) > 40.0 or _arrows.size() > 40:
+				node.queue_free()
+				_arrows.remove_at(i)
+			continue
+		var t0: float = float(ar["t"])
+		var t1: float = t0 + delta
+		ar["t"] = t1
+		var v: Vector3 = ar["v"]
+		var p: Vector3 = ar["pos"]
+		v.y -= float(ar["g"]) * delta
+		p += v * delta
+		ar["v"] = v
+		ar["pos"] = p
+		node.global_position = p
+		if v.length() > 0.1:
+			node.look_at(p + v, Vector3.UP, true)
+		if not bool(ar["whizz"]) and p.distance_to(chest) < 4.0:
+			ar["whizz"] = true
+			_sfx3d("ep2_runner_arrow_flyby_0%d" % (1 + i % 2), p, 2.0, 1.0, 20.0)
+		var flight: float = float(ar["flight"])
+		if bool(ar["hit"]) and t0 < flight and t1 >= flight:
+			if p.distance_to(chest) < 1.1:
+				_arrow_hits += 1
+				_hurt("arrow")
+				node.queue_free()
+				_arrows.remove_at(i)
+				continue
+			ar["hit"] = false                       # he moved: it flies on past
+		if p.y <= 0.05 or t1 > 4.0:
+			ar["stuck"] = true                       # into the ground, where it stays
+			ar["life"] = 0.0
+			p.y = maxf(p.y, 0.05)
+			node.global_position = p
+			if p.distance_to(chest) < 12.0:
+				_sfx3d("ep2_arrow_thunk", p, -4.0, 1.0, 25.0)
+
+
+## One heart less (claw or arrow), with a moment of grace; the last one ends the attempt.
+func _hurt(cause: String) -> void:
+	if _invuln > 0.0 or _failing or debug_invulnerable or _resolved:
+		return
+	_health -= 1
+	_invuln = 1.3
+	if _hud:
+		_hud.hurt()
+	_sfx("damage")
+	if _hold <= 0.0:
+		_speak("vo_hurt")
+	if _health <= 0:
+		_fail(cause)
+	elif _riding and float(_road_lines.get("hurt", -100.0)) < _elapsed - 20.0:
+		_road_lines["hurt"] = _elapsed
+		_begin_carry_line("vo_bull_road_hurt")
+
+
+func get_health() -> int:
+	return _health
+
+
+func _shows_health() -> bool:
+	return true
+
+
+## Out of hearts: the attempt ends (input, damage and the bears stop), the screen goes down, and the wood is restored at the mine exit.
+func _fail(cause: String) -> void:
+	if _failing:
+		return
+	_failing = true
+	_fail_t = 0.0
+	if _vm != null:
+		_vm.set_aim(false)
+	_fade(1.0, 0.55)
+	if _hud:
+		_hud.toast("MAULED!" if cause == "claw" else "STRUCK BY AN ARROW!", 1.8)
+
+
+func _tick_fail(delta: float) -> void:
+	_fail_t += delta
+	if _fail_t >= 0.9:
+		_retry_from_surface()
+
+
+## CHECKPOINT hideout_surface_exit (design/ep2/LIVING_WOODS_CONTRACT.md): everything of this attempt rolls back together - bears
+## (alive, in their routines), arrows, the quad under its leaves, Inferno at the bridge, hearts, ammunition - and play resumes at
+## the mine exit with one line from Inferno. Nothing before the checkpoint (the lesson, the lava, the lift) is replayed.
+func _retry_from_surface() -> void:
+	_attempt += 1
+	for ar in _arrows:
+		if is_instance_valid(ar["node"]):
+			(ar["node"] as Node).queue_free()
+	_arrows.clear()
+	for f in _flashes:
+		if is_instance_valid(f[0]):
+			(f[0] as Node).queue_free()
+	_flashes.clear()
+	for mk in _marks:
+		if mk != null and is_instance_valid(mk):
+			(mk as Node).queue_free()
+	if _bears_root != null and is_instance_valid(_bears_root):
+		_bears_root.queue_free()
+	_bears_root = null
+	_bears.clear()
+	_camp_bears.clear()
+	_marked.clear()
+	_marks.clear()
+	_spawned = 0
+	_intro_done.clear()
+	for i in _specs.size():
+		_spawn_bear(_specs[i], i)
+	_spawned = _specs.size()
+	# the quad back under its leaves
+	_quad.position = QUAD_POS
+	_quad.rotation = Vector3(0.0, QUAD_YAW, 0.0)
+	_quad_yaw = QUAD_YAW
+	_reveal_t = -1.0
+	if _cover != null:
+		_cover.visible = true
+		for bit in _cover_bits:
+			(bit[0] as Node3D).transform = bit[3]
+	_riding = false
+	_ride_done = false
+	_ride_s = 0.0
+	_ride_speed = 0.0
+	if _engine:
+		_engine.stop()
+	if _quad_light:
+		_quad_light.light_energy = 0.0
+	# Inferno at the bridge, standing
+	_bull_swing = {}
+	_glide = {}
+	_bull.stop()
+	_bull.release("Left", 0.05)
+	_bull.release("Right", 0.05)
+	_bull.position = BULL_START
+	_bull.facing = 0.0
+	_bull.rotation.y = 0.0
+	_bull_dismount()
+	_bull_alarm = false
+	_bull_waiting = false
+	_bull_rifle_t = 0.0
+	# Lil Blunt at the mine mouth, whole again, with the rounds he had there
+	_player_pos = SPAWN
+	_prev_player = SPAWN
+	_player_vel = Vector3.ZERO
+	_player_yaw = 0.0
+	_look_yaw = 0.0
+	_look_pitch = -0.04
+	eye_height = FPS_EYE_HEIGHT
+	_ground_y = 0.0
+	_vel_y = 0.0
+	_health = HEALTH_MAX
+	_invuln = 1.5
+	if _vm != null and _ammo_snapshot.size() == 2:
+		_vm.gun.rounds = int(_ammo_snapshot[0])
+		_vm.gun.reserve = int(_ammo_snapshot[1])
+	_scope_k = 0.0
+	_zoom = 0.0
+	_aim_on = false
+	_spy_done = false
+	_spy_intro_pending = false
+	_road_lines.clear()
+	_show_active = false
+	_show_blocks_control = false
+	if _show != null:
+		_show.running = false
+	release_look()
+	_failing = false
+	_retry_line_pending = true
+	_advance_to(Beat.SNEAK)
+	_fade(0.0, 0.8)
+	if _hud:
+		_hud.toast("BACK AT THE MINE EXIT", 2.0)
+
+
+## Trunks are solid; the wood is the limit of the world until the spy beat.
 func _collide(p: Vector3) -> Vector3:
 	var q := p
-	q.x = clampf(q.x, -55.0, 55.0)
-	q.z = clampf(q.z, -5.0, 149.0)
+	q.x = clampf(q.x, -110.0, 110.0)
+	q.z = clampf(q.z, -5.0, QUAD_POS.z + 40.0)
 	if _beat == Beat.SPY:
 		q.x = clampf(q.x, SPY_EYE.x - 1.5, SPY_EYE.x + 1.5)
 		q.z = clampf(q.z, SPY_EYE.z - 0.8, SPY_EYE.z + 0.8)
 		return q
-	for t in _trees:
+	for t in _trees_near(Vector2(q.x, q.z), 1):
 		var tp: Vector2 = t[0]
-		if absf(tp.x - q.x) > 3.0 or absf(tp.y - q.z) > 3.0:
-			continue
 		var d := Vector2(q.x - tp.x, q.z - tp.y)
 		var r: float = float(t[1])
 		if d.length() < r:
@@ -1369,3 +2508,38 @@ func _collide(p: Vector3) -> Vector3:
 			q.x = tp.x + out.x
 			q.z = tp.y + out.y
 	return q
+
+
+# --- sound -----------------------------------------------------------------------------------------------------------------
+
+## A committed sound by id (src/assets/sounds/<id>.ogg|.mp3|.wav, or the Episode 2 audio folder), cached.
+func _sound(id: String) -> AudioStream:
+	if _sounds.has(id):
+		return _sounds[id]
+	var st: AudioStream = null
+	for p in ["res://src/assets/sounds/%s.ogg", "res://src/assets/sounds/%s.mp3", "res://src/assets/sounds/%s.wav",
+			"res://src/episode2/assets/audio/%s.wav", "res://src/episode2/assets/audio/%s.mp3", "res://src/episode2/assets/audio/%s.ogg"]:
+		var path: String = (p as String) % id
+		if ResourceLoader.exists(path):
+			st = load(path)
+			break
+	_sounds[id] = st
+	return st
+
+
+## A one-shot positional sound in the wood (growls, roars, bowstrings, arrows, Inferno's rifle).
+func _sfx3d(id: String, at: Vector3, db: float = 0.0, pitch: float = 1.0, max_d: float = 60.0) -> void:
+	var st: AudioStream = _sound(id)
+	if st == null or _visuals == null:
+		return
+	var p := AudioStreamPlayer3D.new()
+	p.stream = st
+	p.bus = "SFX"
+	p.volume_db = db
+	p.pitch_scale = clampf(pitch, 0.5, 2.0)
+	p.max_distance = max_d
+	p.unit_size = 8.0
+	_visuals.add_child(p)
+	p.global_position = at
+	p.play()
+	p.finished.connect(p.queue_free)

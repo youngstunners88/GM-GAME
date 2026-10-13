@@ -447,6 +447,21 @@
       "duration_seconds": 3,
       "prompt_influence": 0.6,
       "prompt": "A small flock of birds suddenly taking off from a branch, wings fluttering, moving away overhead."
+    },
+    {
+      "id": "ep2_bear_snore",
+      "prompt": "A big brown bear snoring deeply while asleep in a quiet forest, a slow rumbling inhale snore then a soft whistling exhale, close, natural, no music",
+      "duration_seconds": 4.0
+    },
+    {
+      "id": "ep2_page_flip",
+      "prompt": "A single glossy magazine page being turned by hand, crisp quick paper flip, close and dry, no music",
+      "duration_seconds": 0.8
+    },
+    {
+      "id": "ep2_arrow_thunk",
+      "prompt": "A wooden arrow thudding hard into a tree trunk, sharp woody thunk with a short shaft vibration, no music",
+      "duration_seconds": 0.7
     }
   ],
   "music": [
@@ -2331,7 +2346,7 @@
     },
     {
       "id": "vo_bull_lift1",
-      "text": "Step on the lift. It runs up two floors, all the way to the surface. Hold on.",
+      "text": "Step in, kid. This cage runs two floors, all the way to the surface.",
       "voice_id": "uWE48TmsTuIjyh2ifoNL",
       "voice_settings": {
         "stability": 0.62,
@@ -2343,7 +2358,7 @@
     },
     {
       "id": "vo_bull_lift_lever",
-      "text": "Don't bother looking for the lever, kid. Took me a year to hide it that well.",
+      "text": "Don't go looking for the handle, kid. Took me a year to make it look like part of the cage.",
       "voice_id": "uWE48TmsTuIjyh2ifoNL",
       "voice_settings": {
         "stability": 0.62,
@@ -2355,7 +2370,7 @@
     },
     {
       "id": "vo_bull_plan1",
-      "text": "Here's the plan. The wood up top is crawling with bears, and we don't fight them in the open. We sneak.",
+      "text": "Here's the plan. Bears can smell a forge from a mile off, so their camp is a long way from my door. Only their scouts roam the near wood. We sneak past them.",
       "voice_id": "uWE48TmsTuIjyh2ifoNL",
       "voice_settings": {
         "stability": 0.62,
@@ -2367,7 +2382,7 @@
     },
     {
       "id": "vo_bull_plan2",
-      "text": "My quad is stashed deeper in the wood. I drive, you shoot. You keep that rifle steady and I keep us moving.",
+      "text": "My quad's stashed past the scouts. Then it's a long ride down the old logging road, and that road is theirs. I drive, you shoot. Some of 'em carry bows, so keep your head down and that rifle busy.",
       "voice_id": "uWE48TmsTuIjyh2ifoNL",
       "voice_settings": {
         "stability": 0.62,
@@ -2379,7 +2394,7 @@
     },
     {
       "id": "vo_bull_plan3",
-      "text": "First we ride to a spot where we can spy on those bears and work out a proper plan. Know your enemy, little fella.",
+      "text": "We ride till we can spy on their camp from the ridge, and we work out a proper plan. Know your enemy, little fella.",
       "voice_id": "uWE48TmsTuIjyh2ifoNL",
       "voice_settings": {
         "stability": 0.62,
@@ -2532,6 +2547,162 @@
         "speed": 1.05
       },
       "note": "Lil Blunt. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_scout_twitch",
+      "text": "That's Twitch, walking his beat. Ears like a fox. Walk, don't run.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 living woods + logging-road ride (founder 2026-10-13)."
+    },
+    {
+      "id": "vo_bull_scout_barnaby",
+      "text": "Professor Barnaby. Reads the same magazine every single day. Don't make him lose his page.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 living woods + logging-road ride (founder 2026-10-13)."
+    },
+    {
+      "id": "vo_bull_scout_moss",
+      "text": "Old Moss. Sleeps through anything but a snapped twig. Easy now.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 living woods + logging-road ride (founder 2026-10-13)."
+    },
+    {
+      "id": "vo_bull_scout_mumbles",
+      "text": "Mumbles. Grumpiest bear in these woods. Let him grumble.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 living woods + logging-road ride (founder 2026-10-13)."
+    },
+    {
+      "id": "vo_bull_scout_hattie",
+      "text": "Up ahead, that's Hattie with the bow. Best shot in these woods. Keep the trunks between you and her.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 living woods + logging-road ride (founder 2026-10-13)."
+    },
+    {
+      "id": "vo_bull_spotted",
+      "text": "He's seen us! Put him down, kid!",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 living woods + logging-road ride (founder 2026-10-13)."
+    },
+    {
+      "id": "vo_bull_road_start",
+      "text": "This old logging road is theirs, kid. Anything with fur that steps out, you put it down.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 living woods + logging-road ride (founder 2026-10-13)."
+    },
+    {
+      "id": "vo_bull_road_bows",
+      "text": "Bows in the trees! Shoot back!",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 living woods + logging-road ride (founder 2026-10-13)."
+    },
+    {
+      "id": "vo_bull_road_charge",
+      "text": "Big one running at us! Drop him!",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 living woods + logging-road ride (founder 2026-10-13)."
+    },
+    {
+      "id": "vo_bull_road_hurt",
+      "text": "You hit? Hang on to me, we're nearly through!",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 living woods + logging-road ride (founder 2026-10-13)."
+    },
+    {
+      "id": "vo_bull_road_clear",
+      "text": "That's the last of their pickets. Their camp is just over that ridge.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 living woods + logging-road ride (founder 2026-10-13)."
+    },
+    {
+      "id": "vo_bull_retry",
+      "text": "That went sideways. Back at the mine door, kid. We go again, quieter this time.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 living woods + logging-road ride (founder 2026-10-13)."
+    },
+    {
+      "id": "vo_lb_road_go",
+      "text": "I've got your back, Inferno!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.45,
+        "speed": 1.05
+      },
+      "note": "Lil Blunt. Episode 2 living woods + logging-road ride (founder 2026-10-13)."
     }
   ]
 }

@@ -110,28 +110,29 @@ func _ready() -> void:
 	var cam_kick_seen: bool = vm.cam_kick >= 0.0
 	_check("R loads shells back into the tube, one at a time", lift.reload() and (_until(lift, 3.0, func(): return lift.get_ammo() == Ep2Winchester.MAG)) and lift.get_reserve() == Ep2Winchester.RESERVE_START - 1, "%d/%d" % [lift.get_ammo(), lift.get_reserve()])
 	_check("the first-person control hint names aim and reload", cam_kick_seen and "RMB" in Episode2Mode.control_hint(Episode2Mode.Mode.FPS) and "reload" in Episode2Mode.control_hint(Episode2Mode.Mode.FPS))
-	# --- the disguise
+	# --- the lever (founder 2026-10-13): INSIDE the cage, iron like the cage's frame (hidden in plain sight), riding up with it
 	var lv: Node3D = lift.get_lever_node()
-	_check("a lever exists in the west wall, at knee height", lv != null and lv.position.x < -4.0 and lv.position.y < 1.4)
-	var rock: StandardMaterial3D = lift.get_rock_material()
+	_check("the lever is INSIDE the cage (a child of the cage, within its walls)", lv != null and lv.get_parent() == lift._cage
+		and absf(lv.position.x) < MineLiftChamber.CAGE_HALF and absf(lv.position.z) < MineLiftChamber.CAGE_HALF)
 	var disguised: bool = true
 	var meshes: int = 0
-	var biggest: float = 0.0
 	for mi in lv.find_children("*", "MeshInstance3D", true, false):
 		meshes += 1
 		var m: MeshInstance3D = mi
-		if m.material_override != rock:
+		if m.material_override is StandardMaterial3D and (m.material_override as StandardMaterial3D).emission_enabled:
 			disguised = false
-		if (m.material_override as StandardMaterial3D).emission_enabled:
-			disguised = false
-		biggest = maxf(biggest, m.mesh.get_aabb().size[m.mesh.get_aabb().size.max_axis_index()] * m.scale[m.scale.max_axis_index()])
-	_check("the lever is made of the WALL'S OWN ROCK material - no metal, no colour, no glow", disguised and meshes >= 2)
-	_check("...and it is small (a stone stub, not a handle: no part longer than 1.2 m)", biggest < 1.2, "%.2f" % biggest)
-	_check("it is far from the cage centre, off the player's path", Vector2(lift.get_lever_position().x, lift.get_lever_position().z).distance_to(Vector2.ZERO) > 3.5)
+	_check("...made of the cage's own rusted iron, nothing lit or coloured", disguised and meshes >= 2)
+	# --- the bars are solid (founder 2026-10-13: "why are they walking through the pole bars")
+	var side_in: Vector3 = lift._cage_bars(Vector3(-2.6, 0.0, 0.0), Vector3(-1.5, 0.0, 0.0))
+	_check("Lil Blunt cannot walk through the cage's side bars", absf(side_in.x) >= MineLiftChamber.CAGE_HALF, str(side_in))
+	var door_in: Vector3 = lift._cage_bars(Vector3(0.0, 0.0, -2.05), Vector3(0.0, 0.0, -1.6))
+	_check("...but walks in through the open walkway doorway", absf(door_in.z - (-1.6)) < 0.01, str(door_in))
+	var top_out: Vector3 = lift._cage_bars(Vector3(0.0, 0.0, 1.0), Vector3(0.0, 0.0, 2.2))
+	_check("...and cannot leave through the shut surface gate", top_out.z <= MineLiftChamber.CAGE_HALF - MineLiftChamber.BODY_R + 0.001, str(top_out))
 	# --- ARRIVE: Inferno walks to the cage while he talks; Lil Blunt walks in
 	_until(lift, 25.0, func(): return said.has("vo_bull_lift1") and not lift.is_show_active())
 	_check("Inferno tells him to step on the lift", said.has("vo_bull_lift1"))
-	_check("...and walks to the cage himself", lift.get_bull().position.distance_to(MineLiftChamber.CAGE_STAND_BULL) < 0.5, str(lift.get_bull().position))
+	_check("...and walks into the cage himself, through the doorway", lift.get_bull().position.distance_to(MineLiftChamber.CAGE_STAND_BULL) < 0.5, str(lift.get_bull().position))
 	lift.set_move_input(Vector2(0.0, 1.0))
 	_until(lift, 8.0, func(): return lift.get_beat_name() != "ARRIVE")
 	lift.set_move_input(Vector2.ZERO)
@@ -142,12 +143,14 @@ func _ready() -> void:
 	_run(lift, 2.0)
 	var eye_p: Vector3 = lift.get_player_position() + Vector3(0.0, Ep2Interlude.FPS_EYE_HEIGHT, 0.0)
 	var to_lever: Vector3 = lift.get_lever_position() - eye_p
-	_check("the scripted beat STAYS in first person (no cut to a body): the rifle is on screen and his eye turns to the lever Inferno walks to",
+	_check("the scripted beat STAYS in first person (no cut to a body): the rifle is on screen and his eye turns to the lever Inferno pulls",
 		not lift._player_node.visible and vm.rifle.visible and lift.get_hud().visible and absf(angle_difference(lift.get_look_yaw(), atan2(to_lever.x, to_lever.z))) < 0.6,
 		"yaw %.2f want %.2f" % [lift.get_look_yaw(), atan2(to_lever.x, to_lever.z)])
 	_until(lift, 30.0, func(): return lift.get_beat_name() == "RISE")
 	_check("he tells Lil Blunt not to bother looking for it - THEN the cage starts", said.has("vo_bull_lift_lever") and lift.get_beat_name() == "RISE", str(said))
 	_check("the lever swung (he actually pulled it)", lift._lever_t >= 1.0)
+	_check("the walkway gate dropped shut behind them", lift._gate_in_k < 0.05)
+	_check("Inferno never left the cage to pull it", absf(lift.get_bull().position.x) < MineLiftChamber.CAGE_HALF and absf(lift.get_bull().position.z) < MineLiftChamber.CAGE_HALF, str(lift.get_bull().position))
 	_check("control returns to the player for the ride", lift.has_player_control())
 	_run(lift, 0.2)
 	_check("...and so does his eye: the rifle is back in his hands on screen", not lift._player_node.visible and vm.rifle.visible and lift.get_hud().visible)
@@ -190,6 +193,7 @@ func _ready() -> void:
 	var res2: Array = []
 	w.chamber_cleared.connect(func(r): res2.append(r))
 	w.setup(0, [], 0)
+	w.debug_invulnerable = true          # this run walks the whole chamber; the fight + failure are tested in section 3
 	await get_tree().process_frame
 	_check("starts at SNEAK", w.get_beat_name() == "SNEAK" and w.has_player_control(), w.get_beat_name())
 	_run(w, 0.3)
@@ -197,13 +201,24 @@ func _ready() -> void:
 	_check("the woods are first person too: the Winchester in his hands, his body hidden, ammo on the HUD",
 		w.is_fps() and w.get_episode_mode() == Episode2Mode.Mode.FPS and wvm != null and wvm.rifle.get_parent() == w.get_camera()
 		and wvm.rifle.get_node_or_null("Hands/HandsModel") != null and not w._player_node.visible and w.get_hud().show_ammo and w.get_ammo() == Ep2Winchester.MAG)
+	_check("the woods can hurt him, so his 3 hearts are on the HUD", w.get_hud().show_health and w.get_health() == 3 and w.get_hud().health == 3)
 	_check("the quad is hidden under leaves and branches (a real pile of them)", w.is_quad_hidden() and w.get_cover_bit_count() >= 80, str(w.get_cover_bit_count()))
-	# the old-growth wood (founder 2026-10-10: "cartoon junk" -> realism; trees in the wind; birds; ElevenLabs soundscape)
-	var trunks: MultiMeshInstance3D = w._visuals.get_node_or_null("ForestTrunks") as MultiMeshInstance3D
-	var crowns: MultiMeshInstance3D = w._visuals.get_node_or_null("ForestCrowns") as MultiMeshInstance3D
+	# the old-growth wood (founder 2026-10-10: "cartoon junk" -> realism; trees in the wind; birds; ElevenLabs soundscape), now ~1 km long
+	var trunk_n: int = 0
+	var trunk_layers: int = 0
+	var crowns: MultiMeshInstance3D = null
+	for n in w._visuals.get_children():
+		if str(n.name).begins_with("ForestTrunks_"):
+			trunk_layers += 1
+			trunk_n += (n as MultiMeshInstance3D).multimesh.instance_count
+		if crowns == null and str(n.name).begins_with("ForestCrowns_"):
+			crowns = n
+	var t0: MultiMeshInstance3D = w._visuals.get_node_or_null("ForestTrunks_0") as MultiMeshInstance3D
 	_check("the wood is the textured old-growth kit (bark trunks + fir-branch crowns), not cones and cylinders",
-		trunks != null and crowns != null and trunks.multimesh.instance_count >= 150 and trunks.multimesh.mesh is ArrayMesh
-		and (trunks.material_override as StandardMaterial3D).albedo_texture != null, str(trunks.multimesh.instance_count if trunks != null else -1))
+		t0 != null and crowns != null and trunk_n >= 600 and t0.multimesh.mesh is ArrayMesh
+		and (t0.material_override as StandardMaterial3D).albedo_texture != null, "%d trunks" % trunk_n)
+	_check("...built in slices along the trail and road, each with a draw distance (a 1 km wood at the old web cost)",
+		trunk_layers >= 12 and t0.visibility_range_end > 100.0, "%d slices" % trunk_layers)
 	var cm: ShaderMaterial = crowns.material_override as ShaderMaterial if crowns != null else null
 	_check("the crowns sway in the wind (wind shader on the branch cards)", cm != null and cm.shader.resource_path.ends_with("ep2_foliage_wind.gdshader")
 		and float(cm.get_shader_parameter("sway")) > 0.1)
@@ -223,14 +238,44 @@ func _ready() -> void:
 		and w._visuals.find_children("BearArcherSentry*", "", false, false).size() == 2, "tris %d" % bear_tris)
 	_check("the ElevenLabs woods soundscape is loaded (ambience loop, gust, 3 bird calls, flutter)", wl != null and wl._ambience.stream != null and wl._gust.stream != null
 		and Ep2Wildlife.CALLS.all(func(p): return ResourceLoader.exists(p)) and ResourceLoader.exists(Ep2Wildlife.FLUTTER))
-	var quad_aabb: Vector3 = Vector3.ZERO
-	for mi in w.get_quad_node().find_children("*", "MeshInstance3D", true, false):
-		quad_aabb = quad_aabb.max((mi as MeshInstance3D).mesh.get_aabb().size)
-	_check("the cover is as high as the quad and wider (nothing of the flame paint shows from the trail)", w.get_cover_node().get_child_count() > 100)
+	# LIVING BEARS (founder 2026-10-13): named, each with his own routine and senses
+	var scouts: Array = w.get_scouts()
+	var routines: Dictionary = {}
+	var names: Dictionary = {}
+	for b in w.get_bears():
+		routines[(b as Ep2BearBrain).routine()] = true
+		names[(b as Ep2BearBrain).display_name()] = true
+	_check("every bear is somebody: a name, a routine of his own (patrol, read, sleep, roam, watch)",
+		names.size() == w.get_bears().size() and routines.has("patrol") and routines.has("read") and routines.has("sleep") and routines.has("roam") and routines.has("watch"),
+		str(routines.keys()))
+	var reader: Ep2BearBrain = w.get_bear("Professor Barnaby")
+	var sleeper: Ep2BearBrain = w.get_bear("Old Moss")
+	var walker: Ep2BearBrain = w.get_bear("Twitch")
+	_run(w, 0.5)
+	_check("Professor Barnaby READS (seated on his stump, Bear Monthly in his paws)", reader != null and Ep2BearKit.pose_name(reader.actor) == "sit_read"
+		and reader.actor.has_meta("prop_magazine") and (reader.actor.get_meta("prop_magazine") as Node3D).visible and reader.actor.has_meta("prop_stump"))
+	_check("Old Moss SLEEPS (lying down, z's over him)", sleeper != null and Ep2BearKit.pose_name(sleeper.actor) == "sleep" and sleeper.actor.has_meta("prop_zzz"))
+	var tw0: Vector3 = walker.actor.position if walker != null else Vector3.ZERO
+	_run(w, 4.0)
+	_check("Twitch WALKS his beat (a real walk, not a slide on the spot)", walker != null and walker.actor.position.distance_to(tw0) > 2.0
+		and walker.actor.current_clip() == walker.actor.walk_clip, "%.1f m %s" % [walker.actor.position.distance_to(tw0), walker.actor.current_clip()])
+	var archers_with_bows: int = 0
+	for b in w.get_bears("road"):
+		if (b as Ep2BearBrain).role() == "archer" and (b as Ep2BearBrain).actor.has_meta("bow"):
+			archers_with_bows += 1
+	_check("the logging road is picketed: at least 12 road bears, archers carrying bows", w.get_bears("road").size() >= 12 and archers_with_bows >= 5,
+		"%d road, %d bows" % [w.get_bears("road").size(), archers_with_bows])
+	# a LARGER world: the bears are far from Inferno's door (they can smell a forge)
+	var nearest: float = 1e9
+	for b in w.get_bears():
+		nearest = minf(nearest, (b as Ep2BearBrain).actor.position.distance_to(WoodsQuadChamber.SPAWN))
+	_check("no bear within 40 m of the mine door; the camp ~1 km away; ~750 m of road to ride",
+		nearest > 40.0 and WoodsQuadChamber.CAMP_CENTRE.distance_to(WoodsQuadChamber.SPAWN) > 900.0 and w.get_ride_length() > 650.0,
+		"nearest %.0f m, camp %.0f m, road %.0f m" % [nearest, WoodsQuadChamber.CAMP_CENTRE.distance_to(WoodsQuadChamber.SPAWN), w.get_ride_length()])
 	_check("no music of the quad ride yet", "deep_mining3" not in _music_path(), _music_path())
-	# walking beside Inferno along the trail is free (no warnings)
+	# walking behind Inferno along the trail is free: no bear notices
 	var guard: int = 0
-	while w.get_beat_name() == "SNEAK" and guard < 12000:
+	while w.get_beat_name() == "SNEAK" and guard < 24000:
 		guard += 1
 		var bull_pos: Vector3 = w.get_bull().position
 		var me: Vector3 = w.get_player_position()
@@ -242,7 +287,10 @@ func _ready() -> void:
 			w.set_move_input(Vector2.ZERO)
 		w.step(1.0 / 60.0)
 	w.set_move_input(Vector2.ZERO)
-	_check("following Inferno at a walk brings them to the thicket (-> REVEAL) with no bear alerted", w.get_beat_name() == "REVEAL" and w.get_noise_hits() == 0, "%s hits %d" % [w.get_beat_name(), w.get_noise_hits()])
+	_check("following Inferno at a walk brings them past every scout to the thicket (-> REVEAL) with no bear alerted",
+		w.get_beat_name() == "REVEAL" and w.get_noise_hits() == 0 and w.get_alert_count() == 0, "%s hits %d alerts %d" % [w.get_beat_name(), w.get_noise_hits(), w.get_alert_count()])
+	_check("...and Inferno named the scouts as they passed them", said2.has("vo_bull_scout_barnaby") and said2.has("vo_bull_scout_moss") and said2.has("vo_bull_scout_hattie"),
+		str(said2))
 	_run(w, 2.5)
 	var to_quad: Vector3 = (WoodsQuadChamber.QUAD_POS + Vector3(0.0, 1.3, 0.0)) - (w.get_player_position() + Vector3(0.0, Ep2Interlude.FPS_EYE_HEIGHT, 0.0))
 	_check("the reveal is seen through HIS eyes with the rifle in his hands: his view turns to the quad, no cut to a cinema camera",
@@ -250,13 +298,25 @@ func _ready() -> void:
 		"yaw %.2f want %.2f" % [w.get_look_yaw(), atan2(to_quad.x, to_quad.z)])
 	_until(w, 40.0, func(): return w.get_beat_name() == "MOUNT" or w.get_beat_name() == "RIDE")
 	_check("the leaves come off (the quad is revealed)", not w.is_quad_hidden() and said2.has("vo_bull_quad_reveal") and said2.has("vo_lb_quad_ok"))
-	_check("Deep Mining 3 only now (the moment they mount)", "deep_mining3" in _music_path() or w.get_beat_name() == "MOUNT", _music_path() + " " + w.get_beat_name())
-	_until(w, 20.0, func(): return w.get_hud().fade > 0.9 or w.get_beat_name() == "RIDE")
-	_check("he climbs on behind Inferno with a blink (the screen dips to black, never a raw teleport)", w.get_hud().fade > 0.5 or w.get_beat_name() == "RIDE", "%.2f" % w.get_hud().fade)
-	_until(w, 20.0, func(): return w.get_beat_name() == "RIDE")
+	# NO BLINK (founder 2026-10-13: "improve the transitions"): his eye climbs onto the back seat in one continuous move
+	var max_fade: float = 0.0
+	var max_jump: float = 0.0
+	var prev_eye: Vector3 = w.get_camera().global_position
+	var glided: bool = false
+	for i in 60 * 12:
+		if w.get_beat_name() == "RIDE":
+			break
+		w.step(1.0 / 60.0)
+		max_fade = maxf(max_fade, w.get_hud().fade)
+		var e: Vector3 = w.get_camera().global_position
+		max_jump = maxf(max_jump, e.distance_to(prev_eye))
+		prev_eye = e
+		glided = glided or w.is_gliding()
+	_check("he climbs on behind Inferno WITHOUT a blink: the screen never dips, the eye glides onto the back seat (no jump)",
+		max_fade < 0.05 and glided and max_jump < 0.25, "fade %.2f jump %.2f m" % [max_fade, max_jump])
 	_check("-> RIDE, the quad is on the road", w.get_beat_name() == "RIDE" and w.is_riding() and said2.has("vo_bull_quad_mount"))
+	_check("Deep Mining 3 only now (the moment they mount)", "deep_mining3" in _music_path(), _music_path())
 	_run(w, 1.5)
-	_check("...and the screen comes back up on the back seat", w.get_hud().fade < 0.2, "%.2f" % w.get_hud().fade)
 	_check("on the back seat he is still first person, the rifle in his hands (\"hold that rifle steady\")", w.is_fps() and wvm.rifle.visible and not w._player_node.visible and w.get_hud().visible)
 	_check("it is the MODELLED flame quad (flame_quad.glb, four spinning Wheel_* nodes), not the box stand-in", w.is_quad_modelled() and w.get_quad_wheel_count() == 4, "%s %d" % [w.is_quad_modelled(), w.get_quad_wheel_count()])
 	var driver: Ep2Actor = w.get_bull()
@@ -275,22 +335,70 @@ func _ready() -> void:
 	_check("the passenger's view rides the quad: it turns with the heading", absf(angle_difference(w._look_yaw, w._quad_yaw)) < 0.2, "look %.2f quad %.2f" % [w._look_yaw, w._quad_yaw])
 	var ride_hits: int = w.get_noise_hits()
 	_check("he can fire from the back seat (the engine covers it: no stealth penalty)", w.shoot() and w.get_noise_hits() == ride_hits)
-	_until(w, 4.0, func(): return "deep_mining3" in _music_path())
 	_check("Deep Mining 3 is playing on the quad", "deep_mining3" in _music_path(), _music_path())
 	var q0: Vector3 = w.get_quad_node().position
 	_run(w, 3.0)
-	_check("the quad moves along the trail (rails: the player does not steer)", w.get_quad_node().position.distance_to(q0) > 12.0, str(w.get_quad_node().position))
+	_check("the quad moves along the road (rails: the player does not steer)", w.get_quad_node().position.distance_to(q0) > 15.0, str(w.get_quad_node().position))
 	_check("both ride it: Inferno up front, Lil Blunt behind", absf(w.get_bull().position.distance_to(w.get_quad_node().position)) < 3.0 and absf(w.get_player_position().distance_to(w.get_quad_node().position)) < 4.5)
-	_until(w, 40.0, func(): return w.get_beat_name() == "SPY")
+	# THE ROAD FIGHT: the pickets wake to the engine; archers loose arrows at him; he shoots back from the back seat
+	var road_alerted: int = 0
+	var shot_at: Dictionary = {}
+	var ride_t: float = 0.0
+	while w.get_beat_name() == "RIDE" and ride_t < 160.0:
+		ride_t += 1.0 / 60.0
+		# aim at the nearest live, alert road bear in front within 35 m, and fire when the lever allows
+		var tgt: Ep2BearBrain = null
+		var best_d: float = 35.0
+		for b in w.get_bears("road"):
+			var br: Ep2BearBrain = b
+			if br.is_dead() or not br.is_alert():
+				continue
+			var dd: float = br.actor.position.distance_to(w.get_player_position())
+			if dd < best_d:
+				best_d = dd
+				tgt = br
+		if tgt != null:
+			var eye3: Vector3 = w.get_player_position() + Vector3(0.0, w.eye_height, 0.0)
+			var aim: Vector3 = tgt.actor.position + Vector3(0.0, tgt.actor.height_m * 0.55, 0.0) - eye3
+			w._look_yaw = atan2(aim.x, aim.z)
+			w._look_pitch = atan2(aim.y, Vector2(aim.x, aim.z).length())
+			w.set_aim(true)
+			if w.get_viewmodel().gun.ads > 0.95 and w.shoot():
+				shot_at[tgt.display_name()] = true
+			if w.get_ammo() == 0:
+				w.reload()
+		else:
+			w.set_aim(false)
+		w.step(1.0 / 60.0)
+	w.set_aim(false)
+	for b in w.get_bears("road"):
+		if (b as Ep2BearBrain).is_alert() or (b as Ep2BearBrain).is_dead() or (b as Ep2BearBrain).aware == Ep2BearBrain.Aware.SEARCH:
+			road_alerted += 1
+	_check("the engine wakes the road: pickets turn on the quad", road_alerted >= 6, "%d alerted" % road_alerted)
+	_check("archers fire back: real arrows are loosed at him on the ride", w.get_arrows_loosed() >= 3, "%d arrows" % w.get_arrows_loosed())
+	var corpse: Ep2BearBrain = null
+	for b in w.get_bears("road"):
+		if (b as Ep2BearBrain).is_dead():
+			corpse = b
+	_check("he shoots bears off the road from the back seat (kills land)", w.get_kills() >= 2 and corpse != null, "%d kills, shot at %s" % [w.get_kills(), str(shot_at.keys())])
+	_check("the ride is long (the camp is far from the mine): over 55 s on the road", ride_t > 55.0, "%.0f s" % ride_t)
 	_check("the ride ends on the ridge (-> SPY) in first person", w.get_beat_name() == "SPY" and w.is_fps())
 	_run(w, 0.8)
 	_check("Inferno gets OFF the quad at the ridge (standing idle, hands free)",
 		driver.current_clip() != WoodsQuadChamber.BULL_SIT_CLIP and driver.reach_weight("Left") < 0.5 and driver.reach_weight("Right") < 0.5,
 		"%s L%.2f R%.2f" % [driver.current_clip(), driver.reach_weight("Left"), driver.reach_weight("Right")])
+	_check("the corpses stay where they fell (no fade, no vanish)", corpse != null and is_instance_valid(corpse.actor) and corpse.actor.is_inside_tree()
+		and Ep2BearKit.pose_name(corpse.actor) == "dead")
+	_until(w, 12.0, func(): return not w.is_show_active() and said2.has("vo_bull_spy1"))
+	_check("he hops off and creeps up to the ferns (no cut): Inferno tells him to get down and look", said2.has("vo_bull_spy1")
+		and w.get_player_position().distance_to(Vector3(WoodsQuadChamber.SPY_EYE.x, 0.0, WoodsQuadChamber.SPY_EYE.z)) < 0.6)
 	_until(w, 12.0, func(): return not w.is_show_active())
-	_check("Inferno tells him to get down and look", said2.has("vo_bull_spy1"))
+	if w.get_ammo() == 0:                  # the road fight emptied the tube: load before the ridge
+		w.reload()
+		_until(w, 8.0, func(): return w.get_ammo() > 0 and not w.get_gun().reloading)
+	_run(w, 0.8)
 	var spy_hits: int = w.get_noise_hits()
-	_check("a shot from the ridge carries to the camp (a noise hit, Inferno holds him back)", w.shoot() and w.get_noise_hits() == spy_hits + 1)
+	_check("a shot from the ridge carries to the camp (a noise hit, Inferno holds him back)", w.shoot() and w.get_noise_hits() == spy_hits + 1, "%d -> %d" % [spy_hits, w.get_noise_hits()])
 	_run(w, 1.2)
 	w.set_aim(true)
 	_run(w, 0.6)
@@ -314,28 +422,102 @@ func _ready() -> void:
 	_check("...and it mints nothing", res2.size() == 1 and int(res2[0].get("gold_awarded", -1)) == 0)
 	w.queue_free()
 
-	# ---------------------------------------------------------------- 3. stealth: running near a bear is heard
+	# ---------------------------------------------------------------- 3. stealth, awareness, the fight, failure + retry
+	print("-- LIVING WOODS: senses, combat, checkpoint")
 	var w2: WoodsQuadChamber = WOODS.instantiate()
 	add_child(w2)
-	w2.setup(0, [], 0)
-	await get_tree().process_frame
-	var pb: Ep2Actor = w2._patrols[0][0]
-	w2._player_pos = Vector3(pb.position.x + 6.0, 0.0, pb.position.z)
-	w2._look_yaw = 0.0
-	w2.set_move_input(Vector2(0.0, 1.0), true)
-	_run(w2, 0.3)
-	_check("RUNNING within a bear's hearing is noticed (a noise hit, Inferno shushes)", w2.get_noise_hits() >= 1, str(w2.get_noise_hits()))
-	var hits: int = w2.get_noise_hits()
-	w2.set_move_input(Vector2(0.0, 1.0), false)
-	_run(w2, 2.0)
-	_check("...walking next to the same bear is free", w2.get_noise_hits() == hits)
 	var said3: Array = []
 	w2.line_spoken.connect(func(id): said3.append(id))
+	w2.setup(0, [], 0)
+	await get_tree().process_frame
+	var moss: Ep2BearBrain = w2.get_bear("Old Moss")
+	var barn: Ep2BearBrain = w2.get_bear("Professor Barnaby")
+	# walking past a sleeper is free; running past him wakes him
+	w2._player_pos = moss.actor.position + Vector3(-6.5, 0.0, -6.0)
+	w2._look_yaw = 0.0
+	w2.set_move_input(Vector2(0.0, 1.0), false)
+	_run(w2, 2.5)
 	w2.set_move_input(Vector2.ZERO)
-	_run(w2, 8.0)
-	hits = w2.get_noise_hits()
-	_check("FIRING the Winchester in the stealth wood is noise too: bears within earshot turn, Inferno hisses",
-		w2.shoot() and w2.get_noise_hits() == hits + 1 and said3.has("vo_bull_woods_shot"), "%d %s" % [w2.get_noise_hits(), str(said3)])
+	_check("WALKING past Old Moss while he sleeps: he sleeps on", moss.is_unaware() and Ep2BearKit.pose_name(moss.actor) == "sleep" and w2.get_noise_hits() == 0,
+		"%s %s" % [moss.awareness_name(), Ep2BearKit.pose_name(moss.actor)])
+	w2._player_pos = moss.actor.position + Vector3(-4.0, 0.0, -5.0)
+	w2._look_yaw = 0.0
+	w2.set_move_input(Vector2(0.0, 1.0), true)
+	_run(w2, 1.0)
+	w2.set_move_input(Vector2.ZERO)
+	_check("RUNNING past him is heard: he wakes (a ?), it is a noise hit and Inferno shushes", not moss.is_unaware() and w2.get_noise_hits() >= 1 and said3.has("vo_bull_woods_quiet"),
+		"%s hits %d" % [moss.awareness_name(), w2.get_noise_hits()])
+	_run(w2, 2.6)
+	_check("...and he gets up off the ground to come and look (the fall played backward, then a walk)", Ep2BearKit.pose_name(moss.actor) != "sleep",
+		Ep2BearKit.pose_name(moss.actor))
+	# standing in front of the reader: he looks up from his magazine, SEES him, roars and charges; Inferno opens fire
+	w2._player_pos = Vector3(-1e3, 0.0, -1e3)
+	_run(w2, 0.2)
+	var bf := Vector3(sin(barn.actor.facing), 0.0, cos(barn.actor.facing))
+	w2._player_pos = barn.actor.position + bf * 5.0
+	w2._look_yaw = atan2(-bf.x, -bf.z)
+	w2.get_bull().position = w2._player_pos + Vector3(2.0, 0.0, 1.5)
+	var hp0: int = w2.get_health()
+	_until(w2, 14.0, func(): return barn.is_alert())
+	_check("Professor Barnaby, nose in his magazine, still SEES him when he stands right in front (sight meter fills, '!')",
+		barn.is_alert() and w2.get_alert_count() >= 1, barn.awareness_name())
+	_until(w2, 10.0, func(): return w2.get_health() < hp0 or barn.is_dead())
+	_check("...he roars and charges: a claw swipe costs a heart, or Inferno drops him first",
+		w2.get_health() < hp0 or barn.is_dead(), "hp %d dead %s bull shots %d" % [w2.get_health(), barn.is_dead(), w2.get_bull_shots()])
+	_check("Inferno shouts and defends him (he fires on the bear, no arm IK)", said3.has("vo_bull_spotted") and w2.get_bull_shots() >= 1
+		and w2.get_bull().reach_weight("Left") < 0.01 and w2.get_bull().reach_weight("Right") < 0.01, "shots %d" % w2.get_bull_shots())
+	var tries: int = 0
+	while not barn.is_dead() and tries < 60 * 20:
+		tries += 1
+		var e3: Vector3 = w2.get_player_position() + Vector3(0.0, w2.eye_height, 0.0)
+		var a3: Vector3 = barn.actor.position + Vector3(0.0, 1.2, 0.0) - e3
+		w2._look_yaw = atan2(a3.x, a3.z)
+		w2._look_pitch = atan2(a3.y, Vector2(a3.x, a3.z).length())
+		w2.set_aim(true)
+		if w2.get_viewmodel().gun.ads > 0.95:
+			w2.shoot()
+		if w2.get_ammo() == 0:
+			w2.reload()
+		w2._invuln = 1.0                      # keep the test player standing while he shoots it out
+		w2.step(1.0 / 60.0)
+	w2.set_aim(false)
+	_check("a shot bear goes down", barn.is_dead(), barn.awareness_name())
+	var fell_at: Vector3 = barn.actor.position
+	_run(w2, 5.0)
+	_check("...and his body stays where he fell (dead pose, still there 5 s later)", is_instance_valid(barn.actor) and barn.actor.is_inside_tree()
+		and barn.actor.position.distance_to(fell_at) < 0.1 and Ep2BearKit.pose_name(barn.actor) == "dead")
+	# an archer: in her sector she sees him, draws (the warning) and looses a real arrow
+	var hat: Ep2BearBrain = w2.get_bear("Hattie")
+	# a spot in her sector with a clear line of sight (the old growth hides most of the wood from her)
+	var spot: Vector3 = hat.actor.position
+	for dist in [14.0, 17.0, 11.0, 20.0, 9.0]:
+		for da in [0.0, 0.2, -0.2, 0.4, -0.4]:
+			var yaw_c: float = float(hat.p["face"]) + float(da)
+			var c3: Vector3 = hat.actor.position + Vector3(sin(yaw_c), 0.0, cos(yaw_c)) * float(dist)
+			if spot == hat.actor.position and not w2._los_blocked(Vector2(hat.actor.position.x, hat.actor.position.z), Vector2(c3.x, c3.z)):
+				spot = c3
+	w2._player_pos = spot
+	w2._invuln = 0.0
+	var arrows0: int = w2.get_arrows_loosed()
+	_until(w2, 14.0, func(): return w2.get_arrows_loosed() > arrows0)
+	_check("Hattie spots him in her sector, draws and looses an ARROW (a real projectile in the air)", w2.get_arrows_loosed() > arrows0
+		and w2._arrows.size() >= 1, "%d arrows, %s" % [w2.get_arrows_loosed(), hat.awareness_name()])
+	# out of hearts -> the checkpoint at the mine exit; everything comes back together
+	w2._invuln = 0.0
+	w2._health = 1
+	w2._hurt("claw")
+	_check("the last heart ends the attempt: input stops, the screen goes down", w2.is_failing() and not w2.has_player_control())
+	_run(w2, 1.2)
+	_run(w2, 0.6)
+	var barn2: Ep2BearBrain = w2.get_bear("Professor Barnaby")
+	_check("RETRY from the mine exit: Lil Blunt at the door with 3 hearts, the beat back to SNEAK, Inferno's retry line",
+		w2.get_attempt() == 1 and w2.get_health() == 3 and w2.get_beat_name() == "SNEAK" and w2.get_player_position().distance_to(WoodsQuadChamber.SPAWN) < 0.5
+		and said3.has("vo_bull_retry") and w2.has_player_control(), "attempt %d hp %d %s" % [w2.get_attempt(), w2.get_health(), w2.get_beat_name()])
+	_check("...and the wood is restored with him: Barnaby alive and reading again, the quad back under its leaves, a full tube",
+		barn2 != null and not barn2.is_dead() and Ep2BearKit.pose_name(barn2.actor) == "sit_read" and w2.is_quad_hidden() and w2.get_ammo() == Ep2Winchester.MAG
+		and w2.get_live_bear_count() == w2.get_bears().size())
+	_run(w2, 1.0)
+	_check("the screen comes back up at the mine exit", w2.get_hud().fade < 0.5, "%.2f" % w2.get_hud().fade)
 	w2.queue_free()
 
 	# ---------------------------------------------------------------- 4. the session chain

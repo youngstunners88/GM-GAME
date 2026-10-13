@@ -99,6 +99,7 @@ func _woods() -> void:
 	var w: WoodsQuadChamber = c
 	_run(2.0)
 	await _cap("woods_1_start")
+	w.debug_invulnerable = true
 	w._player_pos = Vector3(0.5, 0.0, 28.0)
 	w._look_yaw = 0.0
 	w._bull.position = Vector3(1.0, 0.0, 33.0)
@@ -113,7 +114,7 @@ func _woods() -> void:
 	_run(0.2)
 	# the founder's bear stills (2026-10-10): a bear in the wood, close, from the player's eye - the first patrol bear from ~6 m
 	var keep_pos: Vector3 = w._player_pos
-	var pb: Node3D = w._patrols[0][0]
+	var pb: Node3D = w.get_bear("Twitch").actor
 	var to_b: Vector3 = pb.global_position - Vector3(0.0, 0.0, 0.0)
 	w._player_pos = Vector3(to_b.x + 4.0, 0.0, to_b.z - 4.5)
 	var dlook: Vector3 = (pb.global_position + Vector3(0.0, 1.2, 0.0)) - (w._player_pos + Vector3(0.0, 1.55, 0.0))

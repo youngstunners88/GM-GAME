@@ -47,3 +47,14 @@ to turn the rifle about its own origin, so the forearm end swung up and the slee
   `tests/ep2_range_lesson_test`.
 - Moving the hip CLOSER also hides it but blows the GM logo up and cuts it at the frame edge: rejected (do not change the approved look).
 - Do not "improve" the sleeve material on the side: the founder read the shared-material change as the gun getting darker. Reverted.
+
+## Outdoors: the gun must not go dark navy (2026-10-13)
+
+In the bear woods the low golden-hour sun lit the held Winchester only when he faced roughly east: facing west the receiver measured
+0.03 mean (dark navy, logo lost) against 0.35 facing east, at the same spot. The founder has already rejected a "darker gun". Fix
+(no material colour change): `Ep2Viewmodel.set_world_shadows(false)` (no tree-shadow patches on the gun) and
+`Ep2Viewmodel.set_own_light(4.7, sun)` - an OMNI key on the camera masked to the viewmodel layer, its energy filling what the sun
+leaves out by view direction. Result: 0.34-0.38 in every direction. A directional key does nothing in the Compatibility renderer
+(its cull mask is ignored - tested). Re-measure with `tools/ep2_shots/vm_outdoor_light_probe.tscn -- key=sun` / `key=4.7` whenever
+the woods' sun or the rifle changes.
+

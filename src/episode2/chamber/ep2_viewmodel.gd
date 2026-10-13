@@ -150,6 +150,77 @@ func _apply_exposure() -> void:
 		mat.albedo_color = Color(base.r * _exposure, base.g * _exposure, base.b * _exposure, base.a)
 
 
+## Render layer of the gun in your hands when it has its own light (outdoors): only the viewmodel key light lights this layer.
+const VM_LIGHT_LAYER := 1 << 19
+var _key_light: OmniLight3D = null
+var _key_max: float = 0.0
+var _sun_toward_yaw: float = NAN
+
+
+## OUTDOORS THE SUN LIGHTS THE GUN FROM WHEREVER IT HAPPENS TO BE: with the low golden-hour sun behind him the receiver turns
+## dark navy (measured 2026-10-13 at one spot: rifle region mean 0.35 facing east, 0.03 facing west). The founder will not accept
+## a darker gun, so outdoors the held rifle + hands get their OWN key light that moves with the view (the classic FPS viewmodel
+## light): a short-range omni just above and behind his left shoulder, masked to the viewmodel's layer (an omni's cull mask is
+## honoured by the Compatibility renderer; a directional one's is not - tested). Colours / materials are untouched.
+func set_own_light(energy: float, sun: DirectionalLight3D = null) -> void:
+	if rifle == null or camera == null:
+		return
+	_key_max = energy
+	if sun != null:
+		var travel: Vector3 = -sun.global_transform.basis.z
+		_sun_toward_yaw = atan2(-travel.x, -travel.z)
+	for vi in rifle.find_children("*", "VisualInstance3D", true, false):
+		if not (vi is Light3D):
+			(vi as VisualInstance3D).layers = 1 | VM_LIGHT_LAYER
+	if _key_light == null:
+		_key_light = OmniLight3D.new()
+		_key_light.name = "ViewmodelKey"
+		_key_light.light_cull_mask = VM_LIGHT_LAYER
+		_key_light.shadow_enabled = false
+		_key_light.light_color = Color(1.0, 0.93, 0.82)
+		_key_light.omni_range = 1.6
+		_key_light.omni_attenuation = 0.6
+		_key_light.position = Vector3(-0.25, 0.32, 0.05)          # camera space: up-left, a hand's width behind the eye
+		camera.add_child(_key_light)
+	_update_key_light()
+
+
+## The sun lights the held gun best when it is off his right side (measured: peak with the view ~90 deg left of the sun) and not
+## at all from behind; the key light fills exactly what the sun leaves out, so the gun's brightness stays level as he turns.
+func _update_key_light() -> void:
+	if _key_light == null or camera == null or not camera.is_inside_tree():
+		return
+	var f: Vector3 = -camera.global_transform.basis.z
+	var yaw: float = atan2(f.x, f.z)
+	var s: float = sqrt(clampf(cos(yaw - (_sun_toward_yaw - PI * 0.5)), 0.0, 1.0)) if not is_nan(_sun_toward_yaw) else 0.5
+	_key_light.light_energy = _key_max * (1.0 - s) + 0.1
+
+
+## World shadows on the gun in your hands: OFF outdoors (the bear woods). The 40 m trees' sun shadows sweep over a camera-held
+## rifle as he walks and turn it dark navy in every patch of shade - the "gun is darker" the founder will not accept. The
+## colours are untouched: only the receive-shadows flag of the held rifle + hands materials changes (FPS viewmodel practice).
+func set_world_shadows(on: bool) -> void:
+	if rifle == null:
+		return
+	_apply_exposure()                      # the hands' materials are already per-viewmodel duplicates; reuse them
+	for mi in rifle.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF if not on else m.cast_shadow
+		if m.mesh == null:
+			continue
+		for i in m.mesh.get_surface_count():
+			var src: Material = m.get_surface_override_material(i)
+			var own: bool = src != null
+			if src == null:
+				src = m.mesh.surface_get_material(i)
+			if src is BaseMaterial3D:
+				var bm: BaseMaterial3D = src as BaseMaterial3D
+				if not own:
+					bm = bm.duplicate() as BaseMaterial3D       # never touch the shared GLB material (the wall rifle uses it)
+					m.set_surface_override_material(i, bm)
+				bm.disable_receive_shadows = not on
+
+
 ## Show or hide the rifle (the host hides it while a director camera is on, when the body is seen instead).
 func set_shown(on: bool) -> void:
 	if rifle != null and is_instance_valid(rifle):
@@ -182,6 +253,7 @@ func is_ads() -> bool:
 ## Advance everything one physics step. `moving` / `sprinting` / `walk_phase` come from the host's movement.
 func step(delta: float, moving: bool, sprinting: bool, walk_phase: float) -> void:
 	_anim_t += delta
+	_update_key_light()
 	gun.sprinting = sprinting
 	gun.step(delta)
 	_tick_lever(delta)
