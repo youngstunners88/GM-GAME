@@ -51,3 +51,8 @@ instanced only in Stages 1-3, so the Smoke Lounge and vault realms (which also u
 - Custom `_input` router: cannot tell that a modal panel is above a control, must reimplement finger ownership.
 - Swipe/tap gesture zones: forbidden by the 2026-08-01 DO-NOT list (invisible zones) and less reliable than buttons.
 - Godot 4.7 built-in `VirtualJoystick`: not available on the pinned 4.3.
+
+## Amendment 2026-10-13 — no written words
+
+Founder rule: a phone UI is icons and finger movement, never key names. The "?" hint button, per-button `label`
+exports and the hint labels were removed; the first-run cue is a wordless pulse. See the skill's "NO WRITTEN WORDS".

@@ -23,10 +23,10 @@ finger -> Godot GUI -> VirtualJoystick / VirtualButton -> TouchActions -> InputM
 
 | file | job |
 |---|---|
-| `mobile_layout_manager.gd` | **Autoload** `MobileLayoutManager`. WHETHER controls exist (touch device, PLAYING, a platformer `Player` or the `touch_controls_wanted` group, not locked, not keyboard-driving), WHICH layout, relayout on `size_changed`, release-on-hide, first-run hint, prefs (`user://touch_controls.cfg`). |
+| `mobile_layout_manager.gd` | **Autoload** `MobileLayoutManager`. WHETHER controls exist (touch device, PLAYING, a platformer `Player` or the `touch_controls_wanted` group, not locked, not keyboard-driving), WHICH layout, relayout on `size_changed`, release-on-hide, first-run wordless pulse, prefs (`user://touch_controls.cfg`). |
 | `touch_metrics.gd` | Pure device maths: phone/tablet by **smallest side in dp (<600 = phone)**, orientation, `dp` = canvas units per dp, safe area (notch insets + minimum edge margin), `layout_key()`. |
 | `touch_actions.gd` | The injector: `press/release/set_axis/release_all/set_suspended/buzz`. Mirrors `TouchScreenButton`: `Input.action_press(strength)` for polled reads **and** an `InputEventAction` on press/release edges for `_input` handlers. |
-| `virtual_control.gd` | Base `Control`: anchor corner + offset in dp + radius in dp, round hit test, theme lookup, label drawing. |
+| `virtual_control.gd` | Base `Control`: anchor corner + offset in dp + radius in dp, round hit test, theme lookup. |
 | `virtual_joystick.gd/.tscn` | Analog stick. FIXED / DYNAMIC (default) / FOLLOWING. Horizontal = **analog strength**; up/down = deliberate, hysteresis-gated digital (ladders, drop-through, ground pound). |
 | `virtual_button.gd/.tscn` | Round thumb button. HOLD (jump, attack, dash) or TOGGLE (run). Vector glyphs, no font dependence. |
 | `touch_layout.gd` | Root script of layout scenes: places controls from metrics, fans out theme/hint/release. |
@@ -83,13 +83,15 @@ when the window fills the screen; on web it is empty so a 14dp side/top and 18dp
 - RUN survives death and pause (it is suspended, not reset) but switches itself off on a real hide (transition, lock).
 - **Hybrid devices**: a real key press hides the controls, the next screen touch brings them back.
   A real finger also proves a touchscreen even if the platform said no.
-- First time controls appear: labels flash for 4.5 s (`flash_hints()`), once per install.
+- **NO WRITTEN WORDS on the touch UI (founder 2026-10-13, angry).** Phones show icons and finger movement only: no
+  JUMP/ATK/MOVE/"?" text, no key names, no hint line. Teach with a first-run opacity pulse (`flash_hints()`, wordless).
+  Never add a `label`, a Label node or a keyboard hint on touch devices.
 - Haptics: `Input.vibrate_handheld(12)` on press where the platform has it (Android browsers; no-op on iOS Safari).
 
 ## Extending
 
 - **New button**: drop a `virtual_button.tscn` instance into each layout scene; set `anchor_corner`, `offset_dp`,
-  `radius_dp`, `action` (must exist in the InputMap), `glyph`/`label`, `role` (tint). No code changes.
+  `radius_dp`, `action` (must exist in the InputMap), `glyph` (vector icon, no text), `role` (tint). No code changes.
 - **New screen shape**: add `layouts/<key>.tscn`, register it in `MobileLayoutManager.LAYOUT_SCENES`, return the key
   from `TouchMetrics.layout_key()`. The geometry test then checks it automatically if you add the screen to its list.
 - **A new scene that needs controls** (a chamber, a portal explorer): put a node in group `touch_controls_wanted`.
@@ -141,9 +143,9 @@ Never write FIXED/live on the strength of these alone. Say "pushed / deploying",
 hard-refresh check on his phone and tablet.
 
 ### Founder device checklist (hard refresh first)
-1. Start Stage 1: controls fade in, labels show ~4s, then drop to see-through.
+1. Start Stage 1: controls fade in, controls pulse ~4s (no words), then drop to see-through.
 2. Hold a thumb on the left: the stick appears under it. Light push walks, firm push runs; slide up on a ladder.
-3. Hold the stick, tap JUMP (double tap = double jump) and ATK at the same time.
+3. Hold the stick, tap the jump icon (double tap = double jump) and the attack icon at the same time.
 4. Tap RUN once: stays lit and keeps sprinting; tap again to stop.
 5. Rotate the phone: controls re-lay out and nothing sticks. Pause/resume: nothing keeps running.
 6. Tablet: buttons larger and further in from the edge; nothing covers the character.

@@ -121,7 +121,7 @@ async function runProfile(browser, key) {
   await page.keyboard.press('Escape');               // first-run HOW-YOU-ROLL panel
   await page.waitForTimeout(600);
   let playing = false;
-  for (const ratio of [0.642, 0.71, 0.60, 0.553]) {
+  for (const ratio of [0.642, 0.71, 0.60, 0.553, 0.536]) {
     await tap(p.w * 0.5, p.h * ratio);
     await page.waitForTimeout(2500);
     await page.keyboard.press('Escape');             // optional email-signup panel
