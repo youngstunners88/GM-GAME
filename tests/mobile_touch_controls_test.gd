@@ -51,6 +51,8 @@ func _ready() -> void:
 	await _test_touch_actions()
 	await _test_live_controls()
 	await _test_visibility_rules()
+	await _test_stick_edges_and_orphans()
+	await _test_film_opt_in()
 	await _test_player_integration()
 	print("MOBILE_TOUCH_CONTROLS: %s" % ("ALL PASS" if _fail == 0 else "%d FAILURE(S)" % _fail))
 	TouchActions.release_all()
@@ -440,6 +442,103 @@ func _test_visibility_rules() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	_check("rotating back restores a landscape layout", MobileLayoutManager.current_layout_key() != &"phone_portrait")
+
+# --- regressions found by the adversarial review ---------------------------------
+
+func _test_stick_edges_and_orphans() -> void:
+	print(" stick edges, ladder intent, orphan fingers:")
+	_go_playing()
+	MobileLayoutManager.refresh()
+	await get_tree().process_frame
+	var lay: TouchLayout = MobileLayoutManager.layout()
+	var stick := lay.find_role(&"stick") as VirtualJoystick
+	var radius: float = stick.base_radius_dp * stick.unit
+	var origin: Vector2 = stick.global_position + stick.size * Vector2(0.5, 0.45)
+
+	# touching down near the region EDGE used to read as a full push (the base was
+	# clamped onto the screen and the clamp shift was read as displacement)
+	for spot in [Vector2(6.0, stick.size.y * 0.5), Vector2(stick.size.x * 0.5, stick.size.y - 6.0), Vector2(stick.size.x * 0.5, 6.0)]:
+		_touch(0, true, stick.global_position + spot)
+		await get_tree().process_frame
+		var quiet: bool = Input.get_axis("move_left", "move_right") == 0.0 and not Input.is_action_pressed("move_up") and not Input.is_action_pressed("move_down")
+		_check("touch-down at region offset %s reads ZERO (no phantom push)" % str(spot), quiet)
+		_touch(0, false, stick.global_position + spot)
+		await get_tree().process_frame
+
+	# a push a few degrees off vertical is a CLIMB, not a sidestep (ladder drift)
+	_touch(0, true, origin)
+	await get_tree().process_frame
+	_drag(0, origin + Vector2(radius * 0.17, -radius * 0.9))
+	await get_tree().process_frame
+	_check("near-vertical push climbs and adds NO horizontal drift", Input.is_action_pressed("move_up") and Input.get_axis("move_left", "move_right") == 0.0, "axis=%f" % Input.get_axis("move_left", "move_right"))
+	_drag(0, origin + Vector2(radius * 0.7, -radius * 0.7))
+	await get_tree().process_frame
+	_check("a true diagonal still keeps its horizontal part", Input.get_axis("move_left", "move_right") > 0.5)
+	_touch(0, false, origin)
+	await get_tree().process_frame
+
+	# a finger that PRESSED WHILE HIDDEN gets drags but never a release: it must NOT be adopted
+	StateMachine.change_state(StateMachine.State.GAME_OVER)
+	await get_tree().process_frame
+	_touch(0, true, origin)
+	await get_tree().process_frame
+	StateMachine.change_state(StateMachine.State.PLAYING)
+	await get_tree().process_frame
+	_drag(0, origin + Vector2(radius, 0.0))
+	await get_tree().process_frame
+	_drag(0, origin + Vector2(radius + 20.0, 0.0))
+	await get_tree().process_frame
+	_check("a finger that never pressed the stick is NOT adopted (its release would never arrive)", Input.get_axis("move_left", "move_right") == 0.0 and not stick.is_active())
+	_touch(0, false, origin)
+	await get_tree().process_frame
+
+	# an owned finger that LIFTS while the controls are hidden must not be adopted later
+	_touch(0, true, origin)
+	await get_tree().process_frame
+	_drag(0, origin + Vector2(radius, 0.0))
+	await get_tree().process_frame
+	StateMachine.change_state(StateMachine.State.GAME_OVER)
+	await get_tree().process_frame
+	_check("hiding remembers the owned finger", stick._orphan == 0)
+	_touch(0, false, origin)
+	await get_tree().process_frame
+	_check("its release (delivered even while hidden) clears the memory", stick._orphan == -1)
+	StateMachine.change_state(StateMachine.State.PLAYING)
+	await get_tree().process_frame
+	_touch(0, true, origin + Vector2(0, 40))   # a different finger lands... after show it works normally
+	await get_tree().process_frame
+	_drag(0, origin + Vector2(0, 40) + Vector2(radius, 0.0))
+	await get_tree().process_frame
+	_check("a normal press after all that steers normally", Input.get_axis("move_left", "move_right") > 0.9)
+	_touch(0, false, origin)
+	await get_tree().process_frame
+	_check("and releases cleanly", Input.get_axis("move_left", "move_right") == 0.0 and stick._orphan == -1)
+
+	# a button pressed then hidden within its press-in tween must not stay DRAWN pressed
+	var jump := lay.find_button(&"jump")
+	_touch(1, true, _centre(jump))
+	StateMachine.change_state(StateMachine.State.GAME_OVER)
+	await get_tree().create_timer(0.25).timeout
+	_check("a press cut short by hiding leaves the button drawn idle", jump._press_amount == 0.0, "press_amount=%f" % jump._press_amount)
+	_touch(1, false, _centre(jump))
+	StateMachine.change_state(StateMachine.State.PLAYING)
+	await get_tree().process_frame
+
+func _test_film_opt_in() -> void:
+	print(" boss-defeat film / victory screens:")
+	_go_playing()
+	var marker: Node = get_tree().get_first_node_in_group(MobileLayoutManager.GROUP_WANTED)
+	StateMachine.change_state(StateMachine.State.LEVEL_COMPLETE)
+	await get_tree().process_frame
+	_check("LEVEL_COMPLETE with an opted-in scene (the Stage 3 film) keeps the controls", MobileLayoutManager.controls_visible)
+	marker.remove_from_group(MobileLayoutManager.GROUP_WANTED)
+	MobileLayoutManager.refresh()
+	_check("LEVEL_COMPLETE without opt-in (victory screen) hides them", not MobileLayoutManager.controls_visible)
+	marker.add_to_group(MobileLayoutManager.GROUP_WANTED)
+	StateMachine.change_state(StateMachine.State.TRANSITIONING)
+	StateMachine.change_state(StateMachine.State.PLAYING)
+	await get_tree().process_frame
+	_check("back to PLAYING shows them again", MobileLayoutManager.controls_visible)
 
 # --- the real player ---------------------------------------------------------
 

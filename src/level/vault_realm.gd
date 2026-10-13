@@ -997,6 +997,15 @@ func _build_clerk_panel() -> void:
 	panel.custom_minimum_size = Vector2(780, 400)
 	panel.position = Vector2(-260, -200)
 	root.add_child(panel)
+	# TOUCH: this panel (layer 30) sits over the on-screen GRAB button, and the intro
+	# is stepped one line per `interact`. A tap on the panel advances the INTRO lines
+	# only (never a stake/confirm: those stay real buttons). Mouse events cover both a
+	# desktop click and a touch tap (emulate_mouse_from_touch), so exactly one fires.
+	panel.gui_input.connect(func(ev: InputEvent) -> void:
+		var mb := ev as InputEventMouseButton
+		if mb != null and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT \
+				and _clerk_open and _mira_dlg != null and not _mira_dlg.at_end():
+			_clerk_advance_dialogue())
 	# Gold/cyan border so the panel pops off the busy backdrop.
 	var border := ColorRect.new()
 	border.color = _fg()
@@ -1019,7 +1028,7 @@ func _build_clerk_panel() -> void:
 	style_label(_clerk_line, 28)
 	root.add_child(_clerk_line)
 	var hint := Label.new()
-	hint.text = "[E] next"
+	hint.text = "[E] / tap: next"
 	hint.position = Vector2(440, -190)
 	style_label(hint, 22)
 	root.add_child(hint)

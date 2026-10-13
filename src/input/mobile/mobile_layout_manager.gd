@@ -10,6 +10,8 @@ extends Node
 ##   * the device has a touchscreen (or was forced: `--touch-ui` / GM_TOUCH_UI=1)
 ##   * the player is not driving with a keyboard right now (hybrid laptops/iPads)
 ##   * the game is PLAYING (not menu / pause / transition / game over / victory)
+##     (a scene that opted in via the group below may also keep them through
+##     LEVEL_COMPLETE, e.g. the skippable Stage 3 defeat film)
 ##   * the scene holds a platformer `Player`, or opted in via the
 ##     `touch_controls_wanted` group (the extension point for new chambers)
 ##   * nothing has locked it (`set_locked`, e.g. a modal panel or a cutscene)
@@ -145,16 +147,21 @@ func metrics() -> TouchMetrics:
 func _wants_controls() -> bool:
 	if not enabled or not is_touch_device or _keyboard_mode or not _locks.is_empty():
 		return false
-	if not StateMachine.is_playing():
-		return false
-	return _gameplay_present()
+	var opted_in: bool = not get_tree().get_nodes_in_group(GROUP_WANTED).is_empty()
+	if StateMachine.is_playing():
+		return opted_in or _platformer_player_present()
+	# LEVEL_COMPLETE is the boss-defeat film: it is skipped by HOLDING jump, which
+	# the old always-on overlay allowed. Only a scene that explicitly opted in keeps
+	# the controls through it; the victory / menu screens never opt in, so their
+	# buttons are never covered by the stick region.
+	return opted_in and StateMachine.get_state_enum() == StateMachine.State.LEVEL_COMPLETE
 
-## A platformer Player is on stage, or something explicitly asked for controls.
-func _gameplay_present() -> bool:
+## A platformer Player is on stage.
+func _platformer_player_present() -> bool:
 	for node in get_tree().get_nodes_in_group(&"player"):
 		if node is Player:
 			return true
-	return not get_tree().get_nodes_in_group(GROUP_WANTED).is_empty()
+	return false
 
 func _set_shown(shown: bool) -> void:
 	if shown == controls_visible:

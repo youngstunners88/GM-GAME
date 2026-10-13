@@ -720,6 +720,9 @@ func _build_player() -> void:
 	var entrance: Vector2 = Layout.ENTRANCES[protocol]
 	player.position = entrance + Vector2(0, 35)
 	player.add_to_group("player")
+	# Not a platformer `Player`, but the room needs move + interact: ask for the
+	# on-screen touch controls (group tag only; this script knows nothing of touch).
+	player.add_to_group("touch_controls_wanted")
 	player.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(player)
 	_player = player

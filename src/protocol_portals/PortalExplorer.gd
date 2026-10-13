@@ -33,7 +33,9 @@ func _physics_process(_delta: float) -> void:
 	if get_tree().paused:
 		velocity = Vector2.ZERO
 		return
-	var input := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	# deadzone 0.0: the default (-1) averages the actions' 0.5 dead zones, which would
+	# swallow a light ANALOG push (touch stick, gamepad). Keys are 1.0, so unchanged.
+	var input := Input.get_vector("move_left", "move_right", "move_up", "move_down", 0.0)
 	velocity = input * SPEED
 	_climbing = _in_ladder and input.y < -0.1
 	if _sprite != null and absf(input.x) > 0.05:

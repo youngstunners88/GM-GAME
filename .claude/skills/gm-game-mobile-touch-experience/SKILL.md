@@ -33,7 +33,7 @@ finger -> Godot GUI -> VirtualJoystick / VirtualButton -> TouchActions -> InputM
 | `layouts/phone_landscape.tscn`, `tablet_landscape.tscn`, `phone_portrait.tscn` | **Pure scenes** composing controls. Numbers are dp. Tablet = x1.2 tier scale + wider spacing. |
 | `touch_theme.gd` + `themes/smoke_realm_touch_theme.tres` | Tints, idle/pressed opacity (0.30 / 0.78), stroke widths. Swap per biome with `MobileLayoutManager.apply_theme()`. |
 
-Gate: `tests/mobile_touch_controls_test.tscn` (120+ checks, in CI). Browser: `scripts/touch-playtest.mjs`.
+Gate: `tests/mobile_touch_controls_test.tscn` (130+ checks incl. mutation-checked regressions, in CI). Browser: `scripts/touch-playtest.mjs`.
 
 ## Why real `Control`s, not TouchScreenButton or a hand-rolled `_input` router
 
@@ -64,10 +64,18 @@ when the window fills the screen; on web it is empty so a 14dp side/top and 18dp
   not weaken the dash (test `light-tilt air dash`, mutation-checked: 178 vs 400 without it).
 - **Hide = release**: pause, transition, lock, keyboard use, focus loss, layout swap all call
   `TouchActions.release_all()`. Nothing may stay held by a finger that is gone.
-- **A thumb still down across a death / respawn / pause / rotation is ADOPTED**: Godot keeps routing a finger's
-  drags to the control it pressed even while that control is hidden (verified), so the stick treats a drag from an
-  unowned finger as a fresh begin - but only while visible, so nothing is pressed during GAME_OVER or pause.
-  (Found by the real-browser playtest: before this, the stick stayed dead after every death until the thumb lifted.)
+- **A thumb still down across a death / respawn / pause is RESUMED, but only if this stick owned it**: Godot keeps
+  routing a finger's drags AND its release to the control it pressed even while that control is hidden (measured), so
+  `release()` remembers the finger (`_orphan`) and its next drag restarts the stick. A finger that pressed while the
+  controls were hidden also produces drags but its release is NEVER delivered (measured) - adopting it would leave the
+  hero running forever, so it is ignored. The same goes for a rebuilt layout (rotation): the new stick never owned it.
+  (Real-browser playtest found the dead-stick-after-death bug; the adversarial review found the stuck-input hazard of
+  the naive fix.)
+- **The stick measures from where the thumb landed.** Only the DRAWN base is clamped onto the screen near the region
+  edge; output is measured from the logical origin, so touch-down alone never reads as a push.
+- **Vertical intent beats sidestep**: while up/down is engaged and |y| > |x| the horizontal axis is 0, otherwise a thumb
+  a few degrees off vertical drifts the hero off a ladder (player.gd moves x at 0.6 x climb speed while climbing).
+- RUN switches itself off whenever the controls hide (death, pause); tap it again.
 - **Hybrid devices**: a real key press hides the controls, the next screen touch brings them back.
   A real finger also proves a touchscreen even if the platform said no.
 - First time controls appear: labels flash for 4.5 s (`flash_hints()`), once per install.
@@ -82,6 +90,9 @@ when the window fills the screen; on web it is empty so a 14dp side/top and 18dp
 - **A new scene that needs controls** (a chamber, a portal explorer): put a node in group `touch_controls_wanted`.
   A platformer `Player` already counts. Episode 2 first-person rooms deliberately do NOT (mouse-look, different
   controls) - give them their own layout + a `look` control before opting them in.
+- **A skippable film that needs the controls** (the Stage 3 boss-defeat film is skipped by HOLDING jump): add the node to
+  `touch_controls_wanted` while it plays. That group is the only thing that keeps controls through LEVEL_COMPLETE (victory
+  and menu screens never opt in, so their buttons stay free). Remove it when the film ends.
 - **A modal / dialogue / cutscene that must own the screen**: `MobileLayoutManager.set_locked(&"my_key", true/false)`.
 - **Re-skin**: assign a `TouchTheme` via `apply_theme()`. **Disable everything** (desktop builds): `enabled = false`.
 - Desktop testing: run with `-- --touch-ui` or `GM_TOUCH_UI=1`; the layout then shows on a mouse machine
@@ -101,7 +112,9 @@ when the window fills the screen; on web it is empty so a 14dp side/top and 18dp
 7. `gdparse` is syntax-only. The truth is the headless test + a real export.
 8. The GUI keeps delivering a finger's drags to the control it pressed **even while that control is hidden** - code that
    releases on hide must also decide what a later drag from that finger means (we adopt it in the stick).
-9. Run the security sentinel **after** `git add`. Do not commit the `.godot-cache` symlink or `export_presets.cfg`.
+9. Never adopt a finger the control did not press: after `GAME_OVER` / pause the GUI still sends that finger's drags
+   to the control, and a finger that pressed while it was hidden gets drags but NO release.
+10. Run the security sentinel **after** `git add`. Do not commit the `.godot-cache` symlink or `export_presets.cfg`.
 
 ## Verify (in this order)
 
@@ -130,6 +143,17 @@ hard-refresh check on his phone and tablet.
 5. Rotate the phone: controls re-lay out and nothing sticks. Pause/resume: nothing keeps running.
 6. Tablet: buttons larger and further in from the edge; nothing covers the character.
 7. Laptop: touch layer absent; keyboard plays exactly as before.
+
+## Known gaps (found, not fixed - outside the touch layer)
+
+- **Vault realms**: the Diamond Vault clerk's intro can be tapped through, but Gideon's (Fort Knox) dialogue still needs
+  `interact` / ESC and its last `interact` STAKES gold, so it needs its own Next / Confirm / Leave buttons before touch
+  can drive it (value-moving: follow `goldmine-economy-invariants`). The Smoke Lounge and vault rooms do get the stick,
+  buttons and a way back out.
+- `src/ui/pause_menu.gd:12` calls `event.is_action_just_pressed(...)` (an `Input` method, not an `InputEvent` one): a
+  script error on every event and PAUSED can never be entered. Pre-existing (keyboard Escape logs it too); fixing it
+  would switch a dead pause menu on, so it needs the founder's call.
+- Console noise `Can't change this state while flushing queries ... area_set_shape_disabled` is pre-existing game noise.
 
 ## Not built (on purpose)
 

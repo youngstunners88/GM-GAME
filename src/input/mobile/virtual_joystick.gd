@@ -45,9 +45,13 @@ const V_CONE := 1.35
 @export var knob_radius_dp: float = 27.0
 
 var _finger: int = -1
+var _orphan: int = -1                   # finger this stick owned when it was hidden/released from outside
 var _rest: Vector2 = Vector2.ZERO       # local coords
-var _origin: Vector2 = Vector2.ZERO     # current base centre, local coords
-var _knob: Vector2 = Vector2.ZERO       # current knob centre, local coords
+## LOGICAL base centre (local coords): exactly where the thumb landed (or the rest
+## spot in FIXED mode). Output is measured from here, so touching down anywhere
+## reads zero. Only the DRAWN base is clamped onto the screen (_draw_origin()).
+var _origin: Vector2 = Vector2.ZERO
+var _shown: Vector2 = Vector2.ZERO      # knob displacement from the base, clamped to the rim
 var _v_state: int = 0                   # -1 up, 0 none, +1 down
 var _value: Vector2 = Vector2.ZERO
 var _active_amount: float = 0.0 : set = _set_active_amount
@@ -82,7 +86,7 @@ func apply_layout(m: TouchMetrics, unit_scale: float) -> void:
 	_rest = _clamp_base(global_rest - position)
 	if _finger == -1:
 		_origin = _rest
-		_knob = _rest
+		_shown = Vector2.ZERO
 	queue_redraw()
 
 ## The stick listens over its whole rectangular region (the base is not round).
@@ -102,26 +106,37 @@ func _gui_input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		var touch := event as InputEventScreenTouch
 		if touch.pressed:
+			if touch.index == _orphan:
+				_orphan = -1   # a fresh press with that index: the old finger is long gone
 			if _finger == -1 and _accepts(touch.position):
 				_finger = touch.index
 				_begin(touch.position)
 			accept_event()
 		elif touch.index == _finger:
-			release()
+			_reset()
+			accept_event()
+		elif touch.index == _orphan:
+			# the orphaned finger lifted (the GUI delivers that release even while we
+			# are hidden): it is gone, nothing to adopt any more
+			_orphan = -1
 			accept_event()
 	elif event is InputEventScreenDrag:
 		var drag := event as InputEventScreenDrag
 		if drag.index == _finger:
 			_move(drag.position)
-		elif _finger == -1 and is_visible_in_tree() and _accepts(drag.position):
-			# ADOPT AN ORPHANED FINGER. The GUI keeps routing a finger's drags to
-			# the control it pressed even while that control is hidden (verified on
-			# 4.3), so a thumb still down across a death/respawn, a pause or a
-			# rotation shows up here as drags with no press. Without this the stick
-			# stayed dead after every death until the player lifted and re-touched
-			# (seen in the real-browser playtest). Hidden controls never adopt, so
-			# nothing is pressed during GAME_OVER / pause / transitions.
-			_finger = drag.index
+		elif _finger == -1 and drag.index == _orphan and is_visible_in_tree() and _accepts(drag.position):
+			# RESUME A THUMB THIS STICK OWNED. The GUI keeps routing a finger's drags
+			# (and its release) to the control it pressed even while that control is
+			# hidden (verified on 4.3), so a thumb still down across a death/respawn
+			# or a pause arrives as drags with no press. Without this the stick stayed
+			# dead after every death until the player lifted and re-touched (seen in
+			# the real-browser playtest).
+			# ONLY a finger recorded in _orphan may be adopted. A finger that pressed
+			# while the controls were hidden also produces drags here but its RELEASE
+			# is never delivered (measured), so adopting it would leave the hero
+			# running forever. Hidden controls never adopt either.
+			_finger = _orphan
+			_orphan = -1
 			_begin(drag.position)
 		accept_event()
 
@@ -131,7 +146,7 @@ func _accepts(local_pos: Vector2) -> bool:
 	return true
 
 func _begin(local_pos: Vector2) -> void:
-	_origin = _rest if mode == Mode.FIXED else _clamp_base(local_pos)
+	_origin = _rest if mode == Mode.FIXED else local_pos
 	_animate_active(1.0)
 	_move(local_pos)
 
@@ -141,16 +156,21 @@ func _move(local_pos: Vector2) -> void:
 	var dist: float = delta.length()
 	if mode == Mode.FOLLOWING and dist > radius:
 		# drag the base along so the finger stays on the rim
-		_origin = _clamp_base(_origin + delta / dist * (dist - radius))
+		_origin += delta / dist * (dist - radius)
 		delta = local_pos - _origin
 		dist = delta.length()
-	var shown: Vector2 = delta if dist <= radius or dist == 0.0 else delta / dist * radius
-	_knob = _origin + shown
-	_apply(shown / maxf(radius, 0.001))
+	_shown = delta if dist <= radius or dist == 0.0 else delta / dist * radius
+	_apply(_shown / maxf(radius, 0.001))
 
 func _apply(n: Vector2) -> void:
 	var hx: float = shape_horizontal(n.x)
 	_v_state = vertical_state(n, _v_state)
+	# A mostly-vertical push is a climb / drop, not a sidestep: on a ladder
+	# player.gd turns any horizontal axis into drift (0.6 x climb speed) and a
+	# thumb a few degrees off vertical walked the hero out of the 44px ladder
+	# zone. Only a deliberate diagonal (|x| >= |y|) keeps horizontal output.
+	if _v_state != 0 and absf(n.x) < absf(n.y):
+		hx = 0.0
 	TouchActions.set_axis(&"move_left", &"move_right", hx)
 	TouchActions.set_axis(&"move_up", &"move_down", float(_v_state))
 	var v := Vector2(hx, float(_v_state))
@@ -159,6 +179,11 @@ func _apply(n: Vector2) -> void:
 		value_changed.emit(_value)
 	queue_redraw()
 
+## Where the base RING is drawn: the logical origin, pushed back inside the region
+## so the whole disc stays on screen near the edges (output never uses this).
+func _draw_origin() -> Vector2:
+	return _origin if mode == Mode.FIXED else _clamp_base(_origin)
+
 ## Current output: x = signed horizontal strength, y = -1 up / +1 down.
 func value() -> Vector2:
 	return _value
@@ -166,7 +191,16 @@ func value() -> Vector2:
 func is_active() -> bool:
 	return _finger != -1
 
+## Let go of everything from OUTSIDE (hide, pause, death, layout swap). The finger
+## this stick was following is remembered so it can be resumed if it is still down
+## when the controls come back (see _gui_input).
 func release() -> void:
+	if _finger != -1:
+		_orphan = _finger
+	_reset()
+
+## Drop the finger and every action. Used directly when the finger itself lifts.
+func _reset() -> void:
 	var was_active: bool = _finger != -1
 	_finger = -1
 	_v_state = 0
@@ -178,7 +212,7 @@ func release() -> void:
 		_value = Vector2.ZERO
 		value_changed.emit(_value)
 	_origin = _rest
-	_knob = _rest
+	_shown = Vector2.ZERO
 	if was_active:
 		_animate_active(0.0)
 	else:
@@ -207,7 +241,8 @@ func _draw() -> void:
 	var r: float = base_radius_dp * unit
 	var k: float = knob_radius_dp * unit
 	var ring_w: float = maxf((touch_theme.ring_width_dp if touch_theme != null else 2.5) * unit, 1.5)
-	var c: Vector2 = _origin
+	var c: Vector2 = _draw_origin()
+	var knob_pos: Vector2 = c + _shown
 	draw_circle(c, r, Color(col.r, col.g, col.b, alpha * 0.28))
 	draw_arc(c, r, 0.0, TAU, 56, Color(col.r, col.g, col.b, alpha), ring_w, true)
 	# four tiny rim ticks help the thumb find the directions without looking
@@ -215,7 +250,7 @@ func _draw() -> void:
 		var d := Vector2.RIGHT.rotated(TAU * float(i) / 4.0)
 		draw_line(c + d * r * 0.78, c + d * r * 0.94, Color(col.r, col.g, col.b, alpha * 0.9), ring_w, true)
 	var knob_alpha: float = lerpf(idle * 0.9, pressed_alpha(), _active_amount)
-	draw_circle(_knob, k, Color(col.r, col.g, col.b, knob_alpha * 0.55))
-	draw_arc(_knob, k, 0.0, TAU, 40, Color(1, 1, 1, clampf(knob_alpha + 0.1, 0.0, 1.0)), ring_w, true)
+	draw_circle(knob_pos, k, Color(col.r, col.g, col.b, knob_alpha * 0.55))
+	draw_arc(knob_pos, k, 0.0, TAU, 40, Color(1, 1, 1, clampf(knob_alpha + 0.1, 0.0, 1.0)), ring_w, true)
 	if hint_active:
 		_draw_label("MOVE", c + Vector2(0.0, -r - 12.0 * unit), (touch_theme.label_size_dp if touch_theme != null else 11.0) * unit, 0.95)

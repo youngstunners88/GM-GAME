@@ -88,6 +88,10 @@ func release() -> void:
 	_is_on = false
 	if action != &"":
 		TouchActions.release(action)
+	# kill a press-in tween still running, or it lands AFTER this and leaves the
+	# button drawn pressed with nothing held
+	if _tween != null and _tween.is_valid():
+		_tween.kill()
 	_press_amount = 0.0
 	if was_active:
 		released.emit()
