@@ -81,6 +81,15 @@ when the window fills the screen; on web it is empty so a 14dp side/top and 18dp
 - **Vertical intent beats sidestep**: while up/down is engaged and |y| > |x| the horizontal axis is 0, otherwise a thumb
   a few degrees off vertical drifts the hero off a ladder (player.gd moves x at 0.6 x climb speed while climbing).
 - RUN survives death and pause (it is suspended, not reset) but switches itself off on a real hide (transition, lock).
+- **Vault dialogues (Gideon / Fort Knox, Mira / Diamond Vault) are modal AND lock the touch layer.** Their panels sit on layer
+  30 over the GRAB button, and GRAB is just the `interact` action, which `vault_realm.gd._physics_process` also reads as
+  "advance" and, on the last step, as the stake / `clerk_confirm`. So `gideon_open()` / `clerk_open()` call
+  `MobileLayoutManager.set_locked(&"vault_panel", true)` (released in `*_close()` and `_exit_tree()`): a stray GRAB can never
+  reach a value-moving step. Gideon's panel has real **NEXT / CONFIRM STAKE / LEAVE** buttons (>=96px, `FOCUS_NONE` because a
+  focused Button also answers `ui_accept`, which the vault reads too = double fire). Rules for any NPC panel that moves value:
+  background taps do nothing; the confirm button exists only on the last line, away from NEXT; it is disarmed for a short window
+  after appearing (`GIDEON_CONFIRM_ARM_SEC`); NEXT is guarded so it can never be the terminal step. Gate:
+  `tests/vault_touch_dialogue_test.tscn`.
 - **Hybrid devices**: a real key press hides the controls, the next screen touch brings them back.
   A real finger also proves a touchscreen even if the platform said no.
 - First time controls appear: labels flash for 4.5 s (`flash_hints()`), once per install.
@@ -125,6 +134,7 @@ when the window fills the screen; on web it is empty so a 14dp side/top and 18dp
 
 ```bash
 godot --headless res://tests/mobile_touch_controls_test.tscn      # ends MOBILE_TOUCH_CONTROLS: ALL PASS
+godot --headless res://tests/vault_touch_dialogue_test.tscn       # ends VAULT_TOUCH_DIALOGUE: ALL PASS (Gideon/Mira buttons + lock)
 godot --headless res://tests/script_compile_test.tscn             # every script/scene still compiles
 bash scripts/ep2-local-export.sh                                   # CI-identical non-threaded web export
 node scripts/touch-playtest.mjs http://localhost:8899/game/index.html web_verify/touch-playtest phone,tablet,desktop
@@ -148,13 +158,12 @@ hard-refresh check on his phone and tablet.
 5. Rotate the phone: controls re-lay out and nothing sticks. Pause/resume: nothing keeps running.
 6. Tablet: buttons larger and further in from the edge; nothing covers the character.
 7. Laptop: touch layer absent; keyboard plays exactly as before.
+8. Fort Knox: walk to Gideon, tap GRAB. The controls hide and his panel shows NEXT; tap through to CONFIRM STAKE (greyed for ~0.6 s); LEAVE works on every line; the controls return after.
 
 ## Known gaps (found, not fixed - outside the touch layer)
 
-- **Vault realms**: the Diamond Vault clerk's intro can be tapped through, but Gideon's (Fort Knox) dialogue still needs
-  `interact` / ESC and its last `interact` STAKES gold, so it needs its own Next / Confirm / Leave buttons before touch
-  can drive it (value-moving: follow `goldmine-economy-invariants`). The Smoke Lounge and vault rooms do get the stick,
-  buttons and a way back out.
+- **Vault altars / Assay Scale** (`vault_realm.gd`): reached with GRAB, and ONE press stakes 25% (E always did the same).
+  A founder decision, not changed: whether a touch player should get a confirm step there too.
 - `src/ui/pause_menu.gd:12` calls `event.is_action_just_pressed(...)` (an `Input` method, not an `InputEvent` one): a
   script error on every event and PAUSED can never be entered. Pre-existing (keyboard Escape logs it too); fixing it
   would switch a dead pause menu on, so it needs the founder's call.
