@@ -85,8 +85,10 @@ async function runProfile(browser, key) {
       try { if (e.data && e.data.type === 'state') window.__states.push(String(e.data.value)); } catch (_) { /* ignore */ }
     });
   });
+  res.touchLog = [];
   page.on('console', (m) => {
     const t = m.text();
+    if (t.startsWith('[Touch]')) res.touchLog.push(t.slice(0, 160));
     if ((m.type() === 'error' || GODOT_ERROR_RE.test(t)) && !BENIGN_RE.test(t)) res.errors.push(`[${m.type()}] ${t.slice(0, 240)}`);
   });
   page.on('pageerror', (e) => res.errors.push(`[pageerror] ${String(e).slice(0, 240)}`));
@@ -253,6 +255,7 @@ async function runProfile(browser, key) {
   await up(0);
   await shotHud('14-released-at-end');                  // nothing held
 
+  console.log('  [Touch] log from the game:\n    ' + res.touchLog.join('\n    '));
   gate('touch session: no console errors', res.errors.length === 0, res.errors.join(' | '));
   res.note = 'Read the shots (overlay line INPUT held is ground truth): 03 right~0.5; 04 +jump; 05 +attack (3 fingers); 06 only the stick; 07 nothing; 08 right=1; 09 left=1; 10 right+sprint; 10b sprint alone (toggle); 11 nothing; 12-* thumb held through deaths, STATE flips to GAME_OVER (INPUT -) then right=1.00 again after each respawn; 14 nothing held.';
   await context.close();

@@ -67,6 +67,11 @@ var _hint_timer: Timer
 var _hint_seen: bool = false
 var _fade: Tween
 
+## Rare-transition log (show / hide / suspend / layout / release). Shows up in the browser
+## console and the touch playtest, so "why did my thumb stop steering" is answerable.
+func _log(msg: String) -> void:
+	print("[Touch] %s (state %s)" % [msg, StateMachine.get_current_state()])
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	force_touch_ui = "--touch-ui" in OS.get_cmdline_args() or "--touch-ui" in OS.get_cmdline_user_args() \
@@ -189,6 +194,7 @@ func _set_shown(shown: bool) -> void:
 	controls_visible = shown
 	if _fade != null and _fade.is_valid():
 		_fade.kill()
+	_log("controls %s" % ("SHOWN" if shown else "HIDDEN"))
 	if shown:
 		_layer.visible = true
 		if _layout != null:
@@ -212,6 +218,7 @@ func _set_suspended(on: bool) -> void:
 	if on == controls_suspended:
 		return
 	controls_suspended = on
+	_log("controls %s" % ("SUSPENDED" if on else "RESUMED"))
 	TouchActions.set_suspended(on)
 	if _layout != null:
 		if _fade != null and _fade.is_valid():
@@ -248,6 +255,7 @@ func _relayout() -> void:
 	_layout.apply(_metrics, button_scale, _theme)
 
 func _build_layout(key: StringName) -> void:
+	_log("layout build %s (releases all)" % key)
 	_release_everything()
 	if _fade != null and _fade.is_valid():
 		_fade.kill()
@@ -289,6 +297,7 @@ func _input(event: InputEvent) -> void:
 func _notification(what: int) -> void:
 	# Tab hidden / app backgrounded: fingers can vanish without a release event.
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		_log("focus lost (releases all)")
 		_release_everything()
 
 # --- preferences -------------------------------------------------------------
