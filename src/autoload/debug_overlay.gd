@@ -29,6 +29,10 @@ func _ready() -> void:
 			_on = true
 			_label.visible = true
 
+## Is the F3 / ?debug=1 overlay showing? (Lets other systems add verbose logging only then.)
+func is_on() -> bool:
+	return _on
+
 func _unhandled_key_input(event: InputEvent) -> void:
 	var k := event as InputEventKey
 	if k != null and k.pressed and not k.echo and k.keycode == KEY_F3:

@@ -279,6 +279,9 @@ func _build_layout(key: StringName) -> void:
 # --- input mode + safety -----------------------------------------------------
 
 func _input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch and DebugOverlay.is_on():
+		var finger := event as InputEventScreenTouch
+		_log("finger %d %s%s" % [finger.index, "DOWN" if finger.pressed else "UP", " CANCELED" if finger.canceled else ""])
 	if event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed:
 		# A real finger proves a touchscreen even if the platform did not say so
 		# (some touch laptops, a desktop browser in device-emulation mode).
