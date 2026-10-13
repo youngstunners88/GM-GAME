@@ -53,6 +53,8 @@ var camera: Camera3D = null
 var cam_kick: float = 0.0
 ## Low ready: the rifle drops down and away (the spyglass is up, a cutscene line is spoken...).
 var lowered: bool = false
+## The hip placement (defaults to VM_HIP_POS); a probe can sweep it.
+var hip_pos: Vector3 = VM_HIP_POS
 var shots_played: int = 0
 var levers_played: int = 0
 
@@ -101,7 +103,7 @@ func attach(cam: Camera3D) -> void:
 		rifle.add_child(stub)
 	rifle.name = "Viewmodel"
 	cam.add_child(rifle)
-	rifle.position = VM_HIP_POS
+	rifle.position = hip_pos
 	rifle.rotation = VM_HIP_ROT
 	rifle.scale = Vector3.ONE * VM_SCALE
 	_build_muzzle_flash()
@@ -197,7 +199,7 @@ func step(delta: float, moving: bool, sprinting: bool, walk_phase: float) -> voi
 	var ads_k: float = ads * ads * (3.0 - 2.0 * ads)
 	_vm_low = move_toward(_vm_low, 1.0 if lowered else 0.0, delta * 2.6)
 	var sprint: float = 1.0 if (sprinting and moving and ads < 0.1) else 0.0
-	var pos: Vector3 = VM_HIP_POS.lerp(VM_LOW_POS, _vm_low).lerp(VM_SPRINT_POS, sprint * (1.0 - _vm_low))
+	var pos: Vector3 = hip_pos.lerp(VM_LOW_POS, _vm_low).lerp(VM_SPRINT_POS, sprint * (1.0 - _vm_low))
 	var rot: Vector3 = VM_HIP_ROT.lerp(VM_LOW_ROT, _vm_low).lerp(VM_SPRINT_ROT, sprint * (1.0 - _vm_low))
 	# aimed: centred with the sight line on the screen centre
 	var ads_pos := Vector3(0.0, -(VM_ADS_SIGHT_DROP + _rifle_sight_height() * VM_SCALE), float(rifle.get_meta("ads_depth", VM_ADS_DEPTH)))
@@ -218,6 +220,7 @@ func step(delta: float, moving: bool, sprinting: bool, walk_phase: float) -> voi
 	_vm_lag = _vm_lag.lerp(lag_target, 1.0 - exp(-delta * 12.0))
 	pos += Vector3(_vm_lag.x, _vm_lag.y, 0.0) * calm
 	rot.y += _vm_lag.x * 1.6
+	var rot_hold: Vector3 = rot          # the hold before the kick / lever / reload turns
 	# recoil: the rifle jumps back and its muzzle lifts, then settles
 	pos += Vector3(0.0, 0.016, 0.085) * _recoil * lerpf(1.0, 0.55, ads_k)
 	rot.x += 0.12 * _recoil * lerpf(1.0, 0.6, ads_k)
@@ -234,6 +237,11 @@ func step(delta: float, moving: bool, sprinting: bool, walk_phase: float) -> voi
 		rot.z += -0.55
 		rot.x += 0.28
 		pos += Vector3(-0.05, -0.05 - 0.02 * tap, 0.04)
+	# THE ARM IS THE PIVOT (founder 2026-10-13: "bring the arm closer so when the rifle kicks up we don't see that green extension"):
+	# the kick, the lever roll and the reload turn the rifle about Lil Blunt's forearm, so the arm stays tucked in where it is at the
+	# hip instead of swinging its end (and the sleeve behind it) up into the frame. The hip look itself is unchanged.
+	var piv: Vector3 = Vector3(rifle.get_meta("arm_pivot", Vector3.ZERO)) * rifle.scale.x
+	pos += Basis.from_euler(rot_hold) * piv - Basis.from_euler(rot) * piv
 	rifle.position = pos
 	rifle.rotation = rot
 

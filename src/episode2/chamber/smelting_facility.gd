@@ -2395,6 +2395,7 @@ func _animate_fps(delta: float) -> void:
 	_vm_lag = _vm_lag.lerp(lag_target, 1.0 - exp(-delta * 12.0))
 	pos += Vector3(_vm_lag.x, _vm_lag.y, 0.0) * calm
 	rot.y += _vm_lag.x * 1.6
+	var rot_hold: Vector3 = rot          # the hold before the kick / lever / reload turns
 	# recoil: the rifle jumps back and its muzzle lifts, then settles
 	pos += Vector3(0.0, 0.016, 0.085) * _recoil * lerpf(1.0, 0.55, ads_k)
 	rot.x += 0.12 * _recoil * lerpf(1.0, 0.6, ads_k)
@@ -2411,6 +2412,11 @@ func _animate_fps(delta: float) -> void:
 		rot.z += -0.55
 		rot.x += 0.28
 		pos += Vector3(-0.05, -0.05 - 0.02 * tap, 0.04)
+	# THE ARM IS THE PIVOT (founder 2026-10-13: "bring the arm closer so when the rifle kicks up we don't see that green extension"):
+	# the kick, the lever roll and the reload turn the rifle about Lil Blunt's forearm, so the arm stays tucked in where it is at the
+	# hip instead of swinging its end (and the sleeve behind it) up into the frame. The hip look itself is unchanged.
+	var piv: Vector3 = Vector3(_rifle_node.get_meta("arm_pivot", Vector3.ZERO)) * _rifle_node.scale.x
+	pos += Basis.from_euler(rot_hold) * piv - Basis.from_euler(rot) * piv
 	_rifle_node.position = pos
 	_rifle_node.rotation = rot
 

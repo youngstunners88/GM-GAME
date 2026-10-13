@@ -35,3 +35,15 @@ An invisible viewmodel is a POSE/camera problem first. Only reach for the model 
 (holes, logo, see-through): `ep2-founder-weapon-glb` (Blender build of the founder GLB), `ep2-rifle-realism` +
 `blender-headless-render-safety` (headless Blender), `ep2-tripo-mesh-surgery` / `ep2-hyperreal-scene-pipeline`
 (Tripo via Muapi), `ep2-solid-models` (see-through).
+
+## The forearm extension never shows on the kick (founder 2026-10-13)
+"Bring the arm closer so that when the rifle kicks up we don't see that green extension. Don't make things worse." The founder rifle's
+arm ends in a cut hidden by a flat-green `ArmSleeve` (`ep2_view_hands.gd`). The kick, the lever roll (rot.z +0.34) and the reload used
+to turn the rifle about its own origin, so the forearm end swung up and the sleeve showed bottom-left (measured 0.185 % of the frame at
++316 ms). Now both copies of the viewmodel step (`ep2_viewmodel.gd`, `smelting_facility.gd`) turn about the FOREARM END
+(`rifle.get_meta("arm_pivot")` = HandsModel position + SLEEVE_CUT): `pos += B(rot_hold)*piv - B(rot)*piv`. The hip look is untouched.
+- Measure: `tools/ep2_shots/vm_sleeve_probe.tscn` (renders the real viewmodel, sleeve in magenta, through a shot and a look sweep, run at
+  1725x993 / 1280x720 / 2560x1080 / 1024x768) and `tools/ep2_shots/vm_kick_shot.tscn` (the real woods). Gate: `_arm_stays_put` in
+  `tests/ep2_range_lesson_test`.
+- Moving the hip CLOSER also hides it but blows the GM logo up and cuts it at the frame edge: rejected (do not change the approved look).
+- Do not "improve" the sleeve material on the side: the founder read the shared-material change as the gun getting darker. Reverted.
