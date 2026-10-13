@@ -686,6 +686,19 @@ jobs:
           echo "${BUTLER_SHA256}  butler.zip" | sha256sum -c -
           unzip -q butler.zip butler
           chmod +x butler
-          ./butler push web/game "$ITCH_TARGET" \
-            --userversion "$(git rev-parse --short HEAD)-$(date -u +%Y%m%d%H%M)"
+          # itch refuses a new build while the channel's previous one is still processing
+          # ("latest build is still processing, try again later" - 2026-10-14 cost two deploys).
+          # Wait it out instead of failing; any OTHER butler error still fails at once.
+          set -o pipefail
+          ver="$(git rev-parse --short HEAD)-$(date -u +%Y%m%d%H%M)"
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if ./butler push web/game "$ITCH_TARGET" --userversion "$ver" 2>&1 | tee butler.log; then
+              if ! grep -q "still processing" butler.log; then break; fi
+            elif ! grep -q "still processing" butler.log; then
+              exit 1
+            fi
+            if [ "$attempt" = 10 ]; then echo "::error::itch kept the previous build processing for 10 tries"; exit 1; fi
+            echo "itch is still processing the previous build - waiting 90s (attempt ${attempt})"
+            sleep 90
+          done
           echo "::notice::Pushed to https://youngstunners88.itch.io/smokerealm"
