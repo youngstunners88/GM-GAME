@@ -257,7 +257,7 @@ func _test_live_controls() -> void:
 	await get_tree().process_frame
 	_check("controls appear when PLAYING with a wanting scene", MobileLayoutManager.controls_visible)
 	var lay: TouchLayout = MobileLayoutManager.layout()
-	_check("a layout is built", lay != null and lay.controls().size() == 7, "controls=%d" % (lay.controls().size() if lay else -1))
+	_check("a layout is built", lay != null and lay.controls().size() == 6, "controls=%d" % (lay.controls().size() if lay else -1))
 	_check("touch layer sits below the modal panels (layer < 20)", MobileLayoutManager.LAYER < 20)
 	var stick := lay.find_role(&"stick") as VirtualJoystick
 	var jump := lay.find_button(&"jump")

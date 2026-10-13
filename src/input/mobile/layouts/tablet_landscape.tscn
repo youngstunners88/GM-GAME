@@ -28,7 +28,6 @@ role = &"jump"
 action = &"jump"
 mode = 0
 glyph = 1
-label = "JUMP"
 
 [node name="Attack" parent="." instance=ExtResource("3_button")]
 layout_mode = 0
@@ -40,7 +39,6 @@ role = &"attack"
 action = &"attack"
 mode = 0
 glyph = 2
-label = "ATK"
 
 [node name="Dash" parent="." instance=ExtResource("3_button")]
 layout_mode = 0
@@ -52,7 +50,6 @@ role = &"dash"
 action = &"dash"
 mode = 0
 glyph = 3
-label = "DASH"
 
 [node name="Run" parent="." instance=ExtResource("3_button")]
 layout_mode = 0
@@ -64,7 +61,6 @@ role = &"run"
 action = &"sprint"
 mode = 1
 glyph = 4
-label = "RUN"
 
 [node name="Grab" parent="." instance=ExtResource("3_button")]
 layout_mode = 0
@@ -76,16 +72,3 @@ role = &"grab"
 action = &"interact"
 mode = 0
 glyph = 5
-label = "GRAB"
-
-[node name="Hint" parent="." instance=ExtResource("3_button")]
-layout_mode = 0
-anchor_corner = 2
-offset_dp = Vector2(0, 28)
-radius_dp = 15.0
-hit_pad_dp = 14.0
-role = &"hint"
-action = &""
-mode = 0
-glyph = 6
-label = ""
