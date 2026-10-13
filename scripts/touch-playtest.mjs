@@ -39,6 +39,8 @@ const PROFILES = {
   phone:   { w: 844,  h: 390, dpr: 2, touch: true,  mobile: true,  label: 'phone landscape 844x390 @2' },
   tablet:  { w: 1024, h: 768, dpr: 1, touch: true,  mobile: true,  label: 'tablet landscape 1024x768 @1' },
   desktop: { w: 1280, h: 720, dpr: 1, touch: false, mobile: false, label: 'desktop 1280x720 (no touchscreen)' },
+  // portrait phone (the founder's iPhone screenshot): screenshots only, no finger script
+  portrait: { w: 390, h: 844, dpr: 2, touch: true, mobile: true, portrait: true, label: 'phone PORTRAIT 390x844 @2' },
 };
 
 // Control centres in CSS px, measured from the layout scenes (dp from the safe-rect
@@ -119,7 +121,7 @@ async function runProfile(browser, key) {
   await page.keyboard.press('Escape');               // first-run HOW-YOU-ROLL panel
   await page.waitForTimeout(600);
   let playing = false;
-  for (const ratio of [0.642, 0.71, 0.60, 0.553]) {
+  for (const ratio of [0.642, 0.71, 0.60, 0.553, 0.536]) {
     await tap(p.w * 0.5, p.h * ratio);
     await page.waitForTimeout(2500);
     await page.keyboard.press('Escape');             // optional email-signup panel
@@ -157,6 +159,15 @@ async function runProfile(browser, key) {
   }
 
   // ---- touch: multi-finger helper over CDP. Every event lists ALL active points.
+  if (p.portrait) {
+    await page.waitForTimeout(1500);
+    await shot('02-controls-visible');
+    await page.waitForTimeout(6000);
+    await shot('03-controls-idle');
+    gate('portrait: no console errors', res.errors.length === 0, res.errors.join(' | '));
+    await context.close();
+    return;
+  }
   const pts = controlPoints(p);
   const active = new Map();
   const send = (type) => cdp.send('Input.dispatchTouchEvent', {

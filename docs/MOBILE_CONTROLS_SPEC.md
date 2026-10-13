@@ -41,28 +41,27 @@ Phone vs tablet is decided by the smallest window side in dp (< 600 = phone), ne
 | Right | DASH | dash | (62, 186) r30 | (78, 206) |
 | Right | RUN (toggle) | sprint | (172, 162) r28 | (194, 182) |
 | Right | GRAB | interact | (276, 140) r28 | (324, 66) |
-| Centre | "?" | shows labels | bottom-centre r15 | same |
 
 `phone_portrait.tscn` stacks the right-hand buttons in one column up the edge. Idle opacity 0.30, pressed 0.78.
 Layout recomputes on `size_changed` (rotate / resize safe) and releases every held action when it swaps. A death or pause keeps the controls up, dimmed and SUSPENDED (nothing pressed, fingers still tracked, direction/run restored on resume); a scene transition or lock hides them and releases everything.
 
-## ASCII-only labels
+## No written words (founder, 2026-10-13)
 
-The pixel font has no arrow glyphs — `◄ ► ▲ ▼ ← →` render as tofu. Buttons use vector glyphs; the optional hint
-labels are basic Latin (`JUMP`, `ATK`, `DASH`, `RUN`, `GRAB`, `MOVE`, `?`).
+Mobile players use finger movements, not key names. The touch UI carries NO text at all: buttons are vector icons
+(double-chevron jump, starburst attack, chevron dash, bolt run, diamond grab), the stick is a bare ring/thumb, there
+is no "?" button and no hint line. The first-run cue is a wordless opacity pulse.
 
 ## First-run onboarding
 
 `src/ui/how_to_play_panel.gd` — dismissible "HOW YOU ROLL" panel with keyboard AND touch columns, shown once on
 first run (`user://how_to_play_shown.txt`), re-openable from the main menu's HOW TO PLAY button. In addition the
-touch controls flash their labels for ~4.5 s the first time they appear (`user://touch_controls.cfg`), and the
-"?" button re-shows them.
+touch controls pulse (no words) for ~4.5 s the first time they appear (`user://touch_controls.cfg`).
 
 ## DO NOT (distilled from the Kimi K3 audit; still true)
 
 - **DO NOT** detect mobile with `has_feature("mobile")` — always false on Web.
 - **DO NOT** add a second touch-parsing path, `TouchScreenButton`s, or invisible tap-zones next to the new one.
-- **DO NOT** put arrow glyphs in labels — ASCII only.
+- **DO NOT** put ANY written word or key name on the touch UI (founder rule).
 - **DO NOT** rely on `emulate_mouse_from_touch` for game controls (single pointer, double-fires) — and do not switch it
   off either: menus need it.
 - **DO NOT** compute control layout only in `_ready()` — it must follow `size_changed`.
@@ -76,7 +75,7 @@ Automated: `tests/mobile_touch_controls_test.tscn` (headless, real fingers -> re
 
 Touch (real device, hard refresh first):
 - Stick: light push walks, firm push runs, push up/down on a ladder climbs.
-- Hold the stick, tap JUMP (twice = double jump) and ATK together.
+- Hold the stick, tap the jump icon (twice = double jump) and ATK together.
 - RUN tap stays on, second tap stops. DASH in the air.
 - Keep the thumb down through a death/respawn: the stick resumes without lifting.
 - Rotate / resize: controls re-lay out, nothing sticks. Pause / resume: nothing keeps running while paused.

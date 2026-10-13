@@ -68,3 +68,8 @@ on a menu nobody had played, so the surrounding assumptions were checked and sev
   now also act on the raw finger event with a same-frame dedupe (trap 11 in the skill). Rejected: cancelling the stick's finger on
   pause (breaks "the thumb never has to lift") and a second parser next to the touch layer.
 Open for the founder: whether pausing should exist at all, and what Restart should mean inside the Lounge.
+
+## Amendment 2026-10-13 — no written words
+
+Founder rule: a phone UI is icons and finger movement, never key names. The "?" hint button, per-button `label`
+exports and the hint labels were removed; the first-run cue is a wordless pulse. See the skill's "NO WRITTEN WORDS".

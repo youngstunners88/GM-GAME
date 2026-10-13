@@ -9,7 +9,7 @@ extends VirtualControl
 ##         for RUN: sprinting while still reaching JUMP with the same thumb was
 ##         the one thing the old held RUN button could not do.
 ##
-## A button with no `action` (the "?" hint button) just emits `activated`.
+## A button with no `action` just emits `activated`.
 ## Sliding the finger off does NOT release (the Kimi F4 lesson): the press ends
 ## when the finger lifts, because the GUI keeps delivering that finger's release
 ## to this control wherever it ends up.
@@ -20,13 +20,11 @@ signal released
 signal toggled(is_on: bool)
 
 enum Mode { HOLD, TOGGLE }
-enum Glyph { NONE, JUMP, ATTACK, DASH, RUN, GRAB, HINT, PAUSE }
+enum Glyph { NONE, JUMP, ATTACK, DASH, RUN, GRAB, PAUSE }
 
 @export var action: StringName = &""
 @export var mode: Mode = Mode.HOLD
 @export var glyph: Glyph = Glyph.NONE
-## Short ASCII word shown while the first-time hint is up.
-@export var label: String = ""
 
 var _finger: int = -1
 var _is_on: bool = false
@@ -132,13 +130,7 @@ func _draw() -> void:
 	var white := Color(1, 1, 1, clampf(alpha + 0.12, 0.0, 1.0))
 	var stroke: float = maxf((th.glyph_width_dp if th != null else 3.6) * unit, 2.0)
 	var g: float = r * 0.5   # glyph half-size
-	var lift: float = -r * 0.14 if hint_active and label != "" else 0.0
-	var gc := c + Vector2(0.0, lift)
-	_draw_glyph(gc, g, stroke, white)
-
-	if hint_active and label != "":
-		var fpx: float = (th.label_size_dp if th != null else 11.0) * unit
-		_draw_label(label, c + Vector2(0.0, r * 0.52), fpx, clampf(alpha + 0.1, 0.0, 1.0))
+	_draw_glyph(c, g, stroke, white)
 
 func _draw_glyph(c: Vector2, g: float, stroke: float, col: Color) -> void:
 	match glyph:
@@ -166,10 +158,8 @@ func _draw_glyph(c: Vector2, g: float, stroke: float, col: Color) -> void:
 			draw_colored_polygon(PackedVector2Array([
 				c + Vector2(0, -g * 0.95), c + Vector2(g * 0.68, 0), c + Vector2(0, g * 0.95), c + Vector2(-g * 0.68, 0)]),
 				Color(col.r, col.g, col.b, col.a * 0.9))
-		Glyph.HINT:
-			_draw_label("?", c - Vector2(0, g * 0.05), g * 2.1, col.a)
 		Glyph.PAUSE:
-			# two bars: the universal pause mark, readable without a label
+			# two bars: the universal pause mark (no word needed)
 			for side in [-1.0, 1.0]:
 				var x: float = side * g * 0.34
 				draw_line(c + Vector2(x, -g * 0.62), c + Vector2(x, g * 0.62), col, stroke * 1.2, true)
