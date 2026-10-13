@@ -992,12 +992,8 @@ func _setup_blaze_portal(pos: Vector2, threshold: int, level_index: int) -> void
 	add_child(portal)
 
 func _setup_hud() -> void:
-	var pm := preload("res://src/ui/pause_menu.tscn").instantiate()
-	add_child(pm)
-	pm.get_node("VBox/ResumeBtn").pressed.connect(pm._on_resume_pressed)
-	pm.get_node("VBox/RestartBtn").pressed.connect(pm._on_restart_pressed)
-	pm.get_node("VBox/TalkBtn").pressed.connect(pm._on_talk_pressed)
-	pm.get_node("VBox/QuitBtn").pressed.connect(pm._on_quit_pressed)
+	# The pause menu wires its own buttons (src/ui/pause_menu.gd).
+	add_child(preload("res://src/ui/pause_menu.tscn").instantiate())
 
 func _on_boss_trigger(body: Node2D) -> void:
 	pass  # Override in subclasses for boss arena logic

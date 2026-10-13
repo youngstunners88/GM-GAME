@@ -20,7 +20,7 @@ signal released
 signal toggled(is_on: bool)
 
 enum Mode { HOLD, TOGGLE }
-enum Glyph { NONE, JUMP, ATTACK, DASH, RUN, GRAB, HINT }
+enum Glyph { NONE, JUMP, ATTACK, DASH, RUN, GRAB, HINT, PAUSE }
 
 @export var action: StringName = &""
 @export var mode: Mode = Mode.HOLD
@@ -168,5 +168,10 @@ func _draw_glyph(c: Vector2, g: float, stroke: float, col: Color) -> void:
 				Color(col.r, col.g, col.b, col.a * 0.9))
 		Glyph.HINT:
 			_draw_label("?", c - Vector2(0, g * 0.05), g * 2.1, col.a)
+		Glyph.PAUSE:
+			# two bars: the universal pause mark, readable without a label
+			for side in [-1.0, 1.0]:
+				var x: float = side * g * 0.34
+				draw_line(c + Vector2(x, -g * 0.62), c + Vector2(x, g * 0.62), col, stroke * 1.2, true)
 		_:
 			pass

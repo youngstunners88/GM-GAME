@@ -569,6 +569,11 @@ func has_power_up(type: String) -> bool:
     return current_power_up == type
 
 func _process(delta: float) -> void:
+    # This autoload is PROCESS_MODE_ALWAYS (it must keep the session alive across
+    # scene changes), so it kept ticking through the pause menu and drained Blaze /
+    # the Diamond shield / the big axe while the player was reading the menu.
+    if get_tree().paused:
+        return
     if power_up_timer > 0:
         power_up_timer -= delta
         if power_up_timer <= 0:

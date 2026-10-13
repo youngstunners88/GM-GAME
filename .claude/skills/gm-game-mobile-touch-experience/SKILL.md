@@ -30,10 +30,11 @@ finger -> Godot GUI -> VirtualJoystick / VirtualButton -> TouchActions -> InputM
 | `virtual_joystick.gd/.tscn` | Analog stick. FIXED / DYNAMIC (default) / FOLLOWING. Horizontal = **analog strength**; up/down = deliberate, hysteresis-gated digital (ladders, drop-through, ground pound). |
 | `virtual_button.gd/.tscn` | Round thumb button. HOLD (jump, attack, dash) or TOGGLE (run). Vector glyphs, no font dependence. |
 | `touch_layout.gd` | Root script of layout scenes: places controls from metrics, fans out theme/hint/release. |
-| `layouts/phone_landscape.tscn`, `tablet_landscape.tscn`, `phone_portrait.tscn` | **Pure scenes** composing controls. Numbers are dp. Tablet = x1.2 tier scale + wider spacing. |
+| `layouts/phone_landscape.tscn`, `tablet_landscape.tscn`, `phone_portrait.tscn` | **Pure scenes** composing controls. Numbers are dp. Tablet = x1.2 tier scale + wider spacing. Each ends with the small **Pause** button (top-right, below the HUD's lives + fullscreen cluster, action `pause`, glyph PAUSE). |
 | `touch_theme.gd` + `themes/smoke_realm_touch_theme.tres` | Tints, idle/pressed opacity (0.30 / 0.78), stroke widths. Swap per biome with `MobileLayoutManager.apply_theme()`. |
 
 Gate: `tests/mobile_touch_controls_test.tscn` (130+ checks incl. mutation-checked regressions, in CI). Browser: `scripts/touch-playtest.mjs`.
+Pause: `tests/pause_menu_test.tscn` (69 checks, in CI) and `scripts/pause-playtest.mjs` (real Chromium, keyboard + touch).
 
 ## Why real `Control`s, not TouchScreenButton or a hand-rolled `_input` router
 
@@ -81,6 +82,11 @@ when the window fills the screen; on web it is empty so a 14dp side/top and 18dp
 - **Vertical intent beats sidestep**: while up/down is engaged and |y| > |x| the horizontal axis is 0, otherwise a thumb
   a few degrees off vertical drifts the hero off a ladder (player.gd moves x at 0.6 x climb speed while climbing).
 - RUN survives death and pause (it is suspended, not reset) but switches itself off on a real hide (transition, lock).
+- **The pause button** (`action = pause`, a HOLD button like the others) is the touch route to the pause menu: Escape does not
+  exist on a phone. It presses the `pause` action (project InputMap: gamepad Start; deliberately NOT a key, `P` is the
+  checkpoint share-snapshot hotkey and Escape stays `ui_cancel`). `pause_menu.gd` toggles on either action. While PAUSED the
+  layer is suspended like on death, so the button is inert; **Resume is the menu's own button**, which sits on canvas layer 40,
+  ABOVE this layer (18), so the dimmed stick region underneath can never swallow a tap on it.
 - **Hybrid devices**: a real key press hides the controls, the next screen touch brings them back.
   A real finger also proves a touchscreen even if the platform said no.
 - First time controls appear: labels flash for 4.5 s (`flash_hints()`), once per install.
@@ -120,6 +126,11 @@ when the window fills the screen; on web it is empty so a 14dp side/top and 18dp
 9. Never adopt a finger the control did not press: after `GAME_OVER` / pause the GUI still sends that finger's drags
    to the control, and a finger that pressed while it was hidden gets drags but NO release.
 10. Run the security sentinel **after** `git add`. Do not commit the `.godot-cache` symlink or `export_presets.cfg`.
+11. **Godot only turns the FIRST finger down into a mouse click** (`Input.mouse_from_touch_index`). A thumb resting on the stick owns
+    that slot, so a second finger tapping an ordinary `Button` (the pause menu's Resume) does NOTHING until the first thumb lifts
+    (measured: `tests/pause_menu_test.gd`, mutation M5). Any modal opened while a thumb can still be down must also react to the raw
+    `InputEventScreenTouch` its buttons receive in `gui_input`, and dedupe against the emulated click arriving in the SAME frame
+    (see `PauseMenu._activate`). Never fix this by cancelling the stick's finger: that throws away the "thumb never has to lift" model.
 
 ## Verify (in this order)
 
@@ -128,6 +139,8 @@ godot --headless res://tests/mobile_touch_controls_test.tscn      # ends MOBILE_
 godot --headless res://tests/script_compile_test.tscn             # every script/scene still compiles
 bash scripts/ep2-local-export.sh                                   # CI-identical non-threaded web export
 node scripts/touch-playtest.mjs http://localhost:8899/game/index.html web_verify/touch-playtest phone,tablet,desktop
+godot --headless res://tests/pause_menu_test.tscn                 # ends PAUSE_MENU: ALL PASS (pause, resume, Talk, thumb-down Resume)
+node scripts/pause-playtest.mjs http://localhost:8899/game/index.html web_verify/pause-playtest desktop,phone
 ```
 `touch-playtest.mjs` boots the export in Chromium with a touch-capable mobile context, taps PLAY, then sends real
 multi-finger events over CDP (`Input.dispatchTouchEvent`): light tilt, firm push, JUMP + ATK with the stick held,
@@ -151,13 +164,14 @@ hard-refresh check on his phone and tablet.
 
 ## Known gaps (found, not fixed - outside the touch layer)
 
+- (FIXED 2026-10-13, was listed here) `src/ui/pause_menu.gd` called `event.is_action_just_pressed(...)`, an `Input` method that
+  `InputEvent` does not have, so it threw on every event and PAUSED could never be entered. Now `is_action_pressed` + no echo,
+  gated by `tests/pause_menu_test.tscn`. Whether pausing should exist at all is still the founder's call.
+
 - **Vault realms**: the Diamond Vault clerk's intro can be tapped through, but Gideon's (Fort Knox) dialogue still needs
   `interact` / ESC and its last `interact` STAKES gold, so it needs its own Next / Confirm / Leave buttons before touch
   can drive it (value-moving: follow `goldmine-economy-invariants`). The Smoke Lounge and vault rooms do get the stick,
   buttons and a way back out.
-- `src/ui/pause_menu.gd:12` calls `event.is_action_just_pressed(...)` (an `Input` method, not an `InputEvent` one): a
-  script error on every event and PAUSED can never be entered. Pre-existing (keyboard Escape logs it too); fixing it
-  would switch a dead pause menu on, so it needs the founder's call.
 - Console noise `Can't change this state while flushing queries ... area_set_shape_disabled` is pre-existing game noise.
 
 ## Not built (on purpose)

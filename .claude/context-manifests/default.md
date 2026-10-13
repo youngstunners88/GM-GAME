@@ -24,6 +24,7 @@ the next agent hunting for files that were renamed.
 | Boss work | `src/boss/boss_base.gd` + the specific boss, `docs/architecture/adr-boss-ai-overhaul.md` |
 | Level work | `src/level/level_base.gd` + the specific level |
 | UI work | `src/ui/hud.gd` or `src/ui/main_menu.gd` + the target scene |
+| Pause menu / Escape / pausing | `src/ui/pause_menu.gd`, `src/autoload/state_machine.gd`; gate `tests/pause_menu_test.tscn`; browser `scripts/pause-playtest.mjs` |
 | Touch / mobile / tablet controls | `.claude/skills/gm-game-mobile-touch-experience/SKILL.md`, then `src/input/mobile/mobile_layout_manager.gd` + the one control/layout you change; gate `tests/mobile_touch_controls_test.tscn`; browser `scripts/touch-playtest.mjs` |
 | Shooter (v1.2) | → `.claude/context-manifests/shooter.md` |
 | Episode 2 armory / living bears / Bull stealth / corpse arrows / retry / quad pursuit | `.claude/skills/ep2-living-woods/SKILL.md`, `design/ep2/LIVING_WOODS_CONTRACT.md`; then only the component skill and source paths for the task |
@@ -54,6 +55,7 @@ gdparse <changed>.gd                       # syntax
 node scripts/verify-game.mjs <url>         # v1.0 campaign, 5 gates
 node scripts/verify-shooter.mjs <url>      # v1.2 prototype, 6 gates
 godot --headless res://tests/save_compat_test.tscn   # save format
+godot --headless res://tests/pause_menu_test.tscn    # PAUSE_MENU: ALL PASS
 bash scripts/security-sentinel.sh          # 18 checks, 0 blockers
 
 # icp-contract gate NEEDS a local price fixture or it reports 6 false failures:

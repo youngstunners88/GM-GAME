@@ -51,3 +51,20 @@ instanced only in Stages 1-3, so the Smoke Lounge and vault realms (which also u
 - Custom `_input` router: cannot tell that a modal panel is above a control, must reimplement finger ownership.
 - Swipe/tap gesture zones: forbidden by the 2026-08-01 DO-NOT list (invisible zones) and less reliable than buttons.
 - Godot 4.7 built-in `VirtualJoystick`: not available on the pinned 4.3.
+
+## Addendum 2026-10-13: the pause menu and a touch pause button
+`src/ui/pause_menu.gd` had never worked: it called `event.is_action_just_pressed("ui_cancel")` (an `Input` method; `InputEvent`
+only has `is_action_pressed`), so every event threw and `StateMachine` could never enter PAUSED. Fixing that one line switches
+on a menu nobody had played, so the surrounding assumptions were checked and several were wrong:
+- `GameManager` is `PROCESS_MODE_ALWAYS`, so Blaze / the Diamond shield / the big axe kept draining while paused. `_process` now stops
+  while `get_tree().paused`.
+- Other panels (oracle, lore, onboarding) pause the tree but leave the state PLAYING; the menu refuses to open on top of them, and
+  while the Talk panel is up (menu hidden, state PAUSED) Escape belongs to that panel. The companion panel now closes on Escape.
+- The menu wires its own buttons (the Lounge forgot Talk), sits on layer 40 (above the touch layer 18 and the 20-30 panels, below
+  how-to-play 80), hides Restart in the Smoke Lounge (it would wipe the run inside a side room), and credits paused time back to the
+  level clock that feeds the adaptive-difficulty pacing metric.
+- Touch: a `pause` InputMap action (gamepad Start only, `P` is taken) + a Pause `VirtualButton` in every layout. Godot only emulates a
+  mouse click for the first finger down, so a thumb still on the stick made Resume untappable by the other thumb; the menu's buttons
+  now also act on the raw finger event with a same-frame dedupe (trap 11 in the skill). Rejected: cancelling the stick's finger on
+  pause (breaks "the thumb never has to lift") and a second parser next to the touch layer.
+Open for the founder: whether pausing should exist at all, and what Restart should mean inside the Lounge.

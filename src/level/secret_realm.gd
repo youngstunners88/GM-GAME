@@ -683,9 +683,10 @@ func _setup_portal() -> void:
 func _setup_hud() -> void:
 	var pm := preload("res://src/ui/pause_menu.tscn").instantiate()
 	add_child(pm)
-	pm.get_node("VBox/ResumeBtn").pressed.connect(pm._on_resume_pressed)
-	pm.get_node("VBox/RestartBtn").pressed.connect(pm._on_restart_pressed)
-	pm.get_node("VBox/QuitBtn").pressed.connect(pm._on_quit_pressed)
+	# Restart reloads the current scene and wipes the whole session. In a side
+	# room that would strand the player in an empty lounge with the run erased,
+	# so the lounge offers Resume / Talk / Quit only.
+	pm.get_node("VBox/RestartBtn").hide()
 	add_child(preload("res://src/ui/hud.tscn").instantiate())
 
 ## A quiet name-card so the destination reads as "Smoke Lounge" rather than

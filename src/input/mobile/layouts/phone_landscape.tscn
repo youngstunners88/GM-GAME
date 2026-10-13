@@ -89,3 +89,15 @@ action = &""
 mode = 0
 glyph = 6
 label = ""
+
+[node name="Pause" parent="." instance=ExtResource("3_button")]
+layout_mode = 0
+anchor_corner = 4
+offset_dp = Vector2(24, 52)
+radius_dp = 17.0
+hit_pad_dp = 12.0
+role = &"pause"
+action = &"pause"
+mode = 0
+glyph = 7
+label = ""

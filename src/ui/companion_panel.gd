@@ -61,7 +61,7 @@ var _variant_turn: Dictionary = {}
 var _cache: Dictionary = {}   # question -> answer, this session
 
 @onready var _panel: Control = $Panel
-@onready var _input: LineEdit = $Panel/VBox/Input
+@onready var _question_edit: LineEdit = $Panel/VBox/Input
 @onready var _answer: Label = $Panel/VBox/Answer
 @onready var _ask_btn: Button = $Panel/VBox/Row/AskBtn
 @onready var _close_btn: Button = $Panel/VBox/Row/CloseBtn
@@ -71,16 +71,26 @@ func _ready() -> void:
 	visible = false
 	_ask_btn.pressed.connect(_on_ask)
 	_close_btn.pressed.connect(close)
-	_input.text_submitted.connect(func(_t: String) -> void: _on_ask())
+	_question_edit.text_submitted.connect(func(_t: String) -> void: _on_ask())
 
 func open() -> void:
 	visible = true
 	get_tree().paused = true
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_answer.text = "Yo. What's good?"
-	_input.text = ""
-	_input.grab_focus()
+	_question_edit.text = ""
+	_question_edit.grab_focus()
 	Web3Bridge.track("companion_opened")
+
+## Escape backs out of the panel (keyboard parity with the Close button) and lands
+## on the pause menu it was opened from. `_input`, not `_unhandled_input`: the
+## focused LineEdit would take the key first. Marked handled so the pause menu never
+## also reads the same press as "resume". (The LineEdit member is `_question_edit`
+## because a member named `_input` cannot coexist with this engine hook.)
+func _input(event: InputEvent) -> void:
+	if visible and event.is_action_pressed(&"ui_cancel") and not event.is_echo():
+		get_viewport().set_input_as_handled()
+		close()
 
 ## Kimi audit (2026-08-06): this MUST free the panel, not just hide it.
 ## The pause-menu opener re-shows itself on this node's `tree_exited`. A
@@ -164,7 +174,7 @@ func _offline_line(state: Dictionary) -> String:
 	return _line_for("default")
 
 func _on_ask() -> void:
-	var q := _input.text.strip_edges()
+	var q := _question_edit.text.strip_edges()
 	if q == "":
 		return
 	if _cache.has(q):
