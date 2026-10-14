@@ -47,6 +47,10 @@ const SOUND_DIR := "res://src/assets/sounds/"
 ## The rifle logic: ammo, tube magazine, lever cycle, ADS blend, spread. Starts loaded and unlocked (Lil Blunt was taught
 ## in the hideout; nobody locks his trigger in the story rooms).
 var gun: Ep2Winchester = Ep2Winchester.new()
+var armory: Ep2ArmoryState = null
+var _weapon_views: Dictionary = {}
+var _shown: bool = true
+var _active_id: String = ""
 var rifle: Node3D = null
 var camera: Camera3D = null
 ## Radians the host adds to the view pitch for the shot's kick; decays by itself.
@@ -69,6 +73,7 @@ var _muzzle_flash: MeshInstance3D = null
 var _flash_light: OmniLight3D = null
 var _soft_tex: GradientTexture2D = null
 var _players: Array[AudioStreamPlayer] = []
+var _report_pools: Dictionary = {}
 var _lever_player: AudioStreamPlayer = null
 var _next_player: int = 0
 var _lever_due: float = -1.0
@@ -81,15 +86,8 @@ func attach(cam: Camera3D) -> void:
 	if rifle != null or cam == null:
 		return
 	camera = cam
-	gun.locked = false
-	gun.reload_locked = false
-	gun.rounds = Ep2Winchester.MAG
-	gun.reserve = Ep2Winchester.RESERVE_START
-	gun.fired.connect(_on_fired)
-	gun.dry_fired.connect(_on_dry_fired)
-	gun.shell_loaded.connect(_on_shell_loaded)
-	gun.reload_finished.connect(func() -> void: reload_finished.emit())
-	gun.blocked.connect(func(reason: String) -> void: blocked.emit(reason))
+	# Rendering never awards ownership or refills a gun. The host binds story state.
+	_connect_active_gun()
 	var packed: PackedScene = load(RIFLE_BASE) as PackedScene if ResourceLoader.exists(RIFLE_BASE) else null
 	if packed != null:
 		rifle = packed.instantiate() as Node3D
@@ -117,6 +115,14 @@ func attach(cam: Camera3D) -> void:
 	_flash_light.position = Vector3(0.2, -0.15, -1.0)
 	_build_audio()
 	_apply_exposure()
+	_weapon_views[Ep2ArmoryState.WIN] = rifle
+	_active_id = Ep2ArmoryState.WIN
+	var revolver := Ep2RemingtonView.make()
+	cam.add_child(revolver)
+	revolver.scale = Vector3.ONE * VM_SCALE
+	revolver.visible = false
+	_weapon_views[Ep2ArmoryState.REM] = revolver
+	_sync_weapon()
 
 
 ## Scale the rifle's albedo (and with it its metal reflections) for a very bright scene. In the hideout's lamplight the receiver
@@ -223,8 +229,9 @@ func set_world_shadows(on: bool) -> void:
 
 ## Show or hide the rifle (the host hides it while a director camera is on, when the body is seen instead).
 func set_shown(on: bool) -> void:
+	_shown = on
 	if rifle != null and is_instance_valid(rifle):
-		rifle.visible = on
+		rifle.visible = on and (armory == null or armory.owns(armory.equipped))
 
 
 ## The mouse delta in pixels: the rifle LAGS the mouse a little (sway).
@@ -238,11 +245,15 @@ func set_aim(on: bool) -> void:
 
 ## Pull the trigger. True when a round went out.
 func fire() -> bool:
+	if armory != null and not armory.ready():
+		return false
 	return gun.trigger() == Ep2Winchester.Shot.OK
 
 
 ## R: load shells one at a time. True when a reload started.
 func reload() -> bool:
+	if armory != null and not armory.ready():
+		return false
 	return gun.start_reload()
 
 
@@ -255,7 +266,10 @@ func step(delta: float, moving: bool, sprinting: bool, walk_phase: float) -> voi
 	_anim_t += delta
 	_update_key_light()
 	gun.sprinting = sprinting
-	gun.step(delta)
+	if armory != null:
+		armory.step(delta)
+	else:
+		gun.step(delta)
 	_tick_lever(delta)
 	_recoil = maxf(0.0, _recoil - delta * 6.0)
 	cam_kick = lerpf(cam_kick, 0.0, 1.0 - exp(-delta / 0.14))
@@ -298,14 +312,14 @@ func step(delta: float, moving: bool, sprinting: bool, walk_phase: float) -> voi
 	rot.x += 0.12 * _recoil * lerpf(1.0, 0.6, ads_k)
 	# the lever cycle: after each shot the rifle dips and rolls as the lever is racked
 	var cp: float = gun.cycle_progress()
-	if cp < 1.0:
+	if cp < 1.0 and _active_id != Ep2ArmoryState.REM:
 		var k: float = sin(cp * PI)
 		rot.z += 0.34 * k
 		rot.x -= 0.2 * k
 		pos.y -= 0.025 * k
 	# the shell-by-shell reload: the rifle tilts to show the loading gate and taps once per shell
 	if gun.reloading:
-		var tap: float = absf(sin(_anim_t * PI / Ep2Winchester.RELOAD_PER_SHELL))
+		var tap: float = absf(sin(_anim_t * PI / gun.reload_interval))
 		rot.z += -0.55
 		rot.x += 0.28
 		pos += Vector3(-0.05, -0.05 - 0.02 * tap, 0.04)
@@ -331,12 +345,12 @@ func _on_fired() -> void:
 
 
 func _on_dry_fired() -> void:
-	_sfx("ep2_winchester_dry")
+	_sfx("ep2_revolver_empty" if _active_id == Ep2ArmoryState.REM else "ep2_winchester_dry")
 	dry_fired.emit()
 
 
 func _on_shell_loaded(_n: int) -> void:
-	_sfx("ep2_winchester_shell_load")
+	_sfx("ep2_revolver_reload" if _active_id == Ep2ArmoryState.REM else "ep2_winchester_shell_load")
 
 
 func _sfx(sound_name: String) -> void:
@@ -359,6 +373,7 @@ func _build_audio() -> void:
 			p.stream = load(path) as AudioStream
 		add_child(p)
 		_players.append(p)
+	_report_pools[Ep2ArmoryState.WIN] = _players
 	_lever_player = AudioStreamPlayer.new()
 	_lever_player.name = "LeverPlayer"
 	_lever_player.bus = bus
@@ -376,7 +391,7 @@ func _play_shot() -> void:
 		p.pitch_scale = randf_range(0.96, 1.03)
 		p.play()
 		shots_played += 1
-	_lever_due = LEVER_DELAY
+	_lever_due = -1.0 if _active_id == Ep2ArmoryState.REM else LEVER_DELAY
 
 
 ## Racks the lever LEVER_DELAY after the shot (driven by step(), so a headless test sees it too).
@@ -446,3 +461,83 @@ func _rifle_sight_height() -> float:
 			top = maxf(top, bb.end.y)
 	_sight_h = clampf(top, 0.03, 0.2) if top > 0.0 else 0.06
 	return _sight_h
+
+
+func bind_armory(state: Ep2ArmoryState) -> void:
+	if armory != null and armory.changed.is_connected(_sync_weapon):
+		armory.changed.disconnect(_sync_weapon)
+	_disconnect_active_gun()
+	armory = state
+	gun = state.active_gun()
+	_connect_active_gun()
+	state.changed.connect(_sync_weapon)
+	_sync_weapon()
+
+
+func _connect_active_gun() -> void:
+	for pair in [[gun.fired, _on_fired], [gun.dry_fired, _on_dry_fired], [gun.shell_loaded, _on_shell_loaded],
+		[gun.reload_finished, _reload_done], [gun.blocked, _blocked]]:
+		if not pair[0].is_connected(pair[1]):
+			pair[0].connect(pair[1])
+
+
+func _disconnect_active_gun() -> void:
+	for pair in [[gun.fired, _on_fired], [gun.dry_fired, _on_dry_fired], [gun.shell_loaded, _on_shell_loaded],
+		[gun.reload_finished, _reload_done], [gun.blocked, _blocked]]:
+		if pair[0].is_connected(pair[1]):
+			pair[0].disconnect(pair[1])
+
+
+func _reload_done() -> void:
+	reload_finished.emit()
+
+
+func _blocked(reason: String) -> void:
+	blocked.emit(reason)
+
+
+func _sync_weapon() -> void:
+	if armory == null:
+		return
+	var selected: Ep2Winchester = armory.active_gun()
+	if gun != selected:
+		_disconnect_active_gun()
+		gun = selected
+		_connect_active_gun()
+	if camera == null or _weapon_views.is_empty():
+		return
+	if _active_id != armory.equipped:
+		for view in _weapon_views.values():
+			(view as Node3D).visible = false
+		_active_id = armory.equipped
+		rifle = _weapon_views[_active_id]
+		_muzzle_flash = rifle.get_node_or_null("MuzzleFlash")
+		if _muzzle_flash == null:
+			_build_muzzle_flash()
+			_muzzle_flash.position = Vector3(0, 0.038, 0.35)
+		_muzzle_flash.visible = false
+		_recoil = 0.0
+		_flash_t = 0.0
+		_lever_due = -1.0
+		_sight_h = 0.0
+		# Separate pools keep the outgoing report playing through a swap.
+		if not _report_pools.has(_active_id):
+			var pool: Array[AudioStreamPlayer] = []
+			for i in 3:
+				var player := AudioStreamPlayer.new()
+				player.bus = "SFX" if AudioServer.get_bus_index("SFX") >= 0 else "Master"
+				player.volume_db = SHOT_DB
+				player.stream = load(SOUND_DIR + "ep2_revolver_blast_%d.mp3" % (i + 1))
+				add_child(player)
+				pool.append(player)
+			_report_pools[_active_id] = pool
+		_players = _report_pools[_active_id]
+		if _key_light != null:
+			set_own_light(_key_max)
+	set_shown(_shown)
+
+
+func _exit_tree() -> void:
+	_disconnect_active_gun()
+	if armory != null and armory.changed.is_connected(_sync_weapon):
+		armory.changed.disconnect(_sync_weapon)

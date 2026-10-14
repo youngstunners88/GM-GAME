@@ -231,6 +231,8 @@ const LESSON_ARRIVE_RADIUS := 2.6                   # how close to the firing li
 const AIM_HOLD_SECONDS := 0.7                       # ADS must be held this long to count as "aimed"
 const NAG_SECONDS := 14.0
 const LESSON_STEPS := 4
+var armory: Ep2ArmoryState = null
+var _armory_view: Ep2Viewmodel = null
 var _gun: Ep2Winchester = Ep2Winchester.new()
 var _lesson: int = Lesson.OFF
 var _lesson_t: float = 0.0
@@ -581,7 +583,11 @@ func step(delta: float) -> void:
 		_show.step(delta)
 	_tick_lava(delta)
 	_gun.sprinting = _run_input and _moving
-	_gun.step(delta)
+	if _armory_view != null:
+		_armory_view.step(delta, _moving, _run_input and _moving, _walk_phase)
+		_cam_kick = _armory_view.cam_kick
+	else:
+		_gun.step(delta)
 	_tick_later(delta)
 	match _beat:
 		Beat.WAKE:
@@ -638,8 +644,10 @@ func start_rig(_payment: String = "") -> bool:
 ## Ep2Winchester logic (locked / empty / lever cycling), then a ray with the weapon's spread tests the three steel
 ## plates. Returns true when a plate went down.
 func shoot() -> bool:
-	if not _running or _resolved or not _has_winchester:
+	if not _running or _resolved or not _has_winchester or armory_open():
 		return false
+	if _armory_view != null:
+		return _armory_view.fire() if has_player_control() else false
 	if _show_active and _beat != Beat.VERB_TEACH:
 		return false
 	if _gun.trigger() != Ep2Winchester.Shot.OK:
@@ -792,7 +800,7 @@ func has_player_control() -> bool:
 		return false
 	if _beat <= Beat.WAKE or _beat >= Beat.DONE:
 		return false
-	return not _show_blocks_control
+	return not _show_blocks_control and not armory_open()
 
 
 func _in_scripted_handover() -> bool:
@@ -2228,6 +2236,10 @@ func _enter_fps() -> void:
 		_hud_ctl = Ep2FpsHud.new()
 		_hud_ctl.mag = Ep2Winchester.MAG
 		_fps_hud.add_child(_hud_ctl)
+		if armory != null:
+			_hud_ctl.bind_armory(armory)
+			_hud_ctl.weapon_selected.connect(select_weapon)
+			_hud_ctl.armory_requested.connect(toggle_armory)
 	_flash_light = OmniLight3D.new()
 	_flash_light.light_color = Color(1.0, 0.8, 0.5)
 	_flash_light.light_energy = 0.0
@@ -2366,6 +2378,11 @@ func _tick_winchester_lever(delta: float) -> void:
 
 
 func _animate_fps(delta: float) -> void:
+	if _armory_view != null:
+		if _rifle_node != null:
+			_rifle_node.visible = false
+		_push_hud(delta)
+		return
 	if not _fps:
 		return
 	_tick_winchester_lever(delta)
@@ -2438,7 +2455,8 @@ func _push_hud(_delta: float) -> void:
 		return
 	_hud_ctl.spread_deg = _gun.spread_deg(_moving, _player_pos.y > 0.05)
 	_hud_ctl.ads = _gun.ads
-	_hud_ctl.set_ammo(_gun.rounds, _gun.reserve, Ep2Winchester.MAG)
+	_hud_ctl.set_ammo(_gun.rounds, _gun.reserve, _gun.capacity)
+	_hud_ctl.armory_enabled = _lesson == Lesson.DONE and not _show_blocks_control
 	_hud_ctl.show_ammo = _has_winchester and (_lesson == Lesson.OFF or _lesson >= Lesson.LOAD)
 	_hud_ctl.objective = _lesson_objective()
 	var stepping: bool = _lesson >= Lesson.LOAD and _lesson <= Lesson.PRACTICE
@@ -2453,7 +2471,7 @@ func _push_hud(_delta: float) -> void:
 
 ## RMB held: aim down the sights. (The session root maps the mouse button; the gun clamps it while sprinting.)
 func set_aim(on: bool) -> void:
-	if not _fps or _show_blocks_control:
+	if not _fps or _show_blocks_control or armory_open():
 		_gun.set_aim(false)
 		return
 	_gun.set_aim(on)
@@ -2461,6 +2479,10 @@ func set_aim(on: bool) -> void:
 
 ## R: load shells one at a time. Returns true when a reload started.
 func reload() -> bool:
+	if armory_open():
+		return false
+	if _armory_view != null:
+		return _armory_view.reload() if has_player_control() else false
 	if not _fps or not _has_winchester or _show_blocks_control:
 		return false
 	return _gun.start_reload()
@@ -2498,7 +2520,7 @@ func _toast(text: String, seconds: float = 1.6) -> void:
 
 func _on_dry_fired() -> void:
 	_sfx("ep2_winchester_dry")
-	_toast("OUT OF ROUNDS  -  PRESS R")
+	_toast("EMPTY  -  NO RESERVE" if _gun.reserve == 0 else "OUT OF ROUNDS  -  PRESS R")
 	if _empty_line_cd <= 0.0 and _lesson >= Lesson.FIRE and _gun.reserve > 0:
 		_empty_line_cd = 12.0
 		_speak("vo_bull_range_empty")
@@ -2790,3 +2812,51 @@ func _soft_blob() -> GradientTexture2D:
 		_blob_tex.height = 64
 	return _blob_tex
 
+
+
+func bind_armory(state: Ep2ArmoryState) -> void:
+	armory = state
+
+
+func armory_open() -> bool:
+	return _hud_ctl != null and _hud_ctl.armory_open
+
+
+func toggle_armory() -> void:
+	if _hud_ctl == null or not _running or _resolved or _show_blocks_control:
+		return
+	_hud_ctl.toggle_armory()
+	_move_input = Vector2.ZERO
+	_run_input = false
+	_gun.set_aim(false)
+
+
+func select_weapon(id: String) -> bool:
+	# The teacher's loading / aiming / firing drill cannot be skipped with the revolver.
+	if armory == null or _lesson != Lesson.DONE or _show_blocks_control or not _fps or not _running or _resolved or not armory.owns(id):
+		return false
+	if _armory_view == null:
+		for pair in [[_gun.fired, _fire_fx], [_gun.dry_fired, _on_dry_fired], [_gun.shell_loaded, _on_shell_loaded],
+			[_gun.reload_finished, _on_reload_finished], [_gun.blocked, _on_gun_blocked]]:
+			if pair[0].is_connected(pair[1]):
+				pair[0].disconnect(pair[1])
+		_armory_view = Ep2Viewmodel.new()
+		add_child(_armory_view)
+		_armory_view.bind_armory(armory)
+		_armory_view.attach(_camera)
+		if _rifle_node != null:
+			_rifle_node.visible = false
+		armory.changed.connect(_armory_weapon_changed)
+	var selected: bool = armory.select(id)
+	_armory_weapon_changed()
+	if selected:
+		_hud_ctl.toast(Ep2ArmoryState.NAMES[id], 1.0)
+	return selected
+
+
+func _armory_weapon_changed() -> void:
+	_gun = armory.active_gun()
+
+
+func select_previous_weapon() -> bool:
+	return select_weapon(armory.previous) if armory != null else false

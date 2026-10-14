@@ -5,6 +5,9 @@
 
 ---
 
+**PERSONAL ARMORY BUILT; RELEASE VERIFICATION PENDING (2026-10-15).** Winchester 1886 and Golden Remington 1875 now have named quick slots, independent finite loaded/reserve ammunition, a dedicated first-person Remington, 1/2/Q/Tab controls with touch/controller equivalents and keyboard rebinding. Camera/room changes preserve ammo. The rifle lesson blocks switching until complete. Bear bodies remain searchable for their remaining arrows; surface retries restore both guns, stored arrows and corpse claims together. Existing town/world/companion work is preserved. Native armory/save/checkpoint and existing gameplay gates pass; convention and captures: `design/ep2/armory/`. Both requested decision-model calls hit proxy 403, so no Jev/Microsoft approval is claimed. Master publication, final web-pack checks and actual upload/BUILD proof are separate release steps.
+
+
 **🤠 FOUNDER'S CAST + A LIVING BULL + THE ROAD (2026-10-14, later; shipping)**
 - **JakeX is cancelled. The town now has the founder's own Sheriff** (grey-bearded, long coat, star, pipe with a curl of smoke) **and Minister Mike Dean** (his robot-headed minister: black clerical coat, gold cross, glowing orange eyes) who issues the certificate from behind the counter on a low step. Both built with Tripo from the founder's model sheets (Drive), arms lowered, baked small. Office order: Sheriff greets -> Lil Blunt asks -> Sheriff hands him to the Minister -> Minister states the rules (in your name, cannot be sold on or traded, bring your share; no numbers) -> Sheriff sends him to the saloon. Sheriff stays the witness of the draw. All Jake files, voice ids and the JakeX reference were removed. Role assumption to confirm: Sheriff = lawman/witness, Minister = certificate issuer.
 - **The draw opponent and barman are humans** (cowboy with a real draw pose and revolver, barman); the town has no bears.

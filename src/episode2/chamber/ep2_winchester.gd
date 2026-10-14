@@ -46,6 +46,10 @@ var dry_fires: int = 0
 
 var _cycle: float = 0.0            # > 0 while the lever is being racked
 var _reload_t: float = 0.0
+## Per-firearm game profile; the lesson keeps the existing Winchester defaults.
+var capacity: int = MAG
+var cycle_time: float = CYCLE
+var reload_interval: float = RELOAD_PER_SHELL
 
 
 ## Advance the clocks. Call once per physics step.
@@ -84,7 +88,7 @@ func trigger() -> int:
 		_stop_reload()              # firing interrupts a shell-by-shell reload, as in Modern Warfare
 	rounds -= 1
 	shots_fired += 1
-	_cycle = CYCLE
+	_cycle = cycle_time
 	fired.emit()
 	return Shot.OK
 
@@ -94,10 +98,10 @@ func start_reload() -> bool:
 	if reload_locked:
 		blocked.emit("reload_locked")
 		return false
-	if reloading or rounds >= MAG or reserve <= 0 or _cycle > 0.0:
+	if reloading or rounds >= capacity or reserve <= 0 or _cycle > 0.0:
 		return false
 	reloading = true
-	_reload_t = RELOAD_PER_SHELL
+	_reload_t = reload_interval
 	reload_started.emit()
 	return true
 
@@ -106,11 +110,11 @@ func _load_one_shell() -> void:
 	rounds += 1
 	reserve -= 1
 	shell_loaded.emit(rounds)
-	if rounds >= MAG or reserve <= 0:
+	if rounds >= capacity or reserve <= 0:
 		_stop_reload()
 		reload_finished.emit()
 	else:
-		_reload_t = RELOAD_PER_SHELL
+		_reload_t = reload_interval
 
 
 func _stop_reload() -> void:
@@ -118,10 +122,14 @@ func _stop_reload() -> void:
 	_reload_t = 0.0
 
 
+func cancel_reload() -> void:
+	_stop_reload()       # only completed shell transactions have spent reserve
+
+
 func is_cycling() -> bool: return _cycle > 0.0
 ## 0..1 progress through the lever cycle (1 = ready), for the viewmodel's racking animation.
-func cycle_progress() -> float: return 1.0 - _cycle / CYCLE if _cycle > 0.0 else 1.0
-func is_full() -> bool: return rounds >= MAG
+func cycle_progress() -> float: return 1.0 - _cycle / cycle_time if _cycle > 0.0 else 1.0
+func is_full() -> bool: return rounds >= capacity
 
 
 ## One-sigma aim error in degrees right now.
