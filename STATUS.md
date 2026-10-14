@@ -5,7 +5,7 @@
 
 ---
 
-**🤠 BUILT: OUT OF THE WOODS, INTO THE GOLDMINE TOWN, AND THE DRAW (2026-10-14, after Codex's motion commit d6e32b1; pushed / deploying — "live" only after the CI deploy proof).** Your spec, played in first person with the Winchester in his hands the whole way:
+**🤠 BUILT: OUT OF THE WOODS, INTO THE GOLDMINE TOWN, AND THE DRAW (2026-10-14, after Codex's motion commit d6e32b1; **LIVE**: master c9f07a8, CI run 38445270039 attempt 2, butler "Pushed to https://youngstunners88.itch.io/smokerealm" 01:08 UTC - hard-refresh itch).** Your spec, played in first person with the Winchester in his hands the whole way:
 - **The ride goes on out of the woods.** The road now runs ~1.2 km: the bears ambush on the logging road, thin out as the pines end (no bear past the last trees), then gold-rush desert (sage scrub, boulders, mesas, two distant riders who never come near) and the light warms from the woods' golden hour into open desert. The spy camp/ridge is gone (superseded by your lock).
 - **The drop-off.** Bull pulls up in the main street: the blonde lady line (a wink, nothing shown), "go to the certificate office and get the sheriff to sort you a certificate, I'll meet you at the bar for a whiskey"; Lil Blunt hops off (no cut) and Bull rides off on the quad up the street and away. The town room takes over in the same street in one invisible cut (both rooms build the same town and desert at the same coordinates).
 - **The town** (Blender kit + Muapi textures): CERTIFICATES office, SALOON, TREASURY, GENERAL STORE, HOTEL, ASSAY, AUCTIONS, STATS, RESERVE, church at the end, Fort Knox on its rock hill with flags. No Diamonds anywhere.
@@ -14,6 +14,7 @@
 - **The draw** in the street: rifle down until Jake says DRAW (a different wait each round). Fire early = foul, redo. Too slow = he shoots first, screen drops, hearts back, again (a retry, never a death; he gives a little more time each loss). Hit him first = the map to the auction. Then **Bull strolls out of the HOTEL** and walks over (no line yet: his reaction is yours to lock). TO BE CONTINUED.
 - **Proof:** new gate `tests/ep2_gold_town_test.tscn` (47 checks, wired into CI) + the interlude (lift → woods → drop-off → town), Fort Knox arc, session root and Codex's character-motion gates all pass; real-render captures of every beat (`tools/ep2_shots/town_beats_shot.tscn`). Also fixed while testing: Codex's side-on bow stance had left the archers' sight cone pointing 90° off the target (`Ep2BearBrain.gaze_yaw`).
 - **Pack size:** the build sat at ~190 MiB against the 190 MiB gate, so Episode 2's own JPEG textures are now stored as high-quality lossy (0.9) instead of 4-7x larger lossless copies; local web export with the whole town: **186.9 MiB**. Episode 1 art and the locked title screen untouched.
+- **Deploy note:** itch held the previous upload "still processing" for ~7 hours, so the first three deploys were refused; CI now waits and retries on that answer (up to 15 min) instead of failing.
 - **Your calls:** Bull's reaction when he arrives; Inferno's lift "plan" line still says "spy on the bears" (re-record it to "ride for town"?); the stranger and barman are the bear rig for now (Tripo models from their refs next if you want them unique).
 
 ---
