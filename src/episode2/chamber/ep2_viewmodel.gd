@@ -546,6 +546,15 @@ func _sync_weapon() -> void:
 	set_shown(_shown)
 
 
+func _enter_tree() -> void:
+	# Seamless room activation moves an already-built view out of its preview viewport.
+	_connect_active_gun()
+	if armory != null:
+		if not armory.changed.is_connected(_sync_weapon):
+			armory.changed.connect(_sync_weapon)
+		_sync_weapon()
+
+
 func _exit_tree() -> void:
 	_disconnect_active_gun()
 	if armory != null and armory.changed.is_connected(_sync_weapon):

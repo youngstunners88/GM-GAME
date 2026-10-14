@@ -1,5 +1,5 @@
 {
-  "observed_remote_sha": "231fcca3",
+  "observed_remote_sha": "becde060",
   "objective": "Personal armory implemented and tested: both firearms, quick selection, finite session ammunition, saved training, persistent bear-arrow loot and atomic surface/runner retries. Preserve Claude world work; verify actual release when networking permits.",
   "task_paths": [
     "src/episode2/chamber/ep2_armory_state.gd",
@@ -17,8 +17,8 @@
   "evidence": {
     "report": "design/ep2/armory/VERIFICATION.md",
     "contract": "design/ep2/armory/CONVENTION.md",
-    "validation": "Armory gate and 8 merged-source suites pass; security/title lock pass. Native captures inspected. Web export 198481936 bytes before cached-lighting followup; five local browser gates pass, strict checker fails remote certificate fetches. Cached-view lighting regression passes.",
-    "release": "Implementation, training restoration, runner checkpoints and cached lighting published through master231fcca3. Current source also ensures a swapped prop starts in carry before physics and uses readable ammo tooltips. Final carry followup publication pending. Actions/itch HTTP403; no butler/public BUILD proof. Network draft save failed INVALID_ARGUMENT; readback unchanged."
+    "validation": "Native armory tests now cover actual viewport reparent/activation and pre-first-tick surface checkpoint capture. Prior full gates/title/security pass; final lifecycle publication/export pending.",
+    "release": "Armory source and restart/carry fixes published through master becde060. Current followup restores viewmodel callbacks on viewport entry and captures the surface snapshot before first input. GitHub Actions/itch HTTP403, Jev/Microsoft CONNECT403; no live upload proof. Network draft saving rejected INVALID_ARGUMENT."
   },
   "unresolved": [
     "External Jev/Microsoft decisions blocked by proxy 403.",
@@ -26,5 +26,5 @@
     "Native Remington is procedural reference-based geometry; no fully articulated reload/finger rig.",
     "Actual release upload and matching public BUILD require network-accessible verification."
   ],
-  "next_action": "Finish current carry followup publication/export, then verify CI/butler and public BUILD when network access permits. Source is implemented; live verification remains blocked."
+  "next_action": "Publish the final lifecycle correction through the existing non-forced pipeline, export/check the final pack, then verify actual butler/public BUILD when networking permits."
 }

@@ -1185,6 +1185,8 @@ func get_scouts() -> Array:
 # --- the story --------------------------------------------------------------------------------------------------------
 
 func _on_setup() -> void:
+	_armory_snapshot = armory.snapshot()  # before the first player event can spend a round or claim loot
+	_ammo_snapshot = [armory.active_gun().rounds, armory.active_gun().reserve]
 	_beat = Beat.SNEAK
 	_player_pos = SPAWN
 	_prev_player = SPAWN

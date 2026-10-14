@@ -25,3 +25,5 @@ The final finite-ammo integration also restores the runner-entry resource checkp
 Restart corrections `52467762` and `87d3a8e8` reached master after a safe merge of CI export commit `83e80f7d`. A final cached-view lighting correction applies the existing Winchester daylight treatment even when the Remington is initially equipped, and applies shadow settings to both cached props. Its regression assertions pass. No firearm art, title screen, world choreography or tuning numbers changed in that correction.
 
 Cached lighting correction `231fcca3` reached master. Final carry regression checks that an equipped prop is already positioned/oriented before its first physics tick, preventing a camera-origin frame during fast switching. Ammo tooltips use player-facing wording.
+
+The real prebuilt-room activation path is now exercised: removing/re-entering the viewport must reconnect firearm and selection callbacks once. Surface inventory is captured during setup before the first player input, rather than after an early shot. Both regressions pass against WoodsQuadChamber.

@@ -277,6 +277,10 @@ func _ready() -> void:
 	woods.bind_armory(encounter)
 	woods.setup()
 	woods.set_physics_process(false)
+	var surface_rounds: int = encounter.active_gun().rounds
+	woods.get_viewmodel().fire()  # player input can arrive before the first physics step
+	woods._retry_from_surface()
+	_check("surface entry captures ammo before the very first player event", encounter.active_gun().rounds == surface_rounds)
 	woods.step(1.0 / 60.0)
 	var baseline: Dictionary = woods._armory_snapshot.duplicate(true)
 	var bear: Ep2BearBrain = woods.get_bears()[0]
@@ -296,6 +300,22 @@ func _ready() -> void:
 	woods._retry_from_surface()
 	_check("retry restores both guns, selection, arrows and corpse claims together", encounter.snapshot()["weapons"][Ep2ArmoryState.WIN]["loaded"] == baseline["weapons"][Ep2ArmoryState.WIN]["loaded"] and encounter.snapshot()["weapons"][Ep2ArmoryState.REM]["loaded"] == baseline["weapons"][Ep2ArmoryState.REM]["loaded"] and encounter.equipped == baseline["equipped"] and encounter.arrows == baseline["arrows"] and encounter.corpses == baseline["corpses"])
 	_check("retry restores the living bear with the same stable ID", not (woods.get_bears()[0] as Ep2BearBrain).is_dead() and str(woods.get_bears()[0].get_meta("corpse_id")) == "woods:0")
+	# Actual activation removes/re-enters the tree; resource callbacks must survive it.
+	var viewport := SubViewport.new()
+	viewport.own_world_3d = true
+	viewport.size = Vector2i(320, 180)
+	add_child(viewport)
+	woods.reparent(viewport, false)
+	woods.activate(self)
+	woods.set_physics_process(false)
+	var reports: Array = [0]
+	woods.get_viewmodel().fired.connect(func() -> void: reports[0] += 1)
+	var entry_rounds: int = encounter.active_gun().rounds
+	_check("activated rooms reconnect shots exactly once", woods.get_viewmodel().fire() and reports[0] == 1 and encounter.active_gun().rounds == entry_rounds - 1)
+	encounter.select(Ep2ArmoryState.REM)
+	encounter.step(0.18)
+	_check("activated rooms still switch the real prop and gun", woods.get_viewmodel().gun == encounter.firearm(Ep2ArmoryState.REM) and woods.get_viewmodel().rifle.name == "GoldenRemington1875" and woods.get_viewmodel().fire() and reports[0] == 2)
+	viewport.queue_free()
 	woods.queue_free()
 	await get_tree().process_frame
 	# No integration fixture inventory is left in the next suite's persisted session.
