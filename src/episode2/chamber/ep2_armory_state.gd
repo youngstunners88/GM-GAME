@@ -130,7 +130,7 @@ func snapshot() -> Dictionary:
 		var gun: Ep2Winchester = firearm(id)
 		weapons[id] = {"owned": owns(id), "loaded": gun.rounds, "reserve": gun.reserve,
 			"cycle": gun._cycle, "reload_t": gun._reload_t, "reloading": gun.reloading,
-			"locked": gun.locked, "reload_locked": gun.reload_locked}
+			"locked": gun.locked, "reload_locked": gun.reload_locked, "training_complete": gun.training_complete}
 	return {"version": VERSION, "weapons": weapons, "equipped": equipped, "previous": previous,
 		"arrows": arrows, "corpses": corpses.duplicate(true), "switch_t": _switch_t}
 
@@ -152,6 +152,7 @@ func restore(data: Dictionary, earned_remington: bool = false) -> void:
 		gun.reloading = acquired and bool(entry.get("reloading", false)) and gun.reserve > 0 and not gun.is_full()
 		gun.locked = bool(entry.get("locked", not acquired))
 		gun.reload_locked = bool(entry.get("reload_locked", not acquired))
+		gun.training_complete = acquired and bool(entry.get("training_complete", false))
 		gun.set_aim(false)
 		gun.ads = 0.0
 	if earned_remington and not owns(REM):

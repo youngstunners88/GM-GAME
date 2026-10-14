@@ -363,7 +363,11 @@ func setup(_gold_principal: int = 0, _bears: Array = [], _diamonds_paid: int = 0
 	_mold_broken = []
 	for _m in MOLD_TARGETS:
 		_mold_broken.append(false)
-	_gun = Ep2Winchester.new()
+	_gun = armory.firearm(Ep2ArmoryState.WIN) if armory != null and armory.owns(Ep2ArmoryState.WIN) else Ep2Winchester.new()
+	_gun.cancel_reload()
+	_gun.set_aim(false)
+	if armory != null and armory.owns(Ep2ArmoryState.WIN):
+		armory.select(Ep2ArmoryState.WIN)
 	_connect_gun()
 	_lesson = Lesson.OFF
 	_lesson_t = 0.0
@@ -586,8 +590,12 @@ func step(delta: float) -> void:
 	if _armory_view != null:
 		_armory_view.step(delta, _moving, _run_input and _moving, _walk_phase)
 		_cam_kick = _armory_view.cam_kick
+	elif armory != null and armory.firearm(Ep2ArmoryState.WIN) == _gun:
+		armory.step(delta)
 	else:
 		_gun.step(delta)
+		if armory != null:
+			armory.step(delta)
 	_tick_later(delta)
 	match _beat:
 		Beat.WAKE:
@@ -2496,11 +2504,10 @@ func is_ads() -> bool: return _gun.ads > 0.5
 
 
 func _connect_gun() -> void:
-	_gun.fired.connect(_fire_fx)
-	_gun.dry_fired.connect(_on_dry_fired)
-	_gun.shell_loaded.connect(_on_shell_loaded)
-	_gun.reload_finished.connect(_on_reload_finished)
-	_gun.blocked.connect(_on_gun_blocked)
+	for pair in [[_gun.fired, _fire_fx], [_gun.dry_fired, _on_dry_fired], [_gun.shell_loaded, _on_shell_loaded],
+		[_gun.reload_finished, _on_reload_finished], [_gun.blocked, _on_gun_blocked]]:
+		if not pair[0].is_connected(pair[1]):
+			pair[0].connect(pair[1])
 
 
 func _sfx(name: String) -> void:
@@ -2566,6 +2573,13 @@ func _tick_later(delta: float) -> void:
 
 
 func _begin_lesson() -> void:
+	if _gun.training_complete:
+		_lesson = Lesson.DONE
+		_lead_done = true
+		_molds_left = 0
+		for i in _mold_broken.size():
+			_mold_broken[i] = true
+		return
 	_lesson = Lesson.LEAD
 	_lesson_t = 0.0
 	_lead_done = false
@@ -2573,8 +2587,9 @@ func _begin_lesson() -> void:
 	_nag_t = 0.0
 	_gun.locked = true
 	_gun.reload_locked = true
-	_gun.rounds = 0
-	_gun.reserve = Ep2Winchester.RESERVE_START
+	if armory == null:
+		_gun.rounds = 0
+		_gun.reserve = Ep2Winchester.RESERVE_START
 	_add_line_marker()
 
 
@@ -2627,6 +2642,9 @@ func _tick_lesson(delta: float) -> void:
 						_speak("vo_bull_range_nag")
 		Lesson.DEMO:
 			_frame_demo(delta)
+		Lesson.LOAD:
+			if _gun.is_full():
+				_on_reload_finished()  # a resumed full gun needs no additional loading transaction
 		Lesson.AIM:
 			_aim_held = _aim_held + delta if _gun.ads >= 0.95 else 0.0
 			if _aim_held >= AIM_HOLD_SECONDS:
@@ -2642,6 +2660,9 @@ func _tick_lesson(delta: float) -> void:
 		Lesson.PRACTICE:
 			if _molds_left <= 0:
 				_lesson = Lesson.DONE
+				_gun.training_complete = true
+				if armory != null:
+					armory.changed.emit()
 				_speak("vo_bull_range_done")
 				_hold = _vo_len("vo_bull_range_done") + 0.4
 		Lesson.DONE:

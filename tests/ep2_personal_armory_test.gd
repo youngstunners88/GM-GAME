@@ -192,9 +192,30 @@ func _ready() -> void:
 	facility._gun.reload_locked = false
 	_check("hideout handover shares its actual gun, including lesson ammo", lesson_root.armory.firearm(Ep2ArmoryState.WIN) == facility.get_gun())
 	_check("revolver switching cannot bypass the rifle lesson", not facility.select_weapon(Ep2ArmoryState.REM) and facility._gun.rounds == 3)
-	facility._lesson = SmeltingFacilityChamber.Lesson.DONE
+	facility._lesson = SmeltingFacilityChamber.Lesson.PRACTICE
+	facility._molds_left = 0
+	facility._tick_lesson(0.1)
 	facility._beat = SmeltingFacilityChamber.Beat.VERB_TEACH
 	_check("after the lesson the hideout supports the Remington FPS view", facility.select_weapon(Ep2ArmoryState.REM) and facility._armory_view.rifle.name == "GoldenRemington1875" and lesson_root.armory.firearm(Ep2ArmoryState.WIN).rounds == 3 and lesson_root.armory.firearm(Ep2ArmoryState.WIN).reserve == 7)
+	var resumed: SmeltingFacilityChamber = load("res://src/episode2/chamber/smelting_facility.tscn").instantiate()
+	lesson_root.add_child(resumed)
+	lesson_root._wire_chamber(resumed)
+	resumed.intro_film = false
+	resumed.setup()
+	resumed.set_physics_process(false)
+	resumed._item_delivered("rifle")
+	resumed._begin_lesson()
+	_check("re-entering a completed lesson preserves its real gun and finite ammo", resumed.get_gun() == lesson_root.armory.firearm(Ep2ArmoryState.WIN) and resumed.get_gun().rounds == 3 and resumed.get_gun().reserve == 7 and resumed.get_lesson() == SmeltingFacilityChamber.Lesson.DONE and not resumed.get_gun().locked)
+	var disk_state := Ep2ArmoryState.new()
+	disk_state.restore(lesson_root.armory.snapshot())
+	_check("completed training survives an armory save", disk_state.firearm(Ep2ArmoryState.WIN).training_complete)
+	resumed.get_gun().training_complete = false
+	resumed._begin_lesson()
+	_check("resuming incomplete training never refills or discards ammunition", resumed.get_gun().rounds == 3 and resumed.get_gun().reserve == 7 and resumed.get_gun().locked)
+	resumed.get_gun().rounds = 4
+	resumed._lesson = SmeltingFacilityChamber.Lesson.LOAD
+	resumed._tick_lesson(0.1)
+	_check("a resumed full gun advances past loading without another round", resumed.get_lesson() == SmeltingFacilityChamber.Lesson.AIM and resumed.get_gun().reserve == 7)
 	lesson_root.queue_free()
 	await get_tree().process_frame
 

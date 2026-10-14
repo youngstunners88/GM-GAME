@@ -1,5 +1,5 @@
 {
-  "observed_remote_sha": "236ff712",
+  "observed_remote_sha": "fba4e6b8",
   "objective": "Complete Lil Blunt personal armory: both firearms, quick selection, finite session ammunition, persistent bear-arrow loot and atomic surface retries; preserve concurrent Claude world work.",
   "task_paths": [
     "src/episode2/chamber/ep2_armory_state.gd",
@@ -17,8 +17,8 @@
   "evidence": {
     "report": "design/ep2/armory/VERIFICATION.md",
     "contract": "design/ep2/armory/CONVENTION.md",
-    "validation": "Armory resource/input/save/real-corpse/checkpoint gate and 8 existing gameplay suites pass locally; native Compatibility captures inspected. Final merged-source release checks pending.",
-    "release": "Publication pending. Decision model requests failed CONNECT proxy 403; no model verdict. Actions/itch upload/BUILD proof remains unverified."
+    "validation": "8 merged-source gates + security/title lock pass; native captures inspected. Web export 198479472 bytes; five local browser game gates pass, strict checker failed on remote certificate fetches. Final restart correction validated by armory gate and pending publication.",
+    "release": "Implementation 388dbc0c published through master fba4e6b8. Restart correction pending. Actions and itch page HTTP 403; no butler upload or live BUILD proof. Network draft save failed INVALID_ARGUMENT, readback unchanged."
   },
   "unresolved": [
     "External Jev/Microsoft decisions blocked by proxy 403.",
@@ -26,5 +26,5 @@
     "Native Remington is procedural reference-based geometry; no fully articulated reload/finger rig.",
     "Actual release upload and matching public BUILD require network-accessible verification."
   ],
-  "next_action": "Run final merged-source checks and nonthreaded <190 MiB web export, publish through scripts/ship-to-master.sh, then verify butler and public BUILD."
+  "next_action": "Publish the tested restart correction after appropriate gates/export. Recheck CI upload and matching public BUILD when networking permits; never label a source push live deployment."
 }

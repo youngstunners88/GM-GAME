@@ -50,6 +50,7 @@ var _reload_t: float = 0.0
 var capacity: int = MAG
 var cycle_time: float = CYCLE
 var reload_interval: float = RELOAD_PER_SHELL
+var training_complete: bool = false
 
 
 ## Advance the clocks. Call once per physics step.
