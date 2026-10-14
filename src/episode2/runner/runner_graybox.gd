@@ -302,6 +302,7 @@ func _advance(delta: float) -> void:
 	_distance += _speed * delta
 	_shoot_cd = maxf(0.0, _shoot_cd - delta)
 	if armory != null:
+		armory.step(delta)
 		armory.firearm(Ep2ArmoryState.REM)._cycle = _shoot_cd
 	_swipe_t = maxf(0.0, _swipe_t - delta)
 	_advance_reload(delta)
@@ -920,6 +921,6 @@ func bind_armory(state: Ep2ArmoryState) -> void:
 	armory = state
 	var firearm: Ep2Winchester = state.firearm(Ep2ArmoryState.REM)
 	_ammo = firearm.rounds
-	_shoot_cd = firearm._cycle
+	_shoot_cd = maxf(firearm._cycle, state._switch_t)
 	_can_shoot = _can_shoot and state.owns(Ep2ArmoryState.REM)
 	ammo_changed.emit(_ammo)

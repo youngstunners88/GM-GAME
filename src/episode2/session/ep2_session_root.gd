@@ -47,6 +47,7 @@ const DEFAULT_GOLD_PRINCIPAL := 1000
 
 var armory: Ep2ArmoryState = Ep2ArmoryState.new()
 var _armory_save_due: float = -1.0
+var _runner_armory_checkpoint: Dictionary = {}
 var _mode: int = Mode.IDLE
 var _active: Node = null
 var _plan: Array = []
@@ -78,6 +79,7 @@ func configure(plan: Array, commit_to_economy: bool = true) -> void:
 	_chain_id = ""
 	_chain_n = 0
 	_totals = {"gold_awarded": 0, "gold_forfeited": 0, "diamonds_burned": 0, "btc_paid": 0}
+	_runner_armory_checkpoint.clear()
 	_teardown_active()
 	_mode = Mode.IDLE
 
@@ -94,6 +96,9 @@ func _enter_runner() -> void:
 	var seg: Dictionary = _plan[_segment]
 	if bool(seg.get("armed", false)):
 		armory.acquire(Ep2ArmoryState.REM)
+		armory.select(Ep2ArmoryState.REM)
+	armory.firearm(Ep2ArmoryState.REM).cancel_reload()  # runner owns its timed cylinder reload
+	_runner_armory_checkpoint = armory.snapshot()
 	var r: Node = RUNNER_SCENE.instantiate()
 	add_child(r)
 	_active = r
@@ -357,6 +362,10 @@ func _on_chamber_failed() -> void:
 	session_failed.emit()
 
 func _on_run_failed() -> void:
+	if _mode != Mode.RUNNER:
+		return
+	if not _runner_armory_checkpoint.is_empty():
+		armory.restore(_runner_armory_checkpoint)
 	_mode = Mode.IDLE
 	_teardown_active()
 	_sync_mouse_mode()

@@ -234,6 +234,31 @@ func _ready() -> void:
 	runner.queue_free()
 	await get_tree().process_frame
 
+	# A failed finite-ammo runner attempt cannot permanently spend its restart supply.
+	var retry_root := Ep2SessionRoot.new()
+	retry_root.input_enabled = false
+	add_child(retry_root)
+	var before_runner_save: Dictionary = GameManager.personal_armory.duplicate(true)
+	var resume_reload := _both()
+	resume_reload.select(Ep2ArmoryState.REM)
+	resume_reload.step(0.18)
+	resume_reload.active_gun().rounds = 4
+	resume_reload.active_gun().start_reload()
+	GameManager.personal_armory = resume_reload.snapshot()
+	retry_root.configure([{"chamber_z": 200, "armed": true, "obstacles": []}], false)
+	retry_root.start()
+	_check("entering the runner cancels the FPS loader without spending its reserve", not retry_root.armory.firearm(Ep2ArmoryState.REM).reloading and retry_root.armory.firearm(Ep2ArmoryState.REM).rounds == 4 and retry_root.armory.firearm(Ep2ArmoryState.REM).reserve == 18)
+	var attempt: RunnerGraybox = retry_root.get_active()
+	attempt.set_physics_process(false)
+	attempt.step(0.18)
+	var starting: int = retry_root.armory.firearm(Ep2ArmoryState.REM).rounds
+	var spent: bool = attempt._try_fire_round()
+	retry_root._on_run_failed()
+	_check("runner failure restores its entry inventory instead of draining later retries", spent and retry_root.armory.firearm(Ep2ArmoryState.REM).rounds == starting and retry_root.armory.equipped == Ep2ArmoryState.REM)
+	retry_root.queue_free()
+	await get_tree().process_frame
+	GameManager.personal_armory = before_runner_save
+
 	# A real bear body + proximity search + atomic surface retry.
 	var woods: WoodsQuadChamber = load("res://src/episode2/chamber/woods_quad.tscn").instantiate()
 	add_child(woods)
@@ -264,5 +289,12 @@ func _ready() -> void:
 	_check("retry restores the living bear with the same stable ID", not (woods.get_bears()[0] as Ep2BearBrain).is_dead() and str(woods.get_bears()[0].get_meta("corpse_id")) == "woods:0")
 	woods.queue_free()
 	await get_tree().process_frame
+	# No integration fixture inventory is left in the next suite's persisted session.
+	if prior_save != "":
+		var file := FileAccess.open(GameManager.SAVE_PATH, FileAccess.WRITE)
+		file.store_string(prior_save)
+		file.close()
+	else:
+		DirAccess.remove_absolute(GameManager.SAVE_PATH)
 	print("EP2_PERSONAL_ARMORY: %s" % ("ALL PASS" if _fail == 0 else "%d FAILED" % _fail))
 	get_tree().quit(0 if _fail == 0 else 1)

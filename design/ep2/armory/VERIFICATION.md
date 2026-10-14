@@ -19,3 +19,5 @@ Final local release validation: merged source includes Claude's `236ff712` Bull 
 Source `388dbc0c` was published through merge `fba4e6b8` by the non-forced shipping script. Final review then added saved training completion/shared gun restoration for hideout restarts, with real re-entry and full-gun lesson assertions. The final release commit/export must include that correction.
 
 GitHub Actions API and the public itch page each returned HTTP 403. A configuration draft adding `api.github.com`, `openrouter.ai`, `youngstunners88.itch.io`, `itch.io` and `html-classic.itch.zone` was attempted, but the configuration service returned INVALID_ARGUMENT and could not confirm saving. Readback still contained only the prior four custom hosts. No network setting was applied and no deployment success is claimed.
+
+The final finite-ammo integration also restores the runner-entry resource checkpoint on a failed attempt and cancels an incoming FPS loader before the runner cylinder timer takes ownership. The armory integration gate exercises both paths.
