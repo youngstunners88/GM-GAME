@@ -94,6 +94,14 @@ func _ready() -> void:
 	vm.attach(cam)
 	_check("repeated attach preserves an empty revolver and rifle reserve", vm.gun == rem and vm.gun.rounds == 0 and win.reserve == 1)
 	_check("Remington has a real camera-held model and a grip hand", vm.rifle.name == "GoldenRemington1875" and vm.rifle.has_node("Barrel") and vm.rifle.has_node("RightArm"))
+	vm.set_exposure(0.7)
+	vm.set_world_shadows(false)
+	var lighting_ok: bool = not vm._exp_mats.is_empty()
+	for pair in vm._exp_mats:
+		lighting_ok = lighting_ok and is_equal_approx((pair[0] as StandardMaterial3D).albedo_color.r, (pair[1] as Color).r * 0.7) and (pair[0] as BaseMaterial3D).disable_receive_shadows
+	_check("daylight settings reach the cached Winchester while Remington is equipped", lighting_ok)
+	_check("the procedural Remington also receives the shadow setting", (vm.rifle.get_node("Barrel").material_override as BaseMaterial3D).disable_receive_shadows)
+
 	state.select(Ep2ArmoryState.WIN)
 	state.step(0.18)
 	_check("selection projects the founder Winchester without a refill", vm.gun == win and win.rounds == 1 and vm.rifle.has_node("Hands/HandsModel"))

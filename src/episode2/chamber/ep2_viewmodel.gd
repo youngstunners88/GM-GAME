@@ -134,7 +134,8 @@ func set_exposure(k: float) -> void:
 
 
 func _apply_exposure() -> void:
-	var model: Node = rifle.get_node_or_null("Hands/HandsModel") if rifle != null else null
+	var winchester: Node3D = _weapon_views.get(Ep2ArmoryState.WIN, rifle)
+	var model: Node = winchester.get_node_or_null("Hands/HandsModel") if winchester != null else null
 	if model == null:
 		return
 	if _exp_mats.is_empty():
@@ -209,22 +210,28 @@ func set_world_shadows(on: bool) -> void:
 	if rifle == null:
 		return
 	_apply_exposure()                      # the hands' materials are already per-viewmodel duplicates; reuse them
-	for mi in rifle.find_children("*", "MeshInstance3D", true, false):
-		var m := mi as MeshInstance3D
-		m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF if not on else m.cast_shadow
-		if m.mesh == null:
-			continue
-		for i in m.mesh.get_surface_count():
-			var src: Material = m.get_surface_override_material(i)
-			var own: bool = src != null
-			if src == null:
-				src = m.mesh.surface_get_material(i)
-			if src is BaseMaterial3D:
-				var bm: BaseMaterial3D = src as BaseMaterial3D
-				if not own:
-					bm = bm.duplicate() as BaseMaterial3D       # never touch the shared GLB material (the wall rifle uses it)
-					m.set_surface_override_material(i, bm)
-				bm.disable_receive_shadows = not on
+	var views: Array = _weapon_views.values() if not _weapon_views.is_empty() else [rifle]
+	for view in views:
+		for mi in view.find_children("*", "MeshInstance3D", true, false):
+			var m := mi as MeshInstance3D
+			m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF if not on else m.cast_shadow
+			if m.material_override is BaseMaterial3D:
+				var override: BaseMaterial3D = m.material_override.duplicate()
+				override.disable_receive_shadows = not on
+				m.material_override = override
+			if m.mesh == null:
+				continue
+			for i in m.mesh.get_surface_count():
+				var src: Material = m.get_surface_override_material(i)
+				var own: bool = src != null
+				if src == null:
+					src = m.mesh.surface_get_material(i)
+				if src is BaseMaterial3D:
+					var bm: BaseMaterial3D = src as BaseMaterial3D
+					if not own:
+						bm = bm.duplicate() as BaseMaterial3D       # never touch the shared GLB material (the wall rifle uses it)
+						m.set_surface_override_material(i, bm)
+					bm.disable_receive_shadows = not on
 
 
 ## Show or hide the rifle (the host hides it while a director camera is on, when the body is seen instead).

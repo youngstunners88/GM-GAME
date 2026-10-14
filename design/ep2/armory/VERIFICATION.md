@@ -21,3 +21,5 @@ Source `388dbc0c` was published through merge `fba4e6b8` by the non-forced shipp
 GitHub Actions API and the public itch page each returned HTTP 403. A configuration draft adding `api.github.com`, `openrouter.ai`, `youngstunners88.itch.io`, `itch.io` and `html-classic.itch.zone` was attempted, but the configuration service returned INVALID_ARGUMENT and could not confirm saving. Readback still contained only the prior four custom hosts. No network setting was applied and no deployment success is claimed.
 
 The final finite-ammo integration also restores the runner-entry resource checkpoint on a failed attempt and cancels an incoming FPS loader before the runner cylinder timer takes ownership. The armory integration gate exercises both paths.
+
+Restart corrections `52467762` and `87d3a8e8` reached master after a safe merge of CI export commit `83e80f7d`. A final cached-view lighting correction applies the existing Winchester daylight treatment even when the Remington is initially equipped, and applies shadow settings to both cached props. Its regression assertions pass. No firearm art, title screen, world choreography or tuning numbers changed in that correction.

@@ -1,6 +1,6 @@
 {
-  "observed_remote_sha": "fba4e6b8",
-  "objective": "Complete Lil Blunt personal armory: both firearms, quick selection, finite session ammunition, persistent bear-arrow loot and atomic surface retries; preserve concurrent Claude world work.",
+  "observed_remote_sha": "87d3a8e8",
+  "objective": "Personal armory implemented and tested: both firearms, quick selection, finite session ammunition, saved training, persistent bear-arrow loot and atomic surface/runner retries. Preserve Claude world work; verify actual release when networking permits.",
   "task_paths": [
     "src/episode2/chamber/ep2_armory_state.gd",
     "src/episode2/chamber/ep2_remington_view.gd",
@@ -17,8 +17,8 @@
   "evidence": {
     "report": "design/ep2/armory/VERIFICATION.md",
     "contract": "design/ep2/armory/CONVENTION.md",
-    "validation": "8 merged-source gates + security/title lock pass; native captures inspected. Web export 198479472 bytes; five local browser game gates pass, strict checker failed on remote certificate fetches. Final restart correction validated by armory gate and pending publication.",
-    "release": "Implementation 388dbc0c published through master fba4e6b8. Restart correction pending. Actions and itch page HTTP 403; no butler upload or live BUILD proof. Network draft save failed INVALID_ARGUMENT, readback unchanged."
+    "validation": "Armory gate and 8 merged-source suites pass; security/title lock pass. Native captures inspected. Web export 198481936 bytes before cached-lighting followup; five local browser gates pass, strict checker fails remote certificate fetches. Cached-view lighting regression passes.",
+    "release": "Implementation388dbc0c, restart correction52467762 and runner checkpoint87d3a8e8 published to master. Current branch also includes the cached-view lighting correction pending final push. Actions and itch HTTP403; no butler/public BUILD proof. Network draft save failed INVALID_ARGUMENT; readback unchanged."
   },
   "unresolved": [
     "External Jev/Microsoft decisions blocked by proxy 403.",
@@ -26,5 +26,5 @@
     "Native Remington is procedural reference-based geometry; no fully articulated reload/finger rig.",
     "Actual release upload and matching public BUILD require network-accessible verification."
   ],
-  "next_action": "Publish the tested restart correction after appropriate gates/export. Recheck CI upload and matching public BUILD when networking permits; never label a source push live deployment."
+  "next_action": "Complete the cached-view lighting followup publication, then verify CI/butler upload and matching public BUILD when networking permits. Source completion must not be called verified live deployment."
 }
