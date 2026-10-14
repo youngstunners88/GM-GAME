@@ -199,7 +199,7 @@ func _update_armory() -> void:
 		var selected: String = " > " if armory.equipped == id and armory.owns(id) else ""
 		_slots[i].text = "%s%s  %s" % [selected, Ep2ArmoryState.key_label(Ep2ArmoryState.ACTIONS[i]), Ep2ArmoryState.NAMES[id]]
 		_slots[i].disabled = not armory_enabled or not armory.owns(id)
-		_slots[i].tooltip_text = "%d / %d %s" % [firearm.rounds, firearm.reserve, Ep2ArmoryState.AMMO_TYPES[id]]
+		_slots[i].tooltip_text = "%s: %d loaded / %d reserve" % ["Rifle rounds" if id == Ep2ArmoryState.WIN else "Revolver rounds", firearm.rounds, firearm.reserve]
 		lines.append("%s%s: %d / %d" % [selected, Ep2ArmoryState.NAMES[id], firearm.rounds, firearm.reserve] if armory.owns(id) else "%s: not acquired" % Ep2ArmoryState.NAMES[id])
 	lines.append("\nBear arrows stored: %d\nSearch fallen bears for their remaining arrows.\nA bow has not been acquired." % armory.arrows)
 	lines.append("\n%s / %s: select     %s: previous     %s: armory\nController: LB / RB, Y, Back. Touch: tap a slot.\nSwitching cancels loading; completed rounds stay loaded." % [Ep2ArmoryState.key_label("ep2_weapon_1"), Ep2ArmoryState.key_label("ep2_weapon_2"), Ep2ArmoryState.key_label("ep2_weapon_previous"), Ep2ArmoryState.key_label("ep2_armory")])

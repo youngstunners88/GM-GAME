@@ -518,6 +518,8 @@ func _sync_weapon() -> void:
 			(view as Node3D).visible = false
 		_active_id = armory.equipped
 		rifle = _weapon_views[_active_id]
+		rifle.position = hip_pos
+		rifle.rotation = VM_HIP_ROT  # correct carry even if rendering precedes the next physics tick
 		_muzzle_flash = rifle.get_node_or_null("MuzzleFlash")
 		if _muzzle_flash == null:
 			_build_muzzle_flash()

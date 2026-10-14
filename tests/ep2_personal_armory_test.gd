@@ -94,6 +94,7 @@ func _ready() -> void:
 	vm.attach(cam)
 	_check("repeated attach preserves an empty revolver and rifle reserve", vm.gun == rem and vm.gun.rounds == 0 and win.reserve == 1)
 	_check("Remington has a real camera-held model and a grip hand", vm.rifle.name == "GoldenRemington1875" and vm.rifle.has_node("Barrel") and vm.rifle.has_node("RightArm"))
+	_check("a newly selected prop starts in carry before the first physics tick", vm.rifle.position == vm.hip_pos and vm.rifle.rotation.is_equal_approx(Ep2Viewmodel.VM_HIP_ROT))
 	vm.set_exposure(0.7)
 	vm.set_world_shadows(false)
 	var lighting_ok: bool = not vm._exp_mats.is_empty()
