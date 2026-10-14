@@ -20,6 +20,7 @@ the next agent hunting for files that were renamed.
 
 | Task | Load |
 |---|---|
+| Episode 2 town richness / avenues / facade doors and windows / background people and animals | `.claude/skills/ep2-living-town/SKILL.md`, `design/ep2/town/README.md`; then only the needed street/facade/life/proof component |
 | Player / movement / combat | `src/player/player.gd`, `src/player/combat_handler.gd`, `docs/architecture/adr-combat-system.md`, `docs/architecture/adr-gameplay-feel.md` |
 | Boss work | `src/boss/boss_base.gd` + the specific boss, `docs/architecture/adr-boss-ai-overhaul.md` |
 | Level work | `src/level/level_base.gd` + the specific level |

@@ -50,6 +50,7 @@ updates that may supersede or adjust what's in `goldmine_protocol_design.md`.
 10. Boss arena
 
 ## Good Work Looks Like
+- Episode 2 living-town preparation: `design/ep2/town/README.md`, `tools/ep2_town/`; route through `ep2-living-town`. Source-based plans protect doors/duel and provide connected avenues/activity clusters; a valid proposal is not runtime approval.
 - Bull/bear acting and grips: `design/ep2/motion/TRANSCRIPT_ADAPTATION.md` + `CHARACTER_MOTION_CONTRACT.md`; skills route from `ep2-character-performance`. Keep performance guides separate from appearance refs and require independent physical contacts.
 - Every mechanic doc includes: purpose, trigger, behavior, numbers, visual/audio cues
 - Level docs describe platform placement in terms of screen sections (16:9, 1920x1080 base)

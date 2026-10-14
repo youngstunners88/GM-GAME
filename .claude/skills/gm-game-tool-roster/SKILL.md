@@ -5,6 +5,9 @@ description: Always-on map of founder env keys, MCP, CLI. TRIGGER on any art, 3D
 
 # Awareness
 
+## Living-town preparation (2026-10-15)
+`tools/ep2_town/town_tool.py` provides offline `audit`, `plan`, `validate`, `handoff` commands; stdlib Python only. Use `ep2-living-town` for connected avenues, facade visibility, people/horses/dogs/chickens and instruments. It exports schematic/markers and unresolved asset/capture jobs, never provider calls or finished gameplay. See `tools/ep2_town/README.md` for commands and validator limits.
+
 ## Character-motion adaptation (2026-10-14)
 For the founder's BFS/MiniMax-H3 video transcript and Bull/bear grip work, use `ep2-character-performance`. MiniMax-H3 video swap is distinct from Tripo H3.1 model generation; neither output proves a rigged gameplay grip. Check tools in the actual executor: this pass found local Blender and Godot 4.3, but no bare `game-dev`/`tripo` or Xvfb. Historical "works" rows below are not current readiness. Use existing licensed clips/local authoring when optional tools are unavailable; no provider job ran to create these skills.
 
