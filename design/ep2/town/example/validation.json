@@ -1,0 +1,24 @@
+{
+  "valid_proposal": true,
+  "errors": [],
+  "unresolved_assets": [
+    "stable_hand",
+    "horse_west",
+    "horse_east",
+    "storekeeper",
+    "miner",
+    "laundry_worker",
+    "fiddler",
+    "fiddle",
+    "piano",
+    "dog_yard",
+    "dog_stable",
+    "chicken_1",
+    "chicken_2",
+    "chicken_3",
+    "water_pump",
+    "feed_sacks"
+  ],
+  "runtime_approved": false,
+  "note": "Checks cover proposal geometry and declared locks only; engine navigation, full moving-body collisions, visibility, sound and performance remain unverified."
+}
