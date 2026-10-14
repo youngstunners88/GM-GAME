@@ -82,7 +82,8 @@ func _ready() -> void:
 	w.queue_free()
 
 	var manifest: Dictionary = JSON.parse_string(_text("res://assets/audio-manifest.json"))
-	var story_ids := ["vo_bull_lava", "vo_bull_lift", "vo_bull_plan", "vo_lb_plan", "vo_bull_woods", "vo_bull_quad", "vo_lb_quad", "vo_bull_spy", "vo_lb_spy"]
+	var story_ids := ["vo_bull_lava", "vo_bull_lift", "vo_bull_plan", "vo_lb_plan", "vo_bull_woods", "vo_bull_quad", "vo_lb_quad", "vo_bull_spy", "vo_lb_spy",
+		"vo_bull_road", "vo_bull_ahead", "vo_bull_cart", "vo_bull_cover", "vo_bull_quiet", "vo_bull_sneak", "vo_bull_wait", "vo_bull_scout", "vo_bull_spotted", "vo_lb_road", "vo_lb_cart"]
 	var clean: bool = true
 	var bad: String = ""
 	var checked: int = 0

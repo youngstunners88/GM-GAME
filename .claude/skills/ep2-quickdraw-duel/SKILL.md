@@ -7,7 +7,7 @@ description: The bar draw in the GoldMine town (spec 2026-10-14 section 5) - a w
 
 - Trigger: someone in the bar notices Lil Blunt pay a quarter Bitcoin for his whiskey.
 - Demand, verbatim: "Give me a bitcoin or I give you the map to the auction where they can get more intel."
-- Stakes: die and pay BTC, or kill and get the map. Bull is NOT there. Sheriff Jake is the witness (`ep2-sheriff-jake`).
+- Stakes: die and pay BTC, or kill and get the map. Bull is NOT there. the Sheriff is the witness (`ep2-sheriff-jake`).
 - Outcome handling is NOT locked: build the win (the map; the opponent down; the sheriff calls it) and a lose that RETRIES the draw
   (story death is never permanent; 3-heart cap; no second health system). Bull arrives after it starts or ends (what he does: open).
 
@@ -29,3 +29,10 @@ never silently swap weapons.
 
 Foul before the signal -> redo; draw after the signal and hit first -> WIN + map item + sheriff line; too slow -> LOSE -> retry from the
 stand-off with hearts restored; Bull absent until the draw started; the sheriff present throughout.
+
+
+## UPDATE 2026-10-14: the man he draws against is a COWBOY, not a bear
+The stranger at the bar (and the barman) are **human** and **the town has no bears** (founder: "our man who draws with Lil Blunt is a cowboy and not a bear"). `cowboy.glb` =
+Tripo multiview from the Muapi sheet `fort_knox_prep/cowboy_stranger` (black flat-brim hat, charcoal waistcoat, rust-red shirt, red neckerchief, gloves, gun belt with an empty right holster, spurs),
+baked with two arm poses: `Idle` (arms down) and `Draw` (gun arm out, the revolver prop `Revolver` appears in his hand). On "Draw!" he swaps to the Draw pose; when shot he tips over (`fall_dead`).
+`Ep2TownFolk` is the actor; gate `tests/ep2_gold_town_test.tscn` asserts no `Ep2Actor` / bear node exists in the town.

@@ -1,6 +1,6 @@
 extends Node
 ## REAL-RENDER proof of the GoldMine town chamber (founder lock 2026-10-14) from Lil Blunt's own eye, rifle in hand: the street where
-## Bull dropped him, Sheriff Jake behind the certificate counter, the saloon bar and the barman, the stranger, the draw in the street,
+## Bull dropped him, the Sheriff and Minister Mike Dean in the certificate office, the saloon bar and the barman, the stranger, the draw in the street,
 ## and Bull walking up afterwards.
 ##   xvfb-run -a -s "-screen 0 1280x720x24" godot --rendering-driver opengl3 --rendering-method gl_compatibility \
 ##       --resolution 1280x720 --path . res://tools/ep2_shots/town_beats_shot.tscn -- out=.farm/town_beats
@@ -28,16 +28,20 @@ func _ready() -> void:
 	c._player_pos = Ep2GoldTown.local_to_world("Bldg_Certificates", Vector3(0.6, 0.0, -2.2))
 	c._advance_to(GoldTownChamber.Beat.OFFICE)
 	_run(2.0)
-	_look_at(c.get_jake().position + Vector3(0.0, 1.45, 0.0))
-	await _cap("3_sheriff_jake")
+	_look_at(c.get_sheriff().position + Vector3(0.0, 1.45, 0.0))
+	await _cap("3_sheriff")
+	_look_at(c.get_minister().position + Vector3(0.0, 1.2, 0.0))
+	await _cap("3c_minister_mike_dean")
 	var keep: Vector3 = c._player_pos
 	c._player_pos = Ep2GoldTown.local_to_world("Bldg_Certificates", Vector3(0.6, 0.0, -4.0))
 	c._camera.fov = 40.0
-	_look_at(c.get_jake().position + Vector3(0.0, 1.5, 0.0))
-	await _cap("3b_jake_close")
+	_look_at(c.get_sheriff().position + Vector3(0.0, 1.5, 0.0))
+	await _cap("3b_sheriff_close")
 	c._player_pos = keep
 	# the saloon
-	while c.get_beat_name() != "TO_BAR":
+	var g0: int = 0
+	while c.get_beat_name() != "TO_BAR" and g0 < 200:
+		g0 += 1
 		_run(0.5)
 	c._player_pos = Ep2GoldTown.local_to_world("Bldg_Saloon", GoldTownChamber.BAR_SPOT)
 	c._advance_to(GoldTownChamber.Beat.BAR)
@@ -53,21 +57,26 @@ func _ready() -> void:
 	c._show_active = false
 	c._show_blocks_control = false
 	c._advance_to(GoldTownChamber.Beat.SQUARE_UP)
-	c._opp_path = []
-	c._jake_path = []
+	c._opp.stop()
+	c._sheriff.stop()
+	c._minister.stop()
 	c._player_pos = GoldTownChamber.DUEL_MARK
 	c._advance_to(GoldTownChamber.Beat.DRAW)
 	_run(1.0)
 	_look_at(GoldTownChamber.OPP_MARK + Vector3(0.0, 1.5, 0.0))
 	await _cap("7_the_draw_wait")
-	while c.get_draw_state() != "go":
+	var g: int = 0
+	while c.get_draw_state() != "go" and g < 400:
+		g += 1
 		_run(0.1)
 	_run(0.5)
 	_look_at(GoldTownChamber.OPP_MARK + Vector3(0.0, 1.3, 0.0))
 	await _cap("8_draw")
 	c._on_player_shot()
 	_run(4.0)
-	while c.get_beat_name() == "DRAW":
+	g = 0
+	while c.get_beat_name() == "DRAW" and g < 200:
+		g += 1
 		_run(0.2)
 	_run(2.5)
 	_look_at(c.get_bull().position + Vector3(0.0, 2.0, 0.0))

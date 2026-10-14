@@ -1,28 +1,37 @@
 ---
 name: ep2-sheriff-jake
-description: Sheriff Jake - the founder's identity lock for the GoldMine town's lawman, a tribute to JakeX (TitanX ecosystem founder meme) elevated into a Western sheriff. Who he is, how he must look, how to build/rig him and what he does in the certificate office and the draw. TRIGGER on "sheriff", "Jake", "JakeX", "TitanX", "lawman", "the witness".
+description: The GoldMine town's lawman and certificate minister (founder, 2026-10-14) - the founder's OWN Sheriff (weathered, grey-bearded, long coat, pipe) and Minister Mike Dean (robot-headed chibi in black clerical coat, cross pendant), who issues the certificate. JakeX was CANCELLED - never reintroduce him. Use for the certificate office, the witness, their models, voices and lines. (Skill name kept for routing; it covers both characters.)
 ---
 
-# Identity (spec section 3, verbatim intent)
+# Cast lock (founder 2026-10-14: "replace JakeX with the sheriff I made ... The minister is Minister Mike Dean")
 
-Jake (JakeX / TitanX ecosystem tribute). **Cigarette in mouth.** Recognisable as the TitanX founder-meme figure elevated into a Western
-lawman. Not a random NPC: he is the on-screen identification of the TitanX ecosystem inside the Gold Mine town.
-Reference: `artifacts/episode2-gold-mine/references/founder_2026-10-13_town/sheriff_jake_jakex_identity.jpg`.
+**JakeX / "Sheriff Jake" is cancelled.** No curly-haired child-face, no neon "jakeX" hatband, no cigarette. Any leftover `jake`
+file, `vo_jake_*` id or `get_jake` is a bug - delete it.
 
-Carry over from the reference: the big curly dark-brown hair, round face with big brown eyes and full lips, the cigarette with a curl of
-smoke, and the neon-green "jakeX" ransom-letter band (as his hatband). Make him an **adult** lawman (the meme art is a child's face -
-never show a child smoking): sheriff's star, wide-brim hat over the curls, waistcoat, gun belt, duster, boots.
+| Who | Look (founder art: `artifacts/episode2-gold-mine/references/founder_2026-10-14_cast/`) | Role |
+|---|---|---|
+| **The Sheriff** | weathered older man, grey beard, wide-brim hat, scarf, star on a waistcoat, long dusty coat, gun belt, tall boots, **a pipe** with a curl of smoke | Greets Lil Blunt at the certificate office, lays out the rules, later the **witness** of the draw and the one who calls "draw" / fair and square. Gruff, fair, few words. |
+| **Minister Mike Dean** | small robot-headed chibi: blue-steel face, glowing orange eyes, red ear-cups, black flat-brim hat, black clerical coat, white collar, gold cross, robot hands. Real person behind him: Mike Dean, creator of titanxhub.com and a long-time TitanX proponent (x.com/MikeDeanLive). | Behind the certificate counter; **issues the certificate**, with the book open. Dignified, kind, a little ceremonial. |
 
-# Role in this slice
+Handle Minister Mike Dean respectfully: a tribute, never a joke at his expense. The Minister is a robot - no drug gags, no money
+claims. Rules he states stay faithful to the GoldMine whitepaper (in your name, cannot be sold on, cannot be traded, bring your
+share); **no invented numbers**; no wallet/contract addresses.
 
-- Certificate office: present and involved; he DIRECTS Lil Blunt (the certificate path / next step). Certificate rules stay faithful to
-  the GoldMine whitepaper (non-transferable claims, share requirements); do not resolve or invent numbers here.
-- Bar: he decides to be Lil Blunt's WITNESS - the only reason the draw is formal rather than an ambush.
-- Deeper TitanX ties: later. Do not invent lore.
+# Where it lives
 
-# Build
+- `src/episode2/chamber/gold_town.gd`: `SHERIFF_MODEL` / `MINISTER_MODEL` (`town/sheriff.glb`, `town/minister.glb`), `SHERIFF_HEIGHT`
+  1.78, `MINISTER_HEIGHT` 1.5, `SHERIFF_OFFICE_AT`, `MINISTER_DESK`, getters `get_sheriff()` / `get_minister()`. Both are `Ep2TownFolk`
+  (static model, bob/sway + baked arm poses - no rig).
+- Office order: `vo_sheriff_1` -> `vo_lb_cert1` -> `vo_sheriff_2` (rules) -> look to the Minister -> `vo_minister_1` -> look back ->
+  `vo_sheriff_3` (to the saloon). Draw: `vo_sheriff_witness/draw/foul/lose/win`.
+- Voices: ElevenLabs via `scripts/generate_audio.py` (see `ep2-voice-barks`); manifest ids in `assets/audio-manifest.json`.
+  Re-encode to mono 64k; delete stray `*.mp3` the generator leaves outside `src/assets/sounds/voice/`.
+- Models: founder art -> Tripo multiview (`muapi_3d.py run tripo3d-h31-multiview-to-3d`) -> `ep2-founder-model-bake` (T-pose arms
+  lowered, decimate with UV delimit, 1K textures). Tripo characters face +X: check with `tools/ep2_shots/glb_preview.tscn`.
+- Gate: `tests/ep2_gold_town_test.tscn`; look: `tools/ep2_shots/town_beats_shot.tscn` (shots 3, 3b, 3c).
 
-Concept stills (Muapi GPT Image 2, `ep2-hyperreal-scene-pipeline`) -> image-to-3D (Tripo H3.1 / Meshy via `tools/ep2_forge/muapi_3d.py`)
--> auto-rig to the same 24-bone skeleton family (`ep2-motion-emotion`, `ep2-rest-aware-retargeting`) -> Ep2Actor. The cigarette is a
-rigid prop on a head holder (`Ep2Actor.holder("Head")`) with a small smoke particle; never skinned. Voice: his own ElevenLabs voice id
-recorded in the manifest note; calm, dry, laconic. Prove with real first-person captures beside the reference (`ep2-reference-match-loop`).
+# Rules
+
+- The town has no bears and no Jake. Everyone in it is human or Minister Mike Dean.
+- The Sheriff is an adult lawman; the pipe is a period prop with a thin smoke curl, never glamorised.
+- Never put a real person's face on a model beyond the founder's own art.

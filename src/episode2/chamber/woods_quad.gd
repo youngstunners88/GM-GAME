@@ -84,6 +84,16 @@ const SHOT_HEARING := 46.0                         # a Winchester shot carries f
 const ENGINE_HEARING := 70.0                       # the quad's engine: every bear inside this turns to it ...
 const ENGINE_ALARM := 40.0                         # ... and inside this (with a clear line) knows it is the enemy
 const SEAT_SIDE := 0.55                            # the back seat is wide: he sits to the right of Inferno's axis and sees the road past his shoulder
+const CART_MODEL := "res://src/episode2/assets/town/donkey_cart.glb"
+const CART_S0 := 868.0                              # where the farmer's donkey cart stands on the road (arc length; the desert, past the last pines)
+const CART_SPEED := 2.4                             # ... and how fast it plods toward town (m/s)
+const CART_LATERAL := 3.1                           # it keeps to the right of the road; the quad passes on the left
+const CART_SCALE := 3.8                             # the Tripo model is ~1 m long, 0.59 m tall
+const BULL_AHEAD := ["vo_bull_ahead1", "vo_bull_ahead2", "vo_bull_ahead3"]      # Lil Blunt is scouting on ahead
+const BULL_WAIT := ["vo_bull_wait1", "vo_bull_wait2"]                           # Lil Blunt lags: a look back, a word
+const BULL_EASY := ["vo_bull_woods_sneak", "vo_bull_sneak2", "vo_bull_sneak3"]  # the rare murmur while they walk
+const BULL_QUIET := ["vo_bull_woods_quiet", "vo_bull_quiet2"]                   # he ran, a bear heard
+const BULL_COVER := ["vo_bull_cover1", "vo_bull_cover2", "vo_bull_cover3"]      # Lil Blunt is in trouble: Inferno fires
 const HEALTH_MAX := 3                              # the story's 3-heart cap (no second health system)
 const BEAR_ACTIVE_R := 150.0                       # bears further than this sleep in the engine (hidden, not processed) - the fog hides them anyway
 const ARROW_SPEED := 40.0
@@ -187,6 +197,18 @@ var _quad_yaw: float = 0.0
 var _engine: AudioStreamPlayer = null
 var _sneak_i: int = 0
 var _bull_waiting: bool = false
+var _bull_chat_cd: float = 14.0                      # seconds before Inferno may say another unprompted line (long + random: no nagging)
+var _bull_wait_t: float = 0.0                        # how long he has stood looking back this time
+var _bull_wait_lock: float = 0.0                     # after a wait he strolls on for a while before he will wait again
+var _bull_pace: float = 0.0
+var _line_idx: Dictionary = {}                       # pool key -> next line (rotates, never the same one twice running)
+var _sneak_arc: PackedFloat32Array = PackedFloat32Array()
+var _cart: Node3D = null                             # the farmer on his donkey cart (founder model), plodding down the desert road
+var _cart_s: float = CART_S0
+var _cart_warned: bool = false
+var _cart_state: int = 0                             # 0 ahead, 1 approached (slowing), 2 greeted, 3 passed
+var _bull_ride_cd: float = 0.0
+var _bull_ride_shots: int = 0
 var _warn_cd: float = 0.0
 var _stay_cd: float = 0.0
 var _bark_cd: float = 0.0
@@ -264,7 +286,7 @@ func _build_steps() -> Array:
 	var steps: Array = [_step_light_mats, _load_forest_kit, _step_ground, _build_ride_path, _resolve_specs, _build_trails]
 	for i in _forest_chunk_count():
 		steps.append(Callable(self, "_build_forest_chunk").bind(i))
-	steps.append_array([_build_sun_shafts, _build_mine_hut, _build_quad, _build_cover, _build_desert, _build_town])
+	steps.append_array([_build_sun_shafts, _build_mine_hut, _build_quad, _build_cover, _build_desert, _build_town, _build_cart])
 	var n: int = SCOUTS.size() + ROAD_BEARS.size()
 	for k in int(ceil(float(n) / 3.0)):
 		steps.append(Callable(self, "_spawn_batch").bind(k, 3))
@@ -1190,6 +1212,7 @@ func _on_beat_entered(b: int) -> void:
 				_hud.objective = "Stay close to Inferno. Walk soft - the bears' scouts hear a runner."
 			_begin_carry_line("vo_bull_retry" if _retry_line_pending else "vo_bull_woods_sneak")
 			_retry_line_pending = false
+			_bull_chat_cd = _rng.randf_range(22.0, 34.0)
 		Beat.REVEAL:
 			_bull.stop()
 			if _hud:
@@ -1446,41 +1469,115 @@ func _tick(delta: float) -> void:
 			_tick_bull_defence(delta)
 			_tick_sneak(delta)
 		Beat.RIDE:
+			_tick_bull_ride_cover(delta)
 			_tick_ride(delta)
 		Beat.DROPOFF:
 			_tick_dropoff(delta)
 
 
-func _tick_sneak(_delta: float) -> void:
+## Inferno the grown-up (founder 2026-10-14: "mechanical ... repeats walk soft and follow me ... if Lil Blunt goes on ahead he should acknowledge it
+## as an adult and not wait for him to come back"). He walks the trail at his own pace. Lil Blunt scouting AHEAD: one easy word now and then and he
+## carries on. Lil Blunt LAGGING: he stops, looks back, waits a few seconds, then strolls on slowly (never rigid). Unprompted lines are rare, random
+## and rotate through a pool (skill ep2-bull-companion-pacing).
+func _tick_sneak(delta: float) -> void:
+	_bull_chat_cd = maxf(0.0, _bull_chat_cd - delta)
+	_bull_wait_lock = maxf(0.0, _bull_wait_lock - delta)
 	if _bull_alarm or not _bull_swing.is_empty():
 		return
 	var trail: Array = SNEAK_TRAIL
 	var target2: Vector2 = trail[_sneak_i]
 	var bt := Vector3(target2.x, 0.0, target2.y)
+	var bull2 := Vector2(_bull.position.x, _bull.position.z)
+	var gap: float = _trail_s(Vector2(_player_pos.x, _player_pos.z)) - _trail_s(bull2)      # > 0: Lil Blunt is AHEAD of him on the trail
 	var dist_player: float = Vector2(_bull.position.x - _player_pos.x, _bull.position.z - _player_pos.z).length()
+	var at_end: bool = _sneak_i >= trail.size() - 1 and bull2.distance_to(Vector2((trail[trail.size() - 1] as Vector2).x, (trail[trail.size() - 1] as Vector2).y)) < 1.6
+	var want_pace: float = 1.9
 	if _show_active:
 		pass
-	elif dist_player > 6.5:
-		# too far behind: Inferno stops and waits (never abandons him)
-		if _bull.is_walking():
-			_bull.stop()
-		_bull_waiting = true
-		_bull.face_point(_player_pos)
-		if _stay_cd <= 0.0 and _hold <= 0.0:
-			_stay_cd = 9.0
-			_begin_carry_line("vo_bull_woods_sneak")
-	elif dist_player < 4.5 or not _bull_waiting:
+	elif at_end:
+		# at the thicket he does wait for him - the reveal is theirs together
+		if dist_player > 8.0:
+			if _bull.is_walking():
+				_bull.stop()
+			_bull.face_point(_player_pos)
+			_bull_chat(BULL_WAIT, 12.0, 20.0)
+	elif gap > 3.5 and dist_player > 4.0:
+		# he is out in front: Inferno lets him scout, says so once in a while, and keeps his own pace
+		_bull_wait_t = 0.0
 		_bull_waiting = false
-		if not _bull.is_walking():
-			_bull.walk_to(bt, 1.9)
-	if Vector2(_bull.position.x, _bull.position.z).distance_to(target2) < 0.35:
+		if gap > 6.0:
+			_bull_chat(BULL_AHEAD, 18.0, 34.0)
+		want_pace = 2.3
+		_bull_walk_pace(bt, want_pace)
+	elif dist_player > 8.0 and gap < -2.0:
+		if _bull_wait_lock <= 0.0:
+			# a look back and a short wait ...
+			_bull_wait_t += delta
+			_bull_waiting = true
+			if _bull.is_walking():
+				_bull.stop()
+			_bull.face_point(_player_pos)
+			if _bull_wait_t > 0.8:
+				_bull_chat(BULL_WAIT, 22.0, 38.0)
+			if _bull_wait_t > 3.8:
+				# ... then he gets on with it: he is a grown man, he strolls on and Lil Blunt catches up
+				_bull_wait_lock = 16.0
+				_bull_wait_t = 0.0
+				_bull_waiting = false
+		else:
+			_bull_walk_pace(bt, 1.25)
+	else:
+		_bull_wait_t = 0.0
+		_bull_waiting = false
+		_bull_walk_pace(bt, want_pace)
+		_bull_chat(BULL_EASY, 40.0, 75.0)
+	if bull2.distance_to(target2) < 0.35:
 		_sneak_i += 1
 		_intro_scout_at(_sneak_i)
 		if _sneak_i >= trail.size():
 			_sneak_i = trail.size() - 1
-			if dist_player < 6.0:
+			if dist_player < 8.0:
 				_advance_to(Beat.REVEAL)
 			return
+
+
+## Walk toward `bt` at `pace` (re-issued when the pace changes, so a stroll turns into a stride and back without a stop).
+func _bull_walk_pace(bt: Vector3, pace: float) -> void:
+	if not _bull.is_walking() or absf(_bull_pace - pace) > 0.05:
+		_bull_pace = pace
+		_bull.walk_to(bt, pace)
+
+
+## One unprompted line from `pool`, rotating (never the same line twice running), then silence for a random `cd_min`..`cd_max` seconds.
+func _bull_chat(pool: Array, cd_min: float, cd_max: float) -> bool:
+	if _bull_chat_cd > 0.0 or _hold > 0.0 or _show_active:
+		return false
+	var key: String = str(pool[0])
+	var i: int = int(_line_idx.get(key, _rng.randi() % pool.size()))
+	_line_idx[key] = (i + 1) % pool.size()
+	_bull_chat_cd = _rng.randf_range(cd_min, cd_max)
+	_begin_carry_line(str(pool[i % pool.size()]))
+	return true
+
+
+## Arc length along the sneak trail of the point nearest `p` (how far along the trail someone is, whatever side of it he wandered to).
+func _trail_s(p: Vector2) -> float:
+	var tr: Array = SNEAK_TRAIL
+	if _sneak_arc.is_empty():
+		_sneak_arc.append(0.0)
+		for i in range(1, tr.size()):
+			_sneak_arc.append(_sneak_arc[i - 1] + (tr[i] as Vector2).distance_to(tr[i - 1] as Vector2))
+	var best_d: float = 1e9
+	var best_s: float = 0.0
+	for i in range(tr.size() - 1):
+		var a: Vector2 = tr[i]
+		var ab: Vector2 = (tr[i + 1] as Vector2) - a
+		var t: float = clampf((p - a).dot(ab) / maxf(ab.length_squared(), 0.001), 0.0, 1.0)
+		var d: float = p.distance_to(a + ab * t)
+		if d < best_d:
+			best_d = d
+			best_s = _sneak_arc[i] + ab.length() * t
+	return best_s
 
 
 ## Inferno names the scout they are passing (a quiet aside, only if that bear is alive and has not noticed them).
@@ -1623,12 +1720,15 @@ func _noise(at: Vector3, radius: float, kind: String) -> int:
 	if n > 0 and kind != "engine" and kind != "leaves" and (_beat == Beat.SNEAK or _beat == Beat.REVEAL):
 		_noise_hits += 1
 		if _warn_cd <= 0.0:
-			_warn_cd = 7.0
+			_warn_cd = 14.0
 			var shot: bool = kind == "shot"
 			if _hud:
 				_hud.toast("A SHOT CARRIES!" if shot else "SHH! WALK SOFT", 2.0)
 			# a hiss is urgent: it cuts whatever he was saying
-			_begin_carry_line("vo_bull_woods_shot" if shot else "vo_bull_woods_quiet")
+			var qi: int = int(_line_idx.get("quiet", 0))
+			_line_idx["quiet"] = qi + 1
+			_bull_chat_cd = maxf(_bull_chat_cd, 12.0)
+			_begin_carry_line("vo_bull_woods_shot" if shot else str(BULL_QUIET[qi % BULL_QUIET.size()]))
 	return n
 
 
@@ -1638,17 +1738,31 @@ func _tick_bull_defence(delta: float) -> void:
 	if _bull == null:
 		return
 	_bull_fire_cd = maxf(0.0, _bull_fire_cd - delta)
+	# "if he sees Lil Blunt struggling" (founder 2026-10-14): hurt, or a hostile bear closing on HIM - then Inferno does not wait for a bear to be
+	# coming at himself: he covers Lil Blunt, fires faster and straighter, and steps in for a clear line.
 	var threat: Ep2BearBrain = null
-	var best: float = 34.0
+	var best: float = 40.0
+	var near_player: bool = false
 	for b in _bears:
 		var br: Ep2BearBrain = b
 		if not br.is_alert() or br.is_dead():
 			continue
 		var d: float = br.actor.position.distance_to(_bull.position)
-		if d < best and not _los_blocked(Vector2(_bull.position.x, _bull.position.z), Vector2(br.actor.position.x, br.actor.position.z)):
-			best = d
+		var dp: float = br.actor.position.distance_to(_player_pos)
+		var pressing: bool = dp < 13.0
+		near_player = near_player or pressing
+		var score: float = d - (14.0 if pressing else 0.0)
+		if score < best and d < 40.0 and not _los_blocked(Vector2(_bull.position.x, _bull.position.z), Vector2(br.actor.position.x, br.actor.position.z)):
+			best = score
 			threat = br
+	var struggling: bool = _health < HEALTH_MAX or near_player
 	if threat == null:
+		if near_player and _health < HEALTH_MAX:
+			# no clear line from where he stands: he steps toward Lil Blunt to get one
+			var toward: Vector3 = (_player_pos - _bull.position)
+			toward.y = 0.0
+			if toward.length() > 5.0:
+				_bull.walk_to(_bull.position + toward.normalized() * minf(toward.length() - 3.5, 6.0), 3.4)
 		if _bull_alarm:
 			_bull_calm_t += delta
 			if _bull_calm_t > 2.5:
@@ -1659,27 +1773,69 @@ func _tick_bull_defence(delta: float) -> void:
 	if not _bull_alarm:
 		_bull_alarm = true
 		_bull.stop()
-		_bull_fire_cd = 0.9
+		_bull_fire_cd = 0.5 if struggling else 0.9
 		if _bark_cd <= 0.0:
 			_bark_cd = 8.0
-			_begin_carry_line("vo_bull_spotted")
+			if _health <= 1:
+				var ci0: int = int(_line_idx.get("cover", 0))
+				_line_idx["cover"] = ci0 + 1
+				_begin_carry_line(str(BULL_COVER[ci0 % BULL_COVER.size()]))      # Lil Blunt is on his last heart: not "he's seen us", "I've got you"
+			else:
+				_begin_carry_line("vo_bull_spotted")
+	elif struggling and _health <= 1 and _bark_cd <= 0.0 and _hold <= 0.0:
+		_bark_cd = 10.0
+		var ci: int = int(_line_idx.get("cover", 0))
+		_line_idx["cover"] = ci + 1
+		_begin_carry_line(str(BULL_COVER[ci % BULL_COVER.size()]))
 	_bull.face_point(threat.actor.position)
 	var hero: Ep2BullHero = _bull.get_node_or_null("BullHero")
 	if hero:
 		hero.aim_at(threat.actor.global_position + Vector3.UP * threat.actor.height_m * 0.6)
 	if _bull_fire_cd <= 0.0 and _bull.is_facing(threat.actor.position, 0.35):
-		_bull_fire_cd = 1.6 + _rng.randf() * 0.6
-		_bull_fire_at(threat)
+		_bull_fire_cd = (1.0 + _rng.randf() * 0.4) if struggling else (1.6 + _rng.randf() * 0.6)
+		_bull_fire_at(threat, 0.72 if struggling else 0.55)
 
 
-func _bull_fire_at(br: Ep2BearBrain) -> void:
+## Inferno on the quad covers Lil Blunt too (the road fight): when a bear is on the quad, or he is hurt, he lets off a round over his shoulder
+## from the saddle (no reach, the rifle pivots in his fist). Not a turret - one round every couple of seconds, and only when it matters.
+func _tick_bull_ride_cover(delta: float) -> void:
+	_bull_ride_cd = maxf(0.0, _bull_ride_cd - delta)
+	if _bull_ride_cd > 0.0 or _bull == null or _player_pos.z > FOREST_END_Z:
+		return
+	var best: Ep2BearBrain = null
+	var best_d: float = 1e9
+	var hurt: bool = _health < HEALTH_MAX
+	for b in _bears:
+		var br: Ep2BearBrain = b
+		if br.is_dead() or not br.is_alert() or not br.actor.visible:
+			continue
+		var d: float = br.actor.position.distance_to(_player_pos)
+		var reach: float = 26.0 if hurt else 11.0
+		if br.role() == "archer" and not hurt:
+			continue                                                       # an archer at range is for Lil Blunt to answer unless he is hurt
+		if d < reach and d < best_d:
+			best_d = d
+			best = br
+	if best == null:
+		return
+	_bull_ride_cd = (1.7 if hurt else 2.6) + _rng.randf() * 0.7
+	_bull_ride_shots += 1
+	_bull_fire_at(best, 0.72 if hurt else 0.5)
+	if _health <= 1 and _bark_cd <= 0.0 and _hold <= 0.0:
+		_bark_cd = 12.0
+		var ci: int = int(_line_idx.get("cover", 0))
+		_line_idx["cover"] = ci + 1
+		_begin_carry_line(str(BULL_COVER[ci % BULL_COVER.size()]))
+
+
+func _bull_fire_at(br: Ep2BearBrain, hit_chance: float = 0.55) -> void:
 	_bull_shots += 1
 	var target: Vector3 = br.actor.position + Vector3(0.0, br.actor.height_m * 0.6, 0.0)
 	var hero: Ep2BullHero = _bull.get_node_or_null("BullHero")
 	var muzzle: Vector3 = hero.fire_at(target) if hero else _bull.position + Vector3.UP * 1.5
 	_flash(muzzle)
 	_sfx3d("ep2_winchester_shot_%d" % (1 + _bull_shots % 3), muzzle, -1.0, 0.92, 90.0)
-	if _rng.randf() < 0.55:
+	if _rng.randf() < hit_chance:
 		br.take_hit(_bull.position)
 	_noise(_bull.position, SHOT_HEARING, "bull_shot")
 
@@ -1733,6 +1889,7 @@ func _tick_ride(delta: float) -> void:
 	var h1: float = float(_ride_sample(_ride_s + 14.0)[1])
 	var bend: float = clampf(absf(angle_difference(h0, h1)) / 0.55, 0.0, 1.0)
 	var target_speed: float = lerpf(RIDE_SPEED, RIDE_BEND_SPEED, bend)
+	target_speed = minf(target_speed, _tick_cart(delta))
 	if remaining < 60.0:
 		target_speed = minf(target_speed, 3.0 + 6.0 * remaining / 60.0)        # rolling into town at a walking pace
 	if remaining < 16.0:
@@ -1831,6 +1988,7 @@ func get_alert_count() -> int: return _alerts
 func get_arrows_loosed() -> int: return _arrows_loosed
 func get_arrow_hits() -> int: return _arrow_hits
 func get_bull_shots() -> int: return _bull_shots
+func get_bull_ride_shots() -> int: return _bull_ride_shots
 func get_attempt() -> int: return _attempt
 func is_failing() -> bool: return _failing
 
@@ -2243,6 +2401,15 @@ func _retry_from_surface() -> void:
 	_scope_k = 0.0
 	_rideoff = {}
 	_dropoff_done = false
+	_cart_s = CART_S0
+	_cart_state = 0
+	_cart_warned = false
+	_bull_chat_cd = 20.0
+	_bull_wait_t = 0.0
+	_bull_wait_lock = 0.0
+	_bull_ride_cd = 0.0
+	if _cart != null:
+		_place_cart(0.0)
 	_road_lines.clear()
 	_show_active = false
 	_show_blocks_control = false
@@ -2276,6 +2443,63 @@ func _collide(p: Vector3) -> Vector3:
 			q.x = tp.x + out.x
 			q.z = tp.y + out.y
 	return q
+
+
+# --- the farmer and his donkey (founder 2026-10-14: "on the road they should drive past the man on the cart with the donkey - slow down, pass him and wave") ---
+
+func _build_cart() -> void:
+	if not ResourceLoader.exists(CART_MODEL):
+		return
+	var holder := Node3D.new()
+	holder.name = "DonkeyCart"
+	var model: Node3D = (load(CART_MODEL) as PackedScene).instantiate() as Node3D
+	model.scale = Vector3.ONE * CART_SCALE
+	model.rotation.y = -PI * 0.5                      # the model's nose is +X; the holder's +Z is the way it travels
+	holder.add_child(model)
+	_visuals.add_child(holder)
+	_cart = holder
+	_place_cart(0.0)
+
+
+## Put the cart on its place on the road (right of the centre line), nose down the road, with a plodding bob.
+func _place_cart(t: float) -> void:
+	if _cart == null:
+		return
+	var smp: Array = _ride_sample(_cart_s)
+	var yaw: float = float(smp[1])
+	var right := Vector3(-cos(yaw), 0.0, sin(yaw))
+	var pos: Vector3 = (smp[0] as Vector3) + right * CART_LATERAL
+	pos.y = 0.012 + 0.02 * absf(sin(t * 4.2))
+	_cart.position = pos
+	_cart.rotation = Vector3(0.012 * sin(t * 2.1), yaw, 0.01 * sin(t * 4.2))
+
+
+## The cart plods on; the quad eases down behind it (so it does not spook the donkey), draws level, Inferno greets the farmer, Lil Blunt answers,
+## and they open up again past him. Returns the speed this allows the quad.
+func _tick_cart(delta: float) -> float:
+	if _cart == null or _cart_state >= 3:
+		return 99.0
+	_cart_s += CART_SPEED * delta
+	_place_cart(_elapsed)
+	var gap: float = _cart_s - _ride_s                  # > 0: the cart is still ahead of them on the road
+	var allow: float = 99.0
+	if gap < 70.0 and gap > -10.0:
+		allow = maxf(CART_SPEED + 2.7, CART_SPEED + 2.7 + (gap - 8.0) * 0.16)     # eases from the straight-road speed down to a stroll past him
+		if _cart_state == 0:
+			_cart_state = 1
+		if not _cart_warned and gap > 16.0 and _hold <= 0.0 and not _show_active:
+			_cart_warned = true
+			_begin_carry_line("vo_bull_cart1")
+	if _cart_state == 1 and gap < 13.0:
+		_cart_state = 2
+		_start_show([FacilityShow._say("vo_bull_cart2", 0.15), FacilityShow._say("vo_cart_man", 0.15), FacilityShow._say("vo_lb_cart", 0.1)])
+	if gap < -24.0:
+		_cart_state = 3                                  # behind them now: the road opens up again
+	return allow
+
+
+func get_cart_state() -> int: return _cart_state
+func get_cart_node() -> Node3D: return _cart
 
 
 # --- out of the woods: the desert, the town, the drop-off (founder lock 2026-10-14) ------------------------------------------

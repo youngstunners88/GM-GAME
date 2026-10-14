@@ -12,7 +12,7 @@ the next agent hunting for files that were renamed.
 
 | Path | Why |
 |---|---|
-| `STATUS.md` | Current shipped state — the client-facing truth |
+| `STATUS.md` (first 40 lines only: `sed -n 1,40p STATUS.md`) | Current shipped state — the client-facing truth. Older entries: `docs/status-archive/` (1.3 MB - never read whole) |
 | `src/autoload/game_manager.gd` | Global state, progression, save/load |
 | `src/autoload/state_machine.gd` | MENU/PLAYING/PAUSED transitions + web state beacon |
 

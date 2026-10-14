@@ -468,40 +468,6 @@
       ]
     },
     {
-      "id": "sheriff_jake",
-      "title": "Sheriff Jake (JakeX tribute, adult lawman)",
-      "views": [
-        {
-          "name": "front",
-          "kind": "i2i",
-          "lock": "object",
-          "aspect": "3:4",
-          "refs": [
-            "artifacts/episode2-gold-mine/references/founder_2026-10-13_town/sheriff_jake_jakex_identity.jpg"
-          ],
-          "prompt": "Full-body front view, A-pose, of an ADULT Wild West sheriff whose face is a grown-up version of the reference character: big curly dark-brown hair under a wide-brim brown cowboy hat whose hatband is a neon-green band with black ransom-letter text 'jakeX', round face, big brown eyes, full lips, a lit cigarette in his mouth with a thin curl of smoke. Silver sheriff's star on a brown waistcoat over a white shirt, string tie, long canvas duster, gun belt with a holstered revolver, jeans, boots. Stylised-realistic 3D game character, grown man proportions."
-        },
-        {
-          "name": "side",
-          "kind": "i2i",
-          "lock": "object",
-          "aspect": "3:4",
-          "refs": [],
-          "prompt": "The same sheriff character, full-body left side view, A-pose, identical outfit, hat, hatband, cigarette and proportions.",
-          "from": "front"
-        },
-        {
-          "name": "back",
-          "kind": "i2i",
-          "lock": "object",
-          "aspect": "3:4",
-          "refs": [],
-          "prompt": "The same sheriff character, full-body back view, A-pose, identical outfit, hat, curly hair under the hat, duster and gun belt.",
-          "from": "front"
-        }
-      ]
-    },
-    {
       "id": "town_kit",
       "title": "Gold-rush town kit textures (founder target goldmine_town_target.jpg)",
       "constraints": [

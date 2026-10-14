@@ -6,32 +6,44 @@ extends Ep2Interlude
 ## desert at the same coordinates in both rooms) and plays the rest of the slice in first person, the Winchester in his hands:
 ##
 ##   STREET    walk to the CERTIFICATES office
-##   OFFICE    Sheriff Jake (curls, cigarette, green jakeX hatband, star) behind the counter: the certificate is made out in your
+##   OFFICE    The Sheriff (the founder's own character: weathered, long duster, star, a wisp of smoke) and Minister Mike Dean (the certificate book) behind the counter: the certificate is made out in your
 ##             name, can't be sold on or traded, bring your share and he stamps it (whitepaper-faithful, no invented numbers)
 ##   TO_BAR    cross the street to the SALOON
 ##   BAR       a whiskey, a quarter of a Bitcoin on the bar, the bartender's jaw drops, a stranger at the end of the bar noticed -
-##             "Give me a bitcoin or I give you the map to the auction where they can get more intel." Lil Blunt won't. Jake walks
+##             "Give me a bitcoin or I give you the map to the auction where they can get more intel." Lil Blunt won't. the Sheriff walks
 ##             in: he is the witness
-##   SQUARE_UP out in the street, face him; Jake stands to the side
-##   DRAW      the rifle stays down until Jake says DRAW (a seeded wait). Fire early = a foul, Jake makes them redo it. Hit him first
-##             = the map. Too slow = he shoots first: the screen drops, hearts restored, Jake sets it up again (retry, never a death)
-##   WON       Jake hands him the map; Bull comes walking up the street (his reaction is not locked: no line yet)
+##   SQUARE_UP out in the street, face him; the Sheriff stands to the side
+##   DRAW      the rifle stays down until the Sheriff says DRAW (a seeded wait). Fire early = a foul, the Sheriff makes them redo it. Hit him first
+##             = the map. Too slow = he shoots first: the screen drops, hearts restored, the Sheriff sets it up again (retry, never a death)
+##   WON       the Sheriff hands him the map; Bull comes walking up the street (his reaction is not locked: no line yet)
 ##   DONE      TO BE CONTINUED
 ## Never in this room: the banned Episode 2 protocol (ep2-fort-knox-arc rule 4), a second health system, a wallet or contract address.
 
 enum Beat { STREET, OFFICE, TO_BAR, BAR, SQUARE_UP, DRAW, WON, DONE }
 
-const JAKE_MODEL := "res://src/episode2/assets/town/sheriff_jake.glb"
+const SHERIFF_MODEL := "res://src/episode2/assets/town/sheriff.glb"          # the founder's own Sheriff (Drive 2026-10-14): weathered, bearded, long coat, pipe - baked for the pack
+const MINISTER_MODEL := "res://src/episode2/assets/town/minister.glb"      # Minister Mike Dean: the founder's robot-headed minister (Drive 2026-10-14), baked for the pack
+const COWBOY_MODEL := "res://src/episode2/assets/town/cowboy.glb"        # the stranger: a HUMAN cowboy (child meshes "Idle" and "Draw")
+const BARTENDER_MODEL := "res://src/episode2/assets/town/bartender.glb"  # the barman: a human too - the town has no bears
+const COWBOY_HEIGHT := 1.84
+## His gun hand in the Draw pose, as a fraction of his height (x right, y up, z forward; measured in Blender by prep_founder_town_models.py).
+const COWBOY_HAND_DRAW := Vector3(-0.18, 0.75, 0.10)
+const BARTENDER_HEIGHT := 1.76
 const WHISKEY_MODEL := "res://src/episode2/assets/whiskey_glass.glb"
 const COIN_MODEL := "res://src/episode2/assets/btc_coin.glb"
-const JAKE_HEIGHT := 1.86
+const SHERIFF_HEIGHT := 1.78
+const MINISTER_HEIGHT := 1.65
+const MINISTER_STEP := 0.5                               # the low wooden step he stands on behind the counter, so the counter does not hide him
 ## In each building's local frame (x along the front, -z inside).
-const JAKE_DESK := Vector3(0.6, 0.0, -5.7)           # behind the certificate counter
+## Where the cigarette sits on the Sheriff, as a fraction of his height (x right, y up, z forward).
+const SHERIFF_MOUTH := Vector3(0.0, 0.9, 0.07)
+const MINISTER_DESK := Vector3(0.6, 0.0, -5.7)          # Minister Mike Dean behind the certificate counter, the certificate book open
+const SHERIFF_OFFICE_AT := Vector3(-2.3, 0.0, -2.9)     # the Sheriff by the stove, where he greets whoever walks in
 const OFFICE_SPOT := Vector3(0.6, 0.0, -3.4)          # where Lil Blunt stands at the counter
 const BAR_SPOT := Vector3(-0.6, 0.0, -7.7)            # at the saloon bar
 const BARTENDER_AT := Vector3(-0.8, 0.0, -10.0)
 const OPP_AT_BAR := Vector3(2.5, 0.0, -7.6)
-const JAKE_SALOON := Vector3(1.4, 0.0, -2.2)           # just inside the saloon door
+const SHERIFF_SALOON := Vector3(1.4, 0.0, -2.2)           # just inside the saloon door
 ## The duel in the street (world).
 const DUEL_MARK := Vector3(0.0, 0.0, 1417.0)
 const OPP_MARK := Vector3(0.0, 0.0, 1432.0)
@@ -43,14 +55,13 @@ const OPP_REACTION_STEP := 0.3                        # ...a little more each ti
 const OPP_HIT_R := 0.5
 
 var _town_col: Dictionary = {}
-var _jake: Node3D = null
-var _jake_path: Array = []
-var _jake_face: float = 0.0
-var _jake_walk_t: float = 0.0
-var _jake_smoke: CPUParticles3D = null
-var _bartender: Ep2Actor = null
-var _opp: Ep2Actor = null
-var _opp_path: Array = []
+var _sheriff: Ep2TownFolk = null
+var _minister: Ep2TownFolk = null
+var _sheriff_delay: float = 0.0
+var _sheriff_goes: Array = []                            # where the Sheriff walks once his delay has run out
+var _sheriff_smoke: CPUParticles3D = null
+var _bartender: Ep2TownFolk = null
+var _opp: Ep2TownFolk = null
 var _revolver: Node3D = null
 var _glass: Node3D = null
 var _coin: Node3D = null
@@ -139,24 +150,23 @@ func _step_desert() -> void:
 
 
 func _step_people() -> void:
-	_build_jake()
-	_bartender = Ep2BearKit.make_bear(_visuals, Ep2GoldTown.local_to_world("Bldg_Saloon", BARTENDER_AT), 2.0)
+	_build_sheriff()
+	_bartender = Ep2TownFolk.new()
 	_bartender.name = "Bartender"
-	_face_actor(_bartender, Ep2GoldTown.local_to_world("Bldg_Saloon", BAR_SPOT))
-	_apron(_bartender)
-	_opp = Ep2BearKit.make_bear(_visuals, Ep2GoldTown.local_to_world("Bldg_Saloon", OPP_AT_BAR), 2.25)
+	_visuals.add_child(_bartender)
+	_bartender.setup(BARTENDER_MODEL, BARTENDER_HEIGHT, Color(0.85, 0.82, 0.74))
+	_bartender.position = Ep2GoldTown.local_to_world("Bldg_Saloon", BARTENDER_AT)
+	_face_folk(_bartender, Ep2GoldTown.local_to_world("Bldg_Saloon", BAR_SPOT))
+	_opp = Ep2TownFolk.new()
 	_opp.name = "Stranger"
-	_face_actor(_opp, Ep2GoldTown.local_to_world("Bldg_Saloon", BAR_SPOT + Vector3(0.0, 0.0, -1.5)))
+	_visuals.add_child(_opp)
+	_opp.setup(COWBOY_MODEL, COWBOY_HEIGHT, Color(0.2, 0.17, 0.15), false)
+	_opp.position = Ep2GoldTown.local_to_world("Bldg_Saloon", OPP_AT_BAR)
+	_face_folk(_opp, Ep2GoldTown.local_to_world("Bldg_Saloon", BAR_SPOT + Vector3(0.0, 0.0, -1.5)))
+	# his revolver: in the holster (hidden) until he draws, then in his gun hand
 	_revolver = _make_revolver()
-	var hold: Node3D = _opp.holder("RightHand")
-	if hold != null:
-		hold.add_child(_revolver)
-		_revolver.position = Vector3(0.0, 0.06, 0.04)
-		_revolver.rotation = Vector3(0.0, 0.0, -PI * 0.5)
-	else:
-		_opp.add_child(_revolver)
-		_revolver.position = Vector3(0.35, 1.0, 0.1)
-	_hat(_opp, Color(0.13, 0.10, 0.08))
+	_opp.add_child(_revolver)
+	_revolver.visible = false
 	_glass = _prop(WHISKEY_MODEL, 0.11)
 	_coin = _prop(COIN_MODEL, 0.06)
 	_flash = OmniLight3D.new()
@@ -169,53 +179,43 @@ func _step_people() -> void:
 		_bull.visible = false
 
 
-## Sheriff Jake: the Tripo model (static) if it is in the build, scaled to JAKE_HEIGHT, with a lit cigarette in his mouth trailing smoke.
-## Without the model a plain stand-in figure keeps the beats playable (the test does not depend on the art).
-func _build_jake() -> void:
-	_jake = Node3D.new()
-	_jake.name = "SheriffJake"
-	_visuals.add_child(_jake)
-	var body: Node3D = null
-	if ResourceLoader.exists(JAKE_MODEL):
-		body = (load(JAKE_MODEL) as PackedScene).instantiate() as Node3D
-	if body != null:
-		_jake.add_child(body)
-		var aabb: AABB = _aabb_of(body)
-		var s: float = JAKE_HEIGHT / maxf(aabb.size.y, 0.01)
-		body.scale = Vector3.ONE * s
-		body.position = Vector3(-(aabb.position.x + aabb.size.x * 0.5) * s, -aabb.position.y * s, -(aabb.position.z + aabb.size.z * 0.5) * s)
-		for mi in body.find_children("*", "MeshInstance3D", true, false):
-			(mi as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-	else:
-		var coat := _plain(Color(0.30, 0.24, 0.18))
-		_cyl(0.24, 0.30, 1.35, Vector3(0.0, 0.68, 0.0), coat, _jake)
-		_sphere(0.15, Vector3(0.0, 1.55, 0.0), _plain(Color(0.86, 0.68, 0.55)), _jake)
-		_hat(_jake, Color(0.42, 0.30, 0.18), 1.68)
-		_box(Vector3(0.08, 0.08, 0.02), Vector3(-0.12, 1.2, 0.27), _plain(Color(0.95, 0.80, 0.35), 0.3, 0.9), _jake)   # the star
-	# the cigarette (skill ep2-sheriff-jake: always in his mouth), its ember and a thin curl of smoke
-	var cig := Node3D.new()
-	cig.name = "Cigarette"
-	cig.position = Vector3(0.04, JAKE_HEIGHT * 0.865, 0.13)
-	cig.rotation = Vector3(0.25, 0.35, 0.0)
-	_jake.add_child(cig)
-	var stick := _cyl(0.006, 0.006, 0.075, Vector3.ZERO, _plain(Color(0.95, 0.93, 0.88), 0.7), cig)
-	stick.rotation = Vector3(PI * 0.5, 0.0, 0.0)
-	stick.position = Vector3(0.0, 0.0, 0.035)
-	_sphere(0.008, Vector3(0.0, 0.0, 0.074), _glow(Color(1.0, 0.42, 0.12), 3.5), cig)
-	_jake_smoke = _particles(18, 2.6, Color(0.86, 0.86, 0.84, 0.33), 0.07)
-	_jake_smoke.name = "CigSmoke"
-	_jake_smoke.position = Vector3(0.0, 0.0, 0.076)
-	_jake_smoke.direction = Vector3.UP
-	_jake_smoke.spread = 12.0
-	_jake_smoke.initial_velocity_min = 0.05
-	_jake_smoke.initial_velocity_max = 0.12
-	_jake_smoke.gravity = Vector3(0.02, 0.06, 0.0)
-	_jake_smoke.scale_amount_min = 0.6
-	_jake_smoke.scale_amount_max = 2.6
-	cig.add_child(_jake_smoke)
-	_jake.position = Ep2GoldTown.local_to_world("Bldg_Certificates", JAKE_DESK)
-	_jake_face = _yaw_to(_jake.position, Ep2GoldTown.local_to_world("Bldg_Certificates", OFFICE_SPOT))
-	_jake.rotation.y = _jake_face
+## The Sheriff: the founder's own model (Drive 2026-10-14), arms lowered out of the T-pose, grey beard, star, pipe - with a
+## thin curl of smoke over his lip. Beside him stands Minister Mike Dean, the founder's robot-headed minister. Without the model a plain stand-in keeps the beats playable.
+func _build_sheriff() -> void:
+	_sheriff = Ep2TownFolk.new()
+	_sheriff.name = "Sheriff"
+	_visuals.add_child(_sheriff)
+	_sheriff.setup(SHERIFF_MODEL, SHERIFF_HEIGHT, Color(0.42, 0.30, 0.18))
+	_sheriff_smoke = _particles(18, 2.6, Color(0.86, 0.86, 0.84, 0.33), 0.06)
+	_sheriff_smoke.name = "CigSmoke"
+	_sheriff_smoke.position = SHERIFF_MOUTH * SHERIFF_HEIGHT
+	_sheriff_smoke.direction = Vector3.UP
+	_sheriff_smoke.spread = 12.0
+	_sheriff_smoke.initial_velocity_min = 0.05
+	_sheriff_smoke.initial_velocity_max = 0.12
+	_sheriff_smoke.gravity = Vector3(0.02, 0.06, 0.0)
+	_sheriff_smoke.scale_amount_min = 0.6
+	_sheriff_smoke.scale_amount_max = 2.6
+	_sheriff.add_child(_sheriff_smoke)
+	_sheriff.position = Ep2GoldTown.local_to_world("Bldg_Certificates", SHERIFF_OFFICE_AT)
+	_face_folk(_sheriff, Ep2GoldTown.local_to_world("Bldg_Certificates", OFFICE_SPOT))
+	_minister = Ep2TownFolk.new()
+	_minister.name = "MinisterMikeDean"
+	_visuals.add_child(_minister)
+	_minister.setup(MINISTER_MODEL, MINISTER_HEIGHT, Color(0.1, 0.1, 0.12))
+	_minister.position = Ep2GoldTown.local_to_world("Bldg_Certificates", MINISTER_DESK) + Vector3(0.0, MINISTER_STEP, 0.0)
+	var step := MeshInstance3D.new()
+	step.name = "MinisterStep"
+	var box := BoxMesh.new()
+	box.size = Vector3(1.1, MINISTER_STEP, 0.9)
+	step.mesh = box
+	var wood := StandardMaterial3D.new()
+	wood.albedo_color = Color(0.32, 0.2, 0.11)
+	wood.roughness = 0.9
+	step.material_override = wood
+	step.position = _minister.position - Vector3(0.0, MINISTER_STEP * 0.5, 0.0)
+	_visuals.add_child(step)
+	_face_folk(_minister, Ep2GoldTown.local_to_world("Bldg_Certificates", OFFICE_SPOT))
 
 
 static func _aabb_of(n: Node3D) -> AABB:
@@ -241,21 +241,7 @@ static func _local_xf(root: Node3D, n: Node3D) -> Transform3D:
 	return t
 
 
-func _hat(parent: Node3D, c: Color, y: float = -1.0) -> void:
-	var holder: Node3D = parent
-	var at := Vector3(0.0, y, 0.0)
-	if parent is Ep2Actor and (parent as Ep2Actor).holder("Head") != null:
-		holder = (parent as Ep2Actor).holder("Head")
-		at = Vector3(0.0, 0.2, 0.0)
-	var m := _plain(c, 0.9)
-	_cyl(0.30, 0.30, 0.025, at, m, holder, 18)
-	_cyl(0.15, 0.17, 0.17, at + Vector3(0.0, 0.09, 0.0), m, holder, 14)
 
-
-func _apron(a: Ep2Actor) -> void:
-	var sp: Node3D = a.holder("Spine") if a.holder("Spine") != null else a
-	var ap := _box(Vector3(0.62, 0.8, 0.04), Vector3(0.0, -0.25, 0.3), _plain(Color(0.92, 0.90, 0.84), 0.95), sp)
-	ap.name = "Apron"
 
 
 func _make_revolver() -> Node3D:
@@ -294,8 +280,8 @@ static func _yaw_to(from: Vector3, to: Vector3) -> float:
 	return atan2(to.x - from.x, to.z - from.z)
 
 
-func _face_actor(a: Ep2Actor, p: Vector3) -> void:
-	a.facing = _yaw_to(a.position, p)
+func _face_folk(a: Ep2TownFolk, p: Vector3) -> void:
+	a.face_point(p)
 	a.rotation.y = a.facing
 
 
@@ -324,22 +310,24 @@ func _on_beat_entered(b: int) -> void:
 		Beat.OFFICE:
 			if _hud:
 				_hud.objective = ""
-			var jake_eye: Vector3 = _jake.position + Vector3(0.0, JAKE_HEIGHT * 0.9, 0.0)
-			look_toward(jake_eye, 2.6)
-			_jake_look_at_player()
+			look_toward(_sheriff.position + Vector3(0.0, SHERIFF_HEIGHT * 0.9, 0.0), 2.6)
+			_sheriff_look_at_player()
 			_start_show([
-				FacilityShow._say("vo_jake_1", 0.35),
+				FacilityShow._say("vo_sheriff_1", 0.35),
 				FacilityShow._say("vo_lb_cert1", 0.25),
-				FacilityShow._say("vo_jake_2", 0.3),
-				FacilityShow._say("vo_jake_3", 0.3),
+				FacilityShow._say("vo_sheriff_2", 0.3),
+				{"do": "call", "fn": func() -> void: look_toward(_minister.position + Vector3(0.0, MINISTER_HEIGHT * 0.85, 0.0), 2.4)},
+				FacilityShow._say("vo_minister_1", 0.3),
+				{"do": "call", "fn": func() -> void: look_toward(_sheriff.position + Vector3(0.0, SHERIFF_HEIGHT * 0.9, 0.0), 2.4)},
+				FacilityShow._say("vo_sheriff_3", 0.3),
 				{"do": "call", "fn": release_look}], true)
 		Beat.TO_BAR:
 			if _hud:
 				_hud.objective = "Cross the street to the SALOON."
 			# the sheriff finishes his smoke at the counter, then strolls over behind you (he has a feeling about that saloon)
-			_jake_path = [Ep2GoldTown.local_to_world("Bldg_Certificates", Vector3(0.6, 0.0, -2.0)), Ep2GoldTown.door_world("Bldg_Certificates", 1.6),
+			_sheriff_delay = 6.0
+			_sheriff_goes = [Ep2GoldTown.local_to_world("Bldg_Certificates", Vector3(0.6, 0.0, -2.0)), Ep2GoldTown.door_world("Bldg_Certificates", 1.6),
 				Ep2GoldTown.door_world("Bldg_Saloon", 2.2)]
-			_jake_walk_t = -6.0
 		Beat.BAR:
 			if _hud:
 				_hud.objective = ""
@@ -354,23 +342,22 @@ func _on_beat_entered(b: int) -> void:
 				{"do": "call", "fn": func() -> void: _place(_coin, bar_top + Ep2GoldTown.local_to_world("Bldg_Saloon", Vector3(0.35, 0, 0)) - Ep2GoldTown.local_to_world("Bldg_Saloon", Vector3.ZERO))},
 				FacilityShow._say("vo_bar_2", 0.3),
 				{"do": "call", "fn": func() -> void: look_toward(_opp.position + Vector3(0.0, 1.9, 0.0), 2.4)},
-				{"do": "call", "fn": func() -> void: _face_actor(_opp, _player_pos)},
+				{"do": "call", "fn": func() -> void: _face_folk(_opp, _player_pos)},
 				FacilityShow._say("vo_opp_1", 0.3),
 				FacilityShow._say("vo_opp_2", 0.35),
 				FacilityShow._say("vo_lb_draw1", 0.3),
 				FacilityShow._say("vo_opp_3", 0.4),
-				{"do": "call", "fn": _jake_enters_saloon},
-				{"do": "call", "fn": func() -> void: look_toward(Ep2GoldTown.local_to_world("Bldg_Saloon", JAKE_SALOON) + Vector3(0.0, JAKE_HEIGHT * 0.9, 0.0), 2.0)},
+				{"do": "call", "fn": _sheriff_enters_saloon},
+				{"do": "call", "fn": func() -> void: look_toward(Ep2GoldTown.local_to_world("Bldg_Saloon", SHERIFF_SALOON) + Vector3(0.0, SHERIFF_HEIGHT * 0.9, 0.0), 2.0)},
 				{"do": "wait", "t": 2.6},
-				FacilityShow._say("vo_jake_witness", 0.3),
+				FacilityShow._say("vo_sheriff_witness", 0.3),
 				{"do": "call", "fn": release_look}], true)
 		Beat.SQUARE_UP:
 			if _hud:
 				_hud.objective = "Step out into the street and face him."
 			var sd: Vector3 = Ep2GoldTown.door_world("Bldg_Saloon", 1.5)
-			_opp_path = [Ep2GoldTown.door_world("Bldg_Saloon", -1.0), sd, Vector3(3.0, 0.0, 1426.0), OPP_MARK]
-			_jake_path = [sd + Vector3(0.0, 0.0, 1.0), WITNESS_MARK]
-			_jake_walk_t = 0.0
+			_opp.walk_path([Ep2GoldTown.door_world("Bldg_Saloon", -1.0), sd, Vector3(3.0, 0.0, 1426.0), OPP_MARK], 1.5)
+			_sheriff.walk_path([sd + Vector3(0.0, 0.0, 1.0), WITNESS_MARK], 1.4)
 		Beat.DRAW:
 			if _hud:
 				_hud.objective = "Hands still till the sheriff says DRAW."
@@ -385,7 +372,7 @@ func _on_beat_entered(b: int) -> void:
 			_bull.visible = true
 			_bull.position = Ep2GoldTown.door_world("Bldg_B", 0.8)
 			_start_show([
-				FacilityShow._say("vo_jake_win", 0.4),
+				FacilityShow._say("vo_sheriff_win", 0.4),
 				{"do": "wait", "t": 0.4}], false)
 			_bull.walk_to(_player_pos + Vector3(1.4, 0.0, 2.6), 1.6)
 		Beat.DONE:
@@ -406,23 +393,19 @@ func _place(n: Node3D, p: Vector3) -> void:
 
 
 ## The sheriff pushes in through the saloon doors (if Lil Blunt outran him, he is already at the door) and walks up to the bar.
-func _jake_enters_saloon() -> void:
+func _sheriff_enters_saloon() -> void:
 	var outside: Vector3 = Ep2GoldTown.door_world("Bldg_Saloon", 1.2)
-	if _jake.position.distance_to(outside) > 4.0:
-		_jake.position = outside
-	_jake_path = [Ep2GoldTown.door_world("Bldg_Saloon", -0.6), Ep2GoldTown.local_to_world("Bldg_Saloon", JAKE_SALOON)]
-	_jake_walk_t = 0.0
+	if _sheriff.position.distance_to(outside) > 4.0:
+		_sheriff.position = outside
+	_sheriff.walk_path([Ep2GoldTown.door_world("Bldg_Saloon", -0.6), Ep2GoldTown.local_to_world("Bldg_Saloon", SHERIFF_SALOON)], 1.4)
 
 
-func _jake_look_at_player() -> void:
-	_jake_face = _yaw_to(_jake.position, _player_pos)
+func _sheriff_look_at_player() -> void:
+	_sheriff.face_point(_player_pos)
 
 
 func _tick(delta: float) -> void:
-	_tick_jake(delta)
-	_tick_opp(delta)
-	if _bartender != null:
-		_bartender.step(delta)
+	_tick_people(delta)
 	if _flash_t > 0.0:
 		_flash_t = maxf(0.0, _flash_t - delta)
 		_flash.light_energy = 6.0 * _flash_t / 0.08
@@ -434,7 +417,7 @@ func _tick(delta: float) -> void:
 			if _in_room("Bldg_Saloon", -5.5):
 				_advance_to(Beat.BAR)
 		Beat.SQUARE_UP:
-			_duel_ready = _player_pos.distance_to(DUEL_MARK) < 2.0 and _opp_path.is_empty() and _jake_path.is_empty()
+			_duel_ready = _player_pos.distance_to(DUEL_MARK) < 2.0 and not _opp.is_walking() and not _sheriff.is_walking()
 			if _duel_ready:
 				_advance_to(Beat.DRAW)
 		Beat.DRAW:
@@ -458,45 +441,24 @@ func _in_room(piece: String, depth: float) -> bool:
 	return lp.z < depth and absf(lp.x) < float(fp[0]) * 0.5
 
 
-## The sheriff walks his path (a gentle stride: his model is a statue, so the walk is a bob and a sway), and turns to whoever he is talking to.
-func _tick_jake(delta: float) -> void:
-	if _jake == null:
-		return
-	var walking: bool = false
-	if not _jake_path.is_empty():
-		_jake_walk_t += delta
-		if _jake_walk_t > 0.0:
-			var goal: Vector3 = _jake_path[0]
-			var d: Vector3 = goal - _jake.position
-			d.y = 0.0
-			if d.length() < 0.08:
-				_jake_path.pop_front()
-			else:
-				walking = true
-				var stepv: Vector3 = d.normalized() * minf(d.length(), 1.35 * delta)
-				_jake.position += stepv
-				_jake_face = atan2(d.x, d.z)
-	elif _beat == Beat.DRAW:
-		_jake_face = _yaw_to(_jake.position, (DUEL_MARK + OPP_MARK) * 0.5)
-	elif _beat in [Beat.OFFICE, Beat.BAR, Beat.WON]:
-		_jake_look_at_player()
-	_jake.rotation.y = lerp_angle(_jake.rotation.y, _jake_face, clampf(4.0 * delta, 0.0, 1.0))
-	var body: Node3D = _jake.get_child(0) as Node3D
-	if body != null:
-		var ph: float = _elapsed * 7.0
-		body.rotation.z = (sin(ph) * 0.035) if walking else sin(_elapsed * 1.3) * 0.006
-		_jake.position.y = (absf(sin(ph)) * 0.035) if walking else 0.0
-
-
-func _tick_opp(delta: float) -> void:
-	if _opp == null:
-		return
-	if not _opp_path.is_empty() and not _opp.is_walking():
-		var nxt: Vector3 = _opp_path.pop_front()
-		_opp.walk_to(nxt, 1.5)
-	if _opp_path.is_empty() and not _opp.is_walking() and _beat == Beat.SQUARE_UP:
+## The cast: the Sheriff strolls where he is sent (after his delay) and turns to whoever he is talking to; the stranger walks and squares up.
+func _tick_people(delta: float) -> void:
+	if _sheriff_delay > 0.0:
+		_sheriff_delay -= delta
+		if _sheriff_delay <= 0.0 and not _sheriff_goes.is_empty():
+			_sheriff.walk_path(_sheriff_goes, 1.35)
+			_sheriff_goes = []
+	if not _sheriff.is_walking():
+		if _beat == Beat.DRAW:
+			_sheriff.face_point((DUEL_MARK + OPP_MARK) * 0.5)
+		elif _beat in [Beat.OFFICE, Beat.BAR, Beat.WON]:
+			_sheriff_look_at_player()
+	if _beat == Beat.SQUARE_UP and not _opp.is_walking():
 		_opp.face_point(DUEL_MARK)
+	_sheriff.step(delta)
+	_minister.step(delta)
 	_opp.step(delta)
+	_bartender.step(delta)
 
 
 # --- the draw ---------------------------------------------------------------------------------------------------------
@@ -506,9 +468,12 @@ func _start_round() -> void:
 	_draw_t = 0.0
 	_draw_wait = _rng.randf_range(DRAW_WAIT_MIN, DRAW_WAIT_MAX)
 	_opp.position = OPP_MARK
-	_face_actor(_opp, DUEL_MARK)
-	Ep2BearKit.pose(_opp, "idle")
-	_jake.position = WITNESS_MARK
+	_face_folk(_opp, DUEL_MARK)
+	_opp.set_pose("idle")
+	_opp.dead = false
+	_opp.rotation = Vector3(0.0, _opp.rotation.y, 0.0)
+	_revolver.visible = false
+	_sheriff.position = WITNESS_MARK
 	look_toward(OPP_MARK + Vector3(0.0, 1.6, 0.0), 3.0)
 
 
@@ -526,7 +491,8 @@ func _tick_draw(delta: float) -> void:
 			if _draw_t >= _draw_wait and _hold <= 0.0:
 				_draw_state = "go"
 				_draw_t = 0.0
-				_begin_carry_line("vo_jake_draw")
+				_begin_carry_line("vo_sheriff_draw")
+				_opp_draws()
 				if _hud:
 					_hud.objective = "DRAW!"
 		"go":
@@ -540,7 +506,7 @@ func _tick_draw(delta: float) -> void:
 				_hud.fade = clampf(_draw_t / 0.5, 0.0, 1.0) if _draw_t < 1.6 else clampf(1.0 - (_draw_t - 1.6) / 0.7, 0.0, 1.0)
 			if _draw_t > 1.6 and _draw_state == "lost" and not _show_active and _hold <= 0.0:
 				_restage()
-				_begin_carry_line("vo_jake_lose")
+				_begin_carry_line("vo_sheriff_lose")
 				_draw_state = "relost"
 		"relost", "foul":
 			if _hud and _draw_state == "relost":
@@ -574,7 +540,7 @@ func shoot() -> bool:
 		_fouls += 1
 		_draw_state = "foul"
 		_draw_t = 0.0
-		_begin_carry_line("vo_jake_foul")
+		_begin_carry_line("vo_sheriff_foul")
 		if _hud:
 			_hud.objective = "FOUL - wait for the word."
 		return false
@@ -591,7 +557,8 @@ func _on_player_shot() -> void:
 	if aim_hits_opponent(eye, dir):
 		_draw_state = "won"
 		_draw_t = 0.0
-		Ep2BearKit.pose(_opp, "dead")
+		_opp.fall_dead()
+		_revolver.visible = false
 		if _hud:
 			_hud.objective = ""
 
@@ -619,7 +586,17 @@ func aim_hits_opponent(eye: Vector3, dir: Vector3) -> bool:
 	return (eye + d * sc).distance_to(a + u * tc) < OPP_HIT_R
 
 
+## The stranger's gun hand comes up with the revolver in it (the baked "Draw" arm pose + the prop at his hand).
+func _opp_draws() -> void:
+	_opp.set_pose("draw")
+	_revolver.visible = true
+	_revolver.position = COWBOY_HAND_DRAW * COWBOY_HEIGHT
+	_revolver.rotation = Vector3(0.0, 0.0, 0.0)
+	_opp.kick()
+
+
 func _opp_fires() -> void:
+	_opp.kick()
 	_losses += 1
 	_draw_state = "lost"
 	_draw_t = 0.0
@@ -638,9 +615,10 @@ func get_draw_wait() -> float: return _draw_wait
 func get_losses() -> int: return _losses
 func get_fouls() -> int: return _fouls
 func has_map() -> bool: return _got_map
-func get_jake() -> Node3D: return _jake
-func get_opponent() -> Ep2Actor: return _opp
-func get_bartender() -> Ep2Actor: return _bartender
+func get_sheriff() -> Ep2TownFolk: return _sheriff
+func get_minister() -> Ep2TownFolk: return _minister
+func get_opponent() -> Ep2TownFolk: return _opp
+func get_bartender() -> Ep2TownFolk: return _bartender
 func is_bull_here() -> bool: return _bull != null and _bull.visible
 func is_coin_on_bar() -> bool: return _coin != null and _coin.visible
 func is_glass_on_bar() -> bool: return _glass != null and _glass.visible
