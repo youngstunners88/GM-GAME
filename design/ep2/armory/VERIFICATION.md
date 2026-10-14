@@ -27,3 +27,9 @@ Restart corrections `52467762` and `87d3a8e8` reached master after a safe merge 
 Cached lighting correction `231fcca3` reached master. Final carry regression checks that an equipped prop is already positioned/oriented before its first physics tick, preventing a camera-origin frame during fast switching. Ammo tooltips use player-facing wording.
 
 The real prebuilt-room activation path is now exercised: removing/re-entering the viewport must reconnect firearm and selection callbacks once. Surface inventory is captured during setup before the first player input, rather than after an early shot. Both regressions pass against WoodsQuadChamber.
+
+Final source publication: master `2f0a58a9` includes runtime lifecycle correction `d0b4b18d` and every preceding armory change. The shipping script verified compile, armory, range, facility, session, town, companion/cart and interlude gates, plus security sentinel and title-screen lock. Final PCK: 198,484,640 bytes (189.29 MiB), nonthreaded Compatibility export.
+
+The strict local browser check now passes with PLAYING observed and no errors. Chromium's regular-profile root import was rejected by automatic approval because it would persistently broaden that profile's trusted roots. The recommended safer alternative succeeded: a temporary isolated profile used the environment's provided CA, constrained to the four already-allowed game-service hosts. TLS verification stayed enabled; the temporary profile was removed after testing. No regular-profile or system trust setting was changed. This is local game validation, not public upload/BUILD verification.
+
+See release-receipt.json for the exact final source and checked/unchecked results. GitHub Actions/itch endpoint access and both requested decision reviews remain blocked by the environment's restricted HTTP policy.
