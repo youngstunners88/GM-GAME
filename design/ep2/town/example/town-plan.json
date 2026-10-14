@@ -1,0 +1,934 @@
+{
+  "schema_version": 1,
+  "status": "proposal",
+  "seed": 22015,
+  "source_commit": "236ff712b67f56ce77b6633b463e2c64c7ed3229",
+  "source_hashes": {
+    "src/episode2/chamber/ep2_gold_town.gd": "sha256:qkd3W81rQSva+Xv9j7DFT5jzNRqwvQ/4DGgPjo5zOzU=",
+    "tools/ep2_blender/build_town_kit.py": "sha256:emtfda8n3SME22D3/kro4aMEB+sBw6s3o9IrZdDrnJg="
+  },
+  "coordinate_frame": "Godot metres; x east, y up; plan points are [x,z]",
+  "buildings": [
+    {
+      "id": "Bldg_Certificates",
+      "front": [
+        -9.0,
+        1412.0
+      ],
+      "side": 1,
+      "bounds": [
+        -18.0,
+        1408.0,
+        -9.0,
+        1416.0
+      ],
+      "door_half_width": 0.75,
+      "traversable": true
+    },
+    {
+      "id": "Bldg_A",
+      "front": [
+        -9.0,
+        1421.5
+      ],
+      "side": 1,
+      "bounds": [
+        -17.0,
+        1418.0,
+        -9.0,
+        1425.0
+      ],
+      "door_half_width": 0.0,
+      "traversable": false
+    },
+    {
+      "id": "Bldg_B",
+      "front": [
+        -9.0,
+        1430.0
+      ],
+      "side": 1,
+      "bounds": [
+        -18.0,
+        1426.0,
+        -9.0,
+        1434.0
+      ],
+      "door_half_width": 0.0,
+      "traversable": false
+    },
+    {
+      "id": "Bldg_C",
+      "front": [
+        -9.0,
+        1438.5
+      ],
+      "side": 1,
+      "bounds": [
+        -17.0,
+        1435.5,
+        -9.0,
+        1441.5
+      ],
+      "door_half_width": 0.0,
+      "traversable": false
+    },
+    {
+      "id": "Bldg_E",
+      "front": [
+        -9.0,
+        1447.0
+      ],
+      "side": 1,
+      "bounds": [
+        -17.0,
+        1443.5,
+        -9.0,
+        1450.5
+      ],
+      "door_half_width": 0.0,
+      "traversable": false
+    },
+    {
+      "id": "Bldg_Saloon",
+      "front": [
+        9.0,
+        1414.0
+      ],
+      "side": -1,
+      "bounds": [
+        9.0,
+        1408.0,
+        21.0,
+        1420.0
+      ],
+      "door_half_width": 0.95,
+      "traversable": true
+    },
+    {
+      "id": "Bldg_Treasury",
+      "front": [
+        9.0,
+        1426.5
+      ],
+      "side": -1,
+      "bounds": [
+        9.0,
+        1421.5,
+        21.0,
+        1431.5
+      ],
+      "door_half_width": 0.0,
+      "traversable": false
+    },
+    {
+      "id": "Bldg_D",
+      "front": [
+        9.0,
+        1437.5
+      ],
+      "side": -1,
+      "bounds": [
+        9.0,
+        1433.0,
+        18.0,
+        1442.0
+      ],
+      "door_half_width": 0.0,
+      "traversable": false
+    },
+    {
+      "id": "Bldg_F",
+      "front": [
+        9.0,
+        1447.0
+      ],
+      "side": -1,
+      "bounds": [
+        9.0,
+        1443.0,
+        18.0,
+        1451.0
+      ],
+      "door_half_width": 0.0,
+      "traversable": false
+    },
+    {
+      "id": "Church",
+      "front": [
+        0.0,
+        1478.0
+      ],
+      "side": 0,
+      "bounds": [
+        -4.0,
+        1478.0,
+        4.0,
+        1492.0
+      ],
+      "door_half_width": 0.0,
+      "traversable": false
+    }
+  ],
+  "narrative": {
+    "beats": [
+      "STREET",
+      "OFFICE",
+      "TO_BAR",
+      "BAR",
+      "SQUARE_UP",
+      "DRAW",
+      "WON",
+      "DONE"
+    ],
+    "cast": [
+      "Sheriff",
+      "Minister Mike Dean"
+    ],
+    "bull": "absent until WON; existing runtime owns his entrance",
+    "bears_in_town": false,
+    "diamonds": false,
+    "new_protocol_numbers": false
+  },
+  "budgets": {
+    "max_ambient_actors": 24,
+    "max_instrument_emitters": 2,
+    "pck_limit_bytes": 199229440,
+    "measured_pck_bytes": null
+  },
+  "keepouts": [
+    {
+      "id": "main_travel_and_duel",
+      "bounds": [
+        -3.5,
+        1397,
+        3.5,
+        1467
+      ]
+    }
+  ],
+  "roads": [
+    {
+      "id": "main",
+      "points": [
+        [
+          0,
+          1401
+        ],
+        [
+          0,
+          1470
+        ]
+      ],
+      "width": 7
+    },
+    {
+      "id": "south_cross",
+      "points": [
+        [
+          -30,
+          1401
+        ],
+        [
+          32,
+          1401
+        ]
+      ],
+      "width": 4
+    },
+    {
+      "id": "north_cross",
+      "points": [
+        [
+          -30,
+          1458
+        ],
+        [
+          32,
+          1458
+        ]
+      ],
+      "width": 4
+    },
+    {
+      "id": "west_avenue",
+      "points": [
+        [
+          -30,
+          1401
+        ],
+        [
+          -30,
+          1458
+        ]
+      ],
+      "width": 4
+    },
+    {
+      "id": "east_avenue",
+      "points": [
+        [
+          32,
+          1401
+        ],
+        [
+          32,
+          1458
+        ]
+      ],
+      "width": 4
+    }
+  ],
+  "facades": [
+    {
+      "building": "Bldg_Certificates",
+      "door": "open passage",
+      "min_visible_windows": 2,
+      "treatment": "recessed sash, sill, frame; weathered timber",
+      "proof": "first-person frontal and oblique capture; verify window backing/occlusion"
+    },
+    {
+      "building": "Bldg_A",
+      "door": "closed scenic door",
+      "min_visible_windows": 2,
+      "treatment": "recessed sash, sill, frame; weathered timber",
+      "proof": "first-person frontal and oblique capture; verify window backing/occlusion"
+    },
+    {
+      "building": "Bldg_B",
+      "door": "closed scenic door",
+      "min_visible_windows": 2,
+      "treatment": "recessed sash, sill, frame; weathered timber",
+      "proof": "first-person frontal and oblique capture; verify window backing/occlusion"
+    },
+    {
+      "building": "Bldg_C",
+      "door": "closed scenic door",
+      "min_visible_windows": 2,
+      "treatment": "recessed sash, sill, frame; weathered timber",
+      "proof": "first-person frontal and oblique capture; verify window backing/occlusion"
+    },
+    {
+      "building": "Bldg_E",
+      "door": "closed scenic door",
+      "min_visible_windows": 2,
+      "treatment": "recessed sash, sill, frame; weathered timber",
+      "proof": "first-person frontal and oblique capture; verify window backing/occlusion"
+    },
+    {
+      "building": "Bldg_Saloon",
+      "door": "open passage",
+      "min_visible_windows": 2,
+      "treatment": "recessed sash, sill, frame; weathered timber",
+      "proof": "first-person frontal and oblique capture; verify window backing/occlusion"
+    },
+    {
+      "building": "Bldg_Treasury",
+      "door": "closed scenic door",
+      "min_visible_windows": 2,
+      "treatment": "recessed sash, sill, frame; weathered timber",
+      "proof": "first-person frontal and oblique capture; verify window backing/occlusion"
+    },
+    {
+      "building": "Bldg_D",
+      "door": "closed scenic door",
+      "min_visible_windows": 2,
+      "treatment": "recessed sash, sill, frame; weathered timber",
+      "proof": "first-person frontal and oblique capture; verify window backing/occlusion"
+    },
+    {
+      "building": "Bldg_F",
+      "door": "closed scenic door",
+      "min_visible_windows": 2,
+      "treatment": "recessed sash, sill, frame; weathered timber",
+      "proof": "first-person frontal and oblique capture; verify window backing/occlusion"
+    },
+    {
+      "building": "Church",
+      "door": "closed scenic door",
+      "min_visible_windows": 2,
+      "treatment": "recessed sash, sill, frame; weathered timber",
+      "proof": "first-person frontal and oblique capture; verify window backing/occlusion"
+    }
+  ],
+  "population": [
+    {
+      "id": "stable_hand",
+      "kind": "person",
+      "at": [
+        -24,
+        1441
+      ],
+      "radius": 0.4,
+      "district": "Stable yard",
+      "action": "brush horse; carry feed",
+      "routine": "stable_loop",
+      "path": [
+        [
+          -24,
+          1441
+        ],
+        [
+          -24,
+          1443
+        ]
+      ],
+      "phase_seconds": 1.898,
+      "asset": null,
+      "attachment_parent": null,
+      "audio_emitter": false,
+      "stop_audio_on": [
+        "OFFICE",
+        "BAR",
+        "SQUARE_UP",
+        "DRAW"
+      ],
+      "on_duel": "hold in home zone; no street crossing; animals never become targets"
+    },
+    {
+      "id": "horse_west",
+      "kind": "horse",
+      "at": [
+        -24,
+        1446
+      ],
+      "radius": 1.0,
+      "district": "Stable yard",
+      "action": "weight shift; ear flick; drink",
+      "routine": "horse_idle",
+      "path": [],
+      "phase_seconds": 6.415,
+      "asset": null,
+      "attachment_parent": null,
+      "audio_emitter": false,
+      "stop_audio_on": [
+        "OFFICE",
+        "BAR",
+        "SQUARE_UP",
+        "DRAW"
+      ],
+      "on_duel": "hold in home zone; no street crossing; animals never become targets"
+    },
+    {
+      "id": "horse_east",
+      "kind": "horse",
+      "at": [
+        6.4,
+        1431
+      ],
+      "radius": 0.9,
+      "district": "Hitch rail",
+      "action": "breath; tail swish; head lower",
+      "routine": "horse_idle",
+      "path": [],
+      "phase_seconds": 4.944,
+      "asset": null,
+      "attachment_parent": null,
+      "audio_emitter": false,
+      "stop_audio_on": [
+        "OFFICE",
+        "BAR",
+        "SQUARE_UP",
+        "DRAW"
+      ],
+      "on_duel": "hold in home zone; no street crossing; animals never become targets"
+    },
+    {
+      "id": "storekeeper",
+      "kind": "person",
+      "at": [
+        -7.1,
+        1422
+      ],
+      "radius": 0.4,
+      "district": "General store porch",
+      "action": "sweep; pause; watch street",
+      "routine": "sweep",
+      "path": [],
+      "phase_seconds": 1.96,
+      "asset": null,
+      "attachment_parent": null,
+      "audio_emitter": false,
+      "stop_audio_on": [
+        "OFFICE",
+        "BAR",
+        "SQUARE_UP",
+        "DRAW"
+      ],
+      "on_duel": "hold in home zone; no street crossing; animals never become targets"
+    },
+    {
+      "id": "miner",
+      "kind": "person",
+      "at": [
+        -24,
+        1421
+      ],
+      "radius": 0.4,
+      "district": "Assay service yard",
+      "action": "carry ore sack; rest",
+      "routine": "carry_loop",
+      "path": [
+        [
+          -24,
+          1421
+        ],
+        [
+          -24,
+          1424
+        ]
+      ],
+      "phase_seconds": 4.751,
+      "asset": null,
+      "attachment_parent": null,
+      "audio_emitter": false,
+      "stop_audio_on": [
+        "OFFICE",
+        "BAR",
+        "SQUARE_UP",
+        "DRAW"
+      ],
+      "on_duel": "hold in home zone; no street crossing; animals never become targets"
+    },
+    {
+      "id": "laundry_worker",
+      "kind": "person",
+      "at": [
+        25,
+        1424
+      ],
+      "radius": 0.4,
+      "district": "Hotel service yard",
+      "action": "peg linen; turn",
+      "routine": "laundry",
+      "path": [],
+      "phase_seconds": 0.698,
+      "asset": null,
+      "attachment_parent": null,
+      "audio_emitter": false,
+      "stop_audio_on": [
+        "OFFICE",
+        "BAR",
+        "SQUARE_UP",
+        "DRAW"
+      ],
+      "on_duel": "hold in home zone; no street crossing; animals never become targets"
+    },
+    {
+      "id": "fiddler",
+      "kind": "person",
+      "at": [
+        7,
+        1409
+      ],
+      "radius": 0.4,
+      "district": "Saloon porch",
+      "action": "bow fiddle with measured hand contacts",
+      "routine": "fiddle",
+      "path": [],
+      "phase_seconds": 4.246,
+      "asset": null,
+      "attachment_parent": null,
+      "audio_emitter": false,
+      "stop_audio_on": [
+        "OFFICE",
+        "BAR",
+        "SQUARE_UP",
+        "DRAW"
+      ],
+      "on_duel": "hold in home zone; no street crossing; animals never become targets"
+    },
+    {
+      "id": "fiddle",
+      "kind": "instrument",
+      "at": [
+        7,
+        1409
+      ],
+      "radius": 0.18,
+      "district": "Saloon porch",
+      "action": "attached to fiddler; positional stem",
+      "routine": "attached",
+      "path": [],
+      "phase_seconds": 4.808,
+      "asset": null,
+      "attachment_parent": "fiddler",
+      "audio_emitter": true,
+      "stop_audio_on": [
+        "OFFICE",
+        "BAR",
+        "SQUARE_UP",
+        "DRAW"
+      ],
+      "on_duel": "hold in home zone; no street crossing; animals never become targets"
+    },
+    {
+      "id": "piano",
+      "kind": "instrument",
+      "at": [
+        18,
+        1418
+      ],
+      "radius": 0.6,
+      "district": "Saloon interior",
+      "action": "reuse Bar_Piano; optional quiet stem",
+      "routine": "piano",
+      "path": [],
+      "phase_seconds": 6.214,
+      "asset": null,
+      "attachment_parent": null,
+      "audio_emitter": true,
+      "stop_audio_on": [
+        "OFFICE",
+        "BAR",
+        "SQUARE_UP",
+        "DRAW"
+      ],
+      "on_duel": "hold in home zone; no street crossing; animals never become targets"
+    },
+    {
+      "id": "dog_yard",
+      "kind": "dog",
+      "at": [
+        -23,
+        1428
+      ],
+      "radius": 0.4,
+      "district": "Assay yard",
+      "action": "sniff; settle; glance up",
+      "routine": "dog_loop",
+      "path": [
+        [
+          -23,
+          1428
+        ],
+        [
+          -24,
+          1430
+        ]
+      ],
+      "phase_seconds": 7.585,
+      "asset": null,
+      "attachment_parent": null,
+      "audio_emitter": false,
+      "stop_audio_on": [
+        "OFFICE",
+        "BAR",
+        "SQUARE_UP",
+        "DRAW"
+      ],
+      "on_duel": "hold in home zone; no street crossing; animals never become targets"
+    },
+    {
+      "id": "dog_stable",
+      "kind": "dog",
+      "at": [
+        -25,
+        1449
+      ],
+      "radius": 0.4,
+      "district": "Stable shade",
+      "action": "sleep; ear twitch; stand",
+      "routine": "dog_rest",
+      "path": [],
+      "phase_seconds": 4.533,
+      "asset": null,
+      "attachment_parent": null,
+      "audio_emitter": false,
+      "stop_audio_on": [
+        "OFFICE",
+        "BAR",
+        "SQUARE_UP",
+        "DRAW"
+      ],
+      "on_duel": "hold in home zone; no street crossing; animals never become targets"
+    },
+    {
+      "id": "chicken_1",
+      "kind": "chicken",
+      "at": [
+        25,
+        1443
+      ],
+      "radius": 0.2,
+      "district": "Feed yard",
+      "action": "peck; scratch; short wander",
+      "routine": "peck",
+      "path": [
+        [
+          25,
+          1443
+        ],
+        [
+          26,
+          1444
+        ]
+      ],
+      "phase_seconds": 6.693,
+      "asset": null,
+      "attachment_parent": null,
+      "audio_emitter": false,
+      "stop_audio_on": [
+        "OFFICE",
+        "BAR",
+        "SQUARE_UP",
+        "DRAW"
+      ],
+      "on_duel": "hold in home zone; no street crossing; animals never become targets"
+    },
+    {
+      "id": "chicken_2",
+      "kind": "chicken",
+      "at": [
+        27,
+        1447
+      ],
+      "radius": 0.2,
+      "district": "Feed yard",
+      "action": "peck; look up",
+      "routine": "peck",
+      "path": [
+        [
+          27,
+          1447
+        ],
+        [
+          26,
+          1448
+        ]
+      ],
+      "phase_seconds": 1.182,
+      "asset": null,
+      "attachment_parent": null,
+      "audio_emitter": false,
+      "stop_audio_on": [
+        "OFFICE",
+        "BAR",
+        "SQUARE_UP",
+        "DRAW"
+      ],
+      "on_duel": "hold in home zone; no street crossing; animals never become targets"
+    },
+    {
+      "id": "chicken_3",
+      "kind": "chicken",
+      "at": [
+        25,
+        1450
+      ],
+      "radius": 0.2,
+      "district": "Feed yard",
+      "action": "peck; shake feathers",
+      "routine": "peck",
+      "path": [
+        [
+          25,
+          1450
+        ],
+        [
+          26,
+          1451
+        ]
+      ],
+      "phase_seconds": 2.029,
+      "asset": null,
+      "attachment_parent": null,
+      "audio_emitter": false,
+      "stop_audio_on": [
+        "OFFICE",
+        "BAR",
+        "SQUARE_UP",
+        "DRAW"
+      ],
+      "on_duel": "hold in home zone; no street crossing; animals never become targets"
+    },
+    {
+      "id": "water_pump",
+      "kind": "prop",
+      "at": [
+        -23,
+        1452
+      ],
+      "radius": 0.65,
+      "district": "Stable yard",
+      "action": "bucket, wet patch and worn ground",
+      "routine": "static",
+      "path": [],
+      "phase_seconds": 1.063,
+      "asset": null,
+      "attachment_parent": null,
+      "audio_emitter": false,
+      "stop_audio_on": [
+        "OFFICE",
+        "BAR",
+        "SQUARE_UP",
+        "DRAW"
+      ],
+      "on_duel": "hold in home zone; no street crossing; animals never become targets"
+    },
+    {
+      "id": "feed_sacks",
+      "kind": "prop",
+      "at": [
+        27,
+        1441
+      ],
+      "radius": 0.6,
+      "district": "Feed yard",
+      "action": "stack by coop, wheelbarrow nearby",
+      "routine": "static",
+      "path": [],
+      "phase_seconds": 6.685,
+      "asset": null,
+      "attachment_parent": null,
+      "audio_emitter": false,
+      "stop_audio_on": [
+        "OFFICE",
+        "BAR",
+        "SQUARE_UP",
+        "DRAW"
+      ],
+      "on_duel": "hold in home zone; no street crossing; animals never become targets"
+    }
+  ],
+  "captures": [
+    {
+      "id": "arrival",
+      "eye": [
+        -2,
+        1.55,
+        1403
+      ],
+      "target": [
+        0,
+        1.4,
+        1435
+      ],
+      "evidence_required": [
+        "baseline",
+        "candidate",
+        "10_second_clip"
+      ],
+      "status": "not_captured"
+    },
+    {
+      "id": "cross_street",
+      "eye": [
+        0,
+        1.55,
+        1458
+      ],
+      "target": [
+        -30,
+        1.4,
+        1458
+      ],
+      "evidence_required": [
+        "baseline",
+        "candidate",
+        "10_second_clip"
+      ],
+      "status": "not_captured"
+    },
+    {
+      "id": "stable",
+      "eye": [
+        -29,
+        1.55,
+        1437
+      ],
+      "target": [
+        -24,
+        1.4,
+        1446
+      ],
+      "evidence_required": [
+        "baseline",
+        "candidate",
+        "10_second_clip"
+      ],
+      "status": "not_captured"
+    },
+    {
+      "id": "feed_yard",
+      "eye": [
+        31,
+        1.55,
+        1440
+      ],
+      "target": [
+        26,
+        1.4,
+        1447
+      ],
+      "evidence_required": [
+        "baseline",
+        "candidate",
+        "10_second_clip"
+      ],
+      "status": "not_captured"
+    },
+    {
+      "id": "office_door",
+      "eye": [
+        -5,
+        1.55,
+        1412
+      ],
+      "target": [
+        -9,
+        1.4,
+        1412
+      ],
+      "evidence_required": [
+        "baseline",
+        "candidate",
+        "10_second_clip"
+      ],
+      "status": "not_captured"
+    },
+    {
+      "id": "saloon_door",
+      "eye": [
+        5,
+        1.55,
+        1414
+      ],
+      "target": [
+        9,
+        1.4,
+        1414
+      ],
+      "evidence_required": [
+        "baseline",
+        "candidate",
+        "10_second_clip"
+      ],
+      "status": "not_captured"
+    },
+    {
+      "id": "duel",
+      "eye": [
+        0,
+        1.55,
+        1417
+      ],
+      "target": [
+        0,
+        1.4,
+        1432
+      ],
+      "evidence_required": [
+        "baseline",
+        "candidate",
+        "10_second_clip"
+      ],
+      "status": "not_captured"
+    }
+  ],
+  "evidence": {
+    "runtime_visual": "not_run",
+    "performance": "not_measured",
+    "release": "not_attempted"
+  }
+}
