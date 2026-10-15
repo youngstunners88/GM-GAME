@@ -13,6 +13,8 @@ func _ready() -> void:
 	_setup_depth_routes()
 	_setup_ambient_dust()
 	_setup_distant_train()
+	_setup_distant_lake()
+	_setup_stable_horses()
 	AudioManager.set_reverb_profile("mine")
 	AudioManager.play_playlist(["res://src/assets/music/level03_theme.ogg", "res://src/assets/music/level03_theme_alt.ogg", "res://src/assets/music/lil_blunt_theme.mp3"])
 	AudioManager.play_voice("stage3_intro")
@@ -56,6 +58,22 @@ func _setup_distant_train() -> void:
 	var ride := preload("res://src/level/distant_train.tscn").instantiate()
 	ride.name = "DistantTrainRide"
 	add_child(ride)
+
+## Far-horizon lake behind the rail line (slower parallax = farther).
+## Pure backdrop like the train — no collision, no gameplay coupling.
+func _setup_distant_lake() -> void:
+	var lake := preload("res://src/level/distant_lake.tscn").instantiate()
+	lake.name = "DistantLake"
+	add_child(lake)
+
+## Horse stable + paddock on the ride into town (world x ~3050: past the
+## Fort Knox door at 2690, before the Gold Rush Reserve at 3420). Scenery
+## only — horses graze, stand and walk the rail; nothing to collide with.
+func _setup_stable_horses() -> void:
+	var farm := preload("res://src/level/stable_horses.tscn").instantiate()
+	farm.name = "StableHorses"
+	farm.position = Vector2(3050, 624)
+	add_child(farm)
 
 ## Task #23 extension — Gold Rush depth (LEVEL_23_EXTEND.md):
 ##   SPEEDRUNNER: the TIMED-GATE run — a pressure-plate timed door guards a
