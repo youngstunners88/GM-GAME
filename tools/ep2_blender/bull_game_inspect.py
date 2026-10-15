@@ -30,17 +30,32 @@ if a.clip_glb:
     for o in set(bpy.data.objects) - have:
         bpy.data.objects.remove(o, do_unlink=True)
     print("ACTIONS", [x.name for x in bpy.data.actions])
+def _fcurves(act):
+    """Blender <=4.3: act.fcurves; 4.4+ slotted actions: layers/strips/channelbags."""
+    if hasattr(act, "fcurves"):
+        return act.fcurves
+    out = []
+    for l in act.layers:
+        for st in l.strips:
+            for cb in st.channelbags:
+                out.append(cb.fcurves)
+    return out[0] if len(out) == 1 else out[0]
 if arm.animation_data:
     if a.clip:
         act = bpy.data.actions.get(a.clip) or next((x for x in bpy.data.actions if x.name.startswith(a.clip)), None)
         arm.animation_data.action = act
+        try:
+            arm.animation_data.action_slot = act.slots[0]
+        except Exception:
+            pass
+        _fc = _fcurves(act)
         # Ep2Actor._drop_bone_translations: only Hips keeps translation keys at runtime
-        for fc in [f for f in act.fcurves if f.data_path.endswith("location") and '"Hips"' not in f.data_path]:
-            act.fcurves.remove(fc)
+        for fc in [f for f in _fc if f.data_path.endswith("location") and '"Hips"' not in f.data_path]:
+            _fc.remove(fc)
         if a.lock_arms:
-            for fc in [f for f in act.fcurves if any('"%s"' % b in f.data_path for b in ("LeftShoulder", "LeftArm", "LeftForeArm",
+            for fc in [f for f in _fc if any('"%s"' % b in f.data_path for b in ("LeftShoulder", "LeftArm", "LeftForeArm",
                        "LeftHand", "RightShoulder", "RightArm", "RightForeArm", "RightHand"))]:
-                act.fcurves.remove(fc)
+                _fc.remove(fc)
     else:
         arm.animation_data.action = None
         for pb in arm.pose.bones:
