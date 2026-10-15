@@ -8,6 +8,7 @@
  *
  * node scripts/jev.mjs --request request.json --dry-run
  * node scripts/jev.mjs --request request.json --send
+ * Flags: --experimental-images (OpenRouter probe), --long-context (header, 262k server limit).
  * Legacy metric CLI: --from-gate gate.json (0 ship/1 block/2 uncertain/3 error).
  */
 
@@ -51,7 +52,8 @@ export async function evaluate({ state, questions, provider = PROVIDER, model, a
   });
   if (!res.ok) throw new Error(`Jev HTTP ${res.status}. No automatic retry or provider fallback; inspect the request schema or network policy.`);
   const data=validateResponse(await res.json(),questions);
-  if (Object.keys(assets).length && data.model !== model) throw new Error("Image response model differs from the requested 1.14 pin; capability unverified.");
+  // jev-preview / jev-1.14 resolve to 1.14.0, so compare the class, not the literal id.
+  if (Object.keys(assets).length && !/1\.14|preview/.test(data.model)) throw new Error("Image response model is not 1.14-class; capability unverified.");
   for (const a of Object.values(data.answers)) {
     if (a.type==='noul') {a.type='boolean';a.probability=a.noul;}
   }
@@ -102,7 +104,7 @@ async function main() {
     const request=JSON.parse(await readFile(filename,'utf8'));
     request.provider ??= get('--provider') || PROVIDER;
     request.model ??= request.provider === PROVIDER ? MODEL : PROVIDERS[request.provider]?.model;
-    const options={experimentalImages:argv.includes('--experimental-images')};
+    const options={experimentalImages:argv.includes('--experimental-images'),longContext:argv.includes('--long-context')};
     const prepared=await prepareRequest(request,options);
     console.log(JSON.stringify({preflight:prepared.summary},null,2));
     if (argv.includes('--dry-run') || !argv.includes('--send')) return;

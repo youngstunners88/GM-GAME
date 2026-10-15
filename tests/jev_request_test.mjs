@@ -65,3 +65,76 @@ test('OpenRouter remains explicit, using only its own credential and endpoint',a
   assert.equal((await evaluate({...base,provider:'openrouter'})).answers.contact.probability,.2);
  }finally{global.fetch=old;if(saved===undefined)delete process.env.OPENROUTER_API_KEY;else process.env.OPENROUTER_API_KEY=saved;}
 });
+
+// ---- Official-docs (2026-10-15) additions: dimensions, box, pins, long context, aliases ----
+import {writeFile,mkdtemp} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {deflateSync} from 'node:zlib';
+const crcT=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
+const crc=b=>{let c=~0;for(const x of b)c=crcT[(c^x)&255]^(c>>>8);return ~c>>>0;};
+const chunk=(t,d)=>{const h=Buffer.alloc(8);h.writeUInt32BE(d.length,0);h.write(t,4,'ascii');const c=Buffer.alloc(4);c.writeUInt32BE(crc(Buffer.concat([h.subarray(4),d])),0);return Buffer.concat([h,d,c]);};
+/** Tiny valid grayscale PNG; all-zero rows compress to a few bytes even at 1568 px. */
+function png(w,h,{animated=false}={}){
+ const ihdr=Buffer.alloc(13);ihdr.writeUInt32BE(w,0);ihdr.writeUInt32BE(h,4);ihdr[8]=8;ihdr[9]=0;
+ const parts=[Buffer.from([137,80,78,71,13,10,26,10]),chunk('IHDR',ihdr)];
+ if(animated)parts.push(chunk('acTL',Buffer.alloc(8)));
+ parts.push(chunk('IDAT',deflateSync(Buffer.alloc((w+1)*h))),chunk('IEND',Buffer.alloc(0)));
+ return Buffer.concat(parts);
+}
+const dir=await mkdtemp(join(tmpdir(),'jev-'));
+async function img(name,w,h,o){const f=join(dir,name);await writeFile(f,png(w,h,o));return f;}
+const opt={experimentalImages:true};
+
+test('image dimension limits match official docs with actionable errors',async()=>{
+ const mk=async(w,h)=>({state:'Inspect <a>.',questions,assets:{'<a>':await img(`d${w}x${h}.png`,w,h)}});
+ await prepareRequest(await mk(256,400),opt);
+ await prepareRequest(await mk(1568,1000),opt); // 1.568M px: inside both docs and local budget
+ await assert.rejects(prepareRequest(await mk(255,1000),opt),/at least 256.*resize/);
+ await assert.rejects(prepareRequest(await mk(1000,100),opt),/at least 256/);
+ await assert.rejects(prepareRequest(await mk(1569,300),opt),/at most 1568.*crop/);
+ await assert.rejects(prepareRequest(await mk(300,1569),opt),/at most 1568/);
+ await assert.rejects(prepareRequest(await mk(1568,1568),opt),/pixel/); // 2,458,624 ok for docs, over stricter local budget
+});
+test('pixel-count floor: sides in range but too few total pixels is rejected',()=>{
+ // 256x256=65,536 < 78,400 even though both sides are legal.
+ return assert.rejects((async()=>prepareRequest({state:'Inspect <a>.',questions,assets:{'<a>':await img('small.png',256,256)}},opt))(),/78400/);
+});
+test('animated PNG is rejected',async()=>{
+ await assert.rejects(prepareRequest({state:'Inspect <a>.',questions,assets:{'<a>':await img('apng.png',300,300,{animated:true})}},opt),/Animated PNG/);
+});
+test('box questions are accepted, experimental, and validated by type only',async()=>{
+ const q={where:{type:'box',instructions:'Box the visible blemish.'}};
+ const r=await prepareRequest({state:'Inspect <a>.',questions:q,assets:{'<a>':await img('b.png',300,300)}},opt);
+ assert.equal(JSON.parse(await new Response(r.body).text().then(t=>t.slice(t.indexOf('{"model"'),t.indexOf('\r\n--',t.indexOf('{"model"'))))).questions.where.type,'box');
+ await assert.rejects(prepareRequest({state:'x',questions:{w:{type:'box',instructions:' '}}}),/Invalid question/);
+ validateResponse({model:'jev-1.14.0',answers:{where:{type:'box',boxes:[{any:'shape'}]}}},q);
+ validateResponse({model:'jev-1.14.0',answers:{where:{type:'box'}}},q);
+ assert.throws(()=>validateResponse({model:'jev-1.14.0',answers:{where:{type:'noul',noul:.1}}},q),/Malformed answer/);
+});
+test('image model pins: 1.14 class allowed on typesafe, jev-latest and 1.13 rejected',async()=>{
+ const req=async m=>({state:'Inspect <a>.',questions,model:m,assets:{'<a>':await img('p.png',300,300)}});
+ for(const m of ['jev-1.14','jev-1.14.0','jev-preview'])assert.equal((await prepareRequest(await req(m),opt)).summary.model,m);
+ await assert.rejects(prepareRequest(await req('jev-latest'),opt),/jev-latest points at 1\.13/);
+ for(const m of ['jev-1.13','jev-1.13.0'])await assert.rejects(prepareRequest(await req(m),opt),/1\.13/);
+ await assert.rejects(prepareRequest({...await req('jev-preview'),provider:'openrouter'},opt),/pin/);
+ // Text-only requests are not restricted by the image pin rule.
+ assert.equal((await prepareRequest({...base,model:'jev-latest'})).summary.model,'jev-latest');
+});
+test('longContext adds the header and raises the local text budget only when set',async()=>{
+ const big={...base,state:'x'.repeat(BUDGET.textBytes+10)};
+ await assert.rejects(prepareRequest(big),/budget/);
+ const r=await prepareRequest(big,{longContext:true});
+ assert.equal(r.headers['TypeSafe-Danger-Zone-Long-Context'],'true');
+ await assert.rejects(prepareRequest({...base,state:'x'.repeat(BUDGET.longContextTextBytes)},{longContext:true}),/budget/);
+ assert.equal((await prepareRequest(base)).headers['TypeSafe-Danger-Zone-Long-Context'],undefined);
+});
+test('docs-style backticked aliases and angle aliases both work; unused refs are caught',async()=>{
+ const f=await img('al.png',300,300);
+ const r=await prepareRequest({state:'Inspect `photo`.',questions,assets:{photo:f}},opt);
+ assert.deepEqual(Object.keys(JSON.parse(await new Response(r.body).text().then(t=>{const i=t.indexOf('{"model"');return t.slice(i,t.indexOf('\r\n--',i));})).assets),['photo']);
+ await assert.rejects(prepareRequest({state:'Inspect photo without ticks.',questions,assets:{photo:f}},opt),/Unused/);
+ await assert.rejects(prepareRequest({state:'Inspect <photo>.',questions,assets:{photo:f}},opt),/Unused/);
+ await prepareRequest({state:'Inspect <photo>.',questions,assets:{'<photo>':f}},opt);
+ await assert.rejects(prepareRequest({state:'x',questions,assets:{'bad key!':f}},opt),/references/);
+});

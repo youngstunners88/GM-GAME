@@ -15,3 +15,16 @@ Read independently accessible official source, without changing network policy:
 The user explicitly chose “Use TypeSafe directly” after adding TYPESAFE. The helper now defaults to `https://api.typesafe.ai/v1/systemone` (SDK `client.ts`) and native pin `jev-1.14`. TypeSafe credentials never go to OpenRouter; OpenRouter remains an explicit compatibility provider. The live direct request also fails before provider acceptance with proxy CONNECT 403. Native model availability, paired image control and release-specific limits remain pending. The SDK's default `jev-latest` is not used to silently bypass the requested 1.14 pin.
 
 The final encoder matches the SDK byte protocol: the `request` JSON part has Content-Type application/json **without a filename**; image parts have their own MIME/filename. Offline tests inspect boundaries, descriptors and unchanged binary PNG bytes. Native FormData + Blob was corrected because it adds filename="blob" to the JSON part, which some servers parse as a file. The blocked network attempt cannot establish either candidate was accepted.
+
+## Verified against official docs 2026-10-15
+
+Read from the official TypeSafe docs (supersedes the "unreachable" note above for these facts):
+
+- Images: endpoint `https://api.typesafe.ai/v1/systemone`, required header `TypeSafe-Danger-Zone-Images: true`; multipart with JSON part `request` (application/json) plus image parts named by each asset's `part` field; alternative is base64 `data_base64` in the JSON (not used here). PNG or JPEG stills only; animated PNG rejected.
+- Limits: image <= 16 MiB; each side 256..1568 px; total pixels 78,400..2,458,624; request body, all images combined and expanded request each <= 32 MiB. Local `BUDGET` stays stricter (3 MiB, 2.1M px, 2 images).
+- References are the asset key in backticks (`photo`) in `state`/`instructions`/`criteria`; reusing a reference duplicates the image (token cost). `usage.input_tokens` includes image tokens. The helper accepts both docs-style `photo` and SDK-style `<photo>` keys.
+- Question types: noul, choice, score, plus experimental `box` (bounding boxes). Images and Box are documented as not production-ready; format and accuracy may change. `validateResponse` checks only the answer type for `box`.
+- Long context: header `TypeSafe-Danger-Zone-Long-Context: true` raises 64k per-request / 32k per-question to 262k. Exposed as `longContext` / `--long-context`; local text budget rises to 1 MiB only when set.
+- Models: `jev-1.14.0`, `jev-1.13.0`; `jev-preview` -> 1.14.0; **`jev-latest` -> 1.13.0, not 1.14**. Image requests therefore accept only `jev-1.14`, `jev-1.14.0`, `jev-preview`. Price $42 per billion input tokens, output free.
+- Docs disagree: the models page lists input as text-only; the images page describes images behind the experimental header. Treat images as experimental.
+- **Live acceptance is still unverified**: no API key is available in this environment, so no request was sent. Offline tests cover encoding and validation only.
