@@ -15,6 +15,25 @@ def mat(name, color, metallic=0.0, roughness=0.8):
     return m
 
 wood  = mat("St_Wood", (0.42, 0.28, 0.15), 0.0, 0.85)
+def _pbrify(m, albedo_path, tint=(1.0, 1.0, 1.0)):
+    nt = m.node_tree
+    bsdf = nt.nodes["Principled BSDF"]
+    tex = nt.nodes.new("ShaderNodeTexImage")
+    tex.image = bpy.data.images.load(albedo_path)
+    try:
+        tex.image.colorspace_settings.name = 'sRGB'
+    except: pass
+    if tint[:3] == (1.0, 1.0, 1.0):
+        nt.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
+    else:
+        mul = nt.nodes.new("ShaderNodeMixRGB")
+        mul.blend_type = 'MULTIPLY'
+        mul.inputs["Fac"].default_value = 1.0
+        mul.inputs["Color1"].default_value = (*tint[:3], 1.0)
+        nt.links.new(tex.outputs["Color"], mul.inputs["Color2"])
+        nt.links.new(mul.outputs["Color"], bsdf.inputs["Base Color"])
+
+_pbrify(wood, "/tmp/farm_work/tex/wood_albedo.jpg", tint=(0.85, 0.75, 0.65))
 dark  = mat("St_Dark", (0.16, 0.10, 0.07), 0.0, 0.9)
 roofm = mat("St_Roof", (0.30, 0.18, 0.12), 0.0, 0.9)
 hole  = mat("St_Hole", (0.03, 0.02, 0.02), 0.0, 1.0)
