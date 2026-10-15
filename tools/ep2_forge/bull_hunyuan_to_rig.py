@@ -42,6 +42,10 @@ ap.add_argument("--painted", default="", help="painted UV-mapped OBJ (+ _metalli
 ap.add_argument("--tex-size", type=int, default=2048)
 ap.add_argument("--clip", default="Idle_02", help="action used for the STRETCH sample (bear: Idle)")
 ap.add_argument("--mat-name", default="bull_hunyuan_painted")
+ap.add_argument("--fit-arms", action="store_true", help="new mesh arms hang lower than the skeleton's bind arms: fit a temporary arm "
+                "pose to the mesh, transfer weights in THAT pose, then un-pose the vertices back into the original bind pose")
+ap.add_argument("--envelope", type=float, default=0.0, help="power p>0: skin by distance to bone segments (1/d^p) instead of "
+                "the nearest-surface transfer; position-only so separate shells (cloth, jaw, straps) move together")
 ap.add_argument("--no-limb", action="store_true")
 ap.add_argument("--keep-icosphere", action="store_true")
 a = ap.parse_args(argv)
@@ -313,6 +317,56 @@ new.data.update()
 nmn, nmx = world_bbox(new)
 print("ALIGN scale=%.4f old_bbox=%s..%s new_bbox=%s..%s" % (s, np.round(omn, 3), np.round(omx, 3), np.round(nmn, 3), np.round(nmx, 3)))
 
+# ---- 3b arm fit (optional) ------------------------------------------------------------------------------------------
+POSE = {}     # bone name -> 4x4 numpy (posed armature-space matrix @ inverse rest matrix); empty = bind pose
+if a.fit_arms:
+    # the glTF import leaves an action active: start from the true bind pose
+    if arm.animation_data:
+        arm.animation_data.action = None
+    for pb in arm.pose.bones:
+        pb.matrix_basis = Matrix.Identity(4)
+    bpy.context.view_layer.update()
+    Mw = arm.matrix_world
+    def chain(side):
+        names = [side + n for n in ("Arm", "ForeArm", "Hand")]
+        pts = []
+        for n in names:
+            b = arm.data.bones[n]
+            pts.append((np.array((Mw @ b.head_local)[:]), np.array((Mw @ b.tail_local)[:])))
+        return names, pts
+    cx = np.array([(Wm_new_ := new.matrix_world) @ v.co for v in new.data.vertices])
+    for side in ("Left", "Right"):
+        names, pts = chain(side)
+        piv = pts[0][0]
+        sgn = 1.0 if piv[0] > 0 else -1.0
+        reg = cx[(cx[:, 0] * sgn > 0.5) & (cx[:, 2] > 0.5) & (cx[:, 2] < 1.55)]
+        best = (1e9, 0.0)
+        for deg in np.arange(-80, 80.5, 1.0):
+            th = math.radians(deg)
+            R = np.array([[math.cos(th), 0, math.sin(th)], [0, 1, 0], [-math.sin(th), 0, math.cos(th)]])
+            segs_ = [(piv + R @ (h - piv), piv + R @ (t - piv)) for h, t in pts]
+            d = np.full(len(reg), 1e9)
+            for h, t in segs_:
+                ab = t - h
+                tt = np.clip(((reg - h) @ ab) / max(ab @ ab, 1e-9), 0, 1)
+                d = np.minimum(d, np.linalg.norm(reg - (h + np.outer(tt, ab)), axis=1))
+            sc = float(d.mean())
+            if sc < best[0]:
+                best = (sc, deg)
+        print("ARMFIT %s deg=%.0f mean_dist=%.3f over %d verts" % (side, best[1], best[0], len(reg)))
+        th = math.radians(best[1])
+        R3 = Matrix.Rotation(th, 4, "Y")
+        T = Matrix.Translation(Vector(piv[:])) @ R3 @ Matrix.Translation(-Vector(piv[:]))
+        pb = arm.pose.bones[names[0]]
+        D = Mw.inverted() @ T @ Mw
+        bl = arm.data.bones[names[0]].matrix_local
+        pb.matrix_basis = bl.inverted() @ D @ bl      # parent pose is identity -> local delta in bone space
+        print("ARMFIT Mw", [round(x, 4) for x in Mw.to_scale()], "D det %.3f" % D.determinant())
+        bpy.context.view_layer.update()
+    for pb in arm.pose.bones:
+        POSE[pb.name] = np.array((pb.matrix @ arm.data.bones[pb.name].matrix_local.inverted())[:])
+    bpy.context.view_layer.update()
+
 # ---- 4 weight transfer --------------------------------------------------------------------------------------------
 gnames = [g.name for g in old.vertex_groups]
 G = len(gnames)
@@ -330,6 +384,10 @@ me = old.data
 me.calc_loop_triangles()
 for t in me.loop_triangles:
     tri_vi.append(t.vertices[:])
+if a.fit_arms:     # posed surface: bake the temporary arm pose into a copy so BVH + barycentrics match the new mesh
+    ev_old = old.evaluated_get(bpy.context.evaluated_depsgraph_get())
+    me = bpy.data.meshes.new_from_object(ev_old)
+    old_co_w = [Wm_old @ v.co for v in me.vertices]
 bm = bmesh.new(); bm.from_mesh(me); bm.transform(Wm_old); bm.faces.ensure_lookup_table()
 bvh = BVHTree.FromBMesh(bm)
 # map bmesh face index -> its first triangle's verts (faces are tris in the Meshy mesh; fan otherwise)
@@ -372,6 +430,28 @@ for v in new.data.vertices:
     nw[v.index] = (ow[tri[0]] * bu + ow[tri[1]] * bv + ow[tri[2]] * bw) / sm
 bm.free()
 print("TRANSFER done verts", nv)
+if a.envelope > 0:
+    eseg, ename_ = [], []
+    for b in arm.data.bones:
+        if b.name not in gnames:
+            continue
+        pbn = arm.pose.bones[b.name]
+        kids = [c for c in b.children if c.name in gnames]
+        h = np.array((arm.matrix_world @ pbn.head)[:])
+        t = np.array((arm.matrix_world @ (arm.pose.bones[kids[0].name].head if kids else pbn.tail))[:])
+        eseg.append((h, t)); ename_.append(gnames.index(b.name))
+    D_ = np.empty((nv, len(eseg)))
+    for k, (h, t) in enumerate(eseg):
+        ab = t - h
+        tt = np.clip(((npos - h) @ ab) / max(ab @ ab, 1e-9), 0, 1)
+        D_[:, k] = np.linalg.norm(npos - (h + np.outer(tt, ab)), axis=1)
+    dmin = D_.min(1, keepdims=True)
+    W_ = np.where(D_ < dmin * 1.8 + 0.01, 1.0 / (D_ + 0.02) ** a.envelope, 0.0)
+    nw[:] = 0
+    for k, gi_ in enumerate(ename_):
+        nw[:, gi_] = W_[:, k]
+    nw /= np.maximum(nw.sum(1, keepdims=True), 1e-8)
+    print("ENVELOPE weights p=%.1f" % a.envelope)
 
 # ---- 5 limb gate, smooth, limit, normalise ------------------------------------------------------------------------
 if not a.no_limb:
@@ -380,9 +460,10 @@ if not a.no_limb:
     for b in arm.data.bones:
         if b.name not in gi:
             continue
-        h = arm.matrix_world @ b.head_local
+        pbn = arm.pose.bones[b.name]
+        h = arm.matrix_world @ pbn.head
         kids = [c for c in b.children if c.name in gi]
-        t = arm.matrix_world @ (kids[0].head_local if kids else b.tail_local)
+        t = arm.matrix_world @ (arm.pose.bones[kids[0].name].head if kids else pbn.tail)
         segs.append((np.array(h[:]), np.array(t[:]))); seg_limb.append(BONE_LIMB.get(b.name, "core"))
     best_d = np.full(nv, 1e9); lab = np.array(["core"] * nv, dtype=object)
     for (h, t), lb in zip(segs, seg_limb):
@@ -434,6 +515,19 @@ for i in range(G):
 infl = (nw > 1e-3).sum(1)
 print("INFLUENCE hist 1..4:", [int((infl == k).sum()) for k in range(1, 5)], "orphans", orphans, "max", int(infl.max()))
 
+if a.fit_arms:
+    # un-pose: v_bind = (sum_i w_i * P_i)^-1 v_posed, so in the ORIGINAL bind pose the mesh matches the skeleton again
+    Pm = np.stack([POSE.get(n, np.eye(4)) for n in gnames])            # G x 4 x 4
+    Mb = np.einsum("vg,gij->vij", nw, Pm)
+    co = np.array([v.co[:] for v in new.data.vertices]); POSED_CO = co.copy(); co4 = np.c_[co, np.ones(len(co))]
+    out = np.einsum("vij,vj->vi", np.linalg.inv(Mb), co4)[:, :3]
+    new.data.vertices.foreach_set("co", out.astype(np.float32).ravel())
+    new.data.update()
+    for pb in arm.pose.bones:
+        pb.matrix_basis = Matrix.Identity(4)
+    bpy.context.view_layer.update()
+    print("UNPOSED bbox", out.min(0).round(3), out.max(0).round(3))
+
 # ---- 6 parent to the original armature, name like the original --------------------------------------------------
 old_name = old.name
 bpy.data.objects.remove(old, do_unlink=True)
@@ -463,6 +557,21 @@ bsdf.inputs["Base Color"].default_value = (0.55, 0.55, 0.55, 1)
 bsdf.inputs["Roughness"].default_value = 0.8
 new.data.materials.clear(); new.data.materials.append(mat)
 
+if a.fit_arms and os.environ.get("ARMDBG"):
+    for n in ("LeftArm", "RightArm"):
+        pbx = arm.pose.bones[n]; bl_ = arm.data.bones[n].matrix_local; pbx.matrix_basis = bl_.inverted() @ Matrix(POSE[n].tolist()) @ bl_
+    bpy.context.view_layer.update()
+    e = new.evaluated_get(bpy.context.evaluated_depsgraph_get()).to_mesh()
+    ec = np.array([v.co[:] for v in e.vertices])
+    dd = np.linalg.norm(ec - POSED_CO, axis=1)
+    print("ARMDBG reskin dev max %.3f mean %.3f  (cm); weight sum min %.3f" % (dd.max(), dd.mean(), nw.sum(1).min()))
+    ai = [gnames.index(n) for n in ("LeftArm","LeftForeArm","LeftHand","RightArm","RightForeArm","RightHand") if n in gnames]
+    aw = nw[:, ai].sum(1)
+    print("ARMDBG dev for arm-weight==0: %.3f ; >0: %.3f ; nverts armw>0 %d" % (dd[aw == 0].mean(), dd[aw > 0].mean(), (aw > 0).sum()))
+    print("ARMDBG P LeftArm\n", POSE["LeftArm"].round(3), "\n P LeftHand\n", POSE["LeftHand"].round(3))
+    print("ARMDBG pose LeftHand actual\n", np.array((arm.pose.bones["LeftHand"].matrix @ arm.data.bones["LeftHand"].matrix_local.inverted())[:]).round(3))
+    for pb in arm.pose.bones:
+        pb.matrix_basis = Matrix.Identity(4)
 # ---- 8 stretch + export -------------------------------------------------------------------------------------------
 act = bpy.data.actions.get(a.clip)
 if arm.animation_data is None:
