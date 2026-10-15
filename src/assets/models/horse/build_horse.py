@@ -22,6 +22,37 @@ coatF = mat("CoatFar", (0.34, 0.18, 0.09))
 dark  = mat("Points", (0.12, 0.07, 0.05))
 eyeM  = mat("Eye", (0.02, 0.02, 0.02), 0.2)
 
+def _pbrify(m, albedo_path, normal_path=None, tint=(1.0, 1.0, 1.0, 1.0)):
+    """Poly Haven PBR onto a flat material: albedo (+tint multiply) + normal."""
+    nt = m.node_tree
+    bsdf = nt.nodes["Principled BSDF"]
+    tex = nt.nodes.new("ShaderNodeTexImage")
+    tex.image = bpy.data.images.load(albedo_path)
+    try:
+        tex.image.colorspace_settings.name = 'sRGB'
+    except: pass
+    if tint[:3] == (1.0, 1.0, 1.0):
+        nt.links.new(tex.outputs["Color"], bsdf.inputs["Base Color"])
+    else:
+        mul = nt.nodes.new("ShaderNodeMixRGB")
+        mul.blend_type = 'MULTIPLY'
+        mul.inputs["Fac"].default_value = 1.0
+        mul.inputs["Color1"].default_value = (*tint[:3], 1.0)
+        nt.links.new(tex.outputs["Color"], mul.inputs["Color2"])
+        nt.links.new(mul.outputs["Color"], bsdf.inputs["Base Color"])
+    if normal_path:
+        ntex = nt.nodes.new("ShaderNodeTexImage")
+        ntex.image = bpy.data.images.load(normal_path)
+        try:
+            ntex.image.colorspace_settings.name = 'Non-Color'
+        except: pass
+        nmap = nt.nodes.new("ShaderNodeNormalMap")
+        nt.links.new(ntex.outputs["Color"], nmap.inputs["Color"])
+        nt.links.new(nmap.outputs["Normal"], bsdf.inputs["Normal"])
+
+_pbrify(coat, "/tmp/farm_work/tex/hide_albedo.jpg", "/tmp/farm_work/tex/hide_nor.jpg")
+_pbrify(coatF, "/tmp/farm_work/tex/hide_albedo.jpg", "/tmp/farm_work/tex/hide_nor.jpg", tint=(0.78, 0.78, 0.82))
+
 # ---------- armature ----------
 bpy.ops.object.armature_add(location=(0, 0, 0))
 arm = bpy.context.active_object
