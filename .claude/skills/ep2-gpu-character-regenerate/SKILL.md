@@ -41,3 +41,9 @@ Latest transformers -> "Error(s) in loading state_dict for SingleImageEncoder". 
   bone name) keep working. Never IK arms to shoulder height (Tripo skin webs); keep rest-arm locks until a rest-aware clip is proven.
 - Pack budget 189.2/190 MiB: the new GLB must REPLACE `inferno_bull_rigged.glb` (5.4 MB) / `bear_rigged.glb` (4.7 MB).
 - Do not claim "fixed" from a render alone: grade the engine capture against the founder's image with numbers.
+- **Extracted-texture trap (cost an hour):** `.glb.import` has `gltf/embedded_image_handling=1`; Godot reuses the old
+  `<name>_0.jpg/_1.jpg` it extracted last time, so a new GLB shows the old atlas on new UVs (shattered). Delete those files
+  + their `.import` before reimport. Verify a GLB's UVs with a Blender import round-trip, not just the pre-export scene.
+- Local engine test: `godot --path <git worktree> --rendering-driver opengl3 res://tools/ep2_shots/bull_close_shot.tscn -- out=DIR`
+  (Godot 4.7.2 at `~/.local/bin/godot`; the project is 4.3, so do not commit its re-import changes).
+- Hunyuan paint leaves the FACE dark: plan a face repaint pass; never lift with emission (it fogs the figure).

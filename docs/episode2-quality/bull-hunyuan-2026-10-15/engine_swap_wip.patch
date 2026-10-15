@@ -1,0 +1,106 @@
+diff --git i/src/episode2/actors/ep2_bull_hero.gd w/src/episode2/actors/ep2_bull_hero.gd
+index 703c6314..6565dd3b 100644
+--- i/src/episode2/actors/ep2_bull_hero.gd
++++ w/src/episode2/actors/ep2_bull_hero.gd
+@@ -35,7 +35,7 @@ var _palm_m := Vector3.ZERO
+ 
+ 
+ ## Dress `b` once: rest-arm lock + the vertical rifle in his left fist. Safe on a fallback (no skeleton) actor.
+-static func dress(b: Ep2Actor, with_rifle: bool = true) -> Ep2BullHero:
++static func dress(b: Ep2Actor, with_rifle: bool = false) -> Ep2BullHero:
+ 	if b == null or b.skeleton == null:
+ 		return null
+ 	var h := Ep2BullHero.new()
+@@ -49,7 +49,9 @@ static func dress(b: Ep2Actor, with_rifle: bool = true) -> Ep2BullHero:
+ ## Sheet grade (founder: "muddy"): black fur, dark denim, brown leather, brass. The restored PBR is an orange-tinted
+ ## self-glow over a copper-leaning atlas, so in golden woods light he read as a bronze statue. Cool and darken the
+ ## albedo a touch, take the glow down to a neutral lift and keep the metal low: measured in _measure / the report.
+-const GRADE_ALBEDO := Color(0.60, 0.66, 1.04)
++## True when inferno_bull_rigged.glb is the painted Hunyuan3D Bull (own UVs/textures, rifle baked into the fist).
++const PAINTED_GLB := true
++const GRADE_ALBEDO := Color(1.0, 1.0, 1.0)
+ const GRADE_EMISSION := Color(0.85, 0.85, 0.9)
+ const GRADE_EMISSION_ENERGY := 0.0
+ const GRADE_METALLIC := 0.35
+@@ -118,6 +120,8 @@ func _setup(with_rifle: bool) -> void:
+ 
+ 
+ func _add_lamp(sk: Skeleton3D) -> void:
++	if PAINTED_GLB:
++		return    # the painted model has its own lamp on the hat; the old rest-pose lamp prop would float on his face
+ 	var head: int = sk.find_bone("Head")
+ 	var hold: Node3D = bull.holder("Head")
+ 	if head < 0 or hold == null:
+diff --git i/src/episode2/chamber/interlude_base.gd w/src/episode2/chamber/interlude_base.gd
+index 43f6bcd8..adda4471 100644
+--- i/src/episode2/chamber/interlude_base.gd
++++ w/src/episode2/chamber/interlude_base.gd
+@@ -988,24 +988,25 @@ static func _fix_bull_materials(root: Node) -> void:
+ 				d.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
+ 				d.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_OPAQUE_ONLY
+ 				d.resource_name = "InfernoBullRestoredPBR"
+-				d.albedo_texture = preload("res://src/episode2/assets/textures/bull_albedo.jpg")
+-				d.metallic_texture = preload("res://src/episode2/assets/textures/bull_metal_rough.png")
+-				d.roughness_texture = d.metallic_texture
+-				d.metallic_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_BLUE
+-				d.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_GREEN
+-				d.metallic = 0.65
+-				d.metallic_specular = 0.25
+-				d.roughness = 1.0
+-				d.normal_enabled = true
+-				d.normal_texture = preload("res://src/episode2/assets/textures/bull_normal.png")
+-				d.normal_scale = 0.65
++				if not Ep2BullHero.PAINTED_GLB:
++					d.albedo_texture = preload("res://src/episode2/assets/textures/bull_albedo.jpg")
++					d.metallic_texture = preload("res://src/episode2/assets/textures/bull_metal_rough.png")
++					d.roughness_texture = d.metallic_texture
++					d.metallic_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_BLUE
++					d.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_GREEN
++					d.metallic = 0.65
++					d.metallic_specular = 0.25
++					d.roughness = 1.0
++					d.normal_enabled = true
++					d.normal_texture = preload("res://src/episode2/assets/textures/bull_normal.png")
++					d.normal_scale = 0.65
+ 				d.rim_enabled = true
+ 				d.rim = 0.12
+ 				d.rim_tint = 0.5
+ 				d.emission_enabled = true
+ 				d.emission = Color(1.0, 0.78, 0.55)
+ 				d.emission_texture = d.albedo_texture
+-				d.emission_energy_multiplier = 0.1
++				d.emission_energy_multiplier = 0.35 if Ep2BullHero.PAINTED_GLB else 0.1
+ 				d.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+ 				m.set_surface_override_material(i, d)
+ 
+diff --git i/src/episode2/chamber/smelting_facility.gd w/src/episode2/chamber/smelting_facility.gd
+index ec896ddb..a63164c0 100644
+--- i/src/episode2/chamber/smelting_facility.gd
++++ w/src/episode2/chamber/smelting_facility.gd
+@@ -295,6 +295,8 @@ var _range_blockers: Array = []
+ var _rifle_node: Node3D = null
+ 
+ ## The same model rigged on Meshy (2026-10-01) with four library clips; origin at his feet, 2.4 m tall.
++## The painted Hunyuan Bull carries its own UV-matched textures: never replace them with the old bull_albedo/normal.
++const BULL_PAINTED_GLB := true
+ const BULL_RIG_MODEL := "res://src/episode2/assets/inferno_bull_rigged.glb"
+ const BULL_RIG_H := 2.4
+ ## Lil Blunt's free walk / run cycles from his Meshy rig (armature-only GLBs, same track paths as the hero).
+@@ -1799,7 +1801,7 @@ func _fix_bull_materials(root: Node, restored_bull: bool = false) -> void:
+ 				d.roughness_texture = null
+ 				# Source UVs verified in Blender against the runtime color map.
+ 				# Restore PBR detail without replacing the animated rig or mesh.
+-				if restored_bull:
++				if restored_bull and not BULL_PAINTED_GLB:
+ 					d.resource_name = "InfernoBullRestoredPBR"
+ 					d.albedo_texture = preload("res://src/episode2/assets/textures/bull_albedo.jpg")
+ 					d.metallic_texture = preload("res://src/episode2/assets/textures/bull_metal_rough.png")
+@@ -1817,7 +1819,7 @@ func _fix_bull_materials(root: Node, restored_bull: bool = false) -> void:
+ 				d.emission_enabled = true
+ 				d.emission = Color(1.0, 0.78, 0.55)
+ 				d.emission_texture = d.albedo_texture
+-				d.emission_energy_multiplier = 0.06 if restored_bull else 0.12
++				d.emission_energy_multiplier = (0.35 if BULL_PAINTED_GLB else 0.06) if restored_bull else 0.12
+ 				d.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+ 				m.set_surface_override_material(i, d)
+ 

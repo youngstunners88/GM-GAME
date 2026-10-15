@@ -39,3 +39,19 @@ wiring/grading (no Godot on the laptop). See 'Integration checklist'.
 5. The face under the hat is dark: lift it with the hideout fill light / a fresnel-free albedo curve; measure with
    `ref_metrics.py` against `inferno_bull_with_rifle.jpg`, then Jev + Astra (`ep2-reference-match-loop`).
 6. Pack gate: the new GLB is smaller (3.98 vs 5.6 MB), so the budget improves.
+
+## Engine test result (2026-10-15, Godot 4.7.2 on a throwaway worktree, `bull_close_shot.tscn`)
+Pictures: `engine_old_front.png` (shipping Bull) vs `engine_new_front_emis035.png` (candidate). **Verdict: NOT ready to swap.**
+- Mapping is correct in the engine once the stale extracted textures are removed (see the trap below).
+- Wins: richer clothing detail (bandolier, buckle, pouches, bandana), lamp on the hat, 3.98 MB vs 5.6 MB.
+- Losses: the face under the hat is BLACK (aviators and cigar are lost; the old Bull's face reads better), and a
+  self-lit lift (emission 0.35) washes the whole figure into fog. Orange dot on the face is the cigar/old lamp glow.
+- `engine_swap_wip.patch` holds the three GDScript edits tried (grade off, no texture overrides, no lamp prop, emission).
+  Do not apply the emission change. Next: repaint the face region of the albedo (composite from the reference at the
+  hat/face UV islands), keep emission 0.0-0.08, then re-run the shot and the reference-match numbers.
+
+## TRAP: the project's `.glb.import` uses `gltf/embedded_image_handling=1` (EXTRACT TEXTURES)
+Godot extracts embedded textures to `inferno_bull_rigged_0.jpg` / `_1.jpg` next to the GLB and then REUSES those files.
+Swapping in a new GLB keeps showing the OLD textures on the new UVs: a scrambled, shattered look that is NOT a UV bug
+(Blender renders the same GLB perfectly). Delete the extracted `_N.jpg` + `.import` files before reimporting. Also keep
+the project's original `.import` (generate_lods=false), a fresh Godot 4.7 one adds LODs. Same applies to the bear.
