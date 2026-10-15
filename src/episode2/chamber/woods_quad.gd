@@ -1852,6 +1852,7 @@ func _bull_fire_at(br: Ep2BearBrain, hit_chance: float = 0.55) -> void:
 	_flash(muzzle)
 	_sfx3d("ep2_winchester_shot_%d" % (1 + _bull_shots % 3), muzzle, -1.0, 0.92, 90.0)
 	if _rng.randf() < hit_chance:
+		br.set_meta("killed_by", "bull")   # Bull's kill is Bull's: Lil Blunt must not take the credit
 		br.take_hit(_bull.position)
 	_noise(_bull.position, SHOT_HEARING, "bull_shot")
 
@@ -2045,6 +2046,7 @@ func _on_player_shot() -> void:
 	var dir: Vector3 = _fire_dir()
 	var hit: Ep2BearBrain = _bear_on_ray(eye, dir)
 	if hit != null:
+		hit.set_meta("killed_by", "player")   # only HIS shots earn his "bear down" line (founder 2026-10-15)
 		var killed: bool = hit.take_hit(eye)
 		if _hud:
 			_hud.hit_marker(killed)
@@ -2190,7 +2192,8 @@ func _on_bear_died(br: Ep2BearBrain) -> void:
 	var snore: AudioStreamPlayer3D = br.actor.get_meta("snore") if br.actor.has_meta("snore") else null
 	if snore != null:
 		snore.stop()
-	if _hold <= 0.0 and _bark_cd <= 4.0:
+	# Lil Blunt only brags about a bear HE shot. A bear Bull dropped (or anything else) gets no line from him.
+	if str(br.get_meta("killed_by", "")) == "player" and _hold <= 0.0 and _bark_cd <= 4.0:
 		_bark_cd = 6.0
 		_begin_carry_line("ep2_vo_bear_down_%d" % (1 + (_kills * 5) % 12))
 
