@@ -5,8 +5,9 @@
 miner's hat, bandolier, belt buckle, pouches, boots, rifle and cigar - far more detail than the soft Tripo sculpt
 (see `shape_front.png`, `shape_side.png`). Missing from the shape: aviators, helmet lamp, nose ring (texture work).
 
-**NOT done:** texture/PBR (Hunyuan3D-Paint), decimation to a game mesh, rigging onto the 24-bone skeleton,
-engine wiring. The unattended paint run ended early (pod stopped itself; log not retrieved).
+**Update 2026-10-15 (later):** texture/PBR DONE (Hunyuan3D-Paint, 72 s), skinned onto the game skeleton DONE
+(`bull_hunyuan_painted_rigged_candidate.glb`, 40k faces, 3.98 MB, Idle_02 0 stretched edges). Still NOT done: engine
+wiring/grading (no Godot on the laptop). See 'Integration checklist'.
 
 ## Pipeline that worked (pod: runpod-torch-v280, Python 3.12, torch 2.8.0+cu128)
 1. Clone `Tencent-Hunyuan/Hunyuan3D-2.1`; the repo's pinned requirements.txt does NOT install on py3.12.
@@ -27,3 +28,14 @@ engine wiring. The unattended paint run ended early (pod stopped itself; log not
 - No SSH key was registered on the account, so everything went through Jupyter (`pod.py`/`up.py`/`dl.py`,
   password read from the pod env; never committed).
 - Always arm `watchdog.sh` (stops the pod after 50 min). Stopped pods still bill disk (~$0.20/GB/month).
+
+## Integration checklist (do on a machine with Godot; engine-test before shipping)
+1. Keep the old GLB: `git mv`/copy `src/episode2/assets/inferno_bull_rigged.glb` -> `.farm/retired/`.
+2. Copy `design/ep2/blender/character-work/bull_hunyuan_painted_rigged_candidate.glb` to
+   `src/episode2/assets/inferno_bull_rigged.glb` (same node/bone names; clips load by bone name).
+3. `src/episode2/actors/ep2_bull_hero.gd`: the material grade (albedo x 0.60,0.66,1.04) was tuned for the OLD texture;
+   the painted albedo is already dark - drop/relax it or the Bull goes black. Keep the rest-arm locks (Ep2BullRestArm).
+4. A rifle is baked into the left fist: hide/skip the separate `Ep2BullHeroRifle` prop, or it doubles.
+5. The face under the hat is dark: lift it with the hideout fill light / a fresnel-free albedo curve; measure with
+   `ref_metrics.py` against `inferno_bull_with_rifle.jpg`, then Jev + Astra (`ep2-reference-match-loop`).
+6. Pack gate: the new GLB is smaller (3.98 vs 5.6 MB), so the budget improves.
