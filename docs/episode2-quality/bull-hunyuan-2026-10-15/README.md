@@ -55,3 +55,11 @@ Godot extracts embedded textures to `inferno_bull_rigged_0.jpg` / `_1.jpg` next 
 Swapping in a new GLB keeps showing the OLD textures on the new UVs: a scrambled, shattered look that is NOT a UV bug
 (Blender renders the same GLB perfectly). Delete the extracted `_N.jpg` + `.import` files before reimporting. Also keep
 the project's original `.import` (generate_lods=false), a fresh Godot 4.7 one adds LODs. Same applies to the bear.
+
+## Face diagnosis follow-up (2026-10-15, later; Poly Haven studio light + 4 engine experiments)
+Studio renders (`studio_old_front.png`, `studio_new_front.png`, `studio_new_34.png`, HDRI `studio_small_08`): under neutral softbox the
+new Bull's aviators, cigar and bandana read, but fur/face albedo is very dark. In-engine experiments on the worktree, all in
+`bull_close_shot.tscn`: (1) emission 0.35: fogs the whole figure; (2) albedo gain 1.7x: no change to the face; (3) warm
+OmniLight fill in front of the face: no change; (4) UNSHADED: face still black while clothing shows true colours. **The face albedo
+itself is near-black.** Fix = repaint/lift the face UV islands in the albedo (locate islands from the UVs of the head vertices),
+then re-run the shot. Earlier note "face is dark because of lighting" is superseded by this.
