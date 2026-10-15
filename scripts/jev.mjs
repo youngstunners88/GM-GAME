@@ -50,7 +50,12 @@ export async function evaluate({ state, questions, provider = PROVIDER, model, a
     method:'POST', headers:{...request.headers,Authorization:`Bearer ${key}`},
     body:request.body, signal:AbortSignal.timeout(TIMEOUT_MS), redirect:'error',
   });
-  if (!res.ok) throw new Error(`Jev HTTP ${res.status}. No automatic retry or provider fallback; inspect the request schema or network policy.`);
+  if (!res.ok) {
+    // Show the provider's own error text (never headers/keys): 'Model X does not exist' was invisible and cost a debugging round.
+    let detail = '';
+    try { const t = await res.text(); detail = (JSON.parse(t)?.error?.message ?? t).toString().slice(0, 300); } catch { /* body unreadable */ }
+    throw new Error(`Jev HTTP ${res.status}${detail ? `: ${detail}` : ''}. No automatic retry or provider fallback.`);
+  }
   const data=validateResponse(await res.json(),questions);
   // jev-preview / jev-1.14 resolve to 1.14.0, so compare the class, not the literal id.
   if (Object.keys(assets).length && !/1\.14|preview/.test(data.model)) throw new Error("Image response model is not 1.14-class; capability unverified.");

@@ -29,6 +29,9 @@ and engine captures before it informs anything (CLAUDE.md MODEL ROLE SPLIT). Thi
   Docs models page says text-only; images are an EXPERIMENTAL header (`TypeSafe-Danger-Zone-Images`). Image limits: PNG/JPEG,
   each side 256-1568 px, total 78,400-2,458,624 px, 16 MiB each. New `box` question type (experimental). Long context
   (262k) needs `TypeSafe-Danger-Zone-Long-Context`. "All models perform worse on multimodality than on text."
+- **LIVE-VERIFIED 2026-10-15 on OpenRouter `POST /api/alpha/decisions`** ($0.0000236 per 2-question call, HTTP 200): model `typesafe/jev-1.14`
+  works; **`~typesafe/jev-latest` (WITH the tilde) resolves to `typesafe/jev-1.14-20261014`** (so on OpenRouter the latest alias IS 1.14, unlike
+  TypeSafe's own docs page); `typesafe/jev-latest` (no tilde) -> 400 "does not exist". Response carries `model`, `answers`, `usage.cost`, `id`.
 - Decisions are ONLY for choices over text/measurements. For pixels, use row 3/4 and feed Jev the NUMBERS they produce.
 
 ## Trust protocol (a model is "good at 3D" only after this)
@@ -62,3 +65,8 @@ Pack: reference + OLD + NEW engine captures (3 images, ~4-5k tokens in). Raw ans
 Verdict: **Argon passes calibration for mesh/texture diagnosis at 1/5 the cost and is the default first lane for 3D review.** Use Astra
 as the second opinion when (a) the images contain a known confound, (b) Argon says REJECT/SHIP and it gates a ship call. Both are advice; Claude
 still ran the unshaded test itself.
+
+### 2026-10-15 - Jev typed decisions on the same Bull facts (live, OpenRouter, text only)
+`ship_as_is` noul = 0.06; `next_step` = face_repaint (probability 1.0, confidence 1.0; more_lighting 0, regenerate 0, ship_now 0). Matches the
+known answer and both vision reviews. Cost $0.00002. Use Jev for the ship/no-ship and next-step choice AFTER a vision model + local
+measurements produced the facts; never feed it pictures for a verdict.
