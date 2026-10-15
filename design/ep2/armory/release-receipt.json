@@ -1,46 +1,72 @@
 {
-  "source_commit": "2f0a58a901ebe86a614d6e0eadab4fecdcce7edc",
-  "implementation_commit": "388dbc0c",
-  "latest_runtime_fix": "d0b4b18d",
-  "native_gates": [
-    "script_compile",
-    "ep2_personal_armory",
-    "ep2_range_lesson",
-    "ep2_smelting_facility",
-    "ep2_session_root",
-    "ep2_gold_town",
-    "ep2_companion_cart",
-    "ep2_interlude"
+  "date": "2026-10-15",
+  "source_publication": {
+    "master_sha": "1067d7dc",
+    "game_code_sha": "5c7d6f0e",
+    "jev_transport_sha": "9ca09ecb",
+    "preserved_remote_candidate_sha": "44a13a3f",
+    "method": "existing ship-to-master.sh; non-forced fast-forward"
+  },
+  "implemented": [
+    "Actual weapon render icons on western leather/brass cards",
+    "Hold/preview/release weapon selection with SceneTree pause",
+    "Keyboard/controller/second-finger touch and portrait layout",
+    "Blender Remington with curved walnut, floral detail, Bitcoin medallions and fitted hand",
+    "Existing finite resource/acquisition/loot/checkpoint contracts retained",
+    "Routed Jev1.14 skill, direct TypeSafe and explicit OpenRouter compatibility"
   ],
-  "native_result": "PASS",
-  "security_sentinel": "PASS",
-  "front_page_lock": "PASS",
-  "web_pck_bytes": 198484640,
-  "web_pck_MiB": 189.29,
-  "web_thread_support": false,
-  "local_browser": {
-    "passed": true,
-    "tests": {
-      "canvas_attached": "PASS",
-      "engine_booted": "PASS",
-      "no_godot_errors": "PASS",
-      "thread_support": "PASS",
-      "level_1_runs": "PASS"
-    },
-    "statesSeen": [
-      "TRANSITIONING",
-      "PLAYING"
+  "validation": {
+    "native_pass": [
+      "script_compile",
+      "ep2_personal_armory",
+      "ep2_range_lesson",
+      "ep2_smelting_facility",
+      "ep2_session_root",
+      "ep2_gold_town",
+      "ep2_companion_cart",
+      "ep2_interlude",
+      "save_compat",
+      "ep2_runner_revolver",
+      "ep3_stage3_golden_revolver"
     ],
-    "errors": [],
-    "tls_verification": true,
-    "trust_scope": "Temporary isolated Chromium profile, constrained to the four existing allowed game-service hosts; removed after validation."
+    "jev_offline_tests": 6,
+    "browser": "strict local Chromium: 5 gates PASS, PLAYING, no errors; TLS enabled, disposable CA-constrained profile removed",
+    "pck_bytes": 199005552,
+    "pck_limit_bytes": 199229440,
+    "threaded": false,
+    "security": "no blockers at fail-on=high",
+    "title_lock": "PASS",
+    "existing_pause_suite": "Three hit-target collisions reproduced on unchanged baseline f6203903. Baseline also had one additional scene-start timing failure; cause not investigated."
   },
-  "publication": "Non-forced master push confirmed by shipping script.",
-  "live_upload_verified": false,
-  "public_build_verified": false,
-  "decision_reviews": {
-    "Jev": "CONNECT proxy 403; no verdict",
-    "Microsoft": "CONNECT proxy 403; no verdict"
+  "type_safe": {
+    "selected_by_user": true,
+    "endpoint": "https://api.typesafe.ai/v1/systemone",
+    "model_pin": "jev-1.14",
+    "credential_names": [
+      "TYPESAFE",
+      "TYPESAFE_API_KEY"
+    ],
+    "credential_values_recorded": false,
+    "live_provider_acceptance": false,
+    "error": "CONNECT403 before provider acceptance; runtime readiness metadata unknown",
+    "paired_image_control": "pending",
+    "context_limit": "unverified; documentation host blocked"
   },
-  "network_draft": "Save rejected INVALID_ARGUMENT; readback unchanged."
+  "network_draft": {
+    "save": "INVALID_ARGUMENT",
+    "readback_revision": 5,
+    "custom_hosts_unchanged": true
+  },
+  "live": {
+    "actions_verified": false,
+    "butler_upload_verified": false,
+    "public_build_verified": false,
+    "status": "API/public hosts blocked with CONNECT403; source publication is not live deployment proof"
+  },
+  "evidence": [
+    "design/ep2/armory/VERIFICATION.md",
+    "design/ep2/armory/blender/game-asset-validation.json",
+    ".claude/skills/jev-1-14-routing/references/compatibility.md",
+    ".claude/skills/jev-1-14-routing/references/probe-receipt.json"
+  ]
 }

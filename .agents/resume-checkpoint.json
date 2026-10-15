@@ -1,6 +1,6 @@
 {
-  "observed_remote_sha": "f6203903363baaea2fbc4c20164a2445c6c9ea0e",
-  "objective": "Publish western icon hold/pause selector and Blender Remington correction; user also requested Jev 1.14 routing, then explicitly chose direct TypeSafe after adding TYPESAFE. Preserve Claude world work.",
+  "observed_remote_sha": "1067d7dc",
+  "objective": "Western hold/pause icon selector, Blender Remington and direct TypeSafe Jev 1.14 routing are implemented and published at master1067d7dc. Preserve Claude candidate work merged from44a13a3f. Remaining work is live API/paired image validation and verified public deployment when network access permits.",
   "task_paths": [
     "src/episode2/chamber/ep2_fps_hud.gd",
     "src/episode2/chamber/ep2_weapon_selector.gd",
@@ -17,12 +17,13 @@
   "evidence": {
     "armory": "native integration + portrait PASS; strict local browser PASS; PCK199005552 bytes",
     "jev": "6 offline tests PASS; documented binary multipart; direct provider call blocked before acceptance",
-    "baseline_pause": "3 hit-target failures reproduced on f6203903, plus isolated-cache scene-start failure; untouched source"
+    "baseline_pause": "3 hit-target failures reproduced on f6203903, plus isolated-cache scene-start failure; untouched source",
+    "release": "Game code5c7d6f0e, Jev protocol correction9ca09ecb, safe merge/publication1067d7dc. Security and title lock PASS. Local strict browser PASS. Temporary browser profile removed; baseline worktree removed after retaining logs."
   },
   "unresolved": [
     "TypeSafe API/docs CONNECT403; TYPESAFE new binding listed but runtime readiness unknown; existing TYPESAFE_API_KEY present. No authenticated API success or paired vision control.",
     "Network draft save INVALID_ARGUMENT; revision5/custom hosts unchanged.",
     "Public Actions/itch endpoint CONNECT403; no CI/butler/live BUILD proof."
   ],
-  "next_action": "Complete security/title gates, scoped commits and non-forced master publication. Remove disposable Chromium profile after local proof; preserve baseline evidence. User selected direct TypeSafe; do not ask provider permission again."
+  "next_action": "Allow api.typesafe.ai (plus docs hosts for limits) in environment network settings; automatic draft save failed INVALID_ARGUMENT/readback unchanged. Then authenticate and run paired image controls on pinned Jev1.14. Check Actions/butler/public BUILD including1067d7dc when allowed; never claim current live deployment or a Jev vision verdict without those results. Do not redo finished armory or ask direct-provider permission again."
 }
