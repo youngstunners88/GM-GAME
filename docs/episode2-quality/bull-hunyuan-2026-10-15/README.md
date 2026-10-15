@@ -74,3 +74,25 @@ at the `headfront` bone. **Do not swap yet.** Options, best first: (1) regenerat
 faces (not only camera-facing), lenses lifted to reference value, then re-shoot; (3) keep the shipping Bull's head and use the new
 body only. Engine edits to carry when this ships: see `engine_swap_wip.patch` (without the emission and fill-light experiments,
 which did nothing useful) + delete the extracted `inferno_bull_rigged_0/1.jpg` before reimport (trap above).
+
+## v3 = new HEAD (face close-up regenerate) grafted on the v2 body (2026-10-15)
+GLB `design/ep2/blender/character-work/bull_hunyuan_head_v3_rigged_candidate.glb` (6.04 MB; shipping 5.6; pack headroom 0.8 MB: OK only if it
+REPLACES the old one). Script `tools/ep2_forge/bull_head_graft.py`. Head: Hunyuan3D-2.1 octree 512 from `head_ref_input.png`
+(smoke wisp removed), painted at 512, rigid to the `Head` bone with a 5 cm blend to `neck`. Fit: IoU grid search (scale 0.39, front IoU 0.81).
+Face now legible in neutral light AND in the engine (`engine_v3_head_zoom.png`: eyes, nose ring, ears, bandana).
+
+### Left-elbow / transparency (founder request): culling ON vs OFF, magenta background, Idle_02 and walk, both elbows, 3 views
+| Case (pixels visible only because back faces show) | v3 | v2 | shipping Bull |
+|---|---|---|---|
+| idle, arms locked / free | **0** | 2 / 36 | 10,819 |
+| walk, arms locked | **0** | 2,099 | 12,685 |
+| walk, arms free | 30 | 10,082 | 17,861 |
+Interior holes (magenta enclosed in the silhouette): 0, 0, 0, 30 in the same order. So the SHIPPING Bull is the one with see-through
+surfaces (single-sided shells, the old "see-through Bull" bug the engine hides with CULL_DISABLED); v3 does not depend on that fix.
+Cost of the seam weld: ~150 more stretched edges in the walk (803 mean vs v2 609, shipping 1,366).
+
+### Open items before the swap (engine integration, needs Godot):
+1. Skip the old lamp disc and the cigar-ember prop (`_cigar_tip`, bone `headfront`) for the painted model: they sit mid-face on the new head.
+2. Seam: visible open rims at the character's right neck/shoulder (75 body + 50 head boundary edges seen from outside); fill or overlap.
+3. Delete the extracted `inferno_bull_rigged_0/1.jpg` + `.import` before reimport (trap above); keep the project's original `.glb.import`.
+4. Re-shoot with the HUD hidden; run `ep2-reference-match-loop` numbers; ship only after a Godot 4.3 export gate.
