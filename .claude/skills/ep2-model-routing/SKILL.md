@@ -47,3 +47,18 @@ and engine captures before it informs anything (CLAUDE.md MODEL ROLE SPLIT). Thi
   `mkdir -p ~/.config/gm-game; read -rsp "OpenRouter key: " K; echo; (umask 077; printf 'export OPENROUTER_API_KEY=%s\n' "$K" > ~/.config/gm-game/env); unset K`
   (add a `TYPESAFE=` line the same way for direct Jev). Never paste a key in chat; never commit that file.
 - Money-moving or shipping decisions are never delegated: a model answer cannot approve a deploy.
+
+## Calibration log
+### 2026-10-15 - Bull face (known answer: albedo near-black; emission fogs; lighting/albedo-gain do not fix; repaint face UV islands)
+Pack: reference + OLD + NEW engine captures (3 images, ~4-5k tokens in). Raw answers: `docs/model-responses/{gemini-argon,astra}-bull-face-2026-10-15.md`.
+| | Gemini 4 Argon | GPT-6 Astra (control) |
+|---|---|---|
+| Cost | **$0.023** | $0.109 |
+| Found the known cause | YES, rank 1 (baked AO into near-zero albedo) and proposed UNSHADED as the confirming test (exactly the test that settled it) | YES, rank 1 (texture content), albedo-only preview as the test |
+| Orange dot | correctly: cigar-ember particle, same position in OLD and NEW | correctly: same disk in OLD; wanted it isolated |
+| Repair plan | concrete and executable: vertex-colour mask bake of the face islands, reference projection paint, luminance + SSIM measurement | careful, generic: locate islands, localized paint, measure feature contrast |
+| Weakness | **missed an explicit confound**: blamed material for the global washout although the prompt said emission 0.35 was on in that capture; verdict REJECT is harsher than the evidence | asked "MISSING: does the screenshot include the emission experiment" (correct); verdict FIX_THEN_SHIP matches the founder-facing call |
+| Invented anything? | no invented files; one mild over-claim (the baked rifle "collides with the equipped weapon"; the second rifle was a hideout prop) | no |
+Verdict: **Argon passes calibration for mesh/texture diagnosis at 1/5 the cost and is the default first lane for 3D review.** Use Astra
+as the second opinion when (a) the images contain a known confound, (b) Argon says REJECT/SHIP and it gates a ship call. Both are advice; Claude
+still ran the unshaded test itself.
