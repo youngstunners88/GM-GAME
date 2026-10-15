@@ -1,28 +1,30 @@
 {
-  "observed_remote_sha": "ac20beace6535262dda0f8a269dbad3eac137ae6",
-  "objective": "Implement Bull/bear motion and physical rifle/bow/book contact from the archived transcript; runtime implementation verified locally and ready for master publication.",
+  "observed_remote_sha": "2f0a58a901ebe86a614d6e0eadab4fecdcce7edc",
+  "objective": "Armory implementation complete and published: both guns, finite ammunition, keyboard/touch/controller selection, saved training, persistent corpse-arrow loot, viewport callback recovery, and surface/runner retries. Preserve concurrent Claude work. Remaining work is external model review and verified live release when networking permits.",
   "task_paths": [
-    "src/episode2/actors",
-    "src/episode2/chamber/smelting_facility.gd",
+    "src/episode2/chamber/ep2_armory_state.gd",
+    "src/episode2/chamber/ep2_remington_view.gd",
+    "src/episode2/chamber/ep2_viewmodel.gd",
+    "src/episode2/chamber/ep2_fps_hud.gd",
+    "src/episode2/session/ep2_session_root.gd",
+    "src/autoload/game_manager.gd",
+    "src/episode2/runner/runner_graybox.gd",
     "src/episode2/chamber/woods_quad.gd",
-    "src/episode2/assets/bear_rigged.glb",
-    "tests/ep2_character_motion_test.gd",
-    "tools/ep2_forge/repair_bear_arm_bind.py",
-    "tools/ep2_shots",
-    "design/ep2/motion/jobs/2026-10-14-runtime",
-    ".github/workflows/export-game.yml",
-    "STATUS.md"
+    "src/episode2/chamber/smelting_facility.gd",
+    "tests/ep2_personal_armory_test.gd",
+    "design/ep2/armory"
   ],
   "evidence": {
-    "source_baseline": "ac20beace6535262dda0f8a269dbad3eac137ae6",
-    "report": "design/ep2/motion/jobs/2026-10-14-runtime/REPORT.md",
-    "validation": "Whole-interval skinned paw contacts and native Episode 2 gates pass. 4.3 nonthreaded web pack under 190 MiB. Five local browser gates pass; overall blocked by remote proxy CA fetch errors.",
-    "release": "GitHub Actions API and itch page are blocked by proxy 403; no live upload proof."
+    "report": "design/ep2/armory/VERIFICATION.md",
+    "contract": "design/ep2/armory/CONVENTION.md",
+    "validation": "All 8 final native gates, security/title lock PASS. Final nonthreaded PCK198484640 bytes. Strict local browser PASS with TLS enabled in temporary isolated profile constrained to four allowed game hosts; profile removed after validation.",
+    "release": "All runtime changes published to master2f0a58a9. Latest runtime fix d0b4b18d. Live butler/public BUILD and Jev/Microsoft endpoints blocked by proxy403. Network configuration draft save failed INVALID_ARGUMENT; readback unchanged. Receipt design/ep2/armory/release-receipt.json."
   },
   "unresolved": [
-    "Bull quad two-hand reach candidate rejected for visible skin tearing; previous posture preserved.",
-    "No finger articulation or full foot/mount/lever/leaf certification.",
-    "Live release verification and external Jev/Microsoft review blocked by outbound policy."
+    "External Jev/Microsoft decisions blocked by proxy 403.",
+    "Armory saves do not add complete story/world-position persistence.",
+    "Native Remington is procedural reference-based geometry; no fully articulated reload/finger rig.",
+    "Actual release upload and matching public BUILD require network-accessible verification."
   ],
-  "next_action": "Publish the verified runtime change through the non-forced shipping script, then verify actual butler upload and matching public BUILD when network access permits."
+  "next_action": "Check the release workflow containing d0b4b18d/2f0a58a9, actual butler upload and matching public BUILD once allowed. Obtain both decision reviews when OpenRouter access is available. Do not redo completed armory implementation or call unverified deployment live."
 }

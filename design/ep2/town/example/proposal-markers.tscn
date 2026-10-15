@@ -1,0 +1,69 @@
+[gd_scene format=3]
+
+[node name="TownProposalMarkers" type="Node3D"]
+metadata/proposal_only = true
+metadata/runtime_approved = false
+
+[node name="stable_hand" type="Marker3D" parent="."]
+position = Vector3(-24, 0, 1441)
+metadata/kind = "person"
+
+[node name="horse_west" type="Marker3D" parent="."]
+position = Vector3(-24, 0, 1446)
+metadata/kind = "horse"
+
+[node name="horse_east" type="Marker3D" parent="."]
+position = Vector3(6.4, 0, 1431)
+metadata/kind = "horse"
+
+[node name="storekeeper" type="Marker3D" parent="."]
+position = Vector3(-7.1, 0, 1422)
+metadata/kind = "person"
+
+[node name="miner" type="Marker3D" parent="."]
+position = Vector3(-24, 0, 1421)
+metadata/kind = "person"
+
+[node name="laundry_worker" type="Marker3D" parent="."]
+position = Vector3(25, 0, 1424)
+metadata/kind = "person"
+
+[node name="fiddler" type="Marker3D" parent="."]
+position = Vector3(7, 0, 1409)
+metadata/kind = "person"
+
+[node name="fiddle" type="Marker3D" parent="."]
+position = Vector3(7, 0, 1409)
+metadata/kind = "instrument"
+
+[node name="piano" type="Marker3D" parent="."]
+position = Vector3(18, 0, 1418)
+metadata/kind = "instrument"
+
+[node name="dog_yard" type="Marker3D" parent="."]
+position = Vector3(-23, 0, 1428)
+metadata/kind = "dog"
+
+[node name="dog_stable" type="Marker3D" parent="."]
+position = Vector3(-25, 0, 1449)
+metadata/kind = "dog"
+
+[node name="chicken_1" type="Marker3D" parent="."]
+position = Vector3(25, 0, 1443)
+metadata/kind = "chicken"
+
+[node name="chicken_2" type="Marker3D" parent="."]
+position = Vector3(27, 0, 1447)
+metadata/kind = "chicken"
+
+[node name="chicken_3" type="Marker3D" parent="."]
+position = Vector3(25, 0, 1450)
+metadata/kind = "chicken"
+
+[node name="water_pump" type="Marker3D" parent="."]
+position = Vector3(-23, 0, 1452)
+metadata/kind = "prop"
+
+[node name="feed_sacks" type="Marker3D" parent="."]
+position = Vector3(27, 0, 1441)
+metadata/kind = "prop"

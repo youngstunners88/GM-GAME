@@ -12,6 +12,7 @@ coach, "The Lesson 3.1"; kept current by skill `context-md-upkeep`.)
 - `docs/pck_budget_doc.md`: every pack addition with its size.
 - `docs/security/`: audit log + checklist (security sentinel).
 - Founder motion transcript/archive and adaptation: `design/ep2/motion/`; route through `ep2-character-performance`. Clip-plan validation is input evidence, not a rendered animation/contact approval.
+- Living-town toolkit: `design/ep2/town/README.md`, `tools/ep2_town/`; proposal SVGs/markers are preparation. Actual player-camera clips, audio/performance and export evidence belong in `docs/episode2-quality/` after runtime implementation.
 
 ## Naming
 - Topic docs: `[topic]_doc.md`. Intake of a founder delivery: `docs/episode2-quality/intake_<date>_doc.md`.

@@ -22,6 +22,7 @@ CONTEXT.md per workspace, kept current by skill `context-md-upkeep`.)
 ## Pipelines (which tool for what)
 | need | tool | skill |
 |---|---|---|
+| town streets/facades/background-life jobs | offline `tools/ep2_town/town_tool.py` audit/plan/validate/handoff; approved existing/local art first | `ep2-living-town` + street/facade/life/proof components |
 | reference still / texture / keyed card | Muapi GPT Image 2 (`tools/ep2_forge/muapi_ref.py`, or `muapi` CLI) | `ep2-hyperreal-scene-pipeline` |
 | image -> 3D | Tripo H3.1 / Meshy via Muapi (`tools/ep2_forge/muapi_3d.py`) | same |
 | modular kit / clean-up / bake | headless Blender (`tools/ep2_blender/*`), `tools/ep2_forge/ai_prop_to_game.py` | `ep2-set-piece-forge` |

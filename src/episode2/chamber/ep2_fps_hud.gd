@@ -13,6 +13,22 @@ extends Control
 
 const GOLD := Color(1.0, 0.86, 0.45)
 const WHITE := Color(1, 1, 1, 0.95)
+signal weapon_selected(id: String)
+signal armory_requested
+signal search_requested
+var armory: Ep2ArmoryState = null
+var armory_open: bool = false
+var armory_enabled: bool = true
+var _slots: Array[Button] = []
+var _quick: GridContainer = null
+var _panel: PanelContainer = null
+var _inventory: Label = null
+var _search: Button = null
+var _mouse_before: Input.MouseMode = Input.MOUSE_MODE_VISIBLE
+var _finger_on: Dictionary = {}
+var _last_activation_frame: int = -1
+var _binding_action: String = ""
+var _controls: HBoxContainer = null
 
 var spread_deg: float = 2.6
 var ads: float = 0.0
@@ -67,6 +83,8 @@ func _ready() -> void:
 	_vignette.modulate.a = 0.0
 	_vignette.show_behind_parent = true        # under the crosshair, ammo and prompts, never over them
 	add_child(_vignette)
+	Ep2ArmoryState.install_actions()
+	_build_armory()
 
 
 func _fit() -> void:
@@ -80,6 +98,7 @@ func _fit() -> void:
 
 func _process(delta: float) -> void:
 	_fit()
+	_update_armory()
 	_toast_t = maxf(0.0, _toast_t - delta)
 	_hit_t = maxf(0.0, _hit_t - delta)
 	_hurt_t = maxf(0.0, _hurt_t - delta)
@@ -87,6 +106,141 @@ func _process(delta: float) -> void:
 	if _vignette:
 		_vignette.modulate.a = ads * 0.85
 	queue_redraw()
+
+
+func bind_armory(state: Ep2ArmoryState) -> void:
+	armory = state
+	_update_armory()
+
+
+func _button(text: String, callback: Callable) -> Button:
+	var button := Button.new()
+	button.text = text
+	button.custom_minimum_size = Vector2(0, 44)
+	button.add_theme_font_size_override("font_size", 15)
+	button.pressed.connect(_activate_button.bind(callback))
+	button.gui_input.connect(_touch_button.bind(button, callback))
+	return button
+
+
+func _activate_button(callback: Callable) -> void:
+	var frame: int = Engine.get_process_frames()
+	if frame != _last_activation_frame:
+		_last_activation_frame = frame
+		callback.call()
+
+
+func _touch_button(event: InputEvent, button: Button, callback: Callable) -> void:
+	if not event is InputEventScreenTouch or button.disabled:
+		return
+	var touch: InputEventScreenTouch = event
+	if touch.pressed:
+		_finger_on[touch.index] = button
+	else:
+		var started: Variant = _finger_on.get(touch.index)
+		_finger_on.erase(touch.index)
+		if started == button and not touch.canceled and Rect2(Vector2.ZERO, button.size).has_point(touch.position):
+			_activate_button(callback)
+
+
+func _build_armory() -> void:
+	_quick = GridContainer.new()
+	_quick.columns = 4
+	_quick.add_theme_constant_override("separation", 6)
+	add_child(_quick)
+	for id in Ep2ArmoryState.IDS:
+		var button := _button("", func() -> void: weapon_selected.emit(id))
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		_quick.add_child(button)
+		_slots.append(button)
+	_quick.add_child(_button("Previous", func() -> void: weapon_selected.emit(armory.previous)))
+	_quick.add_child(_button("Armory", func() -> void: armory_requested.emit()))
+	_panel = PanelContainer.new()
+	_panel.visible = false
+	add_child(_panel)
+	var contents := VBoxContainer.new()
+	_panel.add_child(contents)
+	_inventory = Label.new()
+	_inventory.add_theme_font_size_override("font_size", 18)
+	_inventory.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	contents.add_child(_inventory)
+	contents.add_child(_button("Close armory [Tab / Back]", func() -> void: armory_requested.emit()))
+	contents.add_child(_button("Change keyboard controls", func() -> void: _controls.visible = not _controls.visible))
+	_controls = HBoxContainer.new()
+	_controls.visible = false
+	contents.add_child(_controls)
+	for i in Ep2ArmoryState.ACTIONS.size():
+		var action: String = Ep2ArmoryState.ACTIONS[i]
+		_controls.add_child(_button(["Slot 1", "Slot 2", "Previous", "Armory"][i], func() -> void:
+			_binding_action = action
+			toast("Press a new key; Escape cancels", 6.0)))
+	_search = _button("Search bear [E]", func() -> void: search_requested.emit())
+	_search.visible = false
+	add_child(_search)
+
+
+func _update_armory() -> void:
+	if _quick == null:
+		return
+	_quick.visible = armory != null and show_ammo
+	if armory == null:
+		return
+	var width: float = minf(size.x - 24.0, 880.0)
+	_quick.columns = 4 if width >= 850.0 else 2 if width >= 550.0 else 1
+	_quick.position = Vector2((size.x - width) * 0.5, size.y - 70.0 - ceilf(4.0 / float(_quick.columns)) * 50.0)
+	_quick.size.x = width
+	(_quick.get_child(2) as Button).text = "Previous [%s]" % Ep2ArmoryState.key_label("ep2_weapon_previous")
+	(_quick.get_child(3) as Button).text = "Armory [%s]" % Ep2ArmoryState.key_label("ep2_armory")
+	(_panel.get_child(0).get_child(1) as Button).text = "Close armory [%s / Back]" % Ep2ArmoryState.key_label("ep2_armory")
+	var lines := PackedStringArray(["LIL BLUNT'S PERSONAL ARMORY", "Loaded rounds / reserve rounds", ""])
+	for i in Ep2ArmoryState.IDS.size():
+		var id: String = Ep2ArmoryState.IDS[i]
+		var firearm: Ep2Winchester = armory.firearm(id)
+		var selected: String = " > " if armory.equipped == id and armory.owns(id) else ""
+		_slots[i].text = "%s%s  %s" % [selected, Ep2ArmoryState.key_label(Ep2ArmoryState.ACTIONS[i]), Ep2ArmoryState.NAMES[id]]
+		_slots[i].disabled = not armory_enabled or not armory.owns(id)
+		_slots[i].tooltip_text = "%s: %d loaded / %d reserve" % ["Rifle rounds" if id == Ep2ArmoryState.WIN else "Revolver rounds", firearm.rounds, firearm.reserve]
+		lines.append("%s%s: %d / %d" % [selected, Ep2ArmoryState.NAMES[id], firearm.rounds, firearm.reserve] if armory.owns(id) else "%s: not acquired" % Ep2ArmoryState.NAMES[id])
+	lines.append("\nBear arrows stored: %d\nSearch fallen bears for their remaining arrows.\nA bow has not been acquired." % armory.arrows)
+	lines.append("\n%s / %s: select     %s: previous     %s: armory\nController: LB / RB, Y, Back. Touch: tap a slot.\nSwitching cancels loading; completed rounds stay loaded." % [Ep2ArmoryState.key_label("ep2_weapon_1"), Ep2ArmoryState.key_label("ep2_weapon_2"), Ep2ArmoryState.key_label("ep2_weapon_previous"), Ep2ArmoryState.key_label("ep2_armory")])
+	_inventory.text = "\n".join(lines)
+	_panel.position = Vector2((size.x - minf(600.0, size.x - 32.0)) * 0.5, size.y * 0.10)
+	_panel.size.x = minf(600.0, size.x - 32.0)
+	_search.position = Vector2(size.x * 0.5 - 140.0, size.y * 0.65)
+	_search.size.x = 280.0
+	if not is_visible_in_tree() and armory_open:
+		toggle_armory()
+
+
+func set_search_prompt(text: String) -> void:
+	if _search != null:
+		_search.text = text
+		_search.visible = text != "" and not armory_open
+
+
+func toggle_armory() -> void:
+	_binding_action = ""
+	armory_open = not armory_open
+	_panel.visible = armory_open
+	if armory_open:
+		_mouse_before = Input.mouse_mode
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		_panel.get_child(0).get_child(1).grab_focus()
+	else:
+		Input.mouse_mode = _mouse_before
+
+
+func _input(event: InputEvent) -> void:
+	if armory_open and _binding_action != "" and event is InputEventKey and event.pressed and not event.is_echo():
+		if event.physical_keycode != KEY_ESCAPE:
+			toast("Control saved" if Ep2ArmoryState.rebind_key(_binding_action, event.physical_keycode) else "Key already used; choose another key", 2.0)
+		_binding_action = ""
+		get_viewport().set_input_as_handled()
+		return
+	# Tab normally gets consumed by GUI focus traversal, before session unhandled input.
+	if is_visible_in_tree() and armory != null and event.is_action_pressed("ep2_armory") and not event.is_echo():
+		armory_requested.emit()
+		get_viewport().set_input_as_handled()
 
 
 ## Ramp the black cover to `goal` (0..1) over `seconds`.
@@ -149,6 +303,10 @@ func _draw() -> void:
 	# --- ammo (bottom right) ------------------------------------------------------------------------------
 	if show_ammo and _font:
 		var base := Vector2(size.x - 40.0, size.y - 42.0)
+		if armory != null and armory.owns(armory.equipped):
+			var status: String = "RELOADING" if armory.active_gun().reloading else Ep2ArmoryState.NAMES[armory.equipped]
+			draw_string_outline(_font, Vector2(size.x - 300.0, size.y - 166.0), status, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 5, Color(0, 0, 0, 0.8))
+			draw_string(_font, Vector2(size.x - 300.0, size.y - 166.0), status, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, GOLD)
 		var rcol: Color = GOLD if rounds > 0 else Color(1.0, 0.35, 0.25)
 		var big: String = str(rounds)
 		var fs_big: int = int(h * 0.085)

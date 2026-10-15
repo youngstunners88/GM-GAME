@@ -1,0 +1,46 @@
+{
+  "source_commit": "2f0a58a901ebe86a614d6e0eadab4fecdcce7edc",
+  "implementation_commit": "388dbc0c",
+  "latest_runtime_fix": "d0b4b18d",
+  "native_gates": [
+    "script_compile",
+    "ep2_personal_armory",
+    "ep2_range_lesson",
+    "ep2_smelting_facility",
+    "ep2_session_root",
+    "ep2_gold_town",
+    "ep2_companion_cart",
+    "ep2_interlude"
+  ],
+  "native_result": "PASS",
+  "security_sentinel": "PASS",
+  "front_page_lock": "PASS",
+  "web_pck_bytes": 198484640,
+  "web_pck_MiB": 189.29,
+  "web_thread_support": false,
+  "local_browser": {
+    "passed": true,
+    "tests": {
+      "canvas_attached": "PASS",
+      "engine_booted": "PASS",
+      "no_godot_errors": "PASS",
+      "thread_support": "PASS",
+      "level_1_runs": "PASS"
+    },
+    "statesSeen": [
+      "TRANSITIONING",
+      "PLAYING"
+    ],
+    "errors": [],
+    "tls_verification": true,
+    "trust_scope": "Temporary isolated Chromium profile, constrained to the four existing allowed game-service hosts; removed after validation."
+  },
+  "publication": "Non-forced master push confirmed by shipping script.",
+  "live_upload_verified": false,
+  "public_build_verified": false,
+  "decision_reviews": {
+    "Jev": "CONNECT proxy 403; no verdict",
+    "Microsoft": "CONNECT proxy 403; no verdict"
+  },
+  "network_draft": "Save rejected INVALID_ARGUMENT; readback unchanged."
+}

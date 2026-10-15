@@ -20,6 +20,10 @@ Read design/ep2/LIVING_WOODS_CONTRACT.md, then only relevant current acquisition
 
 ## Required evidence for implementation
 
-Proposed future gate ep2_personal_armory_test: old-save ownership migration; selection of both acquired guns; unowned slot rejection; loaded/reserve conservation through transitions; no refill on repeated attach; empty feedback; mid-reload/same-frame switching; independent ammo pools; arrow storage without a bow; checkpoint round trip. Name the final test files when created.
+Implemented gate `tests/ep2_personal_armory_test.tscn`: old-save ownership migration; selection of both acquired guns; unowned slot rejection; loaded/reserve conservation through transitions; no refill on repeated attach; empty feedback; mid-reload/same-frame switching; independent ammo pools; arrow storage without a bow; checkpoint round trip. Name the final test files when created.
 
 Capture both named slots, each equipped firearm in the player's hands, selection on keyboard/touch/controller where available, low/empty ammunition, interrupted reload and panel arrow count. Measure switching latency and errors rather than assert a universal UX winner. Consult both decision models through ep2-living-woods with those facts. Existing range/lesson, save compatibility, runner revolver and Stage 3 golden-revolver tests remain applicable.
+
+## Current implementation
+
+`Ep2ArmoryState` owns the resources; `design/ep2/armory/CONVENTION.md` defines transactions and corpse/checkpoint IDs. `tools/ep2_shots/armory_shot.tscn` provides native camera/HUD captures. Preserve the actual hideout gun, background-copy/live-rebind boundary and finite runner bridge. Keep changes narrow when another session is building the world. External Jev/Microsoft calls can be network-blocked; record the failure and do not invent their verdicts.

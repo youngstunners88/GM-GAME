@@ -42,6 +42,7 @@ same commit — a manifest that lies is worse than none.
 ## Routing
 | Task | Go to | Read | Skills |
 |------|-------|------|--------|
+| **Episode 2 town feels empty / one block; add avenues, doors, windows, people, horses, dogs, chickens or instruments** | `design/ep2/town/`, `tools/ep2_town/` | `.claude/skills/ep2-living-town/SKILL.md` | `ep2-living-town`, `ep2-town-streets`, `ep2-town-facades`, `ep2-town-background-life`, `ep2-town-proof` |
 | Design a level, mechanic, or boss | /design | CONTEXT.md | — |
 | Create art/audio specs or style guide | /assets | CONTEXT.md | pixel-art-skill |
 | Write code, build scenes, configure engine | /src | `.claude/context-manifests/default.md` | gdscript-skill |

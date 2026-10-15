@@ -236,6 +236,7 @@ var _fail_t: float = 0.0
 var _retry_line_pending: bool = false
 var _attempt: int = 0
 var _ammo_snapshot: Array = []
+var _armory_snapshot: Dictionary = {}
 var _player_vel: Vector3 = Vector3.ZERO
 var _prev_player: Vector3 = Vector3.ZERO
 var _arrows: Array = []                             # Dictionary per arrow in flight / stuck
@@ -1146,6 +1147,13 @@ func _spawn_bear(spec: Dictionary, idx: int) -> Ep2BearBrain:
 		Ep2BearKit.add_bow(a)
 	var brain := Ep2BearBrain.new(a, (spec as Dictionary).duplicate(true), 1886 + idx * 31 + _attempt * 7)
 	brain.set_meta("group", str(spec["group"]))
+	brain.set_meta("corpse_id", "woods:%d" % idx)
+	if armory.corpses.has("woods:%d" % idx):
+		brain.aware = Ep2BearBrain.Aware.DEAD
+		brain.hp = 0
+		brain.arrows = int(armory.corpses["woods:%d" % idx]["arrows"])
+		a.stop()
+		Ep2BearKit.pose(a, "dead")
 	brain.roared.connect(_on_bear_roared)
 	brain.arrow_loosed.connect(_on_arrow_loosed)
 	brain.swiped.connect(_on_bear_swiped)
@@ -1177,6 +1185,8 @@ func get_scouts() -> Array:
 # --- the story --------------------------------------------------------------------------------------------------------
 
 func _on_setup() -> void:
+	_armory_snapshot = armory.snapshot()  # before the first player event can spend a round or claim loot
+	_ammo_snapshot = [armory.active_gun().rounds, armory.active_gun().reserve]
 	_beat = Beat.SNEAK
 	_player_pos = SPAWN
 	_prev_player = SPAWN
@@ -1448,9 +1458,15 @@ func _tick(delta: float) -> void:
 	_invuln = maxf(0.0, _invuln - delta)
 	if _ammo_snapshot.is_empty() and _vm != null:
 		_ammo_snapshot = [_vm.gun.rounds, _vm.gun.reserve]
+		_armory_snapshot = armory.snapshot()
 	_player_vel = (_player_pos - _prev_player) / maxf(delta, 0.0001)
 	_prev_player = _player_pos
 	_tick_flashes(delta)
+	if _hud != null:
+		if not _hud.search_requested.is_connected(_search_nearby):
+			_hud.search_requested.connect(_search_nearby)
+		var body: Ep2BearBrain = _nearby_corpse()
+		_hud.set_search_prompt("Search %s [E]" % body.display_name() if body != null else "")
 	if _failing:
 		_tick_fail(delta)
 		return
@@ -2012,7 +2028,7 @@ func _can_jump() -> bool:
 
 
 func has_player_control() -> bool:
-	return _running and not _resolved and not _show_blocks_control and _beat != Beat.DONE and not _failing
+	return _running and not _resolved and not _show_blocks_control and _beat != Beat.DONE and not _failing and not armory_open()
 
 
 ## The woods have no spyglass any more (the ride ends in town): the rifle never drops to low ready here.
@@ -2168,6 +2184,7 @@ func _on_bear_swiped(br: Ep2BearBrain) -> void:
 
 
 func _on_bear_died(br: Ep2BearBrain) -> void:
+	armory.record_corpse(str(br.get_meta("corpse_id", "")), br.arrows)
 	_kills += 1
 	_sfx3d("ep2_bear_death_%d" % (1 + _kills % 3), br.actor.global_position + Vector3(0.0, 1.2, 0.0), 0.0, float(br.p.get("pitch", 1.0)), 70.0)
 	var snore: AudioStreamPlayer3D = br.actor.get_meta("snore") if br.actor.has_meta("snore") else null
@@ -2336,6 +2353,8 @@ func _tick_fail(delta: float) -> void:
 ## (alive, in their routines), arrows, the quad under its leaves, Inferno at the bridge, hearts, ammunition - and play resumes at
 ## the mine exit with one line from Inferno. Nothing before the checkpoint (the lesson, the lava, the lift) is replayed.
 func _retry_from_surface() -> void:
+	if not _armory_snapshot.is_empty():
+		armory.restore(_armory_snapshot)
 	_attempt += 1
 	for ar in _arrows:
 		if is_instance_valid(ar["node"]):
@@ -2395,7 +2414,7 @@ func _retry_from_surface() -> void:
 	_vel_y = 0.0
 	_health = HEALTH_MAX
 	_invuln = 1.5
-	if _vm != null and _ammo_snapshot.size() == 2:
+	if _armory_snapshot.is_empty() and _vm != null and _ammo_snapshot.size() == 2:
 		_vm.gun.rounds = int(_ammo_snapshot[0])
 		_vm.gun.reserve = int(_ammo_snapshot[1])
 	_scope_k = 0.0
@@ -2681,3 +2700,41 @@ func _sfx3d(id: String, at: Vector3, db: float = 0.0, pitch: float = 1.0, max_d:
 	p.global_position = at
 	p.play()
 	p.finished.connect(p.queue_free)
+
+
+## Bodies stay until this encounter is disposed or retried. Search is a once-only resource transaction.
+func _nearby_corpse() -> Ep2BearBrain:
+	if not has_player_control() or _riding or not _glide.is_empty():
+		return null
+	var nearest: Ep2BearBrain = null
+	var best: float = 2.8
+	var eye := Vector2(_player_pos.x, _player_pos.z)
+	var forward := Vector2(sin(_look_yaw), cos(_look_yaw))
+	for bear in _bears:
+		var br: Ep2BearBrain = bear
+		var id: String = str(br.get_meta("corpse_id", ""))
+		if not br.is_dead() or not armory.corpses.has(id) or bool(armory.corpses[id]["searched"]):
+			continue
+		var pos := Vector2(br.actor.position.x, br.actor.position.z)
+		var offset: Vector2 = pos - eye
+		var distance: float = offset.length()
+		if distance < best and (distance < 0.5 or offset.normalized().dot(forward) > 0.5) and not _los_blocked(eye, pos):
+			nearest = br
+			best = distance
+	return nearest
+
+
+func _search_nearby() -> void:
+	start_rig()
+
+
+func start_rig(_mode: String = "eth") -> bool:
+	var body: Ep2BearBrain = _nearby_corpse()
+	if body == null:
+		return false
+	var count: int = armory.claim_corpse(str(body.get_meta("corpse_id")))
+	if count < 0:
+		return false
+	if _hud != null:
+		_hud.toast("Recovered %d bear arrows" % count if count > 0 else "No arrows recovered", 1.8)
+	return true

@@ -119,8 +119,10 @@ var _player_pose: RunnerArmRest = null
 var _hero_anim: AnimationPlayer = null
 var _hero_clip: String = ""
 var _bull: Ep2Actor = null
+var armory: Ep2ArmoryState = Ep2ArmoryState.post_hideout()
 var _vm: Ep2Viewmodel = null                  # the Winchester in his hands (first person)
 var _held_rifle: Node3D = null                # ...and the same rifle on the third-person body, seen only in a director shot
+var _held_revolver: Node3D = null
 var _hud_layer: CanvasLayer = null
 var _hud: Ep2FpsHud = null
 var _look_goal_on: bool = false               # a scripted beat turns his view toward `_look_goal` (he keeps the rifle in his hands)
@@ -484,7 +486,7 @@ func _apply_music() -> void:
 # --- the session-root contract ------------------------------------------------------------------------------------
 
 func has_player_control() -> bool:
-	return _running and not _resolved and not _show_blocks_control
+	return _running and not _resolved and not _show_blocks_control and not armory_open()
 
 
 func wants_mouse_capture() -> bool:
@@ -568,7 +570,7 @@ func leave_cover() -> void: pass
 func get_beat() -> int: return _beat
 func get_beat_name() -> String: return _beat_label(_beat)
 func get_title_card() -> String: return title_card
-func has_winchester() -> bool: return true
+func has_winchester() -> bool: return armory.owns(Ep2ArmoryState.WIN)
 func get_molds_left() -> int: return 0
 func get_btc_paid() -> int: return 1
 func get_health() -> int: return 3        # the hideout's cap; a story room that can hurt (the bear woods) overrides it - same 3 hearts
@@ -750,12 +752,13 @@ func _build_first_person() -> void:
 	_vm = Ep2Viewmodel.new()
 	_vm.name = "Viewmodel"
 	add_child(_vm)
+	_vm.bind_armory(armory)
 	_vm.attach(_camera)
 	_vm.set_exposure(viewmodel_exposure)
 	_vm.fired.connect(_on_player_shot)
 	_vm.dry_fired.connect(func() -> void:
 		if _hud != null:
-			_hud.toast("OUT OF ROUNDS  -  PRESS R", 1.6))
+			_hud.toast("EMPTY  -  NO RESERVE" if _vm.gun.reserve == 0 else "OUT OF ROUNDS  -  PRESS R", 1.6))
 	_hud_layer = CanvasLayer.new()
 	_hud_layer.layer = 12
 	add_child(_hud_layer)
@@ -764,6 +767,9 @@ func _build_first_person() -> void:
 	_hud.show_ammo = true
 	_hud.show_crosshair = true
 	_hud_layer.add_child(_hud)
+	_hud.bind_armory(armory)
+	_hud.weapon_selected.connect(select_weapon)
+	_hud.armory_requested.connect(toggle_armory)
 
 
 ## One physics step of the rifle and the HUD numbers.
@@ -775,7 +781,7 @@ func _tick_viewmodel(delta: float) -> void:
 	if _hud != null:
 		_hud.spread_deg = _vm.gun.spread_deg(_moving, _player_pos.y > _ground_y + 0.05)
 		_hud.ads = maxf(_vm.gun.ads, _scope_k)
-		_hud.set_ammo(_vm.gun.rounds, _vm.gun.reserve, Ep2Winchester.MAG)
+		_hud.set_ammo(_vm.gun.rounds, _vm.gun.reserve, _vm.gun.capacity)
 		_hud.health = get_health()
 		_hud.health_max = 3
 		_hud.show_health = _shows_health()
@@ -918,6 +924,14 @@ func _hold_rifle(root: Node3D) -> void:
 	rifle.rotation = HELD_RIFLE_ROT
 	root.add_child(rifle)
 	_held_rifle = rifle
+	_held_revolver = Ep2RemingtonView.make()
+	_held_revolver.name = "HeldRevolver"
+	_held_revolver.get_node("RightArm").free()  # the director shows the hero's own hand
+	_held_revolver.scale = Vector3.ONE * 0.8
+	_held_revolver.position = HELD_RIFLE_POS
+	_held_revolver.rotation = HELD_RIFLE_ROT
+	root.add_child(_held_revolver)
+	_sync_held_weapon()
 
 
 func _add_hero_clip(clip_name: String, path: String) -> void:
@@ -1116,3 +1130,49 @@ func _particles(amount: int, lifetime: float, color: Color, size: float) -> CPUP
 	p.color_ramp = fade
 	p.emitting = true
 	return p
+
+
+func bind_armory(state: Ep2ArmoryState) -> void:
+	if armory.changed.is_connected(_sync_held_weapon):
+		armory.changed.disconnect(_sync_held_weapon)
+	armory = state
+	armory.changed.connect(_sync_held_weapon)
+	_sync_held_weapon()
+	if _vm != null:
+		_vm.bind_armory(state)
+	if _hud != null:
+		_hud.bind_armory(state)
+
+
+func armory_open() -> bool:
+	return _hud != null and _hud.armory_open
+
+
+func select_weapon(id: String) -> bool:
+	if not _running or _resolved or _show_blocks_control:
+		return false
+	var selected: bool = armory.select(id)
+	_sync_held_weapon()
+	if selected and _hud != null:
+		_hud.toast(Ep2ArmoryState.NAMES[id], 1.0)
+	return selected
+
+
+func select_previous_weapon() -> bool:
+	return select_weapon(armory.previous)
+
+
+func toggle_armory() -> void:
+	if _hud == null or not _running or _resolved or _show_blocks_control:
+		return
+	_hud.toggle_armory()
+	_move_input = Vector2.ZERO
+	_run_input = false
+	set_aim(false)
+
+
+func _sync_held_weapon() -> void:
+	if _held_rifle != null:
+		_held_rifle.visible = armory.owns(Ep2ArmoryState.WIN) and armory.equipped == Ep2ArmoryState.WIN
+	if _held_revolver != null:
+		_held_revolver.visible = armory.owns(Ep2ArmoryState.REM) and armory.equipped == Ep2ArmoryState.REM

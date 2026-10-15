@@ -1,0 +1,322 @@
+[
+  {
+    "id": "stable_hand",
+    "kind": "person",
+    "purpose": "brush horse; carry feed",
+    "status": "asset_unresolved",
+    "existing_candidate": null,
+    "required_clips": [
+      "stable_loop"
+    ],
+    "model": null,
+    "license_proof": null,
+    "pipeline": "approved library/local Blender first; existing Tripo/Meshy workflow only if needed",
+    "prompt": "Golden-hour GoldMine western town. Stable yard: brush horse; carry feed. Weathered period materials, grounded scale; no modern equipment, no bears, no new story dialogue.",
+    "acceptance": [
+      "metres; feet/pivot at ground",
+      "licensed source recorded",
+      "whole animation loop checked",
+      "real first-person camera review"
+    ]
+  },
+  {
+    "id": "horse_west",
+    "kind": "horse",
+    "purpose": "weight shift; ear flick; drink",
+    "status": "asset_unresolved",
+    "existing_candidate": null,
+    "required_clips": [
+      "horse_idle"
+    ],
+    "model": null,
+    "license_proof": null,
+    "pipeline": "approved library/local Blender first; existing Tripo/Meshy workflow only if needed",
+    "prompt": "Golden-hour GoldMine western town. Stable yard: weight shift; ear flick; drink. Weathered period materials, grounded scale; no modern equipment, no bears, no new story dialogue.",
+    "acceptance": [
+      "metres; feet/pivot at ground",
+      "licensed source recorded",
+      "whole animation loop checked",
+      "real first-person camera review"
+    ]
+  },
+  {
+    "id": "horse_east",
+    "kind": "horse",
+    "purpose": "breath; tail swish; head lower",
+    "status": "asset_unresolved",
+    "existing_candidate": null,
+    "required_clips": [
+      "horse_idle"
+    ],
+    "model": null,
+    "license_proof": null,
+    "pipeline": "approved library/local Blender first; existing Tripo/Meshy workflow only if needed",
+    "prompt": "Golden-hour GoldMine western town. Hitch rail: breath; tail swish; head lower. Weathered period materials, grounded scale; no modern equipment, no bears, no new story dialogue.",
+    "acceptance": [
+      "metres; feet/pivot at ground",
+      "licensed source recorded",
+      "whole animation loop checked",
+      "real first-person camera review"
+    ]
+  },
+  {
+    "id": "storekeeper",
+    "kind": "person",
+    "purpose": "sweep; pause; watch street",
+    "status": "asset_unresolved",
+    "existing_candidate": null,
+    "required_clips": [
+      "sweep"
+    ],
+    "model": null,
+    "license_proof": null,
+    "pipeline": "approved library/local Blender first; existing Tripo/Meshy workflow only if needed",
+    "prompt": "Golden-hour GoldMine western town. General store porch: sweep; pause; watch street. Weathered period materials, grounded scale; no modern equipment, no bears, no new story dialogue.",
+    "acceptance": [
+      "metres; feet/pivot at ground",
+      "licensed source recorded",
+      "whole animation loop checked",
+      "real first-person camera review"
+    ]
+  },
+  {
+    "id": "miner",
+    "kind": "person",
+    "purpose": "carry ore sack; rest",
+    "status": "asset_unresolved",
+    "existing_candidate": null,
+    "required_clips": [
+      "carry_loop"
+    ],
+    "model": null,
+    "license_proof": null,
+    "pipeline": "approved library/local Blender first; existing Tripo/Meshy workflow only if needed",
+    "prompt": "Golden-hour GoldMine western town. Assay service yard: carry ore sack; rest. Weathered period materials, grounded scale; no modern equipment, no bears, no new story dialogue.",
+    "acceptance": [
+      "metres; feet/pivot at ground",
+      "licensed source recorded",
+      "whole animation loop checked",
+      "real first-person camera review"
+    ]
+  },
+  {
+    "id": "laundry_worker",
+    "kind": "person",
+    "purpose": "peg linen; turn",
+    "status": "asset_unresolved",
+    "existing_candidate": null,
+    "required_clips": [
+      "laundry"
+    ],
+    "model": null,
+    "license_proof": null,
+    "pipeline": "approved library/local Blender first; existing Tripo/Meshy workflow only if needed",
+    "prompt": "Golden-hour GoldMine western town. Hotel service yard: peg linen; turn. Weathered period materials, grounded scale; no modern equipment, no bears, no new story dialogue.",
+    "acceptance": [
+      "metres; feet/pivot at ground",
+      "licensed source recorded",
+      "whole animation loop checked",
+      "real first-person camera review"
+    ]
+  },
+  {
+    "id": "fiddler",
+    "kind": "person",
+    "purpose": "bow fiddle with measured hand contacts",
+    "status": "asset_unresolved",
+    "existing_candidate": null,
+    "required_clips": [
+      "fiddle"
+    ],
+    "model": null,
+    "license_proof": null,
+    "pipeline": "approved library/local Blender first; existing Tripo/Meshy workflow only if needed",
+    "prompt": "Golden-hour GoldMine western town. Saloon porch: bow fiddle with measured hand contacts. Weathered period materials, grounded scale; no modern equipment, no bears, no new story dialogue.",
+    "acceptance": [
+      "metres; feet/pivot at ground",
+      "licensed source recorded",
+      "whole animation loop checked",
+      "real first-person camera review"
+    ]
+  },
+  {
+    "id": "fiddle",
+    "kind": "instrument",
+    "purpose": "attached to fiddler; positional stem",
+    "status": "asset_unresolved",
+    "existing_candidate": null,
+    "required_clips": [
+      "attached"
+    ],
+    "model": null,
+    "license_proof": null,
+    "pipeline": "approved library/local Blender first; existing Tripo/Meshy workflow only if needed",
+    "prompt": "Golden-hour GoldMine western town. Saloon porch: attached to fiddler; positional stem. Weathered period materials, grounded scale; no modern equipment, no bears, no new story dialogue.",
+    "acceptance": [
+      "metres; feet/pivot at ground",
+      "licensed source recorded",
+      "whole animation loop checked",
+      "real first-person camera review"
+    ]
+  },
+  {
+    "id": "piano",
+    "kind": "instrument",
+    "purpose": "reuse Bar_Piano; optional quiet stem",
+    "status": "reuse_search_required",
+    "existing_candidate": "town_kit.glb:Bar_Piano",
+    "required_clips": [
+      "piano"
+    ],
+    "model": null,
+    "license_proof": null,
+    "pipeline": "approved library/local Blender first; existing Tripo/Meshy workflow only if needed",
+    "prompt": "Golden-hour GoldMine western town. Saloon interior: reuse Bar_Piano; optional quiet stem. Weathered period materials, grounded scale; no modern equipment, no bears, no new story dialogue.",
+    "acceptance": [
+      "metres; feet/pivot at ground",
+      "licensed source recorded",
+      "whole animation loop checked",
+      "real first-person camera review"
+    ]
+  },
+  {
+    "id": "dog_yard",
+    "kind": "dog",
+    "purpose": "sniff; settle; glance up",
+    "status": "asset_unresolved",
+    "existing_candidate": null,
+    "required_clips": [
+      "dog_loop"
+    ],
+    "model": null,
+    "license_proof": null,
+    "pipeline": "approved library/local Blender first; existing Tripo/Meshy workflow only if needed",
+    "prompt": "Golden-hour GoldMine western town. Assay yard: sniff; settle; glance up. Weathered period materials, grounded scale; no modern equipment, no bears, no new story dialogue.",
+    "acceptance": [
+      "metres; feet/pivot at ground",
+      "licensed source recorded",
+      "whole animation loop checked",
+      "real first-person camera review"
+    ]
+  },
+  {
+    "id": "dog_stable",
+    "kind": "dog",
+    "purpose": "sleep; ear twitch; stand",
+    "status": "asset_unresolved",
+    "existing_candidate": null,
+    "required_clips": [
+      "dog_rest"
+    ],
+    "model": null,
+    "license_proof": null,
+    "pipeline": "approved library/local Blender first; existing Tripo/Meshy workflow only if needed",
+    "prompt": "Golden-hour GoldMine western town. Stable shade: sleep; ear twitch; stand. Weathered period materials, grounded scale; no modern equipment, no bears, no new story dialogue.",
+    "acceptance": [
+      "metres; feet/pivot at ground",
+      "licensed source recorded",
+      "whole animation loop checked",
+      "real first-person camera review"
+    ]
+  },
+  {
+    "id": "chicken_1",
+    "kind": "chicken",
+    "purpose": "peck; scratch; short wander",
+    "status": "asset_unresolved",
+    "existing_candidate": null,
+    "required_clips": [
+      "peck"
+    ],
+    "model": null,
+    "license_proof": null,
+    "pipeline": "approved library/local Blender first; existing Tripo/Meshy workflow only if needed",
+    "prompt": "Golden-hour GoldMine western town. Feed yard: peck; scratch; short wander. Weathered period materials, grounded scale; no modern equipment, no bears, no new story dialogue.",
+    "acceptance": [
+      "metres; feet/pivot at ground",
+      "licensed source recorded",
+      "whole animation loop checked",
+      "real first-person camera review"
+    ]
+  },
+  {
+    "id": "chicken_2",
+    "kind": "chicken",
+    "purpose": "peck; look up",
+    "status": "asset_unresolved",
+    "existing_candidate": null,
+    "required_clips": [
+      "peck"
+    ],
+    "model": null,
+    "license_proof": null,
+    "pipeline": "approved library/local Blender first; existing Tripo/Meshy workflow only if needed",
+    "prompt": "Golden-hour GoldMine western town. Feed yard: peck; look up. Weathered period materials, grounded scale; no modern equipment, no bears, no new story dialogue.",
+    "acceptance": [
+      "metres; feet/pivot at ground",
+      "licensed source recorded",
+      "whole animation loop checked",
+      "real first-person camera review"
+    ]
+  },
+  {
+    "id": "chicken_3",
+    "kind": "chicken",
+    "purpose": "peck; shake feathers",
+    "status": "asset_unresolved",
+    "existing_candidate": null,
+    "required_clips": [
+      "peck"
+    ],
+    "model": null,
+    "license_proof": null,
+    "pipeline": "approved library/local Blender first; existing Tripo/Meshy workflow only if needed",
+    "prompt": "Golden-hour GoldMine western town. Feed yard: peck; shake feathers. Weathered period materials, grounded scale; no modern equipment, no bears, no new story dialogue.",
+    "acceptance": [
+      "metres; feet/pivot at ground",
+      "licensed source recorded",
+      "whole animation loop checked",
+      "real first-person camera review"
+    ]
+  },
+  {
+    "id": "water_pump",
+    "kind": "prop",
+    "purpose": "bucket, wet patch and worn ground",
+    "status": "asset_unresolved",
+    "existing_candidate": null,
+    "required_clips": [
+      "static"
+    ],
+    "model": null,
+    "license_proof": null,
+    "pipeline": "approved library/local Blender first; existing Tripo/Meshy workflow only if needed",
+    "prompt": "Golden-hour GoldMine western town. Stable yard: bucket, wet patch and worn ground. Weathered period materials, grounded scale; no modern equipment, no bears, no new story dialogue.",
+    "acceptance": [
+      "metres; feet/pivot at ground",
+      "licensed source recorded",
+      "whole animation loop checked",
+      "real first-person camera review"
+    ]
+  },
+  {
+    "id": "feed_sacks",
+    "kind": "prop",
+    "purpose": "stack by coop, wheelbarrow nearby",
+    "status": "asset_unresolved",
+    "existing_candidate": null,
+    "required_clips": [
+      "static"
+    ],
+    "model": null,
+    "license_proof": null,
+    "pipeline": "approved library/local Blender first; existing Tripo/Meshy workflow only if needed",
+    "prompt": "Golden-hour GoldMine western town. Feed yard: stack by coop, wheelbarrow nearby. Weathered period materials, grounded scale; no modern equipment, no bears, no new story dialogue.",
+    "acceptance": [
+      "metres; feet/pivot at ground",
+      "licensed source recorded",
+      "whole animation loop checked",
+      "real first-person camera review"
+    ]
+  }
+]
