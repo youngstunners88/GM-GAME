@@ -24,3 +24,24 @@ TextureFilter NEAREST to match pixel-art, or keep LINEAR for the photoreal 1024 
 - This drop used 2K HDR (6 MB). For final renders swap to 4K (`studio_small_09_4k.hdr`, ~25 MB).
 - Reusable pattern for any asset: same `/assets` + `/files` calls work for `textures`, `models`, `all`. Docs: https://api.polyhaven.com
 - Attribution not required (CC0) but keeping the slug + author (Sergej Majboroda) recorded here for provenance.
+
+## Fidelity pass candidate (2026-10-15)
+
+The editable source is Blender **5.2** format. Use Blender 5.2+; Blender 4.3
+cannot read its header. Reproduce with:
+
+```sh
+blender -b src/assets/models/goldmine_train/goldmine_train.blend --python tools/ep2_blender/train_fidelity_pass.py
+```
+
+The pass adds open framed cab windows, a flared funnel/mouth, thirteen separate
+pilot slats, spoked drivers and pilot/tender wheels, both coupling rods with
+offset crank pins, tender coal and lettering. GLB: 15,300 triangles, 287 mesh
+objects. The supplied 2K HDRI is loaded and packed into the source. The Blender
+sprite is still an alternate/base; all three photoreal sprites, distant train
+rig, riders, 3200 span and 0.18 parallax remain unchanged. This is a static model;
+no articulated wheel/rod animation is claimed.
+
+The previous `/tmp/train_work/load_polyhaven_hdri.py` command is historical;
+the checked-in script above now owns reproduction. Engine import and release
+verification are pending; see `design/train-revolver-pass/REPORT.md`.
