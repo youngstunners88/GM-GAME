@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
 import { prepareRequest,validateResponse,DEFAULT_MODEL,BUDGET } from '../scripts/jev-request.mjs';
 import { evaluate,decide } from '../scripts/jev.mjs';
 const questions={contact:{type:'boolean',instructions:'Do the measured contact distances exceed the specified tolerance?'}};
@@ -27,11 +28,17 @@ test('image gate is explicit, uses binary multipart, labels evidence and binds i
  const b=await prepareRequest(req,{experimentalImages:true});
  assert.equal(a.summary.digest,b.summary.digest);
  assert.equal(a.headers['TypeSafe-Danger-Zone-Images'],'true');
- assert.equal(a.headers['Content-Type'],undefined);
- const payload=JSON.parse(await a.body.get('request').text());
+ const boundary=a.headers['Content-Type'].split('boundary=')[1];
+ assert.ok(boundary);
+ const bytes=Buffer.from(await a.body.arrayBuffer());
+ const prefix=`--${boundary}\r\nContent-Disposition: form-data; name="request"\r\nContent-Type: application/json\r\n\r\n`;
+ assert.ok(bytes.subarray(0,Buffer.byteLength(prefix)).equals(Buffer.from(prefix)));
+ const end=bytes.indexOf(Buffer.from(`\r\n--${boundary}`),Buffer.byteLength(prefix));
+ const payload=JSON.parse(bytes.subarray(Buffer.byteLength(prefix),end).toString());
  assert.deepEqual(payload.assets,{'<current>':{type:'image',part:'asset-0'}});
- assert.equal(a.body.get('asset-0').type,'image/png');
- assert.ok(a.body.get('asset-0').size>10000);
+ assert.ok(bytes.includes(Buffer.from('name="asset-0"; filename="asset-0"\r\nContent-Type: image/png')));
+ assert.ok(bytes.includes(await readFile(req.assets['<current>'])));
+ assert.ok(bytes.subarray(-Buffer.byteLength(`--${boundary}--\r\n`)).equals(Buffer.from(`--${boundary}--\r\n`)));
  assert.ok(!JSON.stringify(payload).includes('src/episode2'));
  await assert.rejects(prepareRequest({...req,state:'No image reference here.'},{experimentalImages:true}),/Unused/);
  await assert.rejects(prepareRequest({...req,assets:{'<current>':'package.json'}},{experimentalImages:true}),/PNG/);

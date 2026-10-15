@@ -13,3 +13,5 @@ Read independently accessible official source, without changing network policy:
 ## User-selected direct route
 
 The user explicitly chose “Use TypeSafe directly” after adding TYPESAFE. The helper now defaults to `https://api.typesafe.ai/v1/systemone` (SDK `client.ts`) and native pin `jev-1.14`. TypeSafe credentials never go to OpenRouter; OpenRouter remains an explicit compatibility provider. The live direct request also fails before provider acceptance with proxy CONNECT 403. Native model availability, paired image control and release-specific limits remain pending. The SDK's default `jev-latest` is not used to silently bypass the requested 1.14 pin.
+
+The final encoder matches the SDK byte protocol: the `request` JSON part has Content-Type application/json **without a filename**; image parts have their own MIME/filename. Offline tests inspect boundaries, descriptors and unchanged binary PNG bytes. Native FormData + Blob was corrected because it adds filename="blob" to the JSON part, which some servers parse as a file. The blocked network attempt cannot establish either candidate was accepted.

@@ -3,7 +3,7 @@
  * acceptance/control probe. It is explicitly experimental, never a silent fallback.
  */
 import { readFile } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 export const DEFAULT_MODEL = 'jev-1.14';
 export const PROVIDERS = Object.freeze({typesafe:{endpoint:'https://api.typesafe.ai/v1/systemone',model:DEFAULT_MODEL},openrouter:{endpoint:'https://openrouter.ai/api/alpha/decisions',model:'typesafe/jev-1.14'}});
 export const BUDGET = Object.freeze({ textBytes: 65536, images: 2, imageBytes: 3 * 1024 * 1024, pixels: 2100000, questions: 8 });
@@ -66,11 +66,21 @@ export async function prepareRequest({ provider = 'typesafe', model, state, ques
   let body = json;
   const headers = { 'Content-Type': 'application/json' };
   if (attachments.length) {
-    const form = new FormData();
-    form.append('request', new Blob([JSON.stringify({...payload,assets:fields})], {type:'application/json'}));
-    for (const a of attachments) form.append(a.part, new Blob([a.bytes],{type:a.mime}),a.part);
-    body = form;
-    delete headers['Content-Type']; // fetch generates the boundary; never supply a mismatched one.
+    // Match the official SDK exactly: the JSON request part has NO filename.
+    // FormData + Blob would add filename="blob", which servers can parse as an
+    // uploaded file instead of the required JSON request field.
+    const boundary = `jev-${randomBytes(16).toString('hex')}`;
+    const chunks = [
+      `--${boundary}\r\nContent-Disposition: form-data; name="request"\r\nContent-Type: application/json\r\n\r\n`,
+      JSON.stringify({...payload,assets:fields}), '\r\n',
+    ];
+    for (const a of attachments) chunks.push(
+      `--${boundary}\r\nContent-Disposition: form-data; name="${a.part}"; filename="${a.part}"\r\nContent-Type: ${a.mime}\r\n\r\n`,
+      a.bytes, '\r\n',
+    );
+    chunks.push(`--${boundary}--\r\n`);
+    body = new Blob(chunks);
+    headers['Content-Type'] = `multipart/form-data; boundary=${boundary}`;
     headers['TypeSafe-Danger-Zone-Images'] = 'true';
   }
   return { body, headers, summary: { provider, model, questionNames: Object.keys(wire), textBytes: Buffer.byteLength(json), images: attachments.map(({width,height,mime,bytes})=>({width,height,mime,bytes:bytes.length})), digest:hash.digest('hex'), imageTransport: provider === 'typesafe' ? 'documented TypeSafe multipart; live probe pending' : 'upstream SDK multipart; OpenRouter acceptance unverified' } };
