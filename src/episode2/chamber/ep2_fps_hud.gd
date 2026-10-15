@@ -21,14 +21,16 @@ var armory_open: bool = false
 var armory_enabled: bool = true
 var _slots: Array[Button] = []
 var _quick: GridContainer = null
-var _panel: PanelContainer = null
-var _inventory: Label = null
+var _panel: Ep2WeaponSelector = null
 var _search: Button = null
 var _mouse_before: Input.MouseMode = Input.MOUSE_MODE_VISIBLE
 var _finger_on: Dictionary = {}
 var _last_activation_frame: int = -1
-var _binding_action: String = ""
-var _controls: HBoxContainer = null
+var _hold_button: Button
+var _owns_pause: bool = false
+var _hold_finger: int = -1
+var _hold_mouse: bool = false
+var _selector_layer: CanvasLayer
 
 var spread_deg: float = 2.6
 var ads: float = 0.0
@@ -58,6 +60,7 @@ var _fade_rate: float = 0.0
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	# Sized by hand from the viewport every frame: anchors under a CanvasLayer resolved to a 0x0 rect in the
 	# headless-free capture rig, which drew nothing (the first lesson capture had no crosshair, ammo or prompt).
 	position = Vector2.ZERO
@@ -99,6 +102,9 @@ func _fit() -> void:
 func _process(delta: float) -> void:
 	_fit()
 	_update_armory()
+	if armory_open:
+		queue_redraw()
+		return
 	_toast_t = maxf(0.0, _toast_t - delta)
 	_hit_t = maxf(0.0, _hit_t - delta)
 	_hurt_t = maxf(0.0, _hurt_t - delta)
@@ -109,6 +115,8 @@ func _process(delta: float) -> void:
 
 
 func bind_armory(state: Ep2ArmoryState) -> void:
+	if armory_open:
+		close_armory(false)
 	armory = state
 	_update_armory()
 
@@ -145,35 +153,30 @@ func _touch_button(event: InputEvent, button: Button, callback: Callable) -> voi
 
 func _build_armory() -> void:
 	_quick = GridContainer.new()
-	_quick.columns = 4
-	_quick.add_theme_constant_override("separation", 6)
+	_quick.columns = 1
 	add_child(_quick)
-	for id in Ep2ArmoryState.IDS:
-		var button := _button("", func() -> void: weapon_selected.emit(id))
-		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		_quick.add_child(button)
-		_slots.append(button)
-	_quick.add_child(_button("Previous", func() -> void: weapon_selected.emit(armory.previous)))
-	_quick.add_child(_button("Armory", func() -> void: armory_requested.emit()))
-	_panel = PanelContainer.new()
+	_hold_button = Button.new()
+	_hold_button.custom_minimum_size = Vector2(92, 60)
+	_hold_button.expand_icon = true
+	_hold_button.add_theme_constant_override("icon_max_width", 56)
+	_hold_button.add_theme_font_size_override("font_size", 12)
+	_hold_button.add_theme_font_override("font", Ep2WeaponSelector.FONT)
+	var leather := StyleBoxFlat.new()
+	leather.bg_color = Color("302117")
+	leather.border_color = Ep2WeaponSelector.BRASS
+	leather.set_border_width_all(1)
+	leather.set_corner_radius_all(6)
+	_hold_button.add_theme_stylebox_override("normal", leather)
+	_hold_button.tooltip_text = "Hold to open your holsters. Time pauses while you choose."
+	_quick.add_child(_hold_button)
+	# Above mobile controls; the rest of the ordinary HUD stays on its original layer.
+	_selector_layer = CanvasLayer.new()
+	_selector_layer.layer = 40
+	add_child(_selector_layer)
+	_panel = Ep2WeaponSelector.new()
 	_panel.visible = false
-	add_child(_panel)
-	var contents := VBoxContainer.new()
-	_panel.add_child(contents)
-	_inventory = Label.new()
-	_inventory.add_theme_font_size_override("font_size", 18)
-	_inventory.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	contents.add_child(_inventory)
-	contents.add_child(_button("Close armory [Tab / Back]", func() -> void: armory_requested.emit()))
-	contents.add_child(_button("Change keyboard controls", func() -> void: _controls.visible = not _controls.visible))
-	_controls = HBoxContainer.new()
-	_controls.visible = false
-	contents.add_child(_controls)
-	for i in Ep2ArmoryState.ACTIONS.size():
-		var action: String = Ep2ArmoryState.ACTIONS[i]
-		_controls.add_child(_button(["Slot 1", "Slot 2", "Previous", "Armory"][i], func() -> void:
-			_binding_action = action
-			toast("Press a new key; Escape cancels", 6.0)))
+	_selector_layer.add_child(_panel)
+	_slots = _panel.cards
 	_search = _button("Search bear [E]", func() -> void: search_requested.emit())
 	_search.visible = false
 	add_child(_search)
@@ -182,34 +185,21 @@ func _build_armory() -> void:
 func _update_armory() -> void:
 	if _quick == null:
 		return
-	_quick.visible = armory != null and show_ammo
+	_quick.visible = armory != null and show_ammo and not armory_open
 	if armory == null:
 		return
-	var width: float = minf(size.x - 24.0, 880.0)
-	_quick.columns = 4 if width >= 850.0 else 2 if width >= 550.0 else 1
-	_quick.position = Vector2((size.x - width) * 0.5, size.y - 70.0 - ceilf(4.0 / float(_quick.columns)) * 50.0)
-	_quick.size.x = width
-	(_quick.get_child(2) as Button).text = "Previous [%s]" % Ep2ArmoryState.key_label("ep2_weapon_previous")
-	(_quick.get_child(3) as Button).text = "Armory [%s]" % Ep2ArmoryState.key_label("ep2_armory")
-	(_panel.get_child(0).get_child(1) as Button).text = "Close armory [%s / Back]" % Ep2ArmoryState.key_label("ep2_armory")
-	var lines := PackedStringArray(["LIL BLUNT'S PERSONAL ARMORY", "Loaded rounds / reserve rounds", ""])
-	for i in Ep2ArmoryState.IDS.size():
-		var id: String = Ep2ArmoryState.IDS[i]
-		var firearm: Ep2Winchester = armory.firearm(id)
-		var selected: String = " > " if armory.equipped == id and armory.owns(id) else ""
-		_slots[i].text = "%s%s  %s" % [selected, Ep2ArmoryState.key_label(Ep2ArmoryState.ACTIONS[i]), Ep2ArmoryState.NAMES[id]]
-		_slots[i].disabled = not armory_enabled or not armory.owns(id)
-		_slots[i].tooltip_text = "%s: %d loaded / %d reserve" % ["Rifle rounds" if id == Ep2ArmoryState.WIN else "Revolver rounds", firearm.rounds, firearm.reserve]
-		lines.append("%s%s: %d / %d" % [selected, Ep2ArmoryState.NAMES[id], firearm.rounds, firearm.reserve] if armory.owns(id) else "%s: not acquired" % Ep2ArmoryState.NAMES[id])
-	lines.append("\nBear arrows stored: %d\nSearch fallen bears for their remaining arrows.\nA bow has not been acquired." % armory.arrows)
-	lines.append("\n%s / %s: select     %s: previous     %s: armory\nController: LB / RB, Y, Back. Touch: tap a slot.\nSwitching cancels loading; completed rounds stay loaded." % [Ep2ArmoryState.key_label("ep2_weapon_1"), Ep2ArmoryState.key_label("ep2_weapon_2"), Ep2ArmoryState.key_label("ep2_weapon_previous"), Ep2ArmoryState.key_label("ep2_armory")])
-	_inventory.text = "\n".join(lines)
-	_panel.position = Vector2((size.x - minf(600.0, size.x - 32.0)) * 0.5, size.y * 0.10)
-	_panel.size.x = minf(600.0, size.x - 32.0)
-	_search.position = Vector2(size.x * 0.5 - 140.0, size.y * 0.65)
-	_search.size.x = 280.0
-	if not is_visible_in_tree() and armory_open:
-		toggle_armory()
+	_hold_button.disabled = not armory_enabled
+	_hold_button.icon = Ep2WeaponSelector.ICONS[armory.equipped]
+	_hold_button.text = "HOLD\n%s" % Ep2ArmoryState.key_label("ep2_armory")
+	var ui_scale: float = size.x / 390.0 if size.x / size.y < 1.1 else 1.0
+	_quick.scale = Vector2.ONE * ui_scale
+	_quick.position = Vector2(size.x * 0.5 - 68 * ui_scale, size.y - 76 * ui_scale)
+	_quick.size = Vector2(136, 60)
+	_panel.state = armory
+	_search.position = Vector2(size.x * 0.5 - 140, size.y * 0.65)
+	_search.size.x = 280
+	if armory_open and (not is_visible_in_tree() or not armory_enabled or not show_ammo):
+		close_armory(false)
 
 
 func set_search_prompt(text: String) -> void:
@@ -218,29 +208,112 @@ func set_search_prompt(text: String) -> void:
 		_search.visible = text != "" and not armory_open
 
 
+## Host calls this only after its story/tutorial control guards approve opening.
 func toggle_armory() -> void:
-	_binding_action = ""
-	armory_open = not armory_open
-	_panel.visible = armory_open
 	if armory_open:
-		_mouse_before = Input.mouse_mode
-		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-		_panel.get_child(0).get_child(1).grab_focus()
-	else:
+		close_armory(false)
+		return
+	if not armory_enabled or armory == null or get_tree().paused:
+		return
+	armory_open = true
+	_panel.state = armory
+	_panel.highlighted = armory.equipped
+	_panel.visible = true
+	_search.hide()
+	_mouse_before = Input.mouse_mode
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	_owns_pause = true
+	get_tree().paused = true
+	_update_armory()
+
+
+## Release commits the preview once, then gives the scene clock back to its owner.
+func close_armory(commit: bool = true, restore_mouse: bool = true) -> void:
+	if not armory_open:
+		return
+	if commit and armory.owns(_panel.highlighted):
+		weapon_selected.emit(_panel.highlighted)
+	armory_open = false
+	_panel.hide()
+	_hold_finger = -1
+	_hold_mouse = false
+	if restore_mouse:
 		Input.mouse_mode = _mouse_before
+	_release_pause()
+	_update_armory()
+
+
+func _release_pause() -> void:
+	if _owns_pause and is_inside_tree():
+		# Never resume a real pause menu/state change that took ownership afterwards.
+		if not StateMachine.is_paused():
+			get_tree().paused = false
+	_owns_pause = false
+
+
+func _exit_tree() -> void:
+	if armory_open:
+		Input.mouse_mode = _mouse_before
+	_release_pause()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and armory_open:
+		close_armory(false, false)
 
 
 func _input(event: InputEvent) -> void:
-	if armory_open and _binding_action != "" and event is InputEventKey and event.pressed and not event.is_echo():
-		if event.physical_keycode != KEY_ESCAPE:
-			toast("Control saved" if Ep2ArmoryState.rebind_key(_binding_action, event.physical_keycode) else "Key already used; choose another key", 2.0)
-		_binding_action = ""
+	if not is_visible_in_tree() or armory == null or not show_ammo:
+		return
+	if event.is_action_pressed("ep2_armory") and not event.is_echo():
+		if not armory_open:
+			armory_requested.emit()
 		get_viewport().set_input_as_handled()
 		return
-	# Tab normally gets consumed by GUI focus traversal, before session unhandled input.
-	if is_visible_in_tree() and armory != null and event.is_action_pressed("ep2_armory") and not event.is_echo():
-		armory_requested.emit()
+	if event.is_action_released("ep2_armory") and armory_open:
+		close_armory()
 		get_viewport().set_input_as_handled()
+		return
+	# Raw fingers include the second thumb: the armory never injects movement/fire.
+	if event is InputEventScreenTouch:
+		if event.pressed and not armory_open and _hold_button.get_global_rect().has_point(event.position):
+			armory_requested.emit()
+			if armory_open:
+				_hold_finger = event.index
+		elif armory_open:
+			_panel.point_at(event.position)
+			if not event.pressed and event.index == _hold_finger:
+				close_armory(not event.canceled)
+		if armory_open or event.index == _hold_finger:
+			get_viewport().set_input_as_handled()
+	elif event is InputEventScreenDrag and armory_open:
+		_panel.point_at(event.position)
+		get_viewport().set_input_as_handled()
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed and not armory_open and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED and _hold_button.get_global_rect().has_point(event.position):
+			armory_requested.emit()
+			_hold_mouse = armory_open
+		elif not event.pressed and _hold_mouse:
+			_panel.point_at(event.position)
+			close_armory()
+		if armory_open:
+			get_viewport().set_input_as_handled()
+	if not armory_open:
+		return
+	if event.is_action_pressed("ui_cancel"):
+		close_armory(false)
+	elif event.is_action_pressed("ep2_weapon_1") or event.is_action_pressed("ui_left"):
+		_panel.preview(Ep2ArmoryState.WIN)
+	elif event.is_action_pressed("ep2_weapon_2") or event.is_action_pressed("ui_right"):
+		_panel.preview(Ep2ArmoryState.REM)
+	elif event.is_action_pressed("ep2_weapon_previous"):
+		_panel.preview(Ep2ArmoryState.REM if _panel.highlighted == Ep2ArmoryState.WIN else Ep2ArmoryState.WIN)
+	elif event is InputEventJoypadMotion and event.axis == JOY_AXIS_LEFT_X and absf(event.axis_value) > 0.45:
+		_panel.preview(Ep2ArmoryState.WIN if event.axis_value < 0 else Ep2ArmoryState.REM)
+	elif event is InputEventMouseMotion:
+		_panel.point_at(event.position)
+	# All other gameplay input is consumed while the world is frozen.
+	get_viewport().set_input_as_handled()
 
 
 ## Ramp the black cover to `goal` (0..1) over `seconds`.
@@ -271,6 +344,8 @@ func set_ammo(r: int, res: int, m: int) -> void:
 
 
 func _draw() -> void:
+	if armory_open:
+		return
 	var c: Vector2 = size * 0.5
 	var h: float = size.y
 	# --- crosshair ---------------------------------------------------------------------------------------

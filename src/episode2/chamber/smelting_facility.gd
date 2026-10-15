@@ -2246,6 +2246,7 @@ func _enter_fps() -> void:
 		_fps_hud.add_child(_hud_ctl)
 		if armory != null:
 			_hud_ctl.bind_armory(armory)
+			_hud_ctl.armory_enabled = _lesson == Lesson.DONE and not _show_blocks_control
 			_hud_ctl.weapon_selected.connect(select_weapon)
 			_hud_ctl.armory_requested.connect(toggle_armory)
 	_flash_light = OmniLight3D.new()

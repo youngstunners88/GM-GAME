@@ -5,6 +5,14 @@ quick-audit block. Newest first.
 
 ---
 
+## 2026-10-15 — Western armory / Jev 1.14 direct routing
+
+- Ran security-sentinel after staging the correction, with `--fail-on=high`.
+- First pass flagged the new asset/request SHA-256 fingerprints as private-key-shaped literals (SEC-005). Replaced those fingerprints with SHA-512; no allowlist or detector weakening.
+- Final sentinel: no high/critical blockers. Title-screen fingerprint gate passes.
+- Direct TypeSafe and explicit OpenRouter keep credentials separate, retain proxy/CA verification, reject redirects/provider fallback and use bounded binary image assets. No credential values were saved or printed.
+- Native armory/domain gates and local browser verification pass. The independent pause-menu layout failures reproduce on baseline; no broader all-tests-pass or live deployment claim.
+
 ## 2026-07-12 — INCIDENT: real private keys in public git history (found by CI gitleaks)
 
 The gitleaks gate added in the previous audit **did its job**: a full-history

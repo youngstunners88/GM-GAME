@@ -4,6 +4,7 @@ var room: Ep2Interlude
 var out := ".farm/armory"
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("out="):
 			out = arg.trim_prefix("out=")
@@ -14,6 +15,7 @@ func _ready() -> void:
 	state.acquire(Ep2ArmoryState.REM)
 	state.acquire(Ep2ArmoryState.WIN)
 	room.bind_armory(state)
+	room.process_mode = Node.PROCESS_MODE_PAUSABLE
 	room.setup()
 	room.set_physics_process(false)
 	for i in 30:
@@ -23,6 +25,7 @@ func _ready() -> void:
 	room.select_weapon(Ep2ArmoryState.REM)
 	for i in 30:
 		room.step(1.0 / 60.0)
+	room._hud.toast("", 0.0)
 	await capture("2_remington")
 	room.set_aim(true)
 	for i in 30:

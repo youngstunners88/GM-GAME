@@ -1,4 +1,9 @@
 extends Node
+
+class PauseProbe extends Node:
+	var ticks: int = 0
+	func _physics_process(_delta: float) -> void:
+		ticks += 1
 ## Resource transactions plus real camera, input routing, runner bridge and woods checkpoint.
 var _fail: int = 0
 
@@ -94,14 +99,14 @@ func _ready() -> void:
 	vm.attach(cam)
 	_check("repeated attach preserves an empty revolver and rifle reserve", vm.gun == rem and vm.gun.rounds == 0 and win.reserve == 1)
 	_check("Remington has a real camera-held model and a grip hand", vm.rifle.name == "GoldenRemington1875" and vm.rifle.has_node("Barrel") and vm.rifle.has_node("RightArm"))
-	_check("a newly selected prop starts in carry before the first physics tick", vm.rifle.position == vm.hip_pos and vm.rifle.rotation.is_equal_approx(Ep2Viewmodel.VM_HIP_ROT))
+	_check("a newly selected prop starts in carry before the first physics tick", vm.rifle.position == vm.hip_pos + Vector3(vm.rifle.get_meta("hip_offset", Vector3.ZERO)) and vm.rifle.rotation.is_equal_approx(vm.rifle.get_meta("hip_rotation", Ep2Viewmodel.VM_HIP_ROT)))
 	vm.set_exposure(0.7)
 	vm.set_world_shadows(false)
 	var lighting_ok: bool = not vm._exp_mats.is_empty()
 	for pair in vm._exp_mats:
 		lighting_ok = lighting_ok and is_equal_approx((pair[0] as StandardMaterial3D).albedo_color.r, (pair[1] as Color).r * 0.7) and (pair[0] as BaseMaterial3D).disable_receive_shadows
 	_check("daylight settings reach the cached Winchester while Remington is equipped", lighting_ok)
-	_check("the procedural Remington also receives the shadow setting", (vm.rifle.get_node("Barrel").material_override as BaseMaterial3D).disable_receive_shadows)
+	_check("the Blender Remington also receives the shadow setting", (vm.rifle.get_node("Barrel").get_surface_override_material(0) as BaseMaterial3D).disable_receive_shadows)
 
 	state.select(Ep2ArmoryState.WIN)
 	state.step(0.18)
@@ -151,31 +156,90 @@ func _ready() -> void:
 	root._route_free_roam(pad)
 	_check("controller LB selects Winchester through InputMap", root.armory.equipped == Ep2ArmoryState.WIN)
 	await get_tree().process_frame
-	var slot: Button = room._hud._slots[1]
+	var hud: Ep2FpsHud = room._hud
+	var slot: Button = hud._slots[1]
 	var finger := InputEventScreenTouch.new()
-	finger.index = 0
-	finger.position = slot.get_global_rect().get_center()
+	finger.index = 1
+	finger.position = hud._hold_button.get_global_rect().get_center()
 	finger.pressed = true
 	Input.parse_input_event(finger)
 	await get_tree().process_frame
+	_check("second-thumb hold opens the icon armory and pauses the tree", hud.armory_open and get_tree().paused)
+	var drag := InputEventScreenDrag.new()
+	drag.index = 1
+	drag.position = slot.get_global_rect().get_center()
+	Input.parse_input_event(drag)
+	await get_tree().process_frame
+	_check("touch preview waits for release before changing weapons", hud._panel.highlighted == Ep2ArmoryState.REM and root.armory.equipped == Ep2ArmoryState.WIN)
 	finger = finger.duplicate()
+	finger.position = drag.position
 	finger.pressed = false
 	Input.parse_input_event(finger)
 	await get_tree().process_frame
-	_check("real touch button selects the other gun", root.armory.equipped == Ep2ArmoryState.REM)
+	_check("touch release selects the other gun and resumes gameplay", root.armory.equipped == Ep2ArmoryState.REM and not hud.armory_open and not get_tree().paused)
 	root.armory.step(0.18)
-	room.toggle_armory()
+	var probe := PauseProbe.new()
+	probe.process_mode = Node.PROCESS_MODE_PAUSABLE
+	room.add_child(probe)
+	await get_tree().physics_frame
+	root.armory.firearm(Ep2ArmoryState.WIN).rounds = 1
+	root.armory.firearm(Ep2ArmoryState.WIN).start_reload()
+	var tab := InputEventKey.new()
+	tab.physical_keycode = KEY_TAB
+	tab.pressed = true
+	Input.parse_input_event(tab)
+	await get_tree().process_frame
+	var reload_clock: float = root.armory.firearm(Ep2ArmoryState.WIN)._reload_t
+	var ticks: int = probe.ticks
 	var loaded: int = root.armory.active_gun().rounds
-	room.set_move_input(Vector2(0, 1))
 	var before: Vector3 = room.get_player_position()
-	room.step(0.05)
-	_check("open inventory blocks shooting and movement", not room.shoot() and loaded == root.armory.active_gun().rounds and room.get_player_position() == before)
-	_check("panel states both firearm names and arrow storage", room._hud._inventory.text.contains("Golden Remington 1875") and room._hud._inventory.text.contains("Winchester 1886") and room._hud._inventory.text.contains("Bear arrows stored"))
+	await get_tree().create_timer(0.08, true).timeout
+	_check("holding armory freezes world physics and finite ammunition", probe.ticks == ticks and loaded == root.armory.active_gun().rounds and room.get_player_position() == before and not room.shoot())
+	_check("holstered reload clock stays frozen throughout selection", root.armory.firearm(Ep2ArmoryState.WIN)._reload_t == reload_clock and root.armory.firearm(Ep2ArmoryState.WIN).rounds == 1)
+	_check("two actual weapon textures replace the text inventory", hud._panel.ICONS[Ep2ArmoryState.WIN].get_width() == 640 and hud._panel.ICONS[Ep2ArmoryState.REM].get_width() == 640 and hud._slots.size() == 2)
+	key.physical_keycode = KEY_1
+	Input.parse_input_event(key)
+	await get_tree().process_frame
+	_check("keyboard choice works while paused without committing early", hud._panel.highlighted == Ep2ArmoryState.WIN and root.armory.equipped == Ep2ArmoryState.REM)
+	tab.pressed = false
+	Input.parse_input_event(tab)
+	await get_tree().process_frame
+	_check("key release equips once and returns control", root.armory.equipped == Ep2ArmoryState.WIN and not get_tree().paused and not hud.armory_open)
+	pad.button_index = JOY_BUTTON_BACK
+	pad.pressed = true
+	Input.parse_input_event(pad)
+	await get_tree().process_frame
+	var stick := InputEventJoypadMotion.new()
+	stick.axis = JOY_AXIS_LEFT_X
+	stick.axis_value = .8
+	Input.parse_input_event(stick)
+	await get_tree().process_frame
+	pad.pressed = false
+	Input.parse_input_event(pad)
+	await get_tree().process_frame
+	_check("controller hold, stick choice and release select Remington", root.armory.equipped == Ep2ArmoryState.REM and not get_tree().paused)
+	get_tree().paused = true
+	hud.toggle_armory()
+	_check("armory cannot steal an existing pause", not hud.armory_open and get_tree().paused)
+	get_tree().paused = false
+	room.toggle_armory()
+	hud._notification(Node.NOTIFICATION_APPLICATION_FOCUS_OUT)
+	_check("focus loss releases the armory pause without changing selection", not hud.armory_open and not get_tree().paused and root.armory.equipped == Ep2ArmoryState.REM)
+	get_window().size = Vector2i(390, 844)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	room.toggle_armory()
+	await get_tree().process_frame
+	_check("portrait selector uses a readable 390-unit layout and separate stacked cards", is_equal_approx(hud._panel.size.x, 390) and hud._slots[0].get_global_rect().end.y < hud._slots[1].get_global_rect().position.y)
+	hud.close_armory(false)
+	get_window().size = Vector2i(1280, 720)
+	await get_tree().process_frame
 	room.toggle_armory()
 	root._active = null
 	root._mode = Ep2SessionRoot.Mode.IDLE
 	root.queue_free()
 	await get_tree().process_frame
+	_check("freeing an open HUD releases its pause", not get_tree().paused)
 	GameManager.personal_armory = prior
 	GameManager.current_level = original_level
 	GameManager.highest_unlocked_level = original_highest

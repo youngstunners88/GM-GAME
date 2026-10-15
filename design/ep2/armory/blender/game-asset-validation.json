@@ -1,0 +1,16 @@
+{
+  "remington_1875_gold.glb": {
+    "bytes": 750980,
+    "triangles": 9556,
+    "meshes": 3,
+    "finite_positions_normals": true,
+    "sha512": "b5bb3ee35109c755578e39b7f34504c71c3e1754b423f44ba098f67d3f6915f96e2a1053efbd09974ac64d36c0e469b556ba343e26087892ef233ea5bda3426c"
+  },
+  "remington_grip_hand.glb": {
+    "bytes": 226940,
+    "triangles": 4307,
+    "meshes": 4,
+    "finite_positions_normals": true,
+    "sha512": "afde5d4035b70eb121051b2cc4e2b382d882e494f08ba949876ce296b7db0002c5704ad7ba0bc7e90eadd873c807750be757af3421476ef88518953e5c8816dc"
+  }
+}

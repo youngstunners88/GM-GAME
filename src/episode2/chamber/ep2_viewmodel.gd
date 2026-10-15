@@ -292,8 +292,8 @@ func step(delta: float, moving: bool, sprinting: bool, walk_phase: float) -> voi
 	var ads_k: float = ads * ads * (3.0 - 2.0 * ads)
 	_vm_low = move_toward(_vm_low, 1.0 if lowered else 0.0, delta * 2.6)
 	var sprint: float = 1.0 if (sprinting and moving and ads < 0.1) else 0.0
-	var pos: Vector3 = hip_pos.lerp(VM_LOW_POS, _vm_low).lerp(VM_SPRINT_POS, sprint * (1.0 - _vm_low))
-	var rot: Vector3 = VM_HIP_ROT.lerp(VM_LOW_ROT, _vm_low).lerp(VM_SPRINT_ROT, sprint * (1.0 - _vm_low))
+	var pos: Vector3 = (hip_pos + Vector3(rifle.get_meta("hip_offset", Vector3.ZERO))).lerp(VM_LOW_POS, _vm_low).lerp(VM_SPRINT_POS, sprint * (1.0 - _vm_low))
+	var rot: Vector3 = Vector3(rifle.get_meta("hip_rotation", VM_HIP_ROT)).lerp(VM_LOW_ROT, _vm_low).lerp(VM_SPRINT_ROT, sprint * (1.0 - _vm_low))
 	# aimed: centred with the sight line on the screen centre
 	var ads_pos := Vector3(0.0, -(VM_ADS_SIGHT_DROP + _rifle_sight_height() * VM_SCALE), float(rifle.get_meta("ads_depth", VM_ADS_DEPTH)))
 	if rifle.has_meta("ads_cam"):
@@ -518,8 +518,8 @@ func _sync_weapon() -> void:
 			(view as Node3D).visible = false
 		_active_id = armory.equipped
 		rifle = _weapon_views[_active_id]
-		rifle.position = hip_pos
-		rifle.rotation = VM_HIP_ROT  # correct carry even if rendering precedes the next physics tick
+		rifle.position = hip_pos + Vector3(rifle.get_meta("hip_offset", Vector3.ZERO))
+		rifle.rotation = rifle.get_meta("hip_rotation", VM_HIP_ROT)  # correct carry even if rendering precedes the next physics tick
 		_muzzle_flash = rifle.get_node_or_null("MuzzleFlash")
 		if _muzzle_flash == null:
 			_build_muzzle_flash()

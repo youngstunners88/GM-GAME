@@ -25,6 +25,7 @@ the next agent hunting for files that were renamed.
 | Boss work | `src/boss/boss_base.gd` + the specific boss, `docs/architecture/adr-boss-ai-overhaul.md` |
 | Level work | `src/level/level_base.gd` + the specific level |
 | UI work | `src/ui/hud.gd` or `src/ui/main_menu.gd` + the target scene |
+| Jev / TypeSafe 1.14 / image decisions / efficient routing | `.claude/skills/jev-1-14-routing/SKILL.md`, then `scripts/jev.mjs` / `scripts/jev-request.mjs` only |
 | Pause menu / Escape / pausing | `src/ui/pause_menu.gd`, `src/autoload/state_machine.gd`; gate `tests/pause_menu_test.tscn`; browser `scripts/pause-playtest.mjs` |
 | Touch / mobile / tablet controls | `.claude/skills/gm-game-mobile-touch-experience/SKILL.md`, then `src/input/mobile/mobile_layout_manager.gd` + the one control/layout you change; gate `tests/mobile_touch_controls_test.tscn`; browser `scripts/touch-playtest.mjs` |
 | Shooter (v1.2) | → `.claude/context-manifests/shooter.md` |

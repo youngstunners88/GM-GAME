@@ -42,6 +42,7 @@ same commit — a manifest that lies is worse than none.
 ## Routing
 | Task | Go to | Read | Skills |
 |------|-------|------|--------|
+| **Jev 1.14 / TypeSafe / efficient decisions / image acceptance** | `scripts/jev.mjs` | `.claude/skills/jev-1-14-routing/SKILL.md` | `jev-1-14-routing` |
 | **Episode 2 town feels empty / one block; add avenues, doors, windows, people, horses, dogs, chickens or instruments** | `design/ep2/town/`, `tools/ep2_town/` | `.claude/skills/ep2-living-town/SKILL.md` | `ep2-living-town`, `ep2-town-streets`, `ep2-town-facades`, `ep2-town-background-life`, `ep2-town-proof` |
 | Design a level, mechanic, or boss | /design | CONTEXT.md | — |
 | Create art/audio specs or style guide | /assets | CONTEXT.md | pixel-art-skill |
@@ -265,7 +266,7 @@ commit, and every "FIXED" claim, per the rule at the top of this section. This
 does not relax `live-build-proof` — a DeepSeek read of a screenshot is not a
 substitute for Claude's own live-itch verification.
 
-| **Jev (TypeSafe)** | `~typesafe/jev-latest` (pins to `typesafe/jev-1.13`) | **Ship/block DECISIONS on numbers.** Not a chat model — it answers structured questions and is called at `POST https://openrouter.ai/api/alpha/decisions`, NOT `/v1/chat/completions`. Question types: `noul` (0-1 likelihood), `choice` (+`criteria`), `score`. Every question needs `instructions`. Costs ~$0.00002 a call. | ~$0.00002/call |
+| **Jev (TypeSafe)** | `jev-1.14` direct TypeSafe; `typesafe/jev-1.14` on explicit OpenRouter | **Ship/block DECISIONS on numbers.** Not a chat model — it answers structured questions and defaults to `POST https://api.typesafe.ai/v1/systemone`; explicit OpenRouter uses `/api/alpha/decisions`. Question types: `noul` (0-1 likelihood), `choice` (+`criteria`), `score`. Every question needs `instructions`. Record actual returned usage/cost; 1.14 pricing is unverified here. | verify current pricing |
 
 **CORRECTION (2026-09-20).** A previous version of this file stated that no
 "typesafe"/"jev" model existed, on the strength of a `GET /v1/models` grep. That
@@ -274,13 +275,7 @@ was WRONG and it cost the founder real time. Decisions models are NOT listed in
 right endpoint is. Verified working; a 400 from that endpoint is a SCHEMA error
 (it names the missing field), never "model does not exist".
 
-**Jev is text-only — it does NOT see images.** Control-tested 2026-09-20: an
-image with a black bar scored `noul` 0.22, an identical image without one scored
-0.19, and the token count tracked the base64 STRING length, not the picture. So
-never hand Jev a screenshot and treat the number as a verdict on the pixels —
-that is fake verification. Feed it the NUMERIC METRICS from
-`scripts/seam-smudge-gate.py`; let DeepSeek V4.1 Flash (real vision, verified
-same day) do the looking.
+**Jev 1.14 routing (founder, 2026-10-15):** read `.claude/skills/jev-1-14-routing/SKILL.md`. Keep deterministic checks local; use small batched typed decisions via direct TypeSafe, as the user explicitly selected after adding TYPESAFE. OpenRouter is an explicit compatibility option with its own key. The old 1.13 base64-as-text experiment is historical, not a ban on the new image feature. Proper image bytes use the upstream documented asset encoding; A live API response and paired image controls must succeed before claiming vision verification; OpenRouter image forwarding needs separate proof. Current provider access/context docs are blocked; do not invent limits or verdicts.
 
 Dispatch with `scripts/or-call.mjs`, which carries every guard that matters —
 `@include` file inlining, abort-before-spending on a missing path, live `/models`

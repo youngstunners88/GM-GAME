@@ -59,6 +59,10 @@ export_presets.cfg
 # web pack; regenerating lossless defaults adds several MB near itch's cap.
 !src/assets/portals/fixtures/*.png.import
 !src/assets/portals/maps/map_diamonds_courtyard.png.import
+# Authored armory texture/mesh presets keep this new kit within the web PCK budget.
+!src/episode2/assets/weapons/armory/*.png.import
+!src/episode2/assets/weapons/armory/*.glb.import
+!src/episode2/assets/weapons/armory/*.otf.import
 
 # === Engine: Unity ===
 [Ll]ibrary/
