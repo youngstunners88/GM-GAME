@@ -63,3 +63,14 @@ new Bull's aviators, cigar and bandana read, but fur/face albedo is very dark. I
 OmniLight fill in front of the face: no change; (4) UNSHADED: face still black while clothing shows true colours. **The face albedo
 itself is near-black.** Fix = repaint/lift the face UV islands in the albedo (locate islands from the UVs of the head vertices),
 then re-run the shot. Earlier note "face is dark because of lighting" is superseded by this.
+
+## v2 (face repaint) engine verdict (2026-10-15, Godot 4.7.2 worktree, `engine_head_compare_old_v1_v2.png`: old | v1 | v2)
+Method: reference head camera-projected into the face UV islands (378 faces, 0.28% of the atlas; `tools/ep2_blender/bull_face_repaint.py`),
+non-face region unchanged (0.00%). Numbers: face luminance 0.153 -> 0.180, contrast 0.147 -> 0.195, crop SSIM vs reference 0.07 -> 0.41.
+**In the engine v2 is better than v1 but still NOT at the shipping Bull's face**: faint brow/rim detail shows, lenses and snout are still
+dark, thin seam cracks remain (only camera-facing faces were repainted on a shredded atlas), the orange dot is the old cigar-ember prop
+at the `headfront` bone. **Do not swap yet.** Options, best first: (1) regenerate JUST THE HEAD from a face close-up reference
+(Hunyuan puts its detail budget on the face; ~$0.5 of GPU) and graft it on the new body; (2) a second repaint pass with all head
+faces (not only camera-facing), lenses lifted to reference value, then re-shoot; (3) keep the shipping Bull's head and use the new
+body only. Engine edits to carry when this ships: see `engine_swap_wip.patch` (without the emission and fill-light experiments,
+which did nothing useful) + delete the extracted `inferno_bull_rigged_0/1.jpg` before reimport (trap above).
