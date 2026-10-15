@@ -1,30 +1,28 @@
 {
-  "observed_remote_sha": "2f0a58a901ebe86a614d6e0eadab4fecdcce7edc",
-  "objective": "Armory implementation complete and published: both guns, finite ammunition, keyboard/touch/controller selection, saved training, persistent corpse-arrow loot, viewport callback recovery, and surface/runner retries. Preserve concurrent Claude work. Remaining work is external model review and verified live release when networking permits.",
+  "observed_remote_sha": "f6203903363baaea2fbc4c20164a2445c6c9ea0e",
+  "objective": "Publish western icon hold/pause selector and Blender Remington correction; user also requested Jev 1.14 routing, then explicitly chose direct TypeSafe after adding TYPESAFE. Preserve Claude world work.",
   "task_paths": [
-    "src/episode2/chamber/ep2_armory_state.gd",
+    "src/episode2/chamber/ep2_fps_hud.gd",
+    "src/episode2/chamber/ep2_weapon_selector.gd",
     "src/episode2/chamber/ep2_remington_view.gd",
     "src/episode2/chamber/ep2_viewmodel.gd",
-    "src/episode2/chamber/ep2_fps_hud.gd",
-    "src/episode2/session/ep2_session_root.gd",
-    "src/autoload/game_manager.gd",
-    "src/episode2/runner/runner_graybox.gd",
-    "src/episode2/chamber/woods_quad.gd",
-    "src/episode2/chamber/smelting_facility.gd",
+    "src/episode2/assets/weapons/armory",
+    "tools/ep2_blender",
+    "scripts/jev.mjs",
+    "scripts/jev-request.mjs",
+    ".claude/skills/jev-1-14-routing",
     "tests/ep2_personal_armory_test.gd",
     "design/ep2/armory"
   ],
   "evidence": {
-    "report": "design/ep2/armory/VERIFICATION.md",
-    "contract": "design/ep2/armory/CONVENTION.md",
-    "validation": "All 8 final native gates, security/title lock PASS. Final nonthreaded PCK198484640 bytes. Strict local browser PASS with TLS enabled in temporary isolated profile constrained to four allowed game hosts; profile removed after validation.",
-    "release": "All runtime changes published to master2f0a58a9. Latest runtime fix d0b4b18d. Live butler/public BUILD and Jev/Microsoft endpoints blocked by proxy403. Network configuration draft save failed INVALID_ARGUMENT; readback unchanged. Receipt design/ep2/armory/release-receipt.json."
+    "armory": "native integration + portrait PASS; strict local browser PASS; PCK199005552 bytes",
+    "jev": "6 offline tests PASS; documented binary multipart; direct provider call blocked before acceptance",
+    "baseline_pause": "3 hit-target failures reproduced on f6203903, plus isolated-cache scene-start failure; untouched source"
   },
   "unresolved": [
-    "External Jev/Microsoft decisions blocked by proxy 403.",
-    "Armory saves do not add complete story/world-position persistence.",
-    "Native Remington is procedural reference-based geometry; no fully articulated reload/finger rig.",
-    "Actual release upload and matching public BUILD require network-accessible verification."
+    "TypeSafe API/docs CONNECT403; TYPESAFE new binding listed but runtime readiness unknown; existing TYPESAFE_API_KEY present. No authenticated API success or paired vision control.",
+    "Network draft save INVALID_ARGUMENT; revision5/custom hosts unchanged.",
+    "Public Actions/itch endpoint CONNECT403; no CI/butler/live BUILD proof."
   ],
-  "next_action": "Check the release workflow containing d0b4b18d/2f0a58a9, actual butler upload and matching public BUILD once allowed. Obtain both decision reviews when OpenRouter access is available. Do not redo completed armory implementation or call unverified deployment live."
+  "next_action": "Complete security/title gates, scoped commits and non-forced master publication. Remove disposable Chromium profile after local proof; preserve baseline evidence. User selected direct TypeSafe; do not ask provider permission again."
 }

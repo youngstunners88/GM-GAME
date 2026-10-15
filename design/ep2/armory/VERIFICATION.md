@@ -1,3 +1,21 @@
+# Western icon armory and Blender correction — 2026-10-15
+
+The founder rejected the old text panel and primitive Remington. The current correction replaces both: actual weapon renders, western leather/brass/Bookman styling, hold/preview/release selection and a real SceneTree pause. Keyboard, controller, raw second-finger hold/drag/release, frozen world physics/reload clocks, release/cancel/focus-loss/scene-exit cleanup and existing pause ownership are exercised by `ep2_personal_armory_test`. Portrait uses a 390-unit stacked layout; font MSDF preserves scale.
+
+The Remington and contact-fitted hand are authored in headless Blender. Editable sources, reproducible commands, budgets/provenance and finite-geometry checks are in `blender/`. Existing Winchester source assets and Claude's world/Bull/town choreography are unchanged. Existing earned ownership, finite independent ammo, corpse arrows, source-gun acquisition, viewport handoffs and checkpoint conservation still pass.
+
+Validation: compile, personal armory, range lesson, smelting facility, session root, town, companion/cart, interlude, save compatibility, runner revolver and Stage 3 revolver all pass with pinned Godot 4.3. The broader pause-menu suite reports three existing fullscreen-button hit-target collisions; an isolated checkout of unchanged master f6203903 reproduces those same three profile failures (and one additional baseline scene-start failure caused by the isolated cache). None involves the Episode 2 selector. No unrelated mobile layout source was changed.
+
+The current nonthreaded web export is 199,005,552 bytes (189.79 MiB), below the 190 MiB gate. Strict local Chromium verification passes all five game gates with PLAYING observed and no errors. TLS remains enabled; the provided platform proxy CA is trusted only in a disposable browser profile constrained to the four existing game hosts, then removed. Native camera captures show actual selected guns, ADS, empty ammo and the icon selector with an explicit earned-guns/three-arrow capture fixture; actual corpse/checkpoint tests are separate.
+
+The requested Jev 1.14 routing skill and request helper are separate from runtime gameplay. The user subsequently selected direct TypeSafe. Six offline tests pass for bounded JSON/binary multipart, provider/credential separation, pins, typed output and no retry/fallback. The live direct request fails at proxy CONNECT 403 before provider acceptance; no Jev visual verdict is claimed. Official SDK sources establish the image encoding, not a successful account call. Context limits and model-specific pricing remain unverified.
+
+Publication and live status must be recorded in release-receipt.json. Public GitHub Actions/itch and TypeSafe API/docs remain blocked. A narrow network draft update returned INVALID_ARGUMENT; revision/readback retained the four previous game-service hosts. No network configuration change or live deployment is claimed.
+
+---
+
+## Historical first implementation (superseded presentation)
+
 # Armory implementation evidence — 2026-10-15 (Asia/Seoul)
 
 Implemented the session-owned armory convention, real first-person golden Remington, named quick slots, independent finite ammunition, touch/controller selection, keyboard rebinding, searchable persistent bear bodies and atomic surface resource/loot restoration. See CONVENTION.md for the behavior and limits.
