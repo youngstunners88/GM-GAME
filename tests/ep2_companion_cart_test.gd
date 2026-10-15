@@ -110,6 +110,23 @@ func _ready() -> void:
 	_run(w2, 10.0)
 	_check("a bear on Lil Blunt who is down to his last heart: Inferno opens fire", w2.get_bull_shots() > shots0, "%d shots" % w2.get_bull_shots())
 	_check("...and calls out that he has him covered", said2.any(func(id): return str(id) in WoodsQuadChamber.BULL_COVER), str(said2))
+	# Who gets the credit (founder 2026-10-15: "Lil Blunt speaks as if he killed a bear, I never fired a shot")
+	var victims: Array = w2.get_bears().filter(func(b): return b != barn)
+	var before: int = said2.size()
+	w2._hold = 0.0
+	w2._bark_cd = 0.0
+	(victims[0] as Ep2BearBrain).set_meta("killed_by", "bull")
+	w2._on_bear_died(victims[0])
+	_run(w2, 1.0)
+	var bragged: Array = said2.slice(before).filter(func(id): return str(id).begins_with("ep2_vo_bear_down_"))
+	_check("a bear INFERNO shot dead gets no 'bear down' brag from Lil Blunt", bragged.is_empty(), str(bragged))
+	w2._hold = 0.0
+	w2._bark_cd = 0.0
+	(victims[1] as Ep2BearBrain).set_meta("killed_by", "player")
+	w2._on_bear_died(victims[1])
+	_run(w2, 1.0)
+	bragged = said2.slice(before).filter(func(id): return str(id).begins_with("ep2_vo_bear_down_"))
+	_check("...but a bear LIL BLUNT shot still earns his line", bragged.size() == 1, str(said2.slice(before)))
 	w2.queue_free()
 
 	print("-- THE DONKEY CART")

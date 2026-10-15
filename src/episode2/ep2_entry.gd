@@ -168,6 +168,14 @@ func _begin() -> void:
 func _start_session() -> void:
 	_ended = false
 	_banner.text = ""
+	# A run that starts from the cliff is a NEW run: Lil Blunt begins with a fresh armory (full rounds, rifle lesson not yet taught).
+	# Without this the saved armory from an earlier play-through came back - 8 rounds left and "training_complete", so the target
+	# practice vanished and the runner felt starved (founder 2026-10-15). Mid-run retries still conserve rounds via the session
+	# root's own checkpoint. A test warp (?ep2leg=N) keeps whatever the save holds.
+	if _leg_offset == 0:
+		var gm: Node = get_node_or_null("/root/GameManager")
+		if gm != null:
+			gm.personal_armory = {}
 	_root.configure(_plan().slice(_leg_offset), true)   # commit_to_economy: real GOLD in play
 	_root.start()
 
