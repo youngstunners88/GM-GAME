@@ -1,0 +1,17 @@
+{
+ "request_id": "9ba4367d-6fe6-4c85-ae24-f6a3b2844d93",
+ "endpoint": "gpt-image-2-text-to-image",
+ "payload": {
+  "prompt": "Photorealistic cinematic concept still for a first-person western shooter, 'western Modern Warfare' art direction: warm low sun key light with teal-blue shadow fill, thin atmospheric haze, physically based materials (weathered timber, rusted riveted steel, packed dirt, gravel, bark, dust), natural film grain, 35mm lens at human eye height (1.6 m), high dynamic range, sharp detail, believable scale. No text, no lettering, no watermark, no logos, no user interface, no people, no close-up characters. A very wide forest trail (about ten metres across) at dusk, deep fresh tyre ruts and trampled undergrowth running straight for two hundred metres, tall pines on both sides, fallen logs along the edges, thick low mist. Far down the trail a long line of torches and lanterns carried by a pursuing mob of tiny distant bear silhouettes glows in the haze. Eye-level view looking back along the trail.",
+  "aspect_ratio": "16:9",
+  "resolution": "2K",
+  "quality": "high"
+ },
+ "url": "https://cdn.muapi.ai/outputs/generated/9ba4367d-6fe6-4c85-ae24-f6a3b2844d93_42b599dd.png",
+ "cost_usd": 0.45,
+ "size": [
+  1600,
+  900
+ ],
+ "made": "2026-10-09"
+}

@@ -301,6 +301,40 @@ jobs:
           grep -q 'QUIZ_PROTOCOL_ONLY: ALL PASS' quiz-tests.log
           timeout 90 "$GODOT_BIN" --headless res://tests/nft_issuer_test.tscn 2>&1 | tee nft-tests.log
           grep -q 'NFT_ISSUER: ALL PASS' nft-tests.log
+          # On-screen touch controls: real finger events -> GUI -> InputMap -> the real
+          # player (analog walk, multi-touch combo, release-on-hide, layouts on every screen).
+          timeout 180 "$GODOT_BIN" --headless res://tests/mobile_touch_controls_test.tscn 2>&1 | tee touch-tests.log
+          grep -q 'MOBILE_TOUCH_CONTROLS: ALL PASS' touch-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' touch-tests.log; then exit 1; fi
+          # Pause menu (src/ui/pause_menu.gd): Escape / the touch pause button pause and resume the
+          # real Stage 1 and Smoke Lounge, the hero freezes, power-up timers stop draining, Talk and
+          # other modals keep their own Escape, a second thumb can tap Resume. It was dead code for
+          # as long as it existed (InputEvent has no is_action_just_pressed), so keep it gated.
+          timeout 180 "$GODOT_BIN" --headless res://tests/pause_menu_test.tscn 2>&1 | tee pause-tests.log
+          grep -q 'PAUSE_MENU: ALL PASS' pause-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' pause-tests.log; then exit 1; fi
+          # Vault NPC dialogues on a touch screen: Gideon's NEXT / CONFIRM STAKE / LEAVE buttons, and
+          # proof that no stray tap (or GRAB) can stake GOLD without the explicit CONFIRM STAKE press.
+          timeout 120 "$GODOT_BIN" --headless res://tests/vault_touch_dialogue_test.tscn 2>&1 | tee vault-touch-tests.log
+          grep -q 'VAULT_TOUCH_DIALOGUE: ALL PASS' vault-touch-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' vault-touch-tests.log; then exit 1; fi
+          # Actual skinned paw contacts throughout reading/draw/release, plus
+          # the deterministic actor clock and Bull's grip-preserving recoil.
+          timeout 180 "$GODOT_BIN" --headless res://tests/ep2_character_motion_test.tscn 2>&1 | tee character-motion-tests.log
+          grep -q 'EP2_CHARACTER_MOTION: ALL PASS' character-motion-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' character-motion-tests.log; then exit 1; fi
+          # Session-owned guns, finite ammo, touch/controller swaps and atomic bear-loot retries.
+          timeout 180 "$GODOT_BIN" --headless res://tests/ep2_personal_armory_test.tscn 2>&1 | tee personal-armory-tests.log
+          grep -q 'EP2_PERSONAL_ARMORY: ALL PASS' personal-armory-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' personal-armory-tests.log; then exit 1; fi
+          # The GoldMine town (founder 2026-10-14): the sheriff's office, the saloon, the draw (foul / retry / win), Bull, the chain.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_gold_town_test.tscn 2>&1 | tee gold-town-tests.log
+          grep -q 'EP2_GOLD_TOWN: ALL PASS' gold-town-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' gold-town-tests.log; then exit 1; fi
+          # Bull's pacing, the cover fire and the donkey cart on the road (founder 2026-10-14).
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_companion_cart_test.tscn 2>&1 | tee companion-cart-tests.log
+          grep -q 'EP2_COMPANION_CART: ALL PASS' companion-cart-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' companion-cart-tests.log; then exit 1; fi
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' portal-tests.log; then exit 1; fi
           timeout 90 "$GODOT_BIN" --headless --script res://tests/portal_traversal_test.gd 2>&1 | tee portal-traversal.log
           grep -q 'PORTAL TRAVERSAL: ALL PASS' portal-traversal.log
@@ -660,6 +694,19 @@ jobs:
           echo "${BUTLER_SHA256}  butler.zip" | sha256sum -c -
           unzip -q butler.zip butler
           chmod +x butler
-          ./butler push web/game "$ITCH_TARGET" \
-            --userversion "$(git rev-parse --short HEAD)-$(date -u +%Y%m%d%H%M)"
+          # itch refuses a new build while the channel's previous one is still processing
+          # ("latest build is still processing, try again later" - 2026-10-14 cost two deploys).
+          # Wait it out instead of failing; any OTHER butler error still fails at once.
+          set -o pipefail
+          ver="$(git rev-parse --short HEAD)-$(date -u +%Y%m%d%H%M)"
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if ./butler push web/game "$ITCH_TARGET" --userversion "$ver" 2>&1 | tee butler.log; then
+              if ! grep -q "still processing" butler.log; then break; fi
+            elif ! grep -q "still processing" butler.log; then
+              exit 1
+            fi
+            if [ "$attempt" = 10 ]; then echo "::error::itch kept the previous build processing for 10 tries"; exit 1; fi
+            echo "itch is still processing the previous build - waiting 90s (attempt ${attempt})"
+            sleep 90
+          done
           echo "::notice::Pushed to https://youngstunners88.itch.io/smokerealm"

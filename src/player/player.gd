@@ -1010,7 +1010,9 @@ func _on_mobile_dash() -> void:
 func _try_air_dash() -> void:
 	if not input_handler.is_air_dash_available():
 		return
-	var dash_dir := input_handler.get_movement_direction()
+	# The axis can be ANALOG (touch stick, gamepad): a light tilt must still dash
+	# at full punch, so only its sign picks the direction.
+	var dash_dir := signf(input_handler.get_movement_direction())
 	if dash_dir == 0:
 		dash_dir = 1.0 if input_handler.facing_right else -1.0
 	velocity.x = dash_dir * InputHandler.AIR_DASH_SPEED

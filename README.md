@@ -53,10 +53,10 @@ lil-blunt-game/
 │   └── auditor.gd/.tscn
 ├── effects/
 │   └── smoke_puff.gd/.tscn
-└── ui/
-    ├── main_menu.gd/.tscn
-    ├── hud.gd/.tscn
-    └── touch_controls.gd/.tscn
+├── ui/
+│   ├── main_menu.gd/.tscn
+│   └── hud.gd/.tscn
+└── input/mobile/          (touch controls: joystick, buttons, layouts, MobileLayoutManager)
 ```
 
 ## ⚡ Power-Ups

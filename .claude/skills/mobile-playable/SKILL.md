@@ -24,171 +24,24 @@ Use when the user asks to:
 - Add haptic feedback or mobile-specific UX
 - Configure Android/iOS export settings
 
-## Current Mobile State
+## Current Mobile State (rewritten 2026-10-13)
 
-### What's Implemented:
-- `MobileInputHandler` autoload (`src/autoload/mobile_input_handler.gd`) — virtual joystick + action buttons
-- `TouchControls` UI (`src/ui/touch_controls.gd`) — visual touch overlay
-- `MobileControls` UI (`src/ui/mobile_controls.gd`) — alternate control scheme
-- Mobile detection: `OS.get_name() in ["Android", "iOS"] or DisplayServer.is_touchscreen_available()`
-- Player hooks: `MobileInputHandler.touch_jump` and `touch_dash` signals connected in `Player._ready()`
-- Movement: `MobileInputHandler.get_movement_input()` returns -1/0/1 from virtual joystick
-- Sprint: `MobileInputHandler.is_sprint_active()` returns button state
-- Orientation setting: `window/handheld/orientation=6` (landscape) in project.godot
+**Touch controls are owned by skill `gm-game-mobile-touch-experience`** — read it first for anything about the
+joystick, thumb buttons, layouts, safe areas, orientation or haptics. Summary:
+- `src/input/mobile/` holds the analog `VirtualJoystick`, `VirtualButton`s, per-device layout scenes and the
+  `MobileLayoutManager` autoload. Controls press ordinary InputMap actions (`TouchActions`); gameplay never knows.
+- `MobileInputHandler` (`src/autoload/mobile_input_handler.gd`) is only a thin shim (`is_mobile`,
+  `get_movement_input()` = `Input.get_axis`, `is_sprint_active()`); its `touch_*` signals are never emitted.
+- The old `src/ui/mobile_controls.gd` / `touch_controls.tscn` (TouchScreenButtons) are deleted.
+- Detection: `OS.get_name() in ["Android","iOS"] or DisplayServer.is_touchscreen_available()` (Web always reports
+  `"Web"`, so `has_feature("mobile")` is always false). Phone vs tablet is by smallest side in dp (< 600 = phone).
+- Orientation setting: `window/handheld/orientation=6` (landscape) in project.godot; stretch `canvas_items` + `expand`.
+- Gates: `tests/mobile_touch_controls_test.tscn`; real-browser multi-touch `scripts/touch-playtest.mjs`.
 
-### What Needs Work:
-- Touch controls need real-device testing (headless Chromium reports no touchscreen)
-- Virtual joystick uses screen-relative zones, not a floating joystick
-- No visual feedback for button presses (no press animation)
-- No haptic feedback (vibration)
-- Viewport may not handle notch/safe area insets
-- Performance not optimized for mobile GPUs (forward_plus renderer)
-- No PWA manifest for installable mobile web app
-
-## MobileInputHandler Architecture
-
-### Detection:
-```gdscript
-var is_mobile: bool = OS.get_name() in ["Android", "iOS"] or DisplayServer.is_touchscreen_available()
-```
-
-**Critical**: On web export, `OS.get_name()` returns `"Web"` (never `"Android"` or `"iOS"`). A mobile browser only reveals itself through `DisplayServer.is_touchscreen_available()`. Without this check, itch.io/mobile-web players get no touch controls at all.
-
-### Virtual Joystick:
-- **Zone**: Left 40% of screen (`joystick_zone = Rect2(0, 0, screen_size.x * 0.4, screen_size.y)`)
-- **Center**: Fixed at `Vector2(screen_size.x * 0.2, screen_size.y / 2)` — NOT a floating joystick
-- **Deadzone**: 30px radius (`JOYSTICK_DEADZONE`)
-- **Output**: `sign(delta.x)` — binary -1/0/1, no analog gradient
-
-### Action Buttons:
-- **Zone**: Right 60% of screen
-- **Layout**: 4 buttons stacked vertically on the right edge:
-  - Jump (top, y = screen_size.y / 4)
-  - Sprint (middle, y = screen_size.y / 2)
-  - Dash (lower, y = 3 * screen_size.y / 4)
-  - Interact (bottom, y = screen_size.y - BUTTON_SIZE - 20)
-- **Button size**: 80×80 px (`BUTTON_SIZE`)
-- **Center X**: `screen_size.x - BUTTON_SIZE`
-
-### Input Flow:
-```
-Touch event → _handle_touch() →
-  if in joystick_zone → _update_joystick() → touch_move signal
-  else → _handle_action_button() → emit signal (touch_jump/dash/sprint/interact)
-
-Player._physics_process():
-  movement_direction = MobileInputHandler.get_movement_input()  # overrides keyboard
-  sprint_mult = input_handler.get_sprint_multiplier()  # checks MobileInputHandler.is_sprint_active()
-```
-
-## Mobile Improvements to Implement
-
-### 1. Floating Virtual Joystick
-**Problem**: Current joystick center is fixed at screen position. Players touching anywhere in the left 40% get binary direction based on offset from a fixed point — uncomfortable and imprecise.
-
-**Solution**: Make the joystick float — the initial touch point becomes the joystick center, and dragging from there controls direction.
-
-```gdscript
-var _joystick_origin: Vector2 = Vector2.ZERO
-var _joystick_active: bool = false
-
-func _handle_touch(event: InputEventScreenTouch) -> void:
-    if event.pressed and joystick_zone.has_point(event.position):
-        _joystick_origin = event.position
-        _joystick_active = true
-    elif not event.pressed and _joystick_active:
-        _joystick_active = false
-        current_movement = 0.0
-        touch_move.emit(0.0)
-
-func _handle_drag(event: InputEventScreenDrag) -> void:
-    if _joystick_active:
-        var delta := event.position - _joystick_origin
-        if delta.length() < JOYSTICK_DEADZONE:
-            current_movement = 0.0
-        else:
-            current_movement = clampf(delta.x / 80.0, -1.0, 1.0)  # analog
-        touch_move.emit(current_movement)
-```
-
-### 2. Analog Movement
-**Problem**: `sign(delta.x)` gives binary -1/0/1. No way to walk slowly.
-
-**Solution**: Use `clampf(delta.x / threshold, -1.0, 1.0)` for analog input. Update `Player._physics_process()` to use the analog value:
-```gdscript
-var movement_direction: float = input_handler.get_movement_direction()
-if MobileInputHandler and MobileInputHandler.is_mobile:
-    movement_direction = MobileInputHandler.get_movement_input()
-    # movement_direction is now -1.0 to 1.0, not just -1/0/1
-```
-
-### 3. Visual Touch Overlay
-**Problem**: Current touch controls have no visual feedback. Players can't see where buttons are.
-
-**Solution**: Draw a semi-transparent overlay in `_draw()` or via CanvasLayer:
-- Joystick base circle + draggable thumb
-- Button circles that highlight on press
-- Use `CanvasItem` draw calls or TextureRect nodes
-
-### 4. Button Layout Improvement
-**Problem**: 4 buttons stacked vertically is not ergonomic. Thumb reach is limited.
-
-**Solution**: Arrange buttons in an arc or diamond pattern:
-```
-     JUMP
-  DASH   SPRINT
-     INTERACT
-```
-Or use a configurable layout with drag-to-reposition.
-
-### 5. Multi-Touch Handling
-**Problem**: Current code tracks touches by `event.index` but doesn't properly handle simultaneous joystick + button presses.
-
-**Solution**: Ensure each touch ID is tracked independently:
-```gdscript
-var _joystick_touch_id: int = -1  # which touch owns the joystick
-
-func _handle_touch(event: InputEventScreenTouch) -> void:
-    if event.pressed:
-        if _joystick_touch_id == -1 and joystick_zone.has_point(event.position):
-            _joystick_touch_id = event.index
-            _joystick_origin = event.position
-            _joystick_active = true
-        else:
-            _handle_action_button(event.position)
-    else:
-        if event.index == _joystick_touch_id:
-            _joystick_touch_id = -1
-            _joystick_active = false
-            current_movement = 0.0
-            touch_move.emit(0.0)
-        else:
-            _release_action_button(event.position)
-```
-
-### 6. Attack Button
-**Problem**: No attack button on mobile. Keyboard uses J or Enter, but mobile has no equivalent.
-
-**Solution**: Add an attack button to the action button layout. Connect to the player's combat handler.
-
-### 7. Haptic Feedback
-```gdscript
-# On jump, hit, damage, pickup
-if is_mobile:
-    if OS.has_feature("android"):
-        Input.vibrate_handheld(50)  # 50ms vibration
-    # iOS uses a different API; check platform
-```
-
-### 8. Safe Area Handling
-**Problem**: Notch/cutout and home indicator can overlap UI.
-
-**Solution**:
-```gdscript
-func _ready() -> void:
-    var safe_area := DisplayServer.get_display_safe_area()
-    # Adjust UI positions to stay within safe_area
-```
+### Still open (not touch controls)
+- Real-device confirmation on a phone and a tablet (founder hard-refresh) — nothing here is claimed FIXED without it.
+- No PWA manifest; performance not tuned for mobile GPUs (forward_plus renderer in project settings).
+- Native Android/iOS export paths are untested on hardware.
 
 ## Viewport and Screen Adaptation
 

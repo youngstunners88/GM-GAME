@@ -28,6 +28,7 @@ ErrorReporter="*res://src/autoload/error_reporter.gd"
 DifficultyManager="*res://src/autoload/difficulty_manager.gd"
 DevCoordinator="*res://src/autoload/dev_coordinator.gd"
 MobileInputHandler="*res://src/autoload/mobile_input_handler.gd"
+MobileLayoutManager="*res://src/input/mobile/mobile_layout_manager.gd"
 ComboSystem="*res://src/autoload/combo_system.gd"
 IcpBackend="*res://src/autoload/icp_backend.gd"
 NftIssuer="*res://src/autoload/nft_issuer.gd"
@@ -92,6 +93,11 @@ move_down={
 "deadzone": 0.5,
 "events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":83,"key_label":0,"unicode":115,"location":0,"echo":false,"script":null)
 , Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":4194322,"key_label":0,"unicode":0,"location":0,"echo":false,"script":null)
+]
+}
+pause={
+"deadzone": 0.5,
+"events": [Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"button_index":6,"pressure":0.0,"pressed":false,"script":null)
 ]
 }
 

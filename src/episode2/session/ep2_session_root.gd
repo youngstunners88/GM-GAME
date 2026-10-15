@@ -35,11 +35,19 @@ const RUNNER_SCENE := preload("res://src/episode2/runner/runner_graybox.tscn")
 const CHAMBER_SCENES := {
 	"smelting_facility": preload("res://src/episode2/chamber/smelting_facility.tscn"),
 	"miner_shaft": preload("res://src/episode2/chamber/miner_shaft.tscn"),
+	# The INTERLUDE chain (founder 2026-10-09): after the hideout the runner is paused - a mine lift, then the bear woods.
+	"mine_lift": preload("res://src/episode2/chamber/mine_lift.tscn"),
+	"woods_quad": preload("res://src/episode2/chamber/woods_quad.tscn"),
+	# Out of the woods (founder 2026-10-14): Bull drops Lil Blunt in the GoldMine town - the sheriff, the saloon, the draw.
+	"gold_town": preload("res://src/episode2/chamber/gold_town.tscn"),
 }
 const DEFAULT_CHAMBER := "miner_shaft"
 
 const DEFAULT_GOLD_PRINCIPAL := 1000
 
+var armory: Ep2ArmoryState = Ep2ArmoryState.new()
+var _armory_save_due: float = -1.0
+var _runner_armory_checkpoint: Dictionary = {}
 var _mode: int = Mode.IDLE
 var _active: Node = null
 var _plan: Array = []
@@ -48,17 +56,30 @@ var _completed_distance: float = 0.0
 var _rewarded_chambers: Dictionary = {}   # index -> true, guard #1
 ## The segment index the CURRENTLY-LOADED chamber belongs to (guard #1 key).
 var _chamber_segment: int = -1
+## Which chamber of the current segment is loaded ("" = the segment's own). Interlude chambers chain: a chamber's result
+## may carry `next_chamber` (load that one next, in the same segment) or `end_session` (the playable slice ends here).
+var _chain_id: String = ""
+var _chain_n: int = 0
 var _commit_to_economy: bool = true
 var _totals: Dictionary = {"gold_awarded": 0, "gold_forfeited": 0, "diamonds_burned": 0, "btc_paid": 0}
 
 func configure(plan: Array, commit_to_economy: bool = true) -> void:
+	Ep2ArmoryState.install_actions()
+	var manager: Node = get_node_or_null("/root/GameManager")
+	armory = Ep2ArmoryState.new()
+	if manager != null:
+		armory.restore(manager.personal_armory, manager.highest_unlocked_level >= 3 or manager.current_level >= 3)
+	armory.changed.connect(_persist_armory)
 	_plan = plan.duplicate(true)
 	_commit_to_economy = commit_to_economy
 	_segment = 0
 	_completed_distance = 0.0
 	_rewarded_chambers.clear()
 	_chamber_segment = -1
+	_chain_id = ""
+	_chain_n = 0
 	_totals = {"gold_awarded": 0, "gold_forfeited": 0, "diamonds_burned": 0, "btc_paid": 0}
+	_runner_armory_checkpoint.clear()
 	_teardown_active()
 	_mode = Mode.IDLE
 
@@ -73,6 +94,11 @@ func _enter_runner() -> void:
 	_mode = Mode.TRANSITION
 	_teardown_active()
 	var seg: Dictionary = _plan[_segment]
+	if bool(seg.get("armed", false)):
+		armory.acquire(Ep2ArmoryState.REM)
+		armory.select(Ep2ArmoryState.REM)
+	armory.firearm(Ep2ArmoryState.REM).cancel_reload()  # runner owns its timed cylinder reload
+	_runner_armory_checkpoint = armory.snapshot()
 	var r: Node = RUNNER_SCENE.instantiate()
 	add_child(r)
 	_active = r
@@ -90,6 +116,7 @@ func _enter_runner() -> void:
 			"ends_at_cliff": bool(seg.get("ends_at_cliff", false)),
 		}
 	)
+	r.bind_armory(armory)
 	r.chamber_reached.connect(_on_chamber_reached, CONNECT_ONE_SHOT)
 	if r.has_signal("cliff_panic"):
 		r.cliff_panic.connect(_warm_chamber_assets, CONNECT_ONE_SHOT)
@@ -107,13 +134,14 @@ func _enter_chamber() -> void:
 		_completed_distance += float(_active.get_distance())
 	_teardown_active()
 	var seg: Dictionary = _plan[_segment]
-	var chamber_id: String = str(seg.get("chamber", DEFAULT_CHAMBER))
+	var chamber_id: String = _chain_id if _chain_id != "" else str(seg.get("chamber", DEFAULT_CHAMBER))
 	if not CHAMBER_SCENES.has(chamber_id):
 		push_error("Ep2SessionRoot: unknown chamber id \"%s\"; falling back to %s" % [chamber_id, DEFAULT_CHAMBER])
 		chamber_id = DEFAULT_CHAMBER
 	var c: Node = CHAMBER_SCENES[chamber_id].instantiate()
 	add_child(c)
 	_active = c
+	_wire_chamber(c)
 	c.setup(
 		int(seg.get("gold_principal", DEFAULT_GOLD_PRINCIPAL)),
 		seg.get("bears", []),
@@ -124,6 +152,109 @@ func _enter_chamber() -> void:
 	_chamber_segment = _segment
 	_mode = Mode.CHAMBER
 	mode_changed.emit(_mode)
+
+## Load the next chamber of a chain in the same segment (no runner in between). If it was built in the background
+## (`_on_prebuild_requested`), the hand-over is ONE cut in the same frame: the player keeps his gaze and his held keys, there is no
+## freeze, no blackout, no title card (founder 2026-10-11: "one motion").
+func _enter_chamber_chained(segment: int) -> void:
+	_mode = Mode.TRANSITION
+	var gaze: Dictionary = {}
+	if _active != null and _active.has_method("get_handoff"):
+		gaze = _active.get_handoff()
+	var c: Node = null
+	var seamless: bool = false
+	if _pb_node != null and is_instance_valid(_pb_node) and _pb_id == _chain_id:
+		c = _pb_node
+		seamless = true
+	else:
+		if _pb_node != null and is_instance_valid(_pb_node):
+			_pb_node.queue_free()
+			if _pb_vp != null:
+				_pb_vp.queue_free()
+				_pb_vp = null
+		c = CHAMBER_SCENES[_chain_id].instantiate()
+	_pb_node = null
+	_pb_id = ""
+	var old: Node = _active
+	if old != null:
+		if old.get_parent() == self:
+			remove_child(old)             # out of the tree NOW: its WorldEnvironment / camera / lights must not outlive the cut by a frame
+		old.queue_free()
+	_active = c
+	_wire_chamber(c)
+	if seamless:
+		c.call("activate", self, gaze)
+		if _pb_vp != null:
+			_pb_vp.queue_free()
+			_pb_vp = null
+	else:
+		add_child(c)
+		c.setup(0, [], 0)
+	c.chamber_cleared.connect(_on_chamber_cleared, CONNECT_ONE_SHOT)
+	c.chamber_failed.connect(_on_chamber_failed, CONNECT_ONE_SHOT)
+	_chamber_segment = segment
+	_mode = Mode.CHAMBER
+	mode_changed.emit(_mode)
+
+
+# --- background build of the next chamber (skill ep2-interlude-chain: "no blackouts") -------------------------------------------
+
+## Millisecond budget per frame for the background build; raised while the player is already waiting at the hand-over door.
+const PREBUILD_MS := 7.0
+const PREBUILD_MS_WAITING := 40.0
+var _pb_node: Node = null
+var _pb_id: String = ""
+var _pb_vp: SubViewport = null
+
+
+## A chamber asked for the next one to be built behind it: instantiate it hidden and let `_process` build it a few ms per frame.
+func _on_prebuild_requested(chamber_id: String) -> void:
+	if not CHAMBER_SCENES.has(chamber_id) or (_pb_node != null and is_instance_valid(_pb_node)):
+		return
+	var n: Node = CHAMBER_SCENES[chamber_id].instantiate()
+	if n.has_method("bind_armory"):
+		n.bind_armory(armory.detached_copy())
+	if n.has_method("prebuild_begin"):
+		# An off-screen viewport with its OWN world: the chamber is built, lit and drawn there (so the GPU compiles its shaders and
+		# uploads its meshes now, a few ms per frame) without touching the camera / environment of the chamber being played.
+		_pb_vp = SubViewport.new()
+		_pb_vp.name = "PrebuildViewport"
+		_pb_vp.size = Vector2i(320, 180)
+		_pb_vp.own_world_3d = true
+		_pb_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+		add_child(_pb_vp)
+		_pb_vp.add_child(n)
+		n.call("prebuild_begin")
+	else:
+		add_child(n)
+	_pb_node = n
+	_pb_id = chamber_id
+
+
+## True once the chamber named `chamber_id` is fully built in the background (the active chamber holds its exit until then).
+func is_prebuilt(chamber_id: String) -> bool:
+	return _pb_node != null and is_instance_valid(_pb_node) and _pb_id == chamber_id and bool(_pb_node.call("is_prebuilt"))
+
+
+## Advance the background build. `step()` (the deterministic tests) finishes it; `_process` spends a few ms per frame.
+func _drive_prebuild(budget_ms: float) -> void:
+	if _pb_node == null or not is_instance_valid(_pb_node):
+		return
+	if budget_ms >= 1.0e8 and _pb_node.has_method("prebuild_finish"):
+		_pb_node.call("prebuild_finish")
+	elif _pb_node.has_method("prebuild_step"):
+		_pb_node.call("prebuild_step", budget_ms)
+
+
+func _wire_chamber(c: Node) -> void:
+	if c.has_method("bind_armory"):
+		c.bind_armory(armory)
+	if c.has_signal("weapon_granted"):
+		c.weapon_granted.connect(func(id: String) -> void: armory.acquire(id, c.get_gun()))
+	if c.has_signal("prebuild_requested") and not c.prebuild_requested.is_connected(_on_prebuild_requested):
+		c.prebuild_requested.connect(_on_prebuild_requested)
+	if "handoff_ready" in c:
+		c.set("handoff_ready", func() -> bool: return _pb_node == null or not is_instance_valid(_pb_node) or bool(_pb_node.call("is_prebuilt")))
 
 ## The next scene's models are requested on a worker thread while Lil Blunt is still panicking on the cart, so
 ## the cut to the film and the hideout never stalls on a disk read (the "ridiculously delayed" film).
@@ -152,6 +283,13 @@ func _teardown_active() -> void:
 	if _active:
 		_active.queue_free()
 		_active = null
+	if _pb_node != null and is_instance_valid(_pb_node) and _chain_id == "":
+		_pb_node.queue_free()
+		_pb_node = null
+		_pb_id = ""
+		if _pb_vp != null:
+			_pb_vp.queue_free()
+			_pb_vp = null
 
 # --- Signal handlers ----------------------------------------------------------
 
@@ -161,10 +299,18 @@ func _on_chamber_reached() -> void:
 	_enter_chamber()
 
 func _on_chamber_cleared(result: Dictionary) -> void:
+	armory.active_gun().cancel_reload()
+	_persist_armory()
+	var manager: Node = get_node_or_null("/root/GameManager")
+	if manager != null:
+		manager.save_session()
 	var owner_segment: int = _chamber_segment
-	if owner_segment < 0 or _rewarded_chambers.has(owner_segment):
+	# Guard #1 is keyed per chamber: a chained interlude gets its own key (segment * 100 + its place in the chain), so the
+	# first chamber's payout can never be paid twice and a chained one is never swallowed by it.
+	var key: int = owner_segment + _chain_n * 100
+	if owner_segment < 0 or _rewarded_chambers.has(key):
 		return
-	_rewarded_chambers[owner_segment] = true
+	_rewarded_chambers[key] = true
 
 	var awarded: int = int(result.get("gold_awarded", 0))
 	var forfeited: int = int(result.get("gold_forfeited", 0))
@@ -187,6 +333,24 @@ func _on_chamber_cleared(result: Dictionary) -> void:
 				gm.auction_gold_pool += forfeited
 
 	chamber_committed.emit(owner_segment, result)
+	var next_chamber: String = str(result.get("next_chamber", ""))
+	if bool(result.get("end_session", false)):
+		_chain_id = ""
+		_chain_n = 0
+		_chamber_segment = -1
+		_mode = Mode.IDLE
+		_teardown_active()
+		_sync_mouse_mode()
+		session_complete.emit()
+		return
+	if next_chamber != "" and CHAMBER_SCENES.has(next_chamber):
+		_chain_id = next_chamber
+		_chain_n += 1
+		_chamber_segment = -1
+		_enter_chamber_chained(owner_segment)
+		return
+	_chain_id = ""
+	_chain_n = 0
 	_chamber_segment = -1
 	_advance_segment()
 
@@ -198,6 +362,10 @@ func _on_chamber_failed() -> void:
 	session_failed.emit()
 
 func _on_run_failed() -> void:
+	if _mode != Mode.RUNNER:
+		return
+	if not _runner_armory_checkpoint.is_empty():
+		armory.restore(_runner_armory_checkpoint)
 	_mode = Mode.IDLE
 	_teardown_active()
 	_sync_mouse_mode()
@@ -291,6 +459,7 @@ func chamber_leave_cover() -> void:
 		_active.leave_cover()
 
 func step(delta: float) -> void:
+	_drive_prebuild(1.0e9)      # deterministic callers have no frame clock: the background build simply completes
 	if _active and (_mode == Mode.RUNNER or _mode == Mode.CHAMBER):
 		_active.step(delta)
 
@@ -319,8 +488,18 @@ func get_total_distance() -> float:
 # mode and visible everywhere else (chambers, menus, after the session ends).
 
 func _process(_delta: float) -> void:
+	if _armory_save_due >= 0.0:
+		_armory_save_due -= _delta
+		if _armory_save_due <= 0.0:
+			_armory_save_due = -1.0
+			var manager: Node = get_node_or_null("/root/GameManager")
+			if manager != null:
+				manager.personal_armory = armory.snapshot()
+				manager.save_session()
 	_sync_mouse_mode()
 	_poll_free_roam()
+	var waiting: bool = _active != null and _active.has_method("is_waiting_for_handoff") and bool(_active.call("is_waiting_for_handoff"))
+	_drive_prebuild(PREBUILD_MS_WAITING if waiting else PREBUILD_MS)
 
 func _sync_mouse_mode() -> void:
 	if _mode == Mode.CHAMBER and _free_roam() and _active.wants_mouse_capture():
@@ -346,6 +525,9 @@ func _poll_free_roam() -> void:
 		return
 	var v := Vector2(Input.get_axis("move_left", "move_right"), Input.get_axis("move_down", "move_up"))
 	var run: bool = InputMap.has_action("sprint") and Input.is_action_pressed("sprint")
+	if _active.has_method("armory_open") and _active.armory_open():
+		v = Vector2.ZERO
+		run = false
 	if v != _last_move or run != _last_run:
 		_last_move = v
 		_last_run = run
@@ -353,6 +535,21 @@ func _poll_free_roam() -> void:
 
 ## Mouse + Space + E/LMB for the hideout. Returns true when the event was used.
 func _route_free_roam(event: InputEvent) -> bool:
+	if _active.has_method("select_weapon"):
+		if event.is_action_pressed("ep2_weapon_1"):
+			_active.select_weapon(Ep2ArmoryState.WIN)
+			return true
+		if event.is_action_pressed("ep2_weapon_2"):
+			_active.select_weapon(Ep2ArmoryState.REM)
+			return true
+		if event.is_action_pressed("ep2_weapon_previous"):
+			_active.select_previous_weapon()
+			return true
+		if event.is_action_pressed("ep2_armory"):
+			_active.toggle_armory()
+			return true
+		if _active.armory_open():
+			return true
 	if event is InputEventMouseMotion:
 		_active.look((event as InputEventMouseMotion).relative)
 		return true
@@ -445,6 +642,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				runner_shoot()
 		Mode.CHAMBER:
 			if _free_roam() and _route_free_roam(event):
+				get_viewport().set_input_as_handled()
 				return
 			if event.is_action_pressed("attack"):
 				chamber_shoot()
@@ -462,3 +660,18 @@ func _unhandled_input(event: InputEvent) -> void:
 				chamber_walk(-1.0)
 			elif event.is_action_released("move_right") or event.is_action_released("move_left"):
 				chamber_walk_stop()
+
+
+func _persist_armory() -> void:
+	var manager: Node = get_node_or_null("/root/GameManager")
+	if manager != null:
+		manager.personal_armory = armory.snapshot()
+		_armory_save_due = 0.75
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_APPLICATION_PAUSED:
+		_persist_armory()
+		var manager: Node = get_node_or_null("/root/GameManager")
+		if manager != null:
+			manager.save_session()

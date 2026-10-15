@@ -3,7 +3,8 @@
 [ext_resource type="Script" path="res://src/ui/pause_menu.gd" id="1_pmenu"]
 
 [node name="PauseMenu" type="CanvasLayer"]
-process_mode = 4
+process_mode = 3
+layer = 40
 script = ExtResource("1_pmenu")
 
 [node name="Background" type="ColorRect" parent="."]

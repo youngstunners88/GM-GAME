@@ -1,0 +1,17 @@
+{
+ "request_id": "8b6f7696-5af8-4f4f-86e2-2a80f6591879",
+ "endpoint": "gpt-image-2-text-to-image",
+ "payload": {
+  "prompt": "Photorealistic product-style reference for 3D modelling: the single subject centred with generous margin on a seamless plain mid-grey studio backdrop, soft even key light with a gentle rim light, sharp focus, true materials (lacquer, chrome, leather, rubber, rust, scale, steel), no text, no logos, no people, only a soft contact shadow. A custom hand-painted FLAME DESIGNER QUAD bike (all-terrain vehicle) built big enough to carry a huge driver and a rifleman behind him: deep candy-apple red lacquer body, layered airbrushed orange-and-yellow flame tongues licking back from the nose along both flanks and over the front fenders, polished chrome handlebars, bull bar and a long tubular chrome rear rack, a long black leather bench seat, a round chrome headlight with a guard, wide knobby off-road tyres, a little dried mud and honest wear. Three-quarter front view from the left, the whole vehicle in frame.",
+  "aspect_ratio": "4:3",
+  "resolution": "2K",
+  "quality": "high"
+ },
+ "url": "https://cdn.muapi.ai/outputs/generated/8b6f7696-5af8-4f4f-86e2-2a80f6591879_b0f5a323.png",
+ "cost_usd": 0.54,
+ "size": [
+  1600,
+  1200
+ ],
+ "made": "2026-10-09"
+}

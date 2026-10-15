@@ -29,6 +29,11 @@ extends Node3D
 ## session root's commit path handles a 0/0 result as a no-op, which is exactly
 ## what a story chamber should contribute.
 signal chamber_cleared(result: Dictionary)
+## Asks the session root to build the next chamber (the mine lift) in the background while the range lesson and the lava river play,
+## so leaving the hideout is one motion with no blackout (founder 2026-10-11).
+signal prebuild_requested(chamber_id: String)
+## Set by the session root: true once the next chamber is built. Null (tests, a lone room) = always ready.
+var handoff_ready: Callable = Callable()
 ## Never emitted. There is no fail state in Chamber 0 — no enemies, no timer,
 ## no resource. Declared because the session root connects it unconditionally,
 ## and a missing signal is a hard error at connect time.
@@ -45,6 +50,8 @@ signal gear_granted(gear_id: String)
 signal payment_made(amount: int)
 ## The scene flipped to first person (the shooter/RPG mode starts here; see Episode2Mode).
 signal fps_started
+## The lava river burned Lil Blunt (founder 2026-10-09: it must really hurt); carries the health left.
+signal burned(health_left: int)
 
 enum Beat {
 	CINEMATIC,    # the cliff-jump film (founder 2026-09-30): the cart flies, he jumps, rolls, hits his head
@@ -130,6 +137,21 @@ const PREBUILD_AT := 3.0
 const FILM_OFFSET := Vector3(4000.0, 0.0, 0.0)   # the film set lives far from the room: no shared light, no overlap
 const COMPANION_ID := "inferno_bull"
 
+# --- THE LAVA RIVER (founder 2026-10-09: "make sure the lava river actually hurts so that Inferno Bull hops over and
+# tells Lil Blunt to hop over"). The molten channel across the room is real: from the EXIT beat on, standing in it
+# burns (a heart, a kick back to the bank, a flash, a yelp). The plank bridge is gone; the way out is a HOP.
+const LAVA_HALF := 0.85              # burn zone is |z - CHANNEL_Z| < LAVA_HALF (the trench is 2.2 m; a little forgiveness)
+const LAVA_SAFE_Y := 0.35            # feet this high clear the lava
+const MAX_HEALTH := 3
+const BURN_COOLDOWN := 0.9
+## The interlude that follows the hideout: the mine lift up two floors to the surface (skill ep2-interlude-chain).
+const NEXT_CHAMBER := "mine_lift"
+var _health: int = MAX_HEALTH
+var _lava_on: bool = false
+var _lava_bank: float = -1.0        # which bank he last stood on: -1 near (hideout) side, +1 far (lift) side
+var _burn_cd: float = 0.0
+var _burns: int = 0
+
 # --- Live state ----------------------------------------------------------------
 var _beat: int = Beat.ARRIVAL
 var _running: bool = false
@@ -177,6 +199,8 @@ var _glass_node: Node3D = null
 var _bull_guard_rifle: Node3D = null # Bull's own gun, separate from the traded reward
 var _bull_rest_arm: Ep2BullRestArm = null
 var _bull_rifle_ready: bool = false
+var _bull_motion: Ep2MotionLayer = null
+var _bull_shot_time: float = -99.0
 var _cigar_tip: MeshInstance3D = null
 var _cigar_smoke: CPUParticles3D = null
 var _anim_t: float = 0.0
@@ -207,6 +231,8 @@ const LESSON_ARRIVE_RADIUS := 2.6                   # how close to the firing li
 const AIM_HOLD_SECONDS := 0.7                       # ADS must be held this long to count as "aimed"
 const NAG_SECONDS := 14.0
 const LESSON_STEPS := 4
+var armory: Ep2ArmoryState = null
+var _armory_view: Ep2Viewmodel = null
 var _gun: Ep2Winchester = Ep2Winchester.new()
 var _lesson: int = Lesson.OFF
 var _lesson_t: float = 0.0
@@ -337,7 +363,11 @@ func setup(_gold_principal: int = 0, _bears: Array = [], _diamonds_paid: int = 0
 	_mold_broken = []
 	for _m in MOLD_TARGETS:
 		_mold_broken.append(false)
-	_gun = Ep2Winchester.new()
+	_gun = armory.firearm(Ep2ArmoryState.WIN) if armory != null and armory.owns(Ep2ArmoryState.WIN) else Ep2Winchester.new()
+	_gun.cancel_reload()
+	_gun.set_aim(false)
+	if armory != null and armory.owns(Ep2ArmoryState.WIN):
+		armory.select(Ep2ArmoryState.WIN)
 	_connect_gun()
 	_lesson = Lesson.OFF
 	_lesson_t = 0.0
@@ -555,8 +585,17 @@ func step(delta: float) -> void:
 
 	if _show and _show.running:
 		_show.step(delta)
+	_tick_lava(delta)
 	_gun.sprinting = _run_input and _moving
-	_gun.step(delta)
+	if _armory_view != null:
+		_armory_view.step(delta, _moving, _run_input and _moving, _walk_phase)
+		_cam_kick = _armory_view.cam_kick
+	elif armory != null and armory.firearm(Ep2ArmoryState.WIN) == _gun:
+		armory.step(delta)
+	else:
+		_gun.step(delta)
+		if armory != null:
+			armory.step(delta)
 	_tick_later(delta)
 	match _beat:
 		Beat.WAKE:
@@ -580,7 +619,7 @@ func step(delta: float) -> void:
 		Beat.EXIT:
 			# They leave TOGETHER: the Bull leads to the Fort Knox door and you follow in first person.
 			# Resolve once you reach the door, never before his line has finished.
-			if _hold <= 0.0 and _player_pos.z >= EXIT_POSITION.z - 1.0:
+			if _hold <= 0.0 and not _show_active and _player_pos.z >= EXIT_POSITION.z - 1.0 and _handoff_ok():
 				_resolve()
 		_:
 			pass
@@ -613,8 +652,10 @@ func start_rig(_payment: String = "") -> bool:
 ## Ep2Winchester logic (locked / empty / lever cycling), then a ray with the weapon's spread tests the three steel
 ## plates. Returns true when a plate went down.
 func shoot() -> bool:
-	if not _running or _resolved or not _has_winchester:
+	if not _running or _resolved or not _has_winchester or armory_open():
 		return false
+	if _armory_view != null:
+		return _armory_view.fire() if has_player_control() else false
 	if _show_active and _beat != Beat.VERB_TEACH:
 		return false
 	if _gun.trigger() != Ep2Winchester.Shot.OK:
@@ -767,7 +808,7 @@ func has_player_control() -> bool:
 		return false
 	if _beat <= Beat.WAKE or _beat >= Beat.DONE:
 		return false
-	return not _show_blocks_control
+	return not _show_blocks_control and not armory_open()
 
 
 func _in_scripted_handover() -> bool:
@@ -814,7 +855,8 @@ func _collide(p: Vector3) -> Vector3:
 	var q := p
 	q.z = clampf(q.z, ENTRY_POSITION.z, EXIT_POSITION.z)
 	q.x = clampf(q.x, -ROOM_X, ROOM_X)
-	if absf(q.z - CHANNEL_Z) < 1.1 and absf(q.x) > 1.0:
+	# Until the EXIT beat the channel is a wall (the choreography owns the room); from EXIT on it is a hazard, not a barrier.
+	if _beat < Beat.EXIT and absf(q.z - CHANNEL_Z) < 1.1:
 		q.z = CHANNEL_Z - 1.1 if _player_pos.z < CHANNEL_Z else CHANNEL_Z + 1.1
 	for b in _blockers:
 		var c: Vector2 = b[0]
@@ -849,6 +891,7 @@ func _on_beat_entered(beat: int) -> void:
 	if beat == Beat.VERB_TEACH:
 		_enter_fps()
 		_begin_lesson()
+		prebuild_requested.emit("mine_lift")
 	if beat == Beat.TERMS or beat == Beat.PROMISE:
 		_move_input = Vector2.ZERO
 	var steps: Array = FacilityShow.steps_for(self, beat)
@@ -990,8 +1033,65 @@ func _resolve() -> void:
 		"companion": COMPANION_ID,
 		"weapon": WINCHESTER_ID,
 		"next_mode": "fps",
+		"next_chamber": NEXT_CHAMBER,
 		"seconds": _elapsed,
 	})
+
+
+# --- the lava river ------------------------------------------------------------------------------------------
+
+## The EXIT show arms the river (before that the channel is a wall and nothing can burn).
+func _lava_begin() -> void:
+	_lava_on = true
+
+
+## True once Lil Blunt stands on the far bank (past the burn zone), so Inferno can stop nagging and lead on.
+func _lava_crossed() -> bool:
+	return _player_pos.z > CHANNEL_Z + LAVA_HALF + 0.4
+
+
+## Is Lil Blunt's body in the molten channel right now (feet below LAVA_SAFE_Y inside the burn zone)?
+func in_lava() -> bool:
+	return _lava_on and absf(_player_pos.z - CHANNEL_Z) < LAVA_HALF and _player_pos.y < LAVA_SAFE_Y
+
+
+func _tick_lava(delta: float) -> void:
+	if not _lava_on:
+		return
+	_burn_cd = maxf(0.0, _burn_cd - delta)
+	var dz: float = _player_pos.z - CHANNEL_Z
+	if absf(dz) >= LAVA_HALF:
+		_lava_bank = 1.0 if dz > 0.0 else -1.0
+	if in_lava() and _burn_cd <= 0.0:
+		_burn()
+
+
+## One burn: lose a heart, get kicked back to the bank he came from (with a hop so he can try again), flash, yelp.
+## Out of hearts he is simply restored (the hideout is a story room: there is no game over, only a sore bottom).
+func _burn() -> void:
+	_burn_cd = BURN_COOLDOWN
+	_burns += 1
+	_health -= 1
+	var out_of_hearts: bool = _health <= 0
+	if out_of_hearts:
+		_health = MAX_HEALTH
+	_player_pos.z = CHANNEL_Z + _lava_bank * (LAVA_HALF + 0.55)
+	_vel_y = JUMP_VELOCITY * 0.85
+	_air_jumps = 0
+	if _hud_ctl:
+		_hud_ctl.hurt()
+		_hud_ctl.toast("TRY AGAIN: RUN, JUMP, JUMP AGAIN" if out_of_hearts else "HOT! THE LAVA BURNS. HOP OVER IT", 2.2)
+	var am: Node = get_node_or_null("/root/AudioManager")
+	if am and am.has_method("play_sfx"):
+		am.play_sfx("ep2_lava_burn")
+	_yelp()
+	burned.emit(_health)
+
+
+## Lil Blunt's pain bark: any line of the voice bank's "hit" category (his alarm reactions).
+func _yelp() -> void:
+	var ids: Array = VoiceBank.CATEGORIES["hit"]["ids"]
+	_speak(str(ids[_burns % ids.size()]))
 
 
 ## Choose the framing: first person from the verb teach on; the player's follow camera whenever he has control
@@ -1108,6 +1208,19 @@ func get_line_hold() -> float: return _hold
 func get_distance_to_bull() -> float: return _distance_to_bull()
 func get_player_position() -> Vector3: return _player_pos
 func get_look_yaw() -> float: return _look_yaw
+
+
+## The player's gaze for the next chamber's first frame (yaw 0 = +Z in every chamber), and whether the next chamber is built.
+func get_handoff() -> Dictionary:
+	return {"yaw": _look_yaw, "pitch": _look_pitch}
+
+
+func _handoff_ok() -> bool:
+	return handoff_ready.is_null() or bool(handoff_ready.call())
+
+
+func is_waiting_for_handoff() -> bool:
+	return _beat == Beat.EXIT and _player_pos.z >= EXIT_POSITION.z - 1.0 and not _handoff_ok()
 func is_moving() -> bool: return _moving
 func is_fps() -> bool: return _fps
 ## Whether the founder's film ran this session (the narrative-canon memory uses it to drop lines the film covered).
@@ -1121,7 +1234,7 @@ func get_episode_mode() -> int:
 	return Episode2Mode.Mode.FPS if _fps else Episode2Mode.Mode.HIDEOUT
 ## Chamber 0 has no health and no fail state. Reported as full so a shared HUD
 ## does not have to special-case it.
-func get_health() -> int: return 3
+func get_health() -> int: return _health
 func get_ammo() -> int: return _gun.rounds
 func get_live_bear_count() -> int: return 0
 func get_vest() -> float: return 0.0
@@ -1357,9 +1470,7 @@ func _build_visuals() -> void:
 		_blockers.append([Vector2(cs.x, cs.z), 1.1])
 	for rb in _range_blockers:
 		_blockers.append(rb)
-	# A plank bridge over the molten channel: the only way across to Fort Knox.
-	var bridge := _box(Vector3(2.0, 0.1, 2.8), Vector3(0.0, 0.06, CHANNEL_Z), timber)
-	bridge.name = "ChannelBridge"
+	# (The plank bridge is gone, founder 2026-10-09: the lava burns and the way across is a hop.)
 
 	# The Blender stone arch frames this exit; keep its opening unobstructed.
 	# A brass plate, not the old bright-green bar (it hung across the furnace like a UI element).
@@ -1655,6 +1766,13 @@ func _build_bull(timber: StandardMaterial3D) -> void:
 	_build_bull_props()
 	_bull_rest_arm = Ep2BullRestArm.new()
 	_bull.skeleton.add_child(_bull_rest_arm)
+	_bull_motion = Ep2MotionLayer.new()
+	_bull_motion.actor = _bull
+	_bull_motion.bull_carry = true
+	_bull.skeleton.add_child(_bull_motion)
+	_bull.pose_stepped.connect(func(dt: float) -> void:
+		_bull_motion.aim_weight = move_toward(_bull_motion.aim_weight, 1.0 if _bull_rifle_ready else 0.0, dt * 4.0)
+		_bull_motion.recoil = exp(-maxf(0.0, _bull.motion_time - _bull_shot_time) * 14.0) if _bull.motion_time - _bull_shot_time < 0.5 else 0.0)
 	_bull.skeleton.skeleton_updated.connect(_sync_bull_hand_props)
 
 
@@ -1718,23 +1836,21 @@ func _begin_stand_up() -> void:
 	_set_glass_on_table()
 
 
-## When he stands the whiskey goes down on the table (a separate glass, never skinned to his arm: founder
-## 2026-10-02 "liquid arm"). Return it to his hand once the hand-over is finished.
+## Founder 2026-10-10: keep the whiskey on the table throughout the encounter.
+## Both hands stay free of the glass during seating, walking and equipment hand-over.
 func _set_glass_on_table() -> void:
 	if _glass_node == null or not is_instance_valid(_glass_node):
 		return
-	_glass_node.reparent(_visuals, false)
+	if _glass_node.get_parent() != _visuals:
+		_glass_node.reparent(_visuals, false)
 	_glass_node.top_level = false
 	_glass_node.position = HideoutDressing.WHISKEY_TABLE_POS + Vector3(0.55, 1.03 + GLASS_HEIGHT * 0.5, 0.2)
 	_glass_node.rotation = Vector3.ZERO
 
 
-## Restore his glass after the traded equipment leaves his hands. No idle sipping or IK loop.
+## Existing choreography calls this after hand-over; the glass stays on the table.
 func _return_bull_glass() -> void:
-	if _glass_node and _bull:
-		_glass_node.reparent(_bull.holder("LeftHand"), false)
-		_glass_node.top_level = true
-		_glass_node.scale = Vector3.ONE
+	_set_glass_on_table()
 
 
 ## Place rigid props from the final modified bone pose, after animation and IK.
@@ -1745,32 +1861,30 @@ func _sync_bull_hand_props() -> void:
 	var sk: Skeleton3D = _bull.skeleton
 	var forward: Vector3 = Basis(Vector3.UP, _bull.facing) * Vector3.FORWARD
 	var across: Vector3 = Basis(Vector3.UP, _bull.facing) * Vector3.RIGHT
-	var left: int = sk.find_bone("LeftHand")
-	if left >= 0 and _glass_node and _glass_node.get_parent() != _visuals:
-		var palm: Vector3 = (sk.global_transform * sk.get_bone_global_pose(left)).origin
-		_glass_node.global_transform = Transform3D(Basis.IDENTITY, palm + Vector3.UP * 0.06 - forward * 0.10)
 	var carrying_trade: bool = _rifle_node != null and _rifle_node.get_parent() == _bull.holder("RightHand")
 	if _bull_guard_rifle:
 		_bull_guard_rifle.visible = (_stand_t < 0.0 or _has_helmet) and not carrying_trade
 	var gun: Node3D = _rifle_node if carrying_trade else _bull_guard_rifle
-	var right: int = sk.find_bone("RightHand")
-	if gun == null or not gun.visible or right < 0:
+	var hand: int = sk.find_bone("RightHand" if carrying_trade else "LeftHand")
+	if gun == null or not gun.visible or hand < 0:
 		return
-	var palm: Vector3 = (sk.global_transform * sk.get_bone_global_pose(right)).origin
+	var hand_world: Transform3D = sk.global_transform * sk.get_bone_global_pose(hand)
+	var anchor: Vector3 = Ep2BullHero.RIGHT_PALM_M if carrying_trade else Ep2BullHero.LEFT_PALM_M
+	var palm: Vector3 = hand_world * (anchor * _bull.height_m / 2.4 / sk.global_transform.basis.get_scale().x)
 	if carrying_trade:
 		var stock_axis: Vector3 = Vector3(-1.0, 0.15, -0.10).normalized()
 		var depth: Vector3 = stock_axis.cross(Vector3.UP).normalized()
 		var up: Vector3 = depth.cross(stock_axis).normalized()
-		gun.global_transform = Transform3D(Basis(-depth, up, -stock_axis).scaled(Vector3.ONE * 1.05), palm - stock_axis * 0.12 - forward * 0.05)
+		gun.global_transform = Transform3D(Basis(-depth, up, -stock_axis).scaled(Vector3.ONE * 1.05), palm - stock_axis * (Ep2BullHero.GRIP_ALONG * 1.05))
 		return
 	if _bull_rifle_ready:
-		# DEMO / ready: both hands on the rifle, muzzle pointing where he faces (slightly up), stock at his shoulder.
+		# Restrained hip fire: preserve the sculpted fist/pouch; the free left fist holds the rifle.
 		var fwd_front: Vector3 = -forward
 		var muz: Vector3 = (fwd_front + Vector3.UP * 0.06).normalized()
 		var sd: Vector3 = muz.cross(Vector3.UP).normalized()
 		var lf: Vector3 = sd.cross(muz).normalized()
 		gun.global_transform = Transform3D(Basis(sd, lf, muz).scaled(Vector3.ONE * BULL_RIFLE_SCALE),
-			palm + muz * (0.30 * BULL_RIFLE_SCALE))
+			palm + muz * (Ep2BullHero.GRIP_ALONG * BULL_RIFLE_SCALE))
 		return
 	# His OWN Winchester: shoulder carry. Muzzle up past his right shoulder, tipped a little out and back, gripped
 	# at the wrist of the stock, so its whole silhouette stands clear of his body from the front and both sides.
@@ -1783,7 +1897,7 @@ func _sync_bull_hand_props() -> void:
 	var lift: Vector3 = muzzle.cross(side).normalized()     # right-handed: side x lift = muzzle
 	var s: float = BULL_RIFLE_SCALE
 	gun.global_transform = Transform3D(Basis(side, lift, muzzle).scaled(Vector3.ONE * s),
-		palm + muzzle * (0.26 * s) - across * 0.02)
+		palm + muzzle * (Ep2BullHero.GRIP_ALONG * s))
 
 
 func _stand_up_done() -> bool:
@@ -1866,10 +1980,7 @@ func _add_whiskey_inside(holder: Node3D, radius: float) -> void:
 
 
 func _build_bull_props() -> void:
-	# The WHISKEY: a real tumbler in his left hand (the hand Stand_and_Drink / Sit_and_Drink lift to his mouth),
-	# sized in METRES in a bone holder. (The first version was parented in rig units and was ~2 mm tall:
-	# "I don't see his whiskey".)
-	# The founder's own tumbler (Meshy LKhotS): unit-height GLB scaled to GLASS_HEIGHT (0.31 m); its base sits on y = 0.
+	# A room prop, never attached to Bull's hand.
 	_glass_node = Node3D.new()
 	_glass_node.name = "BullGlass"
 	var gm: Node3D = (load(GLASS_MODEL) as PackedScene).instantiate()
@@ -1892,17 +2003,11 @@ func _build_bull_props() -> void:
 			mesh.set_surface_override_material(i, glass_mat)
 	_glass_node.add_child(gm)
 	_add_whiskey_inside(_glass_node, _glass_radius(gm))
-	var lh: Node3D = _bull.holder("LeftHand")
-	if lh:
-		lh.add_child(_glass_node)
-		_glass_node.top_level = true
-		_glass_node.position = GLASS_IN_HAND_POS
-	else:
-		_glass_node.position = BULL_POSITION + Vector3(0.7, 1.2, -0.3)
-		_visuals.add_child(_glass_node)
+	_visuals.add_child(_glass_node)
+	_set_glass_on_table()
 	_bull_guard_rifle = (load(RIFLE_MODEL) as PackedScene).instantiate()
 	_bull_guard_rifle.name = "BullPersonalWinchester"
-	_bull.holder("RightHand").add_child(_bull_guard_rifle)
+	_bull.holder("LeftHand").add_child(_bull_guard_rifle)
 	_bull_guard_rifle.top_level = true
 	RunnerView.self_light(_bull_guard_rifle, 0.12, Color(1.0, 0.88, 0.72))
 	_fix_bull_materials(_bull_guard_rifle)
@@ -2014,7 +2119,7 @@ func _animate_bull(delta: float) -> void:
 			and _bull.current_clip() != "walk" and _bull.current_clip() != BULL_SIP:
 		_bull.play(BULL_IDLE)
 	if _bull_rest_arm:
-		_bull_rest_arm.resting = not _bull.is_walking() and _bull.reach_weight("Right") < 0.01 and _bull.current_clip() == BULL_IDLE
+		_bull_rest_arm.resting = _bull.reach_weight("Right") < 0.01 and _bull.reach_weight("Left") < 0.01 and (_bull.current_clip() == BULL_IDLE or _bull.is_walking())
 	# Rest means REST: no idle sips, no waving. Arms only move for an action beat (grab, hand-over).
 	_follow_player_in_fps(delta)
 	if _bull_blocker_i >= 0 and _bull_blocker_i < _blockers.size():
@@ -2139,6 +2244,11 @@ func _enter_fps() -> void:
 		_hud_ctl = Ep2FpsHud.new()
 		_hud_ctl.mag = Ep2Winchester.MAG
 		_fps_hud.add_child(_hud_ctl)
+		if armory != null:
+			_hud_ctl.bind_armory(armory)
+			_hud_ctl.armory_enabled = _lesson == Lesson.DONE and not _show_blocks_control
+			_hud_ctl.weapon_selected.connect(select_weapon)
+			_hud_ctl.armory_requested.connect(toggle_armory)
 	_flash_light = OmniLight3D.new()
 	_flash_light.light_color = Color(1.0, 0.8, 0.5)
 	_flash_light.light_energy = 0.0
@@ -2157,10 +2267,10 @@ func _enter_fps() -> void:
 var VM_SCALE := 0.8
 var VM_HIP_POS := Vector3(0.17, -0.16, -0.5)
 var VM_HIP_ROT := Vector3(0.03, PI + 0.07, 0.0)
-const VM_LOW_POS := Vector3(0.2, -0.3, -0.46)
-const VM_LOW_ROT := Vector3(-0.42, PI + 0.62, -0.28)
-const VM_SPRINT_POS := Vector3(0.1, -0.3, -0.42)
-const VM_SPRINT_ROT := Vector3(-0.35, PI + 0.5, 0.45)
+const VM_LOW_POS := Vector3(0.2, -0.26, -0.5)    # carry (hideout walk to the firing line): rifle IN FRAME lower right, muzzle forward-left, never across the view (founder 2026-10-11: dropping it out of frame here made the rifle "invisible")
+const VM_LOW_ROT := Vector3(-0.14, PI + 0.24, -0.08)
+const VM_SPRINT_POS := Vector3(0.19, -0.27, -0.48)    # sprint: still in frame (rifle must always be seen), angled less than the old across-the-view swing
+const VM_SPRINT_ROT := Vector3(-0.2, PI + 0.3, 0.12)
 var VM_ADS_DEPTH := -0.46
 var VM_ADS_SIGHT_DROP := 0.012            # the front post sits a hair below the centre so the target stays visible
 
@@ -2277,6 +2387,11 @@ func _tick_winchester_lever(delta: float) -> void:
 
 
 func _animate_fps(delta: float) -> void:
+	if _armory_view != null:
+		if _rifle_node != null:
+			_rifle_node.visible = false
+		_push_hud(delta)
+		return
 	if not _fps:
 		return
 	_tick_winchester_lever(delta)
@@ -2317,6 +2432,7 @@ func _animate_fps(delta: float) -> void:
 	_vm_lag = _vm_lag.lerp(lag_target, 1.0 - exp(-delta * 12.0))
 	pos += Vector3(_vm_lag.x, _vm_lag.y, 0.0) * calm
 	rot.y += _vm_lag.x * 1.6
+	var rot_hold: Vector3 = rot          # the hold before the kick / lever / reload turns
 	# recoil: the rifle jumps back and its muzzle lifts, then settles
 	pos += Vector3(0.0, 0.016, 0.085) * _recoil * lerpf(1.0, 0.55, ads_k)
 	rot.x += 0.12 * _recoil * lerpf(1.0, 0.6, ads_k)
@@ -2333,6 +2449,11 @@ func _animate_fps(delta: float) -> void:
 		rot.z += -0.55
 		rot.x += 0.28
 		pos += Vector3(-0.05, -0.05 - 0.02 * tap, 0.04)
+	# THE ARM IS THE PIVOT (founder 2026-10-13: "bring the arm closer so when the rifle kicks up we don't see that green extension"):
+	# the kick, the lever roll and the reload turn the rifle about Lil Blunt's forearm, so the arm stays tucked in where it is at the
+	# hip instead of swinging its end (and the sleeve behind it) up into the frame. The hip look itself is unchanged.
+	var piv: Vector3 = Vector3(_rifle_node.get_meta("arm_pivot", Vector3.ZERO)) * _rifle_node.scale.x
+	pos += Basis.from_euler(rot_hold) * piv - Basis.from_euler(rot) * piv
 	_rifle_node.position = pos
 	_rifle_node.rotation = rot
 
@@ -2343,19 +2464,23 @@ func _push_hud(_delta: float) -> void:
 		return
 	_hud_ctl.spread_deg = _gun.spread_deg(_moving, _player_pos.y > 0.05)
 	_hud_ctl.ads = _gun.ads
-	_hud_ctl.set_ammo(_gun.rounds, _gun.reserve, Ep2Winchester.MAG)
+	_hud_ctl.set_ammo(_gun.rounds, _gun.reserve, _gun.capacity)
+	_hud_ctl.armory_enabled = _lesson == Lesson.DONE and not _show_blocks_control
 	_hud_ctl.show_ammo = _has_winchester and (_lesson == Lesson.OFF or _lesson >= Lesson.LOAD)
 	_hud_ctl.objective = _lesson_objective()
 	var stepping: bool = _lesson >= Lesson.LOAD and _lesson <= Lesson.PRACTICE
 	_hud_ctl.step_index = _lesson - Lesson.LOAD + 1 if stepping else 0
 	_hud_ctl.step_total = LESSON_STEPS if stepping else 0
+	_hud_ctl.health = _health
+	_hud_ctl.health_max = MAX_HEALTH
+	_hud_ctl.show_health = _lava_on
 
 
 # --- The weapon's public verbs + the target-practice lesson (skill ep2-range-lesson) -------------------------------
 
 ## RMB held: aim down the sights. (The session root maps the mouse button; the gun clamps it while sprinting.)
 func set_aim(on: bool) -> void:
-	if not _fps or _show_blocks_control:
+	if not _fps or _show_blocks_control or armory_open():
 		_gun.set_aim(false)
 		return
 	_gun.set_aim(on)
@@ -2363,6 +2488,10 @@ func set_aim(on: bool) -> void:
 
 ## R: load shells one at a time. Returns true when a reload started.
 func reload() -> bool:
+	if armory_open():
+		return false
+	if _armory_view != null:
+		return _armory_view.reload() if has_player_control() else false
 	if not _fps or not _has_winchester or _show_blocks_control:
 		return false
 	return _gun.start_reload()
@@ -2376,11 +2505,10 @@ func is_ads() -> bool: return _gun.ads > 0.5
 
 
 func _connect_gun() -> void:
-	_gun.fired.connect(_fire_fx)
-	_gun.dry_fired.connect(_on_dry_fired)
-	_gun.shell_loaded.connect(_on_shell_loaded)
-	_gun.reload_finished.connect(_on_reload_finished)
-	_gun.blocked.connect(_on_gun_blocked)
+	for pair in [[_gun.fired, _fire_fx], [_gun.dry_fired, _on_dry_fired], [_gun.shell_loaded, _on_shell_loaded],
+		[_gun.reload_finished, _on_reload_finished], [_gun.blocked, _on_gun_blocked]]:
+		if not pair[0].is_connected(pair[1]):
+			pair[0].connect(pair[1])
 
 
 func _sfx(name: String) -> void:
@@ -2400,7 +2528,7 @@ func _toast(text: String, seconds: float = 1.6) -> void:
 
 func _on_dry_fired() -> void:
 	_sfx("ep2_winchester_dry")
-	_toast("OUT OF ROUNDS  -  PRESS R")
+	_toast("EMPTY  -  NO RESERVE" if _gun.reserve == 0 else "OUT OF ROUNDS  -  PRESS R")
 	if _empty_line_cd <= 0.0 and _lesson >= Lesson.FIRE and _gun.reserve > 0:
 		_empty_line_cd = 12.0
 		_speak("vo_bull_range_empty")
@@ -2446,6 +2574,13 @@ func _tick_later(delta: float) -> void:
 
 
 func _begin_lesson() -> void:
+	if _gun.training_complete:
+		_lesson = Lesson.DONE
+		_lead_done = true
+		_molds_left = 0
+		for i in _mold_broken.size():
+			_mold_broken[i] = true
+		return
 	_lesson = Lesson.LEAD
 	_lesson_t = 0.0
 	_lead_done = false
@@ -2453,8 +2588,9 @@ func _begin_lesson() -> void:
 	_nag_t = 0.0
 	_gun.locked = true
 	_gun.reload_locked = true
-	_gun.rounds = 0
-	_gun.reserve = Ep2Winchester.RESERVE_START
+	if armory == null:
+		_gun.rounds = 0
+		_gun.reserve = Ep2Winchester.RESERVE_START
 	_add_line_marker()
 
 
@@ -2507,6 +2643,9 @@ func _tick_lesson(delta: float) -> void:
 						_speak("vo_bull_range_nag")
 		Lesson.DEMO:
 			_frame_demo(delta)
+		Lesson.LOAD:
+			if _gun.is_full():
+				_on_reload_finished()  # a resumed full gun needs no additional loading transaction
 		Lesson.AIM:
 			_aim_held = _aim_held + delta if _gun.ads >= 0.95 else 0.0
 			if _aim_held >= AIM_HOLD_SECONDS:
@@ -2522,6 +2661,9 @@ func _tick_lesson(delta: float) -> void:
 		Lesson.PRACTICE:
 			if _molds_left <= 0:
 				_lesson = Lesson.DONE
+				_gun.training_complete = true
+				if armory != null:
+					armory.changed.emit()
 				_speak("vo_bull_range_done")
 				_hold = _vo_len("vo_bull_range_done") + 0.4
 		Lesson.DONE:
@@ -2609,16 +2751,16 @@ func _demo_raise() -> void:
 	if _bull == null:
 		return
 	_set_bull_rifle_mode("ready")
-	var front: Vector3 = _bull_front()
-	var across: Vector3 = Basis(Vector3.UP, _bull.facing) * Vector3.RIGHT      # his LEFT
-	_bull.reach("Right", _bull.position + front * 0.5 - across * 0.15 + Vector3.UP * 2.12, 0.5, 0.1)
-	_bull.reach("Left", _bull.position + front * 1.15 + across * 0.05 + Vector3.UP * 2.02, 0.5, 0.1)
+	# No shoulder-height IK raise: bending his arms that far webbed and melted the elbow on the founder's Tripo body
+	# (founder 2026-10-11, red circle on the range demo). He fires from the hip: arms stay in the rest pose and the
+	# rifle in his hand turns level toward the targets ("ready" mode in _sync_bull_hand_props).
 
 
 func _demo_fire() -> void:
 	_play_winchester()
 	if _bull:
-		var muzzle: Vector3 = _bull.position + _bull_front() * 1.5 + Vector3.UP * 2.1
+		_bull_shot_time = _bull.motion_time
+		var muzzle: Vector3 = _bull_guard_rifle.to_global(Vector3(0, 0, 0.60)) if _bull_guard_rifle else _bull.position + _bull_front() * 1.5 + Vector3.UP * 1.2
 		var lt := OmniLight3D.new()
 		lt.light_color = Color(1.0, 0.8, 0.5)
 		lt.light_energy = 5.0
@@ -2692,3 +2834,51 @@ func _soft_blob() -> GradientTexture2D:
 		_blob_tex.height = 64
 	return _blob_tex
 
+
+
+func bind_armory(state: Ep2ArmoryState) -> void:
+	armory = state
+
+
+func armory_open() -> bool:
+	return _hud_ctl != null and _hud_ctl.armory_open
+
+
+func toggle_armory() -> void:
+	if _hud_ctl == null or not _running or _resolved or _show_blocks_control:
+		return
+	_hud_ctl.toggle_armory()
+	_move_input = Vector2.ZERO
+	_run_input = false
+	_gun.set_aim(false)
+
+
+func select_weapon(id: String) -> bool:
+	# The teacher's loading / aiming / firing drill cannot be skipped with the revolver.
+	if armory == null or _lesson != Lesson.DONE or _show_blocks_control or not _fps or not _running or _resolved or not armory.owns(id):
+		return false
+	if _armory_view == null:
+		for pair in [[_gun.fired, _fire_fx], [_gun.dry_fired, _on_dry_fired], [_gun.shell_loaded, _on_shell_loaded],
+			[_gun.reload_finished, _on_reload_finished], [_gun.blocked, _on_gun_blocked]]:
+			if pair[0].is_connected(pair[1]):
+				pair[0].disconnect(pair[1])
+		_armory_view = Ep2Viewmodel.new()
+		add_child(_armory_view)
+		_armory_view.bind_armory(armory)
+		_armory_view.attach(_camera)
+		if _rifle_node != null:
+			_rifle_node.visible = false
+		armory.changed.connect(_armory_weapon_changed)
+	var selected: bool = armory.select(id)
+	_armory_weapon_changed()
+	if selected:
+		_hud_ctl.toast(Ep2ArmoryState.NAMES[id], 1.0)
+	return selected
+
+
+func _armory_weapon_changed() -> void:
+	_gun = armory.active_gun()
+
+
+func select_previous_weapon() -> bool:
+	return select_weapon(armory.previous) if armory != null else false

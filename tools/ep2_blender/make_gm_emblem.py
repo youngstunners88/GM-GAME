@@ -26,6 +26,23 @@ if "--classic" in sys.argv:
     alpha = np.clip((NN / 2 - 1 - rr), 0, 1)
     gr = np.clip((a[..., 1] - np.maximum(a[..., 0] * 1.2, a[..., 2]) - 0.05) / 0.3, 0, 1)      # neon-green pixels only
     emit = a * gr[..., None] * 1.0
+    if "--disc" in sys.argv:
+        # DISC (founder 2026-10-10, skill ep2-winchester-logo: "the logo is the GM letters on a dark disc ... delete the ring"): no gold rim
+        # around it. The chain ring touches the crop edge, so the logo is shrunk to 93 % and the band outside it is the logo's OWN dark disc
+        # colour (median of its dark interior), so the disc edge is dark - never a gold or brown bezel.
+        dark = a[(rr < NN * 0.40) & (a.mean(-1) < 0.16)]
+        dk = np.median(dark, axis=0) if len(dark) > 50 else np.array([0.06, 0.09, 0.07], np.float32)
+        S = 0.93
+        sm = np.asarray(c.resize((int(NN * S), int(NN * S)), Image.LANCZOS)).astype(np.float32) / 255.0
+        sm = np.clip(sm ** 0.9 * 1.08, 0, 1)
+        o = (NN - sm.shape[0]) // 2
+        big = np.ones_like(a) * dk[None, None, :]
+        rs = np.sqrt((xx[o:o + sm.shape[0], o:o + sm.shape[1]] - NN / 2) ** 2 + (yy[o:o + sm.shape[0], o:o + sm.shape[1]] - NN / 2) ** 2)
+        w = np.clip((NN / 2 * S - 1.5 - rs) / 2.0, 0, 1)[..., None]                     # logo cut to its circle, 2 px soft edge into the dark band
+        big[o:o + sm.shape[0], o:o + sm.shape[1]] = sm * w + big[o:o + sm.shape[0], o:o + sm.shape[1]] * (1 - w)
+        a = big
+        gr = np.clip((a[..., 1] - np.maximum(a[..., 0] * 1.2, a[..., 2]) - 0.05) / 0.3, 0, 1)
+        emit = a * gr[..., None] * 1.0
     Image.fromarray((np.dstack([a, alpha]) * 255).astype(np.uint8), "RGBA").save(OUT + "/emblem_color.png", optimize=True)
     Image.fromarray((np.clip(emit, 0, 1) * 255).astype(np.uint8)).save(OUT + "/emblem_emit.png", optimize=True)
     print("classic emblem written", OUT); sys.exit(0)

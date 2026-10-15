@@ -1,0 +1,17 @@
+{
+ "request_id": "60cc482b-82aa-41f2-9987-a4125888b103",
+ "endpoint": "gpt-image-2-image-to-image",
+ "payload": {
+  "prompt": "Photorealistic cinematic concept still for a first-person western shooter, 'western Modern Warfare' art direction: warm low sun key light with teal-blue shadow fill, thin atmospheric haze, physically based materials (weathered timber, rusted riveted steel, packed dirt, gravel, bark, dust), natural film grain, 35mm lens at human eye height (1.6 m), high dynamic range, sharp detail, believable scale. No text, no lettering, no watermark, no logos, no user interface, no people, no close-up characters. First-person view from the back seat of a quad bike on a packed-dirt road leaving a pine forest: the last tall pines thin out on both sides, ahead the land opens into dry golden-hour gold-rush country - tan dirt, sagebrush and dry grass, scattered boulders, low rocky hills and distant flat-topped mesas, a small Wild West timber town with false-front buildings and a stone castle-fort on a rise far down the road, dust in the warm air, low sun ahead, long shadows. Match the light, palette and building style of the reference image. No people close, one distant rider on horseback on a far hill.",
+  "aspect_ratio": "16:9",
+  "resolution": "2K",
+  "quality": "high"
+ },
+ "url": "https://cdn.muapi.ai/outputs/generated/60cc482b-82aa-41f2-9987-a4125888b103_0dcefdce.png",
+ "cost_usd": 0.09,
+ "size": [
+  1600,
+  900
+ ],
+ "made": "2026-10-13"
+}

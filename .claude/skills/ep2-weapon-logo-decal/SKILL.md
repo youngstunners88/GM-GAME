@@ -51,3 +51,19 @@ logo with its CHAIN RING, gold, restrained neon). Now: `rifle_export_game.py` fl
 (texture only, no logo), and builds REAL geometry: a bevelled raised gold bezel ring + an inset face disc carrying the classic logo
 (`make_gm_emblem.py --classic`, chain ring included). Tune `--br` (radius), bezel colour is a plain factor (metal reads black without env light
 in the Compatibility renderer; keep metallic <= 0.6, no emission). Pack cost: emblem jpg 92 KB + emit 18 KB.
+
+## 2026-10-09 (failed attempt, do not repeat blindly): carving a socket by vertex displacement
+Subdividing + displacing the Tripo receiver plate did NOT work: the Tripo emblem relief is several OVERLAPPING shells (y 0.09-0.13), so
+collapsing them onto one profile gives coplanar shards, ragged gold, 36k polys / 2.2 MB. Patch kept in
+`tools/ep2_blender/experiments/rifle_socket_carve_attempt.patch`. A real engraving needs the plate region DELETED (all layers) and rebuilt
+as clean geometry in Blender (or a Tripo regeneration of the receiver), not displaced. Shipped state = flush gold-ringed inlay (commit 6d4dfe6).
+
+## 2026-10-09 (WORKS): clean rebuild of the emblem plate, one mesh
+`rifle_export_game.py` step 3b: ray-cast the visible plate, DELETE every Tripo face (ALL normals - the shell undersides render double-sided
+and swirl the logo) inside the emblem cylinder, and build one clean polar-grid patch in the SAME mesh: dark steel ring -> gold rim ->
+engraved socket floor with the GM logo (planar UV, verified linear in the exported GLB). Facts that cost hours: the plate's top edge is only
+~0.075 above the emblem centre, so keep the emblem inside it (`--lz 0.443 --sr 0.05`); the Tripo boss is a 1.7-unit mound; bake atlas at 1024
+(`--bake 1024`) to hold the pack budget. Command in `ep2-founder-weapon-glb` plus `--lz 0.443 --sr 0.05 --bake 1024`.
+
+## 2026-10-10: SUPERSEDED for the shipped rifle by `ep2-winchester-logo`
+The gold bezel / steel ring described above is REJECTED by the founder ("remove this brown outer circle! NOT EXPAND IT"). The logo is the GM disc only. Follow `ep2-winchester-logo` and its gate `tests/ep2_winchester_logo_test.tscn`.

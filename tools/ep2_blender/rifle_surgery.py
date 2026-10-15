@@ -38,7 +38,14 @@ for i in WOOD:
 for i in CAP_SHIFT:
     for v in {v for f in isl[i] for v in f.verts}: v.co.x += EXT
 # 1+2b. delete
-dele = [f for i in (HAND2 | FLOATERS | STUB) for f in isl[i]]
+# floating needles / sub-centimetre shards left by the Tripo mesh (1-4 faces, <= 1.2 cm): one stood up above the fore-end like a thorn
+# (founder 2026-10-09 circled it: "fix this little thing"). A 1-2 triangle island is never a real detail, so they all go.
+def _isl_size(fs):
+    vs = {v for f in fs for v in f.verts}
+    return max(max(v.co[i] for v in vs) - min(v.co[i] for v in vs) for i in range(3))
+NEEDLES = {k for k, fs in enumerate(isl) if len(fs) <= 4 and _isl_size(fs) <= 0.012} - (HAND2 | FLOATERS | STUB | CAP_SHIFT | WOOD)
+log("surgery: needle shards removed", len(NEEDLES))
+dele = [f for i in (HAND2 | FLOATERS | STUB | NEEDLES) for f in isl[i]]
 bmesh.ops.delete(bm, geom=dele, context='FACES')
 bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
 log("surgery: deleted", len(dele), "faces")

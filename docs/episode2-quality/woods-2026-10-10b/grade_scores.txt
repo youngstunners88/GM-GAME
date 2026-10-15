@@ -1,0 +1,36 @@
+day woods_exterior_target woods_1_start 0.6335 1.37 1.27
+day woods_exterior_target woods_0_target 0.6837 1.13 1.27
+day woods_exterior_target woods_9_bear_close 0.6903 1.12 1.27
+day bear_scene_2 woods_1_start 0.6619 1.37 1.82
+day bear_scene_2 woods_0_target 0.4172 1.13 1.82
+day bear_scene_2 woods_9_bear_close 0.4173 1.12 1.82
+day bear_scene_3 woods_1_start 0.6878 1.37 1.67
+day bear_scene_3 woods_0_target 0.5051 1.13 1.67
+day bear_scene_3 woods_9_bear_close 0.5036 1.12 1.67
+day exiting_outside_mine_bull woods_1_start 0.7782 1.37 1.37
+day exiting_outside_mine_bull woods_0_target 0.5693 1.13 1.37
+day exiting_outside_mine_bull woods_9_bear_close 0.5746 1.12 1.37
+golden woods_exterior_target woods_1_start 0.2199 3.39 1.27
+golden woods_exterior_target woods_0_target 0.3629 2.93 1.27
+golden woods_exterior_target woods_9_bear_close 0.3423 2.83 1.27
+golden bear_scene_2 woods_1_start 0.3204 3.39 1.82
+golden bear_scene_2 woods_0_target 0.4563 2.93 1.82
+golden bear_scene_2 woods_9_bear_close 0.471 2.83 1.82
+golden bear_scene_3 woods_1_start 0.2704 3.39 1.67
+golden bear_scene_3 woods_0_target 0.4283 2.93 1.67
+golden bear_scene_3 woods_9_bear_close 0.4242 2.83 1.67
+golden exiting_outside_mine_bull woods_1_start 0.2706 3.39 1.37
+golden exiting_outside_mine_bull woods_0_target 0.3934 2.93 1.37
+golden exiting_outside_mine_bull woods_9_bear_close 0.381 2.83 1.37
+golden2 woods_exterior_target woods_1_start 0.2865 1.93
+golden2 woods_exterior_target woods_0_target 0.6397 1.61
+golden2 woods_exterior_target woods_9_bear_close 0.6138 1.54
+golden2 bear_scene_2 woods_1_start 0.5612 1.93
+golden2 bear_scene_2 woods_0_target 0.6655 1.61
+golden2 bear_scene_2 woods_9_bear_close 0.6944 1.54
+golden2 bear_scene_3 woods_1_start 0.4537 1.93
+golden2 bear_scene_3 woods_0_target 0.7676 1.61
+golden2 bear_scene_3 woods_9_bear_close 0.7793 1.54
+golden2 exiting_outside_mine_bull woods_1_start 0.3775 1.93
+golden2 exiting_outside_mine_bull woods_0_target 0.7336 1.61
+golden2 exiting_outside_mine_bull woods_9_bear_close 0.7349 1.54

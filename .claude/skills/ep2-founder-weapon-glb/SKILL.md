@@ -68,3 +68,19 @@ Then delete `src/episode2/assets/weapons/textures_tmp/` (embedded in the GLB). W
 `FOUNDER_Z_SHIFT 0.34`, `FOUNDER_DROP 0.045`); the rack, Bull and hand-over still use the forge rifle. Pack budget: CI pck was 188 MiB of 190 -
 the normal map (1 MB) is OFF (`--normal` to enable); the superseded Blender hands GLB was deleted to pay for this one.
 Open: a right hand is not in the model (only the left glove + forearm), no lever animation, receiver not brass.
+
+## 7. SHIPPED (2026-10-10): the founder's "rifle 3d.glb" IS Lil Blunt's rifle
+Drive 1X09DLG2prOs_B-AuNc15AohVZ8lyfAzS (Tripo, 61.6k verts, 4K albedo, Mixamo default rig - ignore it). Logo fixed with
+`ep2-winchester-logo` (third pass), then `tools/ep2_blender/lil_blunt_rifle_to_game.py`: the gun axis is measured by PCA of the
+verts above the hanging arm (the model is turned ~22 deg in plan - a flat 90 deg turn put the logo 0.39 m off the barrel), the thin
+end is the muzzle, scaled to 1.2 m, barrel on x = 0, logo on +X at z -0.246, decimated to 22k tris, albedo 2048 / MR + normal 1024 /
+emission 512. Viewmodel: `Ep2ViewHands.founder_z_shift = 0.05` (forward until the GM logo reads in the hip view; 0.15 hid the arm).
+The previous build is in `.farm/retired/winchester_1886_founder_prev.glb`. Pack +~1.3 MB.
+
+## 8. Hold + aim fixes (2026-10-11, founder: "the arm is cut off and you can see that" / "shouldering brings the player beneath the
+viewpoint of the rifle")
+- The Tripo barrel rose 6.7 deg toward the muzzle: `lil_blunt_rifle_to_game.py` now fits the barrel's top line (glTF z 0.2..0.62)
+  and pitches it level about the logo point. Then `Ep2ViewHands.founder_ads_cam = (0, 0.345, -0.05)` = on the rear/front sight line.
+- The model's forearm ends in a flat cut: `Ep2ViewHands._add_sleeve` continues it along its measured axis in its measured green
+  (cut centre (0.243, -0.004, -0.054), axis (0.297, -0.935, 0.194)); `founder_drop 0.13`, `founder_z_shift 0.02`. Proof: no green
+  arm pixel ends inside the hip frame (bottom rows), `docs/episode2-quality/lil-blunt-rifle-logo-2026-10-10/hip_and_ads_2026-10-11.jpg`.

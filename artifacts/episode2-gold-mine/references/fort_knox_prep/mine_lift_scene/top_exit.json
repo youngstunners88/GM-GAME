@@ -1,0 +1,17 @@
+{
+ "request_id": "080eaed3-74fb-4e1f-b278-d8ce5026d4e3",
+ "endpoint": "gpt-image-2-image-to-image",
+ "payload": {
+  "prompt": "Photorealistic cinematic concept still for a first-person western shooter, 'western Modern Warfare' art direction: warm low sun key light with teal-blue shadow fill, thin atmospheric haze, physically based materials (weathered timber, rusted riveted steel, packed dirt, gravel, bark, dust), natural film grain, 35mm lens at human eye height (1.6 m), high dynamic range, sharp detail, believable scale. No text, no lettering, no watermark, no logos, no user interface, no people, no close-up characters. Same mine and art direction, at the TOP of the lift shaft: the iron cage has arrived and its gate is open onto a plank walkway with wooden rails and chains that leads out through a timber-framed mine mouth into bright warm daylight and a pine forest outside, a bull skull over the mouth, a lantern on a post, dust motes in the shaft of sunlight. First person eye height looking toward the daylight, nobody in the shot.",
+  "aspect_ratio": "16:9",
+  "resolution": "2K",
+  "quality": "high"
+ },
+ "url": "https://cdn.muapi.ai/outputs/generated/080eaed3-74fb-4e1f-b278-d8ce5026d4e3_4c871b4f.png",
+ "cost_usd": 0.45,
+ "size": [
+  1600,
+  900
+ ],
+ "made": "2026-10-10"
+}

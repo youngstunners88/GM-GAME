@@ -1,0 +1,63 @@
+{
+  "state": {
+    "source_commit": "aebdee36797cd7f85776ee2e6802ef952dd32f6c",
+    "kind": "design contract selection, NOT gameplay validation",
+    "observed": {
+      "named_player_firearms": 2,
+      "names": [
+        "Winchester 1886",
+        "golden Remington 1875 revolver"
+      ],
+      "existing_winchester_tube": 4,
+      "existing_initial_reserve": 24,
+      "new_room_attach_resets_ammo": true,
+      "existing_running_hearing_m": 19,
+      "existing_shot_hearing_m": 46,
+      "patrol_bears": 3,
+      "camp_bears": 6,
+      "static_archer_sentries": 2,
+      "player_health_cap": 3
+    },
+    "founder_requirements": [
+      "rapid weapon selection and discoverable personal armory",
+      "limited ammunition and future recoverable bear arrows",
+      "persistent lootable bear bodies",
+      "Bull creeps, scans, panics and shoots when detected before quad",
+      "player or companion failure restarts surface-elevator-exit checkpoint",
+      "quiet branch hand-brushes camouflage leaves",
+      "quad noise triggers spatially local delayed bear pursuit, claws, arrows and occasional boarding",
+      "sparse home territory, large mountain, dismount then uphill binocular lookout",
+      "current task produces skills and conventions, not runtime combat"
+    ],
+    "candidates": {
+      "direct_slots_plus_inventory": "Two named quick slots, previous-weapon toggle, compact persistent equipped/loaded/reserve HUD, expandable inventory panel. Shared session ammo/loot ledger and atomic checkpoint restore. Future bow/arrows as explicit capability, no accidental third weapon unlock.",
+      "wheel_only": "Only radial weapon wheel; hides owned weapons and ammo until opened.",
+      "scene_local": "Each room owns its weapon and fresh ammo; corpses deleted on room exit; scripted global bear wave."
+    },
+    "limits": "No usability, combat, navigation or perf experiment was run. Evaluate contract coherence only; do not claim tested balance or measured user preference."
+  },
+  "questions": {
+    "armory_convention": {
+      "type": "choice",
+      "instructions": "Select the best of these conventions for the two named firearms, fast switching, finite ammo and future arrow collection. Use observed structural facts only.",
+      "criteria": {
+        "direct_slots_plus_inventory": "Two named quick slots, previous-weapon toggle, compact persistent equipped/loaded/reserve HUD, expandable inventory panel. Shared session ammo/loot ledger and atomic checkpoint restore. Future bow/arrows as explicit capability, no accidental third weapon unlock.",
+        "wheel_only": "Only radial weapon wheel; hides owned weapons and ammo until opened.",
+        "scene_local": "Each room owns its weapon and fresh ammo; corpses deleted on room exit; scripted global bear wave."
+      }
+    },
+    "has_checkpoint_exploit": {
+      "type": "noul",
+      "instructions": "Would a shared ledger with atomic restore of checkpoint inventory, corpses, consumed loot and objective state prevent keeping post-checkpoint loot across failure? True means this proposal still has a duplication inconsistency."
+    },
+    "encounter_convention": {
+      "type": "choice",
+      "instructions": "Choose a sound/reaction convention that fits sparse home territory and varied player outcomes. No playtest results are available.",
+      "criteria": {
+        "local_delayed": "Individual hearing with distance/occlusion, investigation before confirmed target, reaction plus navigation arrival delays, small authored population and seeded variation; no teleport waves.",
+        "global_wave": "Any shot or engine start makes every bear instantly attack from every distance.",
+        "harmless_script": "Bear turns only; player and Bull cannot fail."
+      }
+    }
+  }
+}

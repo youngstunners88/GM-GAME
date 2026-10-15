@@ -1,0 +1,130 @@
+{
+  "schema": "gm-game.character-motion-plan.v1",
+  "job_id": "bull-rifle-contact",
+  "status": "draft",
+  "source_commit": "45f5d1142084baadc926965c54699a8fa0892c41",
+  "transcript": {
+    "path": "design/ep2/motion/WORKFLOW_TRANSCRIPT.txt",
+    "sha512": "aa5b8dd72b0b3eaba17790a545a64f151b346eb8869519ffcce6a2ed76fad5235a4e21e0a85a6d44446e4e0885e0abccde95d7d68a517117d0c2ba2d2953c866"
+  },
+  "appearance": {
+    "model_path": "src/episode2/assets/inferno_bull_rigged.glb",
+    "reference_path": "artifacts/episode2-gold-mine/references/founder_2026-10-10b/inferno_bull_with_rifle.jpg",
+    "identity_description": "Founder Tripo Inferno Bull: horns, helmet lamp, dark fur/leather/denim, cigar, existing coat and body. Preserve founder rifle; verify which anatomical hand grips stock and which can support fore-end.",
+    "source_rights": "founder-provided; verify derivative/export permissions for any added input"
+  },
+  "performance": {
+    "method": "blender-authored",
+    "source_path": null,
+    "rights_status": "pending",
+    "fps": 30,
+    "review_seconds": 7,
+    "overlap_frames": 0,
+    "root_motion_owner": "room-in-place",
+    "audio": {
+      "preserve_soundtrack": false,
+      "condition_generation": false,
+      "game_dialogue_timeline": "existing events; no new lip-sync claim"
+    }
+  },
+  "clip": {
+    "name": "bull_rifle_ready_fire_recover",
+    "duration_s": null,
+    "phases": [
+      {
+        "name": "ready",
+        "start_s": null,
+        "end_s": null
+      },
+      {
+        "name": "aim",
+        "start_s": null,
+        "end_s": null
+      },
+      {
+        "name": "fire",
+        "start_s": null,
+        "end_s": null
+      },
+      {
+        "name": "recover",
+        "start_s": null,
+        "end_s": null
+      }
+    ],
+    "contacts": [
+      {
+        "character_anchor": "LeftPalm",
+        "prop_path": "src/episode2/assets/winchester_1886.glb",
+        "prop_anchor": "StockGrip",
+        "start_s": null,
+        "end_s": null,
+        "max_gap_m": 0.015,
+        "status": "unresolved; author independent geometry markers"
+      },
+      {
+        "character_anchor": "RightPalm",
+        "prop_path": "src/episode2/assets/winchester_1886.glb",
+        "prop_anchor": "ForeEnd",
+        "start_s": null,
+        "end_s": null,
+        "max_gap_m": 0.015,
+        "status": "unresolved; fused fist/pouch skin must pass first"
+      }
+    ],
+    "events": [
+      {
+        "name": "muzzle_shot",
+        "time_s": null,
+        "one_shot": true,
+        "status": "unresolved; bind to actual muzzle"
+      }
+    ],
+    "plant_intervals": [],
+    "supports": [
+      "actual ground",
+      "rifle stock/fore-end"
+    ],
+    "hand_capability": "24 joints; no finger joints; finger articulation not claimed"
+  },
+  "captures": {
+    "player_camera": "existing woods and hideout camera; same baseline/candidate view",
+    "diagnostic_views": [
+      "front",
+      "side",
+      "back"
+    ],
+    "source_sha_and_hashes_required": true,
+    "timed_sequence_required": true
+  },
+  "gates": {
+    "input_rights": "pending",
+    "rest_identity": "pending",
+    "skin_integrity": "pending",
+    "contact_intervals": "pending",
+    "temporal_continuity": "pending",
+    "runtime_pixels": "pending"
+  },
+  "outputs": {
+    "root": "design/ep2/motion/jobs/bull-rifle-contact",
+    "planned": [
+      "clip-plan.json",
+      "source.blend",
+      "rig-map.json",
+      "contact-markers.json",
+      "metrics.json",
+      "captures/",
+      "review.md"
+    ]
+  },
+  "limits": {
+    "paid_jobs_authorized": false,
+    "body_generation_needed": false,
+    "runtime_changed": false
+  },
+  "notes": [
+    "This draft is a reusable input plan, not an animation or proof.",
+    "7 s is a review-window suggestion from the transcript, not a prescribed firing duration.",
+    "No contact anchor named here exists by assumption; it must be authored and independently measured."
+  ]
+}

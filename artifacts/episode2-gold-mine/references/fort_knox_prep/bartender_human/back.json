@@ -1,0 +1,17 @@
+{
+ "request_id": "b0b7bd81-bfbf-47af-826f-5f4ab8b15d31",
+ "endpoint": "gpt-image-2-image-to-image",
+ "payload": {
+  "prompt": "Photorealistic product-style reference for 3D modelling: the single subject centred with generous margin on a seamless plain mid-grey studio backdrop, soft even key light with a gentle rim light, sharp focus, true materials (lacquer, chrome, leather, rubber, rust, scale, steel), no text, no logos, no people, only a soft contact shadow. The same bartender, full-body back view, T-pose (arms straight out horizontally), identical outfit, hat, face and proportions.",
+  "aspect_ratio": "3:4",
+  "resolution": "2K",
+  "quality": "high"
+ },
+ "url": "https://cdn.muapi.ai/outputs/generated/b0b7bd81-bfbf-47af-826f-5f4ab8b15d31_2dd275aa.png",
+ "cost_usd": 0.09,
+ "size": [
+  1536,
+  2048
+ ],
+ "made": "2026-10-14"
+}

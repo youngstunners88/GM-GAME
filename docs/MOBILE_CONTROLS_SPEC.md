@@ -1,111 +1,84 @@
 # Mobile Controls + Onboarding — Spec
 
-Landed 2026-08-01. Drafted by DeepSeek V4 Flash from the shipped
-implementation (`docs/model-responses/2026-08-01-deepseek-mobile-spec-compliance.md`),
-reviewed and corrected by Claude against the real files. Design inputs: Grok
-4.5 (control scheme + title hierarchy), Kimi K3 (input-path + font audits) —
-see `docs/model-responses/2026-08-01-*`.
+**Rewritten 2026-10-13** for the analog-stick touch system in `src/input/mobile/`
+(skill `gm-game-mobile-touch-experience`, ADR `docs/architecture/adr-mobile-touch-controls.md`,
+founder prompt `PROMPT_MOBILE_TABLET_TOUCH_EXPERIENCE_2026-10-13.md`).
+The 2026-08-01 design (nine fixed `TouchScreenButton`s in `src/ui/mobile_controls.gd`, drafted by DeepSeek V4 Flash
+from the Grok 4.5 scheme and the Kimi K3 audit, `docs/model-responses/2026-08-01-*`) is **gone**; its DO-NOT list
+below is still binding because each line was a real bug.
 
-This documents the SHIPPED design so a future change doesn't re-introduce the
-bugs it fixed. If you touch touch input or early UI, read the DO-NOT list.
+## Architecture: one path — Control -> TouchActions -> InputMap action
 
-## Architecture: one path — TouchScreenButton → InputMap action
+`MobileLayoutManager` (autoload) owns a CanvasLayer (layer 18) holding one layout scene. Its `VirtualJoystick` and
+`VirtualButton` controls press the existing InputMap actions through `TouchActions`:
+- **press** -> `Input.action_press(action, strength)` + one `InputEventAction` on the edge
+- **release** -> `Input.action_release(action)` + the up event
 
-Every on-screen control is a `TouchScreenButton` bound to an existing
-`InputMap` action (`src/ui/mobile_controls.gd`):
-- **pressed** → `Input.action_press(action)`
-- **released** → `Input.action_release(action)`
+So desktop parity is by construction: keyboard, gamepad and touch all reach `player.gd` through `Input.*`, and the
+touch layer is simply hidden (and inert) on a machine without a touchscreen. Controls are real `Control` nodes:
+Godot's GUI routes touch/drag/release per finger index, which is true multi-touch (stick + JUMP + ATK together).
 
-Why:
-- **Desktop parity by construction** — touch presses the same actions the
-  keyboard does (move_left/right/up/down, jump, dash, sprint, interact,
-  attack), so movement, jump, double-jump, climb, dash, sprint, interact, and
-  attack (tap + fire-breath hold) all run through one code path. There is no
-  separate "mobile" gameplay branch to drift.
-- **Native multitouch** — each `TouchScreenButton` tracks its own finger, so
-  LEFT + JUMP + ATK can be held at once. Plain `Button` nodes under
-  `emulate_mouse_from_touch` collapse to a single mouse pointer and cannot.
-
-`MobileInputHandler` (autoload) is now a thin shim:
-`get_movement_input()` returns `Input.get_axis("move_left","move_right")`;
-`is_sprint_active()` returns the `sprint` action. The old `touch_*` signals
-remain *declared* only so existing `.connect()` calls don't error — they are
-no longer emitted.
+`MobileInputHandler` (autoload) stays a thin shim: `get_movement_input()` returns `Input.get_axis("move_left",
+"move_right")` (now genuinely analog on touch), `is_sprint_active()` returns the `sprint` action. Its `touch_*`
+signals are declared only so old `.connect()` calls do not error; they are never emitted.
 
 ## Detection rule
 
 ```gdscript
 is_touch = OS.get_name() in ["Android","iOS"] or DisplayServer.is_touchscreen_available()
 ```
+The Web export always reports `OS.get_name() == "Web"`, so `has_feature("mobile")` is always false in a browser.
+A real finger also proves a touchscreen (`MobileLayoutManager` learns it on the first `InputEventScreenTouch`).
+Phone vs tablet is decided by the smallest window side in dp (< 600 = phone), never by an OS name.
 
-The Web export always reports `OS.get_name() == "Web"` — even in a phone
-browser — so `has_feature("mobile")` is always false. `is_touchscreen_available()`
-is the only reliable mobile-web signal. `TouchScreenButton.visibility_mode =
-VISIBILITY_TOUCHSCREEN_ONLY` also disables the hit areas on non-touch desktop.
+## Layout map (dp; centre measured inward from the safe-area corner; JUMP etc. are anchored bottom-right)
 
-## ASCII-only labels
+| Hand | Control | action | phone landscape | tablet landscape (x1.2) |
+|------|---------|--------|-----------------|--------------------------|
+| Left  | analog stick (appears under the thumb) | move_left/right (analog), move_up/down (digital) | region x 0-47 %, y 24-100 %, base r58 | region 0-46 %, base r58 |
+| Right | JUMP (hold) | jump | (96, 84) r40 | (112, 104) |
+| Right | ATK (hold) | attack | (200, 62) r36 | (222, 82) |
+| Right | DASH | dash | (62, 186) r30 | (78, 206) |
+| Right | RUN (toggle) | sprint | (172, 162) r28 | (194, 182) |
+| Right | GRAB | interact | (276, 140) r28 | (324, 66) |
 
-The pixel font has no arrow glyphs — `◄ ► ▲ ▼ ← →` render as tofu boxes. All
-labels are basic-Latin: `<`, `>`, `UP`, `DOWN`, `JUMP`, `ATK`, `DASH`, `RUN`,
-`GRAB`.
+`phone_portrait.tscn` stacks the right-hand buttons in one column up the edge. Idle opacity 0.30, pressed 0.78.
+Layout recomputes on `size_changed` (rotate / resize safe) and releases every held action when it swaps. A death or pause keeps the controls up, dimmed and SUSPENDED (nothing pressed, fingers still tracked, direction/run restored on resume); a scene transition or lock hides them and releases everything.
 
-## Layout map (viewport fractions, landscape)
+## No written words (founder, 2026-10-13)
 
-| Thumb | Control | action | rect [x,y,w,h] |
-|-------|---------|--------|----------------|
-| Left  | `<`     | move_left  | 0.02, 0.62, 0.13, 0.31 |
-| Left  | `>`     | move_right | 0.16, 0.62, 0.13, 0.31 |
-| Left  | `UP`    | move_up    | 0.04, 0.34, 0.10, 0.15 |
-| Left  | `DOWN`  | move_down  | 0.04, 0.50, 0.10, 0.12 |
-| Right | `ATK`   | attack     | 0.71, 0.58, 0.22, 0.32 (primary, biggest) |
-| Right | `JUMP`  | jump       | 0.79, 0.30, 0.19, 0.26 |
-| Right | `DASH`  | dash       | 0.58, 0.60, 0.12, 0.22 |
-| Right | `RUN`   | sprint     | 0.58, 0.36, 0.11, 0.20 |
-| Centre| `GRAB`  | interact   | 0.44, 0.85, 0.12, 0.12 |
-
-Layout recomputes on `get_viewport().size_changed` (rotate/resize safe).
+Mobile players use finger movements, not key names. The touch UI carries NO text at all: buttons are vector icons
+(double-chevron jump, starburst attack, chevron dash, bolt run, diamond grab), the stick is a bare ring/thumb, there
+is no "?" button and no hint line. The first-run cue is a wordless opacity pulse.
 
 ## First-run onboarding
 
-`src/ui/how_to_play_panel.gd` — a dismissible "HOW YOU ROLL" panel showing
-keyboard AND touch per action in two columns. Auto-shown once on first run
-(persisted to `user://how_to_play_shown.txt`), re-openable from the main
-menu's **HOW TO PLAY** button. Fits any viewport via a `ScrollContainer`.
-Dismissed by tapping the dimmed backdrop, the **GOT IT** button, or `ui_cancel`.
-(NOT wired into the pause menu — that scene is currently dead/uninstanced;
-see owner notes in the session log.)
+`src/ui/how_to_play_panel.gd` — dismissible "HOW YOU ROLL" panel with keyboard AND touch columns, shown once on
+first run (`user://how_to_play_shown.txt`), re-openable from the main menu's HOW TO PLAY button. In addition the
+touch controls pulse (no words) for ~4.5 s the first time they appear (`user://touch_controls.cfg`).
 
-## DO NOT (distilled from the Kimi K3 audit)
+## DO NOT (distilled from the Kimi K3 audit; still true)
 
 - **DO NOT** detect mobile with `has_feature("mobile")` — always false on Web.
-- **DO NOT** add a second touch-parsing path or invisible tap-zones — one
-  `TouchScreenButton` → InputMap-action path only.
-- **DO NOT** put arrow glyphs in labels — ASCII only.
-- **DO NOT** rely on `emulate_mouse_from_touch` for game controls — it breaks
-  multitouch and double-fires.
-- **DO NOT** compute control/zone layout only in `_ready()` — connect
-  `size_changed`.
-- **DO NOT** leave dead touch scripts around (`touch_controls.gd` was deleted).
+- **DO NOT** add a second touch-parsing path, `TouchScreenButton`s, or invisible tap-zones next to the new one.
+- **DO NOT** put ANY written word or key name on the touch UI (founder rule).
+- **DO NOT** rely on `emulate_mouse_from_touch` for game controls (single pointer, double-fires) — and do not switch it
+  off either: menus need it.
+- **DO NOT** compute control layout only in `_ready()` — it must follow `size_changed`.
+- **DO NOT** name an enum `Anchor` or `Corner` in a `Control` subclass (Godot built-ins; the script silently fails).
+- **DO NOT** leave a held action behind when controls hide — every hide path goes through `TouchActions.release_all()`.
 
-## Minimal test checklist (run after any input/UI change)
+## Test checklist (run after any input/UI change)
 
-Touch (real device or Playwright touch context, e.g. 844×390 landscape):
-- Tap each of `< > UP DOWN JUMP ATK DASH RUN GRAB` → correct action fires.
-- Hold `<` + `JUMP` + `ATK` together → moves, jumps, attacks, no dropped input.
-- On a ladder, tap `UP`/`DOWN` → climbs.
-- Release all → nothing stuck.
-- Rotate/resize → controls reposition, none off-screen.
+Automated: `tests/mobile_touch_controls_test.tscn` (headless, real fingers -> real player), `script_compile_test`,
+`scripts/touch-playtest.mjs` (Chromium multi-touch against a local export, screenshots with the F3 overlay).
 
-Desktop parity:
-- Keyboard (WASD/arrows, Space, J, K, Shift, E) all still respond.
-- Touch overlay is invisible on non-touch desktop.
+Touch (real device, hard refresh first):
+- Stick: light push walks, firm push runs, push up/down on a ladder climbs.
+- Hold the stick, tap the jump icon (twice = double jump) and ATK together.
+- RUN tap stays on, second tap stops. DASH in the air.
+- Keep the thumb down through a death/respawn: the stick resumes without lifting.
+- Rotate / resize: controls re-lay out, nothing sticks. Pause / resume: nothing keeps running while paused.
+- Tablet: bigger buttons set further in from the edge; nothing covers the hero.
 
-Onboarding:
-- First run: panel auto-shows; dismiss via backdrop / GOT IT / Escape.
-- Second run: does NOT auto-show (flag persisted).
-- Re-open from the menu button works; on 844×390 all rows + GOT IT reachable.
-
-Gates:
-- `script_compile`, `distributor_behaviour`, `boss_arena_reachable`,
-  `security-sentinel`, and `verify-game.mjs` (desktop, dismisses the first-run
-  panel then reaches PLAYING) all pass; console clean.
+Desktop parity: keyboard (WASD/arrows, Space, J, K, Shift, E) plays exactly as before; no touch layer drawn.

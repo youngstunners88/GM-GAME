@@ -7,6 +7,8 @@ allowed-tools: Bash, Read, Write, Edit
 
 # Inferno Bull: re-pose, de-mud, light (measured 2026-10-06)
 
+**2026-10-14 movement/contact follow-up:** use `.claude/skills/ep2-character-performance/SKILL.md` and `design/ep2/motion/CHARACTER_MOTION_CONTRACT.md`. Rest-arm locks documented here prevent known skin tears; they are a temporary safety measure, not proof of fluid motion or correct firing grip. Do not remove them blindly: first prove a rest-aware, skin-safe action with independent palm/prop contacts. The current woods firing transform shifts the rifle 0.2 m from the hand and needs a grip-preserving authoring pass; no runtime fix is claimed by the new skills.
+
 Source model: Tripo (`tripo_node_*`, texture `Bull_minotaur_3d_model_Clone1_Clone1`), 67,927 verts, 24-bone Mixamo-style armature, action `Idle_02`.
 Design reference: Drive `Inferno Bull with rifle.jpg` (`C:\Users\SAMSUNG\Downloads\Inferno Bull with rifle.jpg`) - visible face (gold aviators, nose ring, cigar), relaxed arm resting at the pouch, rifle in the other hand.
 Run only headless (`blender-headless-render-safety`): the bull script builds ~500 objects.
@@ -40,3 +42,31 @@ Pose + face visibility + material de-mud are real, verified gains (`bull_h3/h4/h
 - Pose is still the Tripo stance (feet pigeon-toed, no weapon); the reference has the rifle upright in the other hand - swap in the approved rifle (`ep2-rifle-realism`) via the hand bone.
 - Fur is a baked texture; real hair curves would be the next realism step but cost RAM/time on this machine.
 - This is a Blender hero render only; nothing here is wired into the Godot game (`inferno_bull_rigged.glb` is a different, Meshy-based asset).
+
+## Game GLB: sheet stance in the engine (2026-10-11, inferno_bull_rigged.glb)
+The game Bull IS the Tripo body on the 24-bone Meshy skeleton, and its **bind pose already is the character sheet**
+(upright, head up, right fist on the flask pouch, left fist closed for a rifle). The "melted arm", bowed head and
+stiff slouch all came from the Meshy clips driving a body they were not made for, plus nearest-vertex skin weights.
+Fix, all on the GLB in place (skeleton, node names, clip GLBs untouched, so walk/run/sit/talk keep working):
+1. `tools/ep2_forge/bull_hero_fix.py` (exact command in its docstring; source in `.farm/retired/inferno_bull_rigged_pre_hero_2026-10-11.glb`):
+   Idle_02 rebuilt from the bind pose + a breath; weights limited per limb by nearest bone segment (backpack = Spine02
+   rigid, belt pouches never arm), smoothed 6 passes over the position-welded surface; hand-to-body bridge triangles
+   cut; rifle-stub islands inside `--drop-box` boxes deleted. NOT `--tiny-tex`: the cliff cinematic uses the embedded atlas.
+2. `src/episode2/actors/ep2_bull_hero.gd` (`Ep2BullHero.dress(b)`, one line in `interlude_base._build_bull`): arms held at
+   rest (Ep2BullRestArm) unless seated or reaching - the walk clip's arm swing tears the fist fused into the flask pouch;
+   rifle (`winchester_1886.glb`, darkened, matte) placed vertically from the LeftHand bone every skeleton update, hidden
+   on Sit clips; lit helmet lamp at the measured lens; material grade (albedo x(0.60,0.66,1.04), no orange self-glow).
+   The hideout keeps its own props; `smelting_facility` now also rests the arms while walking.
+3. Measure: `tools/ep2_blender/bull_game_inspect.py <glb> <out> [--clip X | --clip-glb walk.glb --clip "Armature|walking"] [--lock-arms] --stretch`
+   (Cycles, no EGL) prints edges stretched >2x = the melted-surface count. Before/after: idle 6069 -> 0, walk 4229 -> 1366,
+   sit 6286 -> 4186, talk 4069 -> 3048. Evidence: `docs/episode2-quality/inferno-bull-2026-10-11/`.
+Traps: never write a CRLF .gd through Python text mode (smelting_facility.gd is CRLF - edit bytes); per-UV-island
+majority labels tore seams (the decimated mesh is ~2200 UV islands but ONE welded shell); the talk/gesture/sit clips
+still stretch the fused hand/pouch and the sit clip is hunched - a re-generated body with a free right hand is the real fix.
+
+## Founder 2026-10-11 round 2 ("rifle hovering - WHY THE SEPARATION", "elbow webbed melting")
+- Bull's rifle MUST be a child of `bull.holder("LeftHand")` (BoneAttachment3D -> follows the final drawn pose, metres frame), placed
+  from the hand bone's rest (grip = wrist + 9 cm along the bone). Never place it from a measured rest point or from
+  `skeleton_updated` + `get_bone_global_pose` (pre-modifier pose) - both left it hovering 0.2 m off his fist.
+- Never IK his arms to shoulder height (the range demo did): the Tripo skin webs and melts at the elbow. Keep arms at rest; turn the
+  rifle instead (hip fire).

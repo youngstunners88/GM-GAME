@@ -51,6 +51,10 @@ var _music_muted := false
 
 func play() -> void:
 	layer = 5  # above HUD/gameplay, below the level-transition wipe (layer 10)
+	# The film is skipped by HOLDING jump; ask for the on-screen controls so a touch
+	# player can do it too (MobileLayoutManager keeps them through LEVEL_COMPLETE for
+	# opted-in scenes only). Removed again in _finish().
+	add_to_group("touch_controls_wanted")
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	if not ResourceLoader.exists(VIDEO):
 		print("[VIDEO] %s: file missing from the build: %s (skipping the film)" % [name, VIDEO])
@@ -159,6 +163,7 @@ func _finish() -> void:
 	if _done:
 		return
 	_done = true
+	remove_from_group("touch_controls_wanted")
 	_restore_stage_music()
 	finished.emit()
 	if not keep_cover:

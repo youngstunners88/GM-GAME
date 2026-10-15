@@ -95,6 +95,23 @@ var _gideon_line: Label = null
 ## but it also cancels" — on the final line E closed the panel while the hint
 ## still promised another line, so a normal advance read as a cancel.
 var _gideon_hint: Label = null
+## On-screen controls for Gideon's panel (touch + mouse). NEXT advances a line,
+## CONFIRM STAKE is the ONLY on-screen path to the stake, LEAVE is Escape.
+## Each is a real Button on the layer-30 panel: the touch layer (layer 18) is
+## underneath the panel, so the panel has to carry its own buttons.
+var _gideon_next_btn: Button = null
+var _gideon_confirm_btn: Button = null
+var _gideon_leave_btn: Button = null
+## CONFIRM STAKE ignores presses for this long after the last line appears. A
+## double tap on NEXT must never roll straight through to the stake. Applies to
+## the BUTTON only: the keyboard's terminal E is deliberately untouched.
+const GIDEON_CONFIRM_ARM_SEC: float = 0.6
+var _gideon_confirm_armed_msec: int = 0
+## Key this scene uses with MobileLayoutManager.set_locked while a dialogue
+## panel is up. Hides the touch layer so GRAB (the `interact` action) cannot
+## also drive the keyboard path underneath a panel: a stray GRAB tap would
+## otherwise reach the terminal stake / the clerk's confirm.
+const TOUCH_LOCK_KEY: StringName = &"vault_panel"
 
 ## Play a vault character's VO clip (Mira / Gideon). Fire-and-forget: builds a
 ## throwaway AudioStreamPlayer that frees itself when the line finishes.
@@ -145,7 +162,7 @@ func _make_gideon_dialogue() -> SteppedDialogue:
 		"Howdy, partner! Name's Goldwater Vale — Fort Knox's your gold rush stop.",
 		"Step up to the assay scale, friend — let's weigh that glitter proper.",
 		"Fancy stakin' yer claim? I'll lock a quarter of yer GOLD into the vault.",
-		"Ready? Press E to CONFIRM — I'll lock her down tight.",
+		"Ready? Hit CONFIRM STAKE and I'll lock her down tight.",
 	]
 	d.farewell = "Ride safe now — come back when yer pockets need fillin' again."
 	return d
@@ -280,6 +297,43 @@ func _on_mobile_interact() -> void:
 		return
 	if _at_altar != "":
 		_stake_at(_at_altar)
+
+## A scene freed with a dialogue still up (scene change, test teardown) must not
+## leave the touch layer locked for whatever loads next.
+func _exit_tree() -> void:
+	_touch_modal(false)
+	for l: Array in _links:
+		if (l[0] as Signal).is_connected(l[1]):
+			(l[0] as Signal).disconnect(l[1])
+	_links.clear()
+
+## Connect an autoload signal to a lambda of this scene and remember it. The
+## autoload outlives the scene and a lambda connection is NOT dropped when its
+## scene is freed, so every vault visit used to leave listeners whose captured
+## nodes were gone ("Lambda capture ... was freed" on every later gold change).
+var _links: Array = []
+func _link(sig: Signal, handler: Callable) -> void:
+	sig.connect(handler)
+	_links.append([sig, handler])
+
+## Hide the touch layer while a dialogue panel owns the screen (and give it back
+## after). The panels carry their own buttons; what this prevents is GRAB, which
+## injects the same `interact` action as E, reaching the keyboard path under a
+## panel and confirming a stake without the explicit CONFIRM button.
+func _touch_modal(open: bool) -> void:
+	if MobileLayoutManager and MobileLayoutManager.is_inside_tree():
+		MobileLayoutManager.set_locked(TOUCH_LOCK_KEY, open)
+
+## Whether to print KEY NAMES ("[E]", "[ESC]", "press E") on screen. Founder rule
+## (2026-10-13, touch skill): no key names and no keyboard hint lines on a touch
+## device - phones are played with icons and fingers. The words on a panel's own
+## BUTTONS (NEXT, CONFIRM STAKE, LEAVE) are not key names and stay.
+func _keys_shown() -> bool:
+	return not (MobileLayoutManager and MobileLayoutManager.is_touch_device)
+
+## ", press E" on a keyboard machine, nothing on a touch device (for sentences).
+func _press_e() -> String:
+	return ", press E" if _keys_shown() else ""
 
 # --- Environment ------------------------------------------------------------
 
@@ -602,7 +656,7 @@ func _setup_clerk(x: float) -> void:
 	gtw.tween_property(glow, "modulate:a", 0.25, 1.0).set_trans(Tween.TRANS_SINE)
 
 	var plate := Label.new()
-	plate.text = "MIRA \"LEDGER\" VOSS\n[E] TALK"
+	plate.text = "MIRA \"LEDGER\" VOSS\n" + ("[E] TALK" if _keys_shown() else "TALK")
 	plate.position = Vector2(-96, -250)
 	style_label(plate, 26)
 	clerk.add_child(plate)
@@ -638,6 +692,7 @@ func clerk_open() -> void:
 	if not _diamonds:
 		return
 	_clerk_open = true
+	_touch_modal(true)
 	_clerk_row = 0
 	_clerk_stake_amt = GoldMineSystem.diamonds_balance
 	_clerk_crush_amt = _crush_cap()
@@ -782,6 +837,7 @@ func clerk_confirm() -> void:
 
 func clerk_close() -> void:
 	_clerk_open = false
+	_touch_modal(false)
 	if _clerk_panel != null and is_instance_valid(_clerk_panel):
 		_clerk_panel.queue_free()
 	_clerk_panel = null
@@ -805,7 +861,7 @@ func _setup_gideon(x: float, y: float) -> void:
 	g.add_child(spr)
 	_gideon_sprite = spr
 	var plate := Label.new()
-	plate.text = "GIDEON \"GOLDWATER\" VALE\n[E] TALK"
+	plate.text = "GIDEON \"GOLDWATER\" VALE\n" + ("[E] TALK" if _keys_shown() else "TALK")
 	plate.position = Vector2(-110, -280)
 	style_label(plate, 26)
 	g.add_child(plate)
@@ -833,6 +889,7 @@ func _setup_gideon(x: float, y: float) -> void:
 
 func gideon_open() -> void:
 	_gideon_open = true
+	_touch_modal(true)
 	if _gideon_dlg == null:
 		_gideon_dlg = _make_gideon_dialogue()
 	_gideon_dlg.idx = -1
@@ -864,10 +921,73 @@ func gideon_step() -> void:
 	if _gideon_line != null and is_instance_valid(_gideon_line):
 		_gideon_line.text = "GIDEON: " + line
 	# Keep the prompt truthful about what THIS line's E will do: advance on a mid
-	# line, CONFIRM the stake on the last line.
+	# line, CONFIRM the stake on the last line. The on-screen buttons follow the
+	# same state: NEXT on a mid line, CONFIRM STAKE on the last (never both).
+	_gideon_sync_controls()
+
+## Show the buttons and the hint that match the current line. Called after every
+## advance. When the LAST line has just appeared CONFIRM STAKE is armed late (see
+## GIDEON_CONFIRM_ARM_SEC); an already-made stake shows a disabled button, so the
+## panel never offers a control that cannot act.
+func _gideon_sync_controls() -> void:
+	if _gideon_dlg == null:
+		return
+	var at_end: bool = _gideon_dlg.at_end()
 	if _gideon_hint != null and is_instance_valid(_gideon_hint):
-		_gideon_hint.text = ("[E] CONFIRM STAKE   [ESC] leave" if _gideon_dlg.at_end()
-			else "[E] next   [ESC] leave")
+		_gideon_hint.visible = _keys_shown()
+		if not at_end:
+			_gideon_hint.text = "[E] / NEXT   [ESC] / LEAVE"
+		elif _gideon_staked:
+			_gideon_hint.text = "[E] / CLOSE   [ESC] / LEAVE"
+		else:
+			_gideon_hint.text = "[E] / CONFIRM STAKE   [ESC] / LEAVE"
+	if _gideon_next_btn != null and is_instance_valid(_gideon_next_btn):
+		_gideon_next_btn.visible = not at_end
+	if _gideon_confirm_btn != null and is_instance_valid(_gideon_confirm_btn):
+		_gideon_confirm_btn.visible = at_end
+		if at_end:
+			_gideon_arm_confirm_button()
+
+## Disable CONFIRM STAKE for GIDEON_CONFIRM_ARM_SEC after the last line shows,
+## then enable it. `_gideon_confirm_armed_msec` is the gate the press handler
+## itself checks, so a programmatic press obeys the same window as a finger.
+func _gideon_arm_confirm_button() -> void:
+	var btn: Button = _gideon_confirm_btn
+	if _gideon_staked:
+		btn.text = "ALREADY STAKED"
+		btn.disabled = true
+		return
+	btn.text = "CONFIRM STAKE"
+	btn.disabled = true
+	_gideon_confirm_armed_msec = Time.get_ticks_msec() + int(GIDEON_CONFIRM_ARM_SEC * 1000.0)
+	# The tween belongs to the panel, so it dies with it (no dangling callback).
+	var tw: Tween = _gideon_panel.create_tween()
+	tw.tween_interval(GIDEON_CONFIRM_ARM_SEC)
+	tw.tween_callback(func() -> void:
+		if is_instance_valid(btn):
+			btn.disabled = false)
+
+# --- Gideon's on-screen controls -------------------------------------------
+## These are what the buttons call. Each routes into the SAME function the
+## keyboard reaches (gideon_step / gideon_close) behind a guard that makes it a
+## no-op unless that button is the legitimate one for the current line, so a
+## NEXT press can never confirm and CONFIRM can never skip a line.
+
+## NEXT: advance one line. Only on a line that is NOT the last: on the last line
+## gideon_step() is the confirm, and NEXT is not allowed to be that.
+func gideon_press_next() -> void:
+	if not _gideon_open or _gideon_dlg == null or _gideon_dlg.at_end():
+		return
+	gideon_step()
+
+## CONFIRM STAKE: the terminal step of gideon_step() (stake 25% of GOLD, then
+## close). Only on the last line, only once armed.
+func gideon_press_confirm() -> void:
+	if not _gideon_open or _gideon_dlg == null or not _gideon_dlg.at_end():
+		return
+	if Time.get_ticks_msec() < _gideon_confirm_armed_msec:
+		return
+	gideon_step()
 
 ## Gideon's confirm: stake 25% of held GOLD into Fort Knox via the real
 ## GoldMineSystem primitive, with an honest success/empty float. One-shot per
@@ -891,9 +1011,13 @@ func _gideon_confirm_stake() -> void:
 
 func gideon_close() -> void:
 	_gideon_open = false
+	_touch_modal(false)
 	if _gideon_panel != null and is_instance_valid(_gideon_panel):
 		_gideon_panel.queue_free()
 	_gideon_panel = null
+	_gideon_next_btn = null
+	_gideon_confirm_btn = null
+	_gideon_leave_btn = null
 
 func _build_gideon_panel() -> void:
 	if _gideon_panel != null and is_instance_valid(_gideon_panel):
@@ -915,13 +1039,21 @@ func _build_gideon_panel() -> void:
 		root.add_child(portrait)
 	var panel := ColorRect.new()
 	panel.color = Color(0.14, 0.09, 0.03, 0.95)
-	panel.custom_minimum_size = Vector2(780, 200)
+	panel.custom_minimum_size = Vector2(780, 300)
+	panel.size = Vector2(780, 300)
 	panel.position = Vector2(-260, -110)
+	# STOP, deliberately, and NO gui_input handler. A tap on the panel background
+	# must do nothing: this dialogue's last step moves GOLD, so only the explicit
+	# buttons below may advance it. (The Diamond Vault clerk lets a tap advance
+	# its intro lines; her stake/crush are separate buttons. Gideon has no such
+	# split, so he gets no tap-anywhere shortcut at all.)
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	root.add_child(panel)
 	var border := ColorRect.new()
 	border.color = Color(1.0, 0.85, 0.4, 1.0)
 	border.custom_minimum_size = Vector2(780, 6)
 	border.position = Vector2(-260, -110)
+	border.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(border)
 	_gideon_line = Label.new()
 	_gideon_line.position = Vector2(-236, -84)
@@ -929,13 +1061,42 @@ func _build_gideon_panel() -> void:
 	_gideon_line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	style_label(_gideon_line, 28)
 	root.add_child(_gideon_line)
+
+	# On-screen controls. >=96px tall like every other vault button (style_button
+	# also floors the font at 24). Three DIFFERENT places: NEXT and CONFIRM STAKE
+	# never share a spot, so a double tap on NEXT cannot land on CONFIRM when the
+	# last line swaps them, and LEAVE sits well away from CONFIRM STAKE so
+	# reaching for the harmless one cannot press the value-moving one.
+	_gideon_leave_btn = _gideon_button(root, "LEAVE", Vector2(-236, 36), Vector2(190, 96), 32)
+	_gideon_leave_btn.pressed.connect(gideon_close)               # == Escape
+	_gideon_confirm_btn = _gideon_button(root, "CONFIRM STAKE", Vector2(20, 36), Vector2(300, 96), 30)
+	_gideon_confirm_btn.pressed.connect(gideon_press_confirm)     # == terminal E
+	_gideon_confirm_btn.visible = false                           # last line only
+	_gideon_next_btn = _gideon_button(root, "NEXT", Vector2(336, 36), Vector2(170, 96), 36)
+	_gideon_next_btn.pressed.connect(gideon_press_next)           # == E on a mid line
+
 	var hint := Label.new()
-	hint.text = "[E] next   [ESC] leave"
-	hint.position = Vector2(-236, 40)
+	hint.text = "[E] / NEXT   [ESC] / LEAVE"
+	hint.position = Vector2(-236, 140)
 	style_label(hint, 22)
 	root.add_child(hint)
-	# Stored so gideon_step can flip it to "[E] close" on the terminal line.
+	# Stored so gideon_step can keep it truthful line by line.
 	_gideon_hint = hint
+
+## One of Gideon's panel buttons. FOCUS_NONE on purpose: a focused Button also
+## answers `ui_accept` (Enter / Space), and _physics_process reads that same
+## action for the dialogue, so a focused NEXT would fire twice on one Enter and
+## the second firing could land on the last line and confirm the stake.
+func _gideon_button(parent: Control, text: String, pos: Vector2, min_size: Vector2, font: int) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.custom_minimum_size = min_size
+	b.size = min_size
+	b.position = pos
+	b.focus_mode = Control.FOCUS_NONE
+	style_button(b, font)
+	parent.add_child(b)
+	return b
 
 ## A big +/- control row: a large label, a "-" Button, a big value Label, a "+"
 ## Button. Buttons are >=96px tall touch targets (Fable/Kimi s7).
@@ -997,6 +1158,15 @@ func _build_clerk_panel() -> void:
 	panel.custom_minimum_size = Vector2(780, 400)
 	panel.position = Vector2(-260, -200)
 	root.add_child(panel)
+	# TOUCH: this panel (layer 30) sits over the on-screen GRAB button, and the intro
+	# is stepped one line per `interact`. A tap on the panel advances the INTRO lines
+	# only (never a stake/confirm: those stay real buttons). Mouse events cover both a
+	# desktop click and a touch tap (emulate_mouse_from_touch), so exactly one fires.
+	panel.gui_input.connect(func(ev: InputEvent) -> void:
+		var mb := ev as InputEventMouseButton
+		if mb != null and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT \
+				and _clerk_open and _mira_dlg != null and not _mira_dlg.at_end():
+			_clerk_advance_dialogue())
 	# Gold/cyan border so the panel pops off the busy backdrop.
 	var border := ColorRect.new()
 	border.color = _fg()
@@ -1019,9 +1189,10 @@ func _build_clerk_panel() -> void:
 	style_label(_clerk_line, 28)
 	root.add_child(_clerk_line)
 	var hint := Label.new()
-	hint.text = "[E] next"
+	hint.text = "[E] / tap: next"
 	hint.position = Vector2(440, -190)
 	style_label(hint, 22)
+	hint.visible = _keys_shown()   # no key names on a touch device
 	root.add_child(hint)
 
 	_clerk_actions = []
@@ -1300,7 +1471,7 @@ func _build_gold_scale(parent: Node2D, diamonds: bool, interactive: bool = false
 	#    point (Fort Knox). The Diamond Vault scale is informational.
 	if interactive:
 		var hint := Label.new()
-		hint.text = "[E] WEIGH GOLD"
+		hint.text = "[E] WEIGH GOLD" if _keys_shown() else "WEIGH GOLD"
 		hint.position = Vector2(-160, 245)
 		hint.custom_minimum_size = Vector2(320, 0)
 		hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -1321,10 +1492,10 @@ func _build_gold_scale(parent: Node2D, diamonds: bool, interactive: bool = false
 			return_val.text = str(int(ret))
 	updater.call()
 	if diamonds:
-		GoldMineSystem.diamond_shares_changed.connect(func(_s: int) -> void: updater.call())
-		GoldMineSystem.diamonds_changed.connect(func(_s: int) -> void: updater.call())
+		_link(GoldMineSystem.diamond_shares_changed, func(_s: int) -> void: updater.call())
+		_link(GoldMineSystem.diamonds_changed, func(_s: int) -> void: updater.call())
 	else:
-		GoldMineSystem.gold_changed.connect(func(_s: int) -> void: updater.call())
+		_link(GoldMineSystem.gold_changed, func(_s: int) -> void: updater.call())
 
 ## A one-way-safe solid platform used by the Assay Hall climb. `golden` makes it
 ## a bright, obviously-highlighted route (founder T5: "highlighted platforms →
@@ -1388,21 +1559,21 @@ func _setup_hud() -> void:
 	layer.add_child(_readout)
 	_refresh_readout()
 	if _diamonds:
-		GoldMineSystem.diamond_shares_changed.connect(func(_s: int) -> void: _refresh_readout())
-		GoldMineSystem.diamonds_changed.connect(func(_s: int) -> void: _refresh_readout())
+		_link(GoldMineSystem.diamond_shares_changed, func(_s: int) -> void: _refresh_readout())
+		_link(GoldMineSystem.diamonds_changed, func(_s: int) -> void: _refresh_readout())
 	else:
 		# gold_changed / a shares readout — Fort Knox uses fort_knox_shares.
-		GoldMineSystem.gold_changed.connect(func(_s: int) -> void: _refresh_readout())
+		_link(GoldMineSystem.gold_changed, func(_s: int) -> void: _refresh_readout())
 
 func _refresh_readout() -> void:
 	if _readout == null:
 		return
 	if _diamonds:
-		_readout.text = "DIAMONDS %d   |   DIAMOND SHARES %d\nWalk to an altar, press E to STAKE 25%%" % [
-			GoldMineSystem.diamonds_balance, GoldMineSystem.diamond_shares]
+		_readout.text = "DIAMONDS %d   |   DIAMOND SHARES %d\nWalk to an altar%s to STAKE 25%%" % [
+			GoldMineSystem.diamonds_balance, GoldMineSystem.diamond_shares, _press_e()]
 	else:
-		_readout.text = "GOLD %d   |   FORT KNOX SHARES %d\nWalk to an altar, press E to STAKE 25%%" % [
-			GoldMineSystem.gold_balance, GoldMineSystem.fort_knox_shares]
+		_readout.text = "GOLD %d   |   FORT KNOX SHARES %d\nWalk to an altar%s to STAKE 25%%" % [
+			GoldMineSystem.gold_balance, GoldMineSystem.fort_knox_shares, _press_e()]
 
 func _setup_title_card() -> void:
 	var layer := CanvasLayer.new()

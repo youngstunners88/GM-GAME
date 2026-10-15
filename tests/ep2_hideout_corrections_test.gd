@@ -6,8 +6,8 @@ extends Node
 ##  2. "the sound of the winchester is horrid ... needs to sound dangerous" - the FPS rifle fires the layered
 ##     Winchester samples on its own pool and racks the lever after each shot (skill ep2-winchester-sound).
 ##  3. "we still can't see his rifle or the whiskey glass" - after the film the Bull faces Lil Blunt, his own
-##     Winchester is shoulder-carried (muzzle well above his hand) and the glass holds visible whiskey
-##     (skill ep2-bull-props-visible).
+##     Winchester is shoulder-carried (muzzle well above his hand).
+##     Founder 2026-10-10 supersedes the glass-in-hand requirement: keep it on the table.
 ## Run: .godot-cache/Godot_v4.3-stable_linux.x86_64 --headless res://tests/ep2_hideout_corrections_test.tscn
 
 var _fail: int = 0
@@ -111,6 +111,7 @@ func _winchester() -> void:
 func _bull_props() -> void:
 	var f: Node = _facility()
 	await get_tree().process_frame
+	_check("glass is on the table while Bull is seated", f._glass_node.get_parent() == f._visuals)
 	f._on_video_film_finished()
 	var bull: Node3D = f._bull
 	var to_hero: float = atan2(f._player_pos.x - bull.position.x, f._player_pos.z - bull.position.z)
@@ -130,12 +131,16 @@ func _bull_props() -> void:
 		var muzzle_top: Vector3 = gun.global_position + muzzle_dir * 0.6 * gun.global_transform.basis.get_scale().x
 		_check("...its muzzle rises to his shoulder line (%.2f m)" % muzzle_top.y, muzzle_top.y > 2.0)
 	var glass: Node3D = f._glass_node
-	_check("his whiskey glass is in his hand", glass != null and glass.is_visible_in_tree() and glass.get_parent() != f._visuals)
+	_check("his whiskey stays on the table, leaving his hand free", glass != null and glass.is_visible_in_tree() and glass.get_parent() == f._visuals)
 	_check("...with whiskey, ice and a rim inside", glass != null and glass.get_node_or_null("Whiskey") != null
 		and glass.get_node_or_null("Ice") != null and glass.get_node_or_null("Rim") != null)
+	var table_pose: Transform3D = glass.global_transform
+	f._return_bull_glass()
+	_check("handover cleanup cannot reattach the glass", glass.get_parent() == f._visuals)
 	f._player_pos = Vector3(4.6, 0.0, 8.4)
 	for i in 150:
 		f.step(1.0 / 60.0)
+	_check("glass stays fixed while Bull moves and turns", glass.global_transform.is_equal_approx(table_pose))
 	to_hero = atan2(f._player_pos.x - bull.position.x, f._player_pos.z - bull.position.z)
 	_check("...and turns to face him from the other side (off by %.2f rad)" % absf(angle_difference(bull.facing, to_hero)),
 		absf(angle_difference(bull.facing, to_hero)) < f.REST_FACE_SLACK + 0.05)

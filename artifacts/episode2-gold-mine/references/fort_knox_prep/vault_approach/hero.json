@@ -1,0 +1,17 @@
+{
+ "request_id": "cca7222f-2065-4163-b07f-604480906c85",
+ "endpoint": "gpt-image-2-text-to-image",
+ "payload": {
+  "prompt": "Photorealistic cinematic concept still for a first-person western shooter, 'western Modern Warfare' art direction: warm low sun key light with teal-blue shadow fill, thin atmospheric haze, physically based materials (weathered timber, rusted riveted steel, packed dirt, gravel, bark, dust), natural film grain, 35mm lens at human eye height (1.6 m), high dynamic range, sharp detail, believable scale. No text, no lettering, no watermark, no logos, no user interface, no people, no close-up characters. The approach to Fort Knox at dusk: a long straight gravel road across open ground leading to a massive fortified vault compound of riveted steel plates and rough granite, a floodlit gatehouse, watchtowers, razor wire and sandbags, the silhouette of the vault block against an orange sky, burned-out mine carts and broken crates along the roadside for cover, an eye-level view down the road about 300 metres from the gate. The vault door and the interior are not visible.",
+  "aspect_ratio": "16:9",
+  "resolution": "2K",
+  "quality": "high"
+ },
+ "url": "https://cdn.muapi.ai/outputs/generated/cca7222f-2065-4163-b07f-604480906c85_2700035d.png",
+ "cost_usd": 0.45,
+ "size": [
+  1600,
+  900
+ ],
+ "made": "2026-10-09"
+}

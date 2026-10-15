@@ -1,9 +1,12 @@
 extends Node
 ## Mobile input SHIM.
 ##
-## As of 2026-08-01 the on-screen touch overlay (src/ui/mobile_controls.gd)
-## drives gameplay entirely through the existing InputMap actions via
-## TouchScreenButton — the same actions the keyboard uses. So this autoload no
+## As of 2026-10-13 the on-screen touch controls live in src/input/mobile/
+## (autoload MobileLayoutManager; skill gm-game-mobile-touch-experience). They
+## drive gameplay entirely through the existing InputMap actions — the same
+## actions the keyboard uses — via Control nodes and TouchActions. (Between
+## 2026-08-01 and 2026-10-13 this was src/ui/mobile_controls.gd with
+## TouchScreenButtons; that file is gone.) So this autoload no
 ## longer needs its own touch parsing, invisible tap-zones, or keyboard mirror.
 ## Those were the source of the double-fire / dead-signal / stuck-movement bugs
 ## the Kimi K3 audit (docs/model-responses/2026-08-01-kimi-mobile-input-audit.md,
@@ -13,7 +16,8 @@ extends Node
 ##   - `is_mobile` — touch-capability flag other systems read.
 ##   - `get_movement_input()` / `is_sprint_active()` — now read the InputMap
 ##     directly, so they work identically on desktop (keyboard) and mobile
-##     (TouchScreenButton pressing the same actions). player.gd reads
+##     (the touch stick presses move_left/right with ANALOG strength, so this
+##     axis is -1..1, not just -1/0/1). player.gd reads
 ##     get_movement_input() every frame; returning the action axis keeps that
 ##     call correct on both platforms.
 ##   - the `touch_*` signals stay DECLARED (players/combat/forge connect to

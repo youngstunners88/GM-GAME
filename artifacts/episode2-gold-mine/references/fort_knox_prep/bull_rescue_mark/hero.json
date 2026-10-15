@@ -1,0 +1,17 @@
+{
+ "request_id": "39b1b528-e23b-4eb3-94b1-da9361bb285c",
+ "endpoint": "gpt-image-2-image-to-image",
+ "payload": {
+  "prompt": "Photorealistic cinematic concept still for a first-person western shooter, 'western Modern Warfare' art direction: warm low sun key light with teal-blue shadow fill, thin atmospheric haze, physically based materials (weathered timber, rusted riveted steel, packed dirt, gravel, bark, dust), natural film grain, 35mm lens at human eye height (1.6 m), high dynamic range, sharp detail, believable scale. The named characters in the brief are the only characters. No text, no lettering, no watermark, no logos, no user interface. Inferno Bull, the huge muscular bull with a miner's helmet with horns and a red bandana exactly as in the reference images, lying DOWN on his side in a trench beside a broken wooden gate, ALIVE and breathing: eyes half open, one fist clenched in the dirt, pinned under a fallen timber beam. A knocked-over lantern still glows beside him, torn sandbags, dust and drifting embers; a rope tied to a lantern post marks the spot. Dusk, low angle, clearly hurt but definitely not dead.",
+  "aspect_ratio": "16:9",
+  "resolution": "2K",
+  "quality": "high"
+ },
+ "url": "https://cdn.muapi.ai/outputs/generated/39b1b528-e23b-4eb3-94b1-da9361bb285c_ca6f3d88.png",
+ "cost_usd": 0.45,
+ "size": [
+  1600,
+  900
+ ],
+ "made": "2026-10-09"
+}

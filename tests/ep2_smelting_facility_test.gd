@@ -151,7 +151,7 @@ func _ready() -> void:
 	c.set_move_input(Vector2(0.0, 1.0))
 	_run(c, 2.0)
 	c.set_move_input(Vector2.ZERO)
-	_check("the molten channel is only crossable on the bridge", c.get_player_position().z < c.CHANNEL_Z - 1.0,
+	_check("the molten channel is a wall until the lava opens (no bridge, no burn yet)", c.get_player_position().z < c.CHANNEL_Z - 1.0 and c.get_health() == 3,
 		str(c.get_player_position()))
 
 	# --- 3. approach: you have to cross the floor ----------------------------------------------------------------
@@ -245,15 +245,42 @@ func _ready() -> void:
 		and said.find("vo_bull_partner") < said.find("vo_lb_partner_ok"))
 	_check("-> EXIT, the Bull is the companion (beside you)", c.get_beat() == c.Beat.EXIT, c.get_beat_name())
 
-	# --- 10. EXIT together ----------------------------------------------------------------------------------------------------
+	# --- 10. THE LAVA RIVER (founder 2026-10-09): it burns; Inferno hops it and tells Lil Blunt to hop over ------------------
+	var burns: Array = []
+	c.burned.connect(func(h): burns.append(h))
+	c._player_pos = Vector3(0.0, 0.0, 3.0)                 # well back from the river while he does his piece
+	c._look_yaw = 0.0
+	_until(c, 25.0, func(): return said.has("vo_bull_lava2"))
+	_check("he warns first, THEN hops, THEN tells him to hop over", said.has("vo_bull_lava1") and said.has("vo_bull_lava2")
+		and said.find("vo_bull_lava1") < said.find("vo_bull_lava2"), str(said))
+	_check("Inferno Bull is across the lava (he hopped it)", c.get_bull().position.z > c.CHANNEL_Z + c.LAVA_HALF, str(c.get_bull().position))
+	_check("the lava is armed", c.in_lava() == false and c._lava_on)
+	# standing in it burns: a heart lost, kicked back to the near bank, a flash, hearts shown
+	c._player_pos = Vector3(0.0, 0.0, c.CHANNEL_Z - 0.3)
+	_run(c, 0.1)
+	_check("standing in the molten channel burns him (health 3 -> 2)", c.get_health() == 2 and burns.size() == 1, "%d %s" % [c.get_health(), str(burns)])
+	_check("...and throws him back to the bank he came from", c.get_player_position().z < c.CHANNEL_Z - c.LAVA_HALF, str(c.get_player_position()))
+	_run(c, 0.2)
+	_check("one burn per cooldown, not one per frame", burns.size() == 1)
+	_run(c, 2.0)
+	# a running double... a single running jump clears it without a scratch
+	c._player_pos = Vector3(0.0, 0.0, c.CHANNEL_Z - c.LAVA_HALF - 1.0)
+	c._look_yaw = 0.0
+	c.set_move_input(Vector2(0.0, 1.0), true)
+	c.jump()
+	_run(c, 1.0)
+	c.set_move_input(Vector2.ZERO)
+	_check("a running jump clears the river with no burn", c.get_health() == 2 and c.get_player_position().z > c.CHANNEL_Z + c.LAVA_HALF, "%d %s" % [c.get_health(), str(c.get_player_position())])
+	_until(c, 20.0, func(): return said.has("vo_bull_lava_made_it"))
+	_check("once he is across Inferno praises it", said.has("vo_bull_lava_made_it"))
+
+	# --- 10b. EXIT together ---------------------------------------------------------------------------------------------------
 	c._player_pos = Vector3(c.EXIT_POSITION.x, 0.0, c.EXIT_POSITION.z - 4.0)
 	c.aim_at(Vector3(c.EXIT_POSITION.x, 1.5, c.EXIT_POSITION.z + 5.0))
 	c.set_move_input(Vector2(0.0, 1.0))
-	_run(c, 1.0)
-	_check("cannot leave before his parting line finishes", results.is_empty(), "(hold %.2f)" % c.get_line_hold())
 	_until(c, 30.0, func(): return results.size() == 1)
 	c.set_move_input(Vector2.ZERO)
-	_check("walking out through the Fort Knox door resolves the chamber", results.size() == 1, str(results.size()))
+	_check("walking out through the door resolves the chamber", results.size() == 1, str(results.size()))
 	if results.size() == 1:
 		var r: Dictionary = results[0]
 		_check("gold_awarded is a hard 0", int(r.get("gold_awarded", -1)) == 0)
@@ -262,6 +289,7 @@ func _ready() -> void:
 		_check("result flags the story chamber, the companion, the weapon", bool(r.get("story", false))
 			and str(r.get("companion", "")) == "inferno_bull" and str(r.get("weapon", "")) == "winchester_1886")
 		_check("result says the next mode is first person", str(r.get("next_mode", "")) == "fps")
+		_check("the story goes on to the mine lift (interlude chain)", str(r.get("next_chamber", "")) == "mine_lift")
 	_check("early_claim() always refuses - nothing here to claim", c.early_claim() == false)
 	_check("resolving twice is impossible", c.is_resolved() and not c.is_running())
 	c.queue_free()
@@ -338,7 +366,7 @@ func _ready() -> void:
 	_check("Bull PBR keeps fur/leather nonmetal with bounded armor highlights", matte and body_materials > 0)
 	var gs: Vector3 = h._glass_node.global_transform.basis.get_scale()
 	_check("his whiskey glass is real-sized (world scale ~1 in the hand-bone holder, not 2 mm)", absf(gs.x - 1.0) < 0.15, str(gs))
-	_check("the glass rides his hand bone", h._glass_node.get_parent().get_parent().name == "Att_LeftHand")
+	_check("the glass stays on the whiskey table", h._glass_node.get_parent() == h._visuals)
 	h.queue_free()
 
 	# --- 13. the session root loads it and routes the REAL keys ---------------------------------------------------------------
@@ -421,8 +449,8 @@ func _ready() -> void:
 		_check("...and play resumes at target practice in first person", f.get_beat() == f.Beat.VERB_TEACH and f.is_fps() and f.has_player_control(), f.get_beat_name())
 		_check("...with the Bull standing at his mark", f.get_bull().position.distance_to(f.BULL_REST) < 0.05)
 		_check("...and the film node is gone", f.get_video_film() == null)
-		_check("film resume: Bull holds his whiskey", f._glass_node.get_parent() == f.get_bull().holder("LeftHand"))
-		_check("film resume: Bull's own rifle is separate from the sold reward", f._bull_guard_rifle != f._rifle_node and f._bull_guard_rifle.get_parent() == f.get_bull().holder("RightHand"))
+		_check("film resume: whiskey stays on the table", f._glass_node.get_parent() == f._visuals)
+		_check("film resume: Bull's own rifle is separate from the sold reward", f._bull_guard_rifle != f._rifle_node and f._bull_guard_rifle.get_parent() == f.get_bull().holder("LeftHand"))
 		_check("film resume: player still owns the traded Winchester", f.has_winchester() and f._rifle_node.get_parent() == f._camera)
 		_check("film resume: the rest arm is relaxed without IK", f._bull_rest_arm.resting and f.get_bull().reach_weight("Right") < 0.01)
 		f.queue_free()

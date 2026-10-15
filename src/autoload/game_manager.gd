@@ -569,6 +569,11 @@ func has_power_up(type: String) -> bool:
     return current_power_up == type
 
 func _process(delta: float) -> void:
+    # This autoload is PROCESS_MODE_ALWAYS (it must keep the session alive across
+    # scene changes), so it kept ticking through the pause menu and drained Blaze /
+    # the Diamond shield / the big axe while the player was reading the menu.
+    if get_tree().paused:
+        return
     if power_up_timer > 0:
         power_up_timer -= delta
         if power_up_timer <= 0:
@@ -589,6 +594,7 @@ func reset_level() -> void:
     health_changed.emit(player_health)
 
 func reset_session() -> void:
+    personal_armory = {}
     player_health = max_health
     lives = max_lives
     lives_changed.emit(lives)
@@ -644,6 +650,8 @@ func get_checkpoint(level: int) -> Vector2:
 func clear_checkpoint(level: int) -> void:
     level_checkpoints.erase(level)
 
+var personal_armory: Dictionary = {}
+
 func save_session() -> bool:
     var data: Dictionary = {
         "total_score": total_score,
@@ -663,6 +671,7 @@ func save_session() -> bool:
         # and balances are a live cache, never persisted (see its declaration).
         "progression_state": progression_state,
         "wallet_address": wallet_address,
+        "personal_armory": personal_armory,
     }
     var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if f == null:
@@ -702,6 +711,9 @@ func load_session() -> bool:
     lives_changed.emit(lives)
     current_level = clampi(SaveSafe.to_int(data.get("current_level", 1), 1), 1, 3)
     highest_unlocked_level = clampi(SaveSafe.to_int(data.get("highest_unlocked_level", 1), 1), 1, LEVEL_SEQUENCE.size())
+    var armory := Ep2ArmoryState.new()
+    armory.restore(SaveSafe.to_dict(data.get("personal_armory", {})), highest_unlocked_level >= 3 or current_level >= 3)
+    personal_armory = armory.snapshot()
     _deserialize_checkpoints(SaveSafe.to_dict(data.get("checkpoints", {})))
     if data.has("goldmine"):
         GoldMineSystem.load_save_data(SaveSafe.to_dict(data.get("goldmine", {})))

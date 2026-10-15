@@ -1,0 +1,17 @@
+{
+ "request_id": "2f1e44e1-2f3b-4433-8abb-7aa5be5e4492",
+ "endpoint": "gpt-image-2-image-to-image",
+ "payload": {
+  "prompt": "Photorealistic product-style reference for 3D modelling: the single subject centred with generous margin on a seamless plain mid-grey studio backdrop, soft even key light with a gentle rim light, sharp focus, true materials (lacquer, chrome, leather, rubber, rust, scale, steel), no text, no logos, no people, only a soft contact shadow. The exact same quad bike, identical flame design and parts, rear three-quarter view from the left showing the long leather bench seat, the chrome rear rack and the back of the flame paint.",
+  "aspect_ratio": "4:3",
+  "resolution": "2K",
+  "quality": "high"
+ },
+ "url": "https://cdn.muapi.ai/outputs/generated/2f1e44e1-2f3b-4433-8abb-7aa5be5e4492_705ff4c8.png",
+ "cost_usd": 0.09,
+ "size": [
+  1600,
+  1200
+ ],
+ "made": "2026-10-09"
+}

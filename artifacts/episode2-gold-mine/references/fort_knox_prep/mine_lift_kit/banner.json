@@ -1,0 +1,17 @@
+{
+ "request_id": "207f668d-e29c-4d20-84ef-fea4e8606981",
+ "endpoint": "gpt-image-2-text-to-image",
+ "payload": {
+  "prompt": "Photorealistic product-style reference for 3D modelling: the single subject centred with generous margin on a seamless plain mid-grey studio backdrop, soft even key light with a gentle rim light, sharp focus, true materials (lacquer, chrome, leather, rubber, rust, scale, steel), no text, no logos, no people, only a soft contact shadow. IGNORE the grey studio backdrop: on a perfectly flat uniform pure chroma-green (#00FF00) background, front-on, one tattered old western banner of dark brick-red canvas hanging from a short wooden pole at the top, a bleached longhorn bull skull painted on it in faded bone white, the bottom edge torn into ragged strips, dirt and burn marks. The banner is centred, flat to the camera, the whole banner and pole in frame.",
+  "aspect_ratio": "3:4",
+  "resolution": "2K",
+  "quality": "high"
+ },
+ "url": "https://cdn.muapi.ai/outputs/generated/207f668d-e29c-4d20-84ef-fea4e8606981_1027d9dc.png",
+ "cost_usd": 0.36,
+ "size": [
+  1600,
+  2133
+ ],
+ "made": "2026-10-10"
+}

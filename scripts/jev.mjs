@@ -1,43 +1,25 @@
 #!/usr/bin/env node
 /**
- * JEV DECISION CLIENT — ship/block verdicts on NUMBERS.
+ * Jev 1.14: direct TypeSafe by user choice; explicit OpenRouter compatibility.
+ * Text uses JSON, images use documented multipart file-byte assets and an
+ * experimental header. Never base64 prose, chat completions or provider fallback.
+ * Credentials stay with their provider. See the routed skill for input budgets,
+ * pending context limits, live transport/image controls and response receipts.
  *
- * Why this exists rather than the upstream plugin
- * ------------------------------------------------
- * jukkatupamaki/better-call-jev is a good piece of work and this file borrows
- * its best idea outright (see THRESHOLDS below). It is not vendored because its
- * only implemented transport is the Vercel AI Gateway
- * (https://ai-gateway.vercel.sh/v1/evaluate) behind a NEW `JEV_API_KEY` from a
- * Vercel account. Jev is already reachable here on the OPENROUTER_API_KEY this
- * project already has, so adopting it would add a second credential and a
- * second bill for the same model. Transport differs; the question contract is
- * kept identical so code written against one reads the same as the other.
- *
- * Schema mapping (verified live 2026-09-20)
- * -----------------------------------------
- *   upstream/Vercel            OpenRouter /api/alpha/decisions
- *   type 'boolean' -> probability     type 'noul' -> noul
- *   type 'choice'  + criteria         same
- *   type 'score'   + criteria[]       same
- * So a `boolean` question here is sent as `noul` and the 0-1 answer is read
- * back from `.noul`. Everything else is passed through untouched.
- *
- * HARD RULE FOR THIS PROJECT — JEV CANNOT SEE IMAGES.
- * Control-tested: an image WITH a black bar scored 0.22, an identical image
- * WITHOUT one scored 0.19, and the token count tracked the base64 string
- * length, not the picture. Handing Jev a screenshot and quoting the number back
- * is fake verification, which is the exact failure this project keeps being
- * burned by. Feed it the METRICS from scripts/seam-smudge-gate.py.
- *
- * Usage
- *   node scripts/jev.mjs --from-gate <gate.json>
- *   node scripts/jev.mjs --state "<text>" --bool "name=instructions" \
- *                        --choice "verdict=ship:desc|block:desc"
- * Exit code: 0 ship, 1 block, 2 uncertain, 3 transport/usage error.
+ * node scripts/jev.mjs --request request.json --dry-run
+ * node scripts/jev.mjs --request request.json --send
+ * Flags: --experimental-images (OpenRouter probe), --long-context (header, 262k server limit).
+ * Legacy metric CLI: --from-gate gate.json (0 ship/1 block/2 uncertain/3 error).
  */
 
-const ENDPOINT = process.env.JEV_ENDPOINT || 'https://openrouter.ai/api/alpha/decisions';
-const MODEL = process.env.JEV_MODEL || '~typesafe/jev-latest';
+import { prepareRequest, validateResponse, DEFAULT_MODEL, PROVIDERS } from './jev-request.mjs';
+import { setGlobalProxyFromEnv } from 'node:http';
+import { readFile } from 'node:fs/promises';
+// Node 24 honours the configured proxy and NO_PROXY without weakening TLS.
+if (process.env.HTTPS_PROXY || process.env.https_proxy) setGlobalProxyFromEnv();
+
+const PROVIDER = process.env.JEV_PROVIDER || (process.env.JEV_MODEL?.startsWith('microsoft/') ? 'openrouter' : 'typesafe');
+const MODEL = process.env.JEV_MODEL || PROVIDERS[PROVIDER]?.model || DEFAULT_MODEL;
 const TIMEOUT_MS = Number(process.env.JEV_TIMEOUT_MS || 45000);
 
 /**
@@ -56,40 +38,29 @@ export function decide(probability, t = THRESHOLDS) {
   return 'uncertain';
 }
 
-export async function evaluate({ state, questions }) {
-  const key = process.env.OPENROUTER_API_KEY;
-  if (!key) throw new Error('Missing OPENROUTER_API_KEY in the environment.');
-  if (typeof state !== 'string' && !Array.isArray(state) && typeof state !== 'object') {
-    throw new Error('state must be a string, record or array.');
-  }
-  // Map the portable `boolean` type onto this transport's `noul`.
-  const wire = {};
-  for (const [name, q] of Object.entries(questions)) {
-    wire[name] = q.type === 'boolean' ? { ...q, type: 'noul' } : q;
-  }
-  const ac = new AbortController();
-  const timer = setTimeout(() => ac.abort(), TIMEOUT_MS);
-  let res;
-  try {
-    res = await fetch(ENDPOINT, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: MODEL, state, questions: wire }),
-      signal: ac.signal,
-    });
-  } finally {
-    clearTimeout(timer);
-  }
-  const text = await res.text();
+export async function evaluate({ state, questions, provider = PROVIDER, model, assets = {} }, options = {}) {
+  if (!Object.hasOwn(PROVIDERS,provider)) throw new Error("Unknown decision provider.");
+  model ??= provider === PROVIDER ? MODEL : PROVIDERS[provider].model;
+  const endpoint=PROVIDERS[provider].endpoint;
+  const key = provider === 'typesafe' ? process.env.TYPESAFE || process.env.TYPESAFE_API_KEY : process.env.OPENROUTER_API_KEY || process.env.OPENROUTER_API;
+  if (!key) throw new Error(`Missing configured ${provider} credential.`);
+  if (process.env.JEV_ENDPOINT && process.env.JEV_ENDPOINT !== endpoint) throw new Error('Endpoint must match the explicitly selected provider.');
+  const request = options.prepared ?? await prepareRequest({state,questions,provider,model,assets}, options);
+  const res = await fetch(endpoint, {
+    method:'POST', headers:{...request.headers,Authorization:`Bearer ${key}`},
+    body:request.body, signal:AbortSignal.timeout(TIMEOUT_MS), redirect:'error',
+  });
   if (!res.ok) {
-    // A 400 here is a SCHEMA error that names the missing field. It is NOT
-    // "model does not exist" — that mistake cost this project a whole session.
-    throw new Error(`Jev HTTP ${res.status}: ${text.slice(0, 900)}`);
+    // Show the provider's own error text (never headers/keys): 'Model X does not exist' was invisible and cost a debugging round.
+    let detail = '';
+    try { const t = await res.text(); detail = (JSON.parse(t)?.error?.message ?? t).toString().slice(0, 300); } catch { /* body unreadable */ }
+    throw new Error(`Jev HTTP ${res.status}${detail ? `: ${detail}` : ''}. No automatic retry or provider fallback.`);
   }
-  const data = JSON.parse(text);
-  // Normalise `noul` back to `probability` so callers see the portable shape.
-  for (const a of Object.values(data.answers || {})) {
-    if (a && a.type === 'noul') { a.type = 'boolean'; a.probability = a.noul; }
+  const data=validateResponse(await res.json(),questions);
+  // jev-preview / jev-1.14 resolve to 1.14.0, so compare the class, not the literal id.
+  if (Object.keys(assets).length && !/1\.14|preview/.test(data.model)) throw new Error("Image response model is not 1.14-class; capability unverified.");
+  for (const a of Object.values(data.answers)) {
+    if (a.type==='noul') {a.type='boolean';a.probability=a.noul;}
   }
   return data;
 }
@@ -133,6 +104,19 @@ const QUESTIONS = {
 async function main() {
   const argv = process.argv.slice(2);
   const get = (f) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : null; };
+  const filename=get('--request');
+  if (filename) {
+    const request=JSON.parse(await readFile(filename,'utf8'));
+    request.provider ??= get('--provider') || PROVIDER;
+    request.model ??= request.provider === PROVIDER ? MODEL : PROVIDERS[request.provider]?.model;
+    const options={experimentalImages:argv.includes('--experimental-images'),longContext:argv.includes('--long-context')};
+    const prepared=await prepareRequest(request,options);
+    console.log(JSON.stringify({preflight:prepared.summary},null,2));
+    if (argv.includes('--dry-run') || !argv.includes('--send')) return;
+    const response=await evaluate(request,{...options,prepared});
+    console.log(JSON.stringify({requestDigest:prepared.summary.digest,response},null,2));
+    return;
+  }
   let state = get('--state');
   let questions = {};
 

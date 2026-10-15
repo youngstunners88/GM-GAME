@@ -1,0 +1,90 @@
+[00:00] Hello. It has been a while since I last posted a video. I have been working on a new character swap Lora from my BFS collection best face swap Lora and a planner note to go with it. The Lora changes the character in your video. The planner helps organize shots, prompts, and references, but it is optional and can work with other Lora's, too. Before we open the workflow, let me show you a few real results.
+
+
+[00:45] The planner organizes shots, prompts, and references. It also works with other Lora's, and you do not need it to use this one. You can load your video with native comfy UI nodes and connect it to add guide. In this tutorial, the guide video is your original performance and scene. The reference image defines the new character's appearance. Keep those two jobs in mind as we go through the workflow.
+
+
+[01:13] The planner starts with a 12-second range. Treat that as a starting setting, not a promise that every clip will work on the first try. Some scenes work up 10, 12, or even 15 seconds. If the background or movement drifts, try another seed or shorten the range. Around 7 seconds can be a useful troubleshooting test. One shot processes the selected range together, which can help clothing stay consistent. For a longer video or a smaller GPU, split the range into shorter shots. The context window passes extra frames between shots to help continuity. It cannot guarantee that unseen clothing will stay identical. A full body reference and a
+
+
+[01:58] consistent global description can help. Here is a small choice that makes a big difference. Keep one global prompt and one global reference for the whole run. The planner can extract a caption for you, but please edit it when something important is missing. Add the details the model cannot safely guess, like roller skates, accessories, or clothing that is only partly visible in your reference.
+
+
+[02:26] Let me slow down on the prompt. The global prompt is shared by every shot, unless you override it for a specific shot. In my tested template, subject one is the character in picture one, and details is replaced with the description of that reference image. You can edit that description before running. The guide video still defines the scene and performance. The main guide subject is the person being replaced. There's also a target placeholder for a short description of that guide subject, such as the woman in the white shirt.
+
+
+[03:03] The planner replaces these placeholders with ordinary text. They are not magic tokens learned by the LoRA. My tested wording uses the main guide subject. The target-based version is a useful option when selection is ambiguous, but I have not established that it performs better. Start with a global prompt and reference, then change only what a particular shot needs.
+
+
+[03:29] The key conditioning path for this LoRA is add guide. It was trained with aligned guide latents, so the source video's motion stays on the generated timeline. The reference image supplies the new character's appearance separately. Audio has two different controls, and they are easy to confuse. In the planner's video tab, use the videos audio means keep the original soundtrack instead of a silent track.
+
+
+[03:59] That setting alone does not make the model listen to the audio. To condition generation on sound, connect an audio VAE and enable with audio in BFS short H3 conditioning, either the regular or advanced node. Only then is audio passed into the conditioning. This may improve lip sync, but it does not guarantee it. Here is what one planner run does when you split a video into shots. It generates shot one, then passes its last 17 frames as context for shot two.
+
+
+[04:36] Shot two passes its last 17 frames to shot three and so on. Each shot is processed separately using less memory than a full long video. At the end, the planner stitches the generated shots into one video. The context frames help the next shot continue the motion, but they cannot guarantee identical clothing or details that were hidden in the reference.
+
+
+[05:03] If your GPU can handle the full range, one shot avoids those shot boundaries. The planner is a helper, not a requirement for the LoRA. Its interface organizes shots, prompts, references, and audio. The same LoRA can use native ComfyUI nodes. Load video, then a conventional add guide. Optional preprocessing, masks, and repacking are separate tools, not part of the planner itself.
+
+
+[05:30] Here is a real comparison. This clip uses native reference with the same prompt, but no BFS LoRA. The model understands the scene, yet the result is not frame locked to the source. Posing timing can drift, and the original audio may no longer match the generated lips. Guide latents are the safer choice when exact motion matters.
+
+
+[05:54] Here is the audio distinction in the real interface. In the planner's video tab, use the video's audio select the original soundtrack for the output. You can also choose a silent track. This does not turn on audio conditioning. For that, open BFS shot H3 conditioning or its advanced version. Connect the audio VAE and set with audio to true. Now, the shot's audio is supplied to the model during generation. Without that step, the original soundtrack may still be attached to the finished video, but it did not guide the generated mouth movement. Pause here if you need to check both settings in your own workflow.
+
+
+[06:40] Let's slow down and look at the actual planner node. This is only an organizer for the workflow. The lower way does not require it. Across the top are the video shots, people and masks, prompts and refs, and run tabs. The node receives references and an optional prompt, then sends the planned shots, timing, audio, and references to the rest of the graph. We will open one tab at a time.
+
+
+[07:08] In the video tab, load your guide clip and select the exact range to process. This screenshot shows 15 seconds as a test, not a guarantee that every scene will hold together for that long. Start around 12 seconds and shorten the range or try another seed if motion or background drifts. The mega pixel fill controls generation size. Half a mega pixel is the starting setting shown here. Higher values cost more memory.
+
+
+[07:37] The video audio option chooses the output soundtrack only. Audio conditioning is enabled separately in H3 conditioning. In the shots tab, each shot can inherit the global prompt and reference or override them. The field called who is replaced describes the guide subject in plain English. It helps the planner choose the target, but it is not a hard mask.
+
+
+[08:04] If you split the video, the continuity control can pass the last 17 frames of one shot into the next. That may help motion, but it cannot promise identical hidden clothing. Check each shot before copying settings to the others. Prompts and refs is where I prefer to keep one global reference and one global prompt. The reference description fills the details placeholder in that prompt.
+
+
+[08:33] The automatic VLM caption is a draft, so read it. Sometimes it adds unwanted words like answer or misses a functional detail such as wheels on shoes. Edit the description before running. If you connect a prompt or reference directly to the node input, that connected value overrides what you typed in this tab. Now, the masks. Because this tab can solve some specific problems, but I do not recommend enabling a mask by default. Start with full frame and no masking. That lets the model generate the whole frame with the guide and prompt doing most of the work.
+
+
+[09:14] If the video has more than one person, the most dominant guide subject is usually the one the model replaces. A clear target description can help, but words alone may not always force the selection. Use the subject tools and preview the selection when you need tighter control. A mask can restrict where the swap is applied or help protect the background, but it can also create seams, cut off hair or clothing, and make motion less natural. Full frame with a target description is not the same as a hard spatial mask.
+
+
+[09:50] So, use masks for a concrete problem, compare against an unmasked run, and keep the simpler result if it works. Finally, the run tab checks the plan before you generate. Read the warnings rather than clicking past them. This 15-second one-shot is marked as longer than the suggested short limit. Autoloop processes the selected shots in one run and joins their results. Max shots and max total seconds can limit a test run.
+
+
+[10:24] The people and scene filters are optional, and skipped shots can keep the original video. Start simple, review the first result, then enable filters only for a problem you can actually see. Now for the fun part. These are real moving tests of the current BFS Laura. Watch how the new character follows different motions, lighting, and camera framing, and look closely at the imperfections, too. Facial expressions, fast movement, occlusion, and small costume details still need work.
+
+
+[10:59] This is one Laura, not a promise that every subject will work perfectly. This prompt fix is a good example of why the reference image is not enough by itself. In the first result, the shoes look unusual, but the prompt never says they have wheels, so the character can appear to float. In the second result, I explicitly describe them as roller skates, and the movement makes more sense.
+
+
+[11:25] If a visual detail has a function, spell it out in the global description. The model may not infer it from a picture alone. This first version was trained mainly with human-like references. It is most likely to work with people and humanoid characters. Animals and very different anatomies are much harder. It is one LoRA, not a universal swap system. We also do not have a large open data set designed for every difficult case, complex expressions, shifting light, occlusion, and unusual creatures. For version two, I want to work on those gaps. One experimental direction is reinforcement learning. Generate several candidates with the model we already
+
+
+[12:11] trained, score them for identity, expression, pose, and scene consistency, and use that feedback to steer training. This would reduce our dependence on fully paired target videos. It would still require good source clips and trustworthy rewards. It is not data-free or guaranteed to work. That is a research direction, not a promise of perfect results.
+
+
+[12:35] Please experiment with different Turbo LoRAs available for this model. They do not all behave the same way. Your sampler and scheduler combination can also change the result, so there is no single setting I can promise will be best for every video. Change one variable at a time, keep the same seed for comparisons, and share the settings and short examples that worked for you. Those reports help me see where the LoRA is strong, where it fails, and what to test next.
+
+
+[13:08] Before we wrap up, here are two more tests from the same LoRA. One has bright snow and ice, the other has difficult blue club lighting. Keep your eye on the guide, the reference, and the swap result together. These are not a curated promise of perfection. They show both what this version can already do and where it still needs work.
+
+
+[13:32] You will find links to the model and the workflow in the video description. Thank you to the Banoduko Discord community for welcoming my experiments and helping me make so many decisions along the way. And thank you to the team at facy.ai who sponsored the GPU use to train this Lora. If this work helped you, you can support future training at buy me a coffee.com/nrdx.
+
+
+[13:58] Before using the Lora commercially, please read the license on the model page. I chose those terms deliberately. I want open weight work to benefit the community, not simply disappear behind a paid API. I am an independent creator. Training cost GPU time and a great deal of personal time. Thank you for testing the model and sharing honest results. I will keep working on the next version.
+
+
+[https://huggingface.co/Alissonerdx/Minimax-H3-ComfyUI](https://huggingface.co/Alissonerdx/Minimax-H3-ComfyUI)
+
+
+[https://huggingface.co/Alissonerdx/Minimax-H3-ComfyUI/blob/main/workflows/minimax_h3_character_swap_workflow.json](https://huggingface.co/Alissonerdx/Minimax-H3-ComfyUI/blob/main/workflows/minimax_h3_character_swap_workflow.json)
+
+
+
+
+

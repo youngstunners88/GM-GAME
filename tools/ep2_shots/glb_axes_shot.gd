@@ -15,8 +15,12 @@ func _ready() -> void:
 	var l := DirectionalLight3D.new(); l.rotation_degrees = Vector3(-40, 30, 0); vp.add_child(l)
 	var env := WorldEnvironment.new(); env.environment = Environment.new(); env.environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR; env.environment.ambient_light_color = Color(0.6,0.6,0.6); vp.add_child(env)
 	var cam := Camera3D.new(); cam.projection = Camera3D.PROJECTION_ORTHOGONAL; cam.size = float(OS.get_environment("CAMSIZE") if OS.get_environment("CAMSIZE") != "" else "1.6"); vp.add_child(cam)
-	for view in [["side", Vector3(3,0,0), Vector3.UP], ["top", Vector3(0,3,0.001), Vector3.FORWARD]]:
-		cam.position = view[1]; cam.look_at(Vector3.ZERO, view[2])
+	var focus := Vector3.ZERO
+	if OS.get_environment("FOCUS") != "":
+		var fp: PackedStringArray = OS.get_environment("FOCUS").split(",")
+		focus = Vector3(float(fp[0]), float(fp[1]), float(fp[2]))
+	for view in [["side", Vector3(3,0,0), Vector3.UP], ["top", Vector3(0,3,0.001), Vector3.FORWARD], ["side_l", Vector3(-3,0,0), Vector3.UP]]:
+		cam.position = view[1] + focus; cam.look_at(focus, view[2])
 		await RenderingServer.frame_post_draw; await RenderingServer.frame_post_draw
 		vp.get_texture().get_image().save_png("%s_%s.png" % [out, view[0]])
 	get_tree().quit()

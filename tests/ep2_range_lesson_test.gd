@@ -31,9 +31,48 @@ func _until(c: Node, limit: float, pred: Callable) -> bool:
 	return pred.call()
 
 
+## Founder 2026-10-11 ("why is the rifle invisible"): the hideout carry pose (Inferno leads to the firing line) must keep
+## the rifle IN FRAME. The woods spyglass pose (below the frame) lives in ep2_viewmodel.gd and must never be copied here.
+## Measured carry pose: 71 % of the rifle on screen (the below-frame copy that shipped: 23 %).
+func _carry_pose_in_frame() -> void:
+	var low: Vector3 = SmeltingFacilityChamber.VM_LOW_POS
+	var spr: Vector3 = SmeltingFacilityChamber.VM_SPRINT_POS
+	_check("hideout carry pose keeps the rifle in frame (VM_LOW_POS.y >= -0.32)", low.y >= -0.32, str(low))
+	_check("sprint pose keeps the rifle in frame (VM_SPRINT_POS.y >= -0.32)", spr.y >= -0.32, str(spr))
+	_check("sprint pose in the woods keeps the rifle in frame", Ep2Viewmodel.VM_SPRINT_POS.y >= -0.32, str(Ep2Viewmodel.VM_SPRINT_POS))
+
+
+## Founder 2026-10-13 ("bring the arm closer so when the rifle kicks up we don't see that green extension"): the kick, the
+## lever roll and the reload turn the rifle about the FOREARM end, so the arm (and the sleeve behind it) does not swing into view.
+func _arm_stays_put() -> void:
+	var cam := Camera3D.new()
+	add_child(cam)
+	var vm := Ep2Viewmodel.new()
+	add_child(vm)
+	vm.bind_armory(Ep2ArmoryState.post_hideout())
+	vm.attach(cam)
+	_check("the founder rifle carries the forearm pivot", vm.rifle.has_meta("arm_pivot"))
+	var piv: Vector3 = vm.rifle.get_meta("arm_pivot", Vector3.ZERO)
+	for i in 20:
+		vm.step(1.0 / 60.0, false, false, 0.0)
+	var rest: Vector3 = vm.rifle.transform * piv
+	var worst := 0.0
+	vm.fire()
+	for i in 60:
+		vm.step(1.0 / 60.0, false, false, 0.0)
+		worst = maxf(worst, (vm.rifle.transform * piv - rest).length())
+	# only the straight kick-back (8.5 cm toward the shoulder) may move the arm; no swing from the roll / muzzle lift
+	_check("the arm stays tucked through the kick and lever roll (forearm end moves <= 9 cm, kick-back only)", worst <= 0.09, "%.3f m" % worst)
+	vm.queue_free()
+	cam.queue_free()
+	await get_tree().process_frame
+
+
 func _ready() -> void:
 	print("EP2 RANGE LESSON:")
 	_gun_logic()
+	_carry_pose_in_frame()
+	await _arm_stays_put()
 	await _lesson()
 	print("EP2_RANGE_LESSON: %s" % ("ALL PASS" if _fail == 0 else "FAIL (%d)" % _fail))
 	get_tree().quit(_fail)

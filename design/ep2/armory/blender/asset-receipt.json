@@ -1,0 +1,11 @@
+{
+  "source": "Founder isolated engraved gold Remington reference, conversation 2026-10-15",
+  "method": "Blender-authored mesh and floral curves; no paid provider",
+  "triangles": 45323,
+  "runtime_meshes": 5,
+  "length_m": 0.505,
+  "textures": "128x256 authored walnut grain; metallic/roughness portable glTF",
+  "output": "design/ep2/armory/blender/remington_1875_gold.blend",
+  "stage": "editable high detail source",
+  "runtime_validation": "game-asset-validation.json"
+}
