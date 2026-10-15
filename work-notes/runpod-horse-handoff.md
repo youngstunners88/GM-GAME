@@ -1,14 +1,13 @@
 # HANDOFF — RunPod AssetFurnace horse run (for Claude Code on founder's Omarchy box)
 Date: 2026-10-16 · From: opencode session (no GPU here) · To: Claude Code (has the key)
 
-## Terminal run (founder wants full-terminal, no permission prompts)
+## Terminal run — FULLY AUTONOMOUS (founder-ordered, no check-ins)
 ```bash
 cd <your GM-GAME clone> && git pull
-claude --dangerously-skip-permissions "RunPod horse job. Key is stored: source ~/.config/gm-game/runpod-env (never print it). Read work-notes/runpod-horse-handoff.md and execute it end to end. Spend rules: confirm the pod \$/hr with me BEFORE creating anything that costs, stay under my stated cap, stop the pod when done. Push results to branch assetfurnace/horse-v1. Report branch, cost, screenshot."
+claude --dangerously-skip-permissions "RunPod horse job, FULLY AUTONOMOUS. Key is stored: source ~/.config/gm-game/runpod-env (never print it). Manage RunPod through your RunPod MCP tools. Read work-notes/runpod-horse-handoff.md and execute it end to end. MONEY: you are authorized to spend up to \$25 total without asking me anything — pick a 24 GB+ pod with the best \$/hr, run the job, STOP/TERMINATE the pod the second results are downloaded. If projected total exceeds \$25, stop everything and report instead of spending more. Push results to branch assetfurnace/horse-v1. Final report only: branch, total spend, screenshot. Start now, no questions."
 ```
-`--dangerously-skip-permissions` = no allow-list prompts; the spend gates above
-stay as conversation (it asks in chat, not via permission popups). Key hygiene:
-dedicated key, deleted after the job.
+Change the \$25 number and re-run to set a different cap. Worst case is bounded:
+disposable key + capped spend + branch-only writes. Delete the key when the job lands.
 
 ## Objective
 Generate a photoreal RIGGED horse GLB with AssetFurnace on a rented RunPod GPU,
