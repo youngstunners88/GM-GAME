@@ -1,6 +1,15 @@
 # HANDOFF — RunPod AssetFurnace horse run (for Claude Code on founder's Omarchy box)
 Date: 2026-10-16 · From: opencode session (no GPU here) · To: Claude Code (has the key)
 
+## Terminal run (founder wants full-terminal, no permission prompts)
+```bash
+cd <your GM-GAME clone> && git pull
+claude --dangerously-skip-permissions "RunPod horse job. Key is stored: source ~/.config/gm-game/runpod-env (never print it). Read work-notes/runpod-horse-handoff.md and execute it end to end. Spend rules: confirm the pod \$/hr with me BEFORE creating anything that costs, stay under my stated cap, stop the pod when done. Push results to branch assetfurnace/horse-v1. Report branch, cost, screenshot."
+```
+`--dangerously-skip-permissions` = no allow-list prompts; the spend gates above
+stay as conversation (it asks in chat, not via permission popups). Key hygiene:
+dedicated key, deleted after the job.
+
 ## Objective
 Generate a photoreal RIGGED horse GLB with AssetFurnace on a rented RunPod GPU,
 return it to this repo. The in-repo procedural horse
