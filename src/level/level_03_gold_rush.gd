@@ -12,6 +12,7 @@ func _ready() -> void:
 	_setup_blaze_portal(Vector2(2600, 300), 4000, 3)
 	_setup_depth_routes()
 	_setup_ambient_dust()
+	_setup_distant_train()
 	AudioManager.set_reverb_profile("mine")
 	AudioManager.play_playlist(["res://src/assets/music/level03_theme.ogg", "res://src/assets/music/level03_theme_alt.ogg", "res://src/assets/music/lil_blunt_theme.mp3"])
 	AudioManager.play_voice("stage3_intro")
@@ -45,6 +46,16 @@ func _setup_ambient_dust() -> void:
 		dust.scale_amount_max = 0.4
 		dust.color = Color(1.0, 0.82, 0.35, 0.22)
 		add_child(dust)
+
+## Far-horizon GoldMine train with Inferno Bull + Lil Blunt riding the tender
+## into town. Self-contained ParallaxBackground rig (distant_train.tscn):
+## track + looping locomotive + riders + stack smoke, scrolling at 0.18x
+## behind the gameplay plane. Pure backdrop — no collision, no gameplay
+## coupling, so it can never block or reward anything.
+func _setup_distant_train() -> void:
+	var ride := preload("res://src/level/distant_train.tscn").instantiate()
+	ride.name = "DistantTrainRide"
+	add_child(ride)
 
 ## Task #23 extension — Gold Rush depth (LEVEL_23_EXTEND.md):
 ##   SPEEDRUNNER: the TIMED-GATE run — a pressure-plate timed door guards a

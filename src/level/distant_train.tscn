@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/level/distant_train.gd" id="1_distant_train"]
+
+[node name="DistantTrainParallax" type="ParallaxBackground"]
+layer = -15
+
+[node name="DistantTrain" parent="." type="ParallaxLayer"]
+script = ExtResource("1_distant_train")
