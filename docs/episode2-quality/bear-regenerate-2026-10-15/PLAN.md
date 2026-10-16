@@ -71,3 +71,15 @@ Pack: 189.2 / 190 MiB (STATUS.md) -> every replacement must be same size or smal
 - Two bear looks (plain vs balaclava) exist; founder must pick one or the pack/art disagree between statue and rig.
 - Pack: 189.2/190 MiB; do not land A without retiring the old files (`git rm`, move to `.farm/retired/`).
 - Do not merge before `scripts/ship-to-master.sh` gates and the front-page lock check.
+
+## Engine verdict on the candidate (2026-10-16, Godot 4.7.2 `bear_poses_shot`, run through a 1600x900 SubViewport): NOT READY
+`design/ep2/blender/character-work/bear_hunyuan_painted_rigged_candidate.glb` (3.1 MB vs shipping 4.7 MB; same 24 joints and
+seven clips) reads better than the shipping bear at rest (`new_rest_front.png`), but in the engine's own poses it deforms badly:
+see `engine_candidate_poses_front.png` (run, sit_read, sleep, aim, shot, leap) and `engine_candidate_sit_read_close.png`.
+- Thin sliver "scratch" shards across the legs and torso (skin weights transferred onto a dense, shredded atlas),
+- the modelled quiver arrows stretch into flat red sheets and spikes when the arms move,
+- cape/vest fragments tear away at the shoulders in sit_read and aim.
+The shipping bear is blurrier but does not do this, so the swap was tried and REVERTED (shipping GLB untouched).
+Next, in order: (1) remove the quiver arrows and any loose shells from the mesh (arrows are separate nodes in the kit);
+(2) re-skin with a smoothed, normalized 4-influence weight pass over welded vertices (the same weld the Bull needed), then
+re-shoot; (3) only then the swap, with the stale-texture trap from the Bull README handled (delete `bear_rigged_0.jpg(.import)`).
