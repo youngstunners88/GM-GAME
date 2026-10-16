@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Downscale the embedded textures of a GLB, leaving mesh, skin and clips byte-identical.
 
-    python3 tools/ep2_forge/glb_downscale_textures.py in.glb out.glb [--scale 0.5] [--quality 88]
+    python3 tools/ep2_forge/glb_downscale_textures.py in.glb out.glb [--scale 0.5] [--scales 0.5,0.25,0.5,0.25] [--quality 88]
 
 Why: Godot stores every embedded texture as GPU-compressed data for the web export, so one 2048x2048
 map costs ~11 MiB in the .pck however small the JPEG is. The painted Bull carried 2x2048 + 2x1024 maps and
@@ -48,16 +48,19 @@ def main() -> None:
     ap.add_argument("src", type=Path)
     ap.add_argument("dst", type=Path)
     ap.add_argument("--scale", type=float, default=0.5)
+    ap.add_argument("--scales", default="", help="per-image scales in `images` order, e.g. 0.5,0.25 (overrides --scale)")
     ap.add_argument("--quality", type=int, default=88)
     a = ap.parse_args()
     j, blob = read_glb(a.src)
-    image_views = {im["bufferView"] for im in j.get("images", []) if "bufferView" in im}
+    per = [float(x) for x in a.scales.split(",")] if a.scales else []
+    image_views = {im["bufferView"]: (per[k] if k < len(per) else a.scale)
+                   for k, im in enumerate(j.get("images", [])) if "bufferView" in im}
     out = bytearray()
     for i, bv in enumerate(j["bufferViews"]):
         start = bv.get("byteOffset", 0)
         data = blob[start:start + bv["byteLength"]]
         if i in image_views:
-            new = resize(data, a.scale, a.quality)
+            new = resize(data, image_views[i], a.quality)
             print(f"bufferView {i}: {len(data) // 1024} KB -> {len(new) // 1024} KB")
             data = new
         while len(out) % 4:
