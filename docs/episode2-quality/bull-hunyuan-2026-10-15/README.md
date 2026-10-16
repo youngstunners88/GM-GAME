@@ -110,3 +110,11 @@ Pictures: `engine_v3_swapped_front.png`, `engine_v3_swapped_side.png` (aviators,
 rifle in the fist; the orange glows in frame are room embers, verified by shooting the same view with the Bull hidden).
 **Still open:** neck/shoulder seam (75 body + 50 head boundary edges seen from outside; reads as an opaque wall, not a hole),
 a Godot 4.3 export gate, and `ep2-reference-match-loop` numbers against `inferno_bull_with_rifle.jpg`.
+
+### Pack gate (2026-10-16, local 4.3 web export via `scripts/ep2-local-export.sh`, same preset as CI)
+Old Bull 188.8 MiB. v3 as built (2x2048 + 2x1024 maps) 203.0 MiB: over the 190 MiB gate (Godot stores each embedded map as GPU-compressed
+data, ~2 MiB per megapixel). Fixed in three steps, none of them visible in the engine shots: colour maps halved (`tools/ep2_forge/glb_downscale_textures.py`),
+the never-drawn mesh of `inferno_bull_sit_clips.glb` stripped to a stub (3.2 MB -> 373 KB, same joints/clips/channels; `Ep2Actor.add_all_clips`
+only copies its clips; `tools/ep2_forge/glb_strip_mesh.py`), metallic-roughness maps to one-eighth size. **Result 189.59 MiB (198,798,912 bytes; gate
+199,229,440), margin 0.4 MiB** and the Bull has all nine clips (checked in the engine). Any further asset added to master will break this gate first.
+Godot 4.3 script-compile gate: all pass. Local master export hangs for an unrelated reason (not investigated).
