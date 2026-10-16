@@ -53,6 +53,8 @@ default_gates() {
   # The same headless gameplay tests CI runs. Without this, a change that CI rejects still lands on master and
   # silently blocks every deploy behind it (2026-10-16: bear paw contact, Bull rifle grip).
   bash scripts/ci-gates-local.sh || return 1
+  # And the pack size as CI measures it (fresh clone, no warm import cache).
+  bash scripts/pack-gate-fresh.sh || return 1
   bash scripts/security-sentinel.sh >/tmp/ship_sentinel.log 2>&1 \
     || { echo "✗ security sentinel"; tail -20 /tmp/ship_sentinel.log; return 1; }
   echo "✓ security sentinel"
