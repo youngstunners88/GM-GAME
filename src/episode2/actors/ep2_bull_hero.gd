@@ -165,7 +165,8 @@ func _step(dt: float) -> void:
 	# drinking clip is allowed to move the arms; every other pose keeps them at the imported rest pose.
 	rest_arm.resting = (not seated or clip.contains("Chair")) and not reaching
 	if rifle:
-		rifle.visible = not seated and bull.is_visible_in_tree()
+		# Painted Bull: his own rifle is baked into the mesh; this prop is only the invisible grip/aim reference.
+		rifle.visible = not PAINTED_GLB and not seated and bull.is_visible_in_tree()
 	var aiming: bool = bull.motion_time < aim_until and not seated
 	var local_carry: Vector3 = bull.global_transform.basis * Vector3(0.06, 1.0, 0.10).normalized()
 	var wanted: Vector3 = (aim_target - bull.global_position - Vector3.UP * bull.height_m * 0.57).normalized() if aiming else local_carry

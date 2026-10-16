@@ -114,5 +114,6 @@ func _ready() -> void:
 		bull.step(1.0 / 60.0)
 		await get_tree().process_frame
 	check("Bull aim, recoil and recovery preserve primary rifle grip %.4f m" % gun_error[0], gun_error[0] < 0.015)
+	check("painted Bull never draws a second rifle (the grip reference prop stays hidden)", not Ep2BullHero.PAINTED_GLB or not hero.rifle.visible)
 	print("EP2_CHARACTER_MOTION: ", "ALL PASS" if failures == 0 else "%d FAILURES" % failures)
 	get_tree().quit(0 if failures == 0 else 1)
