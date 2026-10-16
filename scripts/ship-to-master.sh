@@ -11,7 +11,7 @@
 #   1. refuses if the working tree has uncommitted changes
 #   2. merges origin/master INTO this branch (never the reverse), so other sessions'
 #      shipped work is kept; on a conflict it aborts cleanly and lists the files
-#   3. runs the gates (script compile + security sentinel, or --gates "<cmd>")
+#   3. runs the gates (script compile + the full CI headless test block + security sentinel, or --gates "<cmd>")
 #   4. pushes this branch, then FAST-FORWARDS master to it. A fast-forward can only
 #      add commits; if another session moved master meanwhile, the push is rejected
 #      and we merge again (up to 3 tries). It never force-pushes.
@@ -50,6 +50,9 @@ default_gates() {
   else
     echo "! Godot not bootstrapped (scripts/bootstrap-godot.sh) — skipping compile; CI still gates it"
   fi
+  # The same headless gameplay tests CI runs. Without this, a change that CI rejects still lands on master and
+  # silently blocks every deploy behind it (2026-10-16: bear paw contact, Bull rifle grip).
+  bash scripts/ci-gates-local.sh || return 1
   bash scripts/security-sentinel.sh >/tmp/ship_sentinel.log 2>&1 \
     || { echo "✗ security sentinel"; tail -20 /tmp/ship_sentinel.log; return 1; }
   echo "✓ security sentinel"
