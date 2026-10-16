@@ -91,8 +91,8 @@ func _setup(with_rifle: bool) -> void:
 	_add_lamp(sk)
 	_hand = sk.find_bone("LeftHand")
 	_palm_m = LEFT_PALM_M * bull.height_m / 2.4
-	if PAINTED_GLB or not with_rifle or _hand < 0 or not ResourceLoader.exists(RIFLE_MODEL):
-		return    # painted model: the rifle is already in his left fist
+	if not with_rifle or _hand < 0 or not ResourceLoader.exists(RIFLE_MODEL):
+		return
 	_scale = RIFLE_SCALE_PER_M * bull.height_m
 	# Desired rest frame in skeleton space: muzzle up with a slight forward/outward tip, the rifle's TOP (lift, +Y)
 	# facing out to his left so the side plate - lever, receiver, stock - reads in profile from the front (sheet).
@@ -115,6 +115,9 @@ func _setup(with_rifle: bool) -> void:
 	if hold == null:
 		return
 	hold.add_child(rifle)
+	# Painted model: its own rifle is already in his left fist. This prop stays as the invisible grip/aim reference
+	# (recoil, muzzle point and the CI grip test measure it), so the rifle is never drawn twice.
+	rifle.visible = not PAINTED_GLB
 	# The holder is the hand bone's frame in METRES (Ep2Actor.holder undoes the rig's cm scale).
 	var rb: Basis = rest.basis.orthonormalized()
 	rifle.transform = Transform3D(rb.inverse() * Basis(side, lift, muzzle) * Basis.from_scale(Vector3.ONE * _scale),
