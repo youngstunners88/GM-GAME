@@ -1799,7 +1799,7 @@ func _fix_bull_materials(root: Node, restored_bull: bool = false) -> void:
 				d.roughness_texture = null
 				# Source UVs verified in Blender against the runtime color map.
 				# Restore PBR detail without replacing the animated rig or mesh.
-				if restored_bull and not Ep2BullHero.PAINTED_GLB:    # painted Bull: own UV-matched textures
+				if restored_bull:
 					d.resource_name = "InfernoBullRestoredPBR"
 					d.albedo_texture = preload("res://src/episode2/assets/textures/bull_albedo.jpg")
 					d.metallic_texture = preload("res://src/episode2/assets/textures/bull_metal_rough.png")
@@ -1817,7 +1817,7 @@ func _fix_bull_materials(root: Node, restored_bull: bool = false) -> void:
 				d.emission_enabled = true
 				d.emission = Color(1.0, 0.78, 0.55)
 				d.emission_texture = d.albedo_texture
-				d.emission_energy_multiplier = (0.04 if Ep2BullHero.PAINTED_GLB else 0.06) if restored_bull else 0.12
+				d.emission_energy_multiplier = 0.06 if restored_bull else 0.12
 				d.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 				m.set_surface_override_material(i, d)
 
@@ -1863,8 +1863,7 @@ func _sync_bull_hand_props() -> void:
 	var across: Vector3 = Basis(Vector3.UP, _bull.facing) * Vector3.RIGHT
 	var carrying_trade: bool = _rifle_node != null and _rifle_node.get_parent() == _bull.holder("RightHand")
 	if _bull_guard_rifle:
-		# The painted Bull already holds his rifle; keep the prop (the aim code reads its muzzle) but never draw it.
-		_bull_guard_rifle.visible = (_stand_t < 0.0 or _has_helmet) and not carrying_trade and not Ep2BullHero.PAINTED_GLB
+		_bull_guard_rifle.visible = (_stand_t < 0.0 or _has_helmet) and not carrying_trade
 	var gun: Node3D = _rifle_node if carrying_trade else _bull_guard_rifle
 	var hand: int = sk.find_bone("RightHand" if carrying_trade else "LeftHand")
 	if gun == null or not gun.visible or hand < 0:
@@ -2033,13 +2032,7 @@ func _build_bull_props() -> void:
 	_cigar_smoke.preprocess = 3.0
 	_cigar_smoke.local_coords = false
 	var fh: Node3D = _bull.holder("Head")
-	if Ep2BullHero.PAINTED_GLB:
-		# The painted model's own cigar is in its face; the ember and smoke props would sit mid-face.
-		_cigar_tip.free()
-		_cigar_tip = null
-		_cigar_smoke.free()
-		_cigar_smoke = null
-	elif fh:
+	if fh:
 		fh.add_child(_cigar_tip)
 		fh.add_child(_cigar_smoke)
 		_cigar_tip.position = CIGAR_TIP_IN_HEAD

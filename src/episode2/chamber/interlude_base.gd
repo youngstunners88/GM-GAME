@@ -988,25 +988,24 @@ static func _fix_bull_materials(root: Node) -> void:
 				d.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
 				d.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_OPAQUE_ONLY
 				d.resource_name = "InfernoBullRestoredPBR"
-				if not Ep2BullHero.PAINTED_GLB:    # the painted Bull carries its own UV-matched textures
-					d.albedo_texture = preload("res://src/episode2/assets/textures/bull_albedo.jpg")
-					d.metallic_texture = preload("res://src/episode2/assets/textures/bull_metal_rough.png")
-					d.roughness_texture = d.metallic_texture
-					d.metallic_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_BLUE
-					d.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_GREEN
-					d.metallic = 0.65
-					d.metallic_specular = 0.25
-					d.roughness = 1.0
-					d.normal_enabled = true
-					d.normal_texture = preload("res://src/episode2/assets/textures/bull_normal.png")
-					d.normal_scale = 0.65
+				d.albedo_texture = preload("res://src/episode2/assets/textures/bull_albedo.jpg")
+				d.metallic_texture = preload("res://src/episode2/assets/textures/bull_metal_rough.png")
+				d.roughness_texture = d.metallic_texture
+				d.metallic_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_BLUE
+				d.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_GREEN
+				d.metallic = 0.65
+				d.metallic_specular = 0.25
+				d.roughness = 1.0
+				d.normal_enabled = true
+				d.normal_texture = preload("res://src/episode2/assets/textures/bull_normal.png")
+				d.normal_scale = 0.65
 				d.rim_enabled = true
 				d.rim = 0.12
 				d.rim_tint = 0.5
 				d.emission_enabled = true
 				d.emission = Color(1.0, 0.78, 0.55)
 				d.emission_texture = d.albedo_texture
-				d.emission_energy_multiplier = 0.04 if Ep2BullHero.PAINTED_GLB else 0.1    # 0.35 fogged the painted figure
+				d.emission_energy_multiplier = 0.1
 				d.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 				m.set_surface_override_material(i, d)
 

@@ -49,11 +49,7 @@ static func dress(b: Ep2Actor, with_rifle: bool = true) -> Ep2BullHero:
 ## Sheet grade (founder: "muddy"): black fur, dark denim, brown leather, brass. The restored PBR is an orange-tinted
 ## self-glow over a copper-leaning atlas, so in golden woods light he read as a bronze statue. Cool and darken the
 ## albedo a touch, take the glow down to a neutral lift and keep the metal low: measured in _measure / the report.
-## True when inferno_bull_rigged.glb is the painted Hunyuan3D Bull (own UVs and textures, its own lamp, cigar and
-## rifle modelled in; v3 head grafted on the v2 body). The old Bull's grade, lamp prop and rifle prop do not apply:
-## the painted albedo is already dark, and the props would sit mid-face or double the rifle in his fist.
-const PAINTED_GLB := true
-const GRADE_ALBEDO := Color(1.0, 1.0, 1.0) if PAINTED_GLB else Color(0.60, 0.66, 1.04)
+const GRADE_ALBEDO := Color(0.60, 0.66, 1.04)
 const GRADE_EMISSION := Color(0.85, 0.85, 0.9)
 const GRADE_EMISSION_ENERGY := 0.0
 const GRADE_METALLIC := 0.35
@@ -91,8 +87,8 @@ func _setup(with_rifle: bool) -> void:
 	_add_lamp(sk)
 	_hand = sk.find_bone("LeftHand")
 	_palm_m = LEFT_PALM_M * bull.height_m / 2.4
-	if PAINTED_GLB or not with_rifle or _hand < 0 or not ResourceLoader.exists(RIFLE_MODEL):
-		return    # painted model: the rifle is already in his left fist
+	if not with_rifle or _hand < 0 or not ResourceLoader.exists(RIFLE_MODEL):
+		return
 	_scale = RIFLE_SCALE_PER_M * bull.height_m
 	# Desired rest frame in skeleton space: muzzle up with a slight forward/outward tip, the rifle's TOP (lift, +Y)
 	# facing out to his left so the side plate - lever, receiver, stock - reads in profile from the front (sheet).
@@ -122,8 +118,6 @@ func _setup(with_rifle: bool) -> void:
 
 
 func _add_lamp(sk: Skeleton3D) -> void:
-	if PAINTED_GLB:
-		return    # the painted model has its own lamp on the hat; the old rest-pose lamp prop would float on his face
 	var head: int = sk.find_bone("Head")
 	var hold: Node3D = bull.holder("Head")
 	if head < 0 or hold == null:
