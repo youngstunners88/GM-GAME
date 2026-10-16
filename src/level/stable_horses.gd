@@ -4,18 +4,24 @@ extends Node2D
 ## the Fort Knox door, before the Gold Rush Reserve — close enough to town to
 ## belong to it, far enough to be its own spread). World-space cluster on a
 ## back berm (z_index -8, hazed): Blender-rendered barn + corral sprite, three
-## Blender-rigged horses on SpriteFrames loops — one grazing, one standing,
+## AssetFurnace (Pixal3D) horse, rigged in Blender with planted-foot IK, on SpriteFrames loops — one grazing, one standing,
 ## one walking the paddock rail. Pure scenery: no collision, no pickups.
 
 const STABLE_TEXTURE := "res://src/assets/sprites/sprite_prop_stable.png"
 const FRAME_DIR := "res://src/assets/sprites/horse_%s_%02d.png"
 const STAND_FRAME := "res://src/assets/sprites/horse_stand.png"
+## Frames are 340x320 feet-planted canvases. The AssetFurnace horse stands 259 px tall in
+## them (the old one 297), so the scale rises to keep the same ~172 px on screen.
+const FRAME_SCALE := 0.665
+const FRAME_SIZE := Vector2(340, 320)
 
 var _walker: AnimatedSprite2D
 var _walker_from: float = -160.0
 var _walker_to: float = 170.0
 var _walker_dir: float = 1.0
-var _walker_speed: float = 26.0
+# Ground speed that matches the walk cycle's stride, so the planted hooves do not skate:
+# stride 92 canvas px (rig_report.json) * FRAME_SCALE / (8 frames at 10 fps = 0.8 s).
+var _walker_speed: float = 92.0 * FRAME_SCALE / 0.8
 
 
 func _ready() -> void:
@@ -74,10 +80,9 @@ func _add_horse(horse_name: String, pos: Vector2, anim: String, fps: float, flip
 	h.frames = frames
 	h.animation = anim
 	h.flip_h = flip
-	# Frames are 340x320 feet-planted canvases; scale to ~185px tall and sit
-	# the canvas bottom on the berm so hooves never float or sink.
-	h.scale = Vector2.ONE * 0.58
-	h.position = pos + Vector2(0, -93)
+	# Sit the canvas bottom on the berm so hooves never float or sink.
+	h.scale = Vector2.ONE * FRAME_SCALE
+	h.position = pos + Vector2(0, -FRAME_SIZE.y * FRAME_SCALE * 0.5)
 	h.modulate = tint
 	h.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	add_child(h)
