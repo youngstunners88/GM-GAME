@@ -15,6 +15,7 @@ mkdir -p "$D/.godot-cache" "$D/.farm"; cp "$G" "$D/.godot-cache/"
 pck="$D/web_verify/game/index.pck"
 [ -f "$pck" ] || { echo "✗ fresh export produced no pck (see $D/.farm/pack-gate.log)"; exit 1; }
 sz=$(stat -c%s "$pck")
+[ "$sz" -gt "$LIMIT" ] && python3 tools/ep2_forge/pck_report.py "$pck" --top 10   # what is big (run from the real repo, not the clone)
 rm -rf "$D"
 if [ "$sz" -gt "$LIMIT" ]; then echo "✗ fresh-import pck $sz B > gate $LIMIT B (CI would fail: $(( sz / 1048576 )) MiB)"; exit 1; fi
 echo "✓ fresh-import pck $sz B (gate $LIMIT, margin $(( LIMIT - sz )) B)"
