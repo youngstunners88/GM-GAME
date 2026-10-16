@@ -96,3 +96,17 @@ Cost of the seam weld: ~150 more stretched edges in the walk (803 mean vs v2 609
 2. Seam: visible open rims at the character's right neck/shoulder (75 body + 50 head boundary edges seen from outside); fill or overlap.
 3. Delete the extracted `inferno_bull_rigged_0/1.jpg` + `.import` before reimport (trap above); keep the project's original `.glb.import`.
 4. Re-shoot with the HUD hidden; run `ep2-reference-match-loop` numbers; ship only after a Godot 4.3 export gate.
+
+## v3 SWAPPED INTO THE ENGINE (2026-10-16, branch `bull-v3-engine-swap`, Godot 4.7.2 worktree shots)
+`src/episode2/assets/inferno_bull_rigged.glb` is now the v3 candidate (6.04 MB; same 24 joints, same four clips, same mesh
+name, checked against the old file). The old GLB is in git history (`git show 26667644:src/episode2/assets/inferno_bull_rigged.glb`).
+Engine edits, all behind one switch `Ep2BullHero.PAINTED_GLB` (set false to restore the old Bull's grade and props):
+- `ep2_bull_hero.gd`: albedo grade off (painted albedo is already dark), no rest-pose lamp prop, no separate rifle prop.
+- `interlude_base.gd`, `smelting_facility.gd`: no `bull_albedo/metal/normal` texture overrides (own UVs), emission 0.04 (0.35 fogged it).
+- `smelting_facility.gd`: no cigar-ember/smoke props (the model's cigar is in its face); the guard-rifle prop is kept for
+  the aim code's muzzle point but never drawn, so the baked rifle is not doubled.
+- The stale extracted `inferno_bull_rigged_0.jpg(.import)` are deleted; Godot re-extracts on import (trap above).
+Pictures: `engine_v3_swapped_front.png`, `engine_v3_swapped_side.png` (aviators, nose ring, bandana, lamp, cigar legible; one
+rifle in the fist; the orange glows in frame are room embers, verified by shooting the same view with the Bull hidden).
+**Still open:** neck/shoulder seam (75 body + 50 head boundary edges seen from outside; reads as an opaque wall, not a hole),
+a Godot 4.3 export gate, and `ep2-reference-match-loop` numbers against `inferno_bull_with_rifle.jpg`.

@@ -71,3 +71,19 @@ Pack: 189.2 / 190 MiB (STATUS.md) -> every replacement must be same size or smal
 - Two bear looks (plain vs balaclava) exist; founder must pick one or the pack/art disagree between statue and rig.
 - Pack: 189.2/190 MiB; do not land A without retiring the old files (`git rm`, move to `.farm/retired/`).
 - Do not merge before `scripts/ship-to-master.sh` gates and the front-page lock check.
+
+## Engine verdict on the candidate (2026-10-16, Godot 4.7.2 `bear_poses_shot`, run through a 1600x900 SubViewport): NOT READY
+`design/ep2/blender/character-work/bear_hunyuan_painted_rigged_candidate.glb` (3.1 MB vs shipping 4.7 MB; same 24 joints and
+seven clips) reads better than the shipping bear at rest (`new_rest_front.png`), but in the engine's own poses it deforms badly:
+see `engine_candidate_poses_front.png` (run, sit_read, sleep, aim, shot, leap) and `engine_candidate_sit_read_close.png`.
+- Thin sliver "scratch" shards across the legs and torso (skin weights transferred onto a dense, shredded atlas),
+- the modelled quiver arrows stretch into flat red sheets and spikes when the arms move,
+- cape/vest fragments tear away at the shoulders in sit_read and aim.
+The shipping bear is blurrier but does not do this, so the swap was tried and REVERTED (shipping GLB untouched).
+Next, in order: (1) remove the quiver arrows and any loose shells from the mesh (arrows are separate nodes in the kit);
+(2) re-skin with a smoothed, normalized 4-influence weight pass over welded vertices (the same weld the Bull needed), then
+re-shoot; (3) only then the swap, with the stale-texture trap from the Bull README handled (delete `bear_rigged_0.jpg(.import)`).
+
+## Update 2026-10-16: skin-smoothing fix works (candidate re-installed)
+`tools/ep2_forge/glb_smooth_skin.py` welds weights by position and Laplacian-smooths them (`--iters 6 --keep 0.5 --max-edge 0.05`): the torn shoulder fragments and body slivers are gone. The quiver is a tan leather block on the back (mesh is ~870 detached shells, so component pinning over-grabs): it is pinned rigidly to Spine02 with a back-region box plus the red arrow vertices (`--pin`, `--pin-mask`, `--pin-grow 3`). Result in the engine poses (run/sit_read/aim/shot/leap): a recognisable quiver with arrows, no red sheets. Known leftover: one thin red needle beside the head in sit_read. Pictures: `shots/smoothed_pinned_*.png`. Godot 4.3 compile gate passes; full web export not re-run (the new GLB and texture are smaller than the shipping ones, so the pack can only shrink).
+Rebuild: in Blender sample the base-colour texture at each vertex UV, mask red & glTF z<0.08 to `red.npz` (key `red`, original vertex order), then run the smoother with `--pin=-0.62,1.0,-0.45,0.62,1.95,-0.16:Spine02 --pin=-0.72,1.45,-0.45,-0.18,1.95,0.08:Spine02:LeftArm+RightArm+LeftShoulder+RightShoulder+Spine02+Spine01 --pin=0.18,1.45,-0.45,0.72,1.95,0.08:Spine02:<same> --pin-mask=red.npz:Spine02:0 --pin-grow 3 --mask-z-max 0.08`.
