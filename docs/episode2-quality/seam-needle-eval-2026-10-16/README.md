@@ -29,3 +29,8 @@ Neither is a texture-quality defect, so a better generated texture cannot fix ei
 
 ## Verdict
 Texture-generation (ComfyUI) does not apply, regeneration (RunPod) is the expensive path and is not needed first. Geometry edits in local Blender are the smallest test and cost nothing. Tests A and B are proposed, not run.
+
+## Test A result (run 2026-10-16): PASS
+The 12 needle vertices sit at glTF x -0.48, y 1.78-1.80, z 0.08: exactly on the `--mask-z-max 0.08` cut of the old recipe (the arrow tip's red vertices had z just past it, so the pin missed them). `mkmask.py` rebuilds the red mask (and the extra-vertex set); `needle_vertices.npz` is the exact 12-vertex set. A rebuilt mask does NOT reproduce the committed weights (the original `red.npz` is lost and a regenerated one pins different pieces and tears brown quiver shards), so the fix is a patch on the committed GLB: `python3 tools/ep2_forge/glb_pin_pieces.py in.glb out.glb needle_vertices.npz:Spine02:0` (pins only those 12 vertices to Spine02; the rest of the file is byte-identical, 3,119,283 B unchanged).
+Pictures: `testA_before_sit_read.png`, `testA_after_sit_read.png`, `testA_after_poses.png` (run, sit_read, sleep, aim, shot, leap). Needle gone in sit_read, no change elsewhere. Godot 4.3 compile gate: see work log.
+Test B (Bull seam) NOT run, by the user's choice.
