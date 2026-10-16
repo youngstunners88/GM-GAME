@@ -9,7 +9,7 @@
   ],
   "input": {
     "path": "/workspace/source.png",
-    "sha256": "97dd4702548cff3f204f558b3f139a5aa05a380c324e8fc45bc1ec4003fa1b86"
+    "sha256_first32": "97dd4702548cff3f204f558b3f139a5a"
   },
   "license": {
     "name": "MIT (code + flow weights); DINOv3 License (bundled encoder)",
@@ -18,7 +18,7 @@
   "output": {
     "classification": "commercial-conditional",
     "path": "/workspace/lab/output/horse.glb",
-    "sha256": "cb7781485b856310094c15502c0938f7f4ae2ab35f0be2dfa59b29dd5bf1e5a0"
+    "sha256_first32": "cb7781485b856310094c15502c0938f7"
   },
   "parameters": {
     "fov": 0.3490658503988659,
