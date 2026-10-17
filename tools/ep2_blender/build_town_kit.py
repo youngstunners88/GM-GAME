@@ -6,11 +6,13 @@ Headless bpy (`python3 tools/ep2_blender/build_town_kit.py`). ONE GLB of named p
   Bldg_Certificates  two-storey false-front office, porch + posts, door you can walk through, a real interior (floor, walls, ceiling)
   Bldg_Saloon        two-storey false front with a balcony on posts, swing-door opening, a big interior (14 x 11 m)
   Bldg_Treasury      sandstone bank front: pilasters, pediment, double door (shut)
+  Bldg_Armory        weathered arms shop: barred windows, muted sign, walk-in door, lean-to loading shed (side lane)
   Bldg_A / Bldg_B / Bldg_C / Bldg_D   street fillers (one / two storeys, different fronts, shut doors)
   Church             white clapboard church with steeple
   FortKnox           stone castle-fort: curtain walls + merlons, three towers, the gate arch (sits on a rock hill placed in Godot)
   HitchRail Wagon Trough LampPost Bench Boardwalk4m
   Int_Counter Int_Shelves Int_Desk Int_Stove Bar_Counter Bar_BackShelf Bar_Table Bar_Chair Bar_Piano
+  Arm_Counter Arm_Rack Arm_Case Arm_SniperCase Arm_PowderKeg River_Crate River_Skiff
 Every building's origin is the middle of its FRONT edge at street level; its front faces +Z (game frame). Sign boards carry an empty
 child "SignAnchor_<WORD>" where Godot hangs the painted sign (a texture), so no text is modelled. Materials are NAMED and untextured
 (Siding, Trim, Roof, Sandstone, FortStone, PaintWhite, Planks, Glass, Iron, Brass, Bottle, Mirror, Cloth, DarkWood); the chambers assign
@@ -239,6 +241,22 @@ building("Bldg_D", 9.0, 9.0, 2, 9.0, "AUCTIONS").build()
 building("Bldg_E", 7.0, 8.0, 1, 6.0, "STATS").build()
 building("Bldg_F", 8.0, 9.0, 2, 8.4, "RESERVE").build()
 
+# the Armory: Rich & Utah's shop. Weathered false front, barred windows, a muted sign, a walk-in door and a
+# lean-to loading shed behind for kegs, crates and river gear. Sits on a side lane, off the Main Street sightline.
+p = Piece("Bldg_Armory")
+w, d, h = 8.0, 9.0, 7.2
+shell(p, w, d, h, 1.4, 0.0, True, True, "Siding", (-w / 2 + 1.6, w / 2 - 1.6), (-w / 2 + 1.6, w / 2 - 1.6))
+for wx in (-w / 2 + 1.6, w / 2 - 1.6):          # barred ground-floor windows
+    for i in range(5):
+        p.box("Iron", (0.045, 1.5, 0.045), (wx - 0.32 + i * 0.16, 1.6, 0.05))
+false_front(p, w, h, "ARMS", h - 0.9, 4.2, 0.9, "Siding")
+porch(p, w)
+p.box("Roof", (4.0, 0.06, 3.0), (0.0, 2.7, -d - 1.3), rot_z=0.18)     # lean-to loading shed, behind
+for sx in (-1.7, 1.7):
+    for sz in (-d - 0.2, -d - 2.6):
+        p.box("Trim", (0.16, 2.5, 0.16), (sx, 1.25, sz))
+p.build()
+
 # the Treasury: sandstone, pilasters, pediment, shut double door
 p = Piece("Bldg_Treasury")
 w, d, h = 10.0, 12.0, 7.6
@@ -433,6 +451,64 @@ p.box("DarkWood", (1.5, 1.3, 0.6), (0.0, 0.65, 0.0))
 p.box("PaintWhite", (1.3, 0.04, 0.16), (0.0, 0.74, 0.36))
 for i in range(18):
     p.box("Iron", (0.025, 0.045, 0.1), (-0.6 + i * 0.07, 0.765, 0.33))
+p.build()
+
+# --- the armory interior + river gear --------------------------------------------------------------------------------------
+p = Piece("Arm_Counter")     # the trade counter: panelled front, top, a brass round anchor
+p.box("DarkWood", (5.0, 1.05, 0.7), (0.0, 0.525, 0.0))
+p.box("Trim", (5.2, 0.07, 0.85), (0.0, 1.09, 0.0))
+for i in range(7):
+    p.box("Trim", (0.6, 0.62, 0.04), (-2.1 + i * 0.7, 0.55, 0.37))
+p.anchor("TradeAnchor", (0.0, 1.13, 0.2))
+p.build()
+
+p = Piece("Arm_Rack")        # wall rack of lever rifles: backboard + three silhouettes
+p.box("DarkWood", (2.4, 1.9, 0.12), (0.0, 1.0, -0.06))
+for i in range(3):
+    x = -0.75 + i * 0.75
+    p.box("Iron", (0.05, 1.5, 0.05), (x, 1.05, 0.02))
+    p.box("DarkWood", (0.09, 0.8, 0.10), (x, 0.5, 0.03))
+    p.box("Brass", (0.10, 0.12, 0.12), (x, 0.95, 0.03))
+p.build()
+
+p = Piece("Arm_Case")        # glass case of revolvers on a wooden pedestal
+p.box("DarkWood", (2.0, 0.9, 0.8), (0.0, 0.45, 0.0))
+p.box("Trim", (2.06, 0.06, 0.86), (0.0, 0.92, 0.0))
+p.box("Glass", (2.0, 0.5, 0.8), (0.0, 1.23, 0.0))
+for i in range(3):
+    p.box("Iron", (0.34, 0.05, 0.05), (-0.7 + i * 0.7, 1.05, 0.0))
+    p.cyl("DarkWood", 0.09, 0.09, 0.12, (-0.7 + i * 0.7, 1.02, 0.2), "x", 12)
+p.build()
+
+p = Piece("Arm_SniperCase")  # the lit case for the period long rifle
+p.box("DarkWood", (2.6, 0.2, 0.7), (0.0, 0.5, 0.0))
+p.box("Glass", (2.6, 1.4, 0.7), (0.0, 1.3, 0.0))
+p.box("Iron", (1.9, 0.06, 0.06), (0.0, 1.2, 0.0))
+p.box("Brass", (0.14, 0.16, 0.16), (0.7, 1.2, 0.0))
+p.anchor("SniperAnchor", (0.0, 1.95, 0.0))
+p.build()
+
+p = Piece("Arm_PowderKeg")   # powder keg with brass hoops
+p.cyl("DarkWood", 0.34, 0.34, 0.8, (0.0, 0.4, 0.0), "y", 16)
+for y in (0.18, 0.62):
+    p.cyl("Brass", 0.355, 0.355, 0.05, (0.0, y, 0.0), "y", 16)
+p.cyl("Iron", 0.08, 0.08, 0.06, (0.0, 0.82, 0.0), "y", 8)
+p.build()
+
+p = Piece("River_Crate")     # sealed buoyant river crate: planked box with rope lashings
+p.box("Planks", (1.1, 0.7, 0.8), (0.0, 0.35, 0.0))
+p.box("Trim", (1.16, 0.08, 0.86), (0.0, 0.35, 0.0))
+for sx in (-0.4, 0.4):
+    p.box("Cloth", (0.06, 0.74, 0.84), (sx, 0.35, 0.0))
+p.build()
+
+p = Piece("River_Skiff")     # flat-bottom river skiff with thwarts and a raised stem
+p.box("Planks", (1.5, 0.16, 4.6), (0.0, 0.22, 0.0))
+for sx in (-1, 1):
+    p.box("Planks", (0.14, 0.55, 4.6), (sx * 0.68, 0.5, 0.0), rot_z=-sx * 0.06)
+for sz in (-1.3, 0.1, 1.5):
+    p.box("Planks", (1.3, 0.06, 0.34), (0.0, 0.62, sz))
+p.box("Planks", (0.22, 1.0, 1.1), (0.0, 0.8, -2.5), rot_x=0.5)
 p.build()
 
 bpy.ops.export_scene.gltf(filepath=OUT, export_format="GLB", export_apply=True, export_yup=True)
