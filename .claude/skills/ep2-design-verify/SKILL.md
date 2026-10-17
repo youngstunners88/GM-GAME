@@ -48,7 +48,7 @@ If any answer is no, the item is `IN CODE`, whatever the file says.
 
 Report the ledger status of every row. For any row not `SEEN`, say what is missing and what
 will settle it. Do not write "shipped" until `SHIPPED` is verified (CI green on the master commit
-and the itch update time). Log each step in the GM Game vault `Work Log/<date>.md`.
+and the itch update time). Log each step in the ledger file and STATUS.md. The Obsidian vault at `~/Documents/ComfyUI/comfyUI work/` is the Quiet Money films memory, NOT this game: never search it for river, lake or train.
 
 # Known state (2026-10-17, from the repo and the vault)
 
@@ -57,11 +57,9 @@ and the itch update time). Log each step in the GM Game vault `Work Log/<date>.m
   layer -15 (0.18x), track at `track_y` 430. The refined train asset (15,300 tris, `design/train-revolver-pass/`)
   is a candidate and its release is blocked by the CI portal visibility gate
   (STATUS.md, 2026-10-15). Status: `WIRED` in code, `SEEN` not verified.
-- **River**: the only river in the game is the Ep2 lava river in
-  `src/episode2/chamber/smelting_facility.gd`. The Still Water lake and river card
-  (`design/world/regions/11_still-water-lake.md`) is an OUTLINE proposal; the lake backdrop
-  `distant_lake.gd` is decoration only. No playable river exists for Still Water. Status: `IN CODE` (backdrop) / not built (region).
-- **Vault gap**: `GM Game/Work Log/2026-10-16.md` records horse, bull, bear, lake, and shipping, but has no river or train entry. The vault's Projects notes name `~/GM-GAME` and `~/Documents/GitHub/GM-GAME` branches, but the checkout is on `ship-bear-bull`, so those notes are stale.
+- **River = the gorge, built** (2026-09-30): `design/world/regions/02_gorge-and-smelting-facility.md`, a gorge over a river of molten gold; code in `src/episode2/chamber/smelting_facility.gd`.
+- **Lake = Still Water, designed not built**: region card `design/world/regions/11_still-water-lake.md` (outline), layer-2 spec `design/ep2/lake/WIRE_SPEC.md` (271 lines), gated on Layer 1 (founder target image, still missing). Only `src/level/distant_lake.gd` (47-line code-drawn parallax backdrop for the Level 3 vista) exists in code. Status: backdrop `WIRED`, region not built.
+- **Where to look**: the repo (`design/world/regions/`, `design/ep2/`, `src/level/`), never the vault. Credit: the opencode session located these.
 
 # Gotchas
 
