@@ -227,3 +227,6 @@ artifacts/wtest/
 artifacts/verify-deploy/
 
 !src/assets/portals/maps/map_gold_square.png.import
+
+# Tripo CLI working output (never shipped)
+tripo-out/
