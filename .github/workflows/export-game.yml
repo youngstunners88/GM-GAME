@@ -320,6 +320,10 @@ jobs:
           timeout 120 "$GODOT_BIN" --headless res://tests/vault_touch_dialogue_test.tscn 2>&1 | tee vault-touch-tests.log
           grep -q 'VAULT_TOUCH_DIALOGUE: ALL PASS' vault-touch-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' vault-touch-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless --path . res://tests/ep2_bow_test.tscn > bow-tests.log 2>&1
+          cat bow-tests.log
+          grep -q 'EP2_BOW: ALL PASS' bow-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error' bow-tests.log; then exit 1; fi
           # Actual skinned paw contacts throughout reading/draw/release, plus
           # the deterministic actor clock and Bull's grip-preserving recoil.
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_character_motion_test.tscn 2>&1 | tee character-motion-tests.log

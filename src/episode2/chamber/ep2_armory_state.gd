@@ -5,13 +5,14 @@ signal changed
 
 const WIN := "winchester_1886"
 const REM := "remington_1875_gold"
-const IDS := [WIN, REM]
-const NAMES := {WIN: "Winchester 1886", REM: "Golden Remington 1875"}
-const AMMO_TYPES := {WIN: "rifle_round", REM: "revolver_round"}
+const BOW := "bear_longbow"
+const IDS := [WIN, REM, BOW]
+const NAMES := {WIN: "Winchester 1886", REM: "Golden Remington 1875", BOW: "Recovered Bear Bow"}
+const AMMO_TYPES := {WIN: "rifle_round", REM: "revolver_round", BOW: "bear_arrow"}
 const SWITCH_TIME := 0.18
 const VERSION := 1
 const CONTROL_FILE := "user://ep2_armory_controls.cfg"
-const ACTIONS := ["ep2_weapon_1", "ep2_weapon_2", "ep2_weapon_previous", "ep2_armory"]
+const ACTIONS := ["ep2_weapon_1", "ep2_weapon_2", "ep2_weapon_3", "ep2_weapon_previous", "ep2_armory"]
 var owned: Dictionary = {}
 var equipped: String = WIN
 var previous: String = REM
@@ -23,7 +24,7 @@ var _switch_t: float = 0.0
 
 func _init() -> void:
 	for id in IDS:
-		var gun := Ep2Winchester.new()
+		var gun: Ep2Winchester = Ep2Bow.new() if id == BOW else Ep2Winchester.new()
 		gun.reserve = 0
 		if id == REM:
 			gun.capacity = 6           # existing runner's six-round game convention
@@ -33,7 +34,10 @@ func _init() -> void:
 
 
 func _watch(gun: Ep2Winchester) -> void:
-	gun.fired.connect(_notify)
+	gun.fired.connect(func() -> void:
+		if gun is Ep2Bow:
+			arrows = gun.rounds
+		_notify())
 	gun.shell_loaded.connect(func(_rounds: int) -> void: changed.emit())
 
 
@@ -62,8 +66,8 @@ func acquire(id: String, source: Ep2Winchester = null) -> bool:
 		_guns[id] = source
 		_watch(source)
 	else:
-		gun.rounds = gun.capacity
-		gun.reserve = 24 if id == WIN else 18
+		gun.rounds = arrows if id == BOW else gun.capacity
+		gun.reserve = 24 if id == WIN else 0 if id == BOW else 18
 		gun.locked = false
 		gun.reload_locked = false
 	if id == WIN or not owns(equipped):
@@ -106,18 +110,21 @@ func step(delta: float) -> void:
 		(gun as Ep2Winchester).step(delta)   # holstered cooldowns continue; switching never resets one
 
 
-func record_corpse(id: String, arrow_count: int) -> void:
+func record_corpse(id: String, arrow_count: int, has_bow: bool = false) -> void:
 	if not corpses.has(id):
-		corpses[id] = {"arrows": clampi(arrow_count, 0, 100), "searched": false}
+		corpses[id] = {"arrows": clampi(arrow_count, 0, 100), "searched": false, "bow": has_bow}
 		changed.emit()
 
 
 func claim_corpse(id: String) -> int:
 	if not corpses.has(id) or bool(corpses[id]["searched"]):
 		return -1
+	if bool(corpses[id].get("bow", false)):
+		acquire(BOW)
 	var count: int = mini(int(corpses[id]["arrows"]), 999 - arrows)
 	# Leave excess arrows on the body rather than destroy them at the storage cap.
 	arrows += count
+	(firearm(BOW) as Ep2Bow).rounds = arrows
 	corpses[id]["arrows"] -= count
 	corpses[id]["searched"] = int(corpses[id]["arrows"]) == 0
 	changed.emit()
@@ -142,6 +149,7 @@ func restore(data: Dictionary, earned_remington: bool = false) -> void:
 	var valid: bool = SaveSafe.to_int(data.get("version", 0)) == VERSION and data.get("weapons") is Dictionary
 	for id in IDS:
 		var gun: Ep2Winchester = firearm(id)
+		gun.cancel_reload()
 		var entry: Dictionary = data["weapons"].get(id, {}) if valid and data["weapons"].get(id, {}) is Dictionary else {}
 		var acquired: bool = bool(entry.get("owned", false))
 		owned[id] = acquired
@@ -163,7 +171,8 @@ func restore(data: Dictionary, earned_remington: bool = false) -> void:
 		if records is Dictionary:
 			for id in records:
 				if records[id] is Dictionary:
-					corpses[str(id)] = {"arrows": clampi(SaveSafe.to_int(records[id].get("arrows", 0)), 0, 100), "searched": bool(records[id].get("searched", false))}
+					corpses[str(id)] = {"arrows": clampi(SaveSafe.to_int(records[id].get("arrows", 0)), 0, 100), "searched": bool(records[id].get("searched", false)), "bow": bool(records[id].get("bow", false))}
+	(firearm(BOW) as Ep2Bow).rounds = arrows
 	equipped = str(data.get("equipped", REM if owns(REM) else WIN))
 	if not owns(equipped):
 		equipped = WIN if owns(WIN) else REM if owns(REM) else WIN
@@ -182,7 +191,7 @@ static func install_actions() -> void:
 	var config := ConfigFile.new()
 	config.load(CONTROL_FILE)
 	var bindings: Dictionary = {"ep2_weapon_1": [KEY_1, JOY_BUTTON_LEFT_SHOULDER], "ep2_weapon_2": [KEY_2, JOY_BUTTON_RIGHT_SHOULDER],
-		"ep2_weapon_previous": [KEY_Q, JOY_BUTTON_Y], "ep2_armory": [KEY_TAB, JOY_BUTTON_BACK]}
+		"ep2_weapon_3": [KEY_3, JOY_BUTTON_DPAD_UP], "ep2_weapon_previous": [KEY_Q, JOY_BUTTON_Y], "ep2_armory": [KEY_TAB, JOY_BUTTON_BACK]}
 	for action in bindings:
 		if InputMap.has_action(action):
 			continue             # existing custom/rebound controls take precedence

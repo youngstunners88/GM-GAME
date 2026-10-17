@@ -239,6 +239,7 @@ var _ammo_snapshot: Array = []
 var _armory_snapshot: Dictionary = {}
 var _player_vel: Vector3 = Vector3.ZERO
 var _prev_player: Vector3 = Vector3.ZERO
+var _player_arrows: Array = []
 var _arrows: Array = []                             # Dictionary per arrow in flight / stuck
 var _arrows_loosed: int = 0
 var _arrow_hits: int = 0
@@ -1475,6 +1476,7 @@ func _tick(delta: float) -> void:
 	_tick_cover(delta)
 	_tick_bears(delta)
 	_tick_arrows(delta)
+	_tick_player_arrows(delta)
 	_tick_footsteps(delta)
 	_tick_riders(delta)
 	if _wildlife != null:
@@ -2042,6 +2044,16 @@ func _viewmodel_lowered() -> bool:
 ## THE RIFLE IS IN HIS HANDS, so a shot is a fact of the wood (skill ep2-interlude-chain): the round flies down his aim (with the
 ## Winchester's spread) and hits the first bear on the line unless a trunk is in the way; and the bang is heard far and wide.
 func _on_player_shot() -> void:
+	if armory.equipped == Ep2ArmoryState.BOW:
+		var eye: Vector3 = _player_pos + Vector3(0.0, eye_height, 0.0)
+		var origin: Vector3 = _vm.rifle.get_node("Nock").global_position
+		var direction: Vector3 = (eye + _fire_dir() * 50.0 - origin).normalized()
+		var arrow := _arrow_mesh()
+		_visuals.add_child(arrow)
+		arrow.global_position = origin
+		_player_arrows.append({"node": arrow, "pos": origin, "v": direction * 38.0, "t": 0.0})
+		_noise(_player_pos, 14.0, "bow")
+		return
 	var eye: Vector3 = _player_pos + Vector3(0.0, eye_height, 0.0)
 	var dir: Vector3 = _fire_dir()
 	var hit: Ep2BearBrain = _bear_on_ray(eye, dir)
@@ -2064,7 +2076,7 @@ func _fire_dir() -> Vector3:
 
 
 ## The nearest living bear the ray passes through (his body as one or two capsules for the pose he is in), unless a trunk is first.
-func _bear_on_ray(eye: Vector3, dir: Vector3) -> Ep2BearBrain:
+func _bear_on_ray(eye: Vector3, dir: Vector3, max_distance: float = 170.0) -> Ep2BearBrain:
 	var best: Ep2BearBrain = null
 	var best_t: float = 1e9
 	for b in _bears:
@@ -2073,14 +2085,14 @@ func _bear_on_ray(eye: Vector3, dir: Vector3) -> Ep2BearBrain:
 			continue
 		var to: Vector3 = br.actor.position - eye
 		var tc: float = to.dot(dir)
-		if tc < -2.0 or tc > 170.0:
+		if tc < -2.0 or tc > max_distance + 2.0:
 			continue
 		for sh in _bear_shapes(br):
 			var t: float = _ray_capsule(eye, dir, sh[0], sh[1], float(sh[2]))
-			if t >= 0.3 and t < best_t:
+			if t >= 0.0 and t <= max_distance and t < best_t:
 				best_t = t
 				best = br
-	if best != null and _ray_tree_blocked(eye, dir, best_t):
+	if best != null and _ray_tree_blocked(eye, dir, best_t, 0.0, 0.0):
 		return null
 	return best
 
@@ -2124,7 +2136,7 @@ static func _ray_capsule(o: Vector3, d: Vector3, a: Vector3, b: Vector3, r: floa
 
 
 ## Does a trunk stop the round before `t_max`? (Horizontal ray vs trunk circles, along the grid.)
-func _ray_tree_blocked(eye: Vector3, dir: Vector3, t_max: float) -> bool:
+func _ray_tree_blocked(eye: Vector3, dir: Vector3, t_max: float, near_clearance: float = 0.4, far_clearance: float = 0.3) -> bool:
 	var d2 := Vector2(dir.x, dir.z)
 	var l: float = d2.length()
 	if l < 1e-4:
@@ -2153,7 +2165,7 @@ func _ray_tree_blocked(eye: Vector3, dir: Vector3, t_max: float) -> bool:
 					if disc < 0.0:
 						continue
 					var s: float = (-bb - sqrt(disc)) / (2.0 * aa)
-					if s > 0.4 and s < t_max - 0.3 and eye.y + dir.y * s < float(e[2]):
+					if s >= near_clearance and s <= t_max - far_clearance and eye.y + dir.y * s < float(e[2]):
 						return true
 		t += TREE_CELL * 0.5 / l
 	return false
@@ -2186,7 +2198,7 @@ func _on_bear_swiped(br: Ep2BearBrain) -> void:
 
 
 func _on_bear_died(br: Ep2BearBrain) -> void:
-	armory.record_corpse(str(br.get_meta("corpse_id", "")), br.arrows)
+	armory.record_corpse(str(br.get_meta("corpse_id", "")), br.arrows, br.actor.has_meta("bow"))
 	_kills += 1
 	_sfx3d("ep2_bear_death_%d" % (1 + _kills % 3), br.actor.global_position + Vector3(0.0, 1.2, 0.0), 0.0, float(br.p.get("pitch", 1.0)), 70.0)
 	var snore: AudioStreamPlayer3D = br.actor.get_meta("snore") if br.actor.has_meta("snore") else null
@@ -2224,40 +2236,34 @@ func _on_arrow_loosed(br: Ep2BearBrain, from: Vector3, _to: Vector3) -> void:
 		"life": 0.0, "whizz": false, "from": br})
 
 
+## Swept flight hits the first bear or trunk once; it never spends ammunition a second time.
+func _tick_player_arrows(delta: float) -> void:
+	for i in range(_player_arrows.size() - 1, -1, -1):
+		var item: Dictionary = _player_arrows[i]
+		var before: Vector3 = item["pos"]
+		var velocity: Vector3 = item["v"]
+		velocity.y -= 9.8 * delta
+		var travel: Vector3 = velocity * delta
+		var hit: Ep2BearBrain = _bear_on_ray(before, travel.normalized(), travel.length())
+		var stopped: bool = hit != null or _ray_tree_blocked(before, travel.normalized(), travel.length(), 0.0, 0.0)
+		if hit != null:
+			hit.set_meta("killed_by", "player")
+			var killed: bool = hit.take_hit(before)
+			if _hud != null:
+				_hud.hit_marker(killed)
+		item["t"] = float(item["t"]) + delta
+		item["pos"] = before + travel
+		item["v"] = velocity
+		var node: Node3D = item["node"]
+		node.global_position = item["pos"]
+		node.basis = Basis.looking_at(-velocity.normalized(), Vector3.UP)
+		if stopped or float(item["t"]) > 4.0 or node.position.y < _ground_y:
+			node.queue_free()
+			_player_arrows.remove_at(i)
+
+
 func _arrow_mesh() -> Node3D:
-	var root := Node3D.new()
-	root.name = "Arrow"
-	var shaft := MeshInstance3D.new()
-	var cm := CylinderMesh.new()
-	cm.top_radius = 0.012
-	cm.bottom_radius = 0.012
-	cm.height = 0.85
-	cm.radial_segments = 5
-	shaft.mesh = cm
-	shaft.material_override = _plain(Color(0.55, 0.40, 0.24), 0.8)
-	shaft.rotation.x = PI * 0.5                    # along the arrow's +Z
-	root.add_child(shaft)
-	var tip := MeshInstance3D.new()
-	var tm := CylinderMesh.new()
-	tm.top_radius = 0.0
-	tm.bottom_radius = 0.03
-	tm.height = 0.09
-	tm.radial_segments = 5
-	tip.mesh = tm
-	tip.material_override = _plain(Color(0.35, 0.36, 0.38), 0.4, 0.6)
-	tip.rotation.x = PI * 0.5
-	tip.position = Vector3(0.0, 0.0, 0.46)
-	root.add_child(tip)
-	for k in 3:
-		var fl := MeshInstance3D.new()
-		var bm := BoxMesh.new()
-		bm.size = Vector3(0.003, 0.06, 0.14)
-		fl.mesh = bm
-		fl.material_override = _plain(Color(0.85, 0.82, 0.76), 0.9)
-		fl.position = Vector3(0.0, 0.0, -0.36)
-		fl.rotation.z = float(k) * TAU / 3.0
-		root.add_child(fl)
-	return root
+	return Ep2BowView.arrow()
 
 
 func _tick_arrows(delta: float) -> void:
@@ -2363,6 +2369,9 @@ func _retry_from_surface() -> void:
 		if is_instance_valid(ar["node"]):
 			(ar["node"] as Node).queue_free()
 	_arrows.clear()
+	for item in _player_arrows:
+		(item["node"] as Node3D).queue_free()
+	_player_arrows.clear()
 	for f in _flashes:
 		if is_instance_valid(f[0]):
 			(f[0] as Node).queue_free()
@@ -2739,5 +2748,5 @@ func start_rig(_mode: String = "eth") -> bool:
 	if count < 0:
 		return false
 	if _hud != null:
-		_hud.toast("Recovered %d bear arrows" % count if count > 0 else "No arrows recovered", 1.8)
+		_hud.toast("Recovered bear bow · %d arrows" % count if bool(armory.corpses[str(body.get_meta("corpse_id"))].get("bow", false)) else "Recovered %d bear arrows" % count if count > 0 else "No arrows recovered", 1.8)
 	return true

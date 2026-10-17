@@ -215,6 +215,8 @@ func toggle_armory() -> void:
 		return
 	if not armory_enabled or armory == null or get_tree().paused:
 		return
+	if armory.active_gun() is Ep2Bow:
+		armory.active_gun().cancel_reload()
 	armory_open = true
 	_panel.state = armory
 	_panel.highlighted = armory.equipped
@@ -379,14 +381,14 @@ func _draw() -> void:
 	if show_ammo and _font:
 		var base := Vector2(size.x - 40.0, size.y - 42.0)
 		if armory != null and armory.owns(armory.equipped):
-			var status: String = "RELOADING" if armory.active_gun().reloading else Ep2ArmoryState.NAMES[armory.equipped]
+			var status: String = "DRAWING..." if armory.active_gun() is Ep2Bow and (armory.active_gun() as Ep2Bow).drawing else "RELOADING" if armory.active_gun().reloading else Ep2ArmoryState.NAMES[armory.equipped]
 			draw_string_outline(_font, Vector2(size.x - 300.0, size.y - 166.0), status, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 5, Color(0, 0, 0, 0.8))
 			draw_string(_font, Vector2(size.x - 300.0, size.y - 166.0), status, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, GOLD)
 		var rcol: Color = GOLD if rounds > 0 else Color(1.0, 0.35, 0.25)
 		var big: String = str(rounds)
 		var fs_big: int = int(h * 0.085)
 		var w_big: float = _font.get_string_size(big, HORIZONTAL_ALIGNMENT_LEFT, -1, fs_big).x
-		var small: String = " / %d" % reserve
+		var small: String = " ARROWS" if armory != null and armory.equipped == Ep2ArmoryState.BOW else " / %d" % reserve
 		var fs_small: int = int(h * 0.04)
 		var w_small: float = _font.get_string_size(small, HORIZONTAL_ALIGNMENT_LEFT, -1, fs_small).x
 		var x0: float = base.x - w_big - w_small
@@ -395,7 +397,7 @@ func _draw() -> void:
 		draw_string_outline(_font, Vector2(x0 + w_big, base.y), small, HORIZONTAL_ALIGNMENT_LEFT, -1, fs_small, 6, Color(0, 0, 0, 0.8))
 		draw_string(_font, Vector2(x0 + w_big, base.y), small, HORIZONTAL_ALIGNMENT_LEFT, -1, fs_small, Color(1, 1, 1, 0.8))
 		# shell pips above the number: one per tube slot, filled when loaded
-		for i in mag:
+		for i in (0 if armory != null and armory.equipped == Ep2ArmoryState.BOW else mag):
 			var px: float = base.x - 14.0 - float(mag - 1 - i) * 17.0
 			var pr := Rect2(px - 5.0, base.y - fs_big - 22.0, 10.0, 18.0)
 			draw_rect(pr, Color(0, 0, 0, 0.55))

@@ -10,7 +10,7 @@ static func make() -> Node3D:
 	hand.name = "RightArm"
 	root.add_child(hand)
 	root.set_meta("hip_rotation", Vector3(0.03, PI + 0.28, -0.04))
-	root.set_meta("hip_offset", Vector3(0.02, 0.015, 0.07))
+	root.set_meta("hip_offset", Vector3(0.015, 0.055, -0.08))
 	root.set_meta("arm_pivot", Vector3(-0.14, -0.23, -0.33))
-	root.set_meta("ads_cam", Vector3(0, 0.063, -0.37))
+	root.set_meta("ads_cam", Vector3(0, 0.063, -0.52))
 	return root

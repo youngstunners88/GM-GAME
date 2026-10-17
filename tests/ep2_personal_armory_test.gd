@@ -65,7 +65,7 @@ func _ready() -> void:
 	_check("zero reserve cannot reload or auto-switch", not rem.start_reload() and rem.trigger() == Ep2Winchester.Shot.EMPTY and state.equipped == Ep2ArmoryState.REM)
 	state.record_corpse("woods:test", 3)
 	_check("once-only quiver recovery stores arrows separately", state.claim_corpse("woods:test") == 3 and state.claim_corpse("woods:test") == -1 and state.arrows == 3 and win.rounds == 1 and rem.rounds == 0)
-	_check("arrows do not create a bow or third quick slot", Ep2ArmoryState.IDS.size() == 2 and not state.owns("bow"))
+	_check("arrows alone do not award a bow", not state.owns(Ep2ArmoryState.BOW))
 	var saved: Dictionary = state.snapshot()
 	var copy := Ep2ArmoryState.new()
 	copy.restore(JSON.parse_string(JSON.stringify(saved)))
@@ -196,7 +196,7 @@ func _ready() -> void:
 	await get_tree().create_timer(0.08, true).timeout
 	_check("holding armory freezes world physics and finite ammunition", probe.ticks == ticks and loaded == root.armory.active_gun().rounds and room.get_player_position() == before and not room.shoot())
 	_check("holstered reload clock stays frozen throughout selection", root.armory.firearm(Ep2ArmoryState.WIN)._reload_t == reload_clock and root.armory.firearm(Ep2ArmoryState.WIN).rounds == 1)
-	_check("two actual weapon textures replace the text inventory", hud._panel.ICONS[Ep2ArmoryState.WIN].get_width() == 640 and hud._panel.ICONS[Ep2ArmoryState.REM].get_width() == 640 and hud._slots.size() == 2)
+	_check("three weapon cards preserve the firearm textures and recovered bow icon", hud._panel.ICONS[Ep2ArmoryState.WIN].get_width() == 640 and hud._panel.ICONS[Ep2ArmoryState.REM].get_width() == 640 and hud._panel.ICONS[Ep2ArmoryState.BOW].get_width() == 512 and hud._slots.size() == 3)
 	key.physical_keycode = KEY_1
 	Input.parse_input_event(key)
 	await get_tree().process_frame

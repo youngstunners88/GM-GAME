@@ -5,6 +5,7 @@ const FONT := preload("res://src/episode2/assets/weapons/armory/western_bookman.
 const ICONS := {
 	Ep2ArmoryState.WIN: preload("res://src/episode2/assets/weapons/armory/winchester_icon.png"),
 	Ep2ArmoryState.REM: preload("res://src/episode2/assets/weapons/armory/remington_icon.png"),
+	Ep2ArmoryState.BOW: preload("res://src/episode2/assets/weapons/armory/bow_icon.svg"),
 }
 const BRASS := Color("c7a267")
 const PAPER := Color("eddbb2")
@@ -51,11 +52,11 @@ func _process(_delta: float) -> void:
 func card_rect(i: int) -> Rect2:
 	if size.x < 650.0:
 		var w: float = minf(440.0, size.x - 32.0)
-		var h: float = minf(205.0, size.y * 0.26)
-		return Rect2(Vector2((size.x - w) * 0.5, size.y * 0.25 + i * (h + 12.0)), Vector2(w, h))
-	var w: float = minf(460.0, (size.x - 96.0) * 0.5)
+		var h: float = minf(160.0, size.y * 0.20)
+		return Rect2(Vector2((size.x - w) * 0.5, size.y * 0.24 + i * (h + 12.0)), Vector2(w, h))
+	var w: float = minf(460.0, (size.x - 96.0) / 3.0)
 	var h: float = minf(300.0, size.y * 0.45)
-	return Rect2(Vector2(size.x * 0.5 + (i - 1) * (w + 14.0) + 7.0, size.y * 0.5 - h * 0.45), Vector2(w, h))
+	return Rect2(Vector2(size.x * 0.5 + (i - 1) * (w + 14.0) - w * 0.5, size.y * 0.5 - h * 0.45), Vector2(w, h))
 
 func _text(text: String, p: Vector2, font_size: int, color: Color = PAPER, centered: bool = false) -> void:
 	if centered:
@@ -108,19 +109,19 @@ func _draw() -> void:
 		var ratio: float = minf(image_rect.size.x / icon.get_width(), image_rect.size.y / icon.get_height())
 		var image_size: Vector2 = icon.get_size() * ratio
 		draw_texture_rect(icon, Rect2(image_rect.get_center() - image_size * 0.5, image_size), false, Color.WHITE if state.owns(id) else Color(.45,.4,.34,.5))
-		var fs: int = mini(16, int(rect.size.x / 22.0)) if compact else 20
-		_text("WINCHESTER 1886" if i == 0 else "GOLDEN REMINGTON 1875",Vector2(rect.get_center().x,rect.position.y+rect.size.y*.75),fs,PAPER,true)
+		var fs: int = mini(16, int(rect.size.x / 22.0)) if compact else mini(20, int(rect.size.x / 15.0))
+		_text(Ep2ArmoryState.NAMES[id].to_upper(),Vector2(rect.get_center().x,rect.position.y+rect.size.y*.75),fs,PAPER,true)
 		var gun: Ep2Winchester = state.firearm(id)
-		var count: String = "%d LOADED  /  %d RESERVE" % [gun.rounds,gun.reserve] if state.owns(id) else "NOT YET ACQUIRED"
+		var count: String = ("%d ARROWS" % state.arrows if id == Ep2ArmoryState.BOW else "%d LOADED  /  %d RESERVE" % [gun.rounds,gun.reserve]) if state.owns(id) else "RECOVER FROM AN ARCHER" if id == Ep2ArmoryState.BOW else "NOT YET ACQUIRED"
 		_text(count,Vector2(rect.get_center().x,rect.position.y+rect.size.y*.86),12 if compact else 14,BRASS,true)
 		var key: String = Ep2ArmoryState.key_label(Ep2ArmoryState.ACTIONS[i])
 		_text(key,rect.position+Vector2(24,32),18,BRASS)
 		if picked:
 			_text("EQUIP ON RELEASE",Vector2(rect.get_center().x,rect.end.y-12),10,BRASS,true)
-	var footer_y: float = card_rect(1).end.y + 34
+	var footer_y: float = card_rect(2 if compact else 1).end.y + 26
 	_text("BEAR ARROWS  ·  %d" % state.arrows,Vector2(mid,footer_y),13,BRASS,true)
 	_text("TIME STANDS STILL",Vector2(mid,footer_y+26),12,PAPER,true)
-	var hint: String = "Hold %s / Back · point or choose 1 / 2 · release to equip" % Ep2ArmoryState.key_label("ep2_armory")
+	var hint: String = "Hold %s / Back · point or choose 1 / 2 / 3 · release to equip" % Ep2ArmoryState.key_label("ep2_armory")
 	if compact:
 		hint = "Hold holster · drag to a weapon · release"
 	_text(hint,Vector2(mid,footer_y+49),10 if compact else 13,BRASS,true)

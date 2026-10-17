@@ -542,6 +542,9 @@ func _route_free_roam(event: InputEvent) -> bool:
 		if event.is_action_pressed("ep2_weapon_2"):
 			_active.select_weapon(Ep2ArmoryState.REM)
 			return true
+		if event.is_action_pressed("ep2_weapon_3"):
+			_active.select_weapon(Ep2ArmoryState.BOW)
+			return true
 		if event.is_action_pressed("ep2_weapon_previous"):
 			_active.select_previous_weapon()
 			return true
