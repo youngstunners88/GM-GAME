@@ -5,10 +5,18 @@ No code, no assets yet. Superseded decisions: the earlier draft was a Treasury c
 all replaced by the founder lock.
 
 **Founder lock (canon): `PROMPT_EPISODE2_RICH_ARMORY_UTAH_RIVER.md`.**
-Also read: `design/ep2/armory/CONVENTION.md` (personal armory — needs an amendment, see §7),
+Also read: `design/ep2/armory/CONVENTION.md` (personal armory — amended 2026-10-17: the Armory is the one PAID crypto source, see §7),
 `PROMPT_EPISODE2_SURFACE_TO_TOWN_DRAW_SPEC.md`, `.claude/skills/ep2-surface-to-town/SKILL.md`,
 `.claude/skills/gm-game-gold-world/references/region-brief.md`, `design/world/WORLD_BIBLE.md`,
 `src/episode2/chamber/ep2_gold_town.gd`, `src/episode2/chamber/ep2_armory_state.gd`.
+
+**Build progress (2026-10-17).** Layer 3 started on branch `feat/rich-armory-lock`:
+`tools/ep2_blender/build_town_kit.py` now defines `Bldg_Armory` (barred windows, muted `ARMS` sign, walk-in door,
+lean-to loading shed) plus the first interior/props (`Arm_Counter`, `Arm_Rack`, `Arm_Case`, `Arm_SniperCase`,
+`Arm_PowderKeg`) and river gear (`River_Crate`, `River_Skiff`); `town_kit.glb` rebuilt; placed down a side lane off
+the left row (off the Main Street sightline) in `ep2_gold_town.gd`, dressed and furnished. The purchase contract is
+legalized and tested. **Still to build:** the armory chamber + Rich/Utah bodies + trade UI, the sniper, and the day-88
+river set-piece.
 
 FREEZE: no Pillar 5 / certificates / SWF. No CONFIDENTIAL items. No wallet or contract addresses.
 No invented tokenomics and no invented protocol numbers.

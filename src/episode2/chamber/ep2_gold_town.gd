@@ -104,8 +104,7 @@ static func build(parent: Node3D, interiors: bool) -> Dictionary:
 		["Trough", Vector3(6.2, 0.0, 1420.5), PI * 0.5], ["Wagon", Vector3(4.2, 0.0, 1452.0), 0.2], ["Wagon", Vector3(-3.6, 0.0, 1463.0), -2.9],
 		["LampPost", Vector3(-6.8, 0.0, 1409.0), 0.0], ["LampPost", Vector3(6.8, 0.0, 1424.0), PI], ["LampPost", Vector3(-6.8, 0.0, 1434.0), 0.0],
 		["Bench", Vector3(-7.6, 0.44, 1423.0), PI * 0.5], ["Bench", Vector3(7.6, 0.44, 1446.0), -PI * 0.5],
-		# the armory lane, off the left row past the STATS block: a boarded walk, a lamp, and river gear staged at the lean-to
-		["Boardwalk4m", Vector3(-12.0, 0.0, 1450.8), 0.0], ["Boardwalk4m", Vector3(-16.5, 0.0, 1450.8), 0.0],
+		# the armory lane, off the left row past the STATS block: a lamp, and river gear staged at the lean-to
 		["LampPost", Vector3(-10.0, 0.0, 1450.0), 0.0],
 		["Arm_PowderKeg", Vector3(-17.0, 0.0, 1465.2), 0.0], ["Arm_PowderKeg", Vector3(-16.1, 0.0, 1465.7), 0.0],
 		["River_Crate", Vector3(-14.9, 0.0, 1465.0), 0.3], ["River_Skiff", Vector3(-22.4, 0.0, 1460.0), PI * 0.5],
