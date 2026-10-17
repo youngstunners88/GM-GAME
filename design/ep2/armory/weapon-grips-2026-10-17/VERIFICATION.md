@@ -38,3 +38,7 @@ python tools/ep2_blender/share_weapon_textures.py
 ```
 
 The glove maps use existing lossy import settings, one shared olive map, and no unused first-person distance LODs. Keep those import sidecars when rebuilding. Runtime admission remains subject to full shipping checks and actual CI/butler/public BUILD verification; source publication alone is not a deployment receipt.
+
+## Deployment receipt
+
+Source `a13b767c7804befd5cff2e815b6b80d1e677c1ea` shipped through [CI run 39026261056](https://github.com/youngstunners88/GM-GAME/actions/runs/39026261056), all weapon gates and butler deployment successful. Actual upload log: `Pushed to https://youngstunners88.itch.io/smokerealm` at 10:56:32 UTC. Public browser boot and visible read-only overlay confirmed **BUILD 2026-10-17-a13b767**. CI artifact PCK: **199181600 B**. The existing Episode 2 access-code prompt is still enabled; no protected public playthrough is claimed. Changed gameplay was verified using the local real-camera fixtures and CI/native tests. Exact structured evidence: `release-receipt.json`. Decision-provider credentials were not configured, so no external model verdict is claimed.
