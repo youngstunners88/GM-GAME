@@ -13,6 +13,11 @@ const SWITCH_TIME := 0.18
 const VERSION := 1
 const CONTROL_FILE := "user://ep2_armory_controls.cfg"
 const ACTIONS := ["ep2_weapon_1", "ep2_weapon_2", "ep2_weapon_3", "ep2_weapon_previous", "ep2_armory"]
+## The Armory (Rich & Utah, off Main Street) is the one PAID acquisition source.
+## It sells firearms and ammunition for Episode 1 crypto; it never awards anything
+## for free and respects the same finite reserve cap as earned ammunition.
+const ARMORY_TENDER := ["btc", "eth", "sol"]
+const RESERVE_CAP := 2000
 var owned: Dictionary = {}
 var equipped: String = WIN
 var previous: String = REM
@@ -72,6 +77,32 @@ func acquire(id: String, source: Ep2Winchester = null) -> bool:
 		gun.reload_locked = false
 	if id == WIN or not owns(equipped):
 		equipped = id
+	changed.emit()
+	return true
+
+
+## The Armory's paid path (Rich & Utah, off Main Street). `tender` is the Episode 1
+## crypto currency ("btc" / "eth" / "sol"); the calling room owns the balance and
+## debits it before asking. A purchase never re-sells an owned gun and never marks
+## ammunition free (the finite reserve cap is unchanged).
+func purchase_firearm(id: String, tender: String) -> bool:
+	if not IDS.has(id) or owns(id) or not ARMORY_TENDER.has(tender):
+		return false
+	return acquire(id)
+
+
+func purchase_ammo(id: String, rounds: int, tender: String) -> bool:
+	if not owns(id) or rounds <= 0 or not ARMORY_TENDER.has(tender):
+		return false
+	if id == BOW:
+		var room: int = 999 - arrows
+		if room <= 0:
+			return false
+		arrows += mini(rounds, room)
+		(firearm(BOW) as Ep2Bow).rounds = arrows
+	else:
+		var gun: Ep2Winchester = firearm(id)
+		gun.reserve = mini(gun.reserve + rounds, RESERVE_CAP)
 	changed.emit()
 	return true
 

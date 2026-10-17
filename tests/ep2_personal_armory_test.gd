@@ -33,6 +33,17 @@ func _ready() -> void:
 	_check("old Stage 1 save does not award a revolver", not state.owns(Ep2ArmoryState.REM))
 	state.restore({}, true)
 	_check("old earned Stage 3 save migrates the golden Remington", state.owns(Ep2ArmoryState.REM) and state.firearm(Ep2ArmoryState.REM).rounds == 6)
+	# The Armory (Rich & Utah) is a legal PAID acquisition source for Episode 1 crypto.
+	var shop := Ep2ArmoryState.new()
+	_check("the Armory rejects an unlisted tender", not shop.purchase_firearm(Ep2ArmoryState.REM, "gold") and not shop.owns(Ep2ArmoryState.REM))
+	_check("the Armory sells a period firearm for Episode 1 crypto", shop.purchase_firearm(Ep2ArmoryState.REM, "btc") and shop.owns(Ep2ArmoryState.REM))
+	_check("the Armory never re-sells an owned gun", not shop.purchase_firearm(Ep2ArmoryState.REM, "eth"))
+	shop.purchase_firearm(Ep2ArmoryState.WIN, "eth")
+	var shop_win: Ep2Winchester = shop.firearm(Ep2ArmoryState.WIN)
+	var shop_reserve: int = shop_win.reserve
+	_check("the Armory tops up owned ammunition with Episode 1 crypto", shop.purchase_ammo(Ep2ArmoryState.WIN, 12, "sol") and shop_win.reserve == shop_reserve + 12)
+	_check("the Armory cannot sell ammunition for an unowned gun", not shop.purchase_ammo(Ep2ArmoryState.BOW, 6, "btc") and shop_win.reserve == shop_reserve + 12)
+	_check("the Armory cannot sell for a free or unknown tender", not shop.purchase_ammo(Ep2ArmoryState.WIN, 12, "") and not shop.purchase_ammo(Ep2ArmoryState.WIN, 12, "gold"))
 	state = _both()
 	var win: Ep2Winchester = state.firearm(Ep2ArmoryState.WIN)
 	var rem: Ep2Winchester = state.firearm(Ep2ArmoryState.REM)

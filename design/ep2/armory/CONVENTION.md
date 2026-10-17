@@ -2,6 +2,8 @@
 
 The session root owns `Ep2ArmoryState`. Rooms, HUDs and camera-held models project it. Background prebuilds use detached copies and bind the live state at activation. Attaching or replacing a camera never grants ammunition.
 
+**The Armory (Rich & Utah) is the one PAID acquisition source** (founder lock `PROMPT_EPISODE2_RICH_ARMORY_UTAH_RIVER.md`, 2026-10-17). Its counter sells firearms and ammunition for Episode 1 crypto — `btc` / `eth` / `sol` only, never an invented soft currency. `Ep2ArmoryState.purchase_firearm(id, tender)` and `purchase_ammo(id, rounds, tender)` are the only legal paths; the calling room owns the balance and debits it first. Story handovers stay the default and are unaffected. A purchase never awards a free full loadout, never re-sells an owned gun, and bought ammunition obeys the same finite reserve cap (`RESERVE_CAP`) as earned ammunition.
+
 | ID | Player name | Separate ammunition | Game capacity |
 |---|---|---|---|
 | `winchester_1886` | Winchester 1886 | `rifle_round` | 4 |
