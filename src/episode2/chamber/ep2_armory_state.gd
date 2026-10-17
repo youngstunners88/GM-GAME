@@ -18,11 +18,36 @@ const ACTIONS := ["ep2_weapon_1", "ep2_weapon_2", "ep2_weapon_3", "ep2_weapon_pr
 ## for free and respects the same finite reserve cap as earned ammunition.
 const ARMORY_TENDER := ["btc", "eth", "sol"]
 const RESERVE_CAP := 2000
+## The Armory's stock (single source of truth for the trade panel AND the chamber that debits it).
+## Prices are feel-values in Episode 1 crypto coins (F - free to tune; never a protocol fact).
+const SHOP: Array = [
+	{"id": "sniper", "name": "LONG RIFLE", "note": "SET TRIGGER - FOR THE OVERLOOK", "price": 3, "rounds": 0},
+	{"id": "sniper_ammo", "name": "LONG-RIFLE CARTRIDGES", "note": "A BOX OF TEN", "price": 2, "rounds": 10},
+	{"id": "rifle_ammo", "name": "REPEATER CARTRIDGES", "note": "A BOX OF TWENTY-FOUR", "price": 1, "rounds": 24},
+	{"id": "revolver_ammo", "name": "SIXGUN CARTRIDGES", "note": "A BOX OF EIGHTEEN", "price": 1, "rounds": 18},
+	{"id": "river_gear", "name": "RIVER GEAR", "note": "SKIFF AND SEALED CRATES", "price": 2, "rounds": 0},
+]
+
+
+static func shop_item(id: String) -> Dictionary:
+	for item in SHOP:
+		if str(item["id"]) == id:
+			return item
+	return {}
+
+
+## The long rifle Rich sells for the day-88 overlook. It is NOT one of the three
+## quick-switch slots (the personal armory system is preserved untouched); it is
+## carried into the river set-piece, so it is a separate acquisition.
+const SNIPER := "armory_sniper"
 var owned: Dictionary = {}
 var equipped: String = WIN
 var previous: String = REM
 var arrows: int = 0
 var corpses: Dictionary = {}
+var sniper_owned: bool = false
+var sniper_rounds: int = 0
+var river_gear: bool = false
 var _guns: Dictionary = {}
 var _switch_t: float = 0.0
 
@@ -107,6 +132,33 @@ func purchase_ammo(id: String, rounds: int, tender: String) -> bool:
 	return true
 
 
+## The day-88 long rifle: a one-time Armory purchase (Episode 1 crypto only).
+func purchase_sniper(tender: String) -> bool:
+	if sniper_owned or not ARMORY_TENDER.has(tender):
+		return false
+	sniper_owned = true
+	changed.emit()
+	return true
+
+
+## Long-rifle cartridges for the day-88 set-piece (sold by the box, finite like the rest).
+func purchase_sniper_ammo(rounds: int, tender: String) -> bool:
+	if not sniper_owned or rounds <= 0 or sniper_rounds >= RESERVE_CAP or not ARMORY_TENDER.has(tender):
+		return false
+	sniper_rounds = mini(sniper_rounds + rounds, RESERVE_CAP)
+	changed.emit()
+	return true
+
+
+## The river gear (skiff / sealed buoyant crates) that carries the day-88 shipment.
+func purchase_river_gear(tender: String) -> bool:
+	if river_gear or not ARMORY_TENDER.has(tender):
+		return false
+	river_gear = true
+	changed.emit()
+	return true
+
+
 ## Standalone post-hideout scenes declare their story entry, separate from rendering.
 static func post_hideout() -> Ep2ArmoryState:
 	var state := Ep2ArmoryState.new()
@@ -170,7 +222,8 @@ func snapshot() -> Dictionary:
 			"cycle": gun._cycle, "reload_t": gun._reload_t, "reloading": gun.reloading,
 			"locked": gun.locked, "reload_locked": gun.reload_locked, "training_complete": gun.training_complete}
 	return {"version": VERSION, "weapons": weapons, "equipped": equipped, "previous": previous,
-		"arrows": arrows, "corpses": corpses.duplicate(true), "switch_t": _switch_t}
+		"arrows": arrows, "corpses": corpses.duplicate(true), "switch_t": _switch_t,
+		"sniper": sniper_owned, "sniper_rounds": sniper_rounds, "river_gear": river_gear}
 
 
 func restore(data: Dictionary, earned_remington: bool = false) -> void:
@@ -208,6 +261,9 @@ func restore(data: Dictionary, earned_remington: bool = false) -> void:
 	if not owns(equipped):
 		equipped = WIN if owns(WIN) else REM if owns(REM) else WIN
 	previous = REM if equipped == WIN else WIN
+	sniper_owned = valid and bool(data.get("sniper", false))
+	sniper_rounds = clampi(SaveSafe.to_int(data.get("sniper_rounds", 0)), 0, RESERVE_CAP) if sniper_owned else 0
+	river_gear = valid and bool(data.get("river_gear", false))
 	_switch_t = clampf(SaveSafe.to_float(data.get("switch_t", 0)), 0.0, SWITCH_TIME) if valid else 0.0
 	changed.emit()
 

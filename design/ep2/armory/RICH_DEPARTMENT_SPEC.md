@@ -1,22 +1,24 @@
 # Rich's Armory — a dedicated shop off Main Street (department + arsenal + Utah)
 
-status: draft for founder review (2026-10-17). Layer 2 of `ep2-layered-production` (wire spec).
-No code, no assets yet. Superseded decisions: the earlier draft was a Treasury counter, ammo-only, paid in nuggets —
-all replaced by the founder lock.
+status: **IN GAME (2026-10-17)** — Layer 3 + 4 + 5 landed on branch `feat/rich-armory-lock`. Every section below is
+now build notes for what shipped, not a plan. Superseded decisions: the earlier draft was a Treasury counter, ammo-only,
+paid in nuggets — all replaced by the founder lock. Still open: only the day-88 river set-piece itself (§9).
 
 **Founder lock (canon): `PROMPT_EPISODE2_RICH_ARMORY_UTAH_RIVER.md`.**
 Also read: `design/ep2/armory/CONVENTION.md` (personal armory — amended 2026-10-17: the Armory is the one PAID crypto source, see §7),
-`PROMPT_EPISODE2_SURFACE_TO_TOWN_DRAW_SPEC.md`, `.claude/skills/ep2-surface-to-town/SKILL.md`,
-`.claude/skills/gm-game-gold-world/references/region-brief.md`, `design/world/WORLD_BIBLE.md`,
-`src/episode2/chamber/ep2_gold_town.gd`, `src/episode2/chamber/ep2_armory_state.gd`.
+`design/ep2/armory/RICH_UTAH_LINES.md` (the voice-ready trade script, unrecorded), `PROMPT_EPISODE2_SURFACE_TO_TOWN_DRAW_SPEC.md`,
+`.claude/skills/ep2-surface-to-town/SKILL.md`, `.claude/skills/gm-game-gold-world/references/region-brief.md`,
+`design/world/WORLD_BIBLE.md`, `src/episode2/chamber/ep2_gold_town.gd`, `src/episode2/chamber/ep2_armory_state.gd`.
 
-**Build progress (2026-10-17).** Layer 3 started on branch `feat/rich-armory-lock`:
-`tools/ep2_blender/build_town_kit.py` now defines `Bldg_Armory` (barred windows, muted `ARMS` sign, walk-in door,
-lean-to loading shed) plus the first interior/props (`Arm_Counter`, `Arm_Rack`, `Arm_Case`, `Arm_SniperCase`,
-`Arm_PowderKeg`) and river gear (`River_Crate`, `River_Skiff`); `town_kit.glb` rebuilt; placed down a side lane off
-the left row (off the Main Street sightline) in `ep2_gold_town.gd`, dressed and furnished. The purchase contract is
-legalized and tested. **Still to build:** the armory chamber + Rich/Utah bodies + trade UI, the sniper, and the day-88
-river set-piece.
+**Build progress (2026-10-17).** Branch `feat/rich-armory-lock`:
+`tools/ep2_blender/build_town_kit.py` defines `Bldg_Armory` (barred windows, muted `ARMS` sign, walk-in door, lean-to
+loading shed) plus the interior/props (`Arm_Counter`, `Arm_Rack`, `Arm_Case`, `Arm_SniperCase`, `Arm_PowderKeg`) and
+river gear (`River_Crate`, `River_Skiff`); placed down a side lane off the left row (off the Main Street sightline) in
+`ep2_gold_town.gd`, dressed and furnished. The purchase contract is legalized (`GameManager.spend_coins`, CONVENTION
+carve-out). The trade UI (`ep2_armory_shop.gd`) and both bodies ship — `tools/ep2_blender/build_armory_folk.py`
+authors Rich and Utah headless in the in-repo Blender 5.2.1, one 20-bone skeleton and five authored clips each, played
+by `Ep2TownFolk`. Gates: `ep2_gold_town_test`, `ep2_personal_armory_test`, `ep2_fort_knox_arc_test` ALL PASS.
+**Still to build:** only the day-88 river set-piece (overlook, water, bears) and the voice pass.
 
 FREEZE: no Pillar 5 / certificates / SWF. No CONFIDENTIAL items. No wallet or contract addresses.
 No invented tokenomics and no invented protocol numbers.
@@ -109,8 +111,12 @@ established crypto as visible money in this town; the Armory continues that at h
 
 - Exact prices stay flexible for balance; the fiction is fixed (Episode 1 crypto is the tender).
 - No free full loadout on first entry.
-- **Open:** which exact counter is the tender (crypto-flavoured score `coins_collected` vs a true "bag" holding) — see
-  `docs/design/economy_points_system_design.md` (it separates SCORE from protocol holdings). To confirm before coding.
+- **DECIDED (built 2026-10-17):** the tender is the crypto-flavoured score **`GameManager.coins_collected`** — the
+  Episode 1 coin faces — debited through the new **`GameManager.spend_coins(count) -> bool`** (it emits
+  `coins_changed`, never touches score, and refuses to overdraw). `ethereum_rings_collected` stays the unspent
+  premium pickup; no second "bag" or holdings system was invented (`docs/design/economy_points_system_design.md`'s
+  SCORE/holdings split is respected). The chamber owns the balance: it debits first and refunds if the state
+  refuses (`gold_town.gd` `_spend` / `_refund`).
 
 **F = feel value (free to tune).** No price, balance, percentage, APY or address is ever shown as protocol fact.
 
@@ -131,30 +137,49 @@ established crypto as visible money in this town; the Armory continues that at h
 - **River gear** (boat / kayak / packaging) is sold or prepared here and used in the day-88 sequence.
 - **No invented GoldMine protocol numbers** — map only existing whitepaper language when the shipment is described.
 - **Preserve the personal armory system** (Winchester, Remington, ammo, pause/equip flow). This building is the
-  narrative and spatial source, not a replacement.
-- No token balance / price / yield / `%` / `$` / `0x` / ticker in any player string; no `GoldMineSystem` write.
-- **⚠ CONVENTION amendment needed:** `design/ep2/armory/CONVENTION.md` says *"ownership is earned"* and the armory
-  never grants ammunition from a camera. Selling firearms for crypto contradicts that line. The lock wins, but the
-  convention (and its tests, e.g. `ep2_personal_armory_test`) must be amended explicitly before the buy-a-sniper flow
-  is built — otherwise the purchase will fight the existing contract.
+  narrative and spatial source, not a replacement. The long rifle is **not** a fourth quick-switch slot: it lives
+  outside `Ep2ArmoryState.IDS` as `sniper_owned` + `sniper_rounds`, for the day-88 set-piece.
+- **Strings:** the trade may show the game's own fiction — the three tenders exactly as the lock names them
+  (BTC / ETH / SOL), the coin price of an item and the purse — because those are game facts the founder lock
+  establishes (the town already spends crypto as money). What a player string may **never** show: an invented
+  protocol number, a yield, a rate, an APY, a `%`, a `$`, a `0x` address, or a balance presented as a protocol
+  fact. Spoken lines say "coin", never a ticker (see `RICH_UTAH_LINES.md`). No `GoldMineSystem` write.
+- **✅ CONVENTION amendment landed (2026-10-17):** `design/ep2/armory/CONVENTION.md` now carries the carve-out —
+  the Armory is *"the one PAID acquisition source"*, `purchase_firearm` / `purchase_ammo` (plus the Armory's own
+  sniper/river APIs) are the only legal paid paths, and the calling room owns and debits the balance. The old
+  "ownership is earned" line stands for every other source; `ep2_personal_armory_test` covers both readings.
 
-## 8. The bodies — Rich + Utah (Layer 4 + 5 plan)
+## 8. The bodies — Rich + Utah (built 2026-10-17)
 
-Work in `youngstunners88/GM-GAME`, not an isolated Blender file (`smokerealm-episode2-art`).
+**Route change (recorded):** the Layer 4 plan assumed Tripo/Meshy multi-image-to-3d. That service is unavailable
+(balance 0, no keys on this box), so both bodies were **authored on-box in the in-repo Blender 5.2.1, headless** by
+`tools/ep2_blender/build_armory_folk.py` — no external calls, no textures to ship (solid material palette, ~450 KB
+per GLB). Reference discipline was kept: Rich matches his existing 2D art, and a new Utah design sheet
+(`captures/`) was written from the founder's Utah Drive reference before modelling.
 
-- **Reference (Layer 3 first):** Rich — his existing 2D art; Utah — a new design sheet (Tripo / Meshy / Blender).
-  Generate front/side/back renders as Meshy multi-image inputs so the models match the art.
-- **Model (Layer 4):** `ep2-meshy-studio` — multi-image-to-3d (Meshy-7 PBR) → remesh ~30–40k → `shrink_glb.py`
-  (`--max 1024 --aux-max 256`) → `glb-shot.mjs` contact sheet → look before placing. Rich: long duster, wide hat, worn
-  leather, brass ledger + stamp. Utah: period, leaner silhouette, distinct palette so the riverside read is instant.
-- **Rig + clips (Layer 5):** `ep2-character-performance` — `idle`, `counter_idle` (hand over the case), `greet`; a
-  `carry` for Utah hauling the crate. Prop contacts (ledger, a brass round, the rifle) must actually meet the hand.
-- **Integration:** two `Ep2TownFolk` behind the counter, height ~1.78 (Sheriff convention), static with a stride bob
-  unless a full idle ships.
-- **Voice:** Rich reuses `LNV6ahDtkAOqwn1X3R7a`; **Utah needs a new ElevenLabs voice** (pick, record the id). Write
-  3–5 trade barks each through `ep2-voice-barks`; encode small (voice 48k mono) for the pack gate.
-- **Pack:** new textures `compress/mode=1` and FORCE-ADD their `.import` (`*.import` is gitignored); pck under
-  190 MiB (`scripts/ep2-local-export.sh`).
+- **One skeleton, two bodies.** Each figure is a single multi-material mesh (lofted from measured profiles) plus an
+  authored armature — **20 bones** — with **procedural distance-weighted skinning** written by the script (Godot's
+  `ARMATURE_AUTO` was not used). The shared skeleton drives both the mesh and the clips, so a hand prop binds to
+  `Hand.L` / `Hand.R` and actually moves with the performance.
+- **Authored clips are baked into the GLB** and played by `Ep2TownFolk`:
+  **Rich** — `Counter` (hand on the long case, head up to the customer), `Greet`, `Idle`, `Point`, `Walk`;
+  **Utah** — `Carry` (hauls the crate), `Greet`, `Idle`, `Point`, `Walk`.
+  `_bind_clips()` detects a rigged GLB, `set_pose()` routes to real clips, and the statue sway/breath is skipped for
+  rigged folk (the stride bob still runs while walking). Behind the counter: Rich `hold_clip("Counter")`, Utah
+  `hold_clip("Idle")`; both turn to whoever walks in.
+- **Props as built:** Rich holds the **claim book and brass stamp in the left hand** (his Ep1 "Claim Recorder"
+  identity; bound to `Hand.L`), wears the leather duster, dark miner's helmet with brass headlamp, gold aviator
+  shades, cigar, red neckerchief, GM medallion, tool belt, chaps and tall boots. Utah: brown felt hat, dark shades,
+  grey goatee, open black leather jacket with **star badge**, dark vest, tooled belt with **twin low-slung
+  holsters**, rope coil, charcoal jeans, two-tone boots.
+- **Heights:** Rich **1.86 m** built and standing; Utah built at 1.80 m and stood at **1.74 m** by the town folk
+  convention (`Ep2GoldTown` const `UTAH_HEIGHT`; `Ep2TownFolk.setup()` rescales to the requested height).
+- **Voice:** Rich reuses `LNV6ahDtkAOqwn1X3R7a`; **Utah needs a new ElevenLabs voice** (pick, record the id). The
+  voice-ready trade script (barks, refusals, the hand-off line) lives in `design/ep2/armory/RICH_UTAH_LINES.md`;
+  none of it is recorded — the room currently speaks through the panel + HUD text quoted there. Encode barks small
+  (voice 48k mono) for the pack gate when recorded.
+- **Pack:** the folk GLBs carry no new textures (palette-only materials), so the 190 MiB pck gate is untouched by
+  the bodies; `scripts/ep2-local-export.sh` still verifies it at export.
 
 ## 9. Day-88 river handoff (seeded here)
 
@@ -166,26 +191,63 @@ Work in `youngstunners88/GM-GAME`, not an isolated Blender file (`smokerealm-epi
   the river prompt).
 - **Utah** is the river-linked partner who appears at the riverside. Whether Utah or Inferno Bull rides/goes with the
   shipment is **not** locked here.
+- **As built (2026-10-17):** the long rifle and the river gear are real stock — `Ep2ArmoryState.SHOP` ids `sniper` /
+  `sniper_ammo` / `river_gear`, state `sniper_owned` + `sniper_rounds` + `river_gear` — and the town room's last beat
+  is their consequence: `GEARED` fires when Lil Blunt walks out holding the rifle, its cartridges **and** the river
+  gear, and the ending payload carries `armory_visited`, `sniper`, `sniper_rounds` and `river_gear` into the next
+  room. The river set-piece itself (overlook, water, bears, the craft order) is the **next** build; nothing about it
+  is claimed here beyond what the counter sells.
 
 ## 10. Acceptance gate (headless + capture)
 
-- [ ] Building: a new armory kit piece stands on a **side lane off Main Street** with a `0.75` door; walk-in, no blackout.
-- [ ] Exclusive placement: off the main sightline; Main Street keeps its buildings and its clear duel lane.
-- [ ] Rich **and** Utah present behind the counter on the first proper visit.
-- [ ] Inventory: the period weapon array + ammunition is visible in racks/cases and purchasable.
-- [ ] Payment: purchases spend **Episode 1 crypto only**; no invented soft currency; no free first-entry loadout.
-- [ ] Sniper: the long rifle is acquired here and is the weapon used in the day-88 overlook set-piece.
-- [ ] River gear: boat/kayak/packaging is obtained here and used in the day-88 sequence.
-- [ ] Treasury untouched: no weapon racks, no trade, no economy write in the Treasury chamber.
-- [ ] Personal armory preserved: `ep2_personal_armory_test` (and its amendment) passes; no `GoldMineSystem` write.
-- [ ] Strings: no digit, `%`, `$`, `0x`, ticker or address in any armory trade string.
-- [ ] Bodies: gameplay-camera captures of Rich + Utah graded against their references (`ep2-reference-match-loop`).
-- [ ] Pack: pck under 190 MiB after the models + clips land.
+Status as of 2026-10-17 (branch `feat/rich-armory-lock`). Each ✅ names the evidence that holds it up.
 
-## 11. Open questions for the founder
+- [x] Building: `Bldg_Armory` stands on a **side lane off Main Street** with a walkable door. `build_town_kit.py`
+      gains the piece; `ep2_gold_town_test` walks the lane and enters.
+- [x] Exclusive placement: off the main sightline; no existing building moved, the duel lane untouched
+      (`ep2_gold_town_test` lane walk + placement assertions).
+- [x] Rich **and** Utah present behind the counter on the first proper visit — and rigged, moving on authored clips
+      (`ep2_gold_town_test` both-present + rigged-clip checks).
+- [x] Inventory visible in racks/cases and purchasable: counter, wall racks, revolver case, lit long-rifle case, keg
+      (`build_town_kit.py`), trade panel (`ep2_armory_shop.gd`), single-source stock (`Ep2ArmoryState.SHOP`).
+- [x] Payment: purchases spend **Episode 1 crypto only** (`coins_collected`, debited via `GameManager.spend_coins`);
+      no invented soft currency, no free first-entry loadout, unlisted tenders refused (`ep2_gold_town_test` +
+      `ep2_personal_armory_test`).
+- [x] Sniper: the long rifle is acquired at this counter for the day-88 overlook; it is not a quick-switch slot
+      (`sniper_owned` / `sniper_rounds` outside `IDS`) and the ending carries it (`ep2_personal_armory_test` +
+      `ep2_gold_town_test` GEARED fields).
+- [x] River gear: skiff + sealed crates sold here, carried into the day-88 sequence (`river_gear`, same gates).
+- [x] Treasury untouched: `ep2_fort_knox_arc_test` ALL PASS with the extended beat list; no weapon racks and no
+      economy write in the Treasury chamber.
+- [x] Personal armory preserved: `ep2_personal_armory_test` ALL PASS including the amended CONVENTION reading and
+      the new catalogue/sniper/river/snapshot checks; no `GoldMineSystem` write anywhere in the Armory flow.
+- [x] Strings: every shipped string is quoted in `RICH_UTAH_LINES.md` §2 and obeys §7 — no invented protocol number,
+      no yield/`%`/`$`/`0x`/address; the panel's coin counts and the three tenders are game fiction the lock names.
+- [ ] Bodies, gameplay-camera captures: Blender judgment renders of the **shipped GLBs** are in the repo —
+      `design/ep2/armory/captures/` — Rich `rich_idle_front` / `rich_greet_front` / `rich_counter_three` /
+      `rich_walk_three`, Utah `utah_idle_front` / `utah_idle_side` / `utah_greet_front` / `utah_carry_three`, graded
+      against `utah_ref.jpg` and Rich's founder art (`rich_the_claim_recorder.png`). They are Blender renders — a true
+      **in-game gameplay-camera** capture is still open on this box (the local gate script skips the xvfb render
+      stage — needs apt/xvfb).
+- [ ] Pack: pck under 190 MiB — re-verify at export (`scripts/ep2-local-export.sh`); the folk GLBs add no textures
+      (palette-only, ~450 KB each), so no pack risk is expected.
 
-1. **Tender:** which Episode 1 counter pays — the crypto-flavoured score (`coins_collected`: SOL/ETH/BTC faces) or a true
-   holdings "bag"? (the economy doc separates the two)
-2. **Sniper:** a specific real 1800s rifle (e.g. a Sharps/Buffalo or a scoped Winchester) or an original period silhouette?
-3. **Utah on the water:** Utah, Inferno Bull, or both (Utah bank / Bull on the water)?
-4. **Exclusivity:** just set apart on the lane, or **door gated** until Lil Blunt is armed / has the tip?
+## 11. Open questions — resolved as implemented (2026-10-17)
+
+The lock left four questions and gave authority to resolve them by building. All four are answered; each answer is
+now what the code and docs actually do.
+
+1. **Tender — `coins_collected`, through `spend_coins()`.** The crypto-flavoured Episode 1 score pays; the chamber
+   debits first and refunds on refusal; `ethereum_rings_collected` stays unspent premium pickup; no second holdings
+   system was invented (see §6).
+2. **Sniper — an original period silhouette, no licensed model name.** Octagon-barrel long rifle, walnut stock,
+   brass tube sight (built in `build_town_kit.py`; `Arm_SniperCase`). Mechanical stats stay balance-tunable per the
+   lock (line: "period silhouette is required; mechanical numbers can follow balance").
+3. **Utah on the water — Utah is the riverside partner; who rides stays open.** The lock makes Utah the river-linked
+   character and the founder's prompt has him appear riverside later; what rides with the shipment (Utah, Inferno
+   Bull, or both) stays deferred to the day-88 river build. This room locks only the counter, the craft order and
+   the send-off (scripted, unrecorded: `RICH_UTAH_LINES.md` §3).
+4. **Exclusivity — positional, not gated.** The door is never locked; the shop is findable-but-off-street (side
+   lane off the left row), the trade opens **only at the counter** (`_at_armory_counter()`: `Beat.ARMORY` +
+   `ARMORY_TRADE_R`) and only once the tip beat has pointed the way, and buying anything requires Episode 1 crypto
+   in the purse.

@@ -49,8 +49,8 @@ func _ready() -> void:
 	_check("the woods chamber has only its groundwork beats (no CLAIM / DECOY / VAULT / SACRIFICE / RESCUE beat)",
 		woods_beats == ["SNEAK", "REVEAL", "MOUNT", "RIDE", "DROPOFF", "DONE"], str(woods_beats))
 	var town_beats: Array = GoldTownChamber.Beat.keys()
-	_check("the town chamber has only the founder's 2026-10-14 beats (no CLAIM / DECOY / VAULT / SACRIFICE / RESCUE)",
-		town_beats == ["STREET", "OFFICE", "TO_BAR", "BAR", "SQUARE_UP", "DRAW", "WON", "DONE"], str(town_beats))
+	_check("the town chamber keeps the founder's 2026-10-14 beats and the Armory turn (TIP / ARMORY / GEARED, Rich & Utah), still no CLAIM / DECOY / VAULT / SACRIFICE / RESCUE",
+		town_beats == ["STREET", "OFFICE", "TO_BAR", "BAR", "SQUARE_UP", "DRAW", "WON", "TIP", "ARMORY", "GEARED", "DONE"], str(town_beats))
 	var lift_beats: Array = MineLiftChamber.Beat.keys()
 	_check("the lift chamber keeps its groundwork beats", lift_beats == ["ARRIVE", "BOARD", "LEVER", "RISE", "SURFACE", "DONE"], str(lift_beats))
 	_check("the woods hand over to the town, and the town ends the slice (end_session)", "\"next_chamber\": \"gold_town\"" in _text("res://src/episode2/chamber/woods_quad.gd")

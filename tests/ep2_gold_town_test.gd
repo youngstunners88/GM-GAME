@@ -190,10 +190,57 @@ func _ready() -> void:
 	_until(c, 10.0, func(): return c.get_beat_name() == "WON")
 	_check("-> WON: the map to the auction is his", c.has_map() and c.get_beat_name() == "WON")
 	_check("Bull comes walking up the street afterwards (no line locked for him)", c.is_bull_here())
-	_until(c, 40.0, func(): return res.size() == 1)
 	_check("the Sheriff calls it fair and square", said.has("vo_sheriff_win"))
+
+	# ---- the Armory: Rich the Claim Recorder and Utah, off Main Street (founder lock PROMPT_EPISODE2_RICH_ARMORY_UTAH_RIVER.md)
+	print("-- THE ARMORY (down the side lane, Rich & Utah)")
+	_until(c, 30.0, func(): return c.get_beat_name() == "TIP")
+	_check("-> TIP: the room points him down the side lane (off Main Street, not on the boardwalk)",
+		c.get_beat_name() == "TIP" and "lane" in str(c.get_hud().objective).to_lower(), str(c.get_hud().objective))
+	var rich: Ep2TownFolk = c.get_rich()
+	var utah: Ep2TownFolk = c.get_utah()
+	_check("Rich the Claim Recorder and Utah are both in the shop before he ever walks in (the lock's both-present rule)",
+		rich != null and utah != null and rich.visible and utah.visible, str(rich) + " " + str(utah))
+	_check("both are rigged bodies, moving on their authored clips (not statues with a bob)",
+		rich.has_clips() and utah.has_clips() and rich.current_clip() == "counter" and utah.current_clip() == "idle",
+		"%s %s" % [rich.current_clip(), utah.current_clip()])
+	var lane: Vector3 = Ep2GoldTown.door_world("Bldg_Armory", 2.2)
+	var inside: Vector3 = Ep2GoldTown.local_to_world("Bldg_Armory", GoldTownChamber.ARMORY_SPOT)
+	# the shop is off the Main Street sightline: he has to step off the boardwalk, walk up the street
+	# past the left row, turn down the lane between Bldg_E's back and the shop front, and go in.
+	var stepped: bool = _walk_to(c, Vector3(-6.0, 0.0, 1453.0), 40.0)
+	stepped = _walk_to(c, GoldTownChamber.LANE_MARK, 30.0) and stepped
+	stepped = _walk_to(c, lane, 30.0) and stepped
+	_check("he walks the side lane off the left row (off Main Street, no sign on the drag) and in through the shop door",
+		stepped and _walk_to(c, inside, 30.0), str(c.get_player_position()) + " want " + str(inside))
+	_until(c, 8.0, func(): return c.get_beat_name() == "ARMORY")
+	_check("-> ARMORY: both shopkeepers turn to whoever came in", c.get_beat_name() == "ARMORY" and c.armory_visited())
+	_check("the trade is offered at the counter and nowhere else", c._at_armory_counter())
+	_check("the purse is Episode 1 crypto and the case below it: no soft currency, no free loadout",
+		not c.is_shop_open() and c.get_shop() != null and c.get_shop().purse >= 0)
+	GameManager.coins_collected = 0
+	_check("no crypto, no iron: the counter refuses the long rifle", not c.buy("sniper", 3, "btc") and not c.has_sniper())
+	GameManager.coins_collected = 9
+	var before: int = GameManager.coins_collected
+	_check("with crypto in the purse [E] opens Rich & Utah's trade", c.start_rig("eth") and c.is_shop_open())
+	_check("the long rifle is sold for crypto - 3 coins, debited, not minted",
+		c.buy("sniper", 3, "btc") and c.has_sniper() and GameManager.coins_collected == before - 3 and c.coins_spent() == 3,
+		"purse %d spent %d" % [GameManager.coins_collected, c.coins_spent()])
+	_check("a second look at the same rifle is not a second sale", not c.buy("sniper", 3, "btc") and GameManager.coins_collected == before - 3)
+	_check("the long-rifle cartridges come by the box and only after the rifle", c.buy("sniper_ammo", 2, "sol") and c.armory.sniper_rounds == GoldTownChamber.SNIPER_BOX)
+	_check("the river gear (skiff and sealed crates) is his for the day-88 shipment", c.buy("river_gear", 2, "eth") and c.has_river_gear())
+	_check("the room refuses a tender that is not Episode 1 crypto", not c.buy("rifle_ammo", 1, "gold") and not c.buy("river_gear", 2, "gold"))
+	c.get_shop().closed.emit()
+	_check("Esc shuts the trade and gives the street back", not c.is_shop_open() and not get_tree().paused)
+	_until(c, 12.0, func(): return c.get_beat_name() == "GEARED")
+	_check("-> GEARED: the rifle and the river gear in hand, the room hands him to the river shipment",
+		c.get_beat_name() == "GEARED" and c.has_sniper() and c.has_river_gear())
+	_until(c, 20.0, func(): return res.size() == 1)
 	_check("the room ends the playable slice (TO BE CONTINUED), the map in hand, mints nothing", res.size() == 1 and bool(res[0].get("end_session", false))
 		and bool(res[0].get("to_be_continued", false)) and bool(res[0].get("got_map", false)) and int(res[0].get("gold_awarded", -1)) == 0, str(res))
+	_check("the ending carries the Armory: he visited it, and the long rifle + river gear come with him",
+		res.size() == 1 and bool(res[0].get("armory_visited", false)) and bool(res[0].get("sniper", false))
+		and int(res[0].get("sniper_rounds", 0)) == GoldTownChamber.SNIPER_BOX and bool(res[0].get("river_gear", false)), str(res))
 	c.queue_free()
 
 	# ---- lines exist; the session chain woods -> town -> end

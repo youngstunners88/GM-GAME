@@ -44,6 +44,32 @@ func _ready() -> void:
 	_check("the Armory tops up owned ammunition with Episode 1 crypto", shop.purchase_ammo(Ep2ArmoryState.WIN, 12, "sol") and shop_win.reserve == shop_reserve + 12)
 	_check("the Armory cannot sell ammunition for an unowned gun", not shop.purchase_ammo(Ep2ArmoryState.BOW, 6, "btc") and shop_win.reserve == shop_reserve + 12)
 	_check("the Armory cannot sell for a free or unknown tender", not shop.purchase_ammo(Ep2ArmoryState.WIN, 12, "") and not shop.purchase_ammo(Ep2ArmoryState.WIN, 12, "gold"))
+	# The Armory's own stock (Rich & Utah, off Main Street): the long rifle for the day-88 river overlook and the
+	# river gear for the shipment. `SHOP` is the single source of truth the panel and the chamber both read.
+	var ids: Array = []
+	for item in Ep2ArmoryState.SHOP:
+		ids.append(str(item.get("id", "")))
+	_check("the catalogue is well formed and single-sourced (id / name / note / price / rounds)",
+		ids == ["sniper", "sniper_ammo", "rifle_ammo", "revolver_ammo", "river_gear"]
+		and int(Ep2ArmoryState.shop_item("sniper").get("price", 0)) > 0
+		and int(Ep2ArmoryState.shop_item("rifle_ammo").get("rounds", 0)) == 24
+		and Ep2ArmoryState.shop_item("no_such_item").is_empty())
+	var shop2 := Ep2ArmoryState.new()
+	_check("the long rifle is not a quick-switch slot (it is an acquired rifle, not a fourth wheel stop)",
+		not shop2.select(Ep2ArmoryState.SNIPER) and shop2.equipped == Ep2ArmoryState.WIN and not Ep2ArmoryState.IDS.has(Ep2ArmoryState.SNIPER))
+	_check("no iron on credit: the long rifle is refused for a tender that is not Episode 1 crypto",
+		not shop2.purchase_sniper("gold") and not shop2.sniper_owned)
+	_check("the long rifle is sold for Episode 1 crypto, once", shop2.purchase_sniper("btc") and shop2.sniper_owned
+		and not shop2.purchase_sniper("eth"))
+	_check("cartridges come by the box and only behind the rifle", not Ep2ArmoryState.new().purchase_sniper_ammo(10, "eth")
+		and shop2.purchase_sniper_ammo(10, "eth") and shop2.sniper_rounds == 10
+		and not shop2.purchase_sniper_ammo(10, "gold") and shop2.sniper_rounds == 10)
+	_check("river gear (the skiff and the sealed crates) is sold for Episode 1 crypto, once",
+		shop2.purchase_river_gear("sol") and shop2.river_gear and not shop2.purchase_river_gear("sol"))
+	var round_trip := Ep2ArmoryState.new()
+	round_trip.restore(shop2.snapshot())
+	_check("the snapshot carries the long rifle, its rounds and the river gear into the next room",
+		round_trip.sniper_owned and round_trip.sniper_rounds == 10 and round_trip.river_gear)
 	state = _both()
 	var win: Ep2Winchester = state.firearm(Ep2ArmoryState.WIN)
 	var rem: Ep2Winchester = state.firearm(Ep2ArmoryState.REM)

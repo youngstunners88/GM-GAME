@@ -485,6 +485,23 @@ p.box("DarkWood", (2.6, 0.2, 0.7), (0.0, 0.5, 0.0))
 p.box("Glass", (2.6, 1.4, 0.7), (0.0, 1.3, 0.0))
 p.box("Iron", (1.9, 0.06, 0.06), (0.0, 1.2, 0.0))
 p.box("Brass", (0.14, 0.16, 0.16), (0.7, 1.2, 0.0))
+# the period long rifle itself, laid across the case on two cradles: a long octagon barrel, a
+# walnut stock, a set trigger and a brass tube sight. It is what Rich sells for the day-88
+# overlook, so the silhouette has to read from the shop floor.
+for cx in (-0.75, 0.55):                              # the display cradles
+    p.box("Trim", (0.16, 0.10, 0.24), (cx, 1.06, 0.0))
+    p.box("Trim", (0.16, 0.06, 0.12), (cx, 1.14, 0.0))
+RY = 1.30                                             # the rifle lies along x on the cradles
+p.box("DarkWood", (0.46, 0.16, 0.13), (-0.92, RY - 0.01, 0.0))          # butt
+p.box("DarkWood", (0.30, 0.11, 0.12), (-0.60, RY + 0.01, 0.0))          # wrist of the stock
+p.box("DarkWood", (0.72, 0.09, 0.11), (0.06, RY, 0.0))                  # fore-stock
+p.box("Iron", (0.34, 0.13, 0.14), (-0.30, RY, 0.0))                     # receiver
+p.cyl("Iron", 0.028, 0.024, 1.30, (0.72, RY, 0.0), "x", 12)             # long barrel
+p.box("Iron", (0.10, 0.05, 0.06), (1.36, RY, 0.0))                      # muzzle crown
+p.cyl("Brass", 0.030, 0.030, 0.36, (0.14, RY + 0.10, 0.0), "x", 10)     # brass tube sight
+p.box("Brass", (0.05, 0.10, 0.05), (-0.02, RY + 0.06, 0.0))             # sight mount
+p.box("Brass", (0.20, 0.05, 0.05), (-0.30, RY - 0.09, 0.0))             # set trigger / lever
+p.box("Iron", (0.05, 0.10, 0.05), (-0.44, RY + 0.06, 0.0))              # hammer
 p.anchor("SniperAnchor", (0.0, 1.95, 0.0))
 p.build()
 
