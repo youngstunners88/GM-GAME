@@ -344,6 +344,11 @@ jobs:
           cat bear-attacks-tests.log
           grep -q 'EP2_BEAR_ATTACKS: ALL PASS' bear-attacks-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' bear-attacks-tests.log | grep -v VirtualJoystick; then exit 1; fi
+          # The town's life (founder 2026-10-18: the train, the river and the horses belong in Episode 2).
+          timeout 180 "$GODOT_BIN" --headless --path . res://tests/ep2_town_life_test.tscn > town-life-tests.log 2>&1
+          cat town-life-tests.log
+          grep -q 'EP2_TOWN_LIFE: ALL PASS' town-life-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' town-life-tests.log | grep -v VirtualJoystick; then exit 1; fi
           # The GoldMine town (founder 2026-10-14): the sheriff's office, the saloon, the draw (foul / retry / win), Bull, the chain.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_gold_town_test.tscn 2>&1 | tee gold-town-tests.log
           grep -q 'EP2_GOLD_TOWN: ALL PASS' gold-town-tests.log

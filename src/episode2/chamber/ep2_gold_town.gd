@@ -24,6 +24,11 @@ const STREET_HALF := 9.0
 const DROP_POINT := Vector3(0.0, 0.0, 1403.0)        # where the quad stops and Lil Blunt hops off
 const FORT_POS := Vector3(34.0, 0.0, 1610.0)          # Fort Knox on its rock hill beyond the town (FORT_HILL_H up)
 const FORT_HILL_H := 20.0
+## The river and the railway behind the town (founder 2026-10-18; Ep2TownLife): both run along x between the church (z 1478) and
+## the foot of Fort Knox's hill (z ~1558). The walkable town ends at z 1495, so they are scenery, never an obstacle.
+const RIVER_Z := 1522.0
+const RIVER_W := 22.0
+const TRACK_Z := 1546.0
 
 ## [kit piece, x of the front plane, z of the front centre, faces the street from the left (+1) / right (-1) / along -z (0)]
 const LAYOUT: Array = [
@@ -149,6 +154,7 @@ static func build(parent: Node3D, interiors: bool) -> Dictionary:
 		_hang_signs(fort)
 		for fa in fort.find_children("FlagAnchor*", "", true, false):
 			_flag(fort, (fa as Node3D).position)
+	Ep2TownLife.build(root, props)                      # horses at the rails, the river, the railway and the train
 	if interiors:
 		_furnish(root, kit)
 	kit.free()
@@ -418,7 +424,8 @@ static func build_desert(parent: Node3D, road: Array, forest_end_z: float, world
 			var h2: float = _hash01(z, x, 13.7)
 			var p := Vector2(x + (h1 - 0.5) * 6.0, z + (h2 - 0.5) * 6.0)
 			var near_road: float = _road_dist(p, road)
-			var in_town: bool = absf(p.x) < 26.0 and p.y > TOWN_Z - 6.0 and p.y < TOWN_Z + 90.0
+			var in_town: bool = (absf(p.x) < 26.0 and p.y > TOWN_Z - 6.0 and p.y < TOWN_Z + 90.0) \
+				or (p.y > RIVER_Z - RIVER_W and p.y < TRACK_Z + 8.0)       # the river and the railway corridor stay clear of scrub and rock
 			var open_k: float = clampf((p.y - (forest_end_z - 100.0)) / 120.0, 0.0, 1.0)      # scrub takes over as the pines thin
 			if near_road > 3.5 and not in_town and h1 < 0.55 * open_k:
 				var sc: float = 0.6 + 0.9 * h2
