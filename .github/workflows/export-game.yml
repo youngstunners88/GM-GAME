@@ -342,6 +342,10 @@ jobs:
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_gold_town_test.tscn 2>&1 | tee gold-town-tests.log
           grep -q 'EP2_GOLD_TOWN: ALL PASS' gold-town-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' gold-town-tests.log; then exit 1; fi
+          # The surface set on the desert approach after the forest (founder 2026-10-18): lake, rail line + train, stable + horses.
+          timeout 180 "$GODOT_BIN" --headless res://tests/ep2_surface_set_test.tscn 2>&1 | tee surface-set-tests.log
+          grep -q 'EP2_SURFACE_SET: ALL PASS' surface-set-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' surface-set-tests.log; then exit 1; fi
           # Bull's pacing, the cover fire and the donkey cart on the road (founder 2026-10-14).
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_companion_cart_test.tscn 2>&1 | tee companion-cart-tests.log
           grep -q 'EP2_COMPANION_CART: ALL PASS' companion-cart-tests.log

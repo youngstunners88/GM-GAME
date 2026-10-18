@@ -1,0 +1,68 @@
+extends Node
+## Throwaway: real Episode 2 render of the surface set from the quad ride's own camera.
+const WOODS := preload("res://src/episode2/chamber/woods_quad.tscn")
+const OUT := "/tmp/claude-1000/-home-kofibeatz/52e63802-3211-448c-92bd-97eafe1a6d10/scratchpad/ep2set/"
+var c: WoodsQuadChamber = null
+var vp: SubViewport = null
+
+func _run(seconds: float) -> void:
+	for i in int(seconds * 60.0):
+		c.step(1.0 / 60.0)
+
+func _cap(nm: String) -> void:
+	await RenderingServer.frame_post_draw
+	await RenderingServer.frame_post_draw
+	var img: Image = vp.get_texture().get_image()
+	img.save_png(OUT + nm + ".png")
+	print("shot ", nm, " train_z=", (c.find_child("Train", true, false) as Node3D).position.z if c.find_child("Train", true, false) else -1.0)
+
+func _s_for_z(zt: float) -> float:
+	var lo := 0.0
+	var hi: float = c._ride_total
+	for i in 40:
+		var mid := (lo + hi) * 0.5
+		if (c._ride_sample(mid)[0] as Vector3).z < zt:
+			lo = mid
+		else:
+			hi = mid
+	return hi
+
+func _ready() -> void:
+	DirAccess.make_dir_recursive_absolute(OUT)
+	vp = SubViewport.new()
+	vp.size = Vector2i(1600, 900)
+	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	add_child(vp)
+	c = WOODS.instantiate()
+	vp.add_child(c)
+	c.setup(0, [], 0)
+	c.set_physics_process(false)
+	await get_tree().process_frame
+	c.debug_invulnerable = true
+	_run(1.0)
+	c._advance_to(WoodsQuadChamber.Beat.REVEAL)
+	var guard := 0
+	while c.is_quad_hidden() and guard < 2000:
+		guard += 1
+		_run(0.1)
+	while c.get_beat_name() != "RIDE" and guard < 4000:
+		guard += 1
+		_run(0.1)
+	_run(2.0)
+	print("in RIDE, total=", c._ride_total)
+	for z in [1070.0, 1150.0, 1210.0, 1290.0, 1360.0]:
+		c._ride_s = _s_for_z(z)
+		_run(0.4)
+		await _cap("z%d_fwd" % int(z))
+		var keep: float = c._look_yaw
+		for yaw in [1.0, -1.0]:
+			c._look_yaw = keep + yaw
+			_run(0.15)
+			await _cap("z%d_yaw%s" % [int(z), "p" if yaw > 0.0 else "m"])
+		c._look_yaw = keep
+	var sets: Array = c.find_children("SurfaceSet", "", true, false)
+	print("SurfaceSet nodes: ", sets.size())
+	if sets.size() > 0:
+		var s: Node = sets[0]
+		print("children: ", s.get_children().map(func(n): return n.name))
+	get_tree().quit()

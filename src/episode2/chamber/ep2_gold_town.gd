@@ -84,6 +84,8 @@ static func build(parent: Node3D, interiors: bool) -> Dictionary:
 	var root := Node3D.new()
 	root.name = "GoldTown"
 	parent.add_child(root)
+	# the lake, the rail line + train and the stable + horses on the approach (founder 2026-10-18, Episode 2 after the forest)
+	Ep2SurfaceSet.build(root)
 	if not ResourceLoader.exists(KIT):
 		return {"walls": walls, "props": props}
 	var kit: Node3D = (load(KIT) as PackedScene).instantiate() as Node3D
@@ -420,10 +422,10 @@ static func build_desert(parent: Node3D, road: Array, forest_end_z: float, world
 			var near_road: float = _road_dist(p, road)
 			var in_town: bool = absf(p.x) < 26.0 and p.y > TOWN_Z - 6.0 and p.y < TOWN_Z + 90.0
 			var open_k: float = clampf((p.y - (forest_end_z - 100.0)) / 120.0, 0.0, 1.0)      # scrub takes over as the pines thin
-			if near_road > 3.5 and not in_town and h1 < 0.55 * open_k:
+			if near_road > 3.5 and not in_town and not Ep2SurfaceSet.blocks(p) and h1 < 0.55 * open_k:
 				var sc: float = 0.6 + 0.9 * h2
 				xf_s.append(Transform3D(Basis(Vector3.UP, h1 * TAU) * Basis.from_scale(Vector3(sc, sc * (0.6 + 0.5 * h1), sc)), Vector3(p.x, -0.05, p.y)))
-			if near_road > 6.0 and not in_town and h2 > 0.965:
+			if near_road > 6.0 and not in_town and not Ep2SurfaceSet.blocks(p) and h2 > 0.965:
 				rocks.append(Transform3D(Basis(Vector3.UP, h2 * TAU) * Basis.from_scale(Vector3.ONE * (0.8 + 2.6 * h1)), Vector3(p.x, -0.3, p.y)))
 			x += 4.0
 		if scrub_mesh != null and not xf_s.is_empty():
