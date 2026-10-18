@@ -3,7 +3,7 @@
 blender -b --python tools/ep2_blender/revolver_improve.py -- <in.glb> <out.glb> <hero|game> [<renderdir>]
 
 hero: 2048 textures, gold regraded + polished, clean arm cut, full mesh. Not shipped in the pack.
-game: ~9k tris, 1024 albedo + normal, metallic 0 (the web Compatibility renderer draws
+game: ~14k tris, 1024 albedo + normal, metallic 0 (the web Compatibility renderer draws
       reflection-less metals black, see runner_view.brighten_hero), gold baked bright in the albedo.
 Muzzle stays at -X, up stays +Z in Blender (glTF export keeps muzzle -X, up +Y), centred on the
 barrel, muzzle-to-arm-end length 1.0, so runner_view's bbox-based scaling still works.
@@ -118,7 +118,7 @@ print("final bbox", tuple(round(c, 3) for c in lo), tuple(round(c, 3) for c in h
 
 if not HERO:
     mod = obj.modifiers.new("dec", "DECIMATE")
-    mod.ratio = 9000.0 / max(sum(len(p.vertices) - 2 for p in me.polygons), 1)
+    mod.ratio = 14000.0 / max(sum(len(p.vertices) - 2 for p in me.polygons), 1)
     bpy.ops.object.modifier_apply(modifier="dec")
     bsdf = [n for n in mat.node_tree.nodes if n.type == "BSDF_PRINCIPLED"][0]
     for l in list(mat.node_tree.links):
