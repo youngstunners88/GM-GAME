@@ -130,6 +130,12 @@ Claude Opus 5.5 on OpenRouter with `scripts/opus-offload.mjs` (see the `opus-off
 skill). The session writes the brief and reviews the diff; the offload reads and
 writes the files. Metered on OpenRouter: ~$4 in / $20 out per million tokens.
 
+## ⭐ VAULT-LOG RULE (founder, 2026-10-18 - every session, no exceptions)
+Log all work in the Obsidian vault **`GM Game/`** inside this repo (git-excluded; NOT `~/Documents/ComfyUI/comfyUI work`,
+which is the Quiet Money vault). Each working turn: extend `GM Game/Work Log/<date>.md`, link it from `GM Game/Work Log.md`,
+keep per-topic notes in `GM Game/Projects/` (Revolver, Bears, Train, Lake, Horses...), connect notes with `[[wikilinks]]`
+(memory + knowledge graph), and record SHAs, status (IN CODE / WIRED / SEEN / SHIPPED) and open items.
+
 ## ⭐ ALWAYS-SHIP RULE (never forget)
 After **every significant** change to the game, in the same working session:
 1. **Update `STATUS.md`** — the client's living report (what changed, what
