@@ -244,11 +244,11 @@ jobs:
           #        (2026-10-01: ~14 MB; the Episode 2 hideout's Meshy models pushed the pck over 190 MB).
           #   src/assets/models/horse/assetfurnace/ -> the horse's raw/rigged GLBs, textures and run records (~10 MB);
           #        the stable plays the baked 2D sprites in src/assets/sprites/, no scene loads these.
-          #   src/episode2/assets/{town,weapons,mine_lift,vehicles}/ loose Meshy/Tripo texture exports -> the
-          #        JPG/PNGs that sit beside GLBs whose textures are EMBEDDED in the .glb (verified: zero external
-          #        URIs, zero references in any scene/script). No runtime dir-scan touches these four folders
-          #        (transition_director warms only assets/, hideout/, textures/, audio/), so the .pck skips them;
-          #        the files stay in the repo as pipeline sources (~8 MB, 2026-10-18).
+          #   DO NOT exclude loose texture files next to GLBs (src/episode2/assets/{town,weapons,mine_lift,vehicles}/):
+          #        gltf/embedded_image_handling=1 EXTRACTS the GLB textures to those files and the imported scene points
+          #        at them. Excluding them from the pck strips every texture (rifle, lift cage, flame quad, sheriff,
+          #        cowboy, bartender, minister, donkey cart all render flat white). Tried 2026-10-18 (a089786a), reverted.
+          #        Probe before excluding anything: tools/ep2_forge/texture_ref_probe.gd (run by scripts/ship-to-master.sh).
           #   variant/thread_support=false -> non-threaded: no SharedArrayBuffer/
           #        COOP/COEP needed, so it boots on itch.io/iframes/mobile.
           #   html/head_include            -> loads web/web3.js (copied beside
@@ -262,7 +262,7 @@ jobs:
           custom_features=""
           export_filter="all_resources"
           include_filter="config.json,src/autoload/share_taglines.json"
-          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*,design/*,work-notes/*,tools/*,assets/keyart/*,src/assets/models/horse/assetfurnace/*,web_verify/*,web/game/*,src/episode2/assets/town/sheriff_Color_8e43f67e-cb67-440e-a933-873676200b46.jpg,src/episode2/assets/town/sheriff_NormalGL_8e43f67e-cb67-440e-a933-873676200b46.jpg,src/episode2/assets/town/sheriff_ORM_8e43f67e-cb67-440e-a933-873676200b46.jpg,src/episode2/assets/town/cowboy_Color_d9c0533c-027f-4ccc-bfb9-22c47cae0e86.jpg,src/episode2/assets/town/cowboy_NormalGL_d9c0533c-027f-4ccc-bfb9-22c47cae0e86.jpg,src/episode2/assets/town/cowboy_ORM_d9c0533c-027f-4ccc-bfb9-22c47cae0e86.jpg,src/episode2/assets/town/bartender_Color_d6ddb283-94c7-4e12-ad6e-0a171cf9b04d.jpg,src/episode2/assets/town/bartender_NormalGL_d6ddb283-94c7-4e12-ad6e-0a171cf9b04d.jpg,src/episode2/assets/town/bartender_ORM_d6ddb283-94c7-4e12-ad6e-0a171cf9b04d.jpg,src/episode2/assets/town/minister_Color_f53480cd-f4e1-4d5d-a2df-9b9293ac9654.jpg,src/episode2/assets/town/minister_NormalGL_f53480cd-f4e1-4d5d-a2df-9b9293ac9654.jpg,src/episode2/assets/town/minister_ORM_f53480cd-f4e1-4d5d-a2df-9b9293ac9654.jpg,src/episode2/assets/town/donkey_cart_donkey_cart_3d_model_basecolor.jpg,src/episode2/assets/town/donkey_cart_donkey_cart_3d_model_normal.jpg,src/episode2/assets/weapons/winchester_1886_founder_Image_0.png,src/episode2/assets/weapons/winchester_1886_founder_Image_1.png,src/episode2/assets/weapons/winchester_1886_founder_Image_2.png,src/episode2/assets/weapons/winchester_1886_founder_Image_3.png,src/episode2/assets/mine_lift/mine_lift_cage_BaseColor.jpg,src/episode2/assets/vehicles/flame_quad_ai_BaseColor.jpg"
+          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*,design/*,work-notes/*,tools/*,assets/keyart/*,src/assets/models/horse/assetfurnace/*,web_verify/*,web/game/*"
           export_path="web/game/index.html"
           script_export_mode=1
           script_encryption_key=""
