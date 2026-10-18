@@ -246,10 +246,11 @@ class Figure:
 		return p
 
 	def build(self):
-		"""One mesh object, one material slot per part, shade smooth, feet on z = 0."""
+		"""One mesh object, one material slot per unique material, shade smooth, feet on z = 0."""
 		me = bpy.data.meshes.new(self.name + "_mesh")
 		big = bmesh.new()
 		groups = []                       # (bone hint list, first vert, last vert)
+		slot_of = {}                      # material name -> slot (dedupe: 74 parts, ~20 materials)
 		for i, p in enumerate(self.parts):
 			bmesh.ops.recalc_face_normals(p.bm, faces=p.bm.faces[:])
 			tme = bpy.data.meshes.new("t")
@@ -260,8 +261,10 @@ class Figure:
 			big.from_mesh(tme)
 			big.verts.ensure_lookup_table()
 			big.faces.ensure_lookup_table()
+			if p.name not in slot_of:
+				slot_of[p.name] = len(slot_of)
 			for f in big.faces[n0f:]:
-				f.material_index = i
+				f.material_index = slot_of[p.name]
 			bpy.data.meshes.remove(tme)
 			groups.append((p.bones, n0, len(big.verts) - 1))
 		if os.environ.get("PART_DEBUG"):
@@ -274,8 +277,8 @@ class Figure:
 				print(f"PART {i:3d} {self.parts[i].name:14s} x=[{min(xs):.3f},{max(xs):.3f}] y=[{min(ys):.3f},{max(ys):.3f}] z=[{min(zs):.3f},{max(zs):.3f}]")
 		big.to_mesh(me)
 		big.free()
-		for p in self.parts:
-			me.materials.append(MATS[p.name])
+		for name, _ in sorted(slot_of.items(), key=lambda kv: kv[1]):
+			me.materials.append(MATS[name])
 		ob = bpy.data.objects.new(self.name + "_geo", me)
 		bpy.context.scene.collection.objects.link(ob)
 		bpy.context.view_layer.update()
@@ -1070,7 +1073,12 @@ def export(path, arm_ob, geo):
 		filepath=path, export_format="GLB", export_yup=True, export_apply=False,
 		use_selection=True,
 		export_animations=True, export_animation_mode="ACTIONS", export_skins=True,
-		export_influence_nb=4, export_def_bones=False, export_optimize_animation_size=False,
+		export_influence_nb=4, export_def_bones=False,
+		# keep the authored keys: no per-frame baking, drop constant tracks, but never drop
+		# an armature bone's channel (a missing channel leaves the bone wherever the last clip
+		# left it in Godot - the stale-arm bug)
+		export_force_sampling=False, export_optimize_animation_size=True,
+		export_optimize_animation_keep_anim_armature=True,
 		export_bake_animation=False, export_frame_range=False,
 	)
 	print("wrote", os.path.basename(path), os.path.getsize(path))
