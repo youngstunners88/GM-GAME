@@ -32,6 +32,22 @@ def load_main_mesh(glb):
     return main
 
 
+def load_all(glb):
+    """Import every mesh in the GLB (gun + separate grip) and join them for framing."""
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    bpy.ops.import_scene.gltf(filepath=glb)
+    meshes = [o for o in bpy.data.objects if o.type == "MESH"]
+    for o in [o for o in bpy.data.objects if o.type != "MESH"]:
+        bpy.data.objects.remove(o, do_unlink=True)
+    bpy.ops.object.select_all(action="DESELECT")
+    for o in meshes:
+        o.parent = None
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = meshes[0]
+    bpy.ops.object.join()
+    return bpy.context.view_layer.objects.active
+
+
 def bbox(o):
     pts = [o.matrix_world @ Vector(c) for c in o.bound_box]
     lo = Vector([min(p[i] for p in pts) for i in range(3)])

@@ -117,7 +117,7 @@ func attach(cam: Camera3D) -> void:
 	_apply_exposure()
 	_weapon_views[Ep2ArmoryState.WIN] = rifle
 	_active_id = Ep2ArmoryState.WIN
-	var revolver := Ep2RemingtonView.make()
+	var revolver := Ep2RemingtonView.make_founder()
 	cam.add_child(revolver)
 	revolver.scale = Vector3.ONE * VM_SCALE
 	revolver.visible = false

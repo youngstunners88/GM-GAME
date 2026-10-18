@@ -926,9 +926,8 @@ func _hold_rifle(root: Node3D) -> void:
 	rifle.rotation = HELD_RIFLE_ROT
 	root.add_child(rifle)
 	_held_rifle = rifle
-	_held_revolver = Ep2RemingtonView.make()
+	_held_revolver = Ep2RemingtonView.make_held()   # gun only: the director shows the hero's own hand
 	_held_revolver.name = "HeldRevolver"
-	_held_revolver.get_node("RightArm").free()  # the director shows the hero's own hand
 	_held_revolver.scale = Vector3.ONE * 0.8
 	_held_revolver.position = HELD_RIFLE_POS
 	_held_revolver.rotation = HELD_RIFLE_ROT
