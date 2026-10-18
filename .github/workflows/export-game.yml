@@ -249,6 +249,9 @@ jobs:
           #        at them. Excluding them from the pck strips every texture (rifle, lift cage, flame quad, sheriff,
           #        cowboy, bartender, minister, donkey cart all render flat white). Tried 2026-10-18 (a089786a), reverted.
           #        Probe before excluding anything: tools/ep2_forge/texture_ref_probe.gd (run by scripts/ship-to-master.sh).
+          #   src/assets/sprites/sprite_prop_train-goldmine{,_256}.png + sprite_train_goldmine_blender-render.png -> unused train sprite variants
+          #        (the game loads only sprite_prop_train-goldmine_512.png: src/level/distant_train.gd, Ep2SurfaceSet). No reference by any name in
+          #        code, scenes, resources or data; the blender-render file is only written by tools/ep2_blender/train_fidelity_pass.py (~1.0 MB pck, 2026-10-18).
           #   variant/thread_support=false -> non-threaded: no SharedArrayBuffer/
           #        COOP/COEP needed, so it boots on itch.io/iframes/mobile.
           #   html/head_include            -> loads web/web3.js (copied beside
@@ -262,7 +265,7 @@ jobs:
           custom_features=""
           export_filter="all_resources"
           include_filter="config.json,src/autoload/share_taglines.json"
-          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*,design/*,work-notes/*,tools/*,assets/keyart/*,src/assets/models/horse/assetfurnace/*,web_verify/*,web/game/*"
+          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*,design/*,work-notes/*,tools/*,assets/keyart/*,src/assets/models/horse/assetfurnace/*,web_verify/*,web/game/*,src/assets/sprites/sprite_prop_train-goldmine.png,src/assets/sprites/sprite_prop_train-goldmine_256.png,src/assets/sprites/sprite_train_goldmine_blender-render.png"
           export_path="web/game/index.html"
           script_export_mode=1
           script_encryption_key=""
