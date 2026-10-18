@@ -32,7 +32,7 @@ const LAYOUT: Array = [
 	["Bldg_Saloon", STREET_HALF, 1414.0, -1], ["Bldg_Treasury", STREET_HALF, 1426.5, -1], ["Bldg_D", STREET_HALF, 1437.5, -1],
 	["Bldg_F", STREET_HALF, 1447.0, -1],
 	["Church", 0.0, 1478.0, 0],
-	["Bldg_Armory", -16.0, 1455.0, 0],   # Rich & Utah's shop: down a side lane off the left row, off the Main Street sightline
+	["Bldg_Armory", -20.0, 1468.0, 0],   # Rich & Utah's shop: down a side lane off the left row, set back off the Main Street sightline
 ]
 ## Kit piece -> [width, depth, door half-width (0 = shut), door open]
 const FOOTPRINT: Dictionary = {
