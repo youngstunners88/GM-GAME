@@ -1,6 +1,6 @@
 {
-  "observed_remote_sha": "e3401a42",
-  "objective": "Ship Rich's Armory (Ep2): Rich + Utah, side lane off Main Street, crypto-only trade (coins_collected), long rifle + river gear. Feature fully built on branch feat/rich-armory-lock (6 commits; pushed tip dc92a4af; local merge 5fbf5ed2 contains origin/master e3401a42; master untouched). Held ONLY by the 190 MiB pack gate: last fresh measure 199,772,880 B = 543,440 B over 199,229,440. Pack fixes are uncommitted in worktree ~/.cache/gm-rich-armory-lock. Prior bear/bull/Jev checkpoint items are historical (weapon release shipped a13b767c); vault note 'Work Log/2026-10-17 - Rich Armory (Rich + Utah)'.",
+  "observed_remote_sha": "504ee72a",
+  "objective": "DONE — Rich's Armory (Ep2) is shipped and live. Master `cb000a45` (+ CI build `504ee72a`), BUILD `2026-10-18-cb000a4`, live pck 191,800,848 B (7.43 MB under the 190 MiB gate). Rich + Utah rigged/animated (rebuilt GLBs validated: 20 bones + 5 clips each), armory off Main Street, crypto-only trade (Episode 1 BTC/ETH/SOL), long rifle + river gear for the day-88 set-piece, trade panel + HUD copy (no VO). Pack fixes shipped: 20 dead texture exports excluded, sign_ARMS preset fixed, folk GLBs rebuilt.",
   "task_paths": [
     "src/episode2/chamber/ep2_armory_state.gd",
     "src/episode2/chamber/ep2_armory_shop.gd",
@@ -11,18 +11,18 @@
     "src/episode2/assets/town/sign_ARMS.png.import",
     "tools/ep2_blender/build_armory_folk.py",
     "tests/ep2_gold_town_test.gd",
-    "tests/ep2_personal_armory_test.gd",
-    "design/ep2/armory"
+    "design/ep2/armory/rich-armory-lock-2026-10-18"
   ],
   "evidence": {
-    "gates_at_dc92a4af": "ep2_gold_town_test (18 Armory checks) + ep2_personal_armory_test + ep2_fort_knox_arc_test ALL PASS; scripts/ci-gates-local.sh all pass (xvfb stage skipped).",
-    "uncommitted_shrink": "rich_armory.glb 449,928->230,428 B; utah_armory.glb 467,460->234,720 B; build_armory_folk.py: material-slot dedupe + export_force_sampling=False, export_optimize_animation_size=True, export_optimize_animation_keep_anim_armature=True (never drop a bone channel). NOT yet validated in Godot.",
-    "sign_ARMS": "packs 144,584 B ctex vs ~9 KB for other signs: fix .import to compress/mode=1, lossy_quality=0.7, size_limit=512, mipmaps/generate=true; *.import is gitignored (.gitignore:57) but existing sign .import files are tracked -> git add -f. Fix NOT applied yet."
+    "ci_run": "39089930801 success; butler 'Pushed to https://youngstunners88.itch.io/smokerealm'; live embed key 18305533-2150280; served pck 191,800,848 B contains '2026-10-18-cb000a4'; headless Chromium boot prints '[BUILD] Lil Blunt Adventure — build 2026-10-18-cb000a4' with 0 script errors; title lock preserved. Receipt + VERIFICATION + live screenshot in design/ep2/armory/rich-armory-lock-2026-10-18/.",
+    "pack_gate": "fresh import 191,801,072 B / CI 191,800,848 B / gate 199,229,440 B.",
+    "gates": "EP2_GOLD_TOWN (64 checks) / EP2_PERSONAL_ARMORY / EP2_CHARACTER_MOTION / EP2_BOW / EP2_COMPANION_CART ALL PASS; security sentinel 18/18, 0 blockers.",
+    "learned": "itch assigns a NEW embed key per processed build (old key keeps serving stale files); read the current embed src from the page's data-iframe attribute. The export filter lives in .github/workflows/export-game.yml heredoc; *.import is gitignored (force-add preset changes). A source GLB shrink barely moves the pck; the loose-texture-exclusion class is the safe win (docs/episode2-quality/3d-tools-survey-2026-10-17/README.md §4)."
   },
   "unresolved": [
-    "Validate rebuilt GLBs in Godot 4.3: 20 bones + 5 clips each (Counter/Greet/Idle/Point/Walk; Carry/Greet/Idle/Point/Walk), render one frame per figure to confirm poses animate, re-run ep2_gold_town_test.",
-    "If still over the gate after both fixes: GLB export ensure_tangents=false (~96 KB) or trim mesh segments.",
-    "Open, documented, not blocking ship: voice pass unrecorded (no voice key on this box; script design/ep2/armory/RICH_UTAH_LINES.md); day-88 river set-piece unbuilt; gameplay-camera capture impossible on this box (no xvfb/sudo)."
+    "Day-88 river set-piece designed but not built (RICH_DEPARTMENT_SPEC/OUTLINE).",
+    "Voice pass unrecorded (no voice key on this box; lines in RICH_UTAH_LINES.md).",
+    "No gameplay-camera capture of the armory from this box (no xvfb/sudo); public access gate preserved."
   ],
-  "next_action": "In ~/.cache/gm-rich-armory-lock: validate the rebuilt GLBs, apply the sign_ARMS .import fix (git add -f), re-run bash scripts/pack-gate-fresh.sh; if under, commit GLBs + builder + import, then bash scripts/ship-to-master.sh (re-merges origin, gates, pushes, fast-forwards master). Prove deploy: gh run list --workflow=export-game.yml --branch=master must show success for the shipped SHA + butler 'Pushed to' + live BUILD tag date-sha7 at youngstunners88.itch.io/smokerealm. Do not redo finished gates or re-capture bodies."
+  "next_action": "Nothing blocking. Optional future work: build the day-88 river set-piece; record voice lines; if transition_director gains a missing-file guard, the remaining loose-texture siblings in warm-covered folders (top-level assets/, hideout/) could be excluded too."
 }
