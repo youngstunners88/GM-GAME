@@ -65,6 +65,7 @@ This skill makes the new grip art the canonical look everywhere the player sees 
 | `fps_grip_card.png` | 768x512 transparent hand art; glyph 41px | Episode 2 grip card candidate; 3D hand unchanged |
 | `sidearm_gun_only.png` | 896x496 fresh Blender gun-only render, +X without mirroring | miniature crop source; original hand intake occludes the grip |
 | `sidearm_slot.png` / `src/assets/sprites/sprite_item_golden_revolver.png` | 56x31 landscape crop from the existing Blender Remington; no hand | hip tool, Stage 3 fire; runtime regression pending |
+| `design/ep2/revolver/golden_revolver_hero.glb` / `golden_revolver_game.glb` | 2026-10-18 Blender pass on the founder's Tripo hand+gun GLB (Drive `golden+revolver+3d`); hero 3.1 MB metal, game 0.73 MB 9k tris metallic 0; reproduce with `tools/ep2_blender/revolver_improve.py -- <in.glb> <out.glb> hero\|game` | not wired; needs pack headroom + in-engine look |
 
 Reproduction: `tools/ep2_blender/render_sidearm_crop.py` (Blender source
 `design/ep2/armory/blender/remington_1875_gold.blend`), then

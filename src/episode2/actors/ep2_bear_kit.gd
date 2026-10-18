@@ -14,6 +14,16 @@ const RIG := "res://src/episode2/assets/bear_rigged.glb"
 const WALK_CLIP := "res://src/episode2/assets/inferno_bull_walking_clip.glb"
 const RUN_CLIP := "res://src/episode2/assets/inferno_bull_running_clip.glb"
 const SIT_CLIPS := "res://src/episode2/assets/inferno_bull_sit_clips.glb"
+## Bear-specific combat + gait clips authored on THIS rig (tools/ep2_blender/build_bear_combat_clips.py): a lumbering walk, an
+## all-fours-leaning charge, a rear-up claw swipe and a lunging, head-shaking bite. Same skeleton, so they drive it directly.
+const COMBAT_CLIPS := "res://src/episode2/assets/bear_combat_clips.glb"
+const BEAR_WALK := "Bear_Walk"
+const BEAR_RUN := "Bear_Run"
+const SWIPE := "Bear_Swipe"
+const BITE := "Bear_Bite"
+## Seconds into each attack clip at which the blow connects (swipe: paw lands at frame 15; bite: jaws close at frame 12, 30 fps).
+const SWIPE_IMPACT := 0.5
+const BITE_IMPACT := 0.42
 const SIT := "Chair_Sit_Idle_M"
 const READ_SIT := "Bear_Read_Seat"
 const IDLE := "Idle"
@@ -36,6 +46,14 @@ static func make_bear(parent: Node3D, pos: Vector3, height: float = 2.2) -> Ep2A
 	if not b.setup(RIG, 1.9, height, {"walk": WALK_CLIP, "run": RUN_CLIP}, [IDLE, SCAN]):
 		return b
 	b.add_all_clips(SIT_CLIPS)
+	b.add_all_clips(COMBAT_CLIPS)
+	if b.anim and b.anim.has_animation(BEAR_WALK):
+		b.walk_clip = BEAR_WALK
+		b.run_clip = BEAR_RUN
+		for c in [BEAR_WALK, BEAR_RUN]:
+			b.anim.get_animation(c).loop_mode = Animation.LOOP_LINEAR
+		for c in [SWIPE, BITE]:
+			b.anim.get_animation(c).loop_mode = Animation.LOOP_NONE
 	if b.anim:
 		var library: AnimationLibrary = b.anim.get_animation_library("")
 		if not library.has_animation(READ_SIT):
@@ -92,7 +110,7 @@ static func make_bear(parent: Node3D, pos: Vector3, height: float = 2.2) -> Ep2A
 	return b
 
 
-## Switch `b` to a named pose: idle, walk, run, sit_read, sleep, aim, shot, leap, stomp, hit, dead. Props follow the pose.
+## Switch `b` to a named pose: idle, walk, run, sit_read, sleep, aim, shot, leap, swipe, bite, stomp, hit, dead. Props follow the pose.
 static func pose(b: Ep2Actor, state: String) -> void:
 	if b.anim == null:
 		return
@@ -107,6 +125,8 @@ static func pose(b: Ep2Actor, state: String) -> void:
 		# while walking the clip swings the arms; the modifier only lowers them a little so they don't swing out like an archer's
 		if state in ["walk", "run"]:
 			arms.influence = 0.85 if state == "walk" else 0.75
+			if b.walk_clip == BEAR_WALK:
+				arms.influence = 0.0                 # the authored gait swings its own arms
 	if head:
 		head.influence = 1.0 if reading else 0.0
 	var hold: SkeletonModifier3D = (b.get_meta("arms_read") if b.has_meta("arms_read") else null)
@@ -130,7 +150,7 @@ static func pose(b: Ep2Actor, state: String) -> void:
 		contact.targets.clear()
 		contact.finger_directions.clear()
 		contact.prop_frame = null
-		var carrying_bow: bool = b.has_meta("bow") and state not in ["dead", "sleep", "hit", "leap", "sit_read"]
+		var carrying_bow: bool = b.has_meta("bow") and state not in ["dead", "sleep", "hit", "leap", "swipe", "bite", "sit_read"]
 		contact.influence = 1.0 if reading or carrying_bow else 0.0
 		if reading:
 			var magazine: Node3D = b.get_meta("prop_magazine")
@@ -148,7 +168,7 @@ static func pose(b: Ep2Actor, state: String) -> void:
 		"idle":
 			b.play(IDLE, 1.0, 0.35)
 		"walk":
-			b.play(b.walk_clip, 0.9, 0.3)
+			b.play(b.walk_clip, 0.62 if b.walk_clip == BEAR_WALK else 0.9, 0.3)    # 1.2 s cycle at 0.62x = a heavy 1.9 s stride
 		"run":
 			b.play(b.run_clip, 1.0, 0.25)
 		"sit_read":
@@ -169,6 +189,10 @@ static func pose(b: Ep2Actor, state: String) -> void:
 			b.play(IDLE, 1.0, 0.12)      # string/paw release and local recoil own the shot phase
 		"leap":
 			b.play(LEAP, 1.15, 0.12)
+		"swipe":
+			b.play(SWIPE, 1.0, 0.12)
+		"bite":
+			b.play(BITE, 1.0, 0.12)
 		"stomp":
 			b.play(STOMP, 1.0, 0.2)
 		"hit":

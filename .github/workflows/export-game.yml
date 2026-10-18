@@ -338,6 +338,12 @@ jobs:
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_personal_armory_test.tscn 2>&1 | tee personal-armory-tests.log
           grep -q 'EP2_PERSONAL_ARMORY: ALL PASS' personal-armory-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' personal-armory-tests.log; then exit 1; fi
+          # Bears strike and bite the way a bear would: authored swipe/bite/walk/run clips bound to the rig (a mis-bound
+          # export leaves a T-pose), the brain's attack choice and the blow landing at the clip's contact time.
+          timeout 180 "$GODOT_BIN" --headless --path . res://tests/ep2_bear_attacks_test.tscn > bear-attacks-tests.log 2>&1
+          cat bear-attacks-tests.log
+          grep -q 'EP2_BEAR_ATTACKS: ALL PASS' bear-attacks-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' bear-attacks-tests.log | grep -v VirtualJoystick; then exit 1; fi
           # The GoldMine town (founder 2026-10-14): the sheriff's office, the saloon, the draw (foul / retry / win), Bull, the chain.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_gold_town_test.tscn 2>&1 | tee gold-town-tests.log
           grep -q 'EP2_GOLD_TOWN: ALL PASS' gold-town-tests.log

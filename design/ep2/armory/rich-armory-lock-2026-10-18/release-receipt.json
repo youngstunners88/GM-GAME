@@ -1,0 +1,44 @@
+{
+  "recorded_at": "2026-10-18T12:05:00+09:00",
+  "source_commit": "cb000a45f03b0df32419a2a2a9e905a34c1716cb",
+  "ci_export_commit": "504ee72a0ad5f6b09d710213d8ae8efd3f68f05a",
+  "build": "2026-10-18-cb000a4",
+  "workflow_run": 39089930801,
+  "workflow_url": "https://github.com/youngstunners88/GM-GAME/actions/runs/39089930801",
+  "ci_conclusion": "success",
+  "butler_step": "success",
+  "butler_log": "Pushed to https://youngstunners88.itch.io/smokerealm",
+  "butler_patch": "34.55 MiB patch (84.08% savings)",
+  "live_url": "https://youngstunners88.itch.io/smokerealm",
+  "observed_public_embed": "https://html-classic.itch.zone/html/18305533-2150280/index.html",
+  "previous_public_embed": "https://html-classic.itch.zone/html/18305533-2145024/index.html",
+  "live_pck_bytes": 191800848,
+  "ci_pck_bytes": 191800848,
+  "fresh_import_pck_bytes": 191801072,
+  "pck_limit_bytes": 199229440,
+  "pck_margin_bytes": 7428592,
+  "live_pck_build_tag_present": "2026-10-18-cb000a4",
+  "live_index_html": "byte-identical to the CI-committed web/game/index.html except itch's standard trailing htmlgame.js injection line",
+  "public_boot_verified": "Headless Chromium (Playwright 1.64.1 driving cached chromium-1243) booted the live embed for build 2026-10-18-cb000a4: '[BUILD] Lil Blunt Adventure — build 2026-10-18-cb000a4' printed to console, zero SCRIPT ERROR / Parse Error lines.",
+  "public_build_visually_verified": "design/ep2/armory/rich-armory-lock-2026-10-18/live-title-2026-10-18-cb000a4.png (title screen on the live build)",
+  "public_access_gate": "Title lock preserved (observed on the live boot). No protected public playthrough was performed because access was not available.",
+  "ci_armory_gates": [
+    "EP2_GOLD_TOWN: ALL PASS",
+    "EP2_PERSONAL_ARMORY: ALL PASS",
+    "EP2_CHARACTER_MOTION: ALL PASS",
+    "EP2_BOW: ALL PASS",
+    "EP2_COMPANION_CART: ALL PASS"
+  ],
+  "pack_fixes": [
+    "20 loose Meshy/Tripo texture exports excluded in the export preset (GLBs embed their textures; zero scene/script references; folders untouched by runtime dir-scans) ~7.8 MB",
+    "sign_ARMS.png preset fixed: 144,584 -> 8,494 B ctex (sibling-sign preset; .import force-added)",
+    "Rich/Utah folk GLBs rebuilt: 449,928/467,460 -> 230,428/234,720 B (material-slot dedupe; sparse authored keys; export_optimize_animation_keep_anim_armature)"
+  ],
+  "folk_validation": "Godot 4.3 probe: 20 bones + 5 named clips each; track sets identical to the previously shipped GLBs; old-vs-new pose comparison on a 0.05 s grid worst-case 11.5 deg mid-swing on one fast forearm segment (invisible in side-by-side Blender renders); ep2_gold_town_test ALL PASS (64 checks).",
+  "security": { "checks": 18, "passed": 18, "blockers": 0 },
+  "nonthreaded_web": true,
+  "notes": [
+    "itch assigns a NEW embed key per processed build; the previous key's files stay served in place (stale). Read the current embed src from the page's data-iframe attribute when proving a deploy.",
+    "The pack gate remains 190 MiB (199,229,440 B); headroom after this ship is 7.43 MB."
+  ]
+}

@@ -135,7 +135,7 @@ func _ready() -> void:
 	vm.attach(cam)
 	vm.attach(cam)
 	_check("repeated attach preserves an empty revolver and rifle reserve", vm.gun == rem and vm.gun.rounds == 0 and win.reserve == 1)
-	_check("Remington has a real camera-held model and a grip hand", vm.rifle.name == "GoldenRemington1875" and vm.rifle.has_node("Barrel") and vm.rifle.has_node("RightArm"))
+	_check("Remington is the founder's golden revolver: a real camera-held hand-and-gun model", vm.rifle.name == "GoldenRemington1875" and vm.rifle.has_node("FounderRevolver") and not vm.rifle.find_children("*", "MeshInstance3D", true, false).is_empty())
 	_check("a newly selected prop starts in carry before the first physics tick", vm.rifle.position == vm.hip_pos + Vector3(vm.rifle.get_meta("hip_offset", Vector3.ZERO)) and vm.rifle.rotation.is_equal_approx(vm.rifle.get_meta("hip_rotation", Ep2Viewmodel.VM_HIP_ROT)))
 	vm.set_exposure(0.7)
 	vm.set_world_shadows(false)
@@ -143,7 +143,8 @@ func _ready() -> void:
 	for pair in vm._exp_mats:
 		lighting_ok = lighting_ok and is_equal_approx((pair[0] as StandardMaterial3D).albedo_color.r, (pair[1] as Color).r * 0.7) and (pair[0] as BaseMaterial3D).disable_receive_shadows
 	_check("daylight settings reach the cached Winchester while Remington is equipped", lighting_ok)
-	_check("the Blender Remington also receives the shadow setting", (vm.rifle.get_node("Barrel").get_surface_override_material(0) as BaseMaterial3D).disable_receive_shadows)
+	var rem_mesh: MeshInstance3D = vm.rifle.find_children("*", "MeshInstance3D", true, false)[0]
+	_check("the founder revolver also receives the shadow setting", (rem_mesh.get_surface_override_material(0) as BaseMaterial3D).disable_receive_shadows)
 
 	state.select(Ep2ArmoryState.WIN)
 	state.step(0.18)

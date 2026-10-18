@@ -39,6 +39,9 @@ var _t: float = 0.0                  # time in the current routine / awareness s
 var _react: float = -1.0             # >= 0: counting down to react to a sound
 var _pause: float = 0.0
 var _attack_t: float = -1.0          # >= 0: an attack is winding up / recovering
+var _attack_kind: String = "leap"    # which brawler attack is playing: swipe (rear up, claw slash), bite (lunge + shake) or the old leap
+var _strike_at: float = 0.55         # seconds into the attack at which the blow connects
+var _reach: float = 2.6              # how close the player must still be when it connects
 var _cool: float = 0.0
 var _rng := RandomNumberGenerator.new()
 var _sense_t: float = 0.0
@@ -390,9 +393,9 @@ func _step_combat(delta: float, player: Vector3) -> void:
 		_attack_t += delta
 		actor.stop()
 		actor.face_point(player)
-		if _attack_t >= 0.55 and not bool(p.get("_struck", false)):
+		if _attack_t >= _strike_at and not bool(p.get("_struck", false)):
 			p["_struck"] = true
-			if d < 2.6:
+			if d < _reach:
 				swiped.emit(self)
 		if _attack_t >= 1.5:
 			_attack_t = -1.0
@@ -402,7 +405,8 @@ func _step_combat(delta: float, player: Vector3) -> void:
 	var strike_r: float = 2.2 if lead.length() < 0.5 else 4.2          # a quad coming at him: he jumps early
 	if d < strike_r and _cool <= 0.0 and may_attack:
 		_attack_t = 0.0
-		Ep2BearKit.pose(actor, "leap")
+		_pick_attack(d)
+		Ep2BearKit.pose(actor, _attack_kind)
 		swing_started.emit(self)
 		return
 	if d > 1.8:
@@ -412,3 +416,21 @@ func _step_combat(delta: float, player: Vector3) -> void:
 	else:
 		actor.stop()
 		actor.face_point(player)
+
+
+## Brawler attack choice. A bear at arm's length rears up and rakes with a claw swipe; one right on top of the player lunges
+## head-first and bites, shaking its head. Falls back to the old punch clip if the combat clips are not on this rig.
+func _pick_attack(d: float) -> void:
+	var has_clips: bool = actor != null and actor.anim != null and actor.anim.has_animation(Ep2BearKit.SWIPE)
+	if not has_clips:
+		_attack_kind = "leap"
+		_strike_at = 0.55
+		_reach = 2.6
+	elif d < 1.9 and fmod(_t * 7.0, 1.0) < 0.6:     # deterministic: never consumes the seeded stream
+		_attack_kind = "bite"
+		_strike_at = Ep2BearKit.BITE_IMPACT
+		_reach = 2.3
+	else:
+		_attack_kind = "swipe"
+		_strike_at = Ep2BearKit.SWIPE_IMPACT
+		_reach = 2.6
