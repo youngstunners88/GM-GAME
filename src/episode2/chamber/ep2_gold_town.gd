@@ -45,7 +45,16 @@ const FOOTPRINT: Dictionary = {
 	"Bldg_B": [8.0, 9.0, 0.0], "Bldg_C": [6.0, 8.0, 0.0], "Bldg_D": [9.0, 9.0, 0.0], "Bldg_E": [7.0, 8.0, 0.0], "Bldg_F": [8.0, 9.0, 0.0],
 	"Church": [8.0, 14.0, 0.0],
 	"Bldg_Armory": [8.0, 9.0, 0.7],
+	"Bldg_Armory2": [10.0, 12.0, 1.0],      # the two-storey Armory (streamed extras): double door 2 m wide
 }
+
+## The two-storey Armory (founder 2026-10-19, skill ep2-armory-two-story). When the streamed extras are loadable (Ep2Extras), the
+## "Bldg_Armory" LAYOUT row draws Bldg_Armory2 + its fit-out instead of the kit's one-storey shop, at the SAME transform - so wherever
+## the row is moved, the new building follows. Its GLB also carries the NPC waypoints and walk blockers, read here once per build.
+static var armory_v2: bool = false
+static var armory_spots: Dictionary = {}       # Spot_<name> -> local Vector3 (x along the front, -z inside, y = floor)
+static var armory_blocks: Array = []           # [local centre Vector2(x, z), half extents Vector2] of the shop-floor blockers
+static var armory_lights: Array = []           # local Vector3 lamp positions
 
 
 ## The yaw that turns a kit piece's local +Z front toward the street.
@@ -93,15 +102,22 @@ static func build(parent: Node3D, interiors: bool) -> Dictionary:
 		return {"walls": walls, "props": props}
 	var kit: Node3D = (load(KIT) as PackedScene).instantiate() as Node3D
 	_apply_mats(kit)
+	var a2: Node3D = _load_armory2()
 	for e in LAYOUT:
-		var src: Node3D = kit.find_child(str(e[0]), true, false) as Node3D
+		var piece: String = str(e[0])
+		var src: Node3D = kit.find_child(piece, true, false) as Node3D
+		if piece == "Bldg_Armory" and a2 != null:
+			src = a2.find_child("Bldg_Armory2", true, false) as Node3D
+			piece = "Bldg_Armory2"
 		if src == null:
 			continue
 		var b: Node3D = src.duplicate() as Node3D
 		b.transform = building_xform(e)
 		root.add_child(b)
 		_hang_signs(b)
-		walls.append_array(_walls_of(str(e[0]), building_xform(e)))
+		walls.append_array(_walls_of(piece, building_xform(e)))
+		if piece == "Bldg_Armory2":
+			walls.append_array(_armory2_block_walls(building_xform(e)))
 	# the street furniture: hitching rails, troughs, wagons, lamps, barrels and crates, benches on the porches
 	var dress: Array = [
 		["HitchRail", Vector3(-6.4, 0.0, 1418.0), PI * 0.5], ["HitchRail", Vector3(6.4, 0.0, 1431.0), PI * 0.5],
@@ -156,9 +172,61 @@ static func build(parent: Node3D, interiors: bool) -> Dictionary:
 			_flag(fort, (fa as Node3D).position)
 	Ep2TownLife.build(root, props)                      # horses at the rails, the river, the railway and the train
 	if interiors:
-		_furnish(root, kit)
+		_furnish(root, kit, a2)
 	kit.free()
+	if a2 != null:
+		a2.free()
 	return {"walls": walls, "props": props}
+
+
+## The two-storey Armory scene from the streamed extras (null when they are not loadable yet: the kit's shop is drawn instead).
+## Also reads its Arm2_Nav empties into armory_spots / armory_blocks / armory_lights.
+static func _load_armory2() -> Node3D:
+	armory_v2 = false
+	armory_spots = {}
+	armory_blocks = []
+	armory_lights = []
+	if not Ep2Extras.has(Ep2Extras.ARMORY):
+		return null
+	var ps: PackedScene = load(Ep2Extras.ARMORY) as PackedScene
+	if ps == null:
+		return null
+	var a2: Node3D = ps.instantiate() as Node3D
+	if a2.find_child("Bldg_Armory2", true, false) == null:
+		a2.free()
+		return null
+	_apply_mats(a2)
+	var nav: Node = a2.find_child("Arm2_Nav", true, false)
+	if nav != null:
+		for c in nav.get_children():
+			var n3 := c as Node3D
+			if n3 == null:
+				continue
+			var nm: String = String(n3.name)
+			if nm.begins_with("Spot_"):
+				armory_spots[nm.trim_prefix("Spot_")] = n3.position
+			elif nm.begins_with("Block_"):
+				armory_blocks.append([Vector2(n3.position.x, n3.position.z), Vector2(absf(n3.scale.x), absf(n3.scale.z))])
+	var bld: Node = a2.find_child("Bldg_Armory2", true, false)
+	for c in bld.find_children("LightAnchor_*", "", true, false):
+		armory_lights.append((c as Node3D).position)
+	armory_v2 = true
+	return a2
+
+
+## The Armory's shop-floor blockers (counter, cases, stair, shelves, kegs, gallery posts) as wall segments, so Lil Blunt walks round
+## them like walls (collide()).
+static func _armory2_block_walls(xf: Transform3D) -> Array:
+	var out: Array = []
+	for bl in armory_blocks:
+		var c: Vector2 = bl[0]
+		var h: Vector2 = bl[1]
+		var pts: Array = [Vector3(c.x - h.x, 0, c.y - h.y), Vector3(c.x + h.x, 0, c.y - h.y), Vector3(c.x + h.x, 0, c.y + h.y), Vector3(c.x - h.x, 0, c.y + h.y)]
+		for i in 4:
+			var a: Vector3 = xf * (pts[i] as Vector3)
+			var b: Vector3 = xf * (pts[(i + 1) % 4] as Vector3)
+			out.append([Vector2(a.x, a.z), Vector2(b.x, b.z)])
+	return out
 
 
 ## The kit's named materials -> textured, world-triplanar ones (one material per name, shared by every instance).
@@ -202,6 +270,8 @@ static func _tex_mat(file: String, tint: Color, uv_scale: float, fallback: Strin
 static func _hang_signs(b: Node3D) -> void:
 	for an in b.find_children("SignAnchor_*", "", true, false):
 		var word: String = String(an.name).trim_prefix("SignAnchor_")
+		var hang: bool = word.ends_with("_hang")             # a small board hung under a porch awning (the two-storey Armory)
+		word = word.trim_suffix("_hang")
 		var path: String = TEX_DIR + "sign_%s.png" % word
 		if not ResourceLoader.exists(path):
 			continue
@@ -211,6 +281,8 @@ static func _hang_signs(b: Node3D) -> void:
 		var w: float = 6.0 if word != "FORTKNOX" else 5.6
 		if word in ["ASSAY", "STATS"]:
 			w = 4.6
+		if hang:
+			w = 2.4
 		qm.size = Vector2(w, w * 180.0 / 1024.0)
 		q.mesh = qm
 		var sm := StandardMaterial3D.new()
@@ -300,7 +372,7 @@ static func _flag(parent: Node3D, pos: Vector3) -> void:
 
 ## The two rooms Lil Blunt walks into: the certificate office (counter, pigeonholes, desk, stove, lamps) and the saloon (the long bar,
 ## the back shelf of bottles round a mirror, tables and chairs, a piano, oil lamps). Positions are in each building's local frame.
-static func _furnish(root: Node3D, kit: Node3D) -> void:
+static func _furnish(root: Node3D, kit: Node3D, a2: Node3D = null) -> void:
 	var rooms: Array = [
 		["Bldg_Certificates", "Int_Counter", Vector3(0.6, 0.0, -4.6), 0.0], ["Bldg_Certificates", "Int_Shelves", Vector3(0.6, 0.0, -8.6), 0.0],
 		["Bldg_Certificates", "Int_Desk", Vector3(-2.3, 0.0, -7.0), 0.0], ["Bldg_Certificates", "Int_Stove", Vector3(-3.0, 0.0, -2.4), 0.0],
@@ -314,6 +386,8 @@ static func _furnish(root: Node3D, kit: Node3D) -> void:
 		["Bldg_Armory", "Arm_SniperCase", Vector3(1.8, 0.0, -7.8), 0.0], ["Bldg_Armory", "Arm_PowderKeg", Vector3(-3.2, 0.0, -2.2), 0.0],
 	]
 	for rm in rooms:
+		if a2 != null and str(rm[0]) == "Bldg_Armory":
+			continue                    # the two-storey Armory brings its own fit-out (below)
 		var src: Node3D = kit.find_child(str(rm[1]), true, false) as Node3D
 		if src == null:
 			continue
@@ -331,7 +405,20 @@ static func _furnish(root: Node3D, kit: Node3D) -> void:
 				c.transform = building_xform(entry("Bldg_Saloon")) * Transform3D(Basis(Vector3.UP, a + PI), tp + Vector3(sin(a), 0, cos(a)) * 0.95)
 				root.add_child(c)
 	# warm oil lamps in both rooms
-	for lp in [["Bldg_Certificates", Vector3(0.0, 3.0, -4.0), 4.5], ["Bldg_Saloon", Vector3(-2.0, 3.2, -4.0), 6.0], ["Bldg_Saloon", Vector3(3.0, 3.2, -8.0), 6.0], ["Bldg_Armory", Vector3(0.0, 3.0, -5.0), 5.0]]:
+	var lamps: Array = [["Bldg_Certificates", Vector3(0.0, 3.0, -4.0), 4.5], ["Bldg_Saloon", Vector3(-2.0, 3.2, -4.0), 6.0], ["Bldg_Saloon", Vector3(3.0, 3.2, -8.0), 6.0]]
+	if a2 == null:
+		lamps.append(["Bldg_Armory", Vector3(0.0, 3.0, -5.0), 5.0])
+	else:
+		# the two-storey Armory: its fit-out at the building's transform, and a warm lamp at each hanging oil lamp (<= 4 lights)
+		var fit: Node3D = a2.find_child("Arm2_Fit", true, false) as Node3D
+		if fit != null:
+			var f: Node3D = fit.duplicate() as Node3D
+			f.transform = building_xform(entry("Bldg_Armory"))
+			f.name = "Arm2_Fit_Bldg_Armory"
+			root.add_child(f)
+		for i in mini(armory_lights.size(), 4):
+			lamps.append(["Bldg_Armory", armory_lights[i], 4.5])
+	for lp in lamps:
 		var l := OmniLight3D.new()
 		l.light_color = Color(1.0, 0.72, 0.42)
 		l.light_energy = 1.8

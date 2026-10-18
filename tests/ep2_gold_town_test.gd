@@ -201,8 +201,12 @@ func _ready() -> void:
 	var utah: Ep2TownFolk = c.get_utah()
 	_check("Rich the Claim Recorder and Utah are both in the shop before he ever walks in (the lock's both-present rule)",
 		rich != null and utah != null and rich.visible and utah.visible, str(rich) + " " + str(utah))
+	# the two-storey Armory's pair work on their own (Ep2ArmoryBrain), so any of their work clips is right; the fallback pair holds poses
+	var work_clips: Array = ["counter", "idle", "cigarpuff", "wiperifle", "inspectrifle", "reach", "talk", "pickup", "putdown", "greet", "walk",
+		"carry", "stairsup", "point"]
 	_check("both are rigged bodies, moving on their authored clips (not statues with a bob)",
-		rich.has_clips() and utah.has_clips() and rich.current_clip() == "counter" and utah.current_clip() == "idle",
+		rich.has_clips() and utah.has_clips() and ((Ep2GoldTown.armory_v2 and rich.current_clip() in work_clips and utah.current_clip() in work_clips)
+			or (rich.current_clip() == "counter" and utah.current_clip() == "idle")),
 		"%s %s" % [rich.current_clip(), utah.current_clip()])
 	var lane: Vector3 = Ep2GoldTown.door_world("Bldg_Armory", 2.2)
 	var inside: Vector3 = Ep2GoldTown.local_to_world("Bldg_Armory", GoldTownChamber.ARMORY_SPOT)

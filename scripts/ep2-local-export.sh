@@ -16,6 +16,7 @@ timeout 600 "$G" --headless --editor --quit >/dev/null 2>&1 || true      # fresh
 timeout 900 "$G" --headless --export-release "Web" web_verify/game/index.html > .farm/export.log 2>&1
 [ -f web_verify/game/index.pck ] || { echo "✗ export produced no pck — see .farm/export.log"; exit 1; }
 cp web/web3.js web_verify/game/ 2>/dev/null || true
+timeout 300 "$G" --headless --path . --script tools/ep2_extras/pack_extras.gd -- web_verify/game/ep2_extras.pck > .farm/extras-pack.log 2>&1 || echo "✗ extras pack failed - see .farm/extras-pack.log"
 echo "✓ export ok  pck=$(stat -c%s web_verify/game/index.pck)  script_errors=$(grep -cE 'SCRIPT ERROR|Parse Error' .farm/export.log || true)"
 curl -s -o /dev/null http://localhost:8899/game/index.html || (node scripts/serve-web.mjs 8899 web_verify >/dev/null 2>&1 &)
 sleep 1; echo "  serving http://localhost:8899/game/index.html?ep2=1&ep2probe=1"

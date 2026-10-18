@@ -62,6 +62,7 @@ var _gate_msg: Label = null
 
 func _ready() -> void:
 	_build_hud()
+	Ep2Extras.start(self)          # web: fetch ep2_extras.pck (two-storey Armory, Tripo Rich & Utah) long before the town
 	if _is_unlocked():
 		_begin()
 	else:
