@@ -12,7 +12,11 @@ awk -v L="$L" 'NR>L && /^          EOF$/{exit} NR>L{sub(/^          /,""); print
   | sed 's#export_path="web/game/index.html"#export_path="web_verify/game/index.html"#' > export_presets.cfg
 grep -q 'thread_support=false' export_presets.cfg || { echo "✗ preset lost thread_support=false"; exit 1; }
 mkdir -p web_verify/game && rm -f web_verify/game/index.pck
-timeout 600 "$G" --headless --editor --quit >/dev/null 2>&1 || true      # fresh class cache
+# import with --import, twice: "--editor --quit" can quit before its scan thread finishes ("Scan thread aborted"), leaving
+# images unimported -> "No loader found" + an export segfault (fresh-clone gate, 2026-10-19); the 2nd pass imports the textures
+# GLB imports extract
+timeout 1500 "$G" --headless --path . --import >/dev/null 2>&1 || true
+timeout 1200 "$G" --headless --path . --import >/dev/null 2>&1 || true
 timeout 900 "$G" --headless --export-release "Web" web_verify/game/index.html > .farm/export.log 2>&1
 [ -f web_verify/game/index.pck ] || { echo "✗ export produced no pck — see .farm/export.log"; exit 1; }
 cp web/web3.js web_verify/game/ 2>/dev/null || true

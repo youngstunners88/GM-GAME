@@ -186,10 +186,11 @@ def rifle(p, pos, yaw=0.0, pitch=0.0, roll=0.0, kind="lever", scale=1.0):
             p.cyl("GunSteel", 0.012, 0.012, 0.72, (0.29, 0.015, dz), "x", 6)
         p.box("GunWood", (0.26, 0.04, 0.045), (0.1, -0.01, 0))
     else:
-        p.box("GunWood", (0.36, 0.10, 0.04), (-0.44, -0.035, 0))              # stock
+        p.box("GunWood", (0.38, 0.13, 0.05), (-0.45, -0.045, 0))              # stock
+        p.box("Brass", (0.02, 0.135, 0.052), (-0.645, -0.045, 0))             # buttplate
         p.box("GunWood", (0.10, 0.05, 0.035), (-0.24, -0.005, 0))             # wrist
         p.box("Brass" if kind == "lever" else "GunSteel", (0.18, 0.07, 0.045), (-0.10, 0.0, 0))   # receiver
-        p.cyl("GunSteel", 0.011, 0.011, 0.78 if kind != "buffalo" else 0.92, (0.39 if kind != "buffalo" else 0.46, 0.015, 0), "x", 6)
+        p.cyl("GunSteel", 0.015, 0.015, 0.78 if kind != "buffalo" else 0.92, (0.39 if kind != "buffalo" else 0.46, 0.015, 0), "x", 6)
         p.box("GunWood", (0.30, 0.035, 0.04), (0.12, -0.005, 0))              # fore-end
         if kind == "lever":
             p.cyl("GunSteel", 0.008, 0.008, 0.6, (0.30, -0.012, 0), "x", 5)   # magazine tube
@@ -441,11 +442,12 @@ for x, z in ((-3.4, -0.7), (-3.0, -1.1), (3.0, -6.6), (3.4, -6.9)):
     keg(F, (x, 0, z))
 # the back wall under the gallery: three long racks of rifles (two rows), the cleaning bench
 for x0 in (-3.6, -0.6, 2.2):
-    F.box("DarkWood", (2.6, 2.2, 0.08), (x0 + 1.2, 1.4, -D + T + 0.05))
+    F.box("Felt", (2.6, 2.2, 0.08), (x0 + 1.2, 1.4, -D + T + 0.05))
+    F.box("Trim", (2.75, 0.1, 0.12), (x0 + 1.2, 2.55, -D + T + 0.07))
     for row, y in enumerate((0.95, 2.05)):
         F.box("DarkWood", (2.6, 0.08, 0.2), (x0 + 1.2, y - 0.62, -D + T + 0.14))
         for i in range(7):
-            rifle(F, (x0 + 0.2 + i * 0.36, y, -D + T + 0.14), roll=math.pi / 2, kind=("lever", "shotgun", "lever", "buffalo")[(i + row) % 4])
+            rifle(F, (x0 + 0.2 + i * 0.36, y, -D + T + 0.16), roll=math.pi / 2, kind=("lever", "shotgun", "lever", "buffalo")[(i + row) % 4], scale=1.2)
 F.box("DarkWood", (2.0, 0.9, 0.7), (-3.2, 0.45, -9.6))                                 # cleaning bench
 F.box("Felt", (1.9, 0.02, 0.6), (-3.2, 0.91, -9.6))
 rifle(F, (-3.2, 0.95, -9.6), yaw=0.15, roll=math.pi / 2)
@@ -453,13 +455,14 @@ F.box("Leather", (0.3, 0.12, 0.2), (-2.6, 0.98, -9.4))
 F.box("Iron", (0.5, 0.25, 0.25), (-3.8, 1.03, -9.7))                                    # vice
 # the gallery: rifle racks on the upper back and left walls, a Gatling gun at the rail, crates, Utah's bench and river gear
 for x0 in (-4.2, -1.2, 1.8):
-    F.box("DarkWood", (2.6, 2.3, 0.08), (x0 + 1.2, H1 + 1.6, -D + T + 0.05))
+    F.box("Felt", (2.6, 2.3, 0.08), (x0 + 1.2, H1 + 1.6, -D + T + 0.05))
+    F.box("Trim", (2.75, 0.1, 0.12), (x0 + 1.2, H1 + 2.8, -D + T + 0.07))
     for row, y in enumerate((H1 + 1.1, H1 + 2.25)):
         F.box("DarkWood", (2.6, 0.08, 0.2), (x0 + 1.2, y - 0.62, -D + T + 0.14))
         for i in range(7):
-            rifle(F, (x0 + 0.2 + i * 0.36, y, -D + T + 0.14), roll=math.pi / 2, kind=("lever", "lever", "shotgun", "sniper")[(i + row) % 4])
+            rifle(F, (x0 + 0.2 + i * 0.36, y, -D + T + 0.16), roll=math.pi / 2, kind=("lever", "lever", "shotgun", "sniper")[(i + row) % 4], scale=1.2)
 for z0 in (-1.8, -4.6):
-    F.box("DarkWood", (0.08, 2.3, 2.4), (-HX + T + 0.05, H1 + 1.6, z0 - 1.1))
+    F.box("Felt", (0.08, 2.3, 2.4), (-HX + T + 0.05, H1 + 1.6, z0 - 1.1))
     for i in range(6):
         for j in range(4):
             revolver(F, (-HX + T + 0.12, H1 + 0.9 + j * 0.4, z0 - 0.2 - i * 0.36), yaw=-math.pi / 2, gold=(i == 2 and j == 3))
