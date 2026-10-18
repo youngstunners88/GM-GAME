@@ -7,6 +7,8 @@ allowed-tools: Read, Grep, Glob, Bash, Write, Edit
 
 # Armory further off Main Street (placement + side streets only)
 
+> **Status 2026-10-19:** this is a real founder prompt but it is NOT the active job; the active prompt is Logan's Lake (`ep2-logans-lake`). Nothing here is built. It was written first from the wrong Drive file and is kept because the armory distance complaint is still open.
+
 Source of truth: Drive `PROMPT_EPISODE2_ARMORY_FURTHER_OFF_MAIN.md` (id `12Ddyg5W8Mg27lA3XH6OGr_JROI9sLNvM`). Quote it in the ledger (`ep2-design-verify`), never paraphrase it weaker. Founder's own test: "If a player standing on Main Street can treat the armory door as the next storefront in the same row, the placement is still wrong." He accepts only after a hard refresh on the live itch page. **Do not claim FIXED for a one-metre nudge.**
 
 ## Scope

@@ -42,5 +42,5 @@ Each script prints one JSON result and documents its flags in its docstring: **r
 ## Done means (extends `blender-asset-qa`)
 `qa_check.py --profile game` passes (or each warning is accepted with a reason), `review_shots.py` sheet looked at (`--mode random` finds detached parts, `--mode wire` topology), export file exists and is non-zero, then **Godot import + engine capture** (`ep2-sightline-proof` / `ship-visual-proof`). A green Blender QA is not a shipped look.
 
-## Open: Logan
-The Drive folder `1q4e5q-UVVOH0Dxu9CnRdXAi_4sLkj25K` also holds `Logan.JPG`, `Logan.glb` (23.9 MB), `Logan.zip` (12 MB), uploaded 2026-10-18 14:36 UTC next to Rich/Utah. Nothing in the repo or vault says who Logan is or where he stands (the 2026-10-19 log says "Logan parked"). Do not invent a role. Ask the founder, then route him through `ep2-founder-intake` -> `ep2-tripo-folk-to-game`; treat the 23.9 MB GLB like Utah's 67k-tri one: decimate, 1K textures, one shared clip set, and measure the pack before adding.
+## Logan (resolved 2026-10-19)
+Logan is the liquidity-provider face of **Logan's Lake** (founder lock `PROMPT_EPISODE2_LOGANS_LAKE_LIQUIDITY`, Google Doc `1N5tfMsKgjMUSGY5MqI1EcGYejLd23m4IPIH7mP1IplY`). Story: `ep2-logans-lake`. Model/rig/clips/pack plan: `ep2-logan-character` (a Tripo + Mixamo asset like Utah). Place: `ep2-lake-water-build`.
