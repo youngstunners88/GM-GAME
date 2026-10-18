@@ -3,20 +3,38 @@
 weathered dark-brown boards, like the founder's town target. Writes src/episode2/assets/town/sign_<WORD>.png (1024 wide).
 Never a DIAMONDS sign in Episode 2 (ep2-fort-knox-arc rule 4).
 
-    python3 tools/ep2_forge/paint_town_signs.py
+    python3 tools/ep2_forge/paint_town_signs.py                    # every sign
+    python3 tools/ep2_forge/paint_town_signs.py ARMS               # just the armory board
+    python3 tools/ep2_forge/paint_town_signs.py ARMS --font <ttf>  # a specific face
 """
+import argparse
 import random
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 OUT = Path("src/episode2/assets/town")
-FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"
+# DejaVu is the original face; fall back to any serif present, then to the in-repo Western bookman.
+FONT_CANDIDATES = [
+    "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf",
+    "/usr/share/fonts/liberation/LiberationSerif-Bold.ttf",
+    "src/episode2/assets/weapons/armory/western_bookman.otf",
+]
 WORDS = {"CERTIFICATES": "CERTIFICATES", "SALOON": "SALOON", "TREASURY": "TREASURY", "GENERAL": "GENERAL STORE", "HOTEL": "HOTEL",
-         "ASSAY": "ASSAY OFFICE", "AUCTIONS": "AUCTIONS", "STATS": "STATS", "RESERVE": "RESERVE", "FORTKNOX": "FORT KNOX"}
+         "ASSAY": "ASSAY OFFICE", "AUCTIONS": "AUCTIONS", "STATS": "STATS", "RESERVE": "RESERVE", "FORTKNOX": "FORT KNOX",
+         "ARMS": "RICH & UTAH ARMS"}
 
 
-def board(text, w=1024, h=180, seed=0):
+def font_path(override=None):
+    if override:
+        return override
+    for f in FONT_CANDIDATES:
+        if Path(f).exists():
+            return f
+    raise SystemExit("no serif font found for the town signs")
+
+
+def board(text, w=1024, h=180, seed=0, font_file=None):
     rng = random.Random(seed)
     im = Image.new("RGB", (w, h), (52, 34, 22))
     px = im.load()
@@ -32,10 +50,10 @@ def board(text, w=1024, h=180, seed=0):
     d.rectangle([10, 10, w - 11, h - 11], outline=(214, 190, 140), width=4)
     d.rectangle([20, 20, w - 21, h - 21], outline=(120, 96, 62), width=2)
     size = 120
-    font = ImageFont.truetype(FONT, size)
+    font = ImageFont.truetype(font_file, size)
     while d.textlength(text, font=font) > w - 90 and size > 40:
         size -= 4
-        font = ImageFont.truetype(FONT, size)
+        font = ImageFont.truetype(font_file, size)
     tw = d.textlength(text, font=font)
     x = (w - tw) / 2
     y = (h - size) / 2 - size * 0.12
@@ -51,7 +69,19 @@ def board(text, w=1024, h=180, seed=0):
     return im
 
 
-OUT.mkdir(parents=True, exist_ok=True)
-for i, (key, text) in enumerate(WORDS.items()):
-    board(text, seed=i).save(OUT / f"sign_{key}.png")
-    print("sign", key)
+def main():
+    ap = argparse.ArgumentParser(description="paint the town sign boards")
+    ap.add_argument("keys", nargs="*", help="only these sign keys (default: all)")
+    ap.add_argument("--font", default=None, help="font file override")
+    args = ap.parse_args()
+    chosen = font_path(args.font)
+    OUT.mkdir(parents=True, exist_ok=True)
+    for i, (key, text) in enumerate(WORDS.items()):
+        if args.keys and key not in args.keys:
+            continue
+        board(text, seed=i, font_file=chosen).save(OUT / f"sign_{key}.png")
+        print("sign", key, "->", chosen)
+
+
+if __name__ == "__main__":
+    main()

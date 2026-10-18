@@ -16,10 +16,16 @@ extends Ep2Interlude
 ##   DRAW      the rifle stays down until the Sheriff says DRAW (a seeded wait). Fire early = a foul, the Sheriff makes them redo it. Hit him first
 ##             = the map. Too slow = he shoots first: the screen drops, hearts restored, the Sheriff sets it up again (retry, never a death)
 ##   WON       the Sheriff hands him the map; Bull comes walking up the street (his reaction is not locked: no line yet)
+##   TIP       the tip: RICH keeps an armory down the side lane off the left row (founder lock
+##             PROMPT_EPISODE2_RICH_ARMORY_UTAH_RIVER.md) - off Main Street, deliberately not obvious
+##   ARMORY    walk down the lane and in: Rich the Claim Recorder and Utah behind the counter. Trade (E at
+##             the counter) buys firearms, ammunition and the river gear with Episode 1 crypto only
+##   GEARED    the long rifle and the river gear are his; Rich seeds the day-88 river shipment
 ##   DONE      TO BE CONTINUED
 ## Never in this room: the banned Episode 2 protocol (ep2-fort-knox-arc rule 4), a second health system, a wallet or contract address.
+## The Armory never mints and is NOT the Treasury: the Treasury keeps no racks and no trade (lock section 7).
 
-enum Beat { STREET, OFFICE, TO_BAR, BAR, SQUARE_UP, DRAW, WON, DONE }
+enum Beat { STREET, OFFICE, TO_BAR, BAR, SQUARE_UP, DRAW, WON, TIP, ARMORY, GEARED, DONE }
 
 const SHERIFF_MODEL := "res://src/episode2/assets/town/sheriff.glb"          # the founder's own Sheriff (Drive 2026-10-14): weathered, bearded, long coat, pipe - baked for the pack
 const MINISTER_MODEL := "res://src/episode2/assets/town/minister.glb"      # Minister Mike Dean: the founder's robot-headed minister (Drive 2026-10-14), baked for the pack
@@ -53,6 +59,27 @@ const DRAW_WAIT_MAX := 4.2
 const OPP_REACTION := 1.45                            # seconds from "Draw!" to his shot on the first try (the rifle must come up)
 const OPP_REACTION_STEP := 0.3                        # ...a little more each time he wins (never a wall)
 const OPP_HIT_R := 0.5
+## The Armory (Rich & Utah, down the side lane). Bodies are on-box Blender figures (tools/ep2_blender/
+## build_armory_folk.py); Rich is taller and broader in a long duster and wide-brim hat, Utah slimmer in a
+## short open jacket with a flat brim and a bandana, so the two read apart at a glance (and at the river later).
+const RICH_MODEL := "res://src/episode2/assets/town/rich_armory.glb"
+const UTAH_MODEL := "res://src/episode2/assets/town/utah_armory.glb"
+const RICH_HEIGHT := 1.86
+const UTAH_HEIGHT := 1.74
+## In the Armory's local frame (x along the front, -z inside). Rich behind the counter (the sales side), Utah
+## working the crates and racks behind him.
+const RICH_AT := Vector3(-0.7, 0.0, -5.7)
+const UTAH_AT := Vector3(1.3, 0.0, -6.4)
+const ARMORY_SPOT := Vector3(0.4, 0.0, -3.1)          # where Lil Blunt stands at the counter
+const ARMORY_TRADE_R := 2.4                           # how close he must be for [E] to open the trade
+## The lane he is pointed down (world) and the door mouth of the shop.
+const LANE_MARK := Vector3(-12.0, 0.0, 1452.0)
+## Feel-value prices in Episode 1 crypto coins (F - free to hunt/tune, never a protocol fact).
+const PRICE_SNIPER := 3
+const PRICE_RIVER_GEAR := 2
+const SNIPER_BOX := 10
+const RIFLE_BOX := 24
+const REVOLVER_BOX := 18
 
 var _town_col: Dictionary = {}
 var _sheriff: Ep2TownFolk = null
@@ -77,6 +104,16 @@ var _end_t: float = -1.0
 var _duel_ready: bool = false
 var _flash_t: float = 0.0
 var _flash: OmniLight3D = null
+var _rich: Ep2TownFolk = null
+var _utah: Ep2TownFolk = null
+var _shop: Ep2ArmoryShop = null
+var _shop_layer: CanvasLayer = null
+var _shop_open: bool = false
+var _geared: bool = false                             # rifle + river gear in hand
+var _gear_t: float = -1.0
+var _armory_visited: bool = false                     # he found the lane and walked in
+var _spent: int = 0                                   # crypto spent at the counter (test evidence)
+var _mouse_before: int = Input.MOUSE_MODE_CAPTURED
 
 
 func _init() -> void:
@@ -174,9 +211,172 @@ func _step_people() -> void:
 	_flash.omni_range = 6.0
 	_flash.light_energy = 0.0
 	_visuals.add_child(_flash)
+	_build_armory_folk()
 	if _bull == null:
 		_bull = _build_bull(Ep2GoldTown.door_world("Bldg_B", 0.8), PI * 0.5)
 		_bull.visible = false
+
+
+## Rich and Utah, the Armory's two shopkeepers, behind their counter from the first step into the lane
+## (lock section 6: "both are present"). They are ordinary town folk - a stride bob, a turn to whoever
+## comes in - not bears and not a menu.
+func _build_armory_folk() -> void:
+	_rich = Ep2TownFolk.new()
+	_rich.name = "Rich"
+	_visuals.add_child(_rich)
+	_rich.setup(RICH_MODEL, RICH_HEIGHT, Color(0.30, 0.20, 0.13))
+	_rich.position = Ep2GoldTown.local_to_world("Bldg_Armory", RICH_AT)
+	_face_folk(_rich, Ep2GoldTown.local_to_world("Bldg_Armory", ARMORY_SPOT))
+	_utah = Ep2TownFolk.new()
+	_utah.name = "Utah"
+	_visuals.add_child(_utah)
+	_utah.setup(UTAH_MODEL, UTAH_HEIGHT, Color(0.28, 0.33, 0.34))
+	_utah.position = Ep2GoldTown.local_to_world("Bldg_Armory", UTAH_AT)
+	_face_folk(_utah, Ep2GoldTown.local_to_world("Bldg_Armory", Vector3(1.6, 0.0, -3.0)))
+	# Rich works the claim book at the counter, Utah stands loose beside the racks (authored clips).
+	_rich.hold_clip("Counter")
+	_utah.hold_clip("Idle")
+	_build_shop()
+
+
+## The trade counter itself: hidden until [E] at the counter (or a touch of BUY). Leather and brass,
+## the same cabinet as the personal armory, and it only ever raises `buy_requested`.
+func _build_shop() -> void:
+	_shop = Ep2ArmoryShop.new()
+	_shop.name = "ArmoryShop"
+	_shop_layer = CanvasLayer.new()
+	_shop_layer.name = "ArmoryShopLayer"
+	_shop_layer.layer = 24
+	add_child(_shop_layer)
+	_shop_layer.add_child(_shop)
+	_shop_layer.process_mode = Node.PROCESS_MODE_ALWAYS       # the tree pauses while the trade is up
+	_shop.process_mode = Node.PROCESS_MODE_ALWAYS
+	_shop.buy_requested.connect(_on_buy_requested)
+	_shop.closed.connect(_close_shop)
+	_shop.hide()
+
+
+## [E] at the counter opens Rich & Utah's trade. The personal armory keeps its own key: this is a
+## trade with crypto, not a loadout swap (founder lock PROMPT_EPISODE2_RICH_ARMORY_UTAH_RIVER.md).
+func start_rig(_payment: String = "") -> bool:
+	if _beat != Beat.ARMORY or _shop_open or _shop == null:
+		return false
+	if not _at_armory_counter():
+		return false
+	_open_shop()
+	return true
+
+
+## True when Lil Blunt is close enough to the counter to trade.
+func _at_armory_counter() -> bool:
+	if _beat != Beat.ARMORY:
+		return false
+	return _player_pos.distance_to(Ep2GoldTown.local_to_world("Bldg_Armory", ARMORY_SPOT)) < ARMORY_TRADE_R
+
+
+## The purse: Episode 1 crypto coins, the only tender he takes. Never the score, never a soft currency.
+func _purse() -> int:
+	return GameManager.coins_collected
+
+
+func _open_shop() -> void:
+	if _shop == null:
+		return
+	_shop.open_shop(armory, _purse())
+	_shop_open = true
+	_move_input = Vector2.ZERO
+	_run_input = false
+	set_aim(false)
+	_mouse_before = Input.mouse_mode
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	get_tree().paused = true
+
+
+func _close_shop() -> void:
+	if not _shop_open:
+		return
+	_shop_open = false
+	if _shop != null:
+		_shop.hide()
+	Input.mouse_mode = _mouse_before
+	if not StateMachine.is_paused():
+		get_tree().paused = false
+
+
+func _on_buy_requested(item_id: String, price: int, tender: String) -> void:
+	buy(item_id, price, tender)
+
+
+## The trade. The catalogue in `Ep2ArmoryState.SHOP` is the price, never the panel's label: debit the
+## crypto first, then ask the state for the goods, and give the coin back if the state refuses. Rich
+## does not hand over free iron and the room never invents a currency of its own.
+func buy(item_id: String, _price: int, tender: String = "btc") -> bool:
+	var item: Dictionary = Ep2ArmoryState.shop_item(item_id)
+	if item.is_empty():
+		_note(item_id, false)
+		return false
+	var cost: int = int(item["price"])
+	if cost <= 0 or not Ep2ArmoryState.ARMORY_TENDER.has(tender):
+		_note(item_id, false)
+		return false
+	if not _spend(cost):
+		_note(item_id, false)
+		return false
+	if not _deliver(item_id, int(item["rounds"]), tender):
+		_refund(cost)
+		_note(item_id, false)
+		return false
+	_spent += cost
+	_note(item_id, true)
+	if _hud != null:
+		_hud.toast(str(item["name"]), 1.4)
+	_check_geared()
+	return true
+
+
+## Debit the purse (`GameManager.spend_coins`, which refuses to go negative).
+func _spend(cost: int) -> bool:
+	if not GameManager.spend_coins(cost):
+		return false
+	if _shop != null:
+		_shop.set_purse(_purse())
+	return true
+
+
+## Hand the coin back when the state refuses the sale (never a silent debit).
+func _refund(cost: int) -> void:
+	GameManager.coins_collected += cost
+	GameManager.coins_changed.emit(GameManager.coins_collected)
+	if _shop != null:
+		_shop.set_purse(_purse())
+
+
+func _deliver(item_id: String, rounds: int, tender: String) -> bool:
+	match item_id:
+		"sniper":
+			return armory.purchase_sniper(tender)
+		"sniper_ammo":
+			return armory.purchase_sniper_ammo(rounds, tender)
+		"river_gear":
+			return armory.purchase_river_gear(tender)
+		"rifle_ammo":
+			return armory.purchase_ammo(Ep2ArmoryState.WIN, rounds, tender)
+		"revolver_ammo":
+			return armory.purchase_ammo(Ep2ArmoryState.REM, rounds, tender)
+	return false
+
+
+func _note(item_id: String, ok: bool) -> void:
+	if _shop != null:
+		_shop.purchase_result(item_id, ok)
+
+
+## The long rifle and the river gear both in hand: the river shipment is on (the day-88 set-piece).
+func _check_geared() -> void:
+	if _geared or _gear_t >= 0.0:
+		return
+	if armory.sniper_owned and armory.river_gear:
+		_gear_t = 1.0
 
 
 ## The Sheriff: the founder's own model (Drive 2026-10-14), arms lowered out of the T-pose, grey beard, star, pipe - with a
@@ -375,8 +575,35 @@ func _on_beat_entered(b: int) -> void:
 				FacilityShow._say("vo_sheriff_win", 0.4),
 				{"do": "wait", "t": 0.4}], false)
 			_bull.walk_to(_player_pos + Vector3(1.4, 0.0, 2.6), 1.6)
+		Beat.TIP:
+			# the tip off Main Street: Rich keeps an armory down the side lane (the lock's
+			# "hard-won" find - no ARMORY sign on the main drag). Text only; the voice lines
+			# for Rich and Utah are scripted in design/ep2/armory/RICH_UTAH_LINES.md and wait
+			# on a voice key (none is configured on this box).
+			if _hud:
+				_hud.objective = "Rich keeps an armory down the side lane off the left row. Find it."
+				_hud.toast("AN ARMORY DOWN THE SIDE LANE", 3.4)
+			if _sheriff != null:
+				_sheriff.face_point(Ep2GoldTown.door_world("Bldg_Armory", 1.0))
+			look_toward(Ep2GoldTown.door_world("Bldg_Armory", 1.0) + Vector3(0.0, 1.4, 0.0), 2.0)
+			_start_show([{"do": "wait", "t": 3.0}, {"do": "call", "fn": release_look}], false)
+		Beat.ARMORY:
+			if _hud:
+				_hud.objective = "Trade with Rich at the counter [E]."
+			if _rich != null:
+				_rich.face_point(_player_pos)
+				look_toward(_rich.position + Vector3(0.0, RICH_HEIGHT * 0.85, 0.0), 2.2)
+			_start_show([{"do": "wait", "t": 1.8}, {"do": "call", "fn": release_look}], false)
+		Beat.GEARED:
+			_geared = true
+			if _hud:
+				_hud.objective = "Geared for the river. TO BE CONTINUED."
+				_hud.toast("ARMED FOR THE RIVER SHIPMENT", 3.4)
+			_start_show([{"do": "wait", "t": 2.6}], false)
 		Beat.DONE:
-			_resolve({"end_session": true, "to_be_continued": true, "got_map": _got_map, "draw_losses": _losses, "draw_fouls": _fouls})
+			_resolve({"end_session": true, "to_be_continued": true, "got_map": _got_map, "draw_losses": _losses,
+				"draw_fouls": _fouls, "armory_visited": _armory_visited, "sniper": armory.sniper_owned,
+				"sniper_rounds": armory.sniper_rounds, "river_gear": armory.river_gear})
 
 
 func _show_finished() -> void:
@@ -430,6 +657,28 @@ func _tick(delta: float) -> void:
 			if _end_t >= 0.0 and not _show_active:
 				_end_t -= delta
 				if _end_t < 0.0:
+					_advance_to(Beat.TIP)
+		Beat.TIP:
+			if _in_room("Bldg_Armory", -1.4):
+				_armory_visited = true
+				_advance_to(Beat.ARMORY)
+		Beat.ARMORY:
+			_armory_visited = true
+			if _hud != null:
+				_hud.set_search_prompt("Trade with Rich [E]" if _at_armory_counter() else "")
+			_check_geared()
+			if _gear_t >= 0.0 and not _show_active:
+				_gear_t -= delta
+				if _gear_t < 0.0:
+					_advance_to(Beat.GEARED)
+		Beat.GEARED:
+			if _hud != null:
+				_hud.set_search_prompt("")
+			if not _show_active and _end_t < 0.0:
+				_end_t = 2.4
+			elif _end_t >= 0.0 and not _show_active:
+				_end_t -= delta
+				if _end_t < 0.0:
 					_advance_to(Beat.DONE)
 
 
@@ -455,6 +704,11 @@ func _tick_people(delta: float) -> void:
 			_sheriff_look_at_player()
 	if _beat == Beat.SQUARE_UP and not _opp.is_walking():
 		_opp.face_point(DUEL_MARK)
+	# the Armory's two turn to whoever comes in the door of the shop
+	if _rich != null and _beat in [Beat.TIP, Beat.ARMORY, Beat.GEARED] and _in_room("Bldg_Armory", -2.0):
+		_rich.face_point(_player_pos)
+		if _utah != null:
+			_utah.face_point(_player_pos)
 	_sheriff.step(delta)
 	_minister.step(delta)
 	_opp.step(delta)
@@ -619,6 +873,22 @@ func get_sheriff() -> Ep2TownFolk: return _sheriff
 func get_minister() -> Ep2TownFolk: return _minister
 func get_opponent() -> Ep2TownFolk: return _opp
 func get_bartender() -> Ep2TownFolk: return _bartender
+func get_rich() -> Ep2TownFolk: return _rich
+func get_utah() -> Ep2TownFolk: return _utah
+func get_shop() -> Ep2ArmoryShop: return _shop
+func is_shop_open() -> bool: return _shop_open
+func armory_visited() -> bool: return _armory_visited
+func has_sniper() -> bool: return armory.sniper_owned
+func has_river_gear() -> bool: return armory.river_gear
+func coins_spent() -> int: return _spent
+## The personal armory's key stays out of the trade: while Rich has the counter up, the loadout
+## selector (and the trade's own E) must not fight over the same key.
+func toggle_armory() -> void:
+	if _shop_open or not _running or _resolved or _show_blocks_control:
+		return
+	super()
+func armory_open() -> bool:
+	return _shop_open or super()
 func is_bull_here() -> bool: return _bull != null and _bull.visible
 func is_coin_on_bar() -> bool: return _coin != null and _coin.visible
 func is_glass_on_bar() -> bool: return _glass != null and _glass.visible

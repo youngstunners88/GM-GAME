@@ -244,6 +244,11 @@ jobs:
           #        (2026-10-01: ~14 MB; the Episode 2 hideout's Meshy models pushed the pck over 190 MB).
           #   src/assets/models/horse/assetfurnace/ -> the horse's raw/rigged GLBs, textures and run records (~10 MB);
           #        the stable plays the baked 2D sprites in src/assets/sprites/, no scene loads these.
+          #   src/episode2/assets/{town,weapons,mine_lift,vehicles}/ loose Meshy/Tripo texture exports -> the
+          #        JPG/PNGs that sit beside GLBs whose textures are EMBEDDED in the .glb (verified: zero external
+          #        URIs, zero references in any scene/script). No runtime dir-scan touches these four folders
+          #        (transition_director warms only assets/, hideout/, textures/, audio/), so the .pck skips them;
+          #        the files stay in the repo as pipeline sources (~8 MB, 2026-10-18).
           #   variant/thread_support=false -> non-threaded: no SharedArrayBuffer/
           #        COOP/COEP needed, so it boots on itch.io/iframes/mobile.
           #   html/head_include            -> loads web/web3.js (copied beside
@@ -257,7 +262,7 @@ jobs:
           custom_features=""
           export_filter="all_resources"
           include_filter="config.json,src/autoload/share_taglines.json"
-          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*,design/*,work-notes/*,tools/*,assets/keyart/*,src/assets/models/horse/assetfurnace/*,web_verify/*,web/game/*"
+          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*,design/*,work-notes/*,tools/*,assets/keyart/*,src/assets/models/horse/assetfurnace/*,web_verify/*,web/game/*,src/episode2/assets/town/sheriff_Color_8e43f67e-cb67-440e-a933-873676200b46.jpg,src/episode2/assets/town/sheriff_NormalGL_8e43f67e-cb67-440e-a933-873676200b46.jpg,src/episode2/assets/town/sheriff_ORM_8e43f67e-cb67-440e-a933-873676200b46.jpg,src/episode2/assets/town/cowboy_Color_d9c0533c-027f-4ccc-bfb9-22c47cae0e86.jpg,src/episode2/assets/town/cowboy_NormalGL_d9c0533c-027f-4ccc-bfb9-22c47cae0e86.jpg,src/episode2/assets/town/cowboy_ORM_d9c0533c-027f-4ccc-bfb9-22c47cae0e86.jpg,src/episode2/assets/town/bartender_Color_d6ddb283-94c7-4e12-ad6e-0a171cf9b04d.jpg,src/episode2/assets/town/bartender_NormalGL_d6ddb283-94c7-4e12-ad6e-0a171cf9b04d.jpg,src/episode2/assets/town/bartender_ORM_d6ddb283-94c7-4e12-ad6e-0a171cf9b04d.jpg,src/episode2/assets/town/minister_Color_f53480cd-f4e1-4d5d-a2df-9b9293ac9654.jpg,src/episode2/assets/town/minister_NormalGL_f53480cd-f4e1-4d5d-a2df-9b9293ac9654.jpg,src/episode2/assets/town/minister_ORM_f53480cd-f4e1-4d5d-a2df-9b9293ac9654.jpg,src/episode2/assets/town/donkey_cart_donkey_cart_3d_model_basecolor.jpg,src/episode2/assets/town/donkey_cart_donkey_cart_3d_model_normal.jpg,src/episode2/assets/weapons/winchester_1886_founder_Image_0.png,src/episode2/assets/weapons/winchester_1886_founder_Image_1.png,src/episode2/assets/weapons/winchester_1886_founder_Image_2.png,src/episode2/assets/weapons/winchester_1886_founder_Image_3.png,src/episode2/assets/mine_lift/mine_lift_cage_BaseColor.jpg,src/episode2/assets/vehicles/flame_quad_ai_BaseColor.jpg"
           export_path="web/game/index.html"
           script_export_mode=1
           script_encryption_key=""
@@ -320,6 +325,10 @@ jobs:
           timeout 120 "$GODOT_BIN" --headless res://tests/vault_touch_dialogue_test.tscn 2>&1 | tee vault-touch-tests.log
           grep -q 'VAULT_TOUCH_DIALOGUE: ALL PASS' vault-touch-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' vault-touch-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless --path . res://tests/ep2_bow_test.tscn > bow-tests.log 2>&1
+          cat bow-tests.log
+          grep -q 'EP2_BOW: ALL PASS' bow-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error' bow-tests.log; then exit 1; fi
           # Actual skinned paw contacts throughout reading/draw/release, plus
           # the deterministic actor clock and Bull's grip-preserving recoil.
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_character_motion_test.tscn 2>&1 | tee character-motion-tests.log

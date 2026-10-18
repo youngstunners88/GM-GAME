@@ -32,12 +32,14 @@ const LAYOUT: Array = [
 	["Bldg_Saloon", STREET_HALF, 1414.0, -1], ["Bldg_Treasury", STREET_HALF, 1426.5, -1], ["Bldg_D", STREET_HALF, 1437.5, -1],
 	["Bldg_F", STREET_HALF, 1447.0, -1],
 	["Church", 0.0, 1478.0, 0],
+	["Bldg_Armory", -16.0, 1455.0, 0],   # Rich & Utah's shop: down a side lane off the left row, off the Main Street sightline
 ]
 ## Kit piece -> [width, depth, door half-width (0 = shut), door open]
 const FOOTPRINT: Dictionary = {
 	"Bldg_Certificates": [8.0, 9.0, 0.75], "Bldg_Saloon": [12.0, 12.0, 0.95], "Bldg_Treasury": [10.0, 12.0, 0.0], "Bldg_A": [7.0, 8.0, 0.0],
 	"Bldg_B": [8.0, 9.0, 0.0], "Bldg_C": [6.0, 8.0, 0.0], "Bldg_D": [9.0, 9.0, 0.0], "Bldg_E": [7.0, 8.0, 0.0], "Bldg_F": [8.0, 9.0, 0.0],
 	"Church": [8.0, 14.0, 0.0],
+	"Bldg_Armory": [8.0, 9.0, 0.7],
 }
 
 
@@ -102,6 +104,10 @@ static func build(parent: Node3D, interiors: bool) -> Dictionary:
 		["Trough", Vector3(6.2, 0.0, 1420.5), PI * 0.5], ["Wagon", Vector3(4.2, 0.0, 1452.0), 0.2], ["Wagon", Vector3(-3.6, 0.0, 1463.0), -2.9],
 		["LampPost", Vector3(-6.8, 0.0, 1409.0), 0.0], ["LampPost", Vector3(6.8, 0.0, 1424.0), PI], ["LampPost", Vector3(-6.8, 0.0, 1434.0), 0.0],
 		["Bench", Vector3(-7.6, 0.44, 1423.0), PI * 0.5], ["Bench", Vector3(7.6, 0.44, 1446.0), -PI * 0.5],
+		# the armory lane, off the left row past the STATS block: a lamp, and river gear staged at the lean-to
+		["LampPost", Vector3(-10.0, 0.0, 1450.0), 0.0],
+		["Arm_PowderKeg", Vector3(-17.0, 0.0, 1465.2), 0.0], ["Arm_PowderKeg", Vector3(-16.1, 0.0, 1465.7), 0.0],
+		["River_Crate", Vector3(-14.9, 0.0, 1465.0), 0.3], ["River_Skiff", Vector3(-22.4, 0.0, 1460.0), PI * 0.5],
 	]
 	for d in dress:
 		var s: Node3D = kit.find_child(str(d[0]), true, false) as Node3D
@@ -296,6 +302,10 @@ static func _furnish(root: Node3D, kit: Node3D) -> void:
 		["Bldg_Saloon", "Bar_Piano", Vector3(4.9, 0.0, -10.6), -PI * 0.5],
 		["Bldg_Saloon", "Bar_Table", Vector3(-3.2, 0.0, -3.6), 0.0], ["Bldg_Saloon", "Bar_Table", Vector3(3.6, 0.0, -3.0), 0.0],
 		["Bldg_Saloon", "Bar_Table", Vector3(3.8, 0.0, -6.8), 0.0],
+		# the armory: counter, wall racks, a revolver case, the lit long-rifle case, a powder keg
+		["Bldg_Armory", "Arm_Counter", Vector3(0.6, 0.0, -4.4), 0.0], ["Bldg_Armory", "Arm_Rack", Vector3(-3.4, 0.0, -7.4), PI * 0.5],
+		["Bldg_Armory", "Arm_Rack", Vector3(3.4, 0.0, -7.4), -PI * 0.5], ["Bldg_Armory", "Arm_Case", Vector3(-1.4, 0.0, -6.6), 0.0],
+		["Bldg_Armory", "Arm_SniperCase", Vector3(1.8, 0.0, -7.8), 0.0], ["Bldg_Armory", "Arm_PowderKeg", Vector3(-3.2, 0.0, -2.2), 0.0],
 	]
 	for rm in rooms:
 		var src: Node3D = kit.find_child(str(rm[1]), true, false) as Node3D
@@ -315,7 +325,7 @@ static func _furnish(root: Node3D, kit: Node3D) -> void:
 				c.transform = building_xform(entry("Bldg_Saloon")) * Transform3D(Basis(Vector3.UP, a + PI), tp + Vector3(sin(a), 0, cos(a)) * 0.95)
 				root.add_child(c)
 	# warm oil lamps in both rooms
-	for lp in [["Bldg_Certificates", Vector3(0.0, 3.0, -4.0), 4.5], ["Bldg_Saloon", Vector3(-2.0, 3.2, -4.0), 6.0], ["Bldg_Saloon", Vector3(3.0, 3.2, -8.0), 6.0]]:
+	for lp in [["Bldg_Certificates", Vector3(0.0, 3.0, -4.0), 4.5], ["Bldg_Saloon", Vector3(-2.0, 3.2, -4.0), 6.0], ["Bldg_Saloon", Vector3(3.0, 3.2, -8.0), 6.0], ["Bldg_Armory", Vector3(0.0, 3.0, -5.0), 5.0]]:
 		var l := OmniLight3D.new()
 		l.light_color = Color(1.0, 0.72, 0.42)
 		l.light_energy = 1.8

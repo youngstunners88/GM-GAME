@@ -776,6 +776,8 @@ func _build_first_person() -> void:
 func _tick_viewmodel(delta: float) -> void:
 	if _vm == null:
 		return
+	if _vm.gun is Ep2Bow and not has_player_control():
+		_vm.gun.cancel_reload()
 	_vm.lowered = _viewmodel_lowered()
 	_vm.step(delta, _moving, _run_input and _moving, _walk_phase)
 	if _hud != null:

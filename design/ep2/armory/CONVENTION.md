@@ -2,6 +2,8 @@
 
 The session root owns `Ep2ArmoryState`. Rooms, HUDs and camera-held models project it. Background prebuilds use detached copies and bind the live state at activation. Attaching or replacing a camera never grants ammunition.
 
+**The Armory (Rich & Utah) is the one PAID acquisition source** (founder lock `PROMPT_EPISODE2_RICH_ARMORY_UTAH_RIVER.md`, 2026-10-17). Its counter sells firearms and ammunition for Episode 1 crypto — `btc` / `eth` / `sol` only, never an invented soft currency. `Ep2ArmoryState.purchase_firearm(id, tender)` and `purchase_ammo(id, rounds, tender)` are the only legal paths; the calling room owns the balance and debits it first. Story handovers stay the default and are unaffected. A purchase never awards a free full loadout, never re-sells an owned gun, and bought ammunition obeys the same finite reserve cap (`RESERVE_CAP`) as earned ammunition.
+
 | ID | Player name | Separate ammunition | Game capacity |
 |---|---|---|---|
 | `winchester_1886` | Winchester 1886 | `rifle_round` | 4 |
@@ -16,7 +18,7 @@ Both owned guns remain selectable when empty. Their loaded and reserve counts ne
 
 While held, the selector owns a SceneTree pause: world physics, actors, projectiles and weapon/reload clocks stop. Its HUD continues processing input. Hover/stick/key selection only previews; release commits once, restores mouse mode and resumes gameplay. Escape/focus loss cancels; freeing/rebinding the HUD releases its pause. It cannot open over a pre-existing pause or unpause the real StateMachine pause menu. The rifle lesson blocks switching until complete. Cameras, tutorial locks, three-heart health, title screen and access gates remain under their existing owners.
 
-Bear corpses have stable `woods:<spawn-index>` IDs. Death records the bear's remaining finite quiver; expended arrows are not recreated. Corpses remain in the encounter and can be searched within 2.8 m, while facing the body and with unobstructed access, using E/interact or the Search button. Claiming is once-only; arrows above the storage cap remain on the body. Bodies remain after searching, and existing records reconstruct dead/searchable bodies when that encounter is built again. Arrow storage does not grant a bow or a third firearm slot.
+Bear corpses have stable `woods:<spawn-index>` IDs. Death records the bear's remaining finite quiver; expended arrows are not recreated. Corpses remain in the encounter and can be searched within 2.8 m, while facing the body and with unobstructed access, using E/interact or the Search button. Claiming is once-only; arrows above the storage cap remain on the body. Bodies remain after searching, and existing records reconstruct dead/searchable bodies when that encounter is built again. Arrow storage alone does not grant a bow. From 2026-10-17, an actual archer corpse records and awards its bow once when searched; the recovered bow uses slot 3 / D-pad up / the existing touch armory and spends the shared finite arrow pool only at the visible draw release. Interrupted draws spend nothing. It never consumes firearm rounds.
 
 The surface checkpoint snapshots both guns, selection, cooldown/loading state, stored arrows and corpse claims before danger. Retry restores that snapshot before respawning the same bear IDs. It cannot preserve a loot reward while also resurrecting its source. Bodies are disposed with the encounter or replaced by its checkpoint state.
 

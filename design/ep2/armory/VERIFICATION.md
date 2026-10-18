@@ -1,3 +1,18 @@
+# Rich's Armory trade — 2026-10-17 (Asia/Seoul)
+
+The founder lock `PROMPT_EPISODE2_RICH_ARMORY_UTAH_RIVER.md` is built through the counter on branch `feat/rich-armory-lock`: the off-street building and lane, Rich and Utah as rigged, animated bodies, and the crypto-only trade that sells the long rifle, cartridges and the river gear.
+
+Evidence, all with pinned Godot 4.3 (`tests/`):
+
+- `ep2_gold_town_test` ALL PASS — 18 Armory checks: the lane walk off Main Street and in through the door, both shopkeepers present before entry with authored clips playing (`counter` / `idle`), the trade offered at the counter and nowhere else, the purse as Episode 1 crypto, no-crypto refusal, the long rifle bought once for 3 debited coins, cartridges only behind the rifle, river gear, a non-crypto tender refused, Esc closing the trade, `GEARED` reached with both in hand, and the ending payload carrying `armory_visited` / `sniper` / `sniper_rounds` / `river_gear`.
+- `ep2_personal_armory_test` ALL PASS (73 checks) — the earlier purchase contract plus the new catalogue-shape, not-a-quick-switch-slot, sniper/river purchase and snapshot round-trip checks. GameManager disk round trip, corpse search and surface retry still pass.
+- `ep2_fort_knox_arc_test` ALL PASS — the town beat list asserted as `STREET … WON, TIP, ARMORY, GEARED, DONE`, no banned narrative beats.
+- `scripts/ci-gates-local.sh` — every CI headless gate passes locally (pause tap-target machine difference tolerated: 3 lines). The xvfb render capture stage is skipped on this box (needs apt/xvfb).
+- Bodies: judgment renders of the shipped GLBs are in `captures/` — Rich `rich_idle_front`, `rich_greet_front`, `rich_counter_three`, `rich_walk_three`; Utah `utah_idle_front`, `utah_idle_side`, `utah_greet_front`, `utah_carry_three` — rendered from the clips the room plays (or the next beat's clip), against `utah_ref.jpg` and Rich's founder art. These are Blender renders, **not** in-game gameplay-camera captures — that capture remains outstanding on this box.
+- Honest boundaries: no export, no deployment and no recorded voice belong to this entry. `RICH_UTAH_LINES.md` scripts the voice pass; nothing there is voiced. The day-88 river set-piece itself is not built.
+
+---
+
 # Western icon armory and Blender correction — 2026-10-15
 
 The founder rejected the old text panel and primitive Remington. The current correction replaces both: actual weapon renders, western leather/brass/Bookman styling, hold/preview/release selection and a real SceneTree pause. Keyboard, controller, raw second-finger hold/drag/release, frozen world physics/reload clocks, release/cancel/focus-loss/scene-exit cleanup and existing pause ownership are exercised by `ep2_personal_armory_test`. Portrait uses a 390-unit stacked layout; font MSDF preserves scale.

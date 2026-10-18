@@ -122,6 +122,11 @@ func attach(cam: Camera3D) -> void:
 	revolver.scale = Vector3.ONE * VM_SCALE
 	revolver.visible = false
 	_weapon_views[Ep2ArmoryState.REM] = revolver
+	var bow := Ep2BowView.make(true)
+	cam.add_child(bow)
+	bow.scale = Vector3.ONE * VM_SCALE
+	bow.visible = false
+	_weapon_views[Ep2ArmoryState.BOW] = bow
 	_sync_weapon()
 
 
@@ -236,6 +241,8 @@ func set_world_shadows(on: bool) -> void:
 
 ## Show or hide the rifle (the host hides it while a director camera is on, when the body is seen instead).
 func set_shown(on: bool) -> void:
+	if not on and gun is Ep2Bow:
+		gun.cancel_reload()
 	_shown = on
 	if rifle != null and is_instance_valid(rifle):
 		rifle.visible = on and (armory == null or armory.owns(armory.equipped))
@@ -271,12 +278,19 @@ func is_ads() -> bool:
 ## Advance everything one physics step. `moving` / `sprinting` / `walk_phase` come from the host's movement.
 func step(delta: float, moving: bool, sprinting: bool, walk_phase: float) -> void:
 	_anim_t += delta
+	if _active_id == Ep2ArmoryState.REM and rifle != null:
+		var trigger_anim: AnimationPlayer = rifle.find_child("AnimationPlayer", true, false) as AnimationPlayer
+		if trigger_anim != null:
+			trigger_anim.advance(delta)
 	_update_key_light()
 	gun.sprinting = sprinting
 	if armory != null:
 		armory.step(delta)
 	else:
 		gun.step(delta)
+	if gun is Ep2Bow and rifle != null:
+		var bow := gun as Ep2Bow
+		Ep2BowView.update(rifle, bow.draw_amount(), bow.rounds > 0 and bow.release_time <= 0.0)
 	_tick_lever(delta)
 	_recoil = maxf(0.0, _recoil - delta * 6.0)
 	cam_kick = lerpf(cam_kick, 0.0, 1.0 - exp(-delta / 0.14))
@@ -300,7 +314,7 @@ func step(delta: float, moving: bool, sprinting: bool, walk_phase: float) -> voi
 		# the eye in the rifle's own frame (founder rifle): the node sits so that point lands on the camera; the rifle is yawed
 		# PI toward the player, so its +Z points forward and its +Y up: node = (-cam.y * s, +cam.z * s) in camera space.
 		var ec: Vector3 = rifle.get_meta("ads_cam")
-		ads_pos = Vector3(0.0, -ec.y * VM_SCALE - VM_ADS_SIGHT_DROP, ec.z * VM_SCALE)
+		ads_pos = Vector3(-ec.x * VM_SCALE, -ec.y * VM_SCALE - VM_ADS_SIGHT_DROP, ec.z * VM_SCALE)
 	pos = pos.lerp(ads_pos, ads_k)
 	rot = rot.lerp(Vector3(0.0, PI, 0.0), ads_k)
 	# breathing + walk bob (both nearly vanish aimed)
@@ -319,7 +333,7 @@ func step(delta: float, moving: bool, sprinting: bool, walk_phase: float) -> voi
 	rot.x += 0.12 * _recoil * lerpf(1.0, 0.6, ads_k)
 	# the lever cycle: after each shot the rifle dips and rolls as the lever is racked
 	var cp: float = gun.cycle_progress()
-	if cp < 1.0 and _active_id != Ep2ArmoryState.REM:
+	if cp < 1.0 and _active_id == Ep2ArmoryState.WIN:
 		var k: float = sin(cp * PI)
 		rot.z += 0.34 * k
 		rot.x -= 0.2 * k
@@ -342,6 +356,18 @@ func step(delta: float, moving: bool, sprinting: bool, walk_phase: float) -> voi
 # --- shot reactions ---------------------------------------------------------------------------------------------------
 
 func _on_fired() -> void:
+	if gun is Ep2Bow:
+		_recoil = 0.12
+		_sfx("ep2_bow_loose")
+		fired.emit()
+		return
+	if _active_id == Ep2ArmoryState.REM:
+		var anim: AnimationPlayer = rifle.find_child("AnimationPlayer", true, false) as AnimationPlayer
+		if anim != null:
+			for clip in anim.get_animation_list():
+				if "TriggerSqueeze" in clip:
+					anim.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
+					anim.play(clip)
 	_recoil = 1.0
 	_flash_t = 0.06
 	cam_kick += gun.kick_rad()

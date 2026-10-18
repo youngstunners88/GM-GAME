@@ -364,57 +364,17 @@ static func _stump(b: Ep2Actor) -> Node3D:
 static func add_bow(b: Ep2Actor) -> Node3D:
 	if b.skeleton == null:
 		return null
-	var root := Node3D.new()
-	root.name = "Bow"
+	var root := Ep2BowView.make()
 	b.add_child(root)
-	# Archer stands side-on: left arm extends toward +X, right paw draws toward the chest.
-	root.position = Vector3(0.36, 1.35, 0.08) * b.height_m / 2.2
+	root.position = Vector3(0.70, 1.45, 0.35) * b.height_m / 2.2
 	root.rotation.y = PI * 0.5
-	var grip := Marker3D.new()
-	grip.name = "Grip"
-	root.add_child(grip)
-	var nock := Marker3D.new()
-	nock.name = "Nock"
-	nock.position.z = -0.5
-	root.add_child(nock)
-	var wood := StandardMaterial3D.new()
-	wood.albedo_color = Color(0.36, 0.22, 0.12)
-	wood.roughness = 0.7
-	var n: int = 7
-	var length: float = 1.5
-	for i in n:
-		var t0: float = float(i) / float(n) - 0.5
-		var t1: float = float(i + 1) / float(n) - 0.5
-		var p0 := Vector3(0.0, t0 * length, 0.22 * (cos(t0 * PI * 2.0) - 1.0))
-		var p1 := Vector3(0.0, t1 * length, 0.22 * (cos(t1 * PI * 2.0) - 1.0))
-		var seg := MeshInstance3D.new()
-		var cm := CylinderMesh.new()
-		cm.top_radius = 0.022
-		cm.bottom_radius = 0.026
-		cm.height = p0.distance_to(p1)
-		cm.radial_segments = 6
-		seg.mesh = cm
-		seg.material_override = wood
-		seg.position = (p0 + p1) * 0.5
-		seg.look_at_from_position(seg.position, p1, Vector3.FORWARD)
-		seg.rotate_object_local(Vector3.RIGHT, PI * 0.5)
-		root.add_child(seg)
-	var sm_mat := StandardMaterial3D.new()
-	sm_mat.albedo_color = Color(0.85, 0.82, 0.72)
-	for i in 2:
-		var string := MeshInstance3D.new()
-		string.name = "String%d" % i
-		var sm := CylinderMesh.new()
-		sm.top_radius = 0.003
-		sm.bottom_radius = 0.003
-		string.mesh = sm
-		string.material_override = sm_mat
-		root.add_child(string)
+	var grip: Node3D = root.get_node("Grip")
+	var nock: Node3D = root.get_node("Nock")
 	b.set_meta("bow", root)
 	var torso: int = b.skeleton.find_bone("Spine")
 	var torso_inv: Transform3D = (b.skeleton.global_transform * b.skeleton.get_bone_global_rest(torso)).affine_inverse()
 	b.set_meta("bow_aim_frame", torso_inv * root.global_transform)
-	root.position = Vector3(0.45, 1.0, 0.15) * b.height_m / 2.2
+	root.position = Vector3(0.55, 1.10, 0.32) * b.height_m / 2.2
 	root.rotation.y = 0.15
 	b.set_meta("bow_carry_frame", torso_inv * root.global_transform)
 	# Also works when a bow is equipped after the actor already entered aim.
@@ -431,16 +391,6 @@ static func add_bow(b: Ep2Actor) -> Node3D:
 			contact.targets["Right"] = nock
 			contact.finger_directions["Right"] = Vector3.RIGHT
 		contact.influence = 1.0
-	var arrow := MeshInstance3D.new()
-	arrow.name = "NockedArrow"
-	var shaft := CylinderMesh.new()
-	shaft.top_radius = 0.007
-	shaft.bottom_radius = 0.007
-	shaft.height = 0.95
-	arrow.mesh = shaft
-	arrow.material_override = wood
-	arrow.rotation.x = PI * 0.5
-	root.add_child(arrow)
 	_tick_bow(b, 0.0, pose_name(b))
 	return root
 
@@ -449,20 +399,10 @@ static func _tick_bow(b: Ep2Actor, t: float, state: String, delta: float = 1.0 /
 	var bow: Node3D = b.get_meta("bow")
 	bow.visible = state not in ["dead", "sleep", "sit_read"]
 	var draw: float = clampf(t / 0.7, 0.0, 1.0) if state == "aim" else maxf(0.0, 1.0 - t / 0.12) if state == "shot" else 0.0
-	var nock: Node3D = bow.get_node("Nock")
-	nock.position.z = -0.44 - 0.23 * draw
-	var arrow: Node3D = bow.get_node("NockedArrow")
-	arrow.visible = state == "aim"
-	arrow.position = nock.position + Vector3(0, 0, 0.475)
+	Ep2BowView.update(bow, draw, state == "aim")
 	var contacts: Ep2HandContacts = b.get_meta("contacts")
 	var frame: Transform3D = b.get_meta("bow_aim_frame" if state in ["aim", "shot"] else "bow_carry_frame")
 	contacts.prop_local = contacts.prop_local.interpolate_with(frame, clampf(delta * 12.0, 0.0, 1.0))
-	for i in 2:
-		var end := Vector3(0.0, 0.75 if i == 0 else -0.75, -0.44)
-		var line: MeshInstance3D = bow.get_node("String%d" % i)
-		(line.mesh as CylinderMesh).height = end.distance_to(nock.position)
-		line.position = (end + nock.position) * 0.5
-		line.basis = Basis.looking_at(end - nock.position, Vector3.RIGHT) * Basis(Vector3.RIGHT, PI * 0.5)
 
 
 static func arrow_origin(b: Ep2Actor) -> Vector3:

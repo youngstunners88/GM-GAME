@@ -19,6 +19,10 @@ var _t: float = 0.0
 var _fall: float = 0.0
 var _kick: float = 0.0
 var _path: Array = []
+var _anim: AnimationPlayer = null
+var _rigged: bool = false
+var _clip: String = ""                               # the clip actually playing (lowercased)
+var _base_clip: String = "Idle"                      # what he holds when standing still
 
 
 ## Load `path` (a GLB), scale it to `height`, put its feet on the origin. Falls back to a plain figure so a build without the art still plays.
@@ -36,8 +40,63 @@ func setup(path: String, height: float, fallback_tint: Color = Color(0.4, 0.3, 0
 	model.scale = Vector3.ONE * s
 	# a model baked with two arm poses is already centred (the union box would shift it when the gun arm is out): only stand it on its feet
 	model.position = Vector3(-(bb.position.x + bb.size.x * 0.5) * s if center_xz else 0.0, -bb.position.y * s, -(bb.position.z + bb.size.z * 0.5) * s if center_xz else 0.0)
+	_bind_clips()
 	set_pose("idle")
 	return true
+
+
+## A rigged GLB (the Armory's Rich and Utah, tools/ep2_blender/build_armory_folk.py) arrives with an
+## AnimationPlayer and authored clips; a static Tripo body does not. Rigged folk are driven by real
+## clips instead of the statue bob, everything else about them is unchanged.
+func _bind_clips() -> void:
+	_anim = null
+	_rigged = false
+	if model == null:
+		return
+	for c in model.find_children("*", "AnimationPlayer", true, false):
+		_anim = c
+		break
+	_rigged = _anim != null and not _anim.get_animation_list().is_empty()
+	if _rigged:
+		play_clip(_base_clip)
+
+
+## Play an authored clip by name ("Idle", "Counter", "Walk", "Greet", "Point", "Carry"), tolerant of
+## the importer's prefixes and of a name-cased request. Returns false when there is no such clip.
+func play_clip(name: String, speed: float = 1.0) -> bool:
+	if not _rigged:
+		return false
+	var want: String = name.to_lower()
+	for a in _anim.get_animation_list():
+		var an: String = str(a).to_lower()
+		if an == want or an.ends_with("/" + want) or an.ends_with("|" + want) or an.begins_with(want):
+			if _clip == want and _anim.is_playing() and _anim.current_animation == str(a):
+				_anim.speed_scale = speed
+				return true
+			_clip = want
+			_anim.speed_scale = speed
+			_anim.play(str(a))
+			return true
+	return false
+
+
+func has_clips() -> bool:
+	return _rigged
+
+
+func anim_player() -> AnimationPlayer:
+	return _anim
+
+
+func current_clip() -> String:
+	return _clip
+
+
+## The clip he returns to when he stops walking (the Armory's two stand at the counter, not at parade rest).
+func hold_clip(name: String) -> void:
+	_base_clip = name
+	if _rigged and _clip != name.to_lower():
+		play_clip(name)
 
 
 func _fallback(c: Color) -> Node3D:
@@ -85,6 +144,8 @@ static func _aabb(root: Node3D) -> AABB:
 ## Show the baked arm pose `p` ("idle", "draw", ...): the GLB's child mesh named like it (case-insensitive); a model with a single mesh ignores this.
 func set_pose(p: String) -> void:
 	pose_name = p
+	if _rigged and play_clip(p):
+		return
 	if model == null:
 		return
 	var metas: Array = []
@@ -168,6 +229,14 @@ func step(delta: float) -> void:
 		var k: float = _fall * _fall * (3.0 - 2.0 * _fall)
 		model.rotation = Vector3(-1.45 * k, 0.0, 0.0)
 		model.position.y = 0.0 + 0.16 * k
+		return
+	if _rigged:
+		# the clips carry the body: only the stride lift and a shot's recoil ride on top
+		var want: String = "Walk" if moving else _base_clip
+		if _clip != want.to_lower():
+			play_clip(want)
+		model.rotation = Vector3(-0.08 * _kick, 0.0, 0.0)
+		position.y = (absf(sin(_phase)) * 0.035) if moving else 0.0
 		return
 	model.rotation = Vector3(-0.08 * _kick, 0.0, (0.035 * sin(_phase) if moving else 0.0))
 	position.y = (absf(sin(_phase)) * 0.035) if moving else 0.0

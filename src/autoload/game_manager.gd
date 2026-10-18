@@ -249,6 +249,20 @@ func add_coin() -> void:
     coins_changed.emit(coins_collected)
     add_score(10)
 
+## Spend collected crypto coins (the Armory's tender: Episode 1 BTC/ETH/SOL coin faces).
+## Returns false and debits nothing when the purse cannot cover `count`, so a caller can
+## never go negative. Score is untouched - a purchase is not a scoring event, and the
+## Episode 2 Armory refuses to invent a soft currency (founder lock
+## PROMPT_EPISODE2_RICH_ARMORY_UTAH_RIVER.md).
+func spend_coins(count: int) -> bool:
+    if count <= 0:
+        return false
+    if coins_collected < count:
+        return false
+    coins_collected -= count
+    coins_changed.emit(coins_collected)
+    return true
+
 func add_ethereum_ring() -> void:
     ethereum_rings_collected += 1
     rings_changed.emit(ethereum_rings_collected)
