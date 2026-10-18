@@ -21,12 +21,11 @@ func _ready() -> void:
 		print("EP2_TOWN_LIFE: FAILED %d" % failures)
 		get_tree().quit(1)
 		return
-	var horses: Array = life.find_children("Horse?", "Node3D", false, false)
+	var horses: Array = life.find_children("Horse?", "AnimatedSprite3D", false, false)
 	check("four horses stand in the street and by the armory lane", horses.size() == 4, "got %d" % horses.size())
 	var animated: int = 0
 	for h in horses:
-		var aps: Array = (h as Node).find_children("*", "AnimationPlayer", true, false)
-		if not aps.is_empty() and (aps[0] as AnimationPlayer).is_playing():
+		if h is AnimatedSprite3D and (h as AnimatedSprite3D).is_playing():
 			animated += 1
 	check("every horse is playing a real clip (stand / graze)", animated == 4, "%d animated" % animated)
 	var roaming: Node3D = life.find_child("HorseRoaming", true, false) as Node3D

@@ -8,7 +8,10 @@ extends Node3D
 ## Pack budget: the train is the Level 3 / Blender locomotive that already ships (src/assets/models/goldmine_train, 1:1 metres,
 ## front toward -X); the horse is the AssetFurnace horse shrunk to 7k tris / one 1024 texture (tools/ep2_blender/horse_game.py).
 
-const HORSE := "res://src/episode2/assets/town/horse.glb"           # head toward +X, 3 clips: horse_stand / horse_graze / horse_walk
+const HORSE_DIR := "res://src/assets/sprites/horse_%s_%02d.png"       # the shipped horse sprites (founder: no 3D horse in the pack)
+const HORSE_HEIGHT_M := 2.2
+const HORSE_CANVAS := Vector2(340.0, 320.0)
+const HORSE_STAND_PX := 259.0
 const LOCO := "res://src/assets/models/goldmine_train/goldmine_train.glb"
 const WATER_SHADER := "res://src/episode2/art/water_river.gdshader"
 const ROCK := "res://src/episode2/assets/woods/woods_rock.glb"
@@ -24,7 +27,7 @@ var _train: Node3D
 var _smoke: CPUParticles3D
 var _train_x: float = TRAIN_FROM_X
 var _wait: float = 4.0
-var _walker: Node3D
+var _walker: AnimatedSprite3D
 var _walker_dir: float = 1.0
 var _t: float = 0.0
 var _rng := RandomNumberGenerator.new()
@@ -231,35 +234,50 @@ func _build_train() -> void:
 
 
 func _build_horses(props: Array) -> void:
-	if not ResourceLoader.exists(HORSE):
-		return
-	var scene: PackedScene = load(HORSE)
 	for i in HORSES.size():
 		var h: Array = HORSES[i]
-		var horse := _horse(scene, str(h[3]))
+		var clip: String = "graze" if str(h[3]) == "horse_graze" else "stand"
+		var horse := _horse(clip, cos(float(h[2])) < 0.0)
 		horse.name = "Horse%d" % i
-		horse.position = Vector3(float(h[0]), 0.0, float(h[1]))
-		horse.rotation.y = float(h[2])
+		horse.position += Vector3(float(h[0]), 0.0, float(h[1]))
 		add_child(horse)
 		props.append([Vector2(float(h[0]), float(h[1])), 1.0])         # solid: Lil Blunt walks around a horse
-	_walker = _horse(scene, "horse_walk")
+	_walker = _horse("walk", false)
 	_walker.name = "HorseRoaming"
-	_walker.position = WALK_FROM
-	_walker.rotation.y = -PI * 0.5                                         # head toward +Z, up the street
+	_walker.position += WALK_FROM
 	add_child(_walker)
 
 
-func _horse(scene: PackedScene, clip: String) -> Node3D:
-	var horse: Node3D = scene.instantiate() as Node3D
-	var aps: Array = horse.find_children("*", "AnimationPlayer", true, false)
-	if not aps.is_empty():
-		var ap: AnimationPlayer = aps[0]
-		for cn in ap.get_animation_list():
-			ap.get_animation(cn).loop_mode = Animation.LOOP_LINEAR
-		if ap.has_animation(clip):
-			ap.play(clip)
-			ap.seek(_rng.randf() * ap.get_animation(clip).length, true)          # the herd is never in lock-step
-	return horse
+## One shipped-sprite horse (an upright billboard, hooves on the ground). `clip` is walk / graze / stand.
+func _horse(clip: String, flip: bool) -> AnimatedSprite3D:
+	var frames := SpriteFrames.new()
+	frames.remove_animation("default")
+	var counts := {"walk": 8, "graze": 6, "stand": 1}
+	for a in counts:
+		frames.add_animation(a)
+		frames.set_animation_loop(a, true)
+		frames.set_animation_speed(a, 10.0 if a == "walk" else 5.0)
+		if a == "stand":
+			frames.add_frame(a, load("res://src/assets/sprites/horse_stand.png"))
+			continue
+		for i in int(counts[a]):
+			frames.add_frame(a, load(HORSE_DIR % [a, i]))
+	var h := AnimatedSprite3D.new()
+	h.sprite_frames = frames
+	h.animation = clip
+	var ps: float = HORSE_HEIGHT_M / HORSE_STAND_PX
+	h.pixel_size = ps
+	h.position = Vector3(0.0, HORSE_CANVAS.y * 0.5 * ps, 0.0)            # hooves on the canvas's bottom edge
+	h.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
+	h.shaded = false
+	h.transparent = true
+	h.alpha_cut = SpriteBase3D.ALPHA_CUT_OPAQUE_PREPASS
+	h.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	h.flip_h = flip
+	h.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	h.play(clip)
+	h.frame = _rng.randi() % maxi(1, h.sprite_frames.get_frame_count(clip))      # the herd is never in lock-step
+	return h
 
 
 func _process(delta: float) -> void:
@@ -285,7 +303,7 @@ func _process(delta: float) -> void:
 		_walker.position.z += _walker_dir * step
 		if _walker.position.z > WALK_TO.z:
 			_walker_dir = -1.0
-			_walker.rotation.y = PI * 0.5
+			_walker.flip_h = true
 		elif _walker.position.z < WALK_FROM.z:
 			_walker_dir = 1.0
-			_walker.rotation.y = -PI * 0.5
+			_walker.flip_h = false
