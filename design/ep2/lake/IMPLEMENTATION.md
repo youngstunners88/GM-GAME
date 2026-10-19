@@ -65,6 +65,6 @@ its three extracted textures now live in `src/episode2/extras/lake/`, using the
 existing `ep2_extras.pck` pipeline. The dock remains in the main pack. No other
 model, texture or sound was reduced. The lake waits to offer its interaction
 until the supplied Logan has mounted; a failed download offers E/touch retry.
-The shore and exit remain usable. Larger 1 MiB request chunks drained the pack
-in about 8 seconds in the measured slow browser, versus the previous >180-second
-wait. This is a single-machine observation, not a universal timing promise.
+The shore and exit remain usable. The merged browser-fetch loader handles itch's
+gzip responses through Engine.copyToFS. Retry cancels the previous request, and
+aborted callbacks cannot overwrite the replacement download's state.

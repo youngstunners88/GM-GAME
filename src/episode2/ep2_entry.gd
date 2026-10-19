@@ -235,7 +235,7 @@ func _process(delta: float) -> void:
 			_probe_chamber_t += delta
 			if _probe_chamber_t >= 1.0:
 				_probe_chamber_t = 0.0
-				print("[EP2] chamber beat=%s fps=%s control=%s pos=%s yaw=%.3f extras=%s bytes=%d" % [chamber.get_beat_name(), chamber.is_fps(), chamber.has_player_control(), chamber.get_player_position(), chamber.get_look_yaw(), Ep2Extras.state(), Ep2Extras.received_bytes()])
+				print("[EP2] chamber beat=%s fps=%s control=%s pos=%s yaw=%.3f extras=%s" % [chamber.get_beat_name(), chamber.is_fps(), chamber.has_player_control(), chamber.get_player_position(), chamber.get_look_yaw(), Ep2Extras.state()])
 	if _probe and _root and _root.get_mode() == Ep2SessionRoot.Mode.RUNNER:
 		var a: Node = _root.get_active()
 		if a and a.has_method("get_distance"):
