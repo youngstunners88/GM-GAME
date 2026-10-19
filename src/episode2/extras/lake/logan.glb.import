@@ -4,12 +4,12 @@ importer="scene"
 importer_version=1
 type="PackedScene"
 uid="uid://qt0mcba0o24v"
-path="res://.godot/imported/logan.glb-b04b9b5686a6f8e0246b7ec4a3929407.scn"
+path="res://.godot/imported/logan.glb-5394b3c8e55f211e1f2ddd43129c8946.scn"
 
 [deps]
 
-source_file="res://src/episode2/assets/lake/logan.glb"
-dest_files=["res://.godot/imported/logan.glb-b04b9b5686a6f8e0246b7ec4a3929407.scn"]
+source_file="res://src/episode2/extras/lake/logan.glb"
+dest_files=["res://.godot/imported/logan.glb-5394b3c8e55f211e1f2ddd43129c8946.scn"]
 
 [params]
 

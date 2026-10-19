@@ -2,8 +2,9 @@
 
 Reviewed upstream: https://github.com/EL4CTEO/blender-skills at
 `71d031dab8bc6729504d11a78cbe91945401045f` (MIT, version 1.1.0).
-All 148 tracked files were inventoried and read by the audit: 132 text/code files
-and 16 presentation media files. `upstream-file-audit.json` records every path,
+All 148 tracked files were inventoried and hashed: 132 text/code files were
+reviewed and 16 presentation media files were catalogued as binary examples.
+The videos were not exhaustively watched frame by frame. `upstream-file-audit.json` records every path,
 byte count, SHA-512, module functions and side-effect sites. Media are examples,
 not evidence of GM-GAME quality. The audit includes the installers, plugin metadata,
 shared helper, all 22 skill bodies/references, implementations, test fixtures and CI.
@@ -19,7 +20,7 @@ The full clone is `/workspace/blender-skills`; runtime exports do not contain it
 
 - Skill validation: 22 valid; trigger routing: 25/25; shared helper consistency passed.
 - Blender **5.2.2 LTS** suite: **47 passed, 0 failed, 3 GPU-dependent skipped**.
-  Exact original log: `upstream-tests.log`. This is not a Godot acceptance test.
+  Exact original log: `upstream-tests.txt`. This is not a Godot acceptance test.
 - The runner's `--blend`/factory-startup ordering was experimentally checked on
   Logan's saved source: the Armature remained present. No speculative fix applied.
 - A real-asset defect escaped the upstream fixtures: `rig_check.py` stepped-sliced

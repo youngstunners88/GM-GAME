@@ -8,7 +8,7 @@ description: Prepare, animate and validate the founder-supplied Logan model for 
 Use gm-blender-godot, blender-character-rigging, blender-animation and blender-export-pipelines. Source identity/provenance: design/ep2/lake/SOURCE_RECEIPT.json and references/Logan.JPG. The supplied GLB already has 65 joints and normalized four-weight skin, 52028 triangles, 60285 split vertices and no animations. Inspect before considering paid generation, Rigify or retopology.
 
 Rebuild with Blender 5.2.2:
-`blender -b --factory-startup --python-exit-code 1 -P tools/ep2_blender/prepare_logan.py -- SOURCE.glb src/episode2/assets/lake/logan.glb design/ep2/lake/source/logan.blend`
+`blender -b --factory-startup --python-exit-code 1 -P tools/ep2_blender/prepare_logan.py -- SOURCE.glb src/episode2/extras/lake/logan.glb design/ep2/lake/source/logan.blend`
 
 Preserve face, hat, plaid, waders, satchel and rope. Map rotations through each source bone's rest axes. Author restrained Idle/Greet/Point/Approve gestures; the boots stay planted. Do not rotate foreign Mixamo quaternions onto mismatched rest matrices. Preserve the source skin and UVs. Repair only measured winding conflicts, collapsed faces, coplanar overlaps and detached gear on a separate copy with tools/ep2_blender/logan_mesh_repair.py; interpolate and revalidate weights/UVs on clipped faces. Use that copy for image resizing. No generic auto-fix of asymmetric clothing or the hips root.
 

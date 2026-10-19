@@ -56,3 +56,15 @@ Godot 4.3 Compatibility; Blender lighting alone is not game evidence.
 
 Dialogue is subtitled. Logan voice casting/recording and the later river fight
 remain separate work; do not synthesize a random voice and call it founder-approved.
+
+## Streaming integration (2026-10-19)
+
+After merging the concurrent two-storey Armory/town work, the measured local
+main pack was 204,800,736 bytes (limit 199,229,440). The unchanged Logan GLB and
+its three extracted textures now live in `src/episode2/extras/lake/`, using the
+existing `ep2_extras.pck` pipeline. The dock remains in the main pack. No other
+model, texture or sound was reduced. The lake waits to offer its interaction
+until the supplied Logan has mounted; a failed download offers E/touch retry.
+The shore and exit remain usable. Larger 1 MiB request chunks drained the pack
+in about 8 seconds in the measured slow browser, versus the previous >180-second
+wait. This is a single-machine observation, not a universal timing promise.

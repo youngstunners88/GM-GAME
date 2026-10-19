@@ -3,7 +3,7 @@ extends Ep2Interlude
 ## Founder lock 2026-10-18: investigate / stage depth, never fishing or a protocol dashboard.
 ## The surface route continues here after Rich & Utah's gear. No currency writes or rewards.
 enum Beat { ARRIVE, INVESTIGATE, STAGE, HANDOFF, OVERLOOK }
-const LOGAN := "res://src/episode2/assets/lake/logan.glb"
+const LOGAN := "res://src/episode2/extras/lake/logan.glb"
 const DOCK := "res://src/episode2/assets/lake/staging_dock.glb"
 const SPAWN := Vector3(-8, 0, -13)
 const LOGAN_MARK := Vector3(-3.4, 0, 8)
@@ -144,7 +144,7 @@ func _shore() -> void:
 	_box(Vector3(1.4, 0.95, 1.0), Vector3(0, 0.48, 0), wood, _marker)
 	for x in [-0.53, 0.53]:
 		_box(Vector3(0.09, 1.0, 1.06), Vector3(x, 0.49, 0), _plain(Color(0.19, 0.17, 0.12)), _marker)
-	_marker_label = _sign("STAGED CARGO", STAGING_MARK + Vector3(1.1, 0, 0.5))
+	_marker_label = _sign("STAGED CARGO", STAGING_MARK + Vector3(1.1, 0, 0.5), 3.4)
 	# Cargo waiting at the narrow water, below the player's later overlook.
 	_cargo = Node3D.new()
 	_cargo.name = "StagedShipment"
@@ -209,10 +209,14 @@ func _vegetation() -> void:
 		_visuals.add_child(r)
 
 func _people() -> void:
+	# Keep the supplied skin intact in the existing streamed pack. A slow download
+	# leaves the shore playable and offers retry; never substitute a generic person.
+	if _logan != null or not Ep2Extras.has(LOGAN): return
 	_logan = Ep2TownFolk.new()
 	_logan.name = "Logan"
 	_visuals.add_child(_logan)
 	_logan.setup(LOGAN, 1.82)
+	_logan.clip_blend = 0.18
 	_logan.position = LOGAN_MARK
 	_logan.face_yaw(PI)
 	var ap: AnimationPlayer = _logan.anim_player()
@@ -233,7 +237,8 @@ func _on_setup() -> void:
 	_gesture_t = 0
 	_marker_label.text = "STAGED CARGO"
 	_cargo.position = Vector3(24, -0.08, 49)
-	_logan.hold_clip("Idle")
+	if _logan != null: _logan.hold_clip("Idle")
+	Ep2Extras.start(self)
 	_vm.set_world_shadows(false)
 	_vm.set_own_light(0.65, _sun)
 	if not _hud.search_requested.is_connected(start_rig):
@@ -294,6 +299,9 @@ func _on_beat_entered(b: int) -> void:
 
 func start_rig(_payment: String = "") -> bool:
 	if not has_player_control() or armory_open(): return false
+	if _logan == null:
+		if Ep2Extras.state() == "failed": Ep2Extras.retry(self)
+		return false
 	if _beat == Beat.ARRIVE and _player_pos.distance_to(LOGAN_MARK) < 3.2:
 		_advance_to(Beat.INVESTIGATE)
 		return true
@@ -308,6 +316,13 @@ func start_rig(_payment: String = "") -> bool:
 
 func _tick(delta: float) -> void:
 	_set_ground(path_height(_player_pos.z))
+	if _logan == null:
+		_people()
+		if _logan == null:
+			_hud.objective = "Logan's Lake · Loading Logan…"
+			_hud.set_search_prompt("Loading interrupted. Retry [E]" if Ep2Extras.state() == "failed" else "")
+			return
+		_hud.objective = "Logan's Lake · Meet Logan at the shore."
 	_logan.step(delta)
 	if _player_pos.distance_to(LOGAN_MARK) < 7:
 		_logan.face_point(_player_pos)

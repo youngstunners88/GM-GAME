@@ -231,3 +231,6 @@ artifacts/verify-deploy/
 
 # Tripo CLI working output (never shipped)
 tripo-out/
+
+# Local Obsidian work log (CLAUDE.md vault-log rule)
+/GM Game/

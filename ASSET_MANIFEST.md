@@ -281,7 +281,7 @@ returned HTTP 402; the three above are confirmed available on this key.)
 
 ## Logan’s Lake — 2026-10-19
 
-- `src/episode2/assets/lake/logan.glb`: founder-supplied Drive Logan, 65-joint skin, 52,084 triangles, four authored clips, 1K maps. Source IDs and ownership receipt: `design/ep2/lake/SOURCE_RECEIPT.json`. Editable Blender source and reference retained there.
+- `src/episode2/extras/lake/logan.glb`: founder-supplied Drive Logan, 65-joint skin, 52,084 triangles, four authored clips, 1K maps. Source IDs and ownership receipt: `design/ep2/lake/SOURCE_RECEIPT.json`. Editable Blender source and reference retained there.
 - `src/episode2/assets/lake/staging_dock.glb`: original Blender-built cedar staging dock, 3,356 triangles / 55 parts, fitted ropes and iron cleat. Rebuild: `tools/ep2_blender/build_logan_dock.py`.
 - Reuses existing forest kit, bark/branch/floor textures, rocks, timber and river shader. No founder weapon or title asset changed.
 - Mesh and skin checks: `docs/episode2-quality/logans-lake-2026-10-19/`. Warnings retained: source split UV/clothing seams and hidden back-to-back faces; source hips origin/asymmetric clothing weights; dock piles intentionally below deck origin.

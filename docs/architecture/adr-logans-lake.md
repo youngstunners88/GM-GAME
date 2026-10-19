@@ -23,3 +23,8 @@ early/far/repeated interactions, conserved armory snapshot, world/water bounds,
 town transition result and real Compatibility/browser captures. Security/title,
 texture references, fresh export size and actual deployed BUILD remain release
 requirements. GPU credit authorization does not replace credential readiness.
+
+Uses ADR-0005’s existing streamed extras pack for Logan, preserving his exact GLB
+and texture bytes. The lake delays interaction while the pack loads and offers
+a retry on failure. The original town fallbacks remain unchanged. Browser proof
+must cover mounted textures and the slow/failure path, not just native art.

@@ -38,6 +38,22 @@ static func state() -> String:
 	return _state
 
 
+## Bytes received for the existing opt-in browser diagnostics; no credentials or URLs.
+static func received_bytes() -> int:
+	return _http.get_downloaded_bytes() if _http != null else 0
+
+
+## Retry a failed download at the player's request; retain an already mounted pack.
+static func retry(from: Node) -> void:
+	if _state != "failed": return
+	if _http != null:
+		_http.cancel_request()
+		_http.queue_free()
+		_http = null
+	_state = ""
+	start(from)
+
+
 ## Start the background download once, from any node in the tree (Episode 2's entry calls it). The HTTPRequest lives on the
 ## tree root so it survives scene changes. No-op off the web or when the extras are already loadable.
 static func start(from: Node) -> void:
@@ -48,6 +64,8 @@ static func start(from: Node) -> void:
 	_http.name = "Ep2ExtrasDownload"
 	_http.download_file = LOCAL
 	_http.use_threads = false
+	# Drain larger chunks on low-frame-rate web clients; keep the nonthreaded build.
+	_http.download_chunk_size = 1024 * 1024
 	_http.timeout = 300.0
 	# lambdas, not bare static-method callables: they bind the same in every 4.x
 	_http.request_completed.connect(func(r: int, c: int, h: PackedStringArray, b: PackedByteArray) -> void: Ep2Extras._on_done(r, c, h, b))
