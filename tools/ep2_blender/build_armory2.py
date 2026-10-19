@@ -153,26 +153,46 @@ HF = 9.8                         # false front top
 HX = W / 2
 
 
+def wall_holes(p, m, u0, u1, h, holes, place):
+    """A wall rectangle u0..u1 x 0..h built in boxes AROUND its openings (real holes). holes: [(uc, vc, w, h)]."""
+    us = sorted({u0, u1, *[min(max(c - w_ / 2, u0), u1) for c, _, w_, _ in holes], *[min(max(c + w_ / 2, u0), u1) for c, _, w_, _ in holes]})
+    for ua, ub in zip(us, us[1:]):
+        if ub - ua < 1e-4:
+            continue
+        um = (ua + ub) / 2
+        cuts = sorted((v - hh / 2, v + hh / 2) for c, v, w_, hh in holes if c - w_ / 2 <= um <= c + w_ / 2)
+        v = 0.0
+        for lo, hi in cuts:
+            if lo - v > 1e-4:
+                place(m, ua, ub, v, lo)
+            v = max(v, hi)
+        if h - v > 1e-4:
+            place(m, ua, ub, v, h)
+
+
 def window(p, x, y, w, h, zf, bars=0, shutters=False, face=1.0):
-    """Framed window in a wall plane at z = zf facing +z*face: clear glass, sash bars, sill, head, optional iron bars and open shutters."""
+    """A real window in a hole of the wall plane at z = zf (the wall behind it is z = zf .. zf - T): reveal frame lining the hole, a
+    recessed clear pane, sash bars, sill and head, optional iron bars and open shutters."""
     s = face
-    p.box("GlassClear", (w - 0.1, h - 0.1, 0.03), (x, y, zf))
-    p.box("Trim", (w + 0.2, 0.14, 0.2), (x, y + h / 2 + 0.07, zf + s * 0.04))
-    p.box("Trim", (w + 0.26, 0.09, 0.3), (x, y - h / 2 - 0.05, zf + s * 0.09))
     for sx in (-1, 1):
-        p.box("Trim", (0.09, h, 0.14), (x + sx * w / 2, y, zf + s * 0.02))
-    p.box("Trim", (w, 0.05, 0.06), (x, y, zf + s * 0.01))
-    p.box("Trim", (0.05, h, 0.06), (x, y, zf + s * 0.01))
+        p.box("Trim", (0.08, h + 0.02, T + 0.05), (x + sx * (w / 2 - 0.04), y, zf - T / 2 + 0.02))
+    p.box("Trim", (w, 0.08, T + 0.05), (x, y + h / 2 - 0.04, zf - T / 2 + 0.02))
+    p.box("Trim", (w, 0.06, T + 0.02), (x, y - h / 2 + 0.03, zf - T / 2))
+    p.box("GlassClear", (w - 0.16, h - 0.16, 0.03), (x, y, zf - T * 0.55))
+    p.box("Trim", (0.04, h - 0.16, 0.04), (x, y, zf - T * 0.55 + 0.02))
+    p.box("Trim", (w - 0.16, 0.04, 0.04), (x, y, zf - T * 0.55 + 0.02))
+    p.box("Trim", (w + 0.26, 0.07, 0.17), (x, y - h / 2 - 0.05, zf + 0.06))                  # sill
+    p.box("Trim", (w + 0.22, 0.10, 0.12), (x, y + h / 2 + 0.08, zf + 0.04))                  # head
     for i in range(bars):
-        p.box("Iron", (0.04, h + 0.1, 0.04), (x - w / 2 + (i + 0.5) * w / bars, y, zf + s * 0.12))
+        p.box("Iron", (0.04, h + 0.1, 0.04), (x - w / 2 + (i + 0.5) * w / bars, y, zf + s * 0.10))
     if bars:
         for yy in (y - h / 2 + 0.1, y + h / 2 - 0.1):
-            p.box("Iron", (w + 0.1, 0.05, 0.05), (x, yy, zf + s * 0.12))
+            p.box("Iron", (w + 0.1, 0.05, 0.05), (x, yy, zf + s * 0.10))
     if shutters:
         for sx in (-1, 1):
-            p.box("DarkWood", (w * 0.5, h, 0.05), (x + sx * (w / 2 + w * 0.23), y, zf + s * 0.16), yaw=sx * s * 0.35)
-            for k in range(4):
-                p.box("Trim", (w * 0.48, 0.03, 0.06), (x + sx * (w / 2 + w * 0.23), y - h / 2 + 0.25 + k * (h - 0.5) / 3, zf + s * 0.19), yaw=sx * s * 0.35)
+            p.box("DarkWood", (w * 0.45, h, 0.05), (x + sx * (w / 2 + w * 0.24), y, zf + s * 0.03))
+            for k in range(3):
+                p.box("Trim", (w * 0.4, 0.03, 0.02), (x + sx * (w / 2 + w * 0.24), y - h / 2 + 0.25 + k * (h - 0.5) / 2, zf + s * 0.065))
 
 
 def rifle(p, pos, yaw=0.0, pitch=0.0, roll=0.0, kind="lever", scale=1.0):
@@ -256,32 +276,47 @@ def railing(p, a, b, y, h=0.95, spacing=0.22):
 P = Piece("Bldg_Armory2")
 # front wall around the double door (2.0 x 2.7) and the two display windows; side and back walls; floor
 DOOR_W, DOOR_H = 2.0, 2.7
-lw = HX - DOOR_W / 2
+FRONT = [(0.0, DOOR_H / 2, DOOR_W, DOOR_H)] + [(sx * 3.3, 1.75, 2.2, 1.8) for sx in (-1, 1)] + [(x, H1 + 1.75, 1.0, 1.5) for x in (-3.3, 0.0, 3.3)]
+
+
+def _front(m, ua, ub, va, vb):
+    P.box(m, (ub - ua, vb - va, T), ((ua + ub) / 2, (va + vb) / 2, -T / 2))
+
+
+wall_holes(P, "Siding", -HX, HX, HW, FRONT, _front)
+SIDE_Z = (-3.5, -8.5)
+SIDE = [(z, y, 1.0, 1.4) for z in SIDE_Z for y in (1.7, H1 + 1.7)]
 for sx in (-1, 1):
-    P.box("Siding", (lw, HW, T), (sx * (DOOR_W / 2 + lw / 2), HW / 2, -T / 2))
-P.box("Siding", (DOOR_W, HW - DOOR_H, T), (0, DOOR_H + (HW - DOOR_H) / 2, -T / 2))
-for sx in (-1, 1):
-    P.box("Siding", (T, HW, D), (sx * (HX - T / 2), HW / 2, -D / 2))
-P.box("Siding", (W, HW, T), (0, HW / 2, -D + T / 2))
+    def _side(m, ua, ub, va, vb, sx=sx):
+        P.box(m, (T, vb - va, ub - ua), (sx * (HX - T / 2), (va + vb) / 2, (ua + ub) / 2))
+    wall_holes(P, "Siding", -D, 0.0, HW, SIDE, _side)
+BACK = [(-3.0, H1 + 1.7, 1.0, 1.4), (3.0, H1 + 1.7, 1.0, 1.4)]
+
+
+def _back(m, ua, ub, va, vb):
+    P.box(m, (ub - ua, vb - va, T), ((ua + ub) / 2, (va + vb) / 2, -D + T / 2))
+
+
+wall_holes(P, "Siding", -HX, HX, HW, BACK, _back)
 P.box("Planks", (W, 0.2, D), (0, -0.1, -D / 2))
 P.box("Planks", (W - 2 * T, 0.05, D - 2 * T), (0, 0.025, -D / 2))
 P.box("Trim", (W - 2 * T, 0.1, D - 2 * T), (0, HW - 0.05, -D / 2))                      # upper ceiling
 # windows: punched openings are faked by framing glass over the siding (cheap, reads right at street distance), but the display
 # windows and the door are real openings: the front wall pieces above leave the door; the display windows get a dark "inside" box
 for sx in (-1, 1):
-    window(P, sx * 3.3, 1.75, 2.2, 1.8, 0.05, bars=7)
-    window(P, sx * 3.3, H1 + 1.75, 1.0, 1.5, 0.05, shutters=True)
-window(P, 0.0, H1 + 1.75, 1.0, 1.5, 0.05, shutters=True)
+    window(P, sx * 3.3, 1.75, 2.2, 1.8, 0.0, bars=7)
+    window(P, sx * 3.3, H1 + 1.75, 1.0, 1.5, 0.0, shutters=True)
+window(P, 0.0, H1 + 1.75, 1.0, 1.5, 0.0, shutters=True)
 for sx in (-1, 1):                                                                        # side windows, both floors
     for zz in (-3.5, -8.5):
         keep = P.xf
-        P.xf = P.at((sx * (HX + 0.02), 0, zz), yaw=sx * math.pi / 2)
+        P.xf = P.at((sx * HX, 0, zz), yaw=sx * math.pi / 2)
         window(P, 0.0, 1.7, 1.0, 1.4, 0.0)
         window(P, 0.0, H1 + 1.7, 1.0, 1.4, 0.0)
         P.xf = keep
 for xx in (-3.0, 3.0):                                                                    # back windows (upper)
     keep = P.xf
-    P.xf = P.at((xx, 0, -D - 0.02), yaw=math.pi)
+    P.xf = P.at((xx, 0, -D), yaw=math.pi)
     window(P, 0.0, H1 + 1.7, 1.0, 1.4, 0.0)
     P.xf = keep
 # door frame and the double door: left leaf swung in, right leaf ajar

@@ -17,6 +17,10 @@ const LOCAL := "user://ep2_extras.pck"
 const ARMORY := "res://src/episode2/extras/armory/armory2.glb"
 const RICH := "res://src/episode2/extras/folk/rich_armory2.glb"
 const UTAH := "res://src/episode2/extras/folk/utah_armory2.glb"
+## The town kit with REAL openings (windows, doors, side windows; 2026-10-19 openings pass): same piece names as town_kit.glb.
+const TOWN_KIT := "res://src/episode2/extras/town/town_kit2.glb"
+## The townspeople (Ep2TownPeople), one rigged GLB each.
+const PEOPLE_DIR := "res://src/episode2/extras/people/"
 
 static var _state: String = ""            # "" never started, "loading", "ready", "failed"
 static var _http: HTTPRequest = null

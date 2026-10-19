@@ -100,7 +100,9 @@ static func build(parent: Node3D, interiors: bool) -> Dictionary:
 	parent.add_child(root)
 	if not ResourceLoader.exists(KIT):
 		return {"walls": walls, "props": props}
-	var kit: Node3D = (load(KIT) as PackedScene).instantiate() as Node3D
+	# the kit with real openings is streamed (Ep2Extras); until it is mounted the shipped kit is drawn
+	var kit_path: String = Ep2Extras.TOWN_KIT if Ep2Extras.has(Ep2Extras.TOWN_KIT) else KIT
+	var kit: Node3D = (load(kit_path) as PackedScene).instantiate() as Node3D
 	_apply_mats(kit)
 	var a2: Node3D = _load_armory2()
 	for e in LAYOUT:
