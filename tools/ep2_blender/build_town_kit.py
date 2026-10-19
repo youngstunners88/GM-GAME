@@ -53,6 +53,9 @@ for n, c, r, mt in [("Siding", (0.42, 0.33, 0.24), 0.9, 0.0), ("Trim", (0.30, 0.
                     ("Green", (0.10, 0.25, 0.14), 0.8, 0.0)]:
     mat(n, c, r, mt)
 mat("Glass", (0.08, 0.09, 0.10), 0.1, 0.0)
+mat("GlassDay", (0.40, 0.50, 0.55), 0.06, 0.0)      # openings pass: window glass that reads as glass in daylight (not a dark sticker)
+mat("Dark", (0.025, 0.02, 0.016), 0.95, 0.0)       # the shaded room behind the glass of buildings with no interior
+mat("Shutter", (0.16, 0.30, 0.20), 0.85, 0.0)
 mat("Bottle", (0.25, 0.14, 0.05), 0.15, 0.0)
 
 
@@ -66,6 +69,17 @@ class Piece:
         self.name = name
         self.bms = {}
         self.anchors = []
+        self.yaw = 0.0                       # placement for the next primitives (game frame): rotation about y, then offset
+        self.off = (0.0, 0.0, 0.0)
+
+    def place(self, yaw=0.0, off=(0.0, 0.0, 0.0)):
+        self.yaw, self.off = yaw, off
+
+    def _pc(self, c):
+        a = self.yaw
+        x = c[0] * math.cos(a) + c[2] * math.sin(a)
+        z = -c[0] * math.sin(a) + c[2] * math.cos(a)
+        return (x + self.off[0], c[1] + self.off[1], z + self.off[2])
 
     def _bm(self, m):
         if m not in self.bms:
@@ -79,8 +93,8 @@ class Piece:
         bmesh.ops.create_cube(tmp, size=1.0)
         bmesh.ops.scale(tmp, vec=Vector((size[0], size[2], size[1])), verts=tmp.verts)
         # game rot about y = blender rot about z; game x = blender x; game z = blender -y
-        r = Matrix.Rotation(rot_y, 4, "Z") @ Matrix.Rotation(rot_x, 4, "X") @ Matrix.Rotation(-rot_z, 4, "Y")
-        bmesh.ops.transform(tmp, matrix=Matrix.Translation(G(centre)) @ r, verts=tmp.verts)
+        r = Matrix.Rotation(rot_y + self.yaw, 4, "Z") @ Matrix.Rotation(rot_x, 4, "X") @ Matrix.Rotation(-rot_z, 4, "Y")
+        bmesh.ops.transform(tmp, matrix=Matrix.Translation(G(self._pc(centre))) @ r, verts=tmp.verts)
         self._merge(bm, tmp)
 
     def cyl(self, m, r1, r2, h, centre, axis="y", seg=10):
@@ -142,36 +156,115 @@ class Piece:
 T = 0.14   # wall thickness
 
 
-def window(p, x, y, w=0.9, h=1.4, zf=0.0):
-    """A sash window in a front wall at front plane z = zf: frame + glass + muntins."""
-    p.box("Glass", (w - 0.08, h - 0.08, 0.04), (x, y, zf - 0.02))
-    p.box("Trim", (w + 0.16, 0.12, 0.18), (x, y + h / 2 + 0.06, zf + 0.02))
-    p.box("Trim", (w + 0.22, 0.08, 0.26), (x, y - h / 2 - 0.04, zf + 0.06))
+def wall_holes(p, m, u0, u1, h, holes, place):
+    """A wall rectangle u0..u1 x 0..h built in boxes AROUND its openings (real holes, not a skin). holes: [(uc, vc, w, h)];
+    place(ua, ub, va, vb) -> one box in the caller's wall frame."""
+    us = sorted({u0, u1, *[min(max(c - w_ / 2, u0), u1) for c, _, w_, _ in holes], *[min(max(c + w_ / 2, u0), u1) for c, _, w_, _ in holes]})
+    for ua, ub in zip(us, us[1:]):
+        if ub - ua < 1e-4:
+            continue
+        um = (ua + ub) / 2
+        cuts = sorted((v - hh / 2, v + hh / 2) for c, v, w_, hh in holes if c - w_ / 2 <= um <= c + w_ / 2)
+        v = 0.0
+        for lo, hi in cuts:
+            if lo - v > 1e-4:
+                place(m, ua, ub, v, lo)
+            v = max(v, hi)
+        if h - v > 1e-4:
+            place(m, ua, ub, v, h)
+
+
+def window(p, x, y, w=0.9, h=1.4, zf=0.0, shutters=True, sill_out=0.12, backing=False, lintel=None):
+    """A real window in a hole of the front plane (z = zf .. zf - T): pale reveal frame lining the hole, a recessed pane of day-glass,
+    a muntin cross, a projecting sill and head, open shutters flush to the wall either side, optionally a dark room behind (no interior)."""
+    P = "PaintWhite"
     for sx in (-1, 1):
-        p.box("Trim", (0.08, h, 0.12), (x + sx * (w / 2), y, zf + 0.01))
-    p.box("Trim", (0.04, h, 0.05), (x, y, zf + 0.0))
-    p.box("Trim", (w, 0.04, 0.05), (x, y, zf + 0.0))
+        p.box(P, (0.07, h + 0.02, T + 0.05), (x + sx * (w / 2 - 0.035), y, zf - T / 2 + 0.02))
+    p.box(P, (w, 0.07, T + 0.05), (x, y + h / 2 - 0.035, zf - T / 2 + 0.02))
+    p.box(P, (w, 0.06, T + 0.02), (x, y - h / 2 + 0.03, zf - T / 2))
+    p.box("GlassDay", (w - 0.14, h - 0.14, 0.025), (x, y, zf - T * 0.55))
+    p.box(P, (0.035, h - 0.14, 0.04), (x, y, zf - T * 0.55 + 0.02))
+    p.box(P, (w - 0.14, 0.035, 0.04), (x, y + 0.08, zf - T * 0.55 + 0.02))
+    p.box(P, (w + 0.28, 0.07, sill_out + 0.06), (x, y - h / 2 - 0.04, zf + sill_out / 2 - 0.02))                  # the sill
+    p.box(P, (w + 0.24, 0.10, 0.12), (x, y + h / 2 + 0.07, zf + 0.04))                                           # the head
+    if lintel:
+        p.box(lintel, (w + 0.4, 0.14, 0.22), (x, y + h / 2 + 0.22, zf + 0.06))
+    if shutters:
+        for sx in (-1, 1):
+            p.box("Shutter", (0.40, h, 0.05), (x + sx * (w / 2 + 0.24), y, zf + 0.03))
+            for k in range(3):
+                p.box("Trim", (0.34, 0.025, 0.02), (x + sx * (w / 2 + 0.24), y - h / 2 + 0.25 + k * (h - 0.5) / 2, zf + 0.065))
+    if backing:
+        p.box("Dark", (w - 0.1, h - 0.1, 0.03), (x, y, zf - T - 0.45))
 
 
-def shell(p, w, d, h, door_w, door_x=0.0, open_door=True, interior=False, mat_wall="Siding", wins=(), upper_wins=()):
-    """The walls of a building whose front plane is z = 0 and back is z = -d; door opening in the front."""
+def door_unit(p, x, w, hgt, style, zf=0.0):
+    """The doorway's dressing (the hole itself is cut by shell): frame, threshold and, by style, leaves.
+    open = walkable, no leaf; shut = one panelled leaf + knob + transom; double = two leaves, brass pulls, fan-light; batwing = two
+    waist-high swing doors (the saloon)."""
+    P = "PaintWhite"
+    for sx in (-1, 1):
+        p.box(P, (0.10, hgt + 0.05, T + 0.10), (x + sx * (w / 2 - 0.05), hgt / 2, zf - T / 2 + 0.03))
+    p.box(P, (w + 0.10, 0.12, T + 0.12), (x, hgt + 0.02, zf - T / 2 + 0.04))
+    p.box("Planks", (w + 0.1, 0.05, 0.50), (x, 0.025, zf + 0.20))                                               # threshold step
+    if style == "shut":
+        p.box("DarkWood", (w - 0.14, hgt - 0.62, 0.07), (x, (hgt - 0.62) / 2, zf - T * 0.45))
+        for ty in (0.72, 1.55):
+            p.box("Trim", (w - 0.44, 0.62, 0.025), (x, ty, zf - T * 0.45 + 0.05))
+        p.box("Brass", (0.07, 0.07, 0.10), (x + w / 2 - 0.22, 1.02, zf - T * 0.45 + 0.08))
+        p.box("GlassDay", (w - 0.30, 0.28, 0.02), (x, hgt - 0.46, zf - T * 0.45 + 0.04))
+    elif style == "double":
+        for sx in (-1, 1):
+            p.box("DarkWood", (w / 2 - 0.09, hgt - 0.62, 0.07), (x + sx * (w / 4 - 0.015), (hgt - 0.62) / 2, zf - T * 0.45))
+            for ty in (0.75, 1.65):
+                p.box("Trim", (w / 2 - 0.32, 0.64, 0.025), (x + sx * (w / 4 - 0.015), ty, zf - T * 0.45 + 0.05))
+            p.box("Brass", (0.05, 0.50, 0.07), (x + sx * 0.12, 1.1, zf - T * 0.45 + 0.09))
+        p.box("GlassDay", (w - 0.24, 0.40, 0.02), (x, hgt - 0.40, zf - T * 0.45 + 0.04))
+    elif style == "batwing":
+        for sx in (-1, 1):
+            p.box("DarkWood", (w / 2 - 0.04, 0.95, 0.045), (x + sx * (w / 4), 1.25, zf - T * 0.2), rot_y=sx * 0.55)
+            p.box("Brass", (0.06, 0.06, 0.06), (x + sx * (w / 2 - 0.05), 1.25, zf - T * 0.2 + 0.03))
+
+
+def shell(p, w, d, h, door_w, door_x=0.0, open_door=True, interior=False, mat_wall="Siding", wins=(), upper_wins=(), door_style=None,
+          side_wins=True, back_wins=True, door_h=2.5):
+    """The walls of a building whose front plane is z = 0 and back is z = -d. Every opening is a real hole in the wall (wall_holes):
+    the door in the front, ground and upper windows, and (side_wins) windows in both side walls and (back_wins) the back, so the
+    building reads as inhabited from the lane and from behind."""
     hw = w / 2
-    # front wall pieces around the door
-    left_w = (door_x - door_w / 2) + hw
-    right_w = hw - (door_x + door_w / 2)
-    p.box(mat_wall, (left_w, h, T), (-hw + left_w / 2, h / 2, -T / 2))
-    p.box(mat_wall, (right_w, h, T), (hw - right_w / 2, h / 2, -T / 2))
-    p.box(mat_wall, (door_w, h - 2.5, T), (door_x, 2.5 + (h - 2.5) / 2, -T / 2))
-    # door frame
+    style = door_style or ("open" if open_door else "shut")
+    ww, wh = 0.95, 1.45
+    front = [(door_x, door_h / 2, door_w, door_h)]
+    front += [(x, 1.6, ww, wh) for x in wins] + [(x, h - 1.6, ww, wh) for x in upper_wins]
+
+    def fplace(m, ua, ub, va, vb):
+        p.box(m, (ub - ua, vb - va, T), ((ua + ub) / 2, (va + vb) / 2, -T / 2))
+    wall_holes(p, mat_wall, -hw, hw, h, front, fplace)
+    door_unit(p, door_x, door_w, door_h, style)
+    for x in wins:
+        window(p, x, 1.6, ww, wh, 0.0, backing=not interior)
+    for x in upper_wins:
+        window(p, x, h - 1.6, ww, wh, 0.0, backing=not interior)
+    # side + back walls with their own openings
+    zs = [-d * 0.30, -d * 0.68] if side_wins else []
+    sholes = [(z, 1.6, ww, wh) for z in zs] + ([(z, h - 1.6, ww, wh) for z in zs] if h > 5.5 else [])
     for sx in (-1, 1):
-        p.box("Trim", (0.12, 2.55, 0.22), (door_x + sx * (door_w / 2 + 0.04), 1.275, 0.0))
-    p.box("Trim", (door_w + 0.3, 0.14, 0.24), (door_x, 2.55, 0.0))
-    if not open_door:
-        p.box("DarkWood", (door_w, 2.5, 0.08), (door_x, 1.25, -0.08))
-    # side + back walls
-    for sx in (-1, 1):
-        p.box(mat_wall, (T, h, d), (sx * (hw - T / 2), h / 2, -d / 2))
-    p.box(mat_wall, (w, h, T), (0.0, h / 2, -d + T / 2))
+        def splace(m, ua, ub, va, vb, sx=sx):
+            p.box(m, (T, vb - va, ub - ua), (sx * (hw - T / 2), (va + vb) / 2, (ua + ub) / 2))
+        wall_holes(p, mat_wall, -d, 0.0, h, sholes, splace)
+        for z, y, _, _ in sholes:
+            p.place(sx * math.pi / 2, (sx * hw, 0.0, z))
+            window(p, 0.0, y, ww, wh, 0.0, shutters=False, sill_out=0.08, backing=not interior)
+            p.place()
+    bholes = [(-hw * 0.5, 1.6, ww, wh), (hw * 0.5, 1.6, ww, wh)] if back_wins else []
+
+    def bplace(m, ua, ub, va, vb):
+        p.box(m, (ub - ua, vb - va, T), ((ua + ub) / 2, (va + vb) / 2, -d + T / 2))
+    wall_holes(p, mat_wall, -hw, hw, h, bholes, bplace)
+    for x, y, _, _ in bholes:
+        p.place(math.pi, (x, 0.0, -d))
+        window(p, 0.0, y, ww, wh, 0.0, shutters=False, sill_out=0.06, backing=not interior)
+        p.place()
     # floor, ceiling, gable roof behind the false front
     p.box("Planks", (w, 0.2, d), (0.0, 0.1 - 0.2, -d / 2))
     if interior:
@@ -181,15 +274,13 @@ def shell(p, w, d, h, door_w, door_x=0.0, open_door=True, interior=False, mat_wa
     half = (w / 2 + 0.3) / math.cos(ang)
     for sx in (-1, 1):
         p.box("Roof", (half, 0.06, d + 0.4), (sx * (w / 4 + 0.075), h + math.tan(ang) * (w / 4) + 0.02, -d / 2), rot_z=-sx * ang)
-    for wx in wins:
-        window(p, wx, 1.6, zf=0.0)
-    for wx in upper_wins:
-        window(p, wx, h - 1.6, zf=0.0)
 
 
-def false_front(p, w, h_top, sign_word, sign_y, sign_w, sign_h, mat_wall="Siding"):
-    """The flat false front above the roofline with a cornice, a sign board and its anchor."""
-    p.box(mat_wall, (w + 0.2, h_top, T), (0.0, h_top / 2, 0.02))
+def false_front(p, w, h_top, sign_word, sign_y, sign_w, sign_h, mat_wall="Siding", y0=0.0):
+    """The flat false front ABOVE the roofline (y0 = the wall top) with a cornice, a sign board and its anchor. The slab used to run
+    from the ground up and stood in front of every window and door (the blank boards, 2026-10-19), so it now starts at y0."""
+    if h_top - y0 > 0.05:
+        p.box(mat_wall, (w + 0.2, h_top - y0, T), (0.0, y0 + (h_top - y0) / 2, 0.02))
     p.box("Trim", (w + 0.6, 0.22, 0.45), (0.0, h_top + 0.05, 0.12))
     p.box("Trim", (w + 0.4, 0.12, 0.3), (0.0, h_top - 0.2, 0.1))
     for i in range(6):
@@ -214,13 +305,13 @@ def porch(p, w, depth=2.6, h=3.0, posts=4, steps=True):
             p.box("Planks", (1.8, 0.16, 0.35), (0.0, 0.16 * (k + 0.5), depth + 0.18 + 0.35 * (1 - k)))
 
 
-def building(name, w, d, storeys, h_front, sign_word=None, door_open=False, interior=False, balcony=False, mat_wall="Siding"):
+def building(name, w, d, storeys, h_front, sign_word=None, door_open=False, interior=False, balcony=False, mat_wall="Siding", door_style=None):
     p = Piece(name)
     h = 3.6 * storeys
     wins = (-w / 2 + 1.3, w / 2 - 1.3) if w > 6.5 else ()
     shell(p, w, d, h, 1.5 if not balcony else 1.9, 0.0, door_open, interior, mat_wall, wins,
-          tuple(-w / 2 + 1.1 + i * (w - 2.2) / 2 for i in range(3)) if storeys > 1 else ())
-    false_front(p, w, h_front, sign_word, h + (h_front - h) * 0.5 if h_front > h + 1.0 else h - 0.9, min(w - 1.2, 6.0), 1.0, mat_wall)
+          tuple(-w / 2 + 1.1 + i * (w - 2.2) / 2 for i in range(3)) if storeys > 1 else (), door_style=door_style)
+    false_front(p, w, h_front, sign_word, h + (h_front - h) * 0.5 if h_front > h + 1.0 else h - 0.9, min(w - 1.2, 6.0), 1.0, mat_wall, y0=h)
     porch(p, w)
     if balcony:
         y = 3.6
@@ -233,7 +324,7 @@ def building(name, w, d, storeys, h_front, sign_word=None, door_open=False, inte
 
 # --- the street ---------------------------------------------------------------------------------------------------------------
 building("Bldg_Certificates", 8.0, 9.0, 2, 9.4, "CERTIFICATES", door_open=True, interior=True).build()
-building("Bldg_Saloon", 12.0, 12.0, 2, 9.6, "SALOON", door_open=True, interior=True, balcony=True).build()
+building("Bldg_Saloon", 12.0, 12.0, 2, 9.6, "SALOON", door_open=True, interior=True, balcony=True, door_style="batwing").build()
 building("Bldg_A", 7.0, 8.0, 1, 6.2, "GENERAL").build()
 building("Bldg_B", 8.0, 9.0, 2, 8.6, "HOTEL").build()
 building("Bldg_C", 6.0, 8.0, 1, 5.6, "ASSAY").build()
@@ -249,7 +340,7 @@ shell(p, w, d, h, 1.4, 0.0, True, True, "Siding", (-w / 2 + 1.6, w / 2 - 1.6), (
 for wx in (-w / 2 + 1.6, w / 2 - 1.6):          # barred ground-floor windows
     for i in range(5):
         p.box("Iron", (0.045, 1.5, 0.045), (wx - 0.32 + i * 0.16, 1.6, 0.05))
-false_front(p, w, h, "ARMS", h - 0.9, 4.2, 0.9, "Siding")
+false_front(p, w, h, "ARMS", h - 0.9, 4.2, 0.9, "Siding", y0=h)
 porch(p, w)
 p.box("Roof", (4.0, 0.06, 3.0), (0.0, 2.7, -d - 1.3), rot_z=0.18)     # lean-to loading shed, behind
 for sx in (-1.7, 1.7):
@@ -260,7 +351,7 @@ p.build()
 # the Treasury: sandstone, pilasters, pediment, shut double door
 p = Piece("Bldg_Treasury")
 w, d, h = 10.0, 12.0, 7.6
-shell(p, w, d, h, 2.0, 0.0, False, False, "Sandstone", (-3.2, 3.2), (-3.2, 3.2))
+shell(p, w, d, h, 2.0, 0.0, False, False, "Sandstone", (-3.2, 3.2), (-3.2, 3.2), door_style="double", door_h=2.7)
 for sx in (-1, 1):
     for kx in (1.25, 4.4):
         p.cyl("Sandstone", 0.32, 0.28, h - 0.6, (sx * kx, (h - 0.6) / 2 + 0.6, 0.35), "y", 14)

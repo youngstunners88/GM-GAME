@@ -85,6 +85,9 @@ func _glbs(dir: String) -> PackedStringArray:
 
 
 ## Every literal res:// path in the text files under `dir` that the export filter removes (paths built with % are skipped).
+const STREAMED := "res://src/episode2/extras/"
+
+
 func _literal_refs(dir: String, patterns: PackedStringArray) -> Dictionary:
 	var out := {}
 	var re := RegEx.new()
@@ -94,6 +97,10 @@ func _literal_refs(dir: String, patterns: PackedStringArray) -> Dictionary:
 		for m in re.search_all(txt):
 			var p: String = m.get_string()
 			if p.contains("%") or p.ends_with("/"):
+				continue
+			# res://src/episode2/extras/ is left out of index.pck ON PURPOSE: it ships as the streamed ep2_extras.pck
+			# (src/episode2/ep2_extras.gd); every caller checks Ep2Extras.has() and keeps a fallback
+			if p.begins_with(STREAMED):
 				continue
 			if _excluded(p, patterns) and not _excluded(f, patterns):
 				out[p] = f

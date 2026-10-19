@@ -265,7 +265,7 @@ jobs:
           custom_features=""
           export_filter="all_resources"
           include_filter="config.json,src/autoload/share_taglines.json"
-          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*,design/*,work-notes/*,tools/*,assets/keyart/*,src/assets/models/horse/assetfurnace/*,web_verify/*,web/game/*,src/assets/sprites/sprite_prop_train-goldmine.png,src/assets/sprites/sprite_prop_train-goldmine_256.png,src/assets/sprites/sprite_train_goldmine_blender-render.png,src/assets/portals/leaders/*,src/assets/logos/founder/ref_wrong_diamonds_banned.png,src/assets/art/smoke_lounge_banner.png,src/assets/models/player_bow/bow_fps_view.png"
+          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*,design/*,work-notes/*,tools/*,assets/keyart/*,src/assets/models/horse/assetfurnace/*,web_verify/*,web/game/*,src/assets/sprites/sprite_prop_train-goldmine.png,src/assets/sprites/sprite_prop_train-goldmine_256.png,src/assets/sprites/sprite_train_goldmine_blender-render.png,src/assets/portals/leaders/*,src/assets/logos/founder/ref_wrong_diamonds_banned.png,src/assets/art/smoke_lounge_banner.png,src/assets/models/player_bow/bow_fps_view.png,src/episode2/extras/*"
           export_path="web/game/index.html"
           script_export_mode=1
           script_encryption_key=""
@@ -359,6 +359,14 @@ jobs:
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_logans_lake_test.tscn > logans-lake-tests.log 2>&1
           grep -q 'LOGANS_LAKE: ALL PASS' logans-lake-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' logans-lake-tests.log; then exit 1; fi
+          # Rich & Utah's two-storey Armory (founder 2026-10-19): building, windows, door, no horse inside, both men working both floors.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_armory_two_story_test.tscn 2>&1 | tee armory2-tests.log
+          grep -q 'EP2_ARMORY2: ALL PASS' armory2-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' armory2-tests.log; then exit 1; fi
+          # Town windows and doors are real holes and the town has people (founder 2026-10-19): kit openings + five townsmen/townswomen.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_town_people_test.tscn 2>&1 | tee town-people-tests.log
+          grep -q 'EP2_TOWN_PEOPLE: ALL PASS' town-people-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' town-people-tests.log; then exit 1; fi
           # Bull's pacing, the cover fire and the donkey cart on the road (founder 2026-10-14).
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_companion_cart_test.tscn 2>&1 | tee companion-cart-tests.log
           grep -q 'EP2_COMPANION_CART: ALL PASS' companion-cart-tests.log
@@ -432,6 +440,15 @@ jobs:
             cat export.log
             exit 1
           fi
+          # Episode 2 extras (founder 2026-10-19: "Stream Episode 2 extras"): res://src/episode2/extras/ is excluded from
+          # index.pck above and packed here into ep2_extras.pck, deployed next to it; the game downloads and mounts it when
+          # Episode 2 starts (src/episode2/ep2_extras.gd). Skill: ep2-armory-two-story.
+          timeout 300 "$GODOT_BIN" --headless --path . --script tools/ep2_extras/pack_extras.gd -- web/game/ep2_extras.pck 2>&1 | tee extras-pack.log
+          grep -q 'EXTRAS_PACK:' extras-pack.log
+          [ -f web/game/ep2_extras.pck ] || { echo "::error::ep2_extras.pck was not built"; exit 1; }
+          XB=$(stat -c%s web/game/ep2_extras.pck)
+          echo "ep2_extras.pck = $XB bytes"
+          [ "$XB" -lt 199229440 ] || { echo "::error::ep2_extras.pck over the 190 MiB per-file gate"; exit 1; }
 
       - name: Restore the stamped source
         # MUST run, and must run BEFORE any step that touches git.
@@ -580,6 +597,7 @@ jobs:
           # the small loader files for the mirror. Leaving it on disk is the
           # point — `git reset` unstages without deleting the file.
           git reset -q -- web/game/index.pck || true
+          git reset -q -- web/game/ep2_extras.pck || true   # build artifact too (streamed Episode 2 extras)
           if ! git diff --cached --quiet; then
             git commit -m "build: export Godot 4.3 game to web (automated CI)"
             # Rebase-and-push with RETRIES.

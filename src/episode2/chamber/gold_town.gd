@@ -66,6 +66,12 @@ const RICH_MODEL := "res://src/episode2/assets/town/rich_armory.glb"
 const UTAH_MODEL := "res://src/episode2/assets/town/utah_armory.glb"
 const RICH_HEIGHT := 1.86
 const UTAH_HEIGHT := 1.74
+## The two-storey Armory's Tripo Rich and Utah (heights incl. hat) and walk speeds matched to their Walk clip's stride (measured
+## by tools/ep2_motion/retarget_bvh.py: Utah 0.86 m/s, Rich ~0.76 m/s at his scale) so their feet never skate.
+const RICH2_HEIGHT := 1.80
+const UTAH2_HEIGHT := 1.85
+const RICH2_WALK := 0.76
+const UTAH2_WALK := 0.86
 ## In the Armory's local frame (x along the front, -z inside). Rich behind the counter (the sales side), Utah
 ## working the crates and racks behind him.
 const RICH_AT := Vector3(-0.7, 0.0, -5.7)
@@ -106,6 +112,9 @@ var _flash_t: float = 0.0
 var _flash: OmniLight3D = null
 var _rich: Ep2TownFolk = null
 var _utah: Ep2TownFolk = null
+var _people: Ep2TownPeople = null                # the townsmen and townswomen on Main Street (streamed extras)
+var _rich_brain: Ep2ArmoryBrain = null          # the two-storey Armory only
+var _utah_brain: Ep2ArmoryBrain = null
 var _shop: Ep2ArmoryShop = null
 var _shop_layer: CanvasLayer = null
 var _shop_open: bool = false
@@ -212,6 +221,8 @@ func _step_people() -> void:
 	_flash.light_energy = 0.0
 	_visuals.add_child(_flash)
 	_build_armory_folk()
+	_people = Ep2TownPeople.new()
+	_people.build(_visuals)
 	if _bull == null:
 		_bull = _build_bull(Ep2GoldTown.door_world("Bldg_B", 0.8), PI * 0.5)
 		_bull.visible = false
@@ -221,6 +232,9 @@ func _step_people() -> void:
 ## (lock section 6: "both are present"). They are ordinary town folk - a stride bob, a turn to whoever
 ## comes in - not bears and not a menu.
 func _build_armory_folk() -> void:
+	if Ep2GoldTown.armory_v2 and Ep2Extras.has(Ep2Extras.RICH) and Ep2Extras.has(Ep2Extras.UTAH):
+		_build_armory_folk_v2()
+		return
 	_rich = Ep2TownFolk.new()
 	_rich.name = "Rich"
 	_visuals.add_child(_rich)
@@ -236,6 +250,28 @@ func _build_armory_folk() -> void:
 	# Rich works the claim book at the counter, Utah stands loose beside the racks (authored clips).
 	_rich.hold_clip("Counter")
 	_utah.hold_clip("Idle")
+	_build_shop()
+
+
+## The two-storey Armory's shopkeepers (founder 2026-10-19): the founder's Tripo Rich (miner, GM medallion, cigar) and Utah (gunman,
+## bandoliers), rigged and moved by retargeted mocap (tools/ep2_motion/), each run by an Ep2ArmoryBrain that works both floors and
+## reacts to Lil Blunt (skills ep2-tripo-folk-to-game, ep2-armory-npc-autonomy). Streamed with the building (Ep2Extras).
+func _build_armory_folk_v2() -> void:
+	var xf: Transform3D = Ep2GoldTown.building_xform(Ep2GoldTown.entry("Bldg_Armory"))
+	_rich = Ep2TownFolk.new()
+	_rich.name = "Rich"
+	_visuals.add_child(_rich)
+	_rich.setup(Ep2Extras.RICH, RICH2_HEIGHT, Color(0.30, 0.20, 0.13))
+	_utah = Ep2TownFolk.new()
+	_utah.name = "Utah"
+	_visuals.add_child(_utah)
+	_utah.setup(Ep2Extras.UTAH, UTAH2_HEIGHT, Color(0.28, 0.33, 0.34))
+	_rich_brain = Ep2ArmoryBrain.new()
+	_rich_brain.walk_speed = RICH2_WALK
+	_rich_brain.setup("rich", _rich, xf, Ep2GoldTown.armory_spots, "counter_rich", 7101)
+	_utah_brain = Ep2ArmoryBrain.new()
+	_utah_brain.walk_speed = UTAH2_WALK
+	_utah_brain.setup("utah", _utah, xf, Ep2GoldTown.armory_spots, "bench", 7202)
 	_build_shop()
 
 
@@ -693,7 +729,7 @@ func _wants_handoff() -> bool:
 func _in_room(piece: String, depth: float) -> bool:
 	var e: Array = Ep2GoldTown.entry(piece)
 	var lp: Vector3 = Ep2GoldTown.building_xform(e).affine_inverse() * _player_pos
-	var fp: Array = Ep2GoldTown.FOOTPRINT[piece]
+	var fp: Array = Ep2GoldTown.FOOTPRINT["Bldg_Armory2" if piece == "Bldg_Armory" and Ep2GoldTown.armory_v2 else piece]
 	return lp.z < depth and absf(lp.x) < float(fp[0]) * 0.5
 
 
@@ -712,7 +748,12 @@ func _tick_people(delta: float) -> void:
 	if _beat == Beat.SQUARE_UP and not _opp.is_walking():
 		_opp.face_point(DUEL_MARK)
 	# the Armory's two turn to whoever comes in the door of the shop
-	if _rich != null and _beat in [Beat.TIP, Beat.ARMORY, Beat.GEARED] and _in_room("Bldg_Armory", -2.0):
+	if _people != null:
+		_people.step(delta, _player_pos)
+	if _rich_brain != null:
+		_rich_brain.step(delta, _player_pos)
+		_utah_brain.step(delta, _player_pos)
+	elif _rich != null and _beat in [Beat.TIP, Beat.ARMORY, Beat.GEARED] and _in_room("Bldg_Armory", -2.0):
 		_rich.face_point(_player_pos)
 		if _utah != null:
 			_utah.face_point(_player_pos)
@@ -880,6 +921,7 @@ func get_sheriff() -> Ep2TownFolk: return _sheriff
 func get_minister() -> Ep2TownFolk: return _minister
 func get_opponent() -> Ep2TownFolk: return _opp
 func get_bartender() -> Ep2TownFolk: return _bartender
+func get_people() -> Ep2TownPeople: return _people
 func get_rich() -> Ep2TownFolk: return _rich
 func get_utah() -> Ep2TownFolk: return _utah
 func get_shop() -> Ep2ArmoryShop: return _shop

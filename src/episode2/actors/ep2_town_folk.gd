@@ -23,6 +23,12 @@ var _anim: AnimationPlayer = null
 var _rigged: bool = false
 var _clip: String = ""                               # the clip actually playing (lowercased)
 var _base_clip: String = "Idle"                      # what he holds when standing still
+## Armory autonomy (ep2-armory-npc-autonomy): the clip played while moving ("Walk", "StairsUp", "Carry"), a cross-fade between
+## clips so nothing snaps, and optional height travel (stairs, the gallery) - all off by default so other folk are unchanged.
+var walk_clip: String = "Walk"
+var clip_blend: float = 0.0
+var use_height: bool = false
+var _floor_y: float = 0.0
 
 
 ## Load `path` (a GLB), scale it to `height`, put its feet on the origin. Falls back to a plain figure so a build without the art still plays.
@@ -75,7 +81,7 @@ func play_clip(name: String, speed: float = 1.0) -> bool:
 				return true
 			_clip = want
 			_anim.speed_scale = speed
-			_anim.play(str(a))
+			_anim.play(str(a), clip_blend if clip_blend > 0.0 else -1.0)
 			return true
 	return false
 
@@ -162,7 +168,7 @@ func set_pose(p: String) -> void:
 
 
 func walk_to(p: Vector3, speed: float = 1.4) -> void:
-	_goal = Vector3(p.x, 0.0, p.z)
+	_goal = Vector3(p.x, p.y if use_height else 0.0, p.z)
 	_speed = speed
 	_walking = true
 
@@ -177,6 +183,19 @@ func walk_path(points: Array, speed: float = 1.4) -> void:
 func stop() -> void:
 	_walking = false
 	_path = []
+
+
+## Put him at `p` at once (with its height when `use_height` is on: the Armory gallery is 3.8 m up).
+func place(p: Vector3) -> void:
+	_floor_y = p.y if use_height else 0.0
+	position = Vector3(p.x, _floor_y, p.z)
+	_walking = false
+	_path = []
+
+
+## The floor height he stands on (0 in the street; the gallery's 3.8 in the Armory).
+func floor_y() -> float:
+	return _floor_y
 
 
 func is_walking() -> bool:
@@ -207,8 +226,10 @@ func step(delta: float) -> void:
 	_t += delta
 	var moving: bool = false
 	if _walking and not dead:
-		var d: Vector3 = _goal - position
-		d.y = 0.0
+		var d: Vector3 = _goal - Vector3(position.x, _floor_y, position.z)
+		if not use_height:
+			d.y = 0.0
+		var flat := Vector3(d.x, 0.0, d.z)
 		if d.length() < 0.06:
 			_walking = false
 			if not _path.is_empty():
@@ -217,8 +238,13 @@ func step(delta: float) -> void:
 				arrived.emit()
 		else:
 			moving = true
-			facing = lerp_angle(facing, atan2(d.x, d.z), clampf(8.0 * delta, 0.0, 1.0))
-			position += d.normalized() * minf(d.length(), _speed * delta)
+			if flat.length() > 0.02:
+				facing = lerp_angle(facing, atan2(d.x, d.z), clampf(8.0 * delta, 0.0, 1.0))
+			# speed is ground speed: on a stair the rise rides along with the run
+			var stepv: Vector3 = d * minf(1.0, (_speed * delta) / maxf(flat.length() if flat.length() > 0.02 else d.length(), 0.001))
+			position.x += stepv.x
+			position.z += stepv.z
+			_floor_y += stepv.y
 			_phase += delta * _speed * 4.6
 	rotation.y = lerp_angle(rotation.y, facing, clampf(7.0 * delta, 0.0, 1.0))
 	if model == null:
@@ -232,11 +258,12 @@ func step(delta: float) -> void:
 		return
 	if _rigged:
 		# the clips carry the body: only the stride lift and a shot's recoil ride on top
-		var want: String = "Walk" if moving else _base_clip
+		var want: String = walk_clip if moving else _base_clip
 		if _clip != want.to_lower():
 			play_clip(want)
 		model.rotation = Vector3(-0.08 * _kick, 0.0, 0.0)
-		position.y = (absf(sin(_phase)) * 0.035) if moving else 0.0
+		# mocap clips carry their own bob; the procedural stride lift is only for the old authored figures
+		position.y = _floor_y + ((absf(sin(_phase)) * 0.035) if moving and not use_height else 0.0)
 		return
 	model.rotation = Vector3(-0.08 * _kick, 0.0, (0.035 * sin(_phase) if moving else 0.0))
 	position.y = (absf(sin(_phase)) * 0.035) if moving else 0.0
