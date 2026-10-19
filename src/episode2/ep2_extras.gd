@@ -23,7 +23,6 @@ const TOWN_KIT := "res://src/episode2/extras/town/town_kit2.glb"
 const PEOPLE_DIR := "res://src/episode2/extras/people/"
 
 static var _state: String = ""            # "" never started, "loading", "ready", "failed"
-static var _http: HTTPRequest = null
 
 
 ## True when `path` can be loaded now (on disk in the editor/desktop, or after the web pack mounted).
@@ -38,41 +37,42 @@ static func state() -> String:
 	return _state
 
 
-## Start the background download once, from any node in the tree (Episode 2's entry calls it). The HTTPRequest lives on the
-## tree root so it survives scene changes. No-op off the web or when the extras are already loadable.
+## Start the background download once, from any node in the tree (Episode 2's entry calls it). No-op off the web or when the
+## extras are already loadable.
+##
+## WHY NOT HTTPRequest (2026-10-19 incident): itch's CDN gzips ep2_extras.pck for browsers and reports the COMPRESSED size as
+## Content-Length while the browser hands Godot the decompressed bytes. Godot 4.3's web HTTPClient treats that mismatch as an
+## error ("err != 0 && err != 1") and the download "failed (http 200)", so the town never got its new art. The browser's own
+## fetch() handles compression correctly, so the bytes come from a literal JS fetch and are written straight into the engine's
+## virtual file system (the page's own `engine.rtenv.copyToFS`, the call the engine uses to preload its files) at the real path of
+## user://ep2_extras.pck; Godot then mounts that file like any other pack.
 static func start(from: Node) -> void:
 	if _state != "" or has(ARMORY) or not OS.has_feature("web") or from == null or not from.is_inside_tree():
 		return
 	_state = "loading"
-	_http = HTTPRequest.new()
-	_http.name = "Ep2ExtrasDownload"
-	_http.download_file = LOCAL
-	_http.use_threads = false
-	_http.timeout = 300.0
-	# lambdas, not bare static-method callables: they bind the same in every 4.x
-	_http.request_completed.connect(func(r: int, c: int, h: PackedStringArray, b: PackedByteArray) -> void: Ep2Extras._on_done(r, c, h, b))
-	_http.ready.connect(func() -> void: Ep2Extras._request(), CONNECT_ONE_SHOT)
-	from.get_tree().root.add_child.call_deferred(_http)
+	var win: JavaScriptObject = JavaScriptBridge.get_interface("window")
+	win.set("__ep2x_state", "loading")
+	win.set("__ep2x_path", ProjectSettings.globalize_path(LOCAL))
+	win.set("__ep2x_tag", GameManager.BUILD_TAG)       # CI stamps it per build, so a new pack is never served stale
+	# Pure literal (security-sentinel INJ-003 form (a)): page base + pack name + the tag read from window, never interpolated.
+	JavaScriptBridge.eval("(function(){var base=window.location.href.substring(0,window.location.href.lastIndexOf('/')+1);fetch(base+'ep2_extras.pck?v='+encodeURIComponent(window.__ep2x_tag)).then(function(r){if(!r.ok){throw new Error('http '+r.status);}return r.arrayBuffer();}).then(function(b){engine.rtenv.copyToFS(window.__ep2x_path,b);window.__ep2x_state='ready';}).catch(function(e){window.__ep2x_state='failed: '+e;});})();", true)
+	_watch(from.get_tree())
 
 
-static func _request() -> void:
-	if _http == null or not _http.is_inside_tree():
-		_state = "failed"
+## Poll the JS side twice a second until the file is written (or it failed / 5 minutes passed), then mount it.
+static func _watch(tree: SceneTree) -> void:
+	var waited: float = 0.0
+	while waited < 300.0:
+		await tree.create_timer(0.5).timeout
+		waited += 0.5
+		var st: String = str(JavaScriptBridge.eval("window.__ep2x_state", true))
+		if st == "loading":
+			continue
+		if st == "ready" and ProjectSettings.load_resource_pack(LOCAL, false):
+			_state = "ready" if has(ARMORY) else "failed"
+		else:
+			_state = "failed"
+		print("[EP2] extras ", _state, " (", st, ")")
 		return
-	# page base (literal JS, no interpolation: security-sentinel INJ-003 form (a)) + the pack + a cache-buster per build
-	var base: String = str(JavaScriptBridge.eval("window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1)", true))
-	var tag: String = GameManager.BUILD_TAG                 # CI stamps it per build, so a new pack is never served stale
-	var err: int = _http.request(base + PACK + "?v=" + tag.uri_encode())
-	if err != OK:
-		_state = "failed"
-
-
-static func _on_done(result: int, code: int, _headers: PackedStringArray, _body: PackedByteArray) -> void:
-	if result == HTTPRequest.RESULT_SUCCESS and code == 200 and ProjectSettings.load_resource_pack(LOCAL, false):
-		_state = "ready" if has(ARMORY) else "failed"
-	else:
-		_state = "failed"
-	if _http != null:
-		_http.queue_free()
-		_http = null
-	print("[EP2] extras ", _state, " (http ", code, ")")
+	_state = "failed"
+	print("[EP2] extras failed (timeout)")
