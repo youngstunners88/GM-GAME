@@ -33,8 +33,17 @@ let gameUrl = opt('--url');
 if (!gameUrl) {
   const page0 = await fetch(PAGE).then((r) => r.text());
   const m = page0.match(/https:\/\/html-classic\.itch\.zone\/html\/\d+-\d+\/index\.html\?v=\d+/);
-  if (!m) { console.log('FAIL: no game iframe on the public page'); process.exit(1); }
-  gameUrl = m[0].replace(/&amp;/g, '&');
+  if (m) {
+    gameUrl = m[0].replace(/&amp;/g, '&');
+  } else {
+    // lazy embed (itch shows it while a new upload is processed): the page carries a "load_url" that answers
+    // {"status":"extracting"} until the build is ready, then {"url": <the game index.html>}
+    const lu = page0.match(/"load_url":"([^"]+)"/);
+    if (!lu) { console.log('FAIL: no game iframe or load_url on the public page'); process.exit(1); }
+    const j = await fetch(lu[1].replace(/\\\//g, '/')).then((r) => r.json()).catch(() => ({}));
+    if (!j.url) { console.log(`WAIT: itch is still processing the upload (${JSON.stringify(j)})`); process.exit(2); }
+    gameUrl = j.url;
+  }
 }
 gameUrl += (gameUrl.includes('?') ? '&' : '?') + 'ep2=1';
 
