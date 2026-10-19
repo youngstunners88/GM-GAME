@@ -1,3 +1,5 @@
+> Superseded for Logan's Lake by `design/ep2/lake/LOGANS_LAKE_LOCK.md` (founder, 2026-10-18) and `design/ep2/lake/IMPLEMENTATION.md`. The historical fishing, vesting timers and percentages below MUST NOT be implemented for Logan.
+
 # Still Water - the quiet lake (still_water)            status: outline (proposal for founder review, 2026-10-16)
 Protocol pillar taught here: Pillar 1 GOLD Mining (100-day linear vesting, early-claim forfeiture, 20% Diamond burn)
 and Pillar 2 Fort Knox (short/long pool). Canon: design/goldmine_protocol_design.md Pillars 1-2 (Phase 1 only).

@@ -190,16 +190,28 @@ func _start_session() -> void:
 ## ambiguous. Story content is unchanged; only the distance to it shrinks.
 func _plan() -> Array:
 	var warp: bool = false
+	var lake_probe: bool = false
 	if OS.has_feature("web"):
 		var q = JavaScriptBridge.eval(
 			"new URLSearchParams(window.location.search).get('ep2chamber') || ''", true)
 		warp = str(q) == "1"
+		lake_probe = str(q) == "lake"
+		warp = warp or lake_probe
 	if not warp:
 		return TRACK_PLAN
 	var short_plan: Array = TRACK_PLAN.duplicate(true)
 	short_plan[0]["chamber_z"] = 8.0
 	short_plan[0]["obstacles"] = []
 	short_plan[0]["zip_segments"] = []
+	# Same existing test-warp convention, only reached after the access gate.
+	# No weapons/currency/access are granted here. ep2leg retains its own contract.
+	if lake_probe:
+		for segment in short_plan:
+			segment["chamber"] = "logans_lake"
+			segment["chamber_z"] = 8.0
+			segment["obstacles"] = []
+			segment["zip_segments"] = []
+			segment["archers"] = []
 	return short_plan
 
 func _restart() -> void:

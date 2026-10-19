@@ -1,5 +1,7 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**LOGAN’S LAKE — implementation and validation in progress (2026-10-19).** Added the town-to-lake chamber, supplied Logan with four authored gestures, a staging dock, one cargo check and the river overlook. Installed/audited the pinned EL4CTEO toolkit (22 skills for each agent) and six project adapters. Mesh/skin QA passes; full engine/export/release checks pending. River sniper combat and Logan voice recording remain outside this lake slice. Contract: `design/ep2/lake/IMPLEMENTATION.md`. No live deployment claimed yet.
+
 **Play it:** https://youngstunners88.itch.io/smokerealm
 **Branch:** master (Rich's Armory pack-shrink release `cb000a45`; CI run `39112015843`, butler "Pushed to" + public BUILD `2026-10-18-cf58115` boot-verified)
 

@@ -40,6 +40,8 @@ package that doesn't exist. If a manifest path 404s, fix the manifest in the
 same commit — a manifest that lies is worse than none.
 
 ## Routing
+Logan's Lake and the supplied Logan model: `.claude/skills/ep2-logans-lake/SKILL.md` → `design/ep2/lake/LOGANS_LAKE_LOCK.md`. The older lake fishing/vesting spec is superseded. Pinned Blender toolkit: `gm-blender-godot`; all-file audit: `docs/research/blender-skills/README.md`.
+
 | Task | Go to | Read | Skills |
 |------|-------|------|--------|
 | **Jev 1.14 / TypeSafe / efficient decisions / image acceptance** | `scripts/jev.mjs` | `.claude/skills/jev-1-14-routing/SKILL.md` | `jev-1-14-routing` |

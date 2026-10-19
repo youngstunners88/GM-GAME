@@ -596,12 +596,13 @@ func _on_beat_entered(b: int) -> void:
 			_start_show([{"do": "wait", "t": 1.8}, {"do": "call", "fn": release_look}], false)
 		Beat.GEARED:
 			_geared = true
+			prebuild_requested.emit("logans_lake")
 			if _hud:
-				_hud.objective = "Geared for the river. TO BE CONTINUED."
+				_hud.objective = "Geared for the river. Follow the trail to Logan's Lake."
 				_hud.toast("ARMED FOR THE RIVER SHIPMENT", 3.4)
 			_start_show([{"do": "wait", "t": 2.6}], false)
 		Beat.DONE:
-			_resolve({"end_session": true, "to_be_continued": true, "got_map": _got_map, "draw_losses": _losses,
+			_resolve({"next_chamber": "logans_lake", "got_map": _got_map, "draw_losses": _losses,
 				"draw_fouls": _fouls, "armory_visited": _armory_visited, "sniper": armory.sniper_owned,
 				"sniper_rounds": armory.sniper_rounds, "river_gear": armory.river_gear})
 
@@ -677,9 +678,15 @@ func _tick(delta: float) -> void:
 			if not _show_active and _end_t < 0.0:
 				_end_t = 2.4
 			elif _end_t >= 0.0 and not _show_active:
-				_end_t -= delta
+				_end_t = maxf(0.0, _end_t - delta)
+				if _end_t == 0.0 and _handoff_ok():
+					_end_t = -1.0
 				if _end_t < 0.0:
 					_advance_to(Beat.DONE)
+
+
+func _wants_handoff() -> bool:
+	return _beat == Beat.GEARED and not _show_active
 
 
 ## True when Lil Blunt is inside `piece` deeper than `depth` (local z, negative = inside).

@@ -356,6 +356,9 @@ jobs:
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_gold_town_test.tscn 2>&1 | tee gold-town-tests.log
           grep -q 'EP2_GOLD_TOWN: ALL PASS' gold-town-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' gold-town-tests.log; then exit 1; fi
+          timeout 180 "$GODOT_BIN" --headless res://tests/ep2_logans_lake_test.tscn > logans-lake-tests.log 2>&1
+          grep -q 'LOGANS_LAKE: ALL PASS' logans-lake-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' logans-lake-tests.log; then exit 1; fi
           # Bull's pacing, the cover fire and the donkey cart on the road (founder 2026-10-14).
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_companion_cart_test.tscn 2>&1 | tee companion-cart-tests.log
           grep -q 'EP2_COMPANION_CART: ALL PASS' companion-cart-tests.log

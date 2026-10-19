@@ -236,8 +236,8 @@ func _ready() -> void:
 	_check("-> GEARED: the rifle and the river gear in hand, the room hands him to the river shipment",
 		c.get_beat_name() == "GEARED" and c.has_sniper() and c.has_river_gear())
 	_until(c, 20.0, func(): return res.size() == 1)
-	_check("the room ends the playable slice (TO BE CONTINUED), the map in hand, mints nothing", res.size() == 1 and bool(res[0].get("end_session", false))
-		and bool(res[0].get("to_be_continued", false)) and bool(res[0].get("got_map", false)) and int(res[0].get("gold_awarded", -1)) == 0, str(res))
+	_check("the geared town continues to Logan's Lake, the map in hand, mints nothing", res.size() == 1 and str(res[0].get("next_chamber", "")) == "logans_lake"
+		and not bool(res[0].get("end_session", false)) and bool(res[0].get("got_map", false)) and int(res[0].get("gold_awarded", -1)) == 0, str(res))
 	_check("the ending carries the Armory: he visited it, and the long rifle + river gear come with him",
 		res.size() == 1 and bool(res[0].get("armory_visited", false)) and bool(res[0].get("sniper", false))
 		and int(res[0].get("sniper_rounds", 0)) == GoldTownChamber.SNIPER_BOX and bool(res[0].get("river_gear", false)), str(res))

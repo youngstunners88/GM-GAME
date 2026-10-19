@@ -26,9 +26,9 @@ BLENDER_URL = "https://download.blender.org/release/Blender4.5/blender-4.5.3-lin
 
 
 def _key() -> str:
-    k = os.environ.get("RUNPOD_API", "")
+    k = os.environ.get("RUNPOD") or os.environ.get("RUNPOD_API") or os.environ.get("RUNPOD_API_KEY", "")
     if not k:
-        sys.exit("RUNPOD_API is not set in the environment")
+        sys.exit("Runpod key is not injected into this process (checked RUNPOD, RUNPOD_API, RUNPOD_API_KEY)")
     return k
 
 
