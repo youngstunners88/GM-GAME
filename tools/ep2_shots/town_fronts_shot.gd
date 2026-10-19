@@ -32,6 +32,10 @@ func _ready() -> void:
 	ground.position = Vector3(0, 0, 1450)
 	world.add_child(ground)
 	Ep2GoldTown.build(world, true)
+	var tp := Ep2TownPeople.new()
+	tp.build(world, 4101)
+	for i in 1500:                                   # 25 s of town life, so they are spread along the street
+		tp.step(1.0 / 60.0, Vector3(80, 0, 1300))
 	var cam := Camera3D.new()
 	cam.fov = 70.0
 	cam.far = 900.0
@@ -46,6 +50,8 @@ func _ready() -> void:
 		["6_up_the_street", Vector3(0.0, 1.65, 1403.0), Vector3(0.0, 3.5, 1470.0)],
 		["7_armory_lane", Vector3(-9.0, 1.65, 1452.0), Vector3(-20.0, 3.0, 1468.0)],
 		["8_church", Vector3(0.0, 1.65, 1452.0), Vector3(0.0, 3.0, 1478.0)],
+		["9_people_close", Vector3(0.0, 1.65, 1405.0), Vector3(0.0, 1.5, 1426.0)],
+		["10_people_mid", Vector3(-1.0, 1.65, 1418.0), Vector3(1.5, 1.4, 1440.0)],
 	]
 	for s in shots:
 		cam.global_position = s[1]

@@ -112,6 +112,7 @@ var _flash_t: float = 0.0
 var _flash: OmniLight3D = null
 var _rich: Ep2TownFolk = null
 var _utah: Ep2TownFolk = null
+var _people: Ep2TownPeople = null                # the townsmen and townswomen on Main Street (streamed extras)
 var _rich_brain: Ep2ArmoryBrain = null          # the two-storey Armory only
 var _utah_brain: Ep2ArmoryBrain = null
 var _shop: Ep2ArmoryShop = null
@@ -220,6 +221,8 @@ func _step_people() -> void:
 	_flash.light_energy = 0.0
 	_visuals.add_child(_flash)
 	_build_armory_folk()
+	_people = Ep2TownPeople.new()
+	_people.build(_visuals)
 	if _bull == null:
 		_bull = _build_bull(Ep2GoldTown.door_world("Bldg_B", 0.8), PI * 0.5)
 		_bull.visible = false
@@ -738,6 +741,8 @@ func _tick_people(delta: float) -> void:
 	if _beat == Beat.SQUARE_UP and not _opp.is_walking():
 		_opp.face_point(DUEL_MARK)
 	# the Armory's two turn to whoever comes in the door of the shop
+	if _people != null:
+		_people.step(delta, _player_pos)
 	if _rich_brain != null:
 		_rich_brain.step(delta, _player_pos)
 		_utah_brain.step(delta, _player_pos)
@@ -909,6 +914,7 @@ func get_sheriff() -> Ep2TownFolk: return _sheriff
 func get_minister() -> Ep2TownFolk: return _minister
 func get_opponent() -> Ep2TownFolk: return _opp
 func get_bartender() -> Ep2TownFolk: return _bartender
+func get_people() -> Ep2TownPeople: return _people
 func get_rich() -> Ep2TownFolk: return _rich
 func get_utah() -> Ep2TownFolk: return _utah
 func get_shop() -> Ep2ArmoryShop: return _shop

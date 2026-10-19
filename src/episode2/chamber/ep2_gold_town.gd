@@ -52,6 +52,7 @@ const FOOTPRINT: Dictionary = {
 ## "Bldg_Armory" LAYOUT row draws Bldg_Armory2 + its fit-out instead of the kit's one-storey shop, at the SAME transform - so wherever
 ## the row is moved, the new building follows. Its GLB also carries the NPC waypoints and walk blockers, read here once per build.
 static var armory_v2: bool = false
+static var kit_v2: bool = false                # the streamed town kit with real openings is the one drawn
 static var armory_spots: Dictionary = {}       # Spot_<name> -> local Vector3 (x along the front, -z inside, y = floor)
 static var armory_blocks: Array = []           # [local centre Vector2(x, z), half extents Vector2] of the shop-floor blockers
 static var armory_lights: Array = []           # local Vector3 lamp positions
@@ -102,6 +103,7 @@ static func build(parent: Node3D, interiors: bool) -> Dictionary:
 		return {"walls": walls, "props": props}
 	# the kit with real openings is streamed (Ep2Extras); until it is mounted the shipped kit is drawn
 	var kit_path: String = Ep2Extras.TOWN_KIT if Ep2Extras.has(Ep2Extras.TOWN_KIT) else KIT
+	kit_v2 = kit_path == Ep2Extras.TOWN_KIT
 	var kit: Node3D = (load(kit_path) as PackedScene).instantiate() as Node3D
 	_apply_mats(kit)
 	var a2: Node3D = _load_armory2()
