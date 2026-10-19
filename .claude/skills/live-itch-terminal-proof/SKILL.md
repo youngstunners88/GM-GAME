@@ -25,9 +25,9 @@ The probe loads the game iframe that the public itch page embeds (not the page i
 If (3) fails, the answer is "pushed, not live" and the probe's own output is the evidence. Never call it fixed on a branch alone.
 
 ## Rules that stop the repeat failure
-- A browser agent's diagnosis (a root cause, a "fix verified") is a HYPOTHESIS until its fix is in master AND the probe on the live
-  game shows the expected line. The 2026-10-20 web-session claim (gzip Content-Length) did not match the live server: the file was
-  served byte-identical with and without compression. Check claims against the server before accepting them.
+- A browser agent's diagnosis is a HYPOTHESIS until reproduced. Check it like a browser would: on 2026-10-20 a `curl` without
+  `Accept-Encoding` "disproved" the (correct) gzip cause; with `-H "Accept-Encoding: gzip"` the CDN gzips and sends the compressed
+  Content-Length. See skill `ep2-streamed-extras-web`.
 - Reproduce the EXACT failing line in the same environment before writing a fix (the live probe log, not a local server). Local
   "extras ready" with a local server proved nothing about itch.
 - `butler` needs `~/.local/bin/butler` (15.28.0, sha256 746de1eb...) and a login (`butler login`, run by the founder in a terminal).

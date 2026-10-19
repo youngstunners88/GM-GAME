@@ -28,10 +28,15 @@ const { chromium } = await loadPlaywright();
 const chrome = join(homedir(), '.cache', 'ms-playwright');
 const exe = existsSync(chrome) ? readdirSync(chrome).filter((d) => d.startsWith('chromium-')).sort().map((d) => join(chrome, d, 'chrome-linux64', 'chrome')).find(existsSync) : undefined;
 
-const page0 = await fetch(PAGE).then((r) => r.text());
-const m = page0.match(/https:\/\/html-classic\.itch\.zone\/html\/\d+-\d+\/index\.html\?v=\d+/);
-if (!m) { console.log('FAIL: no game iframe on the public page'); process.exit(1); }
-const gameUrl = m[0].replace(/&amp;/g, '&') + '&ep2=1';
+// --url <game index.html> probes a game directly (a local export behind tools/ep2_extras/gzip_server.py); otherwise the public page's iframe
+let gameUrl = opt('--url');
+if (!gameUrl) {
+  const page0 = await fetch(PAGE).then((r) => r.text());
+  const m = page0.match(/https:\/\/html-classic\.itch\.zone\/html\/\d+-\d+\/index\.html\?v=\d+/);
+  if (!m) { console.log('FAIL: no game iframe on the public page'); process.exit(1); }
+  gameUrl = m[0].replace(/&amp;/g, '&');
+}
+gameUrl += (gameUrl.includes('?') ? '&' : '?') + 'ep2=1';
 
 const browser = await chromium.launch({ executablePath: exe, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });

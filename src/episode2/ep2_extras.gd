@@ -44,7 +44,8 @@ static func state() -> String:
 ## Content-Length while the browser hands Godot the decompressed bytes. Godot 4.3's web HTTPClient treats that mismatch as an
 ## error ("err != 0 && err != 1") and the download "failed (http 200)", so the town never got its new art. The browser's own
 ## fetch() handles compression correctly, so the bytes come from a literal JS fetch and are written straight into the engine's
-## virtual file system (the page's own `engine.rtenv.copyToFS`, the call the engine uses to preload its files) at the real path of
+## virtual file system (Godot 4.3's public `Engine.copyToFS(path, buffer)` on the page's `engine` object - GodotFS.copy_to_fs makes the
+## folder and writes the file) at the real path of
 ## user://ep2_extras.pck; Godot then mounts that file like any other pack.
 static func start(from: Node) -> void:
 	if _state != "" or has(ARMORY) or not OS.has_feature("web") or from == null or not from.is_inside_tree():
@@ -55,7 +56,7 @@ static func start(from: Node) -> void:
 	win.set("__ep2x_path", ProjectSettings.globalize_path(LOCAL))
 	win.set("__ep2x_tag", GameManager.BUILD_TAG)       # CI stamps it per build, so a new pack is never served stale
 	# Pure literal (security-sentinel INJ-003 form (a)): page base + pack name + the tag read from window, never interpolated.
-	JavaScriptBridge.eval("(function(){var base=window.location.href.substring(0,window.location.href.lastIndexOf('/')+1);fetch(base+'ep2_extras.pck?v='+encodeURIComponent(window.__ep2x_tag)).then(function(r){if(!r.ok){throw new Error('http '+r.status);}return r.arrayBuffer();}).then(function(b){engine.rtenv.copyToFS(window.__ep2x_path,b);window.__ep2x_state='ready';}).catch(function(e){window.__ep2x_state='failed: '+e;});})();", true)
+	JavaScriptBridge.eval("(function(){var base=window.location.href.substring(0,window.location.href.lastIndexOf('/')+1);fetch(base+'ep2_extras.pck?v='+encodeURIComponent(window.__ep2x_tag)).then(function(r){if(!r.ok){throw new Error('http '+r.status);}return r.arrayBuffer();}).then(function(b){engine.copyToFS(window.__ep2x_path,b);window.__ep2x_state='ready';}).catch(function(e){window.__ep2x_state='failed: '+e;});})();", true)
 	_watch(from.get_tree())
 
 
