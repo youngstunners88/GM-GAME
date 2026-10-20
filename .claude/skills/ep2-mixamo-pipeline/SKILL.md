@@ -38,5 +38,19 @@ Existing pipeline: Hunyuan3D 2.1 on a Runpod pod (`tools/ep2_runpod/hunyuan/`: i
    `~/.claude/skills/blender-character-rigging/scripts/bind_mesh.py`, proxy weights) -> clips (Mixamo or CMU) -> `export_folk.py` -> streamed extras.
 4. Check against the street/jail in the real renderer (`tools/ep2_shots/*`); stylised on-box people are the fallback that ships.
 
+## Learned running it (2026-10-20, pod `jsr78cv36l5zs9` A40, ~1 h, ~$0.66; pod is STOPPED, volume + models kept)
+Order that works: `acc_ref.py` (SDXL reference) -> `acc_gen.py` (Hunyuan shape, ~2.5 min) -> `acc_paint.py` (decimate 60k + PBR paint, ~7 min) ->
+`fix_texture_holes.py` -> `rig_scan_character.py` (fit the townfolk skeleton, weights, the 5 authored clips, JPEG export) -> real-renderer check.
+- Pod setup: `jail_install.sh` pattern (Hunyuan3D-2.1 + weights, TORCH_CUDA_ARCH_LIST=8.6 for A40). The paint step imports `bpy` only to write a GLB: stub it
+  (`patch_bpy.py` pattern: optional import + trimesh export); the OBJ + albedo/metallic/roughness JPGs it writes are what we keep. `xatlas` must be pip-installed.
+- SDXL cannot be trusted with a pose from words: "A-pose", "hands visible", "arms away from the body" gave hands behind the back / on hips / in pockets in most
+  seeds. A mesh with the arms fused behind the body tears when Greet/Point lift the arm (the coat tails follow). FIX NEXT: control the pose with an image - render the
+  on-box figure with its arms posed ~30 deg out (white background), then SDXL img2img at strength ~0.55 (or ControlNet), so the reference already has the right pose.
+- Frame the reference WIDE (empty space around, boots visible) or the mesh is cropped at the knees. Sepia "1880s photograph" prompts give monochrome textures:
+  ask for natural colour, or run `acc_color.py` (img2img, strength 0.5) which keeps the pose and restores colour.
+- Rig tool traps: the OBJ importer leaves a Y-up -> Z-up rotation on the object (apply it before measuring), decimate BEFORE weighting, set smooth shading, export
+  textures as JPEG (AUTO made a 2 MB PNG).
+- Result so far: Walk deforms well; arm clips need an arms-away mesh. The shipped accomplice remains the on-box figure until an A-pose mesh passes the stress strip.
+
 ## Not possible without the founder
 Mixamo downloads and Mixamo's own auto-rigger need his Adobe sign-in (browser upload of a mesh is manual).

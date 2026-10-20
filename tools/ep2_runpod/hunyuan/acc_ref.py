@@ -4,11 +4,12 @@ import sys, torch
 from diffusers import StableDiffusionXLPipeline
 prompt, prefix = sys.argv[1], sys.argv[2]
 n = int(sys.argv[3]) if len(sys.argv) > 3 else 6
+SEED0 = int(sys.argv[4]) if len(sys.argv) > 4 else 100
 pipe = StableDiffusionXLPipeline.from_pretrained("stabilityai/stable-diffusion-xl-base-1.0", torch_dtype=torch.float16, variant="fp16", use_safetensors=True).to("cuda")
-neg = "hat, cap, sunglasses, cropped, close-up, cut off feet, extra limbs, deformed hands, blurry, text, watermark, multiple people, shadow on background, props, weapon"
+neg = "hands behind back, hands in pockets, hand on hip, arms crossed, sepia, vintage, monochrome, feet cut off, legs cut off, cropped at the knees, cropped at the ankles, hat, cap, sunglasses, cropped, close-up, cut off feet, extra limbs, deformed hands, blurry, text, watermark, multiple people, shadow on background, props, weapon"
 for seed in range(n):
-    g = torch.Generator("cuda").manual_seed(100 + seed)
+    g = torch.Generator("cuda").manual_seed(SEED0 + seed)
     img = pipe(prompt=prompt, negative_prompt=neg, num_inference_steps=32, guidance_scale=7.0, width=832, height=1216, generator=g).images[0]
-    img.save(f"/workspace/{prefix}_{100 + seed}.png")
+    img.save(f"/workspace/{prefix}_{SEED0 + seed}.png")
     print("saved", seed, flush=True)
 print("REF_DONE")
