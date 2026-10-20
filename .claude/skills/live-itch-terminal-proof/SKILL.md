@@ -10,7 +10,7 @@ say "live" from a page loading or a green CI run.
 
 ## The one command
 ```
-node scripts/live-itch-probe.mjs --expect <tag-prefix> --extras --shot /tmp/live.png
+node scripts/live-itch-probe.mjs --expect <tag-prefix> --extras --logan --shot /tmp/live.png
 ```
 `--expect` = the first 7 characters of the merged master commit (the game prints a 7-character tag, e.g. `2026-10-19-6fc7e4d`).
 `--extras` = also require the streamed-pack line `[EP2] extras ready`. Exit 0 only when every asked check passes.
@@ -34,3 +34,5 @@ If (3) fails, the answer is "pushed, not live" and the probe's own output is the
   `butler status youngstunners88/smokerealm:html5` shows processing/ready.
 - I cannot run `scripts/ship-to-master.sh` myself (permission classifier). Say so and give the founder the exact command.
 - Do not re-ship an unchanged master. Check master first.
+
+For Logan releases, `--logan` also requires the delivered skin (65 bones) and four clips to load. It uses `ep2lakeprobe=1`, a read-only diagnostic behind the access prompt; it does not unlock gameplay or claim a public playthrough.

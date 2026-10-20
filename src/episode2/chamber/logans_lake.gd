@@ -226,6 +226,7 @@ func _people() -> void:
 				ap.get_animation(name).loop_mode = Animation.LOOP_LINEAR
 
 func _on_setup() -> void:
+	print("[EP2] Logan lake started")
 	_player_pos = SPAWN
 	_look_yaw = 0.1
 	_look_pitch = 0.02
@@ -294,11 +295,14 @@ func _on_beat_entered(b: int) -> void:
 			_say("LOGAN: Cargo checked. The depth holds. Follow the outflow to the high ground—the day-88 shipment leaves from here.", 8.5)
 			_gesture("Point", 3.0)
 		Beat.OVERLOOK:
-			_hud.objective = "Day-88 river · The lake's depth feeds this exposed shipment route."
+			_hud.objective = "Day-88 river · Follow the outflow. This lake visit ends at the overlook."
 			_say("The still-water narrows into the river. Rich and Utah's gear is ready for the run downstream.", 8.0)
 
 func start_rig(_payment: String = "") -> bool:
 	if not has_player_control() or armory_open(): return false
+	if _beat == Beat.OVERLOOK and _staged and _talk_t <= 0 and _player_pos.z > 59:
+		_resolve({"end_session": true, "lake_complete": true, "river_ready": true, "companion": ""})
+		return true
 	if _logan == null:
 		if Ep2Extras.state() == "failed": Ep2Extras.retry(self)
 		return false
@@ -345,6 +349,8 @@ func _tick(delta: float) -> void:
 		prompt = "Meet Logan [E]"
 	elif _beat == Beat.STAGE and _player_pos.distance_to(STAGING_MARK) < 2.8:
 		prompt = "Check staged cargo [E]"
+	elif _beat == Beat.OVERLOOK and _talk_t <= 0 and _player_pos.z > 59:
+		prompt = "Finish lake visit [E]"
 	_hud.set_search_prompt(prompt)
 	if _staged:
 		_cargo.position.z = minf(72, _cargo.position.z + delta * 0.35)
@@ -370,3 +376,22 @@ func _on_player_shot() -> void:
 func staging_complete() -> bool: return _staged
 func staging_count() -> int: return _stage_calls
 func river_ready() -> bool: return _beat == Beat.OVERLOOK and _staged
+
+## Read-only release diagnostic: instantiate the shipped skin and verify its clips.
+## No scene tree entry, unlock, rewards or progression changes.
+static func probe_assets() -> bool:
+	if not ResourceLoader.exists(LOGAN) or not ResourceLoader.exists(DOCK): return false
+	var packed := load(LOGAN) as PackedScene
+	if packed == null: return false
+	var model := packed.instantiate()
+	var skeletons := model.find_children("*", "Skeleton3D", true, false)
+	var players := model.find_children("*", "AnimationPlayer", true, false)
+	var bones: int = skeletons[0].get_bone_count() if skeletons.size() == 1 else 0
+	var clips: String = ""
+	if not players.is_empty():
+		clips = str(players[0].get_animation_list()).to_lower()
+	var ok: bool = bones == 65
+	for clip in ["idle", "greet", "point", "approve"]: ok = ok and clips.contains(clip)
+	model.free()
+	if ok: print("[EP2] Logan lake assets ready (bones=65 clips=Idle,Greet,Point,Approve)")
+	return ok

@@ -1,5 +1,8 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**LOGAN’S LAKE RELEASE CHECK — 2026-10-20: IN CODE / WIRED, not live yet.** Merged the jailhouse branch and its exact two-fingerprint checksum exception; both town jail beats and the lake handoff remain. The overlook now offers an explicit finish after dialogue and ends the slice, never advances to a vault. The session-level lake gate verifies town DONE → lake → all five beats → one session completion. The live probe gains `--logan` for the delivered 65-bone skin/four clips behind the unchanged access lock. Release gates and public proof pending. No RunPod or paid calls.
+
+
 **LOGAN’S LAKE — built and locally validated; publication pending (2026-10-19).** The town now leads to `src/episode2/chamber/logans_lake.tscn`: supplied Logan with four gestures, a staging dock, one cargo check, shore trail and river overlook. Installed/audited EL4CTEO’s 22 Blender skills for both agents plus six game adapters. Mesh/skin QA, 20 lake checks, full local CI gate block and security sentinel pass (the runner retains three known machine-specific pause geometry exceptions). Full-quality Logan uses the existing streamed pack; itch-style gzip loading and player retry pass. Captures and limitations: `docs/episode2-quality/logans-lake-2026-10-19/VERIFICATION.md`. River sniper combat and Logan voice recording remain outside this slice. No live deployment claimed; the public Chromium probe currently fails certificate trust. RUNPOD remains unavailable in the running shell, so no GPU credits were spent.
 
 **Play it:** https://youngstunners88.itch.io/smokerealm

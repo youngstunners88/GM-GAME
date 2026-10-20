@@ -28,3 +28,9 @@ Uses ADR-0005’s existing streamed extras pack for Logan, preserving his exact 
 and texture bytes. The lake delays interaction while the pack loads and offers
 a retry on failure. The original town fallbacks remain unchanged. Browser proof
 must cover mounted textures and the slow/failure path, not just native art.
+
+2026-10-20 completion: after the overlook caption, E/the existing touch action
+finishes the lake visit via end_session. It never advances to the next runner or
+vault. The host names the completed lake and the future day-88 run. The release
+probe's --logan option checks the delivered 65-bone skin and all four clips
+behind the unchanged access prompt; it does not claim a live playthrough.

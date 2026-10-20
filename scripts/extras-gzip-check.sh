@@ -9,4 +9,4 @@ PORT=${PORT:-8941}
 python3 tools/ep2_extras/gzip_server.py web_verify "$PORT" & SRV=$!
 trap 'kill $SRV 2>/dev/null || true' EXIT
 sleep 1
-node scripts/live-itch-probe.mjs --url "http://127.0.0.1:$PORT/game/index.html" --extras
+node scripts/live-itch-probe.mjs --url "http://127.0.0.1:$PORT/game/index.html" --extras --logan

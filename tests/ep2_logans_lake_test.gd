@@ -16,9 +16,23 @@ func walk(c: LogansLakeChamber, target: Vector3) -> bool:
 		c.step(1.0 / 60.0)
 	return false
 func _ready() -> void:
-	var c: LogansLakeChamber = load("res://src/episode2/chamber/logans_lake.tscn").instantiate()
-	add_child(c)
-	c.setup()
+	var session: Ep2SessionRoot = load("res://src/episode2/session/ep2_session_root.tscn").instantiate()
+	add_child(session)
+	session.configure([{"chamber": "gold_town"}, {"chamber": "miner_shaft"}], false)
+	session._enter_chamber()
+	var town: Node = session.get_active()
+	check("town contains both jail investigation beats", town.Beat.has("JAIL_TIP") and town.Beat.has("JAIL"))
+	town._advance_to(town.Beat.DONE)
+	var c: LogansLakeChamber = session.get_active() as LogansLakeChamber
+	check("real town DONE dispatch loads Logan lake in same session", c != null and session.get_mode() == Ep2SessionRoot.Mode.CHAMBER)
+	if c == null:
+		get_tree().quit(1)
+		return
+	var completions: Array = []
+	session.session_complete.connect(func() -> void: completions.append(true))
+	var results: Array = []
+	c.chamber_cleared.connect(func(result: Dictionary) -> void: results.append(result))
+	check("live asset probe verifies supplied 65-bone skin and four clips", LogansLakeChamber.probe_assets())
 	c.set_physics_process(false)
 	var initial: Dictionary = c.armory.snapshot().duplicate(true)
 	check("registered on the Episode 2 surface chain", Ep2SessionRoot.CHAMBER_SCENES.has("logans_lake"))
@@ -51,5 +65,12 @@ func _ready() -> void:
 	check("overlook stands above the water", c.get_player_position().y > 5.5)
 	check("water remains outside walkable bounds", c._collide(Vector3(25, 0, 20)).x <= -4)
 	check("arrival/overview cannot walk off the world", c._collide(Vector3(-200, 0, 500)).z <= 64)
+	check("cannot finish before overlook closing dialogue", not c.start_rig())
+	advance(c, 8.1)
+	c._hud.search_requested.emit()
+	check("finish touch action completes session exactly once", completions.size() == 1 and results.size() == 1)
+	check("lake result ends slice without next chamber or vault", results.size() == 1 and results[0].get("end_session", false) and results[0].get("lake_complete", false) and not results[0].has("next_chamber"))
+	check("session stops without entering next runner or vault", session.get_mode() == Ep2SessionRoot.Mode.IDLE and session.get_active() == null)
+	check("finish input cannot duplicate completion", not c.start_rig() and completions.size() == 1)
 	print("LOGANS_LAKE: %s" % ("ALL PASS" if failures == 0 else "%d FAIL" % failures))
 	get_tree().quit(1 if failures else 0)

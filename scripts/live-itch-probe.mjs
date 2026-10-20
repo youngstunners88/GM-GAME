@@ -12,6 +12,7 @@ const args = process.argv.slice(2);
 const opt = (k) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : ''; };
 const expect = opt('--expect');
 const wantExtras = args.includes('--extras');
+const wantLogan = args.includes('--logan');
 const shot = opt('--shot');
 const PAGE = process.env.ITCH_PAGE || 'https://youngstunners88.itch.io/smokerealm';
 
@@ -36,7 +37,7 @@ if (!gameUrl) {
   if (!m) { console.log('FAIL: no game iframe on the public page'); process.exit(1); }
   gameUrl = m[0].replace(/&amp;/g, '&');
 }
-gameUrl += (gameUrl.includes('?') ? '&' : '?') + 'ep2=1';
+gameUrl += (gameUrl.includes('?') ? '&' : '?') + 'ep2=1' + (wantLogan ? '&ep2lakeprobe=1' : '');
 
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_BIN || exe, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
@@ -46,17 +47,19 @@ page.on('console', (msg) => { const t = msg.text(); if (/\[BUILD\]|\[EP2\]/.test
 page.on('response', (r) => { if (r.url().includes('ep2_extras.pck')) extrasStatus.push(r.status()); });
 await page.goto(gameUrl, { waitUntil: 'domcontentloaded' });
 const end = Date.now() + 180000;
-while (Date.now() < end && !lines.some((l) => /\[EP2\] extras (ready|failed)/.test(l))) await page.waitForTimeout(500);
+while (Date.now() < end && (!lines.some((l) => /\[EP2\] extras (ready|failed)/.test(l)) || (wantLogan && !lines.some(l => /Logan lake assets (ready|failed)/.test(l))))) await page.waitForTimeout(500);
 if (shot) await page.screenshot({ path: shot });
 await browser.close();
 
 const build = (lines.find((l) => l.startsWith('[BUILD]')) || '').replace(/^\[BUILD\].*build\s*/, '').trim();
 const extras = (lines.find((l) => /\[EP2\] extras/.test(l)) || '').trim();
+const logan = lines.find(l => l.includes('Logan lake assets')) || '';
 const checks = [];
+if (wantLogan) checks.push(['Logan skin and four clips load from deployed extras', logan.includes('Logan lake assets ready'), logan || 'no Logan proof']);
 checks.push(['game page loaded and printed its build tag', build !== '', build]);
 if (expect) checks.push([`live build tag contains ${expect}`, build.includes(expect), build]);
 if (wantExtras) checks.push(['extras log says ready', /extras ready/.test(extras), extras || 'no extras line']);
-console.log(JSON.stringify({ gameUrl, build, extras, extrasHttp: extrasStatus }, null, 1));
+console.log(JSON.stringify({ gameUrl, build, extras, logan, extrasHttp: extrasStatus }, null, 1));
 let ok = true;
 for (const [label, pass, detail] of checks) { console.log(`${pass ? 'PASS' : 'FAIL'}  ${label}  (${detail})`); ok = ok && pass; }
 process.exit(ok ? 0 : 1);

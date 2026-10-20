@@ -39,6 +39,7 @@ var _probe_chamber_t: float = 0.0
 ## player the solvability gate uses), so a browser capture shows clean play.
 var _bot: bool = false
 var _ended: bool = false
+var _lake_complete: bool = false
 var _hud: Label = null
 var _hint: Label = null
 var _banner: Label = null
@@ -62,6 +63,8 @@ var _gate_msg: Label = null
 
 func _ready() -> void:
 	_build_hud()
+	if OS.has_feature("web") and bool(JavaScriptBridge.eval("new URLSearchParams(window.location.search).get('ep2lakeprobe') === '1'", true)):
+		_probe_lake_assets()
 	Ep2Extras.start(self)          # web: fetch ep2_extras.pck (two-storey Armory, Tripo Rich & Utah) long before the town
 	if _is_unlocked():
 		_begin()
@@ -398,6 +401,7 @@ func _on_mode_changed(mode: int) -> void:
 		print("[EP2] leg start %d" % (_root.get_segment() + _leg_offset))
 
 func _on_chamber_committed(_index: int, result: Dictionary) -> void:
+	_lake_complete = bool(result.get("lake_complete", false))
 	if bool(result.get("story", false)) and int(result.get("gold_awarded", 0)) == 0 and int(result.get("gold_forfeited", 0)) == 0:
 		_banner.text = ""      # a story chamber moves nothing: no "CLAIMED 0 GOLD" banner over the next scene
 		return
@@ -407,6 +411,9 @@ func _on_chamber_committed(_index: int, result: Dictionary) -> void:
 
 func _on_session_complete() -> void:
 	_ended = true
+	if _lake_complete:
+		_banner.text = "LOGAN’S LAKE COMPLETE\nThe depth is staged. The day-88 river run lies ahead.\nSPACE / R  play again        ESC  menu"
+		return
 	_banner.text = "TO BE CONTINUED...\nInferno rides, Lil Blunt shoots: the bear hunt is next.\nSPACE / R  play it again        ESC  menu"
 
 func _on_session_failed() -> void:
@@ -431,3 +438,15 @@ func _update_title_card() -> void:
 	tw.tween_property(_title, "modulate:a", 1.0, 0.6)
 	tw.tween_interval(1.8)
 	tw.tween_property(_title, "modulate:a", 0.0, 1.2)
+
+## Opt-in asset proof works behind the normal access prompt without unlocking play.
+func _probe_lake_assets() -> void:
+	for attempt in 610:
+		await get_tree().create_timer(0.5).timeout
+		if Ep2Extras.state() == "ready":
+			if not LogansLakeChamber.probe_assets(): print("[EP2] Logan lake assets failed")
+			return
+		if Ep2Extras.state() == "failed":
+			print("[EP2] Logan lake assets failed (extras unavailable)")
+			return
+	print("[EP2] Logan lake assets failed (timeout)")
