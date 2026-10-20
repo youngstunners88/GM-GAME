@@ -33,3 +33,9 @@ ef2866e62207a8c3c6789a00d839fc5143bd7934:.gitleaksignore:generic-api-key:4
 # NFT contract doc: a made-up 32-hex EXAMPLE player_key (not a credential). Exact historical finding only;
 # the sample was replaced with a placeholder, and every source path remains scanned.
 cd8961adcdf787c5f7b8d52b5b8bc7eb19facd1a:docs/nft/NFT_CONTRACT.md:generic-api-key:36
+
+# 4) Codex's docs/research/blender-skills/installation.json (2026-10-19) is a manifest of file HASHES; gitleaks reads two of them as
+#    generic-api-key. They are content hashes, not credentials (the file lists installed skill files and their digests). These two
+#    fingerprints only; the path itself is not allowlisted.
+5b68e2aa227acc6218262c21a29012063709b35a:docs/research/blender-skills/installation.json:generic-api-key:37
+5b68e2aa227acc6218262c21a29012063709b35a:docs/research/blender-skills/installation.json:generic-api-key:51
