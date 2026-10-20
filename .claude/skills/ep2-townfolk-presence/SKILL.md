@@ -1,6 +1,6 @@
 ---
 name: ep2-townfolk-presence
-description: Verify the Episode 2 town people, Rich and Utah, the Gail house (if specified), the jail and Logan's Lake are spawned, wired into the player flow and present in the exported packs - with the headless gates that fail CI when one is missing. TRIGGER on "town people are absent", "Rich and Utah are puppets", "lake is missing/unreachable", "Gail house", before claiming any town cast or lake work is live.
+description: Verify the Episode 2 town people, Rich and Utah, the jailhouse and Logan's Lake are spawned, wired into the player flow and present in the exported packs - with the headless gates that fail CI when one is missing. TRIGGER on "town people are absent", "Rich and Utah are puppets", "lake is missing/unreachable", "Gail house", before claiming any town cast or lake work is live.
 user-invocable: true
 allowed-tools: Read, Grep, Glob, Bash
 ---
@@ -14,7 +14,7 @@ allowed-tools: Read, Grep, Glob, Bash
 | Rich & Utah (Blender-authored, rigged, mocap clips) | `Ep2Extras.RICH/UTAH`; old puppets `RICH_MODEL/UTAH_MODEL` in `gold_town.gd` are the FALLBACK | `GoldTown` (`armory_v2` and both extras present) | `extras/folk/rich_armory2.glb`, `utah_armory2.glb` | `tests/ep2_armory_two_story_test.tscn` |
 | Jail + accomplice | `Ep2Extras.JAIL/PRISONER` | `Ep2GoldTown`, Beat.JAIL | `extras/jail/*`, `extras/people/prisoner_accomplice.glb` | `ep2_gold_town_test` |
 | Logan's Lake | `src/episode2/chamber/logans_lake.gd/.tscn` | `Ep2SessionRoot.CHAMBER_SCENES["logans_lake"]`, reached from `gold_town` Beat.DONE `next_chamber` | `extras/lake/logan.glb` (+ textures) | `tests/ep2_logans_lake_test.tscn` |
-| Gail house | **no spec, no code, no asset on any branch (checked 2026-10-20)** | - | - | none: ask the founder (location, look, role) before building |
+| Jailhouse (the founder once wrote "Gail house" - it is the JAILHOUSE) | `Ep2GoldTown` `Bldg_Jail`, `Ep2Extras.JAIL` | `Ep2GoldTown`; `GoldTown` Beat.JAIL_TIP/JAIL | `extras/jail/jailhouse.glb`, `sign_JAIL.png` | `check-ep2-extras-pack.sh` + `ep2_gold_town_test` |
 
 ## Verify in this order
 1. `bash scripts/check-ep2-extras-pack.sh web/game` - every extras path is inside `ep2_extras.pck`; town + lake scenes inside `index.pck`; town->lake hand-off still wired. (CI step "Export game to Web".)

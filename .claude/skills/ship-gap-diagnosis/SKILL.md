@@ -39,6 +39,6 @@ New Episode 2 art lives in `src/episode2/extras/` -> **ep2_extras.pck**, NOT in 
 Episode 2 is behind an access code, then woods -> town (gold_town beats: Sheriff, saloon draw, jail, Armory tip, Armory, GEARED) -> `next_chamber: logans_lake`. The lake is only reached at the END of the town beats; `?ep2=1&ep2chamber=lake` (and `ep2lakeprobe=1`) warp straight to it for QA. "Not reachable" often means "the founder did not finish the town beats".
 
 ## 6. Only then: is it unbuilt?
-No hits in `git log --all -S` and no spec in `design/ lore/ docs/ PROMPT_*.md` = ask the founder one precise question (see Gail, 2026-10-20: zero references anywhere in any branch).
+No hits in `git log --all -S` and no spec in `design/ lore/ docs/ PROMPT_*.md` = ask the founder one precise question (beware voice-dictation misspellings: "Gail house" was the JAILHOUSE - search by sound-alikes before concluding nothing exists).
 
 Report each symptom as FIXED+LIVE (probe line), FIXED+DEPLOYING, or BLOCKED (why, what is needed).
