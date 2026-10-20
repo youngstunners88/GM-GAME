@@ -124,7 +124,7 @@ func attach(cam: Camera3D) -> void:
 	_weapon_views[Ep2ArmoryState.REM] = revolver
 	var bow := Ep2BowView.make(true)
 	cam.add_child(bow)
-	bow.scale = Vector3.ONE * VM_SCALE
+	bow.scale = Vector3.ONE * VM_SCALE * float(bow.get_meta("vm_scale", 1.0))
 	bow.visible = false
 	_weapon_views[Ep2ArmoryState.BOW] = bow
 	_sync_weapon()
@@ -211,7 +211,32 @@ func _update_key_light() -> void:
 ## World shadows on the gun in your hands: OFF outdoors (the bear woods). The 40 m trees' sun shadows sweep over a camera-held
 ## rifle as he walks and turn it dark navy in every patch of shade - the "gun is darker" the founder will not accept. The
 ## colours are untouched: only the receive-shadows flag of the held rifle + hands materials changes (FPS viewmodel practice).
+var _shadows_set: bool = false
+var _shadows_on: bool = true
+
+
+## A view built after set_world_shadows (the late-mounted bow) gets the same setting.
+func _apply_world_shadows_to(view: Node3D) -> void:
+	if not _shadows_set:
+		return
+	for mi in view.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF if not _shadows_on else m.cast_shadow
+		if m.mesh == null:
+			continue
+		for i in m.mesh.get_surface_count():
+			var src: Material = m.get_surface_override_material(i)
+			if src == null:
+				src = m.mesh.surface_get_material(i)
+			if src is BaseMaterial3D:
+				var bm: BaseMaterial3D = (src as BaseMaterial3D).duplicate() as BaseMaterial3D
+				bm.disable_receive_shadows = not _shadows_on
+				m.set_surface_override_material(i, bm)
+
+
 func set_world_shadows(on: bool) -> void:
+	_shadows_set = true
+	_shadows_on = on
 	if rifle == null:
 		return
 	_apply_exposure()                      # the hands' materials are already per-viewmodel duplicates; reuse them
@@ -290,7 +315,11 @@ func step(delta: float, moving: bool, sprinting: bool, walk_phase: float) -> voi
 		gun.step(delta)
 	if gun is Ep2Bow and rifle != null:
 		var bow := gun as Ep2Bow
-		Ep2BowView.update(rifle, bow.draw_amount(), bow.rounds > 0 and bow.release_time <= 0.0)
+		if rifle.has_meta("fb"):
+			Ep2BowView.animate_founder(rifle, bow)
+		else:
+			Ep2BowView.update(rifle, bow.draw_amount(), bow.rounds > 0 and bow.release_time <= 0.0)
+		_tick_bow_sound(bow)
 	_tick_lever(delta)
 	_recoil = maxf(0.0, _recoil - delta * 6.0)
 	cam_kick = lerpf(cam_kick, 0.0, 1.0 - exp(-delta / 0.14))
@@ -314,9 +343,11 @@ func step(delta: float, moving: bool, sprinting: bool, walk_phase: float) -> voi
 		# the eye in the rifle's own frame (founder rifle): the node sits so that point lands on the camera; the rifle is yawed
 		# PI toward the player, so its +Z points forward and its +Y up: node = (-cam.y * s, +cam.z * s) in camera space.
 		var ec: Vector3 = rifle.get_meta("ads_cam")
-		ads_pos = Vector3(-ec.x * VM_SCALE, -ec.y * VM_SCALE - VM_ADS_SIGHT_DROP, ec.z * VM_SCALE)
+		ads_pos = Vector3(-ec.x * rifle.scale.x, -ec.y * rifle.scale.x - VM_ADS_SIGHT_DROP, ec.z * rifle.scale.x)
+	if rifle.has_meta("ads_pos"):
+		ads_pos = Vector3(rifle.get_meta("ads_pos"))                  # a view that is not squared up to the target (the founder bow, canted) places its node directly
 	pos = pos.lerp(ads_pos, ads_k)
-	rot = rot.lerp(Vector3(0.0, PI, 0.0), ads_k)
+	rot = rot.lerp(Vector3(rifle.get_meta("ads_rotation", Vector3(0.0, PI, 0.0))), ads_k)
 	# breathing + walk bob (both nearly vanish aimed)
 	var calm: float = lerpf(1.0, 0.18, ads_k)
 	pos += Vector3(sin(_anim_t * 1.3) * 0.0035, sin(_anim_t * 1.9) * 0.004, 0.0) * calm
@@ -351,6 +382,53 @@ func step(delta: float, moving: bool, sprinting: bool, walk_phase: float) -> voi
 	pos += Basis.from_euler(rot_hold) * piv - Basis.from_euler(rot) * piv
 	rifle.position = pos
 	rifle.rotation = rot
+
+
+# --- the founder's bow: sound pairing and the late-mounted view --------------------------------------------------------------------
+
+const BOW_CREAK := "ep2_bow_creak.mp3"                  # 0.88 s: stretched to the 0.7 s draw (pitch 1.257) so the creak ends as the string reaches full draw
+var _creak: AudioStreamPlayer = null
+var _was_drawing: bool = false
+
+
+## The draw creaks (paired to the draw's length, stopped if the draw is cancelled by a switch or a sprint); the loose is `_on_fired`.
+func _tick_bow_sound(bow: Ep2Bow) -> void:
+	if bow.drawing and not _was_drawing:
+		if _creak == null:
+			_creak = AudioStreamPlayer.new()
+			_creak.name = "BowCreak"
+			_creak.bus = "SFX" if AudioServer.get_bus_index("SFX") >= 0 else "Master"
+			_creak.volume_db = -3.0
+			if ResourceLoader.exists(SOUND_DIR + BOW_CREAK):
+				_creak.stream = load(SOUND_DIR + BOW_CREAK) as AudioStream
+			add_child(_creak)
+		if _creak.stream != null:
+			_creak.pitch_scale = 0.88 / Ep2Bow.DRAW_TIME
+			_creak.play()
+	elif _was_drawing and not bow.drawing and bow.release_time <= 0.0 and _creak != null:
+		_creak.stop()                                    # cancelled: no creak without a draw
+	_was_drawing = bow.drawing
+
+
+## The bow view is built when the viewmodel attaches; if the streamed founder bow was not mounted yet then, swap it in the first time the bow is picked.
+func _ensure_founder_bow() -> void:
+	var view: Node3D = _weapon_views.get(Ep2ArmoryState.BOW)
+	if view == null or view.has_meta("fb") or not Ep2BowView.has_founder() or camera == null:
+		return
+	var fresh: Node3D = Ep2BowView.make(true)
+	if not fresh.has_meta("fb"):
+		fresh.free()
+		return
+	var was_active: bool = rifle == view
+	camera.remove_child(view)
+	view.queue_free()
+	camera.add_child(fresh)
+	fresh.scale = Vector3.ONE * VM_SCALE * float(fresh.get_meta("vm_scale", 1.0))
+	fresh.visible = false
+	_weapon_views[Ep2ArmoryState.BOW] = fresh
+	if was_active:
+		rifle = fresh
+	_apply_world_shadows_to(fresh)
 
 
 # --- shot reactions ---------------------------------------------------------------------------------------------------
@@ -539,6 +617,8 @@ func _sync_weapon() -> void:
 		_connect_active_gun()
 	if camera == null or _weapon_views.is_empty():
 		return
+	if armory.equipped == Ep2ArmoryState.BOW:
+		_ensure_founder_bow()
 	if _active_id != armory.equipped:
 		for view in _weapon_views.values():
 			(view as Node3D).visible = false

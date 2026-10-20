@@ -2048,7 +2048,7 @@ func _on_player_shot() -> void:
 		var eye: Vector3 = _player_pos + Vector3(0.0, eye_height, 0.0)
 		var origin: Vector3 = _vm.rifle.get_node("Nock").global_position
 		var direction: Vector3 = (eye + _fire_dir() * 50.0 - origin).normalized()
-		var arrow := _arrow_mesh()
+		var arrow: Node3D = Ep2BowView.player_arrow()            # the founder's arrow where the streamed bow is mounted, else the bear arrow
 		_visuals.add_child(arrow)
 		arrow.global_position = origin
 		_player_arrows.append({"node": arrow, "pos": origin, "v": direction * 38.0, "t": 0.0})
@@ -2258,6 +2258,8 @@ func _tick_player_arrows(delta: float) -> void:
 		node.global_position = item["pos"]
 		node.basis = Basis.looking_at(-velocity.normalized(), Vector3.UP)
 		if stopped or float(item["t"]) > 4.0 or node.position.y < _ground_y:
+			if stopped:
+				_sfx3d("ep2_arrow_thunk", node.global_position, -3.0, 1.0, 40.0)        # the arrow's own impact sound (a hit or a trunk)
 			node.queue_free()
 			_player_arrows.remove_at(i)
 

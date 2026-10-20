@@ -5,6 +5,8 @@ const DRAW_TIME := 0.7
 var drawing: bool = false
 var draw_time: float = 0.0
 var release_time: float = 0.0
+## Drawing brings the bow up to the eye (the aimed pose) and tightens the view like aiming; it relaxes slowly after the loose so the camera does not snap.
+var _draw_ads: float = 0.0
 
 func _init() -> void:
 	capacity = 999
@@ -28,6 +30,10 @@ func trigger() -> int:
 func step(delta: float) -> void:
 	super.step(delta)
 	release_time = maxf(0.0, release_time - delta)
+	var d: float = draw_amount() if drawing else 0.0
+	var want: float = d * d * (3.0 - 2.0 * d) * 0.85
+	_draw_ads = move_toward(_draw_ads, want, delta * (4.0 if want > _draw_ads else 2.2))
+	ads = maxf(ads, _draw_ads)
 	if not drawing:
 		return
 	if sprinting or locked:

@@ -2,6 +2,8 @@
 name: ep2-bow
 description: Lil Blunt picks up the bears' bows and shoots back - FPS bow viewmodel, draw/hold/loose/swing animations, runner pickup drops, and 2D follow-through. TRIGGER on "bow", "bow and arrow", "pick up the bow", "archer", "bear bow", any edit to bear_archer hazards, gnome_arrow.gd, a new player projectile, Ep2ViewHands, or a second first-person weapon.
 ---
+> **2026-10-21:** the player's bow is now the founder's Tripo medieval bow (streamed extra), with real limb flex, string, paired sounds and the GM emblem - see `ep2-founder-bow`. The bears keep the bear bow. The rules below (taken not given, three motions, canon lock) still hold.
+
 # Why (founder 2026-10-15)
 
 "Lil Blunt shoots bears and some of them have bows and arrows so he can pick them up
