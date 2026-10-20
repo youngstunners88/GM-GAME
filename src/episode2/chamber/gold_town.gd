@@ -25,7 +25,7 @@ extends Ep2Interlude
 ## Never in this room: the banned Episode 2 protocol (ep2-fort-knox-arc rule 4), a second health system, a wallet or contract address.
 ## The Armory never mints and is NOT the Treasury: the Treasury keeps no racks and no trade (lock section 7).
 
-enum Beat { STREET, OFFICE, TO_BAR, BAR, SQUARE_UP, DRAW, WON, TIP, ARMORY, GEARED, DONE }
+enum Beat { STREET, OFFICE, TO_BAR, BAR, SQUARE_UP, DRAW, WON, JAIL_TIP, JAIL, TIP, ARMORY, GEARED, DONE }
 
 const SHERIFF_MODEL := "res://src/episode2/assets/town/sheriff.glb"          # the founder's own Sheriff (Drive 2026-10-14): weathered, bearded, long coat, pipe - baked for the pack
 const MINISTER_MODEL := "res://src/episode2/assets/town/minister.glb"      # Minister Mike Dean: the founder's robot-headed minister (Drive 2026-10-14), baked for the pack
@@ -38,6 +38,7 @@ const BARTENDER_HEIGHT := 1.76
 const WHISKEY_MODEL := "res://src/episode2/assets/whiskey_glass.glb"
 const COIN_MODEL := "res://src/episode2/assets/btc_coin.glb"
 const SHERIFF_HEIGHT := 1.78
+const ACCOMPLICE_HEIGHT := 1.74
 const MINISTER_HEIGHT := 1.65
 const MINISTER_STEP := 0.5                               # the low wooden step he stands on behind the counter, so the counter does not hide him
 ## In each building's local frame (x along the front, -z inside).
@@ -121,6 +122,11 @@ var _shop_open: bool = false
 var _geared: bool = false                             # rifle + river gear in hand
 var _gear_t: float = -1.0
 var _armory_visited: bool = false                     # he found the lane and walked in
+## The jailhouse (founder lock 2026-10-20): the Sheriff's prisoner knows who brought the bears.
+var _accomplice: Ep2TownFolk = null
+var _jail_visited: bool = false
+var _jail_done_t: float = -1.0
+var _investigation_open: bool = false                 # the hunt is on: lake -> river -> trains -> Fort Knox
 var _spent: int = 0                                   # crypto spent at the counter (test evidence)
 var _mouse_before: int = Input.MOUSE_MODE_CAPTURED
 
@@ -223,6 +229,7 @@ func _step_people() -> void:
 	_build_armory_folk()
 	_people = Ep2TownPeople.new()
 	_people.build(_visuals)
+	_build_jail_folk()
 	if _bull == null:
 		_bull = _build_bull(Ep2GoldTown.door_world("Bldg_B", 0.8), PI * 0.5)
 		_bull.visible = false
@@ -611,6 +618,26 @@ func _on_beat_entered(b: int) -> void:
 				FacilityShow._say("vo_sheriff_win", 0.4),
 				{"do": "wait", "t": 0.4}], false)
 			_bull.walk_to(_player_pos + Vector3(1.4, 0.0, 2.6), 1.6)
+		Beat.JAIL_TIP:
+			# the Sheriff has a prisoner (founder lock 2026-10-20): he heads for the jailhouse out at the south edge of town
+			_investigation_open = false
+			if _hud:
+				_hud.objective = "The Sheriff has a prisoner. The jailhouse is out the south road, west of the street."
+				_hud.toast("THE SHERIFF HAS A PRISONER WHO KNOWS ABOUT THE BEARS", 3.8)
+			if _sheriff != null:
+				_sheriff.walk_path([Ep2GoldTown.door_world("Bldg_Jail", 3.0), _jail_spot("sheriff")], 1.6)
+			look_toward(Ep2GoldTown.door_world("Bldg_Jail", 1.0) + Vector3(0.0, 1.5, 0.0), 2.0)
+			_start_show([{"do": "wait", "t": 3.0}, {"do": "call", "fn": release_look}], false)
+		Beat.JAIL:
+			_jail_visited = true
+			if _hud:
+				_hud.objective = ""
+			if _sheriff != null:
+				_sheriff.face_point(_player_pos)
+			if _accomplice != null:
+				_accomplice.face_point(_player_pos)
+			_start_show(_jail_show_steps(), false)
+			_jail_done_t = -1.0
 		Beat.TIP:
 			# the tip off Main Street: Rich keeps an armory down the side lane (the lock's
 			# "hard-won" find - no ARMORY sign on the main drag). Text only; the voice lines
@@ -640,7 +667,57 @@ func _on_beat_entered(b: int) -> void:
 		Beat.DONE:
 			_resolve({"next_chamber": "logans_lake", "got_map": _got_map, "draw_losses": _losses,
 				"draw_fouls": _fouls, "armory_visited": _armory_visited, "sniper": armory.sniper_owned,
-				"sniper_rounds": armory.sniper_rounds, "river_gear": armory.river_gear})
+				"sniper_rounds": armory.sniper_rounds, "river_gear": armory.river_gear,
+				"jail_visited": _jail_visited, "investigation": _investigation_open})
+
+
+## The jailhouse exchange, as timed text (voice lines wait on a voice key like the Armory's): the Sheriff presents the caught
+## helper, the accomplice bargains and gives a PARTIAL truth (bears were brought in to soften claims before the vault lockup, the
+## pressure runs toward Fort Knox, look along the lake, the river and the trains), the Sheriff asks Lil Blunt to find who ordered it.
+const JAIL_LINES: Array = [
+	["SHERIFF", "Here he is. Caught him holding the gate open for the bears."],
+	["ACCOMPLICE", "All I did was open a gate. Somebody paid me to bring them in."],
+	["LIL BLUNT", "Who paid you?"],
+	["ACCOMPLICE", "Never saw a face. Coin, and an order: soften the claims before the vault locks."],
+	["ACCOMPLICE", "They want Fort Knox first. Watch the lake outflow, the river... the trains."],
+	["SHERIFF", "Find who brought the bears, Lil Blunt. I'll keep this one where he is."],
+]
+
+
+func _jail_show_steps() -> Array:
+	var steps: Array = []
+	for ln in JAIL_LINES:
+		var who: String = str(ln[0])
+		var text: String = str(ln[1])
+		steps.append({"do": "call", "fn": func() -> void: _jail_line(who, text)})
+		steps.append({"do": "wait", "t": 3.9})
+	return steps
+
+
+func _jail_line(who: String, text: String) -> void:
+	if _hud != null:
+		_hud.toast("%s: %s" % [who, text], 3.8)
+	if who == "ACCOMPLICE" and _accomplice != null:
+		_accomplice.face_point(_player_pos)
+		_accomplice.hold_clip("Greet")
+	elif who == "SHERIFF" and _sheriff != null:
+		_sheriff.face_point(_player_pos)
+
+
+## Build the accomplice into cell A (jail extras only): hatless, rough, standing at the bars. Silent if the jail is not loaded.
+func _build_jail_folk() -> void:
+	if not Ep2GoldTown.jail_v1:
+		return
+	_accomplice = Ep2TownFolk.new()
+	_accomplice.name = "Accomplice"
+	_visuals.add_child(_accomplice)
+	_accomplice.setup(Ep2Extras.PRISONER, ACCOMPLICE_HEIGHT, Color(0.40, 0.30, 0.22))
+	_accomplice.position = Ep2GoldTown.local_to_world("Bldg_Jail", Ep2GoldTown.jail_spots.get("accomplice", Vector3(-1.85, 0.0, -5.7)))
+	_face_folk(_accomplice, Ep2GoldTown.local_to_world("Bldg_Jail", Ep2GoldTown.jail_spots.get("visit", Vector3(-1.85, 0.0, -4.05))))
+
+
+func _jail_spot(name: String) -> Vector3:
+	return Ep2GoldTown.local_to_world("Bldg_Jail", Ep2GoldTown.jail_spots.get(name, Vector3.ZERO))
 
 
 func _show_finished() -> void:
@@ -694,7 +771,23 @@ func _tick(delta: float) -> void:
 			if _end_t >= 0.0 and not _show_active:
 				_end_t -= delta
 				if _end_t < 0.0:
-					_advance_to(Beat.TIP)
+					_advance_to(Beat.JAIL_TIP if Ep2GoldTown.jail_v1 else Beat.TIP)
+		Beat.JAIL_TIP:
+			if _in_room("Bldg_Jail", -1.2):
+				_advance_to(Beat.JAIL)
+		Beat.JAIL:
+			# once the exchange is over he can walk out; the hunt (lake -> river -> trains -> Fort Knox) is on and the Armory tip follows
+			if not _show_active:
+				if _jail_done_t < 0.0:
+					_jail_done_t = 0.0
+					_investigation_open = true
+					if _hud:
+						_hud.objective = "Find who brought the bears: the lake outflow, the river, the trains, Fort Knox."
+						_hud.toast("THE HUNT IS ON: WHO BROUGHT THE BEARS?", 3.8)
+				else:
+					_jail_done_t += delta
+					if _jail_done_t > 2.2 and not _in_room("Bldg_Jail", -0.6):
+						_advance_to(Beat.TIP)
 		Beat.TIP:
 			if _in_room("Bldg_Armory", -1.4):
 				_armory_visited = true
@@ -750,6 +843,8 @@ func _tick_people(delta: float) -> void:
 	# the Armory's two turn to whoever comes in the door of the shop
 	if _people != null:
 		_people.step(delta, _player_pos)
+	if _accomplice != null:
+		_accomplice.step(delta)
 	if _rich_brain != null:
 		_rich_brain.step(delta, _player_pos)
 		_utah_brain.step(delta, _player_pos)
@@ -922,6 +1017,9 @@ func get_minister() -> Ep2TownFolk: return _minister
 func get_opponent() -> Ep2TownFolk: return _opp
 func get_bartender() -> Ep2TownFolk: return _bartender
 func get_people() -> Ep2TownPeople: return _people
+func get_accomplice() -> Ep2TownFolk: return _accomplice
+func is_investigation_open() -> bool: return _investigation_open
+func jail_visited() -> bool: return _jail_visited
 func get_rich() -> Ep2TownFolk: return _rich
 func get_utah() -> Ep2TownFolk: return _utah
 func get_shop() -> Ep2ArmoryShop: return _shop

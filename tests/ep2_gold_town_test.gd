@@ -12,6 +12,14 @@ const ROOT := preload("res://src/episode2/session/ep2_session_root.tscn")
 var _fail: int = 0
 
 
+func _jail_lines_ok() -> bool:
+	var all: String = ""
+	for ln in GoldTownChamber.JAIL_LINES:
+		all += str(ln[1]).to_lower() + " "
+	return "bears" in all and "claims" in all and "fort knox" in all and "lake" in all and "river" in all and "trains" in all \
+		and not ("bankman" in all or "sbf" in all or "celebrity" in all)
+
+
 func _check(label: String, ok: bool, detail: String = "") -> void:
 	if ok:
 		print("  [PASS] %s" % label)
@@ -194,6 +202,36 @@ func _ready() -> void:
 
 	# ---- the Armory: Rich the Claim Recorder and Utah, off Main Street (founder lock PROMPT_EPISODE2_RICH_ARMORY_UTAH_RIVER.md)
 	print("-- THE ARMORY (down the side lane, Rich & Utah)")
+	# ---- the jailhouse (founder lock PROMPT_EPISODE2_JAILHOUSE_BEARS_INVESTIGATION, 2026-10-20): out at the town's south edge, one
+	# occupied cell, the Sheriff asks him to find who brought the bears; then the Armory tip follows as before
+	print("-- THE JAILHOUSE (Sheriff side, out at the south edge of town)")
+	_until(c, 30.0, func(): return c.get_beat_name() == "JAIL_TIP")
+	_check("-> JAIL_TIP: the Sheriff has a prisoner and the jailhouse is out the south road", c.get_beat_name() == "JAIL_TIP" and "jail" in str(c.get_hud().objective).to_lower(),
+		str(c.get_hud().objective))
+	var jdoor: Vector3 = Ep2GoldTown.door_world("Bldg_Jail", 2.4)
+	var jinside: Vector3 = Ep2GoldTown.local_to_world("Bldg_Jail", Ep2GoldTown.jail_spots["visit"])
+	var main_to_jail: float = Vector2(Ep2GoldTown.door_world("Bldg_Jail", 0.0).x, Ep2GoldTown.door_world("Bldg_Jail", 0.0).z).distance_to(Vector2(0.0, 1403.0))
+	_check("the jailhouse stands well apart from the town (>= 22 m from the drop-off, on the Sheriff/Certificates side x < 0)",
+		main_to_jail >= 22.0 and Ep2GoldTown.door_world("Bldg_Jail", 0.0).x < -20.0, "%.1f m" % main_to_jail)
+	var jreached: bool = _walk_to(c, Vector3(-6.0, 0.0, 1400.0), 40.0)
+	jreached = _walk_to(c, jdoor, 40.0) and jreached
+	_check("he walks out the south road to the jailhouse door", jreached, str(c.get_player_position()) + " want " + str(jdoor))
+	var jin_ok: bool = _walk_to(c, Ep2GoldTown.door_world("Bldg_Jail", -0.9), 30.0)      # straight through the doorway first
+	jin_ok = _walk_to(c, jinside, 40.0) and jin_ok
+	_check("he steps in through its door and the cell block is not walkable (bars stop him)", jin_ok, str(c.get_player_position()) + " want " + str(jinside))
+	_until(c, 8.0, func(): return c.get_beat_name() == "JAIL")
+	_check("-> JAIL: one accomplice is in the cell and the Sheriff is inside with him", c.get_beat_name() == "JAIL" and c.get_accomplice() != null
+		and c.get_sheriff() != null)
+	var cell_ok: bool = c.get_accomplice() != null and Ep2GoldTown.local_to_world("Bldg_Jail", Ep2GoldTown.jail_spots["accomplice"]).distance_to(c.get_accomplice().position) < 0.3
+	_check("the accomplice is held in his cell, behind the bars", cell_ok)
+	_until(c, 40.0, func(): return c.is_investigation_open())
+	_check("the Sheriff's ask opens the investigation (the hunt is a thread on the existing path)", c.is_investigation_open())
+	_check("the lines frame bears + early claims + Fort Knox and the existing lake/river/trains path, no celebrity prisoners", _jail_lines_ok())
+	var jout: bool = _walk_to(c, Ep2GoldTown.door_world("Bldg_Jail", -0.9), 30.0)
+	jout = _walk_to(c, jdoor, 30.0) and jout
+	jout = _walk_to(c, Vector3(-6.0, 0.0, 1400.0), 40.0) and jout
+	jout = _walk_to(c, Vector3(2.0, 0.0, 1406.0), 40.0) and jout          # back up the road to the street's centre
+	_check("he walks back out toward town", jout)
 	_until(c, 30.0, func(): return c.get_beat_name() == "TIP")
 	_check("-> TIP: the room points him down the side lane (off Main Street, not on the boardwalk)",
 		c.get_beat_name() == "TIP" and "lane" in str(c.get_hud().objective).to_lower(), str(c.get_hud().objective))

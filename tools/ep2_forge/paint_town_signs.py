@@ -22,7 +22,7 @@ FONT_CANDIDATES = [
 ]
 WORDS = {"CERTIFICATES": "CERTIFICATES", "SALOON": "SALOON", "TREASURY": "TREASURY", "GENERAL": "GENERAL STORE", "HOTEL": "HOTEL",
          "ASSAY": "ASSAY OFFICE", "AUCTIONS": "AUCTIONS", "STATS": "STATS", "RESERVE": "RESERVE", "FORTKNOX": "FORT KNOX",
-         "ARMS": "RICH & UTAH ARMS"}
+         "ARMS": "RICH & UTAH ARMS", "JAIL": "JAILHOUSE"}
 
 
 def font_path(override=None):
@@ -73,13 +73,15 @@ def main():
     ap = argparse.ArgumentParser(description="paint the town sign boards")
     ap.add_argument("keys", nargs="*", help="only these sign keys (default: all)")
     ap.add_argument("--font", default=None, help="font file override")
+    ap.add_argument("--out", default=None, help="output folder (default src/episode2/assets/town); streamed extras use src/episode2/extras/jail")
     args = ap.parse_args()
     chosen = font_path(args.font)
-    OUT.mkdir(parents=True, exist_ok=True)
+    out = Path(args.out) if args.out else OUT
+    out.mkdir(parents=True, exist_ok=True)
     for i, (key, text) in enumerate(WORDS.items()):
         if args.keys and key not in args.keys:
             continue
-        board(text, seed=i, font_file=chosen).save(OUT / f"sign_{key}.png")
+        board(text, seed=i, font_file=chosen).save(out / f"sign_{key}.png")
         print("sign", key, "->", chosen)
 
 

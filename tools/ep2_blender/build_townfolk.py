@@ -55,6 +55,9 @@ PALS = {
                    Canvas=((0.43, 0.31, 0.19), 0.90), Jean=((0.22, 0.30, 0.42), 0.92), HatFelt=((0.62, 0.52, 0.36), 0.92),
                    BootShaft=((0.30, 0.20, 0.12), 0.70), Cloth=((0.62, 0.12, 0.10), 0.92)),
     "dressmaker": pal(Skin=((0.80, 0.62, 0.48), 0.72), Hair=((0.18, 0.12, 0.09), 0.92), Dress=((0.18, 0.32, 0.50), 0.90)),
+    "accomplice": pal(Skin=((0.72, 0.54, 0.40), 0.72), Hair=((0.20, 0.14, 0.10), 0.95), Beard=((0.24, 0.18, 0.13), 0.95),
+                      Shirt=((0.68, 0.62, 0.52), 0.95), Vest=((0.30, 0.25, 0.20), 0.92), Trouser=((0.30, 0.26, 0.21), 0.95),
+                      Suspender=((0.28, 0.20, 0.13), 0.80), Boot=((0.24, 0.17, 0.11), 0.80), Rope=((0.58, 0.50, 0.34), 0.95)),
     "lady": pal(Skin=((0.86, 0.70, 0.58), 0.72), Hair=((0.55, 0.34, 0.16), 0.92), Dress=((0.50, 0.12, 0.17), 0.88),
                 HatFelt=((0.86, 0.80, 0.68), 0.92), HatBand=((0.62, 0.14, 0.16), 0.80)),
 }
@@ -190,10 +193,29 @@ def b_lady(f, j):
     AF.belt(f, j, "Ribbon", "Brass", B["hips"], buckle=False)
 
 
+def b_accomplice(f, j):
+    """The jailhouse's prisoner: a caught helper, not a boss - dirty work shirt with the sleeves rolled, a worn vest hanging open,
+    suspenders, scuffed boots, hatless with matted hair and a rough beard, a rope still looped at his belt."""
+    B = bones()
+    legs(f, j, "Trouser", "Boot")
+    AF.torso(f, j, "Shirt", B["body"])
+    AF.suspenders_shirt(f, j, "Shirt", B["body"])
+    AF.suspenders(f, j, "Suspender", "Brass", B["body"])
+    AF.vest(f, j, "Vest", B["body"], buttons=2)
+    AF.neck(f, j, "Skin", B["head"])
+    for side in ("L", "R"):
+        AF.arm(f, j, side, "Shirt", "Skin", B["arm." + side], roll_up=True, sleeve_to=0.58, girth=0.96)
+    AF.head(f, j, "Skin", B["head"], hair="Hair", beard="Beard")
+    AF.belt(f, j, "BeltLeather", "Brass", B["hips"], buckle=False)
+    AF.rope_coil(f, j, "Rope", B["hips"])
+
+
 PEOPLE = {
     "clerk": ("townsman_clerk", b_clerk, 1.76, 0.96), "oldtimer": ("townsman_oldtimer", b_oldtimer, 1.69, 0.98),
     "rancher": ("townsman_rancher", b_rancher, 1.84, 1.02), "dressmaker": ("townswoman_dressmaker", b_dressmaker, 1.66, 0.90),
     "lady": ("townswoman_lady", b_lady, 1.72, 0.92),
+    # NOT part of Ep2TownPeople's street roster: the jailhouse's accomplice (Ep2Extras.PRISONER), placed by gold_town in cell A
+    "accomplice": ("prisoner_accomplice", b_accomplice, 1.74, 0.97),
 }
 
 for key, (name, builder, height, girth) in PEOPLE.items():

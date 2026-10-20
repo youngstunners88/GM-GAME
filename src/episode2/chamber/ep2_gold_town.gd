@@ -38,6 +38,9 @@ const LAYOUT: Array = [
 	["Bldg_F", STREET_HALF, 1447.0, -1],
 	["Church", 0.0, 1478.0, 0],
 	["Bldg_Armory", -20.0, 1468.0, 0],   # Rich & Utah's shop: down a side lane off the left row, set back off the Main Street sightline
+	# the jailhouse (founder lock 2026-10-20): Sheriff / Certificates side, out at the south edge of town west of the road - ~26 m from
+	# Main Street, not on it. Streamed (Ep2Extras.JAIL); where the extras are not mounted nothing is drawn and the story skips it.
+	["Bldg_Jail", -26.0, 1399.0, 1],
 ]
 ## Kit piece -> [width, depth, door half-width (0 = shut), door open]
 const FOOTPRINT: Dictionary = {
@@ -46,6 +49,7 @@ const FOOTPRINT: Dictionary = {
 	"Church": [8.0, 14.0, 0.0],
 	"Bldg_Armory": [8.0, 9.0, 0.7],
 	"Bldg_Armory2": [10.0, 12.0, 1.0],      # the two-storey Armory (streamed extras): double door 2 m wide
+	"Bldg_Jail": [7.4, 8.6, 0.75],          # the jailhouse (streamed extras): 1.5 m plank door
 }
 
 ## The two-storey Armory (founder 2026-10-19, skill ep2-armory-two-story). When the streamed extras are loadable (Ep2Extras), the
@@ -56,6 +60,14 @@ static var kit_v2: bool = false                # the streamed town kit with real
 static var armory_spots: Dictionary = {}       # Spot_<name> -> local Vector3 (x along the front, -z inside, y = floor)
 static var armory_blocks: Array = []           # [local centre Vector2(x, z), half extents Vector2] of the shop-floor blockers
 static var armory_lights: Array = []           # local Vector3 lamp positions
+## The jailhouse (streamed extras): drawn when jailhouse.glb is loadable; its Jail_Nav empties give the stand points and the
+## cell-block blockers, the same way the Armory's do.
+static var jail_v1: bool = false
+static var jail_spots: Dictionary = {}
+static var jail_blocks: Array = []
+static var jail_lights: Array = []
+## Where the desert scatter (scrub, rock) keeps clear around the jailhouse, so it does not stand in brush (x, z rectangle).
+const JAIL_CLEAR := Rect2(-46.0, 1390.0, 24.0, 20.0)
 
 
 ## The yaw that turns a kit piece's local +Z front toward the street.
@@ -107,12 +119,15 @@ static func build(parent: Node3D, interiors: bool) -> Dictionary:
 	var kit: Node3D = (load(kit_path) as PackedScene).instantiate() as Node3D
 	_apply_mats(kit)
 	var a2: Node3D = _load_armory2()
+	var jl: Node3D = _load_jail()
 	for e in LAYOUT:
 		var piece: String = str(e[0])
 		var src: Node3D = kit.find_child(piece, true, false) as Node3D
 		if piece == "Bldg_Armory" and a2 != null:
 			src = a2.find_child("Bldg_Armory2", true, false) as Node3D
 			piece = "Bldg_Armory2"
+		if piece == "Bldg_Jail":
+			src = jl.find_child("Bldg_Jail", true, false) as Node3D if jl != null else null
 		if src == null:
 			continue
 		var b: Node3D = src.duplicate() as Node3D
@@ -122,6 +137,8 @@ static func build(parent: Node3D, interiors: bool) -> Dictionary:
 		walls.append_array(_walls_of(piece, building_xform(e)))
 		if piece == "Bldg_Armory2":
 			walls.append_array(_armory2_block_walls(building_xform(e)))
+		if piece == "Bldg_Jail":
+			walls.append_array(_blocks_to_walls(jail_blocks, building_xform(e)))
 	# the street furniture: hitching rails, troughs, wagons, lamps, barrels and crates, benches on the porches
 	var dress: Array = [
 		["HitchRail", Vector3(-6.4, 0.0, 1418.0), PI * 0.5], ["HitchRail", Vector3(6.4, 0.0, 1431.0), PI * 0.5],
@@ -131,6 +148,8 @@ static func build(parent: Node3D, interiors: bool) -> Dictionary:
 		["Bench", Vector3(-7.6, 0.44, 1423.0), PI * 0.5], ["Bench", Vector3(7.6, 0.44, 1446.0), -PI * 0.5],
 		# the armory lane, off the left row past the STATS block: a lamp, and river gear staged at the lean-to
 		["LampPost", Vector3(-10.0, 0.0, 1450.0), 0.0],
+		# the jailhouse yard (south edge of town, west of the road): a lamp, a hitching rail and a bench by the door
+		["LampPost", Vector3(-23.2, 0.0, 1396.4), 0.0], ["HitchRail", Vector3(-22.4, 0.0, 1403.6), PI * 0.5], ["Bench", Vector3(-24.0, 0.0, 1394.4), PI * 0.5],
 		["Arm_PowderKeg", Vector3(-17.0, 0.0, 1465.2), 0.0], ["Arm_PowderKeg", Vector3(-16.1, 0.0, 1465.7), 0.0],
 		["River_Crate", Vector3(-14.9, 0.0, 1465.0), 0.3], ["River_Skiff", Vector3(-22.4, 0.0, 1460.0), PI * 0.5],
 	]
@@ -180,6 +199,8 @@ static func build(parent: Node3D, interiors: bool) -> Dictionary:
 	kit.free()
 	if a2 != null:
 		a2.free()
+	if jl != null:
+		jl.free()
 	return {"walls": walls, "props": props}
 
 
@@ -216,6 +237,54 @@ static func _load_armory2() -> Node3D:
 		armory_lights.append((c as Node3D).position)
 	armory_v2 = true
 	return a2
+
+
+## The jailhouse scene from the streamed extras (null when it is not loadable: nothing is drawn). Reads Jail_Nav into
+## jail_spots / jail_blocks and the lamp anchors into jail_lights.
+static func _load_jail() -> Node3D:
+	jail_v1 = false
+	jail_spots = {}
+	jail_blocks = []
+	jail_lights = []
+	if not Ep2Extras.has(Ep2Extras.JAIL):
+		return null
+	var ps: PackedScene = load(Ep2Extras.JAIL) as PackedScene
+	if ps == null:
+		return null
+	var j: Node3D = ps.instantiate() as Node3D
+	if j.find_child("Bldg_Jail", true, false) == null:
+		j.free()
+		return null
+	_apply_mats(j)
+	var nav: Node = j.find_child("Jail_Nav", true, false)
+	if nav != null:
+		for c in nav.get_children():
+			var n3 := c as Node3D
+			if n3 == null:
+				continue
+			var nm: String = String(n3.name)
+			if nm.begins_with("Spot_"):
+				jail_spots[nm.trim_prefix("Spot_")] = n3.position
+			elif nm.begins_with("Block_"):
+				jail_blocks.append([Vector2(n3.position.x, n3.position.z), Vector2(absf(n3.scale.x), absf(n3.scale.z))])
+	for c in (j.find_child("Bldg_Jail", true, false) as Node).find_children("LightAnchor_*", "", true, false):
+		jail_lights.append((c as Node3D).position)
+	jail_v1 = true
+	return j
+
+
+## Rectangular walk blockers [centre Vector2(x, z), half extents Vector2] in a building's local frame -> world wall segments.
+static func _blocks_to_walls(blocks: Array, xf: Transform3D) -> Array:
+	var out: Array = []
+	for bl in blocks:
+		var c: Vector2 = bl[0]
+		var h: Vector2 = bl[1]
+		var pts: Array = [Vector3(c.x - h.x, 0, c.y - h.y), Vector3(c.x + h.x, 0, c.y - h.y), Vector3(c.x + h.x, 0, c.y + h.y), Vector3(c.x - h.x, 0, c.y + h.y)]
+		for i in 4:
+			var a: Vector3 = xf * (pts[i] as Vector3)
+			var b: Vector3 = xf * (pts[(i + 1) % 4] as Vector3)
+			out.append([Vector2(a.x, a.z), Vector2(b.x, b.z)])
+	return out
 
 
 ## The Armory's shop-floor blockers (counter, cases, stair, shelves, kegs, gallery posts) as wall segments, so Lil Blunt walks round
@@ -277,6 +346,8 @@ static func _hang_signs(b: Node3D) -> void:
 		var hang: bool = word.ends_with("_hang")             # a small board hung under a porch awning (the two-storey Armory)
 		word = word.trim_suffix("_hang")
 		var path: String = TEX_DIR + "sign_%s.png" % word
+		if word == "JAIL":
+			path = Ep2Extras.JAIL_SIGN                      # the jail's sign ships with its streamed extras
 		if not ResourceLoader.exists(path):
 			continue
 		var q := MeshInstance3D.new()
@@ -422,6 +493,9 @@ static func _furnish(root: Node3D, kit: Node3D, a2: Node3D = null) -> void:
 			root.add_child(f)
 		for i in mini(armory_lights.size(), 4):
 			lamps.append(["Bldg_Armory", armory_lights[i], 4.5])
+	if jail_v1:
+		for i in mini(jail_lights.size(), 2):
+			lamps.append(["Bldg_Jail", jail_lights[i], 4.0])
 	for lp in lamps:
 		var l := OmniLight3D.new()
 		l.light_color = Color(1.0, 0.72, 0.42)
@@ -516,7 +590,8 @@ static func build_desert(parent: Node3D, road: Array, forest_end_z: float, world
 			var p := Vector2(x + (h1 - 0.5) * 6.0, z + (h2 - 0.5) * 6.0)
 			var near_road: float = _road_dist(p, road)
 			var in_town: bool = (absf(p.x) < 26.0 and p.y > TOWN_Z - 6.0 and p.y < TOWN_Z + 90.0) \
-				or (p.y > RIVER_Z - RIVER_W and p.y < TRACK_Z + 8.0)       # the river and the railway corridor stay clear of scrub and rock
+				or (p.y > RIVER_Z - RIVER_W and p.y < TRACK_Z + 8.0) \
+				or JAIL_CLEAR.has_point(p)       # the river and the railway corridor stay clear of scrub and rock
 			var open_k: float = clampf((p.y - (forest_end_z - 100.0)) / 120.0, 0.0, 1.0)      # scrub takes over as the pines thin
 			if near_road > 3.5 and not in_town and h1 < 0.55 * open_k:
 				var sc: float = 0.6 + 0.9 * h2
