@@ -46,6 +46,8 @@ Logan's Lake and the supplied Logan model: `.claude/skills/ep2-logans-lake/SKILL
 |------|-------|------|--------|
 | **Jev 1.14 / TypeSafe / efficient decisions / image acceptance** | `scripts/jev.mjs` | `.claude/skills/jev-1-14-routing/SKILL.md` | `jev-1-14-routing` |
 | **Episode 2 town feels empty / one block; add avenues, doors, windows, people, horses, dogs, chickens or instruments** | `design/ep2/town/`, `tools/ep2_town/` | `.claude/skills/ep2-living-town/SKILL.md` | `ep2-living-town`, `ep2-town-streets`, `ep2-town-facades`, `ep2-town-background-life`, `ep2-town-proof` |
+| **Logan / Logan's Lake / liquidity / still water / LP face / "investigate" / the lake feeding the day-88 river; Logan.glb or Logan.JPG** | `src/episode2/chamber/` (new `logans_lake.gd`), `design/ep2/lake/` | `.claude/skills/ep2-logans-lake/SKILL.md` | `ep2-logans-lake`, `ep2-logan-character`, `ep2-lake-water-build`, `ep2-blender-skills-bridge` |
+| **Armory "too close to Main Street" / "next storefront" / more than one street / side lane; moving or adding town buildings; any Blender/bpy/GLB kit piece, rig or clip for Episode 2** | `tools/ep2_town/armory_offmain_probe.py` (measure first), then `src/episode2/chamber/ep2_gold_town.gd` `LAYOUT` | `.claude/skills/ep2-armory-off-main/SKILL.md` | `ep2-armory-off-main`, `ep2-sightline-proof`, `ep2-side-lane-build`, `ep2-blender-skills-bridge` (+ installed `blender-*`) |
 | **Shrink a character GLB; pack over 190 MiB; gltfpack/meshoptimizer/UniForge3D** | `tools/ep2_forge/pck_report.py`, `gltfpack_safe.sh` | `.claude/skills/ep2-3d-tools/SKILL.md` | `ep2-3d-tools` |
 | Design a level, mechanic, or boss | /design | CONTEXT.md | — |
 | Create art/audio specs or style guide | /assets | CONTEXT.md | pixel-art-skill |
