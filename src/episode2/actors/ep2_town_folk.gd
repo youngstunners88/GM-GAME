@@ -90,6 +90,54 @@ func has_clips() -> bool:
 	return _rigged
 
 
+## Hold a prop (the Sharps, a crate) in a hand: a BoneAttachment3D on the rig's bone whose name matches `bone` ("Hand.R" or "hand_r"), carrying `prop` at
+## `pos` / `rot_deg` in the bone's frame. A prop of the same name is replaced. The model's own scale is undone so the prop keeps its real size.
+## False when there is no rig / no such bone (the caller keeps the prop elsewhere).
+func attach_prop(prop_node: Node3D, bone: String, pos: Vector3 = Vector3.ZERO, rot_deg: Vector3 = Vector3.ZERO) -> bool:
+	drop_prop(str(prop_node.name))
+	if model == null:
+		return false
+	var want: String = _bone_key(bone)
+	for sk in model.find_children("*", "Skeleton3D", true, false):
+		var skel: Skeleton3D = sk
+		for i in skel.get_bone_count():
+			var have: String = _bone_key(skel.get_bone_name(i))
+			if have == want or have.ends_with("_" + want):
+				var att := BoneAttachment3D.new()
+				att.name = "Hold_" + str(prop_node.name)
+				skel.add_child(att)
+				att.bone_name = skel.get_bone_name(i)
+				att.add_child(prop_node)
+				prop_node.position = pos
+				prop_node.rotation_degrees = rot_deg
+				var s: float = absf(model.scale.x) if absf(model.scale.x) > 1e-4 else 1.0
+				prop_node.scale = Vector3.ONE / s
+				return true
+	return false
+
+
+## A bone name compared loosely: "Hand.R", "hand_r" and "mixamorig:RightHand" / "mixamorig_RightHand" (a rig prefix) all read the same way.
+static func _bone_key(n: String) -> String:
+	return n.to_lower().replace(".", "_").replace(":", "_").replace("/", "_")
+
+
+## Take a held prop out of the hand (it is freed). No-op when nothing by that name is held.
+func drop_prop(prop_name: String) -> void:
+	if model == null:
+		return
+	for a in model.find_children("Hold_" + prop_name, "BoneAttachment3D", true, false):
+		a.get_parent().remove_child(a)
+		a.queue_free()
+
+
+func held_prop(prop_name: String) -> Node3D:
+	if model == null:
+		return null
+	for a in model.find_children("Hold_" + prop_name, "BoneAttachment3D", true, false):
+		return (a as Node).get_child(0) as Node3D if a.get_child_count() > 0 else null
+	return null
+
+
 func anim_player() -> AnimationPlayer:
 	return _anim
 

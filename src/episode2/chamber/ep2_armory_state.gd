@@ -21,8 +21,8 @@ const RESERVE_CAP := 2000
 ## The Armory's stock (single source of truth for the trade panel AND the chamber that debits it).
 ## Prices are feel-values in Episode 1 crypto coins (F - free to tune; never a protocol fact).
 const SHOP: Array = [
-	{"id": "sniper", "name": "LONG RIFLE", "note": "SET TRIGGER - FOR THE OVERLOOK", "price": 3, "rounds": 0},
-	{"id": "sniper_ammo", "name": "LONG-RIFLE CARTRIDGES", "note": "A BOX OF TEN", "price": 2, "rounds": 10},
+	{"id": "sniper", "name": "SHARPS 1874 BUFFALO GUN", "note": "SET TRIGGERS - FOR THE OVERLOOK", "price": 3, "rounds": 0},
+	{"id": "sniper_ammo", "name": "SHARPS CARTRIDGES", "note": "A BOX OF TEN", "price": 2, "rounds": 10},
 	{"id": "rifle_ammo", "name": "REPEATER CARTRIDGES", "note": "A BOX OF TWENTY-FOUR", "price": 1, "rounds": 24},
 	{"id": "revolver_ammo", "name": "SIXGUN CARTRIDGES", "note": "A BOX OF EIGHTEEN", "price": 1, "rounds": 18},
 	{"id": "river_gear", "name": "RIVER GEAR", "note": "SKIFF AND SEALED CRATES", "price": 2, "rounds": 0},
@@ -36,7 +36,8 @@ static func shop_item(id: String) -> Dictionary:
 	return {}
 
 
-## The long rifle Rich sells for the day-88 overlook. It is NOT one of the three
+## The long rifle Rich sells for the day-88 overlook: the Sharps Model 1874 "Buffalo Gun" (founder 2026-10-20; the Colt Gatling on the Armory's post is
+## NOT stock - it never appears in SHOP and nothing here can sell it). It is NOT one of the three
 ## quick-switch slots (the personal armory system is preserved untouched); it is
 ## carried into the river set-piece, so it is a separate acquisition.
 const SNIPER := "armory_sniper"

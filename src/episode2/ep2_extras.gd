@@ -15,6 +15,8 @@ extends RefCounted
 const PACK := "ep2_extras.pck"
 const LOCAL := "user://ep2_extras.pck"
 const ARMORY := "res://src/episode2/extras/armory/armory2.glb"
+const SHARPS := "res://src/episode2/extras/armory/sharps_1874.glb"        # Rich's Sharps Model 1874 Buffalo Gun (case, hand, the long rifle he sells)
+const GATLING := "res://src/episode2/extras/armory/gatling_post.glb"      # the Colt Gatling on its post (NOT FOR SALE) + the firing yard's plates and bale
 const RICH := "res://src/episode2/extras/folk/rich_armory2.glb"
 const UTAH := "res://src/episode2/extras/folk/utah_armory2.glb"
 ## The town kit with REAL openings (windows, doors, side windows; 2026-10-19 openings pass): same piece names as town_kit.glb.

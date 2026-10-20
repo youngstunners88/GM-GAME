@@ -2,7 +2,7 @@
 
 Headless bpy:  blender -b --factory-startup -P tools/ep2_blender/build_armory2.py -- [--out src/episode2/extras/armory/armory2.glb]
 
-One GLB, three named pieces the town places (same conventions as build_town_kit.py: origin = middle of the FRONT edge at street level,
+One GLB, named pieces (Bldg_Armory2, Arm2_Fit, Arm2_Nav and the case rifle Arm2_Sharps) the town places (same conventions as build_town_kit.py: origin = middle of the FRONT edge at street level,
 front faces +Z in the game frame, named untextured materials that Ep2GoldTown._apply_mats skins - Siding, Trim, Roof, Planks - and
 plain coloured ones for the rest):
   Bldg_Armory2      the building: 10 x 12 m, ground floor 3.8 m + upper floor 3.4 m, false front with cornice and sign board, porch with
@@ -16,16 +16,21 @@ plain coloured ones for the rest):
                     a cleaning bench, the back-wall and gallery rifle racks (~60 long guns, ~24 sidearms), a Gatling gun on its carriage
                     at the gallery rail, a punt gun and a buffalo rifle mounted on the gallery fascia, crates of dynamite and cartridges,
                     bandoliers, Utah's upstairs workbench and river gear (sealed crates, a skiff on the wall), a chain across the stair foot.
+  Arm2_Sharps       Rich's Sharps Model 1874 in the lit case (its own piece so the introduction can lift it out into his hand)
   Arm2_Nav          empties only: Spot_<name> (NPC waypoints, y = floor height), Block_<name> (scale = half extents of a walk blocker in
                     the shop floor plane), LightAnchor_<n> (warm lamp positions), SignAnchor_ARMS (the painted sign).
 Everything is written in GAME coordinates (x right, y up, z toward the street) and converted once at the end.
 """
 import math
+import os
 import sys
 
 import bmesh
 import bpy
 from mathutils import Matrix, Vector
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import armory_kit as K          # the Sharps 1874 (shared with build_sharps_gatling.py)
 
 argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 OUT = argv[argv.index("--out") + 1] if "--out" in argv else "src/episode2/extras/armory/armory2.glb"
@@ -55,7 +60,7 @@ for n, c, r, mt in [("Siding", (0.42, 0.33, 0.24), 0.9, 0.0), ("Trim", (0.30, 0.
                     ("DarkWood", (0.20, 0.12, 0.07), 0.55, 0.0), ("Cloth", (0.45, 0.10, 0.08), 0.9, 0.0), ("Green", (0.10, 0.25, 0.14), 0.8, 0.0),
                     ("GunWood", (0.34, 0.17, 0.07), 0.45, 0.0), ("GunSteel", (0.09, 0.095, 0.10), 0.35, 0.85), ("Leather", (0.36, 0.21, 0.11), 0.7, 0.0),
                     ("Paper", (0.82, 0.74, 0.56), 0.95, 0.0), ("Bone", (0.88, 0.84, 0.74), 0.7, 0.0), ("Dynamite", (0.62, 0.10, 0.06), 0.8, 0.0),
-                    ("Felt", (0.12, 0.26, 0.16), 0.95, 0.0), ("Rope", (0.55, 0.45, 0.30), 0.95, 0.0), ("Soot", (0.05, 0.045, 0.04), 0.95, 0.0)]:
+                    ("Felt", (0.12, 0.26, 0.16), 0.95, 0.0), ("Rope", (0.55, 0.45, 0.30), 0.95, 0.0), ("Soot", (0.05, 0.045, 0.04), 0.95, 0.0), ("CaseHard", (0.17, 0.15, 0.21), 0.38, 0.85)]:
     mat(n, c, r, mt)
 mat("GlassClear", (0.62, 0.70, 0.72), 0.05, 0.0, alpha=0.22)
 mat("LampGlow", (1.0, 0.72, 0.36), 0.4, 0.0, emit=4.0)
@@ -144,6 +149,8 @@ class Piece:
             e.scale = (s[0], s[2], s[1])
         return root, tris
 
+
+Piece.prism = K.Piece.prism      # profile extrusions for the shared Sharps (armory_kit.py)
 
 T = 0.16                         # wall thickness
 W, D = 10.0, 12.0                # footprint (x across the front, depth into -z)
@@ -453,11 +460,11 @@ for sx in (-1, 1):
     F.box("Felt", (1.55, 0.02, 0.65), (x, 0.81, -2.2))
     for i in range(4):
         revolver(F, (x - 0.55 + i * 0.37, 0.84, -2.2), yaw=0.3 if i % 2 else -0.3)
-# the lit long-rifle case (the day-88 sniper), end of the counter
+# the lit long-rifle case: Rich's Sharps Model 1874 Buffalo Gun (the day-88 long rifle), end of the counter
 F.box("DarkWood", (0.5, 0.9, 1.7), (2.6, 0.45, CZ))
 F.box("GlassClear", (0.5, 0.45, 1.7), (2.6, 1.13, CZ))
 F.box("Felt", (0.46, 0.02, 1.66), (2.6, 0.91, CZ))
-rifle(F, (2.6, 0.97, CZ), yaw=math.pi / 2, kind="sniper")
+# (the rifle itself is its own piece, Arm2_Sharps, built below: Rich lifts it out of the case in the introduction)
 F.cyl("LampGlow", 0.02, 0.02, 1.5, (2.6, 1.34, CZ), "z", 6)
 # ammunition shelves along the left wall, under the left gallery (by calibre: three shelves of boxes)
 for k in range(4):
@@ -551,6 +558,9 @@ for k in range(12):
 F.box("Iron", (1.25, 0.02, 0.02), ((STAIR_X0 + STAIR_X1) / 2, 0.8, -2.3))
 F.box("Paper", (0.3, 0.16, 0.01), ((STAIR_X0 + STAIR_X1) / 2, 0.7, -2.28))
 root_f, tris_f = F.build()
+SH = Piece("Arm2_Sharps")
+K.sharps(SH, (2.6, 1.012, CZ + 0.245), yaw=math.pi / 2)
+root_sh, tris_sh = SH.build()
 
 # =============================================================================================================== the navigation data
 N = Piece("Arm2_Nav")
@@ -577,7 +587,7 @@ N.build()
 
 # export just these three pieces
 for o in bpy.context.scene.objects:
-    o.select_set(o.name.split(".")[0].split("_geo")[0] in ("Bldg_Armory2", "Arm2_Fit", "Arm2_Nav") or (o.parent and o.parent.name in ("Bldg_Armory2", "Arm2_Fit", "Arm2_Nav")))
+    o.select_set(o.name.split(".")[0].split("_geo")[0] in ("Bldg_Armory2", "Arm2_Fit", "Arm2_Nav", "Arm2_Sharps") or (o.parent and o.parent.name in ("Bldg_Armory2", "Arm2_Fit", "Arm2_Nav", "Arm2_Sharps")))
 import os
 os.makedirs(os.path.dirname(os.path.abspath(OUT)), exist_ok=True)
 bpy.ops.export_scene.gltf(filepath=OUT, export_format="GLB", export_apply=True, export_yup=True, use_selection=True,

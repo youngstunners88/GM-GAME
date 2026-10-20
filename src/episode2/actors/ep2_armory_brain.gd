@@ -14,6 +14,8 @@ extends RefCounted
 ## Pure logic: `step(delta, player_world)` is called by the chamber; a fixed seed replays exactly (tests/ep2_armory_npc_test.gd).
 
 signal greeted(who: String)
+## A directed walk reached its spot (the introduction beat, ep2-armory-guns).
+signal directed_arrived(who: String, spot: String)
 
 const STAIR_EDGE := ["stair_foot", "stair_head"]
 ## Walkable graph between the building's spots (both directions). The counter splits the shop: the gaps at its ends are the only ways
@@ -29,6 +31,8 @@ const EDGES := [
 	["stair_top", "gallery_river"], ["gallery_river", "gallery_window"], ["gallery_river", "gallery_bench"], ["gallery_window", "gallery_bench"],
 	["gallery_bench", "gallery_rack"], ["gallery_rack", "gallery_crates"], ["gallery_rack", "well_view"], ["gallery_crates", "well_view"],
 	["well_view", "gallery_gatling"], ["well_view", "gallery_left"],
+	# out the door and across the porch to the lane and the Gatling post in the yard (the post's spots are added by the chamber)
+	["door", "porch"], ["porch", "lane"], ["lane", "gatling_stand"], ["gatling_stand", "gatling_look"],
 ]
 ## Where a man faces while working at a spot (local frame).
 const FACE := {
@@ -84,6 +88,13 @@ var _player_inside: bool = false
 var _react_t: float = 0.0
 var _wait_t: float = 0.0
 var _adj: Dictionary = {}
+## DIRECTED: a story beat has him (Rich shows the Sharps, Utah takes Lil Blunt out to the Gatling). While directed he runs no tasks and makes no
+## greetings; `release()` hands him back to his work from wherever he stands.
+var directed: bool = false
+var directed_spot: String = ""
+var _announced: bool = false
+var _directed_face: Vector3 = Vector3.INF
+var _directed_face_world: bool = false
 
 
 func setup(p_who: String, p_folk: Ep2TownFolk, p_xf: Transform3D, p_spots: Dictionary, start_spot: String, seed: int) -> void:
@@ -120,13 +131,18 @@ func step(delta: float, player_world: Vector3) -> void:
 	if folk == null:
 		return
 	_t -= delta
-	_react(delta, player_world)
+	if not directed:
+		_react(delta, player_world)
 	match state:
 		"walk":
 			if not folk.is_walking():
 				_arrive_leg()
 		"work":
-			if _t <= 0.0:
+			if directed:
+				if not _announced:
+					_announced = true
+					directed_arrived.emit(who, spot)
+			elif _t <= 0.0:
 				_next_step()
 		"wait":
 			_wait_t -= delta
@@ -140,6 +156,44 @@ func step(delta: float, player_world: Vector3) -> void:
 		_:
 			_next_task()
 	folk.step(delta)
+
+
+# --- directed beats -------------------------------------------------------------------------------------------------------
+
+## Walk to `goal` (a spot name in this brain's graph) along the normal routes (stair reservation, the counter's gaps), then play `clip` there facing
+## the local point `face` (or a world point when `face_world` is true) until `release()`. Emits `directed_arrived` once he is there.
+func direct(goal: String, clip: String, face: Vector3 = Vector3.INF, face_world: bool = false) -> bool:
+	if not spots.has(goal):
+		return false
+	directed = true
+	_announced = false
+	directed_spot = goal
+	if _stair_owner == self and spot not in ["stair_head", "stair_foot"]:
+		_stair_owner = null
+	_directed_face = face
+	_directed_face_world = face_world
+	_steps = [[goal, clip, 1.0e6, 1.0e6, ""]]
+	state = "idle"
+	_next_step()
+	return true
+
+
+## Change what a directed man does where he stands (play another clip, turn to another point) without walking.
+func direct_here(clip: String, face: Vector3 = Vector3.INF, face_world: bool = false) -> void:
+	directed = true
+	if face != Vector3.INF:
+		folk.face_point(face if face_world else xf * face)
+	folk.hold_clip(clip)
+
+
+func release() -> void:
+	directed = false
+	directed_spot = ""
+	_announced = false
+	_steps = []
+	_route = []
+	if state != "walk":
+		state = "idle"
 
 
 # --- reactions ------------------------------------------------------------------------------------------------------------
@@ -239,7 +293,10 @@ func _arrive_leg() -> void:
 func _begin_work(at: String) -> void:
 	state = "work"
 	folk.walk_clip = "Walk"
-	_face_local(FACE.get(at, Vector3(0, 0, -2)))
+	if directed and _directed_face != Vector3.INF:
+		folk.face_point(_directed_face if _directed_face_world else xf * _directed_face)
+	else:
+		_face_local(FACE.get(at, Vector3(0, 0, -2)))
 	folk.hold_clip(_step_clip)
 
 

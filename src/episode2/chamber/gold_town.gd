@@ -88,6 +88,15 @@ const SNIPER_BOX := 10
 const RIFLE_BOX := 24
 const REVOLVER_BOX := 18
 
+## The Sharps 1874 and the Colt Gatling (founder 2026-10-20, skill ep2-armory-guns). The rifle Rich lifts out of the lit case is the long rifle he sells
+## ("sniper" in Ep2ArmoryState.SHOP); the Gatling stands on its post in the yard OUTSIDE the shop and is never for sale.
+const HOLD_RICH := "hand_r"                            # the bone each man carries the rifle on (Ep2TownFolk.attach_prop matches loosely)
+const HOLD_UTAH := "RightHand"
+const SHARPS_HOLD_POS := Vector3(0.0, 0.10, 0.02)      # in the hand bone's frame (tuned against the InspectRifle clip, see tools/ep2_shots/armory_guns_shot.gd)
+const SHARPS_HOLD_ROT := Vector3(0.0, 0.0, 90.0)
+const MOUNT_R := 2.6                                   # how close to the post's stand he must be to take the crank
+const MOUNT_FOV := 66.0
+
 var _town_col: Dictionary = {}
 var _sheriff: Ep2TownFolk = null
 var _minister: Ep2TownFolk = null
@@ -128,6 +137,14 @@ var _jail_visited: bool = false
 var _jail_done_t: float = -1.0
 var _investigation_open: bool = false                 # the hunt is on: lake -> river -> trains -> Fort Knox
 var _spent: int = 0                                   # crypto spent at the counter (test evidence)
+## The two hero guns (ep2-armory-guns).
+var _gatling: Ep2GatlingPost = null                   # the Colt on its post in the yard (streamed extras; null when they are not mounted)
+var _mounted: bool = false                            # he is at the crank: the bore is his view and his mouse
+var _sharps_case: Node3D = null                       # the Sharps in the lit case
+var _sharps_hand: Node3D = null                       # ...and the same rifle once Rich has lifted it out
+var _intro: Ep2ArmoryIntro = null                     # Rich and Utah introduce the two guns
+var _intro_asked: bool = false
+var _mount_bursts: int = 0                            # bursts fired from the post (test evidence)
 var _mouse_before: int = Input.MOUSE_MODE_CAPTURED
 
 
@@ -275,11 +292,12 @@ func _build_armory_folk_v2() -> void:
 	_utah.setup(Ep2Extras.UTAH, UTAH2_HEIGHT, Color(0.28, 0.33, 0.34))
 	_rich_brain = Ep2ArmoryBrain.new()
 	_rich_brain.walk_speed = RICH2_WALK
-	_rich_brain.setup("rich", _rich, xf, Ep2GoldTown.armory_spots, "counter_rich", 7101)
+	_rich_brain.setup("rich", _rich, xf, _brain_spots(), "counter_rich", 7101)
 	_utah_brain = Ep2ArmoryBrain.new()
 	_utah_brain.walk_speed = UTAH2_WALK
-	_utah_brain.setup("utah", _utah, xf, Ep2GoldTown.armory_spots, "bench", 7202)
+	_utah_brain.setup("utah", _utah, xf, _brain_spots(), "bench", 7202)
 	_build_shop()
+	_build_guns()
 
 
 ## The trade counter itself: hidden until [E] at the counter (or a touch of BUY). Leather and brass,
@@ -299,9 +317,227 @@ func _build_shop() -> void:
 	_shop.hide()
 
 
+# --- the two hero guns (Sharps 1874, Colt Gatling) --------------------------------------------------------------------------
+
+## The spots the two men walk between: the building's own Spot_ empties plus the Gatling post in the yard (building-local frame).
+func _brain_spots() -> Dictionary:
+	var sp: Dictionary = Ep2GoldTown.armory_spots.duplicate()
+	sp["gatling_stand"] = Ep2GoldTown.GATLING_POST + Vector3(-Ep2GoldTown.GATLING_STAND_BACK, 0.0, 0.0)
+	sp["gatling_look"] = Ep2GoldTown.GATLING_POST + Vector3(-1.1, 0.0, -2.0)
+	return sp
+
+
+## The Sharps in the lit case (and a second instance for Rich's hand), the Gatling on its post in the yard with its plates, and the introduction that
+## ties them to Rich and Utah. All of it is streamed art (Ep2Extras): where it is not mounted the Armory simply plays as before.
+func _build_guns() -> void:
+	var xf: Transform3D = Ep2GoldTown.building_xform(Ep2GoldTown.entry("Bldg_Armory"))
+	_sharps_case = _visuals.find_child("Arm2_Sharps_Bldg_Armory", true, false) as Node3D
+	if Ep2Extras.has(Ep2Extras.GATLING):
+		var post_w: Vector3 = xf * Ep2GoldTown.GATLING_POST
+		var fwd: Vector3 = xf.basis * Vector3.RIGHT
+		_gatling = Ep2GatlingPost.new()
+		_gatling.name = "GatlingPost"
+		_visuals.add_child(_gatling)
+		_gatling.position = post_w
+		if _gatling.build(Ep2Extras.GATLING, atan2(fwd.x, fwd.z)):
+			_gatling.hang_sign("NOT FOR SALE")
+			var face: Vector3 = post_w + Vector3(0.0, 1.2, 0.0)
+			for pl in Ep2GoldTown.GATLING_PLATES:
+				_gatling.add_plate(xf * (pl as Vector3), face)
+			for bl in Ep2GoldTown.GATLING_BALES:
+				_gatling.add_bale(xf * (bl as Vector3), face)
+			if _town_col.has("props"):
+				(_town_col["props"] as Array).append([Vector2(post_w.x, post_w.z), 0.85])
+		else:
+			_visuals.remove_child(_gatling)
+			_gatling.free()
+			_gatling = null
+	if _rich_brain == null or _utah_brain == null:
+		return
+	_intro = Ep2ArmoryIntro.new()
+	_intro.rich = _rich_brain
+	_intro.utah = _utah_brain
+	_intro.gatling = _gatling
+	_intro.sharps_price = int(Ep2ArmoryState.shop_item("sniper").get("price", PRICE_SNIPER))
+	if _gatling != null and _gatling.plate_count() > 0:
+		var first: Dictionary = _gatling.targets[0]
+		_intro.demo_target = (first["node"] as Node3D).position + _gatling.position + Vector3(0.0, 1.22, 0.0)
+	_intro.said.connect(func(who: String, text: String, secs: float) -> void:
+		if _hud != null:
+			_hud.toast("%s: %s" % [who, text], secs))
+	_intro.objective_changed.connect(_on_intro_objective)
+	_intro.sharps_lifted.connect(_on_sharps_lifted)
+	_intro.finished.connect(_on_intro_finished)
+
+
+func _on_intro_objective(text: String) -> void:
+	if _hud != null and _beat == Beat.ARMORY:
+		_hud.objective = text if text != "" else "Trade with Rich at the counter [E]."
+
+
+func _on_intro_finished() -> void:
+	_on_intro_objective("")
+
+
+## Rich lifts the Sharps out of the lit case into his hand (the case rifle hides), or locks it back. Without a hand bone the rifle simply stays in the case.
+func _on_sharps_lifted(in_hand: bool) -> void:
+	if not in_hand:
+		if _rich != null:
+			_rich.drop_prop("Sharps")
+		if _sharps_case != null:
+			_sharps_case.visible = true
+		return
+	if not Ep2Extras.has(Ep2Extras.SHARPS) or _rich == null:
+		return
+	var ps: PackedScene = load(Ep2Extras.SHARPS) as PackedScene
+	if ps == null:
+		return
+	var rifle: Node3D = ps.instantiate() as Node3D
+	rifle.name = "Sharps"
+	if _rich.attach_prop(rifle, HOLD_RICH, SHARPS_HOLD_POS, SHARPS_HOLD_ROT):
+		if _sharps_case != null:
+			_sharps_case.visible = false
+	else:
+		rifle.free()
+
+
+## The introduction starts when he walks up to the counter, and ends (guns put away, both men back at work) if the beat moves on.
+func _tick_armory_guns(delta: float) -> void:
+	if _intro == null:
+		return
+	if not _intro_asked and _at_armory_counter():
+		_intro_asked = true
+		_intro.begin()
+	_intro.mounted = _mounted
+	_intro.player_bursts = _mount_bursts
+	_intro.step(delta, _player_pos)
+
+
+func skip_armory_intro() -> void:
+	_intro_asked = true
+	if _intro != null:
+		_intro.cancel()
+
+
+## Step away from the crank and put the guns away (the beat moved on, or the room is being left).
+func _end_guns() -> void:
+	if _mounted:
+		_dismount()
+	if _intro != null:
+		_intro.cancel()
+
+
+func _can_mount() -> bool:
+	if _gatling == null or _mounted or _beat != Beat.ARMORY or has_player_control() == false:
+		return false
+	if _intro != null and not _intro.mount_allowed():
+		return false
+	return _player_pos.distance_to(_gatling.stand_position()) < MOUNT_R
+
+
+func _mount() -> void:
+	_mounted = true
+	_move_input = Vector2.ZERO
+	_run_input = false
+	_moving = false
+	set_aim(false)
+	var st: Vector3 = _gatling.stand_position()
+	_player_pos = Vector3(st.x, _ground_y, st.z)
+	_gatling.set_aim(_look_yaw, 0.0)
+	_look_yaw = _gatling.aim_yaw
+	_look_pitch = _gatling.aim_pitch
+	if _hud != null:
+		_hud.set_search_prompt("")
+		_hud.toast("THE COLT GATLING - click to fire, [E] to step away", 3.2)
+
+
+func _dismount() -> void:
+	_mounted = false
+	if _gatling != null:
+		_gatling.cease()
+		_look_yaw = _gatling.aim_yaw
+		_look_pitch = clampf(_gatling.aim_pitch, FPS_PITCH_MIN, FPS_PITCH_MAX)
+
+
+func is_mounted() -> bool: return _mounted
+func get_gatling() -> Ep2GatlingPost: return _gatling
+func get_intro() -> Ep2ArmoryIntro: return _intro
+func mount_bursts() -> int: return _mount_bursts
+
+
+# --- mounted mode: the crank is his view, his mouse and his trigger; everything else about walking and the rifle waits -------------
+
+func look(relative: Vector2) -> void:
+	if _mounted and has_player_control() and _gatling != null:
+		_gatling.aim_delta(relative)
+		_look_yaw = _gatling.aim_yaw
+		_look_pitch = _gatling.aim_pitch
+		return
+	super(relative)
+
+
+func _move_player(delta: float) -> void:
+	if _mounted:
+		_moving = false
+		return
+	super(delta)
+
+
+func _can_jump() -> bool:
+	return not _mounted
+
+
+func set_aim(on: bool) -> void:
+	if _mounted:
+		return
+	super(on)
+
+
+func reload() -> bool:
+	if _mounted:
+		if _hud != null:
+			_hud.toast("THE DRUM IS ALL THERE IS", 1.4)
+		return false
+	return super()
+
+
+func select_weapon(id: String) -> bool:
+	if _mounted:
+		return false
+	return super(id)
+
+
+func _fps_camera(delta: float) -> void:
+	if _mounted and _gatling != null:
+		_camera.position = _gatling.eye_position()
+		_camera.look_at(_camera.position + _gatling.bore_dir(), Vector3.UP)
+		_camera.fov = MOUNT_FOV
+		return
+	super(delta)
+
+
+func _set_eye_view(on: bool) -> void:
+	super(on)
+	if _mounted and _vm != null:
+		_vm.set_shown(false)                                 # the Winchester stays out of the picture while his hands are on the crank
+
+
+func _tick_viewmodel(delta: float) -> void:
+	super(delta)
+	if _mounted and _gatling != null and _hud != null:
+		_hud.set_ammo(_gatling.rounds, 0, Ep2GatlingPost.DRUM)
+		_hud.spread_deg = 1.4
+
+
 ## [E] at the counter opens Rich & Utah's trade. The personal armory keeps its own key: this is a
 ## trade with crypto, not a loadout swap (founder lock PROMPT_EPISODE2_RICH_ARMORY_UTAH_RIVER.md).
 func start_rig(_payment: String = "") -> bool:
+	if _mounted:
+		_dismount()
+		return true
+	if _can_mount():
+		_mount()
+		return true
 	if _beat != Beat.ARMORY or _shop_open or _shop == null:
 		return false
 	if not _at_armory_counter():
@@ -658,6 +894,7 @@ func _on_beat_entered(b: int) -> void:
 				look_toward(_rich.position + Vector3(0.0, RICH_HEIGHT * 0.85, 0.0), 2.2)
 			_start_show([{"do": "wait", "t": 1.8}, {"do": "call", "fn": release_look}], false)
 		Beat.GEARED:
+			_end_guns()
 			_geared = true
 			prebuild_requested.emit("logans_lake")
 			if _hud:
@@ -747,6 +984,8 @@ func _sheriff_look_at_player() -> void:
 
 func _tick(delta: float) -> void:
 	_tick_people(delta)
+	if _gatling != null:
+		_gatling.step(delta)
 	if _flash_t > 0.0:
 		_flash_t = maxf(0.0, _flash_t - delta)
 		_flash.light_energy = 6.0 * _flash_t / 0.08
@@ -794,10 +1033,16 @@ func _tick(delta: float) -> void:
 				_advance_to(Beat.ARMORY)
 		Beat.ARMORY:
 			_armory_visited = true
+			_tick_armory_guns(delta)
 			if _hud != null:
-				_hud.set_search_prompt("Trade with Rich [E]" if _at_armory_counter() else "")
+				if _mounted:
+					_hud.set_search_prompt("")
+				elif _can_mount():
+					_hud.set_search_prompt("Take the crank [E]")
+				else:
+					_hud.set_search_prompt("Trade with Rich [E]" if _at_armory_counter() else "")
 			_check_geared()
-			if _gear_t >= 0.0 and not _show_active:
+			if _gear_t >= 0.0 and not _show_active and not _mounted:
 				_gear_t -= delta
 				if _gear_t < 0.0:
 					_advance_to(Beat.GEARED)
@@ -933,6 +1178,15 @@ func _current_speed() -> float:
 
 ## A shot before the word is a FOUL (the round is redone); after it, the round is real.
 func shoot() -> bool:
+	if _mounted:
+		if not has_player_control() or _gatling == null:
+			return false
+		if _gatling.fire_burst(0.7):
+			_mount_bursts += 1
+			return true
+		if _hud != null:
+			_hud.toast("THE DRUM IS EMPTY", 1.4)
+		return false
 	if _beat == Beat.DRAW and _draw_state == "wait" and has_player_control():
 		_fouls += 1
 		_draw_state = "foul"
@@ -1031,7 +1285,7 @@ func coins_spent() -> int: return _spent
 ## The personal armory's key stays out of the trade: while Rich has the counter up, the loadout
 ## selector (and the trade's own E) must not fight over the same key.
 func toggle_armory() -> void:
-	if _shop_open or not _running or _resolved or _show_blocks_control:
+	if _shop_open or _mounted or not _running or _resolved or _show_blocks_control:
 		return
 	super()
 func armory_open() -> bool:
