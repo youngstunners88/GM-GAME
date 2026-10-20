@@ -234,7 +234,7 @@ func _ready() -> void:
 	await get_tree().create_timer(0.08, true).timeout
 	_check("holding armory freezes world physics and finite ammunition", probe.ticks == ticks and loaded == root.armory.active_gun().rounds and room.get_player_position() == before and not room.shoot())
 	_check("holstered reload clock stays frozen throughout selection", root.armory.firearm(Ep2ArmoryState.WIN)._reload_t == reload_clock and root.armory.firearm(Ep2ArmoryState.WIN).rounds == 1)
-	_check("three weapon cards preserve the firearm textures and recovered bow icon", hud._panel.ICONS[Ep2ArmoryState.WIN].get_width() == 640 and hud._panel.ICONS[Ep2ArmoryState.REM].get_width() == 640 and hud._panel.ICONS[Ep2ArmoryState.BOW].get_width() == 512 and hud._slots.size() == 3)
+	_check("three weapon cards preserve the firearm textures and the bow-in-his-hands icon (all three 640 wide)", hud._panel.ICONS[Ep2ArmoryState.WIN].get_width() == 640 and hud._panel.ICONS[Ep2ArmoryState.REM].get_width() == 640 and hud._panel.ICONS[Ep2ArmoryState.BOW].get_width() == 640 and hud._slots.size() == 3)
 	key.physical_keycode = KEY_1
 	Input.parse_input_event(key)
 	await get_tree().process_frame
