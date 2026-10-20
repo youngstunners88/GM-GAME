@@ -8,7 +8,7 @@ metadata={
 "vram_texture": false
 }
 generator_parameters={
-"md5": "79858eed45b7771c0be0e5322bf38923"
+"md5": "8b161ab7a410c159dfb436f786630830"
 }
 
 [deps]
@@ -21,8 +21,6 @@ dest_files=["res://.godot/imported/founder_bow_tripo_rgb_2a16a794-d190-459d-953b
 compress/mode=1
 compress/high_quality=false
 compress/lossy_quality=0.85
-compress/uastc_level=0
-compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
@@ -30,10 +28,6 @@ mipmaps/generate=true
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""
-process/channel_remap/red=0
-process/channel_remap/green=1
-process/channel_remap/blue=2
-process/channel_remap/alpha=3
 process/fix_alpha_border=true
 process/premult_alpha=false
 process/normal_map_invert_y=false
