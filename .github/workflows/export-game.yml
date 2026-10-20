@@ -363,6 +363,10 @@ jobs:
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_armory_two_story_test.tscn 2>&1 | tee armory2-tests.log
           grep -q 'EP2_ARMORY2: ALL PASS' armory2-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' armory2-tests.log; then exit 1; fi
+          # The Sharps 1874 and the Colt Gatling (founder 2026-10-20): Rich and Utah introduce them; the Gatling is a post outside the shop, never stock.
+          timeout 400 "$GODOT_BIN" --headless res://tests/ep2_armory_guns_test.tscn 2>&1 | tee armory-guns-tests.log
+          grep -q 'EP2_ARMORY_GUNS: ALL PASS' armory-guns-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' armory-guns-tests.log; then exit 1; fi
           # Town windows and doors are real holes and the town has people (founder 2026-10-19): kit openings + five townsmen/townswomen.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_town_people_test.tscn 2>&1 | tee town-people-tests.log
           grep -q 'EP2_TOWN_PEOPLE: ALL PASS' town-people-tests.log

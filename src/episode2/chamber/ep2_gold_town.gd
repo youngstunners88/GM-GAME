@@ -55,10 +55,10 @@ const FOOTPRINT: Dictionary = {
 ## The Colt Gatling's post in the Armory's front yard (founder 2026-10-20, skill ep2-armory-guns), in Bldg_Armory's LOCAL frame (x along the front, +z out
 ## into the yard). The Armory faces -z (yaw PI), so local +x is world -x: at rest the bore points west over open ground, away from the street. The gun
 ## is NOT FOR SALE; the plates and bales are the firing yard it is demonstrated on.
-const GATLING_POST := Vector3(7.4, 0.0, 3.6)
-const GATLING_STAND_BACK := 1.55
-const GATLING_PLATES: Array = [Vector3(13.0, 0.0, 1.2), Vector3(16.5, 0.0, 4.6), Vector3(19.5, 0.0, -1.4), Vector3(23.0, 0.0, 3.0), Vector3(26.0, 0.0, 0.4)]
-const GATLING_BALES: Array = [Vector3(30.0, 0.0, 2.0), Vector3(14.0, 0.0, 6.8)]
+const GATLING_POST := Vector3(9.6, 0.0, 1.6)         # beyond the porch's right end and clear of the grazing horse (-27, 1462.5): founder, "dont replace the horses"
+const GATLING_STAND_BACK := 1.0
+const GATLING_PLATES: Array = [Vector3(17.0, 0.0, 0.4), Vector3(20.5, 0.0, 3.6), Vector3(24.0, 0.0, -0.9), Vector3(27.5, 0.0, 2.4), Vector3(31.0, 0.0, 0.2)]
+const GATLING_BALES: Array = [Vector3(36.0, 0.0, 1.6), Vector3(19.0, 0.0, 5.6)]
 
 ## The two-storey Armory (founder 2026-10-19, skill ep2-armory-two-story). When the streamed extras are loadable (Ep2Extras), the
 ## "Bldg_Armory" LAYOUT row draws Bldg_Armory2 + its fit-out instead of the kit's one-storey shop, at the SAME transform - so wherever

@@ -90,7 +90,7 @@ const REVOLVER_BOX := 18
 
 ## The Sharps 1874 and the Colt Gatling (founder 2026-10-20, skill ep2-armory-guns). The rifle Rich lifts out of the lit case is the long rifle he sells
 ## ("sniper" in Ep2ArmoryState.SHOP); the Gatling stands on its post in the yard OUTSIDE the shop and is never for sale.
-const HOLD_RICH := "hand_r"                            # the bone each man carries the rifle on (Ep2TownFolk.attach_prop matches loosely)
+const HOLD_RICH := "hand_l"                            # the bone each man carries the rifle on (Ep2TownFolk.attach_prop matches loosely)
 const HOLD_UTAH := "RightHand"
 const SHARPS_HOLD_POS := Vector3(0.0, 0.10, 0.02)      # in the hand bone's frame (tuned against the InspectRifle clip, see tools/ep2_shots/armory_guns_shot.gd)
 const SHARPS_HOLD_ROT := Vector3(0.0, 0.0, 90.0)
@@ -443,8 +443,7 @@ func _mount() -> void:
 	set_aim(false)
 	var st: Vector3 = _gatling.stand_position()
 	_player_pos = Vector3(st.x, _ground_y, st.z)
-	_gatling.set_aim(_look_yaw, 0.0)
-	_look_yaw = _gatling.aim_yaw
+	_look_yaw = _gatling.aim_yaw                    # he takes the crank with the bore where it points (the arc is the gun's, not his old view)
 	_look_pitch = _gatling.aim_pitch
 	if _hud != null:
 		_hud.set_search_prompt("")

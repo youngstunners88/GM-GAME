@@ -270,7 +270,7 @@ def gatling_pitch_geo(p):
     p.box("Iron", (0.012, 0.07, 0.012), (-0.16, 0.18, 0.0))                                   # rear post
     p.box("Iron", (0.03, 0.012, 0.05), (-0.16, 0.215, 0.0))                                   # rear leaf
     p.empty("Gat_Muzzle", (GAT_BARREL_X + 1.0, 0.0, 0.0))
-    p.empty("Gat_Eye", (-0.64, 0.38, 0.0))
+    p.empty("Gat_Eye", (-0.86, 0.66, 0.0))          # above and behind the drum: he looks over it down the bore
     p.empty("Gat_Eject", (0.10, 0.02, 0.145))
 
 

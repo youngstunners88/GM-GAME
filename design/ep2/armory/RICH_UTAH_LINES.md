@@ -96,3 +96,10 @@ The `GEARED` hand-off (both, as the room hands him to the day-88 build):
 - Threat barks, bear lines at the river, and anything past the hand-off belong to the day-88 river build — they are
   **not** scripted here.
 - Utah's casting (voice id) is the only open casting call. When it lands, record it in §1 and the spec's §8.
+
+
+## 4. The two-gun introduction (founder 2026-10-20; shipped as timed text, UNVOICED)
+
+Source of truth: `Ep2ArmoryIntro.SHARPS_LINES / GATLING_CALL / GATLING_LINES / GATLING_AFTER / CLOSING` (`src/episode2/actors/ep2_armory_intro.gd`). A voice pass reads them verbatim.
+Stock changes: the shop's long rifle is the **SHARPS 1874 BUFFALO GUN** (`SET TRIGGERS - FOR THE OVERLOOK`) and its cartridges **SHARPS CARTRIDGES**; the Colt Gatling is never stock.
+Rules as in section 2: Rich prices the iron in the shop's own coins and never says "free"; no protocol numbers, yields or tickers; spoken lines say "coin".

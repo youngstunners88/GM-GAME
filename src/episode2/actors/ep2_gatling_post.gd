@@ -229,7 +229,7 @@ func eye_position() -> Vector3:
 ## Where he stands to work the crank: behind the breech on the post's axis, at the bore's heading.
 func stand_position() -> Vector3:
 	var back: Vector3 = Vector3(sin(heading), 0.0, cos(heading))
-	return Vector3(position.x, 0.0, position.z) - back * 1.55
+	return Vector3(position.x, 0.0, position.z) - back * 1.0
 
 
 # --- firing --------------------------------------------------------------------------------------------------------------
