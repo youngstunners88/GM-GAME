@@ -449,6 +449,9 @@ jobs:
           XB=$(stat -c%s web/game/ep2_extras.pck)
           echo "ep2_extras.pck = $XB bytes"
           [ "$XB" -lt 199229440 ] || { echo "::error::ep2_extras.pck over the 190 MiB per-file gate"; exit 1; }
+          # Presence gate (skill ep2-townfolk-presence): townspeople, openings kit, Rich & Utah, jail, Logan and the town->lake chamber
+          # chain must be INSIDE the packs that get deployed - "on master" is not "in the build".
+          bash scripts/check-ep2-extras-pack.sh web/game
 
       - name: Restore the stamped source
         # MUST run, and must run BEFORE any step that touches git.
