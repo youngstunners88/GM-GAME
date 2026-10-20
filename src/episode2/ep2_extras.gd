@@ -21,6 +21,10 @@ const UTAH := "res://src/episode2/extras/folk/utah_armory2.glb"
 const TOWN_KIT := "res://src/episode2/extras/town/town_kit2.glb"
 ## The townspeople (Ep2TownPeople), one rigged GLB each.
 const PEOPLE_DIR := "res://src/episode2/extras/people/"
+## The jailhouse (founder lock 2026-10-20): building + cells + nav points, its painted sign, and the accomplice in cell A.
+const JAIL := "res://src/episode2/extras/jail/jailhouse.glb"
+const JAIL_SIGN := "res://src/episode2/extras/jail/sign_JAIL.png"
+const PRISONER := "res://src/episode2/extras/people/prisoner_accomplice.glb"
 
 static var _state: String = ""            # "" never started, "loading", "ready", "failed"
 
