@@ -12,6 +12,15 @@ const OFFICIAL_NAME := "Jackson Mccree"
 const BOUNTY_CURRENCY := "XAUt"                     # gold XAUt: the lock's own word; never a new token name, never a soft currency
 const HORSE_PRICE_BTC := 0.5                        # half a Bitcoin of Episode 1 crypto
 const HORSE_TENDER := "btc"
+## FOUNDER RULING 2026-10-21: one BTC coin face is one Bitcoin. The purse holds whole faces, so the stable takes ONE face and hands half a Bitcoin back as change.
+const BTC_FACE_VALUE := 1.0
+const HORSE_FACES_PAID := 1
+const HORSE_CHANGE_BTC := 0.5                       # BTC_FACE_VALUE * HORSE_FACES_PAID - HORSE_PRICE_BTC
+## FOUNDER RULING 2026-10-21: the auction is a SECOND SETTLEMENT in the next town (not an event hall): the trail ends at its edge. No full open world: a short trail + a bounded settlement.
+const AUCTION_PLACE := "next_town"
+## FOUNDER RULING 2026-10-21: mean, with an eye patch. The shipped model is a Hunyuan scan rigged on the townfolk skeleton (Ep2Extras.JACK_HAMMER), 1.92 m with the hat.
+const HEIGHT_M := 1.92
+const EYE_PATCH_EYE := "left"                       # his left eye is covered; the right one is the cold one
 const BEAT_ORDER: Array = ["JOB_ASK", "BOUNTY", "JAIL_WORD", "STABLE", "TRAIL", "AUCTION"]
 
 ## The wanted notice on the Sheriff's wall (a 3D sign or a HUD card; the paper's formal name is Jackson Mccree).

@@ -367,6 +367,10 @@ jobs:
           timeout 200 "$GODOT_BIN" --headless res://tests/ep2_jack_hammer_test.tscn 2>&1 | tee jack-hammer-tests.log
           grep -q 'EP2_JACK_HAMMER: ALL PASS' jack-hammer-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' jack-hammer-tests.log; then exit 1; fi
+          # Jack Hammer himself (founder 2026-10-21: mean, eye patch): the streamed model loads, is rigged with the five townfolk clips and stands 1.92 m.
+          timeout 200 "$GODOT_BIN" --headless res://tests/ep2_jack_hammer_character_test.tscn 2>&1 | tee jack-hammer-char-tests.log
+          grep -q 'EP2_JACK_HAMMER_CHARACTER: ALL PASS' jack-hammer-char-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' jack-hammer-char-tests.log; then exit 1; fi
           # Every selector card shows Lil Blunt's hand with the weapon (founder 2026-10-21: the Remington and the bow cards).
           timeout 200 "$GODOT_BIN" --headless res://tests/ep2_weapon_icons_test.tscn 2>&1 | tee weapon-icons-tests.log
           grep -q 'EP2_WEAPON_ICONS: ALL PASS' weapon-icons-tests.log

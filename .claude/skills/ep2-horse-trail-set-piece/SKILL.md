@@ -9,7 +9,7 @@ Locked by the Jack Hammer lock (`ep2-jack-hammer-narrative`): half a Bitcoin buy
 
 ## Stable (small)
 - Where: the Episode 2 surface stable (`gm-game-ep2-surface-set`: the old `feat/ep2-surface-set` lake/train/stable/horses work; **do not replace the 3D horses** - `Ep2TownLife` keeps them). One yard, one stable hand folk (`Ep2TownFolk`, `ep2-town-people` pipeline), one horse standing ready.
-- Buying: a trade card like the Armory's (`ep2_armory_shop.gd`, `ep2-personal-armory`): price from `Ep2JackHammer.HORSE_PRICE_BTC`, tender BTC only, `Ep2JackHammerArc.buy_horse()` decides, the caller debits the Episode 1 purse; refusal line `jh_hand_refuse`; sold line `jh_hand_sold`. **Open:** the purse holds whole coin faces - get the founder's ruling first (see `JACK_HAMMER_LINES.md` open decision 1).
+- Buying: a trade card like the Armory's (`ep2_armory_shop.gd`, `ep2-personal-armory`): price from `Ep2JackHammer.HORSE_PRICE_BTC`, tender BTC only, `Ep2JackHammerArc.buy_horse()` decides, the caller debits the Episode 1 purse; refusal line `jh_hand_refuse`; sold line `jh_hand_sold`. **Ruled 2026-10-21:** one BTC coin face = one Bitcoin; the stable takes one face and gives half a Bitcoin back as change (`Ep2JackHammerArc.buy_horse_with_face`). The trail ends at the edge of a second settlement in the next town.
 - Autonomy for the hand: `ep2-armory-npc-autonomy` pattern, minimal (idle, greet, point to the horse).
 
 ## Trail (the set-piece)

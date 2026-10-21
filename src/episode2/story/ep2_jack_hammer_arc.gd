@@ -21,6 +21,7 @@ var arrived: bool = false
 var arrived_mounted: bool = false
 var arrival_delay_s: float = 0.0
 var spent_btc: float = 0.0
+var change_btc: float = 0.0                   # half a Bitcoin handed back when a whole coin face paid for the horse
 
 
 func started() -> bool:
@@ -76,6 +77,19 @@ func buy_horse(btc_balance: float, tender: String = Ep2JackHammer.HORSE_TENDER) 
 	return maxf(0.0, btc_balance - Ep2JackHammer.HORSE_PRICE_BTC)
 
 
+## The purse way (founder ruling 2026-10-21): one BTC coin face IS one Bitcoin, the horse takes a whole face and half a Bitcoin comes back as change.
+## `faces` = whole BTC coin faces in the purse. Returns {"faces_left": int, "change_btc": float}, or {} when refused (wrong beat, owned, no face, wrong tender).
+## The CALLER debits `faces_paid` faces and credits `change_btc` to its fractional-BTC balance; this class never invents money.
+func buy_horse_with_face(faces: int, tender: String = Ep2JackHammer.HORSE_TENDER) -> Dictionary:
+	if tender != Ep2JackHammer.HORSE_TENDER or beat != "STABLE" or horse_owned or faces < Ep2JackHammer.HORSE_FACES_PAID:
+		return {}
+	horse_owned = true
+	spent_btc += Ep2JackHammer.HORSE_PRICE_BTC
+	change_btc += Ep2JackHammer.HORSE_CHANGE_BTC
+	horse_bought.emit(Ep2JackHammer.HORSE_PRICE_BTC)
+	return {"faces_left": faces - Ep2JackHammer.HORSE_FACES_PAID, "faces_paid": Ep2JackHammer.HORSE_FACES_PAID, "change_btc": Ep2JackHammer.HORSE_CHANGE_BTC}
+
+
 ## The ride begins (only with the horse in hand).
 func start_trail() -> bool:
 	if beat != "STABLE" or not horse_owned:
@@ -114,7 +128,7 @@ func result() -> Dictionary:
 
 func snapshot() -> Dictionary:
 	return {"v": VERSION, "beat": beat, "bounty": knows_bounty, "auction": knows_auction, "horse": horse_owned, "horse_lost": horse_lost,
-		"arrived": arrived, "mounted": arrived_mounted, "delay": arrival_delay_s, "spent_btc": spent_btc}
+		"arrived": arrived, "mounted": arrived_mounted, "delay": arrival_delay_s, "spent_btc": spent_btc, "change_btc": change_btc}
 
 
 ## Wrong-shaped saves are refused field by field (SaveSafe-style bounds): a corrupt file can never put him on the trail without a horse.
@@ -130,5 +144,6 @@ func restore(data: Dictionary) -> void:
 	arrived_mounted = bool(data.get("mounted", false)) and arrived and not horse_lost
 	arrival_delay_s = clampf(float(data.get("delay", 0.0)), 0.0, 3600.0)
 	spent_btc = clampf(float(data.get("spent_btc", 0.0)), 0.0, Ep2JackHammer.HORSE_PRICE_BTC)
+	change_btc = clampf(float(data.get("change_btc", 0.0)), 0.0, Ep2JackHammer.HORSE_CHANGE_BTC) if horse_owned or horse_lost else 0.0
 	if idx >= 4 and not (horse_owned or horse_lost):
 		beat = "JAIL_WORD" if knows_auction else ("BOUNTY" if knows_bounty else ("JOB_ASK" if idx >= 0 else ""))

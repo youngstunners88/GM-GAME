@@ -10,13 +10,13 @@ Locked facts: `PROMPT_EPISODE2_JACK_HAMMER_BOUNTY_HORSE_AUCTION.md`. Lines: `JAC
 | JAIL_WORD | `Beat.JAIL` + `_accomplice`, `JAIL_LINES` (already a partial truth about bears) | append the two JAIL_WORD lines; the Sheriff's line already points at the cell |
 | STABLE | `Ep2TownLife` horses (`src/episode2/chamber/ep2_town_life.gd`, hitch rails + grazing horse); the Episode 2 surface stable is NOT built (`gm-game-ep2-surface-set`) | a stable building/yard + one stable hand folk + a buy panel like the Armory's (`ep2_armory_shop.gd`, tender-only, no soft currency) |
 | TRAIL | none - a new ride-and-shoot chamber (`Ep2Interlude`, same size class as the day-88 river mountain cover) | `ep2-horse-trail-set-piece` plans it; needs the viewmodel on a horse + bandits (`Ep2BearBrain` patterns) |
-| AUCTION | the map prop; `Ep2SessionRoot` chamber chain (`"logans_lake"` is wired after the town) | an arrival chamber stub that reads `jack_hammer` from the hand-off |
+| AUCTION | the map prop; `Ep2SessionRoot` chamber chain (`"logans_lake"` is wired after the town) | an arrival chamber stub that reads `jack_hammer` from the hand-off; the auction is a SECOND SETTLEMENT in the next town (founder ruling 2026-10-21), so the trail ends at its edge |
 
 ## Sequencing (the lock says production decides)
 Recommended: `WON -> JOB -> BOUNTY -> JAIL_TIP/JAIL (+JAIL_WORD) -> TIP/ARMORY (optional guns) -> STABLE -> TRAIL -> AUCTION`, with Logan's Lake / river / trains / Fort Knox downstream as already planned. The Armory stays optional before the horse. **Do not delete** the Armory or Logan locks; `ep2_fort_knox_arc_test` lists the town beats exactly and must be updated in the same commit as any new beat.
 
 ## State carried between rooms
-`Ep2JackHammerArc.result()` -> `{"jack_hammer": {...}}` merged into the chamber result (like `jail_visited` / `investigation`). Never persisted as a balance: the horse purchase debits the Episode 1 purse through the same path as the Armory (`GameManager.spend_coins` or its BTC equivalent once the purse-unit ruling lands).
+`Ep2JackHammerArc.result()` -> `{"jack_hammer": {...}}` merged into the chamber result (like `jail_visited` / `investigation`). Never persisted as a balance: the horse purchase debits the Episode 1 purse through the same path as the Armory (`GameManager.spend_coins` or its BTC equivalent through `Ep2JackHammerArc.buy_horse_with_face()`: one BTC coin face is one Bitcoin, the stable keeps half and hands half a Bitcoin back as change (founder ruling 2026-10-21)).
 
 ## Build order (each step shippable alone)
 1. **Narrative data + arc + gate (done this pass):** `Ep2JackHammer`, `Ep2JackHammerArc`, `tests/ep2_jack_hammer_test.tscn`.

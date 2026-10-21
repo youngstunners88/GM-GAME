@@ -48,9 +48,12 @@ Horse shot out from under him (fail branch, kept light): he goes on **on foot**;
 Sheriff: the town's Sheriff voice (see `ep2-sheriff-jake`). Accomplice: his jail voice. Stable hand + bandits: new, short. **Jack Hammer himself has no voice and no model yet** - the Doc leaves his full visual / VO open;
 get the founder's reference art (`ep2-founder-intake`) before building anything he appears in. Files: `ep2_jh_<id>.ogg`, mono 64k (`ep2-voice-barks`).
 
-## Open decisions (the founder's - recommended defaults are the code's, not canon)
-1. **Purse unit.** The Episode 1 purse is whole *coin faces* (`GameManager.coins_collected`, the Armory's tender) and holds no halves; the lock says half a Bitcoin. The code prices the horse at `HORSE_PRICE_BTC = 0.5` of the BTC tender and the room must convert. Options: (a) one BTC coin face = one Bitcoin, so the horse takes a coin face and returns half as change; (b) price it as one coin face; (c) hold fractional BTC. Needs a ruling before the stable is built.
-2. Where the auction is (second settlement vs an event hall a short ride from town).
+## Founder rulings (2026-10-21) - these were open decisions 1 and 2
+1. **Purse unit: ANSWERED.** One BTC coin face equals one Bitcoin. The horse takes ONE face and half a Bitcoin comes back as change (`Ep2JackHammer.HORSE_FACES_PAID = 1`, `HORSE_CHANGE_BTC = 0.5`, `Ep2JackHammerArc.buy_horse_with_face()`; the caller debits the face and credits the change).
+2. **Where the auction is: ANSWERED.** A second settlement in the next town (`Ep2JackHammer.AUCTION_PLACE = "next_town"`): the trail ends at its edge. Still a bounded settlement, not a second open world.
+3. **Jack Hammer's look: ANSWERED.** Mean, with an eye patch (`tools/ep2_blender/build_jack_hammer.py`, skill `ep2-jack-hammer-character`). Everything else about him (scar, sledgehammer, gold tooth...) is a proposal until the founder judges it.
+
+## Still open (the founder's - recommended defaults are the code's, not canon)
 3. What a horse shot out from under him costs (delay vs on foot vs retry).
 4. Bounty pay on sighting vs capture vs Fort Knox; the XAUt handoff presentation (chest / certificate).
-5. Jack Hammer's look and voice.
+5. Jack Hammer's voice (his look is ruled: mean, eye patch).

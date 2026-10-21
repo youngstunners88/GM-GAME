@@ -28,6 +28,9 @@ const PEOPLE_DIR := "res://src/episode2/extras/people/"
 const JAIL := "res://src/episode2/extras/jail/jailhouse.glb"
 const JAIL_SIGN := "res://src/episode2/extras/jail/sign_JAIL.png"
 const PRISONER := "res://src/episode2/extras/people/prisoner_accomplice.glb"
+## Jack Hammer (Jackson Mccree), the main antagonist (founder 2026-10-21: mean, eye patch): a Hunyuan scan rigged on the townfolk skeleton, 1.92 m with the hat.
+const JACK_HAMMER := "res://src/episode2/extras/people/jack_hammer.glb"
+
 
 static var _state: String = ""            # "" never started, "loading", "ready", "failed"
 
