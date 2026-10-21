@@ -1,0 +1,87 @@
+armory-guns-tests.log
+EP2_ARMORY_GUNS: ALL PASS
+
+armory2-tests.log
+EP2_ARMORY2: ALL PASS
+
+bear-attacks-tests.log
+EP2_BEAR_ATTACKS: ALL PASS
+
+bow-tests.log
+EP2_BOW: ALL PASS
+
+character-motion-tests.log
+EP2_CHARACTER_MOTION: ALL PASS
+
+companion-cart-tests.log
+EP2_COMPANION_CART: ALL PASS
+
+gold-town-tests.log
+EP2_GOLD_TOWN: ALL PASS
+
+jack-hammer-char-tests.log
+EP2_JACK_HAMMER_CHARACTER: ALL PASS
+
+jack-hammer-tests.log
+EP2_JACK_HAMMER: ALL PASS
+
+logans-lake-tests.log
+LOGANS_LAKE: ALL PASS
+
+nft-tests.log
+NFT_ISSUER: ALL PASS
+
+personal-armory-tests.log
+EP2_PERSONAL_ARMORY: ALL PASS
+
+portal-tests.log
+PORTAL ROOMS: ALL PASS
+
+portal-traversal.log
+PORTAL TRAVERSAL: ALL PASS
+
+quiz-tests.log
+QUIZ_PROTOCOL_ONLY: ALL PASS
+
+run.log
+PORTAL ROOMS: ALL PASS
+QUIZ_PROTOCOL_ONLY: ALL PASS
+NFT_ISSUER: ALL PASS
+MOBILE_TOUCH_CONTROLS: ALL PASS
+GATE_MISSING pause-tests.log: PAUSE_MENU: ALL PASS
+VAULT_TOUCH_DIALOGUE: ALL PASS
+EP2_BOW: ALL PASS
+EP2_CHARACTER_MOTION: ALL PASS
+EP2_PERSONAL_ARMORY: ALL PASS
+EP2_BEAR_ATTACKS: ALL PASS
+EP2_TOWN_LIFE: ALL PASS
+EP2_GOLD_TOWN: ALL PASS
+EP2_ARMORY2: ALL PASS
+EP2_JACK_HAMMER: ALL PASS
+EP2_JACK_HAMMER_CHARACTER: ALL PASS
+EP2_WEAPON_ICONS: ALL PASS
+EP2_ARMORY_GUNS: ALL PASS
+EP2_TOWN_PEOPLE: ALL PASS
+EP2_STREET_PEOPLE_ASSETS: ALL PASS (130 checks)
+EP2_COMPANION_CART: ALL PASS
+PORTAL TRAVERSAL: ALL PASS
+
+street-people-assets-tests.log
+EP2_STREET_PEOPLE_ASSETS: ALL PASS (130 checks)
+
+touch-tests.log
+MOBILE_TOUCH_CONTROLS: ALL PASS
+
+town-life-tests.log
+EP2_TOWN_LIFE: ALL PASS
+
+town-people-tests.log
+EP2_TOWN_PEOPLE: ALL PASS
+
+vault-touch-tests.log
+VAULT_TOUCH_DIALOGUE: ALL PASS
+
+weapon-icons-tests.log
+EP2_WEAPON_ICONS: ALL PASS
+
+Full ci-gates-local runner completed successfully; its pre-existing three pause tap-target machine exceptions were tolerated unchanged.

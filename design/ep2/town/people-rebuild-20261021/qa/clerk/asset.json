@@ -1,0 +1,55 @@
+{
+  "ok": true,
+  "pass": true,
+  "errors": [],
+  "warnings": [
+    "townsman_clerk_body: ~18.82% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+    "townsman_clerk_body: duplicate verts=172 loose verts=0",
+    "townsman_clerk_body: 52 n-gons",
+    "hidden back-to-back faces: townsman_clerk_body (51 pairs) - delete to save tris",
+    "asset lowest point z=-0.0021 (not resting on ground plane z=0)"
+  ],
+  "ground_z": -0.0021,
+  "zfighting": [],
+  "floating": [],
+  "back_to_back": [
+    {
+      "where": "townsman_clerk_body",
+      "tri_pairs": 51
+    }
+  ],
+  "enclosed": [],
+  "objects": {
+    "townsman_clerk_body": {
+      "verts": 14100,
+      "faces": 16141,
+      "tris": 27090,
+      "ngons": 52,
+      "boundary_edges": 944,
+      "nonmanifold_edges": 0,
+      "wire_edges": 0,
+      "loose_verts": 0,
+      "degenerate_faces": 0,
+      "zero_length_edges": 0,
+      "inconsistent_normals_edges": 0,
+      "duplicate_verts": 172,
+      "islands": 55,
+      "inside_out_islands": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materials": 1,
+      "unweighted_verts": 0,
+      "verts_over_4_influences": 0,
+      "uv_maps": 1,
+      "uv_oob_pct": 0.0,
+      "uv_zero_area_faces": 0,
+      "uv_overlap_pct": 18.82,
+      "uv_coverage_pct": 7.3
+    }
+  },
+  "overlap_centers": [],
+  "inward_islands": []
+}

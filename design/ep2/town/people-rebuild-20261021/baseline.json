@@ -1,0 +1,90 @@
+{
+  "source_sha": "eef7f782fc5cf8779dc4e7574fd7823b6fd09b15",
+  "assets": [
+    {
+      "file": "townsman_clerk.glb",
+      "bytes": 202736,
+      "triangles": 4462,
+      "joints": [
+        20
+      ],
+      "animations": [
+        "Carry",
+        "Greet",
+        "Idle",
+        "Point",
+        "Walk"
+      ],
+      "images": 0,
+      "uv": false
+    },
+    {
+      "file": "townsman_oldtimer.glb",
+      "bytes": 206016,
+      "triangles": 4638,
+      "joints": [
+        20
+      ],
+      "animations": [
+        "Carry",
+        "Greet",
+        "Idle",
+        "Point",
+        "Walk"
+      ],
+      "images": 0,
+      "uv": false
+    },
+    {
+      "file": "townsman_rancher.glb",
+      "bytes": 212264,
+      "triangles": 4588,
+      "joints": [
+        20
+      ],
+      "animations": [
+        "Carry",
+        "Greet",
+        "Idle",
+        "Point",
+        "Walk"
+      ],
+      "images": 0,
+      "uv": false
+    },
+    {
+      "file": "townswoman_dressmaker.glb",
+      "bytes": 159176,
+      "triangles": 3272,
+      "joints": [
+        20
+      ],
+      "animations": [
+        "Carry",
+        "Greet",
+        "Idle",
+        "Point",
+        "Walk"
+      ],
+      "images": 0,
+      "uv": false
+    },
+    {
+      "file": "townswoman_lady.glb",
+      "bytes": 172300,
+      "triangles": 3648,
+      "joints": [
+        20
+      ],
+      "animations": [
+        "Carry",
+        "Greet",
+        "Idle",
+        "Point",
+        "Walk"
+      ],
+      "images": 0,
+      "uv": false
+    }
+  ]
+}

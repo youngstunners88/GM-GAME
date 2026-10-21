@@ -1,0 +1,96 @@
+{
+  "pass_checks": true,
+  "source_baseline_sha": "eef7f782fc5cf8779dc4e7574fd7823b6fd09b15",
+  "assets": [
+    {
+      "file": "townsman_clerk.glb",
+      "triangles": 27090,
+      "previous_triangles": 4462,
+      "vertices": 18982,
+      "materials": 1,
+      "images": 3,
+      "joints": 20,
+      "clips": [
+        "Carry",
+        "Greet",
+        "Idle",
+        "Point",
+        "Walk"
+      ],
+      "bytes": 3187520,
+      "sha512": "5a69bffe72d322b0c40952616bf8e1708e5b150198d5b47502328018fe30ef198c50d3c9a942674de8efe4a32e73f09e1f4b1374385ba83915c780722ef7d167"
+    },
+    {
+      "file": "townsman_oldtimer.glb",
+      "triangles": 25860,
+      "previous_triangles": 4638,
+      "vertices": 18016,
+      "materials": 1,
+      "images": 3,
+      "joints": 20,
+      "clips": [
+        "Carry",
+        "Greet",
+        "Idle",
+        "Point",
+        "Walk"
+      ],
+      "bytes": 3136988,
+      "sha512": "a379ff4c589171b6f6fa78a1136f1582a54ded9d62161031c1296de5045291ed79896fc5eee89183b3dc7d1326fa39078079ca49366ac178ee2a25630f2d6f7d"
+    },
+    {
+      "file": "townsman_rancher.glb",
+      "triangles": 25828,
+      "previous_triangles": 4588,
+      "vertices": 17717,
+      "materials": 1,
+      "images": 3,
+      "joints": 20,
+      "clips": [
+        "Carry",
+        "Greet",
+        "Idle",
+        "Point",
+        "Walk"
+      ],
+      "bytes": 3106956,
+      "sha512": "666192bcaf5cf0e1b6f3e7ac4fefa8a126cc4af465f619e1f77a8b056e1964336db45fa88d7a8addcd36061d86c9cc0bf37287bc08be7e2fef30819765463f60"
+    },
+    {
+      "file": "townswoman_dressmaker.glb",
+      "triangles": 26964,
+      "previous_triangles": 3272,
+      "vertices": 18309,
+      "materials": 1,
+      "images": 3,
+      "joints": 20,
+      "clips": [
+        "Carry",
+        "Greet",
+        "Idle",
+        "Point",
+        "Walk"
+      ],
+      "bytes": 3143268,
+      "sha512": "6360153991664659dddf86f79587f8c8f205c6145cf612424afa3d78885016d25feb35f301e3e3f5f4b78b9443f64bf53dfb8263adfcfd818ebcefc85a42f7d5"
+    },
+    {
+      "file": "townswoman_lady.glb",
+      "triangles": 28560,
+      "previous_triangles": 3648,
+      "vertices": 20591,
+      "materials": 1,
+      "images": 3,
+      "joints": 20,
+      "clips": [
+        "Carry",
+        "Greet",
+        "Idle",
+        "Point",
+        "Walk"
+      ],
+      "bytes": 3275356,
+      "sha512": "7b687f71148ce68041a007994111bf01b9005f68eda183d44a538c772967e383632777ddc32b810601caf792b53043f39e2608d044885342b37a06bc809f2ce6"
+    }
+  ]
+}

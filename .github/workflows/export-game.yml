@@ -383,6 +383,10 @@ jobs:
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_town_people_test.tscn 2>&1 | tee town-people-tests.log
           grep -q 'EP2_TOWN_PEOPLE: ALL PASS' town-people-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' town-people-tests.log; then exit 1; fi
+          # Reference-led street cast: UVs, image-backed PBR, four normalized skin influences and the five clips survive import.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_street_people_assets_test.tscn 2>&1 | tee street-people-assets-tests.log
+          grep -q 'EP2_STREET_PEOPLE_ASSETS: ALL PASS' street-people-assets-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' street-people-assets-tests.log; then exit 1; fi
           # Bull's pacing, the cover fire and the donkey cart on the road (founder 2026-10-14).
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_companion_cart_test.tscn 2>&1 | tee companion-cart-tests.log
           grep -q 'EP2_COMPANION_CART: ALL PASS' companion-cart-tests.log

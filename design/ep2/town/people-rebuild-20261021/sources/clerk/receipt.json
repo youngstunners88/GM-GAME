@@ -1,0 +1,22 @@
+{
+  "person": "clerk",
+  "height": 1.76,
+  "triangles": 27090,
+  "vertices": 14100,
+  "joints": 20,
+  "clips": [
+    "Carry",
+    "Greet",
+    "Idle",
+    "Point",
+    "Walk"
+  ],
+  "textures": [
+    "clerk_basecolor.jpg",
+    "clerk_orm.png",
+    "clerk_normal.png"
+  ],
+  "bytes": 3187520,
+  "source": "MakeHuman CC0 a8bc2d54ff0ac92e78ff71431b1023eda42bf482",
+  "reference": "1hf_4SEXRphX0utxj8bjTLsjsfqFxiM_K"
+}

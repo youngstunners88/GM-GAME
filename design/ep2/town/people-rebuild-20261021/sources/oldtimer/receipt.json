@@ -1,0 +1,22 @@
+{
+  "person": "oldtimer",
+  "height": 1.69,
+  "triangles": 25860,
+  "vertices": 13361,
+  "joints": 20,
+  "clips": [
+    "Carry",
+    "Greet",
+    "Idle",
+    "Point",
+    "Walk"
+  ],
+  "textures": [
+    "oldtimer_basecolor.jpg",
+    "oldtimer_orm.png",
+    "oldtimer_normal.png"
+  ],
+  "bytes": 3136988,
+  "source": "MakeHuman CC0 a8bc2d54ff0ac92e78ff71431b1023eda42bf482",
+  "reference": "1XFWvo-NIOQ_k7fzr8c6wvBqetckd4DFv"
+}

@@ -1,0 +1,9 @@
+rejected/
+review-v*/
+gameplay/raw/
+sources/**/*.blend1
+sources/**/*.blend2
+sources/*/front.png
+sources/*/back.png
+sources/*/side.png
+sources/*/three_quarter.png
