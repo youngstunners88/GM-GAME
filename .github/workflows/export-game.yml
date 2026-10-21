@@ -363,6 +363,10 @@ jobs:
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_armory_two_story_test.tscn 2>&1 | tee armory2-tests.log
           grep -q 'EP2_ARMORY2: ALL PASS' armory2-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' armory2-tests.log; then exit 1; fi
+          # Jack Hammer's thread (founder lock 2026-10-21): identity, wording rules and order are enforced, not remembered.
+          timeout 200 "$GODOT_BIN" --headless res://tests/ep2_jack_hammer_test.tscn 2>&1 | tee jack-hammer-tests.log
+          grep -q 'EP2_JACK_HAMMER: ALL PASS' jack-hammer-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' jack-hammer-tests.log; then exit 1; fi
           # Every selector card shows Lil Blunt's hand with the weapon (founder 2026-10-21: the Remington and the bow cards).
           timeout 200 "$GODOT_BIN" --headless res://tests/ep2_weapon_icons_test.tscn 2>&1 | tee weapon-icons-tests.log
           grep -q 'EP2_WEAPON_ICONS: ALL PASS' weapon-icons-tests.log
