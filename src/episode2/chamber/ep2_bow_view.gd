@@ -143,11 +143,13 @@ static func make_founder() -> Node3D:
 	root.set_meta("overlays", [])
 	root.get_node("Nock").position = nock_rest.position
 	# carry and aim in the camera (the viewmodel reads these): the bow arm low on the left of the frame; aimed, the eye sits behind the string hand on the arrow's line
-	root.set_meta("vm_scale", 0.62)                                      # the Tripo glove is the size of a real fist; the rifle's hands are smaller on screen
+	root.set_meta("vm_scale", 0.46)                                      # the Tripo glove is the size of a real fist; the rifle's hands are smaller on screen
 	# CANTED, like the Winchester is held: seen square from behind, the arrow, the string hand and both sleeves all stack along the line of sight. Turned ~50 degrees
 	# the bow shows its face and emblem, the arrow runs across the frame and the string hand draws toward the lower right. (Negative cant puts the string hand on the left.)
-	root.set_meta("hip_offset", Vector3(-0.47, -0.04, -0.05))
-	root.set_meta("hip_rotation", Vector3(0.0, PI + 0.90, -0.15))
+	# 2026-10-21 founder "the bow is trash": the old pose (scale 0.62, y -0.04) put everything below the grip off the bottom of the frame and the string hand over the middle.
+	# Smaller and raised, the whole bow, the bracer and the string hand read in one frame (probe p3 of tools/ep2_shots/bow_vm_shot).
+	root.set_meta("hip_offset", Vector3(-0.34, 0.17, -0.22))
+	root.set_meta("hip_rotation", Vector3(0.0, PI + 0.75, -0.12))
 	root.set_meta("ads_pos", Vector3(-0.02, -0.10, -0.55))
 	root.set_meta("ads_rotation", Vector3(0.0, PI + 0.35, -0.05))
 	_tone_founder(root)
@@ -171,6 +173,9 @@ static func _tone_founder(root: Node3D) -> void:
 			var d: StandardMaterial3D = (src as StandardMaterial3D).duplicate() as StandardMaterial3D
 			var k: float = 0.55 if str(src.resource_name) == "SleeveCloth" else 0.84
 			d.albedo_color = Color(d.albedo_color.r * k, d.albedo_color.g * k, d.albedo_color.b * k, d.albedo_color.a)
+			if m.name == "RightHand" and str(src.resource_name) != "SleeveCloth":
+				# the string hand's Tripo glove came out pale stone grey next to the bow hand's olive-brown leather: warm it to the same leather
+				d.albedo_color = Color(d.albedo_color.r * 0.80, d.albedo_color.g * 0.80, d.albedo_color.b * 0.56, d.albedo_color.a)
 			m.set_surface_override_material(i, d)
 
 
@@ -222,7 +227,12 @@ static func _pose_founder(root: Node3D, draw: float, renock: float, age: float, 
 	var hand: Node3D = root.get_node_or_null("RightHand")
 	if hand != null:
 		hand.position = nock_pos + Vector3(0.09, -0.26, -0.06) * slide
-		hand.basis = Basis(fb["hand_q"] as Quaternion) * Basis.from_euler(Vector3(0.0, 0.0, float(fb["hand_roll"]) + 0.45 * slide))
+		# 2026-10-21 founder "the bow is trash": at rest and while the arrow is slid on, the string hand's forearm ran toward the camera and was cut by the near plane
+		# in mid-screen (a green stump). The hand now only exists while the string is drawn: it closes on the string between 30 and 50 % of the draw (earlier its forearm is cut by the near plane) and is gone
+		# as the loose lands (the arrow rides up onto the string on its own).
+		var present: float = smoothstep(0.30, 0.50, e) if renock > 0.99 else 0.0
+		hand.visible = present > 0.01
+		hand.basis = Basis(fb["hand_q"] as Quaternion) * Basis.from_euler(Vector3(0.0, 0.0, float(fb["hand_roll"]) + 0.45 * slide)) * Basis.from_scale(Vector3.ONE * (0.86 * maxf(present, 0.01)))
 
 
 ## The animated bow from the gun's state (called every viewmodel step): draw with ease, the snap and shiver of the loose, the re-nock.

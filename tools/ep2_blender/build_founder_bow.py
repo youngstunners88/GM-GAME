@@ -300,7 +300,7 @@ def grow_sleeve(ob, start, axis, r0, length, cloth, segs=14, taper=1.12):
 
 arm = joined["BowArm"]
 cloth = sleeve_cloth(arm, to_blender(sl_end))
-grow_sleeve(arm, to_blender(sl_end), to_blender(slax) - to_blender(Vector((0, 0, 0))), max(sl_r * 1.1, 0.05), 0.30, cloth)
+grow_sleeve(arm, to_blender(sl_end), to_blender(slax) - to_blender(Vector((0, 0, 0))), max(sl_r * 1.1, 0.05), 0.80, cloth)
 rh = joined["RightHand"]
 hcen, hV, hw, hP = pca(rh)
 pinch = Vector((-0.01, 0.29, 0.06))                       # the ring the arrow passes through (measured: the hand's only mid-size hole)
@@ -310,7 +310,7 @@ if hax.dot(Vector(tuple(hcen)) - pinch) < 0:
 hpr = (hP - hcen) @ _np.array(tuple(hax))
 hend = Vector(tuple(hcen)) + hax * float(hpr.max())
 hr = float(sum(_np.linalg.norm((hP[i] - hcen) - _np.array(tuple(hax)) * hpr[i]) for i in range(len(hP)) if hpr[i] > hpr.max() - 0.04) / max(1, int((hpr > hpr.max() - 0.04).sum())))
-grow_sleeve(rh, hend, hax, max(hr * 1.1, 0.04), 0.32, cloth)
+grow_sleeve(rh, hend, hax, max(hr * 1.1, 0.04), 0.90, cloth)
 cut_l, r_l, axis_l, cut_r, r_r, axis_r = to_blender(sl_end), sl_r, slax, hend, hr, hax
 print("SLEEVES", [round(x, 3) for x in cut_l], round(r_l, 3), [round(x, 3) for x in axis_l], "|", [round(x, 3) for x in cut_r], round(r_r, 3), [round(x, 3) for x in axis_r])
 
