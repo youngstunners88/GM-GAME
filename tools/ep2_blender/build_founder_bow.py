@@ -41,6 +41,9 @@ ap.add_argument("--bend", type=float, default=0.13, help="metres the limb tip tr
 ap.add_argument("--rest-z", type=float, default=-0.20, help="nock z unstrung (string at rest)")
 ap.add_argument("--full-z", type=float, default=-0.52, help="nock z at full draw (the string hand's distance behind the grip)")
 ap.add_argument("--pinch-z", type=float, default=-0.31, help="the shaft is cut here (game z), just behind the founder hand's pinch")
+ap.add_argument("--limbs", choices=["tripo", "procedural"], default="procedural",
+                help="procedural (founder 2026-10-21 'the bow is trash'): the Tripo limbs are 10 cm-wide flat grey paddles that read as cleavers in first person; "
+                     "they are replaced by built recurve limbs (narrow, tapered, laminated walnut + maple, horn tips) between the SAME root and tip points")
 ap.add_argument("--badge-debug", action="store_true")
 ap.add_argument("--emblem-color", default="artifacts/episode2-gold-mine/references/founder_2026-10-10b/emblem/gm_emblem_color.jpg")
 ap.add_argument("--emblem-emit", default="artifacts/episode2-gold-mine/references/founder_2026-10-10b/emblem/gm_emblem_emit.png")
@@ -178,6 +181,125 @@ for ob in joined.values():
         v.co = to_blender(to_game(ob.matrix_world @ v.co))
     ob.matrix_world = Matrix.Identity(4)
     ob.data.update()
+
+# ---- 4a. procedural limbs (default): same root (where the Tripo limb leaves the riser) and same tip (where the string sits), a real limb in between.
+#          Export frame: blender (x, y, z) = game (x, -z, y); the limb runs along blender z, the arrow flies along blender -y, the archer is at +y.
+def _wood_image(name, w=128, h=1024):
+    """Laminated limb texture: u runs round the limb section (back face = u in [0.30, 0.70] carries a pale maple strip), v runs root -> tip (grain)."""
+    import numpy as np
+    rng = np.random.default_rng(1874)
+    v = np.linspace(0.0, 1.0, h)[:, None]
+    u = np.linspace(0.0, 1.0, w)[None, :]
+    grain = 0.5 + 0.5 * np.sin(v * 180.0 + 6.0 * np.sin(v * 9.0 + u * 3.0) + rng.normal(0, 0.15, (h, 1)))
+    fine = rng.normal(0.0, 1.0, (h, w)) * 0.035
+    walnut = np.stack([0.20 + 0.06 * grain, 0.115 + 0.04 * grain, 0.060 + 0.02 * grain], -1)
+    maple = np.stack([0.62 + 0.07 * grain, 0.46 + 0.06 * grain, 0.28 + 0.04 * grain], -1)
+    back = ((u > 0.30) & (u < 0.70)).astype(float)[..., None] * np.ones((h, 1, 1))
+    edge = ((np.abs(u - 0.30) < 0.012) | (np.abs(u - 0.70) < 0.012)).astype(float)[..., None] * np.ones((h, 1, 1))      # thin dark glue lines
+    rgb = walnut * (1 - back) + maple * back
+    rgb = rgb * (1 - 0.7 * edge) + fine[..., None]
+    rgb = np.clip(rgb, 0, 1)
+    img = bpy.data.images.new(name, w, h, alpha=False)
+    px = np.concatenate([rgb, np.ones((h, w, 1))], -1).astype(np.float32)
+    img.pixels.foreach_set(px.reshape(-1))
+    img.pack()
+    return img
+
+
+def _limb_materials():
+    wood = bpy.data.materials.new("LimbWood")
+    wood.use_nodes = True
+    b = next(n for n in wood.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
+    t = wood.node_tree.nodes.new("ShaderNodeTexImage")
+    t.image = _wood_image("limb_laminate")
+    wood.node_tree.links.new(t.outputs["Color"], b.inputs["Base Color"])
+    b.inputs["Roughness"].default_value = 0.45
+    b.inputs["Metallic"].default_value = 0.0
+    horn = bpy.data.materials.new("LimbHorn")
+    horn.use_nodes = True
+    hb = next(n for n in horn.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
+    hb.inputs["Base Color"].default_value = (0.030, 0.024, 0.020, 1)
+    hb.inputs["Roughness"].default_value = 0.30
+    return wood, horn
+
+
+def _limb_mesh(name, root_g, tip_g, sign, wood, horn, rings=44, seg=12):
+    """A recurve limb in the GAME frame (x right, y up, z flight) from the riser root to the string tip, written in the export frame."""
+    L = (tip_g - root_g).length
+    p0 = root_g + Vector((0.0, -sign * 0.03, 0.0))                       # starts 3 cm inside the riser, so no gap shows at the fade
+    p1 = root_g + Vector((0.0, sign * 0.38 * L, -0.012))                 # leaves the riser straight
+    p2 = Vector((tip_g.x, tip_g.y - sign * 0.20 * L, tip_g.z - 0.075))  # bellies back toward the archer...
+    p3 = tip_g                                                            # ...and the tip recurves forward (tangent p3 - p2 points at the target)
+
+    def bez(s):
+        return (1 - s) ** 3 * p0 + 3 * (1 - s) ** 2 * s * p1 + 3 * (1 - s) * s * s * p2 + s ** 3 * p3
+
+    def tan(s):
+        return (3 * (1 - s) ** 2 * (p1 - p0) + 6 * (1 - s) * s * (p2 - p1) + 3 * s * s * (p3 - p2)).normalized()
+
+    me = bpy.data.meshes.new(name + "_mesh")
+    bm = bmesh.new()
+    uvl = bm.loops.layers.uv.new("UVMap")
+    ring_v = []
+    for r in range(rings + 1):
+        s = r / rings
+        c = bez(s)
+        t = tan(s)
+        xa = Vector((1.0, 0.0, 0.0))                                      # width runs across the archer's view (game x)
+        na = t.cross(xa).normalized()                                    # thickness: in the y-z plane, normal to the limb
+        if na.z < 0:
+            na = -na                                                      # +na = the BACK of the limb (toward the target)
+        w = 0.025 * (1 - s) + 0.0105 * s                                   # half-width 25 mm at the fade -> 10.5 mm at the tip (the riser is chunky)
+        th = 0.0105 * (1 - s) + 0.0052 * s                                 # half-thickness 10.5 mm -> 5.2 mm
+        if s > 0.93:
+            w *= 1.0 + 0.6 * (s - 0.93) / 0.07                             # the horn tip flares a little round the string nock
+        ring = []
+        for k in range(seg):
+            ang = 2 * math.pi * k / seg
+            cx, cy = math.cos(ang), math.sin(ang)
+            ex = 2.0 / 4.0                                                 # superellipse: a flat-faced limb with rounded edges
+            px = math.copysign(abs(cx) ** ex, cx) * w
+            py = math.copysign(abs(cy) ** ex, cy) * th
+            ring.append(bm.verts.new(to_blender(c + xa * px + na * py)))
+        ring_v.append((ring, s))
+    for r in range(rings):
+        ra, sa = ring_v[r]
+        rb, sb = ring_v[r + 1]
+        for k in range(seg):
+            k2 = (k + 1) % seg
+            f = bm.faces.new((ra[k], ra[k2], rb[k2], rb[k]))
+            f.material_index = 1 if sa >= 0.93 else 0
+            # u round the section, v along the limb. Angles 0..pi are the BACK (toward the target) -> u 0.30..0.70 (the maple strip);
+            # pi..2pi the belly -> u 0.70..1.30 (the texture repeats, so the walnut wraps with no seam jump). The wrap edge uses 2pi, not 0.
+            for l, (kk, ss, wrap) in zip(f.loops, ((k, sa, False), (k2, sa, k2 == 0), (k2, sb, k2 == 0), (k, sb, False))):
+                ang = 2 * math.pi * (seg if wrap else kk) / seg
+                u = 0.30 + 0.40 * ang / math.pi if ang <= math.pi else 0.70 + 0.60 * (ang - math.pi) / math.pi
+                l[uvl].uv = (u, ss)
+    for ring, s in (ring_v[0], ring_v[-1]):
+        f = bm.faces.new(ring if s > 0.5 else list(reversed(ring)))
+        f.material_index = 1 if s > 0.5 else 0
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    bm.to_mesh(me)
+    bm.free()
+    me.materials.append(wood)
+    me.materials.append(horn)
+    return me
+
+
+if a.limbs == "procedural":
+    wood_m, horn_m = _limb_materials()
+    for n, sign in (("Limb_Up", 1.0), ("Limb_Low", -1.0)):
+        ob = joined[n]
+        G = [Vector((v.co.x, v.co.z, -v.co.y)) for v in ob.data.vertices]      # back to the game frame
+        ys = [abs(p.y) for p in G]
+        y0, y1 = min(ys), max(ys)
+        root_g = sum((p for p in G if abs(p.y) < y0 + 0.02), Vector()) / max(1, sum(1 for p in G if abs(p.y) < y0 + 0.02))
+        tip_g = sum((p for p in G if abs(p.y) > y1 - 0.012), Vector()) / max(1, sum(1 for p in G if abs(p.y) > y1 - 0.012))
+        tip_g = Vector((tip_g.x, sign * y1, tip_g.z))                          # the very end: the string sits on it
+        old = ob.data
+        ob.data = _limb_mesh(n, root_g, tip_g, sign, wood_m, horn_m)
+        bpy.data.meshes.remove(old)
+        print("LIMB", n, "root", [round(x, 3) for x in root_g], "tip", [round(x, 3) for x in tip_g])
 
 # ---- 4b. the open ends (sleeve cut, wrist cut) measured while the mesh is still the clean original: largest boundary loops
 def boundary_loops(ob):
@@ -318,17 +440,24 @@ print("SLEEVES", [round(x, 3) for x in cut_l], round(r_l, 3), [round(x, 3) for x
 LIMB_ROOT = {"Limb_Up": None, "Limb_Low": None}
 for n in ("Limb_Up", "Limb_Low"):
     ob = joined[n]
-    dm = ob.modifiers.new("Decimate", "DECIMATE")
-    dm.decimate_type = "COLLAPSE"
-    dm.ratio = 0.5
-    with bpy.context.temp_override(object=ob, active_object=ob):
-        bpy.ops.object.modifier_apply(modifier=dm.name)
-    bm = bmesh.new()
-    bm.from_mesh(ob.data)
-    bmesh.ops.subdivide_edges(bm, edges=bm.edges[:], cuts=1, use_grid_fill=True)
-    bmesh.ops.triangulate(bm, faces=bm.faces[:])
-    bm.to_mesh(ob.data)
-    bm.free()
+    if a.limbs == "tripo":
+        dm = ob.modifiers.new("Decimate", "DECIMATE")
+        dm.decimate_type = "COLLAPSE"
+        dm.ratio = 0.5
+        with bpy.context.temp_override(object=ob, active_object=ob):
+            bpy.ops.object.modifier_apply(modifier=dm.name)
+        bm = bmesh.new()
+        bm.from_mesh(ob.data)
+        bmesh.ops.subdivide_edges(bm, edges=bm.edges[:], cuts=1, use_grid_fill=True)
+        bmesh.ops.triangulate(bm, faces=bm.faces[:])
+        bm.to_mesh(ob.data)
+        bm.free()
+    else:
+        bm = bmesh.new()                                    # the built limb already has 44 rings along its length: just triangulate for export
+        bm.from_mesh(ob.data)
+        bmesh.ops.triangulate(bm, faces=bm.faces[:])
+        bm.to_mesh(ob.data)
+        bm.free()
     ys = [abs(v.co.z) for v in ob.data.vertices]           # blender z = game y
     LIMB_ROOT[n] = min(ys)
     tip = max(ys)

@@ -61,3 +61,8 @@ creak length/pitch, viewmodel shows the founder bow and the draw creaks and flex
 - Boundary-loop detection of the wrist/sleeve cuts finds nothing useful (Tripo's ends are closed caps and decimation shatters loops): find the sleeve island and the hand's PCA axis instead.
 - The viewmodel's windowed frame is bright: judge colours in the engine, never the Blender Workbench preview.
 - Do not grow the file on the main pack: anything outside `src/episode2/extras/` pays the 199,229,440 B gate (margin was 97 KB).
+
+## 2026-10-21 rework (founder: "the bow is absolutely trash")
+- First-person pose: vm_scale 0.46, hip_offset (-0.34, 0.17, -0.22), hip_rotation y PI+0.75 z -0.12; the string hand exists only while drawn (smoothstep 0.30-0.50 of the draw) because its forearm otherwise crosses the near plane; sleeve growth 0.80/0.90 m; string-hand glove tinted to the bow hand's leather.
+- Limbs: `--limbs procedural` (default) replaces the Tripo paddle limbs with built recurves between the SAME root/tip points (measured from the Tripo limbs, so Tip_Up/Tip_Low and the string do not move). Material `LimbWood` uses a generated laminate texture (extracted by Godot as `founder_bow_limb_laminate.jpg`: commit it and its pinned 4.3 `.import`, lossy 0.85). `--limbs tripo` restores the old ones.
+- After any GLB rebuild: re-render the card (`render_weapon_icons.py --which bow`), run ep2_bow / ep2_weapon_icons / ep2_personal_armory tests, restore 4.7-dirtied imports, run the pinned 4.3 import and commit only its real diff.
