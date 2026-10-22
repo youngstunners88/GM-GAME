@@ -405,8 +405,8 @@
   ],
   "all_clips_present": true,
   "input_sha512": {
-    "src/episode2/extras/people/townsman_youth.glb": "7f78843b60e86d65dff62ddfc6302333e5fdd9c727c60d824e333d9488f48c17611f634430138116b32790fa4fff9179de47e36f019a928048940f38a1f4d44e",
-    "design/ep2/town/autonomy-20261022/sources/youth/youth.blend": "97395e9fea58f724573734285ef923a0bd1268196f1aac872578dcef0053cfc1f971ac9dee8e44d9ee10f266eb5e1bb8538c4f4f4875867f7a328176c31d85f9",
+    "src/episode2/extras/people/townsman_youth.glb": "e61b773381888b95659d51427b9fe56fca803ac74c4d89b572dea06a865dfd9352aec67d45d8ed4ba6f2484a781c32b634bc3c02efbdd12d7bcd41d7651ee000",
+    "design/ep2/town/autonomy-20261022/sources/youth/youth.blend": "6294bb6d6c1d87eede4c7b99796a9d013cdbb228b9deba3161a628261897fce1899cde6fcef4540439acab477de63988e731f15f59b2f84304fd04a85a03ab03",
     "tools/ep2_blender/rebuild_street_people.py": "ec94457402fc5ffbd84ef629589ccc0c52502f1f58468e5920d7f49da948c37cb11301ee5905447330b5cfe904deac89481134422beb7043878de57435d8a2b4"
   }
 }

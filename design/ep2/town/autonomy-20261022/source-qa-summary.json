@@ -42,15 +42,15 @@
       "rig_pass": true,
       "ten_finite_clips": true,
       "warnings": [
-        "townsboy_body: ~18.11% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+        "townsboy_body: ~17.9% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
         "townsboy_body: duplicate verts=92 loose verts=0",
         "townsboy_body: 42 n-gons",
         "hidden back-to-back faces: townsboy_body (5 pairs) - delete to save tris"
       ],
       "max_used_clip_edge_excess_m": 0.01005127089433508,
       "source_hashes": {
-        "src/episode2/extras/people/townsboy.glb": "050312701b121308ac417e3ae041fa32f552322ba4099669bc04728ac4ef574eeffdf0d4e6a32fe5169d264dd85452836c84cdc487d0c81cc96fb1911926bd3e",
-        "design/ep2/town/autonomy-20261022/sources/boy/boy.blend": "6623a09d0c6df3626eaebe335b2388a5af6c65a08044db45b84701e63814e172023359ae312de919fc543d36a38475611d3f99fcef3d591ae29a00c77f8fffec",
+        "src/episode2/extras/people/townsboy.glb": "abf4900c28c08b3a5315dc25392fdc7b82f90844b5ac1bbcc966bd4e3140f44cf360279e8830af4cb074324a37f7dab7322657b9d412faed9287d3a41849e7b4",
+        "design/ep2/town/autonomy-20261022/sources/boy/boy.blend": "557349ea233320683529c70d4648e56fc46c89e4e3f47eb8ad2078fb244d4c543e1c3dce13190e2c4fa213dae3626e329c99c5db1bc65e12240ddf9ee393f726",
         "tools/ep2_blender/rebuild_street_people.py": "ec94457402fc5ffbd84ef629589ccc0c52502f1f58468e5920d7f49da948c37cb11301ee5905447330b5cfe904deac89481134422beb7043878de57435d8a2b4"
       }
     },
@@ -226,15 +226,15 @@
       "rig_pass": true,
       "ten_finite_clips": true,
       "warnings": [
-        "townsman_youth_body: ~17.38% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+        "townsman_youth_body: ~17.48% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
         "townsman_youth_body: duplicate verts=92 loose verts=0",
         "townsman_youth_body: 48 n-gons",
         "hidden back-to-back faces: townsman_youth_body (126 pairs) - delete to save tris"
       ],
       "max_used_clip_edge_excess_m": 0.013255526497249037,
       "source_hashes": {
-        "src/episode2/extras/people/townsman_youth.glb": "7f78843b60e86d65dff62ddfc6302333e5fdd9c727c60d824e333d9488f48c17611f634430138116b32790fa4fff9179de47e36f019a928048940f38a1f4d44e",
-        "design/ep2/town/autonomy-20261022/sources/youth/youth.blend": "97395e9fea58f724573734285ef923a0bd1268196f1aac872578dcef0053cfc1f971ac9dee8e44d9ee10f266eb5e1bb8538c4f4f4875867f7a328176c31d85f9",
+        "src/episode2/extras/people/townsman_youth.glb": "e61b773381888b95659d51427b9fe56fca803ac74c4d89b572dea06a865dfd9352aec67d45d8ed4ba6f2484a781c32b634bc3c02efbdd12d7bcd41d7651ee000",
+        "design/ep2/town/autonomy-20261022/sources/youth/youth.blend": "6294bb6d6c1d87eede4c7b99796a9d013cdbb228b9deba3161a628261897fce1899cde6fcef4540439acab477de63988e731f15f59b2f84304fd04a85a03ab03",
         "tools/ep2_blender/rebuild_street_people.py": "ec94457402fc5ffbd84ef629589ccc0c52502f1f58468e5920d7f49da948c37cb11301ee5905447330b5cfe904deac89481134422beb7043878de57435d8a2b4"
       }
     }

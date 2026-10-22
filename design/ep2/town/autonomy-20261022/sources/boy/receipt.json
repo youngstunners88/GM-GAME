@@ -1,8 +1,8 @@
 {
   "person": "boy",
   "height": 1.36,
-  "triangles": 27688,
-  "vertices": 14244,
+  "triangles": 27088,
+  "vertices": 13924,
   "joints": 20,
   "clips": [
     "Alert",
@@ -21,7 +21,7 @@
     "boy_orm.png",
     "boy_normal.png"
   ],
-  "bytes": 3265424,
+  "bytes": 3228388,
   "source": "MakeHuman CC0 a8bc2d54ff0ac92e78ff71431b1023eda42bf482",
   "reference": "1ASalMzLNI-KVNyBUAWbaoioGriXAxW0n"
 }

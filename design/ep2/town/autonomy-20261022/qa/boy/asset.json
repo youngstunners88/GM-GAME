@@ -3,7 +3,7 @@
   "pass": true,
   "errors": [],
   "warnings": [
-    "townsboy_body: ~18.11% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+    "townsboy_body: ~17.9% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
     "townsboy_body: duplicate verts=92 loose verts=0",
     "townsboy_body: 42 n-gons",
     "hidden back-to-back faces: townsboy_body (5 pairs) - delete to save tris"
@@ -20,9 +20,9 @@
   "enclosed": [],
   "objects": {
     "townsboy_body": {
-      "verts": 14244,
-      "faces": 16947,
-      "tris": 27688,
+      "verts": 13924,
+      "faces": 16547,
+      "tris": 27088,
       "ngons": 42,
       "boundary_edges": 464,
       "nonmanifold_edges": 0,
@@ -32,7 +32,7 @@
       "zero_length_edges": 0,
       "inconsistent_normals_edges": 0,
       "duplicate_verts": 92,
-      "islands": 90,
+      "islands": 80,
       "inside_out_islands": 0,
       "scale": [
         1.0,
@@ -45,7 +45,7 @@
       "uv_maps": 1,
       "uv_oob_pct": 0.0,
       "uv_zero_area_faces": 0,
-      "uv_overlap_pct": 18.11,
+      "uv_overlap_pct": 17.9,
       "uv_coverage_pct": 8.5
     }
   },

@@ -71,12 +71,24 @@ func watch(p: Ep2TownPeople.Person) -> void:
 	var point: Vector3 = p.folk.position
 	# Keep the camera on legal street ground. Never scale the person for a close-up.
 	var eye_ground: Vector2 = chamber.get_people().navigation.closest(Vector2(point.x, point.z - 2.8))
+	for attempt in 24:
+		var angle: float = p.folk.rotation.y + float(attempt / 2) * .16 * (1 if attempt % 2 == 0 else -1)
+		var candidate: Vector2 = chamber.get_people().navigation.closest(Vector2(point.x, point.z) + Vector2(sin(angle), cos(angle)) * 2.8)
+		if chamber.get_people()._body_clear(candidate, null, Vector3(100, 0, 1300)) and chamber.get_people().navigation.segment_clear(candidate, Vector2(point.x, point.z)):
+			eye_ground = candidate
+			break
 	chamber._player_pos = Vector3(eye_ground.x, 0, eye_ground.y)
 	var eye: Vector3 = chamber._player_pos + Vector3(0, chamber.eye_height, 0)
 	var delta: Vector3 = point + Vector3(0, p.folk.height_m * .58, 0) - eye
 	chamber._look_yaw = atan2(delta.x, delta.z)
 	chamber._look_pitch = atan2(delta.y, Vector2(delta.x, delta.z).length())
+	chamber._update_camera(0)
 	chamber._sync_visuals()
+	var focus: Vector3 = point + Vector3(0, p.folk.height_m * .58, 0)
+	var projected: Vector2 = chamber.get_camera().unproject_position(focus)
+	if chamber.get_camera().is_position_behind(focus) or projected.distance_to(Vector2(vp.size) * .5) > 8:
+		push_error("TOWN_AUTONOMY_PLAY: camera lost subject " + p.id)
+		get_tree().quit(1)
 
 func capture(label: String) -> void:
 	for frame in 2: await RenderingServer.frame_post_draw

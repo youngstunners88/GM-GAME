@@ -405,8 +405,8 @@
   ],
   "all_clips_present": true,
   "input_sha512": {
-    "src/episode2/extras/people/townsboy.glb": "050312701b121308ac417e3ae041fa32f552322ba4099669bc04728ac4ef574eeffdf0d4e6a32fe5169d264dd85452836c84cdc487d0c81cc96fb1911926bd3e",
-    "design/ep2/town/autonomy-20261022/sources/boy/boy.blend": "6623a09d0c6df3626eaebe335b2388a5af6c65a08044db45b84701e63814e172023359ae312de919fc543d36a38475611d3f99fcef3d591ae29a00c77f8fffec",
+    "src/episode2/extras/people/townsboy.glb": "abf4900c28c08b3a5315dc25392fdc7b82f90844b5ac1bbcc966bd4e3140f44cf360279e8830af4cb074324a37f7dab7322657b9d412faed9287d3a41849e7b4",
+    "design/ep2/town/autonomy-20261022/sources/boy/boy.blend": "557349ea233320683529c70d4648e56fc46c89e4e3f47eb8ad2078fb244d4c543e1c3dce13190e2c4fa213dae3626e329c99c5db1bc65e12240ddf9ee393f726",
     "tools/ep2_blender/rebuild_street_people.py": "ec94457402fc5ffbd84ef629589ccc0c52502f1f58468e5920d7f49da948c37cb11301ee5905447330b5cfe904deac89481134422beb7043878de57435d8a2b4"
   }
 }

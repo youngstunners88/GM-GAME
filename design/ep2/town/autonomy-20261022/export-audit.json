@@ -211,9 +211,9 @@
     },
     {
       "file": "townsman_youth.glb",
-      "triangles": 28404,
+      "triangles": 27804,
       "previous_triangles": null,
-      "vertices": 20546,
+      "vertices": 19892,
       "materials": 1,
       "images": 3,
       "joints": 20,
@@ -229,14 +229,14 @@
         "Talk",
         "Walk"
       ],
-      "bytes": 3302556,
-      "sha512": "7f78843b60e86d65dff62ddfc6302333e5fdd9c727c60d824e333d9488f48c17611f634430138116b32790fa4fff9179de47e36f019a928048940f38a1f4d44e"
+      "bytes": 3264948,
+      "sha512": "e61b773381888b95659d51427b9fe56fca803ac74c4d89b572dea06a865dfd9352aec67d45d8ed4ba6f2484a781c32b634bc3c02efbdd12d7bcd41d7651ee000"
     },
     {
       "file": "townsboy.glb",
-      "triangles": 27688,
+      "triangles": 27088,
       "previous_triangles": null,
-      "vertices": 19885,
+      "vertices": 19242,
       "materials": 1,
       "images": 3,
       "joints": 20,
@@ -252,8 +252,8 @@
         "Talk",
         "Walk"
       ],
-      "bytes": 3265424,
-      "sha512": "050312701b121308ac417e3ae041fa32f552322ba4099669bc04728ac4ef574eeffdf0d4e6a32fe5169d264dd85452836c84cdc487d0c81cc96fb1911926bd3e"
+      "bytes": 3228388,
+      "sha512": "abf4900c28c08b3a5315dc25392fdc7b82f90844b5ac1bbcc966bd4e3140f44cf360279e8830af4cb074324a37f7dab7322657b9d412faed9287d3a41849e7b4"
     },
     {
       "file": "townsgirl_braided.glb",

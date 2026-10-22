@@ -2,6 +2,7 @@
 import math
 from mathutils import Matrix
 from mathutils import Vector
+from mathutils.bvhtree import BVHTree
 
 
 def build(env):
@@ -23,13 +24,20 @@ def build(env):
     if C.get('curly'):
         # Rounded poles instead of planar caps: adjacent clumps previously
         # shared overlapping horizontal triangles at each row's cap height.
-        for row in range(4):
-            for k in range(13):
-                a=(k+row*.5)*math.tau/13;z=j['foramen'].z+(.03+row*.023)*S
-                r=(.088-row*.008)*S
+        scalp=max((p for p in f.parts if p.name=='Hair' and p.bones==['Head']),key=lambda p:len(p.bm.verts))
+        scalp.bm.verts.ensure_lookup_table();scalp.bm.verts.index_update()
+        support=BVHTree.FromPolygons([v.co.copy() for v in scalp.bm.verts],[tuple(v.index for v in face.verts) for face in scalp.bm.faces])
+        for row,(latitude,count) in enumerate([(.15,15),(.55,13),(.95,9),(1.3,5)]):
+            for k in range(count):
+                a=(k+row*.5)*math.tau/count
+                z=j['foramen'].z+(.015+.11*math.sin(latitude))*S
+                r=.105*math.cos(latitude)*S
+                center=Vector((math.cos(a)*r,math.sin(a)*r,z))
+                hit=support.find_nearest(center)
+                if hit[0] is not None:center=hit[0]+hit[1]*(.006*S)
                 p=part('Hair',['Head'])
                 profile=[(0,-.018*S),(.014*S,-.014*S),(.021*S,0),(.017*S,.015*S),(0,.024*S)]
-                p.lathe(profile,10,xform=Matrix.Translation(Vector((math.cos(a)*r,math.sin(a)*r,z+.017*S))),ry_scale=.91)
+                p.lathe(profile,10,xform=Matrix.Translation(center),ry_scale=.91)
     if C.get('bob'):
         z=j['foramen'].z
         # Open front, thick hair at sides/back down to the jaw; no adult braid or bun.

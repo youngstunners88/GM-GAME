@@ -38,6 +38,8 @@ on:
       # showing the stale failure it was meant to fix. Found the hard way on
       # 1f5a9a1, which triggered no workflow at all.
       - 'scripts/**'
+      - 'tests/**'
+      - 'tools/ep2_shots/**'
       # secure-build-checklist was relocated from scripts/ to this skill path
       # (founder request, PR #21) and immediately reproduced the EXACT bug the
       # comment above documents: the scanner and its rules moved out from under
