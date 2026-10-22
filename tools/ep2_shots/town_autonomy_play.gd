@@ -39,6 +39,9 @@ func _ready() -> void:
 		for clip in ["Idle", "Walk", "Greet", "Observe", "Rest", "Talk", "Inspect", "Alert"]:
 			p.folk.play_clip(clip)
 			var player: AnimationPlayer = p.folk.anim_player()
+			# Manual seeking does not advance an active cross-fade. Settle the real
+			# transition before sampling, otherwise the previous clip can mask this one.
+			player.advance(p.folk.clip_blend + .02)
 			var duration: float = player.current_animation_length
 			for sample in 5:
 				player.seek(duration * float(sample) / 4.0, true)
