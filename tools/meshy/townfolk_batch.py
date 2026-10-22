@@ -272,9 +272,10 @@ def _accessor_floats(js: dict, binc: bytearray, idx: int) -> tuple[int, int, int
 
 
 def _library() -> dict:
-    p = WORK / "library.json"
+    # cached under raw/ (gitignored): the library's "key" fields trip gitleaks' generic-api-key rule (clip names, not secrets)
+    p = WORK / "raw" / "library.json"
     if not p.exists():
-        WORK.mkdir(parents=True, exist_ok=True)
+        p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(json.dumps(_req("GET", "/animations/library?page_size=1000")))
     return {int(a["action_id"]): a for a in json.loads(p.read_text())}
 

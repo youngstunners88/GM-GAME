@@ -39,3 +39,8 @@ cd8961adcdf787c5f7b8d52b5b8bc7eb19facd1a:docs/nft/NFT_CONTRACT.md:generic-api-ke
 #    fingerprints only; the path itself is not allowlisted.
 5b68e2aa227acc6218262c21a29012063709b35a:docs/research/blender-skills/installation.json:generic-api-key:37
 5b68e2aa227acc6218262c21a29012063709b35a:docs/research/blender-skills/installation.json:generic-api-key:51
+
+# 5) Meshy's public animation-library listing (design/ep2/town/meshy-cast-20261022/library.json, 2026-10-22) was committed as
+#    one JSON line: its clip "key" fields (snake-case clip names) read as generic-api-key (12 hits, all on line 1). Not
+#    credentials. The cache now lives in the gitignored raw/ folder; this pins only the historical commit.
+1a78dd3ad49688ac197f49722410fbf9b5bdacaf:design/ep2/town/meshy-cast-20261022/library.json:generic-api-key:1
