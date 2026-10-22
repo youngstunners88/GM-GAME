@@ -7,12 +7,18 @@
     "town_autonomy": "ALL PASS (30 checks)",
     "imported_assets_and_cyclic_animation": "ALL PASS (624 checks)",
     "source_mesh_rig_ten_clips": "13/13 PASS",
-    "security": "18/18 PASS"
+    "security": "18/18 PASS",
+    "fresh_import_pack": {
+      "source_sha": "a2d98bf61617d520986dddbcdc250b60d77c3ff5",
+      "bytes": 199157184,
+      "limit": 199229440,
+      "margin": 72256
+    }
   },
   "pending": [
-    "fresh-import export and PCK presence/size",
-    "gameplay camera images inspected",
-    "remote CI, production upload and public BUILD/playflow"
+    "local complete export presence gate",
+    "CI gameplay camera images inspected",
+    "production upload and public BUILD/playflow"
   ],
   "source_sha512": {
     "src/episode2/actors/ep2_town_people.gd": "20c238db30d739af626eb7171fdaf89f4566256f0390e5107a0c8896f9a0959357b329f98b0d0c457811fe3e8e84027dcaaf997e6d801ee98e752a3dbd2b0f33",

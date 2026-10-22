@@ -13,13 +13,16 @@
     "source_qa": "13/13 mesh and rig PASS; all ten clips finite",
     "movement": "120-second full roster PASS; long-run/disk tests in final regression",
     "network": "Shell DNS fails; GitHub connector independently confirmed master and binary blob upload",
-    "renderer": "X11/Wayland unavailable in sandbox; CI capture added"
+    "renderer": "X11/Wayland unavailable in sandbox; CI capture added",
+    "behavior": "Full CI PASS; autonomy 30/30; imports/cyclic playback 624; script compile PASS; security18/18",
+    "fresh_import_pack": "a2d98bf6:199157184 B; limit199229440 B; margin72256 B",
+    "push": "a2d98bf6 pushed via connector; codex branch trigger being added"
   },
   "unresolved": [
-    "final full regression",
-    "fresh-import pack/export/presence gates",
-    "commit/push/CI player-camera inspection",
-    "deployment and public BUILD/playflow"
+    "CI camera capture and inspection",
+    "local full export presence gate",
+    "nonforced publication, CI/butler and public BUILD/playflow"
   ],
-  "next_action": "Complete gates; use GitHub connector for branch push if shell DNS remains unavailable. Never call pending release live."
+  "next_action": "Complete gates; use GitHub connector for branch push if shell DNS remains unavailable. Never call pending release live.",
+  "source_commit": "a2d98bf61617d520986dddbcdc250b60d77c3ff5"
 }
