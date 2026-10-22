@@ -772,6 +772,9 @@ func _on_setup() -> void:
 	_ground_y = 0.0
 	_apply_handoff_gaze(0.0, -0.03, PI)
 	_player_yaw = _look_yaw
+	# the townsfolk carry on exactly where they were during the ride in (same people, same places, same errands)
+	if _people != null and handoff.get("town_people") is Dictionary:
+		_people.restore(handoff["town_people"])
 	_rng.seed = 1886
 	if _hud:
 		_hud.show_health = false

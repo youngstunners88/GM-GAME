@@ -5,21 +5,24 @@ extends RefCounted
 const GREET_R := 3.6
 const GREET_COOLDOWN := 24.0
 const BODY_R := 0.31
-const LOOPING_CLIPS := ["Idle", "Walk", "Observe", "Rest", "Talk", "Inspect", "Alert"]
+const LOOPING_CLIPS := ["Idle", "Walk", "Observe", "Rest", "Talk", "Inspect", "Alert", "Play"]
+## The children (and the youth) PLAY in their town: tag-style hops, a jump rope - their own clip from the Meshy cast.
+const PLAYERS := ["boy", "braided_girl", "bob_girl", "youth"]
+## walk_speed: the Meshy walk clip's own ground speed (m/s, measured by tools/meshy/townfolk_batch.py foot FK) - stride matching.
 const ROSTER: Array = [
-	{"id": "clerk", "file": "townsman_clerk.glb", "h": 1.76, "route": [Vector2(-2.6, 1408.5), Vector2(-2.6, 1423.0), Vector2(-2.6, 1437.0)], "speed": 0.95, "pause": [3.0, 8.0]},
-	{"id": "oldtimer", "file": "townsman_oldtimer.glb", "h": 1.69, "route": [Vector2(2.6, 1424.0), Vector2(2.6, 1437.0), Vector2(1.2, 1444.0)], "speed": 0.78, "pause": [5.0, 12.0]},
-	{"id": "rancher", "file": "townsman_rancher.glb", "h": 1.84, "route": [Vector2(2.9, 1431.0), Vector2(0.4, 1421.0), Vector2(2.9, 1431.0), Vector2(-0.8, 1436.0)], "speed": 1.05, "pause": [6.0, 14.0]},
-	{"id": "dressmaker", "file": "townswoman_dressmaker.glb", "h": 1.66, "route": [Vector2(1.0, 1409.5), Vector2(1.0, 1427.0), Vector2(1.0, 1445.0)], "speed": 0.88, "pause": [2.5, 6.0]},
-	{"id": "lady", "file": "townswoman_lady.glb", "h": 1.72, "route": [Vector2(-0.6, 1444.0), Vector2(-0.6, 1428.0), Vector2(-0.6, 1411.0)], "speed": 0.82, "pause": [4.0, 9.0]},
-	{"id": "bald_worker", "file": "townsman_bald_worker.glb", "h": 1.8, "speed": 0.99, "route": [Vector2(-2.0, 1410), Vector2(2.0, 1412)], "pause": [4.0, 10.0]},
-	{"id": "grandma", "file": "townswoman_grandma.glb", "h": 1.57, "speed": 0.68, "route": [Vector2(-2.0, 1413), Vector2(2.0, 1415)], "pause": [4.0, 10.0]},
-	{"id": "grandfather", "file": "townsman_grandfather.glb", "h": 1.73, "speed": 0.73, "route": [Vector2(-2.0, 1416), Vector2(2.0, 1418)], "pause": [4.0, 10.0]},
-	{"id": "grandmother", "file": "townswoman_grandmother.glb", "h": 1.59, "speed": 0.7, "route": [Vector2(-2.0, 1419), Vector2(2.0, 1421)], "pause": [4.0, 10.0]},
-	{"id": "youth", "file": "townsman_youth.glb", "h": 1.67, "speed": 1.12, "route": [Vector2(-2.0, 1422), Vector2(2.0, 1424)], "pause": [4.0, 10.0]},
-	{"id": "boy", "file": "townsboy.glb", "h": 1.36, "speed": 1.16, "route": [Vector2(-2.0, 1425), Vector2(2.0, 1427)], "pause": [4.0, 10.0]},
-	{"id": "braided_girl", "file": "townsgirl_braided.glb", "h": 1.34, "speed": 1.02, "route": [Vector2(-2.0, 1428), Vector2(2.0, 1430)], "pause": [4.0, 10.0]},
-	{"id": "bob_girl", "file": "townsgirl_bob.glb", "h": 1.28, "speed": 0.98, "route": [Vector2(-2.0, 1431), Vector2(2.0, 1433)], "pause": [4.0, 10.0]},
+	{"id": "clerk", "file": "townsman_clerk.glb", "h": 1.76, "walk_speed": 0.648, "route": [Vector2(-2.6, 1408.5), Vector2(-2.6, 1423.0), Vector2(-2.6, 1437.0)], "speed": 0.95, "pause": [3.0, 8.0]},
+	{"id": "oldtimer", "file": "townsman_oldtimer.glb", "h": 1.69, "walk_speed": 0.510, "route": [Vector2(2.6, 1424.0), Vector2(2.6, 1437.0), Vector2(1.2, 1444.0)], "speed": 0.78, "pause": [5.0, 12.0]},
+	{"id": "rancher", "file": "townsman_rancher.glb", "h": 1.84, "walk_speed": 0.671, "route": [Vector2(2.9, 1431.0), Vector2(0.4, 1421.0), Vector2(2.9, 1431.0), Vector2(-0.8, 1436.0)], "speed": 1.05, "pause": [6.0, 14.0]},
+	{"id": "dressmaker", "file": "townswoman_dressmaker.glb", "h": 1.66, "walk_speed": 1.344, "route": [Vector2(1.0, 1409.5), Vector2(1.0, 1427.0), Vector2(1.0, 1445.0)], "speed": 0.88, "pause": [2.5, 6.0]},
+	{"id": "lady", "file": "townswoman_lady.glb", "h": 1.72, "walk_speed": 1.379, "route": [Vector2(-0.6, 1444.0), Vector2(-0.6, 1428.0), Vector2(-0.6, 1411.0)], "speed": 0.82, "pause": [4.0, 9.0]},
+	{"id": "bald_worker", "file": "townsman_bald_worker.glb", "h": 1.8, "walk_speed": 1.266, "speed": 0.99, "route": [Vector2(-2.0, 1410), Vector2(2.0, 1412)], "pause": [4.0, 10.0]},
+	{"id": "grandma", "file": "townswoman_grandma.glb", "h": 1.57, "walk_speed": 0.551, "speed": 0.68, "route": [Vector2(-2.0, 1413), Vector2(2.0, 1415)], "pause": [4.0, 10.0]},
+	{"id": "grandfather", "file": "townsman_grandfather.glb", "h": 1.73, "walk_speed": 0.524, "speed": 0.73, "route": [Vector2(-2.0, 1416), Vector2(2.0, 1418)], "pause": [4.0, 10.0]},
+	{"id": "grandmother", "file": "townswoman_grandmother.glb", "h": 1.59, "walk_speed": 0.495, "speed": 0.7, "route": [Vector2(-2.0, 1419), Vector2(2.0, 1421)], "pause": [4.0, 10.0]},
+	{"id": "youth", "file": "townsman_youth.glb", "h": 1.67, "walk_speed": 1.167, "speed": 1.12, "route": [Vector2(-2.0, 1422), Vector2(2.0, 1424)], "pause": [4.0, 10.0]},
+	{"id": "boy", "file": "townsboy.glb", "h": 1.36, "walk_speed": 0.956, "speed": 1.16, "route": [Vector2(-2.0, 1425), Vector2(2.0, 1427)], "pause": [4.0, 10.0]},
+	{"id": "braided_girl", "file": "townsgirl_braided.glb", "h": 1.34, "walk_speed": 0.752, "speed": 1.02, "route": [Vector2(-2.0, 1428), Vector2(2.0, 1430)], "pause": [4.0, 10.0]},
+	{"id": "bob_girl", "file": "townsgirl_bob.glb", "h": 1.28, "walk_speed": 1.084, "speed": 0.98, "route": [Vector2(-2.0, 1431), Vector2(2.0, 1433)], "pause": [4.0, 10.0]},
 ]
 
 const PROFILES := {
@@ -46,7 +49,7 @@ const PLACES := {
 	"rest_south": Vector2(-2.6, 1401), "rest_north": Vector2(3.0, 1450),
 }
 const SHELTERS := [Vector2(-3.2, 1401), Vector2(3.2, 1401), Vector2(-3.2, 1450), Vector2(3.2, 1450), Vector2(-15, 1456)]
-const ACTIVITIES := ["work", "errand", "rest", "observe", "social"]
+const ACTIVITIES := ["work", "errand", "rest", "observe", "social", "play"]
 
 class Person:
 	var id: String = ""
@@ -85,6 +88,8 @@ var _seed: int = 4101
 var _configured: bool = false
 var _mode: String = "normal" # normal | quiet | duel
 var _story_was_duel: bool = false
+## Radius around the player that people keep clear of (0.68 on foot; the woods ride raises it for the quad).
+var player_clearance: float = 0.68
 
 func configure_space(info: Dictionary) -> void:
 	navigation.configure(info)
@@ -123,6 +128,9 @@ func build(parent: Node3D, seed_value: int = 4101) -> int:
 		if not p.folk.setup(path, float(row["h"])):
 			p.folk.queue_free()
 			continue
+		# Meshy cast (2026-10-22): the walk clip keeps pace with the body (no foot slide) and carries its own bob
+		p.folk.walk_clip_speed = float(row.get("walk_speed", 0.0))
+		p.folk.procedural_bob = p.folk.walk_clip_speed <= 0.0
 		p.route = row["route"]
 		p.speed = float(row["speed"])
 		p.pause_range = Vector2(float(row["pause"][0]), float(row["pause"][1]))
@@ -253,6 +261,7 @@ func _choose(p: Person) -> void:
 		if activity == "work": score += 0.65 if p.id in ["bald_worker", "rancher", "dressmaker", "clerk", "youth"] else 0.12
 		if activity == "rest": score += float(p.profile["rest"]) * minf(1.0, p.walked_m / 18.0)
 		if activity == "social": score += float(p.profile["social"]) * 0.6
+		if activity == "play": score += 0.7 if p.id in PLAYERS else -3.0
 		if activity in p.recent: score -= 0.7
 		if activity == "social" and (_mode != "normal" or p.social_cd > 0): score -= 2.0
 		if score > best_score:
@@ -310,15 +319,26 @@ func _arrive(p: Person) -> void:
 		clip = "Rest"
 		p.timer *= 1.0 + float(p.profile["rest"])
 	elif p.activity == "work": clip = "Inspect"
+	elif p.activity == "play" and _has_clip(p, "Play"): clip = "Play"
 	p.folk.hold_clip(clip)
 	if not p.destination.is_empty():
 		var target: Vector2 = PLACES[p.destination]
 		# Face the institution/horse, rather than staring into the last path segment.
 		p.folk.face_point(Vector3(target.x + (-4.0 if target.x < 0 else 4.0), 0, target.y))
 
+## True when this person's model carries an authored clip `name` (importer prefixes tolerated, as Ep2TownFolk does).
+func _has_clip(p: Person, name: String) -> bool:
+	var anim: AnimationPlayer = p.folk.anim_player()
+	if anim == null: return false
+	var want: String = name.to_lower()
+	for clip in anim.get_animation_list():
+		var key: String = String(clip).to_lower()
+		if key == want or key.ends_with("/" + want) or key.ends_with("|" + want): return true
+	return false
+
 func _body_clear(point: Vector2, owner: Person, player: Vector3) -> bool:
 	if not navigation.is_clear(point): return false
-	if absf(player.y) < 2.2 and point.distance_to(Vector2(player.x, player.z)) < 0.68: return false
+	if absf(player.y) < 2.2 and point.distance_to(Vector2(player.x, player.z)) < player_clearance: return false
 	for other in people:
 		if other == owner: continue
 		if point.distance_to(_pos(other)) < BODY_R * 2.0: return false
@@ -428,6 +448,32 @@ func _seek_safety(p: Person, danger: Vector2, duel: bool) -> void:
 	p.folk.stop()
 	p.folk.hold_clip("Alert")
 
+## A vehicle (the quad rolling into town) is coming along `heading`: anyone standing in its path within `reach`
+## metres steps sideways to the verge, then carries on with their own day once it has passed (short fear, no shelter).
+func make_way(from: Vector3, heading: Vector2, reach: float = 14.0, half_width: float = 2.0) -> void:
+	if heading.length_squared() < 0.0001 or _mode == "duel": return
+	var fwd: Vector2 = heading.normalized()
+	var side: Vector2 = Vector2(-fwd.y, fwd.x)
+	var origin := Vector2(from.x, from.z)
+	for p in people:
+		if p.state in ["flee", "shelter"]: continue
+		var rel: Vector2 = _pos(p) - origin
+		var ahead: float = rel.dot(fwd)
+		var lateral: float = rel.dot(side)
+		if ahead < -1.0 or ahead > reach or absf(lateral) > half_width: continue
+		var away: float = 1.0 if lateral >= 0.0 else -1.0
+		var target: Vector2 = navigation.closest(_pos(p) + side * away * (half_width + 1.4 - absf(lateral)) + fwd * 0.6)
+		var path: Array[Vector2] = navigation.path(_pos(p), target)
+		if path.is_empty(): continue
+		_release(p)
+		p.partner = ""
+		p.threat = origin
+		p.safety = target
+		p.fear = maxf(p.fear, 2.5)
+		p.waypoints = path
+		p.state = "flee"
+		p.folk.hold_clip("Observe")
+
 func duel_lane_clear() -> bool:
 	for p in people:
 		var q: Vector2 = _pos(p)
@@ -480,7 +526,7 @@ func restore(data: Dictionary) -> bool:
 		positions.append(point)
 		if row.get("activity") not in ACTIVITIES: return false
 		if row.get("state") not in ["pause", "walk", "flee", "shelter", "greet", "social"]: return false
-		if row.get("clip") not in ["Idle", "Observe", "Rest", "Talk", "Inspect", "Alert", "Greet"]: return false
+		if row.get("clip") not in ["Idle", "Observe", "Rest", "Talk", "Inspect", "Alert", "Greet", "Play"]: return false
 		var destination: Variant = row.get("destination")
 		if not destination is String or (destination != "" and not PLACES.has(destination)): return false
 		if destination != "":

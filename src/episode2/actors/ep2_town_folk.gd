@@ -31,6 +31,11 @@ var clip_blend: float = 0.0
 ## Explicit opt-in for ambient cyclic motion; story/prop performance keeps authored one-shots.
 var looping_clips: Array[String] = []
 var use_height: bool = false
+## Stride matching for library walk clips (Meshy cast, 2026-10-22): the walk clip's own ground speed in m/s. When set,
+## the walk plays at (ground speed / this) so the feet keep pace with the body; 0 keeps the clip at its authored speed.
+var walk_clip_speed: float = 0.0
+## The procedural stride lift on top of rigged clips; mocap walks carry their own bob, so the Meshy cast turns it off.
+var procedural_bob: bool = true
 var _floor_y: float = 0.0
 
 
@@ -317,9 +322,11 @@ func step(delta: float) -> void:
 		var want: String = walk_clip if moving else _base_clip
 		if _clip != want.to_lower():
 			play_clip(want)
+		if walk_clip_speed > 0.0:
+			_anim.speed_scale = clampf(_speed / walk_clip_speed, 0.45, 1.8) if moving else 1.0
 		model.rotation = Vector3(-0.08 * _kick, 0.0, 0.0)
 		# mocap clips carry their own bob; the procedural stride lift is only for the old authored figures
-		position.y = _floor_y + ((absf(sin(_phase)) * 0.035) if moving and not use_height else 0.0)
+		position.y = _floor_y + ((absf(sin(_phase)) * 0.035) if moving and not use_height and procedural_bob else 0.0)
 		return
 	model.rotation = Vector3(-0.08 * _kick, 0.0, (0.035 * sin(_phase) if moving else 0.0))
 	position.y = (absf(sin(_phase)) * 0.035) if moving else 0.0

@@ -170,6 +170,7 @@ var _crown_mat: ShaderMaterial = null
 var _fern_mat: ShaderMaterial = null
 var _rock_mesh: Mesh = null
 var _wildlife: Ep2Wildlife = null
+var _people: Ep2TownPeople = null                   # the townsfolk: already living in their town while the quad rolls in
 var _exit_kit: Node3D = null                          # the mine-lift walkway kit, for the mine exit + bridge
 ## "golden" = golden hour (founder bear stills 2026-10-10b; Jev 0.54 / microsoft-decision-1 0.58 chose it on the closeness table),
 ## "" = the old-growth daylight of the earlier forest target. Set before setup().
@@ -1479,6 +1480,7 @@ func _tick(delta: float) -> void:
 	_tick_player_arrows(delta)
 	_tick_footsteps(delta)
 	_tick_riders(delta)
+	_tick_town_people(delta)
 	if _wildlife != null:
 		_wildlife._centre = Vector3(_player_pos.x, 0.0, _player_pos.z)      # the birds keep to the stretch of wood he is in
 		_wildlife.step(delta)
@@ -2540,6 +2542,12 @@ func get_cart_node() -> Node3D: return _cart
 ## The town and Fort Knox (Ep2GoldTown - the SAME build the town chamber makes, at the same coordinates).
 func _build_town() -> void:
 	_town_col = Ep2GoldTown.build(_visuals, false)
+	# It is THEIR town (founder 2026-10-22): the people are out in the street before Lil Blunt arrives, not spawned
+	# after the drop-off. Their whole state is handed to the town chamber at the cut (get_handoff -> "town_people").
+	_people = Ep2TownPeople.new()
+	_people.configure_space(_town_col)
+	_people.build(_visuals)
+	_people.player_clearance = 1.6                    # the quad is wider than a man on foot
 
 
 ## Gold-rush country between the last pines and the town (Ep2GoldTown.build_desert - the same scrub, rocks and mesas the town chamber
@@ -2670,11 +2678,26 @@ func _tick_dropoff(delta: float) -> void:
 func get_handoff() -> Dictionary:
 	var h: Dictionary = super.get_handoff()
 	h["pos"] = _player_pos
+	if _people != null:
+		h["town_people"] = _people.snapshot()
 	return h
 
 
 func _wants_handoff() -> bool:
 	return _beat == Beat.DROPOFF and _dropoff_done and is_bull_gone()
+
+
+## The town lives its own day from the moment the town is in sight: people go about their errands, and step aside to
+## the verge when the noisy quad (with Lil Blunt on it, or Bull riding off) comes down the street.
+func _tick_town_people(delta: float) -> void:
+	if _people == null or _player_pos.z < Ep2GoldTown.TOWN_Z - 450.0:
+		return
+	_people.player_clearance = 1.6 if _riding else 0.68
+	_people.step(delta, _player_pos)
+	if _quad != null and _quad.visible:
+		var v: float = 4.0 if _riding else float(_rideoff.get("v", 0.0))
+		if v > 0.5:
+			_people.make_way(_quad.position, Vector2(sin(_quad_yaw), cos(_quad_yaw)))
 
 
 func is_bull_gone() -> bool:

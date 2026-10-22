@@ -141,6 +141,39 @@ func _ready() -> void:
 			"path": corrupt["people"][0]["waypoints"] = [[0, 100]]
 			"random": corrupt["people"][0]["rng_state"] = "99999999999999999999"
 		check("invalid %s rejected without mutation" % mutation, not tp.restore(corrupt) and tp.snapshot() == before_invalid)
+	# Regression (founder 2026-10-22): the people live in the town BEFORE the drop-off. The ride chamber builds its own crowd
+	# on the ride's lighter collision; the town chamber must take that exact state over at the cut.
+	var ride_world := Node3D.new()
+	add_child(ride_world)
+	var ride := Ep2TownPeople.new()
+	ride.configure_space(Ep2GoldTown.build(ride_world, false))
+	ride.build(ride_world, 4101)
+	for frame in 900: ride.step(0.1, Vector3(0, 0, 1300))
+	var town_world := Node3D.new()
+	add_child(town_world)
+	var town := Ep2TownPeople.new()
+	town.configure_space(Ep2GoldTown.build(town_world, true))
+	town.build(town_world, 4101)
+	var ride_state: Dictionary = ride.snapshot()
+	var handed: bool = town.restore(JSON.parse_string(JSON.stringify(ride_state)))
+	var mismatched: Array = []
+	for i in ride.people.size():
+		var rp: Ep2TownPeople.Person = ride.people[i]
+		var tq: Ep2TownPeople.Person = town.person(rp.id)
+		if tq == null or Vector2(tq.folk.position.x - rp.folk.position.x, tq.folk.position.z - rp.folk.position.z).length() > 0.001 or tq.state != rp.state or tq.activity != rp.activity \
+				or tq.destination != rp.destination or tq.rng.state != rp.rng.state or tq.visits.size() != rp.visits.size():
+			mismatched.append(rp.id)
+	check("ride-in crowd hands over to the town chamber at the cut", handed and mismatched.is_empty(), mismatched)
+	# A quad comes down the middle of the street: whoever stands in its lane steps to the verge.
+	var lane_person: Ep2TownPeople.Person = ride.people[0]
+	var spot: Vector2 = ride.navigation.closest(Vector2(0.0, 1425.0))
+	lane_person.folk.place(Vector3(spot.x, 0, spot.y))
+	lane_person.state = "pause"
+	lane_person.timer = 30.0
+	ride.make_way(Vector3(spot.x, 0, spot.y - 8.0), Vector2(0, 1))
+	check("a person in the quad's lane steps aside", lane_person.state == "flee" and absf(lane_person.safety.x - spot.x) > 1.0, [lane_person.state, lane_person.safety])
+	ride_world.queue_free()
+	town_world.queue_free()
 	var n: int = tp.build(world, 7627)
 	check("rebuilding creates exactly one instance per identity", n == 13 and world.find_children("Person_*", "", false, false).size() == 13)
 	var file := FileAccess.open("res://design/ep2/town/autonomy-20261022/behavior-report.json", FileAccess.WRITE)
