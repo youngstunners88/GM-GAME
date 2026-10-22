@@ -1,0 +1,412 @@
+{
+  "rig_pass": true,
+  "asset_pass": true,
+  "clips": [
+    {
+      "clip": "Alert",
+      "samples": 18,
+      "finite": true,
+      "max_edge_stretch": 1.465,
+      "min_edge_ratio": 0.6322,
+      "worst_frame": 17.470588235294116,
+      "max_vertex_travel_m": 0.2247,
+      "max_edge_excess_m": 0.0033825641050305166,
+      "worst_edge": {
+        "bind_length_m": 0.0012483438885020225,
+        "posed_length_m": 0.0018287737564001245,
+        "rest_positions": [
+          [
+            -0.16829529404640198,
+            0.022169584408402443,
+            1.1829699277877808
+          ],
+          [
+            -0.16789379715919495,
+            0.02218111790716648,
+            1.1841518878936768
+          ]
+        ],
+        "weights": [
+          {
+            "Hips": 0.0458,
+            "Spine": 0.1873,
+            "Chest": 0.1908,
+            "UpperArm.R": 0.5761
+          },
+          {
+            "Hips": 0.0631,
+            "Chest": 0.2256,
+            "Spine": 0.2302,
+            "UpperArm.R": 0.4811
+          }
+        ]
+      }
+    },
+    {
+      "clip": "Carry",
+      "samples": 24,
+      "finite": true,
+      "max_edge_stretch": 2.468,
+      "min_edge_ratio": 0.3252,
+      "worst_frame": 23.47826086956522,
+      "max_vertex_travel_m": 0.8073,
+      "max_edge_excess_m": 0.014113536121772963,
+      "worst_edge": {
+        "bind_length_m": 0.0018225511210301236,
+        "posed_length_m": 0.004498042759893566,
+        "rest_positions": [
+          [
+            0.16776281595230103,
+            -0.01705974154174328,
+            1.1712133884429932
+          ],
+          [
+            0.16696780920028687,
+            -0.016410350799560547,
+            1.1727193593978882
+          ]
+        ],
+        "weights": [
+          {
+            "Hips": 0.078,
+            "Chest": 0.2426,
+            "Spine": 0.258,
+            "UpperArm.L": 0.4214
+          },
+          {
+            "Hips": 0.0532,
+            "Chest": 0.2039,
+            "Spine": 0.2057,
+            "UpperArm.L": 0.5372
+          }
+        ]
+      }
+    },
+    {
+      "clip": "Greet",
+      "samples": 23,
+      "finite": true,
+      "max_edge_stretch": 5.7802,
+      "min_edge_ratio": 0.149,
+      "worst_frame": 23.0,
+      "max_vertex_travel_m": 0.8818,
+      "max_edge_excess_m": 0.008414672677482197,
+      "worst_edge": {
+        "bind_length_m": 0.0015682046619925863,
+        "posed_length_m": 0.00906453003269884,
+        "rest_positions": [
+          [
+            -0.16642534732818604,
+            0.0032179655972868204,
+            1.1671699285507202
+          ],
+          [
+            -0.16761428117752075,
+            0.0041505019180476665,
+            1.167589545249939
+          ]
+        ],
+        "weights": [
+          {
+            "Hips": 0.0548,
+            "Chest": 0.1909,
+            "Spine": 0.1947,
+            "UpperArm.R": 0.5596
+          },
+          {
+            "Hips": 0.0815,
+            "Chest": 0.236,
+            "Spine": 0.2534,
+            "UpperArm.R": 0.429
+          }
+        ]
+      }
+    },
+    {
+      "clip": "Idle",
+      "samples": 30,
+      "finite": true,
+      "max_edge_stretch": 1.4802,
+      "min_edge_ratio": 0.6428,
+      "worst_frame": 60.0,
+      "max_vertex_travel_m": 0.1562,
+      "max_edge_excess_m": 0.0015982742497799851,
+      "worst_edge": {
+        "bind_length_m": 0.0012483438885020225,
+        "posed_length_m": 0.0018477541559636826,
+        "rest_positions": [
+          [
+            -0.16829529404640198,
+            0.022169584408402443,
+            1.1829699277877808
+          ],
+          [
+            -0.16789379715919495,
+            0.02218111790716648,
+            1.1841518878936768
+          ]
+        ],
+        "weights": [
+          {
+            "Hips": 0.0458,
+            "Spine": 0.1873,
+            "Chest": 0.1908,
+            "UpperArm.R": 0.5761
+          },
+          {
+            "Hips": 0.0631,
+            "Chest": 0.2256,
+            "Spine": 0.2302,
+            "UpperArm.R": 0.4811
+          }
+        ]
+      }
+    },
+    {
+      "clip": "Inspect",
+      "samples": 24,
+      "finite": true,
+      "max_edge_stretch": 1.3166,
+      "min_edge_ratio": 0.6539,
+      "worst_frame": 23.47826086956522,
+      "max_vertex_travel_m": 0.1495,
+      "max_edge_excess_m": 0.0038730250126845223,
+      "worst_edge": {
+        "bind_length_m": 0.0025630748416288155,
+        "posed_length_m": 0.00337462473493789,
+        "rest_positions": [
+          [
+            0.16677619516849518,
+            0.018591033294796944,
+            1.178036093711853
+          ],
+          [
+            0.1681448221206665,
+            0.017079424113035202,
+            1.1795889139175415
+          ]
+        ],
+        "weights": [
+          {
+            "Hips": 0.0762,
+            "Chest": 0.2498,
+            "Spine": 0.2607,
+            "UpperArm.L": 0.4134
+          },
+          {
+            "Hips": 0.0515,
+            "Chest": 0.2021,
+            "Spine": 0.2021,
+            "UpperArm.L": 0.5443
+          }
+        ]
+      }
+    },
+    {
+      "clip": "Observe",
+      "samples": 45,
+      "finite": true,
+      "max_edge_stretch": 1.5286,
+      "min_edge_ratio": 0.5933,
+      "worst_frame": 57.63636363636364,
+      "max_vertex_travel_m": 0.1573,
+      "max_edge_excess_m": 0.0020959379466961234,
+      "worst_edge": {
+        "bind_length_m": 0.0012483438885020225,
+        "posed_length_m": 0.0019082302011975741,
+        "rest_positions": [
+          [
+            -0.16829529404640198,
+            0.022169584408402443,
+            1.1829699277877808
+          ],
+          [
+            -0.16789379715919495,
+            0.02218111790716648,
+            1.1841518878936768
+          ]
+        ],
+        "weights": [
+          {
+            "Hips": 0.0458,
+            "Spine": 0.1873,
+            "Chest": 0.1908,
+            "UpperArm.R": 0.5761
+          },
+          {
+            "Hips": 0.0631,
+            "Chest": 0.2256,
+            "Spine": 0.2302,
+            "UpperArm.R": 0.4811
+          }
+        ]
+      }
+    },
+    {
+      "clip": "Point",
+      "samples": 26,
+      "finite": true,
+      "max_edge_stretch": 11.6483,
+      "min_edge_ratio": 0.2926,
+      "worst_frame": 23.44,
+      "max_vertex_travel_m": 1.0364,
+      "max_edge_excess_m": 0.019418761874506807,
+      "worst_edge": {
+        "bind_length_m": 0.0015682046619925863,
+        "posed_length_m": 0.018266925164160248,
+        "rest_positions": [
+          [
+            -0.16642534732818604,
+            0.0032179655972868204,
+            1.1671699285507202
+          ],
+          [
+            -0.16761428117752075,
+            0.0041505019180476665,
+            1.167589545249939
+          ]
+        ],
+        "weights": [
+          {
+            "Hips": 0.0548,
+            "Chest": 0.1909,
+            "Spine": 0.1947,
+            "UpperArm.R": 0.5596
+          },
+          {
+            "Hips": 0.0815,
+            "Chest": 0.236,
+            "Spine": 0.2534,
+            "UpperArm.R": 0.429
+          }
+        ]
+      }
+    },
+    {
+      "clip": "Rest",
+      "samples": 36,
+      "finite": true,
+      "max_edge_stretch": 1.4302,
+      "min_edge_ratio": 0.662,
+      "worst_frame": 1.0,
+      "max_vertex_travel_m": 0.146,
+      "max_edge_excess_m": 0.0018645152596645093,
+      "worst_edge": {
+        "bind_length_m": 0.0012483438885020225,
+        "posed_length_m": 0.001785367968011616,
+        "rest_positions": [
+          [
+            -0.16829529404640198,
+            0.022169584408402443,
+            1.1829699277877808
+          ],
+          [
+            -0.16789379715919495,
+            0.02218111790716648,
+            1.1841518878936768
+          ]
+        ],
+        "weights": [
+          {
+            "Hips": 0.0458,
+            "Spine": 0.1873,
+            "Chest": 0.1908,
+            "UpperArm.R": 0.5761
+          },
+          {
+            "Hips": 0.0631,
+            "Chest": 0.2256,
+            "Spine": 0.2302,
+            "UpperArm.R": 0.4811
+          }
+        ]
+      }
+    },
+    {
+      "clip": "Talk",
+      "samples": 27,
+      "finite": true,
+      "max_edge_stretch": 1.2663,
+      "min_edge_ratio": 0.5972,
+      "worst_frame": 1.0,
+      "max_vertex_travel_m": 0.2211,
+      "max_edge_excess_m": 0.00227183039677804,
+      "worst_edge": {
+        "bind_length_m": 0.0012483438885020225,
+        "posed_length_m": 0.0015807162571055962,
+        "rest_positions": [
+          [
+            -0.16829529404640198,
+            0.022169584408402443,
+            1.1829699277877808
+          ],
+          [
+            -0.16789379715919495,
+            0.02218111790716648,
+            1.1841518878936768
+          ]
+        ],
+        "weights": [
+          {
+            "Hips": 0.0458,
+            "Spine": 0.1873,
+            "Chest": 0.1908,
+            "UpperArm.R": 0.5761
+          },
+          {
+            "Hips": 0.0631,
+            "Chest": 0.2256,
+            "Spine": 0.2302,
+            "UpperArm.R": 0.4811
+          }
+        ]
+      }
+    },
+    {
+      "clip": "Walk",
+      "samples": 13,
+      "finite": true,
+      "max_edge_stretch": 3.5051,
+      "min_edge_ratio": 0.1197,
+      "worst_frame": 13.0,
+      "max_vertex_travel_m": 0.3034,
+      "max_edge_excess_m": 0.012271070448409208,
+      "worst_edge": {
+        "bind_length_m": 0.0015682046619925863,
+        "posed_length_m": 0.005496785549241015,
+        "rest_positions": [
+          [
+            -0.16642534732818604,
+            0.0032179655972868204,
+            1.1671699285507202
+          ],
+          [
+            -0.16761428117752075,
+            0.0041505019180476665,
+            1.167589545249939
+          ]
+        ],
+        "weights": [
+          {
+            "Hips": 0.0548,
+            "Chest": 0.1909,
+            "Spine": 0.1947,
+            "UpperArm.R": 0.5596
+          },
+          {
+            "Hips": 0.0815,
+            "Chest": 0.236,
+            "Spine": 0.2534,
+            "UpperArm.R": 0.429
+          }
+        ]
+      }
+    }
+  ],
+  "all_clips_present": true,
+  "input_sha512": {
+    "src/episode2/extras/people/townsman_oldtimer.glb": "b636573b788ffb464bccf2da487fe9a6f1efc214ffc6c136dc3578b71f49d6ed6c1e8fc2e7bbbf80f428cd2f556787362020d90a041499c36b4ba7b61cb2a641",
+    "design/ep2/town/autonomy-20261022/sources/oldtimer/oldtimer.blend": "360ead44558290ace425195f3bb787de0c4932574e3482b7dbdbee9c7e62abaca2e49f5d004cbe1ffe93edec78246a72e446a42e89d4bf583ae06770cc6000a4",
+    "tools/ep2_blender/rebuild_street_people.py": "f98abf35379266906fb523d56ed4e11bce39e28df3e18d071c55d44d8851d2420674a41a9e641a04ee10d56ce7a4b50adaf3e34b82dea8dd4385817fb187bde1"
+  }
+}

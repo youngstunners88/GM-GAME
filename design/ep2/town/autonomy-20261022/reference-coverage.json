@@ -1,0 +1,159 @@
+{
+  "images_inspected": 13,
+  "public_cast": 13,
+  "separate_jail_prisoner": 1,
+  "references": [
+    {
+      "reference": "1OPVPqj8P3sVpi_bJN90dJqyqFDoqoLVV",
+      "filename": "Thief_in_T-pose_20261021170854.jpg",
+      "local": "design/ep2/town/people-rebuild-20261021/references/town-ref-1OPVPqj8P3sVpi_bJN90dJqyqFDoqoLVV.jpg",
+      "figures": [
+        {
+          "id": "jail_prisoner",
+          "asset": "src/episode2/extras/people/prisoner_accomplice.glb"
+        }
+      ]
+    },
+    {
+      "reference": "1xtNAz0raq7nbV3vqaIITeEyrQJpVtPh1",
+      "filename": "Townsman_in_T_pose_2K_20261021170646.jpg",
+      "local": "design/ep2/town/people-rebuild-20261021/references/town-reference.jpg",
+      "figures": [
+        {
+          "id": "rancher",
+          "asset": "src/episode2/extras/people/townsman_rancher.glb"
+        }
+      ]
+    },
+    {
+      "reference": "1UKoNFW1zvswqQRNdVLvusFkYoNWbMUQm",
+      "filename": "Maiden_in_T_pose_2K_20261021170549.jpg",
+      "local": "design/ep2/town/people-rebuild-20261021/references/town-ref-1UKoNFW1zvswqQRNdVLvusFkYoNWbMUQm.jpg",
+      "figures": [
+        {
+          "id": "lady",
+          "asset": "src/episode2/extras/people/townswoman_lady.glb"
+        }
+      ]
+    },
+    {
+      "reference": "1XFWvo-NIOQ_k7fzr8c6wvBqetckd4DFv",
+      "filename": "Bearded_townsman_in_T-pose_2K_20261021170452.jpg",
+      "local": "design/ep2/town/people-rebuild-20261021/references/town-ref-1XFWvo-NIOQ_k7fzr8c6wvBqetckd4DFv.jpg",
+      "figures": [
+        {
+          "id": "oldtimer",
+          "asset": "src/episode2/extras/people/townsman_oldtimer.glb"
+        }
+      ]
+    },
+    {
+      "reference": "1dOSJCq5yxlw5ZpCthbsotOL2UvsDtXWq",
+      "filename": "Girl_posing_in_T-pose_2K_20261021170357.jpg",
+      "local": "design/ep2/town/people-rebuild-20261021/references/town-ref-1dOSJCq5yxlw5ZpCthbsotOL2UvsDtXWq.jpg",
+      "figures": [
+        {
+          "id": "dressmaker",
+          "asset": "src/episode2/extras/people/townswoman_dressmaker.glb"
+        }
+      ]
+    },
+    {
+      "reference": "14GoIpTFcyyrTF-wGK-B25gynFwmP7HHY",
+      "filename": "Bald_townsman_in_T_pose_2K_20261021170305.jpg",
+      "local": "design/ep2/town/people-rebuild-20261021/references/town-ref-14GoIpTFcyyrTF-wGK-B25gynFwmP7HHY.jpg",
+      "figures": [
+        {
+          "id": "bald_worker",
+          "asset": "src/episode2/extras/people/townsman_bald_worker.glb"
+        }
+      ]
+    },
+    {
+      "reference": "1TampVjUkhlA5GxEkrEENVgs-RH2MCDg9",
+      "filename": "Child_girl_standing_T_pose_2K_20261021170210.jpg",
+      "local": "design/ep2/town/people-rebuild-20261021/references/town-ref-1TampVjUkhlA5GxEkrEENVgs-RH2MCDg9.jpg",
+      "figures": [
+        {
+          "id": "braided_girl",
+          "asset": "src/episode2/extras/people/townsgirl_braided.glb"
+        }
+      ]
+    },
+    {
+      "reference": "1VOORJh12iCDg7oJYl86VNO_ZvthA4cqq",
+      "filename": "Boy_and_girl_T-pose_2K_20261021170115.jpg",
+      "local": "design/ep2/town/people-rebuild-20261021/references/town-ref-1VOORJh12iCDg7oJYl86VNO_ZvthA4cqq.jpg",
+      "figures": [
+        {
+          "id": "youth",
+          "asset": "src/episode2/extras/people/townsman_youth.glb"
+        }
+      ]
+    },
+    {
+      "reference": "1VmiNy2tokmzI286d_T0B80hEgJD328bp",
+      "filename": "Grandma_in_T_pose_2K_20261021165949.jpg",
+      "local": "design/ep2/town/people-rebuild-20261021/references/town-ref-1VmiNy2tokmzI286d_T0B80hEgJD328bp.jpg",
+      "figures": [
+        {
+          "id": "grandma",
+          "asset": "src/episode2/extras/people/townswoman_grandma.glb"
+        }
+      ]
+    },
+    {
+      "reference": "1V5c47N0jquR7yEOu9l6yIni-lk9z8yV9",
+      "filename": "Grandparents_in_T_pose_2K_20261021165848.jpg",
+      "local": "design/ep2/town/people-rebuild-20261021/references/town-ref-1V5c47N0jquR7yEOu9l6yIni-lk9z8yV9.jpg",
+      "figures": [
+        {
+          "id": "grandfather",
+          "asset": "src/episode2/extras/people/townsman_grandfather.glb"
+        },
+        {
+          "id": "grandmother",
+          "asset": "src/episode2/extras/people/townswoman_grandmother.glb"
+        }
+      ]
+    },
+    {
+      "reference": "1tpM5sMHnAMBluCqGLwo3sTiILwYI7iQP",
+      "filename": "Girl_standing_in_T_pose_2K_20261021165641.jpg",
+      "local": "design/ep2/town/people-rebuild-20261021/references/town-ref-1tpM5sMHnAMBluCqGLwo3sTiILwYI7iQP.jpg",
+      "figures": [
+        {
+          "id": "bob_girl",
+          "asset": "src/episode2/extras/people/townsgirl_bob.glb"
+        }
+      ]
+    },
+    {
+      "reference": "1ASalMzLNI-KVNyBUAWbaoioGriXAxW0n",
+      "filename": "Boy_in_T_pose_2K_20261021164044.jpg",
+      "local": "design/ep2/town/people-rebuild-20261021/references/town-ref-1ASalMzLNI-KVNyBUAWbaoioGriXAxW0n.jpg",
+      "figures": [
+        {
+          "id": "boy",
+          "asset": "src/episode2/extras/people/townsboy.glb"
+        }
+      ]
+    },
+    {
+      "reference": "1hf_4SEXRphX0utxj8bjTLsjsfqFxiM_K",
+      "filename": "Piano_player_in_T_pose_2K_20261021154433.jpg",
+      "local": "design/ep2/town/people-rebuild-20261021/references/town-ref-1hf_4SEXRphX0utxj8bjTLsjsfqFxiM_K.jpg",
+      "figures": [
+        {
+          "id": "clerk",
+          "asset": "src/episode2/extras/people/townsman_clerk.glb"
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "Procedural reference-inspired characters; no claim of scanned likeness.",
+    "Prisoner retains existing story-owned asset and confinement.",
+    "Pianist mingles outdoors; no piano key-contact performance."
+  ]
+}

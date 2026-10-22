@@ -245,6 +245,7 @@ func _step_people() -> void:
 	_visuals.add_child(_flash)
 	_build_armory_folk()
 	_people = Ep2TownPeople.new()
+	_people.configure_space(_town_col)
 	_people.build(_visuals)
 	_build_jail_folk()
 	if _bull == null:
@@ -997,7 +998,7 @@ func _tick(delta: float) -> void:
 				_advance_to(Beat.BAR)
 		Beat.SQUARE_UP:
 			_duel_ready = _player_pos.distance_to(DUEL_MARK) < 2.0 and not _opp.is_walking() and not _sheriff.is_walking()
-			if _duel_ready:
+			if _duel_ready and (_people == null or _people.duel_lane_clear()):
 				_advance_to(Beat.DRAW)
 		Beat.DRAW:
 			_tick_draw(delta)
@@ -1086,6 +1087,7 @@ func _tick_people(delta: float) -> void:
 		_opp.face_point(DUEL_MARK)
 	# the Armory's two turn to whoever comes in the door of the shop
 	if _people != null:
+		_people.set_context("duel" if _beat in [Beat.BAR, Beat.SQUARE_UP, Beat.DRAW] else ("quiet" if _beat in [Beat.OFFICE, Beat.WON, Beat.JAIL] else "normal"))
 		_people.step(delta, _player_pos)
 	if _accomplice != null:
 		_accomplice.step(delta)
@@ -1182,6 +1184,7 @@ func shoot() -> bool:
 			return false
 		if _gatling.fire_burst(0.7):
 			_mount_bursts += 1
+			if _people != null: _people.notify_danger(_player_pos, 32.0)
 			return true
 		if _hud != null:
 			_hud.toast("THE DRUM IS EMPTY", 1.4)
@@ -1200,6 +1203,7 @@ func shoot() -> bool:
 
 
 func _on_player_shot() -> void:
+	if _people != null: _people.notify_danger(_player_pos)
 	if _beat != Beat.DRAW or _draw_state != "go":
 		return
 	var eye: Vector3 = _camera.global_position if _camera != null else _player_pos + Vector3(0.0, eye_height, 0.0)
@@ -1302,4 +1306,10 @@ func _shows_health() -> bool:
 ## The street and the two rooms: the building walls (door gaps open into the office and the saloon), the counter, the bar, the props.
 func _collide(p: Vector3) -> Vector3:
 	var c: Vector2 = Ep2GoldTown.collide(Vector2(p.x, p.z), 0.3, _town_col.get("walls", []), _town_col.get("props", []))
+	if _people != null and p.y < 2.0:
+		for person in _people.people:
+			var dv: Vector2 = c - Vector2(person.folk.position.x, person.folk.position.z)
+			if dv.length() < 0.64:
+				c = Vector2(person.folk.position.x, person.folk.position.z) + (dv.normalized() if dv.length() > 0.001 else Vector2.RIGHT) * 0.64
+				c = Ep2GoldTown.collide(c, 0.3, _town_col.get("walls", []), _town_col.get("props", []))
 	return Vector3(clampf(c.x, -40.0, 40.0), p.y, clampf(c.y, Ep2GoldTown.TOWN_Z - 60.0, Ep2GoldTown.TOWN_Z + 95.0))

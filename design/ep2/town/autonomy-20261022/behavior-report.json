@@ -1,0 +1,373 @@
+{
+	"checks": 30,
+	"failures": 0,
+	"people": {
+		"bald_worker": {
+			"choices": 66,
+			"memories": {
+
+			},
+			"personality": {
+				"interests": [
+					"yard",
+					"water",
+					"office"
+				],
+				"label": "Worker",
+				"rest": 0.3,
+				"social": 0.42,
+				"temperament": "industrious"
+			},
+			"recoveries": 6,
+			"visits": {
+				"horses": 3,
+				"market": 1,
+				"office": 4,
+				"rest_north": 1,
+				"rest_south": 1,
+				"shop": 1,
+				"water": 2,
+				"yard": 1
+			},
+			"walked_m": 312.397682156414
+		},
+		"bob_girl": {
+			"choices": 61,
+			"memories": {
+
+			},
+			"personality": {
+				"interests": [
+					"rest_south",
+					"shop",
+					"water"
+				],
+				"label": "Bob-haired girl",
+				"rest": 0.38,
+				"social": 0.45,
+				"temperament": "watchful"
+			},
+			"recoveries": 11,
+			"visits": {
+				"market": 2,
+				"notice": 1,
+				"saloon": 3,
+				"shop": 1,
+				"water": 1,
+				"yard": 3
+			},
+			"walked_m": 335.476793784648
+		},
+		"boy": {
+			"choices": 68,
+			"memories": {
+
+			},
+			"personality": {
+				"interests": [
+					"water",
+					"market",
+					"rest_south"
+				],
+				"label": "Boy",
+				"rest": 0.24,
+				"social": 0.74,
+				"temperament": "energetic"
+			},
+			"recoveries": 4,
+			"visits": {
+				"horses": 1,
+				"market": 2,
+				"notice": 1,
+				"office": 3,
+				"rest_north": 1,
+				"rest_south": 2,
+				"saloon": 2,
+				"shop": 1
+			},
+			"walked_m": 363.583967823535
+		},
+		"braided_girl": {
+			"choices": 64,
+			"memories": {
+
+			},
+			"personality": {
+				"interests": [
+					"shop",
+					"market",
+					"rest_north"
+				],
+				"label": "Braided girl",
+				"rest": 0.3,
+				"social": 0.58,
+				"temperament": "inquisitive"
+			},
+			"recoveries": 2,
+			"visits": {
+				"market": 1,
+				"notice": 1,
+				"office": 2,
+				"rest_north": 4,
+				"rest_south": 1,
+				"saloon": 1,
+				"shop": 1,
+				"water": 2
+			},
+			"walked_m": 344.45822211355
+		},
+		"clerk": {
+			"choices": 71,
+			"memories": {
+
+			},
+			"personality": {
+				"interests": [
+					"saloon",
+					"office",
+					"notice"
+				],
+				"label": "Pianist",
+				"rest": 0.45,
+				"social": 1,
+				"temperament": "observant"
+			},
+			"recoveries": 7,
+			"visits": {
+				"market": 2,
+				"notice": 1,
+				"office": 1,
+				"rest_north": 1,
+				"saloon": 1,
+				"shop": 1,
+				"water": 3,
+				"yard": 1
+			},
+			"walked_m": 300.940529249609
+		},
+		"dressmaker": {
+			"choices": 75,
+			"memories": {
+
+			},
+			"personality": {
+				"interests": [
+					"shop",
+					"market",
+					"office"
+				],
+				"label": "Dressmaker",
+				"rest": 0.32,
+				"social": 0.67,
+				"temperament": "busy"
+			},
+			"recoveries": 8,
+			"visits": {
+				"horses": 1,
+				"market": 2,
+				"notice": 1,
+				"rest_north": 2,
+				"saloon": 1,
+				"shop": 2,
+				"water": 1
+			},
+			"walked_m": 276.567409530282
+		},
+		"grandfather": {
+			"choices": 45,
+			"memories": {
+
+			},
+			"personality": {
+				"interests": [
+					"rest_north",
+					"horses",
+					"saloon"
+				],
+				"label": "Grandfather",
+				"rest": 0.82,
+				"social": 0.48,
+				"temperament": "unhurried"
+			},
+			"recoveries": 8,
+			"visits": {
+				"horses": 2,
+				"notice": 1,
+				"rest_north": 1,
+				"rest_south": 3,
+				"saloon": 1,
+				"yard": 1
+			},
+			"walked_m": 260.595251511782
+		},
+		"grandma": {
+			"choices": 46,
+			"memories": {
+
+			},
+			"personality": {
+				"interests": [
+					"rest_south",
+					"market",
+					"notice"
+				],
+				"label": "Grandmother",
+				"rest": 0.85,
+				"social": 0.8,
+				"temperament": "welcoming"
+			},
+			"recoveries": 4,
+			"visits": {
+				"horses": 2,
+				"market": 1,
+				"rest_north": 1,
+				"rest_south": 1,
+				"saloon": 1,
+				"shop": 1,
+				"yard": 1
+			},
+			"walked_m": 256.399311166257
+		},
+		"grandmother": {
+			"choices": 72,
+			"memories": {
+
+			},
+			"personality": {
+				"interests": [
+					"rest_north",
+					"shop",
+					"market"
+				],
+				"label": "Elder companion",
+				"rest": 0.87,
+				"social": 0.64,
+				"temperament": "companionable"
+			},
+			"recoveries": 6,
+			"visits": {
+				"horses": 1,
+				"market": 2,
+				"notice": 2,
+				"office": 1,
+				"rest_north": 1,
+				"saloon": 1,
+				"water": 2
+			},
+			"walked_m": 217.141567807645
+		},
+		"lady": {
+			"choices": 90,
+			"memories": {
+
+			},
+			"personality": {
+				"interests": [
+					"market",
+					"notice",
+					"saloon"
+				],
+				"label": "Market visitor",
+				"rest": 0.4,
+				"social": 0.78,
+				"temperament": "outgoing"
+			},
+			"recoveries": 5,
+			"visits": {
+				"horses": 1,
+				"market": 2,
+				"notice": 1,
+				"office": 2,
+				"rest_south": 1,
+				"shop": 1,
+				"water": 1
+			},
+			"walked_m": 216.258829351515
+		},
+		"oldtimer": {
+			"choices": 35,
+			"memories": {
+
+			},
+			"personality": {
+				"interests": [
+					"rest_south",
+					"horses",
+					"notice"
+				],
+				"label": "Old-timer",
+				"rest": 0.9,
+				"social": 0.38,
+				"temperament": "reserved"
+			},
+			"recoveries": 2,
+			"visits": {
+				"horses": 1,
+				"notice": 1,
+				"rest_north": 2,
+				"rest_south": 1,
+				"saloon": 2,
+				"shop": 1,
+				"water": 2,
+				"yard": 1
+			},
+			"walked_m": 301.167549747974
+		},
+		"rancher": {
+			"choices": 74,
+			"memories": {
+
+			},
+			"personality": {
+				"interests": [
+					"horses",
+					"water",
+					"yard"
+				],
+				"label": "Rancher",
+				"rest": 0.3,
+				"social": 0.54,
+				"temperament": "practical"
+			},
+			"recoveries": 7,
+			"visits": {
+				"horses": 1,
+				"market": 1,
+				"notice": 1,
+				"office": 3,
+				"rest_north": 1,
+				"saloon": 2,
+				"water": 2
+			},
+			"walked_m": 312.598739929497
+		},
+		"youth": {
+			"choices": 72,
+			"memories": {
+
+			},
+			"personality": {
+				"interests": [
+					"yard",
+					"notice",
+					"market"
+				],
+				"label": "Young townsman",
+				"rest": 0.18,
+				"social": 0.61,
+				"temperament": "curious"
+			},
+			"recoveries": 7,
+			"visits": {
+				"horses": 2,
+				"notice": 4,
+				"office": 1,
+				"rest_south": 1,
+				"saloon": 1,
+				"shop": 2,
+				"water": 1
+			},
+			"walked_m": 348.62110389024
+		}
+	}
+}

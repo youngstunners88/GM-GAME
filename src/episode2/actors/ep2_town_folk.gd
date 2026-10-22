@@ -12,6 +12,7 @@ var model: Node3D = null
 var pose_name: String = "idle"
 var dead: bool = false
 var _goal: Vector3 = Vector3.ZERO
+var arrival_radius: float = 0.06
 var _walking: bool = false
 var _speed: float = 1.4
 var _phase: float = 0.0
@@ -27,6 +28,8 @@ var _base_clip: String = "Idle"                      # what he holds when standi
 ## clips so nothing snaps, and optional height travel (stairs, the gallery) - all off by default so other folk are unchanged.
 var walk_clip: String = "Walk"
 var clip_blend: float = 0.0
+## Explicit opt-in for ambient cyclic motion; story/prop performance keeps authored one-shots.
+var looping_clips: Array[String] = []
 var use_height: bool = false
 var _floor_y: float = 0.0
 
@@ -64,6 +67,11 @@ func _bind_clips() -> void:
 		break
 	_rigged = _anim != null and not _anim.get_animation_list().is_empty()
 	if _rigged:
+		for name in _anim.get_animation_list():
+			for clip in looping_clips:
+				var key: String = str(name).to_lower()
+				if key == clip.to_lower() or key.ends_with("/" + clip.to_lower()) or key.ends_with("|" + clip.to_lower()):
+					_anim.get_animation(name).loop_mode = Animation.LOOP_LINEAR
 		play_clip(_base_clip)
 
 
@@ -278,7 +286,7 @@ func step(delta: float) -> void:
 		if not use_height:
 			d.y = 0.0
 		var flat := Vector3(d.x, 0.0, d.z)
-		if d.length() < 0.06:
+		if d.length() < arrival_radius:
 			_walking = false
 			if not _path.is_empty():
 				walk_to(_path.pop_front(), _speed)

@@ -1,0 +1,27 @@
+{
+  "person": "grandma",
+  "height": 1.57,
+  "triangles": 28472,
+  "vertices": 14903,
+  "joints": 20,
+  "clips": [
+    "Alert",
+    "Carry",
+    "Greet",
+    "Idle",
+    "Inspect",
+    "Observe",
+    "Point",
+    "Rest",
+    "Talk",
+    "Walk"
+  ],
+  "textures": [
+    "grandma_basecolor.jpg",
+    "grandma_orm.png",
+    "grandma_normal.png"
+  ],
+  "bytes": 3274912,
+  "source": "MakeHuman CC0 a8bc2d54ff0ac92e78ff71431b1023eda42bf482",
+  "reference": "1VmiNy2tokmzI286d_T0B80hEgJD328bp"
+}

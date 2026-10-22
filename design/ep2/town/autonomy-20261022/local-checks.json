@@ -1,0 +1,25 @@
+{
+  "recorded_utc": "2026-10-22T01:56:26.447418+00:00",
+  "gates": {
+    "full_ci": "PASS; documented 3 pause tap-target machine differences",
+    "script_compile": "ALL PASS",
+    "town_people_120s": "ALL PASS",
+    "town_autonomy": "ALL PASS (30 checks)",
+    "imported_assets_and_cyclic_animation": "ALL PASS (624 checks)",
+    "source_mesh_rig_ten_clips": "13/13 PASS",
+    "security": "18/18 PASS"
+  },
+  "pending": [
+    "fresh-import export and PCK presence/size",
+    "gameplay camera images inspected",
+    "remote CI, production upload and public BUILD/playflow"
+  ],
+  "source_sha512": {
+    "src/episode2/actors/ep2_town_people.gd": "20c238db30d739af626eb7171fdaf89f4566256f0390e5107a0c8896f9a0959357b329f98b0d0c457811fe3e8e84027dcaaf997e6d801ee98e752a3dbd2b0f33",
+    "src/episode2/actors/ep2_town_navigation.gd": "5820b76407dc38694dbcf9388ea0a382b2d43bd99cd4db0a959438ce92dffceef027ffa81a7a384f5cfcd4ed68439ed7c6c882f33655dd078ef97f2e00f6ee39",
+    "src/episode2/actors/ep2_town_folk.gd": "6460ca0c42d8b6b72430a4ebad11986d42dbdda65a274651d3185feba9dfc7d9a0d7cf25ead81b39533c361a0b73ce98757e8e23fa6adb166f8d0bbdf723541f",
+    "src/episode2/chamber/gold_town.gd": "218cb7a505818472b6fcc4d144b19912521f9c0daed60c96ff8fc8329e780edc0964f9d12a5ff37d8fcef8e8c0960559f3f21ce5b684919b497c4c11a8117ec9",
+    "src/autoload/game_manager.gd": "30144f8e520535a1deff1c2e153d2621126e393c8cdbecf79e665f08513469a83c235075141203ae8dbe10a0876da0a40a8b70ba6f5121c9f0d914a3104696c8",
+    "src/episode2/session/ep2_session_root.gd": "34df2bdd7e6bd3a08c49fdc8fecd68270d98985f8763c079de356745352048fdb153668fd28431a551842138ad4639419bd0d4105bcd4b370e0f7729261c9347"
+  }
+}

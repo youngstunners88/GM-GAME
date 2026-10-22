@@ -24,7 +24,8 @@ SPEC = importlib.util.spec_from_file_location('street_rig', ROOT/'tools/ep2_blen
 AF = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(AF)
 P = argparse.ArgumentParser(description=__doc__)
-P.add_argument('--only', choices=['clerk', 'oldtimer', 'rancher', 'dressmaker', 'lady'], required=True)
+EXTENDED = json.loads((ROOT/'design/ep2/town/autonomy-20261022/cast-build.json').read_text())
+P.add_argument('--only', choices=['clerk', 'oldtimer', 'rancher', 'dressmaker', 'lady'] + list(EXTENDED), required=True)
 P.add_argument('--render', action='store_true')
 args = P.parse_args(sys.argv[sys.argv.index('--')+1:])
 KEY = args.only
@@ -35,9 +36,11 @@ CONFIG = {
  'dressmaker': dict(name='townswoman_dressmaker',height=1.66,girth=.96,ref='1dOSJCq5yxlw5ZpCthbsotOL2UvsDtXWq',eye=(.505,.157),chin=.218,morph='female-young',skin=(.59,.40,.30),hair=(.075,.050,.037)),
  'lady': dict(name='townswoman_lady',height=1.72,girth=.92,ref='1UKoNFW1zvswqQRNdVLvusFkYoNWbMUQm',eye=(.503,.127),chin=.190,morph='female-young',skin=(.63,.44,.34),hair=(.11,.075,.05)),
 }
+CONFIG.update(EXTENDED)
 C = CONFIG[KEY]
-FEMALE = KEY in ('dressmaker','lady')
-OUT = WORK/'sources'/KEY
+STYLE = C.get('style',KEY)
+FEMALE = STYLE in ('dressmaker','lady')
+OUT = (ROOT/'design/ep2/town/autonomy-20261022' if KEY in EXTENDED else WORK)/'sources'/KEY
 OUT.mkdir(parents=True,exist_ok=True)
 MAPS = OUT/'textures'
 MAPS.mkdir(exist_ok=True)
@@ -79,10 +82,10 @@ def image_save(name, pixels, data=False, jpeg=False):
 TILES={'Skin':2,'Linen':3,'Wool':6,'Leather':7,'Felt':8,'Metal':9,'Hair':10,'Trim':11,'Skirt':12,'Apron':13,'Sole':14,'Eye':15}
 PALETTE={
  'Skin':(C['skin'],.68,0), 'Linen':((.48,.43,.34),.91,0),
- 'Wool':((.070,.063,.055) if KEY=='clerk' else (.12,.115,.10),.94,0),
+ 'Wool':((.070,.063,.055) if STYLE=='clerk' else (.12,.115,.10),.94,0),
  'Leather':((.095,.060,.038),.59,0), 'Felt':((.065,.059,.050),.96,0),
  'Metal':((.53,.41,.24),.38,1), 'Hair':(C['hair'],.87,0), 'Trim':((.22,.18,.12),.8,0),
- 'Skirt':((.10,.125,.13) if KEY=='dressmaker' else (.23,.19,.135),.94,0),
+ 'Skirt':((.10,.125,.13) if STYLE=='dressmaker' else (.23,.19,.135),.94,0),
  'Apron':((.48,.42,.32),.93,0), 'Sole':((.028,.024,.020),.9,0), 'Eye':((.56,.51,.44),.32,0),
 }
 
@@ -183,7 +186,7 @@ def head_and_hands(vs,faces,markers):
         center=sum((hp(vs[i]) for i in face),Vector())/len(face)
         back=max(0,min(1,(center.y/S+.06)/.10))
         hairline=j['foramen'].z+(.043*(1-back)-.065*back)*S
-        return center.z>hairline
+        return False if C.get('bald') else center.z>hairline
     ids=set(sum([face for face in selected if not hair_face(face)],[])); cache={i:p.bm.verts.new(hp(vs[i])) for i in ids}
     for face in selected:
         if not hair_face(face):p._face([cache[i] for i in face])
@@ -232,12 +235,12 @@ def torso_and_sleeves():
     body=['Hips','Spine','Chest']
     waist=j['hips'].z;ch=j['chest'].z;neck=j['neck'].z
     width=.162 if FEMALE else .18
-    shell=loft('Wool' if KEY=='clerk' else 'Linen',body,[(0,0,waist-.06,.17*S,.112*S),(0,0,waist+.05,.156*S,.110*S),(0,0,j['spine'].z,.158*S,.109*S),(0,-.004,ch-.04,width*S,.119*S),(0,-.006,ch+.04,(width+.013)*S,.115*S),(0,0,neck-.055,.174*S,.09*S),(0,0,neck-.015,.075*S,.063*S)],fold=.0025*S)
+    shell=loft('Wool' if STYLE=='clerk' else 'Linen',body,[(0,0,waist-.06,.17*S,.112*S),(0,0,waist+.05,.156*S,.110*S),(0,0,j['spine'].z,.158*S,.109*S),(0,-.004,ch-.04,width*S,.119*S),(0,-.006,ch+.04,(width+.013)*S,.115*S),(0,0,neck-.055,.174*S,.09*S),(0,0,neck-.015,.075*S,.063*S)],fold=.0025*S)
     if FEMALE:
         for vertex in shell.bm.verts:
             amount=max(0,min(1,(ch-vertex.co.z)/(.18*S)))
             vertex.co.x*=1-.12*amount;vertex.co.y*=1-.12*amount
-    if KEY=='clerk':
+    if STYLE=='clerk':
         bib=part('Linen',body);rows=[]
         for z,y,w in [(waist+.02,-.116*S,.055*S),(j['spine'].z,-.119*S,.055*S),(ch,-.128*S,.058*S),(neck-.045,-.104*S,.045*S)]:
             rows.append([bib.bm.verts.new((x,y,z)) for x in (-w,0,w)])
@@ -253,9 +256,9 @@ def torso_and_sleeves():
         a=j['arm.'+side];e=j['elbow.'+side];w=j['wrist.'+side]
         allowed=['Shoulder.'+side,'UpperArm.'+side,'Forearm.'+side,'Chest']
         # A continuous shoulder-to-cuff tube, with loops supporting both sides of the elbow.
-        pts=[a+Vector((-sx*.065,0,-.04)),a,a.lerp(e,.23),a.lerp(e,.6),a.lerp(e,.88),e,e.lerp(w,.12),e.lerp(w,.35),e.lerp(w,.64),e.lerp(w,.78 if KEY in ('rancher','dressmaker') else .96)]
+        pts=[a+Vector((-sx*.065,0,-.04)),a,a.lerp(e,.23),a.lerp(e,.6),a.lerp(e,.88),e,e.lerp(w,.12),e.lerp(w,.35),e.lerp(w,.64),e.lerp(w,.78 if STYLE in ('rancher','dressmaker') else .96)]
         radii=[.045,.060,.064,.061,.055,.052,.052,.054,.048,.040]
-        role='Wool' if KEY=='clerk' else 'Linen'
+        role='Wool' if STYLE=='clerk' else 'Linen'
         p=part(role,allowed)
         p.limb(pts,[(r*S,(r+.004)*S) for r in radii],24,cap0=True,cap1=True)
         # Tailored fold ridges grow from the same surface; do not add disconnected shoulder spheres.
@@ -268,20 +271,24 @@ def torso_and_sleeves():
         p=part('Linen',['Forearm.'+side])
         p.lathe([(.043*S,-.015*S),(.043*S,.014*S),(.034*S,.014*S),(.034*S,-.015*S),(.043*S,-.015*S)],24,xform=Matrix.Translation(end)@d.to_track_quat('Z','Y').to_matrix().to_4x4(),cap_ends=False)
         p.seat=True
-        if KEY in ('rancher','dressmaker'):
+        if STYLE in ('rancher','dressmaker'):
             p=part('Skin',['Forearm.'+side,'Hand.'+side]);p.limb([end-d*.006*S,end.lerp(w,.5),w],[(.036*S,.037*S),(.032*S,.033*S),(.025*S,.028*S)],24,False,False)
     # Union the shirt's overlapping volumes BEFORE UVs and skinning. Shoulder topology is continuous.
-    role='Wool' if KEY=='clerk' else 'Linen'
+    role='Wool' if STYLE=='clerk' else 'Linen'
     chosen=[p for p in f.parts[first:] if p.name==role]
+    def sleeve_side(p):
+        for side in ('L','R'):
+            if any(bone in p.bones for bone in ('UpperArm.'+side,'Forearm.'+side)):return side
+        return 'torso'
     def spread_at(z):return .30*S*max(0,min(1.1,(j['arm.L'].z-z)/(j['arm.L'].z-j['wrist.L'].z)))
     # Weld in an open A-pose. Welding hanging sleeves to the shirt hem would fuse wrist to waist.
     for p in chosen:
-        side=1 if 'UpperArm.L' in p.bones else -1 if 'UpperArm.R' in p.bones else 0
+        side=1 if sleeve_side(p)=='L' else -1 if sleeve_side(p)=='R' else 0
         if side:
             for vertex in p.bm.verts:vertex.co.x+=side*spread_at(vertex.co.z)
     regions={}
     for p in chosen:
-        region='L' if 'UpperArm.L' in p.bones else 'R' if 'UpperArm.R' in p.bones else 'torso'
+        region=sleeve_side(p)
         if region not in regions:regions[region]=[[],[]]
         verts,polys=regions[region];offset=len(verts)
         p.bm.verts.ensure_lookup_table();p.bm.verts.index_update()
@@ -311,9 +318,8 @@ def torso_and_sleeves():
         total=sum(weights.values());weights={key:value/total for key,value in weights.items()}
         region_weights[vertex]=weights
         # Continuous inverse warp: the torso stays put; the lower sleeves return to the original bind pose.
-        side=max(0,min(1,(abs(vertex.co.x)-.18*S)/(.055*S)))
-        side=side*side*(3-2*side)
-        vertex.co.x-=math.copysign(spread_at(vertex.co.z)*side,vertex.co.x)
+        side=weights.get('L',0)-weights.get('R',0)
+        vertex.co.x-=spread_at(vertex.co.z)*side
     bmesh.ops.dissolve_degenerate(merged.bm,dist=.0001,edges=list(merged.bm.edges))
     visited=set();remove=[];components=[]
     for vertex in list(merged.bm.verts):
@@ -361,8 +367,8 @@ def vest_and_coat():
     body=['Hips','Spine','Chest'];z0=j['hips'].z
     # Open front panels with shaped hems, broad lapels, real thickness and separate lining.
     for sx in [-1,1]:
-        for iscoat in ([False,True] if KEY=='clerk' else [False]):
-            role='Wool' if KEY=='clerk' else 'Leather' if KEY=='rancher' else 'Wool'
+        for iscoat in ([False,True] if STYLE=='clerk' else [False]):
+            role='Wool' if STYLE=='clerk' else 'Leather' if STYLE=='rancher' else 'Wool'
             p=part(role,body)
             rows=[]
             low=z0-(.35*S if iscoat else .055*S)
@@ -381,7 +387,7 @@ def vest_and_coat():
             for a,b in zip(rows,rows[1:]):
                 for n in range(11):p._face((a[n],a[n+1],b[n+1],b[n]))
             # Lapel seam deliberately catches grazing desert light.
-            if KEY!='clerk' or iscoat:
+            if STYLE!='clerk' or iscoat:
                 line('Trim',body,[(sx*.036*S,-.145*S,z0+.08*S),(sx*.085*S,-.15*S,j['chest'].z+.04*S),(sx*.066*S,-.10*S,j['neck'].z-.028*S)],.004*S)
                 # Welt pocket with a folded top edge; do not duplicate the same trim on both formal layers.
                 line('Trim',body,[(sx*.09*S,-.143*S,z0+.09*S),(sx*.16*S,-.115*S,z0+.10*S)],.006*S)
@@ -394,7 +400,9 @@ def legs_and_boots():
         h=j['thigh.'+side];k=j['knee.'+side];a=j['ankle.'+side]
         if not FEMALE:
             p=part('Wool',allowed)
-            p.limb([h+Vector((0,0,.04*S)),h,h.lerp(k,.30),h.lerp(k,.75),h.lerp(k,.94),k,k.lerp(a,.10),k.lerp(a,.35),k.lerp(a,.73),a+Vector((0,0,.065*S))],[(r*S,r*S) for r in [.085,.085,.083,.068,.064,.061,.063,.069,.062,.049]],28)
+            # The two thigh tops meet inside the hip. Leave those concealed rings
+            # open rather than placing overlapping horizontal caps across the crotch.
+            p.limb([h+Vector((0,0,.04*S)),h,h.lerp(k,.30),h.lerp(k,.75),h.lerp(k,.94),k,k.lerp(a,.10),k.lerp(a,.35),k.lerp(a,.73),a+Vector((0,0,.065*S))],[(r*S,r*S) for r in [.085,.085,.083,.068,.064,.061,.063,.069,.062,.049]],28,cap0=False)
         x=a.x
         loft('Leather',['Foot.'+side,'Shin.'+side],[(x,.01*S,.07*S,.060*S,.074*S),(x,.012*S,.20*S,.050*S,.051*S),(x,.014*S,.28*S,.056*S,.051*S)],24)
         loft('Leather',['Foot.'+side],[(x,-.052*S,.035*S,.060*S,.13*S),(x,-.06*S,.07*S,.061*S,.133*S),(x,-.037*S,.108*S,.052*S,.098*S),(x,.012*S,.15*S,.041*S,.043*S)],28)
@@ -444,25 +452,25 @@ def skirt_and_apron():
 
 def hats_hair_beard():
     z=j['foramen'].z;head=['Head']
-    if KEY in ('clerk','oldtimer','rancher'):
+    if STYLE in ('clerk','oldtimer','rancher') and not C.get('no_hat') and not C.get('bald'):
         # Shaped felt brim with upturned sides, pinched crown and an independent leather band.
-        brim=.145 if KEY=='clerk' else .17 if KEY=='oldtimer' else .194
+        brim=.145 if STYLE=='clerk' else .17 if STYLE=='oldtimer' else .194
         loft('Felt',head,[(0,0,z+.072*S,brim*S,brim*.85*S),(0,0,z+.084*S,(brim+.002)*S,brim*.85*S),(0,0,z+.089*S,.089*S,.108*S)],48,cap=False)
-        if KEY=='clerk':sections=[(0,0,z+.081*S,.09*S,.108*S),(0,0,z+.22*S,.084*S,.093*S),(0,0,z+.228*S,.075*S,.087*S)]
+        if STYLE=='clerk':sections=[(0,0,z+.081*S,.09*S,.108*S),(0,0,z+.22*S,.084*S,.093*S),(0,0,z+.228*S,.075*S,.087*S)]
         else:sections=[(0,0,z+.082*S,.091*S,.110*S),(0,0,z+.15*S,.080*S,.095*S),(0,0,z+.183*S,.064*S,.079*S),(0,0,z+.191*S,.053*S,.07*S)]
         loft('Felt',head,sections,40)
         loft('Leather',head,[(0,0,z+.089*S,.092*S,.111*S),(0,0,z+.11*S,.091*S,.109*S)],40,cap=False)
-    if KEY=='oldtimer':
+    if STYLE=='oldtimer':
         loft('Hair',head,[(0,-.105*S,z-.25*S,.012*S,.015*S),(0,-.105*S,z-.19*S,.042*S,.028*S),(0,-.092*S,z-.12*S,.063*S,.042*S),(0,-.084*S,z-.055*S,.074*S,.047*S)],40,fold=.003*S)
-    if KEY=='clerk':
+    if STYLE=='clerk':
         # Fine round spectacles, attached to the head throughout all clips.
         for sx in [-1,1]:
             q=part('Metal',head);q.torus(Vector((sx*.034*S,-.157*S,z)),.022*S,.0015*S,28,6,Matrix.Rotation(math.pi/2,4,'X'))
         line('Metal',head,[(-.012*S,-.157*S,z),(.012*S,-.157*S,z)],.0013*S)
     if FEMALE:
-        if KEY=='dressmaker':
+        if STYLE=='dressmaker' and not C.get('bob'):
             loft('Hair',head,[(0,.065*S,z+.035*S,.045*S,.044*S),(0,.088*S,z+.065*S,.054*S,.045*S),(0,.092*S,z+.10*S,.035*S,.03*S)],24)
-        else:
+        elif not C.get('bob'):
             for strand in range(3):
                 points=[]
                 for k in range(40):
@@ -523,8 +531,12 @@ vs,faces,markers=source_mesh()
 head_and_hands(vs,faces,markers)
 torso_and_sleeves();legs_and_boots()
 if FEMALE:skirt_and_apron()
-else:vest_and_coat()
+elif not C.get('suspenders'):vest_and_coat()
 hats_hair_beard()
+if KEY in EXTENDED:
+    spec = importlib.util.spec_from_file_location('extended_details', ROOT/'tools/ep2_blender/town_cast_details.py')
+    details = importlib.util.module_from_spec(spec);spec.loader.exec_module(details)
+    details.build(globals())
 # Figure.build historically rescales only the mesh, which can move its joints away from the rig.
 # Cancel that implicit transform; runtime Ep2TownFolk scales the complete rig to the roster height.
 raw_z=[v.co.z for p in f.parts for v in p.bm.verts]
@@ -591,6 +603,10 @@ for detail,(_,lo,hi) in zip(f.parts,groups):
 uv_atlas(geo)
 # Coherent weights at garment joints; keep head, hats and fingers rigid, skirt driven by pelvis rather than ankles.
 AF.build_clips(arm,'utah')
+if KEY in EXTENDED:
+    activity_spec=importlib.util.spec_from_file_location('town_activity',ROOT/'tools/ep2_blender/town_activity_clips.py')
+    activity=importlib.util.module_from_spec(activity_spec);activity_spec.loader.exec_module(activity)
+    activity.add(AF,arm)
 bpy.context.scene.frame_set(1)
 bpy.ops.wm.save_as_mainfile(filepath=str(OUT/(KEY+'.blend')))
 bpy.ops.file.make_paths_relative();bpy.ops.wm.save_mainfile()

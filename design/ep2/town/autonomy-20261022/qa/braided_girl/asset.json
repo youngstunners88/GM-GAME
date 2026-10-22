@@ -1,0 +1,60 @@
+{
+  "ok": true,
+  "pass": true,
+  "errors": [],
+  "warnings": [
+    "townsgirl_braided_body: ~18.06% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+    "townsgirl_braided_body: duplicate verts=116 loose verts=0",
+    "townsgirl_braided_body: 60 n-gons",
+    "1 parts fully enclosed, not touching (eyes/internals?): ['townsgirl_braided_body']"
+  ],
+  "ground_z": -0.0,
+  "zfighting": [],
+  "floating": [],
+  "back_to_back": [],
+  "enclosed": [
+    {
+      "object": "townsgirl_braided_body",
+      "island_verts": 128,
+      "center": [
+        0.0,
+        0.009,
+        0.112
+      ]
+    }
+  ],
+  "objects": {
+    "townsgirl_braided_body": {
+      "verts": 15199,
+      "faces": 17246,
+      "tris": 29304,
+      "ngons": 60,
+      "boundary_edges": 926,
+      "nonmanifold_edges": 0,
+      "wire_edges": 0,
+      "loose_verts": 0,
+      "degenerate_faces": 0,
+      "zero_length_edges": 0,
+      "inconsistent_normals_edges": 0,
+      "duplicate_verts": 116,
+      "islands": 50,
+      "inside_out_islands": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materials": 1,
+      "unweighted_verts": 0,
+      "verts_over_4_influences": 0,
+      "uv_maps": 1,
+      "uv_oob_pct": 0.0,
+      "uv_zero_area_faces": 0,
+      "uv_overlap_pct": 18.06,
+      "uv_coverage_pct": 9.2
+    }
+  },
+  "overlap_centers": [],
+  "overlap_vertices": [],
+  "inward_islands": []
+}

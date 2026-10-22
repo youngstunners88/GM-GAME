@@ -1,0 +1,54 @@
+{
+  "ok": true,
+  "pass": true,
+  "errors": [],
+  "warnings": [
+    "townsman_rancher_body: ~16.51% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+    "townsman_rancher_body: duplicate verts=92 loose verts=0",
+    "townsman_rancher_body: 50 n-gons",
+    "hidden back-to-back faces: townsman_rancher_body (77 pairs) - delete to save tris"
+  ],
+  "ground_z": -0.0,
+  "zfighting": [],
+  "floating": [],
+  "back_to_back": [
+    {
+      "where": "townsman_rancher_body",
+      "tri_pairs": 77
+    }
+  ],
+  "enclosed": [],
+  "objects": {
+    "townsman_rancher_body": {
+      "verts": 13330,
+      "faces": 15500,
+      "tris": 25828,
+      "ngons": 50,
+      "boundary_edges": 672,
+      "nonmanifold_edges": 0,
+      "wire_edges": 0,
+      "loose_verts": 0,
+      "degenerate_faces": 0,
+      "zero_length_edges": 0,
+      "inconsistent_normals_edges": 0,
+      "duplicate_verts": 92,
+      "islands": 50,
+      "inside_out_islands": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materials": 1,
+      "unweighted_verts": 0,
+      "verts_over_4_influences": 0,
+      "uv_maps": 1,
+      "uv_oob_pct": 0.0,
+      "uv_zero_area_faces": 0,
+      "uv_overlap_pct": 16.51,
+      "uv_coverage_pct": 7.3
+    }
+  },
+  "overlap_centers": [],
+  "inward_islands": []
+}

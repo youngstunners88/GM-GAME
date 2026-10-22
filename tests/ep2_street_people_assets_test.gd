@@ -13,6 +13,7 @@ func _ready() -> void:
 	for row in Ep2TownPeople.ROSTER:
 		var id: String = str(row["id"])
 		var folk := Ep2TownFolk.new()
+		folk.looping_clips.assign(Ep2TownPeople.LOOPING_CLIPS)
 		add_child(folk)
 		check(id + " imported GLB loads", folk.setup(Ep2Extras.PEOPLE_DIR + str(row["file"]), float(row["h"]), Color.WHITE))
 		check(id + " authored clips bind", folk.has_clips())
@@ -53,7 +54,7 @@ func _ready() -> void:
 		if folk._anim != null and rigs.size() == 1:
 			var skeleton := rigs[0] as Skeleton3D
 			folk._anim.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
-			for clip in ["Idle", "Walk", "Greet", "Point", "Carry"]:
+			for clip in ["Idle", "Walk", "Greet", "Point", "Carry", "Observe", "Rest", "Talk", "Inspect", "Alert"]:
 				check(id + " clip " + clip, folk.play_clip(clip))
 				var duration: float = folk._anim.current_animation_length
 				check(id + " positive clip duration " + clip, duration > 0.0)
@@ -64,6 +65,10 @@ func _ready() -> void:
 						var pose: Transform3D = skeleton.get_bone_global_pose(bone)
 						if not pose.is_finite() or pose.origin.length() > 5.0: finite = false
 				check(id + " finite engine poses " + clip, finite)
+				if clip in Ep2TownPeople.LOOPING_CLIPS:
+					folk._anim.seek(0, true)
+					folk._anim.advance(duration * 2.25)
+					check(id + " sustained cyclic animation " + clip, folk._anim.is_playing() and folk._anim.current_animation_position < duration)
 		folk.queue_free()
 		await get_tree().process_frame
 	if failures == 0:

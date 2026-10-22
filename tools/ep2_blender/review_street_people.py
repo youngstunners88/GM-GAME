@@ -19,6 +19,9 @@ ap=argparse.ArgumentParser(description=__doc__)
 ap.add_argument('--person',required=True)
 ap.add_argument('--render',action='store_true')
 a=ap.parse_args(sys.argv[sys.argv.index('--')+1:])
+EXTENDED_WORK=ROOT/'design/ep2/town/autonomy-20261022'
+config=json.loads((EXTENDED_WORK/'cast-build.json').read_text())
+if (EXTENDED_WORK/'sources'/a.person/(a.person+'.blend')).exists(): WORK=EXTENDED_WORK
 folder=WORK/'sources'/a.person
 bpy.ops.wm.open_mainfile(filepath=str(folder/(a.person+'.blend')))
 arm=next(o for o in bpy.data.objects if o.type=='ARMATURE')
@@ -37,6 +40,7 @@ def installed(skill,file):
 
 rig=installed('blender-character-rigging','rig_check').run(armature=arm.name,meshes=[body.name],profile='game')
 overlaps=[]
+overlap_vertices=[]
 inward=[]
 def trace_overlaps(frame,event,arg):
     if event=='call' and frame.f_code.co_name=='_describe':
@@ -44,6 +48,7 @@ def trace_overlaps(frame,event,arg):
         if frame.f_locals['pairs'] is parent.get('zf_pairs'):
             for left,right in list(frame.f_locals['pairs'])[:20]:
                 overlaps.append([list(sum((parent['verts'][v] for v in parent['tris'][i]),Vector())/3) for i in (left,right)])
+                overlap_vertices.append([list(parent['tris'][i]) for i in (left,right)])
     if event=='call' and frame.f_code.co_name=='_result':
         parent=frame.f_back.f_locals
         for group,volume in parent.get('vol',{}).items():
@@ -60,6 +65,7 @@ sys.settrace(trace_overlaps)
 asset=installed('blender-asset-qa','qa_check').run(objects=[body.name],profile='game',eps=.0002)
 sys.settrace(None)
 asset['overlap_centers']=overlaps
+asset['overlap_vertices']=overlap_vertices
 asset['inward_islands']=inward
 (out/'rig.json').write_text(json.dumps(rig,indent=2)+'\n')
 (out/'asset.json').write_text(json.dumps(asset,indent=2)+'\n')
@@ -77,7 +83,7 @@ valid=lengths>.001
 arm.data.pose_position='POSE'
 clips=[]
 for action in sorted(bpy.data.actions,key=lambda act:act.name):
-    if action.name not in ('Idle','Walk','Greet','Point','Carry'):continue
+    if action.name not in ('Idle','Walk','Greet','Point','Carry','Observe','Rest','Talk','Inspect','Alert'):continue
     arm.animation_data.action=action
     if action.slots:arm.animation_data.action_slot=action.slots[0]
     start,end=action.frame_range
@@ -96,9 +102,9 @@ for action in sorted(bpy.data.actions,key=lambda act:act.name):
         maxtravel=max(maxtravel,float(np.linalg.norm(co-rest,axis=1).max()))
     clips.append(dict(clip=action.name,samples=max(2,int((end-start)/2)+1),finite=finite,max_edge_stretch=round(maximum,4),min_edge_ratio=round(minimum,4),worst_frame=worst,max_vertex_travel_m=round(maxtravel,4),max_edge_excess_m=max_excess,worst_edge=worst_edge))
 file_prefix='townswoman_' if a.person in ('lady','dressmaker') else 'townsman_'
-glb=ROOT/'src/episode2/extras/people'/(file_prefix+a.person+'.glb')
+glb=ROOT/'src/episode2/extras/people'/((config[a.person]['name'] if a.person in config else file_prefix+a.person)+'.glb')
 inputs={str(path.relative_to(ROOT)):hashlib.sha512(path.read_bytes()).hexdigest() for path in [glb,folder/(a.person+'.blend'),ROOT/'tools/ep2_blender/rebuild_street_people.py']}
-result=dict(rig_pass=rig['pass'],asset_pass=asset['pass'],clips=clips,all_clips_present=len(clips)==5,input_sha512=inputs)
+result=dict(rig_pass=rig['pass'],asset_pass=asset['pass'],clips=clips,all_clips_present=len(clips)==10,input_sha512=inputs)
 (out/'deformation.json').write_text(json.dumps(result,indent=2)+'\n')
 print('@@'+json.dumps(result),flush=True)
 
@@ -120,5 +126,5 @@ if a.render:
     for name,pos in [('front',(0,-4,1.0)),('three_quarter',(3,-4,1.2)),('side',(4,0,1.0)),('back',(0,4,1.0))]:
         cam.location=pos;cam.rotation_euler=(Vector((0,0,.9))-cam.location).to_track_quat('-Z','Y').to_euler()
         sc.render.filepath=str(out/(name+'.png'));bpy.ops.render.render(write_still=True)
-if not rig['pass'] or not asset['pass'] or len(clips)!=5 or not all(c['finite'] for c in clips):
+if not rig['pass'] or not asset['pass'] or len(clips)!=10 or not all(c['finite'] for c in clips):
     raise RuntimeError('Street person QA did not pass; inspect the JSON and images')

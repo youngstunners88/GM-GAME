@@ -44,6 +44,7 @@ Logan's Lake and the supplied Logan model: `.claude/skills/ep2-logans-lake/SKILL
 
 | Task | Go to | Read | Skills |
 |------|-------|------|--------|
+| **Full supplied townspeople cast, independent routines, street navigation, social memory or civilian danger reactions** | `src/episode2/actors/ep2_town_people.gd`, `design/ep2/town/autonomy-20261022/` | `.agents/skills/ep2-town-autonomy/SKILL.md`, `.agents/skills/ep2-town-cast/SKILL.md` | `ep2-town-autonomy`, `ep2-town-cast`, `creative-hub` |
 | **Jev 1.14 / TypeSafe / efficient decisions / image acceptance** | `scripts/jev.mjs` | `.claude/skills/jev-1-14-routing/SKILL.md` | `jev-1-14-routing` |
 | **Episode 2 town feels empty / one block; add avenues, doors, windows, people, horses, dogs, chickens or instruments** | `design/ep2/town/`, `tools/ep2_town/` | `.claude/skills/ep2-living-town/SKILL.md` | `ep2-living-town`, `ep2-town-streets`, `ep2-town-facades`, `ep2-town-background-life`, `ep2-town-proof` |
 | **Logan / Logan's Lake / liquidity / still water / LP face / "investigate" / the lake feeding the day-88 river; Logan.glb or Logan.JPG** | `src/episode2/chamber/` (new `logans_lake.gd`), `design/ep2/lake/` | `.claude/skills/ep2-logans-lake/SKILL.md` | `ep2-logans-lake`, `ep2-logan-character`, `ep2-lake-water-build`, `ep2-blender-skills-bridge` |

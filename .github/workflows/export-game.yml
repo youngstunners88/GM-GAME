@@ -383,6 +383,10 @@ jobs:
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_town_people_test.tscn 2>&1 | tee town-people-tests.log
           grep -q 'EP2_TOWN_PEOPLE: ALL PASS' town-people-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' town-people-tests.log; then exit 1; fi
+          # Full thirteen-person autonomy: ten minutes, avoidance, danger, social memory and malformed saves.
+          timeout 600 "$GODOT_BIN" --headless res://tests/ep2_town_autonomy_test.tscn 2>&1 | tee town-autonomy-tests.log
+          grep -q 'EP2_TOWN_AUTONOMY: ALL PASS' town-autonomy-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' town-autonomy-tests.log; then exit 1; fi
           # Reference-led street cast: UVs, image-backed PBR, four normalized skin influences and the five clips survive import.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_street_people_assets_test.tscn 2>&1 | tee street-people-assets-tests.log
           grep -q 'EP2_STREET_PEOPLE_ASSETS: ALL PASS' street-people-assets-tests.log
@@ -418,6 +422,26 @@ jobs:
             portal-tests.log
             portal-traversal.log
             portal-render.log
+          retention-days: 14
+
+      - name: Capture town autonomy through the player camera
+        run: |
+          mkdir -p "$RUNNER_TEMP/town-autonomy-captures"
+          SHOT_OUT="$RUNNER_TEMP/town-autonomy-captures" timeout 900 xvfb-run -a "$GODOT_BIN" \
+            --rendering-method gl_compatibility --rendering-driver opengl3 --audio-driver Dummy \
+            --resolution 1280x720 res://tools/ep2_shots/town_autonomy_play.tscn 2>&1 | tee town-autonomy-render.log
+          grep -q 'TOWN_AUTONOMY_PLAY: ALL THIRTEEN CAPTURED' town-autonomy-render.log
+          if grep -E 'SCRIPT ERROR|Parse Error' town-autonomy-render.log; then exit 1; fi
+
+      - name: Upload town autonomy proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: town-autonomy-proof
+          path: |
+            ${{ runner.temp }}/town-autonomy-captures/
+            town-autonomy-render.log
+            town-autonomy-tests.log
           retention-days: 14
 
       - name: Stamp the build tag

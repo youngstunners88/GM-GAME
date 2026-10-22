@@ -1,0 +1,242 @@
+{
+  "all_thirteen_pass": true,
+  "people": [
+    {
+      "id": "bald_worker",
+      "asset_pass": true,
+      "rig_pass": true,
+      "ten_finite_clips": true,
+      "warnings": [
+        "townsman_bald_worker_body: ~7.23% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+        "townsman_bald_worker_body: 42 n-gons",
+        "hidden back-to-back faces: townsman_bald_worker_body (80 pairs) - delete to save tris"
+      ],
+      "max_used_clip_edge_excess_m": 0.012648359049104899,
+      "source_hashes": {
+        "src/episode2/extras/people/townsman_bald_worker.glb": "d9a663d68f0c12c2c76d6852811bcef0bd2f47b90460e075beda721e28feb140175ed1d70cdeafdd18f90527a232f06c6aa29d7487236d3cfbdbba2af126ff87",
+        "design/ep2/town/autonomy-20261022/sources/bald_worker/bald_worker.blend": "0fea76b2eca636f9a123fa028ade80e7f94385ee429638aeba4fed3cf91138852ca0a298496097217c139adc41a0b29110a2c2a6f66a7766dd5a57b6a44d0ad9",
+        "tools/ep2_blender/rebuild_street_people.py": "ec94457402fc5ffbd84ef629589ccc0c52502f1f58468e5920d7f49da948c37cb11301ee5905447330b5cfe904deac89481134422beb7043878de57435d8a2b4"
+      }
+    },
+    {
+      "id": "bob_girl",
+      "asset_pass": true,
+      "rig_pass": true,
+      "ten_finite_clips": true,
+      "warnings": [
+        "townsgirl_bob_body: ~17.74% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+        "townsgirl_bob_body: duplicate verts=116 loose verts=0",
+        "townsgirl_bob_body: 54 n-gons",
+        "2 parts fully enclosed, not touching (eyes/internals?): ['townsgirl_bob_body', 'townsgirl_bob_body']"
+      ],
+      "max_used_clip_edge_excess_m": 0.00865623263108968,
+      "source_hashes": {
+        "src/episode2/extras/people/townsgirl_bob.glb": "d54923dfe8ef893003c5a4e790136e79ee4d0cd860fec11f1fbf2ff0449266a5fbee1f03a8c13b27b9a595750b0ee1391823a24595b8a94b5ddcf761aacba115",
+        "design/ep2/town/autonomy-20261022/sources/bob_girl/bob_girl.blend": "c9c9865887fe93c57464db0eabdcbb0559880633a7aba858117d538a1c56b648eac1ca35e960915abaacbafef44f787800e059eb63880e104b10f1c69f1cb8f5",
+        "tools/ep2_blender/rebuild_street_people.py": "ec94457402fc5ffbd84ef629589ccc0c52502f1f58468e5920d7f49da948c37cb11301ee5905447330b5cfe904deac89481134422beb7043878de57435d8a2b4"
+      }
+    },
+    {
+      "id": "boy",
+      "asset_pass": true,
+      "rig_pass": true,
+      "ten_finite_clips": true,
+      "warnings": [
+        "townsboy_body: ~18.11% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+        "townsboy_body: duplicate verts=92 loose verts=0",
+        "townsboy_body: 42 n-gons",
+        "hidden back-to-back faces: townsboy_body (5 pairs) - delete to save tris"
+      ],
+      "max_used_clip_edge_excess_m": 0.01005127089433508,
+      "source_hashes": {
+        "src/episode2/extras/people/townsboy.glb": "050312701b121308ac417e3ae041fa32f552322ba4099669bc04728ac4ef574eeffdf0d4e6a32fe5169d264dd85452836c84cdc487d0c81cc96fb1911926bd3e",
+        "design/ep2/town/autonomy-20261022/sources/boy/boy.blend": "6623a09d0c6df3626eaebe335b2388a5af6c65a08044db45b84701e63814e172023359ae312de919fc543d36a38475611d3f99fcef3d591ae29a00c77f8fffec",
+        "tools/ep2_blender/rebuild_street_people.py": "ec94457402fc5ffbd84ef629589ccc0c52502f1f58468e5920d7f49da948c37cb11301ee5905447330b5cfe904deac89481134422beb7043878de57435d8a2b4"
+      }
+    },
+    {
+      "id": "braided_girl",
+      "asset_pass": true,
+      "rig_pass": true,
+      "ten_finite_clips": true,
+      "warnings": [
+        "townsgirl_braided_body: ~18.06% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+        "townsgirl_braided_body: duplicate verts=116 loose verts=0",
+        "townsgirl_braided_body: 60 n-gons",
+        "1 parts fully enclosed, not touching (eyes/internals?): ['townsgirl_braided_body']"
+      ],
+      "max_used_clip_edge_excess_m": 0.008918214081610865,
+      "source_hashes": {
+        "src/episode2/extras/people/townsgirl_braided.glb": "f8b3105f20f7a3a4ecd767996764059266de27c47616f8403736dc36d60a29cb801401fb1f51561ab4a0caba852b99a961c6de0080efe6915b08f44793e0bd0f",
+        "design/ep2/town/autonomy-20261022/sources/braided_girl/braided_girl.blend": "971d5b4b1b76656e9dd59f2b922be134d274a67227f9acef88240c84e6e3fa947f8e89a0c666ba4da288a0ce5f22b113568fd93c1aaede4ab4ce668bf72afff0",
+        "tools/ep2_blender/rebuild_street_people.py": "ec94457402fc5ffbd84ef629589ccc0c52502f1f58468e5920d7f49da948c37cb11301ee5905447330b5cfe904deac89481134422beb7043878de57435d8a2b4"
+      }
+    },
+    {
+      "id": "clerk",
+      "asset_pass": true,
+      "rig_pass": true,
+      "ten_finite_clips": true,
+      "warnings": [
+        "townsman_clerk_body: ~18.82% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+        "townsman_clerk_body: duplicate verts=172 loose verts=0",
+        "townsman_clerk_body: 52 n-gons",
+        "hidden back-to-back faces: townsman_clerk_body (51 pairs) - delete to save tris"
+      ],
+      "max_used_clip_edge_excess_m": 0.013469491664581681,
+      "source_hashes": {
+        "src/episode2/extras/people/townsman_clerk.glb": "87ee9b90ef131d7404ff8941e1f698d52835d014860e877fe24b9af1d2ee9958806d80a58c14a04a26cf24851715981736d868c5c6670b5210e6bbb1020bcd17",
+        "design/ep2/town/autonomy-20261022/sources/clerk/clerk.blend": "c62ca800d6de0c6c9022a52b4fe424c1bc653f1b5c43c2a554748886a053f3f0f0dff4179cb79dd167e52b658eb9b0b2ba7bac7d11b9b54a8ba7d944bc8d9437",
+        "tools/ep2_blender/rebuild_street_people.py": "f98abf35379266906fb523d56ed4e11bce39e28df3e18d071c55d44d8851d2420674a41a9e641a04ee10d56ce7a4b50adaf3e34b82dea8dd4385817fb187bde1"
+      }
+    },
+    {
+      "id": "dressmaker",
+      "asset_pass": true,
+      "rig_pass": true,
+      "ten_finite_clips": true,
+      "warnings": [
+        "townswoman_dressmaker_body: ~16.77% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+        "townswoman_dressmaker_body: duplicate verts=116 loose verts=0",
+        "townswoman_dressmaker_body: 56 n-gons",
+        "hidden back-to-back faces: townswoman_dressmaker_body (103 pairs) - delete to save tris",
+        "1 parts fully enclosed, not touching (eyes/internals?): ['townswoman_dressmaker_body']"
+      ],
+      "max_used_clip_edge_excess_m": 0.012155813820819754,
+      "source_hashes": {
+        "src/episode2/extras/people/townswoman_dressmaker.glb": "bf9e0605092a9ece0a2b09d447371704cb685edbba22e68cc211a08e7b741969179fc41b851c68829d58e45ae46b1e90aad48668ee9546089ddd53d12e8ac559",
+        "design/ep2/town/autonomy-20261022/sources/dressmaker/dressmaker.blend": "6daffade2dd89a77cf2d00cb3531acf1b0029ccc5a9af1e4fa6b2db2d69eeef3646b4b4ac852b3cf08a3ba0a14ba74bb48b4e177db5e802c209163261a2fe642",
+        "tools/ep2_blender/rebuild_street_people.py": "f98abf35379266906fb523d56ed4e11bce39e28df3e18d071c55d44d8851d2420674a41a9e641a04ee10d56ce7a4b50adaf3e34b82dea8dd4385817fb187bde1"
+      }
+    },
+    {
+      "id": "grandfather",
+      "asset_pass": true,
+      "rig_pass": true,
+      "ten_finite_clips": true,
+      "warnings": [
+        "townsman_grandfather_body: ~14.84% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+        "townsman_grandfather_body: duplicate verts=124 loose verts=0",
+        "townsman_grandfather_body: 48 n-gons",
+        "hidden back-to-back faces: townsman_grandfather_body (12 pairs) - delete to save tris"
+      ],
+      "max_used_clip_edge_excess_m": 0.012923372039974235,
+      "source_hashes": {
+        "src/episode2/extras/people/townsman_grandfather.glb": "3637d1eed1e5134078cb42d74b093c1b9aa83c83bef683910cd74cca19d655d8d71c307cadfac2e9b0713590b137ab56d83e1eccfef111da0898975c164a3d79",
+        "design/ep2/town/autonomy-20261022/sources/grandfather/grandfather.blend": "e345b15900f67169db02ec38cb67070769567756909aacb8dfe8434f9637b790995a0952d0298295934bd2839245e34b4e5281bcb4f3f38408d859dbe84938a2",
+        "tools/ep2_blender/rebuild_street_people.py": "ec94457402fc5ffbd84ef629589ccc0c52502f1f58468e5920d7f49da948c37cb11301ee5905447330b5cfe904deac89481134422beb7043878de57435d8a2b4"
+      }
+    },
+    {
+      "id": "grandma",
+      "asset_pass": true,
+      "rig_pass": true,
+      "ten_finite_clips": true,
+      "warnings": [
+        "townswoman_grandma_body: ~14.21% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+        "townswoman_grandma_body: duplicate verts=116 loose verts=0",
+        "townswoman_grandma_body: 92 n-gons",
+        "hidden back-to-back faces: townswoman_grandma_body (102 pairs) - delete to save tris",
+        "1 parts fully enclosed, not touching (eyes/internals?): ['townswoman_grandma_body']"
+      ],
+      "max_used_clip_edge_excess_m": 0.011915112328367741,
+      "source_hashes": {
+        "src/episode2/extras/people/townswoman_grandma.glb": "2711deb3f3aa2fc04007a1673e37382af5b7780d5fa7b82279a9a0572690699d2f3bfc460c2fe1d211d60476ef0b2cabf377882b009cf32f2085724ce112939b",
+        "design/ep2/town/autonomy-20261022/sources/grandma/grandma.blend": "794926f74a57abbdde370edb68ef4738963b6514b31754b282b10af012a90642f158c6b25b26070050f0c63aa0c1e5b299900a40df0e8fbff0d9c9881b32ff17",
+        "tools/ep2_blender/rebuild_street_people.py": "ec94457402fc5ffbd84ef629589ccc0c52502f1f58468e5920d7f49da948c37cb11301ee5905447330b5cfe904deac89481134422beb7043878de57435d8a2b4"
+      }
+    },
+    {
+      "id": "grandmother",
+      "asset_pass": true,
+      "rig_pass": true,
+      "ten_finite_clips": true,
+      "warnings": [
+        "townswoman_grandmother_body: ~14.51% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+        "townswoman_grandmother_body: duplicate verts=116 loose verts=0",
+        "townswoman_grandmother_body: 92 n-gons",
+        "hidden back-to-back faces: townswoman_grandmother_body (51 pairs) - delete to save tris",
+        "1 parts fully enclosed, not touching (eyes/internals?): ['townswoman_grandmother_body']"
+      ],
+      "max_used_clip_edge_excess_m": 0.011909059471992604,
+      "source_hashes": {
+        "src/episode2/extras/people/townswoman_grandmother.glb": "4282cef48f2a9d34e4645bd97a9a578d3c0798bdd41b3e82897e947c9fa99c6ec935af5503823d5d5fe0c899d1fa07eac3a080fbb2b037ebd0ec4e3ac1ae51e4",
+        "design/ep2/town/autonomy-20261022/sources/grandmother/grandmother.blend": "55a070ded668333a78cf8c8600cecd54b354482da29b18fff82bec302515323e84a295f66697f54e78ff784b5dafa9bf0900a47f314bb3abb5db5a13c2a794cb",
+        "tools/ep2_blender/rebuild_street_people.py": "ec94457402fc5ffbd84ef629589ccc0c52502f1f58468e5920d7f49da948c37cb11301ee5905447330b5cfe904deac89481134422beb7043878de57435d8a2b4"
+      }
+    },
+    {
+      "id": "lady",
+      "asset_pass": true,
+      "rig_pass": true,
+      "ten_finite_clips": true,
+      "warnings": [
+        "townswoman_lady_body: ~17.58% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+        "townswoman_lady_body: duplicate verts=116 loose verts=0",
+        "townswoman_lady_body: 60 n-gons",
+        "hidden back-to-back faces: townswoman_lady_body (51 pairs) - delete to save tris",
+        "1 parts fully enclosed, not touching (eyes/internals?): ['townswoman_lady_body']"
+      ],
+      "max_used_clip_edge_excess_m": 0.012464988885369947,
+      "source_hashes": {
+        "src/episode2/extras/people/townswoman_lady.glb": "ebdb961c3e618e84de705397d40fd56fdd9d852f58365ad332493e00f132660fb835f63ce229e8bc6e3e3262243c66810f2a5c1f1f0a3e9626b5ed57f0c2c9eb",
+        "design/ep2/town/autonomy-20261022/sources/lady/lady.blend": "ac86950d446c02f3172d244538268b71705dd1b1d12e5ecabd9af3126a9c3aad2a709fc8df00363fb1ee9be7b7d1108f0660f76ffcf538e61930e19cde92c8b2",
+        "tools/ep2_blender/rebuild_street_people.py": "f98abf35379266906fb523d56ed4e11bce39e28df3e18d071c55d44d8851d2420674a41a9e641a04ee10d56ce7a4b50adaf3e34b82dea8dd4385817fb187bde1"
+      }
+    },
+    {
+      "id": "oldtimer",
+      "asset_pass": true,
+      "rig_pass": true,
+      "ten_finite_clips": true,
+      "warnings": [
+        "townsman_oldtimer_body: ~18.99% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+        "townsman_oldtimer_body: duplicate verts=124 loose verts=0",
+        "townsman_oldtimer_body: 52 n-gons",
+        "hidden back-to-back faces: townsman_oldtimer_body (72 pairs) - delete to save tris"
+      ],
+      "max_used_clip_edge_excess_m": 0.012271070448409208,
+      "source_hashes": {
+        "src/episode2/extras/people/townsman_oldtimer.glb": "b636573b788ffb464bccf2da487fe9a6f1efc214ffc6c136dc3578b71f49d6ed6c1e8fc2e7bbbf80f428cd2f556787362020d90a041499c36b4ba7b61cb2a641",
+        "design/ep2/town/autonomy-20261022/sources/oldtimer/oldtimer.blend": "360ead44558290ace425195f3bb787de0c4932574e3482b7dbdbee9c7e62abaca2e49f5d004cbe1ffe93edec78246a72e446a42e89d4bf583ae06770cc6000a4",
+        "tools/ep2_blender/rebuild_street_people.py": "f98abf35379266906fb523d56ed4e11bce39e28df3e18d071c55d44d8851d2420674a41a9e641a04ee10d56ce7a4b50adaf3e34b82dea8dd4385817fb187bde1"
+      }
+    },
+    {
+      "id": "rancher",
+      "asset_pass": true,
+      "rig_pass": true,
+      "ten_finite_clips": true,
+      "warnings": [
+        "townsman_rancher_body: ~16.51% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+        "townsman_rancher_body: duplicate verts=92 loose verts=0",
+        "townsman_rancher_body: 50 n-gons",
+        "hidden back-to-back faces: townsman_rancher_body (77 pairs) - delete to save tris"
+      ],
+      "max_used_clip_edge_excess_m": 0.013150322864384459,
+      "source_hashes": {
+        "src/episode2/extras/people/townsman_rancher.glb": "9e42c986a10474cd90a1b9882e26bdddd064e5728021245c3bdfb3b56e053134cd7441508764a8cea3622c5fdd988b01ccdf2e3846cbb583bf0dbbc1d30c4bf7",
+        "design/ep2/town/autonomy-20261022/sources/rancher/rancher.blend": "9893e3468eb085a9bfbfbf2748584942400c7f3014dbeccbf287d8f238ebf649e57e1e5bf930d478abb5579a126b2081d8a9dd2bb85f8d3f8e66fb9dacdc397c",
+        "tools/ep2_blender/rebuild_street_people.py": "f98abf35379266906fb523d56ed4e11bce39e28df3e18d071c55d44d8851d2420674a41a9e641a04ee10d56ce7a4b50adaf3e34b82dea8dd4385817fb187bde1"
+      }
+    },
+    {
+      "id": "youth",
+      "asset_pass": true,
+      "rig_pass": true,
+      "ten_finite_clips": true,
+      "warnings": [
+        "townsman_youth_body: ~17.38% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+        "townsman_youth_body: duplicate verts=92 loose verts=0",
+        "townsman_youth_body: 48 n-gons",
+        "hidden back-to-back faces: townsman_youth_body (126 pairs) - delete to save tris"
+      ],
+      "max_used_clip_edge_excess_m": 0.013255526497249037,
+      "source_hashes": {
+        "src/episode2/extras/people/townsman_youth.glb": "7f78843b60e86d65dff62ddfc6302333e5fdd9c727c60d824e333d9488f48c17611f634430138116b32790fa4fff9179de47e36f019a928048940f38a1f4d44e",
+        "design/ep2/town/autonomy-20261022/sources/youth/youth.blend": "97395e9fea58f724573734285ef923a0bd1268196f1aac872578dcef0053cfc1f971ac9dee8e44d9ee10f266eb5e1bb8538c4f4f4875867f7a328176c31d85f9",
+        "tools/ep2_blender/rebuild_street_people.py": "ec94457402fc5ffbd84ef629589ccc0c52502f1f58468e5920d7f49da948c37cb11301ee5905447330b5cfe904deac89481134422beb7043878de57435d8a2b4"
+      }
+    }
+  ]
+}

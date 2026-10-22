@@ -1,32 +1,25 @@
 {
-  "observed_remote_sha": "3f237c09",
-  "objective": "DONE — Episode 2 street people rebuilt and SHIPPED live. Master `15165d37` (work `88fc93ed`, STATUS `15165d37`), CI export `3f237c09`, live itch build 3f237c09-202610211338, embed html-classic.itch.zone/html/18305533-2177388. Five roles (rancher, clerk, lady, oldtimer, dressmaker) rebuilt: anatomical heads/hands, skinned shoulders/sleeves, layered period clothing, draped aprons/skirts, image-backed PBR. 20-joint rig, five clips, roster IDs, heights and routes preserved.",
+  "observed_remote_sha": "209c4e0ae77d0839b754a0d259bec2ead8f7a50d",
+  "objective": "Active owner-authorized continuation: full town cast/autonomy; release not yet verified.",
   "task_paths": [
-    "src/episode2/extras/people/townsman_rancher.glb",
-    "src/episode2/extras/people/townsman_clerk.glb",
-    "src/episode2/extras/people/townsman_oldtimer.glb",
-    "src/episode2/extras/people/townswoman_lady.glb",
-    "src/episode2/extras/people/townswoman_dressmaker.glb",
-    "design/ep2/town/people-rebuild-20261021/",
-    "tools/ep2_blender/rebuild_street_people.py",
-    "tools/ep2_blender/review_street_people.py",
-    "tools/ep2_blender/audit_street_people.py",
-    "tools/ep2_shots/street_people_review.gd",
-    "tests/ep2_street_people_assets_test.tscn"
+    "src/episode2/actors/ep2_town_people.gd",
+    "src/episode2/actors/ep2_town_navigation.gd",
+    "src/episode2/chamber/gold_town.gd",
+    "src/episode2/session/ep2_session_root.gd",
+    "src/autoload/game_manager.gd",
+    "design/ep2/town/autonomy-20261022/"
   ],
   "evidence": {
-    "ci_run": "39608479160 success on master at head SHA 15165d37; butler 'Pushed to https://youngstunners88.itch.io/smokerealm'; 251.19 MiB pushed, 49.85 MiB patch; CI export commit 3f237c09; BUILD_TAG stamped 2026-10-21-15165d3.",
-    "public_proof": "itch wharf latest moved 2092bd73-202610211059 -> 3f237c09-202610211338; live embed key 18305533-2177388; served index.pck 199079056 B contains 2026-10-21-15165d3; served ep2_extras.pck 28551072 B contains all five roles; headless Chromium boot of the served build prints '[BUILD] Lil Blunt Adventure - build 2026-10-21-15165d3' with no SCRIPT ERROR.",
-    "pack_gate": "fresh import 199079104 B on this box, 199079168 B in the CI export, gate 199229440 B - margin 150336 B. The margin is thin; a warm cache hides it.",
-    "gates": "script compile pass; full CI headless block pass (same 3 machine-dependent pause tap-target lines tolerated, no new exception); security sentinel 18/18; front-page lock unchanged; no model uses an excluded texture; all five semantic asset + rig checks pass; 130 new imported asset checks pass.",
-    "learned": "The 2026-10-21 'write quota' failures were NOT a full disk (141 G free). zram was 100% full at 7.2 G of 7.7 G and held 3.4 G of real RAM, and /tmp is a tmpfs sized 50% of RAM that had grown to 2.9 G of 3.9 G. Fix: ~/.local/bin/qm-memory-tune.sh caps zram at min(ram/2,4096), sets swappiness 100, cleans /tmp after 3 days. The zram cap needs a reboot. Also: 10 parallel `blender -b` rebuilds held ~250 MB of swap each and hung on futex_do_wait after finishing their work - the GM-GAME Blender pipeline still needs a concurrency cap (one heavy job at a time on 8 GB).",
-    "itch_learning": "itch assigns a NEW embed key per processed build; the page's data-iframe is JS-driven, so headless Chromium --dump-dom is the way to read the live key. The build appears on the wharf API ~1 min after butler says 'processing'."
+    "source_qa": "13/13 mesh and rig PASS; all ten clips finite",
+    "movement": "120-second full roster PASS; long-run/disk tests in final regression",
+    "network": "Shell DNS fails; GitHub connector independently confirmed master and binary blob upload",
+    "renderer": "X11/Wayland unavailable in sandbox; CI capture added"
   },
   "unresolved": [
-    "Browser proof of the rebuilt town people in the live game is native/headless only - the town-camera captures in gameplay/session are from the local Godot harness, not from the public build.",
-    "Stylized solid hair, rigid finger Hand weights (no finger bones in the 20-joint skeleton), and mild Point shoulder compression (~1-3 cm) remain and are documented, not fixed.",
-    "Local Chromium launch of the game is blocked by sandbox socket permissions (SIGTRAP); the headless-shell path with --enable-unsafe-swiftshader works and prints the BUILD tag.",
-    "zram size cap is written but needs a reboot to take effect."
+    "final full regression",
+    "fresh-import pack/export/presence gates",
+    "commit/push/CI player-camera inspection",
+    "deployment and public BUILD/playflow"
   ],
-  "next_action": "Reboot when convenient to apply the zram size cap, then confirm with `free -h && zramctl && df -h /tmp`. Add a concurrency cap to the GM-GAME Blender pipeline. The founder judges the rebuilt people visually from the live build."
+  "next_action": "Complete gates; use GitHub connector for branch push if shell DNS remains unavailable. Never call pending release live."
 }

@@ -1,0 +1,27 @@
+{
+  "person": "youth",
+  "height": 1.67,
+  "triangles": 28404,
+  "vertices": 14688,
+  "joints": 20,
+  "clips": [
+    "Alert",
+    "Carry",
+    "Greet",
+    "Idle",
+    "Inspect",
+    "Observe",
+    "Point",
+    "Rest",
+    "Talk",
+    "Walk"
+  ],
+  "textures": [
+    "youth_basecolor.jpg",
+    "youth_orm.png",
+    "youth_normal.png"
+  ],
+  "bytes": 3302556,
+  "source": "MakeHuman CC0 a8bc2d54ff0ac92e78ff71431b1023eda42bf482",
+  "reference": "1VOORJh12iCDg7oJYl86VNO_ZvthA4cqq"
+}

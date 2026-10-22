@@ -1,0 +1,66 @@
+{
+  "ok": true,
+  "pass": true,
+  "errors": [],
+  "warnings": [
+    "townswoman_grandmother_body: ~14.51% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+    "townswoman_grandmother_body: duplicate verts=116 loose verts=0",
+    "townswoman_grandmother_body: 92 n-gons",
+    "hidden back-to-back faces: townswoman_grandmother_body (51 pairs) - delete to save tris",
+    "1 parts fully enclosed, not touching (eyes/internals?): ['townswoman_grandmother_body']"
+  ],
+  "ground_z": 0.0,
+  "zfighting": [],
+  "floating": [],
+  "back_to_back": [
+    {
+      "where": "townswoman_grandmother_body",
+      "tri_pairs": 51
+    }
+  ],
+  "enclosed": [
+    {
+      "object": "townswoman_grandmother_body",
+      "island_verts": 128,
+      "center": [
+        0.001,
+        0.012,
+        0.149
+      ]
+    }
+  ],
+  "objects": {
+    "townswoman_grandmother_body": {
+      "verts": 14901,
+      "faces": 16805,
+      "tris": 28468,
+      "ngons": 92,
+      "boundary_edges": 1102,
+      "nonmanifold_edges": 0,
+      "wire_edges": 0,
+      "loose_verts": 0,
+      "degenerate_faces": 0,
+      "zero_length_edges": 0,
+      "inconsistent_normals_edges": 0,
+      "duplicate_verts": 116,
+      "islands": 69,
+      "inside_out_islands": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materials": 1,
+      "unweighted_verts": 0,
+      "verts_over_4_influences": 0,
+      "uv_maps": 1,
+      "uv_oob_pct": 0.0,
+      "uv_zero_area_faces": 0,
+      "uv_overlap_pct": 14.51,
+      "uv_coverage_pct": 6.7
+    }
+  },
+  "overlap_centers": [],
+  "overlap_vertices": [],
+  "inward_islands": []
+}
