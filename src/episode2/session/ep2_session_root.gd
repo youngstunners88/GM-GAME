@@ -38,11 +38,17 @@ const CHAMBER_SCENES := {
 	# The INTERLUDE chain (founder 2026-10-09): after the hideout the runner is paused - a mine lift, then the bear woods.
 	"mine_lift": preload("res://src/episode2/chamber/mine_lift.tscn"),
 	"woods_quad": preload("res://src/episode2/chamber/woods_quad.tscn"),
+	# Out of the woods (founder 2026-10-14): Bull drops Lil Blunt in the GoldMine town - the sheriff, the saloon, the draw.
+	"gold_town": preload("res://src/episode2/chamber/gold_town.tscn"),
+	"logans_lake": preload("res://src/episode2/chamber/logans_lake.tscn"),
 }
 const DEFAULT_CHAMBER := "miner_shaft"
 
 const DEFAULT_GOLD_PRINCIPAL := 1000
 
+var armory: Ep2ArmoryState = Ep2ArmoryState.new()
+var _armory_save_due: float = -1.0
+var _runner_armory_checkpoint: Dictionary = {}
 var _mode: int = Mode.IDLE
 var _active: Node = null
 var _plan: Array = []
@@ -59,6 +65,12 @@ var _commit_to_economy: bool = true
 var _totals: Dictionary = {"gold_awarded": 0, "gold_forfeited": 0, "diamonds_burned": 0, "btc_paid": 0}
 
 func configure(plan: Array, commit_to_economy: bool = true) -> void:
+	Ep2ArmoryState.install_actions()
+	var manager: Node = get_node_or_null("/root/GameManager")
+	armory = Ep2ArmoryState.new()
+	if manager != null:
+		armory.restore(manager.personal_armory, manager.highest_unlocked_level >= 3 or manager.current_level >= 3)
+	armory.changed.connect(_persist_armory)
 	_plan = plan.duplicate(true)
 	_commit_to_economy = commit_to_economy
 	_segment = 0
@@ -68,6 +80,7 @@ func configure(plan: Array, commit_to_economy: bool = true) -> void:
 	_chain_id = ""
 	_chain_n = 0
 	_totals = {"gold_awarded": 0, "gold_forfeited": 0, "diamonds_burned": 0, "btc_paid": 0}
+	_runner_armory_checkpoint.clear()
 	_teardown_active()
 	_mode = Mode.IDLE
 
@@ -82,6 +95,11 @@ func _enter_runner() -> void:
 	_mode = Mode.TRANSITION
 	_teardown_active()
 	var seg: Dictionary = _plan[_segment]
+	if bool(seg.get("armed", false)):
+		armory.acquire(Ep2ArmoryState.REM)
+		armory.select(Ep2ArmoryState.REM)
+	armory.firearm(Ep2ArmoryState.REM).cancel_reload()  # runner owns its timed cylinder reload
+	_runner_armory_checkpoint = armory.snapshot()
 	var r: Node = RUNNER_SCENE.instantiate()
 	add_child(r)
 	_active = r
@@ -99,6 +117,7 @@ func _enter_runner() -> void:
 			"ends_at_cliff": bool(seg.get("ends_at_cliff", false)),
 		}
 	)
+	r.bind_armory(armory)
 	r.chamber_reached.connect(_on_chamber_reached, CONNECT_ONE_SHOT)
 	if r.has_signal("cliff_panic"):
 		r.cliff_panic.connect(_warm_chamber_assets, CONNECT_ONE_SHOT)
@@ -194,6 +213,8 @@ func _on_prebuild_requested(chamber_id: String) -> void:
 	if not CHAMBER_SCENES.has(chamber_id) or (_pb_node != null and is_instance_valid(_pb_node)):
 		return
 	var n: Node = CHAMBER_SCENES[chamber_id].instantiate()
+	if n.has_method("bind_armory"):
+		n.bind_armory(armory.detached_copy())
 	if n.has_method("prebuild_begin"):
 		# An off-screen viewport with its OWN world: the chamber is built, lit and drawn there (so the GPU compiles its shaders and
 		# uploads its meshes now, a few ms per frame) without touching the camera / environment of the chamber being played.
@@ -227,6 +248,10 @@ func _drive_prebuild(budget_ms: float) -> void:
 
 
 func _wire_chamber(c: Node) -> void:
+	if c.has_method("bind_armory"):
+		c.bind_armory(armory)
+	if c.has_signal("weapon_granted"):
+		c.weapon_granted.connect(func(id: String) -> void: armory.acquire(id, c.get_gun()))
 	if c.has_signal("prebuild_requested") and not c.prebuild_requested.is_connected(_on_prebuild_requested):
 		c.prebuild_requested.connect(_on_prebuild_requested)
 	if "handoff_ready" in c:
@@ -275,6 +300,11 @@ func _on_chamber_reached() -> void:
 	_enter_chamber()
 
 func _on_chamber_cleared(result: Dictionary) -> void:
+	armory.active_gun().cancel_reload()
+	_persist_armory()
+	var manager: Node = get_node_or_null("/root/GameManager")
+	if manager != null:
+		manager.save_session()
 	var owner_segment: int = _chamber_segment
 	# Guard #1 is keyed per chamber: a chained interlude gets its own key (segment * 100 + its place in the chain), so the
 	# first chamber's payout can never be paid twice and a chained one is never swallowed by it.
@@ -333,6 +363,10 @@ func _on_chamber_failed() -> void:
 	session_failed.emit()
 
 func _on_run_failed() -> void:
+	if _mode != Mode.RUNNER:
+		return
+	if not _runner_armory_checkpoint.is_empty():
+		armory.restore(_runner_armory_checkpoint)
 	_mode = Mode.IDLE
 	_teardown_active()
 	_sync_mouse_mode()
@@ -455,6 +489,14 @@ func get_total_distance() -> float:
 # mode and visible everywhere else (chambers, menus, after the session ends).
 
 func _process(_delta: float) -> void:
+	if _armory_save_due >= 0.0:
+		_armory_save_due -= _delta
+		if _armory_save_due <= 0.0:
+			_armory_save_due = -1.0
+			var manager: Node = get_node_or_null("/root/GameManager")
+			if manager != null:
+				manager.personal_armory = armory.snapshot()
+				manager.save_session()
 	_sync_mouse_mode()
 	_poll_free_roam()
 	var waiting: bool = _active != null and _active.has_method("is_waiting_for_handoff") and bool(_active.call("is_waiting_for_handoff"))
@@ -484,6 +526,9 @@ func _poll_free_roam() -> void:
 		return
 	var v := Vector2(Input.get_axis("move_left", "move_right"), Input.get_axis("move_down", "move_up"))
 	var run: bool = InputMap.has_action("sprint") and Input.is_action_pressed("sprint")
+	if _active.has_method("armory_open") and _active.armory_open():
+		v = Vector2.ZERO
+		run = false
 	if v != _last_move or run != _last_run:
 		_last_move = v
 		_last_run = run
@@ -491,6 +536,24 @@ func _poll_free_roam() -> void:
 
 ## Mouse + Space + E/LMB for the hideout. Returns true when the event was used.
 func _route_free_roam(event: InputEvent) -> bool:
+	if _active.has_method("select_weapon"):
+		if event.is_action_pressed("ep2_weapon_1"):
+			_active.select_weapon(Ep2ArmoryState.WIN)
+			return true
+		if event.is_action_pressed("ep2_weapon_2"):
+			_active.select_weapon(Ep2ArmoryState.REM)
+			return true
+		if event.is_action_pressed("ep2_weapon_3"):
+			_active.select_weapon(Ep2ArmoryState.BOW)
+			return true
+		if event.is_action_pressed("ep2_weapon_previous"):
+			_active.select_previous_weapon()
+			return true
+		if event.is_action_pressed("ep2_armory"):
+			_active.toggle_armory()
+			return true
+		if _active.armory_open():
+			return true
 	if event is InputEventMouseMotion:
 		_active.look((event as InputEventMouseMotion).relative)
 		return true
@@ -583,6 +646,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				runner_shoot()
 		Mode.CHAMBER:
 			if _free_roam() and _route_free_roam(event):
+				get_viewport().set_input_as_handled()
 				return
 			if event.is_action_pressed("attack"):
 				chamber_shoot()
@@ -600,3 +664,18 @@ func _unhandled_input(event: InputEvent) -> void:
 				chamber_walk(-1.0)
 			elif event.is_action_released("move_right") or event.is_action_released("move_left"):
 				chamber_walk_stop()
+
+
+func _persist_armory() -> void:
+	var manager: Node = get_node_or_null("/root/GameManager")
+	if manager != null:
+		manager.personal_armory = armory.snapshot()
+		_armory_save_due = 0.75
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_APPLICATION_PAUSED:
+		_persist_armory()
+		var manager: Node = get_node_or_null("/root/GameManager")
+		if manager != null:
+			manager.save_session()

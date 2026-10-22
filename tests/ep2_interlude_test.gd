@@ -228,14 +228,16 @@ func _ready() -> void:
 	_check("birds fly in the wood (a few, moving)", wl != null and wl.get_bird_count() >= 5 and (wl._birds[0][0] as Node3D).position.distance_to(bird0) > 3.0)
 	# the founder's TRIPO bears, not the Meshy ones (2026-10-10): the rigged bear file is the Tripo body on the bear skeleton,
 	# its bow-less arms lowered out of the archer T, plus two Tripo bear-archer sentries drawing on the approach
-	var cb: Ep2Actor = w.get_camp_bears()[0]
+	var cb: Ep2Actor = (w.get_scouts()[0] as Ep2BearBrain).actor
 	var bear_tris: int = 0
 	for mi in cb.find_children("*", "MeshInstance3D", true, false):
 		if (mi as MeshInstance3D).mesh != null:
 			bear_tris += (mi as MeshInstance3D).mesh.get_faces().size() / 3
-	_check("the woods bears are the founder's Tripo bear (dense hyper-real body, arms lowered) + 2 Tripo archer sentries",
-		bear_tris > 30000 and cb.skeleton != null and cb.skeleton.get_node_or_null("ArmsDown") != null
-		and w._visuals.find_children("BearArcherSentry*", "", false, false).size() == 2, "tris %d" % bear_tris)
+	_check("the woods bears are the founder's Tripo bear (dense hyper-real body, arms lowered)",
+		bear_tris > 30000 and cb.skeleton != null and cb.skeleton.get_node_or_null("ArmsDown") != null, "tris %d" % bear_tris)
+	# the spy camp is gone (founder 2026-10-14): the ride now runs out of the woods to the gold-rush town
+	_check("no bear camp, no spy ridge, no sentries: the ride heads for town", not ("SPY" in WoodsQuadChamber.Beat)
+		and w._visuals.find_children("BearArcherSentry*", "", false, false).is_empty())
 	_check("the ElevenLabs woods soundscape is loaded (ambience loop, gust, 3 bird calls, flutter)", wl != null and wl._ambience.stream != null and wl._gust.stream != null
 		and Ep2Wildlife.CALLS.all(func(p): return ResourceLoader.exists(p)) and ResourceLoader.exists(Ep2Wildlife.FLUTTER))
 	# LIVING BEARS (founder 2026-10-13): named, each with his own routine and senses
@@ -269,9 +271,14 @@ func _ready() -> void:
 	var nearest: float = 1e9
 	for b in w.get_bears():
 		nearest = minf(nearest, (b as Ep2BearBrain).actor.position.distance_to(WoodsQuadChamber.SPAWN))
-	_check("no bear within 40 m of the mine door; the camp ~1 km away; ~750 m of road to ride",
-		nearest > 40.0 and WoodsQuadChamber.CAMP_CENTRE.distance_to(WoodsQuadChamber.SPAWN) > 900.0 and w.get_ride_length() > 650.0,
-		"nearest %.0f m, camp %.0f m, road %.0f m" % [nearest, WoodsQuadChamber.CAMP_CENTRE.distance_to(WoodsQuadChamber.SPAWN), w.get_ride_length()])
+	var bear_far_z: float = 0.0
+	for b in w.get_bears():
+		bear_far_z = maxf(bear_far_z, (b as Ep2BearBrain).actor.position.z)
+	_check("no bear within 40 m of the mine door; ~1.2 km of road to the town; no bear past the last pines",
+		nearest > 40.0 and w.get_ride_length() > 1100.0 and bear_far_z < WoodsQuadChamber.FOREST_END_Z,
+		"nearest %.0f m, road %.0f m, last bear z %.0f" % [nearest, w.get_ride_length(), bear_far_z])
+	_check("the town is built along the road's end (the same Ep2GoldTown the town chamber builds)",
+		w._visuals.find_child("Bldg_Certificates*", true, false) != null or w._visuals.find_child("Town*", true, false) != null)
 	_check("no music of the quad ride yet", "deep_mining3" not in _music_path(), _music_path())
 	# walking behind Inferno along the trail is free: no bear notices
 	var guard: int = 0
@@ -344,7 +351,8 @@ func _ready() -> void:
 	var road_alerted: int = 0
 	var shot_at: Dictionary = {}
 	var ride_t: float = 0.0
-	while w.get_beat_name() == "RIDE" and ride_t < 160.0:
+	var alert_since: Dictionary = {}
+	while w.get_beat_name() == "RIDE" and ride_t < 300.0:
 		ride_t += 1.0 / 60.0
 		# aim at the nearest live, alert road bear in front within 35 m, and fire when the lever allows
 		var tgt: Ep2BearBrain = null
@@ -352,6 +360,11 @@ func _ready() -> void:
 		for b in w.get_bears("road"):
 			var br: Ep2BearBrain = b
 			if br.is_dead() or not br.is_alert():
+				continue
+			# a human passenger needs a moment to pick out a bear that has just turned on him (and an archer gets his draw off)
+			if not alert_since.has(br.display_name()):
+				alert_since[br.display_name()] = ride_t
+			if ride_t - float(alert_since[br.display_name()]) < 1.8:
 				continue
 			var dd: float = br.actor.position.distance_to(w.get_player_position())
 			if dd < best_d:
@@ -381,44 +394,26 @@ func _ready() -> void:
 		if (b as Ep2BearBrain).is_dead():
 			corpse = b
 	_check("he shoots bears off the road from the back seat (kills land)", w.get_kills() >= 2 and corpse != null, "%d kills, shot at %s" % [w.get_kills(), str(shot_at.keys())])
-	_check("the ride is long (the camp is far from the mine): over 55 s on the road", ride_t > 55.0, "%.0f s" % ride_t)
-	_check("the ride ends on the ridge (-> SPY) in first person", w.get_beat_name() == "SPY" and w.is_fps())
-	_run(w, 0.8)
-	_check("Inferno gets OFF the quad at the ridge (standing idle, hands free)",
-		driver.current_clip() != WoodsQuadChamber.BULL_SIT_CLIP and driver.reach_weight("Left") < 0.5 and driver.reach_weight("Right") < 0.5,
-		"%s L%.2f R%.2f" % [driver.current_clip(), driver.reach_weight("Left"), driver.reach_weight("Right")])
+	_check("the ride is long (out of the wood, across the desert): over 90 s on the road", ride_t > 90.0, "%.0f s" % ride_t)
+	_check("the bears thin out: none attacks in the desert (every picket stands in the wood)", w.get_bears("road").all(func(b): return (b as Ep2BearBrain).actor.position.z < WoodsQuadChamber.FOREST_END_Z))
+	_check("the ride ends IN the town's main street (-> DROPOFF) in first person", w.get_beat_name() == "DROPOFF" and w.is_fps()
+		and absf(w.get_quad_node().position.z - Ep2GoldTown.DROP_POINT.z) < 6.0 and absf(w.get_quad_node().position.x) < Ep2GoldTown.STREET_HALF,
+		"%s %s" % [w.get_beat_name(), str(w.get_quad_node().position)])
+	_check("the desert light took over from the woods' gold (thin fog)", w._env_node.environment.fog_density < 0.004, "%.4f" % w._env_node.environment.fog_density)
 	_check("the corpses stay where they fell (no fade, no vanish)", corpse != null and is_instance_valid(corpse.actor) and corpse.actor.is_inside_tree()
 		and Ep2BearKit.pose_name(corpse.actor) == "dead")
-	_until(w, 12.0, func(): return not w.is_show_active() and said2.has("vo_bull_spy1"))
-	_check("he hops off and creeps up to the ferns (no cut): Inferno tells him to get down and look", said2.has("vo_bull_spy1")
-		and w.get_player_position().distance_to(Vector3(WoodsQuadChamber.SPY_EYE.x, 0.0, WoodsQuadChamber.SPY_EYE.z)) < 0.6)
-	_until(w, 12.0, func(): return not w.is_show_active())
-	if w.get_ammo() == 0:                  # the road fight emptied the tube: load before the ridge
-		w.reload()
-		_until(w, 8.0, func(): return w.get_ammo() > 0 and not w.get_gun().reloading)
-	_run(w, 0.8)
-	var spy_hits: int = w.get_noise_hits()
-	_check("a shot from the ridge carries to the camp (a noise hit, Inferno holds him back)", w.shoot() and w.get_noise_hits() == spy_hits + 1, "%d -> %d" % [spy_hits, w.get_noise_hits()])
-	_run(w, 1.2)
-	w.set_aim(true)
-	_run(w, 0.6)
-	_check("RMB at the spy point raises the SPYGLASS (narrow view) and drops the rifle to low ready - not the iron sights", w.get_camera().fov < 20.0 and wvm.lowered and not w.is_ads(), "fov %.1f" % w.get_camera().fov)
-	w.set_aim(false)
-	_run(w, 0.6)
-	_check("lowering the spyglass returns the wide view and the rifle", w.get_camera().fov > 50.0 and not wvm.lowered)
-	# spyglass: look at every bear with RMB held
-	var eye: Vector3 = WoodsQuadChamber.SPY_EYE
-	for b in w.get_camp_bears():
-		var to3: Vector3 = (b.position + Vector3(0.0, 1.1, 0.0)) - eye
-		w._look_yaw = atan2(to3.x, to3.z)
-		w._look_pitch = atan2(to3.y, Vector2(to3.x, to3.z).length())
-		w.set_aim(true)
-		_run(w, 0.6)
-	w.set_aim(false)
-	_check("every bear in the camp can be spotted through the spyglass", w.get_marked_count() == w.get_bear_total() and w.get_bear_total() == 6, "%d/%d" % [w.get_marked_count(), w.get_bear_total()])
-	_until(w, 30.0, func(): return res2.size() == 1)
-	_check("then Inferno sums it up and Lil Blunt answers", said2.has("vo_bull_spy2") and said2.has("vo_lb_spy_reply"))
-	_check("the chamber ends the playable slice (TO BE CONTINUED)", res2.size() == 1 and bool(res2[0].get("end_session", false)) and bool(res2[0].get("to_be_continued", false)))
+	_until(w, 25.0, func(): return said2.has("vo_lb_drop"))
+	_check("Bull drops him off: the Blondie line, the certificate office + the bar, Lil Blunt answers - in order",
+		said2.find("vo_bull_drop1") >= 0 and said2.find("vo_bull_drop1") < said2.find("vo_bull_drop2") and said2.find("vo_bull_drop2") < said2.find("vo_lb_drop"), str(said2))
+	_check("Lil Blunt is OFF the quad, on his feet in the street, the rifle still in his hands", not w.is_riding() and w.is_fps() and wvm.rifle.visible
+		and w.get_player_position().y < 0.2, str(w.get_player_position()))
+	var qz0: Vector3 = w.get_quad_node().position
+	_until(w, 30.0, func(): return w.is_bull_gone() or res2.size() == 1)
+	_check("...and Bull RIDES OFF on the quad, up the street and away", w.is_bull_gone() and w.get_quad_node().position.distance_to(qz0) > 40.0,
+		str(w.get_quad_node().position))
+	_until(w, 5.0, func(): return res2.size() == 1)
+	_check("the woods chain to the gold town (no TO BE CONTINUED here any more)", res2.size() == 1 and str(res2[0].get("next_chamber", "")) == "gold_town"
+		and not bool(res2[0].get("end_session", false)), str(res2))
 	_check("...and it mints nothing", res2.size() == 1 and int(res2[0].get("gold_awarded", -1)) == 0)
 	w.queue_free()
 
@@ -595,9 +590,9 @@ func _ready() -> void:
 	var all_ok: bool = true
 	var natural: bool = true
 	var clean: bool = true
-	var ids: Array = ["vo_bull_woods_shot", "vo_bull_spy_shot", "vo_bull_lava1", "vo_bull_lava2", "vo_bull_lava_nudge", "vo_bull_lava_made_it", "vo_bull_lift1", "vo_bull_lift_lever", "vo_bull_plan1",
+	var ids: Array = ["vo_bull_woods_shot", "vo_bull_lava1", "vo_bull_lava2", "vo_bull_lava_nudge", "vo_bull_lava_made_it", "vo_bull_lift1", "vo_bull_lift_lever", "vo_bull_plan1",
 		"vo_bull_plan2", "vo_bull_plan3", "vo_lb_plan_reply", "vo_bull_lift_arrive", "vo_bull_woods_sneak", "vo_bull_woods_quiet", "vo_bull_quad_reveal",
-		"vo_lb_quad_ok", "vo_bull_quad_mount", "vo_bull_spy1", "vo_bull_spy2", "vo_lb_spy_reply"]
+		"vo_lb_quad_ok", "vo_bull_quad_mount"]
 	for id in ids:
 		if not ResourceLoader.exists("res://src/assets/sounds/voice/%s.mp3" % id) or _manifest_text(id) == "":
 			all_ok = false

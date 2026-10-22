@@ -16,16 +16,19 @@ extends Ep2Interlude
 ##   * THE OLD LOGGING ROAD (~750 m on the quad, ~70 s): bear pickets along the road wake to the engine - brawlers run at the
 ##     bike and leap, archers draw and loose real arrows (a visible draw = the warning; arrows fly, miss or hit). Lil Blunt
 ##     shoots from the back seat while Inferno drives. Dead bears stay where they fell.
-##   * THE RIDGE over the bear camp, ~1 km from the mine: park, hop off, spyglass, spot the camp.
+##   * OUT OF THE WOODS INTO GOLD-RUSH COUNTRY (founder lock 2026-10-14, PROMPT_EPISODE2_SURFACE_TO_TOWN_DRAW_SPEC.md): the pines thin,
+##     the light warms, the desert opens, the bears stop coming; the town and Fort Knox grow on the horizon (Ep2GoldTown). Bull drops
+##     Lil Blunt in the main street (his Blondie line), Lil Blunt hops off and Bull rides off on the quad. The town is the next room
+##     (GoldTownChamber), built behind this one during the ride and swapped in with one invisible cut.
 ## Failing (out of hearts) restarts at the mine exit (checkpoint hideout_surface_exit, design/ep2/LIVING_WOODS_CONTRACT.md):
 ## bears, quad, ammo and hearts are restored together; Inferno says one line and they go again.
 ## Every hand-over inside the chamber is a move, never a blink: he climbs onto the quad (his view glides to the back seat while
 ## Inferno swings onto the saddle) and hops off at the ridge the same way (skill ep2-no-blackouts).
 ##
-## Beats: SNEAK -> REVEAL (leaves off) -> MOUNT -> RIDE (on rails, the road fight) -> SPY (hold RMB: spyglass, spot 6 bears) -> DONE.
+## Beats: SNEAK -> REVEAL (leaves off) -> MOUNT -> RIDE (on rails, the road fight, then the desert) -> DROPOFF (the street) -> DONE.
 ## Skills: ep2-interlude-chain, ep2-living-woods.
 
-enum Beat { SNEAK, REVEAL, MOUNT, RIDE, SPY, DONE }
+enum Beat { SNEAK, REVEAL, MOUNT, RIDE, DROPOFF, DONE }
 
 const MUSIC := "res://src/assets/music/ep2_deep_mining3_quad.ogg"
 const QUAD_LOOP := "res://src/assets/sounds/ep2_quad_loop.mp3"
@@ -44,7 +47,10 @@ const RIDE_TRAIL: Array = [Vector2(-11.5, 219.0), Vector2(-6.0, 229.0), Vector2(
 	Vector2(8.0, 320.0), Vector2(-6.0, 348.0), Vector2(-16.0, 378.0), Vector2(-14.0, 410.0), Vector2(-2.0, 440.0), Vector2(12.0, 470.0),
 	Vector2(20.0, 505.0), Vector2(14.0, 540.0), Vector2(0.0, 570.0), Vector2(-14.0, 600.0), Vector2(-20.0, 635.0), Vector2(-12.0, 668.0),
 	Vector2(2.0, 698.0), Vector2(14.0, 730.0), Vector2(16.0, 765.0), Vector2(6.0, 798.0), Vector2(-8.0, 828.0), Vector2(-12.0, 860.0),
-	Vector2(-5.0, 890.0), Vector2(3.0, 918.0), Vector2(2.0, 942.0), Vector2(1.0, 957.0)]
+	Vector2(-5.0, 890.0), Vector2(3.0, 918.0), Vector2(2.0, 942.0), Vector2(1.0, 957.0),
+	# out of the pines into gold-rush country (2026-10-14): a long easy road across the desert into the town's main street
+	Vector2(-4.0, 990.0), Vector2(-10.0, 1040.0), Vector2(-7.0, 1100.0), Vector2(3.0, 1160.0), Vector2(9.0, 1220.0), Vector2(6.0, 1285.0),
+	Vector2(1.0, 1345.0), Vector2(0.0, 1385.0), Vector2(0.0, 1403.0)]
 const RIDE_SPEED := 12.5                            # the straights
 const RIDE_BEND_SPEED := 7.5                        # Inferno brakes into the bends
 ## The modelled quad: Tripo H3.1 multi-view image-to-3D (Muapi) from the GPT-Image-2 stills of the founder's flame-designer quad, cleaned up by
@@ -68,26 +74,31 @@ const BACK_SIDE := 0.30                             # ...a little to the right o
 const BACK_EYE := 1.40                              # his eye above the seat/rack there (kneeling)
 const BULL_LEAN := 0.55                             # Inferno leans onto the grips (the seated clip alone sits him upright against a chair back)
 const BULL_GRIPS_IK := false                      # Inferno's hands are NOT dragged to the grips: the skinned elbow cannot take the IK (tears / goes invisible)
-const RIDGE_Z := 965.0
-const SPY_EYE := Vector3(2.6, 1.55, RIDGE_Z)       # behind the ferns on the ridge
-const CAMP_CENTRE := Vector3(0.0, 0.0, RIDGE_Z + 41.0)
-## The six camp bears, as offsets from the campfire (spotted through the spyglass at the end).
-const BEAR_SPOTS: Array = [Vector2(-5.5, -5.0), Vector2(-2.0, 4.0), Vector2(4.0, -7.0), Vector2(6.5, 2.0), Vector2(-8.5, 3.0), Vector2(1.5, 9.0)]
+const PICKET_ROAD_LEN := 775.0                    # the road pickets' `at` is a fraction of the WOODS road (the desert part has no bears)
+const FOREST_END_Z := 960.0                        # the old growth thins out over the 100 m before this and stops
+const DESERT_FULL_Z := 1080.0                      # the light is fully gold-rush country from here (graded by road distance)
+const WORLD_END_Z := 1760.0
 const HEARING := 19.0                              # a RUNNING Lil Blunt is heard inside this radius (x the bear's ears)
 const WALK_NOISE := 4.0                            # ...a walking one only this close
 const SHOT_HEARING := 46.0                         # a Winchester shot carries far further than boots on gravel
 const ENGINE_HEARING := 70.0                       # the quad's engine: every bear inside this turns to it ...
 const ENGINE_ALARM := 40.0                         # ... and inside this (with a clear line) knows it is the enemy
-const SPY_ZOOM_FOV := 16.0
-const SPY_SPOT_ANGLE := 0.075                      # radians (~4.3 deg): how close to a bear the spyglass must be
-const SPY_TIMEOUT := 70.0
 const SEAT_SIDE := 0.55                            # the back seat is wide: he sits to the right of Inferno's axis and sees the road past his shoulder
+const CART_MODEL := "res://src/episode2/assets/town/donkey_cart.glb"
+const CART_S0 := 868.0                              # where the farmer's donkey cart stands on the road (arc length; the desert, past the last pines)
+const CART_SPEED := 2.4                             # ... and how fast it plods toward town (m/s)
+const CART_LATERAL := 3.1                           # it keeps to the right of the road; the quad passes on the left
+const CART_SCALE := 3.8                             # the Tripo model is ~1 m long, 0.59 m tall
+const BULL_AHEAD := ["vo_bull_ahead1", "vo_bull_ahead2", "vo_bull_ahead3"]      # Lil Blunt is scouting on ahead
+const BULL_WAIT := ["vo_bull_wait1", "vo_bull_wait2"]                           # Lil Blunt lags: a look back, a word
+const BULL_EASY := ["vo_bull_woods_sneak", "vo_bull_sneak2", "vo_bull_sneak3"]  # the rare murmur while they walk
+const BULL_QUIET := ["vo_bull_woods_quiet", "vo_bull_quiet2"]                   # he ran, a bear heard
+const BULL_COVER := ["vo_bull_cover1", "vo_bull_cover2", "vo_bull_cover3"]      # Lil Blunt is in trouble: Inferno fires
 const HEALTH_MAX := 3                              # the story's 3-heart cap (no second health system)
 const BEAR_ACTIVE_R := 150.0                       # bears further than this sleep in the engine (hidden, not processed) - the fog hides them anyway
 const ARROW_SPEED := 40.0
 const ARCHERS_AT_ONCE := 2                         # the active-attack budget: at most this many bows drawn on him at a time
 const VM_KEY_ENERGY := 4.7                         # measured: holds the held rifle at 0.34-0.38 mean in every direction (sun-only: 0.03-0.35)
-const COAST_DIST := 75.0                           # the engine is off this far before the ridge (the camp is ~41 m beyond it)
 
 ## THE SCOUTS of the near wood (founder: "they should all have personality and individual character"). Positions keep a walker on
 ## Inferno's trail out of every bear's sight (sight x attention, field of view) - stealth is possible; straying, running and
@@ -128,15 +139,6 @@ const ROAD_BEARS: Array = [
 	{"name": "Moose", "role": "brawler", "routine": "road", "at": 0.74, "lat": 6.5, "react": 0.8, "run": 4.4, "hp": 3, "height": 2.65, "pitch": 0.65},
 	{"name": "Gnasher", "role": "brawler", "routine": "road", "at": 0.85, "lat": -6.5, "react": 0.6, "run": 4.8, "hp": 2, "height": 2.3, "pitch": 0.85},
 	{"name": "Wren", "role": "archer", "routine": "watch", "at": 0.87, "lat": 19.0, "sweep": 0.5, "sight": 36.0, "react": 0.7, "hp": 1, "arrows": 8, "range": 42.0, "reload": 1.9, "height": 1.95, "pitch": 1.2},
-]
-## THE CAMP (seen from the ridge): around the fire. `off` = offset from the fire = BEAR_SPOTS.
-const CAMP_BEARS: Array = [
-	{"name": "Chief Ironpaw", "role": "brawler", "routine": "roam", "roam_r": 3.0, "hp": 3, "height": 2.7, "pitch": 0.6},
-	{"name": "Dozer", "role": "brawler", "routine": "sleep", "hp": 2, "height": 2.4, "pitch": 0.75},
-	{"name": "Paige", "role": "archer", "routine": "read", "hp": 1, "height": 2.0, "pitch": 1.2},
-	{"name": "Cookie", "role": "brawler", "routine": "read", "hp": 2, "height": 2.3, "pitch": 0.9},
-	{"name": "Bolt", "role": "archer", "routine": "patrol", "route_off": [Vector2(-8.5, 3.0), Vector2(-9.0, -9.0), Vector2(8.0, -10.0)], "hp": 1, "height": 2.05, "pitch": 1.1},
-	{"name": "Hum", "role": "brawler", "routine": "roam", "roam_r": 2.5, "hp": 2, "height": 2.2, "pitch": 1.0},
 ]
 
 # --- the old-growth wood (founder target artifacts/episode2-gold-mine/references/founder_2026-10-10/woods_exterior_target.jpg:
@@ -195,19 +197,27 @@ var _quad_yaw: float = 0.0
 var _engine: AudioStreamPlayer = null
 var _sneak_i: int = 0
 var _bull_waiting: bool = false
+var _bull_chat_cd: float = 14.0                      # seconds before Inferno may say another unprompted line (long + random: no nagging)
+var _bull_wait_t: float = 0.0                        # how long he has stood looking back this time
+var _bull_wait_lock: float = 0.0                     # after a wait he strolls on for a while before he will wait again
+var _bull_pace: float = 0.0
+var _line_idx: Dictionary = {}                       # pool key -> next line (rotates, never the same one twice running)
+var _sneak_arc: PackedFloat32Array = PackedFloat32Array()
+var _cart: Node3D = null                             # the farmer on his donkey cart (founder model), plodding down the desert road
+var _cart_s: float = CART_S0
+var _cart_warned: bool = false
+var _cart_state: int = 0                             # 0 ahead, 1 approached (slowing), 2 greeted, 3 passed
+var _bull_ride_cd: float = 0.0
+var _bull_ride_shots: int = 0
 var _warn_cd: float = 0.0
 var _stay_cd: float = 0.0
 var _bark_cd: float = 0.0
 var _noise_hits: int = 0
-var _camp_bears: Array = []                         # Ep2Actor (the spyglass targets)
-var _marked: Array = []                             # bool per camp bear
-var _marks: Array = []                              # marker node per camp bear
-var _zoom: float = 0.0
-var _aim_on: bool = false
-var _spy_t: float = 0.0
-var _spy_done: bool = false
-var _spy_intro_pending: bool = false
 var _quad_yaw_prev: float = 0.0
+var _desert_k: float = -1.0                          # 0 woods light .. 1 gold-rush desert light (by the quad's z)
+var _town_col: Dictionary = {}                        # Ep2GoldTown walls / props for walking in the street
+var _rideoff: Dictionary = {}                         # Bull riding away down the street after the drop-off
+var _dropoff_done: bool = false
 
 # --- the living wood -----------------------------------------------------------------------------------------------
 var _bears_root: Node3D = null
@@ -226,8 +236,10 @@ var _fail_t: float = 0.0
 var _retry_line_pending: bool = false
 var _attempt: int = 0
 var _ammo_snapshot: Array = []
+var _armory_snapshot: Dictionary = {}
 var _player_vel: Vector3 = Vector3.ZERO
 var _prev_player: Vector3 = Vector3.ZERO
+var _player_arrows: Array = []
 var _arrows: Array = []                             # Dictionary per arrow in flight / stuck
 var _arrows_loosed: int = 0
 var _arrow_hits: int = 0
@@ -237,8 +249,6 @@ var _bull_alarm: bool = false
 var _bull_calm_t: float = 0.0
 var _bull_fire_cd: float = 0.0
 var _bull_shots: int = 0
-var _bull_rifle_rest: Transform3D = Transform3D.IDENTITY
-var _bull_rifle_t: float = -1.0
 var _flashes: Array = []                            # [Node3D, seconds left]
 var _glide: Dictionary = {}                          # the player's eye moving onto / off the quad
 var _bull_swing: Dictionary = {}                     # Inferno swinging onto / off the saddle
@@ -278,8 +288,8 @@ func _build_steps() -> Array:
 	var steps: Array = [_step_light_mats, _load_forest_kit, _step_ground, _build_ride_path, _resolve_specs, _build_trails]
 	for i in _forest_chunk_count():
 		steps.append(Callable(self, "_build_forest_chunk").bind(i))
-	steps.append_array([_build_sun_shafts, _build_mine_hut, _build_quad, _build_cover, _build_camp, _build_ridge])
-	var n: int = SCOUTS.size() + ROAD_BEARS.size() + CAMP_BEARS.size()
+	steps.append_array([_build_sun_shafts, _build_mine_hut, _build_quad, _build_cover, _build_desert, _build_town, _build_cart])
+	var n: int = SCOUTS.size() + ROAD_BEARS.size()
 	for k in int(ceil(float(n) / 3.0)):
 		steps.append(Callable(self, "_spawn_batch").bind(k, 3))
 	steps.append(_step_bull)
@@ -311,8 +321,17 @@ func _step_ground() -> void:
 	_ground_mat = _tex(FLOOR_TEX, Color(0.82, 0.84, 0.76), 0.28) if ResourceLoader.exists(FLOOR_TEX) else _tex(GRAVEL_TEX, Color(0.38, 0.42, 0.25), 0.35)
 	_ground_mat.uv1_world_triplanar = true
 	_ground_mat.roughness = 0.95
-	var z1: float = CAMP_CENTRE.z + 110.0
+	var z1: float = FOREST_END_Z + 30.0
 	_box(Vector3(440.0, 0.5, z1 + 30.0), Vector3(0.0, -0.25, (z1 - 30.0) * 0.5), _ground_mat)
+	# the desert floor from the last pines to beyond the town (a hair lower: the forest floor wins where they overlap)
+	var dg := MeshInstance3D.new()
+	var pm := PlaneMesh.new()
+	pm.size = Vector2(1400.0, WORLD_END_Z - FOREST_END_Z + 520.0)
+	dg.mesh = pm
+	dg.material_override = Ep2GoldTown.desert_ground_mat()
+	dg.position = Vector3(0.0, -0.012, (FOREST_END_Z - 80.0 + WORLD_END_Z + 440.0) * 0.5)
+	dg.name = "DesertFloor"
+	_visuals.add_child(dg)
 
 
 ## Old-growth daylight (founder target): a bright, pale sky glowing through the canopy, cool green-grey air between the trunks
@@ -515,8 +534,7 @@ func _forest_blocked(p: Vector2, margin: float, trees: bool = true, segs: Array 
 	var sg: Array = segs if not segs.is_empty() else _segs_near(p.y, p.y, margin + 40.0)
 	if _dist_segs(p, sg) < margin:
 		return true
-	if (absf(p.x) < 13.0 and p.y > RIDGE_Z - 8.0 and p.y < CAMP_CENTRE.z - 14.0) or p.distance_to(Vector2(CAMP_CENTRE.x, CAMP_CENTRE.z)) < 24.0 \
-			or p.distance_to(Vector2(QUAD_POS.x, QUAD_POS.z)) < 6.0:
+	if p.distance_to(Vector2(QUAD_POS.x, QUAD_POS.z)) < 6.0 or p.y > FOREST_END_Z:
 		return true
 	if trees:
 		if absf(p.x) < 7.0 and p.y < 8.0 and p.y > -14.0:
@@ -536,7 +554,7 @@ func _hash01(x: float, z: float, k: float) -> float:
 
 
 func _forest_chunk_count() -> int:
-	return int(ceil((CAMP_CENTRE.z + 100.0 - FOREST_Z0) / CHUNK_Z))
+	return int(ceil((FOREST_END_Z + 10.0 - FOREST_Z0) / CHUNK_Z))
 
 
 ## The x-span of slice [z0, z1): FOREST_HALF_W either side of every trail / road point near it (the camp too at the far end).
@@ -549,9 +567,6 @@ func _chunk_x_span(z0: float, z1: float) -> Vector2:
 			if v.y >= z0 - 45.0 and v.y <= z1 + 45.0:
 				lo = minf(lo, v.x)
 				hi = maxf(hi, v.x)
-	if z1 > CAMP_CENTRE.z - 70.0:
-		lo = minf(lo, CAMP_CENTRE.x - 25.0)
-		hi = maxf(hi, CAMP_CENTRE.x + 25.0)
 	if lo > hi:
 		lo = 0.0
 		hi = 0.0
@@ -755,7 +770,7 @@ func _build_sun_shafts() -> void:
 			i += 1
 			var r: float = _hash01(float(i), pts[k].z, 4.4)
 			var p := Vector2(pts[k].x + (r - 0.5) * 34.0, pts[k].z + r * 6.0)
-			if not (absf(p.x) < 13.0 and p.y > RIDGE_Z - 8.0):
+			if p.y < FOREST_END_Z - 40.0:
 				xfs.append(Transform3D(Basis.from_scale(Vector3(0.6 + 1.4 * r, 1.0, 1.0)), Vector3(p.x, 13.0, p.y)))
 	var mm := _multi(qm, xfs, m, 0.0)
 	if mm != null:
@@ -1043,82 +1058,6 @@ func is_quad_hidden() -> bool:
 	return _cover != null and is_instance_valid(_cover) and _cover.visible and _reveal_t < 0.0
 
 
-# --- the bear camp + the ridge ----------------------------------------------------------------------------------------------
-
-func _build_camp() -> void:
-	var canvas: StandardMaterial3D = _plain(Color(0.55, 0.48, 0.34), 0.95)
-	var wood: StandardMaterial3D = _tex(TIMBER_TEX, Color(0.55, 0.40, 0.27), 0.6)
-	var cx: float = CAMP_CENTRE.x
-	var cz: float = CAMP_CENTRE.z
-	_box(Vector3(46.0, 0.06, 38.0), Vector3(cx, 0.03, cz), _tex(GRAVEL_TEX, Color(0.40, 0.31, 0.22), 0.5))
-	# two sentries at the camp's edge: the founder's Tripo BEAR ARCHER (bow drawn, miner's lamp lit - his reference still),
-	# aiming down the approach toward the ridge. Static pose; the arrow runs along the model's +X, so a +90 deg yaw aims it at -Z.
-	if ResourceLoader.exists(BEAR_ARCHER_MODEL):
-		var sentries: Array = [Vector3(cx - 6.5, 0.0, cz - 16.0), Vector3(cx + 7.5, 0.0, cz - 14.5)]
-		for si in sentries.size():
-			var sp: Vector3 = sentries[si]
-			var archer: Node3D = (load(BEAR_ARCHER_MODEL) as PackedScene).instantiate()
-			archer.name = "BearArcherSentry%d" % si
-			# the imported scene is already 1.69 m tall (inner node x1.9) and CENTRED on y (base at -0.863): lift it onto the ground
-			var k: float = 2.0 / (0.892 * 1.9009)
-			archer.scale = Vector3.ONE * k
-			archer.position = sp + Vector3(0.0, 0.8629 * k, 0.0)
-			archer.rotation.y = PI * 0.5 + ((sp.x - cx) * 0.012)
-			_visuals.add_child(archer)
-	# tents: prisms
-	for to in [Vector3(-12.0, 0.0, -2.0), Vector3(11.0, 0.0, -4.0), Vector3(-9.0, 0.0, 11.0), Vector3(9.0, 0.0, 10.0)]:
-		var tp: Vector3 = CAMP_CENTRE + (to as Vector3)
-		var pm := PrismMesh.new()
-		pm.size = Vector3(4.6, 3.0, 5.0)
-		var tent := MeshInstance3D.new()
-		tent.mesh = pm
-		tent.material_override = canvas
-		tent.position = tp + Vector3(0.0, 1.5, 0.0)
-		tent.rotation.y = (to as Vector3).x * 0.1
-		_visuals.add_child(tent)
-	# logs round the fire
-	for i in 6:
-		var a: float = float(i) * 1.0472
-		var lg := _cyl(0.28, 0.28, 2.4, Vector3(cx + cos(a) * 3.6, 0.3, cz + sin(a) * 3.6), wood, null, 8)
-		lg.rotation = Vector3(PI * 0.5, 0.0, a + PI * 0.5)
-	# the campfire: a hot glow + smoke
-	var fire := _cyl(0.0, 0.7, 1.2, Vector3(cx, 0.6, cz), _glow(Color(1.0, 0.5, 0.1), 2.6), null, 7)
-	fire.name = "Campfire"
-	var fl := OmniLight3D.new()
-	fl.light_color = Color(1.0, 0.6, 0.25)
-	fl.light_energy = 3.2
-	fl.omni_range = 26.0
-	fl.position = Vector3(cx, 1.5, cz)
-	_visuals.add_child(fl)
-	var smoke := _particles(18, 4.0, Color(0.5, 0.5, 0.5, 0.45), 1.8)
-	smoke.position = Vector3(cx, 1.4, cz)
-	smoke.direction = Vector3(0.0, 1.0, 0.0)
-	smoke.initial_velocity_min = 0.8
-	smoke.initial_velocity_max = 1.4
-	_visuals.add_child(smoke)
-	# a watchtower
-	for tx in [-1.0, 1.0]:
-		for tz in [-1.0, 1.0]:
-			_box(Vector3(0.35, 7.0, 0.35), Vector3(cx - 17.0 + 1.6 * tx, 3.5, cz - 12.0 + 1.6 * tz), wood)
-	_box(Vector3(4.2, 0.3, 4.2), Vector3(cx - 17.0, 7.0, cz - 12.0), wood)
-	_box(Vector3(4.2, 0.9, 0.2), Vector3(cx - 17.0, 7.6, cz - 14.0), wood)
-
-
-func _build_ridge() -> void:
-	# the ridge: a fern bank and a fallen log across the spy spot, a rise the ride tops before the camp opens up beyond it
-	var fern: StandardMaterial3D = _plain(Color(0.20, 0.42, 0.16), 0.95)
-	var wood: StandardMaterial3D = _tex(TIMBER_TEX, Color(0.45, 0.33, 0.22), 0.6)
-	for i in 26:
-		var x: float = -10.0 + float(i) * 0.9
-		var z: float = RIDGE_Z + 3.0 + 1.0 * sin(float(i) * 1.9)
-		var f: Node3D = _foliage_bit(i, 0.6 + 0.25 * absf(sin(float(i) * 2.7)), Vector3(x, 0.0, z), _visuals, true) if _fern_mat != null \
-			else _sphere(0.6 + 0.25 * absf(sin(float(i) * 2.7)), Vector3(x, 0.3, z), fern, null, 0.7)
-		f.rotation.y = float(i)
-	var log := _cyl(0.45, 0.45, 9.0, Vector3(1.0, 0.45, RIDGE_Z + 1.6), wood, null, 8)
-	log.rotation = Vector3(0.0, 0.0, PI * 0.5)
-	log.rotation.y = 0.08
-
-
 # --- the living bears -----------------------------------------------------------------------------------------------------
 
 ## The quad's road as a curve: Catmull-Rom through RIDE_TRAIL, resampled every ~1.5 m (built first: the wood keeps clear of it,
@@ -1156,7 +1095,7 @@ func _resolve_specs() -> void:
 		_specs.append(d)
 	for rb in ROAD_BEARS:
 		var d2: Dictionary = (rb as Dictionary).duplicate(true)
-		var smp: Array = _ride_sample(float(d2["at"]) * _ride_total)
+		var smp: Array = _ride_sample(float(d2["at"]) * PICKET_ROAD_LEN)
 		var at: Vector3 = smp[0]
 		var yaw: float = float(smp[1])
 		var right := Vector3(-cos(yaw), 0.0, sin(yaw))         # the rider's right (heading yaw: forward = (sin, 0, cos))
@@ -1164,7 +1103,7 @@ func _resolve_specs() -> void:
 		d2["pos"] = Vector2(p.x, p.z)
 		if not d2.has("face"):
 			# sentries watch the road coming toward them (a little up-road); readers / sleepers face away into the trees
-			var up_road: Array = _ride_sample(float(d2["at"]) * _ride_total - 25.0)
+			var up_road: Array = _ride_sample(float(d2["at"]) * PICKET_ROAD_LEN - 25.0)
 			var look: Vector3 = up_road[0]
 			var face: float = atan2(look.x - p.x, look.z - p.z)
 			if str(d2["routine"]) in ["read", "sleep"]:
@@ -1172,18 +1111,6 @@ func _resolve_specs() -> void:
 			d2["face"] = face
 		d2["group"] = "road"
 		_specs.append(d2)
-	for i in CAMP_BEARS.size():
-		var d3: Dictionary = (CAMP_BEARS[i] as Dictionary).duplicate(true)
-		var off: Vector2 = BEAR_SPOTS[i]
-		d3["pos"] = Vector2(CAMP_CENTRE.x + off.x, CAMP_CENTRE.z + off.y)
-		d3["face"] = atan2(-off.x, -off.y)                     # toward the fire
-		if d3.has("route_off"):
-			var r: Array = []
-			for ro in d3["route_off"]:
-				r.append(Vector2(CAMP_CENTRE.x + (ro as Vector2).x, CAMP_CENTRE.z + (ro as Vector2).y))
-			d3["route"] = r
-		d3["group"] = "camp"
-		_specs.append(d3)
 	for d4 in _specs:
 		var sp: Dictionary = d4
 		var home: Vector2 = sp["pos"]
@@ -1221,6 +1148,13 @@ func _spawn_bear(spec: Dictionary, idx: int) -> Ep2BearBrain:
 		Ep2BearKit.add_bow(a)
 	var brain := Ep2BearBrain.new(a, (spec as Dictionary).duplicate(true), 1886 + idx * 31 + _attempt * 7)
 	brain.set_meta("group", str(spec["group"]))
+	brain.set_meta("corpse_id", "woods:%d" % idx)
+	if armory.corpses.has("woods:%d" % idx):
+		brain.aware = Ep2BearBrain.Aware.DEAD
+		brain.hp = 0
+		brain.arrows = int(armory.corpses["woods:%d" % idx]["arrows"])
+		a.stop()
+		Ep2BearKit.pose(a, "dead")
 	brain.roared.connect(_on_bear_roared)
 	brain.arrow_loosed.connect(_on_arrow_loosed)
 	brain.swiped.connect(_on_bear_swiped)
@@ -1228,10 +1162,6 @@ func _spawn_bear(spec: Dictionary, idx: int) -> Ep2BearBrain:
 	brain.died.connect(_on_bear_died)
 	brain.spotted.connect(_on_bear_spotted)
 	_bears.append(brain)
-	if str(spec["group"]) == "camp":
-		_camp_bears.append(a)
-		_marked.append(false)
-		_marks.append(null)
 	return brain
 
 
@@ -1256,6 +1186,8 @@ func get_scouts() -> Array:
 # --- the story --------------------------------------------------------------------------------------------------------
 
 func _on_setup() -> void:
+	_armory_snapshot = armory.snapshot()  # before the first player event can spend a round or claim loot
+	_ammo_snapshot = [armory.active_gun().rounds, armory.active_gun().reserve]
 	_beat = Beat.SNEAK
 	_player_pos = SPAWN
 	_prev_player = SPAWN
@@ -1291,6 +1223,7 @@ func _on_beat_entered(b: int) -> void:
 				_hud.objective = "Stay close to Inferno. Walk soft - the bears' scouts hear a runner."
 			_begin_carry_line("vo_bull_retry" if _retry_line_pending else "vo_bull_woods_sneak")
 			_retry_line_pending = false
+			_bull_chat_cd = _rng.randf_range(22.0, 34.0)
 		Beat.REVEAL:
 			_bull.stop()
 			if _hud:
@@ -1316,8 +1249,8 @@ func _on_beat_entered(b: int) -> void:
 				{"do": "wait", "t": 1.05}], true)
 		Beat.RIDE:
 			_begin_ride()
-		Beat.SPY:
-			_begin_spy()
+		Beat.DROPOFF:
+			_begin_dropoff()
 
 
 func _show_finished() -> void:
@@ -1326,14 +1259,11 @@ func _show_finished() -> void:
 			_advance_to(Beat.MOUNT)
 		Beat.MOUNT:
 			_advance_to(Beat.RIDE)
-		Beat.SPY:
-			if _spy_intro_pending:
-				_spy_intro_pending = false
-				release_look()
-				_start_show([FacilityShow._say("vo_bull_spy1", 0.3)])
-			elif _spy_done:
-				_advance_to(Beat.DONE)
-				_resolve({"end_session": true, "to_be_continued": true, "next_mode": "quad_hunt"})
+		Beat.DROPOFF:
+			_dropoff_done = true
+			if _hud:
+				_hud.objective = "Go to the CERTIFICATES office. Get the sheriff to sort you a certificate."
+
 
 
 func _reveal_quad() -> void:
@@ -1387,6 +1317,7 @@ func _begin_ride() -> void:
 	if _hud:
 		_hud.objective = "Hold on and shoot back - bears on the road."
 	_start_show([FacilityShow._say("vo_bull_road_start", 0.2), FacilityShow._say("vo_lb_road_go", 0.2)])
+	prebuild_requested.emit("gold_town")          # the town builds behind the ride (one invisible cut at the drop-off)
 
 
 ## Where Lil Blunt kneels on the rack, for the quad's current pose.
@@ -1519,34 +1450,6 @@ func is_gliding() -> bool:
 	return not _glide.is_empty()
 
 
-func _begin_spy() -> void:
-	_riding = false
-	cam_distance = 3.9
-	cam_height = 1.45
-	_spy_t = 0.0
-	_spy_done = false
-	if _engine:
-		_engine.stop()
-	if _quad_light:
-		_quad_light.light_energy = 0.0
-	# he hops off the back and creeps up to the ferns; Inferno swings off and walks up beside him (no cut)
-	_glide_to(Vector3(SPY_EYE.x, 0.0, SPY_EYE.z), SPY_EYE.y, 1.4, 0.2)
-	_bull_swing_off(Vector3(SPY_EYE.x - 2.4, 0.0, SPY_EYE.z - 1.0))
-	look_toward(CAMP_CENTRE + Vector3(0.0, 1.2, 0.0), 1.8)
-	if _hud:
-		_hud.show_crosshair = true
-		_hud.objective = "Hold RIGHT MOUSE for the spyglass. Spot the bears: 0 / %d" % BEAR_SPOTS.size()
-	_spy_intro_pending = true
-	_start_show([{"do": "wait", "t": 1.45}], true)
-
-
-func _finish_spy() -> void:
-	_spy_done = true
-	_start_show([
-		FacilityShow._say("vo_bull_spy2", 0.3),
-		FacilityShow._say("vo_lb_spy_reply", 0.4)])
-
-
 # --- per-frame --------------------------------------------------------------------------------------------------------
 
 func _tick(delta: float) -> void:
@@ -1556,9 +1459,15 @@ func _tick(delta: float) -> void:
 	_invuln = maxf(0.0, _invuln - delta)
 	if _ammo_snapshot.is_empty() and _vm != null:
 		_ammo_snapshot = [_vm.gun.rounds, _vm.gun.reserve]
+		_armory_snapshot = armory.snapshot()
 	_player_vel = (_player_pos - _prev_player) / maxf(delta, 0.0001)
 	_prev_player = _player_pos
 	_tick_flashes(delta)
+	if _hud != null:
+		if not _hud.search_requested.is_connected(_search_nearby):
+			_hud.search_requested.connect(_search_nearby)
+		var body: Ep2BearBrain = _nearby_corpse()
+		_hud.set_search_prompt("Search %s [E]" % body.display_name() if body != null else "")
 	if _failing:
 		_tick_fail(delta)
 		return
@@ -1567,7 +1476,9 @@ func _tick(delta: float) -> void:
 	_tick_cover(delta)
 	_tick_bears(delta)
 	_tick_arrows(delta)
+	_tick_player_arrows(delta)
 	_tick_footsteps(delta)
+	_tick_riders(delta)
 	if _wildlife != null:
 		_wildlife._centre = Vector3(_player_pos.x, 0.0, _player_pos.z)      # the birds keep to the stretch of wood he is in
 		_wildlife.step(delta)
@@ -1576,41 +1487,115 @@ func _tick(delta: float) -> void:
 			_tick_bull_defence(delta)
 			_tick_sneak(delta)
 		Beat.RIDE:
+			_tick_bull_ride_cover(delta)
 			_tick_ride(delta)
-		Beat.SPY:
-			_tick_spy(delta)
+		Beat.DROPOFF:
+			_tick_dropoff(delta)
 
 
-func _tick_sneak(_delta: float) -> void:
+## Inferno the grown-up (founder 2026-10-14: "mechanical ... repeats walk soft and follow me ... if Lil Blunt goes on ahead he should acknowledge it
+## as an adult and not wait for him to come back"). He walks the trail at his own pace. Lil Blunt scouting AHEAD: one easy word now and then and he
+## carries on. Lil Blunt LAGGING: he stops, looks back, waits a few seconds, then strolls on slowly (never rigid). Unprompted lines are rare, random
+## and rotate through a pool (skill ep2-bull-companion-pacing).
+func _tick_sneak(delta: float) -> void:
+	_bull_chat_cd = maxf(0.0, _bull_chat_cd - delta)
+	_bull_wait_lock = maxf(0.0, _bull_wait_lock - delta)
 	if _bull_alarm or not _bull_swing.is_empty():
 		return
 	var trail: Array = SNEAK_TRAIL
 	var target2: Vector2 = trail[_sneak_i]
 	var bt := Vector3(target2.x, 0.0, target2.y)
+	var bull2 := Vector2(_bull.position.x, _bull.position.z)
+	var gap: float = _trail_s(Vector2(_player_pos.x, _player_pos.z)) - _trail_s(bull2)      # > 0: Lil Blunt is AHEAD of him on the trail
 	var dist_player: float = Vector2(_bull.position.x - _player_pos.x, _bull.position.z - _player_pos.z).length()
+	var at_end: bool = _sneak_i >= trail.size() - 1 and bull2.distance_to(Vector2((trail[trail.size() - 1] as Vector2).x, (trail[trail.size() - 1] as Vector2).y)) < 1.6
+	var want_pace: float = 1.9
 	if _show_active:
 		pass
-	elif dist_player > 6.5:
-		# too far behind: Inferno stops and waits (never abandons him)
-		if _bull.is_walking():
-			_bull.stop()
-		_bull_waiting = true
-		_bull.face_point(_player_pos)
-		if _stay_cd <= 0.0 and _hold <= 0.0:
-			_stay_cd = 9.0
-			_begin_carry_line("vo_bull_woods_sneak")
-	elif dist_player < 4.5 or not _bull_waiting:
+	elif at_end:
+		# at the thicket he does wait for him - the reveal is theirs together
+		if dist_player > 8.0:
+			if _bull.is_walking():
+				_bull.stop()
+			_bull.face_point(_player_pos)
+			_bull_chat(BULL_WAIT, 12.0, 20.0)
+	elif gap > 3.5 and dist_player > 4.0:
+		# he is out in front: Inferno lets him scout, says so once in a while, and keeps his own pace
+		_bull_wait_t = 0.0
 		_bull_waiting = false
-		if not _bull.is_walking():
-			_bull.walk_to(bt, 1.9)
-	if Vector2(_bull.position.x, _bull.position.z).distance_to(target2) < 0.35:
+		if gap > 6.0:
+			_bull_chat(BULL_AHEAD, 18.0, 34.0)
+		want_pace = 2.3
+		_bull_walk_pace(bt, want_pace)
+	elif dist_player > 8.0 and gap < -2.0:
+		if _bull_wait_lock <= 0.0:
+			# a look back and a short wait ...
+			_bull_wait_t += delta
+			_bull_waiting = true
+			if _bull.is_walking():
+				_bull.stop()
+			_bull.face_point(_player_pos)
+			if _bull_wait_t > 0.8:
+				_bull_chat(BULL_WAIT, 22.0, 38.0)
+			if _bull_wait_t > 3.8:
+				# ... then he gets on with it: he is a grown man, he strolls on and Lil Blunt catches up
+				_bull_wait_lock = 16.0
+				_bull_wait_t = 0.0
+				_bull_waiting = false
+		else:
+			_bull_walk_pace(bt, 1.25)
+	else:
+		_bull_wait_t = 0.0
+		_bull_waiting = false
+		_bull_walk_pace(bt, want_pace)
+		_bull_chat(BULL_EASY, 40.0, 75.0)
+	if bull2.distance_to(target2) < 0.35:
 		_sneak_i += 1
 		_intro_scout_at(_sneak_i)
 		if _sneak_i >= trail.size():
 			_sneak_i = trail.size() - 1
-			if dist_player < 6.0:
+			if dist_player < 8.0:
 				_advance_to(Beat.REVEAL)
 			return
+
+
+## Walk toward `bt` at `pace` (re-issued when the pace changes, so a stroll turns into a stride and back without a stop).
+func _bull_walk_pace(bt: Vector3, pace: float) -> void:
+	if not _bull.is_walking() or absf(_bull_pace - pace) > 0.05:
+		_bull_pace = pace
+		_bull.walk_to(bt, pace)
+
+
+## One unprompted line from `pool`, rotating (never the same line twice running), then silence for a random `cd_min`..`cd_max` seconds.
+func _bull_chat(pool: Array, cd_min: float, cd_max: float) -> bool:
+	if _bull_chat_cd > 0.0 or _hold > 0.0 or _show_active:
+		return false
+	var key: String = str(pool[0])
+	var i: int = int(_line_idx.get(key, _rng.randi() % pool.size()))
+	_line_idx[key] = (i + 1) % pool.size()
+	_bull_chat_cd = _rng.randf_range(cd_min, cd_max)
+	_begin_carry_line(str(pool[i % pool.size()]))
+	return true
+
+
+## Arc length along the sneak trail of the point nearest `p` (how far along the trail someone is, whatever side of it he wandered to).
+func _trail_s(p: Vector2) -> float:
+	var tr: Array = SNEAK_TRAIL
+	if _sneak_arc.is_empty():
+		_sneak_arc.append(0.0)
+		for i in range(1, tr.size()):
+			_sneak_arc.append(_sneak_arc[i - 1] + (tr[i] as Vector2).distance_to(tr[i - 1] as Vector2))
+	var best_d: float = 1e9
+	var best_s: float = 0.0
+	for i in range(tr.size() - 1):
+		var a: Vector2 = tr[i]
+		var ab: Vector2 = (tr[i + 1] as Vector2) - a
+		var t: float = clampf((p - a).dot(ab) / maxf(ab.length_squared(), 0.001), 0.0, 1.0)
+		var d: float = p.distance_to(a + ab * t)
+		if d < best_d:
+			best_d = d
+			best_s = _sneak_arc[i] + ab.length() * t
+	return best_s
 
 
 ## Inferno names the scout they are passing (a quiet aside, only if that bear is alive and has not noticed them).
@@ -1661,8 +1646,6 @@ func _tick_bears(delta: float) -> void:
 func _exposure() -> float:
 	if _riding:
 		return 1.0
-	if _beat == Beat.SPY:
-		return 0.25
 	if _moving:
 		return 1.0 if _run_input else 0.55
 	return 0.3
@@ -1752,15 +1735,18 @@ func _noise(at: Vector3, radius: float, kind: String) -> int:
 			n += 1
 			_sfx3d("ep2_bear_growl_%d" % (1 + (br.actor.get_instance_id() % 3)), br.actor.global_position + Vector3(0.0, 1.6, 0.0),
 				-2.0, float(br.p.get("pitch", 1.0)), 45.0)
-	if n > 0 and kind != "engine" and kind != "leaves" and (_beat == Beat.SNEAK or _beat == Beat.REVEAL or _beat == Beat.SPY):
+	if n > 0 and kind != "engine" and kind != "leaves" and (_beat == Beat.SNEAK or _beat == Beat.REVEAL):
 		_noise_hits += 1
 		if _warn_cd <= 0.0:
-			_warn_cd = 7.0
+			_warn_cd = 14.0
 			var shot: bool = kind == "shot"
 			if _hud:
 				_hud.toast("A SHOT CARRIES!" if shot else "SHH! WALK SOFT", 2.0)
 			# a hiss is urgent: it cuts whatever he was saying
-			_begin_carry_line(("vo_bull_spy_shot" if _beat == Beat.SPY else "vo_bull_woods_shot") if shot else "vo_bull_woods_quiet")
+			var qi: int = int(_line_idx.get("quiet", 0))
+			_line_idx["quiet"] = qi + 1
+			_bull_chat_cd = maxf(_bull_chat_cd, 12.0)
+			_begin_carry_line("vo_bull_woods_shot" if shot else str(BULL_QUIET[qi % BULL_QUIET.size()]))
 	return n
 
 
@@ -1770,17 +1756,31 @@ func _tick_bull_defence(delta: float) -> void:
 	if _bull == null:
 		return
 	_bull_fire_cd = maxf(0.0, _bull_fire_cd - delta)
+	# "if he sees Lil Blunt struggling" (founder 2026-10-14): hurt, or a hostile bear closing on HIM - then Inferno does not wait for a bear to be
+	# coming at himself: he covers Lil Blunt, fires faster and straighter, and steps in for a clear line.
 	var threat: Ep2BearBrain = null
-	var best: float = 34.0
+	var best: float = 40.0
+	var near_player: bool = false
 	for b in _bears:
 		var br: Ep2BearBrain = b
 		if not br.is_alert() or br.is_dead():
 			continue
 		var d: float = br.actor.position.distance_to(_bull.position)
-		if d < best and not _los_blocked(Vector2(_bull.position.x, _bull.position.z), Vector2(br.actor.position.x, br.actor.position.z)):
-			best = d
+		var dp: float = br.actor.position.distance_to(_player_pos)
+		var pressing: bool = dp < 13.0
+		near_player = near_player or pressing
+		var score: float = d - (14.0 if pressing else 0.0)
+		if score < best and d < 40.0 and not _los_blocked(Vector2(_bull.position.x, _bull.position.z), Vector2(br.actor.position.x, br.actor.position.z)):
+			best = score
 			threat = br
+	var struggling: bool = _health < HEALTH_MAX or near_player
 	if threat == null:
+		if near_player and _health < HEALTH_MAX:
+			# no clear line from where he stands: he steps toward Lil Blunt to get one
+			var toward: Vector3 = (_player_pos - _bull.position)
+			toward.y = 0.0
+			if toward.length() > 5.0:
+				_bull.walk_to(_bull.position + toward.normalized() * minf(toward.length() - 3.5, 6.0), 3.4)
 		if _bull_alarm:
 			_bull_calm_t += delta
 			if _bull_calm_t > 2.5:
@@ -1791,33 +1791,70 @@ func _tick_bull_defence(delta: float) -> void:
 	if not _bull_alarm:
 		_bull_alarm = true
 		_bull.stop()
-		_bull_fire_cd = 0.9
+		_bull_fire_cd = 0.5 if struggling else 0.9
 		if _bark_cd <= 0.0:
 			_bark_cd = 8.0
-			_begin_carry_line("vo_bull_spotted")
+			if _health <= 1:
+				var ci0: int = int(_line_idx.get("cover", 0))
+				_line_idx["cover"] = ci0 + 1
+				_begin_carry_line(str(BULL_COVER[ci0 % BULL_COVER.size()]))      # Lil Blunt is on his last heart: not "he's seen us", "I've got you"
+			else:
+				_begin_carry_line("vo_bull_spotted")
+	elif struggling and _health <= 1 and _bark_cd <= 0.0 and _hold <= 0.0:
+		_bark_cd = 10.0
+		var ci: int = int(_line_idx.get("cover", 0))
+		_line_idx["cover"] = ci + 1
+		_begin_carry_line(str(BULL_COVER[ci % BULL_COVER.size()]))
 	_bull.face_point(threat.actor.position)
+	var hero: Ep2BullHero = _bull.get_node_or_null("BullHero")
+	if hero:
+		hero.aim_at(threat.actor.global_position + Vector3.UP * threat.actor.height_m * 0.6)
 	if _bull_fire_cd <= 0.0 and _bull.is_facing(threat.actor.position, 0.35):
-		_bull_fire_cd = 1.6 + _rng.randf() * 0.6
-		_bull_fire_at(threat)
+		_bull_fire_cd = (1.0 + _rng.randf() * 0.4) if struggling else (1.6 + _rng.randf() * 0.6)
+		_bull_fire_at(threat, 0.72 if struggling else 0.55)
 
 
-func _bull_fire_at(br: Ep2BearBrain) -> void:
+## Inferno on the quad covers Lil Blunt too (the road fight): when a bear is on the quad, or he is hurt, he lets off a round over his shoulder
+## from the saddle (no reach, the rifle pivots in his fist). Not a turret - one round every couple of seconds, and only when it matters.
+func _tick_bull_ride_cover(delta: float) -> void:
+	_bull_ride_cd = maxf(0.0, _bull_ride_cd - delta)
+	if _bull_ride_cd > 0.0 or _bull == null or _player_pos.z > FOREST_END_Z:
+		return
+	var best: Ep2BearBrain = null
+	var best_d: float = 1e9
+	var hurt: bool = _health < HEALTH_MAX
+	for b in _bears:
+		var br: Ep2BearBrain = b
+		if br.is_dead() or not br.is_alert() or not br.actor.visible:
+			continue
+		var d: float = br.actor.position.distance_to(_player_pos)
+		var reach: float = 26.0 if hurt else 11.0
+		if br.role() == "archer" and not hurt:
+			continue                                                       # an archer at range is for Lil Blunt to answer unless he is hurt
+		if d < reach and d < best_d:
+			best_d = d
+			best = br
+	if best == null:
+		return
+	_bull_ride_cd = (1.7 if hurt else 2.6) + _rng.randf() * 0.7
+	_bull_ride_shots += 1
+	_bull_fire_at(best, 0.72 if hurt else 0.5)
+	if _health <= 1 and _bark_cd <= 0.0 and _hold <= 0.0:
+		_bark_cd = 12.0
+		var ci: int = int(_line_idx.get("cover", 0))
+		_line_idx["cover"] = ci + 1
+		_begin_carry_line(str(BULL_COVER[ci % BULL_COVER.size()]))
+
+
+func _bull_fire_at(br: Ep2BearBrain, hit_chance: float = 0.55) -> void:
 	_bull_shots += 1
 	var target: Vector3 = br.actor.position + Vector3(0.0, br.actor.height_m * 0.6, 0.0)
-	var rifle: Node3D = _bull.find_child("BullHeroRifle", true, false) as Node3D
-	var muzzle: Vector3 = _bull.position + Vector3(0.0, 1.5, 0.0)
-	if rifle != null and rifle.visible:
-		if _bull_rifle_t < 0.0:
-			_bull_rifle_rest = rifle.transform
-		var o: Vector3 = rifle.global_position
-		var dir: Vector3 = (target - o).normalized()
-		var sc: Vector3 = rifle.global_transform.basis.get_scale()
-		rifle.global_transform = Transform3D(Basis.looking_at(-dir, Vector3.UP) * Basis.from_scale(sc), o + dir * 0.2)
-		_bull_rifle_t = 0.6
-		muzzle = o + dir * 0.9
+	var hero: Ep2BullHero = _bull.get_node_or_null("BullHero")
+	var muzzle: Vector3 = hero.fire_at(target) if hero else _bull.position + Vector3.UP * 1.5
 	_flash(muzzle)
 	_sfx3d("ep2_winchester_shot_%d" % (1 + _bull_shots % 3), muzzle, -1.0, 0.92, 90.0)
-	if _rng.randf() < 0.55:
+	if _rng.randf() < hit_chance:
+		br.set_meta("killed_by", "bull")   # Bull's kill is Bull's: Lil Blunt must not take the credit
 		br.take_hit(_bull.position)
 	_noise(_bull.position, SHOT_HEARING, "bull_shot")
 
@@ -1830,12 +1867,6 @@ func _tick_flashes(delta: float) -> void:
 			if is_instance_valid(f[0]):
 				(f[0] as Node).queue_free()
 			_flashes.remove_at(i)
-	if _bull_rifle_t >= 0.0:
-		_bull_rifle_t -= delta
-		if _bull_rifle_t < 0.0 and _bull != null:
-			var rifle: Node3D = _bull.find_child("BullHeroRifle", true, false) as Node3D
-			if rifle != null:
-				rifle.transform = _bull_rifle_rest
 
 
 func _flash(at: Vector3) -> void:
@@ -1877,10 +1908,9 @@ func _tick_ride(delta: float) -> void:
 	var h1: float = float(_ride_sample(_ride_s + 14.0)[1])
 	var bend: float = clampf(absf(angle_difference(h0, h1)) / 0.55, 0.0, 1.0)
 	var target_speed: float = lerpf(RIDE_SPEED, RIDE_BEND_SPEED, bend)
-	# the last stretch below the ridge Inferno cuts the engine and COASTS in: the camp over the ridge must not hear them
-	var coasting: bool = remaining < COAST_DIST
-	if coasting:
-		target_speed = minf(target_speed, maxf(2.0, 7.0 * remaining / COAST_DIST + 1.0))
+	target_speed = minf(target_speed, _tick_cart(delta))
+	if remaining < 60.0:
+		target_speed = minf(target_speed, 3.0 + 6.0 * remaining / 60.0)        # rolling into town at a walking pace
 	if remaining < 16.0:
 		target_speed = maxf(1.5, target_speed * remaining / 16.0)
 	_ride_speed = move_toward(_ride_speed, target_speed, 4.5 * delta)
@@ -1899,18 +1929,17 @@ func _tick_ride(delta: float) -> void:
 	_quad_yaw_prev = _quad_yaw
 	if _engine:
 		_engine.pitch_scale = 0.85 + 0.35 * clampf(_ride_speed / RIDE_SPEED, 0.0, 1.0)
-		_engine.volume_db = move_toward(_engine.volume_db, -40.0 if coasting else -7.0, delta * 18.0)
-		if coasting and _engine.volume_db <= -39.0 and _engine.playing:
-			_engine.stop()
+	# out of the pines the light warms into gold-rush country (graded by distance, never a cut)
+	_grade_desert(_quad.position.z)
 	# the engine is the loudest thing in the wood: bears near the road turn to it, the close ones know it is the enemy
 	_engine_acc += delta
-	if _engine_acc >= 0.25 and not coasting:
+	if _engine_acc >= 0.25:
 		_engine_acc = 0.0
 		_engine_noise()
 	_road_barks()
 	if _ride_s >= _ride_total - 0.01:
 		_ride_done = true
-		_advance_to(Beat.SPY)
+		_advance_to(Beat.DROPOFF)
 
 
 func _engine_noise() -> void:
@@ -1953,79 +1982,6 @@ func _road_barks() -> void:
 		_begin_carry_line("vo_bull_road_clear")
 
 
-func set_aim(on: bool) -> void:
-	if _beat == Beat.SPY:
-		# at the spy point RMB is the SPYGLASS: the rifle drops to low ready while it is up
-		_aim_on = on and has_player_control()
-		if _vm != null:
-			_vm.set_aim(false)
-		return
-	_aim_on = false
-	super.set_aim(on)
-
-
-func _tick_spy(delta: float) -> void:
-	_spy_t += delta
-	_zoom = move_toward(_zoom, 1.0 if _aim_on else 0.0, delta / 0.25)
-	var eye: Vector3 = SPY_EYE
-	var cp: float = cos(_look_pitch)
-	var dir := Vector3(sin(_look_yaw) * cp, sin(_look_pitch), cos(_look_yaw) * cp)
-	_scope_fov = SPY_ZOOM_FOV
-	_scope_k = _zoom                        # the first-person camera narrows to the spyglass (see Ep2Interlude._fps_camera)
-	# marking: the spyglass up and a bear in the middle of it
-	if _zoom > 0.6:
-		for i in _camp_bears.size():
-			if _marked[i]:
-				continue
-			var b: Ep2Actor = _camp_bears[i]
-			var to: Vector3 = (b.position + Vector3(0.0, 1.1, 0.0)) - eye
-			if to.length() < 1.0:
-				continue
-			if dir.angle_to(to.normalized()) < SPY_SPOT_ANGLE:
-				_mark_bear(i)
-	for i in _marks.size():
-		var mk: Node3D = _marks[i]
-		if mk != null and is_instance_valid(mk):
-			mk.position = (_camp_bears[i] as Ep2Actor).position + Vector3(0.0, 3.0, 0.0)
-	if _spy_done:
-		return
-	if _spy_t > SPY_TIMEOUT:
-		for i in _camp_bears.size():
-			if not _marked[i]:
-				_mark_bear(i, true)
-	if _count_marked() >= _camp_bears.size() and not _show_active:
-		_finish_spy()
-
-
-func _count_marked() -> int:
-	var n: int = 0
-	for m in _marked:
-		if bool(m):
-			n += 1
-	return n
-
-
-func _mark_bear(i: int, silent: bool = false) -> void:
-	_marked[i] = true
-	var b: Ep2Actor = _camp_bears[i]
-	var mk := _sphere(0.22, b.position + Vector3(0.0, 3.0, 0.0), _glow(Color(1.0, 0.8, 0.2), 3.0), null, 1.4)
-	mk.name = "BearMark"
-	_marks[i] = mk
-	var n: int = _count_marked()
-	if _hud:
-		_hud.objective = "Hold RIGHT MOUSE for the spyglass. Spot the bears: %d / %d" % [n, _camp_bears.size()]
-		if not silent:
-			_hud.toast("BEAR SPOTTED  %d / %d" % [n, _camp_bears.size()], 1.4)
-
-
-func get_marked_count() -> int:
-	return _count_marked()
-
-
-func get_bear_total() -> int:
-	return _camp_bears.size()
-
-
 func get_noise_hits() -> int:
 	return _noise_hits
 
@@ -2042,10 +1998,6 @@ func get_ride_length() -> float:
 	return _ride_total
 
 
-func get_camp_bears() -> Array:
-	return _camp_bears
-
-
 func get_live_bear_count() -> int:
 	return _bears.filter(func(b: Ep2BearBrain) -> bool: return not b.is_dead()).size()
 
@@ -2055,6 +2007,7 @@ func get_alert_count() -> int: return _alerts
 func get_arrows_loosed() -> int: return _arrows_loosed
 func get_arrow_hits() -> int: return _arrow_hits
 func get_bull_shots() -> int: return _bull_shots
+func get_bull_ride_shots() -> int: return _bull_ride_shots
 func get_attempt() -> int: return _attempt
 func is_failing() -> bool: return _failing
 
@@ -2074,16 +2027,16 @@ func _update_vertical(delta: float) -> void:
 
 
 func _can_jump() -> bool:
-	return not _riding and _beat != Beat.SPY and _glide.is_empty()
+	return not _riding and _glide.is_empty()
 
 
 func has_player_control() -> bool:
-	return _running and not _resolved and not _show_blocks_control and _beat != Beat.DONE and not _failing
+	return _running and not _resolved and not _show_blocks_control and _beat != Beat.DONE and not _failing and not armory_open()
 
 
-## The rifle drops to low ready while the spyglass is up.
+## The woods have no spyglass any more (the ride ends in town): the rifle never drops to low ready here.
 func _viewmodel_lowered() -> bool:
-	return _beat == Beat.SPY and _aim_on
+	return false
 
 
 # --- the fight -----------------------------------------------------------------------------------------------------------
@@ -2091,10 +2044,21 @@ func _viewmodel_lowered() -> bool:
 ## THE RIFLE IS IN HIS HANDS, so a shot is a fact of the wood (skill ep2-interlude-chain): the round flies down his aim (with the
 ## Winchester's spread) and hits the first bear on the line unless a trunk is in the way; and the bang is heard far and wide.
 func _on_player_shot() -> void:
+	if armory.equipped == Ep2ArmoryState.BOW:
+		var eye: Vector3 = _player_pos + Vector3(0.0, eye_height, 0.0)
+		var origin: Vector3 = _vm.rifle.get_node("Nock").global_position
+		var direction: Vector3 = (eye + _fire_dir() * 50.0 - origin).normalized()
+		var arrow: Node3D = Ep2BowView.player_arrow()            # the founder's arrow where the streamed bow is mounted, else the bear arrow
+		_visuals.add_child(arrow)
+		arrow.global_position = origin
+		_player_arrows.append({"node": arrow, "pos": origin, "v": direction * 38.0, "t": 0.0})
+		_noise(_player_pos, 14.0, "bow")
+		return
 	var eye: Vector3 = _player_pos + Vector3(0.0, eye_height, 0.0)
 	var dir: Vector3 = _fire_dir()
 	var hit: Ep2BearBrain = _bear_on_ray(eye, dir)
 	if hit != null:
+		hit.set_meta("killed_by", "player")   # only HIS shots earn his "bear down" line (founder 2026-10-15)
 		var killed: bool = hit.take_hit(eye)
 		if _hud:
 			_hud.hit_marker(killed)
@@ -2112,7 +2076,7 @@ func _fire_dir() -> Vector3:
 
 
 ## The nearest living bear the ray passes through (his body as one or two capsules for the pose he is in), unless a trunk is first.
-func _bear_on_ray(eye: Vector3, dir: Vector3) -> Ep2BearBrain:
+func _bear_on_ray(eye: Vector3, dir: Vector3, max_distance: float = 170.0) -> Ep2BearBrain:
 	var best: Ep2BearBrain = null
 	var best_t: float = 1e9
 	for b in _bears:
@@ -2121,14 +2085,14 @@ func _bear_on_ray(eye: Vector3, dir: Vector3) -> Ep2BearBrain:
 			continue
 		var to: Vector3 = br.actor.position - eye
 		var tc: float = to.dot(dir)
-		if tc < -2.0 or tc > 170.0:
+		if tc < -2.0 or tc > max_distance + 2.0:
 			continue
 		for sh in _bear_shapes(br):
 			var t: float = _ray_capsule(eye, dir, sh[0], sh[1], float(sh[2]))
-			if t >= 0.3 and t < best_t:
+			if t >= 0.0 and t <= max_distance and t < best_t:
 				best_t = t
 				best = br
-	if best != null and _ray_tree_blocked(eye, dir, best_t):
+	if best != null and _ray_tree_blocked(eye, dir, best_t, 0.0, 0.0):
 		return null
 	return best
 
@@ -2172,7 +2136,7 @@ static func _ray_capsule(o: Vector3, d: Vector3, a: Vector3, b: Vector3, r: floa
 
 
 ## Does a trunk stop the round before `t_max`? (Horizontal ray vs trunk circles, along the grid.)
-func _ray_tree_blocked(eye: Vector3, dir: Vector3, t_max: float) -> bool:
+func _ray_tree_blocked(eye: Vector3, dir: Vector3, t_max: float, near_clearance: float = 0.4, far_clearance: float = 0.3) -> bool:
 	var d2 := Vector2(dir.x, dir.z)
 	var l: float = d2.length()
 	if l < 1e-4:
@@ -2201,7 +2165,7 @@ func _ray_tree_blocked(eye: Vector3, dir: Vector3, t_max: float) -> bool:
 					if disc < 0.0:
 						continue
 					var s: float = (-bb - sqrt(disc)) / (2.0 * aa)
-					if s > 0.4 and s < t_max - 0.3 and eye.y + dir.y * s < float(e[2]):
+					if s >= near_clearance and s <= t_max - far_clearance and eye.y + dir.y * s < float(e[2]):
 						return true
 		t += TREE_CELL * 0.5 / l
 	return false
@@ -2234,12 +2198,14 @@ func _on_bear_swiped(br: Ep2BearBrain) -> void:
 
 
 func _on_bear_died(br: Ep2BearBrain) -> void:
+	armory.record_corpse(str(br.get_meta("corpse_id", "")), br.arrows, br.actor.has_meta("bow"))
 	_kills += 1
 	_sfx3d("ep2_bear_death_%d" % (1 + _kills % 3), br.actor.global_position + Vector3(0.0, 1.2, 0.0), 0.0, float(br.p.get("pitch", 1.0)), 70.0)
 	var snore: AudioStreamPlayer3D = br.actor.get_meta("snore") if br.actor.has_meta("snore") else null
 	if snore != null:
 		snore.stop()
-	if _hold <= 0.0 and _bark_cd <= 4.0:
+	# Lil Blunt only brags about a bear HE shot. A bear Bull dropped (or anything else) gets no line from him.
+	if str(br.get_meta("killed_by", "")) == "player" and _hold <= 0.0 and _bark_cd <= 4.0:
 		_bark_cd = 6.0
 		_begin_carry_line("ep2_vo_bear_down_%d" % (1 + (_kills * 5) % 12))
 
@@ -2270,40 +2236,36 @@ func _on_arrow_loosed(br: Ep2BearBrain, from: Vector3, _to: Vector3) -> void:
 		"life": 0.0, "whizz": false, "from": br})
 
 
+## Swept flight hits the first bear or trunk once; it never spends ammunition a second time.
+func _tick_player_arrows(delta: float) -> void:
+	for i in range(_player_arrows.size() - 1, -1, -1):
+		var item: Dictionary = _player_arrows[i]
+		var before: Vector3 = item["pos"]
+		var velocity: Vector3 = item["v"]
+		velocity.y -= 9.8 * delta
+		var travel: Vector3 = velocity * delta
+		var hit: Ep2BearBrain = _bear_on_ray(before, travel.normalized(), travel.length())
+		var stopped: bool = hit != null or _ray_tree_blocked(before, travel.normalized(), travel.length(), 0.0, 0.0)
+		if hit != null:
+			hit.set_meta("killed_by", "player")
+			var killed: bool = hit.take_hit(before)
+			if _hud != null:
+				_hud.hit_marker(killed)
+		item["t"] = float(item["t"]) + delta
+		item["pos"] = before + travel
+		item["v"] = velocity
+		var node: Node3D = item["node"]
+		node.global_position = item["pos"]
+		node.basis = Basis.looking_at(-velocity.normalized(), Vector3.UP)
+		if stopped or float(item["t"]) > 4.0 or node.position.y < _ground_y:
+			if stopped:
+				_sfx3d("ep2_arrow_thunk", node.global_position, -3.0, 1.0, 40.0)        # the arrow's own impact sound (a hit or a trunk)
+			node.queue_free()
+			_player_arrows.remove_at(i)
+
+
 func _arrow_mesh() -> Node3D:
-	var root := Node3D.new()
-	root.name = "Arrow"
-	var shaft := MeshInstance3D.new()
-	var cm := CylinderMesh.new()
-	cm.top_radius = 0.012
-	cm.bottom_radius = 0.012
-	cm.height = 0.85
-	cm.radial_segments = 5
-	shaft.mesh = cm
-	shaft.material_override = _plain(Color(0.55, 0.40, 0.24), 0.8)
-	shaft.rotation.x = PI * 0.5                    # along the arrow's +Z
-	root.add_child(shaft)
-	var tip := MeshInstance3D.new()
-	var tm := CylinderMesh.new()
-	tm.top_radius = 0.0
-	tm.bottom_radius = 0.03
-	tm.height = 0.09
-	tm.radial_segments = 5
-	tip.mesh = tm
-	tip.material_override = _plain(Color(0.35, 0.36, 0.38), 0.4, 0.6)
-	tip.rotation.x = PI * 0.5
-	tip.position = Vector3(0.0, 0.0, 0.46)
-	root.add_child(tip)
-	for k in 3:
-		var fl := MeshInstance3D.new()
-		var bm := BoxMesh.new()
-		bm.size = Vector3(0.003, 0.06, 0.14)
-		fl.mesh = bm
-		fl.material_override = _plain(Color(0.85, 0.82, 0.76), 0.9)
-		fl.position = Vector3(0.0, 0.0, -0.36)
-		fl.rotation.z = float(k) * TAU / 3.0
-		root.add_child(fl)
-	return root
+	return Ep2BowView.arrow()
 
 
 func _tick_arrows(delta: float) -> void:
@@ -2402,25 +2364,24 @@ func _tick_fail(delta: float) -> void:
 ## (alive, in their routines), arrows, the quad under its leaves, Inferno at the bridge, hearts, ammunition - and play resumes at
 ## the mine exit with one line from Inferno. Nothing before the checkpoint (the lesson, the lava, the lift) is replayed.
 func _retry_from_surface() -> void:
+	if not _armory_snapshot.is_empty():
+		armory.restore(_armory_snapshot)
 	_attempt += 1
 	for ar in _arrows:
 		if is_instance_valid(ar["node"]):
 			(ar["node"] as Node).queue_free()
 	_arrows.clear()
+	for item in _player_arrows:
+		(item["node"] as Node3D).queue_free()
+	_player_arrows.clear()
 	for f in _flashes:
 		if is_instance_valid(f[0]):
 			(f[0] as Node).queue_free()
 	_flashes.clear()
-	for mk in _marks:
-		if mk != null and is_instance_valid(mk):
-			(mk as Node).queue_free()
 	if _bears_root != null and is_instance_valid(_bears_root):
 		_bears_root.queue_free()
 	_bears_root = null
 	_bears.clear()
-	_camp_bears.clear()
-	_marked.clear()
-	_marks.clear()
 	_spawned = 0
 	_intro_done.clear()
 	for i in _specs.size():
@@ -2455,7 +2416,6 @@ func _retry_from_surface() -> void:
 	_bull_dismount()
 	_bull_alarm = false
 	_bull_waiting = false
-	_bull_rifle_t = 0.0
 	# Lil Blunt at the mine mouth, whole again, with the rounds he had there
 	_player_pos = SPAWN
 	_prev_player = SPAWN
@@ -2468,14 +2428,21 @@ func _retry_from_surface() -> void:
 	_vel_y = 0.0
 	_health = HEALTH_MAX
 	_invuln = 1.5
-	if _vm != null and _ammo_snapshot.size() == 2:
+	if _armory_snapshot.is_empty() and _vm != null and _ammo_snapshot.size() == 2:
 		_vm.gun.rounds = int(_ammo_snapshot[0])
 		_vm.gun.reserve = int(_ammo_snapshot[1])
 	_scope_k = 0.0
-	_zoom = 0.0
-	_aim_on = false
-	_spy_done = false
-	_spy_intro_pending = false
+	_rideoff = {}
+	_dropoff_done = false
+	_cart_s = CART_S0
+	_cart_state = 0
+	_cart_warned = false
+	_bull_chat_cd = 20.0
+	_bull_wait_t = 0.0
+	_bull_wait_lock = 0.0
+	_bull_ride_cd = 0.0
+	if _cart != null:
+		_place_cart(0.0)
 	_road_lines.clear()
 	_show_active = false
 	_show_blocks_control = false
@@ -2490,15 +2457,16 @@ func _retry_from_surface() -> void:
 		_hud.toast("BACK AT THE MINE EXIT", 2.0)
 
 
-## Trunks are solid; the wood is the limit of the world until the spy beat.
+## Trunks are solid; the wood is the limit of the world until the drop-off; in the town street the buildings are.
 func _collide(p: Vector3) -> Vector3:
 	var q := p
+	if _beat == Beat.DROPOFF:
+		var c: Vector2 = Ep2GoldTown.collide(Vector2(q.x, q.z), 0.3, _town_col.get("walls", []), _town_col.get("props", []))
+		q.x = clampf(c.x, -30.0, 30.0)
+		q.z = clampf(c.y, Ep2GoldTown.TOWN_Z - 30.0, Ep2GoldTown.TOWN_Z + 90.0)
+		return q
 	q.x = clampf(q.x, -110.0, 110.0)
 	q.z = clampf(q.z, -5.0, QUAD_POS.z + 40.0)
-	if _beat == Beat.SPY:
-		q.x = clampf(q.x, SPY_EYE.x - 1.5, SPY_EYE.x + 1.5)
-		q.z = clampf(q.z, SPY_EYE.z - 0.8, SPY_EYE.z + 0.8)
-		return q
 	for t in _trees_near(Vector2(q.x, q.z), 1):
 		var tp: Vector2 = t[0]
 		var d := Vector2(q.x - tp.x, q.z - tp.y)
@@ -2508,6 +2476,209 @@ func _collide(p: Vector3) -> Vector3:
 			q.x = tp.x + out.x
 			q.z = tp.y + out.y
 	return q
+
+
+# --- the farmer and his donkey (founder 2026-10-14: "on the road they should drive past the man on the cart with the donkey - slow down, pass him and wave") ---
+
+func _build_cart() -> void:
+	if not ResourceLoader.exists(CART_MODEL):
+		return
+	var holder := Node3D.new()
+	holder.name = "DonkeyCart"
+	var model: Node3D = (load(CART_MODEL) as PackedScene).instantiate() as Node3D
+	model.scale = Vector3.ONE * CART_SCALE
+	model.rotation.y = -PI * 0.5                      # the model's nose is +X; the holder's +Z is the way it travels
+	holder.add_child(model)
+	_visuals.add_child(holder)
+	_cart = holder
+	_place_cart(0.0)
+
+
+## Put the cart on its place on the road (right of the centre line), nose down the road, with a plodding bob.
+func _place_cart(t: float) -> void:
+	if _cart == null:
+		return
+	var smp: Array = _ride_sample(_cart_s)
+	var yaw: float = float(smp[1])
+	var right := Vector3(-cos(yaw), 0.0, sin(yaw))
+	var pos: Vector3 = (smp[0] as Vector3) + right * CART_LATERAL
+	pos.y = 0.012 + 0.02 * absf(sin(t * 4.2))
+	_cart.position = pos
+	_cart.rotation = Vector3(0.012 * sin(t * 2.1), yaw, 0.01 * sin(t * 4.2))
+
+
+## The cart plods on; the quad eases down behind it (so it does not spook the donkey), draws level, Inferno greets the farmer, Lil Blunt answers,
+## and they open up again past him. Returns the speed this allows the quad.
+func _tick_cart(delta: float) -> float:
+	if _cart == null or _cart_state >= 3:
+		return 99.0
+	_cart_s += CART_SPEED * delta
+	_place_cart(_elapsed)
+	var gap: float = _cart_s - _ride_s                  # > 0: the cart is still ahead of them on the road
+	var allow: float = 99.0
+	if gap < 70.0 and gap > -10.0:
+		allow = maxf(CART_SPEED + 2.7, CART_SPEED + 2.7 + (gap - 8.0) * 0.16)     # eases from the straight-road speed down to a stroll past him
+		if _cart_state == 0:
+			_cart_state = 1
+		if not _cart_warned and gap > 16.0 and _hold <= 0.0 and not _show_active:
+			_cart_warned = true
+			_begin_carry_line("vo_bull_cart1")
+	if _cart_state == 1 and gap < 13.0:
+		_cart_state = 2
+		_start_show([FacilityShow._say("vo_bull_cart2", 0.15), FacilityShow._say("vo_cart_man", 0.15), FacilityShow._say("vo_lb_cart", 0.1)])
+	if gap < -24.0:
+		_cart_state = 3                                  # behind them now: the road opens up again
+	return allow
+
+
+func get_cart_state() -> int: return _cart_state
+func get_cart_node() -> Node3D: return _cart
+
+
+# --- out of the woods: the desert, the town, the drop-off (founder lock 2026-10-14) ------------------------------------------
+
+## The town and Fort Knox (Ep2GoldTown - the SAME build the town chamber makes, at the same coordinates).
+func _build_town() -> void:
+	_town_col = Ep2GoldTown.build(_visuals, false)
+
+
+## Gold-rush country between the last pines and the town (Ep2GoldTown.build_desert - the same scrub, rocks and mesas the town chamber
+## builds, so the drop-off cut is invisible), then the distant riders.
+func _build_desert() -> void:
+	Ep2GoldTown.build_desert(_visuals, RIDE_TRAIL, FOREST_END_Z, WORLD_END_Z, _kit_meshes.get("Fern", null), _rock_mesh, _dry_scrub_mat(), _desert_rock_mat())
+	_build_riders()
+
+
+func _dry_scrub_mat() -> ShaderMaterial:
+	return Ep2GoldTown.scrub_mat()
+
+
+func _desert_rock_mat() -> StandardMaterial3D:
+	return Ep2GoldTown.desert_rock_mat()
+
+
+var _riders: Array = []                               # [Node3D, Vector3 a, Vector3 b, float t, float period]
+
+
+## One or two distant riders on the hills: they ride slowly to and fro far off the road and never come near (spec beat 1).
+func _build_riders() -> void:
+	const RIDER := "res://src/episode2/assets/town/distant_rider.glb"
+	if not ResourceLoader.exists(RIDER):
+		return
+	for spec in [[Vector3(-120.0, 0.0, 1120.0), Vector3(-160.0, 0.0, 1240.0), 70.0], [Vector3(150.0, 0.0, 1290.0), Vector3(110.0, 0.0, 1380.0), 90.0]]:
+		var r: Node3D = (load(RIDER) as PackedScene).instantiate() as Node3D
+		r.name = "DistantRider"
+		_visuals.add_child(r)
+		r.position = spec[0]
+		_riders.append([r, spec[0], spec[1], 0.0, float(spec[2])])
+
+
+func _tick_riders(delta: float) -> void:
+	for rd in _riders:
+		rd[3] = float(rd[3]) + delta
+		var k: float = 0.5 - 0.5 * cos(TAU * float(rd[3]) / float(rd[4]))
+		var a: Vector3 = rd[1]
+		var b: Vector3 = rd[2]
+		var n: Node3D = rd[0]
+		var prev: Vector3 = n.position
+		n.position = a.lerp(b, k)
+		var mv: Vector3 = n.position - prev
+		if mv.length() > 1e-4:
+			n.rotation.y = atan2(mv.x, mv.z)
+
+
+## The woods' golden hour warms into gold-rush desert light over the road between the last pines and DESERT_FULL_Z.
+func _grade_desert(z: float) -> void:
+	if light_grade != "golden" or _env_node == null or _env_node.environment == null:
+		return
+	var k: float = clampf((z - (FOREST_END_Z - 120.0)) / (DESERT_FULL_Z - (FOREST_END_Z - 120.0)), 0.0, 1.0)
+	if absf(k - _desert_k) < 0.01:
+		return
+	_desert_k = k
+	Ep2GoldTown.apply_desert_grade(_env_node.environment, _sun, k)
+
+
+## THE DROP-OFF (founder 2026-10-14): in the main street Bull tells him about his blonde lady friend (a grin, nothing shown), sends him to
+## the certificate office and says he'll meet him at the bar; Lil Blunt hops off (his eye glides down, no cut) and Bull rides off on
+## the quad down the street and away. Then the town chamber takes over in one invisible cut.
+func _begin_dropoff() -> void:
+	_riding = false
+	_grade_desert(Ep2GoldTown.TOWN_Z)
+	if _hud:
+		_hud.objective = ""
+	var r := Vector3(-cos(_quad_yaw), 0.0, sin(_quad_yaw)) * -1.0
+	var off: Vector3 = _quad.position + r * 2.2 + Vector3(sin(_quad_yaw), 0.0, cos(_quad_yaw)) * -0.8
+	off.y = 0.0
+	_start_show([
+		FacilityShow._say("vo_bull_drop1", 0.25),
+		{"do": "call", "fn": func() -> void: _glide_to(off, FPS_EYE_HEIGHT, 1.0, 0.15)},
+		{"do": "wait", "t": 1.05},
+		{"do": "call", "fn": func() -> void: look_toward(_bull.position + Vector3(0.0, 2.2, 0.0), 3.0)},
+		FacilityShow._say("vo_bull_drop2", 0.2),
+		FacilityShow._say("vo_lb_drop", 0.2),
+		{"do": "call", "fn": _bull_ride_off},
+		{"do": "wait", "t": 1.2},
+		{"do": "call", "fn": release_look}], true)
+
+
+## Bull opens the throttle and rides away up the street, round the church and off - the engine fading with the distance.
+func _bull_ride_off() -> void:
+	var start: Vector3 = _quad.position
+	_rideoff = {"pts": [start, Vector3(0.0, 0.0, 1440.0), Vector3(2.0, 0.0, 1466.0), Vector3(16.0, 0.0, 1478.0), Vector3(70.0, 0.0, 1500.0),
+		Vector3(160.0, 0.0, 1520.0)], "s": 0.0, "v": 0.0}
+	_sfx("ep2_quad_start")
+
+
+func _tick_dropoff(delta: float) -> void:
+	if not _rideoff.is_empty():
+		var pts: Array = _rideoff["pts"]
+		_rideoff["v"] = minf(float(_rideoff["v"]) + 4.0 * delta, 11.0)
+		_rideoff["s"] = float(_rideoff["s"]) + float(_rideoff["v"]) * delta
+		var s: float = float(_rideoff["s"])
+		var i: int = 0
+		var acc: float = 0.0
+		while i < pts.size() - 1 and acc + (pts[i + 1] as Vector3).distance_to(pts[i]) < s:
+			acc += (pts[i + 1] as Vector3).distance_to(pts[i])
+			i += 1
+		if i < pts.size() - 1:
+			var a: Vector3 = pts[i]
+			var b: Vector3 = pts[i + 1]
+			var t: float = clampf((s - acc) / maxf(a.distance_to(b), 0.01), 0.0, 1.0)
+			_quad.position = a.lerp(b, t)
+			_quad_yaw = lerp_angle(_quad_yaw, atan2(b.x - a.x, b.z - a.z), clampf(5.0 * delta, 0.0, 1.0))
+			_quad.rotation = Vector3(0.0, _quad_yaw, 0.0)
+			for w in _quad_wheels:
+				(w as Node3D).rotation.x += float(_rideoff["v"]) * delta / (QUAD_WHEEL_R if _quad_modelled else 0.68)
+			_bull.position = _bull_seat_position()
+			_bull.facing = _quad_yaw
+			_bull.rotation.y = _quad_yaw
+		var far: float = _quad.position.distance_to(_player_pos)
+		if _engine:
+			_engine.pitch_scale = 0.9 + 0.3 * clampf(float(_rideoff["v"]) / 11.0, 0.0, 1.0)
+			_engine.volume_db = -7.0 - 26.0 * clampf(far / 120.0, 0.0, 1.0)
+		if far > 110.0 or i >= pts.size() - 1:
+			if _quad.visible:
+				_quad.visible = false
+				_bull.visible = false
+				if _engine:
+					_engine.stop()
+	# he is out of sight and the town is built: hand over to the town chamber (one cut, same street)
+	if _dropoff_done and (_quad == null or not _quad.visible) and _handoff_ok() and not _resolved:
+		_resolve({"next_chamber": "gold_town"})
+
+
+func get_handoff() -> Dictionary:
+	var h: Dictionary = super.get_handoff()
+	h["pos"] = _player_pos
+	return h
+
+
+func _wants_handoff() -> bool:
+	return _beat == Beat.DROPOFF and _dropoff_done and is_bull_gone()
+
+
+func is_bull_gone() -> bool:
+	return _quad != null and not _quad.visible
 
 
 # --- sound -----------------------------------------------------------------------------------------------------------------
@@ -2543,3 +2714,41 @@ func _sfx3d(id: String, at: Vector3, db: float = 0.0, pitch: float = 1.0, max_d:
 	p.global_position = at
 	p.play()
 	p.finished.connect(p.queue_free)
+
+
+## Bodies stay until this encounter is disposed or retried. Search is a once-only resource transaction.
+func _nearby_corpse() -> Ep2BearBrain:
+	if not has_player_control() or _riding or not _glide.is_empty():
+		return null
+	var nearest: Ep2BearBrain = null
+	var best: float = 2.8
+	var eye := Vector2(_player_pos.x, _player_pos.z)
+	var forward := Vector2(sin(_look_yaw), cos(_look_yaw))
+	for bear in _bears:
+		var br: Ep2BearBrain = bear
+		var id: String = str(br.get_meta("corpse_id", ""))
+		if not br.is_dead() or not armory.corpses.has(id) or bool(armory.corpses[id]["searched"]):
+			continue
+		var pos := Vector2(br.actor.position.x, br.actor.position.z)
+		var offset: Vector2 = pos - eye
+		var distance: float = offset.length()
+		if distance < best and (distance < 0.5 or offset.normalized().dot(forward) > 0.5) and not _los_blocked(eye, pos):
+			nearest = br
+			best = distance
+	return nearest
+
+
+func _search_nearby() -> void:
+	start_rig()
+
+
+func start_rig(_mode: String = "eth") -> bool:
+	var body: Ep2BearBrain = _nearby_corpse()
+	if body == null:
+		return false
+	var count: int = armory.claim_corpse(str(body.get_meta("corpse_id")))
+	if count < 0:
+		return false
+	if _hud != null:
+		_hud.toast("Recovered bear bow · %d arrows" % count if bool(armory.corpses[str(body.get_meta("corpse_id"))].get("bow", false)) else "Recovered %d bear arrows" % count if count > 0 else "No arrows recovered", 1.8)
+	return true

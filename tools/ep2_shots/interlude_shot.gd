@@ -4,7 +4,7 @@ extends Node
 ##   xvfb-run -a -s "-screen 0 1280x720x24" godot --rendering-driver opengl3 --rendering-method gl_compatibility \
 ##       --resolution 1280x720 res://tools/ep2_shots/interlude_shot.tscn -- chamber=lift out=.farm/interlude
 ##   chamber=lift  -> arrive (first person, rifle in hands), ADS, lever (director shot: body + held rifle), rise, surface
-##   chamber=woods -> start, trail, FIRE (muzzle flash), quad hidden, reveal, ride (back seat), spy (hip + spyglass)
+##   chamber=woods -> start, trail, FIRE (muzzle flash), quad hidden, reveal, ride (back seat), the desert road, the drop-off in the town street, Bull riding off
 const LIFT := preload("res://src/episode2/chamber/mine_lift.tscn")
 const WOODS := preload("res://src/episode2/chamber/woods_quad.tscn")
 var _out := ".farm/interlude"
@@ -174,16 +174,19 @@ func _woods() -> void:
 	cam.global_transform = cam_xf
 	w.get_viewmodel().set_shown(true)
 	w.get_hud().visible = true
-	while w.get_beat_name() != "SPY" and guard < 8000:
+	# out of the woods: the desert, the town, the drop-off (founder 2026-10-14)
+	while w.get_beat_name() == "RIDE" and w.get_quad_node().position.z < 1150.0 and guard < 12000:
+		guard += 1
+		_run(0.2)
+	await _cap("woods_7_desert_road")
+	while w.get_beat_name() != "DROPOFF" and guard < 16000:
 		guard += 1
 		_run(0.2)
 	_run(1.0)
-	await _cap("woods_7_spy_hip")
-	var eye: Vector3 = WoodsQuadChamber.SPY_EYE
-	var b: Ep2Actor = w.get_camp_bears()[2]
-	var to: Vector3 = (b.position + Vector3(0.0, 1.1, 0.0)) - eye
-	w._look_yaw = atan2(to.x, to.z)
-	w._look_pitch = atan2(to.y, Vector2(to.x, to.z).length())
-	w.set_aim(true)
-	_run(0.8)
-	await _cap("woods_8_spyglass")
+	await _cap("woods_8_dropoff_street")
+	while not w.is_bull_gone() and guard < 20000:
+		guard += 1
+		_run(0.2)
+		if w.get_quad_node().position.distance_to(w.get_player_position()) > 25.0 and w.get_quad_node().visible:
+			await _cap("woods_9_bull_rides_off")
+			break

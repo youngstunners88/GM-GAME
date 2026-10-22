@@ -1,0 +1,17 @@
+{
+ "request_id": "b234d37b-1e16-4e83-b9f2-106f4e71c016",
+ "endpoint": "gpt-image-2-text-to-image",
+ "payload": {
+  "prompt": "Photorealistic product-style reference for 3D modelling: the single subject centred with generous margin on a seamless plain mid-grey studio backdrop, soft even key light with a gentle rim light, sharp focus, true materials (lacquer, chrome, leather, rubber, rust, scale, steel), no text, no logos, no people, only a soft contact shadow. IGNORE the studio backdrop: a perfectly flat, front-on, evenly lit SEAMLESS TILING TEXTURE that fills the whole square edge to edge: dressed tan sandstone block masonry wall of an 1870s western bank, rectangular blocks in running bond with pale mortar joints, warm ochre and cream tones, weathering. No perspective, no border.",
+  "aspect_ratio": "1:1",
+  "resolution": "2K",
+  "quality": "high"
+ },
+ "url": "https://cdn.muapi.ai/outputs/generated/b234d37b-1e16-4e83-b9f2-106f4e71c016_272d4c7b.png",
+ "cost_usd": 0.09,
+ "size": [
+  1600,
+  1600
+ ],
+ "made": "2026-10-13"
+}

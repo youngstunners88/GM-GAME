@@ -59,6 +59,10 @@ export_presets.cfg
 # web pack; regenerating lossless defaults adds several MB near itch's cap.
 !src/assets/portals/fixtures/*.png.import
 !src/assets/portals/maps/map_diamonds_courtyard.png.import
+# Authored armory texture/mesh presets keep this new kit within the web PCK budget.
+!src/episode2/assets/weapons/armory/*.png.import
+!src/episode2/assets/weapons/armory/*.glb.import
+!src/episode2/assets/weapons/armory/*.otf.import
 
 # === Engine: Unity ===
 [Ll]ibrary/
@@ -184,6 +188,7 @@ playtest-boss-*.json
 # itch gets the fresh pck via butler straight from the runner disk; git never
 # carries it (committing it froze the live build for many sessions).
 web/game/index.pck
+web/game/ep2_extras.pck
 
 # session working files
 scratchpad/
@@ -223,3 +228,9 @@ artifacts/wtest/
 artifacts/verify-deploy/
 
 !src/assets/portals/maps/map_gold_square.png.import
+
+# Tripo CLI working output (never shipped)
+tripo-out/
+
+# Local Obsidian work log (CLAUDE.md vault-log rule)
+/GM Game/

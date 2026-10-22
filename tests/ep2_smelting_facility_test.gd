@@ -450,7 +450,7 @@ func _ready() -> void:
 		_check("...with the Bull standing at his mark", f.get_bull().position.distance_to(f.BULL_REST) < 0.05)
 		_check("...and the film node is gone", f.get_video_film() == null)
 		_check("film resume: whiskey stays on the table", f._glass_node.get_parent() == f._visuals)
-		_check("film resume: Bull's own rifle is separate from the sold reward", f._bull_guard_rifle != f._rifle_node and f._bull_guard_rifle.get_parent() == f.get_bull().holder("RightHand"))
+		_check("film resume: Bull's own rifle is separate from the sold reward", f._bull_guard_rifle != f._rifle_node and f._bull_guard_rifle.get_parent() == f.get_bull().holder("LeftHand"))
 		_check("film resume: player still owns the traded Winchester", f.has_winchester() and f._rifle_node.get_parent() == f._camera)
 		_check("film resume: the rest arm is relaxed without IK", f._bull_rest_arm.resting and f.get_bull().reach_weight("Right") < 0.01)
 		f.queue_free()

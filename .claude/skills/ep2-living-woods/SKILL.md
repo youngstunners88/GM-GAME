@@ -23,8 +23,8 @@ Before another session edits, assign named files/functions and interfaces. Sessi
 
 ## Jev and Microsoft Decision
 
-Use the existing scripts/jev.mjs transport, POST https://openrouter.ai/api/alpha/decisions.
-Models are ~typesafe/jev-latest and microsoft/microsoft-decision-1 (JEV_MODEL override), both text-only.
+Use scripts/jev.mjs and the routed Jev 1.14 skill. The user-selected Jev route is now direct TypeSafe; Microsoft uses explicit OpenRouter POST https://openrouter.ai/api/alpha/decisions.
+Models are jev-1.14 (direct TypeSafe) and microsoft/microsoft-decision-1 (JEV_PROVIDER=openrouter, JEV_MODEL override), Microsoft remains on the text decision path; route Jev 1.14 via `.claude/skills/jev-1-14-routing/SKILL.md` for current image capability requirements.
 Read .claude/skills/jev-decision-gate/SKILL.md. Reuse OPENROUTER_API_KEY or a process-local alias from OPENROUTER_API; never print/store the value.
 The founder requested both models. Preserve both returned outputs, precise model IDs, source SHA, input evidence, costs if returned, uncertainty and disagreement. Neither is a gameplay test or permission.
 

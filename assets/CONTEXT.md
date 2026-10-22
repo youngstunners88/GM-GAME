@@ -1,5 +1,7 @@
 # Assets Workspace (art, 3D, audio direction + manifests)
 
+Logan's Lake: founder reference/provenance in `design/ep2/lake/`; game GLBs in `src/episode2/assets/lake/`; production skills `ep2-logan-performance`, `ep2-lake-world`, `gm-blender-godot`. The installed Blender toolkit is pinned/audited in `docs/research/blender-skills/`. The lake lock supersedes historical fishing/vesting plans.
+
 Where the LOOK and SOUND of the game are decided and tracked: manifests, reference intake, art/audio direction. The actual game
 files live in `src/` (Godot loads only from there); this workspace holds the source-of-truth lists and the rules. Read this before
 generating, importing or replacing any model, texture or sound. (Workspace pattern: founder's coach, "The Lesson 3.1" - one
@@ -22,6 +24,7 @@ CONTEXT.md per workspace, kept current by skill `context-md-upkeep`.)
 ## Pipelines (which tool for what)
 | need | tool | skill |
 |---|---|---|
+| town streets/facades/background-life jobs | offline `tools/ep2_town/town_tool.py` audit/plan/validate/handoff; approved existing/local art first | `ep2-living-town` + street/facade/life/proof components |
 | reference still / texture / keyed card | Muapi GPT Image 2 (`tools/ep2_forge/muapi_ref.py`, or `muapi` CLI) | `ep2-hyperreal-scene-pipeline` |
 | image -> 3D | Tripo H3.1 / Meshy via Muapi (`tools/ep2_forge/muapi_3d.py`) | same |
 | modular kit / clean-up / bake | headless Blender (`tools/ep2_blender/*`), `tools/ep2_forge/ai_prop_to_game.py` | `ep2-set-piece-forge` |

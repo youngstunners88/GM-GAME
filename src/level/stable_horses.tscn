@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/level/stable_horses.gd" id="1_stable_horses"]
+
+[node name="StableHorses" type="Node2D"]
+script = ExtResource("1_stable_horses")

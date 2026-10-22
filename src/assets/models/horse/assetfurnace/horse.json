@@ -1,0 +1,36 @@
+{
+  "backend": "pixal3d",
+  "components": [
+    {
+      "component": "rembg/birefnet-general-lite",
+      "license": "MIT (BiRefNet)",
+      "purpose": "background removal"
+    }
+  ],
+  "input": {
+    "path": "/workspace/source.png",
+    "sha256_first32": "97dd4702548cff3f204f558b3f139a5a"
+  },
+  "license": {
+    "name": "MIT (code + flow weights); DINOv3 License (bundled encoder)",
+    "url": "https://huggingface.co/raven38/pixal3d-sv-q8_0-v1"
+  },
+  "output": {
+    "classification": "commercial-conditional",
+    "path": "/workspace/lab/output/horse.glb",
+    "sha256_first32": "cb7781485b856310094c15502c0938f7"
+  },
+  "parameters": {
+    "fov": 0.3490658503988659,
+    "gsh": null,
+    "gss": 10.0,
+    "matted": true,
+    "res": 1024,
+    "seed": 42,
+    "steps": 12
+  },
+  "schema_version": 1,
+  "timings_seconds": {
+    "total": 235.5
+  }
+}

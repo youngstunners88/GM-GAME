@@ -40,8 +40,16 @@ package that doesn't exist. If a manifest path 404s, fix the manifest in the
 same commit — a manifest that lies is worse than none.
 
 ## Routing
+Logan's Lake and the supplied Logan model: `.claude/skills/ep2-logans-lake/SKILL.md` → `design/ep2/lake/LOGANS_LAKE_LOCK.md`. The older lake fishing/vesting spec is superseded. Pinned Blender toolkit: `gm-blender-godot`; all-file audit: `docs/research/blender-skills/README.md`.
+
 | Task | Go to | Read | Skills |
 |------|-------|------|--------|
+| **Jev 1.14 / TypeSafe / efficient decisions / image acceptance** | `scripts/jev.mjs` | `.claude/skills/jev-1-14-routing/SKILL.md` | `jev-1-14-routing` |
+| **Episode 2 town feels empty / one block; add avenues, doors, windows, people, horses, dogs, chickens or instruments** | `design/ep2/town/`, `tools/ep2_town/` | `.claude/skills/ep2-living-town/SKILL.md` | `ep2-living-town`, `ep2-town-streets`, `ep2-town-facades`, `ep2-town-background-life`, `ep2-town-proof` |
+| **Logan / Logan's Lake / liquidity / still water / LP face / "investigate" / the lake feeding the day-88 river; Logan.glb or Logan.JPG** | `src/episode2/chamber/` (new `logans_lake.gd`), `design/ep2/lake/` | `.claude/skills/ep2-logans-lake/SKILL.md` | `ep2-logans-lake`, `ep2-logan-character`, `ep2-lake-water-build`, `ep2-blender-skills-bridge` |
+| **Armory "too close to Main Street" / "next storefront" / more than one street / side lane; moving or adding town buildings; any Blender/bpy/GLB kit piece, rig or clip for Episode 2** | `tools/ep2_town/armory_offmain_probe.py` (measure first), then `src/episode2/chamber/ep2_gold_town.gd` `LAYOUT` | `.claude/skills/ep2-armory-off-main/SKILL.md` | `ep2-armory-off-main`, `ep2-sightline-proof`, `ep2-side-lane-build`, `ep2-blender-skills-bridge` (+ installed `blender-*`) |
+| **"It is on master but the founder does not see it" / town people, Rich & Utah puppets, doors+windows, Logan's Lake unreachable, Gail house; any release gate for the Episode 2 cast** | `scripts/check-ep2-extras-pack.sh`, `scripts/live-itch-probe.mjs` | `.claude/skills/ship-gap-diagnosis/SKILL.md` | `ship-gap-diagnosis`, `ep2-townfolk-presence`, `ep2-doors-windows`, `always-ship-live` |
+| **Shrink a character GLB; pack over 190 MiB; gltfpack/meshoptimizer/UniForge3D** | `tools/ep2_forge/pck_report.py`, `gltfpack_safe.sh` | `.claude/skills/ep2-3d-tools/SKILL.md` | `ep2-3d-tools` |
 | Design a level, mechanic, or boss | /design | CONTEXT.md | — |
 | Create art/audio specs or style guide | /assets | CONTEXT.md | pixel-art-skill |
 | Write code, build scenes, configure engine | /src | `.claude/context-manifests/default.md` | gdscript-skill |
@@ -61,6 +69,15 @@ same commit — a manifest that lies is worse than none.
 | **Bears not alive / no awareness / bear personalities / road ambush on the quad / woods too small** | bear kit + brain + woods specs; walking behind Inferno must stay silent (test) | `.claude/skills/ep2-living-woods/SKILL.md` ("Implemented") | `ep2-living-woods`, `ep2-bear-awareness` |
 | **Bull/bears move statically / incorrect rifle grip / hands miss bow, book or quad / guided-video transcript** | `design/ep2/motion/` contract + existing rigs; guide timing -> rest-aware motion -> independent contact -> runtime proof | `.claude/skills/ep2-character-performance/SKILL.md` | `ep2-character-performance`, `ep2-performance-guides`, `ep2-rest-aware-retargeting`, `ep2-prop-contact-animation`, `ep2-character-motion-qa` |
 | **Gun looks darker / dark navy outdoors** | the sun lights the held gun by direction; viewmodel key light, never a colour change | `.claude/skills/ep2-rifle-always-visible/SKILL.md` | `ep2-rifle-always-visible` |
+| **Long session / context filling / "token burn" / DietCode / ScaleDown / reading STATUS.md or logs** | cheap reads (grep + offset), quiet gates, STATUS.md head only | `.claude/skills/token-efficiency/SKILL.md` | `token-efficiency` |
+| **Pack-size trim, export `exclude_filter`, `.import` / compression, material or lighting change, "remove unused" cleanup; founder says "why did you change my X" / "highlighted" / things went white** | prove the change is invisible to the player: texture probe + before/after captures | `.claude/skills/ship-visual-proof/SKILL.md` | `ship-visual-proof` |
+| **Rich & Utah's Armory: two storeys, entry, windows, weaponry, horse inside; Rich/Utah Tripo models, detailed motion (Runpod), autonomy** | `src/episode2/chamber/ep2_gold_town.gd`, `tools/ep2_blender/build_town_kit.py`, `src/episode2/actors/ep2_town_folk.gd`; Blender skills in `~/.claude/skills/blender-*` (EL4CTEO/blender-skills) | `.claude/skills/ep2-armory-two-story/SKILL.md` | `ep2-armory-two-story`, `ep2-tripo-folk-to-game`, `ep2-runpod-motion-lab`, `ep2-armory-npc-autonomy` |
+| **Sharps 1874 / Buffalo Gun, Colt Gatling, "Rich and Utah introduce Lil Blunt to the guns", mounted gun, the long rifle** | `src/episode2/actors/ep2_gatling_post.gd`, `ep2_armory_intro.gd`, `tools/ep2_blender/armory_kit.py`, `gold_town.gd` (mounted mode) | `.claude/skills/ep2-armory-guns/SKILL.md` | `ep2-armory-guns`, `ep2-armory-two-story`, `ep2-armory-npc-autonomy` |
+| **The bow / bow and arrow, draw-loose-nock, bow sound, GM logo on the bow, "medieval bow", the weapon selection tab cards / icons, "the Remington has no hand"** | `src/episode2/chamber/ep2_bow_view.gd`, `ep2_viewmodel.gd`, `tools/ep2_blender/build_founder_bow.py`, `render_weapon_icons.py` | `.claude/skills/ep2-founder-bow/SKILL.md`, `.claude/skills/ep2-weapon-selector-icons/SKILL.md` | `ep2-founder-bow`, `ep2-weapon-selector-icons`, `ep2-bow`, `ep2-winchester-logo` |
+| **Jack Hammer / Jackson Mccree (his look: mean, eye patch), the bounty, XAUt, "ask the Sheriff for a job", buying a horse at the stables, the ride-and-shoot trail, the auction ride, the main antagonist** | `src/episode2/story/ep2_jack_hammer.gd`, `ep2_jack_hammer_arc.gd`, `design/ep2/jack_hammer/` | `.claude/skills/ep2-jack-hammer-narrative/SKILL.md`, `ep2-jack-hammer-dialogue`, `ep2-horse-trail-set-piece` | `ep2-jack-hammer-narrative`, `ep2-jack-hammer-dialogue`, `ep2-horse-trail-set-piece`, `ep2-jack-hammer-character`, `ep2-jailhouse`, `ep2-sheriff-jake` |
+| **Town windows/doors blank, "no windows", buildings look empty; townsmen/townswomen, the town has no people** | `tools/ep2_blender/build_town_kit.py`, `tools/ep2_blender/build_townfolk.py`, `src/episode2/actors/ep2_town_people.gd` | `.claude/skills/gm-game-episode2-town-windows-doors/SKILL.md`, `.claude/skills/ep2-town-people/SKILL.md` | `gm-game-episode2-town-windows-doors`, `ep2-town-people` |
+| **"[EP2] extras failed", the new town/Armory does not show on itch, streamed pack, "is it live"** | `src/episode2/ep2_extras.gd`, `scripts/extras-gzip-check.sh`, `scripts/live-itch-probe.mjs` | `.claude/skills/ep2-streamed-extras-web/SKILL.md`, `.claude/skills/live-itch-terminal-proof/SKILL.md` | `ep2-streamed-extras-web`, `live-itch-terminal-proof` |
+| **Jailhouse, accomplice, "who brought the bears", the Sheriff's prisoner, investigation hook; Mixamo / humanoid animation / Runpod character** | `tools/ep2_blender/build_jailhouse.py`, `src/episode2/chamber/gold_town.gd` (Beat.JAIL_TIP/JAIL), `tools/ep2_motion/mixamo_dl.py` | `.claude/skills/ep2-jailhouse/SKILL.md`, `.claude/skills/ep2-mixamo-pipeline/SKILL.md` | `ep2-jailhouse`, `ep2-mixamo-pipeline` |
 | **Founder says something LOOKS wrong / "check for yourself"** | capture it yourself first | `.claude/skills/see-it-yourself/SKILL.md` | `see-it-yourself`, `ep2-reference-match-loop` |
 
 **After the hideout (lava river, mine lift, bear woods, quad bike, spy on the bears, "the next scene is not the runner") go through `ep2-interlude-chain`** (`.claude/skills/ep2-interlude-chain/SKILL.md`).
@@ -68,6 +85,8 @@ same commit — a manifest that lies is worse than none.
 **THE GAME IS A FIRST-PERSON SHOOTER. The founder's 2026-10-10 clarification adds the personal armory: Winchester 1886 and golden Remington 1875, quick switching, finite ammunition and future collected bear arrows. Keep the equipped firearm in Lil Blunt's hands; the Winchester is the initial/default rifle, not a ban on selecting the earned Remington. Never silently unarm him or use a third-person follow camera. New story rooms extend `Ep2Interlude` (`src/episode2/chamber/interlude_base.gd`); its current Winchester-only viewmodel needs the armory integration before switching is playable.**
 
 **Living woods / personal armory / Inferno lookout / bear awareness / corpse arrows / checkpoint retry / noisy quad escape / mountain binoculars:** use `.claude/skills/ep2-living-woods/SKILL.md` and `design/ep2/LIVING_WOODS_CONTRACT.md`, then the component skill named there. This is the founder's updated convention for the hideout-to-lookout slice: dangerous, varied encounters restart at the surface elevator exit; dead bears remain searchable; Bull physically brushes camouflage off the quad. The skills are preparation, not an implemented feature. Preserve concurrent Claude world foundations. Later Fort Knox plot/rescue rules remain in effect; a failed encounter attempt does not permanently kill Bull.
+
+**Surface -> town (founder lock 2026-10-14): the quad ride out of the woods into the gold-rush town, Inferno leaving "to see a Blondie", the certificate office with the founder's Sheriff and Minister Mike Dean (JakeX was cancelled), the bar (whiskey, a quarter Bitcoin, the witnessed draw for the map to the auction), Bull arriving after the draw - READ `PROMPT_EPISODE2_SURFACE_TO_TOWN_DRAW_SPEC.md` FIRST and go through `ep2-surface-to-town`** (then `ep2-gold-rush-town` for the look - target `artifacts/episode2-gold-mine/references/founder_2026-10-13_town/goldmine_town_target.jpg` - `ep2-sheriff-jake`, `ep2-quickdraw-duel`). It supersedes "immediate town arrival / direct Fort Knox express"; the Fort Knox locks below still hold downstream of the bar.
 
 **Episode 2 world-building after the woods (Fort Knox, the decoy, the quad claim, Inferno's sacrifice, AwesomeX, the rescue, the spy point/vault approach/return trail) READS `PROMPT_EPISODE2_FORT_KNOX_AWESOMEX_FOUNDATION.md` FIRST and goes through `ep2-fort-knox-arc`** (`.claude/skills/ep2-fort-knox-arc/SKILL.md`: the locked run order, cast lock, prep-only rule, 3-heart cap, no Diamonds, one quad then none, AwesomeX is a dragon with machine guns, Bull is rescued not killed). Its gate is `tests/ep2_fort_knox_arc_test.tscn`. **Hyper-real scenes and props (reference stills from Muapi GPT Image 2 -> headless Blender / Meshy / Tripo -> engine capture graded against the reference with Jev numbers, DeepSeek triage and an Astra review) go through `ep2-hyperreal-scene-pipeline`** (`.claude/skills/ep2-hyperreal-scene-pipeline/SKILL.md`; briefs in `tools/ep2_forge/fort_knox_refs.json`, generator `tools/ep2_forge/muapi_ref.py`, metrics `tools/ep2_forge/ref_metrics.py`; **image -> 3D model is pay-per-call through Muapi** - Tripo H3.1 / Meshy 6-7, `tools/ep2_forge/muapi_3d.py` + `ai_vehicle_to_game.py`, see the skill: the flame quad went from 4/10 kit-bashed to 6/10 this way).
 
@@ -123,6 +142,12 @@ When the session's rate limit is tight, send large, well-specified coding work t
 Claude Opus 5.5 on OpenRouter with `scripts/opus-offload.mjs` (see the `opus-offload`
 skill). The session writes the brief and reviews the diff; the offload reads and
 writes the files. Metered on OpenRouter: ~$4 in / $20 out per million tokens.
+
+## ⭐ VAULT-LOG RULE (founder, 2026-10-18 - every session, no exceptions)
+Log all work in the Obsidian vault **`GM Game/`** inside this repo (git-excluded; NOT `~/Documents/ComfyUI/comfyUI work`,
+which is the Quiet Money vault). Each working turn: extend `GM Game/Work Log/<date>.md`, link it from `GM Game/Work Log.md`,
+keep per-topic notes in `GM Game/Projects/` (Revolver, Bears, Train, Lake, Horses...), connect notes with `[[wikilinks]]`
+(memory + knowledge graph), and record SHAs, status (IN CODE / WIRED / SEEN / SHIPPED) and open items.
 
 ## ⭐ ALWAYS-SHIP RULE (never forget)
 After **every significant** change to the game, in the same working session:
@@ -261,7 +286,7 @@ commit, and every "FIXED" claim, per the rule at the top of this section. This
 does not relax `live-build-proof` — a DeepSeek read of a screenshot is not a
 substitute for Claude's own live-itch verification.
 
-| **Jev (TypeSafe)** | `~typesafe/jev-latest` (pins to `typesafe/jev-1.13`) | **Ship/block DECISIONS on numbers.** Not a chat model — it answers structured questions and is called at `POST https://openrouter.ai/api/alpha/decisions`, NOT `/v1/chat/completions`. Question types: `noul` (0-1 likelihood), `choice` (+`criteria`), `score`. Every question needs `instructions`. Costs ~$0.00002 a call. | ~$0.00002/call |
+| **Jev (TypeSafe)** | `jev-1.14` direct TypeSafe; `typesafe/jev-1.14` on explicit OpenRouter | **Ship/block DECISIONS on numbers.** Not a chat model — it answers structured questions and defaults to `POST https://api.typesafe.ai/v1/systemone`; explicit OpenRouter uses `/api/alpha/decisions`. Question types: `noul` (0-1 likelihood), `choice` (+`criteria`), `score`. Every question needs `instructions`. Record actual returned usage/cost; 1.14 pricing is unverified here. | verify current pricing |
 
 **CORRECTION (2026-09-20).** A previous version of this file stated that no
 "typesafe"/"jev" model existed, on the strength of a `GET /v1/models` grep. That
@@ -270,13 +295,7 @@ was WRONG and it cost the founder real time. Decisions models are NOT listed in
 right endpoint is. Verified working; a 400 from that endpoint is a SCHEMA error
 (it names the missing field), never "model does not exist".
 
-**Jev is text-only — it does NOT see images.** Control-tested 2026-09-20: an
-image with a black bar scored `noul` 0.22, an identical image without one scored
-0.19, and the token count tracked the base64 STRING length, not the picture. So
-never hand Jev a screenshot and treat the number as a verdict on the pixels —
-that is fake verification. Feed it the NUMERIC METRICS from
-`scripts/seam-smudge-gate.py`; let DeepSeek V4.1 Flash (real vision, verified
-same day) do the looking.
+**Jev 1.14 routing (founder, 2026-10-15):** read `.claude/skills/jev-1-14-routing/SKILL.md`. Keep deterministic checks local; use small batched typed decisions via direct TypeSafe, as the user explicitly selected after adding TYPESAFE. OpenRouter is an explicit compatibility option with its own key. The old 1.13 base64-as-text experiment is historical, not a ban on the new image feature. Proper image bytes use the upstream documented asset encoding; A live API response and paired image controls must succeed before claiming vision verification; OpenRouter image forwarding needs separate proof. Current provider access/context docs are blocked; do not invent limits or verdicts.
 
 Dispatch with `scripts/or-call.mjs`, which carries every guard that matters —
 `@include` file inlining, abort-before-spending on a missing path, live `/models`

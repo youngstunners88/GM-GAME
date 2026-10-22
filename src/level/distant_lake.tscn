@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/level/distant_lake.gd" id="1_distant_lake"]
+
+[node name="DistantLakeParallax" type="ParallaxBackground"]
+layer = -17
+
+[node name="DistantLake" parent="." type="ParallaxLayer"]
+script = ExtResource("1_distant_lake")

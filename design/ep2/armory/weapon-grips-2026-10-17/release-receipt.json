@@ -1,0 +1,55 @@
+{
+  "recorded_at": "2026-10-17T20:27:03.109123+09:00",
+  "source_commit": "a13b767c7804befd5cff2e815b6b80d1e677c1ea",
+  "ci_export_commit": "e3401a4264f6dd2a62a2b9633a4a7050e0d1e1b7",
+  "build": "2026-10-17-a13b767",
+  "workflow_run": 39026261056,
+  "workflow_url": "https://github.com/youngstunners88/GM-GAME/actions/runs/39026261056",
+  "ci_conclusion": "success",
+  "butler_step": "success",
+  "butler_uploaded_at_utc": "2026-10-17T10:56:32Z",
+  "butler_log": "Pushed to https://youngstunners88.itch.io/smokerealm",
+  "live_url": "https://youngstunners88.itch.io/smokerealm",
+  "observed_public_embed": "https://html-classic.itch.zone/html/18305533-2145024/index.html",
+  "public_build_visually_verified": true,
+  "public_boot_verified": true,
+  "public_episode2_gate": "Existing access-code prompt observed; gate preserved. No protected public playthrough was performed because access was not available.",
+  "native_changed_flow": "Gameplay-camera hip/ADS/trigger/recovery and bow draw/release captures; archer contact visibility; deterministic resource, hit and trunk-occlusion checks.",
+  "ci_weapon_gates": [
+    "EP2_BOW: ALL PASS",
+    "EP2_CHARACTER_MOTION: ALL PASS",
+    "EP2_PERSONAL_ARMORY: ALL PASS"
+  ],
+  "local_compile": {
+    "scripts": 336,
+    "scenes": 237,
+    "result": "ALL PASS"
+  },
+  "security": {
+    "checks": 18,
+    "passed": 18,
+    "blockers": 0
+  },
+  "fresh_import_pck_bytes": 199181680,
+  "ci_pck_bytes": 199181600,
+  "pck_limit_bytes": 199229440,
+  "nonthreaded_web": true,
+  "tripo": {
+    "cli_version": "0.7.0",
+    "auth_verified": true,
+    "region": "ov",
+    "initial_api_balance": 0,
+    "credits_spent": 0,
+    "paid_tasks": []
+  },
+  "flow": {
+    "existing_session_verified": true,
+    "observed_model": "Nano Banana 2.1",
+    "new_generation": false
+  },
+  "provider_reviews": "TypeSafe and OpenRouter decision credentials were not configured; no Jev/Microsoft opinion is claimed.",
+  "preserved_concurrent_work": [
+    "PROMPT_EPISODE2_RICH_ARMORY_UTAH_RIVER.md",
+    "design/ep2/armory/RICH_DEPARTMENT_SPEC.md"
+  ]
+}

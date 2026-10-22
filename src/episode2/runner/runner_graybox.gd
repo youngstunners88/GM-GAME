@@ -189,6 +189,7 @@ var _zip_resolved: Dictionary = {} # segment index -> true once caught/missed (j
 var _archers: Array = []
 var _can_shoot: bool = false       # true once the revolver is in hand
 var _shoot_cd: float = 0.0
+var armory: Ep2ArmoryState = null
 var _ammo: int = CYLINDER
 var _reloading: bool = false
 var _reload_t: float = 0.0
@@ -300,6 +301,9 @@ func _advance(delta: float) -> void:
 	_speed = lerpf(_base_speed, _max_speed, clampf(_distance / SPEED_RAMP_DIST, 0.0, 1.0))
 	_distance += _speed * delta
 	_shoot_cd = maxf(0.0, _shoot_cd - delta)
+	if armory != null:
+		armory.step(delta)
+		armory.firearm(Ep2ArmoryState.REM)._cycle = _shoot_cd
 	_swipe_t = maxf(0.0, _swipe_t - delta)
 	_advance_reload(delta)
 
@@ -380,7 +384,15 @@ func _advance_reload(delta: float) -> void:
 	if _reload_t + RELOAD_EPSILON >= RELOAD_TIME:
 		_reloading = false
 		_reload_t = 0.0
-		_ammo = CYLINDER
+		if armory != null:
+			var firearm: Ep2Winchester = armory.firearm(Ep2ArmoryState.REM)
+			var count: int = mini(CYLINDER - _ammo, firearm.reserve)
+			_ammo += count
+			firearm.reserve -= count
+			firearm.rounds = _ammo
+			armory.changed.emit()
+		else:
+			_ammo = CYLINDER
 		reload_finished.emit()
 		ammo_changed.emit(_ammo)
 
@@ -649,6 +661,8 @@ func reload() -> void:
 	_start_reload()
 
 func _start_reload() -> void:
+	if armory != null and armory.firearm(Ep2ArmoryState.REM).reserve <= 0:
+		return
 	if _reloading:
 		return
 	_reloading = true
@@ -670,6 +684,10 @@ func _try_fire_round() -> bool:
 		return false
 	_ammo -= 1
 	_shoot_cd = SHOOT_COOLDOWN
+	if armory != null:
+		armory.firearm(Ep2ArmoryState.REM).rounds = _ammo
+		armory.firearm(Ep2ArmoryState.REM)._cycle = _shoot_cd
+		armory.changed.emit()
 	shot_fired.emit()
 	ammo_changed.emit(_ammo)
 	return true
@@ -897,3 +915,12 @@ func get_reload_progress() -> float:
 		return 0.0
 	return clampf(_reload_t / RELOAD_TIME, 0.0, 1.0)
 func is_swiping() -> bool: return _swipe_t > 0.0
+
+
+func bind_armory(state: Ep2ArmoryState) -> void:
+	armory = state
+	var firearm: Ep2Winchester = state.firearm(Ep2ArmoryState.REM)
+	_ammo = firearm.rounds
+	_shoot_cd = maxf(firearm._cycle, state._switch_t)
+	_can_shoot = _can_shoot and state.owns(Ep2ArmoryState.REM)
+	ammo_changed.emit(_ammo)

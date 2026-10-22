@@ -1,0 +1,140 @@
+{
+  "_doc": "Rich & Utah clip set (skill ep2-runpod-motion-lab). Windows were picked from 1 fps contact sheets of every CMU clip retargeted onto Utah (Runpod pod pqcfms6z98llt8, 2026-10-19). Source licence: tools/ep2_motion/fetch_cmu.sh. start/end in seconds of the source, autoloop [min,max] s cuts on the best-matching pose, speed < 1 slows, reverse plays backwards, pingpong loops forward-back. 2026-10-20 (skill ep2-armory-guns): Crank = 15_08 'hand signals - horizontally revolve forearms' (Utah's hand on the Gatling crank), HandOver = 80_06 'paying for something' (Rich holds the Sharps out).",
+  "clips": [
+    {
+      "name": "Idle",
+      "bvh": "77_02",
+      "start": 0.5,
+      "end": 7.5,
+      "autoloop": [
+        3.0,
+        7.0
+      ],
+      "loop": true
+    },
+    {
+      "name": "Walk",
+      "bvh": "81_03",
+      "start": 1.0,
+      "end": 3.2,
+      "autoloop": [
+        0.9,
+        1.4
+      ],
+      "loop": true
+    },
+    {
+      "name": "StairsUp",
+      "bvh": "83_29",
+      "start": 3.0,
+      "end": 7.0,
+      "autoloop": [
+        0.9,
+        1.5
+      ],
+      "loop": true
+    },
+    {
+      "name": "Greet",
+      "bvh": "13_27",
+      "start": 0.6,
+      "end": 2.8
+    },
+    {
+      "name": "Point",
+      "bvh": "13_27",
+      "start": 1.8,
+      "end": 4.0
+    },
+    {
+      "name": "Talk",
+      "bvh": "19_08",
+      "start": 1.0,
+      "end": 9.0,
+      "autoloop": [
+        4.0,
+        8.0
+      ],
+      "loop": true
+    },
+    {
+      "name": "Carry",
+      "bvh": "70_10",
+      "start": 3.2,
+      "end": 6.2,
+      "autoloop": [
+        0.9,
+        1.4
+      ],
+      "loop": true
+    },
+    {
+      "name": "PickUp",
+      "bvh": "26_09",
+      "start": 0.6,
+      "end": 3.6
+    },
+    {
+      "name": "PutDown",
+      "bvh": "26_09",
+      "start": 0.6,
+      "end": 3.6,
+      "reverse": true
+    },
+    {
+      "name": "WipeRifle",
+      "bvh": "80_50",
+      "start": 3.0,
+      "end": 10.0,
+      "autoloop": [
+        3.0,
+        6.5
+      ],
+      "loop": true
+    },
+    {
+      "name": "InspectRifle",
+      "bvh": "80_03",
+      "start": 1.0,
+      "end": 5.0
+    },
+    {
+      "name": "Reach",
+      "bvh": "15_06",
+      "start": 0.5,
+      "end": 3.5
+    },
+    {
+      "name": "Counter",
+      "bvh": "15_06",
+      "start": 1.4,
+      "end": 2.4,
+      "speed": 0.35,
+      "pingpong": true,
+      "loop": true
+    },
+    {
+      "name": "CigarPuff",
+      "bvh": "80_28",
+      "start": 2.0,
+      "end": 9.0
+    },
+    {
+      "name": "Crank",
+      "bvh": "15_08",
+      "start": 2.0,
+      "end": 10.0,
+      "autoloop": [
+        2.0,
+        5.0
+      ],
+      "loop": true
+    },
+    {
+      "name": "HandOver",
+      "bvh": "80_06",
+      "start": 4.0,
+      "end": 6.9
+    }
+  ]
+}

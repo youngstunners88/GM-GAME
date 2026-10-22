@@ -43,6 +43,12 @@ window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/handheld/orientation=6
 
+[filesystem]
+
+; .blend sources live beside runtime GLBs in src/assets/models. Godot's Blender importer HANGS the headless import (CI's 300 s
+; import pass times out, textures never import, and the portal gate fails). The game only ships the exported GLBs.
+import/blender/enabled=false
+
 [input]
 move_left={
 "deadzone": 0.5,

@@ -1,0 +1,17 @@
+{
+ "request_id": "27b86ffe-9a4e-43a3-a7d8-04ced185fa2c",
+ "endpoint": "gpt-image-2-image-to-image",
+ "payload": {
+  "prompt": "Photorealistic product-style reference for 3D modelling: the single subject centred with generous margin on a seamless plain mid-grey studio backdrop, soft even key light with a gentle rim light, sharp focus, true materials (lacquer, chrome, leather, rubber, rust, scale, steel), no text, no logos, no people, only a soft contact shadow. A rugged adult human Wild West gunslinger: lean, stubbled jaw, sun-weathered tan skin, narrow sharp eyes, black flat-brim cowboy hat, dark charcoal waistcoat over a rust-red shirt with rolled sleeves, a red neckerchief, leather gloves, a low-slung gun belt with an empty right-hand holster and cartridge loops, dark denim trousers, worn riding boots with spurs. Match the reference image's art style and proportions exactly (stylised-realistic 3D game character, slightly large head, leather and cloth with fine texture) but a DIFFERENT person. Full-body front view, T-pose with both arms held straight out horizontally, palms down, standing straight, feet shoulder-width, plain neutral grey background, no props in the hands, no text.",
+  "aspect_ratio": "3:4",
+  "resolution": "2K",
+  "quality": "high"
+ },
+ "url": "https://cdn.muapi.ai/outputs/generated/27b86ffe-9a4e-43a3-a7d8-04ced185fa2c_5d69d18b.png",
+ "cost_usd": 0.09,
+ "size": [
+  1536,
+  2048
+ ],
+ "made": "2026-10-14"
+}

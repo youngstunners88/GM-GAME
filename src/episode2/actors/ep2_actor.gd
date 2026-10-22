@@ -33,6 +33,9 @@ var _clip: String = ""
 var _reach: Dictionary = {}      # side -> {"ik": Ep2ArmIK, "w": float, "goal": float, "ramp": float}
 var _attachments: Dictionary = {}
 var _hop: Dictionary = {}          # a scripted jump arc: {from, to, t, dur, h}
+var motion_time: float = 0.0
+var motion_speed: float = 0.0
+signal pose_stepped(delta: float)
 
 
 ## Instance `scene_path`, scale it so `native_height` becomes `height`, and register extra clips.
@@ -50,9 +53,12 @@ func setup(scene_path: String, native_height: float, height: float, clips: Dicti
 	var aps: Array = model.find_children("*", "AnimationPlayer", true, false)
 	if not aps.is_empty():
 		anim = aps[0]
+		# Choreography, movement and clips share ONE clock, including headless tests and pause.
+		anim.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 	var sks: Array = model.find_children("*", "Skeleton3D", true, false)
 	if not sks.is_empty():
 		skeleton = sks[0]
+		skeleton.reset_bone_poses()
 	for cn in clips:
 		add_clip(str(cn), str(clips[cn]))
 	if anim:
@@ -82,9 +88,55 @@ func setup(scene_path: String, native_height: float, height: float, clips: Dicti
 ## The Meshy clips are baked with a translation key on EVERY bone (the old skeleton's bone lengths). A character rigged
 ## on different proportions (the founder's Tripo Bull) must keep its own bone lengths, so only the Hips keeps moving.
 static func _drop_bone_translations(a: Animation) -> void:
+	# Some imported idles bake the old rig's height multiplier into both Hips
+	# scale and height. Removing only scale leaves the shorter legs above ground.
+	var hips_scale: float = 1.0
+	for track in a.get_track_count():
+		if a.track_get_type(track) == Animation.TYPE_SCALE_3D and str(a.track_get_path(track)).ends_with(":Hips") and a.track_get_key_count(track) > 0:
+			hips_scale = (a.track_get_key_value(track, 0) as Vector3).y
+	if absf(hips_scale - 1.0) > 0.01:
+		for track in a.get_track_count():
+			if a.track_get_type(track) == Animation.TYPE_POSITION_3D and str(a.track_get_path(track)).ends_with(":Hips"):
+				for key in a.track_get_key_count(track):
+					a.track_set_key_value(track, key, (a.track_get_key_value(track, key) as Vector3) / hips_scale)
 	for i in range(a.get_track_count() - 1, -1, -1):
-		if a.track_get_type(i) == Animation.TYPE_POSITION_3D and not str(a.track_get_path(i)).ends_with(":Hips"):
+		if a.track_get_type(i) == Animation.TYPE_SCALE_3D or (a.track_get_type(i) == Animation.TYPE_POSITION_3D and not str(a.track_get_path(i)).ends_with(":Hips")):
 			a.remove_track(i)
+
+
+## Transfer motion relative to the source rest, not its human/T-pose coordinates.
+## The bears' A pose and short hips differ substantially from the library Bull rig.
+func _retarget_clip(a: Animation, source: Node) -> void:
+	var sks: Array = source.find_children("*", "Skeleton3D", true, false)
+	if skeleton == null or sks.is_empty():
+		_drop_bone_translations(a)
+		return
+	var from: Skeleton3D = sks[0]
+	for track in range(a.get_track_count() - 1, -1, -1):
+		if a.track_get_type(track) == Animation.TYPE_SCALE_3D:
+			a.remove_track(track)
+			continue
+		var name: String = str(a.track_get_path(track)).get_slice(":", 1)
+		var s: int = from.find_bone(name)
+		var t: int = skeleton.find_bone(name)
+		if s < 0 or t < 0:
+			continue
+		var sr: Transform3D = from.get_bone_rest(s)
+		var tr: Transform3D = skeleton.get_bone_rest(t)
+		if a.track_get_type(track) == Animation.TYPE_ROTATION_3D:
+			var qs: Quaternion = sr.basis.get_rotation_quaternion()
+			var qt: Quaternion = tr.basis.get_rotation_quaternion()
+			for k in a.track_get_key_count(track):
+				var q: Quaternion = a.track_get_key_value(track, k)
+				a.track_set_key_value(track, k, (qt * qs.inverse() * q).normalized())
+		elif a.track_get_type(track) == Animation.TYPE_POSITION_3D:
+			if name != "Hips":
+				a.remove_track(track)
+			else:
+				var ratio: float = tr.origin.length() / maxf(sr.origin.length(), 0.001)
+				for k in a.track_get_key_count(track):
+					var p: Vector3 = a.track_get_key_value(track, k)
+					a.track_set_key_value(track, k, tr.origin + (p - sr.origin) * ratio)
 
 
 ## Copy the first animation of an armature-only Meshy GLB into this actor's player under `clip_name`.
@@ -102,7 +154,7 @@ func add_clip(clip_name: String, path: String) -> void:
 		var lib: AnimationLibrary = anim.get_animation_library("")
 		if not names.is_empty() and lib and not lib.has_animation(clip_name):
 			var cl: Animation = sp.get_animation(names[0]).duplicate(true)
-			_drop_bone_translations(cl)
+			_retarget_clip(cl, src)
 			lib.add_animation(clip_name, cl)
 	src.free()
 
@@ -155,7 +207,7 @@ func add_all_clips(path: String) -> void:
 		for cn in sp.get_animation_list():
 			if lib and not lib.has_animation(cn):
 				var cl: Animation = sp.get_animation(cn).duplicate(true)
-				_drop_bone_translations(cl)
+				_retarget_clip(cl, src)
 				lib.add_animation(cn, cl)
 		if lib:
 			lib.set_meta("merged_" + path.md5_text(), true)
@@ -232,7 +284,10 @@ func play(clip: String, speed: float = 1.0, blend: float = 0.3) -> void:
 		anim.speed_scale = speed
 		return
 	_clip = clip
-	anim.play(clip, blend, speed)
+	# custom_speed=0 would permanently freeze a gait first entered during a pivot.
+	# Own speed in one place so subsequent stride / pause requests can resume it.
+	anim.speed_scale = speed
+	anim.play(clip, blend, 1.0)
 
 
 func current_clip() -> String: return _clip
@@ -272,8 +327,11 @@ func reach_shortfall(side: String) -> float:
 # --- per-frame -------------------------------------------------------------------------------------------
 
 func step(delta: float) -> void:
+	motion_time += delta
+	var before: Vector3 = position
 	if not _hop.is_empty():
 		_step_hop(delta)
+		_advance_pose(delta, before)
 		return
 	var heading: float = facing
 	if _walking:
@@ -302,7 +360,9 @@ func step(delta: float) -> void:
 			var c: String = run_clip if run else walk_clip
 			if anim.has_animation(c):
 				var base: float = natural_mps * (2.2 if run else 1.0)
-				play(c, clampf(_speed / base, 0.4, 2.2), 0.25)
+				# Feet slow during a pivot instead of striding at full speed on the spot.
+				var actual: float = position.distance_to(before) / maxf(delta, 0.0001)
+				play(c, clampf(actual / base, 0.0, 2.2), 0.25)
 		elif idle_clip != "" and (_clip == walk_clip or _clip == run_clip):
 			play(idle_clip, 1.0, 0.3)
 	for sd in _reach:
@@ -315,6 +375,18 @@ func step(delta: float) -> void:
 		ik.influence = w
 		if w <= 0.0 and goal <= 0.0:
 			ik.reaching = false
+	_advance_pose(delta, before)
+
+
+func _advance_pose(delta: float, before: Vector3) -> void:
+	motion_speed = position.distance_to(before) / maxf(delta, 0.0001)
+	if anim:
+		# Imported immutable tracks are omitted. Restore their rest values before additive
+		# modifiers, otherwise an untracked spine accumulates yesterday's breathing/recoil.
+		if skeleton:
+			skeleton.reset_bone_poses()
+		anim.advance(delta)
+	pose_stepped.emit(delta)
 
 
 func _step_hop(delta: float) -> void:

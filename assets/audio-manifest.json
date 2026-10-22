@@ -2465,18 +2465,6 @@
       "note": "Inferno Bull, natural Western pace. Fired in the stealth woods - the rifle is in Lil Blunt's hands now, a shot is noise (founder 2026-10-09)."
     },
     {
-      "id": "vo_bull_spy_shot",
-      "text": "Hold your fire, little fella! We look today. We shoot when I say.",
-      "voice_id": "uWE48TmsTuIjyh2ifoNL",
-      "voice_settings": {
-        "stability": 0.62,
-        "similarity_boost": 0.75,
-        "style": 0.28,
-        "speed": 1.2
-      },
-      "note": "Inferno Bull, natural Western pace. Fired at the spy point - the bears are far but a shot carries (founder 2026-10-09)."
-    },
-    {
       "id": "vo_bull_quad_reveal",
       "text": "Meet my baby. A flame designer quad, hand painted. Nobody has ever found her under those leaves.",
       "voice_id": "uWE48TmsTuIjyh2ifoNL",
@@ -2511,42 +2499,6 @@
         "speed": 1.2
       },
       "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
-    },
-    {
-      "id": "vo_bull_spy1",
-      "text": "This is the spot. Down on your belly and look through the ferns.",
-      "voice_id": "uWE48TmsTuIjyh2ifoNL",
-      "voice_settings": {
-        "stability": 0.62,
-        "similarity_boost": 0.75,
-        "style": 0.28,
-        "speed": 1.2
-      },
-      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
-    },
-    {
-      "id": "vo_bull_spy2",
-      "text": "Count them, little fella. Where they stand, where they sleep, which way they look. Then we make our plan.",
-      "voice_id": "uWE48TmsTuIjyh2ifoNL",
-      "voice_settings": {
-        "stability": 0.62,
-        "similarity_boost": 0.75,
-        "style": 0.28,
-        "speed": 1.2
-      },
-      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
-    },
-    {
-      "id": "vo_lb_spy_reply",
-      "text": "That's a lot of bears. A whole lot of bears.",
-      "voice_id": "HMGfKwZCRujgXyRDUW0b",
-      "voice_settings": {
-        "stability": 0.45,
-        "similarity_boost": 0.8,
-        "style": 0.45,
-        "speed": 1.05
-      },
-      "note": "Lil Blunt. Episode 2 lift/woods interlude (founder 2026-10-09)."
     },
     {
       "id": "vo_bull_scout_twitch",
@@ -2703,6 +2655,438 @@
         "speed": 1.05
       },
       "note": "Lil Blunt. Episode 2 living woods + logging-road ride (founder 2026-10-13)."
+    },
+    {
+      "id": "vo_bull_drop1",
+      "text": "This is your stop, kid. There's a blonde lady in this town who's been waiting on me all week, and I don't keep a lady waiting.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Episode 2 surface-to-town lock (founder 2026-10-14, PROMPT_EPISODE2_SURFACE_TO_TOWN_DRAW_SPEC.md). Inferno Bull, the drop-off: a grin, the Blondie (founder: he is going to sleep with her; a wink, nothing shown)."
+    },
+    {
+      "id": "vo_bull_drop2",
+      "text": "Go to the certificate office and get the sheriff to sort you a certificate. I'll meet you at the bar for a whiskey.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Episode 2 surface-to-town lock (founder 2026-10-14, PROMPT_EPISODE2_SURFACE_TO_TOWN_DRAW_SPEC.md). Inferno Bull, the drop-off instructions."
+    },
+    {
+      "id": "vo_lb_drop",
+      "text": "Certificate office, then the bar. Got it. Have fun, big guy!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.45,
+        "speed": 1.05
+      },
+      "note": "Episode 2 surface-to-town lock (founder 2026-10-14, PROMPT_EPISODE2_SURFACE_TO_TOWN_DRAW_SPEC.md). Lil Blunt."
+    },
+    {
+      "id": "vo_sheriff_1",
+      "text": "Well now. Somebody rode in on Inferno's quad and lived. What can I do for you, partner?",
+      "voice_id": "CwhRBWXzGAHq8TQ4Fs17",
+      "voice_settings": {
+        "stability": 0.55,
+        "similarity_boost": 0.75,
+        "style": 0.25,
+        "speed": 0.95
+      },
+      "note": "The town Sheriff (the founder's own character, 2026-10-14; replaces the cancelled JakeX). Episode 2 GoldMine town."
+    },
+    {
+      "id": "vo_lb_cert1",
+      "text": "Inferno said you'd sort me a certificate, Sheriff.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.45,
+        "speed": 1.05
+      },
+      "note": "Episode 2 surface-to-town lock (founder 2026-10-14, PROMPT_EPISODE2_SURFACE_TO_TOWN_DRAW_SPEC.md). Lil Blunt."
+    },
+    {
+      "id": "vo_sheriff_2",
+      "text": "Certificates are the Minister's department. Minister Mike Dean, this young fella wants one.",
+      "voice_id": "CwhRBWXzGAHq8TQ4Fs17",
+      "voice_settings": {
+        "stability": 0.55,
+        "similarity_boost": 0.75,
+        "style": 0.25,
+        "speed": 0.95
+      },
+      "note": "The town Sheriff hands him to the Minister (founder 2026-10-14)."
+    },
+    {
+      "id": "vo_minister_1",
+      "text": "Welcome, friend. A certificate is made out in your name, and it stays in your name. It cannot be sold on and it cannot be traded. Bring your share and I will stamp it.",
+      "voice_id": "onwK4e9ZLuTAKqWW03F9",
+      "voice_settings": {
+        "stability": 0.6,
+        "similarity_boost": 0.75,
+        "style": 0.3,
+        "speed": 1.0
+      },
+      "note": "Minister Mike Dean (founder 2026-10-14), the certificate rules as the whitepaper has them - no invented numbers."
+    },
+    {
+      "id": "vo_sheriff_3",
+      "text": "Till then, wet your whistle at the saloon across the street. And mind who's watching when you pay.",
+      "voice_id": "CwhRBWXzGAHq8TQ4Fs17",
+      "voice_settings": {
+        "stability": 0.55,
+        "similarity_boost": 0.75,
+        "style": 0.25,
+        "speed": 0.95
+      },
+      "note": "The town Sheriff (the founder's own character, 2026-10-14; replaces the cancelled JakeX). Episode 2 GoldMine town."
+    },
+    {
+      "id": "vo_bar_1",
+      "text": "What'll it be, stranger?",
+      "voice_id": "pqHfZKP75CvOlQylNhV4",
+      "voice_settings": {
+        "stability": 0.6,
+        "similarity_boost": 0.75,
+        "style": 0.2,
+        "speed": 1.0
+      },
+      "note": "Episode 2 surface-to-town lock (founder 2026-10-14, PROMPT_EPISODE2_SURFACE_TO_TOWN_DRAW_SPEC.md). Bartender (Bill voice)."
+    },
+    {
+      "id": "vo_lb_bar1",
+      "text": "A whiskey, please.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.45,
+        "speed": 1.05
+      },
+      "note": "Episode 2 surface-to-town lock (founder 2026-10-14, PROMPT_EPISODE2_SURFACE_TO_TOWN_DRAW_SPEC.md). Lil Blunt orders."
+    },
+    {
+      "id": "vo_lb_bar2",
+      "text": "Here. A quarter of a Bitcoin. Keep the change.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.45,
+        "speed": 1.05
+      },
+      "note": "Episode 2 surface-to-town lock (founder 2026-10-14, PROMPT_EPISODE2_SURFACE_TO_TOWN_DRAW_SPEC.md). Lil Blunt pays: the visible spark."
+    },
+    {
+      "id": "vo_bar_2",
+      "text": "A quarter of a Bitcoin? Lord have mercy.",
+      "voice_id": "pqHfZKP75CvOlQylNhV4",
+      "voice_settings": {
+        "stability": 0.6,
+        "similarity_boost": 0.75,
+        "style": 0.2,
+        "speed": 1.0
+      },
+      "note": "Episode 2 surface-to-town lock (founder 2026-10-14, PROMPT_EPISODE2_SURFACE_TO_TOWN_DRAW_SPEC.md). Bartender reacts."
+    },
+    {
+      "id": "vo_opp_1",
+      "text": "Did I hear that right? A quarter Bitcoin, from a little thing like you?",
+      "voice_id": "LEQxdWqt02nZ8lXoPL0Y",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.75,
+        "style": 0.45,
+        "speed": 1.0
+      },
+      "note": "Episode 2 surface-to-town lock (founder 2026-10-14, PROMPT_EPISODE2_SURFACE_TO_TOWN_DRAW_SPEC.md). The opponent (Bandit voice) notices the payment."
+    },
+    {
+      "id": "vo_opp_2",
+      "text": "Give me a bitcoin or I give you the map to the auction where they can get more intel.",
+      "voice_id": "LEQxdWqt02nZ8lXoPL0Y",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.75,
+        "style": 0.45,
+        "speed": 1.0
+      },
+      "note": "Episode 2 surface-to-town lock (founder 2026-10-14, PROMPT_EPISODE2_SURFACE_TO_TOWN_DRAW_SPEC.md). The opponent: the founder demand, VERBATIM."
+    },
+    {
+      "id": "vo_lb_draw1",
+      "text": "I'm not giving you a bitcoin.",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.45,
+        "speed": 1.05
+      },
+      "note": "Episode 2 surface-to-town lock (founder 2026-10-14, PROMPT_EPISODE2_SURFACE_TO_TOWN_DRAW_SPEC.md). Lil Blunt refuses."
+    },
+    {
+      "id": "vo_opp_3",
+      "text": "Then we settle it the old way. You lose, you die and I take your bitcoin. You win, the map is yours.",
+      "voice_id": "LEQxdWqt02nZ8lXoPL0Y",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.75,
+        "style": 0.45,
+        "speed": 1.0
+      },
+      "note": "Episode 2 surface-to-town lock (founder 2026-10-14, PROMPT_EPISODE2_SURFACE_TO_TOWN_DRAW_SPEC.md). The stakes."
+    },
+    {
+      "id": "vo_sheriff_witness",
+      "text": "Hold it. If this is happening, it happens proper. I'm the little fella's witness. Square up. Nobody draws till I say draw.",
+      "voice_id": "CwhRBWXzGAHq8TQ4Fs17",
+      "voice_settings": {
+        "stability": 0.55,
+        "similarity_boost": 0.75,
+        "style": 0.25,
+        "speed": 0.95
+      },
+      "note": "The town Sheriff (the founder's own character, 2026-10-14; replaces the cancelled JakeX). Episode 2 GoldMine town."
+    },
+    {
+      "id": "vo_sheriff_draw",
+      "text": "Draw!",
+      "voice_id": "CwhRBWXzGAHq8TQ4Fs17",
+      "voice_settings": {
+        "stability": 0.55,
+        "similarity_boost": 0.75,
+        "style": 0.25,
+        "speed": 0.95
+      },
+      "note": "The town Sheriff (the founder's own character, 2026-10-14; replaces the cancelled JakeX). Episode 2 GoldMine town."
+    },
+    {
+      "id": "vo_sheriff_foul",
+      "text": "I said wait for my word. Again.",
+      "voice_id": "CwhRBWXzGAHq8TQ4Fs17",
+      "voice_settings": {
+        "stability": 0.55,
+        "similarity_boost": 0.75,
+        "style": 0.25,
+        "speed": 0.95
+      },
+      "note": "The town Sheriff (the founder's own character, 2026-10-14; replaces the cancelled JakeX). Episode 2 GoldMine town."
+    },
+    {
+      "id": "vo_sheriff_win",
+      "text": "That settles it. The map's yours, son. Fair and square, and I saw it.",
+      "voice_id": "CwhRBWXzGAHq8TQ4Fs17",
+      "voice_settings": {
+        "stability": 0.55,
+        "similarity_boost": 0.75,
+        "style": 0.25,
+        "speed": 0.95
+      },
+      "note": "The town Sheriff (the founder's own character, 2026-10-14; replaces the cancelled JakeX). Episode 2 GoldMine town."
+    },
+    {
+      "id": "vo_sheriff_lose",
+      "text": "Too slow. On your feet, we do it again.",
+      "voice_id": "CwhRBWXzGAHq8TQ4Fs17",
+      "voice_settings": {
+        "stability": 0.55,
+        "similarity_boost": 0.75,
+        "style": 0.25,
+        "speed": 0.95
+      },
+      "note": "The town Sheriff (the founder's own character, 2026-10-14; replaces the cancelled JakeX). Episode 2 GoldMine town."
+    },
+    {
+      "id": "vo_bull_ahead1",
+      "text": "Eager one. Go on and scout ahead, kid. I've got your back.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_ahead2",
+      "text": "Look at you, leading the way. Keep your eyes open. I'm right behind you.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_ahead3",
+      "text": "Alright, you take point for a while. Shout if you see anything.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_wait1",
+      "text": "Take your time, kid. The bears aren't going anywhere.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_wait2",
+      "text": "Easy pace, kid. I'll be up ahead at the next bend.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_sneak2",
+      "text": "Quiet feet through here. Nice and easy.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_sneak3",
+      "text": "Good. Steady as she goes.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_quiet2",
+      "text": "Careful, careful! That ruckus carries. Slow it down, little fella.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_cover1",
+      "text": "I've got you, kid! Get behind me!",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_cover2",
+      "text": "Stay down, I'm firing!",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_cover3",
+      "text": "Hold on, kid, I'm coming!",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_cart1",
+      "text": "Easy now. There's an old farmer ahead with his donkey. We slow down so we don't spook the animal.",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_bull_cart2",
+      "text": "Afternoon, friend! Lovely day for it!",
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_cart_man",
+      "text": "Afternoon, Inferno! Mind the dust, and give my donkey some room!",
+      "voice_id": "2EiwWnXFnvU5JabPnv8n",
+      "voice_settings": {
+        "stability": 0.62,
+        "similarity_boost": 0.75,
+        "style": 0.28,
+        "speed": 1.2
+      },
+      "note": "Inferno Bull, natural Western pace. Episode 2 lift/woods interlude (founder 2026-10-09)."
+    },
+    {
+      "id": "vo_lb_cart",
+      "text": "Hi there! Have a great day!",
+      "voice_id": "HMGfKwZCRujgXyRDUW0b",
+      "voice_settings": {
+        "stability": 0.45,
+        "similarity_boost": 0.8,
+        "style": 0.45,
+        "speed": 1.05
+      },
+      "note": "Lil Blunt. Episode 2 lift/woods interlude (founder 2026-10-09)."
     }
   ]
 }

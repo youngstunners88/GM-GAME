@@ -1,0 +1,75 @@
+{
+  "resumed": false,
+  "source": "output/horse.glb",
+  "image": "/workspace/source.png",
+  "output": "output/horse_finished.glb",
+  "stages": [
+    "retopologise",
+    "photo",
+    "bake",
+    "compress"
+  ],
+  "seconds": {
+    "retopologise": 29.6,
+    "photo": 15.3,
+    "bake": 19.3,
+    "compress": 0.4
+  },
+  "total_seconds": 64.7,
+  "retopology": {
+    "faces": 40000,
+    "atlas": 2048,
+    "voxel": 0.004,
+    "angle": 89.0
+  },
+  "surface": {
+    "metallic": 0.25,
+    "roughness": 0.65,
+    "ior": 1.45
+  },
+  "bake": {
+    "size": 2048
+  },
+  "paint": null,
+  "photo": {
+    "views": "output/horse.svviews",
+    "count": 1,
+    "texture_share": 0.116
+  },
+  "textures": [
+    {
+      "image": 0,
+      "kind": "data",
+      "resolution": [
+        2048,
+        2048
+      ],
+      "before": 2740575,
+      "after": 774296,
+      "skipped": false
+    },
+    {
+      "image": 1,
+      "kind": "colour",
+      "resolution": [
+        2048,
+        2048
+      ],
+      "before": 2428768,
+      "after": 604141,
+      "skipped": false
+    },
+    {
+      "image": 2,
+      "kind": "data",
+      "resolution": [
+        2048,
+        2048
+      ],
+      "before": 1838434,
+      "after": 250179,
+      "skipped": false
+    }
+  ],
+  "size_bytes": 3345396
+}

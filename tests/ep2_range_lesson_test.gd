@@ -49,6 +49,7 @@ func _arm_stays_put() -> void:
 	add_child(cam)
 	var vm := Ep2Viewmodel.new()
 	add_child(vm)
+	vm.bind_armory(Ep2ArmoryState.post_hideout())
 	vm.attach(cam)
 	_check("the founder rifle carries the forearm pivot", vm.rifle.has_meta("arm_pivot"))
 	var piv: Vector3 = vm.rifle.get_meta("arm_pivot", Vector3.ZERO)

@@ -1,27 +1,32 @@
 {
-  "observed_remote_sha": "45f5d1142084baadc926965c54699a8fa0892c41",
-  "objective": "Prepare transcript-based Bull/bear motion, retargeting, prop-contact and QA skills. Latest founder request is skills-only.",
+  "observed_remote_sha": "3f237c09",
+  "objective": "DONE — Episode 2 street people rebuilt and SHIPPED live. Master `15165d37` (work `88fc93ed`, STATUS `15165d37`), CI export `3f237c09`, live itch build 3f237c09-202610211338, embed html-classic.itch.zone/html/18305533-2177388. Five roles (rancher, clerk, lady, oldtimer, dressmaker) rebuilt: anatomical heads/hands, skinned shoulders/sleeves, layered period clothing, draped aprons/skirts, image-backed PBR. 20-joint rig, five clips, roster IDs, heights and routes preserved.",
   "task_paths": [
-    ".claude/skills/ep2-character-performance",
-    ".claude/skills/ep2-performance-guides",
-    ".claude/skills/ep2-rest-aware-retargeting",
-    ".claude/skills/ep2-prop-contact-animation",
-    ".claude/skills/ep2-character-motion-qa",
-    "design/ep2/motion",
-    "CLAUDE.md",
-    "AGENTS.md",
-    "STATUS.md"
+    "src/episode2/extras/people/townsman_rancher.glb",
+    "src/episode2/extras/people/townsman_clerk.glb",
+    "src/episode2/extras/people/townsman_oldtimer.glb",
+    "src/episode2/extras/people/townswoman_lady.glb",
+    "src/episode2/extras/people/townswoman_dressmaker.glb",
+    "design/ep2/town/people-rebuild-20261021/",
+    "tools/ep2_blender/rebuild_street_people.py",
+    "tools/ep2_blender/review_street_people.py",
+    "tools/ep2_blender/audit_street_people.py",
+    "tools/ep2_shots/street_people_review.gd",
+    "tests/ep2_street_people_assets_test.tscn"
   ],
   "evidence": {
-    "source_baseline": "45f5d1142084baadc926965c54699a8fa0892c41",
-    "transcript": "design/ep2/motion/WORKFLOW_TRANSCRIPT.txt; user attachment read in full, preserved verbatim and SHA512-verified.",
-    "rig_inventory": "Both current GLBs have 24 joints including hands, with no finger joints. Source inspection only.",
-    "validation": "5 skill metadata/routes; draft validator exit 0, input gate exit 2, false-ready and bad-digest exit 1. No runtime edits or new rendered proof.",
-    "legacy_skill": "Original character-performance content retained in references/historical-performance-2026-10-01.md."
+    "ci_run": "39608479160 success on master at head SHA 15165d37; butler 'Pushed to https://youngstunners88.itch.io/smokerealm'; 251.19 MiB pushed, 49.85 MiB patch; CI export commit 3f237c09; BUILD_TAG stamped 2026-10-21-15165d3.",
+    "public_proof": "itch wharf latest moved 2092bd73-202610211059 -> 3f237c09-202610211338; live embed key 18305533-2177388; served index.pck 199079056 B contains 2026-10-21-15165d3; served ep2_extras.pck 28551072 B contains all five roles; headless Chromium boot of the served build prints '[BUILD] Lil Blunt Adventure - build 2026-10-21-15165d3' with no SCRIPT ERROR.",
+    "pack_gate": "fresh import 199079104 B on this box, 199079168 B in the CI export, gate 199229440 B - margin 150336 B. The margin is thin; a warm cache hides it.",
+    "gates": "script compile pass; full CI headless block pass (same 3 machine-dependent pause tap-target lines tolerated, no new exception); security sentinel 18/18; front-page lock unchanged; no model uses an excluded texture; all five semantic asset + rig checks pass; 130 new imported asset checks pass.",
+    "learned": "The 2026-10-21 'write quota' failures were NOT a full disk (141 G free). zram was 100% full at 7.2 G of 7.7 G and held 3.4 G of real RAM, and /tmp is a tmpfs sized 50% of RAM that had grown to 2.9 G of 3.9 G. Fix: ~/.local/bin/qm-memory-tune.sh caps zram at min(ram/2,4096), sets swappiness 100, cleans /tmp after 3 days. The zram cap needs a reboot. Also: 10 parallel `blender -b` rebuilds held ~250 MB of swap each and hung on futex_do_wait after finishing their work - the GM-GAME Blender pipeline still needs a concurrency cap (one heavy job at a time on 8 GB).",
+    "itch_learning": "itch assigns a NEW embed key per processed build; the page's data-iframe is JS-driven, so headless Chromium --dump-dom is the way to read the live key. The build appears on the wharf API ~1 min after butler says 'processing'."
   },
   "unresolved": [
-    "Motion performance source, phases and independent contact markers remain future authoring work.",
-    "BFS/model license and provider runs unverified; current Google Doc URL blocked, transcript attachment used instead."
+    "Browser proof of the rebuilt town people in the live game is native/headless only - the town-camera captures in gameplay/session are from the local Godot harness, not from the public build.",
+    "Stylized solid hair, rigid finger Hand weights (no finger bones in the 20-joint skeleton), and mild Point shoulder compression (~1-3 cm) remain and are documented, not fixed.",
+    "Local Chromium launch of the game is blocked by sandbox socket permissions (SIGTRAP); the headless-shell path with --enable-unsafe-swiftshader works and prints the BUILD tag.",
+    "zram size cap is written but needs a reboot to take effect."
   ],
-  "next_action": "Refresh master; start ep2-character-performance when implementation is requested. Preserve Claude world/mobile work and verify full motion/contact before runtime release."
+  "next_action": "Reboot when convenient to apply the zram size cap, then confirm with `free -h && zramctl && df -h /tmp`. Add a concurrency cap to the GM-GAME Blender pipeline. The founder judges the rebuilt people visually from the live build."
 }

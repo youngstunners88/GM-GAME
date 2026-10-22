@@ -1,0 +1,83 @@
+{
+  "source_sha512": "d6d7fd42b50ec7366e43eee9f1b60a3b3e8fc830c366d529cea00c4a857151d02dbb638b331734b907324c8bcee8dc3cd3a5b3f4f8a1ba3bb8643b790a256927",
+  "cutout_bounds_in_source": [
+    277,
+    312,
+    1024,
+    1024
+  ],
+  "edge_white_pixels_after": 0,
+  "method": "outside-connected neutral background removal; 1px inset; 2px interior edge colour extension; no blur",
+  "derivations": [
+    {
+      "file": "pickup_splash.png",
+      "size": [
+        640,
+        640
+      ],
+      "source_glyph_extent": [
+        524,
+        367,
+        565,
+        426
+      ],
+      "glyph_height_pixels": 48.06,
+      "hand_canon": "founder glove, studded bracer and vine arm retained; no mirroring"
+    },
+    {
+      "file": "hud_portrait.png",
+      "size": [
+        320,
+        384
+      ],
+      "source_glyph_extent": [
+        524,
+        367,
+        565,
+        426
+      ],
+      "glyph_height_pixels": 24.03,
+      "hand_canon": "founder glove, studded bracer and vine arm retained; no mirroring"
+    },
+    {
+      "file": "stage2_handoff_closeup.png",
+      "size": [
+        960,
+        540
+      ],
+      "source_glyph_extent": [
+        524,
+        367,
+        565,
+        426
+      ],
+      "glyph_height_pixels": 42.76,
+      "hand_canon": "founder glove, studded bracer and vine arm retained; no mirroring"
+    },
+    {
+      "file": "fps_grip_card.png",
+      "size": [
+        768,
+        512
+      ],
+      "source_glyph_extent": [
+        524,
+        367,
+        565,
+        426
+      ],
+      "glyph_height_pixels": 41.1,
+      "hand_canon": "founder glove, studded bracer and vine arm retained; no mirroring"
+    }
+  ],
+  "sidearm": {
+    "size": [
+      56,
+      31
+    ],
+    "facing": "+X",
+    "grip": "rear third",
+    "exception": "Founder approved 14px glyph minimum only for larger cards and close-ups, 2026-10-15.",
+    "source": "sidearm_gun_only.png: fresh opposite-side Blender render of the existing Remington, no hand or mirroring"
+  }
+}

@@ -199,6 +199,8 @@ var _glass_node: Node3D = null
 var _bull_guard_rifle: Node3D = null # Bull's own gun, separate from the traded reward
 var _bull_rest_arm: Ep2BullRestArm = null
 var _bull_rifle_ready: bool = false
+var _bull_motion: Ep2MotionLayer = null
+var _bull_shot_time: float = -99.0
 var _cigar_tip: MeshInstance3D = null
 var _cigar_smoke: CPUParticles3D = null
 var _anim_t: float = 0.0
@@ -229,6 +231,8 @@ const LESSON_ARRIVE_RADIUS := 2.6                   # how close to the firing li
 const AIM_HOLD_SECONDS := 0.7                       # ADS must be held this long to count as "aimed"
 const NAG_SECONDS := 14.0
 const LESSON_STEPS := 4
+var armory: Ep2ArmoryState = null
+var _armory_view: Ep2Viewmodel = null
 var _gun: Ep2Winchester = Ep2Winchester.new()
 var _lesson: int = Lesson.OFF
 var _lesson_t: float = 0.0
@@ -359,7 +363,11 @@ func setup(_gold_principal: int = 0, _bears: Array = [], _diamonds_paid: int = 0
 	_mold_broken = []
 	for _m in MOLD_TARGETS:
 		_mold_broken.append(false)
-	_gun = Ep2Winchester.new()
+	_gun = armory.firearm(Ep2ArmoryState.WIN) if armory != null and armory.owns(Ep2ArmoryState.WIN) else Ep2Winchester.new()
+	_gun.cancel_reload()
+	_gun.set_aim(false)
+	if armory != null and armory.owns(Ep2ArmoryState.WIN):
+		armory.select(Ep2ArmoryState.WIN)
 	_connect_gun()
 	_lesson = Lesson.OFF
 	_lesson_t = 0.0
@@ -579,7 +587,15 @@ func step(delta: float) -> void:
 		_show.step(delta)
 	_tick_lava(delta)
 	_gun.sprinting = _run_input and _moving
-	_gun.step(delta)
+	if _armory_view != null:
+		_armory_view.step(delta, _moving, _run_input and _moving, _walk_phase)
+		_cam_kick = _armory_view.cam_kick
+	elif armory != null and armory.firearm(Ep2ArmoryState.WIN) == _gun:
+		armory.step(delta)
+	else:
+		_gun.step(delta)
+		if armory != null:
+			armory.step(delta)
 	_tick_later(delta)
 	match _beat:
 		Beat.WAKE:
@@ -636,8 +652,10 @@ func start_rig(_payment: String = "") -> bool:
 ## Ep2Winchester logic (locked / empty / lever cycling), then a ray with the weapon's spread tests the three steel
 ## plates. Returns true when a plate went down.
 func shoot() -> bool:
-	if not _running or _resolved or not _has_winchester:
+	if not _running or _resolved or not _has_winchester or armory_open():
 		return false
+	if _armory_view != null:
+		return _armory_view.fire() if has_player_control() else false
 	if _show_active and _beat != Beat.VERB_TEACH:
 		return false
 	if _gun.trigger() != Ep2Winchester.Shot.OK:
@@ -790,7 +808,7 @@ func has_player_control() -> bool:
 		return false
 	if _beat <= Beat.WAKE or _beat >= Beat.DONE:
 		return false
-	return not _show_blocks_control
+	return not _show_blocks_control and not armory_open()
 
 
 func _in_scripted_handover() -> bool:
@@ -1748,6 +1766,13 @@ func _build_bull(timber: StandardMaterial3D) -> void:
 	_build_bull_props()
 	_bull_rest_arm = Ep2BullRestArm.new()
 	_bull.skeleton.add_child(_bull_rest_arm)
+	_bull_motion = Ep2MotionLayer.new()
+	_bull_motion.actor = _bull
+	_bull_motion.bull_carry = true
+	_bull.skeleton.add_child(_bull_motion)
+	_bull.pose_stepped.connect(func(dt: float) -> void:
+		_bull_motion.aim_weight = move_toward(_bull_motion.aim_weight, 1.0 if _bull_rifle_ready else 0.0, dt * 4.0)
+		_bull_motion.recoil = exp(-maxf(0.0, _bull.motion_time - _bull_shot_time) * 14.0) if _bull.motion_time - _bull_shot_time < 0.5 else 0.0)
 	_bull.skeleton.skeleton_updated.connect(_sync_bull_hand_props)
 
 
@@ -1774,7 +1799,7 @@ func _fix_bull_materials(root: Node, restored_bull: bool = false) -> void:
 				d.roughness_texture = null
 				# Source UVs verified in Blender against the runtime color map.
 				# Restore PBR detail without replacing the animated rig or mesh.
-				if restored_bull:
+				if restored_bull and not Ep2BullHero.PAINTED_GLB:    # painted Bull: own UV-matched textures
 					d.resource_name = "InfernoBullRestoredPBR"
 					d.albedo_texture = preload("res://src/episode2/assets/textures/bull_albedo.jpg")
 					d.metallic_texture = preload("res://src/episode2/assets/textures/bull_metal_rough.png")
@@ -1792,7 +1817,7 @@ func _fix_bull_materials(root: Node, restored_bull: bool = false) -> void:
 				d.emission_enabled = true
 				d.emission = Color(1.0, 0.78, 0.55)
 				d.emission_texture = d.albedo_texture
-				d.emission_energy_multiplier = 0.06 if restored_bull else 0.12
+				d.emission_energy_multiplier = (0.04 if Ep2BullHero.PAINTED_GLB else 0.06) if restored_bull else 0.12
 				d.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 				m.set_surface_override_material(i, d)
 
@@ -1838,26 +1863,29 @@ func _sync_bull_hand_props() -> void:
 	var across: Vector3 = Basis(Vector3.UP, _bull.facing) * Vector3.RIGHT
 	var carrying_trade: bool = _rifle_node != null and _rifle_node.get_parent() == _bull.holder("RightHand")
 	if _bull_guard_rifle:
-		_bull_guard_rifle.visible = (_stand_t < 0.0 or _has_helmet) and not carrying_trade
+		# The painted Bull already holds his rifle; keep the prop (the aim code reads its muzzle) but never draw it.
+		_bull_guard_rifle.visible = (_stand_t < 0.0 or _has_helmet) and not carrying_trade and not Ep2BullHero.PAINTED_GLB
 	var gun: Node3D = _rifle_node if carrying_trade else _bull_guard_rifle
-	var right: int = sk.find_bone("RightHand")
-	if gun == null or not gun.visible or right < 0:
+	var hand: int = sk.find_bone("RightHand" if carrying_trade else "LeftHand")
+	if gun == null or not gun.visible or hand < 0:
 		return
-	var palm: Vector3 = (sk.global_transform * sk.get_bone_global_pose(right)).origin
+	var hand_world: Transform3D = sk.global_transform * sk.get_bone_global_pose(hand)
+	var anchor: Vector3 = Ep2BullHero.RIGHT_PALM_M if carrying_trade else Ep2BullHero.LEFT_PALM_M
+	var palm: Vector3 = hand_world * (anchor * _bull.height_m / 2.4 / sk.global_transform.basis.get_scale().x)
 	if carrying_trade:
 		var stock_axis: Vector3 = Vector3(-1.0, 0.15, -0.10).normalized()
 		var depth: Vector3 = stock_axis.cross(Vector3.UP).normalized()
 		var up: Vector3 = depth.cross(stock_axis).normalized()
-		gun.global_transform = Transform3D(Basis(-depth, up, -stock_axis).scaled(Vector3.ONE * 1.05), palm - stock_axis * 0.12 - forward * 0.05)
+		gun.global_transform = Transform3D(Basis(-depth, up, -stock_axis).scaled(Vector3.ONE * 1.05), palm - stock_axis * (Ep2BullHero.GRIP_ALONG * 1.05))
 		return
 	if _bull_rifle_ready:
-		# DEMO / ready: both hands on the rifle, muzzle pointing where he faces (slightly up), stock at his shoulder.
+		# Restrained hip fire: preserve the sculpted fist/pouch; the free left fist holds the rifle.
 		var fwd_front: Vector3 = -forward
 		var muz: Vector3 = (fwd_front + Vector3.UP * 0.06).normalized()
 		var sd: Vector3 = muz.cross(Vector3.UP).normalized()
 		var lf: Vector3 = sd.cross(muz).normalized()
 		gun.global_transform = Transform3D(Basis(sd, lf, muz).scaled(Vector3.ONE * BULL_RIFLE_SCALE),
-			palm + muz * (0.30 * BULL_RIFLE_SCALE))
+			palm + muz * (Ep2BullHero.GRIP_ALONG * BULL_RIFLE_SCALE))
 		return
 	# His OWN Winchester: shoulder carry. Muzzle up past his right shoulder, tipped a little out and back, gripped
 	# at the wrist of the stock, so its whole silhouette stands clear of his body from the front and both sides.
@@ -1870,7 +1898,7 @@ func _sync_bull_hand_props() -> void:
 	var lift: Vector3 = muzzle.cross(side).normalized()     # right-handed: side x lift = muzzle
 	var s: float = BULL_RIFLE_SCALE
 	gun.global_transform = Transform3D(Basis(side, lift, muzzle).scaled(Vector3.ONE * s),
-		palm + muzzle * (0.26 * s) - across * 0.02)
+		palm + muzzle * (Ep2BullHero.GRIP_ALONG * s))
 
 
 func _stand_up_done() -> bool:
@@ -1980,7 +2008,7 @@ func _build_bull_props() -> void:
 	_set_glass_on_table()
 	_bull_guard_rifle = (load(RIFLE_MODEL) as PackedScene).instantiate()
 	_bull_guard_rifle.name = "BullPersonalWinchester"
-	_bull.holder("RightHand").add_child(_bull_guard_rifle)
+	_bull.holder("LeftHand").add_child(_bull_guard_rifle)
 	_bull_guard_rifle.top_level = true
 	RunnerView.self_light(_bull_guard_rifle, 0.12, Color(1.0, 0.88, 0.72))
 	_fix_bull_materials(_bull_guard_rifle)
@@ -2005,7 +2033,13 @@ func _build_bull_props() -> void:
 	_cigar_smoke.preprocess = 3.0
 	_cigar_smoke.local_coords = false
 	var fh: Node3D = _bull.holder("Head")
-	if fh:
+	if Ep2BullHero.PAINTED_GLB:
+		# The painted model's own cigar is in its face; the ember and smoke props would sit mid-face.
+		_cigar_tip.free()
+		_cigar_tip = null
+		_cigar_smoke.free()
+		_cigar_smoke = null
+	elif fh:
 		fh.add_child(_cigar_tip)
 		fh.add_child(_cigar_smoke)
 		_cigar_tip.position = CIGAR_TIP_IN_HEAD
@@ -2217,6 +2251,11 @@ func _enter_fps() -> void:
 		_hud_ctl = Ep2FpsHud.new()
 		_hud_ctl.mag = Ep2Winchester.MAG
 		_fps_hud.add_child(_hud_ctl)
+		if armory != null:
+			_hud_ctl.bind_armory(armory)
+			_hud_ctl.armory_enabled = _lesson == Lesson.DONE and not _show_blocks_control
+			_hud_ctl.weapon_selected.connect(select_weapon)
+			_hud_ctl.armory_requested.connect(toggle_armory)
 	_flash_light = OmniLight3D.new()
 	_flash_light.light_color = Color(1.0, 0.8, 0.5)
 	_flash_light.light_energy = 0.0
@@ -2355,6 +2394,11 @@ func _tick_winchester_lever(delta: float) -> void:
 
 
 func _animate_fps(delta: float) -> void:
+	if _armory_view != null:
+		if _rifle_node != null:
+			_rifle_node.visible = false
+		_push_hud(delta)
+		return
 	if not _fps:
 		return
 	_tick_winchester_lever(delta)
@@ -2427,7 +2471,8 @@ func _push_hud(_delta: float) -> void:
 		return
 	_hud_ctl.spread_deg = _gun.spread_deg(_moving, _player_pos.y > 0.05)
 	_hud_ctl.ads = _gun.ads
-	_hud_ctl.set_ammo(_gun.rounds, _gun.reserve, Ep2Winchester.MAG)
+	_hud_ctl.set_ammo(_gun.rounds, _gun.reserve, _gun.capacity)
+	_hud_ctl.armory_enabled = _lesson == Lesson.DONE and not _show_blocks_control
 	_hud_ctl.show_ammo = _has_winchester and (_lesson == Lesson.OFF or _lesson >= Lesson.LOAD)
 	_hud_ctl.objective = _lesson_objective()
 	var stepping: bool = _lesson >= Lesson.LOAD and _lesson <= Lesson.PRACTICE
@@ -2442,7 +2487,7 @@ func _push_hud(_delta: float) -> void:
 
 ## RMB held: aim down the sights. (The session root maps the mouse button; the gun clamps it while sprinting.)
 func set_aim(on: bool) -> void:
-	if not _fps or _show_blocks_control:
+	if not _fps or _show_blocks_control or armory_open():
 		_gun.set_aim(false)
 		return
 	_gun.set_aim(on)
@@ -2450,6 +2495,10 @@ func set_aim(on: bool) -> void:
 
 ## R: load shells one at a time. Returns true when a reload started.
 func reload() -> bool:
+	if armory_open():
+		return false
+	if _armory_view != null:
+		return _armory_view.reload() if has_player_control() else false
 	if not _fps or not _has_winchester or _show_blocks_control:
 		return false
 	return _gun.start_reload()
@@ -2463,11 +2512,10 @@ func is_ads() -> bool: return _gun.ads > 0.5
 
 
 func _connect_gun() -> void:
-	_gun.fired.connect(_fire_fx)
-	_gun.dry_fired.connect(_on_dry_fired)
-	_gun.shell_loaded.connect(_on_shell_loaded)
-	_gun.reload_finished.connect(_on_reload_finished)
-	_gun.blocked.connect(_on_gun_blocked)
+	for pair in [[_gun.fired, _fire_fx], [_gun.dry_fired, _on_dry_fired], [_gun.shell_loaded, _on_shell_loaded],
+		[_gun.reload_finished, _on_reload_finished], [_gun.blocked, _on_gun_blocked]]:
+		if not pair[0].is_connected(pair[1]):
+			pair[0].connect(pair[1])
 
 
 func _sfx(name: String) -> void:
@@ -2487,7 +2535,7 @@ func _toast(text: String, seconds: float = 1.6) -> void:
 
 func _on_dry_fired() -> void:
 	_sfx("ep2_winchester_dry")
-	_toast("OUT OF ROUNDS  -  PRESS R")
+	_toast("EMPTY  -  NO RESERVE" if _gun.reserve == 0 else "OUT OF ROUNDS  -  PRESS R")
 	if _empty_line_cd <= 0.0 and _lesson >= Lesson.FIRE and _gun.reserve > 0:
 		_empty_line_cd = 12.0
 		_speak("vo_bull_range_empty")
@@ -2533,6 +2581,13 @@ func _tick_later(delta: float) -> void:
 
 
 func _begin_lesson() -> void:
+	if _gun.training_complete:
+		_lesson = Lesson.DONE
+		_lead_done = true
+		_molds_left = 0
+		for i in _mold_broken.size():
+			_mold_broken[i] = true
+		return
 	_lesson = Lesson.LEAD
 	_lesson_t = 0.0
 	_lead_done = false
@@ -2540,8 +2595,9 @@ func _begin_lesson() -> void:
 	_nag_t = 0.0
 	_gun.locked = true
 	_gun.reload_locked = true
-	_gun.rounds = 0
-	_gun.reserve = Ep2Winchester.RESERVE_START
+	if armory == null:
+		_gun.rounds = 0
+		_gun.reserve = Ep2Winchester.RESERVE_START
 	_add_line_marker()
 
 
@@ -2594,6 +2650,9 @@ func _tick_lesson(delta: float) -> void:
 						_speak("vo_bull_range_nag")
 		Lesson.DEMO:
 			_frame_demo(delta)
+		Lesson.LOAD:
+			if _gun.is_full():
+				_on_reload_finished()  # a resumed full gun needs no additional loading transaction
 		Lesson.AIM:
 			_aim_held = _aim_held + delta if _gun.ads >= 0.95 else 0.0
 			if _aim_held >= AIM_HOLD_SECONDS:
@@ -2609,6 +2668,9 @@ func _tick_lesson(delta: float) -> void:
 		Lesson.PRACTICE:
 			if _molds_left <= 0:
 				_lesson = Lesson.DONE
+				_gun.training_complete = true
+				if armory != null:
+					armory.changed.emit()
 				_speak("vo_bull_range_done")
 				_hold = _vo_len("vo_bull_range_done") + 0.4
 		Lesson.DONE:
@@ -2704,7 +2766,8 @@ func _demo_raise() -> void:
 func _demo_fire() -> void:
 	_play_winchester()
 	if _bull:
-		var muzzle: Vector3 = _bull.position + _bull_front() * 1.5 + Vector3.UP * 1.2      # hip fire (no arm raise)
+		_bull_shot_time = _bull.motion_time
+		var muzzle: Vector3 = _bull_guard_rifle.to_global(Vector3(0, 0, 0.60)) if _bull_guard_rifle else _bull.position + _bull_front() * 1.5 + Vector3.UP * 1.2
 		var lt := OmniLight3D.new()
 		lt.light_color = Color(1.0, 0.8, 0.5)
 		lt.light_energy = 5.0
@@ -2778,3 +2841,51 @@ func _soft_blob() -> GradientTexture2D:
 		_blob_tex.height = 64
 	return _blob_tex
 
+
+
+func bind_armory(state: Ep2ArmoryState) -> void:
+	armory = state
+
+
+func armory_open() -> bool:
+	return _hud_ctl != null and _hud_ctl.armory_open
+
+
+func toggle_armory() -> void:
+	if _hud_ctl == null or not _running or _resolved or _show_blocks_control:
+		return
+	_hud_ctl.toggle_armory()
+	_move_input = Vector2.ZERO
+	_run_input = false
+	_gun.set_aim(false)
+
+
+func select_weapon(id: String) -> bool:
+	# The teacher's loading / aiming / firing drill cannot be skipped with the revolver.
+	if armory == null or _lesson != Lesson.DONE or _show_blocks_control or not _fps or not _running or _resolved or not armory.owns(id):
+		return false
+	if _armory_view == null:
+		for pair in [[_gun.fired, _fire_fx], [_gun.dry_fired, _on_dry_fired], [_gun.shell_loaded, _on_shell_loaded],
+			[_gun.reload_finished, _on_reload_finished], [_gun.blocked, _on_gun_blocked]]:
+			if pair[0].is_connected(pair[1]):
+				pair[0].disconnect(pair[1])
+		_armory_view = Ep2Viewmodel.new()
+		add_child(_armory_view)
+		_armory_view.bind_armory(armory)
+		_armory_view.attach(_camera)
+		if _rifle_node != null:
+			_rifle_node.visible = false
+		armory.changed.connect(_armory_weapon_changed)
+	var selected: bool = armory.select(id)
+	_armory_weapon_changed()
+	if selected:
+		_hud_ctl.toast(Ep2ArmoryState.NAMES[id], 1.0)
+	return selected
+
+
+func _armory_weapon_changed() -> void:
+	_gun = armory.active_gun()
+
+
+func select_previous_weapon() -> bool:
+	return select_weapon(armory.previous) if armory != null else false

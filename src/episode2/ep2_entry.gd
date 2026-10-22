@@ -39,6 +39,7 @@ var _probe_chamber_t: float = 0.0
 ## player the solvability gate uses), so a browser capture shows clean play.
 var _bot: bool = false
 var _ended: bool = false
+var _lake_complete: bool = false
 var _hud: Label = null
 var _hint: Label = null
 var _banner: Label = null
@@ -62,6 +63,9 @@ var _gate_msg: Label = null
 
 func _ready() -> void:
 	_build_hud()
+	if OS.has_feature("web") and bool(JavaScriptBridge.eval("new URLSearchParams(window.location.search).get('ep2lakeprobe') === '1'", true)):
+		_probe_lake_assets()
+	Ep2Extras.start(self)          # web: fetch ep2_extras.pck (two-storey Armory, Tripo Rich & Utah) long before the town
 	if _is_unlocked():
 		_begin()
 	else:
@@ -168,6 +172,14 @@ func _begin() -> void:
 func _start_session() -> void:
 	_ended = false
 	_banner.text = ""
+	# A run that starts from the cliff is a NEW run: Lil Blunt begins with a fresh armory (full rounds, rifle lesson not yet taught).
+	# Without this the saved armory from an earlier play-through came back - 8 rounds left and "training_complete", so the target
+	# practice vanished and the runner felt starved (founder 2026-10-15). Mid-run retries still conserve rounds via the session
+	# root's own checkpoint. A test warp (?ep2leg=N) keeps whatever the save holds.
+	if _leg_offset == 0:
+		var gm: Node = get_node_or_null("/root/GameManager")
+		if gm != null:
+			gm.personal_armory = {}
 	_root.configure(_plan().slice(_leg_offset), true)   # commit_to_economy: real GOLD in play
 	_root.start()
 
@@ -182,16 +194,28 @@ func _start_session() -> void:
 ## ambiguous. Story content is unchanged; only the distance to it shrinks.
 func _plan() -> Array:
 	var warp: bool = false
+	var lake_probe: bool = false
 	if OS.has_feature("web"):
 		var q = JavaScriptBridge.eval(
 			"new URLSearchParams(window.location.search).get('ep2chamber') || ''", true)
 		warp = str(q) == "1"
+		lake_probe = str(q) == "lake"
+		warp = warp or lake_probe
 	if not warp:
 		return TRACK_PLAN
 	var short_plan: Array = TRACK_PLAN.duplicate(true)
 	short_plan[0]["chamber_z"] = 8.0
 	short_plan[0]["obstacles"] = []
 	short_plan[0]["zip_segments"] = []
+	# Same existing test-warp convention, only reached after the access gate.
+	# No weapons/currency/access are granted here. ep2leg retains its own contract.
+	if lake_probe:
+		for segment in short_plan:
+			segment["chamber"] = "logans_lake"
+			segment["chamber_z"] = 8.0
+			segment["obstacles"] = []
+			segment["zip_segments"] = []
+			segment["archers"] = []
 	return short_plan
 
 func _restart() -> void:
@@ -214,7 +238,7 @@ func _process(delta: float) -> void:
 			_probe_chamber_t += delta
 			if _probe_chamber_t >= 1.0:
 				_probe_chamber_t = 0.0
-				print("[EP2] chamber beat=%s fps=%s control=%s pos=%s yaw=%.3f" % [chamber.get_beat_name(), chamber.is_fps(), chamber.has_player_control(), chamber.get_player_position(), chamber.get_look_yaw()])
+				print("[EP2] chamber beat=%s fps=%s control=%s pos=%s yaw=%.3f extras=%s" % [chamber.get_beat_name(), chamber.is_fps(), chamber.has_player_control(), chamber.get_player_position(), chamber.get_look_yaw(), Ep2Extras.state()])
 	if _probe and _root and _root.get_mode() == Ep2SessionRoot.Mode.RUNNER:
 		var a: Node = _root.get_active()
 		if a and a.has_method("get_distance"):
@@ -377,6 +401,7 @@ func _on_mode_changed(mode: int) -> void:
 		print("[EP2] leg start %d" % (_root.get_segment() + _leg_offset))
 
 func _on_chamber_committed(_index: int, result: Dictionary) -> void:
+	_lake_complete = bool(result.get("lake_complete", false))
 	if bool(result.get("story", false)) and int(result.get("gold_awarded", 0)) == 0 and int(result.get("gold_forfeited", 0)) == 0:
 		_banner.text = ""      # a story chamber moves nothing: no "CLAIMED 0 GOLD" banner over the next scene
 		return
@@ -386,6 +411,9 @@ func _on_chamber_committed(_index: int, result: Dictionary) -> void:
 
 func _on_session_complete() -> void:
 	_ended = true
+	if _lake_complete:
+		_banner.text = "LOGAN’S LAKE COMPLETE\nThe depth is staged. The day-88 river run lies ahead.\nSPACE / R  play again        ESC  menu"
+		return
 	_banner.text = "TO BE CONTINUED...\nInferno rides, Lil Blunt shoots: the bear hunt is next.\nSPACE / R  play it again        ESC  menu"
 
 func _on_session_failed() -> void:
@@ -410,3 +438,15 @@ func _update_title_card() -> void:
 	tw.tween_property(_title, "modulate:a", 1.0, 0.6)
 	tw.tween_interval(1.8)
 	tw.tween_property(_title, "modulate:a", 0.0, 1.2)
+
+## Opt-in asset proof works behind the normal access prompt without unlocking play.
+func _probe_lake_assets() -> void:
+	for attempt in 610:
+		await get_tree().create_timer(0.5).timeout
+		if Ep2Extras.state() == "ready":
+			if not LogansLakeChamber.probe_assets(): print("[EP2] Logan lake assets failed")
+			return
+		if Ep2Extras.state() == "failed":
+			print("[EP2] Logan lake assets failed (extras unavailable)")
+			return
+	print("[EP2] Logan lake assets failed (timeout)")

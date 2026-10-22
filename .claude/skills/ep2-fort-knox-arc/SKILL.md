@@ -14,6 +14,11 @@ arc and said "we need to start laying the groundwork ... create the necessary sk
 He also said "of course we are not going to build it all out in one prompt". So the job is **prep**: references, models, set dressing, the
 geometry the later playable beats need. It is not the playable claim.
 
+**2026-10-14 surface-to-town lock:** `PROMPT_EPISODE2_SURFACE_TO_TOWN_DRAW_SPEC.md` now sits BETWEEN the woods and Fort Knox: the quad
+rides to the gold-rush town (bears thin out), Bull leaves, certificate office + Sheriff Jake, the bar draw for the map to the auction,
+Bull returns. It supersedes "direct Fort Knox express". The road fight on the quad is built (founder 2026-10-13). Rules 3-8 below still
+hold; the Auction still waits (the map points to it). Work on that stretch goes through `ep2-surface-to-town`.
+
 # Hard rules (verbatim from the file; tests/ep2_fort_knox_arc_test.gd locks them)
 
 **2026-10-10 scope clarification:** the founder has requested skills/conventions for dangerous woods, quick Winchester/Remington selection, lootable bear bodies, Inferno defensive fire, a noisy quad escape and park/uphill/binocular observation. Use `ep2-living-woods` and `design/ep2/LIVING_WOODS_CONTRACT.md` for that specified slice. This preparation does not implement the later vault/decoy run. Selecting the earned Remington is allowed; an encounter failure involving Bull retries at the surface exit and is not his permanent story death. Do not re-ask whether the explicitly specified escape systems may be prepared. The historical status table below does not establish those systems are implemented.

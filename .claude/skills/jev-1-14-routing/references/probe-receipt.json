@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-15",
+  "provider": "typesafe",
+  "endpoint": "https://api.typesafe.ai/v1/systemone",
+  "requested_model": "jev-1.14",
+  "key_source": "TYPESAFE or TYPESAFE_API_KEY (values never recorded)",
+  "local_tests": "6 PASS",
+  "provider_acceptance": false,
+  "vision_control": "not run; initial transport blocked",
+  "error": "fetch failed; independent HTTPS probe reports CONNECT tunnel 403",
+  "context_length": "unverified: official docs blocked",
+  "pricing": "unverified",
+  "network_draft": "INVALID_ARGUMENT; readback revision 5 retains original four custom hosts",
+  "source_evidence": "Official TypeSafe SDK 0.7.0 and OpenRouter SDK 1.4.25; compatibility.md",
+  "input_fingerprint_sha512": "0f0764cf732ff5a0ce6b24ed5cde33e85770e8b2bd5561afeb3a22606c057e266e357c3e25ebbb34e17d10cd7c5a45a580a5170ddfe3d183c9f599ea97ef64e4"
+}

@@ -1,0 +1,36 @@
+{
+  "camera_angle_x": 0.34906584,
+  "mesh_scale": 1,
+  "frames": [
+    {
+      "file_path": "input.png",
+      "transform_matrix": [
+        [
+          -1.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0,
+          2.83564091
+        ],
+        [
+          0.0,
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    }
+  ],
+  "image_to_3dlab_turned": true
+}
