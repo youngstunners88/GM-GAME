@@ -1,5 +1,5 @@
 {
-  "recorded_utc": "2026-10-22T01:56:26.447418+00:00",
+  "recorded_utc": "2026-10-22T09:46:28.805892+00:00",
   "gates": {
     "full_ci": "PASS; documented 3 pause tap-target machine differences",
     "script_compile": "ALL PASS",
@@ -9,18 +9,19 @@
     "source_mesh_rig_ten_clips": "14/14 PASS",
     "security": "18/18 PASS",
     "fresh_import_pack": {
-      "source_sha": "a2d98bf61617d520986dddbcdc250b60d77c3ff5",
-      "bytes": 199157184,
+      "source_sha": "13cbfad0dbcb6652ceefc5ece0d0efc8a5b2e981",
+      "bytes": 199157824,
       "limit": 199229440,
-      "margin": 72256
+      "margin": 71616,
+      "log": ".farm/town-fourteen-pack.log",
+      "note": "Local fresh-import source export; stamped CI/public pack is 199157792 bytes."
     },
-    "affected_town_story": "ALL PASS after prisoner reference rebuild"
+    "affected_town_story": "ALL PASS after prisoner reference rebuild",
+    "production_ci": "PASS run 39727661169; successful butler upload",
+    "gameplay_camera": "605 frames, complete; portraits, activity samples, curls/prisoner cycles and behavior phases inspected",
+    "public_packs": "Exact byte matches to CI artifact 12405186938; BUILD 2026-10-22-13cbfad; all fourteen figures present"
   },
-  "pending": [
-    "final-source fresh-import size/presence gate",
-    "605-frame corrected camera proof inspected",
-    "successful final production upload and public BUILD/extras verification"
-  ],
+  "pending": [],
   "source_sha512": {
     "src/episode2/actors/ep2_town_people.gd": "20c238db30d739af626eb7171fdaf89f4566256f0390e5107a0c8896f9a0959357b329f98b0d0c457811fe3e8e84027dcaaf997e6d801ee98e752a3dbd2b0f33",
     "src/episode2/actors/ep2_town_navigation.gd": "5820b76407dc38694dbcf9388ea0a382b2d43bd99cd4db0a959438ce92dffceef027ffa81a7a384f5cfcd4ed68439ed7c6c882f33655dd078ef97f2e00f6ee39",

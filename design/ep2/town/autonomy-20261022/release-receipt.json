@@ -1,0 +1,71 @@
+{
+  "verified_utc": "2026-10-22T09:46:28.805892+00:00",
+  "source_commit": "13cbfad0dbcb6652ceefc5ece0d0efc8a5b2e981",
+  "build": "2026-10-22-13cbfad",
+  "production_run": "https://github.com/youngstunners88/GM-GAME/actions/runs/39727661169",
+  "production_job": 119658832903,
+  "conclusion": "success",
+  "butler_upload": {
+    "channel": "youngstunners88/smokerealm:html5",
+    "time_utc": "2026-10-22T05:51:35Z",
+    "observed_log": [
+      "Build is now processing, should be up in a bit.",
+      "Pushed to https://youngstunners88.itch.io/smokerealm"
+    ]
+  },
+  "artifacts": {
+    "town_autonomy_proof": 12404268651,
+    "godot_web_export": 12405186938,
+    "itch_build": 12405196834
+  },
+  "camera": {
+    "frames": 605,
+    "public_people": 13,
+    "separate_prisoner": 1,
+    "reviewed": [
+      "all thirteen greeting views",
+      "all thirteen Walk/Talk/Rest samples",
+      "whole Greet cycles for youth and boy",
+      "whole Talk cycle for striped prisoner",
+      "ordinary/danger/recovery/duel beginning and end"
+    ],
+    "fixture": "Actual GoldTown chamber camera/HUD/viewmodel in CI Compatibility renderer; manual activity selection plus autonomous clock/context scenario, not a protected public playthrough."
+  },
+  "public_verification": {
+    "url": "https://youngstunners88.itch.io/smokerealm",
+    "game_base": "https://html-classic.itch.zone/html/18305533-2183099/",
+    "build_from_public_game_manager_bytecode": "2026-10-22-13cbfad",
+    "both_packs_exact_ci_match": true,
+    "all_fourteen_figures_present": true,
+    "webgl2_boot": true,
+    "title_console_errors": [],
+    "episode2_access_prompt_preserved": true,
+    "protected_episode2_public_walkthrough": "Not claimed: EP2_CODE is not configured; access controls were not bypassed."
+  },
+  "tests": {
+    "full_ci": "PASS; documented 3 pause tap-target machine differences",
+    "script_compile": "ALL PASS",
+    "town_people_120s": "ALL PASS",
+    "town_autonomy": "ALL PASS (30 checks)",
+    "imported_assets_and_cyclic_animation": "ALL PASS (672 checks; thirteen public plus prisoner)",
+    "source_mesh_rig_ten_clips": "14/14 PASS",
+    "security": "18/18 PASS",
+    "fresh_import_pack": {
+      "source_sha": "13cbfad0dbcb6652ceefc5ece0d0efc8a5b2e981",
+      "bytes": 199157824,
+      "limit": 199229440,
+      "margin": 71616,
+      "log": ".farm/town-fourteen-pack.log",
+      "note": "Local fresh-import source export; stamped CI/public pack is 199157792 bytes."
+    },
+    "affected_town_story": "ALL PASS after prisoner reference rebuild",
+    "production_ci": "PASS run 39727661169; successful butler upload",
+    "gameplay_camera": "605 frames, complete; portraits, activity samples, curls/prisoner cycles and behavior phases inspected",
+    "public_packs": "Exact byte matches to CI artifact 12405186938; BUILD 2026-10-22-13cbfad; all fourteen figures present"
+  },
+  "memory_swap": {
+    "after_reboot": "3.9 GiB available RAM; swap empty",
+    "final": "3.5 GiB available RAM; 1.9 GiB swap used, 9.6 GiB free"
+  },
+  "transport": "Shell Git DNS unavailable; authenticated GitHub connector used for blobs/trees/commits and lease-checked non-forced refs, exact Git objects mirrored locally; concurrent CI HTML histories integrated."
+}

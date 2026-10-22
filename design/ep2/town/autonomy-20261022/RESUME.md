@@ -1,6 +1,6 @@
 # Current continuation status
 
-The owner resumed after reboot. See `VERIFICATION.md` and `.agents/resume-checkpoint.json` for current evidence. The following reboot checkpoint is retained as historical context; its failures have since been investigated and its release status is not a completion claim.
+Completed and publicly verified: BUILD `2026-10-22-13cbfad`, production source `13cbfad0dbcb6652ceefc5ece0d0efc8a5b2e981`, successful run `39727661169`. All thirteen public figures plus the separate prisoner pass QA and are in the publicly served packs. See `release-receipt.json`, `VERIFICATION.md`, and `evidence/`. The following reboot checkpoint is historical; its movement, geometry, save, camera and release failures are resolved. Public Episode 2 access controls remain active; no protected public walkthrough is claimed.
 
 # Resume after owner-requested reboot — 2026-10-22
 

@@ -1,6 +1,6 @@
 {
-  "observed_remote_sha": "2229be7f56ad04c71e5aad562c7c7ceb98089ed8",
-  "objective": "Owner authorized commit/push/ship without prompts. Fourteenth striped-shirt prisoner and final 605-frame capture correction validated locally; committing and shipping now.",
+  "observed_remote_sha": "c3234338d1d9a36b8231f06005c368f654547510",
+  "objective": "Complete: all thirteen public people and separate prisoner implemented, tested, committed/pushed, production uploaded and exact public packs verified. Owner authorization remains commit/push/ship without repeated permission.",
   "task_paths": [
     "src/episode2/actors/ep2_town_people.gd",
     "src/episode2/actors/ep2_town_navigation.gd",
@@ -13,17 +13,15 @@
     "source_qa": "14/14 mesh/rig/ten finite clips; raw GLB audit; 672 imported checks; prisoner remains outside public13 roster",
     "movement": "120-second full roster PASS; long-run/disk tests in final regression",
     "network": "Shell DNS fails; GitHub connector independently confirmed master and binary blob upload",
-    "renderer": "Real all13 initial camera views inspected. Capture now points actual camera, settles blends, checks framing and includes prisoner. Final605-frame proof pending.",
+    "renderer": "605-frame final camera artifact12404268651 inspected; review images preserved in evidence/",
     "behavior": "Full CI before prisoner PASS; affected full town story and compile after prisoner PASS; autonomy30 PASS",
-    "fresh_import_pack": "a2d98bf6:199157184 B; limit199229440 B; margin72256 B",
-    "push": "ae4a30a8 on task branch and master; transport via authenticated GitHub connector, locally mirrored identical Git objects"
+    "fresh_import_pack": "13cbfad0:199157824 B; limit199229440 B; margin71616 B",
+    "push": "Source13cbfad0 on both histories; concurrent CI HTML commits reconciled in final receipt merge",
+    "public": "BUILD2026-10-22-13cbfad extracted from served bytecode; main/extras exactly match successful CI export; all fourteen figures present; real WebGL title and access gate verified"
   },
-  "unresolved": [
-    "final-source pack/presence gate",
-    "final605-frame CI capture and inspection",
-    "final butler upload/public BUILD/extras; protected Episode2 playthrough not claimed without code"
-  ],
-  "next_action": "Monitor run39725920389 via connector. Firecrawl interact session01a161f5-df43-764f-ab49-9de5183230eb supports a child /usr/bin/google-chrome with SwiftShader for real public rendering. Commit/ship final receipts after verified deployment.",
-  "source_commit": "2229be7f56ad04c71e5aad562c7c7ceb98089ed8",
-  "production_run": "https://github.com/youngstunners88/GM-GAME/actions/runs/39725920389"
+  "unresolved": [],
+  "next_action": "No remaining build work. Preserve sources, evidence and full cast; use the final release receipt for future tuning.",
+  "source_commit": "13cbfad0dbcb6652ceefc5ece0d0efc8a5b2e981",
+  "production_run": "https://github.com/youngstunners88/GM-GAME/actions/runs/39727661169",
+  "verification_limit": "No configured EP2_CODE: public title/access gate verified; protected public town playthrough not claimed. Native story and CI actual gameplay-camera proof exercised the change."
 }
