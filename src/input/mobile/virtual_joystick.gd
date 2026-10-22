@@ -19,6 +19,12 @@ extends VirtualControl
 ##              chases it, so the neutral point never drifts away from the thumb.
 ##
 ## The region is a fraction of the safe area so it adapts to any aspect ratio.
+##
+## `analog_vertical` (first-person rooms): forward/back become ANALOG like left/right
+## (a light push is a slow walk, `Input.get_axis(move_down, move_up)` reads the tilt),
+## and the platformer's "vertical intent beats sidestep" suppression, climb cone and
+## hysteresis are bypassed so strafing while walking works. Default false: the
+## platformer's outputs are byte-identical (tests/touch_controls_profiles_test.gd).
 
 signal value_changed(value: Vector2)
 
@@ -43,6 +49,8 @@ const V_CONE := 1.35
 @export var rest_offset_dp: Vector2 = Vector2(112, 98)
 @export var base_radius_dp: float = 58.0
 @export var knob_radius_dp: float = 27.0
+## First-person mode, see the class comment. Platformer layouts leave this false.
+@export var analog_vertical: bool = false
 
 var _finger: int = -1
 var _orphan: int = -1                   # finger this stick owned when it was hidden/released from outside
@@ -79,6 +87,7 @@ static func vertical_state(n: Vector2, previous: int) -> int:
 
 func apply_layout(m: TouchMetrics, unit_scale: float) -> void:
 	unit = m.dp * unit_scale
+	dp = m.dp
 	var rect: Rect2 = m.safe_rect
 	position = rect.position + rect.size * region.position
 	size = rect.size * region.size
@@ -170,6 +179,17 @@ func _move(local_pos: Vector2) -> void:
 
 func _apply(n: Vector2) -> void:
 	var hx: float = shape_horizontal(n.x)
+	if analog_vertical:
+		var vy: float = shape_horizontal(n.y)
+		_v_state = 0
+		TouchActions.set_axis(&"move_left", &"move_right", hx)
+		TouchActions.set_axis(&"move_up", &"move_down", vy)
+		var analog := Vector2(hx, vy)
+		if not analog.is_equal_approx(_value):
+			_value = analog
+			value_changed.emit(_value)
+		queue_redraw()
+		return
 	_v_state = vertical_state(n, _v_state)
 	# A mostly-vertical push is a climb / drop, not a sidestep: on a ladder
 	# player.gd turns any horizontal axis into drift (0.6 x climb speed) and a
@@ -190,7 +210,8 @@ func _apply(n: Vector2) -> void:
 func _draw_origin() -> Vector2:
 	return _origin if mode == Mode.FIXED else _clamp_base(_origin)
 
-## Current output: x = signed horizontal strength, y = -1 up / +1 down.
+## Current output: x = signed horizontal strength, y = -1 up / +1 down (analog_vertical:
+## y = signed strength, negative = forward).
 func value() -> Vector2:
 	return _value
 

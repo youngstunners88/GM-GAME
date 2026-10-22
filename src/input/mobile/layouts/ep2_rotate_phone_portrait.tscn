@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/input/mobile/touch_layout.gd" id="1_layout"]
+[ext_resource type="PackedScene" path="res://src/input/mobile/virtual_rotate_cue.tscn" id="2_rot"]
+
+[node name="Ep2RotatePhonePortrait" type="Control"]
+mouse_filter = 2
+script = ExtResource("1_layout")
+tier_scale = 1.0
+layout_name = &"ep2_rotate_phone_portrait"
+profile = &"ep2_rotate"
+
+[node name="RotateCue" parent="." instance=ExtResource("2_rot")]
+layout_mode = 0

@@ -18,8 +18,8 @@ func _ready() -> void:
 	_setup_blaze_portal(Vector2(2100, 280), 2500, 2)
 	_setup_depth_routes()
 	AudioManager.set_reverb_profile("cave")
-	AudioManager.play_playlist(["res://src/assets/music/level02_theme.ogg", "res://src/assets/music/level02_theme_alt.ogg", "res://src/assets/music/lil_blunt_theme.mp3"])
-	AudioManager.play_voice("stage2_intro")
+	# play_playlist + the intro voice, except on a RETURN from Blaze Rush (LevelBase).
+	_start_stage_audio(["res://src/assets/music/level02_theme.ogg", "res://src/assets/music/level02_theme_alt.ogg", "res://src/assets/music/lil_blunt_theme.mp3"], "stage2_intro")
 
 ## Task #23 extension — Crystal Caverns depth (LEVEL_23_EXTEND.md):
 ##   SPEEDRUNNER: crystal one-way chain rising through the mid-cavern

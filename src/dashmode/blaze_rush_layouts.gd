@@ -9,20 +9,30 @@ extends RefCounted
 ## Positions are x offsets (px) from run start. Ground sits at y=500.
 ##
 ## Each level is built in four escalating zones — warm-up, building, rhythm,
-## gauntlet finale — with hazard spacing shrinking zone over zone. Combined
-## with the speed_start -> speed_end ramp in blaze_rush.gd (same distance to
-## the telegraph = less real time to react as speed climbs), this is what
-## makes a run get harder as it progresses instead of holding one flat
-## difficulty end to end. There is deliberately zero RNG anywhere in this
-## file — every position below is hand-placed and reproducible; "feels
-## random" was a pacing/density complaint, not a literal randomness one, and
-## the fix is deliberate rhythm, not adding real randomness.
+## gauntlet finale — with hazard spacing shrinking zone over zone. There is
+## deliberately zero RNG anywhere in this file — every position below is
+## hand-placed and reproducible; "feels random" was a pacing/density
+## complaint, not a literal randomness one, and the fix is deliberate rhythm,
+## not adding real randomness.
+##
+## SPEED: the run is a FLAT 320 u/s on every stage (blaze_rush.gd RUN_SPEED).
+## The `speed_start` / `speed_end` keys below are the ramp these layouts were
+## first authored against; NO RUNTIME CODE READS THEM (designed_ramp_unused).
+## They stay as data so a future per-stage speed has a starting point, but a
+## test must never trust them: tests/blaze_rush_window_test.gd measures the
+## real windows at the real speed. (A slower run makes candle trains HARDER:
+## a triple must be cleared while above the 32 u candle top.)
+##
+## FAIRNESS: every hazard group must leave a single-jump window of at least
+## 120 ms at 320 u/s (touch latency is 60-110 ms plus jitter). The old
+## 60/70 u candle triples gave 89 ms and 27 ms; all seven are now 50 u apart
+## (152 ms). tests/blaze_rush_window_test.gd is the arbiter — change a
+## position here and that gate re-measures it with real physics.
 ##
 ## Jump arc reference (GRAVITY=2200, JUMP_VELOCITY=-700): air time is fixed
 ## at ~0.636s regardless of run speed, so horizontal clearance a jump can
-## cover is speed * 0.636. Every "gap" width below was sized against the
-## LOCAL speed at that x (via the level's speed_start/speed_end lerp) with
-## at least a 20% safety margin, so gaps stay fair even as speed ramps.
+## cover is speed * 0.636 (+ the 24 u cube box). The gap widths were NOT
+## changed by the fairness pass: the widest (190 u) still leaves ~148 ms.
 
 const GROUND_Y: float = 500.0
 
@@ -64,9 +74,9 @@ static func _level_1() -> Dictionary:
 			# Zone C — rhythm: tighter, evenly spaced combo train.
 			{"type": "fud_wall", "x": 3150.0},
 			{"type": "smoke", "x": 3170.0, "y": 210.0},
-			{"type": "candle", "x": 3500.0},
+			{"type": "candle", "x": 3510.0},
 			{"type": "candle", "x": 3560.0},
-			{"type": "candle", "x": 3620.0},
+			{"type": "candle", "x": 3610.0},
 			{"type": "smoke", "x": 3560.0, "y": 190.0},
 			{"type": "gap", "x": 3900.0, "w": 160.0},
 			{"type": "smoke", "x": 3980.0, "y": 130.0},
@@ -79,9 +89,9 @@ static func _level_1() -> Dictionary:
 			{"type": "smoke", "x": 4530.0, "y": 180.0},
 			{"type": "gap", "x": 4800.0, "w": 170.0},
 			{"type": "smoke", "x": 4880.0, "y": 130.0},
-			{"type": "candle", "x": 5080.0},
+			{"type": "candle", "x": 5090.0},
 			{"type": "candle", "x": 5140.0},
-			{"type": "candle", "x": 5200.0},
+			{"type": "candle", "x": 5190.0},
 			{"type": "smoke", "x": 5140.0, "y": 200.0},
 
 			# Victory stretch — clear run-up to the finish line.
@@ -126,9 +136,9 @@ static func _level_2() -> Dictionary:
 
 			{"type": "fud_wall", "x": 2950.0},
 			{"type": "smoke", "x": 2970.0, "y": 210.0},
-			{"type": "candle", "x": 3300.0},
+			{"type": "candle", "x": 3310.0},
 			{"type": "candle", "x": 3360.0},
-			{"type": "candle", "x": 3420.0},
+			{"type": "candle", "x": 3410.0},
 			{"type": "smoke", "x": 3360.0, "y": 190.0},
 			{"type": "gap", "x": 3750.0, "w": 170.0},
 			{"type": "smoke", "x": 3830.0, "y": 130.0},
@@ -149,9 +159,9 @@ static func _level_2() -> Dictionary:
 			{"type": "smoke", "x": 5300.0, "y": 200.0},
 			{"type": "gap", "x": 5650.0, "w": 180.0},
 			{"type": "smoke", "x": 5730.0, "y": 130.0},
-			{"type": "candle", "x": 5900.0},
+			{"type": "candle", "x": 5910.0},
 			{"type": "candle", "x": 5960.0},
-			{"type": "candle", "x": 6020.0},
+			{"type": "candle", "x": 6010.0},
 			{"type": "smoke", "x": 5960.0, "y": 210.0},
 
 			{"type": "smoke", "x": 6200.0, "y": 60.0},
@@ -189,9 +199,9 @@ static func _level_3() -> Dictionary:
 
 			{"type": "fud_wall", "x": 3500.0},
 			{"type": "smoke", "x": 3530.0, "y": 210.0},
-			{"type": "candle", "x": 3920.0},
+			{"type": "candle", "x": 3940.0},
 			{"type": "candle", "x": 3990.0},
-			{"type": "candle", "x": 4060.0},
+			{"type": "candle", "x": 4040.0},
 			{"type": "smoke", "x": 4000.0, "y": 190.0},
 			{"type": "gap", "x": 4450.0, "w": 170.0},
 			{"type": "smoke", "x": 4650.0, "y": 130.0},
@@ -206,15 +216,15 @@ static func _level_3() -> Dictionary:
 			{"type": "smoke", "x": 5560.0, "y": 180.0},
 			{"type": "gap", "x": 5920.0, "w": 180.0},
 			{"type": "smoke", "x": 6150.0, "y": 130.0},
-			{"type": "candle", "x": 6230.0},
+			{"type": "candle", "x": 6240.0},
 			{"type": "candle", "x": 6290.0},
-			{"type": "candle", "x": 6350.0},
+			{"type": "candle", "x": 6340.0},
 			{"type": "smoke", "x": 6300.0, "y": 200.0},
 			{"type": "gap", "x": 6710.0, "w": 190.0},
 			{"type": "smoke", "x": 6950.0, "y": 130.0},
-			{"type": "candle", "x": 7010.0},
+			{"type": "candle", "x": 7030.0},
 			{"type": "candle", "x": 7080.0},
-			{"type": "candle", "x": 7150.0},
+			{"type": "candle", "x": 7130.0},
 			{"type": "smoke", "x": 7080.0, "y": 210.0},
 
 			{"type": "smoke", "x": 7300.0, "y": 60.0},

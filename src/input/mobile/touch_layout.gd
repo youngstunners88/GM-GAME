@@ -11,8 +11,11 @@ extends Control
 
 ## Extra size multiplier for this layout's tier (tablets get larger targets).
 @export var tier_scale: float = 1.0
-## The layout key this scene answers to (matches TouchMetrics.layout_key()).
+## The layout key this scene answers to (the registry key in MobileLayoutManager.LAYOUT_SCENES,
+## e.g. "phone_landscape" or "blaze_phone_landscape").
 @export var layout_name: StringName = &"phone_landscape"
+## The touch profile this scene belongs to ("platformer", "blaze", "ep2_runner", ...).
+@export var profile: StringName = &"platformer"
 
 func _ready() -> void:
 	# Sized explicitly from the metrics in apply(); no anchors, so there is no
@@ -68,3 +71,14 @@ func set_hint(on: bool) -> void:
 func release_all() -> void:
 	for c in controls():
 		c.release()
+
+## Make every control ignore touches (a layer that is fading out) or listen again.
+func set_inert(on: bool) -> void:
+	for c in controls():
+		c.set_inert(on)
+
+## Fan out "injection is suspended / resumed" (death, pause) to controls that hold an
+## action on their own (the swipe pad's duck).
+func on_suspended(on: bool) -> void:
+	for c in controls():
+		c.on_suspended(on)

@@ -14,6 +14,8 @@ extends Node
 ##   * hiding the controls (pause / lock / keyboard) releases every held action
 ##   * keyboard still reaches the same actions untouched
 ##   * no two buttons overlap and nothing lands off-screen at any screen size
+##   * the profile layouts (blaze, ep2_runner, ep2_foot, ep2_film, ep2_end, ep2_rotate) hold
+##     the same geometry rules on every screen, keep clear of the Episode 2 HUD, and have no text
 ##
 ## Run: godot --headless res://tests/mobile_touch_controls_test.tscn
 
@@ -48,6 +50,7 @@ func _ready() -> void:
 	_test_metrics()
 	_test_stick_shaping()
 	await _test_layout_geometry()
+	await _test_profile_layout_geometry()
 	await _test_touch_actions()
 	await _test_live_controls()
 	await _test_visibility_rules()
@@ -206,6 +209,193 @@ func _test_layout_geometry() -> void:
 		_check("%s: JUMP target >= 48dp" % label, jump.size.x / m.dp >= 48.0, "%f dp" % (jump.size.x / m.dp))
 		lay.queue_free()
 		await get_tree().process_frame
+
+## Screens the profile loop runs on (the same list as the platformer loop above).
+const GEOMETRY_SCREENS := [
+	{"name": "iPhone 844x390 @3", "win": Vector2(2532, 1170), "dpr": 3.0, "ins": Vector4(132, 0, 132, 102)},
+	{"name": "small Android 640x360 @2.6", "win": Vector2(1664, 936), "dpr": 2.6, "ins": Vector4.ZERO},
+	{"name": "wide Android 915x412 @2.6", "win": Vector2(2379, 1071), "dpr": 2.6, "ins": Vector4.ZERO},
+	{"name": "iPad 1024x768 @2", "win": Vector2(2048, 1536), "dpr": 2.0, "ins": Vector4.ZERO},
+	{"name": "iPad Pro 1366x1024 @2", "win": Vector2(2732, 2048), "dpr": 2.0, "ins": Vector4.ZERO},
+	{"name": "phone portrait 390x844 @3", "win": Vector2(1170, 2532), "dpr": 3.0, "ins": Vector4.ZERO},
+	{"name": "desktop emulation 1280x720 @1", "win": Vector2(1280, 720), "dpr": 1.0, "ins": Vector4.ZERO},
+]
+const PROFILES_UNDER_TEST: Array[StringName] = [&"blaze", &"ep2_runner", &"ep2_foot", &"ep2_film", &"ep2_end", &"ep2_rotate"]
+## Episode 2 HUD keep-outs, in CANVAS units (the HUD is drawn in canvas units, not dp; at the
+## reference phone 150 x 96 units are the 81 x 52 dp of the brief): the ammo pips + reload bar
+## at the bottom-right, and the holster hold button at the bottom-centre (140 x 80, scaled by
+## width / 390 in portrait exactly as ep2_fps_hud.gd does).
+const AMMO_HUD_UNITS := Vector2(150.0, 96.0)
+const HOLSTER_UNITS := Vector2(140.0, 80.0)
+
+## Does any node under `root` carry written words? (Label-like classes, or a non-empty
+## `text` / `tooltip_text`.) Returns the first offender's description, or "".
+func _first_text_node(root: Node) -> String:
+	var text_classes := ["Label", "RichTextLabel", "Button", "LinkButton", "CheckBox", "CheckButton", "MenuButton",
+		"OptionButton", "LineEdit", "TextEdit", "CodeEdit"]
+	for cls in text_classes:
+		if root.is_class(cls):
+			return "%s is a %s" % [root.name, cls]
+	for prop in ["text", "tooltip_text"]:
+		if prop in root and str(root.get(prop)) != "":
+			return "%s.%s = '%s'" % [root.name, prop, str(root.get(prop))]
+	for child in root.get_children():
+		var found: String = _first_text_node(child)
+		if found != "":
+			return found
+	return ""
+
+## The profile layouts, on every screen: on screen, no overlaps, >= 44 dp hit areas, inside
+## the safe rect, the Episode 2 HUD keep-outs, the left-edge inset of the swipe pad, no words,
+## and the profile's own content.
+func _test_profile_layout_geometry() -> void:
+	print(" profile layouts (every profile, every screen):")
+	var available: Array = MobileLayoutManager.LAYOUT_SCENES.keys() + MobileLayoutManager.PROFILE_SCENES.keys()
+	for s in GEOMETRY_SCREENS:
+		var win: Vector2 = s["win"]
+		var vp: Vector2 = _expand_viewport(win)
+		var m := TouchMetrics.compute(vp, win, s["dpr"], s["ins"], true)
+		var view := Rect2(Vector2.ZERO, vp).grow(0.5)
+		var safe: Rect2 = m.safe_rect.grow(0.5)
+		var portrait: bool = m.orientation == TouchMetrics.PORTRAIT
+		var hud := Rect2(vp - AMMO_HUD_UNITS, AMMO_HUD_UNITS)
+		var holster_scale: float = vp.x / 390.0 if portrait else 1.0
+		var holster_size: Vector2 = HOLSTER_UNITS * holster_scale
+		var holster := Rect2(Vector2(vp.x * 0.5 - holster_size.x * 0.5, vp.y - holster_size.y), holster_size)
+		for profile in PROFILES_UNDER_TEST:
+			var key: StringName = TouchMetrics.profile_layout_key(profile, m.device_class, m.orientation, available)
+			var label: String = "%s / %s -> %s" % [s["name"], profile, key]
+			_check("%s: the profile has its own scene for this screen" % label, MobileLayoutManager.PROFILE_SCENES.has(key))
+			if not MobileLayoutManager.PROFILE_SCENES.has(key):
+				continue
+			var lay := (MobileLayoutManager.PROFILE_SCENES[key] as PackedScene).instantiate() as TouchLayout
+			add_child(lay)
+			lay.apply(m, 1.0, MobileLayoutManager.DEFAULT_THEME)
+			var problems: PackedStringArray = []
+			if lay.profile != profile or lay.layout_name != key:
+				problems.append("scene says profile=%s layout=%s" % [lay.profile, lay.layout_name])
+			var buttons: Array[VirtualButton] = []
+			var regions: Array[Control] = []
+			for c in lay.controls():
+				if c is VirtualButton:
+					buttons.append(c)
+				elif c is VirtualJoystick or c is VirtualSwipePad or c is VirtualLookPad:
+					regions.append(c)
+			for b in buttons:
+				var rect := Rect2(b.global_position, b.size)
+				if not view.encloses(rect):
+					problems.append("%s hit area off screen" % b.name)
+				if b.size.x / m.dp < 44.0 - 0.01:
+					problems.append("%s hit %.1f dp < 44" % [b.name, b.size.x / m.dp])
+				var disc := Rect2(_centre(b) - Vector2.ONE * b.radius_dp * b.unit, Vector2.ONE * b.radius_dp * b.unit * 2.0)
+				if not safe.encloses(disc):
+					problems.append("%s disc leaves the safe rect" % b.name)
+				if b.action != &"" and not InputMap.has_action(b.action):
+					problems.append("%s action '%s' is not in the InputMap" % [b.name, b.action])
+				if profile == &"ep2_runner" or profile == &"ep2_foot":
+					if _circle_hits_rect(_centre(b), b.radius_dp * b.unit, hud):
+						problems.append("%s covers the ammo HUD box" % b.name)
+				if profile == &"ep2_foot" and _circle_hits_rect(_centre(b), b.size.x * 0.5, holster):
+					problems.append("%s covers the holster button" % b.name)
+			for i in buttons.size():
+				for j in range(i + 1, buttons.size()):
+					if _centre(buttons[i]).distance_to(_centre(buttons[j])) < buttons[i].size.x * 0.5 + buttons[j].size.x * 0.5:
+						problems.append("%s x %s overlap" % [buttons[i].name, buttons[j].name])
+			for r in regions:
+				var area := Rect2(r.global_position, r.size)
+				if not safe.encloses(area):
+					problems.append("region %s leaves the safe rect" % r.name)
+				if profile == &"ep2_foot" and area.intersects(holster):
+					problems.append("region %s covers the holster button" % r.name)
+				if r is VirtualSwipePad and area.position.x < VirtualSwipePad.EDGE_INBOARD_DP * m.dp - 0.5:
+					problems.append("swipe pad is %.1f dp from the screen edge (< 24)" % (area.position.x / m.dp))
+				if r is VirtualJoystick or r is VirtualSwipePad:
+					for b in buttons:
+						if area.has_point(_centre(b)):
+							problems.append("%s sits inside region %s" % [b.name, r.name])
+			var words: String = _first_text_node(lay)
+			if words != "":
+				problems.append("written words: %s" % words)
+			problems.append_array(_profile_content_problems(profile, lay, m))
+			_check("%s: geometry, keep-outs, no words" % label, problems.is_empty(), "; ".join(problems))
+			lay.queue_free()
+			await get_tree().process_frame
+
+## Circle vs rectangle overlap (canvas units).
+func _circle_hits_rect(centre: Vector2, radius: float, rect: Rect2) -> bool:
+	var nearest := Vector2(clampf(centre.x, rect.position.x, rect.end.x), clampf(centre.y, rect.position.y, rect.end.y))
+	return centre.distance_to(nearest) < radius
+
+## What each profile's layout must contain (and must not).
+func _profile_content_problems(profile: StringName, lay: TouchLayout, m: TouchMetrics) -> PackedStringArray:
+	var out: PackedStringArray = []
+	var cs: Array[VirtualControl] = lay.controls()
+	match profile:
+		&"blaze":
+			if cs.is_empty() or not (cs[0] is VirtualTapField):
+				out.append("TapField must be the FIRST control (below every button)")
+			if lay.find_button(&"pause") == null:
+				out.append("no pause button")
+			if cs.size() != 2:
+				out.append("expected TapField + Pause, got %d controls" % cs.size())
+			if lay.find_button(&"blaze_exit") != null:
+				out.append("an EXIT button in the layout (the exit lives in the pause overlay)")
+		&"ep2_runner":
+			var pads: int = 0
+			for c in cs:
+				if c is VirtualSwipePad:
+					pads += 1
+				if c is VirtualJoystick or c is VirtualLookPad:
+					out.append("%s has no place in the runner" % c.name)
+			if pads != 1:
+				out.append("expected exactly one SwipePad, got %d" % pads)
+			if lay.find_button(&"attack") == null:
+				out.append("no attack button (the auto-aim runner_shoot)")
+			var pick: VirtualButton = lay.find_button(&"ep2_touch_swipe")
+			if pick == null or pick.glyph != VirtualButton.Glyph.PICKAXE or pick.size.x / m.dp < 56.0:
+				out.append("pickaxe button missing or < 56 dp")
+			if lay.find_button(&"ep2_touch_reload") != null:
+				out.append("a reload button in the runner (auto-reload exists)")
+			if lay.find_button(&"pause") == null:
+				out.append("no pause button")
+		&"ep2_foot":
+			var stick: VirtualJoystick = lay.find_role(&"stick") as VirtualJoystick
+			if stick == null or not stick.analog_vertical:
+				out.append("the stick must be analog_vertical")
+			var look_index: int = -1
+			var stick_index: int = -1
+			for i in cs.size():
+				if cs[i] is VirtualLookPad:
+					look_index = i
+				if cs[i] is VirtualJoystick:
+					stick_index = i
+			if look_index == -1 or look_index > 1 or stick_index == -1:
+				out.append("LookPad must come first (under the stick and every button)")
+			for action in [&"attack", &"ep2_touch_jump", &"ep2_touch_aim", &"ep2_touch_reload", &"interact", &"sprint", &"pause"]:
+				if lay.find_button(action) == null:
+					out.append("no button on '%s'" % action)
+			for action in [&"ep2_touch_jump", &"ep2_touch_aim", &"ep2_touch_reload"]:
+				var b: VirtualButton = lay.find_button(action)
+				if b != null and not b.touch_only:
+					out.append("%s must be touch_only (registered empty in the InputMap)" % action)
+		&"ep2_film":
+			if cs.size() != 1 or not (cs[0] is VirtualButton):
+				out.append("exactly one SKIP button expected")
+			else:
+				var skip := cs[0] as VirtualButton
+				if skip.glyph != VirtualButton.Glyph.SKIP or skip.action != &"jump" or skip.hold_seconds <= 0.0:
+					out.append("the film button must be SKIP on jump with a hold ring")
+		&"ep2_end":
+			var retry: VirtualButton = lay.find_button(&"jump")
+			var home: VirtualButton = lay.find_button(&"ui_cancel")
+			if retry == null or home == null or cs.size() != 2:
+				out.append("retry (jump) and home (ui_cancel) expected")
+			elif retry.arm_delay_s < 0.5 or home.arm_delay_s < 0.5:
+				out.append("retry/home must be armed after a beat (arm_delay_s >= 0.5)")
+		&"ep2_rotate":
+			if cs.size() != 1 or not (cs[0] is VirtualRotateCue):
+				out.append("the rotate cue alone expected")
+	return out
 
 # --- TouchActions ------------------------------------------------------------
 

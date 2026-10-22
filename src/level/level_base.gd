@@ -1013,6 +1013,36 @@ func _setup_blaze_portal(pos: Vector2, threshold: int, level_index: int) -> void
 	portal.level_index = level_index
 	add_child(portal)
 
+## Start the stage's music and intro voice — UNLESS this load is the return from a
+## side mode (Blaze Rush), in which case the stage song is already playing again
+## and the intro line has already been heard.
+##
+## Every stage used to open with a bare `play_playlist(...)` + `play_voice(...)`.
+## That made a Blaze return restart a shuffled track from 0:00 and replay the
+## 4-10 s "stageN_intro" line (which also ducks the music -16 dB) on EVERY return.
+## Blaze now resumes the paused stage track (AudioManager.
+## release_music_override_faded) and sets GameManager.side_return = {kind, level};
+## this reads and CLEARS it (always, so a stale flag can never suppress the next
+## ordinary load) and, when it names THIS level:
+##   * leaves the music alone if the base player is already on this playlist
+##     (calling play_playlist() here would duck the resumed track out and start a
+##     second one — the founder's "faint second song" bleed),
+##   * restarts the playlist only if the music was lost (and never the voice line).
+## `force_first` is passed straight to play_playlist (Level 1's "Song A first
+## when played from the title screen" rule). `voice` "" = no intro line.
+func _start_stage_audio(paths: Array, voice: String = "", force_first: bool = false) -> void:
+	var sr: Dictionary = GameManager.side_return
+	GameManager.side_return = {}
+	var came_back: bool = not sr.is_empty() \
+			and int(sr.get("level", -1)) == level_data.level_index
+	if came_back:
+		if not AudioManager.is_playing_playlist(paths):
+			AudioManager.play_playlist(paths, false)
+		return
+	AudioManager.play_playlist(paths, force_first)
+	if voice != "":
+		AudioManager.play_voice(voice)
+
 func _setup_hud() -> void:
 	# The pause menu wires its own buttons (src/ui/pause_menu.gd).
 	add_child(preload("res://src/ui/pause_menu.tscn").instantiate())

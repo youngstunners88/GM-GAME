@@ -26,13 +26,14 @@ func _ready() -> void:
     # 2026-09-30 founder clarification: "Song A first" applies when the game is PLAYED FROM THE
     # TITLE SCREEN, not every time Level 1 loads. Returning from Blaze Rush, the Smoke Lounge or
     # an education room just shuffles on (AudioManager.launched_from_title()).
-    AudioManager.play_playlist([
+    # LevelBase._start_stage_audio = play_playlist + the intro voice, except on a
+    # RETURN from Blaze Rush (the song carries on, the intro is not replayed).
+    _start_stage_audio([
         "res://src/assets/music/level01_theme_always_first.mp3",
         "res://src/assets/music/level01_theme_oxbow.mp3",
         "res://src/assets/music/level01_theme.ogg",
         "res://src/assets/music/lil_blunt_theme.mp3",
-    ], AudioManager.launched_from_title())
-    AudioManager.play_voice("stage1_intro")
+    ], "stage1_intro", AudioManager.launched_from_title())
 
 ## Task #23 — three routes per section (ground y=650, plats y=300..500):
 ##   SPEEDRUNNER: high one-way chain (x 850→1350) toward the Blaze Portal —

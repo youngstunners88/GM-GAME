@@ -77,6 +77,28 @@ static func layout_key(device: StringName, orient: StringName) -> StringName:
 		return &"tablet_landscape"
 	return &"phone_landscape"
 
+## Registry key for a PROFILE ("blaze", "ep2_runner", ...) on this screen. `available`
+## is the registry's key list. Fallback chain: the exact `<profile>_<layout key>` scene,
+## then that profile's landscape scene (tablet landscape first on a tablet), then the
+## platformer layout for this screen. The platformer profile (or an empty name) is just
+## `layout_key()`, so every existing key keeps meaning exactly what it did.
+static func profile_layout_key(profile: StringName, device: StringName, orient: StringName,
+		available: Array) -> StringName:
+	var base: StringName = layout_key(device, orient)
+	if profile == &"" or profile == &"platformer":
+		return base
+	var exact := StringName("%s_%s" % [profile, base])
+	if available.has(exact):
+		return exact
+	if device == CLASS_TABLET:
+		var tablet := StringName("%s_tablet_landscape" % profile)
+		if available.has(tablet):
+			return tablet
+	var phone := StringName("%s_phone_landscape" % profile)
+	if available.has(phone):
+		return phone
+	return base
+
 # --- construction ------------------------------------------------------------
 
 ## Pure constructor. `insets_px` is (left, top, right, bottom) in window pixels.

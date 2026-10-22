@@ -47,7 +47,10 @@ var _cover_rect: Rect2 = Rect2()
 
 var _video_player: VideoStreamPlayer = null
 var _done := false
-var _music_muted := false
+## Stage music leaves with a FADE (AudioManager.fade_out_music), not a Music-bus mute: a muted bus keeps the boss theme
+## playing silently for the whole film and it re-enters mid-song the moment the bus is unmuted (the "boss-theme blip" at
+## film end, 2026-10-22 hand-off audit). The film's own audio is on Master, so it is unaffected either way.
+const MUSIC_FADE_SECONDS := 0.8
 
 func play() -> void:
 	layer = 5  # above HUD/gameplay, below the level-transition wipe (layer 10)
@@ -66,7 +69,37 @@ func play() -> void:
 		_finish()
 		return
 
-	var vp: Vector2 = get_viewport().get_visible_rect().size
+	var vid := VideoStreamPlayer.new()
+	vid.name = "BossDefeatVideo"
+	vid.stream = stream
+	vid.expand = true
+	vid.loop = false
+	vid.volume_db = 0.0  # NOT muted — the video's own dialogue is the point.
+	vid.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(vid)
+	_video_player = vid
+	_layout_video()
+	# A phone rotated during the 15 s film must not leave the picture at its old pixel rect.
+	get_viewport().size_changed.connect(_layout_video)
+	vid.finished.connect(_finish)
+	# Stage/boss music leaves with a fade so it does not play over the cutscene's own baked-in VO. (The bosses already
+	# fade it at the top of die(); this makes the film correct on its own and is a harmless repeat after them.)
+	AudioManager.fade_out_music(MUSIC_FADE_SECONDS)
+	vid.play()
+
+	get_tree().create_timer(DEADLINE_SEC, true, false, true).timeout.connect(_finish)
+
+## Fit the 16:9 film to the CURRENT viewport, filling and cropping (never letterboxed), and remember that rect for the
+## cover. Runs at play() and on every viewport resize (rotation, a resized browser tab).
+func _layout_video() -> void:
+	if not is_instance_valid(_video_player):
+		return
+	_cover_rect = _fill_rect(get_viewport().get_visible_rect().size)
+	_video_player.position = _cover_rect.position
+	_video_player.size = _cover_rect.size
+
+## The film's 1280x720 frame scaled to cover `vp` completely (cropping the overflow), centred.
+static func _fill_rect(vp: Vector2) -> Rect2:
 	var src := Vector2(1280.0, 720.0)
 	var ar: float = src.x / maxf(1.0, src.y)
 	var h: float = vp.y
@@ -74,28 +107,7 @@ func play() -> void:
 	if w < vp.x:
 		w = vp.x
 		h = w / ar
-
-	var vid := VideoStreamPlayer.new()
-	vid.name = "BossDefeatVideo"
-	vid.stream = stream
-	vid.expand = true
-	vid.loop = false
-	vid.volume_db = 0.0  # NOT muted — the video's own dialogue is the point.
-	vid.position = Vector2((vp.x - w) * 0.5, (vp.y - h) * 0.5)
-	vid.size = Vector2(w, h)
-	_cover_rect = Rect2(vid.position, vid.size)
-	vid.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(vid)
-	_video_player = vid
-	vid.finished.connect(_finish)
-	# Silence the stage/boss music so it doesn't play over the cutscene's own
-	# baked-in VO. The video's audio is on the Master bus, so muting the Music
-	# bus only kills the background track; restored in _finish() so the next
-	# stage's music plays normally.
-	_mute_stage_music()
-	vid.play()
-
-	get_tree().create_timer(DEADLINE_SEC, true, false, true).timeout.connect(_finish)
+	return Rect2(Vector2((vp.x - w) * 0.5, (vp.y - h) * 0.5), Vector2(w, h))
 
 func _process(delta: float) -> void:
 	if _done:
@@ -114,24 +126,6 @@ func _process(delta: float) -> void:
 func _exit_tree() -> void:
 	if is_instance_valid(_video_player):
 		_video_player.stop()
-	# Safety: never leave the Music bus muted if we're torn down off the
-	# normal _finish() path.
-	_restore_stage_music()
-
-func _mute_stage_music() -> void:
-	var bus := AudioServer.get_bus_index("Music")
-	if bus < 0:
-		return
-	AudioServer.set_bus_mute(bus, true)
-	_music_muted = true
-
-func _restore_stage_music() -> void:
-	if not _music_muted:
-		return
-	var bus := AudioServer.get_bus_index("Music")
-	if bus >= 0:
-		AudioServer.set_bus_mute(bus, false)
-	_music_muted = false
 
 ## The film's last frame as a full-screen Control (a still image of the final video frame on black), for the
 ## seamless hand-off. Null if the video never produced a frame.
@@ -144,17 +138,21 @@ func make_cover() -> Control:
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(bg)
+	# The rect comes from the viewport AS IT IS NOW (the part of this node that outlives the film: a phone rotated
+	# during the film must not hand over a stale one), and the picture is anchored full-rect with a "covered" stretch
+	# so it keeps filling and cropping if the phone is rotated again while the cover waits for Episode 2.
+	_cover_rect = _fill_rect(get_viewport().get_visible_rect().size)
 	if is_instance_valid(_video_player):
 		var tex: Texture2D = _video_player.get_video_texture()
 		if tex != null:
 			var img: Image = tex.get_image()
 			if img != null and not img.is_empty():
 				var tr := TextureRect.new()
+				tr.name = "LastFrame"
 				tr.texture = ImageTexture.create_from_image(img)
 				tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-				tr.stretch_mode = TextureRect.STRETCH_SCALE
-				tr.position = _cover_rect.position
-				tr.size = _cover_rect.size
+				tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+				tr.set_anchors_preset(Control.PRESET_FULL_RECT)
 				tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
 				root.add_child(tr)
 	return root
@@ -164,7 +162,8 @@ func _finish() -> void:
 		return
 	_done = true
 	remove_from_group("touch_controls_wanted")
-	_restore_stage_music()
+	if get_viewport().size_changed.is_connected(_layout_video):
+		get_viewport().size_changed.disconnect(_layout_video)
 	finished.emit()
 	if not keep_cover:
 		queue_free()

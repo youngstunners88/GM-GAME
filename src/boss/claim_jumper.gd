@@ -945,6 +945,9 @@ func die() -> void:
 	# Episode 2 starts after this boss: begin loading it NOW, a little per frame, so the death tween and the 15 s
 	# film hide the work (TransitionDirector; skill ep2-seamless-transition).
 	TransitionDirector.prewarm(GameManager.EPISODE2_SCENE, true)
+	# The boss theme leaves with a FADE now (it used to keep playing silently under a muted Music bus for the whole
+	# film and re-enter mid-song at film end). fade_out_music also empties the playlist, so nothing restarts it.
+	AudioManager.fade_out_music(0.8)
 	BossVoiceSystem.say(self, BOSS_ID, "death", true)
 	BossVoiceSystem.clear_active()
 	set_physics_process(false)

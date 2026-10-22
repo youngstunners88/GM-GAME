@@ -16,8 +16,8 @@ func _ready() -> void:
 	_setup_distant_lake()
 	_setup_stable_horses()
 	AudioManager.set_reverb_profile("mine")
-	AudioManager.play_playlist(["res://src/assets/music/level03_theme.ogg", "res://src/assets/music/level03_theme_alt.ogg", "res://src/assets/music/lil_blunt_theme.mp3"])
-	AudioManager.play_voice("stage3_intro")
+	# play_playlist + the intro voice, except on a RETURN from Blaze Rush (LevelBase).
+	_start_stage_audio(["res://src/assets/music/level03_theme.ogg", "res://src/assets/music/level03_theme_alt.ogg", "res://src/assets/music/lil_blunt_theme.mp3"], "stage3_intro")
 
 ## Gold-dust motes drifting through the canyon light — the one atmosphere
 ## element the painted backdrop alone can't give (a static image doesn't

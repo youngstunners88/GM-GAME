@@ -6,8 +6,29 @@ extends Node
 
 signal load_progress(progress: float)
 signal load_finished(scene_path: String)
+## Emitted when the incoming scene is fully REVEALED: the wipe-in / fade-in that
+## follows a load_scene() has finished (immediately, for a transition with no
+## cover). A scene that must not start its action under a half-covered screen
+## (Blaze Rush's armed start) waits for this; it never fires for a load that a
+## newer load_scene() superseded. Callers of _play_in_transition do NOT await it,
+## so _abort_load keeps its order (reveal started, THEN recover_from_transition).
+signal revealed
 
 enum Transition { INSTANT, FADE, SLIDE, SMOKE, DIAMOND, GOLD }
+
+## Default length of a wipe out / in (SMOKE, DIAMOND, GOLD).
+const DEFAULT_WIPE_SECONDS: float = 0.45
+## Blaze Rush's shorter wipe. Used ONLY by callers that pass
+## blaze_wipe_seconds() next to blaze_transition_for_level(); the global default
+## above is never changed (boss-3 / Episode 2 hand-offs, vault doors etc. keep 0.45).
+const BLAZE_WIPE_SECONDS: float = 0.30
+
+## Length of the wipe of the load in flight (and of its reveal).
+var _wipe_seconds: float = DEFAULT_WIPE_SECONDS
+## False from load_scene() until the reveal that follows it has finished.
+var _revealed: bool = true
+## Bumped by every load_scene(); a reveal that finds a newer load in flight stays quiet.
+var _load_gen: int = 0
 
 var _loading_path: String = ""
 var _transition_type: Transition = Transition.INSTANT
@@ -33,9 +54,29 @@ static func blaze_transition_for_level(level_index: int) -> Transition:
         _:
             return Transition.SMOKE
 
-func load_scene(path: String, transition_type: Transition = Transition.FADE) -> void:
+## How long a Blaze Rush wipe lasts (0.30 s each way instead of 0.45 s: the secret
+## mode is the FAST one and a phone player is in a short-session loop). Pass it as
+## load_scene()'s third argument NEXT TO blaze_transition_for_level(); nothing else
+## shortens a wipe.
+static func blaze_wipe_seconds() -> float:
+    return BLAZE_WIPE_SECONDS
+
+## True when no load is mid-flight and the last reveal has finished.
+func is_revealed() -> bool:
+    return _revealed
+
+## `wipe_seconds` <= 0 (the default) keeps DEFAULT_WIPE_SECONDS; it only matters
+## for the SMOKE / DIAMOND / GOLD wipes.
+func load_scene(path: String, transition_type: Transition = Transition.FADE, wipe_seconds: float = -1.0) -> void:
     if _loading_path != "":
         push_warning("SceneRouter: load already in progress for %s" % _loading_path)
+        return
+
+    # EPISODE 2 is staged by the TransitionDirector, never by a plain fade: the menu button and the ?ep2=1 boot used to
+    # fade to black, then compile ep2_entry + six chambers in ONE frame and start the fade-in on top of the first-draw
+    # stall (black, a freeze, a pop). The director gives it a dp-sized wordless card, a budgeted warm-up, a settle and a
+    # reveal, exactly like the boss-3 hand-off. Diverted BEFORE _loading_path is set, so this guard can never be left set.
+    if _divert_to_director(path):
         return
 
     # ALWAYS restore real time BEFORE a transition.
@@ -69,6 +110,9 @@ func load_scene(path: String, transition_type: Transition = Transition.FADE) -> 
     StateMachine.change_state(StateMachine.State.TRANSITIONING)
     _loading_path = path
     _transition_type = transition_type
+    _wipe_seconds = wipe_seconds if wipe_seconds > 0.0 else DEFAULT_WIPE_SECONDS
+    _revealed = false
+    _load_gen += 1
     _node_count_before = _count_nodes()
     print("[SceneRouter] Loading %s (nodes before: %d)" % [path, _node_count_before])
 
@@ -77,14 +121,14 @@ func load_scene(path: String, transition_type: Transition = Transition.FADE) -> 
             SceneTransition.fade_out()
             await get_tree().create_timer(0.3).timeout
         Transition.SMOKE:
-            SceneTransition.wipe_out("smoke")
-            await get_tree().create_timer(0.45).timeout
+            SceneTransition.wipe_out("smoke", _wipe_seconds)
+            await get_tree().create_timer(_wipe_seconds).timeout
         Transition.DIAMOND:
-            SceneTransition.wipe_out("diamond")
-            await get_tree().create_timer(0.45).timeout
+            SceneTransition.wipe_out("diamond", _wipe_seconds)
+            await get_tree().create_timer(_wipe_seconds).timeout
         Transition.GOLD:
-            SceneTransition.wipe_out("gold")
-            await get_tree().create_timer(0.45).timeout
+            SceneTransition.wipe_out("gold", _wipe_seconds)
+            await get_tree().create_timer(_wipe_seconds).timeout
         _:
             pass
 
@@ -118,6 +162,17 @@ func load_scene(path: String, transition_type: Transition = Transition.FADE) -> 
         return
     set_process(true)
 
+## True when the TransitionDirector took this load (Episode 2 only). A hand-off already in flight swallows the
+## duplicate request (a second tap on the EPISODE 2 button). A missing scene falls through to the normal route, whose
+## failure handling (_abort_load) is the established one.
+func _divert_to_director(path: String) -> bool:
+    if path != GameManager.EPISODE2_SCENE or not ResourceLoader.exists(path):
+        return false
+    if TransitionDirector.is_busy():
+        return true
+    TransitionDirector.go(path)
+    return true
+
 ## A load failed and the scene did NOT change: lift the fade overlay and put
 ## the StateMachine back where it was, otherwise the session soft-locks in
 ## TRANSITIONING with the player frozen and no recovery UI.
@@ -130,11 +185,24 @@ func _abort_load() -> void:
 ## Reveal the freshly loaded (or restored) scene with whatever transition
 ## covered it — wipes reverse their dissolve, everything else lifts the fade.
 func _play_in_transition() -> void:
-    match _transition_type:
+    # Captured BEFORE the first await: a newer load_scene() may reassign these
+    # while this reveal is still running.
+    var kind: Transition = _transition_type
+    var seconds: float = _wipe_seconds
+    var gen: int = _load_gen
+    match kind:
         Transition.SMOKE, Transition.DIAMOND, Transition.GOLD:
-            SceneTransition.wipe_in()
+            await SceneTransition.wipe_in(seconds)
+        Transition.FADE:
+            await SceneTransition.fade_in()
         _:
+            # No cover to lift (INSTANT / SLIDE): the legacy fade_in on a clear
+            # overlay, and the scene is revealed right now.
             SceneTransition.fade_in()
+    if gen != _load_gen:
+        return
+    _revealed = true
+    revealed.emit()
 
 func _process(_delta: float) -> void:
     if _loading_path == "":
