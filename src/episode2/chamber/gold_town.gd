@@ -947,8 +947,11 @@ func _build_jail_folk() -> void:
 		return
 	_accomplice = Ep2TownFolk.new()
 	_accomplice.name = "Accomplice"
+	_accomplice.looping_clips.assign(["Idle", "Observe", "Talk"])
+	_accomplice.clip_blend = .18
 	_visuals.add_child(_accomplice)
 	_accomplice.setup(Ep2Extras.PRISONER, ACCOMPLICE_HEIGHT, Color(0.40, 0.30, 0.22))
+	_accomplice.hold_clip("Observe")
 	_accomplice.position = Ep2GoldTown.local_to_world("Bldg_Jail", Ep2GoldTown.jail_spots.get("accomplice", Vector3(-1.85, 0.0, -5.7)))
 	_face_folk(_accomplice, Ep2GoldTown.local_to_world("Bldg_Jail", Ep2GoldTown.jail_spots.get("visit", Vector3(-1.85, 0.0, -4.05))))
 

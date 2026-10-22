@@ -1,6 +1,6 @@
 {
-  "observed_remote_sha": "209c4e0ae77d0839b754a0d259bec2ead8f7a50d",
-  "objective": "Active owner-authorized continuation: full town cast/autonomy; release not yet verified.",
+  "observed_remote_sha": "2229be7f56ad04c71e5aad562c7c7ceb98089ed8",
+  "objective": "Owner authorized commit/push/ship without prompts. Fourteenth striped-shirt prisoner and final 605-frame capture correction validated locally; committing and shipping now.",
   "task_paths": [
     "src/episode2/actors/ep2_town_people.gd",
     "src/episode2/actors/ep2_town_navigation.gd",
@@ -10,19 +10,20 @@
     "design/ep2/town/autonomy-20261022/"
   ],
   "evidence": {
-    "source_qa": "13/13 mesh and rig PASS; all ten clips finite",
+    "source_qa": "14/14 mesh/rig/ten finite clips; raw GLB audit; 672 imported checks; prisoner remains outside public13 roster",
     "movement": "120-second full roster PASS; long-run/disk tests in final regression",
     "network": "Shell DNS fails; GitHub connector independently confirmed master and binary blob upload",
-    "renderer": "X11/Wayland unavailable in sandbox; CI capture added",
-    "behavior": "Full CI PASS; autonomy 30/30; imports/cyclic playback 624; script compile PASS; security18/18",
+    "renderer": "Real all13 initial camera views inspected. Capture now points actual camera, settles blends, checks framing and includes prisoner. Final605-frame proof pending.",
+    "behavior": "Full CI before prisoner PASS; affected full town story and compile after prisoner PASS; autonomy30 PASS",
     "fresh_import_pack": "a2d98bf6:199157184 B; limit199229440 B; margin72256 B",
-    "push": "a2d98bf6 pushed via connector; codex branch trigger being added"
+    "push": "ae4a30a8 on task branch and master; transport via authenticated GitHub connector, locally mirrored identical Git objects"
   },
   "unresolved": [
-    "CI camera capture and inspection",
-    "local full export presence gate",
-    "nonforced publication, CI/butler and public BUILD/playflow"
+    "final-source pack/presence gate",
+    "final605-frame CI capture and inspection",
+    "final butler upload/public BUILD/extras; protected Episode2 playthrough not claimed without code"
   ],
-  "next_action": "Complete gates; use GitHub connector for branch push if shell DNS remains unavailable. Never call pending release live.",
-  "source_commit": "a2d98bf61617d520986dddbcdc250b60d77c3ff5"
+  "next_action": "Monitor run39725920389 via connector. Firecrawl interact session01a161f5-df43-764f-ab49-9de5183230eb supports a child /usr/bin/google-chrome with SwiftShader for real public rendering. Commit/ship final receipts after verified deployment.",
+  "source_commit": "2229be7f56ad04c71e5aad562c7c7ceb98089ed8",
+  "production_run": "https://github.com/youngstunners88/GM-GAME/actions/runs/39725920389"
 }

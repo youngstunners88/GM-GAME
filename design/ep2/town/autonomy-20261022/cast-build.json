@@ -200,5 +200,32 @@
     ],
     "child": true,
     "bob": true
+  },
+  "prisoner": {
+    "name": "prisoner_accomplice",
+    "height": 1.74,
+    "girth": 0.97,
+    "style": "rancher",
+    "ref": "1OPVPqj8P3sVpi_bJN90dJqyqFDoqoLVV",
+    "eye": [
+      0.5,
+      0.14
+    ],
+    "chin": 0.208,
+    "morph": "male-young",
+    "skin": [
+      0.52,
+      0.35,
+      0.27
+    ],
+    "hair": [
+      0.08,
+      0.055,
+      0.04
+    ],
+    "no_hat": true,
+    "curly": true,
+    "no_vest": true,
+    "striped": true
   }
 }

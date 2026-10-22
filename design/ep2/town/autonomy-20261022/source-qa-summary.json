@@ -1,5 +1,7 @@
 {
-  "all_thirteen_pass": true,
+  "public_cast": 13,
+  "separate_prisoner": 1,
+  "all_fourteen_pass": true,
   "people": [
     {
       "id": "bald_worker",
@@ -200,6 +202,24 @@
         "src/episode2/extras/people/townsman_oldtimer.glb": "b636573b788ffb464bccf2da487fe9a6f1efc214ffc6c136dc3578b71f49d6ed6c1e8fc2e7bbbf80f428cd2f556787362020d90a041499c36b4ba7b61cb2a641",
         "design/ep2/town/autonomy-20261022/sources/oldtimer/oldtimer.blend": "360ead44558290ace425195f3bb787de0c4932574e3482b7dbdbee9c7e62abaca2e49f5d004cbe1ffe93edec78246a72e446a42e89d4bf583ae06770cc6000a4",
         "tools/ep2_blender/rebuild_street_people.py": "f98abf35379266906fb523d56ed4e11bce39e28df3e18d071c55d44d8851d2420674a41a9e641a04ee10d56ce7a4b50adaf3e34b82dea8dd4385817fb187bde1"
+      }
+    },
+    {
+      "id": "prisoner",
+      "asset_pass": true,
+      "rig_pass": true,
+      "ten_finite_clips": true,
+      "warnings": [
+        "prisoner_accomplice_body: ~41.17% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+        "prisoner_accomplice_body: duplicate verts=92 loose verts=0",
+        "prisoner_accomplice_body: 38 n-gons",
+        "hidden back-to-back faces: prisoner_accomplice_body (76 pairs) - delete to save tris"
+      ],
+      "max_used_clip_edge_excess_m": 0.013388801784733909,
+      "source_hashes": {
+        "src/episode2/extras/people/prisoner_accomplice.glb": "eb24c62437501f636f2b9a92b5c17e92fd371a6b7286029f5313ad7fb510b8de1038af80d7bccfadaab52cd713cd11c18d943a7b9626d0ba7596dabbebd01a9a",
+        "design/ep2/town/autonomy-20261022/sources/prisoner/prisoner.blend": "05115b98c570426164fa648bedde5a9192502748d37be5ebd8e981200dc123f15d5a44e6bb5e64ca46b6022b69c25cb1a5f3e6f9988ded948e4a81454f73804c",
+        "tools/ep2_blender/rebuild_street_people.py": "2390f227ca19042bf11013a01b2bfee1d01ae0ee56d4afd4098627438904363c3deb5358910505c61b432eb05d0f93257b60d1e962993a21279042568e40ece3"
       }
     },
     {

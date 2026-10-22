@@ -10,7 +10,8 @@
       "figures": [
         {
           "id": "jail_prisoner",
-          "asset": "src/episode2/extras/people/prisoner_accomplice.glb"
+          "asset": "src/episode2/extras/people/prisoner_accomplice.glb",
+          "source": "design/ep2/town/autonomy-20261022/sources/prisoner/prisoner.blend"
         }
       ]
     },
@@ -153,7 +154,7 @@
   ],
   "limits": [
     "Procedural reference-inspired characters; no claim of scanned likeness.",
-    "Prisoner retains existing story-owned asset and confinement.",
-    "Pianist mingles outdoors; no piano key-contact performance."
+    "Pianist mingles outdoors; no piano key-contact performance.",
+    "Prisoner rebuilt from the striped-shirt reference; cell, dialogue and story control preserved. Original GLB retained under originals/."
   ]
 }

@@ -108,6 +108,9 @@ def make_atlas():
         if role=='Skirt' and FEMALE:
             variation+=.025*(np.cos(xx*.32)**12)*(np.cos(yy*.32)**12)
         tile=np.asarray(rgb)[None,None,:]*(1+variation[:,:,None]*3)
+        if role=='Linen' and C.get('striped'):
+            bands=np.where(yy[:,:,None]<128,np.asarray((.075,.08,.075)),np.asarray((.67,.64,.54)))
+            tile=bands*(1+variation[:,:,None]*2)
         bc[y:y+256,x:x+256,:3]=np.clip(tile,.005,.9)
         orm[y:y+256,x:x+256,0]=1
         orm[y:y+256,x:x+256,1]=np.clip(rough+variation*.7,.18,.99)
@@ -496,6 +499,12 @@ def uv_atlas(geo):
                 us.append((li,u,v))
             if max(u for _,u,_ in us)-min(u for _,u,_ in us)>.5:us=[(li,u+1 if u<.5 else u,v)for li,u,v in us]
             for li,u,v in us:uv[li].uv=(u*.5,max(.002,min(.998,v))*.5)
+        elif role=='Linen' and C.get('striped'):
+            # World-height UVs keep the prisoner's shirt and rolled sleeves in
+            # broad horizontal bands rather than turning stripes with each UV island.
+            for li in poly.loop_indices:
+                co=geo.data.vertices[geo.data.loops[li].vertex_index].co
+                uv[li].uv=((3.025+(co.x/S+.5)%1*.95)/4,(.025+((co.z/S)/.14)%1*.95)/4)
         else:
             cell=TILES[role];x=cell%4;y=cell//4
             for li in poly.loop_indices:
@@ -531,7 +540,7 @@ vs,faces,markers=source_mesh()
 head_and_hands(vs,faces,markers)
 torso_and_sleeves();legs_and_boots()
 if FEMALE:skirt_and_apron()
-elif not C.get('suspenders'):vest_and_coat()
+elif not C.get('suspenders') and not C.get('no_vest'):vest_and_coat()
 hats_hair_beard()
 if KEY in EXTENDED:
     spec = importlib.util.spec_from_file_location('extended_details', ROOT/'tools/ep2_blender/town_cast_details.py')

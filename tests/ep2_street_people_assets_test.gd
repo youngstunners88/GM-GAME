@@ -10,7 +10,9 @@ func check(label: String, passed: bool) -> void:
 		print("[FAIL] ", label)
 
 func _ready() -> void:
-	for row in Ep2TownPeople.ROSTER:
+	var cast: Array = Ep2TownPeople.ROSTER.duplicate(true)
+	cast.append({"id": "jail_prisoner", "file": "prisoner_accomplice.glb", "h": GoldTownChamber.ACCOMPLICE_HEIGHT})
+	for row in cast:
 		var id: String = str(row["id"])
 		var folk := Ep2TownFolk.new()
 		folk.looping_clips.assign(Ep2TownPeople.LOOPING_CLIPS)

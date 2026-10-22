@@ -430,10 +430,11 @@ jobs:
       - name: Capture town autonomy through the player camera
         run: |
           mkdir -p "$RUNNER_TEMP/town-autonomy-captures"
-          SHOT_OUT="$RUNNER_TEMP/town-autonomy-captures" timeout 900 xvfb-run -a "$GODOT_BIN" \
+          SHOT_OUT="$RUNNER_TEMP/town-autonomy-captures" timeout 1200 xvfb-run -a "$GODOT_BIN" \
             --rendering-method gl_compatibility --rendering-driver opengl3 --audio-driver Dummy \
             --resolution 1280x720 res://tools/ep2_shots/town_autonomy_play.tscn 2>&1 | tee town-autonomy-render.log
           grep -q 'TOWN_AUTONOMY_PLAY: ALL THIRTEEN CAPTURED' town-autonomy-render.log
+          grep -q 'TOWN_AUTONOMY_PLAY: JAIL PRISONER CAPTURED' town-autonomy-render.log
           if grep -E 'SCRIPT ERROR|Parse Error' town-autonomy-render.log; then exit 1; fi
 
       - name: Upload town autonomy proof

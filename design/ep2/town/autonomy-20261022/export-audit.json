@@ -300,6 +300,29 @@
       ],
       "bytes": 3216696,
       "sha512": "d54923dfe8ef893003c5a4e790136e79ee4d0cd860fec11f1fbf2ff0449266a5fbee1f03a8c13b27b9a595750b0ee1391823a24595b8a94b5ddcf761aacba115"
+    },
+    {
+      "file": "prisoner_accomplice.glb",
+      "triangles": 26936,
+      "previous_triangles": null,
+      "vertices": 18084,
+      "materials": 1,
+      "images": 3,
+      "joints": 20,
+      "clips": [
+        "Alert",
+        "Carry",
+        "Greet",
+        "Idle",
+        "Inspect",
+        "Observe",
+        "Point",
+        "Rest",
+        "Talk",
+        "Walk"
+      ],
+      "bytes": 3157180,
+      "sha512": "eb24c62437501f636f2b9a92b5c17e92fd371a6b7286029f5313ad7fb510b8de1038af80d7bccfadaab52cd713cd11c18d943a7b9626d0ba7596dabbebd01a9a"
     }
   ]
 }
