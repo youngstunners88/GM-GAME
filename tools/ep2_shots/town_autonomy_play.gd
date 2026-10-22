@@ -11,9 +11,9 @@ func _ready() -> void:
 	if out.is_empty(): out = "res://design/ep2/town/autonomy-20261022/gameplay"
 	DirAccess.make_dir_recursive_absolute(out)
 	vp = SubViewport.new()
-	vp.size = Vector2i(1280, 720)
+	vp.size = Vector2i(960, 540)
 	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
-	vp.msaa_3d = Viewport.MSAA_4X
+	vp.msaa_3d = Viewport.MSAA_DISABLED
 	add_child(vp)
 	chamber = load("res://src/episode2/chamber/gold_town.tscn").instantiate() as GoldTownChamber
 	vp.add_child(chamber)
@@ -40,14 +40,14 @@ func _ready() -> void:
 			p.folk.play_clip(clip)
 			var player: AnimationPlayer = p.folk.anim_player()
 			var duration: float = player.current_animation_length
-			for sample in 7:
-				player.seek(duration * float(sample) / 6.0, true)
+			for sample in 5:
+				player.seek(duration * float(sample) / 4.0, true)
 				await capture("%s_%s_%02d" % [p.id, clip, sample])
 	# Autonomous timelines: no state assignment, destinations and clips selected by the live controller.
 	for phase in ["ordinary", "danger", "recovery", "duel"]:
 		if phase == "danger": crowd.notify_danger(Vector3(0, 0, 1425), 200)
 		if phase == "duel": crowd.set_context("duel")
-		for sample in 12:
+		for sample in 13:
 			# Advance the crowd clock directly only in this scenario; chamber context would restore the story beat.
 			for tick in 120:
 				crowd.step(.05, Vector3(0, 0, 1404))
@@ -87,3 +87,4 @@ func capture(label: String) -> void:
 	var states: Array = []
 	for p in chamber.get_people().people: states.append({"id": p.id, "state": p.state, "activity": p.activity, "clip": p.folk.current_clip(), "position": str(p.folk.position)})
 	records.append({"frame": label, "elapsed": chamber.get_people().elapsed, "people": states})
+	if records.size() % 50 == 0: print("TOWN_AUTONOMY_PLAY: progress ", records.size(), " frames")
