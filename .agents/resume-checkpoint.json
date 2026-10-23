@@ -1,27 +1,24 @@
 {
-  "observed_remote_sha": "c3234338d1d9a36b8231f06005c368f654547510",
-  "objective": "Complete: all thirteen public people and separate prisoner implemented, tested, committed/pushed, production uploaded and exact public packs verified. Owner authorization remains commit/push/ship without repeated permission.",
+  "observed_remote_sha": "bb2047c27620ad358dff92ea6b749356a63e4da4",
+  "objective": "Repair all five transition complaints in Transitions work document; three skills written and applied.",
   "task_paths": [
-    "src/episode2/actors/ep2_town_people.gd",
-    "src/episode2/actors/ep2_town_navigation.gd",
-    "src/episode2/chamber/gold_town.gd",
-    "src/episode2/session/ep2_session_root.gd",
-    "src/autoload/game_manager.gd",
-    "design/ep2/town/autonomy-20261022/"
+    "src/autoload/nft_issuer.gd",
+    "src/autoload/transition_director.gd",
+    "src/episode2/chamber/interlude_base.gd",
+    "src/episode2/chamber/mine_lift.gd",
+    "src/episode2/chamber/woods_quad.gd",
+    "tests/transition_feedback_test.gd"
   ],
+  "source_commit": "ca5e8c53f7fab84505873f4daad829432785e084",
   "evidence": {
-    "source_qa": "14/14 mesh/rig/ten finite clips; raw GLB audit; 672 imported checks; prisoner remains outside public13 roster",
-    "movement": "120-second full roster PASS; long-run/disk tests in final regression",
-    "network": "Shell DNS fails; GitHub connector independently confirmed master and binary blob upload",
-    "renderer": "605-frame final camera artifact12404268651 inspected; review images preserved in evidence/",
-    "behavior": "Full CI before prisoner PASS; affected full town story and compile after prisoner PASS; autonomy30 PASS",
-    "fresh_import_pack": "13cbfad0:199157824 B; limit199229440 B; margin71616 B",
-    "push": "Source13cbfad0 on both histories; concurrent CI HTML commits reconciled in final receipt merge",
-    "public": "BUILD2026-10-22-13cbfad extracted from served bytecode; main/extras exactly match successful CI export; all fourteen figures present; real WebGL title and access gate verified"
+    "tests": "Pinned4.3 compile, feedback, interlude, transition director, session root, save, fullCI PASS; security18PASS; unchanged title lock",
+    "render": "Actual Compatibility session-root first-frame doorway and complete reveal-to-ride sequence inspected; docs/episode2-quality/transitions-2026-10-23/",
+    "timing": "115\u219227 entry warm resources; dissolve.60\u2192.18s; quad11.92s,max.098m/frame60Hz"
   },
-  "unresolved": [],
-  "next_action": "No remaining build work. Preserve sources, evidence and full cast; use the final release receipt for future tuning.",
-  "source_commit": "13cbfad0dbcb6652ceefc5ece0d0efc8a5b2e981",
-  "production_run": "https://github.com/youngstunners88/GM-GAME/actions/runs/39727661169",
-  "verification_limit": "No configured EP2_CODE: public title/access gate verified; protected public town playthrough not claimed. Native story and CI actual gameplay-camera proof exercised the change."
+  "unresolved": [
+    "Fresh pack/export pending",
+    "Automatic approval rejected git push: explicit publication approval required; do not bypass",
+    "Inherited optional facility PBR material-name assertion is stale; documented, no material/source changes"
+  ],
+  "next_action": "Finish local export/package, request approval for exact reviewed source commit publication; then push, nonforced master integration, verify CI upload and public BUILD."
 }

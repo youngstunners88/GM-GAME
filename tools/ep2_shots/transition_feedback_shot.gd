@@ -45,6 +45,9 @@ func _ready() -> void:
 	await snap("02_woods_first_frame")
 	await get_tree().process_frame
 	await snap("03_woods_next_frame")
+	if "dooronly=1" in OS.get_cmdline_user_args():
+		get_tree().quit()
+		return
 	# Whole action sampled at 10 fps with 60 Hz deterministic simulation.
 	wood._player_pos = WoodsQuadChamber.QUAD_POS + Vector3(3.0, 0.0, -5.0)
 	wood._bull.position = WoodsQuadChamber.QUAD_POS + Vector3(3.0, 0.0, -1.2)

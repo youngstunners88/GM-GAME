@@ -348,7 +348,6 @@ func _build_top(gravel: StandardMaterial3D) -> void:
 	_kit("Beam4m", Vector3(0.0, TOP_Y + 4.25, SHAFT_HALF + 1.5), Vector3.ZERO, Vector3(1.05, 1.0, 1.0))
 	_skull(Vector3(0.0, TOP_Y + 4.85, SHAFT_HALF + 1.25), PI)
 	_lantern(Vector3(1.42, TOP_Y + 1.45, 4.0), 2.4, 8.0)
-	_lantern(Vector3(-1.42, TOP_Y + 1.45, 9.0), 1.6, 6.0)
 	_surface_outside()
 
 

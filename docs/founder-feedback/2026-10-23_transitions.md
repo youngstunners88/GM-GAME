@@ -23,3 +23,10 @@ No assets, paid generation, canister/economy rules, title files or access creden
 - The actual session root performs the captured doorway handoff. The entire quad reveal-to-ride action is sampled from the actual 3D chamber; temporal continuity is separately checked at 60 Hz. [Board](../episode2-quality/transitions-2026-10-23/transition-board.jpg), [sequence](../episode2-quality/transitions-2026-10-23/quad-sequence.gif).
 - Optional legacy EP2_SMELTING_FACILITY test has one inherited material-name assertion failure. Unchanged baseline `Ep2BullHero.PAINTED_GLB = true` bypasses the retired `InfernoBullRestoredPBR` material that this old test requires. The shader/map sample itself has 885 nonmetal samples (threshold 700). Neither the test nor character materials are changed here; this legacy gate is absent from the release CI block. Its remaining facility assertions pass.
 - No paid jobs or external model decisions were needed. Security, fresh-pack export and production/public verification follow below.
+
+## Local export and publication state
+
+- Security sentinel: 18 checks, zero blockers. Founder title lock: PASS.
+- Fresh-clone import/export of source `ca5e8c53`: 199168160 B main pack, below 199229440 B by 61280 B. Current-cache export using the current CI preset: 199200848 B. Nonthreaded export, zero script errors. Local Chromium WebGL boot and streamed extras mount: PASS (HTTP 200).
+- Final visual follow-up moves the exit lantern into the shared bridge builder; it no longer disappears in the doorway cut. Final doorway frames inspected again. No source assets/import settings changed. The focused compile/transition/interlude checks are being repeated for this follow-up, with a final source export next.
+- Automatic approval review rejected the attempted `git push -u origin codex/transition-flow-20261023`, stating that external code/data disclosure and repository mutation need explicit user authorization. No push/deployment was performed through another route. Publication remains blocked pending that approval.

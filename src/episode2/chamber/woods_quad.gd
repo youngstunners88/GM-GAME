@@ -893,6 +893,8 @@ func _build_mine_hut() -> void:
 
 
 func _build_exit_bridge() -> void:
+	# Same exterior lantern on both sides of the mapped doorway.
+	_lantern(Vector3(-1.42, 1.45, 7.0), 1.6, 6.0)
 	# the plank bridge out into the wood: 2 m sections with posts, a timber hand rail and a sagging rope rail each side
 	for i in 6:
 		var z2: float = 5.0 + float(i) * 2.0
