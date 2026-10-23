@@ -28,5 +28,15 @@ No assets, paid generation, canister/economy rules, title files or access creden
 
 - Security sentinel: 18 checks, zero blockers. Founder title lock: PASS.
 - Fresh-clone import/export of source `ca5e8c53`: 199168160 B main pack, below 199229440 B by 61280 B. Current-cache export using the current CI preset: 199200848 B. Nonthreaded export, zero script errors. Local Chromium WebGL boot and streamed extras mount: PASS (HTTP 200).
-- Final visual follow-up moves the exit lantern into the shared bridge builder; it no longer disappears in the doorway cut. Final doorway frames inspected again. No source assets/import settings changed. The focused compile/transition/interlude checks are being repeated for this follow-up, with a final source export next.
+- Final visual follow-up moves the exit lantern into the shared bridge builder; it no longer disappears in the doorway cut. Final doorway frames inspected again. No source assets/import settings changed. The focused compile/transition/interlude checks all pass again for this follow-up. Final-source export and fresh-import gate both pass.
 - Automatic approval review rejected the attempted `git push -u origin codex/transition-flow-20261023`, stating that external code/data disclosure and repository mutation need explicit user authorization. No push/deployment was performed through another route. Publication remains blocked pending that approval.
+
+## Final verification receipt
+
+- Final gameplay source: `3b9b26acc7e09ccd9d2b161abf5cf0ae1cc99b72` (main fixes `ca5e8c53f7fab84505873f4daad829432785e084`).
+- Final source fresh-clone main pack: **199168112 B / 199229440 B**, margin **61328 B**. Fresh import uses the pinned Godot4.3 binary and the current CI preset. Zero script errors. Final current-cache main pack: 199200848 B; streamed extras: 54444608 B, also under the per-file gate.
+- Final-source SCRIPT_COMPILE, TRANSITION_FEEDBACK and EP2_INTERLUDE: ALL PASS. TRANSITION_DIRECTOR, EP2_SESSION_ROOT, SAVE_COMPAT and full CI block passed before the final shared-lantern-only visual follow-up. Security sentinel rerun on the final source: 18 checks, zero blockers. Title lock unchanged.
+- Final mapped doorway images inspected after sharing the lantern: same forest, bridge, lamp, Bull and eye pose; the gun remains visible. The complete quad action is in the sequence artifact.
+- Entry real-render harness: actual film end frame covering the destination; 15-second prewarm, 960×540 llvmpipe, compile-now behavior matching boss death. Sequential idle checks (one each): baseline director **6158 ms** to reveal; current **4346 ms**, both **zero black frames**. Current warm-phase worst frame121 ms vs baseline270 ms. This is a local software-renderer sample, not a device-independent latency guarantee. An earlier current run during a competing fresh import took10410 ms; CPU contention materially changes this result.
+- Local Chromium WebGL boot and streamed-pack mount pass (HTTP200). No public release or protected public playthrough is claimed.
+- Push/deployment approval was requested through the user-input UI after the reviewable changes and local evidence were prepared. No answer has been received yet; no external write was retried through another route.

@@ -9,16 +9,18 @@
     "src/episode2/chamber/woods_quad.gd",
     "tests/transition_feedback_test.gd"
   ],
-  "source_commit": "ca5e8c53f7fab84505873f4daad829432785e084",
+  "source_commit": "3b9b26acc7e09ccd9d2b161abf5cf0ae1cc99b72",
   "evidence": {
     "tests": "Pinned4.3 compile, feedback, interlude, transition director, session root, save, fullCI PASS; security18PASS; unchanged title lock",
     "render": "Actual Compatibility session-root first-frame doorway and complete reveal-to-ride sequence inspected; docs/episode2-quality/transitions-2026-10-23/",
-    "timing": "115\u219227 entry warm resources; dissolve.60\u2192.18s; quad11.92s,max.098m/frame60Hz"
+    "timing": "115\u219227 entry warm resources; dissolve.60\u2192.18s; quad11.92s,max.098m/frame60Hz",
+    "pack": "Final source fresh-import199168112B, limit199229440B, margin61328B; current-cache199200848B; nonthreaded4.3 and0script errors",
+    "entry_render": "Idle sequential llvmpipe: baseline6158ms,current4346ms;15s warm,zero blackframes; competing-import current10410ms shows contention limit",
+    "web": "Local Chromium WebGL boot and extras ready HTTP200; public release not claimed"
   },
   "unresolved": [
-    "Fresh pack/export pending",
-    "Automatic approval rejected git push: explicit publication approval required; do not bypass",
-    "Inherited optional facility PBR material-name assertion is stale; documented, no material/source changes"
+    "Automatic approval review rejected git push; explicit push/master/deployment approval requested in UI and pending. Do not bypass.",
+    "Inherited optional facility assertion expects a retired material; other facility assertions and all actual CI gates pass."
   ],
-  "next_action": "Finish local export/package, request approval for exact reviewed source commit publication; then push, nonforced master integration, verify CI upload and public BUILD."
+  "next_action": "If owner approves publication: refresh master, preserve intervening changes, push codex/transition-flow-20261023, nonforced master integration, verify successful CI butler upload and public BUILD. All local work and evidence are complete."
 }
