@@ -1080,7 +1080,8 @@ func _burn() -> void:
 	_air_jumps = 0
 	if _hud_ctl:
 		_hud_ctl.hurt()
-		_hud_ctl.toast("TRY AGAIN: RUN, JUMP, JUMP AGAIN" if out_of_hearts else "HOT! THE LAVA BURNS. HOP OVER IT", 2.2)
+		_hud_ctl.toast("TRY AGAIN: RUN, JUMP, JUMP AGAIN" if out_of_hearts else "HOT! THE LAVA BURNS. HOP OVER IT", 2.2,
+				Ep2FpsHud.Token.RETRY if out_of_hearts else Ep2FpsHud.Token.HEAT)
 	var am: Node = get_node_or_null("/root/AudioManager")
 	if am and am.has_method("play_sfx"):
 		am.play_sfx("ep2_lava_burn")
@@ -1199,6 +1200,17 @@ func has_winchester() -> bool: return _has_winchester
 func has_helmet() -> bool: return _has_helmet
 func get_film() -> CliffJumpCinematic: return _film if _film and is_instance_valid(_film) else null
 func get_video_film() -> Ep2VideoFilm: return _vfilm if _vfilm and is_instance_valid(_vfilm) else null
+
+## True while the cliff film (the Seedance video, or the in-engine fallback) is up AND a deliberate skip is possible. The
+## session root maps it to the touch profile `ep2_film` (one SKIP button on `jump`); each film keeps its own hold timer.
+func is_film_skippable() -> bool:
+	if _beat != Beat.CINEMATIC:
+		return false
+	var vf: Ep2VideoFilm = get_video_film()
+	if vf != null:
+		return vf.is_skippable()
+	var f: CliffJumpCinematic = get_film()
+	return f != null and f.is_skippable()
 func get_molds_left() -> int: return _molds_left
 func is_resolved() -> bool: return _resolved
 func is_running() -> bool: return _running
@@ -2475,6 +2487,7 @@ func _push_hud(_delta: float) -> void:
 	_hud_ctl.armory_enabled = _lesson == Lesson.DONE and not _show_blocks_control
 	_hud_ctl.show_ammo = _has_winchester and (_lesson == Lesson.OFF or _lesson >= Lesson.LOAD)
 	_hud_ctl.objective = _lesson_objective()
+	_push_lesson_tokens()
 	var stepping: bool = _lesson >= Lesson.LOAD and _lesson <= Lesson.PRACTICE
 	_hud_ctl.step_index = _lesson - Lesson.LOAD + 1 if stepping else 0
 	_hud_ctl.step_total = LESSON_STEPS if stepping else 0
@@ -2528,14 +2541,15 @@ func _play_clang() -> void:
 	_sfx("ep2_plate_clang")
 
 
-func _toast(text: String, seconds: float = 1.6) -> void:
+func _toast(text: String, seconds: float = 1.6, token: int = Ep2FpsHud.Token.NONE) -> void:
 	if _hud_ctl:
-		_hud_ctl.toast(text, seconds)
+		_hud_ctl.toast(text, seconds, token)
 
 
 func _on_dry_fired() -> void:
 	_sfx("ep2_winchester_dry")
-	_toast("EMPTY  -  NO RESERVE" if _gun.reserve == 0 else "OUT OF ROUNDS  -  PRESS R")
+	_toast("EMPTY  -  NO RESERVE" if _gun.reserve == 0 else "OUT OF ROUNDS  -  PRESS R", 1.6,
+			Ep2FpsHud.Token.EMPTY if _gun.reserve == 0 else Ep2FpsHud.Token.CYLINDER)
 	if _empty_line_cd <= 0.0 and _lesson >= Lesson.FIRE and _gun.reserve > 0:
 		_empty_line_cd = 12.0
 		_speak("vo_bull_range_empty")
@@ -2555,12 +2569,12 @@ func _on_reload_finished() -> void:
 
 func _on_gun_blocked(reason: String) -> void:
 	if reason == "locked":
-		_toast("WAIT FOR INFERNO")
+		_toast("WAIT FOR INFERNO", 1.6, Ep2FpsHud.Token.EYE)
 		if _hold_line_cd <= 0.0 and _lesson >= Lesson.LEAD and _lesson <= Lesson.AIM:
 			_hold_line_cd = 9.0
 			_speak("vo_bull_range_hold")
 	else:
-		_toast("WATCH INFERNO FIRST")
+		_toast("WATCH INFERNO FIRST", 1.6, Ep2FpsHud.Token.EYE)
 
 
 ## Delay a call by `seconds` of facility time (driven by step, so the headless gates see it too).
@@ -2676,6 +2690,33 @@ func _tick_lesson(delta: float) -> void:
 		Lesson.DONE:
 			if _hold <= 0.0:
 				_advance()
+
+
+## The lesson as icons for a touch device (the HUD draws these INSTEAD of `_lesson_objective()` there; a desktop keeps the words):
+## boot -> eye -> cylinder -> scope -> burst -> plates, with the same two counts the words carry (rounds loaded, plates left).
+func _push_lesson_tokens() -> void:
+	var token: int = Ep2FpsHud.Token.NONE
+	var count: int = -1
+	var count_max: int = -1
+	match _lesson:
+		Lesson.LEAD:
+			token = Ep2FpsHud.Token.BOOT
+		Lesson.DEMO:
+			token = Ep2FpsHud.Token.EYE
+		Lesson.LOAD:
+			token = Ep2FpsHud.Token.CYLINDER
+			count = _gun.rounds
+			count_max = Ep2Winchester.MAG
+		Lesson.AIM:
+			token = Ep2FpsHud.Token.SCOPE
+		Lesson.FIRE:
+			token = Ep2FpsHud.Token.BURST
+		Lesson.PRACTICE:
+			token = Ep2FpsHud.Token.TARGETS
+			count = _molds_left
+	_hud_ctl.lesson_token = token
+	_hud_ctl.lesson_count = count
+	_hud_ctl.lesson_count_max = count_max
 
 
 func _lesson_objective() -> String:

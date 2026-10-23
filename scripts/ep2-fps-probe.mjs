@@ -10,7 +10,7 @@ let d = -1, t0 = 0, t1 = 0;
 page.on('console', m => { const r = m.text().match(/\[EP2\] d=(\d+)/); if (!r) return; d = +r[1];
   if (d >= from && !t0) t0 = Date.now(); if (d >= to && !t1) t1 = Date.now(); });
 await page.goto(`http://localhost:8899/game/index.html?ep2=1&ep2probe=1&ep2bot=1&ep2leg=${leg}${extra}`);
-const end = Date.now() + 420000;
+const end = Date.now() + 420000 + 180000;   // + the director hand-off (card, warm-up, reveal) that now precedes the first metre
 while (!t1 && Date.now() < end) await page.waitForTimeout(250);
 console.log(`${extra || '(none)'}: ${t1 ? ((to - from) / ((t1 - t0) / 1000)).toFixed(1) + ' m/s wall' : 'DID NOT REACH ' + to + ' (at ' + d + ')'}`);
 await browser.close();

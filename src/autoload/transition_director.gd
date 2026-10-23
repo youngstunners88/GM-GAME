@@ -265,6 +265,13 @@ func handoff_holding() -> bool:
 	return _going and state >= S.COVERING and state < S.REVEALING
 
 
+## True once nothing the player can see is moving any more: a COVER (the film's frozen last frame) is opaque from the first
+## covering frame; the black CARD is only opaque once it has faded in (LOADING). The script / scene compiles (the one
+## multi-hundred-ms stall) wait for this, so a half-faded card is never frozen by them.
+func is_screen_covered() -> bool:
+	return state >= S.LOADING or (state == S.COVERING and _cover != null)
+
+
 func is_ready_for(path: String) -> bool:
 	return target_path == path and state == S.READY
 
@@ -375,7 +382,7 @@ func _process(delta: float) -> void:
 		_pump_render(delta)
 		if state == S.READY and _render_queue.is_empty() and not _going:
 			set_process(false)
-	if state == S.WARMING or state == S.COVERING or state == S.LOADING:
+	if state == S.WARMING or state == S.LOADING or (state == S.COVERING and _cover != null):
 		_pump_warm(BUDGET_COVERED_MS if state >= S.COVERING else BUDGET_MS)
 	if _fade_active:
 		_fade_t += delta
@@ -393,7 +400,7 @@ func _process(delta: float) -> void:
 ## Load queued resources until this frame's time budget is spent.
 func _pump_warm(budget_ms: float) -> void:
 	var t0: int = Time.get_ticks_usec()
-	var covered: bool = state >= S.COVERING
+	var covered: bool = is_screen_covered()
 	while not _queue.is_empty():
 		var p: String = str(_queue.front())
 		# Script compiles and scene parses are single multi-hundred-millisecond stalls (ep2_entry.gd alone measured
@@ -731,7 +738,8 @@ func _recover_screen(cover: Control, go_home: bool) -> void:
 		await tw.finished
 	if cover != null and is_instance_valid(cover):
 		cover.queue_free()
-	_hide_card()
+	if not _going:                         # a NEW hand-off (a second tap) already owns the card: do not hide it
+		_hide_card()
 
 
 ## A drawn house, centred, on the card (or, over a cover, on a dark disc so it reads on any frame).
@@ -744,6 +752,10 @@ func _show_home_glyph(over_cover: bool) -> void:
 	_title.visible = false
 	_subtitle.visible = false
 	_bg.visible = not over_cover
+	if over_cover:
+		# The cover was added AFTER the card, so it draws above it: lift the card (its house sits on a dark disc) over the
+		# cover, but still below the progress node, or the house would be hidden behind an opaque film frame.
+		move_child(_card, maxi(_prog.get_index() - 1, 0))
 	_glyph.kind = CardGlyph.HOME
 	_glyph.size = gs
 	_glyph.position = (vp - gs) * 0.5
@@ -755,6 +767,7 @@ func _show_home_glyph(over_cover: bool) -> void:
 func _hide_card() -> void:
 	_card.visible = false
 	_card.modulate.a = 1.0
+	move_child(_card, 0)                   # back under any cover (a failed hand-off lifted it)
 	_bg.visible = true
 	_glyph.kind = CardGlyph.CART
 	_prog.visible = false

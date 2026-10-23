@@ -22,6 +22,9 @@ const GRACE := 2.5
 ## Hold JUMP this long to skip (a tap would be too easy to hit by accident while the cart is still on screen).
 const SKIP_HOLD := 0.9
 const SKIP_ACTION := "jump"
+## The film's clock second from which a deliberate skip is possible (the hint fades in, the touch SKIP button appears, and a
+## hold only counts once JUMP has been released after this moment).
+const SKIP_SHOW_AT := 1.0
 
 var seconds: float = 30.0
 ## Founder 2026-10-04: the film carries the stage theme from `song_video_offset` seconds in; when it ends (or is
@@ -123,8 +126,10 @@ func _process(delta: float) -> void:
 		return
 	if not _driven_externally:
 		step(delta)
-	if _hint:
-		_hint.modulate.a = clampf(minf(_t - 1.0, 5.0 - _t), 0.0, 1.0) * 0.8
+	if _hint and not _done:
+		# "HOLD SPACE TO SKIP" names a key: a phone shows the SKIP button (touch profile ep2_film) instead, never the words
+		_hint.visible = TouchUi.keys_shown()
+		_hint.modulate.a = clampf(minf(_t - SKIP_SHOW_AT, 5.0 - _t), 0.0, 1.0) * 0.8
 
 
 ## Advance the clock; the skip hold and the stall guard both live here.
@@ -148,7 +153,7 @@ func step(delta: float) -> void:
 				return
 	else:
 		_skip_held = 0.0
-		if _t >= 1.0:
+		if _t >= SKIP_SHOW_AT:
 			_skip_armed = true
 	if _video and is_instance_valid(_video) and _video.is_playing():
 		_last_pos = maxf(_last_pos, _video.stream_position)
@@ -175,6 +180,11 @@ func summary() -> String:
 
 func is_done() -> bool: return _done
 func is_finishing() -> bool: return _finishing
+
+## True while a deliberate skip is possible: the picture is up, the film is not ending, and SKIP_SHOW_AT seconds have run.
+## The touch layer shows its one SKIP button (profile `ep2_film`, action `jump`, hold ring SKIP_HOLD long) exactly then.
+func is_skippable() -> bool:
+	return not _done and not _finishing and _video != null and _t >= SKIP_SHOW_AT
 func elapsed() -> float: return _t
 
 

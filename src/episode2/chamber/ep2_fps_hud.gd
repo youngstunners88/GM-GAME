@@ -13,6 +13,11 @@ extends Control
 
 const GOLD := Color(1.0, 0.86, 0.45)
 const WHITE := Color(1, 1, 1, 0.95)
+## WORDLESS icons for a touch device (founder 2026-10-13: a phone has no keys and no written words). Drawn with primitives, so they
+## exist in the web build with no texture and no font: a step of the range lesson, a toast. A desktop keeps its words.
+enum Token { NONE, BOOT, EYE, CYLINDER, SCOPE, BURST, TARGETS, EMPTY, HEAT, RETRY }
+## The range lesson as a path of icons, in the order it is taught: walk to the line, watch, load, aim, fire, clear the plates.
+const LESSON_PATH: Array[int] = [Token.BOOT, Token.EYE, Token.CYLINDER, Token.SCOPE, Token.BURST, Token.TARGETS]
 signal weapon_selected(id: String)
 signal armory_requested
 signal search_requested
@@ -40,7 +45,13 @@ var mag: int = 4
 var objective: String = ""
 var step_index: int = 0
 var step_total: int = 0
+## The current lesson step as an icon (a Token), its number (rounds loaded / targets left; -1 = none) and an optional "of N".
+## Pushed by the room every frame next to `objective`; only a touch device draws these instead of the words.
+var lesson_token: int = Token.NONE
+var lesson_count: int = -1
+var lesson_count_max: int = -1
 var toast_text: String = ""
+var toast_token: int = Token.NONE
 var _toast_t: float = 0.0
 var _hit_t: float = 0.0
 var _hit_kill: bool = false
@@ -190,7 +201,12 @@ func _update_armory() -> void:
 		return
 	_hold_button.disabled = not armory_enabled
 	_hold_button.icon = Ep2WeaponSelector.ICONS[armory.equipped]
-	_hold_button.text = "HOLD\n%s" % Ep2ArmoryState.key_label("ep2_armory")
+	var keys: bool = TouchUi.keys_shown()
+	# the holster button is its weapon icon alone on a phone ("HOLD Tab" names a key); the touch hold works on the icon
+	_hold_button.text = "HOLD\n%s" % Ep2ArmoryState.key_label("ep2_armory") if keys else ""
+	_hold_button.tooltip_text = "Hold to open your holsters. Time pauses while you choose." if keys else ""
+	if not keys:
+		_search.visible = false
 	var ui_scale: float = size.x / 390.0 if size.x / size.y < 1.1 else 1.0
 	_quick.scale = Vector2.ONE * ui_scale
 	_quick.position = Vector2(size.x * 0.5 - 68 * ui_scale, size.y - 76 * ui_scale)
@@ -205,7 +221,8 @@ func _update_armory() -> void:
 func set_search_prompt(text: String) -> void:
 	if _search != null:
 		_search.text = text
-		_search.visible = text != "" and not armory_open
+		# "Search bear [E]" names a key and its button sits under the look pad: a phone has the INTERACT button instead
+		_search.visible = text != "" and not armory_open and TouchUi.keys_shown()
 
 
 ## Host calls this only after its story/tutorial control guards approve opening.
@@ -324,8 +341,11 @@ func fade_to(goal: float, seconds: float) -> void:
 	_fade_rate = absf(_fade_goal - fade) / maxf(seconds, 0.01)
 
 
-func toast(text: String, seconds: float = 1.6) -> void:
+## A short message, centre lower. `token` is its icon: a touch device draws the icon INSTEAD of the words (no token = no toast
+## on a phone, e.g. the name of the weapon just selected).
+func toast(text: String, seconds: float = 1.6, token: int = Token.NONE) -> void:
 	toast_text = text
+	toast_token = token
 	_toast_t = seconds
 
 
@@ -350,6 +370,9 @@ func _draw() -> void:
 		return
 	var c: Vector2 = size * 0.5
 	var h: float = size.y
+	# a touch device (not driven by a keyboard) gets icons where a desktop gets words
+	var wordless: bool = not TouchUi.keys_shown()
+	var beat: float = Time.get_ticks_msec() * 0.001
 	# --- crosshair ---------------------------------------------------------------------------------------
 	var gap: float = 5.0 + spread_deg * 5.2 * (1.0 - ads * 0.8)
 	if not show_crosshair:
@@ -381,14 +404,21 @@ func _draw() -> void:
 	if show_ammo and _font:
 		var base := Vector2(size.x - 40.0, size.y - 42.0)
 		if armory != null and armory.owns(armory.equipped):
-			var status: String = "DRAWING..." if armory.active_gun() is Ep2Bow and (armory.active_gun() as Ep2Bow).drawing else "RELOADING" if armory.active_gun().reloading else Ep2ArmoryState.NAMES[armory.equipped]
-			draw_string_outline(_font, Vector2(size.x - 300.0, size.y - 166.0), status, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 5, Color(0, 0, 0, 0.8))
-			draw_string(_font, Vector2(size.x - 300.0, size.y - 166.0), status, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, GOLD)
+			var bow_drawing: bool = armory.active_gun() is Ep2Bow and (armory.active_gun() as Ep2Bow).drawing
+			if wordless:
+				# no status words: a cylinder turning while the gun reloads, a burst while the bow is drawn; nothing when idle
+				if bow_drawing or armory.active_gun().reloading:
+					_draw_token(Token.BURST if bow_drawing else Token.CYLINDER, Vector2(size.x - 286.0, size.y - 172.0), h * 0.03,
+						Color(GOLD.r, GOLD.g, GOLD.b, 0.75 + 0.2 * sin(beat * 9.0)))
+			else:
+				var status: String = "DRAWING..." if bow_drawing else "RELOADING" if armory.active_gun().reloading else Ep2ArmoryState.NAMES[armory.equipped]
+				draw_string_outline(_font, Vector2(size.x - 300.0, size.y - 166.0), status, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 5, Color(0, 0, 0, 0.8))
+				draw_string(_font, Vector2(size.x - 300.0, size.y - 166.0), status, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, GOLD)
 		var rcol: Color = GOLD if rounds > 0 else Color(1.0, 0.35, 0.25)
 		var big: String = str(rounds)
 		var fs_big: int = int(h * 0.085)
 		var w_big: float = _font.get_string_size(big, HORIZONTAL_ALIGNMENT_LEFT, -1, fs_big).x
-		var small: String = " ARROWS" if armory != null and armory.equipped == Ep2ArmoryState.BOW else " / %d" % reserve
+		var small: String = (" ARROWS" if not wordless else "") if armory != null and armory.equipped == Ep2ArmoryState.BOW else " / %d" % reserve
 		var fs_small: int = int(h * 0.04)
 		var w_small: float = _font.get_string_size(small, HORIZONTAL_ALIGNMENT_LEFT, -1, fs_small).x
 		var x0: float = base.x - w_big - w_small
@@ -403,11 +433,18 @@ func _draw() -> void:
 			draw_rect(pr, Color(0, 0, 0, 0.55))
 			draw_rect(pr.grow(-1.5), GOLD if i < rounds else Color(0.3, 0.26, 0.2, 0.9))
 		if rounds == 0 and reserve > 0:
-			var t := "RELOAD  [R]"
-			draw_string_outline(_font, Vector2(base.x - 170.0, base.y + 30.0), t, HORIZONTAL_ALIGNMENT_LEFT, -1, int(h * 0.032), 6, Color(0, 0, 0, 0.8))
-			draw_string(_font, Vector2(base.x - 170.0, base.y + 30.0), t, HORIZONTAL_ALIGNMENT_LEFT, -1, int(h * 0.032), Color(1.0, 0.45, 0.3))
+			if wordless:
+				# the empty gun asks for a reload with a pulsing cylinder beside the number (the RELOAD button sits just left of it)
+				_draw_token(Token.CYLINDER, Vector2(x0 - float(fs_big) * 0.6, base.y - float(fs_big) * 0.4), h * 0.034,
+					Color(1.0, 0.45, 0.3, 0.55 + 0.4 * absf(sin(beat * 5.0))))
+			else:
+				var t := "RELOAD  [R]"
+				draw_string_outline(_font, Vector2(base.x - 170.0, base.y + 30.0), t, HORIZONTAL_ALIGNMENT_LEFT, -1, int(h * 0.032), 6, Color(0, 0, 0, 0.8))
+				draw_string(_font, Vector2(base.x - 170.0, base.y + 30.0), t, HORIZONTAL_ALIGNMENT_LEFT, -1, int(h * 0.032), Color(1.0, 0.45, 0.3))
 	# --- objective (top left) -----------------------------------------------------------------------------
-	if objective != "" and _font:
+	if wordless and lesson_token != Token.NONE:
+		_draw_lesson_path(beat)
+	elif objective != "" and _font:
 		var fs: int = int(h * 0.036)
 		var pos := Vector2(34.0, 62.0)
 		if step_total > 0:
@@ -418,7 +455,12 @@ func _draw() -> void:
 		draw_string_outline(_font, pos, objective, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 8, Color(0, 0, 0, 0.85))
 		draw_string(_font, pos, objective, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, WHITE)
 	# --- toast (centre, lower) ----------------------------------------------------------------------------
-	if _toast_t > 0.0 and toast_text != "" and _font:
+	if wordless and _toast_t > 0.0 and toast_text != "":
+		# icon or nothing: a toast's words are instructions / status text
+		if toast_token != Token.NONE:
+			var ta: float = clampf(_toast_t / 0.4, 0.0, 1.0)
+			_draw_token(toast_token, Vector2(c.x, size.y * 0.72), h * 0.05, Color(1.0, 0.88, 0.55, ta))
+	elif _toast_t > 0.0 and toast_text != "" and _font:
 		var fs2: int = int(h * 0.04)
 		var w: float = _font.get_string_size(toast_text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs2).x
 		var p := Vector2(c.x - w * 0.5, size.y * 0.74)
@@ -427,6 +469,107 @@ func _draw() -> void:
 		draw_string(_font, p, toast_text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs2, Color(1.0, 0.85, 0.5, a2))
 	if fade > 0.001:
 		draw_rect(Rect2(Vector2.ZERO, size), Color(0.0, 0.0, 0.0, fade))
+
+
+## The range lesson on a phone: six icons in teaching order (walk, watch, load, aim, fire, clear the plates). Taught steps fade,
+## the current one is bright with a pulsing ring, the rest wait dim. Only a plain NUMBER is ever written (rounds loaded, plates
+## left): numbers are the stat labels the rule allows.
+func _draw_lesson_path(beat: float) -> void:
+	var h: float = size.y
+	var u: float = h * 0.034
+	var gap: float = u * 3.1
+	var origin := Vector2(34.0 + u * 1.5, 62.0 + u * 0.6)
+	var current: int = LESSON_PATH.find(lesson_token)
+	for i in LESSON_PATH.size():
+		var at: Vector2 = origin + Vector2(gap * float(i), 0.0)
+		var col := Color(1.0, 1.0, 1.0, 0.28)
+		if i < current:
+			col = Color(GOLD.r, GOLD.g, GOLD.b, 0.45)
+		elif i == current:
+			col = Color(1.0, 1.0, 1.0, 0.95)
+		if i + 1 < LESSON_PATH.size():
+			var a: Vector2 = at + Vector2(u * 1.55, 0.0)
+			draw_line(a, a + Vector2(gap - u * 3.1, 0.0), Color(1, 1, 1, 0.22 if i >= current else 0.4), maxf(u * 0.12, 1.5))
+		_draw_token(LESSON_PATH[i], at, u, col)
+		if i == current:
+			var pulse: float = 0.5 + 0.5 * sin(beat * 6.0)
+			draw_arc(at, u * (1.75 + 0.18 * pulse), 0.0, TAU, 40, Color(GOLD.r, GOLD.g, GOLD.b, 0.55 + 0.4 * pulse), maxf(u * 0.16, 2.0), true)
+	if lesson_count >= 0 and current >= 0 and _font:
+		var txt: String = str(lesson_count) if lesson_count_max < 0 else "%d / %d" % [lesson_count, lesson_count_max]
+		var fs: int = int(h * 0.04)
+		var tw: float = _font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var p := Vector2(origin.x + gap * float(current) - tw * 0.5, origin.y + u * 3.5)
+		draw_string_outline(_font, p, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 7, Color(0, 0, 0, 0.85))
+		draw_string(_font, p, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, WHITE)
+
+
+## One wordless icon, centred on `at`, `s` pixels from the centre to its edge, on a dark disc so it reads on any plate.
+func _draw_token(kind: int, at: Vector2, s: float, col: Color) -> void:
+	var w: float = maxf(s * 0.17, 2.0)
+	var ink := Color(col.r, col.g, col.b, col.a)
+	var shade := Color(0, 0, 0, col.a * 0.5)
+	draw_circle(at, s * 1.4, shade)
+	match kind:
+		Token.BOOT:
+			var boot := PackedVector2Array([
+				at + Vector2(-0.5, -1.0) * s, at + Vector2(0.2, -1.0) * s, at + Vector2(0.2, 0.1) * s,
+				at + Vector2(1.0, 0.4) * s, at + Vector2(1.0, 0.95) * s, at + Vector2(-0.5, 0.95) * s])
+			draw_colored_polygon(boot, ink)
+			draw_line(at + Vector2(-0.5, 0.95) * s, at + Vector2(1.0, 0.95) * s, Color(0, 0, 0, col.a * 0.7), w)
+		Token.EYE:
+			var up := PackedVector2Array()
+			var down := PackedVector2Array()
+			for i in 13:
+				var t: float = float(i) / 12.0
+				var y: float = s * 0.62 * sin(PI * t)
+				up.append(at + Vector2(lerpf(-s, s, t), -y))
+				down.append(at + Vector2(lerpf(-s, s, t), y))
+			draw_polyline(up, ink, w, true)
+			draw_polyline(down, ink, w, true)
+			draw_circle(at, s * 0.32, ink)
+		Token.CYLINDER:
+			draw_arc(at, s, 0.0, TAU, 32, ink, w, true)
+			for i in 6:
+				var a: float = TAU * float(i) / 6.0 - PI * 0.5
+				draw_circle(at + Vector2(cos(a), sin(a)) * s * 0.58, s * 0.2, ink)
+			draw_circle(at, s * 0.14, ink)
+		Token.SCOPE:
+			draw_arc(at, s * 0.78, 0.0, TAU, 32, ink, w, true)
+			for d: Vector2 in [Vector2.UP, Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT]:
+				draw_line(at + d * s * 0.38, at + d * s * 1.15, ink, w * 0.85, true)
+			draw_circle(at, s * 0.1, ink)
+		Token.BURST:
+			for i in 8:
+				var a: float = TAU * float(i) / 8.0
+				var dir := Vector2(cos(a), sin(a))
+				draw_line(at + dir * s * 0.38, at + dir * s * (1.0 if i % 2 == 0 else 0.72), ink, w, true)
+			draw_circle(at, s * 0.2, ink)
+		Token.TARGETS:
+			draw_arc(at, s, 0.0, TAU, 32, ink, w, true)
+			draw_arc(at, s * 0.6, 0.0, TAU, 28, ink, w, true)
+			draw_circle(at, s * 0.24, ink)
+		Token.EMPTY:
+			draw_arc(at, s, 0.0, TAU, 32, ink, w, true)
+			for i in 6:
+				var a: float = TAU * float(i) / 6.0 - PI * 0.5
+				draw_arc(at + Vector2(cos(a), sin(a)) * s * 0.58, s * 0.2, 0.0, TAU, 12, ink, w * 0.6, true)
+			draw_line(at + Vector2(-1.0, 1.0) * s * 0.95, at + Vector2(1.0, -1.0) * s * 0.95, Color(1.0, 0.3, 0.25, col.a), w * 1.2, true)
+		Token.HEAT:
+			var flame := PackedVector2Array([
+				at + Vector2(0.0, -1.15) * s, at + Vector2(0.55, -0.25) * s, at + Vector2(0.38, 0.1) * s, at + Vector2(0.75, 0.5) * s,
+				at + Vector2(0.0, 1.1) * s, at + Vector2(-0.75, 0.5) * s, at + Vector2(-0.4, 0.05) * s, at + Vector2(-0.55, -0.35) * s])
+			draw_colored_polygon(flame, Color(1.0, 0.45, 0.12, col.a))
+			draw_polyline(flame + PackedVector2Array([flame[0]]), Color(1.0, 0.85, 0.4, col.a), w * 0.6, true)
+		Token.RETRY:
+			var a0: float = -PI * 0.5 + 0.5
+			var a1: float = a0 + TAU * 0.8
+			draw_arc(at, s * 0.85, a0, a1, 32, ink, w, true)
+			var e: Vector2 = at + Vector2(cos(a1), sin(a1)) * s * 0.85
+			var radial := Vector2(cos(a1), sin(a1))
+			var tangent := Vector2(-sin(a1), cos(a1))
+			draw_colored_polygon(PackedVector2Array([e + tangent * s * 0.6, e + radial * s * 0.5, e - radial * s * 0.5]), ink)
+		_:
+			pass
 
 
 ## A heart from two circles and a triangle (no font glyph needed, so it also draws in the web build).

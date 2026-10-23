@@ -61,9 +61,11 @@ var _finished: bool = false
 var _jump_buffer: float = 0.0
 var _coyote: float = 0.0
 var _exiting: bool = false
-## The run is "armed" (cube moving) or holding at x=0. Defaults to TRUE so every
-## desktop and headless path keeps auto-running exactly as before; the touch
-## armed-start (wait for the reveal + first tap) flips it in a later phase.
+## The run is "armed" (cube moving) or HOLDING for the player's tap: while false
+## _physics_process does nothing, so the cube stands still wherever it is (at x=0 at the
+## start, or mid-run after a pause-card resume). Defaults to TRUE so every desktop and
+## headless path keeps auto-running exactly as before; only a TOUCH player is armed
+## (see _begin_play): the cube holds until the scene is revealed AND the first tap.
 var _armed: bool = true
 ## Set by _pause_run() / cleared by _resume_run(): physics frozen, buffers cleared.
 var _run_paused: bool = false
@@ -113,6 +115,150 @@ func _release_music(resume: bool = false) -> void:
 ## Belt and braces: if this node is freed by ANY route the override is dropped.
 func _exit_tree() -> void:
 	_release_music()
+	# Leave the touch profile group and every connection made to the touch manager / router,
+	# so the level that follows is asked for the platformer controls and nothing keeps
+	# calling into a freed run.
+	if is_in_group(MobileLayoutManager.GROUP_WANTED):
+		remove_from_group(MobileLayoutManager.GROUP_WANTED)
+	_disconnect_touch_signals()
+
+# --- TOUCH WIRING (the mobile pass) ---------------------------------------------
+#
+# ONE touch path: finger -> the Blaze touch profile's TapField (src/input/mobile) -> the
+# `jump` action -> _unhandled_input -> _queue_jump. This node only ANSWERS the manager
+# (touch_profile / touch_suspended) and owns what the layout cannot: the wordless pause
+# card (BlazePause), the armed start with its tap-hand cue (BlazeTapCue), the HUD that
+# keeps clear of the layout's Pause button, and the exit button that is hidden on a phone.
+
+## The manager reads this from the first node in group touch_controls_wanted.
+signal touch_profile_changed
+
+## The control set Blaze asks the layout manager for (full-screen tap field + Pause).
+const TOUCH_PROFILE := &"blaze"
+## How long the armed start waits for SceneRouter.revealed. The watchdog path
+## (change_scene_to_file) never emits it, and a run must never be stranded behind it.
+const REVEAL_TIMEOUT_S: float = 1.0
+## The strip (dp, in from the safe-area corner) the layout's top-right Pause button owns;
+## the HUD row stays left of it.
+const PAUSE_ZONE_W_DP: float = 62.0
+## The HUD's authored margins (canvas units); touch adds the safe area on top.
+const HUD_MARGIN_X: float = 16.0
+const HUD_MARGIN_Y: float = 12.0
+
+var _card: BlazePause = null
+var _card_open: bool = false
+var _cue: BlazeTapCue = null
+## SceneRouter has revealed this scene (or the safety timeout passed): the first tap may
+## start the run. Always true off touch.
+var _reveal_ready: bool = true
+## Engine frame the run was last armed in: a second tap-ish event of the SAME tap (the
+## fallback path's ScreenTouch + emulated mouse + a late action) is not a jump.
+var _arm_frame: int = -1
+var _tapout_button: Button = null
+var _hud_margin: MarginContainer = null
+var _hud_has_touch_margins: bool = false
+
+## Profile the touch manager shows while this scene is up.
+func touch_profile() -> StringName:
+	return TOUCH_PROFILE
+
+## True while the pause card is up: the layer-60 controls go inert and the card, one layer
+## below them, receives the touch (MobileLayoutManager LAYERING RULE).
+func touch_suspended() -> bool:
+	return _card_open
+
+## "Is this a touch player right now?" - the ONE predicate (TouchUi.keys_shown is its
+## negation): a touch device that is not being driven with a keyboard.
+func _touch_mode() -> bool:
+	return not TouchUi.keys_shown()
+
+## True while the touch layer's own tap field is live under the player's thumb: the blaze
+## profile is up, shown and not suspended. Then the `jump` action is the only tap path.
+func _tap_field_live() -> bool:
+	var mgr: Node = get_node_or_null("/root/MobileLayoutManager")
+	if mgr == null:
+		return false
+	return bool(mgr.get(&"controls_visible")) and not bool(mgr.get(&"controls_suspended")) \
+			and StringName(mgr.call(&"current_profile")) == TOUCH_PROFILE
+
+func _connect_touch_signals() -> void:
+	var mgr: Node = get_node_or_null("/root/MobileLayoutManager")
+	if mgr == null:
+		return
+	for sig_name: StringName in [&"controls_visibility_changed", &"layout_changed", &"profile_changed"]:
+		if not mgr.is_connected(sig_name, _on_touch_state_changed):
+			mgr.connect(sig_name, _on_touch_state_changed)
+
+func _disconnect_touch_signals() -> void:
+	var mgr: Node = get_node_or_null("/root/MobileLayoutManager")
+	if mgr != null:
+		for sig_name: StringName in [&"controls_visibility_changed", &"layout_changed", &"profile_changed"]:
+			if mgr.is_connected(sig_name, _on_touch_state_changed):
+				mgr.disconnect(sig_name, _on_touch_state_changed)
+	if SceneRouter.revealed.is_connected(_on_revealed):
+		SceneRouter.revealed.disconnect(_on_revealed)
+
+## The manager flips is_touch_device lazily on the first real finger and hides the layer on
+## a key press, so the HUD follows these signals instead of deciding once at build time.
+func _on_touch_state_changed(_arg: Variant = null) -> void:
+	_sync_touch_hud()
+
+## Build the pause card and the tap cue. AFTER _let_taps_through(): the card's field is the
+## one intentional STOP Control in the run and must stay one.
+func _build_touch_extras() -> void:
+	var dp: float = maxf(TouchUi.metrics().dp, 0.1)
+	var cue_layer := CanvasLayer.new()
+	cue_layer.name = "TapCueLayer"
+	cue_layer.layer = 30
+	add_child(cue_layer)
+	_cue = BlazeTapCue.new()
+	_cue.name = "TapCue"
+	_cue.unit = dp
+	cue_layer.add_child(_cue)
+	_card = BlazePause.new()
+	add_child(_card)
+	_card.resume_pressed.connect(_on_card_play)
+	_card.exit_pressed.connect(_on_card_exit)
+
+## Where the run starts. Desktop and every headless test keep the old behaviour: PLAYING at
+## once, the cube runs. A TOUCH player is ARMED: the cube holds at x=0 until the scene has
+## been revealed (SceneRouter.revealed, 1.0 s safety timeout) AND the first tap, with the
+## tap-hand cue showing; StateMachine goes to PLAYING at the reveal, not before, because the
+## touch manager only shows controls in PLAYING and they must not pop in under the dissolve.
+func _begin_play() -> void:
+	if not _touch_mode():
+		StateMachine.change_state(StateMachine.State.PLAYING)
+		return
+	_armed = false
+	_reveal_ready = false
+	if SceneRouter.is_revealed():
+		_on_revealed()
+		return
+	SceneRouter.revealed.connect(_on_revealed, CONNECT_ONE_SHOT)
+	get_tree().create_timer(REVEAL_TIMEOUT_S, true, false, true).timeout.connect(_on_revealed)
+
+func _on_revealed() -> void:
+	if _reveal_ready:
+		return
+	_reveal_ready = true
+	if SceneRouter.revealed.is_connected(_on_revealed):
+		SceneRouter.revealed.disconnect(_on_revealed)
+	if not StateMachine.is_playing():
+		StateMachine.change_state(StateMachine.State.PLAYING)
+	_show_cue_if_waiting()
+
+func _show_cue_if_waiting() -> void:
+	if _cue != null and not _armed and _reveal_ready and not _card_open and not _finished and not _exiting:
+		_cue.show_cue()
+
+## The tap that STARTS the run (or continues it after the pause card). It is not a jump.
+func _start_run() -> void:
+	_armed = true
+	_arm_frame = Engine.get_process_frames()
+	_jump_buffer = 0.0
+	_coyote = COYOTE_S
+	if _cue != null:
+		_cue.hide_cue()
 
 ## Hazard telegraph (Grok's "critical for auto-run" call): one reusable
 ## warning bar, not one per obstacle — repositions each frame to whichever
@@ -133,6 +279,9 @@ const TELEGRAPH_W: float = 14.0
 
 func _ready() -> void:
 	var build_start_us: int = Time.get_ticks_usec()
+	# FIRST, before anything can move StateMachine to PLAYING: the touch manager reads its
+	# profile from the first node in this group (touch_profile() -> &"blaze").
+	add_to_group(MobileLayoutManager.GROUP_WANTED)
 	_level_index = int(GameManager.dash_return.get("level_index", 1))
 	_return_path = str(GameManager.dash_return.get("scene_path",
 		"res://src/level/level_01_smoke_realm.tscn"))
@@ -164,9 +313,12 @@ func _ready() -> void:
 	_build_speed_atmosphere()
 	_build_hud()
 	_let_taps_through(self)
+	_build_touch_extras()
 	# Re-frame on a window resize / rotation (no scene reload).
 	get_tree().root.size_changed.connect(_on_viewport_resized)
-	StateMachine.change_state(StateMachine.State.PLAYING)
+	_connect_touch_signals()
+	_sync_touch_hud()
+	_begin_play()
 	AudioManager.play_sfx("powerup")
 	# Blaze Rush has its own track (founder-supplied NewLB2.mp3). push/pop
 	# override pauses and later RESUMES the level's music at its saved
@@ -1696,6 +1848,7 @@ func _on_viewport_resized() -> void:
 	_framing = BlazeFraming.compute(get_viewport_rect().size, _framing_metrics())
 	_look_ahead = float(_framing["look_ahead"])
 	_apply_framing()
+	_sync_touch_hud()
 
 func _apply_framing() -> void:
 	_camera.zoom = Vector2.ONE * float(_framing["zoom"])
@@ -1745,6 +1898,7 @@ func _build_hud() -> void:
 	margin.add_theme_constant_override("margin_top", 12)
 	margin.add_theme_constant_override("margin_right", 16)
 	layer.add_child(margin)
+	_hud_margin = margin
 
 	var row := HBoxContainer.new()
 	margin.add_child(row)
@@ -1818,6 +1972,7 @@ func _build_hud() -> void:
 	tapout_btn.add_theme_stylebox_override("pressed", exit_hover)
 	tapout_btn.pressed.connect(_exit_to_level)
 	row.add_child(tapout_btn)
+	_tapout_button = tapout_btn
 
 	# THE BAR AT THE BOTTOM OF THE SCREEN IS GONE.
 	#
@@ -1841,6 +1996,36 @@ func _build_hud() -> void:
 	# that is no longer displayed.
 
 	_update_hud()
+
+## Place the HUD row for this screen and hide the written exit on a phone.
+##
+## Called at build, on size_changed AND whenever the touch manager shows / hides /
+## re-lays-out, because the manager flips is_touch_device lazily on the first real
+## finger and hides the layer on a key press: the answer cannot be decided once at build.
+##   * touch: the row sits inside the safe area and stops short of the layout's top-right
+##     Pause button (PAUSE_ZONE_W_DP); the text "TAP OUT (Q)" button is hidden (a phone
+##     has no Q and no written words - the exit is the pause card). The Lil Blunt face and
+##     the founder-restored BLAZE DIAMONDS / ATTEMPT labels stay.
+##   * keys shown (desktop, or a hybrid being driven with a keyboard): the authored
+##     16 / 12 / 16 margins and the TAP OUT (Q) button, byte for byte as before.
+func _sync_touch_hud() -> void:
+	var touch: bool = _touch_mode()
+	if _tapout_button != null and is_instance_valid(_tapout_button):
+		_tapout_button.visible = not touch
+	if _hud_margin == null or not is_instance_valid(_hud_margin):
+		return
+	var left: float = HUD_MARGIN_X
+	var top: float = HUD_MARGIN_Y
+	var right: float = HUD_MARGIN_X
+	if touch:
+		var m: TouchMetrics = _framing_metrics()
+		left = maxf(HUD_MARGIN_X, m.safe_rect.position.x)
+		top = maxf(HUD_MARGIN_Y, m.safe_rect.position.y)
+		right = maxf(HUD_MARGIN_X, m.viewport_size.x - m.safe_rect.end.x) + PAUSE_ZONE_W_DP * m.dp
+	_hud_has_touch_margins = touch
+	_hud_margin.add_theme_constant_override("margin_left", int(round(left)))
+	_hud_margin.add_theme_constant_override("margin_top", int(round(top)))
+	_hud_margin.add_theme_constant_override("margin_right", int(round(right)))
 
 # --- run loop ----------------------------------------------------------------
 
@@ -1870,27 +2055,51 @@ func _input(event: InputEvent) -> void:
 	if wants_exit:
 		get_viewport().set_input_as_handled()
 		_exit_to_level()
+		return
+	# The layout's Pause button (and a gamepad's Start) press the `pause` action: open the
+	# wordless card. Resuming from it is the card's own job (BlazePause._input / PLAY).
+	if event.is_action_pressed(&"pause") and not event.is_echo():
+		get_viewport().set_input_as_handled()
+		_open_pause_card()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if _run_paused:
 		return
 	# Whole-screen tap/click = jump (mobile-first, Geometry Dash convention).
-	# ONE finger tap arrives as an InputEventScreenTouch AND an emulated
-	# InputEventMouseButton (device == DEVICE_ID_EMULATION), and — once the touch
-	# layer's tap field is wired — as a `jump` InputEventAction too. All three
-	# land on the same idempotent buffer (a latch, never a counter), so a tap is
-	# exactly one jump however many events it produces. Anything that counts
-	# events (haptics, VFX) belongs at the takeoff in _update_jump, not here.
+	#
+	# ONE tap path. With the touch layer's tap field live (the normal phone case) a finger
+	# reaches this node ONLY as the `jump` action: the field swallows the ScreenTouch and
+	# the mouse click Godot emulates from it. The ScreenTouch / left-click branches below
+	# are the guarded FALLBACK for the moments the layer is not up (a touch device that is
+	# detected lazily on its first finger, the instant before the reveal, a keyboard-mode
+	# laptop) so a first tap is never lost; they are ignored while the field is live, so a
+	# tap that could arrive both ways still counts once. All paths end in the same
+	# idempotent latch (_queue_jump), never a counter.
 	if event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed:
-		_queue_jump()
+		if not _tap_field_live():
+			_on_tap()
 	elif event is InputEventMouseButton and (event as InputEventMouseButton).pressed \
 			and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
 		# LEFT button only (a touch tap's emulated mouse press is the left button): the
 		# wheel and the other buttons also arrive as pressed MouseButton events, and now
 		# that a click anywhere reaches here they must not make the cube jump.
-		_queue_jump()
+		if not _tap_field_live():
+			_on_tap()
 	elif event.is_action_pressed("jump"):
-		_queue_jump()
+		_on_tap()
+
+## A tap, from whichever path. While the run is HOLDING (the touch armed start, or after
+## the pause card) the tap that comes after the reveal starts it - and is not a jump; a tap
+## before the reveal is ignored. Once running it is the buffered jump. A second event of the
+## same tap in the frame that started the run is dropped.
+func _on_tap() -> void:
+	if not _armed:
+		if _reveal_ready and not _card_open:
+			_start_run()
+		return
+	if Engine.get_process_frames() == _arm_frame:
+		return
+	_queue_jump()
 
 ## Remember a tap for the buffer window (0.10 s on touch, 0.06 s on desktop).
 func _queue_jump() -> void:
@@ -1903,8 +2112,8 @@ func _clear_input_buffers() -> void:
 	_jump_buffer = 0.0
 	_coyote = 0.0
 
-## Freeze the run (focus lost, pause overlay). The overlay itself is a later
-## phase; this is the single seam it will call.
+## Freeze the run (focus lost, the wordless pause card). This is the single seam the card
+## calls; the buffers are cleared so a tap queued at the pause edge cannot fire on resume.
 func _pause_run() -> void:
 	if _run_paused:
 		return
@@ -1922,6 +2131,63 @@ func _resume_run() -> void:
 func is_run_paused() -> bool:
 	return _run_paused
 
+# --- the wordless pause card (touch) -----------------------------------------------
+#
+# Opened by the layout's Pause button / a gamepad Start (the `pause` action, see _input) and
+# automatically when the app loses focus. It freezes the run through the same
+# _pause_run()/_resume_run() seam the tests drive, reports touch_suspended() so the
+# layer-60 tap field goes inert and the card (layer 40) gets the touch, and its two pads
+# are PLAY (resume) and EXIT (the SAME _exit_to_level() path as Esc/Q and the finish:
+# music resume, side_return, the 2.5 s watchdog).
+
+## True while the pause card is up.
+func is_pause_card_open() -> bool:
+	return _card_open
+
+func _open_pause_card() -> void:
+	if _card == null or _card_open or _finished or _exiting:
+		return
+	_pause_run()
+	_card_open = true
+	if _cue != null:
+		_cue.hide_cue()   # the hand would sit under the dim
+	_card.open()
+	touch_profile_changed.emit()
+
+func _close_pause_card() -> void:
+	if not _card_open:
+		return
+	_card_open = false
+	_card.close()
+	touch_profile_changed.emit()
+
+## PLAY: back to the run. Buffers are cleared (a tap queued at the pause edge must not fire
+## now). On a touch device the cube then HOLDS where it froze, with the tap-hand cue, until
+## the player's next tap: a thumb that just left PLAY (or a phone call that just ended)
+## gets a beat instead of being dropped into a moving cube. That tap is not a jump.
+func _on_card_play() -> void:
+	if not _card_open:
+		return
+	_close_pause_card()
+	_resume_run()
+	if _touch_mode():
+		_armed = false
+		_show_cue_if_waiting()
+
+## EXIT: the very same path as Esc / Q / the finish line.
+func _on_card_exit() -> void:
+	if not _card_open:
+		return
+	_exit_to_level()
+
+## A phone call, the notification shade, an app switch: the tab loses focus without a
+## release event for anything. A TOUCH player gets the card (and the controls are released
+## by the manager's own focus handler); desktop keeps its old behaviour of carrying on.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		if _player != null and _touch_mode():
+			_open_pause_card()
+
 ## Jump decision, once per physics tick, BEFORE move_and_slide.
 ##
 ## `is_on_floor()` here still reports the PREVIOUS tick's slide, so the cube may
@@ -1938,7 +2204,11 @@ func _update_jump(delta: float) -> void:
 		_jump_buffer = 0.0
 		_coyote = 0.0
 		_spin_cube()
-		_buzz(HAPTIC_JUMP_MS)
+		# ONE haptic per tap: while the touch layer's tap field is live it already buzzed on
+		# the finger-down (VirtualTapField.buzz_ms), so the takeoff stays silent; the
+		# takeoff buzz covers the fallback path, where nothing else vibrates.
+		if not _tap_field_live():
+			_buzz(HAPTIC_JUMP_MS)
 	else:
 		_jump_buffer = maxf(_jump_buffer - delta, 0.0)
 
@@ -1956,8 +2226,11 @@ var _haptic_sent: int = 0
 func _physics_process(delta: float) -> void:
 	if _finished or _player == null:
 		return
+	# HOLDING for the player's tap (touch armed start / after the pause card): nothing moves.
+	if not _armed:
+		return
 
-	_player.velocity.x = RUN_SPEED if _armed else 0.0
+	_player.velocity.x = RUN_SPEED
 	_player.velocity.y += GRAVITY * delta
 
 	_update_jump(delta)

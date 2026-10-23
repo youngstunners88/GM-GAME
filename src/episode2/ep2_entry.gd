@@ -50,6 +50,23 @@ var _keys_t: float = 0.0
 var _title: Label = null
 var _title_done_for: int = 0
 
+# --- TOUCH (skill ep2-mobile-touch; DECISIONS section 4) -------------------------------------------------------------
+## The profile for the run-over screen is THIS node's: the session root is IDLE then and answers `none`. MobileLayoutManager reads
+## the first node (tree order = this node before the session root) of the group that has `touch_profile()`, so this node is a
+## member ONLY while the run is over - otherwise its `none` would hide the session root's controls.
+signal touch_profile_changed
+const TOUCH_GROUP := &"touch_controls_wanted"
+const PROFILE_END := &"ep2_end"
+const PROFILE_NONE := &"none"
+const PROFILE_RUNNER := &"ep2_runner"
+const PROFILE_FOOT := &"ep2_foot"
+const PROFILE_ROTATE := &"ep2_rotate"
+## The wordless pause card (touch). Built on first use; Escape / the card's HOME leave through the same path.
+var _overlay: Ep2TouchOverlay = null
+var _pause_open: bool = false
+## The dimmed last frame behind the run-over buttons (touch): the screen is never plain black.
+var _scrim_layer: CanvasLayer = null
+
 ## Founder 2026-09-30: Episode 2 is behind an access code ("I want to still access it simply but restrict
 ## others"). Only the SHA-256 of the code is stored - the plaintext is not in the repo or the build. This is
 ## a casual lock for a client-only static web game: anyone who reverse-engineers the web pack can skip it.
@@ -158,19 +175,32 @@ func _begin() -> void:
 		for f in str(oq).split(",", false):
 			RunnerView.debug_off[f.strip_edges()] = true
 
+	_enter_playing()
 	_root = SESSION_ROOT.instantiate()
 	add_child(_root)
 	_root.mode_changed.connect(_on_mode_changed)
 	_root.chamber_committed.connect(_on_chamber_committed)
 	_root.session_complete.connect(_on_session_complete)
 	_root.session_failed.connect(_on_session_failed)
+	_root.touch_profile_changed.connect(_sync_portrait_exit)
 	_start_session()
+
+## The menu / ?ep2=1 route enters Episode 2 through SceneRouter, which leaves the StateMachine in TRANSITIONING, and nothing on
+## this side ever set PLAYING - so the touch layer (which needs PLAYING) stayed hidden for the whole run. The Stage 3 story
+## hand-off gets PLAYING from TransitionDirector at its reveal: while the director is still busy it owns the change. Called
+## from _begin(), i.e. AFTER the access gate, so the code screen never sits in PLAYING.
+func _enter_playing() -> void:
+	if not StateMachine.is_state(StateMachine.State.TRANSITIONING):
+		return
+	if TransitionDirector.state != TransitionDirector.S.IDLE:
+		return
+	StateMachine.change_state(StateMachine.State.PLAYING)
 
 ## (Re)start a run from segment 0. Used by _ready() and by the retry path.
 ## Signals are connected ONCE in _ready(); reconnecting here would multiply
 ## every commit callback per retry.
 func _start_session() -> void:
-	_ended = false
+	_set_ended(false)
 	_banner.text = ""
 	# A run that starts from the cliff is a NEW run: Lil Blunt begins with a fresh armory (full rounds, rifle lesson not yet taught).
 	# Without this the saved armory from an earlier play-through came back - 8 rounds left and "training_complete", so the target
@@ -257,11 +287,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_K:
 		_keys_t = KEYS_SHOW_SECONDS          # shows the control list; changes no binding
+	# The touch layer's PAUSE button (and a gamepad's Start) presses `pause`: the wordless pause card. Touch devices only, so
+	# desktop keyboard / mouse play is exactly what it was.
+	if event.is_action_pressed("pause") and not event.is_echo():
+		if TouchUi.is_touch():
+			_open_pause()
+		return
 	# Always an exit. A mode with no visible way out is how a tester gets stuck
 	# and reports the whole episode as broken.
 	if event.is_action_pressed("ui_cancel"):
-		get_tree().paused = false
-		SceneRouter.load_scene(MENU_SCENE, SceneRouter.Transition.DIAMOND)
+		_go_home()
 		return
 	# RETRY. When a run ends, the session root tears the active scene down —
 	# which also removes the only Camera3D, so the screen goes BLACK. A browser
@@ -355,7 +390,7 @@ func _refresh_hud() -> void:
 					if a.get_molds_left() > 0:
 						lines += "   ·   %d molds left" % a.get_molds_left()
 				else:
-					lines += "walk to the Bull (arrows / WASD, mouse to look)"
+					lines += "walk to the Bull (arrows / WASD, mouse to look)" if TouchUi.keys_shown() else "walk to the Bull"
 				var mode: int = a.get_episode_mode() if a.has_method("get_episode_mode") else Episode2Mode.Mode.HIDEOUT
 				if Episode2Mode.is_first_person(mode):
 					lines += "\nFIRST-PERSON SHOOTER   ·   Inferno Bull rides with you   ·   BTC paid: %d" % a.get_btc_paid()
@@ -368,7 +403,7 @@ func _refresh_hud() -> void:
 					lines += "vest %s %d%%%s" % [_bar(a.get_vest()), int(a.get_vest() * 100.0),
 						"   IN COVER" if a.is_in_cover() else ""]
 				else:
-					lines += "rig idle — press E to start a Miner"
+					lines += "rig idle — press E to start a Miner" if TouchUi.keys_shown() else "rig idle"
 				# INSIDE the elif, not after it. When this assignment sat at the
 				# end of the CHAMBER branch it ran unconditionally and stamped
 				# the Miner Shaft's controls over the Smelting Facility's — the
@@ -384,8 +419,8 @@ func _refresh_hud() -> void:
 	# Facility: no beat/inventory text at all (the room tells the story). Elsewhere the run stats stay.
 	if _root.get_mode() == Ep2SessionRoot.Mode.CHAMBER and a and a.has_method("get_beat_name"):
 		_hud.text = ""
-	if _keys_t <= 0.0:
-		_hint.text = ""
+	if _keys_t <= 0.0 or not TouchUi.keys_shown():
+		_hint.text = ""          # (the control strips name keys: a phone never shows them)
 
 func _bar(f: float) -> String:
 	var filled := int(clampf(f, 0.0, 1.0) * 20.0)
@@ -410,14 +445,22 @@ func _on_chamber_committed(_index: int, result: Dictionary) -> void:
 	]
 
 func _on_session_complete() -> void:
-	_ended = true
+	_set_ended(true)
+	if not TouchUi.keys_shown():
+		_banner.text = ""          # wordless: the retry / home buttons (profile ep2_end) are the whole screen
+		_show_scrim()
+		return
 	if _lake_complete:
 		_banner.text = "LOGAN’S LAKE COMPLETE\nThe depth is staged. The day-88 river run lies ahead.\nSPACE / R  play again        ESC  menu"
 		return
 	_banner.text = "TO BE CONTINUED...\nInferno rides, Lil Blunt shoots: the bear hunt is next.\nSPACE / R  play it again        ESC  menu"
 
 func _on_session_failed() -> void:
-	_ended = true
+	_set_ended(true)
+	if not TouchUi.keys_shown():
+		_banner.text = ""          # wordless: the retry / home buttons (profile ep2_end) are the whole screen
+		_show_scrim()
+		return
 	_banner.text = "RUN FAILED\nSPACE / R  try again        ESC  menu"
 
 
@@ -438,6 +481,134 @@ func _update_title_card() -> void:
 	tw.tween_property(_title, "modulate:a", 1.0, 0.6)
 	tw.tween_interval(1.8)
 	tw.tween_property(_title, "modulate:a", 0.0, 1.2)
+
+# --- Touch: run-over buttons, the wordless pause card, the portrait exit ------------------------------------------------
+
+## The profile the manager reads while this node is in the group (only while the run is over): retry + home.
+func touch_profile() -> StringName:
+	return PROFILE_END if _ended else PROFILE_NONE
+
+## Enter / leave the run-over state. The retry button presses `jump` and the home button `ui_cancel`: both already mean
+## "play again" and "back to the menu" in _unhandled_input, so the buttons need no handler of their own.
+func _set_ended(on: bool) -> void:
+	_ended = on
+	if on:
+		if not is_in_group(TOUCH_GROUP):
+			add_to_group(TOUCH_GROUP)
+	else:
+		if is_in_group(TOUCH_GROUP):
+			remove_from_group(TOUCH_GROUP)
+		_clear_scrim()
+	touch_profile_changed.emit()
+
+## True while the run is over (tests).
+func is_ended() -> bool:
+	return _ended
+
+## A dim copy of the last frame behind the retry / home buttons, so the run-over screen is never plain black (the session
+## root has freed the only Camera3D). Touch only. The headless renderer has no viewport texture: a dark warm plate then.
+func _show_scrim() -> void:
+	_clear_scrim()
+	_scrim_layer = CanvasLayer.new()
+	_scrim_layer.layer = 8          # under the HUD (10) and the touch layer (18 / 60)
+	add_child(_scrim_layer)
+	var img: Image = null
+	if DisplayServer.get_name() != "headless":
+		var tex: Texture2D = get_viewport().get_texture()
+		if tex != null:
+			img = tex.get_image()
+	if img != null and not img.is_empty():
+		var frame := TextureRect.new()
+		frame.name = "LastFrame"
+		frame.texture = ImageTexture.create_from_image(img)
+		frame.set_anchors_preset(Control.PRESET_FULL_RECT)
+		frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		frame.stretch_mode = TextureRect.STRETCH_SCALE
+		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		frame.modulate = Color(0.34, 0.31, 0.3)
+		_scrim_layer.add_child(frame)
+	else:
+		var plate := ColorRect.new()
+		plate.name = "LastFrame"
+		plate.color = Color(0.1, 0.065, 0.045)
+		plate.set_anchors_preset(Control.PRESET_FULL_RECT)
+		plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_scrim_layer.add_child(plate)
+
+func _clear_scrim() -> void:
+	if _scrim_layer != null and is_instance_valid(_scrim_layer):
+		_scrim_layer.queue_free()
+	_scrim_layer = null
+
+func has_scrim() -> bool:
+	return _scrim_layer != null and is_instance_valid(_scrim_layer)
+
+func _ensure_overlay() -> Ep2TouchOverlay:
+	if _overlay == null:
+		_overlay = Ep2TouchOverlay.new()
+		add_child(_overlay)
+		_overlay.resume_pressed.connect(_close_pause)
+		_overlay.home_pressed.connect(_go_home)
+	return _overlay
+
+func get_overlay() -> Ep2TouchOverlay:
+	return _overlay
+
+func is_pause_open() -> bool:
+	return _pause_open
+
+## The PAUSE button: freeze the sim (StateMachine PAUSED - the controls underneath go dim and inert) and raise the card.
+## Only while the runner / on-foot controls are the ones up: a film keeps playing through a tree pause (it runs ALWAYS), and
+## the armory, a transition or the portrait cue already own the pause.
+func _open_pause() -> void:
+	if _pause_open or _ended or _gate != null or _root == null:
+		return
+	var profile: StringName = _root.touch_profile()
+	if profile != PROFILE_RUNNER and profile != PROFILE_FOOT:
+		return
+	if not StateMachine.is_playing() or get_tree().paused:
+		return
+	if not StateMachine.change_state(StateMachine.State.PAUSED):
+		return
+	_pause_open = true
+	_ensure_overlay().show_pause()
+
+## PLAY: the card goes, the sim runs again. Only resumes a pause THIS card took.
+func _close_pause() -> void:
+	if not _pause_open:
+		return
+	_pause_open = false
+	if _overlay != null:
+		_overlay.close()
+	if StateMachine.is_paused():
+		StateMachine.change_state(StateMachine.State.PLAYING)
+	_sync_portrait_exit()
+
+## Back to the menu - the same two lines Escape has always run (the card's HOME, and Escape itself, both come here).
+func _go_home() -> void:
+	_close_pause()
+	get_tree().paused = false
+	SceneRouter.load_scene(MENU_SCENE, SceneRouter.Transition.DIAMOND)
+
+## Portrait on a touch device: the session root pauses the sim and the layout manager shows a drawn "turn your phone" cue.
+## A phone locked to portrait must still have a way out, so the cue never stands alone: one HOME icon sits on top of it.
+func _sync_portrait_exit() -> void:
+	if _root == null or not is_instance_valid(_root):
+		return
+	var upright: bool = _root.touch_profile() == PROFILE_ROTATE
+	if upright and not _pause_open:
+		var overlay: Ep2TouchOverlay = _ensure_overlay()
+		if overlay.mode() != Ep2TouchOverlay.Mode.PORTRAIT:
+			overlay.show_portrait_exit()
+	elif _overlay != null and _overlay.mode() == Ep2TouchOverlay.Mode.PORTRAIT:
+		_overlay.close()
+
+func _exit_tree() -> void:
+	# the card pauses the StateMachine: never leave it paused behind a scene that is going away
+	if _pause_open:
+		_pause_open = false
+		if StateMachine.is_paused():
+			StateMachine.change_state(StateMachine.State.PLAYING)
 
 ## Opt-in asset proof works behind the normal access prompt without unlocking play.
 func _probe_lake_assets() -> void:

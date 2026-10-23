@@ -7,20 +7,24 @@ const out = process.argv[2], plan = JSON.parse(process.argv[3]);
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_BIN || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
   args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
-let leg = -1, d = -1, hp = -1; const hpLog = []; const logs = [];
+let leg = -1, d = -1, hp = -1, tdIdle = false; const hpLog = []; const logs = [];
 page.on('console', m => { const t = m.text(); logs.push(`[${m.type()}] ${t}`);
+  if (t.includes('[TD] REVEALING->IDLE')) tdIdle = true;   // ?ep2=1 now runs through the TransitionDirector (card, swap, settle, reveal)
   let r = t.match(/\[EP2\] leg start (\d+)/); if (r) { leg = +r[1]; d = 0; }
   r = t.match(/\[EP2\] d=(\d+) hp=(\d+)/); if (r) { const nh = +r[2]; if (hp !== -1 && nh < hp) hpLog.push(`HIT at leg ${leg} d=${r[1]} (${hp}->${nh})`); d = +r[1]; hp = nh; } });
 page.on('pageerror', e => logs.push(`[pageerror] ${e.message}`));
 await page.goto('http://localhost:8899/game/index.html?ep2=1&ep2probe=1' + (process.argv[4] ? '&' + process.argv[4] : ''));
 const until = async (fn, ms) => { const end = Date.now() + ms; while (Date.now() < end) { if (fn()) return true; await page.waitForTimeout(15); } return false; };
 // Episode 2 is behind an access code (ep2_entry.gd). The code is NOT in the repo: pass it as EP2_CODE.
-await until(() => leg >= 0 || logs.some(l => l.includes('[EP2] code prompt')), 120000);
+await until(() => leg >= 0 || logs.some(l => l.includes('[EP2] code prompt')), 240000);
 if (leg < 0 && logs.some(l => l.includes('[EP2] code prompt'))) {
   if (!process.env.EP2_CODE) { console.log('Episode 2 asks for its access code: set EP2_CODE'); process.exit(2); }
+  // The gate is built while the director still holds the (frozen) scene under its card; keys typed before the reveal are
+  // dropped (a paused tree takes no GUI input). Wait for '[TD] REVEALING->IDLE' (an export without a director never prints it).
+  await until(() => tdIdle, 120000);
   await page.keyboard.type(process.env.EP2_CODE); await page.keyboard.press('Enter');
 }
-await until(() => leg >= 0, 120000);
+await until(() => leg >= 0, 240000);
 await page.mouse.click(640, 360);
 for (const s of plan) {                      // {leg, d, key?/down?/up?, shot?}
   const ok = await until(() => leg > s.leg || (leg === s.leg && d >= s.d), 900000);

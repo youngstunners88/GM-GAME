@@ -124,6 +124,12 @@ func _on_body_entered(body: Node2D) -> void:
 		"position": global_position,
 		"level_index": level_index,
 	}
+	# The level's on-screen controls dissolve with the dive wipe instead of snapping off:
+	# load_scene() moves the StateMachine to TRANSITIONING, which hides the touch layer, and
+	# this asks the manager to fade THAT one hide (0.12 s, controls inert meanwhile). Only
+	# when the controls are actually up - on a desktop nothing is shown and nothing is armed.
+	if MobileLayoutManager.controls_visible:
+		MobileLayoutManager.request_fade_hide()
 	# Match the wipe to THIS realm's palette, not a blanket green/purple smoke
 	# cloud — see SceneRouter.blaze_transition_for_level for why.
 	SceneRouter.load_scene("res://src/dashmode/blaze_rush.tscn",

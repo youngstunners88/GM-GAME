@@ -50,7 +50,7 @@ func _ready() -> void:
 	await _tap_through_spacer(run)
 	run.queue_free()
 	await get_tree().process_frame
-	if _checks < 4:
+	if _checks < 6:
 		_fail += 1
 		print("  [FAIL] only %d checks ran - a false green" % _checks)
 	print("BLAZE_HUD_MOUSE_FILTER: %s" % ("ALL PASS" if _fail == 0 else "%d FAILURE(S)" % _fail))
@@ -78,14 +78,28 @@ func _walk(run: Node) -> void:
 		"found %d" % controls.size())
 	var offenders: Array[String] = []
 	var buttons: int = 0
+	var pause_fields: Array[Control] = []
 	for c in controls:
 		var f: int = c.mouse_filter
 		if c is BaseButton:
 			buttons += 1
 			continue
+		# ALLOWLIST (by name AND parent): the wordless pause card's full-screen field is the
+		# one intentional STOP Control, because while the card is up NO tap may reach the run.
+		# It lives on a CanvasLayer that is HIDDEN during the run (asserted below), so it can
+		# never eat a jump tap. Every other Control - the HUD, the void, the tap-hand cue, the
+		# card's dim and its drawn discs - must let a tap through.
+		if c.name == &"BlazePauseField" and c.get_parent() is BlazePause:
+			pause_fields.append(c)
+			continue
 		if f == Control.MOUSE_FILTER_STOP:
 			offenders.append("%s (%s) filter STOP" % [c.name, c.get_class()])
 	_check("no non-button Control in the run STOPs a tap", offenders.is_empty(), "; ".join(offenders))
+	_check("the pause card's single STOP field exists and is hidden during the run (so it cannot eat a jump tap)",
+		pause_fields.size() == 1 and not pause_fields[0].is_visible_in_tree(), "fields=%d" % pause_fields.size())
+	var cue: Control = run.find_child("TapCue", true, false) as Control
+	_check("the tap-hand cue exists and IGNOREs the mouse (a visible cue must never eat the first tap)",
+		cue != null and cue.mouse_filter == Control.MOUSE_FILTER_IGNORE)
 	_check("the exit is the only intentional button", buttons == 1, "buttons=%d" % buttons)
 	var spacer: Control = run.find_child("HudSpacer", true, false) as Control
 	_check("the HUD spacer exists and IGNOREs the mouse",

@@ -55,7 +55,9 @@ const extrasStatus = [];
 page.on('console', (msg) => { const t = msg.text(); if (/\[BUILD\]|\[EP2\]/.test(t)) lines.push(t.slice(0, 200)); });
 page.on('response', (r) => { if (r.url().includes('ep2_extras.pck')) extrasStatus.push(r.status()); });
 await page.goto(gameUrl, { waitUntil: 'domcontentloaded' });
-const end = Date.now() + 180000;
+// ?ep2=1 now runs through the TransitionDirector (card, ~45 MiB warm-up, swap): the extras fetch starts when the Episode 2 scene
+// is built, i.e. after that hand-off, so the window is wider than the old fade-then-swap route needed.
+const end = Date.now() + 300000;
 while (Date.now() < end && (!lines.some((l) => /\[EP2\] extras (ready|failed)/.test(l)) || (wantLogan && !lines.some(l => /Logan lake assets (ready|failed)/.test(l))))) await page.waitForTimeout(500);
 if (shot) await page.screenshot({ path: shot });
 await browser.close();

@@ -130,7 +130,25 @@ func _exit_tree() -> void:
 ## The film's last frame as a full-screen Control (a still image of the final video frame on black), for the
 ## seamless hand-off. Null if the video never produced a frame.
 func make_cover() -> Control:
+	# The rect comes from the viewport AS IT IS NOW (the part of this node that outlives the film: a phone rotated
+	# during the film must not hand over a stale one).
+	_cover_rect = _fill_rect(get_viewport().get_visible_rect().size)
+	var frame: Texture2D = null
+	if is_instance_valid(_video_player):
+		var tex: Texture2D = _video_player.get_video_texture()
+		if tex != null:
+			var img: Image = tex.get_image()
+			if img != null and not img.is_empty():
+				frame = ImageTexture.create_from_image(img)
+	return build_cover(frame)
+
+## A full-screen cover: black, with `frame` (when there is one) anchored full-rect and stretched "covered" (fill + crop,
+## like the film itself), so the picture keeps filling the screen if the phone is rotated again while the cover waits for
+## Episode 2. A null frame (a skipped / undecodable film) is a plain black cover. Static so a test can build one from a
+## synthetic texture (a headless renderer never yields a real video frame).
+static func build_cover(frame: Texture2D) -> Control:
 	var root := Control.new()
+	root.name = "Stage3Cover"
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_STOP
 	var bg := ColorRect.new()
@@ -138,23 +156,15 @@ func make_cover() -> Control:
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(bg)
-	# The rect comes from the viewport AS IT IS NOW (the part of this node that outlives the film: a phone rotated
-	# during the film must not hand over a stale one), and the picture is anchored full-rect with a "covered" stretch
-	# so it keeps filling and cropping if the phone is rotated again while the cover waits for Episode 2.
-	_cover_rect = _fill_rect(get_viewport().get_visible_rect().size)
-	if is_instance_valid(_video_player):
-		var tex: Texture2D = _video_player.get_video_texture()
-		if tex != null:
-			var img: Image = tex.get_image()
-			if img != null and not img.is_empty():
-				var tr := TextureRect.new()
-				tr.name = "LastFrame"
-				tr.texture = ImageTexture.create_from_image(img)
-				tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-				tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-				tr.set_anchors_preset(Control.PRESET_FULL_RECT)
-				tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
-				root.add_child(tr)
+	if frame != null:
+		var tr := TextureRect.new()
+		tr.name = "LastFrame"
+		tr.texture = frame
+		tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		tr.set_anchors_preset(Control.PRESET_FULL_RECT)
+		tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		root.add_child(tr)
 	return root
 
 func _finish() -> void:
