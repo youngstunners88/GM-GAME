@@ -1,0 +1,21 @@
+{
+  "old_eye": {
+    "corridor_pixels": [
+      422,
+      216,
+      538,
+      324
+    ],
+    "driver_toggle_pixel_difference_percent": 40.006
+  },
+  "raised_eye": {
+    "corridor_pixels": [
+      422,
+      216,
+      538,
+      324
+    ],
+    "driver_toggle_pixel_difference_percent": 1.054
+  },
+  "method": "960x540 actual Compatibility renders, identical stance/view with driver visible/hidden, RGB max difference >30 in fixed central116x108 pixels. Includes animated foliage/shadow residual; this is not a pure semantic silhouette mask. Former eye1.40,raised eye1.95 above rear rack."
+}

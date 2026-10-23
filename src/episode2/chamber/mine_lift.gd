@@ -59,6 +59,7 @@ var _kit_mats: Dictionary = {}
 var _halo_tex: GradientTexture2D = null
 var _cage: Node3D = null
 var _gate: Node3D = null
+var _exit_crossbeam: Node3D = null
 var _gate_in: Node3D = null          # the walkway-side gate: up (open) until both are aboard, then it drops shut
 var _gate_in_k: float = 1.0          # 1 = raised / open, 0 = down / shut
 var _gate_in_goal: float = 1.0
@@ -315,7 +316,10 @@ func _build_shaft(rock_dark: StandardMaterial3D, gravel: StandardMaterial3D, tim
 	var by: float = 6.0                                                                                        # above the cage's roof gears (art review: a beam sliced its silhouette)
 	while by < ROOF_Y:                                                                                         # cross beams every 5 m
 		_kit("Beam4m", Vector3(0.0, by, -4.05), Vector3.ZERO, Vector3(2.0, 0.9, 0.9))
-		_kit("Beam4m", Vector3(0.0, by, 4.05), Vector3.ZERO, Vector3(2.0, 0.9, 0.9))
+		var front_beam: Node3D = _kit("Beam4m", Vector3(0.0, by, 4.05), Vector3.ZERO, Vector3(2.0, 0.9, 0.9))
+		if front_beam != null and absf(by - (TOP_Y + 1.0)) < 0.1:
+			_exit_crossbeam = front_beam
+			_exit_crossbeam.name = "SurfaceExitCrossbeam"
 		_kit("Beam4m", Vector3(-4.05, by, 0.0), Vector3(0.0, PI * 0.5, 0.0), Vector3(2.0, 0.9, 0.9))
 		_kit("Beam4m", Vector3(4.05, by, 0.0), Vector3(0.0, PI * 0.5, 0.0), Vector3(2.0, 0.9, 0.9))
 		by += 5.0
@@ -684,6 +688,9 @@ func get_handoff() -> Dictionary:
 	data["surface_player"] = _player_pos - SURFACE_OFFSET
 	if _bull != null:
 		data["surface_bull"] = _bull.position - SURFACE_OFFSET
+		data["surface_bull_facing"] = _bull.facing
+		if _bull.anim != null:
+			data["surface_bull_walk_time"] = _bull.anim.current_animation_position
 	return data
 
 
@@ -740,6 +747,10 @@ func _on_beat_entered(b: int) -> void:
 				FacilityShow._say("vo_bull_plan3", 0.3),
 				FacilityShow._say("vo_lb_plan_reply", 0.3)])
 		Beat.SURFACE:
+			# This shaft brace lies at chest height across the only exit. Clear it before
+			# the gate slides open; neither character may walk through solid timber.
+			if _exit_crossbeam != null:
+				_exit_crossbeam.visible = false
 			_sfx("ep2_lift_arrive")
 			if _loop:
 				_loop.stop()

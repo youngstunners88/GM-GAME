@@ -71,7 +71,7 @@ const GRIP_U := 1.74
 const GRIP_X := 0.56
 const BACK_F := -1.45                               # Lil Blunt's spot on the rear of the seat / rack
 const BACK_SIDE := 0.30                             # ...a little to the right of the centreline: he looks past Inferno's shoulder, not into his back
-const BACK_EYE := 1.40                              # his eye above the seat/rack there (kneeling)
+const BACK_EYE := 1.95                              # elevated passenger stance clears Inferno's pack for shooting
 const BULL_LEAN := 0.55                             # Inferno leans onto the grips (the seated clip alone sits him upright against a chair back)
 const BULL_GRIPS_IK := false                      # Inferno's hands are NOT dragged to the grips: the skinned elbow cannot take the IK (tears / goes invisible)
 const PICKET_ROAD_LEN := 775.0                    # the road pickets' `at` is a fraction of the WOODS road (the desert part has no bears)
@@ -294,6 +294,7 @@ func _build_steps() -> Array:
 	for k in int(ceil(float(n) / 3.0)):
 		steps.append(Callable(self, "_spawn_batch").bind(k, 3))
 	steps.append(_step_bull)
+	steps.append(_build_wildlife)
 	return steps
 
 
@@ -1234,14 +1235,13 @@ func _on_setup() -> void:
 		_bull = _build_bull(BULL_START, 0.0)
 	if handoff.has("surface_bull"):
 		_bull.position = handoff["surface_bull"]
+		_bull.facing = float(handoff.get("surface_bull_facing", 0.0))
+		_bull.rotation.y = _bull.facing
 	_engine = _loop_player(QUAD_LOOP, -7.0)
 	# life in the wood: birds on random flights (some swooping between the trunks), flocks flushing, and the ElevenLabs
 	# soundscape (ambience bed, canopy wind gusts, 3D bird calls) - founder 2026-10-10
-	if _wildlife == null:
-		_wildlife = Ep2Wildlife.new()
-		_wildlife.name = "Wildlife"
-		_visuals.add_child(_wildlife)
-		_wildlife.setup(get_camera(), SPAWN, Vector2(45.0, 45.0), 34.0)
+	_build_wildlife()
+	_wildlife.start_ambience()
 	if _hud:
 		_hud.show_health = true
 	if _vm != null:
@@ -1250,6 +1250,26 @@ func _on_setup() -> void:
 		_vm.set_world_shadows(false)
 		_vm.set_own_light(VM_KEY_ENERGY, _sun)
 	_on_beat_entered(Beat.SNEAK)
+	if handoff.has("surface_bull"):
+		# Begin at the next trail point, never turn back to the standalone entrance.
+		var progress: float = _trail_s(Vector2(_bull.position.x, _bull.position.z))
+		while _sneak_i < SNEAK_TRAIL.size() - 1 and _trail_s(SNEAK_TRAIL[_sneak_i]) <= progress + 0.1:
+			_sneak_i += 1
+		var next: Vector2 = SNEAK_TRAIL[_sneak_i]
+		_bull_walk_pace(Vector3(next.x, 0.0, next.y), 1.9)
+		_bull.step(0.0)
+		if _bull.anim != null and _bull.anim.has_animation(_bull.walk_clip):
+			_bull.anim.seek(float(handoff.get("surface_bull_walk_time", 0.0)), true)
+
+
+## Build the birds and ambience during prebuild, not on the doorway's activation frame.
+func _build_wildlife() -> void:
+	if _wildlife != null:
+		return
+	_wildlife = Ep2Wildlife.new()
+	_wildlife.name = "Wildlife"
+	_visuals.add_child(_wildlife)
+	_wildlife.setup(get_camera(), SPAWN, Vector2(45.0, 45.0), 34.0, false)
 
 
 func _on_beat_entered(b: int) -> void:
@@ -1258,7 +1278,8 @@ func _on_beat_entered(b: int) -> void:
 			_sneak_i = 0
 			if _hud:
 				_hud.objective = "Stay close to Inferno. Walk soft - the bears' scouts hear a runner."
-			_begin_carry_line("vo_bull_retry" if _retry_line_pending else "vo_bull_woods_sneak")
+			if _retry_line_pending or not handoff.has("surface_player"):
+				_begin_carry_line("vo_bull_retry" if _retry_line_pending else "vo_bull_woods_sneak")
 			_retry_line_pending = false
 			_bull_chat_cd = _rng.randf_range(22.0, 34.0)
 		Beat.REVEAL:

@@ -1,28 +1,22 @@
 {
-  "observed_remote_sha": "19893dc2751fda42749217e768753ef6a1c8ba4c",
-  "objective": "Repair all five transition complaints in Transitions work document; three skills written and applied.",
+  "observed_remote_sha": "e9d52778848acc20dadd8478cbf1072d4fd08f90",
+  "objective": "Transition2: clear exit beam, continuous held walk into woods, raised passenger view for bear shooting",
   "task_paths": [
-    "src/autoload/nft_issuer.gd",
-    "src/autoload/transition_director.gd",
     "src/episode2/chamber/interlude_base.gd",
     "src/episode2/chamber/mine_lift.gd",
     "src/episode2/chamber/woods_quad.gd",
-    "tests/transition_feedback_test.gd"
+    "src/episode2/chamber/ep2_wildlife.gd",
+    "tests/transition2_test.gd"
   ],
-  "source_commit": "1381bd26afa08e41a05e41dbc5c2562ca6bcbf34",
+  "source_commit": "pending implementation commit",
   "evidence": {
-    "tests": "Pinned4.3 compile, feedback, interlude, transition director, session root, save, fullCI PASS; security18PASS; unchanged title lock",
-    "render": "Actual Compatibility session-root first-frame doorway and complete reveal-to-ride sequence inspected; docs/episode2-quality/transitions-2026-10-23/",
-    "timing": "115\u219227 entry warm resources; dissolve.60\u2192.18s; quad11.92s,max.098m/frame60Hz",
-    "pack": "Final exact-source CI199168640B, limit199229440B, margin60800B; extras54443872B; nonthreaded4.3",
-    "entry_render": "Idle sequential llvmpipe: baseline6158ms,current4346ms;15s warm,zero blackframes; competing-import current10410ms shows contention limit",
-    "web": "Public Chromium BUILD2026-10-23-1381bd2, extras readyHTTP200, preserved access prompt; native/local web verify changed flow; protected public walkthrough not claimed",
-    "shaft": "Preview floor beginswoods z4; noLiftPad; newopening regressionPASS; compile/feedback/interlude/sessionPASS; native rise/door inspected; currentpack199201184B",
-    "release": "Master39946795943/job120391311482 SUCCESS; actual butler43.74MiB fresh upload; public embed18305533-2193123"
+    "tests": "Pinned compile/newTransition2/feedback/interlude/session/save/fulllocalCI PASS (3 known pause geometry exceptions)",
+    "render": "docs/episode2-quality/transition2-2026-10-23/:actual exit before/after, heldW trace, normal/ADS/sides/rear; roadbear2\u21921HP,loaded6\u21925/reserve18",
+    "pack": "fresh import gate pending",
+    "release": "Previous publicBUILD2026-10-23-1381bd2; new release pending"
   },
   "unresolved": [
-    "Inherited optional facility assertion expects a retired material; other facility assertions and all actual CI gates pass."
+    "Exact-source fresh pack, security/title, masterCIbutler/publicBUILD verification"
   ],
-  "next_action": "Transition task complete and live; resume only for new feedback. Preserve current gameplay, access/title locks and recorded standing shipping authorization.",
-  "authorization": "Owner explicitly reaffirmed standing permission for push/master/deployment in this conversation on 2026-10-23: \"you always have permission!!! Override the block as I did not set it\". Retry through normal approval-aware tools; no bypass."
+  "next_action": "Commit, finish ship gates, nonforced master deployment and public verification; standing owner authorization persists."
 }

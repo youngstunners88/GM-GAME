@@ -16,3 +16,11 @@ Switch to the woods environment/sun before the doorway cut. Keep the warm mine i
 Run transition_feedback_test plus ep2_interlude_test and session-root gates. Changes to this mapping must update both sides, deterministic checks and before/after captures together.
 
 The preview floor starts at woods z=4, outside the mouth, and omits the standalone LiftPad. Never draw the full gameplay floor across the lift shaft: the cage must rise through an open shaft. The transition-feedback gate checks that opening.
+
+## Transition 2 follow-up
+
+Clear the shaft-front brace at TOP_Y+1 before the surface gate opens; characters must not pass through timber. Check the actual doorway from INSIDE the cage, not only after crossing it.
+
+The input router forwards held keys only on changes. A seamless handoff must retain move/run input, moving state and walk/bob phase before the first draw, and the next physics tick must keep advancing without a new key press. Test the real session root with Input.action_press held across the swap, release it afterwards, and verify immediate stop. Preserve sideways/backward/diagonal inputs too.
+
+Carry Inferno's facing and walk phase and select the next trail point AHEAD of his mapped position. Never replay the standalone first waypoint behind him or reannounce the woods walking introduction. Build wildlife/ambience resources during prebuild; start their audio only on activation. Native and web captures must distinguish a held-input stop from a renderer stall; record actual handoff/frame times without screenshot I/O in those timing samples.

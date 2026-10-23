@@ -293,7 +293,8 @@ func activate(new_parent: Node, handoff_data: Dictionary = {}) -> void:
 
 ## Where the previous chamber leaves the player's gaze, for the next chamber's first frame (same yaw convention everywhere: 0 = +Z).
 func get_handoff() -> Dictionary:
-	return {"yaw": _look_yaw, "pitch": _look_pitch, "run": _run_input}
+	return {"yaw": _look_yaw, "pitch": _look_pitch, "run": _run_input,
+		"move": _move_input, "moving": _moving, "walk_phase": _walk_phase, "anim_t": _anim_t}
 
 
 ## Apply the previous chamber's gaze (clamped so the cut never lands him facing a wall behind him).
@@ -320,6 +321,14 @@ func setup(_gold_principal: int = 0, _bears: Array = [], _diamonds_paid: int = 0
 	_air_jumps = 0
 	_ensure_room()
 	_on_setup()
+	# The root only forwards held keys when they CHANGE. Keep the actual held input and
+	# foot/bob phase through a seamless doorway, including its very first rendered frame.
+	if handoff_seamless:
+		_move_input = handoff.get("move", Vector2.ZERO)
+		_run_input = bool(handoff.get("run", false))
+		_moving = bool(handoff.get("moving", false))
+		_walk_phase = float(handoff.get("walk_phase", 0.0))
+		_anim_t = float(handoff.get("anim_t", 0.0))
 	_apply_music()
 	# The handoff must render the new eye pose immediately, before its first physics tick.
 	_update_camera(0.0)

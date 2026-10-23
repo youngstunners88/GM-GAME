@@ -35,7 +35,7 @@ var gusts_played: int = 0
 var flocks_flushed: int = 0
 
 
-func setup(listener: Node3D, centre: Vector3, half_extent: Vector2, canopy_y: float) -> void:
+func setup(listener: Node3D, centre: Vector3, half_extent: Vector2, canopy_y: float, play_ambience: bool = true) -> void:
 	_rng.seed = seed
 	_listener = listener
 	_centre = centre
@@ -57,7 +57,12 @@ func setup(listener: Node3D, centre: Vector3, half_extent: Vector2, canopy_y: fl
 		p.volume_db = -4.0
 		add_child(p)
 		_calls.append(p)
-	if _ambience.stream != null:
+	if play_ambience:
+		start_ambience()
+
+
+func start_ambience() -> void:
+	if _ambience != null and _ambience.stream != null and not _ambience.playing:
 		_ambience.play()
 
 

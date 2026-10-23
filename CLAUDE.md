@@ -345,3 +345,5 @@ screen**, that song plays first. It does NOT mean every time Level 1 loads. Comi
 Smoke Lounge, an education room or any other side area resumes/shuffles whatever music is appropriate.
 Implemented by `AudioManager.launched_from_title()` in `level_01_smoke_realm.gd`. Education rooms play the
 founder's `education_stage1/2/3.mp3` with a fade in on entry and a fade out on leaving.
+
+**Transition 2 (exit beam, held-walk stop/restart, Inferno pack blocking passenger fire):** use `gm-game-location-continuity` and `.claude/skills/gm-game-passenger-sightline/SKILL.md`; verify the real input router and normal/ADS player-camera views.
