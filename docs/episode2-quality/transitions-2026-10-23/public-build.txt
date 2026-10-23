@@ -1,0 +1,12 @@
+{
+ "gameUrl": "https://html-classic.itch.zone/html/18305533-2193123/index.html?v=1792756442&ep2=1",
+ "build": "2026-10-23-1381bd2",
+ "extras": "[EP2] extras ready (ready)",
+ "logan": "",
+ "extrasHttp": [
+  200
+ ]
+}
+PASS  game page loaded and printed its build tag  (2026-10-23-1381bd2)
+PASS  live build tag contains 2026-10-23-1381bd2  (2026-10-23-1381bd2)
+PASS  extras log says ready  ([EP2] extras ready (ready))

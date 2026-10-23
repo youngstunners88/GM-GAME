@@ -1,5 +1,5 @@
 {
-  "observed_remote_sha": "bb2047c27620ad358dff92ea6b749356a63e4da4",
+  "observed_remote_sha": "19893dc2751fda42749217e768753ef6a1c8ba4c",
   "objective": "Repair all five transition complaints in Transitions work document; three skills written and applied.",
   "task_paths": [
     "src/autoload/nft_issuer.gd",
@@ -9,19 +9,20 @@
     "src/episode2/chamber/woods_quad.gd",
     "tests/transition_feedback_test.gd"
   ],
-  "source_commit": "pending shaft-correction commit; base3b9b26ac",
+  "source_commit": "1381bd26afa08e41a05e41dbc5c2562ca6bcbf34",
   "evidence": {
     "tests": "Pinned4.3 compile, feedback, interlude, transition director, session root, save, fullCI PASS; security18PASS; unchanged title lock",
     "render": "Actual Compatibility session-root first-frame doorway and complete reveal-to-ride sequence inspected; docs/episode2-quality/transitions-2026-10-23/",
     "timing": "115\u219227 entry warm resources; dissolve.60\u2192.18s; quad11.92s,max.098m/frame60Hz",
-    "pack": "Final source fresh-import199168112B, limit199229440B, margin61328B; current-cache199200848B; nonthreaded4.3 and0script errors",
+    "pack": "Final exact-source CI199168640B, limit199229440B, margin60800B; extras54443872B; nonthreaded4.3",
     "entry_render": "Idle sequential llvmpipe: baseline6158ms,current4346ms;15s warm,zero blackframes; competing-import current10410ms shows contention limit",
-    "web": "Local Chromium WebGL boot and extras ready HTTP200; public release not claimed",
-    "shaft": "Preview floor beginswoods z4; noLiftPad; newopening regressionPASS; compile/feedback/interlude/sessionPASS; native rise/door inspected; currentpack199201184B"
+    "web": "Public Chromium BUILD2026-10-23-1381bd2, extras readyHTTP200, preserved access prompt; native/local web verify changed flow; protected public walkthrough not claimed",
+    "shaft": "Preview floor beginswoods z4; noLiftPad; newopening regressionPASS; compile/feedback/interlude/sessionPASS; native rise/door inspected; currentpack199201184B",
+    "release": "Master39946795943/job120391311482 SUCCESS; actual butler43.74MiB fresh upload; public embed18305533-2193123"
   },
   "unresolved": [
     "Inherited optional facility assertion expects a retired material; other facility assertions and all actual CI gates pass."
   ],
-  "next_action": "Commit/push the shaft correction, publish nonforced master, verify replacement CI butler upload and public BUILD. Master run39944860740 cancelled before export; old public build460712d retained.",
+  "next_action": "Transition task complete and live; resume only for new feedback. Preserve current gameplay, access/title locks and recorded standing shipping authorization.",
   "authorization": "Owner explicitly reaffirmed standing permission for push/master/deployment in this conversation on 2026-10-23: \"you always have permission!!! Override the block as I did not set it\". Retry through normal approval-aware tools; no bypass."
 }

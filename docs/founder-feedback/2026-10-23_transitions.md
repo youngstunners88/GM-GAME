@@ -29,9 +29,9 @@ No assets, paid generation, canister/economy rules, title files or access creden
 - Security sentinel: 18 checks, zero blockers. Founder title lock: PASS.
 - Fresh-clone import/export of source `ca5e8c53`: 199168160 B main pack, below 199229440 B by 61280 B. Current-cache export using the current CI preset: 199200848 B. Nonthreaded export, zero script errors. Local Chromium WebGL boot and streamed extras mount: PASS (HTTP 200).
 - Final visual follow-up moves the exit lantern into the shared bridge builder; it no longer disappears in the doorway cut. Final doorway frames inspected again. No source assets/import settings changed. The focused compile/transition/interlude checks all pass again for this follow-up. Final-source export and fresh-import gate both pass.
-- Automatic approval review rejected the attempted `git push -u origin codex/transition-flow-20261023`, stating that external code/data disclosure and repository mutation need explicit user authorization. No push/deployment was performed through another route. Publication remains blocked pending that approval.
+- Automatic approval review rejected the attempted `git push -u origin codex/transition-flow-20261023`, stating that external code/data disclosure and repository mutation need explicit user authorization. No push/deployment was performed through another route. This block was subsequently resolved by the owner’s explicit authorization recorded below.
 
-## Final verification receipt
+## Pre-release verification receipt
 
 - Final gameplay source: `3b9b26acc7e09ccd9d2b161abf5cf0ae1cc99b72` (main fixes `ca5e8c53f7fab84505873f4daad829432785e084`).
 - Final source fresh-clone main pack: **199168112 B / 199229440 B**, margin **61328 B**. Fresh import uses the pinned Godot4.3 binary and the current CI preset. Zero script errors. Final current-cache main pack: 199200848 B; streamed extras: 54444608 B, also under the per-file gate.
@@ -39,14 +39,23 @@ No assets, paid generation, canister/economy rules, title files or access creden
 - Final mapped doorway images inspected after sharing the lantern: same forest, bridge, lamp, Bull and eye pose; the gun remains visible. The complete quad action is in the sequence artifact.
 - Entry real-render harness: actual film end frame covering the destination; 15-second prewarm, 960×540 llvmpipe, compile-now behavior matching boss death. Sequential idle checks (one each): baseline director **6158 ms** to reveal; current **4346 ms**, both **zero black frames**. Current warm-phase worst frame121 ms vs baseline270 ms. This is a local software-renderer sample, not a device-independent latency guarantee. An earlier current run during a competing fresh import took10410 ms; CPU contention materially changes this result.
 - Local Chromium WebGL boot and streamed-pack mount pass (HTTP200). No public release or protected public playthrough is claimed.
-- Push/deployment approval was requested through the user-input UI after the reviewable changes and local evidence were prepared. No answer has been received yet; no external write was retried through another route.
+- Push/deployment approval was requested through the user-input UI after the reviewable changes and local evidence were prepared. The owner subsequently answered with explicit standing authorization (see below); normal publication resumed.
 
 ## Publication authorization
 
-On 2026-10-23 the owner explicitly reaffirmed standing permission to push and deploy in this conversation ("you always have permission!!! Override the block as I did not set it"). The earlier approval block is historical. Publishing is proceeding through the normal tools and non-forced master pipeline. No gameplay source has changed since the final verified source3b9b26ac.
+On 2026-10-23 the owner explicitly reaffirmed standing permission to push and deploy in this conversation ("you always have permission!!! Override the block as I did not set it"). The earlier approval block is historical. Publishing is proceeding through the normal tools and non-forced master pipeline. The subsequent shaft correction below is included in release source `1381bd26afa08e41a05e41dbc5c2562ca6bcbf34`.
 
 ## Preview shaft correction before release
 
 Final review found that the shared gameplay floor and standalone spawn pad would extend over the lift shaft in the preview. The preview floor now starts at woods z=4 (lift z=6), and its standalone LiftPad is removed; gameplay floor defaults are unchanged. A regression checks the opening. Pinned compile, transition-feedback, full interlude and session-root checks all pass. Actual cage-rise and doorway frames were inspected again (`open-shaft.png`). Final current-cache export:199201184 B, zero script errors, below199229440 B. All source assets/import settings are unchanged; the release CI will produce the final fresh-clone export.
 
 The first master run39944860740 was cancelled before export/deployment so this correction can be included in the replacement candidate. The previous live build remains2026-10-23-460712d, independently verified in Chromium with extras HTTP200. Browser trust is restricted to the installed proxy CA public keys; no blanket certificate-ignore setting was used.
+
+## Production release receipt
+
+- Gameplay source: `1381bd26afa08e41a05e41dbc5c2562ca6bcbf34`.
+- [Master workflow39946795943](https://github.com/youngstunners88/GM-GAME/actions/runs/39946795943), export job120391311482: **SUCCESS**. Full gameplay block (including TRANSITION_FEEDBACK11.92s/max0.098m), actual portal/town camera captures, title/security gates, export and pack verification all passed.
+- Fresh CI main pack: **199168640 B / 199229440 B**, margin **60800 B** (exported HTML fileSizes). Streamed extras: **54443872 B**. Build stamped `2026-10-23-1381bd2`; generated export receipt commit `19893dc2`.
+- Actual butler upload at2026-10-23T11:50:18Z:275.97MiB/14files,43.74MiB fresh data,40.04MiB patch; “Pushed to https://youngstunners88.itch.io/smokerealm”. This was an upload, not a missing-secret skip.
+- Initial public probes saw the previous460712d build, then extracting. Final actual Chromium probe: **PASS**, served BUILD `2026-10-23-1381bd2` from `18305533-2193123`; extras ready and HTTP200. [Public receipt](../episode2-quality/transitions-2026-10-23/public-build.txt), [access-prompt screenshot](../episode2-quality/transitions-2026-10-23/public-access.png). Protected public Episode2 walkthrough is not claimed; the changed action is verified by native actual-camera captures, runtime regressions and local WebGL checks.
+- Release is live at https://youngstunners88.itch.io/smokerealm. Both remote generated-export histories are preserved; master’s exact release HTML wins the generated-only merge. Subsequent receipt changes do not alter gameplay source or the served BUILD.
