@@ -188,6 +188,7 @@ playtest-boss-*.json
 # itch gets the fresh pck via butler straight from the runner disk; git never
 # carries it (committing it froze the live build for many sessions).
 web/game/index.pck
+web/game/ep2_extras.pck
 
 # session working files
 scratchpad/
@@ -230,3 +231,6 @@ artifacts/verify-deploy/
 
 # Tripo CLI working output (never shipped)
 tripo-out/
+
+# Local Obsidian work log (CLAUDE.md vault-log rule)
+/GM Game/

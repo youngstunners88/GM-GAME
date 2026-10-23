@@ -38,6 +38,9 @@ const LAYOUT: Array = [
 	["Bldg_F", STREET_HALF, 1447.0, -1],
 	["Church", 0.0, 1478.0, 0],
 	["Bldg_Armory", -20.0, 1468.0, 0],   # Rich & Utah's shop: down a side lane off the left row, set back off the Main Street sightline
+	# the jailhouse (founder lock 2026-10-20): Sheriff / Certificates side, out at the south edge of town west of the road - ~26 m from
+	# Main Street, not on it. Streamed (Ep2Extras.JAIL); where the extras are not mounted nothing is drawn and the story skips it.
+	["Bldg_Jail", -26.0, 1399.0, 1],
 ]
 ## Kit piece -> [width, depth, door half-width (0 = shut), door open]
 const FOOTPRINT: Dictionary = {
@@ -45,7 +48,34 @@ const FOOTPRINT: Dictionary = {
 	"Bldg_B": [8.0, 9.0, 0.0], "Bldg_C": [6.0, 8.0, 0.0], "Bldg_D": [9.0, 9.0, 0.0], "Bldg_E": [7.0, 8.0, 0.0], "Bldg_F": [8.0, 9.0, 0.0],
 	"Church": [8.0, 14.0, 0.0],
 	"Bldg_Armory": [8.0, 9.0, 0.7],
+	"Bldg_Armory2": [10.0, 12.0, 1.0],      # the two-storey Armory (streamed extras): double door 2 m wide
+	"Bldg_Jail": [7.4, 8.6, 0.75],          # the jailhouse (streamed extras): 1.5 m plank door
 }
+
+## The Colt Gatling's post in the Armory's front yard (founder 2026-10-20, skill ep2-armory-guns), in Bldg_Armory's LOCAL frame (x along the front, +z out
+## into the yard). The Armory faces -z (yaw PI), so local +x is world -x: at rest the bore points west over open ground, away from the street. The gun
+## is NOT FOR SALE; the plates and bales are the firing yard it is demonstrated on.
+const GATLING_POST := Vector3(9.6, 0.0, 1.6)         # beyond the porch's right end and clear of the grazing horse (-27, 1462.5): founder, "dont replace the horses"
+const GATLING_STAND_BACK := 1.0
+const GATLING_PLATES: Array = [Vector3(17.0, 0.0, 0.4), Vector3(20.5, 0.0, 3.6), Vector3(24.0, 0.0, -0.9), Vector3(27.5, 0.0, 2.4), Vector3(31.0, 0.0, 0.2)]
+const GATLING_BALES: Array = [Vector3(36.0, 0.0, 1.6), Vector3(19.0, 0.0, 5.6)]
+
+## The two-storey Armory (founder 2026-10-19, skill ep2-armory-two-story). When the streamed extras are loadable (Ep2Extras), the
+## "Bldg_Armory" LAYOUT row draws Bldg_Armory2 + its fit-out instead of the kit's one-storey shop, at the SAME transform - so wherever
+## the row is moved, the new building follows. Its GLB also carries the NPC waypoints and walk blockers, read here once per build.
+static var armory_v2: bool = false
+static var kit_v2: bool = false                # the streamed town kit with real openings is the one drawn
+static var armory_spots: Dictionary = {}       # Spot_<name> -> local Vector3 (x along the front, -z inside, y = floor)
+static var armory_blocks: Array = []           # [local centre Vector2(x, z), half extents Vector2] of the shop-floor blockers
+static var armory_lights: Array = []           # local Vector3 lamp positions
+## The jailhouse (streamed extras): drawn when jailhouse.glb is loadable; its Jail_Nav empties give the stand points and the
+## cell-block blockers, the same way the Armory's do.
+static var jail_v1: bool = false
+static var jail_spots: Dictionary = {}
+static var jail_blocks: Array = []
+static var jail_lights: Array = []
+## Where the desert scatter (scrub, rock) keeps clear around the jailhouse, so it does not stand in brush (x, z rectangle).
+const JAIL_CLEAR := Rect2(-46.0, 1390.0, 24.0, 20.0)
 
 
 ## The yaw that turns a kit piece's local +Z front toward the street.
@@ -91,17 +121,32 @@ static func build(parent: Node3D, interiors: bool) -> Dictionary:
 	parent.add_child(root)
 	if not ResourceLoader.exists(KIT):
 		return {"walls": walls, "props": props}
-	var kit: Node3D = (load(KIT) as PackedScene).instantiate() as Node3D
+	# the kit with real openings is streamed (Ep2Extras); until it is mounted the shipped kit is drawn
+	var kit_path: String = Ep2Extras.TOWN_KIT if Ep2Extras.has(Ep2Extras.TOWN_KIT) else KIT
+	kit_v2 = kit_path == Ep2Extras.TOWN_KIT
+	var kit: Node3D = (load(kit_path) as PackedScene).instantiate() as Node3D
 	_apply_mats(kit)
+	var a2: Node3D = _load_armory2()
+	var jl: Node3D = _load_jail()
 	for e in LAYOUT:
-		var src: Node3D = kit.find_child(str(e[0]), true, false) as Node3D
+		var piece: String = str(e[0])
+		var src: Node3D = kit.find_child(piece, true, false) as Node3D
+		if piece == "Bldg_Armory" and a2 != null:
+			src = a2.find_child("Bldg_Armory2", true, false) as Node3D
+			piece = "Bldg_Armory2"
+		if piece == "Bldg_Jail":
+			src = jl.find_child("Bldg_Jail", true, false) as Node3D if jl != null else null
 		if src == null:
 			continue
 		var b: Node3D = src.duplicate() as Node3D
 		b.transform = building_xform(e)
 		root.add_child(b)
 		_hang_signs(b)
-		walls.append_array(_walls_of(str(e[0]), building_xform(e)))
+		walls.append_array(_walls_of(piece, building_xform(e)))
+		if piece == "Bldg_Armory2":
+			walls.append_array(_armory2_block_walls(building_xform(e)))
+		if piece == "Bldg_Jail":
+			walls.append_array(_blocks_to_walls(jail_blocks, building_xform(e)))
 	# the street furniture: hitching rails, troughs, wagons, lamps, barrels and crates, benches on the porches
 	var dress: Array = [
 		["HitchRail", Vector3(-6.4, 0.0, 1418.0), PI * 0.5], ["HitchRail", Vector3(6.4, 0.0, 1431.0), PI * 0.5],
@@ -111,6 +156,8 @@ static func build(parent: Node3D, interiors: bool) -> Dictionary:
 		["Bench", Vector3(-7.6, 0.44, 1423.0), PI * 0.5], ["Bench", Vector3(7.6, 0.44, 1446.0), -PI * 0.5],
 		# the armory lane, off the left row past the STATS block: a lamp, and river gear staged at the lean-to
 		["LampPost", Vector3(-10.0, 0.0, 1450.0), 0.0],
+		# the jailhouse yard (south edge of town, west of the road): a lamp, a hitching rail and a bench by the door
+		["LampPost", Vector3(-23.2, 0.0, 1396.4), 0.0], ["HitchRail", Vector3(-22.4, 0.0, 1403.6), PI * 0.5], ["Bench", Vector3(-24.0, 0.0, 1394.4), PI * 0.5],
 		["Arm_PowderKeg", Vector3(-17.0, 0.0, 1465.2), 0.0], ["Arm_PowderKeg", Vector3(-16.1, 0.0, 1465.7), 0.0],
 		["River_Crate", Vector3(-14.9, 0.0, 1465.0), 0.3], ["River_Skiff", Vector3(-22.4, 0.0, 1460.0), PI * 0.5],
 	]
@@ -156,9 +203,111 @@ static func build(parent: Node3D, interiors: bool) -> Dictionary:
 			_flag(fort, (fa as Node3D).position)
 	Ep2TownLife.build(root, props)                      # horses at the rails, the river, the railway and the train
 	if interiors:
-		_furnish(root, kit)
+		_furnish(root, kit, a2)
 	kit.free()
+	if a2 != null:
+		a2.free()
+	if jl != null:
+		jl.free()
 	return {"walls": walls, "props": props}
+
+
+## The two-storey Armory scene from the streamed extras (null when they are not loadable yet: the kit's shop is drawn instead).
+## Also reads its Arm2_Nav empties into armory_spots / armory_blocks / armory_lights.
+static func _load_armory2() -> Node3D:
+	armory_v2 = false
+	armory_spots = {}
+	armory_blocks = []
+	armory_lights = []
+	if not Ep2Extras.has(Ep2Extras.ARMORY):
+		return null
+	var ps: PackedScene = load(Ep2Extras.ARMORY) as PackedScene
+	if ps == null:
+		return null
+	var a2: Node3D = ps.instantiate() as Node3D
+	if a2.find_child("Bldg_Armory2", true, false) == null:
+		a2.free()
+		return null
+	_apply_mats(a2)
+	var nav: Node = a2.find_child("Arm2_Nav", true, false)
+	if nav != null:
+		for c in nav.get_children():
+			var n3 := c as Node3D
+			if n3 == null:
+				continue
+			var nm: String = String(n3.name)
+			if nm.begins_with("Spot_"):
+				armory_spots[nm.trim_prefix("Spot_")] = n3.position
+			elif nm.begins_with("Block_"):
+				armory_blocks.append([Vector2(n3.position.x, n3.position.z), Vector2(absf(n3.scale.x), absf(n3.scale.z))])
+	var bld: Node = a2.find_child("Bldg_Armory2", true, false)
+	for c in bld.find_children("LightAnchor_*", "", true, false):
+		armory_lights.append((c as Node3D).position)
+	armory_v2 = true
+	return a2
+
+
+## The jailhouse scene from the streamed extras (null when it is not loadable: nothing is drawn). Reads Jail_Nav into
+## jail_spots / jail_blocks and the lamp anchors into jail_lights.
+static func _load_jail() -> Node3D:
+	jail_v1 = false
+	jail_spots = {}
+	jail_blocks = []
+	jail_lights = []
+	if not Ep2Extras.has(Ep2Extras.JAIL):
+		return null
+	var ps: PackedScene = load(Ep2Extras.JAIL) as PackedScene
+	if ps == null:
+		return null
+	var j: Node3D = ps.instantiate() as Node3D
+	if j.find_child("Bldg_Jail", true, false) == null:
+		j.free()
+		return null
+	_apply_mats(j)
+	var nav: Node = j.find_child("Jail_Nav", true, false)
+	if nav != null:
+		for c in nav.get_children():
+			var n3 := c as Node3D
+			if n3 == null:
+				continue
+			var nm: String = String(n3.name)
+			if nm.begins_with("Spot_"):
+				jail_spots[nm.trim_prefix("Spot_")] = n3.position
+			elif nm.begins_with("Block_"):
+				jail_blocks.append([Vector2(n3.position.x, n3.position.z), Vector2(absf(n3.scale.x), absf(n3.scale.z))])
+	for c in (j.find_child("Bldg_Jail", true, false) as Node).find_children("LightAnchor_*", "", true, false):
+		jail_lights.append((c as Node3D).position)
+	jail_v1 = true
+	return j
+
+
+## Rectangular walk blockers [centre Vector2(x, z), half extents Vector2] in a building's local frame -> world wall segments.
+static func _blocks_to_walls(blocks: Array, xf: Transform3D) -> Array:
+	var out: Array = []
+	for bl in blocks:
+		var c: Vector2 = bl[0]
+		var h: Vector2 = bl[1]
+		var pts: Array = [Vector3(c.x - h.x, 0, c.y - h.y), Vector3(c.x + h.x, 0, c.y - h.y), Vector3(c.x + h.x, 0, c.y + h.y), Vector3(c.x - h.x, 0, c.y + h.y)]
+		for i in 4:
+			var a: Vector3 = xf * (pts[i] as Vector3)
+			var b: Vector3 = xf * (pts[(i + 1) % 4] as Vector3)
+			out.append([Vector2(a.x, a.z), Vector2(b.x, b.z)])
+	return out
+
+
+## The Armory's shop-floor blockers (counter, cases, stair, shelves, kegs, gallery posts) as wall segments, so Lil Blunt walks round
+## them like walls (collide()).
+static func _armory2_block_walls(xf: Transform3D) -> Array:
+	var out: Array = []
+	for bl in armory_blocks:
+		var c: Vector2 = bl[0]
+		var h: Vector2 = bl[1]
+		var pts: Array = [Vector3(c.x - h.x, 0, c.y - h.y), Vector3(c.x + h.x, 0, c.y - h.y), Vector3(c.x + h.x, 0, c.y + h.y), Vector3(c.x - h.x, 0, c.y + h.y)]
+		for i in 4:
+			var a: Vector3 = xf * (pts[i] as Vector3)
+			var b: Vector3 = xf * (pts[(i + 1) % 4] as Vector3)
+			out.append([Vector2(a.x, a.z), Vector2(b.x, b.z)])
+	return out
 
 
 ## The kit's named materials -> textured, world-triplanar ones (one material per name, shared by every instance).
@@ -202,7 +351,11 @@ static func _tex_mat(file: String, tint: Color, uv_scale: float, fallback: Strin
 static func _hang_signs(b: Node3D) -> void:
 	for an in b.find_children("SignAnchor_*", "", true, false):
 		var word: String = String(an.name).trim_prefix("SignAnchor_")
+		var hang: bool = word.ends_with("_hang")             # a small board hung under a porch awning (the two-storey Armory)
+		word = word.trim_suffix("_hang")
 		var path: String = TEX_DIR + "sign_%s.png" % word
+		if word == "JAIL":
+			path = Ep2Extras.JAIL_SIGN                      # the jail's sign ships with its streamed extras
 		if not ResourceLoader.exists(path):
 			continue
 		var q := MeshInstance3D.new()
@@ -211,6 +364,8 @@ static func _hang_signs(b: Node3D) -> void:
 		var w: float = 6.0 if word != "FORTKNOX" else 5.6
 		if word in ["ASSAY", "STATS"]:
 			w = 4.6
+		if hang:
+			w = 2.4
 		qm.size = Vector2(w, w * 180.0 / 1024.0)
 		q.mesh = qm
 		var sm := StandardMaterial3D.new()
@@ -300,7 +455,7 @@ static func _flag(parent: Node3D, pos: Vector3) -> void:
 
 ## The two rooms Lil Blunt walks into: the certificate office (counter, pigeonholes, desk, stove, lamps) and the saloon (the long bar,
 ## the back shelf of bottles round a mirror, tables and chairs, a piano, oil lamps). Positions are in each building's local frame.
-static func _furnish(root: Node3D, kit: Node3D) -> void:
+static func _furnish(root: Node3D, kit: Node3D, a2: Node3D = null) -> void:
 	var rooms: Array = [
 		["Bldg_Certificates", "Int_Counter", Vector3(0.6, 0.0, -4.6), 0.0], ["Bldg_Certificates", "Int_Shelves", Vector3(0.6, 0.0, -8.6), 0.0],
 		["Bldg_Certificates", "Int_Desk", Vector3(-2.3, 0.0, -7.0), 0.0], ["Bldg_Certificates", "Int_Stove", Vector3(-3.0, 0.0, -2.4), 0.0],
@@ -314,6 +469,8 @@ static func _furnish(root: Node3D, kit: Node3D) -> void:
 		["Bldg_Armory", "Arm_SniperCase", Vector3(1.8, 0.0, -7.8), 0.0], ["Bldg_Armory", "Arm_PowderKeg", Vector3(-3.2, 0.0, -2.2), 0.0],
 	]
 	for rm in rooms:
+		if a2 != null and str(rm[0]) == "Bldg_Armory":
+			continue                    # the two-storey Armory brings its own fit-out (below)
 		var src: Node3D = kit.find_child(str(rm[1]), true, false) as Node3D
 		if src == null:
 			continue
@@ -331,7 +488,29 @@ static func _furnish(root: Node3D, kit: Node3D) -> void:
 				c.transform = building_xform(entry("Bldg_Saloon")) * Transform3D(Basis(Vector3.UP, a + PI), tp + Vector3(sin(a), 0, cos(a)) * 0.95)
 				root.add_child(c)
 	# warm oil lamps in both rooms
-	for lp in [["Bldg_Certificates", Vector3(0.0, 3.0, -4.0), 4.5], ["Bldg_Saloon", Vector3(-2.0, 3.2, -4.0), 6.0], ["Bldg_Saloon", Vector3(3.0, 3.2, -8.0), 6.0], ["Bldg_Armory", Vector3(0.0, 3.0, -5.0), 5.0]]:
+	var lamps: Array = [["Bldg_Certificates", Vector3(0.0, 3.0, -4.0), 4.5], ["Bldg_Saloon", Vector3(-2.0, 3.2, -4.0), 6.0], ["Bldg_Saloon", Vector3(3.0, 3.2, -8.0), 6.0]]
+	if a2 == null:
+		lamps.append(["Bldg_Armory", Vector3(0.0, 3.0, -5.0), 5.0])
+	else:
+		# the two-storey Armory: its fit-out at the building's transform, and a warm lamp at each hanging oil lamp (<= 4 lights)
+		var fit: Node3D = a2.find_child("Arm2_Fit", true, false) as Node3D
+		if fit != null:
+			var f: Node3D = fit.duplicate() as Node3D
+			f.transform = building_xform(entry("Bldg_Armory"))
+			f.name = "Arm2_Fit_Bldg_Armory"
+			root.add_child(f)
+		var shp: Node3D = a2.find_child("Arm2_Sharps", true, false) as Node3D        # the Sharps in the lit case: its own node, Rich lifts it out
+		if shp != null:
+			var sn: Node3D = shp.duplicate() as Node3D
+			sn.transform = building_xform(entry("Bldg_Armory"))
+			sn.name = "Arm2_Sharps_Bldg_Armory"
+			root.add_child(sn)
+		for i in mini(armory_lights.size(), 4):
+			lamps.append(["Bldg_Armory", armory_lights[i], 4.5])
+	if jail_v1:
+		for i in mini(jail_lights.size(), 2):
+			lamps.append(["Bldg_Jail", jail_lights[i], 4.0])
+	for lp in lamps:
 		var l := OmniLight3D.new()
 		l.light_color = Color(1.0, 0.72, 0.42)
 		l.light_energy = 1.8
@@ -425,7 +604,8 @@ static func build_desert(parent: Node3D, road: Array, forest_end_z: float, world
 			var p := Vector2(x + (h1 - 0.5) * 6.0, z + (h2 - 0.5) * 6.0)
 			var near_road: float = _road_dist(p, road)
 			var in_town: bool = (absf(p.x) < 26.0 and p.y > TOWN_Z - 6.0 and p.y < TOWN_Z + 90.0) \
-				or (p.y > RIVER_Z - RIVER_W and p.y < TRACK_Z + 8.0)       # the river and the railway corridor stay clear of scrub and rock
+				or (p.y > RIVER_Z - RIVER_W and p.y < TRACK_Z + 8.0) \
+				or JAIL_CLEAR.has_point(p)       # the river and the railway corridor stay clear of scrub and rock
 			var open_k: float = clampf((p.y - (forest_end_z - 100.0)) / 120.0, 0.0, 1.0)      # scrub takes over as the pines thin
 			if near_road > 3.5 and not in_town and h1 < 0.55 * open_k:
 				var sc: float = 0.6 + 0.9 * h2

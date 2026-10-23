@@ -1,0 +1,22 @@
+{
+  "person": "dressmaker",
+  "height": 1.66,
+  "triangles": 26964,
+  "vertices": 14073,
+  "joints": 20,
+  "clips": [
+    "Carry",
+    "Greet",
+    "Idle",
+    "Point",
+    "Walk"
+  ],
+  "textures": [
+    "dressmaker_basecolor.jpg",
+    "dressmaker_orm.png",
+    "dressmaker_normal.png"
+  ],
+  "bytes": 3143268,
+  "source": "MakeHuman CC0 a8bc2d54ff0ac92e78ff71431b1023eda42bf482",
+  "reference": "1dOSJCq5yxlw5ZpCthbsotOL2UvsDtXWq"
+}

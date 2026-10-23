@@ -1,0 +1,2 @@
+→ CI gates (workflow lines 308-379), logs in /tmp/tmp.9cLXr6Taf6
+✓ all CI headless gates pass (pause tap-target machine difference tolerated: 3 lines)

@@ -1,3 +1,5 @@
+> Superseded for Logan's Lake by `design/ep2/lake/LOGANS_LAKE_LOCK.md` (founder, 2026-10-18) and `design/ep2/lake/IMPLEMENTATION.md`. The historical fishing, vesting timers and percentages below MUST NOT be implemented for Logan.
+
 # Still Water - lake WIRE SPEC (layer 2)            status: draft for founder review (reviewed 2026-10-16, 3 fixes below)
 Region canon: `design/world/regions/11_still-water-lake.md`. Protocol canon: `design/goldmine_protocol_design.md`
 Pillars 1-2 only (Phase 1). Workflow: `ep2-layered-production` layer 2. Layer 1 (founder target image) is still

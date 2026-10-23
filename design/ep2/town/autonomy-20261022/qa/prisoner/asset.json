@@ -1,0 +1,55 @@
+{
+  "ok": true,
+  "pass": true,
+  "errors": [],
+  "warnings": [
+    "prisoner_accomplice_body: ~41.17% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+    "prisoner_accomplice_body: duplicate verts=92 loose verts=0",
+    "prisoner_accomplice_body: 38 n-gons",
+    "hidden back-to-back faces: prisoner_accomplice_body (76 pairs) - delete to save tris"
+  ],
+  "ground_z": 0.0,
+  "zfighting": [],
+  "floating": [],
+  "back_to_back": [
+    {
+      "where": "prisoner_accomplice_body",
+      "tri_pairs": 76
+    }
+  ],
+  "enclosed": [],
+  "objects": {
+    "prisoner_accomplice_body": {
+      "verts": 13844,
+      "faces": 16501,
+      "tris": 26936,
+      "ngons": 38,
+      "boundary_edges": 464,
+      "nonmanifold_edges": 0,
+      "wire_edges": 0,
+      "loose_verts": 0,
+      "degenerate_faces": 0,
+      "zero_length_edges": 0,
+      "inconsistent_normals_edges": 0,
+      "duplicate_verts": 92,
+      "islands": 78,
+      "inside_out_islands": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materials": 1,
+      "unweighted_verts": 0,
+      "verts_over_4_influences": 0,
+      "uv_maps": 1,
+      "uv_oob_pct": 0.0,
+      "uv_zero_area_faces": 0,
+      "uv_overlap_pct": 41.17,
+      "uv_coverage_pct": 9.6
+    }
+  },
+  "overlap_centers": [],
+  "overlap_vertices": [],
+  "inward_islands": []
+}

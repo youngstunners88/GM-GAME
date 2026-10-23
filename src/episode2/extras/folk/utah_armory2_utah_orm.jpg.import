@@ -1,0 +1,37 @@
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+uid="uid://cufnqkecfu43c"
+path="res://.godot/imported/utah_armory2_utah_orm.jpg-a763daaa7d32e98693c6298b3fa75407.ctex"
+metadata={
+"vram_texture": false
+}
+generator_parameters={
+"md5": "1f905b84810d26fa4b5da485d8b4379c"
+}
+
+[deps]
+
+source_file="res://src/episode2/extras/folk/utah_armory2_utah_orm.jpg"
+dest_files=["res://.godot/imported/utah_armory2_utah_orm.jpg-a763daaa7d32e98693c6298b3fa75407.ctex"]
+
+[params]
+
+compress/mode=1
+compress/high_quality=false
+compress/lossy_quality=0.85
+compress/hdr_compression=1
+compress/normal_map=0
+compress/channel_pack=0
+mipmaps/generate=true
+mipmaps/limit=-1
+roughness/mode=0
+roughness/src_normal=""
+process/fix_alpha_border=true
+process/premult_alpha=false
+process/normal_map_invert_y=false
+process/hdr_as_srgb=false
+process/hdr_clamp_exposure=false
+process/size_limit=0
+detect_3d/compress_to=0

@@ -19,6 +19,7 @@ browser check `scripts/touch-playtest.mjs`. Episode 2 first-person rooms do NOT 
 ## Where things are (Episode 2)
 | what | file |
 |---|---|
+| Logan's Lake (town gear → staging → river overlook) | `src/episode2/chamber/logans_lake.gd`; active lock: `design/ep2/lake/LOGANS_LAKE_LOCK.md`; skill `ep2-logans-lake` |
 | viewmodel rifle + hands | `src/episode2/chamber/ep2_view_hands.gd` (loads `assets/weapons/winchester_1886_founder.glb`) |
 | mine lift | `src/episode2/chamber/mine_lift.gd` |
 | bear woods (forest, wind, birds, mine exit, golden-hour grade) | `src/episode2/chamber/woods_quad.gd`, `ep2_wildlife.gd`, `art/ep2_foliage_wind.gdshader` |

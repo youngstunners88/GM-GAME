@@ -1,0 +1,27 @@
+{
+  "person": "grandfather",
+  "height": 1.73,
+  "triangles": 25220,
+  "vertices": 12977,
+  "joints": 20,
+  "clips": [
+    "Alert",
+    "Carry",
+    "Greet",
+    "Idle",
+    "Inspect",
+    "Observe",
+    "Point",
+    "Rest",
+    "Talk",
+    "Walk"
+  ],
+  "textures": [
+    "grandfather_basecolor.jpg",
+    "grandfather_orm.png",
+    "grandfather_normal.png"
+  ],
+  "bytes": 3135632,
+  "source": "MakeHuman CC0 a8bc2d54ff0ac92e78ff71431b1023eda42bf482",
+  "reference": "1V5c47N0jquR7yEOu9l6yIni-lk9z8yV9"
+}

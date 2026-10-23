@@ -25,7 +25,7 @@ extends Ep2Interlude
 ## Never in this room: the banned Episode 2 protocol (ep2-fort-knox-arc rule 4), a second health system, a wallet or contract address.
 ## The Armory never mints and is NOT the Treasury: the Treasury keeps no racks and no trade (lock section 7).
 
-enum Beat { STREET, OFFICE, TO_BAR, BAR, SQUARE_UP, DRAW, WON, TIP, ARMORY, GEARED, DONE }
+enum Beat { STREET, OFFICE, TO_BAR, BAR, SQUARE_UP, DRAW, WON, JAIL_TIP, JAIL, TIP, ARMORY, GEARED, DONE }
 
 const SHERIFF_MODEL := "res://src/episode2/assets/town/sheriff.glb"          # the founder's own Sheriff (Drive 2026-10-14): weathered, bearded, long coat, pipe - baked for the pack
 const MINISTER_MODEL := "res://src/episode2/assets/town/minister.glb"      # Minister Mike Dean: the founder's robot-headed minister (Drive 2026-10-14), baked for the pack
@@ -38,6 +38,7 @@ const BARTENDER_HEIGHT := 1.76
 const WHISKEY_MODEL := "res://src/episode2/assets/whiskey_glass.glb"
 const COIN_MODEL := "res://src/episode2/assets/btc_coin.glb"
 const SHERIFF_HEIGHT := 1.78
+const ACCOMPLICE_HEIGHT := 1.74
 const MINISTER_HEIGHT := 1.65
 const MINISTER_STEP := 0.5                               # the low wooden step he stands on behind the counter, so the counter does not hide him
 ## In each building's local frame (x along the front, -z inside).
@@ -66,6 +67,12 @@ const RICH_MODEL := "res://src/episode2/assets/town/rich_armory.glb"
 const UTAH_MODEL := "res://src/episode2/assets/town/utah_armory.glb"
 const RICH_HEIGHT := 1.86
 const UTAH_HEIGHT := 1.74
+## The two-storey Armory's Tripo Rich and Utah (heights incl. hat) and walk speeds matched to their Walk clip's stride (measured
+## by tools/ep2_motion/retarget_bvh.py: Utah 0.86 m/s, Rich ~0.76 m/s at his scale) so their feet never skate.
+const RICH2_HEIGHT := 1.80
+const UTAH2_HEIGHT := 1.85
+const RICH2_WALK := 0.76
+const UTAH2_WALK := 0.86
 ## In the Armory's local frame (x along the front, -z inside). Rich behind the counter (the sales side), Utah
 ## working the crates and racks behind him.
 const RICH_AT := Vector3(-0.7, 0.0, -5.7)
@@ -80,6 +87,15 @@ const PRICE_RIVER_GEAR := 2
 const SNIPER_BOX := 10
 const RIFLE_BOX := 24
 const REVOLVER_BOX := 18
+
+## The Sharps 1874 and the Colt Gatling (founder 2026-10-20, skill ep2-armory-guns). The rifle Rich lifts out of the lit case is the long rifle he sells
+## ("sniper" in Ep2ArmoryState.SHOP); the Gatling stands on its post in the yard OUTSIDE the shop and is never for sale.
+const HOLD_RICH := "hand_l"                            # the bone each man carries the rifle on (Ep2TownFolk.attach_prop matches loosely)
+const HOLD_UTAH := "RightHand"
+const SHARPS_HOLD_POS := Vector3(0.0, 0.10, 0.02)      # in the hand bone's frame (tuned against the InspectRifle clip, see tools/ep2_shots/armory_guns_shot.gd)
+const SHARPS_HOLD_ROT := Vector3(0.0, 0.0, 90.0)
+const MOUNT_R := 2.6                                   # how close to the post's stand he must be to take the crank
+const MOUNT_FOV := 66.0
 
 var _town_col: Dictionary = {}
 var _sheriff: Ep2TownFolk = null
@@ -106,13 +122,29 @@ var _flash_t: float = 0.0
 var _flash: OmniLight3D = null
 var _rich: Ep2TownFolk = null
 var _utah: Ep2TownFolk = null
+var _people: Ep2TownPeople = null                # the townsmen and townswomen on Main Street (streamed extras)
+var _rich_brain: Ep2ArmoryBrain = null          # the two-storey Armory only
+var _utah_brain: Ep2ArmoryBrain = null
 var _shop: Ep2ArmoryShop = null
 var _shop_layer: CanvasLayer = null
 var _shop_open: bool = false
 var _geared: bool = false                             # rifle + river gear in hand
 var _gear_t: float = -1.0
 var _armory_visited: bool = false                     # he found the lane and walked in
+## The jailhouse (founder lock 2026-10-20): the Sheriff's prisoner knows who brought the bears.
+var _accomplice: Ep2TownFolk = null
+var _jail_visited: bool = false
+var _jail_done_t: float = -1.0
+var _investigation_open: bool = false                 # the hunt is on: lake -> river -> trains -> Fort Knox
 var _spent: int = 0                                   # crypto spent at the counter (test evidence)
+## The two hero guns (ep2-armory-guns).
+var _gatling: Ep2GatlingPost = null                   # the Colt on its post in the yard (streamed extras; null when they are not mounted)
+var _mounted: bool = false                            # he is at the crank: the bore is his view and his mouse
+var _sharps_case: Node3D = null                       # the Sharps in the lit case
+var _sharps_hand: Node3D = null                       # ...and the same rifle once Rich has lifted it out
+var _intro: Ep2ArmoryIntro = null                     # Rich and Utah introduce the two guns
+var _intro_asked: bool = false
+var _mount_bursts: int = 0                            # bursts fired from the post (test evidence)
 var _mouse_before: int = Input.MOUSE_MODE_CAPTURED
 
 
@@ -212,6 +244,10 @@ func _step_people() -> void:
 	_flash.light_energy = 0.0
 	_visuals.add_child(_flash)
 	_build_armory_folk()
+	_people = Ep2TownPeople.new()
+	_people.configure_space(_town_col)
+	_people.build(_visuals)
+	_build_jail_folk()
 	if _bull == null:
 		_bull = _build_bull(Ep2GoldTown.door_world("Bldg_B", 0.8), PI * 0.5)
 		_bull.visible = false
@@ -221,6 +257,9 @@ func _step_people() -> void:
 ## (lock section 6: "both are present"). They are ordinary town folk - a stride bob, a turn to whoever
 ## comes in - not bears and not a menu.
 func _build_armory_folk() -> void:
+	if Ep2GoldTown.armory_v2 and Ep2Extras.has(Ep2Extras.RICH) and Ep2Extras.has(Ep2Extras.UTAH):
+		_build_armory_folk_v2()
+		return
 	_rich = Ep2TownFolk.new()
 	_rich.name = "Rich"
 	_visuals.add_child(_rich)
@@ -237,6 +276,29 @@ func _build_armory_folk() -> void:
 	_rich.hold_clip("Counter")
 	_utah.hold_clip("Idle")
 	_build_shop()
+
+
+## The two-storey Armory's shopkeepers (founder 2026-10-19): the founder's Tripo Rich (miner, GM medallion, cigar) and Utah (gunman,
+## bandoliers), rigged and moved by retargeted mocap (tools/ep2_motion/), each run by an Ep2ArmoryBrain that works both floors and
+## reacts to Lil Blunt (skills ep2-tripo-folk-to-game, ep2-armory-npc-autonomy). Streamed with the building (Ep2Extras).
+func _build_armory_folk_v2() -> void:
+	var xf: Transform3D = Ep2GoldTown.building_xform(Ep2GoldTown.entry("Bldg_Armory"))
+	_rich = Ep2TownFolk.new()
+	_rich.name = "Rich"
+	_visuals.add_child(_rich)
+	_rich.setup(Ep2Extras.RICH, RICH2_HEIGHT, Color(0.30, 0.20, 0.13))
+	_utah = Ep2TownFolk.new()
+	_utah.name = "Utah"
+	_visuals.add_child(_utah)
+	_utah.setup(Ep2Extras.UTAH, UTAH2_HEIGHT, Color(0.28, 0.33, 0.34))
+	_rich_brain = Ep2ArmoryBrain.new()
+	_rich_brain.walk_speed = RICH2_WALK
+	_rich_brain.setup("rich", _rich, xf, _brain_spots(), "counter_rich", 7101)
+	_utah_brain = Ep2ArmoryBrain.new()
+	_utah_brain.walk_speed = UTAH2_WALK
+	_utah_brain.setup("utah", _utah, xf, _brain_spots(), "bench", 7202)
+	_build_shop()
+	_build_guns()
 
 
 ## The trade counter itself: hidden until [E] at the counter (or a touch of BUY). Leather and brass,
@@ -256,9 +318,226 @@ func _build_shop() -> void:
 	_shop.hide()
 
 
+# --- the two hero guns (Sharps 1874, Colt Gatling) --------------------------------------------------------------------------
+
+## The spots the two men walk between: the building's own Spot_ empties plus the Gatling post in the yard (building-local frame).
+func _brain_spots() -> Dictionary:
+	var sp: Dictionary = Ep2GoldTown.armory_spots.duplicate()
+	sp["gatling_stand"] = Ep2GoldTown.GATLING_POST + Vector3(-Ep2GoldTown.GATLING_STAND_BACK, 0.0, 0.0)
+	sp["gatling_look"] = Ep2GoldTown.GATLING_POST + Vector3(-1.1, 0.0, -2.0)
+	return sp
+
+
+## The Sharps in the lit case (and a second instance for Rich's hand), the Gatling on its post in the yard with its plates, and the introduction that
+## ties them to Rich and Utah. All of it is streamed art (Ep2Extras): where it is not mounted the Armory simply plays as before.
+func _build_guns() -> void:
+	var xf: Transform3D = Ep2GoldTown.building_xform(Ep2GoldTown.entry("Bldg_Armory"))
+	_sharps_case = _visuals.find_child("Arm2_Sharps_Bldg_Armory", true, false) as Node3D
+	if Ep2Extras.has(Ep2Extras.GATLING):
+		var post_w: Vector3 = xf * Ep2GoldTown.GATLING_POST
+		var fwd: Vector3 = xf.basis * Vector3.RIGHT
+		_gatling = Ep2GatlingPost.new()
+		_gatling.name = "GatlingPost"
+		_visuals.add_child(_gatling)
+		_gatling.position = post_w
+		if _gatling.build(Ep2Extras.GATLING, atan2(fwd.x, fwd.z)):
+			_gatling.hang_sign("NOT FOR SALE")
+			var face: Vector3 = post_w + Vector3(0.0, 1.2, 0.0)
+			for pl in Ep2GoldTown.GATLING_PLATES:
+				_gatling.add_plate(xf * (pl as Vector3), face)
+			for bl in Ep2GoldTown.GATLING_BALES:
+				_gatling.add_bale(xf * (bl as Vector3), face)
+			if _town_col.has("props"):
+				(_town_col["props"] as Array).append([Vector2(post_w.x, post_w.z), 0.85])
+		else:
+			_visuals.remove_child(_gatling)
+			_gatling.free()
+			_gatling = null
+	if _rich_brain == null or _utah_brain == null:
+		return
+	_intro = Ep2ArmoryIntro.new()
+	_intro.rich = _rich_brain
+	_intro.utah = _utah_brain
+	_intro.gatling = _gatling
+	_intro.sharps_price = int(Ep2ArmoryState.shop_item("sniper").get("price", PRICE_SNIPER))
+	if _gatling != null and _gatling.plate_count() > 0:
+		var first: Dictionary = _gatling.targets[0]
+		_intro.demo_target = (first["node"] as Node3D).position + _gatling.position + Vector3(0.0, 1.22, 0.0)
+	_intro.said.connect(func(who: String, text: String, secs: float) -> void:
+		if _hud != null:
+			_hud.toast("%s: %s" % [who, text], secs))
+	_intro.objective_changed.connect(_on_intro_objective)
+	_intro.sharps_lifted.connect(_on_sharps_lifted)
+	_intro.finished.connect(_on_intro_finished)
+
+
+func _on_intro_objective(text: String) -> void:
+	if _hud != null and _beat == Beat.ARMORY:
+		_hud.objective = text if text != "" else "Trade with Rich at the counter [E]."
+
+
+func _on_intro_finished() -> void:
+	_on_intro_objective("")
+
+
+## Rich lifts the Sharps out of the lit case into his hand (the case rifle hides), or locks it back. Without a hand bone the rifle simply stays in the case.
+func _on_sharps_lifted(in_hand: bool) -> void:
+	if not in_hand:
+		if _rich != null:
+			_rich.drop_prop("Sharps")
+		if _sharps_case != null:
+			_sharps_case.visible = true
+		return
+	if not Ep2Extras.has(Ep2Extras.SHARPS) or _rich == null:
+		return
+	var ps: PackedScene = load(Ep2Extras.SHARPS) as PackedScene
+	if ps == null:
+		return
+	var rifle: Node3D = ps.instantiate() as Node3D
+	rifle.name = "Sharps"
+	if _rich.attach_prop(rifle, HOLD_RICH, SHARPS_HOLD_POS, SHARPS_HOLD_ROT):
+		if _sharps_case != null:
+			_sharps_case.visible = false
+	else:
+		rifle.free()
+
+
+## The introduction starts when he walks up to the counter, and ends (guns put away, both men back at work) if the beat moves on.
+func _tick_armory_guns(delta: float) -> void:
+	if _intro == null:
+		return
+	if not _intro_asked and _at_armory_counter():
+		_intro_asked = true
+		_intro.begin()
+	_intro.mounted = _mounted
+	_intro.player_bursts = _mount_bursts
+	_intro.step(delta, _player_pos)
+
+
+func skip_armory_intro() -> void:
+	_intro_asked = true
+	if _intro != null:
+		_intro.cancel()
+
+
+## Step away from the crank and put the guns away (the beat moved on, or the room is being left).
+func _end_guns() -> void:
+	if _mounted:
+		_dismount()
+	if _intro != null:
+		_intro.cancel()
+
+
+func _can_mount() -> bool:
+	if _gatling == null or _mounted or _beat != Beat.ARMORY or has_player_control() == false:
+		return false
+	if _intro != null and not _intro.mount_allowed():
+		return false
+	return _player_pos.distance_to(_gatling.stand_position()) < MOUNT_R
+
+
+func _mount() -> void:
+	_mounted = true
+	_move_input = Vector2.ZERO
+	_run_input = false
+	_moving = false
+	set_aim(false)
+	var st: Vector3 = _gatling.stand_position()
+	_player_pos = Vector3(st.x, _ground_y, st.z)
+	_look_yaw = _gatling.aim_yaw                    # he takes the crank with the bore where it points (the arc is the gun's, not his old view)
+	_look_pitch = _gatling.aim_pitch
+	if _hud != null:
+		_hud.set_search_prompt("")
+		_hud.toast("THE COLT GATLING - click to fire, [E] to step away", 3.2)
+
+
+func _dismount() -> void:
+	_mounted = false
+	if _gatling != null:
+		_gatling.cease()
+		_look_yaw = _gatling.aim_yaw
+		_look_pitch = clampf(_gatling.aim_pitch, FPS_PITCH_MIN, FPS_PITCH_MAX)
+
+
+func is_mounted() -> bool: return _mounted
+func get_gatling() -> Ep2GatlingPost: return _gatling
+func get_intro() -> Ep2ArmoryIntro: return _intro
+func mount_bursts() -> int: return _mount_bursts
+
+
+# --- mounted mode: the crank is his view, his mouse and his trigger; everything else about walking and the rifle waits -------------
+
+func look(relative: Vector2) -> void:
+	if _mounted and has_player_control() and _gatling != null:
+		_gatling.aim_delta(relative)
+		_look_yaw = _gatling.aim_yaw
+		_look_pitch = _gatling.aim_pitch
+		return
+	super(relative)
+
+
+func _move_player(delta: float) -> void:
+	if _mounted:
+		_moving = false
+		return
+	super(delta)
+
+
+func _can_jump() -> bool:
+	return not _mounted
+
+
+func set_aim(on: bool) -> void:
+	if _mounted:
+		return
+	super(on)
+
+
+func reload() -> bool:
+	if _mounted:
+		if _hud != null:
+			_hud.toast("THE DRUM IS ALL THERE IS", 1.4)
+		return false
+	return super()
+
+
+func select_weapon(id: String) -> bool:
+	if _mounted:
+		return false
+	return super(id)
+
+
+func _fps_camera(delta: float) -> void:
+	if _mounted and _gatling != null:
+		_camera.position = _gatling.eye_position()
+		_camera.look_at(_camera.position + _gatling.bore_dir(), Vector3.UP)
+		_camera.fov = MOUNT_FOV
+		return
+	super(delta)
+
+
+func _set_eye_view(on: bool) -> void:
+	super(on)
+	if _mounted and _vm != null:
+		_vm.set_shown(false)                                 # the Winchester stays out of the picture while his hands are on the crank
+
+
+func _tick_viewmodel(delta: float) -> void:
+	super(delta)
+	if _mounted and _gatling != null and _hud != null:
+		_hud.set_ammo(_gatling.rounds, 0, Ep2GatlingPost.DRUM)
+		_hud.spread_deg = 1.4
+
+
 ## [E] at the counter opens Rich & Utah's trade. The personal armory keeps its own key: this is a
 ## trade with crypto, not a loadout swap (founder lock PROMPT_EPISODE2_RICH_ARMORY_UTAH_RIVER.md).
 func start_rig(_payment: String = "") -> bool:
+	if _mounted:
+		_dismount()
+		return true
+	if _can_mount():
+		_mount()
+		return true
 	if _beat != Beat.ARMORY or _shop_open or _shop == null:
 		return false
 	if not _at_armory_counter():
@@ -493,6 +772,9 @@ func _on_setup() -> void:
 	_ground_y = 0.0
 	_apply_handoff_gaze(0.0, -0.03, PI)
 	_player_yaw = _look_yaw
+	# the townsfolk carry on exactly where they were during the ride in (same people, same places, same errands)
+	if _people != null and handoff.get("town_people") is Dictionary:
+		_people.restore(handoff["town_people"])
 	_rng.seed = 1886
 	if _hud:
 		_hud.show_health = false
@@ -575,6 +857,26 @@ func _on_beat_entered(b: int) -> void:
 				FacilityShow._say("vo_sheriff_win", 0.4),
 				{"do": "wait", "t": 0.4}], false)
 			_bull.walk_to(_player_pos + Vector3(1.4, 0.0, 2.6), 1.6)
+		Beat.JAIL_TIP:
+			# the Sheriff has a prisoner (founder lock 2026-10-20): he heads for the jailhouse out at the south edge of town
+			_investigation_open = false
+			if _hud:
+				_hud.objective = "The Sheriff has a prisoner. The jailhouse is out the south road, west of the street."
+				_hud.toast("THE SHERIFF HAS A PRISONER WHO KNOWS ABOUT THE BEARS", 3.8)
+			if _sheriff != null:
+				_sheriff.walk_path([Ep2GoldTown.door_world("Bldg_Jail", 3.0), _jail_spot("sheriff")], 1.6)
+			look_toward(Ep2GoldTown.door_world("Bldg_Jail", 1.0) + Vector3(0.0, 1.5, 0.0), 2.0)
+			_start_show([{"do": "wait", "t": 3.0}, {"do": "call", "fn": release_look}], false)
+		Beat.JAIL:
+			_jail_visited = true
+			if _hud:
+				_hud.objective = ""
+			if _sheriff != null:
+				_sheriff.face_point(_player_pos)
+			if _accomplice != null:
+				_accomplice.face_point(_player_pos)
+			_start_show(_jail_show_steps(), false)
+			_jail_done_t = -1.0
 		Beat.TIP:
 			# the tip off Main Street: Rich keeps an armory down the side lane (the lock's
 			# "hard-won" find - no ARMORY sign on the main drag). Text only; the voice lines
@@ -595,15 +897,70 @@ func _on_beat_entered(b: int) -> void:
 				look_toward(_rich.position + Vector3(0.0, RICH_HEIGHT * 0.85, 0.0), 2.2)
 			_start_show([{"do": "wait", "t": 1.8}, {"do": "call", "fn": release_look}], false)
 		Beat.GEARED:
+			_end_guns()
 			_geared = true
+			prebuild_requested.emit("logans_lake")
 			if _hud:
-				_hud.objective = "Geared for the river. TO BE CONTINUED."
+				_hud.objective = "Geared for the river. Follow the trail to Logan's Lake."
 				_hud.toast("ARMED FOR THE RIVER SHIPMENT", 3.4)
 			_start_show([{"do": "wait", "t": 2.6}], false)
 		Beat.DONE:
-			_resolve({"end_session": true, "to_be_continued": true, "got_map": _got_map, "draw_losses": _losses,
+			_resolve({"next_chamber": "logans_lake", "got_map": _got_map, "draw_losses": _losses,
 				"draw_fouls": _fouls, "armory_visited": _armory_visited, "sniper": armory.sniper_owned,
-				"sniper_rounds": armory.sniper_rounds, "river_gear": armory.river_gear})
+				"sniper_rounds": armory.sniper_rounds, "river_gear": armory.river_gear,
+				"jail_visited": _jail_visited, "investigation": _investigation_open})
+
+
+## The jailhouse exchange, as timed text (voice lines wait on a voice key like the Armory's): the Sheriff presents the caught
+## helper, the accomplice bargains and gives a PARTIAL truth (bears were brought in to soften claims before the vault lockup, the
+## pressure runs toward Fort Knox, look along the lake, the river and the trains), the Sheriff asks Lil Blunt to find who ordered it.
+const JAIL_LINES: Array = [
+	["SHERIFF", "Here he is. Caught him holding the gate open for the bears."],
+	["ACCOMPLICE", "All I did was open a gate. Somebody paid me to bring them in."],
+	["LIL BLUNT", "Who paid you?"],
+	["ACCOMPLICE", "Never saw a face. Coin, and an order: soften the claims before the vault locks."],
+	["ACCOMPLICE", "They want Fort Knox first. Watch the lake outflow, the river... the trains."],
+	["SHERIFF", "Find who brought the bears, Lil Blunt. I'll keep this one where he is."],
+]
+
+
+func _jail_show_steps() -> Array:
+	var steps: Array = []
+	for ln in JAIL_LINES:
+		var who: String = str(ln[0])
+		var text: String = str(ln[1])
+		steps.append({"do": "call", "fn": func() -> void: _jail_line(who, text)})
+		steps.append({"do": "wait", "t": 3.9})
+	return steps
+
+
+func _jail_line(who: String, text: String) -> void:
+	if _hud != null:
+		_hud.toast("%s: %s" % [who, text], 3.8)
+	if who == "ACCOMPLICE" and _accomplice != null:
+		_accomplice.face_point(_player_pos)
+		_accomplice.hold_clip("Greet")
+	elif who == "SHERIFF" and _sheriff != null:
+		_sheriff.face_point(_player_pos)
+
+
+## Build the accomplice into cell A (jail extras only): hatless, rough, standing at the bars. Silent if the jail is not loaded.
+func _build_jail_folk() -> void:
+	if not Ep2GoldTown.jail_v1:
+		return
+	_accomplice = Ep2TownFolk.new()
+	_accomplice.name = "Accomplice"
+	_accomplice.looping_clips.assign(["Idle", "Observe", "Talk"])
+	_accomplice.clip_blend = .18
+	_visuals.add_child(_accomplice)
+	_accomplice.setup(Ep2Extras.PRISONER, ACCOMPLICE_HEIGHT, Color(0.40, 0.30, 0.22))
+	_accomplice.hold_clip("Observe")
+	_accomplice.position = Ep2GoldTown.local_to_world("Bldg_Jail", Ep2GoldTown.jail_spots.get("accomplice", Vector3(-1.85, 0.0, -5.7)))
+	_face_folk(_accomplice, Ep2GoldTown.local_to_world("Bldg_Jail", Ep2GoldTown.jail_spots.get("visit", Vector3(-1.85, 0.0, -4.05))))
+
+
+func _jail_spot(name: String) -> Vector3:
+	return Ep2GoldTown.local_to_world("Bldg_Jail", Ep2GoldTown.jail_spots.get(name, Vector3.ZERO))
 
 
 func _show_finished() -> void:
@@ -633,6 +990,8 @@ func _sheriff_look_at_player() -> void:
 
 func _tick(delta: float) -> void:
 	_tick_people(delta)
+	if _gatling != null:
+		_gatling.step(delta)
 	if _flash_t > 0.0:
 		_flash_t = maxf(0.0, _flash_t - delta)
 		_flash.light_energy = 6.0 * _flash_t / 0.08
@@ -645,7 +1004,7 @@ func _tick(delta: float) -> void:
 				_advance_to(Beat.BAR)
 		Beat.SQUARE_UP:
 			_duel_ready = _player_pos.distance_to(DUEL_MARK) < 2.0 and not _opp.is_walking() and not _sheriff.is_walking()
-			if _duel_ready:
+			if _duel_ready and (_people == null or _people.duel_lane_clear()):
 				_advance_to(Beat.DRAW)
 		Beat.DRAW:
 			_tick_draw(delta)
@@ -657,17 +1016,39 @@ func _tick(delta: float) -> void:
 			if _end_t >= 0.0 and not _show_active:
 				_end_t -= delta
 				if _end_t < 0.0:
-					_advance_to(Beat.TIP)
+					_advance_to(Beat.JAIL_TIP if Ep2GoldTown.jail_v1 else Beat.TIP)
+		Beat.JAIL_TIP:
+			if _in_room("Bldg_Jail", -1.2):
+				_advance_to(Beat.JAIL)
+		Beat.JAIL:
+			# once the exchange is over he can walk out; the hunt (lake -> river -> trains -> Fort Knox) is on and the Armory tip follows
+			if not _show_active:
+				if _jail_done_t < 0.0:
+					_jail_done_t = 0.0
+					_investigation_open = true
+					if _hud:
+						_hud.objective = "Find who brought the bears: the lake outflow, the river, the trains, Fort Knox."
+						_hud.toast("THE HUNT IS ON: WHO BROUGHT THE BEARS?", 3.8)
+				else:
+					_jail_done_t += delta
+					if _jail_done_t > 2.2 and not _in_room("Bldg_Jail", -0.6):
+						_advance_to(Beat.TIP)
 		Beat.TIP:
 			if _in_room("Bldg_Armory", -1.4):
 				_armory_visited = true
 				_advance_to(Beat.ARMORY)
 		Beat.ARMORY:
 			_armory_visited = true
+			_tick_armory_guns(delta)
 			if _hud != null:
-				_hud.set_search_prompt("Trade with Rich [E]" if _at_armory_counter() else "")
+				if _mounted:
+					_hud.set_search_prompt("")
+				elif _can_mount():
+					_hud.set_search_prompt("Take the crank [E]")
+				else:
+					_hud.set_search_prompt("Trade with Rich [E]" if _at_armory_counter() else "")
 			_check_geared()
-			if _gear_t >= 0.0 and not _show_active:
+			if _gear_t >= 0.0 and not _show_active and not _mounted:
 				_gear_t -= delta
 				if _gear_t < 0.0:
 					_advance_to(Beat.GEARED)
@@ -677,16 +1058,22 @@ func _tick(delta: float) -> void:
 			if not _show_active and _end_t < 0.0:
 				_end_t = 2.4
 			elif _end_t >= 0.0 and not _show_active:
-				_end_t -= delta
+				_end_t = maxf(0.0, _end_t - delta)
+				if _end_t == 0.0 and _handoff_ok():
+					_end_t = -1.0
 				if _end_t < 0.0:
 					_advance_to(Beat.DONE)
+
+
+func _wants_handoff() -> bool:
+	return _beat == Beat.GEARED and not _show_active
 
 
 ## True when Lil Blunt is inside `piece` deeper than `depth` (local z, negative = inside).
 func _in_room(piece: String, depth: float) -> bool:
 	var e: Array = Ep2GoldTown.entry(piece)
 	var lp: Vector3 = Ep2GoldTown.building_xform(e).affine_inverse() * _player_pos
-	var fp: Array = Ep2GoldTown.FOOTPRINT[piece]
+	var fp: Array = Ep2GoldTown.FOOTPRINT["Bldg_Armory2" if piece == "Bldg_Armory" and Ep2GoldTown.armory_v2 else piece]
 	return lp.z < depth and absf(lp.x) < float(fp[0]) * 0.5
 
 
@@ -705,7 +1092,15 @@ func _tick_people(delta: float) -> void:
 	if _beat == Beat.SQUARE_UP and not _opp.is_walking():
 		_opp.face_point(DUEL_MARK)
 	# the Armory's two turn to whoever comes in the door of the shop
-	if _rich != null and _beat in [Beat.TIP, Beat.ARMORY, Beat.GEARED] and _in_room("Bldg_Armory", -2.0):
+	if _people != null:
+		_people.set_context("duel" if _beat in [Beat.BAR, Beat.SQUARE_UP, Beat.DRAW] else ("quiet" if _beat in [Beat.OFFICE, Beat.WON, Beat.JAIL] else "normal"))
+		_people.step(delta, _player_pos)
+	if _accomplice != null:
+		_accomplice.step(delta)
+	if _rich_brain != null:
+		_rich_brain.step(delta, _player_pos)
+		_utah_brain.step(delta, _player_pos)
+	elif _rich != null and _beat in [Beat.TIP, Beat.ARMORY, Beat.GEARED] and _in_room("Bldg_Armory", -2.0):
 		_rich.face_point(_player_pos)
 		if _utah != null:
 			_utah.face_point(_player_pos)
@@ -790,6 +1185,16 @@ func _current_speed() -> float:
 
 ## A shot before the word is a FOUL (the round is redone); after it, the round is real.
 func shoot() -> bool:
+	if _mounted:
+		if not has_player_control() or _gatling == null:
+			return false
+		if _gatling.fire_burst(0.7):
+			_mount_bursts += 1
+			if _people != null: _people.notify_danger(_player_pos, 32.0)
+			return true
+		if _hud != null:
+			_hud.toast("THE DRUM IS EMPTY", 1.4)
+		return false
 	if _beat == Beat.DRAW and _draw_state == "wait" and has_player_control():
 		_fouls += 1
 		_draw_state = "foul"
@@ -804,6 +1209,7 @@ func shoot() -> bool:
 
 
 func _on_player_shot() -> void:
+	if _people != null: _people.notify_danger(_player_pos)
 	if _beat != Beat.DRAW or _draw_state != "go":
 		return
 	var eye: Vector3 = _camera.global_position if _camera != null else _player_pos + Vector3(0.0, eye_height, 0.0)
@@ -873,6 +1279,10 @@ func get_sheriff() -> Ep2TownFolk: return _sheriff
 func get_minister() -> Ep2TownFolk: return _minister
 func get_opponent() -> Ep2TownFolk: return _opp
 func get_bartender() -> Ep2TownFolk: return _bartender
+func get_people() -> Ep2TownPeople: return _people
+func get_accomplice() -> Ep2TownFolk: return _accomplice
+func is_investigation_open() -> bool: return _investigation_open
+func jail_visited() -> bool: return _jail_visited
 func get_rich() -> Ep2TownFolk: return _rich
 func get_utah() -> Ep2TownFolk: return _utah
 func get_shop() -> Ep2ArmoryShop: return _shop
@@ -884,7 +1294,7 @@ func coins_spent() -> int: return _spent
 ## The personal armory's key stays out of the trade: while Rich has the counter up, the loadout
 ## selector (and the trade's own E) must not fight over the same key.
 func toggle_armory() -> void:
-	if _shop_open or not _running or _resolved or _show_blocks_control:
+	if _shop_open or _mounted or not _running or _resolved or _show_blocks_control:
 		return
 	super()
 func armory_open() -> bool:
@@ -902,4 +1312,10 @@ func _shows_health() -> bool:
 ## The street and the two rooms: the building walls (door gaps open into the office and the saloon), the counter, the bar, the props.
 func _collide(p: Vector3) -> Vector3:
 	var c: Vector2 = Ep2GoldTown.collide(Vector2(p.x, p.z), 0.3, _town_col.get("walls", []), _town_col.get("props", []))
+	if _people != null and p.y < 2.0:
+		for person in _people.people:
+			var dv: Vector2 = c - Vector2(person.folk.position.x, person.folk.position.z)
+			if dv.length() < 0.64:
+				c = Vector2(person.folk.position.x, person.folk.position.z) + (dv.normalized() if dv.length() > 0.001 else Vector2.RIGHT) * 0.64
+				c = Ep2GoldTown.collide(c, 0.3, _town_col.get("walls", []), _town_col.get("props", []))
 	return Vector3(clampf(c.x, -40.0, 40.0), p.y, clampf(c.y, Ep2GoldTown.TOWN_Z - 60.0, Ep2GoldTown.TOWN_Z + 95.0))

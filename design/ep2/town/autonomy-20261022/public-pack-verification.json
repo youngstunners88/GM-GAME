@@ -1,0 +1,53 @@
+{
+  "base": "https://html-classic.itch.zone/html/18305533-2183099/",
+  "packs": [
+    {
+      "name": "index.pck",
+      "bytes": 199157792,
+      "sha512": "674a1b59df75b8da8751fd63dd338fba99e3ee436369534a763ebbc3269fa23f86247e17dff2d5c0af6e89d37594405c0e57fe4bcaed102958d5cad6e27a1c9e",
+      "exact_ci_match": true,
+      "build_tags": [
+        "2026-10-22-13cbfad"
+      ],
+      "entries": 2562,
+      "town_assets": [
+        "res://src/episode2/actors/ep2_town_navigation.gd.remap",
+        "res://src/episode2/actors/ep2_town_navigation.gdc"
+      ]
+    },
+    {
+      "name": "ep2_extras.pck",
+      "bytes": 51101664,
+      "sha512": "ad73b4c64670ce21692dd0a98a882438db89323dc23ac62f7ad05c026b89fcf20f3fbbd49ceb799a1024706d6319cdf3a555002bcd180414b71a9c0bd60ac20f",
+      "exact_ci_match": true,
+      "entries": 166,
+      "town_assets": [
+        "res://src/episode2/extras/people/prisoner_accomplice.glb.import",
+        "res://.godot/imported/prisoner_accomplice.glb-c7aeb40480143cc69ad2c76b975e8c09.scn",
+        "res://src/episode2/extras/people/prisoner_accomplice_prisoner_basecolor.jpg.import",
+        "res://.godot/imported/prisoner_accomplice_prisoner_basecolor.jpg-1b95310b21d1411cbe40b8a6e798b0b9.ctex",
+        "res://src/episode2/extras/people/prisoner_accomplice_prisoner_normal.png.import",
+        "res://.godot/imported/prisoner_accomplice_prisoner_normal.png-294a1a92577ef55266af2c89d08f3235.ctex",
+        "res://src/episode2/extras/people/prisoner_accomplice_prisoner_orm.png.import",
+        "res://.godot/imported/prisoner_accomplice_prisoner_orm.png-d720a0dde3b14c2769013af885f3399a.ctex"
+      ]
+    }
+  ],
+  "all_fourteen_present": {
+    "townsman_clerk": true,
+    "townsman_oldtimer": true,
+    "townsman_rancher": true,
+    "townswoman_dressmaker": true,
+    "townswoman_lady": true,
+    "townsman_bald_worker": true,
+    "townswoman_grandma": true,
+    "townsman_grandfather": true,
+    "townswoman_grandmother": true,
+    "townsman_youth": true,
+    "townsboy": true,
+    "townsgirl_braided": true,
+    "townsgirl_bob": true,
+    "prisoner_accomplice": true
+  },
+  "verified_utc": "2026-10-22T09:46:28.805892+00:00"
+}

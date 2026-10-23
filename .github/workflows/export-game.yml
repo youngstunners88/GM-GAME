@@ -22,6 +22,7 @@ on:
       - main
       - master
       - claude/**
+      - codex/**
     paths:
       - 'src/**'
       - 'project.godot'
@@ -37,6 +38,8 @@ on:
       # showing the stale failure it was meant to fix. Found the hard way on
       # 1f5a9a1, which triggered no workflow at all.
       - 'scripts/**'
+      - 'tests/**'
+      - 'tools/ep2_shots/**'
       # secure-build-checklist was relocated from scripts/ to this skill path
       # (founder request, PR #21) and immediately reproduced the EXACT bug the
       # comment above documents: the scanner and its rules moved out from under
@@ -244,11 +247,14 @@ jobs:
           #        (2026-10-01: ~14 MB; the Episode 2 hideout's Meshy models pushed the pck over 190 MB).
           #   src/assets/models/horse/assetfurnace/ -> the horse's raw/rigged GLBs, textures and run records (~10 MB);
           #        the stable plays the baked 2D sprites in src/assets/sprites/, no scene loads these.
-          #   src/episode2/assets/{town,weapons,mine_lift,vehicles}/ loose Meshy/Tripo texture exports -> the
-          #        JPG/PNGs that sit beside GLBs whose textures are EMBEDDED in the .glb (verified: zero external
-          #        URIs, zero references in any scene/script). No runtime dir-scan touches these four folders
-          #        (transition_director warms only assets/, hideout/, textures/, audio/), so the .pck skips them;
-          #        the files stay in the repo as pipeline sources (~8 MB, 2026-10-18).
+          #   DO NOT exclude loose texture files next to GLBs (src/episode2/assets/{town,weapons,mine_lift,vehicles}/):
+          #        gltf/embedded_image_handling=1 EXTRACTS the GLB textures to those files and the imported scene points
+          #        at them. Excluding them from the pck strips every texture (rifle, lift cage, flame quad, sheriff,
+          #        cowboy, bartender, minister, donkey cart all render flat white). Tried 2026-10-18 (a089786a), reverted.
+          #        Probe before excluding anything: tools/ep2_forge/texture_ref_probe.gd (run by scripts/ship-to-master.sh).
+          #   src/assets/sprites/sprite_prop_train-goldmine{,_256}.png + sprite_train_goldmine_blender-render.png -> unused train sprite variants
+          #        (the game loads only sprite_prop_train-goldmine_512.png: src/level/distant_train.gd, Ep2SurfaceSet). No reference by any name in
+          #        code, scenes, resources or data; the blender-render file is only written by tools/ep2_blender/train_fidelity_pass.py (~1.0 MB pck, 2026-10-18).
           #   variant/thread_support=false -> non-threaded: no SharedArrayBuffer/
           #        COOP/COEP needed, so it boots on itch.io/iframes/mobile.
           #   html/head_include            -> loads web/web3.js (copied beside
@@ -262,7 +268,7 @@ jobs:
           custom_features=""
           export_filter="all_resources"
           include_filter="config.json,src/autoload/share_taglines.json"
-          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*,design/*,work-notes/*,tools/*,assets/keyart/*,src/assets/models/horse/assetfurnace/*,web_verify/*,web/game/*,src/episode2/assets/town/sheriff_Color_8e43f67e-cb67-440e-a933-873676200b46.jpg,src/episode2/assets/town/sheriff_NormalGL_8e43f67e-cb67-440e-a933-873676200b46.jpg,src/episode2/assets/town/sheriff_ORM_8e43f67e-cb67-440e-a933-873676200b46.jpg,src/episode2/assets/town/cowboy_Color_d9c0533c-027f-4ccc-bfb9-22c47cae0e86.jpg,src/episode2/assets/town/cowboy_NormalGL_d9c0533c-027f-4ccc-bfb9-22c47cae0e86.jpg,src/episode2/assets/town/cowboy_ORM_d9c0533c-027f-4ccc-bfb9-22c47cae0e86.jpg,src/episode2/assets/town/bartender_Color_d6ddb283-94c7-4e12-ad6e-0a171cf9b04d.jpg,src/episode2/assets/town/bartender_NormalGL_d6ddb283-94c7-4e12-ad6e-0a171cf9b04d.jpg,src/episode2/assets/town/bartender_ORM_d6ddb283-94c7-4e12-ad6e-0a171cf9b04d.jpg,src/episode2/assets/town/minister_Color_f53480cd-f4e1-4d5d-a2df-9b9293ac9654.jpg,src/episode2/assets/town/minister_NormalGL_f53480cd-f4e1-4d5d-a2df-9b9293ac9654.jpg,src/episode2/assets/town/minister_ORM_f53480cd-f4e1-4d5d-a2df-9b9293ac9654.jpg,src/episode2/assets/town/donkey_cart_donkey_cart_3d_model_basecolor.jpg,src/episode2/assets/town/donkey_cart_donkey_cart_3d_model_normal.jpg,src/episode2/assets/weapons/winchester_1886_founder_Image_0.png,src/episode2/assets/weapons/winchester_1886_founder_Image_1.png,src/episode2/assets/weapons/winchester_1886_founder_Image_2.png,src/episode2/assets/weapons/winchester_1886_founder_Image_3.png,src/episode2/assets/mine_lift/mine_lift_cage_BaseColor.jpg,src/episode2/assets/vehicles/flame_quad_ai_BaseColor.jpg"
+          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*,design/*,work-notes/*,tools/*,assets/keyart/*,src/assets/models/horse/assetfurnace/*,web_verify/*,web/game/*,src/assets/sprites/sprite_prop_train-goldmine.png,src/assets/sprites/sprite_prop_train-goldmine_256.png,src/assets/sprites/sprite_train_goldmine_blender-render.png,src/assets/portals/leaders/*,src/assets/logos/founder/ref_wrong_diamonds_banned.png,src/assets/art/smoke_lounge_banner.png,src/assets/models/player_bow/bow_fps_view.png,src/episode2/extras/*"
           export_path="web/game/index.html"
           script_export_mode=1
           script_encryption_key=""
@@ -353,6 +359,41 @@ jobs:
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_gold_town_test.tscn 2>&1 | tee gold-town-tests.log
           grep -q 'EP2_GOLD_TOWN: ALL PASS' gold-town-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' gold-town-tests.log; then exit 1; fi
+          timeout 180 "$GODOT_BIN" --headless res://tests/ep2_logans_lake_test.tscn > logans-lake-tests.log 2>&1
+          grep -q 'LOGANS_LAKE: ALL PASS' logans-lake-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' logans-lake-tests.log; then exit 1; fi
+          # Rich & Utah's two-storey Armory (founder 2026-10-19): building, windows, door, no horse inside, both men working both floors.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_armory_two_story_test.tscn 2>&1 | tee armory2-tests.log
+          grep -q 'EP2_ARMORY2: ALL PASS' armory2-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' armory2-tests.log; then exit 1; fi
+          # Jack Hammer's thread (founder lock 2026-10-21): identity, wording rules and order are enforced, not remembered.
+          timeout 200 "$GODOT_BIN" --headless res://tests/ep2_jack_hammer_test.tscn 2>&1 | tee jack-hammer-tests.log
+          grep -q 'EP2_JACK_HAMMER: ALL PASS' jack-hammer-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' jack-hammer-tests.log; then exit 1; fi
+          # Jack Hammer himself (founder 2026-10-21: mean, eye patch): the streamed model loads, is rigged with the five townfolk clips and stands 1.92 m.
+          timeout 200 "$GODOT_BIN" --headless res://tests/ep2_jack_hammer_character_test.tscn 2>&1 | tee jack-hammer-char-tests.log
+          grep -q 'EP2_JACK_HAMMER_CHARACTER: ALL PASS' jack-hammer-char-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' jack-hammer-char-tests.log; then exit 1; fi
+          # Every selector card shows Lil Blunt's hand with the weapon (founder 2026-10-21: the Remington and the bow cards).
+          timeout 200 "$GODOT_BIN" --headless res://tests/ep2_weapon_icons_test.tscn 2>&1 | tee weapon-icons-tests.log
+          grep -q 'EP2_WEAPON_ICONS: ALL PASS' weapon-icons-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' weapon-icons-tests.log; then exit 1; fi
+          # The Sharps 1874 and the Colt Gatling (founder 2026-10-20): Rich and Utah introduce them; the Gatling is a post outside the shop, never stock.
+          timeout 400 "$GODOT_BIN" --headless res://tests/ep2_armory_guns_test.tscn 2>&1 | tee armory-guns-tests.log
+          grep -q 'EP2_ARMORY_GUNS: ALL PASS' armory-guns-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' armory-guns-tests.log; then exit 1; fi
+          # Town windows and doors are real holes and the town has people (founder 2026-10-19): kit openings + five townsmen/townswomen.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_town_people_test.tscn 2>&1 | tee town-people-tests.log
+          grep -q 'EP2_TOWN_PEOPLE: ALL PASS' town-people-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' town-people-tests.log; then exit 1; fi
+          # Full thirteen-person autonomy: ten minutes, avoidance, danger, social memory and malformed saves.
+          timeout 600 "$GODOT_BIN" --headless res://tests/ep2_town_autonomy_test.tscn 2>&1 | tee town-autonomy-tests.log
+          grep -q 'EP2_TOWN_AUTONOMY: ALL PASS' town-autonomy-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' town-autonomy-tests.log; then exit 1; fi
+          # Reference-led street cast: UVs, image-backed PBR, four normalized skin influences and the five clips survive import.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_street_people_assets_test.tscn 2>&1 | tee street-people-assets-tests.log
+          grep -q 'EP2_STREET_PEOPLE_ASSETS: ALL PASS' street-people-assets-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' street-people-assets-tests.log; then exit 1; fi
           # Bull's pacing, the cover fire and the donkey cart on the road (founder 2026-10-14).
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_companion_cart_test.tscn 2>&1 | tee companion-cart-tests.log
           grep -q 'EP2_COMPANION_CART: ALL PASS' companion-cart-tests.log
@@ -384,6 +425,27 @@ jobs:
             portal-tests.log
             portal-traversal.log
             portal-render.log
+          retention-days: 14
+
+      - name: Capture town autonomy through the player camera
+        run: |
+          mkdir -p "$RUNNER_TEMP/town-autonomy-captures"
+          SHOT_OUT="$RUNNER_TEMP/town-autonomy-captures" timeout 1200 xvfb-run -a "$GODOT_BIN" \
+            --rendering-method gl_compatibility --rendering-driver opengl3 --audio-driver Dummy \
+            --resolution 1280x720 res://tools/ep2_shots/town_autonomy_play.tscn 2>&1 | tee town-autonomy-render.log
+          grep -q 'TOWN_AUTONOMY_PLAY: ALL THIRTEEN CAPTURED' town-autonomy-render.log
+          grep -q 'TOWN_AUTONOMY_PLAY: JAIL PRISONER CAPTURED' town-autonomy-render.log
+          if grep -E 'SCRIPT ERROR|Parse Error' town-autonomy-render.log; then exit 1; fi
+
+      - name: Upload town autonomy proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: town-autonomy-proof
+          path: |
+            ${{ runner.temp }}/town-autonomy-captures/
+            town-autonomy-render.log
+            town-autonomy-tests.log
           retention-days: 14
 
       - name: Stamp the build tag
@@ -426,6 +488,18 @@ jobs:
             cat export.log
             exit 1
           fi
+          # Episode 2 extras (founder 2026-10-19: "Stream Episode 2 extras"): res://src/episode2/extras/ is excluded from
+          # index.pck above and packed here into ep2_extras.pck, deployed next to it; the game downloads and mounts it when
+          # Episode 2 starts (src/episode2/ep2_extras.gd). Skill: ep2-armory-two-story.
+          timeout 300 "$GODOT_BIN" --headless --path . --script tools/ep2_extras/pack_extras.gd -- web/game/ep2_extras.pck 2>&1 | tee extras-pack.log
+          grep -q 'EXTRAS_PACK:' extras-pack.log
+          [ -f web/game/ep2_extras.pck ] || { echo "::error::ep2_extras.pck was not built"; exit 1; }
+          XB=$(stat -c%s web/game/ep2_extras.pck)
+          echo "ep2_extras.pck = $XB bytes"
+          [ "$XB" -lt 199229440 ] || { echo "::error::ep2_extras.pck over the 190 MiB per-file gate"; exit 1; }
+          # Presence gate (skill ep2-townfolk-presence): townspeople, openings kit, Rich & Utah, jail, Logan and the town->lake chamber
+          # chain must be INSIDE the packs that get deployed - "on master" is not "in the build".
+          bash scripts/check-ep2-extras-pack.sh web/game
 
       - name: Restore the stamped source
         # MUST run, and must run BEFORE any step that touches git.
@@ -574,6 +648,7 @@ jobs:
           # the small loader files for the mirror. Leaving it on disk is the
           # point — `git reset` unstages without deleting the file.
           git reset -q -- web/game/index.pck || true
+          git reset -q -- web/game/ep2_extras.pck || true   # build artifact too (streamed Episode 2 extras)
           if ! git diff --cached --quiet; then
             git commit -m "build: export Godot 4.3 game to web (automated CI)"
             # Rebase-and-push with RETRIES.

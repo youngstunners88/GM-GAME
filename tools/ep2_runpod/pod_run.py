@@ -26,9 +26,9 @@ BLENDER_URL = "https://download.blender.org/release/Blender4.5/blender-4.5.3-lin
 
 
 def _key() -> str:
-    k = os.environ.get("RUNPOD_API", "")
+    k = os.environ.get("RUNPOD") or os.environ.get("RUNPOD_API") or os.environ.get("RUNPOD_API_KEY", "")
     if not k:
-        sys.exit("RUNPOD_API is not set in the environment")
+        sys.exit("Runpod key is not injected into this process (checked RUNPOD, RUNPOD_API, RUNPOD_API_KEY)")
     return k
 
 
@@ -43,6 +43,10 @@ def pods():
 
 
 def pick(pod_id: str = ""):
+    # No REST key on this machine (the Runpod MCP is OAuth): take the pod id + its Jupyter password from the env instead
+    # (POD_JUPYTER_PASSWORD, read from a 600-mode file by the caller; never printed).
+    if not os.environ.get("RUNPOD_API") and os.environ.get("POD_JUPYTER_PASSWORD") and pod_id:
+        return {"id": pod_id}
     ps = [p for p in pods() if p.get("desiredStatus") == "RUNNING"]
     if pod_id:
         ps = [p for p in ps if p["id"] == pod_id]
@@ -53,9 +57,11 @@ def pick(pod_id: str = ""):
 
 def jupyter(pod):
     """(base url, headers) for the pod's Jupyter through the Runpod proxy; auth by the pod's own JUPYTER_PASSWORD."""
-    full = rest("/pods/" + pod["id"])
-    env = full.get("env") or {}
-    pw = env.get("JUPYTER_PASSWORD") or env.get("JUPYTER_TOKEN") or ""
+    pw = os.environ.get("POD_JUPYTER_PASSWORD", "")
+    if not pw:
+        full = rest("/pods/" + pod["id"])
+        env = full.get("env") or {}
+        pw = env.get("JUPYTER_PASSWORD") or env.get("JUPYTER_TOKEN") or ""
     base = "https://%s-8888.proxy.runpod.net" % pod["id"]
     hdr = {"Authorization": "token " + pw} if pw else {}
     return base, hdr

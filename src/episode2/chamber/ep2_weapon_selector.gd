@@ -5,7 +5,7 @@ const FONT := preload("res://src/episode2/assets/weapons/armory/western_bookman.
 const ICONS := {
 	Ep2ArmoryState.WIN: preload("res://src/episode2/assets/weapons/armory/winchester_icon.png"),
 	Ep2ArmoryState.REM: preload("res://src/episode2/assets/weapons/armory/remington_icon.png"),
-	Ep2ArmoryState.BOW: preload("res://src/episode2/assets/weapons/armory/bow_icon.svg"),
+	Ep2ArmoryState.BOW: preload("res://src/episode2/assets/weapons/armory/bow_icon.png"),
 }
 const BRASS := Color("c7a267")
 const PAPER := Color("eddbb2")

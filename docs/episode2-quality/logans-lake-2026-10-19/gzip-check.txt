@@ -1,0 +1,10 @@
+{
+ "gameUrl": "http://127.0.0.1:8941/game/index.html?ep2=1",
+ "build": "dev-local",
+ "extras": "[EP2] extras ready (ready)",
+ "extrasHttp": [
+  200
+ ]
+}
+PASS  game page loaded and printed its build tag  (dev-local)
+PASS  extras log says ready  ([EP2] extras ready (ready))

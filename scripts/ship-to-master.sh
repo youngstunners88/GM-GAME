@@ -55,6 +55,9 @@ default_gates() {
   bash scripts/ci-gates-local.sh || return 1
   # And the pack size as CI measures it (fresh clone, no warm import cache).
   bash scripts/pack-gate-fresh.sh || return 1
+  timeout 600 "$G" --headless --path . --script tools/ep2_forge/texture_ref_probe.gd >/tmp/ship_texprobe.log 2>&1 \
+    || { echo "✗ an excluded export path is still used by a model (it would render white)"; grep FAIL /tmp/ship_texprobe.log | head -20; return 1; }
+  echo "✓ no model uses an excluded texture"
   bash scripts/security-sentinel.sh >/tmp/ship_sentinel.log 2>&1 \
     || { echo "✗ security sentinel"; tail -20 /tmp/ship_sentinel.log; return 1; }
   echo "✓ security sentinel"

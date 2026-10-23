@@ -1,0 +1,2243 @@
+[
+  {
+    "path": ".claude-plugin/marketplace.json",
+    "bytes": 365,
+    "sha512": "3d82a5ad4f1b9c4fc2cce303a597a948bedf8d107f8de9296f7a0ea15a1ac1a90b6c0a63342e94c3706969fa5d202a7230aa9da3f1a5cb45e0484edb0ca57b52",
+    "lines": 12,
+    "kind": "text"
+  },
+  {
+    "path": ".claude-plugin/plugin.json",
+    "bytes": 572,
+    "sha512": "95ecc4e0f58ce4bd2cca7d9913796b59db006963369e7a51e414391ab97a729b2b83a3f58fbf7da9df42790a0edea06e10775c266e6e283ff9c3bcf95dbd811f",
+    "lines": 10,
+    "kind": "text"
+  },
+  {
+    "path": ".gitattributes",
+    "bytes": 67,
+    "sha512": "f61dadfdf9300e6f734deb5dfbcbbb5e338b1a1846b2e69259ece5adcc658be37d401911031799fbc256e83dfbb4baaf0c340e089bb4168eefa15cefe9fd63f8",
+    "lines": 4,
+    "kind": "text"
+  },
+  {
+    "path": ".github/workflows/ci.yml",
+    "bytes": 1377,
+    "sha512": "c65089726a3025cc2fe2041a6a4ea23599fc4b922799fafe83c1befa529591785434e66847d436e72a61004b6bc841965d15ae674708bc0ffcd54b69a8bcdea5",
+    "lines": 42,
+    "kind": "text"
+  },
+  {
+    "path": ".gitignore",
+    "bytes": 107,
+    "sha512": "b4168fd626ba99b421c1168690b57b4f365bc3dc166d6787fa875dfba55ce161ae0f30cbb703c6a67fc1469d82f9e14e7c616e21a1f8fb69b0644f130a2e63ba",
+    "lines": 10,
+    "kind": "text"
+  },
+  {
+    "path": "AGENTS.md",
+    "bytes": 2895,
+    "sha512": "d924272fda1f6fecb0b0b78f91678a0559c523b229cd2b8b2258b01b2f22cc3ff7011e9cdfce033d4e9ed37f0586d3c3c6a59ea8c37e22f384bc35fb68b171f3",
+    "lines": 40,
+    "kind": "text"
+  },
+  {
+    "path": "CHANGELOG.md",
+    "bytes": 788,
+    "sha512": "4a719be337d381157d8861cf2f3d64e2b0f3c7f8381672b801371a286c1cd9042df56ee8c4b5561ecf60261f665e215ec7253da7cf8b8db47251af822a1220ee",
+    "lines": 11,
+    "kind": "text"
+  },
+  {
+    "path": "CLAUDE.md",
+    "bytes": 11,
+    "sha512": "c681b5597f1fc6c7b09e635d102b0924860879ff893e81331764a309d676d1a027e6c8c7dc2754fd73cb5e731073bf8552cb266d9ec143ba0e0b5e7c54d6695e",
+    "lines": 1,
+    "kind": "text"
+  },
+  {
+    "path": "LICENSE",
+    "bytes": 1064,
+    "sha512": "8162e8d1f81f25a3abf509b2a7d0109401fe75c8f00a34c9779be6798d04c0881f9d3f1bae1f16c8fe72ff729f8d02bf016868eb961a1824991350d38cc9d72a",
+    "lines": 21,
+    "kind": "text"
+  },
+  {
+    "path": "README.md",
+    "bytes": 3674,
+    "sha512": "684378f3a0828f7e77dd46382ba8436381e68fd4bff8f2380255f6fc88288a00dd77049f8c95f44bc1c84aaefb1e97b13a4a1056a7e6c87e39403edfc312ee03",
+    "lines": 74,
+    "kind": "text"
+  },
+  {
+    "path": "assets/banner.png",
+    "bytes": 58959,
+    "sha512": "e1888dab8081420ca899335f8674e24af6b3e0b1c51a84ce54162ecc480439f7fbc600e3cbdb3764330cf87585fbfc7c7e912e661e1ff3dcee06db02d1f6f38e",
+    "kind": "media"
+  },
+  {
+    "path": "assets/icon.svg",
+    "bytes": 1260,
+    "sha512": "c3fe1c8a8e8e6332065e235f89f7451d022dbcd8ec7c4e20943efb637ff9929450fcbd52175f05e08aca28c01cb9eec4a9c24827f7b57a02cf730fe067cc58d6",
+    "lines": 24,
+    "kind": "text"
+  },
+  {
+    "path": "docs/_config.yml",
+    "bytes": 28,
+    "sha512": "b7e5515f729e1753c20784198e0204be3087a1e0b7bc2a00de8f41cdafe3d79adeeb00d4a36f48cc57b920a1ea6f6949a5db890c5d08d93eec4934aefb12c824",
+    "lines": 2,
+    "kind": "text"
+  },
+  {
+    "path": "docs/comparison/index.html",
+    "bytes": 11818,
+    "sha512": "1a1504aab91fc2cec9e318e897d5f915d1a6884011d3c2f0e23b2579a5bf267b2a3267d2c5d7f8a2527ef781a80ca7a880260f8afc6ad9ef28a032660ce5efe9",
+    "lines": 159,
+    "kind": "text"
+  },
+  {
+    "path": "docs/comparison/media/blanket-noskill-poster.webp",
+    "bytes": 10434,
+    "sha512": "d4b441a395a3c5b464a3311c2e735407e3ec332195a9b2ac27c5ce1d7116e99b67ff1d4b5287f58169b592bed3651058681a689ffbb48e22d862e440bab71476",
+    "kind": "media"
+  },
+  {
+    "path": "docs/comparison/media/blanket-noskill.mp4",
+    "bytes": 428226,
+    "sha512": "dc62a4a7d1120b7d22f1f9bb2ca34217a924353ec922f3d439ad91403235ab2b9da60dc3a8223a8194c2df718aed335b0c223cd9b8cdbe636b16df03fff81a1e",
+    "kind": "media"
+  },
+  {
+    "path": "docs/comparison/media/blanket-skill-poster.webp",
+    "bytes": 11888,
+    "sha512": "a2d142eb1d0bef4ac6ff9693864fff035ccf59d15524a5aa32fec1e49ff370198ea5929909198dfd176e189d73db1adc25fd298fee947f7b7d40a1b1525392b1",
+    "kind": "media"
+  },
+  {
+    "path": "docs/comparison/media/blanket-skill.mp4",
+    "bytes": 234923,
+    "sha512": "73ae5afbdebc77462c5521df08d5898f56ef7cee8988a6d3657383e6b18120bfa154f765efa4cb7e14a03f1b080cd1d50ec93c9c03207b8edb586825a307d827",
+    "kind": "media"
+  },
+  {
+    "path": "docs/comparison/media/concrete-detail-noskill.webp",
+    "bytes": 493610,
+    "sha512": "18986f52dae575548816a8cf21aded75ace113be17bdc515c76809f10b60fe325e0c7fd3128c1c5f1841b70989ab665aef2ba6e9a72556a9cd2c2310a2080efd",
+    "kind": "media"
+  },
+  {
+    "path": "docs/comparison/media/concrete-detail-skill.webp",
+    "bytes": 752118,
+    "sha512": "81aa846ac6294fcc6b3fe9ee9f25b8a5903de84a3cf179887b39aae6cebea7aa134dcde07e2819cf915501bd7d70f9c1aeb2f8375ccec6546ec64b99d4368994",
+    "kind": "media"
+  },
+  {
+    "path": "docs/comparison/media/concrete-hero-noskill-crop.webp",
+    "bytes": 183394,
+    "sha512": "4241d868cfa60c8237fb9a400fec6e14b16d505754ccf4639732a8d511d88499636221fb75044576438be1b6e461f2357c5eca9892f25105ab2dad58e00704f5",
+    "kind": "media"
+  },
+  {
+    "path": "docs/comparison/media/concrete-hero-noskill.webp",
+    "bytes": 469180,
+    "sha512": "d4e736a6ec173186072d179b89aace8ebf28ff3c53185150be2c7d6240a3e85e773dd5129767b63ba83a0af331dbba44b7d0ac25ade408bd8b55726d4ec4c530",
+    "kind": "media"
+  },
+  {
+    "path": "docs/comparison/media/concrete-hero-skill-crop.webp",
+    "bytes": 314966,
+    "sha512": "9b1eadcc272cc115ac9f2dd5ab45cb94977fb075c6a90d092b28b079c19f7f50b0223bb8e9c2f8932fded1188e6aa9e1d39b0825574c281bba1acb0875b62e90",
+    "kind": "media"
+  },
+  {
+    "path": "docs/comparison/media/concrete-hero-skill.webp",
+    "bytes": 649208,
+    "sha512": "673e176f4cba65cb2a513f921357bd266db0ecd1b88bbb126c0f347d593f89a53b9cf17c4e14e1c085def714b91f312c0b711227db841463c83e397eb9b73ee8",
+    "kind": "media"
+  },
+  {
+    "path": "docs/comparison/media/pistol-noskill-poster.webp",
+    "bytes": 5478,
+    "sha512": "52321d9b650f94b8b48145b28fcc6872d5cd6dc28cd8b75db1b0b66cd1466ba013318a09af51795a710e821413789ed321373fdc56a40265bf756939fe70abee",
+    "kind": "media"
+  },
+  {
+    "path": "docs/comparison/media/pistol-noskill.mp4",
+    "bytes": 191778,
+    "sha512": "99b10fabee603909d6810c0f0bf8dd9c79df7a16c7e6bf38bb5ce4161a6f5029ca6344ba87115fdd22d3fa443051f1744065573aad72df6ebb093fdac44cf441",
+    "kind": "media"
+  },
+  {
+    "path": "docs/comparison/media/pistol-skill-poster.webp",
+    "bytes": 4834,
+    "sha512": "84cfb06ce2a2e1d7261106b3ff4fcef52e81cc86417b830ef2ee24eac05232b81e30a9ecae949dcbb3170acf769e242e6d7dc9f0911c372b476a2ebc2bef0ced",
+    "kind": "media"
+  },
+  {
+    "path": "docs/comparison/media/pistol-skill.mp4",
+    "bytes": 189164,
+    "sha512": "19e249d0b2031975a8df71714f00ae30afea4424540524758ada734fa2d2aba1bea7b18594f4eaa397bb6bf135734766075c4351b58e0ebb5a7bc02ecd26ffc7",
+    "kind": "media"
+  },
+  {
+    "path": "docs/comparison/media/preview.jpg",
+    "bytes": 63326,
+    "sha512": "3f5b7f59a3b5c56920769bbebc78b13f1d715026d10b1fa895381452d485775c1cacafd4db75a53e03baf86d6cd7c79d7427af186d21f83aa02dc5b08ae33e72",
+    "kind": "media"
+  },
+  {
+    "path": "docs/reddit-post.md",
+    "bytes": 871,
+    "sha512": "0ccfef6d279d805d1dfdf8b72699219e9da39f485ba2d16ff12a30d6cf42db9c7467d102e3b8e87f911de6859fd2c6bf7529db05c362e20c3128d16676e3f692",
+    "lines": 19,
+    "kind": "text"
+  },
+  {
+    "path": "install/install.ps1",
+    "bytes": 2688,
+    "sha512": "5ad29e456918f2c73bb6f3efd66f8b6d6a19655f0d61b9e489e53132aa2d818cb94e2b6567fec63bc83e3e492105093b5ba308e76ec673e5856c9224bdf23220",
+    "lines": 56,
+    "kind": "text"
+  },
+  {
+    "path": "install/install.sh",
+    "bytes": 2343,
+    "sha512": "f4e6871a0a909a59fc10ea2f8640aacce522c2e86385126bd034520265067ed0cd533c0e89a1e48194b8ae5a083709c369d46a5319a4d28e8933326f33201c21",
+    "lines": 50,
+    "kind": "text"
+  },
+  {
+    "path": "shared/_bpyx.py",
+    "bytes": 4503,
+    "sha512": "efe48e13da12813ac4a148cddb03660e21af4ff077fa4d0f69e6b5f4a443fd54ad509e915351c4439eab74caf7f6986b1ba3aedabc857b03d5eabc640755ad6d",
+    "lines": 136,
+    "kind": "text",
+    "functions": [
+      "argv",
+      "_default",
+      "emit",
+      "parser",
+      "cli",
+      "add_common",
+      "objects",
+      "object_mode",
+      "select_only",
+      "node",
+      "enum_ids",
+      "set_enum",
+      "mesh_tris",
+      "r"
+    ],
+    "doc": "_bpyx - tiny shared helpers for blender-agent-skills scripts (Blender 5.2+).\n\nSource of truth: shared/_bpyx.py. Copies in skills/*/scripts/ are synced by\ntools/sync_shared.py - never edit a copy.\n\nEvery skill script follows one contract:\n  run(**kwargs) -> dict          # call from MCP / Python (import the module)\n  blender -b f.blend -P x.py -- --arg v   # CLI: prints one line \"@@JSON@@{...}\"",
+    "side_effects": [
+      {
+        "line": 53,
+        "code": "bpy.ops.wm.save_as_mainfile(filepath=bpy.path.abspath(save))"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-addon-development/SKILL.md",
+    "bytes": 5056,
+    "sha512": "763d8cea38335e0cd1187bf4682de70200cf47684f9ec5da64d7f5f569e18058f69fabb400262a75876e4b9387a42dcb49fd43a63ffb558b7e635170ec8ad916",
+    "lines": 49,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-addon-development/assets/addon_template/__init__.py",
+    "bytes": 661,
+    "sha512": "8c477a5cf04b814b17826a05be0b22891159668cf400ddc16bfb77b3d63a2bfe862bc5dab6503e775a5115cfa8ab5c712d867ac9c8abe4581b77df2ec6d57718",
+    "lines": 25,
+    "kind": "text",
+    "functions": [
+      "register",
+      "unregister"
+    ],
+    "doc": "My Tool - Blender extension template (4.2+ extension format, verified on 5.2).",
+    "side_effects": [
+      {
+        "line": 22,
+        "code": "bpy.types.VIEW3D_MT_object.remove(ui.menu_func)"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-addon-development/assets/addon_template/blender_manifest.toml",
+    "bytes": 832,
+    "sha512": "0a19cd22722e6ce9e99508cd44f7bc196972adf008e00b0afc93909f0ed084f88f84aa0c0e90bd02a055ecf38cfa89c33084013d78366e978efad31c23118efb",
+    "lines": 29,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-addon-development/assets/addon_template/operators.py",
+    "bytes": 1347,
+    "sha512": "46753048882ddb4e608e00a1a1373055c516f9ab9648cce32f44117f916860d4a06ca6d4726242ffa49fb249c838de4c667e0486290f4d64d6c7f084063bdc14",
+    "lines": 33,
+    "kind": "text",
+    "functions": [
+      "poll",
+      "invoke",
+      "execute"
+    ],
+    "doc": "",
+    "side_effects": []
+  },
+  {
+    "path": "skills/blender-addon-development/assets/addon_template/ui.py",
+    "bytes": 877,
+    "sha512": "579ca1a6c2772d8fb36a32f7a5a404b93b10c076599df893c9610d5ad89d3104fdccab2a5c34e3701a197766f3a3aa3a6d0c678930cef17e1488cb4219bcf298",
+    "lines": 30,
+    "kind": "text",
+    "functions": [
+      "menu_func",
+      "draw",
+      "draw"
+    ],
+    "doc": "",
+    "side_effects": []
+  },
+  {
+    "path": "skills/blender-animation/SKILL.md",
+    "bytes": 6150,
+    "sha512": "44a85033284098e184a7bd6e849ca941e162a80567ea59e5e82f5ab32a10e5778795b8ab36e3fffb57f5af0f9bbbfca54613ba630f943c69ce685656bb17be31",
+    "lines": 60,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-animation/scripts/_bpyx.py",
+    "bytes": 4503,
+    "sha512": "efe48e13da12813ac4a148cddb03660e21af4ff077fa4d0f69e6b5f4a443fd54ad509e915351c4439eab74caf7f6986b1ba3aedabc857b03d5eabc640755ad6d",
+    "lines": 136,
+    "kind": "text",
+    "functions": [
+      "argv",
+      "_default",
+      "emit",
+      "parser",
+      "cli",
+      "add_common",
+      "objects",
+      "object_mode",
+      "select_only",
+      "node",
+      "enum_ids",
+      "set_enum",
+      "mesh_tris",
+      "r"
+    ],
+    "doc": "_bpyx - tiny shared helpers for blender-agent-skills scripts (Blender 5.2+).\n\nSource of truth: shared/_bpyx.py. Copies in skills/*/scripts/ are synced by\ntools/sync_shared.py - never edit a copy.\n\nEvery skill script follows one contract:\n  run(**kwargs) -> dict          # call from MCP / Python (import the module)\n  blender -b f.blend -P x.py -- --arg v   # CLI: prints one line \"@@JSON@@{...}\"",
+    "side_effects": [
+      {
+        "line": 53,
+        "code": "bpy.ops.wm.save_as_mainfile(filepath=bpy.path.abspath(save))"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-animation/scripts/bake_action.py",
+    "bytes": 6923,
+    "sha512": "ffd7c5a0b7b61fd53bc641d8653d290aa0ffbde83e661005c367e098e0c32c46b8082d8a87ca21a33e6847cac5420393338b93bedde26fa18c64ce43565fbe46",
+    "lines": 158,
+    "kind": "text",
+    "functions": [
+      "list_actions",
+      "_assign",
+      "_mute",
+      "_root_motion",
+      "run"
+    ],
+    "doc": "Bake animation clips from a control rig onto an export skeleton (visual keying), one action per\nclip, optional root motion, clean curves, NLA strips for exporters; or list clips.\n\nTypical: Rigify RIG_Body (animated) -> GAME_RIG_Body (from rigify_build --game-skeleton).\nAfter baking, the target's constraints are MUTED so exporters play the baked actions\n(--follow unmutes them to drive the target from the control rig again).\nUsage:\n  blender -b f.blend -P bake_action.py -- --list\n  blender -b f.bl",
+    "side_effects": [
+      {
+        "line": 115,
+        "code": "bpy.data.actions.remove(old)"
+      },
+      {
+        "line": 132,
+        "code": "ad.nla_tracks.remove(t)"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-asset-qa/SKILL.md",
+    "bytes": 4667,
+    "sha512": "4563b25565051cbc968c097da98c451aaf7ee804a61a57e3da76d975e7dafbcc363c79ed5c3078fddad2f612e6bdbb5f1c77835c0b9b21130e73b6c849c931f6",
+    "lines": 55,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-asset-qa/scripts/_bpyx.py",
+    "bytes": 4503,
+    "sha512": "efe48e13da12813ac4a148cddb03660e21af4ff077fa4d0f69e6b5f4a443fd54ad509e915351c4439eab74caf7f6986b1ba3aedabc857b03d5eabc640755ad6d",
+    "lines": 136,
+    "kind": "text",
+    "functions": [
+      "argv",
+      "_default",
+      "emit",
+      "parser",
+      "cli",
+      "add_common",
+      "objects",
+      "object_mode",
+      "select_only",
+      "node",
+      "enum_ids",
+      "set_enum",
+      "mesh_tris",
+      "r"
+    ],
+    "doc": "_bpyx - tiny shared helpers for blender-agent-skills scripts (Blender 5.2+).\n\nSource of truth: shared/_bpyx.py. Copies in skills/*/scripts/ are synced by\ntools/sync_shared.py - never edit a copy.\n\nEvery skill script follows one contract:\n  run(**kwargs) -> dict          # call from MCP / Python (import the module)\n  blender -b f.blend -P x.py -- --arg v   # CLI: prints one line \"@@JSON@@{...}\"",
+    "side_effects": [
+      {
+        "line": 53,
+        "code": "bpy.ops.wm.save_as_mainfile(filepath=bpy.path.abspath(save))"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-asset-qa/scripts/qa_check.py",
+    "bytes": 16590,
+    "sha512": "227a2ebffa391d051e4639b1c88924c5eb7a436ca2e8b63bf1a2dc47d2552423cebdc0c8cc884296c3e3a74453b78e1bbca53db4b1013f246530ca4b4d86df03",
+    "lines": 355,
+    "kind": "text",
+    "functions": [
+      "_mesh_world",
+      "_islands",
+      "_point_in_tri",
+      "_uv_stats",
+      "run",
+      "_result",
+      "find",
+      "flag",
+      "_describe"
+    ],
+    "doc": "Mesh/asset QA: z-fighting, detached parts, normals, topology, transforms, UVs, weights.\n\nPass the objects of ONE asset (they are checked together: islands far from all others = floating).\nUsage:\n  blender -b f.blend -P qa_check.py -- [--objects A B] [--profile game|render|print|roblox]\n      [--eps 0.001] [--tol 0.002] [--no-modifiers] [--max-tris 300000]\n  MCP: import qa_check; print(qa_check.run(objects=[\"Chair\"], profile=\"game\"))\nReturns {\"pass\": bool, \"errors\": [...], \"warnings\": [...], \"obj",
+    "side_effects": []
+  },
+  {
+    "path": "skills/blender-asset-qa/scripts/review_shots.py",
+    "bytes": 6292,
+    "sha512": "455e9b5a5c7d4d031dc33d91bf7fa05a9fb84049151e5695f8bb197f6096a407568ab06ef956705af98e0eabc7f8c7ad4a7f6ab6cb6e18c9788bf1003d995c32",
+    "lines": 142,
+    "kind": "text",
+    "functions": [
+      "_bounds",
+      "run"
+    ],
+    "doc": "Render a multi-angle review contact sheet (headless-safe Workbench) for visual QA.\n\nModes: solid (studio light + cavity), random (color per object/part -> spot detached\nparts), wire (black wireframe over solid -> topology), material (texture/material colors).\nUsage:\n  blender -b f.blend -P review_shots.py -- [--objects A B] [--out //review.png]\n      [--views front right back left top three_quarter] [--mode solid|random|wire|material] [--res 512]\n  MCP: prefer the `look` tool; this script is for",
+    "side_effects": [
+      {
+        "line": 107,
+        "code": "bpy.data.images.remove(im)"
+      },
+      {
+        "line": 119,
+        "code": "bpy.data.images.remove(im)"
+      },
+      {
+        "line": 123,
+        "code": "bpy.data.objects.remove(o)"
+      },
+      {
+        "line": 125,
+        "code": "bpy.data.cameras.remove(data)"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-character-rigging/SKILL.md",
+    "bytes": 6653,
+    "sha512": "effb7554b1f4e67263a2111881fe08dcb00cd44b281f29e3eb142106608d1cb958c59ad3d2edbd60eb5109aa40698ac08cc7205b90ad411ae695f4c925829c88",
+    "lines": 55,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-character-rigging/scripts/_bpyx.py",
+    "bytes": 4503,
+    "sha512": "efe48e13da12813ac4a148cddb03660e21af4ff077fa4d0f69e6b5f4a443fd54ad509e915351c4439eab74caf7f6986b1ba3aedabc857b03d5eabc640755ad6d",
+    "lines": 136,
+    "kind": "text",
+    "functions": [
+      "argv",
+      "_default",
+      "emit",
+      "parser",
+      "cli",
+      "add_common",
+      "objects",
+      "object_mode",
+      "select_only",
+      "node",
+      "enum_ids",
+      "set_enum",
+      "mesh_tris",
+      "r"
+    ],
+    "doc": "_bpyx - tiny shared helpers for blender-agent-skills scripts (Blender 5.2+).\n\nSource of truth: shared/_bpyx.py. Copies in skills/*/scripts/ are synced by\ntools/sync_shared.py - never edit a copy.\n\nEvery skill script follows one contract:\n  run(**kwargs) -> dict          # call from MCP / Python (import the module)\n  blender -b f.blend -P x.py -- --arg v   # CLI: prints one line \"@@JSON@@{...}\"",
+    "side_effects": [
+      {
+        "line": 53,
+        "code": "bpy.ops.wm.save_as_mainfile(filepath=bpy.path.abspath(save))"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-character-rigging/scripts/bind_mesh.py",
+    "bytes": 4516,
+    "sha512": "a8d946edfe61c462dd9ec4710e8d6ab9bc39f9f9d00ed3b50c200195fbfd21ac453dc87d584d6b7b2b3f3e7ad6446c6704e3a475d1ccb976b0aaee80de44f7ea",
+    "lines": 109,
+    "kind": "text",
+    "functions": [
+      "_ctx",
+      "unweighted",
+      "_parent",
+      "_proxy_weights",
+      "cleanup",
+      "run"
+    ],
+    "doc": "Skin meshes to an armature with robust automatic weights, then clean them for engines.\n\nMethods: auto (bone heat), proxy (voxel-remeshed manifold proxy gets heat weights, transferred\nback - use for non-manifold/AI/kitbashed meshes or when heat fails), envelope, empty (groups only).\nauto falls back to proxy when heat weighting leaves verts unweighted.\nCleanup: remove weights < --clean, limit to --limit influences, normalize.\nUsage:\n  blender -b f.blend -P bind_mesh.py -- --armature RIG --meshes B",
+    "side_effects": [
+      {
+        "line": 62,
+        "code": "bpy.data.objects.remove(proxy)"
+      },
+      {
+        "line": 80,
+        "code": "ob.modifiers.remove(m)"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-character-rigging/scripts/rig_check.py",
+    "bytes": 9246,
+    "sha512": "9b1ef96eb4c8825bc39e7dcf260f61d7a3a764a16f8d24ce87d914f8f7b18d48a2d0223780c5841e36e0ec1447d02627943582ca32f244005fd221cab84438e3",
+    "lines": 181,
+    "kind": "text",
+    "functions": [
+      "_mirror",
+      "run"
+    ],
+    "doc": "Validate a skeleton + its skinned meshes for animation/engine export; optional safe fixes.\n\nSkeleton: applied transforms, single root at origin, zero-length bones, L/R pairs + mirrored\nroll, deform count, constraints on deform bones (need baking), profile naming (roblox R15,\nunity humanoid, unreal mannequin).\nSkin: unweighted verts, >N influences, non-normalized, weights on non-deform/root bones,\ngroups without bones, L/R weight asymmetry.\nUsage:\n  blender -b f.blend -P rig_check.py -- --armatur",
+    "side_effects": [
+      {
+        "line": 119,
+        "code": "ob.vertex_groups.remove(g)"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-character-rigging/scripts/rigify_build.py",
+    "bytes": 7387,
+    "sha512": "b3d85a3dcb7894ab4175f7cf3200a3f53d70fa902d0e140e44daf69db062085201ddea1d3965eff5d887c4fd6ba4ac5ec0e0c2781e1aac53e2d30ee4fa3bf424",
+    "lines": 190,
+    "kind": "text",
+    "functions": [
+      "_ensure_rigify",
+      "_bounds",
+      "_fit",
+      "_remove_face",
+      "_generate",
+      "game_skeleton",
+      "run",
+      "deform_parent"
+    ],
+    "doc": "Rigify pipeline: add + fit metarig, generate control rig, build an engine-ready game skeleton.\n\nSteps (combine freely):\n  --add TYPE      add metarig (basic_human | human | basic_quadruped | horse | wolf | cat | bird | shark)\n  --fit MESH      scale/center the metarig to the mesh height (joint placement is still yours)\n  --no-face       remove the face rig from 'human' (games: use shape keys or a light face rig)\n  --generate      generate the control rig from --metarig (or the one just added)\n  ",
+    "side_effects": [
+      {
+        "line": 66,
+        "code": "eb.remove(b)"
+      },
+      {
+        "line": 87,
+        "code": "bpy.data.objects.remove(old)"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-character-rigging/scripts/stress_poses.py",
+    "bytes": 5318,
+    "sha512": "25b163308f2ea1167a3f75ff16731b9b68a2386f17346b5735a3470f8dc4fc541d1cf5ac23a9a080879e7ab4557cfd6f44a2cbab96e7f0e8b63247460fab4107",
+    "lines": 127,
+    "kind": "text",
+    "functions": [
+      "_side",
+      "_find",
+      "_rotate",
+      "run"
+    ],
+    "doc": "Create a QA_Stress action with extreme poses to review deformation (elbows, knees, shoulders, hips, spine, neck).\n\nWorks on Rigify control rigs (poses FK controls, switches IK->FK) and plain/game skeletons\n(Rigify DEF/game names, Mixamo, UE, Roblox R15). Character must face -Y, Z up.\nFrames: 1 rest | 10 arms raised | 20 elbows 130 + arms forward | 30 hip flex + knee 120 (L)\n        | 40 crouch | 50 spine twist + head turn.\nUsage:\n  blender -b f.blend -P stress_poses.py -- --armature RIG [--save ",
+    "side_effects": [
+      {
+        "line": 83,
+        "code": "bpy.data.actions.remove(act)"
+      },
+      {
+        "line": 92,
+        "code": "bpy.data.actions.remove(act)"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-core/SKILL.md",
+    "bytes": 7166,
+    "sha512": "ab891884207d0f7d246cb9542da97e1a9777d7fb6f38939ef22d4dad1c35a540c85e44e0284ea169ecae300b7945e8120dcb227619cbdef146589959a6f13860",
+    "lines": 80,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-core/references/api-changes-5x.md",
+    "bytes": 6666,
+    "sha512": "cd8315385e613955f886ef3e85173bf822386b695df27c2f3bbe5bff1f32ec49fb36bf818cbe1096ebc251b05c72a7a4647d7866146140a87a2326ac970c2541",
+    "lines": 88,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-core/references/bpy-patterns.md",
+    "bytes": 7793,
+    "sha512": "0f29808841907e2a29b22b7d28a053c3639fbe7f58a25c21e3010658fb3e7132870b3f14ff9062e559ee365cd1c63c813ec5db9a27ca903363792ce2afbd1eea",
+    "lines": 187,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-core/scripts/_bpyx.py",
+    "bytes": 4503,
+    "sha512": "efe48e13da12813ac4a148cddb03660e21af4ff077fa4d0f69e6b5f4a443fd54ad509e915351c4439eab74caf7f6986b1ba3aedabc857b03d5eabc640755ad6d",
+    "lines": 136,
+    "kind": "text",
+    "functions": [
+      "argv",
+      "_default",
+      "emit",
+      "parser",
+      "cli",
+      "add_common",
+      "objects",
+      "object_mode",
+      "select_only",
+      "node",
+      "enum_ids",
+      "set_enum",
+      "mesh_tris",
+      "r"
+    ],
+    "doc": "_bpyx - tiny shared helpers for blender-agent-skills scripts (Blender 5.2+).\n\nSource of truth: shared/_bpyx.py. Copies in skills/*/scripts/ are synced by\ntools/sync_shared.py - never edit a copy.\n\nEvery skill script follows one contract:\n  run(**kwargs) -> dict          # call from MCP / Python (import the module)\n  blender -b f.blend -P x.py -- --arg v   # CLI: prints one line \"@@JSON@@{...}\"",
+    "side_effects": [
+      {
+        "line": 53,
+        "code": "bpy.ops.wm.save_as_mainfile(filepath=bpy.path.abspath(save))"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-core/scripts/env_report.py",
+    "bytes": 2015,
+    "sha512": "fc38ff77c9119b108ac242465d0b6c9630494c81aec9e2711fcc2238036caa0ad70498c004ee6d72f818dec5e0fcde8344d61592ec7d2cd8b934a5b6c11c3049",
+    "lines": 60,
+    "kind": "text",
+    "functions": [
+      "_gpu",
+      "run"
+    ],
+    "doc": "Report Blender version, engines, GPU, add-ons, units and scene stats as JSON.\n\nUsage:\n  blender -b [file.blend] -P env_report.py\n  MCP: import env_report; print(env_report.run())",
+    "side_effects": []
+  },
+  {
+    "path": "skills/blender-core/scripts/run_in_blender.py",
+    "bytes": 3292,
+    "sha512": "dc5d8a02c5f5fb36429d00d1786c27b02dd1bebfd80c11808393a8a9c572a5646a5e0b5e2c8ff622c940369fcc859a6b5e56a71d78a2cf23bebe392d4cea20f1",
+    "lines": 91,
+    "kind": "text",
+    "functions": [
+      "_ver",
+      "find_blender",
+      "main"
+    ],
+    "doc": "Run a skill script in headless Blender and print only its JSON result.\n\nHost-side (system Python 3.9+, no bpy). Finds Blender automatically:\n$BLENDER_EXE > PATH > standard install dirs (newest version wins).\n\nUsage:\n  python run_in_blender.py [--blend FILE] [--user-prefs] SCRIPT.py [-- script args]\n  python run_in_blender.py --expr \"import bpy; print(bpy.app.version_string)\"\n  python run_in_blender.py --which          # print the Blender path it would use\nExit code: 0 ok, 1 script error, 2 Blend",
+    "side_effects": [
+      {
+        "line": 76,
+        "code": "p = subprocess.run(cmd, capture_output=True, text=True, encoding=\"utf-8\", errors=\"replace\")"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-export-pipelines/SKILL.md",
+    "bytes": 5094,
+    "sha512": "5d2f049fa1b1ea50f0827b716d8a805115251ecca451b022d6375b90c3f42b6d28a62724aed1dad84e0df3ee208b723e248653a0cd0e52b22920de3c0d10361e",
+    "lines": 62,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-export-pipelines/references/godot-web.md",
+    "bytes": 2828,
+    "sha512": "d931b62f1158f66498ce54feae1b73a960935bf8f606e795608db6eba51905b7c1e0311c8a0f94655ddd30d18d4ebc38d5ce2adc56c345ba9750b9c7604c3f51",
+    "lines": 21,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-export-pipelines/references/roblox.md",
+    "bytes": 3995,
+    "sha512": "c3b05baf82eb173f01dbbeed2919427224fda0035599e4d59bda80b7faf186e9a7caed98f5ab7222048fbd3363d8bed49e34d1933e7e5027798490e2f643eaa1",
+    "lines": 42,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-export-pipelines/references/unity.md",
+    "bytes": 2354,
+    "sha512": "1ff0400ab9d0d810d95a7f61d30e50b77aeb414b554764497db177903ee6bfadf40d671adf81317db53a37d7a7fe3663916b419ca9b9418ba09d8f3710eac620",
+    "lines": 27,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-export-pipelines/references/unreal.md",
+    "bytes": 3200,
+    "sha512": "ebbbe9fdfe4a5ed9f5476643812cc38096e125ec8690086c64bb7001e84ab583a3e666a6ada7345b3fa6b09446781a775b1a755b983163b3e39353b5bcbe09d4",
+    "lines": 32,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-export-pipelines/scripts/_bpyx.py",
+    "bytes": 4503,
+    "sha512": "efe48e13da12813ac4a148cddb03660e21af4ff077fa4d0f69e6b5f4a443fd54ad509e915351c4439eab74caf7f6986b1ba3aedabc857b03d5eabc640755ad6d",
+    "lines": 136,
+    "kind": "text",
+    "functions": [
+      "argv",
+      "_default",
+      "emit",
+      "parser",
+      "cli",
+      "add_common",
+      "objects",
+      "object_mode",
+      "select_only",
+      "node",
+      "enum_ids",
+      "set_enum",
+      "mesh_tris",
+      "r"
+    ],
+    "doc": "_bpyx - tiny shared helpers for blender-agent-skills scripts (Blender 5.2+).\n\nSource of truth: shared/_bpyx.py. Copies in skills/*/scripts/ are synced by\ntools/sync_shared.py - never edit a copy.\n\nEvery skill script follows one contract:\n  run(**kwargs) -> dict          # call from MCP / Python (import the module)\n  blender -b f.blend -P x.py -- --arg v   # CLI: prints one line \"@@JSON@@{...}\"",
+    "side_effects": [
+      {
+        "line": 53,
+        "code": "bpy.ops.wm.save_as_mainfile(filepath=bpy.path.abspath(save))"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-export-pipelines/scripts/export_asset.py",
+    "bytes": 8743,
+    "sha512": "3fbcc15e282a24a1da1c2474316f2cdfdb21f29d8ef31692ed6f6c30b5d21badeec2843d8f888e11eec63fec10733517dd554da0e7b5eec9de68d386406795ae",
+    "lines": 176,
+    "kind": "text",
+    "functions": [
+      "glb_summary",
+      "_gather",
+      "_export",
+      "_coerce",
+      "run"
+    ],
+    "doc": "Export objects/collections with engine presets, then verify the file.\n\nPresets: roblox (FBX), roblox_gltf, unity (FBX), unity_skeletal, unreal (FBX), unreal_skeletal,\ngodot (GLB), web (GLB + meshopt + WebP), gltf (plain GLB), usd (USDZ/USD).\nSelection: --objects (children included) or --collection; default = selected/visible meshes+armatures.\n--batch exports each top-level object to its own file at the world origin.\nUsage:\n  blender -b f.blend -P export_asset.py -- --preset unreal --objects SM_C",
+    "side_effects": [
+      {
+        "line": 63,
+        "code": "with open(path, \"rb\") as f:"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-facial-shapekeys/SKILL.md",
+    "bytes": 4875,
+    "sha512": "cdae5b0dd33771d154083f3c44735bb7abc384f173968afc0b474c9f72238a5f1a9c117d929461f77c7315d918310fbba366537fafa1da2b922fe469ea9c13de",
+    "lines": 54,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-facial-shapekeys/scripts/_bpyx.py",
+    "bytes": 4503,
+    "sha512": "efe48e13da12813ac4a148cddb03660e21af4ff077fa4d0f69e6b5f4a443fd54ad509e915351c4439eab74caf7f6986b1ba3aedabc857b03d5eabc640755ad6d",
+    "lines": 136,
+    "kind": "text",
+    "functions": [
+      "argv",
+      "_default",
+      "emit",
+      "parser",
+      "cli",
+      "add_common",
+      "objects",
+      "object_mode",
+      "select_only",
+      "node",
+      "enum_ids",
+      "set_enum",
+      "mesh_tris",
+      "r"
+    ],
+    "doc": "_bpyx - tiny shared helpers for blender-agent-skills scripts (Blender 5.2+).\n\nSource of truth: shared/_bpyx.py. Copies in skills/*/scripts/ are synced by\ntools/sync_shared.py - never edit a copy.\n\nEvery skill script follows one contract:\n  run(**kwargs) -> dict          # call from MCP / Python (import the module)\n  blender -b f.blend -P x.py -- --arg v   # CLI: prints one line \"@@JSON@@{...}\"",
+    "side_effects": [
+      {
+        "line": 53,
+        "code": "bpy.ops.wm.save_as_mainfile(filepath=bpy.path.abspath(save))"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-facial-shapekeys/scripts/shapekeys.py",
+    "bytes": 6208,
+    "sha512": "75af49d37aec821ff86a1251619a942ecde68112ce48dc47d2f87f1103af74e43ba5cd7e4abfac2254b208c9bf2af21eb885650c6677193ecf879f78ff92d714",
+    "lines": 136,
+    "kind": "text",
+    "functions": [
+      "_keys",
+      "_co",
+      "run"
+    ],
+    "doc": "Shape-key toolkit for faces: create ARKit-52 / viseme sets, split symmetric keys L/R,\nmirror keys, report sculpt status, and wire driver controls.\n\nUsage:\n  blender -b f.blend -P shapekeys.py -- --mesh Head --create arkit|visemes\n  blender -b f.blend -P shapekeys.py -- --mesh Head --split eyeBlink [--falloff 0.02] [--style arkit|dot]\n  blender -b f.blend -P shapekeys.py -- --mesh Head --mirror browDownLeft\n  blender -b f.blend -P shapekeys.py -- --mesh Head --report\n  blender -b f.blend -P shape",
+    "side_effects": [
+      {
+        "line": 82,
+        "code": "ob.shape_key_remove(old)"
+      },
+      {
+        "line": 101,
+        "code": "kb.driver_remove(\"value\")"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-game-optimization/SKILL.md",
+    "bytes": 5978,
+    "sha512": "d8b6b88284d4a7a9395d9ecfc3bd20e9cb805372c255c826445b0a81d98b563d11974c7c724d9da8ce2ddf0cd436c690da32aff1ba8adf9874892f9acd3916ce",
+    "lines": 67,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-game-optimization/scripts/_bpyx.py",
+    "bytes": 4503,
+    "sha512": "efe48e13da12813ac4a148cddb03660e21af4ff077fa4d0f69e6b5f4a443fd54ad509e915351c4439eab74caf7f6986b1ba3aedabc857b03d5eabc640755ad6d",
+    "lines": 136,
+    "kind": "text",
+    "functions": [
+      "argv",
+      "_default",
+      "emit",
+      "parser",
+      "cli",
+      "add_common",
+      "objects",
+      "object_mode",
+      "select_only",
+      "node",
+      "enum_ids",
+      "set_enum",
+      "mesh_tris",
+      "r"
+    ],
+    "doc": "_bpyx - tiny shared helpers for blender-agent-skills scripts (Blender 5.2+).\n\nSource of truth: shared/_bpyx.py. Copies in skills/*/scripts/ are synced by\ntools/sync_shared.py - never edit a copy.\n\nEvery skill script follows one contract:\n  run(**kwargs) -> dict          # call from MCP / Python (import the module)\n  blender -b f.blend -P x.py -- --arg v   # CLI: prints one line \"@@JSON@@{...}\"",
+    "side_effects": [
+      {
+        "line": 53,
+        "code": "bpy.ops.wm.save_as_mainfile(filepath=bpy.path.abspath(save))"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-game-optimization/scripts/make_lods.py",
+    "bytes": 3956,
+    "sha512": "0c00cad4783523ab5f57fce30893c71038cda1296035130d7c8979d8c296efb38667eb78712a227a89d36bfaa64394adb49c7854c2092fa8aa647f46fd2380a1",
+    "lines": 94,
+    "kind": "text",
+    "functions": [
+      "cleanup",
+      "run"
+    ],
+    "doc": "Generate an LOD chain (<name>_LOD1..N) with Decimate, preserving UV seams/normals/silhouette.\n\nDefault ratios halve the triangles per level: 1.0, 0.5, 0.25, 0.125. LOD0 is the source (renamed\n<base>_LOD0 if --rename). Also cleans the mesh first (merge by distance, delete loose, degenerate).\nUsage:\n  blender -b f.blend -P make_lods.py -- --objects SM_Crate [--ratios 0.5 0.25 0.125]\n      [--symmetry] [--cleanup] [--rename] [--collection LODs] [--save out.blend]\n  MCP: import make_lods; print(make",
+    "side_effects": [
+      {
+        "line": 57,
+        "code": "bpy.data.objects.remove(old)"
+      },
+      {
+        "line": 67,
+        "code": "bpy.data.meshes.remove(old_me)"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-game-optimization/scripts/mesh_stats.py",
+    "bytes": 3920,
+    "sha512": "4f81b0a4221490b2003a6aeac014e410590223a02692e4a6aef48395921f9f6006b83fdc6a74937e73a0c4dea3390d6fa49403cd1d2466052f7750e7bef9feee",
+    "lines": 86,
+    "kind": "text",
+    "functions": [
+      "_vram",
+      "run"
+    ],
+    "doc": "Budget report: tris/verts per object, materials (draw calls), textures + VRAM, vs a platform budget.\n\nUsage:\n  blender -b f.blend -P mesh_stats.py -- [--objects A B] [--budget mobile|roblox|console|pc|vr|web]\n  MCP: import mesh_stats; print(mesh_stats.run(budget=\"mobile\"))",
+    "side_effects": []
+  },
+  {
+    "path": "skills/blender-geometry-nodes/SKILL.md",
+    "bytes": 6020,
+    "sha512": "3eff184fc2d2bd0c4fecd3590e754ea75dfe77f6c51d24b1c99e16e2c85c56dff1dddb9bc606feb85853a512e34ac7f973ce09000b99f753c4289c8f733342eb",
+    "lines": 59,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-geometry-nodes/references/recipes.md",
+    "bytes": 3938,
+    "sha512": "cb60c8a1c956821e3e09fdf288a754e94b9cdf4474176cc673b5c52d810859f28b163f0810ca3bfdc26242c2c49a695a16b48e5655762037c7d1c1f60abf328f",
+    "lines": 66,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-geometry-nodes/scripts/_bpyx.py",
+    "bytes": 4503,
+    "sha512": "efe48e13da12813ac4a148cddb03660e21af4ff077fa4d0f69e6b5f4a443fd54ad509e915351c4439eab74caf7f6986b1ba3aedabc857b03d5eabc640755ad6d",
+    "lines": 136,
+    "kind": "text",
+    "functions": [
+      "argv",
+      "_default",
+      "emit",
+      "parser",
+      "cli",
+      "add_common",
+      "objects",
+      "object_mode",
+      "select_only",
+      "node",
+      "enum_ids",
+      "set_enum",
+      "mesh_tris",
+      "r"
+    ],
+    "doc": "_bpyx - tiny shared helpers for blender-agent-skills scripts (Blender 5.2+).\n\nSource of truth: shared/_bpyx.py. Copies in skills/*/scripts/ are synced by\ntools/sync_shared.py - never edit a copy.\n\nEvery skill script follows one contract:\n  run(**kwargs) -> dict          # call from MCP / Python (import the module)\n  blender -b f.blend -P x.py -- --arg v   # CLI: prints one line \"@@JSON@@{...}\"",
+    "side_effects": [
+      {
+        "line": 53,
+        "code": "bpy.ops.wm.save_as_mainfile(filepath=bpy.path.abspath(save))"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-geometry-nodes/scripts/gn_builder.py",
+    "bytes": 9377,
+    "sha512": "9f2ee60ce6c41ce90cf540b28f56c18ac1362d43125308e645c93e98b8059c80149a09b291bdba6a022ea2289be9d4a82820da23d2572f7a951a96a2c5c6af53",
+    "lines": 208,
+    "kind": "text",
+    "functions": [
+      "describe",
+      "_sock",
+      "build",
+      "_layout",
+      "apply",
+      "_parse_val",
+      "run",
+      "sock"
+    ],
+    "doc": "Build node trees (Geometry Nodes, shader, compositor) from a compact JSON spec, apply them as\nmodifiers with input values (5.2 RNA API), and describe node types' sockets.\n\nSpec (JSON file or dict):\n{ \"name\": \"Scatter\", \"tree\": \"geometry\" | \"shader\" | \"compositor\",\n  \"material\": \"M_X\",                          # shader: build inside this material\n  \"inputs\":  [[\"Geometry\",\"GEOMETRY\"], [\"Density\",\"FLOAT\",10,{\"min\":0}]],\n  \"outputs\": [[\"Geometry\",\"GEOMETRY\"]],\n  \"nodes\": { \"dist\": [\"GeometryNodeDis",
+    "side_effects": [
+      {
+        "line": 63,
+        "code": "bpy.data.node_groups.remove(ng)"
+      },
+      {
+        "line": 182,
+        "code": "with open(bpy.path.abspath(spec), encoding=\"utf-8\") as f:"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-hardsurface-modeling/SKILL.md",
+    "bytes": 5641,
+    "sha512": "8df48a6baf66fe3a0e1af64a87272bda3d8ef71232e6e732a473ba4d398408f2882da1a79b8a99a8af32774f4856d61a058eb542be38748fe68a161466cff49f",
+    "lines": 63,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-hardsurface-modeling/scripts/_bpyx.py",
+    "bytes": 4503,
+    "sha512": "efe48e13da12813ac4a148cddb03660e21af4ff077fa4d0f69e6b5f4a443fd54ad509e915351c4439eab74caf7f6986b1ba3aedabc857b03d5eabc640755ad6d",
+    "lines": 136,
+    "kind": "text",
+    "functions": [
+      "argv",
+      "_default",
+      "emit",
+      "parser",
+      "cli",
+      "add_common",
+      "objects",
+      "object_mode",
+      "select_only",
+      "node",
+      "enum_ids",
+      "set_enum",
+      "mesh_tris",
+      "r"
+    ],
+    "doc": "_bpyx - tiny shared helpers for blender-agent-skills scripts (Blender 5.2+).\n\nSource of truth: shared/_bpyx.py. Copies in skills/*/scripts/ are synced by\ntools/sync_shared.py - never edit a copy.\n\nEvery skill script follows one contract:\n  run(**kwargs) -> dict          # call from MCP / Python (import the module)\n  blender -b f.blend -P x.py -- --arg v   # CLI: prints one line \"@@JSON@@{...}\"",
+    "side_effects": [
+      {
+        "line": 53,
+        "code": "bpy.ops.wm.save_as_mainfile(filepath=bpy.path.abspath(save))"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-hardsurface-modeling/scripts/apply_stack.py",
+    "bytes": 4877,
+    "sha512": "d78e50ab7adaa9e0a0d3f3794f6037e80daafd20b8074b2d4b63026bd9db098768777a010e2719a313958efb31bebab997e8ef3d9e11738c280c7d9b4938fea4",
+    "lines": 104,
+    "kind": "text",
+    "functions": [
+      "_smooth_faces",
+      "run"
+    ],
+    "doc": "Build (and optionally apply) a production hard-surface modifier stack.\n\nPresets:\n  midpoly : booleans -> Bevel(angle, harden normals) -> Weighted Normal(keep sharp)  [games]\n  subd    : booleans -> Bevel(1 seg, support edge) -> Subdivision(2) + Smooth by Angle  [renders]\n  render  : booleans -> Bevel(4 seg, arc miter) -> Weighted Normal                      [renders]\nBevel width defaults to 1% of the object's largest dimension (override with --width, metres).\nUsage:\n  blender -b f.blend -P apply",
+    "side_effects": [
+      {
+        "line": 29,
+        "code": "me.attributes.remove(a)"
+      },
+      {
+        "line": 46,
+        "code": "ob.modifiers.remove(m)"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-lighting-lookdev/SKILL.md",
+    "bytes": 5341,
+    "sha512": "76353c04b0c888a47aca2cc3ee637e7eccbd792c81fb901153f7ad67b2aaf064c855fca073dab4554c4d600646bb1f5588d242fe55c9ee820166537f332ae068",
+    "lines": 52,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-lighting-lookdev/scripts/_bpyx.py",
+    "bytes": 4503,
+    "sha512": "efe48e13da12813ac4a148cddb03660e21af4ff077fa4d0f69e6b5f4a443fd54ad509e915351c4439eab74caf7f6986b1ba3aedabc857b03d5eabc640755ad6d",
+    "lines": 136,
+    "kind": "text",
+    "functions": [
+      "argv",
+      "_default",
+      "emit",
+      "parser",
+      "cli",
+      "add_common",
+      "objects",
+      "object_mode",
+      "select_only",
+      "node",
+      "enum_ids",
+      "set_enum",
+      "mesh_tris",
+      "r"
+    ],
+    "doc": "_bpyx - tiny shared helpers for blender-agent-skills scripts (Blender 5.2+).\n\nSource of truth: shared/_bpyx.py. Copies in skills/*/scripts/ are synced by\ntools/sync_shared.py - never edit a copy.\n\nEvery skill script follows one contract:\n  run(**kwargs) -> dict          # call from MCP / Python (import the module)\n  blender -b f.blend -P x.py -- --arg v   # CLI: prints one line \"@@JSON@@{...}\"",
+    "side_effects": [
+      {
+        "line": 53,
+        "code": "bpy.ops.wm.save_as_mainfile(filepath=bpy.path.abspath(save))"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-lighting-lookdev/scripts/turntable.py",
+    "bytes": 7687,
+    "sha512": "18885e835f93833cd68a7e85cfd86f8bb85c80161ac1084f8737a3acccda845360a5c688975538c8b6789ae712ef72b5bad47ebb684f932c58a1425646c499d6",
+    "lines": 176,
+    "kind": "text",
+    "functions": [
+      "_bounds",
+      "_clear",
+      "_area",
+      "_backdrop",
+      "run",
+      "_fcurves"
+    ],
+    "doc": "Look-dev scene in one call: framed camera, light rig (studio 3-point / HDRI / both), optional\ncyclorama backdrop and a looping turntable (camera + lights orbit; the asset is untouched).\n\nUsage:\n  blender -b f.blend -P turntable.py -- --objects Hero [--rig studio|hdri|both] [--hdri path.exr]\n      [--hdri-strength 1] [--frames 120] [--lens 85] [--backdrop] [--elevation 15] [--save out.blend]\n  MCP: import turntable; print(turntable.run(objects=[\"Hero\"], rig=\"studio\", frames=120))\nThen render with",
+    "side_effects": [
+      {
+        "line": 35,
+        "code": "bpy.data.objects.remove(o)"
+      },
+      {
+        "line": 39,
+        "code": "coll.remove(data)"
+      },
+      {
+        "line": 135,
+        "code": "wt.links.remove(l)"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-pbr-materials/SKILL.md",
+    "bytes": 5929,
+    "sha512": "4337b91849e52be99acddae17982e3149265395c2d5f2daee38360dd31e701f6efa75a5d6fd8d0da39d3170913e1b90a5875b0895ee1672d96274838fcb094b5",
+    "lines": 57,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-pbr-materials/references/pbr-values.md",
+    "bytes": 2645,
+    "sha512": "cee4b6b12ce56ed7f3c8194ac72609cbbf61fc213c44d1a49d145fc37b133188ba4f9e7a3ca89004a8404cdc64ca79c93e0d8a6e23069c0790ffbb1c1e06875b",
+    "lines": 47,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-pbr-materials/scripts/_bpyx.py",
+    "bytes": 4503,
+    "sha512": "efe48e13da12813ac4a148cddb03660e21af4ff077fa4d0f69e6b5f4a443fd54ad509e915351c4439eab74caf7f6986b1ba3aedabc857b03d5eabc640755ad6d",
+    "lines": 136,
+    "kind": "text",
+    "functions": [
+      "argv",
+      "_default",
+      "emit",
+      "parser",
+      "cli",
+      "add_common",
+      "objects",
+      "object_mode",
+      "select_only",
+      "node",
+      "enum_ids",
+      "set_enum",
+      "mesh_tris",
+      "r"
+    ],
+    "doc": "_bpyx - tiny shared helpers for blender-agent-skills scripts (Blender 5.2+).\n\nSource of truth: shared/_bpyx.py. Copies in skills/*/scripts/ are synced by\ntools/sync_shared.py - never edit a copy.\n\nEvery skill script follows one contract:\n  run(**kwargs) -> dict          # call from MCP / Python (import the module)\n  blender -b f.blend -P x.py -- --arg v   # CLI: prints one line \"@@JSON@@{...}\"",
+    "side_effects": [
+      {
+        "line": 53,
+        "code": "bpy.ops.wm.save_as_mainfile(filepath=bpy.path.abspath(save))"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-pbr-materials/scripts/build_pbr_material.py",
+    "bytes": 11905,
+    "sha512": "f1f60cd1b2712a13af77fec2dea706174070ee65dd8982d4805646bf064c761d0418d5f7f52d032204fbc81c249642919c77613770887b366e235500582b0fe4",
+    "lines": 236,
+    "kind": "text",
+    "functions": [
+      "_srgb_to_lin",
+      "classify",
+      "_find_textures",
+      "_gltf_output_group",
+      "run",
+      "tex"
+    ],
+    "doc": "Build a correct metal/rough PBR material from texture files or a measured preset.\n\nTexture mode: give --textures dir (or files); maps are detected by name suffix\n(basecolor/albedo/diffuse/_bc/_col, normal/_n/nor_gl/nor_dx, rough, metal, ao/occlusion,\norm/arm (R=AO G=Rough B=Metal), height/disp, emissive/emission, opacity/alpha).\nColor spaces are set (color -> sRGB, data -> Non-Color); DirectX normals get G flipped;\nAO is wired into a \"glTF Material Output\" group so glTF exports it.\nPreset mode: ",
+    "side_effects": [
+      {
+        "line": 107,
+        "code": "nt.nodes.remove(n)"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-pipeline-automation/SKILL.md",
+    "bytes": 4899,
+    "sha512": "1dd24bef14669c73dcde38d2d04cccb3c30ae920c63864ef1feaa5bd57a18a4563aa74662c52ada0753fce3497f4f8fde04025de0b0eb6d92912d47414fff951",
+    "lines": 60,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-pipeline-automation/scripts/_bpyx.py",
+    "bytes": 4503,
+    "sha512": "efe48e13da12813ac4a148cddb03660e21af4ff077fa4d0f69e6b5f4a443fd54ad509e915351c4439eab74caf7f6986b1ba3aedabc857b03d5eabc640755ad6d",
+    "lines": 136,
+    "kind": "text",
+    "functions": [
+      "argv",
+      "_default",
+      "emit",
+      "parser",
+      "cli",
+      "add_common",
+      "objects",
+      "object_mode",
+      "select_only",
+      "node",
+      "enum_ids",
+      "set_enum",
+      "mesh_tris",
+      "r"
+    ],
+    "doc": "_bpyx - tiny shared helpers for blender-agent-skills scripts (Blender 5.2+).\n\nSource of truth: shared/_bpyx.py. Copies in skills/*/scripts/ are synced by\ntools/sync_shared.py - never edit a copy.\n\nEvery skill script follows one contract:\n  run(**kwargs) -> dict          # call from MCP / Python (import the module)\n  blender -b f.blend -P x.py -- --arg v   # CLI: prints one line \"@@JSON@@{...}\"",
+    "side_effects": [
+      {
+        "line": 53,
+        "code": "bpy.ops.wm.save_as_mainfile(filepath=bpy.path.abspath(save))"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-pipeline-automation/scripts/batch_process.py",
+    "bytes": 6833,
+    "sha512": "fcc38ae64f1268e501721e25cd7d530516899f916fcb1277deee7e0d67ea6dfb937b9e51af7f9e9f4eff91d92f1136061f4c577eda6e1d76fe3e1c90ac9be6aa",
+    "lines": 154,
+    "kind": "text",
+    "functions": [
+      "gather",
+      "load",
+      "inventory",
+      "_module",
+      "run"
+    ],
+    "doc": "Batch over many files in one Blender process: convert formats, inventory report, or run any\nskill script's run(**kwargs) per file and save. Sharding for parallel processes.\n\nInputs: .blend .fbx .glb .gltf .obj .stl .ply .usd .usda .usdc .usdz .abc (folder, glob, or list)\nUsage:\n  blender -b -P batch_process.py -- --in \"assets/**/*.fbx\" --op convert --to glb --out export/\n  blender -b -P batch_process.py -- --in assets/ --op report\n  blender -b -P batch_process.py -- --in \"src/*.blend\" --op scrip",
+    "side_effects": [
+      {
+        "line": 43,
+        "code": "\"blend\": lambda p, kw: bpy.ops.wm.save_as_mainfile(filepath=p, copy=True),"
+      },
+      {
+        "line": 128,
+        "code": "bpy.ops.wm.save_as_mainfile(filepath=dst, copy=True)"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-rendering/SKILL.md",
+    "bytes": 5599,
+    "sha512": "c289d68aaf98c22b9af923f8f9ecd0633cde2a79ad36f85e39a6f674b51b1e64ef9a3c81d2a5d7c008660d25b859fa9a0d02b87893fdbbfddb24edbc14c7d6ee",
+    "lines": 70,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-rendering/scripts/_bpyx.py",
+    "bytes": 4503,
+    "sha512": "efe48e13da12813ac4a148cddb03660e21af4ff077fa4d0f69e6b5f4a443fd54ad509e915351c4439eab74caf7f6986b1ba3aedabc857b03d5eabc640755ad6d",
+    "lines": 136,
+    "kind": "text",
+    "functions": [
+      "argv",
+      "_default",
+      "emit",
+      "parser",
+      "cli",
+      "add_common",
+      "objects",
+      "object_mode",
+      "select_only",
+      "node",
+      "enum_ids",
+      "set_enum",
+      "mesh_tris",
+      "r"
+    ],
+    "doc": "_bpyx - tiny shared helpers for blender-agent-skills scripts (Blender 5.2+).\n\nSource of truth: shared/_bpyx.py. Copies in skills/*/scripts/ are synced by\ntools/sync_shared.py - never edit a copy.\n\nEvery skill script follows one contract:\n  run(**kwargs) -> dict          # call from MCP / Python (import the module)\n  blender -b f.blend -P x.py -- --arg v   # CLI: prints one line \"@@JSON@@{...}\"",
+    "side_effects": [
+      {
+        "line": 53,
+        "code": "bpy.ops.wm.save_as_mainfile(filepath=bpy.path.abspath(save))"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-rendering/scripts/render_batch.py",
+    "bytes": 6960,
+    "sha512": "2cf5b70c9873d5b910647f0e75f5812379dcc1a088be78acf8252fc9957c32fd2c7a757cbdf65eb075325e00112979ddcf5c825ceedd04c0b4a041435b0516dd",
+    "lines": 165,
+    "kind": "text",
+    "functions": [
+      "_gpu",
+      "_frames",
+      "run"
+    ],
+    "doc": "Render stills/animations with quality presets, per-camera batches, any output format.\n\nPresets: preview (fast look-dev), final (production), product (clean, transparent bg).\nFormats: PNG, JPEG, EXR (half float), EXR_MULTI (all passes), MP4 (H.264), WEBM.\nUsage:\n  blender -b f.blend -P render_batch.py -- [--engine CYCLES|BLENDER_EEVEE|BLENDER_WORKBENCH]\n      [--preset preview|final|product] [--res 1920 1080] [--percent 100] [--samples N]\n      [--out //render/shot_####] [--format PNG] [--frames ",
+    "side_effects": []
+  },
+  {
+    "path": "skills/blender-retopology-uv/SKILL.md",
+    "bytes": 5127,
+    "sha512": "1a16eec5d016a532c0bdbffc5e1488e05729717d38baa12f538c78f5a7c17a051fb2f10a8e305215897e622dba88edd2a1b4c9ae939faab066788b5bd2a476d1",
+    "lines": 61,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-retopology-uv/scripts/_bpyx.py",
+    "bytes": 4503,
+    "sha512": "efe48e13da12813ac4a148cddb03660e21af4ff077fa4d0f69e6b5f4a443fd54ad509e915351c4439eab74caf7f6986b1ba3aedabc857b03d5eabc640755ad6d",
+    "lines": 136,
+    "kind": "text",
+    "functions": [
+      "argv",
+      "_default",
+      "emit",
+      "parser",
+      "cli",
+      "add_common",
+      "objects",
+      "object_mode",
+      "select_only",
+      "node",
+      "enum_ids",
+      "set_enum",
+      "mesh_tris",
+      "r"
+    ],
+    "doc": "_bpyx - tiny shared helpers for blender-agent-skills scripts (Blender 5.2+).\n\nSource of truth: shared/_bpyx.py. Copies in skills/*/scripts/ are synced by\ntools/sync_shared.py - never edit a copy.\n\nEvery skill script follows one contract:\n  run(**kwargs) -> dict          # call from MCP / Python (import the module)\n  blender -b f.blend -P x.py -- --arg v   # CLI: prints one line \"@@JSON@@{...}\"",
+    "side_effects": [
+      {
+        "line": 53,
+        "code": "bpy.ops.wm.save_as_mainfile(filepath=bpy.path.abspath(save))"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-retopology-uv/scripts/auto_retopo.py",
+    "bytes": 4110,
+    "sha512": "99d7551e630b13ccf96fe035954c92436543075e04fea7766349c255d1cf1345d77bccd0b2ac413918c914322a10fc713cba075a53517ebace98b9b41ebbd73b",
+    "lines": 90,
+    "kind": "text",
+    "functions": [
+      "_ctx",
+      "_apply_all",
+      "run"
+    ],
+    "doc": "Make a low-poly retopo copy of a dense mesh (sculpt/scan/AI-generated) at a triangle budget.\n\nMethods: quadriflow (clean quads; needs manifold input - auto voxel-remesh first),\ndecimate (fast, keeps UVs/shape; triangles), planar (hard-surface: dissolve flat areas).\nThe result is shrinkwrapped back onto the source and named <source>_low.\nUsage:\n  blender -b f.blend -P auto_retopo.py -- --objects Sculpt [--method quadriflow|decimate|planar]\n      [--tris 10000] [--voxel 0] [--symmetry] [--save out",
+    "side_effects": []
+  },
+  {
+    "path": "skills/blender-retopology-uv/scripts/texel_density.py",
+    "bytes": 4693,
+    "sha512": "24e42a0914ba9594711dc8f115a0c0f23c40b48bec293ae3b09aafcd7febfc6e7487c5469a80bab87c8a8a3b52675fb3996959bab7525baf131f01f127847a90",
+    "lines": 123,
+    "kind": "text",
+    "functions": [
+      "_islands",
+      "_uv_area",
+      "_measure",
+      "run"
+    ],
+    "doc": "Measure (and optionally set) texel density in px/m for objects' active UV map.\n\nReports per-object area-weighted mean, min/max over islands, and spread (max/min).\n--set scales every island to the target density (about its UV centre) then repacks\nwithout rescaling; reports overflow if it no longer fits in 0-1.\nUsage:\n  blender -b f.blend -P texel_density.py -- [--objects A B] [--res 2048] [--set 512] [--margin-px 8] [--save out.blend]\n  MCP: import texel_density; print(texel_density.run(objects=[",
+    "side_effects": []
+  },
+  {
+    "path": "skills/blender-retopology-uv/scripts/uv_pack.py",
+    "bytes": 4816,
+    "sha512": "4ae3ddefa678e9aecd660a29d0ff5ddf89f18a41fd63165a2341d5d8e4491da84795ce7071c7f980a87c649f612581978242a94562fe827e4e61d8bdf00038b1",
+    "lines": 109,
+    "kind": "text",
+    "functions": [
+      "_seams_from_sharp",
+      "_collapsed_ratio",
+      "run"
+    ],
+    "doc": "Unwrap + pack UVs with production defaults; optional seams-from-sharp and lightmap UV2.\n\nMethods: smart (auto seams by angle), seams (use marked seams; --seams-from-sharp marks\nhard edges first), min_stretch (SLIM, marked seams), lightmap (non-overlapping UV2 only).\nMargins are given in pixels at --res so padding survives mip-mapping.\nUsage:\n  blender -b f.blend -P uv_pack.py -- [--objects A B] [--method smart|seams|min_stretch]\n      [--angle 66] [--seams-from-sharp 60] [--res 2048] [--margin-p",
+    "side_effects": []
+  },
+  {
+    "path": "skills/blender-scene-setup/SKILL.md",
+    "bytes": 5340,
+    "sha512": "a0d3fe6ff4dfba3e91de5760bc437b1f6cc562b03b6666c51903ed02d9647de33be7e3dcdf1e12d8728c8a91909358ff511ddcf15a3ddd1c37ec4415bc5b01c6",
+    "lines": 73,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-scene-setup/scripts/_bpyx.py",
+    "bytes": 4503,
+    "sha512": "efe48e13da12813ac4a148cddb03660e21af4ff077fa4d0f69e6b5f4a443fd54ad509e915351c4439eab74caf7f6986b1ba3aedabc857b03d5eabc640755ad6d",
+    "lines": 136,
+    "kind": "text",
+    "functions": [
+      "argv",
+      "_default",
+      "emit",
+      "parser",
+      "cli",
+      "add_common",
+      "objects",
+      "object_mode",
+      "select_only",
+      "node",
+      "enum_ids",
+      "set_enum",
+      "mesh_tris",
+      "r"
+    ],
+    "doc": "_bpyx - tiny shared helpers for blender-agent-skills scripts (Blender 5.2+).\n\nSource of truth: shared/_bpyx.py. Copies in skills/*/scripts/ are synced by\ntools/sync_shared.py - never edit a copy.\n\nEvery skill script follows one contract:\n  run(**kwargs) -> dict          # call from MCP / Python (import the module)\n  blender -b f.blend -P x.py -- --arg v   # CLI: prints one line \"@@JSON@@{...}\"",
+    "side_effects": [
+      {
+        "line": 53,
+        "code": "bpy.ops.wm.save_as_mainfile(filepath=bpy.path.abspath(save))"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-scene-setup/scripts/scene_audit.py",
+    "bytes": 5041,
+    "sha512": "a195e73593c93c879e4f6ec1677b55e8e13caafef70ab4efa8833c57b150661a8469ddeaf04c6c2f73f008b65661b0bb313bda2b5bfb5c8adc07f97f3a0ce783",
+    "lines": 117,
+    "kind": "text",
+    "functions": [
+      "_apply_rot_scale",
+      "run"
+    ],
+    "doc": "Audit scene hygiene: units, transforms, naming, collections, materials, images, orphans.\n\nOptional safe fixes: purge orphans, apply rot/scale on single-user meshes, make paths relative.\nUsage:\n  blender -b f.blend -P scene_audit.py -- [--objects A B] [--fix purge scale paths] [--save out.blend]\n  MCP: import scene_audit; print(scene_audit.run(fix=[\"purge\"]))",
+    "side_effects": []
+  },
+  {
+    "path": "skills/blender-sculpting/SKILL.md",
+    "bytes": 4720,
+    "sha512": "92a94e74ce094517d6f6188cb3fd3b3365edb98ce73ec7859d923e20e989cf0ae6e374a24dd10c68ec6cd0fd705d0d87154f1408bc55d0e7111d377d76a396e4",
+    "lines": 51,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-sculpting/scripts/_bpyx.py",
+    "bytes": 4503,
+    "sha512": "efe48e13da12813ac4a148cddb03660e21af4ff077fa4d0f69e6b5f4a443fd54ad509e915351c4439eab74caf7f6986b1ba3aedabc857b03d5eabc640755ad6d",
+    "lines": 136,
+    "kind": "text",
+    "functions": [
+      "argv",
+      "_default",
+      "emit",
+      "parser",
+      "cli",
+      "add_common",
+      "objects",
+      "object_mode",
+      "select_only",
+      "node",
+      "enum_ids",
+      "set_enum",
+      "mesh_tris",
+      "r"
+    ],
+    "doc": "_bpyx - tiny shared helpers for blender-agent-skills scripts (Blender 5.2+).\n\nSource of truth: shared/_bpyx.py. Copies in skills/*/scripts/ are synced by\ntools/sync_shared.py - never edit a copy.\n\nEvery skill script follows one contract:\n  run(**kwargs) -> dict          # call from MCP / Python (import the module)\n  blender -b f.blend -P x.py -- --arg v   # CLI: prints one line \"@@JSON@@{...}\"",
+    "side_effects": [
+      {
+        "line": 53,
+        "code": "bpy.ops.wm.save_as_mainfile(filepath=bpy.path.abspath(save))"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-sculpting/scripts/sculpt_ops.py",
+    "bytes": 4160,
+    "sha512": "1fe598f8bed44cd55e15673d205a0ce0323aa2d2ed426421dc3d70515a4512d770862a2eb58d0da1c2af3f0d1ab8949210499b6d6b078d2cd03085d06b0f3826",
+    "lines": 91,
+    "kind": "text",
+    "functions": [
+      "_ctx",
+      "_apply",
+      "run"
+    ],
+    "doc": "Headless-safe sculpt preparation and procedural \"sculpt\" ops (no Sculpt Mode - it crashes in -b).\n\nOps run in the order given:\n  remesh=SIZE        voxel remesh (uniform topology, fuses parts)   e.g. remesh=0.01\n  symmetrize=+X      mirror one side onto the other (+X|-X|+Y|-Y|+Z|-Z)\n  multires=LEVELS    add Multires and subdivide (Catmull-Clark) LEVELS times\n  inflate=DIST       push surface along normals (m)\n  detail=STR,SCALE   noise displacement (organic surface breakup), e.g. detail=0.01,0.0",
+    "side_effects": []
+  },
+  {
+    "path": "skills/blender-simulation/SKILL.md",
+    "bytes": 5883,
+    "sha512": "7e4a314c69f8788c3c0188dcd877e134513412771d15d4c1aa206c2a0a4040b1daefcc03d8376034d197a780ed3716462fdb17d14a01e296a7b165327a6dc4b1",
+    "lines": 67,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-simulation/scripts/_bpyx.py",
+    "bytes": 4503,
+    "sha512": "efe48e13da12813ac4a148cddb03660e21af4ff077fa4d0f69e6b5f4a443fd54ad509e915351c4439eab74caf7f6986b1ba3aedabc857b03d5eabc640755ad6d",
+    "lines": 136,
+    "kind": "text",
+    "functions": [
+      "argv",
+      "_default",
+      "emit",
+      "parser",
+      "cli",
+      "add_common",
+      "objects",
+      "object_mode",
+      "select_only",
+      "node",
+      "enum_ids",
+      "set_enum",
+      "mesh_tris",
+      "r"
+    ],
+    "doc": "_bpyx - tiny shared helpers for blender-agent-skills scripts (Blender 5.2+).\n\nSource of truth: shared/_bpyx.py. Copies in skills/*/scripts/ are synced by\ntools/sync_shared.py - never edit a copy.\n\nEvery skill script follows one contract:\n  run(**kwargs) -> dict          # call from MCP / Python (import the module)\n  blender -b f.blend -P x.py -- --arg v   # CLI: prints one line \"@@JSON@@{...}\"",
+    "side_effects": [
+      {
+        "line": 53,
+        "code": "bpy.ops.wm.save_as_mainfile(filepath=bpy.path.abspath(save))"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-simulation/scripts/sim_setup.py",
+    "bytes": 10097,
+    "sha512": "b3bb86cdf10af0fe06d9969b38634508d014cb8ad0d8ea52a3fc28697d207ba244432d471be0ddf67edc36a5c372f18aa4f88a9d6c602a7f14601b32d164c5c5",
+    "lines": 204,
+    "kind": "text",
+    "functions": [
+      "_ctx",
+      "_volume",
+      "_asset_group",
+      "_set_inputs",
+      "_num",
+      "run"
+    ],
+    "doc": "Set up and bake simulations: rigid bodies, classic cloth (presets), 5.2 node-based cloth\n(experimental Cloth Dynamics asset + Collider assets), then bake / bake-to-keyframes.\n\nUsage:\n  blender -b f.blend -P sim_setup.py -- --rigid --active Crate1 Crate2 --passive Floor [--shape CONVEX_HULL]\n      [--density 500] [--frames 1 120] [--bake] [--to-keys] [--save out.blend]\n  blender -b f.blend -P sim_setup.py -- --cloth Flag --preset cotton --pin PinGroup --colliders Pole [--bake]\n  blender -b f.blen",
+    "side_effects": [
+      {
+        "line": 166,
+        "code": "bpy.ops.rigidbody.object_remove()"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-texture-baking/SKILL.md",
+    "bytes": 5713,
+    "sha512": "6898cb088797c3af09e9d30bf6fb23f530d1060dc00827ce3e095fc6c4b60f441d7228a9eaed431051f2811f1aa0157d17d3c30a05960b1cce67aa212aa24dca",
+    "lines": 69,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-texture-baking/scripts/_bpyx.py",
+    "bytes": 4503,
+    "sha512": "efe48e13da12813ac4a148cddb03660e21af4ff077fa4d0f69e6b5f4a443fd54ad509e915351c4439eab74caf7f6986b1ba3aedabc857b03d5eabc640755ad6d",
+    "lines": 136,
+    "kind": "text",
+    "functions": [
+      "argv",
+      "_default",
+      "emit",
+      "parser",
+      "cli",
+      "add_common",
+      "objects",
+      "object_mode",
+      "select_only",
+      "node",
+      "enum_ids",
+      "set_enum",
+      "mesh_tris",
+      "r"
+    ],
+    "doc": "_bpyx - tiny shared helpers for blender-agent-skills scripts (Blender 5.2+).\n\nSource of truth: shared/_bpyx.py. Copies in skills/*/scripts/ are synced by\ntools/sync_shared.py - never edit a copy.\n\nEvery skill script follows one contract:\n  run(**kwargs) -> dict          # call from MCP / Python (import the module)\n  blender -b f.blend -P x.py -- --arg v   # CLI: prints one line \"@@JSON@@{...}\"",
+    "side_effects": [
+      {
+        "line": 53,
+        "code": "bpy.ops.wm.save_as_mainfile(filepath=bpy.path.abspath(save))"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-texture-baking/scripts/bake_maps.py",
+    "bytes": 11253,
+    "sha512": "12626d9fcda5302e1f2dc4147277cc8154b265ad44d369871d23f9cc69b739f4d91ffcfce0243e0291f48b7302443e82d2a36a3d88bb905044de4b104884d9fc",
+    "lines": 267,
+    "kind": "text",
+    "functions": [
+      "_set_device",
+      "_signal_override",
+      "_restore",
+      "_target_node",
+      "_blur",
+      "_curvature_from_normal",
+      "run"
+    ],
+    "doc": "Bake texture maps with Cycles: high->low (selected-to-active) or self-bake procedural materials.\n\nMaps: normal, ao, roughness, basecolor, metallic, opacity, emit, id, thickness, curvature\n(curvature is derived from the baked tangent normal map), combined.\n--pack-orm writes T_<name>_ORM (R=AO, G=Roughness, B=Metallic) from the baked maps.\nUsage:\n  blender -b f.blend -P bake_maps.py -- --low SM_Crate --high Crate_high [Crate_bolts]\n      [--maps normal ao curvature] [--res 2048] [--samples 64] [--",
+    "side_effects": [
+      {
+        "line": 92,
+        "code": "nt.nodes.remove(node)"
+      },
+      {
+        "line": 212,
+        "code": "nt.nodes.remove(n)"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-time-of-day/SKILL.md",
+    "bytes": 6715,
+    "sha512": "833dfae0f3e2ffd9ace9b9414755f001fc7a793cc027ff7e6f58252609d58e638081deae84dc1db8b3d76617fa98837d37350ec95df9df58c647fcd8847d94c0",
+    "lines": 62,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-time-of-day/references/fog-volumetrics.md",
+    "bytes": 3124,
+    "sha512": "c944b6585a7c9c40dda90a682d144ef95054ca02ff4e1d99afdb3a75b34752f3bd73b4a4ab1899de7c0bf57a55d182af8bf742060823131ee64c5c852da653c5",
+    "lines": 38,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-time-of-day/references/light-values.md",
+    "bytes": 2884,
+    "sha512": "10e6dfb83d255d5d8ebb291956b7777ceac454f41b5f8cb38c9bbacb4b2d3c8dcae4a49f67f79813d0c89fa3922316c011d2eebc38d2b88296fb5fde871d4b69",
+    "lines": 53,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-time-of-day/references/night-and-moods.md",
+    "bytes": 4075,
+    "sha512": "1759344d6bf18c26f3b0efeb87ee65ba2203ec19f2767dcef07b8779dc95e8c1a8e2348c4e87dfdd25ad484f3f0df80b2d143c0f34a7a6a48d540c4fb1d9e9e9",
+    "lines": 36,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-time-of-day/scripts/_bpyx.py",
+    "bytes": 4503,
+    "sha512": "efe48e13da12813ac4a148cddb03660e21af4ff077fa4d0f69e6b5f4a443fd54ad509e915351c4439eab74caf7f6986b1ba3aedabc857b03d5eabc640755ad6d",
+    "lines": 136,
+    "kind": "text",
+    "functions": [
+      "argv",
+      "_default",
+      "emit",
+      "parser",
+      "cli",
+      "add_common",
+      "objects",
+      "object_mode",
+      "select_only",
+      "node",
+      "enum_ids",
+      "set_enum",
+      "mesh_tris",
+      "r"
+    ],
+    "doc": "_bpyx - tiny shared helpers for blender-agent-skills scripts (Blender 5.2+).\n\nSource of truth: shared/_bpyx.py. Copies in skills/*/scripts/ are synced by\ntools/sync_shared.py - never edit a copy.\n\nEvery skill script follows one contract:\n  run(**kwargs) -> dict          # call from MCP / Python (import the module)\n  blender -b f.blend -P x.py -- --arg v   # CLI: prints one line \"@@JSON@@{...}\"",
+    "side_effects": [
+      {
+        "line": 53,
+        "code": "bpy.ops.wm.save_as_mainfile(filepath=bpy.path.abspath(save))"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-time-of-day/scripts/scene_mood.py",
+    "bytes": 22978,
+    "sha512": "1d61b3f592e792580fa87486148a57228c71047a59d7a11637dcb4fc7bd8bc2b8e90e61992297cd3e6346a7424a90e14a0f2d8f6876ec7258de4f9dba9766ce3",
+    "lines": 469,
+    "kind": "text",
+    "functions": [
+      "_lerp_table",
+      "lum",
+      "_sun_dir",
+      "_scene_bounds",
+      "_clear",
+      "_coll",
+      "_light",
+      "_norm",
+      "_math",
+      "_mix_rgb",
+      "_world",
+      "_fog_box",
+      "_transmittance",
+      "_fog",
+      "_grade",
+      "run"
+    ],
+    "doc": "Time-of-day / mood environment in one call: physically measured sky + matching sun or moon lamp,\nnight sky with stars and city glow, height fog sized from meteorological visibility, exposure\nbalance, optional stylized mood (accent lights, AgX look, compositor grade).\n\nEverything lives in the ENV_Mood collection / ENV_World / ENV_Grade; re-running replaces it.\nSun color and sun/sky ratio come from Blender 5.2's Multiple Scattering sky, measured per elevation.\nUsage:\n  blender -b f.blend -P scene_",
+    "side_effects": [
+      {
+        "line": 108,
+        "code": "bpy.data.objects.remove(o)"
+      },
+      {
+        "line": 112,
+        "code": "coll.remove(data)"
+      },
+      {
+        "line": 115,
+        "code": "bpy.data.materials.remove(m)"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-weather-fx/SKILL.md",
+    "bytes": 6649,
+    "sha512": "0bae23853e3103d3e3f4605089b455c7aa72e178b4541f3b65c3aade24d98ca973ef0eed281ceec82e72c3aad73eda0bb9ad58f3a855cd049a7ac95f774ce8e3",
+    "lines": 64,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-weather-fx/references/realtime-engines.md",
+    "bytes": 2659,
+    "sha512": "8303a977add3e85d9bf0e533b4d9869ed0964d04e113f2e6390bb3abc20b52f896733083f9770dadda8470f56000e266f2825510df720bc0d9b891c3231302d3",
+    "lines": 25,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-weather-fx/references/weather-values.md",
+    "bytes": 3142,
+    "sha512": "c7492c28184388a7d5ab96a525d4e3957f8bdd601c3167c6872522208941ed642e9e88010e18505236d6695e851f3c53683eb15935302724f1fe19bba63a7dae",
+    "lines": 40,
+    "kind": "text"
+  },
+  {
+    "path": "skills/blender-weather-fx/scripts/_bpyx.py",
+    "bytes": 4503,
+    "sha512": "efe48e13da12813ac4a148cddb03660e21af4ff077fa4d0f69e6b5f4a443fd54ad509e915351c4439eab74caf7f6986b1ba3aedabc857b03d5eabc640755ad6d",
+    "lines": 136,
+    "kind": "text",
+    "functions": [
+      "argv",
+      "_default",
+      "emit",
+      "parser",
+      "cli",
+      "add_common",
+      "objects",
+      "object_mode",
+      "select_only",
+      "node",
+      "enum_ids",
+      "set_enum",
+      "mesh_tris",
+      "r"
+    ],
+    "doc": "_bpyx - tiny shared helpers for blender-agent-skills scripts (Blender 5.2+).\n\nSource of truth: shared/_bpyx.py. Copies in skills/*/scripts/ are synced by\ntools/sync_shared.py - never edit a copy.\n\nEvery skill script follows one contract:\n  run(**kwargs) -> dict          # call from MCP / Python (import the module)\n  blender -b f.blend -P x.py -- --arg v   # CLI: prints one line \"@@JSON@@{...}\"",
+    "side_effects": [
+      {
+        "line": 53,
+        "code": "bpy.ops.wm.save_as_mainfile(filepath=bpy.path.abspath(save))"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-weather-fx/scripts/lightning.py",
+    "bytes": 7844,
+    "sha512": "60db9117c9abf26e295448890297460aa275f9da05ef29e6b0079a5bf1ef14679a5190c27d9ca6360c6cd63218854d4248f249cb71a262a744c81823f66c43e8",
+    "lines": 182,
+    "kind": "text",
+    "functions": [
+      "_clear",
+      "_bolt_points",
+      "_curve",
+      "_envelope",
+      "run"
+    ],
+    "doc": "Storm lightning: keyed multi-stroke flashes (a real strike is 3-4 return strokes ~40-60 ms apart),\na cloud-lit flash light, an optional branching emissive bolt and a sky flash on the world.\n\nEverything is ENV_Storm_*; re-running replaces it. Times are in frames of the current scene fps.\nUsage:\n  blender -b f.blend -P lightning.py -- [--flashes 2] [--frames 30 80] [--strokes 3]\n      [--at X Y] [--distance 300] [--height 450] [--strength 1.0] [--no-bolt] [--no-sky]\n      [--seed 0] [--save out.bl",
+    "side_effects": [
+      {
+        "line": 28,
+        "code": "bpy.data.objects.remove(o)"
+      },
+      {
+        "line": 31,
+        "code": "coll.remove(coll[data.name])"
+      },
+      {
+        "line": 35,
+        "code": "bpy.data.materials.remove(m)"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-weather-fx/scripts/precipitation.py",
+    "bytes": 19038,
+    "sha512": "aa28e886b885571b1e9fe579a3ae2869ad615e9b501a3125f25608a04cf770db82a5b85f0348e45084d6d14c383dbf555a7bb7340bf6b08551f0475e45eb36a6",
+    "lines": 355,
+    "kind": "text",
+    "functions": [
+      "_iface",
+      "build_tree",
+      "_material",
+      "_camera_box",
+      "run",
+      "__init__",
+      "sock",
+      "n",
+      "out",
+      "math",
+      "vmath",
+      "rnd"
+    ],
+    "doc": "Rain, snow, dust, ash or embers as a seamlessly looping Geometry Nodes system (no simulation:\ndeterministic, headless-safe, any frame renders on its own).\n\nParticles live in a world-fixed box that covers what the camera sees (sampled over the frame\nrange), fall at real speeds along the wind, stop on --ground objects (raycast) and, for rain,\nspawn splash crowns at the impact point. All values stay editable on the ENV_Weather_<type>\nobject's modifier.\nUsage:\n  blender -b f.blend -P precipitation.p",
+    "side_effects": [
+      {
+        "line": 314,
+        "code": "ob.modifiers.remove(m)"
+      },
+      {
+        "line": 321,
+        "code": "gcol.objects.unlink(o)"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-weather-fx/scripts/surface_weather.py",
+    "bytes": 17820,
+    "sha512": "04b6b490c4fd63064558e4d94207f7fbff3d37c3b399bdde068c7a42448152b71b744eefd7cc5ee663720b7505e5105c52197f636afed94b5ecf1f5c8c5cd62a",
+    "lines": 366,
+    "kind": "text",
+    "functions": [
+      "build_group",
+      "_src",
+      "_apply_mat",
+      "_remove_mat",
+      "_snow_tree",
+      "_snow_material",
+      "_vertex_mask",
+      "run",
+      "__init__",
+      "link",
+      "set",
+      "n",
+      "math",
+      "mrange",
+      "mix",
+      "noise"
+    ],
+    "doc": "Reversible weather layer on existing materials: wetness (porous darkening + water film coat),\npuddles with flattened normals and animated rain ripples, rain streaks on walls, snow cover; plus\noptional real snow geometry (GN shell) and a vertex-color mask for game engines.\n\nInserts one ENV_Weather group node in front of every Principled BSDF of the target objects'\nmaterials; the original links/values are stored on the material and --remove restores them exactly.\nMasks are world-space, so puddles ",
+    "side_effects": [
+      {
+        "line": 235,
+        "code": "nt.links.remove(lk)"
+      },
+      {
+        "line": 241,
+        "code": "nt.nodes.remove(n)"
+      },
+      {
+        "line": 327,
+        "code": "o.modifiers.remove(md)"
+      },
+      {
+        "line": 330,
+        "code": "o.data.color_attributes.remove(ca)"
+      }
+    ]
+  },
+  {
+    "path": "skills/blender-workflow-recipes/SKILL.md",
+    "bytes": 7442,
+    "sha512": "86691938826ef82267900d02b49d0dc0b943601e86ab5291844c8f298aa1d87af81f99b75af42feb6f5b2a490c0cfc38faf3e8626f5fb0a7a6fae6f0dd31cd51",
+    "lines": 74,
+    "kind": "text"
+  },
+  {
+    "path": "tests/fixtures.py",
+    "bytes": 4750,
+    "sha512": "e14640a321722e0a1a8c162e3726626903cad8dc629129935758c5822d3777840e46d1999e90c988a6399d0029840189e550c25f5706ca353272fdb439b49e58",
+    "lines": 121,
+    "kind": "text",
+    "functions": [
+      "mesh_object",
+      "cube",
+      "uv_sphere",
+      "plane",
+      "zfight_pair",
+      "detached_part",
+      "unwrap",
+      "street",
+      "simple_character",
+      "two_layers",
+      "build",
+      "mat",
+      "build"
+    ],
+    "doc": "Procedural test fixtures (no binary .blend files in the repo).",
+    "side_effects": []
+  },
+  {
+    "path": "tests/run_all.py",
+    "bytes": 2484,
+    "sha512": "7019a86d97b7792a85e1c98877d39a472d8447ef07b3055da5a9f59d1dd8af1cf52ba456b63875b485e14c70a1c4b56f142ee2e83fd67fb19ad921af0d7dcbed",
+    "lines": 79,
+    "kind": "text",
+    "functions": [
+      "skill_module",
+      "fresh",
+      "requires_gpu",
+      "main"
+    ],
+    "doc": "In-Blender test runner. Discovers tests/test_*.py, runs each test_* on a fresh empty scene.\n\nUsage: blender -b --factory-startup --python-exit-code 1 -P tests/run_all.py -- [name-filter]\n       (or: python tools/run_tests.py [name-filter])",
+    "side_effects": []
+  },
+  {
+    "path": "tests/test_addon.py",
+    "bytes": 1580,
+    "sha512": "6f9ca0a93ae6bbf1a02e1f21ce37e792022325f7302e4d5761172b81cab6f2a93ed7e230c120e8cd1cfbe680b348146b82cb35daa5d94e8a368706dd1dabcd5e",
+    "lines": 39,
+    "kind": "text",
+    "functions": [
+      "test_template_validates_builds_and_registers"
+    ],
+    "doc": "",
+    "side_effects": [
+      {
+        "line": 14,
+        "code": "r = subprocess.run([exe, \"--factory-startup\", \"--command\", \"extension\", \"validate\", str(src)],"
+      },
+      {
+        "line": 19,
+        "code": "r = subprocess.run([exe, \"--factory-startup\", \"--command\", \"extension\", \"build\", \"--source-dir\", str(src),"
+      },
+      {
+        "line": 24,
+        "code": "shutil.rmtree(pkg, ignore_errors=True)"
+      }
+    ]
+  },
+  {
+    "path": "tests/test_animation.py",
+    "bytes": 2555,
+    "sha512": "3112d3172fe6f825d9406a038924ed480fa3e1bd5577d494ad52054abf42179511d269552bb1c51d7f70faae9994bfea29166364071b7b91853052dd2d96c547",
+    "lines": 57,
+    "kind": "text",
+    "functions": [
+      "_walk",
+      "test_bake_to_copy_with_root_motion_and_export"
+    ],
+    "doc": "",
+    "side_effects": []
+  },
+  {
+    "path": "tests/test_atmosphere.py",
+    "bytes": 2743,
+    "sha512": "bbc6f4d77c361f49231f8ba2bacd7a033059cbf453b6340e555a96becfa55002890b8f25e08581f57c49815d6a0b857b4013a953815997c33592109dcafa3d57",
+    "lines": 64,
+    "kind": "text",
+    "functions": [
+      "_mean_luma",
+      "_render",
+      "test_time_presets_sun_color_and_balance",
+      "test_night_renders_darker_than_noon",
+      "test_fog_density_from_visibility_and_moods"
+    ],
+    "doc": "",
+    "side_effects": [
+      {
+        "line": 9,
+        "code": "bpy.data.images.remove(img)"
+      }
+    ]
+  },
+  {
+    "path": "tests/test_baking.py",
+    "bytes": 2283,
+    "sha512": "15975bbeeccf09061ba36c6fb8335b1e66f80a068fc0d7f8e67b4012769c19b6dc0248409ae2db70519de465b0a96653dbf9219d20e0c35ff865a7077602648c",
+    "lines": 50,
+    "kind": "text",
+    "functions": [
+      "_pixels",
+      "test_high_to_low_bake_normal_ao_curv_orm_basecolor",
+      "test_self_bake_procedural_roughness"
+    ],
+    "doc": "",
+    "side_effects": []
+  },
+  {
+    "path": "tests/test_core.py",
+    "bytes": 1520,
+    "sha512": "72ee17fe5def08182ce543528dbfbf930c7f67af3ffe40e341070533d27ca7766a05aa00c3cd0f1e42fda2eb258a34b6eac44f858db3b827eca99744b03bc98c",
+    "lines": 44,
+    "kind": "text",
+    "functions": [
+      "_run_md_blocks",
+      "test_bpy_patterns_snippets_run",
+      "test_env_report",
+      "test_snippet_docs_across_skills"
+    ],
+    "doc": "",
+    "side_effects": [
+      {
+        "line": 20,
+        "code": "exec(compile(code, f\"{pathlib.Path(md).name}[{i}]\", \"exec\"), {\"__name__\": \"__snippet__\"})"
+      }
+    ]
+  },
+  {
+    "path": "tests/test_export.py",
+    "bytes": 2071,
+    "sha512": "463c6c8fa90c446926476bc5b4f1f133d8b60b2e6fbbabf03b5d03331611b88d7667fe12a29375acad4567f38c976bbefbdd81da029aa04875a4163fe2994893",
+    "lines": 48,
+    "kind": "text",
+    "functions": [
+      "_reimport_dims",
+      "test_all_presets_roundtrip_scale",
+      "test_batch_export_at_origin"
+    ],
+    "doc": "",
+    "side_effects": []
+  },
+  {
+    "path": "tests/test_facial.py",
+    "bytes": 1632,
+    "sha512": "51ce1becd0bf004b69c9b28cb75215e62b475bd35fbdbc2efb5bbd94534b6d3aae18a50c650eb0e099e6b57b94d4183dcaf9c46a9887044bfb5318b61ef439e8",
+    "lines": 33,
+    "kind": "text",
+    "functions": [
+      "test_arkit_split_mirror_drivers_report"
+    ],
+    "doc": "",
+    "side_effects": []
+  },
+  {
+    "path": "tests/test_geonodes.py",
+    "bytes": 3975,
+    "sha512": "e5b574facb465e6010283af365860f1c2be809e0ef4552202494d65b6ab4df8cd5a9bd418b9d53383b5eab963bf22d8892352756f37a25d680229ab2e0d85744",
+    "lines": 89,
+    "kind": "text",
+    "functions": [
+      "test_build_apply_set_inputs",
+      "test_repeat_zone",
+      "test_describe",
+      "test_reference_recipes_build_and_evaluate"
+    ],
+    "doc": "",
+    "side_effects": []
+  },
+  {
+    "path": "tests/test_materials.py",
+    "bytes": 1904,
+    "sha512": "7504007d300b808d2fa8584bd43b0631551b3adfbdf42b2a6caba276c4ef9bac24aa8a31b87ce32e3c4d8ade2127f3b30dfbca2e49e5d819e92dbf92e9251579",
+    "lines": 41,
+    "kind": "text",
+    "functions": [
+      "_img",
+      "test_texture_set_autowire_orm_dx_normal",
+      "test_presets_and_srgb_color_override"
+    ],
+    "doc": "",
+    "side_effects": [
+      {
+        "line": 13,
+        "code": "bpy.data.images.remove(im)"
+      }
+    ]
+  },
+  {
+    "path": "tests/test_modeling.py",
+    "bytes": 1569,
+    "sha512": "7ace0bd26d78660f809f736a4d998c54e2b0a307bc0a2af527834cf942978c7e2c046337f193c90db3de180589690f3def29caf9d6bd9b1d29358fa7925489bb",
+    "lines": 35,
+    "kind": "text",
+    "functions": [
+      "test_midpoly_stack_with_boolean_and_apply",
+      "test_subd_preset_adds_smooth_by_angle",
+      "test_hardsurface_snippet_attributes"
+    ],
+    "doc": "",
+    "side_effects": []
+  },
+  {
+    "path": "tests/test_optimization.py",
+    "bytes": 913,
+    "sha512": "a3ce495b16516c41ad11fea06ba51a1cb8f792b0bc410399b28b35d66c520cc6acf3782b259a5dea5a6b4d68361cc78fc0a4bbba62712e50b0439b05897560d6",
+    "lines": 20,
+    "kind": "text",
+    "functions": [
+      "test_lods_halve_and_cleanup",
+      "test_mesh_stats_budget"
+    ],
+    "doc": "",
+    "side_effects": []
+  },
+  {
+    "path": "tests/test_pipeline.py",
+    "bytes": 1233,
+    "sha512": "515d1ac0163e1d85469bd7b1732cdf1cc7ec2233be1f115e94dbd6dcc14b966bbaf5329a2e9edf9f48a89fb7d06b43c96b3bed93d86938a64e3a880eff1d2f14",
+    "lines": 30,
+    "kind": "text",
+    "functions": [
+      "test_batch_convert_report_script_shard"
+    ],
+    "doc": "",
+    "side_effects": [
+      {
+        "line": 20,
+        "code": "bpy.ops.wm.save_as_mainfile(filepath=p)"
+      }
+    ]
+  },
+  {
+    "path": "tests/test_qa.py",
+    "bytes": 3488,
+    "sha512": "89b8a28e46387cf3aea555bde198bda05af774de9bd024220d48020ebe2cb3fd6cd9fdd0124f88b56b310c44631f9a7258888972934a3565be06190911ef2c7d",
+    "lines": 99,
+    "kind": "text",
+    "functions": [
+      "_qa",
+      "test_clean_cube_passes",
+      "test_detects_zfighting_between_objects_and_within_mesh",
+      "test_slightly_offset_coplanar_is_zfighting_but_far_is_not",
+      "test_detects_floating_parts_and_objects",
+      "test_touching_parts_are_not_floating",
+      "test_enclosed_part_is_not_floating",
+      "test_detects_inverted_and_inconsistent_normals_and_back_to_back",
+      "test_roblox_profile_flags_open_mesh_and_ngons",
+      "test_review_shots_renders_sheet"
+    ],
+    "doc": "",
+    "side_effects": []
+  },
+  {
+    "path": "tests/test_rendering.py",
+    "bytes": 1730,
+    "sha512": "acc3d735dcc5fbd24cbf90b4742fcf420bdbe3998cbb93a0095ebceea9a510f1a7b87158df8b877cb4ea184edc8ab07a811ac4c64d096b241eba85169e45aa6c",
+    "lines": 40,
+    "kind": "text",
+    "functions": [
+      "_camera",
+      "test_render_stills_cycles_eevee_workbench",
+      "test_lookdev_turntable_and_studio"
+    ],
+    "doc": "",
+    "side_effects": []
+  },
+  {
+    "path": "tests/test_retopo_uv.py",
+    "bytes": 1440,
+    "sha512": "4b6cfa1d0ea2e542152d3a1808fdf7230604f579bd05972dfa138010527f19fe1a456ce1865f9869ad5d9ccd49bddd72cdf0bbe7a529402da8c7003c71e1ca99",
+    "lines": 31,
+    "kind": "text",
+    "functions": [
+      "test_uv_pack_and_texel_density_set",
+      "test_auto_retopo_methods"
+    ],
+    "doc": "",
+    "side_effects": [
+      {
+        "line": 27,
+        "code": "bpy.data.objects.remove(bpy.data.objects[\"Dense_low\"])"
+      }
+    ]
+  },
+  {
+    "path": "tests/test_rigging.py",
+    "bytes": 2868,
+    "sha512": "91fbde348042178a93efa0eab46f0dd37dce66cb43575fed2115b5b56f124985a1910874247d86e5f90b0262eab28302b1672dd6cef768004a561492725217c9",
+    "lines": 51,
+    "kind": "text",
+    "functions": [
+      "_humanoid_mesh",
+      "test_rigify_pipeline_bind_check_stress",
+      "test_proxy_bind_and_fix",
+      "build"
+    ],
+    "doc": "",
+    "side_effects": []
+  },
+  {
+    "path": "tests/test_scene.py",
+    "bytes": 1441,
+    "sha512": "d8f6ab037309e52a6c95adddcbff5b4280a62900bbf99b05117b12ab4aaa3c0e10e72b195acf7de24259842a0094580a85e4415f7a8a41c3493cb30926692fe2",
+    "lines": 38,
+    "kind": "text",
+    "functions": [
+      "test_scene_audit_flags_and_fixes",
+      "test_collection_exporter_snippet"
+    ],
+    "doc": "",
+    "side_effects": []
+  },
+  {
+    "path": "tests/test_sculpt.py",
+    "bytes": 505,
+    "sha512": "71536367798235cbed83148005120d3c2d826c1644665e7e2f636bb99cddd7f6e2767a4bfccb4b193a1c45fbdba017b269d166272cda5bf7b52c2718328f639d",
+    "lines": 12,
+    "kind": "text",
+    "functions": [
+      "test_sculpt_ops_chain"
+    ],
+    "doc": "",
+    "side_effects": []
+  },
+  {
+    "path": "tests/test_simulation.py",
+    "bytes": 1636,
+    "sha512": "d709c0d5f6f837813b9306002ca97ef76fa1c742b367c65f9dff67327c4510220fcbe67c6f51655260af66b417602bb3e15d4c780e82d7b59e3f0d31d511fbb6",
+    "lines": 37,
+    "kind": "text",
+    "functions": [
+      "_grid",
+      "test_rigid_body_drop_and_keys",
+      "test_classic_cloth_drapes_on_collider",
+      "test_gn_cloth_52_asset"
+    ],
+    "doc": "",
+    "side_effects": []
+  },
+  {
+    "path": "tests/test_weather.py",
+    "bytes": 4218,
+    "sha512": "38894f41d5b4bfda3ebdb647ade04201986c7520c333705c52b7395e137ebc4750f2a4fc458e2cf9cd2a8838aaac65b728b1b2a2ac653ea9e3bafcd3210ee6b3",
+    "lines": 88,
+    "kind": "text",
+    "functions": [
+      "_instances",
+      "test_precipitation_loops_and_stops_on_ground",
+      "test_surface_weather_roundtrip_restores_materials",
+      "test_snow_geometry_and_vertex_mask",
+      "test_lightning_keys_strokes_and_bolt"
+    ],
+    "doc": "",
+    "side_effects": []
+  },
+  {
+    "path": "tools/run_tests.py",
+    "bytes": 1242,
+    "sha512": "2c37f48fd57c5b771ac7c386c33d588f72130ef4531b7c3f5475561f01abc296e64c173f793e8704270a62ad6612c475ea32b337815b3d65549c772731195759",
+    "lines": 34,
+    "kind": "text",
+    "functions": [
+      "main"
+    ],
+    "doc": "Run the headless Blender test suite.\n\nUsage: python tools/run_tests.py [name-filter]     (BLENDER_EXE overrides discovery)",
+    "side_effects": [
+      {
+        "line": 22,
+        "code": "p = subprocess.run(cmd, capture_output=True, text=True, encoding=\"utf-8\", errors=\"replace\")"
+      }
+    ]
+  },
+  {
+    "path": "tools/sync_shared.py",
+    "bytes": 968,
+    "sha512": "d8ecad0b4bfb42a76688f9b58922a41975c291b25078df262cc6a7b907a49e7bfc9a62e824f46502f3e0ccc41baaa6b90177b4fcd2b048251b865009d6b8ca61",
+    "lines": 34,
+    "kind": "text",
+    "functions": [
+      "targets",
+      "main"
+    ],
+    "doc": "Copy shared/_bpyx.py into every skills/*/scripts/ folder that has Blender scripts.\n\nUsage: python tools/sync_shared.py [--check]   (--check: exit 1 if any copy is stale)",
+    "side_effects": []
+  },
+  {
+    "path": "tools/trigger_check.py",
+    "bytes": 3617,
+    "sha512": "c835dc2c2d6687480705fe46473cafabee71e1431d25d208d378601dcf2678e33eabb2de5135f6cd5fb1eb040c2a6d1d4980e40f523960afbd1c916a583cab81",
+    "lines": 71,
+    "kind": "text",
+    "functions": [
+      "toks",
+      "main"
+    ],
+    "doc": "Heuristic trigger check: do skill descriptions win for prompts they should own?\n\nScores each prompt against every description (token overlap, IDF weighted) and checks that the\nexpected skill is in the top 2. A cheap regression guard when editing descriptions; real agents\nuse richer matching.\nUsage: python tools/trigger_check.py",
+    "side_effects": []
+  },
+  {
+    "path": "tools/validate_skills.py",
+    "bytes": 4848,
+    "sha512": "56a7916e0015136b036c6fe33cc94d397738041ae132c1c8c57ba7fc4c0d9105eea707da2a9ea601b843b842069020dd4571da072ca07adba049926f304574f4",
+    "lines": 122,
+    "kind": "text",
+    "functions": [
+      "tokens",
+      "frontmatter",
+      "check_skill",
+      "main"
+    ],
+    "doc": "Lint skills against the Agent Skills spec + this repo's token budgets.\n\nChecks: frontmatter (name/description rules, name == dir), SKILL.md <= 500 lines and\ntoken budget, relative links resolve, scripts compile, Blender scripts expose run()\nand a Usage docstring, _bpyx copies in sync.\nUsage: python tools/validate_skills.py [--strict]   (--strict: warnings fail too)",
+    "side_effects": []
+  }
+]

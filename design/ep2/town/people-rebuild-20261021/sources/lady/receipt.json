@@ -1,0 +1,22 @@
+{
+  "person": "lady",
+  "height": 1.72,
+  "triangles": 28560,
+  "vertices": 14827,
+  "joints": 20,
+  "clips": [
+    "Carry",
+    "Greet",
+    "Idle",
+    "Point",
+    "Walk"
+  ],
+  "textures": [
+    "lady_basecolor.jpg",
+    "lady_orm.png",
+    "lady_normal.png"
+  ],
+  "bytes": 3275356,
+  "source": "MakeHuman CC0 a8bc2d54ff0ac92e78ff71431b1023eda42bf482",
+  "reference": "1UKoNFW1zvswqQRNdVLvusFkYoNWbMUQm"
+}

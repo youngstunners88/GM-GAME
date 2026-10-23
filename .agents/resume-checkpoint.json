@@ -1,28 +1,27 @@
 {
-  "observed_remote_sha": "504ee72a",
-  "objective": "DONE — Rich's Armory (Ep2) is shipped and live. Master `cb000a45` (+ CI build `504ee72a`), BUILD `2026-10-18-cb000a4`, live pck 191,800,848 B (7.43 MB under the 190 MiB gate). Rich + Utah rigged/animated (rebuilt GLBs validated: 20 bones + 5 clips each), armory off Main Street, crypto-only trade (Episode 1 BTC/ETH/SOL), long rifle + river gear for the day-88 set-piece, trade panel + HUD copy (no VO). Pack fixes shipped: 20 dead texture exports excluded, sign_ARMS preset fixed, folk GLBs rebuilt.",
+  "observed_remote_sha": "c3234338d1d9a36b8231f06005c368f654547510",
+  "objective": "Complete: all thirteen public people and separate prisoner implemented, tested, committed/pushed, production uploaded and exact public packs verified. Owner authorization remains commit/push/ship without repeated permission.",
   "task_paths": [
-    "src/episode2/chamber/ep2_armory_state.gd",
-    "src/episode2/chamber/ep2_armory_shop.gd",
+    "src/episode2/actors/ep2_town_people.gd",
+    "src/episode2/actors/ep2_town_navigation.gd",
     "src/episode2/chamber/gold_town.gd",
-    "src/episode2/actors/ep2_town_folk.gd",
-    "src/episode2/assets/town/rich_armory.glb",
-    "src/episode2/assets/town/utah_armory.glb",
-    "src/episode2/assets/town/sign_ARMS.png.import",
-    "tools/ep2_blender/build_armory_folk.py",
-    "tests/ep2_gold_town_test.gd",
-    "design/ep2/armory/rich-armory-lock-2026-10-18"
+    "src/episode2/session/ep2_session_root.gd",
+    "src/autoload/game_manager.gd",
+    "design/ep2/town/autonomy-20261022/"
   ],
   "evidence": {
-    "ci_run": "39089930801 success; butler 'Pushed to https://youngstunners88.itch.io/smokerealm'; live embed key 18305533-2150280; served pck 191,800,848 B contains '2026-10-18-cb000a4'; headless Chromium boot prints '[BUILD] Lil Blunt Adventure — build 2026-10-18-cb000a4' with 0 script errors; title lock preserved. Receipt + VERIFICATION + live screenshot in design/ep2/armory/rich-armory-lock-2026-10-18/.",
-    "pack_gate": "fresh import 191,801,072 B / CI 191,800,848 B / gate 199,229,440 B.",
-    "gates": "EP2_GOLD_TOWN (64 checks) / EP2_PERSONAL_ARMORY / EP2_CHARACTER_MOTION / EP2_BOW / EP2_COMPANION_CART ALL PASS; security sentinel 18/18, 0 blockers.",
-    "learned": "itch assigns a NEW embed key per processed build (old key keeps serving stale files); read the current embed src from the page's data-iframe attribute. The export filter lives in .github/workflows/export-game.yml heredoc; *.import is gitignored (force-add preset changes). A source GLB shrink barely moves the pck; the loose-texture-exclusion class is the safe win (docs/episode2-quality/3d-tools-survey-2026-10-17/README.md §4)."
+    "source_qa": "14/14 mesh/rig/ten finite clips; raw GLB audit; 672 imported checks; prisoner remains outside public13 roster",
+    "movement": "120-second full roster PASS; long-run/disk tests in final regression",
+    "network": "Shell DNS fails; GitHub connector independently confirmed master and binary blob upload",
+    "renderer": "605-frame final camera artifact12404268651 inspected; review images preserved in evidence/",
+    "behavior": "Full CI before prisoner PASS; affected full town story and compile after prisoner PASS; autonomy30 PASS",
+    "fresh_import_pack": "13cbfad0:199157824 B; limit199229440 B; margin71616 B",
+    "push": "Source13cbfad0 on both histories; concurrent CI HTML commits reconciled in final receipt merge",
+    "public": "BUILD2026-10-22-13cbfad extracted from served bytecode; main/extras exactly match successful CI export; all fourteen figures present; real WebGL title and access gate verified"
   },
-  "unresolved": [
-    "Day-88 river set-piece designed but not built (RICH_DEPARTMENT_SPEC/OUTLINE).",
-    "Voice pass unrecorded (no voice key on this box; lines in RICH_UTAH_LINES.md).",
-    "No gameplay-camera capture of the armory from this box (no xvfb/sudo); public access gate preserved."
-  ],
-  "next_action": "Nothing blocking. Optional future work: build the day-88 river set-piece; record voice lines; if transition_director gains a missing-file guard, the remaining loose-texture siblings in warm-covered folders (top-level assets/, hideout/) could be excluded too."
+  "unresolved": [],
+  "next_action": "No remaining build work. Preserve sources, evidence and full cast; use the final release receipt for future tuning.",
+  "source_commit": "13cbfad0dbcb6652ceefc5ece0d0efc8a5b2e981",
+  "production_run": "https://github.com/youngstunners88/GM-GAME/actions/runs/39727661169",
+  "verification_limit": "No configured EP2_CODE: public title/access gate verified; protected public town playthrough not claimed. Native story and CI actual gameplay-camera proof exercised the change."
 }

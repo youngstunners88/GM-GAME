@@ -1,0 +1,24 @@
+{
+  "folder": "https://drive.google.com/drive/folders/1q4e5q-UVVOH0Dxu9CnRdXAi_4sLkj25K",
+  "source": "Founder supplied for GM-GAME; no new third-party marketplace license inferred.",
+  "files": [
+    {
+      "name": "Logan.glb",
+      "drive_id": "1wQN_w5Lajmjg8cboFIikdmySi98VGhnl",
+      "bytes": 23925540,
+      "sha512": "253ebdc89187fff6d2519d67261efb39ef17354e3436e308c0a5d1c60be6e8ef53d2b840175102e468141f6989649d412b5bd9a9133dc047937efd69de6cd6ff"
+    },
+    {
+      "name": "Logan.JPG",
+      "drive_id": "1t-_1l56QsUQGuPTmuqE43TSt11IwfYaD",
+      "bytes": 3454515,
+      "sha512": "cab1f26bf59332a439d4475e33352e172a983904c3b82e3a040fa59bbfa75b0c96d9cc04514a920902613d99732669e8621c2a9e583085f41be743ad4218f61d"
+    },
+    {
+      "name": "Logan.zip",
+      "drive_id": "1CcU0LjyuAP5DLurSo-X9110EDgFztoGm",
+      "bytes": 11972197,
+      "sha512": "3edaf3fdc5dfccb87d7eda46d18a897db876fde035d5384f7920573912d25e5ea5622a13c0a9a1caaf4471e53005fc6081d8a831bd21c7179c4b3c10a8605d29"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "ok": true,
+  "pass": true,
+  "errors": [],
+  "warnings": [
+    "townsman_oldtimer_body: ~1 sampled verts with asymmetric L/R weights (mirror weights?)"
+  ],
+  "bones": 20,
+  "deform_bones": 19,
+  "profile": {},
+  "skin": {
+    "townsman_oldtimer_body": {
+      "verts": 13361,
+      "unweighted": 0,
+      "over_4": 0,
+      "not_normalized": 0,
+      "weights_on_root": 0,
+      "weights_on_nondeform": 0,
+      "groups_without_bone": [],
+      "asymmetric_verts_sampled": 1,
+      "deform_bones_without_group": 0
+    }
+  },
+  "fixed": false
+}

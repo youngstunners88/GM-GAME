@@ -1,0 +1,27 @@
+{
+  "person": "prisoner",
+  "height": 1.74,
+  "triangles": 26936,
+  "vertices": 13844,
+  "joints": 20,
+  "clips": [
+    "Alert",
+    "Carry",
+    "Greet",
+    "Idle",
+    "Inspect",
+    "Observe",
+    "Point",
+    "Rest",
+    "Talk",
+    "Walk"
+  ],
+  "textures": [
+    "prisoner_basecolor.jpg",
+    "prisoner_orm.png",
+    "prisoner_normal.png"
+  ],
+  "bytes": 3157180,
+  "source": "MakeHuman CC0 a8bc2d54ff0ac92e78ff71431b1023eda42bf482",
+  "reference": "1OPVPqj8P3sVpi_bJN90dJqyqFDoqoLVV"
+}

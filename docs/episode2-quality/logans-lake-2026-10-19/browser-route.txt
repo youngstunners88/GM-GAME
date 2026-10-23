@@ -1,0 +1,71 @@
+[BUILD] Lil Blunt Adventure — build dev-local
+REQUEST_FAILED https://browser.sentry-cdn.com/8.42.0/bundle.tracing.min.js net::ERR_CERT_AUTHORITY_INVALID
+REQUEST_FAILED https://lil-blunt-backend.teacherchris37.workers.dev/health net::ERR_CERT_AUTHORITY_INVALID
+REQUEST http://127.0.0.1:8942/game/ep2_extras.pck?v=dev-local
+[EP2] code prompt
+[BUILD] Lil Blunt Adventure — build dev-local
+REQUEST_FAILED https://lil-blunt-backend.teacherchris37.workers.dev/health net::ERR_CERT_AUTHORITY_INVALID
+REQUEST_FAILED https://browser.sentry-cdn.com/8.42.0/bundle.tracing.min.js net::ERR_CERT_AUTHORITY_INVALID
+REQUEST http://127.0.0.1:8942/game/ep2_extras.pck?v=dev-local
+RESPONSE 200 http://127.0.0.1:8942/game/ep2_extras.pck?v=dev-local
+[EP2] extras ready (ready)
+[EP2] chamber beat=ARRIVE fps=true control=true pos=(-8, 0, -13) yaw=0.100 extras=ready
+[EP2] chamber beat=ARRIVE fps=true control=true pos=(-8, 0, -13) yaw=0.100 extras=ready
+NETWORK [
+  {
+    name: 'http://127.0.0.1:8942/game/ep2_extras.pck?v=dev-local',
+    duration: 12598.40000000596,
+    size: 10704702
+  }
+]
+[EP2] chamber beat=ARRIVE fps=true control=true pos=(-8, 0, -13) yaw=0.100 extras=ready
+[EP2] chamber beat=ARRIVE fps=true control=true pos=(-7.852913, 0, -11.53404) yaw=0.100 extras=ready
+[EP2] chamber beat=ARRIVE fps=true control=true pos=(-7.490852, 0, -7.925517) yaw=0.100 extras=ready
+PROBE ARRIVE [ -7.490852, 0, -7.925517 ]
+[EP2] chamber beat=ARRIVE fps=true control=true pos=(-7.128792, 0, -4.316966) yaw=0.100 extras=ready
+[EP2] chamber beat=ARRIVE fps=true control=true pos=(-6.766731, 0, -0.708415) yaw=0.100 extras=ready
+[EP2] chamber beat=ARRIVE fps=true control=true pos=(-6.404671, 0, 2.900134) yaw=0.100 extras=ready
+[EP2] chamber beat=ARRIVE fps=true control=true pos=(-6.04261, 0, 6.508685) yaw=0.100 extras=ready
+[EP2] chamber beat=INVESTIGATE fps=true control=true pos=(-5.68055, 0, 10.11722) yaw=0.100 extras=ready
+PROBE INVESTIGATE [ -5.68055, 0, 10.11722 ]
+[EP2] chamber beat=INVESTIGATE fps=true control=true pos=(-5.590034, 0, 11.01935) yaw=0.100 extras=ready
+[EP2] chamber beat=INVESTIGATE fps=true control=true pos=(-5.590034, 0, 11.01935) yaw=0.100 extras=ready
+[EP2] chamber beat=INVESTIGATE fps=true control=true pos=(-5.590034, 0, 11.01935) yaw=0.100 extras=ready
+[EP2] chamber beat=INVESTIGATE fps=true control=true pos=(-5.590034, 0, 11.01935) yaw=0.100 extras=ready
+[EP2] chamber beat=INVESTIGATE fps=true control=true pos=(-5.590034, 0, 11.01935) yaw=0.100 extras=ready
+PROBE INVESTIGATE [ -5.590034, 0, 11.01935 ]
+[EP2] chamber beat=INVESTIGATE fps=true control=true pos=(-5.590034, 0, 11.01935) yaw=0.100 extras=ready
+[EP2] chamber beat=INVESTIGATE fps=true control=true pos=(-5.590034, 0, 11.01935) yaw=0.100 extras=ready
+[EP2] chamber beat=INVESTIGATE fps=true control=true pos=(-5.590034, 0, 11.01935) yaw=0.100 extras=ready
+[EP2] chamber beat=INVESTIGATE fps=true control=true pos=(-5.590034, 0, 11.01935) yaw=0.100 extras=ready
+[EP2] chamber beat=INVESTIGATE fps=true control=true pos=(-5.590034, 0, 11.01935) yaw=0.100 extras=ready
+PROBE INVESTIGATE [ -5.590034, 0, 11.01935 ]
+[EP2] chamber beat=INVESTIGATE fps=true control=true pos=(-5.590034, 0, 11.01935) yaw=0.100 extras=ready
+[EP2] chamber beat=INVESTIGATE fps=true control=true pos=(-5.590034, 0, 11.01935) yaw=0.100 extras=ready
+[EP2] chamber beat=INVESTIGATE fps=true control=true pos=(-5.590034, 0, 11.01935) yaw=0.100 extras=ready
+[EP2] chamber beat=INVESTIGATE fps=true control=true pos=(-5.590034, 0, 11.01935) yaw=0.100 extras=ready
+[EP2] chamber beat=INVESTIGATE fps=true control=true pos=(-5.590034, 0, 11.01935) yaw=0.100 extras=ready
+PROBE INVESTIGATE [ -5.590034, 0, 11.01935 ]
+[EP2] chamber beat=INVESTIGATE fps=true control=true pos=(-5.590034, 0, 11.01935) yaw=0.100 extras=ready
+REQUEST_FAILED https://lil-blunt-backend.teacherchris37.workers.dev/health net::ERR_CERT_AUTHORITY_INVALID
+[EP2] chamber beat=INVESTIGATE fps=true control=true pos=(-5.590034, 0, 11.01935) yaw=0.100 extras=ready
+[EP2] chamber beat=STAGE fps=true control=true pos=(-5.590034, 0, 11.01935) yaw=0.100 extras=ready
+[EP2] chamber beat=STAGE fps=true control=true pos=(-5.273232, 0, 14.1768) yaw=0.100 extras=ready
+[EP2] chamber beat=HANDOFF fps=true control=true pos=(-4.911171, 0, 17.78532) yaw=0.100 extras=ready
+PROBE HANDOFF [ -4.911171, 0, 17.78532 ]
+[EP2] chamber beat=HANDOFF fps=true control=true pos=(-4.865913, 0, 18.23639) yaw=0.100 extras=ready
+[EP2] chamber beat=HANDOFF fps=true control=true pos=(-4.594368, 0, 20.94278) yaw=0.100 extras=ready
+[EP2] chamber beat=HANDOFF fps=true control=true pos=(-4.232307, 0, 24.5513) yaw=0.100 extras=ready
+[EP2] chamber beat=HANDOFF fps=true control=true pos=(-4.1, 0, 28.15982) yaw=0.100 extras=ready
+[EP2] chamber beat=HANDOFF fps=true control=true pos=(-4.1, 0, 31.76834) yaw=0.100 extras=ready
+PROBE HANDOFF [ -4.1, 0, 31.76834 ]
+[EP2] chamber beat=HANDOFF fps=true control=true pos=(-4.1, 0.509352, 35.37698) yaw=0.100 extras=ready
+[EP2] chamber beat=HANDOFF fps=true control=true pos=(-4.1, 1.282633, 38.98562) yaw=0.100 extras=ready
+[EP2] chamber beat=HANDOFF fps=true control=true pos=(-4.1, 2.055913, 42.59426) yaw=0.100 extras=ready
+[EP2] chamber beat=HANDOFF fps=true control=true pos=(-4.1, 2.829194, 46.2029) yaw=0.100 extras=ready
+[EP2] chamber beat=HANDOFF fps=true control=true pos=(-4.1, 3.602474, 49.81155) yaw=0.100 extras=ready
+PROBE HANDOFF [ -4.1, 3.602474, 49.81155 ]
+[EP2] chamber beat=HANDOFF fps=true control=true pos=(-4.1, 4.375755, 53.42019) yaw=0.100 extras=ready
+[EP2] chamber beat=HANDOFF fps=true control=true pos=(-4.1, 5.149035, 57.02883) yaw=0.100 extras=ready
+[EP2] chamber beat=OVERLOOK fps=true control=true pos=(-4.1, 5.922316, 60.63747) yaw=0.100 extras=ready
+LAKE_BROWSER: ALL PASS (access gate, streamed Logan, walk/investigate/stage/overlook, held-armory pause)

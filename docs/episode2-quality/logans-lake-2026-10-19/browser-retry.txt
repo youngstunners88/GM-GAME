@@ -1,0 +1,20 @@
+[BUILD] Lil Blunt Adventure — build dev-local
+REQUEST_FAILED https://browser.sentry-cdn.com/8.42.0/bundle.tracing.min.js net::ERR_CERT_AUTHORITY_INVALID
+REQUEST_FAILED https://lil-blunt-backend.teacherchris37.workers.dev/health net::ERR_CERT_AUTHORITY_INVALID
+REQUEST http://127.0.0.1:8942/game/ep2_extras.pck?v=dev-local
+[EP2] code prompt
+REQUEST_FAILED http://127.0.0.1:8942/game/ep2_extras.pck?v=dev-local net::ERR_FAILED
+[EP2] extras failed (failed: TypeError: Failed to fetch)
+[BUILD] Lil Blunt Adventure — build dev-local
+REQUEST_FAILED https://browser.sentry-cdn.com/8.42.0/bundle.tracing.min.js net::ERR_CERT_AUTHORITY_INVALID
+REQUEST_FAILED https://lil-blunt-backend.teacherchris37.workers.dev/health net::ERR_CERT_AUTHORITY_INVALID
+REQUEST http://127.0.0.1:8942/game/ep2_extras.pck?v=dev-local
+REQUEST_FAILED http://127.0.0.1:8942/game/ep2_extras.pck?v=dev-local net::ERR_FAILED
+[EP2] extras failed (failed: TypeError: Failed to fetch)
+[EP2] chamber beat=ARRIVE fps=true control=true pos=(-8, 0, -13) yaw=0.100 extras=failed
+[EP2] chamber beat=ARRIVE fps=true control=true pos=(-8, 0, -13) yaw=0.100 extras=failed
+REQUEST http://127.0.0.1:8942/game/ep2_extras.pck?v=dev-local
+RESPONSE 200 http://127.0.0.1:8942/game/ep2_extras.pck?v=dev-local
+[EP2] chamber beat=ARRIVE fps=true control=true pos=(-8, 0, -13) yaw=0.100 extras=loading
+[EP2] extras ready (ready)
+LAKE_RETRY: ALL PASS (failed pack, player retry, mounted pack)

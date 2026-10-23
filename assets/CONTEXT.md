@@ -1,5 +1,7 @@
 # Assets Workspace (art, 3D, audio direction + manifests)
 
+Logan's Lake: founder reference/provenance in `design/ep2/lake/`; game GLBs in `src/episode2/assets/lake/`; production skills `ep2-logan-performance`, `ep2-lake-world`, `gm-blender-godot`. The installed Blender toolkit is pinned/audited in `docs/research/blender-skills/`. The lake lock supersedes historical fishing/vesting plans.
+
 Where the LOOK and SOUND of the game are decided and tracked: manifests, reference intake, art/audio direction. The actual game
 files live in `src/` (Godot loads only from there); this workspace holds the source-of-truth lists and the rules. Read this before
 generating, importing or replacing any model, texture or sound. (Workspace pattern: founder's coach, "The Lesson 3.1" - one

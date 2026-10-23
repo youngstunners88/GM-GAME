@@ -1,0 +1,27 @@
+{
+  "person": "boy",
+  "height": 1.36,
+  "triangles": 27088,
+  "vertices": 13924,
+  "joints": 20,
+  "clips": [
+    "Alert",
+    "Carry",
+    "Greet",
+    "Idle",
+    "Inspect",
+    "Observe",
+    "Point",
+    "Rest",
+    "Talk",
+    "Walk"
+  ],
+  "textures": [
+    "boy_basecolor.jpg",
+    "boy_orm.png",
+    "boy_normal.png"
+  ],
+  "bytes": 3228388,
+  "source": "MakeHuman CC0 a8bc2d54ff0ac92e78ff71431b1023eda42bf482",
+  "reference": "1ASalMzLNI-KVNyBUAWbaoioGriXAxW0n"
+}

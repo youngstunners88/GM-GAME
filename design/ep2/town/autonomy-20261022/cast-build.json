@@ -1,0 +1,231 @@
+{
+  "bald_worker": {
+    "name": "townsman_bald_worker",
+    "height": 1.8,
+    "girth": 1.1,
+    "style": "rancher",
+    "ref": "14GoIpTFcyyrTF-wGK-B25gynFwmP7HHY",
+    "eye": [
+      0.5,
+      0.145
+    ],
+    "chin": 0.21,
+    "morph": "male-young",
+    "skin": [
+      0.53,
+      0.35,
+      0.26
+    ],
+    "hair": [
+      0.1,
+      0.07,
+      0.05
+    ],
+    "bald": true,
+    "suspenders": true
+  },
+  "grandma": {
+    "name": "townswoman_grandma",
+    "height": 1.57,
+    "girth": 1.08,
+    "style": "dressmaker",
+    "ref": "1VmiNy2tokmzI286d_T0B80hEgJD328bp",
+    "eye": [
+      0.5,
+      0.145
+    ],
+    "chin": 0.216,
+    "morph": "female-young",
+    "skin": [
+      0.55,
+      0.38,
+      0.29
+    ],
+    "hair": [
+      0.39,
+      0.37,
+      0.33
+    ],
+    "elder": true,
+    "shawl": true
+  },
+  "grandfather": {
+    "name": "townsman_grandfather",
+    "height": 1.73,
+    "girth": 1.02,
+    "style": "oldtimer",
+    "ref": "1V5c47N0jquR7yEOu9l6yIni-lk9z8yV9",
+    "eye": [
+      0.3,
+      0.157
+    ],
+    "chin": 0.225,
+    "morph": "male-old",
+    "skin": [
+      0.52,
+      0.35,
+      0.27
+    ],
+    "hair": [
+      0.39,
+      0.37,
+      0.33
+    ],
+    "elder": true,
+    "no_hat": true
+  },
+  "grandmother": {
+    "name": "townswoman_grandmother",
+    "height": 1.59,
+    "girth": 1.02,
+    "style": "dressmaker",
+    "ref": "1V5c47N0jquR7yEOu9l6yIni-lk9z8yV9",
+    "eye": [
+      0.704,
+      0.205
+    ],
+    "chin": 0.27,
+    "morph": "female-young",
+    "skin": [
+      0.57,
+      0.39,
+      0.3
+    ],
+    "hair": [
+      0.42,
+      0.4,
+      0.37
+    ],
+    "elder": true,
+    "shawl": true
+  },
+  "youth": {
+    "name": "townsman_youth",
+    "height": 1.67,
+    "girth": 0.9,
+    "style": "rancher",
+    "ref": "1VOORJh12iCDg7oJYl86VNO_ZvthA4cqq",
+    "eye": [
+      0.5,
+      0.145
+    ],
+    "chin": 0.207,
+    "morph": "male-young",
+    "skin": [
+      0.55,
+      0.37,
+      0.28
+    ],
+    "hair": [
+      0.09,
+      0.065,
+      0.047
+    ],
+    "no_hat": true,
+    "curly": true,
+    "scarf": true
+  },
+  "boy": {
+    "name": "townsboy",
+    "height": 1.36,
+    "girth": 0.86,
+    "style": "rancher",
+    "ref": "1ASalMzLNI-KVNyBUAWbaoioGriXAxW0n",
+    "eye": [
+      0.5,
+      0.14
+    ],
+    "chin": 0.206,
+    "morph": "male-young",
+    "skin": [
+      0.57,
+      0.39,
+      0.3
+    ],
+    "hair": [
+      0.11,
+      0.08,
+      0.055
+    ],
+    "child": true,
+    "suspenders": true,
+    "no_hat": true,
+    "curly": true
+  },
+  "braided_girl": {
+    "name": "townsgirl_braided",
+    "height": 1.34,
+    "girth": 0.83,
+    "style": "lady",
+    "ref": "1TampVjUkhlA5GxEkrEENVgs-RH2MCDg9",
+    "eye": [
+      0.5,
+      0.145
+    ],
+    "chin": 0.213,
+    "morph": "female-young",
+    "skin": [
+      0.62,
+      0.43,
+      0.33
+    ],
+    "hair": [
+      0.18,
+      0.125,
+      0.075
+    ],
+    "child": true
+  },
+  "bob_girl": {
+    "name": "townsgirl_bob",
+    "height": 1.28,
+    "girth": 0.88,
+    "style": "dressmaker",
+    "ref": "1tpM5sMHnAMBluCqGLwo3sTiILwYI7iQP",
+    "eye": [
+      0.5,
+      0.153
+    ],
+    "chin": 0.215,
+    "morph": "female-young",
+    "skin": [
+      0.61,
+      0.42,
+      0.33
+    ],
+    "hair": [
+      0.19,
+      0.13,
+      0.08
+    ],
+    "child": true,
+    "bob": true
+  },
+  "prisoner": {
+    "name": "prisoner_accomplice",
+    "height": 1.74,
+    "girth": 0.97,
+    "style": "rancher",
+    "ref": "1OPVPqj8P3sVpi_bJN90dJqyqFDoqoLVV",
+    "eye": [
+      0.5,
+      0.14
+    ],
+    "chin": 0.208,
+    "morph": "male-young",
+    "skin": [
+      0.52,
+      0.35,
+      0.27
+    ],
+    "hair": [
+      0.08,
+      0.055,
+      0.04
+    ],
+    "no_hat": true,
+    "curly": true,
+    "no_vest": true,
+    "striped": true
+  }
+}

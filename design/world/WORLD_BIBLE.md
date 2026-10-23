@@ -31,7 +31,7 @@ gun-smoke world that he leaves a little better (the chill wins).
 | 8 | **Mine Mouth -> Frontier canyon** | OUTLINE | first time above ground; overwatch from a water tower | horseback / handcar chase |
 | 9 | **The Smoke Lounge** | OUTLINE (portal room exists) | the Bull's PROMISE beat; calm hub | - |
 | 10 | **Diamond territory** | OUTLINE | Diamonds pillar | - |
-| 11 | **Still Water** - the quiet lake (calm hub, far from town and the rail line; the train is visible far off) | OUTLINE (proposal 2026-10-16, card `regions/11_still-water-lake.md`) | Pillar 1 vesting + Pillar 2 pools as METAPHOR only (Phase 1; no Phase 2 certificates) | walk from the town's back lane |
+| 11 | **Logan's Lake** — named still-water, staging shore and day-88 outflow | Runtime `src/episode2/chamber/logans_lake.tscn`; active founder lock `design/ep2/lake/LOGANS_LAKE_LOCK.md` (2026-10-18) | Investigate / stage / protect depth; no fishing or vesting timers; separate from Town Stockpile | after Rich & Utah's gear, before the river fight |
 
 Open for the founder: region 4-10 order, which regions are hubs, whether the frontier has a free-roam layer.
 

@@ -33,7 +33,7 @@ var _rng := RandomNumberGenerator.new()
 ## [x, z, yaw, clip]: horses tied at the hitch rails (head to the rail), one grazing by the armory lane. Yaw 0 = head toward +X.
 const HORSES: Array = [
 	[-4.5, 1418.0, PI, "horse_stand"], [4.5, 1431.0, 0.0, "horse_graze"], [-4.5, 1441.0, PI, "horse_stand"],
-	[-24.0, 1472.0, 2.4, "horse_graze"],
+	[-27.0, 1462.5, 2.4, "horse_graze"],        # outside the Armory, west of its porch (founder 2026-10-19: no horse inside)
 ]
 const WALK_FROM := Vector3(8.0, 0.0, 1449.0)
 const WALK_TO := Vector3(8.0, 0.0, 1472.0)

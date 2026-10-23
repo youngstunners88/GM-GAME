@@ -1,0 +1,22 @@
+{
+  "person": "rancher",
+  "height": 1.84,
+  "triangles": 25828,
+  "vertices": 13330,
+  "joints": 20,
+  "clips": [
+    "Carry",
+    "Greet",
+    "Idle",
+    "Point",
+    "Walk"
+  ],
+  "textures": [
+    "rancher_basecolor.jpg",
+    "rancher_orm.png",
+    "rancher_normal.png"
+  ],
+  "bytes": 3106956,
+  "source": "MakeHuman CC0 a8bc2d54ff0ac92e78ff71431b1023eda42bf482",
+  "reference": "1xtNAz0raq7nbV3vqaIITeEyrQJpVtPh1"
+}

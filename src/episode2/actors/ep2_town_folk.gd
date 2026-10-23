@@ -12,6 +12,7 @@ var model: Node3D = null
 var pose_name: String = "idle"
 var dead: bool = false
 var _goal: Vector3 = Vector3.ZERO
+var arrival_radius: float = 0.06
 var _walking: bool = false
 var _speed: float = 1.4
 var _phase: float = 0.0
@@ -23,6 +24,19 @@ var _anim: AnimationPlayer = null
 var _rigged: bool = false
 var _clip: String = ""                               # the clip actually playing (lowercased)
 var _base_clip: String = "Idle"                      # what he holds when standing still
+## Armory autonomy (ep2-armory-npc-autonomy): the clip played while moving ("Walk", "StairsUp", "Carry"), a cross-fade between
+## clips so nothing snaps, and optional height travel (stairs, the gallery) - all off by default so other folk are unchanged.
+var walk_clip: String = "Walk"
+var clip_blend: float = 0.0
+## Explicit opt-in for ambient cyclic motion; story/prop performance keeps authored one-shots.
+var looping_clips: Array[String] = []
+var use_height: bool = false
+## Stride matching for library walk clips (Meshy cast, 2026-10-22): the walk clip's own ground speed in m/s. When set,
+## the walk plays at (ground speed / this) so the feet keep pace with the body; 0 keeps the clip at its authored speed.
+var walk_clip_speed: float = 0.0
+## The procedural stride lift on top of rigged clips; mocap walks carry their own bob, so the Meshy cast turns it off.
+var procedural_bob: bool = true
+var _floor_y: float = 0.0
 
 
 ## Load `path` (a GLB), scale it to `height`, put its feet on the origin. Falls back to a plain figure so a build without the art still plays.
@@ -58,6 +72,11 @@ func _bind_clips() -> void:
 		break
 	_rigged = _anim != null and not _anim.get_animation_list().is_empty()
 	if _rigged:
+		for name in _anim.get_animation_list():
+			for clip in looping_clips:
+				var key: String = str(name).to_lower()
+				if key == clip.to_lower() or key.ends_with("/" + clip.to_lower()) or key.ends_with("|" + clip.to_lower()):
+					_anim.get_animation(name).loop_mode = Animation.LOOP_LINEAR
 		play_clip(_base_clip)
 
 
@@ -75,13 +94,61 @@ func play_clip(name: String, speed: float = 1.0) -> bool:
 				return true
 			_clip = want
 			_anim.speed_scale = speed
-			_anim.play(str(a))
+			_anim.play(str(a), clip_blend if clip_blend > 0.0 else -1.0)
 			return true
 	return false
 
 
 func has_clips() -> bool:
 	return _rigged
+
+
+## Hold a prop (the Sharps, a crate) in a hand: a BoneAttachment3D on the rig's bone whose name matches `bone` ("Hand.R" or "hand_r"), carrying `prop` at
+## `pos` / `rot_deg` in the bone's frame. A prop of the same name is replaced. The model's own scale is undone so the prop keeps its real size.
+## False when there is no rig / no such bone (the caller keeps the prop elsewhere).
+func attach_prop(prop_node: Node3D, bone: String, pos: Vector3 = Vector3.ZERO, rot_deg: Vector3 = Vector3.ZERO) -> bool:
+	drop_prop(str(prop_node.name))
+	if model == null:
+		return false
+	var want: String = _bone_key(bone)
+	for sk in model.find_children("*", "Skeleton3D", true, false):
+		var skel: Skeleton3D = sk
+		for i in skel.get_bone_count():
+			var have: String = _bone_key(skel.get_bone_name(i))
+			if have == want or have.ends_with("_" + want):
+				var att := BoneAttachment3D.new()
+				att.name = "Hold_" + str(prop_node.name)
+				skel.add_child(att)
+				att.bone_name = skel.get_bone_name(i)
+				att.add_child(prop_node)
+				prop_node.position = pos
+				prop_node.rotation_degrees = rot_deg
+				var s: float = absf(model.scale.x) if absf(model.scale.x) > 1e-4 else 1.0
+				prop_node.scale = Vector3.ONE / s
+				return true
+	return false
+
+
+## A bone name compared loosely: "Hand.R", "hand_r" and "mixamorig:RightHand" / "mixamorig_RightHand" (a rig prefix) all read the same way.
+static func _bone_key(n: String) -> String:
+	return n.to_lower().replace(".", "_").replace(":", "_").replace("/", "_")
+
+
+## Take a held prop out of the hand (it is freed). No-op when nothing by that name is held.
+func drop_prop(prop_name: String) -> void:
+	if model == null:
+		return
+	for a in model.find_children("Hold_" + prop_name, "BoneAttachment3D", true, false):
+		a.get_parent().remove_child(a)
+		a.queue_free()
+
+
+func held_prop(prop_name: String) -> Node3D:
+	if model == null:
+		return null
+	for a in model.find_children("Hold_" + prop_name, "BoneAttachment3D", true, false):
+		return (a as Node).get_child(0) as Node3D if a.get_child_count() > 0 else null
+	return null
 
 
 func anim_player() -> AnimationPlayer:
@@ -162,7 +229,7 @@ func set_pose(p: String) -> void:
 
 
 func walk_to(p: Vector3, speed: float = 1.4) -> void:
-	_goal = Vector3(p.x, 0.0, p.z)
+	_goal = Vector3(p.x, p.y if use_height else 0.0, p.z)
 	_speed = speed
 	_walking = true
 
@@ -177,6 +244,19 @@ func walk_path(points: Array, speed: float = 1.4) -> void:
 func stop() -> void:
 	_walking = false
 	_path = []
+
+
+## Put him at `p` at once (with its height when `use_height` is on: the Armory gallery is 3.8 m up).
+func place(p: Vector3) -> void:
+	_floor_y = p.y if use_height else 0.0
+	position = Vector3(p.x, _floor_y, p.z)
+	_walking = false
+	_path = []
+
+
+## The floor height he stands on (0 in the street; the gallery's 3.8 in the Armory).
+func floor_y() -> float:
+	return _floor_y
 
 
 func is_walking() -> bool:
@@ -207,9 +287,11 @@ func step(delta: float) -> void:
 	_t += delta
 	var moving: bool = false
 	if _walking and not dead:
-		var d: Vector3 = _goal - position
-		d.y = 0.0
-		if d.length() < 0.06:
+		var d: Vector3 = _goal - Vector3(position.x, _floor_y, position.z)
+		if not use_height:
+			d.y = 0.0
+		var flat := Vector3(d.x, 0.0, d.z)
+		if d.length() < arrival_radius:
 			_walking = false
 			if not _path.is_empty():
 				walk_to(_path.pop_front(), _speed)
@@ -217,8 +299,13 @@ func step(delta: float) -> void:
 				arrived.emit()
 		else:
 			moving = true
-			facing = lerp_angle(facing, atan2(d.x, d.z), clampf(8.0 * delta, 0.0, 1.0))
-			position += d.normalized() * minf(d.length(), _speed * delta)
+			if flat.length() > 0.02:
+				facing = lerp_angle(facing, atan2(d.x, d.z), clampf(8.0 * delta, 0.0, 1.0))
+			# speed is ground speed: on a stair the rise rides along with the run
+			var stepv: Vector3 = d * minf(1.0, (_speed * delta) / maxf(flat.length() if flat.length() > 0.02 else d.length(), 0.001))
+			position.x += stepv.x
+			position.z += stepv.z
+			_floor_y += stepv.y
 			_phase += delta * _speed * 4.6
 	rotation.y = lerp_angle(rotation.y, facing, clampf(7.0 * delta, 0.0, 1.0))
 	if model == null:
@@ -232,11 +319,14 @@ func step(delta: float) -> void:
 		return
 	if _rigged:
 		# the clips carry the body: only the stride lift and a shot's recoil ride on top
-		var want: String = "Walk" if moving else _base_clip
+		var want: String = walk_clip if moving else _base_clip
 		if _clip != want.to_lower():
 			play_clip(want)
+		if walk_clip_speed > 0.0:
+			_anim.speed_scale = clampf(_speed / walk_clip_speed, 0.45, 1.8) if moving else 1.0
 		model.rotation = Vector3(-0.08 * _kick, 0.0, 0.0)
-		position.y = (absf(sin(_phase)) * 0.035) if moving else 0.0
+		# mocap clips carry their own bob; the procedural stride lift is only for the old authored figures
+		position.y = _floor_y + ((absf(sin(_phase)) * 0.035) if moving and not use_height and procedural_bob else 0.0)
 		return
 	model.rotation = Vector3(-0.08 * _kick, 0.0, (0.035 * sin(_phase) if moving else 0.0))
 	position.y = (absf(sin(_phase)) * 0.035) if moving else 0.0

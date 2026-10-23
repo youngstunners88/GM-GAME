@@ -1,5 +1,7 @@
 # GM-GAME working agreement
 
+For Logan's Lake or the installed Blender toolkit, start with `.claude/skills/ep2-logans-lake/SKILL.md` and `gm-blender-godot`. The founder's 2026-10-18 lake lock supersedes the older fishing/vesting wire spec. See `design/ep2/lake/IMPLEMENTATION.md` and the pinned all-file audit in `docs/research/blender-skills/`. RunPod GPU spending for this lake task is explicitly authorized (2026-10-19); use the configured `RUNPOD` binding, verify availability, record cost and clean up only task-owned resources.
+
 On startup and after rate-limit gaps, use `.agents/skills/smokerealm-resume/SKILL.md` and `.agents/resume-checkpoint.json` to inspect intervening Claude/Codex commits before editing. Preserve concurrent work, load only relevant deltas, and save compact evidence with exact SHAs. Refresh master again before publishing.
 
 Read `CLAUDE.md` and `.claude/context-manifests/default.md` before changing this game. Preserve its existing gameplay contracts, title-screen lock, access controls and nonthreaded Godot 4.3 web export.
