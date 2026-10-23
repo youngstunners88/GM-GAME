@@ -85,6 +85,20 @@ func _finger_up(key: int) -> void:
 func finger_count() -> int:
 	return _fingers.size()
 
+## BUG FIX (blaze_touch, flagged to the foundation owner). A suspension (the Blaze pause card
+## is up) makes this field inert, and a finger that lifts WHILE it is inert is delivered to
+## the overlay, never to the field - so `_fingers` kept a stale key and swallowed the next
+## real tap of that finger index (`_finger_down` returns early on a known key): after
+## PLAY the first tap of finger 0 did nothing. Forget every finger when the suspension
+## starts. TouchActions.set_suspended() has already released `action`; a finger that was
+## down before is never adopted again (the orphan rule).
+func on_suspended(on: bool) -> void:
+	if on:
+		_fingers.clear()
+		_rings.clear()
+		set_process(false)
+		queue_redraw()
+
 func release() -> void:
 	_fingers.clear()
 	_rings.clear()

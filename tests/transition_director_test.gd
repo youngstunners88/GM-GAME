@@ -164,6 +164,29 @@ func _ready() -> void:
 	GameManager.ep2_story_unlocked = unlocked0
 	_check("the state machine ended PLAYING after the menu route", StateMachine.get_current_state() == "PLAYING")
 
+	# 1c. The runner's OWN hold (F15), independent of the freeze: a first-leg runner built while the director holds the cover
+	# does not advance on physics ticks that DO reach it, and starts only once the director is at REVEALING. (The freeze
+	# already keeps a paused runner still; this proves the runner does not lean on it.)
+	AudioManager.fade_out_music(0.01)
+	td._going = true
+	td.state = td.S.SWAPPING
+	var held_runner: Node = load("res://src/episode2/runner/runner_graybox.tscn").instantiate()
+	add_child(held_runner)
+	held_runner.setup(200.0)
+	for i in 12:
+		held_runner._physics_process(1.0 / 60.0)
+	_check("runner hold: 12 physics ticks under the cover leave the cart at distance 0 (%.3f)" % float(held_runner.get_distance()),
+		held_runner.is_reveal_holding() and float(held_runner.get_distance()) == 0.0)
+	_check("runner hold: no music starts while it waits", AudioManager.current_music_player == null)
+	td.state = td.S.REVEALING
+	held_runner._physics_process(1.0 / 60.0)
+	_check("runner hold: the first tick after the reveal starts the cart (%.3f m) and the music" % float(held_runner.get_distance()),
+		not held_runner.is_reveal_holding() and float(held_runner.get_distance()) > 0.0 and AudioManager.current_music_player != null)
+	td._going = false
+	td.state = td.S.IDLE
+	held_runner.queue_free()
+	AudioManager.fade_out_music(0.01)
+
 	# 2. Hand-off to a tiny scene: states, StateMachine, card, scene change.
 	var states: Array = []
 	td.state_changed.connect(func(_f, t): states.append(t))
@@ -461,9 +484,14 @@ func _ready() -> void:
 		_check("film: turned back to landscape, re-fitted again", vid.size.is_equal_approx(want_l.size) and vid.position.is_equal_approx(want_l.position))
 		sv.size = Vector2i(390, 844)
 		await get_tree().process_frame
+		film._finish()                                   # the film ends; the player turns the phone AFTER that, before the cover is made
+		sv.size = Vector2i(844, 390)
+		await get_tree().process_frame
+		_check("film: once finished it stops following the viewport (the video keeps the old rect)",
+			not sv.size_changed.is_connected(film._layout_video) and vid.size.is_equal_approx(want_p.size))
 		var live_cover: Control = film.make_cover()
-		_check("cover: make_cover() takes its rect from the viewport AS IT IS (not from play()): %s" % str(film._cover_rect),
-			film._cover_rect.is_equal_approx(want_p))
+		_check("cover: make_cover() takes its rect from the viewport AS IT IS (not from the last layout): %s" % str(film._cover_rect),
+			film._cover_rect.is_equal_approx(want_l))
 		live_cover.free()
 	# a cover built from a real picture keeps filling the screen while it waits through a rotation
 	var img := Image.create(64, 36, false, Image.FORMAT_RGB8)
@@ -488,8 +516,8 @@ func _ready() -> void:
 	_check("cover: no film frame (skipped / undecodable film) is a plain black cover, not an invisible one",
 		black.get_child_count() == 1 and black.get_child(0) is ColorRect and (black.get_child(0) as ColorRect).color == Color.BLACK)
 	black.free()
-	film._finish()
-	_check("film: finishing it stops following the viewport", not sv.size_changed.is_connected(film._layout_video))
+	_check("film: the touch profile is the single wordless SKIP (ep2_film), not the whole platformer cluster",
+		film.touch_profile() == &"ep2_film" and MobileLayoutManager.KNOWN_PROFILES.has(film.touch_profile()))
 	film.queue_free()
 	cover_frame.queue_free()
 	sv.queue_free()

@@ -90,6 +90,11 @@ var _touch_last_suspended: bool = false
 ## True while THIS node holds the tree paused because a touch device is held upright (the 3D runner / hideout cannot be
 ## framed in portrait: a drawn "turn your phone" cue is up instead). Only this node ever clears it.
 var _rotate_paused: bool = false
+## A held verb that began as an input EVENT and must end as one: a pause (the touch card, the armory, the rotate cue) freezes
+## this node, so the release event of a duck / an aim made DURING it never arrives. `_resync_held_verbs` ends them when polled
+## input says the finger or key is already up.
+var _duck_by_event: bool = false
+var _aim_by_touch: bool = false
 
 func _ready() -> void:
 	for action: StringName in TOUCH_ACTIONS:
@@ -581,6 +586,16 @@ func _rotate_wanted() -> bool:
 			return _foot_ok()
 	return false
 
+## Ends a duck / an ADS whose release event was dropped while the tree was paused (the polled input is the truth).
+func _resync_held_verbs() -> void:
+	if _duck_by_event and not Input.is_action_pressed(&"move_down"):
+		_duck_by_event = false
+		runner_duck_end()
+	if _aim_by_touch and not Input.is_action_pressed(TOUCH_AIM):
+		_aim_by_touch = false
+		if _mode == Mode.CHAMBER and _active != null and is_instance_valid(_active) and _active.has_method("set_aim"):
+			_active.set_aim(false)
+
 ## Announce a changed profile / suspended flag (the manager then refreshes at once instead of at its next 5 Hz poll).
 func _touch_changed() -> void:
 	var profile: StringName = touch_profile()
@@ -633,6 +648,7 @@ func _process(_delta: float) -> void:
 				manager.save_session()
 	_sync_mouse_mode()
 	_poll_free_roam()
+	_resync_held_verbs()
 	_update_rotate_pause()
 	_touch_changed()
 	var waiting: bool = _active != null and _active.has_method("is_waiting_for_handoff") and bool(_active.call("is_waiting_for_handoff"))
@@ -703,6 +719,7 @@ func _route_free_roam(event: InputEvent) -> bool:
 		return false
 	# Touch-only verbs (audit F6 / F7): jump, hold-to-aim, reload. W stays move_up, never jump.
 	if event.is_action(TOUCH_AIM) and _active.has_method("set_aim"):
+		_aim_by_touch = event.is_pressed()
 		_active.set_aim(event.is_pressed())
 		return true
 	if event.is_action_pressed(TOUCH_JUMP):
@@ -806,8 +823,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			elif event.is_action_pressed("jump"):
 				runner_jump()
 			elif event.is_action_pressed("move_down"):
+				_duck_by_event = true
 				runner_duck_start()
 			elif event.is_action_released("move_down"):
+				_duck_by_event = false
 				runner_duck_end()
 			elif event.is_action_pressed("attack"):
 				runner_shoot()

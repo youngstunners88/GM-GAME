@@ -80,15 +80,36 @@ func _path_a_boss_film_go_reveal(root: Node) -> void:
 	film.play()
 	_mlm.refresh()
 	await get_tree().process_frame
-	_check("A: through the film the controls stay up (hold-jump skips it) and the thumbs are still down",
-		bool(_mlm.controls_visible) and TouchActions.held_count() == FINGERS.size(), "held %d" % TouchActions.held_count())
-	film._finish()
-	var cover: Control = film.make_cover()
-	film.queue_free()
-	_leaks.clear()
-	_td.go(TARGET, "", "", cover)
-	_check("A: the instant go() starts, the layer is hidden and every finger is released (held %d)" % TouchActions.held_count(),
-		not bool(_mlm.controls_visible) and TouchActions.held_count() == 0 and _pressed().is_empty(), str(_pressed()))
+	_check("A: during the film the phone shows ONE wordless SKIP button, not the platformer cluster (profile %s, %d buttons)" % [str(_mlm.current_profile()), _button_count()],
+		bool(_mlm.controls_visible) and _mlm.current_profile() == &"ep2_film" and _button_count() == 1)
+	_check("A: swapping the platformer cluster for the skip button released the thumbs that were on the old controls (held %d)" % TouchActions.held_count(),
+		TouchActions.held_count() == 0 and _pressed().is_empty())
+	# The film ends the instant its skip hold completes; the boss then hands off in the SAME frame (claim_jumper.die()), so the
+	# handler below does exactly that - and the thumbs are still on the glass (the skip finger plus the others) at that moment.
+	var go_obs: Dictionary = {"held_before": -1, "held_after": -1, "layer_after": true, "done": false}
+	var on_finished := func() -> void:
+		go_obs["done"] = film._done
+		for a in FINGERS:
+			TouchActions.press(a)
+		go_obs["held_before"] = TouchActions.held_count()
+		var c: Control = film.make_cover()
+		film.queue_free()
+		_leaks.clear()
+		_td.go(TARGET, "", "", c)
+		go_obs["held_after"] = TouchActions.held_count()
+		go_obs["layer_after"] = bool(_mlm.controls_visible)
+	film.finished.connect(on_finished)
+	# the SKIP button presses the ordinary `jump` action; the film's rule (hold SKIP_HOLD s, after one release) is unchanged
+	TouchActions.press(&"jump")
+	await get_tree().create_timer(0.8).timeout
+	_check("A: a hold shorter than the film's rule does NOT skip it (0.8 s of %.1f s)" % film.SKIP_HOLD, not film._done)
+	var wait: int = 0
+	while int(go_obs["held_before"]) < 0 and wait < 300:
+		await get_tree().process_frame
+		wait += 1
+	_check("A: holding the skip button the full second skips the film", bool(go_obs["done"]) and int(go_obs["held_before"]) >= FINGERS.size(), str(go_obs))
+	_check("A: the instant go() starts, the layer is hidden and every finger is released (held %d -> %d)" % [int(go_obs["held_before"]), int(go_obs["held_after"])],
+		int(go_obs["held_after"]) == 0 and not bool(go_obs["layer_after"]) and _pressed().is_empty(), str(_pressed()))
 	await _watch_until_idle("A")
 	await _frames(5)
 	_check("A: nothing was held or pressed at ANY frame of the hand-off (%d leaks)" % _leaks.size(), _leaks.is_empty(), str(_leaks.slice(0, 3)))
@@ -235,6 +256,22 @@ func _watch_until_idle(tag: String) -> void:
 func _sample(tag: String) -> void:
 	if TouchActions.held_count() != 0 or not _pressed().is_empty():
 		_leaks.append("%s frame: director %s held %d pressed %s" % [tag, str(_td.state), TouchActions.held_count(), str(_pressed())])
+
+
+## VirtualButtons currently in the touch layout (the film profile has exactly one: SKIP).
+func _button_count() -> int:
+	var lay: Node = _mlm.layout()
+	if lay == null:
+		return 0
+	var n: int = 0
+	var stack: Array = [lay]
+	while not stack.is_empty():
+		var cur: Node = stack.pop_back()
+		if cur is VirtualButton:
+			n += 1
+		for c in cur.get_children():
+			stack.append(c)
+	return n
 
 
 func _frames(n: int) -> void:

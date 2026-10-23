@@ -144,6 +144,8 @@ const PAUSE_ZONE_W_DP: float = 62.0
 ## The HUD's authored margins (canvas units); touch adds the safe area on top.
 const HUD_MARGIN_X: float = 16.0
 const HUD_MARGIN_Y: float = 12.0
+## Breathing room (dp) between the HUD row and the Pause button's hit area.
+const HUD_PAUSE_GAP_DP: float = 4.0
 
 var _card: BlazePause = null
 var _card_open: bool = false
@@ -1997,6 +1999,21 @@ func _build_hud() -> void:
 
 	_update_hud()
 
+## Canvas units from the viewport's right edge that the layout's Pause button actually
+## occupies (plus a gap), or 0 when no blaze layout is up yet. Read from the live layout so a
+## tablet's x1.2 tier and the player's button-size preference are honoured.
+func _pause_button_clearance(m: TouchMetrics) -> float:
+	var mgr: Node = get_node_or_null("/root/MobileLayoutManager")
+	if mgr == null:
+		return 0.0
+	var lay: Variant = mgr.call(&"layout")
+	if not (lay is TouchLayout):
+		return 0.0
+	var btn: VirtualButton = (lay as TouchLayout).find_button(&"pause")
+	if btn == null or btn.size.x <= 1.0:
+		return 0.0
+	return m.viewport_size.x - btn.position.x + HUD_PAUSE_GAP_DP * m.dp
+
 ## Place the HUD row for this screen and hide the written exit on a phone.
 ##
 ## Called at build, on size_changed AND whenever the touch manager shows / hides /
@@ -2021,7 +2038,10 @@ func _sync_touch_hud() -> void:
 		var m: TouchMetrics = _framing_metrics()
 		left = maxf(HUD_MARGIN_X, m.safe_rect.position.x)
 		top = maxf(HUD_MARGIN_Y, m.safe_rect.position.y)
-		right = maxf(HUD_MARGIN_X, m.viewport_size.x - m.safe_rect.end.x) + PAUSE_ZONE_W_DP * m.dp
+		right = maxf(HUD_MARGIN_X, m.viewport_size.x - m.safe_rect.end.x) + (PAUSE_ZONE_W_DP + HUD_PAUSE_GAP_DP) * m.dp
+		# The real button is bigger than the nominal zone on a tablet (tier 1.2) and with the
+		# player's own button-size preference (up to x1.5): clear whatever is actually there.
+		right = maxf(right, _pause_button_clearance(m))
 	_hud_has_touch_margins = touch
 	_hud_margin.add_theme_constant_override("margin_left", int(round(left)))
 	_hud_margin.add_theme_constant_override("margin_top", int(round(top)))

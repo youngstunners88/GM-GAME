@@ -89,6 +89,13 @@ func play() -> void:
 
 	get_tree().create_timer(DEADLINE_SEC, true, false, true).timeout.connect(_finish)
 
+## Touch profile (read by MobileLayoutManager because the film joins group touch_controls_wanted): ONE wordless skip button
+## with a hold ring (the `ep2_film` layout, which presses the ordinary `jump` action) instead of the whole platformer
+## cluster over the 15 s film. The skip RULE is unchanged - hold jump for SKIP_HOLD seconds after one release - so
+## keyboard and gamepad behave exactly as before; the ring is only a cue (its own timer is a shade shorter than SKIP_HOLD).
+func touch_profile() -> StringName:
+	return &"ep2_film"
+
 ## Fit the 16:9 film to the CURRENT viewport, filling and cropping (never letterboxed), and remember that rect for the
 ## cover. Runs at play() and on every viewport resize (rotation, a resized browser tab).
 func _layout_video() -> void:

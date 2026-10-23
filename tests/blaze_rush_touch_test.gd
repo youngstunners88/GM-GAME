@@ -84,17 +84,21 @@ func _ready() -> void:
 	_was_force = MobileLayoutManager.force_touch_ui
 	_isolate_game_state()
 	_force_touch(true)
+	# Every section is held to the number of checks it is known to run. A runtime error inside a
+	# coroutine ends that coroutine silently and the verdict below would still read "ALL PASS":
+	# a section that ran short is therefore a FAILURE of its own.
 	for sc: Dictionary in SCREENS:
-		await _screen_battery(sc)
-	await _pause_card_flows()
-	await _focus_out()
-	await _wordless_scan()
-	await _hud_follows_the_manager()
-	await _rotation()
-	await _armed_start_real_router()
-	await _reveal_timeout()
-	await _desktop_is_unchanged()
-	await _lifecycle()
+		await _section(str(sc["name"]), _screen_battery.bind(sc), EXPECT_BATTERY)
+	await _section("pause card", _pause_card_flows, EXPECT["pause card"])
+	await _section("fallback path", _fallback_path, EXPECT["fallback path"])
+	await _section("focus loss", _focus_out, EXPECT["focus loss"])
+	await _section("wordless", _wordless_scan, EXPECT["wordless"])
+	await _section("hud follows detection", _hud_follows_the_manager, EXPECT["hud follows detection"])
+	await _section("rotation", _rotation, EXPECT["rotation"])
+	await _section("real router + portal", _armed_start_real_router, EXPECT["real router + portal"])
+	await _section("reveal timeout", _reveal_timeout, EXPECT["reveal timeout"])
+	await _section("desktop", _desktop_is_unchanged, EXPECT["desktop"])
+	await _section("lifecycle", _lifecycle, EXPECT["lifecycle"])
 	_force_touch(false)
 	MobileLayoutManager.is_touch_device = _was_touch
 	MobileLayoutManager.force_touch_ui = _was_force
@@ -103,6 +107,30 @@ func _ready() -> void:
 		print("  [FAIL] only %d checks ran - a false green" % _checks)
 	print("BLAZE_RUSH_TOUCH: %s" % ("ALL PASS" if _fail == 0 else "%d FAILURE(S)" % _fail))
 	get_tree().quit(_fail)
+
+## Minimum checks each section must run (a lower count means a coroutine died mid-section).
+const EXPECT_BATTERY: int = 62
+const EXPECT := {
+	"pause card": 21,
+	"fallback path": 4,
+	"focus loss": 5,
+	"wordless": 6,
+	"hud follows detection": 8,
+	"rotation": 38,
+	"real router + portal": 16,
+	"reveal timeout": 4,
+	"desktop": 8,
+	"lifecycle": 50,
+}
+
+func _section(label: String, body: Callable, expected: int) -> void:
+	var before: int = _checks
+	await body.call()
+	var ran: int = _checks - before
+	print("  (info) section '%s': %d checks" % [label, ran])
+	if ran < expected:
+		_fail += 1
+		print("  [FAIL] section '%s' ran only %d of the %d checks it must run (a coroutine died - see SCRIPT ERROR above)" % [label, ran, expected])
 
 # ---- helpers -------------------------------------------------------------------------------
 
@@ -143,6 +171,13 @@ func _touch(index: int, pressed: bool, canvas_pos: Vector2) -> void:
 	t.pressed = pressed
 	t.position = _to_window(canvas_pos)
 	Input.parse_input_event(t)
+
+## A ScreenTouch handed straight to the run (as if the GUI had not swallowed it).
+func _stray_tap() -> InputEventScreenTouch:
+	var ev := InputEventScreenTouch.new()
+	ev.pressed = true
+	ev.index = 0
+	return ev
 
 func _centre(c: Control) -> Vector2:
 	return c.global_position + c.size * 0.5
@@ -347,14 +382,17 @@ func _screen_battery(sc: Dictionary) -> void:
 	for spot: Array in spots:
 		await _park(run)
 		_seen.clear()
+		var buzz_before: int = int(run.get("_haptic_sent"))
 		_watch(run)
 		_touch(0, true, spot[1])
 		await _ticks(40)
 		var n: int = _unwatch()
+		var buzzes: int = int(run.get("_haptic_sent")) - buzz_before
 		_touch(0, false, spot[1])
 		await _frames(2)
 		_check("%s: a tap on %s = exactly ONE jump" % [tag, spot[0]], n == 1 and _count("jump:down") == 1,
 			"takeoffs=%d jump:down=%d" % [n, _count("jump:down")])
+		_check("%s: ...and the takeoff adds no SECOND haptic (the tap field already buzzed once)" % tag, buzzes == 0, "takeoff buzzes=%d" % buzzes)
 		_check("%s: ...and lifting the finger let `jump` go" % tag, not Input.is_action_pressed(&"jump"))
 
 	# ---- a resting finger never swallows the next ----
@@ -471,6 +509,36 @@ func _pause_card_flows() -> void:
 	await _arm_with_a_tap(run, Vector2(400.0, 200.0))
 	await _park(run)
 
+	# a tap queued AT the pause edge must not survive it
+	run.set("_jump_buffer", 0.1)
+	run.set("_coyote", 0.06)
+	run.call("_open_pause_card")
+	_check("opening the card clears the jump buffer and the coyote grace (a tap queued at the pause edge)",
+		float(run.get("_jump_buffer")) == 0.0 and float(run.get("_coyote")) == 0.0, "buffer=%f coyote=%f" % [float(run.get("_jump_buffer")), float(run.get("_coyote"))])
+	run.call("_unhandled_input", _stray_tap())
+	_check("...and a tap that reaches the run while the card is up is ignored", float(run.get("_jump_buffer")) == 0.0)
+	run.call("_on_card_play")
+	_check("(setup) PLAY by code resumes", not card.is_open())
+	await _arm_with_a_tap(run, Vector2(400.0, 200.0))   # the continuing tap
+	await _park(run)
+
+	# ONE path: with the tap field live a stray ScreenTouch / click that still reaches the run is
+	# ignored (the `jump` action is the only tap path); a continuing tap's twin in the SAME
+	# frame is not a jump either
+	_check("(setup) the tap field is live", bool(run.call("_tap_field_live")))
+	run.call("_unhandled_input", _stray_tap())
+	_check("with the tap field live, a stray ScreenTouch reaching the run is ignored (one path)", float(run.get("_jump_buffer")) == 0.0)
+	var stray_click := InputEventMouseButton.new()
+	stray_click.button_index = MOUSE_BUTTON_LEFT
+	stray_click.pressed = true
+	run.call("_unhandled_input", stray_click)
+	_check("...and so is a stray left click", float(run.get("_jump_buffer")) == 0.0)
+	run.set("_armed", false)
+	run.call("_start_run")
+	run.call("_on_tap")
+	_check("the second event of the tap that STARTED the run (same frame) is not a jump", float(run.get("_jump_buffer")) == 0.0)
+	await _park(run)
+
 	# a resting finger + Pause: the resting finger's later lift must not leave a stale field
 	var field: VirtualTapField = _field()
 	var rest: Vector2 = Vector2(300.0, 300.0)
@@ -559,7 +627,60 @@ func _pause_card_flows() -> void:
 	_touch(0, false, card.play_center())
 	await _frames(3)
 	card.resume_pressed.disconnect(counter)
-	_check("one finger tap on PLAY = ONE resume (the emulated click is deduped in the same frame)", resumes[0] == 1, "resumes=%d" % resumes[0])
+	_check("one finger tap on PLAY = ONE resume", resumes[0] == 1, "resumes=%d" % resumes[0])
+	# The dedupe itself. In the run, PLAY's handler closes the card (which also forgets the other
+	# pointer's press), so the same-frame double never gets a second chance; a STANDALONE card
+	# with only a counter attached shows the guard on its own.
+	var lone := BlazePause.new()
+	add_child(lone)
+	await _frames(2)
+	lone.open()
+	var twice: Array[int] = [0]
+	var count2 := func() -> void: twice[0] += 1
+	lone.resume_pressed.connect(count2)
+	var pos: Vector2 = lone.play_center()
+	lone.call("_pointer", "t0", true, false, pos)
+	lone.call("_pointer", "m", true, false, pos)
+	lone.call("_pointer", "t0", false, false, pos)
+	lone.call("_pointer", "m", false, false, pos)
+	_check("a raw finger event and the click emulated from it, in the SAME frame, activate ONE time", twice[0] == 1, "activations=%d" % twice[0])
+	await _frames(1)
+	lone.call("_pointer", "t1", true, false, pos)
+	lone.call("_pointer", "t1", false, false, pos)
+	_check("...and a tap in the NEXT frame is a new activation", twice[0] == 2, "activations=%d" % twice[0])
+	lone.queue_free()
+	await _free(run)
+
+# ================================================================================================
+#  the fallback path: the layer is not up, the first tap must still land
+# ================================================================================================
+
+func _fallback_path() -> void:
+	print(" fallback path (touch layer not up):")
+	await _set_screen(Vector2i(844, 390))
+	var run: Node2D = await _boot(1)
+	var cue: BlazeTapCue = run.get("_cue") as BlazeTapCue
+	MobileLayoutManager.set_locked(&"blaze_touch_test", true)   # the layer goes away; the run keeps going
+	await _frames(3)
+	_check("(setup) the touch layer is down and the tap hand is still showing",
+		not MobileLayoutManager.controls_visible and not bool(run.call("_tap_field_live")) and cue.is_cue_shown())
+	var v: Vector2 = _view()
+	# the hand is drawn at (0.5, 0.70) of the screen: a visible cue must never eat the first tap
+	var on_cue: Vector2 = Vector2(v.x * BlazeTapCue.TIP_X, v.y * BlazeTapCue.TIP_Y)
+	await _arm_with_a_tap(run, on_cue)
+	_check("a tap ON the tap-hand cue reaches the run through the fallback path and starts it", _armed(run))
+	await _park(run)
+	var buzz_before: int = int(run.get("_haptic_sent"))
+	_watch(run)
+	_touch(0, true, Vector2(v.x * 0.3, v.y * 0.3))
+	await _ticks(40)
+	var n: int = _unwatch()
+	_touch(0, false, Vector2(v.x * 0.3, v.y * 0.3))
+	await _frames(2)
+	_check("fallback: one finger (ScreenTouch + emulated click) = exactly ONE jump", n == 1, "takeoffs=%d" % n)
+	_check("fallback: exactly ONE haptic (the takeoff's; no tap field is up to buzz)", int(run.get("_haptic_sent")) - buzz_before == 1,
+		"buzzes=%d" % (int(run.get("_haptic_sent")) - buzz_before))
+	MobileLayoutManager.set_locked(&"blaze_touch_test", false)
 	await _free(run)
 
 # ================================================================================================
@@ -771,7 +892,12 @@ func _armed_start_real_router() -> void:
 	var body := Node2D.new()
 	body.add_to_group(&"player")
 	add_child(body)
-	get_tree().current_scene = null
+	# The level is the CURRENT scene (the portal reads its path; the router frees it on the
+	# swap). A stand-in node plays that part so the test itself is never freed.
+	var level_stand_in := Node.new()
+	level_stand_in.scene_file_path = str(LEVELS[1])
+	get_tree().root.add_child(level_stand_in)
+	get_tree().current_scene = level_stand_in
 	var observed: Dictionary = {}
 	var on_loaded: Callable = func(_p: String) -> void:
 		var run_now: Node = get_tree().current_scene
@@ -783,8 +909,6 @@ func _armed_start_real_router() -> void:
 		observed["visible"] = MobileLayoutManager.controls_visible
 	SceneRouter.load_finished.connect(on_loaded, CONNECT_ONE_SHOT)
 	var revealed_state: Array[String] = []
-	var on_revealed: Callable = func() -> void: revealed_state.append(StateMachine.get_current_state())
-	SceneRouter.revealed.connect(on_revealed, CONNECT_ONE_SHOT)
 	portal.call("_on_body_entered", body)
 	_check("the portal's entry fades the controls out (inert fade, not a snap): fading=%s" % MobileLayoutManager.is_hide_fading(),
 		MobileLayoutManager.is_hide_fading() and not MobileLayoutManager.controls_visible)
@@ -800,6 +924,10 @@ func _armed_start_real_router() -> void:
 	_check("...the run is HOLDING (armed=false, reveal not ready, cube at x=0) and the touch layer is not up yet",
 		observed.get("armed", true) == false and observed.get("reveal_ready", true) == false and observed.get("x", -1.0) == 0.0 and observed.get("visible", true) == false, str(observed))
 	var run: Node2D = get_tree().current_scene as Node2D
+	# Connected AFTER the run's own _ready, so this fires AFTER the run's handler for the same
+	# `revealed` emission: what it records is the state the reveal LEFT behind.
+	var on_revealed: Callable = func() -> void: revealed_state.append(StateMachine.get_current_state())
+	SceneRouter.revealed.connect(on_revealed, CONNECT_ONE_SHOT)
 	# a tap during the dissolve (before the reveal) is ignored: it must not start the run
 	_touch(0, true, Vector2(400.0, 200.0))
 	await _frames(1)
@@ -810,7 +938,7 @@ func _armed_start_real_router() -> void:
 		await get_tree().process_frame
 		waited += 1
 	_check("the router revealed the scene", not revealed_state.is_empty())
-	_check("PLAYING is entered at the reveal (the state when `revealed` fired: %s)" % [revealed_state], StateMachine.is_playing())
+	_check("PLAYING is entered AT the reveal (state right after `revealed`: %s)" % [revealed_state], revealed_state == ["PLAYING"])
 	await _frames(3)
 	MobileLayoutManager.refresh()
 	await _frames(2)
@@ -826,6 +954,8 @@ func _armed_start_real_router() -> void:
 	# leave: the profile goes with the node
 	run.queue_free()
 	get_tree().current_scene = self
+	if is_instance_valid(level_stand_in):
+		level_stand_in.queue_free()
 	await _frames(3)
 	stand_in.queue_free()
 	body.queue_free()
@@ -873,6 +1003,10 @@ func _desktop_is_unchanged() -> void:
 	_check("desktop: the touch profile is still declared (inert without a touch device)", run.call("touch_profile") == &"blaze" and not bool(run.call("touch_suspended")))
 	# Esc / Q / Backspace stay an instant exit
 	await _free(run)
+	# The real exits are proven by the lifecycle section below and by blaze_lifecycle_e2e_test.
+	# Here only the KEYS are on trial, so the router is blocked (it refuses a second load while
+	# one is "in flight") and no scene swap can start.
+	SceneRouter._loading_path = "__blaze_touch_test_block__"
 	for keycode: Key in [KEY_ESCAPE, KEY_Q, KEY_BACKSPACE]:
 		var r: Node2D = await _boot(1)
 		var ev := InputEventKey.new()
@@ -882,9 +1016,8 @@ func _desktop_is_unchanged() -> void:
 		Input.parse_input_event(ev)
 		await _frames(2)
 		_check("desktop: key %s is still an instant exit (_exiting)" % OS.get_keycode_string(keycode), bool(r.get("_exiting")))
-		r.set("_exiting", false)   # the router is not asked to move in this section
-		SceneRouter._loading_path = ""
 		await _free(r)
+	SceneRouter._loading_path = ""
 	_force_touch(true)
 
 # ================================================================================================
@@ -938,22 +1071,23 @@ func _lifecycle_one(level: int, route: String) -> void:
 		await _frames(2)
 		var card: BlazePause = run.get("_card") as BlazePause
 		_check("%s: the card is up" % tag, card.is_open())
-		_touch(0, true, card.exit_center())
+		var exit_pos: Vector2 = card.exit_center()   # (the card is freed with the run on the way out)
+		_touch(0, true, exit_pos)
 		await _frames(2)
-		_touch(0, false, card.exit_center())
+		_touch(0, false, exit_pos)
 		await _frames(2)
-		_check("%s: the card's EXIT ran the real exit (_exiting)" % tag, bool(run.get("_exiting")))
+		_check("%s: the card's EXIT ran the real exit (_exiting)" % tag, is_instance_valid(run) and bool(run.get("_exiting")))
 	else:
 		# real finish: the cube is carried into the finish line by its own forward motion
 		_player(run).global_position = Vector2(float(run.get("_course_length")) + 30.0, _player(run).global_position.y)
 		var waited: int = 0
-		while not bool(run.get("_exiting")) and waited < 600:
+		while is_instance_valid(run) and not bool(run.get("_exiting")) and waited < 600:
 			await get_tree().process_frame
 			waited += 1
-		_check("%s: crossing the finish line ends in the exit (_exiting)" % tag, bool(run.get("_exiting")))
+		_check("%s: crossing the finish line ends in the exit (_exiting)" % tag, is_instance_valid(run) and bool(run.get("_exiting")))
 	_check("%s: side_return = {blaze, %d}" % [tag, level],
 		GameManager.side_return.get("kind", "") == "blaze" and int(GameManager.side_return.get("level", -1)) == level, str(GameManager.side_return))
-	_check("%s: the music override is released (token cleared)" % tag, int(run.get("_music_token")) == -1)
+	_check("%s: the music override is released (token cleared)" % tag, is_instance_valid(run) and int(run.get("_music_token")) == -1)
 	_check("%s: the stage track RESUMED at once (the wipe is not silent)" % tag,
 		AudioManager.current_music_player == stage_player and not stage_player.stream_paused and stage_player.playing)
 	var landed: Node = null
