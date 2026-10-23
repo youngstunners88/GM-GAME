@@ -316,10 +316,11 @@ func build_surface_vista() -> Node3D:
 	add_child(_sun)
 	_step_light_mats()
 	_load_forest_kit()
-	_step_ground()
+	_step_ground(4.0)  # The surface floor begins outside the mine mouth, never across the lift shaft.
 	_build_ride_path()
 	_resolve_specs()
 	_build_trails()
+	_visuals.get_node("LiftPad").free()  # This gameplay spawn pad would overlap the cage in the preview.
 	for i in 3:
 		_build_forest_chunk(i)
 	_build_exit_bridge()
@@ -340,13 +341,14 @@ func _step_light_mats() -> void:
 		_plain(Color(0.27, 0.42, 0.12), 0.95)]
 
 
-func _step_ground() -> void:
+func _step_ground(z_start: float = -30.0) -> void:
 	# the forest floor: moss, needles and twigs (Muapi seamless still), world-tiled every 3.5 m - now under a 1 km wood
 	_ground_mat = _tex(FLOOR_TEX, Color(0.82, 0.84, 0.76), 0.28) if ResourceLoader.exists(FLOOR_TEX) else _tex(GRAVEL_TEX, Color(0.38, 0.42, 0.25), 0.35)
 	_ground_mat.uv1_world_triplanar = true
 	_ground_mat.roughness = 0.95
 	var z1: float = FOREST_END_Z + 30.0
-	_box(Vector3(440.0, 0.5, z1 + 30.0), Vector3(0.0, -0.25, (z1 - 30.0) * 0.5), _ground_mat)
+	var floor_mesh := _box(Vector3(440.0, 0.5, z1 - z_start), Vector3(0.0, -0.25, (z1 + z_start) * 0.5), _ground_mat)
+	floor_mesh.name = "ForestFloor"
 	# the desert floor from the last pines to beyond the town (a hair lower: the forest floor wins where they overlap)
 	var dg := MeshInstance3D.new()
 	var pm := PlaneMesh.new()

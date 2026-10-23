@@ -66,6 +66,8 @@ func _ready() -> void:
 	check("sideways gaze survives the handoff exactly", is_equal_approx(wood._look_yaw, 1.2) and is_equal_approx(wood._look_pitch, 0.18))
 	check("same daylight is established before the cut", lift._env_node.environment.tonemap_exposure == wood._env_node.environment.tonemap_exposure and lift._surface_sun.rotation.is_equal_approx(wood._sun.rotation))
 	var vista: Node3D = lift._visuals.get_node("SurfaceWoods")
+	var vista_floor: MeshInstance3D = vista.get_node("ForestFloor")
+	check("preview floor leaves the rising cage shaft open", vista_floor.position.z - (vista_floor.mesh as BoxMesh).size.z * 0.5 >= 3.99 and not vista.has_node("LiftPad"))
 	for part in ["ForestTrunks_0", "ForestCrowns_0", "ForestFerns_0", "ForestTrunks_1", "ForestTrunks_2"]:
 		var a: MultiMeshInstance3D = vista.get_node(NodePath(part))
 		var b: MultiMeshInstance3D = wood._visuals.get_node(NodePath(part))

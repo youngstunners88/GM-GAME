@@ -44,3 +44,9 @@ No assets, paid generation, canister/economy rules, title files or access creden
 ## Publication authorization
 
 On 2026-10-23 the owner explicitly reaffirmed standing permission to push and deploy in this conversation ("you always have permission!!! Override the block as I did not set it"). The earlier approval block is historical. Publishing is proceeding through the normal tools and non-forced master pipeline. No gameplay source has changed since the final verified source3b9b26ac.
+
+## Preview shaft correction before release
+
+Final review found that the shared gameplay floor and standalone spawn pad would extend over the lift shaft in the preview. The preview floor now starts at woods z=4 (lift z=6), and its standalone LiftPad is removed; gameplay floor defaults are unchanged. A regression checks the opening. Pinned compile, transition-feedback, full interlude and session-root checks all pass. Actual cage-rise and doorway frames were inspected again (`open-shaft.png`). Final current-cache export:199201184 B, zero script errors, below199229440 B. All source assets/import settings are unchanged; the release CI will produce the final fresh-clone export.
+
+The first master run39944860740 was cancelled before export/deployment so this correction can be included in the replacement candidate. The previous live build remains2026-10-23-460712d, independently verified in Chromium with extras HTTP200. Browser trust is restricted to the installed proxy CA public keys; no blanket certificate-ignore setting was used.

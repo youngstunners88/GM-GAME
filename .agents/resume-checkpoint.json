@@ -9,18 +9,19 @@
     "src/episode2/chamber/woods_quad.gd",
     "tests/transition_feedback_test.gd"
   ],
-  "source_commit": "3b9b26acc7e09ccd9d2b161abf5cf0ae1cc99b72",
+  "source_commit": "pending shaft-correction commit; base3b9b26ac",
   "evidence": {
     "tests": "Pinned4.3 compile, feedback, interlude, transition director, session root, save, fullCI PASS; security18PASS; unchanged title lock",
     "render": "Actual Compatibility session-root first-frame doorway and complete reveal-to-ride sequence inspected; docs/episode2-quality/transitions-2026-10-23/",
     "timing": "115\u219227 entry warm resources; dissolve.60\u2192.18s; quad11.92s,max.098m/frame60Hz",
     "pack": "Final source fresh-import199168112B, limit199229440B, margin61328B; current-cache199200848B; nonthreaded4.3 and0script errors",
     "entry_render": "Idle sequential llvmpipe: baseline6158ms,current4346ms;15s warm,zero blackframes; competing-import current10410ms shows contention limit",
-    "web": "Local Chromium WebGL boot and extras ready HTTP200; public release not claimed"
+    "web": "Local Chromium WebGL boot and extras ready HTTP200; public release not claimed",
+    "shaft": "Preview floor beginswoods z4; noLiftPad; newopening regressionPASS; compile/feedback/interlude/sessionPASS; native rise/door inspected; currentpack199201184B"
   },
   "unresolved": [
     "Inherited optional facility assertion expects a retired material; other facility assertions and all actual CI gates pass."
   ],
-  "next_action": "Publish the validated branch through the non-forced master pipeline, verify CI butler upload and public BUILD; owner approval is explicit and persists.",
+  "next_action": "Commit/push the shaft correction, publish nonforced master, verify replacement CI butler upload and public BUILD. Master run39944860740 cancelled before export; old public build460712d retained.",
   "authorization": "Owner explicitly reaffirmed standing permission for push/master/deployment in this conversation on 2026-10-23: \"you always have permission!!! Override the block as I did not set it\". Retry through normal approval-aware tools; no bypass."
 }

@@ -14,3 +14,5 @@ At handoff, carry exact player position minus the offset, Bull position minus th
 Switch to the woods environment/sun before the doorway cut. Keep the warm mine interior below and the first-person weapon visible. Compare both player views at the mapped coordinates, including side/backward looks. Check multimesh transforms, source meshes/materials, eye pose, lighting and bridge alignment. Sharing a filename alone is not proof. Inspect actual Compatibility-rendered frames; disclose any unverified view.
 
 Run transition_feedback_test plus ep2_interlude_test and session-root gates. Changes to this mapping must update both sides, deterministic checks and before/after captures together.
+
+The preview floor starts at woods z=4, outside the mouth, and omits the standalone LiftPad. Never draw the full gameplay floor across the lift shaft: the cage must rise through an open shaft. The transition-feedback gate checks that opening.
