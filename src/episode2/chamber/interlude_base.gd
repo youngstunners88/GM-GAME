@@ -321,6 +321,8 @@ func setup(_gold_principal: int = 0, _bears: Array = [], _diamonds_paid: int = 0
 	_ensure_room()
 	_on_setup()
 	_apply_music()
+	# The handoff must render the new eye pose immediately, before its first physics tick.
+	_update_camera(0.0)
 	_sync_visuals()
 	beat_changed.emit(_beat)
 

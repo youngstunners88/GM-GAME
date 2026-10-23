@@ -314,6 +314,9 @@ jobs:
           grep -q 'QUIZ_PROTOCOL_ONLY: ALL PASS' quiz-tests.log
           timeout 90 "$GODOT_BIN" --headless res://tests/nft_issuer_test.tscn 2>&1 | tee nft-tests.log
           grep -q 'NFT_ISSUER: ALL PASS' nft-tests.log
+          timeout 180 "$GODOT_BIN" --headless res://tests/transition_feedback_test.tscn 2>&1 | tee transition-feedback-tests.log
+          grep -q 'TRANSITION_FEEDBACK: ALL PASS' transition-feedback-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' transition-feedback-tests.log; then exit 1; fi
           # On-screen touch controls: real finger events -> GUI -> InputMap -> the real
           # player (analog walk, multi-touch combo, release-on-hide, layouts on every screen).
           timeout 180 "$GODOT_BIN" --headless res://tests/mobile_touch_controls_test.tscn 2>&1 | tee touch-tests.log

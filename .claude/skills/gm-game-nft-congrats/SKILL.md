@@ -3,6 +3,9 @@ name: gm-game-nft-congrats
 description: "The cool, short congratulations when an NFT is issued: top-centre card with the NFT art, a ~2 s jingle, then one short spoken Lil Blunt line. TRIGGER on any change to the NFT card, jingle, spoken lines, their loudness, or src/assets/nft/audio, and when the founder says the NFT moment is too long / too serious / silent / too loud."
 ---
 
+# Founder update 2026-10-23
+Boss NFT rewards use the existing display and boss jingle only: no Lil Blunt announcement. Protocol-test NFT speech is unchanged. Route transition work through `gm-game-transition-repair`. This supersedes the older boss-speech instructions below.
+
 # Tone (founder: "some congratulations spoken with a cool little jingle. Nothing too long or too serious")
 Chill, playful, 3 seconds of audio in total: jingle (~2.2 s) then Lil Blunt's line (<= 4 s, < 60 characters). Card shows 5.5 s then fades.
 No speeches, no jargon, no protocol lecture. Boss NFTs get the triumphant jingle, test NFTs the bright "smart" one.

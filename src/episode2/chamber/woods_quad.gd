@@ -306,6 +306,29 @@ func _warm_views() -> Array:
 		{"eye": eye + Vector3(0.0, 0.0, 14.0), "yaw": atan2(to_scout.x, to_scout.z), "pitch": -0.05}]
 
 
+## Build just the mine-facing landscape using exactly the gameplay builders.
+## Used by the lift so its window is the place the player walks into.
+func build_surface_vista() -> Node3D:
+	_visuals = Node3D.new()
+	_env_node = WorldEnvironment.new()
+	add_child(_env_node)
+	_sun = DirectionalLight3D.new()
+	add_child(_sun)
+	_step_light_mats()
+	_load_forest_kit()
+	_step_ground()
+	_build_ride_path()
+	_resolve_specs()
+	_build_trails()
+	for i in 3:
+		_build_forest_chunk(i)
+	_build_exit_bridge()
+	if _exit_kit != null:
+		_exit_kit.free()
+		_exit_kit = null
+	return _visuals
+
+
 func _step_bull() -> void:
 	if _bull == null:      # Inferno is built (and his shaders warmed) in the background too, not at the cut
 		_bull = _build_bull(BULL_START, 0.0)
@@ -862,6 +885,14 @@ func _build_mine_hut() -> void:
 	for sx in [-1.0, 1.0]:
 		_kit_part("Beam4m", Vector3(sx * 1.18, 2.95, 4.0), Vector3(0.0, 0.0, sx * 0.78), Vector3(0.24, 0.8, 0.8))
 	_lantern(Vector3(-1.45, 2.5, 0.5), 2.2, 8.0)
+	_build_exit_bridge()
+	# the adit walls are solid (trunk-style collision circles along both sides)
+	for zi in 11:
+		for sx in [-1.0, 1.0]:
+			_add_tree(Vector2(sx * 2.25, -4.0 + float(zi) * 0.8), 0.55, 3.5)
+
+
+func _build_exit_bridge() -> void:
 	# the plank bridge out into the wood: 2 m sections with posts, a timber hand rail and a sagging rope rail each side
 	for i in 6:
 		var z2: float = 5.0 + float(i) * 2.0
@@ -872,10 +903,6 @@ func _build_mine_hut() -> void:
 			_kit_part("Chain2m", Vector3(sx * 1.12, -0.42, z2 - 1.0))
 	for sx in [-1.0, 1.0]:
 		_kit_part("Post", Vector3(sx * 1.12, 0.0, 16.0))
-	# the adit walls are solid (trunk-style collision circles along both sides)
-	for zi in 11:
-		for sx in [-1.0, 1.0]:
-			_add_tree(Vector2(sx * 2.25, -4.0 + float(zi) * 0.8), 0.55, 3.5)
 
 
 ## One piece of the mine-lift walkway kit, with the lift's own triplanar plank / timber / rusted-iron materials (local scale).
@@ -1190,14 +1217,19 @@ func _on_setup() -> void:
 	_armory_snapshot = armory.snapshot()  # before the first player event can spend a round or claim loot
 	_ammo_snapshot = [armory.active_gun().rounds, armory.active_gun().reserve]
 	_beat = Beat.SNEAK
-	_player_pos = SPAWN
-	_prev_player = SPAWN
+	_player_pos = handoff.get("surface_player", SPAWN)
+	_prev_player = _player_pos
 	_ground_y = 0.0
 	_apply_handoff_gaze(0.0, -0.04)           # first person, eyes level (keeps the gaze he had at the previous chamber's exit)
-	_player_yaw = 0.0
+	if handoff.has("surface_player"):
+		_look_yaw = float(handoff.get("yaw", 0.0))
+		_look_pitch = float(handoff.get("pitch", -0.04))
+	_player_yaw = _look_yaw
 	_rng.seed = 1886
 	if _bull == null:
 		_bull = _build_bull(BULL_START, 0.0)
+	if handoff.has("surface_bull"):
+		_bull.position = handoff["surface_bull"]
 	_engine = _loop_player(QUAD_LOOP, -7.0)
 	# life in the wood: birds on random flights (some swooping between the trunks), flocks flushing, and the ElevenLabs
 	# soundscape (ambience bed, canopy wind gusts, 3D bird calls) - founder 2026-10-10
@@ -1233,21 +1265,23 @@ func _on_beat_entered(b: int) -> void:
 			_start_show([
 				{"do": "walk", "to": bull_at, "speed": 2.2},
 				{"do": "face", "at": QUAD_POS},
-				FacilityShow._say("vo_bull_quad_reveal", 0.2),
+				{"do": "call", "fn": func() -> void: _begin_carry_line("vo_bull_quad_reveal")},
 				{"do": "reach", "at": QUAD_POS + Vector3(0.0, 1.5, 0.0), "ramp": 0.5, "hold": 0.2, "lean": 0.35},
 				{"do": "call", "fn": _reveal_quad},
 				{"do": "wait", "t": 1.2},
 				{"do": "release", "ramp": 0.5, "t": 0.4},
-				FacilityShow._say("vo_lb_quad_ok", 0.2),
-				{"do": "wait", "t": 0.5}], true)
+				{"do": "until", "pred": func() -> bool: return _hold <= 0.0},
+				{"do": "call", "fn": func() -> void: _begin_carry_line("vo_lb_quad_ok")}], true)
 			look_toward(QUAD_POS + Vector3(0.0, 1.3, 0.0), 2.2)
 		Beat.MOUNT:
 			# no blink (founder 2026-10-13 "the transitions are not smooth"): his eye climbs onto the back seat while Inferno
 			# swings onto the saddle, in one continuous move
 			_start_show([
-				FacilityShow._say("vo_bull_quad_mount", 0.15),
+				{"do": "call", "fn": _approach_quad},
+				{"do": "until", "pred": func() -> bool: return not is_gliding() and not _bull.is_walking() and _hold <= 0.0},
+				{"do": "call", "fn": func() -> void: _begin_carry_line("vo_bull_quad_mount")},
 				{"do": "call", "fn": _mount},
-				{"do": "wait", "t": 1.05}], true)
+				{"do": "until", "pred": func() -> bool: return not is_gliding() and _bull_swing.is_empty()}], true)
 		Beat.RIDE:
 			_begin_ride()
 		Beat.DROPOFF:
@@ -1271,6 +1305,13 @@ func _reveal_quad() -> void:
 	_reveal_t = 0.0
 	_sfx("ep2_leaves_pull")
 	_noise(QUAD_POS, 10.0, "leaves")
+
+
+func _approach_quad() -> void:
+	# Close the actual distance on foot before climbing; no long camera flight through the bike.
+	var passenger := QUAD_POS + Vector3(-1.4, 0.0, -1.9)
+	_glide_to(passenger, FPS_EYE_HEIGHT, maxf(0.6, _player_pos.distance_to(passenger) / 3.2))
+	_bull.walk_to(QUAD_POS + Vector3(1.4, 0.0, 0.0), 2.2)
 
 
 func _mount() -> void:
