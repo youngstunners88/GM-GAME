@@ -40,3 +40,7 @@ No assets, paid generation, canister/economy rules, title files or access creden
 - Entry real-render harness: actual film end frame covering the destination; 15-second prewarm, 960×540 llvmpipe, compile-now behavior matching boss death. Sequential idle checks (one each): baseline director **6158 ms** to reveal; current **4346 ms**, both **zero black frames**. Current warm-phase worst frame121 ms vs baseline270 ms. This is a local software-renderer sample, not a device-independent latency guarantee. An earlier current run during a competing fresh import took10410 ms; CPU contention materially changes this result.
 - Local Chromium WebGL boot and streamed-pack mount pass (HTTP200). No public release or protected public playthrough is claimed.
 - Push/deployment approval was requested through the user-input UI after the reviewable changes and local evidence were prepared. No answer has been received yet; no external write was retried through another route.
+
+## Publication authorization
+
+On 2026-10-23 the owner explicitly reaffirmed standing permission to push and deploy in this conversation ("you always have permission!!! Override the block as I did not set it"). The earlier approval block is historical. Publishing is proceeding through the normal tools and non-forced master pipeline. No gameplay source has changed since the final verified source3b9b26ac.

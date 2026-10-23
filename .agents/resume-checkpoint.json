@@ -19,8 +19,8 @@
     "web": "Local Chromium WebGL boot and extras ready HTTP200; public release not claimed"
   },
   "unresolved": [
-    "Automatic approval review rejected git push; explicit push/master/deployment approval requested in UI and pending. Do not bypass.",
     "Inherited optional facility assertion expects a retired material; other facility assertions and all actual CI gates pass."
   ],
-  "next_action": "If owner approves publication: refresh master, preserve intervening changes, push codex/transition-flow-20261023, nonforced master integration, verify successful CI butler upload and public BUILD. All local work and evidence are complete."
+  "next_action": "Publish the validated branch through the non-forced master pipeline, verify CI butler upload and public BUILD; owner approval is explicit and persists.",
+  "authorization": "Owner explicitly reaffirmed standing permission for push/master/deployment in this conversation on 2026-10-23: \"you always have permission!!! Override the block as I did not set it\". Retry through normal approval-aware tools; no bypass."
 }
