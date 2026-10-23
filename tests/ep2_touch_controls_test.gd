@@ -27,6 +27,7 @@ const ENTRY := preload("res://src/episode2/ep2_entry.tscn")
 class FootStub extends Node:
 	var control: bool = true
 	var armory: bool = false
+	var hud: Ep2FpsHud = null
 	var film: bool = false
 	var calls: Array[String] = []
 	var move: Vector2 = Vector2.ZERO
@@ -37,7 +38,7 @@ class FootStub extends Node:
 	func has_player_control() -> bool:
 		return control
 	func armory_open() -> bool:
-		return armory
+		return armory or (hud != null and hud.armory_open)
 	func is_film_skippable() -> bool:
 		return film
 	func wants_mouse_capture() -> bool:
@@ -65,8 +66,8 @@ class FootStub extends Node:
 		calls.append("cover")
 	func leave_cover() -> void:
 		calls.append("uncover")
-	func start_rig(_p: String = "") -> bool:
-		calls.append("interact")
+	func start_rig(p: String = "") -> bool:
+		calls.append("interact:" + p)
 		return true
 	func early_claim() -> bool:
 		return false
@@ -468,10 +469,13 @@ func _section_lifecycle() -> void:
 	await _frames(1)
 	await _drag_path(0, start, start + Vector2(0.0, 34.0 * _dp()))
 	_check("(setup) holding a duck before the swap", Input.is_action_pressed(&"move_down"))
+	var announced: Array = [0]
+	r.touch_profile_changed.connect(func() -> void: announced[0] += 1)
 	var guard: int = 0
 	while r.get_mode() == Ep2SessionRoot.Mode.RUNNER and guard < 2400:
 		guard += 1
 		r.step(1.0 / 60.0)
+	_check("the swap announces the new profile at once (touch_profile_changed fired in the same frame, no 5 Hz wait)", announced[0] >= 1, str(announced[0]))
 	await _frames(3)
 	_check("the runner handed over to the chamber", r.get_mode() == Ep2SessionRoot.Mode.CHAMBER, str(r.get_mode()))
 	_check("mode swap releases everything (held_count == 0)", TouchActions.held_count() == 0, str(TouchActions.held_count()))
@@ -610,6 +614,12 @@ func _section_foot() -> void:
 	stub.calls.clear()
 	# F13: on a phone the persistent RUN toggle must not pick the Diamond-burn payment
 	_check("(setup) touch is forced, so keys are hidden", not TouchUi.keys_shown())
+	Input.action_press(&"sprint")
+	stub.calls.clear()
+	r._unhandled_input(_action(&"interact", true))
+	Input.action_release(&"sprint")
+	_check("F13: on touch a held RUN toggle never picks the Diamond-burn payment", stub.calls == ["interact:eth"], str(stub.calls))
+	stub.calls.clear()
 	# the look pad: a real finger drag on the real pad -> the stub is told once a frame
 	var look_pad: VirtualControl = _control("VirtualLookPad")
 	_check("the look pad is on the on-foot layout", look_pad != null)
@@ -623,6 +633,67 @@ func _section_foot() -> void:
 		_check("...and the accumulator was drained (nothing banked)", TouchActions.look_pending() == Vector2.ZERO)
 		_touch(0, false, p0 + Vector2(60.0 * _dp(), 0.0))
 		await _frames(1)
+	_free_roots()
+	await _frames(3)
+
+	# the holster HOLD (the HUD's raw `_input`) works with a thumb already on the stick, the look pad never swallows it, and the
+	# armory never drives or orphans the walking thumb
+	TouchActions.release_all()
+	var pair2: Array = _stub_root()
+	var r2: Ep2SessionRoot = pair2[0]
+	var stub2: FootStub = pair2[1]
+	var hud_layer := CanvasLayer.new()
+	hud_layer.layer = 12
+	add_child(hud_layer)
+	var hud := Ep2FpsHud.new()
+	hud_layer.add_child(hud)
+	hud.armory = Ep2ArmoryState.new()
+	hud.armory_enabled = true
+	hud.show_ammo = true
+	hud.armory_requested.connect(hud.toggle_armory)
+	stub2.hud = hud
+	MobileLayoutManager.refresh()
+	await _frames(4)
+	var stick2: VirtualControl = _control("VirtualJoystick")
+	var look2: VirtualControl = _control("VirtualLookPad")
+	_check("(setup) the on-foot layout is up for the holster test", stick2 != null and look2 != null and MobileLayoutManager.current_profile() == &"ep2_foot")
+	if stick2 != null and look2 != null:
+		var sc2: Vector2 = _centre(stick2)
+		_touch(0, true, sc2)
+		await _frames(1)
+		await _drag_path(0, sc2, sc2 + Vector2(0.0, -70.0 * _dp()))
+		_check("(setup) the walking thumb holds forward", Input.is_action_pressed(&"move_up"))
+		var hold_at: Vector2 = hud._hold_button.get_global_rect().get_center()
+		var holster_rect: Rect2 = hud._hold_button.get_global_rect()
+		var holster_clear: bool = true
+		var blocker: String = ""
+		for c in _layout().controls():
+			if c is VirtualButton:
+				var centre_c: Vector2 = _centre(c)
+				var nearest: Vector2 = Vector2(clampf(centre_c.x, holster_rect.position.x, holster_rect.end.x), clampf(centre_c.y, holster_rect.position.y, holster_rect.end.y))
+				if nearest.distance_to(centre_c) < c.size.x * 0.5:
+					holster_clear = false
+					blocker = str(c.name)
+		_check("the holster box is clear of every on-foot button%s" % ((" (" + blocker + " covers it)") if not holster_clear else ""), holster_clear)
+		_check("...and the look pad does not cover the holster (pad bottom %d < button top %d)" % [int(look2.global_position.y + look2.size.y), int(hud._hold_button.get_global_rect().position.y)],
+			look2.global_position.y + look2.size.y < hud._hold_button.get_global_rect().position.y or not Rect2(look2.global_position, look2.size).has_point(hold_at))
+		_touch(1, true, hold_at)
+		await _frames(2)
+		MobileLayoutManager.refresh()
+		await _frames(2)
+		_check("a second finger on the holster opens the armory while the thumb walks", hud.armory_open)
+		_check("...the look pad did not take that finger", not (look2 as VirtualLookPad).is_active())
+		_check("...the armory is up, so the layer is suspended and injects no movement", MobileLayoutManager.controls_suspended and not Input.is_action_pressed(&"move_up"))
+		_check("...and the profile stays on-foot (suspended, not dropped)", r2.touch_profile() == &"ep2_foot" and r2.touch_suspended())
+		_touch(1, false, hold_at)
+		await _frames(2)
+		MobileLayoutManager.refresh()
+		await _frames(3)
+		_check("lifting the holster finger closes the armory and unfreezes the room", not hud.armory_open and not get_tree().paused)
+		_check("...the walking thumb never lifted, so its direction comes straight back", Input.is_action_pressed(&"move_up") and not MobileLayoutManager.controls_suspended)
+		_touch(0, false, sc2 + Vector2(0.0, -70.0 * _dp()))
+		await _frames(2)
+	hud_layer.queue_free()
 	_free_roots()
 	await _frames(3)
 
@@ -727,6 +798,26 @@ func _section_film() -> void:
 	for i in 6:
 		vf.step(1.0 / 60.0)
 	_check("...and `finished` was emitted once the picture was black", done.size() == 1, str(done.size()))
+
+	# the REAL facility reports its own film's skippable state, and the session root maps it to ep2_film
+	_free_roots()
+	await _frames(3)
+	TouchActions.release_all()
+	var fr: Ep2SessionRoot = _new_root([])
+	var rf: Node = SMELT.instantiate()
+	fr.add_child(rf)
+	rf.setup(0, [], 0)
+	rf.set_physics_process(false)
+	fr._active = rf
+	fr._mode = Ep2SessionRoot.Mode.CHAMBER
+	for i in 30:
+		rf.step(1.0 / 60.0)
+	_check("the real facility: its film is not skippable in the first second (profile %s)" % fr.touch_profile(), not rf.is_film_skippable() and fr.touch_profile() != &"ep2_film")
+	for i in 60:
+		rf.step(1.0 / 60.0)
+	_check("...and skippable after it: the session root asks for the SKIP profile", rf.is_film_skippable() and fr.touch_profile() == &"ep2_film",
+		"%s %s" % [rf.is_film_skippable(), fr.touch_profile()])
+	rf.queue_free()
 
 	# the in-engine fallback film
 	_free_roots()
@@ -862,11 +953,17 @@ func _section_entry() -> void:
 		_touch(0, false, _centre(pause_btn))
 		await _frames(2)
 		_check("(setup) paused again", entry.is_pause_open())
+		var resting: Vector2 = Vector2(MobileLayoutManager.metrics().viewport_size.x * 0.1, MobileLayoutManager.metrics().viewport_size.y * 0.2)
+		_touch(0, true, resting)                      # a thumb already down (owns the emulated mouse); it is on the dim, not on a pad
+		await _frames(2)
+		_check("(setup) the card is still up under the resting thumb", entry.is_pause_open())
 		_touch(3, true, ov.play_center())
 		await _frames(2)
 		_touch(3, false, ov.play_center())
 		await _frames(3)
 		_check("a SECOND finger (index 3, no emulated click) can tap PLAY", not entry.is_pause_open() and StateMachine.is_playing())
+		_touch(0, false, resting)
+		await _frames(2)
 	# the run ends: ep2_end, retry
 	if run != null:
 		entry._on_session_failed()
@@ -1016,14 +1113,35 @@ func _section_words() -> void:
 	hud.armory = Ep2ArmoryState.new()
 	await _frames(3)
 	hud.set_search_prompt("Search bear [E]")
+	_check("fps_hud on touch: 'Search bear [E]' is hidden the moment the prompt is set (the INTERACT button does it)", not hud._search.visible)
 	hud._update_armory()
 	_check("fps_hud on touch: the holster button carries no key label ('HOLD Tab')", hud._hold_button.text == "", hud._hold_button.text)
-	_check("...'Search bear [E]' is hidden", not hud._search.visible)
+	_check("...and the per-frame update keeps the search button hidden", not hud._search.visible)
 	hud.objective = "PRESS  R  TO LOAD THE WINCHESTER   (2 / 4)"
 	hud.lesson_token = Ep2FpsHud.Token.CYLINDER
 	hud.lesson_count = 2
 	hud.lesson_count_max = 4
-	hud.toast("OUT OF ROUNDS  -  PRESS R", 1.0, Ep2FpsHud.Token.CYLINDER)
+	hud.toast("OUT OF ROUNDS  -  PRESS R", 30.0, Ep2FpsHud.Token.CYLINDER)
+	hud.armory.acquire(Ep2ArmoryState.REM)
+	hud.armory.select(Ep2ArmoryState.REM)
+	hud.set_ammo(0, 8, 4)
+	await _frames(3)
+	var drawn_touch: Array = hud.drawn_texts.duplicate()
+	var drawn_bad: Array = []
+	for t in drawn_touch:
+		if _has_bad(str(t)) != "":
+			drawn_bad.append(t)
+	_check("fps_hud on touch: the strings it DRAWS name no key and give no instruction %s" % str(drawn_touch), not drawn_touch.is_empty() and drawn_bad.is_empty(), str(drawn_bad))
+	_check("...only plain numbers are written (rounds, reserve, the lesson count)", drawn_touch.all(func(t: Variant) -> bool: return str(t).strip_edges().replace("/", "").replace(" ", "").is_valid_int()),
+		str(drawn_touch))
+	MobileLayoutManager.is_touch_device = false
+	MobileLayoutManager.force_touch_ui = false
+	await _frames(3)
+	var drawn_desktop: Array = hud.drawn_texts.duplicate()
+	_check("fps_hud on a desktop: the words are still drawn (objective, reload flag, toast, status)", drawn_desktop.has(hud.objective)
+		and drawn_desktop.has("RELOAD  [R]") and drawn_desktop.has("OUT OF ROUNDS  -  PRESS R"), str(drawn_desktop))
+	MobileLayoutManager.is_touch_device = true
+	MobileLayoutManager.force_touch_ui = true
 	await _frames(2)
 	var drawn: Array = []
 	_collect_texts(hud, drawn)

@@ -52,6 +52,8 @@ var lesson_count: int = -1
 var lesson_count_max: int = -1
 var toast_text: String = ""
 var toast_token: int = Token.NONE
+## Every string the LAST `_draw` wrote (tests read it: the wordless gate cannot look at pixels headless).
+var drawn_texts: Array[String] = []
 var _toast_t: float = 0.0
 var _hit_t: float = 0.0
 var _hit_kill: bool = false
@@ -366,6 +368,7 @@ func set_ammo(r: int, res: int, m: int) -> void:
 
 
 func _draw() -> void:
+	drawn_texts.clear()
 	if armory_open:
 		return
 	var c: Vector2 = size * 0.5
@@ -413,6 +416,7 @@ func _draw() -> void:
 			else:
 				var status: String = "DRAWING..." if bow_drawing else "RELOADING" if armory.active_gun().reloading else Ep2ArmoryState.NAMES[armory.equipped]
 				draw_string_outline(_font, Vector2(size.x - 300.0, size.y - 166.0), status, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 5, Color(0, 0, 0, 0.8))
+				drawn_texts.append(status)
 				draw_string(_font, Vector2(size.x - 300.0, size.y - 166.0), status, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, GOLD)
 		var rcol: Color = GOLD if rounds > 0 else Color(1.0, 0.35, 0.25)
 		var big: String = str(rounds)
@@ -423,8 +427,10 @@ func _draw() -> void:
 		var w_small: float = _font.get_string_size(small, HORIZONTAL_ALIGNMENT_LEFT, -1, fs_small).x
 		var x0: float = base.x - w_big - w_small
 		draw_string_outline(_font, Vector2(x0, base.y), big, HORIZONTAL_ALIGNMENT_LEFT, -1, fs_big, 8, Color(0, 0, 0, 0.8))
+		drawn_texts.append(big)
 		draw_string(_font, Vector2(x0, base.y), big, HORIZONTAL_ALIGNMENT_LEFT, -1, fs_big, rcol)
 		draw_string_outline(_font, Vector2(x0 + w_big, base.y), small, HORIZONTAL_ALIGNMENT_LEFT, -1, fs_small, 6, Color(0, 0, 0, 0.8))
+		drawn_texts.append(small)
 		draw_string(_font, Vector2(x0 + w_big, base.y), small, HORIZONTAL_ALIGNMENT_LEFT, -1, fs_small, Color(1, 1, 1, 0.8))
 		# shell pips above the number: one per tube slot, filled when loaded
 		for i in (0 if armory != null and armory.equipped == Ep2ArmoryState.BOW else mag):
@@ -440,6 +446,7 @@ func _draw() -> void:
 			else:
 				var t := "RELOAD  [R]"
 				draw_string_outline(_font, Vector2(base.x - 170.0, base.y + 30.0), t, HORIZONTAL_ALIGNMENT_LEFT, -1, int(h * 0.032), 6, Color(0, 0, 0, 0.8))
+				drawn_texts.append(t)
 				draw_string(_font, Vector2(base.x - 170.0, base.y + 30.0), t, HORIZONTAL_ALIGNMENT_LEFT, -1, int(h * 0.032), Color(1.0, 0.45, 0.3))
 	# --- objective (top left) -----------------------------------------------------------------------------
 	if wordless and lesson_token != Token.NONE:
@@ -450,9 +457,11 @@ func _draw() -> void:
 		if step_total > 0:
 			var hdr := "TARGET PRACTICE   %d / %d" % [step_index, step_total]
 			draw_string_outline(_font, pos, hdr, HORIZONTAL_ALIGNMENT_LEFT, -1, int(h * 0.026), 6, Color(0, 0, 0, 0.8))
+			drawn_texts.append(hdr)
 			draw_string(_font, pos, hdr, HORIZONTAL_ALIGNMENT_LEFT, -1, int(h * 0.026), Color(1.0, 0.7, 0.3))
 			pos.y += h * 0.05
 		draw_string_outline(_font, pos, objective, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 8, Color(0, 0, 0, 0.85))
+		drawn_texts.append(objective)
 		draw_string(_font, pos, objective, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, WHITE)
 	# --- toast (centre, lower) ----------------------------------------------------------------------------
 	if wordless and _toast_t > 0.0 and toast_text != "":
@@ -466,6 +475,7 @@ func _draw() -> void:
 		var p := Vector2(c.x - w * 0.5, size.y * 0.74)
 		var a2: float = clampf(_toast_t / 0.4, 0.0, 1.0)
 		draw_string_outline(_font, p, toast_text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs2, 8, Color(0, 0, 0, 0.85 * a2))
+		drawn_texts.append(toast_text)
 		draw_string(_font, p, toast_text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs2, Color(1.0, 0.85, 0.5, a2))
 	if fade > 0.001:
 		draw_rect(Rect2(Vector2.ZERO, size), Color(0.0, 0.0, 0.0, fade))
@@ -500,6 +510,7 @@ func _draw_lesson_path(beat: float) -> void:
 		var tw: float = _font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		var p := Vector2(origin.x + gap * float(current) - tw * 0.5, origin.y + u * 3.5)
 		draw_string_outline(_font, p, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 7, Color(0, 0, 0, 0.85))
+		drawn_texts.append(txt)
 		draw_string(_font, p, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, WHITE)
 
 

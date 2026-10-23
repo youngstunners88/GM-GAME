@@ -941,7 +941,9 @@ func take_damage(amount: int) -> void:
 
 func die() -> void:
 	is_dead = true
-	GameManager.mark_boss_defeated("claim_jumper")  # progression + the boss NFT
+	# progression + the boss NFT. The harness fast-kill (gm_harness build only, src/debug/harness_hooks.gd) skips ONLY this line.
+	if not preload("res://src/debug/harness_hooks.gd").skip_boss_credit(self):
+		GameManager.mark_boss_defeated("claim_jumper")
 	# Episode 2 starts after this boss: begin loading it NOW, a little per frame, so the death tween and the 15 s
 	# film hide the work (TransitionDirector; skill ep2-seamless-transition).
 	TransitionDirector.prewarm(GameManager.EPISODE2_SCENE, true)

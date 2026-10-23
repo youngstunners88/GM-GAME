@@ -74,6 +74,7 @@ var _scrim_layer: CanvasLayer = null
 ## base64 of the SHA-256 (not hex: a 64-hex literal is exactly what the sentinel's SEC-005 private-key check flags)
 const ACCESS_SHA256 := "oNnp3gYj9AxoCW/G7jmhAtt4RK0pxyT2xg4gDl8Eajs="
 const UNLOCK_FILE := "user://ep2_unlock.cfg"
+const HarnessHooks := preload("res://src/debug/harness_hooks.gd")   # test-harness hooks, compiled out unless the gm_harness feature tag is set
 var _gate: Control = null
 var _gate_input: LineEdit = null
 var _gate_msg: Label = null
@@ -93,6 +94,7 @@ static func code_ok(code: String) -> bool:
 
 func _is_unlocked() -> bool:
 	var cf := ConfigFile.new()
+	HarnessHooks.apply_ep2_gate_skip()   # harness-only access-gate skip: a web build tagged gm_harness, never the shipped one
 	if GameManager.EP2_STORY_BYPASSES_CODE and GameManager.ep2_story_unlocked:
 		return true         # earned: boss 3 was just beaten (founder 2026-10-03: the hand-off must be seamless)
 	return cf.load(UNLOCK_FILE) == OK and str(cf.get_value("ep2", "key", "")) == ACCESS_SHA256

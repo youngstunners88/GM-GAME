@@ -11,6 +11,15 @@ L=$(grep -n "cat > export_presets.cfg" .github/workflows/export-game.yml | cut -
 awk -v L="$L" 'NR>L && /^          EOF$/{exit} NR>L{sub(/^          /,""); print}' .github/workflows/export-game.yml \
   | sed 's#export_path="web/game/index.html"#export_path="web_verify/game/index.html"#' > export_presets.cfg
 grep -q 'thread_support=false' export_presets.cfg || { echo "✗ preset lost thread_support=false"; exit 1; }
+# OPT-IN test-harness build: `GM_HARNESS=1 bash scripts/ep2-local-export.sh` adds the custom feature tag gm_harness, which
+# switches on the two probe hooks in src/debug/harness_hooks.gd (?ep2gate=skip, ?bosskill=1). Off by default, so the default
+# build stays CI-identical (pack-gate-fresh.sh and ship-to-master call this script). This is the ONLY place the tag is ever
+# written; scripts/check-harness-hooks.py fails CI if the CI preset heredoc or export-web.sh ever carries it.
+if [ "${GM_HARNESS:-0}" = "1" ]; then
+  sed -i 's#custom_features=""#custom_features="gm_harness"#' export_presets.cfg
+  grep -q 'custom_features="gm_harness"' export_presets.cfg || { echo "✗ gm_harness tag did not land in the preset"; exit 1; }
+  echo "⚠ HARNESS BUILD (custom_features=gm_harness): probe hooks are live. NOT CI-identical - never ship it, never size-gate it."
+fi
 mkdir -p web_verify/game && rm -f web_verify/game/index.pck
 # import with --import, twice: "--editor --quit" can quit before its scan thread finishes ("Scan thread aborted"), leaving
 # images unimported -> "No loader found" + an export segfault (fresh-clone gate, 2026-10-19); the 2nd pass imports the textures

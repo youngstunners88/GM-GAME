@@ -237,5 +237,19 @@ func _ready() -> void:
 		r5.get_mode() == Ep2SessionRoot.Mode.CHAMBER)
 	r5.queue_free()
 
+	# 17. Touch hand-over (mobile audit F1 / F3): the session root IS the touch-profile source, joins the group in _ready, and the
+	#     touch-only verbs reach the runner. (tests/ep2_touch_controls_test drives the real fingers; this pins the contract.)
+	var r6 := _mk(_plan_one())
+	_check("the session root is in the touch group from _ready", r6.is_in_group(&"touch_controls_wanted"))
+	_check("idle (not started) -> no touch controls", r6.touch_profile() == &"none")
+	r6.start()
+	_check("running the cart -> the ep2_runner profile", r6.touch_profile() == &"ep2_runner")
+	var swing := InputEventAction.new()
+	swing.action = &"ep2_touch_swipe"
+	swing.pressed = true
+	r6._unhandled_input(swing)
+	_check("the touch-only pickaxe verb reaches the runner", r6.get_active().is_swiping())
+	r6.queue_free()
+
 	print("EP2_SESSION_ROOT: %s" % ("ALL PASS" if _fail == 0 else "%d FAILURE(S)" % _fail))
 	get_tree().quit(_fail)

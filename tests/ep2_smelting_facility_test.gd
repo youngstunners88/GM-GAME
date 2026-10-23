@@ -413,6 +413,46 @@ func _ready() -> void:
 	var yaw0: float = g.get_look_yaw()
 	root2._route_free_roam(mm)
 	_check("session root: mouse motion turns the view", g.get_look_yaw() < yaw0 - 0.2)
+	# --- touch regressions (mobile audit F5 / F6 / F8): the keyboard map above is unchanged, and the touch verbs are separate ---
+	var fx0: Vector2 = g._move_input
+	var act := InputEventAction.new()
+	act.action = &"move_right"
+	act.pressed = true
+	root2._unhandled_input(act)
+	act.pressed = false
+	root2._unhandled_input(act)
+	var act_down := InputEventAction.new()
+	act_down.action = &"move_down"
+	act_down.pressed = true
+	root2._unhandled_input(act_down)
+	_check("F5: move_* InputEventAction (the touch stick) never walks him forward or takes cover", g._move_input == fx0 and not g._in_cover, str(g._move_input))
+	var tj := InputEventAction.new()
+	tj.action = &"ep2_touch_jump"
+	tj.pressed = true
+	g._vel_y = 0.0
+	g._player_pos.y = 0.0
+	root2._unhandled_input(tj)
+	_check("F6: the touch Jump button (ep2_touch_jump) jumps", g._vel_y > 0.0, str(g._vel_y))
+	g._vel_y = 0.0
+	g._player_pos.y = 0.0
+	var w_key := InputEventKey.new()
+	w_key.physical_keycode = KEY_W
+	w_key.pressed = true
+	root2._unhandled_input(w_key)
+	_check("F6: the W key is forward, never jump", g._vel_y == 0.0, str(g._vel_y))
+	var shots0: int = g.get_gun().shots_fired
+	var emu := InputEventMouseButton.new()
+	emu.button_index = MOUSE_BUTTON_LEFT
+	emu.pressed = true
+	emu.device = InputEvent.DEVICE_ID_EMULATION
+	var emu_yaw0: float = g.get_look_yaw()
+	var emu_move := InputEventMouseMotion.new()
+	emu_move.relative = Vector2(200.0, 0.0)
+	emu_move.device = InputEvent.DEVICE_ID_EMULATION
+	root2._unhandled_input(emu)
+	root2._unhandled_input(emu_move)
+	_check("F8: a finger's emulated mouse neither fires, looks nor captures the pointer",
+		g.get_gun().shots_fired == shots0 and is_equal_approx(g.get_look_yaw(), emu_yaw0) and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED)
 	root2._active = null
 	root2.queue_free()
 	g.queue_free()
