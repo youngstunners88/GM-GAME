@@ -27,7 +27,9 @@ Use when the user asks to:
 ## Current Mobile State (rewritten 2026-10-13)
 
 **Touch controls are owned by skill `gm-game-mobile-touch-experience`** — read it first for anything about the
-joystick, thumb buttons, layouts, safe areas, orientation or haptics. Summary:
+joystick, thumb buttons, layouts, safe areas, orientation or haptics. Mobile skills added 2026-10-23 (founder: "players use finger movements", no keys written on screen):
+`gm-game-blaze-rush-mobile` (Blaze Rush, all 3 stages), `ep2-mobile-touch` (Episode 2 runner + hideout), `gm-game-mobile-seamless-transitions` (Episode 1 -> 2 hand-off and the other cuts),
+`gm-game-touch-flow-verification` (how to prove a touch flow; what needs a real phone). Plain-words device checklist for the founder: `docs/MOBILE_TEST_STEPS_2026-10-23.md`. Summary:
 - `src/input/mobile/` holds the analog `VirtualJoystick`, `VirtualButton`s, per-device layout scenes and the
   `MobileLayoutManager` autoload. Controls press ordinary InputMap actions (`TouchActions`); gameplay never knows.
 - `MobileInputHandler` (`src/autoload/mobile_input_handler.gd`) is only a thin shim (`is_mobile`,
@@ -63,7 +65,7 @@ window/handheld/orientation=6  # landscape
 ### Mobile Aspect Ratio Handling:
 - **Landscape phones**: 16:9 or 19.5:9 — slight horizontal stretch, acceptable
 - **Tablets**: 4:3 or 16:10 — more letterboxing, but `expand` fills the screen
-- **Portrait**: orientation is locked to landscape (setting 6), but if portrait is desired, the entire UI needs redesign
+- **Portrait**: `window/handheld/orientation=6` is the sensor setting and the web shell allows BOTH orientations, so portrait is real. Blaze Rush frames itself for portrait (`BlazeFraming`); the 3D Episode 2 runner/hideout cannot, so it pauses behind a drawn "turn your phone" cue (`ep2_rotate`).
 
 ### Improvement: Adaptive Layout
 ```gdscript

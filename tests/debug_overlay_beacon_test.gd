@@ -17,7 +17,7 @@ func _ready() -> void:
 	# --- beacon schema (scalars only) -------------------------------------------------------------------------
 	var v: Dictionary = DebugOverlay._beacon_value()
 	for k: String in ["t", "build", "harness", "state", "paused", "time_scale", "scene", "td", "td_frozen", "held",
-			"touch", "frames", "avg_ms", "worst_ms", "worst_all_ms", "mem_mb", "mem_peak_mb", "tex_mb", "tex_peak_mb"]:
+			"touch", "win", "frames", "avg_ms", "worst_ms", "worst_all_ms", "mem_mb", "mem_peak_mb", "tex_mb", "tex_peak_mb"]:
 		_check("beacon has '%s'" % k, v.has(k))
 	var touch: Dictionary = v.get("touch", {})
 	for k: String in ["shown", "susp", "profile", "layout", "held"]:
@@ -65,6 +65,11 @@ func _ready() -> void:
 	_check("words: a Label under a hidden branch is not", not ("BRANCH WORD" in texts))
 	_check("words: a Label under a hidden CanvasLayer is not", not ("LAYER WORD" in texts))
 	_check("words: a secret LineEdit reports only its placeholder", "code" in texts and not ("hunter2" in texts))
+	var seen_rect: Array = []
+	for w: Dictionary in words:
+		if str(w["text"]) == "A BUTTON":
+			seen_rect = w.get("rect", [])
+	_check("words: a Control entry carries a window-pixel rect [x,y,w,h]", seen_rect.size() == 4 and int(seen_rect[2]) > 0 and int(seen_rect[3]) > 0)
 	_check("words: each entry has path + text", words.size() > 0 and (words[0] as Dictionary).has("path") and (words[0] as Dictionary).has("text"))
 	DebugOverlay._label.text = "OWN LABEL TEXT"          # give the overlay's own label something to (wrongly) report
 	DebugOverlay._label.visible = true

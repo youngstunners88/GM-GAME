@@ -8,8 +8,8 @@ feature tag `gm_harness`, which only `GM_HARNESS=1 scripts/ep2-local-export.sh` 
 
   H1  a harness query parameter (ep2gate, bosskill) is mentioned in any src/ .gd file except harness_hooks.gd
   H2  a function in harness_hooks.gd that reads one is missing OS.has_feature("web") or OS.has_feature("gm_harness")
-  H3  allowed() stops requiring BOTH web and tag before it reads the page URL, or JavaScriptBridge.eval appears anywhere
-      in the file except the single literal (no interpolation) eval inside _search(), which only allowed() may call
+  H3  gated_value() stops requiring BOTH web and tag before it reads the page URL, or JavaScriptBridge.eval appears
+      anywhere in the file except the single literal (no interpolation) eval inside _search(), which only gated_value() may call
   H4  the hook API is called from a place other than its one sanctioned call site
       (apply_ep2_gate_skip -> ep2_entry.gd, kill_boss_after -> level_base.gd, skip_boss_credit -> claim_jumper.gd),
       or the functions that set/read the no-credit mark lose their tag / gate
@@ -103,14 +103,16 @@ for name, body in fns.items():
             fail('H2', f'{HOOKS}:{name}() reads a harness parameter without OS.has_feature("web")')
 
 # ---- H3 -----------------------------------------------------------------------------------------------------------
-allowed = fns.get('allowed', '')
-m_gate = re.search(r'if not \(web and tag\):\s*\n\s*return false', allowed)
-i_search = allowed.find('_search()')
+gate = fns.get('gated_value', '')
+m_gate = re.search(r'if not \(web and tag\):\s*\n\s*return ""', gate)
+i_search = gate.find('_search()')
 if not m_gate or i_search < 0 or m_gate.start() > i_search:
-    fail('H3', 'allowed() must `if not (web and tag): return false` BEFORE it calls _search()')
+    fail('H3', 'gated_value() must `if not (web and tag): return ""` BEFORE it calls _search()')
+if 'gated_value(' not in fns.get('allowed', ''):
+    fail('H3', 'allowed() must go through gated_value()')
 for name, body in fns.items():
-    if name != 'allowed' and '_search(' in re.sub(r'(?m)^(?:static\s+)?func\s+_search.*$', '', body) and name != '_search':
-        fail('H3', f'{name}() calls _search(); only allowed() may read the page URL')
+    if name != 'gated_value' and '_search(' in re.sub(r'(?m)^(?:static\s+)?func\s+_search.*$', '', body) and name != '_search':
+        fail('H3', f'{name}() calls _search(); only gated_value() may read the page URL')
 evals = [(n, b) for n, b in fns.items() if 'JavaScriptBridge.eval' in b]
 if [n for n, _ in evals] != ['_search']:
     fail('H3', f'JavaScriptBridge.eval must appear only in _search(); found in {[n for n, _ in evals]}')
@@ -142,8 +144,9 @@ if 'OS.has_feature("gm_harness")' not in fns.get('skip_boss_credit', ''):
 for name, body in fns.items():
     if 'set_meta(META_NO_CREDIT' in body and name != '_kill_boss':
         fail('H4', f'{name}() sets the no-credit mark; only _kill_boss() may')
-if not re.search(r'level_index != KILL_LEVEL or not boss_kill_requested\(\)', fns.get('kill_boss_after', '')):
-    fail('H4', 'kill_boss_after() must return unless boss_kill_requested() (the gate) and the level is the stage-3 boss')
+kba = fns.get('kill_boss_after', '')
+if not (re.search(r'boss_kill_delay_s\(\)', kba) and re.search(r'level_index != KILL_LEVEL or delay_s <= 0\.0', kba)):
+    fail('H4', 'kill_boss_after() must return unless the gated delay is positive and the level is the stage-3 boss')
 for name, body in fns.items():
     if '_kill_boss(' in re.sub(r'(?m)^static func _kill_boss.*$', '', body) and name not in ('kill_boss_after', '_kill_boss'):
         fail('H4', f'{name}() calls _kill_boss(); only kill_boss_after() may (after the gate)')

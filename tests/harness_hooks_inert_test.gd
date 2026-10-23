@@ -37,6 +37,15 @@ func _ready() -> void:
 	_check("gate: wrong value -> refused", not HarnessHooks.allowed(true, true, "ep2gate", "no", q))
 	_check("gate: param absent -> refused", not HarnessHooks.allowed(true, true, "ep2gate", "skip", "?debug=1"))
 	_check("gate: bosskill=0 -> refused", not HarnessHooks.allowed(true, true, "bosskill", "1", "?bosskill=0"))
+	_check("gate: an empty `wanted` never matches an absent parameter", not HarnessHooks.allowed(true, true, "nope", "", "?debug=1"))
+	_check("gated_value: web+tag returns the value", HarnessHooks.gated_value(true, true, "bosskill", "?bosskill=8") == "8")
+	_check("gated_value: no tag returns \"\" (value hidden)", HarnessHooks.gated_value(true, false, "bosskill", "?bosskill=8") == "")
+	_check("gated_value: not web returns \"\"", HarnessHooks.gated_value(false, true, "bosskill", "?bosskill=8") == "")
+	_check("kill_delay: 8 -> 8 s", HarnessHooks.kill_delay("8") == 8.0)
+	_check("kill_delay: 1 -> 1 s", HarnessHooks.kill_delay("1") == 1.0)
+	_check("kill_delay: 999 clamps to the max", HarnessHooks.kill_delay("999") == float(HarnessHooks.KILL_DELAY_MAX_S))
+	_check("kill_delay: 0, -3, abc, empty -> no kill",
+		HarnessHooks.kill_delay("0") == 0.0 and HarnessHooks.kill_delay("-3") == 0.0 and HarnessHooks.kill_delay("abc") == 0.0 and HarnessHooks.kill_delay("") == 0.0)
 	_check("param(): plain, no leading ?", HarnessHooks.param("a=b&c=d", "c") == "d")
 	_check("param(): value containing '='", HarnessHooks.param("?k=a=b", "k") == "a=b")
 	_check("param(): prefix of another key is not a match", HarnessHooks.param("?ep2gateX=skip", "ep2gate") == "")
@@ -44,6 +53,7 @@ func _ready() -> void:
 	# --- 2. the real wrappers in THIS build -----------------------------------------------------------------------
 	_check("real: ep2_gate_skip_requested() is false", not HarnessHooks.ep2_gate_skip_requested())
 	_check("real: boss_kill_requested() is false", not HarnessHooks.boss_kill_requested())
+	_check("real: boss_kill_delay_s() is 0", HarnessHooks.boss_kill_delay_s() == 0.0)
 
 	# --- 3. hook (a): the access-code gate stays shut -------------------------------------------------------------
 	GameManager.ep2_story_unlocked = false
@@ -76,12 +86,12 @@ func _ready() -> void:
 	boss2.set_script(FAKE_BOSS)
 	boss2.add_to_group("boss")
 	add_child(boss2)
-	await HarnessHooks.kill_boss_after(get_tree(), 0.0, 3, "harness_fake_boss.gd")
+	await HarnessHooks.kill_boss_after(get_tree(), 3, "harness_fake_boss.gd")
 	for _i in 4:
 		await get_tree().process_frame
 	_check("hook b: kill_boss_after(stage 3) did NOT kill the boss without the tag", boss2.died == 0 and not boss2.is_dead)
 	_check("hook b: ...and did not mark it", not boss2.has_meta(HarnessHooks.META_NO_CREDIT))
-	await HarnessHooks.kill_boss_after(get_tree(), 0.0, 1, "harness_fake_boss.gd")
+	await HarnessHooks.kill_boss_after(get_tree(), 1, "harness_fake_boss.gd")
 	_check("hook b: other stages never kill either", boss2.died == 0)
 	boss2.free()
 

@@ -92,60 +92,165 @@ export function isTouchProfile(profile) {
 }
 
 /** `browser.newContext()` options for a profile. */
-export function contextOptions(profile) {
+export function contextOptions(profile, { dpr, size } = {}) {
   const p = typeof profile === 'string' ? PROFILES[profile] : profile;
   if (!p) throw new Error(`pw.mjs: unknown profile ${String(profile)}`);
-  return { viewport: { width: p.w, height: p.h }, deviceScaleFactor: p.dpr, hasTouch: p.touch, isMobile: p.mobile };
+  const [w, h] = size || [p.w, p.h];
+  return { viewport: { width: w, height: h }, deviceScaleFactor: dpr || p.dpr, hasTouch: p.touch, isMobile: p.mobile };
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// 3. Page-side hooks (installed BEFORE the game loads).
+// 3. Page-side hooks (installed BEFORE the game loads). Everything is stamped with performance.now() so rAF gaps,
+//    long tasks, game log lines, StateMachine changes and luminance samples all share ONE clock.
 //    window.__states  : StateMachine postMessage beacon (state_machine.gd), names in order
-//    window.__stateT  : [[performance.now(), name], ...] the same, timestamped
+//    window.__stateT  : [[t, name], ...] the same, timestamped
 //    window.__gm      : latest DebugOverlay beacon object (needs ?debug=1 or ?debug=beacon), window.__gmAt = its time
+//    window.__gmLog   : [[t, {scene,state,td,held,shown,susp,profile,worst_ms,mem_mb}], ...] every beacon (<= 4000)
 //    window.__gmWords : latest on-demand visible-text list (see requestWords)
-//    window.__fr      : rAF frame recorder {n,max,gaps:[[t,dt]>100ms],recent:[last 60 dt]}
+//    window.__fr      : rAF frame recorder {n,max,gaps:[[t,dt]>40ms],all:[[t,dt]...],recent:[last 60 dt]}
+//    window.__logT    : [[t, text], ...] console lines starting [TD] [EP2] [HARNESS] [MEM] [SceneRouter] [Touch] [Blaze]
+//    window.__mem     : [[t, wasmHeapBytes, jsHeapUsedBytes], ...] once a second (peak = max)
+//    window.__long    : [[startTime, duration], ...] PerformanceObserver 'longtask' entries (>50 ms main-thread tasks)
+//    window.__lum     : [[t, mean luminance 0..1], ...] opt-in (installHarnessHooks(page,{lum:true})): three 1-px rows of the
+//                       WebGL framebuffer are read right after each Godot rAF callback, in the same task, so the canvas is
+//                       not yet cleared. A luminance < 0.08 is a "black frame".
 // ---------------------------------------------------------------------------------------------------------------
-const HARNESS_INIT = () => {
+const HARNESS_INIT = (opts) => {
+  const now = () => Math.round(performance.now() * 10) / 10;
   window.__states = [];
   window.__stateT = [];
   window.__gm = null;
   window.__gmAt = 0;
+  window.__gmLog = [];
   window.__gmWords = null;
   window.__gmWordsReq = 0;
+  window.__logT = [];
+  window.__long = [];
+  window.__lum = [];
   window.addEventListener('message', (e) => {
     try {
       const d = e.data;
       if (!d || typeof d !== 'object') return;
       if (d.type === 'state') {
         window.__states.push(String(d.value));
-        window.__stateT.push([Math.round(performance.now()), String(d.value)]);
+        window.__stateT.push([now(), String(d.value)]);
       } else if (d.type === 'gm') {
         window.__gm = d.value;
         window.__gmAt = performance.now();
+        const v = d.value || {};
+        const t = v.touch || {};
+        if (window.__gmLog.length < 4000) {
+          window.__gmLog.push([now(), { scene: v.scene, state: v.state, td: v.td, held: t.held, heldActions: v.held,
+            shown: t.shown, susp: t.susp, profile: t.profile, worst_ms: v.worst_ms, mem_mb: v.mem_mb, tex_mb: v.tex_mb }]);
+        }
       } else if (d.type === 'gm_words') {
         window.__gmWords = d.value;
       }
     } catch (_) { /* ignore */ }
   });
-  window.__fr = { last: performance.now(), n: 0, max: 0, gaps: [], recent: [] };
+  // game log lines on the shared clock
+  const keep = /^\[(TD|EP2|HARNESS|MEM|SceneRouter|Touch|Blaze)\]/;
+  for (const m of ['log', 'info', 'warn']) {
+    const orig = console[m].bind(console);
+    console[m] = (...args) => {
+      try { const t = String(args[0]); if (keep.test(t) && window.__logT.length < 20000) window.__logT.push([now(), t.slice(0, 200)]); } catch (_) { /* ignore */ }
+      return orig(...args);
+    };
+  }
+  try {
+    new PerformanceObserver((list) => {
+      for (const e of list.getEntries()) window.__long.push([Math.round(e.startTime * 10) / 10, Math.round(e.duration * 10) / 10]);
+    }).observe({ type: 'longtask', buffered: true });
+  } catch (_) { /* longtask unsupported */ }
+  // peak memory: the WASM heap (hook the constructor BEFORE the engine creates it) + the JS heap where Chromium exposes it
+  window.__mem = [];
+  try {
+    const OrigMem = WebAssembly.Memory;
+    window.__wasmMems = [];
+    WebAssembly.Memory = class extends OrigMem { constructor(...a) { super(...a); window.__wasmMems.push(this); } };
+    // Godot 4.3's non-threaded web build EXPORTS the memory from the module instead of constructing it in JS
+    for (const fn of ['instantiate', 'instantiateStreaming']) {
+      const orig = WebAssembly[fn];
+      if (!orig) continue;
+      WebAssembly[fn] = function (...a) {
+        return orig.apply(this, a).then((r) => {
+          try { const m = (r.instance || r).exports.memory; if (m) window.__wasmMems.push(m); } catch (_) { /* ignore */ }
+          return r;
+        });
+      };
+    }
+  } catch (_) { /* leave it */ }
+  setInterval(() => {
+    try {
+      let wasm = 0;
+      for (const m of window.__wasmMems || []) wasm = Math.max(wasm, m.buffer.byteLength);
+      const jh = performance.memory ? performance.memory.usedJSHeapSize : 0;
+      if (window.__mem.length < 4000) window.__mem.push([now(), wasm, jh]);
+    } catch (_) { /* ignore */ }
+  }, 1000);
+  window.__fr = { last: performance.now(), n: 0, max: 0, gaps: [], all: [], recent: [] };
+  const origRaf = window.requestAnimationFrame.bind(window);
+  // our own recorder uses the ORIGINAL rAF
   const tick = (t) => {
     const fr = window.__fr;
     const dt = t - fr.last;
     fr.last = t;
     fr.n++;
     if (dt > fr.max) fr.max = dt;
-    if (dt > 100) fr.gaps.push([Math.round(t), Math.round(dt)]);
+    if (dt > 40 && fr.gaps.length < 20000) fr.gaps.push([Math.round(t), Math.round(dt)]);
+    if (fr.all.length < 40000) fr.all.push([Math.round(t), Math.round(dt)]);
     fr.recent.push(dt);
     if (fr.recent.length > 60) fr.recent.shift();
-    requestAnimationFrame(tick);
+    origRaf(tick);
   };
-  requestAnimationFrame(tick);
+  origRaf(tick);
+  if (opts && opts.lum) {
+    let lastS = 0;
+    let cv = null;
+    let cx = null;
+    let glc = null;
+    let strip = null;
+    const sample = () => {
+      const t = performance.now();
+      if (t - lastS < (opts.lumEveryMs || 90)) return;
+      lastS = t;
+      const c = document.querySelector('canvas');
+      if (!c || !c.width) return;
+      try {
+        // Three 1-px rows of the default framebuffer via readPixels: the frame was just drawn (same task, buffer not yet
+        // presented/cleared) and this avoids drawImage()'s full-frame copy, which under SwiftShader costs more than the
+        // frame itself. Skipped (not black!) when an off-screen FBO is bound.
+        if (!glc) glc = c.getContext('webgl2') || c.getContext('webgl');
+        if (!glc) return;
+        const w = glc.drawingBufferWidth;
+        const h = glc.drawingBufferHeight;
+        if (!strip || strip.length !== w * 4) strip = new Uint8Array(w * 4);
+        // Godot leaves an off-screen FBO bound, so point ONLY the READ binding (WebGL2) at the default framebuffer and
+        // put it back afterwards: the engine's own (draw) binding and its state cache are untouched.
+        const prevRead = glc.READ_FRAMEBUFFER ? glc.getParameter(glc.READ_FRAMEBUFFER_BINDING) : glc.getParameter(glc.FRAMEBUFFER_BINDING);
+        if (!glc.READ_FRAMEBUFFER && prevRead !== null) return;       // WebGL1 with an FBO bound: skip, never rebind
+        if (glc.READ_FRAMEBUFFER) glc.bindFramebuffer(glc.READ_FRAMEBUFFER, null);
+        let sum = 0;
+        let n = 0;
+        try {
+          for (const f of [0.25, 0.5, 0.75]) {
+            glc.readPixels(0, Math.floor(h * f), w, 1, glc.RGBA, glc.UNSIGNED_BYTE, strip);
+            for (let i = 0; i < strip.length; i += 4 * 4) { sum += 0.2126 * strip[i] + 0.7152 * strip[i + 1] + 0.0722 * strip[i + 2]; n++; }
+          }
+        } finally {
+          if (glc.READ_FRAMEBUFFER) glc.bindFramebuffer(glc.READ_FRAMEBUFFER, prevRead);
+        }
+        if (window.__lum.length < 20000) window.__lum.push([Math.round(t * 10) / 10, Math.round(sum / n / 255 * 10000) / 10000]);
+      } catch (_) { /* lost context */ }
+    };
+    // wrap the page's rAF so the sample is taken in the SAME task, right after the engine's own frame callback
+    window.requestAnimationFrame = (cb) => origRaf((ts) => { try { cb(ts); } finally { sample(); } });
+  }
 };
 
-/** Install the page-side hooks above. Call before `page.goto`. */
-export function installHarnessHooks(page) {
-  return page.addInitScript(HARNESS_INIT);
+/** Install the page-side hooks above. Call before `page.goto`. opts: {lum:bool, lumEveryMs:number} */
+export function installHarnessHooks(page, opts = {}) {
+  return page.addInitScript(HARNESS_INIT, opts);
 }
 
 /** Latest `window.__gm` beacon object, or null if the game has not posted one (is ?debug=1 on, game top-level?). */
@@ -193,7 +298,7 @@ export function frameGaps(page) {
 // ---------------------------------------------------------------------------------------------------------------
 export const GODOT_ERROR_RE = /USER SCRIPT ERROR|SCRIPT ERROR|Parse Error|Failed to instantiate an autoload|The InputMap action|SharedArrayBuffer/i;
 // PRE-EXISTING noise, matched exactly so any NEW error still fails a gate.
-export const BENIGN_RE = /Can't change this state while flushing queries|area_set_shape_disabled|USER WARNING|at: push_warning|No loader found for resource: res:\/\/src\/assets\/(sounds|music)\/|at: _load \(core\/io\/resource_loader|Blocking on the main thread|ERR_CONNECTION_RESET|Failed to fetch|godot_js_fetch|posthog|ERR_NAME_NOT_RESOLVED|ERR_TUNNEL|net::ERR/i;
+export const BENIGN_RE = /Can't change this state while flushing queries|area_set_shape_disabled|USER WARNING|at: push_warning|No loader found for resource: res:\/\/src\/assets\/(sounds|music)\/|at: _load \(core\/io\/resource_loader|at: open \(core\/io\/resource_format_binary|Blocking on the main thread|ERR_CONNECTION_RESET|Failed to fetch|godot_js_fetch|posthog|ERR_NAME_NOT_RESOLVED|ERR_TUNNEL|net::ERR/i;
 const DEFAULT_PREFIXES = ['[Touch]', '[TD]', '[SceneRouter]', '[EP2]', '[Blaze]'];
 
 /**
@@ -366,15 +471,16 @@ export function multiTouch(cdp, { dwellMs = 100, stepMs = 16 } = {}) {
 /**
  * @param browser  from launch()
  * @param key      key of PROFILES
+ * @param opts     {dwellMs, dpr (override the profile's deviceScaleFactor), hooks:{lum,lumEveryMs}} (hooks -> installHarnessHooks)
  * @returns {{context, page, cdp, touch:boolean, profile, mt: ReturnType<typeof multiTouch>|null}}
  *          `cdp`/`mt` are null on the desktop profile.
  */
-export async function newProfilePage(browser, key, { dwellMs } = {}) {
+export async function newProfilePage(browser, key, { dwellMs, hooks = {}, dpr, size } = {}) {
   const profile = PROFILES[key];
   if (!profile) throw new Error(`pw.mjs: unknown profile ${key}`);
-  const context = await browser.newContext(contextOptions(profile));
+  const context = await browser.newContext(contextOptions(profile, { dpr, size }));
   const page = await context.newPage();
-  await installHarnessHooks(page);
+  await installHarnessHooks(page, hooks);
   let cdp = null;
   let mt = null;
   if (profile.touch) {

@@ -205,6 +205,7 @@ func _beacon_value() -> Dictionary:
 		"td_frozen": td_frozen,
 		"held": _held_actions(),
 		"touch": touch,
+		"win": [DisplayServer.window_get_size().x, DisplayServer.window_get_size().y],
 		"frames": _frames,
 		"avg_ms": snappedf(_avg_ms(), 0.1),
 		"worst_ms": snappedf(_worst_window_ms, 0.1),
@@ -275,6 +276,12 @@ func _walk_words(n: Node, out: Array) -> void:
 		text = (n as Label3D).text
 	text = text.strip_edges()
 	if text != "" and n.is_visible_in_tree():
-		out.append({"path": str(n.get_path()), "text": text.substr(0, 80)})
+		var entry: Dictionary = {"path": str(n.get_path()), "text": text.substr(0, 80)}
+		if n is Control and n.get_viewport() != null:
+			# window pixels, so a probe can tap the node: css = px * canvas.clientWidth / beacon.win[0]
+			var c := n as Control
+			var r: Rect2 = n.get_viewport().get_final_transform() * c.get_global_transform_with_canvas() * Rect2(Vector2.ZERO, c.size)
+			entry["rect"] = [int(r.position.x), int(r.position.y), int(r.size.x), int(r.size.y)]
+		out.append(entry)
 	for c: Node in n.get_children():
 		_walk_words(c, out)

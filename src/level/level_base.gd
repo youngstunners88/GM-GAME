@@ -116,7 +116,7 @@ func _maybe_debug_boss_warp() -> void:
 	_on_boss_trigger(player)
 	# Harness fast boss kill for the transition probe (stage 3 only). A complete no-op unless the web build carries
 	# the gm_harness feature tag (GM_HARNESS=1 scripts/ep2-local-export.sh); see src/debug/harness_hooks.gd.
-	preload("res://src/debug/harness_hooks.gd").kill_boss_after(get_tree(), 1.5, level_data.level_index)
+	preload("res://src/debug/harness_hooks.gd").kill_boss_after(get_tree(), level_data.level_index)
 
 ## Reads the `?boss=N` query param on web (0 if absent / not a web build).
 ## Tiny + side-effect-free so it cannot affect a normal production load.
