@@ -1,0 +1,31 @@
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+  [PASS] pack below unchanged199229440B gate
+  [PASS] pack mounts
+  [PASS] pack below unchanged199229440B gate
+  [PASS] pack mounts
+  [PASS] dude_stable_owner has no raw GLB fallback
+  [PASS] dude_stable_owner imported scene is packaged
+  [PASS] dude_stable_owner retains65bones
+  [PASS] dude_stable_owner packaged idle
+  [PASS] dude_stable_owner packaged walk
+  [PASS] dude_stable_owner packaged run
+  [PASS] dude_stable_owner packaged turn
+  [PASS] dude_stable_owner packaged jump
+  [PASS] dude_stable_owner material is present
+  [PASS] dude_stable_owner imported texture is present and <=1024
+  [PASS] dude_stable_owner imported texture is present and <=1024
+  [PASS] dude_stable_owner imported texture is present and <=1024
+  [PASS] stable_assistant has no raw GLB fallback
+  [PASS] stable_assistant imported scene is packaged
+  [PASS] stable_assistant retains65bones
+  [PASS] stable_assistant packaged idle
+  [PASS] stable_assistant packaged walk
+  [PASS] stable_assistant packaged run
+  [PASS] stable_assistant packaged turn
+  [PASS] stable_assistant packaged jump
+  [PASS] stable_assistant material is present
+  [PASS] stable_assistant imported texture is present and <=1024
+  [PASS] stable_assistant imported texture is present and <=1024
+  [PASS] stable_assistant imported texture is present and <=1024
+STABLE_PACK: ALL PASS

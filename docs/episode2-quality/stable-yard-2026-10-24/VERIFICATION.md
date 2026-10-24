@@ -17,4 +17,6 @@ Main delta45152B, margin781760B. Unchanged hard limit199229440B. Original GLBs e
 
 Security18/18 and title5/5 pass. Texture reference probe69models/0excluded-but-used textures; only the two explicit streamed stable GLBs join the existing streamed-path handling, with mandatory isolated pack verification. Local exact web engine canvas/boot/script/thread/Level1 checks all PASS; overall browser verifier remains FAIL from external HTTPS certificate errors. No trust changes or protected town browser playthrough claimed.
 
-Pending: fresh/cold import size, refresh master/ship, CI actual butler upload and public BUILD/itch Updated proof. No live claim yet. Generic external-service browser certificate limitations remain documented by prior town-voice work; trust was not modified.
+Fresh detached worktree9e95b5ed cold-import export PASS: main198413200B, extras70522080B; zero script errors, isolated cast/textures and presence gate PASS. Main margin816240B. Warm/cold measurements are reported separately. gltfpack1.3 built from upstream f0a684f11ead064e176775c9b796f82a55910e92.
+
+Pending: refresh master/ship, CI actual butler upload and public BUILD/itch Updated proof. No live claim yet. Generic external-service browser certificate limitations remain documented by prior town-voice work; trust was not modified.

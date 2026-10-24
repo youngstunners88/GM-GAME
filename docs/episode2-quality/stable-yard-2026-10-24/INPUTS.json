@@ -93,6 +93,8 @@
     "extras_bytes": 70522016,
     "main_delta": 45152,
     "margin_bytes": 781760,
-    "cold_import_pending": true
+    "cold_import_pending": false,
+    "cold_main_bytes": 198413200,
+    "cold_extras_bytes": 70522080
   }
 }
