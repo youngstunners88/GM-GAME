@@ -24,8 +24,17 @@ for p in "${named[@]}" "${onrepo[@]}"; do
   rel=${p#res://}
   grep -aqF "$rel" "$extras" || miss "ep2_extras.pck" "$rel"
 done
-n_people=$(printf '%s\n' "${onrepo[@]}" | grep -cE 'extras/people/town(sman|swoman)_')
-[ "$n_people" -ge 5 ] || { echo "✗ only $n_people townspeople in src/episode2/extras/people (need >= 5)"; fail=1; }
+mapfile -t roster < <(python3 - <<'PY'
+import re
+from pathlib import Path
+source=Path('src/episode2/actors/ep2_town_people.gd').read_text().split('const ROSTER: Array = [',1)[1].split('\n]',1)[0]
+for name in re.findall(r'"file": "([^"]+\.glb)"',source): print('src/episode2/extras/people/'+name)
+PY
+)
+[ "${#roster[@]}" -ge 13 ] || { echo "✗ public roster has fewer than thirteen supplied figures"; fail=1; }
+for rel in "${roster[@]}"; do
+  grep -aqF "$rel" "$extras" || miss "ep2_extras.pck" "$rel"
+done
 printf '%s\n' "${onrepo[@]}" | grep -q 'extras/lake/logan.glb'      || { echo "✗ Logan (extras/lake/logan.glb) is not in the repo's extras"; fail=1; }
 printf '%s\n' "${onrepo[@]}" | grep -q 'extras/folk/rich_armory2.glb' || { echo "✗ Rich v2 (extras/folk/rich_armory2.glb) is not in the repo's extras"; fail=1; }
 printf '%s\n' "${onrepo[@]}" | grep -q 'extras/folk/utah_armory2.glb' || { echo "✗ Utah v2 (extras/folk/utah_armory2.glb) is not in the repo's extras"; fail=1; }

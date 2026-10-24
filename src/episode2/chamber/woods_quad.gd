@@ -71,7 +71,7 @@ const GRIP_U := 1.74
 const GRIP_X := 0.56
 const BACK_F := -1.45                               # Lil Blunt's spot on the rear of the seat / rack
 const BACK_SIDE := 0.30                             # ...a little to the right of the centreline: he looks past Inferno's shoulder, not into his back
-const BACK_EYE := 1.40                              # his eye above the seat/rack there (kneeling)
+const BACK_EYE := 1.95                              # elevated passenger stance clears Inferno's pack for shooting
 const BULL_LEAN := 0.55                             # Inferno leans onto the grips (the seated clip alone sits him upright against a chair back)
 const BULL_GRIPS_IK := false                      # Inferno's hands are NOT dragged to the grips: the skinned elbow cannot take the IK (tears / goes invisible)
 const PICKET_ROAD_LEN := 775.0                    # the road pickets' `at` is a fraction of the WOODS road (the desert part has no bears)
@@ -170,6 +170,7 @@ var _crown_mat: ShaderMaterial = null
 var _fern_mat: ShaderMaterial = null
 var _rock_mesh: Mesh = null
 var _wildlife: Ep2Wildlife = null
+var _people: Ep2TownPeople = null                   # the townsfolk: already living in their town while the quad rolls in
 var _exit_kit: Node3D = null                          # the mine-lift walkway kit, for the mine exit + bridge
 ## "golden" = golden hour (founder bear stills 2026-10-10b; Jev 0.54 / microsoft-decision-1 0.58 chose it on the closeness table),
 ## "" = the old-growth daylight of the earlier forest target. Set before setup().
@@ -293,6 +294,7 @@ func _build_steps() -> Array:
 	for k in int(ceil(float(n) / 3.0)):
 		steps.append(Callable(self, "_spawn_batch").bind(k, 3))
 	steps.append(_step_bull)
+	steps.append(_build_wildlife)
 	return steps
 
 
@@ -303,6 +305,30 @@ func _warm_views() -> Array:
 	return [{"eye": eye, "yaw": 0.0, "pitch": -0.04}, {"eye": eye, "yaw": 0.8, "pitch": -0.05}, {"eye": eye, "yaw": -0.8, "pitch": -0.05},
 		{"eye": eye, "yaw": 0.0, "pitch": 0.5}, {"eye": eye + Vector3(0.0, 0.0, 14.0), "yaw": 0.0, "pitch": -0.1},
 		{"eye": eye + Vector3(0.0, 0.0, 14.0), "yaw": atan2(to_scout.x, to_scout.z), "pitch": -0.05}]
+
+
+## Build just the mine-facing landscape using exactly the gameplay builders.
+## Used by the lift so its window is the place the player walks into.
+func build_surface_vista() -> Node3D:
+	_visuals = Node3D.new()
+	_env_node = WorldEnvironment.new()
+	add_child(_env_node)
+	_sun = DirectionalLight3D.new()
+	add_child(_sun)
+	_step_light_mats()
+	_load_forest_kit()
+	_step_ground(4.0)  # The surface floor begins outside the mine mouth, never across the lift shaft.
+	_build_ride_path()
+	_resolve_specs()
+	_build_trails()
+	_visuals.get_node("LiftPad").free()  # This gameplay spawn pad would overlap the cage in the preview.
+	for i in 3:
+		_build_forest_chunk(i)
+	_build_exit_bridge()
+	if _exit_kit != null:
+		_exit_kit.free()
+		_exit_kit = null
+	return _visuals
 
 
 func _step_bull() -> void:
@@ -316,13 +342,14 @@ func _step_light_mats() -> void:
 		_plain(Color(0.27, 0.42, 0.12), 0.95)]
 
 
-func _step_ground() -> void:
+func _step_ground(z_start: float = -30.0) -> void:
 	# the forest floor: moss, needles and twigs (Muapi seamless still), world-tiled every 3.5 m - now under a 1 km wood
 	_ground_mat = _tex(FLOOR_TEX, Color(0.82, 0.84, 0.76), 0.28) if ResourceLoader.exists(FLOOR_TEX) else _tex(GRAVEL_TEX, Color(0.38, 0.42, 0.25), 0.35)
 	_ground_mat.uv1_world_triplanar = true
 	_ground_mat.roughness = 0.95
 	var z1: float = FOREST_END_Z + 30.0
-	_box(Vector3(440.0, 0.5, z1 + 30.0), Vector3(0.0, -0.25, (z1 - 30.0) * 0.5), _ground_mat)
+	var floor_mesh := _box(Vector3(440.0, 0.5, z1 - z_start), Vector3(0.0, -0.25, (z1 + z_start) * 0.5), _ground_mat)
+	floor_mesh.name = "ForestFloor"
 	# the desert floor from the last pines to beyond the town (a hair lower: the forest floor wins where they overlap)
 	var dg := MeshInstance3D.new()
 	var pm := PlaneMesh.new()
@@ -861,6 +888,16 @@ func _build_mine_hut() -> void:
 	for sx in [-1.0, 1.0]:
 		_kit_part("Beam4m", Vector3(sx * 1.18, 2.95, 4.0), Vector3(0.0, 0.0, sx * 0.78), Vector3(0.24, 0.8, 0.8))
 	_lantern(Vector3(-1.45, 2.5, 0.5), 2.2, 8.0)
+	_build_exit_bridge()
+	# the adit walls are solid (trunk-style collision circles along both sides)
+	for zi in 11:
+		for sx in [-1.0, 1.0]:
+			_add_tree(Vector2(sx * 2.25, -4.0 + float(zi) * 0.8), 0.55, 3.5)
+
+
+func _build_exit_bridge() -> void:
+	# Same exterior lantern on both sides of the mapped doorway.
+	_lantern(Vector3(-1.42, 1.45, 7.0), 1.6, 6.0)
 	# the plank bridge out into the wood: 2 m sections with posts, a timber hand rail and a sagging rope rail each side
 	for i in 6:
 		var z2: float = 5.0 + float(i) * 2.0
@@ -871,10 +908,6 @@ func _build_mine_hut() -> void:
 			_kit_part("Chain2m", Vector3(sx * 1.12, -0.42, z2 - 1.0))
 	for sx in [-1.0, 1.0]:
 		_kit_part("Post", Vector3(sx * 1.12, 0.0, 16.0))
-	# the adit walls are solid (trunk-style collision circles along both sides)
-	for zi in 11:
-		for sx in [-1.0, 1.0]:
-			_add_tree(Vector2(sx * 2.25, -4.0 + float(zi) * 0.8), 0.55, 3.5)
 
 
 ## One piece of the mine-lift walkway kit, with the lift's own triplanar plank / timber / rusted-iron materials (local scale).
@@ -1189,22 +1222,26 @@ func _on_setup() -> void:
 	_armory_snapshot = armory.snapshot()  # before the first player event can spend a round or claim loot
 	_ammo_snapshot = [armory.active_gun().rounds, armory.active_gun().reserve]
 	_beat = Beat.SNEAK
-	_player_pos = SPAWN
-	_prev_player = SPAWN
+	_player_pos = handoff.get("surface_player", SPAWN)
+	_prev_player = _player_pos
 	_ground_y = 0.0
 	_apply_handoff_gaze(0.0, -0.04)           # first person, eyes level (keeps the gaze he had at the previous chamber's exit)
-	_player_yaw = 0.0
+	if handoff.has("surface_player"):
+		_look_yaw = float(handoff.get("yaw", 0.0))
+		_look_pitch = float(handoff.get("pitch", -0.04))
+	_player_yaw = _look_yaw
 	_rng.seed = 1886
 	if _bull == null:
 		_bull = _build_bull(BULL_START, 0.0)
+	if handoff.has("surface_bull"):
+		_bull.position = handoff["surface_bull"]
+		_bull.facing = float(handoff.get("surface_bull_facing", 0.0))
+		_bull.rotation.y = _bull.facing
 	_engine = _loop_player(QUAD_LOOP, -7.0)
 	# life in the wood: birds on random flights (some swooping between the trunks), flocks flushing, and the ElevenLabs
 	# soundscape (ambience bed, canopy wind gusts, 3D bird calls) - founder 2026-10-10
-	if _wildlife == null:
-		_wildlife = Ep2Wildlife.new()
-		_wildlife.name = "Wildlife"
-		_visuals.add_child(_wildlife)
-		_wildlife.setup(get_camera(), SPAWN, Vector2(45.0, 45.0), 34.0)
+	_build_wildlife()
+	_wildlife.start_ambience()
 	if _hud:
 		_hud.show_health = true
 	if _vm != null:
@@ -1213,6 +1250,26 @@ func _on_setup() -> void:
 		_vm.set_world_shadows(false)
 		_vm.set_own_light(VM_KEY_ENERGY, _sun)
 	_on_beat_entered(Beat.SNEAK)
+	if handoff.has("surface_bull"):
+		# Begin at the next trail point, never turn back to the standalone entrance.
+		var progress: float = _trail_s(Vector2(_bull.position.x, _bull.position.z))
+		while _sneak_i < SNEAK_TRAIL.size() - 1 and _trail_s(SNEAK_TRAIL[_sneak_i]) <= progress + 0.1:
+			_sneak_i += 1
+		var next: Vector2 = SNEAK_TRAIL[_sneak_i]
+		_bull_walk_pace(Vector3(next.x, 0.0, next.y), 1.9)
+		_bull.step(0.0)
+		if _bull.anim != null and _bull.anim.has_animation(_bull.walk_clip):
+			_bull.anim.seek(float(handoff.get("surface_bull_walk_time", 0.0)), true)
+
+
+## Build the birds and ambience during prebuild, not on the doorway's activation frame.
+func _build_wildlife() -> void:
+	if _wildlife != null:
+		return
+	_wildlife = Ep2Wildlife.new()
+	_wildlife.name = "Wildlife"
+	_visuals.add_child(_wildlife)
+	_wildlife.setup(get_camera(), SPAWN, Vector2(45.0, 45.0), 34.0, false)
 
 
 func _on_beat_entered(b: int) -> void:
@@ -1221,7 +1278,8 @@ func _on_beat_entered(b: int) -> void:
 			_sneak_i = 0
 			if _hud:
 				_hud.objective = "Stay close to Inferno. Walk soft - the bears' scouts hear a runner."
-			_begin_carry_line("vo_bull_retry" if _retry_line_pending else "vo_bull_woods_sneak")
+			if _retry_line_pending or not handoff.has("surface_player"):
+				_begin_carry_line("vo_bull_retry" if _retry_line_pending else "vo_bull_woods_sneak")
 			_retry_line_pending = false
 			_bull_chat_cd = _rng.randf_range(22.0, 34.0)
 		Beat.REVEAL:
@@ -1232,21 +1290,23 @@ func _on_beat_entered(b: int) -> void:
 			_start_show([
 				{"do": "walk", "to": bull_at, "speed": 2.2},
 				{"do": "face", "at": QUAD_POS},
-				FacilityShow._say("vo_bull_quad_reveal", 0.2),
+				{"do": "call", "fn": func() -> void: _begin_carry_line("vo_bull_quad_reveal")},
 				{"do": "reach", "at": QUAD_POS + Vector3(0.0, 1.5, 0.0), "ramp": 0.5, "hold": 0.2, "lean": 0.35},
 				{"do": "call", "fn": _reveal_quad},
 				{"do": "wait", "t": 1.2},
 				{"do": "release", "ramp": 0.5, "t": 0.4},
-				FacilityShow._say("vo_lb_quad_ok", 0.2),
-				{"do": "wait", "t": 0.5}], true)
+				{"do": "until", "pred": func() -> bool: return _hold <= 0.0},
+				{"do": "call", "fn": func() -> void: _begin_carry_line("vo_lb_quad_ok")}], true)
 			look_toward(QUAD_POS + Vector3(0.0, 1.3, 0.0), 2.2)
 		Beat.MOUNT:
 			# no blink (founder 2026-10-13 "the transitions are not smooth"): his eye climbs onto the back seat while Inferno
 			# swings onto the saddle, in one continuous move
 			_start_show([
-				FacilityShow._say("vo_bull_quad_mount", 0.15),
+				{"do": "call", "fn": _approach_quad},
+				{"do": "until", "pred": func() -> bool: return not is_gliding() and not _bull.is_walking() and _hold <= 0.0},
+				{"do": "call", "fn": func() -> void: _begin_carry_line("vo_bull_quad_mount")},
 				{"do": "call", "fn": _mount},
-				{"do": "wait", "t": 1.05}], true)
+				{"do": "until", "pred": func() -> bool: return not is_gliding() and _bull_swing.is_empty()}], true)
 		Beat.RIDE:
 			_begin_ride()
 		Beat.DROPOFF:
@@ -1270,6 +1330,13 @@ func _reveal_quad() -> void:
 	_reveal_t = 0.0
 	_sfx("ep2_leaves_pull")
 	_noise(QUAD_POS, 10.0, "leaves")
+
+
+func _approach_quad() -> void:
+	# Close the actual distance on foot before climbing; no long camera flight through the bike.
+	var passenger := QUAD_POS + Vector3(-1.4, 0.0, -1.9)
+	_glide_to(passenger, FPS_EYE_HEIGHT, maxf(0.6, _player_pos.distance_to(passenger) / 3.2))
+	_bull.walk_to(QUAD_POS + Vector3(1.4, 0.0, 0.0), 2.2)
 
 
 func _mount() -> void:
@@ -1479,6 +1546,7 @@ func _tick(delta: float) -> void:
 	_tick_player_arrows(delta)
 	_tick_footsteps(delta)
 	_tick_riders(delta)
+	_tick_town_people(delta)
 	if _wildlife != null:
 		_wildlife._centre = Vector3(_player_pos.x, 0.0, _player_pos.z)      # the birds keep to the stretch of wood he is in
 		_wildlife.step(delta)
@@ -2540,6 +2608,12 @@ func get_cart_node() -> Node3D: return _cart
 ## The town and Fort Knox (Ep2GoldTown - the SAME build the town chamber makes, at the same coordinates).
 func _build_town() -> void:
 	_town_col = Ep2GoldTown.build(_visuals, false)
+	# It is THEIR town (founder 2026-10-22): the people are out in the street before Lil Blunt arrives, not spawned
+	# after the drop-off. Their whole state is handed to the town chamber at the cut (get_handoff -> "town_people").
+	_people = Ep2TownPeople.new()
+	_people.configure_space(_town_col)
+	_people.build(_visuals)
+	_people.player_clearance = 1.6                    # the quad is wider than a man on foot
 
 
 ## Gold-rush country between the last pines and the town (Ep2GoldTown.build_desert - the same scrub, rocks and mesas the town chamber
@@ -2670,11 +2744,26 @@ func _tick_dropoff(delta: float) -> void:
 func get_handoff() -> Dictionary:
 	var h: Dictionary = super.get_handoff()
 	h["pos"] = _player_pos
+	if _people != null:
+		h["town_people"] = _people.snapshot()
 	return h
 
 
 func _wants_handoff() -> bool:
 	return _beat == Beat.DROPOFF and _dropoff_done and is_bull_gone()
+
+
+## The town lives its own day from the moment the town is in sight: people go about their errands, and step aside to
+## the verge when the noisy quad (with Lil Blunt on it, or Bull riding off) comes down the street.
+func _tick_town_people(delta: float) -> void:
+	if _people == null or _player_pos.z < Ep2GoldTown.TOWN_Z - 450.0:
+		return
+	_people.player_clearance = 1.6 if _riding else 0.68
+	_people.step(delta, _player_pos)
+	if _quad != null and _quad.visible:
+		var v: float = 4.0 if _riding else float(_rideoff.get("v", 0.0))
+		if v > 0.5:
+			_people.make_way(_quad.position, Vector2(sin(_quad_yaw), cos(_quad_yaw)))
 
 
 func is_bull_gone() -> bool:

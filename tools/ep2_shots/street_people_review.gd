@@ -93,7 +93,7 @@ func review(row: Dictionary) -> void:
 	cam.look_at(Vector3(0, 1.55, 1418), Vector3.UP)
 	if not hands_only: await shot(id + "_face")
 	if full:
-		for clip in ["Idle", "Walk", "Greet", "Point", "Carry"]:
+		for clip in ["Idle", "Walk", "Greet", "Point", "Carry", "Observe", "Rest", "Talk", "Inspect", "Alert"]:
 			folk.play_clip(clip)
 			var duration: float = folk._anim.current_animation_length
 			for frame in (0 if hands_only else 9):

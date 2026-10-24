@@ -385,6 +385,9 @@ func _play_congrats(d: Dictionary) -> void:
 	if jingle is AudioStream:
 		_jingle_player.stream = jingle
 		_jingle_player.play()
+	# Boss rewards: display and jingle only (founder 2026-10-23).
+	if kind == "boss":
+		return
 	var voice: Variant = load(VOICE_PATH_FMT % str(d.get("id", "")))
 	if voice is AudioStream:
 		_voice_player.stream = voice

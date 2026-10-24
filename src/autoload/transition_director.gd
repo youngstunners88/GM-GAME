@@ -59,7 +59,7 @@ const MAX_SETTLE_SECONDS := 3.0
 ## A frame longer than this is "the stall" (shader compile / texture upload at the first draw).
 const STALL_MS := 250.0
 ## Film-frame -> live runner dissolve.
-const DISSOLVE_SECONDS := 0.6
+const DISSOLVE_SECONDS := 0.18
 ## A cover (the film's frozen last frame) that has been up this long shows the progress bar: after ~1.2 s of an
 ## unmoving picture a phone player starts to think the game crashed. It fades in over ALIVE_FADE_SECONDS.
 const ALIVE_AFTER_SECONDS := 1.2
@@ -77,11 +77,27 @@ const TOUCH_GLYPH_DP := Vector2(88.0, 64.0)
 ## the first runner leg plays them the moment the cover lifts (RunnerGraybox), so they must already be in memory.
 const PRESETS := {
 	"res://src/episode2/ep2_entry.tscn": {
-		"dirs": ["res://src/episode2/assets/", "res://src/episode2/assets/hideout/", "res://src/episode2/assets/textures/",
-			"res://src/episode2/assets/audio/"],
+		"dirs": ["res://src/episode2/assets/textures/"],
 		"exts": ["glb", "jpg", "png", "wav", "mp3"],
-		"files": ["res://src/assets/video/cutscenes/ep2_cliff_to_hideout.ogv", "res://src/assets/music/ep2_deep_mining_theme.mp3",
-			"res://src/assets/music/runner_run.mp3", "res://src/assets/music/runner_run_1.mp3"],
+		## Only opening-runner assets block entry; the root warms the hideout during play.
+		"files": ["res://src/assets/music/ep2_deep_mining_theme.mp3",
+			"res://src/assets/music/runner_run.mp3", "res://src/assets/music/runner_run_1.mp3",
+			"res://src/episode2/assets/bear_rigged.glb",
+			"res://src/episode2/assets/golden_revolver.glb",
+			"res://src/episode2/assets/pickaxe.glb",
+			"res://src/episode2/assets/ore_cart.glb",
+			"res://src/episode2/assets/minecart.glb",
+			"res://src/episode2/assets/lantern.glb",
+			"res://src/episode2/assets/boulder_rock.glb",
+			"res://src/episode2/assets/boulder.glb",
+			"res://src/episode2/assets/gold_pile.glb",
+			"res://src/episode2/assets/rock_chunk.glb",
+			"res://src/episode2/assets/mine_tunnel_shell.glb",
+			"res://src/episode2/assets/leaf_cart.glb",
+			"res://src/episode2/assets/leaf_cart_wreck_a.glb",
+			"res://src/episode2/assets/leaf_cart_wreck_b.glb",
+			"res://src/episode2/assets/lil_blunt_hero.glb",
+			"res://src/episode2/assets/mine_bear_archer.glb"],
 		"title": "EPISODE 2",
 		"subtitle": "THE GOLD MINE",
 	},

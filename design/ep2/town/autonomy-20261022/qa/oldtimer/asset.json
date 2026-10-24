@@ -1,0 +1,54 @@
+{
+  "ok": true,
+  "pass": true,
+  "errors": [],
+  "warnings": [
+    "townsman_oldtimer_body: ~18.99% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+    "townsman_oldtimer_body: duplicate verts=124 loose verts=0",
+    "townsman_oldtimer_body: 52 n-gons",
+    "hidden back-to-back faces: townsman_oldtimer_body (72 pairs) - delete to save tris"
+  ],
+  "ground_z": -0.0,
+  "zfighting": [],
+  "floating": [],
+  "back_to_back": [
+    {
+      "where": "townsman_oldtimer_body",
+      "tri_pairs": 72
+    }
+  ],
+  "enclosed": [],
+  "objects": {
+    "townsman_oldtimer_body": {
+      "verts": 13361,
+      "faces": 15503,
+      "tris": 25860,
+      "ngons": 52,
+      "boundary_edges": 702,
+      "nonmanifold_edges": 0,
+      "wire_edges": 0,
+      "loose_verts": 0,
+      "degenerate_faces": 0,
+      "zero_length_edges": 0,
+      "inconsistent_normals_edges": 0,
+      "duplicate_verts": 124,
+      "islands": 49,
+      "inside_out_islands": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materials": 1,
+      "unweighted_verts": 0,
+      "verts_over_4_influences": 0,
+      "uv_maps": 1,
+      "uv_oob_pct": 0.0,
+      "uv_zero_area_faces": 0,
+      "uv_overlap_pct": 18.99,
+      "uv_coverage_pct": 7.2
+    }
+  },
+  "overlap_centers": [],
+  "inward_islands": []
+}

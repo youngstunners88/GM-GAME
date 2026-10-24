@@ -70,6 +70,7 @@ const DEFAULT_GOLD_PRINCIPAL := 1000
 var armory: Ep2ArmoryState = Ep2ArmoryState.new()
 var _armory_save_due: float = -1.0
 var _runner_armory_checkpoint: Dictionary = {}
+var _town_save_due: float = 20.0
 var _mode: int = Mode.IDLE
 var _active: Node = null
 var _plan: Array = []
@@ -188,6 +189,7 @@ func _enter_chamber() -> void:
 		seg.get("bears", []),
 		int(seg.get("diamonds_paid", 0))
 	)
+	_restore_town(c)
 	c.chamber_cleared.connect(_on_chamber_cleared, CONNECT_ONE_SHOT)
 	c.chamber_failed.connect(_on_chamber_failed, CONNECT_ONE_SHOT)
 	_chamber_segment = _segment
@@ -218,6 +220,7 @@ func _enter_chamber_chained(segment: int) -> void:
 	_pb_id = ""
 	var old: Node = _active
 	if old != null:
+		_persist_town()
 		if old.get_parent() == self:
 			remove_child(old)             # out of the tree NOW: its WorldEnvironment / camera / lights must not outlive the cut by a frame
 		old.queue_free()
@@ -231,6 +234,7 @@ func _enter_chamber_chained(segment: int) -> void:
 	else:
 		add_child(c)
 		c.setup(0, [], 0)
+	_restore_town(c)
 	c.chamber_cleared.connect(_on_chamber_cleared, CONNECT_ONE_SHOT)
 	c.chamber_failed.connect(_on_chamber_failed, CONNECT_ONE_SHOT)
 	_chamber_segment = segment
@@ -322,6 +326,7 @@ func _on_cliff_panic_music(level: int) -> void:
 
 func _teardown_active() -> void:
 	if _active:
+		_persist_town()
 		_active.queue_free()
 		_active = null
 	if _pb_node != null and is_instance_valid(_pb_node) and _chain_id == "":
@@ -638,6 +643,10 @@ func _on_window_resized() -> void:
 # mode and visible everywhere else (chambers, menus, after the session ends).
 
 func _process(_delta: float) -> void:
+	_town_save_due -= _delta
+	if _town_save_due <= 0:
+		_town_save_due = 20.0
+		_persist_town()
 	if _armory_save_due >= 0.0:
 		_armory_save_due -= _delta
 		if _armory_save_due <= 0.0:
@@ -653,6 +662,21 @@ func _process(_delta: float) -> void:
 	_touch_changed()
 	var waiting: bool = _active != null and _active.has_method("is_waiting_for_handoff") and bool(_active.call("is_waiting_for_handoff"))
 	_drive_prebuild(PREBUILD_MS_WAITING if waiting else PREBUILD_MS)
+
+func _restore_town(chamber: Node) -> void:
+	if not chamber is GoldTownChamber: return
+	var manager: Node = get_node_or_null("/root/GameManager")
+	if manager != null and chamber.get_people() != null:
+		chamber.get_people().restore(manager.town_people_state)
+	_town_save_due = 20.0
+
+func _persist_town() -> void:
+	if not is_instance_valid(_active) or not _active is GoldTownChamber: return
+	var manager: Node = get_node_or_null("/root/GameManager")
+	var crowd: Ep2TownPeople = _active.get_people()
+	if manager != null and crowd != null:
+		manager.town_people_state = crowd.snapshot()
+		manager.save_session()
 
 func _sync_mouse_mode() -> void:
 	if _mode == Mode.CHAMBER and _free_roam() and _active.wants_mouse_capture():
@@ -763,6 +787,7 @@ func _route_free_roam(event: InputEvent) -> bool:
 	return false
 
 func _exit_tree() -> void:
+	_persist_town()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	# never leave the tree frozen behind us because the screen was upright when this node went away
 	var tree: SceneTree = get_tree()

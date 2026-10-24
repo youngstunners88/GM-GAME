@@ -80,8 +80,9 @@ func _ready() -> void:
 	var holder := Node3D.new()
 	world.add_child(holder)
 	var tp := Ep2TownPeople.new()
+	tp.configure_space(info)
 	var n: int = tp.build(holder, 4101)
-	check("five townspeople are placed (three men, two women)", n == 5, "%d" % n)
+	check("all supplied public townspeople are placed", n == Ep2TownPeople.ROSTER.size(), "%d" % n)
 	var walls: Array = info["walls"]
 	var props: Array = info["props"]
 	var bad_route: Array = []
@@ -112,9 +113,10 @@ func _ready() -> void:
 	check("in 120 s nobody ever stands inside a wall or prop, or off the ground", bad_pos == 0, "%d" % bad_pos)
 	var walkers: int = 0
 	for p in tp.people:
+		print("TOWN_TRAVEL ", p.id, " metres=", p.walked_m, " state=", p.state, " destination=", p.destination, " position=", p.folk.position, " recoveries=", p.recoveries)
 		if (p as Ep2TownPeople.Person).walked_m > 12.0:
 			walkers += 1
-	check("they really walk the street (every one covers > 12 m in 120 s)", walkers == 5, "%d of 5" % walkers)
+	check("they really walk the street (every one covers > 12 m in 120 s)", walkers == Ep2TownPeople.ROSTER.size(), "%d of full roster" % walkers)
 	var starts: Array = started.values()
 	starts.sort()
 	check("they are not in lock-step (their first steps are spread over > 2 s)", starts.size() >= 4 and float(starts[starts.size() - 1] - starts[0]) * dt > 2.0, str(starts))

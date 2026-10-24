@@ -42,6 +42,12 @@ const CAGE_STAND_BULL := Vector3(-0.95, 0.0, 0.95)    # inside the cage, in the 
 const CAGE_DOOR_HALF := 1.05        # the doorways' half width (cut out of the Tripo cage by tools/ep2_blender/cage_open_doorways.py)
 const BODY_R := 0.3                  # Lil Blunt's body radius against the cage bars
 const EXIT_Z := 8.0
+## Lift mouth z=6 matches woods mouth z=4.
+const SURFACE_OFFSET := Vector3(0.0, TOP_Y, 2.0)
+var _surface_environment: Environment = null
+var _surface_sun: DirectionalLight3D = null
+var _mine_environment: Environment = null
+var _surface_daylight := false
 ## THE LEVER IS INSIDE THE CAGE (founder 2026-10-13: "why is the lever not inside the elevator"): an iron handle on the cage's
 ## left wall, rusted the same as the cage's own struts so it reads as part of the frame - hidden in plain sight. Cage-local
 ## (it rides up with the cage). Inferno pulls it from where he stands; nobody walks out through the bars any more.
@@ -53,6 +59,7 @@ var _kit_mats: Dictionary = {}
 var _halo_tex: GradientTexture2D = null
 var _cage: Node3D = null
 var _gate: Node3D = null
+var _exit_crossbeam: Node3D = null
 var _gate_in: Node3D = null          # the walkway-side gate: up (open) until both are aboard, then it drops shut
 var _gate_in_k: float = 1.0          # 1 = raised / open, 0 = down / shut
 var _gate_in_goal: float = 1.0
@@ -309,7 +316,10 @@ func _build_shaft(rock_dark: StandardMaterial3D, gravel: StandardMaterial3D, tim
 	var by: float = 6.0                                                                                        # above the cage's roof gears (art review: a beam sliced its silhouette)
 	while by < ROOF_Y:                                                                                         # cross beams every 5 m
 		_kit("Beam4m", Vector3(0.0, by, -4.05), Vector3.ZERO, Vector3(2.0, 0.9, 0.9))
-		_kit("Beam4m", Vector3(0.0, by, 4.05), Vector3.ZERO, Vector3(2.0, 0.9, 0.9))
+		var front_beam: Node3D = _kit("Beam4m", Vector3(0.0, by, 4.05), Vector3.ZERO, Vector3(2.0, 0.9, 0.9))
+		if front_beam != null and absf(by - (TOP_Y + 1.0)) < 0.1:
+			_exit_crossbeam = front_beam
+			_exit_crossbeam.name = "SurfaceExitCrossbeam"
 		_kit("Beam4m", Vector3(-4.05, by, 0.0), Vector3(0.0, PI * 0.5, 0.0), Vector3(2.0, 0.9, 0.9))
 		_kit("Beam4m", Vector3(4.05, by, 0.0), Vector3(0.0, PI * 0.5, 0.0), Vector3(2.0, 0.9, 0.9))
 		by += 5.0
@@ -334,7 +344,7 @@ func _build_shaft(rock_dark: StandardMaterial3D, gravel: StandardMaterial3D, tim
 
 ## THE TOP: a plank walkway out of the shaft through a timbered mine mouth into the daylight.
 func _build_top(gravel: StandardMaterial3D) -> void:
-	_walkway(Vector3(0.0, TOP_Y, 2.0), 6, true, true)
+	_walkway(Vector3(0.0, TOP_Y, 2.0), 2, true, true)
 	_box(Vector3(3.0, 0.1, 0.5), Vector3(0.0, TOP_Y - 0.05, 2.0), _kit_mats["Planks"])                      # threshold: no gap to the shaft at the cage door
 	_box(Vector3(9.0, 0.5, 14.0), Vector3(0.0, TOP_Y - 0.6, 11.5), gravel)                                  # ground under the walkway
 	for sx in [-1.0, 1.0]:                                                                                   # the mine-mouth timber frame
@@ -342,7 +352,6 @@ func _build_top(gravel: StandardMaterial3D) -> void:
 	_kit("Beam4m", Vector3(0.0, TOP_Y + 4.25, SHAFT_HALF + 1.5), Vector3.ZERO, Vector3(1.05, 1.0, 1.0))
 	_skull(Vector3(0.0, TOP_Y + 4.85, SHAFT_HALF + 1.25), PI)
 	_lantern(Vector3(1.42, TOP_Y + 1.45, 4.0), 2.4, 8.0)
-	_lantern(Vector3(-1.42, TOP_Y + 1.45, 9.0), 1.6, 6.0)
 	_surface_outside()
 
 
@@ -528,43 +537,37 @@ func _apply_light() -> void:
 
 
 func _surface_outside() -> void:
-	var grass: StandardMaterial3D = _tex(GRAVEL_TEX, Color(0.30, 0.42, 0.20), 0.30)
-	_box(Vector3(80.0, 0.5, 60.0), Vector3(0.0, TOP_Y - 0.86, 48.0), grass)
-	var bark: StandardMaterial3D = _plain(Color(0.28, 0.19, 0.12), 0.95)
-	var leaf: StandardMaterial3D = _plain(Color(0.12, 0.30, 0.13), 0.9)
-	var leaf2: StandardMaterial3D = _plain(Color(0.17, 0.38, 0.15), 0.9)
-	var i: int = 0
-	for z in [16.0, 19.0, 22.0, 27.0, 33.0, 40.0]:
-		for x in [-9.0, -5.5, 5.5, 9.5, -14.0, 14.0]:
-			var jitter: float = sin(z * 3.1 + x * 1.7)
-			var px: float = x + jitter * 1.6
-			var hh: float = 7.0 + 3.0 * absf(jitter)
-			_cyl(0.32, 0.46, hh, Vector3(px, TOP_Y + hh * 0.5, z + cos(x) * 1.4), bark, null, 7)
-			_cyl(0.0, 2.6 + absf(jitter), 5.5, Vector3(px, TOP_Y + hh + 1.2, z + cos(x) * 1.4), leaf if i % 2 == 0 else leaf2, null, 8)
-			i += 1
-	# the reveal beyond the mine mouth (art review): conifers in three depth layers, rocks, a dirt trail on from the walkway
-	var pine: StandardMaterial3D = _plain(Color(0.10, 0.22, 0.12), 0.9)
-	var pine2: StandardMaterial3D = _plain(Color(0.14, 0.28, 0.14), 0.9)
-	var stone: StandardMaterial3D = _tex(ROCK_TEX, Color(0.55, 0.50, 0.44), 0.4)
-	var dirt: StandardMaterial3D = _tex(GRAVEL_TEX, Color(0.52, 0.42, 0.30), 0.35)
-	_box(Vector3(2.6, 0.06, 26.0), Vector3(0.0, TOP_Y - 0.58, 27.0), dirt)
-	var layers: Array = [[8.5, 3.4, 9.0], [13.0, 4.6, 12.0], [19.0, 6.5, 15.0]]          # z, |x| min, height
-	for li in layers.size():
-		var L: Array = layers[li]
-		for k in 4:
-			for sx in [-1.0, 1.0]:
-				var px: float = sx * (float(L[1]) + 2.2 * k + 0.7 * sin(k * 2.3 + li))
-				var pz: float = float(L[0]) + 1.4 * cos(k * 1.7 + li * 2.0)
-				var th: float = float(L[2]) * (0.85 + 0.15 * sin(k + li))
-				_cyl(0.18, 0.3, th * 0.35, Vector3(px, TOP_Y + th * 0.175 - 0.5, pz), bark, null, 6)
-				for t in 3:
-					_cyl(0.0, (1.9 - 0.45 * t) * th / 10.0 * 1.4, th * 0.42, Vector3(px, TOP_Y + th * (0.32 + 0.2 * t) - 0.5, pz), pine if (k + t) % 2 == 0 else pine2, null, 9)
-	for rk in [Vector3(2.4, 0.0, 9.0), Vector3(-2.8, 0.0, 11.5), Vector3(3.1, 0.0, 15.0), Vector3(-2.2, 0.0, 18.0), Vector3(2.0, 0.0, 22.0)]:
-		_sphere(0.55 + 0.25 * absf(sin(rk.z)), Vector3(rk.x, TOP_Y - 0.55, rk.z), stone, null, 0.6)
-	# a bright warm sky wall so the opening reads as daylight, not a black hole
-	var sky := _glow(Color(0.86, 0.80, 0.62), 1.4)
-	sky.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_box(Vector3(120.0, 50.0, 0.5), Vector3(0.0, TOP_Y + 18.0, 75.0), sky)
+	# Use the playable wood's builder, meshes, deterministic placement and materials.
+	# Three near slices only: no town, bears, quad, player or second running chamber.
+	var source: Ep2Interlude = load("res://src/episode2/chamber/woods_quad.gd").new()
+	var vista: Node3D = source.call("build_surface_vista")
+	vista.name = "SurfaceWoods"
+	vista.position = SURFACE_OFFSET
+	_visuals.add_child(vista)
+	_surface_environment = source._env_node.environment
+	_surface_sun = source._sun
+	source.remove_child(_surface_sun)
+	_surface_sun.visible = false
+	_visuals.add_child(_surface_sun)
+	source.free()
+	_mine_environment = _env_node.environment
+
+
+func _surface_light() -> void:
+	if _surface_environment == null:
+		return
+	# Enter the same daylight before the doorway cut, while keeping the shaft warm below.
+	var daylight: bool = _cage_y >= TOP_Y - 0.5
+	if daylight == _surface_daylight:
+		return
+	_surface_daylight = daylight
+	if daylight and _vm != null:
+		_vm.set_exposure(0.82)
+		_vm.set_world_shadows(false)
+		_vm.set_own_light(WoodsQuadChamber.VM_KEY_ENERGY, _surface_sun)
+	_env_node.environment = _surface_environment if daylight else _mine_environment
+	_sun.visible = not daylight
+	_surface_sun.visible = daylight
 
 
 func _build_cage(timber: StandardMaterial3D, iron: StandardMaterial3D) -> void:
@@ -677,7 +680,18 @@ func is_gate_open() -> bool:
 # --- the story --------------------------------------------------------------------------------------------------------
 
 func _wants_handoff() -> bool:
-	return _beat == Beat.SURFACE and _player_pos.z >= EXIT_Z and not _show_active
+	return _beat == Beat.SURFACE and _player_pos.z >= EXIT_Z
+
+
+func get_handoff() -> Dictionary:
+	var data: Dictionary = super.get_handoff()
+	data["surface_player"] = _player_pos - SURFACE_OFFSET
+	if _bull != null:
+		data["surface_bull"] = _bull.position - SURFACE_OFFSET
+		data["surface_bull_facing"] = _bull.facing
+		if _bull.anim != null:
+			data["surface_bull_walk_time"] = _bull.anim.current_animation_position
+	return data
 
 
 func _on_setup() -> void:
@@ -713,7 +727,6 @@ func _on_beat_entered(b: int) -> void:
 			_sfx("ep2_lift_start")
 			_start_show([
 				{"do": "call", "fn": func() -> void: look_toward(get_lever_position() + Vector3(0.0, 0.1, 0.0), 2.6)},
-				{"do": "call", "fn": func() -> void: _begin_carry_line("vo_bull_lift_lever")},
 				{"do": "face", "at": LEVER_POS + Vector3(0.0, 0.0, 0.0)},
 				{"do": "reach", "at": LEVER_POS + Vector3(0.12, 0.2, 0.0), "ramp": 0.45, "hold": 0.3, "lean": 0.0},
 				{"do": "call", "fn": _pull_lever},
@@ -728,18 +741,22 @@ func _on_beat_entered(b: int) -> void:
 				_loop.play()
 			_start_show([
 				{"do": "face", "at": _player_pos},
+				{"do": "until", "pred": func() -> bool: return _hold <= 0.0},
 				FacilityShow._say("vo_bull_plan1", 0.25),
 				FacilityShow._say("vo_bull_plan2", 0.25),
 				FacilityShow._say("vo_bull_plan3", 0.3),
 				FacilityShow._say("vo_lb_plan_reply", 0.3)])
 		Beat.SURFACE:
+			# This shaft brace lies at chest height across the only exit. Clear it before
+			# the gate slides open; neither character may walk through solid timber.
+			if _exit_crossbeam != null:
+				_exit_crossbeam.visible = false
 			_sfx("ep2_lift_arrive")
 			if _loop:
 				_loop.stop()
 			camera_max = Vector3(4.1, 40.0, 16.0)
 			_bull_on_cage = false
 			_start_show([
-				FacilityShow._say("vo_bull_lift_arrive", 0.2),
 				{"do": "walk", "to": Vector3(0.75, TOP_Y, 12.8), "speed": 2.8},          # he leads out along the walkway's right edge, clear of the view
 				{"do": "face", "at": Vector3(0.0, TOP_Y, 0.0)}])
 
@@ -761,6 +778,7 @@ func _show_finished() -> void:
 
 
 func _tick(delta: float) -> void:
+	_surface_light()
 	# lever animation: the iron handle swings from back (-35 deg) to forward (+35 deg) as Inferno pulls it
 	if _lever_t >= 0.0 and _lever_t < 1.0 and _lever:
 		_lever_t = minf(1.0, _lever_t + delta / 0.7)
@@ -793,7 +811,7 @@ func _tick(delta: float) -> void:
 		Beat.SURFACE:
 			_cage_y = TOP_Y
 			_gate_open = minf(1.0, _gate_open + delta / 1.2)
-			if _player_pos.z >= EXIT_Z and not _show_active and _handoff_ok():
+			if _player_pos.z >= EXIT_Z and _handoff_ok():
 				_advance_to(Beat.DONE)
 				_resolve({"next_chamber": NEXT_CHAMBER, "next_mode": "stealth"})
 	if _cage:

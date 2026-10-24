@@ -147,7 +147,7 @@ func _ready() -> void:
 		not lift._player_node.visible and vm.rifle.visible and lift.get_hud().visible and absf(angle_difference(lift.get_look_yaw(), atan2(to_lever.x, to_lever.z))) < 0.6,
 		"yaw %.2f want %.2f" % [lift.get_look_yaw(), atan2(to_lever.x, to_lever.z)])
 	_until(lift, 30.0, func(): return lift.get_beat_name() == "RISE")
-	_check("he tells Lil Blunt not to bother looking for it - THEN the cage starts", said.has("vo_bull_lift_lever") and lift.get_beat_name() == "RISE", str(said))
+	_check("the handle is pulled silently, then the cage starts", not said.has("vo_bull_lift_lever") and lift.get_beat_name() == "RISE", str(said))
 	_check("the lever swung (he actually pulled it)", lift._lever_t >= 1.0)
 	_check("the walkway gate dropped shut behind them", lift._gate_in_k < 0.05)
 	_check("Inferno never left the cage to pull it", absf(lift.get_bull().position.x) < MineLiftChamber.CAGE_HALF and absf(lift.get_bull().position.z) < MineLiftChamber.CAGE_HALF, str(lift.get_bull().position))
@@ -171,7 +171,7 @@ func _ready() -> void:
 		and said.find("vo_bull_plan3") < said.find("vo_lb_plan_reply"), str(said))
 	_until(lift, 6.0, func(): return lift.is_gate_open())
 	_check("the gate slides open at the top", lift.is_gate_open())
-	_check("Inferno announces the surface", said.has("vo_bull_lift_arrive"))
+	_check("surface exit has no blocking arrival narration", not said.has("vo_bull_lift_arrive"))
 	_until(lift, 10.0, func(): return not lift.is_show_active())
 	lift._look_yaw = 0.0                                # he turns from the lever wall to the daylight (the mouse, in play)
 	lift.set_move_input(Vector2(0.0, 1.0))

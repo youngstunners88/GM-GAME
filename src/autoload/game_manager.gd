@@ -670,6 +670,8 @@ func clear_checkpoint(level: int) -> void:
     level_checkpoints.erase(level)
 
 var personal_armory: Dictionary = {}
+## Ambient town memory only; never grants progress or access to Episode 2.
+var town_people_state: Dictionary = {}
 
 func save_session() -> bool:
     var data: Dictionary = {
@@ -691,6 +693,7 @@ func save_session() -> bool:
         "progression_state": progression_state,
         "wallet_address": wallet_address,
         "personal_armory": personal_armory,
+        "town_people_state": town_people_state,
     }
     var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if f == null:
@@ -733,6 +736,10 @@ func load_session() -> bool:
     var armory := Ep2ArmoryState.new()
     armory.restore(SaveSafe.to_dict(data.get("personal_armory", {})), highest_unlocked_level >= 3 or current_level >= 3)
     personal_armory = armory.snapshot()
+    town_people_state = SaveSafe.to_dict(data.get("town_people_state", {}))
+    # Full semantic validation is performed against the loaded town's geometry/roster.
+    if JSON.stringify(town_people_state).length() > 65536:
+        town_people_state = {}
     _deserialize_checkpoints(SaveSafe.to_dict(data.get("checkpoints", {})))
     if data.has("goldmine"):
         GoldMineSystem.load_save_data(SaveSafe.to_dict(data.get("goldmine", {})))
