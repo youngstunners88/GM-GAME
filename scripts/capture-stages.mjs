@@ -2,7 +2,7 @@
 // capture-stages.mjs — pan sweep of levels 1-3 via ?stage=N for seam/smudge/sliver
 // diagnosis. Usage: node scripts/capture-stages.mjs <base-url> <out-dir> [stage]
 import fs from 'fs';
-import { chromium } from 'playwright';
+import { chromium } from './lib/pw.mjs';
 
 const URL_BASE = process.argv[2] || 'http://localhost:8899/game/index.html';
 const OUT_DIR = process.argv[3] || 'artifacts/stage-shots';

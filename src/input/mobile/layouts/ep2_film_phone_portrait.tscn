@@ -1,0 +1,23 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/input/mobile/touch_layout.gd" id="1_layout"]
+[ext_resource type="PackedScene" path="res://src/input/mobile/virtual_button.tscn" id="2_btn"]
+
+[node name="Ep2FilmPhonePortrait" type="Control"]
+mouse_filter = 2
+script = ExtResource("1_layout")
+tier_scale = 1.0
+layout_name = &"ep2_film_phone_portrait"
+profile = &"ep2_film"
+
+[node name="Skip" parent="." instance=ExtResource("2_btn")]
+layout_mode = 0
+anchor_corner = 1
+offset_dp = Vector2(66.0, 80.0)
+radius_dp = 36.0
+hit_pad_dp = 12.0
+role = &"jump"
+action = &"jump"
+mode = 0
+glyph = 7
+hold_seconds = 0.9

@@ -7,6 +7,19 @@ extends Area2D
 @export var unlock_threshold: int = 1500
 @export var level_index: int = 1
 
+## Hint label font on a mouse-and-keyboard machine (unchanged).
+const HINT_FONT_PX: int = 12
+## Touch: the hint is this tall in dp, clamped to a sane canvas-unit range.
+const TOUCH_HINT_DP: float = 11.0
+const TOUCH_HINT_MIN_PX: int = 14
+const TOUCH_HINT_MAX_PX: int = 44
+const TOUCH_HINT_WIDTH: float = 240.0
+
+## Hint font size in canvas units for a screen where one dp is `dp_units` canvas
+## units. Pure, so a test can pose as a 2x phone (1.85 u/dp) or a 3x portrait one.
+static func touch_hint_font_px(dp_units: float) -> int:
+	return clampi(int(round(TOUCH_HINT_DP * maxf(dp_units, 0.1))), TOUCH_HINT_MIN_PX, TOUCH_HINT_MAX_PX)
+
 var _unlocked: bool = false
 var _ring: Node2D
 var _hint: Label
@@ -53,7 +66,16 @@ func _setup_visual() -> void:
 	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_hint.position = Vector2(-52, -78)
 	_hint.custom_minimum_size = Vector2(104, 0)
-	_hint.add_theme_font_size_override("font_size", 12)
+	_hint.add_theme_font_size_override("font_size", HINT_FONT_PX)
+	if TouchUi.is_touch():
+		# 12 px is 6.5 dp tall on a phone: unreadable. Size the hint in dp (the
+		# camera of a platformer stage is unzoomed, so canvas units are world
+		# units), and widen + raise the label so the bigger text stays centred
+		# over the ring instead of growing off to the right.
+		var px: int = touch_hint_font_px(TouchUi.metrics().dp)
+		_hint.add_theme_font_size_override("font_size", px)
+		_hint.custom_minimum_size = Vector2(TOUCH_HINT_WIDTH, 0)
+		_hint.position = Vector2(-TOUCH_HINT_WIDTH * 0.5, -44.0 - float(px) * 1.5)
 	add_child(_hint)
 
 	var col := CollisionShape2D.new()
@@ -102,7 +124,14 @@ func _on_body_entered(body: Node2D) -> void:
 		"position": global_position,
 		"level_index": level_index,
 	}
+	# The level's on-screen controls dissolve with the dive wipe instead of snapping off:
+	# load_scene() moves the StateMachine to TRANSITIONING, which hides the touch layer, and
+	# this asks the manager to fade THAT one hide (0.12 s, controls inert meanwhile). Only
+	# when the controls are actually up - on a desktop nothing is shown and nothing is armed.
+	if MobileLayoutManager.controls_visible:
+		MobileLayoutManager.request_fade_hide()
 	# Match the wipe to THIS realm's palette, not a blanket green/purple smoke
 	# cloud — see SceneRouter.blaze_transition_for_level for why.
 	SceneRouter.load_scene("res://src/dashmode/blaze_rush.tscn",
-		SceneRouter.blaze_transition_for_level(level_index))
+		SceneRouter.blaze_transition_for_level(level_index),
+		SceneRouter.blaze_wipe_seconds())

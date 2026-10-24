@@ -204,12 +204,37 @@ const RUNNER_MUSIC_PLAYLIST := [
 	"res://src/assets/music/runner_run_1.mp3",
 ]
 
+## HAND-OFF GATE (mobile transitions audit F06 + F15, 2026-10-22). A runner that is created while the TransitionDirector
+## is still holding the cover (the boss-3 -> Episode 2 hand-off or the menu route) is the FIRST leg of a session: it must
+## neither advance nor start its music under a half-opaque cover. It waits until the director is at REVEALING, then the
+## music fades in over HANDOFF_MUSIC_FADE_SECONDS (so it lines up with the dissolve, after the first-draw stall) and the
+## cart starts at distance 0. Later legs and retries are created with the director idle and are never held.
+const HANDOFF_MUSIC_FADE_SECONDS := 1.6
+var _reveal_hold: bool = false
+
 @onready var _cart: Node3D = $Cart
 
 func _ready() -> void:
 	if _cart:
 		_cart.position = Vector3(LANE_X[_lane], 0.0, 0.0)
-	AudioManager.play_playlist(RUNNER_MUSIC_PLAYLIST, true)
+	if _handoff_holding():
+		_reveal_hold = true
+	else:
+		AudioManager.play_playlist(RUNNER_MUSIC_PLAYLIST, true)
+
+## True while the TransitionDirector is still holding the cover over this (first-leg) runner.
+func _handoff_holding() -> bool:
+	var td: Node = get_node_or_null("/root/TransitionDirector")
+	return td != null and td.has_method("handoff_holding") and bool(td.call("handoff_holding"))
+
+## The cover has lifted: let the cart go and bring the runner music in.
+func _end_reveal_hold() -> void:
+	_reveal_hold = false
+	AudioManager.play_playlist(RUNNER_MUSIC_PLAYLIST, true, HANDOFF_MUSIC_FADE_SECONDS)
+
+## True while this first-leg runner is waiting for the cover to lift (tests, debug).
+func is_reveal_holding() -> bool:
+	return _reveal_hold
 
 ## Configure the segment before/at spawn. Also resets all run state — safe to
 ## call again on a reused instance.
@@ -287,6 +312,10 @@ func setup(chamber_z: float, obstacles: Array = [], zip_segments: Array = [],
 		_cart.position = Vector3(LANE_X[_lane], 0.0, 0.0)
 
 func _physics_process(delta: float) -> void:
+	if _reveal_hold:
+		if _handoff_holding():
+			return
+		_end_reveal_hold()
 	if not _running:
 		return
 	_advance(delta)

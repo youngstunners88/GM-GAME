@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/input/mobile/virtual_tap_field.gd" id="1_tap"]
+
+[node name="VirtualTapField" type="Control"]
+mouse_filter = 0
+script = ExtResource("1_tap")
+role = &"jump"

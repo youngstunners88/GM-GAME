@@ -73,3 +73,28 @@ Open for the founder: whether pausing should exist at all, and what Restart shou
 
 Founder rule: a phone UI is icons and finger movement, never key names. The "?" hint button, per-button `label`
 exports and the hint labels were removed; the first-run cue is a wordless pulse. See the skill's "NO WRITTEN WORDS".
+
+## Amendment 2026-10-23 - profiles, finger-movement controls, and the refined zone rule
+
+Founder (angry, 2026-10-13 and again 2026-10-22): "mobile games do not have the keys written on them; players use finger movements." Blaze Rush (one verb: tap) and the Episode 2 mine runner
+(hop / jump / duck) and hideout (look) cannot be played with the Episode 1 stick-and-buttons cluster. Status of this amendment: Accepted. Skills: `gm-game-mobile-touch-experience` (contract),
+`gm-game-blaze-rush-mobile`, `ep2-mobile-touch`. Blaze decision record: `adr-blaze-rush-mobile.md`.
+
+Decisions (the original Decision items 1-6 stand; "InputMap is the only contract" gained two documented verbs):
+1. **Profiles.** The scene says which control set it wants: the manager reads `touch_profile() -> StringName` from the FIRST node in group `touch_controls_wanted` that has it (optional `touch_suspended()` and signal `touch_profile_changed`).
+   Names: `platformer` (default), `blaze`, `ep2_runner`, `ep2_foot`, `ep2_film`, `ep2_end`, `ep2_rotate`, `none`. Group nodes without the method keep the legacy platformer behaviour. Registries: `LAYOUT_SCENES` (platformer only) and `PROFILE_SCENES` (18 scenes keyed `<profile>_<variant>`).
+   The layout is built BEFORE the layer is shown; a profile change releases everything once. `blaze`, `ep2_film`, `ep2_end`, `ep2_rotate` sit on layer `LAYER_OVER_FILMS = 60` and go inert while suspended so a lower-layer overlay of the game's own receives the touch.
+2. **New controls** (all `Control`s, vector-drawn, no text): `VirtualTapField` (tap anywhere = fresh `jump` edge), `VirtualSwipePad` (hop / jump / duck from finger travel; thresholds in dp), `VirtualLookPad` (drag = look via `TouchActions.add_look` / `take_look`),
+   `VirtualRotateCue`; `VirtualButton` glyphs SKIP / PICKAXE / CYLINDER / SCOPE / RETRY / HOME / PLAY / EXIT / EYE, a hold ring, an arming delay and `touch_only`; `VirtualJoystick.analog_vertical` for first-person rooms.
+   `TouchActions` gained `pulse`, `tap`, `add_look/take_look/look_pending`, `ensure_action` (touch-only verbs are registered EMPTY actions, so they can never collide with a key).
+3. **The zone rule is refined, not repealed.** The earlier "no invisible tap zones / no gesture detector" rule (Rejected list above, DO-NOT list in `docs/MOBILE_CONTROLS_SPEC.md`) existed because the 2026-08-01 overlay's hidden zones double-fired and stuck inputs.
+   The founder's "players use finger movements" supersedes it for exactly one shape: swipe, look and tap zones are allowed **as real, VISIBLE `Control`s inside a layout scene** (a faint ring and chevrons, corner brackets, a tap ring, a first-run pulse),
+   with per-finger ownership, release-on-hide and rotation, and the orphan rule (never adopt a finger the control did not press), placed FIRST so buttons win their own touches. Still forbidden: `TouchScreenButton`, a second parser, hidden hit areas, gesture detection in game code.
+4. **`TouchUi` (static, null-safe) is the one question "is this a touch player?"**: `keys_shown() = not (is_touch() and not is_keyboard_mode())`. Every key name or keyboard instruction in game UI is gated on it and replaced by an icon or a pulse
+   (the "no written words" amendment above, made enforceable). `VirtualControl._draw_label` was removed and a source-level test fails on any text API in `src/input/mobile` or any text in a layout scene.
+5. **Scoped fade.** `request_fade_hide()` lets exactly one hide (the Blaze portal dive) fade over 0.12 s with the controls inert; every other hide stays instant (the vault lock test depends on it).
+6. Router/edge fixes that touch needs and desktop does not see: Episode 2 F5 (hoisted `move_*` swallow), F6 (`ep2_touch_jump`), F8 (`DEVICE_ID_EMULATION` mouse ignored on foot).
+
+Consequences: + the three phone flows (Blaze, Episode 2 runner/hideout, the hand-off) are playable with fingers only, desktop is byte-identical; - more surface to keep honest (profile registry, layer 60 inert rule, group-order trap), and every threshold
+(swipe 22/20/24 dp, look gain, 24 dp edge inset, retry arm 0.8 s) is a paper number until the founder's device pass. Pack impact: none (no binary assets; the web pack is at its 190 MiB gate).
+

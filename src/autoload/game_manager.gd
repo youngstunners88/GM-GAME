@@ -57,6 +57,10 @@ var titanx_collected: int = 0
 var blaze_rush_completed: Dictionary = {}   # level_index -> true once one-time bonuses paid
 var dash_return: Dictionary = {}            # transient: scene_path/position/level_index for the return trip
 var secret_return: Dictionary = {}          # transient: scene_path/position to return from a secret realm
+## transient: {kind, level} set by a side mode (Blaze Rush) when it hands the player BACK to its level.
+## The level's _start_stage_audio() reads and clears it, so a return neither restarts a random music
+## track nor replays the stage-intro voice line. Empty = an ordinary level load.
+var side_return: Dictionary = {}
 var player_health: int = 3
 var max_health: int = 3
 ## Lives — a hard fail (falling into a pit) costs one. Out of lives = game over.
@@ -629,6 +633,7 @@ func reset_session() -> void:
     blaze_portal_used.clear()
     vault_door_used.clear()
     dash_return = {}
+    side_return = {}
     level_checkpoints.clear()
     GoldMineSystem.reset_session()
 

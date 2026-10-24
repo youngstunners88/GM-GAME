@@ -28,8 +28,29 @@ signal mode_changed(mode: int)
 signal chamber_committed(index: int, result: Dictionary)
 signal session_complete
 signal session_failed
+## The touch profile or the suspended flag may have changed. MobileLayoutManager connects to it the first time it reads
+## this node and refreshes at once (it also polls 5x a second, which is all a PAUSED tree can rely on).
+signal touch_profile_changed
 
 enum Mode { IDLE, RUNNER, CHAMBER, TRANSITION }
+
+# --- TOUCH (skill ep2-mobile-touch; DECISIONS section 4) -----------------------------------------------------------
+# This node IS the profile source for the on-screen controls. MobileLayoutManager reads `touch_profile()` from the first
+# node in the group below that has it; the profile names are the manager's. Joined in `_ready` (so there is no gap at the
+# hand-off reveal) and only AFTER the scene swap, so it never coexists with the Stage 3 film's legacy group node.
+const TOUCH_GROUP := &"touch_controls_wanted"
+const PROFILE_RUNNER := &"ep2_runner"
+const PROFILE_FOOT := &"ep2_foot"
+const PROFILE_FILM := &"ep2_film"
+const PROFILE_ROTATE := &"ep2_rotate"
+const PROFILE_NONE := &"none"
+## Touch-only verbs (no key event, so they can never collide with W = jump + move_up). The layout buttons register them too;
+## registering here as well keeps a test without a layout, or a router without a touch layer, working.
+const TOUCH_SWIPE := &"ep2_touch_swipe"
+const TOUCH_RELOAD := &"ep2_touch_reload"
+const TOUCH_AIM := &"ep2_touch_aim"
+const TOUCH_JUMP := &"ep2_touch_jump"
+const TOUCH_ACTIONS: Array[StringName] = [TOUCH_SWIPE, TOUCH_RELOAD, TOUCH_AIM, TOUCH_JUMP]
 
 const RUNNER_SCENE := preload("res://src/episode2/runner/runner_graybox.tscn")
 const CHAMBER_SCENES := {
@@ -64,6 +85,25 @@ var _chain_id: String = ""
 var _chain_n: int = 0
 var _commit_to_economy: bool = true
 var _totals: Dictionary = {"gold_awarded": 0, "gold_forfeited": 0, "diamonds_burned": 0, "btc_paid": 0}
+## The last profile / suspended flag announced through `touch_profile_changed`.
+var _touch_last_profile: StringName = &""
+var _touch_last_suspended: bool = false
+## True while THIS node holds the tree paused because a touch device is held upright (the 3D runner / hideout cannot be
+## framed in portrait: a drawn "turn your phone" cue is up instead). Only this node ever clears it.
+var _rotate_paused: bool = false
+## A held verb that began as an input EVENT and must end as one: a pause (the touch card, the armory, the rotate cue) freezes
+## this node, so the release event of a duck / an aim made DURING it never arrives. `_resync_held_verbs` ends them when polled
+## input says the finger or key is already up.
+var _duck_by_event: bool = false
+var _aim_by_touch: bool = false
+
+func _ready() -> void:
+	for action: StringName in TOUCH_ACTIONS:
+		TouchActions.ensure_action(action)
+	add_to_group(TOUCH_GROUP)
+	mode_changed.connect(_on_mode_changed_touch)
+	# a window event, not a frame: it still arrives while the tree is paused (the rotate pause)
+	get_tree().root.size_changed.connect(_on_window_resized)
 
 func configure(plan: Array, commit_to_economy: bool = true) -> void:
 	Ep2ArmoryState.install_actions()
@@ -489,6 +529,115 @@ func get_total_distance() -> float:
 		live = float(_active.get_distance())
 	return _completed_distance + live
 
+# --- Touch profile (the controls the phone shows right now) -------------------------------------------------------------
+#
+#   RUNNER, running                          -> ep2_runner   (swipe pad + attack + pickaxe + pause)
+#   CHAMBER, free roam, player in control    -> ep2_foot     (stick + look pad + fire/jump/aim/reload/interact/run + pause)
+#   CHAMBER, armory open                     -> ep2_foot, SUSPENDED (the walking thumb is not orphaned)
+#   CHAMBER, a skippable film is up          -> ep2_film     (one SKIP button; the film's own hold timer decides)
+#   RUNNER / foot while the screen is upright on a touch device -> ep2_rotate (and the sim is paused until landscape)
+#   TRANSITION, IDLE, a scripted beat, anything else -> none (the manager hides the controls and releases everything)
+#
+# The run-over screen (retry + home) is Ep2Entry's profile (`ep2_end`): this node is IDLE then.
+
+## Which touch profile the scene asks for. Duck-typed: MobileLayoutManager reads it from the first group node that has it.
+func touch_profile() -> StringName:
+	if _active == null or not is_instance_valid(_active):
+		return PROFILE_NONE
+	match _mode:
+		Mode.RUNNER:
+			if _runner_live():
+				return PROFILE_ROTATE if _rotate_wanted() else PROFILE_RUNNER
+		Mode.CHAMBER:
+			if _active.has_method("is_film_skippable") and bool(_active.call("is_film_skippable")):
+				return PROFILE_FILM
+			if _foot_ok():
+				return PROFILE_ROTATE if _rotate_wanted() else PROFILE_FOOT
+	return PROFILE_NONE
+
+## Keep the controls up but inert: the armory is open (the weapon selector reads raw fingers and the holster hold must not
+## fight a live stick). The walking thumb keeps its finger; nothing is injected until the armory closes.
+func touch_suspended() -> bool:
+	return _mode == Mode.CHAMBER and _armory_is_open()
+
+func _runner_live() -> bool:
+	return _active.has_method("is_running") and bool(_active.call("is_running"))
+
+func _armory_is_open() -> bool:
+	return _active != null and is_instance_valid(_active) and _active.has_method("armory_open") and bool(_active.call("armory_open"))
+
+## On foot AND the player is the one driving (or the armory is open on top of a driven room).
+func _foot_ok() -> bool:
+	if not _free_roam():
+		return false
+	return (_active.has_method("has_player_control") and bool(_active.call("has_player_control"))) or _armory_is_open()
+
+## The window is taller than wide (TouchMetrics' own rule, so the cue and the layouts always agree).
+func _portrait_window() -> bool:
+	var win: Window = get_window()
+	var size_px: Vector2 = Vector2(win.size) if win != null else get_viewport().get_visible_rect().size
+	return TouchMetrics.orientation_of(size_px) == TouchMetrics.PORTRAIT
+
+## Upright on a touch device that is not being driven by a keyboard, in a mode the controls would be up for.
+func _rotate_wanted() -> bool:
+	if not TouchUi.is_touch() or TouchUi.is_keyboard_mode() or not _portrait_window():
+		return false
+	if _active == null or not is_instance_valid(_active):
+		return false
+	match _mode:
+		Mode.RUNNER:
+			return _runner_live()
+		Mode.CHAMBER:
+			return _foot_ok()
+	return false
+
+## Ends a duck / an ADS whose release event was dropped while the tree was paused (the polled input is the truth).
+func _resync_held_verbs() -> void:
+	if _duck_by_event and not Input.is_action_pressed(&"move_down"):
+		_duck_by_event = false
+		runner_duck_end()
+	if _aim_by_touch and not Input.is_action_pressed(TOUCH_AIM):
+		_aim_by_touch = false
+		if _mode == Mode.CHAMBER and _active != null and is_instance_valid(_active) and _active.has_method("set_aim"):
+			_active.set_aim(false)
+
+## Announce a changed profile / suspended flag (the manager then refreshes at once instead of at its next 5 Hz poll).
+func _touch_changed() -> void:
+	var profile: StringName = touch_profile()
+	var suspended: bool = touch_suspended()
+	if profile == _touch_last_profile and suspended == _touch_last_suspended:
+		return
+	_touch_last_profile = profile
+	_touch_last_suspended = suspended
+	touch_profile_changed.emit()
+
+## Portrait on a touch device: the sim waits (tree pause) until the screen is landscape again. The pause is taken only while
+## the game is PLAYING (that is when the manager can show the cue), never over somebody else's pause (the armory, a pause
+## overlay, the transition director's freeze), and only this node releases it.
+func _update_rotate_pause() -> void:
+	var want: bool = _rotate_wanted()
+	if want:
+		# also re-asserts the pause if a StateMachine change cleared it while the screen is still upright
+		if StateMachine.is_playing() and not get_tree().paused:
+			_rotate_paused = true
+			get_tree().paused = true
+	elif _rotate_paused:
+		_rotate_paused = false
+		if get_tree().paused and not StateMachine.is_paused():
+			get_tree().paused = false
+
+## True while this node is holding the tree paused for the rotate cue (tests, debug).
+func is_rotate_paused() -> bool:
+	return _rotate_paused
+
+func _on_mode_changed_touch(_mode_now: int) -> void:
+	_update_rotate_pause()
+	_touch_changed()
+
+func _on_window_resized() -> void:
+	_update_rotate_pause()
+	_touch_changed()
+
 # --- Mouse cursor ---------------------------------------------------------------
 # The runner view draws its own reticle, so the OS cursor is hidden in RUNNER
 # mode and visible everywhere else (chambers, menus, after the session ends).
@@ -508,6 +657,9 @@ func _process(_delta: float) -> void:
 				manager.save_session()
 	_sync_mouse_mode()
 	_poll_free_roam()
+	_resync_held_verbs()
+	_update_rotate_pause()
+	_touch_changed()
 	var waiting: bool = _active != null and _active.has_method("is_waiting_for_handoff") and bool(_active.call("is_waiting_for_handoff"))
 	_drive_prebuild(PREBUILD_MS_WAITING if waiting else PREBUILD_MS)
 
@@ -544,6 +696,9 @@ func _free_roam() -> bool:
 	return _active != null and is_instance_valid(_active) and _active.has_method("set_move_input")
 
 func _poll_free_roam() -> void:
+	# The touch look pad banks a drag delta every event; the room drains it ONCE a frame, into the very verb the mouse
+	# uses (so LOOK_SENSITIVITY and the ADS scale apply identically). Always drained so a stale drag never waits.
+	var look_delta: Vector2 = TouchActions.take_look()
 	if not input_enabled or _mode != Mode.CHAMBER or not _free_roam():
 		_last_move = Vector2.ZERO
 		_last_run = false
@@ -553,10 +708,13 @@ func _poll_free_roam() -> void:
 	if _active.has_method("armory_open") and _active.armory_open():
 		v = Vector2.ZERO
 		run = false
+		look_delta = Vector2.ZERO
 	if v != _last_move or run != _last_run:
 		_last_move = v
 		_last_run = run
 		_active.set_move_input(v, run)
+	if look_delta != Vector2.ZERO and _active.has_method("look"):
+		_active.look(look_delta)
 
 ## Mouse + Space + E/LMB for the hideout. Returns true when the event was used.
 func _route_free_roam(event: InputEvent) -> bool:
@@ -578,6 +736,22 @@ func _route_free_roam(event: InputEvent) -> bool:
 			return true
 		if _active.armory_open():
 			return true
+	# TOUCH (audit F8). A finger makes an emulated mouse event (device == DEVICE_ID_EMULATION) wherever no control covers it;
+	# on foot that must never look, fire or capture the pointer: look comes from the look pad (TouchActions.take_look) and fire
+	# from the FIRE button (the `attack` action). A real mouse (device 0) is untouched.
+	if event is InputEventMouse and (event as InputEventMouse).device == InputEvent.DEVICE_ID_EMULATION:
+		return false
+	# Touch-only verbs (audit F6 / F7): jump, hold-to-aim, reload. W stays move_up, never jump.
+	if event.is_action(TOUCH_AIM) and _active.has_method("set_aim"):
+		_aim_by_touch = event.is_pressed()
+		_active.set_aim(event.is_pressed())
+		return true
+	if event.is_action_pressed(TOUCH_JUMP):
+		_active.jump()
+		return true
+	if event.is_action_pressed(TOUCH_RELOAD) and _active.has_method("reload"):
+		_active.reload()
+		return true
 	if event is InputEventMouseMotion:
 		_active.look((event as InputEventMouseMotion).relative)
 		return true
@@ -603,16 +777,26 @@ func _route_free_roam(event: InputEvent) -> bool:
 		if k.pressed and k.physical_keycode == KEY_R and _active.has_method("reload"):
 			_active.reload()
 			return true
-		# W / S / arrows are movement here, never "jump" or "take cover": swallow them so the shaft bindings
-		# (move_down = cover, move_left/right = walk) cannot fire on top of free roam.
-		if event.is_action("move_up") or event.is_action("move_down") or event.is_action("move_left") \
-				or event.is_action("move_right"):
-			return true
+	# W / S / arrows are movement here, never "jump" or "take cover": swallow them so the shaft bindings
+	# (move_down = cover, move_left/right = walk) cannot fire on top of free roam. Hoisted out of the key branch (audit F5):
+	# the touch stick (and a gamepad D-pad) presses these as InputEventAction / joypad events, which are not keys, and used
+	# to fall through to chamber_walk / take_cover (a horizontal push walked FORWARD). _poll_free_roam reads the same axes.
+	if event.is_action("move_up") or event.is_action("move_down") or event.is_action("move_left") \
+			or event.is_action("move_right"):
+		return true
 	return false
 
 func _exit_tree() -> void:
 	_persist_town()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	# never leave the tree frozen behind us because the screen was upright when this node went away
+	var tree: SceneTree = get_tree()
+	if _rotate_paused:
+		_rotate_paused = false
+		if tree != null and tree.paused and StateMachine.is_playing():
+			tree.paused = false
+	if tree != null and tree.root.size_changed.is_connected(_on_window_resized):
+		tree.root.size_changed.disconnect(_on_window_resized)
 
 # --- Live player input (guard #2 still applies) --------------------------------
 #
@@ -664,11 +848,18 @@ func _unhandled_input(event: InputEvent) -> void:
 			elif event.is_action_pressed("jump"):
 				runner_jump()
 			elif event.is_action_pressed("move_down"):
+				_duck_by_event = true
 				runner_duck_start()
 			elif event.is_action_released("move_down"):
+				_duck_by_event = false
 				runner_duck_end()
 			elif event.is_action_pressed("attack"):
 				runner_shoot()
+			# touch-only verbs (the pickaxe button; the runner has no reload button - it reloads itself - but the verb exists)
+			elif event.is_action_pressed(TOUCH_SWIPE):
+				runner_swipe()
+			elif event.is_action_pressed(TOUCH_RELOAD):
+				runner_reload()
 		Mode.CHAMBER:
 			if _free_roam() and _route_free_roam(event):
 				get_viewport().set_input_as_handled()
@@ -676,7 +867,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			if event.is_action_pressed("attack"):
 				chamber_shoot()
 			elif event.is_action_pressed("interact"):
-				chamber_start_rig("eth_diamonds" if Input.is_action_pressed("sprint") else "eth")
+				# (the touch RUN button is a persistent toggle: on a phone it must never pick the Diamond-burn payment - audit F13)
+				chamber_start_rig("eth_diamonds" if Input.is_action_pressed("sprint") and TouchUi.keys_shown() else "eth")
 			elif event.is_action_pressed("dash"):
 				chamber_early_claim()
 			elif event.is_action_pressed("move_down"):

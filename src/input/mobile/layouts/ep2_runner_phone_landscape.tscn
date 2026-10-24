@@ -1,0 +1,51 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/input/mobile/touch_layout.gd" id="1_layout"]
+[ext_resource type="PackedScene" path="res://src/input/mobile/virtual_swipe_pad.tscn" id="2_swipe"]
+[ext_resource type="PackedScene" path="res://src/input/mobile/virtual_button.tscn" id="3_btn"]
+
+[node name="Ep2RunnerPhoneLandscape" type="Control"]
+mouse_filter = 2
+script = ExtResource("1_layout")
+tier_scale = 1.0
+layout_name = &"ep2_runner_phone_landscape"
+profile = &"ep2_runner"
+
+[node name="SwipePad" parent="." instance=ExtResource("2_swipe")]
+layout_mode = 0
+region = Rect2(0.0, 0.12, 0.44, 0.88)
+rest_offset_dp = Vector2(112.0, 92.0)
+
+[node name="Attack" parent="." instance=ExtResource("3_btn")]
+layout_mode = 0
+anchor_corner = 1
+offset_dp = Vector2(92.0, 96.0)
+radius_dp = 40.0
+hit_pad_dp = 10.0
+role = &"attack"
+action = &"attack"
+mode = 0
+glyph = 2
+
+[node name="Pickaxe" parent="." instance=ExtResource("3_btn")]
+layout_mode = 0
+anchor_corner = 1
+offset_dp = Vector2(188.0, 58.0)
+radius_dp = 34.0
+hit_pad_dp = 10.0
+role = &"attack"
+action = &"ep2_touch_swipe"
+mode = 0
+glyph = 8
+touch_only = true
+
+[node name="Pause" parent="." instance=ExtResource("3_btn")]
+layout_mode = 0
+anchor_corner = 4
+offset_dp = Vector2(30.0, 64.0)
+radius_dp = 17.0
+hit_pad_dp = 12.0
+role = &"pause"
+action = &"pause"
+mode = 0
+glyph = 6

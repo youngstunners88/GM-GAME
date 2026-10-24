@@ -2,20 +2,31 @@ extends Node
 ## Validates the Blaze Rush course data and the finish -> return-to-game flow.
 ##
 ## WHY THIS EXISTS: the layouts in blaze_rush_layouts.gd are hand-authored
-## pixel coordinates with a speed ramp layered on top in blaze_rush.gd — a
+## pixel coordinates run at a FLAT RUN_SPEED (blaze_rush.gd; the layouts'
+## speed_start/speed_end ramp is authored data that nothing reads) — a
 ## typo here doesn't fail to compile, it silently produces an unfair gap (one
-## wider than the jump arc can clear at that point in the run) or a hazard
-## sitting inside a pit with no floor under it. Nothing else in the gate
+## wider than the jump arc can clear at that speed) or a hazard
+## sitting inside a pit with no floor under it. The real-physics window
+## measurements live in blaze_rush_window_test.gd. Nothing else in the gate
 ## battery would catch that. This also exercises the actual finish -> exit
 ## code path (GameManager.dash_return -> SceneRouter.load_scene) rather than
 ## trusting a code read that it works.
 ##
 ## Run: godot --headless res://tests/blaze_rush_layout_test.tscn
 
-const GRAVITY: float = 2200.0
-const JUMP_VELOCITY: float = -700.0
+## The REAL run constants, read from the script itself so this gate cannot drift
+## from the game (constants are not reachable through Node.get(), but they are on
+## the preloaded script).
+const BlazeRush := preload("res://src/dashmode/blaze_rush.gd")
+const GRAVITY: float = BlazeRush.GRAVITY
+const JUMP_VELOCITY: float = BlazeRush.JUMP_VELOCITY
+const RUN_SPEED: float = BlazeRush.RUN_SPEED
 const AIR_TIME: float = 2.0 * 700.0 / GRAVITY  # ~0.636s, fixed regardless of run speed
-const SAFETY_MARGIN: float = 0.8  # gap width must fit within 80% of max jump range
+## The cube's collision box is 24 u wide: a landing counts as soon as its LEADING
+## edge is over the far lip, and it can still take off one physics tick after its
+## trailing edge left the near lip (is_on_floor() reports the previous tick).
+const CUBE_BOX: float = 24.0
+const MIN_GAP_WINDOW_S: float = 0.120   # the fairness floor (see blaze_rush_window_test)
 
 var _failures: Array[String] = []
 
@@ -25,21 +36,29 @@ func _ready() -> void:
 	await _validate_finish_and_return_flow()
 	_report_and_quit()
 
+## A pit must leave the player a TAKEOFF WINDOW of at least MIN_GAP_WINDOW_S.
+##
+## This used to compare every gap with a local speed lerped from the layout's
+## `speed_start` -> `speed_end` (up to 460 u/s). NO runtime code reads those keys:
+## the run is a flat RUN_SPEED (320) on every stage, so the old check certified
+## gaps against a speed the player never reaches. Here the REAL speed is used and
+## the analytic reach is deliberately a little conservative:
+##   reach = RUN_SPEED * AIR_TIME + CUBE_BOX + one tick of travel   (~233 u)
+##   window = (reach - gap_width) / RUN_SPEED
+## (the engine sweep in blaze_rush_window_test.gd measures ~237.5 u: the widest gap,
+## 190 u, leaves 148 ms there vs 134 ms here). The real-physics test is the arbiter;
+## this one only keeps the data sane without a physics step.
 func test_blaze_rush_layouts_gaps_stay_within_local_jump_range(level: int, layout: Dictionary) -> void:
-	var length: float = layout.get("length", 1.0)
-	var speed_start: float = layout.get("speed_start", 320.0)
-	var speed_end: float = layout.get("speed_end", speed_start)
+	var reach: float = RUN_SPEED * AIR_TIME + CUBE_BOX + RUN_SPEED / 60.0
 	for ob in layout.get("obstacles", []):
 		if ob.get("type", "") != "gap":
 			continue
-		var progress := clampf(ob.x / length, 0.0, 1.0)
-		var local_speed: float = lerpf(speed_start, speed_end, progress)
-		var max_range: float = local_speed * AIR_TIME * SAFETY_MARGIN
 		var w: float = ob.get("w", 0.0)
-		if w > max_range:
+		var window_s: float = (reach - w) / RUN_SPEED
+		if window_s < MIN_GAP_WINDOW_S:
 			_failures.append(
-				"level %d gap at x=%.0f (w=%.0f) exceeds safe jump range %.1f at local speed %.1f"
-				% [level, ob.x, w, max_range, local_speed]
+				"level %d gap at x=%.0f (w=%.0f) leaves only a %.0f ms takeoff window at the real flat speed %.0f u/s (reach %.1f u, floor %.0f ms)"
+				% [level, ob.x, w, window_s * 1000.0, RUN_SPEED, reach, MIN_GAP_WINDOW_S * 1000.0]
 			)
 
 func test_blaze_rush_layouts_hazards_do_not_sit_inside_gaps(level: int, layout: Dictionary) -> void:

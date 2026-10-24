@@ -20,7 +20,7 @@
 // Exit 0 = booted with no script errors and every shot written.
 import fs from 'fs';
 import path from 'path';
-import { chromium } from 'playwright';
+import { chromium } from './lib/pw.mjs';
 
 const URL_BASE = process.argv[2];
 const OUT_DIR = process.argv[3] || 'artifacts/ep2-shots';
@@ -38,6 +38,10 @@ const url = URL_BASE + (URL_BASE.includes('?') ? '&' : '?') + 'ep2=1' +
   (CHAMBER ? '&ep2chamber=1' : '');
 const errors = [];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// ?ep2=1 now goes through the TransitionDirector (SceneRouter.load_scene diverts Episode 2 to it): card -> swap -> settle
+// -> reveal. The runner is only on screen once '[TD] REVEALING->IDLE' has printed, so the script waits for that line
+// instead of trusting a fixed sleep (the card, not the runner, would be in the first screenshot otherwise).
+const tdLines = [];
 
 // This sandbox ships a pinned Chromium at PLAYWRIGHT_BROWSERS_PATH that will
 // NOT match the browser build a freshly-installed playwright package expects
@@ -65,6 +69,7 @@ page.on('console', (m) => {
   }
 });
 page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
+page.on('console', (m) => { const t = m.text(); if (t.startsWith('[TD]')) tdLines.push(t); });
 
 console.log('opening', url);
 await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 120000 });
@@ -75,7 +80,15 @@ await page.waitForFunction(() => {
   const c = document.querySelector('canvas');
   return c && c.width > 100 && c.height > 100;
 }, { timeout: 180000 });
-await sleep(9000);   // engine warm-up + autoloads + scene route
+await sleep(9000);   // engine warm-up + autoloads + the menu's own first frames
+{
+  // the hand-off (card, warm-up of ~45 MiB, swap, settle, reveal) under software GL can take a minute: wait for its end
+  const end = Date.now() + 240000;
+  while (!tdLines.some((l) => l.includes('REVEALING->IDLE')) && Date.now() < end) await sleep(250);
+  const done = tdLines.some((l) => l.includes('REVEALING->IDLE'));
+  console.log(done ? 'director hand-off finished' : 'WARNING: no "[TD] REVEALING->IDLE" within 240 s; continuing (an older export has no director route)');
+  await sleep(1500);   // the runner's first frames after the cover lifts
+}
 
 const shots = [];
 async function shot(name) {

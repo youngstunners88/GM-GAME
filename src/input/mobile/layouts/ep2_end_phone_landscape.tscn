@@ -1,0 +1,35 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/input/mobile/touch_layout.gd" id="1_layout"]
+[ext_resource type="PackedScene" path="res://src/input/mobile/virtual_button.tscn" id="2_btn"]
+
+[node name="Ep2EndPhoneLandscape" type="Control"]
+mouse_filter = 2
+script = ExtResource("1_layout")
+tier_scale = 1.0
+layout_name = &"ep2_end_phone_landscape"
+profile = &"ep2_end"
+
+[node name="Retry" parent="." instance=ExtResource("2_btn")]
+layout_mode = 0
+anchor_corner = 2
+offset_dp = Vector2(-66.0, 120.0)
+radius_dp = 46.0
+hit_pad_dp = 12.0
+role = &"jump"
+action = &"jump"
+mode = 0
+glyph = 11
+arm_delay_s = 0.8
+
+[node name="Home" parent="." instance=ExtResource("2_btn")]
+layout_mode = 0
+anchor_corner = 2
+offset_dp = Vector2(74.0, 112.0)
+radius_dp = 34.0
+hit_pad_dp = 12.0
+role = &"dash"
+action = &"ui_cancel"
+mode = 0
+glyph = 12
+arm_delay_s = 0.8

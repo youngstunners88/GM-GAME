@@ -374,6 +374,85 @@ func discard_music_override(token: int) -> void:
     _saved_stream = null
     _saved_playlist = []
 
+## Release a pushed override SMOOTHLY and RESUME the paused base track — the exit
+## of a side mode (Blaze Rush) that hands the player straight back to the level it
+## came from. The override track fades out over `seconds` while the base track
+## the push paused fades back IN from its saved position (the same node when it is
+## still alive, rebuilt from the saved context when it is not), so the wipe is
+## never silent and the stage song carries on instead of restarting.
+##
+## THE "FAINT SECOND SONG" RULE STILL HOLDS. discard_music_override() exists
+## because resuming the base track and then letting the destination call
+## play_playlist() overlaps the resumed track with a fresh one (~0.8 s of two
+## songs). This function is only safe when the destination does NOT start new
+## music: the caller must set GameManager.side_return and the level must start its
+## audio through LevelBase._start_stage_audio(), which skips play_playlist()
+## when is_playing_playlist() says the stage track is already live.
+## Stale tokens are ignored, like every other release.
+func release_music_override_faded(token: int, seconds: float = 0.35) -> void:
+    if token != _override_token or not _override_active:
+        return
+    _override_active = false
+    seconds = maxf(seconds, 0.01)
+    # 1. The override track fades out and frees itself. It is detached from the
+    #    single _override_player slot first and parked in _retiring, so a later
+    #    push / purge can still hard-stop it and nothing leaks.
+    var outgoing: AudioStreamPlayer = _override_player
+    _override_player = null
+    if outgoing and is_instance_valid(outgoing):
+        _retiring.append(outgoing)
+        var out_tw := outgoing.create_tween()
+        out_tw.tween_property(outgoing, "volume_db", -40.0, seconds)
+        out_tw.finished.connect(func() -> void:
+            _retiring.erase(outgoing)
+            if is_instance_valid(outgoing):
+                outgoing.stop()
+                outgoing.queue_free())
+    # 2. The base track resumes, fading in. A speaking announcer keeps it ducked.
+    var target_db: float = VOICE_DUCK_DB if _voice_ducking else 0.0
+    if current_music_player and is_instance_valid(current_music_player):
+        current_music_player.volume_db = -30.0
+        current_music_player.stream_paused = false
+        var in_tw := current_music_player.create_tween()
+        in_tw.tween_property(current_music_player, "volume_db", target_db, seconds)
+        _saved_stream = null
+        _saved_playlist = []
+        return
+    # The base player was freed (scene change, etc.): rebuild from the saved context.
+    _playlist = _saved_playlist
+    _last_track = _saved_last_track
+    if _saved_stream != null:
+        current_music_player = AudioStreamPlayer.new()
+        current_music_player.bus = "Music"
+        current_music_player.stream = _saved_stream
+        add_child(current_music_player)
+        current_music_player.volume_db = -30.0
+        var rebuilt_tw := current_music_player.create_tween()
+        rebuilt_tw.tween_property(current_music_player, "volume_db", target_db, seconds)
+        current_music_player.play(_saved_position)
+        current_music_player.finished.connect(_on_music_track_finished)
+    elif not _playlist.is_empty():
+        _play_next_in_playlist(true)
+    _saved_stream = null
+    _saved_playlist = []
+
+## True when the BASE music (not an override) is already playing exactly this
+## playlist: it is live, not paused and no override owns the music. Used by
+## LevelBase._start_stage_audio() after a Blaze return to skip a redundant
+## play_playlist() — the resumed stage song must be left alone.
+func is_playing_playlist(paths: Array) -> bool:
+    var found: Array = []
+    for p in paths:
+        if ResourceLoader.exists(p):
+            found.append(p)
+    if found.is_empty() or _override_active:
+        return false
+    if not (current_music_player and is_instance_valid(current_music_player)):
+        return false
+    if current_music_player.stream_paused:
+        return false
+    return _playlist == found
+
 func _clear_override_player() -> void:
     if _override_player and is_instance_valid(_override_player):
         _override_player.stop()

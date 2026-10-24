@@ -268,7 +268,7 @@ jobs:
           custom_features=""
           export_filter="all_resources"
           include_filter="config.json,src/autoload/share_taglines.json"
-          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*,design/*,work-notes/*,tools/*,assets/keyart/*,src/assets/models/horse/assetfurnace/*,web_verify/*,web/game/*,src/assets/sprites/sprite_prop_train-goldmine.png,src/assets/sprites/sprite_prop_train-goldmine_256.png,src/assets/sprites/sprite_train_goldmine_blender-render.png,src/assets/portals/leaders/*,src/assets/logos/founder/ref_wrong_diamonds_banned.png,src/assets/art/smoke_lounge_banner.png,src/assets/models/player_bow/bow_fps_view.png,src/episode2/extras/*"
+          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*,design/*,work-notes/*,tools/*,assets/keyart/*,src/assets/models/horse/assetfurnace/*,web_verify/*,web/game/*,src/assets/sprites/sprite_prop_train-goldmine.png,src/assets/sprites/sprite_prop_train-goldmine_256.png,src/assets/sprites/sprite_train_goldmine_blender-render.png,src/assets/portals/leaders/*,src/assets/logos/founder/ref_wrong_diamonds_banned.png,src/assets/logos/founder/ref_flaming_diamond_target.png,src/assets/logos/founder/ref_no_logos_in_gaps.png,src/assets/logos/founder/ref_stilts_gap_outline.png,src/assets/logos/founder/ref_squares_to_replace.png,src/assets/logos/founder/ref_pipe_masks_logo.png,src/assets/logos/founder/ref_mural_remove.png,src/assets/art/smoke_lounge_banner.png,src/assets/models/player_bow/bow_fps_view.png,src/episode2/extras/*"
           export_path="web/game/index.html"
           script_export_mode=1
           script_encryption_key=""
@@ -407,6 +407,92 @@ jobs:
           timeout 90 "$GODOT_BIN" --headless --script res://tests/portal_traversal_test.gd 2>&1 | tee portal-traversal.log
           grep -q 'PORTAL TRAVERSAL: ALL PASS' portal-traversal.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' portal-traversal.log; then exit 1; fi
+          # --- no-Godot checks first (cheap) ---
+          python3 scripts/check-harness-hooks.py 2>&1 | tee harness-hooks-tests.log
+          grep -q 'CHECK_HARNESS_HOOKS: ALL PASS' harness-hooks-tests.log
+          if grep -E '\[FAIL\]' harness-hooks-tests.log; then exit 1; fi
+          node scripts/mobile-transition-probe.mjs --selftest 2>&1 | tee probe-selftest-tests.log
+          grep -q 'MOBILE_TRANSITION_PROBE_SELFTEST: ALL PASS' probe-selftest-tests.log
+          if grep -E '\[FAIL\]' probe-selftest-tests.log; then exit 1; fi
+          # --- headless Godot gates (all measured passing on 2026-10-23) ---
+          timeout 120 "$GODOT_BIN" --headless res://tests/touch_controls_profiles_test.tscn 2>&1 | tee touch-controls-profiles-tests.log
+          grep -q 'TOUCH_CONTROLS_PROFILES: ALL PASS' touch-controls-profiles-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' touch-controls-profiles-tests.log; then exit 1; fi
+          timeout 180 "$GODOT_BIN" --headless res://tests/blaze_rush_touch_test.tscn 2>&1 | tee blaze-rush-touch-tests.log
+          grep -q 'BLAZE_RUSH_TOUCH: ALL PASS' blaze-rush-touch-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-rush-touch-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/blaze_rush_window_test.tscn 2>&1 | tee blaze-rush-window-tests.log
+          grep -q 'BLAZE_RUSH_WINDOW: ALL PASS' blaze-rush-window-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-rush-window-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/blaze_input_buffer_test.tscn 2>&1 | tee blaze-input-buffer-tests.log
+          grep -q 'BLAZE_INPUT_BUFFER: ALL PASS' blaze-input-buffer-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-input-buffer-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/blaze_hud_mouse_filter_test.tscn 2>&1 | tee blaze-hud-mouse-filter-tests.log
+          grep -q 'BLAZE_HUD_MOUSE_FILTER: ALL PASS' blaze-hud-mouse-filter-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-hud-mouse-filter-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/blaze_framing_test.tscn 2>&1 | tee blaze-framing-tests.log
+          grep -q 'BLAZE_FRAMING: ALL PASS' blaze-framing-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-framing-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/level_return_audio_test.tscn 2>&1 | tee level-return-audio-tests.log
+          grep -q 'LEVEL_RETURN_AUDIO: ALL PASS' level-return-audio-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' level-return-audio-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/scene_router_reveal_test.tscn 2>&1 | tee scene-router-reveal-tests.log
+          grep -q 'SCENE_ROUTER_REVEAL: ALL PASS' scene-router-reveal-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' scene-router-reveal-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/blaze_band_density_test.tscn 2>&1 | tee blaze-band-density-tests.log
+          grep -q 'BLAZE_BAND_DENSITY: ALL PASS' blaze-band-density-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-band-density-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/blaze_band_layout_test.tscn 2>&1 | tee blaze-band-layout-tests.log
+          grep -q 'BLAZE_BAND_LAYOUT: ALL PASS' blaze-band-layout-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-band-layout-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/blaze_claim_reset_test.tscn 2>&1 | tee blaze-claim-reset-tests.log
+          grep -q 'BLAZE_CLAIM_RESET: ALL PASS' blaze-claim-reset-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-claim-reset-tests.log; then exit 1; fi
+          timeout 180 "$GODOT_BIN" --headless res://tests/blaze_diamond_bounce_repro_test.tscn 2>&1 | tee blaze-diamond-bounce-repro-tests.log
+          grep -q 'BLAZE_DIAMOND_BOUNCE_REPRO: ALL PASS' blaze-diamond-bounce-repro-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-diamond-bounce-repro-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/blaze_hud_label_fit_test.tscn 2>&1 | tee blaze-hud-label-fit-tests.log
+          grep -q 'BLAZE_HUD_LABEL_FIT: ALL PASS' blaze-hud-label-fit-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-hud-label-fit-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/blaze_lifecycle_e2e_test.tscn 2>&1 | tee blaze-lifecycle-ee-tests.log
+          grep -q 'BLAZE_LIFECYCLE_E2E: ALL PASS' blaze-lifecycle-ee-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-lifecycle-ee-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/blaze_lounge_banner_test.tscn 2>&1 | tee blaze-lounge-banner-tests.log
+          grep -q 'BLAZE_LOUNGE_BANNER: ALL PASS' blaze-lounge-banner-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-lounge-banner-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/blaze_rush_layout_test.tscn 2>&1 | tee blaze-rush-layout-tests.log
+          grep -q 'BLAZE_RUSH_LAYOUT: ALL PASS' blaze-rush-layout-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-rush-layout-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/blaze_rush_no_pixelation_test.tscn 2>&1 | tee blaze-rush-no-pixelation-tests.log
+          grep -q 'BLAZE_RUSH_NO_PIXELATION: ALL PASS' blaze-rush-no-pixelation-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-rush-no-pixelation-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/blaze_transition_palette_test.tscn 2>&1 | tee blaze-transition-palette-tests.log
+          grep -q 'BLAZE_TRANSITION_PALETTE: ALL PASS' blaze-transition-palette-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blaze-transition-palette-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/transition_director_test.tscn 2>&1 | tee transition-director-tests.log
+          grep -q 'TRANSITION_DIRECTOR: ALL PASS' transition-director-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' transition-director-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/touch_scene_swap_cleanup_test.tscn 2>&1 | tee touch-scene-swap-cleanup-tests.log
+          grep -q 'TOUCH_SCENE_SWAP_CLEANUP: ALL PASS' touch-scene-swap-cleanup-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' touch-scene-swap-cleanup-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/ep2_touch_controls_test.tscn 2>&1 | tee ep-touch-controls-tests.log
+          grep -q 'EP2_TOUCH_CONTROLS: ALL PASS' ep-touch-controls-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep-touch-controls-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/ep2_session_root_test.tscn 2>&1 | tee ep-session-root-tests.log
+          grep -q 'EP2_SESSION_ROOT: ALL PASS' ep-session-root-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep-session-root-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/ep2_theme_handoff_test.tscn 2>&1 | tee ep-theme-handoff-tests.log
+          grep -q 'EP2_THEME_HANDOFF: ALL PASS' ep-theme-handoff-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep-theme-handoff-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/ep2_access_code_test.tscn 2>&1 | tee ep-access-code-tests.log
+          grep -q 'EP2_ACCESS_CODE: ALL PASS' ep-access-code-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep-access-code-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/harness_hooks_inert_test.tscn 2>&1 | tee harness-hooks-inert-tests.log
+          grep -q 'HARNESS_HOOKS_INERT: ALL PASS' harness-hooks-inert-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' harness-hooks-inert-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/debug_overlay_beacon_test.tscn 2>&1 | tee debug-overlay-beacon-tests.log
+          grep -q 'DEBUG_OVERLAY_BEACON: ALL PASS' debug-overlay-beacon-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' debug-overlay-beacon-tests.log; then exit 1; fi
           # A headless renderer cannot catch a foreground rectangle hiding the
           # background. Render the real scenes with the web-compatible driver.
           sudo apt-get update -qq

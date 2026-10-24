@@ -49,6 +49,8 @@ const SLOW := 0.3               # bullet-time speed (action seconds per real sec
 const SLOW_RAMP := 0.12         # action seconds to ease into slow-mo
 const BLACKOUT_LEN := 4.4       # real seconds from the head hit's aftermath to black
 const SKIP_HOLD := 0.6
+## Real seconds into the film from which the touch SKIP button is offered (same beat as the video film's hint).
+const SKIP_SHOW_AT := 1.0
 
 # --- derived timeline (action seconds), filled in _init
 var a_launch: float
@@ -74,6 +76,7 @@ var _flash: float = 0.0
 var _fov_kick: float = 0.0
 var _skip_t: float = 0.0
 var _skip_armed: bool = false
+var _skip_hint: Label = null
 var _releasing: float = -1.0
 var _prev_cam: Camera3D = null
 
@@ -188,6 +191,10 @@ func release(seconds: float = 1.6) -> void:
 
 
 func is_finished() -> bool: return _done
+
+## True while a deliberate skip is possible (the touch layer shows its one SKIP button exactly then, profile `ep2_film`).
+func is_skippable() -> bool:
+	return _started and not _done and _releasing < 0.0 and _real >= SKIP_SHOW_AT
 func get_shot() -> String: return _shot
 func get_action_time() -> float: return _act
 func get_real_time() -> float: return _real
@@ -254,6 +261,8 @@ func _once(name: String) -> bool:
 
 
 func _step_skip(delta: float) -> void:
+	if _skip_hint != null:
+		_skip_hint.visible = TouchUi.keys_shown()          # the words name a key: a phone gets the SKIP button instead
 	var held: bool = Input.is_action_pressed("jump") or Input.is_action_pressed("ui_accept")
 	if not held:
 		_skip_armed = true           # a key still held from the runner never counts
@@ -763,6 +772,8 @@ func _build_overlay() -> void:
 	hint.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	hint.position = Vector2(-190.0, -40.0)
 	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hint.visible = TouchUi.keys_shown()
+	_skip_hint = hint
 	_overlay.add_child(hint)
 
 

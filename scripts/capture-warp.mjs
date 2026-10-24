@@ -2,7 +2,7 @@
 // capture-warp.mjs — capture a stage at explicit spawn_x positions (no walking).
 // Usage: node scripts/capture-warp.mjs <base-url> <out-dir> <stage> <x1,x2,...>
 import fs from 'fs';
-import { chromium } from 'playwright';
+import { chromium } from './lib/pw.mjs';
 const URL_BASE = process.argv[2];
 const OUT_DIR = process.argv[3];
 const STAGE = process.argv[4];

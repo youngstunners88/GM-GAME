@@ -40,6 +40,30 @@ Runner (cart) keeps its own verbs: Left/Right hop rails, Space jump/grab zipline
   on the bridge.
 
 # Gates
-`tests/ep2_smelting_facility_test.tscn` section 12 proves every row of the table, including through the session root
+`tests/ep2_smelting_facility_test.tscn` section 13 (the real-keys routing check; section 12 is the Bull rig - an earlier version of this skill cited 12) proves every row of the table, including through the session root
 with `Input.action_press("move_up")` and a real Space `InputEventKey`. Update the HUD hint in `ep2_entry.gd` with any
 change. In the browser: click once in the hideout and check mouse look before calling it done.
+
+# TOUCH (phones and tablets; added 2026-10-23 - full detail in `ep2-mobile-touch`)
+Keyboard and mouse above are UNCHANGED (desktop byte-identical). On a touch device the same verbs arrive through the touch layer (profile `ep2_foot`), never through a new parser:
+
+| Verb | Touch control | What the router sees |
+|---|---|---|
+| walk / strafe / forward-back | left analog stick (`analog_vertical = true`) | `move_left/right/up/down` pressed with strength; `_poll_free_roam` reads the axes |
+| look | right look pad (drag) | `TouchActions.take_look()` drained once a frame into `look(relative)` |
+| fire | FIRE button | the `attack` action -> `chamber_shoot()` |
+| jump | JUMP button | `ep2_touch_jump` -> `jump()` (W stays `move_up`, never jump) |
+| aim down sights | SCOPE button, HOLD | `ep2_touch_aim` press/release -> `set_aim(true/false)` |
+| reload | CYLINDER button | `ep2_touch_reload` -> `reload()` |
+| talk / take | hand button | `interact` |
+| run | RUN button, TOGGLE | `sprint` |
+| pause | top-right pause icon | `pause` -> the wordless card (`Ep2TouchOverlay`), Ep2Entry owns it |
+
+Router rules that must stay true (all in `_route_free_roam`, gated by `tests/ep2_touch_controls_test.tscn`):
+- **F5**: the `move_*` swallow sits OUTSIDE the `InputEventKey` branch. `TouchActions` pushes `InputEventAction`, which used to fall through to `chamber_walk` / `take_cover` (a horizontal push walked FORWARD). Side effect: a gamepad D-pad no longer walks forward in free roam.
+- **F6**: `InputEventAction` `ep2_touch_jump` jumps; the W key still does not.
+- **F8**: an `InputEventMouse` with `device == InputEvent.DEVICE_ID_EMULATION` (a finger's echo) never fires, looks or captures the pointer on foot. A real mouse (device 0) is untouched. Any new pointer branch needs the same check.
+- The armory/shop modal keeps the profile SUSPENDED (a live stick would scroll the shop rows; `ep2_armory_shop._input` consumes `move_*`/`interact`/`ui_cancel`).
+- No key name may be written on touch: gate strings on `TouchUi.keys_shown()` (`ep2-mobile-touch` has the replaced-strings table and the strings that still leak in later rooms).
+- A new walkable room gets touch for free when it implements the same room API (`set_move_input`, `look`, `jump`, `has_player_control`, `wants_mouse_capture`, `armory_open`) AND is reachable as `Mode.CHAMBER` free roam; check `touch_profile()` in `ep2_session_root.gd` returns `ep2_foot` for it, and add a touch-flow test.
+

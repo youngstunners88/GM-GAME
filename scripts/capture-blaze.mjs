@@ -1,4 +1,4 @@
-import { chromium } from 'playwright'; import fs from 'fs';
+import { chromium } from './lib/pw.mjs'; import fs from 'fs';
 const BASE=process.argv[2]; const OUT=process.argv[3]||'artifacts/blaze'; fs.mkdirSync(OUT,{recursive:true});
 const PIN=['/opt/pw-browsers/chromium-1194/chrome-linux/chrome','/opt/pw-browsers/chromium/chrome-linux/chrome'];
 const o={args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage','--no-sandbox','--ignore-certificate-errors']};

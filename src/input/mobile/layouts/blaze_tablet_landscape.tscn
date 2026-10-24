@@ -1,0 +1,27 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/input/mobile/touch_layout.gd" id="1_layout"]
+[ext_resource type="PackedScene" path="res://src/input/mobile/virtual_tap_field.tscn" id="2_tap"]
+[ext_resource type="PackedScene" path="res://src/input/mobile/virtual_button.tscn" id="3_btn"]
+
+[node name="BlazeTabletLandscape" type="Control"]
+mouse_filter = 2
+script = ExtResource("1_layout")
+tier_scale = 1.2
+layout_name = &"blaze_tablet_landscape"
+profile = &"blaze"
+
+[node name="TapField" parent="." instance=ExtResource("2_tap")]
+layout_mode = 0
+action = &"jump"
+
+[node name="Pause" parent="." instance=ExtResource("3_btn")]
+layout_mode = 0
+anchor_corner = 4
+offset_dp = Vector2(30.0, 64.0)
+radius_dp = 17.0
+hit_pad_dp = 12.0
+role = &"pause"
+action = &"pause"
+mode = 0
+glyph = 6

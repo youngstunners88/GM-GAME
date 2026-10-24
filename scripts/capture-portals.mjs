@@ -3,7 +3,7 @@
 // down its shaft, and the tour strip it opens.
 // Usage: node scripts/capture-portals.mjs <base-url> <out-dir>
 import fs from 'fs';
-import { chromium } from 'playwright';
+import { chromium } from './lib/pw.mjs';
 
 const URL_BASE = process.argv[2];
 const OUT_DIR = process.argv[3];

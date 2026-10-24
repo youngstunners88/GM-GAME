@@ -3,7 +3,7 @@
 // an IDENTICAL mean = the 3D pass is missing (HUD over clear colour), not "dark art" — that is how
 // the >1000-instance blank (docs/research/3d/001) was measured. Usage:
 //   node scripts/ep2-blank-frame-probe.mjs ["&ep2off=gold,streaks" | "&ep2bot=1"]
-import { chromium } from 'playwright';
+import { chromium } from './lib/pw.mjs';
 const q = process.argv[2] || '';
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
   args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
@@ -12,10 +12,11 @@ let d = -1, leg = -1, last = '';
 page.on('console', m => { const t = m.text(); let r = t.match(/\[EP2\] leg start (\d+)/); if (r) leg = +r[1];
   r = t.match(/\[EP2\] d=(\d+) hp=(\d+)(.*)/); if (r) { d = +r[1]; last = r[3]; } });
 await page.goto('http://localhost:8899/game/index.html?ep2=1&ep2probe=1' + q);
-const t0 = Date.now(); while (leg < 0 && Date.now() - t0 < 120000) await page.waitForTimeout(50);
+const t0 = Date.now(); while (leg < 0 && Date.now() - t0 < 240000) await page.waitForTimeout(50);   // ?ep2=1 now runs through the TransitionDirector (card + warm-up + reveal) first
+const tRun = Date.now();
 await page.mouse.click(320, 180);
 const rows = [];
-while (d < +(process.env.PROBE_TO || 220) && Date.now() - t0 < 300000) {
+while (d < +(process.env.PROBE_TO || 220) && Date.now() - tRun < 300000) {
   const d0 = d;
   const buf = await page.screenshot({ clip: { x: 0, y: 120, width: 640, height: 200 } });
   const mean = await page.evaluate(async (b64) => { const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode();

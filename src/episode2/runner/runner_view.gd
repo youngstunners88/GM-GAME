@@ -268,6 +268,21 @@ var _aim_dir: Vector3 = Vector3.BACK
 var _aim_point: Vector3 = Vector3.ZERO
 var _aim_hit: String = ""
 
+# TOUCH aiming (DECISIONS section 4 item 4). The mouse position is meaningless on a phone: before any tap it is (0, 0) - a
+# reticle stuck in the top-left corner and a gun arm aimed at it - and only finger 0 ever moves it. On touch the view uses the
+# point of the last tap that reached the game (an emulated left press outside every pad; the session root fires through it)
+# for TOUCH_AIM_FRESH_S, then the gun arm falls back to its forward default; the reticle is a brief ring there, never a
+# resting crosshair.
+const TOUCH_AIM_FRESH_S := 0.6
+const TOUCH_RING_S := 0.45
+var _touch_press_pos: Vector2 = Vector2.ZERO
+var _touch_press_ms: int = -100000
+
+# Wordless telegraph cues (touch): the Label3Ds that tell the player what to do ("DUCK", "HOP!", "JUMP", "SWIPE!"...) keep
+# their words on a desktop; on a touch device the words are blanked and a flat arrow / ring / cross glyph child shows instead.
+var _cue_labels: Array = []
+var _cue_touch: bool = false
+
 # HUD (persists across rebuilds; child of this node, not the world).
 var _hud: CanvasLayer = null
 var _reticle: Control = null
@@ -352,6 +367,7 @@ func rebuild(sim: Node) -> void:
 	_boarders.clear()
 	_shovel_bears.clear()
 	_labels.clear()
+	_cue_labels.clear()
 	_zip_markers.clear()
 	_lights.clear()
 	_pocket_segs.clear()
@@ -461,6 +477,27 @@ func _connect_sim() -> void:
 		var cb: Callable = pairs[sig]
 		if _sim.has_signal(sig) and not _sim.is_connected(sig, cb):
 			_sim.connect(sig, cb)
+
+## A left press that reached the game (a control or a pad would have swallowed it first): on a phone this is the "tap in a free
+## area" shot, and the view aims at it for a moment (see the TOUCH aiming note at the top). Desktop reads the mouse instead.
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		var mb: InputEventMouseButton = event
+		if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+			_touch_press_pos = mb.position
+			_touch_press_ms = Time.get_ticks_msec()
+
+## Seconds since the last tap that reached the game.
+func _touch_press_age() -> float:
+	return float(Time.get_ticks_msec() - _touch_press_ms) / 1000.0
+
+## Does the player have an aim point right now? A mouse always does; a finger only just after a tap.
+func _aim_point_live() -> bool:
+	return TouchUi.keys_shown() or _touch_press_age() < TOUCH_AIM_FRESH_S
+
+## The aim point in canvas units: the mouse, or the last tap on a touch device.
+func _aim_screen_pos(vp: Viewport) -> Vector2:
+	return vp.get_mouse_position() if TouchUi.keys_shown() else _touch_press_pos
 
 func _process(delta: float) -> void:
 	if _sim == null or _world == null or not is_instance_valid(_world):
@@ -1567,6 +1604,7 @@ func _build_hazards() -> void:
 		for a in _sim.get_archers():
 			var lbl := _label("SHOOT", C_SHOOT)
 			lbl.position = Vector3(_side_x(float(a["side"]), Sim.ARCHER_X), Sim.ARCHER_Y + 3.6, float(a["z"]))
+			_tag_cue(lbl, "shoot")
 			_labels.append({"node": lbl, "z": float(a["z"]), "strip": null, "archer": str(a["id"])})
 
 ## THE PIT: the trestle is gone across all three rails. A black gap you can SEE from far off (it hides the
@@ -1633,6 +1671,7 @@ func _build_boarders() -> void:
 		var lbl := _label("SWIPE! X / right-click", C_SWIPE)
 		lbl.font_size = 80
 		lbl.position = Vector3(0.0, 3.3, z)
+		_tag_cue(lbl, "swing")
 		_boarders.append({"obs": oi, "z": z, "node": bear, "label": lbl, "start_x": sx,
 			"state": "idle", "t": 0.0, "from": Vector3.ZERO})
 	if posts.size() > 0:
@@ -1711,6 +1750,109 @@ func _label(text: String, c: Color) -> Label3D:
 	_world.add_child(l)
 	return l
 
+## Which wordless glyph stands in for a telegraph's words on a touch device ("" = none: the words stay).
+func _cue_kind_for(verb: String) -> String:
+	if verb.begins_with("DUCK"):
+		return "down"
+	if verb.begins_with("HOP"):
+		return "hop"
+	if verb.begins_with("JUMP") or verb.begins_with("NO TRACK"):
+		return "up"
+	if verb.begins_with("BEAR LINE"):
+		return "shoot"
+	if verb.begins_with("RAIL ENDS"):
+		return "warn"
+	return ""
+
+## Give `lbl` a flat glyph child (up / down / hop arrows, shoot ring, swing cross, warn !, new +). The glyph only shows, and the
+## words only go, while a touch device is in play: `_sync_cue_mode` flips them (every frame, so a finger seen late counts).
+func _tag_cue(lbl: Label3D, kind: String) -> void:
+	if kind == "":
+		return
+	lbl.set_meta("cue_text", lbl.text)
+	var glyph: Node3D = _cue_glyph(kind, lbl.modulate)
+	glyph.name = "CueGlyph"
+	lbl.add_child(glyph)
+	_cue_labels.append(lbl)
+	_apply_cue_mode(lbl, _cue_touch)
+
+func _cue_mesh(mesh: Mesh, mat: Material, pos: Vector3 = Vector3.ZERO, rot_z: float = 0.0) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	mi.material_override = mat
+	mi.position = pos
+	mi.rotation.z = rot_z
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return mi
+
+func _cue_tri(mat: Material, s: float, pos: Vector3, rot_z: float) -> MeshInstance3D:
+	var tri := PrismMesh.new()
+	tri.size = Vector3(s * 1.5, s * 1.3, 0.1)
+	return _cue_mesh(tri, mat, pos, rot_z)
+
+func _cue_bar(mat: Material, w: float, h: float, pos: Vector3, rot_z: float = 0.0) -> MeshInstance3D:
+	var bar := BoxMesh.new()
+	bar.size = Vector3(w, h, 0.1)
+	return _cue_mesh(bar, mat, pos, rot_z)
+
+func _cue_glyph(kind: String, col: Color) -> Node3D:
+	var g := Node3D.new()
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = Color(col.r, col.g, col.b, 1.0)
+	mat.no_depth_test = true
+	var s: float = 0.75
+	match kind:
+		"up":
+			g.add_child(_cue_tri(mat, s, Vector3.ZERO, 0.0))
+		"down":
+			g.add_child(_cue_tri(mat, s, Vector3.ZERO, PI))
+		"hop":
+			g.add_child(_cue_tri(mat, s, Vector3(-s * 0.95, 0.0, 0.0), PI * 0.5))
+			g.add_child(_cue_tri(mat, s, Vector3(s * 0.95, 0.0, 0.0), -PI * 0.5))
+		"shoot":
+			var ring := TorusMesh.new()
+			ring.inner_radius = s * 0.52
+			ring.outer_radius = s * 0.68
+			var ri := _cue_mesh(ring, mat)
+			ri.rotation.x = PI * 0.5
+			g.add_child(ri)
+			var dot := SphereMesh.new()
+			dot.radius = s * 0.17
+			dot.height = s * 0.34
+			g.add_child(_cue_mesh(dot, mat))
+		"swing":
+			g.add_child(_cue_bar(mat, s * 2.0, s * 0.28, Vector3.ZERO, PI * 0.25))
+			g.add_child(_cue_bar(mat, s * 2.0, s * 0.28, Vector3.ZERO, -PI * 0.25))
+		"warn":
+			g.add_child(_cue_bar(mat, s * 0.3, s * 1.1, Vector3(0.0, s * 0.3, 0.0)))
+			g.add_child(_cue_bar(mat, s * 0.34, s * 0.34, Vector3(0.0, -s * 0.62, 0.0)))
+		"new":
+			g.add_child(_cue_bar(mat, s * 1.5, s * 0.3, Vector3.ZERO))
+			g.add_child(_cue_bar(mat, s * 0.3, s * 1.5, Vector3.ZERO))
+	return g
+
+## Words (desktop) or glyph (touch) for one tagged label.
+func _apply_cue_mode(lbl: Label3D, touch: bool) -> void:
+	if lbl == null or not is_instance_valid(lbl):
+		return
+	lbl.text = "" if touch else str(lbl.get_meta("cue_text", lbl.text))
+	var glyph: Node = lbl.get_node_or_null("CueGlyph")
+	if glyph is Node3D:
+		(glyph as Node3D).visible = touch
+
+func _sync_cue_mode() -> void:
+	var touch: bool = not TouchUi.keys_shown()
+	if touch == _cue_touch:
+		return
+	_cue_touch = touch
+	for lbl in _cue_labels:
+		_apply_cue_mode(lbl as Label3D, touch)
+
+## True while the telegraph glyphs (not their words) are the cue (tests).
+func is_cue_wordless() -> bool:
+	return _cue_touch
+
 func _add_telegraph(x: float, z: float, c: Color, verb: String, obs_index: int = -1) -> void:
 	var strip := _mesh_node(_box(Vector3(1.9, 0.04, 6.0)), _glow_mat("strip_" + verb, c, 0.35),
 		Vector3(x, -0.36, z - 1.5))
@@ -1729,6 +1871,7 @@ func _add_telegraph(x: float, z: float, c: Color, verb: String, obs_index: int =
 			return
 	var lbl := _label(verb, c)
 	lbl.position = Vector3(x, 3.3, z)
+	_tag_cue(lbl, _cue_kind_for(verb))
 	_labels.append({"node": lbl, "z": z, "strip": null, "strips": [strip], "archer": "", "verb": verb,
 		"xs": [x], "obs": ([obs_index] if obs_index >= 0 else [])})
 
@@ -1763,6 +1906,7 @@ func _build_ziplines() -> void:
 		var lbl := _label(verb, C_ZIP)
 		lbl.font_size = 72
 		lbl.position = Vector3(0.0, cable_y - 0.6, s0 - (2.0 if chained else 0.0))
+		_tag_cue(lbl, "up")
 		_labels.append({"node": lbl, "z": s0, "strip": null, "archer": "", "near": 9.0})
 
 ## Gold nuggets: glowing, spinning pickups on their rail (bait toward risk).
@@ -2064,6 +2208,7 @@ func _build_rail_events() -> void:
 			var lbl := _label("NEW CART ▸", Color(0.55, 1.0, 0.55))
 			lbl.font_size = 64
 			lbl.position = Vector3(lx, 2.9, z)
+			_tag_cue(lbl, "new")
 			_labels.append({"node": lbl, "z": z, "strip": null, "archer": "", "near": 2.0})
 
 ## The heart pickup: two lobes and a point, red and self-lit (Compatibility renderer: emission, not reflections),
@@ -2513,6 +2658,11 @@ func _draw_reticle() -> void:
 		return
 	var c: Vector2 = _reticle.size * 0.5
 	var col: Color = C_RETICLE_HOT if _reticle_hot else C_RETICLE
+	if not TouchUi.keys_shown():
+		# a brief ring where the finger tapped, growing and fading - never a resting crosshair
+		var k: float = clampf(_touch_press_age() / TOUCH_RING_S, 0.0, 1.0)
+		_reticle.draw_arc(c, 10.0 + 16.0 * k, 0.0, TAU, 32, Color(col.r, col.g, col.b, col.a * (1.0 - k)), 3.0, true)
+		return
 	_reticle.draw_arc(c, 14.0, 0.0, TAU, 32, col, 2.5, true)
 	for d in [Vector2(1.0, 0.0), Vector2(-1.0, 0.0), Vector2(0.0, 1.0), Vector2(0.0, -1.0)]:
 		var dv: Vector2 = d
@@ -2533,8 +2683,10 @@ func _update_hud() -> void:
 	if vp == null:
 		return
 	var vs: Vector2 = vp.get_visible_rect().size
-	var mp: Vector2 = vp.get_mouse_position()
+	var touch: bool = not TouchUi.keys_shown()
+	var mp: Vector2 = _aim_screen_pos(vp)
 	_reticle.position = mp - _reticle.size * 0.5
+	_reticle.visible = (not touch) or _touch_press_age() < TOUCH_RING_S
 	_reticle_hot = _aim_hit != ""
 	_reticle.queue_redraw()
 	var armed: bool = bool(_sim.can_shoot())
@@ -2545,15 +2697,17 @@ func _update_hud() -> void:
 		p.visible = armed
 		p.position = Vector2(vs.x - 30.0 - float(_pips.size() - 1 - i) * 18.0, vs.y - 46.0)
 		p.color = C_PIP if i < ammo else C_PIP_SPENT
+		# touch: the cylinder asks for a reload by pulsing (the "R - reload" words are gone; the runner reloads itself on a dry fire)
+		p.modulate.a = 0.55 + 0.45 * absf(sin(Time.get_ticks_msec() * 0.006)) if (touch and armed and not reloading and ammo <= 2) else 1.0
 	var bar_pos := Vector2(vs.x - 150.0, vs.y - 64.0)
 	_reload_bg.visible = armed and reloading
 	_reload_fill.visible = armed and reloading
-	_reload_label.visible = armed and reloading
+	_reload_label.visible = armed and reloading and TouchUi.keys_shown()        # "RELOADING": the bar above says it on a phone
 	_reload_bg.position = bar_pos
 	_reload_fill.position = bar_pos + Vector2(2.0, 2.0)
 	_reload_fill.size = Vector2(120.0 * float(_sim.get_reload_progress()), 6.0)
 	_reload_label.position = bar_pos + Vector2(0.0, -30.0)
-	_hint_label.visible = armed and not reloading and ammo <= 2
+	_hint_label.visible = armed and not reloading and ammo <= 2 and TouchUi.keys_shown()        # "R - reload" names a key
 	_hint_label.position = Vector2(vs.x - 150.0, vs.y - 92.0)
 	if _gold_label:
 		_gold_label.visible = true
@@ -3002,6 +3156,7 @@ func _update_boarders(dist: float, delta: float) -> void:
 		lbl.visible = str(bd["state"]) == "idle" and ahead > 1.0 and ahead < TELEGRAPH_RANGE
 
 func _update_labels(dist: float) -> void:
+	_sync_cue_mode()
 	var obs: Array = _sim.get_obstacles()
 	for e in _labels:
 		var z: float = float(e["z"])
@@ -3101,7 +3256,9 @@ func _update_aim() -> void:
 	var vp: Viewport = get_viewport()
 	if vp == null:
 		return
-	var mp: Vector2 = vp.get_mouse_position()
+	if not _aim_point_live():
+		return          # touch, no recent tap: _aim_ok stays false, so the gun arm and the rider keep their forward default
+	var mp: Vector2 = _aim_screen_pos(vp)
 	_aim_origin = _camera.project_ray_origin(mp)
 	_aim_dir = _camera.project_ray_normal(mp)
 	_aim_point = _aim_origin + _aim_dir * AIM_FALLBACK

@@ -19,6 +19,19 @@ extends Control
 ## Placement is data: each control names a screen corner, an offset in dp measured
 ## INWARD from that corner and a radius in dp. The layout scene sets those; the
 ## `TouchLayout` calls `apply_layout()` whenever the screen changes.
+##
+## NO TEXT, EVER: controls draw vector shapes only (founder, 2026-10-13: a phone UI has
+## no written words). There is deliberately no text-drawing helper here; the wordless
+## scan tests walk every layout scene and fail on any Label / Button / text property.
+##
+## Rules every subclass follows (the stick set them, the pads/field reuse them):
+##   * per-finger ownership: a control acts only on a finger it PRESSED itself
+##   * the orphan rule: never adopt a finger it did not press (after a hide the GUI
+##     still routes that finger's drags, and a finger that pressed while hidden never
+##     delivers a release)
+##   * release() on hide / rotation / focus loss drops every finger and action
+##   * a faint visible resting cue (these are not invisible zones). The one exception is the
+##     whole-screen tap field (Blaze), which acknowledges each tap with a ring instead.
 
 enum ScreenAnchor { BOTTOM_LEFT, BOTTOM_RIGHT, BOTTOM_CENTER, TOP_LEFT, TOP_RIGHT, TOP_CENTER }
 
@@ -35,10 +48,16 @@ enum ScreenAnchor { BOTTOM_LEFT, BOTTOM_RIGHT, BOTTOM_CENTER, TOP_LEFT, TOP_RIGH
 var touch_theme: TouchTheme
 ## Canvas units per dp for THIS control (metrics dp x user scale x tier scale).
 var unit: float = 1.0
+## Canvas units per dp of the SCREEN (metrics dp, no user/tier scale). Finger-travel
+## thresholds (swipe distances, look slop) are measured with this, not with `unit`:
+## a bigger button should not make a swipe longer.
+var dp: float = 1.0
 var hint_active: bool = false : set = set_hint
+## The mouse filter this control returns to after set_inert(false).
+var base_mouse_filter: Control.MouseFilter = Control.MOUSE_FILTER_STOP
 
 func _ready() -> void:
-	mouse_filter = Control.MOUSE_FILTER_STOP
+	mouse_filter = base_mouse_filter
 	focus_mode = Control.FOCUS_NONE
 	visibility_changed.connect(_on_visibility_changed)
 
@@ -49,6 +68,7 @@ func _exit_tree() -> void:
 ## radius; the visible disc is drawn inside it.
 func apply_layout(m: TouchMetrics, unit_scale: float) -> void:
 	unit = m.dp * unit_scale
+	dp = m.dp
 	var vis_r: float = radius_dp * unit
 	var hit_r: float = (radius_dp + hit_pad_dp) * unit
 	var rect: Rect2 = m.safe_rect
@@ -110,18 +130,13 @@ func pressed_alpha() -> float:
 func hint_alpha() -> float:
 	return touch_theme.hint_alpha if touch_theme != null else 0.88
 
-## Outlined ASCII text centred on `centre` (the pixel font has no arrow glyphs,
-## so labels stay basic Latin; round glyphs are drawn as vectors instead).
-func _draw_label(text: String, centre: Vector2, font_px: float, alpha: float) -> void:
-	var font: Font = ThemeDB.fallback_font
-	if font == null or text.is_empty():
-		return
-	var fs: int = maxi(int(font_px), 6)
-	var width: float = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	var pos := Vector2(centre.x - width * 0.5, centre.y + fs * 0.35)
-	var col: Color = touch_theme.label_color if touch_theme != null else Color.WHITE
-	var out: Color = touch_theme.label_outline if touch_theme != null else Color.BLACK
-	col.a *= alpha
-	out.a *= alpha
-	font.draw_string_outline(get_canvas_item(), pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, maxi(int(fs * 0.3), 2), out)
-	font.draw_string(get_canvas_item(), pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+## While true the control ignores every touch (mouse_filter IGNORE) so a layer that is
+## fading out can never take a press that lands during the fade.
+func set_inert(on: bool) -> void:
+	mouse_filter = Control.MOUSE_FILTER_IGNORE if on else base_mouse_filter
+
+## The layout manager tells every control when injection is suspended (death / pause)
+## or resumes. Default: nothing. Controls that hold an action of their own accord
+## (the swipe pad's duck) drop it here.
+func on_suspended(_on: bool) -> void:
+	pass

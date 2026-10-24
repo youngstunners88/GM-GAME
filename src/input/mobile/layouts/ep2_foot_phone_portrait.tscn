@@ -1,0 +1,106 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/input/mobile/touch_layout.gd" id="1_layout"]
+[ext_resource type="PackedScene" path="res://src/input/mobile/virtual_look_pad.tscn" id="2_look"]
+[ext_resource type="PackedScene" path="res://src/input/mobile/virtual_joystick.tscn" id="3_stick"]
+[ext_resource type="PackedScene" path="res://src/input/mobile/virtual_button.tscn" id="4_btn"]
+
+[node name="Ep2FootPhonePortrait" type="Control"]
+mouse_filter = 2
+script = ExtResource("1_layout")
+tier_scale = 1.0
+layout_name = &"ep2_foot_phone_portrait"
+profile = &"ep2_foot"
+
+[node name="LookPad" parent="." instance=ExtResource("2_look")]
+layout_mode = 0
+region = Rect2(0.0, 0.0, 1.0, 0.5)
+
+[node name="Stick" parent="." instance=ExtResource("3_stick")]
+layout_mode = 0
+mode = 1
+region = Rect2(0.0, 0.5, 0.4, 0.4)
+rest_offset_dp = Vector2(96.0, 110.0)
+base_radius_dp = 58.0
+knob_radius_dp = 27.0
+analog_vertical = true
+
+[node name="Fire" parent="." instance=ExtResource("4_btn")]
+layout_mode = 0
+anchor_corner = 1
+offset_dp = Vector2(84.0, 110.0)
+radius_dp = 44.0
+hit_pad_dp = 10.0
+role = &"attack"
+action = &"attack"
+mode = 0
+glyph = 2
+
+[node name="Jump" parent="." instance=ExtResource("4_btn")]
+layout_mode = 0
+anchor_corner = 1
+offset_dp = Vector2(84.0, 222.0)
+radius_dp = 36.0
+hit_pad_dp = 10.0
+role = &"jump"
+action = &"ep2_touch_jump"
+mode = 0
+glyph = 1
+touch_only = true
+
+[node name="Aim" parent="." instance=ExtResource("4_btn")]
+layout_mode = 0
+anchor_corner = 1
+offset_dp = Vector2(84.0, 320.0)
+radius_dp = 30.0
+hit_pad_dp = 10.0
+role = &"dash"
+action = &"ep2_touch_aim"
+mode = 0
+glyph = 10
+touch_only = true
+
+[node name="Reload" parent="." instance=ExtResource("4_btn")]
+layout_mode = 0
+anchor_corner = 1
+offset_dp = Vector2(170.0, 150.0)
+radius_dp = 28.0
+hit_pad_dp = 8.0
+role = &"run"
+action = &"ep2_touch_reload"
+mode = 0
+glyph = 9
+touch_only = true
+
+[node name="Interact" parent="." instance=ExtResource("4_btn")]
+layout_mode = 0
+anchor_corner = 1
+offset_dp = Vector2(170.0, 250.0)
+radius_dp = 28.0
+hit_pad_dp = 8.0
+role = &"grab"
+action = &"interact"
+mode = 0
+glyph = 5
+
+[node name="Run" parent="." instance=ExtResource("4_btn")]
+layout_mode = 0
+anchor_corner = 1
+offset_dp = Vector2(84.0, 412.0)
+radius_dp = 28.0
+hit_pad_dp = 8.0
+role = &"run"
+action = &"sprint"
+mode = 1
+glyph = 4
+
+[node name="Pause" parent="." instance=ExtResource("4_btn")]
+layout_mode = 0
+anchor_corner = 4
+offset_dp = Vector2(30.0, 64.0)
+radius_dp = 17.0
+hit_pad_dp = 12.0
+role = &"pause"
+action = &"pause"
+mode = 0
+glyph = 6

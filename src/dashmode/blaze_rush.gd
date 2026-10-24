@@ -15,6 +15,22 @@ const COMPLETION_GOLD: int = 5
 const FLAWLESS_DIAMONDS: int = 5
 const SCORE_PER_SMOKE: int = 10
 
+## INPUT FEEL (the mobile pass). The run is one button, so the button has to be
+## forgiving or a thumb (60-110 ms of touch latency plus jitter) loses runs the
+## player did not lose:
+##   * a tap that lands up to JUMP_BUFFER_* BEFORE the cube is back on the floor
+##     is remembered and fires on landing (0.10 s on a touch device, 0.06 s on
+##     desktop, where latency is lower and the old feel is kept close);
+##   * a tap up to COYOTE_S AFTER the floor ended (a gap lip) still jumps.
+## Before this the latch was cleared every physics tick: no buffer, no coyote.
+const JUMP_BUFFER_TOUCH_S: float = 0.10
+const JUMP_BUFFER_DESKTOP_S: float = 0.06
+const COYOTE_S: float = 0.06
+## Haptic ticks (ms) through TouchActions.buzz, touch devices only.
+const HAPTIC_JUMP_MS: int = 8
+const HAPTIC_PICKUP_MS: int = 6
+const HAPTIC_CRASH_MS: int = 30
+
 ## "Electric Haze" palette (Grok 4.5 dispatch, docs/model-responses/
 ## 2026-07-29-grok-blaze-rush.md) — deliberately distinct from every other
 ## realm: hot/electric rather than the Smoke Realm's forest calm, Crystal
@@ -26,6 +42,11 @@ const COLOR_HAZARD := Color(1.0, 0.25, 0.08, 1.0)
 const COLOR_SAFE_GROUND := Color(0.45, 0.35, 0.75, 1.0)
 const COLOR_SAFE_EDGE := Color(0.3, 1.0, 0.85, 1.0)
 const COLOR_COLLECTIBLE := Color(1.0, 0.95, 0.75, 1.0)
+## Candle silhouette (see _make_candle): dark outside, cream inside, red body.
+const CANDLE_OUTLINE_COLOR := Color(0.06, 0.0, 0.12, 1.0)
+const CANDLE_RIM_COLOR := Color(1.0, 0.95, 0.75, 1.0)
+const CANDLE_OUTLINE_PX: int = 3
+const CANDLE_RIM_PX: int = 2
 
 var _level_index: int = 1
 var _course_length: float = 3400.0
@@ -36,8 +57,25 @@ var _attempts: int = 1
 var _smoke_this_attempt: int = 0
 var _smoke_tokens: Array[Area2D] = []
 var _finished: bool = false
-var _tap_buffered: bool = false
+## Seconds a remembered tap stays valid / seconds of grace after leaving the floor.
+var _jump_buffer: float = 0.0
+var _coyote: float = 0.0
 var _exiting: bool = false
+## The run is "armed" (cube moving) or HOLDING for the player's tap: while false
+## _physics_process does nothing, so the cube stands still wherever it is (at x=0 at the
+## start, or mid-run after a pause-card resume). Defaults to TRUE so every desktop and
+## headless path keeps auto-running exactly as before; only a TOUCH player is armed
+## (see _begin_play): the cube holds until the scene is revealed AND the first tap.
+var _armed: bool = true
+## Set by _pause_run() / cleared by _resume_run(): physics frozen, buffers cleared.
+var _run_paused: bool = false
+## Test hook (null in the shipped game): metrics used for framing instead of the
+## live ones, so a headless test can pose as a 2x phone.
+var framing_metrics_override: TouchMetrics = null
+## The current BlazeFraming.compute() result (zoom, cam_y, look_ahead, band_depth).
+var _framing: Dictionary = {}
+## Camera lead over the cube; BlazeFraming may raise it on a very narrow view.
+var _look_ahead: float = BlazeFraming.BASE_LOOK_AHEAD
 ## Snapshot dash_return at _ready so a mid-run reset() can't clear it.
 var _return_path: String = ""
 var _return_pos: Vector2 = Vector2.ZERO
@@ -46,19 +84,183 @@ var _return_pos: Vector2 = Vector2.ZERO
 const BLAZE_MUSIC := "res://src/assets/music/blaze_rush_theme.mp3"
 var _music_token: int = -1
 
-func _release_music() -> void:
-	if _music_token != -1:
-		# discard_music_override(), NOT release_music_override(): the
-		# destination scene's own _ready() calls play_playlist() a moment
-		# after this, so resuming the paused base track first only creates a
-		# ~0.8s window where it overlaps the fresh track fading in (the
-		# founder's reported "faint second song").
-		AudioManager.discard_music_override(_music_token)
-		_music_token = -1
+## How long the Blaze track fades out while the level's own track fades back in.
+const MUSIC_RETURN_FADE_S: float = 0.35
+
+## Give the music back.
+##
+## `resume` = TRUE is the NORMAL exit (finish / tap out, _exit_to_level): the
+## level's paused track RESUMES from its saved position (faded in while the Blaze
+## track fades out, AudioManager.release_music_override_faded) and the level —
+## told by GameManager.side_return — neither restarts a random track nor replays
+## its stage-intro voice line (LevelBase._start_stage_audio). Before this the
+## exit called discard_music_override(): ~0.45 s of silence under the wipe, then a
+## shuffled restart from 0:00 and the 4-10 s intro line again on EVERY return.
+##
+## `resume` = FALSE (the default, used by _exit_tree) is the old discard: this
+## node is being freed by a route that is NOT the exit and nobody has set
+## side_return, so the destination's own play_playlist() is about to start fresh
+## music. Resuming first would only create a ~0.8 s window where the paused
+## track overlaps the new one fading in (the founder's "faint second song").
+func _release_music(resume: bool = false) -> void:
+	if _music_token == -1:
+		return
+	var token: int = _music_token
+	_music_token = -1
+	if resume:
+		AudioManager.release_music_override_faded(token, MUSIC_RETURN_FADE_S)
+	else:
+		AudioManager.discard_music_override(token)
 
 ## Belt and braces: if this node is freed by ANY route the override is dropped.
 func _exit_tree() -> void:
 	_release_music()
+	# Leave the touch profile group and every connection made to the touch manager / router,
+	# so the level that follows is asked for the platformer controls and nothing keeps
+	# calling into a freed run.
+	if is_in_group(MobileLayoutManager.GROUP_WANTED):
+		remove_from_group(MobileLayoutManager.GROUP_WANTED)
+	_disconnect_touch_signals()
+
+# --- TOUCH WIRING (the mobile pass) ---------------------------------------------
+#
+# ONE touch path: finger -> the Blaze touch profile's TapField (src/input/mobile) -> the
+# `jump` action -> _unhandled_input -> _queue_jump. This node only ANSWERS the manager
+# (touch_profile / touch_suspended) and owns what the layout cannot: the wordless pause
+# card (BlazePause), the armed start with its tap-hand cue (BlazeTapCue), the HUD that
+# keeps clear of the layout's Pause button, and the exit button that is hidden on a phone.
+
+## The manager reads this from the first node in group touch_controls_wanted.
+signal touch_profile_changed
+
+## The control set Blaze asks the layout manager for (full-screen tap field + Pause).
+const TOUCH_PROFILE := &"blaze"
+## How long the armed start waits for SceneRouter.revealed. The watchdog path
+## (change_scene_to_file) never emits it, and a run must never be stranded behind it.
+const REVEAL_TIMEOUT_S: float = 1.0
+## The strip (dp, in from the safe-area corner) the layout's top-right Pause button owns;
+## the HUD row stays left of it.
+const PAUSE_ZONE_W_DP: float = 62.0
+## The HUD's authored margins (canvas units); touch adds the safe area on top.
+const HUD_MARGIN_X: float = 16.0
+const HUD_MARGIN_Y: float = 12.0
+## Breathing room (dp) between the HUD row and the Pause button's hit area.
+const HUD_PAUSE_GAP_DP: float = 4.0
+
+var _card: BlazePause = null
+var _card_open: bool = false
+var _cue: BlazeTapCue = null
+## SceneRouter has revealed this scene (or the safety timeout passed): the first tap may
+## start the run. Always true off touch.
+var _reveal_ready: bool = true
+## Engine frame the run was last armed in: a second tap-ish event of the SAME tap (the
+## fallback path's ScreenTouch + emulated mouse + a late action) is not a jump.
+var _arm_frame: int = -1
+var _tapout_button: Button = null
+var _hud_margin: MarginContainer = null
+var _hud_has_touch_margins: bool = false
+
+## Profile the touch manager shows while this scene is up.
+func touch_profile() -> StringName:
+	return TOUCH_PROFILE
+
+## True while the pause card is up: the layer-60 controls go inert and the card, one layer
+## below them, receives the touch (MobileLayoutManager LAYERING RULE).
+func touch_suspended() -> bool:
+	return _card_open
+
+## "Is this a touch player right now?" - the ONE predicate (TouchUi.keys_shown is its
+## negation): a touch device that is not being driven with a keyboard.
+func _touch_mode() -> bool:
+	return not TouchUi.keys_shown()
+
+## True while the touch layer's own tap field is live under the player's thumb: the blaze
+## profile is up, shown and not suspended. Then the `jump` action is the only tap path.
+func _tap_field_live() -> bool:
+	var mgr: Node = get_node_or_null("/root/MobileLayoutManager")
+	if mgr == null:
+		return false
+	return bool(mgr.get(&"controls_visible")) and not bool(mgr.get(&"controls_suspended")) \
+			and StringName(mgr.call(&"current_profile")) == TOUCH_PROFILE
+
+func _connect_touch_signals() -> void:
+	var mgr: Node = get_node_or_null("/root/MobileLayoutManager")
+	if mgr == null:
+		return
+	for sig_name: StringName in [&"controls_visibility_changed", &"layout_changed", &"profile_changed"]:
+		if not mgr.is_connected(sig_name, _on_touch_state_changed):
+			mgr.connect(sig_name, _on_touch_state_changed)
+
+func _disconnect_touch_signals() -> void:
+	var mgr: Node = get_node_or_null("/root/MobileLayoutManager")
+	if mgr != null:
+		for sig_name: StringName in [&"controls_visibility_changed", &"layout_changed", &"profile_changed"]:
+			if mgr.is_connected(sig_name, _on_touch_state_changed):
+				mgr.disconnect(sig_name, _on_touch_state_changed)
+	if SceneRouter.revealed.is_connected(_on_revealed):
+		SceneRouter.revealed.disconnect(_on_revealed)
+
+## The manager flips is_touch_device lazily on the first real finger and hides the layer on
+## a key press, so the HUD follows these signals instead of deciding once at build time.
+func _on_touch_state_changed(_arg: Variant = null) -> void:
+	_sync_touch_hud()
+
+## Build the pause card and the tap cue. AFTER _let_taps_through(): the card's field is the
+## one intentional STOP Control in the run and must stay one.
+func _build_touch_extras() -> void:
+	var dp: float = maxf(TouchUi.metrics().dp, 0.1)
+	var cue_layer := CanvasLayer.new()
+	cue_layer.name = "TapCueLayer"
+	cue_layer.layer = 30
+	add_child(cue_layer)
+	_cue = BlazeTapCue.new()
+	_cue.name = "TapCue"
+	_cue.unit = dp
+	cue_layer.add_child(_cue)
+	_card = BlazePause.new()
+	add_child(_card)
+	_card.resume_pressed.connect(_on_card_play)
+	_card.exit_pressed.connect(_on_card_exit)
+
+## Where the run starts. Desktop and every headless test keep the old behaviour: PLAYING at
+## once, the cube runs. A TOUCH player is ARMED: the cube holds at x=0 until the scene has
+## been revealed (SceneRouter.revealed, 1.0 s safety timeout) AND the first tap, with the
+## tap-hand cue showing; StateMachine goes to PLAYING at the reveal, not before, because the
+## touch manager only shows controls in PLAYING and they must not pop in under the dissolve.
+func _begin_play() -> void:
+	if not _touch_mode():
+		StateMachine.change_state(StateMachine.State.PLAYING)
+		return
+	_armed = false
+	_reveal_ready = false
+	if SceneRouter.is_revealed():
+		_on_revealed()
+		return
+	SceneRouter.revealed.connect(_on_revealed, CONNECT_ONE_SHOT)
+	get_tree().create_timer(REVEAL_TIMEOUT_S, true, false, true).timeout.connect(_on_revealed)
+
+func _on_revealed() -> void:
+	if _reveal_ready:
+		return
+	_reveal_ready = true
+	if SceneRouter.revealed.is_connected(_on_revealed):
+		SceneRouter.revealed.disconnect(_on_revealed)
+	if not StateMachine.is_playing():
+		StateMachine.change_state(StateMachine.State.PLAYING)
+	_show_cue_if_waiting()
+
+func _show_cue_if_waiting() -> void:
+	if _cue != null and not _armed and _reveal_ready and not _card_open and not _finished and not _exiting:
+		_cue.show_cue()
+
+## The tap that STARTS the run (or continues it after the pause card). It is not a jump.
+func _start_run() -> void:
+	_armed = true
+	_arm_frame = Engine.get_process_frames()
+	_jump_buffer = 0.0
+	_coyote = COYOTE_S
+	if _cue != null:
+		_cue.hide_cue()
 
 ## Hazard telegraph (Grok's "critical for auto-run" call): one reusable
 ## warning bar, not one per obstacle — repositions each frame to whichever
@@ -66,19 +268,31 @@ func _exit_tree() -> void:
 ## it approaches. fud_walls aren't tracked here: they're visibly landable,
 ## not an ambush the way a thin candle or a floor gap is at 320px/s.
 var _hazard_x: Array[float] = []
-var _telegraph: ColorRect
+var _telegraph: Node2D
+var _telegraph_cap: Node2D
+## The camera-attached speed-cue dust, resized to a tall (portrait) view.
+var _dust: CPUParticles2D = null
 const TELEGRAPH_LEAD: float = 450.0
+## Width of the warning bar (was 6): 14 u = 7.6 dp on a landscape phone.
+const TELEGRAPH_W: float = 14.0
 
 @onready var _smoke_label: Label = Label.new()
 @onready var _attempt_label: Label = Label.new()
 
 func _ready() -> void:
+	var build_start_us: int = Time.get_ticks_usec()
+	# FIRST, before anything can move StateMachine to PLAYING: the touch manager reads its
+	# profile from the first node in this group (touch_profile() -> &"blaze").
+	add_to_group(MobileLayoutManager.GROUP_WANTED)
 	_level_index = int(GameManager.dash_return.get("level_index", 1))
 	_return_path = str(GameManager.dash_return.get("scene_path",
 		"res://src/level/level_01_smoke_realm.tscn"))
 	_return_pos = GameManager.dash_return.get("position", Vector2.ZERO)
 	var layout := BlazeRushLayouts.get_layout(_level_index)
 	_course_length = layout.get("length", 3400.0)
+	# Framing FIRST: the floor band's visual depth depends on it.
+	_framing = BlazeFraming.compute(get_viewport_rect().size, _framing_metrics())
+	_look_ahead = float(_framing["look_ahead"])
 	_build_background()
 	_build_ground(layout)
 	_build_obstacles(layout)
@@ -100,12 +314,24 @@ func _ready() -> void:
 	_build_camera()
 	_build_speed_atmosphere()
 	_build_hud()
-	StateMachine.change_state(StateMachine.State.PLAYING)
+	_let_taps_through(self)
+	_build_touch_extras()
+	# Re-frame on a window resize / rotation (no scene reload).
+	get_tree().root.size_changed.connect(_on_viewport_resized)
+	_connect_touch_signals()
+	_sync_touch_hud()
+	_begin_play()
 	AudioManager.play_sfx("powerup")
 	# Blaze Rush has its own track (founder-supplied NewLB2.mp3). push/pop
 	# override pauses and later RESUMES the level's music at its saved
-	# position, so returning to the stage does not restart its song.
+	# position; _exit_to_level hands it back through
+	# release_music_override_faded so the stage song carries on under the wipe.
 	_music_token = AudioManager.push_music_override(BLAZE_MUSIC)
+	# Measured, not guessed: the whole course (~220-275 nodes, ~14 texture loads
+	# and a 3.3 MB mp3) is built synchronously in this one frame, which is the
+	# risk on a slow phone. The browser playtest reads this line at 4x CPU
+	# throttle (budget 250 ms there, 80 ms on desktop).
+	print("[Blaze] build %d ms (L%d)" % [int(float(Time.get_ticks_usec() - build_start_us) / 1000.0), _level_index])
 
 # --- construction -----------------------------------------------------------
 
@@ -123,6 +349,7 @@ func _build_background() -> void:
 	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
 	layer.add_child(bg)
 	add_child(layer)
+	_void_layer = layer
 
 	# L1 far haze — true world-space parallax (~0.15x), same ParallaxBackground/
 	# ParallaxLayer + motion_mirroring pattern already used in level_base.gd and
@@ -131,6 +358,13 @@ func _build_background() -> void:
 	# but behind gameplay (default layer 0), hence -1.
 	var pbg := ParallaxBackground.new()
 	pbg.layer = -1
+	# A ParallaxBackground is SCALED by the Camera2D zoom (engine-probed on 4.3:
+	# zoom 1.64 made the plate's on-screen scale go 1.25 -> 2.05). The portrait
+	# framing zooms the camera, which would magnify the plate a second time and
+	# break its cover maths, so the backdrop opts out of the zoom entirely: its
+	# scale is exactly the `fill` BlazeFraming.backdrop_plan computes. (Identical
+	# to dividing the sprite by the zoom, without the bookkeeping.)
+	pbg.scroll_ignore_camera_zoom = true
 	add_child(pbg)
 	var haze_layer := ParallaxLayer.new()
 	haze_layer.motion_scale = Vector2(0.15, 0.0)
@@ -226,25 +460,62 @@ const BLAZE_BACKDROPS := {
 ## period EQUAL to that width (a true butt-join). The join is made invisible by
 ## making the plate seamless (scripts/make-plate-seamless.py), not by fudging
 ## the tiling.
-const TILE_SAFE_PAD_PX: float = 2.0
+const TILE_SAFE_PAD_PX: float = BlazeFraming.PLATE_PAD_PX
+
+## The ParallaxBackground the plate lives on, the plate texture, and the nodes
+## _layout_backdrop() (re)builds on every viewport shape change.
+var _backdrop_pbg: ParallaxBackground = null
+var _backdrop_tex: Texture2D = null
+var _backdrop_layer: ParallaxLayer = null
+## Portrait only: the sky gradient (below the plate) and the seam fade (over it).
+var _backdrop_sky: TextureRect = null
+var _backdrop_fade: TextureRect = null
+var _void_layer: CanvasLayer = null
 
 func _build_stage_theme_layer(pbg: ParallaxBackground) -> void:
 	var tex: Texture2D = _resolve_backdrop_texture()
 	if tex == null:
 		return
-	# See the long note in level/level_base.gd _setup_background(). Short form:
-	# the repeat period must equal the drawn tile width EXACTLY. An earlier
-	# attempt used a 64px overlap, which shortens the period and makes the art
-	# jump backwards at every wrap — that manufactured the dividing line the
-	# founder caught, rather than hiding one. The plates themselves are made
-	# seamless by scripts/make-plate-seamless.py.
-	var view_h: float = get_viewport_rect().size.y
-	var view_w: float = get_viewport_rect().size.x
-	var fill: float = maxf(
-		(view_h + TILE_SAFE_PAD_PX) / float(tex.get_height()),
-		(view_w + TILE_SAFE_PAD_PX) / float(tex.get_width()))
-	var drawn_width: float = ceilf(tex.get_width() * fill)
-	fill = drawn_width / float(tex.get_width())
+	_backdrop_pbg = pbg
+	_backdrop_tex = tex
+	_layout_backdrop()
+
+## (Re)lay the stage plate for the CURRENT viewport. Called once from _ready and
+## again on every size_changed, because the old one-shot fill left the plate
+## covering only the top 877 u after a landscape -> portrait rotation (the run
+## then sat on black).
+##
+## See the long note in level/level_base.gd _setup_background(). Short form:
+## the repeat period must equal the drawn tile width EXACTLY. An earlier
+## attempt used a 64px overlap, which shortens the period and makes the art
+## jump backwards at every wrap — that manufactured the dividing line the
+## founder caught, rather than hiding one. The plates themselves are made
+## seamless by scripts/make-plate-seamless.py.
+##
+## BlazeFraming.backdrop_plan decides the shape: every landscape view keeps the
+## classic cover-fit plate (byte-identical sizing to before); a portrait view
+## (cover fill > 2.2, a 4.8x blur) draws only the plate's horizon band, width-
+## fit, over a 2-stop sky gradient with a soft fade at the join.
+func _layout_backdrop() -> void:
+	if _backdrop_tex == null or _backdrop_pbg == null:
+		return
+	for old: Node in [_backdrop_layer, _backdrop_sky, _backdrop_fade]:
+		if old != null and is_instance_valid(old):
+			old.get_parent().remove_child(old)
+			old.queue_free()
+	_backdrop_layer = null
+	_backdrop_sky = null
+	_backdrop_fade = null
+	var view: Vector2 = get_viewport_rect().size
+	if _framing.is_empty():
+		_framing = BlazeFraming.compute(view, _framing_metrics())
+	var tex: Texture2D = _backdrop_tex
+	var plan: Dictionary = BlazeFraming.backdrop_plan(
+		view, Vector2(float(tex.get_width()), float(tex.get_height())),
+		float(_framing["ground_screen_y"]))
+	var fill: float = float(plan["fill"])
+	var drawn_width: float = float(plan["drawn_width"])
+	var horizon: bool = StringName(plan["mode"]) == &"horizon"
 	var layer := ParallaxLayer.new()
 	# Slower than the haze so it sits clearly further back; y locked so it can
 	# never slide off and expose the void (same rule as level_base).
@@ -254,6 +525,11 @@ func _build_stage_theme_layer(pbg: ParallaxBackground) -> void:
 	spr.texture = tex
 	spr.centered = false
 	spr.scale = Vector2(fill, fill)
+	if horizon:
+		var region: Rect2 = plan["region"]
+		spr.region_enabled = true
+		spr.region_rect = region
+		spr.position = Vector2(0.0, float(plan["pos_y"]))
 	# The dedicated plates are ALREADY painted in their realm's Blaze palette,
 	# so they ship unmodulated — pushing them dark again is what flattened all
 	# three into "same art, different tint" last time. Only the legacy fallback
@@ -262,7 +538,61 @@ func _build_stage_theme_layer(pbg: ParallaxBackground) -> void:
 	spr.modulate = (Color(1.0, 1.0, 1.0, 1.0) if _using_realm_plate
 		else Color(0.42, 0.28, 0.55, 1.0))
 	layer.add_child(spr)
-	pbg.add_child(layer)
+	_backdrop_pbg.add_child(layer)
+	_backdrop_layer = layer
+	if horizon:
+		_build_portrait_sky(plan, view)
+
+## Portrait sky: a vertical 2-stop gradient (plate top-row average -> the colour
+## at the band's first row) from the screen top to the band, plus a short fade
+## over the band's top edge so the join is not a ruled line across the screen.
+## Stops are baked per realm in BlazeFraming.SKY_STOPS (measured offline from the
+## plates; tests/blaze_framing_test.gd re-measures them) — a runtime
+## Texture2D.get_image() readback is a GPU round trip on the web renderer.
+func _build_portrait_sky(plan: Dictionary, view: Vector2) -> void:
+	var stops: Array[Color] = BlazeFraming.sky_stops(_level_index)
+	var sky_h: float = float(plan["sky_height"])
+	if sky_h > 0.5 and _void_layer != null:
+		var grad := Gradient.new()
+		grad.set_color(0, stops[0])
+		grad.set_color(1, stops[1])
+		var gtex := GradientTexture2D.new()
+		gtex.gradient = grad
+		gtex.width = 4
+		gtex.height = 256
+		gtex.fill_from = Vector2(0.5, 0.0)
+		gtex.fill_to = Vector2(0.5, 1.0)
+		var sky := TextureRect.new()
+		sky.name = "PortraitSky"
+		sky.texture = gtex
+		sky.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		sky.stretch_mode = TextureRect.STRETCH_SCALE
+		sky.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		# Overlap the band by a few units so rounding can never show a hairline.
+		sky.position = Vector2.ZERO
+		sky.size = Vector2(view.x, sky_h + 2.0)
+		_void_layer.add_child(sky)
+		_backdrop_sky = sky
+	# Fade strip over the band's top edge: join colour, opaque -> transparent.
+	var fade_grad := Gradient.new()
+	fade_grad.set_color(0, Color(stops[1], 1.0))
+	fade_grad.set_color(1, Color(stops[1], 0.0))
+	var ftex := GradientTexture2D.new()
+	ftex.gradient = fade_grad
+	ftex.width = 4
+	ftex.height = 64
+	ftex.fill_from = Vector2(0.5, 0.0)
+	ftex.fill_to = Vector2(0.5, 1.0)
+	var fade := TextureRect.new()
+	fade.name = "PortraitSkyFade"
+	fade.texture = ftex
+	fade.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	fade.stretch_mode = TextureRect.STRETCH_SCALE
+	fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fade.position = Vector2(0.0, float(plan["fade_y"]))
+	fade.size = Vector2(view.x, BlazeFraming.HORIZON_FADE_H)
+	_backdrop_pbg.add_child(fade)
+	_backdrop_fade = fade
 
 ## True when the backdrop came from BLAZE_BACKDROPS rather than the fallback.
 var _using_realm_plate: bool = false
@@ -938,6 +1268,8 @@ func _build_speed_atmosphere() -> void:
 	dust.scale_amount_max = 0.5
 	dust.color = Color(COLOR_COLLECTIBLE.r, COLOR_COLLECTIBLE.g, COLOR_COLLECTIBLE.b, 0.2)
 	_camera.add_child(dust)
+	_dust = dust
+	_fit_dust()
 
 	# Hazard telegraph — a thin world-space warning bar, repositioned each
 	# physics frame in _physics_process to whichever lethal hazard is next
@@ -951,11 +1283,41 @@ func _build_speed_atmosphere() -> void:
 	# above the actual course, nowhere near the hazards it was meant to warn
 	# about. Anchored to GROUND_Y now, spanning from above candle/wall height
 	# down through the floor, same vertical footprint the obstacles use.
-	_telegraph = ColorRect.new()
-	_telegraph.size = Vector2(6, 260)
-	_telegraph.position = Vector2(-3, GROUND_Y - 260.0)
-	_telegraph.color = Color(COLOR_HAZARD.r, COLOR_HAZARD.g, COLOR_HAZARD.b, 0.0)
+	# THE TELEGRAPH IS WIDER AND CAPPED (mobile readability pass). It was one 6 u
+	# bar in the hazard red: 3.2 dp on a landscape phone, 1.8 dp in portrait, and
+	# on the Stage 3 plate nearly invisible. Now: a 14 u bar (still red, still the
+	# existing fade over TELEGRAPH_LEAD) under a CREAM down-chevron cap with a dark
+	# outline that pulses, so the warning is a shape that pops against any plate.
+	# Never a recolour of the hazard itself: the candles stay red.
+	_telegraph = Node2D.new()
+	_telegraph.name = "Telegraph"
 	_telegraph.z_index = 5
+	var tg_outline := ColorRect.new()
+	tg_outline.color = CANDLE_OUTLINE_COLOR
+	tg_outline.size = Vector2(TELEGRAPH_W + 4.0, 260.0)
+	tg_outline.position = Vector2(-(TELEGRAPH_W + 4.0) * 0.5, GROUND_Y - 260.0)
+	_telegraph.add_child(tg_outline)
+	var tg_bar := ColorRect.new()
+	tg_bar.color = Color(COLOR_HAZARD.r, COLOR_HAZARD.g, COLOR_HAZARD.b, 1.0)
+	tg_bar.size = Vector2(TELEGRAPH_W, 260.0)
+	tg_bar.position = Vector2(-TELEGRAPH_W * 0.5, GROUND_Y - 260.0)
+	_telegraph.add_child(tg_bar)
+	_telegraph_cap = Node2D.new()
+	_telegraph_cap.name = "TelegraphCap"
+	_telegraph_cap.position = Vector2(0.0, GROUND_Y - 262.0)
+	var cap_dark := Polygon2D.new()
+	cap_dark.color = CANDLE_OUTLINE_COLOR
+	cap_dark.polygon = PackedVector2Array([Vector2(-21, -22), Vector2(21, -22), Vector2(0, 8)])
+	_telegraph_cap.add_child(cap_dark)
+	var cap_lit := Polygon2D.new()
+	cap_lit.color = CANDLE_RIM_COLOR
+	cap_lit.polygon = PackedVector2Array([Vector2(-17, -18), Vector2(17, -18), Vector2(0, 3)])
+	_telegraph_cap.add_child(cap_lit)
+	_telegraph.add_child(_telegraph_cap)
+	_telegraph.modulate.a = 0.0
+	var cap_pulse := _telegraph_cap.create_tween().set_loops()
+	cap_pulse.tween_property(_telegraph_cap, "scale", Vector2(1.18, 1.18), 0.28).set_trans(Tween.TRANS_SINE)
+	cap_pulse.tween_property(_telegraph_cap, "scale", Vector2.ONE, 0.28).set_trans(Tween.TRANS_SINE)
 	add_child(_telegraph)
 
 ## Radial-falloff dot, generated once and cached — the same "no art dependency
@@ -988,18 +1350,36 @@ func _build_ground(layout: Dictionary) -> void:
 	for g: Vector2 in gaps:
 		_gap_spans.append(g)
 
-	var cursor: float = -200.0
+	_make_left_apron()
+	var cursor: float = FLOOR_START_X
 	for gap in gaps:
 		_make_floor_segment(cursor, gap.x)
 		cursor = gap.y
 	_make_floor_segment(cursor, _course_length + 600.0)
 
-func _make_floor_segment(from_x: float, to_x: float) -> void:
-	var w := to_x - from_x
-	if w <= 0.0:
-		return
-	var body := StaticBody2D.new()
-	body.position = Vector2(from_x, GROUND_Y)
+## Where the first floor segment starts (the cube spawns at x = 0).
+const FLOOR_START_X: float = -200.0
+## How far left the decorative apron reaches, and how wide it is.
+const APRON_LEFT_X: float = -1400.0
+
+## Visual-only continuation of the floor to the LEFT of the first segment, shown
+## only when the camera is zoomed in (portrait): there the view reaches ~430 u
+## past the floor's left end at every respawn and showed void under the cube's
+## start. It has NO collision (the cube never goes left of x = 0) and is hidden at
+## zoom 1, so every landscape view is exactly as it was.
+func _make_left_apron() -> void:
+	var apron := Node2D.new()
+	apron.name = "LeftApron"
+	apron.position = Vector2(APRON_LEFT_X, GROUND_Y)
+	_add_band_visuals(apron, FLOOR_START_X - APRON_LEFT_X)
+	apron.visible = float(_framing.get("zoom", 1.0)) > 1.001
+	add_child(apron)
+	_left_apron = apron
+
+## The floor band's look, shared by every segment and the apron: a lit top, a
+## darker body (as deep as the FRAMING asks — visual only), faint seams, a mint
+## top edge. Collision is built separately and never changes.
+func _add_band_visuals(parent: Node2D, w: float) -> void:
 	# Founder, 2026-08-20 residual (shot_3): circled the ground band as
 	# "rectangle residue" — a single flat COLOR_SAFE_GROUND swatch across the
 	# full 220px band reads as an unfinished placeholder box, not ground.
@@ -1008,12 +1388,16 @@ func _make_floor_segment(from_x: float, to_x: float) -> void:
 	var visual := ColorRect.new()
 	visual.color = COLOR_SAFE_GROUND.lightened(0.14)
 	visual.size = Vector2(w, 60.0)
-	body.add_child(visual)
+	parent.add_child(visual)
 	var visual_body := ColorRect.new()
 	visual_body.position = Vector2(0.0, 60.0)
 	visual_body.color = COLOR_SAFE_GROUND.darkened(0.22)
-	visual_body.size = Vector2(w, 160.0)
-	body.add_child(visual_body)
+	# Body = depth - 60 (160 at the authored 220). BlazeFraming extends the depth
+	# on a TALL view so there is no strip of plate under the band; collision
+	# stays 220 (see _make_floor_segment).
+	visual_body.size = Vector2(w, _band_depth() - 60.0)
+	parent.add_child(visual_body)
+	_band_bodies.append(visual_body)
 	# Grok 4.6 (2026-08-20 residual): "two flat boxes... will keep reading as
 	# unfinished residue... add cheap surface language: faint horizontal
 	# seams." Two thin low-contrast lines break up the body band without
@@ -1023,13 +1407,31 @@ func _make_floor_segment(from_x: float, to_x: float) -> void:
 		seam.position = Vector2(0.0, seam_y)
 		seam.color = Color(0, 0, 0, 0.12)
 		seam.size = Vector2(w, 2.0)
-		body.add_child(seam)
+		parent.add_child(seam)
 	var edge := ColorRect.new()
 	edge.color = COLOR_SAFE_EDGE
 	edge.size = Vector2(w, 4.0)
-	body.add_child(edge)
+	parent.add_child(edge)
+
+## Visual body ColorRects of every floor segment (+ apron), so a rotation can
+## re-deepen them without rebuilding the course.
+var _band_bodies: Array[ColorRect] = []
+var _left_apron: Node2D = null
+
+func _band_depth() -> float:
+	return float(_framing.get("band_depth", BlazeFraming.BAND_DEPTH))
+
+func _make_floor_segment(from_x: float, to_x: float) -> void:
+	var w := to_x - from_x
+	if w <= 0.0:
+		return
+	var body := StaticBody2D.new()
+	body.position = Vector2(from_x, GROUND_Y)
+	_add_band_visuals(body, w)
 	var col := CollisionShape2D.new()
 	var shape := RectangleShape2D.new()
+	# COLLISION IS ALWAYS 220 u, whatever the visual depth: the fairness windows
+	# (tests/blaze_rush_window_test.gd) were measured against this shape.
 	shape.size = Vector2(w, 220.0)
 	col.shape = shape
 	col.position = Vector2(w / 2.0, 110.0)
@@ -1059,11 +1461,37 @@ func _make_candle(x: float) -> void:
 	# RED CANDLE — restored. "Bring back the red candles and replace these
 	# squares with the flaming diamonds." The diamonds belong on the floating
 	# SMOKE TOKENS (see _make_smoke_token), not on this hazard.
+	# READABILITY (the mobile pass). On a phone a candle is ~10x18 dp and on the
+	# amber Stage 3 plate the flat red merged into the sky (WCAG contrast of the
+	# red against the plate band: 2.99 / 2.42 / 1.30 on stages 1/2/3). The colour
+	# stays RED — the founder asked for the red candles back — and the contrast
+	# comes from a silhouette instead: a 3 u dark outline OUTSIDE a 2 u cream rim
+	# around the unchanged 18x34 red body. The dark ring reads on the amber plate,
+	# the cream ring on the violet and cyan ones (>= 7:1 on all three, measured in
+	# tests/blaze_framing_test.gd). Both rings sit outside the red body, which is
+	# itself larger than the 14x30 collision shape, so the hit box is unchanged.
+	var outline := ColorRect.new()
+	outline.name = "CandleOutline"
+	outline.color = CANDLE_OUTLINE_COLOR
+	outline.size = Vector2(18 + 2 * (CANDLE_RIM_PX + CANDLE_OUTLINE_PX), 34 + CANDLE_RIM_PX + CANDLE_OUTLINE_PX)
+	outline.position = Vector2(-9 - CANDLE_RIM_PX - CANDLE_OUTLINE_PX, -34 - CANDLE_RIM_PX - CANDLE_OUTLINE_PX)
+	area.add_child(outline)
+	var rim := ColorRect.new()
+	rim.name = "CandleRim"
+	rim.color = CANDLE_RIM_COLOR
+	rim.size = Vector2(18 + 2 * CANDLE_RIM_PX, 34 + CANDLE_RIM_PX)
+	rim.position = Vector2(-9 - CANDLE_RIM_PX, -34 - CANDLE_RIM_PX)
+	area.add_child(rim)
 	var body := ColorRect.new()
 	body.color = COLOR_HAZARD
 	body.size = Vector2(18, 34)
 	body.position = Vector2(-9, -34)
 	area.add_child(body)
+	var wick_outline := ColorRect.new()
+	wick_outline.color = CANDLE_OUTLINE_COLOR
+	wick_outline.size = Vector2(4 + 2 * CANDLE_OUTLINE_PX, 14 + CANDLE_OUTLINE_PX)
+	wick_outline.position = Vector2(-2 - CANDLE_OUTLINE_PX, -48 - CANDLE_OUTLINE_PX)
+	area.add_child(wick_outline)
 	var wick := ColorRect.new()
 	wick.color = Color(1.0, 0.55, 0.15, 0.9)
 	wick.size = Vector2(4, 14)
@@ -1278,6 +1706,7 @@ func _make_smoke_token(x: float, height: float) -> void:
 			_smoke_this_attempt += 1
 			_update_hud()
 			AudioManager.play_sfx("coin")
+			_buzz(HAPTIC_PICKUP_MS)
 			_spawn_pickup_burst(area.global_position)
 	)
 	add_child(area)
@@ -1377,9 +1806,88 @@ func _build_player() -> void:
 
 func _build_camera() -> void:
 	_camera = Camera2D.new()
-	_camera.position = Vector2(0, 360)
+	_camera.position = Vector2(0, float(_framing.get("cam_y", BlazeFraming.BASE_CAM_Y)))
+	_camera.zoom = Vector2.ONE * float(_framing.get("zoom", 1.0))
 	add_child(_camera)
 	_camera.make_current()
+	# Cube and track agree from the first frame (the camera is built after the
+	# player, so _reset_player could not place it).
+	_camera.position.x = _player.position.x + _look_ahead
+	_maybe_show_rotate_cue()
+
+## EVERY Control this scene builds must let a tap through to _unhandled_input.
+##
+## Engine-measured (tests/blaze_hud_mouse_filter_test.gd): a Godot 4.3 `ColorRect`
+## defaults to mouse_filter STOP, and Controls parented to a Node2D (the floor
+## band, the candles, the logos' plates) still take part in the viewport's GUI
+## hit-test, as does the full-screen void ColorRect on CanvasLayer -2. A tap or
+## mouse click that lands on ANY of them is consumed there and never reaches
+## `_unhandled_input` - so tap/click-to-jump only worked on the ~84 u HUD strip
+## (keyboard and gamepad, which are not GUI-hit-tested, always worked). Walking the
+## finished tree once is cheaper and harder to forget than patching ~40
+## ColorRect.new() sites; the exit button is the one intentional STOP.
+func _let_taps_through(node: Node) -> void:
+	if node is Control and not (node is BaseButton):
+		var ctrl: Control = node as Control
+		if ctrl.mouse_filter == Control.MOUSE_FILTER_STOP:
+			ctrl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for child in node.get_children():
+		_let_taps_through(child)
+
+## Metrics the framing is computed against: the test override, else the live ones
+## (MobileLayoutManager's, kept current on resize) or a fresh read.
+func _framing_metrics() -> TouchMetrics:
+	if framing_metrics_override != null:
+		return framing_metrics_override
+	return TouchUi.metrics()
+
+## Re-frame after a window resize or phone rotation. The course itself is never
+## rebuilt: camera zoom / y, the floor band's visual depth, the left apron, the
+## backdrop plate and the portrait cue all follow the new shape in place.
+func _on_viewport_resized() -> void:
+	if _camera == null:
+		return
+	_framing = BlazeFraming.compute(get_viewport_rect().size, _framing_metrics())
+	_look_ahead = float(_framing["look_ahead"])
+	_apply_framing()
+	_sync_touch_hud()
+
+func _apply_framing() -> void:
+	_camera.zoom = Vector2.ONE * float(_framing["zoom"])
+	_camera.position.y = float(_framing["cam_y"])
+	if _player != null:
+		_camera.position.x = _player.position.x + _look_ahead
+	var body_h: float = _band_depth() - 60.0
+	for body: ColorRect in _band_bodies:
+		if is_instance_valid(body):
+			body.size.y = body_h
+	if _left_apron != null and is_instance_valid(_left_apron):
+		_left_apron.visible = float(_framing["zoom"]) > 1.001
+	_fit_dust()
+	_layout_backdrop()
+	_maybe_show_rotate_cue()
+
+## The dust field was authored for a 720 u tall view (a 520 u box). On a tall,
+## zoomed portrait view that box is a thin column in the middle, so scale it with
+## the visible height (and the particle count with it, to keep the same density).
+## A 16:9 view gives the original box and the original 20 particles exactly.
+func _fit_dust() -> void:
+	if _dust == null or not is_instance_valid(_dust):
+		return
+	var vis: Vector2 = _framing.get("vis", Vector2(1280.0, 720.0))
+	var k: float = maxf(1.0, vis.y / 720.0)
+	_dust.emission_rect_extents = Vector2(200.0, 260.0 * k)
+	var wanted: int = int(round(20.0 * k))
+	if _dust.amount != wanted:
+		_dust.amount = wanted
+
+## One-time wordless "turn the phone" cue, portrait on a touch device only.
+func _maybe_show_rotate_cue() -> void:
+	if _framing.is_empty() or not bool(_framing.get("portrait", false)):
+		return
+	if BlazeRotateCue.was_shown() or not TouchUi.is_touch():
+		return
+	BlazeRotateCue.show_on(self, _framing_metrics().dp)
 
 func _build_hud() -> void:
 	var layer := CanvasLayer.new()
@@ -1392,6 +1900,7 @@ func _build_hud() -> void:
 	margin.add_theme_constant_override("margin_top", 12)
 	margin.add_theme_constant_override("margin_right", 16)
 	layer.add_child(margin)
+	_hud_margin = margin
 
 	var row := HBoxContainer.new()
 	margin.add_child(row)
@@ -1400,7 +1909,14 @@ func _build_hud() -> void:
 	row.add_child(_smoke_label)
 
 	var spacer := Control.new()
+	spacer.name = "HudSpacer"
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# IGNORE, not the Control default STOP. A bare Control swallows every tap on
+	# it: this spacer is a ~400-470 u (215-250 dp) wide, ~72 u tall dead strip at
+	# the top centre of a landscape phone where the thumb silently did NOT jump
+	# (engine-measured with a replica of this HUD). tests/blaze_hud_mouse_filter_
+	# test.gd walks every HUD Control and fails on any STOP that is not a button.
+	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(spacer)
 
 	_attempt_label.add_theme_font_size_override("font_size", 52)
@@ -1458,6 +1974,7 @@ func _build_hud() -> void:
 	tapout_btn.add_theme_stylebox_override("pressed", exit_hover)
 	tapout_btn.pressed.connect(_exit_to_level)
 	row.add_child(tapout_btn)
+	_tapout_button = tapout_btn
 
 	# THE BAR AT THE BOTTOM OF THE SCREEN IS GONE.
 	#
@@ -1481,6 +1998,54 @@ func _build_hud() -> void:
 	# that is no longer displayed.
 
 	_update_hud()
+
+## Canvas units from the viewport's right edge that the layout's Pause button actually
+## occupies (plus a gap), or 0 when no blaze layout is up yet. Read from the live layout so a
+## tablet's x1.2 tier and the player's button-size preference are honoured.
+func _pause_button_clearance(m: TouchMetrics) -> float:
+	var mgr: Node = get_node_or_null("/root/MobileLayoutManager")
+	if mgr == null:
+		return 0.0
+	var lay: Variant = mgr.call(&"layout")
+	if not (lay is TouchLayout):
+		return 0.0
+	var btn: VirtualButton = (lay as TouchLayout).find_button(&"pause")
+	if btn == null or btn.size.x <= 1.0:
+		return 0.0
+	return m.viewport_size.x - btn.position.x + HUD_PAUSE_GAP_DP * m.dp
+
+## Place the HUD row for this screen and hide the written exit on a phone.
+##
+## Called at build, on size_changed AND whenever the touch manager shows / hides /
+## re-lays-out, because the manager flips is_touch_device lazily on the first real
+## finger and hides the layer on a key press: the answer cannot be decided once at build.
+##   * touch: the row sits inside the safe area and stops short of the layout's top-right
+##     Pause button (PAUSE_ZONE_W_DP); the text "TAP OUT (Q)" button is hidden (a phone
+##     has no Q and no written words - the exit is the pause card). The Lil Blunt face and
+##     the founder-restored BLAZE DIAMONDS / ATTEMPT labels stay.
+##   * keys shown (desktop, or a hybrid being driven with a keyboard): the authored
+##     16 / 12 / 16 margins and the TAP OUT (Q) button, byte for byte as before.
+func _sync_touch_hud() -> void:
+	var touch: bool = _touch_mode()
+	if _tapout_button != null and is_instance_valid(_tapout_button):
+		_tapout_button.visible = not touch
+	if _hud_margin == null or not is_instance_valid(_hud_margin):
+		return
+	var left: float = HUD_MARGIN_X
+	var top: float = HUD_MARGIN_Y
+	var right: float = HUD_MARGIN_X
+	if touch:
+		var m: TouchMetrics = _framing_metrics()
+		left = maxf(HUD_MARGIN_X, m.safe_rect.position.x)
+		top = maxf(HUD_MARGIN_Y, m.safe_rect.position.y)
+		right = maxf(HUD_MARGIN_X, m.viewport_size.x - m.safe_rect.end.x) + (PAUSE_ZONE_W_DP + HUD_PAUSE_GAP_DP) * m.dp
+		# The real button is bigger than the nominal zone on a tablet (tier 1.2) and with the
+		# player's own button-size preference (up to x1.5): clear whatever is actually there.
+		right = maxf(right, _pause_button_clearance(m))
+	_hud_has_touch_margins = touch
+	_hud_margin.add_theme_constant_override("margin_left", int(round(left)))
+	_hud_margin.add_theme_constant_override("margin_top", int(round(top)))
+	_hud_margin.add_theme_constant_override("margin_right", int(round(right)))
 
 # --- run loop ----------------------------------------------------------------
 
@@ -1510,27 +2075,185 @@ func _input(event: InputEvent) -> void:
 	if wants_exit:
 		get_viewport().set_input_as_handled()
 		_exit_to_level()
+		return
+	# The layout's Pause button (and a gamepad's Start) press the `pause` action: open the
+	# wordless card. Resuming from it is the card's own job (BlazePause._input / PLAY).
+	if event.is_action_pressed(&"pause") and not event.is_echo():
+		get_viewport().set_input_as_handled()
+		_open_pause_card()
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _run_paused:
+		return
 	# Whole-screen tap/click = jump (mobile-first, Geometry Dash convention).
-	if event is InputEventScreenTouch and event.pressed:
-		_tap_buffered = true
-	elif event is InputEventMouseButton and event.pressed:
-		_tap_buffered = true
+	#
+	# ONE tap path. With the touch layer's tap field live (the normal phone case) a finger
+	# reaches this node ONLY as the `jump` action: the field swallows the ScreenTouch and
+	# the mouse click Godot emulates from it. The ScreenTouch / left-click branches below
+	# are the guarded FALLBACK for the moments the layer is not up (a touch device that is
+	# detected lazily on its first finger, the instant before the reveal, a keyboard-mode
+	# laptop) so a first tap is never lost; they are ignored while the field is live, so a
+	# tap that could arrive both ways still counts once. All paths end in the same
+	# idempotent latch (_queue_jump), never a counter.
+	if event is InputEventScreenTouch and (event as InputEventScreenTouch).pressed:
+		if not _tap_field_live():
+			_on_tap()
+	elif event is InputEventMouseButton and (event as InputEventMouseButton).pressed \
+			and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+		# LEFT button only (a touch tap's emulated mouse press is the left button): the
+		# wheel and the other buttons also arrive as pressed MouseButton events, and now
+		# that a click anywhere reaches here they must not make the cube jump.
+		if not _tap_field_live():
+			_on_tap()
 	elif event.is_action_pressed("jump"):
-		_tap_buffered = true
+		_on_tap()
+
+## A tap, from whichever path. While the run is HOLDING (the touch armed start, or after
+## the pause card) the tap that comes after the reveal starts it - and is not a jump; a tap
+## before the reveal is ignored. Once running it is the buffered jump. A second event of the
+## same tap in the frame that started the run is dropped.
+func _on_tap() -> void:
+	if not _armed:
+		if _reveal_ready and not _card_open:
+			_start_run()
+		return
+	if Engine.get_process_frames() == _arm_frame:
+		return
+	_queue_jump()
+
+## Remember a tap for the buffer window (0.10 s on touch, 0.06 s on desktop).
+func _queue_jump() -> void:
+	_jump_buffer = JUMP_BUFFER_TOUCH_S if TouchUi.is_touch() else JUMP_BUFFER_DESKTOP_S
+
+## Forget every remembered tap and the coyote grace. Called on pause and resume so
+## a tap registered at the pause edge cannot fire a jump the moment the run
+## resumes (the buffers only decay inside _physics_process).
+func _clear_input_buffers() -> void:
+	_jump_buffer = 0.0
+	_coyote = 0.0
+
+## Freeze the run (focus lost, the wordless pause card). This is the single seam the card
+## calls; the buffers are cleared so a tap queued at the pause edge cannot fire on resume.
+func _pause_run() -> void:
+	if _run_paused:
+		return
+	_run_paused = true
+	_clear_input_buffers()
+	set_physics_process(false)
+
+func _resume_run() -> void:
+	if not _run_paused:
+		return
+	_run_paused = false
+	_clear_input_buffers()
+	set_physics_process(true)
+
+func is_run_paused() -> bool:
+	return _run_paused
+
+# --- the wordless pause card (touch) -----------------------------------------------
+#
+# Opened by the layout's Pause button / a gamepad Start (the `pause` action, see _input) and
+# automatically when the app loses focus. It freezes the run through the same
+# _pause_run()/_resume_run() seam the tests drive, reports touch_suspended() so the
+# layer-60 tap field goes inert and the card (layer 40) gets the touch, and its two pads
+# are PLAY (resume) and EXIT (the SAME _exit_to_level() path as Esc/Q and the finish:
+# music resume, side_return, the 2.5 s watchdog).
+
+## True while the pause card is up.
+func is_pause_card_open() -> bool:
+	return _card_open
+
+func _open_pause_card() -> void:
+	if _card == null or _card_open or _finished or _exiting:
+		return
+	_pause_run()
+	_card_open = true
+	if _cue != null:
+		_cue.hide_cue()   # the hand would sit under the dim
+	_card.open()
+	touch_profile_changed.emit()
+
+func _close_pause_card() -> void:
+	if not _card_open:
+		return
+	_card_open = false
+	_card.close()
+	touch_profile_changed.emit()
+
+## PLAY: back to the run. Buffers are cleared (a tap queued at the pause edge must not fire
+## now). On a touch device the cube then HOLDS where it froze, with the tap-hand cue, until
+## the player's next tap: a thumb that just left PLAY (or a phone call that just ended)
+## gets a beat instead of being dropped into a moving cube. That tap is not a jump.
+func _on_card_play() -> void:
+	if not _card_open:
+		return
+	_close_pause_card()
+	_resume_run()
+	if _touch_mode():
+		_armed = false
+		_show_cue_if_waiting()
+
+## EXIT: the very same path as Esc / Q / the finish line.
+func _on_card_exit() -> void:
+	if not _card_open:
+		return
+	_exit_to_level()
+
+## A phone call, the notification shade, an app switch: the tab loses focus without a
+## release event for anything. A TOUCH player gets the card (and the controls are released
+## by the manager's own focus handler); desktop keeps its old behaviour of carrying on.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_OUT or what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		if _player != null and _touch_mode():
+			_open_pause_card()
+
+## Jump decision, once per physics tick, BEFORE move_and_slide.
+##
+## `is_on_floor()` here still reports the PREVIOUS tick's slide, so the cube may
+## jump one tick after the floor ended even without coyote; COYOTE_S widens that
+## deliberately (a lip is 5.3 u per tick at 320 u/s). The buffer decays only when
+## no jump fires, and a jump zeroes both, so one tap can never become two jumps.
+func _update_jump(delta: float) -> void:
+	if _player.is_on_floor():
+		_coyote = COYOTE_S
+	else:
+		_coyote = maxf(_coyote - delta, 0.0)
+	if _jump_buffer > 0.0 and _coyote > 0.0:
+		_player.velocity.y = JUMP_VELOCITY
+		_jump_buffer = 0.0
+		_coyote = 0.0
+		_spin_cube()
+		# ONE haptic per tap: while the touch layer's tap field is live it already buzzed on
+		# the finger-down (VirtualTapField.buzz_ms), so the takeoff stays silent; the
+		# takeoff buzz covers the fallback path, where nothing else vibrates.
+		if not _tap_field_live():
+			_buzz(HAPTIC_JUMP_MS)
+	else:
+		_jump_buffer = maxf(_jump_buffer - delta, 0.0)
+
+## Haptic tick, touch devices only (TouchActions.buzz is Input.vibrate_handheld:
+## Android browsers and native; silently nothing on iOS Safari and desktop).
+func _buzz(duration_ms: int) -> void:
+	if TouchUi.is_touch():
+		_haptic_sent += 1
+		TouchActions.buzz(duration_ms)
+
+## How many haptic ticks were actually forwarded to TouchActions (a counter the
+## tests read: it must stay 0 on a mouse-and-keyboard machine).
+var _haptic_sent: int = 0
 
 func _physics_process(delta: float) -> void:
 	if _finished or _player == null:
+		return
+	# HOLDING for the player's tap (touch armed start / after the pause card): nothing moves.
+	if not _armed:
 		return
 
 	_player.velocity.x = RUN_SPEED
 	_player.velocity.y += GRAVITY * delta
 
-	if _tap_buffered and _player.is_on_floor():
-		_player.velocity.y = JUMP_VELOCITY
-		_spin_cube()
-	_tap_buffered = false
+	_update_jump(delta)
 
 	_player.move_and_slide()
 
@@ -1546,7 +2269,7 @@ func _physics_process(delta: float) -> void:
 		_crash()
 		return
 
-	_camera.position.x = _player.position.x + 240.0
+	_camera.position.x = _player.position.x + _look_ahead
 	_update_telegraph()
 
 ## Find the next lethal hazard ahead of the player and fade the warning bar
@@ -1561,14 +2284,14 @@ func _update_telegraph() -> void:
 			next_x = hx
 			break
 	if next_x < 0.0:
-		_telegraph.color.a = 0.0
+		_telegraph.modulate.a = 0.0
 		return
 	var dist := next_x - px
 	if dist > TELEGRAPH_LEAD:
-		_telegraph.color.a = 0.0
+		_telegraph.modulate.a = 0.0
 		return
-	_telegraph.position.x = next_x - 3.0  # keep the 6px bar centered on the hazard
-	_telegraph.color.a = clampf(1.0 - dist / TELEGRAPH_LEAD, 0.0, 1.0) * 0.85
+	_telegraph.position.x = next_x  # the 14 u bar and its cap are centred on the hazard
+	_telegraph.modulate.a = clampf(1.0 - dist / TELEGRAPH_LEAD, 0.0, 1.0) * 0.85
 
 func _spin_cube() -> void:
 	var tween := create_tween()
@@ -1583,8 +2306,17 @@ func _crash() -> void:
 		return
 	_attempts += 1
 	_smoke_this_attempt = 0
-	ScreenShake.shake(0.2, 6.0)
+	# NO ScreenShake here, on purpose. The old `ScreenShake.shake(0.2, 6.0)` was
+	# dead code: ScreenShake only shakes the camera registered by player.gd, which
+	# is freed in this scene, and Blaze never registers its own — so no crash has
+	# ever shaken. Worse, with no valid camera ScreenShake never decrements the
+	# duration, so the stale 0.2 s / 6 px request fired as a surprise jolt in the
+	# level the moment the player's camera registered on the way back. Wiring a
+	# real camera would CHANGE the desktop crash feel (a shake on every attempt of
+	# a 45-attempt loop); deleting the call keeps it exactly as it has always been
+	# and removes the jolt on return. The haptic below is the touch-side feedback.
 	AudioManager.play_sfx("hit")
+	_buzz(HAPTIC_CRASH_MS)
 	_reset_player()
 	# RESTORE THE DIAMONDS AFTER ALL OF THIS FRAME'S COLLISION CALLBACKS, NOT
 	# DURING THEM.
@@ -1619,10 +2351,26 @@ func _restore_tokens() -> void:
 		token.monitoring = true
 	_crash_pending = false
 
+## Respawn standing ON the floor (cube centre half a collision box above it), not
+## in the air: the old spawn was a full PLAYER_SIZE above the floor, so the cube
+## was airborne for ~6 physics ticks (0.1 s) and every tap in that window was lost.
+const RESPAWN_Y: float = GROUND_Y - 12.0
+
 func _reset_player() -> void:
-	_player.position = Vector2(0.0, GROUND_Y - PLAYER_SIZE)
+	_player.position = Vector2(0.0, RESPAWN_Y)
 	_player.velocity = Vector2.ZERO
 	_player_visual.rotation = 0.0
+	# A tap during the respawn is not lost: is_on_floor() still reports the stale
+	# pre-teleport slide until the next move_and_slide, so grant the coyote grace
+	# explicitly (the buffer is deliberately NOT cleared by a crash).
+	_coyote = COYOTE_S
+	# The camera follows on the crash tick too. _crash() returns out of
+	# _physics_process before its camera update, so without this one rendered frame
+	# showed the OLD scroll position with the cube gone (an empty frame, worse at
+	# 120 Hz). The camera does not exist yet on the very first call (_build_player).
+	if _camera != null:
+		_camera.position.x = _player.position.x + _look_ahead
+		_update_telegraph()
 
 func _update_hud() -> void:
 	# Founder: "PUFFS" -> "BLAZE DIAMONDS". Same rename as the main HUD's
@@ -1705,10 +2453,15 @@ func _exit_to_level() -> void:
 		# player was never in.
 		GameManager.save_checkpoint(_level_index, 990 + _level_index, portal_pos)
 	GameManager.dash_return = {}
-	_release_music()
+	# Tell the level it is a RETURN from Blaze (LevelBase._start_stage_audio reads
+	# and clears this): its song carries on instead of restarting, and the
+	# stage-intro voice line is not replayed.
+	GameManager.side_return = {"kind": "blaze", "level": _level_index}
+	_release_music(true)
 	# Same realm-matched wipe as the entry (blaze_portal.gd) — the exit must
 	# not un-match what the entry just established.
-	SceneRouter.load_scene(return_path, SceneRouter.blaze_transition_for_level(_level_index))
+	SceneRouter.load_scene(return_path, SceneRouter.blaze_transition_for_level(_level_index),
+		SceneRouter.blaze_wipe_seconds())
 	_arm_exit_watchdog(return_path)
 
 ## LAST-RESORT EXIT. The player must NEVER be stranded in Blaze Rush.

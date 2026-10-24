@@ -59,6 +59,20 @@ func _ready() -> void:
 			boss_src.contains("GameManager.next_level_scene(3)") and boss_src.contains("stage3_boss_defeat_cutscene.gd")
 			and not boss_src.contains('load_scene("res://src/ui/main_menu.tscn"'))
 
+	# 1c. THE MENU ROUTE (mobile transitions, F08): the EPISODE 2 button and the ?ep2=1 boot call SceneRouter.load_scene with
+	#     the entry scene, and the router hands THAT scene (and only it) to the TransitionDirector - the card, the budgeted
+	#     warm-up, the settle and the reveal - instead of a fade to black followed by a one-frame compile and a pop.
+	#     (The real swap into a live Episode 2 is driven end to end by tests/transition_director_test.)
+	var menu_src: String = FileAccess.get_file_as_string("res://src/ui/main_menu.gd")
+	var router_src: String = FileAccess.get_file_as_string("res://src/autoload/scene_router.gd")
+	_check("the EPISODE 2 button and the ?ep2=1 boot both route through SceneRouter.load_scene(EPISODE2_SCENE)",
+		menu_src.count("SceneRouter.load_scene(GameManager.EPISODE2_SCENE") >= 2)
+	_check("...and the router diverts exactly that scene to the TransitionDirector",
+		router_src.contains("_divert_to_director(path)") and router_src.contains("TransitionDirector.go(path)")
+		and router_src.contains("path != GameManager.EPISODE2_SCENE"))
+	_check("any other scene still takes the normal route (the divert says no)",
+		not SceneRouter._divert_to_director("res://src/ui/main_menu.tscn"))
+
 	# 2. Clearing an EARLIER level must still route to the next level, not skip
 	#    the rest of Episode 1.
 	var mid: String = gm.next_level_scene(1)
