@@ -1,0 +1,32 @@
+# Generation log - Lil Blunt NFT Collection (2026-10-19 / 10-24)
+Model: Google Flow, Nano Banana 2.1, 1:1, x2 per prompt, 0 credits. Reference: founder image(s) only (see skill gm-game-nft-lil-blunt-collection). Ring: tools/nft/ring_frame.py (all pass --check).
+Prompt styles: medallion-game (01-05), founder-universe community (09-14), crypto-meme adventures (17-29), candid phone snapshot pack (30-31).
+Finals (best of 2 per piece, ring-framed):
+- lb_nft_09_community_four_chain_lounge_v1  (community)
+- lb_nft_10_community_ferrari_golfcart_v1  (community)
+- lb_nft_11_community_speedboat_v1  (community)
+- lb_nft_12_community_bong_jet_v1  (community)
+- lb_nft_13_community_rolls_bong_car_v1  (community)
+- lb_nft_14_community_grandpas_stage_v1  (community)
+- lb_nft_01_game_smoke_doublejump_v2  (game)
+- lb_nft_02_game_ep2_quad_escape_v1  (game)
+- lb_nft_03_game_ep2_armory_remington_v1  (game)
+- lb_nft_04_game_lounge_alone_ring_v2  (game)
+- lb_nft_05_game_whitepaper_portal_v1  (game)
+- lb_nft_17_meme_candle_surf_v1  (series2_meme)
+- lb_nft_18_meme_diamond_hands_v1  (series2_meme)
+- lb_nft_19_meme_rocket_moon_v1  (series2_meme)
+- lb_nft_20_meme_gold_whale_v2  (series2_meme)
+- lb_nft_21_meme_rug_pull_v1  (series2_meme)
+- lb_nft_22_meme_tornado_eye_v1  (series2_meme)
+- lb_nft_23_meme_skydive_v1  (series2_meme)
+- lb_nft_24_meme_bull_vs_bear_v1  (series2_meme)
+- lb_nft_25_meme_chain_bridge_v1  (series2_meme)
+- lb_nft_26_meme_balloon_heist_v1  (series2_meme)
+- lb_nft_27_meme_gold_train_v1  (series2_meme)
+- lb_nft_28_meme_moon_flag_v1  (series2_meme)
+- lb_nft_29_meme_space_casino_v1  (series2_meme)
+- lb_nft_30_snap_convenience_store_v1  (series3_snapshot)
+- lb_nft_31_snap_airport_gate_v1  (series3_snapshot)
+
+Not used: 02-04 first attempts (boss/Blaze redundant with founder's six), versions made with 4 references (off-model).
