@@ -1317,6 +1317,8 @@ func _collide(p: Vector3) -> Vector3:
 	var c: Vector2 = Ep2GoldTown.collide(Vector2(p.x, p.z), 0.3, _town_col.get("walls", []), _town_col.get("props", []))
 	if _people != null and p.y < 2.0:
 		for person in _people.people:
+			if absf(person.folk.position.y - p.y) > 1.5:
+				continue                     # the saloon's balcony drinkers are 4 m up: they do not stand in the street under them
 			var dv: Vector2 = c - Vector2(person.folk.position.x, person.folk.position.z)
 			if dv.length() < 0.64:
 				c = Vector2(person.folk.position.x, person.folk.position.z) + (dv.normalized() if dv.length() > 0.001 else Vector2.RIGHT) * 0.64

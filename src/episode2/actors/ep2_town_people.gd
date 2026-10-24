@@ -55,7 +55,16 @@ const ACTIVITIES := ["work", "errand", "rest", "observe", "social", "play"]
 ## street graph to the foot of its porch steps, step up onto the porch, in through the door to the counter, buy (talk to the keeper),
 ## and back out - from the general store with a paper parcel in hand. One customer at a time per counter (reservation "shop:<piece>").
 ## Indoors is safe: a danger or the duel leaves a shopper inside until it has passed.
-const SHOP_STATES := ["shop_in", "shop_buy", "shop_out"]
+const SHOP_STATES := ["shop_queue", "shop_in", "shop_buy", "shop_leave_wait", "shop_out"]
+## Traffic: one person at a time walks between the street and their place inside ("door:<piece>" reservation), so nobody passes
+## through anybody in a doorway or an aisle; each visitor waits at their own spot along the front ("slot:<piece>#k", 1.3 m apart).
+const SLOT_OFFSETS := [0.0, -1.3, 1.3, -2.6, 2.6]
+## THE SALOON (founder 2026-10-24: "sitting and drinking in the saloon as well as the balcony above"; skill ep2-saloon-drinkers). A saloon
+## visit is a shop visit whose "counter" is a free chair at a table (sit, drink - Ep2DrinkPose's SitDrink built from the person's own
+## rig - then leave) or the bar (StandDrink). Each seat is its own reservation ("shop:Bldg_Saloon#<seat>"), so several drink at once.
+## The two balcony regulars start the day up there and stay, drinking and watching the street.
+const BALCONY_REGULARS := ["grandfather", "oldtimer"]
+const GLASS := "res://src/episode2/assets/whiskey_glass.glb"
 const SHOP_CHANCE := 0.55                # share of errands that become a shop visit when a counter is free
 const PARCEL_SECONDS := 40.0
 
@@ -89,6 +98,8 @@ class Person:
 	var safety := Vector2.ZERO
 	var shop: String = ""            # the walk-in shop (Bldg_A / B / C) this person is visiting, "" when outdoors
 	var parcel_t: float = 0.0        # seconds left carrying what they bought
+	var seat: int = -1                 # saloon place (Ep2GoldTown.saloon_seats() index), -1 = not in the saloon
+	var slot: int = -1                 # their waiting spot along the shop front (SLOT_OFFSETS index), -1 = none
 
 var people: Array = []
 var navigation := Ep2TownNavigation.new()
@@ -155,7 +166,30 @@ func build(parent: Node3D, seed_value: int = 4101) -> int:
 		p.timer = p.rng.randf_range(0.5, 8.0)
 		p.social_cd = p.rng.randf_range(5, 20)
 		people.append(p)
+	_seat_regulars()
 	return people.size()
+
+## The balcony regulars take their seats (called at the end of build(); a restore() may later put them elsewhere).
+func _seat_regulars() -> void:
+	var seats: Array = Ep2GoldTown.saloon_seats()
+	var k: int = 0
+	for i in seats.size():
+		if str(seats[i]["kind"]) != "balcony" or k >= BALCONY_REGULARS.size() or Ep2GoldTown.shop_spots("Bldg_Saloon").is_empty():
+			continue
+		var p: Person = person(BALCONY_REGULARS[k])
+		k += 1
+		if p == null:
+			continue
+		p.shop = "Bldg_Saloon"
+		p.seat = i
+		p.destination = "shop:Bldg_Saloon#%d" % i
+		reservations[p.destination] = p.id
+		p.activity = "rest"
+		p.folk.use_height = true
+		p.state = "shop_buy"
+		_start_drinking(p, Ep2GoldTown.shop_spots("Bldg_Saloon"))
+		p.timer = 30.0
+
 
 func set_context(mode: String) -> void:
 	if mode not in ["normal", "quiet", "duel"]: mode = "normal"
@@ -349,23 +383,35 @@ func _arrive(p: Person) -> void:
 		# Face the institution/horse, rather than staring into the last path segment.
 		p.folk.face_point(Vector3(target.x + (-4.0 if target.x < 0 else 4.0), 0, target.y))
 
-## Turn an errand into a shop visit when a walk-in shop's counter is free. False = no shop open / free / chosen (a normal errand runs).
+## Turn an errand into a shop visit when a walk-in shop has room. False = no shop open / free / chosen (a normal errand runs).
 func _start_shopping(p: Person) -> bool:
 	if _mode != "normal" or p.rng.randf() > SHOP_CHANCE:
 		return false
 	var open: Array = []
 	for piece in Ep2GoldTown.WALKIN_SHOPS:
-		var key: String = "shop:" + str(piece)
-		if reservations.has(key) or Ep2GoldTown.shop_spots(str(piece)).is_empty():
+		if Ep2GoldTown.shop_spots(str(piece)).is_empty():
 			continue
-		if p.id in PLAYERS and str(piece) == "Bldg_C":
-			continue                                    # the children go for candy at the general store, not to the assayer
+		if str(piece) != "Bldg_Saloon" and reservations.has("shop:" + str(piece)):
+			continue                                    # a shop serves one customer at a time
+		if p.id in PLAYERS and str(piece) in ["Bldg_C", "Bldg_Saloon"]:
+			continue                                    # the children go for candy at the general store, not to the assayer or the bar
 		open.append(str(piece))
 	if open.is_empty():
 		return false
 	var piece: String = open[p.rng.randi() % open.size()]
-	var spots: Dictionary = Ep2GoldTown.shop_spots(piece)
-	var out3: Vector3 = spots["out"]
+	if "saloon" in (p.profile.get("interests", []) as Array) and open.has("Bldg_Saloon") and p.rng.randf() < 0.6:
+		piece = "Bldg_Saloon"                           # the saloon's regulars go for a drink more often than for groceries
+	var key: String = "shop:" + piece
+	var seat: int = -1
+	if piece == "Bldg_Saloon":
+		seat = _free_saloon_seat(p)
+		if seat < 0:
+			return false
+		key = "shop:Bldg_Saloon#%d" % seat
+	var slot: int = _free_slot(p, piece)
+	if slot < 0:
+		return false
+	var out3: Vector3 = _slot_point(piece, slot)
 	var target: Vector2 = navigation.closest(Vector2(out3.x, out3.z))
 	var path: Array[Vector2] = navigation.path(_pos(p), target)
 	if path.is_empty() and _pos(p).distance_to(target) > 1.0:
@@ -375,9 +421,12 @@ func _start_shopping(p: Person) -> bool:
 	p.activity_time = 0.0
 	p.recent.append("errand")
 	if p.recent.size() > 3: p.recent.pop_front()
-	p.destination = "shop:" + piece
-	reservations[p.destination] = p.id
+	p.destination = key
+	reservations[key] = p.id
+	reservations["slot:%s#%d" % [piece, slot]] = p.id
 	p.shop = piece
+	p.seat = seat
+	p.slot = slot
 	p.waypoints = path
 	p.state = "walk"
 	p.blocked = 0.0
@@ -385,20 +434,70 @@ func _start_shopping(p: Person) -> bool:
 	return true
 
 
-## At the foot of the steps: up onto the porch, in through the door, to the counter (heights from the porch and the shop floor).
+## A free waiting spot along `piece`'s front for `p` (nobody standing there), or -1.
+func _free_slot(p: Person, piece: String) -> int:
+	for k in SLOT_OFFSETS.size():
+		if reservations.has("slot:%s#%d" % [piece, k]):
+			continue
+		var w: Vector3 = _slot_point(piece, k)
+		if navigation.is_clear(Vector2(w.x, w.z)) and _body_clear(Vector2(w.x, w.z), p, Vector3(100, 0, 1300)):
+			return k
+	return -1
+
+
+func _slot_point(piece: String, k: int) -> Vector3:
+	return Ep2GoldTown.local_to_world(piece, Vector3(float(SLOT_OFFSETS[k]), 0.0, Ep2GoldTown.PORCH_DEPTH + 1.1))
+
+
+## At their spot in front of the shop: queue for the door.
 func _enter_shop(p: Person) -> void:
-	var spots: Dictionary = Ep2GoldTown.shop_spots(p.shop)
-	if spots.is_empty():
+	if Ep2GoldTown.shop_spots(p.shop).is_empty():
 		_leave_shop_done(p)
 		return
 	p.visits["shop"] = int(p.visits.get("shop", 0)) + 1
-	p.folk.use_height = true
+	p.folk.stop()
+	p.folk.hold_clip("Observe")
+	p.state = "shop_queue"
+
+
+## The way in: up onto the porch, through the door, then the place's own route (the aisle to a chair / the bar) or the counter.
+func _legs_in(p: Person) -> Array:
+	var spots: Dictionary = Ep2GoldTown.shop_spots(p.shop)
+	var pts: Array = [spots["porch"], spots["door"]]
+	if p.shop == "Bldg_Saloon" and p.seat >= 0:
+		pts.append_array(Ep2GoldTown.saloon_seats()[p.seat]["route"])
+	else:
+		pts.append(spots["counter"])
 	var legs: Array = []
-	for k in ["porch", "door", "counter"]:
-		var w: Vector3 = spots[k]
-		legs.append(Vector3(w.x, Ep2GoldTown.shop_floor_y(p.shop, w), w.z))
-	p.folk.walk_path(legs, minf(p.speed, 1.0))
-	p.state = "shop_in"
+	for w in pts:
+		legs.append(Vector3((w as Vector3).x, Ep2GoldTown.shop_floor_y(p.shop, w), (w as Vector3).z))
+	return legs
+
+
+func _legs_out(p: Person) -> Array:
+	var legs: Array = _legs_in(p)
+	legs.reverse()
+	legs.pop_front()                                     # they are standing on the last point already
+	var w: Vector3 = _slot_point(p.shop, maxi(p.slot, 0))
+	legs.append(Vector3(w.x, 0.0, w.z))
+	return legs
+
+
+func _door_key(p: Person) -> String:
+	return "door:" + p.shop
+
+
+func _take_door(p: Person) -> bool:
+	var owner: String = str(reservations.get(_door_key(p), ""))
+	if owner != "" and owner != p.id:
+		return false
+	reservations[_door_key(p)] = p.id
+	return true
+
+
+func _free_door(p: Person) -> void:
+	if reservations.get(_door_key(p), "") == p.id:
+		reservations.erase(_door_key(p))
 
 
 func _step_shop(p: Person, dt: float) -> void:
@@ -407,26 +506,39 @@ func _step_shop(p: Person, dt: float) -> void:
 		_leave_shop_done(p)
 		return
 	match p.state:
+		"shop_queue":
+			p.folk.face_point(spots["porch"])
+			if _mode == "normal" and _take_door(p):
+				p.folk.use_height = true
+				p.folk.walk_path(_legs_in(p), minf(p.speed, 1.0))
+				p.state = "shop_in"
 		"shop_in":
 			if not p.folk.is_walking():
+				_free_door(p)
 				p.state = "shop_buy"
-				p.timer = p.rng.randf_range(4.0, 8.0)
-				p.folk.face_point(spots["face"])
-				p.folk.hold_clip("Inspect")         # looking over the goods on the counter (no shopkeeper model yet: see STATUS)
+				if p.shop == "Bldg_Saloon":
+					_start_drinking(p, spots)
+				else:
+					p.timer = p.rng.randf_range(4.0, 8.0)
+					p.folk.face_point(spots["face"])
+					p.folk.hold_clip("Inspect")     # looking over the goods on the counter (no shopkeeper model yet: see STATUS)
 		"shop_buy":
-			p.folk.face_point(spots["face"])
+			p.folk.face_point(_face_point(p, spots))
+			if p.id in BALCONY_REGULARS and p.seat >= 0 and str(Ep2GoldTown.saloon_seats()[p.seat]["kind"]) == "balcony":
+				p.timer = maxf(p.timer, 30.0)          # the regulars stay up there all day
 			if _mode == "duel":
 				p.timer = maxf(p.timer, 1.0)            # nobody walks out into the street during the draw
 			if p.timer <= 0.0:
+				p.state = "shop_leave_wait"
+		"shop_leave_wait":
+			p.folk.face_point(_face_point(p, spots))
+			if _mode != "duel" and _take_door(p):
+				_stop_drinking(p)
 				if str(Ep2GoldTown.WALKIN_SHOPS[p.shop][0]) == "general":
 					p.folk.attach_prop(_parcel(), "RightHand", Vector3(0.0, -0.08, 0.06))
 					p.parcel_t = PARCEL_SECONDS
 					if _has_clip(p, "Carry"): p.folk.hold_clip("Carry")
-				var legs: Array = []
-				for k in ["door", "porch", "out"]:
-					var w: Vector3 = spots[k]
-					legs.append(Vector3(w.x, Ep2GoldTown.shop_floor_y(p.shop, w), w.z))
-				p.folk.walk_path(legs, minf(p.speed, 1.0))
+				p.folk.walk_path(_legs_out(p), minf(p.speed, 1.0))
 				p.state = "shop_out"
 		"shop_out":
 			if not p.folk.is_walking():
@@ -435,16 +547,99 @@ func _step_shop(p: Person, dt: float) -> void:
 
 
 func _leave_shop_done(p: Person) -> void:
+	_free_door(p)
 	p.folk.use_height = false
 	p.folk.place(Vector3(p.folk.position.x, 0.0, p.folk.position.z))
 	if reservations.get(p.destination, "") == p.id: reservations.erase(p.destination)
+	if p.slot >= 0 and reservations.get("slot:%s#%d" % [p.shop, p.slot], "") == p.id: reservations.erase("slot:%s#%d" % [p.shop, p.slot])
 	p.destination = ""
 	p.shop = ""
+	p.seat = -1
+	p.slot = -1
 	p.state = "pause"
 	p.timer = p.rng.randf_range(2.0, 5.0)
 	p.folk.hold_clip("Observe" if p.parcel_t <= 0.0 else ("Carry" if _has_clip(p, "Carry") else "Idle"))
 	if _mode == "duel":
 		_seek_safety(p, Vector2(0.0, p.folk.position.z), true)
+
+
+## A free place in the saloon for a visitor: a table (aisle-side chair) or the bar. Balcony places belong to the regulars.
+func _free_saloon_seat(p: Person) -> int:
+	var seats: Array = Ep2GoldTown.saloon_seats()
+	var free: Array = []
+	for i in seats.size():
+		if str(seats[i]["kind"]) != "balcony" and not reservations.has("shop:Bldg_Saloon#%d" % i):
+			free.append(i)
+	return int(free[p.rng.randi() % free.size()]) if not free.is_empty() else -1
+
+
+func _face_point(p: Person, spots: Dictionary) -> Vector3:
+	if p.shop == "Bldg_Saloon" and p.seat >= 0:
+		return Ep2GoldTown.saloon_seats()[p.seat]["face"]
+	return spots["face"]
+
+
+## Sit down (or lean at the bar) with a whiskey: the drink clip is built from this person's own rig the first time it is needed.
+func _start_drinking(p: Person, spots: Dictionary) -> void:
+	var seated: bool = p.seat >= 0 and str(Ep2GoldTown.saloon_seats()[p.seat]["kind"]) == "table"   # the bar and the balcony rail: standing
+	if p.seat >= 0:                                     # onto the chair / the place at the bar / the balcony rail, at its own height
+		var seat: Dictionary = Ep2GoldTown.saloon_seats()[p.seat]
+		var pos: Vector3 = seat["pos"]
+		p.folk.place(Vector3(pos.x, float(seat["y"]), pos.z))
+	p.folk.face_point(_face_point(p, spots))
+	p.folk.rotation.y = p.folk.facing                   # sat (or set) down facing the table / bar / street, no slow swivel in place
+	p.timer = p.rng.randf_range(35.0, 75.0)
+	var clip: String = "SitDrink" if seated else "StandDrink"
+	if _ensure_drink_clip(p, seated):
+		p.folk.hold_clip(clip)
+	else:
+		p.folk.hold_clip("Rest" if seated else "Idle")
+	if ResourceLoader.exists(GLASS):
+		# attach_prop resets the held node's scale to undo the model's own, so the tumbler (a unit-height GLB) is scaled INSIDE a holder
+		var holder := Node3D.new()
+		holder.name = "Glass"
+		var g: Node3D = (load(GLASS) as PackedScene).instantiate() as Node3D
+		g.scale = Vector3.ONE * 0.1                     # a 10 cm whiskey tumbler
+		g.position = Vector3(0.0, -0.03, 0.0)
+		holder.add_child(g)
+		p.folk.attach_prop(holder, "RightHand", Vector3(0.0, 0.07, 0.035))
+
+
+## Up from the chair to the step behind it, glass back on the table.
+func _stop_drinking(p: Person) -> void:
+	p.folk.drop_prop("Glass")
+	if p.shop == "Bldg_Saloon" and p.seat >= 0 and str(Ep2GoldTown.saloon_seats()[p.seat]["kind"]) == "table":
+		var back: Vector3 = Ep2GoldTown.saloon_seats()[p.seat]["approach"]
+		p.folk.place(Vector3(back.x, 0.06, back.z))
+
+
+func _ensure_drink_clip(p: Person, seated: bool) -> bool:
+	var player: AnimationPlayer = p.folk.anim_player()
+	if player == null or p.folk.model == null:
+		return false
+	var name: String = "SitDrink" if seated else "StandDrink"
+	if player.has_animation(name):
+		return true
+	var skels: Array = p.folk.model.find_children("*", "Skeleton3D", true, false)
+	if skels.is_empty():
+		return false
+	var skel: Skeleton3D = skels[0]
+	var rel: Transform3D = p.folk.global_transform.affine_inverse() * skel.global_transform if p.folk.is_inside_tree() \
+		else _relative(p.folk, skel)
+	var b: Basis = rel.basis
+	var inv: Basis = b.inverse()
+	return Ep2DrinkPose.install(player, skel, (inv * Vector3(0, 0, 1)).normalized(), (inv * Vector3.UP).normalized(), b.get_scale().y, seated)
+
+
+## A node's transform relative to an ancestor without the scene tree (tests build people off-tree).
+static func _relative(ancestor: Node3D, n: Node3D) -> Transform3D:
+	var t := Transform3D()
+	var c: Node = n
+	while c != null and c != ancestor:
+		if c is Node3D:
+			t = (c as Node3D).transform * t
+		c = c.get_parent()
+	return t
 
 
 ## What he bought at the general store: a paper parcel tied with string.
@@ -559,7 +754,10 @@ func _try_social(p: Person) -> void:
 		return
 
 func _seek_safety(p: Person, danger: Vector2, duel: bool) -> void:
-	if p.state in SHOP_STATES:
+	if p.state == "shop_queue":
+		_leave_shop_done(p)                         # waiting in the street for the door: not indoors yet, take cover like anyone
+		if p.state in ["flee", "shelter"]: return
+	elif p.state in SHOP_STATES:
 		return                                      # indoors (or on the way in/out): the shop is the safest place in town
 	_release(p)
 	p.partner = ""
@@ -639,7 +837,7 @@ func snapshot() -> Dictionary:
 			if p.folk.is_walking(): legs.append([p.folk._goal.x, p.folk._goal.y, p.folk._goal.z])
 			for g in p.folk._path: legs.append([(g as Vector3).x, (g as Vector3).y, (g as Vector3).z])
 		rows.append({"id": p.id, "position": [_pos(p).x, _pos(p).y], "activity": p.activity, "destination": p.destination,
-			"shop": p.shop, "height": p.folk.position.y if p.state in SHOP_STATES else 0.0, "shop_legs": legs, "parcel_t": p.parcel_t,
+			"shop": p.shop, "seat": p.seat, "slot": p.slot, "height": p.folk.position.y if p.state in SHOP_STATES else 0.0, "shop_legs": legs, "parcel_t": p.parcel_t,
 			"recent": p.recent.duplicate(), "visits": p.visits.duplicate(), "memories": p.memories.duplicate(),
 			"greet_cd": p.greet_cd, "greets": p.greets, "walked_m": p.walked_m, "choices": p.choices,
 			"rng_state": str(p.rng.state), "fear": p.fear, "social_cd": p.social_cd,
@@ -667,6 +865,7 @@ func restore(data: Dictionary) -> bool:
 	var seen: Dictionary = {}
 	var destinations: Dictionary = {}
 	var positions: Array[Vector2] = []
+	var heights: Array[float] = []
 	for row in rows:
 		if not row is Dictionary or not row.get("id") is String: return false
 		var id: String = row["id"]
@@ -678,12 +877,12 @@ func restore(data: Dictionary) -> bool:
 		if not shop is String or (shop != "" and Ep2GoldTown.shop_spots(shop).is_empty()): return false
 		var shopping: bool = row.get("state") in SHOP_STATES
 		if shopping and shop == "": return false
-		if not shopping and shop != "" and row.get("destination") != "shop:" + str(shop): return false   # on the way there
+		if not shopping and shop != "" and str(row.get("destination", "")).get_slice("#", 0) != "shop:" + str(shop): return false   # on the way there
 		if shopping:                                  # indoors / on its porch: must be within that shop's own footprint
 			var l: Vector3 = Ep2GoldTown.building_xform(Ep2GoldTown.entry(shop)).affine_inverse() * Vector3(point.x, 0, point.y)
 			var fp: Array = Ep2GoldTown.FOOTPRINT[shop]
 			if absf(l.x) > float(fp[0]) * 0.5 or l.z < -float(fp[1]) or l.z > Ep2GoldTown.PORCH_DEPTH + 1.5: return false
-			if not _number(row.get("height", 0.0), 0, 0.5): return false
+			if not _number(row.get("height", 0.0), 0, Ep2GoldTown.BALCONY_Y + 0.1 if shop == "Bldg_Saloon" else 0.5): return false
 			if not row.get("shop_legs") is Array or row["shop_legs"].size() > 3: return false
 			for leg in row["shop_legs"]:
 				if not leg is Array or leg.size() != 3: return false
@@ -691,16 +890,22 @@ func restore(data: Dictionary) -> bool:
 					if not (c is int or c is float) or not is_finite(float(c)): return false
 		elif not navigation.is_standing_clear(point): return false
 		if not _number(row.get("parcel_t", 0.0), 0, PARCEL_SECONDS): return false
-		for previous in positions:
-			if previous.distance_to(point) < 0.60: return false
+		var h: float = float(row.get("height", 0.0)) if shopping else 0.0
+		for k in positions.size():
+			if absf(heights[k] - h) < 1.0 and positions[k].distance_to(point) < 0.60: return false   # the balcony is above the porch
 		positions.append(point)
+		heights.append(h)
 		if row.get("activity") not in ACTIVITIES: return false
 		if row.get("state") not in ["pause", "walk", "flee", "shelter", "greet", "social"] + SHOP_STATES: return false
-		if row.get("clip") not in ["Idle", "Observe", "Rest", "Talk", "Inspect", "Alert", "Greet", "Play", "Carry"]: return false
+		if row.get("clip") not in ["Idle", "Observe", "Rest", "Talk", "Inspect", "Alert", "Greet", "Play", "Carry", "SitDrink", "StandDrink"]: return false
 		var destination: Variant = row.get("destination")
 		if not destination is String: return false
 		if destination != "" and not PLACES.has(destination) \
-				and not (destination.begins_with("shop:") and Ep2GoldTown.WALKIN_SHOPS.has(destination.trim_prefix("shop:"))): return false
+				and not (destination.begins_with("shop:") and Ep2GoldTown.WALKIN_SHOPS.has(destination.trim_prefix("shop:").get_slice("#", 0))): return false
+		var seat_v: Variant = row.get("seat", -1)
+		if not (seat_v is int or seat_v is float) or int(seat_v) < -1 or int(seat_v) >= Ep2GoldTown.saloon_seats().size(): return false
+		var slot_v: Variant = row.get("slot", -1)
+		if not (slot_v is int or slot_v is float) or int(slot_v) < -1 or int(slot_v) >= SLOT_OFFSETS.size(): return false
 		if destination != "":
 			if destinations.has(destination): return false
 			destinations[destination] = id
@@ -736,6 +941,11 @@ func restore(data: Dictionary) -> bool:
 			var partner: Dictionary = seen.get(row["partner"], {})
 			if partner.get("state") != "social" or partner.get("partner") != row["id"]: return false
 	reservations = destinations
+	for row in rows:                                   # the visit's waiting spot and, for whoever is walking it, the door
+		var shop_r: String = str(row.get("shop", ""))
+		if shop_r == "": continue
+		if int(row.get("slot", -1)) >= 0: reservations["slot:%s#%d" % [shop_r, int(row["slot"])]] = row["id"]
+		if row.get("state") in ["shop_in", "shop_out"]: reservations["door:" + shop_r] = row["id"]
 	elapsed = float(data["elapsed"])
 	_mode = data["mode"]
 	_story_was_duel = _mode == "duel"
@@ -774,6 +984,16 @@ func restore(data: Dictionary) -> bool:
 			var legs: Array = []
 			for leg in row.get("shop_legs", []): legs.append(Vector3(float(leg[0]), float(leg[1]), float(leg[2])))
 			if not legs.is_empty(): p.folk.walk_path(legs, minf(p.speed, 1.0))
+		p.seat = int(row.get("seat", -1))
+		p.slot = int(row.get("slot", -1))
+		p.folk.drop_prop("Glass")
+		if p.state == "shop_buy" and p.shop == "Bldg_Saloon":
+			var keep_timer: float = p.timer
+			var keep_rng: int = p.rng.state
+			_start_drinking(p, Ep2GoldTown.shop_spots(p.shop))
+			p.folk.place(Vector3(point.x, float(row.get("height", 0.0)), point.y))
+			p.timer = keep_timer
+			p.rng.state = keep_rng
 		p.folk.drop_prop("Parcel")
 		p.parcel_t = float(row.get("parcel_t", 0.0))
 		if p.parcel_t > 0.0: p.folk.attach_prop(_parcel(), "RightHand", Vector3(0.0, -0.08, 0.06))

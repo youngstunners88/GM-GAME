@@ -32,7 +32,7 @@ func _ready() -> void:
 			if p.state in Ep2TownPeople.SHOP_STATES: shop_ticks += 1
 			for k in range(i + 1, tp.people.size()):
 				var other: Ep2TownPeople.Person = tp.people[k]
-				if q.distance_to(Vector2(other.folk.position.x, other.folk.position.z)) < 0.60: overlaps += 1
+				if absf(p.folk.position.y - other.folk.position.y) < 1.0 and q.distance_to(Vector2(other.folk.position.x, other.folk.position.z)) < 0.60: overlaps += 1
 	check("ten minutes: nobody enters walls, props, raised porches or firing yard (shop visits apart)", static_hits == 0, static_hits)
 	check("ten minutes: townspeople really go into the shops", shop_ticks > 0, shop_ticks)
 	check("ten minutes: civilians never intersect one another", overlaps == 0, overlaps)
@@ -40,8 +40,11 @@ func _ready() -> void:
 	var all_active: bool = true
 	var all_varied: bool = true
 	for p in tp.people:
-		all_active = all_active and p.walked_m > 20 and p.choices > 5
-		all_varied = all_varied and p.visits.size() >= 2
+		if p.id in Ep2TownPeople.BALCONY_REGULARS:
+			all_active = all_active and p.state == "shop_buy" and p.seat >= 0      # drinking on the saloon balcony all day, by design
+		else:
+			all_active = all_active and p.walked_m > 20 and p.choices > 5
+			all_varied = all_varied and p.visits.size() >= 2
 		distinct_histories[JSON.stringify(p.visits)] = true
 		reports[p.id] = {"walked_m": p.walked_m, "choices": p.choices, "visits": p.visits.duplicate(), "recoveries": p.recoveries, "personality": p.profile, "memories": p.memories.duplicate()}
 	check("every person independently makes decisions and travels", all_active, reports)
@@ -104,7 +107,7 @@ func _ready() -> void:
 	for frame in 1200: tp.step(0.1, far)
 	check("crowd clears the duel lane without teleporting", tp.duel_lane_clear())
 	var sheltered: bool = true
-	for p in tp.people: sheltered = sheltered and (p.state == "shelter" or p.state in ["shop_in", "shop_buy"])   # indoors is safe
+	for p in tp.people: sheltered = sheltered and (p.state == "shelter" or p.state in ["shop_in", "shop_buy", "shop_leave_wait"])   # indoors is safe
 	check("everyone waits safely during the draw", sheltered)
 	var frozen: Dictionary = tp.snapshot()
 	tp.step(0, far)

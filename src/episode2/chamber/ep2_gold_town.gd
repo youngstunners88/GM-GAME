@@ -58,10 +58,82 @@ const FOOTPRINT: Dictionary = {
 ## doors shut, so their walls stay closed until town_kit2 is drawn (kit_v2).
 ## shop -> its kit piece; [trade name, counter offset in the building's local frame (the customer stands at the counter's CustomerSpot)]
 const WALKIN_SHOPS: Dictionary = {"Bldg_A": ["general", Vector3(1.2, 0.0, -4.0)], "Bldg_B": ["hotel", Vector3(-1.4, 0.0, -5.4)],
-	"Bldg_C": ["assay", Vector3(0.0, 0.0, -3.8)]}
+	"Bldg_C": ["assay", Vector3(0.0, 0.0, -3.8)], "Bldg_Saloon": ["saloon", Vector3(-1.0, 0.0, -9.0)]}
+## The shops that only open with the streamed kit (the saloon is always open: the story walks in through its batwings).
+const KIT2_SHOPS := ["Bldg_A", "Bldg_B", "Bldg_C"]
+## THE SALOON'S DRINKERS (founder 2026-10-24: "sitting and drinking in the saloon as well as the balcony above"). Table chairs (the same
+## three tables _furnish sets, three chairs each) and two chairs on the balcony; skill ep2-saloon-drinkers. Saloon-local positions.
+const SALOON_TABLES: Array = [Vector3(-3.2, 0.0, -3.6), Vector3(3.6, 0.0, -3.0), Vector3(3.8, 0.0, -6.8)]
+const BALCONY_Y := 3.98                      # the balcony's plank top (build_town_kit.py building(balcony=True))
+## The regulars STAND at the rail (a seated head is below the 1.3 m rail: from the street you would see nobody); chairs behind them.
+const BALCONY_SEATS: Array = [Vector3(-2.3, 0.0, 1.2), Vector3(-1.0, 0.0, 1.2)]
+const BALCONY_CHAIRS: Array = [Vector3(-2.6, 0.0, 0.45), Vector3(-0.7, 0.0, 0.45)]
+const BALCONY_TABLE := Vector3(-1.65, 0.0, 0.45)
+
+
+## Every place a drinker can take: [{"kind": "table" | "bar" | "balcony", "pos": world floor point (the chair / the spot at the bar),
+## "face": world point to look at, "y": floor height, "approach": where the walk in ends (a step behind the chair), "route": world
+## points from just inside the door to "approach" (down the aisle, never through a table or a neighbour)}]. Only the aisle-side chair
+## of each table is used, so whoever walks in or out passes nobody seated; the bar places are 1.4 m apart, walked to along a row 0.75 m
+## in front of them. Empty when the saloon is not in the layout.
+const BAR_SPOTS := [-3.6, -2.2, -0.8, 0.6]         # saloon-local x of the places at the bar
+const BAR_Z := -8.15                               # standing at the bar (its front is at z -8.6)
+const BAR_ROW_Z := -7.4                            # the walking row in front of the drinkers there
 ## Porch floor height (kit porch(): planks 0.22 thick centred at 0.33) and its depth / steps, for anyone walking in or out.
 const PORCH_Y := 0.44
 const PORCH_DEPTH := 2.6
+
+
+static func _saloon_w(p: Vector3) -> Vector3:
+	return local_to_world("Bldg_Saloon", p)
+
+
+static func saloon_seats() -> Array:
+	var out: Array = []
+	if entry("Bldg_Saloon").is_empty():
+		return out
+	for tp in SALOON_TABLES:
+		var best: Vector3 = Vector3.ZERO
+		var best_x: float = INF
+		for k in 3:
+			var a: float = float(k) * TAU / 3.0 + (tp as Vector3).x
+			var p: Vector3 = tp + Vector3(sin(a), 0, cos(a)) * 0.95
+			if absf(p.x) < best_x:
+				best_x = absf(p.x)
+				best = p
+		var approach: Vector3 = best + (best - (tp as Vector3)).normalized() * 0.45
+		# down the aisle, never further back than the bar's walking row (a back table's chair is reached along that row, 0.75 m
+		# clear of anyone standing at the bar), then across to the chair
+		var row_z: float = maxf(approach.z, BAR_ROW_Z)
+		out.append({"kind": "table", "pos": _saloon_w(best), "face": _saloon_w(tp), "y": 0.06, "approach": _saloon_w(approach),
+			"route": [_saloon_w(Vector3(0.0, 0.0, row_z)), _saloon_w(Vector3(approach.x, 0.0, row_z)), _saloon_w(approach)]})
+	for bx in BAR_SPOTS:
+		var spot := Vector3(float(bx), 0.0, BAR_Z)
+		out.append({"kind": "bar", "pos": _saloon_w(spot), "face": _saloon_w(Vector3(float(bx), 1.0, -9.0)), "y": 0.06, "approach": _saloon_w(spot),
+			"route": [_saloon_w(Vector3(0.0, 0.0, BAR_ROW_Z)), _saloon_w(Vector3(float(bx), 0.0, BAR_ROW_Z)), _saloon_w(spot)]})
+	for bs in BALCONY_SEATS:
+		out.append({"kind": "balcony", "pos": _saloon_w(bs), "face": _saloon_w((bs as Vector3) + Vector3(0, 0, 3.0)), "y": BALCONY_Y,
+			"approach": _saloon_w(bs), "route": []})
+	return out
+
+
+static func _balcony_furniture(root: Node3D, kit: Node3D) -> void:
+	if entry("Bldg_Saloon").is_empty():
+		return
+	var chair: Node3D = kit.find_child("Bar_Chair", true, false) as Node3D
+	var table: Node3D = kit.find_child("Bar_Table", true, false) as Node3D
+	var xf: Transform3D = building_xform(entry("Bldg_Saloon"))
+	if chair != null:
+		for bs in BALCONY_CHAIRS:
+			var c: Node3D = chair.duplicate() as Node3D
+			c.transform = xf * Transform3D(Basis(Vector3.UP, PI), (bs as Vector3) + Vector3(0, BALCONY_Y, 0))   # facing the street
+			c.name = "BalconyChair"
+			root.add_child(c)
+	if table != null:
+		var t: Node3D = table.duplicate() as Node3D
+		t.transform = xf * Transform3D(Basis().scaled(Vector3(0.7, 1.0, 0.7)), BALCONY_TABLE + Vector3(0, BALCONY_Y, 0))
+		t.name = "BalconyTable"
+		root.add_child(t)
 
 
 ## Where a customer goes for each walk-in shop, in world space: "out" (the street, past the porch steps), "door" (just inside the doorway),
@@ -245,6 +317,7 @@ static func build(parent: Node3D, interiors: bool) -> Dictionary:
 			_flag(fort, (fa as Node3D).position)
 	Ep2TownLife.build(root, props)                      # horses at the rails, the river, the railway and the train
 	Ep2TownPosters.build(root, props)                   # the wanted posters: notice board, shop fronts, the jail (streamed images)
+	_balcony_furniture(root, kit)                       # two chairs and a little table on the saloon's balcony (its drinkers sit there)
 	if interiors:
 		_furnish(root, kit, a2)
 	kit.free()
@@ -438,7 +511,7 @@ static func _walls_of(piece: String, xf: Transform3D) -> Array:
 	var w: float = float(fp[0]) * 0.5
 	var d: float = float(fp[1])
 	var door: float = float(fp[2])
-	if WALKIN_SHOPS.has(piece) and not kit_v2:
+	if piece in KIT2_SHOPS and not kit_v2:
 		door = 0.0                      # the fallback kit draws these doors shut
 	var local: Array = []
 	if door > 0.0:

@@ -107,7 +107,7 @@ func _ready() -> void:
 			var pos: Vector3 = (p as Ep2TownPeople.Person).folk.position
 			var q := Vector2(pos.x, pos.z)
 			var shopping: bool = (p as Ep2TownPeople.Person).state in Ep2TownPeople.SHOP_STATES     # scripted shop visit: porch / indoors, heights legal
-			if is_nan(pos.x) or (not shopping and (Ep2GoldTown.collide(q, 0.30, walls, props).distance_to(q) > 0.05 or absf(pos.y) > 0.06)) or (shopping and (pos.y < -0.01 or pos.y > 0.5)):          # the walking bob lifts a figure up to 3.5 cm
+			if is_nan(pos.x) or (not shopping and (Ep2GoldTown.collide(q, 0.30, walls, props).distance_to(q) > 0.05 or absf(pos.y) > 0.06)) or (shopping and (pos.y < -0.01 or (pos.y > 0.5 and absf(pos.y - Ep2GoldTown.BALCONY_Y) > 0.05))):   # the saloon balcony's drinkers sit 3.98 m up          # the walking bob lifts a figure up to 3.5 cm
 				bad_pos += 1
 			if i < 3000 and (p as Ep2TownPeople.Person).state == "walk" and not started.has((p as Ep2TownPeople.Person).id):
 				started[(p as Ep2TownPeople.Person).id] = i
@@ -117,7 +117,9 @@ func _ready() -> void:
 		print("TOWN_TRAVEL ", p.id, " metres=", p.walked_m, " state=", p.state, " destination=", p.destination, " position=", p.folk.position, " recoveries=", p.recoveries)
 		if (p as Ep2TownPeople.Person).walked_m > 12.0:
 			walkers += 1
-	check("they really walk the street (every one covers > 12 m in 120 s)", walkers == Ep2TownPeople.ROSTER.size(), "%d of full roster" % walkers)
+	# the two balcony regulars sit drinking over the street all day (founder 2026-10-24); everyone else walks it
+	var street_cast: int = Ep2TownPeople.ROSTER.size() - Ep2TownPeople.BALCONY_REGULARS.size()
+	check("they really walk the street (every one covers > 12 m in 120 s; the balcony regulars sit)", walkers >= street_cast, "%d of %d" % [walkers, street_cast])
 	var starts: Array = started.values()
 	starts.sort()
 	check("they are not in lock-step (their first steps are spread over > 2 s)", starts.size() >= 4 and float(starts[starts.size() - 1] - starts[0]) * dt > 2.0, str(starts))

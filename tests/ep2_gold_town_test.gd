@@ -43,15 +43,31 @@ func _until(c: GoldTownChamber, seconds: float, cond: Callable) -> bool:
 
 ## Walk Lil Blunt to `goal` (straight line steering, re-aimed each step; the walls push him round corners).
 func _walk_to(c: GoldTownChamber, goal: Vector3, seconds: float = 30.0) -> bool:
+	# Walks like a player: straight at the goal, and when townspeople crossing the street box him in (no progress for a second),
+	# a short sidestep round them - the way anyone at the keys would - before heading for the goal again.
+	var last: Vector3 = c.get_player_position()
+	var stuck: float = 0.0
+	var side_t: float = 0.0
+	var side: float = 1.0
 	for i in int(seconds * 60.0):
 		var me: Vector3 = c.get_player_position()
 		var d := Vector2(goal.x - me.x, goal.z - me.z)
 		if d.length() < 0.5:
 			c.set_move_input(Vector2.ZERO)
 			return true
-		c._look_yaw = atan2(d.x, d.y)
+		var yaw: float = atan2(d.x, d.y)
+		if side_t > 0.0:
+			side_t -= 1.0 / 60.0
+			yaw += side * PI * 0.5
+		c._look_yaw = yaw
 		c.set_move_input(Vector2(0.0, 1.0), true)
 		c.step(1.0 / 60.0)
+		stuck = stuck + 1.0 / 60.0 if c.get_player_position().distance_to(last) < 0.01 else 0.0
+		last = c.get_player_position()
+		if stuck > 1.0 and side_t <= 0.0:
+			side_t = 0.7
+			side = -side
+			stuck = 0.0
 	c.set_move_input(Vector2.ZERO)
 	return false
 
