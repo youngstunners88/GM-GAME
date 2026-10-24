@@ -23,3 +23,7 @@ Recording commands (Node 24 proxy support is required in the managed runtime):
 ELEVENLABS_KEY_BINDING=ELEV NODE_USE_ENV_PROXY=1 node scripts/generate-town-audio.mjs --generate --speakers utah
 ELEVENLABS_KEY_BINDING=ELEVEN NODE_USE_ENV_PROXY=1 node scripts/generate-town-audio.mjs --generate --speakers sheriff,prisoner
 ```
+
+## Verify imported public audio without source fallback
+
+Extras pack contains `.ogg.import` remaps and imported Vorbis resources, not raw source Oggs. A `FileAccess.get_sha256("res://...ogg")` check inside the source checkout can silently read disk originals and is NOT packed-payload evidence. Mount only the downloaded public extras pack in a separate minimal Godot4.3 project. Assert raw `.ogg` FileAccess paths are absent, then ResourceLoader-load the streams through their import remaps. Flatten `stream.packet_sequence.packet_data` page/packet arrays; hash each packet preceded by its little-endian uint32 length using HashingContext.HASH_SHA256. Compare to identically framed packets parsed from receipt-hash-matching source Ogg pages. Also require engine duration equals seconds+start_seconds within0.00005. Final release audit verified all71payloads/timings with0failures. See `docs/episode2-quality/town-voices-2026-10-24/RELEASE.md`, `public-audio-payload-audit.json`, and `public-pack-audit.gd.txt`. Do not claim raw-container byte equality for imported resources.

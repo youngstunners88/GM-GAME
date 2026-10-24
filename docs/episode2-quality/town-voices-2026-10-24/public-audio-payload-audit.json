@@ -1,0 +1,433 @@
+{
+  "failures": 0,
+  "method": "Godot4.3 isolated project; only downloaded public extras pack mounted; raw source Oggs asserted absent. Length-prefixed encoded Vorbis packet SHA256 compared to original receipt-matching Ogg packets; engine duration checked to0.00005s.",
+  "recordings": 71,
+  "rows": [
+    {
+      "engine_duration_matches": true,
+      "id": "town_jail_02",
+      "packets": 64,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_intro_sharps_lines_0",
+      "packets": 368,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_intro_sharps_lines_1",
+      "packets": 340,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_intro_sharps_lines_3",
+      "packets": 355,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_intro_sharps_lines_4",
+      "packets": 326,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_intro_sharps_lines_5",
+      "packets": 327,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_intro_gatling_after_1",
+      "packets": 297,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_trade_00",
+      "packets": 130,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_trade_01",
+      "packets": 163,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_trade_02",
+      "packets": 195,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_trade_04",
+      "packets": 199,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_trade_06",
+      "packets": 291,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_trade_08",
+      "packets": 184,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_trade_10",
+      "packets": 97,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_trade_12",
+      "packets": 190,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_trade_13",
+      "packets": 137,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_trade_14",
+      "packets": 157,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_clerk_0",
+      "packets": 153,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_clerk_1",
+      "packets": 132,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_oldtimer_0",
+      "packets": 203,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_oldtimer_1",
+      "packets": 181,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_rancher_0",
+      "packets": 122,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_rancher_1",
+      "packets": 131,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_dressmaker_0",
+      "packets": 176,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_dressmaker_1",
+      "packets": 138,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_lady_0",
+      "packets": 187,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_lady_1",
+      "packets": 131,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_bald_worker_0",
+      "packets": 176,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_bald_worker_1",
+      "packets": 163,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_grandma_0",
+      "packets": 147,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_grandma_1",
+      "packets": 108,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_grandfather_0",
+      "packets": 160,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_grandfather_1",
+      "packets": 193,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_grandmother_0",
+      "packets": 141,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_grandmother_1",
+      "packets": 134,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_youth_0",
+      "packets": 108,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_youth_1",
+      "packets": 189,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_boy_0",
+      "packets": 132,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_boy_1",
+      "packets": 168,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_braided_girl_0",
+      "packets": 110,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_braided_girl_1",
+      "packets": 114,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_bob_girl_0",
+      "packets": 109,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_greet_bob_girl_1",
+      "packets": 161,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_wind",
+      "packets": 701,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_saloon",
+      "packets": 614,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_boardwalk",
+      "packets": 33,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_draw_bell",
+      "packets": 178,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_intro_sharps_lines_2",
+      "packets": 212,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_intro_gatling_call_0",
+      "packets": 193,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_intro_gatling_lines_0",
+      "packets": 333,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_intro_gatling_lines_1",
+      "packets": 392,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_intro_gatling_after_0",
+      "packets": 425,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_intro_gatling_after_2",
+      "packets": 279,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_intro_closing_0",
+      "packets": 227,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_trade_03",
+      "packets": 206,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_trade_05",
+      "packets": 227,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_trade_07",
+      "packets": 285,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_trade_09",
+      "packets": 123,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_trade_11",
+      "packets": 207,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "vo_sheriff_1",
+      "packets": 326,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "vo_sheriff_2",
+      "packets": 309,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "vo_sheriff_3",
+      "packets": 326,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "vo_sheriff_witness",
+      "packets": 596,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "vo_sheriff_foul",
+      "packets": 162,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "vo_sheriff_win",
+      "packets": 271,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "vo_sheriff_lose",
+      "packets": 242,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_jail_00",
+      "packets": 186,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_jail_01",
+      "packets": 222,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_jail_03",
+      "packets": 309,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_jail_04",
+      "packets": 291,
+      "payload_identical": true
+    },
+    {
+      "engine_duration_matches": true,
+      "id": "town_jail_05",
+      "packets": 235,
+      "payload_identical": true
+    }
+  ]
+}

@@ -1,24 +1,28 @@
 {
-  "observed_remote_sha": "434109bb2debf7f102f523f7015438e150977b60",
-  "objective": "Complete founder-approved town voice cast and verify/release without weakening gates",
+  "observed_remote_sha": "977961e1145fcca5df98f05a62451364dc96c221",
+  "objective": "Finish town voice release proof: actual butler and public BUILD/audio pack",
   "task_paths": [
     "assets/town-audio.json",
     "assets/town-audio-generated.json",
     "src/episode2/audio/",
     "src/autoload/audio_manager.gd",
-    "tests/ep2_town_audio_test.gd"
+    "src/autoload/game_manager.gd",
+    "tests/ep2_town_audio_test.gd",
+    "tests/blaze_rush_touch_test.gd"
   ],
-  "source_commit": "c3e5588e7fb911e39024ee1fd3809907df2aef18",
+  "source_commit": "70c5dba70f5fc4399dfb80f5babe29543397916d",
   "evidence": {
-    "recordings": "67dialogue+4effects complete;47old hashes/receipts preserved;all71decode;peak0.8839283",
-    "voices": "Utah under ELEV;SheriffGM/PrisonSam under ELEVEN;account/user_read verified;founder approved previews;no deletions",
-    "output": "Chromium all71assets nonzero;native4voice mixer sampled;fixed inherited+6dB clipping for explicit recorded streams only",
-    "tests": "Pinned4.3compile/townaudio0pending/goldtown/armoryguns/audiobuses PASS;security18/18;title5/5"
+    "recordings": "67dialogue+4effects complete;47old hashes/receipts preserved; all71decode; peak0.8839283; founder approved3previews",
+    "voices": "Utah ELEV;SheriffGM/PrisonSam ELEVEN; user_read/account/voice IDs verified; no deletions/fallback",
+    "fixes": "Unitygain only explicit recorded streams; legacy+6dB unchanged. Offlinebanner IGNORE fixes top-left swallowing, forcedofflineBlazePASS",
+    "merged_master": "b34cca64/c5be58ce purse/elevator/hideout/walkinshops/shopping preserved in ce5910d3",
+    "tests": "MergedfullCI PASS(3existingpausegeometryexceptions); compile/town0pending/goldtown/purse/armory/buses/security18/title5 PASS",
+    "export": "Publicmain198313680B/margin915760B;extras60568032B. Earlier local raw packed-hash audit could fall back to source; superseded by isolated imported packet audit.",
+    "output": "Merged native4voice peaks0.421\u20130.689; exactwebBGM/jumpoutputPASS; all71assetsWebAudioPASS. Generalbrowser overallFAIL externalcert, 5engine/gamechecksPASS",
+    "publication": "Master70c5dba7;productionCI40077607425SUCCESS;actualbutler46.14MiBfresh;publicBUILD2026-10-24-70c5dba;isolatedpublic71Vorbispacketpayload+strictdurationchecksPASS"
   },
   "unresolved": [
-    "Full CI running /tmp/tmp.wlSRCLqz4z;known pause geometry differences observed",
-    "Exact export queued behind fullCI;no public town playthrough or final-take subjective listening claimed",
-    "Commit/push/nonforced master/butler/publicBUILD pending"
+    "No protectedpublictownplaythrough/finaltakeearverdict claimed. Chromium trust change rejected by auto-review; no explicitapproval, trust unchanged."
   ],
-  "next_action": "Finish fullCI, inspect control failures honestly;exact export/pack/browser checks;refreshmaster before release;do not weaken gates"
+  "next_action": "Release complete and verified. Preserve concurrent work; use RELEASE.md as current truth and retain audit correction."
 }
