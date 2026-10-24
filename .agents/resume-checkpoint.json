@@ -1,5 +1,5 @@
 {
-  "observed_remote_sha": "ef7d8cdbcc5b29f0fa77c54d44bfa72b42dd97e0",
+  "observed_remote_sha": "974bd27a",
   "objective": "Episode2 stable yard: original Dude + cube-headed assistant +3\u20135horses; shrink before runtime integration",
   "task_paths": [
     "src/episode2/chamber/ep2_town_life.gd",
@@ -14,10 +14,11 @@
     "horse": "ExistingGLB19joints, horse_graze/stand/walk; preserve5existinghorses.",
     "location": "Owner authorized restoring original Episode2 yard; both uploaded GLBs received.",
     "voice": "DudePe1gOSDKAuczOZqgCiEm; placeholderdude_greet_01 only. No TTS/storyinvented.",
-    "changes": "Stable yard implemented, native91/full suite/captures/exported cast pass; see stable-yard handoff."
+    "changes": "Stable yard implemented, native91/full suite/captures/exported cast pass; see stable-yard handoff.",
+    "release": "CI40104657803 PASS, actualbutler59.86MiBfresh, publicBUILD2026-10-24-c5fb1d8/Updated15:19UTC and importedcast PASS. See stable-yard RELEASE.md."
   },
   "unresolved": [
-    "Cold import, staged security/title, normal ship and actual public deployment proof"
+    "Dude recording intentionally remains requested placeholder; browser external-certificate limitation documented; cloud-local vault not PC-synced."
   ],
-  "next_action": "Finish stable-yard release verification and ship."
+  "next_action": "Stable yard complete. Preserve release; choose new owner task."
 }

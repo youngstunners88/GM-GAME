@@ -1,0 +1,11 @@
+{
+  "page": "https://youngstunners88.itch.io/smokerealm",
+  "embed": "https://html-classic.itch.zone/html/18305533-2201730/index.html?v=1792855254",
+  "pack": "https://html-classic.itch.zone/html/18305533-2201730/index.pck",
+  "pack_bytes": 198413264,
+  "method": "Full public pack download via normally validated HTTPS; compiled GameManager directory MD5 verified before reading BUILD constant; not browser gameplay",
+  "build_tags": [
+    "2026-10-24-c5fb1d8"
+  ],
+  "expected_build_matches": true
+}

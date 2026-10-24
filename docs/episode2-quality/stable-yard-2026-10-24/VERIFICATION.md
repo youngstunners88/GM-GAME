@@ -1,6 +1,6 @@
 # Stable yard verification —2026-10-24
 
-Release pending. Source baseline ef7d8cdb; Godot4.3.stable.official.77dcf97d8, nonthreaded Compatibility export. Original yard restored with owner approval. See handoff and asset manifest for source/reduction details.
+Release complete; see [RELEASE.md](RELEASE.md). Source baseline ef7d8cdb; Godot4.3.stable.official.77dcf97d8, nonthreaded Compatibility export. Original yard restored with owner approval. See handoff and asset manifest for source/reduction details.
 
 - Stable gate:91checks PASS (rigs/whole-clip finite poses/loop and one-shot behavior/rigid head scale/collision/motion/5new+5existing horses/shared build/handoff/talk/story safety/pack and thread limits).
 - Full native CI block PASS; unchanged runner documents3local pause tap-target geometry differences. No new tolerance or control exceptions.
@@ -19,4 +19,4 @@ Security18/18 and title5/5 pass. Texture reference probe69models/0excluded-but-u
 
 Fresh detached worktree9e95b5ed cold-import export PASS: main198413200B, extras70522080B; zero script errors, isolated cast/textures and presence gate PASS. Main margin816240B. Warm/cold measurements are reported separately. gltfpack1.3 built from upstream f0a684f11ead064e176775c9b796f82a55910e92.
 
-Pending: refresh master/ship, CI actual butler upload and public BUILD/itch Updated proof. No live claim yet. Generic external-service browser certificate limitations remain documented by prior town-voice work; trust was not modified.
+Completed: normal master ship, productionCI40104657803, actual butler fresh upload, public BUILD/Updated and imported public cast verification; see RELEASE.md. Generic external-service browser certificate limitations remain documented by prior town-voice work; trust was not modified.

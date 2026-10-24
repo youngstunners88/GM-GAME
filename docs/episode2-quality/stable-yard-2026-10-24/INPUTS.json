@@ -1,5 +1,5 @@
 {
-  "status": "implemented_local_verification_passed_release_pending",
+  "status": "completed_public_release_verified",
   "source_commit": "ef7d8cdbcc5b29f0fa77c54d44bfa72b42dd97e0",
   "voice": {
     "speaker": "stable_owner_dude",
@@ -86,7 +86,7 @@
     "character_clips_verified": true,
     "new_characters_placed": true,
     "candidate_exported": true,
-    "deployed": false
+    "deployed": true
   },
   "candidate": {
     "main_bytes": 198447680,
@@ -96,5 +96,13 @@
     "cold_import_pending": false,
     "cold_main_bytes": 198413200,
     "cold_extras_bytes": 70522080
+  },
+  "release": {
+    "source_sha": "c5fb1d8dfa09afac5883d5f7ded97d78b8e5144c",
+    "ci_run": 40104657803,
+    "build": "2026-10-24-c5fb1d8",
+    "public_main_bytes": 198413264,
+    "public_extras_bytes": 70521376,
+    "public_updated": "2026-10-24 15:19 UTC"
   }
 }
