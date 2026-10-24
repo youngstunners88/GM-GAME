@@ -86,12 +86,12 @@ func _ready() -> void:
 	boss2.set_script(FAKE_BOSS)
 	boss2.add_to_group("boss")
 	add_child(boss2)
-	await HarnessHooks.kill_boss_after(get_tree(), 3, "harness_fake_boss.gd")
+	await HarnessHooks.kill_boss_after(self, 3, "harness_fake_boss.gd")
 	for _i in 4:
 		await get_tree().process_frame
 	_check("hook b: kill_boss_after(stage 3) did NOT kill the boss without the tag", boss2.died == 0 and not boss2.is_dead)
 	_check("hook b: ...and did not mark it", not boss2.has_meta(HarnessHooks.META_NO_CREDIT))
-	await HarnessHooks.kill_boss_after(get_tree(), 1, "harness_fake_boss.gd")
+	await HarnessHooks.kill_boss_after(self, 1, "harness_fake_boss.gd")
 	_check("hook b: other stages never kill either", boss2.died == 0)
 	boss2.free()
 

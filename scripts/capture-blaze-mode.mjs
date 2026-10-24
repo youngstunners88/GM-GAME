@@ -8,7 +8,7 @@
 //   A) Stage 1: walk/jump right into the weed leaf -> Blaze Mode, then film.
 //   B) Blaze Rush L1 -> press Q (Tap Out) -> film the level it returns to.
 // Usage: node scripts/capture-blaze-mode.mjs <live index.html url>
-import { chromium } from 'playwright'; import fs from 'fs';
+import { chromium } from './lib/pw.mjs'; import fs from 'fs';
 const OUT='artifacts/blaze-mode'; fs.rmSync(OUT,{recursive:true,force:true}); fs.mkdirSync(OUT,{recursive:true});
 const PIN=['/opt/pw-browsers/chromium-1194/chrome-linux/chrome','/opt/pw-browsers/chromium/chrome-linux/chrome'];
 const o={args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage','--no-sandbox','--ignore-certificate-errors']};

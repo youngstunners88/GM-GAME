@@ -1,6 +1,6 @@
 // capture-itch-live.mjs — capture the CURRENT live itch build (fetches the live
 // game URL from the itch page first, so it always hits the latest deployed build).
-import { chromium } from 'playwright';
+import { chromium } from './lib/pw.mjs';
 import fs from 'fs';
 const OUT='artifacts/itch-live'; fs.mkdirSync(OUT,{recursive:true});
 const PINNED=['/opt/pw-browsers/chromium-1194/chrome-linux/chrome','/opt/pw-browsers/chromium/chrome-linux/chrome'];

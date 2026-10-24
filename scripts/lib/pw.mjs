@@ -34,21 +34,30 @@ function loadPlaywright() {
   for (const id of PW_CANDIDATES) {
     try {
       const mod = require(id);
-      if (mod && mod.chromium) return { chromium: mod.chromium, source: id };
+      if (mod && mod.chromium) return { chromium: mod.chromium, source: id, error: null };
       failures.push(`${id}: loaded but has no .chromium`);
     } catch (e) {
       failures.push(`${id}: ${String(e && e.code || e).slice(0, 80)}`);
     }
   }
-  throw new Error(
-    'scripts/lib/pw.mjs: Playwright not found. Tried:\n  ' + failures.join('\n  ') +
-    '\nFix: `npm install --no-save playwright@1` in the repo root, or set PLAYWRIGHT_PKG=/path/to/playwright/index.js');
+  return {
+    chromium: undefined,
+    source: null,
+    error: 'scripts/lib/pw.mjs: Playwright not found. Tried:\n  ' + failures.join('\n  ') +
+      '\nFix: `npm install --no-save playwright@1` in the repo root, or set PLAYWRIGHT_PKG=/path/to/playwright/index.js',
+  };
 }
 
+// Soft failure: a script that only needs the pure helpers (e.g. `mobile-transition-probe.mjs --selftest`, which runs on a CI
+// runner with no browser) still imports this module; anything that needs a browser throws the message above via need().
 const _pw = loadPlaywright();
-/** Playwright's chromium launcher (BrowserType). */
-export const chromium = _pw.chromium;
-/** Which candidate actually loaded (printed by the probe so a version drift is visible). */
+function need() {
+  if (!_pw.chromium) throw new Error(_pw.error);
+  return _pw.chromium;
+}
+/** Playwright's chromium launcher (BrowserType). When Playwright is not installed any use of it throws the 'not found' message. */
+export const chromium = _pw.chromium || new Proxy({}, { get() { throw new Error(_pw.error); } });
+/** Which candidate actually loaded (printed by the probe so a version drift is visible); null when none. */
 export const playwrightSource = _pw.source;
 /** The Chromium binary the harness was calibrated on (symlink to chromium-1194 in this container). */
 export const CHROMIUM_BIN = process.env.CHROMIUM_BIN || '/opt/pw-browsers/chromium';
@@ -70,7 +79,7 @@ export function launchOptions(extra = {}) {
 
 /** Launch Chromium the way every game script does. */
 export function launch(extra = {}) {
-  return chromium.launch(launchOptions(extra));
+  return need().launch(launchOptions(extra));
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -108,7 +117,9 @@ export function contextOptions(profile, { dpr, size } = {}) {
 //    window.__gmLog   : [[t, {scene,state,td,held,shown,susp,profile,worst_ms,mem_mb}], ...] every beacon (<= 4000)
 //    window.__gmWords : latest on-demand visible-text list (see requestWords)
 //    window.__fr      : rAF frame recorder {n,max,gaps:[[t,dt]>40ms],all:[[t,dt]...],recent:[last 60 dt]}
-//    window.__logT    : [[t, text], ...] console lines starting [TD] [EP2] [HARNESS] [MEM] [SceneRouter] [Touch] [Blaze]
+//    window.__logT    : [[t, text], ...] console lines starting [TD] [EP2] [HARNESS] [MEM] [DBG] [SceneRouter] [Touch] [Blaze]
+//                       (stamped when the engine PRINTS them: use these, not __stateT, for timing - a postMessage event is
+//                       a queued browser task and arrives late exactly when the main thread stalls)
 //    window.__mem     : [[t, wasmHeapBytes, jsHeapUsedBytes], ...] once a second (peak = max)
 //    window.__long    : [[startTime, duration], ...] PerformanceObserver 'longtask' entries (>50 ms main-thread tasks)
 //    window.__lum     : [[t, mean luminance 0..1], ...] opt-in (installHarnessHooks(page,{lum:true})): three 1-px rows of the
@@ -149,7 +160,7 @@ const HARNESS_INIT = (opts) => {
     } catch (_) { /* ignore */ }
   });
   // game log lines on the shared clock
-  const keep = /^\[(TD|EP2|HARNESS|MEM|SceneRouter|Touch|Blaze)\]/;
+  const keep = /^\[(TD|EP2|HARNESS|MEM|DBG|SceneRouter|Touch|Blaze)\]/;
   for (const m of ['log', 'info', 'warn']) {
     const orig = console[m].bind(console);
     console[m] = (...args) => {

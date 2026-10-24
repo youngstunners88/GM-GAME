@@ -147,6 +147,8 @@ for name, body in fns.items():
 kba = fns.get('kill_boss_after', '')
 if not (re.search(r'boss_kill_delay_s\(\)', kba) and re.search(r'level_index != KILL_LEVEL or delay_s <= 0\.0', kba)):
     fail('H4', 'kill_boss_after() must return unless the gated delay is positive and the level is the stage-3 boss')
+if 'is_instance_valid(level)' not in kba:
+    fail('H4', 'kill_boss_after() must drop the fuse when its level instance is gone (a stale fuse must not kill the next instance\'s boss)')
 for name, body in fns.items():
     if '_kill_boss(' in re.sub(r'(?m)^static func _kill_boss.*$', '', body) and name not in ('kill_boss_after', '_kill_boss'):
         fail('H4', f'{name}() calls _kill_boss(); only kill_boss_after() may (after the gate)')

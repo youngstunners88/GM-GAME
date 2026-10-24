@@ -3,7 +3,7 @@
 // an IDENTICAL mean = the 3D pass is missing (HUD over clear colour), not "dark art" — that is how
 // the >1000-instance blank (docs/research/3d/001) was measured. Usage:
 //   node scripts/ep2-blank-frame-probe.mjs ["&ep2off=gold,streaks" | "&ep2bot=1"]
-import { chromium } from 'playwright';
+import { chromium } from './lib/pw.mjs';
 const q = process.argv[2] || '';
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
   args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });

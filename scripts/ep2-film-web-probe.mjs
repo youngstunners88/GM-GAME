@@ -2,7 +2,7 @@
 // Needs scripts/ep2-local-export.sh to have served :8899. Runs the bot to the cart end, then logs every console line
 // that mentions the film/video/errors and samples screenshots (mean brightness + saved png) for 150 s of the film window.
 //   node scripts/ep2-film-web-probe.mjs .farm/filmweb ["&extra=query"]
-import { chromium } from 'playwright';
+import { chromium } from './lib/pw.mjs';
 import fs from 'node:fs';
 const out = process.argv[2] || '.farm/filmweb'; const q = process.argv[3] || '';
 fs.mkdirSync(out, { recursive: true });

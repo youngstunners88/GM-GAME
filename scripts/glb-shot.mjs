@@ -16,7 +16,7 @@ import http from 'http';
 import { readFileSync, existsSync, statSync } from 'fs';
 import { resolve, extname, join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { chromium } from 'playwright';
+import { chromium } from './lib/pw.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const [glb, out] = process.argv.slice(2);

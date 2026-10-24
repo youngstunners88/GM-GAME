@@ -155,7 +155,7 @@ export function analyse(scn, raw, m, opts = {}) {
     black('film_to_hideout', m.filmEndLo, m.hideout == null ? null : m.hideout + 1500);
     if (m.chamber != null && m.hideout != null) out.film_ms = Math.round(m.hideout - m.chamber);
   }
-  if (m.leg != null) {
+  if (m.leg != null && scn !== 'C') {      // C's first leg is an 8 m dash into the film, not "the first 30 s of the runner"
     out.runner_over100_30s = countOver(gaps, 100, m.leg, m.leg + runS);
     out.runner_worst_gap_30s_ms = longestGap(gaps, m.leg, m.leg + runS).ms;
     out.runner_longtask_30s_ms = longtaskMs(raw.long || [], m.leg, m.leg + runS);
@@ -197,13 +197,14 @@ function selftest() {
   eq('heldMax none -> null', heldMax(gml, 1000), null);
   eq('peak', peak(gml, 'mem_mb'), 80);
   const raw = { fr: { gaps: [[1100, 200], [5000, 180], [5400, 110], [20000, 90]], n: 999, max: 200 },
-    long: [[1000, 150]], lum: [[4900, 0.3], [5000, 0.01], [5100, 0.02], [5300, 0.4]], gmlog: [[5200, { held: 0 }], [5300, { held: 3 }]] };
+    long: [[1000, 150]], lum: [[4900, 0.3], [5000, 0.01], [5100, 0.02], [5300, 0.4]], gmlog: [[900, { held: 1 }], [4000, { held: 9 }], [5200, { held: 0 }], [5300, { held: 3 }]] };
   const a = analyse('A', raw, { die: 1000, go: 4900, reveal: 5200, leg: 5400 }, { runS: 30 });
   eq('A: cover hold', a.cover_hold_ms, 300);
   eq('A: first runner after go', a.first_runner_after_go_ms, 500);
   eq('A: die-window gap', [a.gap_die_ms, a.longtask_die_ms], [200, 150]);
   eq('A: black frames in the cut', [a.black_cut.black, a.black_cut.black_ms], [2, 100]);
-  eq('A: held after swap is the max after go', a.held_after_swap, 3);
+  eq('A: held after swap is the max after go (an earlier 9 must not leak in)', a.held_after_swap, 3);
+  eq('A: held before die is the max in the 1.5 s before die()', a.held_before_die, 1);
   eq('A: runner gaps >100 in the first 30 s', a.runner_over100_30s, 1);
   console.log(bad ? `MOBILE_TRANSITION_PROBE_SELFTEST: ${bad} FAILURE(S)` : 'MOBILE_TRANSITION_PROBE_SELFTEST: ALL PASS');
   return bad;
@@ -284,7 +285,7 @@ async function runScenario(scn, rate, { base, outDir, lum, runS, say, label, dpr
   const res = { scenario: scn, throttle: rate, label, reached: 'nothing', why: '', metrics: null, notes: [], errors: [] };
   try {
     const { context, page, cdp, mt } = await newProfilePage(browser, 'phone', { hooks: { lum }, dpr, size });
-    const con = collectConsole(page, { prefixes: ['[TD]', '[EP2]', '[HARNESS]', '[SceneRouter]', '[Blaze]'], echo: false });
+    const con = collectConsole(page, { prefixes: ['[TD]', '[EP2]', '[HARNESS]', '[SceneRouter]', '[Blaze]', '[DBG]'], echo: false });
     let crashed = false;
     page.on('crash', () => { crashed = true; });
     const throttle = async (r) => { await cdp.send('Emulation.setCPUThrottlingRate', { rate: r }); say(`CPU throttle ${r}x`); };
@@ -297,10 +298,7 @@ async function runScenario(scn, rate, { base, outDir, lum, runS, say, label, dpr
       for (const e of window.__logT) if (e[0] >= a && rx.test(e[1])) return e;
       return null;
     }, [re.source, after]);
-    const findState = (name, after = 0) => page.evaluate(([n, a]) => {
-      for (const e of window.__stateT) if (e[0] >= a && e[1] === n) return e[0];
-      return null;
-    }, [name, after]);
+    const findStateLog = (to, after = 0) => find(new RegExp(`^\\[DBG\\] state \\w+->${to}$`), after);
     const waitFor = async (probe, timeoutMs, what) => {
       const end = Date.now() + timeoutMs;
       while (Date.now() < end) {
@@ -315,13 +313,13 @@ async function runScenario(scn, rate, { base, outDir, lum, runS, say, label, dpr
 
     // --- URL per scenario ---------------------------------------------------------------------------------------
     const q = {
-      A: '?boss=3&bosskill=8&ep2probe=1&debug=beacon',
+      A: '?boss=3&bosskill=2&ep2probe=1&debug=beacon',
       B: '?ep2=1&ep2gate=skip&ep2probe=1&debug=beacon',
       C: '?ep2=1&ep2gate=skip&ep2chamber=1&ep2probe=1&debug=beacon',
     }[scn];
     if (!q) throw new Error(`unknown scenario ${scn}`);
     // B and C start their cut within seconds of the engine finishing boot, so the throttle must already be on.
-    // A arms a fixed 8 s fuse (bosskill=8) and prints "[HARNESS] bosskill armed": the throttle goes on then.
+    // A arms a fixed 2 s fuse (bosskill=2) and prints "[HARNESS] bosskill armed": the throttle goes on then.
     if (scn !== 'A' && rate > 1) await throttle(rate);
     const slow = Math.max(1, rate);
     const bootT0 = Date.now();
@@ -345,7 +343,9 @@ async function runScenario(scn, rate, { base, outDir, lum, runS, say, label, dpr
       res.harness_tag = !!(data.gm && data.gm.harness);
       res.metrics = analyse(scn, data, marks, { runS });
       res.lum_series = (data.lum || []).slice(-1500);
-      res.timeline = { states: data.stateT, logs: data.logT.filter(([, t]) => !/^\[EP2\] d=/.test(t)).slice(-120) };
+      const keepKey = ([, t]) => /^\[(DBG|TD|HARNESS)\]|\[EP2\] (leg|code|chamber)/.test(t);
+      const noD = data.logT.filter(([, t]) => !/^\[EP2\] d=/.test(t));
+      res.timeline = { states: data.stateT, logs: noD.filter(keepKey).slice(-300), logs_tail: noD.slice(-60) };
       res.errors = con.errors.slice(0, 20);
       res.beacon_last = data.gm;
       if (!data.gm) res.notes.push('no window.__gm beacon was received (is ?debug=beacon honoured by this build?)');
@@ -354,29 +354,47 @@ async function runScenario(scn, rate, { base, outDir, lum, runS, say, label, dpr
 
     // --- A: boss kill -> film -> Episode 2 --------------------------------------------------------------------
     if (scn === 'A') {
-      const armed = await waitFor(() => find(/^\[HARNESS\] bosskill armed/), 300000 * slow, 'bosskill fuse');
-      if (!armed) {
-        res.why = 'no "[HARNESS] bosskill armed" line: the build is not a GM_HARNESS=1 export, or ?boss=3 did not open the arena';
-        await finish({}); return res;
+      // The hero dies a few seconds into the arena when he stands still, and the level then reloads and RE-ARMS the fuse.
+      // So: for every arming, put the thumb down again (a finger that was down across a reload is no longer owned by the
+      // stick) and wait for die() followed by LEVEL_COMPLETE; give up after 8 armings.
+      let armedAfter = 0;
+      let attempt = 0;
+      let tDie = null;
+      let lc = null;
+      let dieErr = '';
+      for (; attempt < 8 && lc === null; attempt++) {
+        const armed = await waitFor(() => find(/^\[HARNESS\] bosskill armed/, armedAfter), (attempt ? 90000 : 300000) * slow, 'bosskill fuse');
+        if (!armed) {
+          dieErr = attempt ? 'the fuse was not re-armed after a death' : 'no "[HARNESS] bosskill armed" line: the build is not a GM_HARNESS=1 export, or ?boss=3 did not open the arena';
+          break;
+        }
+        armedAfter = armed[0] + 1;
+        if (attempt === 0) { stage('stage-3 arena open, fuse armed'); await throttle(rate); }
+        // the thumb: stick centre of the phone-landscape layout, pushed gently LEFT (away from the boss), never lifting
+        if (mt.count()) await mt.upAll();
+        await mt.down(0, 126, 280);
+        await mt.dragTo(0, 90, 280, 3);
+        if (attempt === 0) await shot('fight');
+        const die = await waitFor(async () => (await find(/^\[HARNESS\] bosskill: stage-3 boss die\(\)/, armed[0])) || (await find(/^\[HARNESS\] bosskill armed/, armed[0] + 1) ? 'RE' : null), 40000 * slow, 'boss die()');
+        if (!die || die === 'RE') { res.notes.push(`attempt ${attempt + 1}: the hero died before the fuse burned (level reloaded)`); continue; }
+        tDie = die[0];
+        const lcE = await waitFor(() => findStateLog('LEVEL_COMPLETE', tDie - 50), 6000 * slow, 'LEVEL_COMPLETE');
+        if (!lcE) { res.notes.push(`attempt ${attempt + 1}: die() ran but the state never reached LEVEL_COMPLETE (hero already dead)`); tDie = null; continue; }
+        lc = lcE[0];
       }
-      stage('stage-3 arena open, fuse armed');
-      await throttle(rate);
-      // the thumb: stick centre of the phone-landscape layout, pushed right, and it never lifts
-      await mt.down(0, 126, 280);
-      await mt.dragTo(0, 176, 280, 4);
-      await shot('fight');
-      const die = await waitFor(() => find(/^\[HARNESS\] bosskill: /), 60000 * slow, 'boss die()');
-      if (!die) { res.why = 'fuse never fired'; await finish({}); return res; }
-      const tDie = die[0];
-      stage('boss die() called');
-      const lc = await waitFor(() => findState('LEVEL_COMPLETE', tDie - 50), 30000 * slow, 'LEVEL_COMPLETE');
-      const go = await waitFor(() => findState('TRANSITIONING', tDie), 240000 * slow, 'film end / TransitionDirector.go');
-      if (!go) { res.why = 'the film did not end (no TRANSITIONING after die)'; await finish({ die: tDie }); return res; }
+      if (lc === null) { res.why = dieErr || 'no attempt produced die() + LEVEL_COMPLETE'; await finish({}); return res; }
+      res.attempts = attempt;
+      stage(`boss die() called (attempt ${attempt})`);
+      // marks come from the engine's own synchronous "[DBG] state A->B" lines (debug_overlay.gd): a postMessage-based
+      // timestamp is a queued task and arrives late exactly when the main thread stalls
+      const goE = await waitFor(() => findStateLog('TRANSITIONING', tDie), 240000 * slow, 'film end / TransitionDirector.go');
+      const go = goE ? goE[0] : null;
+      if (!go) { res.why = 'the film did not end (no TRANSITIONING after die)'; await finish({ die: tDie, levelComplete: lc }); return res; }
       stage('film over, hand-off started');
       await shot('cover');
-      const reveal = await waitFor(() => findState('PLAYING', go), 240000 * slow, 'reveal');
+      const revealE = await waitFor(() => findStateLog('PLAYING', go), 240000 * slow, 'reveal');
       const leg = await waitFor(() => find(/^\[EP2\] leg start/, go - 100), 240000 * slow, 'first runner frame');
-      const marks = { die: tDie, levelComplete: lc, go, reveal, leg: leg ? leg[0] : null };
+      const marks = { die: tDie, levelComplete: lc, go, reveal: revealE ? revealE[0] : null, leg: leg ? leg[0] : null };
       if (!leg) { res.why = 'Episode 2 never started a runner leg'; await finish(marks); return res; }
       stage('Episode 2 first runner frame');
       await sleep(runS * 1000 + 1500);          // the first 30 s of the runner are measured

@@ -20,7 +20,7 @@
 // Exit 0 = booted with no script errors and every shot written.
 import fs from 'fs';
 import path from 'path';
-import { chromium } from 'playwright';
+import { chromium } from './lib/pw.mjs';
 
 const URL_BASE = process.argv[2];
 const OUT_DIR = process.argv[3] || 'artifacts/ep2-shots';

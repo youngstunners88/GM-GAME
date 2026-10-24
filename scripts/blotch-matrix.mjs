@@ -7,7 +7,7 @@
 // it scores on a single frame. L2 blaze is the load-bearing negative: any
 // theory that blames the GPU, the monitor or the screenshot tool has to
 // explain why exactly one scene is exempt, and none of them can.
-import { chromium } from 'playwright';
+import { chromium } from './lib/pw.mjs';
 import fs from 'fs';
 
 const OUT = process.env.OUT || 'artifacts/blotch-matrix';

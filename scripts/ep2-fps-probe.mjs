@@ -1,7 +1,7 @@
 // ep2-fps-probe.mjs — track-metres per wall-second in the REAL web build over a window of a leg,
 // to bisect render cost with ?ep2off= toggles (software Chromium is the slow-device canary).
 //   node scripts/ep2-fps-probe.mjs <leg> <from_m> <to_m> ["&ep2off=hero"]
-import { chromium } from 'playwright';
+import { chromium } from './lib/pw.mjs';
 const [leg, from, to, extra] = [+process.argv[2], +process.argv[3], +process.argv[4], process.argv[5] || ''];
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
   args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });

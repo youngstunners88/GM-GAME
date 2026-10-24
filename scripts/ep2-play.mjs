@@ -1,4 +1,4 @@
-import { chromium } from 'playwright';
+import { chromium } from './lib/pw.mjs';
 // Episode 2 browser playtest: drive the real web build by TRACK DISTANCE (not wall-clock,
 // which drifts on CPU-rendered browsers). Needs ?ep2probe=1 (ep2_entry.gd prints d/hp).
 // Usage: node scripts/ep2-play.mjs <outdir> '<plan json>' [extra-query]  — plan steps:

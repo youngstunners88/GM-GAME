@@ -24,7 +24,7 @@
 // Verified this way on build 2026-09-22-a79d3db: 179 body px, 89 wrap px,
 // 15 fuse px in one blob beside the player. Usage: <url> [stage 1-3].
 // Pair with: python3 scripts/weapon-colour-check.py artifacts/weapon-verify-sN
-import { chromium } from 'playwright'; import fs from 'fs';
+import { chromium } from './lib/pw.mjs'; import fs from 'fs';
 const OUT=`artifacts/weapon-verify-s${process.argv[3]||"1"}`; fs.rmSync(OUT,{recursive:true,force:true}); fs.mkdirSync(OUT,{recursive:true});
 const PIN=['/opt/pw-browsers/chromium-1194/chrome-linux/chrome','/opt/pw-browsers/chromium/chrome-linux/chrome'];
 const o={args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage','--no-sandbox','--ignore-certificate-errors']};

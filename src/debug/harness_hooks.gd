@@ -84,14 +84,20 @@ static func boss_kill_requested() -> bool:
 	return boss_kill_delay_s() > 0.0
 
 ## Called (not awaited) from LevelBase._maybe_debug_boss_warp() right after the arena trigger fired. Does nothing
-## unless the gate lets the parameter through, the level is stage 3 and the boss's script is claim_jumper.gd.
-## `script_suffix` is a parameter only so the headless test can aim it at a fixture boss.
-static func kill_boss_after(tree: SceneTree, level_index: int, script_suffix: String = KILL_SCRIPT_SUFFIX) -> void:
+## unless the gate lets the parameter through, the level is stage 3 and the boss's script is claim_jumper.gd. The fuse
+## belongs to `level`: if that level instance is gone when it burns (the player died and the level reloaded) it does
+## nothing, so a stale fuse can never kill the NEXT instance's boss. `script_suffix` is a parameter only so the
+## headless test can aim it at a fixture boss.
+static func kill_boss_after(level: Node, level_index: int, script_suffix: String = KILL_SCRIPT_SUFFIX) -> void:
 	var delay_s: float = boss_kill_delay_s()
-	if level_index != KILL_LEVEL or delay_s <= 0.0:
+	if level_index != KILL_LEVEL or delay_s <= 0.0 or level == null or not level.is_inside_tree():
 		return
 	print("[HARNESS] bosskill armed: stage-3 boss die() in %.1f s (gm_harness build only)" % delay_s)
+	var tree: SceneTree = level.get_tree()
 	await tree.create_timer(delay_s).timeout
+	if not is_instance_valid(level) or not level.is_inside_tree():
+		print("[HARNESS] bosskill: fuse dropped, its level is gone")
+		return
 	if not _kill_boss(tree, script_suffix):
 		print("[HARNESS] bosskill: no live claim_jumper in group boss after %.1f s" % delay_s)
 

@@ -31,5 +31,8 @@ timeout 900 "$G" --headless --export-release "Web" web_verify/game/index.html > 
 cp web/web3.js web_verify/game/ 2>/dev/null || true
 timeout 300 "$G" --headless --path . --script tools/ep2_extras/pack_extras.gd -- web_verify/game/ep2_extras.pck > .farm/extras-pack.log 2>&1 || echo "✗ extras pack failed - see .farm/extras-pack.log"
 echo "✓ export ok  pck=$(stat -c%s web_verify/game/index.pck)  script_errors=$(grep -cE 'SCRIPT ERROR|Parse Error' .farm/export.log || true)"
-curl -s -o /dev/null http://localhost:8899/game/index.html || (node scripts/serve-web.mjs 8899 web_verify >/dev/null 2>&1 &)
+# The server is started with fds 3-9 CLOSED: under `flock /tmp/gm-godot.lock bash scripts/ep2-local-export.sh` it would otherwise
+# inherit the lock's descriptor and hold /tmp/gm-godot.lock for as long as it serves (2026-10-23: that blocked every other
+# agent's --import/--export for 30 minutes). `flock -o` is the other half of the fix: the lock is not passed to children.
+curl -s -o /dev/null http://localhost:8899/game/index.html || (setsid node scripts/serve-web.mjs 8899 web_verify >/dev/null 2>&1 3>&- 4>&- 5>&- 6>&- 7>&- 8>&- 9>&- &)
 sleep 1; echo "  serving http://localhost:8899/game/index.html?ep2=1&ep2probe=1"

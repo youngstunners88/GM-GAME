@@ -28,7 +28,7 @@
 //   smoke bomb -> dark green body (0.22,0.29,0.2) + lighter green wrap
 //                 (0.42,0.6,0.36) + orange fuse (1,0.72,0.3)
 //   axe        -> the pale steel pickaxe SPRITE
-import { chromium } from 'playwright'; import fs from 'fs';
+import { chromium } from './lib/pw.mjs'; import fs from 'fs';
 const OUT='artifacts/stage1-weapon'; fs.rmSync(OUT,{recursive:true,force:true}); fs.mkdirSync(OUT,{recursive:true});
 const PIN=['/opt/pw-browsers/chromium-1194/chrome-linux/chrome','/opt/pw-browsers/chromium/chrome-linux/chrome'];
 const o={args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-dev-shm-usage','--no-sandbox','--ignore-certificate-errors']};

@@ -59,6 +59,19 @@ func _ready() -> void:
 		elif q == "beacon":
 			_beacon_only = true
 	_frame_ms.resize(FRAME_RING)
+	# Synchronous console marks for the probe's timeline. The StateMachine postMessage beacon is queued as a browser task,
+	# so under a main-thread stall its page timestamp is LATE (exactly when it matters); a console line is stamped when it
+	# is printed. Printed only while the overlay is on.
+	StateMachine.state_changed.connect(_on_state_changed)
+	TransitionDirector.state_changed.connect(_on_td_changed)
+
+func _on_state_changed(from_state: String, to_state: String) -> void:
+	if is_on():
+		print("[DBG] state %s->%s" % [from_state, to_state])
+
+func _on_td_changed(from_state: String, to_state: String) -> void:
+	if is_on():
+		print("[DBG] td %s->%s" % [from_state, to_state])
 
 ## Is the F3 / ?debug=1 / ?debug=beacon overlay on? (Lets other systems add verbose logging only then.)
 func is_on() -> bool:
