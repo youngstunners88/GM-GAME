@@ -87,3 +87,12 @@ Checksum-verified4.3editor/templates downloaded; discarded inherited incompatibl
 
 
 Resolved the previously reported local Blaze top-left touch failures: diagnostic scene-tree enumeration at(8,8) identified GameManager's offline banner background ColorRect at(6,4), size520x26, layer99, mouse_filter STOP. It appears asynchronously on connection failure, above the touch layer60, explaining environment/timing variation and untouched-master reproduction. Both banner controls now explicitly IGNORE input. Blaze touch gate deliberately shows the banner before the entire existing battery; no assertion removed or weakened. Final standalone BLAZE_RUSH_TOUCH ALL PASS, including all three top-left cases. First full run retains historical two failures before this fix; a fresh full run is queued.
+
+
+## Merged release candidate ce5910d3
+
+Preserves masterb34cca64/c5be58ce purse, elevator/hideout, walk-in shops and shopping. Full nativeCI PASS via unmodified local runner (only its3documented pause geometry exceptions); forced-offline Blaze gate ALL PASS. Compile, town-audio0pending, gold-town, armory-guns, purse, audio-buses, security18/18 and title5/5 PASS. Crowd autonomy33checks, street assets617checks PASS.
+
+Exact production export: zero script errors; main198348336B, gate199229440B, margin881104B; extras60568768B/322files. Extras presence gate11named+89shipped PASS; all71town audio hashes match mounted pack. Native four-role output again0.421–0.689peak. Exact web BGM/jump output PASS. Browser's five engine/game checks PASS; overall verifier still FAIL due external certificate errors (retained in merged-web-verify.json). No trust bypass, no protected public town walkthrough or subjective final-take listening claim. Founder approved all3design previews.
+
+Merged source fingerprint (runtime, tests, tools, workflow, lock and scan configuration) retained in merged-source-proof.json, enabling reuse only for identical files after a fresh master fetch. Source63c3fb88 branchCI40065830747SUCCESS is historical; merged branchCI40076803154pending. Master release, actual butler and final public BUILD pending.
