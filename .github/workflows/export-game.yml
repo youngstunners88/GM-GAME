@@ -268,7 +268,7 @@ jobs:
           custom_features=""
           export_filter="all_resources"
           include_filter="config.json,src/autoload/share_taglines.json"
-          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*,design/*,work-notes/*,tools/*,assets/keyart/*,src/assets/models/horse/assetfurnace/*,web_verify/*,web/game/*,src/assets/sprites/sprite_prop_train-goldmine.png,src/assets/sprites/sprite_prop_train-goldmine_256.png,src/assets/sprites/sprite_train_goldmine_blender-render.png,src/assets/portals/leaders/*,src/assets/logos/founder/ref_wrong_diamonds_banned.png,src/assets/logos/founder/ref_flaming_diamond_target.png,src/assets/logos/founder/ref_no_logos_in_gaps.png,src/assets/logos/founder/ref_stilts_gap_outline.png,src/assets/logos/founder/ref_squares_to_replace.png,src/assets/logos/founder/ref_pipe_masks_logo.png,src/assets/logos/founder/ref_mural_remove.png,src/assets/art/smoke_lounge_banner.png,src/assets/models/player_bow/bow_fps_view.png,src/episode2/extras/*"
+          exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*,design/*,work-notes/*,tools/*,assets/keyart/*,src/assets/models/horse/assetfurnace/*,web_verify/*,web/game/*,src/assets/sprites/sprite_prop_train-goldmine.png,src/assets/sprites/sprite_prop_train-goldmine_256.png,src/assets/sprites/sprite_train_goldmine_blender-render.png,src/assets/portals/leaders/*,src/assets/logos/founder/ref_wrong_diamonds_banned.png,src/assets/logos/founder/ref_flaming_diamond_target.png,src/assets/logos/founder/ref_no_logos_in_gaps.png,src/assets/logos/founder/ref_stilts_gap_outline.png,src/assets/logos/founder/ref_squares_to_replace.png,src/assets/logos/founder/ref_pipe_masks_logo.png,src/assets/logos/founder/ref_mural_remove.png,src/assets/art/smoke_lounge_banner.png,src/assets/models/player_bow/bow_fps_view.png,src/episode2/extras/*,src/episode2/assets/town/dude_stable_owner*,src/episode2/assets/town/stable_assistant*"
           export_path="web/game/index.html"
           script_export_mode=1
           script_encryption_key=""
@@ -359,6 +359,9 @@ jobs:
           timeout 180 "$GODOT_BIN" --headless --path . res://tests/ep2_town_life_test.tscn > town-life-tests.log 2>&1
           cat town-life-tests.log
           grep -q 'EP2_TOWN_LIFE: ALL PASS' town-life-tests.log
+          timeout 240 "$GODOT_BIN" --headless res://tests/ep2_stable_yard_test.tscn 2>&1 | tee stable-yard-tests.log
+          grep -q 'EP2_STABLE_YARD: ALL PASS' stable-yard-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' stable-yard-tests.log; then exit 1; fi
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' town-life-tests.log | grep -v VirtualJoystick; then exit 1; fi
           # The GoldMine town (founder 2026-10-14): the sheriff's office, the saloon, the draw (foul / retry / win), Bull, the chain.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_gold_town_test.tscn 2>&1 | tee gold-town-tests.log
@@ -546,6 +549,25 @@ jobs:
             town-autonomy-tests.log
           retention-days: 14
 
+      - name: Capture stable yard through the player camera
+        run: |
+          mkdir -p "$RUNNER_TEMP/stable-yard-captures"
+          timeout 600 xvfb-run -a "$GODOT_BIN" --rendering-method gl_compatibility --rendering-driver opengl3 --audio-driver Dummy \
+            --resolution 1280x720 res://tools/ep2_shots/stable_yard_shot.tscn -- out="$RUNNER_TEMP/stable-yard-captures" 2>&1 | tee stable-yard-render.log
+          grep -q 'STABLE_YARD_SHOT: TWO RIGS FIVE CLIPS AND HERD CAPTURED' stable-yard-render.log
+          if grep -E 'SCRIPT ERROR|Parse Error' stable-yard-render.log; then exit 1; fi
+
+      - name: Upload stable yard proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stable-yard-proof
+          path: |
+            ${{ runner.temp }}/stable-yard-captures/
+            stable-yard-tests.log
+            stable-yard-render.log
+          retention-days: 14
+
       - name: Stamp the build tag
         run: |
           # BUILD_TAG's whole job is to let the founder PROVE, from a screenshot,
@@ -598,6 +620,12 @@ jobs:
           # Presence gate (skill ep2-townfolk-presence): townspeople, openings kit, Rich & Utah, jail, Logan and the town->lake chamber
           # chain must be INSIDE the packs that get deployed - "on master" is not "in the build".
           bash scripts/check-ep2-extras-pack.sh web/game
+          # Isolated imported-resource check: raw source files cannot mask a missing streamed stable rig/texture.
+          STABLE_CHECK_DIR=$(mktemp -d)
+          printf 'config_version=5\n[application]\nconfig/name="Stable pack check"\n' > "$STABLE_CHECK_DIR/project.godot"
+          timeout 120 "$GODOT_BIN" --headless --path "$STABLE_CHECK_DIR" --script "$GITHUB_WORKSPACE/tools/ep2_forge/check_stable_pack.gd" -- "$GITHUB_WORKSPACE/web/game/index.pck" "$GITHUB_WORKSPACE/web/game/ep2_extras.pck" 2>&1 | tee stable-pack-check.log
+          grep -q 'STABLE_PACK: ALL PASS' stable-pack-check.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' stable-pack-check.log; then exit 1; fi
 
       - name: Restore the stamped source
         # MUST run, and must run BEFORE any step that touches git.

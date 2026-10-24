@@ -1,0 +1,185 @@
+{
+  "version": 1,
+  "models": [
+    {
+      "role": "dude",
+      "file": "src/episode2/assets/town/dude_stable_owner.glb",
+      "bytes": 1426396,
+      "sha512": "158cefe7f38e9a58a13558e9f33518733e60f1a9c763f3a22f495b1ad87324f5f5bf9eccba90b62a0a5ffe70914a6e7f94ad7351538ac3ce9ade1241f71c97fa",
+      "triangles": 9243,
+      "joints": 65,
+      "clips": [
+        "idle.001",
+        "jump.001",
+        "run.001",
+        "turn.001",
+        "walk.001"
+      ],
+      "head_region_vertices": 5679,
+      "nonrigid_head_region_vertices": 0,
+      "source": {
+        "role": "dude",
+        "source_sha512": "927daa7248b1f0aff34350bdb214c178a17bb85f66a237ed1ce91581df681f9e2843a85933eac41b6e12142ff4cecf9d872a1265bcf214bf52265d78eaee837d",
+        "source_bytes": 25398272,
+        "original_clips": [
+          "walk.001",
+          "turn.001",
+          "run.001",
+          "jump.001"
+        ],
+        "prepared_clips": [
+          "walk.001",
+          "turn.001",
+          "run.001",
+          "jump.001",
+          "idle.001"
+        ],
+        "authored_idle_from_own_turn_pose": true,
+        "textures": [
+          {
+            "before": [
+              4096,
+              4096
+            ],
+            "after": [
+              1024,
+              1024
+            ],
+            "jpeg_bytes": 66498
+          },
+          {
+            "before": [
+              4096,
+              4096
+            ],
+            "after": [
+              1024,
+              1024
+            ],
+            "jpeg_bytes": 254584
+          },
+          {
+            "before": [
+              4096,
+              4096
+            ],
+            "after": [
+              1024,
+              1024
+            ],
+            "jpeg_bytes": 267555
+          }
+        ],
+        "rigid_head_vertices": 17594,
+        "rigid_head_min_y": 0.8248874174912382,
+        "joints": 65,
+        "removed_xz_root_travel": {
+          "walk.001": [
+            -5.875946953892708e-06,
+            5.543231964111328e-06,
+            1.5782060623168945
+          ],
+          "run.001": [
+            0.0015234574675559998,
+            0.0074271559715271,
+            3.0812864303588867
+          ]
+        }
+      }
+    },
+    {
+      "role": "assistant",
+      "file": "src/episode2/assets/town/stable_assistant.glb",
+      "bytes": 1608596,
+      "sha512": "69c51c95c163ecbde9530b79c5fc9708a165c86b7d4d726f89647ace68cabb9f22676f1c608641948d1755a6f190b357b8b8d66f41817aa4f1c6a611f31e3b75",
+      "triangles": 8915,
+      "joints": 65,
+      "clips": [
+        "jump.001",
+        "walk.001",
+        "turn.001",
+        "idle.001",
+        "run.001"
+      ],
+      "head_region_vertices": 2759,
+      "nonrigid_head_region_vertices": 0,
+      "source": {
+        "role": "assistant",
+        "source_sha512": "563039b1f510e4600e99584c6bbe8cd4ae810be33f795f64da4bcd7ccbf9c0b38baae4b42c4bda36416f28f12e7cc0f79fcfecc84013a0fc33de5cccfc438b0a",
+        "source_bytes": 23454576,
+        "original_clips": [
+          "jump.001",
+          "walk.001",
+          "turn.001",
+          "idle.001",
+          "run.001"
+        ],
+        "prepared_clips": [
+          "jump.001",
+          "walk.001",
+          "turn.001",
+          "idle.001",
+          "run.001"
+        ],
+        "authored_idle_from_own_turn_pose": false,
+        "textures": [
+          {
+            "before": [
+              4096,
+              4096
+            ],
+            "after": [
+              1024,
+              1024
+            ],
+            "jpeg_bytes": 109535
+          },
+          {
+            "before": [
+              4096,
+              4096
+            ],
+            "after": [
+              1024,
+              1024
+            ],
+            "jpeg_bytes": 325225
+          },
+          {
+            "before": [
+              4096,
+              4096
+            ],
+            "after": [
+              1024,
+              1024
+            ],
+            "jpeg_bytes": 240451
+          }
+        ],
+        "rigid_head_vertices": 8883,
+        "rigid_head_min_y": 0.6662590233376756,
+        "joints": 65,
+        "removed_xz_root_travel": {
+          "walk.001": [
+            -4.5872293412685394e-06,
+            4.32133674621582e-06,
+            1.2332335710525513
+          ],
+          "run.001": [
+            0.0011904574930667877,
+            0.0058036744594573975,
+            2.4077630043029785
+          ]
+        }
+      }
+    }
+  ],
+  "voice": {
+    "dude": "Pe1gOSDKAuczOZqgCiEm",
+    "hook": "dude_greet_01",
+    "recording_present": false
+  },
+  "streamed_from_canonical_town_paths": true,
+  "pack_limit": 199229440
+}

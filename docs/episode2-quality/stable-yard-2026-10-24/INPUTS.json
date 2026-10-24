@@ -1,5 +1,5 @@
 {
-  "status": "blocked_missing_source_assets_and_current_stable_location",
+  "status": "implemented_local_verification_passed_release_pending",
   "source_commit": "ef7d8cdbcc5b29f0fa77c54d44bfa72b42dd97e0",
   "voice": {
     "speaker": "stable_owner_dude",
@@ -12,13 +12,13 @@
     {
       "role": "dude",
       "supplied_pc_path": "~/Documents/SmokeRealm-stable-characters-20261024/dude/dude_stable_owner.glb",
-      "available_in_cloud": false,
+      "available_in_cloud": true,
       "target": "src/episode2/assets/town/dude_stable_owner.glb"
     },
     {
       "role": "assistant",
       "supplied_pc_path": "~/Documents/SmokeRealm-stable-characters-20261024/assistant/stable_assistant.glb",
-      "available_in_cloud": false,
+      "available_in_cloud": true,
       "target": "src/episode2/assets/town/stable_assistant.glb"
     }
   ],
@@ -49,7 +49,7 @@
     "limit_bytes": 199229440,
     "margin_bytes": 826912,
     "export_script_errors": 0,
-    "candidate_pack_bytes": null
+    "candidate_pack_bytes": 198447680
   },
   "current_master_stable": {
     "building_found": false,
@@ -69,7 +69,8 @@
       -4,
       1240
     ],
-    "presentation": "Old Node3D surface set used flat stable facade and animated sprite horses; not present in current Ep2GoldTown/TownLife."
+    "presentation": "Old Node3D surface set used flat stable facade and animated sprite horses; not present in current Ep2GoldTown/TownLife.",
+    "restoration_authorized": true
   },
   "horse": {
     "path": "src/episode2/assets/town/horse.glb",
@@ -81,10 +82,17 @@
     ]
   },
   "verification": {
-    "characters_reduced": false,
-    "character_clips_verified": false,
-    "new_characters_placed": false,
-    "candidate_exported": false,
+    "characters_reduced": true,
+    "character_clips_verified": true,
+    "new_characters_placed": true,
+    "candidate_exported": true,
     "deployed": false
+  },
+  "candidate": {
+    "main_bytes": 198447680,
+    "extras_bytes": 70522016,
+    "main_delta": 45152,
+    "margin_bytes": 781760,
+    "cold_import_pending": true
   }
 }

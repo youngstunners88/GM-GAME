@@ -15,7 +15,19 @@ set -euo pipefail
 in="$1"; out="$2"; ratio="${3:-1}"
 command -v gltfpack >/dev/null || { echo "gltfpack not on PATH (see docs/episode2-quality/3d-tools-survey-2026-10-17/README.md)"; exit 2; }
 args=(-i "$in" -o "$out" -noq -kn -km)
-if [ "$ratio" != "1" ]; then args+=(-si "$ratio" -sv); [ "${BORDERS:-}" = "lock" ] && args+=(-slb); fi
+if [ "$ratio" != "1" ]; then
+  args+=(-si "$ratio" -sv)
+  [ "${BORDERS:-}" = "lock" ] && args+=(-slb)
+  # Optional, measured budgets for new founder rigs; existing callers keep their defaults.
+  if [ -n "${GLTFPACK_SIMPLIFY_ERROR:-}" ]; then
+    python3 - "$GLTFPACK_SIMPLIFY_ERROR" <<'PY'
+import sys
+assert 0 < float(sys.argv[1]) <= 0.05, "simplification error must be in (0, 0.05]"
+PY
+    args+=(-se "$GLTFPACK_SIMPLIFY_ERROR")
+  fi
+  [ "${GLTFPACK_PERMISSIVE:-}" = "1" ] && args+=(-sp)
+fi
 gltfpack "${args[@]}" 2>&1 | tail -2
 python3 - "$in" "$out" <<'PY'
 import json, struct, sys

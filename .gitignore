@@ -237,3 +237,11 @@ tripo-out/
 
 # Offline town voice raw recordings and local evidence
 /work/town-voices/
+
+# Founder stable character originals and temporary production output
+/design/ep2/stable-yard-20261024/originals/
+/work/stable-yard/
+
+# Godot extracts these textures from the two canonical small GLBs
+/src/episode2/assets/town/dude_stable_owner_*.jpg
+/src/episode2/assets/town/stable_assistant_*.jpg

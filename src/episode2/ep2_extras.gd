@@ -30,6 +30,10 @@ const JAIL_SIGN := "res://src/episode2/extras/jail/sign_JAIL.png"
 const PRISONER := "res://src/episode2/extras/people/prisoner_accomplice.glb"
 ## Jack Hammer (Jackson Mccree), the main antagonist (founder 2026-10-21: mean, eye patch): a Hunyuan scan rigged on the townfolk skeleton, 1.92 m with the hat.
 const JACK_HAMMER := "res://src/episode2/extras/people/jack_hammer.glb"
+## Canonical founder stable assets stay at their requested town paths, but their
+## imported payloads stream with this pack (main-pack headroom is under1MiB).
+const STABLE_DUDE := "res://src/episode2/assets/town/dude_stable_owner.glb"
+const STABLE_ASSISTANT := "res://src/episode2/assets/town/stable_assistant.glb"
 
 
 static var _state: String = ""            # "" never started, "loading", "ready", "failed"

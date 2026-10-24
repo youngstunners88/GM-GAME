@@ -35,6 +35,15 @@ PY
 for rel in "${roster[@]}"; do
   grep -aqF "$rel" "$extras" || miss "ep2_extras.pck" "$rel"
 done
+# Canonical stable rigs stream from assets/town; their remaps must be in extras,
+# and must not accidentally pull the imported character families into main.
+for stem in dude_stable_owner stable_assistant; do
+  rel="src/episode2/assets/town/$stem.glb.import"
+  grep -aqF "$rel" "$extras" || miss "ep2_extras.pck" "$rel"
+  if grep -aqF "$rel" "$main"; then
+    echo "✗ stable rig unexpectedly bundled in main: $rel"; fail=1
+  fi
+done
 printf '%s\n' "${onrepo[@]}" | grep -q 'extras/lake/logan.glb'      || { echo "✗ Logan (extras/lake/logan.glb) is not in the repo's extras"; fail=1; }
 printf '%s\n' "${onrepo[@]}" | grep -q 'extras/folk/rich_armory2.glb' || { echo "✗ Rich v2 (extras/folk/rich_armory2.glb) is not in the repo's extras"; fail=1; }
 printf '%s\n' "${onrepo[@]}" | grep -q 'extras/folk/utah_armory2.glb' || { echo "✗ Utah v2 (extras/folk/utah_armory2.glb) is not in the repo's extras"; fail=1; }

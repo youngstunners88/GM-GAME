@@ -316,6 +316,7 @@ static func build(parent: Node3D, interiors: bool) -> Dictionary:
 		for fa in fort.find_children("FlagAnchor*", "", true, false):
 			_flag(fort, (fa as Node3D).position)
 	Ep2TownLife.build(root, props)                      # horses at the rails, the river, the railway and the train
+	Ep2StableYard.build(root, props, walls)              # original surface stable, shared by the quad approach and town
 	Ep2TownPosters.build(root, props)                   # the wanted posters: notice board, shop fronts, the jail (streamed images)
 	_balcony_furniture(root, kit)                       # two chairs and a little table on the saloon's balcony (its drinkers sit there)
 	if interiors:
@@ -754,7 +755,8 @@ static func build_desert(parent: Node3D, road: Array, forest_end_z: float, world
 			var near_road: float = _road_dist(p, road)
 			var in_town: bool = (absf(p.x) < 26.0 and p.y > TOWN_Z - 6.0 and p.y < TOWN_Z + 90.0) \
 				or (p.y > RIVER_Z - RIVER_W and p.y < TRACK_Z + 8.0) \
-				or JAIL_CLEAR.has_point(p)       # the river and the railway corridor stay clear of scrub and rock
+				or JAIL_CLEAR.has_point(p) \
+				or Ep2StableYard.PADDOCK.grow(6.0).has_point(p) or Ep2StableYard.ACCESS_CLEAR.has_point(p)
 			var open_k: float = clampf((p.y - (forest_end_z - 100.0)) / 120.0, 0.0, 1.0)      # scrub takes over as the pines thin
 			if near_road > 3.5 and not in_town and h1 < 0.55 * open_k:
 				var sc: float = 0.6 + 0.9 * h2

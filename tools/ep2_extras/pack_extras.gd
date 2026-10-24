@@ -14,6 +14,13 @@ func _init() -> void:
 	var out: String = args[0] if args.size() > 0 else "web/game/ep2_extras.pck"
 	var files: Array = []
 	_walk(ROOT, files)
+	# New stable rigs keep their canonical assets/town paths without filling the
+	# main web pack. Include GLB remaps AND their extracted texture remaps.
+	var town := DirAccess.open("res://src/episode2/assets/town")
+	if town != null:
+		for f in town.get_files():
+			if f.begins_with("dude_stable_owner") or f.begins_with("stable_assistant"):
+				files.append("res://src/episode2/assets/town/" + f)
 	var pk := PCKPacker.new()
 	if pk.pck_start(out) != OK:
 		push_error("EXTRAS_PACK: cannot write " + out)

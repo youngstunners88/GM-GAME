@@ -12,15 +12,12 @@
     "resume": "Freshmaster merged, including concurrent saloon drinkers. Repo/requiredskills read.",
     "baseline": "Pinned4.3export0scripterrors; main198402528B/gate199229440B/margin826912B; pck_report retained.",
     "horse": "ExistingGLB19joints, horse_graze/stand/walk; preserve5existinghorses.",
-    "location": "No stablebuilding in current master. Historicald68919580a9e79000bdeeeea05cbcf5b63fd392c surface-set stable(-16,0,1222),paddock(-24,1204,20,36); ownerconfirmationpending.",
+    "location": "Owner authorized restoring original Episode2 yard; both uploaded GLBs received.",
     "voice": "DudePe1gOSDKAuczOZqgCiEm; placeholderdude_greet_01 only. No TTS/storyinvented.",
-    "changes": "Documentation/inputmanifest only; no runtime/CI changes, no candidates/deploy. Cloud-local excludedGMGamevault log written."
+    "changes": "Stable yard implemented, native91/full suite/captures/exported cast pass; see stable-yard handoff."
   },
   "unresolved": [
-    "Two suppliedPCGLBs notmounted; obtainattachments/downloadlinks/PCenvironment. No exposedremotePCconnector.",
-    "Confirm restorehistoricalEpisode2yard vs newerPCstable scene/commit.",
-    "gltfpack absent; bootstrapwheninputfilesavailable.",
-    "Afterinputreduction, implementsharedyard/interaction/test/captures; exactbefore/afterpack and normalverifiedrelease."
+    "Cold import, staged security/title, normal ship and actual public deployment proof"
   ],
-  "next_action": "Await sourceassets/location clarification. Read docs/handoffs/2026-10-24_stable-yard.md; do not deploy a placeholder cast."
+  "next_action": "Finish stable-yard release verification and ship."
 }

@@ -130,6 +130,9 @@ var _shop_layer: CanvasLayer = null
 var _shop_open: bool = false
 var _shop_bought: bool = false
 var _town_audio: Ep2TownSoundscape = null
+var _stable_yard: Ep2StableYard = null
+var _stable_prompt_shown: bool = false
+signal stable_voice_requested(line_id: String, voice_id: String)
 signal draw_bell_rung
 var _geared: bool = false                             # rifle + river gear in hand
 var _gear_t: float = -1.0
@@ -583,6 +586,8 @@ func start_rig(_payment: String = "") -> bool:
 	if _can_mount():
 		_mount()
 		return true
+	if _stable_yard != null and _stable_interaction_allowed() and _stable_yard.try_talk(_player_pos):
+		return true
 	if _beat != Beat.ARMORY or _shop_open or _shop == null:
 		return false
 	if not _at_armory_counter():
@@ -831,6 +836,13 @@ func _on_setup() -> void:
 	# the townsfolk carry on exactly where they were during the ride in (same people, same places, same errands)
 	if _people != null and handoff.get("town_people") is Dictionary:
 		_people.restore(handoff["town_people"])
+	_stable_yard = _visuals.find_child("StableYard", true, false) as Ep2StableYard
+	if _stable_yard != null:
+		if handoff.get("stable_yard") is Dictionary:
+			_stable_yard.restore(handoff["stable_yard"])
+		_stable_yard.voice_line_requested.connect(func(id: String, voice: String) -> void:
+			stable_voice_requested.emit(id, voice)
+			_speak(id)) # Placeholder id only; no story text, currency, or invented recording.
 	_rng.seed = 1886
 	if _hud:
 		_hud.show_health = false
@@ -1050,6 +1062,8 @@ func _sheriff_look_at_player() -> void:
 func _tick(delta: float) -> void:
 	var intro_busy: bool = _intro != null and _intro.is_busy()
 	var duel: bool = _beat in [Beat.BAR, Beat.SQUARE_UP, Beat.DRAW]
+	if _stable_yard != null:
+		_stable_yard.step(delta, _player_pos, duel or _hold > 0.0 or _show_active or intro_busy or _shop_open)
 	if _town_audio != null:
 		_town_audio.step(delta, _people, _player_pos, _hold > 0.0 or _show_active or intro_busy or _shop_open, duel)
 		if not _show_active and _hold <= 0.0 and not intro_busy and not duel and not _shop_open and _town_audio.has_queued():
@@ -1128,6 +1142,17 @@ func _tick(delta: float) -> void:
 					_end_t = -1.0
 				if _end_t < 0.0:
 					_advance_to(Beat.DONE)
+	if _stable_yard != null and _hud != null:
+		var show_prompt: bool = _stable_interaction_allowed() and _stable_yard.can_talk(_player_pos)
+		if show_prompt:
+			_hud.set_search_prompt("Talk to Dude [E]" if TouchUi.keys_shown() else "Talk to Dude")
+		elif _stable_prompt_shown and _beat != Beat.ARMORY:
+			_hud.set_search_prompt("")
+		_stable_prompt_shown = show_prompt
+
+
+func _stable_interaction_allowed() -> bool:
+	return _beat not in [Beat.BAR, Beat.SQUARE_UP, Beat.DRAW, Beat.GEARED, Beat.DONE] and _hold <= 0.0 and not _show_active and not _shop_open and not (_intro != null and _intro.is_busy())
 
 
 func _wants_handoff() -> bool:
@@ -1386,4 +1411,5 @@ func _collide(p: Vector3) -> Vector3:
 			if dv.length() < 0.64:
 				c = Vector2(person.folk.position.x, person.folk.position.z) + (dv.normalized() if dv.length() > 0.001 else Vector2.RIGHT) * 0.64
 				c = Ep2GoldTown.collide(c, 0.3, _town_col.get("walls", []), _town_col.get("props", []))
-	return Vector3(clampf(c.x, -40.0, 40.0), p.y, clampf(c.y, Ep2GoldTown.TOWN_Z - 60.0, Ep2GoldTown.TOWN_Z + 95.0))
+	# Restore access to the original approach yard without opening the woods or any story gate.
+	return Vector3(clampf(c.x, -40.0, 40.0), p.y, clampf(c.y, Ep2StableYard.PADDOCK.position.y - 2.0, Ep2GoldTown.TOWN_Z + 95.0))

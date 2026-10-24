@@ -171,6 +171,7 @@ var _fern_mat: ShaderMaterial = null
 var _rock_mesh: Mesh = null
 var _wildlife: Ep2Wildlife = null
 var _people: Ep2TownPeople = null                   # the townsfolk: already living in their town while the quad rolls in
+var _stable_yard: Ep2StableYard = null
 var _exit_kit: Node3D = null                          # the mine-lift walkway kit, for the mine exit + bridge
 ## "golden" = golden hour (founder bear stills 2026-10-10b; Jev 0.54 / microsoft-decision-1 0.58 chose it on the closeness table),
 ## "" = the old-growth daylight of the earlier forest target. Set before setup().
@@ -2608,6 +2609,7 @@ func get_cart_node() -> Node3D: return _cart
 ## The town and Fort Knox (Ep2GoldTown - the SAME build the town chamber makes, at the same coordinates).
 func _build_town() -> void:
 	_town_col = Ep2GoldTown.build(_visuals, false)
+	_stable_yard = _visuals.find_child("StableYard", true, false) as Ep2StableYard
 	# It is THEIR town (founder 2026-10-22): the people are out in the street before Lil Blunt arrives, not spawned
 	# after the drop-off. Their whole state is handed to the town chamber at the cut (get_handoff -> "town_people").
 	_people = Ep2TownPeople.new()
@@ -2746,6 +2748,8 @@ func get_handoff() -> Dictionary:
 	h["pos"] = _player_pos
 	if _people != null:
 		h["town_people"] = _people.snapshot()
+	if _stable_yard != null:
+		h["stable_yard"] = _stable_yard.snapshot()
 	return h
 
 
@@ -2756,6 +2760,8 @@ func _wants_handoff() -> bool:
 ## The town lives its own day from the moment the town is in sight: people go about their errands, and step aside to
 ## the verge when the noisy quad (with Lil Blunt on it, or Bull riding off) comes down the street.
 func _tick_town_people(delta: float) -> void:
+	if _stable_yard != null:
+		_stable_yard.step(delta, _player_pos)
 	if _people == null or _player_pos.z < Ep2GoldTown.TOWN_Z - 450.0:
 		return
 	_people.player_clearance = 1.6 if _riding else 0.68
