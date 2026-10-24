@@ -332,7 +332,28 @@ for sx in (-1, 1):
     for sz in (-0.8, 0.8):
         P.box("DarkWood", (0.55, 0.52, 0.06), (sx * 2.5, 0.26, -7.3 + sz))
     P.box("Cloth", (0.58, 0.07, 1.2), (sx * 2.5, 0.585, -7.55))                        # a thin blanket
-P.cyl("Iron", 0.17, 0.14, 0.30, (-1.2, 0.15, -8.05), "y", 10)                        # the bucket
+# the privy in cell A (founder 2026-10-24: "the toilet with flies in the jail house"): a plank box against the cell divider, its seat
+# board cut round a dark hole, the lid hinged up against the bars, a stained slop bucket showing through the open front, a wet stain on
+# the floor, and news-sheet scraps on a nail. Flies + their buzz are added by the game at Spot_privy (Ep2JailFlies).
+PX, PZ = -0.42, -6.35                             # box centre: back against the divider (x = 0), seat faces into the cell (-x)
+P.box("DarkWood", (0.62, 0.46, 0.06), (PX, 0.23, PZ - 0.30))                   # sides (box runs along z)
+P.box("DarkWood", (0.62, 0.46, 0.06), (PX, 0.23, PZ + 0.30))
+P.box("DarkWood", (0.06, 0.46, 0.66), (PX + 0.28, 0.23, PZ))                    # back panel against the divider
+P.box("DarkWood", (0.06, 0.20, 0.66), (PX - 0.28, 0.36, PZ))                    # front apron (the bucket shows below it)
+for sz, w_ in ((-0.21, 0.24), (0.21, 0.24)):                                      # seat board in two halves round the hole
+    P.box("Trim", (0.64, 0.05, w_), (PX, 0.485, PZ + sz))
+for sx_, w_ in ((-0.22, 0.20), (0.22, 0.20)):
+    P.box("Trim", (w_, 0.05, 0.18), (PX + sx_, 0.485, PZ))
+P.box("Soot", (0.24, 0.02, 0.24), (PX, 0.475, PZ))                               # the hole: black under the cut (square, like the cut)
+P.box("Trim", (0.06, 0.62, 0.58), (PX + 0.30, 0.82, PZ), roll=0.0)              # lid, hinged up against the divider bars
+P.cyl("Brass", 0.02, 0.02, 0.10, (PX + 0.30, 0.52, PZ - 0.22), "z", 6)          # two hinges
+P.cyl("Brass", 0.02, 0.02, 0.10, (PX + 0.30, 0.52, PZ + 0.22), "z", 6)
+P.cyl("Iron", 0.16, 0.13, 0.30, (PX - 0.04, 0.15, PZ), "y", 12)                 # slop bucket under the seat
+P.cyl("Soot", 0.13, 0.13, 0.01, (PX - 0.04, 0.305, PZ), "y", 12)                # what's in it
+P.cyl("Soot", 0.34, 0.30, 0.004, (PX - 0.36, 0.003, PZ + 0.08), "y", 14)        # the wet stain spreading out in front
+P.cyl("Iron", 0.008, 0.008, 0.07, (-0.06, 1.05, PZ - 0.52), "x", 5)             # a nail on the divider post ...
+for k in range(3):                                                                # ... and torn news-sheet hung on it
+    P.box("Paper", (0.012, 0.16, 0.13), (-0.03 - 0.004 * k, 0.98 - 0.01 * k, PZ - 0.52 + 0.012 * k), roll=0.08 * k - 0.06)
 P.cyl("Iron", 0.045, 0.045, 0.30, (-2.5, 0.20, -5.35), "z", 6)                        # ankle ring + chain on the floor of cell A
 P.cyl("Iron", 0.18, 0.18, 0.03, (-2.5, 0.02, -5.30), "y", 12)
 # warm lamps: the office and the cell corridor
@@ -344,7 +365,8 @@ root_b, tris_b = P.build()
 # =============================================================================================================== navigation data
 N = Piece("Jail_Nav")
 for name, pos in [("door", (0.0, 0.0, -0.5)), ("lane", (0.0, 0.0, 4.0)), ("sheriff", (0.7, 0.0, -3.95)), ("visit", (-1.85, 0.0, -4.05)),
-                  ("accomplice", (-1.85, 0.0, -5.7)), ("desk", (1.7, 0.0, -3.1)), ("stove", (-2.5, 0.0, -1.0))]:
+                  ("accomplice", (-1.85, 0.0, -5.7)), ("desk", (1.7, 0.0, -3.1)), ("stove", (-2.5, 0.0, -1.0)),
+                  ("privy", (PX, 0.5, PZ))]:                                     # y = seat height: where the flies hang
     N.empty("Spot_" + name, pos)
 for name, c, half in [("desk", (1.7, -2.6), (0.8, 0.5)), ("bars", (0.0, BZ), (HX, 0.16)), ("divider", (0.0, -6.75), (0.12, 1.85)),
                       ("stove", (-2.95, -1.0), (0.38, 0.38)), ("rack", (-HX + T + 0.2, -2.6), (0.22, 0.95))]:
