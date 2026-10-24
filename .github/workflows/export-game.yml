@@ -363,6 +363,8 @@ jobs:
           # The GoldMine town (founder 2026-10-14): the sheriff's office, the saloon, the draw (foul / retry / win), Bull, the chain.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_gold_town_test.tscn 2>&1 | tee gold-town-tests.log
           grep -q 'EP2_GOLD_TOWN: ALL PASS' gold-town-tests.log
+          timeout 240 "$GODOT_BIN" --headless res://tests/ep2_town_audio_test.tscn > town-audio-tests.log 2>&1
+          grep -q 'EP2_TOWN_AUDIO: ALL PASS' town-audio-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' gold-town-tests.log; then exit 1; fi
           # Lil Blunt's crypto purse (founder 2026-10-24): ETH/BTC/WBTC/SOL/TitanX credited per pickup, spent per token at Rich's, drawn in the weapon tab.
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_purse_test.tscn > purse-tests.log 2>&1

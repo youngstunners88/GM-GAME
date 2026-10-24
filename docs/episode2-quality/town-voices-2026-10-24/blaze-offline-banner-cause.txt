@@ -1,0 +1,4 @@
+DIAG CONTROL /root/@CanvasLayer@252/@ColorRect@251 rect=[P: (6, 4), S: (520, 26)] filter=0 xform=[X: (1, 0), Y: (0, 1), O: (6, 4)]
+  [FAIL] phone portrait: a tap on the top-left corner = exactly ONE jump takeoffs=0 jump:down=0
+DIAG CONTROL /root/@CanvasLayer@252/@ColorRect@251 rect=[P: (6, 4), S: (520, 26)] filter=0 xform=[X: (1, 0), Y: (0, 1), O: (6, 4)]
+  [FAIL] tablet landscape: a tap on the top-left corner = exactly ONE jump takeoffs=0 jump:down=0

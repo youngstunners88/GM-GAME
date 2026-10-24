@@ -83,6 +83,14 @@ func _ready() -> void:
 	_was_touch = MobileLayoutManager.is_touch_device
 	_was_force = MobileLayoutManager.force_touch_ui
 	_isolate_game_state()
+	# Offline status is informational: it must never eat a corner tap above the touch layer.
+	GameManager._show_offline_banner()
+	await _frames(2)
+	var banner_ignores_input := true
+	for child in GameManager._offline_banner.get_children():
+		if child is Control and child.mouse_filter != Control.MOUSE_FILTER_IGNORE:
+			banner_ignores_input = false
+	_check("offline banner leaves all touches to gameplay", banner_ignores_input)
 	_force_touch(true)
 	# Every section is held to the number of checks it is known to run. A runtime error inside a
 	# coroutine ends that coroutine silently and the verdict below would still read "ALL PASS":

@@ -119,7 +119,10 @@ func _ready() -> void:
 	c._player_pos = counter
 	c._advance_to(GoldTownChamber.Beat.ARMORY)
 	c._look_yaw = atan2(Ep2GoldTown.local_to_world("Bldg_Armory", Vector3(2.6, 1.0, -5.2)).x - counter.x, Ep2GoldTown.local_to_world("Bldg_Armory", Vector3(2.6, 1.0, -5.2)).z - counter.z)
-	_run(c, 1.0)
+	var greeting_seconds: float = 1.0
+	for id in ["town_trade_00", "town_trade_01", "town_trade_02", "town_trade_03"]:
+		greeting_seconds += Ep2TownVoiceBank.seconds(id) + 0.3
+	_until(c, greeting_seconds + 2.0, func(): return intro.is_busy())
 	check("walking up to the counter starts the introduction: Rich is called to the lit case, directed off his tasks", intro.is_busy() and c._rich_brain.directed)
 	check("Rich cannot mount the Gatling before Utah offers it", not intro.mount_allowed() and not c._can_mount())
 	_until(c, 40.0, func(): return intro.stage == Ep2ArmoryIntro.Stage.SHARPS_TALK)

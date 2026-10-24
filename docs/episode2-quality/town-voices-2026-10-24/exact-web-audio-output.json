@@ -1,0 +1,18 @@
+{
+  "url": "http://127.0.0.1:8899/game/index.html",
+  "tests": {
+    "audio_context_running": "PASS",
+    "bgm_audible": "PASS",
+    "jump_sfx_audible": "PASS"
+  },
+  "passed": true,
+  "maxLevelPeak": 101,
+  "maxJumpPeak": 128,
+  "consoleErrorsTail": [
+    "USER WARNING: Invalid state transition: MENU → MENU",
+    "   at: push_warning (core/variant/variant_utility.cpp:1112)",
+    "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID",
+    "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID",
+    "TypeError: Failed to fetch\n    at Object.create (http://127.0.0.1:8899/game/index.js:9:221077)\n    at _godot_js_fetch_create (http://127.0.0.1:8899/game/index.js:9:221972)\n    at wasm://wasm/086f3c36:wasm-function[796]:0x8ef81\n    at wasm://wasm/086f3c36:wasm-function[16684]:0xf04031\n    at wasm://w"
+  ]
+}

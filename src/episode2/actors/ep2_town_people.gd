@@ -1,5 +1,6 @@
 class_name Ep2TownPeople
 extends RefCounted
+signal greeted(person_id: String, actor: Ep2TownFolk, count: int)
 ## Independent deterministic ambient brains. All thirteen supplied public figures; the jail prisoner is story-controlled.
 ## No wall-clock timers, external AI, quest dialogue, combat targets or unbounded wandering.
 const GREET_R := 3.6
@@ -295,6 +296,7 @@ func _greet(p: Person, player: Vector3) -> void:
 	p.greet_cd = GREET_COOLDOWN + (1.0 - float(p.profile["social"])) * 20.0
 	p.greets += 1
 	p.memories["player_seen"] = elapsed
+	greeted.emit(p.id, p.folk, p.greets)
 	# The destination is retained; the next decision can resume the interrupted errand.
 
 func _release(p: Person) -> void:

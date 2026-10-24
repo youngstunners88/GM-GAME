@@ -1,21 +1,28 @@
 {
-  "observed_remote_sha": "b17acfad5fea9649bbf25a536a13e07d6427402f",
-  "objective": "Transition2: clear exit beam, continuous held walk into woods, raised passenger view for bear shooting",
+  "observed_remote_sha": "977961e1145fcca5df98f05a62451364dc96c221",
+  "objective": "Finish town voice release proof: actual butler and public BUILD/audio pack",
   "task_paths": [
-    "src/episode2/chamber/interlude_base.gd",
-    "src/episode2/chamber/mine_lift.gd",
-    "src/episode2/chamber/woods_quad.gd",
-    "src/episode2/chamber/ep2_wildlife.gd",
-    "tests/transition2_test.gd"
+    "assets/town-audio.json",
+    "assets/town-audio-generated.json",
+    "src/episode2/audio/",
+    "src/autoload/audio_manager.gd",
+    "src/autoload/game_manager.gd",
+    "tests/ep2_town_audio_test.gd",
+    "tests/blaze_rush_touch_test.gd"
   ],
-  "source_commit": "e1b93d22d1d79bfd805d6e160350d3481e03249a",
+  "source_commit": "70c5dba70f5fc4399dfb80f5babe29543397916d",
   "evidence": {
-    "tests": "Pinned compile/newTransition2/feedback/interlude/session/save/fulllocalCI PASS (3 known pause geometry exceptions)",
-    "render": "docs/episode2-quality/transition2-2026-10-23/:actual exit before/after, heldW trace, normal/ADS/sides/rear; roadbear2\u21921HP,loaded6\u21925/reserve18",
-    "pack": "Exact productionCI199173008B/gate199229440B/margin56432B;extras54443936B;nonthreaded4.3. Localfresh199173136B,warm199205824B.",
-    "release": "Master39965066342/job120452670367 SUCCESS;actualbutler44.50MiBfresh;publicChromiumBUILD2026-10-23-e1b93d2,embed18305533-2194028,extrasreadyHTTP200",
-    "security": "18 checks/no blockers; front-page5filelockPASS"
+    "recordings": "67dialogue+4effects complete;47old hashes/receipts preserved; all71decode; peak0.8839283; founder approved3previews",
+    "voices": "Utah ELEV;SheriffGM/PrisonSam ELEVEN; user_read/account/voice IDs verified; no deletions/fallback",
+    "fixes": "Unitygain only explicit recorded streams; legacy+6dB unchanged. Offlinebanner IGNORE fixes top-left swallowing, forcedofflineBlazePASS",
+    "merged_master": "b34cca64/c5be58ce purse/elevator/hideout/walkinshops/shopping preserved in ce5910d3",
+    "tests": "MergedfullCI PASS(3existingpausegeometryexceptions); compile/town0pending/goldtown/purse/armory/buses/security18/title5 PASS",
+    "export": "Publicmain198313680B/margin915760B;extras60568032B. Earlier local raw packed-hash audit could fall back to source; superseded by isolated imported packet audit.",
+    "output": "Merged native4voice peaks0.421\u20130.689; exactwebBGM/jumpoutputPASS; all71assetsWebAudioPASS. Generalbrowser overallFAIL externalcert, 5engine/gamechecksPASS",
+    "publication": "Master70c5dba7;productionCI40077607425SUCCESS;actualbutler46.14MiBfresh;publicBUILD2026-10-24-70c5dba;isolatedpublic71Vorbispacketpayload+strictdurationchecksPASS"
   },
-  "unresolved": [],
-  "next_action": "Transition2 task complete and live. Preserve gameplay/access/title contracts and standing shipping authorization; resume for new feedback."
+  "unresolved": [
+    "No protectedpublictownplaythrough/finaltakeearverdict claimed. Chromium trust change rejected by auto-review; no explicitapproval, trust unchanged."
+  ],
+  "next_action": "Release complete and verified. Preserve concurrent work; use RELEASE.md as current truth and retain audit correction."
 }

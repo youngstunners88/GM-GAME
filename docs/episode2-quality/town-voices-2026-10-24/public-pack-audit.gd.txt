@@ -1,0 +1,30 @@
+extends SceneTree
+func _initialize() -> void:
+	var expected: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("/tmp/gm-town-public-audit/expected.json"))
+	assert(ProjectSettings.load_resource_pack("/workspace/GM-GAME/work/town-voices/public-extras.pck", true))
+	var rows: Array = []
+	var failures := 0
+	for id in expected:
+		var path: String = "res://src/episode2/extras/audio/town/" + str(id) + ".ogg"
+		assert(not FileAccess.file_exists(path), "Raw source must be absent: audit cannot fall back to project files")
+		var stream: AudioStreamOggVorbis = load(path)
+		var seq = stream.packet_sequence
+		var ctx := HashingContext.new()
+		ctx.start(HashingContext.HASH_SHA256)
+		var count := 0
+		for page in seq.packet_data:
+			for packet in page:
+				var header := PackedByteArray()
+				header.resize(4)
+				header.encode_u32(0, packet.size())
+				ctx.update(header)
+				ctx.update(packet)
+				count += 1
+		var same: bool = ctx.finish().hex_encode() == expected[id]["packet_sha256"] and count == expected[id]["packets"]
+		var timed: bool = absf(stream.get_length() - float(expected[id]["engine_seconds"])) < 0.00005
+		if not same or not timed: failures += 1
+		rows.append({"id": id, "packets": count, "payload_identical": same, "engine_duration_matches": timed})
+	var report := {"method": "Godot4.3 isolated project; only downloaded public extras pack mounted; raw source Oggs asserted absent. Length-prefixed encoded Vorbis packet SHA256 compared to original receipt-matching Ogg packets; engine duration checked to0.00005s.", "recordings": rows.size(), "failures": failures, "rows": rows}
+	FileAccess.open("/workspace/GM-GAME/work/town-voices/public-audio-payload-audit.json", FileAccess.WRITE).store_string(JSON.stringify(report, "  "))
+	print("PUBLIC_AUDIO_PAYLOAD: ", rows.size(), " recordings; failures=", failures)
+	quit(1 if failures else 0)

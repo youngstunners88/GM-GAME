@@ -1,0 +1,431 @@
+{
+  "method": "Chromium decoded Ogg source through analyser connected to AudioContext.destination; asset output only, not Godot runtime or subjective listening",
+  "results": [
+    {
+      "id": "town_jail_02",
+      "peak": 0.5513365864753723,
+      "seconds": 1.0984807256235827,
+      "pass": true
+    },
+    {
+      "id": "town_intro_sharps_lines_0",
+      "peak": 0.6896404027938843,
+      "seconds": 6.276734693877551,
+      "pass": true
+    },
+    {
+      "id": "town_intro_sharps_lines_1",
+      "peak": 0.6606446504592896,
+      "seconds": 6.151111111111111,
+      "pass": true
+    },
+    {
+      "id": "town_intro_sharps_lines_3",
+      "peak": 0.5760939121246338,
+      "seconds": 6.238458049886622,
+      "pass": true
+    },
+    {
+      "id": "town_intro_sharps_lines_4",
+      "peak": 0.6425815224647522,
+      "seconds": 5.774081632653061,
+      "pass": true
+    },
+    {
+      "id": "town_intro_sharps_lines_5",
+      "peak": 0.6448104381561279,
+      "seconds": 5.74922902494331,
+      "pass": true
+    },
+    {
+      "id": "town_intro_gatling_after_1",
+      "peak": 0.6025135517120361,
+      "seconds": 5.050657596371882,
+      "pass": true
+    },
+    {
+      "id": "town_trade_00",
+      "peak": 0.42898666858673096,
+      "seconds": 2.324739229024943,
+      "pass": true
+    },
+    {
+      "id": "town_trade_01",
+      "peak": 0.6018242835998535,
+      "seconds": 2.9698639455782314,
+      "pass": true
+    },
+    {
+      "id": "town_trade_02",
+      "peak": 0.60378098487854,
+      "seconds": 3.497981859410431,
+      "pass": true
+    },
+    {
+      "id": "town_trade_04",
+      "peak": 0.6255786418914795,
+      "seconds": 3.561746031746032,
+      "pass": true
+    },
+    {
+      "id": "town_trade_06",
+      "peak": 0.6178727746009827,
+      "seconds": 4.971791383219955,
+      "pass": true
+    },
+    {
+      "id": "town_trade_08",
+      "peak": 0.6515035629272461,
+      "seconds": 3.2217913832199545,
+      "pass": true
+    },
+    {
+      "id": "town_trade_10",
+      "peak": 0.49203312397003174,
+      "seconds": 1.612403628117914,
+      "pass": true
+    },
+    {
+      "id": "town_trade_12",
+      "peak": 0.5450140237808228,
+      "seconds": 3.3147392290249433,
+      "pass": true
+    },
+    {
+      "id": "town_trade_13",
+      "peak": 0.4587668776512146,
+      "seconds": 2.4210204081632654,
+      "pass": true
+    },
+    {
+      "id": "town_trade_14",
+      "peak": 0.4424310326576233,
+      "seconds": 2.5910204081632653,
+      "pass": true
+    },
+    {
+      "id": "town_greet_clerk_0",
+      "peak": 0.6248714923858643,
+      "seconds": 2.735238095238095,
+      "pass": true
+    },
+    {
+      "id": "town_greet_clerk_1",
+      "peak": 0.5439537167549133,
+      "seconds": 2.3893650793650796,
+      "pass": true
+    },
+    {
+      "id": "town_greet_oldtimer_0",
+      "peak": 0.6212370991706848,
+      "seconds": 3.205374149659864,
+      "pass": true
+    },
+    {
+      "id": "town_greet_oldtimer_1",
+      "peak": 0.6016759872436523,
+      "seconds": 3.147324263038549,
+      "pass": true
+    },
+    {
+      "id": "town_greet_rancher_0",
+      "peak": 0.45454081892967224,
+      "seconds": 2.096575963718821,
+      "pass": true
+    },
+    {
+      "id": "town_greet_rancher_1",
+      "peak": 0.6594358682632446,
+      "seconds": 2.1001133786848074,
+      "pass": true
+    },
+    {
+      "id": "town_greet_dressmaker_0",
+      "peak": 0.6647266149520874,
+      "seconds": 3.2146485260770974,
+      "pass": true
+    },
+    {
+      "id": "town_greet_dressmaker_1",
+      "peak": 0.40348196029663086,
+      "seconds": 2.255873015873016,
+      "pass": true
+    },
+    {
+      "id": "town_greet_lady_0",
+      "peak": 0.4473213851451874,
+      "seconds": 3.307074829931973,
+      "pass": true
+    },
+    {
+      "id": "town_greet_lady_1",
+      "peak": 0.5775340795516968,
+      "seconds": 2.2797732426303856,
+      "pass": true
+    },
+    {
+      "id": "town_greet_bald_worker_0",
+      "peak": 0.616850733757019,
+      "seconds": 2.9774149659863944,
+      "pass": true
+    },
+    {
+      "id": "town_greet_bald_worker_1",
+      "peak": 0.5973852276802063,
+      "seconds": 2.91031746031746,
+      "pass": true
+    },
+    {
+      "id": "town_greet_grandma_0",
+      "peak": 0.6394488215446472,
+      "seconds": 2.73562358276644,
+      "pass": true
+    },
+    {
+      "id": "town_greet_grandma_1",
+      "peak": 0.5952536463737488,
+      "seconds": 1.9902494331065759,
+      "pass": true
+    },
+    {
+      "id": "town_greet_grandfather_0",
+      "peak": 0.42818742990493774,
+      "seconds": 2.750249433106576,
+      "pass": true
+    },
+    {
+      "id": "town_greet_grandfather_1",
+      "peak": 0.4296938180923462,
+      "seconds": 3.31031746031746,
+      "pass": true
+    },
+    {
+      "id": "town_greet_grandmother_0",
+      "peak": 0.6445269584655762,
+      "seconds": 2.5030385487528344,
+      "pass": true
+    },
+    {
+      "id": "town_greet_grandmother_1",
+      "peak": 0.6502355337142944,
+      "seconds": 2.3212698412698414,
+      "pass": true
+    },
+    {
+      "id": "town_greet_youth_0",
+      "peak": 0.49682706594467163,
+      "seconds": 1.849705215419501,
+      "pass": true
+    },
+    {
+      "id": "town_greet_youth_1",
+      "peak": 0.6356328725814819,
+      "seconds": 3.0419501133786846,
+      "pass": true
+    },
+    {
+      "id": "town_greet_boy_0",
+      "peak": 0.6418226361274719,
+      "seconds": 2.409954648526077,
+      "pass": true
+    },
+    {
+      "id": "town_greet_boy_1",
+      "peak": 0.6287277936935425,
+      "seconds": 2.911156462585034,
+      "pass": true
+    },
+    {
+      "id": "town_greet_braided_girl_0",
+      "peak": 0.4705002009868622,
+      "seconds": 2.1664399092970523,
+      "pass": true
+    },
+    {
+      "id": "town_greet_braided_girl_1",
+      "peak": 0.5694398880004883,
+      "seconds": 1.8594784580498867,
+      "pass": true
+    },
+    {
+      "id": "town_greet_bob_girl_0",
+      "peak": 0.603712797164917,
+      "seconds": 2.0275736961451245,
+      "pass": true
+    },
+    {
+      "id": "town_greet_bob_girl_1",
+      "peak": 0.30210113525390625,
+      "seconds": 2.781065759637188,
+      "pass": true
+    },
+    {
+      "id": "town_wind",
+      "peak": 0.6357644200325012,
+      "seconds": 16,
+      "pass": true
+    },
+    {
+      "id": "town_saloon",
+      "peak": 0.3912355601787567,
+      "seconds": 14,
+      "pass": true
+    },
+    {
+      "id": "town_boardwalk",
+      "peak": 0.7971987724304199,
+      "seconds": 0.6196825396825397,
+      "pass": true
+    },
+    {
+      "id": "town_draw_bell",
+      "peak": 0.8839282989501953,
+      "seconds": 3.999002267573696,
+      "pass": true
+    },
+    {
+      "id": "town_intro_sharps_lines_2",
+      "peak": 0.46280747652053833,
+      "seconds": 3.9533560090702946,
+      "pass": true
+    },
+    {
+      "id": "town_intro_gatling_call_0",
+      "peak": 0.49529212713241577,
+      "seconds": 3.695578231292517,
+      "pass": true
+    },
+    {
+      "id": "town_intro_gatling_lines_0",
+      "peak": 0.5570286512374878,
+      "seconds": 5.739977324263038,
+      "pass": true
+    },
+    {
+      "id": "town_intro_gatling_lines_1",
+      "peak": 0.6341618895530701,
+      "seconds": 7.346190476190476,
+      "pass": true
+    },
+    {
+      "id": "town_intro_gatling_after_0",
+      "peak": 0.5567176938056946,
+      "seconds": 7.799818594104308,
+      "pass": true
+    },
+    {
+      "id": "town_intro_gatling_after_2",
+      "peak": 0.5691816806793213,
+      "seconds": 5.062857142857143,
+      "pass": true
+    },
+    {
+      "id": "town_intro_closing_0",
+      "peak": 0.4709891676902771,
+      "seconds": 4.093106575963719,
+      "pass": true
+    },
+    {
+      "id": "town_trade_03",
+      "peak": 0.5780184268951416,
+      "seconds": 3.9439909297052154,
+      "pass": true
+    },
+    {
+      "id": "town_trade_05",
+      "peak": 0.4376540184020996,
+      "seconds": 4.365646258503402,
+      "pass": true
+    },
+    {
+      "id": "town_trade_07",
+      "peak": 0.6179511547088623,
+      "seconds": 5.210068027210884,
+      "pass": true
+    },
+    {
+      "id": "town_trade_09",
+      "peak": 0.48993170261383057,
+      "seconds": 2.3132879818594105,
+      "pass": true
+    },
+    {
+      "id": "town_trade_11",
+      "peak": 0.5110873579978943,
+      "seconds": 3.8547845804988663,
+      "pass": true
+    },
+    {
+      "id": "vo_sheriff_1",
+      "peak": 0.5599340200424194,
+      "seconds": 6.262108843537415,
+      "pass": true
+    },
+    {
+      "id": "vo_sheriff_2",
+      "peak": 0.580286979675293,
+      "seconds": 5.699365079365079,
+      "pass": true
+    },
+    {
+      "id": "vo_sheriff_3",
+      "peak": 0.5262759327888489,
+      "seconds": 6.087324263038549,
+      "pass": true
+    },
+    {
+      "id": "vo_sheriff_witness",
+      "peak": 0.5632916688919067,
+      "seconds": 10.897528344671201,
+      "pass": true
+    },
+    {
+      "id": "vo_sheriff_foul",
+      "peak": 0.4962323307991028,
+      "seconds": 3.075034013605442,
+      "pass": true
+    },
+    {
+      "id": "vo_sheriff_win",
+      "peak": 0.517240047454834,
+      "seconds": 5.115442176870748,
+      "pass": true
+    },
+    {
+      "id": "vo_sheriff_lose",
+      "peak": 0.4099201560020447,
+      "seconds": 4.457868480725623,
+      "pass": true
+    },
+    {
+      "id": "town_jail_00",
+      "peak": 0.42166829109191895,
+      "seconds": 3.605374149659864,
+      "pass": true
+    },
+    {
+      "id": "town_jail_01",
+      "peak": 0.6673673391342163,
+      "seconds": 3.970113378684807,
+      "pass": true
+    },
+    {
+      "id": "town_jail_03",
+      "peak": 0.4155404567718506,
+      "seconds": 5.8474829931972785,
+      "pass": true
+    },
+    {
+      "id": "town_jail_04",
+      "peak": 0.4894968271255493,
+      "seconds": 5.499705215419501,
+      "pass": true
+    },
+    {
+      "id": "town_jail_05",
+      "peak": 0.5920600295066833,
+      "seconds": 4.248820861678005,
+      "pass": true
+    }
+  ]
+}

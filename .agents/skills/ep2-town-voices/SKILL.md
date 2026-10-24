@@ -1,0 +1,29 @@
+---
+name: ep2-town-voices
+description: Finish or maintain the offline ElevenLabs town cast, Rich identity, prisoner speech, ambience and bell-only duel signal.
+---
+Read `assets/town-audio.json`, `assets/town-audio-generated.json` and the latest town-voice handoff first. Preserve all verified recordings and Rich's Episode 1 identity `LNV6ahDtkAOqwn1X3R7a`. The high Western tenor belongs to the prisoner behind bars. Utah and the sheriff each require their own original design. No voice deletion is authorized.
+
+Discover credential binding names without printing values. Default to `ELEVENLABS_API_KEY`; another binding requires explicit `ELEVENLABS_KEY_BINDING`. Verify the intended account and capacity using real provider responses; do not fall back to a legacy account. Missing `user_read` prevents account verification. Credit balance and custom-voice slots are separate.
+
+Production: `scripts/generate-town-audio.mjs --plan`, then `--generate --speakers <only pending roles>`. Source hashes and processing receipts must match. Keep audio in the streamed extras; never put a credential or a runtime ElevenLabs dependency in the game. Preserve raw takes when available.
+
+Speech must finish before progression. `Ep2TownVoiceBank.seconds()` uses engine stream length plus a 0.25-second gap. Godot 4.3 OggPacketSequence uses final granule/sample rate, while ffprobe subtracts a positive start timestamp. Receipts preserve both `seconds` and `start_seconds`; their sum must match the engine to sample precision. Inspect start PTS, hashes and final granules; do not relax tolerance for alleged padding.
+
+The town bell alone opens the draw window, once per round/retry. Sheriff speech tells both men to listen. Missing bell must keep firing locked. Suppress ambient greetings for story/duel, preserve music ducking and a single story voice lane. Keep the bell out of ambience.
+
+Required checks: pinned 4.3 import/compile; `ep2_town_audio_test`, `ep2_gold_town_test`, `ep2_armory_guns_test`; receipt/hash/decoded peak checks; actual audible output; full normal release gates and exact public BUILD. The audio gate must block while any of 67 recordings is missing. Never publish an incomplete cast. Use `smokerealm-ship` after all checks; preserve concurrent master, gameplay, title and access locks.
+
+## Founder-created cast (2026-10-24)
+
+Founder approved all three Voice Design previews. Read-only APIs verified Utah `LeIvuXkiWRYkY1ThkAdG` under `ELEV`; Sheriff GM `zskPkJFpKt6Fq5Aouk0g` and Prison Sam `D7R0fmiEU45c9y4irVok` under `ELEVEN`. These bindings belong to different accounts. Select each explicitly; never regenerate preserved Rich takes. Both accounts allowed user/subscription reads at recording time. Free-plan API voice design is unavailable; founder created the voices in the UI.
+
+Recording commands (Node 24 proxy support is required in the managed runtime):
+```bash
+ELEVENLABS_KEY_BINDING=ELEV NODE_USE_ENV_PROXY=1 node scripts/generate-town-audio.mjs --generate --speakers utah
+ELEVENLABS_KEY_BINDING=ELEVEN NODE_USE_ENV_PROXY=1 node scripts/generate-town-audio.mjs --generate --speakers sheriff,prisoner
+```
+
+## Verify imported public audio without source fallback
+
+Extras pack contains `.ogg.import` remaps and imported Vorbis resources, not raw source Oggs. A `FileAccess.get_sha256("res://...ogg")` check inside the source checkout can silently read disk originals and is NOT packed-payload evidence. Mount only the downloaded public extras pack in a separate minimal Godot4.3 project. Assert raw `.ogg` FileAccess paths are absent, then ResourceLoader-load the streams through their import remaps. Flatten `stream.packet_sequence.packet_data` page/packet arrays; hash each packet preceded by its little-endian uint32 length using HashingContext.HASH_SHA256. Compare to identically framed packets parsed from receipt-hash-matching source Ogg pages. Also require engine duration equals seconds+start_seconds within0.00005. Final release audit verified all71payloads/timings with0failures. See `docs/episode2-quality/town-voices-2026-10-24/RELEASE.md`, `public-audio-payload-audit.json`, and `public-pack-audit.gd.txt`. Do not claim raw-container byte equality for imported resources.

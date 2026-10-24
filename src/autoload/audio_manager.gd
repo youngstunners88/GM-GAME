@@ -507,11 +507,15 @@ const VOICE_RESTORE_GRACE := 0.7
 var _voice_gen: int = 0
 var _voice_ducking: bool = false
 
-func play_voice(name: String) -> void:
-    var path := _resolve_audio("res://src/assets/sounds/voice/" + name)
-    if path == "":
-        return
-    var stream := load(path)
+func play_voice(name: String, recorded_stream: AudioStream = null) -> void:
+    # Streamed town recordings use the same single speech slot and music duck.
+    # Existing callers retain their original root-file lookup.
+    var stream: AudioStream = recorded_stream
+    if stream == null:
+        var path := _resolve_audio("res://src/assets/sounds/voice/" + name)
+        if path == "":
+            return
+        stream = load(path) as AudioStream
     if not stream:
         return
     if _voice_player and is_instance_valid(_voice_player):
@@ -523,7 +527,8 @@ func play_voice(name: String) -> void:
     # with coin pings and axe hits and got lost in a fight. +6dB puts the line
     # clearly on top of the mix; the music duck below was already there and was
     # never the whole story on its own.
-    _voice_player.volume_db = 6.0
+    # Offline town takes are already normalized; the legacy announcer boost clips them.
+    _voice_player.volume_db = 0.0 if recorded_stream != null else 6.0
     _voice_player.stream = stream
     add_child(_voice_player)
     # Hold the music duck for the WHOLE speech, not per line. Founder 2026-10-04: "while he was speaking the music

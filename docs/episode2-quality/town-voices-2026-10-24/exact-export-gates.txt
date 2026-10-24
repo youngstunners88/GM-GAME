@@ -1,0 +1,9 @@
+Pinned Godot4.3 stable77dcf97d8. Nonthreaded production preset.
+Main pack198286800B / gate199229440B; margin942640B.
+Extras pack60397632B / gate199229440B.
+Export SCRIPT ERROR/Parse Error count0.
+Extras presence gate11named +89shipped extras PASS; town/lake scenes present in main pack.
+Mounted extras pack: all71town audio SHA256 receipts match packed bytes.
+Browser engine/canvas/Level1/thread checks PASS. Overall verify-game FAIL due external ERR_CERT_AUTHORITY_INVALID; no certificate bypass applied.
+WebAudio destination: BGM peak101, jump peak128 on0–128 scale; audio_context_running/BGM/jump all PASS.
+This covers Level1 output and independent town asset output; no protected web/public town playthrough or final-take subjective listening verdict.

@@ -73,6 +73,8 @@ func _walk_to(c: GoldTownChamber, goal: Vector3, seconds: float = 30.0) -> bool:
 
 
 func _manifest_text(id: String) -> String:
+	if Ep2TownVoiceBank.LINES.has(id):
+		return str(Ep2TownVoiceBank.LINES[id]["text"])
 	var m = JSON.parse_string(FileAccess.get_file_as_string("res://assets/audio-manifest.json"))
 	var stack: Array = [m]
 	while not stack.is_empty():
@@ -174,30 +176,30 @@ func _ready() -> void:
 		"%s opp %s sheriff %s" % [c.get_beat_name(), str(c.get_opponent().position), str(sheriff.position)])
 	_check("his hearts are on the HUD for the draw", c.get_hud().show_health and c.get_health() == 3)
 	_run(c, 0.3)
-	_check("before the word the rifle is DOWN (low ready)", c.get_viewmodel().lowered and c.get_draw_state() == "wait")
-	_check("the wait before the word is never the same twice-predictable (seeded, between the limits)",
+	_check("before the bell the rifle is DOWN (low ready)", c.get_viewmodel().lowered and c.get_draw_state() == "wait")
+	_check("the wait before the bell is never the same twice-predictable (seeded, between the limits)",
 		c.get_draw_wait() >= GoldTownChamber.DRAW_WAIT_MIN and c.get_draw_wait() <= GoldTownChamber.DRAW_WAIT_MAX, "%.2f" % c.get_draw_wait())
 	var p0: Vector3 = c.get_player_position()
 	c.set_move_input(Vector2(0.0, 1.0), true)
 	_run(c, 0.3)
 	c.set_move_input(Vector2.ZERO)
 	_check("feet planted: he cannot walk during the draw", c.get_player_position().distance_to(p0) < 0.01)
-	# FOUL: fire before the word
-	_check("firing before the word is a FOUL (no shot leaves the barrel)", not c.shoot() and c.get_fouls() == 1 and said.has("vo_sheriff_foul"))
-	_until(c, 10.0, func(): return c.get_draw_state() == "wait")
+	# FOUL: fire before the bell
+	_check("firing before the bell is a FOUL (no shot leaves the barrel)", not c.shoot() and c.get_fouls() == 1 and said.has("vo_sheriff_foul"))
+	_until(c, Ep2TownVoiceBank.seconds("vo_sheriff_foul") + 5.0, func(): return c.get_draw_state() == "wait")
 	_check("...and the round is set up again", c.get_draw_state() == "wait" and c.get_opponent().position.distance_to(GoldTownChamber.OPP_MARK) < 0.1)
-	# LOSE: do nothing after the word
+	# LOSE: do nothing after the bell
 	_until(c, 10.0, func(): return c.get_draw_state() == "go")
-	_check("the Sheriff says DRAW and the stranger's gun hand comes up with the revolver in it", said.has("vo_sheriff_draw") and c.get_draw_state() == "go"
+	_check("the town bell signals DRAW and the stranger's gun hand comes up with the revolver in it", c._town_audio.bell_count == 1 and not said.has("vo_sheriff_draw") and c.get_draw_state() == "go"
 		and c.get_opponent().pose_name == "draw" and c.get_opponent().find_child("Revolver", true, false).visible)
 	_check("...and the rifle comes up", not c.get_viewmodel().lowered)
 	_until(c, 5.0, func(): return c.get_draw_state() != "go")
 	_check("too slow: the stranger fires first (a loss, never a death)", c.get_losses() == 1 and c.get_draw_state() == "lost")
-	_until(c, 12.0, func(): return c.get_draw_state() == "wait")
+	_until(c, Ep2TownVoiceBank.seconds("vo_sheriff_lose") + 8.0, func(): return c.get_draw_state() == "wait")
 	_check("...the screen comes back, the Sheriff says do it again, hearts full, back on the mark", said.has("vo_sheriff_lose") and c.get_health() == 3
 		and c.get_player_position().distance_to(GoldTownChamber.DUEL_MARK) < 0.1 and c.get_hud().fade < 0.05 and c.get_beat_name() == "DRAW")
 	_check("...and he gives a little more time on the next try", c.opp_reaction() > GoldTownChamber.OPP_REACTION)
-	# WIN: aim and fire on the word
+	# WIN: aim and fire at the bell
 	_until(c, 10.0, func(): return c.get_draw_state() == "go")
 	var fired: bool = false
 	for i in 120:
@@ -209,7 +211,7 @@ func _ready() -> void:
 		if c.get_draw_state() != "go":
 			break
 	c.set_aim(false)
-	_check("on the word he brings the rifle up and hits the stranger first (he goes down)", fired and c.get_draw_state() == "won" and c.get_opponent().dead, "%s fired %s" % [c.get_draw_state(), fired])
+	_check("at the bell he brings the rifle up and hits the stranger first (he goes down)", fired and c.get_draw_state() == "won" and c.get_opponent().dead, "%s fired %s" % [c.get_draw_state(), fired])
 	_check("a shot that misses wide would not count (the hit is a real ray test)", not c.aim_hits_opponent(c.get_player_position() + Vector3(0, 1.5, 0), Vector3(1.0, 0.0, 0.0)))
 	_until(c, 10.0, func(): return c.get_beat_name() == "WON")
 	_check("-> WON: the map to the auction is his", c.has_map() and c.get_beat_name() == "WON")
@@ -240,7 +242,10 @@ func _ready() -> void:
 		and c.get_sheriff() != null)
 	var cell_ok: bool = c.get_accomplice() != null and Ep2GoldTown.local_to_world("Bldg_Jail", Ep2GoldTown.jail_spots["accomplice"]).distance_to(c.get_accomplice().position) < 0.3
 	_check("the accomplice is held in his cell, behind the bars", cell_ok)
-	_until(c, 40.0, func(): return c.is_investigation_open())
+	var jail_budget: float = 3.0
+	for line in GoldTownChamber.JAIL_LINES:
+		jail_budget += Ep2TownVoiceBank.seconds(Ep2TownVoiceBank.id_for(c._town_speaker(str(line[0])), str(line[1]))) + 0.3
+	_until(c, jail_budget, func(): return c.is_investigation_open())
 	_check("the Sheriff's ask opens the investigation (the hunt is a thread on the existing path)", c.is_investigation_open())
 	_check("the lines frame bears + early claims + Fort Knox and the existing lake/river/trains path, no celebrity prisoners", _jail_lines_ok())
 	var jout: bool = _walk_to(c, Ep2GoldTown.door_world("Bldg_Jail", -0.9), 30.0)
@@ -293,7 +298,11 @@ func _ready() -> void:
 	_check("the room refuses a tender that is not in his purse", not c.buy("rifle_ammo", 1, "gold") and not c.buy("river_gear", 2, "gold"))
 	c.get_shop().closed.emit()
 	_check("Esc shuts the trade and gives the street back", not c.is_shop_open() and not get_tree().paused)
-	_until(c, 12.0, func(): return c.get_beat_name() == "GEARED")
+	# Purchases during the entrance wait for all four greetings and queued sale/denial lines.
+	var purchase_speech_budget: float = 5.0
+	for id in ["town_trade_00", "town_trade_01", "town_trade_02", "town_trade_03", "town_trade_09", "town_trade_04", "town_trade_06", "town_trade_07"]:
+		purchase_speech_budget += Ep2TownVoiceBank.seconds(id) + 0.3
+	_until(c, purchase_speech_budget, func(): return c.get_beat_name() == "GEARED")
 	_check("-> GEARED: the rifle and the river gear in hand, the room hands him to the river shipment",
 		c.get_beat_name() == "GEARED" and c.has_sniper() and c.has_river_gear())
 	_until(c, 20.0, func(): return res.size() == 1)
@@ -307,10 +316,10 @@ func _ready() -> void:
 	# ---- lines exist; the session chain woods -> town -> end
 	print("-- LINES + CHAIN")
 	var ids: Array = ["vo_bull_drop1", "vo_bull_drop2", "vo_lb_drop", "vo_sheriff_1", "vo_lb_cert1", "vo_sheriff_2", "vo_sheriff_3", "vo_bar_1", "vo_lb_bar1", "vo_lb_bar2",
-		"vo_bar_2", "vo_opp_1", "vo_opp_2", "vo_lb_draw1", "vo_opp_3", "vo_sheriff_witness", "vo_sheriff_draw", "vo_sheriff_foul", "vo_sheriff_win", "vo_sheriff_lose"]
+		"vo_bar_2", "vo_opp_1", "vo_opp_2", "vo_lb_draw1", "vo_opp_3", "vo_sheriff_witness", "vo_sheriff_foul", "vo_sheriff_win", "vo_sheriff_lose"]
 	var missing: Array = []
 	for id in ids:
-		if not ResourceLoader.exists("res://src/assets/sounds/voice/%s.mp3" % id) or _manifest_text(id) == "":
+		if (Ep2TownVoiceBank.stream(id) == null if Ep2TownVoiceBank.LINES.has(id) else not ResourceLoader.exists("res://src/assets/sounds/voice/%s.mp3" % id)) or _manifest_text(id) == "":
 			missing.append(id)
 	_check("all %d town voice lines are generated and in the manifest" % ids.size(), missing.is_empty(), str(missing))
 	_check("Bull's drop-off: the blonde lady (a wink, nothing shown), the certificate office, the bar for a whiskey",
