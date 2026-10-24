@@ -20,6 +20,8 @@ const NATIVE := {
 	"ore_cart": [0.879, -0.440], "cauldron": [0.655, -0.327],
 }
 const RIFLE := "res://src/episode2/assets/winchester_1886.glb"
+## The Armory Gatling's barrels run along its local +x (Ep2GoldTown.GATLING_POST): turn it so they point the way the old prop did.
+const GATLING_YAW_FIX := -PI * 0.5
 const POSTER_TEX := "res://src/episode2/assets/textures/tex_pinup_poster.jpg"
 const HIDE_TEX := "res://src/episode2/assets/textures/tex_cowhide.png"
 const TIMBER_TEX := "res://src/episode2/assets/textures/tex_timber.jpg"
@@ -501,6 +503,20 @@ func _revolver(pos: Vector3) -> void:
 
 ## The Colt Gatling (Meshy): brass breech, six barrels, wooden tripod. Its muzzle is model -X; `yaw` turns it.
 func _gatling(pos: Vector3, yaw: float) -> Node3D:
+	# The Armory's Colt Gatling (founder 2026-10-24: Inferno's items "look crass and trash" - the old Meshy gun stood on a stick
+	# tripod): the same detailed post-mounted gun Rich keeps (streamed, extras/armory/gatling_post.glb), without its NOT FOR SALE sign.
+	if Ep2Extras.has(Ep2Extras.GATLING):
+		var src: Node = (load(Ep2Extras.GATLING) as PackedScene).instantiate()
+		var post: Node3D = src.find_child("Gatling_Post", true, false) as Node3D
+		if post != null:
+			var gun: Node3D = post.duplicate() as Node3D
+			gun.transform = Transform3D(Basis(Vector3.UP, yaw + GATLING_YAW_FIX), pos)
+			gun.name = "ColtGatling"
+			_v.add_child(gun)
+			src.free()
+			_blockers.append([Vector2(pos.x, pos.z), 1.1])
+			return gun
+		src.free()
 	var g: Node3D = _prop("gatling", pos, 1.8, yaw)
 	if g == null:
 		g = Node3D.new()
@@ -826,6 +842,18 @@ func _lean_tool(base: Vector3, length: float, parent: Node3D, shovel: bool) -> v
 
 func _wanted_poster(pos: Vector3, sx: float, parent: Node3D) -> void:
 	_box(Vector3(0.06, 1.15, 0.9), pos, _dark_wood, Vector3.ZERO, parent)
+	# The real hand-bills (founder 2026-10-24: the posters looked like blank boards): the same engraved posters the town hangs
+	# (Ep2TownPosters, streamed). Jack Hammer on the left wall, the masked stage robbers on the right. Bars below are the fallback.
+	var bill: String = Ep2TownPosters.DIR + ("poster_jack_hammer.jpg" if sx < 0.0 else "poster_masked_riders.jpg")
+	if Ep2Extras.has(bill):
+		var m := StandardMaterial3D.new()
+		m.albedo_texture = load(bill)
+		m.roughness = 0.95
+		m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+		var q := QuadMesh.new()
+		q.size = Vector2(0.74, 0.74 * Ep2TownPosters.ASPECT_PAINTED)
+		_add(q, m, pos + Vector3(-0.04 * sx, 0.0, 0.0), Vector3(0.0, -sx * 90.0, sx * 1.5), parent)
+		return
 	var paper := _plain(Color(0.82, 0.73, 0.55), 0.95, 0.0)
 	paper.emission_enabled = true
 	paper.emission = Color(0.65, 0.52, 0.34)
@@ -1045,18 +1073,42 @@ func _joinery_and_lanterns() -> void:
 				_add(link, _iron, Vector3(x, 5.8 - float(i) * 0.10, z), Vector3(90, float(i % 2) * 90, 0), root)
 			_lantern(Vector3(x, 4.3, z), 0.65, root)
 			_fire(Vector3(x, 4.6, z), 1.2, 5.0)
-	# Dark open Fort Knox passage; the furnace is beside it, never across its mouth.
+	# THE ELEVATOR DOOR, OPEN (founder 2026-10-24: "improve the design of the door that leads to the elevator ... the door should be open and
+	# we should be able to see the elevator from within the smelting facility"). Two heavy plank leaves swung right back toward the room on
+	# strap hinges, so the arch is clear and the doorway shows the mine lift beyond it (SmeltingFacilityChamber.portal_attach; the session
+	# root draws the built lift room in it). Each leaf: six boards with gaps and a little warp, three riveted iron straps, a clinched-nail
+	# brace, a ring pull. The leaves swing into the ROOM - into the passage they would stand behind the doorway image and vanish.
+	var plank_tones: Array = [0.92, 1.0, 0.86, 0.97, 0.9, 1.04]
 	for side in [-1.0, 1.0]:
 		var door := Node3D.new()
+		door.name = "ElevatorDoorLeaf"
 		door.position = Vector3(side * 2.3, 0.0, 16.1)
-		door.rotation.y = side * 0.48
+		door.rotation.y = -side * 1.5                    # open flat toward the room, either side of the arch
 		root.add_child(door)
-		_box(Vector3(1.45, 3.95, 0.25), Vector3(-side * 0.72, 1.98, 0), _dark_wood, Vector3.ZERO, door)
-		for y in [0.5, 1.98, 3.45]:
-			_box(Vector3(1.42, 0.18, 0.31), Vector3(-side * 0.72, y, -0.03), _iron, Vector3.ZERO, door)
-			for dx in [0.2, 1.2]:
-				_cyl(0.04, 0.04, 0.05, Vector3(-side * dx, y, -0.20), _brass, Vector3(90, 0, 0), door)
-	_box(Vector3(4.3, 4.2, 0.15), Vector3(0, 2.1, 18.2), _plain(Color(0.05, 0.035, 0.025), 1.0, 0.0), Vector3.ZERO, root)
+		for i in 6:
+			var w := StandardMaterial3D.new()
+			w.albedo_color = _dark_wood.albedo_color * float(plank_tones[i])
+			w.albedo_texture = _dark_wood.albedo_texture
+			w.uv1_triplanar = _dark_wood.uv1_triplanar
+			w.uv1_scale = _dark_wood.uv1_scale
+			w.roughness = 0.9
+			var x: float = -side * (0.13 + float(i) * 0.24)
+			_box(Vector3(0.22, 3.95 - 0.03 * float(i % 3), 0.11), Vector3(x, 1.98, 0.0), w, Vector3(0, 0, 0.4 * float(i % 2) - 0.2), door)
+		for y in [0.45, 1.98, 3.5]:
+			_box(Vector3(1.48, 0.13, 0.04), Vector3(-side * 0.74, y, -0.075), _iron, Vector3.ZERO, door)       # strap across the boards
+			_box(Vector3(0.62, 0.15, 0.05), Vector3(side * 0.18, y, -0.07), _iron, Vector3.ZERO, door)          # the strap hinge round the pin
+			for k in 6:
+				_cyl(0.022, 0.022, 0.03, Vector3(-side * (0.12 + float(k) * 0.26), y, -0.1), _brass, Vector3(90, 0, 0), door)
+		_box(Vector3(0.12, 2.0, 0.06), Vector3(-side * 0.74, 1.2, -0.065), _iron, Vector3(0, 0, side * 33.0), door)  # diagonal brace
+		var ring := TorusMesh.new()
+		ring.inner_radius = 0.07
+		ring.outer_radius = 0.1
+		_add(ring, _iron, Vector3(-side * 1.3, 1.25, -0.14), Vector3(0, 0, 0), door)
+		_cyl(0.05, 0.05, 0.05, Vector3(-side * 1.3, 1.35, -0.1), _brass, Vector3(90, 0, 0), door)                 # its boss
+		_cyl(0.045, 0.045, 4.1, Vector3(side * 0.02, 2.0, 0.0), _iron, Vector3.ZERO, door)                        # the hinge pin
+	# The passage beyond the door: dark, until the doorway shows the lift room (then this plate is hidden, see portal_attach).
+	var plate := _box(Vector3(4.3, 4.2, 0.15), Vector3(0, 2.1, 18.2), _plain(Color(0.05, 0.035, 0.025), 1.0, 0.0), Vector3.ZERO, root)
+	plate.name = "PassagePlate"
 	for x in [-8.0, -4.3, 4.4, 8.2]:
 		for i in 3:
 			var rock: Node3D = _glb(RunnerView.BOULDER_ROCK_MODEL, Vector3(x, 2.4 + float(i) * 1.7, 17.6), 1.9, x, root)

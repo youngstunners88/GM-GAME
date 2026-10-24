@@ -558,6 +558,65 @@ func _ready() -> void:
 	_check("...the moment it is built the door opens: the hideout resolves toward the lift", hf_resolved.size() == 1 and str(hf_resolved[0].get("next_chamber", "")) == "mine_lift")
 	root2.queue_free()
 
+	# ---- THE OPEN DOOR (founder 2026-10-24: "no transition at that point ... the door should be open and we should be able to see the
+	# elevator from within the smelting facility"): the doorway shows the built lift room, he walks through, the cut lands him there.
+	var hp: SmeltingFacilityChamber = load("res://src/episode2/chamber/smelting_facility.tscn").instantiate()
+	hp.intro_film = false
+	var root3: Ep2SessionRoot = ROOT.instantiate()
+	add_child(root3)
+	root3.add_child(hp)
+	root3._active = hp
+	root3._wire_chamber(hp)
+	hp.setup(0, [], 0)
+	hp.set_physics_process(false)
+	await get_tree().process_frame
+	hp._on_video_film_finished()
+	hp.prebuild_requested.emit("mine_lift")
+	root3.step(0.016)                                   # the lift finishes building behind the hideout
+	var pl: MineLiftChamber = root3._pb_node as MineLiftChamber
+	hp._beat = SmeltingFacilityChamber.Beat.EXIT
+	hp._show_active = false
+	hp._hold = 0.0
+	hp._player_pos = Vector3(0.0, 0.0, SmeltingFacilityChamber.EXIT_POSITION.z - 2.0)
+	var cam: Camera3D = hp._camera
+	_check("the hideout has its camera in the tree for the doorway view", cam != null and cam.is_inside_tree())
+	if cam != null:
+		cam.global_transform = Transform3D(Basis(), Vector3(0.0, 1.6, SmeltingFacilityChamber.EXIT_POSITION.z - 2.0)).looking_at(Vector3(0.0, 1.8, SmeltingFacilityChamber.PORTAL_Z), Vector3.UP)
+	root3._drive_portal()
+	_check("facing the open door, the doorway shows the built lift room", hp._portal_live and hp._portal_quad != null and hp._portal_quad.visible and root3._portal_on)
+	_check("...rendered at screen size from a camera mirroring his, 30 m down the lift's z",
+		root3._pb_vp.size == Vector2i(root3.get_viewport().get_visible_rect().size)
+			and pl.get_camera().global_position.distance_to(cam.global_position + SmeltingFacilityChamber.LIFT_OFFSET) < 0.01)
+	_check("...with the lift's tunnel plug and back wall out of the way (they stand between that camera and the cavern)",
+		pl._mouth_open and not pl._mouth_plug.visible and not pl._mouth_wall.visible)
+	_check("...and no second Inferno in it while the real one is still in the hideout", not pl._bull.visible)
+	hp._bull.position = Vector3(0.7, 0.0, SmeltingFacilityChamber.PORTAL_Z + 1.5)
+	root3._drive_portal()
+	_check("Inferno through the doorway ahead of him is drawn on the lift side, where he stands", pl._bull.visible
+		and pl._bull.position.distance_to(hp._bull.position + SmeltingFacilityChamber.LIFT_OFFSET) < 0.01)
+	_check("the floor runs on through the open door while the doorway shows the lift",
+		hp._collide(Vector3(0.0, 0.0, SmeltingFacilityChamber.PORTAL_Z + 0.2)).z > SmeltingFacilityChamber.EXIT_POSITION.z + 1.0)
+	var hp_res: Array = []
+	hp.chamber_cleared.connect(func(r): hp_res.append(r))
+	hp._player_pos = Vector3(0.3, 0.0, SmeltingFacilityChamber.PORTAL_Z - 0.05)
+	hp.step(0.016)
+	_check("a step short of the doorway is still the hideout (no early cut)", hp_res.is_empty())
+	hp._player_pos = Vector3(0.3, 0.0, SmeltingFacilityChamber.PORTAL_Z + 0.02)
+	var hand: Dictionary = hp.get_handoff()
+	hp.step(0.016)
+	_check("through the doorway the hideout hands over to the lift", hp_res.size() == 1 and str(hp_res[0].get("next_chamber", "")) == "mine_lift")
+	_check("...carrying where he stands and where Inferno stands, in the lift's frame",
+		hand.has("lift_player") and absf((hand["lift_player"] as Vector3).z - (MineLiftChamber.PORTAL_Z + 0.02)) < 0.01 and hand.has("lift_bull"))
+	root3._chain_id = "mine_lift"
+	root3._enter_chamber_chained(0)
+	var la: MineLiftChamber = root3.get_active() as MineLiftChamber
+	_check("the SAME lift room that was in the doorway is now the room he is in", la == pl and la.handoff_seamless)
+	_check("...and he is at its mouth where the doorway showed him, not 2.6 m on at the old start point",
+		absf(la.get_player_position().z - (MineLiftChamber.PORTAL_Z + 0.02)) < 0.05 and absf(la.get_player_position().x - 0.3) < 0.01,
+		str(la.get_player_position()))
+	_check("...with Inferno still ahead of him on the bridge", la._bull.visible and la._bull.position.z > la.get_player_position().z)
+	root3.queue_free()
+
 	# ---- NO BLACKOUTS (founder 2026-10-11): the wood is built BEHIND the lift, in an off-screen viewport, and the hand-over is one cut
 	var lift_node: MineLiftChamber = root.get_active()
 	_check("entering the lift starts building the WOODS in the background (hosted off-screen, the lift stays the active chamber)",

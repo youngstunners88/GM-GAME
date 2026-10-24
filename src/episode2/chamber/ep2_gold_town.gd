@@ -44,13 +44,55 @@ const LAYOUT: Array = [
 ]
 ## Kit piece -> [width, depth, door half-width (0 = shut), door open]
 const FOOTPRINT: Dictionary = {
-	"Bldg_Certificates": [8.0, 9.0, 0.75], "Bldg_Saloon": [12.0, 12.0, 0.95], "Bldg_Treasury": [10.0, 12.0, 0.0], "Bldg_A": [7.0, 8.0, 0.0],
-	"Bldg_B": [8.0, 9.0, 0.0], "Bldg_C": [6.0, 8.0, 0.0], "Bldg_D": [9.0, 9.0, 0.0], "Bldg_E": [7.0, 8.0, 0.0], "Bldg_F": [8.0, 9.0, 0.0],
+	"Bldg_Certificates": [8.0, 9.0, 0.75], "Bldg_Saloon": [12.0, 12.0, 0.95], "Bldg_Treasury": [10.0, 12.0, 0.0], "Bldg_A": [7.0, 8.0, 0.75],
+	"Bldg_B": [8.0, 9.0, 0.75], "Bldg_C": [6.0, 8.0, 0.75], "Bldg_D": [9.0, 9.0, 0.0], "Bldg_E": [7.0, 8.0, 0.0], "Bldg_F": [8.0, 9.0, 0.0],
 	"Church": [8.0, 14.0, 0.0],
 	"Bldg_Armory": [8.0, 9.0, 0.7],
 	"Bldg_Armory2": [10.0, 12.0, 1.0],      # the two-storey Armory (streamed extras): double door 2 m wide
 	"Bldg_Jail": [7.4, 8.6, 0.75],          # the jailhouse (streamed extras): 1.5 m plank door
 }
+
+## THE WALK-IN SHOPS (founder 2026-10-24: "the interiors of the buildings in the town ... aren't detailed enough ... people ... entering the
+## stores and leaving. buying things"). The general store, the hotel and the assay office open their doors and are furnished
+## (tools/ep2_blender/build_town_kit.py Gen_* / Hotel_* / Assay_*) - in the STREAMED kit only: the shipped fallback kit still has their
+## doors shut, so their walls stay closed until town_kit2 is drawn (kit_v2).
+## shop -> its kit piece; [trade name, counter offset in the building's local frame (the customer stands at the counter's CustomerSpot)]
+const WALKIN_SHOPS: Dictionary = {"Bldg_A": ["general", Vector3(1.2, 0.0, -4.0)], "Bldg_B": ["hotel", Vector3(-1.4, 0.0, -5.4)],
+	"Bldg_C": ["assay", Vector3(0.0, 0.0, -3.8)]}
+## Porch floor height (kit porch(): planks 0.22 thick centred at 0.33) and its depth / steps, for anyone walking in or out.
+const PORCH_Y := 0.44
+const PORCH_DEPTH := 2.6
+
+
+## Where a customer goes for each walk-in shop, in world space: "out" (the street, past the porch steps), "door" (just inside the doorway),
+## "counter" (at the counter's front) and "face" (the shopkeeper's side, to look at). {} when the shop is not open (fallback kit).
+static func shop_spots(piece: String) -> Dictionary:
+	if not kit_v2 or not WALKIN_SHOPS.has(piece) or entry(piece).is_empty():
+		return {}
+	var c: Vector3 = WALKIN_SHOPS[piece][1]
+	return {"out": local_to_world(piece, Vector3(0.0, 0.0, PORCH_DEPTH + 1.1)), "porch": local_to_world(piece, Vector3(0.0, 0.0, 1.0)),
+		"door": local_to_world(piece, Vector3(0.0, 0.0, -0.9)), "counter": local_to_world(piece, c + Vector3(0.0, 0.0, 0.95)),
+		"face": local_to_world(piece, c + Vector3(0.0, 0.0, -0.8))}
+
+
+## Floor height under a world point near a walk-in shop: the porch boards are 0.44 m up (two steps in front), the shop floor is level
+## with the street (its plank floor is 0.06). Everyone else stands on y = 0.
+static func shop_floor_y(piece: String, world: Vector3) -> float:
+	var e: Array = entry(piece)
+	if e.is_empty():
+		return 0.0
+	var l: Vector3 = building_xform(e).affine_inverse() * world
+	var half: float = float(FOOTPRINT.get(piece, [8.0, 9.0, 0.0])[0]) * 0.5 + 0.2
+	if absf(l.x) > half:
+		return 0.0
+	if l.z >= 0.0 and l.z <= PORCH_DEPTH:
+		return PORCH_Y
+	if l.z > PORCH_DEPTH and l.z < PORCH_DEPTH + 0.75:                  # the two steps
+		return PORCH_Y * clampf(1.0 - (l.z - PORCH_DEPTH) / 0.75, 0.0, 1.0)
+	if l.z < 0.0 and l.z > -float(FOOTPRINT.get(piece, [8.0, 9.0, 0.0])[1]):
+		return 0.06
+	return 0.0
+
 
 ## The Colt Gatling's post in the Armory's front yard (founder 2026-10-20, skill ep2-armory-guns), in Bldg_Armory's LOCAL frame (x along the front, +z out
 ## into the yard). The Armory faces -z (yaw PI), so local +x is world -x: at rest the bore points west over open ground, away from the street. The gun
@@ -396,6 +438,8 @@ static func _walls_of(piece: String, xf: Transform3D) -> Array:
 	var w: float = float(fp[0]) * 0.5
 	var d: float = float(fp[1])
 	var door: float = float(fp[2])
+	if WALKIN_SHOPS.has(piece) and not kit_v2:
+		door = 0.0                      # the fallback kit draws these doors shut
 	var local: Array = []
 	if door > 0.0:
 		local.append([Vector3(-w, 0, 0), Vector3(-door, 0, 0)])
@@ -479,6 +523,13 @@ static func _furnish(root: Node3D, kit: Node3D, a2: Node3D = null) -> void:
 		["Bldg_Saloon", "Bar_Table", Vector3(-3.2, 0.0, -3.6), 0.0], ["Bldg_Saloon", "Bar_Table", Vector3(3.6, 0.0, -3.0), 0.0],
 		["Bldg_Saloon", "Bar_Table", Vector3(3.8, 0.0, -6.8), 0.0],
 		# the armory: counter, wall racks, a revolver case, the lit long-rifle case, a powder keg
+		# the walk-in shops (streamed kit only: these pieces exist in town_kit2): general store, hotel, assay office
+		["Bldg_A", "Gen_Counter", Vector3(1.2, 0.0, -4.0), 0.0], ["Bldg_A", "Gen_Shelves", Vector3(0.0, 0.0, -7.6), 0.0],
+		["Bldg_A", "Gen_FloorGoods", Vector3(-2.2, 0.0, -2.0), 0.0],
+		["Bldg_B", "Hotel_Desk", Vector3(-1.4, 0.0, -5.4), 0.0], ["Bldg_B", "Hotel_Stairs", Vector3(2.95, 0.0, -2.0), 0.0],
+		["Bldg_B", "Hotel_Lounge", Vector3(-2.3, 0.0, -2.1), PI * 0.5],
+		["Bldg_C", "Assay_Counter", Vector3(0.0, 0.0, -3.8), 0.0], ["Bldg_C", "Assay_Furnace", Vector3(-1.85, 0.0, -6.7), 0.0],
+		["Bldg_C", "Assay_Shelves", Vector3(1.4, 0.0, -7.6), 0.0],
 		["Bldg_Armory", "Arm_Counter", Vector3(0.6, 0.0, -4.4), 0.0], ["Bldg_Armory", "Arm_Rack", Vector3(-3.4, 0.0, -7.4), PI * 0.5],
 		["Bldg_Armory", "Arm_Rack", Vector3(3.4, 0.0, -7.4), -PI * 0.5], ["Bldg_Armory", "Arm_Case", Vector3(-1.4, 0.0, -6.6), 0.0],
 		["Bldg_Armory", "Arm_SniperCase", Vector3(1.8, 0.0, -7.8), 0.0], ["Bldg_Armory", "Arm_PowderKeg", Vector3(-3.2, 0.0, -2.2), 0.0],
@@ -504,6 +555,8 @@ static func _furnish(root: Node3D, kit: Node3D, a2: Node3D = null) -> void:
 				root.add_child(c)
 	# warm oil lamps in both rooms
 	var lamps: Array = [["Bldg_Certificates", Vector3(0.0, 3.0, -4.0), 4.5], ["Bldg_Saloon", Vector3(-2.0, 3.2, -4.0), 6.0], ["Bldg_Saloon", Vector3(3.0, 3.2, -8.0), 6.0]]
+	if kit_v2:                         # one warm lamp in each walk-in shop
+		lamps.append_array([["Bldg_A", Vector3(0.0, 3.0, -4.0), 4.5], ["Bldg_B", Vector3(-0.8, 3.0, -4.2), 4.5], ["Bldg_C", Vector3(0.0, 3.0, -4.2), 4.0]])
 	if a2 == null:
 		lamps.append(["Bldg_Armory", Vector3(0.0, 3.0, -5.0), 5.0])
 	else:

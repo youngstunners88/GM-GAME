@@ -50,6 +50,14 @@ const PLACES := {
 }
 const SHELTERS := [Vector2(-3.2, 1401), Vector2(3.2, 1401), Vector2(-3.2, 1450), Vector2(3.2, 1450), Vector2(-15, 1456)]
 const ACTIVITIES := ["work", "errand", "rest", "observe", "social", "play"]
+## SHOPPING (founder 2026-10-24: "people in the town have real activities. perhaps some entering the stores and leaving. buying things").
+## An errand can be a real trip into one of the walk-in shops (Ep2GoldTown.WALKIN_SHOPS, open when the streamed kit is drawn): walk the
+## street graph to the foot of its porch steps, step up onto the porch, in through the door to the counter, buy (talk to the keeper),
+## and back out - from the general store with a paper parcel in hand. One customer at a time per counter (reservation "shop:<piece>").
+## Indoors is safe: a danger or the duel leaves a shopper inside until it has passed.
+const SHOP_STATES := ["shop_in", "shop_buy", "shop_out"]
+const SHOP_CHANCE := 0.55                # share of errands that become a shop visit when a counter is free
+const PARCEL_SECONDS := 40.0
 
 class Person:
 	var id: String = ""
@@ -79,6 +87,8 @@ class Person:
 	var threat := Vector2.ZERO
 	var activity_time: float = 0.0
 	var safety := Vector2.ZERO
+	var shop: String = ""            # the walk-in shop (Bldg_A / B / C) this person is visiting, "" when outdoors
+	var parcel_t: float = 0.0        # seconds left carrying what they bought
 
 var people: Array = []
 var navigation := Ep2TownNavigation.new()
@@ -188,6 +198,9 @@ func _step_one(p: Person, dt: float, player: Vector3) -> void:
 	p.fear = maxf(0, p.fear - dt)
 	p.timer = maxf(-1, p.timer - dt)
 	p.activity_time += dt
+	if p.parcel_t > 0.0:
+		p.parcel_t = maxf(0.0, p.parcel_t - dt)          # never below zero: a saved 0 must restore (restore() bounds it 0..PARCEL_SECONDS)
+		if p.parcel_t <= 0.0: p.folk.drop_prop("Parcel")
 	var before: Vector2 = _pos(p)
 	if p.state == "flee" and p.fear <= 0 and _mode != "duel":
 		p.folk.stop()
@@ -196,6 +209,9 @@ func _step_one(p: Person, dt: float, player: Vector3) -> void:
 	if p.state in ["walk", "flee"]:
 		_move(p, dt, player)
 		if p.state == "walk" and _mode == "normal" and p.fear <= 0 and _near_player(p, player): _greet(p, player)
+	elif p.state in SHOP_STATES:
+		_step_shop(p, dt)
+		return
 	elif p.state == "shelter":
 		p.folk.face_point(Vector3(p.threat.x, 0, p.threat.y))
 		if _mode != "duel" and p.fear <= 0 and p.timer <= 0:
@@ -291,6 +307,8 @@ func _choose(p: Person) -> void:
 		if score > best_place:
 			best_place = score
 			place = candidate
+	if chosen == "errand" and _start_shopping(p):
+		return
 	p.activity = chosen
 	p.choices += 1
 	p.activity_time = 0.0
@@ -310,6 +328,9 @@ func _choose(p: Person) -> void:
 	if p.waypoints.is_empty(): _arrive(p)
 
 func _arrive(p: Person) -> void:
+	if p.destination.begins_with("shop:"):
+		_enter_shop(p)
+		return
 	p.folk.stop()
 	p.visits[p.destination] = int(p.visits.get(p.destination, 0)) + 1
 	p.state = "pause"
@@ -325,6 +346,129 @@ func _arrive(p: Person) -> void:
 		var target: Vector2 = PLACES[p.destination]
 		# Face the institution/horse, rather than staring into the last path segment.
 		p.folk.face_point(Vector3(target.x + (-4.0 if target.x < 0 else 4.0), 0, target.y))
+
+## Turn an errand into a shop visit when a walk-in shop's counter is free. False = no shop open / free / chosen (a normal errand runs).
+func _start_shopping(p: Person) -> bool:
+	if _mode != "normal" or p.rng.randf() > SHOP_CHANCE:
+		return false
+	var open: Array = []
+	for piece in Ep2GoldTown.WALKIN_SHOPS:
+		var key: String = "shop:" + str(piece)
+		if reservations.has(key) or Ep2GoldTown.shop_spots(str(piece)).is_empty():
+			continue
+		if p.id in PLAYERS and str(piece) == "Bldg_C":
+			continue                                    # the children go for candy at the general store, not to the assayer
+		open.append(str(piece))
+	if open.is_empty():
+		return false
+	var piece: String = open[p.rng.randi() % open.size()]
+	var spots: Dictionary = Ep2GoldTown.shop_spots(piece)
+	var out3: Vector3 = spots["out"]
+	var target: Vector2 = navigation.closest(Vector2(out3.x, out3.z))
+	var path: Array[Vector2] = navigation.path(_pos(p), target)
+	if path.is_empty() and _pos(p).distance_to(target) > 1.0:
+		return false
+	p.activity = "errand"
+	p.choices += 1
+	p.activity_time = 0.0
+	p.recent.append("errand")
+	if p.recent.size() > 3: p.recent.pop_front()
+	p.destination = "shop:" + piece
+	reservations[p.destination] = p.id
+	p.shop = piece
+	p.waypoints = path
+	p.state = "walk"
+	p.blocked = 0.0
+	if p.waypoints.is_empty(): _arrive(p)
+	return true
+
+
+## At the foot of the steps: up onto the porch, in through the door, to the counter (heights from the porch and the shop floor).
+func _enter_shop(p: Person) -> void:
+	var spots: Dictionary = Ep2GoldTown.shop_spots(p.shop)
+	if spots.is_empty():
+		_leave_shop_done(p)
+		return
+	p.visits["shop"] = int(p.visits.get("shop", 0)) + 1
+	p.folk.use_height = true
+	var legs: Array = []
+	for k in ["porch", "door", "counter"]:
+		var w: Vector3 = spots[k]
+		legs.append(Vector3(w.x, Ep2GoldTown.shop_floor_y(p.shop, w), w.z))
+	p.folk.walk_path(legs, minf(p.speed, 1.0))
+	p.state = "shop_in"
+
+
+func _step_shop(p: Person, dt: float) -> void:
+	var spots: Dictionary = Ep2GoldTown.shop_spots(p.shop)
+	if spots.is_empty():
+		_leave_shop_done(p)
+		return
+	match p.state:
+		"shop_in":
+			if not p.folk.is_walking():
+				p.state = "shop_buy"
+				p.timer = p.rng.randf_range(4.0, 8.0)
+				p.folk.face_point(spots["face"])
+				p.folk.hold_clip("Inspect")         # looking over the goods on the counter (no shopkeeper model yet: see STATUS)
+		"shop_buy":
+			p.folk.face_point(spots["face"])
+			if _mode == "duel":
+				p.timer = maxf(p.timer, 1.0)            # nobody walks out into the street during the draw
+			if p.timer <= 0.0:
+				if str(Ep2GoldTown.WALKIN_SHOPS[p.shop][0]) == "general":
+					p.folk.attach_prop(_parcel(), "RightHand", Vector3(0.0, -0.08, 0.06))
+					p.parcel_t = PARCEL_SECONDS
+					if _has_clip(p, "Carry"): p.folk.hold_clip("Carry")
+				var legs: Array = []
+				for k in ["door", "porch", "out"]:
+					var w: Vector3 = spots[k]
+					legs.append(Vector3(w.x, Ep2GoldTown.shop_floor_y(p.shop, w), w.z))
+				p.folk.walk_path(legs, minf(p.speed, 1.0))
+				p.state = "shop_out"
+		"shop_out":
+			if not p.folk.is_walking():
+				_leave_shop_done(p)
+	p.folk.step(dt)
+
+
+func _leave_shop_done(p: Person) -> void:
+	p.folk.use_height = false
+	p.folk.place(Vector3(p.folk.position.x, 0.0, p.folk.position.z))
+	if reservations.get(p.destination, "") == p.id: reservations.erase(p.destination)
+	p.destination = ""
+	p.shop = ""
+	p.state = "pause"
+	p.timer = p.rng.randf_range(2.0, 5.0)
+	p.folk.hold_clip("Observe" if p.parcel_t <= 0.0 else ("Carry" if _has_clip(p, "Carry") else "Idle"))
+	if _mode == "duel":
+		_seek_safety(p, Vector2(0.0, p.folk.position.z), true)
+
+
+## What he bought at the general store: a paper parcel tied with string.
+func _parcel() -> Node3D:
+	var root := Node3D.new()
+	root.name = "Parcel"
+	var box := MeshInstance3D.new()
+	var bm := BoxMesh.new()
+	bm.size = Vector3(0.26, 0.16, 0.2)
+	box.mesh = bm
+	var paper := StandardMaterial3D.new()
+	paper.albedo_color = Color(0.72, 0.58, 0.40)
+	paper.roughness = 0.95
+	box.material_override = paper
+	root.add_child(box)
+	var string := StandardMaterial3D.new()
+	string.albedo_color = Color(0.85, 0.82, 0.74)
+	for axis in [0, 1]:
+		var band := MeshInstance3D.new()
+		var b2 := BoxMesh.new()
+		b2.size = Vector3(0.012, 0.165, 0.205) if axis == 0 else Vector3(0.265, 0.165, 0.012)
+		band.mesh = b2
+		band.material_override = string
+		root.add_child(band)
+	return root
+
 
 ## True when this person's model carries an authored clip `name` (importer prefixes tolerated, as Ep2TownFolk does).
 func _has_clip(p: Person, name: String) -> bool:
@@ -413,6 +557,8 @@ func _try_social(p: Person) -> void:
 		return
 
 func _seek_safety(p: Person, danger: Vector2, duel: bool) -> void:
+	if p.state in SHOP_STATES:
+		return                                      # indoors (or on the way in/out): the shop is the safest place in town
 	_release(p)
 	p.partner = ""
 	p.threat = danger
@@ -485,7 +631,13 @@ func snapshot() -> Dictionary:
 	for p in people:
 		var path: Array = []
 		for point in p.waypoints: path.append([point.x, point.y])
+		# a shopper is saved where they are (in the shop, on the porch) with the legs still to walk, and restored exactly there
+		var legs: Array = []
+		if p.state in SHOP_STATES:
+			if p.folk.is_walking(): legs.append([p.folk._goal.x, p.folk._goal.y, p.folk._goal.z])
+			for g in p.folk._path: legs.append([(g as Vector3).x, (g as Vector3).y, (g as Vector3).z])
 		rows.append({"id": p.id, "position": [_pos(p).x, _pos(p).y], "activity": p.activity, "destination": p.destination,
+			"shop": p.shop, "height": p.folk.position.y if p.state in SHOP_STATES else 0.0, "shop_legs": legs, "parcel_t": p.parcel_t,
 			"recent": p.recent.duplicate(), "visits": p.visits.duplicate(), "memories": p.memories.duplicate(),
 			"greet_cd": p.greet_cd, "greets": p.greets, "walked_m": p.walked_m, "choices": p.choices,
 			"rng_state": str(p.rng.state), "fear": p.fear, "social_cd": p.social_cd,
@@ -520,15 +672,33 @@ func restore(data: Dictionary) -> bool:
 		seen[id] = row
 		if not _point(row.get("position")): return false
 		var point: Vector2 = _vector(row["position"])
-		if not navigation.is_clear(point): return false
+		var shop: Variant = row.get("shop", "")
+		if not shop is String or (shop != "" and Ep2GoldTown.shop_spots(shop).is_empty()): return false
+		var shopping: bool = row.get("state") in SHOP_STATES
+		if shopping and shop == "": return false
+		if not shopping and shop != "" and row.get("destination") != "shop:" + str(shop): return false   # on the way there
+		if shopping:                                  # indoors / on its porch: must be within that shop's own footprint
+			var l: Vector3 = Ep2GoldTown.building_xform(Ep2GoldTown.entry(shop)).affine_inverse() * Vector3(point.x, 0, point.y)
+			var fp: Array = Ep2GoldTown.FOOTPRINT[shop]
+			if absf(l.x) > float(fp[0]) * 0.5 or l.z < -float(fp[1]) or l.z > Ep2GoldTown.PORCH_DEPTH + 1.5: return false
+			if not _number(row.get("height", 0.0), 0, 0.5): return false
+			if not row.get("shop_legs") is Array or row["shop_legs"].size() > 3: return false
+			for leg in row["shop_legs"]:
+				if not leg is Array or leg.size() != 3: return false
+				for c in leg:
+					if not (c is int or c is float) or not is_finite(float(c)): return false
+		elif not navigation.is_clear(point): return false
+		if not _number(row.get("parcel_t", 0.0), 0, PARCEL_SECONDS): return false
 		for previous in positions:
 			if previous.distance_to(point) < 0.60: return false
 		positions.append(point)
 		if row.get("activity") not in ACTIVITIES: return false
-		if row.get("state") not in ["pause", "walk", "flee", "shelter", "greet", "social"]: return false
-		if row.get("clip") not in ["Idle", "Observe", "Rest", "Talk", "Inspect", "Alert", "Greet", "Play"]: return false
+		if row.get("state") not in ["pause", "walk", "flee", "shelter", "greet", "social"] + SHOP_STATES: return false
+		if row.get("clip") not in ["Idle", "Observe", "Rest", "Talk", "Inspect", "Alert", "Greet", "Play", "Carry"]: return false
 		var destination: Variant = row.get("destination")
-		if not destination is String or (destination != "" and not PLACES.has(destination)): return false
+		if not destination is String: return false
+		if destination != "" and not PLACES.has(destination) \
+				and not (destination.begins_with("shop:") and Ep2GoldTown.WALKIN_SHOPS.has(destination.trim_prefix("shop:"))): return false
 		if destination != "":
 			if destinations.has(destination): return false
 			destinations[destination] = id
@@ -594,4 +764,15 @@ func restore(data: Dictionary) -> bool:
 		p.waypoints.clear()
 		for waypoint in row["waypoints"]: p.waypoints.append(_vector(waypoint))
 		p.folk.hold_clip(row["clip"])
+		# the shop visit: back in the shop at the saved height, the same legs still to walk, the parcel in hand if bought
+		p.shop = str(row.get("shop", ""))
+		p.folk.use_height = p.state in SHOP_STATES
+		if p.folk.use_height:
+			p.folk.place(Vector3(point.x, float(row.get("height", 0.0)), point.y))
+			var legs: Array = []
+			for leg in row.get("shop_legs", []): legs.append(Vector3(float(leg[0]), float(leg[1]), float(leg[2])))
+			if not legs.is_empty(): p.folk.walk_path(legs, minf(p.speed, 1.0))
+		p.folk.drop_prop("Parcel")
+		p.parcel_t = float(row.get("parcel_t", 0.0))
+		if p.parcel_t > 0.0: p.folk.attach_prop(_parcel(), "RightHand", Vector3(0.0, -0.08, 0.06))
 	return true

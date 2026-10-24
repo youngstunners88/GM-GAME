@@ -218,6 +218,7 @@ func _enter_chamber_chained(segment: int) -> void:
 		c = CHAMBER_SCENES[_chain_id].instantiate()
 	_pb_node = null
 	_pb_id = ""
+	_portal_on = false
 	var old: Node = _active
 	if old != null:
 		_persist_town()
@@ -274,6 +275,38 @@ func _on_prebuild_requested(chamber_id: String) -> void:
 		add_child(n)
 	_pb_node = n
 	_pb_id = chamber_id
+
+
+## THE OPEN DOOR (founder 2026-10-24: no transition at the hideout's elevator door - "the door should be open and we should be able to
+## see the elevator from within the smelting facility"). A chamber that wants to show the next room through a doorway answers
+## `portal_view_wanted()` with the view in the next room's frame (or {}). Once that room is fully built behind it, its off-screen
+## viewport is raised to screen size, its camera follows that view every frame, and its image is handed to the doorway
+## (`portal_attach`). The hand-over itself is unchanged: the same instance is activated in the same frame.
+var _portal_on: bool = false
+
+
+func _drive_portal() -> void:
+	var want: Dictionary = {}
+	if _active != null and is_instance_valid(_active) and _active.has_method("portal_view_wanted"):
+		want = _active.call("portal_view_wanted")
+	var ok: bool = not want.is_empty() and _pb_vp != null and is_instance_valid(_pb_vp) and _pb_id != "" and is_prebuilt(_pb_id) \
+		and _pb_node.has_method("portal_view")
+	if not ok:
+		if _portal_on and _active != null and is_instance_valid(_active) and _active.has_method("portal_detach"):
+			_active.call("portal_detach")
+		if _portal_on and _pb_vp != null and is_instance_valid(_pb_vp):
+			_pb_vp.render_target_update_mode = SubViewport.UPDATE_DISABLED     # nothing to show: stop drawing the next room
+		_portal_on = false
+		return
+	if not _portal_on:
+		_pb_vp.size = Vector2i(get_viewport().get_visible_rect().size)
+		_pb_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+		_pb_node.call("portal_begin")
+		_active.call("portal_attach", _pb_vp.get_texture())
+		_portal_on = true
+	elif _pb_vp.size != Vector2i(get_viewport().get_visible_rect().size):
+		_pb_vp.size = Vector2i(get_viewport().get_visible_rect().size)
+	_pb_node.call("portal_view", want)
 
 
 ## True once the chamber named `chamber_id` is fully built in the background (the active chamber holds its exit until then).
@@ -662,6 +695,7 @@ func _process(_delta: float) -> void:
 	_touch_changed()
 	var waiting: bool = _active != null and _active.has_method("is_waiting_for_handoff") and bool(_active.call("is_waiting_for_handoff"))
 	_drive_prebuild(PREBUILD_MS_WAITING if waiting else PREBUILD_MS)
+	_drive_portal()
 
 func _restore_town(chamber: Node) -> void:
 	if not chamber is GoldTownChamber: return

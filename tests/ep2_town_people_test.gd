@@ -106,7 +106,8 @@ func _ready() -> void:
 		for p in tp.people:
 			var pos: Vector3 = (p as Ep2TownPeople.Person).folk.position
 			var q := Vector2(pos.x, pos.z)
-			if Ep2GoldTown.collide(q, 0.30, walls, props).distance_to(q) > 0.05 or is_nan(pos.x) or absf(pos.y) > 0.06:          # the walking bob lifts a figure up to 3.5 cm
+			var shopping: bool = (p as Ep2TownPeople.Person).state in Ep2TownPeople.SHOP_STATES     # scripted shop visit: porch / indoors, heights legal
+			if is_nan(pos.x) or (not shopping and (Ep2GoldTown.collide(q, 0.30, walls, props).distance_to(q) > 0.05 or absf(pos.y) > 0.06)) or (shopping and (pos.y < -0.01 or pos.y > 0.5)):          # the walking bob lifts a figure up to 3.5 cm
 				bad_pos += 1
 			if i < 3000 and (p as Ep2TownPeople.Person).state == "walk" and not started.has((p as Ep2TownPeople.Person).id):
 				started[(p as Ep2TownPeople.Person).id] = i

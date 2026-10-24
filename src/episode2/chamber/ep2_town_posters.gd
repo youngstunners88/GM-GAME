@@ -13,6 +13,8 @@ extends RefCounted
 ## depends on them. Positions are in each building's LOCAL frame (x along the front, +z out of the front wall, y up), see Ep2GoldTown.
 
 const DIR := "res://src/episode2/extras/town/posters/"
+## The painted hand-bills are 640 x 880 (height / width), for callers that size a frame before the image is loaded.
+const ASPECT_PAINTED := 880.0 / 640.0
 const IDS := ["crypto_queen", "rh", "jack_hammer", "accomplice", "masked_riders", "horse_thieves"]
 ## Each bill takes its own height / width from its image (the painted hand-bills are 640 x 880, the founder's are square).
 ## The notice board at the drop-off: Lil Blunt hops off the quad at Ep2GoldTown.DROP_POINT and this is the first thing on the left.

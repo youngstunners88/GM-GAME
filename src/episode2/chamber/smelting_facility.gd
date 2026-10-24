@@ -77,6 +77,16 @@ const BULL_POSITION := Vector3(1.6, 0.0, 6.0)
 const BULL_REST := Vector3(2.6, 0.0, 6.3)
 const MOLD_RACK_POSITION := Vector3(RangeDressing.LANE_X, 2.85, -9.3)   # the middle plaque, for aim rigs/tests
 const EXIT_POSITION := Vector3(0.0, 0.0, 15.0)
+## THE OPEN DOOR (founder 2026-10-24: "improve the design of the door that leads to the elevator. i dont want a transition at that point.
+## he needs to literally just walk through into the section [with] the elevator. Thus the door should be open and we should be able to see
+## the elevator from within the smelting facility"). The doorway plane in the stone arch, and the fixed shift that puts the mine lift's
+## tunnel mouth on it (MineLiftChamber.PORTAL_Z = -13.6): every point past the doorway IS a point of the lift room, z - 30 m.
+const PORTAL_Z := 16.4
+const PORTAL_SIZE := Vector2(4.3, 4.4)
+const LIFT_OFFSET := Vector3(0.0, 0.0, -30.0)
+## The hideout's grading darkens the doorway image a little (Compatibility grades every material): measured with
+## tools/ep2_shots/door_portal_shot.tscn (cut_a vs cut_b centre luminance), this gain makes the last hideout frame match the first lift frame.
+const PORTAL_GAIN := 1.07
 ## How close you must be for the meeting to start. Generous — this is a
 ## breather, not a precision-platforming beat.
 const TALK_RANGE := 3.2
@@ -285,6 +295,8 @@ const ADS_MOVE_SCALE := 0.55           # ...and so does walking
 const CAM_LERP := 1.8          # units/sec — a push-in, not a snap
 
 var _visuals: Node3D = null
+var _portal_quad: MeshInstance3D = null
+var _portal_live: bool = false          # the doorway is showing the built lift room (the session root drives it)
 var _camera: Camera3D = null
 var _cam_target_pos: Vector3 = CAM_WIDE[0]
 var _cam_target_pitch: float = float(CAM_WIDE[1])
@@ -619,7 +631,10 @@ func step(delta: float) -> void:
 		Beat.EXIT:
 			# They leave TOGETHER: the Bull leads to the Fort Knox door and you follow in first person.
 			# Resolve once you reach the door, never before his line has finished.
-			if _hold <= 0.0 and not _show_active and _player_pos.z >= EXIT_POSITION.z - 1.0 and _handoff_ok():
+			if _walk_through_ok():
+				if _player_pos.z >= PORTAL_Z:      # through the open door: the cut lands him where the doorway showed
+					_resolve()
+			elif _hold <= 0.0 and not _show_active and _player_pos.z >= EXIT_POSITION.z - 1.0 and _handoff_ok():
 				_resolve()
 		_:
 			pass
@@ -853,8 +868,10 @@ func _update_vertical(delta: float) -> void:
 ## Keep Lil Blunt in the room and out of the props and the molten channel (crossable only on the bridge).
 func _collide(p: Vector3) -> Vector3:
 	var q := p
-	q.z = clampf(q.z, ENTRY_POSITION.z, EXIT_POSITION.z)
+	q.z = clampf(q.z, ENTRY_POSITION.z, PORTAL_Z + 0.3 if _walk_through_ok() else EXIT_POSITION.z)
 	q.x = clampf(q.x, -ROOM_X, ROOM_X)
+	if q.z > EXIT_POSITION.z:
+		q.x = clampf(q.x, -1.2, 1.2)         # between the door leaves, onto the lift's bridge (its rails are at +-1.2)
 	# Until the EXIT beat the channel is a wall (the choreography owns the room); from EXIT on it is a hazard, not a barrier.
 	if _beat < Beat.EXIT and absf(q.z - CHANNEL_Z) < 1.1:
 		q.z = CHANNEL_Z - 1.1 if _player_pos.z < CHANNEL_Z else CHANNEL_Z + 1.1
@@ -1223,8 +1240,72 @@ func get_look_yaw() -> float: return _look_yaw
 
 
 ## The player's gaze for the next chamber's first frame (yaw 0 = +Z in every chamber), and whether the next chamber is built.
+## The view the doorway needs this frame, in the lift room's frame (the session root renders it there), or {} when the doorway is not
+## worth drawing: before the lesson builds the lift, or while the camera faces away from the door (no second room drawn for nothing).
+func portal_view_wanted() -> Dictionary:
+	if _camera == null or not is_instance_valid(_camera) or not _camera.is_inside_tree() or _beat < Beat.VERB_TEACH:
+		return {}
+	var cam: Transform3D = _camera.global_transform
+	var to_door: Vector3 = Vector3(0.0, 2.0, PORTAL_Z) - cam.origin
+	var fwd: Vector3 = -cam.basis.z
+	if to_door.length() > 45.0 or (fwd.dot(to_door.normalized()) < 0.15 and to_door.length() > 2.5):
+		return {}
+	var d: Dictionary = {"xf": Transform3D(cam.basis, cam.origin + LIFT_OFFSET), "fov": _camera.fov}
+	if _bull != null and _bull.position.z > PORTAL_Z - 0.6:   # Inferno is going through ahead of him: draw him on the far side
+		d["bull"] = _bull.position + LIFT_OFFSET
+		d["bull_facing"] = _bull.facing
+	return d
+
+
+## The session root hands over the lift room's image: put it in the doorway (and take away the dark plate that stood for the passage).
+func portal_attach(tex: Texture2D) -> void:
+	if _portal_quad == null:
+		_portal_quad = MeshInstance3D.new()
+		_portal_quad.name = "ElevatorDoorway"
+		var qm := QuadMesh.new()
+		qm.size = PORTAL_SIZE
+		_portal_quad.mesh = qm
+		var sm := ShaderMaterial.new()
+		sm.shader = load("res://src/episode2/art/ep2_portal.gdshader")
+		sm.set_shader_parameter("gain", PORTAL_GAIN)
+		_portal_quad.material_override = sm
+		_portal_quad.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		_portal_quad.position = Vector3(0.0, PORTAL_SIZE.y * 0.5, PORTAL_Z)
+		add_child(_portal_quad)
+	(_portal_quad.material_override as ShaderMaterial).set_shader_parameter("portal_tex", tex)
+	_portal_quad.visible = true
+	_portal_live = true
+	_set_passage_plate(false)
+
+
+func portal_detach() -> void:
+	_portal_live = false
+	if _portal_quad != null:
+		_portal_quad.visible = false
+	_set_passage_plate(true)
+
+
+func _set_passage_plate(on: bool) -> void:
+	if _visuals == null:
+		return
+	var plate := _visuals.find_child("PassagePlate", true, false) as Node3D
+	if plate != null:
+		plate.visible = on
+
+
+## True when the open doorway can take him straight through (the lift is drawn in it and the last line has been said).
+func _walk_through_ok() -> bool:
+	return _portal_live and _beat == Beat.EXIT and _hold <= 0.0 and not _show_active and _handoff_ok()
+
+
 func get_handoff() -> Dictionary:
-	return {"yaw": _look_yaw, "pitch": _look_pitch}
+	var d: Dictionary = {"yaw": _look_yaw, "pitch": _look_pitch}
+	if _portal_live:                     # walked through the doorway: the lift room picks up exactly where he and Inferno are
+		d["lift_player"] = _player_pos + LIFT_OFFSET
+		if _bull != null:
+			d["lift_bull"] = _bull.position + LIFT_OFFSET
+			d["lift_bull_facing"] = _bull.facing
+	return d
 
 
 func _handoff_ok() -> bool:
@@ -1475,6 +1556,8 @@ func _build_visuals() -> void:
 	# --- the hangout: alcove, trophies, armory, Gatling, poster, braziers (see HideoutDressing).
 	_dressing = await HideoutDressing.build(_visuals, _build_slice)
 	_blockers = (_dressing.get("blockers", []) as Array).duplicate()
+	for sx in [-1.0, 1.0]:
+		_blockers.append([Vector2(sx * 2.3, 15.4), 0.45])   # the open elevator-door leaves standing into the room
 	_rifle_node = _dressing.get("rack_rifle") as Node3D
 	_bull_blocker_i = _blockers.size()
 	_blockers.append([Vector2(BULL_POSITION.x, BULL_POSITION.z), 1.5])
@@ -2163,6 +2246,8 @@ func _follow_player_in_fps(_delta: float) -> void:
 	var d: float = Vector2(_bull.position.x - spot.x, _bull.position.z - spot.z).length()
 	if _beat == Beat.EXIT and _hold <= 0.0:
 		var door := Vector3(EXIT_POSITION.x + 1.2, 0.0, EXIT_POSITION.z + 0.5)
+		if _portal_live:
+			door = Vector3(0.7, 0.0, PORTAL_Z + 3.4)   # through the open door onto the lift's bridge, leading the way
 		if Vector2(_bull.position.x - door.x, _bull.position.z - door.z).length() > 0.5:
 			_bull.walk_to(door, 2.4)
 		else:
