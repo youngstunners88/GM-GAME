@@ -15,4 +15,6 @@ Release pending. Source baseline ef7d8cdb; Godot4.3.stable.official.77dcf97d8, n
 
 Main delta45152B, margin781760B. Unchanged hard limit199229440B. Original GLBs excluded; only1.43/1.61MB reduced versions committed. Existing streamed extras carry their imported scenes/textures.
 
-Pending: fresh/cold import size, staged security/title, refresh master/ship, CI actual butler upload and public BUILD/itch Updated proof. No live claim yet. Generic external-service browser certificate limitations remain documented by prior town-voice work; trust was not modified.
+Security18/18 and title5/5 pass. Texture reference probe69models/0excluded-but-used textures; only the two explicit streamed stable GLBs join the existing streamed-path handling, with mandatory isolated pack verification. Local exact web engine canvas/boot/script/thread/Level1 checks all PASS; overall browser verifier remains FAIL from external HTTPS certificate errors. No trust changes or protected town browser playthrough claimed.
+
+Pending: fresh/cold import size, refresh master/ship, CI actual butler upload and public BUILD/itch Updated proof. No live claim yet. Generic external-service browser certificate limitations remain documented by prior town-voice work; trust was not modified.
