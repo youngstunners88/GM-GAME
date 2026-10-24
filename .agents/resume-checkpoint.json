@@ -1,28 +1,26 @@
 {
-  "observed_remote_sha": "977961e1145fcca5df98f05a62451364dc96c221",
-  "objective": "Finish town voice release proof: actual butler and public BUILD/audio pack",
+  "observed_remote_sha": "ef7d8cdbcc5b29f0fa77c54d44bfa72b42dd97e0",
+  "objective": "Episode2 stable yard: original Dude + cube-headed assistant +3\u20135horses; shrink before runtime integration",
   "task_paths": [
-    "assets/town-audio.json",
-    "assets/town-audio-generated.json",
-    "src/episode2/audio/",
-    "src/autoload/audio_manager.gd",
-    "src/autoload/game_manager.gd",
-    "tests/ep2_town_audio_test.gd",
-    "tests/blaze_rush_touch_test.gd"
+    "src/episode2/chamber/ep2_town_life.gd",
+    "src/episode2/chamber/ep2_gold_town.gd",
+    "src/episode2/assets/town/",
+    "tests/ep2_stable_yard_test.tscn"
   ],
-  "source_commit": "70c5dba70f5fc4399dfb80f5babe29543397916d",
+  "source_commit": "ef7d8cdbcc5b29f0fa77c54d44bfa72b42dd97e0",
   "evidence": {
-    "recordings": "67dialogue+4effects complete;47old hashes/receipts preserved; all71decode; peak0.8839283; founder approved3previews",
-    "voices": "Utah ELEV;SheriffGM/PrisonSam ELEVEN; user_read/account/voice IDs verified; no deletions/fallback",
-    "fixes": "Unitygain only explicit recorded streams; legacy+6dB unchanged. Offlinebanner IGNORE fixes top-left swallowing, forcedofflineBlazePASS",
-    "merged_master": "b34cca64/c5be58ce purse/elevator/hideout/walkinshops/shopping preserved in ce5910d3",
-    "tests": "MergedfullCI PASS(3existingpausegeometryexceptions); compile/town0pending/goldtown/purse/armory/buses/security18/title5 PASS",
-    "export": "Publicmain198313680B/margin915760B;extras60568032B. Earlier local raw packed-hash audit could fall back to source; superseded by isolated imported packet audit.",
-    "output": "Merged native4voice peaks0.421\u20130.689; exactwebBGM/jumpoutputPASS; all71assetsWebAudioPASS. Generalbrowser overallFAIL externalcert, 5engine/gamechecksPASS",
-    "publication": "Master70c5dba7;productionCI40077607425SUCCESS;actualbutler46.14MiBfresh;publicBUILD2026-10-24-70c5dba;isolatedpublic71Vorbispacketpayload+strictdurationchecksPASS"
+    "resume": "Freshmaster merged, including concurrent saloon drinkers. Repo/requiredskills read.",
+    "baseline": "Pinned4.3export0scripterrors; main198402528B/gate199229440B/margin826912B; pck_report retained.",
+    "horse": "ExistingGLB19joints, horse_graze/stand/walk; preserve5existinghorses.",
+    "location": "No stablebuilding in current master. Historicald68919580a9e79000bdeeeea05cbcf5b63fd392c surface-set stable(-16,0,1222),paddock(-24,1204,20,36); ownerconfirmationpending.",
+    "voice": "DudePe1gOSDKAuczOZqgCiEm; placeholderdude_greet_01 only. No TTS/storyinvented.",
+    "changes": "Documentation/inputmanifest only; no runtime/CI changes, no candidates/deploy. Cloud-local excludedGMGamevault log written."
   },
   "unresolved": [
-    "No protectedpublictownplaythrough/finaltakeearverdict claimed. Chromium trust change rejected by auto-review; no explicitapproval, trust unchanged."
+    "Two suppliedPCGLBs notmounted; obtainattachments/downloadlinks/PCenvironment. No exposedremotePCconnector.",
+    "Confirm restorehistoricalEpisode2yard vs newerPCstable scene/commit.",
+    "gltfpack absent; bootstrapwheninputfilesavailable.",
+    "Afterinputreduction, implementsharedyard/interaction/test/captures; exactbefore/afterpack and normalverifiedrelease."
   ],
-  "next_action": "Release complete and verified. Preserve concurrent work; use RELEASE.md as current truth and retain audit correction."
+  "next_action": "Await sourceassets/location clarification. Read docs/handoffs/2026-10-24_stable-yard.md; do not deploy a placeholder cast."
 }

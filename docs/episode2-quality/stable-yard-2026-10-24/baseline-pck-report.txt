@@ -1,0 +1,10 @@
+2641 files, payload 198.1 MB, file 198.4 MB (gate 199.2 MB)
+by kind (MB): {'.ctex': 58.1, '.mp3str': 57.2, '.ogv': 29.0, '.oggvorbisstr': 24.9, '.scn': 21.4, '.gdc': 5.3, '.sample': 1.5, '.json': 0.3}
+meaning: .ctex=textures, .mp3str/.oggvorbisstr=audio, .ogv=video, .scn=3D models, .gdc=scripts
+top 6 files:
+    8.76 MB  src/assets/video/cutscenes/ep2_cliff_to_hideout.ogv
+    6.32 MB  src/assets/video/cutscenes/stage2_boss_defeat.ogv
+    6.21 MB  src/assets/video/smoke_lounge.ogv
+    3.86 MB  src/assets/video/cutscenes/stage1_boss_defeat.ogv
+    3.83 MB  src/assets/video/cutscenes/stage3_boss_defeat.ogv
+    3.40 MB  .godot/imported/menu_mist_theme.mp3-5387b36af3681b417890d4e12774adfb.mp3str

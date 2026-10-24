@@ -1,0 +1,90 @@
+{
+  "status": "blocked_missing_source_assets_and_current_stable_location",
+  "source_commit": "ef7d8cdbcc5b29f0fa77c54d44bfa72b42dd97e0",
+  "voice": {
+    "speaker": "stable_owner_dude",
+    "voice_id": "Pe1gOSDKAuczOZqgCiEm",
+    "line_id_hook": "dude_greet_01",
+    "generated_audio": false,
+    "note": "Distinct new stable-owner role; do not silently replace the existing roaming rancher."
+  },
+  "assets": [
+    {
+      "role": "dude",
+      "supplied_pc_path": "~/Documents/SmokeRealm-stable-characters-20261024/dude/dude_stable_owner.glb",
+      "available_in_cloud": false,
+      "target": "src/episode2/assets/town/dude_stable_owner.glb"
+    },
+    {
+      "role": "assistant",
+      "supplied_pc_path": "~/Documents/SmokeRealm-stable-characters-20261024/assistant/stable_assistant.glb",
+      "available_in_cloud": false,
+      "target": "src/episode2/assets/town/stable_assistant.glb"
+    }
+  ],
+  "preservation": {
+    "target_triangles_each": [
+      8000,
+      10000
+    ],
+    "texture_max": 1024,
+    "texture_format": "JPEG",
+    "joint_count_expected": 65,
+    "clips": [
+      "idle",
+      "walk",
+      "run",
+      "turn",
+      "jump"
+    ],
+    "rigid_features": [
+      "assistant_cube_head",
+      "hat"
+    ],
+    "originals": "Excluded design/ folder only; no originals imported into runtime"
+  },
+  "baseline": {
+    "godot": "4.3.stable.official.77dcf97d8",
+    "main_pack_bytes": 198402528,
+    "limit_bytes": 199229440,
+    "margin_bytes": 826912,
+    "export_script_errors": 0,
+    "candidate_pack_bytes": null
+  },
+  "current_master_stable": {
+    "building_found": false,
+    "existing_street_horses_preserved": 5
+  },
+  "historical_stable": {
+    "commit": "d68919580a9e79000bdeeeea05cbcf5b63fd392c",
+    "script": "src/episode2/chamber/ep2_surface_set.gd",
+    "world_position": [
+      -16,
+      0,
+      1222
+    ],
+    "paddock_xz_bounds": [
+      -24,
+      1204,
+      -4,
+      1240
+    ],
+    "presentation": "Old Node3D surface set used flat stable facade and animated sprite horses; not present in current Ep2GoldTown/TownLife."
+  },
+  "horse": {
+    "path": "src/episode2/assets/town/horse.glb",
+    "joints": 19,
+    "clips": [
+      "horse_graze",
+      "horse_stand",
+      "horse_walk"
+    ]
+  },
+  "verification": {
+    "characters_reduced": false,
+    "character_clips_verified": false,
+    "new_characters_placed": false,
+    "candidate_exported": false,
+    "deployed": false
+  }
+}
