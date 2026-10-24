@@ -527,7 +527,8 @@ func play_voice(name: String, recorded_stream: AudioStream = null) -> void:
     # with coin pings and axe hits and got lost in a fight. +6dB puts the line
     # clearly on top of the mix; the music duck below was already there and was
     # never the whole story on its own.
-    _voice_player.volume_db = 6.0
+    # Offline town takes are already normalized; the legacy announcer boost clips them.
+    _voice_player.volume_db = 0.0 if recorded_stream != null else 6.0
     _voice_player.stream = stream
     add_child(_voice_player)
     # Hold the music duck for the WHOLE speech, not per line. Founder 2026-10-04: "while he was speaking the music

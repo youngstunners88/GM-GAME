@@ -5,73 +5,73 @@ const LINES: Dictionary = {
 	"vo_sheriff_1": {
 		"speaker": "sheriff",
 		"text": "Well now. Somebody rode in on Inferno's quad and lived. What can I do for you, partner?",
-		"seconds": 0,
+		"seconds": 6.305,
 		"start_seconds": 0,
-		"ready": false,
+		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/vo_sheriff_1.ogg"
 	},
 	"vo_sheriff_2": {
 		"speaker": "sheriff",
 		"text": "Certificates are the Minister's department. Minister Mike Dean, this young fella wants one.",
-		"seconds": 0,
+		"seconds": 5.705042,
 		"start_seconds": 0,
-		"ready": false,
+		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/vo_sheriff_2.ogg"
 	},
 	"vo_sheriff_3": {
 		"speaker": "sheriff",
 		"text": "Till then, wet your whistle at the saloon across the street. And mind who's watching when you pay.",
-		"seconds": 0,
+		"seconds": 6.105,
 		"start_seconds": 0,
-		"ready": false,
+		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/vo_sheriff_3.ogg"
 	},
 	"vo_sheriff_witness": {
 		"speaker": "sheriff",
 		"text": "Hold it. If this is happening, it happens proper. I'm the little fella's witness. Square up. Listen for the town bell. Nobody draws till that bell rings.",
-		"seconds": 0,
+		"seconds": 10.905,
 		"start_seconds": 0,
-		"ready": false,
+		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/vo_sheriff_witness.ogg"
 	},
 	"vo_sheriff_foul": {
 		"speaker": "sheriff",
 		"text": "I said wait for the bell. Again.",
-		"seconds": 0,
-		"start_seconds": 0,
-		"ready": false,
+		"seconds": 3.085708,
+		"start_seconds": 0.019292,
+		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/vo_sheriff_foul.ogg"
 	},
 	"vo_sheriff_win": {
 		"speaker": "sheriff",
 		"text": "That settles it. The map's yours, son. Fair and square, and I saw it.",
-		"seconds": 0,
+		"seconds": 5.205,
 		"start_seconds": 0,
-		"ready": false,
+		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/vo_sheriff_win.ogg"
 	},
 	"vo_sheriff_lose": {
 		"speaker": "sheriff",
 		"text": "Too slow. On your feet. Listen for the bell, and we'll do it again.",
-		"seconds": 0,
+		"seconds": 4.505042,
 		"start_seconds": 0,
-		"ready": false,
+		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/vo_sheriff_lose.ogg"
 	},
 	"town_jail_00": {
 		"speaker": "sheriff",
 		"text": "Here he is. Caught him holding the gate open for the bears.",
-		"seconds": 0,
-		"start_seconds": 0,
-		"ready": false,
+		"seconds": 3.616042,
+		"start_seconds": 0.088958,
+		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_jail_00.ogg"
 	},
 	"town_jail_01": {
 		"speaker": "prisoner",
 		"text": "All I did was open a gate. Somebody paid me to bring them in.",
-		"seconds": 0,
+		"seconds": 4.005,
 		"start_seconds": 0,
-		"ready": false,
+		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_jail_01.ogg"
 	},
 	"town_jail_02": {
@@ -85,25 +85,25 @@ const LINES: Dictionary = {
 	"town_jail_03": {
 		"speaker": "prisoner",
 		"text": "Never saw a face. Coin, and an order: soften the claims before the vault locks.",
-		"seconds": 0,
+		"seconds": 5.905,
 		"start_seconds": 0,
-		"ready": false,
+		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_jail_03.ogg"
 	},
 	"town_jail_04": {
 		"speaker": "prisoner",
 		"text": "They want Fort Knox first. Watch the lake outflow, the river... the trains.",
-		"seconds": 0,
+		"seconds": 5.505,
 		"start_seconds": 0,
-		"ready": false,
+		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_jail_04.ogg"
 	},
 	"town_jail_05": {
 		"speaker": "sheriff",
 		"text": "Find who brought the bears, Lil Blunt. I'll keep this one where he is.",
-		"seconds": 0,
+		"seconds": 4.305,
 		"start_seconds": 0,
-		"ready": false,
+		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_jail_05.ogg"
 	},
 	"town_intro_sharps_lines_0": {
@@ -125,9 +125,9 @@ const LINES: Dictionary = {
 	"town_intro_sharps_lines_2": {
 		"speaker": "utah",
 		"text": "Falling block. One shot, then you earn the next one.",
-		"seconds": 0,
+		"seconds": 4.005042,
 		"start_seconds": 0,
-		"ready": false,
+		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_intro_sharps_lines_2.ogg"
 	},
 	"town_intro_sharps_lines_3": {
@@ -157,33 +157,33 @@ const LINES: Dictionary = {
 	"town_intro_gatling_call_0": {
 		"speaker": "utah",
 		"text": "Now the one that is not for sale. Follow me out front.",
-		"seconds": 0,
+		"seconds": 3.705,
 		"start_seconds": 0,
-		"ready": false,
+		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_intro_gatling_call_0.ogg"
 	},
 	"town_intro_gatling_lines_0": {
 		"speaker": "utah",
 		"text": "Colt Gatling Gun. Six barrels, a drum on top, a crank on the side.",
-		"seconds": 0,
+		"seconds": 5.805,
 		"start_seconds": 0,
-		"ready": false,
+		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_intro_gatling_lines_0.ogg"
 	},
 	"town_intro_gatling_lines_1": {
 		"speaker": "utah",
 		"text": "Doctor Gatling's patent, built by Colt. Turn the crank and the barrels turn with it. Watch the plates.",
-		"seconds": 0,
+		"seconds": 7.405,
 		"start_seconds": 0,
-		"ready": false,
+		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_intro_gatling_lines_1.ogg"
 	},
 	"town_intro_gatling_after_0": {
 		"speaker": "utah",
 		"text": "Bolted to the porch. Not for coin, not for gold. Rich will not sell her and I will not let him.",
-		"seconds": 0,
+		"seconds": 7.805042,
 		"start_seconds": 0,
-		"ready": false,
+		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_intro_gatling_after_0.ogg"
 	},
 	"town_intro_gatling_after_1": {
@@ -197,17 +197,17 @@ const LINES: Dictionary = {
 	"town_intro_gatling_after_2": {
 		"speaker": "utah",
 		"text": "Go on. Take the crank. Short bursts. The drum is all there is.",
-		"seconds": 0,
+		"seconds": 5.105,
 		"start_seconds": 0,
-		"ready": false,
+		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_intro_gatling_after_2.ogg"
 	},
 	"town_intro_closing_0": {
 		"speaker": "utah",
 		"text": "Steady hands. Remember her when the shipment comes down.",
-		"seconds": 0,
+		"seconds": 4.105042,
 		"start_seconds": 0,
-		"ready": false,
+		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_intro_closing_0.ogg"
 	},
 	"town_trade_00": {
@@ -237,9 +237,9 @@ const LINES: Dictionary = {
 	"town_trade_03": {
 		"speaker": "utah",
 		"text": "River rises tomorrow. Something rides it down.",
-		"seconds": 0,
+		"seconds": 4.005,
 		"start_seconds": 0,
-		"ready": false,
+		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_trade_03.ogg"
 	},
 	"town_trade_04": {
@@ -253,9 +253,9 @@ const LINES: Dictionary = {
 	"town_trade_05": {
 		"speaker": "utah",
 		"text": "From the high rocks you'll see the whole bend. Take the high rocks.",
-		"seconds": 0,
+		"seconds": 4.405,
 		"start_seconds": 0,
-		"ready": false,
+		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_trade_05.ogg"
 	},
 	"town_trade_06": {
@@ -269,9 +269,9 @@ const LINES: Dictionary = {
 	"town_trade_07": {
 		"speaker": "utah",
 		"text": "Skiff's sound, crates are sealed. She'll ride wet and ride heavy.",
-		"seconds": 0,
+		"seconds": 5.305042,
 		"start_seconds": 0,
-		"ready": false,
+		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_trade_07.ogg"
 	},
 	"town_trade_08": {
@@ -285,9 +285,9 @@ const LINES: Dictionary = {
 	"town_trade_09": {
 		"speaker": "utah",
 		"text": "Come back when the purse sits heavier.",
-		"seconds": 0,
+		"seconds": 2.313292,
 		"start_seconds": 0,
-		"ready": false,
+		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_trade_09.ogg"
 	},
 	"town_trade_10": {
@@ -301,9 +301,9 @@ const LINES: Dictionary = {
 	"town_trade_11": {
 		"speaker": "utah",
 		"text": "Be on the overlook by first light. I'll be at the water.",
-		"seconds": 0,
-		"start_seconds": 0,
-		"ready": false,
+		"seconds": 3.865458,
+		"start_seconds": 0.039542,
+		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_trade_11.ogg"
 	},
 	"town_trade_12": {

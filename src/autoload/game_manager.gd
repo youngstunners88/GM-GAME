@@ -855,11 +855,13 @@ func _show_offline_banner() -> void:
     _offline_banner.layer = 99
     var lbl := Label.new()
     lbl.name = "Banner"
+    lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
     lbl.text = "OFFLINE MODE — scores saved locally, will sync when reconnected"
     lbl.add_theme_font_size_override("font_size", 14)
     lbl.modulate = Color(1.0, 0.85, 0.5, 0.95)
     lbl.position = Vector2(12, 6)
     var bg := ColorRect.new()
+    bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
     bg.color = Color(0.1, 0.08, 0.02, 0.75)
     bg.size = Vector2(520, 26)
     bg.position = Vector2(6, 4)

@@ -13,3 +13,13 @@ Speech must finish before progression. `Ep2TownVoiceBank.seconds()` uses engine 
 The town bell alone opens the draw window, once per round/retry. Sheriff speech tells both men to listen. Missing bell must keep firing locked. Suppress ambient greetings for story/duel, preserve music ducking and a single story voice lane. Keep the bell out of ambience.
 
 Required checks: pinned 4.3 import/compile; `ep2_town_audio_test`, `ep2_gold_town_test`, `ep2_armory_guns_test`; receipt/hash/decoded peak checks; actual audible output; full normal release gates and exact public BUILD. The audio gate must block while any of 67 recordings is missing. Never publish an incomplete cast. Use `smokerealm-ship` after all checks; preserve concurrent master, gameplay, title and access locks.
+
+## Founder-created cast (2026-10-24)
+
+Founder approved all three Voice Design previews. Read-only APIs verified Utah `LeIvuXkiWRYkY1ThkAdG` under `ELEV`; Sheriff GM `zskPkJFpKt6Fq5Aouk0g` and Prison Sam `D7R0fmiEU45c9y4irVok` under `ELEVEN`. These bindings belong to different accounts. Select each explicitly; never regenerate preserved Rich takes. Both accounts allowed user/subscription reads at recording time. Free-plan API voice design is unavailable; founder created the voices in the UI.
+
+Recording commands (Node 24 proxy support is required in the managed runtime):
+```bash
+ELEVENLABS_KEY_BINDING=ELEV NODE_USE_ENV_PROXY=1 node scripts/generate-town-audio.mjs --generate --speakers utah
+ELEVENLABS_KEY_BINDING=ELEVEN NODE_USE_ENV_PROXY=1 node scripts/generate-town-audio.mjs --generate --speakers sheriff,prisoner
+```

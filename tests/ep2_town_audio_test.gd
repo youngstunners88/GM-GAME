@@ -63,6 +63,7 @@ func _ready() -> void:
 		var id: String = Ep2TownVoiceBank.id_for("rich", text)
 		check("Rich's full gun explanation has its recorded duration", c._intro._line_t >= Ep2TownVoiceBank.seconds(id) and c._intro._line_t > 4.2)
 		check("Rich's intro really plays the recorded stream", AudioManager._voice_player != null and AudioManager._voice_player.stream == Ep2TownVoiceBank.stream(id))
+		check("normalized recorded speech does not inherit the announcer boost", AudioManager._voice_player != null and is_zero_approx(AudioManager._voice_player.volume_db))
 	else:
 		check("built armory has its existing gun introduction", false)
 	# Godot uses the final granule / sample rate. ffprobe subtracts positive start PTS.

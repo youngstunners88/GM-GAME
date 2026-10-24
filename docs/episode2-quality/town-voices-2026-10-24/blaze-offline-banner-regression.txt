@@ -1,0 +1,5 @@
+  [PASS] offline banner leaves all touches to gameplay
+  [PASS] phone landscape: a tap on the top-left corner = exactly ONE jump
+  [PASS] phone portrait: a tap on the top-left corner = exactly ONE jump
+  [PASS] tablet landscape: a tap on the top-left corner = exactly ONE jump
+BLAZE_RUSH_TOUCH: ALL PASS

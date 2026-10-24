@@ -1,25 +1,24 @@
 {
-  "observed_remote_sha": "434109bb",
-  "objective": "Complete town cast, native/audio/web verification and nonforced release",
-  "source_commit": "15ed3fc6",
+  "observed_remote_sha": "434109bb2debf7f102f523f7015438e150977b60",
+  "objective": "Complete founder-approved town voice cast and verify/release without weakening gates",
   "task_paths": [
-    "assets/town-audio*.json",
-    "scripts/elevenlabs-client.mjs",
-    "scripts/generate-town-audio.mjs",
-    "src/episode2/audio",
-    "tests/ep2_town_audio_test.gd",
-    "tests/ep2_gold_town_test.gd"
+    "assets/town-audio.json",
+    "assets/town-audio-generated.json",
+    "src/episode2/audio/",
+    "src/autoload/audio_manager.gd",
+    "tests/ep2_town_audio_test.gd"
   ],
+  "source_commit": "c3e5588e7fb911e39024ee1fd3809907df2aef18",
   "evidence": {
-    "timing": "Nine positive Ogg starts; engine=duration+start verified all47. Engine sequencing; files unchanged.",
-    "native": "compile/audio assertions/armory pass; gold only missing sheriff. FullCI cast +3localBlaze touches/knownpause; master reproduces2touches.",
-    "security": "18/18; title5/5",
-    "handoff": "docs/handoffs/2026-10-24_town-voices.md"
+    "recordings": "67dialogue+4effects complete;47old hashes/receipts preserved;all71decode;peak0.8839283",
+    "voices": "Utah under ELEV;SheriffGM/PrisonSam under ELEVEN;account/user_read verified;founder approved previews;no deletions",
+    "output": "Chromium all71assets nonzero;native4voice mixer sampled;fixed inherited+6dB clipping for explicit recorded streams only",
+    "tests": "Pinned4.3compile/townaudio0pending/goldtown/armoryguns/audiobuses PASS;security18/18;title5/5"
   },
   "unresolved": [
-    "Owner newELEVEN/ELEV+ keys not exposed to runningenvironment. OnlyELEVENLABS_API_KEY; user/subscription HTTP401 missinguser_read. No identity/capacity verified.",
-    "3voices/24takes pending; no deletion authorized.",
-    "Subjective/audibleoutput, exactexport/pack/fullrelease/publicBUILD stillrequired."
+    "Full CI running /tmp/tmp.wlSRCLqz4z;known pause geometry differences observed",
+    "Exact export queued behind fullCI;no public town playthrough or final-take subjective listening claimed",
+    "Commit/push/nonforced master/butler/publicBUILD pending"
   ],
-  "next_action": "Apply owner newenvironment to runtime, discoverbindings byname only, verifyintendedaccount then produce pendingcast. Do not deploypartial."
+  "next_action": "Finish fullCI, inspect control failures honestly;exact export/pack/browser checks;refreshmaster before release;do not weaken gates"
 }

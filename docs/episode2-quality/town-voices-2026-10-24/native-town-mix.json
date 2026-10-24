@@ -1,0 +1,47 @@
+{
+  "method": "Godot 4.3 headless AudioEffectCapture on Master, AudioManager.play_voice with actual town bank streams, 0.7 seconds per sample. Mix samples verify signal, not hardware listening.",
+  "before_legacy_plus_6db": [
+    {
+      "frames": 26112,
+      "id": "vo_sheriff_1",
+      "peak": 1.11779999732971
+    },
+    {
+      "frames": 28672,
+      "id": "town_jail_00",
+      "peak": 0.840246260166168
+    },
+    {
+      "frames": 28672,
+      "id": "town_intro_sharps_lines_2",
+      "peak": 0.923730313777924
+    },
+    {
+      "frames": 32768,
+      "id": "town_intro_sharps_lines_0",
+      "peak": 1.37487745285034
+    }
+  ],
+  "after_normalized_recording_unity_gain": [
+    {
+      "frames": 24576,
+      "id": "vo_sheriff_1",
+      "peak": 0.56022709608078
+    },
+    {
+      "frames": 28672,
+      "id": "town_jail_00",
+      "peak": 0.421120703220367
+    },
+    {
+      "frames": 32768,
+      "id": "town_intro_sharps_lines_2",
+      "peak": 0.462961882352829
+    },
+    {
+      "frames": 28672,
+      "id": "town_intro_sharps_lines_0",
+      "peak": 0.68907105922699
+    }
+  ]
+}

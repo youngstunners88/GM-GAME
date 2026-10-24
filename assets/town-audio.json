@@ -1,27 +1,30 @@
 {
   "version": 1,
   "model_id": "eleven_v4",
-  "note": "Offline ElevenLabs production only. Keys stay in the build environment; game ships recorded Ogg audio. Rich reuses Episode1. Three newly designed character voices await free custom slots.",
+  "note": "Offline ElevenLabs production only. Keys stay in the build environment; game ships recorded Ogg audio. Rich reuses Episode1. Original Utah, sheriff and prisoner supplied by founder.",
   "voices": {
     "rich": {
       "voice_id": "LNV6ahDtkAOqwn1X3R7a",
-      "name": "Rich Miner — Episode 1 voice",
+      "name": "Rich Miner \u2014 Episode 1 voice",
       "source": "Existing Gold Claim Recorder; reuse unchanged"
     },
     "utah": {
-      "voice_id": null,
-      "name": "Utah — SmokeRealm",
-      "source": "New original thick Western voice; selected audition2; save blocked by custom voice limit"
+      "voice_id": "LeIvuXkiWRYkY1ThkAdG",
+      "name": "Utah",
+      "source": "Founder-created original voice; supplied 2026-10-24; verified via read-only voice API",
+      "production_binding": "ELEV"
     },
     "prisoner": {
-      "voice_id": null,
-      "name": "Prisoner — SmokeRealm",
-      "source": "New original higher Western tenor; selected audition1; save blocked by custom voice limit"
+      "voice_id": "D7R0fmiEU45c9y4irVok",
+      "name": "Prison Sam",
+      "source": "Founder-created original voice; supplied 2026-10-24; verified via read-only voice API",
+      "production_binding": "ELEVEN"
     },
     "sheriff": {
-      "voice_id": null,
-      "name": "Sheriff — SmokeRealm",
-      "source": "New original Western sheriff; selected audition2; save blocked by custom voice limit"
+      "voice_id": "zskPkJFpKt6Fq5Aouk0g",
+      "name": "Sheriff GM",
+      "source": "Founder-created original voice; supplied 2026-10-24; verified via read-only voice API",
+      "production_binding": "ELEVEN"
     },
     "lil_blunt": {
       "voice_id": "HMGfKwZCRujgXyRDUW0b",
