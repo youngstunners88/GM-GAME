@@ -1,5 +1,5 @@
 {
-  "observed_remote_sha": "e9d52778848acc20dadd8478cbf1072d4fd08f90",
+  "observed_remote_sha": "b17acfad5fea9649bbf25a536a13e07d6427402f",
   "objective": "Transition2: clear exit beam, continuous held walk into woods, raised passenger view for bear shooting",
   "task_paths": [
     "src/episode2/chamber/interlude_base.gd",
@@ -8,15 +8,14 @@
     "src/episode2/chamber/ep2_wildlife.gd",
     "tests/transition2_test.gd"
   ],
-  "source_commit": "pending implementation commit",
+  "source_commit": "e1b93d22d1d79bfd805d6e160350d3481e03249a",
   "evidence": {
     "tests": "Pinned compile/newTransition2/feedback/interlude/session/save/fulllocalCI PASS (3 known pause geometry exceptions)",
     "render": "docs/episode2-quality/transition2-2026-10-23/:actual exit before/after, heldW trace, normal/ADS/sides/rear; roadbear2\u21921HP,loaded6\u21925/reserve18",
-    "pack": "fresh import gate pending",
-    "release": "Previous publicBUILD2026-10-23-1381bd2; new release pending"
+    "pack": "Exact productionCI199173008B/gate199229440B/margin56432B;extras54443936B;nonthreaded4.3. Localfresh199173136B,warm199205824B.",
+    "release": "Master39965066342/job120452670367 SUCCESS;actualbutler44.50MiBfresh;publicChromiumBUILD2026-10-23-e1b93d2,embed18305533-2194028,extrasreadyHTTP200",
+    "security": "18 checks/no blockers; front-page5filelockPASS"
   },
-  "unresolved": [
-    "Exact-source fresh pack, security/title, masterCIbutler/publicBUILD verification"
-  ],
-  "next_action": "Commit, finish ship gates, nonforced master deployment and public verification; standing owner authorization persists."
+  "unresolved": [],
+  "next_action": "Transition2 task complete and live. Preserve gameplay/access/title contracts and standing shipping authorization; resume for new feedback."
 }
