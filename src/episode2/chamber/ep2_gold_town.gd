@@ -202,6 +202,7 @@ static func build(parent: Node3D, interiors: bool) -> Dictionary:
 		for fa in fort.find_children("FlagAnchor*", "", true, false):
 			_flag(fort, (fa as Node3D).position)
 	Ep2TownLife.build(root, props)                      # horses at the rails, the river, the railway and the train
+	Ep2TownPosters.build(root, props)                   # the wanted posters: notice board, shop fronts, the jail (streamed images)
 	if interiors:
 		_furnish(root, kit, a2)
 	kit.free()
@@ -264,6 +265,7 @@ static func _load_jail() -> Node3D:
 		j.free()
 		return null
 	_apply_mats(j)
+	_texture_dark_wood(j)
 	var nav: Node = j.find_child("Jail_Nav", true, false)
 	if nav != null:
 		for c in nav.get_children():
@@ -329,6 +331,19 @@ static func _apply_mats(kit: Node) -> void:
 			var key: String = String(src.resource_name) if src != null else ""
 			if mats.has(key):
 				m.mesh.surface_set_material(si, mats[key])
+
+
+## The jail's furniture (desk, chair, cots, the privy box, the rifle rack) came out of the glTF as flat brown "DarkWood"; give it real
+## grain - the timber texture, darkened - so it stops reading as painted cardboard (founder 2026-10-24: interiors look low quality).
+## Jail only: the kit's and the Armory's DarkWood stay exactly as approved.
+static func _texture_dark_wood(n: Node) -> void:
+	var dw: StandardMaterial3D = _tex_mat("", Color(0.50, 0.36, 0.26), 0.9, TIMBER_TEX)
+	for mi in n.find_children("*", "MeshInstance3D", true, false):
+		var m := mi as MeshInstance3D
+		for si in m.mesh.get_surface_count():
+			var src: Material = m.mesh.surface_get_material(si)
+			if src != null and String(src.resource_name) == "DarkWood":
+				m.mesh.surface_set_material(si, dw)
 
 
 ## A world-triplanar material from a town texture (falls back to `fallback`, then to a flat colour) - tinted.
@@ -510,6 +525,12 @@ static func _furnish(root: Node3D, kit: Node3D, a2: Node3D = null) -> void:
 	if jail_v1:
 		for i in mini(jail_lights.size(), 2):
 			lamps.append(["Bldg_Jail", jail_lights[i], 4.0])
+		if jail_spots.has("privy"):                      # the flies over the cell's privy, and their buzz (founder 2026-10-24)
+			var flies := Ep2JailFlies.new()
+			flies.name = "JailFlies"
+			flies.position = local_to_world("Bldg_Jail", jail_spots["privy"])
+			flies.rotation.y = building_xform(entry("Bldg_Jail")).basis.get_euler().y
+			root.add_child(flies)
 	for lp in lamps:
 		var l := OmniLight3D.new()
 		l.light_color = Color(1.0, 0.72, 0.42)
