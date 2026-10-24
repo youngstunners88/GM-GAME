@@ -271,6 +271,7 @@ func add_ethereum_ring() -> void:
     ethereum_rings_collected += 1
     rings_changed.emit(ethereum_rings_collected)
     add_score(50)
+    purse_add("eth", 1)          # an Ethereum ring is ETH in the purse (founder 2026-10-24)
 
 ## Credit $TITANX. Founder: "$TITANX... are tokens and not coins" — a
 ## separate counter from add_coin() so a TitanX pickup is never counted, on
@@ -289,6 +290,85 @@ func add_ethereum_ring() -> void:
 func add_titanx(amount: int = 1) -> void:
     titanx_collected += amount
     titanx_changed.emit(titanx_collected)
+    purse_changed.emit("titanx", titanx_collected)
+
+# ---- the crypto purse (founder 2026-10-24) ---------------------------------
+## "Throughout the game Lil Blunt has been collecting ETH, BTC, WBTC, Solana and
+## TitanX. These need to be reflected in the tab when he is selecting his
+## weapon so that when he is making a purchase at Rich or anywhere he can use
+## his coins and tokens."
+##
+## One purse, five tokens, each a whole-face count:
+##   eth / btc / sol - the Episode 1 crypto coins (and an Ethereum ring is ETH),
+##                     kept here in token_purse;
+##   wbtc            - GoldMineSystem.wbtc_balance (the protocol counter it
+##                     always was, so nothing reads two copies);
+##   titanx          - titanx_collected (likewise).
+## Like WBTC and TitanX, the purse is a holding, not run currency: a boss touch
+## does not empty it (see boss_contact_restart); only a new game does. The
+## plain coin tally (coins_collected) stays the Episode 1 HUD/score counter.
+const PURSE_TOKENS := ["eth", "btc", "wbtc", "sol", "titanx"]
+const PURSE_NAMES := {"eth": "ETH", "btc": "BTC", "wbtc": "WBTC", "sol": "SOL", "titanx": "TITANX"}
+signal purse_changed(token: String, balance: int)
+var token_purse: Dictionary = {"eth": 0, "btc": 0, "sol": 0}
+
+## Whole faces of `token` Lil Blunt holds (0 for an unknown token).
+func purse_balance(token: String) -> int:
+    match token:
+        "wbtc":
+            return GoldMineSystem.wbtc_balance
+        "titanx":
+            return titanx_collected
+    return int(token_purse.get(token, 0))
+
+## Credit `amount` faces of an Episode 1 coin token (eth / btc / sol). WBTC and
+## TitanX keep their own award paths (GoldMineSystem.award_wbtc, add_titanx);
+## for those this is the refund path of a refused sale.
+func purse_add(token: String, amount: int = 1) -> void:
+    if amount <= 0 or not PURSE_TOKENS.has(token):
+        return
+    match token:
+        "wbtc":
+            GoldMineSystem.wbtc_balance += amount
+            GoldMineSystem.wbtc_changed.emit(GoldMineSystem.wbtc_balance)
+        "titanx":
+            titanx_collected += amount
+            titanx_changed.emit(titanx_collected)
+        _:
+            token_purse[token] = int(token_purse.get(token, 0)) + amount
+    purse_changed.emit(token, purse_balance(token))
+
+## Pay `amount` faces of `token`. False (and nothing debited) when the purse
+## cannot cover it, so a caller can never go negative and never invents money.
+func purse_spend(token: String, amount: int) -> bool:
+    if amount <= 0 or not PURSE_TOKENS.has(token) or purse_balance(token) < amount:
+        return false
+    match token:
+        "wbtc":
+            GoldMineSystem.wbtc_balance -= amount
+            GoldMineSystem.wbtc_changed.emit(GoldMineSystem.wbtc_balance)
+        "titanx":
+            titanx_collected -= amount
+            titanx_changed.emit(titanx_collected)
+        _:
+            token_purse[token] = int(token_purse.get(token, 0)) - amount
+    purse_changed.emit(token, purse_balance(token))
+    return true
+
+## The purse from a save. A save written before the purse existed carries only
+## the shared coin pool that Rich used to take; that pool moves into the purse
+## ONCE, split evenly over ETH / BTC / SOL (remainder to BTC), so no player
+## loses buying power and no face is created or destroyed.
+func _load_purse(data: Dictionary) -> void:
+    token_purse = {"eth": 0, "btc": 0, "sol": 0}
+    if data.has("token_purse"):
+        var raw: Dictionary = SaveSafe.to_dict(data.get("token_purse", {}))
+        for t in ["eth", "btc", "sol"]:
+            token_purse[t] = maxi(0, SaveSafe.to_int(raw.get(t, 0), 0))
+        return
+    var legacy: int = coins_collected
+    var share: int = legacy / 3
+    token_purse = {"eth": share, "btc": legacy - 2 * share, "sol": share}
 
 ## Bank $SMOKE tokens earned in Blaze Rush runs.
 func add_smoke(amount: int) -> void:
@@ -628,6 +708,7 @@ func reset_session() -> void:
     smoke_changed.emit(0)
     titanx_collected = 0
     titanx_changed.emit(0)
+    token_purse = {"eth": 0, "btc": 0, "sol": 0}
     blaze_rush_completed.clear()
     secret_door_used.clear()
     blaze_portal_used.clear()
@@ -680,6 +761,7 @@ func save_session() -> bool:
         "rings": ethereum_rings_collected,
         "smoke": smoke_collected,
         "titanx": titanx_collected,
+        "token_purse": token_purse,
         "blaze_rush": _serialize_blaze_completions(),
         "health": player_health,
         "max_health": max_health,
@@ -724,6 +806,7 @@ func load_session() -> bool:
     ethereum_rings_collected = maxi(0, SaveSafe.to_int(data.get("rings", 0), 0))
     smoke_collected = maxi(0, SaveSafe.to_int(data.get("smoke", 0), 0))
     titanx_collected = maxi(0, SaveSafe.to_int(data.get("titanx", 0), 0))
+    _load_purse(data)
     _deserialize_blaze_completions(SaveSafe.to_dict(data.get("blaze_rush", {})))
     max_health = clampi(SaveSafe.to_int(data.get("max_health", 3), 3), 1, 10)
     player_health = clampi(SaveSafe.to_int(data.get("health", max_health), max_health), 1, max_health)

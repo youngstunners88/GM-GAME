@@ -53,6 +53,49 @@ var _surface_daylight := false
 ## (it rides up with the cage). Inferno pulls it from where he stands; nobody walks out through the bars any more.
 const LEVER_POS := Vector3(-1.62, 1.15, 0.35)
 
+## THE OPEN DOOR (founder 2026-10-24: "i dont want a transition at that point. he needs to literally just walk through into the section
+## that [has] the elevator ... we should be able to see the elevator from within the smelting facility"). While the hideout is played,
+## this room - already built behind it - is the view through the hideout's open doorway: the session root mirrors the player's camera
+## into this room's camera every frame (portal_view) and the doorway shows that image. The black tunnel plug and the back wall stand
+## between that camera and the cavern, so they are hidden while the doorway looks through them, and come back once Lil Blunt has walked
+## in past them. The hand-over then carries his real position and Inferno's (lift_player / lift_bull), not START_POS.
+## Where the hideout's doorway plane lands in this room (the tunnel plug's front face is CAVE_Z0 + 0.4).
+const PORTAL_Z := CAVE_Z0 + 0.4
+## Lil Blunt may stand right at the mouth after the hand-over (the old floor stopped him 0.6 m in, past where the doorway put him).
+const MOUTH_MIN_Z := CAVE_Z0 + 0.35
+var _mouth_plug: MeshInstance3D = null
+var _mouth_wall: MeshInstance3D = null
+var _mouth_open: bool = false
+
+
+## The hideout's doorway is about to look into this room: open the mouth, keep Inferno hidden until the hideout's Inferno walks through.
+func portal_begin() -> void:
+	_set_mouth_open(true)
+	if _bull != null:
+		_bull.visible = false
+
+
+## One frame of the view through the hideout's doorway. `d` = {"xf": the camera in this room's frame, "fov": degrees,
+## "bull": Inferno's position here once the hideout's Inferno has passed the doorway (absent before), "bull_facing": radians}.
+func portal_view(d: Dictionary) -> void:
+	if _camera == null:
+		return
+	_camera.current = true
+	_camera.global_transform = d.get("xf", _camera.global_transform)
+	_camera.fov = float(d.get("fov", _camera.fov))
+	if _bull != null:
+		_bull.visible = d.has("bull")
+		if d.has("bull"):
+			_bull.position = d["bull"]
+			_bull.facing = float(d.get("bull_facing", _bull.facing))
+
+
+func _set_mouth_open(open: bool) -> void:
+	_mouth_open = open
+	for n in [_mouth_plug, _mouth_wall]:
+		if n != null:
+			n.visible = not open
+
 var _rock: StandardMaterial3D = null
 var _kit_root: Node3D = null
 var _kit_mats: Dictionary = {}
@@ -176,10 +219,10 @@ func _build_cavern(rock_dark: StandardMaterial3D, gravel: StandardMaterial3D, ir
 		_box(Vector3(2.0, CAVE_H - PIT_Y, zl + 1.0), Vector3((CAVE_HALF_X + 1.0) * sx, (CAVE_H + PIT_Y) * 0.5, zc), _rock)
 		var w: float = CAVE_HALF_X - SHAFT_HALF + 1.0                                                      # the cavern meets the shaft's south wall
 		_box(Vector3(w, CAVE_H - PIT_Y, 1.6), Vector3((SHAFT_HALF + w * 0.5) * sx, (CAVE_H + PIT_Y) * 0.5, -SHAFT_HALF - 0.8), _rock)
-	_box(Vector3(18.0, CAVE_H - PIT_Y, 2.0), Vector3(0.0, (CAVE_H + PIT_Y) * 0.5, CAVE_Z0 - 1.0), _rock)  # back wall (the hideout side)
+	_mouth_wall = _box(Vector3(18.0, CAVE_H - PIT_Y, 2.0), Vector3(0.0, (CAVE_H + PIT_Y) * 0.5, CAVE_Z0 - 1.0), _rock)  # back wall (the hideout side)
 	_box(Vector3(18.0, 1.6, zl + 1.0), Vector3(0.0, CAVE_H + 0.8, zc), rock_dark)                          # cavern roof
 	# the hideout tunnel mouth in the back wall, framed in timber
-	_box(Vector3(3.6, 4.2, 0.6), Vector3(0.0, 2.1, CAVE_Z0 + 0.1), _plain(Color(0.02, 0.015, 0.01), 1.0))
+	_mouth_plug = _box(Vector3(3.6, 4.2, 0.6), Vector3(0.0, 2.1, CAVE_Z0 + 0.1), _plain(Color(0.02, 0.015, 0.01), 1.0))
 	for sx in [-1.0, 1.0]:
 		_kit("Beam4m", Vector3(1.9 * sx, 2.0, CAVE_Z0 + 0.6), Vector3(0.0, 0.0, PI * 0.5), Vector3(1.05, 1.0, 1.0))
 	_kit("Beam4m", Vector3(0.0, 4.3, CAVE_Z0 + 0.6), Vector3.ZERO, Vector3(1.15, 1.0, 1.0))
@@ -698,11 +741,19 @@ func _on_setup() -> void:
 	prebuild_requested.emit(NEXT_CHAMBER)      # the bear woods build behind the shaft while the cage is boarded and rises
 	_beat = Beat.ARRIVE
 	_player_pos = START_POS
+	if handoff.has("lift_player"):            # walked in through the open doorway: exactly where the doorway showed him
+		var lp: Vector3 = handoff["lift_player"]
+		_player_pos = Vector3(clampf(lp.x, -1.2, 1.2), 0.0, maxf(lp.z, MOUTH_MIN_Z))
 	_ground_y = 0.0
 	_player_yaw = 0.0
 	_apply_handoff_gaze(0.0, -0.04)           # first person, eyes level (keeps the gaze he had at the previous chamber's exit)
 	if _bull == null:
 		_bull = _build_bull(START_POS + Vector3(-1.2, 0.0, 4.0), 0.0)
+	if handoff.has("lift_bull"):              # Inferno walked through ahead of him: keep him where he was, facing the way he faced
+		_bull.position = handoff["lift_bull"]
+		_bull.facing = float(handoff.get("lift_bull_facing", _bull.facing))
+	if _bull != null:
+		_bull.visible = true
 	_loop = _loop_player(LOOP_SFX, -8.0)
 	_on_beat_entered(Beat.ARRIVE)
 
@@ -778,6 +829,8 @@ func _show_finished() -> void:
 
 
 func _tick(delta: float) -> void:
+	if _mouth_open and _running and _player_pos.z > CAVE_Z0 + 1.6:
+		_set_mouth_open(false)          # he is in: the tunnel behind him is the dark tunnel again
 	_surface_light()
 	# lever animation: the iron handle swings from back (-35 deg) to forward (+35 deg) as Inferno pulls it
 	if _lever_t >= 0.0 and _lever_t < 1.0 and _lever:
@@ -887,7 +940,7 @@ func _collide(p: Vector3) -> Vector3:
 	# ground floor: the tunnel then the shaft base
 	if q.z < -SHAFT_HALF:
 		q.x = clampf(q.x, -1.2, 1.2)        # between the bridge rails (a 7 m drop beyond them)
-		q.z = maxf(q.z, CAVE_Z0 + 0.6)
+		q.z = maxf(q.z, MOUTH_MIN_Z if _mouth_open else CAVE_Z0 + 0.6)
 	else:
 		q.x = clampf(q.x, -(SHAFT_HALF - 0.5), SHAFT_HALF - 0.5)
 		q.z = clampf(q.z, -SHAFT_HALF - 5.0, SHAFT_HALF - 0.6)

@@ -70,6 +70,15 @@ func is_clear(p: Vector2) -> bool:
 		if rect.has_point(p): return false
 	return Ep2GoldTown.collide(p, RADIUS, walls, props).distance_to(p) < 0.002
 
+## is_clear for a point someone is already STANDING on (a saved position): a walker can settle within a hair of a prop circle's edge
+## (a horse at the rail: 1.341 m from its centre against 1.34 m), which the strict test calls blocked. 2 cm is far below anything that
+## puts a body inside a wall or a prop; everything else is exactly is_clear.
+func is_standing_clear(p: Vector2, tolerance: float = 0.02) -> bool:
+	if not Rect2(ORIGIN, Vector2(SIZE - Vector2i.ONE) * SPACING).has_point(p): return false
+	for rect in blocked_rects:
+		if rect.has_point(p): return false
+	return Ep2GoldTown.collide(p, RADIUS, walls, props).distance_to(p) < tolerance
+
 func segment_clear(a: Vector2, b: Vector2) -> bool:
 	var count: int = maxi(1, ceili(a.distance_to(b) / 0.16))
 	for i in count + 1:

@@ -21,16 +21,20 @@ func _ready() -> void:
 	var far := Vector3(80, 0, 1300)
 	var overlaps: int = 0
 	var static_hits: int = 0
+	var shop_ticks: int = 0
 	for frame in 6000: # ten simulated minutes, at a different tick rate from the old 120s test
 		tp.step(0.1, far)
 		for i in tp.people.size():
 			var p: Ep2TownPeople.Person = tp.people[i]
 			var q := Vector2(p.folk.position.x, p.folk.position.z)
-			if not tp.navigation.is_clear(q): static_hits += 1
+			# a shopper on a scripted visit is legitimately on a walk-in shop's porch / inside it (founder 2026-10-24); everyone else stays on the street graph
+			if p.state not in Ep2TownPeople.SHOP_STATES and not tp.navigation.is_clear(q): static_hits += 1
+			if p.state in Ep2TownPeople.SHOP_STATES: shop_ticks += 1
 			for k in range(i + 1, tp.people.size()):
 				var other: Ep2TownPeople.Person = tp.people[k]
 				if q.distance_to(Vector2(other.folk.position.x, other.folk.position.z)) < 0.60: overlaps += 1
-	check("ten minutes: nobody enters walls, props, raised porches or firing yard", static_hits == 0, static_hits)
+	check("ten minutes: nobody enters walls, props, raised porches or firing yard (shop visits apart)", static_hits == 0, static_hits)
+	check("ten minutes: townspeople really go into the shops", shop_ticks > 0, shop_ticks)
 	check("ten minutes: civilians never intersect one another", overlaps == 0, overlaps)
 	var distinct_histories: Dictionary = {}
 	var all_active: bool = true
@@ -87,7 +91,7 @@ func _ready() -> void:
 	tp.notify_danger(Vector3(0, 0, 1425), 200)
 	var fear_count: int = 0
 	for p in tp.people:
-		if p.fear > 0 and p.state in ["flee", "shelter"]: fear_count += 1
+		if (p.fear > 0 and p.state in ["flee", "shelter"]) or p.state in Ep2TownPeople.SHOP_STATES: fear_count += 1   # a shopper indoors is not exposed
 	check("nearby gunfire interrupts every exposed civilian", fear_count == 13, fear_count)
 	for frame in 900: tp.step(0.1, far)
 	var recovered: int = 0
@@ -100,7 +104,7 @@ func _ready() -> void:
 	for frame in 1200: tp.step(0.1, far)
 	check("crowd clears the duel lane without teleporting", tp.duel_lane_clear())
 	var sheltered: bool = true
-	for p in tp.people: sheltered = sheltered and p.state == "shelter"
+	for p in tp.people: sheltered = sheltered and (p.state == "shelter" or p.state in ["shop_in", "shop_buy"])   # indoors is safe
 	check("everyone waits safely during the draw", sheltered)
 	var frozen: Dictionary = tp.snapshot()
 	tp.step(0, far)

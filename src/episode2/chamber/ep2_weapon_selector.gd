@@ -7,6 +7,15 @@ const ICONS := {
 	Ep2ArmoryState.REM: preload("res://src/episode2/assets/weapons/armory/remington_icon.png"),
 	Ep2ArmoryState.BOW: preload("res://src/episode2/assets/weapons/armory/bow_icon.png"),
 }
+## The purse (founder 2026-10-24: "Lil Blunt has been collecting Eth, BTC, WBTC, Solana and TitanX. These need to be reflected in the
+## tab when he is selecting his weapon"): the game's own coin art for each token, in GameManager.PURSE_TOKENS order.
+const PURSE_ICONS := {
+	"eth": preload("res://src/assets/sprites/sprite_item_coin-eth.png"),
+	"btc": preload("res://src/assets/sprites/sprite_item_coin-btc.png"),
+	"wbtc": preload("res://src/assets/sprites/sprite_item_wbtc.png"),
+	"sol": preload("res://src/assets/sprites/sprite_item_coin-sol.png"),
+	"titanx": preload("res://src/episode2/assets/textures/logos/logo_titanx.png"),
+}
 const BRASS := Color("c7a267")
 const PAPER := Color("eddbb2")
 var state: Ep2ArmoryState
@@ -99,6 +108,7 @@ func _draw() -> void:
 	draw_line(Vector2(mid - minf(270,size.x*.38),line_y),Vector2(mid-14,line_y),BRASS,1)
 	draw_line(Vector2(mid + 14,line_y),Vector2(mid+minf(270,size.x*.38),line_y),BRASS,1)
 	draw_colored_polygon(PackedVector2Array([Vector2(mid,line_y-5),Vector2(mid+5,line_y),Vector2(mid,line_y+5),Vector2(mid-5,line_y)]),BRASS)
+	_draw_purse(Rect2(Vector2(mid - minf(350.0, size.x * 0.5 - 16.0), line_y + 10.0), Vector2(minf(700.0, size.x - 32.0), 40.0 if compact else 44.0)), compact)
 	for i in Ep2ArmoryState.IDS.size():
 		var id: String = Ep2ArmoryState.IDS[i]
 		var rect: Rect2 = card_rect(i)
@@ -125,3 +135,36 @@ func _draw() -> void:
 	if compact:
 		hint = "Hold holster · drag to a weapon · release"
 	_text(hint,Vector2(mid,footer_y+49),10 if compact else 13,BRASS,true)
+
+
+## The purse strip: a leather band under the title with every token he carries and how many faces of it - what Rich (or anyone in
+## town) will take from him. Balances come straight from GameManager.purse_balance, so the tab and the shop can never disagree.
+func _draw_purse(band: Rect2, compact: bool) -> void:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("2a1d14")
+	style.border_color = Color("765839")
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(7)
+	draw_style_box(style, band)
+	var label_w: float = 0.0 if compact else 74.0
+	if not compact:
+		_text("PURSE", band.position + Vector2(14.0, band.size.y * 0.5 + 6.0), 15, BRASS)
+	var tokens: Array = GameManager.PURSE_TOKENS
+	var slot: float = (band.size.x - label_w - 12.0) / float(tokens.size())
+	var icon_px: float = band.size.y - (18.0 if compact else 14.0)
+	var fs: int = 11 if compact else 16          # the phone keeps the names (BTC and WBTC share an orange coin face)
+	for i in tokens.size():
+		var t: String = tokens[i]
+		var x0: float = band.position.x + label_w + 6.0 + slot * float(i)
+		var tex: Texture2D = PURSE_ICONS.get(t)
+		if tex != null:
+			draw_texture_rect(tex, Rect2(Vector2(x0 + 4.0, band.position.y + 7.0), Vector2(icon_px, icon_px)), false)
+		var amount: int = GameManager.purse_balance(t)
+		var token_name: String = str(GameManager.PURSE_NAMES.get(t, t.to_upper()))
+		var ink: Color = PAPER if amount > 0 else Color(0.6, 0.52, 0.42)
+		var tx: float = x0 + icon_px + (6.0 if compact else 9.0)
+		if compact:                                  # phone: the count over the token's name, so five fit in 358 px
+			_text("%d" % amount, Vector2(tx, band.position.y + band.size.y * 0.5 - 1.0), 13, ink)
+			_text(token_name, Vector2(tx, band.position.y + band.size.y * 0.5 + 11.0), 8, BRASS)
+		else:
+			_text("%s %d" % [token_name, amount], Vector2(tx, band.position.y + band.size.y * 0.5 + fs * 0.36), fs, ink)

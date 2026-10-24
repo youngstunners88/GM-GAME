@@ -263,20 +263,23 @@ func _ready() -> void:
 	_until(c, 8.0, func(): return c.get_beat_name() == "ARMORY")
 	_check("-> ARMORY: both shopkeepers turn to whoever came in", c.get_beat_name() == "ARMORY" and c.armory_visited())
 	_check("the trade is offered at the counter and nowhere else", c._at_armory_counter())
-	_check("the purse is Episode 1 crypto and the case below it: no soft currency, no free loadout",
+	_check("the purse is his collected crypto and the case below it: no soft currency, no free loadout",
 		not c.is_shop_open() and c.get_shop() != null and c.get_shop().purse >= 0)
-	GameManager.coins_collected = 0
+	GameManager.token_purse = {"eth": 0, "btc": 0, "sol": 0}
 	_check("no crypto, no iron: the counter refuses the long rifle", not c.buy("sniper", 3, "btc") and not c.has_sniper())
-	GameManager.coins_collected = 9
-	var before: int = GameManager.coins_collected
+	GameManager.token_purse = {"eth": 4, "btc": 9, "sol": 5}
+	var before: int = GameManager.purse_balance("btc")
 	_check("with crypto in the purse [E] opens Rich & Utah's trade", c.start_rig("eth") and c.is_shop_open())
-	_check("the long rifle is sold for crypto - 3 coins, debited, not minted",
-		c.buy("sniper", 3, "btc") and c.has_sniper() and GameManager.coins_collected == before - 3 and c.coins_spent() == 3,
-		"purse %d spent %d" % [GameManager.coins_collected, c.coins_spent()])
-	_check("a second look at the same rifle is not a second sale", not c.buy("sniper", 3, "btc") and GameManager.coins_collected == before - 3)
-	_check("the long-rifle cartridges come by the box and only after the rifle", c.buy("sniper_ammo", 2, "sol") and c.armory.sniper_rounds == GoldTownChamber.SNIPER_BOX)
-	_check("the river gear (skiff and sealed crates) is his for the day-88 shipment", c.buy("river_gear", 2, "eth") and c.has_river_gear())
-	_check("the room refuses a tender that is not Episode 1 crypto", not c.buy("rifle_ammo", 1, "gold") and not c.buy("river_gear", 2, "gold"))
+	_check("the long rifle is sold for BTC - 3 faces of BTC debited, not minted, nothing else touched",
+		c.buy("sniper", 3, "btc") and c.has_sniper() and GameManager.purse_balance("btc") == before - 3 and c.coins_spent() == 3
+			and GameManager.purse_balance("eth") == 4 and GameManager.purse_balance("sol") == 5,
+		"purse %s spent %d" % [str(GameManager.token_purse), c.coins_spent()])
+	_check("a second look at the same rifle is not a second sale", not c.buy("sniper", 3, "btc") and GameManager.purse_balance("btc") == before - 3)
+	_check("the long-rifle cartridges come by the box and only after the rifle, paid in SOL",
+		c.buy("sniper_ammo", 2, "sol") and c.armory.sniper_rounds == GoldTownChamber.SNIPER_BOX and GameManager.purse_balance("sol") == 3)
+	_check("the river gear (skiff and sealed crates) is his for the day-88 shipment, paid in ETH", c.buy("river_gear", 2, "eth") and c.has_river_gear() and GameManager.purse_balance("eth") == 2)
+	_check("a token he does not hold enough of is refused (no TitanX on him)", GameManager.purse_balance("titanx") > 0 or not c.buy("rifle_ammo", 1, "titanx"))
+	_check("the room refuses a tender that is not in his purse", not c.buy("rifle_ammo", 1, "gold") and not c.buy("river_gear", 2, "gold"))
 	c.get_shop().closed.emit()
 	_check("Esc shuts the trade and gives the street back", not c.is_shop_open() and not get_tree().paused)
 	# Purchases during the entrance wait for all four greetings and queued sale/denial lines.

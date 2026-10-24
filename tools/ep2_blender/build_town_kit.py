@@ -57,6 +57,12 @@ mat("GlassDay", (0.40, 0.50, 0.55), 0.06, 0.0)      # openings pass: window glas
 mat("Dark", (0.025, 0.02, 0.016), 0.95, 0.0)       # the shaded room behind the glass of buildings with no interior
 mat("Shutter", (0.16, 0.30, 0.20), 0.85, 0.0)
 mat("Bottle", (0.25, 0.14, 0.05), 0.15, 0.0)
+# shop interiors (founder 2026-10-24: "the interiors of the buildings in the town ... aren't detailed enough"): goods read by colour
+for n, c, r, mt in [("TinRed", (0.55, 0.10, 0.07), 0.45, 0.6), ("TinBlue", (0.10, 0.20, 0.42), 0.45, 0.6), ("TinYellow", (0.70, 0.55, 0.12), 0.45, 0.6),
+                    ("TinGreen", (0.12, 0.32, 0.16), 0.45, 0.6), ("Burlap", (0.52, 0.42, 0.28), 1.0, 0.0), ("Paper", (0.82, 0.74, 0.56), 0.95, 0.0),
+                    ("Brick", (0.46, 0.22, 0.14), 0.95, 0.0), ("Ore", (0.32, 0.29, 0.26), 0.9, 0.1), ("Rug", (0.42, 0.13, 0.10), 1.0, 0.0),
+                    ("Leather", (0.30, 0.16, 0.08), 0.6, 0.0), ("Candy", (0.80, 0.30, 0.40), 0.4, 0.0)]:
+    mat(n, c, r, mt)
 
 
 def G(p):
@@ -325,9 +331,9 @@ def building(name, w, d, storeys, h_front, sign_word=None, door_open=False, inte
 # --- the street ---------------------------------------------------------------------------------------------------------------
 building("Bldg_Certificates", 8.0, 9.0, 2, 9.4, "CERTIFICATES", door_open=True, interior=True).build()
 building("Bldg_Saloon", 12.0, 12.0, 2, 9.6, "SALOON", door_open=True, interior=True, balcony=True, door_style="batwing").build()
-building("Bldg_A", 7.0, 8.0, 1, 6.2, "GENERAL").build()
-building("Bldg_B", 8.0, 9.0, 2, 8.6, "HOTEL").build()
-building("Bldg_C", 6.0, 8.0, 1, 5.6, "ASSAY").build()
+building("Bldg_A", 7.0, 8.0, 1, 6.2, "GENERAL", door_open=True, interior=True).build()     # walk-in shops (2026-10-24)
+building("Bldg_B", 8.0, 9.0, 2, 8.6, "HOTEL", door_open=True, interior=True).build()
+building("Bldg_C", 6.0, 8.0, 1, 5.6, "ASSAY", door_open=True, interior=True).build()
 building("Bldg_D", 9.0, 9.0, 2, 9.0, "AUCTIONS").build()
 building("Bldg_E", 7.0, 8.0, 1, 6.0, "STATS").build()
 building("Bldg_F", 8.0, 9.0, 2, 8.4, "RESERVE").build()
@@ -617,6 +623,184 @@ for sx in (-1, 1):
 for sz in (-1.3, 0.1, 1.5):
     p.box("Planks", (1.3, 0.06, 0.34), (0.0, 0.62, sz))
 p.box("Planks", (0.22, 1.0, 1.1), (0.0, 0.8, -2.5), rot_x=0.5)
+p.build()
+
+# --- the walk-in shops (founder 2026-10-24: "differences in the buildings and interiors thereof are particular ... people ... entering the
+# stores and leaving, buying things"). Each shop's trade reads from the door: the general store's walls of tins and sacks, the hotel's desk
+# and key board under its stair, the assay office's grilled counter, scales and furnace. Placed by Ep2GoldTown._furnish (local frames).
+def tin_row(p, x0, y, z, n, step=0.15, r=0.055, h=0.16):
+    cols = ["TinRed", "TinBlue", "TinYellow", "TinGreen"]
+    for i in range(n):
+        p.cyl(cols[(i * 7 + int(y * 10)) % 4], r, r, h, (x0 + i * step, y + h / 2, z), "y", 10)
+
+
+p = Piece("Gen_Counter")       # long counter, brass scale, candy jars, coffee mill, the till; front along +z
+p.box("DarkWood", (3.6, 0.98, 0.72), (0.0, 0.49, 0.0))
+p.box("Trim", (3.8, 0.06, 0.86), (0.0, 1.01, 0.0))
+for i in range(4):
+    p.box("Trim", (0.78, 0.62, 0.035), (-1.35 + i * 0.9, 0.5, 0.37))
+p.box("GlassDay", (1.0, 0.5, 0.04), (-1.1, 0.66, 0.37))                          # a glass front panel showing goods
+for i in range(5):
+    p.box(["TinRed", "Paper", "TinYellow", "Burlap", "TinBlue"][i], (0.16, 0.12, 0.14), (-1.45 + i * 0.18, 0.5, 0.25))
+p.box("Brass", (0.34, 0.03, 0.26), (0.9, 1.06, 0.05))                            # scale platform
+p.box("Brass", (0.05, 0.36, 0.05), (1.02, 1.24, -0.04))
+p.cyl("Brass", 0.15, 0.12, 0.05, (0.9, 1.44, 0.05), "y", 14)                     # scoop pan
+for i, c in enumerate(["Candy", "TinYellow", "TinGreen"]):
+    p.cyl("GlassDay", 0.09, 0.09, 0.26, (-0.6 + i * 0.24, 1.17, -0.12), "y", 12)   # jars
+    p.cyl(c, 0.075, 0.075, 0.16, (-0.6 + i * 0.24, 1.12, -0.12), "y", 10)       # what is in them
+    p.cyl("Brass", 0.095, 0.095, 0.03, (-0.6 + i * 0.24, 1.315, -0.12), "y", 12)
+p.box("Iron", (0.22, 0.24, 0.22), (0.15, 1.16, -0.15))                           # coffee mill
+p.cyl("Iron", 0.12, 0.12, 0.02, (0.15, 1.34, -0.15), "z", 12)
+p.box("Brass", (0.48, 0.34, 0.34), (1.45, 1.21, -0.12))                          # the till
+for k in range(8):
+    p.box("PaintWhite", (0.05, 0.03, 0.05), (1.29 + (k % 4) * 0.1, 1.40, -0.03 + (k // 4) * 0.08))
+p.cyl("Paper", 0.07, 0.07, 0.42, (-1.55, 1.12, -0.2), "x", 10)                   # wrapping paper roll
+p.anchor("CustomerSpot", (0.0, 0.0, 0.9))
+p.anchor("KeeperSpot", (0.4, 0.0, -0.8))
+p.build()
+
+p = Piece("Gen_Shelves")       # the back wall of goods: five shelves of tins, boxes and bottles
+p.box("DarkWood", (4.6, 2.7, 0.42), (0.0, 1.35, -0.21))
+for r in range(6):
+    p.box("Trim", (4.6, 0.04, 0.44), (0.0, 0.25 + r * 0.46, -0.19))
+for c in range(5):
+    p.box("Trim", (0.05, 2.6, 0.44), (-2.28 + c * 1.14, 1.35, -0.19))
+for r in range(5):
+    y = 0.27 + r * 0.46
+    for bay in range(4):
+        x0 = -2.15 + bay * 1.14
+        kind = (r + bay) % 3
+        if kind == 0:
+            tin_row(p, x0 + 0.05, y, -0.12, 6)
+        elif kind == 1:
+            for k in range(4):
+                p.box(["Paper", "TinRed", "Burlap", "TinBlue"][(k + r) % 4], (0.2, 0.26 - 0.03 * (k % 2), 0.26), (x0 + 0.13 + k * 0.24, y + 0.13, -0.13))
+        else:
+            for k in range(6):
+                p.cyl("Bottle", 0.04, 0.035, 0.28, (x0 + 0.1 + k * 0.17, y + 0.14, -0.12), "y", 8)
+p.build()
+
+p = Piece("Gen_FloorGoods")    # sacks of flour and beans, the cracker barrel, a crate of apples, the tool rack, a coil of rope
+for i, (x, z) in enumerate([(-0.5, 0.0), (0.1, 0.15), (-0.2, 0.62)]):
+    p.cyl("Burlap", 0.24, 0.3, 0.72 - 0.08 * i, (x, 0.36 - 0.04 * i, z), "y", 10)
+    p.cyl("Burlap", 0.12, 0.2, 0.14, (x, 0.76 - 0.08 * i, z), "y", 8)
+p.cyl("DarkWood", 0.3, 0.27, 0.78, (1.0, 0.39, 0.0), "y", 14)                   # cracker barrel
+for y in (0.12, 0.66):
+    p.cyl("Iron", 0.305, 0.305, 0.04, (1.0, y, 0.0), "y", 14)
+p.cyl("Trim", 0.3, 0.3, 0.03, (1.0, 0.8, 0.0), "y", 14)
+p.box("Planks", (0.6, 0.32, 0.42), (1.0, 0.16, 0.8))                            # apple crate
+for k in range(6):
+    p.cyl("TinRed", 0.05, 0.05, 0.08, (0.8 + (k % 3) * 0.18, 0.34, 0.68 + (k // 3) * 0.2), "y", 8)
+p.box("DarkWood", (0.1, 1.5, 0.1), (-1.4, 0.75, -0.3))                         # tool rack: two posts and a rail
+p.box("DarkWood", (0.1, 1.5, 0.1), (-1.4, 0.75, 0.9))
+p.box("DarkWood", (0.08, 0.08, 1.3), (-1.4, 1.3, 0.3))
+for k in range(4):
+    z = -0.15 + k * 0.3
+    p.box("Planks", (0.04, 1.3, 0.04), (-1.33, 0.68, z), rot_z=0.12)            # handles leaning on the rail
+    p.box("Iron", (0.03, 0.3, 0.22) if k % 2 == 0 else (0.03, 0.12, 0.42), (-1.26, 0.12, z))   # shovel blades / pick heads
+p.cyl("Burlap", 0.28, 0.28, 0.16, (0.0, 0.08, -0.6), "y", 14)                   # rope coil
+p.build()
+
+p = Piece("Hotel_Desk")        # the front desk, register, bell, and the key board with its brass keys on the wall behind
+p.box("DarkWood", (2.4, 1.05, 0.7), (0.0, 0.525, 0.0))
+p.box("Trim", (2.6, 0.06, 0.82), (0.0, 1.08, 0.0))
+for i in range(3):
+    p.box("Trim", (0.66, 0.66, 0.035), (-0.78 + i * 0.78, 0.53, 0.36))
+p.box("Leather", (0.42, 0.04, 0.3), (-0.3, 1.13, 0.05))                          # the register, open
+p.box("Paper", (0.38, 0.012, 0.27), (-0.3, 1.155, 0.05))
+p.cyl("Brass", 0.06, 0.07, 0.06, (0.55, 1.14, 0.12), "y", 12)                   # the bell
+p.cyl("Brass", 0.012, 0.012, 0.03, (0.55, 1.185, 0.12), "y", 6)
+p.box("DarkWood", (1.8, 1.2, 0.06), (0.0, 1.9, -0.95))                          # key board
+for r in range(3):
+    for c in range(6):
+        x = -0.75 + c * 0.3
+        y = 2.3 - r * 0.38
+        p.box("Brass", (0.02, 0.02, 0.06), (x, y, -0.9))
+        if (r * 6 + c) % 4 != 1:                                                  # a few rooms are out: no key
+            p.box("Brass", (0.035, 0.13, 0.012), (x, y - 0.08, -0.88))
+            p.box("Paper", (0.06, 0.05, 0.01), (x, y - 0.17, -0.88))
+p.anchor("CustomerSpot", (0.0, 0.0, 0.85))
+p.anchor("KeeperSpot", (0.3, 0.0, -0.6))
+p.build()
+
+p = Piece("Hotel_Stairs")      # the stair to the rooms: rising along -z from the front, a stringer each side, newel posts and a rail
+n = 14
+for i in range(n):
+    p.box("Planks", (1.1, 0.06, 0.32), (0.0, 0.2 + i * 0.25, -0.3 - i * 0.3))
+    p.box("DarkWood", (1.1, 0.25, 0.03), (0.0, 0.08 + i * 0.25, -0.15 - i * 0.3))
+for sx in (-1, 1):
+    p.box("DarkWood", (0.06, 0.3, n * 0.31), (sx * 0.58, 1.85, -0.3 - n * 0.15), rot_x=math.atan2(0.25, 0.3))
+p.box("Trim", (0.12, 1.1, 0.12), (-0.62, 0.55, -0.1))                           # newel post
+for i in range(0, n, 2):
+    p.box("Trim", (0.035, 0.85, 0.035), (-0.6, 0.6 + i * 0.25, -0.3 - i * 0.3))   # balusters
+p.box("Trim", (0.07, 0.07, n * 0.39), (-0.6, 1.4 + n * 0.125, -0.3 - n * 0.15), rot_x=math.atan2(0.25, 0.3))
+p.build()
+
+p = Piece("Hotel_Lounge")      # a settee and a side table on a rug, a potted cactus, a spittoon
+p.box("Rug", (2.4, 0.015, 1.6), (0.0, 0.008, 0.0))
+p.box("DarkWood", (1.6, 0.14, 0.62), (0.0, 0.38, -0.3))
+p.box("Cloth", (1.5, 0.12, 0.56), (0.0, 0.5, -0.28))
+p.box("Cloth", (1.5, 0.5, 0.12), (0.0, 0.78, -0.56))
+for sx in (-1, 1):
+    p.box("DarkWood", (0.1, 0.55, 0.62), (sx * 0.78, 0.55, -0.3))
+    for sz in (-0.55, -0.05):
+        p.box("DarkWood", (0.06, 0.32, 0.06), (sx * 0.72, 0.16, sz))
+p.cyl("DarkWood", 0.3, 0.3, 0.04, (1.4, 0.62, 0.3), "y", 14)
+p.cyl("DarkWood", 0.04, 0.04, 0.6, (1.4, 0.31, 0.3), "y", 8)
+p.cyl("Brick", 0.17, 0.13, 0.3, (-1.4, 0.15, 0.4), "y", 12)                     # cactus in a clay pot
+p.cyl("Green", 0.08, 0.1, 0.62, (-1.4, 0.6, 0.4), "y", 10)
+p.cyl("Green", 0.045, 0.05, 0.28, (-1.27, 0.7, 0.4), "y", 8)
+p.cyl("Brass", 0.12, 0.09, 0.2, (0.95, 0.1, -0.7), "y", 12)                     # spittoon
+p.build()
+
+p = Piece("Assay_Counter")     # the assay counter behind a brass grille, the balance in its glass case, ore samples, the ledger
+p.box("DarkWood", (3.8, 1.0, 0.7), (0.0, 0.5, 0.0))
+p.box("Trim", (4.0, 0.06, 0.82), (0.0, 1.03, 0.0))
+for i in range(19):                                                               # the grille, a pass-through window in the middle
+    x = -1.8 + i * 0.2
+    if abs(x) > 0.35:
+        p.box("Brass", (0.02, 0.8, 0.02), (x, 1.46, 0.3))
+p.box("Brass", (3.8, 0.04, 0.04), (0.0, 1.88, 0.3))
+p.box("Brass", (0.74, 0.04, 0.04), (0.0, 1.5, 0.3))
+for sx in (-1, 1):                                                                # the balance in its glass case
+    p.box("GlassDay", (0.03, 0.5, 0.42), (1.0 + sx * 0.32, 1.31, -0.1))
+p.box("GlassDay", (0.66, 0.03, 0.42), (1.0, 1.57, -0.1))
+p.box("Brass", (0.04, 0.34, 0.04), (1.0, 1.23, -0.1))
+p.box("Brass", (0.48, 0.02, 0.02), (1.0, 1.4, -0.1))
+for sx in (-1, 1):
+    p.cyl("Brass", 0.07, 0.07, 0.015, (1.0 + sx * 0.22, 1.24, -0.1), "y", 12)
+for k in range(5):                                                               # ore samples on the counter, flecks of gold
+    p.box("Ore", (0.12, 0.08, 0.1), (-1.3 + k * 0.17, 1.1, -0.15 + (k % 2) * 0.1), rot_y=0.4 * k)
+    p.box("Brass", (0.03, 0.02, 0.03), (-1.28 + k * 0.17, 1.15, -0.13 + (k % 2) * 0.1))
+p.box("Leather", (0.36, 0.05, 0.26), (-0.55, 1.08, 0.12))
+p.anchor("CustomerSpot", (0.0, 0.0, 0.85))
+p.anchor("KeeperSpot", (0.0, 0.0, -0.7))
+p.build()
+
+p = Piece("Assay_Furnace")     # the brick assay furnace, its iron door glowing, crucibles and tongs on the hearth
+p.box("Brick", (1.3, 1.2, 1.0), (0.0, 0.6, 0.0))
+p.box("Brick", (1.4, 0.12, 1.1), (0.0, 1.26, 0.0))
+p.box("Iron", (0.5, 0.42, 0.04), (0.0, 0.62, 0.51))
+p.box("Candy", (0.3, 0.12, 0.02), (0.0, 0.66, 0.535))                           # the glow at the door's slot (warm in the shop lamp)
+p.cyl("Iron", 0.12, 0.12, 2.4, (0.0, 2.5, -0.2), "y", 10)                       # flue
+for k in range(3):
+    p.cyl("Iron", 0.07, 0.05, 0.12, (-0.45 + k * 0.2, 1.38, 0.3), "y", 10)       # crucibles
+p.box("Iron", (0.03, 0.03, 0.7), (0.55, 1.35, 0.1), rot_y=0.3)                   # tongs
+p.build()
+
+p = Piece("Assay_Shelves")     # samples in labelled trays, jars of reagent, a mortar and pestle
+p.box("DarkWood", (2.6, 2.2, 0.4), (0.0, 1.1, -0.2))
+for r in range(5):
+    p.box("Trim", (2.6, 0.04, 0.42), (0.0, 0.25 + r * 0.45, -0.18))
+for r in range(4):
+    y = 0.27 + r * 0.45
+    for k in range(6):
+        if (r + k) % 3 == 0:
+            p.cyl("GlassDay", 0.06, 0.06, 0.2, (-1.05 + k * 0.42, y + 0.1, -0.12), "y", 10)
+        else:
+            p.box("Paper", (0.3, 0.05, 0.22), (-1.05 + k * 0.42, y + 0.025, -0.13))
+            p.box("Ore", (0.1, 0.07, 0.08), (-1.05 + k * 0.42, y + 0.08, -0.13), rot_y=0.5 * k)
+p.cyl("Ore", 0.1, 0.08, 0.1, (0.9, 2.12, -0.12), "y", 12)
 p.build()
 
 bpy.ops.export_scene.gltf(filepath=OUT, export_format="GLB", export_apply=True, export_yup=True)
