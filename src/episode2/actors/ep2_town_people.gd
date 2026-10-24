@@ -266,6 +266,8 @@ func _greet(p: Person, player: Vector3) -> void:
 func _release(p: Person) -> void:
 	if reservations.get(p.destination, "") == p.id: reservations.erase(p.destination)
 	p.destination = ""
+	if p.state not in SHOP_STATES:
+		p.shop = ""                     # a shop trip abandoned on the way (blocked, danger, a new plan) is no trip
 
 func _choose(p: Person) -> void:
 	_release(p)
@@ -687,7 +689,7 @@ func restore(data: Dictionary) -> bool:
 				if not leg is Array or leg.size() != 3: return false
 				for c in leg:
 					if not (c is int or c is float) or not is_finite(float(c)): return false
-		elif not navigation.is_clear(point): return false
+		elif not navigation.is_standing_clear(point): return false
 		if not _number(row.get("parcel_t", 0.0), 0, PARCEL_SECONDS): return false
 		for previous in positions:
 			if previous.distance_to(point) < 0.60: return false

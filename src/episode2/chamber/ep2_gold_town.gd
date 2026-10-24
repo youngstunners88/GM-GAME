@@ -377,7 +377,7 @@ static func _apply_mats(kit: Node) -> void:
 
 ## The jail's furniture (desk, chair, cots, the privy box, the rifle rack) came out of the glTF as flat brown "DarkWood"; give it real
 ## grain - the timber texture, darkened - so it stops reading as painted cardboard (founder 2026-10-24: interiors look low quality).
-## Jail only: the kit's and the Armory's DarkWood stay exactly as approved.
+## The jail and the walk-in shops only: the kit's other rooms and the Armory's DarkWood stay exactly as approved.
 static func _texture_dark_wood(n: Node) -> void:
 	var dw: StandardMaterial3D = _tex_mat("", Color(0.50, 0.36, 0.26), 0.9, TIMBER_TEX)
 	for mi in n.find_children("*", "MeshInstance3D", true, false):
@@ -545,6 +545,8 @@ static func _furnish(root: Node3D, kit: Node3D, a2: Node3D = null) -> void:
 		n.transform = xf * Transform3D(Basis(Vector3.UP, float(rm[3])), rm[2])
 		n.name = str(rm[1]) + "_" + str(rm[0])
 		root.add_child(n)
+		if str(rm[0]) in WALKIN_SHOPS:
+			_texture_dark_wood(n)          # the shops' counters, shelves and furniture in real grain, like the jail's
 	var chair: Node3D = kit.find_child("Bar_Chair", true, false) as Node3D
 	if chair != null:
 		for tp in [Vector3(-3.2, 0.0, -3.6), Vector3(3.6, 0.0, -3.0), Vector3(3.8, 0.0, -6.8)]:
