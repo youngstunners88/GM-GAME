@@ -16,7 +16,7 @@ const ACTIONS := ["ep2_weapon_1", "ep2_weapon_2", "ep2_weapon_3", "ep2_weapon_pr
 ## The Armory (Rich & Utah, off Main Street) is the one PAID acquisition source.
 ## It sells firearms and ammunition for Episode 1 crypto; it never awards anything
 ## for free and respects the same finite reserve cap as earned ammunition.
-const ARMORY_TENDER := ["btc", "eth", "sol"]
+const ARMORY_TENDER := ["btc", "eth", "wbtc", "sol", "titanx"]      # the whole purse pays (founder 2026-10-24)
 const RESERVE_CAP := 2000
 ## The Armory's stock (single source of truth for the trade panel AND the chamber that debits it).
 ## Prices are feel-values in Episode 1 crypto coins (F - free to tune; never a protocol fact).

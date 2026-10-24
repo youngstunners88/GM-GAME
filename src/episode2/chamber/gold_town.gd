@@ -553,14 +553,18 @@ func _at_armory_counter() -> bool:
 	return _player_pos.distance_to(Ep2GoldTown.local_to_world("Bldg_Armory", ARMORY_SPOT)) < ARMORY_TRADE_R
 
 
-## The purse: Episode 1 crypto coins, the only tender he takes. Never the score, never a soft currency.
-func _purse() -> int:
-	return GameManager.coins_collected
+## The purse: the tokens Lil Blunt has collected all game (ETH, BTC, WBTC, SOL, TitanX; GameManager.purse_balance), one balance per
+## tender. Never the score, never a soft currency.
+func _purse(tender: String = "") -> int:
+	if tender == "":
+		tender = _shop.tender if _shop != null else "btc"
+	return GameManager.purse_balance(tender)
 
 
 func _open_shop() -> void:
 	if _shop == null:
 		return
+	_shop.purse_of = func(t: String) -> int: return GameManager.purse_balance(t)
 	_shop.open_shop(armory, _purse())
 	_shop_open = true
 	_move_input = Vector2.ZERO
@@ -598,11 +602,11 @@ func buy(item_id: String, _price: int, tender: String = "btc") -> bool:
 	if cost <= 0 or not Ep2ArmoryState.ARMORY_TENDER.has(tender):
 		_note(item_id, false)
 		return false
-	if not _spend(cost):
+	if not _spend(cost, tender):
 		_note(item_id, false)
 		return false
 	if not _deliver(item_id, int(item["rounds"]), tender):
-		_refund(cost)
+		_refund(cost, tender)
 		_note(item_id, false)
 		return false
 	_spent += cost
@@ -613,21 +617,20 @@ func buy(item_id: String, _price: int, tender: String = "btc") -> bool:
 	return true
 
 
-## Debit the purse (`GameManager.spend_coins`, which refuses to go negative).
-func _spend(cost: int) -> bool:
-	if not GameManager.spend_coins(cost):
+## Debit the tender's own balance (`GameManager.purse_spend`, which refuses to go negative).
+func _spend(cost: int, tender: String) -> bool:
+	if not GameManager.purse_spend(tender, cost):
 		return false
 	if _shop != null:
-		_shop.set_purse(_purse())
+		_shop.set_purse(_purse(tender))
 	return true
 
 
-## Hand the coin back when the state refuses the sale (never a silent debit).
-func _refund(cost: int) -> void:
-	GameManager.coins_collected += cost
-	GameManager.coins_changed.emit(GameManager.coins_collected)
+## Hand the faces back when the state refuses the sale (never a silent debit).
+func _refund(cost: int, tender: String) -> void:
+	GameManager.purse_add(tender, cost)
 	if _shop != null:
-		_shop.set_purse(_purse())
+		_shop.set_purse(_purse(tender))
 
 
 func _deliver(item_id: String, rounds: int, tender: String) -> bool:

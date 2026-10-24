@@ -28,7 +28,7 @@ func _ready() -> void:
 		if spec[0] == "wake":
 			f._on_beat_entered(f.Beat.WAKE)
 		elif spec[0] == "helmet":
-			f._helmet_t = 0.0
+			if "_helmet_t" in f: f.set("_helmet_t", 0.0)   # older builds only
 			f._to_hand_mark()
 		else:
 			f._player_pos = Vector3(0.4, 0.0, 3.4)
@@ -66,7 +66,7 @@ func _ready() -> void:
 	f._has_winchester = true
 	f._has_helmet = true
 	f._stand_t = -1.0              # seated on his crate again, like the target image
-	f._bull_clip = ""
+	if "_bull_clip" in f: f.set("_bull_clip", "")   # older builds only
 	f._player_pos = f.HAND_MARK
 	for _i in 200:
 		f.step(1.0 / 60.0)

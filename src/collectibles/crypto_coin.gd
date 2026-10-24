@@ -19,6 +19,9 @@ extends Area2D
 ## protocol tokens through them is what makes those rows mean something.
 @export var protocol_credit: String = ""
 @export var protocol_amount: int = 1
+## Which purse token this coin face is (founder 2026-10-24: Lil Blunt has been collecting ETH, BTC and Solana all game, and pays
+## Rich with them): "eth" / "btc" / "sol", set per scene (coin_eth / coin_btc / coin_sol.tscn). "" = a coin that is not a token.
+@export var purse_token: String = ""
 
 func _credit_protocol() -> void:
 	match protocol_credit:
@@ -49,6 +52,8 @@ func collect() -> void:
 	GameManager.add_coin()
 	ComboSystem.add_score(score_value)
 	_credit_protocol()
+	if purse_token != "":
+		GameManager.purse_add(purse_token, 1)
 	AudioManager.play_sfx_at("coin", global_position)
 	EffectSpawner.burst("coin_sparkle", global_position)
 	ScreenShake.light()

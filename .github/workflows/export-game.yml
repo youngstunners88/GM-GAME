@@ -364,6 +364,11 @@ jobs:
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_gold_town_test.tscn 2>&1 | tee gold-town-tests.log
           grep -q 'EP2_GOLD_TOWN: ALL PASS' gold-town-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' gold-town-tests.log; then exit 1; fi
+          # Lil Blunt's crypto purse (founder 2026-10-24): ETH/BTC/WBTC/SOL/TitanX credited per pickup, spent per token at Rich's, drawn in the weapon tab.
+          timeout 180 "$GODOT_BIN" --headless res://tests/ep2_purse_test.tscn > purse-tests.log 2>&1
+          cat purse-tests.log
+          grep -q 'EP2_PURSE: ALL PASS' purse-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' purse-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_logans_lake_test.tscn > logans-lake-tests.log 2>&1
           grep -q 'LOGANS_LAKE: ALL PASS' logans-lake-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' logans-lake-tests.log; then exit 1; fi

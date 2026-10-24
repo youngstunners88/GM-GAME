@@ -16,12 +16,15 @@ const PAPER := Color("eddbb2")
 const LEATHER := Color("38261b")
 const LEATHER_DIM := Color("231b15")
 const CLOSED := Color("5d4a38")
-const TENDER_NAMES := {"btc": "BTC", "eth": "ETH", "sol": "SOL"}
-const TENDERS := ["btc", "eth", "sol"]
+## Every token in Lil Blunt's purse pays (founder 2026-10-24: ETH, BTC, WBTC, Solana and TitanX, "at Rich or anywhere").
+const TENDER_NAMES := {"btc": "BTC", "eth": "ETH", "wbtc": "WBTC", "sol": "SOL", "titanx": "TITANX"}
+const TENDERS := ["btc", "eth", "wbtc", "sol", "titanx"]
 
 var state: Ep2ArmoryState = null
 var purse: int = 0
 var tender: String = "btc"
+## The host's balance lookup for a tender (GameManager.purse_balance); when unset the shop keeps the purse it was opened with.
+var purse_of: Callable = Callable()
 var index: int = 0
 var grace: float = 0.25
 var flash: String = ""
@@ -53,6 +56,8 @@ func _ready() -> void:
 func open_shop(armory_state: Ep2ArmoryState, coin_purse: int) -> void:
 	state = armory_state
 	purse = coin_purse
+	if purse_of.is_valid():
+		purse = int(purse_of.call(tender))
 	index = 0
 	grace = 0.25
 	flash = ""
@@ -61,6 +66,13 @@ func open_shop(armory_state: Ep2ArmoryState, coin_purse: int) -> void:
 
 func set_purse(coin_purse: int) -> void:
 	purse = coin_purse
+	queue_redraw()
+
+
+## Re-read the balance of the tender now selected (each token is its own purse).
+func _refresh_purse() -> void:
+	if purse_of.is_valid():
+		purse = int(purse_of.call(tender))
 	queue_redraw()
 
 
@@ -185,7 +197,7 @@ func _draw() -> void:
 	draw_line(Vector2(mid - minf(220, size.x * 0.34), line_y), Vector2(mid - 14, line_y), BRASS, 1)
 	draw_line(Vector2(mid + 14, line_y), Vector2(mid + minf(220, size.x * 0.34), line_y), BRASS, 1)
 	draw_colored_polygon(PackedVector2Array([Vector2(mid, line_y - 5), Vector2(mid + 5, line_y), Vector2(mid, line_y + 5), Vector2(mid - 5, line_y)]), BRASS)
-	_text("TENDER: EPISODE 1 CRYPTO  ·  %s  ·  PURSE %d" % [TENDER_NAMES.get(tender, tender.to_upper()), purse],
+	_text("PAY WITH  ◂ %s ▸  ·  YOU HOLD %d" % [TENDER_NAMES.get(tender, tender.to_upper()), purse],
 		Vector2(mid, line_y + (14 if compact else 20)), 11 if compact else 14, BRASS, true)
 	for i in rows.size():
 		var item: Dictionary = rows[i]
@@ -222,6 +234,7 @@ func _input(event: InputEvent) -> void:
 	elif event.is_action_pressed("ui_left") or event.is_action_pressed("ui_right"):
 		var k: int = 1 if event.is_action_pressed("ui_right") else -1
 		tender = TENDERS[(TENDERS.find(tender) + k + TENDERS.size()) % TENDERS.size()]
+		_refresh_purse()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("interact") or event.is_action_pressed("ui_accept"):
 		if grace <= 0.0:
