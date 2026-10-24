@@ -1,0 +1,84 @@
+{
+  "source_commit": "15ed3fc6",
+  "recordings_preserved": 47,
+  "dialogue": 43,
+  "effects": 4,
+  "pending_dialogue": 24,
+  "sha256_matches": true,
+  "maximum_decoded_peak": 0.8839282989501953,
+  "nonzero_ogg_starts": [
+    {
+      "id": "town_trade_04",
+      "final_granule": 86520,
+      "sample_rate": 24000,
+      "ffprobe_seconds": 3.572417,
+      "start_seconds": 0.032583,
+      "godot_seconds": 3.605
+    },
+    {
+      "id": "town_trade_08",
+      "final_granule": 79321,
+      "sample_rate": 24000,
+      "ffprobe_seconds": 3.232458,
+      "start_seconds": 0.072583,
+      "godot_seconds": 3.305041666666667
+    },
+    {
+      "id": "town_trade_12",
+      "final_granule": 81720,
+      "sample_rate": 24000,
+      "ffprobe_seconds": 3.325417,
+      "start_seconds": 0.079583,
+      "godot_seconds": 3.405
+    },
+    {
+      "id": "town_greet_oldtimer_0",
+      "final_granule": 79320,
+      "sample_rate": 24000,
+      "ffprobe_seconds": 3.216042,
+      "start_seconds": 0.088958,
+      "godot_seconds": 3.305
+    },
+    {
+      "id": "town_greet_oldtimer_1",
+      "final_granule": 76920,
+      "sample_rate": 24000,
+      "ffprobe_seconds": 3.158,
+      "start_seconds": 0.047,
+      "godot_seconds": 3.205
+    },
+    {
+      "id": "town_greet_dressmaker_0",
+      "final_granule": 79320,
+      "sample_rate": 24000,
+      "ffprobe_seconds": 3.225333,
+      "start_seconds": 0.079667,
+      "godot_seconds": 3.305
+    },
+    {
+      "id": "town_greet_lady_0",
+      "final_granule": 81721,
+      "sample_rate": 24000,
+      "ffprobe_seconds": 3.31775,
+      "start_seconds": 0.087292,
+      "godot_seconds": 3.4050416666666665
+    },
+    {
+      "id": "town_greet_grandfather_1",
+      "final_granule": 81720,
+      "sample_rate": 24000,
+      "ffprobe_seconds": 3.321,
+      "start_seconds": 0.084,
+      "godot_seconds": 3.405
+    },
+    {
+      "id": "town_greet_youth_1",
+      "final_granule": 74520,
+      "sample_rate": 24000,
+      "ffprobe_seconds": 3.052625,
+      "start_seconds": 0.052375,
+      "godot_seconds": 3.105
+    }
+  ],
+  "account_verification": "ELEVENLABS_API_KEY /v1/user and /v1/user/subscription HTTP401 missing user_read; no legacy alias used, no voice created/deleted"
+}

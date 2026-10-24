@@ -129,7 +129,12 @@ fi
 # All three are whole-file excludes of generated/pinned/documented manifests.
 # A genuinely new 64-hex literal in any hand-written file still fails, which
 # is the point.
-key_hits=$(git ls-files | xargs grep -lEn "\b(0x)?[a-fA-F0-9]{64}\b" 2>/dev/null \
+# Town audio receipts contain public SHA-256 file/source checksums. Exclude only
+# those two exact JSON fields in that generated manifest, never the whole file.
+# Any other private-key-shaped literal in the same manifest still fails.
+key_hits=$(git ls-files | xargs grep -nE "\b(0x)?[a-fA-F0-9]{64}\b" 2>/dev/null \
+  | grep -vE '^assets/town-audio-generated\.json:[0-9]+:[[:space:]]*"(sha256|source_hash)": "[a-f0-9]{64}",?$' \
+  | cut -d: -f1 | sort -u \
   | grep -vE "\.(wasm|pck|png|jpg|jpeg|ogg|import)$" \
   | grep -v "\.github/workflows/export-game\.yml" \
   | grep -vE "(^|/)mops\.lock$" \

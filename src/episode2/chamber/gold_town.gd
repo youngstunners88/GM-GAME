@@ -13,7 +13,7 @@ extends Ep2Interlude
 ##             "Give me a bitcoin or I give you the map to the auction where they can get more intel." Lil Blunt won't. the Sheriff walks
 ##             in: he is the witness
 ##   SQUARE_UP out in the street, face him; the Sheriff stands to the side
-##   DRAW      the rifle stays down until the Sheriff says DRAW (a seeded wait). Fire early = a foul, the Sheriff makes them redo it. Hit him first
+##   DRAW      the rifle stays down until the town bell rings (a seeded wait). Fire early = a foul, the Sheriff makes them redo it. Hit him first
 ##             = the map. Too slow = he shoots first: the screen drops, hearts restored, the Sheriff sets it up again (retry, never a death)
 ##   WON       the Sheriff hands him the map; Bull comes walking up the street (his reaction is not locked: no line yet)
 ##   TIP       the tip: RICH keeps an armory down the side lane off the left row (founder lock
@@ -57,7 +57,7 @@ const OPP_MARK := Vector3(0.0, 0.0, 1432.0)
 const WITNESS_MARK := Vector3(-5.4, 0.0, 1424.5)
 const DRAW_WAIT_MIN := 1.8
 const DRAW_WAIT_MAX := 4.2
-const OPP_REACTION := 1.45                            # seconds from "Draw!" to his shot on the first try (the rifle must come up)
+const OPP_REACTION := 1.45                            # seconds from the bell to his shot on the first try (the rifle must come up)
 const OPP_REACTION_STEP := 0.3                        # ...a little more each time he wins (never a wall)
 const OPP_HIT_R := 0.5
 ## The Armory (Rich & Utah, down the side lane). Bodies are on-box Blender figures (tools/ep2_blender/
@@ -1188,7 +1188,7 @@ func _start_round() -> void:
 	look_toward(OPP_MARK + Vector3(0.0, 1.6, 0.0), 3.0)
 
 
-## Seconds the stranger takes from "Draw!" to his shot this round.
+## Seconds the stranger takes from the bell to his shot this round.
 func opp_reaction() -> float:
 	return OPP_REACTION + OPP_REACTION_STEP * float(mini(_losses, 3))
 

@@ -1,25 +1,25 @@
 {
-  "observed_remote_sha": "b56d87900ea61658a3f9713749f06e2966b2990e",
-  "objective": "Townvoices/ElevenLabs: newUtah/prisoner/sheriff;reuseRich;13townsfolk;townsound+bell draw",
+  "observed_remote_sha": "434109bb",
+  "objective": "Complete town cast, native/audio/web verification and nonforced release",
+  "source_commit": "15ed3fc6",
   "task_paths": [
-    "src/episode2/chamber/gold_town.gd",
-    "src/episode2/actors/ep2_armory_intro.gd",
-    "src/episode2/actors/ep2_town_people.gd",
-    "src/autoload/audio_manager.gd",
-    "src/episode2/audio/",
-    "assets/town-audio.json",
-    "scripts/generate-town-audio.mjs"
+    "assets/town-audio*.json",
+    "scripts/elevenlabs-client.mjs",
+    "scripts/generate-town-audio.mjs",
+    "src/episode2/audio",
+    "tests/ep2_town_audio_test.gd",
+    "tests/ep2_gold_town_test.gd"
   ],
   "evidence": {
-    "prepared": "SDKonboardverified;43VO+4SFXrecorded,67planned/24pending;new3auditionsbutnone saved",
-    "tests": "Compilepassed;newruntimecue/greet/Rich checks pass except3Godot-vs-ffprobe duration diffs;24takespending;fullreleasechecksnotrun",
-    "blocker": "Oldactiveaccount10/10customslots;useraddednewkeysandrequestsnewsessionfreshcredentials;doNOTdeletevoices"
+    "timing": "Nine positive Ogg starts; engine=duration+start verified all47. Engine sequencing; files unchanged.",
+    "native": "compile/audio assertions/armory pass; gold only missing sheriff. FullCI cast +3localBlaze touches/knownpause; master reproduces2touches.",
+    "security": "18/18; title5/5",
+    "handoff": "docs/handoffs/2026-10-24_town-voices.md"
   },
   "unresolved": [
-    "UsefreshsessionNEWkeys",
-    "Create3voicesand24takes",
-    "Engine Ogg duration audit",
-    "Finishgatesandverifyrelease"
+    "Owner newELEVEN/ELEV+ keys not exposed to runningenvironment. OnlyELEVENLABS_API_KEY; user/subscription HTTP401 missinguser_read. No identity/capacity verified.",
+    "3voices/24takes pending; no deletion authorized.",
+    "Subjective/audibleoutput, exactexport/pack/fullrelease/publicBUILD stillrequired."
   ],
-  "next_action": "Read docs/handoffs/2026-10-24_town-voices.md; resume draftbranch codex/town-voices-20261024. Do not deploy partialcast."
+  "next_action": "Apply owner newenvironment to runtime, discoverbindings byname only, verifyintendedaccount then produce pendingcast. Do not deploypartial."
 }

@@ -6,6 +6,7 @@ const LINES: Dictionary = {
 		"speaker": "sheriff",
 		"text": "Well now. Somebody rode in on Inferno's quad and lived. What can I do for you, partner?",
 		"seconds": 0,
+		"start_seconds": 0,
 		"ready": false,
 		"path": "res://src/episode2/extras/audio/town/vo_sheriff_1.ogg"
 	},
@@ -13,6 +14,7 @@ const LINES: Dictionary = {
 		"speaker": "sheriff",
 		"text": "Certificates are the Minister's department. Minister Mike Dean, this young fella wants one.",
 		"seconds": 0,
+		"start_seconds": 0,
 		"ready": false,
 		"path": "res://src/episode2/extras/audio/town/vo_sheriff_2.ogg"
 	},
@@ -20,6 +22,7 @@ const LINES: Dictionary = {
 		"speaker": "sheriff",
 		"text": "Till then, wet your whistle at the saloon across the street. And mind who's watching when you pay.",
 		"seconds": 0,
+		"start_seconds": 0,
 		"ready": false,
 		"path": "res://src/episode2/extras/audio/town/vo_sheriff_3.ogg"
 	},
@@ -27,6 +30,7 @@ const LINES: Dictionary = {
 		"speaker": "sheriff",
 		"text": "Hold it. If this is happening, it happens proper. I'm the little fella's witness. Square up. Listen for the town bell. Nobody draws till that bell rings.",
 		"seconds": 0,
+		"start_seconds": 0,
 		"ready": false,
 		"path": "res://src/episode2/extras/audio/town/vo_sheriff_witness.ogg"
 	},
@@ -34,6 +38,7 @@ const LINES: Dictionary = {
 		"speaker": "sheriff",
 		"text": "I said wait for the bell. Again.",
 		"seconds": 0,
+		"start_seconds": 0,
 		"ready": false,
 		"path": "res://src/episode2/extras/audio/town/vo_sheriff_foul.ogg"
 	},
@@ -41,6 +46,7 @@ const LINES: Dictionary = {
 		"speaker": "sheriff",
 		"text": "That settles it. The map's yours, son. Fair and square, and I saw it.",
 		"seconds": 0,
+		"start_seconds": 0,
 		"ready": false,
 		"path": "res://src/episode2/extras/audio/town/vo_sheriff_win.ogg"
 	},
@@ -48,6 +54,7 @@ const LINES: Dictionary = {
 		"speaker": "sheriff",
 		"text": "Too slow. On your feet. Listen for the bell, and we'll do it again.",
 		"seconds": 0,
+		"start_seconds": 0,
 		"ready": false,
 		"path": "res://src/episode2/extras/audio/town/vo_sheriff_lose.ogg"
 	},
@@ -55,6 +62,7 @@ const LINES: Dictionary = {
 		"speaker": "sheriff",
 		"text": "Here he is. Caught him holding the gate open for the bears.",
 		"seconds": 0,
+		"start_seconds": 0,
 		"ready": false,
 		"path": "res://src/episode2/extras/audio/town/town_jail_00.ogg"
 	},
@@ -62,6 +70,7 @@ const LINES: Dictionary = {
 		"speaker": "prisoner",
 		"text": "All I did was open a gate. Somebody paid me to bring them in.",
 		"seconds": 0,
+		"start_seconds": 0,
 		"ready": false,
 		"path": "res://src/episode2/extras/audio/town/town_jail_01.ogg"
 	},
@@ -69,6 +78,7 @@ const LINES: Dictionary = {
 		"speaker": "lil_blunt",
 		"text": "Who paid you?",
 		"seconds": 1.0985,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_jail_02.ogg"
 	},
@@ -76,6 +86,7 @@ const LINES: Dictionary = {
 		"speaker": "prisoner",
 		"text": "Never saw a face. Coin, and an order: soften the claims before the vault locks.",
 		"seconds": 0,
+		"start_seconds": 0,
 		"ready": false,
 		"path": "res://src/episode2/extras/audio/town/town_jail_03.ogg"
 	},
@@ -83,6 +94,7 @@ const LINES: Dictionary = {
 		"speaker": "prisoner",
 		"text": "They want Fort Knox first. Watch the lake outflow, the river... the trains.",
 		"seconds": 0,
+		"start_seconds": 0,
 		"ready": false,
 		"path": "res://src/episode2/extras/audio/town/town_jail_04.ogg"
 	},
@@ -90,6 +102,7 @@ const LINES: Dictionary = {
 		"speaker": "sheriff",
 		"text": "Find who brought the bears, Lil Blunt. I'll keep this one where he is.",
 		"seconds": 0,
+		"start_seconds": 0,
 		"ready": false,
 		"path": "res://src/episode2/extras/audio/town/town_jail_05.ogg"
 	},
@@ -97,6 +110,7 @@ const LINES: Dictionary = {
 		"speaker": "rich",
 		"text": "Lil Blunt. Come in off the street. Mind the glass. This is what the river wants.",
 		"seconds": 6.305,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_intro_sharps_lines_0.ogg"
 	},
@@ -104,6 +118,7 @@ const LINES: Dictionary = {
 		"speaker": "rich",
 		"text": "A Sharps, Model 1874. The buffalo hunters called her the Buffalo Gun.",
 		"seconds": 6.205,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_intro_sharps_lines_1.ogg"
 	},
@@ -111,6 +126,7 @@ const LINES: Dictionary = {
 		"speaker": "utah",
 		"text": "Falling block. One shot, then you earn the next one.",
 		"seconds": 0,
+		"start_seconds": 0,
 		"ready": false,
 		"path": "res://src/episode2/extras/audio/town/town_intro_sharps_lines_2.ogg"
 	},
@@ -118,6 +134,7 @@ const LINES: Dictionary = {
 		"speaker": "rich",
 		"text": "Thirty-inch octagon barrel, double set triggers, a tang sight you can read at six hundred yards.",
 		"seconds": 6.305,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_intro_sharps_lines_3.ogg"
 	},
@@ -125,6 +142,7 @@ const LINES: Dictionary = {
 		"speaker": "rich",
 		"text": "Set the back trigger and the front one breaks at a whisper. Take a look. Don't take her home yet.",
 		"seconds": 5.805,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_intro_sharps_lines_4.ogg"
 	},
@@ -132,6 +150,7 @@ const LINES: Dictionary = {
 		"speaker": "rich",
 		"text": "three coin and she is yours, cartridges by the box. Coin, never credit.",
 		"seconds": 5.805,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_intro_sharps_lines_5.ogg"
 	},
@@ -139,6 +158,7 @@ const LINES: Dictionary = {
 		"speaker": "utah",
 		"text": "Now the one that is not for sale. Follow me out front.",
 		"seconds": 0,
+		"start_seconds": 0,
 		"ready": false,
 		"path": "res://src/episode2/extras/audio/town/town_intro_gatling_call_0.ogg"
 	},
@@ -146,6 +166,7 @@ const LINES: Dictionary = {
 		"speaker": "utah",
 		"text": "Colt Gatling Gun. Six barrels, a drum on top, a crank on the side.",
 		"seconds": 0,
+		"start_seconds": 0,
 		"ready": false,
 		"path": "res://src/episode2/extras/audio/town/town_intro_gatling_lines_0.ogg"
 	},
@@ -153,6 +174,7 @@ const LINES: Dictionary = {
 		"speaker": "utah",
 		"text": "Doctor Gatling's patent, built by Colt. Turn the crank and the barrels turn with it. Watch the plates.",
 		"seconds": 0,
+		"start_seconds": 0,
 		"ready": false,
 		"path": "res://src/episode2/extras/audio/town/town_intro_gatling_lines_1.ogg"
 	},
@@ -160,6 +182,7 @@ const LINES: Dictionary = {
 		"speaker": "utah",
 		"text": "Bolted to the porch. Not for coin, not for gold. Rich will not sell her and I will not let him.",
 		"seconds": 0,
+		"start_seconds": 0,
 		"ready": false,
 		"path": "res://src/episode2/extras/audio/town/town_intro_gatling_after_0.ogg"
 	},
@@ -167,6 +190,7 @@ const LINES: Dictionary = {
 		"speaker": "rich",
 		"text": "She stays on the post, Lil Blunt. When the river comes you will want her near the bank.",
 		"seconds": 5.105042,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_intro_gatling_after_1.ogg"
 	},
@@ -174,6 +198,7 @@ const LINES: Dictionary = {
 		"speaker": "utah",
 		"text": "Go on. Take the crank. Short bursts. The drum is all there is.",
 		"seconds": 0,
+		"start_seconds": 0,
 		"ready": false,
 		"path": "res://src/episode2/extras/audio/town/town_intro_gatling_after_2.ogg"
 	},
@@ -181,6 +206,7 @@ const LINES: Dictionary = {
 		"speaker": "utah",
 		"text": "Steady hands. Remember her when the shipment comes down.",
 		"seconds": 0,
+		"start_seconds": 0,
 		"ready": false,
 		"path": "res://src/episode2/extras/audio/town/town_intro_closing_0.ogg"
 	},
@@ -188,6 +214,7 @@ const LINES: Dictionary = {
 		"speaker": "rich",
 		"text": "You found the lane. Most don't.",
 		"seconds": 2.32475,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_trade_00.ogg"
 	},
@@ -195,6 +222,7 @@ const LINES: Dictionary = {
 		"speaker": "lil_blunt",
 		"text": "Rich? Inferno said you know this town.",
 		"seconds": 2.969875,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_trade_01.ogg"
 	},
@@ -202,6 +230,7 @@ const LINES: Dictionary = {
 		"speaker": "rich",
 		"text": "Iron's on the wall. Coin's the only tongue I take.",
 		"seconds": 3.505042,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_trade_02.ogg"
 	},
@@ -209,6 +238,7 @@ const LINES: Dictionary = {
 		"speaker": "utah",
 		"text": "River rises tomorrow. Something rides it down.",
 		"seconds": 0,
+		"start_seconds": 0,
 		"ready": false,
 		"path": "res://src/episode2/extras/audio/town/town_trade_03.ogg"
 	},
@@ -216,6 +246,7 @@ const LINES: Dictionary = {
 		"speaker": "rich",
 		"text": "Set trigger. It reaches clean across the water.",
 		"seconds": 3.572417,
+		"start_seconds": 0.032583,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_trade_04.ogg"
 	},
@@ -223,6 +254,7 @@ const LINES: Dictionary = {
 		"speaker": "utah",
 		"text": "From the high rocks you'll see the whole bend. Take the high rocks.",
 		"seconds": 0,
+		"start_seconds": 0,
 		"ready": false,
 		"path": "res://src/episode2/extras/audio/town/town_trade_05.ogg"
 	},
@@ -230,6 +262,7 @@ const LINES: Dictionary = {
 		"speaker": "rich",
 		"text": "Lead's sold by the box. It never comes cheap and it never comes free.",
 		"seconds": 5.005,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_trade_06.ogg"
 	},
@@ -237,6 +270,7 @@ const LINES: Dictionary = {
 		"speaker": "utah",
 		"text": "Skiff's sound, crates are sealed. She'll ride wet and ride heavy.",
 		"seconds": 0,
+		"start_seconds": 0,
 		"ready": false,
 		"path": "res://src/episode2/extras/audio/town/town_trade_07.ogg"
 	},
@@ -244,6 +278,7 @@ const LINES: Dictionary = {
 		"speaker": "rich",
 		"text": "That don't spend here. Bring the coin you earned.",
 		"seconds": 3.232458,
+		"start_seconds": 0.072583,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_trade_08.ogg"
 	},
@@ -251,6 +286,7 @@ const LINES: Dictionary = {
 		"speaker": "utah",
 		"text": "Come back when the purse sits heavier.",
 		"seconds": 0,
+		"start_seconds": 0,
 		"ready": false,
 		"path": "res://src/episode2/extras/audio/town/town_trade_09.ogg"
 	},
@@ -258,6 +294,7 @@ const LINES: Dictionary = {
 		"speaker": "rich",
 		"text": "Mind the lane on the way out.",
 		"seconds": 1.612417,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_trade_10.ogg"
 	},
@@ -265,6 +302,7 @@ const LINES: Dictionary = {
 		"speaker": "utah",
 		"text": "Be on the overlook by first light. I'll be at the water.",
 		"seconds": 0,
+		"start_seconds": 0,
 		"ready": false,
 		"path": "res://src/episode2/extras/audio/town/town_trade_11.ogg"
 	},
@@ -272,6 +310,7 @@ const LINES: Dictionary = {
 		"speaker": "rich",
 		"text": "And bring it back empty. That's how I know it worked.",
 		"seconds": 3.325417,
+		"start_seconds": 0.079583,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_trade_12.ogg"
 	},
@@ -279,6 +318,7 @@ const LINES: Dictionary = {
 		"speaker": "lil_blunt",
 		"text": "I'll take a look. Let's hear what you've got.",
 		"seconds": 2.421042,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_trade_13.ogg"
 	},
@@ -286,6 +326,7 @@ const LINES: Dictionary = {
 		"speaker": "lil_blunt",
 		"text": "Much obliged. I'll make it count.",
 		"seconds": 2.591042,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_trade_14.ogg"
 	},
@@ -293,6 +334,7 @@ const LINES: Dictionary = {
 		"speaker": "clerk",
 		"text": "Morning, traveler. Keep your papers dry.",
 		"seconds": 2.73525,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_clerk_0.ogg"
 	},
@@ -300,6 +342,7 @@ const LINES: Dictionary = {
 		"speaker": "clerk",
 		"text": "Claim office is down the boardwalk, partner.",
 		"seconds": 2.389375,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_clerk_1.ogg"
 	},
@@ -307,6 +350,7 @@ const LINES: Dictionary = {
 		"speaker": "oldtimer",
 		"text": "Take it easy. This town ain't going anywhere.",
 		"seconds": 3.216042,
+		"start_seconds": 0.088958,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_oldtimer_0.ogg"
 	},
@@ -314,6 +358,7 @@ const LINES: Dictionary = {
 		"speaker": "oldtimer",
 		"text": "Mind the dust. It gets into everything.",
 		"seconds": 3.158,
+		"start_seconds": 0.047,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_oldtimer_1.ogg"
 	},
@@ -321,6 +366,7 @@ const LINES: Dictionary = {
 		"speaker": "rancher",
 		"text": "Fine day to be on your feet, partner.",
 		"seconds": 2.096583,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_rancher_0.ogg"
 	},
@@ -328,6 +374,7 @@ const LINES: Dictionary = {
 		"speaker": "rancher",
 		"text": "Watch the horses round the bend.",
 		"seconds": 2.100125,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_rancher_1.ogg"
 	},
@@ -335,6 +382,7 @@ const LINES: Dictionary = {
 		"speaker": "dressmaker",
 		"text": "Morning. Mind that loose stitch on your sleeve.",
 		"seconds": 3.225333,
+		"start_seconds": 0.079667,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_dressmaker_0.ogg"
 	},
@@ -342,6 +390,7 @@ const LINES: Dictionary = {
 		"speaker": "dressmaker",
 		"text": "A little dust never hurt good cloth.",
 		"seconds": 2.255875,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_dressmaker_1.ogg"
 	},
@@ -349,6 +398,7 @@ const LINES: Dictionary = {
 		"speaker": "lady",
 		"text": "Well now, a new face. Welcome to town.",
 		"seconds": 3.31775,
+		"start_seconds": 0.087292,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_lady_0.ogg"
 	},
@@ -356,6 +406,7 @@ const LINES: Dictionary = {
 		"speaker": "lady",
 		"text": "Best keep an ear out round the saloon.",
 		"seconds": 2.279792,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_lady_1.ogg"
 	},
@@ -363,6 +414,7 @@ const LINES: Dictionary = {
 		"speaker": "bald_worker",
 		"text": "Good day. Plenty of work before sundown.",
 		"seconds": 2.977417,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_bald_worker_0.ogg"
 	},
@@ -370,6 +422,7 @@ const LINES: Dictionary = {
 		"speaker": "bald_worker",
 		"text": "Boardwalk's solid. Boots'll last longer on it.",
 		"seconds": 2.910333,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_bald_worker_1.ogg"
 	},
@@ -377,6 +430,7 @@ const LINES: Dictionary = {
 		"speaker": "grandma",
 		"text": "There you are, dear. Stay out of trouble.",
 		"seconds": 2.735625,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_grandma_0.ogg"
 	},
@@ -384,6 +438,7 @@ const LINES: Dictionary = {
 		"speaker": "grandma",
 		"text": "You're welcome here, young fella.",
 		"seconds": 1.99025,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_grandma_1.ogg"
 	},
@@ -391,6 +446,7 @@ const LINES: Dictionary = {
 		"speaker": "grandfather",
 		"text": "Easy does it, son. No need to hurry.",
 		"seconds": 2.75025,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_grandfather_0.ogg"
 	},
@@ -398,6 +454,7 @@ const LINES: Dictionary = {
 		"speaker": "grandfather",
 		"text": "Good weather. Best enjoy it while it lasts.",
 		"seconds": 3.321,
+		"start_seconds": 0.084,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_grandfather_1.ogg"
 	},
@@ -405,6 +462,7 @@ const LINES: Dictionary = {
 		"speaker": "grandmother",
 		"text": "Lovely to see somebody new about town.",
 		"seconds": 2.503042,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_grandmother_0.ogg"
 	},
@@ -412,6 +470,7 @@ const LINES: Dictionary = {
 		"speaker": "grandmother",
 		"text": "Rest those feet when you get the chance.",
 		"seconds": 2.321292,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_grandmother_1.ogg"
 	},
@@ -419,6 +478,7 @@ const LINES: Dictionary = {
 		"speaker": "youth",
 		"text": "Hey, partner. You come far?",
 		"seconds": 1.849708,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_youth_0.ogg"
 	},
@@ -426,6 +486,7 @@ const LINES: Dictionary = {
 		"speaker": "youth",
 		"text": "Stay sharp round here. Folks notice things.",
 		"seconds": 3.052625,
+		"start_seconds": 0.052375,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_youth_1.ogg"
 	},
@@ -433,6 +494,7 @@ const LINES: Dictionary = {
 		"speaker": "boy",
 		"text": "Hi there! Want to see how high I can jump?",
 		"seconds": 2.409958,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_boy_0.ogg"
 	},
@@ -440,6 +502,7 @@ const LINES: Dictionary = {
 		"speaker": "boy",
 		"text": "Watch me! I almost made it that time.",
 		"seconds": 2.911167,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_boy_1.ogg"
 	},
@@ -447,6 +510,7 @@ const LINES: Dictionary = {
 		"speaker": "braided_girl",
 		"text": "Hello! We're playing over here.",
 		"seconds": 2.166458,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_braided_girl_0.ogg"
 	},
@@ -454,6 +518,7 @@ const LINES: Dictionary = {
 		"speaker": "braided_girl",
 		"text": "Bet you can't skip as quick as me.",
 		"seconds": 1.8595,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_braided_girl_1.ogg"
 	},
@@ -461,6 +526,7 @@ const LINES: Dictionary = {
 		"speaker": "bob_girl",
 		"text": "Hi! Mind the rope, please.",
 		"seconds": 2.027583,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_bob_girl_0.ogg"
 	},
@@ -468,6 +534,7 @@ const LINES: Dictionary = {
 		"speaker": "bob_girl",
 		"text": "Just one more turn, then it's your go.",
 		"seconds": 2.781083,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_bob_girl_1.ogg"
 	}
@@ -534,7 +601,9 @@ static func id_for(speaker: String, text: String) -> String:
 	return ""
 
 static func seconds(id: String, fallback: float = 4.2) -> float:
-	return float(LINES[id]["seconds"]) + 0.25 if LINES.has(id) and LINES[id]["ready"] else fallback
+	# Sequence speech using the engine stream duration; receipt seconds audit the encoded file.
+	var recording: AudioStream = stream(id)
+	return recording.get_length() + 0.25 if recording != null else fallback
 
 static func stream(id: String) -> AudioStream:
 	if not LINES.has(id) or not LINES[id]["ready"]:

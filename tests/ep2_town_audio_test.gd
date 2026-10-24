@@ -15,6 +15,7 @@ func _ready() -> void:
 	c.set_physics_process(false)
 	check("town audio is silent until activated, then loops", c._town_audio.active and c._town_audio._wind.playing and c._town_audio._saloon.playing)
 	check("every supplied public town figure has a recorded voice bank", Ep2TownVoiceBank.GREETINGS.size() == Ep2TownPeople.ROSTER.size())
+	check("all supplied public figures are actually built", c._people.people.size() == Ep2TownPeople.ROSTER.size())
 	for person in c._people.people:
 		c._town_audio.story_busy = false
 		c._town_audio.quiet = false
@@ -22,7 +23,7 @@ func _ready() -> void:
 		check(person.id + " can actually speak a nearby greeting", c._town_audio.greet(person.id, person.folk, 1))
 	c._town_audio.step(0.0, c._people, c._player_pos, true, false)
 	check("story speech immediately stops ambient speech", not c._town_audio._greeting.playing)
-	check("a greeting cannot interrupt the story", not c._town_audio.greet(c._people.people[0].id, c._people.people[0].folk, 2))
+	check("a greeting cannot interrupt the story", not c._town_audio.greet("oldtimer", null, 2))
 	c._town_audio.step(0.0, c._people, c._player_pos, false, true)
 	check("duel suppresses chatter and lowers ambience", c._town_audio.quiet and c._town_audio._saloon.volume_db <= -28.0)
 	var voices: Array = []
@@ -64,12 +65,18 @@ func _ready() -> void:
 		check("Rich's intro really plays the recorded stream", AudioManager._voice_player != null and AudioManager._voice_player.stream == Ep2TownVoiceBank.stream(id))
 	else:
 		check("built armory has its existing gun introduction", false)
+	# Godot uses the final granule / sample rate. ffprobe subtracts positive start PTS.
+	# Audit that exact offset instead of accepting an unexplained duration tolerance.
 	for id in Ep2TownVoiceBank.LINES:
 		var row: Dictionary = Ep2TownVoiceBank.LINES[id]
 		if not row["ready"]:
 			pending += 1
 			continue
 		var stream: AudioStream = Ep2TownVoiceBank.stream(id)
-		check(id + " recorded take is packaged and timed (%.3f / %.3f)" % [stream.get_length() if stream else 0.0, float(row["seconds"])], stream != null and absf(stream.get_length() - float(row["seconds"])) < 0.08)
+		check(id + " recorded take is packaged and timed (%.3f / %.3f)" % [stream.get_length() if stream else 0.0, (float(row["seconds"]) + float(row["start_seconds"]))], stream != null and absf(stream.get_length() - (float(row["seconds"]) + float(row["start_seconds"]))) < 0.00005)
+	var receipts = JSON.parse_string(FileAccess.get_file_as_string("res://assets/town-audio-generated.json"))
+	for id in ["town_wind", "town_saloon", "town_boardwalk", "town_draw_bell"]:
+		var effect: AudioStream = load(Ep2TownSoundscape.ROOT + id + ".ogg") as AudioStream
+		check(id + " effect is packaged with exact encoded duration", effect != null and absf(effect.get_length() - (float(receipts[id]["seconds"]) + float(receipts[id]["start_seconds"]))) < 0.00005)
 	print("EP2_TOWN_AUDIO: %s (pending recordings: %d)" % ["ALL PASS" if failures == 0 and pending == 0 else ("BLOCKED BY CAST CAPACITY" if failures == 0 else "%d FAILURE(S)" % failures), pending])
 	get_tree().quit(1 if failures else (2 if pending else 0))

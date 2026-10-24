@@ -92,3 +92,5 @@ bash scripts/security-sentinel.sh          # 18 checks, 0 blockers
 node scripts/icp-price-fixture.mjs &        # serves :8788/prices
 godot --headless res://tests/icp_contract_test.tscn  # 13/13 only with the above
 ```
+
+Town voices / ElevenLabs / Rich / Utah / prisoner / sheriff / bell-only draw: `.agents/skills/ep2-town-voices/SKILL.md`; offline source `assets/town-audio.json`, receipts `assets/town-audio-generated.json`, runtime `src/episode2/audio/`, gates `tests/ep2_town_audio_test.tscn`, `tests/ep2_gold_town_test.tscn`, `tests/ep2_armory_guns_test.tscn`.
