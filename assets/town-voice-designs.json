@@ -1,0 +1,38 @@
+{
+  "utah": {
+    "request": {
+      "voice_description": "An original older male Western river guide. Very thick American frontier drawl, low mid register, dry leathery gravel, slow stretched vowels, warm but weather worn and practical. Natural conversational storytelling, clearly intelligible, not an announcer. Clean studio audio, no music, no effects. No imitation of a known person.",
+      "text": "Easy there, partner. The river takes its own sweet time, and so do I. Pull your hat down, check the ropes, and keep your eyes on the far bank. We have a good long trail ahead of us.",
+      "model_id": "eleven_ttv_v3",
+      "seed": 24010,
+      "guidance_scale": 4,
+      "should_enhance": false
+    },
+    "selected_preview_index": 2,
+    "note": "Preview IDs were made in the old account and may not work with a new workspace key. Regenerate with the supplied prompt when needed."
+  },
+  "prisoner": {
+    "request": {
+      "voice_description": "An original adult male Western prisoner. A distinctly high-pitched light tenor, pinched and slightly nasal, with a pronounced American frontier drawl. Wiry, nervous, defensive and quick but intelligible. Higher register than a cowboy bass; not a child, not a cartoon squeak. Clean close studio audio, no music or effects. No imitation of a real person.",
+      "text": "Now hold on a minute, friend. I never said I had all the answers. You ask your questions mighty fast, and a fellow needs a moment to think. There is no cause for all this fuss, is there?",
+      "model_id": "eleven_ttv_v3",
+      "seed": 24011,
+      "guidance_scale": 4,
+      "should_enhance": false
+    },
+    "selected_preview_index": 1,
+    "note": "Preview IDs were made in the old account and may not work with a new workspace key. Regenerate with the supplied prompt when needed."
+  },
+  "sheriff": {
+    "request": {
+      "voice_description": "A completely original male Western sheriff about fifty. Distinctive coppery medium-low baritone, dry creaky phrase endings, measured American frontier drawl and sharply articulated consonants. Calm local authority, patient, firm, with a wry warmth. Clearly different from a nasal prisoner and a slow gravelly river guide. Natural close speech, no announcer performance. Clean studio audio, no music or effects; no imitation of any existing actor or character.",
+      "text": "All right, gentlemen. We settle things fair in this town. Keep your hands where I can see them, stand easy, and listen close. Nobody moves before the bell. You have my word on that.",
+      "model_id": "eleven_ttv_v3",
+      "seed": 24012,
+      "guidance_scale": 4,
+      "should_enhance": false
+    },
+    "selected_preview_index": 2,
+    "note": "Preview IDs were made in the old account and may not work with a new workspace key. Regenerate with the supplied prompt when needed."
+  }
+}

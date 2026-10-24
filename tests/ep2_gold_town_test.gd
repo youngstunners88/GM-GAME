@@ -172,7 +172,7 @@ func _ready() -> void:
 	_check("...and the round is set up again", c.get_draw_state() == "wait" and c.get_opponent().position.distance_to(GoldTownChamber.OPP_MARK) < 0.1)
 	# LOSE: do nothing after the word
 	_until(c, 10.0, func(): return c.get_draw_state() == "go")
-	_check("the Sheriff says DRAW and the stranger's gun hand comes up with the revolver in it", said.has("vo_sheriff_draw") and c.get_draw_state() == "go"
+	_check("the town bell signals DRAW and the stranger's gun hand comes up with the revolver in it", c._town_audio.bell_count == 1 and not said.has("vo_sheriff_draw") and c.get_draw_state() == "go"
 		and c.get_opponent().pose_name == "draw" and c.get_opponent().find_child("Revolver", true, false).visible)
 	_check("...and the rifle comes up", not c.get_viewmodel().lowered)
 	_until(c, 5.0, func(): return c.get_draw_state() != "go")

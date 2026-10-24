@@ -53,6 +53,7 @@ var demo_target: Vector3 = Vector3.ZERO          # a world point on the first pl
 var mounted: bool = false                        # set by the chamber
 var player_bursts: int = 0                       # bursts Lil Blunt has fired from the post
 var shown_lines: Array = []                      # every [who, text] said, in order (the test reads it)
+var voice_seconds: Callable = Callable()         # the chamber supplies actual recorded duration; standalone logic keeps LINE_S
 
 var _t: float = 0.0
 var _i: int = 0
@@ -261,7 +262,9 @@ func _say_next(lines: Array, clip: String) -> void:
 func _say(who: String, text: String) -> void:
 	shown_lines.append([who, text])
 	_line_t = LINE_S
-	said.emit(who, text, LINE_S - 0.3)
+	if not voice_seconds.is_null():
+		_line_t = maxf(LINE_S, float(voice_seconds.call(who, text)))
+	said.emit(who, text, _line_t - 0.15)
 
 
 func _price_words() -> String:

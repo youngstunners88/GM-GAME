@@ -507,11 +507,15 @@ const VOICE_RESTORE_GRACE := 0.7
 var _voice_gen: int = 0
 var _voice_ducking: bool = false
 
-func play_voice(name: String) -> void:
-    var path := _resolve_audio("res://src/assets/sounds/voice/" + name)
-    if path == "":
-        return
-    var stream := load(path)
+func play_voice(name: String, recorded_stream: AudioStream = null) -> void:
+    # Streamed town recordings use the same single speech slot and music duck.
+    # Existing callers retain their original root-file lookup.
+    var stream: AudioStream = recorded_stream
+    if stream == null:
+        var path := _resolve_audio("res://src/assets/sounds/voice/" + name)
+        if path == "":
+            return
+        stream = load(path) as AudioStream
     if not stream:
         return
     if _voice_player and is_instance_valid(_voice_player):

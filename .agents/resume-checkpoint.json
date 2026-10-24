@@ -1,21 +1,25 @@
 {
-  "observed_remote_sha": "b17acfad5fea9649bbf25a536a13e07d6427402f",
-  "objective": "Transition2: clear exit beam, continuous held walk into woods, raised passenger view for bear shooting",
+  "observed_remote_sha": "b56d87900ea61658a3f9713749f06e2966b2990e",
+  "objective": "Townvoices/ElevenLabs: newUtah/prisoner/sheriff;reuseRich;13townsfolk;townsound+bell draw",
   "task_paths": [
-    "src/episode2/chamber/interlude_base.gd",
-    "src/episode2/chamber/mine_lift.gd",
-    "src/episode2/chamber/woods_quad.gd",
-    "src/episode2/chamber/ep2_wildlife.gd",
-    "tests/transition2_test.gd"
+    "src/episode2/chamber/gold_town.gd",
+    "src/episode2/actors/ep2_armory_intro.gd",
+    "src/episode2/actors/ep2_town_people.gd",
+    "src/autoload/audio_manager.gd",
+    "src/episode2/audio/",
+    "assets/town-audio.json",
+    "scripts/generate-town-audio.mjs"
   ],
-  "source_commit": "e1b93d22d1d79bfd805d6e160350d3481e03249a",
   "evidence": {
-    "tests": "Pinned compile/newTransition2/feedback/interlude/session/save/fulllocalCI PASS (3 known pause geometry exceptions)",
-    "render": "docs/episode2-quality/transition2-2026-10-23/:actual exit before/after, heldW trace, normal/ADS/sides/rear; roadbear2\u21921HP,loaded6\u21925/reserve18",
-    "pack": "Exact productionCI199173008B/gate199229440B/margin56432B;extras54443936B;nonthreaded4.3. Localfresh199173136B,warm199205824B.",
-    "release": "Master39965066342/job120452670367 SUCCESS;actualbutler44.50MiBfresh;publicChromiumBUILD2026-10-23-e1b93d2,embed18305533-2194028,extrasreadyHTTP200",
-    "security": "18 checks/no blockers; front-page5filelockPASS"
+    "prepared": "SDKonboardverified;43VO+4SFXrecorded,67planned/24pending;new3auditionsbutnone saved",
+    "tests": "Compilepassed;newruntimecue/greet/Rich checks pass except3Godot-vs-ffprobe duration diffs;24takespending;fullreleasechecksnotrun",
+    "blocker": "Oldactiveaccount10/10customslots;useraddednewkeysandrequestsnewsessionfreshcredentials;doNOTdeletevoices"
   },
-  "unresolved": [],
-  "next_action": "Transition2 task complete and live. Preserve gameplay/access/title contracts and standing shipping authorization; resume for new feedback."
+  "unresolved": [
+    "UsefreshsessionNEWkeys",
+    "Create3voicesand24takes",
+    "Engine Ogg duration audit",
+    "Finishgatesandverifyrelease"
+  ],
+  "next_action": "Read docs/handoffs/2026-10-24_town-voices.md; resume draftbranch codex/town-voices-20261024. Do not deploy partialcast."
 }

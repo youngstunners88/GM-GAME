@@ -1,0 +1,57 @@
+# Town voices / ElevenLabs — session handoff, 2026-10-24
+
+## User request and authorization
+
+Run `npx -y @elevenlabs/cli@latest onboard init` and add ElevenLabs to GM-GAME. Give the townspeople voices; create a NEW thick Western Utah voice, a NEW higher-pitched Western voice for the man behind bars (user explicitly clarified prisoner, not a jail guard), and a NEW distinct/unused sheriff voice. Reuse Rich's Episode1 voice so he converses with Lil Blunt. Add town sounds. The town bell is the sole draw signal, and the sheriff tells both men to listen for the bell.
+
+The user added new ElevenLabs keys in environment variables and explicitly requested a fresh Codex session because this one still reached the old account/limit. **No voice deletion was approved. Do not delete Builder Chick, Moa, Irish Spartan or any other voice.** No voices have been deleted.
+
+Standing authorization in AGENTS.md permits ordinary GM-GAME commit/push/nonforced master release. Preserve concurrent work. Do not deploy this incomplete draft.
+
+## Checkout / source
+
+Repository `/workspace/GM-GAME`; feature branch `codex/town-voices-20261024`, based on freshly fetched master `b56d87900ea61658a3f9713749f06e2966b2990e` (includes Claude's mobile/transition and pack-headroom work). Previous Transition2 work remains shipped. Read AGENTS.md, CLAUDE.md, default context manifest and resume/ship skills. Refresh remote before subsequent work.
+
+## Credentials / ElevenLabs state
+
+- CLI onboarding executed. Installed `@elevenlabs/elevenlabs-js`; package + lock changed. Latest onboarding check confirms SDK declared/imported and credential works. No key is stored in source. `.env.local` is absent; do not ask for a key in chat or print credential values.
+- Active environment status advanced from spec21 to spec22, observations current. It exposed only `ELEVENLABS_API_KEY`. Calls still returned `voice_limit_reached`, maximum custom voices10/10, even after the update. New session must discover the NEW available bindings by name only and use the intended new account/workspace; verify with actual API responses. API credit and saved custom-voice-slot limits are different. Do not rely on placeholder/fingerprint comparisons to establish freshness.
+- `scripts/elevenlabs-client.mjs` currently aliases `ELEVENLABS_API` over `_API_KEY` if present, following the old project convention. With fresh keys, deliberately select the intended binding and avoid silently overriding a new key with a legacy one.
+- Old account contains Rich voice `LNV6ahDtkAOqwn1X3R7a` and Lil Blunt `HMGfKwZCRujgXyRDUW0b`. Rich must keep that identity. Already recorded Rich takes can be reused even if the new account cannot generate them.
+- Designed3 auditions per new character successfully (9 previews), but saving ALL3 failed from the10/10 limit. No persistent new voices were created. Original generic prompts/seeds and selected indices are preserved in `assets/town-voice-designs.json`. In this workspace, raw responses/auditions and acoustic metrics are under ignored `work/town-voices/design/`.
+- Selected auditions: Utah2 (~102Hz median F0, slow leathery drawl), prisoner1 (~229Hz, higher adult tenor), sheriff2 (~126Hz coppery baritone). Metrics are algorithmic estimates, not claims of a subjective listening verdict. Fresh-account preview IDs may need regeneration.
+- CLI design uses `--json -` for request body and `--output-format mp3_44100_128` as a separate flag; output_format is a QUERY parameter and fails schema validation in body JSON. Save via `text-to-voice create` with generated_voice_id, voice_name and voice_description. Capture responses to files; do not print base64 audio.
+- An initial automatic approval rejection concerned sending alleged private story dialogue. Read-only GitHub metadata verified this repo PUBLIC (`private:false`), and auditions were replaced with newly written generic text. Subsequent design/TTS/SFX calls were accepted. No remaining automatic-approval block; the outstanding error is the provider voice-slot limit.
+
+## Work completed in draft
+
+- `assets/town-audio.json`: cast +67 story/greeting lines, all13 public figures (2 greetings each), Rich/LilBlunt exchange, existing armory introduction verbatim, jail exchange, new sheriff bell instructions;4SFX prompts.
+- `scripts/elevenlabs-client.mjs`, `scripts/generate-town-audio.mjs`: official SDK, environment-only credentials, bounded generation with source-hash receipts, raw-audio cache, normalized/limited monoOgg, generated runtime bank. No API key or live ElevenLabs request is needed by the shipped browser game.
+- **43 spoken clips +4SFX generated** (47 Ogg files) in `src/episode2/extras/audio/town/` so the main pack stays small. Rich reuses his Episode1 voice. Other13 townspeople use available suitable character voices. Metadata/hashes/lengths: `assets/town-audio-generated.json`. Raw originals are in ignored `work/town-voices/recordings/` (may not persist between machines).
+- Utah, prisoner and sheriff voice_id fields remain NULL; **24 takes pending**. Set only after actual successful voice creation. Regenerate only those roles; keep existing Rich identity/takes.
+-4effects: looping town breeze, looping saloon murmur, boardwalk boots, single town draw bell. No bell in ordinary ambience. Effects processed locally after quiet-loop/trimming issue; source audio reused without extra generation. Current decoded maximum sample peak across47files ~0.794, avoiding clipping. Bell onset measured at0ms; loop durations preserved16/14sec, boots~0.62sec, bell~4sec.
+- `src/episode2/audio/town_voice_bank.gd` generated67entries with ready flags, text, speaker, path, ffprobe seconds.
+- `town_soundscape.gd`: silent until activation, spatial saloon/boots/greetings, one greeting slot and cooldown, story/duel suppress chatter and lower ambience, sole bell player/counter, queued purchase remarks.
+- `Ep2TownPeople.greeted` signal connects the existing greeting animation to actual voice. No AI/save/economy changes.
+- `AudioManager.play_voice(name, recorded_stream=null)` optional stream supports extra-pack audio while retaining existing single voice slot/music duck. Other callers unchanged.
+- GoldTown uses new cast for sheriff, real jail speech holds, voiced Rich/LilBlunt entrance, recorded armory lines, queued purchase responses, voiced departure. New sheriff says listen for bell. GO changes only after successful bell play; no `vo_sheriff_draw` speech signal. Missing bell never silently opens firing window.
+- ArmoryIntro gets optional recorded-duration callback; current sentence completes before yielding the bought/geared exit. Prices/currency/acquisitions unchanged.
+
+## Verification / unfinished issues
+
+- Pinned Godot4.3 import and SCRIPT_COMPILE passed before final test additions; rerun compile after edits.
+- New `tests/ep2_town_audio_test.{gd,tscn}` exercises all13 actual greetings, priority/suppression, bell tick/one per round/retry/missing-bell guard, all6 jail speech holds, actual Rich playback/long-line timing, packaged-file timing/readiness.
+- Latest new test result: **3 runtime audit failures +24 pending takes**. Failures are timing comparisons for oldtimer0/lady0/grandfather1: Godot4.3 `AudioStreamOggVorbis.get_length()` reports~0.084–0.089s more than ffprobe, while threshold is0.08. Investigate/use engine playback duration for sequencing and make the audit accurately distinguish Ogg padding; do not blindly claim pass or relax unexplained failures. All other exercised cue/greeting/Rich checks passed.
+- Existing gold-town test has one assertion updated from spoken Draw to bell count; remaining old spoken-signal labels/list and fixed timing bounds need review. Existing armory-guns test now waits the recorded entrance duration before intro; not fully rerun yet.
+- Added CI town-audio gate beside gold-town gate. It MUST fail until all67 takes are present/ready. Do not publish this partial cast.
+- Full CI, asset presence/pack gates, native/audio/player-camera and web audible-output checks, new exact-source export, master release/butler/public BUILD still required.
+- Current main pack at baseline198094432B; threshold199229440B. New recordings intentionally stream in extras. Preserve nonthreaded4.3, title/access locks, recent mobile controls and concurrent work.
+- Listen/audition the actual voices/effects where supported; don't claim an ear verdict solely from pitch/peak measurements. The current local Browser plugin's js control wasn't exposed, so CLI/API were used. Follow Browser skill if new session has connected browser control.
+
+## Next actions
+
+1. Fresh environment/key discovery; use user's NEW keys and actual provider capacity. No voice deletion.
+2. Save/create3 original voices, readback IDs, populate cast; generate24 pending takes via SDK; rerun generator bank. Preserve Rich ID.
+3. Fix engine-duration audit and finish story/bell tests and dialogue arbitration. Add reusable town voice/bell skill + routing and update old UNVOICED docs/quickdraw convention.
+4. Complete appropriate native/audio/web/pack/security/fullCI checks. Update source/capture receipts and Obsidian work log.
+5. Commit/push/nonforced master with existing ship workflow, verify actual upload and publicly served BUILD. Report actual tested scope; don't claim a protected public playthrough without performing it.

@@ -128,6 +128,9 @@ var _utah_brain: Ep2ArmoryBrain = null
 var _shop: Ep2ArmoryShop = null
 var _shop_layer: CanvasLayer = null
 var _shop_open: bool = false
+var _shop_bought: bool = false
+var _town_audio: Ep2TownSoundscape = null
+signal draw_bell_rung
 var _geared: bool = false                             # rifle + river gear in hand
 var _gear_t: float = -1.0
 var _armory_visited: bool = false                     # he found the lane and walked in
@@ -173,7 +176,44 @@ func _build_room() -> void:
 
 
 func _build_steps() -> Array:
-	return [_step_light, _step_ground, _step_town, _step_desert, _step_people]
+	return [_step_light, _step_ground, _step_town, _step_desert, _step_people, _step_town_audio]
+
+
+func _step_town_audio() -> void:
+	_town_audio = Ep2TownSoundscape.new()
+	_town_audio.name = "TownSoundscape"
+	add_child(_town_audio)
+	if _people != null:
+		_people.greeted.connect(func(id: String, actor: Ep2TownFolk, count: int) -> void: _town_audio.greet(id, actor, count))
+
+
+func _town_speaker(who: String) -> String:
+	return {"RICH": "rich", "UTAH": "utah", "SHERIFF": "sheriff", "ACCOMPLICE": "prisoner", "LIL BLUNT": "lil_blunt"}.get(who, who.to_lower())
+
+
+func _town_line(who: String, text: String) -> void:
+	var id: String = Ep2TownVoiceBank.id_for(_town_speaker(who), text)
+	if _hud != null:
+		_hud.toast("%s: %s" % [who, text], Ep2TownVoiceBank.seconds(id))
+	if id != "": _speak(id)
+
+
+func _vo_len(id: String) -> float:
+	if Ep2TownVoiceBank.LINES.has(id):
+		return maxf(0.5, Ep2TownVoiceBank.seconds(id) - 0.25)
+	return super._vo_len(id)
+
+
+func _speak(id: String) -> void:
+	if not Ep2TownVoiceBank.LINES.has(id):
+		super._speak(id)
+		return
+	if _town_audio != null: _town_audio.silence_greeting()
+	line_spoken.emit(id)
+	var recording: AudioStream = Ep2TownVoiceBank.stream(id)
+	if recording == null: return  # A missing new cast take must not play the retired sheriff instead.
+	var am: Node = get_node_or_null("/root/AudioManager")
+	if am != null: am.play_voice(id, recording)
 
 
 func _warm_views() -> Array:
@@ -360,12 +400,11 @@ func _build_guns() -> void:
 	_intro.utah = _utah_brain
 	_intro.gatling = _gatling
 	_intro.sharps_price = int(Ep2ArmoryState.shop_item("sniper").get("price", PRICE_SNIPER))
+	_intro.voice_seconds = func(who: String, text: String) -> float: return Ep2TownVoiceBank.seconds(Ep2TownVoiceBank.id_for(_town_speaker(who), text))
 	if _gatling != null and _gatling.plate_count() > 0:
 		var first: Dictionary = _gatling.targets[0]
 		_intro.demo_target = (first["node"] as Node3D).position + _gatling.position + Vector3(0.0, 1.22, 0.0)
-	_intro.said.connect(func(who: String, text: String, secs: float) -> void:
-		if _hud != null:
-			_hud.toast("%s: %s" % [who, text], secs))
+	_intro.said.connect(func(who: String, text: String, _secs: float) -> void: _town_line(who, text))
 	_intro.objective_changed.connect(_on_intro_objective)
 	_intro.sharps_lifted.connect(_on_sharps_lifted)
 	_intro.finished.connect(_on_intro_finished)
@@ -406,7 +445,13 @@ func _on_sharps_lifted(in_hand: bool) -> void:
 func _tick_armory_guns(delta: float) -> void:
 	if _intro == null:
 		return
-	if not _intro_asked and _at_armory_counter():
+	if _show_active: return
+	# A completed purchase may skip the rest of the demonstration, after the current
+	# recorded sentence finishes, rather than cutting a man off mid-word.
+	if _gear_t >= 0.0 and _intro.is_busy() and _intro._line_t <= delta:
+		_intro.cancel()
+	if _hold > 0.0 and not _intro.is_busy(): return
+	if not _intro_asked and _at_armory_counter() and _gear_t < 0.0:
 		_intro_asked = true
 		_intro.begin()
 	_intro.mounted = _mounted
@@ -563,6 +608,7 @@ func _open_shop() -> void:
 		return
 	_shop.open_shop(armory, _purse())
 	_shop_open = true
+	_shop_bought = false
 	_move_input = Vector2.ZERO
 	_run_input = false
 	set_aim(false)
@@ -580,6 +626,7 @@ func _close_shop() -> void:
 	Input.mouse_mode = _mouse_before
 	if not StateMachine.is_paused():
 		get_tree().paused = false
+	if not _shop_bought and _town_audio != null: _town_audio.queue_line("town_trade_10")
 
 
 func _on_buy_requested(item_id: String, price: int, tender: String) -> void:
@@ -648,6 +695,12 @@ func _deliver(item_id: String, rounds: int, tender: String) -> bool:
 func _note(item_id: String, ok: bool) -> void:
 	if _shop != null:
 		_shop.purchase_result(item_id, ok)
+	if _shop_open and _town_audio != null:
+		if ok:
+			_shop_bought = true
+			_town_audio.queue_line("town_trade_07" if item_id == "river_gear" else ("town_trade_04" if item_id == "sniper" else "town_trade_06"))
+		else:
+			_town_audio.queue_line("town_trade_09")
 
 
 ## The long rifle and the river gear both in hand: the river shipment is on (the day-88 set-piece).
@@ -781,6 +834,7 @@ func _on_setup() -> void:
 	if _vm != null:
 		_vm.set_world_shadows(false)
 		_vm.set_own_light(WoodsQuadChamber.VM_KEY_ENERGY, _sun)
+	if _town_audio != null: _town_audio.start()
 	_advance_to(Beat.STREET)
 
 
@@ -842,7 +896,7 @@ func _on_beat_entered(b: int) -> void:
 			_sheriff.walk_path([sd + Vector3(0.0, 0.0, 1.0), WITNESS_MARK], 1.4)
 		Beat.DRAW:
 			if _hud:
-				_hud.objective = "Hands still till the sheriff says DRAW."
+				_hud.objective = "Listen for the town bell. Keep your hands still until it rings."
 				_hud.show_health = true
 			_start_round()
 		Beat.WON:
@@ -895,7 +949,9 @@ func _on_beat_entered(b: int) -> void:
 			if _rich != null:
 				_rich.face_point(_player_pos)
 				look_toward(_rich.position + Vector3(0.0, RICH_HEIGHT * 0.85, 0.0), 2.2)
-			_start_show([{"do": "wait", "t": 1.8}, {"do": "call", "fn": release_look}], false)
+			_start_show([FacilityShow._say("town_trade_00"), FacilityShow._say("town_trade_01"),
+				FacilityShow._say("town_trade_02"), FacilityShow._say("town_trade_03"),
+				{"do": "call", "fn": release_look}], false)
 		Beat.GEARED:
 			_end_guns()
 			_geared = true
@@ -903,7 +959,7 @@ func _on_beat_entered(b: int) -> void:
 			if _hud:
 				_hud.objective = "Geared for the river. Follow the trail to Logan's Lake."
 				_hud.toast("ARMED FOR THE RIVER SHIPMENT", 3.4)
-			_start_show([{"do": "wait", "t": 2.6}], false)
+			_start_show([FacilityShow._say("town_trade_11"), FacilityShow._say("town_trade_12")], false)
 		Beat.DONE:
 			_resolve({"next_chamber": "logans_lake", "got_map": _got_map, "draw_losses": _losses,
 				"draw_fouls": _fouls, "armory_visited": _armory_visited, "sniper": armory.sniper_owned,
@@ -930,13 +986,13 @@ func _jail_show_steps() -> Array:
 		var who: String = str(ln[0])
 		var text: String = str(ln[1])
 		steps.append({"do": "call", "fn": func() -> void: _jail_line(who, text)})
-		steps.append({"do": "wait", "t": 3.9})
+		steps.append(FacilityShow._say(Ep2TownVoiceBank.id_for(_town_speaker(who), text), 0.25))
 	return steps
 
 
 func _jail_line(who: String, text: String) -> void:
 	if _hud != null:
-		_hud.toast("%s: %s" % [who, text], 3.8)
+		_hud.toast("%s: %s" % [who, text], Ep2TownVoiceBank.seconds(Ep2TownVoiceBank.id_for(_town_speaker(who), text)))
 	if who == "ACCOMPLICE" and _accomplice != null:
 		_accomplice.face_point(_player_pos)
 		_accomplice.hold_clip("Greet")
@@ -989,6 +1045,12 @@ func _sheriff_look_at_player() -> void:
 
 
 func _tick(delta: float) -> void:
+	var intro_busy: bool = _intro != null and _intro.is_busy()
+	var duel: bool = _beat in [Beat.BAR, Beat.SQUARE_UP, Beat.DRAW]
+	if _town_audio != null:
+		_town_audio.step(delta, _people, _player_pos, _hold > 0.0 or _show_active or intro_busy or _shop_open, duel)
+		if not _show_active and _hold <= 0.0 and not intro_busy and not duel and not _shop_open and _town_audio.has_queued():
+			_begin_carry_line(_town_audio.take_line())
 	_tick_people(delta)
 	if _gatling != null:
 		_gatling.step(delta)
@@ -1048,7 +1110,7 @@ func _tick(delta: float) -> void:
 				else:
 					_hud.set_search_prompt("Trade with Rich [E]" if _at_armory_counter() else "")
 			_check_geared()
-			if _gear_t >= 0.0 and not _show_active and not _mounted:
+			if _gear_t >= 0.0 and not _show_active and not _mounted and _hold <= 0.0 and (_town_audio == null or not _town_audio.has_queued()) and not (_intro != null and _intro.is_busy()):
 				_gear_t -= delta
 				if _gear_t < 0.0:
 					_advance_to(Beat.GEARED)
@@ -1138,9 +1200,10 @@ func _tick_draw(delta: float) -> void:
 			if _draw_t > 0.6:
 				release_look()
 			if _draw_t >= _draw_wait and _hold <= 0.0:
+				if _town_audio == null or not _town_audio.ring_bell(): return
 				_draw_state = "go"
 				_draw_t = 0.0
-				_begin_carry_line("vo_sheriff_draw")
+				draw_bell_rung.emit()
 				_opp_draws()
 				if _hud:
 					_hud.objective = "DRAW!"
@@ -1163,7 +1226,7 @@ func _tick_draw(delta: float) -> void:
 			if _hold <= 0.0 and _draw_t > 2.4:
 				if _hud:
 					_hud.fade = 0.0
-					_hud.objective = "Hands still till the sheriff says DRAW."
+					_hud.objective = "Listen for the bell. Hands still until it rings."
 				_start_round()
 
 
