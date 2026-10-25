@@ -15,3 +15,11 @@ Pinned editor: checksum-verified Godot 4.3; Compatibility renderer; 1280x720; de
 ![Stage 1 ending with Tax Evader reward](restoration-20261026/stage1-ending.png)
 ![Stage 2 ending with Crystal Miner reward](restoration-20261026/stage2-ending.png)
 ![Stage 3 ending with Claim Jumper Slayer reward](restoration-20261026/stage3-ending.png)
+
+## Deployment and exact public export
+
+Production run [40207231039](https://github.com/youngstunners88/GM-GAME/actions/runs/40207231039) passed every required gate and its butler deployment step. The actual log confirms the itch upload with 43.26 MiB fresh data. The later road-cart release preserves the NFT source files unchanged and passed run 40212082180. Public pack BUILD is `2026-10-25-0e3383d`, 198599104 bytes, below the 190 MiB gate; its compiled issuer contains the restored replay path. JavaScript, WASM and extras respond HTTP 200 with TLS verification enabled. The signed embed-load response initially returned a cached extracting status; a fresh read returned the complete public game frame.
+
+The downloaded public pack itself was booted with checksum-verified Godot 4.3. Its actual compiled BUILD was asserted, and all six real SceneRouter → boss trigger → boss die → NFT card cases passed (three stages, missing record and replay). NFT voice remains unloaded/silent; replay records remain unchanged. The three screenshots above now show this exact public pack's rendered endings. The previous public pack reproduced the defect, providing a before/after regression check.
+
+See `restoration-20261026/release-receipt.json` for source/build/run identities, public pack hash, HTTP checks, six exact-pack results and limitations. Browser-specific full-campaign, real-phone and new live-canister issuance are not claimed. Native exact-export checks and public delivery verification are complete; founder playtest confirmation remains separate.

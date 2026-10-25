@@ -1,0 +1,64 @@
+{
+  "nft_release_source": "9f9dfc78b18972b0e7d610c8ae00e6a78f13d3c5",
+  "nft_release_ci": 40207231039,
+  "nft_release_job": 121210666639,
+  "nft_release_deploy_step": "success",
+  "actual_upload_log": "2026-10-25T15:55:54.9855958Z Pushed to https://youngstunners88.itch.io/smokerealm",
+  "upload_fresh_data": "43.26 MiB",
+  "current_public_source": "0e3383daf2af6d106f9fb9b70387ae82ebc18bd2",
+  "current_public_ci": 40212082180,
+  "current_public_deploy_step": "success",
+  "public_pack": {
+    "page": "https://youngstunners88.itch.io/smokerealm",
+    "game_frame": "https://html-classic.itch.zone/html/18305533-2210770/index.html?v=1792962544",
+    "expected_build": "2026-10-25-0e3383d",
+    "public_pack_bytes": 198599104,
+    "public_pack_sha512": "d83f5d3c2b924ba2cb0b14b01b1776b24c9eb60b8409c3720e8d44048c055a295c42a0774a7d72742591749b5110841dc83223dac01892de2a746faf707ac6b2",
+    "scripts": {
+      "res://src/autoload/game_manager.gdc": {
+        "bytes": 56976,
+        "md5": "ddd9eac82772a6fd73385a2ec4c97635",
+        "builds": [
+          "2026-10-25-0e3383d"
+        ],
+        "replay_trigger_format_present": false
+      },
+      "res://src/autoload/nft_issuer.gdc": {
+        "bytes": 39780,
+        "md5": "2c19922c5e3ae67da660678d6a7ee0fe",
+        "builds": [],
+        "replay_trigger_format_present": true
+      }
+    },
+    "asset_http_status": {
+      "index.wasm": 200,
+      "index.js": 200,
+      "ep2_extras.pck": 200
+    },
+    "tls_verification": "enabled",
+    "public_battle_playthrough": false
+  },
+  "exact_downloaded_pack_native_checks": [
+    "PACKED_REAL_STAGE_COMPLETION: PASS stage=1 mode=missing scene=res://src/level/level_01_smoke_realm.tscn card=boss_auditor voice=false",
+    "PACKED_REAL_STAGE_COMPLETION: PASS stage=1 mode=replay scene=res://src/level/level_01_smoke_realm.tscn card=boss_auditor voice=false",
+    "PACKED_REAL_STAGE_COMPLETION: PASS stage=2 mode=missing scene=res://src/level/level_02_crystal_caverns.tscn card=boss_distributor voice=false",
+    "PACKED_REAL_STAGE_COMPLETION: PASS stage=2 mode=replay scene=res://src/level/level_02_crystal_caverns.tscn card=boss_distributor voice=false",
+    "PACKED_REAL_STAGE_COMPLETION: PASS stage=3 mode=missing scene=res://src/level/level_03_gold_rush.tscn card=boss_claimjumper voice=false",
+    "PACKED_REAL_STAGE_COMPLETION: PASS stage=3 mode=replay scene=res://src/level/level_03_gold_rush.tscn card=boss_claimjumper voice=false"
+  ],
+  "native_nft_checks": 53,
+  "godot": "checksum-verified 4.3.stable",
+  "renderer": "Compatibility",
+  "viewport": [
+    1280,
+    720
+  ],
+  "old_public_defect": "Reproduced on public build 2026-10-25-1cf02a9 using actual stage-1 SceneRouter/boss die handler with saved boss flag and missing ledger. NFT=false, no card.",
+  "limitations": [
+    "Downloaded public pack exercised natively; full public browser campaign and real-phone playthrough not claimed.",
+    "Local browser probe blocked by ERR_CERT_AUTHORITY_INVALID; TLS was not weakened.",
+    "Independent browser-service request did not return before session interruption.",
+    "No new live canister issuance/on-chain timestamp is claimed; isolated tests disable submission.",
+    "Founder playtest confirmation remains separate."
+  ]
+}
