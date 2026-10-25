@@ -185,13 +185,14 @@ func mark_level_completed(level_index: int) -> void:
 
 ## Record a boss kill by id ("auditor", "distributor", "claim_jumper", ...).
 func mark_boss_defeated(boss_id: String) -> void:
+    # Every real victory presents the reward, including replays and older saves
+    # whose progression survived without the separate NFT ledger.
+    NftIssuer.on_boss_defeated(boss_id)
     var defeated: Array = progression_state["bosses_defeated"]
     if boss_id in defeated:
         return
     defeated.append(boss_id)
     save_session()
-    # Founder (2026-10-04): beating a stage boss issues that stage's boss NFT (see docs/nft/NFT_CONTRACT.md).
-    NftIssuer.on_boss_defeated(boss_id)
 
 ## Unlock a content tier. Emits so menus can reveal entries without polling.
 func unlock_content(content: String) -> void:

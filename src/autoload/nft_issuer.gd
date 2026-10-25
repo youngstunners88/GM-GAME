@@ -61,6 +61,12 @@ func _ready() -> void:
 
 ## A stage boss died. `boss_key` is the id GameManager uses: "auditor" | "distributor" | "claim_jumper".
 func on_boss_defeated(boss_key: String) -> void:
+	# A replay celebrates the existing soulbound reward without issuing it twice
+	# or replacing its original canister timestamp. Only real boss deaths call us.
+	var id: String = str(_by_trigger.get("boss_defeated:%s" % boss_key, ""))
+	if id != "" and has_nft(id):
+		_enqueue_card(id)
+		return
 	_issue_for_trigger("boss_defeated", boss_key, {})
 
 
