@@ -120,6 +120,17 @@ func launched_from_title() -> bool:
 func play_room_music(path: String, fade_seconds: float = 2.5) -> void:
     play_playlist([path], true, fade_seconds)
 
+## Subtle crossfade (founder 2026-10-25, forest -> town): the current track fades out over `seconds` WHILE `path` fades in over
+## the same span, then loops. Unlike play_playlist (0.45 s duck-out) the two overlap gently, with no gap and no pop.
+func crossfade_music(path: String, seconds: float = 4.0) -> void:
+    if not ResourceLoader.exists(path):
+        return
+    _drop_override_for_new_music()
+    _stop_ambient()
+    _duck_out_music(maxf(seconds, 0.5))
+    _playlist = [path]
+    _play_next_in_playlist(true, true, maxf(seconds, 1.5))
+
 ## Fade the current music out over `seconds` and stop (leaving a stage).
 func fade_out_music(seconds: float = 1.6) -> void:
     _playlist = []

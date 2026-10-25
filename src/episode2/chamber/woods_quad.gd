@@ -31,6 +31,8 @@ extends Ep2Interlude
 enum Beat { SNEAK, REVEAL, MOUNT, RIDE, DROPOFF, DONE }
 
 const MUSIC := "res://src/assets/music/ep2_deep_mining3_quad.ogg"
+const TOWN_MUSIC := "res://src/assets/music/ep2_theme_town.mp3"   # the founder's Episode 2 theme: fades in as the quad leaves the pines
+const TOWN_MUSIC_FADE := 5.0
 const QUAD_LOOP := "res://src/assets/sounds/ep2_quad_loop.mp3"
 
 # --- layout (metres; flat ground, +z is "deeper into the wood") ---
@@ -195,6 +197,7 @@ var _ride_s: float = 0.0
 var _ride_total: float = 0.0
 var _ride_speed: float = 0.0
 var _ride_done: bool = false
+var _town_music_started: bool = false
 var _quad_yaw: float = 0.0
 var _engine: AudioStreamPlayer = null
 var _sneak_i: int = 0
@@ -1365,6 +1368,7 @@ func _begin_ride() -> void:
 	release_camera()
 	_riding = true
 	_ride_done = false
+	_town_music_started = false
 	cam_distance = 7.5
 	cam_height = 2.4
 	_bull.stop()
@@ -2000,6 +2004,11 @@ func _tick_ride(delta: float) -> void:
 		_engine.pitch_scale = 0.85 + 0.35 * clampf(_ride_speed / RIDE_SPEED, 0.0, 1.0)
 	# out of the pines the light warms into gold-rush country (graded by distance, never a cut)
 	_grade_desert(_quad.position.z)
+	if not _town_music_started and _quad.position.z >= FOREST_END_Z - 100.0:      # the pines thin: the forest song gives way to the town theme
+		_town_music_started = true
+		var am: Node = get_node_or_null("/root/AudioManager")
+		if am != null and am.has_method("crossfade_music"):
+			am.crossfade_music(TOWN_MUSIC, TOWN_MUSIC_FADE)
 	# the engine is the loudest thing in the wood: bears near the road turn to it, the close ones know it is the enemy
 	_engine_acc += delta
 	if _engine_acc >= 0.25:
