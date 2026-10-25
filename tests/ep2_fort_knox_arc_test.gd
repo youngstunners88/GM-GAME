@@ -49,8 +49,9 @@ func _ready() -> void:
 	_check("the woods chamber has only its groundwork beats (no CLAIM / DECOY / VAULT / SACRIFICE / RESCUE beat)",
 		woods_beats == ["SNEAK", "REVEAL", "MOUNT", "RIDE", "DROPOFF", "DONE"], str(woods_beats))
 	var town_beats: Array = GoldTownChamber.Beat.keys()
-	_check("the town chamber keeps the founder's 2026-10-14 beats, the jailhouse visit (JAIL_TIP / JAIL, founder lock 2026-10-20) and the Armory turn (TIP / ARMORY / GEARED, Rich & Utah), still no CLAIM / DECOY / VAULT / SACRIFICE / RESCUE",
-		town_beats == ["STREET", "OFFICE", "TO_BAR", "BAR", "SQUARE_UP", "DRAW", "WON", "JAIL_TIP", "JAIL", "TIP", "ARMORY", "GEARED", "DONE"], str(town_beats))
+	_check("the town chamber keeps the founder's 2026-10-14 beats, the post-draw rewrite (founder 2026-10-25 section 4: JOB, the Gatling then Inferno's return BULL_BACK, the BODY, DRINKS), the Armory turn and the jailhouse visit downstream of the bar, still no CLAIM / DECOY / VAULT / SACRIFICE / RESCUE",
+		town_beats == ["STREET", "OFFICE", "TO_BAR", "BAR", "SQUARE_UP", "DRAW", "WON", "JOB", "TIP", "ARMORY", "BULL_BACK", "BODY", "DRINKS",
+			"JAIL_TIP", "JAIL", "GEARED", "DONE"], str(town_beats))
 	var lift_beats: Array = MineLiftChamber.Beat.keys()
 	_check("the lift chamber keeps its groundwork beats", lift_beats == ["ARRIVE", "BOARD", "LEVER", "RISE", "SURFACE", "DONE"], str(lift_beats))
 	# the town now continues to Logan's Lake (founder lock 2026-10-18; Codex's chamber is still being built, so its own ending is not asserted

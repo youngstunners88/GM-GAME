@@ -27,7 +27,9 @@ Founder placement rule: the jailhouse is a little way out of town, not beside it
   Walkable bounds are x +-40, z 1340-1495.
 - Streamed (ADR-0005, `ep2-streamed-extras-web`): nothing under `extras/` is in `index.pck`; when the extras are not mounted the layout row draws
   nothing and the story skips JAIL_TIP/JAIL (`Ep2GoldTown.jail_v1`). Never load the jail without `Ep2Extras.has()`.
-- Beat order: WON -> JAIL_TIP (Sheriff walks ahead, objective names the jail) -> JAIL (enter) -> TIP (Armory) -> ARMORY -> GEARED -> DONE.
+- Beat order (founder 2026-10-25 post-draw rewrite, PROMPT_EPISODE2_CAD_TRANSITIONS_DRAW_REWRITE section 4): WON -> JOB (the Sheriff offers the job:
+  who let the bears hold Fort Knox; his prisoner knows more) -> TIP -> ARMORY -> BULL_BACK -> BODY -> DRINKS -> JAIL_TIP (Sheriff walks ahead,
+  objective names the jail) -> JAIL (enter) -> GEARED (or back to Rich's counter for the gear) -> DONE. The jail is downstream of the bar.
   The lines are timed toasts (the HUD has no subtitle bar; VO waits on a voice key like the Armory's). Keep lines <= ~90 chars.
 - Accomplice = bargaining, partial truth only: bears brought in, early claims, Fort Knox first, "watch the lake outflow, the river, the trains".
   Never a full map of bear spawns, never a name from the real world.

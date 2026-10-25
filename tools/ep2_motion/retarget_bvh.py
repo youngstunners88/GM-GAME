@@ -37,6 +37,24 @@ CMU_TO_UE = {
     "clavicle_l": "LeftShoulder", "upperarm_l": "LeftArm", "lowerarm_l": "LeftForeArm",
     "clavicle_r": "RightShoulder", "upperarm_r": "RightArm", "lowerarm_r": "RightForeArm",
 }
+## The Meshy auto-rig (24 joints) names its spine bottom-up Spine02 -> Spine01 -> Spine and its neck lower-case.
+CMU_TO_MESHY = {
+    "Hips": "Hips", "LeftUpLeg": "LeftUpLeg", "LeftLeg": "LeftLeg", "LeftFoot": "LeftFoot", "LeftToeBase": "LeftToeBase",
+    "RightUpLeg": "RightUpLeg", "RightLeg": "RightLeg", "RightFoot": "RightFoot", "RightToeBase": "RightToeBase",
+    "Spine02": "LowerBack", "Spine01": "Spine", "Spine": "Spine1", "neck": "Neck", "Head": "Head",
+    "LeftShoulder": "LeftShoulder", "LeftArm": "LeftArm", "LeftForeArm": "LeftForeArm",
+    "RightShoulder": "RightShoulder", "RightArm": "RightArm", "RightForeArm": "RightForeArm",
+}
+## The game's own 20-joint townfolk rig (tools/ep2_blender/build_armory_folk.py, rig_scan_character.py: the prisoner, Jack Hammer, the
+## rigged Minister): Root -> Hips -> Spine -> Chest -> Neck -> Head, Shoulder/UpperArm/Forearm/Hand, Thigh/Shin/Foot (.L / .R).
+## Insertion order matters: the leg chain is read up -> low -> foot.
+CMU_TO_TOWNFOLK = {
+    "Hips": "Hips", "Thigh.L": "LeftUpLeg", "Shin.L": "LeftLeg", "Foot.L": "LeftFoot",
+    "Thigh.R": "RightUpLeg", "Shin.R": "RightLeg", "Foot.R": "RightFoot",
+    "Spine": "LowerBack", "Chest": "Spine1", "Neck": "Neck", "Head": "Head",
+    "Shoulder.L": "LeftShoulder", "UpperArm.L": "LeftArm", "Forearm.L": "LeftForeArm",
+    "Shoulder.R": "RightShoulder", "UpperArm.R": "RightArm", "Forearm.R": "RightForeArm",
+}
 LIMB_SRC = {"LeftUpLeg", "LeftLeg", "LeftFoot", "RightUpLeg", "RightLeg", "RightFoot",
             "LeftArm", "LeftForeArm", "LeftHand", "RightArm", "RightForeArm", "RightHand"}
 
@@ -46,7 +64,12 @@ ap.add_argument("--bvh-dir", required=True)
 ap.add_argument("--out", required=True)
 ap.add_argument("--fps", type=int, default=30)
 ap.add_argument("--only", nargs="*", default=[])
+ap.add_argument("--glb", default="")                  # import this rigged GLB first (instead of opening a prepared .blend)
+ap.add_argument("--export-glb", default="")           # also write the armature + mesh + every clip as a GLB (for append_glb_clips.py)
 a = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
+if a.glb:
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    bpy.ops.import_scene.gltf(filepath=a.glb)
 spec = json.load(open(a.spec))
 
 sc = bpy.context.scene
@@ -54,7 +77,11 @@ tgt = next(o for o in sc.objects if o.type == "ARMATURE")
 assert tgt.matrix_world.to_3x3().is_identity or (tgt.matrix_world.to_3x3() - Matrix.Identity(3)).median_scale < 1e-4, "apply transforms first"
 names = {b.name for b in tgt.data.bones}
 prefix = "mixamorig:" if any(n.startswith("mixamorig:") for n in names) else ""
-if prefix or "Hips" in names:
+if "Spine02" in names and "neck" in names:            # the Meshy rig (the Episode 2 townspeople): Hips -> Spine02 -> Spine01 -> Spine -> neck
+    MAP = {k: v for k, v in CMU_TO_MESHY.items() if k in names}
+elif "Thigh.L" in names and "Forearm.L" in names:     # the game's townfolk rig (rig_scan_character.py)
+    MAP = {k: v for k, v in CMU_TO_TOWNFOLK.items() if k in names}
+elif prefix or "Hips" in names:
     MAP = {prefix + k: v for k, v in CMU_TO_MIXAMO.items() if prefix + k in names}
 else:
     MAP = {k: v for k, v in CMU_TO_UE.items() if k in names}
@@ -229,4 +256,6 @@ for pb in tgt.pose.bones:
     pb.location = (0, 0, 0)
     pb.rotation_quaternion = (1, 0, 0, 0)
 bpy.ops.wm.save_as_mainfile(filepath=a.out)
-print("@@" + json.dumps({"ok": True, "map": len(MAP), "clips": report, "out": a.out}))
+if a.export_glb:
+    bpy.ops.export_scene.gltf(filepath=a.export_glb, export_format="GLB", export_animations=True, export_yup=True)
+print("@@" + json.dumps({"ok": True, "map": len(MAP), "clips": report, "out": a.out, "glb": a.export_glb}))

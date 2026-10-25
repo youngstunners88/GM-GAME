@@ -15,17 +15,70 @@ extends Ep2Interlude
 ##   SQUARE_UP out in the street, face him; the Sheriff stands to the side
 ##   DRAW      the rifle stays down until the town bell rings (a seeded wait). Fire early = a foul, the Sheriff makes them redo it. Hit him first
 ##             = the map. Too slow = he shoots first: the screen drops, hearts restored, the Sheriff sets it up again (retry, never a death)
-##   WON       the Sheriff hands him the map; Bull comes walking up the street (his reaction is not locked: no line yet)
+## POST-DRAW (founder 2026-10-25, PROMPT_EPISODE2_CAD_TRANSITIONS_DRAW_REWRITE section 4 - replaces "Bull arrives at the draw"):
+##   WON       the map is his. Minister Mike Dean runs out of his office in a panic and asks what happened; the townspeople celebrate,
+##             then dance together. Inferno does NOT arrive. Mike Dean goes to kneel by the stranger and pray.
+##   JOB       the Sheriff, impressed with the shooting, offers the job: find out who let the bears hold Fort Knox (his prisoner may know)
+##             and sends him to Rich and Utah first
 ##   TIP       the tip: RICH keeps an armory down the side lane off the left row (founder lock
 ##             PROMPT_EPISODE2_RICH_ARMORY_UTAH_RIVER.md) - off Main Street, deliberately not obvious
 ##   ARMORY    walk down the lane and in: Rich the Claim Recorder and Utah behind the counter. Trade (E at
-##             the counter) buys firearms, ammunition and the river gear with Episode 1 crypto only
-##   GEARED    the long rifle and the river gear are his; Rich seeds the day-88 river shipment
-##   DONE      TO BE CONTINUED
+##             the counter) buys firearms, ammunition and the river gear with Episode 1 crypto only; he can test the Colt Gatling
+##   BULL_BACK after testing the Gatling: Inferno rides back in on his quad and parks outside Rich's; whiskey's on him
+##   BODY      on the way: the man Lil Blunt shot, Mike Dean praying by him; Inferno greets the Minister, asks who put a hole in his
+##             head - "Must've been a bird that had to get rid of the heavy load."
+##   DRINKS    whiskey at the bar; Inferno's cousin Flux needs help with his new kettle: they part a while and meet later
+##   JAIL_TIP / JAIL  the Sheriff's prisoner (founder lock 2026-10-20), downstream of the bar
+##   GEARED    the long rifle and the river gear are his (bought at Rich's, then or after the jail); Rich seeds the day-88 river shipment
+##   DONE      TO BE CONTINUED. Fort Knox stays the climax - never opened here.
 ## Never in this room: the banned Episode 2 protocol (ep2-fort-knox-arc rule 4), a second health system, a wallet or contract address.
 ## The Armory never mints and is NOT the Treasury: the Treasury keeps no racks and no trade (lock section 7).
 
-enum Beat { STREET, OFFICE, TO_BAR, BAR, SQUARE_UP, DRAW, WON, JAIL_TIP, JAIL, TIP, ARMORY, GEARED, DONE }
+enum Beat { STREET, OFFICE, TO_BAR, BAR, SQUARE_UP, DRAW, WON, JOB, TIP, ARMORY, BULL_BACK, BODY, DRINKS, JAIL_TIP, JAIL, GEARED, DONE }
+
+## The post-draw lines (section 4). Timed captions: no voice key is configured on this box, so like the jailhouse's they are text, and a
+## recording dropped into Ep2TownVoiceBank under the same speaker + text plays automatically. Lil Blunt's bird line is the founder's own.
+const PANIC_LINES: Array = [
+	["MIKE DEAN", "Lord have mercy! What in heaven's name happened out here?"],
+	["SHERIFF", "A fair draw, Minister. The stranger called it. The little fella was faster."],
+	["MIKE DEAN", "Then somebody had better pray for that poor soul. I'll see to him."],
+]
+const JOB_LINES: Array = [
+	["SHERIFF", "That was some fine shooting, son. Haven't seen a draw that clean in years."],
+	["SHERIFF", "I could use a hand like yours. Somebody let the bears hold Fort Knox."],
+	["SHERIFF", "Find out who. My prisoner in the jailhouse knows more than he's telling."],
+	["SHERIFF", "But get yourself properly armed first. Go see Rich and Utah, down the side lane."],
+	["LIL BLUNT", "Rich and Utah. I'm on it, Sheriff."],
+]
+const BULL_BACK_LINES: Array = [
+	["INFERNO", "Heard that Gatling clear across town. Figured it had to be you, little man."],
+	["INFERNO", "Come on. First whiskey's on me."],
+]
+const BODY_LINES: Array = [
+	["INFERNO", "Evening, Minister."],
+	["MIKE DEAN", "Evening, Inferno. Just saying a few words for him."],
+	["INFERNO", "So who put a hole in his head?"],
+	["LIL BLUNT", "Must've been a bird that had to get rid of the heavy load."],
+	["INFERNO", "A bird. Sure it was."],
+]
+const DRINK_LINES: Array = [
+	["BARTENDER", "Two whiskeys, coming right up."],
+	["INFERNO", "To the quickest little hand in GoldMine."],
+	["LIL BLUNT", "Cheers."],
+	["INFERNO", "Listen, my cousin Flux needs a hand with his new kettle."],
+	["INFERNO", "We'll lie low a little while and meet up later. Stay out of trouble."],
+]
+## Inferno's ride back in: the road he left town on, reversed (woods_quad.gd _bull_ride_off), up the lane to Rich's. He parks east of the
+## shop door, clear of the Gatling yard to the west (Ep2GoldTown.GATLING_POST) and of the lane walk.
+const QUAD_RETURN: Array = [Vector3(70.0, 0.0, 1500.0), Vector3(16.0, 0.0, 1478.0), Vector3(2.0, 0.0, 1466.0), Vector3(0.0, 0.0, 1452.0),
+	Vector3(-12.0, 0.0, 1452.0)]
+const QUAD_PARK_LOCAL := Vector3(-5.2, 0.0, 4.2)           # in the Armory's frame (x along the front, +z out of the door)
+const MINISTER_RUN := 3.1                                  # m/s: his panic run (the CMU run's own stride, 2.44 m/s, plays a little quick)
+const MINISTER_RUN_STRIDE := 2.44
+const MINISTER_WALK := 1.15
+const KNEEL_AT := Vector3(0.95, 0.0, -0.45)                # where the Minister kneels, from the fallen stranger
+const BODY_NEAR := 7.5                                     # how close Lil Blunt comes to the body before Inferno speaks
+const GATLING_TESTED_HOLD := 1.4                           # seconds after he steps off the crank before Inferno is heard coming
 
 const SHERIFF_MODEL := "res://src/episode2/assets/town/sheriff.glb"          # the founder's own Sheriff (Drive 2026-10-14): weathered, bearded, long coat, pipe - baked for the pack
 const MINISTER_MODEL := "res://src/episode2/assets/town/minister.glb"      # Minister Mike Dean: the founder's robot-headed minister (Drive 2026-10-14), baked for the pack
@@ -134,6 +187,8 @@ var _stable_yard: Ep2StableYard = null
 var _stable_prompt_shown: bool = false
 signal stable_voice_requested(line_id: String, voice_id: String)
 signal draw_bell_rung
+## A post-draw caption was shown (speaker, text) - test evidence for the section 4 lines.
+signal captioned(who: String, text: String)
 var _geared: bool = false                             # rifle + river gear in hand
 var _gear_t: float = -1.0
 var _armory_visited: bool = false                     # he found the lane and walked in
@@ -152,6 +207,22 @@ var _intro: Ep2ArmoryIntro = null                     # Rich and Utah introduce 
 var _intro_asked: bool = false
 var _mount_bursts: int = 0                            # bursts fired from the post (test evidence)
 var _mouse_before: int = Input.MOUSE_MODE_CAPTURED
+## The post-draw (section 4).
+var _minister_rigged: bool = false                    # the rigged Mike Dean (streamed): runs, kneels, prays; else the old statue
+var _minister_task: String = ""                       # "" | "panic" (running out) | "asked" | "to_body" | "kneeling"
+var _minister_t: float = 0.0
+var _panic_done: bool = false
+var _won_t: float = 0.0
+var _job_said: bool = false
+var _gat_tested_t: float = -1.0                       # >= 0 once he has fired the Gatling and stepped off: Inferno's cue
+var _armory_t: float = 0.0
+var _armory_return: bool = false                      # back at Rich's after the jail, only to gear up for the river
+var _quad: Ep2TownQuad = null
+var _bull_riding: bool = false
+var _bull_task: String = ""                           # "" | "riding" | "to_lb" | "greeted" | "to_body" | "at_body" | "to_bar" | "at_bar" | "leaving"
+var _body_said: bool = false
+var _drinks_said: bool = false
+var _glass2: Node3D = null
 
 
 func _init() -> void:
@@ -466,7 +537,7 @@ func _tick_armory_guns(delta: float) -> void:
 func skip_armory_intro() -> void:
 	_intro_asked = true
 	if _intro != null:
-		_intro.cancel()
+		_intro.skip()
 
 
 ## Step away from the crank and put the guns away (the beat moved on, or the room is being left).
@@ -716,7 +787,9 @@ func _note(item_id: String, ok: bool) -> void:
 func _check_geared() -> void:
 	if _geared or _gear_t >= 0.0:
 		return
-	if armory.sniper_owned and armory.river_gear:
+	# section 4: the first visit to Rich's goes on to the Gatling and Inferno's return; geared shows only once the story has been to
+	# the bar (and the jail): already geared then -> straight on (_after_story), else this return visit is the one that gears him
+	if armory.sniper_owned and armory.river_gear and _armory_return:
 		_gear_t = 1.0
 
 
@@ -742,9 +815,21 @@ func _build_sheriff() -> void:
 	_face_folk(_sheriff, Ep2GoldTown.local_to_world("Bldg_Certificates", OFFICE_SPOT))
 	_minister = Ep2TownFolk.new()
 	_minister.name = "MinisterMikeDean"
+	# The founder's Mike Dean rigged on the townfolk skeleton (tools/ep2_motion/rig_scan_character.py + clips_minister.json: a panic Run,
+	# KneelDown and a praying Kneel - section 4 of the 2026-10-25 prompt) streams with the town people; without the pack the statue
+	# stands in exactly as before.
+	_minister.looping_clips.assign(["Idle", "Walk", "Run", "Kneel"])
+	_minister.clip_blend = 0.2
 	_visuals.add_child(_minister)
-	_minister.setup(MINISTER_MODEL, MINISTER_HEIGHT, Color(0.1, 0.1, 0.12))
-	_minister.position = Ep2GoldTown.local_to_world("Bldg_Certificates", MINISTER_DESK) + Vector3(0.0, MINISTER_STEP, 0.0)
+	_minister.setup(Ep2Extras.MINISTER if Ep2Extras.has(Ep2Extras.MINISTER) else MINISTER_MODEL, MINISTER_HEIGHT, Color(0.1, 0.1, 0.12))
+	_minister_rigged = _minister.has_clips()
+	if _minister_rigged:
+		_minister.use_height = true                    # he stands on his step behind the counter, and steps down off it
+		_minister.procedural_bob = false
+		_minister.place(Ep2GoldTown.local_to_world("Bldg_Certificates", MINISTER_DESK) + Vector3(0.0, MINISTER_STEP, 0.0))
+		_minister.hold_clip("Idle")
+	else:
+		_minister.position = Ep2GoldTown.local_to_world("Bldg_Certificates", MINISTER_DESK) + Vector3(0.0, MINISTER_STEP, 0.0)
 	var step := MeshInstance3D.new()
 	step.name = "MinisterStep"
 	var box := BoxMesh.new()
@@ -917,16 +1002,25 @@ func _on_beat_entered(b: int) -> void:
 			_start_round()
 		Beat.WON:
 			_got_map = true
+			_won_t = 0.0
 			if _hud:
 				_hud.objective = "THE AUCTION MAP is yours."
 				_hud.toast("YOU GOT THE MAP TO THE AUCTION", 3.0)
-			# he strolls out of the HOTEL (the blonde lady friend; nothing shown), hat and grin, and walks over
-			_bull.visible = true
-			_bull.position = Ep2GoldTown.door_world("Bldg_B", 0.8)
+			# section 4.1: Inferno does NOT arrive at the draw. Minister Mike Dean runs out of his office in a panic; the street celebrates
+			# round Lil Blunt (clear of the fallen stranger), then pairs off and dances.
+			_minister_runs_out()
+			if _people != null:
+				_people.celebrate(_player_pos, _opp.position)
 			_start_show([
 				FacilityShow._say("vo_sheriff_win", 0.4),
 				{"do": "wait", "t": 0.4}], false)
-			_bull.walk_to(_player_pos + Vector3(1.4, 0.0, 2.6), 1.6)
+		Beat.JOB:
+			# section 4.2: the Sheriff walks over, impressed, and offers the job - who let the bears hold Fort Knox (his prisoner may know) -
+			# and sends him to Rich and Utah first
+			if _hud:
+				_hud.objective = ""
+			_job_said = false
+			_sheriff.walk_to(_stand_off(_sheriff.position, _player_pos, 1.8), 1.4)
 		Beat.JAIL_TIP:
 			# the Sheriff has a prisoner (founder lock 2026-10-20): he heads for the jailhouse out at the south edge of town
 			_investigation_open = false
@@ -960,14 +1054,42 @@ func _on_beat_entered(b: int) -> void:
 			look_toward(Ep2GoldTown.door_world("Bldg_Armory", 1.0) + Vector3(0.0, 1.4, 0.0), 2.0)
 			_start_show([{"do": "wait", "t": 3.0}, {"do": "call", "fn": release_look}], false)
 		Beat.ARMORY:
+			_armory_t = 0.0
+			if _armory_return:
+				# back from the jail only to gear up for the river: no second welcome
+				if _hud:
+					_hud.objective = "Gear up for the river at Rich's counter [E]: the long rifle and the river gear."
+				_check_geared()
+			else:
+				if _hud:
+					_hud.objective = "Trade with Rich at the counter [E]."
+				if _rich != null:
+					_rich.face_point(_player_pos)
+					look_toward(_rich.position + Vector3(0.0, RICH_HEIGHT * 0.85, 0.0), 2.2)
+				_start_show([FacilityShow._say("town_trade_00"), FacilityShow._say("town_trade_01"),
+					FacilityShow._say("town_trade_02"), FacilityShow._say("town_trade_03"),
+					{"do": "call", "fn": release_look}], false)
+		Beat.BULL_BACK:
+			# section 4.3: after the Gatling, Inferno rides back in on his quad and parks outside Rich's
+			_end_guns()
 			if _hud:
-				_hud.objective = "Trade with Rich at the counter [E]."
-			if _rich != null:
-				_rich.face_point(_player_pos)
-				look_toward(_rich.position + Vector3(0.0, RICH_HEIGHT * 0.85, 0.0), 2.2)
-			_start_show([FacilityShow._say("town_trade_00"), FacilityShow._say("town_trade_01"),
-				FacilityShow._say("town_trade_02"), FacilityShow._say("town_trade_03"),
-				{"do": "call", "fn": release_look}], false)
+				_hud.objective = ""
+			_quad_comes_back()
+		Beat.BODY:
+			# section 4.4: on the way to the bar, the man Lil Blunt shot - and Mike Dean praying by him
+			if _hud:
+				_hud.objective = "Walk with Inferno to the saloon."
+			_body_said = false
+			_bull_task = "to_body"
+			_bull_route([Ep2GoldTown.door_world("Bldg_Armory", 6.0), LANE_MARK, Vector3(-2.2, 0.0, 1450.0), _body_stand()], 1.5)
+		Beat.DRINKS:
+			# section 4.5: whiskey at the bar; then cousin Flux's new kettle - they part a while and meet later
+			if _hud:
+				_hud.objective = "Inferno's buying. Into the saloon, up to the bar."
+			_drinks_said = false
+			_bull_task = "to_bar"
+			_bull_route([Ep2GoldTown.door_world("Bldg_Saloon", 2.4), Ep2GoldTown.door_world("Bldg_Saloon", -1.0),
+				Ep2GoldTown.local_to_world("Bldg_Saloon", BAR_SPOT + Vector3(1.4, 0.0, -0.1))], 1.4)
 		Beat.GEARED:
 			_end_guns()
 			_geared = true
@@ -1035,6 +1157,263 @@ func _jail_spot(name: String) -> Vector3:
 	return Ep2GoldTown.local_to_world("Bldg_Jail", Ep2GoldTown.jail_spots.get(name, Vector3.ZERO))
 
 
+# --- the post-draw (founder 2026-10-25, PROMPT_EPISODE2_CAD_TRANSITIONS_DRAW_REWRITE section 4) --------------------------------------------
+
+## A spoken exchange as timed captions: each line is toasted with its speaker (and plays a recording when Ep2TownVoiceBank has one for that
+## speaker + text), held for a reading time, the speaker turned to Lil Blunt.
+func _caption_steps(lines: Array) -> Array:
+	var steps: Array = []
+	for ln in lines:
+		var who: String = str(ln[0])
+		var text: String = str(ln[1])
+		steps.append({"do": "call", "fn": func() -> void: _caption_line(who, text)})
+		steps.append({"do": "wait", "t": _caption_seconds(who, text)})
+	return steps
+
+
+static func _read_seconds(text: String) -> float:
+	return clampf(1.3 + float(text.length()) * 0.052, 2.4, 6.2)
+
+
+func _caption_seconds(who: String, text: String) -> float:
+	var rec: float = Ep2TownVoiceBank.seconds(Ep2TownVoiceBank.id_for(_town_speaker(who), text))
+	return maxf(_read_seconds(text), rec + 0.3)
+
+
+func _caption_line(who: String, text: String) -> void:
+	var id: String = Ep2TownVoiceBank.id_for(_town_speaker(who), text)
+	if _hud != null:
+		_hud.toast("%s: %s" % [who, text], _caption_seconds(who, text))
+	if id != "":
+		_speak(id)
+	captioned.emit(who, text)
+	match who:
+		"SHERIFF":
+			if _sheriff != null: _sheriff.face_point(_player_pos)
+		"MIKE DEAN":
+			if _minister != null and _minister_task != "kneeling": _minister.face_point(_player_pos)
+		"INFERNO":
+			if _bull != null and _bull_task not in ["riding", "leaving"]: _bull.face_point(_player_pos)
+		"BARTENDER":
+			if _bartender != null: _bartender.face_point(_player_pos)
+
+
+## `to`, moved `gap` metres toward `from` on the ground: where someone stops to talk to whoever stands at `to`.
+static func _stand_off(from: Vector3, to: Vector3, gap: float) -> Vector3:
+	var d := Vector3(from.x - to.x, 0.0, from.z - to.z)
+	if d.length() < 0.01:
+		d = Vector3(0.0, 0.0, 1.0)
+	return Vector3(to.x, 0.0, to.z) + d.normalized() * gap
+
+
+func _people_cheer_s() -> float:
+	return Ep2TownPeople.CHEER_S if _people != null and not _people.people.is_empty() else 3.0
+
+
+## Section 4.1: Mike Dean leaves his counter in a panic - round the end of it, out through the door - and runs to Lil Blunt (his rigged
+## body on its Run clip; the statue simply hurries). _tick_minister carries on: his question, then the walk to the fallen stranger to pray.
+func _minister_runs_out() -> void:
+	if _minister == null:
+		_panic_done = true
+		return
+	_minister_task = "panic"
+	_minister_t = 0.0
+	var stop: Vector3 = _stand_off(Ep2GoldTown.door_world("Bldg_Certificates", 2.0), _player_pos, 2.3)
+	var pts: Array = [Ep2GoldTown.local_to_world("Bldg_Certificates", Vector3(3.2, 0.0, -5.4)),
+		Ep2GoldTown.local_to_world("Bldg_Certificates", Vector3(3.2, 0.0, -3.4)), Ep2GoldTown.local_to_world("Bldg_Certificates", Vector3(0.6, 0.0, -2.0)),
+		Ep2GoldTown.door_world("Bldg_Certificates", -0.6), Ep2GoldTown.door_world("Bldg_Certificates", 1.6), stop]
+	if _minister_rigged:
+		_minister.walk_clip = "Run"
+		_minister.walk_clip_speed = MINISTER_RUN_STRIDE
+	_minister.walk_path(pts, MINISTER_RUN)
+
+
+func _tick_minister(delta: float) -> void:
+	if _minister == null or _minister_task == "":
+		return
+	_minister_t += delta
+	match _minister_task:
+		"panic":
+			if not _minister.is_walking() and not _show_active:
+				_minister_task = "asking"
+				if _minister_rigged:
+					_minister.walk_clip = "Walk"
+					_minister.walk_clip_speed = 0.0
+				_minister.face_point(_player_pos)
+				look_toward(_minister.position + Vector3(0.0, MINISTER_HEIGHT * 0.85, 0.0), 2.4)
+				_start_show(_caption_steps(PANIC_LINES) + [{"do": "call", "fn": _after_panic}], false)
+		"to_body":
+			if not _minister.is_walking():
+				_minister_task = "kneeling"
+				_minister_t = 0.0
+				_minister.face_point(_opp.position)
+				if _minister_rigged:
+					_minister.hold_clip("KneelDown")
+		"kneeling":
+			_minister.face_point(_opp.position)
+			if _minister_rigged and _minister_t > 1.95 and _minister.current_clip() != "kneel":
+				_minister.hold_clip("Kneel")
+
+
+func _after_panic() -> void:
+	release_look()
+	_panic_done = true
+	_minister_task = "to_body"
+	_minister.walk_path([_opp.position + KNEEL_AT], MINISTER_WALK)
+
+
+## Section 4.3: the quad (the woods ride's model) rolls back up the road and the lane with Inferno in the saddle and parks outside Rich's.
+func _quad_comes_back() -> void:
+	if _quad == null:
+		_quad = Ep2TownQuad.new()
+		_quad.name = "InfernoQuad"
+		_visuals.add_child(_quad)
+		_quad.build()
+	_quad.drive(QUAD_RETURN + [Ep2GoldTown.local_to_world("Bldg_Armory", QUAD_PARK_LOCAL)])
+	_bull.visible = true
+	if _bull.anim != null and not _bull.anim.has_animation(WoodsQuadChamber.BULL_SIT_CLIP):
+		_bull.add_all_clips(SmeltingFacilityChamber.BULL_SIT_CLIPS)
+	if _bull.anim != null and _bull.anim.has_animation(WoodsQuadChamber.BULL_SIT_CLIP):
+		_bull.play(WoodsQuadChamber.BULL_SIT_CLIP, 0.0, 0.0)            # seated, frozen (the woods ride's pose)
+		_bull.anim.seek(WoodsQuadChamber.BULL_SIT_AT, true)
+	_bull.clear_face_goal()
+	_bull_task = "riding"
+	_seat_bull()
+
+
+func _seat_bull() -> void:
+	_bull.position = _quad.seat_position()
+	_bull.facing = _quad.yaw
+	_bull.rotation.y = _quad.yaw
+
+
+func _tick_bull_back(delta: float) -> void:
+	match _bull_task:
+		"riding":
+			_quad.step(delta)
+			_seat_bull()
+			# townspeople in the road step aside to the verge as he comes (the ride into town does the same)
+			_make_way_t -= delta
+			if _people != null and _make_way_t <= 0.0:
+				_make_way_t = 0.25
+				_people.make_way(_quad.position, Vector2(sin(_quad.yaw), cos(_quad.yaw)), 14.0, 2.0)
+			if _quad.is_parked:
+				# the parked quad is solid: nobody walks through it
+				if _town_col.has("props"):
+					(_town_col["props"] as Array).append([Vector2(_quad.position.x, _quad.position.z), 1.25])
+				# he swings off beside the saddle and comes over (to the shop door if Lil Blunt is inside)
+				_bull_task = "to_lb"
+				_bull.position = _quad.dismount_spot()
+				_bull.play(BULL_IDLE, 1.0, 0.25)
+				var meet: Vector3 = Ep2GoldTown.door_world("Bldg_Armory", 1.2) if _in_room("Bldg_Armory", -0.5) else _player_pos
+				_bull.walk_to(_stand_off(_bull.position, meet, 2.3), 1.5)
+		"to_lb":
+			if not _bull.is_walking() and not _show_active:
+				if _player_pos.distance_to(_bull.position) > 6.5:
+					_bull.face_point(_player_pos)
+					if _hud != null:
+						_hud.objective = "Inferno's back - he's outside Rich's."
+					return
+				_bull_task = "greeted"
+				_bull.face_point(_player_pos)
+				look_toward(_bull.head_world(), 2.4)
+				_start_show(_caption_steps(BULL_BACK_LINES) + [{"do": "call", "fn": release_look}], false)
+		"greeted":
+			if not _show_active:
+				_advance_to(Beat.BODY)
+
+
+## Where Inferno stops by the fallen stranger: on the lane side of him, the Minister kneeling on the other.
+func _body_stand() -> Vector3:
+	return _opp.position + Vector3(-1.5, 0.0, 2.3)
+
+
+var _bull_path: Array = []
+var _bull_speed: float = 1.5
+var _make_way_t: float = 0.0
+var _duck: Ep2DuckModifier = null
+
+
+## Inferno walks the points in order (Ep2Actor walks one point at a time).
+func _bull_route(points: Array, speed: float) -> void:
+	_bull_path = points.duplicate()
+	_bull_speed = speed
+	if not _bull_path.is_empty():
+		_bull.walk_to(_bull_path.pop_front(), speed)
+
+
+func _tick_bull_route() -> void:
+	if _bull == null or _bull_task not in ["to_body", "to_bar", "leaving"]:
+		return
+	_duck_bull()
+	if _bull.is_walking():
+		return
+	if not _bull_path.is_empty():
+		_bull.walk_to(_bull_path.pop_front(), _bull_speed)
+		return
+	match _bull_task:
+		"to_body":
+			_bull_task = "at_body"
+			_bull.face_point(_minister.position if _minister != null else _opp.position)
+		"to_bar":
+			_bull_task = "at_bar"
+			_bull.face_point(_player_pos)
+		"leaving":
+			_bull_task = ""
+			_bull.visible = false
+			_set_duck(0.0)
+
+
+## Section 4.5: a 2.9 m man through the saloon's 2.5 m batwing door - he stoops (Ep2DuckModifier) as he nears the door plane and straightens
+## once through, and drops a hand's breadth, so the lintel never cuts his hat.
+func _duck_bull() -> void:
+	var lp: Vector3 = Ep2GoldTown.building_xform(Ep2GoldTown.entry("Bldg_Saloon")).affine_inverse() * _bull.position
+	var near: float = 0.0
+	if absf(lp.x) < 2.2:
+		near = clampf((2.0 - absf(lp.z)) / 1.3, 0.0, 1.0)
+	_set_duck(near)
+
+
+func _set_duck(amount: float) -> void:
+	if _duck == null:
+		if amount <= 0.0 or _bull.skeleton == null:
+			return
+		_duck = Ep2DuckModifier.new()
+		_duck.name = "DoorDuck"
+		_bull.skeleton.add_child(_duck)
+		_bull_model_y = _bull.model.position.y if _bull.model != null else 0.0
+	_duck.amount = amount
+	_max_duck = maxf(_max_duck, amount)
+	_duck.forward = Vector3(sin(_bull.rotation.y), 0.0, cos(_bull.rotation.y))
+	if _bull.model != null:
+		_bull.model.position.y = _bull_model_y - 0.12 * amount
+
+
+var _bull_model_y: float = 0.0
+var _max_duck: float = 0.0                            # the deepest stoop so far (test evidence)
+
+
+## Two whiskeys on the bar: the one from the draw's round and a second for Inferno beside it.
+func _pour_two() -> void:
+	var bar_top: Vector3 = Ep2GoldTown.local_to_world("Bldg_Saloon", Vector3(-0.6, 1.2, -8.7))
+	_place(_glass, bar_top)
+	if _glass2 == null:
+		_glass2 = _prop(WHISKEY_MODEL, 0.11)
+	_place(_glass2, bar_top + (Ep2GoldTown.local_to_world("Bldg_Saloon", Vector3(1.1, 0.0, 0.0)) - Ep2GoldTown.local_to_world("Bldg_Saloon", Vector3.ZERO)))
+
+
+## What follows the bar and the jail: the Sheriff's prisoner (when the jailhouse is streamed in), then the river - straight on if he bought
+## the long rifle and the river gear at Rich's, else back to Rich's counter for them.
+func _after_story() -> void:
+	if _beat == Beat.DRINKS and Ep2GoldTown.jail_v1:
+		_advance_to(Beat.JAIL_TIP)
+	elif armory.sniper_owned and armory.river_gear:
+		_advance_to(Beat.GEARED)
+	else:
+		_armory_return = true
+		_advance_to(Beat.ARMORY)
+
+
 func _show_finished() -> void:
 	match _beat:
 		Beat.OFFICE:
@@ -1070,6 +1449,8 @@ func _tick(delta: float) -> void:
 		if not _show_active and _hold <= 0.0 and not intro_busy and not duel and not _shop_open and _town_audio.has_queued():
 			_begin_carry_line(_town_audio.take_line())
 	_tick_people(delta)
+	_tick_minister(delta)
+	_tick_bull_route()
 	if _gatling != null:
 		_gatling.step(delta)
 	if _flash_t > 0.0:
@@ -1089,14 +1470,18 @@ func _tick(delta: float) -> void:
 		Beat.DRAW:
 			_tick_draw(delta)
 		Beat.WON:
-			if not _bull_arrived and not _bull.is_walking():
-				_bull_arrived = true
-				_bull.face_point(_player_pos)
-				_end_t = 3.0
-			if _end_t >= 0.0 and not _show_active:
-				_end_t -= delta
-				if _end_t < 0.0:
-					_advance_to(Beat.JAIL_TIP if Ep2GoldTown.jail_v1 else Beat.TIP)
+			_won_t += delta
+			# the Minister's panic plays out; the job follows once the street has had its cheer (the dance goes on under the Sheriff)
+			if _panic_done and not _show_active and _won_t > _people_cheer_s():
+				_advance_to(Beat.JOB)
+		Beat.JOB:
+			if not _job_said and not _sheriff.is_walking() and not _show_active:
+				_job_said = true
+				_sheriff.face_point(_player_pos)
+				look_toward(_sheriff.position + Vector3(0.0, SHERIFF_HEIGHT * 0.9, 0.0), 2.4)
+				_start_show(_caption_steps(JOB_LINES) + [{"do": "call", "fn": release_look}], false)
+			elif _job_said and not _show_active:
+				_advance_to(Beat.TIP)
 		Beat.JAIL_TIP:
 			if _in_room("Bldg_Jail", -1.2):
 				_advance_to(Beat.JAIL)
@@ -1112,7 +1497,7 @@ func _tick(delta: float) -> void:
 				else:
 					_jail_done_t += delta
 					if _jail_done_t > 2.2 and not _in_room("Bldg_Jail", -0.6):
-						_advance_to(Beat.TIP)
+						_after_story()                     # geared already: the river; else back to Rich's for the gear
 		Beat.TIP:
 			if _in_room("Bldg_Armory", -1.4):
 				_armory_visited = true
@@ -1128,10 +1513,46 @@ func _tick(delta: float) -> void:
 				else:
 					_hud.set_search_prompt("Trade with Rich [E]" if _at_armory_counter() else "")
 			_check_geared()
+			_armory_t += delta
 			if _gear_t >= 0.0 and not _show_active and not _mounted and _hold <= 0.0 and (_town_audio == null or not _town_audio.has_queued()) and not (_intro != null and _intro.is_busy()):
 				_gear_t -= delta
 				if _gear_t < 0.0:
 					_advance_to(Beat.GEARED)
+			elif not _armory_return:
+				# section 4.3: the Gatling tested (a burst fired from the crank, then stepped off, Utah's intro wound up) is Inferno's cue.
+				# With no Gatling streamed in (the pack is not mounted), he still comes once the visit has had its time.
+				if _gat_tested_t < 0.0 and _mount_bursts > 0 and not _mounted:
+					_gat_tested_t = 0.0
+				var free: bool = not _show_active and not _shop_open and not _mounted and not (_intro != null and _intro.is_busy())
+				if _gat_tested_t >= 0.0 and free:
+					_gat_tested_t += delta
+					if _gat_tested_t >= GATLING_TESTED_HOLD:
+						_advance_to(Beat.BULL_BACK)
+				elif _gatling == null and free and _armory_t > 25.0:
+					_advance_to(Beat.BULL_BACK)
+		Beat.BULL_BACK:
+			_tick_bull_back(delta)
+		Beat.BODY:
+			if not _body_said and _bull_task == "at_body" and not _show_active and _player_pos.distance_to(_opp.position) < BODY_NEAR:
+				_body_said = true
+				_bull.face_point(_minister.position if _minister != null else _opp.position)
+				look_toward(_opp.position + Vector3(0.0, 0.5, 0.0), 2.2)
+				_start_show(_caption_steps(BODY_LINES) + [{"do": "call", "fn": release_look}], false)
+			elif _body_said and not _show_active:
+				_advance_to(Beat.DRINKS)
+		Beat.DRINKS:
+			if not _drinks_said and _bull_task == "at_bar" and not _show_active and _in_room("Bldg_Saloon", -5.5):
+				_drinks_said = true
+				_pour_two()
+				_bull.face_point(_player_pos)
+				look_toward(_bull.head_world(), 2.0)
+				_start_show(_caption_steps(DRINK_LINES) + [{"do": "call", "fn": release_look}], false)
+			elif _drinks_said and not _show_active:
+				# Inferno heads off to his cousin's; the story's next thread is the Sheriff's prisoner
+				_bull_task = "leaving"
+				_bull_route([Ep2GoldTown.door_world("Bldg_Saloon", -1.0), Ep2GoldTown.door_world("Bldg_Saloon", 3.0), Vector3(1.5, 0.0, 1470.0),
+					Vector3(16.0, 0.0, 1480.0)], 1.6)
+				_after_story()
 		Beat.GEARED:
 			if _hud != null:
 				_hud.set_search_prompt("")
@@ -1178,13 +1599,13 @@ func _tick_people(delta: float) -> void:
 	if not _sheriff.is_walking():
 		if _beat == Beat.DRAW:
 			_sheriff.face_point((DUEL_MARK + OPP_MARK) * 0.5)
-		elif _beat in [Beat.OFFICE, Beat.BAR, Beat.WON]:
+		elif _beat in [Beat.OFFICE, Beat.BAR, Beat.WON, Beat.JOB]:
 			_sheriff_look_at_player()
 	if _beat == Beat.SQUARE_UP and not _opp.is_walking():
 		_opp.face_point(DUEL_MARK)
 	# the Armory's two turn to whoever comes in the door of the shop
 	if _people != null:
-		_people.set_context("duel" if _beat in [Beat.BAR, Beat.SQUARE_UP, Beat.DRAW] else ("quiet" if _beat in [Beat.OFFICE, Beat.WON, Beat.JAIL] else "normal"))
+		_people.set_context("duel" if _beat in [Beat.BAR, Beat.SQUARE_UP, Beat.DRAW] else ("quiet" if _beat in [Beat.OFFICE, Beat.WON, Beat.JOB, Beat.BODY, Beat.JAIL] else "normal"))
 		_people.step(delta, _player_pos)
 	if _accomplice != null:
 		_accomplice.step(delta)
@@ -1392,6 +1813,15 @@ func toggle_armory() -> void:
 func armory_open() -> bool:
 	return _shop_open or super()
 func is_bull_here() -> bool: return _bull != null and _bull.visible
+## Section 4 (post-draw) evidence.
+func get_bull() -> Ep2Actor: return _bull
+func get_quad() -> Ep2TownQuad: return _quad
+func bull_task() -> String: return _bull_task
+func minister_rigged() -> bool: return _minister_rigged
+func minister_task() -> String: return _minister_task
+func is_armory_return() -> bool: return _armory_return
+func max_duck() -> float: return _max_duck
+func is_second_glass_on_bar() -> bool: return _glass2 != null and _glass2.visible
 func is_coin_on_bar() -> bool: return _coin != null and _coin.visible
 func is_glass_on_bar() -> bool: return _glass != null and _glass.visible
 

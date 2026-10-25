@@ -1,6 +1,6 @@
 ---
 name: ep2-surface-to-town
-description: The founder's LOCKED surface-to-town sequence (2026-10-14) - quad ride out of the woods (bears thin out near town), Inferno leaves "to see a Blondie", the certificate office with the Sheriff, the bar (whiskey, a quarter Bitcoin, the draw, the sheriff as witness), Inferno arrives after the draw. READ FIRST for any work on the end of the quad ride, the town, the certificate office, the bar, the Sheriff, the draw or Bull's departure / return. TRIGGER on "town", "ride out of the woods", "certificate", "sheriff", "Jake", "JakeX", "TitanX", "bar", "saloon", "whiskey", "quarter bitcoin", "draw", "duel", "Blondie", "map to the auction".
+description: The founder's LOCKED surface-to-town sequence (2026-10-14) - quad ride out of the woods (bears thin out near town), Inferno leaves "to see a Blondie", the certificate office with the Sheriff, the bar (whiskey, a quarter Bitcoin, the draw, the sheriff as witness), Inferno returns later on his quad (post-draw rewrite 2026-10-25, section 4 of PROMPT_EPISODE2_CAD_TRANSITIONS_DRAW_REWRITE). READ FIRST for any work on the end of the quad ride, the town, the certificate office, the bar, the Sheriff, the draw or Bull's departure / return. TRIGGER on "town", "ride out of the woods", "certificate", "sheriff", "Jake", "JakeX", "TitanX", "bar", "saloon", "whiskey", "quarter bitcoin", "draw", "duel", "Blondie", "map to the auction".
 ---
 
 # The file that wins
@@ -21,7 +21,7 @@ file disagree, the file is right. Founder references: `artifacts/episode2-gold-m
 | 3 | Certificate office + the Sheriff | town chamber, building "CERTIFICATES" from the target image | the Sheriff + Minister Mike Dean = `ep2-sheriff-jake`. He DIRECTS (certificate path / next step); certificate mechanics faithful to the whitepaper, not resolved here; never invent protocol numbers. |
 | 4 | Bar, Lil Blunt alone: orders a whiskey, pays a QUARTER Bitcoin, someone notices | saloon chamber | The payment is the visible spark. No extra tokenomics. |
 | 5 | The draw: "Give me a bitcoin or I give you the map to the auction where they can get more intel." Die and pay BTC, or kill and get the map. The sheriff is his witness. | `ep2-quickdraw-duel` | Win = the MAP (to the auction: later, `ep2-fort-knox-arc` rule 5 "the Auction waits"). Lose = retry (never a permanent death; 3-heart cap). |
-| 6 | Bull arrives after the draw starts / ends | Bull walks in | What he says / does is NOT locked - leave it for the next pass. |
+| 6 | ~~Bull arrives after the draw~~ SUPERSEDED 2026-10-25 (PROMPT_EPISODE2_CAD_TRANSITIONS_DRAW_REWRITE section 4) | Inferno does NOT come at the draw: Mike Dean runs out, the street celebrates then dances, the Sheriff's job, Rich & Utah, the Gatling, THEN Inferno on his quad, the body + the bird line, the bar + Flux's kettle | Implemented: gold_town.gd beats WON, JOB, TIP, ARMORY, BULL_BACK, BODY, DRINKS; gate ep2_gold_town_test. |
 
 # Rules
 
@@ -50,7 +50,7 @@ Tests per beat (sequence, who is present, the line ids, the draw outcomes), real
   (`_bull_ride_off`), then `next_chamber: gold_town` once the town is prebuilt.
 - Shared set: `src/episode2/chamber/ep2_gold_town.gd` (layout, kit materials, signs, collision, `build_desert` - deterministic, so both rooms draw the
   same scrub/rocks/mesas), kit `tools/ep2_blender/build_town_kit.py`, signs `tools/ep2_forge/paint_town_signs.py`.
-- Town room: `src/episode2/chamber/gold_town.gd` (`GoldTownChamber`): STREET, OFFICE, TO_BAR, BAR, SQUARE_UP, DRAW, WON, DONE. the Sheriff =
+- Town room: `src/episode2/chamber/gold_town.gd` (`GoldTownChamber`): STREET, OFFICE, TO_BAR, BAR, SQUARE_UP, DRAW, WON, JOB, TIP, ARMORY, BULL_BACK, BODY, DRINKS, JAIL_TIP, JAIL, GEARED, DONE (2026-10-25). the Sheriff =
   `src/episode2/assets/town/sheriff_jake.glb` (Tripo multiview, decimated to 9k faces / 1K textures for the pack budget), static with a stride bob.
 - Gate: `tests/ep2_gold_town_test.tscn` (in CI). Captures: `tools/ep2_shots/town_beats_shot.tscn`, `tools/ep2_shots/town_shot.tscn`.
 - Pack budget: keep new textures `compress/mode=1` and FORCE-ADD their `.import` (`*.import` is gitignored; without it CI imports lossless).

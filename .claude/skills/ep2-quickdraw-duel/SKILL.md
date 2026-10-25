@@ -9,7 +9,7 @@ description: The bar draw in the GoldMine town (spec 2026-10-14 section 5) - a w
 - Demand, verbatim: "Give me a bitcoin or I give you the map to the auction where they can get more intel."
 - Stakes: die and pay BTC, or kill and get the map. Bull is NOT there. the Sheriff is the witness (`ep2-sheriff-jake`).
 - Outcome handling is NOT locked: build the win (the map; the opponent down; the sheriff calls it) and a lose that RETRIES the draw
-  (story death is never permanent; 3-heart cap; no second health system). Bull arrives after it starts or ends (what he does: open).
+  (story death is never permanent; 3-heart cap; no second health system). Bull does NOT arrive at the draw (founder 2026-10-25 section 4: Mike Dean runs out, the street celebrates, the Sheriff's job; Inferno returns after the Gatling).
 
 # Mechanic (first person, the equipped firearm in hand)
 

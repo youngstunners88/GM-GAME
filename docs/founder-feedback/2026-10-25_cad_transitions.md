@@ -56,6 +56,36 @@ elevator! This is ridiculous. How can he be in the elevator and in the other roo
 - Proof: `tools/ep2_shots/smelter_kit_shot.tscn` (`fallback=1` renders the old props from the same build). Gate: `tests/ep2_smelter_kit_test`
   (new, CI). Facility, interlude, seamless-chain, transition, PBR and armory-guns gates pass.
 
+## P1 — Section 4: the post-draw rewrite
+
+![post-draw sequence](2026-10-25_cad_transitions/post_draw_sequence.jpg)
+
+The town's beats are now STREET, OFFICE, TO_BAR, BAR, SQUARE_UP, DRAW, **WON, JOB, TIP, ARMORY, BULL_BACK, BODY, DRINKS**, JAIL_TIP, JAIL,
+GEARED, DONE (`src/episode2/chamber/gold_town.gd`). Fort Knox is never opened.
+- **4.1 WON**: Inferno does **not** come. Minister Mike Dean, now **rigged** (`tools/ep2_motion/rig_scan_character.py` on the founder's
+  model, `src/episode2/extras/people/minister_mike_dean.glb`), **runs** out from behind his counter (CMU 16_35) and asks what happened;
+  the Sheriff answers. The street **celebrates** round Lil Blunt (CMU 79_69 cheer / 80_43 clap) and then **couples dance together** (the
+  two partners of one CMU salsa take, 60_01 / 61_01, started on the same frame, at arm's length) - `Ep2TownPeople.celebrate()`. The
+  clips were retargeted onto each townsperson's own rig and appended to their GLBs without touching a mesh or texture byte
+  (`tools/ep2_motion/append_glb_clips.py`, verified: every original byte, clip, node and material identical). Mike Dean then kneels and
+  **prays** by the stranger (CMU 23_03 + hands joined by `tools/ep2_motion/pray_arms.py`).
+- **4.2 JOB**: the Sheriff, impressed with the shooting, offers the job - find out who let the bears hold Fort Knox, his prisoner knows
+  more - and sends him to Rich and Utah first.
+- **4.3 ARMORY -> BULL_BACK**: Lil Blunt can test the Colt Gatling; once he has fired it and stepped off, Inferno rides back in on his
+  flame quad (`Ep2TownQuad`, the woods ride's model and seat) up the lane, townspeople stepping aside, and parks outside Rich's (clear of
+  the Gatling yard; solid). "First whiskey's on me."
+- **4.4 BODY**: the man Lil Blunt shot lies where he fell, Mike Dean praying by him. Inferno greets the Minister and asks who put a hole
+  in his head; Lil Blunt: *"Must've been a bird that had to get rid of the heavy load."*
+- **4.5 DRINKS**: into the saloon - Inferno (2.9 m) **stoops** through the 2.5 m batwing door (`Ep2DuckModifier`, a SkeletonModifier3D) -
+  two whiskeys on the bar; his cousin **Flux** needs help with his new kettle; they part a while and will meet up later. Then the
+  Sheriff's prisoner (the jailhouse, now downstream of the bar), then the river.
+- Buying the long rifle + river gear on the first visit no longer ends the town early; after the jail he is either geared (on to the
+  river) or sent back to Rich's counter for it.
+- Lines are timed captions (no voice key on this box), with the speaker; a recording added to Ep2TownVoiceBank under the same speaker
+  and text plays automatically.
+- Proof: `tools/ep2_shots/post_draw_shot.tscn` (real renderer). Gate: `tests/ep2_gold_town_test` walks the whole sequence (CI);
+  `ep2_fort_knox_arc_test` (beat list), town people / autonomy / audio / stable yard / Logan's Lake / interlude / armory gates pass.
+
 ## Not yet verified
 - Web-build listening and a real-browser walk of hideout → lift → woods (headless gates + native GPU captures only). The founder's hard refresh is the acceptance.
 - The synthesized train has not been listened to by a human. If it reads wrong, regenerate with ElevenLabs / VARCO when a key is on the box (same file names).

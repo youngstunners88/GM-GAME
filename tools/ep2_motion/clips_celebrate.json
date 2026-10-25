@@ -1,0 +1,9 @@
+{
+ "note": "Episode 2 post-draw celebration (founder 2026-10-25 section 4.1: townspeople celebrate, then dance together). CMU mocap, commercial use allowed (tools/ep2_motion/fetch_cmu.sh).",
+ "clips": [
+  {"name": "Cheer", "bvh": "79_69", "start": 0.7, "end": 6.2, "loop": true, "loop_blend": 10},
+  {"name": "Clap", "bvh": "80_43", "start": 0.6, "end": 7.4, "loop": true, "loop_blend": 10},
+  {"name": "DanceA", "bvh": "60_01", "start": 2.0, "end": 12.0, "loop": true, "loop_blend": 12},
+  {"name": "DanceB", "bvh": "61_01", "start": 2.0, "end": 12.0, "loop": true, "loop_blend": 12}
+ ]
+}

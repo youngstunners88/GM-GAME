@@ -38,6 +38,12 @@ CLIPS="
 15_06 lean forward, reach for (Reach/Counter)
 13_10 jump up to grab, reach for, tiptoe (Reach high shelf)
 26_09 bend, pick up (PickUp)
+79_69 very happy (Cheer - townspeople after the draw, clips_celebrate.json)
+80_43 happy (Clap)
+60_01 salsa dance, lead (DanceA - partners dance together)
+61_01 salsa dance, follow (DanceB)
+16_35 run/jog (Run - Minister Mike Dean's panic, clips_minister.json)
+23_03 B kneels, comforts A (KneelDown / Kneel - the Minister praying by the body; hands joined by pray_arms.py)
 "
 echo "$CLIPS" | while read -r c rest; do
   [ -z "$c" ] && continue

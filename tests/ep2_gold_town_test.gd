@@ -215,44 +215,58 @@ func _ready() -> void:
 	_check("a shot that misses wide would not count (the hit is a real ray test)", not c.aim_hits_opponent(c.get_player_position() + Vector3(0, 1.5, 0), Vector3(1.0, 0.0, 0.0)))
 	_until(c, 10.0, func(): return c.get_beat_name() == "WON")
 	_check("-> WON: the map to the auction is his", c.has_map() and c.get_beat_name() == "WON")
-	_check("Bull comes walking up the street afterwards (no line locked for him)", c.is_bull_here())
 	_check("the Sheriff calls it fair and square", said.has("vo_sheriff_win"))
+
+	# ---- section 4.1 / 4.2 (founder 2026-10-25, PROMPT_EPISODE2_CAD_TRANSITIONS_DRAW_REWRITE): no Inferno at the draw; Minister Mike Dean
+	# runs out of his office in a panic and asks what happened; the townspeople celebrate, then dance together; the Sheriff offers the job
+	print("-- AFTER THE DRAW (section 4: Mike Dean, the street celebrates and dances, the Sheriff's job)")
+	var caps: Array = []
+	c.captioned.connect(func(w: String, t: String) -> void: caps.append([w, t]))
+	_check("Inferno does NOT arrive at the draw (section 4.1 replaces Bull-at-the-draw)", not c.is_bull_here())
+	var mike: Ep2TownFolk = c.get_minister()
+	var office_xf: Transform3D = Ep2GoldTown.building_xform(Ep2GoldTown.entry("Bldg_Certificates"))
+	var ran: bool = false
+	var mike_outside: bool = false
+	var cheered: int = 0
+	var danced_pairs: int = 0
+	for i in 60 * 80:
+		c.step(1.0 / 60.0)
+		if mike.current_clip() == "run":
+			ran = true
+		if (office_xf.affine_inverse() * mike.position).z > 0.5:
+			mike_outside = true
+		var ppl: Ep2TownPeople = c.get_people()
+		if ppl != null:
+			var now_cheer: int = 0
+			var now_dance: int = 0
+			for q in ppl.people:
+				if q.state == "cel_cheer" and q.folk.current_clip() in ["cheer", "clap"]:
+					now_cheer += 1
+				var mate: Variant = ppl.person(q.partner) if q.partner != "" else null
+				if q.state == "cel_dance" and q.folk.current_clip() in ["dancea", "danceb"] and mate != null and mate.state == "cel_dance" \
+						and q.folk.position.distance_to(mate.folk.position) < 2.0:
+					now_dance += 1
+			cheered = maxi(cheered, now_cheer)
+			danced_pairs = maxi(danced_pairs, int(now_dance / 2.0))
+		if c.get_beat_name() == "TIP" and danced_pairs > 0:
+			break
+	_check("Minister Mike Dean leaves his counter and comes out of the office", mike_outside)
+	_check("...at a run (the founder's Mike Dean rigged, on his Run clip; the statue only if the streamed pack is missing)", ran or not c.minister_rigged(),
+		"rigged %s" % c.minister_rigged())
+	_check("...and asks what happened", caps.any(func(l: Array) -> bool: return l[0] == "MIKE DEAN" and "happened" in str(l[1]).to_lower()), str(caps))
+	_check("the townspeople gather round and celebrate (their own Cheer / Clap clips)", cheered >= 4, "%d cheering at once" % cheered)
+	_check("...then pair off and dance together (DanceA / DanceB partners within arm's reach, facing each other)", danced_pairs >= 2, "%d pairs" % danced_pairs)
+	_check("-> JOB -> TIP: the Sheriff walked over and had his word", c.get_beat_name() == "TIP", c.get_beat_name())
+	var job: String = " ".join(caps.filter(func(l: Array) -> bool: return l[0] == "SHERIFF").map(func(l: Array) -> String: return str(l[1]).to_lower()))
+	_check("...impressed with the shooting, he offers the job: who let the bears hold Fort Knox (his prisoner knows more) - and see Rich and Utah first",
+		"shooting" in job and "bears" in job and "fort knox" in job and "prisoner" in job and "rich and utah" in job, job)
+	_check("still no Inferno: he comes back later, after the Gatling", not c.is_bull_here())
+	var opp_at: Vector3 = c.get_opponent().position
+	_check("Mike Dean has gone to the fallen stranger to kneel and pray", mike.position.distance_to(opp_at) < 1.8
+		and (not c.minister_rigged() or mike.current_clip() in ["kneel", "kneeldown"]), "%s %.2f m" % [mike.current_clip(), mike.position.distance_to(opp_at)])
 
 	# ---- the Armory: Rich the Claim Recorder and Utah, off Main Street (founder lock PROMPT_EPISODE2_RICH_ARMORY_UTAH_RIVER.md)
 	print("-- THE ARMORY (down the side lane, Rich & Utah)")
-	# ---- the jailhouse (founder lock PROMPT_EPISODE2_JAILHOUSE_BEARS_INVESTIGATION, 2026-10-20): out at the town's south edge, one
-	# occupied cell, the Sheriff asks him to find who brought the bears; then the Armory tip follows as before
-	print("-- THE JAILHOUSE (Sheriff side, out at the south edge of town)")
-	_until(c, 30.0, func(): return c.get_beat_name() == "JAIL_TIP")
-	_check("-> JAIL_TIP: the Sheriff has a prisoner and the jailhouse is out the south road", c.get_beat_name() == "JAIL_TIP" and "jail" in str(c.get_hud().objective).to_lower(),
-		str(c.get_hud().objective))
-	var jdoor: Vector3 = Ep2GoldTown.door_world("Bldg_Jail", 2.4)
-	var jinside: Vector3 = Ep2GoldTown.local_to_world("Bldg_Jail", Ep2GoldTown.jail_spots["visit"])
-	var main_to_jail: float = Vector2(Ep2GoldTown.door_world("Bldg_Jail", 0.0).x, Ep2GoldTown.door_world("Bldg_Jail", 0.0).z).distance_to(Vector2(0.0, 1403.0))
-	_check("the jailhouse stands well apart from the town (>= 22 m from the drop-off, on the Sheriff/Certificates side x < 0)",
-		main_to_jail >= 22.0 and Ep2GoldTown.door_world("Bldg_Jail", 0.0).x < -20.0, "%.1f m" % main_to_jail)
-	var jreached: bool = _walk_to(c, Vector3(-6.0, 0.0, 1400.0), 40.0)
-	jreached = _walk_to(c, jdoor, 40.0) and jreached
-	_check("he walks out the south road to the jailhouse door", jreached, str(c.get_player_position()) + " want " + str(jdoor))
-	var jin_ok: bool = _walk_to(c, Ep2GoldTown.door_world("Bldg_Jail", -0.9), 30.0)      # straight through the doorway first
-	jin_ok = _walk_to(c, jinside, 40.0) and jin_ok
-	_check("he steps in through its door and the cell block is not walkable (bars stop him)", jin_ok, str(c.get_player_position()) + " want " + str(jinside))
-	_until(c, 8.0, func(): return c.get_beat_name() == "JAIL")
-	_check("-> JAIL: one accomplice is in the cell and the Sheriff is inside with him", c.get_beat_name() == "JAIL" and c.get_accomplice() != null
-		and c.get_sheriff() != null)
-	var cell_ok: bool = c.get_accomplice() != null and Ep2GoldTown.local_to_world("Bldg_Jail", Ep2GoldTown.jail_spots["accomplice"]).distance_to(c.get_accomplice().position) < 0.3
-	_check("the accomplice is held in his cell, behind the bars", cell_ok)
-	var jail_budget: float = 3.0
-	for line in GoldTownChamber.JAIL_LINES:
-		jail_budget += Ep2TownVoiceBank.seconds(Ep2TownVoiceBank.id_for(c._town_speaker(str(line[0])), str(line[1]))) + 0.3
-	_until(c, jail_budget, func(): return c.is_investigation_open())
-	_check("the Sheriff's ask opens the investigation (the hunt is a thread on the existing path)", c.is_investigation_open())
-	_check("the lines frame bears + early claims + Fort Knox and the existing lake/river/trains path, no celebrity prisoners", _jail_lines_ok())
-	var jout: bool = _walk_to(c, Ep2GoldTown.door_world("Bldg_Jail", -0.9), 30.0)
-	jout = _walk_to(c, jdoor, 30.0) and jout
-	jout = _walk_to(c, Vector3(-6.0, 0.0, 1400.0), 40.0) and jout
-	jout = _walk_to(c, Vector3(2.0, 0.0, 1406.0), 40.0) and jout          # back up the road to the street's centre
-	_check("he walks back out toward town", jout)
 	_until(c, 30.0, func(): return c.get_beat_name() == "TIP")
 	_check("-> TIP: the room points him down the side lane (off Main Street, not on the boardwalk)",
 		c.get_beat_name() == "TIP" and "lane" in str(c.get_hud().objective).to_lower(), str(c.get_hud().objective))
@@ -298,13 +312,111 @@ func _ready() -> void:
 	_check("the room refuses a tender that is not in his purse", not c.buy("rifle_ammo", 1, "gold") and not c.buy("river_gear", 2, "gold"))
 	c.get_shop().closed.emit()
 	_check("Esc shuts the trade and gives the street back", not c.is_shop_open() and not get_tree().paused)
-	# Purchases during the entrance wait for all four greetings and queued sale/denial lines.
-	var purchase_speech_budget: float = 5.0
-	for id in ["town_trade_00", "town_trade_01", "town_trade_02", "town_trade_03", "town_trade_09", "town_trade_04", "town_trade_06", "town_trade_07"]:
-		purchase_speech_budget += Ep2TownVoiceBank.seconds(id) + 0.3
-	_until(c, purchase_speech_budget, func(): return c.get_beat_name() == "GEARED")
-	_check("-> GEARED: the rifle and the river gear in hand, the room hands him to the river shipment",
-		c.get_beat_name() == "GEARED" and c.has_sniper() and c.has_river_gear())
+	# ---- section 4.3: he can test the Colt Gatling; after it, Inferno rides back in on his quad and parks outside Rich's
+	print("-- THE GATLING, THEN INFERNO'S RETURN (section 4.3)")
+	for i in 120:
+		c.step(1.0 / 60.0)
+	_check("buying everything on the first visit does not end the town: the story goes on with Inferno", c.get_beat_name() == "ARMORY", c.get_beat_name())
+	var gat: Ep2GatlingPost = c.get_gatling()
+	_check("the Colt Gatling stands in the yard (streamed extras)", gat != null)
+	if gat != null:
+		c.skip_armory_intro()
+		var out_ok: bool = _walk_to(c, Ep2GoldTown.door_world("Bldg_Armory", -0.9), 30.0)
+		out_ok = _walk_to(c, Ep2GoldTown.door_world("Bldg_Armory", 2.0), 30.0) and out_ok
+		out_ok = _walk_to(c, gat.stand_position(), 40.0) and out_ok
+		_check("he walks out to the Colt Gatling in the yard", out_ok, str(c.get_player_position()))
+		_check("he takes the crank", c.start_rig("") and c.is_mounted())
+		var fired_g: bool = false
+		for i in 90:
+			if c.shoot():
+				fired_g = true
+			c.step(1.0 / 60.0)
+		_check("...fires a burst from the drum", fired_g and c.mount_bursts() > 0)
+		_check("...and steps away from it", c.start_rig("") and not c.is_mounted())
+	_until(c, 40.0, func(): return c.get_beat_name() == "BULL_BACK")
+	_check("-> BULL_BACK: with the Gatling tested, Inferno is coming back", c.get_beat_name() == "BULL_BACK" and c.is_bull_here() and c.get_quad() != null)
+	_check("...on his flame quad, seated in the saddle", c.get_quad() != null and c.bull_task() == "riding"
+		and c.get_bull().position.distance_to(c.get_quad().seat_position()) < 0.05)
+	_until(c, 40.0, func(): return c.get_quad() != null and c.get_quad().is_parked)
+	var park: Vector3 = Ep2GoldTown.local_to_world("Bldg_Armory", GoldTownChamber.QUAD_PARK_LOCAL)
+	_check("...and parks outside Rich's, clear of the Gatling yard", c.get_quad() != null and c.get_quad().is_parked
+		and Vector2(c.get_quad().position.x, c.get_quad().position.z).distance_to(Vector2(park.x, park.z)) < 0.3
+		and (gat == null or c.get_quad().position.distance_to(gat.position) > 6.0), str(c.get_quad().position if c.get_quad() != null else Vector3.ZERO))
+	_check("...and the parked quad is solid (nobody walks through it)", c.get_quad() != null and c._town_col.get("props", []).any(func(pr: Array) -> bool:
+		return (pr[0] as Vector2).distance_to(Vector2(c.get_quad().position.x, c.get_quad().position.z)) < 0.05))
+	_until(c, 40.0, func(): return c.get_beat_name() == "BODY")
+	_check("he swings off, comes over: the whiskey is on him", c.get_beat_name() == "BODY"
+		and caps.any(func(l: Array) -> bool: return l[0] == "INFERNO" and "whiskey" in str(l[1]).to_lower()), c.get_beat_name())
+
+	# ---- section 4.4: on the way, the man Lil Blunt shot, Mike Dean praying by him; Inferno greets him; the bird
+	print("-- THE BODY IN THE STREET (section 4.4)")
+	var walked: bool = _walk_to(c, Vector3(-6.0, 0.0, 1453.0), 40.0)
+	walked = _walk_to(c, opp_at + Vector3(-3.0, 0.0, 4.0), 60.0) and walked
+	_check("he walks back with Inferno and comes upon the man he shot", walked and c.get_opponent().dead, str(c.get_player_position()))
+	_until(c, 60.0, func(): return c.get_beat_name() == "DRINKS")
+	_check("Mike Dean is kneeling there, praying", mike.position.distance_to(opp_at) < 1.8 and (not c.minister_rigged() or mike.current_clip() == "kneel"),
+		mike.current_clip())
+	_check("Inferno greets the Minister", caps.any(func(l: Array) -> bool: return l[0] == "INFERNO" and "minister" in str(l[1]).to_lower()))
+	_check("...and asks who put a hole in his head", caps.any(func(l: Array) -> bool: return l[0] == "INFERNO" and "hole in his head" in str(l[1]).to_lower()))
+	_check("Lil Blunt: \"Must've been a bird that had to get rid of the heavy load.\"",
+		caps.any(func(l: Array) -> bool: return l[0] == "LIL BLUNT" and str(l[1]) == "Must've been a bird that had to get rid of the heavy load."))
+
+	# ---- section 4.5: the bar - whiskey; cousin Flux's new kettle; they part a while
+	print("-- THE BAR, AND FLUX'S KETTLE (section 4.5)")
+	var into: bool = _walk_to(c, Ep2GoldTown.door_world("Bldg_Saloon", 2.2), 40.0)
+	into = _walk_to(c, Ep2GoldTown.door_world("Bldg_Saloon", -0.9), 30.0) and into
+	into = _walk_to(c, Ep2GoldTown.local_to_world("Bldg_Saloon", GoldTownChamber.BAR_SPOT), 40.0) and into
+	_check("he follows Inferno into the saloon and up to the bar", into, str(c.get_player_position()))
+	_until(c, 60.0, func(): return c.get_beat_name() != "DRINKS")
+	_check("Inferno - 2.9 m - stooped through the saloon's 2.5 m door rather than through its lintel", c.max_duck() > 0.6, "%.2f" % c.max_duck())
+	_check("...and straightened up again inside (no stoop left at the bar)", c.get_bull() == null or not c.get_bull().visible
+		or c.bull_task() != "at_bar" or c.get_bull().skeleton.get_children().all(func(n: Node) -> bool: return not (n is Ep2DuckModifier) or (n as Ep2DuckModifier).amount < 0.05))
+	_check("two whiskeys on the bar", c.is_glass_on_bar() and c.is_second_glass_on_bar())
+	_check("...then Inferno: his cousin Flux needs help with his new kettle - they'll meet up later",
+		caps.any(func(l: Array) -> bool: return l[0] == "INFERNO" and "flux" in str(l[1]).to_lower() and "kettle" in str(l[1]).to_lower())
+		and caps.any(func(l: Array) -> bool: return l[0] == "INFERNO" and "later" in str(l[1]).to_lower()))
+	_check("-> the next thread is the Sheriff's prisoner (the jailhouse stays downstream of the bar)",
+		c.get_beat_name() == ("JAIL_TIP" if Ep2GoldTown.jail_v1 else "GEARED"), c.get_beat_name())
+	var left: bool = _walk_to(c, Ep2GoldTown.door_world("Bldg_Saloon", -0.9), 30.0)
+	left = _walk_to(c, Ep2GoldTown.door_world("Bldg_Saloon", 2.0), 30.0) and left
+	_check("he steps back out into the street", left)
+
+	# ---- the jailhouse (founder lock PROMPT_EPISODE2_JAILHOUSE_BEARS_INVESTIGATION, 2026-10-20): out at the town's south edge, one
+	# occupied cell, the Sheriff asks him to find who brought the bears. Since section 4 (2026-10-25) it follows the bar
+	print("-- THE JAILHOUSE (Sheriff side, out at the south edge of town)")
+	_until(c, 30.0, func(): return c.get_beat_name() == "JAIL_TIP")
+	_check("-> JAIL_TIP: the Sheriff has a prisoner and the jailhouse is out the south road", c.get_beat_name() == "JAIL_TIP" and "jail" in str(c.get_hud().objective).to_lower(),
+		str(c.get_hud().objective))
+	var jdoor: Vector3 = Ep2GoldTown.door_world("Bldg_Jail", 2.4)
+	var jinside: Vector3 = Ep2GoldTown.local_to_world("Bldg_Jail", Ep2GoldTown.jail_spots["visit"])
+	var main_to_jail: float = Vector2(Ep2GoldTown.door_world("Bldg_Jail", 0.0).x, Ep2GoldTown.door_world("Bldg_Jail", 0.0).z).distance_to(Vector2(0.0, 1403.0))
+	_check("the jailhouse stands well apart from the town (>= 22 m from the drop-off, on the Sheriff/Certificates side x < 0)",
+		main_to_jail >= 22.0 and Ep2GoldTown.door_world("Bldg_Jail", 0.0).x < -20.0, "%.1f m" % main_to_jail)
+	var jreached: bool = _walk_to(c, Vector3(-6.0, 0.0, 1400.0), 40.0)
+	jreached = _walk_to(c, jdoor, 40.0) and jreached
+	_check("he walks out the south road to the jailhouse door", jreached, str(c.get_player_position()) + " want " + str(jdoor))
+	var jin_ok: bool = _walk_to(c, Ep2GoldTown.door_world("Bldg_Jail", -0.9), 30.0)      # straight through the doorway first
+	jin_ok = _walk_to(c, jinside, 40.0) and jin_ok
+	_check("he steps in through its door and the cell block is not walkable (bars stop him)", jin_ok, str(c.get_player_position()) + " want " + str(jinside))
+	_until(c, 8.0, func(): return c.get_beat_name() == "JAIL")
+	_check("-> JAIL: one accomplice is in the cell and the Sheriff is inside with him", c.get_beat_name() == "JAIL" and c.get_accomplice() != null
+		and c.get_sheriff() != null)
+	var cell_ok: bool = c.get_accomplice() != null and Ep2GoldTown.local_to_world("Bldg_Jail", Ep2GoldTown.jail_spots["accomplice"]).distance_to(c.get_accomplice().position) < 0.3
+	_check("the accomplice is held in his cell, behind the bars", cell_ok)
+	var jail_budget: float = 3.0
+	for line in GoldTownChamber.JAIL_LINES:
+		jail_budget += Ep2TownVoiceBank.seconds(Ep2TownVoiceBank.id_for(c._town_speaker(str(line[0])), str(line[1]))) + 0.3
+	_until(c, jail_budget, func(): return c.is_investigation_open())
+	_check("the Sheriff's ask opens the investigation (the hunt is a thread on the existing path)", c.is_investigation_open())
+	_check("the lines frame bears + early claims + Fort Knox and the existing lake/river/trains path, no celebrity prisoners", _jail_lines_ok())
+	var jout: bool = _walk_to(c, Ep2GoldTown.door_world("Bldg_Jail", -0.9), 30.0)
+	jout = _walk_to(c, jdoor, 30.0) and jout
+	jout = _walk_to(c, Vector3(-6.0, 0.0, 1400.0), 40.0) and jout
+	jout = _walk_to(c, Vector3(2.0, 0.0, 1406.0), 40.0) and jout          # back up the road to the street's centre
+	_check("he walks back out toward town", jout)
+	_until(c, 30.0, func(): return c.get_beat_name() == "GEARED")
+	_check("-> GEARED: with the long rifle and the river gear already bought at Rich's, the town hands him to the river shipment",
+		c.get_beat_name() == "GEARED" and c.has_sniper() and c.has_river_gear(), c.get_beat_name())
 	_until(c, 20.0, func(): return res.size() == 1)
 	_check("the geared town continues to Logan's Lake, the map in hand, mints nothing", res.size() == 1 and str(res[0].get("next_chamber", "")) == "logans_lake"
 		and not bool(res[0].get("end_session", false)) and bool(res[0].get("got_map", false)) and int(res[0].get("gold_awarded", -1)) == 0, str(res))

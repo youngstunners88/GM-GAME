@@ -106,6 +106,13 @@ func cancel() -> void:
 	finished.emit()
 
 
+## Skip the introduction outright (a visit that has already had it, or a test): put anything away and mark it DONE, so the Gatling is
+## free to take even when the introduction never began.
+func skip() -> void:
+	cancel()
+	stage = Stage.DONE
+
+
 func _on_arrived(who: String, _spot: String) -> void:
 	if who == "rich":
 		_rich_arrived = true

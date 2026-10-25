@@ -30,6 +30,8 @@ const PEOPLE_DIR := "res://src/episode2/extras/people/"
 const JAIL := "res://src/episode2/extras/jail/jailhouse.glb"
 const JAIL_SIGN := "res://src/episode2/extras/jail/sign_JAIL.png"
 const PRISONER := "res://src/episode2/extras/people/prisoner_accomplice.glb"
+## Minister Mike Dean rigged on the townfolk skeleton (founder 2026-10-25 post-draw: he runs out in a panic, then kneels and prays by the body).
+const MINISTER := "res://src/episode2/extras/people/minister_mike_dean.glb"
 ## Jack Hammer (Jackson Mccree), the main antagonist (founder 2026-10-21: mean, eye patch): a Hunyuan scan rigged on the townfolk skeleton, 1.92 m with the hat.
 const JACK_HAMMER := "res://src/episode2/extras/people/jack_hammer.glb"
 ## Canonical founder stable assets stay at their requested town paths, but their

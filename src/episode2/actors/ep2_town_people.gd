@@ -6,7 +6,18 @@ signal greeted(person_id: String, actor: Ep2TownFolk, count: int)
 const GREET_R := 3.6
 const GREET_COOLDOWN := 24.0
 const BODY_R := 0.31
-const LOOPING_CLIPS := ["Idle", "Walk", "Observe", "Rest", "Talk", "Inspect", "Alert", "Play"]
+const LOOPING_CLIPS := ["Idle", "Walk", "Observe", "Rest", "Talk", "Inspect", "Alert", "Play", "Cheer", "Clap", "DanceA", "DanceB"]
+## The celebration after the draw (celebrate()): the ring's radius round Lil Blunt, how far people come from to join, the room kept round
+## the fallen stranger, the cheering and the dancing (seconds), and the grace before a stray celebrant simply carries on.
+const CEL_STATES := ["cel_go", "cel_cheer", "cel_dance"]
+const CEL_R := 4.6
+const CEL_REACH := 26.0
+const CEL_PAIR_GAP := 1.25                # metres between dance partners' ring spots
+const CEL_RUSH := 1.7                     # they hurry over to him (their own walk, played quicker)
+const CEL_AVOID := 3.2
+const CHEER_S := 9.0
+const DANCE_S := 16.0
+const CEL_GRACE := 12.0
 ## The children (and the youth) PLAY in their town: tag-style hops, a jump rope - their own clip from the Meshy cast.
 const PLAYERS := ["boy", "braided_girl", "bob_girl", "youth"]
 ## walk_speed: the Meshy walk clip's own ground speed (m/s, measured by tools/meshy/townfolk_batch.py foot FK) - stride matching.
@@ -109,6 +120,7 @@ var elapsed: float = 0.0
 var _seed: int = 4101
 var _configured: bool = false
 var _mode: String = "normal" # normal | quiet | duel
+var _cel: Dictionary = {}     # the celebration after the draw while it runs (celebrate()); empty otherwise
 var _story_was_duel: bool = false
 ## Radius around the player that people keep clear of (0.68 on foot; the woods ride raises it for the quad).
 var player_clearance: float = 0.68
@@ -206,6 +218,8 @@ func set_context(mode: String) -> void:
 	elif _story_was_duel:
 		_story_was_duel = false
 		for p in people:
+			if p.state in CEL_STATES:
+				continue                                # the celebration after the draw keeps its own clock
 			p.fear = maxf(p.fear, 3.0)
 			p.timer = p.rng.randf_range(2, 5)
 
@@ -224,8 +238,142 @@ func step(delta: float, player_world: Vector3) -> void:
 	while remaining > 0.00001:
 		var dt: float = minf(remaining, 0.05)
 		elapsed += dt
+		_tick_celebration(dt)
 		for p in people: _step_one(p, dt, player_world)
 		remaining -= dt
+
+
+# --- THE CELEBRATION (founder 2026-10-25, PROMPT_EPISODE2_CAD_TRANSITIONS_DRAW_REWRITE section 4.1: "Townspeople celebrate Lil Blunt's
+# win, then dance together") -------------------------------------------------------------------------------------------------------
+## Everyone out in the street gathers on a ring round `centre` - kept clear of `avoid` (the fallen stranger) - and cheers or claps (their
+## own retargeted CMU Cheer / Clap clips, tools/ep2_motion/clips_celebrate.json) for `cheer_s`; then neighbours on the ring pair off,
+## face each other and dance (DanceA / DanceB: the two partners of one CMU salsa take, so a pair moves together) for `dance_s`; then
+## everyone goes back to their own day. Indoors (a shop, the saloon, the balcony) they stay where they are. Returns how many joined.
+func celebrate(centre: Vector3, avoid: Vector3, cheer_s: float = CHEER_S, dance_s: float = DANCE_S) -> int:
+	var c2 := Vector2(centre.x, centre.z)
+	var joined: Array = people.filter(func(p: Person) -> bool:
+		return p.state not in SHOP_STATES and not p.folk.use_height and _pos(p).distance_to(c2) < CEL_REACH)
+	# neighbours on the ring are neighbours in the list: partners are planned now (k, k+1) and given ADJACENT ring spots, so a couple
+	# dances at arm's length; the odd one out claps
+	joined.sort_custom(func(a: Person, b: Person) -> bool:
+		return (_pos(a) - c2).angle() < (_pos(b) - c2).angle())
+	var avoid2 := Vector2(avoid.x, avoid.z)
+	var n: int = joined.size()
+	var mates: Dictionary = {}
+	for k in range(0, n - 1, 2):
+		mates[joined[k].id] = joined[k + 1].id
+		mates[joined[k + 1].id] = joined[k].id
+	var slots: int = maxi(1, int(ceil(float(n) / 2.0)))
+	var base: float = (_pos(joined[0]) - c2).angle() if n > 0 else 0.0
+	for k in n:
+		var p: Person = joined[k]
+		var ang: float = base + TAU * float(k >> 1) / float(slots)
+		var tangent := Vector2(-sin(ang), cos(ang))
+		var side: float = (-0.5 if k % 2 == 0 else 0.5) if mates.has(p.id) else 0.0
+		var spot: Vector2 = navigation.closest(c2 + Vector2(cos(ang), sin(ang)) * CEL_R + tangent * side * CEL_PAIR_GAP)
+		if spot.distance_to(avoid2) < CEL_AVOID:
+			spot = navigation.closest(avoid2 + (spot - avoid2).normalized() * CEL_AVOID)
+		_release(p)
+		p.partner = ""
+		p.fear = 0.0
+		p.safety = spot                                    # (the ring spot; restored as a plain pause - see snapshot())
+		var path: Array[Vector2] = navigation.path(_pos(p), spot)
+		p.waypoints = path
+		p.state = "cel_go"
+		p.timer = cheer_s + dance_s + CEL_GRACE
+		p.folk.hold_clip("Observe")
+		if path.is_empty():
+			_join_cheer(p)
+	_cel = {"centre": c2, "t": 0.0, "cheer": cheer_s, "dance": dance_s, "phase": "cheer", "mates": mates}
+	return n
+
+
+func is_celebrating() -> bool:
+	return not _cel.is_empty()
+
+
+## "cheer" | "dance" | "" - where the celebration is.
+func celebration_phase() -> String:
+	return str(_cel.get("phase", ""))
+
+
+## The partner planned for `id` in the celebration ("" = none, the odd one out).
+func celebration_mate(id: String) -> String:
+	return str(_cel.get("mates", {}).get(id, ""))
+
+
+func _join_cheer(p: Person) -> void:
+	p.folk.stop()
+	p.waypoints.clear()
+	p.state = "cel_cheer"
+	var c2: Vector2 = _cel.get("centre", _pos(p))
+	p.folk.face_point(Vector3(c2.x, 0.0, c2.y))
+	# half cheer with arms up, half clap - their own clips; a cast member without them keeps the greeting wave
+	var want: String = "Cheer" if int(p.id.hash()) % 2 == 0 else "Clap"
+	p.folk.hold_clip(want if _has_clip(p, want) else ("Cheer" if _has_clip(p, "Cheer") else "Greet"))
+	if str(_cel.get("phase", "cheer")) == "dance":
+		_start_dance(p)                                    # a late arrival: dances if the partner is waiting, else claps along
+
+
+## A couple starts together, on the same frame (the two partners of one CMU salsa take stay in step), facing each other: the lower id
+## leads (DanceA). Nothing happens until both have reached the ring. True when the couple is dancing.
+func _start_dance(p: Person) -> bool:
+	var mate: Person = person(celebration_mate(p.id))
+	if mate == null or mate.state not in ["cel_cheer", "cel_dance"] or p.state not in ["cel_cheer", "cel_dance"]:
+		return false
+	for pair in [[p, mate], [mate, p]]:
+		var a: Person = pair[0]
+		var b: Person = pair[1]
+		if a.state == "cel_dance":
+			continue
+		a.state = "cel_dance"
+		a.partner = b.id
+		var clip: String = "DanceA" if a.id < b.id else "DanceB"
+		a.folk.hold_clip(clip if _has_clip(a, clip) else ("Clap" if _has_clip(a, "Clap") else "Greet"))
+		a.folk.face_point(b.folk.position)
+	return true
+
+
+func _step_celebration(p: Person, dt: float, player: Vector3) -> void:
+	match p.state:
+		"cel_go":
+			_move(p, dt, player)
+			if p.state == "pause":                       # boxed in on the way: cheer where they stand
+				_join_cheer(p)
+		"cel_cheer":
+			var c2: Vector2 = _cel.get("centre", _pos(p))
+			p.folk.face_point(Vector3(c2.x, 0.0, c2.y))
+		"cel_dance":
+			var mate: Person = person(p.partner) if p.partner != "" else null
+			if mate != null:
+				p.folk.face_point(mate.folk.position)
+	if p.timer <= 0.0 or _cel.is_empty():
+		_end_celebration_for(p)
+
+
+func _end_celebration_for(p: Person) -> void:
+	p.state = "pause"
+	p.partner = ""
+	p.waypoints.clear()
+	p.timer = p.rng.randf_range(1.0, 4.0)
+	p.folk.hold_clip("Observe")
+
+
+func _tick_celebration(dt: float) -> void:
+	if _cel.is_empty():
+		return
+	_cel["t"] = float(_cel["t"]) + dt
+	var t: float = _cel["t"]
+	if str(_cel["phase"]) == "cheer" and t >= float(_cel["cheer"]):
+		_cel["phase"] = "dance"
+		for p in people:
+			if p.state == "cel_cheer":
+				_start_dance(p)
+	elif str(_cel["phase"]) == "dance" and t >= float(_cel["cheer"]) + float(_cel["dance"]):
+		_cel = {}
+		for p in people:
+			if p.state in CEL_STATES:
+				_end_celebration_for(p)
 
 func _step_one(p: Person, dt: float, player: Vector3) -> void:
 	p.greet_cd = maxf(0, p.greet_cd - dt)
@@ -237,6 +385,10 @@ func _step_one(p: Person, dt: float, player: Vector3) -> void:
 		p.parcel_t = maxf(0.0, p.parcel_t - dt)          # never below zero: a saved 0 must restore (restore() bounds it 0..PARCEL_SECONDS)
 		if p.parcel_t <= 0.0: p.folk.drop_prop("Parcel")
 	var before: Vector2 = _pos(p)
+	if p.state in CEL_STATES:
+		_step_celebration(p, dt, player)
+		if before.distance_to(_pos(p)) < 0.000001: p.folk.step(dt)
+		return
 	if p.state == "flee" and p.fear <= 0 and _mode != "duel":
 		p.folk.stop()
 		p.state = "pause"
@@ -366,6 +518,9 @@ func _choose(p: Person) -> void:
 	if p.waypoints.is_empty(): _arrive(p)
 
 func _arrive(p: Person) -> void:
+	if p.state == "cel_go":
+		_join_cheer(p)
+		return
 	if p.destination.begins_with("shop:"):
 		_enter_shop(p)
 		return
@@ -701,7 +856,7 @@ func _move(p: Person, dt: float, player: Vector3) -> void:
 		return
 	var target: Vector2 = p.waypoints[0]
 	var direction: Vector2 = (target - here).normalized()
-	var speed: float = p.speed * (1.45 if p.state == "flee" else 1.0)
+	var speed: float = p.speed * (1.45 if p.state == "flee" else (CEL_RUSH if p.state == "cel_go" else 1.0))
 	var distance: float = minf(speed * dt, here.distance_to(target))
 	var candidate: Vector2 = here + direction * distance
 	var moved: bool = _body_clear(candidate, p, player) and navigation.segment_clear(here, candidate)
@@ -838,15 +993,19 @@ func snapshot() -> Dictionary:
 		if p.state in SHOP_STATES:
 			if p.folk.is_walking(): legs.append([p.folk._goal.x, p.folk._goal.y, p.folk._goal.z])
 			for g in p.folk._path: legs.append([(g as Vector3).x, (g as Vector3).y, (g as Vector3).z])
+		# the celebration after the draw is a moment, not a routine: it saves as a plain pause where they stand (restore() knows that)
+		if p.state in CEL_STATES:
+			path = []
 		rows.append({"id": p.id, "position": [_pos(p).x, _pos(p).y], "activity": p.activity, "destination": p.destination,
 			"shop": p.shop, "seat": p.seat, "slot": p.slot, "height": p.folk.position.y if p.state in SHOP_STATES else 0.0, "shop_legs": legs, "parcel_t": p.parcel_t,
 			"recent": p.recent.duplicate(), "visits": p.visits.duplicate(), "memories": p.memories.duplicate(),
 			"greet_cd": p.greet_cd, "greets": p.greets, "walked_m": p.walked_m, "choices": p.choices,
 			"rng_state": str(p.rng.state), "fear": p.fear, "social_cd": p.social_cd,
-			"state": p.state, "timer": p.timer, "waypoints": path, "partner": p.partner,
+			"state": "pause" if p.state in CEL_STATES else p.state, "timer": clampf(p.timer, -1.0, 4.0) if p.state in CEL_STATES else p.timer,
+			"waypoints": path, "partner": "" if p.state in CEL_STATES else p.partner,
 			"threat": [p.threat.x, p.threat.y], "safety": [p.safety.x, p.safety.y],
 			"blocked": p.blocked, "recoveries": p.recoveries, "activity_time": p.activity_time,
-			"clip": p.folk._base_clip})
+			"clip": "Idle" if p.state in CEL_STATES else p.folk._base_clip})
 	return {"version": 1, "elapsed": elapsed, "people": rows, "mode": _mode}
 
 func _number(value: Variant, low: float, high: float) -> bool:
