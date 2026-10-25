@@ -1305,6 +1305,8 @@ func get_handoff() -> Dictionary:
 		if _bull != null:
 			d["lift_bull"] = _bull.position + LIFT_OFFSET
 			d["lift_bull_facing"] = _bull.facing
+			if _bull.anim != null and _bull.anim.current_animation == _bull.walk_clip:
+				d["lift_bull_walk_time"] = _bull.anim.current_animation_position      # the lift keeps his stride, no pop to idle
 	return d
 
 

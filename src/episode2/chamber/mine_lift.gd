@@ -359,10 +359,8 @@ func _build_shaft(rock_dark: StandardMaterial3D, gravel: StandardMaterial3D, tim
 	var by: float = 6.0                                                                                        # above the cage's roof gears (art review: a beam sliced its silhouette)
 	while by < ROOF_Y:                                                                                         # cross beams every 5 m
 		_kit("Beam4m", Vector3(0.0, by, -4.05), Vector3.ZERO, Vector3(2.0, 0.9, 0.9))
-		var front_beam: Node3D = _kit("Beam4m", Vector3(0.0, by, 4.05), Vector3.ZERO, Vector3(2.0, 0.9, 0.9))
-		if front_beam != null and absf(by - (TOP_Y + 1.0)) < 0.1:
-			_exit_crossbeam = front_beam
-			_exit_crossbeam.name = "SurfaceExitCrossbeam"
+		if absf(by - (TOP_Y + 1.0)) >= 0.1:       # never build the brace across the surface exit: chest height, the only way out
+			_kit("Beam4m", Vector3(0.0, by, 4.05), Vector3.ZERO, Vector3(2.0, 0.9, 0.9))
 		_kit("Beam4m", Vector3(-4.05, by, 0.0), Vector3(0.0, PI * 0.5, 0.0), Vector3(2.0, 0.9, 0.9))
 		_kit("Beam4m", Vector3(4.05, by, 0.0), Vector3(0.0, PI * 0.5, 0.0), Vector3(2.0, 0.9, 0.9))
 		by += 5.0
@@ -752,6 +750,9 @@ func _on_setup() -> void:
 	if handoff.has("lift_bull"):              # Inferno walked through ahead of him: keep him where he was, facing the way he faced
 		_bull.position = handoff["lift_bull"]
 		_bull.facing = float(handoff.get("lift_bull_facing", _bull.facing))
+		if handoff.has("lift_bull_walk_time") and _bull.anim != null and _bull.anim.has_animation(_bull.walk_clip):
+			_bull.anim.play(_bull.walk_clip)
+			_bull.anim.seek(float(handoff["lift_bull_walk_time"]), true)
 	if _bull != null:
 		_bull.visible = true
 	_loop = _loop_player(LOOP_SFX, -8.0)
