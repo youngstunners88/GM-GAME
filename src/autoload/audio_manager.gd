@@ -518,6 +518,7 @@ const GREETING_DUCK_DB := -12.0
 ## The recorded town takes are mastered ~-20 LUFS against -16 LUFS for the town theme; +2.5 dB lifts them level with the legacy
 ## announcer lines while every take stays under -0.3 dBTP (loudest measured take peaks at -2.8 dBTP).
 const TOWN_TAKE_GAIN_DB := 2.5
+const TOWN_TAKE_PEAK_DBTP := -2.8     # the loudest recorded town take's true peak (ffmpeg ebur128, 71 takes, 2026-10-25)
 var _voice_gen: int = 0
 var _voice_ducking: bool = false
 ## Where the music sits while nobody is speaking (0) or under the current speech (the duck). EVERY music fade aims here.

@@ -243,7 +243,9 @@ func _control_without_guard(level: int) -> void:
 	var voice_before: int = AudioManager._voice_gen
 	var node2: Node = _make_level(level)
 	await get_tree().process_frame
-	await get_tree().create_timer(0.1).timeout
+	# sample at the first frame of the new level: since 2026-10-25 one tween owns the music level (AudioManager._tween_music_to), so
+	# the resumed track's fade-in no longer fights its fade-out and it drops below the -20 dB detector line ~0.1 s later. The overlap
+	# this control must SEE is there from the first frame.
 	var a: Dictionary = _audible()
 	_check("CONTROL (no side_return): the old resumed track and a fresh one overlap - the detector can see a second song",
 		(a["stage"] as Array).size() >= 2, "stage=%d" % (a["stage"] as Array).size())

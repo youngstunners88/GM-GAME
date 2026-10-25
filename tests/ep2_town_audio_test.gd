@@ -63,7 +63,11 @@ func _ready() -> void:
 		var id: String = Ep2TownVoiceBank.id_for("rich", text)
 		check("Rich's full gun explanation has its recorded duration", c._intro._line_t >= Ep2TownVoiceBank.seconds(id) and c._intro._line_t > 4.2)
 		check("Rich's intro really plays the recorded stream", AudioManager._voice_player != null and AudioManager._voice_player.stream == Ep2TownVoiceBank.stream(id))
-		check("normalized recorded speech does not inherit the announcer boost", AudioManager._voice_player != null and is_zero_approx(AudioManager._voice_player.volume_db))
+		# founder 2026-10-25 "people VO overshadowed by music": the normalized takes get a small lift (TOWN_TAKE_GAIN_DB), never the +6 dB
+		# announcer boost that clipped them - the loudest take peaks at -2.8 dBTP, so the lift must keep it under 0 dBTP
+		check("normalized recorded speech does not inherit the announcer boost (a small, clip-free lift only)",
+			AudioManager._voice_player != null and is_equal_approx(AudioManager._voice_player.volume_db, AudioManager.TOWN_TAKE_GAIN_DB)
+			and AudioManager.TOWN_TAKE_GAIN_DB < 6.0 and AudioManager.TOWN_TAKE_PEAK_DBTP + AudioManager.TOWN_TAKE_GAIN_DB < 0.0)
 	else:
 		check("built armory has its existing gun introduction", false)
 	# Godot uses the final granule / sample rate. ffprobe subtracts positive start PTS.
