@@ -90,7 +90,7 @@ const CART_MODEL := "res://src/episode2/assets/town/donkey_cart.glb"
 const CART_S0 := 868.0                              # where the farmer's donkey cart stands on the road (arc length; the desert, past the last pines)
 const CART_SPEED := 2.4                             # ... and how fast it plods toward town (m/s)
 const CART_LATERAL := 3.1                           # it keeps to the right of the road; the quad passes on the left
-const CART_SCALE := 3.8                             # the Tripo model is ~1 m long, 0.59 m tall
+const CART_SCALE := 3.8                             # original fused fallback only; new articulated parts are authored in metres
 const BULL_AHEAD := ["vo_bull_ahead1", "vo_bull_ahead2", "vo_bull_ahead3"]      # Lil Blunt is scouting on ahead
 const BULL_WAIT := ["vo_bull_wait1", "vo_bull_wait2"]                           # Lil Blunt lags: a look back, a word
 const BULL_EASY := ["vo_bull_woods_sneak", "vo_bull_sneak2", "vo_bull_sneak3"]  # the rare murmur while they walk
@@ -2520,6 +2520,7 @@ func _retry_from_surface() -> void:
 	_bull_wait_lock = 0.0
 	_bull_ride_cd = 0.0
 	if _cart != null:
+		(_cart as Ep2RoadCart).reset_motion()
 		_place_cart(0.0)
 	_road_lines.clear()
 	_show_active = false
@@ -2559,39 +2560,39 @@ func _collide(p: Vector3) -> Vector3:
 # --- the farmer and his donkey (founder 2026-10-14: "on the road they should drive past the man on the cart with the donkey - slow down, pass him and wave") ---
 
 func _build_cart() -> void:
-	if not ResourceLoader.exists(CART_MODEL):
-		return
-	var holder := Node3D.new()
-	holder.name = "DonkeyCart"
-	var model: Node3D = (load(CART_MODEL) as PackedScene).instantiate() as Node3D
-	model.scale = Vector3.ONE * CART_SCALE
-	model.rotation.y = -PI * 0.5                      # the model's nose is +X; the holder's +Z is the way it travels
-	holder.add_child(model)
+	var holder := Ep2RoadCart.new()
 	_visuals.add_child(holder)
+	holder.build(CART_MODEL, CART_SCALE)
 	_cart = holder
+	line_spoken.connect(func(id: String):
+		if id == "vo_cart_man" and is_instance_valid(holder):
+			holder.greet())
 	_place_cart(0.0)
 
 
-## Put the cart on its place on the road (right of the centre line), nose down the road, with a plodding bob.
-func _place_cart(t: float) -> void:
+## The road is flat here. Keep the articulated roots on it; only limbs move.
+func _place_cart(_t: float) -> void:
 	if _cart == null:
 		return
 	var smp: Array = _ride_sample(_cart_s)
 	var yaw: float = float(smp[1])
 	var right := Vector3(-cos(yaw), 0.0, sin(yaw))
 	var pos: Vector3 = (smp[0] as Vector3) + right * CART_LATERAL
-	pos.y = 0.012 + 0.02 * absf(sin(t * 4.2))
+	pos.y = 0.0
 	_cart.position = pos
-	_cart.rotation = Vector3(0.012 * sin(t * 2.1), yaw, 0.01 * sin(t * 4.2))
+	_cart.rotation = Vector3(0.0, yaw, 0.0)
 
 
 ## The cart plods on; the quad eases down behind it (so it does not spook the donkey), draws level, Inferno greets the farmer, Lil Blunt answers,
 ## and they open up again past him. Returns the speed this allows the quad.
 func _tick_cart(delta: float) -> float:
-	if _cart == null or _cart_state >= 3:
+	if _cart == null:
 		return 99.0
 	_cart_s += CART_SPEED * delta
 	_place_cart(_elapsed)
+	(_cart as Ep2RoadCart).advance_motion(delta, CART_SPEED * delta)
+	if _cart_state >= 3:
+		return 99.0
 	var gap: float = _cart_s - _ride_s                  # > 0: the cart is still ahead of them on the road
 	var allow: float = 99.0
 	if gap < 70.0 and gap > -10.0:

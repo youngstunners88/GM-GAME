@@ -1,0 +1,71 @@
+{
+  "source_master": "9f9dfc78b18972b0e7d610c8ae00e6a78f13d3c5",
+  "budget_credits": 150,
+  "balance_before": 637,
+  "balance_after": 572,
+  "actual_credits": 65,
+  "tasks": [
+    {
+      "id": "01a173c8-274c-76b9-833f-261128a290b5",
+      "type": "text-to-3d-preview",
+      "mode": "preview",
+      "status": "SUCCEEDED",
+      "consumed_credits": 20,
+      "prompt": "One realistic cinematic Western working donkey, full body, neutral standing square on all four hooves, four straight separated legs, long upright ears, short dark mane, grey brown fur, pale muzzle, dark hooves, leather bridle and simple breast harness. No rider, no cart, no ground or base. Anatomically sound quadruped ready for skeletal rigging. Painterly realistic gold rush film game asset, natural proportions.",
+      "texture_prompt": ""
+    },
+    {
+      "id": "01a173c9-87ea-71ae-8fb9-13476fded7f1",
+      "type": "text-to-3d-refine",
+      "mode": "refine",
+      "status": "SUCCEEDED",
+      "consumed_credits": 10,
+      "prompt": "One realistic cinematic Western working donkey, full body, neutral standing square on all four hooves, four straight separated legs, long upright ears, short dark mane, grey brown fur, pale muzzle, dark hooves, leather bridle and simple breast harness. No rider, no cart, no ground or base. Anatomically sound quadruped ready for skeletal rigging. Painterly realistic gold rush film game asset, natural proportions.",
+      "texture_prompt": "Natural grey brown donkey coat, pale grey muzzle and belly, charcoal mane and hooves, worn dark brown leather bridle and harness. Matte fur, subtle realistic wear, no painted lighting."
+    },
+    {
+      "id": "01a173c8-72cb-7071-ba81-a7b613996644",
+      "type": "text-to-3d-preview",
+      "mode": "preview",
+      "status": "SUCCEEDED",
+      "consumed_credits": 20,
+      "prompt": "Single full body elderly bearded Western farmer, kind weathered face, wide brim brown felt hat, faded ochre shirt sleeves rolled to elbows, dark brown waistcoat, tan work trousers, leather boots. Standing neutral A pose, arms separated from torso, empty hands with distinct fingers, no props no base no scenery. Cinematic painterly realistic gold rush Western game character. Anatomically correct humanoid suitable for skeletal rigging and later seated cart driving pose.",
+      "texture_prompt": ""
+    },
+    {
+      "id": "01a173c9-c1ab-70fd-a2e9-94b52074d361",
+      "type": "text-to-3d-refine",
+      "mode": "refine",
+      "status": "SUCCEEDED",
+      "consumed_credits": 10,
+      "prompt": "Single full body elderly bearded Western farmer, kind weathered face, wide brim brown felt hat, faded ochre shirt sleeves rolled to elbows, dark brown waistcoat, tan work trousers, leather boots. Standing neutral A pose, arms separated from torso, empty hands with distinct fingers, no props no base no scenery. Cinematic painterly realistic gold rush Western game character. Anatomically correct humanoid suitable for skeletal rigging and later seated cart driving pose.",
+      "texture_prompt": "Weathered friendly elderly Western farmer, grey beard, faded ochre cotton work shirt, dark brown leather waistcoat, tan dusty work trousers and worn brown leather boots. Cinematic painterly realistic materials, no baked lighting, no lettering."
+    },
+    {
+      "id": "01a173cb-e3c0-710b-98f9-10cbb4640560",
+      "type": "rig",
+      "mode": null,
+      "status": "SUCCEEDED",
+      "consumed_credits": 5,
+      "prompt": null,
+      "texture_prompt": null
+    }
+  ],
+  "tools": {
+    "meshy": "0.4.0",
+    "blender": "4.3.2 (documented 5.2.2 executable absent; installed skill hashes verified)",
+    "godot": "4.3.stable.official.77dcf97d8",
+    "game_development_studio": "game-dev CLI absent; no installation or credential change attempted"
+  },
+  "local_authoring": [
+    "quadruped skeleton, constrained weights and 4-beat distance walk",
+    "seated farmer pose, fixed rein-hand grip, independent wave",
+    "cart axle-centred independent spoked wheels, fitted Western hat",
+    "runtime bone-following rein ribbons"
+  ],
+  "protected_fused_asset_sha512": "3bb48cb06aa16783033b04d18ebba9ad50e8b25524a8c0297a67c218735a2a0ec06038dc20557220a57772ca9349f6ea6a3d9bf0b6c9f7e96c59aa4379909ad7",
+  "validation_notes": {
+    "donkey_blender_rig_check": "PASS:17 bones; zero unweighted, >4-influence or non-normalized vertices",
+    "farmer_blender_rig_check": "Provider centimetre armature retains scale0.01; generic check flags unapplied transform and asymmetric rest roll. Original skin/bind basis preserved; zero unweighted/>4/non-normalized vertices. Godot imported 24-bone seated clips, full hand/seat/contact tests and exported-pack tests pass."
+  }
+}
