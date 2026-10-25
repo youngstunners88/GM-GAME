@@ -1,0 +1,18 @@
+{
+  "godot": "4.3.stable",
+  "renderer": "Compatibility",
+  "viewport": [
+    1280,
+    720
+  ],
+  "results": [
+    "REAL_STAGE_COMPLETION: PASS stage=1 mode=missing scene=res://src/level/level_01_smoke_realm.tscn card=boss_auditor voice=false",
+    "REAL_STAGE_COMPLETION: PASS stage=1 mode=replay scene=res://src/level/level_01_smoke_realm.tscn card=boss_auditor voice=false",
+    "REAL_STAGE_COMPLETION: PASS stage=2 mode=missing scene=res://src/level/level_02_crystal_caverns.tscn card=boss_distributor voice=false",
+    "REAL_STAGE_COMPLETION: PASS stage=2 mode=replay scene=res://src/level/level_02_crystal_caverns.tscn card=boss_distributor voice=false",
+    "REAL_STAGE_COMPLETION: PASS stage=3 mode=missing scene=res://src/level/level_03_gold_rush.tscn card=boss_claimjumper voice=false",
+    "REAL_STAGE_COMPLETION: PASS stage=3 mode=replay scene=res://src/level/level_03_gold_rush.tscn card=boss_claimjumper voice=false"
+  ],
+  "native_nft_regression_checks": 53,
+  "production_source": "9f9dfc78b18972b0e7d610c8ae00e6a78f13d3c5"
+}
