@@ -74,6 +74,7 @@ var viewmodel_exposure: float = 1.0
 # --- live state -----------------------------------------------------------------------------------------------------
 var _beat: int = 0
 var _elapsed: float = 0.0
+var _kit_poll: float = 0.0                 # seconds to the next Ep2KitProps.upgrade_pending() while stand-ins wait for a kit
 var _running: bool = false
 var _resolved: bool = false
 var _room_built: bool = false
@@ -355,6 +356,13 @@ func step(delta: float) -> void:
 	if _hold > 0.0:
 		_hold = maxf(0.0, _hold - delta)
 	_tick_queued_line(delta)
+	# streamed CAD props (Ep2KitProps: the town's furniture, the smelter's kit) built as stand-ins before the web pack mounted turn into
+	# the CAD pieces the moment it is
+	if Ep2KitProps.pending_count() > 0:
+		_kit_poll -= delta
+		if _kit_poll <= 0.0:
+			_kit_poll = 0.5
+			Ep2KitProps.upgrade_pending()
 	if has_player_control():
 		_move_player(delta)
 	else:

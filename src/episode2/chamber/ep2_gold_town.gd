@@ -124,16 +124,110 @@ static func _balcony_furniture(root: Node3D, kit: Node3D) -> void:
 	var table: Node3D = kit.find_child("Bar_Table", true, false) as Node3D
 	var xf: Transform3D = building_xform(entry("Bldg_Saloon"))
 	if chair != null:
-		for bs in BALCONY_CHAIRS:
-			var c: Node3D = chair.duplicate() as Node3D
-			c.transform = xf * Transform3D(Basis(Vector3.UP, PI), (bs as Vector3) + Vector3(0, BALCONY_Y, 0))   # facing the street
-			c.name = "BalconyChair"
-			root.add_child(c)
+		for bs in BALCONY_CHAIRS:                    # the CAD bentwood chairs (the kit's box chair until the streamed pack is mounted)
+			_cad_piece(root, "Twn_Chair", xf * Transform3D(Basis(Vector3.UP, PI), (bs as Vector3) + Vector3(0, BALCONY_Y, 0)), chair).name = "BalconyChair"
 	if table != null:
-		var t: Node3D = table.duplicate() as Node3D
-		t.transform = xf * Transform3D(Basis().scaled(Vector3(0.7, 1.0, 0.7)), BALCONY_TABLE + Vector3(0, BALCONY_Y, 0))
-		t.name = "BalconyTable"
-		root.add_child(t)
+		_cad_piece(root, "Twn_Table", xf * Transform3D(Basis().scaled(Vector3(0.7, 1.0, 0.7)), BALCONY_TABLE + Vector3(0, BALCONY_Y, 0)),
+			table).name = "BalconyTable"
+
+
+## One CAD furniture piece (Ep2KitProps, Twn_*) at `xf`, the kit's old piece `src` standing in until the streamed pack is mounted.
+## `saloon` = one of the saloon's own pieces (its stand-in gets the _texture_dark_wood call it always had). Returns the holder.
+static func _cad_piece(root: Node3D, prop: String, xf: Transform3D, src: Node3D, saloon: bool = false) -> Node3D:
+	var stand_in := func(h: Node3D) -> void:
+		if src == null:
+			return
+		var n: Node3D = src.duplicate() as Node3D
+		n.transform = Transform3D.IDENTITY
+		h.add_child(n)
+		if saloon:
+			_texture_dark_wood(n)              # the saloon's kit pieces in real grain, as they were
+	return Ep2KitProps.place(root, prop, xf, Transform3D.IDENTITY, stand_in, false, TOWN_TONE)
+
+
+## The rooms' new detail (ROOM_DETAIL) and the hanging lamps (HANGING), CAD only. Floor pieces add their footprint to `props`.
+static func _room_detail(root: Node3D, props: Array) -> void:
+	for d in ROOM_DETAIL:
+		var piece: String = str(d[0])
+		if entry(piece).is_empty() or (piece == "Bldg_Jail" and not jail_v1):
+			continue
+		var lean: float = float(d[5]) if (d as Array).size() > 5 else 0.0
+		var pos: Vector3 = d[2]
+		if pos.y == 0.0:
+			pos.y = float(ROOM_FLOOR.get(piece, KIT_FLOOR))         # on the boards, not in them
+		var xf: Transform3D = building_xform(entry(piece)) * Transform3D(Basis(Vector3.UP, float(d[3])) * Basis(Vector3.BACK, lean), pos)
+		var h: Node3D = Ep2KitProps.place(root, str(d[1]), xf, Transform3D.IDENTITY, Callable(), false, TOWN_TONE)
+		h.name = str(d[1]).replace("Twn_", "Prop_") + "_" + piece
+		var fp: Vector2 = d[4]
+		if fp != Vector2.ZERO:
+			props.append_array(_footprint_circles(xf, fp))
+		if str(d[1]) == "Twn_Clock":                 # the regulator's pendulum swings (its own piece, on its pivot)
+			var sw := Ep2Pendulum.new()
+			sw.name = "Pendulum_" + piece
+			sw.transform = xf * Transform3D(Basis.IDENTITY, CLOCK_PIVOT)
+			root.add_child(sw, true)
+			Ep2KitProps.place(sw, "Twn_ClockPendulum", Transform3D.IDENTITY)
+	for hg in HANGING:
+		var piece: String = str(hg[0])
+		if entry(piece).is_empty():
+			continue
+		var light: Vector3 = hg[2]
+		var top_local := Vector3(light.x, light.y + float(hg[3]), light.z)
+		var at: Vector3 = local_to_world(piece, top_local)
+		var h: Node3D = Ep2KitProps.place(root, str(hg[1]), Transform3D(building_xform(entry(piece)).basis, at), Transform3D.IDENTITY, Callable(),
+			false, TOWN_TONE)
+		h.name = str(hg[1]).replace("Twn_", "Prop_") + "_" + piece
+		var top_w: Vector3 = local_to_world(piece, Vector3(light.x, CEILING_Y, light.z))
+		if str(hg[1]) == "Twn_Chandelier":
+			Ep2KitProps.chain(root, top_w, top_w.y - at.y, 1.4)      # the wheel's heavy chain
+		else:
+			_hanger_rod(root, top_w, top_w.y - at.y)                   # a harp lamp's slim rod and its ceiling canopy
+
+
+## A footprint (width across the prop's x, depth along its z) placed by `xf` -> walk circles along its long side.
+static func _footprint_circles(xf: Transform3D, fp: Vector2) -> Array:
+	var out: Array = []
+	var long_x: bool = fp.x >= fp.y
+	var length: float = maxf(fp.x, fp.y)
+	var r: float = minf(fp.x, fp.y) * 0.5 + 0.05
+	var n: int = maxi(1, int(ceil(length / (r * 2.0))))
+	for i in n:
+		var t: float = (float(i) + 0.5) / float(n) - 0.5
+		var lp := Vector3(t * length, 0.0, 0.0) if long_x else Vector3(0.0, 0.0, t * length)
+		var w: Vector3 = xf * lp
+		out.append([Vector2(w.x, w.z), r])
+	return out
+
+
+## A lamp's suspension: a slim iron rod down from a small ceiling canopy.
+static func _hanger_rod(root: Node3D, top_w: Vector3, length: float) -> void:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.20, 0.19, 0.17)
+	mat.roughness = 0.6
+	mat.metallic = 0.3
+	var rod := MeshInstance3D.new()
+	rod.name = "LampRod"
+	var cm := CylinderMesh.new()
+	cm.top_radius = 0.007
+	cm.bottom_radius = 0.007
+	cm.height = maxf(0.05, length)
+	cm.radial_segments = 6
+	cm.rings = 1
+	rod.mesh = cm
+	rod.material_override = mat
+	rod.position = top_w - Vector3(0.0, length * 0.5, 0.0)
+	root.add_child(rod, true)
+	var can := MeshInstance3D.new()
+	can.name = "LampCanopy"
+	var cc := CylinderMesh.new()
+	cc.top_radius = 0.05
+	cc.bottom_radius = 0.07
+	cc.height = 0.04
+	cc.radial_segments = 12
+	can.mesh = cc
+	can.material_override = mat
+	can.position = top_w - Vector3(0.0, 0.02, 0.0)
+	root.add_child(can, true)
 
 
 ## Where a customer goes for each walk-in shop, in world space: "out" (the street, past the porch steps), "door" (just inside the doorway),
@@ -321,7 +415,7 @@ static func build(parent: Node3D, interiors: bool) -> Dictionary:
 	Ep2TownPosters.build(root, props)                   # the wanted posters: notice board, shop fronts, the jail (streamed images)
 	_balcony_furniture(root, kit)                       # two chairs and a little table on the saloon's balcony (its drinkers sit there)
 	if interiors:
-		_furnish(root, kit, a2)
+		_furnish(root, kit, a2, props)
 	kit.free()
 	if a2 != null:
 		a2.free()
@@ -588,9 +682,70 @@ static func _flag(parent: Node3D, pos: Vector3) -> void:
 	parent.add_child(q)
 
 
+## THE TOWN'S CAD FURNITURE (founder 2026-10-25: "Town interiors - more furnished furniture and subtle details (Certificate, Saloon,
+## Armory, Jail as touched)"; "do not ship grey boxes or low-poly placeholders where CAD can replace them"). The kit pieces it replaces
+## (Ep2Extras.TOWN_FURNITURE, tools/ep2_cad/town_interior_cad.py) keep the same origin, footprint and heights, so every seat, drinker's
+## place, counter wall and story mark stays where it was. Until the streamed pack is mounted the old piece stands in (Ep2KitProps.place)
+## and turns into the CAD one when it is.
+const CAD_FURNITURE := {"Int_Counter": "Twn_Counter", "Int_Shelves": "Twn_Pigeonholes", "Int_Desk": "Twn_Desk", "Int_Stove": "Twn_Stove",
+	"Bar_Counter": "Twn_Bar", "Bar_BackShelf": "Twn_BackBar", "Bar_Piano": "Twn_Piano", "Bar_Table": "Twn_Table", "Bar_Chair": "Twn_Chair"}
+## The rooms keep the tone they had (measured in tools/ep2_shots/interiors_shot captures, before vs after). Every room's kit furniture
+## shows the Ep2Pbr dark wood (the kit is dressed in build() before _furnish, and the dressing is a surface override, so the saloon's
+## old _texture_dark_wood grain never showed): the CAD bodies, the saloon's tables and the bentwood chairs are that same DarkWood,
+## untoned. The walnut panels, tops and turned parts (GunWood, authored 0.62 / 0.45 / 0.29 shown) are toned to the old fronts'
+## measured brightness - the office's counter front was 56 / 20 / 2 on screen (CAD: 61 / 23 / 2), the saloon bar's 82 / 34 / 8.
+const TOWN_TONE := {"GunWood": ["wood_walnut", 0.40, 0.0, 0.85, Color(0.38, 0.24, 0.12)]}
+## What the rooms never had (CAD only: nothing stands in while the pack is not mounted). In each building's local frame:
+## [building, prop, position, yaw, floor footprint (Vector2 across x / along z of the prop, for the walk; ZERO = on a wall, a table
+## top, overhead or too small to walk into), lean (radians about the prop's own z; optional)]. Every one is clear of the story's marks
+## and the townspeople's routes (tests/ep2_town_furniture_test).
+const ROOM_DETAIL: Array = [
+	# the saloon: cuspidors at the bar rail between the drinkers' places, the hall tree by the door, the regulator on the left wall, the
+	# piano's stool, a poker spread and two rounds of drinks on the tables
+	["Bldg_Saloon", "Twn_Spittoon", Vector3(-4.4, 0.0, -8.25), 0.0, Vector2.ZERO], ["Bldg_Saloon", "Twn_Spittoon", Vector3(-2.9, 0.0, -8.25), 0.6, Vector2.ZERO],
+	["Bldg_Saloon", "Twn_Spittoon", Vector3(-1.5, 0.0, -8.25), 1.9, Vector2.ZERO], ["Bldg_Saloon", "Twn_Spittoon", Vector3(1.6, 0.0, -8.25), 2.7, Vector2.ZERO],
+	["Bldg_Saloon", "Twn_HatRack", Vector3(-2.6, 0.0, -0.55), 0.4, Vector2(0.5, 0.5)],
+	["Bldg_Saloon", "Twn_Clock", Vector3(-5.86, 1.55, -6.0), PI * 0.5, Vector2.ZERO],
+	["Bldg_Saloon", "Twn_PianoStool", Vector3(4.15, 0.0, -10.6), 0.3, Vector2(0.48, 0.48)],
+	["Bldg_Saloon", "Twn_TableDrinks", Vector3(-3.2, 0.785, -3.6), 0.8, Vector2.ZERO], ["Bldg_Saloon", "Twn_PokerSet", Vector3(3.6, 0.785, -3.0), -0.5, Vector2.ZERO],
+	["Bldg_Saloon", "Twn_TableDrinks", Vector3(3.8, 0.785, -6.8), 2.6, Vector2.ZERO],
+	# the certificate office: the desk's captain's chair and lamp, the safe in the back corner, a waiting bench under the clock on the
+	# left wall, the hall tree by the door, stove wood, a cuspidor at the counter's end
+	["Bldg_Certificates", "Twn_DeskChair", Vector3(-2.3, 0.0, -7.75), 0.0, Vector2(0.5, 0.48)],
+	["Bldg_Certificates", "Twn_DeskLamp", Vector3(-1.7, 0.81, -7.2), 0.4, Vector2.ZERO],
+	["Bldg_Certificates", "Twn_Safe", Vector3(3.05, 0.0, -8.45), 0.0, Vector2(0.7, 0.7)],
+	["Bldg_Certificates", "Twn_Bench", Vector3(-3.55, 0.0, -4.4), PI * 0.5, Vector2(1.6, 0.45)],
+	["Bldg_Certificates", "Twn_Clock", Vector3(-3.86, 1.75, -4.4), PI * 0.5, Vector2.ZERO],
+	["Bldg_Certificates", "Twn_HatRack", Vector3(1.6, 0.0, -0.5), -0.3, Vector2(0.5, 0.5)],
+	["Bldg_Certificates", "Twn_WoodBox", Vector3(-3.45, 0.0, -1.55), PI * 0.5, Vector2(0.62, 0.42)],
+	["Bldg_Certificates", "Twn_Spittoon", Vector3(2.4, 0.0, -3.95), 1.0, Vector2.ZERO],
+	# the jail (only when it is drawn): a lantern on the desk, the keys on the wall by it, coffee on the stove, a water bucket, the
+	# prisoner's supper inside cell A, a broom in the corner, a cuspidor, the regulator
+	["Bldg_Jail", "Twn_Lantern", Vector3(1.15, 0.85, -2.45), 0.3, Vector2.ZERO],
+	["Bldg_Jail", "Twn_KeyRing", Vector3(3.52, 1.6, -3.45), -PI * 0.5, Vector2.ZERO],
+	["Bldg_Jail", "Twn_Clock", Vector3(3.52, 1.7, -4.3), -PI * 0.5, Vector2.ZERO],
+	["Bldg_Jail", "Twn_CoffeePot", Vector3(-2.78, 0.75, -0.95), 2.2, Vector2.ZERO],
+	["Bldg_Jail", "Twn_Bucket", Vector3(-3.25, 0.0, -0.35), 0.7, Vector2(0.34, 0.34)],
+	["Bldg_Jail", "Twn_TinPlate", Vector3(-1.15, 0.0, -5.3), 0.4, Vector2.ZERO],
+	["Bldg_Jail", "Twn_Broom", Vector3(3.3, 0.0, -0.32), -0.4, Vector2.ZERO, -0.21],
+	["Bldg_Jail", "Twn_Spittoon", Vector3(2.75, 0.0, -3.25), 0.5, Vector2.ZERO],
+]
+## The saloon's wagon-wheel chandelier and the harp lamps hang from the ceiling, their flames where the rooms' warm lights already are:
+## [building, prop, the light's position, how far the flame hangs below the prop's origin].
+const HANGING: Array = [["Bldg_Saloon", "Twn_Chandelier", Vector3(-2.0, 3.2, -4.0), 0.76], ["Bldg_Saloon", "Twn_HangLamp", Vector3(3.0, 3.2, -8.0), 0.47],
+	["Bldg_Certificates", "Twn_HangLamp", Vector3(0.0, 3.0, -4.0), 0.47]]
+const CEILING_Y := 7.16                      # the two-storey rooms' ceiling (build_town_kit.py shell(): h - 0.04)
+## The rooms' plank floors stand proud of the street level: the kit's interiors 0.06 (shell()), the jail's 0.05 (build_jailhouse.py).
+## The kit's old furniture stands at 0 (its feet in the boards, as approved); the new floor detail stands ON the boards.
+const ROOM_FLOOR := {"Bldg_Jail": 0.05}
+const KIT_FLOOR := 0.06
+const CLOCK_PIVOT := Vector3(0.0, 0.70, 0.05)   # the regulator's pendulum pivot in the clock's frame (town_interior_cad.py build_clock)
+
+
 ## The two rooms Lil Blunt walks into: the certificate office (counter, pigeonholes, desk, stove, lamps) and the saloon (the long bar,
 ## the back shelf of bottles round a mirror, tables and chairs, a piano, oil lamps). Positions are in each building's local frame.
-static func _furnish(root: Node3D, kit: Node3D, a2: Node3D = null) -> void:
+## `props` takes the walk footprints of the new floor pieces (Ep2GoldTown.collide).
+static func _furnish(root: Node3D, kit: Node3D, a2: Node3D = null, props: Array = []) -> void:
 	var rooms: Array = [
 		["Bldg_Certificates", "Int_Counter", Vector3(0.6, 0.0, -4.6), 0.0], ["Bldg_Certificates", "Int_Shelves", Vector3(0.6, 0.0, -8.6), 0.0],
 		["Bldg_Certificates", "Int_Desk", Vector3(-2.3, 0.0, -7.0), 0.0], ["Bldg_Certificates", "Int_Stove", Vector3(-3.0, 0.0, -2.4), 0.0],
@@ -616,21 +771,24 @@ static func _furnish(root: Node3D, kit: Node3D, a2: Node3D = null) -> void:
 		var src: Node3D = kit.find_child(str(rm[1]), true, false) as Node3D
 		if src == null:
 			continue
+		var xf: Transform3D = building_xform(entry(str(rm[0]))) * Transform3D(Basis(Vector3.UP, float(rm[3])), rm[2])
+		var nm: String = str(rm[1]) + "_" + str(rm[0])
+		if CAD_FURNITURE.has(str(rm[1])):
+			_cad_piece(root, str(CAD_FURNITURE[str(rm[1])]), xf, src, str(rm[0]) == "Bldg_Saloon").name = nm
+			continue
 		var n: Node3D = src.duplicate() as Node3D
-		var xf: Transform3D = building_xform(entry(str(rm[0])))
-		n.transform = xf * Transform3D(Basis(Vector3.UP, float(rm[3])), rm[2])
-		n.name = str(rm[1]) + "_" + str(rm[0])
+		n.transform = xf
+		n.name = nm
 		root.add_child(n)
 		if str(rm[0]) in WALKIN_SHOPS:
 			_texture_dark_wood(n)          # the shops' counters, shelves and furniture in real grain, like the jail's
 	var chair: Node3D = kit.find_child("Bar_Chair", true, false) as Node3D
 	if chair != null:
-		for tp in [Vector3(-3.2, 0.0, -3.6), Vector3(3.6, 0.0, -3.0), Vector3(3.8, 0.0, -6.8)]:
+		for tp in SALOON_TABLES:            # three bentwood chairs round each table (the kit's box chair until the pack is mounted)
 			for k in 3:
 				var a: float = float(k) * TAU / 3.0 + tp.x
-				var c: Node3D = chair.duplicate() as Node3D
-				c.transform = building_xform(entry("Bldg_Saloon")) * Transform3D(Basis(Vector3.UP, a + PI), tp + Vector3(sin(a), 0, cos(a)) * 0.95)
-				root.add_child(c)
+				_cad_piece(root, "Twn_Chair", building_xform(entry("Bldg_Saloon")) * Transform3D(Basis(Vector3.UP, a + PI), tp + Vector3(sin(a), 0, cos(a)) * 0.95), chair)
+	_room_detail(root, props)
 	# warm oil lamps in both rooms
 	var lamps: Array = [["Bldg_Certificates", Vector3(0.0, 3.0, -4.0), 4.5], ["Bldg_Saloon", Vector3(-2.0, 3.2, -4.0), 6.0], ["Bldg_Saloon", Vector3(3.0, 3.2, -8.0), 6.0]]
 	if kit_v2:                         # one warm lamp in each walk-in shop

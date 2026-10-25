@@ -1,0 +1,66 @@
+extends Node
+## THE TOWN'S ROOMS, FURNISHED (founder 2026-10-25: "Town interiors - more furnished furniture and subtle details (Certificate, Saloon,
+## Armory, Jail as touched)"): fixed eye-level views of the saloon, the certificate office and the jail in the real town chamber, for a
+## before / after board (run the same script on master for "before").
+##   godot --rendering-driver opengl3 --path . res://tools/ep2_shots/interiors_shot.tscn -- out=<dir>
+## Rendered in a 1600x900 SubViewport (the tiling window manager squashes a real window).
+var chamber: GoldTownChamber
+var vp: SubViewport
+var out := ".farm/interiors"
+
+## [label, building, eye ground point (local), look-at point (local)]
+const VIEWS: Array = [
+	["saloon_wide", "Bldg_Saloon", Vector3(0.0, 0.0, -0.7), Vector3(-0.6, 1.5, -9.0)],
+	["saloon_bar", "Bldg_Saloon", Vector3(1.2, 0.0, -5.6), Vector3(-1.6, 1.4, -10.6)],
+	["saloon_tables", "Bldg_Saloon", Vector3(1.6, 0.0, -6.4), Vector3(-3.2, 1.4, -3.4)],
+	["saloon_piano", "Bldg_Saloon", Vector3(3.0, 0.0, -5.4), Vector3(4.8, 0.9, -10.6)],
+	["office_counter", "Bldg_Certificates", Vector3(0.9, 0.0, -1.5), Vector3(0.6, 1.3, -6.0)],
+	["office_left", "Bldg_Certificates", Vector3(1.8, 0.0, -2.2), Vector3(-3.2, 1.2, -4.6)],
+	["office_back", "Bldg_Certificates", Vector3(-0.6, 0.0, -3.0), Vector3(2.6, 1.0, -8.4)],
+	["jail_office", "Bldg_Jail", Vector3(0.9, 0.0, -0.8), Vector3(2.4, 0.9, -3.0)],
+	["jail_stove", "Bldg_Jail", Vector3(0.6, 0.0, -3.0), Vector3(-3.0, 0.6, -0.7)],
+	["jail_cell", "Bldg_Jail", Vector3(-1.0, 0.0, -4.2), Vector3(-1.2, 0.05, -5.3)],
+]
+
+
+func _ready() -> void:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("out="):
+			out = a.substr(4)
+	DirAccess.make_dir_recursive_absolute(out)
+	vp = SubViewport.new()
+	vp.size = Vector2i(1600, 900)
+	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	add_child(vp)
+	chamber = load("res://src/episode2/chamber/gold_town.tscn").instantiate() as GoldTownChamber
+	vp.add_child(chamber)
+	chamber.setup(0, [], 0)
+	chamber.set_physics_process(false)
+	for i in 30:
+		chamber.step(1.0 / 60.0)
+		await get_tree().process_frame
+	for v in VIEWS:
+		if Ep2GoldTown.entry(str(v[1])).is_empty() or (str(v[1]) == "Bldg_Jail" and not Ep2GoldTown.jail_v1):
+			continue
+		var g: Vector3 = Ep2GoldTown.local_to_world(str(v[1]), v[2])
+		var f: Vector3 = Ep2GoldTown.local_to_world(str(v[1]), v[3])
+		_look(g, f)
+		await _shot(str(v[0]))
+	print("INTERIORS_SHOT_DONE")
+	get_tree().quit()
+
+
+func _look(ground: Vector3, focus: Vector3) -> void:
+	chamber._player_pos = Vector3(ground.x, 0.0, ground.z)
+	var eye: Vector3 = chamber._player_pos + Vector3(0, chamber.eye_height, 0)
+	var d: Vector3 = focus - eye
+	chamber._look_yaw = atan2(d.x, d.z)
+	chamber._look_pitch = atan2(d.y, Vector2(d.x, d.z).length())
+	chamber._update_camera(0)
+	chamber._sync_visuals()
+
+
+func _shot(label: String) -> void:
+	for f in 6:
+		await RenderingServer.frame_post_draw
+	vp.get_texture().get_image().save_jpg("%s/%s.jpg" % [out, label], 0.88)

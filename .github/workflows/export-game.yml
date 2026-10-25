@@ -327,6 +327,9 @@ jobs:
           # The smelter's CAD prop kit (founder 2026-10-25 "not grey primitives"): every prop present, stand-in -> CAD upgrade, the hideout dressed with it.
           timeout 240 "$GODOT_BIN" --headless res://tests/ep2_smelter_kit_test.tscn 2>&1 | tee ep2-smelter-kit-tests.log
           grep -q 'EP2_SMELTER_KIT: ALL PASS' ep2-smelter-kit-tests.log
+          # The town's CAD furniture (founder 2026-10-25 "more furnished furniture and subtle details"): every piece present, the old box -> CAD in place, rooms furnished, no story mark blocked.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_town_furniture_test.tscn 2>&1 | tee ep2-town-furniture-tests.log
+          grep -q 'EP2_TOWN_FURNITURE: ALL PASS' ep2-town-furniture-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' transition-feedback-tests.log; then exit 1; fi
           # On-screen touch controls: real finger events -> GUI -> InputMap -> the real
           # player (analog walk, multi-touch combo, release-on-hide, layouts on every screen).

@@ -86,6 +86,32 @@ GEARED, DONE (`src/episode2/chamber/gold_town.gd`). Fort Knox is never opened.
 - Proof: `tools/ep2_shots/post_draw_shot.tscn` (real renderer). Gate: `tests/ep2_gold_town_test` walks the whole sequence (CI);
   `ep2_fort_knox_arc_test` (beat list), town people / autonomy / audio / stable yard / Logan's Lake / interlude / armory gates pass.
 
+## P1 — CAD pass, part 3 (the town's rooms furnished)
+
+![before / after](2026-10-25_cad_transitions/interiors_before_after.jpg)
+
+- **FreeCAD furniture kit** (`tools/ep2_cad/town_interior_cad.py` -> `tools/ep2_blender/build_town_interior_kit.py` ->
+  `src/episode2/extras/town/town_furniture.glb`, 31 pieces, 92.7k triangles, 5.3 MB streamed; contact sheet `town_furniture_kit.jpg`).
+- **Replaced where they stood** (same origin, footprint and heights - every seat, drinker's place, counter wall and story mark unchanged):
+  the saloon's bar (raised panels, moulded top, brass foot rail on posts), back bar (turned columns, framed mirror, dentil cornice, forty
+  labelled bottles, brass register, glass pyramids), tables (turned pedestal, cabriole feet), bentwood chairs (Thonet No. 14, cane seats,
+  the balcony's too) and the upright piano (88 keys, sconces, sheet music); the office's counter (the open certificate book, bell, inkwell
+  and pen, stamp), pigeonholes (rolled certificates in red tape, deed bundles, ledgers), pedestal desk (leather top, brass-pulled drawers)
+  and pot-belly stove (mica windows aglow, nickel rail, the pipe elbowing into the wall).
+- **New detail**: four cuspidors at the bar rail, a wagon-wheel chandelier on a chain and harp lamps hung where the rooms' warm lights
+  already were, Vienna regulator clocks (pendulums swing: `Ep2Pendulum`), hall trees with hats, the piano stool, a poker spread and rounds
+  of whiskey on the tables; the office's safe, waiting bench, captain's chair, desk lamp and split logs; the jail's lantern, keys, coffee
+  pot, water bucket and dipper, the prisoner's supper in his cell, a broom.
+- **Same tone as before** (measured on the real renderer, `tools/ep2_shots/interiors_shot.tscn`, master vs branch): office counter front
+  61/22/2 vs 56/20/2, saloon bar 89/37/10 vs 82/34/8, the saloon frame average identical. Found on the way: since part 1 the whole town kit is
+  PBR-dressed before `_furnish`, and the dressing is a surface override, so the saloon's old timber re-texture never showed - the CAD
+  pieces take the same dark wood, with the walnut panels toned to the old fronts' brightness (`TOWN_TONE`).
+- **Never in the way**: nothing new stands on a story mark, the Minister's panic run, a drinker's place or route, or a jail stand point;
+  the new floor pieces (safe, bench, hall trees, chairs, wood box, piano stool, bucket) are solid; the floor detail stands on the boards
+  (the rooms' floors are 0.06 / 0.05 above the street). While the web build downloads, the old pieces stand in and upgrade in place.
+- Gate: `tests/ep2_town_furniture_test` (new, CI). Gold town, smelter kit and PBR gates pass. Rich & Utah's Armory - already the densest
+  room, its routes tight - keeps part 1's photo-scanned detail for now.
+
 ## Not yet verified
 - Web-build listening and a real-browser walk of hideout → lift → woods (headless gates + native GPU captures only). The founder's hard refresh is the acceptance.
 - The synthesized train has not been listened to by a human. If it reads wrong, regenerate with ElevenLabs / VARCO when a key is on the box (same file names).
