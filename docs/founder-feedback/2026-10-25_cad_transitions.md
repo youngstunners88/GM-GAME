@@ -35,6 +35,27 @@ elevator! This is ridiculous. How can he be in the elevator and in the other roo
 - Gates: `tests/ep2_pbr_test` (new, CI) + armory guns / two-storey / gold town / personal armory / seamless chain pass. `ep2_hideout_corrections_test`
   (4 FAIL) and `ep2_smelting_facility_test` "Bull PBR" (1 FAIL) fail identically on master: pre-existing, not CI gates.
 
+## P1 — CAD pass, part 2 (the smelter's prop kit)
+
+![before / after](2026-10-25_cad_transitions/smelter_kit_before_after.jpg)
+
+- **FreeCAD kit** (`tools/ep2_cad/smelter_kit_cad.py` -> `tools/ep2_blender/build_smelter_kit.py` -> `src/episode2/extras/hideout/smelter_kit.glb`,
+  52k triangles, streamed): a Colt Single Action Army (fluted cylinder with its chambers, ejector housing, case-hardened frame, hammer,
+  trigger guard, plow-handle walnut grip with backstrap), oak kegs (staves with real seams, iron hoops, recessed heads, bungs), chocks, a
+  London-pattern anvil on a banded stump, tongs, a pouring ladle, a three-bar ingot mould, a coal shovel, an octagonal sledge, a pick, oval
+  chain links and a hook, a .45-70 round, a planked crate and an open ammunition box.
+- **In the hideout** (`HideoutDressing`, `SmeltingFacilityChamber`): the six gun-wall revolvers, the eight hanging chains and the pour
+  ladles' hangers, every crate and ammo box, the spilled rounds and the leaning shovel / sledge are the CAD pieces at the same spots; new
+  kegs, a keg on chocks, the anvil with its tongs, two ingot moulds and a pick (each with a walk blocker).
+- **Never a missing prop** (`Ep2KitProps`): the hideout is built a few seconds into the opening film, usually before the web build has the
+  streamed pack; the old primitive stands in and is swapped to the CAD piece the moment the pack mounts (normally under the film).
+- **Colour found and fixed**: the Blender kits write their colours as if sRGB but glTF stores them linear, so every kit colour shows a stop
+  brighter in the engine (that brighter look is what the Armory and the yard Gatling have always shown, and they keep it). In the fire-lit
+  hideout the kit pieces take their intended colours (`Ep2Pbr.dress(..., kit_tone)`), so the Colts are dark blued steel with walnut grips,
+  not silver with ivory. The painted-iron set has no metal map: its metal now applies uniformly and its roughness is matte.
+- Proof: `tools/ep2_shots/smelter_kit_shot.tscn` (`fallback=1` renders the old props from the same build). Gate: `tests/ep2_smelter_kit_test`
+  (new, CI). Facility, interlude, seamless-chain, transition, PBR and armory-guns gates pass.
+
 ## Not yet verified
 - Web-build listening and a real-browser walk of hideout → lift → woods (headless gates + native GPU captures only). The founder's hard refresh is the acceptance.
 - The synthesized train has not been listened to by a human. If it reads wrong, regenerate with ElevenLabs / VARCO when a key is on the box (same file names).

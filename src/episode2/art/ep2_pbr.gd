@@ -51,6 +51,13 @@ const BY_NAME := {
 	"Brick": ["brick_red", 1.20, 0.0, 1.0],
 }
 
+## Sets whose ORM blue channel is a real metalness map (the ambientCG metals). Every other set's blue is empty, so its metal cap applies
+## uniformly - a map of zeros made the painted iron a glossy non-metal that caught white highlights on links, hoops and tool heads.
+const METAL_MAPS := ["brass_worn", "steel_blued"]
+## Sets whose scanned roughness reads wrong for 1870s working iron: the painted-iron scan averages 0.42 (wet paint); a uniform matte
+## value keeps its albedo grain and relief without the sheen. (The kit's authored Iron was roughness 0.6, metal 0.7.)
+const UNIFORM_ROUGH := {"iron_painted": 0.72}
+
 static var _mats: Dictionary = {}          # cache key -> StandardMaterial3D
 static var _tex: Dictionary = {}           # path -> Texture2D
 
@@ -89,13 +96,16 @@ static func make(set_id: String, authored: Color, tile_m: float, metal_cap: floa
 		m.ao_texture = orm
 		m.ao_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_RED
 		m.ao_light_affect = 0.25
-		m.roughness_texture = orm
-		m.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_GREEN
-		m.roughness = clampf(rough_scale, 0.0, 1.0)
-		if metal_cap > 0.0:
+		if UNIFORM_ROUGH.has(set_id):
+			m.roughness = float(UNIFORM_ROUGH[set_id])
+		else:
+			m.roughness_texture = orm
+			m.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_GREEN
+			m.roughness = clampf(rough_scale, 0.0, 1.0)
+		if metal_cap > 0.0 and set_id in METAL_MAPS:
 			m.metallic_texture = orm
 			m.metallic_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_BLUE
-		m.metallic = metal_cap
+	m.metallic = metal_cap
 	m.metallic_specular = 0.5
 	m.uv1_triplanar = true
 	m.uv1_world_triplanar = false              # object space: the grain rides on moving parts and on duplicated buildings
@@ -109,7 +119,11 @@ static func make(set_id: String, authored: Color, tile_m: float, metal_cap: floa
 ## Dress every surface under `root` whose authored material is in BY_NAME (or `extra`, name -> [set, tile, metal, rough, colour?];
 ## the optional fifth entry replaces the authored colour - one prop's own tone, e.g. the Gatling's period bronze, without re-baking it).
 ## Uses per-instance surface override materials, so the imported (shared) meshes are never modified. Returns how many surfaces changed.
-static func dress(root: Node, extra: Dictionary = {}, skip: Array = []) -> int:
+## `kit_tone`: the Blender kits (armory_kit.standard_materials) wrote their colours as if sRGB, but glTF stores base colours LINEAR, so in
+## the engine every kit colour shows about a stop brighter (GunWood 0.34/0.17/0.07 shows as 0.62/0.45/0.29). Rooms that approved that
+## brighter look (the Armory, the yard Gatling) keep it; a room whose own palette is set in sRGB (the hideout: _iron 0.18, dark timber) asks
+## for the kit's INTENDED colour (the shown colour converted back), so a CAD prop sits in its palette instead of reading pale silver.
+static func dress(root: Node, extra: Dictionary = {}, skip: Array = [], kit_tone: bool = false) -> int:
 	if root == null or not available():
 		return 0
 	var n: int = 0
@@ -134,7 +148,8 @@ static func dress(root: Node, extra: Dictionary = {}, skip: Array = []) -> int:
 				continue
 			var s: Array = spec
 			var bm := cur as BaseMaterial3D
-			var tone: Color = s[4] if s.size() > 4 and s[4] is Color else bm.albedo_color
+			var shown: Color = bm.albedo_color.srgb_to_linear() if kit_tone else bm.albedo_color
+			var tone: Color = s[4] if s.size() > 4 and s[4] is Color else shown
 			var m: StandardMaterial3D = make(str(s[0]), tone, float(s[1]), float(s[2]) if s.size() > 2 else 0.0,
 				float(s[3]) if s.size() > 3 else 1.0)
 			if m == null:

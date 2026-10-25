@@ -324,6 +324,9 @@ jobs:
           # Photo-scanned PBR dressing + the CAD Colt Gatling (founder 2026-10-25 CAD pass): authored colour kept, period bronze, sightline clear.
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_pbr_test.tscn 2>&1 | tee ep2-pbr-tests.log
           grep -q 'EP2_PBR: ALL PASS' ep2-pbr-tests.log
+          # The smelter's CAD prop kit (founder 2026-10-25 "not grey primitives"): every prop present, stand-in -> CAD upgrade, the hideout dressed with it.
+          timeout 240 "$GODOT_BIN" --headless res://tests/ep2_smelter_kit_test.tscn 2>&1 | tee ep2-smelter-kit-tests.log
+          grep -q 'EP2_SMELTER_KIT: ALL PASS' ep2-smelter-kit-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' transition-feedback-tests.log; then exit 1; fi
           # On-screen touch controls: real finger events -> GUI -> InputMap -> the real
           # player (analog walk, multi-touch combo, release-on-hide, layouts on every screen).

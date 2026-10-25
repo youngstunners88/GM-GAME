@@ -17,6 +17,8 @@ const LOCAL := "user://ep2_extras.pck"
 const ARMORY := "res://src/episode2/extras/armory/armory2.glb"
 const SHARPS := "res://src/episode2/extras/armory/sharps_1874.glb"        # Rich's Sharps Model 1874 Buffalo Gun (case, hand, the long rifle he sells)
 const GATLING := "res://src/episode2/extras/armory/gatling_post.glb"      # the Colt Gatling on its post (NOT FOR SALE) + the firing yard's plates and bale
+## The smelter's CAD prop kit (founder 2026-10-25 "not grey primitives"): Colt SAA, kegs, anvil, tongs, ladle, ingot mould, tools, chain, crates (Ep2KitProps).
+const SMELTER_KIT := "res://src/episode2/extras/hideout/smelter_kit.glb"
 const BOW := "res://src/episode2/extras/bow/founder_bow.glb"            # the founder's Tripo bow (Drive 2026-10-20): riser + Lil Blunt's left arm, flexing limbs, arrow, string hand
 const RICH := "res://src/episode2/extras/folk/rich_armory2.glb"
 const UTAH := "res://src/episode2/extras/folk/utah_armory2.glb"

@@ -28,6 +28,10 @@ const TIMBER_TEX := "res://src/episode2/assets/textures/tex_timber.jpg"
 const LANTERN := "res://src/episode2/assets/lantern.glb"
 const WHISKEY_TABLE_POS := Vector3(4.8, 0.0, 4.4)
 const INGOT_RACK := "res://src/episode2/assets/ingot_rack.glb"
+## The CAD kit's crates and kegs keep the hideout's own timber (the measured mean of tex_timber x its tints: the old crates' colour), not the
+## kit's greyer weathered planks - the founder's room palette stays as approved, the props only gain their joinery.
+const CRATE_TONE := {"Planks": ["planks_weathered", 1.4, 0.0, 1.0, Color(0.22, 0.10, 0.03)], "Trim": ["planks_raw", 1.1, 0.0, 1.0, Color(0.105, 0.031, 0.008)]}
+const KEG_TONE := {"Trim": ["planks_raw", 0.9, 0.0, 1.0, Color(0.26, 0.13, 0.05)], "Planks": ["planks_weathered", 0.9, 0.0, 1.0, Color(0.20, 0.10, 0.04)]}
 
 ## Inside faces of the alcove walls. The Bull stands at x=1.6, so the room is ~14 m wide and the walls hold
 ## the gun wall (right) and the trophies (left).
@@ -107,6 +111,8 @@ func _build(visuals: Node3D) -> Dictionary:
 	_crates_and_ammo()
 	await _breathe()
 	_wall_props()
+	await _breathe()
+	_smithy()
 	await _breathe()
 	_bottle_shelf()
 	await _breathe()
@@ -497,11 +503,13 @@ func _gun_wall() -> void:
 				_box(Vector3(0.08, 0.08, 1.3), Vector3(wx + 0.08, y, z0), _leather)
 			for pz in [-0.5, 0.5]:
 				_box(Vector3(0.12, 0.12, 0.12), Vector3(wx + 0.02, y - 0.1, z0 + pz * 1.0), _iron)
-	# Colt Single Action revolvers on pegs (barrel, cylinder, frame, walnut grip), two rows of three, below the rifles.
+	# Colt Single Action revolvers on pegs, two rows of three, below the rifles: the CAD Colt (fluted cylinder, ejector housing, case-hardened
+	# frame, walnut grip; Ep2KitProps) at Inferno's scale, the old code-built one standing in until the streamed kit is mounted.
 	for r in 2:
 		for i in 3:
 			var rp := Vector3(wx + 0.1, 1.55 - 0.45 * float(r), 4.9 + float(i) * 1.5 + 0.2 * float(r))
-			_revolver(rp)
+			Ep2KitProps.place(_v, "Kit_Revolver", Transform3D(Basis.IDENTITY, rp), Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * Ep2KitProps.SCALE_HIDEOUT),
+				Vector3.ZERO), _revolver)
 	for i in 6:
 		_cyl(0.03, 0.03, 0.12, Vector3(wx + 0.1, 1.0, 4.9 + 0.09 * float(i)), _brass, Vector3(0, 0, 0))
 	# The miner's helmet hangs on its own peg at the end of the rack (Inferno Bull takes it down for Lil Blunt).
@@ -509,10 +517,8 @@ func _gun_wall() -> void:
 	_cyl(0.03, 0.03, 0.3, Vector3(wx + 0.12, 2.2, 10.2), _iron, Vector3(0, 0, 90))
 
 
-func _revolver(pos: Vector3) -> void:
-	var root := Node3D.new()
-	root.position = pos
-	_v.add_child(root)
+## The old code-built revolver (barrel, cylinder, frame, grip) in `root`'s frame: the stand-in until the CAD Colt is mounted.
+func _revolver(root: Node3D) -> void:
 	_cyl(0.025, 0.025, 0.42, Vector3(0.0, 0.0, 0.2), _iron, Vector3(90, 0, 0), root)            # barrel
 	_cyl(0.055, 0.055, 0.1, Vector3(0.0, 0.0, -0.04), _iron, Vector3(90, 0, 0), root)            # cylinder
 	_box(Vector3(0.05, 0.12, 0.16), Vector3(0.0, -0.05, -0.16), _iron, Vector3(0, 0, 0), root)    # frame
@@ -531,7 +537,7 @@ func _gatling(pos: Vector3, yaw: float) -> Node3D:
 			gun.transform = Transform3D(Basis(Vector3.UP, yaw + GATLING_YAW_FIX), pos)
 			gun.name = "ColtGatling"
 			_v.add_child(gun)
-			Ep2Pbr.dress(gun, Ep2GatlingPost.DRESS_INDOORS)
+			Ep2Pbr.dress(gun, Ep2GatlingPost.DRESS_INDOORS, [], true)     # the kit's intended dark iron / stone in the fire-lit room
 			src.free()
 			_blockers.append([Vector2(pos.x, pos.z), 1.1])
 			return gun
@@ -707,11 +713,14 @@ func _dark_iron() -> StandardMaterial3D:
 
 func _hanging_chains() -> void:
 	# Iron chains with hooks from the ceiling beams, heavier on the Bull's side.
+	# Real oval links on a hook (the CAD kit, one MultiMesh per chain); the old rod + ring stands in until the kit is mounted.
+	var dark: StandardMaterial3D = _dark_iron()
 	for cx in [-5.2, -2.6, 4.6, 6.2]:
 		for cz in [2.0, 8.0]:
 			var length: float = 2.4 + fmod(absf(cx * cz), 1.6)
-			_cyl(0.05, 0.05, length, Vector3(cx, 6.2 - length * 0.5, cz), _dark_iron())
-			_cyl(0.09, 0.09, 0.08, Vector3(cx, 6.2 - length, cz), _iron, Vector3(90, 0, 0))
+			Ep2KitProps.chain(_v, Vector3(cx, 6.2, cz), length, 3.4, func(h: Node3D) -> void:
+				_cyl(0.05, 0.05, length, Vector3(0.0, -length * 0.5, 0.0), dark, Vector3.ZERO, h)
+				_cyl(0.09, 0.09, 0.08, Vector3(0.0, -length, 0.0), _iron, Vector3(90, 0, 0), h))
 
 
 # --- crates, ammo boxes, brass cartridges (foreground + wall clusters) ----------------------------
@@ -749,8 +758,15 @@ func _crates_and_ammo() -> void:
 	_spilled_brass(Vector3(4.2, 0.03, 5.4), root, 6)
 
 
-## A banded timber crate: plank body, darker plank grooves, brass corner straps and bolt heads.
+## A crate of `size` centred on `centre`: the CAD kit's planked crate (battens, braces, iron corner plates, bolt heads) in the hideout's own
+## warm timber (CRATE_TONE), the old banded box standing in until the streamed kit is mounted.
 func _crate(centre: Vector3, size: Vector3, parent: Node3D) -> void:
+	Ep2KitProps.place(parent, "Kit_Crate", Transform3D(Basis.IDENTITY, centre), Transform3D(Basis.IDENTITY.scaled(size), Vector3(0.0, -size.y * 0.5, 0.0)),
+		func(h: Node3D) -> void: _crate_box(Vector3.ZERO, size, h), false, CRATE_TONE)
+
+
+## The old banded timber crate: plank body, darker plank grooves, brass corner straps and bolt heads.
+func _crate_box(centre: Vector3, size: Vector3, parent: Node3D) -> void:
 	_box(size, centre, _timber, Vector3.ZERO, parent)
 	# plank grooves on the four sides
 	for gz in [-0.3, 0.0, 0.3]:
@@ -766,9 +782,16 @@ func _crate(centre: Vector3, size: Vector3, parent: Node3D) -> void:
 			_box(Vector3(0.06, size.y * 0.96, 0.06), centre + Vector3(size.x * bx, 0.0, size.z * bz), _brass, Vector3.ZERO, parent)
 
 
-## An open crate of ammunition: four low walls, a floor, packed rows of standing brass cartridges, a
-## couple knocked over on the rim.
+## An open box of ammunition on a crate: the CAD kit's planked box with 25 standing .45-70 rounds and two spilled on the lid, in the
+## hideout's timber; the old box stands in until the streamed kit is mounted.
 func _ammo_box(centre: Vector3, parent: Node3D) -> void:
+	Ep2KitProps.place(parent, "Kit_AmmoBox", Transform3D(Basis.IDENTITY, centre), Transform3D(Basis(Vector3.UP, 0.3).scaled(Vector3.ONE * 2.07),
+		Vector3(0.0, -0.13, 0.0)), func(h: Node3D) -> void: _ammo_box_open(Vector3.ZERO, h), false, CRATE_TONE)
+
+
+## The old open crate of ammunition: four low walls, a floor, packed rows of standing brass cartridges, a
+## couple knocked over on the rim.
+func _ammo_box_open(centre: Vector3, parent: Node3D) -> void:
 	var w := 0.62
 	var h := 0.26
 	var wall := 0.05
@@ -796,8 +819,12 @@ func _spilled_brass(centre: Vector3, parent: Node3D, n: int) -> void:
 		var a: float = float(i) * 2.4
 		var off := Vector3(cos(a) * 0.28 * float(i % 3 + 1) * 0.3, 0.035, sin(a * 1.7) * 0.26 * float(i % 2 + 1) * 0.3)
 		var rp: Vector3 = centre + off
-		_cyl(0.034, 0.034, 0.15, rp, _brass, Vector3(90, rad_to_deg(a), 0), parent)
-		_cyl(0.014, 0.03, 0.045, rp + Vector3(cos(a) * 0.08, 0.0, sin(a) * 0.08), copper, Vector3(90, rad_to_deg(a), 0), parent)
+		# the CAD .45-70 lying the same way the old round did, centred on its spot, its side on the planks
+		var turn := Basis.from_euler(Vector3(PI * 0.5, a, 0.0))
+		var local := Transform3D(turn.scaled(Vector3.ONE * 3.0), Vector3(0.0, -0.012, 0.0) + turn * Vector3(0.0, -0.1155, 0.0))
+		Ep2KitProps.place(parent, "Kit_Cartridge", Transform3D(Basis.IDENTITY, rp), local, func(h: Node3D) -> void:
+			_cyl(0.034, 0.034, 0.15, Vector3.ZERO, _brass, Vector3(90, rad_to_deg(a), 0), h)
+			_cyl(0.014, 0.03, 0.045, Vector3(cos(a) * 0.08, 0.0, sin(a) * 0.08), copper, Vector3(90, rad_to_deg(a), 0), h))
 
 
 # --- wall props: bandoliers, tools, horseshoes, tally marks, wanted posters -----------------------
@@ -847,8 +874,56 @@ func _wall_props() -> void:
 	_wanted_poster(Vector3((WALL_X - 0.1), 4.3, 6.4), 1.0, root)
 
 
-## A tool (shovel/sledge) leaning against a wall: handle + head.
+# --- the smelter's working floor: kegs, the anvil, ingot moulds, a pick ------------------------------------------------------------------
+## Founder 2026-10-25 ("furnace, kegs, tools ... not grey primitives"): new CAD pieces from the kit (Ep2KitProps) - two oak kegs with a small
+## one on top by the trophy wall, a keg lying on its chocks below the gun wall, the anvil on its banded stump with the tongs on its face and
+## two ingot moulds before the furnace, a pick leaning on the trophy wall. They are new, so without the streamed kit they simply arrive with
+## it (no primitive stand-ins). Spots keep clear of the walk lane, Inferno's route to the door, the cauldrons and every existing prop.
+func _smithy() -> void:
+	var root := Node3D.new()
+	root.name = "HideoutSmithy"
+	_v.add_child(root)
+	var s: float = 1.5                                            # kegs at Inferno's scale (~0.93 m tall)
+	_kit_at(root, "Kit_Keg", Vector3(6.3, 0.0, 5.6), 0.4, s, KEG_TONE)
+	_kit_at(root, "Kit_Keg", Vector3(6.2, 0.0, 6.42), 1.9, s, KEG_TONE)
+	_kit_at(root, "Kit_KegSmall", Vector3(6.3, (0.62 - 0.028) * s, 5.6), 0.9, s, KEG_TONE)       # resting on the first keg's head
+	_blockers.append([Vector2(6.25, 6.0), 0.95])
+	# the lying keg: its axis across toward the gun wall, on two chocks whose cradle (r 0.245 at y 0.30) is the keg's bilge
+	for cx in [-0.27, 0.27]:
+		_kit_at(root, "Kit_Chock", Vector3(-6.2 + cx * s, 0.0, -0.5), 0.0, s, KEG_TONE)
+	Ep2KitProps.place(root, "Kit_Keg", Transform3D(Basis.IDENTITY, Vector3(-6.2, 0.0, -0.5)),
+		Transform3D(Basis(Vector3.BACK, -PI * 0.5).scaled(Vector3.ONE * s), Vector3(-0.31 * s, 0.30 * s, 0.0)), Callable(), false, KEG_TONE)
+	_blockers.append([Vector2(-6.2, -0.5), 0.75])
+	# the anvil on its stump (face top 0.749 m real), the tongs lying across its face, two ingot moulds on the floor beside it
+	var a: float = 1.6
+	_kit_at(root, "Kit_Anvil", Vector3(-5.9, 0.0, 14.2), 0.25, a)
+	_kit_at(root, "Kit_Tongs", Vector3(-5.9, (0.749 + 0.017) * a, 14.2), 0.25 + PI * 0.5 + 0.2, a)
+	_blockers.append([Vector2(-5.9, 14.2), 0.75])
+	_kit_at(root, "Kit_Mould", Vector3(-7.1, 0.0, 14.0), 0.1, a)
+	_kit_at(root, "Kit_Mould", Vector3(-7.1, 0.07 * a, 14.0), 0.35, a)
+	_blockers.append([Vector2(-7.1, 14.0), 0.5])
+	# a pick, head up, leaning on the trophy wall beside the sledge (its top touches the timber at x 7.1)
+	Ep2KitProps.place(root, "Kit_Pick", Transform3D(Basis.IDENTITY, Vector3(6.55, 0.0, 11.6)),
+		Transform3D((Basis(Vector3.UP, PI * 0.5) * Basis(Vector3.RIGHT, deg_to_rad(-74.0))).scaled(Vector3.ONE * 2.1), Vector3.ZERO), Callable(), true)
+
+
+## A kit prop standing at `pos` turned `yaw`, at `s` x real size (no stand-in: a new piece waits for the streamed kit).
+func _kit_at(parent: Node3D, prop: String, pos: Vector3, yaw: float, s: float, tone: Dictionary = {}) -> Node3D:
+	return Ep2KitProps.place(parent, prop, Transform3D(Basis(Vector3.UP, yaw), pos), Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * s), Vector3.ZERO),
+		Callable(), false, tone)
+
+
+## A tool leaning on the wall, tilted like the old one: the CAD kit's coal shovel (D-grip, blade down) or octagonal sledge (head up); the
+## old handle-and-box stands in until the streamed kit is mounted. Kit tools lie along -z from their working end (real 1.27 m / 0.95 m).
 func _lean_tool(base: Vector3, length: float, parent: Node3D, shovel: bool) -> void:
+	var turn := Basis(Vector3.RIGHT, deg_to_rad(106.0 if shovel else -74.0))
+	var s: float = length / (1.27 if shovel else 0.95)
+	Ep2KitProps.place(parent, "Kit_Shovel" if shovel else "Kit_Sledge", Transform3D(Basis.IDENTITY, base), Transform3D(turn.scaled(Vector3.ONE * s),
+		Vector3.ZERO), func(h: Node3D) -> void: _lean_tool_old(Vector3.ZERO, length, h, shovel), true)
+
+
+## The old leaning tool: handle + head.
+func _lean_tool_old(base: Vector3, length: float, parent: Node3D, shovel: bool) -> void:
 	var handle := _plain(Color(0.5, 0.33, 0.18), 0.75, 0.0)
 	var tilt := 16.0
 	_cyl(0.035, 0.04, length, base + Vector3(0.0, length * 0.5, 0.0), handle, Vector3(tilt, 0, 0), parent)

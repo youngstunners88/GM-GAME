@@ -201,6 +201,7 @@ var _player_pose: RunnerArmRest = null
 ## Set dressing handles + the procedural performance (see _animate). The Bull model is a statue (no skeleton),
 ## so his acting is whole-body: breathing, weight shift, a lean into the hand-off, a raised glass, cigar puffs.
 var _dressing: Dictionary = {}
+var _kit_poll: float = 0.0                        # seconds to the next Ep2KitProps.upgrade_pending() while stand-ins wait for the kit
 var _bull: Ep2Actor = null            # rigged Inferno Bull: walks, turns, reaches (arm IK), carries props
 var _show: FacilityShow = null        # the scripted performance (data-driven sequencer)
 var _show_active: bool = false        # a scripted beat owns Lil Blunt and the camera
@@ -572,6 +573,13 @@ func step(delta: float) -> void:
 	_elapsed += delta
 	if _hold > 0.0:
 		_hold = maxf(0.0, _hold - delta)
+	# The smelter's CAD props (Ep2KitProps): the room is built a few seconds into the film, usually before the web build has mounted the
+	# streamed kit; the stand-ins built then turn into the CAD pieces the moment it is (normally while the film still covers the room).
+	if Ep2KitProps.pending_count() > 0:
+		_kit_poll -= delta
+		if _kit_poll <= 0.0:
+			_kit_poll = 0.5
+			Ep2KitProps.upgrade_pending()
 
 	if _beat == Beat.CINEMATIC:
 		if _vfilm and is_instance_valid(_vfilm):
@@ -1493,7 +1501,9 @@ func _build_visuals() -> void:
 		ladle.position = spec + Vector3(0.55, 4.6, 0.0)
 		ladle.rotation.z = deg_to_rad(32.0)
 		_visuals.add_child(ladle)
-		_box(Vector3(0.06, 1.6, 0.06), spec + Vector3(0.7, 5.6, 0.0), ladle_iron)
+		# the ladle hangs from a real chain on its hook (CAD kit); the old iron bar stands in until the streamed kit is mounted
+		Ep2KitProps.chain(_visuals, spec + Vector3(0.7, 6.4, 0.0), 1.6, 1.8, func(h: Node3D) -> void:
+			_box(Vector3(0.06, 1.6, 0.06), Vector3(0.0, -0.8, 0.0), ladle_iron).reparent(h, false))
 		var glow := Ep2Palette.make_forge_light()
 		glow.light_energy = 2.8
 		glow.omni_range = 7.0
@@ -1532,8 +1542,12 @@ func _build_visuals() -> void:
 			_mesh(rm, Ep2Palette.make("gold"), spec2 + Vector3(0, 0.75, 0))
 	for gp in [Vector3(7.2, 0.0, 9.5), Vector3(-7.6, 0.0, 1.0), Vector3(4.6, 0.0, 12.6)]:
 		_prop(GOLD_PILE_MODEL, gp, 1.3)
-	for cp in [Vector3(-7.0, 0.0, -4.5), Vector3(7.4, 0.0, -2.8), Vector3(-6.2, 0.0, 12.8)]:
-		_box(Vector3(1.1, 1.0, 1.1), cp + Vector3(0.0, 0.5, 0.0), timber)
+	# the CAD kit's planked crates in the hideout's timber (the old plain box stands in until the streamed kit is mounted)
+	for k in 3:
+		var cp: Vector3 = [Vector3(-7.0, 0.0, -4.5), Vector3(7.4, 0.0, -2.8), Vector3(-6.2, 0.0, 12.8)][k]
+		Ep2KitProps.place(_visuals, "Kit_Crate", Transform3D(Basis(Vector3.UP, 0.35 * float(k) - 0.2), cp),
+			Transform3D(Basis.IDENTITY.scaled(Vector3(1.1, 1.0, 1.1)), Vector3.ZERO), func(h: Node3D) -> void:
+				_box(Vector3(1.1, 1.0, 1.1), Vector3(0.0, 0.5, 0.0), timber).reparent(h, false), false, HideoutDressing.CRATE_TONE)
 
 	# Lanterns on the frames, a cooler counterpoint to the pours.
 	for lz in [-4.0, 2.0, 9.0]:
