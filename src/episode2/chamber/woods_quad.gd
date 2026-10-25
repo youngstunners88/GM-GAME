@@ -31,7 +31,7 @@ extends Ep2Interlude
 enum Beat { SNEAK, REVEAL, MOUNT, RIDE, DROPOFF, DONE }
 
 const MUSIC := "res://src/assets/music/ep2_deep_mining3_quad.ogg"
-const TOWN_MUSIC := "res://src/assets/music/ep2_theme_town.mp3"   # the founder's Episode 2 theme: fades in as the quad leaves the pines
+const TOWN_MUSIC := "res://src/episode2/extras/music/ep2_theme_town.mp3"   # the founder's Episode 2 theme: fades in as the quad leaves the pines; STREAMED in ep2_extras.pck (keeps index.pck under its gate), absent = forest song just carries on
 const TOWN_MUSIC_FADE := 5.0
 const QUAD_LOOP := "res://src/assets/sounds/ep2_quad_loop.mp3"
 
