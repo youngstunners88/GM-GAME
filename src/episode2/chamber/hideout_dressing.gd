@@ -79,6 +79,7 @@ func _build(visuals: Node3D) -> Dictionary:
 	_gold.emission_energy_multiplier = 0.035
 	_gold.metallic_specular = 0.7
 	_leather = _plain(Color(0.28, 0.15, 0.09), 0.7, 0.0)
+	_dress_palette()
 	_alcove()
 	await _breathe()
 	_authored_architecture()
@@ -114,6 +115,21 @@ func _build(visuals: Node3D) -> Dictionary:
 	_atmosphere()
 	_blockers.append([Vector2(WHISKEY_TABLE_POS.x, WHISKEY_TABLE_POS.z), 1.35])          # whiskey table
 	return {"flames": _flames, "gatling": gat, "poster": poster, "blockers": _blockers, "rack_rifle": _rack_rifle}
+
+
+## The founder's quality pass (2026-10-25: "hyperreal props ... tools, surfaces - not grey primitives"): the flat iron, brass and leather
+## every code-built prop shares (chains, straps, hoops, tool heads, the ammo boxes' fittings, the saddle-leather) become the photo-scanned
+## sets, keeping their colours (Ep2Pbr). The timber already has its grain texture. Streamed: without the extras the old flats stay.
+func _dress_palette() -> void:
+	var iron: StandardMaterial3D = Ep2Pbr.replace(_iron, "iron_painted", 0.5, 0.3)
+	if iron != null:
+		_iron = iron
+	var brass: StandardMaterial3D = Ep2Pbr.replace(_brass, "brass_worn", 0.35, 0.55)
+	if brass != null:
+		_brass = brass
+	var leather: StandardMaterial3D = Ep2Pbr.replace(_leather, "leather_brown", 0.4)
+	if leather != null:
+		_leather = leather
 
 
 ## Instance a Meshy prop, scaled so its HEIGHT is `height` m, standing on `base` (y = floor), turned `yaw` rad.
@@ -371,6 +387,8 @@ func _authored_architecture() -> void:
 				mat.uv1_scale = Vector3.ONE * 0.4
 			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 			mi.set_surface_override_material(i, mat)
+	# the oak and the stone above already carry their finish textures; the cabinet brass was still flat colour
+	Ep2Pbr.dress(kit, {}, ["ArmoryOak", "ArmoryOakDark", "ArmoryStone", "ArmoryStoneLight"])
 
 
 ## Blender finish kit: deep masonry frames the existing furnace light plane.
@@ -513,6 +531,7 @@ func _gatling(pos: Vector3, yaw: float) -> Node3D:
 			gun.transform = Transform3D(Basis(Vector3.UP, yaw + GATLING_YAW_FIX), pos)
 			gun.name = "ColtGatling"
 			_v.add_child(gun)
+			Ep2Pbr.dress(gun)
 			src.free()
 			_blockers.append([Vector2(pos.x, pos.z), 1.1])
 			return gun

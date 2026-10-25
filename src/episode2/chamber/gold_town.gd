@@ -437,6 +437,7 @@ func _on_sharps_lifted(in_hand: bool) -> void:
 		return
 	var rifle: Node3D = ps.instantiate() as Node3D
 	rifle.name = "Sharps"
+	Ep2Pbr.dress(rifle)
 	if _rich.attach_prop(rifle, HOLD_RICH, SHARPS_HOLD_POS, SHARPS_HOLD_ROT):
 		if _sharps_case != null:
 			_sharps_case.visible = false

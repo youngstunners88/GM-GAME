@@ -99,6 +99,7 @@ func build(path: String, look_yaw: float, seed: int = 1874) -> bool:
 	aim_yaw = look_yaw
 	_post.rotation.y = look_yaw - PI * 0.5          # the model's bore is +x; look yaw is measured from +z
 	add_child(_post)
+	Ep2Pbr.dress(_post)                             # photo-scanned bronze, blued steel, walnut, iron (founder 2026-10-25 quality pass)
 	_yaw_n = _post.find_child("Gat_Yaw", true, false) as Node3D
 	_pitch_n = _post.find_child("Gat_Pitch", true, false) as Node3D
 	_barrels = _post.find_child("Gat_Barrels", true, false) as Node3D

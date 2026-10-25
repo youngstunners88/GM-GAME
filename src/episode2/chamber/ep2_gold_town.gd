@@ -240,6 +240,7 @@ static func build(parent: Node3D, interiors: bool) -> Dictionary:
 	kit_v2 = kit_path == Ep2Extras.TOWN_KIT
 	var kit: Node3D = (load(kit_path) as PackedScene).instantiate() as Node3D
 	_apply_mats(kit)
+	Ep2Pbr.dress(kit)            # the founder's 2026-10-25 pass: the kit's still-flat brass, iron, dark wood, leather, brick, burlap
 	var a2: Node3D = _load_armory2()
 	var jl: Node3D = _load_jail()
 	for e in LAYOUT:
@@ -346,6 +347,7 @@ static func _load_armory2() -> Node3D:
 		a2.free()
 		return null
 	_apply_mats(a2)
+	Ep2Pbr.dress(a2)             # the Armory's cases, racks, counter, guns and fittings: photo-scanned walnut, blued steel, brass, leather
 	var nav: Node = a2.find_child("Arm2_Nav", true, false)
 	if nav != null:
 		for c in nav.get_children():
