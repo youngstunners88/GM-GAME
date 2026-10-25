@@ -21,10 +21,9 @@ const DIR := "res://src/episode2/extras/pbr/"
 
 ## Mean linear albedo of each prepared set (tools/ep2_pbr/prep_pbr.py prints these and writes pbr_sets.json).
 const MEAN := {
-	"brass_worn": Color(0.9669, 0.7498, 0.3245), "steel_blued": Color(0.1584, 0.1551, 0.1474), "steel_scratched": Color(0.1169, 0.1198, 0.1239),
+	"brass_worn": Color(0.9669, 0.7498, 0.3245), "steel_blued": Color(0.1584, 0.1551, 0.1474),
 	"wood_walnut": Color(0.4991, 0.3248, 0.2101), "wood_dark": Color(0.1141, 0.0254, 0.0096), "planks_weathered": Color(0.1228, 0.0911, 0.0635),
-	"planks_raw": Color(0.3858, 0.225, 0.0978), "stone_dressed": Color(0.3781, 0.289, 0.1764), "planks_floor": Color(0.0953, 0.0668, 0.0492),
-	"timber_rough": Color(0.1522, 0.1272, 0.1003), "iron_rust": Color(0.1313, 0.0439, 0.015), "iron_painted": Color(0.4126, 0.2867, 0.133),
+	"planks_raw": Color(0.3858, 0.225, 0.0978), "stone_dressed": Color(0.3781, 0.289, 0.1764), "iron_painted": Color(0.4126, 0.2867, 0.133),
 	"leather_brown": Color(0.0828, 0.027, 0.0056), "brick_red": Color(0.4133, 0.1958, 0.1057), "stone_rustic": Color(0.2524, 0.182, 0.1122),
 	"fabric_burlap": Color(0.2514, 0.2392, 0.1949), "rope": Color(0.204, 0.152, 0.0804),
 }
@@ -107,7 +106,8 @@ static func make(set_id: String, authored: Color, tile_m: float, metal_cap: floa
 	return m
 
 
-## Dress every surface under `root` whose authored material is in BY_NAME (or `extra`, name -> [set, tile, metal, rough]).
+## Dress every surface under `root` whose authored material is in BY_NAME (or `extra`, name -> [set, tile, metal, rough, colour?];
+## the optional fifth entry replaces the authored colour - one prop's own tone, e.g. the Gatling's period bronze, without re-baking it).
 ## Uses per-instance surface override materials, so the imported (shared) meshes are never modified. Returns how many surfaces changed.
 static func dress(root: Node, extra: Dictionary = {}, skip: Array = []) -> int:
 	if root == null or not available():
@@ -134,7 +134,8 @@ static func dress(root: Node, extra: Dictionary = {}, skip: Array = []) -> int:
 				continue
 			var s: Array = spec
 			var bm := cur as BaseMaterial3D
-			var m: StandardMaterial3D = make(str(s[0]), bm.albedo_color, float(s[1]), float(s[2]) if s.size() > 2 else 0.0,
+			var tone: Color = s[4] if s.size() > 4 and s[4] is Color else bm.albedo_color
+			var m: StandardMaterial3D = make(str(s[0]), tone, float(s[1]), float(s[2]) if s.size() > 2 else 0.0,
 				float(s[3]) if s.size() > 3 else 1.0)
 			if m == null:
 				continue

@@ -45,17 +45,6 @@
    "px": 512,
    "source": "polyhaven:rusty_metal_02"
   },
-  "iron_rust": {
-   "has_ao_map": true,
-   "has_metal_map": false,
-   "mean_albedo_linear": [
-    0.1313,
-    0.0439,
-    0.015
-   ],
-   "px": 512,
-   "source": "polyhaven:rust_coarse_01"
-  },
   "leather_brown": {
    "has_ao_map": true,
    "has_metal_map": false,
@@ -66,17 +55,6 @@
    ],
    "px": 512,
    "source": "polyhaven:brown_leather"
-  },
-  "planks_floor": {
-   "has_ao_map": true,
-   "has_metal_map": false,
-   "mean_albedo_linear": [
-    0.0953,
-    0.0668,
-    0.0492
-   ],
-   "px": 512,
-   "source": "polyhaven:old_wood_floor"
   },
   "planks_raw": {
    "has_ao_map": true,
@@ -122,17 +100,6 @@
    "px": 1024,
    "source": "ambientcg:Metal063"
   },
-  "steel_scratched": {
-   "has_ao_map": false,
-   "has_metal_map": true,
-   "mean_albedo_linear": [
-    0.1169,
-    0.1198,
-    0.1239
-   ],
-   "px": 1024,
-   "source": "ambientcg:Metal038"
-  },
   "stone_dressed": {
    "has_ao_map": true,
    "has_metal_map": false,
@@ -154,17 +121,6 @@
    ],
    "px": 512,
    "source": "polyhaven:rustic_stone_wall_02"
-  },
-  "timber_rough": {
-   "has_ao_map": true,
-   "has_metal_map": false,
-   "mean_albedo_linear": [
-    0.1522,
-    0.1272,
-    0.1003
-   ],
-   "px": 512,
-   "source": "polyhaven:rough_wood"
   },
   "wood_dark": {
    "has_ao_map": true,

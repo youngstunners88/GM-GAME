@@ -321,6 +321,9 @@ jobs:
           # The REAL hideout -> prebuilt lift -> prebuilt woods chain (founder 2026-10-25: no door pause, empty elevator, no rewind).
           timeout 300 "$GODOT_BIN" --headless res://tests/seamless_chain_test.tscn 2>&1 | tee seamless-chain-tests.log
           grep -q 'SEAMLESS_CHAIN: ALL PASS' seamless-chain-tests.log
+          # Photo-scanned PBR dressing + the CAD Colt Gatling (founder 2026-10-25 CAD pass): authored colour kept, period bronze, sightline clear.
+          timeout 180 "$GODOT_BIN" --headless res://tests/ep2_pbr_test.tscn 2>&1 | tee ep2-pbr-tests.log
+          grep -q 'EP2_PBR: ALL PASS' ep2-pbr-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' transition-feedback-tests.log; then exit 1; fi
           # On-screen touch controls: real finger events -> GUI -> InputMap -> the real
           # player (analog walk, multi-touch combo, release-on-hide, layouts on every screen).

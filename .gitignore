@@ -63,6 +63,9 @@ export_presets.cfg
 !src/episode2/assets/weapons/armory/*.png.import
 !src/episode2/assets/weapons/armory/*.glb.import
 !src/episode2/assets/weapons/armory/*.otf.import
+# Photo-scanned PBR sets (Ep2Pbr, tools/ep2_pbr/prep_pbr.py): lossy WebP + mipmaps. CI's lossless, mip-less default is several
+# times the streamed download and shimmers at a distance.
+!src/episode2/extras/pbr/*/*.jpg.import
 
 # === Engine: Unity ===
 [Ll]ibrary/

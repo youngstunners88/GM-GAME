@@ -10,7 +10,10 @@ required; ids recorded below and in pbr_sets.json). Writes src/episode2/extras/p
   orm.jpg      R = ambient occlusion, G = roughness, B = metalness (one texture instead of three; Ep2Pbr reads the channels)
 and src/episode2/extras/pbr/pbr_sets.json with each set's source, licence, size and its MEAN LINEAR ALBEDO - Ep2Pbr divides the
 authored material colour by it, so a dressed material keeps the brightness and hue the founder approved and only gains surface detail.
-Hero metals/woods seen at arm's length stay 1024 px; the rest are 512 px to keep the streamed download small.
+Hero metals/woods seen at arm's length stay 1024 px; the rest are 512 px to keep the streamed download small. Only sets a caller
+maps to (Ep2Pbr.BY_NAME or an Ep2Pbr.replace call) belong here: every set ships in the streamed pack.
+The .jpg.import presets next to the maps are TRACKED (.gitignore exception): lossy WebP 0.85 + mipmaps, no 3D detection. CI's
+default re-import would be lossless without mipmaps - several times the download, and shimmering at a distance.
 """
 import json
 import os
@@ -23,15 +26,11 @@ OUT = os.path.join(ROOT, "src", "episode2", "extras", "pbr")
 SETS = {   # set id: (source, size px)
     "brass_worn": ("ambientcg:Metal048B", 1024),
     "steel_blued": ("ambientcg:Metal063", 1024),
-    "steel_scratched": ("ambientcg:Metal038", 1024),
     "wood_walnut": ("polyhaven:smoked_walnut_veneer", 1024),
     "wood_dark": ("polyhaven:dark_wood", 1024),
     "planks_weathered": ("polyhaven:old_planks_02", 1024),
     "planks_raw": ("polyhaven:raw_plank_wall", 1024),
     "stone_dressed": ("polyhaven:sandstone_blocks_08", 1024),
-    "planks_floor": ("polyhaven:old_wood_floor", 512),
-    "timber_rough": ("polyhaven:rough_wood", 512),
-    "iron_rust": ("polyhaven:rust_coarse_01", 512),
     "iron_painted": ("polyhaven:rusty_metal_02", 512),
     "leather_brown": ("polyhaven:brown_leather", 512),
     "brick_red": ("polyhaven:large_red_bricks", 512),

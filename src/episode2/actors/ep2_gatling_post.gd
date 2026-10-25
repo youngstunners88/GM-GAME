@@ -34,6 +34,12 @@ const BALE_TARGET := Vector3(0.0, 0.85, 0.0)         # the paper target on the b
 const FLASH_T := 0.05
 const SPREAD := 0.010                                # radians of random scatter, hot barrels or not
 const BURST_MAX := 2.6
+## The Gatling's own bronze (founder 2026-10-25 "full quality pass - readable, period"): the kit's shared Brass (0.72, 0.55, 0.25) read as
+## pale cream on the Colt's big drum and jacket in desert sun. Period gun bronze is deeper; outdoors the metal can stay high (the desert sky
+## is in every reflection), indoors it is held lower so the hideout's fire-lit display gun does not go black (no reflection probes on the web).
+const BRONZE := Color(0.56, 0.41, 0.21)
+const DRESS_YARD := {"Brass": ["brass_worn", 0.45, 0.82, 0.8, BRONZE]}
+const DRESS_INDOORS := {"Brass": ["brass_worn", 0.45, 0.66, 0.85, BRONZE]}
 const SOUND_DIR := "res://src/assets/sounds/"
 const SHOT_SOUNDS := ["ep2_revolver_blast_1.mp3", "ep2_revolver_blast_2.mp3", "ep2_revolver_blast_3.mp3"]
 
@@ -99,7 +105,7 @@ func build(path: String, look_yaw: float, seed: int = 1874) -> bool:
 	aim_yaw = look_yaw
 	_post.rotation.y = look_yaw - PI * 0.5          # the model's bore is +x; look yaw is measured from +z
 	add_child(_post)
-	Ep2Pbr.dress(_post)                             # photo-scanned bronze, blued steel, walnut, iron (founder 2026-10-25 quality pass)
+	Ep2Pbr.dress(_post, DRESS_YARD)                 # photo-scanned bronze, blued steel, walnut, iron (founder 2026-10-25 quality pass)
 	_yaw_n = _post.find_child("Gat_Yaw", true, false) as Node3D
 	_pitch_n = _post.find_child("Gat_Pitch", true, false) as Node3D
 	_barrels = _post.find_child("Gat_Barrels", true, false) as Node3D

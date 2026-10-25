@@ -19,6 +19,22 @@ elevator! This is ridiculous. How can he be in the elevator and in the other roo
 | "People VO overshadowed by music" | Loudness (ffmpeg ebur128): town theme -16.2 LUFS, recorded town takes ~-20 LUFS played at 0 dB, so speech was 4 dB UNDER the music before any duck. Townspeople's passing greetings (3D, -2 dB, unit 5 m) never ducked the music at all (~6-10 dB under it). Story lines ducked to -16 dB, but a music fade-in tween (the forest → town crossfade) kept running and pulled the music back up over the words: master measured -7.6 dB 3.4 s into a line, rising to 0. | AudioManager: ONE tween owns the music level (`_tween_music_to`). Duck, restore and every fade-in kill the previous one, and fades aim at the current duck level. A line starting during the restore pulls it straight back down. Town takes +2.5 dB (the loudest take peaks at -2.8 dBTP, so they stay under -0.3 dBTP). Greetings: unity gain, unit size 8 m, heard to 18 m, and they duck the music to -10 dB for their length (`duck_for_speech`). | `tests/ep2_audio_mix_test` ALL PASS. Crossfade probe: master -35.1 → -7.6 dB during a line, fixed -16.0 / -16.0 dB. `ep2_voice_duck_test` still ALL PASS. |
 | "Train inaudible when it passes" | The train (`Ep2TownLife`) had no sound player at all, and no train recording ships in the repo. | `tools/ep2_audio/synth_train.py` synthesizes, license-clean and deterministic: a 12 s seamless steam run (5.5 chuffs/s for 7 m/s on 1.52 m drivers, rail-joint clacks of loco + 3 cars every 12 m, rumble, hiss) at -16.1 LUFS, and a three-chime whistle. They ride on the locomotive as 3D sound: unit 42 m (≈-2 dB at mid-street, 106 m), heard to 460 m, whistle on appearing and in front of the town, -7 dB under speech. Only the live room plays it, and a room pre-built off-screen is silent. Files in the streamed extras pack. | `tests/ep2_audio_mix_test` train block: plays when it appears, loops, whistles, dips under a line, silent off-screen. [Spectrogram](2026-10-25_cad_transitions/train_run_spectrogram.jpg) of two loops back to back: seam jump 0.0015 vs median sample step 0.019. |
 
+## P1 — CAD pass, part 1 (Colt Gatling + photo-scanned surfaces)
+
+![before / after](2026-10-25_cad_transitions/cad_pass_before_after.jpg)
+
+- **Colt Gatling**: FreeCAD solids (`tools/ep2_cad/gatling_cad.py`, run `GATLING_CAD_OUT=<dir> freecadcmd tools/ep2_cad/gatling_cad.py`) assembled in
+  Blender (`tools/ep2_blender/build_gatling_cad.py -- --cad <dir>`) into the same `gatling_post.glb` node tree (Gatling_Post -> Gat_Yaw -> Gat_Pitch ->
+  Gat_Barrels / Gat_Crank, markers Gat_Muzzle / Gat_Eye / Gat_Eject / Gat_Sign). 44,120 triangles. Drum lowered so the gunner's line of sight clears it.
+- **Period bronze** (`Ep2GatlingPost.BRONZE`, `DRESS_YARD` / `DRESS_INDOORS`): the shared kit Brass (0.72, 0.55, 0.25) read pale cream in the sun.
+- **Ep2Pbr** (`src/episode2/art/ep2_pbr.gd`): 13 CC0 sets prepared by `tools/ep2_pbr/prep_pbr.py`; object-space triplanar; the set's own mean albedo
+  is divided out so each surface keeps its authored average colour; metal capped for the Compatibility renderer. Import presets are tracked
+  (lossy WebP 0.85 + mipmaps; CI's default would be lossless, several times the download).
+- Measured (luma mean / local detail, same cameras): Armory counter 161.9 / 2.98 -> 159.7 / 3.48; gallery 160.0 / 2.61 -> 158.2 / 3.06; town
+  fronts and the smelter unchanged by this part (their props are the next parts).
+- Gates: `tests/ep2_pbr_test` (new, CI) + armory guns / two-storey / gold town / personal armory / seamless chain pass. `ep2_hideout_corrections_test`
+  (4 FAIL) and `ep2_smelting_facility_test` "Bull PBR" (1 FAIL) fail identically on master: pre-existing, not CI gates.
+
 ## Not yet verified
 - Web-build listening and a real-browser walk of hideout → lift → woods (headless gates + native GPU captures only). The founder's hard refresh is the acceptance.
 - The synthesized train has not been listened to by a human. If it reads wrong, regenerate with ElevenLabs / VARCO when a key is on the box (same file names).

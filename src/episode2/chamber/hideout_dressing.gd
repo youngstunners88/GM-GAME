@@ -531,7 +531,7 @@ func _gatling(pos: Vector3, yaw: float) -> Node3D:
 			gun.transform = Transform3D(Basis(Vector3.UP, yaw + GATLING_YAW_FIX), pos)
 			gun.name = "ColtGatling"
 			_v.add_child(gun)
-			Ep2Pbr.dress(gun)
+			Ep2Pbr.dress(gun, Ep2GatlingPost.DRESS_INDOORS)
 			src.free()
 			_blockers.append([Vector2(pos.x, pos.z), 1.1])
 			return gun
