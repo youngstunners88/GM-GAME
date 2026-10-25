@@ -15,6 +15,8 @@ var _greet_cd := 0.0
 var _foot_cd := 0.0
 var _queued: Array[String] = []
 var bell_count := 0
+## How far the music dips under a passing greeting (a story line ducks it further, to AudioManager.VOICE_DUCK_DB).
+const GREETING_MUSIC_DUCK_DB := -10.0
 
 func _ready() -> void:
 	_wind = AudioStreamPlayer.new()
@@ -24,7 +26,10 @@ func _ready() -> void:
 	add_child(_wind)
 	_saloon = _spatial("town_saloon", -10.0, 24.0, true)
 	_saloon.position = Ep2GoldTown.local_to_world("Bldg_Saloon", Vector3(0, 1.5, -5))
-	_greeting = _spatial("", -2.0, 14.0)
+	# A greeting must read over the town theme (founder 2026-10-25: "people VO overshadowed by music"): unity gain, a wider
+	# unit size (full level within 8 m instead of 5), heard to 18 m, and the music dips under it while it plays (greet()).
+	_greeting = _spatial("", 0.0, 18.0)
+	_greeting.unit_size = 8.0
 	_bell = _spatial("town_draw_bell", 5.0, 180.0)
 	_bell.position = Vector3(0.0, 10.0, 1478.0)
 	_bell.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED
@@ -81,6 +86,9 @@ func greet(person_id: String, actor: Ep2TownFolk, count: int) -> bool:
 	_greeting.stream = recording
 	_greeting.play()
 	_greet_cd = maxf(7.0, recording.get_length() + 3.0)
+	var am: Node = get_node_or_null("/root/AudioManager")
+	if am != null and am.has_method("duck_for_speech"):
+		am.duck_for_speech(recording.get_length(), GREETING_MUSIC_DUCK_DB)
 	return true
 
 func silence_greeting() -> void:

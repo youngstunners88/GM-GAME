@@ -206,15 +206,21 @@ func _enter_chamber_chained(segment: int) -> void:
 		gaze = _active.get_handoff()
 	var c: Node = null
 	var seamless: bool = false
+	# The viewport the next room was built in. Held in a local, not `_pb_vp`: activating the room runs its setup(), and the lift's
+	# setup asks for the woods at once (a NEW `_pb_vp`). Freeing `_pb_vp` after activate used to free that new viewport and the woods
+	# being built inside it, so the woods were built from scratch at the lift's exit (a long freeze) and set up without the hand-over
+	# (back at their own entrance, Inferno's opening line again: founder 2026-10-25 "long painful delay ... the scene rewinds").
+	var built_vp: SubViewport = _pb_vp
+	_pb_vp = null
 	if _pb_node != null and is_instance_valid(_pb_node) and _pb_id == _chain_id:
 		c = _pb_node
 		seamless = true
 	else:
 		if _pb_node != null and is_instance_valid(_pb_node):
 			_pb_node.queue_free()
-			if _pb_vp != null:
-				_pb_vp.queue_free()
-				_pb_vp = null
+		if built_vp != null and is_instance_valid(built_vp):
+			built_vp.queue_free()
+		built_vp = null
 		c = CHAMBER_SCENES[_chain_id].instantiate()
 	_pb_node = null
 	_pb_id = ""
@@ -229,9 +235,8 @@ func _enter_chamber_chained(segment: int) -> void:
 	_wire_chamber(c)
 	if seamless:
 		c.call("activate", self, gaze)
-		if _pb_vp != null:
-			_pb_vp.queue_free()
-			_pb_vp = null
+		if built_vp != null and is_instance_valid(built_vp):
+			built_vp.queue_free()
 	else:
 		add_child(c)
 		c.setup(0, [], 0)
@@ -294,8 +299,10 @@ func _drive_portal() -> void:
 	if not ok:
 		if _portal_on and _active != null and is_instance_valid(_active) and _active.has_method("portal_detach"):
 			_active.call("portal_detach")
-		if _portal_on and _pb_vp != null and is_instance_valid(_pb_vp):
-			_pb_vp.render_target_update_mode = SubViewport.UPDATE_DISABLED     # nothing to show: stop drawing the next room
+		if _pb_vp != null and is_instance_valid(_pb_vp) and (_portal_on or (_pb_id != "" and is_prebuilt(_pb_id))):
+			# nothing to show: stop drawing the next room. Once its warm-up views have been rendered, a built room behind a lift
+			# ride or a long scene is not drawn again every frame (the whole woods cost a second world's draw calls).
+			_pb_vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
 		_portal_on = false
 		return
 	if not _portal_on:

@@ -16,6 +16,14 @@ Swapping chambers built the whole next room synchronously in front of the player
 4. The active chamber holds its exit (`_handoff_ok()` / `handoff_ready`) until the next is built; the root then gives the build 40 ms/frame. A pause at the door at worst, never black.
 5. `_enter_chamber_chained` -> `activate(root, gaze)`: the same instance moves into the main tree, camera current, `setup()` (about 5-8 ms), old chamber removed from the tree that frame. The player's look yaw/pitch carries (`get_handoff` / `_apply_handoff_gaze`, yaw 0 = +Z everywhere) and the held keys persist (the root polls input). `handoff_seamless = true` suppresses the title card (`ep2_entry._update_title_card`).
 6. No prebuild (tests, a lone room, a mismatch): the old synchronous path still works.
+7. **A chained activation may request the NEXT prebuild inside its own `setup()`** (the lift asks for the woods in `_on_setup`). `_enter_chamber_chained`
+   keeps the activated room's viewport in a LOCAL and frees that one - never `_pb_vp` after `activate()`, which is by then the NEW viewport (until 2026-10-25
+   it freed the woods being built behind the lift: the founder's "long painful delay ... the scene rewinds" = woods built at the exit + set up at SPAWN).
+   A finished prebuild stops drawing (`UPDATE_DISABLED`) unless a doorway shows it. Gate: `tests/seamless_chain_test.tscn` (the REAL hideout -> prebuilt
+   lift -> prebuilt woods chain; the older gates enter the lift without a prebuild and cannot see this).
+8. **No dead waits** (founder 2026-10-25): an exit never waits for the companion's last line - he says it on the move and the next room's first line waits
+   for `handoff.voice_left` (`Ep2Interlude._begin_carry_line_after`). A ride lasts as long as its speech (the lift: `_plan_rise_seconds`), so the gate opens
+   on the last line instead of after it.
 
 # Adding a chained chamber
 `_build_steps()` (split the set: any single step over ~100 ms makes a visible hitch), `_warm_views()` (what the player sees first), `prebuild_requested.emit(next)` at the earliest beat, `_wants_handoff()` + `_handoff_ok()` on the exit condition. Never build in `_on_setup` what could be a step (Inferno is `_step_bull`).

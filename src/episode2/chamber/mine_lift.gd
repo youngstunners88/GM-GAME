@@ -71,6 +71,7 @@ var _mouth_open: bool = false
 ## The hideout's doorway is about to look into this room: open the mouth, keep Inferno hidden until the hideout's Inferno walks through.
 func portal_begin() -> void:
 	_set_mouth_open(true)
+	_hide_unentered_body()      # the doorway must show an EMPTY cage: Lil Blunt is still in the hideout holding his rifle
 	if _bull != null:
 		_bull.visible = false
 
@@ -111,6 +112,11 @@ var _lever: Node3D = null
 var _lever_t: float = -1.0
 var _cage_y: float = 0.0
 var _rise_t: float = -1.0
+## How long this climb takes: the cage reaches the top just as Lil Blunt starts his reply to Inferno's plan, so the gate opens on the
+## last line (founder 2026-10-25: "long painful delay where nothing happens" - the 22 s climb used to end ~10 s before the 32 s of plan
+## talk did, and the cage sat shut at the top until the talk was over). Never shorter than RISE_SECONDS; no line is cut.
+var _rise_len: float = RISE_SECONDS
+var _reply_started: bool = false
 var _on_cage: bool = false
 var _bull_on_cage: bool = false
 var _gate_open: float = 0.0
@@ -768,7 +774,8 @@ func _on_beat_entered(b: int) -> void:
 		Beat.ARRIVE:
 			# he walks in through the DOORWAY (centre of the walkway-side opening), never through the bars, and waits by the lever
 			_start_show([
-				{"do": "call", "fn": func() -> void: _begin_carry_line("vo_bull_lift1")},
+				# after the hideout's "made it", which he may still be saying as they come through the door
+				{"do": "call", "fn": func() -> void: _begin_carry_line_after(float(handoff.get("voice_left", 0.0)), "vo_bull_lift1")},
 				{"do": "walk", "to": Vector3(0.0, 0.0, -3.4), "speed": 3.0},
 				{"do": "walk", "to": Vector3(0.0, 0.0, -1.0), "speed": 2.4},
 				{"do": "walk", "to": CAGE_STAND_BULL, "speed": 2.0},
@@ -790,6 +797,8 @@ func _on_beat_entered(b: int) -> void:
 		Beat.RISE:
 			release_look()
 			_rise_t = 0.0
+			_rise_len = _plan_rise_seconds()
+			_reply_started = false
 			_bull_on_cage = true
 			if _loop and not _loop.playing:
 				_loop.play()
@@ -799,7 +808,8 @@ func _on_beat_entered(b: int) -> void:
 				FacilityShow._say("vo_bull_plan1", 0.25),
 				FacilityShow._say("vo_bull_plan2", 0.25),
 				FacilityShow._say("vo_bull_plan3", 0.3),
-				FacilityShow._say("vo_lb_plan_reply", 0.3)])
+				# flagged from INSIDE the reply (an event once it is playing), so reaching the top can never skip the line itself
+				{"do": "say", "id": "vo_lb_plan_reply", "gap": 0.3, "events": [[0.0, func() -> void: _reply_started = true]]}])
 		Beat.SURFACE:
 			# This shaft brace lies at chest height across the only exit. Clear it before
 			# the gate slides open; neither character may walk through solid timber.
@@ -819,6 +829,15 @@ func _pull_lever() -> void:
 	_lever_t = 0.0
 
 
+## The climb lasts as long as Inferno's plan: the line he may still be carrying, his turn to face Lil Blunt, then plan 1-3 with their
+## gaps (the RISE show below). The cage tops out as Lil Blunt's reply begins.
+func _plan_rise_seconds() -> float:
+	var t: float = _hold + 0.5
+	for line in [["vo_bull_plan1", 0.25], ["vo_bull_plan2", 0.25], ["vo_bull_plan3", 0.3]]:
+		t += _vo_len(str(line[0])) + float(line[1])
+	return clampf(t, RISE_SECONDS, 40.0)
+
+
 func _show_finished() -> void:
 	match _beat:
 		Beat.ARRIVE:
@@ -832,8 +851,8 @@ func _show_finished() -> void:
 
 
 func _tick(delta: float) -> void:
-	if _mouth_open and _running and _player_pos.z > CAVE_Z0 + 1.6:
-		_set_mouth_open(false)          # he is in: the tunnel behind him is the dark tunnel again
+	if _mouth_open and _running and _player_pos.z > CAVE_Z0 + 1.6 and (_bull == null or _bull.position.z > CAVE_Z0 + 1.6):
+		_set_mouth_open(false)          # both are in: the tunnel behind them is the dark tunnel again (never close it on Inferno)
 	_surface_light()
 	# lever animation: the iron handle swings from back (-35 deg) to forward (+35 deg) as Inferno pulls it
 	if _lever_t >= 0.0 and _lever_t < 1.0 and _lever:
@@ -856,14 +875,14 @@ func _tick(delta: float) -> void:
 				_advance_to(Beat.LEVER)
 		Beat.RISE:
 			_rise_t += delta
-			var k: float = clampf(_rise_t / RISE_SECONDS, 0.0, 1.0)
+			var k: float = clampf(_rise_t / _rise_len, 0.0, 1.0)
 			k = k * k * (3.0 - 2.0 * k)
 			_cage_y = TOP_Y * k
 			if _loop:
 				_loop.volume_db = -8.0 + 3.0 * sin(_anim_t * 3.0)
-			if _rise_t >= RISE_SECONDS and not _show_active:
+			if _rise_t >= _rise_len and (_reply_started or not _show_active):
 				_cage_y = TOP_Y
-				_advance_to(Beat.SURFACE)
+				_advance_to(Beat.SURFACE)          # Lil Blunt's reply plays on while the gate slides open and they walk out
 		Beat.SURFACE:
 			_cage_y = TOP_Y
 			_gate_open = minf(1.0, _gate_open + delta / 1.2)

@@ -238,6 +238,11 @@ func prebuild_step(budget_ms: float) -> bool:
 		_pb_warm_i += 1
 		return false
 	_pb_active = false
+	# Built and warmed (the warm views drew his body once, so its shaders are compiled): in first person his body is NOT in the room
+	# yet. Founder 2026-10-25: "Remove Lil Blunt in the elevator! ... How can he be in the elevator and in the other room holding his
+	# rifle" - the hideout's doorway looked into this built room while the body still stood where it was built. It appears only in a
+	# director shot (`_set_eye_view(false)`), after he has walked in.
+	_hide_unentered_body()
 	return true
 
 
@@ -349,6 +354,7 @@ func step(delta: float) -> void:
 	_anim_t += delta
 	if _hold > 0.0:
 		_hold = maxf(0.0, _hold - delta)
+	_tick_queued_line(delta)
 	if has_player_control():
 		_move_player(delta)
 	else:
@@ -459,6 +465,31 @@ func _speak(line_id: String) -> void:
 func _begin_carry_line(id: String) -> void:
 	_hold = _vo_len(id)
 	_speak(id)
+
+
+## A carry line that waits `delay` seconds first: the line the previous room's speaker was saying as they walked through the doorway
+## (`handoff.voice_left`) plays to its end, then this one starts. Speakers never overlap and nobody is cut off mid-word.
+var _queued_line: String = ""
+var _queued_in: float = 0.0
+
+
+func _begin_carry_line_after(delay: float, id: String) -> void:
+	if delay <= 0.0:
+		_begin_carry_line(id)
+		return
+	_queued_line = id
+	_queued_in = delay
+	_hold = delay + _vo_len(id)
+
+
+func _tick_queued_line(delta: float) -> void:
+	if _queued_line == "":
+		return
+	_queued_in -= delta
+	if _queued_in <= 0.0:
+		var id: String = _queued_line
+		_queued_line = ""
+		_begin_carry_line(id)
 
 
 func _bull_play(clip: String, speed: float = 1.0) -> void:
@@ -754,6 +785,13 @@ func _set_eye_view(on: bool) -> void:
 		_vm.set_shown(on)
 	if _hud != null:
 		_hud.visible = on
+
+
+## A room built ahead of the player (behind the current chamber, or seen through its doorway) holds no Lil Blunt: in first person
+## the body is only drawn for a director shot, and he has not entered yet.
+func _hide_unentered_body() -> void:
+	if fps_mode and _player_node != null and is_instance_valid(_player_node):
+		_player_node.visible = false
 
 
 ## Build the Winchester viewmodel on the camera and the first-person HUD (ammo, crosshair).

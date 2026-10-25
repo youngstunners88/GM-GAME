@@ -318,6 +318,9 @@ jobs:
           grep -q 'TRANSITION_FEEDBACK: ALL PASS' transition-feedback-tests.log
           timeout 180 "$GODOT_BIN" --headless res://tests/transition2_test.tscn 2>&1 | tee transition2-tests.log
           grep -q 'TRANSITION2: ALL PASS' transition2-tests.log
+          # The REAL hideout -> prebuilt lift -> prebuilt woods chain (founder 2026-10-25: no door pause, empty elevator, no rewind).
+          timeout 300 "$GODOT_BIN" --headless res://tests/seamless_chain_test.tscn 2>&1 | tee seamless-chain-tests.log
+          grep -q 'SEAMLESS_CHAIN: ALL PASS' seamless-chain-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' transition-feedback-tests.log; then exit 1; fi
           # On-screen touch controls: real finger events -> GUI -> InputMap -> the real
           # player (analog walk, multi-touch combo, release-on-hide, layouts on every screen).

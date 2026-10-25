@@ -156,10 +156,9 @@ func play_track_from(path: String, position: float = 0.0, fade_in_seconds: float
     current_music_player.stream = stream
     add_child(current_music_player)
     var start_at: float = clampf(position, 0.0, maxf(stream.get_length() - 0.5, 0.0))
-    current_music_player.volume_db = -30.0 if fade_in_seconds > 0.0 else 0.0
+    current_music_player.volume_db = -30.0 if fade_in_seconds > 0.0 else _music_rest_db()
     if fade_in_seconds > 0.0:
-        var tw := current_music_player.create_tween()
-        tw.tween_property(current_music_player, "volume_db", 0.0, fade_in_seconds)
+        _tween_music_to(_music_rest_db(), fade_in_seconds)
     current_music_player.play(start_at)
     current_music_player.finished.connect(_on_music_track_finished)
 
@@ -222,6 +221,7 @@ func _purge_retiring() -> void:
 ## Fade the current track out and free it — replaces the old hard stop.
 func _duck_out_music(seconds: float = 0.45) -> void:
     _purge_retiring()
+    _kill_music_level_tween()       # a duck/restore still running on the outgoing player must not fight its fade-out
     if current_music_player and is_instance_valid(current_music_player):
         var old := current_music_player
         _retiring.append(old)
@@ -237,6 +237,7 @@ func _duck_out_music(seconds: float = 0.45) -> void:
 
 func _stop_music() -> void:
     _purge_retiring()
+    _kill_music_level_tween()
     if current_music_player and is_instance_valid(current_music_player):
         current_music_player.stop()
         current_music_player.queue_free()
@@ -261,10 +262,9 @@ func _play_next_in_playlist(fade_in: bool = false, force_first: bool = false, fa
     add_child(current_music_player)
     if fade_in:
         current_music_player.volume_db = -12.0 if fade_seconds <= 1.0 else -50.0
-        var tween := current_music_player.create_tween()
-        tween.tween_property(current_music_player, "volume_db", 0.0, fade_seconds)
-    if _voice_ducking:
-        current_music_player.volume_db = VOICE_DUCK_DB     # a track that loops mid-speech stays under the voice
+        _tween_music_to(_music_rest_db(), fade_seconds)     # fades in only as far as a speech in progress allows
+    else:
+        current_music_player.volume_db = _music_rest_db()   # a track that loops mid-speech stays under the voice
     current_music_player.play()
     current_music_player.finished.connect(_on_music_track_finished)
 
@@ -420,12 +420,10 @@ func release_music_override_faded(token: int, seconds: float = 0.35) -> void:
                 outgoing.stop()
                 outgoing.queue_free())
     # 2. The base track resumes, fading in. A speaking announcer keeps it ducked.
-    var target_db: float = VOICE_DUCK_DB if _voice_ducking else 0.0
     if current_music_player and is_instance_valid(current_music_player):
         current_music_player.volume_db = -30.0
         current_music_player.stream_paused = false
-        var in_tw := current_music_player.create_tween()
-        in_tw.tween_property(current_music_player, "volume_db", target_db, seconds)
+        _tween_music_to(_music_rest_db(), seconds)
         _saved_stream = null
         _saved_playlist = []
         return
@@ -438,8 +436,7 @@ func release_music_override_faded(token: int, seconds: float = 0.35) -> void:
         current_music_player.stream = _saved_stream
         add_child(current_music_player)
         current_music_player.volume_db = -30.0
-        var rebuilt_tw := current_music_player.create_tween()
-        rebuilt_tw.tween_property(current_music_player, "volume_db", target_db, seconds)
+        _tween_music_to(_music_rest_db(), seconds)
         current_music_player.play(_saved_position)
         current_music_player.finished.connect(_on_music_track_finished)
     elif not _playlist.is_empty():
@@ -515,8 +512,59 @@ var _voice_player: AudioStreamPlayer
 ## Voice-duck state (founder 2026-10-04): music stays down for a whole speech, not per line.
 const VOICE_DUCK_DB := -16.0
 const VOICE_RESTORE_GRACE := 0.7
+## A townsperson greeting in passing (3D, positional) pulls the music down this far for its length (founder 2026-10-25:
+## "people VO overshadowed by music" - the greetings never ducked it at all, and sat ~6-10 dB under the town theme).
+const GREETING_DUCK_DB := -12.0
+## The recorded town takes are mastered ~-20 LUFS against -16 LUFS for the town theme; +2.5 dB lifts them level with the legacy
+## announcer lines while every take stays under -0.3 dBTP (loudest measured take peaks at -2.8 dBTP).
+const TOWN_TAKE_GAIN_DB := 2.5
 var _voice_gen: int = 0
 var _voice_ducking: bool = false
+## Where the music sits while nobody is speaking (0) or under the current speech (the duck). EVERY music fade aims here.
+var _duck_target_db: float = 0.0
+## The ONE tween that owns current_music_player.volume_db. Starting a fade-in, a duck or a restore kills the previous one, so a
+## track fading in (the forest -> town crossfade) can never pull the music back up over a line that started during its fade.
+var _music_level_tween: Tween = null
+
+
+func _music_rest_db() -> float:
+    return _duck_target_db if _voice_ducking else 0.0
+
+
+func _kill_music_level_tween() -> void:
+    if _music_level_tween != null and _music_level_tween.is_valid():
+        _music_level_tween.kill()
+    _music_level_tween = null
+
+
+func _tween_music_to(db: float, seconds: float) -> void:
+    _kill_music_level_tween()
+    if current_music_player == null or not is_instance_valid(current_music_player):
+        return
+    _music_level_tween = current_music_player.create_tween()
+    _music_level_tween.tween_property(current_music_player, "volume_db", db, maxf(seconds, 0.01))
+
+
+## Is the music down for speech right now (a line, or a townsperson's greeting, plus its grace)? Ambient beds (the train) dip too.
+func is_speech_ducking() -> bool:
+    return _voice_ducking
+
+
+## Is a speech line (announcer slot) playing right now?
+func is_voice_playing() -> bool:
+    return _voice_player != null and is_instance_valid(_voice_player) and _voice_player.playing
+
+
+## Duck the music under a spoken line that does not use the announcer slot (a townsperson's 3D greeting) for `seconds`, then
+## restore it the same way a speech does (only if no newer line started and nothing is still speaking).
+func duck_for_speech(seconds: float, db: float = GREETING_DUCK_DB) -> void:
+    _voice_gen += 1
+    _voice_ducking = true
+    _duck_target_db = minf(_duck_target_db, db) if _duck_target_db < 0.0 else db
+    _duck_music_for_voice(_duck_target_db, 0.2)
+    var gen: int = _voice_gen
+    var t := get_tree().create_timer(maxf(seconds, 0.1) + VOICE_RESTORE_GRACE)
+    t.timeout.connect(func() -> void: _restore_after_voice(gen))
 
 func play_voice(name: String, recorded_stream: AudioStream = null) -> void:
     # Streamed town recordings use the same single speech slot and music duck.
@@ -539,7 +587,7 @@ func play_voice(name: String, recorded_stream: AudioStream = null) -> void:
     # clearly on top of the mix; the music duck below was already there and was
     # never the whole story on its own.
     # Offline town takes are already normalized; the legacy announcer boost clips them.
-    _voice_player.volume_db = 0.0 if recorded_stream != null else 6.0
+    _voice_player.volume_db = TOWN_TAKE_GAIN_DB if recorded_stream != null else 6.0
     _voice_player.stream = stream
     add_child(_voice_player)
     # Hold the music duck for the WHOLE speech, not per line. Founder 2026-10-04: "while he was speaking the music
@@ -549,6 +597,7 @@ func play_voice(name: String, recorded_stream: AudioStream = null) -> void:
     # cancelled if another line starts, so the music stays down from the first word to a beat after the last.
     _voice_gen += 1
     _voice_ducking = true
+    _duck_target_db = VOICE_DUCK_DB
     _duck_music_for_voice(VOICE_DUCK_DB, 0.15)
     _voice_player.play()
     _voice_player.finished.connect(_on_voice_finished)
@@ -556,9 +605,7 @@ func play_voice(name: String, recorded_stream: AudioStream = null) -> void:
 ## Set the current music player's volume for the voice duck (tweened). Also remembered so a music track that LOOPS
 ## mid-speech (new player) starts already ducked instead of blasting back to full.
 func _duck_music_for_voice(db: float, seconds: float) -> void:
-    if current_music_player and is_instance_valid(current_music_player):
-        var tw := current_music_player.create_tween()
-        tw.tween_property(current_music_player, "volume_db", db, seconds)
+    _tween_music_to(db, seconds)
 
 func _on_voice_finished() -> void:
     if _voice_player and is_instance_valid(_voice_player):
@@ -566,16 +613,18 @@ func _on_voice_finished() -> void:
     _voice_player = null
     var gen: int = _voice_gen
     var t := get_tree().create_timer(VOICE_RESTORE_GRACE)
-    t.timeout.connect(func() -> void:
-        # Only lift the duck if no newer line started and nothing is still speaking.
-        if gen != _voice_gen:
-            return
-        if _voice_player and is_instance_valid(_voice_player) and _voice_player.playing:
-            return
-        _voice_ducking = false
-        if current_music_player and is_instance_valid(current_music_player):
-            var restore := current_music_player.create_tween()
-            restore.tween_property(current_music_player, "volume_db", 0.0, 0.5))
+    t.timeout.connect(func() -> void: _restore_after_voice(gen))
+
+
+## Lift the duck after a speech - only if no newer line started (`gen`) and nothing is still speaking.
+func _restore_after_voice(gen: int) -> void:
+    if gen != _voice_gen:
+        return
+    if is_voice_playing():
+        return
+    _voice_ducking = false
+    _duck_target_db = 0.0
+    _tween_music_to(0.0, 0.5)
 
 ## Dedicated player for Lil Blunt's character barks. Deliberately a SEPARATE
 ## node from _voice_player: play_voice() is the ANNOUNCER (stage/boss intros,

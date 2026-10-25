@@ -22,6 +22,21 @@ const CARS := 3
 
 var _train: Node3D
 var _smoke: CPUParticles3D
+## THE TRAIN IS HEARD (founder 2026-10-25: "train inaudible when it passes" - it had no sound at all). A synthesized steam run (chuffs
+## at the 7 m/s wheel rate, rail-joint clacks of the loco + 3 cars; tools/ep2_audio/synth_train.py) rides on the locomotive as a 3D
+## sound that reaches across the river to the street (the track is ~106 m from mid-street), and a three-chime whistle blows as it
+## comes into view and again in front of the town. It dips under speech so it never buries a line.
+const TRAIN_RUN_SFX := "res://src/episode2/extras/audio/town/town_train_run.ogg"
+const TRAIN_WHISTLE_SFX := "res://src/episode2/extras/audio/town/town_train_whistle.ogg"
+const TRAIN_RUN_DB := 6.0
+const TRAIN_WHISTLE_DB := 9.0
+const TRAIN_UNDER_SPEECH_DB := -7.0             # how far the train dips while someone is talking
+const TRAIN_UNIT_SIZE := 42.0                   # full level within 42 m; ~-8 dB at mid-street; silent past MAX
+const TRAIN_MAX_DISTANCE := 460.0
+const WHISTLE_AT_X := [150.0, 40.0]             # blow as it appears, and as it comes level with the town
+var _run_sfx: AudioStreamPlayer3D
+var _whistle_sfx: AudioStreamPlayer3D
+var _whistles_due: Array = []
 var _train_x: float = TRAIN_FROM_X
 var _wait: float = 4.0
 var _walker: Node3D
@@ -228,6 +243,58 @@ func _build_train() -> void:
 	_train.position = Vector3(TRAIN_FROM_X, RAIL_TOP + 0.08, Ep2GoldTown.TRACK_Z)
 	_train.visible = false
 	_smoke.emitting = false
+	_run_sfx = _train_sound("TrainRunSfx", TRAIN_RUN_DB, Vector3(2.0, 1.6, 0.0))
+	_whistle_sfx = _train_sound("TrainWhistleSfx", TRAIN_WHISTLE_DB, Vector3(-4.85, 4.2, 0.0))
+
+
+func _train_sound(n: String, db: float, at: Vector3) -> AudioStreamPlayer3D:
+	var p := AudioStreamPlayer3D.new()
+	p.name = n
+	p.bus = "SFX"
+	p.volume_db = db
+	p.unit_size = TRAIN_UNIT_SIZE
+	p.max_distance = TRAIN_MAX_DISTANCE
+	p.max_db = 6.0
+	p.attenuation_filter_cutoff_hz = 9000.0      # a distant train keeps some of its clack (the 5 kHz default dulls it to a hum)
+	p.position = at
+	_train.add_child(p)
+	return p
+
+
+## The sound files live in the streamed extras pack: load them when the train first runs, not at build time (the pack may still be
+## arriving while the woods are built). Only in the room being played: a room built off-screen stays silent.
+func _ensure_train_audio() -> bool:
+	if _run_sfx == null or not is_inside_tree() or get_viewport() != get_tree().root:
+		return false
+	if _run_sfx.stream == null and ResourceLoader.exists(TRAIN_RUN_SFX):
+		var st: AudioStream = load(TRAIN_RUN_SFX)
+		if st is AudioStreamOggVorbis:
+			(st as AudioStreamOggVorbis).loop = true
+		_run_sfx.stream = st
+	if _whistle_sfx.stream == null and ResourceLoader.exists(TRAIN_WHISTLE_SFX):
+		_whistle_sfx.stream = load(TRAIN_WHISTLE_SFX)
+	return _run_sfx.stream != null
+
+
+func _train_audio_step() -> void:
+	if _run_sfx == null:
+		return
+	if not _train.visible:
+		if _run_sfx.playing:
+			_run_sfx.stop()
+		return
+	if not _ensure_train_audio():
+		return
+	if not _run_sfx.playing:
+		_run_sfx.play(fmod(_t, 12.0))
+	var am: Node = get_node_or_null("/root/AudioManager")
+	var talking: bool = am != null and am.has_method("is_speech_ducking") and bool(am.call("is_speech_ducking"))
+	var goal: float = TRAIN_RUN_DB + (TRAIN_UNDER_SPEECH_DB if talking else 0.0)
+	_run_sfx.volume_db = move_toward(_run_sfx.volume_db, goal, 30.0 * get_process_delta_time())
+	if not _whistles_due.is_empty() and _train_x <= float(_whistles_due[0]):
+		_whistles_due.pop_front()
+		if _whistle_sfx.stream != null and not talking:
+			_whistle_sfx.play()
 
 
 func _build_horses(props: Array) -> void:
@@ -273,6 +340,7 @@ func _process(delta: float) -> void:
 				_train.visible = false
 				_smoke.emitting = false
 				_wait = TRAIN_GAP
+				_whistles_due = []
 		else:
 			_wait -= delta
 			if _wait <= 0.0:
@@ -280,6 +348,8 @@ func _process(delta: float) -> void:
 				_train.position.x = _train_x
 				_train.visible = true
 				_smoke.emitting = true
+				_whistles_due = WHISTLE_AT_X.duplicate()
+		_train_audio_step()
 	if is_instance_valid(_walker):
 		var step: float = 0.95 * delta                                              # matches the walk cycle's stride
 		_walker.position.z += _walker_dir * step

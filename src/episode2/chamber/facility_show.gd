@@ -259,7 +259,9 @@ static func _steps_for_raw(f: Node, beat: int) -> Array:
 				{"do": "face", "at": near},
 				_say("vo_bull_lava2", 0.2),
 				{"do": "until", "pred": f._lava_crossed, "nudge": "vo_bull_lava_nudge", "every": 11.0},
-				_say("vo_bull_lava_made_it", 0.2)]
+				# He praises it ON THE MOVE, leading on through the open door (founder 2026-10-25: "no arbitrary pause between the
+				# facility and the doorway"): the show ends here, so the door is open while the line still plays.
+				{"do": "call", "fn": f._exit_made_it}]
 		B.VERB_TEACH:
 			# He leads Lil Blunt to the range: the line plays while he walks (the player is free and follows).
 			return [{"do": "call", "fn": f._speak.bind("vo_bull_range_follow")},

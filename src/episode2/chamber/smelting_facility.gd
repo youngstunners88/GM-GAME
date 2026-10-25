@@ -297,6 +297,8 @@ const CAM_LERP := 1.8          # units/sec — a push-in, not a snap
 var _visuals: Node3D = null
 var _portal_quad: MeshInstance3D = null
 var _portal_live: bool = false          # the doorway is showing the built lift room (the session root drives it)
+var _exit_line_end: float = 0.0          # when Inferno's "made it" ends (he says it walking on; the lift waits for it)
+var _line_end: float = 0.0               # when the line he is saying now ends (any line: lava2, a nudge, "made it")
 var _camera: Camera3D = null
 var _cam_target_pos: Vector3 = CAM_WIDE[0]
 var _cam_target_pitch: float = float(CAM_WIDE[1])
@@ -634,7 +636,7 @@ func step(delta: float) -> void:
 			if _walk_through_ok():
 				if _player_pos.z >= PORTAL_Z:      # through the open door: the cut lands him where the doorway showed
 					_resolve()
-			elif _hold <= 0.0 and not _show_active and _player_pos.z >= EXIT_POSITION.z - 1.0 and _handoff_ok():
+			elif _exit_open() and _player_pos.z >= EXIT_POSITION.z - 1.0 and _handoff_ok():
 				_resolve()
 		_:
 			pass
@@ -1026,6 +1028,7 @@ func _animate_payment(delta: float) -> void:
 ## than assumed so a headless gate can drive this scene with no autoloads.
 func _speak(line_id: String) -> void:
 	line_spoken.emit(line_id)
+	_line_end = _elapsed + _vo_len(line_id)          # whatever he is saying when they walk through the door plays to its end
 	var am: Node = get_node_or_null("/root/AudioManager")
 	if am and am.has_method("play_voice"):
 		am.play_voice(line_id)
@@ -1293,13 +1296,33 @@ func _set_passage_plate(on: bool) -> void:
 		plate.visible = on
 
 
-## True when the open doorway can take him straight through (the lift is drawn in it and the last line has been said).
+## True when the open doorway can take him straight through (the lift is drawn in it and he may leave).
 func _walk_through_ok() -> bool:
-	return _portal_live and _beat == Beat.EXIT and _hold <= 0.0 and not _show_active and _handoff_ok()
+	return _portal_live and _exit_open() and _handoff_ok()
+
+
+## May Lil Blunt leave? The moment he is over the lava and Inferno (already across) has STARTED "made it" - the frame after he lands.
+## NOT "once Inferno's last line has ended": that held him at an invisible wall in front of the open door for the whole "made it" line
+## (~4.7 s; founder 2026-10-25 "there must be no arbitrary pause / interval between the facility and the doorway"). Inferno now says it
+## while he leads on, and the lift waits for whatever he is saying to end before his next line (`voice_left`), so nobody is cut off.
+func _exit_open() -> bool:
+	if _beat != Beat.EXIT or not _lava_crossed():
+		return false
+	return _exit_line_end > 0.0 or not _show_active
+
+
+## The EXIT show's last step: "made it", spoken while he walks on to the door (the show ends here, so the companion lead in
+## `_follow_player_in_fps` takes him through the open door at once).
+func _exit_made_it() -> void:
+	_hold = 0.0              # a nudge still running is replaced by the praise; nothing holds his lead to the door
+	_speak("vo_bull_lava_made_it")
+	_exit_line_end = _line_end
 
 
 func get_handoff() -> Dictionary:
 	var d: Dictionary = {"yaw": _look_yaw, "pitch": _look_pitch}
+	# Seconds of Inferno's line still to play when the cut happens: the next room starts his next line only after it.
+	d["voice_left"] = maxf(0.0, _line_end - _elapsed)
 	if _portal_live:                     # walked through the doorway: the lift room picks up exactly where he and Inferno are
 		d["lift_player"] = _player_pos + LIFT_OFFSET
 		if _bull != null:
@@ -2251,7 +2274,7 @@ func _follow_player_in_fps(_delta: float) -> void:
 		if _portal_live:
 			door = Vector3(0.7, 0.0, PORTAL_Z + 3.4)   # through the open door onto the lift's bridge, leading the way
 		if Vector2(_bull.position.x - door.x, _bull.position.z - door.z).length() > 0.5:
-			_bull.walk_to(door, 2.4)
+			_bull.walk_to(door, 2.9)       # a brisk lead: Lil Blunt (3.4 m/s) is never held at the door waiting for him
 		else:
 			_bull.stop()
 			_bull.face_point(Vector3(_player_pos.x, 0.0, _player_pos.z))
