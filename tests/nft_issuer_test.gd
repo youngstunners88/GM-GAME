@@ -54,6 +54,28 @@ func _ready() -> void:
 	_check("congrats card is on screen", NftIssuer._card_root != null and is_instance_valid(NftIssuer._card_root))
 	_check("jingle is playing", NftIssuer._jingle_player.playing or NftIssuer._jingle_player.stream != null)
 
+	# Exercise the real progression API for ALL stages, including returning saves.
+	var prior_progress: Dictionary = GameManager.progression_state.duplicate(true)
+	for pair in [["auditor", "boss_auditor"], ["distributor", "boss_distributor"], ["claim_jumper", "boss_claimjumper"]]:
+		var boss: String = pair[0]
+		var id: String = pair[1]
+		(NftIssuer._state["issued"] as Dictionary).erase(id)
+		GameManager.progression_state["bosses_defeated"] = [boss]
+		GameManager.mark_boss_defeated(boss)
+		_check(id + " restored when progression exists without NFT ledger", NftIssuer.has_nft(id))
+		var original: Dictionary = NftIssuer._state["issued"][id].duplicate(true)
+		var queued: int = NftIssuer._card_queue.size()
+		GameManager.mark_boss_defeated(boss)
+		_check(id + " replay presents the reward card", NftIssuer._card_queue.size() == queued + 1 and NftIssuer._card_queue.back() == id)
+		_check(id + " replay preserves the original issuance", NftIssuer._state["issued"][id] == original)
+		NftIssuer._voice_player.stop()
+		NftIssuer._voice_player.stream = null
+		NftIssuer._play_congrats(NftIssuer.definition(id))
+		await get_tree().create_timer(1.85).timeout
+		_check(id + " keeps jingle and no NFT speech", NftIssuer._jingle_player.stream != null and NftIssuer._voice_player.stream == null and not NftIssuer._voice_player.playing)
+	GameManager.progression_state = prior_progress
+	GameManager.save_session()
+
 	# ICP reply validation (the reply is untrusted)
 	var http := HTTPRequest.new(); add_child(http)
 	var good := JSON.stringify({"ok": true, "nft_id": "boss_auditor", "token_index": 7, "issued_at_iso": "2026-10-04T12:34:56Z"}).to_utf8_buffer()
