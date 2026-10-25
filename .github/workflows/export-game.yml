@@ -422,6 +422,9 @@ jobs:
           grep -q 'EP2_STREET_PEOPLE_ASSETS: ALL PASS' street-people-assets-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' street-people-assets-tests.log; then exit 1; fi
           # Bull's pacing, the cover fire and the donkey cart on the road (founder 2026-10-14).
+          timeout 120 "$GODOT_BIN" --headless res://tests/ep2_road_cart_motion_test.tscn 2>&1 | tee road-cart-motion-tests.log
+          grep -q 'EP2_ROAD_CART_MOTION: 12 checks, 0 failed' road-cart-motion-tests.log
+          if grep -Eq 'SCRIPT ERROR|Parse Error' road-cart-motion-tests.log; then exit 1; fi
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_companion_cart_test.tscn 2>&1 | tee companion-cart-tests.log
           grep -q 'EP2_COMPANION_CART: ALL PASS' companion-cart-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' companion-cart-tests.log; then exit 1; fi
@@ -638,6 +641,9 @@ jobs:
           timeout 120 "$GODOT_BIN" --headless --path "$STABLE_CHECK_DIR" --script "$GITHUB_WORKSPACE/tools/ep2_forge/check_stable_pack.gd" -- "$GITHUB_WORKSPACE/web/game/index.pck" "$GITHUB_WORKSPACE/web/game/ep2_extras.pck" 2>&1 | tee stable-pack-check.log
           grep -q 'STABLE_PACK: ALL PASS' stable-pack-check.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' stable-pack-check.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless --path "$STABLE_CHECK_DIR" --script "$GITHUB_WORKSPACE/tools/ep2_cart/check_pack.gd" -- "$GITHUB_WORKSPACE/web/game/index.pck" "$GITHUB_WORKSPACE/web/game/ep2_extras.pck" 2>&1 | tee road-cart-pack-check.log
+          grep -q 'ROAD_CART_PACK: 36 checks, 0 failed' road-cart-pack-check.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' road-cart-pack-check.log; then exit 1; fi
 
       - name: Restore the stamped source
         # MUST run, and must run BEFORE any step that touches git.

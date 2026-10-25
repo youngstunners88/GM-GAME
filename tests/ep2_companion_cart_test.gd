@@ -139,7 +139,7 @@ func _ready() -> void:
 	await get_tree().process_frame
 	_check("the founder's donkey cart is built on the desert road, right of the centre line", w3.get_cart_node() != null and ResourceLoader.exists(WoodsQuadChamber.CART_MODEL)
 		and w3.get_cart_node().find_children("*", "MeshInstance3D", true, false).size() >= 1)
-	_check("...with the driver on the box and the donkey in the shafts (one model, ~14k faces)", w3.get_cart_node().find_children("*", "MeshInstance3D", true, false).size() >= 1)
+	_check("...with a separately rigged seated driver, walking donkey and axle-centred cart wheels", (w3.get_cart_node() as Ep2RoadCart).ready_art and w3.get_cart_node().find_children("*", "Skeleton3D", true, false).size() == 2)
 	for b in w3.get_bears():                                  # a clear road: this run is about the cart, not the bears
 		(b as Ep2BearBrain).actor.visible = false
 		(b as Ep2BearBrain).aware = Ep2BearBrain.Aware.DEAD
@@ -154,10 +154,13 @@ func _ready() -> void:
 	var speed_at_pass: float = 99.0
 	var t: float = 0.0
 	var passed_at: float = -1.0
+	var saw_farmer_wave: bool = false
 	while t < 60.0 and w3.get_cart_state() < 3:
 		t += 1.0 / 60.0
 		w3.step(1.0 / 60.0)
 		var gap: float = w3._cart_s - w3._ride_s
+		if (w3.get_cart_node() as Ep2RoadCart).greeting_time >= 0.0:
+			saw_farmer_wave = saw_farmer_wave or said3.has("vo_cart_man")
 		if gap < 70.0 and gap > -10.0:
 			min_speed = minf(min_speed, w3._ride_speed)
 		if absf(gap) < 5.0:
@@ -170,7 +173,11 @@ func _ready() -> void:
 		if said3.find(order[i - 1]) < 0 or said3.find(order[i - 1]) > said3.find(order[i]):
 			in_order = false
 	_check("Inferno warns about the animal, greets the farmer, the farmer answers, Lil Blunt answers - in order", in_order, str(said3))
-	_run(w3, 12.0)
+	_check("the farmer waves during his own greeting in the real encounter", saw_farmer_wave)
+	var cart_pass_s: float = w3._cart_s
+	_run(w3, 1.0)
+	_check("the donkey keeps walking after the quad passes", w3._cart_s > cart_pass_s + 2.3)
+	_run(w3, 11.0)
 	_check("past him the road opens up again (speed back above 8 m/s)", w3._ride_speed > 8.0 or w3.get_beat_name() != "RIDE", "%.1f" % w3._ride_speed)
 	var lines: Array = ["vo_bull_ahead1", "vo_bull_ahead2", "vo_bull_ahead3", "vo_bull_wait1", "vo_bull_wait2", "vo_bull_sneak2", "vo_bull_sneak3", "vo_bull_quiet2",
 		"vo_bull_cover1", "vo_bull_cover2", "vo_bull_cover3", "vo_bull_cart1", "vo_bull_cart2", "vo_cart_man", "vo_lb_cart"]

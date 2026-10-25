@@ -1,0 +1,61 @@
+{
+  "ok": true,
+  "pass": false,
+  "errors": [
+    "armature object transform not applied (scale (0.009999999776482582, 0.009999999776482582, 0.009999999776482582), rot (0.0, 0.0, 0.0))"
+  ],
+  "warnings": [
+    "root bone 'Hips' not at world origin",
+    "asymmetric bone roll vs mirror: ['LeftShoulder', 'LeftForeArm', 'LeftHand', 'LeftFoot'] (recalc roll / symmetrize)"
+  ],
+  "bones": 24,
+  "deform_bones": 24,
+  "profile": {},
+  "skin": {
+    "char1": {
+      "verts": 20839,
+      "unweighted": 0,
+      "over_4": 0,
+      "not_normalized": 0,
+      "weights_on_root": 7179,
+      "weights_on_nondeform": 0,
+      "groups_without_bone": [],
+      "asymmetric_verts_sampled": 0,
+      "deform_bones_without_group": 0
+    },
+    "HatBand": {
+      "verts": 384,
+      "unweighted": 0,
+      "over_4": 0,
+      "not_normalized": 0,
+      "weights_on_root": 0,
+      "weights_on_nondeform": 0,
+      "groups_without_bone": [],
+      "asymmetric_verts_sampled": 0,
+      "deform_bones_without_group": 23
+    },
+    "HatBrim": {
+      "verts": 384,
+      "unweighted": 0,
+      "over_4": 0,
+      "not_normalized": 0,
+      "weights_on_root": 0,
+      "weights_on_nondeform": 0,
+      "groups_without_bone": [],
+      "asymmetric_verts_sampled": 0,
+      "deform_bones_without_group": 23
+    },
+    "HatCrown": {
+      "verts": 384,
+      "unweighted": 0,
+      "over_4": 0,
+      "not_normalized": 0,
+      "weights_on_root": 0,
+      "weights_on_nondeform": 0,
+      "groups_without_bone": [],
+      "asymmetric_verts_sampled": 0,
+      "deform_bones_without_group": 23
+    }
+  },
+  "fixed": false
+}

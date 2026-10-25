@@ -1,0 +1,25 @@
+{
+  "native_motion": "EP2_ROAD_CART_MOTION: 12 checks, 0 failed",
+  "motion_metrics": [
+    "CONTACT_METRICS slip=0.00315793906339 min=-0.0043580904603 max=0.1487167775631 samples=250 stance_drift=0.01300699915737",
+    "GREETING_METRICS wave=0.66097462177277 grip=0 hip=0 reins=0.00000047706993"
+  ],
+  "companion_regression": "EP2_COMPANION_CART: ALL PASS",
+  "exported_imports": "ROAD_CART_PACK: 36 checks, 0 failed",
+  "exported_encounter": "EXPORTED_ENCOUNTER: ALL PASS slow=5.1 wave=true state=3 lines=[\"vo_bull_road_start\", \"vo_lb_road_go\", \"vo_bull_cart1\", \"vo_bull_cart2\", \"vo_cart_man\", \"vo_lb_cart\"]",
+  "web_export": "\u2713 export ok  pck=198631424  script_errors=0\n  serving http://localhost:8899/game/index.html?ep2=1&ep2probe=1",
+  "security": "18 checks,18 pass,0 blockers",
+  "compile": "SCRIPT_COMPILE: ALL PASS",
+  "save": "SAVE_COMPAT: ALL PASS",
+  "title": "FRONT-PAGE LOCK: OK (5 files)",
+  "harness": "CHECK_HARNESS_HOOKS: ALL PASS",
+  "encounter_captures": [
+    "ENCOUNTER_SHOT approach gap=21.9407768298555 greet=-1 eye=(-10.4039, 3.38692, 1047.597)",
+    "ENCOUNTER_SHOT alongside gap=4.99032142002295 greet=0.56666666666667 eye=(-9.390475, 3.365164, 1076.225)",
+    "ENCOUNTER_SHOT greeting gap=4.90032142002281 greet=0.6 eye=(-9.379069, 3.359966, 1076.395)",
+    "ENCOUNTER_SHOT greeting_mid gap=2.69532142001924 greet=1.41666666666667 eye=(-9.085008, 3.371244, 1080.551)",
+    "ENCOUNTER_SHOT passed gap=-4.0096785799916 greet=-1 eye=(-8.001597, 3.363619, 1093.176)",
+    "ENCOUNTER_REVIEW lines=[\"vo_lb_road_go\", \"vo_bull_cart1\", \"vo_bull_cart2\", \"vo_cart_man\", \"vo_lb_cart\"] state=3 shots=[\"approach\", \"alongside\", \"greeting\", \"greeting_mid\", \"passed\"]"
+  ],
+  "native_teardown_note": "Godot dummy-renderer mesh-null/resource-leak messages occur at teardown; no SCRIPT ERROR/Parse Error or test failures. Real Compatibility captures and final web export were also checked."
+}
