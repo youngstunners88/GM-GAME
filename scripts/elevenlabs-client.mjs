@@ -14,6 +14,10 @@ if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(binding) || !process.env[binding]) {
 const apiKeys = [process.env[binding], ...Object.keys(process.env)
   .filter(k => /^ELEVENLABS_API_KEY_\d+$/.test(k)).sort().map(k => process.env[k]).filter(Boolean)];
 const apiKey = apiKeys[0];
+// Functions can have their own key: ELEVENLABS_SPEECH_API_KEY for text-to-speech (the voices), ELEVENLABS_SFX_API_KEY for sound
+// effects. A function without its own key uses the rotating list above.
+const speechKeys = process.env.ELEVENLABS_SPEECH_API_KEY ? [process.env.ELEVENLABS_SPEECH_API_KEY, ...apiKeys] : apiKeys;
+const sfxKeys = process.env.ELEVENLABS_SFX_API_KEY ? [process.env.ELEVENLABS_SFX_API_KEY, ...apiKeys] : apiKeys;
 
 let Sdk = null;
 try {
@@ -23,9 +27,9 @@ try {
 }
 
 function fetchClient(key) {
-  const post = async (url, body) => {
+  const post = async (url, body, keys = apiKeys) => {
     let last = null;
-    for (const k of apiKeys) {
+    for (const k of keys) {
       const r = await fetch(url, {
         method: 'POST',
         headers: { 'xi-api-key': k, 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
@@ -36,7 +40,7 @@ function fetchClient(key) {
       last = `ElevenLabs ${r.status} on ${new URL(url).pathname}: ${text}`;
       const spent = r.status === 429 || /quota|credits|character|limit/i.test(text);
       if (!spent) break;                       // a bad key or a bad request: no point trying the other keys
-      console.warn(`ElevenLabs key ${apiKeys.indexOf(k) + 1} of ${apiKeys.length} is out of characters or rate-limited; trying the next`);
+      console.warn(`ElevenLabs key ${keys.indexOf(k) + 1} of ${keys.length} is out of characters or rate-limited; trying the next`);
     }
     throw new Error(last);
   };
@@ -51,7 +55,7 @@ function fetchClient(key) {
             ? { stability: o.voiceSettings.stability, similarity_boost: o.voiceSettings.similarityBoost }
             : undefined,
         },
-      ),
+      speechKeys),
     },
     textToSoundEffects: {
       convert: o => post('https://api.elevenlabs.io/v1/sound-generation', {
@@ -60,7 +64,7 @@ function fetchClient(key) {
         loop: o.loop,
         model_id: o.modelId,
         prompt_influence: o.promptInfluence,
-      }),
+      }, sfxKeys),
     },
   };
 }
