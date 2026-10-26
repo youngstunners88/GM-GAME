@@ -9,7 +9,7 @@
     "speaker": "lil_blunt",
     "voice_id": "HMGfKwZCRujgXyRDUW0b",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_intro_sharps_lines_0": {
     "source_hash": "939fa174c15ba1c4a52d889ac0f44acb8d3a00437e43bc72aa645b709e374013",
@@ -21,7 +21,7 @@
     "speaker": "rich",
     "voice_id": "LNV6ahDtkAOqwn1X3R7a",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_intro_sharps_lines_1": {
     "source_hash": "af422106168c59919d2e0d52b739eaaeeef55bfd2dd1d54a13c3226317f5b7c3",
@@ -33,7 +33,7 @@
     "speaker": "rich",
     "voice_id": "LNV6ahDtkAOqwn1X3R7a",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_intro_sharps_lines_3": {
     "source_hash": "1fa84f888d9a9233219b1ae617b65416e90fc5f91eef590b70423e9f8e1085ea",
@@ -45,7 +45,7 @@
     "speaker": "rich",
     "voice_id": "LNV6ahDtkAOqwn1X3R7a",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_intro_sharps_lines_4": {
     "source_hash": "6ba70fc0938c4c250cca15e1a77b31045186c9b3210927b09cfa83ddc942f234",
@@ -57,7 +57,7 @@
     "speaker": "rich",
     "voice_id": "LNV6ahDtkAOqwn1X3R7a",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_intro_sharps_lines_5": {
     "source_hash": "00eb9a9ecaa84acbd5b5ac497acaa24be6c85ce09d96233d27ea52daeadd0212",
@@ -69,7 +69,7 @@
     "speaker": "rich",
     "voice_id": "LNV6ahDtkAOqwn1X3R7a",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_intro_gatling_after_1": {
     "source_hash": "7d4fee6389f88532b158a1e8a55b2eb757246053aec4e54ff759940013ee0eac",
@@ -81,7 +81,7 @@
     "speaker": "rich",
     "voice_id": "LNV6ahDtkAOqwn1X3R7a",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_trade_00": {
     "source_hash": "32a5beee5e4ae95af8cd50516c03bea695eac1d408c5f5172f56e1f5b7c10e95",
@@ -93,7 +93,7 @@
     "speaker": "rich",
     "voice_id": "LNV6ahDtkAOqwn1X3R7a",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_trade_01": {
     "source_hash": "6c3b64ffd41b1c7b610fad2b3961f3a83d4780448b99759fc3c4286f6732e20d",
@@ -105,7 +105,7 @@
     "speaker": "lil_blunt",
     "voice_id": "HMGfKwZCRujgXyRDUW0b",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_trade_02": {
     "source_hash": "1db79f7270c2bbd4ebe63248c5ff815d19404cf97d84a72cc5dc10f2ebf19397",
@@ -117,7 +117,7 @@
     "speaker": "rich",
     "voice_id": "LNV6ahDtkAOqwn1X3R7a",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_trade_04": {
     "source_hash": "c039e0eb2c3c913877183f2ced6ddeec513136587420e97ee458509f70ef032b",
@@ -141,7 +141,7 @@
     "speaker": "rich",
     "voice_id": "LNV6ahDtkAOqwn1X3R7a",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_trade_08": {
     "source_hash": "bff64de111316131eaa570e23e483f0fdf02b1b11e88a6d2ae3dc3211590dc8a",
@@ -165,7 +165,7 @@
     "speaker": "rich",
     "voice_id": "LNV6ahDtkAOqwn1X3R7a",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_trade_12": {
     "source_hash": "8ae352e3636cb4ad7b2c4f5fa64bef3676c9a981045b0a5957514a88cbb26a68",
@@ -189,7 +189,7 @@
     "speaker": "lil_blunt",
     "voice_id": "HMGfKwZCRujgXyRDUW0b",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_trade_14": {
     "source_hash": "d9ff1ee17d6a3203ac2a13522a1dff904fa3a53211e3e47069ab957879ee08dd",
@@ -201,7 +201,7 @@
     "speaker": "lil_blunt",
     "voice_id": "HMGfKwZCRujgXyRDUW0b",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_greet_clerk_0": {
     "source_hash": "bf285328df38c80102461ac2fe3d4ab4a7684b44d371123111336cf4f58c289a",
@@ -213,7 +213,7 @@
     "speaker": "clerk",
     "voice_id": "cjVigY5qzO86Huf0OWal",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_greet_clerk_1": {
     "source_hash": "9d98984bb35a0c7a1fe1df17f7a3c770fd3cd2f964dd74f85ea44abd7baeb398",
@@ -225,7 +225,7 @@
     "speaker": "clerk",
     "voice_id": "cjVigY5qzO86Huf0OWal",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_greet_oldtimer_0": {
     "source_hash": "28d06fe06c69c1fade83d360f34eae98c9435f0e0838523b4bde44c3c273fc6f",
@@ -261,7 +261,7 @@
     "speaker": "rancher",
     "voice_id": "iP95p4xoKVk53GoZ742B",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_greet_rancher_1": {
     "source_hash": "7a890723fc136ffe52f434a55f7d34a2723ec24969ca5a1a290c378859f23a4b",
@@ -273,7 +273,7 @@
     "speaker": "rancher",
     "voice_id": "iP95p4xoKVk53GoZ742B",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_greet_dressmaker_0": {
     "source_hash": "2afebd69f74bc2602e4216b861198207a945e6ea4cead40add5a2814884e7d4f",
@@ -297,7 +297,7 @@
     "speaker": "dressmaker",
     "voice_id": "XrExE9yKIg1WjnnlVkGX",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_greet_lady_0": {
     "source_hash": "f4711ecafa2eb46e8a89661a46add1afe7abaaa539a18afe7fd3af886ea99c8b",
@@ -321,7 +321,7 @@
     "speaker": "lady",
     "voice_id": "hpp4J3VqNfWAUOO0d1Us",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_greet_bald_worker_0": {
     "source_hash": "ba2ce8bd98674bf9f9d4f38f1331b9d0b6d3efa0b858a38cc3a5c9670238b635",
@@ -333,7 +333,7 @@
     "speaker": "bald_worker",
     "voice_id": "nPczCjzI2devNBz1zQrb",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_greet_bald_worker_1": {
     "source_hash": "ad7cc09a7c0cefb735d73cae8573e12dc7eccdb9836aeb1348a5a4d1b16d53e1",
@@ -345,7 +345,7 @@
     "speaker": "bald_worker",
     "voice_id": "nPczCjzI2devNBz1zQrb",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_greet_grandma_0": {
     "source_hash": "1c5da8beb13d6e8aa64de9dd013190aad45fa9d6ebac08174500242b35ba3c78",
@@ -357,7 +357,7 @@
     "speaker": "grandma",
     "voice_id": "5u41aNhyCU6hXOcjPPv0",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_greet_grandma_1": {
     "source_hash": "24505c331bad5cc185226c0880c60e8593950b6084b0dccef34726f90dddad8e",
@@ -369,7 +369,7 @@
     "speaker": "grandma",
     "voice_id": "5u41aNhyCU6hXOcjPPv0",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_greet_grandfather_0": {
     "source_hash": "4beefb4b373bc992759f3420a3b1ab1ce95bd50e216515bdbeda6dbf8787e88c",
@@ -381,7 +381,7 @@
     "speaker": "grandfather",
     "voice_id": "NOpBlnGInO9m6vDvFkFC",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_greet_grandfather_1": {
     "source_hash": "cc6544e88aece1e36bc4e322fe45ad84c593fa9b7185956173854142f05eeeba",
@@ -405,7 +405,7 @@
     "speaker": "grandmother",
     "voice_id": "q1Hhtkt94vkD6q7p50hW",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_greet_grandmother_1": {
     "source_hash": "6a3f9a2d58bf893295316848e38142b00798f032554f77d7579595262162c18d",
@@ -417,7 +417,7 @@
     "speaker": "grandmother",
     "voice_id": "q1Hhtkt94vkD6q7p50hW",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_greet_youth_0": {
     "source_hash": "ee072f46f2617ce4ab515486007c02105b134c37edb5f52b708712acc95b25bf",
@@ -429,7 +429,7 @@
     "speaker": "youth",
     "voice_id": "bIHbv24MWmeRgasZH58o",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_greet_youth_1": {
     "source_hash": "aeae282e1f4b04bac037421bb1dc822033ddf856fde6b2c80954b4e360ccda5c",
@@ -453,7 +453,7 @@
     "speaker": "boy",
     "voice_id": "TX3LPaxmHKxFdv7VOQHJ",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_greet_boy_1": {
     "source_hash": "a9abb24c7f4890c78527343a8a34d3857818c1ac69d3c62706af995155d0ed7f",
@@ -465,7 +465,7 @@
     "speaker": "boy",
     "voice_id": "TX3LPaxmHKxFdv7VOQHJ",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_greet_braided_girl_0": {
     "source_hash": "3a3b1d3a211a485bb642adb3e9168c41927f6e5c698b264ea226ee247ce5a6dc",
@@ -477,7 +477,7 @@
     "speaker": "braided_girl",
     "voice_id": "cgSgspJ2msm6clMCkdW9",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_greet_braided_girl_1": {
     "source_hash": "5e7e4234698038e965c18dc5224bfd33edfc2227c6fdc68bfda6a1efb1e64453",
@@ -489,7 +489,7 @@
     "speaker": "braided_girl",
     "voice_id": "cgSgspJ2msm6clMCkdW9",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_greet_bob_girl_0": {
     "source_hash": "5a952a20ade799b740bfda8a31d6296c0fda2f688c3e61eada6b951dabeee817",
@@ -501,7 +501,7 @@
     "speaker": "bob_girl",
     "voice_id": "FGY2WhTYpPnrIDTdsKH5",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_greet_bob_girl_1": {
     "source_hash": "3d87256635b46d3def185ac3a5d45981844d55f15a75bd1722d35e5b417e0392",
@@ -513,7 +513,7 @@
     "speaker": "bob_girl",
     "voice_id": "FGY2WhTYpPnrIDTdsKH5",
     "model_id": "eleven_v4",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_wind": {
     "source_hash": "4fec53fbbbb2178ba31e6b0ebc47bb1cf01b105d65ebc9aa69d1c9b093ab7f6c",
@@ -524,7 +524,7 @@
     "prompt": "Seamlessly looping realistic frontier desert town atmosphere. Gentle dry breeze past timber storefronts, quiet open air and light fabric awning flutter. Understated, warm daytime, no music, no speech, no bell or chime, no gunshots.",
     "loop": true,
     "model_id": "eleven_text_to_sound_v2",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_saloon": {
     "source_hash": "c025e0173792f3f75ca5996d492a77f4d99b7934fdd90cb0b8f65957faf17044",
@@ -535,7 +535,7 @@
     "prompt": "Seamlessly looping quiet interior of an old Western saloon, distant indistinct soft crowd murmur with no intelligible words, a few faint glass clinks and wooden chair creaks. Calm everyday life, no fighting, no bell, no gunshots, no music.",
     "loop": true,
     "model_id": "eleven_text_to_sound_v2",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_boardwalk": {
     "source_hash": "1af94c70a77134e8c972ce123924fd8455cc44ebf0dfca0ad49fdd49bac44c77",
@@ -546,7 +546,7 @@
     "prompt": "One pair of leather boot footsteps on an old timber boardwalk, natural short wooden taps with a slight plank creak. Close dry realistic foley, no voice, no wind, no bell, no music.",
     "loop": false,
     "model_id": "eleven_text_to_sound_v2",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_draw_bell": {
     "source_hash": "85f2844c428ee221bd1a4162818e55322e396333f431a4506d2cb759e50db15b",
@@ -557,7 +557,7 @@
     "prompt": "Exactly one strong strike of an old bronze Western town bell, immediate crisp metallic attack at the start followed by a warm natural resonant decay into silence. One toll only, no second strike, no background, no music, no voices.",
     "loop": false,
     "model_id": "eleven_text_to_sound_v2",
-    "start_seconds": 0.0
+    "start_seconds": 0
   },
   "town_intro_sharps_lines_2": {
     "source_hash": "51fdf664bb550dc84bdf6db590560177631d4b8d52d056475cfc51396b0343b5",
@@ -845,6 +845,138 @@
     "voice_id": "zskPkJFpKt6Fq5Aouk0g",
     "model_id": "eleven_v4",
     "seconds": 4.305,
+    "start_seconds": 0
+  },
+  "gatling_shot_a": {
+    "source_hash": "4c3ae59d935ccbaf5e7afd0a252f59bbbf58948c6193665f66c83db65831a86e",
+    "processing_version": 2,
+    "sha256": "c7588a2afb1b9a8336d81f3939fe90760d539678fb3aa8623dbfbc5029c8283d",
+    "bytes": 9356,
+    "prompt": "One single heavy report of an 1870s hand-cranked Colt Gatling gun firing outdoors at close range: a deep black-powder boom with a sharp supersonic crack and a short metallic breech clack. One shot only, no echo tail, no music, no voices.",
+    "seconds": 0.799002,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "gatling_shot_b": {
+    "source_hash": "c458eaef6be377b0137a7da72975b49a28a09f7bffd62050dba38c7705514829",
+    "processing_version": 2,
+    "sha256": "e7524d9befe263b8338455e34995d4c780fe76381681085388e5ea70b53f60ea",
+    "bytes": 9507,
+    "prompt": "A single loud black-powder rifle-calibre gunshot from a heavy mounted Gatling gun in an open desert yard: hard punchy blast, crack, brief mechanical clank. Exactly one shot, no reverb tail, no music, no voices.",
+    "seconds": 0.799002,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "gatling_shot_c": {
+    "source_hash": "ddfdbde8f6bd19047e0d6fe0d25cb64f6283318530c1461c6a49f397f312c0ee",
+    "processing_version": 2,
+    "sha256": "6773a86a0fbef47640901c063dfadb0d8c9f77d14f3256cd790d7b07c5fddc0a",
+    "bytes": 9441,
+    "prompt": "One powerful close-up gunshot of an old mounted machine gun round, thick low boom with crisp crack and a quick iron rattle of the mechanism. Only one shot, dry, no music, no voices.",
+    "seconds": 0.799002,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "gatling_crank_loop": {
+    "source_hash": "651ee1d34d2b243593a8cd6d31bbcd04efced61647ed5c1685fbc381cac7c245",
+    "processing_version": 2,
+    "sha256": "d5f57928323e823f330ee89df97f8d5b97bff4ec93bd4b6f7830896f05731b83",
+    "bytes": 30142,
+    "prompt": "Seamlessly looping fast mechanical clatter of a hand-cranked 1870s Gatling gun: brass gears ratcheting, the rotating barrel cluster whirring, cartridges feeding with rhythmic metal clicks. No gunshots, no voices, no music.",
+    "seconds": 2.25,
+    "loop": true,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "gatling_tail": {
+    "source_hash": "6b61bea5acfb0e61a99fd9ab4ed42cf30298809811b1047a70555aad6929cd8e",
+    "processing_version": 2,
+    "sha256": "751026017b907f370c0d471c0108a8fd6728e6e992ebc0b5e60e419bd06137d4",
+    "bytes": 20434,
+    "prompt": "The rolling outdoor echo after a long burst of heavy gunfire fading away across a wide desert valley and rock hills. No new shots, no voices, no music.",
+    "seconds": 2.428503,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "train_passby": {
+    "source_hash": "b45fbb2a4eb67f66486b03176484633bc1cb8c569ee6983b458c6471efc588c0",
+    "processing_version": 2,
+    "sha256": "acc39554e448c6fada55805cccda841d88bd6b65f4be53af8382e9a13aa17a80",
+    "bytes": 105208,
+    "prompt": "Realistic 1880s steam locomotive passing by at speed on a frontier railway: rhythmic heavy chuffing approaching from far away, iron wheels clattering over rail joints, a hiss of escaping steam, one long deep steam whistle as it passes close, a strong Doppler shift, then the train fading into the distance. Outdoors, natural, no music, no voices.",
+    "seconds": 13.956735,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "town_people_loop": {
+    "source_hash": "5de4d50037c890d069612ea38b0441094d9584b80a39bb8760b7e6b5f2ce9458",
+    "processing_version": 2,
+    "sha256": "b6bbbaf51ae19ef98d988fe1e75d6f4c2d7fd7fbf52afc0392d7307d23896ca5",
+    "bytes": 141035,
+    "prompt": "Seamlessly looping lively Western frontier town street ambience: indistinct friendly chatter and occasional laughter from several people at a short distance, boots on a wooden boardwalk, a far-off horse snort, a door creak. No intelligible words, no music, no gunshots, no bell.",
+    "seconds": 16,
+    "loop": true,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "saloon_laughter": {
+    "source_hash": "9a625d6035a5993361909ea16d25269c1a803df1713c7b79d932bf6e7116e405",
+    "processing_version": 2,
+    "sha256": "95ab81d9a2b9de0b9c8714f2ac9722f3f500543199651ea05d0ad17539d8d1d9",
+    "bytes": 23051,
+    "prompt": "A short burst of hearty, warm laughter from two or three men sitting at a saloon table, relaxed and friendly, slight room tone. No words, no music, no glass breaking.",
+    "seconds": 2.37873,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "horse_whinny": {
+    "source_hash": "ce24bb61712b75b74011544d1d831e3cf8f1f7c6dadd2ca2d32c1a5cca8b04f6",
+    "processing_version": 2,
+    "sha256": "7633554b9f9ae5e27b29a61cbdf3221dcc900448b42b6576b774e6d64c0cde58",
+    "bytes": 18161,
+    "prompt": "A single natural horse whinny close by outdoors, a healthy calm horse calling once. No other animals, no hooves, no music.",
+    "seconds": 1.759002,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "horse_snort": {
+    "source_hash": "95bada553508b183e3048c5a0e28090a636701ade5ddfdfe83ed9c66d6179aaa",
+    "processing_version": 2,
+    "sha256": "75460123dbae4fac12c6bd5614cf294df685052dc108695a21e669dce7ae7983",
+    "bytes": 13055,
+    "prompt": "One relaxed horse snort and a soft blow through the nostrils, close and natural, outdoors. No whinny, no music.",
+    "seconds": 1.199002,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "horse_kick": {
+    "source_hash": "c1e8b0f87f420a801a5f0a96be6ac1c3b41553c2dadd13f5cbc7ff81ec7a0ec0",
+    "processing_version": 2,
+    "sha256": "3468e88233bbce052c5679deaaaafdd8e8491d83bd131714d8319fd51efb98f2",
+    "bytes": 10992,
+    "prompt": "A startled horse snorts sharply and its hoof kicks out with a heavy thud against something soft, short and sudden, outdoors. No voice, no music.",
+    "seconds": 0.999002,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "horse_hooves_loop": {
+    "source_hash": "c77447fd6fd43a1e97fbeecf8f030af5957bb37deee82ca654e156187dd57642",
+    "processing_version": 2,
+    "sha256": "9c925731752fad3538153e4b889b4352752a64967ba0fbb942f282acfd53189d",
+    "bytes": 38722,
+    "prompt": "Seamlessly looping steady walk of one horse on packed dry dirt, natural hoof clops with slight tack jingle. No other sounds, no music.",
+    "seconds": 4,
+    "loop": true,
+    "model_id": "eleven_text_to_sound_v2",
     "start_seconds": 0
   }
 }

@@ -531,6 +531,78 @@
       "seconds": 4,
       "loop": false,
       "prompt": "Exactly one strong strike of an old bronze Western town bell, immediate crisp metallic attack at the start followed by a warm natural resonant decay into silence. One toll only, no second strike, no background, no music, no voices."
+    },
+    {
+      "id": "gatling_shot_a",
+      "seconds": 0.8,
+      "loop": false,
+      "prompt": "One single heavy report of an 1870s hand-cranked Colt Gatling gun firing outdoors at close range: a deep black-powder boom with a sharp supersonic crack and a short metallic breech clack. One shot only, no echo tail, no music, no voices."
+    },
+    {
+      "id": "gatling_shot_b",
+      "seconds": 0.8,
+      "loop": false,
+      "prompt": "A single loud black-powder rifle-calibre gunshot from a heavy mounted Gatling gun in an open desert yard: hard punchy blast, crack, brief mechanical clank. Exactly one shot, no reverb tail, no music, no voices."
+    },
+    {
+      "id": "gatling_shot_c",
+      "seconds": 0.8,
+      "loop": false,
+      "prompt": "One powerful close-up gunshot of an old mounted machine gun round, thick low boom with crisp crack and a quick iron rattle of the mechanism. Only one shot, dry, no music, no voices."
+    },
+    {
+      "id": "gatling_crank_loop",
+      "seconds": 2.0,
+      "loop": true,
+      "prompt": "Seamlessly looping fast mechanical clatter of a hand-cranked 1870s Gatling gun: brass gears ratcheting, the rotating barrel cluster whirring, cartridges feeding with rhythmic metal clicks. No gunshots, no voices, no music."
+    },
+    {
+      "id": "gatling_tail",
+      "seconds": 2.5,
+      "loop": false,
+      "prompt": "The rolling outdoor echo after a long burst of heavy gunfire fading away across a wide desert valley and rock hills. No new shots, no voices, no music."
+    },
+    {
+      "id": "train_passby",
+      "seconds": 14,
+      "loop": false,
+      "prompt": "Realistic 1880s steam locomotive passing by at speed on a frontier railway: rhythmic heavy chuffing approaching from far away, iron wheels clattering over rail joints, a hiss of escaping steam, one long deep steam whistle as it passes close, a strong Doppler shift, then the train fading into the distance. Outdoors, natural, no music, no voices."
+    },
+    {
+      "id": "town_people_loop",
+      "seconds": 16,
+      "loop": true,
+      "prompt": "Seamlessly looping lively Western frontier town street ambience: indistinct friendly chatter and occasional laughter from several people at a short distance, boots on a wooden boardwalk, a far-off horse snort, a door creak. No intelligible words, no music, no gunshots, no bell."
+    },
+    {
+      "id": "saloon_laughter",
+      "seconds": 2.5,
+      "loop": false,
+      "prompt": "A short burst of hearty, warm laughter from two or three men sitting at a saloon table, relaxed and friendly, slight room tone. No words, no music, no glass breaking."
+    },
+    {
+      "id": "horse_whinny",
+      "seconds": 1.8,
+      "loop": false,
+      "prompt": "A single natural horse whinny close by outdoors, a healthy calm horse calling once. No other animals, no hooves, no music."
+    },
+    {
+      "id": "horse_snort",
+      "seconds": 1.2,
+      "loop": false,
+      "prompt": "One relaxed horse snort and a soft blow through the nostrils, close and natural, outdoors. No whinny, no music."
+    },
+    {
+      "id": "horse_kick",
+      "seconds": 1.0,
+      "loop": false,
+      "prompt": "A startled horse snorts sharply and its hoof kicks out with a heavy thud against something soft, short and sudden, outdoors. No voice, no music."
+    },
+    {
+      "id": "horse_hooves_loop",
+      "seconds": 4.0,
+      "loop": true,
+      "prompt": "Seamlessly looping steady walk of one horse on packed dry dirt, natural hoof clops with slight tack jingle. No other sounds, no music."
     }
   ]
 }
