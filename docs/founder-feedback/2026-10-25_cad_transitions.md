@@ -130,6 +130,21 @@ GEARED, DONE (`src/episode2/chamber/gold_town.gd`). Fort Knox is never opened.
   and was dropped).
 - Gate: `tests/ep2_town_furniture_test` (street trim + Armory sections, CI). Gold town and two-storey Armory gates pass.
 
+## P1 — CAD pass, part 5 (the smelter's furnace)
+
+![furnace before / after](2026-10-25_cad_transitions/furnace_before_after.jpg)
+
+- Four pieces added to the streamed smelter kit (`tools/ep2_cad/smelter_kit_cad.py` -> `build_smelter_kit.py`; the sixteen existing
+  props' mesh data verified identical): `Kit_FurnaceDoors` (two riveted cast-iron doors on the stone jambs, swung open 100 degrees, with
+  straps, hinge knuckles and pintle plates, a peep port and its cover, a latch bar), `Kit_FurnaceHood` (a sheet-iron hood lofted from a
+  4.3 m riveted rim to its collar, the flue climbing in banded sections into the rock roof, a damper), `Kit_Bellows` (pear boards, the
+  lofted leather, a brass nozzle into the left jamb, the lever on its post, the trestle), `Kit_FireTools` (poker, rake, slag skimmer).
+- Placed by `HideoutDressing._finish_forge` at the furnace stonework's own mount (`FURNACE_MOUNT`); the doors and hood in hideout metres,
+  the bellows and tools at `SCALE_HIDEOUT`. The open right-hand door and the tools have walk blockers; the left door and the bellows are
+  past the walk clamp (x -6.3). Streamed: until the pack mounts the furnace looks as before, then they appear (normally under the film).
+- Gate: `tests/ep2_smelter_kit_test` (CI). `ep2_smelting_facility_test` shows only its known pre-existing "Bull PBR" failure (fails on
+  master too); seamless chain passes.
+
 ## Not yet verified
 - Web-build listening and a real-browser walk of hideout → lift → woods (headless gates + native GPU captures only). The founder's hard refresh is the acceptance.
 - The synthesized train has not been listened to by a human. If it reads wrong, regenerate with ElevenLabs / VARCO when a key is on the box (same file names).

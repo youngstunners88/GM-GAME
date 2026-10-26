@@ -10,7 +10,8 @@ extends Node
 ## Run: godot --headless res://tests/ep2_smelter_kit_test.tscn
 
 const PROPS := ["Kit_Revolver", "Kit_Keg", "Kit_KegSmall", "Kit_Chock", "Kit_Anvil", "Kit_Tongs", "Kit_Ladle", "Kit_Mould", "Kit_Shovel",
-	"Kit_Sledge", "Kit_Pick", "Kit_ChainLink", "Kit_Hook", "Kit_Cartridge", "Kit_Crate", "Kit_AmmoBox"]
+	"Kit_Sledge", "Kit_Pick", "Kit_ChainLink", "Kit_Hook", "Kit_Cartridge", "Kit_Crate", "Kit_AmmoBox",
+	"Kit_FurnaceDoors", "Kit_FurnaceHood", "Kit_Bellows", "Kit_FireTools"]
 var failures := 0
 
 
@@ -128,6 +129,13 @@ func _ready() -> void:
 	var has := func(p: Vector2) -> bool: return bl.any(func(b: Array) -> bool: return (b[0] as Vector2).distance_to(p) < 0.3)
 	check("...each new standing group blocks the walk (kegs, the lying keg, the anvil, the moulds)",
 		has.call(Vector2(6.25, 6.0)) and has.call(Vector2(-6.2, -0.5)) and has.call(Vector2(-5.9, 14.2)) and has.call(Vector2(-7.1, 14.0)))
+	check("the furnace has its CAD front: the iron doors swung open, the riveted hood and flue, the bellows, the fire tools",
+		_props(visuals, "Prop_FurnaceDoors").size() == 1 and _props(visuals, "Prop_FurnaceHood").size() == 1
+		and _props(visuals, "Prop_Bellows").size() == 1 and _props(visuals, "Prop_FireTools").size() == 1
+		and visuals.find_children("Kit_FurnaceDoors", "Node3D", true, false).size() == 1)
+	check("...the open right-hand door and the tools block the walk; the bellows and the left door are beyond the walk clamp (x -6.3)",
+		has.call(Vector2(-4.95, 15.05)) and has.call(Vector2(HideoutDressing.FIRE_TOOLS_AT.x, HideoutDressing.FIRE_TOOLS_AT.z))
+		and HideoutDressing.BELLOWS_AT.x < -6.8)
 	check("nothing waits for the kit on desktop (no stand-ins left)", Ep2KitProps.pending_count() == 0, str(Ep2KitProps.pending_count()))
 	var lying: Node3D = null
 	for k in _props(smithy, "Prop_Keg"):

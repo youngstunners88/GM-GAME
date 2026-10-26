@@ -19,6 +19,11 @@ const NATIVE := {
 	"gatling": [0.670, -0.338], "bear_standing": [1.0, -0.5], "bear_head": [1.0, -0.5],
 	"ore_cart": [0.879, -0.440], "cauldron": [0.655, -0.327],
 }
+## The furnace: its Blender stonework and the CAD front share this mount (the mouth's centre on the face, at floor level); the bellows
+## stand left of the mouth beyond the walk clamp (x -6.3), the fire tools lean on the face right of the right jamb.
+const FURNACE_MOUNT := Vector3(-6.3, 0.0, 16.05)
+const BELLOWS_AT := Vector3(-7.6, 0.0, 14.4)
+const FIRE_TOOLS_AT := Vector3(-4.2, 0.0, 15.62)
 const RIFLE := "res://src/episode2/assets/winchester_1886.glb"
 ## The Armory Gatling's barrels run along its local +x (Ep2GoldTown.GATLING_POST): turn it so they point the way the old prop did.
 const GATLING_YAW_FIX := -PI * 0.5
@@ -400,9 +405,22 @@ func _authored_architecture() -> void:
 ## Blender finish kit: deep masonry frames the existing furnace light plane.
 ## Geometry stays outside the walk route; progression and the opening are unchanged.
 func _finish_forge() -> void:
-	var forge := _glb(PROP_DIR + "furnace_stonework.glb", Vector3(-6.3, 0.0, 16.05), 1.0, 0.0)
+	var forge := _glb(PROP_DIR + "furnace_stonework.glb", FURNACE_MOUNT, 1.0, 0.0)
 	if forge:
 		forge.name = "BlenderFurnaceStonework"
+	# THE CAD FURNACE FRONT (founder 2026-10-25: "Inferno hideout smelting facility - hyperreal props, furnace, kegs, tools ... not grey
+	# primitives"; tools/ep2_cad/smelter_kit_cad.py): cast-iron doors hung on the stone jambs and swung open into the room, a riveted
+	# sheet-iron hood with its flue climbing into the rock roof, the great bellows feeding the left jamb, the fire tools against the face.
+	# The doors and hood are built in the stonework's own frame at hideout size; the bellows and tools are real size. Streamed: until the
+	# kit is mounted the furnace is as it was (nothing stands in), then Ep2KitProps.upgrade_pending() fills them in.
+	var mount := Transform3D(Basis.IDENTITY, FURNACE_MOUNT)
+	Ep2KitProps.place(_v, "Kit_FurnaceDoors", mount)
+	Ep2KitProps.place(_v, "Kit_FurnaceHood", mount)
+	var real := Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * Ep2KitProps.SCALE_HIDEOUT), Vector3.ZERO)
+	Ep2KitProps.place(_v, "Kit_Bellows", Transform3D(Basis(Vector3.UP, -PI * 0.5), BELLOWS_AT), real)     # nozzle (+x) into the jamb
+	Ep2KitProps.place(_v, "Kit_FireTools", Transform3D(Basis.IDENTITY, FIRE_TOOLS_AT), real)              # leaning back onto the face
+	_blockers.append([Vector2(-4.95, 15.05), 0.6])     # the right-hand door, swung into the room (the left one is past the walk clamp)
+	_blockers.append([Vector2(FIRE_TOOLS_AT.x, FIRE_TOOLS_AT.z), 0.35])
 
 
 ## Arrival-side rock face. Looking back previously exposed only the flat forge

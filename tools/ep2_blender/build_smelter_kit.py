@@ -35,12 +35,14 @@ bpy.ops.wm.read_factory_settings(use_empty=True)
 K.MATS.clear()
 K.standard_materials()
 K.mat("Lead", (0.36, 0.35, 0.34), 0.5, 0.55)                    # the bullets: soft grey lead (no PBR set: a few pixels on screen)
+K.mat("Soot", (0.008, 0.007, 0.006), 0.95, 0.0)                 # the furnace doors' peep port: the dark inside
 SC = bpy.context.scene
 
 PIECES = [("revolver", "Kit_Revolver"), ("keg", "Kit_Keg"), ("keg_small", "Kit_KegSmall"), ("chock", "Kit_Chock"),
           ("anvil", "Kit_Anvil"), ("tongs", "Kit_Tongs"), ("ladle", "Kit_Ladle"), ("mould", "Kit_Mould"), ("shovel", "Kit_Shovel"),
           ("sledge", "Kit_Sledge"), ("pick", "Kit_Pick"), ("chain_link", "Kit_ChainLink"), ("hook", "Kit_Hook"),
-          ("cartridge", "Kit_Cartridge"), ("crate", "Kit_Crate"), ("ammo_box", "Kit_AmmoBox")]
+          ("cartridge", "Kit_Cartridge"), ("crate", "Kit_Crate"), ("ammo_box", "Kit_AmmoBox"),
+          ("furnace_doors", "Kit_FurnaceDoors"), ("furnace_hood", "Kit_FurnaceHood"), ("bellows", "Kit_Bellows"), ("fire_tools", "Kit_FireTools")]
 
 
 def import_part(path):

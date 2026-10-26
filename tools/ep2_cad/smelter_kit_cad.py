@@ -499,6 +499,132 @@ def build_ammo_box():
             add(P, mat, shp)
 
 
+# ====================================================================================================== the furnace front
+# (founder 2026-10-25: "Inferno hideout smelting facility - hyperreal props, FURNACE ..."). Built in the furnace stonework's own frame
+# (HideoutDressing mounts both at (-6.3, 0, 16.05), unturned) and in HIDEOUT metres (no scale at placement): x across the mouth, y up,
+# the ROOM is -z. The stone jambs' inner faces are at x +-1.23, their room faces at z -0.41; the arch springs at y 2.36 (outer top
+# 3.58); the rock block's face is z +0.05. The bellows and the fire tools are real size (placed at Ep2KitProps.SCALE_HIDEOUT).
+def prism_xy(points, depth, z0=0.0):
+    pts = [v(x, y, z0) for x, y in points]
+    pts.append(pts[0])
+    return Part.Face(Part.makePolygon(pts)).extrude(v(0, 0, depth))
+
+
+def build_furnace_doors():
+    """Two riveted cast-iron doors hung on the jambs, swung open 100 degrees into the room: three straps with rivets, hinge knuckles on
+    pintle plates, a peep port with its cover swung aside, a latch bar on the free edge."""
+    P = "furnace_doors"
+    W, H, T, y0 = 1.18, 2.08, 0.07, 0.27
+    for side in (-1, 1):
+        parts = []
+        parts.append(("Iron", chamfer(box((W, H, T), (W / 2, y0 + H / 2, -T / 2)), 0.012)))
+        for yy in (y0 + 0.30, y0 + H / 2, y0 + H - 0.30):
+            parts.append(("Iron", box((W - 0.06, 0.12, 0.022), (W / 2 + 0.02, yy, -T - 0.011))))
+            for k in range(7):
+                parts.append(("Iron", Part.makeSphere(0.017, v(0.10 + k * 0.165, yy, -T - 0.022))))
+        for yy in (y0 + 0.22, y0 + H - 0.22):
+            parts.append(("Iron", cyl(0.045, 0.17, (0.0, yy, -T / 2))))
+            parts.append(("Iron", box((0.20, 0.11, 0.035), (-0.10, yy, -T / 2))))
+        parts.append(("Iron", cyl(0.012, H - 0.2, (0.0, y0 + H / 2, -T / 2))))
+        pc = v(W * 0.56, y0 + H * 0.63, -T)
+        parts.append(("Iron", Part.makeTorus(0.085, 0.016, pc - v(0, 0, 0.012), v(0, 0, -1))))
+        parts.append(("Soot", cyl(0.07, 0.01, (pc.x, pc.y, pc.z + 0.002), "z")))
+        cover = cyl(0.11, 0.018, (0, 0, 0), "z")
+        cover.translate(v(pc.x + 0.12, pc.y - 0.10, pc.z - 0.03))
+        parts.append(("Iron", cover))
+        parts.append(("Iron", box((0.05, 0.42, 0.05), (W - 0.09, y0 + H / 2, -T - 0.07))))
+        for dy in (-0.15, 0.15):
+            parts.append(("Iron", box((0.04, 0.04, 0.07), (W - 0.09, y0 + H / 2 + dy, -T - 0.035))))
+        for mat, shp in parts:
+            if side > 0:
+                shp = shp.mirror(O, X)                    # the right door: its leaf runs toward -x from the right jamb
+            shp.rotate(O, Y, -100.0 if side > 0 else 100.0)
+            shp.translate(v(side * 1.23, 0.0, -0.41))
+            add(P, mat, shp)
+
+
+def build_furnace_hood():
+    """A riveted sheet-iron smoke hood over the arch, lofted from a 4.3 m rim to its flue collar, and the flue climbing into the rock
+    roof (y 10.3) in banded sections with a damper handle."""
+    P = "furnace_hood"
+    y0, y1 = 3.64, 5.10
+    rim = Part.makePolygon([v(-2.15, y0, -1.15), v(2.15, y0, -1.15), v(2.15, y0, 0.05), v(-2.15, y0, 0.05), v(-2.15, y0, -1.15)])
+    top = Part.Wire(Part.makeCircle(0.44, v(0, y1, -0.45), Y))
+    hood = Part.makeLoft([rim, top], True)
+    add(P, "Iron", hood)
+    add(P, "Iron", box((4.42, 0.12, 0.08), (0, y0 + 0.06, -1.17)))
+    for sx in (-1, 1):
+        add(P, "Iron", box((0.08, 0.12, 1.24), (sx * 2.19, y0 + 0.06, -0.55)))
+    for k in range(15):
+        add(P, "Iron", Part.makeSphere(0.028, v(-2.1 + k * 0.3, y0 + 0.06, -1.22)))
+    add(P, "Iron", cyl(0.42, 10.3 - y1, (0, (y1 + 10.3) / 2, -0.45)))
+    for yy in (y1 + 0.05, 6.4, 7.6, 8.8, 10.0):
+        add(P, "Iron", cyl(0.46, 0.09, (0, yy, -0.45)))
+    add(P, "Iron", cyl(0.02, 1.0, (0, 5.9, -0.45), "x"))
+    add(P, "Iron", box((0.06, 0.25, 0.06), (0.52, 5.78, -0.45)))
+
+
+def build_bellows():
+    """A great forge bellows on its trestle (real size; origin base centre, the nozzle toward +x): pear-shaped top and bottom boards, the
+    pleated leather between them, a brass nozzle, a lever pole on its post."""
+    P = "bellows"
+    yb, yt = 0.52, 0.80
+    pear = [(0.55, 0.0)] + [(-0.15 + 0.32 * math.cos(math.radians(a)), 0.32 * math.sin(math.radians(a))) for a in range(60, 301, 20)] + [(0.55, 0.0)]
+    pear = pear[:-1]
+
+    def board(y):
+        pts = [v(x, y, z) for x, z in pear]
+        pts.append(pts[0])
+        return Part.Face(Part.makePolygon(pts)).extrude(v(0, 0.035, 0))
+    add(P, "DarkWood", board(yb))
+    add(P, "DarkWood", board(yt))
+    wires = []
+    for y, sc in ((yb + 0.035, 0.94), ((yb + yt) / 2 + 0.02, 1.04), (yt, 0.94)):
+        pts = [v(0.55 + (x - 0.55) * sc, y, z * sc) for x, z in pear]
+        pts.append(pts[0])
+        wires.append(Part.makePolygon(pts))
+    add(P, "Leather", Part.makeLoft(wires, True))
+    add(P, "Brass", cone(0.055, 0.022, 0.32, (0.71, (yb + yt) / 2, 0.0), "x"))
+    add(P, "Brass", cyl(0.06, 0.05, (0.53, (yb + yt) / 2, 0.0), "x"))
+    for x in (-0.30, 0.30):
+        for sz in (-1, 1):
+            leg = cyl(0.028, 0.56, (0, 0, 0))
+            leg.rotate(O, X, sz * 14.0)
+            leg.translate(v(x, 0.26, sz * 0.10))
+            add(P, "Planks", leg)
+        add(P, "Planks", box((0.07, 0.07, 0.36), (x, 0.50, 0.0)))
+    add(P, "Planks", box((0.72, 0.05, 0.08), (0.0, 0.20, 0.0)))
+    add(P, "DarkWood", cyl(0.03, 1.25, (-0.55, 0.62, 0.0)))
+    pole = cyl(0.022, 1.3, (0, 0, 0), "x")
+    pole.rotate(O, Z, -18.0)
+    pole.translate(v(-0.30, 1.05, 0.0))
+    add(P, "DarkWood", pole)
+    add(P, "Iron", cyl_y_link(-0.05, 0.84, 0.93))
+
+
+def cyl_y_link(x, y0, y1):
+    return cyl(0.008, y1 - y0, (x, (y0 + y1) / 2, 0.0))
+
+
+def build_fire_tools():
+    """A poker, a rake and a slag skimmer leaning together (real size; origin = their feet, leaning back toward +z against the furnace)."""
+    P = "fire_tools"
+    for k, (dx, tip) in enumerate(((-0.07, "hook"), (0.0, "rake"), (0.08, "dish"))):
+        rod = cyl(0.011, 1.12, (0, 0.56, 0))
+        parts = [("Iron", rod), ("DarkWood", cyl(0.02, 0.18, (0, 1.06, 0)))]
+        if tip == "hook":
+            parts.append(("Iron", Part.makeTorus(0.035, 0.009, v(0.035, 0.04, 0), Z, -180, 180, 180)))
+        elif tip == "rake":
+            parts.append(("Iron", box((0.20, 0.07, 0.012), (0, 0.035, 0))))
+        else:
+            parts.append(("Iron", revolve([(0.0, 0.0), (0.0, 0.09), (0.02, 0.095), (0.02, 0.085), (0.006, 0.0)], "z", (0, 0.05, 0))))
+        for mat, shp in parts:
+            shp.rotate(O, X, 11.0)
+            shp.rotate(O, Y, (k - 1) * 9.0)
+            shp.translate(v(dx, 0.0, -0.03 * k))
+            add(P, mat, shp)
+
+
 build_revolver()
 build_keg("keg", 0.62, 0.205, 0.245)
 build_keg("keg_small", 0.42, 0.14, 0.168, 14)
@@ -514,6 +640,10 @@ build_chain()
 build_cartridge()
 build_crate()
 build_ammo_box()
+build_furnace_doors()
+build_furnace_hood()
+build_bellows()
+build_fire_tools()
 
 
 def deflection(piece, mat, shape):
@@ -527,6 +657,9 @@ def deflection(piece, mat, shape):
         return max(0.0008, diag * 0.015), 0.8
     if piece in ("crate",):
         return max(0.002, diag * 0.004), 0.6
+    if piece in ("furnace_doors", "furnace_hood", "bellows", "fire_tools"):
+        # (OCC cuts curves ~2x finer than the angle given: 1.0 rad is ~12 segments; rivets, knuckles and the flue bands are many)
+        return max(0.004, diag * 0.004), 1.0
     return max(0.0008, diag * 0.004), 0.5
 
 
