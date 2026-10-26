@@ -9,7 +9,11 @@ const binding = process.env.ELEVENLABS_KEY_BINDING || 'ELEVENLABS_API_KEY';
 if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(binding) || !process.env[binding]) {
   throw new Error(`Missing ElevenLabs credential binding: ${binding}`);
 }
-const apiKey = process.env[binding];
+// Several keys may be set (ELEVENLABS_API_KEY, ELEVENLABS_API_KEY_2, ...). A request that is refused because a key is out of
+// characters or rate-limited moves on to the next key; any other error is raised at once.
+const apiKeys = [process.env[binding], ...Object.keys(process.env)
+  .filter(k => /^ELEVENLABS_API_KEY_\d+$/.test(k)).sort().map(k => process.env[k]).filter(Boolean)];
+const apiKey = apiKeys[0];
 
 let Sdk = null;
 try {
@@ -20,13 +24,21 @@ try {
 
 function fetchClient(key) {
   const post = async (url, body) => {
-    const r = await fetch(url, {
-      method: 'POST',
-      headers: { 'xi-api-key': key, 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
-      body: JSON.stringify(body),
-    });
-    if (!r.ok) throw new Error(`ElevenLabs ${r.status} on ${new URL(url).pathname}: ${(await r.text()).slice(0, 300)}`);
-    return r.body;
+    let last = null;
+    for (const k of apiKeys) {
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'xi-api-key': k, 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
+        body: JSON.stringify(body),
+      });
+      if (r.ok) return r.body;
+      const text = (await r.text()).slice(0, 300);
+      last = `ElevenLabs ${r.status} on ${new URL(url).pathname}: ${text}`;
+      const spent = r.status === 429 || /quota|credits|character|limit/i.test(text);
+      if (!spent) break;                       // a bad key or a bad request: no point trying the other keys
+      console.warn(`ElevenLabs key ${apiKeys.indexOf(k) + 1} of ${apiKeys.length} is out of characters or rate-limited; trying the next`);
+    }
+    throw new Error(last);
   };
   return {
     textToSpeech: {
@@ -54,3 +66,4 @@ function fetchClient(key) {
 }
 
 export const elevenlabs = Sdk ? new Sdk({ apiKey }) : fetchClient(apiKey);
+// The SDK path (when installed) uses the first key only; the fetch path rotates through all of them.
