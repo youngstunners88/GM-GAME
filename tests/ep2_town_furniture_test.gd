@@ -184,6 +184,14 @@ func _ready() -> void:
 			count.call("Prop_Lantern", "Jail") == 1 and count.call("Prop_KeyRing", "Jail") == 1 and count.call("Prop_Clock", "Jail") == 1
 			and count.call("Prop_CoffeePot", "Jail") == 1 and count.call("Prop_Bucket", "Jail") == 1 and count.call("Prop_TinPlate", "Jail") == 1
 			and count.call("Prop_Broom", "Jail") == 1 and count.call("Prop_Spittoon", "Jail") == 1)
+	if Ep2GoldTown.armory_v2:
+		check("Rich & Utah's Armory: the gunsmith's bench, a crate with an ammo box and a powder keg under the stair, a lantern, a hall tree",
+			count.call("Prop_Workbench", "Armory") == 1 and count.call("Prop_Crate", "Armory") == 1 and count.call("Prop_AmmoBox", "Armory") == 1
+			and count.call("Prop_Keg", "Armory") == 1 and count.call("Prop_Lantern", "Armory") == 1 and count.call("Prop_HatRack", "Armory") == 1)
+		var board: Node3D = town.find_child("Prop_GunBoard_Bldg_Armory", false, false) as Node3D
+		check("...and a board of six CAD Colts on the right wall by the door", board != null
+			and board.find_children("Prop_Revolver*", "Node3D", false, false).size() == 6
+			and board.find_children("Kit_Revolver", "Node3D", true, false).size() == 6)
 	var pendulums: Array = town.find_children("Pendulum_*", "Node3D", false, false)
 	check("every regulator has its pendulum on its pivot", pendulums.size() == (3 if Ep2GoldTown.jail_v1 else 2)
 		and pendulums.all(func(p: Node) -> bool: return p is Ep2Pendulum and p.get_child_count() == 1 and p.get_child(0).find_child("Twn_ClockPendulum", false, false) != null),
@@ -222,11 +230,19 @@ func _ready() -> void:
 		for k in Ep2GoldTown.jail_spots:
 			if str(k) != "privy" and str(k) != "lane":
 				marks.append(["Bldg_Jail", Ep2GoldTown.jail_spots[k]])
+	var armory_ground: Array = []                 # Rich & Utah's ground-floor waypoints (the gallery's are 3.8 m up)
+	if Ep2GoldTown.armory_v2:
+		for k in Ep2GoldTown.armory_spots:
+			var sp: Vector3 = Ep2GoldTown.armory_spots[k]
+			if sp.y < 0.5 and not (str(k) in ["lane", "porch"]):
+				marks.append(["Bldg_Armory", sp])
+				armory_ground.append(sp)
 	var crowded: Array = []
 	for d in Ep2GoldTown.ROOM_DETAIL:
 		var fp: Vector2 = d[4]
 		var is_floor: bool = fp != Vector2.ZERO or str(d[1]) in ["Twn_Spittoon", "Twn_Bucket", "Twn_Broom", "Twn_TinPlate"]
-		if not is_floor or Ep2GoldTown.entry(str(d[0])).is_empty() or (str(d[0]) == "Bldg_Jail" and not Ep2GoldTown.jail_v1):
+		if not is_floor or Ep2GoldTown.entry(str(d[0])).is_empty() or (str(d[0]) == "Bldg_Jail" and not Ep2GoldTown.jail_v1) \
+				or (str(d[0]) == "Bldg_Armory" and not Ep2GoldTown.armory_v2):
 			continue
 		var w: Vector3 = Ep2GoldTown.local_to_world(str(d[0]), d[2])
 		var r: float = maxf(fp.x, fp.y) * 0.5 if fp != Vector2.ZERO else 0.17
@@ -236,6 +252,14 @@ func _ready() -> void:
 			var mw: Vector3 = Ep2GoldTown.local_to_world(str(mk[0]), mk[1])
 			if Vector2(w.x, w.z).distance_to(Vector2(mw.x, mw.z)) < r + 0.35:
 				crowded.append("%s@%s near %s" % [d[1], str(d[2]), str(mk[1])])
+		if str(d[0]) == "Bldg_Armory":                 # Rich and Utah walk straight between their waypoints: no new piece on those lines
+			var wl: Vector3 = d[2]
+			for i in armory_ground.size():
+				for j in range(i + 1, armory_ground.size()):
+					var a: Vector3 = armory_ground[i]
+					var b: Vector3 = armory_ground[j]
+					if _seg_dist(Vector2(wl.x, wl.z), Vector2(a.x, a.z), Vector2(b.x, b.z)) < r + 0.25 and a.distance_to(b) < 7.0:
+						crowded.append("%s@%s on the Armory line %s-%s" % [d[1], str(d[2]), str(a), str(b)])
 		if str(d[0]) == "Bldg_Saloon":
 			for seat in Ep2GoldTown.saloon_seats():
 				var pts: Array = [Ep2GoldTown.door_world("Bldg_Saloon", -0.9)] + (seat["route"] as Array)
@@ -249,6 +273,52 @@ func _ready() -> void:
 					crowded.append("%s@%s on a seat" % [d[1], str(d[2])])
 	check("...and none of them stands on a story mark, the minister's run, a drinker's place or route, or a jail stand point",
 		crowded.is_empty(), str(crowded))
+
+	print("-- the street's CAD trim (the streamed kit's porch posts, cornice corbels, window hoods, balcony balusters)")
+	if Ep2GoldTown.kit_v2:
+		var anchors := {}
+		for kind in Ep2GoldTown.TRIM:
+			anchors[kind] = town.find_children(str(kind) + "*", "", true, false).size()
+		var wrong_trim: Array = []
+		for kind in Ep2GoldTown.TRIM:
+			var mmi: MultiMeshInstance3D = town.find_child("Trim_" + str(Ep2GoldTown.TRIM[kind]).trim_prefix("Twn_"), false, false) as MultiMeshInstance3D
+			if mmi == null or mmi.multimesh.instance_count != int(anchors[kind]) or int(anchors[kind]) == 0:
+				wrong_trim.append("%s: %s vs %d anchors" % [kind, str(mmi.multimesh.instance_count) if mmi != null else "none", int(anchors[kind])])
+				continue
+			var m: Mesh = mmi.multimesh.mesh
+			var t: int = 0
+			var town_mat: bool = true
+			for si in m.get_surface_count():
+				t += (m.surface_get_arrays(si)[Mesh.ARRAY_INDEX] as PackedInt32Array).size() / 3
+				var sm: BaseMaterial3D = m.surface_get_material(si) as BaseMaterial3D
+				town_mat = town_mat and sm != null and sm.albedo_texture != null and sm.uv1_world_triplanar
+			if t < 100 or not town_mat:
+				wrong_trim.append("%s: %d tris, town material %s" % [kind, t, str(town_mat)])
+		check("every porch post, cornice corbel, window hood and balcony baluster is the CAD piece, one per anchor, in the kit's own textured Trim / PaintWhite",
+			wrong_trim.is_empty(), str(wrong_trim) + " " + str(anchors))
+		var misplaced: Array = []
+		for an in town.find_children("PostAnchor*", "", true, false):
+			var an_w := Transform3D.IDENTITY                 # the anchor in the town root's frame
+			var c: Node = an
+			while c != null and c != town:
+				if c is Node3D:
+					an_w = (c as Node3D).transform * an_w
+				c = c.get_parent()
+			var placed: Array = Ep2GoldTown.trim_placed.get("PostAnchor", [])
+			if not placed.any(func(t: Transform3D) -> bool: return t.origin.distance_to(an_w.origin) < 0.01):
+				misplaced.append(str(an_w.origin))
+			elif absf(an_w.origin.y - 0.44) > 0.01:
+				misplaced.append("off the deck %s" % str(an_w.origin))
+		check("...each standing exactly where the kit's box was (the post's foot on the porch deck, 0.44)", misplaced.is_empty(), str(misplaced))
+		Ep2KitProps.force_fallback = true
+		var v2 := Node3D.new()
+		add_child(v2)
+		Ep2GoldTown.build(v2, false)
+		var stand: MultiMeshInstance3D = v2.get_child(0).find_child("Trim_PorchPost", false, false) as MultiMeshInstance3D
+		check("...and without the CAD pack the kit's old box posts stand in (never a porch roof on nothing)", stand != null
+			and stand.multimesh.mesh is BoxMesh and stand.multimesh.instance_count == int(anchors["PostAnchor"]))
+		Ep2KitProps.force_fallback = false
+		v2.queue_free()
 
 	print("-- a regulator keeps time")
 	var pend: Ep2Pendulum = pendulums[0] if pendulums.size() > 0 else null

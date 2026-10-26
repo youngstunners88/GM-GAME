@@ -149,7 +149,7 @@ static func _cad_piece(root: Node3D, prop: String, xf: Transform3D, src: Node3D,
 static func _room_detail(root: Node3D, props: Array) -> void:
 	for d in ROOM_DETAIL:
 		var piece: String = str(d[0])
-		if entry(piece).is_empty() or (piece == "Bldg_Jail" and not jail_v1):
+		if entry(piece).is_empty() or (piece == "Bldg_Jail" and not jail_v1) or (piece == "Bldg_Armory" and not armory_v2):
 			continue
 		var lean: float = float(d[5]) if (d as Array).size() > 5 else 0.0
 		var pos: Vector3 = d[2]
@@ -157,10 +157,15 @@ static func _room_detail(root: Node3D, props: Array) -> void:
 			pos.y = float(ROOM_FLOOR.get(piece, KIT_FLOOR))         # on the boards, not in them
 		var xf: Transform3D = building_xform(entry(piece)) * Transform3D(Basis(Vector3.UP, float(d[3])) * Basis(Vector3.BACK, lean), pos)
 		var h: Node3D = Ep2KitProps.place(root, str(d[1]), xf, Transform3D.IDENTITY, Callable(), false, TOWN_TONE)
-		h.name = str(d[1]).replace("Twn_", "Prop_") + "_" + piece
+		h.name = str(d[1]).replace("Twn_", "Prop_").replace("Kit_", "Prop_") + "_" + piece
 		var fp: Vector2 = d[4]
 		if fp != Vector2.ZERO:
 			props.append_array(_footprint_circles(xf, fp))
+		if str(d[1]) == "Twn_GunBoard":              # six CAD Colts on its pegs, barrels along the board, the left side out
+			for row in 2:
+				for col in 3:
+					var gb := Basis(Vector3(0, 0, -1), Vector3(0, 1, 0), Vector3(1, 0, 0))
+					Ep2KitProps.place(h, "Kit_Revolver", Transform3D(gb, Vector3(-0.38 + float(col) * 0.36, 0.165 - float(row) * 0.34, 0.049)))
 		if str(d[1]) == "Twn_Clock":                 # the regulator's pendulum swings (its own piece, on its pivot)
 			var sw := Ep2Pendulum.new()
 			sw.name = "Pendulum_" + piece
@@ -337,6 +342,7 @@ static func build(parent: Node3D, interiors: bool) -> Dictionary:
 	Ep2Pbr.dress(kit)            # the founder's 2026-10-25 pass: the kit's still-flat brass, iron, dark wood, leather, brick, burlap
 	var a2: Node3D = _load_armory2()
 	var jl: Node3D = _load_jail()
+	var trims: Dictionary = {}                 # TrimAnchor kind -> [world Transform3D] (the streamed kit's CAD trim places)
 	for e in LAYOUT:
 		var piece: String = str(e[0])
 		var src: Node3D = kit.find_child(piece, true, false) as Node3D
@@ -351,11 +357,14 @@ static func build(parent: Node3D, interiors: bool) -> Dictionary:
 		b.transform = building_xform(e)
 		root.add_child(b)
 		_hang_signs(b)
+		if kit_v2:
+			_collect_trim(b, trims)
 		walls.append_array(_walls_of(piece, building_xform(e)))
 		if piece == "Bldg_Armory2":
 			walls.append_array(_armory2_block_walls(building_xform(e)))
 		if piece == "Bldg_Jail":
 			walls.append_array(_blocks_to_walls(jail_blocks, building_xform(e)))
+	_build_trim(root, trims)
 	# the street furniture: hitching rails, troughs, wagons, lamps, barrels and crates, benches on the porches
 	var dress: Array = [
 		["HitchRail", Vector3(-6.4, 0.0, 1418.0), PI * 0.5], ["HitchRail", Vector3(6.4, 0.0, 1431.0), PI * 0.5],
@@ -558,6 +567,73 @@ static func _texture_dark_wood(n: Node) -> void:
 				m.mesh.surface_set_material(si, dw)
 
 
+## THE STREET'S CAD TRIM (founder 2026-10-25: "Town exterior - better facades/openings"). The streamed kit (build_town_kit.py
+## --cad-trim) leaves an empty where its box porch posts, cornice brackets, window heads and balcony balusters were; the CAD pieces
+## (tools/ep2_cad/town_interior_cad.py: a chamfered post with its plinth, capital and two sawn scroll brackets; a scrolled corbel; an
+## Italianate window hood; a turned baluster) hang there - one MultiMesh per piece for the whole street, in the kit's own Trim and
+## PaintWhite materials. The shipped fallback kit keeps its boxes and has no anchors.
+const TRIM := {"PostAnchor": "Twn_PorchPost", "CorbelAnchor": "Twn_Corbel", "HoodAnchor": "Twn_WindowHood", "BalusterAnchor": "Twn_Baluster"}
+## The old box each trim replaced, for a stand-in if the CAD piece cannot be loaded: [size, centre offset in the anchor's frame].
+## The last build's trim placements (kind -> [Transform3D in the town root's frame]), for tests: a headless run's dummy renderer does not
+## keep MultiMesh transforms.
+static var trim_placed: Dictionary = {}
+const TRIM_BOX := {"PostAnchor": [Vector3(0.18, 2.9, 0.18), Vector3(0.0, 1.45, 0.0)], "CorbelAnchor": [Vector3(0.14, 0.24, 0.3), Vector3(0.0, -0.08, 0.06)],
+	"HoodAnchor": [Vector3(1.19, 0.10, 0.12), Vector3(0.0, 0.05, 0.04)], "BalusterAnchor": [Vector3(0.06, 0.9, 0.06), Vector3(0.0, 0.45, 0.0)]}
+
+
+## Every trim anchor of building `b` (placed), as a world transform, by kind.
+static func _collect_trim(b: Node3D, into: Dictionary) -> void:
+	for kind in TRIM:
+		for an in b.find_children(str(kind) + "*", "", true, false):
+			var xf := Transform3D.IDENTITY
+			var c: Node = an
+			while c != null and c != b:
+				if c is Node3D:
+					xf = (c as Node3D).transform * xf
+				c = c.get_parent()
+			if not into.has(kind):
+				into[kind] = []
+			(into[kind] as Array).append(b.transform * xf)
+
+
+## One MultiMesh per trim kind under `root` (the CAD piece, or the old box as a stand-in).
+static func _build_trim(root: Node3D, trims: Dictionary) -> void:
+	trim_placed = trims
+	if trims.is_empty():
+		return
+	var mats: Dictionary = {"Trim": _tex_mat("tex_siding.jpg", Color(0.55, 0.42, 0.30), 0.8, TIMBER_TEX),
+		"PaintWhite": _tex_mat("tex_siding.jpg", Color(1.35, 1.32, 1.25), 0.45, PLANK_TEX)}      # = _apply_mats' Trim / PaintWhite
+	for kind in trims:
+		var xfs: Array = trims[kind]
+		var mesh: Mesh = null
+		var inner := Transform3D.IDENTITY
+		var raw: Array = Ep2KitProps.raw_mesh(str(TRIM[kind]))
+		if not raw.is_empty():
+			mesh = (raw[0] as Mesh).duplicate() as Mesh
+			inner = raw[1]
+			for si in mesh.get_surface_count():
+				var sm: Material = mesh.surface_get_material(si)
+				var nm: String = String(sm.resource_name).get_slice(".", 0) if sm != null else ""
+				if mats.has(nm):
+					mesh.surface_set_material(si, mats[nm])
+		else:
+			var bm := BoxMesh.new()                    # the kit's old box, until the CAD piece can be loaded
+			bm.size = TRIM_BOX[kind][0]
+			bm.material = mats["PaintWhite" if kind == "HoodAnchor" else "Trim"]
+			mesh = bm
+			inner = Transform3D(Basis.IDENTITY, TRIM_BOX[kind][1])
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.mesh = mesh
+		mm.instance_count = xfs.size()
+		for i in xfs.size():
+			mm.set_instance_transform(i, (xfs[i] as Transform3D) * inner)
+		var mmi := MultiMeshInstance3D.new()
+		mmi.name = "Trim_" + str(TRIM[kind]).trim_prefix("Twn_")
+		mmi.multimesh = mm
+		root.add_child(mmi)
+
+
 ## A world-triplanar material from a town texture (falls back to `fallback`, then to a flat colour) - tinted.
 static func _tex_mat(file: String, tint: Color, uv_scale: float, fallback: String = "") -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
@@ -729,6 +805,18 @@ const ROOM_DETAIL: Array = [
 	["Bldg_Jail", "Twn_TinPlate", Vector3(-1.15, 0.0, -5.3), 0.4, Vector2.ZERO],
 	["Bldg_Jail", "Twn_Broom", Vector3(3.3, 0.0, -0.32), -0.4, Vector2.ZERO, -0.21],
 	["Bldg_Jail", "Twn_Spittoon", Vector3(2.75, 0.0, -3.25), 0.5, Vector2.ZERO],
+	# Rich & Utah's two-storey Armory (only when it is drawn; founder: "more furniture, cases, racks, subtle detail; denser but readable"):
+	# a gunsmith's bench with its vise and a barrel in the jaws under the back gallery (its lamp hangs over it), a crate with an ammo box
+	# and a powder keg under the stair, a lantern on the cleaning bench, a hall tree by the door (the open floor in front of the counter
+	# is Rich and Utah's: nothing stands on the lines between their waypoints - tests/ep2_town_furniture_test)
+	["Bldg_Armory", "Twn_Workbench", Vector3(2.6, 0.0, -10.35), 0.0, Vector2(1.8, 0.65)],
+	["Bldg_Armory", "Kit_Crate", Vector3(4.12, 0.0, -7.35), 0.15, Vector2(1.0, 1.0)],
+	["Bldg_Armory", "Kit_AmmoBox", Vector3(4.1, 1.05, -7.3), -0.3, Vector2.ZERO],
+	["Bldg_Armory", "Kit_Keg", Vector3(4.15, 0.0, -6.35), 0.4, Vector2(0.5, 0.5)],
+	["Bldg_Armory", "Twn_Lantern", Vector3(-2.5, 0.92, -9.75), 0.6, Vector2.ZERO],
+	["Bldg_Armory", "Twn_HatRack", Vector3(-1.8, 0.0, -0.7), 0.2, Vector2(0.5, 0.5)],
+	# a board of six CAD Colts on the right wall by the door, over the barrel of long guns (clear of the stair foot)
+	["Bldg_Armory", "Twn_GunBoard", Vector3(4.84, 2.2, -1.25), -PI * 0.5, Vector2.ZERO],
 ]
 ## The saloon's wagon-wheel chandelier and the harp lamps hang from the ceiling, their flames where the rooms' warm lights already are:
 ## [building, prop, the light's position, how far the flame hangs below the prop's origin].
@@ -737,7 +825,7 @@ const HANGING: Array = [["Bldg_Saloon", "Twn_Chandelier", Vector3(-2.0, 3.2, -4.
 const CEILING_Y := 7.16                      # the two-storey rooms' ceiling (build_town_kit.py shell(): h - 0.04)
 ## The rooms' plank floors stand proud of the street level: the kit's interiors 0.06 (shell()), the jail's 0.05 (build_jailhouse.py).
 ## The kit's old furniture stands at 0 (its feet in the boards, as approved); the new floor detail stands ON the boards.
-const ROOM_FLOOR := {"Bldg_Jail": 0.05}
+const ROOM_FLOOR := {"Bldg_Jail": 0.05, "Bldg_Armory": 0.05}             # (the two-storey Armory's boards: build_armory2.py)
 const KIT_FLOOR := 0.06
 const CLOCK_PIVOT := Vector3(0.0, 0.70, 0.05)   # the regulator's pendulum pivot in the clock's frame (town_interior_cad.py build_clock)
 

@@ -27,6 +27,9 @@ from mathutils import Matrix, Vector
 
 argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else sys.argv[1:]
 OUT = argv[argv.index("--out") + 1] if "--out" in argv else "src/episode2/assets/town/town_kit.glb"
+# --cad-trim (the streamed town_kit2 only, founder 2026-10-25 "better facades"): leave the box porch posts, cornice brackets, window heads
+# and balcony balusters out and put a TrimAnchor-style empty where each was; Ep2GoldTown hangs the CAD trim (town_furniture.glb) there.
+CAD_TRIM = "--cad-trim" in argv
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
 MATS = {}
@@ -125,6 +128,10 @@ class Piece:
     def anchor(self, name, pos):
         self.anchors.append((name, pos))
 
+    def trim_anchor(self, name, pos):
+        """An empty where the streamed kit's CAD trim hangs (--cad-trim): at the current placement, turned with it."""
+        self.anchors.append((name, self._pc(pos), self.yaw))
+
     def build(self):
         root = bpy.data.objects.new(self.name, None)
         bpy.context.scene.collection.objects.link(root)
@@ -151,11 +158,13 @@ class Piece:
         ob = bpy.data.objects.new(self.name + "_geo", me)
         bpy.context.scene.collection.objects.link(ob)
         ob.parent = root
-        for an, p in self.anchors:
-            e = bpy.data.objects.new(an, None)
+        for a in self.anchors:
+            e = bpy.data.objects.new(a[0], None)
             bpy.context.scene.collection.objects.link(e)
             e.parent = root
-            e.location = G(p)
+            e.location = G(a[1])
+            if len(a) > 2 and abs(a[2]) > 1e-9:
+                e.rotation_euler = (0.0, 0.0, a[2])          # game yaw about y = blender about z
         return root
 
 
@@ -192,7 +201,10 @@ def window(p, x, y, w=0.9, h=1.4, zf=0.0, shutters=True, sill_out=0.12, backing=
     p.box(P, (0.035, h - 0.14, 0.04), (x, y, zf - T * 0.55 + 0.02))
     p.box(P, (w - 0.14, 0.035, 0.04), (x, y + 0.08, zf - T * 0.55 + 0.02))
     p.box(P, (w + 0.28, 0.07, sill_out + 0.06), (x, y - h / 2 - 0.04, zf + sill_out / 2 - 0.02))                  # the sill
-    p.box(P, (w + 0.24, 0.10, 0.12), (x, y + h / 2 + 0.07, zf + 0.04))                                           # the head
+    if CAD_TRIM and abs(w - 0.95) < 0.01 and not lintel:
+        p.trim_anchor("HoodAnchor", (x, y + h / 2 + 0.02, zf))                                                    # the CAD hood
+    else:
+        p.box(P, (w + 0.24, 0.10, 0.12), (x, y + h / 2 + 0.07, zf + 0.04))                                       # the head
     if lintel:
         p.box(lintel, (w + 0.4, 0.14, 0.22), (x, y + h / 2 + 0.22, zf + 0.06))
     if shutters:
@@ -290,7 +302,10 @@ def false_front(p, w, h_top, sign_word, sign_y, sign_w, sign_h, mat_wall="Siding
     p.box("Trim", (w + 0.6, 0.22, 0.45), (0.0, h_top + 0.05, 0.12))
     p.box("Trim", (w + 0.4, 0.12, 0.3), (0.0, h_top - 0.2, 0.1))
     for i in range(6):
-        p.box("Trim", (0.14, 0.24, 0.3), (-w / 2 + 0.3 + i * (w - 0.6) / 5, h_top - 0.34, 0.12))
+        if CAD_TRIM:
+            p.trim_anchor("CorbelAnchor", (-w / 2 + 0.3 + i * (w - 0.6) / 5, h_top - 0.26, 0.06))     # the CAD scroll corbel
+        else:
+            p.box("Trim", (0.14, 0.24, 0.3), (-w / 2 + 0.3 + i * (w - 0.6) / 5, h_top - 0.34, 0.12))
     if sign_word:
         p.box("DarkWood", (sign_w + 0.3, sign_h + 0.3, 0.1), (0.0, sign_y, 0.12))
         p.box("Trim", (sign_w + 0.45, 0.12, 0.16), (0.0, sign_y + sign_h / 2 + 0.17, 0.14))
@@ -302,6 +317,9 @@ def porch(p, w, depth=2.6, h=3.0, posts=4, steps=True):
     p.box("Planks", (w + 0.4, 0.22, depth), (0.0, 0.33, depth / 2))
     for i in range(posts):
         x = -w / 2 + i * w / (posts - 1)
+        if CAD_TRIM and abs(h - 3.0) < 1e-6:
+            p.trim_anchor("PostAnchor", (x, 0.44, depth - 0.15))                              # the CAD chamfered post + brackets
+            continue
         p.box("Trim", (0.18, h, 0.18), (x, 0.44 + h / 2, depth - 0.15))
         p.box("Trim", (0.32, 0.12, 0.32), (x, 0.47, depth - 0.15))
     p.box("Roof", (w + 0.6, 0.06, depth + 0.5), (0.0, 0.44 + h + 0.18, depth / 2), rot_x=0.12)
@@ -323,7 +341,10 @@ def building(name, w, d, storeys, h_front, sign_word=None, door_open=False, inte
         y = 3.6
         p.box("Planks", (w, 0.16, 1.6), (0.0, y + 0.3, 0.8))
         for i in range(int(w / 0.35)):
-            p.box("Trim", (0.06, 0.9, 0.06), (-w / 2 + 0.2 + i * 0.35, y + 0.83, 1.5))
+            if CAD_TRIM:
+                p.trim_anchor("BalusterAnchor", (-w / 2 + 0.2 + i * 0.35, y + 0.38, 1.5))       # the CAD turned baluster
+            else:
+                p.box("Trim", (0.06, 0.9, 0.06), (-w / 2 + 0.2 + i * 0.35, y + 0.83, 1.5))
         p.box("Trim", (w, 0.08, 0.1), (0.0, y + 1.3, 1.5))
     return p
 

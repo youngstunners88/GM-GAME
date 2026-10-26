@@ -18,6 +18,16 @@ description: The town's CAD interior furniture (saloon bar/back bar/bentwood cha
 5. Proof: `tools/ep2_shots/interiors_shot.tscn -- out=<dir>` (opengl3, 1600x900 SubViewport). For "before", copy the script into a master
    worktree for the run only and delete it after. Gate: `tests/ep2_town_furniture_test` (CI).
 
+## The street's trim (part 4)
+- `build_town_kit.py --cad-trim` writes `town_kit2` with PostAnchor / CorbelAnchor / HoodAnchor / BalusterAnchor empties instead of the
+  box posts, cornice brackets, 0.95 m window heads and balcony balusters (`Piece.trim_anchor` applies the current placement and yaw). The
+  default build (the shipped `town_kit.glb`) must stay byte-identical - rebuild into the scratchpad and `cmp` before trusting any change.
+- `Ep2GoldTown._collect_trim` / `_build_trim`: one MultiMesh per piece for the whole street, mesh from `Ep2KitProps.raw_mesh` (the geo
+  node's own transform baked in), surfaces swapped to the kit's Trim / PaintWhite (`_tex_mat`, world triplanar). Box stand-ins if the
+  CAD pack cannot be loaded.
+- Headless (dummy renderer) does NOT keep MultiMesh instance transforms - tests read `Ep2GoldTown.trim_placed`.
+- Instanced by the dozen: keep each trim piece small (no chamfers on prisms; turned parts lod 2). Street total ~48k triangles.
+
 ## Rules
 - Replacements keep the old piece's origin, footprint and heights (bar top 1.20, counter top 1.125, table top 0.785, chair seat 0.48):
   seats (`saloon_seats`), drink poses (`Ep2DrinkPose`), counter walls and story marks depend on them.
@@ -26,7 +36,8 @@ description: The town's CAD interior furniture (saloon bar/back bar/bentwood cha
 - New floor detail goes ON the boards: the kit rooms' floors are 0.06 above the street, the jail's 0.05 (`ROOM_FLOOR` / `KIT_FLOOR`).
   The old furniture stands at 0 (feet in the boards, as approved) - do not move it.
 - Nothing new on a story mark, the Minister's panic run ((3.2,-5.4) -> (3.2,-3.4) -> (0.6,-2.0) in the office), a drinker's place or
-  route, or a jail stand point - the test checks every one. Floor pieces get walk footprints (`props`).
+  route, a jail stand point, or (Armory) any line between two of Rich's / Utah's ground-floor waypoints - the test checks every one.
+  Floor pieces get walk footprints (`props`). The Armory floor is 0.05 (`ROOM_FLOOR`).
 - Two-storey rooms are 7.2 m tall inside (ceiling 7.16): anything hung needs a chain or rod to the ceiling.
 
 ## Traps (cost real time)

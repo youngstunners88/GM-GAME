@@ -48,13 +48,9 @@ static func instance(prop: String, extra: Dictionary = {}) -> Node3D:
 	if not available(prop):
 		return null
 	var path: String = kit_path(prop)
-	var kit: Node3D = _kits.get(path)
-	if kit == null or not is_instance_valid(kit):
-		var ps: PackedScene = load(path) as PackedScene
-		if ps == null:
-			return null
-		kit = ps.instantiate() as Node3D
-		_kits[path] = kit
+	var kit: Node3D = _kit_at(path)
+	if kit == null:
+		return null
 	var src: Node3D = kit.find_child(prop, true, false) as Node3D
 	if src == null:
 		return null
@@ -79,6 +75,39 @@ static func instance(prop: String, extra: Dictionary = {}) -> Node3D:
 				_intended[base.get_instance_id()] = dm
 			m.set_surface_override_material(si, dm)
 	return n
+
+
+## The kit GLB at `path`, instantiated once and kept out of the tree as the template (null when it cannot be loaded).
+static func _kit_at(path: String) -> Node3D:
+	var kit: Node3D = _kits.get(path)
+	if kit == null or not is_instance_valid(kit):
+		var ps: PackedScene = load(path) as PackedScene
+		if ps == null:
+			return null
+		kit = ps.instantiate() as Node3D
+		_kits[path] = kit
+	return kit
+
+
+## The raw (undressed) mesh of kit root `prop` and its transform inside the root - for a MultiMesh of many copies (the street's
+## trim): [Mesh, Transform3D], or [] when the kit is not mounted / has no such prop.
+static func raw_mesh(prop: String) -> Array:
+	if not available(prop):
+		return []
+	var kit: Node3D = _kit_at(kit_path(prop))
+	var src: Node3D = kit.find_child(prop, true, false) as Node3D if kit != null else null
+	if src == null:
+		return []
+	for mi in src.find_children("*", "MeshInstance3D", true, false):
+		var m: MeshInstance3D = mi
+		var xf := Transform3D.IDENTITY
+		var c: Node = m
+		while c != null and c != src:
+			if c is Node3D:
+				xf = (c as Node3D).transform * xf
+			c = c.get_parent()
+		return [m.mesh, xf]
+	return []
 
 
 ## Put prop `prop` in a holder at `at` under `parent`; the CAD prop sits at `local` inside the holder (its turn, scale and offset), the

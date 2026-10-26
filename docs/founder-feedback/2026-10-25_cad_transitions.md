@@ -112,6 +112,24 @@ GEARED, DONE (`src/episode2/chamber/gold_town.gd`). Fort Knox is never opened.
 - Gate: `tests/ep2_town_furniture_test` (new, CI). Gold town, smelter kit and PBR gates pass. Rich & Utah's Armory - already the densest
   room, its routes tight - keeps part 1's photo-scanned detail for now.
 
+## P1 — CAD pass, part 4 (the street's facades + Rich & Utah's Armory)
+
+![street before / after](2026-10-25_cad_transitions/street_trim_before_after.jpg)
+![armory before / after](2026-10-25_cad_transitions/armory_detail_before_after.jpg)
+
+- **Facades**: `tools/ep2_blender/build_town_kit.py --cad-trim` (the streamed `town_kit2` only; the default build is verified
+  byte-identical, so the shipped fallback kit is untouched) leaves an empty where each box porch post (36), cornice bracket (54), window
+  head (137) and balcony baluster (34) was; `Ep2GoldTown._build_trim` hangs the CAD pieces there - a chamfered post with its plinth,
+  capital and two sawn scroll brackets, a scrolled corbel with bossed eyes, an Italianate hood (frieze, moulded cap, end brackets), a
+  turned baluster - one MultiMesh per piece for the whole street (~48k triangles), in the kit's own textured Trim / PaintWhite. If the
+  CAD pack could not be loaded the old boxes stand in.
+- **Rich & Utah's Armory** (it was already the densest room, its NPC routes tight): a wall board of six CAD Colts by the door over the
+  barrel of long guns, a gunsmith's bench with its vise and a barrel in the jaws under the back gallery (its lamp hangs over it), a planked
+  crate with an ammo box and a powder keg under the stair, a lantern on the cleaning bench, a hall tree by the door. The gate checks that no
+  new floor piece lies on any line between two of Rich's or Utah's ground-floor waypoints (a cuspidor in front of the counter failed it
+  and was dropped).
+- Gate: `tests/ep2_town_furniture_test` (street trim + Armory sections, CI). Gold town and two-storey Armory gates pass.
+
 ## Not yet verified
 - Web-build listening and a real-browser walk of hideout → lift → woods (headless gates + native GPU captures only). The founder's hard refresh is the acceptance.
 - The synthesized train has not been listened to by a human. If it reads wrong, regenerate with ElevenLabs / VARCO when a key is on the box (same file names).

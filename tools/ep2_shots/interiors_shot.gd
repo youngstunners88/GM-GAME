@@ -8,7 +8,7 @@ var chamber: GoldTownChamber
 var vp: SubViewport
 var out := ".farm/interiors"
 
-## [label, building, eye ground point (local), look-at point (local)]
+## [label, building ("" = world coordinates), eye ground point (local), look-at point (local)]
 const VIEWS: Array = [
 	["saloon_wide", "Bldg_Saloon", Vector3(0.0, 0.0, -0.7), Vector3(-0.6, 1.5, -9.0)],
 	["saloon_bar", "Bldg_Saloon", Vector3(1.2, 0.0, -5.6), Vector3(-1.6, 1.4, -10.6)],
@@ -20,6 +20,18 @@ const VIEWS: Array = [
 	["jail_office", "Bldg_Jail", Vector3(0.9, 0.0, -0.8), Vector3(2.4, 0.9, -3.0)],
 	["jail_stove", "Bldg_Jail", Vector3(0.6, 0.0, -3.0), Vector3(-3.0, 0.6, -0.7)],
 	["jail_cell", "Bldg_Jail", Vector3(-1.0, 0.0, -4.2), Vector3(-1.2, 0.05, -5.3)],
+	# Rich & Utah's two-storey Armory (when drawn)
+	["armory_back", "Bldg_Armory", Vector3(0.4, 0.0, -3.4), Vector3(2.6, 1.0, -10.4)],
+	["armory_stair", "Bldg_Armory", Vector3(2.0, 0.0, -6.6), Vector3(4.2, 0.6, -6.9)],
+	["armory_guns", "Bldg_Armory", Vector3(2.4, 0.0, -2.4), Vector3(4.84, 2.0, -1.25)],
+	["armory_door", "Bldg_Armory", Vector3(0.6, 0.0, -4.2), Vector3(-1.8, 1.3, -0.7)],
+	["armory_bench", "Bldg_Armory", Vector3(-1.2, 0.0, -7.2), Vector3(-3.2, 0.9, -9.6)],
+	# the street's facades (porch posts, cornice corbels, window hoods, the saloon's balcony)
+	["street_left", "", Vector3(3.0, 0.0, 1416.0), Vector3(-9.0, 3.2, 1426.0)],
+	["street_right", "", Vector3(-3.0, 0.0, 1418.0), Vector3(9.0, 3.4, 1428.0)],
+	["street_saloon", "", Vector3(1.5, 0.0, 1411.0), Vector3(9.0, 4.6, 1414.0)],
+	["porch_close", "", Vector3(4.5, 0.0, 1409.5), Vector3(6.55, 2.7, 1412.0)],
+	["cornice_close", "", Vector3(3.0, 0.0, 1407.0), Vector3(9.0, 8.8, 1411.0)],
 ]
 
 
@@ -40,10 +52,12 @@ func _ready() -> void:
 		chamber.step(1.0 / 60.0)
 		await get_tree().process_frame
 	for v in VIEWS:
-		if Ep2GoldTown.entry(str(v[1])).is_empty() or (str(v[1]) == "Bldg_Jail" and not Ep2GoldTown.jail_v1):
+		var bld: String = str(v[1])
+		if bld != "" and (Ep2GoldTown.entry(bld).is_empty() or (bld == "Bldg_Jail" and not Ep2GoldTown.jail_v1)
+				or (bld == "Bldg_Armory" and not Ep2GoldTown.armory_v2)):
 			continue
-		var g: Vector3 = Ep2GoldTown.local_to_world(str(v[1]), v[2])
-		var f: Vector3 = Ep2GoldTown.local_to_world(str(v[1]), v[3])
+		var g: Vector3 = Ep2GoldTown.local_to_world(bld, v[2]) if bld != "" else v[2]
+		var f: Vector3 = Ep2GoldTown.local_to_world(bld, v[3]) if bld != "" else v[3]
 		_look(g, f)
 		await _shot(str(v[0]))
 	print("INTERIORS_SHOT_DONE")

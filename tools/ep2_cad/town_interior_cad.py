@@ -1197,13 +1197,72 @@ def build_gun_board():
                 add(P, "Brass", sphere(0.009, (cx + dx, cy - 0.02, 0.08)), 2)
 
 
+# ====================================================================================================== the street: facade trim
+# The streamed town kit (tools/ep2_blender/build_town_kit.py --cad-trim) leaves anchors where its box posts, cornice brackets, window
+# heads and balcony balusters were; Ep2GoldTown hangs these there (one MultiMesh per piece for the whole street), in the kit's own
+# Trim / PaintWhite materials.
+def build_porch_post():
+    """A chamfered porch post (origin = its foot on the porch deck, 2.90 m up to the porch beam): a plinth, a stop-chamfered shaft, a
+    collar, the capital block and its cap, and two sawn scroll brackets under the beam (the beam runs along x)."""
+    P = "porch_post"
+    H = 2.90
+    add(P, "Trim", chamfer(box((0.24, 0.30, 0.24), (0, 0.15, 0)), 0.02))
+    shaft = box((0.17, H - 0.62, 0.17), (0, 0.30 + (H - 0.62) / 2, 0))
+    add(P, "Trim", chamfer(shaft, 0.026, [e for e in shaft.Edges if abs(e.tangentAt(e.FirstParameter).dot(Y)) > 0.9]))
+    add(P, "Trim", chamfer(box((0.20, 0.05, 0.20), (0, H - 0.42, 0)), 0.008))
+    add(P, "Trim", chamfer(box((0.21, 0.22, 0.21), (0, H - 0.21, 0)), 0.01))
+    add(P, "Trim", chamfer(box((0.26, 0.04, 0.26), (0, H - 0.02, 0)), 0.008))
+    # the bracket: the corner between the post (x 0.085) and the beam (y H - 0.04) with a quarter-round cut from (0.10, H - 0.5) up
+    # and out to (0.62, H - 0.07), centred low and outboard
+    cx, cy, R = 0.62, H - 0.60, 0.53
+    arc = [(cx + R * math.cos(math.radians(180.0 - k * 11.25)), cy + R * math.sin(math.radians(180.0 - k * 11.25))) for k in range(1, 9)]
+    pts = [(0.085, H - 0.04), (0.085, H - 0.60)] + arc + [(0.62, H - 0.04)]
+    for sx in (-1, 1):
+        add(P, "Trim", prism_xy([(sx * x, y) for x, y in pts], 0.045, -0.0225))
+        add(P, "Trim", cyl(0.03, 0.05, (sx * 0.30, H - 0.22, 0), "z"), 2)                         # the bracket's turned boss
+
+
+def build_corbel():
+    """A scrolled cornice corbel (origin = top back: under the false front's frieze band, on the wall face; it hangs down -y and
+    stands out +z): an S-scroll side profile, the scroll's eye bossed on both faces."""
+    P = "corbel"
+    prof = [(0.0, 0.0), (0.0, 0.26), (-0.04, 0.272), (-0.08, 0.258), (-0.12, 0.222), (-0.16, 0.172), (-0.20, 0.132), (-0.24, 0.112),
+            (-0.28, 0.104), (-0.305, 0.088), (-0.32, 0.06), (-0.32, 0.0)]
+    add(P, "Trim", prism_yz(prof, 0.12, -0.06))
+    for sx in (-1, 1):
+        add(P, "Trim", cyl(0.042, 0.014, (sx * 0.067, -0.075, 0.20), "x"), 2)
+        add(P, "Trim", cyl(0.026, 0.012, (sx * 0.067, -0.27, 0.095), "x"), 2)
+
+
+def build_window_hood():
+    """An Italianate window hood for the kit's 0.95 m windows (origin = the head's middle on the wall face, the frame's top): a frieze
+    board, a moulded cap and two small scroll brackets at its ends."""
+    P = "window_hood"
+    add(P, "PaintWhite", box((1.19, 0.12, 0.05), (0, 0.06, 0.025)))
+    ogee_run(P, "PaintWhite", -0.66, 0.66, 0.12, 0.0, 0.09, 0.15, flip=True)
+    add(P, "PaintWhite", box((1.36, 0.035, 0.17), (0, 0.2275, 0.075)))
+    prof = [(0.12, 0.0), (0.12, 0.10), (0.09, 0.105), (0.05, 0.08), (0.0, 0.05), (-0.05, 0.035), (-0.05, 0.0)]
+    for sx in (-1, 1):
+        add(P, "PaintWhite", prism_yz(prof, 0.05, sx * 0.55 - 0.025))
+
+
+def build_baluster():
+    """A turned balcony baluster (origin = its foot on the balcony deck; 0.90 m to the rail), with square blocks top and bottom."""
+    P = "baluster"
+    add(P, "Trim", box((0.065, 0.10, 0.065), (0, 0.05, 0)))
+    add(P, "Trim", revolve([(0.10, 0.0), (0.10, 0.026), (0.14, 0.03), (0.20, 0.024), (0.34, 0.036), (0.44, 0.03), (0.50, 0.018), (0.62, 0.016),
+                            (0.68, 0.024), (0.73, 0.018), (0.80, 0.022), (0.80, 0.0)], "y"), 2)
+    add(P, "Trim", box((0.065, 0.10, 0.065), (0, 0.85, 0)))
+
+
 BUILDERS = [("bar", build_bar), ("back_bar", build_back_bar), ("table", build_table), ("chair", build_chair), ("poker_set", build_poker_set),
             ("table_drinks", build_table_drinks), ("piano", build_piano), ("piano_stool", build_piano_stool), ("spittoon", build_spittoon),
             ("hang_lamp", build_hang_lamp), ("chandelier", build_chandelier), ("clock", build_clock), ("clock_pendulum", build_clock_pendulum),
             ("hat_rack", build_hat_rack), ("counter", build_counter), ("pigeonholes", build_pigeonholes), ("desk", build_desk),
             ("desk_lamp", build_desk_lamp), ("desk_chair", build_desk_chair), ("stove", build_stove), ("coffee_pot", build_coffee_pot), ("wood_box", build_wood_box),
             ("safe", build_safe), ("bench", build_bench), ("lantern", build_lantern), ("key_ring", build_key_ring), ("bucket", build_bucket),
-            ("tin_plate", build_tin_plate), ("broom", build_broom), ("workbench", build_workbench), ("gun_board", build_gun_board)]
+            ("tin_plate", build_tin_plate), ("broom", build_broom), ("workbench", build_workbench), ("gun_board", build_gun_board),
+            ("porch_post", build_porch_post), ("corbel", build_corbel), ("window_hood", build_window_hood), ("baluster", build_baluster)]
 
 failed = {}
 for name, fn in BUILDERS:
