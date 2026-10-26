@@ -1,0 +1,38 @@
+{
+  "gameUrl": "https://html-classic.itch.zone/html/18305533-2210770/index.html?v=1792962544&ep2=1",
+  "build": "2026-10-25-0e3383d",
+  "extras": "[EP2] extras ready (ready)",
+  "logan": "",
+  "extrasHttp": [
+    200
+  ],
+  "downloaded_packs": {
+    "index.pck": {
+      "bytes": 198599104,
+      "magic": "GDPC",
+      "sha512": "d83f5d3c2b924ba2cb0b14b01b1776b24c9eb60b8409c3720e8d44048c055a295c42a0774a7d72742591749b5110841dc83223dac01892de2a746faf707ac6b2"
+    },
+    "ep2_extras.pck": {
+      "bytes": 98983008,
+      "magic": "GDPC",
+      "sha512": "865c90433309c13166718a786f127ebc69f58c3de6fbff0aedc178115786d6209abf90601566e21be1f9b47f0240ca857e9014a10b52eeff21ac6bcc107ab9ae"
+    }
+  },
+  "source_sha": "0e3383daf2af6d106f9fb9b70387ae82ebc18bd2",
+  "ci_run": 40212082180,
+  "ci_job": 121225261426,
+  "ci_conclusion": "success",
+  "deploy_step": "success",
+  "upload_log": "2026-10-25T16:58:35.6051282Z Pushed to https://youngstunners88.itch.io/smokerealm",
+  "upload_fresh_data": "63.80 MiB",
+  "verified_utc": "2026-10-26T00:19:57.825406+00:00",
+  "meshy_actual_credits": 65,
+  "meshy_budget_credits": 150,
+  "public_export_resource_checks": "ROAD_CART_PACK: 36 checks, 0 failed",
+  "public_export_encounter": "EXPORTED_ENCOUNTER: ALL PASS slow=5.1 wave=true state=3 lines=[\"vo_bull_road_start\", \"vo_lb_road_go\", \"vo_bull_cart1\", \"vo_bull_cart2\", \"vo_cart_man\", \"vo_lb_cart\"]",
+  "public_browser_build_and_extras": true,
+  "public_browser_access_gate_preserved": true,
+  "full_browser_cart_playthrough_claimed": false,
+  "public_export_native_passenger_camera_reviewed": true,
+  "protected_original_fused_asset_unchanged": true
+}
