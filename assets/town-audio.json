@@ -603,6 +603,54 @@
       "seconds": 4.0,
       "loop": true,
       "prompt": "Seamlessly looping steady walk of one horse on packed dry dirt, natural hoof clops with slight tack jingle. No other sounds, no music."
+    },
+    {
+      "id": "window_shatter",
+      "seconds": 1.6,
+      "loop": false,
+      "prompt": "A single pane of old glass in a wooden window frame shattering: a sharp crack, a brief spray of falling glass shards tinkling onto a wooden boardwalk. One event, outdoors, no voices, no music."
+    },
+    {
+      "id": "wood_splinter",
+      "seconds": 1.2,
+      "loop": false,
+      "prompt": "A rifle round striking a timber plank wall: a sharp splintering crack and a few wood chips falling. One impact, no voices, no music, no gunshot report."
+    },
+    {
+      "id": "body_thud",
+      "seconds": 1.0,
+      "loop": false,
+      "prompt": "A man's body falling heavily onto a dusty wooden floor, one dull thud with a soft exhale. No voice words, no music."
+    },
+    {
+      "id": "crowd_cheer",
+      "seconds": 4.0,
+      "loop": false,
+      "prompt": "A small crowd of townspeople cheering and clapping together in the open street on a frontier town: whoops, hooting and friendly applause, lasting about four seconds then fading. No words, no music, no gunshots."
+    },
+    {
+      "id": "hay_rustle",
+      "seconds": 2.5,
+      "loop": false,
+      "prompt": "Someone forking dry hay in a barn stable: a soft rustle, a fork scrape on a plank floor, the hay tossed and falling. No voices, no music, no horse sounds."
+    },
+    {
+      "id": "water_trough",
+      "seconds": 3.0,
+      "loop": false,
+      "prompt": "A horse drinking from a wooden water trough outdoors: steady slurping and splashing of water, a horse blowing out through its nose afterward. No voices, no music."
+    },
+    {
+      "id": "spurs_jingle",
+      "seconds": 1.4,
+      "loop": false,
+      "prompt": "Cowboy spurs jingling with each of two footsteps on a timber floor: bright short metal jingles and boot steps. No voices, no music."
+    },
+    {
+      "id": "bar_glasses_clink",
+      "seconds": 1.6,
+      "loop": false,
+      "prompt": "Two whiskey glasses being clinked together in a saloon and set down on a wooden bar counter: a bright short clink and a soft wood tap. No voices, no music."
     }
   ]
 }

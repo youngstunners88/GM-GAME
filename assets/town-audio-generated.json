@@ -978,5 +978,93 @@
     "loop": true,
     "model_id": "eleven_text_to_sound_v2",
     "start_seconds": 0
+  },
+  "window_shatter": {
+    "source_hash": "b4bc53378ae0b42f75887ccf83798e8e8f7769065ad4c173b1f57792d161ee73",
+    "processing_version": 2,
+    "sha256": "d26577ce8a8a18413d2ebdd845efbf56a46fa1afdff5621d9f4c886b952fabf6",
+    "bytes": 17939,
+    "prompt": "A single pane of old glass in a wooden window frame shattering: a sharp crack, a brief spray of falling glass shards tinkling onto a wooden boardwalk. One event, outdoors, no voices, no music.",
+    "seconds": 1.59898,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "wood_splinter": {
+    "source_hash": "000e2e1e487b27018f4c42a0435098d3fa8f2c63038670008a1b0ac3ab64a2bd",
+    "processing_version": 2,
+    "sha256": "434a610afc464337d0472beb28a603d103988a97ec48a27f8c319a106298c3d2",
+    "bytes": 13204,
+    "prompt": "A rifle round striking a timber plank wall: a sharp splintering crack and a few wood chips falling. One impact, no voices, no music, no gunshot report.",
+    "seconds": 1.160317,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "body_thud": {
+    "source_hash": "5d3ba2cd2fb03b4198ce199c7153084636a0765f9d673102337e407689366ca5",
+    "processing_version": 2,
+    "sha256": "c9d8805d0be29c07ac4e1845be8889c9d1476d9d1ac62005b2eedfa9a44f13d4",
+    "bytes": 10897,
+    "prompt": "A man's body falling heavily onto a dusty wooden floor, one dull thud with a soft exhale. No voice words, no music.",
+    "seconds": 0.986485,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "crowd_cheer": {
+    "source_hash": "a87714dd53a001e45329ac47e2e88c656be3bcefd66443226727b79551fbd729",
+    "processing_version": 2,
+    "sha256": "d631b47196f85b2ff3c7bb4585fc2c2776872ae236ee6e82c53acea3ec6ea5e6",
+    "bytes": 39204,
+    "prompt": "A small crowd of townspeople cheering and clapping together in the open street on a frontier town: whoops, hooting and friendly applause, lasting about four seconds then fading. No words, no music, no gunshots.",
+    "seconds": 3.999002,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "hay_rustle": {
+    "source_hash": "3b033ec3573d7c2a2b37c7ca0b0fee280b7a56a78443be35a85e27f082f2766c",
+    "processing_version": 2,
+    "sha256": "ed4c2a8eadf27cb58ebf3584d32624e8d6aab084bcc94246ec9a61a11a7cd554",
+    "bytes": 24564,
+    "prompt": "Someone forking dry hay in a barn stable: a soft rustle, a fork scrape on a plank floor, the hay tossed and falling. No voices, no music, no horse sounds.",
+    "seconds": 2.433288,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "water_trough": {
+    "source_hash": "94595f4c9e185940bfaa30c1e8660ec5abf898732b145f68159068ef0a92d8d8",
+    "processing_version": 2,
+    "sha256": "4796eb5f304c096be5e970c5456d8c2c188084e41765233999ca2733724b2b0a",
+    "bytes": 29845,
+    "prompt": "A horse drinking from a wooden water trough outdoors: steady slurping and splashing of water, a horse blowing out through its nose afterward. No voices, no music.",
+    "seconds": 2.913515,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "spurs_jingle": {
+    "source_hash": "539bd77abedaeff08badfbfda80efcdf6becaa2bb2f81f620e9b33cefe3a98de",
+    "processing_version": 2,
+    "sha256": "3bd080050563366f72bb17ee6bfe62528743f6a00f5c4a6dec292e7e3d9f3a01",
+    "bytes": 13977,
+    "prompt": "Cowboy spurs jingling with each of two footsteps on a timber floor: bright short metal jingles and boot steps. No voices, no music.",
+    "seconds": 1.121542,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "bar_glasses_clink": {
+    "source_hash": "9aabfe6141a5909c3c84b23346f68e4d174ee4c0418acba5a8d0f60914a9ee10",
+    "processing_version": 2,
+    "sha256": "3a038e180ec2213a1d90e06b98013d752773c17c1df4967600a6f67a1598553d",
+    "bytes": 7146,
+    "prompt": "Two whiskey glasses being clinked together in a saloon and set down on a wooden bar counter: a bright short clink and a soft wood tap. No voices, no music.",
+    "seconds": 0.476417,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
   }
 }
