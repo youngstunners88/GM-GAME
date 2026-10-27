@@ -23,7 +23,7 @@ func _ready() -> void:
 	check("shared town builder restores the original Episode2 yard", yard != null and Ep2StableYard.STABLE_POS == Vector3(-16, 0, 1222))
 	check("yard uses the original paddock, off the approach road", Ep2StableYard.PADDOCK == Rect2(-24, 1204, 20, 36) and Ep2StableYard.PADDOCK.end.x == -4.0)
 	check("both supplied characters actually loaded", yard.actors.size() == 2)
-	check("five extra horses occupy the yard", yard.horses.size() == 5)
+	check("eight horses occupy the yard", yard.horses.size() == 8)
 	var clear_yard := true
 	for rocks in c._visuals.find_children("DesertRocks", "MultiMeshInstance3D", true, false):
 		var mm: MultiMesh = (rocks as MultiMeshInstance3D).multimesh
@@ -41,6 +41,8 @@ func _ready() -> void:
 		var tris := 0
 		for mi in meshes:
 			var mesh: Mesh = (mi as MeshInstance3D).mesh
+			if not (mesh is ArrayMesh):
+				continue                                   # a chore prop on a hand (the assistant's brush), not the character's body
 			for s in mesh.get_surface_count():
 				var count: int = mesh.surface_get_array_index_len(s)
 				tris += count / 3 if count > 0 else mesh.surface_get_array_len(s) / 3
@@ -102,7 +104,7 @@ func _ready() -> void:
 	var twin: Ep2StableYard = other.find_child("StableYard", true, false)
 	var state: Dictionary = yard.snapshot()
 	twin.restore(state)
-	check("woods/town builder produces the same two actors and herd", twin.actors.size() == 2 and twin.horses.size() == 5)
+	check("woods/town builder produces the same two actors and herd", twin.actors.size() == 2 and twin.horses.size() == 8)
 	check("handoff preserves actor places", twin.actors[0].position == yard.actors[0].position and twin.actors[1].position == yard.actors[1].position)
 	check("handoff preserves horse place and clip phase", twin.horses[4].position == yard.horses[4].position and absf((twin._horse_anims[2] as AnimationPlayer).current_animation_position - (yard._horse_anims[2] as AnimationPlayer).current_animation_position) < 0.00005)
 	yard.restore(before)
@@ -113,7 +115,7 @@ func _ready() -> void:
 	yard.step(0.02, c._player_pos)
 	var requests: Array = []
 	c.stable_voice_requested.connect(func(id, voice): requests.append([id, voice]))
-	check("E within3m calls the placeholder voice hook", c.start_rig() and requests == [["dude_greet_01", "Pe1gOSDKAuczOZqgCiEm"]])
+	check("E within3m starts the real ranch conversation", c.start_rig() and requests == [["dude_ranch_01", "Pe1gOSDKAuczOZqgCiEm"]])
 	check("hook creates no purchase, map or story beat", c.get_beat() == GoldTownChamber.Beat.STREET and not c.has_map())
 	c._player_pos += Vector3(4, 0, 0)
 	check("E outside3m does nothing", not c.start_rig())

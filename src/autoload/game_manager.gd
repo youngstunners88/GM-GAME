@@ -371,6 +371,10 @@ var bear_tally: Dictionary = {}
 ## heart when an Episode 2 room can use it. They are holdings, not run currency.
 signal chill_buds_changed(n: int)
 var chill_buds: int = 0
+## Dude's ranch ledger. The one-time welcome bud and any horse credit are
+## persistent holdings, saved alongside the purse rather than run currency.
+var dude_free_bud_claimed: bool = false
+var dude_credit_btc: int = 0
 
 ## Total number of bears Lil Blunt has personally put down.
 func bear_total() -> int:
@@ -403,6 +407,18 @@ func take_chill_bud() -> bool:
     chill_buds_changed.emit(chill_buds)
     return true
 
+## Grant Dude's welcome bud once in this game. False on every later attempt.
+func claim_dude_free_bud() -> bool:
+    if dude_free_bud_claimed:
+        return false
+    dude_free_bud_claimed = true
+    add_chill_buds(1)
+    return true
+
+## Record the BTC owed for Dude's horse on the no-soft-lock credit path.
+func record_dude_credit(amount: int) -> void:
+    dude_credit_btc = maxi(0, amount)
+
 ## The purse from a save. A save written before the purse existed carries only
 ## the shared coin pool that Rich used to take; that pool moves into the purse
 ## ONCE, split evenly over ETH / BTC / SOL (remainder to BTC), so no player
@@ -430,6 +446,8 @@ func _load_ledger(data: Dictionary) -> void:
         if key != "" and count > 0:
             bear_tally[key] = count
     chill_buds = maxi(0, SaveSafe.to_int(data.get("chill_buds", 0), 0))
+    dude_free_bud_claimed = SaveSafe.to_int(data.get("dude_free_bud_claimed", 0), 0) != 0
+    dude_credit_btc = clampi(SaveSafe.to_int(data.get("dude_credit_btc", 0), 0), 0, 1000000)
     runner_btc_credited = 0
     chill_buds_changed.emit(chill_buds)
 
@@ -775,6 +793,8 @@ func reset_session() -> void:
     runner_btc_credited = 0
     bear_tally.clear()
     chill_buds = 0
+    dude_free_bud_claimed = false
+    dude_credit_btc = 0
     chill_buds_changed.emit(0)
     blaze_rush_completed.clear()
     secret_door_used.clear()
@@ -831,6 +851,8 @@ func save_session() -> bool:
         "token_purse": token_purse,
         "bear_tally": bear_tally,
         "chill_buds": chill_buds,
+        "dude_free_bud_claimed": dude_free_bud_claimed,
+        "dude_credit_btc": dude_credit_btc,
         "blaze_rush": _serialize_blaze_completions(),
         "health": player_health,
         "max_health": max_health,
