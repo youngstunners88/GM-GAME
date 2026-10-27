@@ -26,7 +26,12 @@
   "real_phone": "Not tested on hardware",
   "title_lock_files": 5,
   "security": "No blockers at high",
-  "release": "pending",
-  "note": "Final exact-export and downloaded public-pack browser replays follow; phone emulation is distinct from hardware.",
-  "full_native_workflow": "PASS on eaebdacf; final narrow Episode2 cursor/unsupported-context exit adjustment separately covered by30 manual checks and full Episode2 touch suite"
+  "release": "Production CI40513406899/actualbutler upload/publicBUILD2026-10-27-4044823 verified",
+  "note": "Production exact-source full CI passed. Public engine and packs independently replayed; see PUBLIC_PROOF.json and RELEASE.md.",
+  "full_native_workflow": "PASS on eaebdacf; final narrow Episode2 cursor/unsupported-context exit adjustment separately covered by30 manual checks and full Episode2 touch suite",
+  "final_export_main_bytes": 198879632,
+  "final_export_extras_bytes": 112818464,
+  "fresh_import_main_bytes": 198846944,
+  "fresh_margin_bytes": 382496,
+  "final_exact_browser": "Desktop14 and phone-emulation14 checks, two reloads each, errors[]"
 }

@@ -1,0 +1,13 @@
+{
+  "release_sha": "4044823647c3e107c128477eceaa8fda50b8b823",
+  "run_id": 40513406899,
+  "job_id": 122220792382,
+  "conclusion": "success",
+  "actual_butler_upload": true,
+  "evidence": [
+    "2026-10-27T14:01:55.3653649Z ep2_extras.pck = 112817856 bytes",
+    "2026-10-27T14:01:57.8817593Z index.pck = 189 MB (itch per-file limit: 200 MB; CI gate: 190 MB)",
+    "2026-10-27T14:04:26.4224159Z ✓ Re-used 85.25% of old, added 48.86 MiB fresh data",
+    "2026-10-27T14:04:26.4256312Z ##[notice]Pushed to https://youngstunners88.itch.io/smokerealm"
+  ]
+}
