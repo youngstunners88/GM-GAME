@@ -1110,13 +1110,13 @@ func _on_beat_entered(b: int) -> void:
 		Beat.GEARED:
 			_end_guns()
 			_geared = true
-			prebuild_requested.emit("logans_lake")
+			prebuild_requested.emit("lake_trail")
 			if _hud:
 				_hud.objective = "Geared for the river. Follow the trail to Logan's Lake."
 				_hud.toast("ARMED FOR THE RIVER SHIPMENT", 3.4)
 			_start_show([FacilityShow._say("town_trade_11"), FacilityShow._say("town_trade_12")], false)
 		Beat.DONE:
-			_resolve({"next_chamber": "logans_lake", "got_map": _got_map, "draw_losses": _losses,
+			_resolve({"next_chamber": "lake_trail", "horse": true, "got_map": _got_map, "draw_losses": _losses,
 				"draw_fouls": _fouls, "armory_visited": _armory_visited, "sniper": armory.sniper_owned,
 				"sniper_rounds": armory.sniper_rounds, "river_gear": armory.river_gear,
 				"jail_visited": _jail_visited, "investigation": _investigation_open})

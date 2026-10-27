@@ -61,6 +61,7 @@ const CHAMBER_SCENES := {
 	"woods_quad": preload("res://src/episode2/chamber/woods_quad.tscn"),
 	# Out of the woods (founder 2026-10-14): Bull drops Lil Blunt in the GoldMine town - the sheriff, the saloon, the draw.
 	"gold_town": preload("res://src/episode2/chamber/gold_town.tscn"),
+	"lake_trail": preload("res://src/episode2/chamber/lake_trail.tscn"),
 	"logans_lake": preload("res://src/episode2/chamber/logans_lake.tscn"),
 }
 const DEFAULT_CHAMBER := "miner_shaft"
