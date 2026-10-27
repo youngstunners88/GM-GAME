@@ -20,6 +20,7 @@ the next agent hunting for files that were renamed.
 
 | Task | Load |
 |---|---|
+| Logan cabin / porch branding / prospecting detail / wanted bills | `.claude/skills/ep2-logan-cabin/SKILL.md`, `design/ep2/lake/cabin-20261027/BRIEF.md`; then the signage/prospecting/proof component |
 | Logan's Lake / supplied Logan / Blender toolkit | `.claude/skills/ep2-logans-lake/SKILL.md`, `design/ep2/lake/LOGANS_LAKE_LOCK.md`, `design/ep2/lake/IMPLEMENTATION.md`; tooling: `gm-blender-godot` |
 | Episode 2 town richness / avenues / facade doors and windows / background people and animals | `.claude/skills/ep2-living-town/SKILL.md`, `design/ep2/town/README.md`; then only the needed street/facade/life/proof component |
 | Player / movement / combat | `src/player/player.gd`, `src/player/combat_handler.gd`, `docs/architecture/adr-combat-system.md`, `docs/architecture/adr-gameplay-feel.md` |

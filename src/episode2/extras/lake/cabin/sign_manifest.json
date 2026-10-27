@@ -1,0 +1,18 @@
+{
+  "liquidity_sign.png": {
+    "owner": "LOGAN'S CABIN",
+    "sentence": "Be a liquidity provider."
+  },
+  "goldmine_wordmark.png": {
+    "text": "GOLDMINE"
+  },
+  "btc_reserves.png": {
+    "text": "BTC RESERVES"
+  },
+  "GM": "res://src/episode2/assets/textures/logos/logo_gold_mine.png",
+  "BTC": "res://src/episode2/assets/textures/tex_btc_coin.png",
+  "posters": [
+    "res://src/episode2/extras/town/posters/poster_rh.png",
+    "res://src/episode2/extras/town/posters/poster_jack_hammer.jpg"
+  ]
+}
