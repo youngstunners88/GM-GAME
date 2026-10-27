@@ -821,7 +821,9 @@ func _on_beat_entered(b: int) -> void:
 			camera_max = Vector3(4.1, 40.0, 16.0)
 			_bull_on_cage = false
 			_start_show([
-				{"do": "walk", "to": Vector3(0.75, TOP_Y, 12.8), "speed": 2.8},          # he leads out along the walkway's right edge, clear of the view
+				# he leads out right of the middle, clear of the view - but inside the woods bridge's rails (x +-1.12, narrower than this
+				# walkway's): at x 0.75 his shoulder was in the woods' right rail the moment the cut handed him over
+				{"do": "walk", "to": Vector3(0.4, TOP_Y, 12.8), "speed": 2.8},
 				{"do": "face", "at": Vector3(0.0, TOP_Y, 0.0)}])
 
 

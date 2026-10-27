@@ -1329,6 +1329,11 @@ func _exit_made_it() -> void:
 
 func get_handoff() -> Dictionary:
 	var d: Dictionary = {"yaw": _look_yaw, "pitch": _look_pitch}
+	# The held walk, the run and the stride/bob phase go through the doorway too (founder 2026-10-27: the facility -> elevator
+	# transition "still glitches slightly"): the router re-sends held keys only when they CHANGE, so without "move" the lift started
+	# him at a standstill with W still held, and the head bob and the gun's sway restarted from zero. Same fields the lift hands the
+	# woods (Ep2Interlude.get_handoff); same bob formulas on both sides.
+	d.merge({"move": _move_input, "run": _run_input, "moving": _moving, "walk_phase": _walk_phase, "anim_t": _anim_t})
 	# Seconds of Inferno's line still to play when the cut happens: the next room starts his next line only after it.
 	d["voice_left"] = maxf(0.0, _line_end - _elapsed)
 	if _portal_live:                     # walked through the doorway: the lift room picks up exactly where he and Inferno are

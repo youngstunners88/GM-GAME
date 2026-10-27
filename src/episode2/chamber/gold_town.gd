@@ -262,7 +262,8 @@ func _step_town_audio() -> void:
 
 
 func _town_speaker(who: String) -> String:
-	return {"RICH": "rich", "UTAH": "utah", "SHERIFF": "sheriff", "ACCOMPLICE": "prisoner", "LIL BLUNT": "lil_blunt"}.get(who, who.to_lower())
+	return {"RICH": "rich", "UTAH": "utah", "SHERIFF": "sheriff", "ACCOMPLICE": "prisoner", "LIL BLUNT": "lil_blunt",
+		"MIKE DEAN": "minister"}.get(who, who.to_lower())
 
 
 func _town_line(who: String, text: String) -> void:

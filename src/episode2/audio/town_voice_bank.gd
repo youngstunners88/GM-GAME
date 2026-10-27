@@ -537,6 +537,102 @@ const LINES: Dictionary = {
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_greet_bob_girl_1.ogg"
+	},
+	"town_job_04": {
+		"speaker": "lil_blunt",
+		"text": "Rich and Utah. I'm on it, Sheriff.",
+		"seconds": 2.916208,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_job_04.ogg"
+	},
+	"town_bullback_00": {
+		"speaker": "inferno",
+		"text": "Heard that Gatling clear across town. Figured it had to be you, little man.",
+		"seconds": 4.405,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_bullback_00.ogg"
+	},
+	"town_bullback_01": {
+		"speaker": "inferno",
+		"text": "Come on. First whiskey's on me.",
+		"seconds": 1.414625,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_bullback_01.ogg"
+	},
+	"town_body_00": {
+		"speaker": "inferno",
+		"text": "Evening, Minister.",
+		"seconds": 0.89525,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_body_00.ogg"
+	},
+	"town_body_02": {
+		"speaker": "inferno",
+		"text": "So who put a hole in his head?",
+		"seconds": 1.292375,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_body_02.ogg"
+	},
+	"town_body_03": {
+		"speaker": "lil_blunt",
+		"text": "Must've been a bird that had to get rid of the heavy load.",
+		"seconds": 3.13475,
+		"start_seconds": 0.07025,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_body_03.ogg"
+	},
+	"town_body_04": {
+		"speaker": "inferno",
+		"text": "A bird. Sure it was.",
+		"seconds": 1.317375,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_body_04.ogg"
+	},
+	"town_drinks_00": {
+		"speaker": "bartender",
+		"text": "Two whiskeys, coming right up.",
+		"seconds": 2.118792,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_drinks_00.ogg"
+	},
+	"town_drinks_01": {
+		"speaker": "inferno",
+		"text": "To the quickest little hand in GoldMine.",
+		"seconds": 1.753333,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_drinks_01.ogg"
+	},
+	"town_drinks_02": {
+		"speaker": "lil_blunt",
+		"text": "Cheers.",
+		"seconds": 0.835042,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_drinks_02.ogg"
+	},
+	"town_drinks_03": {
+		"speaker": "inferno",
+		"text": "Listen, my cousin Flux needs a hand with his new kettle.",
+		"seconds": 3.217667,
+		"start_seconds": 0.087333,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_drinks_03.ogg"
+	},
+	"town_drinks_04": {
+		"speaker": "inferno",
+		"text": "We'll lie low a little while and meet up later. Stay out of trouble.",
+		"seconds": 3.126083,
+		"start_seconds": 0.078917,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_drinks_04.ogg"
 	}
 }
 const GREETINGS: Dictionary = {

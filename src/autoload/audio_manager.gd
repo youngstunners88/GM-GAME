@@ -121,15 +121,47 @@ func play_room_music(path: String, fade_seconds: float = 2.5) -> void:
     play_playlist([path], true, fade_seconds)
 
 ## Subtle crossfade (founder 2026-10-25, forest -> town): the current track fades out over `seconds` WHILE `path` fades in over
-## the same span, then loops. Unlike play_playlist (0.45 s duck-out) the two overlap gently, with no gap and no pop.
+## the same span, then loops. EQUAL-POWER (founder 2026-10-27: the ride's music "changes to drastically"): the outgoing track's
+## amplitude follows cos and the incoming one's sin, so the two together hold one loudness the whole way. The old linear-dB ramps
+## (0 -> -60 dB out, -50 -> 0 dB in) left both songs ~25 dB down at the midpoint: the music all but vanished, then the theme swelled.
+## The incoming level follows the speech duck every frame (a line that starts mid-blend keeps the music under it).
 func crossfade_music(path: String, seconds: float = 4.0) -> void:
     if not ResourceLoader.exists(path):
         return
+    var stream: AudioStream = load(path)
+    if stream == null:
+        return
     _drop_override_for_new_music()
     _stop_ambient()
-    _duck_out_music(maxf(seconds, 0.5))
+    _purge_retiring()
+    _kill_music_level_tween()
+    var old: AudioStreamPlayer = current_music_player if current_music_player != null and is_instance_valid(current_music_player) else null
+    var old_amp: float = db_to_linear(old.volume_db) if old != null else 0.0
+    if old != null:
+        _retiring.append(old)
     _playlist = [path]
-    _play_next_in_playlist(true, true, maxf(seconds, 1.5))
+    _last_track = path
+    var fresh := AudioStreamPlayer.new()
+    fresh.bus = "Music"
+    fresh.stream = stream
+    fresh.volume_db = -80.0
+    add_child(fresh)
+    fresh.play()
+    fresh.finished.connect(_on_music_track_finished)
+    current_music_player = fresh
+    var step := func(t: float) -> void:
+        if not is_instance_valid(fresh) or current_music_player != fresh:
+            return                   # another music change took over mid-blend: both players are its business now
+        fresh.volume_db = linear_to_db(maxf(db_to_linear(_music_rest_db()) * sin(t * PI * 0.5), 0.00001))
+        if old != null and is_instance_valid(old):
+            old.volume_db = linear_to_db(maxf(old_amp * cos(t * PI * 0.5), 0.00001))
+    var blend := fresh.create_tween()
+    blend.tween_method(step, 0.0, 1.0, maxf(seconds, 0.5))
+    blend.finished.connect(func() -> void:
+        if old != null and _retiring.has(old):
+            _retiring.erase(old)
+            if is_instance_valid(old):
+                old.queue_free())
 
 ## Fade the current music out over `seconds` and stop (leaving a stage).
 func fade_out_music(seconds: float = 1.6) -> void:
