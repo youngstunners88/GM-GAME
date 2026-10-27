@@ -69,6 +69,14 @@
     },
     "bob_girl": {
       "voice_id": "FGY2WhTYpPnrIDTdsKH5"
+    },
+    "bam": {
+      "voice_id": "",
+      "note": "Bam Bankman Free, fictional disgraced crypto prisoner; Claude assigns a premade ElevenLabs voice."
+    },
+    "mike_dean": {
+      "voice_id": "",
+      "note": "Minister Mike Dean's two new cold-interaction lines only; existing minister story recordings are untouched."
     }
   },
   "lines": [
@@ -451,6 +459,138 @@
       "speaker": "bob_girl",
       "text": "Just one more turn, then it's your go.",
       "ambient": true
+    },
+    {
+      "id": "town_law_arrest",
+      "speaker": "sheriff",
+      "text": "Drop it, Blunt. You just shot a man in my town.",
+      "who": "SHERIFF"
+    },
+    {
+      "id": "town_law_release",
+      "speaker": "sheriff",
+      "text": "Your irons stay with me while you're in my town. Take your pick and walk soft.",
+      "who": "SHERIFF"
+    },
+    {
+      "id": "town_law_fine",
+      "speaker": "sheriff",
+      "text": "That damage comes out of your purse, Blunt. BTC, on the barrelhead.",
+      "who": "SHERIFF"
+    },
+    {
+      "id": "town_cell_00",
+      "speaker": "bam",
+      "text": "Name's Bam. Bam Bankman Free. The last part is doing a lot of work.",
+      "who": "BAM"
+    },
+    {
+      "id": "town_cell_01",
+      "speaker": "lil_blunt",
+      "text": "Easy, Bam. Lil Blunt. You look like you've had a year.",
+      "who": "LIL BLUNT"
+    },
+    {
+      "id": "town_cell_02",
+      "speaker": "bam",
+      "text": "Let's just say the books didn't balance. I'd sooner leave it there.",
+      "who": "BAM"
+    },
+    {
+      "id": "town_cell_03",
+      "speaker": "lil_blunt",
+      "text": "That's enough for me. No man owes me his worst day.",
+      "who": "LIL BLUNT"
+    },
+    {
+      "id": "town_cell_04",
+      "speaker": "bam",
+      "text": "I used to call every dip an opportunity. Then the floor learned my name.",
+      "who": "BAM"
+    },
+    {
+      "id": "town_cell_05",
+      "speaker": "lil_blunt",
+      "text": "Floor's an honest teacher. Still, a man can get back up.",
+      "who": "LIL BLUNT"
+    },
+    {
+      "id": "town_cell_06",
+      "speaker": "bam",
+      "text": "I told folks I was building a future. Turned out I was renting their patience.",
+      "who": "BAM"
+    },
+    {
+      "id": "town_cell_07",
+      "speaker": "lil_blunt",
+      "text": "Well. You can sit quiet with me. That's a fair trade.",
+      "who": "LIL BLUNT"
+    },
+    {
+      "id": "town_cell_08",
+      "speaker": "bam",
+      "text": "You're kind, little man. Next coin I earn, I'm counting it twice.",
+      "who": "BAM"
+    },
+    {
+      "id": "town_cell_09",
+      "speaker": "lil_blunt",
+      "text": "Count it slow, Bam. And walk softer than you talk.",
+      "who": "LIL BLUNT"
+    },
+    {
+      "id": "town_cold_clerk",
+      "speaker": "clerk",
+      "text": "Papers are in order. Your manners are another matter.",
+      "ambient": true
+    },
+    {
+      "id": "town_cold_oldtimer",
+      "speaker": "oldtimer",
+      "text": "I've seen quicker tempers than yours end in the same cell.",
+      "ambient": true
+    },
+    {
+      "id": "town_cold_rancher",
+      "speaker": "rancher",
+      "text": "Keep your barrel off my horses and your distance from me.",
+      "ambient": true
+    },
+    {
+      "id": "town_cold_grandma",
+      "speaker": "grandma",
+      "text": "You sit with your thoughts, dear. I'll keep my welcome for later.",
+      "ambient": true
+    },
+    {
+      "id": "town_cold_youth",
+      "speaker": "youth",
+      "text": "That was your one warning shot with us. Don't ask for another.",
+      "ambient": true
+    },
+    {
+      "id": "town_cold_sheriff_0",
+      "speaker": "sheriff",
+      "text": "Walk soft, Blunt. My town remembers.",
+      "who": "SHERIFF"
+    },
+    {
+      "id": "town_cold_sheriff_1",
+      "speaker": "sheriff",
+      "text": "You're still welcome at my office. The easy trust has to be earned back.",
+      "who": "SHERIFF"
+    },
+    {
+      "id": "town_cold_mike_dean_0",
+      "speaker": "mike_dean",
+      "text": "I'll pray for the man you hurt, and for the temper that did it.",
+      "who": "MIKE DEAN"
+    },
+    {
+      "id": "town_cold_mike_dean_1",
+      "speaker": "mike_dean",
+      "text": "Kindness costs nothing, son. Try spending a little more of it.",
+      "who": "MIKE DEAN"
     }
   ],
   "greetings": {

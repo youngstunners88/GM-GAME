@@ -18,6 +18,7 @@ extends Node
 
 ## A round left the barrel (the host decides what a shot means: noise in the woods, nothing in the shaft).
 signal fired
+signal pickaxe_swung
 signal dry_fired
 signal blocked(reason: String)
 signal reload_finished
@@ -43,6 +44,11 @@ const SHOT_DB := 4.0
 const LEVER_DB := 0.0
 const LEVER_DELAY := 0.38
 const SOUND_DIR := "res://src/assets/sounds/"
+const PICKAXE_MODEL := "res://src/episode2/assets/weapons/pickaxe_fp.glb"
+const PICKAXE_SWING := "res://src/assets/sounds/ep2_pickaxe_swing.mp3"
+const PICK_SWING_TIME := 0.46
+const PICK_HOME_POS := Vector3(0.24, -0.30, -0.62)
+const PICK_HOME_ROT := Vector3(-0.25, PI + 0.10, -0.45)
 
 ## The rifle logic: ammo, tube magazine, lever cycle, ADS blend, spread. Starts loaded and unlocked (Lil Blunt was taught
 ## in the hideout; nobody locks his trigger in the story rooms).
@@ -61,6 +67,9 @@ var lowered: bool = false
 var hip_pos: Vector3 = VM_HIP_POS
 var shots_played: int = 0
 var levers_played: int = 0
+var pickaxe_swings: int = 0
+var _pick_swing: float = 0.0
+var _pick_audio: AudioStreamPlayer = null
 
 var _recoil: float = 0.0
 var _flash_t: float = 0.0
@@ -127,6 +136,11 @@ func attach(cam: Camera3D) -> void:
 	bow.scale = Vector3.ONE * VM_SCALE * float(bow.get_meta("vm_scale", 1.0))
 	bow.visible = false
 	_weapon_views[Ep2ArmoryState.BOW] = bow
+	var pick: Node3D = _make_pickaxe_view()
+	cam.add_child(pick)
+	pick.scale = Vector3.ONE * VM_SCALE
+	pick.visible = false
+	_weapon_views[Ep2ArmoryState.PICK] = pick
 	_sync_weapon()
 
 
@@ -270,7 +284,8 @@ func set_shown(on: bool) -> void:
 		gun.cancel_reload()
 	_shown = on
 	if rifle != null and is_instance_valid(rifle):
-		rifle.visible = on and (armory == null or armory.owns(armory.equipped))
+		var available: bool = armory == null or armory.equipped == Ep2ArmoryState.PICK or armory.owns(armory.equipped)
+		rifle.visible = on and available
 
 
 ## The mouse delta in pixels: the rifle LAGS the mouse a little (sway).
@@ -279,11 +294,23 @@ func add_look(relative: Vector2) -> void:
 
 
 func set_aim(on: bool) -> void:
+	if armory != null and armory.equipped == Ep2ArmoryState.PICK:
+		gun.set_aim(false)
+		return
 	gun.set_aim(on)
 
 
 ## Pull the trigger. True when a round went out.
 func fire() -> bool:
+	if armory != null and armory.equipped == Ep2ArmoryState.PICK:
+		if _pick_swing > 0.001:
+			return false
+		_pick_swing = PICK_SWING_TIME
+		pickaxe_swings += 1
+		if _pick_audio != null and _pick_audio.stream != null:
+			_pick_audio.play()
+		pickaxe_swung.emit()
+		return true
 	if armory != null and not armory.ready():
 		return false
 	return gun.trigger() == Ep2Winchester.Shot.OK
@@ -291,6 +318,8 @@ func fire() -> bool:
 
 ## R: load shells one at a time. True when a reload started.
 func reload() -> bool:
+	if armory != null and armory.equipped == Ep2ArmoryState.PICK:
+		return false
 	if armory != null and not armory.ready():
 		return false
 	return gun.start_reload()
@@ -313,6 +342,9 @@ func step(delta: float, moving: bool, sprinting: bool, walk_phase: float) -> voi
 		armory.step(delta)
 	else:
 		gun.step(delta)
+	if armory != null and armory.equipped == Ep2ArmoryState.PICK:
+		_step_pickaxe(delta, moving, walk_phase)
+		return
 	if gun is Ep2Bow and rifle != null:
 		var bow := gun as Ep2Bow
 		if rifle.has_meta("fb"):
@@ -626,30 +658,143 @@ func _sync_weapon() -> void:
 		rifle = _weapon_views[_active_id]
 		rifle.position = hip_pos + Vector3(rifle.get_meta("hip_offset", Vector3.ZERO))
 		rifle.rotation = rifle.get_meta("hip_rotation", VM_HIP_ROT)  # correct carry even if rendering precedes the next physics tick
-		_muzzle_flash = rifle.get_node_or_null("MuzzleFlash")
-		if _muzzle_flash == null:
-			_build_muzzle_flash()
-			_muzzle_flash.position = Vector3(0, 0.038, 0.35)
-		_muzzle_flash.visible = false
-		_recoil = 0.0
-		_flash_t = 0.0
-		_lever_due = -1.0
-		_sight_h = 0.0
-		# Separate pools keep the outgoing report playing through a swap.
-		if not _report_pools.has(_active_id):
-			var pool: Array[AudioStreamPlayer] = []
-			for i in 3:
-				var player := AudioStreamPlayer.new()
-				player.bus = "SFX" if AudioServer.get_bus_index("SFX") >= 0 else "Master"
-				player.volume_db = SHOT_DB
-				player.stream = load(SOUND_DIR + "ep2_revolver_blast_%d.mp3" % (i + 1))
-				add_child(player)
-				pool.append(player)
-			_report_pools[_active_id] = pool
-		_players = _report_pools[_active_id]
+		if _active_id == Ep2ArmoryState.PICK:
+			_muzzle_flash = null
+			_recoil = 0.0
+			_flash_t = 0.0
+			_lever_due = -1.0
+			_sight_h = 0.06
+		else:
+			_muzzle_flash = rifle.get_node_or_null("MuzzleFlash")
+			if _muzzle_flash == null:
+				_build_muzzle_flash()
+				_muzzle_flash.position = Vector3(0, 0.038, 0.35)
+			_muzzle_flash.visible = false
+			_recoil = 0.0
+			_flash_t = 0.0
+			_lever_due = -1.0
+			_sight_h = 0.0
+			# Separate pools keep the outgoing report playing through a swap.
+			if not _report_pools.has(_active_id):
+				var pool: Array[AudioStreamPlayer] = []
+				for i in 3:
+					var player := AudioStreamPlayer.new()
+					player.bus = "SFX" if AudioServer.get_bus_index("SFX") >= 0 else "Master"
+					player.volume_db = SHOT_DB
+					player.stream = load(SOUND_DIR + "ep2_revolver_blast_%d.mp3" % (i + 1))
+					add_child(player)
+					pool.append(player)
+				_report_pools[_active_id] = pool
+			_players = _report_pools[_active_id]
 		if _key_light != null:
 			set_own_light(_key_max)
 	set_shown(_shown)
+
+
+## Build the pickaxe view. The supplied CAD model wins when present; otherwise
+## a tapered hickory handle and a curved, triangulated iron pick are generated.
+func _make_pickaxe_view() -> Node3D:
+	var root := Node3D.new()
+	root.name = "PickaxeViewmodel"
+	if ResourceLoader.exists(PICKAXE_MODEL):
+		var packed: PackedScene = load(PICKAXE_MODEL) as PackedScene
+		if packed != null:
+			var model: Node3D = packed.instantiate() as Node3D
+			if model != null:
+				model.name = "PickaxeCAD"
+				root.add_child(model)
+	else:
+		var wood := StandardMaterial3D.new()
+		wood.albedo_color = Color(0.38, 0.19, 0.075)
+		wood.roughness = 0.72
+		var iron := StandardMaterial3D.new()
+		iron.albedo_color = Color(0.20, 0.22, 0.23)
+		iron.metallic = 0.82
+		iron.roughness = 0.38
+		iron.cull_mode = BaseMaterial3D.CULL_DISABLED
+		_pick_cylinder(root, 0.018, 0.024, 0.90, Vector3(0.0, -0.03, 0.0), wood)
+		_pick_cylinder(root, 0.041, 0.041, 0.115, Vector3(0.0, 0.36, 0.0), iron)
+		for y in [-0.38, 0.08, 0.29]:
+			_pick_cylinder(root, 0.0255, 0.0255, 0.018, Vector3(0.0, float(y), 0.0), iron)
+		var head := MeshInstance3D.new()
+		head.name = "CurvedIronPick"
+		head.mesh = _pick_head_mesh()
+		head.material_override = iron
+		root.add_child(head)
+	_pick_audio = AudioStreamPlayer.new()
+	_pick_audio.name = "PickaxeSwing"
+	_pick_audio.bus = "SFX" if AudioServer.get_bus_index("SFX") >= 0 else "Master"
+	_pick_audio.volume_db = -3.0
+	if ResourceLoader.exists(PICKAXE_SWING):
+		_pick_audio.stream = load(PICKAXE_SWING) as AudioStream
+	add_child(_pick_audio)
+	return root
+
+
+func _pick_cylinder(parent: Node3D, top: float, bottom: float, height: float, at: Vector3, mat: Material) -> void:
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = top
+	mesh.bottom_radius = bottom
+	mesh.height = height
+	mesh.radial_segments = 12
+	var instance := MeshInstance3D.new()
+	instance.mesh = mesh
+	instance.material_override = mat
+	instance.position = at
+	parent.add_child(instance)
+
+
+func _pick_head_mesh() -> ArrayMesh:
+	var rings: Array = []
+	for i in 10:
+		var t: float = -1.0 + float(i) / 4.5
+		var centre := Vector3(t * 0.34, 0.38 - 0.17 * pow(absf(t), 1.6), 0.0)
+		var radius: float = 0.005 + 0.028 * (1.0 - absf(t))
+		var ring: Array = []
+		for j in 6:
+			var a: float = TAU * float(j) / 6.0
+			ring.append(centre + Vector3(0.0, cos(a) * radius, sin(a) * radius * 0.62))
+		rings.append(ring)
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for i in 9:
+		for j in 6:
+			var k: int = (j + 1) % 6
+			var a: Vector3 = rings[i][j]
+			var b: Vector3 = rings[i + 1][j]
+			var c: Vector3 = rings[i + 1][k]
+			var d: Vector3 = rings[i][k]
+			_pick_triangle(st, a, b, d)
+			_pick_triangle(st, b, c, d)
+	return st.commit()
+
+
+func _pick_triangle(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3) -> void:
+	var normal: Vector3 = (b - a).cross(c - a).normalized()
+	st.set_normal(normal)
+	st.add_vertex(a)
+	st.add_vertex(b)
+	st.add_vertex(c)
+
+
+func _step_pickaxe(delta: float, moving: bool, walk_phase: float) -> void:
+	_pick_swing = maxf(0.0, _pick_swing - delta)
+	_recoil = 0.0
+	_flash_t = 0.0
+	cam_kick = lerpf(cam_kick, 0.0, 1.0 - exp(-delta / 0.14))
+	if rifle == null or not is_instance_valid(rifle):
+		return
+	var swing: float = 0.0
+	if _pick_swing > 0.0:
+		swing = sin((1.0 - _pick_swing / PICK_SWING_TIME) * PI)
+	var pos: Vector3 = PICK_HOME_POS + Vector3(0.0, sin(_anim_t * 1.8) * 0.004, 0.0)
+	if moving:
+		pos += Vector3(sin(walk_phase) * 0.009, -absf(sin(walk_phase)) * 0.011, 0.0)
+	var rot: Vector3 = PICK_HOME_ROT
+	pos += Vector3(-0.035, -0.025, -0.15) * swing
+	rot += Vector3(-0.95, 0.12, 0.32) * swing
+	rifle.position = pos
+	rifle.rotation = rot
 
 
 func _enter_tree() -> void:

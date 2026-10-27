@@ -311,7 +311,11 @@ func add_titanx(amount: int = 1) -> void:
 const PURSE_TOKENS := ["eth", "btc", "wbtc", "sol", "titanx"]
 const PURSE_NAMES := {"eth": "ETH", "btc": "BTC", "wbtc": "WBTC", "sol": "SOL", "titanx": "TITANX"}
 signal purse_changed(token: String, balance: int)
+signal town_standing_changed(standing: String)
+signal town_debt_changed(amount: int)
 var token_purse: Dictionary = {"eth": 0, "btc": 0, "sol": 0}
+var town_standing: String = "warm"
+var town_debt_btc: int = 0
 
 ## Whole faces of `token` Lil Blunt holds (0 for an unknown token).
 func purse_balance(token: String) -> int:
@@ -355,6 +359,23 @@ func purse_spend(token: String, amount: int) -> bool:
             token_purse[token] = int(token_purse.get(token, 0)) - amount
     purse_changed.emit(token, purse_balance(token))
     return true
+
+## Set how the town treats Lil Blunt after his conduct there. Only the two
+## authored standings are meaningful; an unchanged standing does not re-save.
+func set_town_standing(standing: String) -> void:
+    if standing not in ["warm", "cold"] or standing == town_standing:
+        return
+    town_standing = standing
+    town_standing_changed.emit(town_standing)
+    save_session()
+
+## Add an unpaid part of a sheriff's fine. The purse itself is never overdrawn.
+func add_town_debt_btc(amount: int) -> void:
+    if amount <= 0:
+        return
+    town_debt_btc += amount
+    town_debt_changed.emit(town_debt_btc)
+    save_session()
 
 # ---- Lil Blunt's Episode 2 ledger ------------------------------------------
 ## BTC banked from the runner leg most recently completed. This is a per-run
@@ -772,6 +793,10 @@ func reset_session() -> void:
     titanx_collected = 0
     titanx_changed.emit(0)
     token_purse = {"eth": 0, "btc": 0, "sol": 0}
+    town_standing = "warm"
+    town_debt_btc = 0
+    town_standing_changed.emit(town_standing)
+    town_debt_changed.emit(0)
     runner_btc_credited = 0
     bear_tally.clear()
     chill_buds = 0
@@ -829,6 +854,8 @@ func save_session() -> bool:
         "smoke": smoke_collected,
         "titanx": titanx_collected,
         "token_purse": token_purse,
+        "town_standing": town_standing,
+        "town_debt_btc": town_debt_btc,
         "bear_tally": bear_tally,
         "chill_buds": chill_buds,
         "blaze_rush": _serialize_blaze_completions(),
@@ -876,6 +903,12 @@ func load_session() -> bool:
     smoke_collected = maxi(0, SaveSafe.to_int(data.get("smoke", 0), 0))
     titanx_collected = maxi(0, SaveSafe.to_int(data.get("titanx", 0), 0))
     _load_purse(data)
+    town_standing = SaveSafe.to_str(data.get("town_standing", "warm"))
+    if town_standing not in ["warm", "cold"]:
+        town_standing = "warm"
+    town_debt_btc = maxi(0, SaveSafe.to_int(data.get("town_debt_btc", 0), 0))
+    town_standing_changed.emit(town_standing)
+    town_debt_changed.emit(town_debt_btc)
     _load_ledger(data)
     _deserialize_blaze_completions(SaveSafe.to_dict(data.get("blaze_rush", {})))
     max_health = clampi(SaveSafe.to_int(data.get("max_health", 3), 3), 1, 10)
