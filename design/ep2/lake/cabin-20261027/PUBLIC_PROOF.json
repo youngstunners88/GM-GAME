@@ -1,0 +1,73 @@
+{
+  "gameUrl": "https://html-classic.itch.zone/html/18305533-2224463/index.html?v=1793094448&ep2=1",
+  "build": "2026-10-27-675859d",
+  "extras": "[EP2] extras ready (ready)",
+  "logan": "",
+  "extrasHttp": [
+    200
+  ],
+  "downloaded_packs": {
+    "index.pck": {
+      "bytes": 198804496,
+      "magic": "GDPC",
+      "sha512": "96658e0ef46b91ea0c83a770d2a609d38633d4446a0236d8e36ed0b0ea04522de997aa0add5f434f3a30481bfa7891e915f5bcabdeecb19b1d003ffc187a2648"
+    },
+    "ep2_extras.pck": {
+      "bytes": 112817792,
+      "magic": "GDPC",
+      "sha512": "6851a7acf5bab53ebf204ee07eb76970c4648509ed737fad6da5f80388a3785974bf13d2bd27491c52661845ed4d63fcf7bb219f85578fe1a7b24c0e8762fa15"
+    }
+  },
+  "access_gate": "Public browser still shows Episode2 access-code prompt; not an authenticated public-origin walkthrough",
+  "native_cabin_resources": 79,
+  "native_lake_resources": 86,
+  "native_route_checks": 22,
+  "compatibility_render": "Inspected exact-public-pack cabin image",
+  "engine_files": {
+    "index.html": {
+      "bytes": 4981,
+      "sha512": "ff2865cb128496e614857f1cbee789b2b2905c0ea01ed7c764862531f0bec6bc88eb3ef57288fb39e8fefac16bf8321dc4ed6a5999dec8022efea9e74d684b30"
+    },
+    "index.js": {
+      "bytes": 331495,
+      "sha512": "d3f5492b8f63c7d1ae8ee5d47f53f31150eb73edcf8e947682a79944f349c44b94b415f8e0d2d80cff668ace9941d15805f3f682234055ab830073ea37b54ae7"
+    },
+    "index.wasm": {
+      "bytes": 35376909,
+      "sha512": "170b8d0dfb11aedd34ef807e6b1043dc3eeb195540e4b388b1bc303d9c21b37f4e1d38430dd55a81eea7e8872272e06e04f9911e162617544fcf59c5d2b51ce0"
+    },
+    "web3.js": {
+      "bytes": 3035,
+      "sha512": "117b235a90965024bf040da8883d58e5924119103a2c637119b94ed823880a6994fddcbccd2cd7a985dc41dffefb71bc3f2f944c935bda02cc241409a62eda15"
+    }
+  },
+  "webgl": {
+    "ready": true,
+    "done": true,
+    "errors": [],
+    "checks": [
+      "[PASS] packed cabin and personal belongings build",
+      "[PASS] packed exact liquidity sentence",
+      "[PASS] packed founder GM and BTC logos",
+      "[PASS] packed RH and Jack Hammer wanted bills",
+      "[PASS] ordinary walk follows the cabin spur",
+      "[PASS] ordinary walk climbs the porch",
+      "[PASS] packed pans and gold remnants",
+      "[PASS] packed BTC reserves and ledger",
+      "[PASS] cabin is an optional visit without remote staging",
+      "[PASS] ordinary walk returns to the shore trail",
+      "[PASS] packed forest upgrades",
+      "[PASS] actual exported bank supports Logan",
+      "[PASS] ordinary walk reaches founder Logan",
+      "[PASS] ordinary interact starts investigation",
+      "[PASS] ordinary walk reaches cargo",
+      "[PASS] touch stages exactly once",
+      "[PASS] Logan waits through handoff",
+      "[PASS] packed skiff boards and rows",
+      "[PASS] downloaded palms/seat survive two whole strokes",
+      "[PASS] inventory remains unchanged",
+      "[PASS] ordinary movement reaches overlook",
+      "[PASS] lake preserves high overlook/outflow"
+    ]
+  }
+}

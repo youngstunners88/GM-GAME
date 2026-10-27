@@ -1,0 +1,16 @@
+{
+  "source": "675859dfbb604c212b9be92bc13d8277fb1b721a",
+  "runtime_source": "33af6037152593cc8fdd2f1154984e318fef25a9",
+  "run_id": 40479528943,
+  "job_id": 122106037451,
+  "conclusion": "success",
+  "upload": "confirmed actual butler upload",
+  "evidence": [
+    "2026-10-27T09:42:26.2092892Z ep2_extras.pck = 112817792 bytes",
+    "2026-10-27T09:42:27.8599508Z LAKE_PACK: ALL PASS (86 checks)",
+    "2026-10-27T09:42:28.2191983Z CABIN_PACK: ALL PASS (79 checks)",
+    "2026-10-27T09:42:29.0767967Z index.pck = 189 MB (itch per-file limit: 200 MB; CI gate: 190 MB)",
+    "2026-10-27T09:44:44.0729585Z ✓ Re-used 83.34% of old, added 55.19 MiB fresh data",
+    "2026-10-27T09:44:44.0761710Z ##[notice]Pushed to https://youngstunners88.itch.io/smokerealm"
+  ]
+}

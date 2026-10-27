@@ -1,0 +1,58 @@
+{
+  "ok": true,
+  "pass": true,
+  "errors": [],
+  "warnings": [
+    "hidden back-to-back faces: LoganCabinShell (46 pairs) - delete to save tris",
+    "1 parts fully enclosed, not touching (eyes/internals?): ['LoganCabinShell']"
+  ],
+  "ground_z": 0.0005,
+  "zfighting": [],
+  "floating": [],
+  "back_to_back": [
+    {
+      "where": "LoganCabinShell",
+      "tri_pairs": 46
+    }
+  ],
+  "enclosed": [
+    {
+      "object": "LoganCabinShell",
+      "island_verts": 105,
+      "center": [
+        0.007,
+        -1.106,
+        0.457
+      ]
+    }
+  ],
+  "objects": {
+    "LoganCabinShell": {
+      "verts": 14492,
+      "faces": 32000,
+      "tris": 32000,
+      "ngons": 0,
+      "boundary_edges": 0,
+      "nonmanifold_edges": 0,
+      "wire_edges": 0,
+      "loose_verts": 0,
+      "degenerate_faces": 0,
+      "zero_length_edges": 0,
+      "inconsistent_normals_edges": 0,
+      "duplicate_verts": 0,
+      "islands": 3,
+      "inside_out_islands": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materials": 1,
+      "uv_maps": 1,
+      "uv_oob_pct": 0.0,
+      "uv_zero_area_faces": 0,
+      "uv_overlap_pct": 0.31,
+      "uv_coverage_pct": 33.0
+    }
+  }
+}

@@ -27,6 +27,7 @@ var _marker_label: Label3D
 var _stage_calls: int = 0
 var _landscape := Ep2LakeLandscape.new()
 var _skiff: Ep2LoganSkiff
+var _cabin := Ep2LoganCabin.new()
 
 func _init() -> void:
 	title_card = "LOGAN'S LAKE"
@@ -36,7 +37,7 @@ func _init() -> void:
 
 func _chamber_id() -> String: return "logans_lake"
 func _beat_label(b: int) -> String: return Beat.keys()[clampi(b, 0, Beat.size() - 1)]
-func _build_steps() -> Array: return [_light, _land, _water, _shore, _vegetation, _people, _build_skiff]
+func _build_steps() -> Array: return [_light, _land, _water, _shore, _vegetation, _people, _build_skiff, _build_cabin]
 
 func _light() -> void:
 	var env := Environment.new()
@@ -146,6 +147,9 @@ func _build_skiff() -> void:
 		_skiff.build(_visuals, _logan, _landscape.water_material)
 		_skiff.reset_routine()
 
+func _build_cabin() -> void:
+	_cabin.build(_visuals)
+
 func _on_setup() -> void:
 	print("[EP2] Logan lake started")
 	_player_pos = SPAWN
@@ -242,7 +246,9 @@ func start_rig(_payment: String = "") -> bool:
 
 func _tick(delta: float) -> void:
 	_landscape.refresh_streamed()
-	_set_ground(path_height(_player_pos.z))
+	_build_cabin()
+	_cabin.refresh_materials()
+	_set_ground(Ep2LoganCabin.walk_height(_player_pos) if _player_pos.x < -11.5 else path_height(_player_pos.z))
 	if _logan == null:
 		_people()
 		if _logan == null:
@@ -286,6 +292,8 @@ func _tick(delta: float) -> void:
 		_advance_to(Beat.OVERLOOK)
 
 func _collide(p: Vector3) -> Vector3:
+	if Ep2LoganCabin.YARD.has_point(Vector2(p.x, p.z)) or (_player_pos.x < -11.5 and p.x < -11.5):
+		return Ep2LoganCabin.collide(p)
 	var q := p
 	q.z = clampf(q.z, -16, 64)
 	q.x = clampf(q.x, -11.5, -4.1)

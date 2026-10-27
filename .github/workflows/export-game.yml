@@ -40,6 +40,7 @@ on:
       - 'scripts/**'
       - 'tests/**'
       - 'tools/ep2_shots/**'
+      - 'tools/ep2_cabin/**'
       # secure-build-checklist was relocated from scripts/ to this skill path
       # (founder request, PR #21) and immediately reproduced the EXACT bug the
       # comment above documents: the scanner and its rules moved out from under
@@ -403,6 +404,9 @@ jobs:
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_lake_art_test.tscn > lake-art-tests.log 2>&1
           grep -q 'LAKE_ART: 23 checks, 0 failed' lake-art-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' lake-art-tests.log; then exit 1; fi
+          timeout 180 "$GODOT_BIN" --headless res://tests/ep2_logan_cabin_test.tscn > logan-cabin-tests.log 2>&1
+          grep -q 'LOGAN_CABIN: 26 checks, 0 failed' logan-cabin-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' logan-cabin-tests.log; then exit 1; fi
           # Rich & Utah's two-storey Armory (founder 2026-10-19): building, windows, door, no horse inside, both men working both floors.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_armory_two_story_test.tscn 2>&1 | tee armory2-tests.log
           grep -q 'EP2_ARMORY2: ALL PASS' armory2-tests.log
@@ -677,6 +681,9 @@ jobs:
           timeout 120 "$GODOT_BIN" --headless --path "$STABLE_CHECK_DIR" --script "$GITHUB_WORKSPACE/tools/ep2_lake/check_pack.gd" -- "$GITHUB_WORKSPACE/web/game/index.pck" "$GITHUB_WORKSPACE/web/game/ep2_extras.pck" 2>&1 | tee lake-pack-check.log
           grep -q 'LAKE_PACK: ALL PASS' lake-pack-check.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' lake-pack-check.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless --path "$STABLE_CHECK_DIR" --script "$GITHUB_WORKSPACE/tools/ep2_cabin/check_pack.gd" -- "$GITHUB_WORKSPACE/web/game/index.pck" "$GITHUB_WORKSPACE/web/game/ep2_extras.pck" 2>&1 | tee cabin-pack-check.log
+          grep -q 'CABIN_PACK: ALL PASS' cabin-pack-check.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' cabin-pack-check.log; then exit 1; fi
 
       - name: Restore the stamped source
         # MUST run, and must run BEFORE any step that touches git.

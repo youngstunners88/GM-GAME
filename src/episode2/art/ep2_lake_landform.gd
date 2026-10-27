@@ -18,7 +18,30 @@ static func flow_center(z: float) -> float:
 static func flow_width(z: float) -> float:
 	return 4.1 + 0.5 * sin(z * 0.09)
 
+static func cabin_clearance(x: float, z: float) -> bool:
+	return x > -31.0 and x < -12.0 and z > 3.0 and z < 23.0
+
 static func terrain_height(x: float, z: float) -> float:
+	var base: float = _natural_height(x, z)
+	if x >= -14.0: return base
+	var wx: float = 1.0 - smoothstep(6.0, 9.0, absf(x + 22.0))
+	var wz: float = 1.0 - smoothstep(6.0, 9.0, absf(z - 13.0))
+	return lerpf(base, 1.0, wx * wz)
+
+static func drawn_height(x: float, z: float) -> float:
+	# Match the actual2m triangle grid, not an unrelated smooth height oracle.
+	var gx: float = floorf((x + 130.0) / 2.0) * 2.0 - 130.0
+	var gz: float = floorf((z + 100.0) / 2.0) * 2.0 - 100.0
+	var u: float = (x - gx) * .5
+	var v: float = (z - gz) * .5
+	var a: float = terrain_height(gx, gz)
+	var b: float = terrain_height(gx + 2.0, gz)
+	var c: float = terrain_height(gx, gz + 2.0)
+	if u + v <= 1.0: return a + (b - a) * u + (c - a) * v
+	var d: float = terrain_height(gx + 2.0, gz + 2.0)
+	return d + (c - d) * (1.0 - u) + (b - d) * (1.0 - v)
+
+static func _natural_height(x: float, z: float) -> float:
 	# Keep the existing walkable corridor and all its story marks intact.
 	if x > -14.0 and x < -0.5 and z > -19.0 and z < 68.0:
 		return path_height(z)

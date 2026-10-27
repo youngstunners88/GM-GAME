@@ -144,6 +144,7 @@ func build_vegetation(parent: Node3D) -> void:
 		if i >= 145:
 			z = rng.randf_range(64.0, 140.0)
 			x = Ep2LakeLandform.flow_center(z) + (-1.0 if i % 2 == 0 else 1.0) * rng.randf_range(12.0, 27.0)
+		if Ep2LakeLandform.cabin_clearance(x, z): continue
 		if x > -25.0 and x < 10.0 and z > 51.0 and z < 73.0: continue
 		if (x > -16.0 and x < -1.5) or (z > 45.0 and absf(x - Ep2LakeLandform.flow_center(z)) < 11.0): continue
 		if radius < 1.45 and sin(a * 5.0 + 0.6) > 0.6 and i % 3 != 0: continue
@@ -156,6 +157,13 @@ func build_vegetation(parent: Node3D) -> void:
 		var shade: float = rng.randf_range(0.82, 1.08)
 		tones[kind].append(Color(shade, shade, shade * 0.96))
 		if radius < 1.50 and trees.size() < 16: trees.append(Vector4(x, z, y + h, h * 0.23))
+	# Deliberate fir backdrop: outside both the building and crown-clearance envelope.
+	for spec in [[-33.0,8.0,0,16.0],[-34.0,18.0,1,18.0],[-29.0,26.0,0,14.0],[-22.0,25.0,2,7.0],[-29.0,0.0,1,17.0],[-19.0,1.0,2,6.0]]:
+		var kind: int = int(spec[2])
+		var p := Vector3(float(spec[0]), Ep2LakeLandform.terrain_height(float(spec[0]),float(spec[1]))-.04,float(spec[1]))
+		var xf := Transform3D(Basis(Vector3.UP,rng.randf_range(-PI,PI)).scaled(Vector3.ONE*float(spec[3])/float([12.0,14.0,7.0][kind])),p)
+		layouts[kind].append(xf)
+		tones[kind].append(Color(.92,.95,.88))
 	tree_instances = 0
 	for kind in 3:
 		var prefix: String = ["FirA", "FirB", "YoungFir"][kind]
@@ -244,6 +252,7 @@ func _understory(kit: Node3D, rng: RandomNumberGenerator) -> void:
 			x = rng.randf_range(-6.0, -3.0)
 			if absf(z - 8.0) < 3 or absf(z - 17.0) < 3: continue
 		elif Ep2LakeLandform.lake_radius(x, z) < 1.11 or (x > -14 and x < -2.5): continue
+		if Ep2LakeLandform.cabin_clearance(x, z): continue
 		var s: float = rng.randf_range(.55, 1.25) * (.58 if i >= 280 else 1.0)
 		transforms.append(Transform3D(Basis(Vector3.UP, rng.randf_range(-PI, PI)).scaled(Vector3.ONE * s), Vector3(x, Ep2LakeLandform.terrain_height(x, z), z)))
 	var fern_material := _foliage("res://src/episode2/assets/woods/tex_woods_fern.png", 1.0, .045)

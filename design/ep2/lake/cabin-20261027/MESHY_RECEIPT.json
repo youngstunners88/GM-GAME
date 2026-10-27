@@ -1,0 +1,25 @@
+{
+  "provider": "Meshy",
+  "date": "2026-10-27",
+  "purpose": "Logan woodland cabin shell only",
+  "balance_before": 542,
+  "balance_after": 512,
+  "actual_spend": 30,
+  "tasks": [
+    {
+      "task_id": "01a17c58-94b8-7596-871d-d0907e4d2d62",
+      "type": "text-to-3d-preview",
+      "status": "SUCCEEDED",
+      "consumed_credits": 20
+    },
+    {
+      "task_id": "01a17c5c-4927-7288-bf4b-a306c89cb919",
+      "type": "text-to-3d-refine",
+      "status": "SUCCEEDED",
+      "consumed_credits": 10
+    }
+  ],
+  "paid_reruns": 0,
+  "credentials": "verified present; values excluded",
+  "note": "All signs, canonical brand art, wanted posters and prospecting/reserve details authored or reused locally. No additional paid generation."
+}

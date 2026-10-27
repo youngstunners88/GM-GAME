@@ -1,24 +1,24 @@
 {
-  "observed_remote_sha": "974bd27a",
-  "objective": "Episode2 stable yard: original Dude + cube-headed assistant +3\u20135horses; shrink before runtime integration",
+  "observed_remote_sha": "eedec6e6",
+  "objective": "Logan woodland cabin with GM/BTC, exact LP sign, prospecting/reserves and original wanted bills \u2014 delivered",
   "task_paths": [
-    "src/episode2/chamber/ep2_town_life.gd",
-    "src/episode2/chamber/ep2_gold_town.gd",
-    "src/episode2/assets/town/",
-    "tests/ep2_stable_yard_test.tscn"
+    "src/episode2/art/ep2_logan_cabin.gd",
+    "src/episode2/chamber/logans_lake.gd",
+    "src/episode2/extras/lake/cabin/",
+    "tests/ep2_logan_cabin_test.gd",
+    "design/ep2/lake/cabin-20261027/"
   ],
-  "source_commit": "ef7d8cdbcc5b29f0fa77c54d44bfa72b42dd97e0",
+  "source_commit": "33af6037152593cc8fdd2f1154984e318fef25a9",
+  "release_commit": "675859dfbb604c212b9be92bc13d8277fb1b721a",
+  "previous_objective": "Episode2 stable yard: original Dude + cube-headed assistant +3\u20135horses; shrink before runtime integration",
   "evidence": {
-    "resume": "Freshmaster merged, including concurrent saloon drinkers. Repo/requiredskills read.",
-    "baseline": "Pinned4.3export0scripterrors; main198402528B/gate199229440B/margin826912B; pck_report retained.",
-    "horse": "ExistingGLB19joints, horse_graze/stand/walk; preserve5existinghorses.",
-    "location": "Owner authorized restoring original Episode2 yard; both uploaded GLBs received.",
-    "voice": "DudePe1gOSDKAuczOZqgCiEm; placeholderdude_greet_01 only. No TTS/storyinvented.",
-    "changes": "Stable yard implemented, native91/full suite/captures/exported cast pass; see stable-yard handoff.",
-    "release": "CI40104657803 PASS, actualbutler59.86MiBfresh, publicBUILD2026-10-24-c5fb1d8/Updated15:19UTC and importedcast PASS. See stable-yard RELEASE.md."
+    "release": "CI40479528943 success, actualbutler55.19MiBfresh, publicBUILD2026-10-27-675859d/extras200/accessgate intact. See RELEASE.md.",
+    "tests": "cabin26/lake23/full local+hosted suite, packed79/86, publicnative22+WebGL22, actual cameras inspected. Freshmain198804640B; publicmain198804496B/extras112817792B.",
+    "spend": "Meshy30credits542\u2192512, preview20/refine10, no reruns.",
+    "preserve": "OriginalLogan65bones/fourclips, rowingboat, stagedonce dialogue/overlook, inventory, access/title and nonthreaded4.3. Closed cabin; optional reachable porch. No neweconomy/quest."
   },
   "unresolved": [
-    "Dude recording intentionally remains requested placeholder; browser external-certificate limitation documented; cloud-local vault not PC-synced."
+    "Authenticated public-origin walkthrough and real-phone performance not claimed; external fixtures replay exact public resources."
   ],
-  "next_action": "Stable yard complete. Preserve release; choose new owner task."
+  "next": "No implementation work outstanding for this cabin request. Refresh master, preserve concurrent changes, use four ep2-logan-cabin component skills for refinement."
 }
