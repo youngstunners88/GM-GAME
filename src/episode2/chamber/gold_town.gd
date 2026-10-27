@@ -38,6 +38,8 @@ enum Beat { STREET, OFFICE, TO_BAR, BAR, SQUARE_UP, DRAW, WON, JOB, TIP, ARMORY,
 
 ## The post-draw lines (section 4). Timed captions: no voice key is configured on this box, so like the jailhouse's they are text, and a
 ## recording dropped into Ep2TownVoiceBank under the same speaker + text plays automatically. Lil Blunt's bird line is the founder's own.
+const BLOOD_FX = preload("res://src/episode2/fx/ep2_blood_fx.gd")
+
 const PANIC_LINES: Array = [
 	["MIKE DEAN", "Lord have mercy! What in heaven's name happened out here?"],
 	["SHERIFF", "A fair draw, Minister. The stranger called it. The little fella was faster."],
@@ -163,6 +165,7 @@ var _glass: Node3D = null
 var _coin: Node3D = null
 var _rng := RandomNumberGenerator.new()
 var _draw_state: String = ""                          # "" | "wait" | "go" | "won" | "lost" | "foul"
+var _opp_pool: Node3D = null                         # made only after the winning fall has finished
 var _draw_t: float = 0.0
 var _draw_wait: float = 0.0
 var _losses: int = 0
@@ -1643,6 +1646,7 @@ func _tick_people(delta: float) -> void:
 func _start_round() -> void:
 	_draw_state = "wait"
 	_draw_t = 0.0
+	_opp_pool = null
 	_draw_wait = _rng.randf_range(DRAW_WAIT_MIN, DRAW_WAIT_MAX)
 	_opp.position = OPP_MARK
 	_face_folk(_opp, DUEL_MARK)
@@ -1677,6 +1681,11 @@ func _tick_draw(delta: float) -> void:
 			if _draw_t >= opp_reaction():
 				_opp_fires()
 		"won":
+			if _opp_pool == null and _draw_t > 0.55:
+				var back: Vector3 = -Vector3(sin(_opp.rotation.y), 0.0, cos(_opp.rotation.y))
+				var at: Vector3 = _opp.position + back * 0.75
+				at.y = 0.0
+				_opp_pool = BLOOD_FX.pool(_visuals, at, 0.55)
 			if _draw_t > 0.8 and not _show_active:
 				_advance_to(Beat.WON)
 		"lost":
@@ -1746,6 +1755,15 @@ func _on_player_shot() -> void:
 	if aim_hits_opponent(eye, dir):
 		_draw_state = "won"
 		_draw_t = 0.0
+		var axis_hit: Vector3 = opponent_hit_point(eye, dir)
+		var outward: Vector3 = eye - axis_hit
+		if outward.length_squared() < 0.0001:
+			outward = -dir
+		outward = outward.normalized()
+		var wound: Vector3 = axis_hit + outward * 0.18
+		BLOOD_FX.spurt(_visuals, wound, dir)
+		var body: Node3D = _opp.model if _opp.model != null else _opp
+		BLOOD_FX.stain(body, wound, outward)
 		_opp.fall_dead()
 		_revolver.visible = false
 		if _hud:
@@ -1754,6 +1772,16 @@ func _on_player_shot() -> void:
 
 ## True when a ray from `eye` along `dir` passes within OPP_HIT_R of the stranger's body (feet to hat).
 func aim_hits_opponent(eye: Vector3, dir: Vector3) -> bool:
+	var points: Array = _opp_ray_points(eye, dir)
+	return (points[0] as Vector3).distance_to(points[1] as Vector3) < OPP_HIT_R
+
+
+## The point on the stranger's body axis closest to this aim ray (the winning wound).
+func opponent_hit_point(eye: Vector3, dir: Vector3) -> Vector3:
+	return _opp_ray_points(eye, dir)[1]
+
+
+func _opp_ray_points(eye: Vector3, dir: Vector3) -> Array:
 	var a: Vector3 = _opp.position + Vector3(0.0, 0.3, 0.0)
 	var b: Vector3 = _opp.position + Vector3(0.0, _opp.height_m, 0.0)
 	var d: Vector3 = dir.normalized()
@@ -1772,7 +1800,7 @@ func aim_hits_opponent(eye: Vector3, dir: Vector3) -> bool:
 		sc = (bb * ee - cc * dd) / den
 		tc = clampf((aa * ee - bb * dd) / den, 0.0, 1.0)
 	sc = maxf(sc, 0.0)
-	return (eye + d * sc).distance_to(a + u * tc) < OPP_HIT_R
+	return [eye + d * sc, a + u * tc]
 
 
 ## The stranger's gun hand comes up with the revolver in it (the baked "Draw" arm pose + the prop at his hand).

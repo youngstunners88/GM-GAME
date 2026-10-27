@@ -30,6 +30,7 @@ extends Ep2Interlude
 
 enum Beat { SNEAK, REVEAL, MOUNT, RIDE, DROPOFF, DONE }
 
+const BLOOD_FX = preload("res://src/episode2/fx/ep2_blood_fx.gd")
 const MUSIC := "res://src/assets/music/ep2_deep_mining3_quad.ogg"
 const TOWN_MUSIC := "res://src/episode2/extras/music/ep2_theme_town.mp3"   # the founder's Episode 2 theme: fades in as the quad leaves the pines; STREAMED in ep2_extras.pck (keeps index.pck under its gate), absent = forest song just carries on
 const TOWN_MUSIC_FADE := 5.0
@@ -1928,8 +1929,30 @@ func _bull_fire_at(br: Ep2BearBrain, hit_chance: float = 0.55) -> void:
 	_sfx3d("ep2_winchester_shot_%d" % (1 + _bull_shots % 3), muzzle, -1.0, 0.92, 90.0)
 	if _rng.randf() < hit_chance:
 		br.set_meta("killed_by", "bull")   # Bull's kill is Bull's: Lil Blunt must not take the credit
+		var outward: Vector3 = _bull.position - target
+		outward.y = 0.0
+		if outward.length_squared() < 0.0001:
+			outward = Vector3.FORWARD
+		outward = outward.normalized()
+		var wound: Vector3 = target + outward * (0.52 * br.actor.height_m / 2.2)
+		_bear_blood(br, wound, (wound - muzzle).normalized(), outward)
 		br.take_hit(_bull.position)
 	_noise(_bull.position, SHOT_HEARING, "bull_shot")
+
+
+func _bear_blood(br: Ep2BearBrain, at: Vector3, shot_dir: Vector3, normal: Vector3 = Vector3.ZERO) -> void:
+	if br == null or br.actor == null or _visuals == null:
+		return
+	var d: Vector3 = shot_dir.normalized() if shot_dir.length_squared() > 0.000001 else Vector3.FORWARD
+	var n: Vector3 = normal if normal.length_squared() > 0.000001 else -d
+	var size: float = clampf(br.actor.height_m / 1.8, 0.9, 1.6)
+	BLOOD_FX.spurt(_visuals, at, d, size)
+	var stains: int = int(br.get_meta("blood_stains", 0))
+	if stains >= 4:
+		return
+	br.set_meta("blood_stains", stains + 1)
+	var body: Node3D = br.actor.model if br.actor.model != null else br.actor
+	BLOOD_FX.stain(body, at, n.normalized(), size)
 
 
 func _tick_flashes(delta: float) -> void:
@@ -2134,9 +2157,13 @@ func _on_player_shot() -> void:
 		return
 	var eye: Vector3 = _player_pos + Vector3(0.0, eye_height, 0.0)
 	var dir: Vector3 = _fire_dir()
-	var hit: Ep2BearBrain = _bear_on_ray(eye, dir)
+	var hit_info: Dictionary = _bear_hit_on_ray(eye, dir)
+	var hit: Ep2BearBrain = hit_info.get("bear", null) as Ep2BearBrain
 	if hit != null:
 		hit.set_meta("killed_by", "player")   # only HIS shots earn his "bear down" line (founder 2026-10-15)
+		var wound: Vector3 = hit_info["point"]
+		var wound_normal: Vector3 = hit_info["normal"]
+		_bear_blood(hit, wound, dir, wound_normal)
 		var killed: bool = hit.take_hit(eye)
 		if _hud:
 			_hud.hit_marker(killed)
@@ -2155,8 +2182,15 @@ func _fire_dir() -> Vector3:
 
 ## The nearest living bear the ray passes through (his body as one or two capsules for the pose he is in), unless a trunk is first.
 func _bear_on_ray(eye: Vector3, dir: Vector3, max_distance: float = 170.0) -> Ep2BearBrain:
+	var hit: Dictionary = _bear_hit_on_ray(eye, dir, max_distance)
+	return hit.get("bear", null) as Ep2BearBrain
+
+
+## The same ray test, with the near-side capsule contact and its outward normal for the wound.
+func _bear_hit_on_ray(eye: Vector3, dir: Vector3, max_distance: float = 170.0) -> Dictionary:
 	var best: Ep2BearBrain = null
 	var best_t: float = 1e9
+	var best_shape: Array = []
 	for b in _bears:
 		var br: Ep2BearBrain = b
 		if br.is_dead() or not br.actor.visible:
@@ -2170,9 +2204,25 @@ func _bear_on_ray(eye: Vector3, dir: Vector3, max_distance: float = 170.0) -> Ep
 			if t >= 0.0 and t <= max_distance and t < best_t:
 				best_t = t
 				best = br
-	if best != null and _ray_tree_blocked(eye, dir, best_t, 0.0, 0.0):
-		return null
-	return best
+				best_shape = sh
+	if best == null:
+		return {}
+	if _ray_tree_blocked(eye, dir, best_t, 0.0, 0.0):
+		return {}
+	var raw: Vector3 = eye + dir * best_t
+	var a: Vector3 = best_shape[0]
+	var b: Vector3 = best_shape[1]
+	var ab: Vector3 = b - a
+	var along: float = clampf((raw - a).dot(ab) / maxf(ab.length_squared(), 0.000001), 0.0, 1.0)
+	var axis: Vector3 = a + ab * along
+	var radius: float = float(best_shape[2])
+	var gap: float = raw.distance_to(axis)
+	var entry: float = sqrt(maxf(radius * radius - gap * gap, 0.0))
+	var point: Vector3 = raw - dir * entry
+	var normal: Vector3 = point - axis
+	if normal.length_squared() < 0.000001:
+		normal = -dir
+	return {"bear": best, "point": point, "normal": normal.normalized()}
 
 
 ## Where a bear's body is for a bullet: [a, b, radius] capsules (standing, seated on his stump, or lying down).
@@ -2282,6 +2332,11 @@ func _on_bear_died(br: Ep2BearBrain) -> void:
 	var snore: AudioStreamPlayer3D = br.actor.get_meta("snore") if br.actor.has_meta("snore") else null
 	if snore != null:
 		snore.stop()
+	var body_scale: float = clampf(br.actor.height_m / 2.2, 0.85, 1.25)
+	var fwd := Vector3(sin(br.actor.facing), 0.0, cos(br.actor.facing))
+	var pool_at: Vector3 = br.actor.position - fwd * (0.45 * body_scale)
+	pool_at.y = 0.0
+	BLOOD_FX.pool(_visuals, pool_at, 0.9 * body_scale)
 	# The Tabs ledger credits only bears Lil Blunt personally shot. Its kind is
 	# the spawn record's explicit kind when present, otherwise its combat role.
 	var player_kill: bool = str(br.get_meta("killed_by", "")) == "player"
@@ -2332,10 +2387,14 @@ func _tick_player_arrows(delta: float) -> void:
 		var velocity: Vector3 = item["v"]
 		velocity.y -= 9.8 * delta
 		var travel: Vector3 = velocity * delta
-		var hit: Ep2BearBrain = _bear_on_ray(before, travel.normalized(), travel.length())
+		var hit_info: Dictionary = _bear_hit_on_ray(before, travel.normalized(), travel.length())
+		var hit: Ep2BearBrain = hit_info.get("bear", null) as Ep2BearBrain
 		var stopped: bool = hit != null or _ray_tree_blocked(before, travel.normalized(), travel.length(), 0.0, 0.0)
 		if hit != null:
 			hit.set_meta("killed_by", "player")
+			var wound: Vector3 = hit_info["point"]
+			var wound_normal: Vector3 = hit_info["normal"]
+			_bear_blood(hit, wound, travel.normalized(), wound_normal)
 			var killed: bool = hit.take_hit(before)
 			if _hud != null:
 				_hud.hit_marker(killed)
