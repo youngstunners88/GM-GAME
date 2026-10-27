@@ -352,7 +352,7 @@ jobs:
           grep -q 'SAVE_COMPAT: ALL PASS' save-compat-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' save-compat-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/manual_checkpoint_test.tscn > manual-checkpoint-tests.log 2>&1
-          grep -q 'MANUAL_CHECKPOINT: 28 checks, 0 failed' manual-checkpoint-tests.log
+          grep -q 'MANUAL_CHECKPOINT: 30 checks, 0 failed' manual-checkpoint-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' manual-checkpoint-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/pause_menu_test.tscn 2>&1 | tee pause-tests.log
           grep -q 'PAUSE_MENU: ALL PASS' pause-tests.log

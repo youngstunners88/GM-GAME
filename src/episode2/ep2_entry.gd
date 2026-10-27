@@ -319,7 +319,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if (event.is_action_pressed("pause") or event.is_action_pressed("ui_cancel")) and not event.is_echo():
 		if _ended: _go_home()
 		elif _pause_open: _close_pause()
-		else: _open_pause()
+		elif _can_pause(): _open_pause()
+		elif event.is_action_pressed("ui_cancel"): _go_home() # retain the existing exit during films/scripted contexts
 		get_viewport().set_input_as_handled()
 		return
 	# RETRY. When a run ends, the session root tears the active scene down —
@@ -589,6 +590,7 @@ func _open_pause() -> void:
 	if not StateMachine.change_state(StateMachine.State.PAUSED):
 		return
 	_pause_open = true
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_ensure_overlay().show_pause()
 
 ## PLAY: the card goes, the sim runs again. Only resumes a pause THIS card took.
@@ -600,9 +602,10 @@ func _close_pause() -> void:
 		_overlay.close()
 	if StateMachine.is_paused():
 		StateMachine.change_state(StateMachine.State.PLAYING)
+	if _root != null: _root._sync_mouse_mode()
 	_sync_portrait_exit()
 
-## Back to the menu - the same two lines Escape has always run (the card's HOME, and Escape itself, both come here).
+## The card's HOME leaves the episode; nonpausable contexts retain their existing Escape exit.
 func _go_home() -> void:
 	_close_pause()
 	get_tree().paused = false

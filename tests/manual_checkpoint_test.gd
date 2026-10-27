@@ -1,4 +1,8 @@
 extends Node
+class ExitProbe extends "res://src/episode2/ep2_entry.gd":
+ var left: bool = false
+ func _ready() -> void: pass
+ func _go_home() -> void: left=true
 var checks: int = 0
 var failures: int = 0
 func check(label: String, ok: bool) -> void:
@@ -59,6 +63,7 @@ func _ready() -> void:
  var event := InputEventKey.new();event.pressed=true;event.keycode=KEY_ESCAPE;event.physical_keycode=KEY_ESCAPE
  entry._unhandled_input(event)
  check("desktop Escape opens pause instead of leaving",entry.is_pause_open() and StateMachine.is_paused())
+ check("paused Episode2 exposes the mouse pointer for Save and Home",Input.mouse_mode==Input.MOUSE_MODE_VISIBLE)
  var distance: float = root.get_active().get_distance()
  await get_tree().process_frame
  check("paused runner distance stays frozen",root.get_active().get_distance()==distance)
@@ -67,6 +72,9 @@ func _ready() -> void:
  check("save confirms the restore point",entry._run_controls.status.text.begins_with("Saved: Episode 2"))
  entry.get_overlay()._input(event)
  check("Escape resumes the paused runner",not entry.is_pause_open() and StateMachine.is_playing())
+ var exit_probe:=ExitProbe.new();add_child(exit_probe);exit_probe._unhandled_input(event)
+ check("nonpausable contexts retain an Escape exit",exit_probe.left)
+ exit_probe.queue_free()
  # Save a later actual room, not just a segment number on paper.
  root.armory.acquire(Ep2ArmoryState.WIN)
  root.armory.firearm(Ep2ArmoryState.WIN).rounds=3

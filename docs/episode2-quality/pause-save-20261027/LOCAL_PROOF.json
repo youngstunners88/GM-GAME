@@ -1,5 +1,5 @@
 {
-  "native_manual_checks": 28,
+  "native_manual_checks": 30,
   "legacy_save_compatibility": "PASS",
   "desktop_pause_playtest": "ALL GATES PASS",
   "phone_sized_browser": {
@@ -27,5 +27,6 @@
   "title_lock_files": 5,
   "security": "No blockers at high",
   "release": "pending",
-  "note": "Browser uses actual exported code/resources through an excluded external fixture; source changed afterward only to preserve empty legacy objects, covered by28 native checks. Exact final export/public replay follows."
+  "note": "Final exact-export and downloaded public-pack browser replays follow; phone emulation is distinct from hardware.",
+  "full_native_workflow": "PASS on eaebdacf; final narrow Episode2 cursor/unsupported-context exit adjustment separately covered by30 manual checks and full Episode2 touch suite"
 }
