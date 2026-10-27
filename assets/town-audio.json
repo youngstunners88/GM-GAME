@@ -3,6 +3,10 @@
   "model_id": "eleven_v4",
   "note": "Offline ElevenLabs production only. Keys stay in the build environment; game ships recorded Ogg audio. Rich reuses Episode1. Original Utah, sheriff and prisoner supplied by founder.",
   "voices": {
+    "bandit": {
+      "voice_id": "",
+      "note": "Claude assigns a premade voice for Jack Hammer's bandits."
+    },
     "rich": {
       "voice_id": "LNV6ahDtkAOqwn1X3R7a",
       "name": "Rich Miner — Episode 1 voice",
@@ -103,6 +107,13 @@
     }
   },
   "lines": [
+    {"id": "trail_lb_start", "speaker": "lil_blunt", "text": "Logan's Lake first. Dude's horse needs water in this heat."},
+    {"id": "trail_lb_ambush", "speaker": "lil_blunt", "text": "Hammer's men on the ridge! Keep moving."},
+    {"id": "trail_lb_unhorse", "speaker": "lil_blunt", "text": "The horse is down. I will finish it on foot."},
+    {"id": "trail_lb_lake", "speaker": "lil_blunt", "text": "Logan's Lake. Easy now. Drink, then I go see Logan."},
+    {"id": "jh_bandit_1", "speaker": "bandit", "text": "That is the rider! Get him off that horse!"},
+    {"id": "jh_bandit_2", "speaker": "bandit", "text": "Hammer's coin says he never reaches the auction!"},
+    {"id": "jh_bandit_3", "speaker": "bandit", "text": "Shoot the horse if you cannot hit the man!"},
     {
       "id": "vo_sheriff_1",
       "speaker": "sheriff",

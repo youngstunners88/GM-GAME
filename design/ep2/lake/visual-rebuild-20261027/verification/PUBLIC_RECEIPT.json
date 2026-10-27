@@ -1,0 +1,32 @@
+{
+  "gameUrl": "https://html-classic.itch.zone/html/18305533-2222704/index.html?v=1793072978&ep2=1",
+  "build": "2026-10-27-b1615aa",
+  "extras": "[EP2] extras ready (ready)",
+  "logan": "",
+  "extrasHttp": [
+    200
+  ],
+  "downloaded_packs": {
+    "index.pck": {
+      "bytes": 198775376,
+      "magic": "GDPC",
+      "sha512": "4d11b160addd43f08d168f6053b48dc70d0ae4dbbc308d5b03d13787fb65aad4f959b0db5527ffe7a560d4c7c27846e9429a68eda320430f6e11b0b76d8d5ad6"
+    },
+    "ep2_extras.pck": {
+      "bytes": 105989440,
+      "magic": "GDPC",
+      "sha512": "3f723965e3ff42ee89500a8cd8fe94a0ea686f08624f7a05972cfa0d032550906ceffd394f4d3d86194feb75157e98de5ea9b5ca679aad4b10d27dce380b6a05"
+    }
+  },
+  "source_commit": "b1615aaceeec51538bed3004dc629a7a095a96db",
+  "ci_run": 40444088899,
+  "ci_job": 121991067811,
+  "ci_conclusion": "success",
+  "butler_fresh_data_mib": 53.28,
+  "resource_checks": 86,
+  "public_native_checks": 12,
+  "public_webgl_checks": 12,
+  "public_origin_access_gate_preserved": true,
+  "scene_test_method": "External fixtures using exact downloaded public production packs; native Compatibility and local browser WebGL. Public origin separately confirms BUILD/extras/access gate.",
+  "meshy_actual_credits": 30
+}

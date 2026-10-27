@@ -1,0 +1,25 @@
+[PASS] new streamed forest kit is actually instantiated
+[PASS] woodland groves retain a bounded shared-mesh instance count
+[PASS] new tree trunks leave the entire walked shore corridor clear
+[PASS] Logan and cargo meet the actual drawn ground at their unchanged marks
+[PASS] continuous basin is recessed below the actual water
+[PASS] outflow meanders while keeping a recessed bed
+[PASS] boat art is mounted without replacing the supplied Logan skin
+[PASS] both rigid oars have independently authored grip and blade nodes
+[PASS] open hull has an actual measured, tapered moving water cut
+[PASS] boat floats across waterline with an open hull above it
+[PASS] arrival keeps Logan on shore and boat visibly moored
+[PASS] Logan waits through his handoff dialogue before departing
+[PASS] handoff starts a physical dock approach before rowing
+[PASS] Logan boards and rows the boat after walking to it
+[PASS] mooring is released and wake appears only after boarding
+ROWING_METRICS palms=0.00000519834884 seat=0.0000010699822 feet=0.00000215984619 limb_length=0.00000232458115 power_blade=-0.22872413694859 recovery_blade=0.07349250465631
+[PASS] both actual palms follow their rigid grips through two complete strokes
+[PASS] pelvis remains supported by the independently authored rowing seat
+[PASS] both boots stay supported on the actual footrest
+[PASS] no arm or leg bone is stretched to fake contact
+[PASS] oar blades enter water on power and clear it on recovery
+[PASS] rowing moves the skiff through the lake instead of waving on the spot
+[PASS] armory pause freezes boat travel, stroke clock and actor routine
+[PASS] retry restores Logan, mooring and the original first-visit state
+LAKE_ART: 23 checks, 0 failed

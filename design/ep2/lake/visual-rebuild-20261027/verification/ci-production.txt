@@ -1,0 +1,7 @@
+Production CI40444088899 / job121991067811 / sourceb1615aac: completed/success.
+Deploy to itch.io via butler: success. Actual upload, not a missing-credentials skip.
+2026-10-27T03:44:16.2675855Z ep2_extras.pck = 105989440 bytes
+2026-10-27T03:44:17.5503454Z LAKE_PACK: ALL PASS (86 checks)
+2026-10-27T03:44:18.0424762Z index.pck = 189 MB (itch per-file limit: 200 MB; CI gate: 190 MB)
+2026-10-27T03:46:11.9809052Z ✓ Re-used 83.59% of old, added 53.28 MiB fresh data
+2026-10-27T03:46:11.9835713Z ##[notice]Pushed to https://youngstunners88.itch.io/smokerealm

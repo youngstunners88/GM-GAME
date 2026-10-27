@@ -1,0 +1,5 @@
+Branch CI40439960335 / sourceee160469: completed/success.
+Full regression/render/export validation passed; branch run does not prove deployment.
+2026-10-27T03:01:37.7837889Z ep2_extras.pck = 105989472 bytes
+2026-10-27T03:01:39.1376367Z LAKE_PACK: ALL PASS (86 checks)
+2026-10-27T03:01:39.3825678Z index.pck = 189 MB (itch per-file limit: 200 MB; CI gate: 190 MB)

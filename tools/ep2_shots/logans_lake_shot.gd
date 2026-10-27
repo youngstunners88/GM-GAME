@@ -2,10 +2,12 @@ extends Node
 var c: LogansLakeChamber
 var out := "/workspace/scratch/logan-task/captures"
 var motion := false
+var view_frames: int = 30
 func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("out="): out = arg.substr(4)
 		if arg == "motion": motion = true
+		if arg.begins_with("frames="): view_frames = int(arg.substr(7))
 	DirAccess.make_dir_recursive_absolute(out)
 	c = load("res://src/episode2/chamber/logans_lake.tscn").instantiate()
 	add_child(c)
@@ -46,7 +48,8 @@ func motion_shots() -> void:
 	ap.advance(0.15)
 	await shot("motion-crossfade", c.LOGAN_MARK + Vector3(0, 0, -3.0), c.LOGAN_MARK + Vector3(0, 0.95, 0), 4)
 
-func shot(label: String, feet: Vector3, target: Vector3, frames: int = 30) -> void:
+func shot(label: String, feet: Vector3, target: Vector3, frames: int = -1) -> void:
+	if frames < 0: frames = view_frames
 	c._player_pos = feet
 	var d: Vector3 = target - feet - Vector3(0, c.eye_height, 0)
 	c._look_yaw = atan2(d.x, d.z)

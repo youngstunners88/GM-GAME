@@ -1,0 +1,29 @@
+  [PASS] town contains both jail investigation beats
+  [PASS] real town DONE dispatch loads Logan lake in same session
+  [PASS] live asset probe verifies supplied 65-bone skin and four clips
+  [PASS] registered on the Episode 2 surface chain
+  [PASS] first person, firearm and 3-heart contract
+  [PASS] founder's supplied Logan has a real skin and clips
+  [PASS] no remote interaction from the arrival trail
+  [PASS] walk to Logan through ordinary movement
+  [PASS] meeting starts investigation
+  [PASS] cannot skip dialogue by spamming interact
+  [PASS] armory freezes the conversation and world
+  [PASS] closing armory resumes the scene
+  [PASS] short dialogue leads to one staging action
+  [PASS] staging cannot be activated beside Logan
+  [PASS] walk to the staging crate
+  [PASS] touch interaction confirms cargo once
+  [PASS] repeat input never rewards or stages twice
+  [PASS] all weapons, finite ammunition and currency unaffected
+  [PASS] walk up the shore to the river overlook
+  [PASS] lake hands off to visible day-88 outflow
+  [PASS] overlook stands above the water
+  [PASS] water remains outside walkable bounds
+  [PASS] arrival/overview cannot walk off the world
+  [PASS] cannot finish before overlook closing dialogue
+  [PASS] finish touch action completes session exactly once
+  [PASS] lake result ends slice without next chamber or vault
+  [PASS] session stops without entering next runner or vault
+  [PASS] finish input cannot duplicate completion
+LOGANS_LAKE: ALL PASS

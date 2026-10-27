@@ -1,0 +1,36 @@
+{
+  "provider": "Meshy",
+  "date_utc": "2026-10-27",
+  "asset": "Logan cedar rowing skiff",
+  "preview_task": "01a17afb-45e7-72f8-a830-db66110d3488",
+  "refine_task": "01a17b01-b696-740a-9a5b-68e46259aaa1",
+  "preview_credits": 20,
+  "refine_credits": 10,
+  "actual_total_credits": 30,
+  "balance_before": 572,
+  "balance_after": 542,
+  "paid_reruns": 0,
+  "source_sha512": "79b63d513d403b3bd5e0e3eb9c0a31bdeacf3e635c0296f407c00c942e2b43f91baf3f569b3816d900cbb810ed12dccd9cbfce811c1d9b9eaee0bba605bf12bb",
+  "runtime_sha512": "7685b359eec94512bce605bd5dbd946468715d977c45b961fd3126814d9308fc81e69f3443f1e553d85049fd5c1451fd6861b2041916f26f0f7cb3ab480570a7",
+  "source_axes": "Meshy +X bow; normalized to Godot +Z bow",
+  "runtime_dimensions_metres": [
+    1.25,
+    0.6,
+    3.4
+  ],
+  "hull_triangles": 23983,
+  "texture_limit": 1024,
+  "added_local_geometry": [
+    "rowing thwart",
+    "footrest",
+    "independent oars and locks",
+    "rigid grip, blade, seat, foot and mooring contacts",
+    "18 measured hull waterline sections"
+  ],
+  "tools": {
+    "Blender": "4.3.2 (documented 5.2.2 unavailable)",
+    "Godot": "4.3 stable Compatibility",
+    "Game Development Studio": "game-dev executable unavailable; local production/QA fallback"
+  },
+  "founder_logan_source_changed": false
+}

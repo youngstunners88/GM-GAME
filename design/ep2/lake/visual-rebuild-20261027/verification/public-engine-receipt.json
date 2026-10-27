@@ -1,0 +1,22 @@
+{
+  "index.html": {
+    "bytes": 4981,
+    "sha512": "285fbb4408085e0c1682e9edd7885cf52af967f1a76a7f68345319195d031071ead1cdc4cd2fe6b02e32d1ba80cb81dd1e866592f357c3d7186b79715bb44b52",
+    "matches_local": false
+  },
+  "index.js": {
+    "bytes": 331495,
+    "sha512": "d3f5492b8f63c7d1ae8ee5d47f53f31150eb73edcf8e947682a79944f349c44b94b415f8e0d2d80cff668ace9941d15805f3f682234055ab830073ea37b54ae7",
+    "matches_local": true
+  },
+  "index.wasm": {
+    "bytes": 35376909,
+    "sha512": "170b8d0dfb11aedd34ef807e6b1043dc3eeb195540e4b388b1bc303d9c21b37f4e1d38430dd55a81eea7e8872272e06e04f9911e162617544fcf59c5d2b51ce0",
+    "matches_local": true
+  },
+  "web3.js": {
+    "bytes": 3035,
+    "sha512": "117b235a90965024bf040da8883d58e5924119103a2c637119b94ed823880a6994fddcbccd2cd7a985dc41dffefb71bc3f2f944c935bda02cc241409a62eda15",
+    "matches_local": true
+  }
+}
