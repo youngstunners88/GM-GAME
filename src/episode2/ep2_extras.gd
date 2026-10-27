@@ -45,6 +45,11 @@ const SHERIFF_JAMES := "res://src/episode2/extras/folk/sheriff_james.glb"
 ## Renegade, the charismatic auctioneer who hosts the auction (founder Drive model 2026-10-27): Mixamo rig, gold suit, pipe;
 ## CMU clips Idle, Walk, Greet, Point, Talk, Counter (tools/ep2_motion/clips_renegade.json).
 const RENEGADE := "res://src/episode2/extras/folk/renegade.glb"
+## The walk-in shops' two keepers (founder fix pack 2026-10-27: "two more shopkeepers (women are fine) behind the counters"): Hunyuan3D-2.1
+## scans of SDXL references with a second, sharper head scan (tools/ep2_runpod/hunyuan cast_*.py), rigged on the townfolk skeleton by
+## tools/ep2_motion/rig_scan_character.py --skirt (Idle, Greet, Point, Carry, Walk). The General Store's (apron) and the Hotel desk's.
+const SHOPKEEPER_GENERAL := "res://src/episode2/extras/people/shopkeeper_general.glb"
+const SHOPKEEPER_HOTEL := "res://src/episode2/extras/people/shopkeeper_hotel.glb"
 ## Canonical founder stable assets stay at their requested town paths, but their
 ## imported payloads stream with this pack (main-pack headroom is under1MiB).
 const STABLE_DUDE := "res://src/episode2/assets/town/dude_stable_owner.glb"

@@ -633,6 +633,126 @@ const LINES: Dictionary = {
 		"start_seconds": 0.078917,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_drinks_04.ogg"
+	},
+	"dude_ranch_01": {
+		"speaker": "dude",
+		"text": "Easy there, friend. Name's Dude.",
+		"seconds": 0,
+		"start_seconds": 0,
+		"ready": false,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_01.ogg"
+	},
+	"dude_ranch_02": {
+		"speaker": "dude",
+		"text": "These are my horses. I sell to folks with business; the Minister knows me.",
+		"seconds": 0,
+		"start_seconds": 0,
+		"ready": false,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_02.ogg"
+	},
+	"dude_ranch_03": {
+		"speaker": "dude",
+		"text": "Long road, huh? Here, one of Dude's Chill Buds, grown right here on the ranch. A gift for the trail. Stay chill.",
+		"seconds": 0,
+		"start_seconds": 0,
+		"ready": false,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_03.ogg"
+	},
+	"dude_ranch_04": {
+		"speaker": "dude",
+		"text": "Anything else? Two Chill Buds for one BTC, partner. Good little road companions.",
+		"seconds": 0,
+		"start_seconds": 0,
+		"ready": false,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_04.ogg"
+	},
+	"dude_ranch_05": {
+		"speaker": "dude",
+		"text": "Pleasure. Two fresh Chill Buds, tucked safe in your tabs. Enjoy the easy road.",
+		"seconds": 0,
+		"start_seconds": 0,
+		"ready": false,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_05.ogg"
+	},
+	"dude_ranch_06": {
+		"speaker": "dude",
+		"text": "No worries. Come back when your purse is heavier; the buds keep, and so does the welcome.",
+		"seconds": 0,
+		"start_seconds": 0,
+		"ready": false,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_06.ogg"
+	},
+	"dude_ranch_07": {
+		"speaker": "lil_blunt",
+		"text": "Name's Lil Blunt. Minister Mike Dean told me to get a horse here.",
+		"seconds": 0,
+		"start_seconds": 0,
+		"ready": false,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_07.ogg"
+	},
+	"dude_ranch_08": {
+		"speaker": "dude",
+		"text": "Mike Dean sent you? Then you're good folk. A saddled horse is two BTC.",
+		"seconds": 0,
+		"start_seconds": 0,
+		"ready": false,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_08.ogg"
+	},
+	"dude_ranch_09": {
+		"speaker": "lil_blunt",
+		"text": "Two BTC? That's a steep climb for a ride, Dude.",
+		"seconds": 0,
+		"start_seconds": 0,
+		"ready": false,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_09.ogg"
+	},
+	"dude_ranch_10": {
+		"speaker": "dude",
+		"text": "Fair haggle. Two even, no fooling. That's the friend price, and she's worth it.",
+		"seconds": 0,
+		"start_seconds": 0,
+		"ready": false,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_10.ogg"
+	},
+	"dude_ranch_11": {
+		"speaker": "dude",
+		"text": "Deal. Two BTC, square and easy. She's yours, partner. Treat her gentle.",
+		"seconds": 0,
+		"start_seconds": 0,
+		"ready": false,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_11.ogg"
+	},
+	"dude_ranch_12": {
+		"speaker": "dude",
+		"text": "Short on coin? Take her on credit until the auction. Two BTC later. Mike's people are good for it.",
+		"seconds": 0,
+		"start_seconds": 0,
+		"ready": false,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_12.ogg"
+	},
+	"dude_ranch_13": {
+		"speaker": "dude",
+		"text": "First go to Logan's Lake so your horse can drink and cool down in this heat. It's on the map.",
+		"seconds": 0,
+		"start_seconds": 0,
+		"ready": false,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_13.ogg"
+	},
+	"dude_ranch_14": {
+		"speaker": "dude",
+		"text": "Anything else, partner? Your horse is ready when you are. No hurry around here.",
+		"seconds": 0,
+		"start_seconds": 0,
+		"ready": false,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_14.ogg"
+	},
+	"dude_ranch_15": {
+		"speaker": "dude",
+		"text": "Remember: Logan's Lake first. Let her drink and cool down. It's right there on the map.",
+		"seconds": 0,
+		"start_seconds": 0,
+		"ready": false,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_15.ogg"
 	}
 }
 const GREETINGS: Dictionary = {

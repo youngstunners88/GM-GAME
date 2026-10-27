@@ -15,26 +15,32 @@ extends Ep2Interlude
 ##   SQUARE_UP out in the street, face him; the Sheriff stands to the side
 ##   DRAW      the rifle stays down until the town bell rings (a seeded wait). Fire early = a foul, the Sheriff makes them redo it. Hit him first
 ##             = the map. Too slow = he shoots first: the screen drops, hearts restored, the Sheriff sets it up again (retry, never a death)
-## POST-DRAW (founder 2026-10-25, PROMPT_EPISODE2_CAD_TRANSITIONS_DRAW_REWRITE section 4 - replaces "Bull arrives at the draw"):
-##   WON       the map is his. Minister Mike Dean runs out of his office in a panic and asks what happened; the townspeople celebrate,
-##             then dance together. Inferno does NOT arrive. Mike Dean goes to kneel by the stranger and pray.
-##   JOB       the Sheriff, impressed with the shooting, offers the job: find out who let the bears hold Fort Knox (his prisoner may know)
-##             and sends him to Rich and Utah first
-##   TIP       the tip: RICH keeps an armory down the side lane off the left row (founder lock
-##             PROMPT_EPISODE2_RICH_ARMORY_UTAH_RIVER.md) - off Main Street, deliberately not obvious
-##   ARMORY    walk down the lane and in: Rich the Claim Recorder and Utah behind the counter. Trade (E at
-##             the counter) buys firearms, ammunition and the river gear with Episode 1 crypto only; he can test the Colt Gatling
-##   BULL_BACK after testing the Gatling: Inferno rides back in on his quad and parks outside Rich's; whiskey's on him
-##   BODY      on the way: the man Lil Blunt shot, Mike Dean praying by him; Inferno greets the Minister, asks who put a hole in his
-##             head - "Must've been a bird that had to get rid of the heavy load."
-##   DRINKS    whiskey at the bar; Inferno's cousin Flux needs help with his new kettle: they part a while and meet later
-##   JAIL_TIP / JAIL  the Sheriff's prisoner (founder lock 2026-10-20), downstream of the bar
-##   GEARED    the long rifle and the river gear are his (bought at Rich's, then or after the jail); Rich seeds the day-88 river shipment
-##   DONE      TO BE CONTINUED. Fort Knox stays the climax - never opened here.
+## POST-DRAW - THE LOCKED STORY ORDER (founder fix pack 2026-10-27 section 2, docs/founder-feedback/2026-10-27_fix_pack.md; it replaces the
+## 2026-10-25 order and keeps its scenes):
+##   WON       he wins: the stranger had drawn a Colt Single Action Army (the Peacemaker) from his hip; it falls by the body, which bleeds.
+##             The street celebrates, then dances. Inferno does NOT arrive.
+##   LOOT      E at the body takes the Peacemaker and the map to the auction (the map is never handed over without it)
+##             ...then Minister Mike Dean runs out of his office, alarmed, asks what happened, and kneels to pray over the gentleman
+##   JOB       Sheriff James, impressed with the draw, offers the job (who let the bears hold Fort Knox) and leads him to the jail
+##   JAIL_TIP / JAIL  the Sheriff walks him out to the jailhouse; the prisoner talks; THEN the Sheriff sends him to Rich & Utah
+##   TIP       the tip: RICH keeps an armory down the side lane off the left row (off Main Street, deliberately not obvious)
+##   ARMORY    Rich the Claim Recorder and Utah: the trade (E at the counter: firearms, ammunition, river gear for Episode 1 crypto) and
+##             the Colt Gatling in the yard (it hits the targets and sounds intense)
+##   BULL_BACK after the Gatling: Inferno rides back in on his quad, parks outside Rich's; the first whiskey's on him
+##   BODY      on the way: Mike Dean again, still praying by the body; Inferno greets him - "Must've been a bird ..."
+##   DRINKS    the bar: they really drink (Inferno lifts his glass, Lil Blunt's comes up to the camera); Inferno has to help his cousin
+##             Flux with his new kettle, and leaves him a gift for Mike Dean: THE GOLD PANNER
+##   MINISTER2 the second visit: Lil Blunt brings Mike Dean the Gold Panner; Mike Dean stamps the certificate (the first visit refused)
+##             and sends him to his friend Dude at the horse stables
+##   STABLES   Dude: the Minister sent him; they agree a price in BTC for the horse; Dude offers his Chill Buds (Tabs health); then
+##             "Logan's Lake first" - the horse needs to drink in this heat (the lake is on the map)
+##   GEARED    on the way out of town (with the long rifle and the river gear: else first back to Rich's counter for them)
+##   DONE      the ride to Logan's Lake (LakeTrailChamber: bandits on the way), then Logan. Fort Knox stays the climax - never opened here.
 ## Never in this room: the banned Episode 2 protocol (ep2-fort-knox-arc rule 4), a second health system, a wallet or contract address.
 ## The Armory never mints and is NOT the Treasury: the Treasury keeps no racks and no trade (lock section 7).
 
-enum Beat { STREET, OFFICE, TO_BAR, BAR, SQUARE_UP, DRAW, WON, JOB, TIP, ARMORY, BULL_BACK, BODY, DRINKS, JAIL_TIP, JAIL, GEARED, DONE }
+enum Beat { STREET, OFFICE, TO_BAR, BAR, SQUARE_UP, DRAW, WON, LOOT, JOB, JAIL_TIP, JAIL, TIP, ARMORY, BULL_BACK, BODY, DRINKS, MINISTER2,
+	STABLES, GEARED, DONE }
 
 ## The post-draw lines (section 4). Timed captions: no voice key is configured on this box, so like the jailhouse's they are text, and a
 ## recording dropped into Ep2TownVoiceBank under the same speaker + text plays automatically. Lil Blunt's bird line is the founder's own.
@@ -49,8 +55,19 @@ const JOB_LINES: Array = [
 	["SHERIFF", "That was some fine shooting, son. Haven't seen a draw that clean in years."],
 	["SHERIFF", "I could use a hand like yours. Somebody let the bears hold Fort Knox."],
 	["SHERIFF", "Find out who. My prisoner in the jailhouse knows more than he's telling."],
+]
+## Section 2 step 4: the Sheriff LEADS him to the jail (when the jailhouse is streamed in), and only after it sends him to Rich & Utah.
+const JOB_TO_JAIL_LINES: Array = [
+	["SHERIFF", "Come on. I'll walk you over, and you can hear it from him yourself."],
+	["LIL BLUNT", "Lead the way, Sheriff."],
+]
+const ARMORY_SEND_LINES: Array = [
 	["SHERIFF", "But get yourself properly armed first. Go see Rich and Utah, down the side lane."],
 	["LIL BLUNT", "Rich and Utah. I'm on it, Sheriff."],
+]
+## The loot at the body (section 2 step 2): his Peacemaker and the map to the auction.
+const LOOT_LINES: Array = [
+	["LIL BLUNT", "A Colt Peacemaker. And the map to the auction - that's what he wanted a Bitcoin for."],
 ]
 const BULL_BACK_LINES: Array = [
 	["INFERNO", "Heard that Gatling clear across town. Figured it had to be you, little man."],
@@ -67,9 +84,32 @@ const DRINK_LINES: Array = [
 	["BARTENDER", "Two whiskeys, coming right up."],
 	["INFERNO", "To the quickest little hand in GoldMine."],
 	["LIL BLUNT", "Cheers."],
+]
+## ...they drink (section 2 step 7: visible drinking, not pantomime), then Flux's kettle, and Inferno's gift for Mike Dean (step 9).
+const FLUX_LINES: Array = [
 	["INFERNO", "Listen, my cousin Flux needs a hand with his new kettle."],
 	["INFERNO", "We'll lie low a little while and meet up later. Stay out of trouble."],
 ]
+const GIFT_LINES: Array = [
+	["INFERNO", "Oh - and take this to Mike Dean for me. The Gold Panner. He's had his eye on it for years."],
+	["LIL BLUNT", "The Gold Panner. I'll see he gets it."],
+]
+## The second visit to the certificate office (section 2 steps 9-10): the gift, the stamp, the referral to Dude.
+const MINISTER2_LINES: Array = [
+	["LIL BLUNT", "Minister. Inferno sent you this. The Gold Panner."],
+	["MIKE DEAN", "The Gold Panner! Bless that big fella, he remembered."],
+	["MIKE DEAN", "And your certificate, son. Made out in your name - stamped and sealed."],
+	["LIL BLUNT", "Much obliged, Minister."],
+	["MIKE DEAN", "You'll want a horse for the trail. Go see my friend Dude at the horse stables. Tell him I sent you."],
+]
+## The drink itself: Inferno's Stand_and_Drink (the hideout's clip) and Lil Blunt's glass up to the camera, then down.
+const FP_DRINK_S := 2.4
+const FP_GLASS_DOWN := Vector3(0.13, -0.30, -0.42)          # camera space: the glass held low at the bar
+const FP_GLASS_LIP := Vector3(0.03, -0.12, -0.24)          # ...at his lips, tipped
+const LOOT_R := 2.4                                         # how close to the body [E] takes the gun and the map
+## The stranger's Peacemaker: in its holster on his gun-hand hip until the bell (his own frame, metres; the gun side is -x, as in
+## COWBOY_HAND_DRAW), barrel down.
+const OPP_HOLSTER := Vector3(-0.21, 0.93, 0.04)
 ## Inferno's ride back in: the road he left town on, reversed (woods_quad.gd _bull_ride_off), up the lane to Rich's. He parks east of the
 ## shop door, clear of the Gatling yard to the west (Ep2GoldTown.GATLING_POST) and of the lane walk.
 const QUAD_RETURN: Array = [Vector3(70.0, 0.0, 1500.0), Vector3(16.0, 0.0, 1478.0), Vector3(2.0, 0.0, 1466.0), Vector3(0.0, 0.0, 1452.0),
@@ -229,6 +269,19 @@ var _bull_task: String = ""                           # "" | "riding" | "to_lb" 
 var _body_said: bool = false
 var _drinks_said: bool = false
 var _glass2: Node3D = null
+## The locked order's new steps (fix pack 2026-10-27 section 2).
+var _got_peacemaker: bool = false                     # E at the body took the stranger's Colt
+var _loot_prompt: bool = false
+var _jail_sent: bool = false                          # the Sheriff has sent him on to Rich & Utah after the jail
+var _fp_glass: Node3D = null                          # Lil Blunt's own glass, on the camera while he drinks
+var _fp_drink_t: float = -1.0                         # >= 0 while that glass is up
+var _bull_sip_t: float = -1.0                         # >= 0 while Inferno drinks
+var _drinks_done: int = 0                             # drinks taken at the bar (test evidence)
+var _gold_panner: bool = false                        # Inferno's gift, until it is handed to Mike Dean
+var _panner_given: bool = false
+var _stamped: bool = false                            # the certificate's stamp (the second visit)
+var _minister2_said: bool = false
+var _horse_bought: bool = false
 
 
 func _init() -> void:
@@ -353,10 +406,16 @@ func _step_people() -> void:
 	_opp.setup(COWBOY_MODEL, COWBOY_HEIGHT, Color(0.2, 0.17, 0.15), false)
 	_opp.position = Ep2GoldTown.local_to_world("Bldg_Saloon", OPP_AT_BAR)
 	_face_folk(_opp, Ep2GoldTown.local_to_world("Bldg_Saloon", BAR_SPOT + Vector3(0.0, 0.0, -1.5)))
-	# his revolver: in the holster (hidden) until he draws, then in his gun hand
-	_revolver = _make_revolver()
+	# his Peacemaker (fix pack 2026-10-27 P0: "the opponent visibly draws a Colt Single Action Army"): the CAD kit's Colt SAA at real
+	# size (the old primitive stands in until the streamed kit mounts), in its holster on his hip until the bell, then in his gun hand
+	_revolver = Node3D.new()
+	_revolver.name = "Revolver"
 	_opp.add_child(_revolver)
-	_revolver.visible = false
+	Ep2KitProps.place(_revolver, "Kit_Revolver", Transform3D.IDENTITY, Transform3D.IDENTITY, func(h: Node3D) -> void:
+		var stand_in: Node3D = _make_revolver()
+		stand_in.name = "PeacemakerStandIn"
+		h.add_child(stand_in))
+	_holster_revolver()
 	_glass = _prop(WHISKEY_MODEL, 0.11)
 	_coin = _prop(COIN_MODEL, 0.06)
 	_flash = OmniLight3D.new()
@@ -369,9 +428,55 @@ func _step_people() -> void:
 	_people.configure_space(_town_col)
 	_people.build(_visuals)
 	_build_jail_folk()
+	_build_shopkeepers()
 	if _bull == null:
 		_bull = _build_bull(Ep2GoldTown.door_world("Bldg_B", 0.8), PI * 0.5)
 		_bull.visible = false
+
+
+## The walk-in shops' keepers (founder fix pack 2026-10-27: "two more shopkeepers (women are fine) behind the counters"): the General
+## Store's (Bldg_A, the apron) and the Hotel desk's (Bldg_B). Each stands behind her counter (the shop's "face" spot, where a customer
+## looks) and turns to whoever walks in. Streamed models; the shops only open with the streamed kit, so without it there is no one.
+const SHOPKEEPERS: Array = [["Bldg_A", Ep2Extras.SHOPKEEPER_GENERAL, 1.66], ["Bldg_B", Ep2Extras.SHOPKEEPER_HOTEL, 1.68]]
+var _shopkeepers: Array = []                          # [piece, Ep2TownFolk]
+
+
+func _build_shopkeepers() -> void:
+	_shopkeepers.clear()
+	for row in SHOPKEEPERS:
+		var piece: String = str(row[0])
+		var spots: Dictionary = Ep2GoldTown.shop_spots(piece)
+		if spots.is_empty() or not Ep2Extras.has(str(row[1])):
+			continue
+		var k := Ep2TownFolk.new()
+		k.name = "Shopkeeper_" + piece
+		k.looping_clips.assign(["Idle"])
+		k.clip_blend = 0.25
+		_visuals.add_child(k)
+		if not k.setup(str(row[1]), float(row[2]), Color(0.3, 0.25, 0.2)) or not k.has_clips():
+			k.queue_free()
+			continue
+		k.procedural_bob = false
+		k.use_height = true                            # the shop's plank floor
+		var at: Vector3 = spots["face"]
+		k.place(Vector3(at.x, Ep2GoldTown.shop_floor_y(piece, at), at.z))
+		k.face_point(spots["counter"])
+		k.rotation.y = k.facing
+		k.hold_clip("Idle")
+		_shopkeepers.append([piece, k])
+
+
+## Behind the counter: she turns to Lil Blunt while he is in her shop, else back to the counter (a customer's place).
+func _tick_shopkeepers(delta: float) -> void:
+	for row in _shopkeepers:
+		var piece: String = row[0]
+		var k: Ep2TownFolk = row[1]
+		k.face_point(_player_pos if _in_room(piece, -0.4) else Ep2GoldTown.shop_spots(piece).get("counter", k.position))
+		k.step(delta)
+
+
+func get_shopkeepers() -> Array:
+	return _shopkeepers.map(func(r: Array) -> Ep2TownFolk: return r[1])
 
 
 ## Rich and Utah, the Armory's two shopkeepers, behind their counter from the first step into the lane
@@ -675,6 +780,9 @@ func _tick_viewmodel(delta: float) -> void:
 ## [E] at the counter opens Rich & Utah's trade. The personal armory keeps its own key: this is a
 ## trade with crypto, not a loadout swap (founder lock PROMPT_EPISODE2_RICH_ARMORY_UTAH_RIVER.md).
 func start_rig(_payment: String = "") -> bool:
+	if _can_loot():
+		_loot()
+		return true
 	if _mounted:
 		_dismount()
 		return true
@@ -1031,32 +1139,34 @@ func _on_beat_entered(b: int) -> void:
 				_hud.show_health = true
 			_start_round()
 		Beat.WON:
-			_got_map = true
 			_won_t = 0.0
 			if _hud:
-				_hud.objective = "THE AUCTION MAP is yours."
-				_hud.toast("YOU GOT THE MAP TO THE AUCTION", 3.0)
-			# section 4.1: Inferno does NOT arrive at the draw. Minister Mike Dean runs out of his office in a panic; the street celebrates
-			# round Lil Blunt (clear of the fallen stranger), then pairs off and dances.
-			_minister_runs_out()
+				_hud.objective = ""
+			# section 2 step 1: the street celebrates round Lil Blunt (clear of the fallen stranger), then pairs off and dances. Inferno does
+			# NOT arrive at the draw. The map is NOT handed over: it is on the body with his Peacemaker (LOOT).
 			if _people != null:
 				_people.celebrate(_player_pos, _opp.position)
 			_start_show([
 				FacilityShow._say("vo_sheriff_win", 0.4),
 				{"do": "wait", "t": 0.4}], false)
+		Beat.LOOT:
+			# section 2 step 2: E at the body takes the Peacemaker and the map to the auction
+			if _hud:
+				_hud.objective = "Search the stranger: his PEACEMAKER and the map to the auction."
+				_hud.toast("HE DROPPED HIS PEACEMAKER", 2.6)
 		Beat.JOB:
-			# section 4.2: the Sheriff walks over, impressed, and offers the job - who let the bears hold Fort Knox (his prisoner may know) -
-			# and sends him to Rich and Utah first
+			# section 2 step 4: Sheriff James walks over, impressed with the draw, and offers the job - who let the bears hold Fort Knox
+			# (his prisoner knows more) - then leads him to the jail (Rich & Utah come after it)
 			if _hud:
 				_hud.objective = ""
 			_job_said = false
 			_sheriff.walk_to(_stand_off(_sheriff.position, _player_pos, 1.8), 1.4)
 		Beat.JAIL_TIP:
-			# the Sheriff has a prisoner (founder lock 2026-10-20): he heads for the jailhouse out at the south edge of town
+			# the Sheriff walks him out to the jailhouse at the south edge of town (founder lock 2026-10-20) - he leads, Lil Blunt follows
 			_investigation_open = false
 			if _hud:
-				_hud.objective = "The Sheriff has a prisoner. The jailhouse is out the south road, west of the street."
-				_hud.toast("THE SHERIFF HAS A PRISONER WHO KNOWS ABOUT THE BEARS", 3.8)
+				_hud.objective = "Follow the Sheriff to the jailhouse, out the south road west of the street."
+				_hud.toast("THE SHERIFF'S PRISONER KNOWS ABOUT THE BEARS", 3.8)
 			if _sheriff != null:
 				_sheriff.walk_path([Ep2GoldTown.door_world("Bldg_Jail", 3.0), _jail_spot("sheriff")], 1.6)
 			look_toward(Ep2GoldTown.door_world("Bldg_Jail", 1.0) + Vector3(0.0, 1.5, 0.0), 2.0)
@@ -1113,23 +1223,35 @@ func _on_beat_entered(b: int) -> void:
 			_bull_task = "to_body"
 			_bull_route([Ep2GoldTown.door_world("Bldg_Armory", 6.0), LANE_MARK, Vector3(-2.2, 0.0, 1450.0), _body_stand()], 1.5)
 		Beat.DRINKS:
-			# section 4.5: whiskey at the bar; then cousin Flux's new kettle - they part a while and meet later
+			# section 2 steps 7-9: whiskey at the bar - they really drink - then cousin Flux's new kettle, and Inferno's gift for Mike Dean
 			if _hud:
 				_hud.objective = "Inferno's buying. Into the saloon, up to the bar."
 			_drinks_said = false
 			_bull_task = "to_bar"
 			_bull_route([Ep2GoldTown.door_world("Bldg_Saloon", 2.4), Ep2GoldTown.door_world("Bldg_Saloon", -1.0),
 				Ep2GoldTown.local_to_world("Bldg_Saloon", BAR_SPOT + Vector3(1.4, 0.0, -0.1))], 1.4)
+		Beat.MINISTER2:
+			# section 2 steps 9-10: the Gold Panner to Mike Dean; the stamp lands on this second visit; he sends him to Dude
+			_minister2_said = false
+			if _hud:
+				_hud.objective = "Take the Gold Panner to Minister Mike Dean at the CERTIFICATES office."
+		Beat.STABLES:
+			# section 2 steps 11-12: Dude - the Minister sent him; the horse for BTC; his Chill Buds; "Logan's Lake first"
+			if _stable_yard != null:
+				_stable_yard.set_referred(true)
+			if _hud:
+				_hud.objective = "Mike Dean's friend Dude keeps the horse stables. Tell him the Minister sent you."
 		Beat.GEARED:
 			_end_guns()
 			_geared = true
-			prebuild_requested.emit("logans_lake")
+			prebuild_requested.emit("lake_trail")
 			if _hud:
-				_hud.objective = "Geared for the river. Follow the trail to Logan's Lake."
-				_hud.toast("ARMED FOR THE RIVER SHIPMENT", 3.4)
+				_hud.objective = "Ride for Logan's Lake - the horse needs water in this heat. It's on the map."
+				_hud.toast("TO LOGAN'S LAKE", 3.4)
 			_start_show([FacilityShow._say("town_trade_11"), FacilityShow._say("town_trade_12")], false)
 		Beat.DONE:
-			_resolve({"next_chamber": "logans_lake", "got_map": _got_map, "draw_losses": _losses,
+			_resolve({"next_chamber": "lake_trail", "horse": _horse_bought, "got_map": _got_map, "peacemaker": _got_peacemaker,
+				"stamped": _stamped, "draw_losses": _losses,
 				"draw_fouls": _fouls, "armory_visited": _armory_visited, "sniper": armory.sniper_owned,
 				"sniper_rounds": armory.sniper_rounds, "river_gear": armory.river_gear,
 				"jail_visited": _jail_visited, "investigation": _investigation_open})
@@ -1296,6 +1418,11 @@ func _tick_minister(delta: float) -> void:
 			_minister.face_point(_opp.position)
 			if _minister_rigged and _minister_t > 1.95 and _minister.current_clip() != "kneel":
 				_minister.hold_clip("Kneel")
+		"home":
+			# back behind his counter for the second visit (DRINKS): facing the door, his book open
+			if not _minister.is_walking():
+				_minister_task = "at_desk"
+				_minister.face_point(Ep2GoldTown.local_to_world("Bldg_Certificates", OFFICE_SPOT))
 
 
 func _after_panic() -> void:
@@ -1445,16 +1572,144 @@ func _pour_two() -> void:
 	_place(_glass2, bar_top + (Ep2GoldTown.local_to_world("Bldg_Saloon", Vector3(1.1, 0.0, 0.0)) - Ep2GoldTown.local_to_world("Bldg_Saloon", Vector3.ZERO)))
 
 
-## What follows the bar and the jail: the Sheriff's prisoner (when the jailhouse is streamed in), then the river - straight on if he bought
-## the long rifle and the river gear at Rich's, else back to Rich's counter for them.
+## What follows Dude's horse (the town's last errand): the ride - straight on if he bought the long rifle and the river gear at Rich's,
+## else back to Rich's counter for them first.
 func _after_story() -> void:
-	if _beat == Beat.DRINKS and Ep2GoldTown.jail_v1:
-		_advance_to(Beat.JAIL_TIP)
-	elif armory.sniper_owned and armory.river_gear:
+	if armory.sniper_owned and armory.river_gear:
 		_advance_to(Beat.GEARED)
 	else:
 		_armory_return = true
 		_advance_to(Beat.ARMORY)
+
+
+## Section 2 step 2: close enough to the fallen stranger (or the Colt by him) for E to search him.
+func _can_loot() -> bool:
+	if _beat != Beat.LOOT or _got_peacemaker or _show_active or _opp == null:
+		return false
+	var near: float = _player_pos.distance_to(_opp.position)
+	if _revolver != null and _revolver.get_parent() == _visuals:
+		near = minf(near, _player_pos.distance_to(_revolver.position))
+	return near < LOOT_R
+
+
+## E at the body: his Peacemaker and the map to the auction are Lil Blunt's. Then Minister Mike Dean comes running (step 3).
+func _loot() -> void:
+	_got_peacemaker = true
+	_got_map = true
+	_town_sfx("gun_pickup")
+	if _revolver != null:
+		_revolver.visible = false
+	if _hud != null:
+		_hud.set_search_prompt("")
+		_hud.objective = ""
+		_hud.toast("YOU TOOK HIS PEACEMAKER AND THE MAP TO THE AUCTION", 3.4)
+	look_toward(_opp.position + Vector3(0.0, 0.3, 0.0), 2.0)
+	_start_show(_caption_steps(LOOT_LINES) + [{"do": "call", "fn": release_look}, {"do": "call", "fn": _minister_runs_out}], false)
+
+
+## After the body (BODY) Mike Dean walks back to his counter, so the second visit finds him there.
+func _minister_goes_home() -> void:
+	if _minister == null:
+		return
+	_minister_task = "home"
+	if _minister_rigged:
+		_minister.hold_clip("Idle")
+	var desk: Vector3 = Ep2GoldTown.local_to_world("Bldg_Certificates", MINISTER_DESK) + Vector3(0.0, MINISTER_STEP if _minister_rigged else 0.0, 0.0)
+	_minister.walk_path([Ep2GoldTown.door_world("Bldg_Certificates", 1.6), Ep2GoldTown.door_world("Bldg_Certificates", -0.6),
+		Ep2GoldTown.local_to_world("Bldg_Certificates", Vector3(0.6, 0.0, -2.0)), Ep2GoldTown.local_to_world("Bldg_Certificates", Vector3(3.2, 0.0, -3.4)),
+		Ep2GoldTown.local_to_world("Bldg_Certificates", Vector3(3.2, 0.0, -5.4)), desk], MINISTER_WALK)
+
+
+## Section 2 step 7: they really drink. Inferno lifts his glass on his own Stand_and_Drink clip; Lil Blunt's glass comes up to the camera.
+func _drink_together() -> void:
+	_drinks_done += 1
+	_fp_drink_t = 0.0
+	_town_sfx("whiskey_gulp")
+	if _glass != null:
+		_glass.visible = false                         # it is in his hand now
+	if _fp_glass == null and _camera != null:
+		_fp_glass = _prop(WHISKEY_MODEL, 0.085)
+		_fp_glass.reparent(_camera, false)
+		_fp_glass.name = "LilBluntGlass"
+	if _fp_glass != null:
+		_fp_glass.visible = true
+		_fp_glass.position = FP_GLASS_DOWN
+		_fp_glass.rotation = Vector3.ZERO
+	if _bull != null and _bull.anim != null and _bull.anim.has_animation(SmeltingFacilityChamber.BULL_SIP):
+		var hand: Node3D = _bull.holder("RightHand")
+		if hand != null and _glass2 != null:
+			_glass2.reparent(hand, false)
+			_glass2.position = Ep2BullHero.RIGHT_PALM_M * (_bull.height_m / 2.4) + Vector3(0.0, -0.05, 0.0)
+			_glass2.rotation = Vector3.ZERO
+		_bull.play(SmeltingFacilityChamber.BULL_SIP, 1.0, 0.25)
+		_bull_sip_t = 0.0
+
+
+## Lil Blunt's glass: up to his lips, tipped, and back down to the bar (FP_DRINK_S); Inferno's sip runs its clip, then his glass goes
+## back on the bar beside the first.
+func _tick_drink(delta: float) -> void:
+	if _fp_drink_t >= 0.0 and _fp_glass != null:
+		_fp_drink_t += delta
+		var k: float = clampf(_fp_drink_t / FP_DRINK_S, 0.0, 1.0)
+		var lift: float = smoothstep(0.0, 0.3, k) * (1.0 - smoothstep(0.72, 1.0, k))
+		_fp_glass.position = FP_GLASS_DOWN.lerp(FP_GLASS_LIP, lift)
+		_fp_glass.rotation = Vector3(-1.05 * lift, 0.0, 0.0)
+		if k >= 1.0:
+			_fp_drink_t = -1.0
+			_fp_glass.visible = false
+			if _glass != null:
+				_glass.visible = true
+	if _bull_sip_t >= 0.0 and _bull != null:
+		_bull_sip_t += delta
+		var length: float = 3.0
+		if _bull.anim != null and _bull.anim.has_animation(SmeltingFacilityChamber.BULL_SIP):
+			length = _bull.anim.get_animation(SmeltingFacilityChamber.BULL_SIP).length
+		if _bull_sip_t >= minf(length, 4.5):
+			_bull_sip_t = -1.0
+			_bull.play(BULL_IDLE, 1.0, 0.3)
+			_pour_two()                                # both glasses back on the bar (_pour_two puts the second one beside the first)
+
+
+## True while either of them has the glass up (the rifle stays low then).
+func is_drinking() -> bool:
+	return _fp_drink_t >= 0.0 or _bull_sip_t >= 0.0
+
+
+## A recorded town effect (Ep2TownSoundscape.ROOT, generated by scripts/generate-town-audio.mjs --sfx): the stamp, the Colt picked
+## up off the street, the gulp of whiskey - all at Lil Blunt, so not spatial. Silent when the streamed pack lacks the file.
+func _town_sfx(id: String) -> void:
+	var path: String = Ep2TownSoundscape.ROOT + id + ".ogg"
+	if not ResourceLoader.exists(path):
+		return
+	var p := AudioStreamPlayer.new()
+	p.bus = "SFX"
+	p.stream = load(path)
+	p.volume_db = -4.0
+	add_child(p)
+	p.play()
+	p.finished.connect(p.queue_free)
+
+
+## Inferno's gift for Mike Dean (step 9): Lil Blunt carries the Gold Panner to the certificate office.
+func _take_gold_panner() -> void:
+	_gold_panner = true
+	if _hud != null:
+		_hud.toast("INFERNO'S GIFT FOR MIKE DEAN: THE GOLD PANNER", 3.6)
+
+
+func _give_gold_panner() -> void:
+	_gold_panner = false
+	_panner_given = true
+	if _hud != null:
+		_hud.toast("YOU GAVE MIKE DEAN THE GOLD PANNER", 2.6)
+
+
+## The second visit's stamp (the certificate path: the first visit refused, the stamp lands now).
+func _stamp_certificate() -> void:
+	_stamped = true
+	_town_sfx("stamp_thud")
+	if _hud != null:
+		_hud.toast("YOUR CERTIFICATE IS STAMPED", 3.0)
 
 
 func _show_finished() -> void:
@@ -1514,33 +1769,49 @@ func _tick(delta: float) -> void:
 			_tick_draw(delta)
 		Beat.WON:
 			_won_t += delta
-			# the Minister's panic plays out; the job follows once the street has had its cheer (the dance goes on under the Sheriff)
-			if _panic_done and not _show_active and _won_t > _people_cheer_s():
+			# the Sheriff has called it; the body is there to be searched (the street cheers and dances meanwhile)
+			if not _show_active and _won_t > 0.8:
+				_advance_to(Beat.LOOT)
+		Beat.LOOT:
+			_won_t += delta
+			var can: bool = _can_loot()
+			if _hud != null and can != _loot_prompt:
+				_hud.set_search_prompt(("Search him [E]" if TouchUi.keys_shown() else "Search him") if can else "")
+			_loot_prompt = can
+			# the Minister's panic and his prayer play out after the loot; the job follows once the street has had its cheer
+			if _got_peacemaker and _panic_done and not _show_active and _won_t > _people_cheer_s():
 				_advance_to(Beat.JOB)
 		Beat.JOB:
 			if not _job_said and not _sheriff.is_walking() and not _show_active:
 				_job_said = true
 				_sheriff.face_point(_player_pos)
 				look_toward(_sheriff.position + Vector3(0.0, SHERIFF_HEIGHT * 0.9, 0.0), 2.4)
-				_start_show(_caption_steps(JOB_LINES) + [{"do": "call", "fn": release_look}], false)
+				# with the jailhouse streamed in he leads the way there; without it he sends him straight to Rich & Utah
+				var lines: Array = JOB_LINES + (JOB_TO_JAIL_LINES if Ep2GoldTown.jail_v1 else ARMORY_SEND_LINES)
+				_start_show(_caption_steps(lines) + [{"do": "call", "fn": release_look}], false)
 			elif _job_said and not _show_active:
-				_advance_to(Beat.TIP)
+				_advance_to(Beat.JAIL_TIP if Ep2GoldTown.jail_v1 else Beat.TIP)
 		Beat.JAIL_TIP:
-			if _in_room("Bldg_Jail", -1.2):
+			# the Sheriff leads: if Lil Blunt outruns him, the prisoner talks once the Sheriff is in too
+			if _in_room("Bldg_Jail", -1.2) and (_sheriff == null or not _sheriff.is_walking()):
 				_advance_to(Beat.JAIL)
 		Beat.JAIL:
-			# once the exchange is over he can walk out; the hunt (lake -> river -> trains -> Fort Knox) is on and the Armory tip follows
+			# the exchange over, the hunt (lake -> river -> trains -> Fort Knox) is on; THEN the Sheriff sends him to Rich & Utah (step 4)
 			if not _show_active:
 				if _jail_done_t < 0.0:
 					_jail_done_t = 0.0
 					_investigation_open = true
 					if _hud:
-						_hud.objective = "Find who brought the bears: the lake outflow, the river, the trains, Fort Knox."
 						_hud.toast("THE HUNT IS ON: WHO BROUGHT THE BEARS?", 3.8)
+					if _sheriff != null:
+						_sheriff.face_point(_player_pos)
+					look_toward(_sheriff.position + Vector3(0.0, SHERIFF_HEIGHT * 0.9, 0.0), 2.4)
+					_jail_sent = true
+					_start_show(_caption_steps(ARMORY_SEND_LINES) + [{"do": "call", "fn": release_look}], false)
 				else:
 					_jail_done_t += delta
-					if _jail_done_t > 2.2 and not _in_room("Bldg_Jail", -0.6):
-						_after_story()                     # geared already: the river; else back to Rich's for the gear
+					if _jail_done_t > 0.6:
+						_advance_to(Beat.TIP)
 		Beat.TIP:
 			if _in_room("Bldg_Armory", -1.4):
 				_armory_visited = true
@@ -1584,17 +1855,39 @@ func _tick(delta: float) -> void:
 			elif _body_said and not _show_active:
 				_advance_to(Beat.DRINKS)
 		Beat.DRINKS:
+			_tick_drink(delta)
 			if not _drinks_said and _bull_task == "at_bar" and not _show_active and _in_room("Bldg_Saloon", -5.5):
 				_drinks_said = true
+				_minister_goes_home()                 # while they drink, Mike Dean gets up and goes back behind his counter
 				_pour_two()
 				_bull.face_point(_player_pos)
 				look_toward(_bull.head_world(), 2.0)
-				_start_show(_caption_steps(DRINK_LINES) + [{"do": "call", "fn": release_look}], false)
-			elif _drinks_said and not _show_active:
-				# Inferno heads off to his cousin's; the story's next thread is the Sheriff's prisoner
+				# the toast, then they really drink (step 7), then Flux's kettle (step 8) and the gift for Mike Dean (step 9)
+				_start_show(_caption_steps(DRINK_LINES) + [{"do": "call", "fn": _drink_together}, {"do": "wait", "t": FP_DRINK_S + 0.2}]
+					+ _caption_steps(FLUX_LINES) + _caption_steps(GIFT_LINES) + [{"do": "call", "fn": _take_gold_panner},
+					{"do": "call", "fn": release_look}], false)
+			elif _drinks_said and not _show_active and not is_drinking():
+				# Inferno heads off to his cousin's; the story's next thread is the gift for Mike Dean
 				_bull_task = "leaving"
 				_bull_route([Ep2GoldTown.door_world("Bldg_Saloon", -1.0), Ep2GoldTown.door_world("Bldg_Saloon", 3.0), Vector3(1.5, 0.0, 1470.0),
 					Vector3(16.0, 0.0, 1480.0)], 1.6)
+				_advance_to(Beat.MINISTER2)
+		Beat.MINISTER2:
+			# the second visit: in at the counter with the Gold Panner - the stamp, then the referral to Dude (steps 9-10)
+			if not _minister2_said and not _show_active and _in_room("Bldg_Certificates", -1.4) \
+					and (_minister == null or not _minister.is_walking()):
+				_minister2_said = true
+				if _minister != null:
+					_minister.face_point(_player_pos)
+					look_toward(_minister.position + Vector3(0.0, MINISTER_HEIGHT * 0.85, 0.0), 2.4)
+				_start_show(_caption_steps(MINISTER2_LINES.slice(0, 2)) + [{"do": "call", "fn": _give_gold_panner}]
+					+ _caption_steps(MINISTER2_LINES.slice(2, 3)) + [{"do": "call", "fn": _stamp_certificate}]
+					+ _caption_steps(MINISTER2_LINES.slice(3)) + [{"do": "call", "fn": release_look}], false)
+			elif _minister2_said and not _show_active:
+				_advance_to(Beat.STABLES)
+		Beat.STABLES:
+			# Dude's conversation runs in Ep2StableYard (talk [E]); the horse bought, his "Logan's Lake first" said -> the ride
+			if _horse_bought and not _show_active and (_stable_yard == null or not _stable_yard.conversation_active()):
 				_after_story()
 		Beat.GEARED:
 			if _hud != null:
@@ -1638,6 +1931,7 @@ func _on_stable_line(who: String, text: String, id: String, _voice: String) -> v
 
 
 func _on_stable_horse_bought(_paid: int, _credit: int) -> void:
+	_horse_bought = true
 	if _hud != null:
 		_hud.objective = "Take your horse to Logan's Lake first so she can drink and cool down. It's on the map."
 
@@ -1656,6 +1950,7 @@ func _in_room(piece: String, depth: float) -> bool:
 
 ## The cast: the Sheriff strolls where he is sent (after his delay) and turns to whoever he is talking to; the stranger walks and squares up.
 func _tick_people(delta: float) -> void:
+	_tick_shopkeepers(delta)
 	if _sheriff_delay > 0.0:
 		_sheriff_delay -= delta
 		if _sheriff_delay <= 0.0 and not _sheriff_goes.is_empty():
@@ -1699,7 +1994,7 @@ func _start_round() -> void:
 	_opp.set_pose("idle")
 	_opp.dead = false
 	_opp.rotation = Vector3(0.0, _opp.rotation.y, 0.0)
-	_revolver.visible = false
+	_holster_revolver()
 	_sheriff.position = WITNESS_MARK
 	look_toward(OPP_MARK + Vector3(0.0, 1.6, 0.0), 3.0)
 
@@ -1759,7 +2054,7 @@ func _restage() -> void:
 
 ## The rifle stays at low ready until the word.
 func _viewmodel_lowered() -> bool:
-	return _beat == Beat.DRAW and _draw_state in ["wait", "foul", "lost", "relost"]
+	return (_beat == Beat.DRAW and _draw_state in ["wait", "foul", "lost", "relost"]) or _fp_drink_t >= 0.0   # the glass is up
 
 
 ## Feet stay planted in the duel: he may look and aim, not walk.
@@ -1811,7 +2106,7 @@ func _on_player_shot() -> void:
 		var body: Node3D = _opp.model if _opp.model != null else _opp
 		BLOOD_FX.stain(body, wound, outward)
 		_opp.fall_dead()
-		_revolver.visible = false
+		_drop_revolver()
 		if _hud:
 			_hud.objective = ""
 
@@ -1852,10 +2147,41 @@ func _opp_ray_points(eye: Vector3, dir: Vector3) -> Array:
 ## The stranger's gun hand comes up with the revolver in it (the baked "Draw" arm pose + the prop at his hand).
 func _opp_draws() -> void:
 	_opp.set_pose("draw")
+	if _revolver.get_parent() != _opp:
+		_revolver.reparent(_opp, false)
 	_revolver.visible = true
 	_revolver.position = COWBOY_HAND_DRAW * COWBOY_HEIGHT
 	_revolver.rotation = Vector3(0.0, 0.0, 0.0)
 	_opp.kick()
+
+
+## The Peacemaker back in its holster on his hip, barrel down (a new round, a restage).
+func _holster_revolver() -> void:
+	if _revolver == null:
+		return
+	if _revolver.get_parent() != _opp:
+		_revolver.reparent(_opp, false)
+	_revolver.visible = true
+	_revolver.position = OPP_HOLSTER
+	_revolver.rotation = Vector3(PI * 0.5 - 0.12, 0.0, 0.0)
+
+
+## He falls: the Colt leaves his hand and lies in the dirt by him, on its side - E there takes it (and the map) in Beat.LOOT.
+func _drop_revolver() -> void:
+	if _revolver == null:
+		return
+	var at: Vector3 = _opp.to_global(Vector3(-0.42, 0.0, 0.38)) if _opp.is_inside_tree() else _opp.position + Vector3(-0.42, 0.0, 0.38)
+	_revolver.reparent(_visuals, false)
+	_revolver.position = Vector3(at.x, 0.045, at.z)
+	_revolver.rotation = Vector3(0.0, _opp.rotation.y + 0.9, PI * 0.5)
+	_revolver.visible = true
+
+
+## Where the round leaves the Colt's barrel (the kit's origin is the bore at the cylinder's front face; the barrel runs +z).
+func _opp_muzzle() -> Vector3:
+	if _revolver != null and _revolver.is_inside_tree():
+		return _revolver.to_global(Vector3(0.0, 0.0, 0.19))
+	return _opp.position + Vector3(0.3, 1.2, 0.4)
 
 
 func _opp_fires() -> void:
@@ -1865,7 +2191,7 @@ func _opp_fires() -> void:
 	_draw_t = 0.0
 	_sfx("ep2_revolver_blast_1")
 	_sfx("damage")
-	_flash.position = _revolver.global_position if _revolver.is_inside_tree() else _opp.position + Vector3(0.3, 1.2, 0.4)
+	_flash.position = _opp_muzzle()
 	_flash_t = 0.08
 	if _hud:
 		_hud.objective = ""
@@ -1878,6 +2204,15 @@ func get_draw_wait() -> float: return _draw_wait
 func get_losses() -> int: return _losses
 func get_fouls() -> int: return _fouls
 func has_map() -> bool: return _got_map
+func has_peacemaker() -> bool: return _got_peacemaker
+func can_loot() -> bool: return _can_loot()
+func get_revolver() -> Node3D: return _revolver
+func has_gold_panner() -> bool: return _gold_panner
+func gold_panner_given() -> bool: return _panner_given
+func is_stamped() -> bool: return _stamped
+func drinks_done() -> int: return _drinks_done
+func horse_bought() -> bool: return _horse_bought
+func jail_sent_to_armory() -> bool: return _jail_sent
 func get_sheriff() -> Ep2TownFolk: return _sheriff
 func get_minister() -> Ep2TownFolk: return _minister
 func get_opponent() -> Ep2TownFolk: return _opp

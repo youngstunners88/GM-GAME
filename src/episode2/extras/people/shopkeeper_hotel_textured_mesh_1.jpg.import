@@ -1,0 +1,37 @@
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+uid="uid://beg4i35kl60ma"
+path="res://.godot/imported/shopkeeper_hotel_textured_mesh_1.jpg-5c36d62260503e89a2ec7af0a9524546.ctex"
+metadata={
+"vram_texture": false
+}
+generator_parameters={
+"md5": "dfd06e634235374c767c1646d814bff3"
+}
+
+[deps]
+
+source_file="res://src/episode2/extras/people/shopkeeper_hotel_textured_mesh_1.jpg"
+dest_files=["res://.godot/imported/shopkeeper_hotel_textured_mesh_1.jpg-5c36d62260503e89a2ec7af0a9524546.ctex"]
+
+[params]
+
+compress/mode=1
+compress/high_quality=false
+compress/lossy_quality=0.85
+compress/hdr_compression=1
+compress/normal_map=0
+compress/channel_pack=0
+mipmaps/generate=true
+mipmaps/limit=-1
+roughness/mode=0
+roughness/src_normal=""
+process/fix_alpha_border=true
+process/premult_alpha=false
+process/normal_map_invert_y=false
+process/hdr_as_srgb=false
+process/hdr_clamp_exposure=false
+process/size_limit=0
+detect_3d/compress_to=0

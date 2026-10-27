@@ -867,6 +867,24 @@
       "seconds": 1.8,
       "loop": false,
       "prompt": "A man in a quiet saloon draws gently on a cigar and slowly exhales the smoke, a soft relaxed breath. Close and quiet, realistic, no words, no music."
+    },
+    {
+      "id": "stamp_thud",
+      "seconds": 1.2,
+      "loop": false,
+      "prompt": "An old brass and wood office stamp pressed firmly once onto a paper certificate on a wooden counter: a solid thump with a faint wooden knock. Close, realistic, no voices, no music."
+    },
+    {
+      "id": "gun_pickup",
+      "seconds": 1.4,
+      "loop": false,
+      "prompt": "A heavy steel single-action revolver is picked up off a dusty dirt street and a folded paper map is tucked into a leather coat: metal scrape, leather creak, paper rustle. Close realistic foley, no voices, no music."
+    },
+    {
+      "id": "whiskey_gulp",
+      "seconds": 2.2,
+      "loop": false,
+      "prompt": "A man lifts a heavy glass of whiskey, takes one long satisfying swallow and sets the glass back down on a wooden bar with a soft knock and a relaxed breath. Close realistic foley, no words, no music."
     }
   ],
   "lines_pending_second_account": [

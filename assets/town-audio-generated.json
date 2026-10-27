@@ -1309,5 +1309,38 @@
     "model_id": "eleven_multilingual_v2",
     "seconds": 3.126083,
     "start_seconds": 0.078917
+  },
+  "stamp_thud": {
+    "source_hash": "6c1140dddcea4bcfe3693cf3ab59feb2bdc104525a172ed0bf1bf288b879d439",
+    "processing_version": 2,
+    "sha256": "532fa0d3239d55af07b88e451e761d738e48805b83dbed1d8313d1e72918f217",
+    "bytes": 9768,
+    "prompt": "An old brass and wood office stamp pressed firmly once onto a paper certificate on a wooden counter: a solid thump with a faint wooden knock. Close, realistic, no voices, no music.",
+    "seconds": 0.925329,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "gun_pickup": {
+    "source_hash": "434a4a68cf90fb03d8ca9616653c80039435663447d018decc651e12fde1e13e",
+    "processing_version": 2,
+    "sha256": "781ce0f863be817ba2d7692581655db58ccfd77ec7ee4c324379c11d1a3ab76d",
+    "bytes": 10828,
+    "prompt": "A heavy steel single-action revolver is picked up off a dusty dirt street and a folded paper map is tucked into a leather coat: metal scrape, leather creak, paper rustle. Close realistic foley, no voices, no music.",
+    "seconds": 0.960385,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "whiskey_gulp": {
+    "source_hash": "826260cce54244fc4e545ba899beb3c28fe019cc5412db67fea211eafdbe02af",
+    "processing_version": 2,
+    "sha256": "06b91172cd76e2c5fa80895fef6dedfc02c8b05f246f9e1d454e6036f06b33f8",
+    "bytes": 17739,
+    "prompt": "A man lifts a heavy glass of whiskey, takes one long satisfying swallow and sets the glass back down on a wooden bar with a soft knock and a relaxed breath. Close realistic foley, no words, no music.",
+    "seconds": 1.865147,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
   }
 }

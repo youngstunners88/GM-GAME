@@ -49,15 +49,16 @@ func _ready() -> void:
 	_check("the woods chamber has only its groundwork beats (no CLAIM / DECOY / VAULT / SACRIFICE / RESCUE beat)",
 		woods_beats == ["SNEAK", "REVEAL", "MOUNT", "RIDE", "DROPOFF", "DONE"], str(woods_beats))
 	var town_beats: Array = GoldTownChamber.Beat.keys()
-	_check("the town chamber keeps the founder's 2026-10-14 beats, the post-draw rewrite (founder 2026-10-25 section 4: JOB, the Gatling then Inferno's return BULL_BACK, the BODY, DRINKS), the Armory turn and the jailhouse visit downstream of the bar, still no CLAIM / DECOY / VAULT / SACRIFICE / RESCUE",
-		town_beats == ["STREET", "OFFICE", "TO_BAR", "BAR", "SQUARE_UP", "DRAW", "WON", "JOB", "TIP", "ARMORY", "BULL_BACK", "BODY", "DRINKS",
-			"JAIL_TIP", "JAIL", "GEARED", "DONE"], str(town_beats))
+	_check("the town chamber keeps the founder's 2026-10-14 beats and the locked post-draw order (fix pack 2026-10-27 section 2: the LOOT, the job and the jail, Rich & Utah, Inferno's return, the BODY, DRINKS, the second visit MINISTER2, Dude's STABLES), still no CLAIM / DECOY / VAULT / SACRIFICE / RESCUE",
+		town_beats == ["STREET", "OFFICE", "TO_BAR", "BAR", "SQUARE_UP", "DRAW", "WON", "LOOT", "JOB", "JAIL_TIP", "JAIL", "TIP", "ARMORY",
+			"BULL_BACK", "BODY", "DRINKS", "MINISTER2", "STABLES", "GEARED", "DONE"], str(town_beats))
 	var lift_beats: Array = MineLiftChamber.Beat.keys()
 	_check("the lift chamber keeps its groundwork beats", lift_beats == ["ARRIVE", "BOARD", "LEVER", "RISE", "SURFACE", "DONE"], str(lift_beats))
 	# the town now continues to Logan's Lake (founder lock 2026-10-18; Codex's chamber is still being built, so its own ending is not asserted
 	# here yet): the woods hand to the town and the town hands on, never straight into the vault
-	_check("the woods hand over to the town, and the town ends the slice or hands on to Logan's Lake (never the vault)", "\"next_chamber\": \"gold_town\"" in _text("res://src/episode2/chamber/woods_quad.gd")
-		and ("end_session" in _text("res://src/episode2/chamber/gold_town.gd") or "\"next_chamber\": \"logans_lake\"" in _text("res://src/episode2/chamber/gold_town.gd")))
+	_check("the woods hand over to the town, and the town ends the slice or hands on toward Logan's Lake - the ride there first (never the vault)", "\"next_chamber\": \"gold_town\"" in _text("res://src/episode2/chamber/woods_quad.gd")
+		and ("end_session" in _text("res://src/episode2/chamber/gold_town.gd") or "\"next_chamber\": \"lake_trail\"" in _text("res://src/episode2/chamber/gold_town.gd")
+			or "\"next_chamber\": \"logans_lake\"" in _text("res://src/episode2/chamber/gold_town.gd")))
 
 	print("-- HEARTS, DIAMONDS, VEHICLES")
 	_check("three hearts max in the hideout (the only health the story has)", SmeltingFacilityChamber.MAX_HEALTH == 3)

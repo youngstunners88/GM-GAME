@@ -416,6 +416,14 @@ jobs:
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_founder_cast_test.tscn 2>&1 | tee founder-cast-tests.log
           grep -q 'EP2_FOUNDER_CAST: ALL PASS' founder-cast-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' founder-cast-tests.log; then exit 1; fi
+          # Blood on the draw body and on shot bears (fix pack 2026-10-27): restrained spurt, a stain that rides the rig, a pool after the fall.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_blood_test.tscn 2>&1 | tee blood-tests.log
+          grep -q 'EP2_BLOOD: ALL PASS' blood-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' blood-tests.log; then exit 1; fi
+          # Dude's ranch (fix pack 2026-10-27): talkable from the woods and the town, the ride loop, the chores, Chill Buds, the BTC horse deal.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_ranch_test.tscn 2>&1 | tee ranch-tests.log
+          grep -q 'EP2_RANCH: ALL PASS' ranch-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ranch-tests.log; then exit 1; fi
           # Every selector card shows Lil Blunt's hand with the weapon (founder 2026-10-21: the Remington and the bow cards).
           timeout 200 "$GODOT_BIN" --headless res://tests/ep2_weapon_icons_test.tscn 2>&1 | tee weapon-icons-tests.log
           grep -q 'EP2_WEAPON_ICONS: ALL PASS' weapon-icons-tests.log

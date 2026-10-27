@@ -40,6 +40,8 @@ ap.add_argument("--head-keep", type=float, default=0.40, help="keep the head sca
 ap.add_argument("--eye-patch", action="store_true", help="Jack Hammer: model a leather eye patch + straps over the head scan's patch eye (the painted one is unreliable)")
 ap.add_argument("--head-tone", type=float, default=1.0, help="saturation multiplier for the head albedo (the scan's skin comes out hot)")
 ap.add_argument("--boots", action="store_true", help="model leather boots over the scan's flat-cut trouser ends (weighted to the Foot bones)")
+ap.add_argument("--skirt", action="store_true", help="a long skirt / apron beside the hanging hands: below the elbows only the arm's own surface takes arm weights")
+ap.add_argument("--skirt-arm-r", type=float, default=0.065, help="with --skirt: how close (m) to an arm bone a vertex below the elbow must be to follow the arm")
 ap.add_argument("--neck-cut", type=float, default=0.36, help="the body scan is cut this far below the top of the figure")
 a = ap.parse_args(sys.argv[sys.argv.index("--") + 1:])
 
@@ -284,6 +286,8 @@ vg = {g.name: g for g in body.vertex_groups}
 LEFT = ("Shoulder.L", "UpperArm.L", "Forearm.L", "Hand.L")
 RIGHT = ("Shoulder.R", "UpperArm.R", "Forearm.R", "Hand.R")
 mid_x = 0.0
+arm_verts: set = set()                                   # --skirt: below the elbows, the vertices that follow an arm
+low_verts: set = set()                                   # --skirt: every vertex below the elbows
 for v in me.vertices:
     co = v.co
     allowed = list(seg.keys())
@@ -296,6 +300,18 @@ for v in me.vertices:
         allowed = [b for b in allowed if b not in LEFT]
     if co.z < 0.52 * H:
         allowed = [b for b in allowed if not (b.startswith("Thigh.") or b.startswith("Shin.") or b.startswith("Foot.")) or b.endswith(".L" if co.x > 0 else ".R")]
+    if a.skirt and co.z < j["elbow.L"].z:
+        # a long skirt or apron flares out to the hanging hands and the scan fuses them: below the elbows a vertex belongs WHOLLY to
+        # the arm (its own sleeve / hand surface, within skirt_arm_r of an arm bone) or wholly to the body - and the faces bridging
+        # the two are cut below (5a), so a raised hand leaves the skirt where it is (2026-10-27 shopkeepers' Greet / Point)
+        near_arm = min(((co - (seg[b][0] + seg[b][1] * max(0.0, min(1.0, (co - seg[b][0]).dot(seg[b][1]) / max(seg[b][1].length_squared, 1e-9))))).length
+                        for b in allowed if b in LEFT or b in RIGHT), default=9.0)
+        if near_arm > a.skirt_arm_r:
+            allowed = [b for b in allowed if b not in LEFT and b not in RIGHT]
+        else:
+            allowed = [b for b in allowed if b in LEFT or b in RIGHT]
+            arm_verts.add(v.index)
+        low_verts.add(v.index)
     best = []
     for b in allowed:
         p0, d = seg[b]
@@ -307,6 +323,20 @@ for v in me.vertices:
     tot = sum(w for w, _ in ws)
     for w, b in ws:
         vg[b].add([v.index], w / tot, "REPLACE")
+# ---- 5a. --skirt: cut the web the scan fused between the hanging hands and the skirt (faces below the elbows with arm AND body
+# vertices), so the arm is its own surface there; the cut is a thin band on the inside of the hand and the skirt's side
+skirt_cut = 0
+if a.skirt and arm_verts:
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bm.verts.ensure_lookup_table()
+    web = [f for f in bm.faces if all(vv.index in low_verts for vv in f.verts)
+           and any(vv.index in arm_verts for vv in f.verts) and any(vv.index not in arm_verts for vv in f.verts)]
+    skirt_cut = len(web)
+    bmesh.ops.delete(bm, geom=web, context="FACES_ONLY")
+    bm.to_mesh(me)
+    bm.free()
+    me.update()
 mod = body.modifiers.new("Armature", "ARMATURE")
 mod.object = arm_ob
 body.parent = arm_ob
@@ -442,5 +472,5 @@ raw = open(a.out, "rb").read()
 import struct
 jl = struct.unpack_from("<I", raw, 12)[0]
 gl = json.loads(raw[20:20 + jl])
-print("@@" + json.dumps({"ok": True, "out": a.out, "bytes": len(raw), "tris_before": tris_before, "tris": tris, "fit": fit, "bones": len(arm_ob.data.bones),
+print("@@" + json.dumps({"ok": True, "out": a.out, "bytes": len(raw), "tris_before": tris_before, "tris": tris, "fit": fit, "skirt_cut": skirt_cut, "skirt_arm_verts": len(arm_verts), "bones": len(arm_ob.data.bones),
                          "animations": [x.get("name") for x in gl.get("animations", [])], "images": len(gl.get("images", [])), "head_tris": (sum(len(p.vertices) - 2 for p in head.data.polygons) if head is not None else 0)}))

@@ -6,7 +6,7 @@ Pinned environment (see docs/episode2-quality/bull-hunyuan-2026-10-15/README.md)
 transformers==4.46.0 diffusers==0.30.0 huggingface-hub==0.30.2, numpy 2.1-2.3, `pip install -e hy3dshape --no-deps`.
 
   python3 gen_batch.py jobs.json [--steps 50] [--octree 384]
-jobs.json: [{"name": "bear_archer", "image": "/workspace/bear_archer_ref.png", "seed": 7}, ...]
+jobs.json: [{"name": "bear_archer", "image": "/workspace/bear_archer_ref.png", "seed": 7, "octree": 512}, ...] (octree per job, optional)
 Writes /workspace/<name>_ref_nobg.png and /workspace/<name>_hy_shape.glb per job. A failing job is logged and skipped
 so one bad image never costs the rest of the (billed) session. Exit code 1 if any job failed.
 """
@@ -42,7 +42,7 @@ for j in jobs:
         img = rembg(img)
         img.save(f"/workspace/{j['name']}_ref_nobg.png")
         g = torch.Generator("cuda").manual_seed(int(j.get("seed", 7)))
-        mesh = pipe(image=img, num_inference_steps=a.steps, octree_resolution=a.octree, generator=g)[0]
+        mesh = pipe(image=img, num_inference_steps=a.steps, octree_resolution=int(j.get("octree", a.octree)), generator=g)[0]
         out = f"/workspace/{j['name']}_hy_shape.glb"
         mesh.export(out)
         print("GEN_DONE", j["name"], len(mesh.vertices), "verts", len(mesh.faces), "faces",

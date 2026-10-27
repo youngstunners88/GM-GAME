@@ -146,7 +146,7 @@ func _test_town() -> void:
 			pool_node.global_position.z - c.get_opponent().position.z).length()
 		_check("the draw pool is beneath the fallen man and is Compatibility-safe",
 			flat_distance < 1.3 and _compatible_fx(pool_node), "%.2f m" % flat_distance)
-	_test_rigged_stain(c)
+	await _test_rigged_stain(c)          # it awaits frames: the town must outlive it
 	c.queue_free()
 	await get_tree().process_frame
 
