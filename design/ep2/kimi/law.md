@@ -66,9 +66,11 @@ Fix pack: "Civilian kill -> jail, Bam Bankman Free, weapon strip; building shot 
    town. Take your pick and walk soft."). `Ep2ArmoryState`: add a confiscation (`confiscate_firearms()`, `firearms_confiscated
    -> bool`, `return_firearms()`; saved in `snapshot()/restore()`); while confiscated the Winchester, Remington and Bow cannot be
    selected (the Tabs cards show them as "HELD BY THE SHERIFF"), and Lil Blunt holds a **pickaxe** in first person: add
-   `PICK := "pickaxe"` as an equipped mode that is not one of the three slots - a simple first-person pickaxe (reuse the
-   hideout's pickaxe mesh if it can be instanced alone, else a clean procedural handle + iron head), a swing on click, no
-   ammunition, no damage to people. `return_firearms()` is called when Lil Blunt leaves town (Claude wires the story moment;
+   `PICK := "pickaxe"` as an equipped mode that is not one of the three slots, shown by the viewmodel
+   (`src/episode2/chamber/ep2_viewmodel.gd`): load `res://src/episode2/assets/weapons/pickaxe_fp.glb` when it exists (Claude
+   will supply a CAD model there later), else a clean procedural pickaxe (a hickory handle ~0.9 m and a curved iron pick
+   head - not two primitives); a swing on click with `res://src/assets/sounds/ep2_pickaxe_swing.mp3`, no ammunition, no
+   damage to people. `return_firearms()` is called when Lil Blunt leaves town (Claude wires the story moment;
    expose it and a signal `firearms_returned`). Nothing is lost forever and the run can never soft-lock.
 5. **Cold relationships**: `GameManager.town_standing` ("warm"/"cold", saved with the purse) + a signal. Cold: townspeople keep
    2.5 m away, skip their friendly greetings, and some say one of 4-6 new cold lines (written into `assets/town-audio.json`
@@ -111,6 +113,7 @@ changed per file and what the gate covers.
 @include src/episode2/chamber/interlude_base.gd
 @include src/episode2/chamber/ep2_armory_state.gd
 @include src/episode2/chamber/ep2_weapon_selector.gd
+@include src/episode2/chamber/ep2_viewmodel.gd
 @include src/episode2/chamber/ep2_gold_town.gd
 @include src/episode2/chamber/ep2_town_life.gd
 @include src/episode2/actors/ep2_town_folk.gd
