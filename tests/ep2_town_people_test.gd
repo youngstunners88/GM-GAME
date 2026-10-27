@@ -118,13 +118,19 @@ func _ready() -> void:
 		if (p as Ep2TownPeople.Person).walked_m > 12.0:
 			walkers += 1
 	# the two balcony regulars sit drinking over the street all day (founder 2026-10-24); everyone else walks it
-	var street_cast: int = Ep2TownPeople.ROSTER.size() - Ep2TownPeople.BALCONY_REGULARS.size()
-	check("they really walk the street (every one covers > 12 m in 120 s; the balcony regulars sit)", walkers >= street_cast, "%d of %d" % [walkers, street_cast])
+	var street_cast: int = Ep2TownPeople.ROSTER.size() - Ep2TownPeople.BALCONY_REGULARS.size() - Ep2TownPeople.TABLE_REGULARS.size()
+	check("they really walk the street (every one covers > 12 m in 120 s; the balcony and table regulars sit)", walkers >= street_cast, "%d of %d" % [walkers, street_cast])
 	var starts: Array = started.values()
 	starts.sort()
 	check("they are not in lock-step (their first steps are spread over > 2 s)", starts.size() >= 4 and float(starts[starts.size() - 1] - starts[0]) * dt > 2.0, str(starts))
 	# greeting: put Lil Blunt beside the clerk
 	var clerk: Ep2TownPeople.Person = tp.people[0] as Ep2TownPeople.Person
+	# a townsman out in the street (not inside a shop or the saloon at this moment, not one of the seated regulars)
+	for q in tp.people:
+		if q.state not in Ep2TownPeople.SHOP_STATES and q.id not in Ep2TownPeople.BALCONY_REGULARS and q.id not in Ep2TownPeople.TABLE_REGULARS \
+				and Ep2TownPeople.sex_of(q.id) == "m":
+			clerk = q
+			break
 	var near: Vector3 = clerk.folk.position + Vector3(1.6, 0.0, 0.0)
 	for i in 240:
 		tp.step(dt, near)

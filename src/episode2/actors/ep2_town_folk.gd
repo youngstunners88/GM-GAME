@@ -37,6 +37,8 @@ var walk_clip_speed: float = 0.0
 ## The procedural stride lift on top of rigged clips; mocap walks carry their own bob, so the Meshy cast turns it off.
 var procedural_bob: bool = true
 var _floor_y: float = 0.0
+## How fast the body swings into the travel heading while walking (per second, a lerp rate). Standing keeps the old 7.
+const WALK_TURN_RATE := 14.0
 
 
 ## Load `path` (a GLB), scale it to `height`, put its feet on the origin. Falls back to a plain figure so a build without the art still plays.
@@ -299,15 +301,19 @@ func step(delta: float) -> void:
 				arrived.emit()
 		else:
 			moving = true
-			if flat.length() > 0.02:
-				facing = lerp_angle(facing, atan2(d.x, d.z), clampf(8.0 * delta, 0.0, 1.0))
+			# The body faces where the feet go. The crowd (Ep2TownPeople) moves a walker one tick at a time - about 1.7 cm a frame at
+			# 60 fps - so the old 2 cm floor never turned anyone slower than ~1.2 m/s: they glided on facing their last heading, the
+			# founder's "townspeople walk backwards" (2026-10-27). Any real heading now sets the facing; the body turns to it quickly.
+			if flat.length() > 0.0005:
+				facing = atan2(d.x, d.z)
 			# speed is ground speed: on a stair the rise rides along with the run
 			var stepv: Vector3 = d * minf(1.0, (_speed * delta) / maxf(flat.length() if flat.length() > 0.02 else d.length(), 0.001))
 			position.x += stepv.x
 			position.z += stepv.z
 			_floor_y += stepv.y
 			_phase += delta * _speed * 4.6
-	rotation.y = lerp_angle(rotation.y, facing, clampf(7.0 * delta, 0.0, 1.0))
+	# walking: a quick turn into the travel heading (time constant ~0.07 s, a pivot rather than a moonwalk); standing: the gentle settle
+	rotation.y = lerp_angle(rotation.y, facing, clampf((WALK_TURN_RATE if moving else 7.0) * delta, 0.0, 1.0))
 	if model == null:
 		return
 	_kick = maxf(0.0, _kick - delta * 6.0)

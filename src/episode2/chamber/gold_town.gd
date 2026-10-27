@@ -42,6 +42,9 @@ extends Ep2Interlude
 enum Beat { STREET, OFFICE, TO_BAR, BAR, SQUARE_UP, DRAW, WON, LOOT, JOB, JAIL_TIP, JAIL, TIP, ARMORY, BULL_BACK, BODY, DRINKS, MINISTER2,
 	STABLES, GEARED, DONE }
 
+## Explicit load as well as class_name: the headless gates do not rescan the global class cache for a newly added script.
+const TOWN_BUMPS = preload("res://src/episode2/actors/ep2_town_bumps.gd")
+
 ## The post-draw lines (section 4). Timed captions: no voice key is configured on this box, so like the jailhouse's they are text, and a
 ## recording dropped into Ep2TownVoiceBank under the same speaker + text plays automatically. Lil Blunt's bird line is the founder's own.
 const BLOOD_FX = preload("res://src/episode2/fx/ep2_blood_fx.gd")
@@ -229,6 +232,7 @@ var _shop_layer: CanvasLayer = null
 var _shop_open: bool = false
 var _shop_bought: bool = false
 var _town_audio: Ep2TownSoundscape = null
+var _bumps: TOWN_BUMPS = null
 var _stable_yard: Ep2StableYard = null
 var _stable_prompt_shown: bool = false
 signal stable_voice_requested(line_id: String, voice_id: String)
@@ -1058,7 +1062,7 @@ func _on_setup() -> void:
 	_player_yaw = _look_yaw
 	# the townsfolk carry on exactly where they were during the ride in (same people, same places, same errands)
 	if _people != null and handoff.get("town_people") is Dictionary:
-		_people.restore(handoff["town_people"])
+		_people.restore(handoff["town_people"], true)    # the ride crowd walked on lighter collision: replan a clipped path
 	_stable_yard = _visuals.find_child("StableYard", true, false) as Ep2StableYard
 	if _stable_yard != null:
 		if handoff.get("stable_yard") is Dictionary:
@@ -1074,6 +1078,11 @@ func _on_setup() -> void:
 		_vm.set_world_shadows(false)
 		_vm.set_own_light(WoodsQuadChamber.VM_KEY_ENERGY, _sun)
 	if _town_audio != null: _town_audio.start()
+	var town_life: Ep2TownLife = _visuals.find_child("TownLife", true, false) as Ep2TownLife
+	if town_life != null:
+		town_life.town_ambient = true
+	_bumps = TOWN_BUMPS.new()
+	_bumps.build(_people, town_life, _town_audio)
 	_advance_to(Beat.STREET)
 
 
@@ -1746,6 +1755,17 @@ func _tick(delta: float) -> void:
 		_town_audio.step(delta, _people, _player_pos, _hold > 0.0 or _show_active or intro_busy or _shop_open, duel)
 		if not _show_active and _hold <= 0.0 and not intro_busy and not duel and not _shop_open and _town_audio.has_queued():
 			_begin_carry_line(_town_audio.take_line())
+	if _bumps != null:
+		var shove: Vector3 = _bumps.step(delta, _player_pos)
+		if shove.length_squared() > 0.0001:
+			# Several ordinary collision moves, never a teleport through a wall. The town has no damage/hearts.
+			var parts: int = maxi(1, ceili(shove.length() / 0.15))
+			for i in parts:
+				var next: Vector3 = _collide(_player_pos + shove / float(parts))
+				_player_pos.x = next.x
+				_player_pos.z = next.z
+			if _vm != null:
+				_vm.cam_kick = maxf(_vm.cam_kick, 0.045)
 	_tick_people(delta)
 	_tick_minister(delta)
 	_tick_bull_route()

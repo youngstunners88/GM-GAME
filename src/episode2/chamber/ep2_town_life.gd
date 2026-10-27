@@ -28,6 +28,15 @@ var _smoke: CPUParticles3D
 ## comes into view and again in front of the town. It dips under speech so it never buries a line.
 const TRAIN_RUN_SFX := "res://src/episode2/extras/audio/town/town_train_run.ogg"
 const TRAIN_WHISTLE_SFX := "res://src/episode2/extras/audio/town/town_train_whistle.ogg"
+const TRAIN_STEAM_SFX := "res://src/episode2/extras/audio/town/train_steam_loop.ogg"
+const TRAIN_STEAM_WHISTLE_SFX := "res://src/episode2/extras/audio/town/train_whistle_steam.ogg"
+const TRAIN_PASSBY_SFX := "res://src/episode2/extras/audio/town/train_passby.ogg"
+const TOWN_SFX_ROOT := "res://src/episode2/extras/audio/town/"
+## Measured against the 14 s recording: its broad, loudest second is 6-7 s, centred at 6.5 s.
+## At load time the centre is length * 0.5 + this measured -0.5 s offset. At 7 m/s the pass-by therefore
+## starts at x=+45.5 m and its peak reaches mid-street (x=0), rather than starting already at the peak.
+const TRAIN_PASSBY_PEAK_BIAS := -0.5
+const TRAIN_PASSBY_DB := 4.0
 const TRAIN_RUN_DB := 6.0
 const TRAIN_WHISTLE_DB := 9.0
 const TRAIN_UNDER_SPEECH_DB := -7.0             # how far the train dips while someone is talking
@@ -36,13 +45,26 @@ const TRAIN_MAX_DISTANCE := 460.0
 const WHISTLE_AT_X := [150.0, 40.0]             # blow as it appears, and as it comes level with the town
 var _run_sfx: AudioStreamPlayer3D
 var _whistle_sfx: AudioStreamPlayer3D
+var _pass_sfx: AudioStreamPlayer3D
 var _whistles_due: Array = []
+var _passby_armed: bool = false
+var _passby_peak: float = 6.5
+var _passby_count: int = 0
+var _passby_start_x: float = 0.0
+var _passby_peak_x: float = 0.0
 var _train_x: float = TRAIN_FROM_X
 var _wait: float = 4.0
 var _walker: Node3D
 var _walker_dir: float = 1.0
 var _t: float = 0.0
 var _rng := RandomNumberGenerator.new()
+## Horse ambience is explicitly enabled by GoldTownChamber, so a TownLife backdrop in the woods/a prebuild stays silent.
+var town_ambient: bool = false
+var _horse_voices: Dictionary = {}
+var _horse_next: Dictionary = {}
+var _last_horse_sound: float = -100.0
+var _hooves: AudioStreamPlayer3D = null
+var horse_effect_counts: Dictionary = {}
 
 
 ## [x, z, yaw, clip]: horses tied at the hitch rails (head to the rail), one grazing by the armory lane. Yaw 0 = head toward +X.
@@ -245,6 +267,7 @@ func _build_train() -> void:
 	_smoke.emitting = false
 	_run_sfx = _train_sound("TrainRunSfx", TRAIN_RUN_DB, Vector3(2.0, 1.6, 0.0))
 	_whistle_sfx = _train_sound("TrainWhistleSfx", TRAIN_WHISTLE_DB, Vector3(-4.85, 4.2, 0.0))
+	_pass_sfx = _train_sound("TrainPassbySfx", TRAIN_PASSBY_DB, Vector3(2.0, 1.6, 0.0))
 
 
 func _train_sound(n: String, db: float, at: Vector3) -> AudioStreamPlayer3D:
@@ -266,13 +289,22 @@ func _train_sound(n: String, db: float, at: Vector3) -> AudioStreamPlayer3D:
 func _ensure_train_audio() -> bool:
 	if _run_sfx == null or not is_inside_tree() or get_viewport() != get_tree().root:
 		return false
-	if _run_sfx.stream == null and ResourceLoader.exists(TRAIN_RUN_SFX):
-		var st: AudioStream = load(TRAIN_RUN_SFX)
-		if st is AudioStreamOggVorbis:
-			(st as AudioStreamOggVorbis).loop = true
-		_run_sfx.stream = st
-	if _whistle_sfx.stream == null and ResourceLoader.exists(TRAIN_WHISTLE_SFX):
-		_whistle_sfx.stream = load(TRAIN_WHISTLE_SFX)
+	if _run_sfx.stream == null:
+		var path: String = TRAIN_STEAM_SFX if ResourceLoader.exists(TRAIN_STEAM_SFX) else TRAIN_RUN_SFX
+		if ResourceLoader.exists(path):
+			var st: AudioStream = load(path)
+			if st is AudioStreamOggVorbis:
+				(st as AudioStreamOggVorbis).loop = true
+			_run_sfx.stream = st
+	if _whistle_sfx.stream == null:
+		var path: String = TRAIN_STEAM_WHISTLE_SFX if ResourceLoader.exists(TRAIN_STEAM_WHISTLE_SFX) else TRAIN_WHISTLE_SFX
+		if ResourceLoader.exists(path):
+			_whistle_sfx.stream = load(path)
+	if _pass_sfx.stream == null and ResourceLoader.exists(TRAIN_PASSBY_SFX):
+		_pass_sfx.stream = load(TRAIN_PASSBY_SFX)
+		var seconds: float = _pass_sfx.stream.get_length()
+		if seconds > 1.0:
+			_passby_peak = clampf(seconds * 0.5 + TRAIN_PASSBY_PEAK_BIAS, 0.5, seconds - 0.5)
 	return _run_sfx.stream != null
 
 
@@ -282,15 +314,26 @@ func _train_audio_step() -> void:
 	if not _train.visible:
 		if _run_sfx.playing:
 			_run_sfx.stop()
+		if _pass_sfx.playing:
+			_pass_sfx.stop()
 		return
 	if not _ensure_train_audio():
 		return
 	if not _run_sfx.playing:
-		_run_sfx.play(fmod(_t, 12.0))
+		_run_sfx.play(fmod(_t, maxf(1.0, _run_sfx.stream.get_length())))
 	var am: Node = get_node_or_null("/root/AudioManager")
 	var talking: bool = am != null and am.has_method("is_speech_ducking") and bool(am.call("is_speech_ducking"))
 	var goal: float = TRAIN_RUN_DB + (TRAIN_UNDER_SPEECH_DB if talking else 0.0)
 	_run_sfx.volume_db = move_toward(_run_sfx.volume_db, goal, 30.0 * get_process_delta_time())
+	if _passby_armed and _train_x <= TRAIN_SPEED * _passby_peak:
+		_passby_armed = false
+		_passby_start_x = _train_x
+		_passby_peak_x = _train_x - TRAIN_SPEED * _passby_peak
+		if _pass_sfx.stream != null:
+			_pass_sfx.play()
+			_passby_count += 1
+	if _pass_sfx.playing:
+		_pass_sfx.volume_db = move_toward(_pass_sfx.volume_db, TRAIN_PASSBY_DB + (TRAIN_UNDER_SPEECH_DB if talking else 0.0), 30.0 * get_process_delta_time())
 	if not _whistles_due.is_empty() and _train_x <= float(_whistles_due[0]):
 		_whistles_due.pop_front()
 		if _whistle_sfx.stream != null and not talking:
@@ -308,12 +351,98 @@ func _build_horses(props: Array) -> void:
 		horse.position = Vector3(float(h[0]), 0.0, float(h[1]))
 		horse.rotation.y = float(h[2])
 		add_child(horse)
+		_register_horse(horse)
 		props.append([Vector2(float(h[0]), float(h[1])), 1.0])         # solid: Lil Blunt walks around a horse
 	_walker = _horse(scene, "horse_walk")
 	_walker.name = "HorseRoaming"
 	_walker.position = WALK_FROM
 	_walker.rotation.y = -PI * 0.5                                         # head toward +Z, up the street
 	add_child(_walker)
+	_register_horse(_walker)
+	_hooves = _horse_voice(_walker, "HorseHooves")
+	_hooves.position.y = 0.35
+	_hooves.unit_size = 4.0
+	_hooves.max_distance = 30.0
+	_hooves.volume_db = -15.0
+	_hooves.set_meta("base_db", -15.0)
+
+
+func _horse_voice(horse: Node3D, label: String) -> AudioStreamPlayer3D:
+	var voice := AudioStreamPlayer3D.new()
+	voice.name = label
+	voice.bus = "SFX"
+	voice.position = Vector3(0.0, 1.1, 0.0)
+	voice.unit_size = 7.0
+	voice.max_distance = 42.0
+	voice.volume_db = -10.0
+	voice.set_meta("base_db", -10.0)
+	horse.add_child(voice)
+	return voice
+
+
+func _register_horse(horse: Node3D) -> void:
+	var id: int = horse.get_instance_id()
+	_horse_voices[id] = _horse_voice(horse, "HorseVoice")
+	_horse_next[id] = _rng.randf_range(12.0, 30.0)
+
+
+func _town_recording(id: String, loop: bool = false) -> AudioStream:
+	var path: String = TOWN_SFX_ROOT + id + ".ogg"
+	if not ResourceLoader.exists(path):
+		return null
+	var stream: AudioStream = load(path) as AudioStream
+	if stream is AudioStreamOggVorbis:
+		(stream as AudioStreamOggVorbis).loop = loop
+	return stream
+
+
+## A bump/shy/kick effect on a particular horse. Kept here so the same voice and speech dip serve ambience and contact.
+func play_horse_effect(horse: Node3D, id: String, db: float = -7.0) -> bool:
+	if not town_ambient or horse == null or not _horse_voices.has(horse.get_instance_id()):
+		return false
+	var stream: AudioStream = _town_recording(id)
+	if stream == null:
+		return false
+	var voice: AudioStreamPlayer3D = _horse_voices[horse.get_instance_id()]
+	voice.stream = stream
+	voice.set_meta("base_db", db)
+	voice.volume_db = db
+	voice.play()
+	_last_horse_sound = _t
+	horse_effect_counts[id] = int(horse_effect_counts.get(id, 0)) + 1
+	return true
+
+
+func _horse_audio_step(delta: float) -> void:
+	if not town_ambient:
+		if _hooves != null and _hooves.playing:
+			_hooves.stop()
+		return
+	var am: Node = get_node_or_null("/root/AudioManager")
+	var talking: bool = am != null and am.has_method("is_speech_ducking") and bool(am.call("is_speech_ducking"))
+	for id in _horse_voices:
+		var voice: AudioStreamPlayer3D = _horse_voices[id]
+		if voice.playing:
+			var base: float = float(voice.get_meta("base_db", -10.0))
+			voice.volume_db = move_toward(voice.volume_db, base - (8.0 if talking else 0.0), 30.0 * delta)
+		_horse_next[id] = float(_horse_next[id]) - delta
+		if float(_horse_next[id]) <= 0.0 and _t - _last_horse_sound >= 3.0 and not voice.playing:
+			var clip: String = "horse_whinny" if _rng.randf() < 0.28 else "horse_snort"
+			var stream: AudioStream = _town_recording(clip)
+			if stream != null:
+				voice.stream = stream
+				voice.set_meta("base_db", -11.0)
+				voice.volume_db = -11.0 - (8.0 if talking else 0.0)
+				voice.play()
+				_last_horse_sound = _t
+				_horse_next[id] = _rng.randf_range(12.0, 30.0)
+	if is_instance_valid(_walker) and _hooves != null:
+		if _hooves.stream == null:
+			_hooves.stream = _town_recording("horse_hooves_loop", true)
+		if _hooves.stream != null:
+			if not _hooves.playing:
+				_hooves.play()
+			_hooves.volume_db = move_toward(_hooves.volume_db, -15.0 - (8.0 if talking else 0.0), 30.0 * delta)
 
 
 func _horse(scene: PackedScene, clip: String) -> Node3D:
@@ -349,6 +478,7 @@ func _process(delta: float) -> void:
 				_train.visible = true
 				_smoke.emitting = true
 				_whistles_due = WHISTLE_AT_X.duplicate()
+				_passby_armed = true
 		_train_audio_step()
 	if is_instance_valid(_walker):
 		var step: float = 0.95 * delta                                              # matches the walk cycle's stride
@@ -359,3 +489,4 @@ func _process(delta: float) -> void:
 		elif _walker.position.z < WALK_FROM.z:
 			_walker_dir = 1.0
 			_walker.rotation.y = -PI * 0.5
+	_horse_audio_step(delta)

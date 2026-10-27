@@ -8,6 +8,12 @@ var _saloon: AudioStreamPlayer3D
 var _greeting: AudioStreamPlayer3D
 var _bell: AudioStreamPlayer3D
 var _boots: AudioStreamPlayer3D
+var _people_bed: AudioStreamPlayer3D
+var _voices: Array[AudioStreamPlayer3D] = []
+var _voice_next: int = 0
+var _spur_cd: float = 4.0
+var _rng := RandomNumberGenerator.new()
+var effect_counts: Dictionary = {}
 var active := false
 var quiet := false
 var story_busy := false
@@ -19,6 +25,7 @@ var bell_count := 0
 const GREETING_MUSIC_DUCK_DB := -10.0
 
 func _ready() -> void:
+	_rng.seed = 18861027
 	_wind = AudioStreamPlayer.new()
 	_wind.bus = "SFX"
 	_wind.stream = _effect("town_wind", true)
@@ -26,6 +33,9 @@ func _ready() -> void:
 	add_child(_wind)
 	_saloon = _spatial("town_saloon", -10.0, 24.0, true)
 	_saloon.position = Ep2GoldTown.local_to_world("Bldg_Saloon", Vector3(0, 1.5, -5))
+	_people_bed = _spatial("town_people_loop", -25.0, 46.0, true)
+	_people_bed.position = Vector3(0.0, 1.4, 1425.0)
+	_people_bed.unit_size = 13.0                       # a quiet street bed, never a wall of chatter over a line
 	# A greeting must read over the town theme (founder 2026-10-25: "people VO overshadowed by music"): unity gain, a wider
 	# unit size (full level within 8 m instead of 5), heard to 18 m, and the music dips under it while it plays (greet()).
 	_greeting = _spatial("", 0.0, 18.0)
@@ -34,6 +44,8 @@ func _ready() -> void:
 	_bell.position = Vector3(0.0, 10.0, 1478.0)
 	_bell.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED
 	_boots = _spatial("town_boardwalk", -14.0, 10.0)
+	for i in 12:
+		_voices.append(_spatial("", -12.0, 20.0))
 
 func _effect(id: String, loop: bool = false) -> AudioStream:
 	var path: String = ROOT + id + ".ogg"
@@ -58,23 +70,84 @@ func start() -> void:
 	active = true
 	if _wind.stream != null: _wind.play()
 	if _saloon.stream != null: _saloon.play()
+	if _people_bed.stream != null: _people_bed.play()
+
+
+func _speech_ducked() -> bool:
+	if story_busy or quiet:
+		return true
+	var am: Node = get_node_or_null("/root/AudioManager")
+	return am != null and am.has_method("is_speech_ducking") and bool(am.call("is_speech_ducking"))
+
+
+## Play one recorded town effect at a world position. A small round-robin pool keeps laughs, glass, bumps and
+## spurs spatial and bounded; every one dips under speech just as the train does. False means not active/no recording.
+func play_effect(id: String, at: Vector3, db: float = -12.0, distance: float = 20.0) -> bool:
+	if not active or _voices.is_empty():
+		return false
+	var stream: AudioStream = _effect(id)
+	if stream == null:
+		return false
+	var p: AudioStreamPlayer3D = _voices[_voice_next]
+	_voice_next = (_voice_next + 1) % _voices.size()
+	p.stop()
+	p.stream = stream
+	p.position = at
+	p.max_distance = distance
+	p.set_meta("base_db", db)
+	p.volume_db = db - (10.0 if _speech_ducked() else 0.0)
+	p.play()
+	effect_counts[id] = int(effect_counts.get(id, 0)) + 1
+	return true
+
 
 func step(delta: float, people: Ep2TownPeople, player: Vector3, busy: bool, duel: bool) -> void:
 	story_busy = busy
 	quiet = duel
 	_greet_cd = maxf(0.0, _greet_cd - delta)
 	_foot_cd = maxf(0.0, _foot_cd - delta)
+	_spur_cd = maxf(0.0, _spur_cd - delta)
 	if busy or duel: silence_greeting()
 	if _wind != null: _wind.volume_db = -24.0 if busy or duel else -16.0
 	if _saloon != null: _saloon.volume_db = -28.0 if busy or duel else -10.0
-	if not active or duel or _foot_cd > 0.0 or people == null: return
+	if _people_bed != null: _people_bed.volume_db = -36.0 if busy or duel else -25.0
+	var ducked: bool = _speech_ducked()
+	for voice in _voices:
+		if voice.playing:
+			var base: float = float(voice.get_meta("base_db", -12.0))
+			voice.volume_db = move_toward(voice.volume_db, base - (10.0 if ducked else 0.0), 35.0 * delta)
+	if not active or people == null: return
 	for person in people.people:
-		if person.state == "walk" and person.folk.position.distance_to(player) < 8.0:
-			if _boots.stream != null:
-				_boots.position = person.folk.position
-				_boots.play()
-			_foot_cd = 0.65
-			break
+		var events: Array = person.drink_events.duplicate()
+		person.drink_events.clear()
+		if duel: continue
+		for event in events:
+			var kind: String = str(event.get("kind", ""))
+			var at: Vector3 = event.get("at", person.folk.position)
+			match kind:
+				"laugh":
+					var id: String = "woman_laugh" if bool(event.get("female", false)) else ("man_laugh_b" if int(event.get("variant", 0)) == 1 else "man_laugh_a")
+					if int(event.get("variant", 0)) == 2: id = "saloon_laughter"
+					play_effect(id, at, -15.0, 22.0)
+				"clink": play_effect("bar_glasses_clink", at, -18.0, 17.0)
+				"exhale": play_effect("cigar_exhale", at, -23.0, 12.0)
+	if duel: return
+	if _foot_cd <= 0.0:
+		for person in people.people:
+			if person.state == "walk" and person.folk.position.distance_to(player) < 8.0:
+				if _boots.stream != null:
+					_boots.position = person.folk.position
+					_boots.play()
+				_foot_cd = 0.65
+				break
+	# Only some of the men wear audible spurs, and only now and then - never another sound on every boot step.
+	if _spur_cd <= 0.0:
+		_spur_cd = _rng.randf_range(5.0, 11.0)
+		for person in people.people:
+			if person.state == "walk" and Ep2TownPeople.sex_of(person.id) == "m" and int(person.id.hash()) % 3 == 0 \
+					and person.folk.position.distance_to(player) < 7.0 and _rng.randf() < 0.45:
+				play_effect("spurs_jingle", person.folk.position + Vector3(0.0, 0.25, 0.0), -18.0, 13.0)
+				break
 
 func greet(person_id: String, actor: Ep2TownFolk, count: int) -> bool:
 	if not active or quiet or story_busy or _greet_cd > 0.0 or not Ep2TownVoiceBank.GREETINGS.has(person_id): return false
