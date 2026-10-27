@@ -13,6 +13,13 @@ func _initialize() -> void:
  for path in args:
   check("pack below 190 MiB",FileAccess.get_file_as_bytes(path).size()<199229440)
   check("pack mounts",ProjectSettings.load_resource_pack(path,true))
+ for name in ["tex_woods_floor.jpg","tex_woods_bark.jpg","tex_woods_bark_n.png","tex_woods_branch.png","tex_woods_fern.png"]:
+  var texture:=load("res://src/episode2/assets/woods/"+name) as Texture2D
+  check("shared forest texture ships "+name,texture!=null and texture.get_width()>0)
+ for name in ["planks_weathered","stone_rustic"]:
+  for channel in ["albedo","normal"]:
+   var texture:=load("res://src/episode2/extras/pbr/"+name+"/"+channel+".jpg") as Texture2D
+   check("streamed shore PBR texture "+name+"/"+channel,texture!=null and texture.get_width()>0)
  for part in ["rowing_skiff","landscape/shore_kit","logan"]:
   var path: String="res://src/episode2/extras/lake/"+part+".glb"
   check(part+" has no raw source fallback",not FileAccess.file_exists(path))
