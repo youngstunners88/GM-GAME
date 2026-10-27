@@ -1,0 +1,25 @@
+{
+  "tasks": [
+    {
+      "id": "01a17b01-b696-740a-9a5b-68e46259aaa1",
+      "type": "text-to-3d-refine",
+      "mode": "refine",
+      "status": "SUCCEEDED",
+      "consumed_credits": 10,
+      "created_at": 1793065073719,
+      "started_at": 1793065073724,
+      "finished_at": 1793065130405
+    },
+    {
+      "id": "01a17afb-45e7-72f8-a830-db66110d3488",
+      "type": "text-to-3d-preview",
+      "mode": "preview",
+      "status": "SUCCEEDED",
+      "consumed_credits": 20,
+      "created_at": 1793064651759,
+      "started_at": 1793064651934,
+      "finished_at": 1793064687073
+    }
+  ],
+  "total_consumed_credits": 30
+}

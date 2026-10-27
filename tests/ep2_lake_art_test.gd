@@ -9,6 +9,19 @@ func check(label: String, ok: bool) -> void:
  print("[PASS] " + label if ok else "[FAIL] " + label)
 func advance(c: LogansLakeChamber, seconds: float) -> void:
  for i in int(seconds * 60): c.step(1.0 / 60.0)
+func drawn_ground(c: LogansLakeChamber, p: Vector3) -> float:
+ var ground:=c._visuals.get_node("ShoreAndMountain") as MeshInstance3D
+ var arrays:=ground.mesh.surface_get_arrays(0)
+ var vertices: PackedVector3Array=arrays[Mesh.ARRAY_VERTEX]
+ var indices: PackedInt32Array=arrays[Mesh.ARRAY_INDEX]
+ for i in range(0,indices.size(),3):
+  var a: Vector3=ground.to_global(vertices[indices[i]])
+  var b: Vector3=ground.to_global(vertices[indices[i+1]])
+  var d: Vector3=ground.to_global(vertices[indices[i+2]])
+  if p.x<minf(a.x,minf(b.x,d.x)) or p.x>maxf(a.x,maxf(b.x,d.x)) or p.z<minf(a.z,minf(b.z,d.z)) or p.z>maxf(a.z,maxf(b.z,d.z)):continue
+  var hit=Geometry3D.segment_intersects_triangle(p+Vector3(0,20,0),p-Vector3(0,10,0),a,b,d)
+  if hit!=null:return hit.y
+ return INF
 func _ready() -> void:
  var c: LogansLakeChamber=load("res://src/episode2/chamber/logans_lake.tscn").instantiate()
  add_child(c);c.setup();c.set_physics_process(false)
@@ -22,7 +35,7 @@ func _ready() -> void:
     var p: Vector3=node.multimesh.get_instance_transform(i).origin
     if p.x > -14 and p.x < -2.5: trunks_clear=false
  check("new tree trunks leave the entire walked shore corridor clear", trunks_clear)
- check("Logan and cargo stand on their unchanged ground marks", absf(c.terrain_height(c.LOGAN_MARK.x,c.LOGAN_MARK.z))<.001 and absf(c.terrain_height(c.STAGING_MARK.x,c.STAGING_MARK.z))<.001)
+ check("Logan and cargo meet the actual drawn ground at their unchanged marks", absf(drawn_ground(c,c.LOGAN_MARK)-c.LOGAN_MARK.y)<.025 and absf(drawn_ground(c,c.STAGING_MARK)-c.STAGING_MARK.y)<.025 and absf(c.terrain_height(c.LOGAN_MARK.x,c.LOGAN_MARK.z))<.001)
  check("continuous basin is recessed below the actual water", c.terrain_height(24,20)<-1.5 and c.terrain_height(24,20)<Ep2LoganSkiff.WATER_Y)
  check("outflow meanders while keeping a recessed bed", absf(Ep2LakeLandform.flow_center(72)-24)>.5 and c.terrain_height(Ep2LakeLandform.flow_center(72),72)<-.5)
  check("boat art is mounted without replacing the supplied Logan skin", c._skiff!=null and c._skiff.ready_art and c._skiff._sk.get_bone_count()==65)

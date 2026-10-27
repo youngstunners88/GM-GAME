@@ -20,7 +20,7 @@ static func flow_width(z: float) -> float:
 
 static func terrain_height(x: float, z: float) -> float:
 	# Keep the existing walkable corridor and all its story marks intact.
-	if x > -14.0 and x < -2.5 and z > -19.0 and z < 68.0:
+	if x > -14.0 and x < -0.5 and z > -19.0 and z < 68.0:
 		return path_height(z)
 	var r: float = lake_radius(x, z)
 	var shore: float = -2.25 + smoothstep(0.77, 1.11, r) * 2.72

@@ -1,1 +1,87 @@
+[PASS] pack below 190 MiB
+[PASS] pack mounts
+[PASS] pack below 190 MiB
+[PASS] pack mounts
+[PASS] shared forest texture ships tex_woods_floor.jpg
+[PASS] shared forest texture ships tex_woods_bark.jpg
+[PASS] shared forest texture ships tex_woods_bark_n.png
+[PASS] shared forest texture ships tex_woods_branch.png
+[PASS] shared forest texture ships tex_woods_fern.png
+[PASS] streamed shore PBR texture planks_weathered/albedo
+[PASS] streamed shore PBR texture planks_weathered/normal
+[PASS] streamed shore PBR texture stone_rustic/albedo
+[PASS] streamed shore PBR texture stone_rustic/normal
+[PASS] rowing_skiff has no raw source fallback
+[PASS] rowing_skiff imported scene ships
+[PASS] skiff rigid socket SeatContact
+[PASS] skiff rigid socket FloorContact
+[PASS] skiff rigid socket SternMooring
+[PASS] skiff rigid socket OarPivot_L
+[PASS] skiff rigid socket OarPivot_R
+[PASS] skiff rigid socket GripContact_L
+[PASS] skiff rigid socket GripContact_R
+[PASS] skiff rigid socket BladeContact_L
+[PASS] skiff rigid socket BladeContact_R
+[PASS] hull waterline section 00
+[PASS] hull waterline section 01
+[PASS] hull waterline section 02
+[PASS] hull waterline section 03
+[PASS] hull waterline section 04
+[PASS] hull waterline section 05
+[PASS] hull waterline section 06
+[PASS] hull waterline section 07
+[PASS] hull waterline section 08
+[PASS] hull waterline section 09
+[PASS] hull waterline section 10
+[PASS] hull waterline section 11
+[PASS] hull waterline section 12
+[PASS] hull waterline section 13
+[PASS] hull waterline section 14
+[PASS] hull waterline section 15
+[PASS] hull waterline section 16
+[PASS] hull waterline section 17
+[PASS] hull waterline has a tapered measured profile
+[PASS] rowing_skiff material imports
+[PASS] rowing_skiff albedo resolves
+[PASS] rowing_skiff material imports
+[PASS] rowing_skiff material imports
+[PASS] rowing_skiff material imports
+[PASS] rowing_skiff material imports
+[PASS] rowing_skiff material imports
+[PASS] rowing_skiff material imports
+[PASS] rowing_skiff material imports
+[PASS] rowing_skiff material imports
+[PASS] rowing_skiff material imports
+[PASS] rowing_skiff material imports
+[PASS] landscape/shore_kit has no raw source fallback
+[PASS] landscape/shore_kit imported scene ships
+[PASS] forest geometry FirA_Wood
+[PASS] forest geometry FirA_Needles
+[PASS] forest geometry FirB_Wood
+[PASS] forest geometry FirB_Needles
+[PASS] forest geometry YoungFir_Wood
+[PASS] forest geometry YoungFir_Needles
+[PASS] forest geometry Rush0_Blade
+[PASS] forest geometry Driftwood
+[PASS] landscape/shore_kit material imports
+[PASS] landscape/shore_kit material imports
+[PASS] landscape/shore_kit material imports
+[PASS] landscape/shore_kit material imports
+[PASS] landscape/shore_kit material imports
+[PASS] landscape/shore_kit material imports
+[PASS] landscape/shore_kit material imports
+[PASS] landscape/shore_kit material imports
+[PASS] landscape/shore_kit material imports
+[PASS] landscape/shore_kit material imports
+[PASS] landscape/shore_kit material imports
+[PASS] logan has no raw source fallback
+[PASS] logan imported scene ships
+[PASS] founder Logan retains 65-bone skin
+[PASS] founder Logan retains authored animation player
+[PASS] Logan source clip Idle
+[PASS] Logan source clip Greet
+[PASS] Logan source clip Point
+[PASS] Logan source clip Approve
+[PASS] logan material imports
+[PASS] logan albedo resolves
 LAKE_PACK: ALL PASS (86 checks)

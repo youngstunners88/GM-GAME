@@ -1,1 +1,12 @@
+[PASS] packed forest upgrades
+[PASS] ordinary walk reaches founder Logan
+[PASS] ordinary interact starts investigation
+[PASS] ordinary walk reaches cargo
+[PASS] touch stages exactly once
+[PASS] Logan waits through handoff
+[PASS] packed skiff boards and rows
+[PASS] downloaded palms/seat survive two whole strokes
+[PASS] inventory remains unchanged
+[PASS] ordinary movement reaches overlook
+[PASS] lake preserves high overlook/outflow
 EXPORTED_LAKE: ALL PASS

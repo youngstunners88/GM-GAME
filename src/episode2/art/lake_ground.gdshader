@@ -13,7 +13,7 @@ void fragment(){
  vec3 floor_col=texture(forest_floor,p*0.24).rgb;
  vec3 stone=texture(gravel_tex,p*0.35).rgb;
  float path=(1.0-smoothstep(.8,1.9,abs(p.x+8.0+sin(p.y*0.12)*0.25)))*(1.0-smoothstep(65.0,70.0,p.y));
- float wet=1.0-smoothstep(-0.1,0.48,world_pos.y);
+ float wet=1.0-smoothstep(-0.18,0.08,world_pos.y);
  float patches=noise(p*0.13)*0.25;
  vec3 earthy=mix(floor_col*vec3(0.80,0.84,0.70),stone*vec3(0.48,0.39,0.27),clamp(path*0.68+wet*.6+slope*.65+patches,0.0,1.0));
  // Preserve colour variation at hill distance after detail textures mip out.
