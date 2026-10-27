@@ -233,6 +233,9 @@ var _shop_open: bool = false
 var _shop_bought: bool = false
 var _town_audio: Ep2TownSoundscape = null
 var _bumps: TOWN_BUMPS = null
+var _law: Ep2TownLaw = null
+var _fine_toast_t: float = 0.0
+var _fine_toast_text: String = ""
 var _stable_yard: Ep2StableYard = null
 var _stable_prompt_shown: bool = false
 signal stable_voice_requested(line_id: String, voice_id: String)
@@ -322,11 +325,12 @@ func _step_town_audio() -> void:
 	add_child(_town_audio)
 	if _people != null:
 		_people.greeted.connect(func(id: String, actor: Ep2TownFolk, count: int) -> void: _town_audio.greet(id, actor, count))
+		_people.cold_greeted.connect(_on_person_cold)
 
 
 func _town_speaker(who: String) -> String:
 	return {"RICH": "rich", "UTAH": "utah", "SHERIFF": "sheriff", "ACCOMPLICE": "prisoner", "LIL BLUNT": "lil_blunt",
-		"MIKE DEAN": "minister", "DUDE": "dude"}.get(who, who.to_lower())
+		"MIKE DEAN": "minister", "DUDE": "dude", "BAM": "bam"}.get(who, who.to_lower())
 
 
 func _town_line(who: String, text: String) -> void:
@@ -436,6 +440,10 @@ func _step_people() -> void:
 	if _bull == null:
 		_bull = _build_bull(Ep2GoldTown.door_world("Bldg_B", 0.8), PI * 0.5)
 		_bull.visible = false
+	_law = Ep2TownLaw.new()
+	_law.name = "TownLaw"
+	add_child(_law)
+	_law.setup(self)
 
 
 ## The walk-in shops' keepers (founder fix pack 2026-10-27: "two more shopkeepers (women are fine) behind the counters"): the General
@@ -572,6 +580,7 @@ func _build_guns() -> void:
 		_gatling.position = post_w
 		if _gatling.build(Ep2Extras.GATLING, atan2(fwd.x, fwd.z)):
 			_gatling.round_fired.connect(_on_gatling_round)
+			_gatling.round_traced.connect(_on_gatling_trace)
 			_gatling.hang_sign("NOT FOR SALE")
 			var face: Vector3 = post_w + Vector3(0.0, 1.2, 0.0)
 			for pl in Ep2GoldTown.GATLING_PLATES:
@@ -766,6 +775,11 @@ func _fps_camera(delta: float) -> void:
 func _on_gatling_round() -> void:
 	if _mounted and _vm != null:
 		_vm.cam_kick = maxf(_vm.cam_kick, 0.007)
+
+
+func _on_gatling_trace(origin: Vector3, direction: Vector3, hit: Dictionary) -> void:
+	if _law != null:
+		_law.gatling_round(origin, direction, hit)
 
 
 func _set_eye_view(on: bool) -> void:
@@ -1071,6 +1085,8 @@ func _on_setup() -> void:
 			stable_voice_requested.emit(id, voice))
 		_stable_yard.conversation_line.connect(_on_stable_line)
 		_stable_yard.horse_bought.connect(_on_stable_horse_bought)
+	if _law != null:
+		_law.refresh_targets()
 	_rng.seed = 1886
 	if _hud:
 		_hud.show_health = false
@@ -1359,6 +1375,8 @@ func _caption_line(who: String, text: String) -> void:
 			if _bull != null and _bull_task not in ["riding", "leaving"]: _bull.face_point(_player_pos)
 		"BARTENDER":
 			if _bartender != null: _bartender.face_point(_player_pos)
+		"BAM":
+			if _law != null and _law.get_bam() != null: _law.get_bam().face_point(_player_pos)
 
 
 ## A rigged speaker who is standing plays Talk for as long as his line lasts, then goes back to Idle - unless something else (a walk,
@@ -1747,6 +1765,15 @@ func _sheriff_look_at_player() -> void:
 
 
 func _tick(delta: float) -> void:
+	if _fine_toast_t > 0.0:
+		_fine_toast_t = maxf(0.0, _fine_toast_t - delta)
+		if _fine_toast_t == 0.0 and _hud != null:
+			_hud.toast(_fine_toast_text, 3.4)
+	if _law != null:
+		_law.step(delta)
+		if _law.suspends_story():
+			_tick_people(delta)
+			return
 	var intro_busy: bool = _intro != null and _intro.is_busy()
 	var duel: bool = _beat in [Beat.BAR, Beat.SQUARE_UP, Beat.DRAW]
 	if _stable_yard != null:
@@ -2109,11 +2136,10 @@ func shoot() -> bool:
 
 func _on_player_shot() -> void:
 	if _people != null: _people.notify_danger(_player_pos)
-	if _beat != Beat.DRAW or _draw_state != "go":
-		return
 	var eye: Vector3 = _camera.global_position if _camera != null else _player_pos + Vector3(0.0, eye_height, 0.0)
 	var dir: Vector3 = -_camera.global_transform.basis.z if _camera != null else Vector3(sin(_look_yaw), 0.0, cos(_look_yaw))
-	if aim_hits_opponent(eye, dir):
+	var in_draw: bool = _beat == Beat.DRAW and _draw_state == "go"
+	if in_draw and aim_hits_opponent(eye, dir):
 		_draw_state = "won"
 		_draw_t = 0.0
 		var axis_hit: Vector3 = opponent_hit_point(eye, dir)
@@ -2129,6 +2155,9 @@ func _on_player_shot() -> void:
 		_drop_revolver()
 		if _hud:
 			_hud.objective = ""
+		return
+	if _law != null:
+		_law.player_shot(eye, dir, in_draw)
 
 
 ## True when a ray from `eye` along `dir` passes within OPP_HIT_R of the stranger's body (feet to hat).
@@ -2219,6 +2248,58 @@ func _opp_fires() -> void:
 
 # --- state the tests read ----------------------------------------------------------------------------------------------
 
+## The town's law owns control only while the Sheriff is escorting Lil Blunt.
+## Inside the cell the eye remains free; its collision keeps him behind bars.
+func has_player_control() -> bool:
+	return super.has_player_control() and (_law == null or not _law.blocks_control())
+
+
+func _law_arrest_started() -> void:
+	_sheriff_delay = 0.0
+	_sheriff_goes = []
+	_move_input = Vector2.ZERO
+	_run_input = false
+	_end_guns()
+	set_aim(false)
+	release_look()
+	if _hud != null:
+		_hud.set_search_prompt("")
+
+
+func _law_line(who: String, text: String) -> void:
+	_caption_line(who, text)
+
+
+func _law_fine(amount: int, debt: int) -> void:
+	_caption_line("SHERIFF", Ep2TownLaw.FINE_LINE)
+	_fine_toast_text = "SHERIFF'S FINE: %d BTC" % amount
+	if debt > 0:
+		_fine_toast_text += " - %d BTC ON THE BOOKS" % debt
+	_fine_toast_t = 2.0
+
+
+func _law_cold_cast(who: String, lines: Array) -> void:
+	if not _show_active:
+		_start_show(_caption_steps(lines), false)
+
+
+func _on_person_cold(id: String, _actor: Ep2TownFolk) -> void:
+	if _law != null and _law.suspends_story():
+		return
+	var line: Array = Ep2TownLaw.cold_line_for(id)
+	if not line.is_empty():
+		_caption_line(str(line[0]), str(line[1]))
+
+
+## The chamber exposes the law for evidence and for the later story hand-off.
+func get_town_law() -> Ep2TownLaw: return _law
+
+
+## Called by the story when Lil Blunt leaves town; ownership was never erased.
+func return_firearms() -> void:
+	armory.return_firearms()
+
+
 func get_draw_state() -> String: return _draw_state
 func get_draw_wait() -> float: return _draw_wait
 func get_losses() -> int: return _losses
@@ -2278,6 +2359,8 @@ func _shows_health() -> bool:
 
 ## The street and the two rooms: the building walls (door gaps open into the office and the saloon), the counter, the bar, the props.
 func _collide(p: Vector3) -> Vector3:
+	if _law != null and _law.cell_locked():
+		return _law.confine_cell(p)
 	var c: Vector2 = Ep2GoldTown.collide(Vector2(p.x, p.z), 0.3, _town_col.get("walls", []), _town_col.get("props", []))
 	if _people != null and p.y < 2.0:
 		for person in _people.people:

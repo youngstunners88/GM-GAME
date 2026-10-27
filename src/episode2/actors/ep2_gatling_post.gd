@@ -16,6 +16,8 @@ extends Node3D
 
 signal burst_started
 signal round_fired
+## Every round's trace (origin, direction, what it met) - the town's law reads the rounds that leave the yard.
+signal round_traced(origin: Vector3, direction: Vector3, hit: Dictionary)
 signal plate_rang(index: int)
 signal emptied
 
@@ -338,6 +340,7 @@ func _shoot_one() -> void:
 	var d: Vector3 = _round_direction(o)
 	d = (d + Vector3(_rng.randf_range(-1, 1), _rng.randf_range(-1, 1), _rng.randf_range(-1, 1)) * SPREAD).normalized()
 	var hit: Dictionary = _trace(o, d)
+	round_traced.emit(o, d, hit)
 	var end: Vector3 = hit["point"]
 	if hit.has("index"):
 		_hit_target(int(hit["index"]), hit["point"])

@@ -2,10 +2,13 @@ class_name Ep2ArmoryState
 extends RefCounted
 ## One resource owner per session. Cameras project this state; they never award ammunition.
 signal changed
+signal firearms_returned
 
 const WIN := "winchester_1886"
 const REM := "remington_1875_gold"
 const BOW := "bear_longbow"
+## An equipped mode while the Sheriff holds the irons, never a fourth slot.
+const PICK := "pickaxe"
 const IDS := [WIN, REM, BOW]
 const NAMES := {WIN: "Winchester 1886", REM: "Golden Remington 1875", BOW: "Recovered Bear Bow"}
 const AMMO_TYPES := {WIN: "rifle_round", REM: "revolver_round", BOW: "bear_arrow"}
@@ -44,6 +47,7 @@ const SNIPER := "armory_sniper"
 var owned: Dictionary = {}
 var equipped: String = WIN
 var previous: String = REM
+var firearms_confiscated: bool = false
 var arrows: int = 0
 var corpses: Dictionary = {}
 var sniper_owned: bool = false
@@ -81,6 +85,8 @@ func firearm(id: String) -> Ep2Winchester:
 
 
 func active_gun() -> Ep2Winchester:
+	if equipped == PICK:
+		return firearm(previous if IDS.has(previous) else WIN)
 	return firearm(equipped)
 
 
@@ -101,7 +107,7 @@ func acquire(id: String, source: Ep2Winchester = null) -> bool:
 		gun.reserve = 24 if id == WIN else 0 if id == BOW else 18
 		gun.locked = false
 		gun.reload_locked = false
-	if id == WIN or not owns(equipped):
+	if not firearms_confiscated and (id == WIN or not owns(equipped)):
 		equipped = id
 	changed.emit()
 	return true
@@ -167,8 +173,50 @@ static func post_hideout() -> Ep2ArmoryState:
 	return state
 
 
+## Take the Winchester, Remington and Bow out of circulation at the jailhouse.
+## Ownership, ammunition and purchases are preserved; only selection changes.
+func confiscate_firearms() -> void:
+	if firearms_confiscated:
+		equipped = PICK
+		return
+	var current: Ep2Winchester = active_gun()
+	if current != null:
+		current.cancel_reload()
+		current.set_aim(false)
+	if IDS.has(equipped):
+		previous = equipped
+	firearms_confiscated = true
+	equipped = PICK
+	_switch_t = 0.0
+	changed.emit()
+
+
+## Return the held irons when the story says Lil Blunt leaves town. No weapon
+## is granted that he did not already own, and the pick remains a safe fallback.
+func return_firearms() -> void:
+	if not firearms_confiscated:
+		return
+	firearms_confiscated = false
+	var choice: String = previous if IDS.has(previous) and owns(previous) else ""
+	if choice == "":
+		for id in IDS:
+			if owns(id):
+				choice = id
+				if id == WIN:
+					break
+	if choice == "":
+		equipped = PICK
+		previous = WIN
+	else:
+		equipped = choice
+		previous = REM if choice == WIN else WIN
+	_switch_t = 0.0
+	changed.emit()
+	firearms_returned.emit()
+
+
 func select(id: String) -> bool:
-	if not owns(id) or id == equipped:
+	if firearms_confiscated or not owns(id) or id == equipped:
 		return false
 	active_gun().cancel_reload()
 	active_gun().set_aim(false)
@@ -185,6 +233,8 @@ func select_previous() -> bool:
 
 
 func ready() -> bool:
+	if firearms_confiscated:
+		return equipped == PICK
 	return owns(equipped) and _switch_t <= 0.0
 
 
@@ -224,13 +274,15 @@ func snapshot() -> Dictionary:
 			"locked": gun.locked, "reload_locked": gun.reload_locked, "training_complete": gun.training_complete}
 	return {"version": VERSION, "weapons": weapons, "equipped": equipped, "previous": previous,
 		"arrows": arrows, "corpses": corpses.duplicate(true), "switch_t": _switch_t,
-		"sniper": sniper_owned, "sniper_rounds": sniper_rounds, "river_gear": river_gear}
+		"sniper": sniper_owned, "sniper_rounds": sniper_rounds, "river_gear": river_gear,
+		"confiscated": firearms_confiscated}
 
 
 func restore(data: Dictionary, earned_remington: bool = false) -> void:
 	owned.clear()
 	corpses.clear()
 	arrows = 0
+	firearms_confiscated = false
 	var valid: bool = SaveSafe.to_int(data.get("version", 0)) == VERSION and data.get("weapons") is Dictionary
 	for id in IDS:
 		var gun: Ep2Winchester = firearm(id)
@@ -258,10 +310,17 @@ func restore(data: Dictionary, earned_remington: bool = false) -> void:
 				if records[id] is Dictionary:
 					corpses[str(id)] = {"arrows": clampi(SaveSafe.to_int(records[id].get("arrows", 0)), 0, 100), "searched": bool(records[id].get("searched", false)), "bow": bool(records[id].get("bow", false))}
 	(firearm(BOW) as Ep2Bow).rounds = arrows
-	equipped = str(data.get("equipped", REM if owns(REM) else WIN))
-	if not owns(equipped):
-		equipped = WIN if owns(WIN) else REM if owns(REM) else WIN
-	previous = REM if equipped == WIN else WIN
+	firearms_confiscated = valid and bool(data.get("confiscated", false))
+	var wanted: String = str(data.get("equipped", REM if owns(REM) else WIN))
+	if firearms_confiscated:
+		equipped = PICK
+	else:
+		equipped = wanted
+		if equipped == PICK or not owns(equipped):
+			equipped = WIN if owns(WIN) else REM if owns(REM) else WIN
+	previous = REM if equipped in [WIN, PICK] else WIN
+	if firearms_confiscated and IDS.has(str(data.get("previous", ""))):
+		previous = str(data["previous"])
 	sniper_owned = valid and bool(data.get("sniper", false))
 	sniper_rounds = clampi(SaveSafe.to_int(data.get("sniper_rounds", 0)), 0, RESERVE_CAP) if sniper_owned else 0
 	river_gear = valid and bool(data.get("river_gear", false))

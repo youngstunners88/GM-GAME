@@ -38,7 +38,7 @@ func _ready() -> void:
 
 ## Previewing never changes the ammunition/reload transaction; release commits once in the host.
 func preview(id: String) -> void:
-	if state != null and state.owns(id):
+	if state != null and not state.firearms_confiscated and state.owns(id):
 		highlighted = id
 		queue_redraw()
 
@@ -55,7 +55,7 @@ func _process(_delta: float) -> void:
 	for i in cards.size():
 		cards[i].position = card_rect(i).position
 		cards[i].size = card_rect(i).size
-		cards[i].disabled = state == null or not state.owns(Ep2ArmoryState.IDS[i])
+		cards[i].disabled = state == null or state.firearms_confiscated or not state.owns(Ep2ArmoryState.IDS[i])
 	queue_redraw()
 
 ## The title/purse/ledger geometry is shared by the cards, so the ledger is a
@@ -150,8 +150,7 @@ func _draw() -> void:
 		draw_texture_rect(icon, Rect2(image_rect.get_center() - image_size * 0.5, image_size), false, Color.WHITE if state.owns(id) else Color(.45,.4,.34,.5))
 		var fs: int = mini(16, int(rect.size.x / 22.0)) if compact else mini(20, int(rect.size.x / 15.0))
 		_text(Ep2ArmoryState.NAMES[id].to_upper(),Vector2(rect.get_center().x,rect.position.y+rect.size.y*.75),fs,PAPER,true)
-		var gun: Ep2Winchester = state.firearm(id)
-		var count: String = ("%d ARROWS" % state.arrows if id == Ep2ArmoryState.BOW else "%d LOADED  /  %d RESERVE" % [gun.rounds,gun.reserve]) if state.owns(id) else "RECOVER FROM AN ARCHER" if id == Ep2ArmoryState.BOW else "NOT YET ACQUIRED"
+		var count: String = card_status(id)
 		_text(count,Vector2(rect.get_center().x,rect.position.y+rect.size.y*.86),12 if compact else 14,BRASS,true)
 		var key: String = Ep2ArmoryState.key_label(Ep2ArmoryState.ACTIONS[i])
 		_text(key,rect.position+Vector2(24,32),18,BRASS)
@@ -164,6 +163,20 @@ func _draw() -> void:
 	if compact:
 		hint = "Hold holster · drag to a weapon · release"
 	_text(hint,Vector2(mid,footer_y+49),10 if compact else 13,BRASS,true)
+
+## The ammunition/acquisition line on one card. Confiscated irons stay visible
+## but cannot be previewed or equipped until the Sheriff returns them.
+func card_status(id: String) -> String:
+	if state == null:
+		return ""
+	if state.firearms_confiscated and state.owns(id):
+		return "HELD BY THE SHERIFF"
+	if not state.owns(id):
+		return "RECOVER FROM AN ARCHER" if id == Ep2ArmoryState.BOW else "NOT YET ACQUIRED"
+	if id == Ep2ArmoryState.BOW:
+		return "%d ARROWS" % state.arrows
+	var gun: Ep2Winchester = state.firearm(id)
+	return "%d LOADED  /  %d RESERVE" % [gun.rounds, gun.reserve]
 
 
 ## The purse strip: a leather band under the title with every token he carries and how many faces of it - what Rich (or anyone in

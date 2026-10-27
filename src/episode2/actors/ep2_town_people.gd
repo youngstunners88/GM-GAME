@@ -1,10 +1,13 @@
 class_name Ep2TownPeople
 extends RefCounted
 signal greeted(person_id: String, actor: Ep2TownFolk, count: int)
+signal cold_greeted(person_id: String, actor: Ep2TownFolk)
 ## Independent deterministic ambient brains. All thirteen supplied public figures; the jail prisoner is story-controlled.
 ## No wall-clock timers, external AI, quest dialogue, combat targets or unbounded wandering.
 const GREET_R := 3.6
 const GREET_COOLDOWN := 24.0
+const COLD_CLEARANCE := 2.5
+const COLD_SPEAKERS := ["clerk", "oldtimer", "rancher", "grandma", "youth"]
 const BODY_R := 0.31
 const LOOPING_CLIPS := ["Idle", "Walk", "Observe", "Rest", "Talk", "Inspect", "Alert", "Play", "Cheer", "Clap", "DanceA", "DanceB"]
 ## The celebration after the draw (celebrate()): the ring's radius round Lil Blunt, how far people come from to join, the room kept round
@@ -408,6 +411,9 @@ func _tick_celebration(dt: float) -> void:
 				_end_celebration_for(p)
 
 func _step_one(p: Person, dt: float, player: Vector3) -> void:
+	if p.folk.dead:
+		p.folk.step(dt)
+		return
 	p.greet_cd = maxf(0, p.greet_cd - dt)
 	p.social_cd = maxf(0, p.social_cd - dt)
 	p.fear = maxf(0, p.fear - dt)
@@ -417,6 +423,11 @@ func _step_one(p: Person, dt: float, player: Vector3) -> void:
 		p.parcel_t = maxf(0.0, p.parcel_t - dt)          # never below zero: a saved 0 must restore (restore() bounds it 0..PARCEL_SECONDS)
 		if p.parcel_t <= 0.0: p.folk.drop_prop("Parcel")
 	var before: Vector2 = _pos(p)
+	if _town_cold() and p.fear <= 0.0 and p.state not in SHOP_STATES and p.state not in CEL_STATES:
+		if _cold_avoid(p, dt, player):
+			return
+		if p.id in COLD_SPEAKERS and p.state != "greet" and p.greet_cd <= 0.0 and _pos(p).distance_to(Vector2(player.x, player.z)) < GREET_R:
+			_cold_greet(p, player)
 	if p.state in CEL_STATES:
 		_step_celebration(p, dt, player)
 		if before.distance_to(_pos(p)) < 0.000001: p.folk.step(dt)
@@ -469,6 +480,8 @@ func person(id: String) -> Person:
 	return null
 
 func _near_player(p: Person, player: Vector3) -> bool:
+	if _town_cold():
+		return false
 	return p.greet_cd <= 0 and absf(player.y) < 3.0 and _pos(p).distance_to(Vector2(player.x, player.z)) < GREET_R
 
 func _greet(p: Person, player: Vector3) -> void:
@@ -921,9 +934,42 @@ func _has_clip(p: Person, name: String) -> bool:
 		if key == want or key.ends_with("/" + want) or key.ends_with("|" + want): return true
 	return false
 
-func _body_clear(point: Vector2, owner: Person, player: Vector3) -> bool:
+func _town_cold() -> bool:
+	return GameManager.town_standing == "cold"
+
+
+## After a shooting, people give Lil Blunt a wide berth instead of walking up
+## with their usual greeting. They still carry on with their own errands.
+func _cold_avoid(p: Person, dt: float, player: Vector3) -> bool:
+	var here: Vector2 = _pos(p)
+	var away: Vector2 = here - Vector2(player.x, player.z)
+	if away.length() >= COLD_CLEARANCE:
+		return false
+	if away.length() < 0.01:
+		away = Vector2.RIGHT
+	var candidate: Vector2 = here + away.normalized() * maxf(p.speed * 1.25 * dt, 0.015)
+	if _body_clear(candidate, p, player, false) and navigation.segment_clear(here, candidate):
+		p.folk.walk_to(Vector3(candidate.x, 0.0, candidate.y), p.speed * 1.25)
+		p.folk.step(dt)
+		p.folk.stop()
+	return true
+
+
+func _cold_greet(p: Person, player: Vector3) -> void:
+	p.folk.stop()
+	p.folk.hold_clip("Observe")
+	p.folk.face_point(player)
+	p.state = "greet"
+	p.timer = 1.6
+	p.greet_cd = GREET_COOLDOWN
+	p.memories["player_seen"] = elapsed
+	cold_greeted.emit(p.id, p.folk)
+
+
+func _body_clear(point: Vector2, owner: Person, player: Vector3, respect_cold: bool = true) -> bool:
 	if not navigation.is_clear(point): return false
-	if absf(player.y) < 2.2 and point.distance_to(Vector2(player.x, player.z)) < player_clearance: return false
+	var clearance: float = maxf(player_clearance, COLD_CLEARANCE) if respect_cold and _town_cold() else player_clearance
+	if absf(player.y) < 2.2 and point.distance_to(Vector2(player.x, player.z)) < clearance: return false
 	for other in people:
 		if other == owner: continue
 		if point.distance_to(_pos(other)) < BODY_R * 2.0: return false
