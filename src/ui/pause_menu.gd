@@ -28,6 +28,7 @@ const PAUSE_ACTION := &"pause"
 
 ## Wall-clock moment this pause began (msec), or -1 when not paused.
 var _paused_at_ms: int = -1
+var _run_controls: RunControls
 ## finger index -> the menu Button that finger went down on.
 var _finger_on: Dictionary = {}
 ## Engine frame of the last button activation (see _activate).
@@ -36,6 +37,15 @@ var _last_activation_frame: int = -1
 func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
     hide()
+    if not TouchUi.keys_shown(): get_node("VBox/SaveBtn").hide()
+    var controls := RunControls.new()
+    _run_controls = controls
+    controls.pause_action = toggle
+    controls.save_action = GameManager.save_manual_checkpoint
+    controls.available = func() -> bool: return (StateMachine.is_playing() and not get_tree().paused) or (StateMachine.is_paused() and visible)
+    controls.checkpoint_name = GameManager.checkpoint_label
+    get_parent().add_child.call_deferred(controls)
+    _wire_button("VBox/SaveBtn", _on_save_pressed)
     StateMachine.state_changed.connect(_on_state_changed)
     _wire_button("VBox/ResumeBtn", _on_resume_pressed)
     _wire_button("VBox/RestartBtn", _on_restart_pressed)
@@ -76,6 +86,9 @@ func _on_button_gui_input(event: InputEvent, button: Button, handler: Callable) 
 func _on_state_changed(from: String, to: String) -> void:
     visible = (to == "PAUSED")
     if to == "PAUSED":
+        get_node("VBox/SaveBtn").visible = TouchUi.keys_shown()
+        get_node("VBox/CheckpointLabel").visible = TouchUi.keys_shown()
+        get_node("VBox/CheckpointLabel").text = "Save point: " + GameManager.checkpoint_label()
         _paused_at_ms = Time.get_ticks_msec()
         _finger_on.clear()
         # Keyboard / gamepad parity: arrows + Enter / A work straight away.
@@ -157,3 +170,24 @@ func _credit_paused_time() -> void:
     var level := get_parent()
     if level != null and "level_start_ms" in level:
         level.level_start_ms += spent
+
+func _on_save_pressed() -> void:
+    var ok: bool = GameManager.save_manual_checkpoint()
+    var button := get_node("VBox/SaveBtn") as Button
+    if ok and GameManager.manual_save_status() == 0:
+        button.disabled = true
+        button.text = "Saving…"
+        var started: int = Time.get_ticks_msec()
+        while GameManager.manual_save_status() == 0 and Time.get_ticks_msec() - started < 15000:
+            await get_tree().process_frame
+        ok = GameManager.manual_save_status() == 1
+        button.disabled = false
+    ok = ok and GameManager.manual_save_status() == 1
+    button.text = ("Saved checkpoint" if ok else "Save not confirmed — retry") if TouchUi.keys_shown() else ("✓" if ok else "×")
+
+func _exit_tree() -> void:
+    if is_instance_valid(_run_controls): _run_controls.queue_free()
+
+func _process(_delta: float) -> void:
+    if visible:
+        get_node("VBox/SaveBtn").disabled = GameManager.manual_save_status() == 0

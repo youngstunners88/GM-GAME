@@ -71,6 +71,7 @@ var armory: Ep2ArmoryState = Ep2ArmoryState.new()
 var _armory_save_due: float = -1.0
 var _runner_armory_checkpoint: Dictionary = {}
 var _town_save_due: float = 20.0
+var section_checkpoint: Dictionary = {}
 var _mode: int = Mode.IDLE
 var _active: Node = null
 var _plan: Array = []
@@ -125,6 +126,41 @@ func configure(plan: Array, commit_to_economy: bool = true) -> void:
 	_teardown_active()
 	_mode = Mode.IDLE
 
+func capture_section_checkpoint() -> void:
+	var manager: Node = get_node_or_null("/root/GameManager")
+	if manager == null: return
+	var room: String = _chain_id
+	if _mode == Mode.CHAMBER and room == "": room = str(_plan[_segment].get("chamber", DEFAULT_CHAMBER))
+	var state: Dictionary = manager.session_data().duplicate(true)
+	state["personal_armory"] = armory.snapshot()
+	section_checkpoint = {"version": 1, "episode": 2, "label": "Episode 2 — " + (room.replace("_", " ").capitalize() if room != "" else "mine run %d" % (_segment + 1)), "state": state,
+		"section": {"segment": _segment, "mode": _mode, "room": room, "chain_n": _chain_n,
+		"distance": _completed_distance, "rewarded": _rewarded_chambers.keys(), "totals": _totals.duplicate(true)}}
+
+func restore_section(record: Dictionary) -> bool:
+	if not GameManager.valid_resume(record) or int(record.episode) != 2: return false
+	var section: Dictionary = record.section
+	var segment: int = SaveSafe.to_int(section.get("segment"), -1)
+	if segment < 0 or segment >= _plan.size(): return false
+	_segment = segment
+	_completed_distance = clampf(SaveSafe.to_float(section.get("distance"), 0), 0, 1000000)
+	_chain_n = clampi(SaveSafe.to_int(section.get("chain_n"), 0), 0, 64)
+	_rewarded_chambers.clear()
+	var rewarded: Variant = section.get("rewarded", [])
+	if not rewarded is Array: return false
+	for key in rewarded:
+		var n: int = SaveSafe.to_int(key, -1)
+		if n >= 0 and n < 6500: _rewarded_chambers[n] = true
+	for key in _totals:
+		_totals[key] = maxi(0, SaveSafe.to_int(SaveSafe.to_dict(section.get("totals", {})).get(key), 0))
+	if int(section.mode) == Mode.RUNNER:
+		_enter_runner()
+	else:
+		_chain_id = str(section.room)
+		if not CHAMBER_SCENES.has(_chain_id): return false
+		_enter_chamber()
+	return true
+
 func start() -> void:
 	if _plan.is_empty():
 		return
@@ -175,6 +211,7 @@ func _enter_runner() -> void:
 	r.run_failed.connect(_on_run_failed, CONNECT_ONE_SHOT)
 	_mode = Mode.RUNNER
 	_sync_mouse_mode()
+	capture_section_checkpoint()
 	mode_changed.emit(_mode)
 
 func _enter_chamber() -> void:
@@ -202,6 +239,7 @@ func _enter_chamber() -> void:
 	c.chamber_failed.connect(_on_chamber_failed, CONNECT_ONE_SHOT)
 	_chamber_segment = _segment
 	_mode = Mode.CHAMBER
+	capture_section_checkpoint()
 	mode_changed.emit(_mode)
 
 ## Load the next chamber of a chain in the same segment (no runner in between). If it was built in the background
@@ -253,6 +291,7 @@ func _enter_chamber_chained(segment: int) -> void:
 	c.chamber_failed.connect(_on_chamber_failed, CONNECT_ONE_SHOT)
 	_chamber_segment = segment
 	_mode = Mode.CHAMBER
+	capture_section_checkpoint()
 	mode_changed.emit(_mode)
 
 

@@ -348,6 +348,12 @@ jobs:
           # real Stage 1 and Smoke Lounge, the hero freezes, power-up timers stop draining, Talk and
           # other modals keep their own Escape, a second thumb can tap Resume. It was dead code for
           # as long as it existed (InputEvent has no is_action_just_pressed), so keep it gated.
+          timeout 120 "$GODOT_BIN" --headless res://tests/save_compat_test.tscn > save-compat-tests.log 2>&1
+          grep -q 'SAVE_COMPAT: ALL PASS' save-compat-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' save-compat-tests.log; then exit 1; fi
+          timeout 180 "$GODOT_BIN" --headless res://tests/manual_checkpoint_test.tscn > manual-checkpoint-tests.log 2>&1
+          grep -q 'MANUAL_CHECKPOINT: 28 checks, 0 failed' manual-checkpoint-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' manual-checkpoint-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/pause_menu_test.tscn 2>&1 | tee pause-tests.log
           grep -q 'PAUSE_MENU: ALL PASS' pause-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' pause-tests.log; then exit 1; fi

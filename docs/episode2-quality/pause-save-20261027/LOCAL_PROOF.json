@@ -1,0 +1,31 @@
+{
+  "native_manual_checks": 28,
+  "legacy_save_compatibility": "PASS",
+  "desktop_pause_playtest": "ALL GATES PASS",
+  "phone_sized_browser": {
+    "done": true,
+    "reloads": 2,
+    "errors": [],
+    "checks": [
+      "[PASS] exported Episode1 Save writes the checkpoint",
+      "[PASS] exported Episode1 Save preserves pause",
+      "[PASS] browser confirms durable checkpoint",
+      "[PASS] browser reload preserves Episode1 manual checkpoint",
+      "[PASS] actual menu Continue restores Episode1 stage and checkpoint",
+      "[PASS] exported Episode2 visible Save writes later section",
+      "[PASS] rolling autosave keeps the explicit checkpoint immutable",
+      "[PASS] browser confirms durable checkpoint",
+      "[PASS] second browser reload preserves Episode2 checkpoint",
+      "[PASS] actual menu Continue restores saved lake rather than new run",
+      "[PASS] exported ammo and reward guards survive reload",
+      "[PASS] restored lake begins without duplicate staging",
+      "[PASS] blocked browser storage reports failure",
+      "[PASS] blocked browser storage preserves previous checkpoint"
+    ]
+  },
+  "real_phone": "Not tested on hardware",
+  "title_lock_files": 5,
+  "security": "No blockers at high",
+  "release": "pending",
+  "note": "Browser uses actual exported code/resources through an excluded external fixture; source changed afterward only to preserve empty legacy objects, covered by28 native checks. Exact final export/public replay follows."
+}

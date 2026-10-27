@@ -82,6 +82,7 @@ func _ready() -> void:
 	# stays here so it still persists everything ELSE _ready() has set up by
 	# this point (checkpoint state, HUD-visible stats), not just current_level.
 	if level_data and level_data.level_index >= 1:
+		GameManager.capture_stage_checkpoint()
 		GameManager.save_session()
 	StateMachine.change_state(StateMachine.State.PLAYING)
 	# S10 T6/T7 — test-only boss warp, fired after the whole _ready chain (incl.

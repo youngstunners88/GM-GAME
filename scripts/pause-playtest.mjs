@@ -47,10 +47,11 @@ const report = { url: gameUrl, profiles: {}, passed: false };
 
 // Menu geometry in Godot canvas units (1280x720 base, scale-to-fit "expand"): VBox is centred, rows are
 // Title / Resume / Restart / Talk / Quit, 4px apart. Clicks are placed from these and CHECKED by screenshot.
-const ROW_Y = { resume: 322, restart: 357, talk: 392, quit: 427 };
+const DESKTOP_ROW_Y = { resume: 282, save: 334, restart: 386, talk: 438, quit: 490 };
 
 async function runProfile(browser, key) {
   const p = PROFILES[key];
+  const ROW_Y = p.touch ? { resume: 296, restart: 348, talk: 400, quit: 452 } : DESKTOP_ROW_Y;
   const res = { label: p.label, gates: {}, errors: [], shots: [] };
   report.profiles[key] = res;
   const gate = (name, ok, detail = '') => {
