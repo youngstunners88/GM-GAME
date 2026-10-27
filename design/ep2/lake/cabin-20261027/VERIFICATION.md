@@ -1,6 +1,6 @@
 # Cabin verification
 
-2026-10-27; source integration, production deployment pending.
+2026-10-27; production deployed and public resources verified; BUILD2026-10-27-675859d.
 
 - Pinned Godot 4.3 native cabin 26, lake art 23, original lake story, script compilation and save compatibility pass.
 - Actual player cameras: seven cabin/return views inspected, with legible logos, exact sentence, original wanted bills, supported pans/nuggets/reserves and visible source gable.
