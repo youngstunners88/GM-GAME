@@ -31,6 +31,11 @@
       "name": "Lil Blunt",
       "source": "Existing protagonist, unchanged"
     },
+    "dude": {
+      "voice_id": "Pe1gOSDKAuczOZqgCiEm",
+      "name": "Dude",
+      "source": "Existing stable owner voice, unchanged"
+    },
     "clerk": {
       "voice_id": "cjVigY5qzO86Huf0OWal"
     },
@@ -533,6 +538,81 @@
       "id": "town_drinks_04",
       "speaker": "inferno",
       "text": "We'll lie low a little while and meet up later. Stay out of trouble."
+    },
+    {
+      "id": "dude_ranch_01",
+      "speaker": "dude",
+      "text": "Easy there, friend. Name's Dude."
+    },
+    {
+      "id": "dude_ranch_02",
+      "speaker": "dude",
+      "text": "These are my horses. I sell to folks with business; the Minister knows me."
+    },
+    {
+      "id": "dude_ranch_03",
+      "speaker": "dude",
+      "text": "Long road, huh? Here, one of Dude's Chill Buds, grown right here on the ranch. A gift for the trail. Stay chill."
+    },
+    {
+      "id": "dude_ranch_04",
+      "speaker": "dude",
+      "text": "Anything else? Two Chill Buds for one BTC, partner. Good little road companions."
+    },
+    {
+      "id": "dude_ranch_05",
+      "speaker": "dude",
+      "text": "Pleasure. Two fresh Chill Buds, tucked safe in your tabs. Enjoy the easy road."
+    },
+    {
+      "id": "dude_ranch_06",
+      "speaker": "dude",
+      "text": "No worries. Come back when your purse is heavier; the buds keep, and so does the welcome."
+    },
+    {
+      "id": "dude_ranch_07",
+      "speaker": "lil_blunt",
+      "text": "Name's Lil Blunt. Minister Mike Dean told me to get a horse here."
+    },
+    {
+      "id": "dude_ranch_08",
+      "speaker": "dude",
+      "text": "Mike Dean sent you? Then you're good folk. A saddled horse is two BTC."
+    },
+    {
+      "id": "dude_ranch_09",
+      "speaker": "lil_blunt",
+      "text": "Two BTC? That's a steep climb for a ride, Dude."
+    },
+    {
+      "id": "dude_ranch_10",
+      "speaker": "dude",
+      "text": "Fair haggle. Two even, no fooling. That's the friend price, and she's worth it."
+    },
+    {
+      "id": "dude_ranch_11",
+      "speaker": "dude",
+      "text": "Deal. Two BTC, square and easy. She's yours, partner. Treat her gentle."
+    },
+    {
+      "id": "dude_ranch_12",
+      "speaker": "dude",
+      "text": "Short on coin? Take her on credit until the auction. Two BTC later. Mike's people are good for it."
+    },
+    {
+      "id": "dude_ranch_13",
+      "speaker": "dude",
+      "text": "First go to Logan's Lake so your horse can drink and cool down in this heat. It's on the map."
+    },
+    {
+      "id": "dude_ranch_14",
+      "speaker": "dude",
+      "text": "Anything else, partner? Your horse is ready when you are. No hurry around here."
+    },
+    {
+      "id": "dude_ranch_15",
+      "speaker": "dude",
+      "text": "Remember: Logan's Lake first. Let her drink and cool down. It's right there on the map."
     }
   ],
   "greetings": {

@@ -269,7 +269,7 @@ func _step_town_audio() -> void:
 
 func _town_speaker(who: String) -> String:
 	return {"RICH": "rich", "UTAH": "utah", "SHERIFF": "sheriff", "ACCOMPLICE": "prisoner", "LIL BLUNT": "lil_blunt",
-		"MIKE DEAN": "minister"}.get(who, who.to_lower())
+		"MIKE DEAN": "minister", "DUDE": "dude"}.get(who, who.to_lower())
 
 
 func _town_line(who: String, text: String) -> void:
@@ -956,8 +956,9 @@ func _on_setup() -> void:
 		if handoff.get("stable_yard") is Dictionary:
 			_stable_yard.restore(handoff["stable_yard"])
 		_stable_yard.voice_line_requested.connect(func(id: String, voice: String) -> void:
-			stable_voice_requested.emit(id, voice)
-			_speak(id)) # Placeholder id only; no story text, currency, or invented recording.
+			stable_voice_requested.emit(id, voice))
+		_stable_yard.conversation_line.connect(_on_stable_line)
+		_stable_yard.horse_bought.connect(_on_stable_horse_bought)
 	_rng.seed = 1886
 	if _hud:
 		_hud.show_health = false
@@ -1617,6 +1618,28 @@ func _tick(delta: float) -> void:
 
 func _stable_interaction_allowed() -> bool:
 	return _beat not in [Beat.BAR, Beat.SQUARE_UP, Beat.DRAW, Beat.GEARED, Beat.DONE] and _hold <= 0.0 and not _show_active and not _shop_open and not (_intro != null and _intro.is_busy())
+
+
+func _on_stable_line(who: String, text: String, id: String, _voice: String) -> void:
+	var seconds: float = _read_seconds(text)
+	if id != "" and Ep2TownVoiceBank.LINES.has(id):
+		seconds = maxf(seconds, Ep2TownVoiceBank.seconds(id) + 0.3)
+	if _hud != null:
+		_hud.toast("%s: %s" % [who, text], seconds)
+	if id != "":
+		line_spoken.emit(id)
+		if Ep2TownVoiceBank.LINES.has(id):
+			if _town_audio != null: _town_audio.silence_greeting()
+			var recording: AudioStream = Ep2TownVoiceBank.stream(id)
+			if recording != null:
+				var am: Node = get_node_or_null("/root/AudioManager")
+				if am != null: am.play_voice(id, recording)
+	captioned.emit(who, text)
+
+
+func _on_stable_horse_bought(_paid: int, _credit: int) -> void:
+	if _hud != null:
+		_hud.objective = "Take your horse to Logan's Lake first so she can drink and cool down. It's on the map."
 
 
 func _wants_handoff() -> bool:

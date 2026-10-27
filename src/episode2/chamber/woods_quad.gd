@@ -183,6 +183,9 @@ var _rock_mesh: Mesh = null
 var _wildlife: Ep2Wildlife = null
 var _people: Ep2TownPeople = null                   # the townsfolk: already living in their town while the quad rolls in
 var _stable_yard: Ep2StableYard = null
+var _stable_prompt_shown: bool = false
+signal stable_voice_requested(line_id: String, voice_id: String)
+signal stable_captioned(who: String, text: String)
 var _exit_kit: Node3D = null                          # the mine-lift walkway kit, for the mine exit + bridge
 ## "golden" = golden hour (founder bear stills 2026-10-10b; Jev 0.54 / microsoft-decision-1 0.58 chose it on the closeness table),
 ## "" = the old-growth daylight of the earlier forest target. Set before setup().
@@ -1547,8 +1550,13 @@ func _tick(delta: float) -> void:
 	if _hud != null:
 		if not _hud.search_requested.is_connected(_search_nearby):
 			_hud.search_requested.connect(_search_nearby)
-		var body: Ep2BearBrain = _nearby_corpse()
-		_hud.set_search_prompt("Search %s [E]" % body.display_name() if body != null else "")
+		var dude_prompt: bool = _stable_interaction_allowed() and _stable_yard != null and _stable_yard.can_talk(_player_pos)
+		if dude_prompt:
+			_hud.set_search_prompt("Talk to Dude [E]" if TouchUi.keys_shown() else "Talk to Dude")
+		else:
+			var body: Ep2BearBrain = _nearby_corpse()
+			_hud.set_search_prompt("Search %s [E]" % body.display_name() if body != null else "")
+		_stable_prompt_shown = dude_prompt
 	if _failing:
 		_tick_fail(delta)
 		return
@@ -2636,6 +2644,12 @@ func _collide(p: Vector3) -> Vector3:
 		q.x = clampf(c.x, -30.0, 30.0)
 		q.z = clampf(c.y, Ep2GoldTown.TOWN_Z - 30.0, Ep2GoldTown.TOWN_Z + 90.0)
 		return q
+	# A player already out on the desert road (including a handed-off ranch
+	# approach) uses the real town/yard walls and props rather than being pulled
+	# back into the near wood. The ordinary sneak keeps its original boundary.
+	if _player_pos.z > FOREST_END_Z:
+		var ranch: Vector2 = Ep2GoldTown.collide(Vector2(q.x, q.z), 0.3, _town_col.get("walls", []), _town_col.get("props", []))
+		return Vector3(clampf(ranch.x, -40.0, 40.0), p.y, clampf(ranch.y, FOREST_END_Z, Ep2GoldTown.TOWN_Z - 30.0))
 	q.x = clampf(q.x, -110.0, 110.0)
 	q.z = clampf(q.z, -5.0, QUAD_POS.z + 40.0)
 	for t in _trees_near(Vector2(q.x, q.z), 1):
@@ -2739,12 +2753,42 @@ func get_cart_node() -> Node3D: return _cart
 func _build_town() -> void:
 	_town_col = Ep2GoldTown.build(_visuals, false)
 	_stable_yard = _visuals.find_child("StableYard", true, false) as Ep2StableYard
+	_wire_stable_yard()
 	# It is THEIR town (founder 2026-10-22): the people are out in the street before Lil Blunt arrives, not spawned
 	# after the drop-off. Their whole state is handed to the town chamber at the cut (get_handoff -> "town_people").
 	_people = Ep2TownPeople.new()
 	_people.configure_space(_town_col)
 	_people.build(_visuals)
 	_people.player_clearance = 1.6                    # the quad is wider than a man on foot
+
+
+func _wire_stable_yard() -> void:
+	if _stable_yard == null: return
+	_stable_yard.voice_line_requested.connect(func(id: String, voice: String) -> void:
+		stable_voice_requested.emit(id, voice))
+	_stable_yard.conversation_line.connect(_on_stable_line)
+	_stable_yard.horse_bought.connect(_on_stable_horse_bought)
+
+
+func _on_stable_line(who: String, text: String, id: String, _voice: String) -> void:
+	var seconds: float = clampf(1.3 + float(text.length()) * 0.052, 2.4, 6.2)
+	if id != "" and Ep2TownVoiceBank.LINES.has(id):
+		seconds = maxf(seconds, Ep2TownVoiceBank.seconds(id) + 0.3)
+	if _hud != null:
+		_hud.toast("%s: %s" % [who, text], seconds)
+	if id != "":
+		line_spoken.emit(id)
+		if Ep2TownVoiceBank.LINES.has(id):
+			var recording: AudioStream = Ep2TownVoiceBank.stream(id)
+			if recording != null:
+				var am: Node = get_node_or_null("/root/AudioManager")
+				if am != null: am.play_voice(id, recording)
+	stable_captioned.emit(who, text)
+
+
+func _on_stable_horse_bought(_paid: int, _credit: int) -> void:
+	if _hud != null:
+		_hud.objective = "Take your horse to Logan's Lake first so she can drink and cool down. It's on the map."
 
 
 ## Gold-rush country between the last pines and the town (Ep2GoldTown.build_desert - the same scrub, rocks and mesas the town chamber
@@ -2966,7 +3010,13 @@ func _search_nearby() -> void:
 	start_rig()
 
 
+func _stable_interaction_allowed() -> bool:
+	return has_player_control() and not _riding and _glide.is_empty() and not _failing
+
+
 func start_rig(_mode: String = "eth") -> bool:
+	if _stable_yard != null and _stable_interaction_allowed() and _stable_yard.try_talk(_player_pos):
+		return true
 	var body: Ep2BearBrain = _nearby_corpse()
 	if body == null:
 		return false
