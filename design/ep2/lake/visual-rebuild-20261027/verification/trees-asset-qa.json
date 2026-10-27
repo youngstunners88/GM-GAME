@@ -1,0 +1,73 @@
+{
+  "ok": true,
+  "pass": true,
+  "errors": [],
+  "warnings": [
+    "FirA_Wood: ~100.0% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+    "FirA_Wood: duplicate verts=2012 loose verts=0",
+    "FirA_Needles: ~100.0% UV overlap (ok only if mirrored/stacked on purpose; bakes break)",
+    "FirA_Needles: duplicate verts=2212 loose verts=0",
+    "asset lowest point z=-0.0119 (not resting on ground plane z=0)"
+  ],
+  "ground_z": -0.0119,
+  "zfighting": [],
+  "floating": [],
+  "back_to_back": [],
+  "enclosed": [],
+  "objects": {
+    "FirA_Wood": {
+      "verts": 4024,
+      "faces": 1006,
+      "tris": 2012,
+      "ngons": 0,
+      "boundary_edges": 4024,
+      "nonmanifold_edges": 0,
+      "wire_edges": 0,
+      "loose_verts": 0,
+      "degenerate_faces": 0,
+      "zero_length_edges": 0,
+      "inconsistent_normals_edges": 0,
+      "duplicate_verts": 2012,
+      "islands": 1006,
+      "inside_out_islands": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materials": 1,
+      "uv_maps": 1,
+      "uv_oob_pct": 36.03,
+      "uv_zero_area_faces": 0,
+      "uv_overlap_pct": 100.0,
+      "uv_coverage_pct": 100.0
+    },
+    "FirA_Needles": {
+      "verts": 8848,
+      "faces": 2212,
+      "tris": 4424,
+      "ngons": 0,
+      "boundary_edges": 8848,
+      "nonmanifold_edges": 0,
+      "wire_edges": 0,
+      "loose_verts": 0,
+      "degenerate_faces": 0,
+      "zero_length_edges": 0,
+      "inconsistent_normals_edges": 0,
+      "duplicate_verts": 2212,
+      "islands": 2212,
+      "inside_out_islands": 0,
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "materials": 1,
+      "uv_maps": 1,
+      "uv_oob_pct": 0.0,
+      "uv_zero_area_faces": 0,
+      "uv_overlap_pct": 100.0,
+      "uv_coverage_pct": 100.0
+    }
+  }
+}

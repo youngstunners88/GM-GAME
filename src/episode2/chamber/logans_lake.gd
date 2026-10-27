@@ -25,6 +25,8 @@ var _dialogue: Label
 var _dialogue_panel: PanelContainer
 var _marker_label: Label3D
 var _stage_calls: int = 0
+var _landscape := Ep2LakeLandscape.new()
+var _skiff: Ep2LoganSkiff
 
 func _init() -> void:
 	title_card = "LOGAN'S LAKE"
@@ -34,85 +36,45 @@ func _init() -> void:
 
 func _chamber_id() -> String: return "logans_lake"
 func _beat_label(b: int) -> String: return Beat.keys()[clampi(b, 0, Beat.size() - 1)]
-func _build_steps() -> Array: return [_light, _land, _water, _shore, _vegetation, _people]
+func _build_steps() -> Array: return [_light, _land, _water, _shore, _vegetation, _people, _build_skiff]
 
 func _light() -> void:
 	var env := Environment.new()
 	_env_node.environment = env
-	Ep2GoldTown.apply_desert_grade(env, _sun, 0.18)
-	env.ambient_light_color = Color(0.57, 0.69, 0.77)
-	env.ambient_light_energy = 0.65
-	env.fog_light_color = Color(0.62, 0.72, 0.75)
-	env.fog_density = 0.0025
-	_sun.rotation_degrees = Vector3(-32, -34, 0)
-	_sun.light_color = Color(1, 0.87, 0.68)
-	_sun.light_energy = 1.2
-	_sun.directional_shadow_max_distance = 85
+	env.background_mode = Environment.BG_SKY
+	var sky := Sky.new()
+	var sky_mat := ProceduralSkyMaterial.new()
+	sky_mat.sky_top_color = Color(0.32, 0.48, 0.58)
+	sky_mat.sky_horizon_color = Color(0.71, 0.77, 0.76)
+	sky_mat.ground_horizon_color = Color(0.42, 0.48, 0.39)
+	sky_mat.ground_bottom_color = Color(0.10, 0.14, 0.09)
+	sky_mat.sun_angle_max = 4.0
+	sky.sky_material = sky_mat
+	env.sky = sky
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color = Color(0.53, 0.65, 0.63)
+	env.ambient_light_energy = 0.55
+	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	env.fog_enabled = true
+	env.fog_light_color = Color(0.60, 0.69, 0.65)
+	env.fog_density = 0.0015
+	_sun.rotation_degrees = Vector3(-31, -34, 0)
+	_sun.light_color = Color(1.0, 0.88, 0.70)
+	_sun.light_energy = 1.25
+	_sun.shadow_enabled = true
+	_sun.directional_shadow_max_distance = 90.0
 
 static func path_height(z: float) -> float:
-	return clampf((z - 33.0) / 28.0, 0.0, 1.0) * 6.0
+	return Ep2LakeLandform.path_height(z)
 
 static func terrain_height(x: float, z: float) -> float:
-	var lake: float = Vector2((x - 24.0) / 27.0, (z - 20.0) / 33.0).length()
-	if lake < 1.0 or (z > 44.0 and absf(x - 24.0) < 5.0):
-		return -2.5
-	if x > -16.0 and x < -2.5 and z > -18.0 and z < 68.0:
-		return path_height(z)
-	var shore: float = smoothstep(1.0, 1.28, lake)
-	var hill: float = maxf(0.0, absf(x - 20.0) - 42.0) * 0.28
-	return shore * (0.2 + hill + maxf(0.0, z - 70.0) * 0.08 + (sin(x * 0.09) * cos(z * 0.08) + 1.0) * hill * 0.5)
+	return Ep2LakeLandform.terrain_height(x, z)
 
 func _land() -> void:
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for ix in range(100):
-		for iz in range(100):
-			var x: float = -130.0 + ix * 3.0
-			var z: float = -100.0 + iz * 3.0
-			for uv in [Vector2(0, 0), Vector2(1, 0), Vector2(0, 1), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)]:
-				var px: float = x + uv.x * 3.0
-				var pz: float = z + uv.y * 3.0
-				st.set_uv(Vector2(px, pz) * 0.13)
-				st.add_vertex(Vector3(px, terrain_height(px, pz) - 0.02, pz))
-	st.generate_normals()
-	var mi := MeshInstance3D.new()
-	mi.name = "ShoreAndMountain"
-	mi.mesh = st.commit()
-	mi.material_override = _tex("res://src/episode2/assets/woods/tex_woods_floor.jpg", Color(0.70, 0.67, 0.52), 1.0)
-	_visuals.add_child(mi)
-	# The walked trail has a continuous slope independent of the coarse landscape grid.
-	for z in range(-16, 65):
-		var y: float = path_height(z + 0.5)
-		var plank := _box(Vector3(8.0, 0.08, 1.03), Vector3(-8, y - 0.04, z + 0.5), _tex("res://src/episode2/assets/town/tex_desert.jpg", Color(0.63, 0.57, 0.44), 0.5))
-		plank.rotation.x = -atan2(path_height(z + 1.0) - path_height(z), 1.0)
+	_landscape.build_ground(_visuals)
 
 func _water() -> void:
-	var material := ShaderMaterial.new()
-	material.shader = load("res://src/episode2/art/water_river.gdshader")
-	material.set_shader_parameter("flow_speed", 0.12)
-	material.set_shader_parameter("deep_color", Vector3(0.025, 0.16, 0.18))
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for i in 96:
-		for a in [-1.0, float(i) / 96.0 * TAU, float(i + 1) / 96.0 * TAU]:
-			var p: Vector2 = Vector2.ZERO if a < 0.0 else Vector2(cos(a), sin(a))
-			st.set_normal(Vector3.UP)
-			st.set_uv(p * 0.5 + Vector2(0.5, 0.5))
-			st.add_vertex(Vector3(24 + p.x * 27, -0.18, 20 + p.y * 33))
-	var lake := MeshInstance3D.new()
-	lake.name = "StillWater"
-	lake.mesh = st.commit()
-	lake.material_override = material
-	lake.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_visuals.add_child(lake)
-	var river := MeshInstance3D.new()
-	river.name = "Day88Outflow"
-	var pm := PlaneMesh.new()
-	pm.size = Vector2(10, 100)
-	river.mesh = pm
-	river.position = Vector3(24, -0.17, 94)
-	river.material_override = material
-	_visuals.add_child(river)
+	_landscape.build_water(_sun)
 
 func _sign(words: String, p: Vector3, width: float = 2.6) -> Label3D:
 	var wood: Material = _tex(TIMBER_TEX, Color(0.50, 0.33, 0.18), 0.5)
@@ -134,6 +96,7 @@ func _shore() -> void:
 	dock.name = "StagingDock"
 	dock.position = Vector3(0, 0, 10)
 	_visuals.add_child(dock)
+	_landscape.register_dock(dock)
 	_sign("LOGAN'S LAKE", Vector3(-4.1, 0, -7), 3.2)
 	_sign("RIVER OVERLOOK  >", Vector3(-4, path_height(34), 34), 3.3)
 	_marker = Node3D.new()
@@ -158,55 +121,7 @@ func _shore() -> void:
 	_sign("DAY-88 RIVER", Vector3(-3.8, 6.0, 61), 2.9)
 
 func _vegetation() -> void:
-	var kit: Node = (load("res://src/episode2/assets/woods/forest_kit.glb") as PackedScene).instantiate()
-	var bark: Material = _tex("res://src/episode2/assets/woods/tex_woods_bark.jpg", Color(0.72, 0.64, 0.54), 0.42)
-	var leaves := ShaderMaterial.new()
-	leaves.shader = load("res://src/episode2/art/ep2_foliage_wind.gdshader")
-	leaves.set_shader_parameter("albedo_tex", load("res://src/episode2/assets/woods/tex_woods_branch.png"))
-	leaves.set_shader_parameter("tint", Color(0.80, 0.90, 0.72))
-	leaves.set_shader_parameter("sway", 0.16)
-	leaves.set_shader_parameter("bend_height", 40.0)
-	leaves.set_shader_parameter("flutter", 0.03)
-	var transforms: Dictionary = {"Trunk": [], "Crown": []}
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 1886
-	for i in 95:
-		var a: float = rng.randf_range(-PI, PI)
-		var radius: float = rng.randf_range(1.22, 2.4)
-		var x: float = 24 + cos(a) * 29 * radius
-		var z: float = 20 + sin(a) * 35 * radius
-		if (x > -18 and x < 0) or (z > 44 and absf(x - 24) < 10):
-			continue
-		var h: float = rng.randf_range(8, 18)
-		for piece in ["Trunk", "Crown"]:
-			var template := kit.find_child(piece, true, false) as MeshInstance3D
-			if template == null: continue
-			var size: Vector3 = Vector3(0.38, h, 0.38) if piece == "Trunk" else Vector3.ONE * h / 40.0
-			transforms[piece].append(Transform3D(Basis(Vector3.UP, a).scaled(size), Vector3(x, terrain_height(x, z), z)))
-	for piece in transforms:
-		var template := kit.find_child(piece, true, false) as MeshInstance3D
-		if template == null: continue
-		var mm := MultiMesh.new()
-		mm.transform_format = MultiMesh.TRANSFORM_3D
-		mm.mesh = template.mesh
-		mm.instance_count = transforms[piece].size()
-		for i in mm.instance_count: mm.set_instance_transform(i, transforms[piece][i])
-		var trees := MultiMeshInstance3D.new()
-		trees.multimesh = mm
-		trees.material_override = bark if piece == "Trunk" else leaves
-		_visuals.add_child(trees)
-	kit.free()
-	# Shore boulders frame the lake, leaving the walking trail and sightline clear.
-	var rock := load("res://src/episode2/assets/woods/woods_rock.glb") as PackedScene
-	for i in 25:
-		var a: float = float(i) / 25.0 * TAU
-		var x: float = 24 + cos(a) * 29
-		var z: float = 20 + sin(a) * 35
-		if x < 0 or (z > 43 and absf(x - 24) < 11): continue
-		var r: Node3D = rock.instantiate()
-		r.position = Vector3(x, terrain_height(x, z) - 0.3, z)
-		r.scale = Vector3.ONE * rng.randf_range(0.6, 1.6)
-		_visuals.add_child(r)
+	_landscape.build_vegetation(_visuals)
 
 func _people() -> void:
 	# Keep the supplied skin intact in the existing streamed pack. A slow download
@@ -225,6 +140,12 @@ func _people() -> void:
 			if str(name).to_lower().contains("idle"):
 				ap.get_animation(name).loop_mode = Animation.LOOP_LINEAR
 
+func _build_skiff() -> void:
+	if _skiff == null and _logan != null and Ep2Extras.has(Ep2LoganSkiff.MODEL):
+		_skiff = Ep2LoganSkiff.new()
+		_skiff.build(_visuals, _logan, _landscape.water_material)
+		_skiff.reset_routine()
+
 func _on_setup() -> void:
 	print("[EP2] Logan lake started")
 	_player_pos = SPAWN
@@ -239,6 +160,7 @@ func _on_setup() -> void:
 	_marker_label.text = "STAGED CARGO"
 	_cargo.position = Vector3(24, -0.08, 49)
 	if _logan != null: _logan.hold_clip("Idle")
+	if _skiff != null: _skiff.reset_routine()
 	Ep2Extras.start(self)
 	_vm.set_world_shadows(false)
 	_vm.set_own_light(0.65, _sun)
@@ -319,6 +241,7 @@ func start_rig(_payment: String = "") -> bool:
 	return false
 
 func _tick(delta: float) -> void:
+	_landscape.refresh_streamed()
 	_set_ground(path_height(_player_pos.z))
 	if _logan == null:
 		_people()
@@ -327,6 +250,7 @@ func _tick(delta: float) -> void:
 			_hud.set_search_prompt("Loading interrupted. Retry [E]" if Ep2Extras.state() == "failed" else "")
 			return
 		_hud.objective = "Logan's Lake · Meet Logan at the shore."
+	_build_skiff()
 	_logan.step(delta)
 	if _player_pos.distance_to(LOGAN_MARK) < 7:
 		_logan.face_point(_player_pos)
@@ -354,7 +278,10 @@ func _tick(delta: float) -> void:
 	_hud.set_search_prompt(prompt)
 	if _staged:
 		_cargo.position.z = minf(72, _cargo.position.z + delta * 0.35)
+		_cargo.position.x = Ep2LakeLandform.flow_center(_cargo.position.z)
 		_cargo.rotation.z = sin(_elapsed * 0.8) * 0.012
+	if _skiff != null:
+		_skiff.advance(delta, _staged and _talk_t <= 0.0)
 	if _beat == Beat.HANDOFF and _player_pos.z > 59:
 		_advance_to(Beat.OVERLOOK)
 
