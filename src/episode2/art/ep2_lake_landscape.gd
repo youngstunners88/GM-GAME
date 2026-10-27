@@ -139,6 +139,12 @@ func build_vegetation(parent: Node3D) -> void:
 		if i < 6:
 			x = -17.0 - float(i % 2) * 3.0
 			z = -8.0 + float(i) * 13.0
+		# Continue the woodland downstream; avoid both the channel and the
+		# overlook's near-camera crown envelope.
+		if i >= 145:
+			z = rng.randf_range(64.0, 140.0)
+			x = Ep2LakeLandform.flow_center(z) + (-1.0 if i % 2 == 0 else 1.0) * rng.randf_range(12.0, 27.0)
+		if x > -25.0 and x < 10.0 and z > 51.0 and z < 73.0: continue
 		if (x > -16.0 and x < -1.5) or (z > 45.0 and absf(x - Ep2LakeLandform.flow_center(z)) < 11.0): continue
 		if radius < 1.45 and sin(a * 5.0 + 0.6) > 0.6 and i % 3 != 0: continue
 		var kind: int = i % 3
@@ -238,9 +244,11 @@ func _understory(kit: Node3D, rng: RandomNumberGenerator) -> void:
 			x = rng.randf_range(-6.0, -3.0)
 			if absf(z - 8.0) < 3 or absf(z - 17.0) < 3: continue
 		elif Ep2LakeLandform.lake_radius(x, z) < 1.11 or (x > -14 and x < -2.5): continue
-		var s: float = rng.randf_range(.55, 1.25)
+		var s: float = rng.randf_range(.55, 1.25) * (.58 if i >= 280 else 1.0)
 		transforms.append(Transform3D(Basis(Vector3.UP, rng.randf_range(-PI, PI)).scaled(Vector3.ONE * s), Vector3(x, Ep2LakeLandform.terrain_height(x, z), z)))
-	_instances(flora, fern.mesh, transforms, _foliage("res://src/episode2/assets/woods/tex_woods_fern.png", 1.0, .045), "ShoreFerns")
+	var fern_material := _foliage("res://src/episode2/assets/woods/tex_woods_fern.png", 1.0, .045)
+	fern_material.set_shader_parameter("tint", Color(.58,.70,.51))
+	_instances(flora, fern.mesh, transforms, fern_material, "ShoreFerns")
 	fern_kit.free()
 
 func _shore_rocks_and_logs(rng: RandomNumberGenerator) -> void:

@@ -34,7 +34,8 @@ static func terrain_height(x: float, z: float) -> float:
 	if z > 46.0:
 		var d: float = absf(x - flow_center(z))
 		var bank: float = -1.9 + smoothstep(flow_width(z) * 0.52, flow_width(z) + 3.0, d) * 2.65
-		terrain = lerpf(terrain, minf(terrain, bank), smoothstep(46.0, 54.0, z))
+		var channel_blend: float = 1.0 - smoothstep(flow_width(z) + 3.0, flow_width(z) + 12.0, d)
+		terrain = lerpf(terrain, minf(terrain, bank), smoothstep(46.0, 54.0, z) * channel_blend)
 	# A continuous hillside supports the existing six-metre overlook trail.
 	if z > 30.0 and x > -28.0 and x < 8.0:
 		var blend: float = 1.0 - smoothstep(3.0, 18.0, absf(x + 8.0))

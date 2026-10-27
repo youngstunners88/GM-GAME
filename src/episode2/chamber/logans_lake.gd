@@ -118,7 +118,7 @@ func _shore() -> void:
 		_box(Vector3(0.18, 0.65, 5.3), Vector3(x, 0.26, 0), wood, _cargo)
 	for z in [-1.4, 0, 1.4]:
 		_box(Vector3(1.6, 0.9, 1.1), Vector3(0, 0.55, z), wood, _cargo)
-	_sign("DAY-88 RIVER", Vector3(-3.8, 6.0, 61), 2.9)
+	_sign("DAY-88 RIVER", Vector3(-4.5, path_height(56), 56), 2.9)
 
 func _vegetation() -> void:
 	_landscape.build_vegetation(_visuals)

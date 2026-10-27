@@ -1,0 +1,6 @@
+PASS script_compile
+PASS save_compat
+PASS ep2_door_stride
+PASS ep2_exit_bridge
+PASS ep2_quad_music
+PASS ep2_lake_art

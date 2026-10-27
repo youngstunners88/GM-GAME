@@ -1,0 +1,3 @@
+ROWING_METRICS palms=0.00000519834884 seat=0.0000010699822 feet=0.00000215984619 limb_length=0.00000232458115 power_blade=-0.22872413694859 recovery_blade=0.07349250465631
+[PASS] armory pause freezes boat travel, stroke clock and actor routine
+LAKE_ART: 23 checks, 0 failed
