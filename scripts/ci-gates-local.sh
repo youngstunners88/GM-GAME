@@ -10,6 +10,9 @@ set -uo pipefail
 cd "$(git rev-parse --show-toplevel)"
 G="${GODOT_BIN:-.godot-cache/Godot_v4.3-stable_linux.x86_64}"
 [ -x "$G" ] || { echo "✗ pinned Godot 4.3 missing ($G): run scripts/bootstrap-godot.sh"; exit 2; }
+# One Godot at a time on this 7 GB box: offloaded-packet verifies (.farm/verify.sh) take the same lock.
+exec 9>/tmp/gm-godot.lock
+flock 9
 WF=.github/workflows/export-game.yml
 start=$(grep -n -- '--script res://tests/portal_room_test.gd' "$WF" | head -1 | cut -d: -f1)
 end=$(grep -n 'sudo apt-get update -qq' "$WF" | awk -F: -v s="$start" '$1>s{print $1; exit}')

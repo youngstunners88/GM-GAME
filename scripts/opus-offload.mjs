@@ -262,7 +262,8 @@ function applyBlocks(text) {
 function verify() {
   if (!VERIFY) return { ok: true, out: '(no --verify given)' };
   try {
-    const out = execSync(VERIFY, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 900000, maxBuffer: 64 << 20 });
+    // 90 min: a verify can wait on the shared Godot lock while a ship runs the full CI gate block.
+    const out = execSync(VERIFY, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 5400000, maxBuffer: 64 << 20 });
     return { ok: true, out };
   } catch (e) {
     return { ok: false, out: `${e.stdout || ''}\n${e.stderr || ''}` };
