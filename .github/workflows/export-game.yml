@@ -321,6 +321,13 @@ jobs:
           # The REAL hideout -> prebuilt lift -> prebuilt woods chain (founder 2026-10-25: no door pause, empty elevator, no rewind).
           timeout 300 "$GODOT_BIN" --headless res://tests/seamless_chain_test.tscn 2>&1 | tee seamless-chain-tests.log
           grep -q 'SEAMLESS_CHAIN: ALL PASS' seamless-chain-tests.log
+          # Founder 2026-10-27 P0: held W crosses the elevator door; nobody walks through the forest bridge's rails; the quad-ride music blends.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_door_stride_test.tscn 2>&1 | tee door-stride-tests.log
+          grep -q 'EP2_DOOR_STRIDE: ALL PASS' door-stride-tests.log
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_exit_bridge_test.tscn 2>&1 | tee exit-bridge-tests.log
+          grep -q 'EP2_EXIT_BRIDGE: ALL PASS' exit-bridge-tests.log
+          timeout 120 "$GODOT_BIN" --headless res://tests/ep2_quad_music_test.tscn 2>&1 | tee quad-music-tests.log
+          grep -q 'EP2_QUAD_MUSIC: ALL PASS' quad-music-tests.log
           # Photo-scanned PBR dressing + the CAD Colt Gatling (founder 2026-10-25 CAD pass): authored colour kept, period bronze, sightline clear.
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_pbr_test.tscn 2>&1 | tee ep2-pbr-tests.log
           grep -q 'EP2_PBR: ALL PASS' ep2-pbr-tests.log

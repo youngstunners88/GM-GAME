@@ -69,6 +69,28 @@
     },
     "bob_girl": {
       "voice_id": "FGY2WhTYpPnrIDTdsKH5"
+    },
+    "inferno": {
+      "voice_id": "uWE48TmsTuIjyh2ifoNL",
+      "name": "Inferno Bull",
+      "source": "Project-owned ElevenLabs Voice Design voice; the same model and settings as his Episode 2 lines (assets/audio-manifest.json vo_bull_*)",
+      "model_id": "eleven_multilingual_v2",
+      "voice_settings": {
+        "stability": 0.75,
+        "similarity_boost": 0.75,
+        "style": 0.15,
+        "speed": 1.2
+      }
+    },
+    "bartender": {
+      "voice_id": "CwhRBWXzGAHq8TQ4Fs17",
+      "name": "Roger (ElevenLabs premade) - the saloon bartender",
+      "source": "Premade voice: the account's ten custom voice slots are full (2026-10-27)"
+    },
+    "minister": {
+      "voice_id": "CfxYdK3WmF3bmrvyLAiU",
+      "name": "Minister Mike Dean",
+      "source": "Founder-supplied voice ID 2026-10-27 ('This is Minister Mike Dean's voice ID'); it lives on the founder's second ElevenLabs account"
     }
   },
   "lines": [
@@ -451,6 +473,66 @@
       "speaker": "bob_girl",
       "text": "Just one more turn, then it's your go.",
       "ambient": true
+    },
+    {
+      "id": "town_job_04",
+      "speaker": "lil_blunt",
+      "text": "Rich and Utah. I'm on it, Sheriff."
+    },
+    {
+      "id": "town_bullback_00",
+      "speaker": "inferno",
+      "text": "Heard that Gatling clear across town. Figured it had to be you, little man."
+    },
+    {
+      "id": "town_bullback_01",
+      "speaker": "inferno",
+      "text": "Come on. First whiskey's on me."
+    },
+    {
+      "id": "town_body_00",
+      "speaker": "inferno",
+      "text": "Evening, Minister."
+    },
+    {
+      "id": "town_body_02",
+      "speaker": "inferno",
+      "text": "So who put a hole in his head?"
+    },
+    {
+      "id": "town_body_03",
+      "speaker": "lil_blunt",
+      "text": "Must've been a bird that had to get rid of the heavy load."
+    },
+    {
+      "id": "town_body_04",
+      "speaker": "inferno",
+      "text": "A bird. Sure it was."
+    },
+    {
+      "id": "town_drinks_00",
+      "speaker": "bartender",
+      "text": "Two whiskeys, coming right up."
+    },
+    {
+      "id": "town_drinks_01",
+      "speaker": "inferno",
+      "text": "To the quickest little hand in GoldMine."
+    },
+    {
+      "id": "town_drinks_02",
+      "speaker": "lil_blunt",
+      "text": "Cheers."
+    },
+    {
+      "id": "town_drinks_03",
+      "speaker": "inferno",
+      "text": "Listen, my cousin Flux needs a hand with his new kettle."
+    },
+    {
+      "id": "town_drinks_04",
+      "speaker": "inferno",
+      "text": "We'll lie low a little while and meet up later. Stay out of trouble."
     }
   ],
   "greetings": {
@@ -706,5 +788,48 @@
       "loop": false,
       "prompt": "A man in a quiet saloon draws gently on a cigar and slowly exhales the smoke, a soft relaxed breath. Close and quiet, realistic, no words, no music."
     }
-  ]
+  ],
+  "lines_pending_second_account": [
+    {
+      "id": "town_panic_00",
+      "speaker": "minister",
+      "text": "Lord have mercy! What in heaven's name happened out here?"
+    },
+    {
+      "id": "town_panic_01",
+      "speaker": "sheriff",
+      "text": "A fair draw, Minister. The stranger called it. The little fella was faster."
+    },
+    {
+      "id": "town_panic_02",
+      "speaker": "minister",
+      "text": "Then somebody had better pray for that poor soul. I'll see to him."
+    },
+    {
+      "id": "town_job_00",
+      "speaker": "sheriff",
+      "text": "That was some fine shooting, son. Haven't seen a draw that clean in years."
+    },
+    {
+      "id": "town_job_01",
+      "speaker": "sheriff",
+      "text": "I could use a hand like yours. Somebody let the bears hold Fort Knox."
+    },
+    {
+      "id": "town_job_02",
+      "speaker": "sheriff",
+      "text": "Find out who. My prisoner in the jailhouse knows more than he's telling."
+    },
+    {
+      "id": "town_job_03",
+      "speaker": "sheriff",
+      "text": "But get yourself properly armed first. Go see Rich and Utah, down the side lane."
+    },
+    {
+      "id": "town_body_01",
+      "speaker": "minister",
+      "text": "Evening, Inferno. Just saying a few words for him."
+    }
+  ],
+  "lines_pending_note": "Lines whose voices live on the founder's second ElevenLabs account (Sheriff, Minister Mike Dean, the prisoner, Dude). Move them into `lines` and run the generator once ELEVENLABS_SFX_API_KEY (elevenlabs2.key) holds that account's sk_ secret."
 }

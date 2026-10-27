@@ -49,12 +49,17 @@ if (args.includes('--generate')) {
   for (const row of candidates) {
     const voice = config.voices[row.speaker];
     if (!voice?.voice_id) { console.log(`PENDING voice slot: ${row.id}`); continue; }
-    const source = { text: row.text, speaker: row.speaker, voice_id: voice.voice_id, model_id: config.model_id };
+    // A voice may carry its own model and settings (Inferno keeps the model and delivery of his Episode 2 lines); the rest use the
+    // manifest's model and the house settings, so their source hashes - and recordings - are unchanged.
+    const model = voice.model_id || config.model_id;
+    const vs = voice.voice_settings || {};
+    const source = { text: row.text, speaker: row.speaker, voice_id: voice.voice_id, model_id: model };
     if (receipts[row.id]?.source_hash === hash(source)) {
       if (receipts[row.id]?.processing_version === processingVersion && existsSync(`${out}/${row.id}.ogg`)) continue;
       if (existsSync(`${work}/${row.id}.mp3`)) { await save(row.id, null, source); continue; }
     }
-    const audio = await elevenlabs.textToSpeech.convert(voice.voice_id, { text: row.text, modelId: config.model_id, outputFormat: 'mp3_44100_128', voiceSettings: { stability: 0.55, similarityBoost: 0.8 } });
+    const audio = await elevenlabs.textToSpeech.convert(voice.voice_id, { text: row.text, modelId: model, outputFormat: 'mp3_44100_128',
+      voiceSettings: { stability: vs.stability ?? 0.55, similarityBoost: vs.similarity_boost ?? 0.8, style: vs.style, speed: vs.speed } });
     await save(row.id, audio, source);
   }
   if (args.includes('--sfx')) for (const row of config.sfx) {
@@ -71,7 +76,7 @@ if (args.includes('--generate')) {
 }
 
 const rows = Object.fromEntries(config.lines.map(r => {
-  const expected = { text: r.text, speaker: r.speaker, voice_id: config.voices[r.speaker]?.voice_id, model_id: config.model_id };
+  const expected = { text: r.text, speaker: r.speaker, voice_id: config.voices[r.speaker]?.voice_id, model_id: config.voices[r.speaker]?.model_id || config.model_id };
   const ready = receipts[r.id]?.source_hash === hash(expected) && existsSync(`${out}/${r.id}.ogg`);
   return [r.id, { speaker: r.speaker, text: r.text, seconds: ready ? receipts[r.id].seconds : 0, start_seconds: ready ? (receipts[r.id].start_seconds || 0) : 0, ready, path: `res://${out}/${r.id}.ogg` }];
 }));

@@ -56,7 +56,12 @@ function fetchClient(key) {
           text: o.text,
           model_id: o.modelId,
           voice_settings: o.voiceSettings
-            ? { stability: o.voiceSettings.stability, similarity_boost: o.voiceSettings.similarityBoost }
+            ? {
+              stability: o.voiceSettings.stability,
+              similarity_boost: o.voiceSettings.similarityBoost,
+              ...(o.voiceSettings.style != null ? { style: o.voiceSettings.style } : {}),
+              ...(o.voiceSettings.speed != null ? { speed: o.voiceSettings.speed } : {}),
+            }
             : undefined,
         },
       speechKeys),

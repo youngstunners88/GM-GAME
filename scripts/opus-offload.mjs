@@ -288,23 +288,34 @@ let total = 0;
 for (let round = 1; round <= ROUNDS; round++) {
   const res = await call(messages);
   total += res.cost;
+  // Keep every raw answer for the reviewer (refused blocks are otherwise lost).
+  writeFileSync(resolve(ROOT, `.farm/offload-${TASK.split('/').pop().replace(/\.md$/, '')}-round${round}.txt`), res.text);
   const { written, refused, failed } = applyBlocks(res.text);
   const notes = (res.text.match(/^NOTES:.*$/m) || [''])[0];
   console.log(`round ${round}: wrote [${written.join(', ')}]${refused.length ? ` REFUSED [${refused.join('; ')}]` : ''}${failed.length ? ` FAILED [${failed.map(f => f.rel).join(', ')}]` : ''} | ${res.u.completion_tokens} out tok | $${res.cost.toFixed(3)}${res.finish === 'length' ? ' | TRUNCATED (raise --max-tokens)' : ''}`);
   if (notes) console.log('  ' + notes.slice(0, 600));
   messages.push({ role: 'assistant', content: res.text });
-  if (refused.length || failed.length) {
-    // Fix the change set before paying for a verify: say exactly what did not apply, with the current text of those files.
+  // A file outside --allow can never be written: say so (do it within the writable files) but do not hold the verify for it.
+  const offLimits = refused.length ? `These changes were REFUSED because the file is not writable for this task - do not resend them; reach the goal ` +
+    `within the writable files (${allow.join(', ')}):\n${refused.map(r => `- ${r}`).join('\n')}\n\n` : '';
+  if (failed.length) {
+    // An edit that did not apply leaves a half change set: fix it before paying for a verify, with the current text of those files.
     const cur = [...new Set(failed.map(f => f.rel))].map(rel => `=== FILE: ${rel} (CURRENT, after your applied edits) ===\n${readFileSync(resolve(ROOT, rel), 'utf8')}\n=== END FILE ===`).join('\n');
-    messages.push({ role: 'user', content: `Some of your changes were NOT applied (everything else was).\n${refused.map(r => `- refused: ${r}`).join('\n')}\n${failed.map(f => `- ${f.rel}: ${f.why}`).join('\n')}\n\nResend ONLY the changes that did not apply, as EDIT blocks against the current files below (FILE blocks only for new files).\n${cur}` });
+    messages.push({ role: 'user', content: `${offLimits}Some of your edits did NOT apply (everything else did).\n${failed.map(f => `- ${f.rel}: ${f.why}`).join('\n')}\n\nResend ONLY the edits that did not apply, as EDIT blocks against the current files below (FILE blocks only for new files).\n${cur}` });
     console.log('  change set incomplete - asking for the missing edits before verifying');
     continue;
   }
-  if (!written.length) { console.log('model returned no applicable changes — stopping'); break; }
+  if (!written.length) {
+    if (refused.length && round < ROUNDS) {
+      messages.push({ role: 'user', content: `${offLimits}Nothing was applied. Send the change again using only the writable files.` });
+      continue;
+    }
+    console.log('model returned no applicable changes — stopping'); break;
+  }
   const v = verify();
   console.log(`  verify: ${v.ok ? 'PASS' : 'FAIL'}`);
   if (v.ok) { console.log(`DONE in ${round} round(s), $${total.toFixed(3)} total. Review with: git diff`); process.exit(0); }
-  messages.push({ role: 'user', content: `Verification failed. Relevant output:\n\n${trim(v.out)}\n\nReturn corrections as EDIT blocks against the files as they are now (your earlier edits are applied).` });
+  messages.push({ role: 'user', content: `${offLimits}Verification failed. Relevant output:\n\n${trim(v.out)}\n\nReturn corrections as EDIT blocks against the files as they are now (your earlier edits are applied).` });
 }
 console.log(`STOPPED after ${ROUNDS} round(s), $${total.toFixed(3)} total — verification not passing. Changes are on disk; review with git diff.`);
 process.exit(1);

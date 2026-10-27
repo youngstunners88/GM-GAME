@@ -32,12 +32,20 @@ enum Beat { SNEAK, REVEAL, MOUNT, RIDE, DROPOFF, DONE }
 
 const MUSIC := "res://src/assets/music/ep2_deep_mining3_quad.ogg"
 const TOWN_MUSIC := "res://src/episode2/extras/music/ep2_theme_town.mp3"   # the founder's Episode 2 theme: fades in as the quad leaves the pines; STREAMED in ep2_extras.pck (keeps index.pck under its gate), absent = forest song just carries on
-const TOWN_MUSIC_FADE := 5.0
+const TOWN_MUSIC_FADE := 12.0                     # a long equal-power blend (AudioManager.crossfade_music), done before the stables
+const TOWN_MUSIC_AFTER_TREES := 30.0              # metres past the last pines (FOREST_END_Z) before the town theme starts to come in
 const QUAD_LOOP := "res://src/assets/sounds/ep2_quad_loop.mp3"
 
 # --- layout (metres; flat ground, +z is "deeper into the wood") ---
 const SPAWN := Vector3(0.0, 0.0, 2.0)
-const BULL_START := Vector3(1.6, 0.0, 4.0)
+const BULL_START := Vector3(0.35, 0.0, 4.0)           # on the boards, inside the rails (he stood at x 1.6 - outside the right rail)
+## The plank bridge out of the adit (_build_exit_bridge): rails at x +-1.12 from z 4 to 16. Founder 2026-10-27: "Inferno Bull walks
+## through the side beam that leads the walkway into the forest. The beam must prevent anyone from walking through it."
+const EXIT_BRIDGE_RAIL_X := 1.12
+const EXIT_BRIDGE_Z0 := 4.0
+const EXIT_BRIDGE_END_Z := 16.0
+const BRIDGE_RAIL_CLEAR := 0.32                      # Lil Blunt's body (0.3) + half the rail: how close he may come to the timber
+const BULL_BRIDGE_LANE := 0.55                       # Inferno's centre stays this far from the middle on the boards (his bulk clears the rails)
 ## The trail Inferno leads along while they sneak: ~230 m through the near wood, past the scouts.
 const SNEAK_TRAIL: Array = [Vector2(0.0, 4.0), Vector2(1.0, 17.0), Vector2(-2.5, 30.0), Vector2(-1.5, 45.0), Vector2(4.0, 62.0),
 	Vector2(8.0, 80.0), Vector2(5.0, 98.0), Vector2(-3.0, 114.0), Vector2(-8.0, 130.0), Vector2(-6.0, 146.0), Vector2(0.0, 162.0),
@@ -1259,7 +1267,7 @@ func _on_setup() -> void:
 		var progress: float = _trail_s(Vector2(_bull.position.x, _bull.position.z))
 		while _sneak_i < SNEAK_TRAIL.size() - 1 and _trail_s(SNEAK_TRAIL[_sneak_i]) <= progress + 0.1:
 			_sneak_i += 1
-		var next: Vector2 = SNEAK_TRAIL[_sneak_i]
+		var next: Vector2 = _bridge_lane(Vector2(_bull.position.x, _bull.position.z), SNEAK_TRAIL[_sneak_i])
 		_bull_walk_pace(Vector3(next.x, 0.0, next.y), 1.9)
 		_bull.step(0.0)
 		if _bull.anim != null and _bull.anim.has_animation(_bull.walk_clip):
@@ -1577,8 +1585,9 @@ func _tick_sneak(delta: float) -> void:
 		return
 	var trail: Array = SNEAK_TRAIL
 	var target2: Vector2 = trail[_sneak_i]
-	var bt := Vector3(target2.x, 0.0, target2.y)
 	var bull2 := Vector2(_bull.position.x, _bull.position.z)
+	var walk2: Vector2 = _bridge_lane(bull2, target2)         # the trail point itself, or the end of the boards first
+	var bt := Vector3(walk2.x, 0.0, walk2.y)
 	var gap: float = _trail_s(Vector2(_player_pos.x, _player_pos.z)) - _trail_s(bull2)      # > 0: Lil Blunt is AHEAD of him on the trail
 	var dist_player: float = Vector2(_bull.position.x - _player_pos.x, _bull.position.z - _player_pos.z).length()
 	var at_end: bool = _sneak_i >= trail.size() - 1 and bull2.distance_to(Vector2((trail[trail.size() - 1] as Vector2).x, (trail[trail.size() - 1] as Vector2).y)) < 1.6
@@ -2004,7 +2013,8 @@ func _tick_ride(delta: float) -> void:
 		_engine.pitch_scale = 0.85 + 0.35 * clampf(_ride_speed / RIDE_SPEED, 0.0, 1.0)
 	# out of the pines the light warms into gold-rush country (graded by distance, never a cut)
 	_grade_desert(_quad.position.z)
-	if not _town_music_started and _quad.position.z >= FOREST_END_Z - 100.0:      # the pines thin: the forest song gives way to the town theme
+	# Out of the trees, not as they thin (founder 2026-10-27: it "changes too soon"): the last pines stand at FOREST_END_Z.
+	if not _town_music_started and _quad.position.z >= FOREST_END_Z + TOWN_MUSIC_AFTER_TREES:
 		_town_music_started = true
 		var am: Node = get_node_or_null("/root/AudioManager")
 		if am != null and am.has_method("crossfade_music"):
@@ -2577,7 +2587,34 @@ func _collide(p: Vector3) -> Vector3:
 			var out: Vector2 = (d.normalized() if d.length_squared() > 1e-6 else Vector2(1.0, 0.0)) * r
 			q.x = tp.x + out.x
 			q.z = tp.y + out.y
+	return _bridge_rails(_player_pos, q)
+
+
+## The exit bridge's rails are walls: along the boards Lil Blunt stays on whichever side of each rail he is on - the boards or the
+## floor beside them - and never passes through the timber. (Not trunk circles: the bears' sight test ignores height, and a railing
+## must not hide him from them.)
+func _bridge_rails(from: Vector3, to: Vector3) -> Vector3:
+	var q := to
+	if q.z < EXIT_BRIDGE_Z0 - BRIDGE_RAIL_CLEAR or q.z > EXIT_BRIDGE_END_Z + BRIDGE_RAIL_CLEAR:
+		return q
+	for sx in [-1.0, 1.0]:
+		var rx: float = sx * EXIT_BRIDGE_RAIL_X
+		var side: float = signf(from.x - rx)
+		if side == 0.0:
+			side = -sx                                       # exactly on the line: he belongs on the boards
+		if side * (q.x - rx) < BRIDGE_RAIL_CLEAR:
+			q.x = rx + side * BRIDGE_RAIL_CLEAR
 	return q
+
+
+## Inferno keeps between the exit bridge's rails until he steps off its end: while he is on the boards and his next trail point lies
+## past the end, he walks to the end of the boards inside his lane first (the trail's first leg ran along the right rail).
+static func _bridge_lane(from: Vector2, to: Vector2) -> Vector2:
+	if from.y < EXIT_BRIDGE_Z0 - 0.6 or from.y > EXIT_BRIDGE_END_Z + 0.5 or to.y <= EXIT_BRIDGE_END_Z + 0.5:
+		return to
+	if absf(from.x) > EXIT_BRIDGE_RAIL_X:
+		return to                                            # beside the boards, not on them: his route is his own
+	return Vector2(clampf(to.x, -BULL_BRIDGE_LANE, BULL_BRIDGE_LANE), EXIT_BRIDGE_END_Z + 0.9)
 
 
 # --- the farmer and his donkey (founder 2026-10-14: "on the road they should drive past the man on the cart with the donkey - slow down, pass him and wave") ---
