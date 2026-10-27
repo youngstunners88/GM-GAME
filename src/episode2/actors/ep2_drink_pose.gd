@@ -60,6 +60,88 @@ static func install(player: AnimationPlayer, skel: Skeleton3D, fwd: Vector3, up:
 	return true
 
 
+## Seeded saloon variant used by the ambient cast. The compatibility entry point above still builds the original
+## 6.4-second clip; this one gives a person their own 5.0-8.5-second sip, idle, laugh and tobacco-smoke clips.
+## Every animation carries its mouth/exhale times as metadata so the performance controller can synchronise sound
+## and smoke even when the clip was started part-way through its loop.
+static func install_variant(player: AnimationPlayer, skel: Skeleton3D, fwd: Vector3, up: Vector3, unit: float, seated: bool, seed_value: int) -> bool:
+	var need := ["Hips", "Spine", "Head", "RightArm", "RightForeArm", "RightHand", "LeftArm", "LeftForeArm", "LeftHand",
+		"LeftUpLeg", "LeftLeg", "LeftFoot", "RightUpLeg", "RightLeg", "RightFoot"]
+	var idx := {}
+	for n in need:
+		var i: int = _find(skel, n)
+		if i < 0:
+			return false
+		idx[n] = i
+	for shoulder in ["LeftShoulder", "RightShoulder"]:
+		var i: int = _find(skel, shoulder)
+		if i >= 0:
+			idx[shoulder] = i
+	fwd = fwd.normalized()
+	up = (up - fwd * up.dot(fwd)).normalized()
+	var right: Vector3 = fwd.cross(up).normalized()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value
+	var prefix: String = "Sit" if seated else "Stand"
+	var glass_lift: float = rng.randf_range(-0.025, 0.035)
+	var length: float = rng.randf_range(5.0, 8.5)
+	var a: float = length * rng.randf_range(0.25, 0.34)
+	var b: float = a + length * rng.randf_range(0.08, 0.12)
+	var c: float = b + length * rng.randf_range(0.12, 0.18)
+	var d: float = c + length * rng.randf_range(0.08, 0.12)
+	var sip: Array = [[0.0, false, 0.0], [a, false, 0.0], [b, true, 0.0], [c, true, 0.0], [d, false, 0.0], [length, false, 0.0]]
+	if not _bake_variant(player, skel, idx, fwd, up, right, unit, seated, prefix + "Drink", length, sip, "sip", glass_lift, [b], []):
+		return false
+	var idle: Array = [[0.0, false, 0.0], [2.0, false, 0.0]]
+	_bake_variant(player, skel, idx, fwd, up, right, unit, seated, prefix + "Idle", 2.0, idle, "idle", glass_lift, [], [])
+	var laugh_length: float = rng.randf_range(1.6, 2.3)
+	var laugh: Array = []
+	var shakes: Array = [0.0, 1.0, -1.0, 0.85, -0.7, 0.0]
+	for k in shakes.size():
+		laugh.append([laugh_length * float(k) / 5.0, false, float(shakes[k])])
+	_bake_variant(player, skel, idx, fwd, up, right, unit, seated, prefix + "Laugh", laugh_length, laugh, "laugh", glass_lift, [laugh_length * 0.18], [])
+	var smoke_length: float = rng.randf_range(4.8, 6.4)
+	var inhale: float = smoke_length * 0.28
+	var exhale: float = smoke_length * 0.58
+	var smoke: Array = [[0.0, false, 0.0], [inhale * 0.55, false, 0.0], [inhale, true, 0.0],
+		[smoke_length * 0.43, true, 0.0], [exhale, false, 0.0], [smoke_length, false, 0.0]]
+	_bake_variant(player, skel, idx, fwd, up, right, unit, seated, prefix + "Smoke", smoke_length, smoke, "smoke", glass_lift, [inhale], [exhale])
+	return true
+
+
+## Bake one variant action. A beat is [seconds, free-hand/glass-at-mouth, laugh-shake].
+static func _bake_variant(player: AnimationPlayer, skel: Skeleton3D, idx: Dictionary, fwd: Vector3, up: Vector3, right: Vector3,
+		unit: float, seated: bool, clip_name: String, length: float, beats: Array, action: String, glass_lift: float, mouths: Array, exhales: Array) -> bool:
+	var poses: Array = []
+	for beat in beats:
+		poses.append(_solve(skel, idx, fwd, up, right, unit, seated, bool(beat[1]), action, glass_lift, float(beat[2])))
+	var anim := Animation.new()
+	anim.length = length
+	anim.loop_mode = Animation.LOOP_LINEAR
+	anim.set_meta("mouth_times", mouths.duplicate())
+	anim.set_meta("exhale_times", exhales.duplicate())
+	var root: Node = player.get_node(player.root_node)
+	var path: String = str(root.get_path_to(skel))
+	var bones: Array = poses[0]["rot"].keys()
+	for bone in bones:
+		var t: int = anim.add_track(Animation.TYPE_ROTATION_3D)
+		anim.track_set_path(t, NodePath("%s:%s" % [path, skel.get_bone_name(int(bone))]))
+		for k in beats.size():
+			anim.rotation_track_insert_key(t, float(beats[k][0]), poses[k]["rot"][bone])
+	var tp: int = anim.add_track(Animation.TYPE_POSITION_3D)
+	anim.track_set_path(tp, NodePath("%s:%s" % [path, skel.get_bone_name(idx["Hips"])]))
+	for k in beats.size():
+		anim.position_track_insert_key(tp, float(beats[k][0]), poses[k]["hips_pos"])
+	var lib: AnimationLibrary = player.get_animation_library("") if player.has_animation_library("") else null
+	if lib == null:
+		lib = AnimationLibrary.new()
+		player.add_animation_library("", lib)
+	if lib.has_animation(clip_name):
+		lib.remove_animation(clip_name)
+	lib.add_animation(clip_name, anim)
+	return true
+
+
 static func _find(skel: Skeleton3D, n: String) -> int:
 	var want: String = n.to_lower()
 	for i in skel.get_bone_count():
@@ -71,7 +153,8 @@ static func _find(skel: Skeleton3D, n: String) -> int:
 
 ## One beat's pose. Forward kinematics over the rest skeleton with our local rotations, so every aim is computed against the
 ## already-posed parent (hips first, then spine, legs, arms).
-static func _solve(skel: Skeleton3D, idx: Dictionary, fwd: Vector3, up: Vector3, right: Vector3, unit: float, seated: bool, at_mouth: bool) -> Dictionary:
+static func _solve(skel: Skeleton3D, idx: Dictionary, fwd: Vector3, up: Vector3, right: Vector3, unit: float, seated: bool, at_mouth: bool,
+		action: String = "sip", glass_lift: float = 0.0, shake: float = 0.0) -> Dictionary:
 	var local_rot: Dictionary = {}
 	for i in skel.get_bone_count():
 		local_rot[i] = skel.get_bone_rest(i).basis.get_rotation_quaternion()
@@ -82,13 +165,23 @@ static func _solve(skel: Skeleton3D, idx: Dictionary, fwd: Vector3, up: Vector3,
 		hips_pos = hips_pos - up * (hips_pos.dot(up) - floor_y - (SEAT_TOP + 0.07) / unit) - fwd * (0.04 / unit)
 	var G := func(i: int) -> Transform3D: return _global(skel, i, local_rot, hips_pos, idx["Hips"])
 	# spine: a little forward over the table (seated) / upright with a slight lean on the rail (standing)
-	_tilt(skel, idx["Spine"], local_rot, G, right, 0.12 if seated else 0.05)
+	var lean: float = 0.12 if seated else 0.05
+	if action == "laugh":
+		lean = (-0.16 if seated else -0.10) + shake * 0.025       # back from the table, not another sip
+	_tilt(skel, idx["Spine"], local_rot, G, right, lean)
 	if seated:
 		for side in ["Left", "Right"]:
 			var s: float = -1.0 if side == "Left" else 1.0
 			_aim(skel, idx[side + "UpLeg"], local_rot, G, (fwd * 1.0 - up * 0.12 + right * s * 0.08).normalized())
 			_aim(skel, idx[side + "Leg"], local_rot, G, (-up * 1.0 + fwd * 0.08).normalized())
 			_aim(skel, idx[side + "Foot"], local_rot, G, (fwd * 1.0 - up * 0.35).normalized())
+	if action == "laugh":
+		_tilt(skel, idx["Head"], local_rot, G, right, 0.24 + shake * 0.055)   # chin up
+		for side in ["Left", "Right"]:
+			var key: String = side + "Shoulder"
+			if idx.has(key):
+				var s: float = -1.0 if side == "Left" else 1.0
+				_tilt(skel, idx[key], local_rot, G, fwd, shake * s * 0.075)  # alternating shoulder shake
 	# the free (left) arm: forearm resting forward on the table / hanging easy
 	if seated:
 		_aim(skel, idx["LeftArm"], local_rot, G, (-up * 0.75 + fwd * 0.55 - right * 0.12).normalized())
@@ -102,19 +195,37 @@ static func _solve(skel: Skeleton3D, idx: Dictionary, fwd: Vector3, up: Vector3,
 	var b: float = skel.get_bone_rest(idx["RightHand"]).origin.length()
 	var target: Vector3
 	var head: Vector3 = (G.call(idx["Head"]) as Transform3D).origin
-	if at_mouth:
+	if at_mouth and action == "sip":
 		target = head + up * (0.03 / unit) + fwd * (0.13 / unit) - right * (0.02 / unit)
 	elif seated:
 		target = Vector3(shoulder) - up * (shoulder.dot(up) - TABLE_TOP / unit - 0.04 / unit) + fwd * (0.30 / unit) + right * (0.06 / unit)
 	else:
 		target = shoulder - up * (0.30 / unit) + fwd * (0.28 / unit) - right * (0.02 / unit)
+	if not (at_mouth and action == "sip"):
+		target += up * (glass_lift / unit)
 	var pole: Vector3 = shoulder + right * (0.35 / unit) - up * (0.45 / unit) - fwd * (0.1 / unit)
 	var elbow: Vector3 = _two_bone(shoulder, target, a, b, pole)
 	_aim(skel, idx["RightArm"], local_rot, G, (elbow - shoulder).normalized())
 	_aim(skel, idx["RightForeArm"], local_rot, G, (target - elbow).normalized())
+	if action == "smoke" and at_mouth:
+		# The cigar is in the FREE hand. Raise that hand to the lips while the whiskey stays at rest.
+		var left_shoulder: Vector3 = (G.call(idx["LeftArm"]) as Transform3D).origin
+		var la: float = skel.get_bone_rest(idx["LeftForeArm"]).origin.length()
+		var lb: float = skel.get_bone_rest(idx["LeftHand"]).origin.length()
+		var cigar_target: Vector3 = head + up * (0.015 / unit) + fwd * (0.125 / unit) + right * (0.025 / unit)
+		var left_pole: Vector3 = left_shoulder - right * (0.35 / unit) - up * (0.45 / unit) - fwd * (0.1 / unit)
+		var left_elbow: Vector3 = _two_bone(left_shoulder, cigar_target, la, lb, left_pole)
+		_aim(skel, idx["LeftArm"], local_rot, G, (left_elbow - left_shoulder).normalized())
+		_aim(skel, idx["LeftForeArm"], local_rot, G, (cigar_target - left_elbow).normalized())
 	var rot: Dictionary = {}
 	for n in ["Spine", "LeftUpLeg", "LeftLeg", "LeftFoot", "RightUpLeg", "RightLeg", "RightFoot", "LeftArm", "LeftForeArm", "RightArm", "RightForeArm"]:
 		rot[idx[n]] = local_rot[idx[n]]
+	if action == "laugh":
+		rot[idx["Head"]] = local_rot[idx["Head"]]
+		for side in ["Left", "Right"]:
+			var key: String = side + "Shoulder"
+			if idx.has(key):
+				rot[idx[key]] = local_rot[idx[key]]
 	rot[idx["Hips"]] = local_rot[idx["Hips"]]
 	return {"rot": rot, "hips_pos": hips_pos}
 

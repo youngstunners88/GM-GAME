@@ -76,6 +76,13 @@ const SLOT_OFFSETS := [0.0, -1.3, 1.3, -2.6, 2.6]
 ## rig - then leave) or the bar (StandDrink). Each seat is its own reservation ("shop:Bldg_Saloon#<seat>"), so several drink at once.
 ## The two balcony regulars start the day up there and stay, drinking and watching the street.
 const BALCONY_REGULARS := ["grandfather", "oldtimer"]
+## The table regulars (founder 2026-10-27: "the bar has sitters"): three locals keep the saloon's table chairs all day, like the balcony
+## pair; a visitor drinks at the bar. Every drinker has their own sip (Ep2DrinkPose.install_variant seeded by drink_seed: a 5.0-8.5 s
+## loop), so no two share one rhythm, and now and then one laughs (their laugh clip + a recorded laugh) or clinks a glass
+## (drink_events, played by Ep2TownSoundscape).
+const TABLE_REGULARS := ["bald_worker", "rancher", "grandmother"]
+const DRINK_VARIANTS := {"SitIdle": "SitDrink", "SitLaugh": "SitDrink", "SitSmoke": "SitDrink",
+	"StandIdle": "StandDrink", "StandLaugh": "StandDrink", "StandSmoke": "StandDrink"}
 const GLASS := "res://src/episode2/assets/whiskey_glass.glb"
 const SHOP_CHANCE := 0.55                # share of errands that become a shop visit when a counter is free
 const PARCEL_SECONDS := 40.0
@@ -112,6 +119,11 @@ class Person:
 	var parcel_t: float = 0.0        # seconds left carrying what they bought
 	var seat: int = -1                 # saloon place (Ep2GoldTown.saloon_seats() index), -1 = not in the saloon
 	var slot: int = -1                 # their waiting spot along the shop front (SLOT_OFFSETS index), -1 = none
+	var drink_seed: int = 0            # this person's own sip timing (Ep2DrinkPose.install_variant), from their id
+	var drink_clock: float = 0.0       # seconds since their last laugh or clink in the saloon (ambient only, not saved)
+	var drink_beats: int = 0
+	var laugh_t: float = 0.0           # seconds left of a laugh before the sip comes back
+	var drink_events: Array[Dictionary] = []   # {"kind": "laugh" | "clink", "at", "female", "variant"} for the soundscape
 
 var people: Array = []
 var navigation := Ep2TownNavigation.new()
@@ -152,6 +164,7 @@ func build(parent: Node3D, seed_value: int = 4101) -> int:
 		var p := Person.new()
 		p.id = str(row["id"])
 		p.rng.seed = seed_value + int(p.id.hash())
+		p.drink_seed = absi(int(p.id.hash())) % 100003 + 7919
 		p.profile = PROFILES[p.id].duplicate(true)
 		p.folk = Ep2TownFolk.new()
 		p.folk.name = "Person_" + p.id
@@ -202,6 +215,25 @@ func _seat_regulars() -> void:
 		p.state = "shop_buy"
 		_start_drinking(p, Ep2GoldTown.shop_spots("Bldg_Saloon"))
 		p.timer = 30.0
+	# the table regulars take the table chairs (one aisle-side chair per table), in roster order
+	var t: int = 0
+	for i in seats.size():
+		if str(seats[i]["kind"]) != "table" or t >= TABLE_REGULARS.size() or Ep2GoldTown.shop_spots("Bldg_Saloon").is_empty():
+			continue
+		var p: Person = person(TABLE_REGULARS[t])
+		t += 1
+		if p == null:
+			continue
+		p.shop = "Bldg_Saloon"
+		p.seat = i
+		p.destination = "shop:Bldg_Saloon#%d" % i
+		reservations[p.destination] = p.id
+		p.activity = "rest"
+		p.folk.use_height = true
+		p.state = "shop_buy"
+		_start_drinking(p, Ep2GoldTown.shop_spots("Bldg_Saloon"))
+		p.timer = 30.0
+		p.drink_clock = float(t) * 2.7                  # their first laugh or clink lands seconds apart, not together
 
 
 func set_context(mode: String) -> void:
@@ -683,6 +715,10 @@ func _step_shop(p: Person, dt: float) -> void:
 			p.folk.face_point(_face_point(p, spots))
 			if p.id in BALCONY_REGULARS and p.seat >= 0 and str(Ep2GoldTown.saloon_seats()[p.seat]["kind"]) == "balcony":
 				p.timer = maxf(p.timer, 30.0)          # the regulars stay up there all day
+			if p.id in TABLE_REGULARS and p.seat >= 0 and str(Ep2GoldTown.saloon_seats()[p.seat]["kind"]) == "table":
+				p.timer = maxf(p.timer, 30.0)          # and the table regulars keep their chairs
+			if p.shop == "Bldg_Saloon":
+				_tick_drinker(p, dt)
 			if _mode == "duel":
 				p.timer = maxf(p.timer, 1.0)            # nobody walks out into the street during the draw
 			if p.timer <= 0.0:
@@ -764,10 +800,59 @@ func _start_drinking(p: Person, spots: Dictionary) -> void:
 
 ## Up from the chair to the step behind it, glass back on the table.
 func _stop_drinking(p: Person) -> void:
+	p.laugh_t = 0.0
+	p.drink_clock = 0.0
 	p.folk.drop_prop("Glass")
 	if p.shop == "Bldg_Saloon" and p.seat >= 0 and str(Ep2GoldTown.saloon_seats()[p.seat]["kind"]) == "table":
 		var back: Vector3 = Ep2GoldTown.saloon_seats()[p.seat]["approach"]
 		p.folk.place(Vector3(back.x, 0.06, back.z))
+
+
+## "f" for the roster's townswomen and townsgirls, "m" for everyone else (the bump grunts and street laughs pick a voice by it).
+static func sex_of(id: String) -> String:
+	for row in ROSTER:
+		if str(row["id"]) == id:
+			var file: String = str(row["file"])
+			return "f" if file.contains("townswoman") or file.contains("townsgirl") else "m"
+	return "m"
+
+
+## "SitLaugh" / "StandDrink" ...: the drinker's own clip of that kind (seated at a table, else standing at the bar or the balcony rail).
+func _drink_name(p: Person, kind: String) -> String:
+	var seated: bool = p.seat >= 0 and str(Ep2GoldTown.saloon_seats()[p.seat]["kind"]) == "table"
+	return ("Sit" if seated else "Stand") + kind
+
+
+## A drinker's small life between sips: every 9-17 s (their own period) a laugh (their laugh clip, then back to the sip) or a clinked
+## glass, each also queued as a sound event for Ep2TownSoundscape. Ambient only: nothing here is saved or changes a decision.
+func _tick_drinker(p: Person, dt: float) -> void:
+	if p.laugh_t > 0.0:
+		p.laugh_t -= dt
+		if p.laugh_t <= 0.0:
+			p.folk.hold_clip(_drink_name(p, "Drink"))
+	p.drink_clock += dt
+	var period: float = 9.0 + float(p.drink_seed % 800) / 100.0
+	if p.drink_clock < period or _mode == "duel":
+		return
+	p.drink_clock -= period
+	p.drink_beats += 1
+	var head: Vector3 = p.folk.position + Vector3(0.0, 1.2, 0.0)
+	if p.drink_events.size() >= 8:
+		p.drink_events.pop_front()                      # nobody is listening (a test, a quiet town): never grows
+	if (p.drink_seed + p.drink_beats) % 3 == 0:
+		p.drink_events.append({"kind": "clink", "at": head})
+		return
+	var laugh: String = _drink_name(p, "Laugh")
+	var player: AnimationPlayer = p.folk.anim_player()
+	if player != null and player.has_animation(laugh) and p.laugh_t <= 0.0:
+		p.folk.hold_clip(laugh)
+		p.laugh_t = player.get_animation(laugh).length
+	p.drink_events.append({"kind": "laugh", "at": head, "female": sex_of(p.id) == "f", "variant": (p.drink_seed + p.drink_beats) % 3})
+
+
+## The clip a snapshot records: a drinker's laugh / idle variant saves as their sip (restore() replays the sip).
+func _snapshot_clip(p: Person) -> String:
+	return str(DRINK_VARIANTS.get(p.folk._base_clip, p.folk._base_clip))
 
 
 func _ensure_drink_clip(p: Person, seated: bool) -> bool:
@@ -785,7 +870,9 @@ func _ensure_drink_clip(p: Person, seated: bool) -> bool:
 		else _relative(p.folk, skel)
 	var b: Basis = rel.basis
 	var inv: Basis = b.inverse()
-	return Ep2DrinkPose.install(player, skel, (inv * Vector3(0, 0, 1)).normalized(), (inv * Vector3.UP).normalized(), b.get_scale().y, seated)
+	# their own sip: a seeded 5.0-8.5 s loop (plus idle / laugh / smoke clips), so two drinkers never share one rhythm
+	return Ep2DrinkPose.install_variant(player, skel, (inv * Vector3(0, 0, 1)).normalized(), (inv * Vector3.UP).normalized(), b.get_scale().y,
+		seated, p.drink_seed)
 
 
 ## A node's transform relative to an ancestor without the scene tree (tests build people off-tree).
@@ -1005,7 +1092,7 @@ func snapshot() -> Dictionary:
 			"waypoints": path, "partner": "" if p.state in CEL_STATES else p.partner,
 			"threat": [p.threat.x, p.threat.y], "safety": [p.safety.x, p.safety.y],
 			"blocked": p.blocked, "recoveries": p.recoveries, "activity_time": p.activity_time,
-			"clip": "Idle" if p.state in CEL_STATES else p.folk._base_clip})
+			"clip": "Idle" if p.state in CEL_STATES else _snapshot_clip(p)})
 	return {"version": 1, "elapsed": elapsed, "people": rows, "mode": _mode}
 
 func _number(value: Variant, low: float, high: float) -> bool:
@@ -1017,12 +1104,18 @@ func _point(value: Variant) -> bool:
 func _vector(value: Array) -> Vector2:
 	return Vector2(float(value[0]), float(value[1]))
 
-func restore(data: Dictionary) -> bool:
+## Put the town back exactly as `data` (a snapshot()) left it; false - and nothing touched - when anything in it is invalid.
+## `replan_paths` is the ride-in hand-over (founder 2026-10-22: the people live in the town before the drop-off): that crowd walked on
+## the ride's lighter collision, so a planned path can clip a prop this town has. Such a walker keeps everything - place, plan,
+## destination, random stream - and only their remaining path is planned again here, to the same last waypoint. A save loaded from
+## disk never replans: a path through a wall there is a corrupt save and is rejected.
+func restore(data: Dictionary, replan_paths: bool = false) -> bool:
 	if data.get("version") != 1 or not data.get("people") is Array: return false
 	var rows: Array = data["people"]
 	if rows.size() != people.size() or not _number(data.get("elapsed"), 0, 10000000): return false
 	if data.get("mode") not in ["normal", "quiet", "duel"]: return false
 	# Validate everything before touching actors, random streams or reservations.
+	var replan: Dictionary = {}                     # id -> the last waypoint to plan to again (replan_paths only)
 	var seen: Dictionary = {}
 	var destinations: Dictionary = {}
 	var positions: Array[Vector2] = []
@@ -1095,7 +1188,12 @@ func restore(data: Dictionary) -> bool:
 		for waypoint in row["waypoints"]:
 			if not _point(waypoint): return false
 			var next: Vector2 = _vector(waypoint)
-			if not navigation.segment_clear(previous, next): return false
+			if not navigation.segment_clear(previous, next):
+				var goal: Vector2 = _vector(row["waypoints"][row["waypoints"].size() - 1])
+				# the hand-over only: an end this town can stand on, reached by a path planned here; anything else is invalid
+				if not replan_paths or not navigation.is_standing_clear(goal) or navigation.path(point, goal).is_empty(): return false
+				replan[id] = goal
+				break
 			previous = next
 	for row in rows:
 		if row["state"] == "social":
@@ -1135,7 +1233,10 @@ func restore(data: Dictionary) -> bool:
 		p.recoveries = int(row["recoveries"])
 		p.activity_time = float(row["activity_time"])
 		p.waypoints.clear()
-		for waypoint in row["waypoints"]: p.waypoints.append(_vector(waypoint))
+		if replan.has(p.id):
+			p.waypoints.assign(navigation.path(point, replan[p.id]))
+		else:
+			for waypoint in row["waypoints"]: p.waypoints.append(_vector(waypoint))
 		p.folk.hold_clip(row["clip"])
 		# the shop visit: back in the shop at the saved height, the same legs still to walk, the parcel in hand if bought
 		p.shop = str(row.get("shop", ""))
