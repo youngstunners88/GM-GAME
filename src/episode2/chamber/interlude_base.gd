@@ -626,6 +626,30 @@ func get_btc_paid() -> int: return 1
 func get_health() -> int: return 3        # the hideout's cap; a story room that can hurt (the bear woods) overrides it - same 3 hearts
 ## True in a room where Lil Blunt can be hurt: the HUD shows his hearts.
 func _shows_health() -> bool: return false
+
+## Use one of Dude's Chill Buds from the Tabs ledger. The room must confirm
+## that it actually restored a heart before the stored item is spent. Rooms
+## without health (and full-health rooms) keep the bud and say why.
+func use_chill_bud() -> bool:
+	if GameManager.chill_buds <= 0:
+		if _hud != null:
+			_hud.toast("NO CHILL BUDS - VISIT DUDE", 1.6)
+		return false
+	if not _heal_one():
+		if _hud != null:
+			_hud.toast("ALREADY FEELING CHILL", 1.6)
+		return false
+	if not GameManager.take_chill_bud():
+		return false
+	if _hud != null:
+		_hud.toast("DUDE'S CHILL BUDS - ONE HEART BACK", 1.6)
+	return true
+
+## Room-specific healing hook. Base rooms have no damageable health, so they
+## never consume a bud. A health room returns true only when it restored one.
+func _heal_one() -> bool:
+	return false
+
 func get_ammo() -> int: return _vm.gun.rounds if _vm != null else 0
 func get_reserve() -> int: return _vm.gun.reserve if _vm != null else 0
 func get_gun() -> Ep2Winchester: return _vm.gun if _vm != null else null
@@ -827,6 +851,7 @@ func _build_first_person() -> void:
 	_hud.bind_armory(armory)
 	_hud.weapon_selected.connect(select_weapon)
 	_hud.armory_requested.connect(toggle_armory)
+	_hud.chill_bud_requested.connect(use_chill_bud)
 
 
 ## One physics step of the rifle and the HUD numbers.

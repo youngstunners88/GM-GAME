@@ -356,6 +356,53 @@ func purse_spend(token: String, amount: int) -> bool:
     purse_changed.emit(token, purse_balance(token))
     return true
 
+# ---- Lil Blunt's Episode 2 ledger ------------------------------------------
+## BTC banked from the runner leg most recently completed. This is a per-run
+## marker, not a balance and not persistent: the session root clears it when a
+## fresh leg starts, and a non-zero value prevents a re-entered completion
+## handler from paying that leg again.
+var runner_btc_credited: int = 0
+
+## Every bear Lil Blunt personally put down, grouped by its role/kind.
+signal bear_tallied(kind: String, total: int)
+var bear_tally: Dictionary = {}
+
+## Dude's Chill Buds are stored, positive health items: one bud restores one
+## heart when an Episode 2 room can use it. They are holdings, not run currency.
+signal chill_buds_changed(n: int)
+var chill_buds: int = 0
+
+## Total number of bears Lil Blunt has personally put down.
+func bear_total() -> int:
+    var total: int = 0
+    for kind in bear_tally:
+        total += maxi(0, int(bear_tally[kind]))
+    return total
+
+## Add one bear to Lil Blunt's personal tally. Bull's kills never come through
+## here. `total` in the signal is the all-kind total after this kill.
+func tally_bear(kind: String) -> void:
+    var key: String = kind.strip_edges().to_lower()
+    if key == "":
+        key = "bear"
+    bear_tally[key] = int(bear_tally.get(key, 0)) + 1
+    bear_tallied.emit(key, bear_total())
+
+## Store `n` of Dude's Chill Buds. Non-positive grants are ignored.
+func add_chill_buds(n: int) -> void:
+    if n <= 0:
+        return
+    chill_buds += n
+    chill_buds_changed.emit(chill_buds)
+
+## Take one stored bud, or return false without changing the count when empty.
+func take_chill_bud() -> bool:
+    if chill_buds <= 0:
+        return false
+    chill_buds -= 1
+    chill_buds_changed.emit(chill_buds)
+    return true
+
 ## The purse from a save. A save written before the purse existed carries only
 ## the shared coin pool that Rich used to take; that pool moves into the purse
 ## ONCE, split evenly over ETH / BTC / SOL (remainder to BTC), so no player
@@ -370,6 +417,21 @@ func _load_purse(data: Dictionary) -> void:
     var legacy: int = coins_collected
     var share: int = legacy / 3
     token_purse = {"eth": share, "btc": legacy - 2 * share, "sol": share}
+
+## Load the persistent parts of Lil Blunt's ledger alongside the purse. Older
+## saves simply start with an empty tally and no buds. The runner credit is a
+## transient per-run guard and is deliberately never restored from disk.
+func _load_ledger(data: Dictionary) -> void:
+    bear_tally.clear()
+    var raw: Dictionary = SaveSafe.to_dict(data.get("bear_tally", {}))
+    for kind in raw:
+        var key: String = SaveSafe.to_str(kind).strip_edges().to_lower()
+        var count: int = clampi(SaveSafe.to_int(raw[kind], 0), 0, 1000000)
+        if key != "" and count > 0:
+            bear_tally[key] = count
+    chill_buds = maxi(0, SaveSafe.to_int(data.get("chill_buds", 0), 0))
+    runner_btc_credited = 0
+    chill_buds_changed.emit(chill_buds)
 
 ## Bank $SMOKE tokens earned in Blaze Rush runs.
 func add_smoke(amount: int) -> void:
@@ -710,6 +772,10 @@ func reset_session() -> void:
     titanx_collected = 0
     titanx_changed.emit(0)
     token_purse = {"eth": 0, "btc": 0, "sol": 0}
+    runner_btc_credited = 0
+    bear_tally.clear()
+    chill_buds = 0
+    chill_buds_changed.emit(0)
     blaze_rush_completed.clear()
     secret_door_used.clear()
     blaze_portal_used.clear()
@@ -763,6 +829,8 @@ func save_session() -> bool:
         "smoke": smoke_collected,
         "titanx": titanx_collected,
         "token_purse": token_purse,
+        "bear_tally": bear_tally,
+        "chill_buds": chill_buds,
         "blaze_rush": _serialize_blaze_completions(),
         "health": player_health,
         "max_health": max_health,
@@ -808,6 +876,7 @@ func load_session() -> bool:
     smoke_collected = maxi(0, SaveSafe.to_int(data.get("smoke", 0), 0))
     titanx_collected = maxi(0, SaveSafe.to_int(data.get("titanx", 0), 0))
     _load_purse(data)
+    _load_ledger(data)
     _deserialize_blaze_completions(SaveSafe.to_dict(data.get("blaze_rush", {})))
     max_health = clampi(SaveSafe.to_int(data.get("max_health", 3), 3), 1, 10)
     player_health = clampi(SaveSafe.to_int(data.get("health", max_health), max_health), 1, max_health)

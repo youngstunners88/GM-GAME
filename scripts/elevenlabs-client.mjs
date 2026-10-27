@@ -15,9 +15,12 @@ const apiKeys = [process.env[binding], ...Object.keys(process.env)
   .filter(k => /^ELEVENLABS_API_KEY_\d+$/.test(k)).sort().map(k => process.env[k]).filter(Boolean)];
 const apiKey = apiKeys[0];
 // Functions can have their own key: ELEVENLABS_SPEECH_API_KEY for text-to-speech (the voices), ELEVENLABS_SFX_API_KEY for sound
-// effects. A function without its own key uses the rotating list above.
-const speechKeys = process.env.ELEVENLABS_SPEECH_API_KEY ? [process.env.ELEVENLABS_SPEECH_API_KEY, ...apiKeys] : apiKeys;
-const sfxKeys = process.env.ELEVENLABS_SFX_API_KEY ? [process.env.ELEVENLABS_SFX_API_KEY, ...apiKeys] : apiKeys;
+// effects. Each function tries its own key first, then every other key: the keys belong to different accounts, and a voice (Mike
+// Dean's CfxYdK3WmF3bmrvyLAiU) or a permission may live on only one of them.
+const uniq = (a) => [...new Set(a.filter(Boolean))];
+const SPEECH = process.env.ELEVENLABS_SPEECH_API_KEY, SFX = process.env.ELEVENLABS_SFX_API_KEY;
+const speechKeys = uniq([SPEECH, ...apiKeys, SFX]);
+const sfxKeys = uniq([SFX, ...apiKeys, SPEECH]);
 
 let Sdk = null;
 try {
@@ -39,8 +42,9 @@ function fetchClient(key) {
       const text = (await r.text()).slice(0, 300);
       last = `ElevenLabs ${r.status} on ${new URL(url).pathname}: ${text}`;
       const spent = r.status === 429 || /quota|credits|character|limit/i.test(text);
-      if (!spent) break;                       // a bad key or a bad request: no point trying the other keys
-      console.warn(`ElevenLabs key ${keys.indexOf(k) + 1} of ${keys.length} is out of characters or rate-limited; trying the next`);
+      const elsewhere = /voice_not_found|missing_permissions/i.test(text);   // that voice or function is on another account's key
+      if (!spent && !elsewhere) break;         // a bad key or a bad request: no point trying the other keys
+      console.warn(`ElevenLabs key ${keys.indexOf(k) + 1} of ${keys.length}: ${elsewhere ? 'this voice or function is not on that account' : 'out of characters or rate-limited'}; trying the next`);
     }
     throw new Error(last);
   };

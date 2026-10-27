@@ -5,7 +5,7 @@
   "voices": {
     "rich": {
       "voice_id": "LNV6ahDtkAOqwn1X3R7a",
-      "name": "Rich Miner \u2014 Episode 1 voice",
+      "name": "Rich Miner — Episode 1 voice",
       "source": "Existing Gold Claim Recorder; reuse unchanged"
     },
     "utah": {
@@ -651,6 +651,60 @@
       "seconds": 1.6,
       "loop": false,
       "prompt": "Two whiskey glasses being clinked together in a saloon and set down on a wooden bar counter: a bright short clink and a soft wood tap. No voices, no music."
+    },
+    {
+      "id": "train_steam_loop",
+      "seconds": 20,
+      "loop": true,
+      "prompt": "Seamlessly looping steam locomotive running at a steady medium speed, heard from about a hundred metres away across open desert: rhythmic deep chuffs, iron wheels and rail-joint clacks, coupled wooden freight cars rolling behind. Realistic 1880s American steam train at a natural distance, no whistle, no bell, no music, no voices."
+    },
+    {
+      "id": "train_whistle_steam",
+      "seconds": 5,
+      "loop": false,
+      "prompt": "One authentic 1880s American steam locomotive chime whistle heard across an open desert valley: two long mellow blasts with a natural distant echo. Realistic, no music, no voices, no engine noise."
+    },
+    {
+      "id": "man_laugh_a",
+      "seconds": 2.5,
+      "loop": false,
+      "prompt": "A middle-aged cowboy sitting in a quiet saloon gives a short hearty natural laugh, warm and relaxed, slightly hoarse. Close and realistic, no words, no music, no crowd."
+    },
+    {
+      "id": "man_laugh_b",
+      "seconds": 2.5,
+      "loop": false,
+      "prompt": "An old frontier man chuckles softly and then laughs a little at a friend's joke, wheezy and friendly. Close and realistic, no words, no music, no crowd."
+    },
+    {
+      "id": "woman_laugh",
+      "seconds": 2.0,
+      "loop": false,
+      "prompt": "A frontier townswoman laughs briefly and warmly at a friend's joke, light and natural. Close and realistic, no words, no music, no crowd."
+    },
+    {
+      "id": "bump_grunt_m",
+      "seconds": 1.0,
+      "loop": false,
+      "prompt": "A man walking on a timber boardwalk is bumped by someone and gives one short surprised grunt, not angry, no words. Close realistic foley, no music."
+    },
+    {
+      "id": "bump_grunt_f",
+      "seconds": 1.0,
+      "loop": false,
+      "prompt": "A woman is bumped by someone passing and gives one short startled gasp, not angry, no words. Close realistic foley, no music."
+    },
+    {
+      "id": "horse_blow",
+      "seconds": 1.5,
+      "loop": false,
+      "prompt": "A tied horse is startled by someone walking into its side: a sharp nostril blow, a short uneasy snort and one hoof stamp on packed dirt. Realistic, no music, no voices."
+    },
+    {
+      "id": "cigar_exhale",
+      "seconds": 1.8,
+      "loop": false,
+      "prompt": "A man in a quiet saloon draws gently on a cigar and slowly exhales the smoke, a soft relaxed breath. Close and quiet, realistic, no words, no music."
     }
   ]
 }

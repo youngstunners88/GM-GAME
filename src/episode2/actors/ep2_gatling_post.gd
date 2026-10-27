@@ -15,6 +15,7 @@ extends Node3D
 ## Conventions: yaws are LOOK yaws (the chamber's `_look_yaw`: forward = (sin y, 0, cos y)); the bore at rest points along `heading`.
 
 signal burst_started
+signal round_fired
 signal plate_rang(index: int)
 signal emptied
 
@@ -42,6 +43,13 @@ const DRESS_YARD := {"Brass": ["brass_worn", 0.45, 0.82, 0.8, BRONZE]}
 const DRESS_INDOORS := {"Brass": ["brass_worn", 0.45, 0.66, 0.85, BRONZE]}
 const SOUND_DIR := "res://src/assets/sounds/"
 const SHOT_SOUNDS := ["ep2_revolver_blast_1.mp3", "ep2_revolver_blast_2.mp3", "ep2_revolver_blast_3.mp3"]
+const GATLING_SOUND_DIR := "res://src/episode2/extras/audio/town/"
+const GATLING_SHOT_SOUNDS := ["gatling_shot_a.ogg", "gatling_shot_b.ogg", "gatling_shot_c.ogg"]
+const CRANK_LOOP_SOUND := "gatling_crank_loop.ogg"
+const TAIL_SOUND := "gatling_tail.ogg"
+const SHOT_POOL_SIZE := 6
+const SHOT_VOLUME_DB := -4.0               # the revolver blast was -7 dB: the Colt is 3 dB hotter, with overlapping voices
+const TAIL_MIN_ROUNDS := 6
 
 var rounds: int = DRUM
 var heading: float = 0.0                  # look yaw of the bore at rest
@@ -66,6 +74,7 @@ var _sign_anchor: Node3D = null
 var _plate_tpl: Node3D = null
 var _bale_tpl: Node3D = null
 var _burst_t: float = 0.0
+var _burst_rounds: int = 0
 var _acc: float = 0.0
 var _rng := RandomNumberGenerator.new()
 var _tracers: Array = []                  # [{node, t}]
@@ -75,14 +84,23 @@ var _flash_mesh: MeshInstance3D = null
 var _flash_t: float = 0.0
 var _casings: CPUParticles3D = null
 var _dust: CPUParticles3D = null
-var _players: Array[AudioStreamPlayer] = []
+var _players: Array[AudioStreamPlayer3D] = []
+var _shot_streams: Array[AudioStream] = []
+var _shot_fallback: Array[bool] = []       # true where the Colt recording is missing and a revolver blast stands in
 var _next_player: int = 0
+var _crank_audio: AudioStreamPlayer3D = null
+var _tail_audio: AudioStreamPlayer3D = null
 var _barrel_angle: float = 0.0
+var _sight_ray_set: bool = false          # mounted only: the player's actual camera ray, not a second, parallel bore ray
+var _sight_origin: Vector3 = Vector3.ZERO
+var _sight_dir: Vector3 = Vector3(0.0, 0.0, 1.0)
 
 
 ## Load the Gatling GLB, set the bore at rest toward `look_yaw`. False (nothing drawn) when the streamed extras are not mounted.
 func build(path: String, look_yaw: float, seed: int = 1874) -> bool:
 	_rng.seed = seed
+	_sight_ray_set = false
+	_burst_rounds = 0
 	if not ResourceLoader.exists(path):
 		return false
 	var ps: PackedScene = load(path) as PackedScene
@@ -233,6 +251,22 @@ func eye_position() -> Vector3:
 	return _eye.global_position if _eye != null else global_position + Vector3(0.0, 1.5, 0.0)
 
 
+## Give the gun the mounted camera's actual crosshair ray. A round still leaves the muzzle, but converges on the first thing
+## this ray meets instead of running parallel to it past the fixed eye/muzzle offset. Utah never sets this: he lays the bore itself.
+func set_sight_ray(origin: Vector3, direction: Vector3) -> void:
+	if direction.length_squared() < 1e-8:
+		clear_sight_ray()
+		return
+	_sight_origin = origin
+	_sight_dir = direction.normalized()
+	_sight_ray_set = true
+
+
+## Forget the mounted crosshair (on dismount, and before the first mounted camera update), restoring bore-laid fire.
+func clear_sight_ray() -> void:
+	_sight_ray_set = false
+
+
 ## Where he stands to work the crank: behind the breech on the post's axis, at the bore's heading.
 func stand_position() -> Vector3:
 	var back: Vector3 = Vector3(sin(heading), 0.0, cos(heading))
@@ -246,6 +280,7 @@ func fire_burst(seconds: float) -> bool:
 	if rounds <= 0:
 		return false
 	if _burst_t <= 0.0:
+		_burst_rounds = 0
 		burst_started.emit()
 	_burst_t = minf(_burst_t + seconds, BURST_MAX)
 	return true
@@ -261,6 +296,7 @@ func is_cranking() -> bool:
 
 func cease() -> void:
 	_burst_t = 0.0
+	_finish_burst()
 
 
 ## Advance `delta` seconds: crank and barrels, rounds, tracers, plates' swing, flash.
@@ -277,6 +313,8 @@ func step(delta: float) -> void:
 				_shoot_one()
 		if _casings != null:
 			_casings.emitting = spin > SPIN_MAX * 0.55 and rounds > 0
+		if _burst_t <= 0.0:
+			_finish_burst()
 	else:
 		spin = maxf(0.0, spin - SPIN_MAX / SPIN_DOWN * delta)
 		_acc = 0.0
@@ -289,13 +327,15 @@ func step(delta: float) -> void:
 		_crank.rotation.z = -_barrel_angle * 0.5
 	_step_targets(delta)
 	_step_fx(delta)
+	_step_audio()
 
 
 func _shoot_one() -> void:
 	rounds -= 1
 	shots_fired += 1
+	_burst_rounds += 1
 	var o: Vector3 = muzzle_position()
-	var d: Vector3 = bore_dir()
+	var d: Vector3 = _round_direction(o)
 	d = (d + Vector3(_rng.randf_range(-1, 1), _rng.randf_range(-1, 1), _rng.randf_range(-1, 1)) * SPREAD).normalized()
 	var hit: Dictionary = _trace(o, d)
 	var end: Vector3 = hit["point"]
@@ -306,9 +346,32 @@ func _shoot_one() -> void:
 	_tracer(o, end)
 	_flash_t = FLASH_T
 	_play_shot()
+	round_fired.emit()
 	if rounds <= 0:
 		_burst_t = 0.0
+		_finish_burst()
 		emptied.emit()
+
+
+## The bore's direction for Utah, or a muzzle-to-aim-point direction for the player. The sight trace deliberately uses the
+## same target / ground query as the round: a plate, bale, ground, or the far point in open air can all be the aim point.
+func _round_direction(o: Vector3) -> Vector3:
+	var bore: Vector3 = bore_dir()
+	if not _sight_ray_set:
+		return bore
+	var sight_hit: Dictionary = _trace(_sight_origin, _sight_dir)
+	var aim_point: Vector3 = sight_hit["point"]
+	var to_point: Vector3 = aim_point - o
+	if to_point.length_squared() < 0.0025:
+		return bore
+	var d: Vector3 = to_point.normalized()
+	return d if d.dot(bore) > 0.0 else bore
+
+
+func _finish_burst() -> void:
+	if _burst_rounds >= TAIL_MIN_ROUNDS:
+		_play_tail()
+	_burst_rounds = 0
 
 
 ## The first thing a round meets: a target's disc, else the ground at y = 0, else open air at RANGE_M.
@@ -445,16 +508,48 @@ func _build_fx() -> void:
 	_dust.mesh = dm
 	_dust.top_level = true
 	add_child(_dust)
+	_build_audio()
+
+
+func _build_audio() -> void:
 	var bus: String = "SFX" if AudioServer.get_bus_index("SFX") >= 0 else "Master"
-	for i in SHOT_SOUNDS.size():
-		var p := AudioStreamPlayer.new()
-		p.bus = bus
-		p.volume_db = -7.0
-		var path: String = SOUND_DIR + str(SHOT_SOUNDS[i])
+	_shot_streams.clear()
+	_shot_fallback.clear()
+	for i in GATLING_SHOT_SOUNDS.size():
+		var stream: AudioStream = null
+		var path: String = GATLING_SOUND_DIR + str(GATLING_SHOT_SOUNDS[i])
 		if ResourceLoader.exists(path):
-			p.stream = load(path) as AudioStream
-		add_child(p)
+			stream = load(path) as AudioStream
+		_shot_fallback.append(stream == null)
+		if stream == null:
+			var fallback: String = SOUND_DIR + str(SHOT_SOUNDS[i])
+			if ResourceLoader.exists(fallback):
+				stream = load(fallback) as AudioStream
+		_shot_streams.append(stream)
+	for i in SHOT_POOL_SIZE:
+		var p: AudioStreamPlayer3D = _audio_3d(_muzzle, bus, SHOT_VOLUME_DB)
 		_players.append(p)
+	_crank_audio = _audio_3d(_muzzle, bus, -60.0)
+	var crank_path: String = GATLING_SOUND_DIR + CRANK_LOOP_SOUND
+	if ResourceLoader.exists(crank_path):
+		var crank_stream: AudioStream = load(crank_path) as AudioStream
+		if crank_stream is AudioStreamOggVorbis:
+			(crank_stream as AudioStreamOggVorbis).loop = true
+		_crank_audio.stream = crank_stream
+	_tail_audio = _audio_3d(_muzzle, bus, SHOT_VOLUME_DB)
+	var tail_path: String = GATLING_SOUND_DIR + TAIL_SOUND
+	if ResourceLoader.exists(tail_path):
+		_tail_audio.stream = load(tail_path) as AudioStream
+
+
+func _audio_3d(parent: Node3D, bus: String, volume_db: float) -> AudioStreamPlayer3D:
+	var p := AudioStreamPlayer3D.new()
+	p.bus = bus
+	p.volume_db = volume_db
+	p.unit_size = 6.0
+	p.max_distance = RANGE_M
+	parent.add_child(p)
+	return p
 
 
 func _tracer(o: Vector3, end: Vector3) -> void:
@@ -476,13 +571,34 @@ func _puff(p: Vector3) -> void:
 
 
 func _play_shot() -> void:
-	if _players.is_empty():
+	if _players.is_empty() or _shot_streams.is_empty():
 		return
-	var p: AudioStreamPlayer = _players[_next_player % _players.size()]
+	var p: AudioStreamPlayer3D = _players[_next_player % _players.size()]
 	_next_player += 1
-	if p.stream != null:
-		p.pitch_scale = _rng.randf_range(1.12, 1.28)
+	var which: int = _rng.randi_range(0, _shot_streams.size() - 1)
+	var stream: AudioStream = _shot_streams[which]
+	p.stream = stream
+	if stream != null:
+		# The Colt's own recordings vary a little around true pitch; a stand-in revolver blast is pitched up to read as a Gatling.
+		p.pitch_scale = _rng.randf_range(1.12, 1.28) if _shot_fallback[which] else _rng.randf_range(0.92, 1.06)
 		p.play()
+
+
+func _play_tail() -> void:
+	if _tail_audio != null and _tail_audio.stream != null:
+		_tail_audio.play()
+
+
+func _step_audio() -> void:
+	if _crank_audio == null:
+		return
+	if _crank_audio.stream != null and spin > 0.05:
+		var k: float = clampf(spin / SPIN_MAX, 0.0, 1.0)
+		_crank_audio.volume_db = -9.0 + linear_to_db(maxf(k, 0.001))
+		if not _crank_audio.playing:
+			_crank_audio.play()
+	elif _crank_audio.playing:
+		_crank_audio.stop()
 
 
 func _step_fx(delta: float) -> void:

@@ -135,6 +135,12 @@ func start() -> void:
 func _enter_runner() -> void:
 	_mode = Mode.TRANSITION
 	_teardown_active()
+	# A fresh leg gets a fresh completion marker. Coins stay in the runner's
+	# `_gold` until the leg actually finishes; a retry or a failed leg therefore
+	# cannot spend an earlier attempt's tunnel BTC at Rich's.
+	var manager: Node = get_node_or_null("/root/GameManager")
+	if manager != null:
+		manager.runner_btc_credited = 0
 	var seg: Dictionary = _plan[_segment]
 	if bool(seg.get("armed", false)):
 		armory.acquire(Ep2ArmoryState.REM)
@@ -160,6 +166,8 @@ func _enter_runner() -> void:
 	)
 	r.bind_armory(armory)
 	r.chamber_reached.connect(_on_chamber_reached, CONNECT_ONE_SHOT)
+	r.archer_down.connect(_on_runner_archer_down)
+	r.shovel_bear_down.connect(_on_runner_shovel_bear_down)
 	if r.has_signal("cliff_panic"):
 		r.cliff_panic.connect(_warm_chamber_assets, CONNECT_ONE_SHOT)
 		_runner_music_faded = false
@@ -382,7 +390,23 @@ func _teardown_active() -> void:
 func _on_chamber_reached() -> void:
 	if _mode != Mode.RUNNER:
 		return
+	# Tunnel BTC becomes purse BTC only when the leg FINISHES. Mark the amount
+	# before purse_add emits: even a re-entrant listener cannot pay this leg a
+	# second time. setup()/retry keeps the coins in the runner and reaches no
+	# handler, so failed attempts credit nothing.
+	var manager: Node = get_node_or_null("/root/GameManager")
+	if manager != null and _active != null and _active.has_method("get_gold"):
+		var run_btc: int = int(_active.get_gold())
+		if run_btc > 0 and int(manager.runner_btc_credited) == 0:
+			manager.runner_btc_credited = run_btc
+			manager.purse_add("btc", run_btc)
 	_enter_chamber()
+
+func _on_runner_archer_down(_archer_id: String) -> void:
+	GameManager.tally_bear("archer")
+
+func _on_runner_shovel_bear_down(_obstacle_index: int) -> void:
+	GameManager.tally_bear("shovel")
 
 func _on_chamber_cleared(result: Dictionary) -> void:
 	armory.active_gun().cancel_reload()

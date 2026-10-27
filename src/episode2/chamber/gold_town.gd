@@ -455,6 +455,7 @@ func _build_guns() -> void:
 		_visuals.add_child(_gatling)
 		_gatling.position = post_w
 		if _gatling.build(Ep2Extras.GATLING, atan2(fwd.x, fwd.z)):
+			_gatling.round_fired.connect(_on_gatling_round)
 			_gatling.hang_sign("NOT FOR SALE")
 			var face: Vector3 = post_w + Vector3(0.0, 1.2, 0.0)
 			for pl in Ep2GoldTown.GATLING_PLATES:
@@ -564,6 +565,7 @@ func _mount() -> void:
 	set_aim(false)
 	var st: Vector3 = _gatling.stand_position()
 	_player_pos = Vector3(st.x, _ground_y, st.z)
+	_gatling.clear_sight_ray()
 	_look_yaw = _gatling.aim_yaw                    # he takes the crank with the bore where it points (the arc is the gun's, not his old view)
 	_look_pitch = _gatling.aim_pitch
 	if _hud != null:
@@ -575,6 +577,7 @@ func _dismount() -> void:
 	_mounted = false
 	if _gatling != null:
 		_gatling.cease()
+		_gatling.clear_sight_ray()
 		_look_yaw = _gatling.aim_yaw
 		_look_pitch = clampf(_gatling.aim_pitch, FPS_PITCH_MIN, FPS_PITCH_MAX)
 
@@ -630,10 +633,23 @@ func select_weapon(id: String) -> bool:
 func _fps_camera(delta: float) -> void:
 	if _mounted and _gatling != null:
 		_camera.position = _gatling.eye_position()
-		_camera.look_at(_camera.position + _gatling.bore_dir(), Vector3.UP)
+		# The Winchester's existing recoil hook gives each crank-fired round a short kick; it never moves the bore or its clamp.
+		var kick: float = _vm.cam_kick if _vm != null else 0.0
+		var pitch: float = clampf(_gatling.aim_pitch + kick, -1.4, 1.4)
+		var cp: float = cos(pitch)
+		var dir := Vector3(sin(_gatling.aim_yaw) * cp, sin(pitch), cos(_gatling.aim_yaw) * cp)
+		_camera.look_at(_camera.position + dir, Vector3.UP)
 		_camera.fov = MOUNT_FOV
+		# Rounds converge on what this actual crosshair ray meets; the muzzle is not the eye and must not fire a parallel miss.
+		_gatling.set_sight_ray(_camera.global_position, -_camera.global_transform.basis.z)
 		return
 	super(delta)
+
+
+## One round left the Colt. Utah's demonstration has no camera kick; only the mounted player feels it.
+func _on_gatling_round() -> void:
+	if _mounted and _vm != null:
+		_vm.cam_kick = maxf(_vm.cam_kick, 0.007)
 
 
 func _set_eye_view(on: bool) -> void:

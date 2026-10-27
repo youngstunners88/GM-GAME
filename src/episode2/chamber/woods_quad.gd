@@ -2282,8 +2282,18 @@ func _on_bear_died(br: Ep2BearBrain) -> void:
 	var snore: AudioStreamPlayer3D = br.actor.get_meta("snore") if br.actor.has_meta("snore") else null
 	if snore != null:
 		snore.stop()
+	# The Tabs ledger credits only bears Lil Blunt personally shot. Its kind is
+	# the spawn record's explicit kind when present, otherwise its combat role.
+	var player_kill: bool = str(br.get_meta("killed_by", "")) == "player"
+	if player_kill:
+		var kind: String = str(br.p.get("kind", "")).strip_edges()
+		if kind == "":
+			kind = str(br.p.get("role", "bear")).strip_edges()
+		if kind == "":
+			kind = "bear"
+		GameManager.tally_bear(kind)
 	# Lil Blunt only brags about a bear HE shot. A bear Bull dropped (or anything else) gets no line from him.
-	if str(br.get_meta("killed_by", "")) == "player" and _hold <= 0.0 and _bark_cd <= 4.0:
+	if player_kill and _hold <= 0.0 and _bark_cd <= 4.0:
 		_bark_cd = 6.0
 		_begin_carry_line("ep2_vo_bear_down_%d" % (1 + (_kills * 5) % 12))
 
@@ -2416,6 +2426,19 @@ func get_health() -> int:
 
 
 func _shows_health() -> bool:
+	return true
+
+
+## One of Dude's Chill Buds restores exactly one heart, never above the story's
+## three-heart cap. The base spends the item only after this returns true.
+func _heal_one() -> bool:
+	if _health >= HEALTH_MAX:
+		return false
+	_health = mini(_health + 1, HEALTH_MAX)
+	if _hud != null:
+		_hud.health = _health
+		_hud.health_max = HEALTH_MAX
+		_hud.show_health = true
 	return true
 
 

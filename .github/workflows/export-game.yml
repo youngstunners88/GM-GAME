@@ -386,6 +386,10 @@ jobs:
           cat purse-tests.log
           grep -q 'EP2_PURSE: ALL PASS' purse-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' purse-tests.log; then exit 1; fi
+          # The Tabs ledger (founder 2026-10-27): runner BTC reaches Rich once, Lil Blunt's own bear kills tally, Dude's Chill Buds heal one heart.
+          timeout 240 "$GODOT_BIN" --headless res://tests/ep2_tabs_ledger_test.tscn > tabs-ledger-tests.log 2>&1
+          grep -q 'EP2_TABS_LEDGER: ALL PASS' tabs-ledger-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' tabs-ledger-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_logans_lake_test.tscn > logans-lake-tests.log 2>&1
           grep -q 'LOGANS_LAKE: ALL PASS' logans-lake-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' logans-lake-tests.log; then exit 1; fi
@@ -409,6 +413,10 @@ jobs:
           timeout 400 "$GODOT_BIN" --headless res://tests/ep2_armory_guns_test.tscn 2>&1 | tee armory-guns-tests.log
           grep -q 'EP2_ARMORY_GUNS: ALL PASS' armory-guns-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' armory-guns-tests.log; then exit 1; fi
+          # The player's Gatling hits what the crosshair is on (founder 2026-10-27: "it doesnt hit any of the targets"): real mouse path, real camera ray.
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_gatling_hits_test.tscn 2>&1 | tee gatling-hits-tests.log
+          grep -q 'EP2_GATLING_HITS: ALL PASS' gatling-hits-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' gatling-hits-tests.log; then exit 1; fi
           # Town windows and doors are real holes and the town has people (founder 2026-10-19): kit openings + five townsmen/townswomen.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_town_people_test.tscn 2>&1 | tee town-people-tests.log
           grep -q 'EP2_TOWN_PEOPLE: ALL PASS' town-people-tests.log

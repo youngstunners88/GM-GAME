@@ -21,6 +21,9 @@ const LESSON_PATH: Array[int] = [Token.BOOT, Token.EYE, Token.CYLINDER, Token.SC
 signal weapon_selected(id: String)
 signal armory_requested
 signal search_requested
+## The open Tabs panel asks its room to use one of Dude's Chill Buds. The room
+## owns health and decides whether a bud can actually be spent.
+signal chill_bud_requested
 var armory: Ep2ArmoryState = null
 var armory_open: bool = false
 var armory_enabled: bool = true
@@ -320,6 +323,12 @@ func _input(event: InputEvent) -> void:
 		if armory_open:
 			get_viewport().set_input_as_handled()
 	if not armory_open:
+		return
+	# A raw physical key, deliberately not an InputMap action: H belongs to the
+	# open ledger and never becomes a gameplay binding in project.godot.
+	if event is InputEventKey and event.pressed and not event.is_echo() and event.physical_keycode == KEY_H:
+		chill_bud_requested.emit()
+		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("ui_cancel"):
 		close_armory(false)

@@ -58,19 +58,47 @@ func _process(_delta: float) -> void:
 		cards[i].disabled = state == null or not state.owns(Ep2ArmoryState.IDS[i])
 	queue_redraw()
 
+## The title/purse/ledger geometry is shared by the cards, so the ledger is a
+## real band under the purse rather than something drawn over the weapon art.
+func _purse_band() -> Rect2:
+	var compact: bool = size.x < 650.0
+	var mid: float = size.x * 0.5
+	var title_size: int = 25 if compact else 40
+	var line_y: float = size.y * 0.12 + title_size + 23.0
+	return Rect2(Vector2(mid - minf(350.0, size.x * 0.5 - 16.0), line_y + 10.0),
+		Vector2(minf(700.0, size.x - 32.0), 40.0 if compact else 44.0))
+
+func _ledger_band() -> Rect2:
+	var purse: Rect2 = _purse_band()
+	return Rect2(purse.position + Vector2(0.0, purse.size.y + 6.0),
+		Vector2(purse.size.x, 46.0 if size.x < 650.0 else 50.0))
+
 func card_rect(i: int) -> Rect2:
 	if size.x < 650.0:
 		var w: float = minf(440.0, size.x - 32.0)
-		var h: float = minf(160.0, size.y * 0.20)
-		return Rect2(Vector2((size.x - w) * 0.5, size.y * 0.24 + i * (h + 12.0)), Vector2(w, h))
+		var top: float = _ledger_band().end.y + 10.0
+		var available: float = maxf(96.0, size.y - top - 82.0)
+		var h: float = maxf(28.0, minf(160.0, minf(size.y * 0.20, (available - 24.0) / 3.0)))
+		var used: float = h * 3.0 + 24.0
+		var y: float = top + maxf(0.0, (available - used) * 0.25)
+		return Rect2(Vector2((size.x - w) * 0.5, y + i * (h + 12.0)), Vector2(w, h))
+	var top: float = _ledger_band().end.y + 14.0
+	var available: float = maxf(120.0, size.y - top - 88.0)
+	var h: float = maxf(80.0, minf(300.0, minf(size.y * 0.45, available)))
+	var y: float = top + maxf(0.0, (available - h) * 0.30)
 	var w: float = minf(460.0, (size.x - 96.0) / 3.0)
-	var h: float = minf(300.0, size.y * 0.45)
-	return Rect2(Vector2(size.x * 0.5 + (i - 1) * (w + 14.0) - w * 0.5, size.y * 0.5 - h * 0.45), Vector2(w, h))
+	return Rect2(Vector2(size.x * 0.5 + (i - 1) * (w + 14.0) - w * 0.5, y), Vector2(w, h))
 
 func _text(text: String, p: Vector2, font_size: int, color: Color = PAPER, centered: bool = false) -> void:
 	if centered:
 		p.x -= FONT.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x * 0.5
 	draw_string(FONT, p, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
+
+func _fit_font_size(text: String, max_width: float, start: int, minimum: int = 8) -> int:
+	var fs: int = start
+	while fs > minimum and FONT.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > max_width:
+		fs -= 1
+	return fs
 
 func _leather(rect: Rect2, color: Color, selected: bool = false) -> void:
 	var style := StyleBoxFlat.new()
@@ -108,7 +136,8 @@ func _draw() -> void:
 	draw_line(Vector2(mid - minf(270,size.x*.38),line_y),Vector2(mid-14,line_y),BRASS,1)
 	draw_line(Vector2(mid + 14,line_y),Vector2(mid+minf(270,size.x*.38),line_y),BRASS,1)
 	draw_colored_polygon(PackedVector2Array([Vector2(mid,line_y-5),Vector2(mid+5,line_y),Vector2(mid,line_y+5),Vector2(mid-5,line_y)]),BRASS)
-	_draw_purse(Rect2(Vector2(mid - minf(350.0, size.x * 0.5 - 16.0), line_y + 10.0), Vector2(minf(700.0, size.x - 32.0), 40.0 if compact else 44.0)), compact)
+	_draw_purse(_purse_band(), compact)
+	_draw_ledger(_ledger_band(), compact)
 	for i in Ep2ArmoryState.IDS.size():
 		var id: String = Ep2ArmoryState.IDS[i]
 		var rect: Rect2 = card_rect(i)
@@ -168,3 +197,34 @@ func _draw_purse(band: Rect2, compact: bool) -> void:
 			_text(token_name, Vector2(tx, band.position.y + band.size.y * 0.5 + 11.0), 8, BRASS)
 		else:
 			_text("%s %d" % [token_name, amount], Vector2(tx, band.position.y + band.size.y * 0.5 + fs * 0.36), fs, ink)
+
+
+## Lil Blunt's ledger: his own bear kills (never Bull's), the Dude's Chill Buds
+## he has stored, and the tunnel BTC banked by the runner leg he just finished.
+## Everything is read live from GameManager, so H and Rich's counter update the
+## same panel without a second copy of any number.
+func _draw_ledger(band: Rect2, compact: bool) -> void:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("211710")
+	style.border_color = Color("765839")
+	style.set_border_width_all(1)
+	style.set_corner_radius_all(7)
+	draw_style_box(style, band)
+	var bear_line: String = "BEARS  %d" % GameManager.bear_total()
+	var kinds: Array = GameManager.bear_tally.keys()
+	kinds.sort()
+	for kind in kinds:
+		var count: int = int(GameManager.bear_tally[kind])
+		if count > 0:
+			bear_line += "   %s %d" % [str(kind).to_upper(), count]
+	var bud_line: String = "CHILL BUDS  %d" % GameManager.chill_buds
+	bud_line += "   H - SMOKE A BUD" if TouchUi.keys_shown() else "   SMOKE A BUD"
+	var runner_btc: int = GameManager.runner_btc_credited
+	if runner_btc > 0:
+		bud_line += "   RUNNER BTC +%d" % runner_btc
+	var max_width: float = band.size.x - 20.0
+	var bear_fs: int = _fit_font_size(bear_line, max_width, 11 if compact else 15)
+	var bud_fs: int = _fit_font_size(bud_line, max_width, 10 if compact else 13)
+	var x: float = band.get_center().x
+	_text(bear_line, Vector2(x, band.position.y + (18.0 if compact else 20.0)), bear_fs, PAPER, true)
+	_text(bud_line, Vector2(x, band.position.y + (36.0 if compact else 40.0)), bud_fs, BRASS, true)

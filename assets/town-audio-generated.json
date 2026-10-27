@@ -1066,5 +1066,104 @@
     "loop": false,
     "model_id": "eleven_text_to_sound_v2",
     "start_seconds": 0
+  },
+  "train_steam_loop": {
+    "source_hash": "1e311f7bc31e171d5fb69077f574a8814e58bd43e92f0ec7b63877c6711ed978",
+    "processing_version": 2,
+    "sha256": "e73c61035f13e639299bb63caed4ae6d1610c3ab9d3a9e0b6371117c51165b85",
+    "bytes": 171286,
+    "prompt": "Seamlessly looping steam locomotive running at a steady medium speed, heard from about a hundred metres away across open desert: rhythmic deep chuffs, iron wheels and rail-joint clacks, coupled wooden freight cars rolling behind. Realistic 1880s American steam train at a natural distance, no whistle, no bell, no music, no voices.",
+    "seconds": 20,
+    "loop": true,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "train_whistle_steam": {
+    "source_hash": "d52197e488e3e8556d4459acb895a41430cf411f4715222629720996ab048990",
+    "processing_version": 2,
+    "sha256": "8b0927a2da85a50c68554be7eea8ff8a892da96dc078133fe21652703fc3389e",
+    "bytes": 42192,
+    "prompt": "One authentic 1880s American steam locomotive chime whistle heard across an open desert valley: two long mellow blasts with a natural distant echo. Realistic, no music, no voices, no engine noise.",
+    "seconds": 4.92458,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "man_laugh_a": {
+    "source_hash": "d82f8d064756d4b83db5cddb3d79ca0d20b8e11f6b46f42ca638c6f31c0b725b",
+    "processing_version": 2,
+    "sha256": "831b50b9cd811751e4dd2ddb77b9707bd353589993f39d300448302fe189bd74",
+    "bytes": 16646,
+    "prompt": "A middle-aged cowboy sitting in a quiet saloon gives a short hearty natural laugh, warm and relaxed, slightly hoarse. Close and realistic, no words, no music, no crowd.",
+    "seconds": 1.685488,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "man_laugh_b": {
+    "source_hash": "9fb2c3573e2cb1434378fe56248cd2503d7e1e98840ccbbdd656060ca7e97470",
+    "processing_version": 2,
+    "sha256": "3e4b731565ab726b5b643bed493a0432b712587f2da185fcb6bc0e721e1124cd",
+    "bytes": 24280,
+    "prompt": "An old frontier man chuckles softly and then laughs a little at a friend's joke, wheezy and friendly. Close and realistic, no words, no music, no crowd.",
+    "seconds": 2.479002,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "woman_laugh": {
+    "source_hash": "4c714e5c10cf16ebd4871fcfd9bef90a25251c0de76308022d629e4d3842c7c4",
+    "processing_version": 2,
+    "sha256": "6225eea3221b6aca23753b22293bec25bbba303b1262931d3e4bd913c8944d08",
+    "bytes": 19315,
+    "prompt": "A frontier townswoman laughs briefly and warmly at a friend's joke, light and natural. Close and realistic, no words, no music, no crowd.",
+    "seconds": 1.932993,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "bump_grunt_m": {
+    "source_hash": "d89821a897e27cd74f06019710899d4437014261aff551865d4742c31f4674c7",
+    "processing_version": 2,
+    "sha256": "ba6591ce1bf4e05efc3cc06a8fcdc3e11c67fccf4f6b4446a382d9982fff0663",
+    "bytes": 11214,
+    "prompt": "A man walking on a timber boardwalk is bumped by someone and gives one short surprised grunt, not angry, no words. Close realistic foley, no music.",
+    "seconds": 0.999002,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "bump_grunt_f": {
+    "source_hash": "ae5c990052a8638cc64a775bec7aaa73564a6ebab8f71d90f0ed60466f7eb2b0",
+    "processing_version": 2,
+    "sha256": "4da6cbe51b5fa2ac9c2fe7b198b5a672e884446df89e39cdbff1f1a858f20c58",
+    "bytes": 10940,
+    "prompt": "A woman is bumped by someone passing and gives one short startled gasp, not angry, no words. Close realistic foley, no music.",
+    "seconds": 0.999002,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "horse_blow": {
+    "source_hash": "8c3a691f5604dcc4c3c9ca73fb95f3a166e99fcc72ba7b89fe23462d5e493a2a",
+    "processing_version": 2,
+    "sha256": "4043d13a1432a28e9bf8bdbf40d736d3af34847e4e1a28feea44b1009e5d005a",
+    "bytes": 15721,
+    "prompt": "A tied horse is startled by someone walking into its side: a sharp nostril blow, a short uneasy snort and one hoof stamp on packed dirt. Realistic, no music, no voices.",
+    "seconds": 1.479002,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
+  },
+  "cigar_exhale": {
+    "source_hash": "0b218119d4664ec7617c6aeef35be706530bf4bacabefacb04af4a9082a898da",
+    "processing_version": 2,
+    "sha256": "f3a4c881b585c2aa32ad6629b412b80ed4499fc95d312e4bab995cf336bb3f54",
+    "bytes": 17612,
+    "prompt": "A man in a quiet saloon draws gently on a cigar and slowly exhales the smoke, a soft relaxed breath. Close and quiet, realistic, no words, no music.",
+    "seconds": 1.712132,
+    "loop": false,
+    "model_id": "eleven_text_to_sound_v2",
+    "start_seconds": 0
   }
 }
