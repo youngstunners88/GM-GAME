@@ -80,7 +80,9 @@ const KNEEL_AT := Vector3(0.95, 0.0, -0.45)                # where the Minister 
 const BODY_NEAR := 7.5                                     # how close Lil Blunt comes to the body before Inferno speaks
 const GATLING_TESTED_HOLD := 1.4                           # seconds after he steps off the crank before Inferno is heard coming
 
-const SHERIFF_MODEL := "res://src/episode2/assets/town/sheriff.glb"          # the founder's own Sheriff (Drive 2026-10-14): weathered, bearded, long coat, pipe - baked for the pack
+# The Sheriff is Sheriff James (founder Drive model 2026-10-27, streamed: Ep2Extras.SHERIFF_JAMES) - "just replace them and keep the
+# narrative and the voice as is". The 2026-10-14 static model is retired, so without the pack a plain figure stands in, never the old one.
+const SHERIFF_WALK_STRIDE := 0.81                         # m/s: his Walk clip's own ground speed (stride matching)
 const MINISTER_MODEL := "res://src/episode2/assets/town/minister.glb"      # Minister Mike Dean: the founder's robot-headed minister (Drive 2026-10-14), baked for the pack
 const COWBOY_MODEL := "res://src/episode2/assets/town/cowboy.glb"        # the stranger: a HUMAN cowboy (child meshes "Idle" and "Draw")
 const BARTENDER_MODEL := "res://src/episode2/assets/town/bartender.glb"  # the barman: a human too - the town has no bears
@@ -95,8 +97,9 @@ const ACCOMPLICE_HEIGHT := 1.74
 const MINISTER_HEIGHT := 1.65
 const MINISTER_STEP := 0.5                               # the low wooden step he stands on behind the counter, so the counter does not hide him
 ## In each building's local frame (x along the front, -z inside).
-## Where the cigarette sits on the Sheriff, as a fraction of his height (x right, y up, z forward).
-const SHERIFF_MOUTH := Vector3(0.0, 0.9, 0.07)
+## Where the smoke rises on the Sheriff, as a fraction of his height (x his left, y up, z forward): Sheriff James's pipe bowl, which
+## hangs from the left corner of his mouth.
+const SHERIFF_MOUTH := Vector3(0.03, 0.855, 0.095)
 const MINISTER_DESK := Vector3(0.6, 0.0, -5.7)          # Minister Mike Dean behind the certificate counter, the certificate book open
 const SHERIFF_OFFICE_AT := Vector3(-2.3, 0.0, -2.9)     # the Sheriff by the stove, where he greets whoever walks in
 const OFFICE_SPOT := Vector3(0.6, 0.0, -3.4)          # where Lil Blunt stands at the counter
@@ -815,8 +818,14 @@ func _check_geared() -> void:
 func _build_sheriff() -> void:
 	_sheriff = Ep2TownFolk.new()
 	_sheriff.name = "Sheriff"
+	_sheriff.looping_clips.assign(["Idle", "Walk", "Talk", "Counter"])
+	_sheriff.clip_blend = 0.2
 	_visuals.add_child(_sheriff)
-	_sheriff.setup(SHERIFF_MODEL, SHERIFF_HEIGHT, Color(0.42, 0.30, 0.18))
+	_sheriff.setup(Ep2Extras.SHERIFF_JAMES if Ep2Extras.has(Ep2Extras.SHERIFF_JAMES) else "", SHERIFF_HEIGHT, Color(0.42, 0.30, 0.18))
+	if _sheriff.has_clips():
+		_sheriff.procedural_bob = false                # mocap carries its own bob
+		_sheriff.walk_clip_speed = SHERIFF_WALK_STRIDE
+		_sheriff.hold_clip("Idle")
 	_sheriff_smoke = _particles(18, 2.6, Color(0.86, 0.86, 0.84, 0.33), 0.06)
 	_sheriff_smoke.name = "CigSmoke"
 	_sheriff_smoke.position = SHERIFF_MOUTH * SHERIFF_HEIGHT
@@ -1206,13 +1215,26 @@ func _caption_line(who: String, text: String) -> void:
 	captioned.emit(who, text)
 	match who:
 		"SHERIFF":
-			if _sheriff != null: _sheriff.face_point(_player_pos)
+			if _sheriff != null:
+				_sheriff.face_point(_player_pos)
+				_talk_clip(_sheriff, _caption_seconds(who, text))
 		"MIKE DEAN":
 			if _minister != null and _minister_task != "kneeling": _minister.face_point(_player_pos)
 		"INFERNO":
 			if _bull != null and _bull_task not in ["riding", "leaving"]: _bull.face_point(_player_pos)
 		"BARTENDER":
 			if _bartender != null: _bartender.face_point(_player_pos)
+
+
+## A rigged speaker who is standing plays Talk for as long as his line lasts, then goes back to Idle - unless something else (a walk,
+## another clip) took over in the meantime.
+func _talk_clip(folk: Ep2TownFolk, seconds: float) -> void:
+	if folk == null or not folk.has_clips() or folk.is_walking():
+		return
+	folk.hold_clip("Talk")
+	get_tree().create_timer(maxf(seconds, 0.5)).timeout.connect(func() -> void:
+		if is_instance_valid(folk) and folk._base_clip == "Talk":     # even if he set off walking meanwhile: he must not stop and keep talking
+			folk.hold_clip("Idle"))
 
 
 ## `to`, moved `gap` metres toward `from` on the ground: where someone stops to talk to whoever stands at `to`.

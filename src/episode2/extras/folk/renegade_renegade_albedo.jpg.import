@@ -2,19 +2,19 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c687i0x5yr34q"
-path="res://.godot/imported/jack_hammer_textured_mesh_1.jpg-b601af0c455729002ee34c7dfd96b55c.ctex"
+uid="uid://cge7xjboqlqmh"
+path="res://.godot/imported/renegade_renegade_albedo.jpg-68b5c955c062f8ea29a33cd7de52348a.ctex"
 metadata={
 "vram_texture": false
 }
 generator_parameters={
-"md5": "3a36a9c3573610fd00ce2f454bd59ed8"
+"md5": "be03f9d69ab34c3d73067d71ec419454"
 }
 
 [deps]
 
-source_file="res://src/episode2/extras/people/jack_hammer_textured_mesh_1.jpg"
-dest_files=["res://.godot/imported/jack_hammer_textured_mesh_1.jpg-b601af0c455729002ee34c7dfd96b55c.ctex"]
+source_file="res://src/episode2/extras/folk/renegade_renegade_albedo.jpg"
+dest_files=["res://.godot/imported/renegade_renegade_albedo.jpg-68b5c955c062f8ea29a33cd7de52348a.ctex"]
 
 [params]
 

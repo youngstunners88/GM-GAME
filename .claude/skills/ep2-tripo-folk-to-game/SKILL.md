@@ -27,7 +27,12 @@ Use the installed Blender skills (Blender 5.2.1 headless; never the GUI, see `bl
    facing -Y. Re-check the armature scale is 1 after export (never 100).
 3. **One skeleton for both**: retarget Rich's UE names and Utah's Mixamo names onto a single shared naming
    (the clip library is authored once). Keep fingers (gun handling) but drop twist/leaf/end bones; <= 4 influences.
-4. **Decimate keeping weights**: target 12-16k tris each. Prefer meshoptimizer `simplify_with_attributes`
+4. **Decimate keeping weights** - and keeping UV seams. **TRAP (measured 2026-10-27): `prep_folk.py --tris 16000` (Blender's
+   collapse decimate) SHREDS Tripo faces** - Tripo meshes have many small UV islands and a 50k -> 16k collapse crosses them, so the
+   texture breaks into shards (Utah's shipped face, Sheriff James's first build; invisible in full-body shots, obvious close up).
+   Run prep_folk with `--tris 200000` (no Blender decimate), retarget + export the full mesh, THEN
+   `tools/ep2_forge/gltfpack_safe.sh full.glb out.glb 0.3` (meshoptimizer keeps attribute seams): clean face, ~15k tris, joints and
+   clips intact. Always check a face close-up (front, 85 mm) before shipping a character. Target 12-16k tris each. Prefer meshoptimizer `simplify_with_attributes`
    (`~/tools-src/venv`) or `tools/ep2_forge/gltfpack_safe.sh` (never default gltfpack: Godot 4.3 refuses
    `KHR_mesh_quantization`). Protect the face, hands and hat brim. Bake 4K -> 1K (rgb + normal; metal-rough only if it
    reads) on the Runpod GPU (`ep2-cloud-gpu-runpod`), and track the `.import` files as lossy (`compress/mode=1`).

@@ -1,0 +1,37 @@
+[remap]
+
+importer="texture"
+type="CompressedTexture2D"
+uid="uid://datf0th2357fe"
+path="res://.godot/imported/sheriff_james_sheriff_james_normal.jpg-86731120f575d3e52a976b726d53a5b3.ctex"
+metadata={
+"vram_texture": false
+}
+generator_parameters={
+"md5": "a47635b580f79823a398956db678b12e"
+}
+
+[deps]
+
+source_file="res://src/episode2/extras/folk/sheriff_james_sheriff_james_normal.jpg"
+dest_files=["res://.godot/imported/sheriff_james_sheriff_james_normal.jpg-86731120f575d3e52a976b726d53a5b3.ctex"]
+
+[params]
+
+compress/mode=1
+compress/high_quality=false
+compress/lossy_quality=0.85
+compress/hdr_compression=1
+compress/normal_map=0
+compress/channel_pack=0
+mipmaps/generate=true
+mipmaps/limit=-1
+roughness/mode=0
+roughness/src_normal=""
+process/fix_alpha_border=true
+process/premult_alpha=false
+process/normal_map_invert_y=false
+process/hdr_as_srgb=false
+process/hdr_clamp_exposure=false
+process/size_limit=0
+detect_3d/compress_to=0

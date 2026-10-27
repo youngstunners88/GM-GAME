@@ -18,9 +18,16 @@ const HORSE_FACES_PAID := 1
 const HORSE_CHANGE_BTC := 0.5                       # BTC_FACE_VALUE * HORSE_FACES_PAID - HORSE_PRICE_BTC
 ## FOUNDER RULING 2026-10-21: the auction is a SECOND SETTLEMENT in the next town (not an event hall): the trail ends at its edge. No full open world: a short trail + a bounded settlement.
 const AUCTION_PLACE := "next_town"
-## FOUNDER RULING 2026-10-21: mean, with an eye patch. The shipped model is a Hunyuan scan rigged on the townfolk skeleton (Ep2Extras.JACK_HAMMER), 1.92 m with the hat.
+## FOUNDER RULING 2026-10-21: mean, with an eye patch. Since 2026-10-27 the shipped model is the founder's OWN Jack Hammer (Drive
+## "Jack+Hammer.glb", Ep2Extras.JACK_HAMMER, 1.92 m), which wears no patch - his model is his call; EYE_PATCH_EYE records the 10-21 ruling.
 const HEIGHT_M := 1.92
 const EYE_PATCH_EYE := "left"                       # his left eye is covered; the right one is the cold one
+## The auction's people (founder 2026-10-27: "Renegade the charismatic auctioneer. He hosts the auction"; "Jack Hammer. He will be at the
+## auction"): both are the founder's own streamed models; the auction settlement places them from this list.
+const AUCTION_CAST: Array = [
+	{"id": "renegade", "who": "RENEGADE", "role": "host", "model": "res://src/episode2/extras/folk/renegade.glb", "height_m": 1.82},
+	{"id": "jack_hammer", "who": "JACK HAMMER", "role": "bidder", "model": "res://src/episode2/extras/people/jack_hammer.glb", "height_m": 1.92},
+]
 const BEAT_ORDER: Array = ["JOB_ASK", "BOUNTY", "JAIL_WORD", "STABLE", "TRAIL", "AUCTION"]
 
 ## The wanted notice on the Sheriff's wall (a 3D sign or a HUD card; the paper's formal name is Jackson Mccree).

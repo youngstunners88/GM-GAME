@@ -12,8 +12,11 @@ that happens". Heavy use is approved; running dry is not. Pair with `ep2-cloud-g
 ## What we can see
 - The Runpod MCP (`mcp__runpod-key__*`) works. `get-organization` is 403 on this account, so there is NO balance read from here.
   `list-billing` (hour/day buckets) gives spend. Never read a Runpod key out of `~/.claude.json` or any file.
-- Inside a pod, `RUNPOD_API_KEY` and `RUNPOD_POD_ID` are injected and `runpodctl` is installed: the pod can stop itself and may read
-  the balance (GraphQL `myself { clientBalance currentSpendPerHr }`). `tools/ep2_runpod/credit_guard.sh` does both.
+- Inside a pod, `RUNPOD_API_KEY` and `RUNPOD_POD_ID` are injected and `runpodctl` is installed, BUT the injected key is NOT allowed to
+  manage the pod (measured 2026-10-27 on `c2gsx9gl2iwf8i`: REST `GET /v1/pods/<id>` -> 403, `runpodctl get pod` -> "Unauthorized",
+  balance unreadable). So `tools/ep2_runpod/credit_guard.sh` inside the pod is only a log: it cannot stop billing. **The brake is the
+  session**: stop the pod with the MCP `pod-action` the moment a job ends, check `get-pod` + `list-billing` at every turn while it runs,
+  and never leave a running pod across a long wait without a reason.
 
 ## Rules
 1. Before creating: read stock (`list-gpu-types` with availability), state the hourly price, pick the cheapest GPU that fits (A40
@@ -21,9 +24,11 @@ that happens". Heavy use is approved; running dry is not. Pair with `ep2-cloud-g
 2. Create with a `/workspace` volume (results survive a stop), `PUBLIC_KEY` = `~/documents.pub` (SSH; the account's registered
    "horse-job" key is not on this box), and a `JUPYTER_PASSWORD` you generate and keep in `~/.config/gm-game/pod_jupyter.pw` (600)
    for `tools/ep2_runpod/pod_run.py` (`POD_JUPYTER_PASSWORD`).
-3. First command on every new or restarted pod: copy `credit_guard.sh` to `/workspace` and start it
-   (`nohup bash /workspace/credit_guard.sh <max_hours> <min_balance_usd> &`). Default 3 h, $3. Check `credit_guard.log` says
-   whether the balance is readable; if it is not, the runtime cap is the only automatic brake - check `list-billing` every hour.
+3. The in-pod guard (`nohup bash /workspace/credit_guard.sh <max_hours> <min_balance_usd> &`) is worth starting only if
+   `credit_guard.log` shows the key can act; on 2026-10-27 it could not (see above), so the session itself is the brake: an
+   `pod-action stop` from the MCP right after the last download, `get-pod` to confirm `desiredStatus: EXITED`.
+   Python on the runpod/pytorch 1.0.x images is the system interpreter: export `PIP_BREAK_SYSTEM_PACKAGES=1` or every `pip
+   install` fails (PEP 668). Fetch many files with one `ssh ... 'tar cf - files' | tar xf -`, not one scp each (7 s per handshake).
 4. Stop when a job ends (GPU billing stops; the volume bills at the stopped rate). Terminate when the build no longer needs it.
    Read the pod back after every stop or terminate.
 5. Only pods this conversation created are ours. `2ctovlhajlrsxm` (gm-town-motion-b) and `xw8jpdvnvbkwr2` (average_coffee_vole)

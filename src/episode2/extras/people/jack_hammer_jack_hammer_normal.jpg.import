@@ -2,19 +2,19 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://7x0f6c4emxm8"
-path="res://.godot/imported/jack_hammer_textured_mesh.jpg-b5651650e0c1364157b78432d737b745.ctex"
+uid="uid://74id5smehrfp"
+path="res://.godot/imported/jack_hammer_jack_hammer_normal.jpg-e45da4b5c32d8a18aff1ec95ad6fb643.ctex"
 metadata={
 "vram_texture": false
 }
 generator_parameters={
-"md5": "2859c5f9afffc6c4c777221a67385b7c"
+"md5": "1a7e566de032146c4ef77b9987889475"
 }
 
 [deps]
 
-source_file="res://src/episode2/extras/people/jack_hammer_textured_mesh.jpg"
-dest_files=["res://.godot/imported/jack_hammer_textured_mesh.jpg-b5651650e0c1364157b78432d737b745.ctex"]
+source_file="res://src/episode2/extras/people/jack_hammer_jack_hammer_normal.jpg"
+dest_files=["res://.godot/imported/jack_hammer_jack_hammer_normal.jpg-e45da4b5c32d8a18aff1ec95ad6fb643.ctex"]
 
 [params]
 

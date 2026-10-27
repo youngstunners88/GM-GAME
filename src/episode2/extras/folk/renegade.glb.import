@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://q7pqu8i1cuuq"
-path="res://.godot/imported/sheriff.glb-66f9e4db7d1f5e88e48bf4ad651a1e86.scn"
+uid="uid://ditug4n73806e"
+path="res://.godot/imported/renegade.glb-fa0960f5683f11c9c287a0ccf67bc3fb.scn"
 
 [deps]
 
-source_file="res://src/episode2/assets/town/sheriff.glb"
-dest_files=["res://.godot/imported/sheriff.glb-66f9e4db7d1f5e88e48bf4ad651a1e86.scn"]
+source_file="res://src/episode2/extras/folk/renegade.glb"
+dest_files=["res://.godot/imported/renegade.glb-fa0960f5683f11c9c287a0ccf67bc3fb.scn"]
 
 [params]
 

@@ -36,8 +36,15 @@ const JAIL_SIGN := "res://src/episode2/extras/jail/sign_JAIL.png"
 const PRISONER := "res://src/episode2/extras/people/prisoner_accomplice.glb"
 ## Minister Mike Dean rigged on the townfolk skeleton (founder 2026-10-25 post-draw: he runs out in a panic, then kneels and prays by the body).
 const MINISTER := "res://src/episode2/extras/people/minister_mike_dean.glb"
-## Jack Hammer (Jackson Mccree), the main antagonist (founder 2026-10-21: mean, eye patch): a Hunyuan scan rigged on the townfolk skeleton, 1.92 m with the hat.
+## Jack Hammer (Jackson Mccree), the main antagonist: since 2026-10-27 the founder's own Tripo model (Drive "Jack+Hammer.glb"; it
+## replaces our 2026-10-21 Hunyuan scan), Mixamo rig, 1.92 m, CMU clips (Idle, Walk, Greet, Point, Talk) + his own Tripo emotes.
 const JACK_HAMMER := "res://src/episode2/extras/people/jack_hammer.glb"
+## Sheriff James (founder Drive model 2026-10-27: "the new sheriff that needs to replace the current one ... keep the narrative and the
+## voice as is"): Mixamo rig, pipe, hat in hand; CMU clips Idle, Walk, Greet, Point, Talk, Counter, CigarPuff (tools/ep2_motion/clips_sheriff_james.json).
+const SHERIFF_JAMES := "res://src/episode2/extras/folk/sheriff_james.glb"
+## Renegade, the charismatic auctioneer who hosts the auction (founder Drive model 2026-10-27): Mixamo rig, gold suit, pipe;
+## CMU clips Idle, Walk, Greet, Point, Talk, Counter (tools/ep2_motion/clips_renegade.json).
+const RENEGADE := "res://src/episode2/extras/folk/renegade.glb"
 ## Canonical founder stable assets stay at their requested town paths, but their
 ## imported payloads stream with this pack (main-pack headroom is under1MiB).
 const STABLE_DUDE := "res://src/episode2/assets/town/dude_stable_owner.glb"
