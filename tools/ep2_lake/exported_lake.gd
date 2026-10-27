@@ -21,12 +21,26 @@ func walk(target: Vector3) -> bool:
    c.set_move_input(Vector2.ZERO);return true
   c._look_yaw=atan2(d.x,d.z);c.set_move_input(Vector2(0,1));c.step(1.0/60.0)
  return false
+func drawn_ground(c, p: Vector3) -> float:
+ var ground:=c._visuals.get_node("ShoreAndMountain") as MeshInstance3D
+ var arrays:=ground.mesh.surface_get_arrays(0)
+ var vertices: PackedVector3Array=arrays[Mesh.ARRAY_VERTEX]
+ var indices: PackedInt32Array=arrays[Mesh.ARRAY_INDEX]
+ for i in range(0,indices.size(),3):
+  var a: Vector3=ground.to_global(vertices[indices[i]])
+  var b: Vector3=ground.to_global(vertices[indices[i+1]])
+  var d: Vector3=ground.to_global(vertices[indices[i+2]])
+  if p.x<minf(a.x,minf(b.x,d.x)) or p.x>maxf(a.x,maxf(b.x,d.x)) or p.z<minf(a.z,minf(b.z,d.z)) or p.z>maxf(a.z,maxf(b.z,d.z)):continue
+  var hit=Geometry3D.segment_intersects_triangle(p+Vector3(0,20,0),p-Vector3(0,10,0),a,b,d)
+  if hit!=null:return hit.y
+ return INF
 func run() -> void:
  c=load("res://src/episode2/chamber/logans_lake.tscn").instantiate()
  root.add_child(c);c.setup();c.set_physics_process(false)
  await process_frame
  var inventory: Dictionary=c.armory.snapshot().duplicate(true)
  check("packed forest upgrades",c._landscape.upgraded and c._landscape.tree_instances>=90)
+ check("actual exported bank supports Logan",absf(drawn_ground(c,c.LOGAN_MARK)-c._logan.position.y)<.025)
  check("ordinary walk reaches founder Logan",walk(Vector3(-5.5,0,8)))
  check("ordinary interact starts investigation",c.start_rig())
  advance(20)
