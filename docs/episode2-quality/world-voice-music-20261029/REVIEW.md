@@ -1,6 +1,6 @@
 # Episode 2 world, voices and draw music — 2026-10-29
 
-Source base 575664b1. Founder explicitly requires commit, push and verified itch.io release. Status: release checks in progress.
+Source base 575664b1. Founder explicitly requires commit, push and verified itch.io release. Status: public BUILD 2026-10-28-e5198bd and streamed extras verified; see RELEASE_RECEIPT.json.
 
 ## Exact requested audio
 
@@ -35,3 +35,5 @@ Release integration: master advanced to 5f908771 with the concurrent 49564e8d la
 Merged source checks pass: lake art 27, lake life 0 failed, world routes 26, complete trail and Logan story, region map 10. New actual Compatibility camera captures replace the earlier pictures and show the expanded concurrent lake basin through the same continuous handoff. Prior full CI/native results remain applicable to unchanged cast/audio, town, lift and shared systems.
 
 Final merged local export is stamped 2026-10-28-e5198bd, contains both sessions' game code, and passes Chromium boot/Stage 1 gameplay with the expected tag. Focused residual checks remain 163/163 after the merge. Main pack 197533616 bytes; extras 127826144 bytes.
+
+Final release verified at the public itch iframe: BUILD `2026-10-28-e5198bd`, extras HTTP 200 and ready. Pinned butler upload confirmed 55.92 MiB fresh / 50.23 MiB patch, itch build 2236885. This final merged artifact was exported locally with the CI's pinned Godot 4.3 nonthreaded preset and tested in Chromium before upload. It includes all concurrent 49564e8d lake work; its runtime matches master 512072c1. Actual production upload used the configured pinned-butler fallback after the earlier CI secondary-mirror timeout; it is not claimed as a successful automatic CI deployment. Fixed pipeline 40748617404 is queued behind the concurrent production run. Public probe also now accepts itch's completed HTML-iframe response as well as direct URLs, avoiding a false extracting state. Public proof checks build/extras and preserves the access gate; it does not claim an authenticated Episode 2 playthrough.

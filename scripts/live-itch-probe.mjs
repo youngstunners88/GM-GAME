@@ -42,8 +42,10 @@ if (!gameUrl) {
     const lu = page0.match(/"load_url":"([^"]+)"/);
     if (!lu) { console.log('FAIL: no game iframe or load_url on the public page'); process.exit(1); }
     const j = await fetch(lu[1].replace(/\\\//g, '/')).then((r) => r.json()).catch(() => ({}));
-    if (!j.url) { console.log(`WAIT: itch is still processing the upload (${JSON.stringify(j)})`); process.exit(2); }
-    gameUrl = j.url;
+    // Completed embeds may return the iframe as HTML instead of a direct url.
+    const readyUrl = j.url || (typeof j.html === 'string' ? j.html.match(/https:\/\/html-classic\.itch\.zone\/html\/\d+(?:-\d+)?\/index\.html(?:\?v=\d+)?/)?.[0] : '');
+    if (!readyUrl) { console.log(`WAIT: itch is still processing the upload (${JSON.stringify(j)})`); process.exit(2); }
+    gameUrl = readyUrl;
   }
 }
 gameUrl += (gameUrl.includes('?') ? '&' : '?') + 'ep2=1' + (wantLogan ? '&ep2lakeprobe=1' : '');

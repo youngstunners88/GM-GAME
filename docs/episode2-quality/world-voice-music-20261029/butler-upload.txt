@@ -1,0 +1,15 @@
++-----------------------------------+
+|       New version available       |
++-----------------------------------+
+| Current version: 15.28.0 (stable) |
+| Latest version:  15.32.0 (stable) |
+|                                   |
+| Run `butler upgrade` to get it.   |
++-----------------------------------+
+• For channel `html5`: last build is 2236753, downloading its signature
+• Pushing 344.40 MiB (13 files, 0 dirs, 0 symlinks)
+✓ Re-used 83.76% of old, added 55.92 MiB fresh data
+✓ 50.23 MiB patch (85.41% savings)
+• Build is now processing, should be up in a bit.
+
+Use the `butler status youngstunners88/smokerealm:html5` for more information.

@@ -1,0 +1,57 @@
+{
+  "status": "public_build_and_extras_verified",
+  "source_commit": "e5198bdbde9ddcf6ddee9c4d6f1cf0c89c333c23",
+  "build": "2026-10-28-e5198bd",
+  "master_contains_source": "512072c1081865a657be38050756a8b03769b034",
+  "runtime_identical_to_master": true,
+  "preserved_concurrent_game_commit": "49564e8df82b0169a7c503e2ec47d2087373587c",
+  "voices": {
+    "minister": "CfxYdK3WmF3bmrvyLAiU",
+    "dude": "3N5PpVsIKXqmtLAhF2Lj",
+    "logan": "01s40UXbrIC3SwHf5nUh",
+    "ready_takes": 147,
+    "dude_logan_binding": "ELEVEVE"
+  },
+  "artifact": {
+    "origin": "local pinned Godot 4.3 nonthreaded Compatibility release export of the merged source; exact export verified in Chromium",
+    "main_bytes": 197533616,
+    "extras_bytes": 127826144
+  },
+  "publication": {
+    "method": "checksum-pinned butler 15.28.0 fallback",
+    "target": "youngstunners88/smokerealm:html5",
+    "itch_build": 2236885,
+    "userversion": "e5198bdb-combined-20261028",
+    "fresh_mib": 55.92,
+    "patch_mib": 50.23,
+    "log": "butler-upload.txt"
+  },
+  "validation": {
+    "world_routes": 26,
+    "focused_residuals": 163,
+    "stable_yard": 98,
+    "lake_art": 27,
+    "lake_life_failed": 0,
+    "region_map": 10,
+    "combined_trail_logan_story": "ALL PASS",
+    "local_web": "PASS expected build, nonthreaded, boot and Stage1 gameplay",
+    "title_access_harness": "preserved; checks pass",
+    "full_prior_ci": "40736486366 succeeded; 40736490312 attempt2 passed gameplay/cameras/export/security but hit45min secondary-mirror timeout before upload",
+    "fixed_workflow_run": 40748617404,
+    "fixed_workflow_status": "queued at public verification; later source-equivalent probe/docs commits may supersede this run"
+  },
+  "limits": [
+    "Visited instances retained within active session; Continue retains section-start semantics.",
+    "No authenticated public Episode2 walkthrough or real-phone certification claimed."
+  ],
+  "verified_at_utc": "2026-10-28T19:04:59.466974+00:00",
+  "public": {
+    "url": "https://youngstunners88.itch.io/smokerealm",
+    "iframe": "https://html-classic.itch.zone/html/18305533-2236885/index.html",
+    "build": "2026-10-28-e5198bd",
+    "extras_http": 200,
+    "extras": "ready",
+    "screenshot": "public.png",
+    "log": "public-verification.txt"
+  }
+}

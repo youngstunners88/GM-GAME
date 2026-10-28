@@ -1,15 +1,17 @@
 {
-  "observed_remote_sha": "5f908771f5e56a7633d5ad6394cdf6f9d630ed0d",
-  "objective": "RELEASING corrected voices/ELEVEVE, connected world, gradual lake and supplied draw music; preserve concurrent lake life",
-  "game_source_base": "5f908771",
-  "prior_source": "14c00e24",
-  "checks": "Full native and hosted gameplay/export/security passed for 14c; merged-source lake art27/life/world26/trail/Logan/map10 pass; updated Compatibility cameras inspected",
-  "evidence": "docs/episode2-quality/world-voice-music-20261029/REVIEW.md",
-  "pending": [
-    "Export stamped merged source and verify web",
-    "Commit/push mirror bound fix with concurrent source preserved",
-    "Publish latest merged build and verify public BUILD/extras",
-    "Write verified release receipt and update STATUS/vault"
-  ],
-  "release_issue": "40736490312 attempt2 timed out on secondary mirror; verified 14c CI artifact uploaded as interim itch2236753. New fix excludes both large packs from mirror and bounds mirror3minutes; primary keeps both."
+  "observed_remote_sha": "512072c1081865a657be38050756a8b03769b034",
+  "objective": "COMPLETE: requested voices/ELEVEVE, audio, backtracking, transitions, gradual lake and supplied draw music publicly verified; concurrent lake49564 preserved",
+  "release_source": "e5198bdbde9ddcf6ddee9c4d6f1cf0c89c333c23",
+  "build": "2026-10-28-e5198bd",
+  "itch_build": 2236885,
+  "deploy": "checksum-pinned butler fallback;55.92MiBfresh",
+  "public": "BUILD matches; extras HTTP200/ready",
+  "evidence": "docs/episode2-quality/world-voice-music-20261029/RELEASE_RECEIPT.json",
+  "checks": "prior full native/CI plus merged lake27,world26,map10,trail/Logan,residual163, exact local Chromium and public build proof",
+  "automation_pending": {
+    "run": 40748617404,
+    "state": "queued behind40745667641",
+    "fix": "3min nonblocking secondary mirror; omit both oversized packs"
+  },
+  "next": "Game work released. Preserve concurrent work. CI may publish a newer tag with identical runtime. No authenticated public Episode2/real-phone claim; active-session instance retention only."
 }
