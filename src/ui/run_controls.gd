@@ -1,12 +1,10 @@
 class_name RunControls
 extends CanvasLayer
-## Visible pause and manual checkpoint save, shared by both episodes.
+## Manual checkpoint save shared by both episodes. Pause uses P / the existing touch control.
 ## Real Buttons support keyboard/mouse; raw finger taps also work with a thumb held.
-var pause_action: Callable
 var save_action: Callable
 var available: Callable
 var checkpoint_name: Callable
-var pause_button: Button
 var save_button: Button
 var status: Label
 var _last_frame: int = -1
@@ -17,7 +15,6 @@ var _point: String = ""
 var _save_started: int = 0
 
 class IconButton extends Button:
-    var save_icon: bool = false
     var saved: bool = false
     var failed: bool = false
     func _draw() -> void:
@@ -26,22 +23,15 @@ class IconButton extends Button:
         if failed: c = Color(1, .3, .3)
         draw_set_transform(size * .5, 0.0, Vector2.ONE * (size.x / 56.0))
         var p := Vector2.ZERO
-        if save_icon:
-            draw_rect(Rect2(p - Vector2(12, 12), Vector2(24, 24)), c, false, 2)
-            draw_rect(Rect2(p - Vector2(7, 11), Vector2(14, 8)), c, false, 2)
-            draw_rect(Rect2(p + Vector2(-7, 3), Vector2(14, 8)), c, false, 2)
-            if saved: draw_polyline(PackedVector2Array([p+Vector2(-7,0), p+Vector2(-2,5), p+Vector2(9,-6)]), c, 3)
-        elif StateMachine.is_paused():
-            draw_colored_polygon(PackedVector2Array([p+Vector2(-7,-12),p+Vector2(12,0),p+Vector2(-7,12)]), c)
-        else:
-            draw_rect(Rect2(p-Vector2(10,12),Vector2(6,24)),c)
-            draw_rect(Rect2(p+Vector2(4,-12),Vector2(6,24)),c)
+        draw_rect(Rect2(p - Vector2(12, 12), Vector2(24, 24)), c, false, 2)
+        draw_rect(Rect2(p - Vector2(7, 11), Vector2(14, 8)), c, false, 2)
+        draw_rect(Rect2(p + Vector2(-7, 3), Vector2(14, 8)), c, false, 2)
+        if saved: draw_polyline(PackedVector2Array([p+Vector2(-7,0), p+Vector2(-2,5), p+Vector2(9,-6)]), c, 3)
 
 func _ready() -> void:
     layer = 75
     process_mode = Node.PROCESS_MODE_ALWAYS
-    pause_button = _button("PauseButton", false, func() -> void: pause_action.call())
-    save_button = _button("SaveButton", true, _save)
+    save_button = _button("SaveButton", _save)
     status = Label.new()
     status.name = "SaveStatus"
     status.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -51,10 +41,10 @@ func _ready() -> void:
     get_viewport().size_changed.connect(_layout)
     _layout()
 
-func _button(label: String, disk: bool, action: Callable) -> Button:
+func _button(label: String, action: Callable) -> Button:
     var b := IconButton.new()
     b.name = label
-    b.save_icon = disk
+    b.focus_mode = Control.FOCUS_NONE # Never let Space/jump activate a HUD button.
     b.custom_minimum_size = Vector2(56, 48)
     b.size = Vector2(56, 48)
     add_child(b)
@@ -76,21 +66,18 @@ func _activate(action: Callable) -> void:
     action.call()
 
 func _layout() -> void:
-    if pause_button == null: return
+    if save_button == null: return
     var area: Rect2 = TouchUi.metrics().safe_rect if TouchUi.is_touch() else get_viewport().get_visible_rect()
     var scale_dp: float = TouchUi.metrics().dp if TouchUi.is_touch() else 1.0
     var edge: Vector2 = area.position + Vector2(area.size.x, 0)
-    pause_button.position = edge + Vector2(-146, 108) * scale_dp
     save_button.position = edge + (Vector2(-114,40) if TouchUi.is_touch() else Vector2(-82,108)) * scale_dp
-    pause_button.size = Vector2(56,48) * scale_dp
-    save_button.size = pause_button.size
+    save_button.size = Vector2(56,48) * scale_dp
     status.position = edge + Vector2(-430, 163) * scale_dp
     status.size = Vector2(405, 48) * scale_dp
 
 func _process(_delta: float) -> void:
     var ok: bool = available.is_valid() and available.call()
     visible = ok
-    pause_button.disabled = not ok
     save_button.disabled = not ok or _waiting or GameManager.manual_save_status() == 0
     if _waiting:
         var result: int = GameManager.manual_save_status()
@@ -101,11 +88,8 @@ func _process(_delta: float) -> void:
     if touch != _last_touch:
         _last_touch = touch
         _layout()
-    pause_button.visible = not touch
-    pause_button.tooltip_text = "" if touch else "Pause / Resume (Esc)"
     save_button.tooltip_text = "" if touch else "Save checkpoint: " + str(checkpoint_name.call())
     status.visible = not touch
-    pause_button.queue_redraw()
 
 func _save() -> void:
     if not available.call(): return

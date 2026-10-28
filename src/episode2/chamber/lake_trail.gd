@@ -39,7 +39,7 @@ const SHORE_SECONDS := 2.6
 
 ## Catmull-Rom control points (x, z). The sampled route is about 560 m long.
 const TRAIL_POINTS: Array = [
-	Vector2(0.0, 0.0), Vector2(0.0, 44.0), Vector2(8.0, 88.0), Vector2(-5.0, 134.0),
+	Vector2(0.0, 0.0), Vector2(10.0, -6.0), Vector2(21.0, -6.0), Vector2(33.0, 10.0), Vector2(18.0, 55.0), Vector2(8.0, 88.0), Vector2(-5.0, 134.0),
 	Vector2(-13.0, 182.0), Vector2(1.0, 232.0), Vector2(15.0, 284.0), Vector2(8.0, 336.0),
 	Vector2(-4.0, 390.0), Vector2(-2.0, 446.0), Vector2(0.0, 500.0),
 ]
@@ -119,7 +119,7 @@ func _beat_label(b: int) -> String:
 # --- set -------------------------------------------------------------------------------------------------------------
 
 func _build_steps() -> Array:
-	return [_step_light, _step_path, _step_ground, _step_trail, _step_desert, _step_lake, _step_horse, _step_bandits]
+	return [_step_light, _step_path, _step_ground, _step_trail, _step_desert, _step_lake, _step_horse, _step_departure_yard, _step_bandits]
 
 
 func _warm_views() -> Array:
@@ -153,6 +153,18 @@ func _step_path() -> void:
 		_route_arc.append(total)
 	_route_total = total
 
+
+func _step_departure_yard() -> void:
+	# The same ranch set surrounds the saddle at the cut, expressed in trail-local coordinates.
+	var parent := Node3D.new()
+	parent.name = "DepartureStables"
+	_visuals.add_child(parent)
+	parent.position = -GoldTownChamber.DEPART_HORSE
+	var props: Array = []
+	var walls: Array = []
+	var yard := Ep2StableYard.build(parent, props, walls)
+	# Slot 1 is now the ridden horse, not a second horse occupying the saddle.
+	if yard.horses.size()>1: yard.horses[1].hide()
 
 func _step_ground() -> void:
 	var ground := MeshInstance3D.new()

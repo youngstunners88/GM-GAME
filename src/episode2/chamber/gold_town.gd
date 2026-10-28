@@ -289,6 +289,9 @@ var _panner_given: bool = false
 var _stamped: bool = false                            # the certificate's stamp (the second visit)
 var _minister2_said: bool = false
 var _horse_bought: bool = false
+var _depart_mounted: bool = false
+var _depart_from := Vector3.ZERO
+const DEPART_HORSE := Vector3(-13,0,1230)
 
 
 func _init() -> void:
@@ -726,7 +729,7 @@ func look(relative: Vector2) -> void:
 
 
 func _move_player(delta: float) -> void:
-	if _mounted:
+	if _mounted or _depart_mounted:
 		_moving = false
 		return
 	super(delta)
@@ -799,6 +802,11 @@ func _tick_viewmodel(delta: float) -> void:
 ## [E] at the counter opens Rich & Utah's trade. The personal armory keeps its own key: this is a
 ## trade with crypto, not a loadout swap (founder lock PROMPT_EPISODE2_RICH_ARMORY_UTAH_RIVER.md).
 func start_rig(_payment: String = "") -> bool:
+	if can_mount_departure():
+		_depart_mounted = true
+		_depart_from = _player_pos
+		_end_t = 1.2
+		return true
 	if _can_loot():
 		_loot()
 		return true
@@ -1318,9 +1326,9 @@ func _on_beat_entered(b: int) -> void:
 					_hud.toast("THE SHERIFF HANDS BACK YOUR IRONS AT THE TOWN LIMITS", 3.4)
 			prebuild_requested.emit("lake_trail")
 			if _hud:
-				_hud.objective = "Ride for Logan's Lake - the horse needs water in this heat. It's on the map."
+				_hud.objective = "Mount your horse at Dude’s stables. Logan’s Lake is marked on your map."
 				_hud.toast("TO LOGAN'S LAKE", 3.4)
-			_start_show([FacilityShow._say("town_trade_11"), FacilityShow._say("town_trade_12")], false)
+			# Wait here for the player to mount at the actual stables.
 		Beat.DONE:
 			_resolve({"next_chamber": "lake_trail", "horse": _horse_bought, "got_map": _got_map, "peacemaker": _got_peacemaker,
 				"stamped": _stamped, "draw_losses": _losses,
@@ -1671,6 +1679,9 @@ func _can_loot() -> bool:
 func _loot() -> void:
 	_got_peacemaker = true
 	_got_map = true
+	GameManager.has_region_map = true
+	GameManager.map_active_destination = "auction"
+	GameManager.save_session()
 	_town_sfx("gun_pickup")
 	if _revolver != null:
 		_revolver.visible = false
@@ -1987,15 +1998,15 @@ func _tick(delta: float) -> void:
 				_after_story()
 		Beat.GEARED:
 			if _hud != null:
-				_hud.set_search_prompt("")
-			if not _show_active and _end_t < 0.0:
-				_end_t = 2.4
-			elif _end_t >= 0.0 and not _show_active:
-				_end_t = maxf(0.0, _end_t - delta)
-				if _end_t == 0.0 and _handoff_ok():
-					_end_t = -1.0
-				if _end_t < 0.0:
-					_advance_to(Beat.DONE)
+				_hud.set_search_prompt(("Mount horse [E]" if TouchUi.keys_shown() else "Mount horse") if can_mount_departure() else "")
+			if _depart_mounted:
+				_end_t = maxf(0.0,_end_t-delta)
+				var mount_k: float = smoothstep(0.0,1.0,1.0-_end_t/1.2)
+				_player_pos = _depart_from.lerp(DEPART_HORSE,mount_k)
+				eye_height = lerpf(1.55,2.18,mount_k)
+				_look_yaw = lerp_angle(_look_yaw,atan2(10.0,-6.0),mount_k)
+				if _end_t == 0.0 and _handoff_ok(): _advance_to(Beat.DONE)
+
 	if _stable_yard != null and _hud != null:
 		var show_prompt: bool = _stable_interaction_allowed() and _stable_yard.can_talk(_player_pos)
 		if show_prompt:
@@ -2028,12 +2039,17 @@ func _on_stable_line(who: String, text: String, id: String, _voice: String) -> v
 
 func _on_stable_horse_bought(_paid: int, _credit: int) -> void:
 	_horse_bought = true
+	GameManager.map_active_destination = "logans_lake"
+	GameManager.save_session()
 	if _hud != null:
 		_hud.objective = "Take your horse to Logan's Lake first so she can drink and cool down. It's on the map."
 
 
+func can_mount_departure() -> bool:
+	return _beat == Beat.GEARED and _horse_bought and not _depart_mounted and not _show_active and _player_pos.distance_to(DEPART_HORSE) < 3.0
+
 func _wants_handoff() -> bool:
-	return _beat == Beat.GEARED and not _show_active
+	return _beat == Beat.GEARED and _depart_mounted and not _show_active
 
 
 ## True when Lil Blunt is inside `piece` deeper than `depth` (local z, negative = inside).

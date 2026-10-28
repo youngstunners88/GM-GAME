@@ -1,5 +1,7 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**2026-10-28 — P pause, Western region chart, explicit stables departure (verification in progress).** Removed the extra desktop HUD pause button; P pauses/resumes both episodes and HUD Save cannot capture Space/jump focus. The stranger's looted chart now persists, appears top-left and opens with M (Escape closes it before normal pause). Parchment map marks Main Street/claims/saloon/jail/off-main Armory, Dude's ranch, the lake/cabin and auction; player marker and lake destination. Dude explicitly says mount at the stables; GEARED waits for E beside the saddled horse, raises the eye into the saddle, and enters the existing ambush trail surrounded by the same ranch set. No automatic timed town departure. Existing progression/access/title/nonthreaded export preserved. Verification/release receipt: docs/episode2-quality/map-stables-20261028/RELEASE.md.
+
 **FOUNDER FIX PACK 2026-10-27, SLICE 3: THE LOCKED STORY ORDER, THE NEW CAST, CONSEQUENCES, TOWN LIFE, THE RIDE TO THE LAKE (shipping).**
 - *The draw and after, in the founder's order:* the stranger wears a **Colt Single Action Army (the Peacemaker)** on his hip and draws it at the
   bell; when he falls it lands in the dirt by the body (which bleeds). **E at the body** takes the Peacemaker and the map to the auction. Then

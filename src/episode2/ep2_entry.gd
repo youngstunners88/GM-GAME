@@ -188,13 +188,23 @@ func _begin() -> void:
 	_root.session_failed.connect(_on_session_failed)
 	_root.touch_profile_changed.connect(_sync_portrait_exit)
 	_run_controls = RunControls.new()
-	_run_controls.pause_action = func() -> void:
-		if _pause_open: _close_pause()
-		else: _open_pause()
 	_run_controls.save_action = _save_checkpoint
 	_run_controls.available = func() -> bool: return _can_pause() or _pause_open
 	_run_controls.checkpoint_name = func() -> String: return str(_root.section_checkpoint.get("label", "Episode 2 section start"))
 	add_child(_run_controls)
+	var chart := preload("res://src/episode2/ui/region_map.gd").new()
+	chart.name = "RegionMap"
+	chart.allowed = _can_pause
+	chart.context = func() -> Vector2:
+		var room: Node = _root.get_active()
+		if room is LakeTrailChamber:
+			return Vector2(.23,.42).lerp(Vector2(.74,.38), clampf(room._route_s / maxf(1.0,room._route_total),0,1))
+		if room is GoldTownChamber:
+			var pos: Vector3 = room.get_player_position()
+			if pos.z < 1300: return Vector2(.23,.42)
+			return Vector2(clampf(.23+pos.x/220,.1,.39),clampf(.68+(pos.z-1420)/400,.51,.8))
+		return Vector2(.74,.38)
+	add_child(chart)
 	var record: Dictionary = GameManager.take_episode2_resume()
 	if not record.is_empty():
 		_saved_offset = clampi(SaveSafe.to_int(record.get("offset"), 0), 0, TRACK_PLAN.size()-1)
@@ -290,6 +300,7 @@ func _physics_process(_delta: float) -> void:
 func _process(delta: float) -> void:
 	_keys_t = maxf(0.0, _keys_t - delta)
 	_refresh_hud()
+	if GameManager.has_region_map: _hud.position.x = 158.0
 	_update_title_card()
 	if _probe and _root:
 		var chamber: Node = _root.get_active()
@@ -395,7 +406,7 @@ func _refresh_hud() -> void:
 				]
 			_hint.text = ("MOUSE aim   LMB fire   R reload   X / RMB axe\n"
 				+ "A / D hop carts   SPACE jump / grab zipline   S duck   "
-				+ "ESC  pause")
+				+ "P  pause")
 		Ep2SessionRoot.Mode.CHAMBER:
 			# Chamber 0 is a story beat with a completely different HUD from a
 			# protocol chamber: no vest, no ammo, no bear count — just where you
@@ -420,7 +431,7 @@ func _refresh_hud() -> void:
 				if Episode2Mode.is_first_person(mode):
 					lines += "\nFIRST-PERSON SHOOTER   ·   Inferno Bull rides with you   ·   BTC paid: %d" % a.get_btc_paid()
 				_hint.text = ("ARROWS / WASD  move      SPACE  jump      MOUSE  look (click to lock)      SHIFT  run\n"
-					+ "E  talk / take      LMB  fire      RMB (hold)  aim down the sights      R  reload      ESC  pause")
+					+ "E  talk / take      LMB  fire      RMB (hold)  aim down the sights      R  reload      P  pause")
 			elif a:
 				lines += "MINER SHAFT\n"
 				lines += "health %d   ammo %d   bears %d\n" % [a.get_health(), a.get_ammo(), a.get_live_bear_count()]
@@ -435,7 +446,7 @@ func _refresh_hud() -> void:
 				# first browser capture of Chamber 0 showed a story beat telling
 				# the player to "start Miner" and "EARLY CLAIM", neither of
 				# which exists in that room.
-				_hint.text = "E  start Miner (hold SHIFT to pay ETH+Diamonds)\nJ / ENTER  shoot     S  cover (hold)\nSHIFT+X / dash  EARLY CLAIM (take partial GOLD now)\nESC  pause"
+				_hint.text = "E  start Miner (hold SHIFT to pay ETH+Diamonds)\nJ / ENTER  shoot     S  cover (hold)\nSHIFT+X / dash  EARLY CLAIM (take partial GOLD now)\nP  pause"
 		Ep2SessionRoot.Mode.TRANSITION:
 			lines += "loading…"
 		_:

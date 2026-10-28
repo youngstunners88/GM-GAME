@@ -500,6 +500,10 @@ func _ready() -> void:
 	_until(c, 30.0, func(): return c.get_beat_name() == "GEARED")
 	_check("-> GEARED: with the long rifle and the river gear already bought at Rich's, he rides for Logan's Lake",
 		c.get_beat_name() == "GEARED" and c.has_sniper() and c.has_river_gear() and "logan" in str(c.get_hud().objective).to_lower(), c.get_beat_name())
+	c.step(10.0)
+	_check("Dude never auto-warps the player to the trail", res.is_empty())
+	c._player_pos = GoldTownChamber.DEPART_HORSE + Vector3(1.5,0,0)
+	_check("E explicitly mounts the horse at the stables",c.can_mount_departure() and c.start_rig(""))
 	_until(c, 20.0, func(): return res.size() == 1)
 	_check("the town hands on to the ride to Logan's Lake on Dude's horse, the map and the Peacemaker in hand, the certificate stamped, mints nothing",
 		res.size() == 1 and str(res[0].get("next_chamber", "")) == "lake_trail" and bool(res[0].get("horse", false))

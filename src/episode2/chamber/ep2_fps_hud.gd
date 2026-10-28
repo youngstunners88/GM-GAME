@@ -462,7 +462,7 @@ func _draw() -> void:
 		_draw_lesson_path(beat)
 	elif objective != "" and _font:
 		var fs: int = int(h * 0.036)
-		var pos := Vector2(34.0, 62.0)
+		var pos := Vector2(158.0 if GameManager.has_region_map else 34.0, 62.0)
 		if step_total > 0:
 			var hdr := "TARGET PRACTICE   %d / %d" % [step_index, step_total]
 			draw_string_outline(_font, pos, hdr, HORIZONTAL_ALIGNMENT_LEFT, -1, int(h * 0.026), 6, Color(0, 0, 0, 0.8))

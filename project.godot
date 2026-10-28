@@ -103,8 +103,14 @@ move_down={
 }
 pause={
 "deadzone": 0.5,
-"events": [Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"button_index":6,"pressure":0.0,"pressed":false,"script":null)
+"events": [Object(InputEventKey,"physical_keycode":80)
+, Object(InputEventJoypadButton,"resource_local_to_scene":false,"resource_name":"","device":-1,"button_index":6,"pressure":0.0,"pressed":false,"script":null)
 ]
+}
+
+toggle_map={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"physical_keycode":77)]
 }
 
 [layer_names]

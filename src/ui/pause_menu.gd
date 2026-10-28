@@ -1,7 +1,7 @@
 extends CanvasLayer
 ## In-run pause menu (Stages 1-3 and the Smoke Lounge).
 ##
-## Escape / gamepad B (`ui_cancel`) or the touch pause button / gamepad Start
+## P / Escape / gamepad B (`ui_cancel`) or the touch pause button / gamepad Start
 ## (`pause`) toggles PLAYING <-> PAUSED on the StateMachine, which owns
 ## `get_tree().paused`. This node listens, shows itself, and wires its own four
 ## buttons, so whichever scene instances it gets a working menu (the Smoke Lounge
@@ -23,7 +23,7 @@ extends CanvasLayer
 ##    Resume would do nothing. The buttons therefore also act on the raw finger
 ##    events; the same-frame dedupe below stops the emulated click from firing twice.
 
-## Touch pause button / gamepad Start. Escape stays on the built-in `ui_cancel`.
+## P / touch pause button / gamepad Start. Escape stays on the built-in `ui_cancel`.
 const PAUSE_ACTION := &"pause"
 
 ## Wall-clock moment this pause began (msec), or -1 when not paused.
@@ -40,7 +40,6 @@ func _ready() -> void:
     if not TouchUi.keys_shown(): get_node("VBox/SaveBtn").hide()
     var controls := RunControls.new()
     _run_controls = controls
-    controls.pause_action = toggle
     controls.save_action = GameManager.save_manual_checkpoint
     controls.available = func() -> bool: return (StateMachine.is_playing() and not get_tree().paused) or (StateMachine.is_paused() and visible)
     controls.checkpoint_name = GameManager.checkpoint_label

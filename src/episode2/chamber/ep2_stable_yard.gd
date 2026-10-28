@@ -490,6 +490,7 @@ func try_talk(player: Vector3) -> bool:
 		lines.append(_line("dude_ranch_10"))
 		lines.append(_line("dude_ranch_11" if _tender_for(HORSE_PRICE) != "" else "dude_ranch_12", "horse_deal"))
 		lines.append(_line("dude_ranch_13"))
+		lines.append({"who":"DUDE", "text":"Mount your saddled horse here at the stables, partner. Follow the trail on your map to Logan’s Lake.", "id":"", "voice":""})
 		# fix pack 2026-10-27 step 11: in the same talk Dude offers his Chill Buds (the first one is his gift; more on the next talk)
 		if not GameManager.dude_free_bud_claimed:
 			lines.append(_line("dude_ranch_03", "free_bud"))

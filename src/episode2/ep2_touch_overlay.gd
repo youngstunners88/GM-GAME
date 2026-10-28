@@ -256,8 +256,8 @@ func _place(pad: Pad, centre: Vector2, radius_dp: float) -> void:
 
 # --- keyboard / gamepad -------------------------------------------------------
 
-## The `pause` action (gamepad Start) or accept resumes; Escape leaves for the menu, exactly what
-## it does when the card is not up (the run itself is paused, so its own handler cannot hear it).
+## P / gamepad Start / accept / Escape resumes this card.
+## The run itself is paused, so its own handler cannot hear these inputs.
 func _input(event: InputEvent) -> void:
 	if _mode != Mode.PAUSE or event.is_echo():
 		return

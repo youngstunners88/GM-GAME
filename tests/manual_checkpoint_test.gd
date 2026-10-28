@@ -36,7 +36,9 @@ func _ready() -> void:
  var pm: CanvasLayer = load("res://src/ui/pause_menu.tscn").instantiate()
  add_child(pm);playing()
  await get_tree().process_frame
- pm.toggle()
+ var pause_key := InputEventKey.new();pause_key.pressed=true;pause_key.keycode=KEY_P;pause_key.physical_keycode=KEY_P
+ check("P is mapped to pause",pause_key.is_action_pressed("pause"))
+ pm._unhandled_input(pause_key)
  check("Episode1 pause freezes the tree",StateMachine.is_paused() and get_tree().paused)
  pm.get_node("VBox/SaveBtn").pressed.emit()
  check("pause Save writes a real checkpoint",FileAccess.file_exists(GameManager.SAVE_PATH) and GameManager.manual_resume.get("episode")==1)
@@ -52,14 +54,23 @@ func _ready() -> void:
  check("failed write preserves existing save",FileAccess.get_file_as_string(GameManager.SAVE_PATH)==previous)
  check("malformed manual record is rejected",not GameManager.save_manual_checkpoint({"version":1,"episode":2,"state":{},"section":{"mode":2,"segment":999,"room":"gold_town"}}))
  check("rejected save preserves previous checkpoint",FileAccess.get_file_as_string(GameManager.SAVE_PATH)==previous)
- pm._on_resume_pressed();pm.queue_free();await get_tree().process_frame
+ pm._unhandled_input(pause_key)
+ check("P resumes Episode1",StateMachine.is_playing() and not get_tree().paused)
+ check("Episode1 has no HUD pause button",pm._run_controls.get_node_or_null("PauseButton")==null)
+ pm.queue_free();await get_tree().process_frame
  playing()
  GameManager.manual_resume={};GameManager.ep2_story_unlocked=true
  var entry: Node = load("res://src/episode2/ep2_entry.tscn").instantiate()
  add_child(entry);await get_tree().process_frame
  var root: Ep2SessionRoot = entry._root
  root.get_active().set_physics_process(false)
- check("both visible controls exist in Episode2",entry._run_controls.pause_button!=null and entry._run_controls.save_button!=null)
+ check("Episode2 retains Save without a HUD pause button",entry._run_controls.get_node_or_null("PauseButton")==null and entry._run_controls.save_button!=null)
+ check("HUD Save cannot capture jump/Space focus",entry._run_controls.save_button.focus_mode==Control.FOCUS_NONE)
+ entry._unhandled_input(pause_key)
+ check("P pauses Episode2",entry.is_pause_open() and StateMachine.is_paused())
+ await get_tree().process_frame
+ entry.get_overlay()._input(pause_key)
+ check("P resumes Episode2",not entry.is_pause_open() and StateMachine.is_playing())
  var event := InputEventKey.new();event.pressed=true;event.keycode=KEY_ESCAPE;event.physical_keycode=KEY_ESCAPE
  entry._unhandled_input(event)
  check("desktop Escape opens pause instead of leaving",entry.is_pause_open() and StateMachine.is_paused())

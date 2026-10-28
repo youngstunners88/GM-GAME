@@ -351,8 +351,11 @@ jobs:
           timeout 120 "$GODOT_BIN" --headless res://tests/save_compat_test.tscn > save-compat-tests.log 2>&1
           grep -q 'SAVE_COMPAT: ALL PASS' save-compat-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' save-compat-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/ep2_region_map_test.tscn > region-map-tests.log 2>&1
+          grep -q 'REGION_MAP: 10 checks, 0 failed' region-map-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' region-map-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/manual_checkpoint_test.tscn > manual-checkpoint-tests.log 2>&1
-          grep -q 'MANUAL_CHECKPOINT: 30 checks, 0 failed' manual-checkpoint-tests.log
+          grep -q 'MANUAL_CHECKPOINT: 36 checks, 0 failed' manual-checkpoint-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' manual-checkpoint-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/pause_menu_test.tscn 2>&1 | tee pause-tests.log
           grep -q 'PAUSE_MENU: ALL PASS' pause-tests.log

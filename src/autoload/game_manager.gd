@@ -469,6 +469,8 @@ var chill_buds: int = 0
 ## persistent holdings, saved alongside the purse rather than run currency.
 var dude_free_bud_claimed: bool = false
 var dude_credit_btc: int = 0
+var has_region_map: bool = false
+var map_active_destination: String = ""
 
 ## Total number of bears Lil Blunt has personally put down.
 func bear_total() -> int:
@@ -541,6 +543,9 @@ func _load_ledger(data: Dictionary) -> void:
             bear_tally[key] = count
     chill_buds = maxi(0, SaveSafe.to_int(data.get("chill_buds", 0), 0))
     dude_free_bud_claimed = SaveSafe.to_int(data.get("dude_free_bud_claimed", 0), 0) != 0
+    has_region_map = SaveSafe.to_int(data.get("has_region_map", 0), 0) != 0
+    map_active_destination = SaveSafe.to_str(data.get("map_active_destination", ""))
+    if map_active_destination not in ["", "auction", "logans_lake"]: map_active_destination = ""
     dude_credit_btc = clampi(SaveSafe.to_int(data.get("dude_credit_btc", 0), 0), 0, 1000000)
     runner_btc_credited = 0
     chill_buds_changed.emit(chill_buds)
@@ -896,6 +901,8 @@ func reset_session() -> void:
     chill_buds = 0
     dude_free_bud_claimed = false
     dude_credit_btc = 0
+    has_region_map = false
+    map_active_destination = ""
     chill_buds_changed.emit(0)
     blaze_rush_completed.clear()
     secret_door_used.clear()
@@ -957,6 +964,8 @@ func session_data() -> Dictionary:
         "chill_buds": chill_buds,
         "dude_free_bud_claimed": dude_free_bud_claimed,
         "dude_credit_btc": dude_credit_btc,
+        "has_region_map": has_region_map,
+        "map_active_destination": map_active_destination,
         "blaze_rush": _serialize_blaze_completions(),
         "health": player_health,
         "max_health": max_health,

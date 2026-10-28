@@ -2,7 +2,7 @@
 // Real-browser playtest for the in-run PAUSE MENU (src/ui/pause_menu.gd).
 //
 // Drives the actual web export in Chromium, the way a player does:
-//   desktop - Escape pauses and resumes Stage 1, the hero stays frozen while paused with
+//   desktop - P pauses and resumes Stage 1, the hero stays frozen while paused with
 //             a movement key held, then Resume / Restart / Talk / Quit buttons by mouse.
 //   phone   - the see-through PAUSE button (top-right) by touch, Resume by touch, and
 //             the multi-finger case: one thumb still resting on the stick while the other
@@ -132,9 +132,9 @@ async function runProfile(browser, key) {
   gate('the game has never been PAUSED before the first press', nPlayingBefore === 0);
 
   if (!p.touch) {
-    // ---- keyboard: Escape pauses, hero frozen with D held, Escape resumes
-    await page.keyboard.press('Escape');
-    gate('Escape pauses (state beacon says PAUSED)', await waitLast('PAUSED'));
+    // ---- keyboard: P pauses, hero frozen with D held, P resumes
+    await page.keyboard.press('KeyP');
+    gate('P pauses (state beacon says PAUSED)',  await waitLast('PAUSED'));
     await page.waitForTimeout(500);
     await shot('02-paused-menu');
     await page.keyboard.down('KeyD');                 // hold right THROUGH the pause
@@ -144,8 +144,8 @@ async function runProfile(browser, key) {
     const b = await hudHash('02b-paused-clip-2');
     gate('the hero is frozen while paused with D held (overlay byte-identical 1.2 s apart)', a === b);
     await page.keyboard.up('KeyD');
-    await page.keyboard.press('Escape');
-    gate('Escape again resumes (state PLAYING)', await waitLast('PLAYING'));
+    await page.keyboard.press('KeyP');
+    gate('P again resumes (state PLAYING)', await waitLast('PLAYING'));
     await page.keyboard.down('KeyD');
     await page.waitForTimeout(300);
     const c = await hudHash('03a-playing-clip-1');
@@ -177,6 +177,19 @@ async function runProfile(browser, key) {
     gate('Escape closes the Talk panel without resuming the game', (await last()) === 'PAUSED');
     await page.keyboard.press('Escape');
     gate('the next Escape resumes', await waitLast('PLAYING'));
+
+    // A HUD click must never turn Space/jump into pause or another Save activation.
+    const disk = toCss(1226, 132);
+    await page.mouse.click(disk.x, disk.y);
+    const pausesBeforeJump = (await states()).filter((s) => s === 'PAUSED').length;
+    const ground = await hudHash('01a-before-jump');
+    await page.keyboard.press('Space');
+    await page.waitForTimeout(180);
+    const airborne = await hudHash('01b-after-jump');
+    await page.keyboard.press('Space');
+    await page.waitForTimeout(180);
+    gate('Space after clicking HUD Save keeps gameplay running', (await last()) === 'PLAYING' && (await states()).filter((s) => s === 'PAUSED').length === pausesBeforeJump);
+    gate('jump input changes the player overlay after HUD Save click', ground !== airborne);
 
     // ---- Restart reloads the stage and the new stage can be paused again
     await page.keyboard.press('Escape');
