@@ -107,6 +107,15 @@ func _ready() -> void:
 	check("woods/town builder produces the same two actors and herd", twin.actors.size() == 2 and twin.horses.size() == 8)
 	check("handoff preserves actor places", twin.actors[0].position == yard.actors[0].position and twin.actors[1].position == yard.actors[1].position)
 	check("handoff preserves horse place and clip phase", twin.horses[4].position == yard.horses[4].position and absf((twin._horse_anims[2] as AnimationPlayer).current_animation_position - (yard._horse_anims[2] as AnimationPlayer).current_animation_position) < 0.00005)
+	# Every instance of a model shares its imported clip library: the twin re-installing the ranch poses there pulled the clips out
+	# from under this yard's players (missing-animation errors here, a segfault on CI, 2026-10-28). Each player owns its list now.
+	var own_lists := true
+	for i in 2:
+		var mine: AnimationLibrary = yard.actors[i].anim_player().get_animation_library("")
+		var theirs: AnimationLibrary = twin.actors[i].anim_player().get_animation_library("")
+		own_lists = own_lists and mine != theirs and mine.has_animation(Ep2RanchPose.RIDE) and mine.has_animation(Ep2RanchPose.BRUSH) \
+			and mine.get_animation(Ep2RanchPose.RIDE) != theirs.get_animation(Ep2RanchPose.RIDE) and _clip(yard.actors[i].anim_player(), "idle") != ""
+	check("each yard's people own their clip list (a second yard cannot pull a clip out from under them)", own_lists)
 	yard.restore(before)
 	c._beat = GoldTownChamber.Beat.STREET
 	c._hold = 0

@@ -120,10 +120,7 @@ static func _install(player: AnimationPlayer, skel: Skeleton3D, fwd: Vector3, up
 		var pose: Dictionary = poses[k]
 		var hips_value: Vector3 = pose["hips_pos"]
 		anim.position_track_insert_key(position_track, float(beats[k]), hips_value)
-	var lib: AnimationLibrary = player.get_animation_library("") if player.has_animation_library("") else null
-	if lib == null:
-		lib = AnimationLibrary.new()
-		player.add_animation_library("", lib)
+	var lib: AnimationLibrary = Ep2TownFolk.own_default_library(player)   # never the model's shared library
 	if lib.has_animation(clip):
 		lib.remove_animation(clip)
 	lib.add_animation(clip, anim)

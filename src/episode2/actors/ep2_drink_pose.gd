@@ -49,10 +49,7 @@ static func install(player: AnimationPlayer, skel: Skeleton3D, fwd: Vector3, up:
 	anim.track_set_path(tp, NodePath("%s:%s" % [path, skel.get_bone_name(idx["Hips"])]))
 	for k in BEATS.size():
 		anim.position_track_insert_key(tp, float(BEATS[k][0]), poses[k]["hips_pos"])
-	var lib: AnimationLibrary = player.get_animation_library("") if player.has_animation_library("") else null
-	if lib == null:
-		lib = AnimationLibrary.new()
-		player.add_animation_library("", lib)
+	var lib: AnimationLibrary = Ep2TownFolk.own_default_library(player)   # never the model's shared library
 	var name: String = "SitDrink" if seated else "StandDrink"
 	if lib.has_animation(name):
 		lib.remove_animation(name)
@@ -132,10 +129,7 @@ static func _bake_variant(player: AnimationPlayer, skel: Skeleton3D, idx: Dictio
 	anim.track_set_path(tp, NodePath("%s:%s" % [path, skel.get_bone_name(idx["Hips"])]))
 	for k in beats.size():
 		anim.position_track_insert_key(tp, float(beats[k][0]), poses[k]["hips_pos"])
-	var lib: AnimationLibrary = player.get_animation_library("") if player.has_animation_library("") else null
-	if lib == null:
-		lib = AnimationLibrary.new()
-		player.add_animation_library("", lib)
+	var lib: AnimationLibrary = Ep2TownFolk.own_default_library(player)   # never the model's shared library
 	if lib.has_animation(clip_name):
 		lib.remove_animation(clip_name)
 	lib.add_animation(clip_name, anim)

@@ -157,6 +157,34 @@ func anim_player() -> AnimationPlayer:
 	return _anim
 
 
+## `player`'s default animation library, made this player's own before a runtime clip (Ep2RanchPose, Ep2DrinkPose) is written
+## into it. Every instance of one imported model SHARES that library, so a clip installed or replaced on one copy lands on - and
+## can be pulled out from under - every other copy: a second stable yard re-installing Dude's ranch clips crashed the CI run
+## (2026-10-28), and two drinkers of one model shared the first one's sip. The copy is shallow (the imported clips stay shared,
+## only the list is this player's), it is made once, and the clip that is playing carries on from where it was.
+static func own_default_library(player: AnimationPlayer) -> AnimationLibrary:
+	if player.has_meta(&"own_default_library") and player.has_animation_library(""):
+		return player.get_animation_library("")
+	var shared: AnimationLibrary = player.get_animation_library("") if player.has_animation_library("") else null
+	var mine := AnimationLibrary.new()
+	if shared != null:
+		for clip_name in shared.get_animation_list():
+			mine.add_animation(clip_name, shared.get_animation(clip_name))
+	var playing: StringName = player.current_animation if player.is_playing() else &""
+	var at: float = player.current_animation_position if playing != &"" else 0.0
+	var speed: float = player.speed_scale
+	if shared != null:
+		player.stop()                   # nothing may point into the animation set while its library is swapped
+		player.remove_animation_library("")
+	player.add_animation_library("", mine)
+	if playing != &"" and player.has_animation(playing):
+		player.play(playing)
+		player.seek(at, true)
+	player.speed_scale = speed
+	player.set_meta(&"own_default_library", true)
+	return mine
+
+
 func current_clip() -> String:
 	return _clip
 
