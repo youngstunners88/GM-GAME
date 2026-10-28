@@ -12,6 +12,7 @@ func run() -> void:
  await process_frame
  var gm=root.get_node("GameManager")
  var sm=root.get_node("StateMachine")
+ sm.change_state(sm.State.TRANSITIONING)
  gm.ep2_story_unlocked=true # Fixture only; entry's real access gate is unchanged.
  var entry=load("res://src/episode2/ep2_entry.tscn").instantiate()
  root.add_child(entry);current_scene=entry
