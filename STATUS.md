@@ -11,7 +11,7 @@
   can go down - you finish on foot).
 - *Cast:* **Sheriff James** replaces the Sheriff (same narrative and voice), **Renegade** hosts the auction, the founder's **Jack Hammer**; **two
   women shopkeepers** behind the General Store counter and the Hotel desk, and **Bam Bankman Free** in the cell (all three generated on Runpod
-  GPUs with Hunyuan3D-2.1 plus a second, sharper head scan, rigged here). Runpod for this build: about $2.30, both pods terminated.
+  GPUs with Hunyuan3D-2.1 plus a second, sharper head scan, rigged here). Runpod for this build: $2.25, both pods terminated.
 - *Consequences:* shoot a townsperson and the Sheriff arrests you - your rifle, bow and Remington are held, two minutes in the cell with **Bam
   Bankman Free** (a disgraced banker in a top hat - fictional; he won't say what he did), out with only the pickaxe, and the town turns cold;
   the Sheriff hands your irons back at the town limits. Shot buildings and windows show damage and the Sheriff fines you in BTC.
@@ -20,9 +20,13 @@
   bumping into people gets a reaction, a horse's rear can kick you, new train sound, people and spurs in the street.
 - *Dude's ranch:* talk to Dude (it was broken), he rides a loop, his assistant brushes horses and carries hay, more horses, a trough, trees,
   Chill Buds for health (kept in Tabs). *Blood* on the draw body and on shot bears.
-- *Voices:* 42 new spoken lines recorded. **Waiting on you:** the Sheriff, Mike Dean and Dude voices live on your SECOND ElevenLabs account -
+- *Voices:* 30 new spoken lines recorded, plus three sounds (the certificate stamp, the gun pickup, the whiskey gulp). **Waiting on you:** the Sheriff, Mike Dean and Dude voices live on your SECOND ElevenLabs account -
   their 32 new lines show as captions until that account's key is saved.
-- *Gates:* town walkthrough 129, town law 40, town feel 19 (at 60 fps), autonomy 33, ranch 32, stable yard 97, founder cast 26, blood 22.
+- *The drink:* the whiskey glasses read as whiskey now (clear glass, amber measure - the hideout's look); they rendered as an opaque cream mug.
+- *Gates:* town walkthrough 129, town law 41, town feel 19 (at 60 fps), autonomy 33, ranch 32, stable yard 97, founder cast 30, blood 22, lake trail 29,
+  Logan's Lake 29, seamless chain 23, town audio 141.
+
+**PAUSE + MANUAL CHECKPOINTS, Episodes1/2 — DEPLOYED, verified2026-10-27, BUILD `2026-10-27-4044823`.** Visible pause/play and disk buttons; Episode1's pause menu displays Save checkpoint and its restore point; Episode2 Escape opens/resumes pause with a usable pointer, while unsupported scripted/film contexts retain their existing exit. Continue restores the latest explicit stage checkpoint/start or Episode2 section start, including coherent inventory/economy/reward guards. Rolling autosaves preserve this slot; web checkpoints use a separately confirmed atomic browser-storage record. Native30/legacy compatibility/full hosted regression and desktop pause playtests pass. Actual served packs198846976B(main)/112817856B(extras) stay below190MiB; public BUILD/extras200/access gate verified. Downloaded public packs pass10 native restart checks and14 desktop/14 touch-emulation WebGL checks with two reloads each, actual Continue, multi-finger Save and blocked-storage protection. Production CI40513406899 succeeded; butler48.86MiBfresh upload confirmed. Title5/access/art preserved. Saves are local to the same browser/device and use named checkpoints, not cloud or exact-frame snapshots. External public-pack replays are distinct from authenticated public-origin Episode2 play or real-phone hardware certification. Receipt: `docs/episode2-quality/pause-save-20261027/RELEASE.md`.
 
 **LOGAN'S WOODLAND CABIN — LIVE, verified2026-10-27, BUILD `2026-10-27-675859d`.** Cedar cabin on a reachable woodland spur, canonical GM/BTC plaques, exact “Be a liquidity provider.” sign, RH/Jack Hammer wanted board, prospecting pans/nuggets/ore sacks/tools and BTC reserve coffer/ledger. Four fine design skills preserve composition/signage/contact/proof. Meshy **30 credits** (20+10,542→512), no paid reruns. Cabin26/lake art23/story/full regressions and real player cameras pass; title, access, Logan/boat/rowing and inventory preserved. Production CI40479528943 succeeded; actualbutler55.19MiBfresh upload confirmed. Public browser BUILD/extras200 and unchanged access gate verified. Actual public main198804496B/extras112817792B both below190MiB; isolated cabin79/lake86, native22 and WebGL22 route checks pass; actual public-pack Compatibility frame inspected. External local scene replays are distinct from authenticated public-origin playthrough. Evidence: `design/ep2/lake/cabin-20261027/RELEASE.md`.
 

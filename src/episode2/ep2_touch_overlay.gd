@@ -268,4 +268,4 @@ func _input(event: InputEvent) -> void:
 		resume_pressed.emit()
 	elif event.is_action_pressed(&"ui_cancel"):
 		get_viewport().set_input_as_handled()
-		home_pressed.emit()
+		resume_pressed.emit()

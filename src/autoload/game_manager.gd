@@ -77,6 +77,70 @@ var player_position: Vector2 = Vector2.ZERO
 var last_damage_source: String = ""
 
 const SAVE_PATH: String = "user://save.json"
+# Manual checkpoint is independent of rolling autosaves. Never nest it in its own snapshot.
+var manual_resume: Dictionary = {}
+var pending_episode2_resume: Dictionary = {}
+var _resume_requested: bool = false
+var _stage_checkpoint: Dictionary = {}
+var _manual_status: int = 1
+
+func checkpoint_label() -> String:
+    if _stage_checkpoint.is_empty(): return "Stage %d start" % current_level
+    return str(_stage_checkpoint.get("label", "Stage checkpoint"))
+
+func capture_stage_checkpoint() -> void:
+    var cp: Dictionary = level_checkpoints.get(current_level, {})
+    _stage_checkpoint = {"version": 1, "episode": 1, "level": current_level,
+        "label": "Stage %d — checkpoint %d" % [current_level, int(cp.get("id", -1)) + 1] if not cp.is_empty() else "Stage %d start" % current_level,
+        "state": session_data().duplicate(true)}
+
+func save_manual_checkpoint(record: Dictionary = {}) -> bool:
+    var candidate: Dictionary = record if not record.is_empty() else _stage_checkpoint
+    if not valid_resume(candidate): return false
+    var previous: Dictionary = manual_resume
+    manual_resume = candidate.duplicate(true)
+    if OS.has_feature("web"):
+        # Explicit saves use an atomic, synchronous Web Storage record. The engine's
+        # larger rolling filesystem cache must not delay or overwrite this checkpoint.
+        var win: JavaScriptObject = JavaScriptBridge.get_interface("window")
+        win.set("__gmCheckpointPayload", JSON.stringify(manual_resume))
+        var confirmed: Variant = JavaScriptBridge.eval("(function(){try{window.localStorage.setItem('smokerealm_manual_checkpoint_v1',window.__gmCheckpointPayload);return true;}catch(e){return false;}finally{delete window.__gmCheckpointPayload;}})();", true)
+        _manual_status = 1 if confirmed == true else -1
+        if _manual_status == 1:
+            save_session() # compatibility copy; the confirmed explicit record is authoritative
+            return true
+    elif save_session():
+        _manual_status = 1
+        return true
+    manual_resume = previous
+    _manual_status = -1
+    return false
+
+func manual_save_status() -> int:
+    return _manual_status
+
+func _browser_checkpoint() -> Dictionary:
+    if not OS.has_feature("web"): return {}
+    var text: Variant = JavaScriptBridge.eval("(function(){try{return window.localStorage.getItem('smokerealm_manual_checkpoint_v1') || '';}catch(e){return '';}})();", true)
+    if not text is String or text.length() > 262144: return {}
+    var candidate: Dictionary = SaveSafe.to_dict(JSON.parse_string(text)) if text != "" else {}
+    return candidate if valid_resume(candidate) else {}
+
+func valid_resume(record: Dictionary) -> bool:
+    if record.get("version") != 1 or not record.get("state") is Dictionary: return false
+    if JSON.stringify(record).length() > 262144: return false
+    var episode: int = SaveSafe.to_int(record.get("episode"), 0)
+    if episode == 1: return SaveSafe.to_int(record.get("level"), 0) in [1, 2, 3]
+    if episode != 2 or not record.get("section") is Dictionary: return false
+    var section: Dictionary = record.section
+    var room: String = SaveSafe.to_str(section.get("room", ""))
+    return SaveSafe.to_int(section.get("segment"), -1) in range(8) and SaveSafe.to_int(section.get("mode"), -1) in [1, 2] and room in ["", "smelting_facility", "miner_shaft", "mine_lift", "woods_quad", "gold_town", "logans_lake"]
+
+func take_episode2_resume() -> Dictionary:
+    var record: Dictionary = pending_episode2_resume
+    pending_episode2_resume = {}
+    return record
+
 
 ## Level progression registry (brief correction G): the ordered campaign.
 ## Beating a level's boss advances to the next; the last completes the game.
@@ -119,6 +183,14 @@ func next_level_scene(cleared_level_index: int) -> String:
     return MENU_SCENE
 
 func level_scene(level_index: int) -> String:
+    # The existing Continue handler calls load_session then level_scene. Keep title art/code locked.
+    if _resume_requested and get_tree().current_scene != null and get_tree().current_scene.scene_file_path == MENU_SCENE:
+        _resume_requested = false
+        if valid_resume(manual_resume):
+            if int(manual_resume.episode) == 2:
+                pending_episode2_resume = manual_resume.duplicate(true)
+                return EPISODE2_SCENE
+            level_index = int(manual_resume.level)
     var i := level_index - 1
     return LEVEL_SEQUENCE[i] if i >= 0 and i < LEVEL_SEQUENCE.size() else LEVEL_SEQUENCE[0]
 
@@ -244,6 +316,7 @@ func _ready() -> void:
     process_mode = Node.PROCESS_MODE_ALWAYS
     print("[BUILD] Lil Blunt Adventure — build %s" % BUILD_TAG)
     load_session()
+    _resume_requested = false
 
 func add_score(points: int) -> void:
     total_score += points
@@ -794,6 +867,9 @@ func reset_level() -> void:
     health_changed.emit(player_health)
 
 func reset_session() -> void:
+    _resume_requested = false
+    pending_episode2_resume = {}
+    _stage_checkpoint = {}
     personal_armory = {}
     player_health = max_health
     lives = max_lives
@@ -839,6 +915,7 @@ func _clear_blaze_music_override() -> void:
 
 func save_checkpoint(level: int, checkpoint_id: int, pos: Vector2) -> void:
     level_checkpoints[level] = {"id": checkpoint_id, "pos": pos}
+    capture_stage_checkpoint()
 
 func get_checkpoint(level: int) -> Vector2:
     if level in level_checkpoints:
@@ -866,8 +943,8 @@ var personal_armory: Dictionary = {}
 ## Ambient town memory only; never grants progress or access to Episode 2.
 var town_people_state: Dictionary = {}
 
-func save_session() -> bool:
-    var data: Dictionary = {
+func session_data() -> Dictionary:
+    return {
         "total_score": total_score,
         "coins": coins_collected,
         "rings": ethereum_rings_collected,
@@ -895,26 +972,46 @@ func save_session() -> bool:
         "personal_armory": personal_armory,
         "town_people_state": town_people_state,
     }
-    var f := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
-    if f == null:
-        push_error("GameManager.save_session: cannot open %s" % SAVE_PATH)
-        return false
+func save_session() -> bool:
+    var data: Dictionary = session_data()
+    data["manual_resume"] = manual_resume
+    return write_session(data)
+
+func write_session(data: Dictionary, path: String = SAVE_PATH) -> bool:
+    var temporary: String = path + ".tmp"
+    var f := FileAccess.open(temporary, FileAccess.WRITE)
+    if f == null: return false
     f.store_string(JSON.stringify(data))
+    f.flush()
+    var result: Error = f.get_error()
     f.close()
-    return true
+    if result != OK: return false
+    return DirAccess.rename_absolute(temporary, path) == OK
 
 func load_session() -> bool:
-    if not FileAccess.file_exists(SAVE_PATH):
-        return false
-    var f := FileAccess.open(SAVE_PATH, FileAccess.READ)
-    if f == null:
-        return false
-    var raw := f.get_as_text()
-    f.close()
-    var parsed: Variant = JSON.parse_string(raw)
-    if typeof(parsed) != TYPE_DICTIONARY:
-        return false
-    var data: Dictionary = parsed
+    var data: Dictionary = {}
+    var valid_file: bool = false
+    if FileAccess.file_exists(SAVE_PATH):
+        var f := FileAccess.open(SAVE_PATH, FileAccess.READ)
+        if f != null:
+            var parsed: Variant = JSON.parse_string(f.get_as_text())
+            if parsed is Dictionary:
+                data = parsed
+                valid_file = true
+            f.close()
+    var browser_record: Dictionary = _browser_checkpoint()
+    manual_resume = browser_record if not browser_record.is_empty() else SaveSafe.to_dict(data.get("manual_resume", {}))
+    if not valid_resume(manual_resume): manual_resume = {}
+    if not valid_file and manual_resume.is_empty(): return false
+    _resume_requested = not manual_resume.is_empty()
+    if _resume_requested: data = manual_resume.state.duplicate(true)
+    restore_session_data(data)
+    # Keep the existing, founder-locked menu's file-presence check working even
+    # when a browser restored the explicit record before its rolling IDB cache.
+    if not browser_record.is_empty() and not FileAccess.file_exists(SAVE_PATH): save_session()
+    return true
+
+func restore_session_data(data: Dictionary) -> void:
     # Clamp everything from disk: user://save.json is player-editable, and
     # unclamped values (9999 health, level 42) corrupt the session state.
     # max_health loads FIRST so the health clamp uses the loaded ceiling
@@ -953,7 +1050,6 @@ func load_session() -> bool:
         GoldMineSystem.load_save_data(SaveSafe.to_dict(data.get("goldmine", {})))
     _deserialize_progression(data.get("progression_state", {}))
     wallet_address = SaveSafe.to_str(data.get("wallet_address", ""))
-    return true
 
 ## Merge saved progression over the defaults, key by key.
 ##

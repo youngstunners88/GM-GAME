@@ -1,24 +1,26 @@
 {
-  "observed_remote_sha": "eedec6e6",
-  "objective": "Logan woodland cabin with GM/BTC, exact LP sign, prospecting/reserves and original wanted bills \u2014 delivered",
+  "observed_remote_sha": "f59caef6",
+  "objective": "Pause + manual checkpoint Save in Episodes1/2 \u2014 implemented, deployed and public resources verified",
+  "source_commit": "eaebdacf85ae0b963f1b916fb9ff2270d6916f9b",
+  "followup": "729b38db",
+  "release_commit": "4044823647c3e107c128477eceaa8fda50b8b823",
   "task_paths": [
-    "src/episode2/art/ep2_logan_cabin.gd",
-    "src/episode2/chamber/logans_lake.gd",
-    "src/episode2/extras/lake/cabin/",
-    "tests/ep2_logan_cabin_test.gd",
-    "design/ep2/lake/cabin-20261027/"
+    "src/autoload/game_manager.gd",
+    "src/ui/run_controls.gd",
+    "src/ui/pause_menu.gd",
+    "src/episode2/ep2_entry.gd",
+    "src/episode2/session/ep2_session_root.gd",
+    "tests/manual_checkpoint_test.gd",
+    "docs/episode2-quality/pause-save-20261027/"
   ],
-  "source_commit": "33af6037152593cc8fdd2f1154984e318fef25a9",
-  "release_commit": "675859dfbb604c212b9be92bc13d8277fb1b721a",
-  "previous_objective": "Episode2 stable yard: original Dude + cube-headed assistant +3\u20135horses; shrink before runtime integration",
   "evidence": {
-    "release": "CI40479528943 success, actualbutler55.19MiBfresh, publicBUILD2026-10-27-675859d/extras200/accessgate intact. See RELEASE.md.",
-    "tests": "cabin26/lake23/full local+hosted suite, packed79/86, publicnative22+WebGL22, actual cameras inspected. Freshmain198804640B; publicmain198804496B/extras112817792B.",
-    "spend": "Meshy30credits542\u2192512, preview20/refine10, no reruns.",
-    "preserve": "OriginalLogan65bones/fourclips, rowingboat, stagedonce dialogue/overlook, inventory, access/title and nonthreaded4.3. Closed cabin; optional reachable porch. No neweconomy/quest."
+    "deployment": "CI40513406899 success/actualbutler48.86MiBfresh; publicBUILD2026-10-27-4044823/extras200/accessgate unchanged.",
+    "tests": "Native30, savecompat/fullhostedCI; actualpublicnative10 across3processes +desktop14/phoneemulation14 with2reloads, multi-fingerSave andquota-failure protection.",
+    "sizes": "Freshmain198846944B; publicmain198846976B/extras112817856B. Title5/texture69/security pass.",
+    "preserve": "One latest explicit namedcheckpoint: Episode1 laststagecheckpoint/start, Episode2 currentsectionstart. Immutable inventory/economy/rewardguards; rollingautosaves independent. Atomic localStorage primarywebrecord +legacyfilecopy, not GodotFSprivateAPI. Samebrowser/device, no cloud/exactframe/authbypass."
   },
   "unresolved": [
-    "Authenticated public-origin walkthrough and real-phone performance not claimed; external fixtures replay exact public resources."
+    "Real-phone hardware and authenticated public-origin Episode2 walkthrough not claimed; external fixtures replay exact publicresources."
   ],
-  "next": "No implementation work outstanding for this cabin request. Refresh master, preserve concurrent changes, use four ep2-logan-cabin component skills for refinement."
+  "next": "No implementation outstanding. Read DESIGN/RELEASE before changing save semantics; refreshmaster andpreserveconcurrent changes."
 }

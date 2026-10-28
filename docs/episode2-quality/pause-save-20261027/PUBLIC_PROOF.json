@@ -1,0 +1,88 @@
+{
+  "gameUrl": "https://html-classic.itch.zone/html/18305533-2225894/index.html?v=1793110236&ep2=1",
+  "build": "2026-10-27-4044823",
+  "extras": "[EP2] extras ready (ready)",
+  "logan": "",
+  "extrasHttp": [
+    200
+  ],
+  "downloaded_packs": {
+    "index.pck": {
+      "bytes": 198846976,
+      "magic": "GDPC",
+      "sha512": "e7da24a68523c8910feab6b028e1b39e279c2f1a3673fc9e37e7044fbaa1aead05b2f531259e9c2d8b515247e5dfd167d1a3a1c7b6dd373edb373e20f340ee6a"
+    },
+    "ep2_extras.pck": {
+      "bytes": 112817856,
+      "magic": "GDPC",
+      "sha512": "6dde2679226898e5313f558a9552cca91e24124a91fcda4ffb6c8f62887def8b6a79230f3fdadd489ee39fcb3a6c653ee8f940a3122ffa2301c12456164ece21"
+    }
+  },
+  "engine_files": {
+    "index.html": {
+      "bytes": 4981,
+      "sha512": "12a5ba0e6d64457af22432682a4fc2780acbb2e3ca4337aa738df44d59991c1efad8ba9e227680241d2fcd87f59d4980b14ce1f2b74dcb96528a5c3e8c3392af"
+    },
+    "index.js": {
+      "bytes": 331495,
+      "sha512": "d3f5492b8f63c7d1ae8ee5d47f53f31150eb73edcf8e947682a79944f349c44b94b415f8e0d2d80cff668ace9941d15805f3f682234055ab830073ea37b54ae7"
+    },
+    "index.wasm": {
+      "bytes": 35376909,
+      "sha512": "170b8d0dfb11aedd34ef807e6b1043dc3eeb195540e4b388b1bc303d9c21b37f4e1d38430dd55a81eea7e8872272e06e04f9911e162617544fcf59c5d2b51ce0"
+    },
+    "web3.js": {
+      "bytes": 3035,
+      "sha512": "117b235a90965024bf040da8883d58e5924119103a2c637119b94ed823880a6994fddcbccd2cd7a985dc41dffefb71bc3f2f944c935bda02cc241409a62eda15"
+    },
+    "index.audio.worklet.js": {
+      "bytes": 7298,
+      "sha512": "2532b3729a7cc3f4909bf853488ae597d99088265b3a7000cb9d4ce2749b4c4ef2746eb26973e891614c615bd25f5ba923451c6f9eb99db4d298b6879e1b826b"
+    }
+  },
+  "native_restart_checks": 10,
+  "public_gate": "Unchanged Episode2 access-code prompt verified",
+  "replay_scope": "External local fixtures against exact downloaded public engine/packs; not an authenticated public-origin Episode2 walkthrough or real-phone hardware pass",
+  "desktop_webgl": {
+    "done": true,
+    "reloads": 2,
+    "errors": [],
+    "checks": [
+      "[PASS] exported Episode1 Save writes the checkpoint",
+      "[PASS] exported Episode1 Save preserves pause",
+      "[PASS] browser confirms durable checkpoint",
+      "[PASS] browser reload preserves Episode1 manual checkpoint",
+      "[PASS] actual menu Continue restores Episode1 stage and checkpoint",
+      "[PASS] exported Episode2 visible Save writes later section",
+      "[PASS] rolling autosave keeps the explicit checkpoint immutable",
+      "[PASS] browser confirms durable checkpoint",
+      "[PASS] second browser reload preserves Episode2 checkpoint",
+      "[PASS] actual menu Continue restores saved lake rather than new run",
+      "[PASS] exported ammo and reward guards survive reload",
+      "[PASS] restored lake begins without duplicate staging",
+      "[PASS] blocked browser storage reports failure",
+      "[PASS] blocked browser storage preserves previous checkpoint"
+    ]
+  },
+  "phone_emulation_webgl": {
+    "done": true,
+    "reloads": 2,
+    "errors": [],
+    "checks": [
+      "[PASS] exported Episode1 Save writes the checkpoint",
+      "[PASS] exported Episode1 Save preserves pause",
+      "[PASS] browser confirms durable checkpoint",
+      "[PASS] browser reload preserves Episode1 manual checkpoint",
+      "[PASS] actual menu Continue restores Episode1 stage and checkpoint",
+      "[PASS] exported Episode2 visible Save writes later section",
+      "[PASS] rolling autosave keeps the explicit checkpoint immutable",
+      "[PASS] browser confirms durable checkpoint",
+      "[PASS] second browser reload preserves Episode2 checkpoint",
+      "[PASS] actual menu Continue restores saved lake rather than new run",
+      "[PASS] exported ammo and reward guards survive reload",
+      "[PASS] restored lake begins without duplicate staging",
+      "[PASS] blocked browser storage reports failure",
+      "[PASS] blocked browser storage preserves previous checkpoint"
+    ]
+  }
+}

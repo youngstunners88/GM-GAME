@@ -64,6 +64,8 @@ const PROFILE_ROTATE := &"ep2_rotate"
 ## The wordless pause card (touch). Built on first use; Escape / the card's HOME leave through the same path.
 var _overlay: Ep2TouchOverlay = null
 var _pause_open: bool = false
+var _run_controls: RunControls
+var _saved_offset: int = 0
 ## The dimmed last frame behind the run-over buttons (touch): the screen is never plain black.
 var _scrim_layer: CanvasLayer = null
 
@@ -185,7 +187,31 @@ func _begin() -> void:
 	_root.session_complete.connect(_on_session_complete)
 	_root.session_failed.connect(_on_session_failed)
 	_root.touch_profile_changed.connect(_sync_portrait_exit)
-	_start_session()
+	_run_controls = RunControls.new()
+	_run_controls.pause_action = func() -> void:
+		if _pause_open: _close_pause()
+		else: _open_pause()
+	_run_controls.save_action = _save_checkpoint
+	_run_controls.available = func() -> bool: return _can_pause() or _pause_open
+	_run_controls.checkpoint_name = func() -> String: return str(_root.section_checkpoint.get("label", "Episode 2 section start"))
+	add_child(_run_controls)
+	var record: Dictionary = GameManager.take_episode2_resume()
+	if not record.is_empty():
+		_saved_offset = clampi(SaveSafe.to_int(record.get("offset"), 0), 0, TRACK_PLAN.size()-1)
+		_root.configure(TRACK_PLAN.slice(_saved_offset), true)
+		if not _root.restore_section(record): _start_session()
+	else:
+		_start_session()
+
+func _save_checkpoint() -> bool:
+	if _root == null or _root.section_checkpoint.is_empty(): return false
+	var record: Dictionary = _root.section_checkpoint.duplicate(true)
+	record["offset"] = _saved_offset
+	return GameManager.save_manual_checkpoint(record)
+
+func _can_pause() -> bool:
+	if _ended or _gate != null or _root == null: return false
+	return _root.touch_profile() in [PROFILE_RUNNER, PROFILE_FOOT] and StateMachine.is_playing() and not get_tree().paused
 
 ## The menu / ?ep2=1 route enters Episode 2 through SceneRouter, which leaves the StateMachine in TRANSITIONING, and nothing on
 ## this side ever set PLAYING - so the touch layer (which needs PLAYING) stayed hidden for the whole run. The Stage 3 story
@@ -202,6 +228,7 @@ func _enter_playing() -> void:
 ## Signals are connected ONCE in _ready(); reconnecting here would multiply
 ## every commit callback per retry.
 func _start_session() -> void:
+	_saved_offset = _leg_offset
 	_set_ended(false)
 	_banner.text = ""
 	# A run that starts from the cliff is a NEW run: Lil Blunt begins with a fresh armory (full rounds, rifle lesson not yet taught).
@@ -289,16 +316,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_K:
 		_keys_t = KEYS_SHOW_SECONDS          # shows the control list; changes no binding
-	# The touch layer's PAUSE button (and a gamepad's Start) presses `pause`: the wordless pause card. Touch devices only, so
-	# desktop keyboard / mouse play is exactly what it was.
-	if event.is_action_pressed("pause") and not event.is_echo():
-		if TouchUi.is_touch():
-			_open_pause()
-		return
-	# Always an exit. A mode with no visible way out is how a tester gets stuck
-	# and reports the whole episode as broken.
-	if event.is_action_pressed("ui_cancel"):
-		_go_home()
+	if (event.is_action_pressed("pause") or event.is_action_pressed("ui_cancel")) and not event.is_echo():
+		if _ended: _go_home()
+		elif _pause_open: _close_pause()
+		elif _can_pause(): _open_pause()
+		elif event.is_action_pressed("ui_cancel"): _go_home() # retain the existing exit during films/scripted contexts
+		get_viewport().set_input_as_handled()
 		return
 	# RETRY. When a run ends, the session root tears the active scene down —
 	# which also removes the only Camera3D, so the screen goes BLACK. A browser
@@ -372,7 +395,7 @@ func _refresh_hud() -> void:
 				]
 			_hint.text = ("MOUSE aim   LMB fire   R reload   X / RMB axe\n"
 				+ "A / D hop carts   SPACE jump / grab zipline   S duck   "
-				+ "ESC  back to menu")
+				+ "ESC  pause")
 		Ep2SessionRoot.Mode.CHAMBER:
 			# Chamber 0 is a story beat with a completely different HUD from a
 			# protocol chamber: no vest, no ammo, no bear count — just where you
@@ -397,7 +420,7 @@ func _refresh_hud() -> void:
 				if Episode2Mode.is_first_person(mode):
 					lines += "\nFIRST-PERSON SHOOTER   ·   Inferno Bull rides with you   ·   BTC paid: %d" % a.get_btc_paid()
 				_hint.text = ("ARROWS / WASD  move      SPACE  jump      MOUSE  look (click to lock)      SHIFT  run\n"
-					+ "E  talk / take      LMB  fire      RMB (hold)  aim down the sights      R  reload      ESC  back to menu")
+					+ "E  talk / take      LMB  fire      RMB (hold)  aim down the sights      R  reload      ESC  pause")
 			elif a:
 				lines += "MINER SHAFT\n"
 				lines += "health %d   ammo %d   bears %d\n" % [a.get_health(), a.get_ammo(), a.get_live_bear_count()]
@@ -412,7 +435,7 @@ func _refresh_hud() -> void:
 				# first browser capture of Chamber 0 showed a story beat telling
 				# the player to "start Miner" and "EARLY CLAIM", neither of
 				# which exists in that room.
-				_hint.text = "E  start Miner (hold SHIFT to pay ETH+Diamonds)\nJ / ENTER  shoot     S  cover (hold)\nSHIFT+X / dash  EARLY CLAIM (take partial GOLD now)\nESC  back to menu"
+				_hint.text = "E  start Miner (hold SHIFT to pay ETH+Diamonds)\nJ / ENTER  shoot     S  cover (hold)\nSHIFT+X / dash  EARLY CLAIM (take partial GOLD now)\nESC  pause"
 		Ep2SessionRoot.Mode.TRANSITION:
 			lines += "loading…"
 		_:
@@ -563,16 +586,11 @@ func is_pause_open() -> bool:
 ## Only while the runner / on-foot controls are the ones up: a film keeps playing through a tree pause (it runs ALWAYS), and
 ## the armory, a transition or the portrait cue already own the pause.
 func _open_pause() -> void:
-	if _pause_open or _ended or _gate != null or _root == null:
-		return
-	var profile: StringName = _root.touch_profile()
-	if profile != PROFILE_RUNNER and profile != PROFILE_FOOT:
-		return
-	if not StateMachine.is_playing() or get_tree().paused:
-		return
+	if _pause_open or not _can_pause(): return
 	if not StateMachine.change_state(StateMachine.State.PAUSED):
 		return
 	_pause_open = true
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_ensure_overlay().show_pause()
 
 ## PLAY: the card goes, the sim runs again. Only resumes a pause THIS card took.
@@ -584,9 +602,10 @@ func _close_pause() -> void:
 		_overlay.close()
 	if StateMachine.is_paused():
 		StateMachine.change_state(StateMachine.State.PLAYING)
+	if _root != null: _root._sync_mouse_mode()
 	_sync_portrait_exit()
 
-## Back to the menu - the same two lines Escape has always run (the card's HOME, and Escape itself, both come here).
+## The card's HOME leaves the episode; nonpausable contexts retain their existing Escape exit.
 func _go_home() -> void:
 	_close_pause()
 	get_tree().paused = false
