@@ -1,6 +1,6 @@
 {
-  "url": "http://localhost:8899/game/index.html",
-  "timestamp": "2026-10-28T16:54:28.118Z",
+  "url": "http://localhost:8898/game/index.html",
+  "timestamp": "2026-10-28T18:45:57.956Z",
   "tests": {
     "canvas_attached": "PASS",
     "engine_booted": "PASS",
@@ -12,9 +12,9 @@
   "consoleTail": [
     "[log] Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org",
     "[log] OpenGL API OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium)) - Compatibility - Using Device: WebKit - WebKit WebGL",
-    "[log] [BUILD] Lil Blunt Adventure — build dev-local",
+    "[log] [BUILD] Lil Blunt Adventure \u2014 build 2026-10-28-e5198bd",
     "[log] [Touch] layout build phone_landscape (releases all) (state MENU)",
-    "[error] USER WARNING: Invalid state transition: MENU → MENU",
+    "[error] USER WARNING: Invalid state transition: MENU \u2192 MENU",
     "[error]    at: push_warning (core/variant/variant_utility.cpp:1112)",
     "[log] [SceneRouter] Loading res://src/level/level_01_smoke_realm.tscn (nodes before: 162)",
     "[log] [SceneRouter] Loaded res://src/level/level_01_smoke_realm.tscn (sync web path)"

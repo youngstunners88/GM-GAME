@@ -13,10 +13,15 @@
   ],
   "evidence": "Native fish27 contact~0.0000055m/map10/life6; lake/cabin26/trail pass. Actual Compatibility fish/map/vulture captures; warm export197532992B/0script errors; fresh197500656B under190MiB. Security/title/harness pass. No provider spend.",
   "pending": [
-    "CI40745667641 queued behind prior14c00release40736490312, itself at gh-pages mirror stage. Do not cancel unrelated run.",
-    "Verify actual butler upload and public BUILD5f90877/extras; replay/export checks as needed",
-    "Commit/push/ship final receipts and checkpoint, clean task processes"
+    "Independently verify public e5198bd source; replay exact public engine/packs with six lake-life browser checks",
+    "Commit final lake receipts and ship docs; latest8df CI is still running, ours5f cancelled by superseding source-equivalent run"
   ],
   "scratch": "/workspace/work/lake-life",
-  "next": "Poll GitHub run jobs; original .agents shipping workflow applies. Map badge/fishing native render checked; generated loops original. Latest founder request permits background fishing, without changing investigate/cargo economy."
+  "next": "Poll GitHub run jobs; original .agents shipping workflow applies. Map badge/fishing native render checked; generated loops original. Latest founder request permits background fishing, without changing investigate/cargo economy.",
+  "related_release": {
+    "source": "e5198bdbde9ddcf6ddee9c4d6f1cf0c89c333c23",
+    "public_build": "2026-10-28-e5198bd",
+    "receipt": "docs/episode2-quality/world-voice-music-20261029/RELEASE_RECEIPT.json",
+    "preserves_our_runtime": true
+  }
 }

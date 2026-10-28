@@ -20,5 +20,5 @@ for start in [1.2,4.9,8.3,13.8,18.1,22]:
  frogs[a:a+length]+=.22*np.sin(np.pi*np.arange(length)/length)**2*(np.sin(phase)+.4*np.sin(phase*2))*(.6+.4*np.sin(2*np.pi*x*19))
 root=Path('src/episode2/extras/audio/lake');root.mkdir(parents=True,exist_ok=True)
 for name,data in [('water',water),('insects',crickets),('frogs',frogs)]:
- wav=Path('/workspace/work/lake-life')/(name+'.wav');write(wav,sr,np.int16(np.clip(data,-1,1)*32767))
+ wav=Path('/workspace/work/lake-life')/(name+'.wav');wav.parent.mkdir(parents=True,exist_ok=True);write(wav,sr,np.int16(np.clip(data,-1,1)*32767))
  subprocess.run(['ffmpeg','-v','error','-y','-i',str(wav),'-c:a','libvorbis','-q:a','3',str(root/(name+'.ogg'))],check=True)
