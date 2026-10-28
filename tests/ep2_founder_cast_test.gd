@@ -109,24 +109,9 @@ func _ready() -> void:
 	c.setup(0, [], 0)
 	await get_tree().process_frame
 	var sheriff: Ep2TownFolk = c._sheriff
-	check("the town's Sheriff is Sheriff James (the streamed rig, with clips)", sheriff != null and sheriff.has_clips()
-		and sheriff.model != null and sheriff.model.scene_file_path == Ep2Extras.SHERIFF_JAMES,
-		sheriff.model.scene_file_path if sheriff != null and sheriff.model != null else "no model")
-	check("...his walk is stride-matched and the statue bob is off", sheriff != null and is_equal_approx(sheriff.walk_clip_speed, GoldTownChamber.SHERIFF_WALK_STRIDE)
-		and not sheriff.procedural_bob)
-	var smoke: Node3D = sheriff.get_node_or_null("CigSmoke") as Node3D if sheriff != null else null
-	check("...his pipe smoke rises at the pipe bowl, below his mouth", smoke != null and smoke.position.y > 1.4 and smoke.position.y < 1.6,
-		str(smoke.position) if smoke != null else "no smoke")
-	if sheriff != null:
-		var text: String = "A fair draw, Minister. The stranger called it. The little fella was faster."
-		c._caption_line("SHERIFF", text)
-		for i in 3:
-			sheriff.step(1.0 / 60.0)
-		check("while his line plays he talks (Talk clip)", sheriff.current_clip() == "talk", sheriff.current_clip())
-		await get_tree().create_timer(c._caption_seconds("SHERIFF", text) + 0.3).timeout
-		for i in 3:
-			sheriff.step(1.0 / 60.0)
-		check("...and goes back to idle when it ends", sheriff.current_clip() == "idle", sheriff.current_clip())
+	check("the town restores the founder's previous Sheriff", sheriff != null and sheriff.model != null
+		and sheriff.model.scene_file_path == GoldTownChamber.SHERIFF_MODEL)
+	check("the previous Sheriff's pipe smoke remains", sheriff.get_node_or_null("CigSmoke") != null)
 	var keepers: Array = c.get_shopkeepers()
 	var placed: int = 0
 	for row in GoldTownChamber.SHOPKEEPERS:

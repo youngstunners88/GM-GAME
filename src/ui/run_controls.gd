@@ -6,6 +6,7 @@ var save_action: Callable
 var available: Callable
 var checkpoint_name: Callable
 var save_button: Button
+var key_hint: Label
 var status: Label
 var _last_frame: int = -1
 var _fingers: Dictionary = {}
@@ -32,6 +33,11 @@ func _ready() -> void:
     layer = 75
     process_mode = Node.PROCESS_MODE_ALWAYS
     save_button = _button("SaveButton", _save)
+    key_hint = Label.new()
+    key_hint.text = 'Press “G”'
+    key_hint.add_theme_font_size_override("font_size", 14)
+    key_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    add_child(key_hint)
     status = Label.new()
     status.name = "SaveStatus"
     status.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -72,6 +78,7 @@ func _layout() -> void:
     var edge: Vector2 = area.position + Vector2(area.size.x, 0)
     save_button.position = edge + (Vector2(-114,40) if TouchUi.is_touch() else Vector2(-82,108)) * scale_dp
     save_button.size = Vector2(56,48) * scale_dp
+    key_hint.position = save_button.position + Vector2(-76,15) * scale_dp
     status.position = edge + Vector2(-430, 163) * scale_dp
     status.size = Vector2(405, 48) * scale_dp
 
@@ -90,6 +97,13 @@ func _process(_delta: float) -> void:
         _layout()
     save_button.tooltip_text = "" if touch else "Save checkpoint: " + str(checkpoint_name.call())
     status.visible = not touch
+    key_hint.visible = not touch
+
+func _unhandled_input(event: InputEvent) -> void:
+    if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_G:
+        if visible and not save_button.disabled:
+            _activate(_save)
+            get_viewport().set_input_as_handled()
 
 func _save() -> void:
     if not available.call(): return

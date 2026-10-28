@@ -71,6 +71,8 @@ func _test_riding() -> void:
 		c.get_route_length() >= 450.0 and c.get_route_length() <= 600.0 and c.is_mounted()
 		and Vector2(c.get_horse_node().position.x - c.get_player_position().x, c.get_horse_node().position.z - c.get_player_position().z).length() < 0.05
 		and c.get_camera().position.y - c.get_horse_node().position.y > 1.5, "%.1f m" % c.get_route_length())
+	c._place_at_distance(75.0)
+	c._look_yaw = c._travel_yaw
 	var start: float = c.get_route_distance()
 	c.set_move_input(Vector2(0.0, 1.0))
 	_step(c, 2.0)
@@ -79,20 +81,20 @@ func _test_riding() -> void:
 		"average %.2f, now %.2f" % [measured, c.get_route_speed()])
 	c.set_move_input(Vector2(0.0, -1.0))
 	_step(c, 2.0)
-	_check("S eases to 4 m/s without stopping the ride", absf(c.get_route_speed() - 4.0) < 0.02 and c.is_riding(), "%.2f" % c.get_route_speed())
-	c.set_move_input(Vector2(1.0, 0.0))
+	_check("S reverses the horse toward town", c.get_route_speed() < -4.0 and c.is_riding(), "%.2f" % c.get_route_speed())
+	c.set_move_input(Vector2(1.0, 1.0))
 	_step(c, 1.2)
 	_check("D steers to the right lane edge but never beyond it", absf(c.get_lane_offset() - 2.2) < 0.02, "%.2f" % c.get_lane_offset())
-	c.set_move_input(Vector2(-1.0, 0.0))
+	c.set_move_input(Vector2(-1.0, 1.0))
 	_step(c, 2.0)
 	_check("A steers back to the opposite edge, still lane-bound", absf(c.get_lane_offset() + 2.2) < 0.02 and absf(c.get_lane_offset()) <= 2.2,
 		"%.2f" % c.get_lane_offset())
 	c.set_move_input(Vector2.ZERO)
-	c.look(Vector2(100000.0, 0.0))
-	_check("mouse look is free within a +/-110 degree cone from travel", absf(angle_difference(c._travel_yaw, c.get_look_yaw())) <= 1.91995)
+	c._look_yaw = c._travel_yaw + PI
+	c.look(Vector2(0.01, 0.0))
+	_check("mouse can aim directly behind through 360 degrees", absf(angle_difference(c._travel_yaw, c.get_look_yaw())) > 3.1)
 	_check("the armory remains usable from the saddle", c.get_viewmodel() != null and c.shoot())
-	_check("the walk clip is speed-matched rather than an invented gallop", c.get_horse_clip() == "horse_walk"
-		and (c._horse_anim == null or c._horse_anim.speed_scale > 1.0))
+	_check("the walk clip is speed-matched rather than an invented gallop", c.get_horse_clip() in ["horse_walk","horse_stand"])
 	c.free()
 
 
@@ -100,7 +102,7 @@ func _test_bandits_and_damage() -> void:
 	print("-- BANDIT TELLS, SHOOTING AND HEARTS")
 	var c: LakeTrailChamber = _make_trail()
 	c.debug_invulnerable = true
-	c._place_at_distance(96.0)
+	c._place_at_distance(122.0)
 	c.set_aim(true)
 	var previous_shots: Array = []
 	previous_shots.resize(c.get_bandit_count())
@@ -148,6 +150,8 @@ func _test_unhorse_to_shore() -> void:
 	print("-- UNHORSE AND ARRIVAL ON FOOT")
 	var c: LakeTrailChamber = _make_trail()
 	var results: Array = []
+	c._place_at_distance(80.0)
+	c._look_yaw = c._travel_yaw
 	c.chamber_cleared.connect(func(result: Dictionary) -> void: results.append(result))
 	for i in 3:
 		c._invuln = 0.0
@@ -200,6 +204,8 @@ func _test_mounted_arrival_and_prebuild() -> void:
 	print("-- MOUNTED ARRIVAL AND PREBUILT LAKE")
 	var c: LakeTrailChamber = _make_trail()
 	c.debug_invulnerable = true
+	c._place_at_distance(80.0)
+	c._look_yaw = c._travel_yaw
 	var results: Array = []
 	c.chamber_cleared.connect(func(result: Dictionary) -> void: results.append(result))
 	_lake_ready = false

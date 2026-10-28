@@ -5,8 +5,8 @@ extends Ep2Interlude
 ## trail: desert, two bandit ambushes, a chasing rider, then trees and the glint of the lake. The lake room is built behind this
 ## one from the first moment of the ride, and the arrival waits for that build rather than freezing at the cut.
 ##
-## Mounted: W/S push or ease between 4 and 7 m/s (5.5 m/s normally), A/D choose a lane inside +/-2.2 m, and the mouse looks
-## freely within +/-110 degrees of travel. Bandits always rise, draw, bark and show a gun glint for 0.8-1.2 seconds before firing.
+## Mounted: W/S ride forward/back relative to the view, A/D choose a lane inside +/-2.2 m, and the mouse looks
+## freely through 360 degrees. Bandits always rise, draw, bark and show a gun glint for 0.8-1.2 seconds before firing.
 ## Three hearts belong to Lil Blunt; the horse has three separate wounds. Losing the horse is a playable UNHORSE event, not a game
 ## over: the camera stumbles down and rolls, then the trail continues on foot. Losing all hearts restores the whole attempt.
 
@@ -18,12 +18,12 @@ const WATER_SHADER := "res://src/episode2/art/water_river.gdshader"
 const BLOOD_FX := "res://src/episode2/fx/ep2_blood_fx.gd"
 
 const CRUISE_SPEED := 5.5
-const MIN_RIDE_SPEED := 4.0
+const MIN_RIDE_SPEED := -7.0
 const MAX_RIDE_SPEED := 7.0
 const FOOT_SPEED := 2.9
 const LANE_LIMIT := 2.2
 const LANE_RATE := 3.2
-const LOOK_LIMIT := 1.9198621774       # 110 degrees
+const LOOK_LIMIT := PI # Full azimuth; never clamp a combat camera.
 const MOUNTED_EYE := 2.18
 const SADDLE_HEIGHT := 1.28
 const HORSE_CLIP_SPEED := 1.9          # ground metres per second represented by horse_walk at speed_scale 1
@@ -39,15 +39,19 @@ const SHORE_SECONDS := 2.6
 
 ## Catmull-Rom control points (x, z). The sampled route is about 560 m long.
 const TRAIL_POINTS: Array = [
-	Vector2(0.0, 0.0), Vector2(10.0, -6.0), Vector2(21.0, -6.0), Vector2(33.0, 10.0), Vector2(18.0, 55.0), Vector2(8.0, 88.0), Vector2(-5.0, 134.0),
-	Vector2(-13.0, 182.0), Vector2(1.0, 232.0), Vector2(15.0, 284.0), Vector2(8.0, 336.0),
-	Vector2(-4.0, 390.0), Vector2(-2.0, 446.0), Vector2(0.0, 500.0),
+	Vector2(0.0, 0.0), Vector2(10.0, -9.0), Vector2(21.0, -9.0), Vector2(33.0, -10.0),
+	Vector2(49.0, -48.0), Vector2(70.0, -82.0), Vector2(102.0, -119.0),
+	Vector2(124.0, -160.0), Vector2(164.0, -193.0), Vector2(202.0, -222.0),
+	Vector2(233.0, -262.0), Vector2(260.0, -300.0), Vector2(290.0, -338.0), Vector2(320.0, -374.0),
 ]
-## Three men at each of two ambushes. `lat` is lateral metres from the trail; negative and positive sides alternate.
+## Six men at each of two ambushes. `lat` is lateral metres from the trail; negative and positive sides alternate.
 const BANDIT_SPECS: Array = [
 	{"s": 140.0, "lat": -8.5, "ambush": 0}, {"s": 151.0, "lat": 9.5, "ambush": 0},
-	{"s": 162.0, "lat": -11.0, "ambush": 0}, {"s": 315.0, "lat": 10.5, "ambush": 1},
-	{"s": 327.0, "lat": -9.0, "ambush": 1}, {"s": 339.0, "lat": 12.0, "ambush": 1},
+	{"s": 162.0, "lat": -11.0, "ambush": 0},
+	{"s": 176.0, "lat": 9.0, "ambush": 0}, {"s": 192.0, "lat": -8.0, "ambush": 0}, {"s": 315.0, "lat": 10.5, "ambush": 1},
+	{"s": 327.0, "lat": -9.0, "ambush": 1},
+	{"s": 352.0, "lat": -9.0, "ambush": 1}, {"s": 368.0, "lat": 11.0, "ambush": 1},
+	{"s": 405.0, "lat": -10.0, "ambush": 1}, {"s": 421.0, "lat": 9.0, "ambush": 1}, {"s": 339.0, "lat": 12.0, "ambush": 1},
 ]
 const BANDIT_BARKS: Array = ["jh_bandit_1", "jh_bandit_2", "jh_bandit_3"]
 const LB_LINES: Dictionary = {
@@ -62,7 +66,12 @@ var _route_pts: PackedVector3Array = PackedVector3Array()
 var _route_arc: PackedFloat32Array = PackedFloat32Array()
 var _route_total: float = 0.0
 var _route_s: float = 0.0
-var _speed: float = CRUISE_SPEED
+var _speed: float = 0.0
+var _town_walls: Array = []
+var _town_props: Array = []
+var _departure_yard: Ep2StableYard = null
+var _return_crowd: Ep2TownPeople = null
+var _in_departure_area: bool = true
 var _lane: float = 0.0
 var _travel_yaw: float = 0.0
 var _previous_travel_yaw: float = 0.0
@@ -103,8 +112,8 @@ func _init() -> void:
 	music_path = ""
 	walk_speed = FOOT_SPEED
 	viewmodel_exposure = 0.8
-	camera_min = Vector3(-180.0, 0.3, -60.0)
-	camera_max = Vector3(180.0, 60.0, 680.0)
+	camera_min = Vector3(-180.0, 0.3, -650.0)
+	camera_max = Vector3(650.0, 60.0, 680.0)
 	_rng.seed = 1886
 
 
@@ -155,25 +164,35 @@ func _step_path() -> void:
 
 
 func _step_departure_yard() -> void:
-	# The same ranch set surrounds the saddle at the cut, expressed in trail-local coordinates.
+	# Town, ranch, river, train and landmark placements share the town's actual survey.
+	# Only the origin changes: the saddle is (0,0,0). The town remains behind us.
 	var parent := Node3D.new()
-	parent.name = "DepartureStables"
+	parent.name = "DepartureTown"
 	_visuals.add_child(parent)
 	parent.position = -GoldTownChamber.DEPART_HORSE
-	var props: Array = []
-	var walls: Array = []
-	var yard := Ep2StableYard.build(parent, props, walls)
-	# Slot 1 is now the ridden horse, not a second horse occupying the saddle.
-	if yard.horses.size()>1: yard.horses[1].hide()
+	var survey: Dictionary = Ep2GoldTown.build(parent, true)
+	_town_walls = survey.get("walls", [])
+	_town_props = survey.get("props", [])
+	_departure_yard = parent.find_child("StableYard", true, false) as Ep2StableYard
+	# The purchased horse is beneath the camera, never duplicated in the paddock.
+	if _departure_yard != null and _departure_yard.horses.size() > 1:
+		_departure_yard.horses[1].hide()
+		for entry in _departure_yard._solids.duplicate():
+			if entry[0] == _departure_yard.horses[1]:
+				_town_props.erase(entry[1])
+				_departure_yard._solids.erase(entry)
+	_return_crowd = Ep2TownPeople.new()
+	_return_crowd.configure_space(survey)
+	_return_crowd.build(parent)
 
 func _step_ground() -> void:
 	var ground := MeshInstance3D.new()
 	ground.name = "TrailDesertFloor"
 	var plane := PlaneMesh.new()
-	plane.size = Vector2(1100.0, 900.0)
+	plane.size = Vector2(1400.0, 1300.0)
 	ground.mesh = plane
 	ground.material_override = Ep2GoldTown.desert_ground_mat()
-	ground.position = Vector3(0.0, -0.012, 280.0)
+	ground.position = Vector3(170.0, -0.012, -140.0)
 	_visuals.add_child(ground)
 
 
@@ -183,11 +202,14 @@ func _step_trail() -> void:
 	dirt.roughness = 0.96
 	var ribbon := _ribbon(_route_pts, 5.8, dirt, 0.022)
 	ribbon.name = "LakeTrail"
+	var back_points := PackedVector3Array([Vector3(21,0,-6),Vector3(21,0,30),Vector3(13,0,70),Vector3(13,0,145)])
+	var return_road: MeshInstance3D = _ribbon(back_points,5.8,dirt,0.022)
+	return_road.name = "TownReturnRoad"
 
 
 func _step_desert() -> void:
 	var meshes: Array = Ep2GoldTown.desert_meshes()
-	Ep2GoldTown.build_desert(_visuals, TRAIL_POINTS, -60.0, 650.0, meshes[0], meshes[1],
+	Ep2GoldTown.build_desert(_visuals, TRAIL_POINTS, -650.0, 300.0, meshes[0], meshes[1],
 		Ep2GoldTown.scrub_mat(), Ep2GoldTown.desert_rock_mat(), 365.0)
 
 
@@ -208,13 +230,16 @@ func _step_lake() -> void:
 		mat.metallic = 0.35
 		mat.roughness = 0.18
 		water.material_override = mat
-	water.position = Vector3(20.0, -0.055, _route_total + 188.0)
+	var end: Vector3 = _route_pts[_route_pts.size()-1]
+	var heading: float = float(_route_sample(_route_total)[1])
+	water.position = end + Vector3(sin(heading)*188.0, -0.055, cos(heading)*188.0)
+	water.rotation.y = heading
 	water.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_visuals.add_child(water)
 	var glint_mat: StandardMaterial3D = _glow(Color(0.82, 0.91, 0.86), 0.55)
 	for i in 14:
-		var z: float = _route_total + 18.0 + float(i) * 8.0
-		var x: float = -34.0 + float((i * 37) % 90)
+		var z: float = end.z - 18.0 - float(i) * 8.0
+		var x: float = end.x - 34.0 + float((i * 37) % 90)
 		var strip := _box(Vector3(2.0 + float(i % 4), 0.008, 0.07), Vector3(x, -0.01, z), glint_mat)
 		strip.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	# Cottonwoods and scrub gather as the desert reaches the water.
@@ -360,7 +385,7 @@ func _update_horse(_delta: float) -> void:
 	if not _horse_left and (_mounted or _unhorse_active):
 		_horse.position.x = _player_pos.x
 		_horse.position.z = _player_pos.z
-		_horse.rotation.y = _travel_yaw
+		_horse.rotation.y = _travel_yaw + (PI if _speed < -0.05 else 0.0)
 	if _unhorse_active:
 		return
 	if _horse_left:
@@ -368,7 +393,7 @@ func _update_horse(_delta: float) -> void:
 	elif _ending and _mounted:
 		_set_horse_clip("horse_graze", 0.85)
 	elif _mounted:
-		_set_horse_clip("horse_walk", clampf(_speed / HORSE_CLIP_SPEED, 1.2, 3.8))
+		_set_horse_clip("horse_walk", clampf(absf(_speed) / HORSE_CLIP_SPEED, 0.1, 3.8)) if absf(_speed) > 0.05 else _set_horse_clip("horse_stand", 1.0)
 	else:
 		_set_horse_clip("horse_stand", 1.0)
 
@@ -652,11 +677,12 @@ func _on_setup() -> void:
 	eye_height = MOUNTED_EYE
 	_ground_y = 0.0
 	_place_at_distance(0.0)
+	_speed = 0.0
 	_apply_handoff_gaze(_travel_yaw, -0.075, 0.65)
 	_clamp_look()
 	_player_yaw = _travel_yaw
 	if _hud != null:
-		_hud.objective = "Ride to Logan's Lake. W push / S ease, A/D steer. Watch the rocks."
+		_hud.objective = "Ride to Logan's Lake — or turn back to town. W/S ride, A/D steer; mouse looks freely." if TouchUi.keys_shown() else "Ride to Logan's Lake — or turn back to town."
 		_hud.show_health = true
 	if _vm != null:
 		_vm.set_world_shadows(false)
@@ -671,24 +697,59 @@ func has_player_control() -> bool:
 
 
 func _move_player(delta: float) -> void:
+	if _in_departure_area and not _ending and not _failing and not _unhorse_active:
+		_move_departure_area(delta)
+		return
 	if _ending or _failing or _unhorse_active:
 		_moving = false
 		return
 	_lane = clampf(_lane + _move_input.x * LANE_RATE * delta, -LANE_LIMIT, LANE_LIMIT)
-	if _mounted:
-		var wanted: float = clampf(CRUISE_SPEED + _move_input.y * 1.5, MIN_RIDE_SPEED, MAX_RIDE_SPEED)
-		_speed = move_toward(_speed, wanted, 2.8 * delta)
-		_moving = true
-		_walk_phase += delta * _speed * 1.4
-	else:
-		var wanted_foot: float = FOOT_SPEED if _move_input.y > 0.05 else 0.0
-		_speed = move_toward(_speed, wanted_foot, 6.0 * delta)
-		_moving = _speed > 0.05
-		if _moving:
-			_walk_phase += delta * 9.5
-	_route_s = minf(_route_total, _route_s + _speed * delta)
+	var facing: float = cos(_look_yaw - _travel_yaw)
+	var direction: float = signf(facing) if absf(facing) > 0.15 else 0.0
+	var wanted: float = _move_input.y * direction * (MAX_RIDE_SPEED if _mounted else FOOT_SPEED)
+	_speed = move_toward(_speed, wanted, 6.0 * delta)
+	_moving = absf(_speed) > 0.05
+	if _moving:
+		_walk_phase += delta * absf(_speed) * 1.4
+	_route_s = clampf(_route_s + _speed * delta, 0.0, _route_total)
 	_sync_route_pose(delta)
+	if _route_s < 60.0:
+		_in_departure_area = true
 
+
+func _move_departure_area(delta: float) -> void:
+	# The ranch and town remain freely traversable in the saddle. Looking behind never
+	# turns the horse unless the player actually asks it to move that way.
+	var forward := Vector3(sin(_look_yaw),0,cos(_look_yaw))
+	var right := Vector3(-cos(_look_yaw),0,sin(_look_yaw))
+	var wish: Vector3 = forward * _move_input.y + right * _move_input.x
+	var target_speed: float = (MAX_RIDE_SPEED if _mounted else FOOT_SPEED) * minf(1.0,wish.length())
+	_speed = move_toward(absf(_speed),target_speed,6.0*delta)
+	_moving = wish.length() > 0.05 and _speed > 0.05
+	if _moving:
+		var direction: Vector3 = wish.normalized()
+		_travel_yaw = atan2(direction.x,direction.z)
+		_previous_travel_yaw = _travel_yaw
+		var candidate: Vector3 = _player_pos + direction * _speed * delta
+		var town_pos: Vector3 = candidate + GoldTownChamber.DEPART_HORSE
+		var corrected: Vector2 = Ep2GoldTown.collide(Vector2(town_pos.x,town_pos.z),0.65,_town_walls,_town_props)
+		_player_pos = Vector3(clampf(corrected.x-GoldTownChamber.DEPART_HORSE.x,-60.0,85.0),0,
+			clampf(corrected.y-GoldTownChamber.DEPART_HORSE.z,-80.0,265.0))
+		_walk_phase += delta * _speed * 1.4
+	var best: float = INF
+	var nearest: int = 0
+	for i in _route_pts.size():
+		var d: float = _player_pos.distance_squared_to(_route_pts[i])
+		if d < best:
+			best = d
+			nearest = i
+	_route_s = _route_arc[nearest]
+	if _route_s > 65.0 and best < 4.0:
+		_in_departure_area = false
+		var sample: Array = _route_sample(_route_s)
+		_travel_yaw = float(sample[1])
+		_previous_travel_yaw = _travel_yaw
+		_lane = clampf((_player_pos-(sample[0] as Vector3)).dot(Vector3(-cos(_travel_yaw),0,sin(_travel_yaw))),-LANE_LIMIT,LANE_LIMIT)
 
 func _sync_route_pose(delta: float) -> void:
 	var sample: Array = _route_sample(_route_s)
@@ -704,6 +765,7 @@ func _sync_route_pose(delta: float) -> void:
 	var right := Vector3(-cos(_travel_yaw), 0.0, sin(_travel_yaw))
 	var centre: Vector3 = sample[0]
 	_player_pos = centre + right * _lane
+
 	_player_pos.y = 0.0
 	_ground_y = 0.0
 	_vel_y = 0.0
@@ -711,6 +773,7 @@ func _sync_route_pose(delta: float) -> void:
 
 
 func _place_at_distance(distance: float) -> void:
+	_in_departure_area = distance < 60.0
 	_route_s = clampf(distance, 0.0, _route_total)
 	_sync_route_pose(0.0)
 
@@ -732,15 +795,14 @@ func look(relative: Vector2) -> void:
 
 
 func _clamp_look() -> void:
-	var offset: float = clampf(wrapf(_look_yaw - _travel_yaw, -PI, PI), -LOOK_LIMIT, LOOK_LIMIT)
-	_look_yaw = _travel_yaw + offset
+	_look_yaw = wrapf(_look_yaw, -PI, PI)
 
 
 func _fps_camera(_delta: float) -> void:
 	var ads: float = _vm.gun.ads if _vm != null else 0.0
 	var bob: float = 0.0
 	if _mounted and not _unhorse_active:
-		bob = sin(_anim_t * (7.0 + _speed * 0.65)) * 0.026 * clampf(_speed / CRUISE_SPEED, 0.0, 1.4)
+		bob = sin(_anim_t * (7.0 + _speed * 0.65)) * 0.026 * clampf(absf(_speed) / CRUISE_SPEED, 0.0, 1.4)
 	elif _moving:
 		bob = sin(_walk_phase) * 0.035 * lerpf(1.0, 0.25, ads)
 	_camera.position = Vector3(_player_pos.x, _player_pos.y + eye_height + bob, _player_pos.z)
@@ -763,6 +825,11 @@ func _fps_camera(_delta: float) -> void:
 func _tick(delta: float) -> void:
 	_invuln = maxf(0.0, _invuln - delta)
 	_tick_flashes(delta)
+	var town_player: Vector3 = _player_pos + GoldTownChamber.DEPART_HORSE
+	if _departure_yard != null:
+		_departure_yard.step(delta, town_player)
+	if _return_crowd != null and _in_departure_area:
+		_return_crowd.step(delta, town_player)
 	if _failing:
 		_tick_fail(delta)
 		return
@@ -853,7 +920,7 @@ func _on_player_shot() -> void:
 	var best_t: float = 181.0
 	for i in _bandits.size():
 		var b: Dictionary = _bandits[i]
-		if str(b["state"]) == "dead":
+		if not (b["root"] as Node3D).visible:
 			continue
 		var t: float = _bandit_ray_hit(b, eye, direction)
 		if t >= 0.0 and t < best_t:
@@ -864,7 +931,7 @@ func _on_player_shot() -> void:
 		if _hud != null:
 			_hud.hit_marker(true)
 		var hit_folk: Ep2TownFolk = (_bandits[best] as Dictionary)["folk"]
-		_blood(get_bandit_aim_position(best), direction, hit_folk.model if hit_folk.model != null else hit_folk)
+		_blood(eye + direction * best_t, direction, hit_folk.model if hit_folk.model != null else hit_folk)
 
 
 func _bandit_ray_hit(b: Dictionary, eye: Vector3, direction: Vector3) -> float:
@@ -873,6 +940,11 @@ func _bandit_ray_hit(b: Dictionary, eye: Vector3, direction: Vector3) -> float:
 		base.y += SADDLE_HEIGHT
 	var a: Vector3 = base + Vector3(0.0, 0.28, 0.0)
 	var top: Vector3 = base + Vector3(0.0, float(b["height"]), 0.0)
+	if str(b["state"]) == "dead":
+		var folk: Ep2TownFolk = b["folk"]
+		var pose: Transform3D = folk.global_transform * Transform3D(folk.model.basis.orthonormalized(),folk.model.position)
+		a = pose * Vector3(0,0.25,0)
+		top = pose * Vector3(0,float(b["height"])*0.85,0)
 	var axis: Vector3 = top - a
 	var d: Vector3 = direction.normalized()
 	var w0: Vector3 = eye - a
@@ -1031,6 +1103,7 @@ func _retry_trail() -> void:
 		_horse.position = Vector3.ZERO
 	_set_horse_clip("horse_walk", _speed / HORSE_CLIP_SPEED)
 	_place_at_distance(0.0)
+	_speed = 0.0
 	_look_pitch = -0.075
 	_beat = Beat.RIDE
 	beat_changed.emit(_beat)

@@ -1,0 +1,11 @@
+  [PASS] the bear has a player and the combat clips merged onto its skeleton
+  [PASS] swipe and bite are 1.2 s one-shots (30 fps authoring)
+  [PASS] the gait clips loop and the bear uses them for walk and run
+  [PASS] the claw blow lands inside its clip, after the wind-up (not the first 0.3 s, before the end)
+  [PASS] the swipe drives the striking arm away from the rest pose
+  [PASS] the bite worries its prey: the head shakes side to side after the lunge
+  [PASS] right on top of the player a bear bites (at arm's length it rears and swipes)
+  [PASS] a brawler beside the player attacks and lands one blow
+  [PASS] ...with a real attack pose, struck at the clip's contact time (not the old fixed 0.55 s punch)
+  [PASS] a blow only lands if the player is still in reach when it connects
+EP2_BEAR_ATTACKS: ALL PASS

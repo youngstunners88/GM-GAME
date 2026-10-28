@@ -4,11 +4,11 @@ extends RefCounted
 ## stains, and flat drying pools. All positions and directions passed to these helpers are
 ## world-space. No decals, shaders, image files, autoloads, or per-frame manager are needed.
 
-const FRESH: Color = Color(0.36, 0.018, 0.024, 1.0)
-const STAIN_WET: Color = Color(0.20, 0.012, 0.016, 0.88)
-const STAIN_DRY: Color = Color(0.075, 0.006, 0.009, 0.94)
-const POOL_WET: Color = Color(0.17, 0.009, 0.013, 0.90)
-const POOL_DRY: Color = Color(0.065, 0.005, 0.008, 0.96)
+const FRESH: Color = Color(0.68, 0.018, 0.024, 1.0)
+const STAIN_WET: Color = Color(0.48, 0.012, 0.016, 0.88)
+const STAIN_DRY: Color = Color(0.30, 0.006, 0.009, 0.94)
+const POOL_WET: Color = Color(0.44, 0.009, 0.013, 0.90)
+const POOL_DRY: Color = Color(0.26, 0.005, 0.008, 0.96)
 const DRY_SECONDS: float = 20.0
 
 static var _splat: ImageTexture = null
@@ -35,6 +35,7 @@ static func spurt(parent: Node3D, at: Vector3, dir: Vector3, size: float = 1.0) 
 	drop_mesh.rings = 3
 	var drop_mat := StandardMaterial3D.new()
 	drop_mat.albedo_color = FRESH
+	drop_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	drop_mat.roughness = 0.34
 	var drops := CPUParticles3D.new()
 	drops.name = "Droplets"
@@ -166,6 +167,7 @@ static func pool(parent: Node3D, at_ground: Vector3, radius: float, grow_s: floa
 static func _splat_material(color: Color, roughness: float) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = color
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.albedo_texture = _splat_texture()
 	mat.roughness = roughness
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA

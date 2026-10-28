@@ -582,6 +582,8 @@ func chamber_start_rig(payment: String = "eth") -> bool:
 
 func chamber_shoot() -> bool:
 	if _mode == Mode.CHAMBER and _active:
+		if _free_roam() and _active.wants_mouse_capture() and not TouchUi.is_touch():
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		return _active.shoot()
 	return false
 
@@ -870,14 +872,22 @@ func _route_free_roam(event: InputEvent) -> bool:
 			return true
 		# RMB held = aim down the sights (Modern Warfare style); released = back to the hip.
 		if mb.button_index == MOUSE_BUTTON_RIGHT and _active.has_method("set_aim"):
+			if mb.pressed and _active.wants_mouse_capture(): Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 			_active.set_aim(mb.pressed)
 			return true
 		return false
 	if event is InputEventKey:
 		var k: InputEventKey = event
+		# Keyboard movement/drawing is a real browser gesture too. Reacquire relative
+		# mouse look after focus loss so the screen edge cannot fence in aiming.
+		if k.pressed and not k.echo and not TouchUi.is_touch() and _active.wants_mouse_capture() and _active.has_player_control() 				and k.physical_keycode in [KEY_W,KEY_A,KEY_S,KEY_D,KEY_UP,KEY_DOWN,KEY_LEFT,KEY_RIGHT,KEY_ENTER,KEY_KP_ENTER]:
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		if k.pressed and k.physical_keycode == KEY_SPACE:
 			_active.jump()
 			return true
+		if k.pressed and not k.echo and k.physical_keycode in [KEY_ENTER, KEY_KP_ENTER] and _active.has_method("draw_weapon"):
+			if _active.draw_weapon():
+				return true
 		# R = load shells, one at a time (the Winchester's tube magazine).
 		if k.pressed and k.physical_keycode == KEY_R and _active.has_method("reload"):
 			_active.reload()

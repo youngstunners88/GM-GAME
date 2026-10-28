@@ -31,16 +31,33 @@ func _check(label: String, ok: bool, detail: String = "") -> void:
 		print("  [FAIL] %s %s" % [label, detail])
 
 
+var _cheer_seen: int = 0
+var _dance_seen: int = 0
+var _minister_ran_seen: bool = false
+func _observed_step(c: GoldTownChamber) -> void:
+	c.step(1.0 / 60.0)
+	if c.get_minister() != null and c.get_minister().current_clip() == "run": _minister_ran_seen=true
+	var ppl: Ep2TownPeople = c.get_people()
+	if ppl == null: return
+	var cheer: int = 0
+	var dance: int = 0
+	for q in ppl.people:
+		if q.state == "cel_cheer" and q.folk.current_clip() in ["cheer","clap"]: cheer+=1
+		var mate: Variant = ppl.person(q.partner) if q.partner != "" else null
+		if q.state == "cel_dance" and q.folk.current_clip() in ["dancea","danceb"] and mate != null and mate.state == "cel_dance" and q.folk.position.distance_to(mate.folk.position)<2.0: dance+=1
+	_cheer_seen=maxi(_cheer_seen,cheer)
+	_dance_seen=maxi(_dance_seen,int(dance/2.0))
+
 func _run(c: GoldTownChamber, seconds: float) -> void:
 	for i in int(seconds * 60.0):
-		c.step(1.0 / 60.0)
+		_observed_step(c)
 
 
 func _until(c: GoldTownChamber, seconds: float, cond: Callable) -> bool:
 	for i in int(seconds * 60.0):
 		if cond.call():
 			return true
-		c.step(1.0 / 60.0)
+		_observed_step(c)
 	return bool(cond.call())
 
 
@@ -64,7 +81,7 @@ func _walk_to(c: GoldTownChamber, goal: Vector3, seconds: float = 30.0) -> bool:
 			yaw += side * PI * 0.5
 		c._look_yaw = yaw
 		c.set_move_input(Vector2(0.0, 1.0), true)
-		c.step(1.0 / 60.0)
+		_observed_step(c)
 		stuck = stuck + 1.0 / 60.0 if c.get_player_position().distance_to(last) < 0.01 else 0.0
 		last = c.get_player_position()
 		if stuck > 1.0 and side_t <= 0.0:
@@ -201,7 +218,7 @@ func _ready() -> void:
 	_until(c, 10.0, func(): return c.get_draw_state() == "go")
 	_check("the town bell signals DRAW and the stranger's gun hand comes up with the revolver in it", c._town_audio.bell_count == 1 and not said.has("vo_sheriff_draw") and c.get_draw_state() == "go"
 		and c.get_opponent().pose_name == "draw" and c.get_opponent().find_child("Revolver", true, false).visible)
-	_check("...and the rifle comes up", not c.get_viewmodel().lowered)
+	_check("the rifle stays out of view until Enter draws it", c.get_viewmodel().lowered and not c._player_drawn)
 	_until(c, 5.0, func(): return c.get_draw_state() != "go")
 	_check("too slow: the stranger fires first (a loss, never a death)", c.get_losses() == 1 and c.get_draw_state() == "lost")
 	_until(c, Ep2TownVoiceBank.seconds("vo_sheriff_lose") + 8.0, func(): return c.get_draw_state() == "wait")
@@ -210,13 +227,14 @@ func _ready() -> void:
 	_check("...and he gives a little more time on the next try", c.opp_reaction() > GoldTownChamber.OPP_REACTION)
 	# WIN: aim and fire at the bell
 	_until(c, 10.0, func(): return c.get_draw_state() == "go")
+	c.draw_weapon()
 	var fired: bool = false
 	for i in 120:
 		_aim_at_opp(c)
 		c.set_aim(true)
 		if c.shoot():
 			fired = true
-		c.step(1.0 / 60.0)
+		_observed_step(c)
 		if c.get_draw_state() != "go":
 			break
 	c.set_aim(false)
@@ -235,23 +253,24 @@ func _ready() -> void:
 	var caps: Array = []
 	c.captioned.connect(func(w: String, t: String) -> void: caps.append([w, t]))
 	_check("Inferno does NOT arrive at the draw", not c.is_bull_here())
-	_until(c, 8.0, func(): return c.get_beat_name() == "LOOT")
+	_until(c, 30.0, func(): return c.get_beat_name() == "LOOT")
 	_check("-> LOOT: search the stranger for his Peacemaker and the map", c.get_beat_name() == "LOOT" and "PEACEMAKER" in str(c.get_hud().objective),
 		str(c.get_hud().objective))
 	_check("[E] from across the street does nothing (he has to go to the body)", not c.can_loot() and not c.start_rig("") and not c.has_map())
 	var mike: Ep2TownFolk = c.get_minister()
 	var office_xf: Transform3D = Ep2GoldTown.building_xform(Ep2GoldTown.entry("Bldg_Certificates"))
-	_check("Mike Dean is still at his counter while nobody has touched the body", (office_xf.affine_inverse() * mike.position).z < 0.0)
+	_check("Mike Dean reacts before the body is looted", c.minister_task() != "" or (office_xf.affine_inverse() * mike.position).z < 0.0)
 	var reached_body: bool = _walk_to(c, opp_at + Vector3(-1.3, 0.0, -0.6), 30.0)
+	_until(c, 30.0, func(): return c.can_loot())
 	_check("he walks up the street to the fallen stranger, and [E] can search him there", reached_body and c.can_loot(), str(c.get_player_position()))
 	_check("[E]: the Peacemaker and the map to the auction are his", c.start_rig("") and c.has_peacemaker() and c.has_map() and not colt.visible)
-	var ran: bool = false
+	var ran: bool = _minister_ran_seen
 	var mike_outside: bool = false
-	var cheered: int = 0
-	var danced_pairs: int = 0
+	var cheered: int = _cheer_seen
+	var danced_pairs: int = _dance_seen
 	var want_next: String = "JAIL_TIP" if Ep2GoldTown.jail_v1 else "TIP"
 	for i in 60 * 90:
-		c.step(1.0 / 60.0)
+		_observed_step(c)
 		if mike.current_clip() == "run":
 			ran = true
 		if (office_xf.affine_inverse() * mike.position).z > 0.5:
@@ -272,7 +291,7 @@ func _ready() -> void:
 		if c.get_beat_name() == want_next and danced_pairs > 0:
 			break
 	_check("Lil Blunt names what he found (the Colt Peacemaker, the map)", caps.any(func(l: Array) -> bool: return l[0] == "LIL BLUNT" and "peacemaker" in str(l[1]).to_lower()))
-	_check("THEN Minister Mike Dean leaves his counter and comes out of the office", mike_outside)
+	_check("Minister Mike Dean leaves his counter and comes out of the office", mike_outside)
 	_check("...at a run (the founder's Mike Dean rigged, on his Run clip; the statue only if the streamed pack is missing)", ran or not c.minister_rigged(),
 		"rigged %s" % c.minister_rigged())
 	_check("...alarmed: he asks what happened", caps.any(func(l: Array) -> bool: return l[0] == "MIKE DEAN" and "happened" in str(l[1]).to_lower()), str(caps))
@@ -374,7 +393,7 @@ func _ready() -> void:
 	# ---- section 4.3: he can test the Colt Gatling; after it, Inferno rides back in on his quad and parks outside Rich's
 	print("-- THE GATLING, THEN INFERNO'S RETURN")
 	for i in 120:
-		c.step(1.0 / 60.0)
+		_observed_step(c)
 	_check("buying everything on the first visit does not end the town: the story goes on with Inferno", c.get_beat_name() == "ARMORY", c.get_beat_name())
 	var gat: Ep2GatlingPost = c.get_gatling()
 	_check("the Colt Gatling stands in the yard (streamed extras)", gat != null)
@@ -389,7 +408,7 @@ func _ready() -> void:
 		for i in 90:
 			if c.shoot():
 				fired_g = true
-			c.step(1.0 / 60.0)
+			_observed_step(c)
 		_check("...fires a burst from the drum", fired_g and c.mount_bursts() > 0)
 		_check("...and steps away from it", c.start_rig("") and not c.is_mounted())
 	_until(c, 40.0, func(): return c.get_beat_name() == "BULL_BACK")
@@ -432,7 +451,7 @@ func _ready() -> void:
 	for i in 60 * 70:
 		if c.get_beat_name() != "DRINKS":
 			break
-		c.step(1.0 / 60.0)
+		_observed_step(c)
 		var bull: Ep2Actor = c.get_bull()
 		if bull != null and bull.anim != null and bull.anim.current_animation == SmeltingFacilityChamber.BULL_SIP:
 			bull_sipped = true

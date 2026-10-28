@@ -1,0 +1,28 @@
+The map has a fault. The jail and Rich and Utah’s needs to be reversed. Have a small tet saying press “M” next to the map so that people understand. Have a small text saying ‘press “G” next to save so people understand. The big problem with the travel to the lake is that after Lil Blunt mounts on the horse he leave the stables and suddenly the environment has changed. This is very problematic we need to maintain that if Lil Blunt wanted he could go back to the town with the horse. Therefore the game has to be true and aligned with map’s geographic points. When Lil Blunt has a horseman behind him he is unable to turn back all the way and shoot. In fact this is a problem throughout the game and only happens sometimes. Once needs to be able to turn around in a 360 degree motion, but there are times when the cursor doesnt allow that. Fix it. We need more bandits on the road to raise the stakes.
+
+
+ The other issue is that The voices arent consistent when the sheriff speaks. Sometimes there’s audio and sometimes just subtitles. He needs to be audile alwayys when he speaks. When he leads Lil Blunt to the jail he walks through the building!!! WHY!!! Let’s bring back the previous sheriff as this one’s face is fucked. Its horrendous.
+
+
+When it comes to the draw make it that Lil Blunt’s weapon is down so that we dont see it and the user thus has to click enter to draw and shoot as normal.
+
+
+Minister Mike Dean still doesnt have a voice even though I gave him this voice a while back: Pe1gOSDKAuczOZqgCiEm voice ID. He should also come out sooner so that its clear that the sound of te gun fire at the bell has alarmed him even if Lil Blunt has not yet collected the map and the gun. The boody needs to splat with blood when shot. That goes for all bodies in the game. And the blood that’s left needs to be red not grey.
+
+
+We need to hear the cheering sounds of the people when the man is shot. It’s great that they’re dancing, but we need to hear the whistling and roaring. You have my API keys of elevenlabs for this: brew install elevenlabs/tap/elevenlabs
+
+
+elevenlabs auth login
+
+
+You have a few elevenlabs api keys in environment even under names like ELE, ELEV, ect.
+audio = elevenlabs.text_to_speech.convert(
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    text="The first move is what sets everything in motion.",
+    model_id="eleven_multilingual_v2",
+    request_options={"additional_body_parameters": {"new_field": "value"}},
+)
+
+
+This is Dude’s voice: Pe1gOSDKAuczOZqgCiEm voice ID. He needs to be fucking audile!!! We have many sounds we can access on Elevenlabs. The train still sounds trash and the sound of the train lingers even when its gone. We also need horse sounds in the stables.

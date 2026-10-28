@@ -226,5 +226,5 @@ func _test_train(chamber: GoldTownChamber) -> void:
 			finished = true
 			break
 	print("EP2_TOWN_FEEL pass-by: starts x=", life._passby_start_x, " peak lands x=", life._passby_peak_x, " count=", life._passby_count)
-	check("the close pass-by fires exactly once in a crossing", life._passby_count == 1 and finished, life._passby_count)
-	check("the pass-by's loudest second lands within 15 m of mid-street", absf(life._passby_peak_x) <= 15.0, life._passby_peak_x)
+	check("recorded train uses one run layer, not a doubled pass-by", life._passby_count == 0 and finished, life._passby_count)
+	check("all train sounds stop when it has gone", not life._run_sfx.playing and not life._pass_sfx.playing and not life._whistle_sfx.playing)

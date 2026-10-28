@@ -1,0 +1,42 @@
+  [PASS] the real streamed town roster is present
+  [PASS] a camera-ray shot on a townsperson kills and immediately starts arrest
+  [PASS] the arrest caption is the Sheriff's
+  [PASS] the Sheriff walks closer during arrest second 1
+  [PASS] the Sheriff walks closer during arrest second 2
+  [PASS] the Sheriff walks closer during arrest second 3
+  [PASS] the Sheriff walks closer during arrest second 4
+  [PASS] the approach really used walking time
+  [PASS] Lil Blunt is auto-walked with the Sheriff into the cell
+  [PASS] Bam Bankman Free is alive in the cell, with the original prisoner untouched
+  [PASS] the guns were taken at the jail and the pickaxe is the equipped mode
+  [PASS] the cell is still shut well before two minutes
+  [PASS] looking and walking cannot get him out before the time is up
+  [PASS] the lock holds through 112 seconds, not a shorter cosmetic wait
+  [PASS] release happens only after the full 120 seconds and walks him back out
+  [PASS] all ten Bam/Lil Blunt lines are captioned once, in order
+  [PASS] their conversation is spread across the stay
+  [PASS] release uses the Sheriff's pickaxe line
+  [PASS] the town relationship is cold
+  [PASS] Tabs shows all three irons HELD BY THE SHERIFF and none can be selected
+  [PASS] click swings the pickaxe with no ammunition and no shot/offence
+  [PASS] confiscation survives the armory snapshot/restore round-trip
+  [PASS] return_firearms() gives every previously owned iron back and emits once
+  [PASS] a shot on sheriff wounds but never kills, and still arrests
+  [PASS] a shot on minister wounds but never kills, and still arrests
+  [PASS] a ray aimed through Inferno Bull never wounds him and never arrests
+  [PASS] the hitch-rail horse is a law target
+  [PASS] a horse bleeds/is wounded, costs a fine, and is not an arrest
+  [PASS] the horse's one-BTC fine settles after three quiet seconds
+  [PASS] the optional blood packet was used when present
+  [PASS] a facade round leaves a real offset bullet mark
+  [PASS] a round through a window shatters that pane
+  [PASS] one window plus one facade hole fines exactly two BTC once
+  [PASS] quiet time cannot debit the same damage twice
+  [PASS] a short purse pays what exists and records the rest as debt
+  [PASS] the purse never goes negative
+  [PASS] standing and debt are written and loaded with the persistent session
+  [PASS] save/load round-trips cold standing and BTC debt
+  [PASS] in the draw the stranger is still the winning target, with no town arrest
+  [PASS] doing nothing after the bell is still the same retryable loss
+  [PASS] the loss restages another draw exactly as before
+EP2_TOWN_LAW: ALL PASS

@@ -288,6 +288,7 @@ func _draw_regression() -> void:
 	c._player_pos = GoldTownChamber.DUEL_MARK
 	c._advance_to(GoldTownChamber.Beat.DRAW)
 	_until(c, 10.0, func(): return c.get_draw_state() == "go")
+	c.draw_weapon()
 	_fire_at(c, c.get_opponent().position + Vector3(0.0, 1.30, 0.0))
 	_check("in the draw the stranger is still the winning target, with no town arrest",
 		c.get_draw_state() == "won" and c.get_opponent().dead and not c.get_town_law().is_arrest_active())

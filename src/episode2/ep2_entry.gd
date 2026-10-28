@@ -198,6 +198,8 @@ func _begin() -> void:
 	chart.context = func() -> Vector2:
 		var room: Node = _root.get_active()
 		if room is LakeTrailChamber:
+			if room._in_departure_area:
+				return Vector2(.23,.42).lerp(Vector2(.23,.76),clampf(room._player_pos.z/265.0,0,1))
 			return Vector2(.23,.42).lerp(Vector2(.74,.38), clampf(room._route_s / maxf(1.0,room._route_total),0,1))
 		if room is GoldTownChamber:
 			var pos: Vector3 = room.get_player_position()

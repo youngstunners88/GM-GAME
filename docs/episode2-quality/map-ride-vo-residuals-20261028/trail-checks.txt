@@ -1,0 +1,30 @@
+  [PASS] GEARED prebuilds the lake trail, not the lake itself
+  [PASS] DONE hands over to the trail with Dude's horse
+  [PASS] DONE keeps the existing story fields
+  [PASS] the session registers the new room
+  [PASS] the trail is 450-600 m and starts mounted with the horse beneath the camera
+  [PASS] W pushes the horse toward 7 m/s and travel stays inside 4-7 m/s
+  [PASS] S reverses the horse toward town
+  [PASS] D steers to the right lane edge but never beyond it
+  [PASS] A steers back to the opposite edge, still lane-bound
+  [PASS] mouse can aim directly behind through 360 degrees
+  [PASS] the armory remains usable from the saddle
+  [PASS] the walk clip is speed-matched rather than an invented gallop
+  [PASS] bandits rise, Draw and show a visible gun glint before firing
+  [PASS] every recorded shot has at least 0.6 s of visible tell (authored tells are 0.85-1.2 s)
+  [PASS] shooting a telegraphing bandit drops him with fall_dead
+  [PASS] a full-health room never heals above three hearts
+  [PASS] one bandit hit costs exactly one heart
+  [PASS] a second separate hit costs one more, never more than the three-heart cap
+  [PASS] three horse wounds trigger exactly one UNHORSE event, not a game over
+  [PASS] the stumble drops and rolls the camera without a blackout, then returns to walking eye height
+  [PASS] he continues on foot at walking speed and still reaches Logan's Lake
+  [PASS] zero hearts ends the attempt like the woods
+  [PASS] retry starts at the trail start with three hearts and a fresh horse
+  [PASS] the ambush and the kill count are restored together
+  [PASS] the lake is requested at the start of the ride
+  [PASS] the shore waits for the already-requested lake instead of building at the cut
+  [PASS] a living horse lowers its head to drink (horse_graze)
+  [PASS] arrival resolves to logans_lake mounted, with time and bandit count
+  [PASS] resolution makes no second prebuild request
+EP2_LAKE_TRAIL: ALL PASS

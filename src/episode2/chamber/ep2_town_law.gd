@@ -211,12 +211,12 @@ func trace(eye: Vector3, direction: Vector3, in_draw: bool = false) -> Dictionar
 	if _people != null:
 		for person in _people.people:
 			var folk: Ep2TownFolk = person.folk
-			if folk == null or folk.dead:
+			if folk == null:
 				continue
-			var t: float = _person_ray(eye, direction, folk, 0.34)
+			var t: float = _corpse_ray(eye,direction,folk) if folk.dead else _person_ray(eye, direction, folk, 0.34)
 			if t < best_t:
 				best_t = t
-				best = {"kind": "person", "id": person.id, "folk": folk, "t": t, "point": eye + direction * t}
+				best = {"kind": "corpse" if folk.dead else "person", "id": person.id, "folk": folk, "t": t, "point": eye + direction * t}
 	for entry in _cast:
 		var node: Node3D = entry["node"]
 		if not is_instance_valid(node) or not node.visible:
@@ -225,7 +225,11 @@ func trace(eye: Vector3, direction: Vector3, in_draw: bool = false) -> Dictionar
 		if in_draw and id == "opponent":
 			continue
 		var kind: String = str(entry["kind"])
-		if kind == "person" and node is Ep2TownFolk and (node as Ep2TownFolk).dead:
+		if node is Ep2TownFolk and (node as Ep2TownFolk).dead:
+			var corpse_t: float = _corpse_ray(eye,direction,node)
+			if corpse_t < best_t:
+				best_t = corpse_t
+				best = {"kind":"corpse","folk":node,"t":corpse_t,"point":eye+direction*corpse_t}
 			continue
 		var height: float = float(entry["height"])
 		var a: Vector3 = node.global_position + Vector3(0.0, 0.25, 0.0)
@@ -283,8 +287,16 @@ func _ray_sphere(eye: Vector3, direction: Vector3, centre: Vector3, radius: floa
 	return t if t >= 0.02 else INF
 
 
+func _corpse_ray(eye: Vector3, direction: Vector3, folk: Ep2TownFolk) -> float:
+	if folk.model == null: return INF
+	var pose: Transform3D = folk.global_transform * Transform3D(folk.model.basis.orthonormalized(),folk.model.position)
+	return _ray_capsule(eye,direction,pose * Vector3(0,0.25,0),pose * Vector3(0,1.6,0),0.34)
+
 func _resolve_hit(hit: Dictionary, direction: Vector3) -> void:
 	match str(hit.get("kind", "miss")):
+		"corpse":
+			_blood_spurt(hit["point"],direction,1.0)
+			_blood_stain(hit["folk"],hit["point"],-direction,0.8)
 		"person":
 			_kill_person(hit, direction)
 		"story":

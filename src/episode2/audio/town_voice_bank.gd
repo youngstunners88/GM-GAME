@@ -873,6 +873,270 @@ const LINES: Dictionary = {
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_minister2_03.ogg"
+	},
+	"town_panic_00": {
+		"speaker": "minister",
+		"text": "Lord have mercy! What in heaven's name happened out here?",
+		"seconds": 4.105,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_panic_00.ogg"
+	},
+	"town_panic_01": {
+		"speaker": "sheriff",
+		"text": "A fair draw, Minister. The stranger called it. The little fella was faster.",
+		"seconds": 5.105,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_panic_01.ogg"
+	},
+	"town_panic_02": {
+		"speaker": "minister",
+		"text": "Then somebody had better pray for that poor soul. I'll see to him.",
+		"seconds": 4.105,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_panic_02.ogg"
+	},
+	"town_job_00": {
+		"speaker": "sheriff",
+		"text": "That was some fine shooting, son. Haven't seen a draw that clean in years.",
+		"seconds": 5.105,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_job_00.ogg"
+	},
+	"town_job_01": {
+		"speaker": "sheriff",
+		"text": "I could use a hand like yours. Somebody let the bears hold Fort Knox.",
+		"seconds": 4.805,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_job_01.ogg"
+	},
+	"town_job_02": {
+		"speaker": "sheriff",
+		"text": "Find out who. My prisoner in the jailhouse knows more than he's telling.",
+		"seconds": 4.905,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_job_02.ogg"
+	},
+	"town_job_03": {
+		"speaker": "sheriff",
+		"text": "But get yourself properly armed first. Go see Rich and Utah, down the side lane.",
+		"seconds": 5.405042,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_job_03.ogg"
+	},
+	"town_body_01": {
+		"speaker": "minister",
+		"text": "Evening, Inferno. Just saying a few words for him.",
+		"seconds": 3.43575,
+		"start_seconds": 0.06925,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_body_01.ogg"
+	},
+	"dude_ranch_01": {
+		"speaker": "dude",
+		"text": "Easy there, friend. Name's Dude.",
+		"seconds": 2.496042,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_01.ogg"
+	},
+	"dude_ranch_02": {
+		"speaker": "dude",
+		"text": "These are my horses. I sell to folks with business; the Minister knows me.",
+		"seconds": 4.505,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_02.ogg"
+	},
+	"dude_ranch_03": {
+		"speaker": "dude",
+		"text": "Long road, huh? Here, one of Dude's Chill Buds, grown right here on the ranch. A gift for the trail. Stay chill.",
+		"seconds": 7.805,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_03.ogg"
+	},
+	"dude_ranch_04": {
+		"speaker": "dude",
+		"text": "Anything else? Two Chill Buds for one BTC, partner. Good little road companions.",
+		"seconds": 5.705,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_04.ogg"
+	},
+	"dude_ranch_05": {
+		"speaker": "dude",
+		"text": "Pleasure. Two fresh Chill Buds, tucked safe in your tabs. Enjoy the easy road.",
+		"seconds": 5.505,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_05.ogg"
+	},
+	"dude_ranch_06": {
+		"speaker": "dude",
+		"text": "No worries. Come back when your purse is heavier; the buds keep, and so does the welcome.",
+		"seconds": 5.405042,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_06.ogg"
+	},
+	"dude_ranch_08": {
+		"speaker": "dude",
+		"text": "Mike Dean sent you? Then you're good folk. A saddled horse is two BTC.",
+		"seconds": 5.505,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_08.ogg"
+	},
+	"dude_ranch_10": {
+		"speaker": "dude",
+		"text": "Fair haggle. Two even, no fooling. That's the friend price, and she's worth it.",
+		"seconds": 5.605,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_10.ogg"
+	},
+	"dude_ranch_11": {
+		"speaker": "dude",
+		"text": "Deal. Two BTC, square and easy. She's yours, partner. Treat her gentle.",
+		"seconds": 5.805,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_11.ogg"
+	},
+	"dude_ranch_12": {
+		"speaker": "dude",
+		"text": "Short on coin? Take her on credit until the auction. Two BTC later. Mike's people are good for it.",
+		"seconds": 6.805,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_12.ogg"
+	},
+	"dude_ranch_13": {
+		"speaker": "dude",
+		"text": "First go to Logan's Lake so your horse can drink and cool down in this heat. It's on the map.",
+		"seconds": 5.405,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_13.ogg"
+	},
+	"dude_ranch_14": {
+		"speaker": "dude",
+		"text": "Anything else, partner? Your horse is ready when you are. No hurry around here.",
+		"seconds": 4.705,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_14.ogg"
+	},
+	"dude_ranch_15": {
+		"speaker": "dude",
+		"text": "Remember: Logan's Lake first. Let her drink and cool down. It's right there on the map.",
+		"seconds": 5.705,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/dude_ranch_15.ogg"
+	},
+	"town_law_arrest": {
+		"speaker": "sheriff",
+		"text": "Drop it, Blunt. You just shot a man in my town.",
+		"seconds": 3.588875,
+		"start_seconds": 0.016125,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_law_arrest.ogg"
+	},
+	"town_law_release": {
+		"speaker": "sheriff",
+		"text": "Your irons stay with me while you're in my town. Take your pick and walk soft.",
+		"seconds": 5.305042,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_law_release.ogg"
+	},
+	"town_law_fine": {
+		"speaker": "sheriff",
+		"text": "That damage comes out of your purse, Blunt. BTC, on the barrelhead.",
+		"seconds": 5.405042,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_law_fine.ogg"
+	},
+	"town_cold_sheriff_0": {
+		"speaker": "sheriff",
+		"text": "Walk soft, Blunt. My town remembers.",
+		"seconds": 3.357583,
+		"start_seconds": 0.047417,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_cold_sheriff_0.ogg"
+	},
+	"town_cold_sheriff_1": {
+		"speaker": "sheriff",
+		"text": "You're still welcome at my office. The easy trust has to be earned back.",
+		"seconds": 4.905,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_cold_sheriff_1.ogg"
+	},
+	"town_cold_mike_dean_0": {
+		"speaker": "minister",
+		"text": "I'll pray for the man you hurt, and for the temper that did it.",
+		"seconds": 3.683542,
+		"start_seconds": 0.021458,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_cold_mike_dean_0.ogg"
+	},
+	"town_cold_mike_dean_1": {
+		"speaker": "minister",
+		"text": "Kindness costs nothing, son. Try spending a little more of it.",
+		"seconds": 4.105,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_cold_mike_dean_1.ogg"
+	},
+	"town_jobjail_00": {
+		"speaker": "sheriff",
+		"text": "Come on. I'll walk you over, and you can hear it from him yourself.",
+		"seconds": 4.005,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_jobjail_00.ogg"
+	},
+	"town_minister2_01": {
+		"speaker": "minister",
+		"text": "The Gold Panner! Bless that big fella, he remembered.",
+		"seconds": 4.305042,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_minister2_01.ogg"
+	},
+	"town_minister2_02": {
+		"speaker": "minister",
+		"text": "And your certificate, son. Made out in your name - stamped and sealed.",
+		"seconds": 4.705,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_minister2_02.ogg"
+	},
+	"town_minister2_04": {
+		"speaker": "minister",
+		"text": "You'll want a horse for the trail. Go see my friend Dude at the horse stables. Tell him I sent you.",
+		"seconds": 5.405,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/town_minister2_04.ogg"
+	},
+	"vo_minister_1": {
+		"speaker": "minister",
+		"text": "Welcome, friend. A certificate is made out in your name, and it stays in your name. It cannot be sold on and it cannot be traded. Bring your share and I will stamp it.",
+		"seconds": 10.205042,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/vo_minister_1.ogg"
 	}
 }
 const GREETINGS: Dictionary = {

@@ -41,7 +41,7 @@ const TRAIN_RUN_DB := 6.0
 const TRAIN_WHISTLE_DB := 9.0
 const TRAIN_UNDER_SPEECH_DB := -7.0             # how far the train dips while someone is talking
 const TRAIN_UNIT_SIZE := 42.0                   # full level within 42 m; ~-8 dB at mid-street; silent past MAX
-const TRAIN_MAX_DISTANCE := 460.0
+const TRAIN_MAX_DISTANCE := 245.0
 const WHISTLE_AT_X := [150.0, 40.0]             # blow as it appears, and as it comes level with the town
 var _run_sfx: AudioStreamPlayer3D
 var _whistle_sfx: AudioStreamPlayer3D
@@ -316,6 +316,8 @@ func _train_audio_step() -> void:
 			_run_sfx.stop()
 		if _pass_sfx.playing:
 			_pass_sfx.stop()
+		if _whistle_sfx.playing:
+			_whistle_sfx.stop()
 		return
 	if not _ensure_train_audio():
 		return
@@ -329,7 +331,7 @@ func _train_audio_step() -> void:
 		_passby_armed = false
 		_passby_start_x = _train_x
 		_passby_peak_x = _train_x - TRAIN_SPEED * _passby_peak
-		if _pass_sfx.stream != null:
+		if _pass_sfx.stream != null and not ResourceLoader.exists(TRAIN_STEAM_SFX):
 			_pass_sfx.play()
 			_passby_count += 1
 	if _pass_sfx.playing:

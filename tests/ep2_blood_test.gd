@@ -127,6 +127,7 @@ func _test_town() -> void:
 	for i in 120:
 		_aim_at_opp(c)
 		c.set_aim(true)
+		c.draw_weapon()
 		if c.shoot():
 			fired = true
 		c.step(1.0 / 60.0)

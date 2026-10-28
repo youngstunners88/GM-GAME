@@ -83,6 +83,8 @@ var _brains: Array = []
 var _horse_anims: Array = []
 var _solids: Array = []
 var _time: float = 0.0
+var _horse_sound_left: float = 2.0
+var _horse_sound_index: int = 0
 var _talk_cd: float = 0.0
 var _quiet: bool = false
 var _distant_dt: float = 0.0
@@ -619,6 +621,13 @@ func step(delta: float, player: Vector3, quiet: bool = false) -> void:
 	_tick_assistant(dt, quiet)
 	if not quiet: _tick_walking_horse()
 	_tick_drink(dt, quiet)
+	if not quiet and player.distance_to(STABLE_POS) < 65.0 and not horses.is_empty():
+		_horse_sound_left -= dt
+		if _horse_sound_left <= 0.0:
+			var i: int = _horse_sound_index % horses.size()
+			_sfx3d("horse_whinny" if _horse_sound_index % 3 == 0 else "horse_snort", horses[i].position + Vector3(0,1.5,0), -4.0, 55.0)
+			_horse_sound_index += 1
+			_horse_sound_left = 9.0 + float((_horse_sound_index * 7) % 8)
 	for ap in _horse_anims:
 		(ap as AnimationPlayer).advance(dt if not quiet else 0.0)
 	for entry in _solids:
@@ -908,7 +917,7 @@ func _sfx3d(id: String, at: Vector3, db: float, max_distance: float) -> void:
 	player.unit_size = 4.0
 	player.max_distance = max_distance
 	add_child(player)
-	player.global_position = at
+	player.position = at
 	player.play()
 	player.finished.connect(player.queue_free)
 

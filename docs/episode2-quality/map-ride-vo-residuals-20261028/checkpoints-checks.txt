@@ -1,0 +1,37 @@
+[PASS] P is mapped to pause
+[PASS] Episode1 pause freezes the tree
+[PASS] pause Save writes a real checkpoint
+[PASS] manual save does not unpause the game
+[PASS] checkpoint owns immutable currency, not later mutations
+[PASS] saved file reloads
+[PASS] Episode1 checkpoint and score restore together
+[PASS] Continue chooses saved stage rather than highest unlock
+[PASS] failed storage write reports failure
+[PASS] failed write preserves existing save
+[PASS] malformed manual record is rejected
+[PASS] rejected save preserves previous checkpoint
+[PASS] P resumes Episode1
+[PASS] Episode1 has no HUD pause button
+[PASS] Episode2 retains Save without a HUD pause button
+[PASS] HUD Save cannot capture jump/Space focus
+[PASS] P pauses Episode2
+[PASS] P resumes Episode2
+[PASS] desktop Escape opens pause instead of leaving
+[PASS] paused Episode2 exposes the mouse pointer for Save and Home
+[PASS] paused runner distance stays frozen
+[PASS] visible Save stores the runner checkpoint
+[PASS] save confirms the restore point
+[PASS] Escape resumes the paused runner
+[PASS] nonpausable contexts retain an Escape exit
+[PASS] later section Save succeeds
+[PASS] fresh session reloads later section
+[PASS] saved data never grants an access bypass
+[PASS] Continue enters the saved lake instead of the opening run
+[PASS] completed reward guards and totals survive JSON
+[PASS] later transient spending rolls back with the section
+[PASS] Logan story restarts at its coherent section checkpoint
+[PASS] second finger saves once without releasing the steering thumb
+[PASS] visible storage failure never claims a save or damages the old one
+[PASS] legacy/no-manual save remains compatible
+[PASS] an empty legacy object still loads its defaults
+MANUAL_CHECKPOINT: 36 checks, 0 failed

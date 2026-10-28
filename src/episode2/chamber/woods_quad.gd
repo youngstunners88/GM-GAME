@@ -2175,10 +2175,10 @@ func _on_player_shot() -> void:
 		return
 	var eye: Vector3 = _player_pos + Vector3(0.0, eye_height, 0.0)
 	var dir: Vector3 = _fire_dir()
-	var hit_info: Dictionary = _bear_hit_on_ray(eye, dir)
+	var hit_info: Dictionary = _bear_hit_on_ray(eye, dir, 170.0, true)
 	var hit: Ep2BearBrain = hit_info.get("bear", null) as Ep2BearBrain
 	if hit != null:
-		hit.set_meta("killed_by", "player")   # only HIS shots earn his "bear down" line (founder 2026-10-15)
+		if not hit.is_dead(): hit.set_meta("killed_by", "player")   # Corpse shots never re-award a kill.
 		var wound: Vector3 = hit_info["point"]
 		var wound_normal: Vector3 = hit_info["normal"]
 		_bear_blood(hit, wound, dir, wound_normal)
@@ -2205,13 +2205,13 @@ func _bear_on_ray(eye: Vector3, dir: Vector3, max_distance: float = 170.0) -> Ep
 
 
 ## The same ray test, with the near-side capsule contact and its outward normal for the wound.
-func _bear_hit_on_ray(eye: Vector3, dir: Vector3, max_distance: float = 170.0) -> Dictionary:
+func _bear_hit_on_ray(eye: Vector3, dir: Vector3, max_distance: float = 170.0, include_dead: bool = false) -> Dictionary:
 	var best: Ep2BearBrain = null
 	var best_t: float = 1e9
 	var best_shape: Array = []
 	for b in _bears:
 		var br: Ep2BearBrain = b
-		if br.is_dead() or not br.actor.visible:
+		if (br.is_dead() and not include_dead) or not br.actor.visible:
 			continue
 		var to: Vector3 = br.actor.position - eye
 		var tc: float = to.dot(dir)

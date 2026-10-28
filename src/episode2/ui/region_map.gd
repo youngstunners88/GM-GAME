@@ -5,6 +5,7 @@ var context: Callable
 var allowed: Callable
 var expanded := false
 var corner: TextureButton
+var key_hint: Label
 var panel: Control
 var paper: TextureRect
 var marker: Label
@@ -22,6 +23,11 @@ func _ready() -> void:
  corner.pressed.connect(toggle)
  add_child(corner)
  corner.hide()
+ key_hint = Label.new()
+ key_hint.text = 'Press “M”'
+ key_hint.add_theme_font_size_override("font_size", 14)
+ key_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+ add_child(key_hint)
  panel = Control.new()
  panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
  add_child(panel)
@@ -62,6 +68,8 @@ func _process(_dt: float) -> void:
  var dp: float = TouchUi.metrics().dp if TouchUi.is_touch() else 1.0
  corner.position = safe.position + Vector2(10,40)*dp
  corner.size = Vector2(116,73)*dp
+ key_hint.visible = corner.visible and TouchUi.keys_shown()
+ key_hint.position = corner.position + Vector2(120,26)*dp
  corner.tooltip_text = "" if TouchUi.is_touch() else "Region map (M) • " + GameManager.map_active_destination.replace("_"," ")
  panel.size = get_viewport().get_visible_rect().size
  panel.visible = expanded

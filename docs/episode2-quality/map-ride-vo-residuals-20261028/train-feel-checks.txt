@@ -1,0 +1,20 @@
+[PASS] nobody walks backwards: no run of more than 6 frames (0.1 s) with the body > 100 deg off the travel
+[PASS] fewer than 0.5% of 60 fps walking samples are mid-pivot (> 100 deg)
+[PASS] at least 98% of moving samples face within 35 deg of travel
+[PASS] no unexplained mid-leg reversals (<=1/person/5min average)
+[PASS] the bar has sitters: the table regulars are in their chairs at minutes 1, 3 and 5
+[PASS] two table drinkers are not phase-locked (their own sip lengths differ by > 0.25 s)
+[PASS] the two balcony drinkers are not phase-locked either
+[PASS] the drinkers laugh or clink now and then (ambient beats over five minutes)
+[PASS] chamber owns the contact-reaction module
+[PASS] a person bump reacts once within 0.3 s
+[PASS] the same contact does not retrigger during the 4 s cooldown
+[PASS] a real hitch-rail horse is available for contact
+[PASS] a rear-arc horse bump kicks Lil Blunt back at least a metre
+[PASS] the rear kick plays its recorded sound
+[PASS] a front horse bump shies but does not kick
+[PASS] the real chamber has its train
+[PASS] the locomotive run is the recorded seamless steam loop
+[PASS] recorded train uses one run layer, not a doubled pass-by
+[PASS] all train sounds stop when it has gone
+EP2_TOWN_FEEL: ALL PASS

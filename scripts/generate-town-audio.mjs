@@ -13,6 +13,8 @@ const speakers = new Set((option('--speakers') || Object.keys(config.voices).joi
 const work = 'work/town-voices/recordings';
 const out = 'src/episode2/extras/audio/town';
 await mkdir(work, { recursive: true });
+// Raw production takes stay local and must never enter the playable pack.
+await writeFile('work/town-voices/.gdignore', '');
 await mkdir(out, { recursive: true });
 const receiptPath = 'assets/town-audio-generated.json';
 const receipts = existsSync(receiptPath) ? JSON.parse(await readFile(receiptPath, 'utf8')) : {};
@@ -58,11 +60,15 @@ if (args.includes('--generate')) {
       if (receipts[row.id]?.processing_version === processingVersion && existsSync(`${out}/${row.id}.ogg`)) continue;
       if (existsSync(`${work}/${row.id}.mp3`)) { await save(row.id, null, source); continue; }
     }
+    const cachedSource = `${work}/${row.id}.mp3.source.json`;
+    if (existsSync(`${work}/${row.id}.mp3`) && existsSync(cachedSource) && hash(JSON.parse(await readFile(cachedSource, 'utf8'))) === hash(source)) {
+      await save(row.id, null, source); continue;
+    }
     const audio = await elevenlabs.textToSpeech.convert(voice.voice_id, { text: row.text, modelId: model, outputFormat: 'mp3_44100_128',
       voiceSettings: { stability: vs.stability ?? 0.55, similarityBoost: vs.similarity_boost ?? 0.8, style: vs.style, speed: vs.speed } });
     await save(row.id, audio, source);
   }
-  if (args.includes('--sfx')) for (const row of config.sfx) {
+  if (args.includes('--sfx')) for (const row of config.sfx.filter(r => !option('--sfx-ids') || option('--sfx-ids').split(',').includes(r.id))) {
     const source = { prompt: row.prompt, seconds: row.seconds, loop: row.loop, model_id: 'eleven_text_to_sound_v2' };
     if (receipts[row.id]?.source_hash === hash(source) && receipts[row.id]?.processing_version === processingVersion && existsSync(`${out}/${row.id}.ogg`)) continue;
     const raw = `${work}/${row.id}.mp3`;

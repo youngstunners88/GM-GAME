@@ -125,8 +125,9 @@ const KNEEL_AT := Vector3(0.95, 0.0, -0.45)                # where the Minister 
 const BODY_NEAR := 7.5                                     # how close Lil Blunt comes to the body before Inferno speaks
 const GATLING_TESTED_HOLD := 1.4                           # seconds after he steps off the crank before Inferno is heard coming
 
-# The Sheriff is Sheriff James (founder Drive model 2026-10-27, streamed: Ep2Extras.SHERIFF_JAMES) - "just replace them and keep the
-# narrative and the voice as is". The 2026-10-14 static model is retired, so without the pack a plain figure stands in, never the old one.
+# Founder 2026-10-28: restore the earlier Sheriff appearance, retaining his dialogue and voice.
+# The previous model and textures are restored into streamed extras to preserve the main-pack budget.
+const SHERIFF_MODEL := "res://src/episode2/extras/people/previous_sheriff/sheriff.glb"
 const SHERIFF_WALK_STRIDE := 0.81                         # m/s: his Walk clip's own ground speed (stride matching)
 const MINISTER_MODEL := "res://src/episode2/assets/town/minister.glb"      # Minister Mike Dean: the founder's robot-headed minister (Drive 2026-10-14), baked for the pack
 const COWBOY_MODEL := "res://src/episode2/assets/town/cowboy.glb"        # the stranger: a HUMAN cowboy (child meshes "Idle" and "Draw")
@@ -210,6 +211,7 @@ var _revolver: Node3D = null
 var _glass: Node3D = null
 var _coin: Node3D = null
 var _rng := RandomNumberGenerator.new()
+var _player_drawn: bool = false
 var _draw_state: String = ""                          # "" | "wait" | "go" | "won" | "lost" | "foul"
 var _opp_pool: Node3D = null                         # made only after the winning fall has finished
 var _draw_t: float = 0.0
@@ -788,7 +790,7 @@ func _on_gatling_trace(origin: Vector3, direction: Vector3, hit: Dictionary) -> 
 
 func _set_eye_view(on: bool) -> void:
 	super(on)
-	if _mounted and _vm != null:
+	if (_mounted or (_beat == Beat.DRAW and not _player_drawn)) and _vm != null:
 		_vm.set_shown(false)                                 # the Winchester stays out of the picture while his hands are on the crank
 
 
@@ -959,7 +961,7 @@ func _build_sheriff() -> void:
 	_sheriff.looping_clips.assign(["Idle", "Walk", "Talk", "Counter"])
 	_sheriff.clip_blend = 0.2
 	_visuals.add_child(_sheriff)
-	_sheriff.setup(Ep2Extras.SHERIFF_JAMES if Ep2Extras.has(Ep2Extras.SHERIFF_JAMES) else "", SHERIFF_HEIGHT, Color(0.42, 0.30, 0.18))
+	_sheriff.setup(SHERIFF_MODEL, SHERIFF_HEIGHT, Color(0.42, 0.30, 0.18))
 	if _sheriff.has_clips():
 		_sheriff.procedural_bob = false                # mocap carries its own bob
 		_sheriff.walk_clip_speed = SHERIFF_WALK_STRIDE
@@ -1214,12 +1216,15 @@ func _on_beat_entered(b: int) -> void:
 			_start_round()
 		Beat.WON:
 			_won_t = 0.0
+			_minister_runs_out()
 			if _hud:
 				_hud.objective = ""
 			# section 2 step 1: the street celebrates round Lil Blunt (clear of the fallen stranger), then pairs off and dances. Inferno does
 			# NOT arrive at the draw. The map is NOT handed over: it is on the body with his Peacemaker (LOOT).
 			if _people != null:
 				_people.celebrate(_player_pos, _opp.position)
+			if _town_audio != null:
+				_town_audio.play_effect("crowd_cheer", _player_pos + Vector3(0,1,0), 1.0, 42.0)
 			_start_show([
 				FacilityShow._say("vo_sheriff_win", 0.4),
 				{"do": "wait", "t": 0.4}], false)
@@ -1242,7 +1247,9 @@ func _on_beat_entered(b: int) -> void:
 				_hud.objective = "Follow the Sheriff to the jailhouse, out the south road west of the street."
 				_hud.toast("THE SHERIFF'S PRISONER KNOWS ABOUT THE BEARS", 3.8)
 			if _sheriff != null:
-				_sheriff.walk_path([Ep2GoldTown.door_world("Bldg_Jail", 3.0), _jail_spot("sheriff")], 1.6)
+				_sheriff.walk_path([Vector3(0.0, 0.0, _sheriff.position.z), Vector3(0.0, 0.0, 1399.0),
+                    Ep2GoldTown.door_world("Bldg_Jail", 3.0), Ep2GoldTown.door_world("Bldg_Jail", -1.0),
+                    _jail_spot("sheriff")], 1.6)
 			look_toward(Ep2GoldTown.door_world("Bldg_Jail", 1.0) + Vector3(0.0, 1.5, 0.0), 2.0)
 			_start_show([{"do": "wait", "t": 3.0}, {"do": "call", "fn": release_look}], false)
 		Beat.JAIL:
@@ -1481,7 +1488,7 @@ func _tick_minister(delta: float) -> void:
 	_minister_t += delta
 	match _minister_task:
 		"panic":
-			if not _minister.is_walking() and not _show_active:
+			if not _minister.is_walking() and not _show_active and _beat != Beat.WON:
 				_minister_task = "asking"
 				if _minister_rigged:
 					_minister.walk_clip = "Walk"
@@ -1690,7 +1697,7 @@ func _loot() -> void:
 		_hud.objective = ""
 		_hud.toast("YOU TOOK HIS PEACEMAKER AND THE MAP TO THE AUCTION", 3.4)
 	look_toward(_opp.position + Vector3(0.0, 0.3, 0.0), 2.0)
-	_start_show(_caption_steps(LOOT_LINES) + [{"do": "call", "fn": release_look}, {"do": "call", "fn": _minister_runs_out}], false)
+	_start_show(_caption_steps(LOOT_LINES) + [{"do": "call", "fn": release_look}], false)
 
 
 ## After the body (BODY) Mike Dean walks back to his counter, so the second visit finds him there.
@@ -2004,7 +2011,7 @@ func _tick(delta: float) -> void:
 				var mount_k: float = smoothstep(0.0,1.0,1.0-_end_t/1.2)
 				_player_pos = _depart_from.lerp(DEPART_HORSE,mount_k)
 				eye_height = lerpf(1.55,2.18,mount_k)
-				_look_yaw = lerp_angle(_look_yaw,atan2(10.0,-6.0),mount_k)
+				_look_yaw = lerp_angle(_look_yaw,atan2(10.0,-9.0),mount_k)
 				if _end_t == 0.0 and _handoff_ok(): _advance_to(Beat.DONE)
 
 	if _stable_yard != null and _hud != null:
@@ -2097,6 +2104,7 @@ func _tick_people(delta: float) -> void:
 # --- the draw ---------------------------------------------------------------------------------------------------------
 
 func _start_round() -> void:
+	_player_drawn = false
 	_draw_state = "wait"
 	_draw_t = 0.0
 	_opp_pool = null
@@ -2129,7 +2137,7 @@ func _tick_draw(delta: float) -> void:
 				draw_bell_rung.emit()
 				_opp_draws()
 				if _hud:
-					_hud.objective = "DRAW!"
+					_hud.objective = "Enter to draw, then shoot!" if TouchUi.keys_shown() else "DRAW!"
 		"go":
 			if _draw_t >= opp_reaction():
 				_opp_fires()
@@ -2164,9 +2172,9 @@ func _restage() -> void:
 	_look_pitch = -0.02
 
 
-## The rifle stays at low ready until the word.
+## The weapon stays completely out of frame until the player draws after the bell.
 func _viewmodel_lowered() -> bool:
-	return (_beat == Beat.DRAW and _draw_state in ["wait", "foul", "lost", "relost"]) or _fp_drink_t >= 0.0   # the glass is up
+	return (_beat == Beat.DRAW and not _player_drawn) or _fp_drink_t >= 0.0   # the glass is up
 
 
 ## Feet stay planted in the duel: he may look and aim, not walk.
@@ -2175,7 +2183,16 @@ func _current_speed() -> float:
 
 
 ## A shot before the word is a FOUL (the round is redone); after it, the round is real.
+func draw_weapon() -> bool:
+	if _beat != Beat.DRAW or _draw_state != "go" or _player_drawn or not has_player_control():
+		return false
+	_player_drawn = true
+	return true
+
 func shoot() -> bool:
+	if _beat == Beat.DRAW and _draw_state == "go" and not _player_drawn:
+		if TouchUi.is_touch(): draw_weapon()
+		return false
 	if _mounted:
 		if not has_player_control() or _gatling == null:
 			return false

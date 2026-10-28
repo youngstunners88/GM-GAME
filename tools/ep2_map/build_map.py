@@ -33,7 +33,7 @@ road([(590,345),(780,480),(830,720),(1040,795)])
 d.rounded_rectangle((115,495,655,875),radius=20,outline=ink,width=2)
 text((385,843),'GOLD TOWN • MAIN STREET',26)
 d.line((370,555,370,775),fill='#a47c4b',width=17)
-for p,t in [((240,620),'Claims office'),((500,620),'Saloon'),((185,735),'Jail'),((240,535),'Rich & Utah'),((370,420),'Dude’s stables'),((1060,795),'Auction grounds')]:place(p,t)
+for p,t in [((240,620),'Claims office'),((500,620),'Saloon'),((185,735),'Rich & Utah'),((240,535),'Jail'),((370,420),'Dude’s stables'),((1060,795),'Auction grounds')]:place(p,t)
 text((785,398),'LAKE TRAIL',22);text((800,435),'from Dude’s ranch',17)
 # Mountains and crosshatched terrain.
 for x,y in [(710,610),(760,650),(900,580),(640,230),(720,220),(1470,260),(980,210)]:
