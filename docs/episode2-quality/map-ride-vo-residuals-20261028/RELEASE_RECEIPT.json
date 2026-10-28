@@ -1,0 +1,20 @@
+{
+  "source_sha": "3ce81051e52aaac245c792b0b4dcb9362c65a1ef",
+  "export_commit": "4c28d09c",
+  "build_id": "2026-10-28-3ce8105",
+  "play_url": "https://youngstunners88.itch.io/smokerealm",
+  "deployment": {
+    "run_url": "https://github.com/youngstunners88/GM-GAME/actions/runs/40690418107",
+    "outcome": "success",
+    "deploy_step": "success",
+    "fresh_upload_mib": 54.72
+  },
+  "public": {
+    "build_matches": true,
+    "extras_http": 200,
+    "extras_ready": true
+  },
+  "limits": [
+    "No authenticated public-origin Episode2 walkthrough or physical-phone certification claimed."
+  ]
+}

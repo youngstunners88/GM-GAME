@@ -1,27 +1,10 @@
 {
-  "observed_remote_sha": "b2aa0391",
-  "objective": "COMPLETE: P pause correction plus Western region map and explicit stables-to-lake departure, deployed and public verified",
-  "release_source": "ac8e5be325d432b805886f8e07be7604d0208f8f",
-  "run": 40656596827,
-  "job": 122709009298,
-  "paths": [
-    "src/ui/run_controls.gd",
-    "project.godot",
-    "src/episode2/ui/region_map.gd",
-    "src/episode2/chamber/gold_town.gd",
-    "src/episode2/chamber/lake_trail.gd",
-    "src/episode2/chamber/ep2_stable_yard.gd",
-    "tests/ep2_region_map_test.gd",
-    "docs/episode2-quality/map-stables-20261028/"
-  ],
-  "evidence": {
-    "local": "Full CI native passes, known3environment pause geometry tolerated; checkpoint36/map10; town/trail/ranch/save/touch pass; native Compatibility captures",
-    "web": "Physical P/freeze/resume/Space after Save + companion/restart/quit ALL PASS. External exported-resource replay M/Escape/modal pause/no automatic warp/E mount5PASS. Not authenticated public-origin Episode2 walkthrough.",
-    "size": "Fresh main197367008B <199229440B; warm197399440B,0script errors; no asset degradation.",
-    "security": "Title5/harness/security pass. No provider spend.",
-    "production": "CI40656596827 success/actual51.10MiBfresh butler; publicBUILD2026-10-28-ac8e5be/extras200; direct public pause ALL PASS; exact public engine/packs map5PASS; main197366816B/extras121764320B"
-  },
+  "observed_remote_sha": "4c28d09c",
+  "objective": "COMPLETE: map, reversible horse ride, full-turn aim, sheriff, voices, draw/blood/audio released",
+  "release_source": "3ce81051e52aaac245c792b0b4dcb9362c65a1ef",
+  "run": 40690418107,
+  "build": "2026-10-28-3ce8105",
+  "evidence": "docs/episode2-quality/map-ride-vo-residuals-20261028/RELEASE_RECEIPT.json",
   "pending": [],
-  "scratch": "/workspace/work/pause-key",
-  "next": "No implementation pending. Read RELEASE.md; preserve normal auth/films/save semantics. Real-phone hardware/authenticated public-origin Episode2 walkthrough not claimed."
+  "next": "Standing commit/push/ship authorization reaffirmed. Preserve public access/title/nonthreaded export. No authenticated public Episode2/real-phone claim."
 }

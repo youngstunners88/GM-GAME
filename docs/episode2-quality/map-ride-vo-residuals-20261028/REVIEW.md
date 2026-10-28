@@ -29,3 +29,7 @@ Existing takes were preserved. New dialogue was generated only on verified inten
 ## Limits
 
 No deployment, public BUILD check, authenticated public Episode2 walkthrough, real phone test, or subjective listening on physical speakers is claimed. Mounted return preserves town geography and background crowd, while conversations/story beats are not replayed after departure. Existing pause-menu target geometry reports the same3 failures recorded in the startup checkpoint; this draft does not change that layout. Game Development Studio CLI and repository `scripts/preflight.py` are unavailable; verification uses installed Godot/Chromium/project tools.
+
+## Verified release
+
+Owner explicitly reaffirmed commit/push/ship. Source`3ce81051`, CI40690418107 completed successfully including butler deployment;54.72MiBfresh upload. Public Chromium observed BUILD`2026-10-28-3ce8105`, extrasHTTP200 and extras ready. Production export commit`4c28d09c`. Receipt: RELEASE_RECEIPT.json; public evidence: live-verification.txt and live.png. The earlier draft-only handoff is superseded. The gh-pages mirror could not refresh; primary itch.io deployment succeeded. No authenticated public-origin Episode2 walkthrough or real-phone test is claimed.
