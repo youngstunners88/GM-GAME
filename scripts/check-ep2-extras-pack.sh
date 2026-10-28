@@ -48,12 +48,15 @@ printf '%s\n' "${onrepo[@]}" | grep -q 'extras/lake/logan.glb'      || { echo "�
 printf '%s\n' "${onrepo[@]}" | grep -q 'extras/folk/rich_armory2.glb' || { echo "✗ Rich v2 (extras/folk/rich_armory2.glb) is not in the repo's extras"; fail=1; }
 printf '%s\n' "${onrepo[@]}" | grep -q 'extras/folk/utah_armory2.glb' || { echo "✗ Utah v2 (extras/folk/utah_armory2.glb) is not in the repo's extras"; fail=1; }
 
-# 3. the scenes the player flow runs through must be in the main pack (chamber chain: town -> Logan's Lake)
-for s in gold_town logans_lake; do
+# 3. the scenes the player flow runs through must be in the main pack (chamber chain: town -> the ride -> Logan's Lake)
+for s in gold_town lake_trail logans_lake; do
   grep -aqF "src/episode2/chamber/$s.tscn" "$main" || miss "index.pck" "src/episode2/chamber/$s.tscn"
 done
-# 4. the player flow actually leads to the lake: the town's last beat hands off to it, and the session root can build it
-grep -q 'next_chamber": "logans_lake"' src/episode2/chamber/gold_town.gd         || { echo "✗ gold_town no longer hands off to logans_lake"; fail=1; }
+# 4. the player flow actually leads to the lake: the town's last beat hands off to the ride (fix pack 2026-10-27), the ride hands off
+#    to the lake, and the session root can build both
+grep -q 'next_chamber": "lake_trail"' src/episode2/chamber/gold_town.gd          || { echo "✗ gold_town no longer hands off to lake_trail"; fail=1; }
+grep -q 'next_chamber": "logans_lake"' src/episode2/chamber/lake_trail.gd        || { echo "✗ lake_trail no longer hands off to logans_lake"; fail=1; }
+grep -q '"lake_trail": preload' src/episode2/session/ep2_session_root.gd         || { echo "✗ Ep2SessionRoot has no lake_trail chamber"; fail=1; }
 grep -q '"logans_lake": preload' src/episode2/session/ep2_session_root.gd         || { echo "✗ Ep2SessionRoot has no logans_lake chamber"; fail=1; }
 
 [ $fail = 0 ] && echo "✓ ep2 presence gate: ${#named[@]} named + ${#onrepo[@]} shipped extras are in ep2_extras.pck; town and lake scenes are in index.pck" || echo "✗ ep2 presence gate FAILED - the build would ship without part of the Episode 2 town"
