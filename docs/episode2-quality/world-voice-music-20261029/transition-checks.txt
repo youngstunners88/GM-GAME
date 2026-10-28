@@ -1,0 +1,28 @@
+  [PASS] boss_auditor keeps the jingle without scheduling/loading speech
+  [PASS] boss_distributor keeps the jingle without scheduling/loading speech
+  [PASS] boss_claimjumper keeps the jingle without scheduling/loading speech
+  [PASS] protocol-test congratulations retain their voice
+  [PASS] Episode 2 entry never waits for the later hideout/film assets
+  [PASS] opening runner models are still warmed
+  [PASS] final-frame dissolve is at most 0.2 seconds
+  [PASS] lift actually reaches the rising phase
+  [PASS] Inferno never announces the handle
+  [PASS] the silent handle is still physically pulled
+  [PASS] surface exit becomes ready while Bull is still walking
+  [PASS] player position is continuous through the doorway
+  [PASS] first rendered eye is already at the mapped position
+  [PASS] Bull does not respawn at a different place
+  [PASS] sideways gaze survives the handoff exactly
+  [PASS] same daylight is established before the cut
+  [PASS] preview floor leaves the rising cage shaft open
+  [PASS] ForestTrunks_0 has identical meshes and every placement on both sides
+  [PASS] ForestCrowns_0 has identical meshes and every placement on both sides
+  [PASS] ForestFerns_0 has identical meshes and every placement on both sides
+  [PASS] ForestTrunks_1 has identical meshes and every placement on both sides
+  [PASS] ForestTrunks_2 has identical meshes and every placement on both sides
+  [PASS] reveal, reply and mount lines finish without self-interruption
+  [PASS] reveal, approach and mounting reach the ride
+  [PASS] whole reveal-to-ride camera has no teleport
+  [PASS] quad is visible by the time the ride begins
+  [PASS] mounting finishes before the quad moves
+TRANSITION_FEEDBACK: ALL PASS (reveal-to-ride 12.03s; max camera step 0.098m)

@@ -1,0 +1,27 @@
+[PASS] mounted town uses actual original actors
+[PASS] correct minister voice
+[PASS] correct Dude voice
+[PASS] Logan's dialogue has actual recordings
+[PASS] road speech resolves streamed takes
+[PASS] trail has nineteen bandits
+[PASS] horse can leave the ranch for the original woods
+[PASS] held movement survives the boundary
+[PASS] same woods instance and mounted transport survive
+[PASS] horse is present in the visited woods
+[PASS] no one-way desert boundary
+[PASS] no invisible quad set-piece fence on return
+[PASS] return through the original elevator
+[PASS] visited elevator descends to the smelting level
+[PASS] original facility can be re-entered
+[PASS] return facility grants control without repeating lesson
+[PASS] return facility door remains traversable
+[PASS] original town can be revisited
+[PASS] fallen stranger stays dead on returning
+[PASS] armory counter remains usable on return
+[PASS] existing trail can be revisited
+[PASS] horizon contains actual lake geometry
+[PASS] lake preview matches the arrival point
+[PASS] route has gradual grass transition
+[PASS] lake route uses the supplied draw song
+[PASS] entering the lake restores previous music
+EP2_WORLD_ROUTES: 26 checks, 0 failed

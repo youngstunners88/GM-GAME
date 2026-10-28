@@ -5,7 +5,7 @@ extends Node
 ## This is the "persistent session root + separate scenes + explicit transition
 ## states" from architecture rail #5
 ## (.claude/skills/gm-game-episode2-gold-mine-runner/SKILL.md). The runner and
-## the chamber are DISPOSABLE scenes; everything that must survive a mode swap
+## runners are disposable; visited story chambers are isolated and retained for backtracking; everything that must survive a mode swap
 ## — health, cumulative track distance, GOLD totals, which chambers are done —
 ## lives here, above both of them.
 ##
@@ -19,7 +19,7 @@ extends Node
 ##      scene before the incoming one is instantiated.
 ##   4. Wrong resume position → `_completed_distance` accumulates the runner's
 ##      distance at the moment the chamber was entered.
-##   5. Mobile memory → the outgoing scene is `queue_free()`d, never hidden.
+##   5. Visited worlds use disabled isolated viewports; configure clears them for a new run.
 ##
 ## ECONOMY: the chamber computes its outcome and emits it; THIS is where it is
 ## committed to GoldMineSystem (mine_gold / auction pool credit).
@@ -108,6 +108,7 @@ func _ready() -> void:
 	get_tree().root.size_changed.connect(_on_window_resized)
 
 func configure(plan: Array, commit_to_economy: bool = true) -> void:
+	world_routes.clear()
 	Ep2ArmoryState.install_actions()
 	var manager: Node = get_node_or_null("/root/GameManager")
 	armory = Ep2ArmoryState.new()
@@ -276,8 +277,8 @@ func _enter_chamber_chained(segment: int) -> void:
 	if old != null:
 		_persist_town()
 		if old.get_parent() == self:
-			remove_child(old)             # out of the tree NOW: its WorldEnvironment / camera / lights must not outlive the cut by a frame
-		old.queue_free()
+			world_routes.park(self,old)
+			# Isolated viewport retains the visited world without leaking its camera, sky or lights.
 	_active = c
 	_wire_chamber(c)
 	if seamless:
@@ -287,6 +288,9 @@ func _enter_chamber_chained(segment: int) -> void:
 	else:
 		add_child(c)
 		c.setup(0, [], 0)
+	if c is LakeTrailChamber and old is GoldTownChamber:
+		var woods: Node3D = world_routes.rooms.get("woods_quad",{}).get("node",null)
+		c.adopt_departure(old,woods)
 	_restore_town(c)
 	c.chamber_cleared.connect(_on_chamber_cleared, CONNECT_ONE_SHOT)
 	c.chamber_failed.connect(_on_chamber_failed, CONNECT_ONE_SHOT)
@@ -301,6 +305,7 @@ func _enter_chamber_chained(segment: int) -> void:
 ## Millisecond budget per frame for the background build; raised while the player is already waiting at the hand-over door.
 const PREBUILD_MS := 7.0
 const PREBUILD_MS_WAITING := 40.0
+var world_routes := Ep2WorldRoutes.new()
 var _pb_node: Node = null
 var _pb_id: String = ""
 var _pb_vp: SubViewport = null
@@ -339,29 +344,36 @@ var _portal_on: bool = false
 
 
 func _drive_portal() -> void:
+	var portal_node: Node = _pb_node
+	var portal_vp: SubViewport = _pb_vp
+	var portal_ready: bool = _pb_id != "" and is_prebuilt(_pb_id)
+	if _active is SmeltingFacilityChamber and _active._world_revisit and world_routes.rooms.has("mine_lift"):
+		portal_node=world_routes.rooms.mine_lift.node
+		portal_vp=world_routes.rooms.mine_lift.viewport
+		portal_ready=true
 	var want: Dictionary = {}
 	if _active != null and is_instance_valid(_active) and _active.has_method("portal_view_wanted"):
 		want = _active.call("portal_view_wanted")
-	var ok: bool = not want.is_empty() and _pb_vp != null and is_instance_valid(_pb_vp) and _pb_id != "" and is_prebuilt(_pb_id) \
-		and _pb_node.has_method("portal_view")
+	var ok: bool = not want.is_empty() and portal_vp != null and is_instance_valid(portal_vp) and portal_ready \
+		and portal_node.has_method("portal_view")
 	if not ok:
 		if _portal_on and _active != null and is_instance_valid(_active) and _active.has_method("portal_detach"):
 			_active.call("portal_detach")
-		if _pb_vp != null and is_instance_valid(_pb_vp) and (_portal_on or (_pb_id != "" and is_prebuilt(_pb_id))):
+		if portal_vp != null and is_instance_valid(portal_vp) and (_portal_on or portal_ready):
 			# nothing to show: stop drawing the next room. Once its warm-up views have been rendered, a built room behind a lift
 			# ride or a long scene is not drawn again every frame (the whole woods cost a second world's draw calls).
-			_pb_vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
+			portal_vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
 		_portal_on = false
 		return
 	if not _portal_on:
-		_pb_vp.size = Vector2i(get_viewport().get_visible_rect().size)
-		_pb_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
-		_pb_node.call("portal_begin")
-		_active.call("portal_attach", _pb_vp.get_texture())
+		portal_vp.size = Vector2i(get_viewport().get_visible_rect().size)
+		portal_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+		portal_node.call("portal_begin")
+		_active.call("portal_attach", portal_vp.get_texture())
 		_portal_on = true
-	elif _pb_vp.size != Vector2i(get_viewport().get_visible_rect().size):
-		_pb_vp.size = Vector2i(get_viewport().get_visible_rect().size)
-	_pb_node.call("portal_view", want)
+	elif portal_vp.size != Vector2i(get_viewport().get_visible_rect().size):
+		portal_vp.size = Vector2i(get_viewport().get_visible_rect().size)
+	portal_node.call("portal_view", want)
 
 
 ## True once the chamber named `chamber_id` is fully built in the background (the active chamber holds its exit until then).
@@ -749,6 +761,7 @@ func _on_window_resized() -> void:
 # mode and visible everywhere else (chambers, menus, after the session ends).
 
 func _process(_delta: float) -> void:
+	world_routes.tick(self,_delta)
 	_town_save_due -= _delta
 	if _town_save_due <= 0:
 		_town_save_due = 20.0
@@ -769,6 +782,8 @@ func _process(_delta: float) -> void:
 	var waiting: bool = _active != null and _active.has_method("is_waiting_for_handoff") and bool(_active.call("is_waiting_for_handoff"))
 	_drive_prebuild(PREBUILD_MS_WAITING if waiting else PREBUILD_MS)
 	_drive_portal()
+	if _active is LakeTrailChamber and _pb_id=="logans_lake" and is_prebuilt("logans_lake"):
+		_active.preview_lake(_pb_node)
 
 func _restore_town(chamber: Node) -> void:
 	if not chamber is GoldTownChamber: return
@@ -902,6 +917,7 @@ func _route_free_roam(event: InputEvent) -> bool:
 	return false
 
 func _exit_tree() -> void:
+	Ep2DrawMusic.finish(self)
 	_persist_town()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	# never leave the tree frozen behind us because the screen was upright when this node went away

@@ -1299,6 +1299,7 @@ func _on_beat_entered(b: int) -> void:
 			_retry_line_pending = false
 			_bull_chat_cd = _rng.randf_range(22.0, 34.0)
 		Beat.REVEAL:
+			prebuild_requested.emit("gold_town")
 			_bull.stop()
 			if _hud:
 				_hud.objective = ""
@@ -1572,6 +1573,7 @@ func _tick(delta: float) -> void:
 	if _wildlife != null:
 		_wildlife._centre = Vector3(_player_pos.x, 0.0, _player_pos.z)      # the birds keep to the stretch of wood he is in
 		_wildlife.step(delta)
+	if _world_revisit: return
 	match _beat:
 		Beat.SNEAK:
 			_tick_bull_defence(delta)
@@ -2649,9 +2651,9 @@ func _collide(p: Vector3) -> Vector3:
 	# back into the near wood. The ordinary sneak keeps its original boundary.
 	if _player_pos.z > FOREST_END_Z:
 		var ranch: Vector2 = Ep2GoldTown.collide(Vector2(q.x, q.z), 0.3, _town_col.get("walls", []), _town_col.get("props", []))
-		return Vector3(clampf(ranch.x, -40.0, 40.0), p.y, clampf(ranch.y, FOREST_END_Z, Ep2GoldTown.TOWN_Z - 30.0))
+		return Vector3(clampf(ranch.x, -40.0, 40.0), p.y, clampf(ranch.y, -5.0 if _world_revisit else FOREST_END_Z, 1760.0 if _world_revisit else Ep2GoldTown.TOWN_Z - 30.0))
 	q.x = clampf(q.x, -110.0, 110.0)
-	q.z = clampf(q.z, -5.0, QUAD_POS.z + 40.0)
+	q.z = clampf(q.z, -5.0, 1760.0 if _world_revisit else QUAD_POS.z + 40.0)
 	for t in _trees_near(Vector2(q.x, q.z), 1):
 		var tp: Vector2 = t[0]
 		var d := Vector2(q.x - tp.x, q.z - tp.y)

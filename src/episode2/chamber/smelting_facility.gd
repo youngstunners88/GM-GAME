@@ -165,6 +165,7 @@ var _burns: int = 0
 # --- Live state ----------------------------------------------------------------
 var _beat: int = Beat.ARRIVAL
 var _running: bool = false
+var _world_revisit: bool = false
 var _resolved: bool = false          # guards double-resolve, same rail as the shaft
 var _player_pos: Vector3 = ENTRY_POSITION
 var _hold: float = 0.0               # seconds left on the current line
@@ -591,6 +592,7 @@ func step(delta: float) -> void:
 			# invisible; a brief hitch a few seconds into a 60 s film is unnoticeable next to a freeze at the cut.
 			if not _room_built and _vfilm.elapsed() >= PREBUILD_AT:
 				_prebuild_room()
+				prebuild_requested.emit("mine_lift")
 			return
 		if _film and is_instance_valid(_film):
 			_film.step(delta)
@@ -618,6 +620,10 @@ func step(delta: float) -> void:
 		_gun.step(delta)
 		if armory != null:
 			armory.step(delta)
+	if _world_revisit:
+		_sync_visuals()
+		_animate(delta)
+		return
 	_tick_later(delta)
 	match _beat:
 		Beat.WAKE:
@@ -1262,7 +1268,7 @@ func portal_view_wanted() -> Dictionary:
 	if to_door.length() > 45.0 or (fwd.dot(to_door.normalized()) < 0.15 and to_door.length() > 2.5):
 		return {}
 	var d: Dictionary = {"xf": Transform3D(cam.basis, cam.origin + LIFT_OFFSET), "fov": _camera.fov}
-	if _bull != null and _bull.position.z > PORTAL_Z - 0.6:   # Inferno is going through ahead of him: draw him on the far side
+	if not _world_revisit and _bull != null and _bull.position.z > PORTAL_Z - 0.6:   # Inferno is going through ahead of him: draw him on the far side
 		d["bull"] = _bull.position + LIFT_OFFSET
 		d["bull_facing"] = _bull.facing
 	return d
@@ -1306,6 +1312,7 @@ func _set_passage_plate(on: bool) -> void:
 
 ## True when the open doorway can take him straight through (the lift is drawn in it and he may leave).
 func _walk_through_ok() -> bool:
+	if _world_revisit: return true
 	return _portal_live and _exit_open() and _handoff_ok()
 
 
@@ -1314,6 +1321,7 @@ func _walk_through_ok() -> bool:
 ## (~4.7 s; founder 2026-10-25 "there must be no arbitrary pause / interval between the facility and the doorway"). Inferno now says it
 ## while he leads on, and the lift waits for whatever he is saying to end before his next line (`voice_left`), so nobody is cut off.
 func _exit_open() -> bool:
+	if _world_revisit: return true
 	if _beat != Beat.EXIT or not _lava_crossed():
 		return false
 	return _exit_line_end > 0.0 or not _show_active

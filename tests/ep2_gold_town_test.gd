@@ -179,7 +179,7 @@ func _ready() -> void:
 	_check("the bar scene plays in order: a whiskey, a quarter Bitcoin, the barman's jaw, the stranger, the demand, the refusal, the terms, the witness", in_order, str(said))
 	_check("the whiskey and the coin are on the bar", c.is_glass_on_bar() and c.is_coin_on_bar())
 	_check("the payment is a QUARTER Bitcoin", "quarter" in _manifest_text("vo_lb_bar2").to_lower() and "bitcoin" in _manifest_text("vo_lb_bar2").to_lower())
-	_check("the demand is the founder's line VERBATIM", _manifest_text("vo_opp_2") == "Give me a bitcoin or I give you the map to the auction where they can get more intel.", _manifest_text("vo_opp_2"))
+	_check("the demand trades the map for Bitcoin and promises auction gold/Bitcoin", _manifest_text("vo_opp_2") == "Give me a Bitcoin in exchange for this map to the auction. You could walk away with more gold and Bitcoin.", _manifest_text("vo_opp_2"))
 	_check("the sheriff is the witness, and he walked in (he is in the saloon)", "witness" in _manifest_text("vo_sheriff_witness")
 		and Ep2GoldTown.building_xform(Ep2GoldTown.entry("Bldg_Saloon")).affine_inverse().origin != Vector3.INF
 		and (Ep2GoldTown.building_xform(Ep2GoldTown.entry("Bldg_Saloon")).affine_inverse() * sheriff.position).z < 0.0, str(sheriff.position))

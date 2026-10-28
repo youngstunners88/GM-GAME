@@ -630,7 +630,7 @@ func _ready() -> void:
 	root._on_chamber_cleared({"story": true, "chamber": "mine_lift", "gold_awarded": 0, "gold_forfeited": 0, "next_chamber": "woods_quad"})
 	_check("the hand-over is the SAME instance that was built behind the lift, in the main tree, its camera current",
 		root.get_active() == woods_node and woods_node.get_parent() == root and (woods_node as Ep2Interlude).get_camera().current)
-	_check("the lift is out of the tree in the same frame (its camera / sky / lights cannot linger over the wood)", not lift_node.is_inside_tree())
+	_check("the visited lift is retained in an isolated disabled world, with no camera/sky/light leaking into the wood", lift_node.get_viewport()!=root.get_viewport() and lift_node.process_mode==Node.PROCESS_MODE_DISABLED and root.world_routes.rooms.has("mine_lift"))
 	_check("one motion: the gaze carries over (yaw 0.5, pitch 0.1) and no title card is shown",
 		absf((woods_node as Ep2Interlude).get_look_yaw() - 0.5) < 0.01 and (woods_node as Ep2Interlude).handoff_seamless)
 	await get_tree().process_frame

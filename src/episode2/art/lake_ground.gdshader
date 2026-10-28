@@ -5,7 +5,7 @@ uniform sampler2D gravel_tex : source_color, filter_linear_mipmap, repeat_enable
 uniform sampler2D gravel_normal : hint_normal, filter_linear_mipmap, repeat_enable;
 varying vec3 world_pos;
 varying float slope;
-void vertex(){world_pos=(MODEL_MATRIX*vec4(VERTEX,1.0)).xyz;slope=1.0-abs(NORMAL.y);}
+void vertex(){world_pos=VERTEX;slope=1.0-abs(NORMAL.y);}
 float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
 void fragment(){
@@ -22,7 +22,9 @@ void fragment(){
  float moss=smoothstep(.26,.68,noise(p*.075+vec2(19.3,4.7)))*(1.0-path*.75)*(1.0-wet*.65);
  earthy=mix(earthy,earthy*vec3(.48,.67,.37),.78*moss);
  earthy*=mix(.66,.90,noise(p*.041));
- ALBEDO=earthy*mix(1.0,0.55,wet);
+ vec3 grass=floor_col*vec3(.56,1.05,.36);
+ float growth=(1.0-path)*(1.0-wet)*(.48+.30*noise(p*.11+vec2(3.,7.)));
+ ALBEDO=mix(earthy,grass,growth)*mix(1.0,0.55,wet);
  ROUGHNESS=mix(0.94,0.65,wet);
  NORMAL_MAP=texture(gravel_normal,p*0.35).rgb;
  NORMAL_MAP_DEPTH=mix(.18,.38,path);

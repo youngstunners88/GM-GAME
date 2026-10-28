@@ -151,10 +151,11 @@ func _build_cabin() -> void:
 	_cabin.build(_visuals)
 
 func _on_setup() -> void:
+	Ep2DrawMusic.finish(self)
 	print("[EP2] Logan lake started")
-	_player_pos = SPAWN
-	_look_yaw = 0.1
-	_look_pitch = 0.02
+	_player_pos = handoff.get("lake_player",SPAWN)
+	_look_yaw = float(handoff.get("lake_yaw",0.1))
+	_look_pitch = float(handoff.get("lake_pitch",0.02))
 	_set_ground(0)
 	_line = 0
 	_talk_t = 0
@@ -202,6 +203,14 @@ func _build_dialogue() -> void:
 func _say(text: String, seconds: float) -> void:
 	_dialogue.text = text
 	_dialogue_panel.show()
+	var parts: PackedStringArray = text.split(": ",true,1)
+	if parts.size() == 2:
+		var speaker: String = "logan" if parts[0] == "LOGAN" else "lil_blunt"
+		var id: String = Ep2TownVoiceBank.id_for(speaker,parts[1])
+		var stream: AudioStream = Ep2TownVoiceBank.stream(id)
+		if stream != null:
+			AudioManager.play_voice(id,stream)
+			seconds = stream.get_length()+0.3
 	_talk_t = seconds
 
 func _gesture(name: String, seconds: float) -> void:

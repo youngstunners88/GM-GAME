@@ -29,6 +29,7 @@ const NEXT_CHAMBER := "woods_quad"
 const SHAFT_HALF := 4.5            # the shaft is 9 m square
 const CAGE_HALF := 1.9             # the cage is 3.8 m square
 const MID_Y := 7.5                 # first floor up
+var _return_down: bool = true
 const TOP_Y := 15.0                # the surface (second floor up)
 const ROOF_Y := 26.0              # tall enough for the Tripo cage's roof gears at the surface
 const PIT_Y := -7.0                # the floor of the pit under the walkway bridge
@@ -853,6 +854,21 @@ func _show_finished() -> void:
 
 
 func _tick(delta: float) -> void:
+	if _world_revisit:
+		# A previously used lift is reversible; boarding at either landing calls the other.
+		if _player_on_cage():
+			_cage_y=move_toward(_cage_y,0.0 if _return_down else TOP_Y,delta*2.5)
+			_set_ground(_cage_y)
+		else:
+			_return_down = _cage_y>TOP_Y*0.5
+		_cage.position.y=_cage_y
+		if _counter: _counter.position.y=TOP_Y-_cage_y+0.6
+		_gate_open=1.0
+		_gate_in_goal=1.0
+		_gate_in_k=1.0
+		if _gate: _gate.position.x=2.3
+		if _gate_in: _gate_in.position.y=4.2
+		return
 	if _mouth_open and _running and _player_pos.z > CAVE_Z0 + 1.6 and (_bull == null or _bull.position.z > CAVE_Z0 + 1.6):
 		_set_mouth_open(false)          # both are in: the tunnel behind them is the dark tunnel again (never close it on Inferno)
 	_surface_light()

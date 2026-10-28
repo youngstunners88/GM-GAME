@@ -62,6 +62,8 @@ var walk_speed: float = 3.4
 var cam_distance: float = 3.9              # follow-camera boom length (the quad ride pulls it back)
 var cam_height: float = 1.45               # how far above his feet the camera looks
 var title_card: String = ""
+var _world_revisit: bool = false
+var _mounted_transport: bool = false
 var music_path: String = ""
 var camera_min: Vector3 = Vector3(-60.0, 0.4, -60.0)
 var camera_max: Vector3 = Vector3(60.0, 40.0, 60.0)
@@ -450,6 +452,8 @@ func _on_beat_entered(_beat_id: int) -> void:
 
 ## Length in seconds of a committed voice clip (a hold always matches the real audio).
 func _vo_len(id: String) -> float:
+	var recorded: AudioStream = Ep2TownVoiceBank.stream(id)
+	if recorded != null: return recorded.get_length()
 	if _vo_lens.has(id):
 		return float(_vo_lens[id])
 	var path: String = "res://src/assets/sounds/voice/%s.mp3" % id
@@ -466,7 +470,7 @@ func _speak(line_id: String) -> void:
 	line_spoken.emit(line_id)
 	var am: Node = get_node_or_null("/root/AudioManager")
 	if am and am.has_method("play_voice"):
-		am.play_voice(line_id)
+		am.play_voice(line_id,Ep2TownVoiceBank.stream(line_id))
 
 
 ## He talks while he walks / stands (FacilityShow's `until` nudge uses this).

@@ -37,10 +37,10 @@
       "source": "Existing protagonist, unchanged"
     },
     "dude": {
-      "voice_id": "Pe1gOSDKAuczOZqgCiEm",
+      "voice_id": "3N5PpVsIKXqmtLAhF2Lj",
       "name": "Dude",
       "source": "Existing stable owner voice, unchanged",
-      "production_binding": "ELE"
+      "production_binding": "ELEVEVE"
     },
     "clerk": {
       "voice_id": "cjVigY5qzO86Huf0OWal"
@@ -99,15 +99,24 @@
       "source": "Premade voice: the account's ten custom voice slots are full (2026-10-27)"
     },
     "minister": {
-      "voice_id": "Pe1gOSDKAuczOZqgCiEm",
+      "voice_id": "CfxYdK3WmF3bmrvyLAiU",
       "name": "Minister Mike Dean",
-      "source": "Founder Google Doc 2026-10-28 explicitly assigns this voice to Minister Mike Dean and Dude.",
+      "source": "Founder correction 2026-10-29; never substitute Dude.",
       "production_binding": "ELE"
     },
     "bam": {
       "voice_id": "SAz9YHcvj6GT2YYXdXww",
       "name": "River (ElevenLabs premade) - Bam Bankman Free",
       "source": "Premade voice: relaxed and quiet for the cell talk; the account's custom voice slots are full (2026-10-27)"
+    },
+    "logan": {
+      "voice_id": "01s40UXbrIC3SwHf5nUh",
+      "name": "Logan",
+      "production_binding": "ELEVEVE"
+    },
+    "stranger": {
+      "voice_id": "LEQxdWqt02nZ8lXoPL0Y",
+      "name": "Stranger"
     }
   },
   "lines": [
@@ -887,6 +896,31 @@
       "id": "vo_minister_1",
       "speaker": "minister",
       "text": "Welcome, friend. A certificate is made out in your name, and it stays in your name. It cannot be sold on and it cannot be traded. Bring your share and I will stamp it."
+    },
+    {
+      "id": "vo_opp_2",
+      "speaker": "stranger",
+      "text": "Give me a Bitcoin in exchange for this map to the auction. You could walk away with more gold and Bitcoin."
+    },
+    {
+      "id": "logan_depth",
+      "speaker": "logan",
+      "text": "This depth stays deep. We stage what comes in before anything goes downstream."
+    },
+    {
+      "id": "logan_lb_depth",
+      "speaker": "lil_blunt",
+      "text": "So the lake holds the depth, and the river carries what is ready?"
+    },
+    {
+      "id": "logan_cargo",
+      "speaker": "logan",
+      "text": "Exactly. Check the cargo at that staging marker. Keep the bank secure; don't empty the lake."
+    },
+    {
+      "id": "logan_handoff",
+      "speaker": "logan",
+      "text": "Cargo checked. The depth holds. Follow the outflow to the high ground\u2014the day-88 shipment leaves from here."
     }
   ],
   "greetings": {

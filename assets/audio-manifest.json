@@ -2731,7 +2731,7 @@
     {
       "id": "vo_minister_1",
       "text": "Welcome, friend. A certificate is made out in your name, and it stays in your name. It cannot be sold on and it cannot be traded. Bring your share and I will stamp it.",
-      "voice_id": "onwK4e9ZLuTAKqWW03F9",
+      "voice_id": "CfxYdK3WmF3bmrvyLAiU",
       "voice_settings": {
         "stability": 0.6,
         "similarity_boost": 0.75,
@@ -2814,7 +2814,7 @@
     },
     {
       "id": "vo_opp_2",
-      "text": "Give me a bitcoin or I give you the map to the auction where they can get more intel.",
+      "text": "Give me a Bitcoin in exchange for this map to the auction. You could walk away with more gold and Bitcoin.",
       "voice_id": "LEQxdWqt02nZ8lXoPL0Y",
       "voice_settings": {
         "stability": 0.45,

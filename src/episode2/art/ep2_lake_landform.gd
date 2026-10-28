@@ -43,7 +43,7 @@ static func drawn_height(x: float, z: float) -> float:
 
 static func _natural_height(x: float, z: float) -> float:
 	# Keep the existing walkable corridor and all its story marks intact.
-	if x > -14.0 and x < -0.5 and z > -19.0 and z < 68.0:
+	if x > -14.0 and x < -0.5 and z > -150.0 and z < 68.0:
 		return path_height(z)
 	var r: float = lake_radius(x, z)
 	var shore: float = -2.25 + smoothstep(0.77, 1.11, r) * 2.72
@@ -63,4 +63,4 @@ static func _natural_height(x: float, z: float) -> float:
 	if z > 30.0 and x > -28.0 and x < 8.0:
 		var blend: float = 1.0 - smoothstep(3.0, 18.0, absf(x + 8.0))
 		terrain = lerpf(terrain, maxf(terrain, path_height(z) - 0.15), blend)
-	return terrain
+	return terrain*smoothstep(-100.0,-25.0,z)

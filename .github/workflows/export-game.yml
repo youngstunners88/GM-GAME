@@ -451,6 +451,9 @@ jobs:
           # The ride to Logan's Lake (fix pack 2026-10-27): Dude's horse, telegraphed bandits, UNHORSE, retry, the prebuilt lake hand-off.
           timeout 600 "$GODOT_BIN" --headless res://tests/ep2_lake_trail_test.tscn 2>&1 | tee lake-trail-tests.log
           grep -q 'EP2_LAKE_TRAIL: ALL PASS' lake-trail-tests.log
+          timeout 300 "$GODOT_BIN" --headless res://tests/ep2_world_routes_test.tscn > world-route-tests.log 2>&1
+          grep -q 'EP2_WORLD_ROUTES: 26 checks, 0 failed' world-route-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' world-route-tests.log; then exit 1; fi
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' lake-trail-tests.log; then exit 1; fi
           # Every selector card shows Lil Blunt's hand with the weapon (founder 2026-10-21: the Remington and the bow cards).
           timeout 200 "$GODOT_BIN" --headless res://tests/ep2_weapon_icons_test.tscn 2>&1 | tee weapon-icons-tests.log

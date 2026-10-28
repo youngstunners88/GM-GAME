@@ -1,0 +1,4 @@
+[gd_scene load_steps=2 format=3]
+[ext_resource type="Script" path="res://tools/ep2_shots/world_1029.gd" id="1"]
+[node name="World1029" type="Node"]
+script = ExtResource("1")

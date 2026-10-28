@@ -1,0 +1,8 @@
+  [PASS] the crossfade starts a new player and keeps the old one fading
+  [PASS] the blend holds one loudness: combined power never sinks below -1.5 dB nor rises above +0.5 dB
+  [PASS] the new track ends at full level and the old one is gone
+  [PASS] a line that starts mid-blend holds the incoming track down
+  [PASS] ...and the music comes back up after it
+  [PASS] a new song mid-blend fades the abandoned blend out instead of fighting it
+  [PASS] the woods start the town theme past the last pines, not as they thin
+EP2_QUAD_MUSIC: ALL PASS
