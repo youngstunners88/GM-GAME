@@ -22,7 +22,13 @@ func _ready() -> void:
 	session._enter_chamber()
 	var town: Node = session.get_active()
 	check("town contains both jail investigation beats", town.Beat.has("JAIL_TIP") and town.Beat.has("JAIL"))
+	town._horse_bought = true                      # Dude sold him the horse (the town's Beat.STABLES)
 	town._advance_to(town.Beat.DONE)
+	# fix pack 2026-10-27 (the locked order): the town hands on to the ride on Dude's horse; the trail's shore hands on to the lake
+	var trail: LakeTrailChamber = session.get_active() as LakeTrailChamber
+	check("real town DONE dispatch rides the lake trail first (Dude's horse, the bandits)", trail != null and session.get_mode() == Ep2SessionRoot.Mode.CHAMBER)
+	if trail != null:
+		trail._resolve({"next_chamber": "logans_lake", "arrived_mounted": true, "trail_seconds": 60.0, "bandits_down": 0, "companion": ""})
 	var c: LogansLakeChamber = session.get_active() as LogansLakeChamber
 	check("real town DONE dispatch loads Logan lake in same session", c != null and session.get_mode() == Ep2SessionRoot.Mode.CHAMBER)
 	if c == null:

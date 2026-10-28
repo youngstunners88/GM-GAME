@@ -4,8 +4,9 @@
   "note": "Offline ElevenLabs production only. Keys stay in the build environment; game ships recorded Ogg audio. Rich reuses Episode1. Original Utah, sheriff and prisoner supplied by founder.",
   "voices": {
     "bandit": {
-      "voice_id": "",
-      "note": "Claude assigns a premade voice for Jack Hammer's bandits."
+      "voice_id": "LEQxdWqt02nZ8lXoPL0Y",
+      "name": "Bandit (project-designed voice, Episode 1)",
+      "source": "The project's own generated 'Bandit' voice, reused for Jack Hammer's men on the lake trail"
     },
     "rich": {
       "voice_id": "LNV6ahDtkAOqwn1X3R7a",
@@ -102,18 +103,47 @@
       "source": "Founder-supplied voice ID 2026-10-27 ('This is Minister Mike Dean's voice ID'); it lives on the founder's second ElevenLabs account"
     },
     "bam": {
-      "voice_id": "",
-      "note": "Bam Bankman Free, fictional disgraced crypto prisoner (Ep2TownLaw's cell talk): a premade voice is assigned at generation."
+      "voice_id": "SAz9YHcvj6GT2YYXdXww",
+      "name": "River (ElevenLabs premade) - Bam Bankman Free",
+      "source": "Premade voice: relaxed and quiet for the cell talk; the account's custom voice slots are full (2026-10-27)"
     }
   },
   "lines": [
-    {"id": "trail_lb_start", "speaker": "lil_blunt", "text": "Logan's Lake first. Dude's horse needs water in this heat."},
-    {"id": "trail_lb_ambush", "speaker": "lil_blunt", "text": "Hammer's men on the ridge! Keep moving."},
-    {"id": "trail_lb_unhorse", "speaker": "lil_blunt", "text": "The horse is down. I will finish it on foot."},
-    {"id": "trail_lb_lake", "speaker": "lil_blunt", "text": "Logan's Lake. Easy now. Drink, then I go see Logan."},
-    {"id": "jh_bandit_1", "speaker": "bandit", "text": "That is the rider! Get him off that horse!"},
-    {"id": "jh_bandit_2", "speaker": "bandit", "text": "Hammer's coin says he never reaches the auction!"},
-    {"id": "jh_bandit_3", "speaker": "bandit", "text": "Shoot the horse if you cannot hit the man!"},
+    {
+      "id": "trail_lb_start",
+      "speaker": "lil_blunt",
+      "text": "Logan's Lake first. Dude's horse needs water in this heat."
+    },
+    {
+      "id": "trail_lb_ambush",
+      "speaker": "lil_blunt",
+      "text": "Hammer's men on the ridge! Keep moving."
+    },
+    {
+      "id": "trail_lb_unhorse",
+      "speaker": "lil_blunt",
+      "text": "The horse is down. I will finish it on foot."
+    },
+    {
+      "id": "trail_lb_lake",
+      "speaker": "lil_blunt",
+      "text": "Logan's Lake. Easy now. Drink, then I go see Logan."
+    },
+    {
+      "id": "jh_bandit_1",
+      "speaker": "bandit",
+      "text": "That is the rider! Get him off that horse!"
+    },
+    {
+      "id": "jh_bandit_2",
+      "speaker": "bandit",
+      "text": "Hammer's coin says he never reaches the auction!"
+    },
+    {
+      "id": "jh_bandit_3",
+      "speaker": "bandit",
+      "text": "Shoot the horse if you cannot hit the man!"
+    },
     {
       "id": "vo_sheriff_1",
       "speaker": "sheriff",
@@ -555,97 +585,14 @@
       "text": "We'll lie low a little while and meet up later. Stay out of trouble."
     },
     {
-      "id": "dude_ranch_01",
-      "speaker": "dude",
-      "text": "Easy there, friend. Name's Dude."
-    },
-    {
-      "id": "dude_ranch_02",
-      "speaker": "dude",
-      "text": "These are my horses. I sell to folks with business; the Minister knows me."
-    },
-    {
-      "id": "dude_ranch_03",
-      "speaker": "dude",
-      "text": "Long road, huh? Here, one of Dude's Chill Buds, grown right here on the ranch. A gift for the trail. Stay chill."
-    },
-    {
-      "id": "dude_ranch_04",
-      "speaker": "dude",
-      "text": "Anything else? Two Chill Buds for one BTC, partner. Good little road companions."
-    },
-    {
-      "id": "dude_ranch_05",
-      "speaker": "dude",
-      "text": "Pleasure. Two fresh Chill Buds, tucked safe in your tabs. Enjoy the easy road."
-    },
-    {
-      "id": "dude_ranch_06",
-      "speaker": "dude",
-      "text": "No worries. Come back when your purse is heavier; the buds keep, and so does the welcome."
-    },
-    {
       "id": "dude_ranch_07",
       "speaker": "lil_blunt",
       "text": "Name's Lil Blunt. Minister Mike Dean told me to get a horse here."
     },
     {
-      "id": "dude_ranch_08",
-      "speaker": "dude",
-      "text": "Mike Dean sent you? Then you're good folk. A saddled horse is two BTC."
-    },
-    {
       "id": "dude_ranch_09",
       "speaker": "lil_blunt",
       "text": "Two BTC? That's a steep climb for a ride, Dude."
-    },
-    {
-      "id": "dude_ranch_10",
-      "speaker": "dude",
-      "text": "Fair haggle. Two even, no fooling. That's the friend price, and she's worth it."
-    },
-    {
-      "id": "dude_ranch_11",
-      "speaker": "dude",
-      "text": "Deal. Two BTC, square and easy. She's yours, partner. Treat her gentle."
-    },
-    {
-      "id": "dude_ranch_12",
-      "speaker": "dude",
-      "text": "Short on coin? Take her on credit until the auction. Two BTC later. Mike's people are good for it."
-    },
-    {
-      "id": "dude_ranch_13",
-      "speaker": "dude",
-      "text": "First go to Logan's Lake so your horse can drink and cool down in this heat. It's on the map."
-    },
-    {
-      "id": "dude_ranch_14",
-      "speaker": "dude",
-      "text": "Anything else, partner? Your horse is ready when you are. No hurry around here."
-    },
-    {
-      "id": "dude_ranch_15",
-      "speaker": "dude",
-      "text": "Remember: Logan's Lake first. Let her drink and cool down. It's right there on the map."
-    },
-    {
-      "id": "town_law_arrest",
-      "speaker": "sheriff",
-      "text": "Drop it, Blunt. You just shot a man in my town.",
-      "who": "SHERIFF"
-    },
-    {
-      "id": "town_law_release",
-      "speaker": "sheriff",
-      "text": "Your irons stay with me while you're in my town. Take your pick and walk soft.",
-      "who": "SHERIFF"
-    },
-    {
-      "id": "town_law_fine",
-      "speaker": "sheriff",
-      "text": "That damage comes out of your purse, Blunt. BTC, on the barrelhead.",
-      "who": "SHERIFF"
     },
     {
       "id": "town_cell_00",
@@ -738,28 +685,34 @@
       "ambient": true
     },
     {
-      "id": "town_cold_sheriff_0",
-      "speaker": "sheriff",
-      "text": "Walk soft, Blunt. My town remembers.",
-      "who": "SHERIFF"
+      "id": "town_loot_00",
+      "speaker": "lil_blunt",
+      "text": "A Colt Peacemaker. And the map to the auction - that's what he wanted a Bitcoin for."
     },
     {
-      "id": "town_cold_sheriff_1",
-      "speaker": "sheriff",
-      "text": "You're still welcome at my office. The easy trust has to be earned back.",
-      "who": "SHERIFF"
+      "id": "town_jobjail_01",
+      "speaker": "lil_blunt",
+      "text": "Lead the way, Sheriff."
     },
     {
-      "id": "town_cold_mike_dean_0",
-      "speaker": "minister",
-      "text": "I'll pray for the man you hurt, and for the temper that did it.",
-      "who": "MIKE DEAN"
+      "id": "town_gift_00",
+      "speaker": "inferno",
+      "text": "Oh - and take this to Mike Dean for me. The Gold Panner. He's had his eye on it for years."
     },
     {
-      "id": "town_cold_mike_dean_1",
-      "speaker": "minister",
-      "text": "Kindness costs nothing, son. Try spending a little more of it.",
-      "who": "MIKE DEAN"
+      "id": "town_gift_01",
+      "speaker": "lil_blunt",
+      "text": "The Gold Panner. I'll see he gets it."
+    },
+    {
+      "id": "town_minister2_00",
+      "speaker": "lil_blunt",
+      "text": "Minister. Inferno sent you this. The Gold Panner."
+    },
+    {
+      "id": "town_minister2_03",
+      "speaker": "lil_blunt",
+      "text": "Much obliged, Minister."
     }
   ],
   "greetings": {
@@ -1074,7 +1027,134 @@
       "id": "town_body_01",
       "speaker": "minister",
       "text": "Evening, Inferno. Just saying a few words for him."
+    },
+    {
+      "id": "dude_ranch_01",
+      "speaker": "dude",
+      "text": "Easy there, friend. Name's Dude."
+    },
+    {
+      "id": "dude_ranch_02",
+      "speaker": "dude",
+      "text": "These are my horses. I sell to folks with business; the Minister knows me."
+    },
+    {
+      "id": "dude_ranch_03",
+      "speaker": "dude",
+      "text": "Long road, huh? Here, one of Dude's Chill Buds, grown right here on the ranch. A gift for the trail. Stay chill."
+    },
+    {
+      "id": "dude_ranch_04",
+      "speaker": "dude",
+      "text": "Anything else? Two Chill Buds for one BTC, partner. Good little road companions."
+    },
+    {
+      "id": "dude_ranch_05",
+      "speaker": "dude",
+      "text": "Pleasure. Two fresh Chill Buds, tucked safe in your tabs. Enjoy the easy road."
+    },
+    {
+      "id": "dude_ranch_06",
+      "speaker": "dude",
+      "text": "No worries. Come back when your purse is heavier; the buds keep, and so does the welcome."
+    },
+    {
+      "id": "dude_ranch_08",
+      "speaker": "dude",
+      "text": "Mike Dean sent you? Then you're good folk. A saddled horse is two BTC."
+    },
+    {
+      "id": "dude_ranch_10",
+      "speaker": "dude",
+      "text": "Fair haggle. Two even, no fooling. That's the friend price, and she's worth it."
+    },
+    {
+      "id": "dude_ranch_11",
+      "speaker": "dude",
+      "text": "Deal. Two BTC, square and easy. She's yours, partner. Treat her gentle."
+    },
+    {
+      "id": "dude_ranch_12",
+      "speaker": "dude",
+      "text": "Short on coin? Take her on credit until the auction. Two BTC later. Mike's people are good for it."
+    },
+    {
+      "id": "dude_ranch_13",
+      "speaker": "dude",
+      "text": "First go to Logan's Lake so your horse can drink and cool down in this heat. It's on the map."
+    },
+    {
+      "id": "dude_ranch_14",
+      "speaker": "dude",
+      "text": "Anything else, partner? Your horse is ready when you are. No hurry around here."
+    },
+    {
+      "id": "dude_ranch_15",
+      "speaker": "dude",
+      "text": "Remember: Logan's Lake first. Let her drink and cool down. It's right there on the map."
+    },
+    {
+      "id": "town_law_arrest",
+      "speaker": "sheriff",
+      "text": "Drop it, Blunt. You just shot a man in my town.",
+      "who": "SHERIFF"
+    },
+    {
+      "id": "town_law_release",
+      "speaker": "sheriff",
+      "text": "Your irons stay with me while you're in my town. Take your pick and walk soft.",
+      "who": "SHERIFF"
+    },
+    {
+      "id": "town_law_fine",
+      "speaker": "sheriff",
+      "text": "That damage comes out of your purse, Blunt. BTC, on the barrelhead.",
+      "who": "SHERIFF"
+    },
+    {
+      "id": "town_cold_sheriff_0",
+      "speaker": "sheriff",
+      "text": "Walk soft, Blunt. My town remembers.",
+      "who": "SHERIFF"
+    },
+    {
+      "id": "town_cold_sheriff_1",
+      "speaker": "sheriff",
+      "text": "You're still welcome at my office. The easy trust has to be earned back.",
+      "who": "SHERIFF"
+    },
+    {
+      "id": "town_cold_mike_dean_0",
+      "speaker": "minister",
+      "text": "I'll pray for the man you hurt, and for the temper that did it.",
+      "who": "MIKE DEAN"
+    },
+    {
+      "id": "town_cold_mike_dean_1",
+      "speaker": "minister",
+      "text": "Kindness costs nothing, son. Try spending a little more of it.",
+      "who": "MIKE DEAN"
+    },
+    {
+      "id": "town_jobjail_00",
+      "speaker": "sheriff",
+      "text": "Come on. I'll walk you over, and you can hear it from him yourself."
+    },
+    {
+      "id": "town_minister2_01",
+      "speaker": "minister",
+      "text": "The Gold Panner! Bless that big fella, he remembered."
+    },
+    {
+      "id": "town_minister2_02",
+      "speaker": "minister",
+      "text": "And your certificate, son. Made out in your name - stamped and sealed."
+    },
+    {
+      "id": "town_minister2_04",
+      "speaker": "minister",
+      "text": "You'll want a horse for the trail. Go see my friend Dude at the horse stables. Tell him I sent you."
     }
   ],
-  "lines_pending_note": "Lines whose voices live on the founder's second ElevenLabs account (Sheriff, Minister Mike Dean, the prisoner, Dude). Move them into `lines` and run the generator once ELEVENLABS_SFX_API_KEY (elevenlabs2.key) holds that account's sk_ secret."
+  "lines_pending_note": "Voices on the founder's SECOND ElevenLabs account (Sheriff James zskPkJFpKt6Fq5Aouk0g, Minister Mike Dean CfxYdK3WmF3bmrvyLAiU, Dude Pe1gOSDKAuczOZqgCiEm, Utah, Prison Sam): their lines wait here until that account's sk_ key is saved to ~/.config/gm-game/elevenlabs2.key; the game still shows them as captions (the text lives in the code). Move a line back into 'lines' and run scripts/generate-town-audio.mjs --generate."
 }

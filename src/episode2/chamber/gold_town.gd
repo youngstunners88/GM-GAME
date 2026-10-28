@@ -425,6 +425,7 @@ func _step_people() -> void:
 		h.add_child(stand_in))
 	_holster_revolver()
 	_glass = _prop(WHISKEY_MODEL, 0.11)
+	_whiskey_look(_glass)
 	_coin = _prop(COIN_MODEL, 0.06)
 	_flash = OmniLight3D.new()
 	_flash.light_color = Color(1.0, 0.8, 0.45)
@@ -999,6 +1000,46 @@ func _build_sheriff() -> void:
 	_face_folk(_minister, Ep2GoldTown.local_to_world("Bldg_Certificates", OFFICE_SPOT))
 
 
+## The founder's tumbler reads as WHISKEY (his hideout direction, skill ep2-bull-props-visible): clear glass with a rim light and an
+## amber measure inside, instead of the raw GLB's baked cream - the same treatment as Inferno's glass in the hideout. `holder` is a
+## _prop() holder (the tumbler's base on y = 0).
+func _whiskey_look(holder: Node3D) -> void:
+	var glass := StandardMaterial3D.new()
+	glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	glass.albedo_color = Color(0.86, 0.93, 1.0, 0.22)
+	glass.roughness = 0.05
+	glass.metallic_specular = 1.0
+	glass.rim_enabled = true
+	glass.rim = 0.9
+	glass.rim_tint = 0.2
+	glass.cull_mode = BaseMaterial3D.CULL_DISABLED
+	for mi in holder.find_children("*", "MeshInstance3D", true, false):
+		(mi as MeshInstance3D).material_override = glass
+	var bx: AABB = _aabb_of(holder)
+	if bx.size.y <= 0.0:
+		return
+	var r: float = minf(bx.size.x, bx.size.z) * 0.5
+	var cyl := CylinderMesh.new()
+	cyl.top_radius = r * 0.84
+	cyl.bottom_radius = r * 0.78
+	cyl.height = bx.size.y * 0.5
+	cyl.radial_segments = 20
+	var amber := StandardMaterial3D.new()
+	amber.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	amber.albedo_color = Color(0.78, 0.40, 0.09, 0.86)
+	amber.roughness = 0.12
+	amber.emission_enabled = true
+	amber.emission = Color(0.45, 0.20, 0.04)
+	amber.emission_energy_multiplier = 0.5
+	var liquid := MeshInstance3D.new()
+	liquid.name = "Whiskey"
+	liquid.mesh = cyl
+	liquid.material_override = amber
+	liquid.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	liquid.position = Vector3(bx.get_center().x, bx.position.y + bx.size.y * 0.09 + cyl.height * 0.5, bx.get_center().z)
+	holder.add_child(liquid)
+
+
 static func _aabb_of(n: Node3D) -> AABB:
 	var out := AABB()
 	var first: bool = true
@@ -1269,6 +1310,12 @@ func _on_beat_entered(b: int) -> void:
 		Beat.GEARED:
 			_end_guns()
 			_geared = true
+			# the law's hook (Ep2TownLaw): irons held by the Sheriff come back as Lil Blunt leaves his town - never into the bandits' trail
+			# with only the pickaxe
+			if armory.firearms_confiscated:
+				return_firearms()
+				if _hud:
+					_hud.toast("THE SHERIFF HANDS BACK YOUR IRONS AT THE TOWN LIMITS", 3.4)
 			prebuild_requested.emit("lake_trail")
 			if _hud:
 				_hud.objective = "Ride for Logan's Lake - the horse needs water in this heat. It's on the map."
@@ -1596,6 +1643,7 @@ func _pour_two() -> void:
 	_place(_glass, bar_top)
 	if _glass2 == null:
 		_glass2 = _prop(WHISKEY_MODEL, 0.11)
+		_whiskey_look(_glass2)
 	_place(_glass2, bar_top + (Ep2GoldTown.local_to_world("Bldg_Saloon", Vector3(1.1, 0.0, 0.0)) - Ep2GoldTown.local_to_world("Bldg_Saloon", Vector3.ZERO)))
 
 
@@ -1656,6 +1704,7 @@ func _drink_together() -> void:
 		_glass.visible = false                         # it is in his hand now
 	if _fp_glass == null and _camera != null:
 		_fp_glass = _prop(WHISKEY_MODEL, 0.085)
+		_whiskey_look(_fp_glass)
 		_fp_glass.reparent(_camera, false)
 		_fp_glass.name = "LilBluntGlass"
 	if _fp_glass != null:

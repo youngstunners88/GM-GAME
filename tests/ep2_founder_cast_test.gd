@@ -69,7 +69,7 @@ func _keeper_model(label: String, path: String, height: float) -> void:
 	var sk: Skeleton3D = skels[0] as Skeleton3D if not skels.is_empty() else null
 	var aps: Array = root.find_children("*", "AnimationPlayer", true, false)
 	var ap: AnimationPlayer = aps[0] as AnimationPlayer if not aps.is_empty() else null
-	check("%s is skinned (a Head bone) with her Idle clip" % label, sk != null and _bone(sk, "Head") >= 0 and ap != null and ap.has_animation("Idle"))
+	check("%s is skinned (a Head bone) with the Idle clip" % label, sk != null and _bone(sk, "Head") >= 0 and ap != null and ap.has_animation("Idle"))
 	var lo := INF
 	var hi := -INF
 	var tris := 0
@@ -100,7 +100,8 @@ func _ready() -> void:
 	check("the retired static Sheriff is gone from the main pack", not ResourceLoader.exists("res://src/episode2/assets/town/sheriff.glb"))
 
 	print("-- the walk-in shops' keepers (fix pack 2026-10-27: two more shopkeepers, women, behind the counters)")
-	for row in [["the General Store keeper", Ep2Extras.SHOPKEEPER_GENERAL, 1.66], ["the Hotel desk keeper", Ep2Extras.SHOPKEEPER_HOTEL, 1.68]]:
+	for row in [["the General Store keeper", Ep2Extras.SHOPKEEPER_GENERAL, 1.66], ["the Hotel desk keeper", Ep2Extras.SHOPKEEPER_HOTEL, 1.68],
+			["Bam Bankman Free (the cell, fix pack 2026-10-27)", Ep2TownLaw.BAM_MODEL, 1.92]]:
 		_keeper_model(str(row[0]), str(row[1]), float(row[2]))
 	print("-- the town's Sheriff")
 	var c: GoldTownChamber = TOWN.instantiate()

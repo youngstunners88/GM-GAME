@@ -52,6 +52,7 @@ func _test_town_hook() -> void:
 	town.prebuild_requested.connect(func(id: String) -> void: requests.append(id))
 	town.chamber_cleared.connect(func(result: Dictionary) -> void: results.append(result))
 	town.setup(0, [], 0)
+	town._horse_bought = true                      # Dude sold him the horse (the town's Beat.STABLES)
 	town._advance_to(town.Beat.GEARED)
 	_check("GEARED prebuilds the lake trail, not the lake itself", requests.count("lake_trail") == 1 and not requests.has("logans_lake"), str(requests))
 	town._advance_to(town.Beat.DONE)
@@ -180,7 +181,11 @@ func _test_retry() -> void:
 		c._invuln = 0.0
 		c._hurt_player()
 	_check("zero hearts ends the attempt like the woods", c.is_failing() and c.get_health() == 0)
-	_step(c, 1.1)
+	# step to the restart itself (it fires 0.9 s into the fall; a fresh horse rides on at once after it)
+	for i in 120:
+		if c.get_attempt() == 1:
+			break
+		c.step(1.0 / 60.0)
 	_check("retry starts at the trail start with three hearts and a fresh horse", not c.is_failing() and c.get_attempt() == 1
 		and c.get_route_distance() < 0.01 and c.get_health() == 3 and c.get_horse_hp() == 3 and c.is_mounted())
 	var living: int = 0

@@ -1,5 +1,29 @@
 # 🌿 Lil Blunt: The Smoke Realm — Live Status Report
 
+**FOUNDER FIX PACK 2026-10-27, SLICE 3: THE LOCKED STORY ORDER, THE NEW CAST, CONSEQUENCES, TOWN LIFE, THE RIDE TO THE LAKE (shipping).**
+- *The draw and after, in the founder's order:* the stranger wears a **Colt Single Action Army (the Peacemaker)** on his hip and draws it at the
+  bell; when he falls it lands in the dirt by the body (which bleeds). **E at the body** takes the Peacemaker and the map to the auction. Then
+  **Mike Dean** runs out, alarmed, and kneels to pray. **Sheriff James** offers the job and **leads Lil Blunt to the jail**, then sends him to
+  **Rich & Utah** (trade + the Colt Gatling). **Inferno** rides back; Mike Dean is still praying by the body; at the bar **they really drink**
+  (Inferno lifts his glass, Lil Blunt's comes up to the camera); Flux's kettle; Inferno's gift **The Gold Panner**; the **second visit** to Mike
+  Dean (he takes the gift and **stamps the certificate**) sends him to **Dude** (the Minister's referral, the horse for BTC, a Chill Bud, "Logan's
+  Lake first"); then **the ride to Logan's Lake** on Dude's horse with **Jack Hammer's men ambushing** on the way (telegraphed shots, the horse
+  can go down - you finish on foot).
+- *Cast:* **Sheriff James** replaces the Sheriff (same narrative and voice), **Renegade** hosts the auction, the founder's **Jack Hammer**; **two
+  women shopkeepers** behind the General Store counter and the Hotel desk, and **Bam Bankman Free** in the cell (all three generated on Runpod
+  GPUs with Hunyuan3D-2.1 plus a second, sharper head scan, rigged here). Runpod for this build: about $2.30, both pods terminated.
+- *Consequences:* shoot a townsperson and the Sheriff arrests you - your rifle, bow and Remington are held, two minutes in the cell with **Bam
+  Bankman Free** (a disgraced banker in a top hat - fictional; he won't say what he did), out with only the pickaxe, and the town turns cold;
+  the Sheriff hands your irons back at the town limits. Shot buildings and windows show damage and the Sheriff fines you in BTC.
+- *Town life:* **townspeople no longer walk backwards** (root cause found: at 60 fps the crowd moves people under the turning threshold -
+  measured 46% of walking frames were backwards, now under 0.02%), the bar has sitters and every drinker has his own rhythm (and laughs),
+  bumping into people gets a reaction, a horse's rear can kick you, new train sound, people and spurs in the street.
+- *Dude's ranch:* talk to Dude (it was broken), he rides a loop, his assistant brushes horses and carries hay, more horses, a trough, trees,
+  Chill Buds for health (kept in Tabs). *Blood* on the draw body and on shot bears.
+- *Voices:* 42 new spoken lines recorded. **Waiting on you:** the Sheriff, Mike Dean and Dude voices live on your SECOND ElevenLabs account -
+  their 32 new lines show as captions until that account's key is saved.
+- *Gates:* town walkthrough 129, town law 40, town feel 19 (at 60 fps), autonomy 33, ranch 32, stable yard 97, founder cast 26, blood 22.
+
 **LOGAN'S WOODLAND CABIN — LIVE, verified2026-10-27, BUILD `2026-10-27-675859d`.** Cedar cabin on a reachable woodland spur, canonical GM/BTC plaques, exact “Be a liquidity provider.” sign, RH/Jack Hammer wanted board, prospecting pans/nuggets/ore sacks/tools and BTC reserve coffer/ledger. Four fine design skills preserve composition/signage/contact/proof. Meshy **30 credits** (20+10,542→512), no paid reruns. Cabin26/lake art23/story/full regressions and real player cameras pass; title, access, Logan/boat/rowing and inventory preserved. Production CI40479528943 succeeded; actualbutler55.19MiBfresh upload confirmed. Public browser BUILD/extras200 and unchanged access gate verified. Actual public main198804496B/extras112817792B both below190MiB; isolated cabin79/lake86, native22 and WebGL22 route checks pass; actual public-pack Compatibility frame inspected. External local scene replays are distinct from authenticated public-origin playthrough. Evidence: `design/ep2/lake/cabin-20261027/RELEASE.md`.
 
 **LOGAN'S LAKE — LIVE, verified2026-10-27, BUILD `2026-10-27-b1615aa`.** Mature fir groves with crooked trunks and needle sprays replace the regular cone trees. Shaped wooded banks, ferns/rushes, granite/driftwood, a weathered dock and calm green water give the lake a stronger Western setting. Logan's new cedar skiff stays moored through the original dialogue; after cargo handoff he walks down the dock, boards and rows a sheltered circuit with independent oars, fitted palms, supported seating/boots and a dry open hull. His supplied65-bone skin/four clips remain unchanged. Actual Meshy spend **30 credits** (20 preview+10 texture;572→542; no reruns). Town→lake→one staging action→overlook, inventory, title art, access controls and nonthreaded Godot4.3 Compatibility export are preserved.

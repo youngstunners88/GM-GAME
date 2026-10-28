@@ -27,8 +27,9 @@ for c in cast:
     head_rows = alpha[y0:y0 + int(0.11 * h)]
     cols = np.nonzero(head_rows.any(0))[0]
     cx = int((cols.min() + cols.max()) / 2)
-    top, bot = max(0, y0 - int(0.02 * h)), y0 + int(0.20 * h)
-    half = int(0.11 * h)
+    # a hat (Jack Hammer, Bam's top hat) takes part of the figure's top: crop_bottom reaches below the chin then (default 0.20)
+    top, bot = max(0, y0 - int(0.02 * h)), y0 + int(float(c.get("crop_bottom", 0.20)) * h)
+    half = int(float(c.get("crop_half", 0.11)) * h)
     box = (max(0, cx - half), top, min(img.width, cx + half), bot)
     crop = img.crop(box)
     side = max(crop.size)

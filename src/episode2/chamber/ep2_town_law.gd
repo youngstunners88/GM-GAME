@@ -561,7 +561,7 @@ func _enter_cell() -> void:
 		_gate.visible = true
 	if _bam != null:
 		_bam.visible = true
-		_bam.hold_clip("Observe")
+		_bam.hold_clip("Idle")
 		_bam.face_point(_host.get("_player_pos"))
 	_set_state("cell")
 
@@ -666,9 +666,9 @@ func _build_cell_folk() -> void:
 	_bam.looping_clips.assign(["Idle", "Observe", "Talk"])
 	_bam.clip_blend = 0.18
 	add_child(_bam)
-	_bam.setup(BAM_MODEL, 1.78, Color(0.30, 0.27, 0.23))
+	_bam.setup(BAM_MODEL, 1.92, Color(0.30, 0.27, 0.23))   # 1.92 m with his top hat (a 1.75 m man)
 	_bam.position = _world(CELL_BAM_LOCAL)
-	_bam.hold_clip("Observe")
+	_bam.hold_clip("Idle")                     # his scan rig: Idle, Greet, Point, Carry, Walk
 	_bam.face_point(_world(CELL_PLAYER_LOCAL))
 	_bam.visible = false
 

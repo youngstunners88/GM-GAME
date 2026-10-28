@@ -95,7 +95,7 @@ func _ready() -> void:
 		if next_minute <= 5 and seconds >= float(next_minute * 60) - dt * 0.5:
 			var seated: int = _table_seated(people)
 			print("EP2_TOWN_FEEL saloon minute ", next_minute, ": ", seated, " seated at tables")
-			occupancy_ok = occupancy_ok and seated >= 3
+			occupancy_ok = occupancy_ok and seated >= Ep2TownPeople.TABLE_REGULARS.size()
 			next_minute += 1
 	var good_percent: float = 100.0 * float(within_35) / float(maxi(1, moving_samples))
 	print("EP2_TOWN_FEEL walk: moving=", moving_samples, " within35=", within_35, " (", good_percent, "%) over100=", over_100, " max=", max_angle)
@@ -109,7 +109,7 @@ func _ready() -> void:
 	check("fewer than 0.5% of 60 fps walking samples are mid-pivot (> 100 deg)", float(over_100) <= 0.005 * float(maxi(1, moving_samples)), [over_100, moving_samples])
 	check("at least 98% of moving samples face within 35 deg of travel", moving_samples > 0 and good_percent >= 98.0, good_percent)
 	check("no unexplained mid-leg reversals (<=1/person/5min average)", total_reversals <= people.people.size(), total_reversals)
-	check("three saloon-table drinkers at minutes 1, 3 and 5", occupancy_ok)
+	check("the bar has sitters: the table regulars are in their chairs at minutes 1, 3 and 5", occupancy_ok)
 	# the saloon's drinkers each have their own sip (Ep2DrinkPose.install_variant): two table regulars and the two balcony regulars
 	var lengths: Array = []
 	for id in [Ep2TownPeople.TABLE_REGULARS[0], Ep2TownPeople.TABLE_REGULARS[1], Ep2TownPeople.BALCONY_REGULARS[0], Ep2TownPeople.BALCONY_REGULARS[1]]:

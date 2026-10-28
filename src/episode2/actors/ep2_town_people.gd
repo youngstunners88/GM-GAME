@@ -79,11 +79,11 @@ const SLOT_OFFSETS := [0.0, -1.3, 1.3, -2.6, 2.6]
 ## rig - then leave) or the bar (StandDrink). Each seat is its own reservation ("shop:Bldg_Saloon#<seat>"), so several drink at once.
 ## The two balcony regulars start the day up there and stay, drinking and watching the street.
 const BALCONY_REGULARS := ["grandfather", "oldtimer"]
-## The table regulars (founder 2026-10-27: "the bar has sitters"): three locals keep the saloon's table chairs all day, like the balcony
-## pair; a visitor drinks at the bar. Every drinker has their own sip (Ep2DrinkPose.install_variant seeded by drink_seed: a 5.0-8.5 s
-## loop), so no two share one rhythm, and now and then one laughs (their laugh clip + a recorded laugh) or clinks a glass
-## (drink_events, played by Ep2TownSoundscape).
-const TABLE_REGULARS := ["bald_worker", "rancher", "grandmother"]
+## The table regulars (founder 2026-10-27: "the bar has sitters"): two locals keep two of the saloon's table chairs all day, like the
+## balcony pair (a third would take one too many cheering people off the street after the draw); visitors take the third chair or the
+## bar. Every drinker has their own sip (Ep2DrinkPose.install_variant seeded by drink_seed: a 5.0-8.5 s loop), so no two share one
+## rhythm, and now and then one laughs (their laugh clip + a recorded laugh) or clinks a glass (drink_events, Ep2TownSoundscape).
+const TABLE_REGULARS := ["bald_worker", "grandmother"]
 const DRINK_VARIANTS := {"SitIdle": "SitDrink", "SitLaugh": "SitDrink", "SitSmoke": "SitDrink",
 	"StandIdle": "StandDrink", "StandLaugh": "StandDrink", "StandSmoke": "StandDrink"}
 const GLASS := "res://src/episode2/assets/whiskey_glass.glb"

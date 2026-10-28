@@ -16,7 +16,6 @@ const HORSE_MODEL := "res://src/episode2/assets/town/horse.glb"
 const COWBOY_MODEL := "res://src/episode2/assets/town/cowboy.glb"
 const WATER_SHADER := "res://src/episode2/art/water_river.gdshader"
 const BLOOD_FX := "res://src/episode2/fx/ep2_blood_fx.gd"
-const ROCK_TEX := Ep2Interlude.ROCK_TEX
 
 const CRUISE_SPEED := 5.5
 const MIN_RIDE_SPEED := 4.0
@@ -853,7 +852,7 @@ func _on_player_shot() -> void:
 		if _hud != null:
 			_hud.hit_marker(true)
 		var hit_folk: Ep2TownFolk = (_bandits[best] as Dictionary)["folk"]
-		_blood(_bandit_aim_position(best), direction, hit_folk.model if hit_folk.model != null else hit_folk)
+		_blood(get_bandit_aim_position(best), direction, hit_folk.model if hit_folk.model != null else hit_folk)
 
 
 func _bandit_ray_hit(b: Dictionary, eye: Vector3, direction: Vector3) -> float:

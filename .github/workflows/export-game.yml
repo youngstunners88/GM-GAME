@@ -431,6 +431,18 @@ jobs:
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_ranch_test.tscn 2>&1 | tee ranch-tests.log
           grep -q 'EP2_RANCH: ALL PASS' ranch-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ranch-tests.log; then exit 1; fi
+          # The town has consequences (fix pack 2026-10-27): a civilian shot -> jail with Bam Bankman Free, guns taken; damage -> BTC fines.
+          timeout 600 "$GODOT_BIN" --headless res://tests/ep2_town_law_test.tscn 2>&1 | tee town-law-tests.log
+          grep -q 'EP2_TOWN_LAW: ALL PASS' town-law-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' town-law-tests.log; then exit 1; fi
+          # Town feel at 60 fps (fix pack 2026-10-27): nobody walks backwards, the bar has sitters, own drinking rhythms, bumps, the train.
+          timeout 600 "$GODOT_BIN" --headless res://tests/ep2_town_feel_test.tscn 2>&1 | tee town-feel-tests.log
+          grep -q 'EP2_TOWN_FEEL: ALL PASS' town-feel-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' town-feel-tests.log; then exit 1; fi
+          # The ride to Logan's Lake (fix pack 2026-10-27): Dude's horse, telegraphed bandits, UNHORSE, retry, the prebuilt lake hand-off.
+          timeout 600 "$GODOT_BIN" --headless res://tests/ep2_lake_trail_test.tscn 2>&1 | tee lake-trail-tests.log
+          grep -q 'EP2_LAKE_TRAIL: ALL PASS' lake-trail-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' lake-trail-tests.log; then exit 1; fi
           # Every selector card shows Lil Blunt's hand with the weapon (founder 2026-10-21: the Remington and the bow cards).
           timeout 200 "$GODOT_BIN" --headless res://tests/ep2_weapon_icons_test.tscn 2>&1 | tee weapon-icons-tests.log
           grep -q 'EP2_WEAPON_ICONS: ALL PASS' weapon-icons-tests.log
