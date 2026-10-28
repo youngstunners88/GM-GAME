@@ -1,0 +1,121 @@
+{
+  "source": "ac8e5be325d432b805886f8e07be7604d0208f8f",
+  "public": {
+    "gameUrl": "https://html-classic.itch.zone/html/18305533-2232885/index.html?v=1793178086&ep2=1",
+    "build": "2026-10-28-ac8e5be",
+    "extras": "[EP2] extras ready (ready)",
+    "logan": "",
+    "extrasHttp": [
+      200
+    ]
+  },
+  "files": {
+    "index.html": {
+      "bytes": 4981,
+      "sha512": "2ce1acc270e5010c58ce0e997e6cc3e1b3fcf92db3695f61dec82261d3ebca8fb0d12c03eee76a27a720a7ee0cbdabfe3a1ce26b4271d54fd030ed9e6215e3b4"
+    },
+    "index.js": {
+      "bytes": 331495,
+      "sha512": "d3f5492b8f63c7d1ae8ee5d47f53f31150eb73edcf8e947682a79944f349c44b94b415f8e0d2d80cff668ace9941d15805f3f682234055ab830073ea37b54ae7"
+    },
+    "index.wasm": {
+      "bytes": 35376909,
+      "sha512": "170b8d0dfb11aedd34ef807e6b1043dc3eeb195540e4b388b1bc303d9c21b37f4e1d38430dd55a81eea7e8872272e06e04f9911e162617544fcf59c5d2b51ce0"
+    },
+    "web3.js": {
+      "bytes": 3035,
+      "sha512": "117b235a90965024bf040da8883d58e5924119103a2c637119b94ed823880a6994fddcbccd2cd7a985dc41dffefb71bc3f2f944c935bda02cc241409a62eda15"
+    },
+    "index.audio.worklet.js": {
+      "bytes": 7298,
+      "sha512": "2532b3729a7cc3f4909bf853488ae597d99088265b3a7000cb9d4ce2749b4c4ef2746eb26973e891614c615bd25f5ba923451c6f9eb99db4d298b6879e1b826b"
+    },
+    "index.pck": {
+      "bytes": 197366816,
+      "sha512": "df34725d359e42d255c56ba1b7fa33f53f6887cdb14972bada71cea2c4bb211cc8afc041f40ff0ec1948ddb9ee6f43ed7b6f01fda880b3a4524288af3813bbe7"
+    },
+    "ep2_extras.pck": {
+      "bytes": 121764320,
+      "sha512": "56b84386ada6b5bab3a54679af38491f4d941cf4c2f6749de8baac874cfbff4eb528d3b584b95860c868b42d0465456a4c63b348876490c2ec42d2292f128907"
+    }
+  },
+  "public_pause_playtest": {
+    "url": "https://html-classic.itch.zone/html/18305533-2232885/index.html",
+    "profiles": {
+      "desktop": {
+        "label": "desktop 1280x720 (keyboard + mouse)",
+        "gates": {
+          "engine boots": "PASS",
+          "Escape on the title screen does not pause (state stays MENU)": "PASS",
+          "reaches PLAYING": "PASS",
+          "the game has never been PAUSED before the first press": "PASS",
+          "P pauses (state beacon says PAUSED)": "PASS",
+          "the hero is frozen while paused with D held (overlay byte-identical 1.2 s apart)": "PASS",
+          "P again resumes (state PLAYING)": "PASS",
+          "and the hero moves again once resumed (control: overlay changes)": "PASS",
+          "Resume button (mouse) resumes": "PASS",
+          "Talk opens the companion panel and the game stays PAUSED": "PASS",
+          "Escape closes the Talk panel without resuming the game": "PASS",
+          "the next Escape resumes": "PASS",
+          "Space after clicking HUD Save keeps gameplay running": "PASS",
+          "jump input changes the player overlay after HUD Save click": "PASS",
+          "Restart reloads Stage 1 (PAUSED -> PLAYING -> TRANSITIONING -> PLAYING)": "PASS",
+          "the reloaded stage pauses again": "PASS",
+          "Quit to Menu lands on the title screen (state MENU)": "PASS",
+          "no console errors during the whole session": "PASS"
+        },
+        "errors": [],
+        "shots": [
+          "/workspace/work/pause-key/public-pause/desktop-01-playing.png",
+          "/workspace/work/pause-key/public-pause/desktop-02-paused-menu.png",
+          "/workspace/work/pause-key/public-pause/desktop-02a-paused-clip-1.png",
+          "/workspace/work/pause-key/public-pause/desktop-02b-paused-clip-2.png",
+          "/workspace/work/pause-key/public-pause/desktop-03a-playing-clip-1.png",
+          "/workspace/work/pause-key/public-pause/desktop-03b-playing-clip-2.png",
+          "/workspace/work/pause-key/public-pause/desktop-04-talk-panel.png",
+          "/workspace/work/pause-key/public-pause/desktop-05-back-in-menu-after-talk.png",
+          "/workspace/work/pause-key/public-pause/desktop-01a-before-jump.png",
+          "/workspace/work/pause-key/public-pause/desktop-01b-after-jump.png",
+          "/workspace/work/pause-key/public-pause/desktop-06-after-restart.png",
+          "/workspace/work/pause-key/public-pause/desktop-07-after-quit.png"
+        ],
+        "touchLog": [
+          "[Touch] layout build phone_landscape (releases all) (state MENU)"
+        ],
+        "states": [
+          "TRANSITIONING",
+          "PLAYING",
+          "PAUSED",
+          "PLAYING",
+          "GAME_OVER",
+          "PLAYING",
+          "PAUSED",
+          "PLAYING",
+          "PAUSED",
+          "PLAYING",
+          "PAUSED",
+          "PLAYING",
+          "TRANSITIONING",
+          "PLAYING",
+          "PAUSED",
+          "PLAYING",
+          "TRANSITIONING",
+          "MENU"
+        ]
+      }
+    },
+    "passed": true
+  },
+  "public_resource_map_replay": {
+    "checks": [
+      "[PASS] exported chart appears after ownership",
+      "[PASS] physical M opens exported chart and freezes world",
+      "[PASS] physical Escape closes chart and restores gameplay",
+      "[PASS] no automatic stable departure",
+      "[PASS] E mounts only beside Dude's horse"
+    ],
+    "passed": true,
+    "errors": [],
+    "boundary": "External-only fixture against exact public engine/main/extras; not an authenticated public-origin Episode2 walkthrough or physical phone test."
+  }
+}

@@ -1,26 +1,27 @@
 {
-  "observed_remote_sha": "f59caef6",
-  "objective": "Pause + manual checkpoint Save in Episodes1/2 \u2014 implemented, deployed and public resources verified",
-  "source_commit": "eaebdacf85ae0b963f1b916fb9ff2270d6916f9b",
-  "followup": "729b38db",
-  "release_commit": "4044823647c3e107c128477eceaa8fda50b8b823",
-  "task_paths": [
-    "src/autoload/game_manager.gd",
+  "observed_remote_sha": "b2aa0391",
+  "objective": "COMPLETE: P pause correction plus Western region map and explicit stables-to-lake departure, deployed and public verified",
+  "release_source": "ac8e5be325d432b805886f8e07be7604d0208f8f",
+  "run": 40656596827,
+  "job": 122709009298,
+  "paths": [
     "src/ui/run_controls.gd",
-    "src/ui/pause_menu.gd",
-    "src/episode2/ep2_entry.gd",
-    "src/episode2/session/ep2_session_root.gd",
-    "tests/manual_checkpoint_test.gd",
-    "docs/episode2-quality/pause-save-20261027/"
+    "project.godot",
+    "src/episode2/ui/region_map.gd",
+    "src/episode2/chamber/gold_town.gd",
+    "src/episode2/chamber/lake_trail.gd",
+    "src/episode2/chamber/ep2_stable_yard.gd",
+    "tests/ep2_region_map_test.gd",
+    "docs/episode2-quality/map-stables-20261028/"
   ],
   "evidence": {
-    "deployment": "CI40513406899 success/actualbutler48.86MiBfresh; publicBUILD2026-10-27-4044823/extras200/accessgate unchanged.",
-    "tests": "Native30, savecompat/fullhostedCI; actualpublicnative10 across3processes +desktop14/phoneemulation14 with2reloads, multi-fingerSave andquota-failure protection.",
-    "sizes": "Freshmain198846944B; publicmain198846976B/extras112817856B. Title5/texture69/security pass.",
-    "preserve": "One latest explicit namedcheckpoint: Episode1 laststagecheckpoint/start, Episode2 currentsectionstart. Immutable inventory/economy/rewardguards; rollingautosaves independent. Atomic localStorage primarywebrecord +legacyfilecopy, not GodotFSprivateAPI. Samebrowser/device, no cloud/exactframe/authbypass."
+    "local": "Full CI native passes, known3environment pause geometry tolerated; checkpoint36/map10; town/trail/ranch/save/touch pass; native Compatibility captures",
+    "web": "Physical P/freeze/resume/Space after Save + companion/restart/quit ALL PASS. External exported-resource replay M/Escape/modal pause/no automatic warp/E mount5PASS. Not authenticated public-origin Episode2 walkthrough.",
+    "size": "Fresh main197367008B <199229440B; warm197399440B,0script errors; no asset degradation.",
+    "security": "Title5/harness/security pass. No provider spend.",
+    "production": "CI40656596827 success/actual51.10MiBfresh butler; publicBUILD2026-10-28-ac8e5be/extras200; direct public pause ALL PASS; exact public engine/packs map5PASS; main197366816B/extras121764320B"
   },
-  "unresolved": [
-    "Real-phone hardware and authenticated public-origin Episode2 walkthrough not claimed; external fixtures replay exact publicresources."
-  ],
-  "next": "No implementation outstanding. Read DESIGN/RELEASE before changing save semantics; refreshmaster andpreserveconcurrent changes."
+  "pending": [],
+  "scratch": "/workspace/work/pause-key",
+  "next": "No implementation pending. Read RELEASE.md; preserve normal auth/films/save semantics. Real-phone hardware/authenticated public-origin Episode2 walkthrough not claimed."
 }

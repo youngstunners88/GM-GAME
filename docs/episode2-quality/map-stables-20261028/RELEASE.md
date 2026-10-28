@@ -15,7 +15,15 @@ Verification completed so far:
 - Real Compatibility camera review: parchment chart, stables, midpoint mount, ranch trail start and gate exit. Captures included; the corner subsequently moved below the offline banner.
 - Exported browser pause playtest: all gates pass, including physical P, movement freeze/resume, Space after mouse Save, companion/restart/quit.
 - External replay of actual exported resources:5 checks pass, including physical M/Escape, world pause and explicit stable mount. This fixture does not bypass any production access control.
-- Local nonthreaded Compatibility export:197399440-byte main pack,0 script errors. Fresh-import gate and full regression are pending below.
+- Local nonthreaded Compatibility export:197399440-byte main pack,0 script errors. Fresh-import main pack:197367008 bytes,1862432 bytes below the unchanged190MiB cap. Full local CI regression suite passes (only the three established local pause/HUD geometry differences tolerated by the repository gate).
 - Security Sentinel: no high blockers; title lock and harness checks pass.
 
-Production release pending. No provider spend.
+Production release confirmed:
+- Source `ac8e5be325d432b805886f8e07be7604d0208f8f`; CI40656596827/job122709009298 completed successfully, including full gameplay, camera captures, web export and pack checks.
+- Actual butler log: “Re-used84.90% of old, added51.10MiB fresh data”; “Pushed to https://youngstunners88.itch.io/smokerealm”.
+- Public BUILD `2026-10-28-ac8e5be`; extras HTTP200/ready and unchanged Episode2 access-code screen verified.
+- Actual public main197366816B/extras121764320B, both below199229440B. SHA512 receipts cover the public engine and both packs.
+- Direct public-origin desktop pause playtest ALL GATES PASS: P/freeze/resume, mouse Resume, companion, Space after Save, restart and quit;0 console errors.
+- External fixture against exact downloaded public engine/packs:5PASS (physical M/Escape, map pause, no automatic town departure, E mount at stables). This is distinct from an authenticated public-origin Episode2 walkthrough. No physical-phone certification is claimed.
+
+No provider spend.

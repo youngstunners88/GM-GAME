@@ -1,0 +1,81 @@
+{
+  "source_commit": "ac8e5be325d432b805886f8e07be7604d0208f8f",
+  "base_master": "6c57f96e10f419e68d0c6cf5bd79c1e01b95b842",
+  "manual_checkpoint_checks": 36,
+  "region_map_checks": 10,
+  "external_exported_map_checks": 5,
+  "browser_pause": {
+    "url": "http://localhost:8899/game/index.html",
+    "profiles": {
+      "desktop": {
+        "label": "desktop 1280x720 (keyboard + mouse)",
+        "gates": {
+          "engine boots": "PASS",
+          "Escape on the title screen does not pause (state stays MENU)": "PASS",
+          "reaches PLAYING": "PASS",
+          "the game has never been PAUSED before the first press": "PASS",
+          "P pauses (state beacon says PAUSED)": "PASS",
+          "the hero is frozen while paused with D held (overlay byte-identical 1.2 s apart)": "PASS",
+          "P again resumes (state PLAYING)": "PASS",
+          "and the hero moves again once resumed (control: overlay changes)": "PASS",
+          "Resume button (mouse) resumes": "PASS",
+          "Talk opens the companion panel and the game stays PAUSED": "PASS",
+          "Escape closes the Talk panel without resuming the game": "PASS",
+          "the next Escape resumes": "PASS",
+          "Space after clicking HUD Save keeps gameplay running": "PASS",
+          "jump input changes the player overlay after HUD Save click": "PASS",
+          "Restart reloads Stage 1 (PAUSED -> PLAYING -> TRANSITIONING -> PLAYING)": "PASS",
+          "the reloaded stage pauses again": "PASS",
+          "Quit to Menu lands on the title screen (state MENU)": "PASS",
+          "no console errors during the whole session": "PASS"
+        },
+        "errors": [],
+        "shots": [
+          "/workspace/work/pause-key/browser-final/desktop-01-playing.png",
+          "/workspace/work/pause-key/browser-final/desktop-02-paused-menu.png",
+          "/workspace/work/pause-key/browser-final/desktop-02a-paused-clip-1.png",
+          "/workspace/work/pause-key/browser-final/desktop-02b-paused-clip-2.png",
+          "/workspace/work/pause-key/browser-final/desktop-03a-playing-clip-1.png",
+          "/workspace/work/pause-key/browser-final/desktop-03b-playing-clip-2.png",
+          "/workspace/work/pause-key/browser-final/desktop-04-talk-panel.png",
+          "/workspace/work/pause-key/browser-final/desktop-05-back-in-menu-after-talk.png",
+          "/workspace/work/pause-key/browser-final/desktop-01a-before-jump.png",
+          "/workspace/work/pause-key/browser-final/desktop-01b-after-jump.png",
+          "/workspace/work/pause-key/browser-final/desktop-06-after-restart.png",
+          "/workspace/work/pause-key/browser-final/desktop-07-after-quit.png"
+        ],
+        "touchLog": [
+          "[Touch] layout build phone_landscape (releases all) (state MENU)"
+        ],
+        "states": [
+          "TRANSITIONING",
+          "PLAYING",
+          "PAUSED",
+          "PLAYING",
+          "GAME_OVER",
+          "PLAYING",
+          "PAUSED",
+          "PLAYING",
+          "PAUSED",
+          "PLAYING",
+          "PAUSED",
+          "PLAYING",
+          "TRANSITIONING",
+          "PLAYING",
+          "PAUSED",
+          "PLAYING",
+          "TRANSITIONING",
+          "MENU"
+        ]
+      }
+    },
+    "passed": true
+  },
+  "local_ci": "all CI headless gates pass; three existing environment pause geometry differences tolerated",
+  "fresh_main_bytes": 197367008,
+  "cap_bytes": 199229440,
+  "security": "no blockers at high",
+  "provider_spend": 0,
+  "production_run": 40656596827,
+  "production_status": "success; actual butler upload51.10MiB fresh; public confirmed"
+}
