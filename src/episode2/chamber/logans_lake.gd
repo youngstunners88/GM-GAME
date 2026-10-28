@@ -1,6 +1,6 @@
 class_name LogansLakeChamber
 extends Ep2Interlude
-## Founder lock 2026-10-18: investigate / stage depth, never fishing or a protocol dashboard.
+## Founder lock 2026-10-18: investigate / stage depth, player investigates; Logan may fish as background lake life.
 ## The surface route continues here after Rich & Utah's gear. No currency writes or rewards.
 enum Beat { ARRIVE, INVESTIGATE, STAGE, HANDOFF, OVERLOOK }
 const LOGAN := "res://src/episode2/extras/lake/logan.glb"
@@ -37,7 +37,7 @@ func _init() -> void:
 
 func _chamber_id() -> String: return "logans_lake"
 func _beat_label(b: int) -> String: return Beat.keys()[clampi(b, 0, Beat.size() - 1)]
-func _build_steps() -> Array: return [_light, _land, _water, _shore, _vegetation, _people, _build_skiff, _build_cabin]
+func _build_steps() -> Array: return [_light, _land, _water, _shore, _vegetation, _people, _build_skiff, _build_cabin, _build_ambience]
 
 func _light() -> void:
 	var env := Environment.new()
@@ -339,3 +339,8 @@ static func probe_assets() -> bool:
 	model.free()
 	if ok: print("[EP2] Logan lake assets ready (bones=65 clips=Idle,Greet,Point,Approve)")
 	return ok
+
+func _build_ambience() -> void:
+	var life := preload("res://src/episode2/art/ep2_lake_ambience.gd").new()
+	life.name="LakeAmbience"
+	_visuals.add_child(life)

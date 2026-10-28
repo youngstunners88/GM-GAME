@@ -5,10 +5,11 @@ var context: Callable
 var allowed: Callable
 var expanded := false
 var corner: TextureButton
+var corner_marker: TextureRect
 var key_hint: Label
 var panel: Control
 var paper: TextureRect
-var marker: Label
+var marker: TextureRect
 var destination: Label
 var _mouse_before: int
 
@@ -23,6 +24,12 @@ func _ready() -> void:
  corner.pressed.connect(toggle)
  add_child(corner)
  corner.hide()
+ corner_marker = TextureRect.new()
+ corner_marker.texture = preload("res://src/assets/art/badge_lilblunt.png")
+ corner_marker.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+ corner_marker.size = Vector2(20,20)
+ corner_marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
+ corner.add_child(corner_marker)
  key_hint = Label.new()
  key_hint.text = 'Press “M”'
  key_hint.add_theme_font_size_override("font_size", 14)
@@ -41,10 +48,12 @@ func _ready() -> void:
  paper.stretch_mode = TextureRect.STRETCH_SCALE
  paper.mouse_filter = Control.MOUSE_FILTER_IGNORE
  panel.add_child(paper)
- marker = Label.new()
- marker.text = "◆"
- marker.add_theme_color_override("font_color",Color(0.16,0.26,0.22))
- marker.add_theme_font_size_override("font_size",28)
+ marker = TextureRect.new()
+ marker.texture = preload("res://src/assets/art/badge_lilblunt.png")
+ marker.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+ marker.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+ marker.size = Vector2(44,44)
+ marker.tooltip_text = "Lil Blunt • You are here"
  marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
  paper.add_child(marker)
  destination = Label.new()
@@ -73,6 +82,9 @@ func _process(_dt: float) -> void:
  corner.tooltip_text = "" if TouchUi.is_touch() else "Region map (M) • " + GameManager.map_active_destination.replace("_"," ")
  panel.size = get_viewport().get_visible_rect().size
  panel.visible = expanded
+ var current_uv := Vector2(.23,.68)
+ if context.is_valid(): current_uv = context.call()
+ corner_marker.position = current_uv*corner.size-corner_marker.size*.5
  if not expanded: return
  var extent := Vector2(minf(safe.size.x-32,safe.size.y*1.6-40),0)
  extent.y = extent.x/1.6
@@ -80,7 +92,7 @@ func _process(_dt: float) -> void:
  paper.position = safe.get_center()-extent*.5
  var uv := Vector2(.23,.68)
  if context.is_valid(): uv = context.call()
- marker.position = uv*extent-Vector2(12,18)
+ marker.position = uv*extent-marker.size*.5
  destination.visible = GameManager.map_active_destination == "logans_lake"
  destination.position = Vector2(.64,.23)*extent
 

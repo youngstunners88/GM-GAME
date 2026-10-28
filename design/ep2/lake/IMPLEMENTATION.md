@@ -68,3 +68,6 @@ until the supplied Logan has mounted; a failed download offers E/touch retry.
 The shore and exit remain usable. The merged browser-fetch loader handles itch's
 gzip responses through Engine.copyToFS. Retry cancels the previous request, and
 aborted callbacks cannot overwrite the replacement download's state.
+
+## Founder update 2026-10-29
+Logan fishes from his skiff between rowing stretches. This is background character life; Lil Blunt retains the investigate/cargo progression. The basin expands to54×45m radii, with matched terrain/water/shore vegetation, shore sounds and vultures on the approach.

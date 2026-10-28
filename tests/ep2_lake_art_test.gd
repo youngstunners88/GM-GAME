@@ -87,6 +87,19 @@ func _ready() -> void:
  check("no arm or leg bone is stretched to fake contact", max_length<.003)
  check("oar blades enter water on power and clear it on recovery", power_blade<b.WATER_Y-.01 and recovery_blade>b.WATER_Y+.10)
  check("rowing moves the skiff through the lake instead of waving on the spot", b.boat.position.distance_to(start)>1.5)
+ advance(c,22)
+ check("Logan stops to fish with a visible rod, line and bobber",b.state==b.State.FISH and b._rod.visible and b._line_mesh.visible and b._bobber.visible and not b._wake.visible)
+ var fish_start: Vector3=b.boat.position
+ var fish_contact: float=0
+ for i in 90:
+  c.step(1.0/30.0)
+  for j in 2:
+   fish_contact=maxf(fish_contact,b.palm_position("Left" if j==0 else "Right").distance_to(b._fish_grips[j].global_position))
+ print("FISHING_CONTACT ",fish_contact)
+ check("fishing palms actually hold the rod without drifting",fish_contact<.04)
+ check("fishing boat holds station on the lake",Vector2(b.boat.position.x-fish_start.x,b.boat.position.z-fish_start.z).length()<.01)
+ advance(c,29)
+ check("Logan resumes rowing after fishing",b.state==b.State.ROW and not b._rod.visible)
  c.set_physics_process(true);c.toggle_armory()
  var frozen_distance: float=b.circuit_distance
  var frozen_time: float=b._time

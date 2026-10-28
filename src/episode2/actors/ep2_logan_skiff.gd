@@ -3,7 +3,7 @@ extends Node3D
 ## Lake-only skiff routine. The founder's Logan skin/clips stay unchanged.
 ## A rest-aware two-bone solve keeps palms on independent rigid oar grips and
 ## boots on the actual footrest. No bone scaling or foreign clip retargeting.
-enum State { MOORED, WALK_TO_BOAT, BOARD, ROW }
+enum State { MOORED, WALK_TO_BOAT, BOARD, ROW, FISH }
 const MODEL := "res://src/episode2/extras/lake/rowing_skiff.glb"
 const WATER_Y := -0.18
 const MOOR := Vector3(2.2, -0.15, 13.0)
@@ -43,6 +43,12 @@ var _board_feet: Array[Vector3] = []
 var _route_i: int = 0
 var _route: Array[Vector3] = [Vector3(9, 0, 18), Vector3(13, 0, 25), Vector3(8, 0, 31), Vector3(3, 0, 24), Vector3(2.2, 0, 13)]
 var _walk_route: Array[Vector3] = [Vector3(-3.4, 0, 10), Vector3(2.2, 0, 10), Vector3(2.2, 0, 11.2), Vector3(2.2, -0.20, 11.9), Vector3(2.2, -0.25, 12.5)]
+var _fish_t := 0.0
+var _rowing_t := 0.0
+var _rod: Node3D
+var _line_mesh: MeshInstance3D
+var _bobber: MeshInstance3D
+var _fish_grips: Array[Node3D] = []
 var _wake: MeshInstance3D
 
 func build(parent: Node3D, logan: Ep2TownFolk, water: ShaderMaterial = null) -> bool:
@@ -107,6 +113,7 @@ func build(parent: Node3D, logan: Ep2TownFolk, water: ShaderMaterial = null) -> 
 	_wake.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	boat.add_child(_wake)
 	_wake.hide()
+	_build_fishing_tackle()
 	ready_art = true
 	_update_mooring()
 	return true
@@ -115,6 +122,11 @@ func reset_routine() -> void:
 	if not ready_art: return
 	_sk.clear_bones_global_pose_override()
 	state = State.MOORED
+	_fish_t = 0.0
+	_rowing_t = 0.0
+	_rod.hide()
+	_line_mesh.hide()
+	_bobber.hide()
 	_lean = 0.0
 	_time = 0.0
 	circuit_distance = 0.0
@@ -132,7 +144,9 @@ func reset_routine() -> void:
 	actor.place(_shore_mark)
 	actor.face_yaw(PI)
 	actor.rotation.y = PI
-	for oar in oars: oar.rotation = Vector3.ZERO
+	for oar in oars:
+		oar.rotation = Vector3.ZERO
+		oar.show()
 	_update_mooring()
 	_update_water_cut()
 
@@ -163,6 +177,23 @@ func advance(delta: float, may_depart: bool) -> void:
 			_wake.show()
 	elif state == State.ROW:
 		_row(delta)
+		_rowing_t += delta
+		if _rowing_t > 22.0:
+			state = State.FISH
+			_fish_t = 0.0
+			_rod.show(); _line_mesh.show(); _bobber.show(); _wake.hide()
+			for oar in oars: oar.hide()
+	elif state == State.FISH:
+		_fish_t += delta
+		_lean = .035 * sin(_fish_t*.7)
+		boat.position.y = MOOR.y + sin(_time*.72)*.007
+		_seat_actor(1.0)
+		_pose_seated(1.0)
+		_update_fishing_line()
+		if _fish_t > 28.0:
+			state = State.ROW; _rowing_t = 0.0
+			_rod.hide(); _line_mesh.hide(); _bobber.hide(); _wake.show()
+			for oar in oars: oar.show()
 	_update_water_cut()
 
 func _walk(delta: float) -> void:
@@ -300,7 +331,7 @@ func _pose_seated(blend: float) -> void:
 		var twist: float = atan2(finger_dir.dot(mapped.cross(wanted)), mapped.dot(wanted))
 		q = Quaternion(finger_dir, twist) * q
 		var hand_basis: Basis = Basis(q) * hand_rest.basis
-		var grip: Vector3 = grips[grip_i].global_position
+		var grip: Vector3 = (_fish_grips[grip_i] if state == State.FISH else grips[grip_i]).global_position
 		var current_palm: Vector3 = _pose_world(side + "Hand") * local_palm
 		var palm: Vector3 = current_palm.lerp(grip, k)
 		var wrist: Vector3 = palm - hand_basis * local_palm
@@ -347,3 +378,41 @@ func _update_mooring() -> void:
 func _update_water_cut() -> void:
 	if _water_material != null and boat != null:
 		_water_material.set_shader_parameter("boat_inverse", boat.global_transform.affine_inverse())
+
+func _build_fishing_tackle() -> void:
+	_rod = Node3D.new()
+	_rod.name = "FishingRod"
+	boat.add_child(_rod)
+	var base: Vector3 = _seat.position + Vector3(0,.45,.02)
+	var tip: Vector3 = base + Vector3(.25,1.15,-2.35)
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = .009; mesh.bottom_radius = .022; mesh.height = base.distance_to(tip)
+	var stick := MeshInstance3D.new()
+	stick.mesh = mesh
+	var wood := StandardMaterial3D.new(); wood.albedo_color = Color(.3,.17,.065)
+	stick.material_override = wood
+	_rod.add_child(stick)
+	stick.position = (base+tip)*.5
+	stick.quaternion = Quaternion(Vector3.UP,(tip-base).normalized())
+	for i in 2:
+		var grip := Node3D.new(); grip.position = base + (tip-base)*(.045 if i==0 else .15)
+		_rod.add_child(grip); _fish_grips.append(grip)
+	_line_mesh = MeshInstance3D.new(); _line_mesh.name = "FishingLine"; boat.add_child(_line_mesh)
+	var thread := StandardMaterial3D.new(); thread.albedo_color = Color(.75,.7,.5); thread.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_line_mesh.material_override = thread
+	_bobber = MeshInstance3D.new(); var ball := SphereMesh.new(); ball.radius=.045; ball.height=.09
+	_bobber.mesh=ball
+	var red := StandardMaterial3D.new(); red.albedo_color=Color(.65,.15,.08); _bobber.material_override=red
+	boat.add_child(_bobber)
+	_rod.hide();_line_mesh.hide();_bobber.hide()
+
+func _update_fishing_line() -> void:
+	var tip: Vector3 = _seat.position + Vector3(.25,1.60,-2.33)
+	var float_at: Vector3 = tip + Vector3(.1,-tip.y + WATER_Y-boat.position.y,-.6)
+	float_at.y += sin(_fish_t*2.1)*.009
+	_bobber.position=float_at
+	var mesh := ImmediateMesh.new(); mesh.surface_begin(Mesh.PRIMITIVE_LINE_STRIP)
+	for i in 13:
+		var k: float = i/12.0
+		mesh.surface_add_vertex(tip.lerp(float_at,k)+Vector3(.03*sin(PI*k+_fish_t),-.07*sin(PI*k),0))
+	mesh.surface_end();_line_mesh.mesh=mesh

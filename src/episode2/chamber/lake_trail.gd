@@ -139,7 +139,7 @@ func _beat_label(b: int) -> String:
 # --- set -------------------------------------------------------------------------------------------------------------
 
 func _build_steps() -> Array:
-	return [_step_light, _step_path, _step_ground, _step_trail, _step_desert, _step_lake, _step_horse, _step_departure_yard, _step_bandits]
+	return [_step_light, _step_path, _step_ground, _step_trail, _step_desert, _step_lake, _step_horse, _step_departure_yard, _step_bandits, _build_vultures]
 
 
 func _warm_views() -> Array:
@@ -1398,3 +1398,9 @@ func _blend_lake_light() -> void:
 	_sun.basis=Basis.from_euler(Vector3(deg_to_rad(-16),deg_to_rad(160),0)).slerp(target_basis,blend)
 	_sun.light_color=Color(1,.80,.56).lerp(_lake_reference._sun.light_color,blend)
 	_sun.light_energy=lerpf(2.3,_lake_reference._sun.light_energy,blend)
+
+func _build_vultures() -> void:
+	var flock := preload("res://src/episode2/art/ep2_trail_vultures.gd").new()
+	flock.name="CirclingVultures"
+	_visuals.add_child(flock)
+	flock.position = _route_sample(160.0)[0]

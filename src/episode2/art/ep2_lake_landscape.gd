@@ -58,7 +58,7 @@ func build_water(sun: DirectionalLight3D) -> void:
 		for p in [Vector2.ZERO, Vector2(cos(a), sin(a)) * Ep2LakeLandform.rim_radius(a) * 1.11, Vector2(cos(b), sin(b)) * Ep2LakeLandform.rim_radius(b) * 1.11]:
 			st.set_normal(Vector3.UP)
 			st.set_uv(p * 0.5 + Vector2(0.5, 0.5))
-			st.add_vertex(Vector3(24 + p.x * 27, -0.18, 20 + p.y * 33))
+			st.add_vertex(Vector3(Ep2LakeLandform.CENTER_X + p.x * Ep2LakeLandform.RADIUS_X, -0.18, 20 + p.y * Ep2LakeLandform.RADIUS_Z))
 	var lake := MeshInstance3D.new()
 	lake.name = "StillWater"
 	lake.mesh = st.commit()
@@ -134,8 +134,8 @@ func build_vegetation(parent: Node3D) -> void:
 	for i in 175:
 		var a: float = rng.randf_range(-PI, PI)
 		var radius: float = rng.randf_range(1.17, 1.58) if i < 125 else rng.randf_range(1.60, 2.65)
-		var x: float = 24.0 + cos(a) * 29.0 * radius
-		var z: float = 20.0 + sin(a) * 36.0 * radius
+		var x: float = Ep2LakeLandform.CENTER_X + cos(a) * 57.0 * radius
+		var z: float = 20.0 + sin(a) * 48.0 * radius
 		if i < 6:
 			x = -17.0 - float(i % 2) * 3.0
 			z = -8.0 + float(i) * 13.0
@@ -234,8 +234,8 @@ func _understory(kit: Node3D, rng: RandomNumberGenerator) -> void:
 		for i in 38:
 			var a: float = rng.randf_range(-PI, PI)
 			var r: float = rng.randf_range(0.99, 1.075) * Ep2LakeLandform.rim_radius(a)
-			var x: float = 24 + cos(a) * 27 * r
-			var z: float = 20 + sin(a) * 33 * r
+			var x: float = Ep2LakeLandform.CENTER_X + cos(a) * Ep2LakeLandform.RADIUS_X * r
+			var z: float = 20 + sin(a) * Ep2LakeLandform.RADIUS_Z * r
 			if x < -2.5 or (z > 45 and absf(x - Ep2LakeLandform.flow_center(z)) < 8) or (x > -5 and x < 6 and z > 7 and z < 17): continue
 			var s: float = rng.randf_range(.65, 1.2)
 			transforms.append(Transform3D(Basis(Vector3.UP, a).scaled(Vector3.ONE * s), Vector3(x, Ep2LakeLandform.terrain_height(x, z) - 0.03, z)))
@@ -265,8 +265,8 @@ func _shore_rocks_and_logs(rng: RandomNumberGenerator) -> void:
 	for i in 55:
 		var a: float = rng.randf_range(-PI, PI)
 		var r: float = rng.randf_range(1.01, 1.17) * Ep2LakeLandform.rim_radius(a)
-		var x: float = 24 + cos(a) * 27 * r
-		var z: float = 20 + sin(a) * 33 * r
+		var x: float = Ep2LakeLandform.CENTER_X + cos(a) * Ep2LakeLandform.RADIUS_X * r
+		var z: float = 20 + sin(a) * Ep2LakeLandform.RADIUS_Z * r
 		if x < -2.5 or (z > 44 and absf(x - Ep2LakeLandform.flow_center(z)) < 10) or (x > -5 and x < 6 and z > 7 and z < 17): continue
 		var rock := packed.instantiate() as Node3D
 		rock.name = "BankGranite_" + str(i)

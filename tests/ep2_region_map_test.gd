@@ -32,7 +32,7 @@ func _ready() -> void:
  await get_tree().process_frame
  check("M opens map and freezes simulation",chart.expanded and chart.panel.visible and get_tree().paused)
  check("lake destination pin is visible",chart.destination.visible)
- check("player marker follows room context",chart.marker.position.is_equal_approx(Vector2(.23,.42)*chart.paper.size-Vector2(12,18)))
+ check("player marker follows room context",chart.marker.position.is_equal_approx(Vector2(.23,.42)*chart.paper.size-chart.marker.size*.5))
  chart._input(key)
  check("M closes and resumes",not chart.expanded and not get_tree().paused)
  chart._input(key)

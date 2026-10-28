@@ -1,5 +1,8 @@
 class_name Ep2LakeLandform
 extends RefCounted
+const CENTER_X := 51.0
+const RADIUS_X := 54.0
+const RADIUS_Z := 45.0
 ## Shared metre-scale shoreline and walking-height contract. Terrain, reflection
 ## tree roots, bank dressing and navigation sample the same continuous surface.
 static func path_height(z: float) -> float:
@@ -9,7 +12,7 @@ static func rim_radius(angle: float) -> float:
 	return 1.0 + 0.038 * sin(angle * 3.0 + 0.4) + 0.020 * sin(angle * 7.0 - 0.6)
 
 static func lake_radius(x: float, z: float) -> float:
-	var p := Vector2((x - 24.0) / 27.0, (z - 20.0) / 33.0)
+	var p := Vector2((x - CENTER_X) / RADIUS_X, (z - 20.0) / RADIUS_Z)
 	return p.length() / rim_radius(atan2(p.y, p.x))
 
 static func flow_center(z: float) -> float:
@@ -51,7 +54,7 @@ static func _natural_height(x: float, z: float) -> float:
 	var terrain: float = shore + pow(outside, 1.45) * 2.0
 	terrain += outside * (0.8 * sin(x * 0.085) * cos(z * 0.10) + 0.5 * sin(z * 0.18 + x * 0.04))
 	# Layered ridges enclose the water beyond the wooded shore, not a flat rim.
-	var ridge: float = maxf(0.0, absf(x - 24.0) - 55.0) * 0.23
+	var ridge: float = maxf(0.0, absf(x - CENTER_X) - 82.0) * 0.23
 	ridge += maxf(0.0, z - 77.0) * 0.095
 	terrain += ridge * (0.75 + 0.25 * sin(x * 0.11 + z * 0.04))
 	if z > 46.0:
