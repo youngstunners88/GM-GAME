@@ -124,7 +124,7 @@ func _ready() -> void:
 	yard.step(0.02, c._player_pos)
 	var requests: Array = []
 	c.stable_voice_requested.connect(func(id, voice): requests.append([id, voice]))
-	check("E within3m starts the real ranch conversation", c.start_rig() and requests == [["dude_ranch_01", "Pe1gOSDKAuczOZqgCiEm"]])
+	check("E within3m starts the real ranch conversation", c.start_rig() and requests == [["dude_ranch_01", "3N5PpVsIKXqmtLAhF2Lj"]])
 	check("hook creates no purchase, map or story beat", c.get_beat() == GoldTownChamber.Beat.STREET and not c.has_map())
 	c._player_pos += Vector3(4, 0, 0)
 	check("E outside3m does nothing", not c.start_rig())
