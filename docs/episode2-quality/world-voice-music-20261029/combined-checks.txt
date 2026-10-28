@@ -1,0 +1,6 @@
+LAKE_ART: 27 checks, 0 failed
+LAKE_LIFE: 0 failed
+EP2_WORLD_ROUTES: 26 checks, 0 failed
+EP2_LAKE_TRAIL: ALL PASS
+LOGANS_LAKE: ALL PASS
+REGION_MAP: 10 checks, 0 failed

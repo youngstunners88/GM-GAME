@@ -1,10 +1,15 @@
 {
-  "observed_remote_sha": "4c28d09c",
-  "objective": "COMPLETE: map, reversible horse ride, full-turn aim, sheriff, voices, draw/blood/audio released",
-  "release_source": "3ce81051e52aaac245c792b0b4dcb9362c65a1ef",
-  "run": 40690418107,
-  "build": "2026-10-28-3ce8105",
-  "evidence": "docs/episode2-quality/map-ride-vo-residuals-20261028/RELEASE_RECEIPT.json",
-  "pending": [],
-  "next": "Standing commit/push/ship authorization reaffirmed. Preserve public access/title/nonthreaded export. No authenticated public Episode2/real-phone claim."
+  "observed_remote_sha": "5f908771f5e56a7633d5ad6394cdf6f9d630ed0d",
+  "objective": "RELEASING corrected voices/ELEVEVE, connected world, gradual lake and supplied draw music; preserve concurrent lake life",
+  "game_source_base": "5f908771",
+  "prior_source": "14c00e24",
+  "checks": "Full native and hosted gameplay/export/security passed for 14c; merged-source lake art27/life/world26/trail/Logan/map10 pass; updated Compatibility cameras inspected",
+  "evidence": "docs/episode2-quality/world-voice-music-20261029/REVIEW.md",
+  "pending": [
+    "Export stamped merged source and verify web",
+    "Commit/push mirror bound fix with concurrent source preserved",
+    "Publish latest merged build and verify public BUILD/extras",
+    "Write verified release receipt and update STATUS/vault"
+  ],
+  "release_issue": "40736490312 attempt2 timed out on secondary mirror; verified 14c CI artifact uploaded as interim itch2236753. New fix excludes both large packs from mirror and bounds mirror3minutes; primary keeps both."
 }
