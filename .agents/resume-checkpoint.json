@@ -1,10 +1,22 @@
 {
-  "observed_remote_sha": "4c28d09c",
-  "objective": "COMPLETE: map, reversible horse ride, full-turn aim, sheriff, voices, draw/blood/audio released",
-  "release_source": "3ce81051e52aaac245c792b0b4dcb9362c65a1ef",
-  "run": 40690418107,
-  "build": "2026-10-28-3ce8105",
-  "evidence": "docs/episode2-quality/map-ride-vo-residuals-20261028/RELEASE_RECEIPT.json",
-  "pending": [],
-  "next": "Standing commit/push/ship authorization reaffirmed. Preserve public access/title/nonthreaded export. No authenticated public Episode2/real-phone claim."
+  "objective": "Finish lake life release: Logan fishing, larger basin, four ambient sound layers, trail vultures and Lil Blunt map icons",
+  "source": "5f908771f5e56a7633d5ad6394cdf6f9d630ed0d",
+  "run": 40745667641,
+  "base": "14c00e248d075d36565c5547e8c213a0319dd363",
+  "paths": [
+    "src/episode2/actors/ep2_logan_skiff.gd",
+    "src/episode2/art/ep2_lake_landform.gd",
+    "src/episode2/art/ep2_lake_ambience.gd",
+    "src/episode2/art/ep2_trail_vultures.gd",
+    "src/episode2/ui/region_map.gd",
+    "docs/episode2-quality/lake-life-20261029/"
+  ],
+  "evidence": "Native fish27 contact~0.0000055m/map10/life6; lake/cabin26/trail pass. Actual Compatibility fish/map/vulture captures; warm export197532992B/0script errors; fresh197500656B under190MiB. Security/title/harness pass. No provider spend.",
+  "pending": [
+    "CI40745667641 queued behind prior14c00release40736490312, itself at gh-pages mirror stage. Do not cancel unrelated run.",
+    "Verify actual butler upload and public BUILD5f90877/extras; replay/export checks as needed",
+    "Commit/push/ship final receipts and checkpoint, clean task processes"
+  ],
+  "scratch": "/workspace/work/lake-life",
+  "next": "Poll GitHub run jobs; original .agents shipping workflow applies. Map badge/fishing native render checked; generated loops original. Latest founder request permits background fishing, without changing investigate/cargo economy."
 }
