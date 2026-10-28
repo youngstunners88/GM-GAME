@@ -1,5 +1,5 @@
 {
-  "objective": "Finish lake life release: Logan fishing, larger basin, four ambient sound layers, trail vultures and Lil Blunt map icons",
+  "objective": "COMPLETE: lake life and Lil Blunt icons published in combined e5198bd build and independently public-resource verified",
   "source": "5f908771f5e56a7633d5ad6394cdf6f9d630ed0d",
   "run": 40745667641,
   "base": "14c00e248d075d36565c5547e8c213a0319dd363",
@@ -11,17 +11,15 @@
     "src/episode2/ui/region_map.gd",
     "docs/episode2-quality/lake-life-20261029/"
   ],
-  "evidence": "Native fish27 contact~0.0000055m/map10/life6; lake/cabin26/trail pass. Actual Compatibility fish/map/vulture captures; warm export197532992B/0script errors; fresh197500656B under190MiB. Security/title/harness pass. No provider spend.",
-  "pending": [
-    "Independently verify public e5198bd source; replay exact public engine/packs with six lake-life browser checks",
-    "Commit final lake receipts and ship docs; latest8df CI is still running, ours5f cancelled by superseding source-equivalent run"
-  ],
+  "evidence": "Native fish27 contact~0.0000055m/map10/life6; lake/cabin26/trail pass. Actual Compatibility fish/map/vulture captures; warm export197532992B/0script errors; fresh197500656B under190MiB. Security/title/harness pass. No provider spend. Public BUILD2026-10-28-e5198bd/extras200, main197533616B/extras127826144B; exact public engine/packs six checks PASS/no errors; actual combined55.92MiBfresh Butler fallback verified.",
+  "pending": [],
   "scratch": "/workspace/work/lake-life",
-  "next": "Poll GitHub run jobs; original .agents shipping workflow applies. Map badge/fishing native render checked; generated loops original. Latest founder request permits background fishing, without changing investigate/cargo economy.",
+  "next": "No feature implementation pending. Latest source-equivalent CI40751388649 still running; ours40745667641 cancelled by superseding combined release after game/export/security passed. Do not claim that cancelled CI deployed. Preserve concurrent mirror/probe fixes. Read RELEASE/PUBLIC_PROOF; real-phone/authenticated public-origin walkthrough not claimed.",
   "related_release": {
     "source": "e5198bdbde9ddcf6ddee9c4d6f1cf0c89c333c23",
     "public_build": "2026-10-28-e5198bd",
     "receipt": "docs/episode2-quality/world-voice-music-20261029/RELEASE_RECEIPT.json",
     "preserves_our_runtime": true
-  }
+  },
+  "observed_remote_sha": "377a1ed7"
 }
