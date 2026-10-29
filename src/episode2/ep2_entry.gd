@@ -86,6 +86,10 @@ func _ready() -> void:
 	if OS.has_feature("web") and bool(JavaScriptBridge.eval("new URLSearchParams(window.location.search).get('ep2lakeprobe') === '1'", true)):
 		_probe_lake_assets()
 	Ep2Extras.start(self)          # web: fetch ep2_extras.pck (two-storey Armory, Tripo Rich & Utah) long before the town
+	# TEST-ONLY (?ep2unlock=1 on web): remember the unlock on this device exactly as a correct code
+	# does, so a phone can enter without a keyboard. The prompt and the code path are untouched.
+	if _debug_unlock_requested():
+		_write_unlock()
 	if _is_unlocked():
 		_begin()
 	else:
@@ -100,6 +104,19 @@ func _is_unlocked() -> bool:
 	if GameManager.EP2_STORY_BYPASSES_CODE and GameManager.ep2_story_unlocked:
 		return true         # earned: boss 3 was just beaten (founder 2026-10-03: the hand-off must be seamless)
 	return cf.load(UNLOCK_FILE) == OK and str(cf.get_value("ep2", "key", "")) == ACCESS_SHA256
+
+## The same device-local record a correct code writes. Kept in one place so the gate and the
+## test-only URL shortcut can never disagree on what "unlocked" means.
+func _write_unlock() -> void:
+	var cf := ConfigFile.new()
+	cf.set_value("ep2", "key", ACCESS_SHA256)
+	cf.save(UNLOCK_FILE)
+
+## TEST-ONLY. ?ep2unlock=1 on web skips the prompt by writing the unlock file above. Off
+## everywhere else (no query string, no web, any other value); the shipped gate is unchanged.
+func _debug_unlock_requested() -> bool:
+	return OS.has_feature("web") and bool(JavaScriptBridge.eval(
+		"new URLSearchParams(window.location.search).get('ep2unlock') === '1'", true))
 
 func _show_gate() -> void:
 	var layer := CanvasLayer.new()
@@ -154,9 +171,7 @@ func _try_code(code: String) -> void:
 		_gate_input.clear()
 		_gate_input.grab_focus()
 		return
-	var cf := ConfigFile.new()
-	cf.set_value("ep2", "key", ACCESS_SHA256)
-	cf.save(UNLOCK_FILE)
+	_write_unlock()
 	_gate.get_parent().queue_free()
 	_gate = null
 	_begin()
