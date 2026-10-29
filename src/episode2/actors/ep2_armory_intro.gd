@@ -180,7 +180,7 @@ func step(delta: float, player_world: Vector3) -> void:
 			if mounted:
 				stage = Stage.GATLING_FREE
 				_free_t = 0.0
-				objective_changed.emit("At the Gatling: click to fire, [E] to step away.")
+				objective_changed.emit("At the Gatling: click to fire, [E] to step away." if TouchUi.keys_shown() else "At the Gatling: shoot, then step away.")
 			elif _line_t <= 0.0 and _i < GATLING_AFTER.size():
 				_say_next(GATLING_AFTER, "")
 		Stage.GATLING_FREE:
@@ -233,7 +233,7 @@ func _step_demo(delta: float) -> void:
 					stage = Stage.GATLING_OFFER
 					_t = 0.0
 					utah.direct("gatling_look", "Idle", demo_target, true)
-					objective_changed.emit("Take the crank [E].")
+					objective_changed.emit("Take the crank [E]." if TouchUi.keys_shown() else "Take the crank.")
 
 
 func _close() -> void:

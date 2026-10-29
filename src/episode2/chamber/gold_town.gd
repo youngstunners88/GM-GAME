@@ -618,7 +618,8 @@ func _build_guns() -> void:
 
 func _on_intro_objective(text: String) -> void:
 	if _hud != null and _beat == Beat.ARMORY:
-		_hud.objective = text if text != "" else "Trade with Rich at the counter [E]."
+		var fallback: String = "Trade with Rich at the counter [E]." if TouchUi.keys_shown() else "Trade with Rich at the counter."
+		_hud.objective = text if text != "" else fallback
 
 
 func _on_intro_finished() -> void:
@@ -1279,11 +1280,12 @@ func _on_beat_entered(b: int) -> void:
 			if _armory_return:
 				# back from the jail only to gear up for the river: no second welcome
 				if _hud:
-					_hud.objective = "Gear up for the river at Rich's counter [E]: the long rifle and the river gear."
+					_hud.objective = ("Gear up for the river at Rich's counter [E]: the long rifle and the river gear."
+						if TouchUi.keys_shown() else "Gear up for the river at Rich's counter: the long rifle and the river gear.")
 				_check_geared()
 			else:
 				if _hud:
-					_hud.objective = "Trade with Rich at the counter [E]."
+					_hud.objective = "Trade with Rich at the counter [E]." if TouchUi.keys_shown() else "Trade with Rich at the counter."
 				if _rich != null:
 					_rich.face_point(_player_pos)
 					look_toward(_rich.position + Vector3(0.0, RICH_HEIGHT * 0.85, 0.0), 2.2)

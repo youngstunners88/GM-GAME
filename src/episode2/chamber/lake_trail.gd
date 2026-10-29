@@ -878,7 +878,7 @@ func _tick_unhorse(delta: float) -> void:
 			_horse.rotation.x = 0.0
 			_horse.rotation.z = -1.12
 		if _hud != null:
-			_hud.objective = "On foot to Logan's Lake. Hold W to follow the trail."
+			_hud.objective = "On foot to Logan's Lake. Hold W to follow the trail." if TouchUi.keys_shown() else "On foot to Logan's Lake. Follow the trail."
 
 
 func _begin_shore() -> void:

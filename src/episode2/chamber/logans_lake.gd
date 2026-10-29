@@ -215,7 +215,7 @@ func _on_beat_entered(b: int) -> void:
 			_hud.objective = "Investigate the depth. Listen to Logan."
 			_say(LINES[0], 6.5)
 			_gesture("Greet", 2.5)
-		Beat.STAGE: _hud.objective = "Check the staged cargo beside Logan [E]."
+		Beat.STAGE: _hud.objective = "Check the staged cargo beside Logan [E]." if TouchUi.keys_shown() else "Check the staged cargo beside Logan."
 		Beat.HANDOFF:
 			_hud.objective = "Follow the shore trail to the river overlook."
 			_say("LOGAN: Cargo checked. The depth holds. Follow the outflow to the high ground—the day-88 shipment leaves from here.", 8.5)
