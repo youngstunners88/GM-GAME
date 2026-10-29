@@ -19,11 +19,16 @@ func run() -> void:
 	root.add_child(session)
 	current_scene = session
 	session.set_process(false)
+	# Use the actual runner-panic warm-up before the film, as normal play does.
+	session._warm_chamber_assets()
+	await create_timer(3.5).timeout
 	var facility = load("res://src/episode2/chamber/smelting_facility.tscn").instantiate()
 	session.add_child(facility)
 	session._active = facility
 	session._wire_chamber(facility)
 	facility.setup()
+	session._mode = session.Mode.CHAMBER
+	session.set_process(true)
 	var film = facility.get_video_film()
 	print("FIX_WEB_FILM_READY")
 	var start := Time.get_ticks_msec()
@@ -31,9 +36,16 @@ func run() -> void:
 	var last_pos := 0.0
 	var worst_gap := 0
 	var updates := 0
+	var render_frames := 0
+	var last_frame_ms: int = start
+	var worst_frame_ms := 0
 	var unwanted_prebuild := false
 	while facility.get_beat_name() == "CINEMATIC" and Time.get_ticks_msec()-start < 100000:
 		await process_frame
+		render_frames += 1
+		var frame_now: int = Time.get_ticks_msec()
+		worst_frame_ms = maxi(worst_frame_ms, frame_now-last_frame_ms)
+		last_frame_ms = frame_now
 		if film._video.is_playing():
 			var p: float = film._video.stream_position
 			if p > last_pos:
@@ -42,12 +54,16 @@ func run() -> void:
 				last_time = Time.get_ticks_msec()
 				last_pos = p
 		if not film.is_done() and session._pb_node != null: unwanted_prebuild = true
-	print("FIX_FILM_METRICS ", JSON.stringify({"picture_s":last_pos,"wall_ms":Time.get_ticks_msec()-start,"updates":updates,"worst_gap_ms":worst_gap,"reason":film.finish_reason}))
+	print("FIX_FILM_METRICS ", JSON.stringify({"picture_s":last_pos,"wall_ms":Time.get_ticks_msec()-start,"clock_updates":updates,"worst_clock_update_ms":worst_gap,"render_frames":render_frames,"worst_frame_ms":worst_frame_ms,"reason":film.finish_reason}))
 	check("exported founder film decodes to normal completion", film.finish_reason == "end" and last_pos > 55.0)
 	check("exported film has no elevator background rendering", not unwanted_prebuild)
 	check("exported film enters the ready lesson", facility.get_beat_name() == "VERB_TEACH" and facility._room_ready)
+	session.set_process(false)
 	session.queue_free()
 	await process_frame
+	# The UI checks use real panel/host logic; the separate native captures
+	# verify the town. Avoid benchmarking its 3D renderer in software here.
+	root.disable_3d = true
 	var town = load("res://src/episode2/chamber/gold_town.tscn").instantiate()
 	root.add_child(town)
 	current_scene = town

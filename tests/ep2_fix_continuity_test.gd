@@ -53,6 +53,7 @@ func _ready() -> void:
 	facility._update_camera(0.0)
 	var camera_before: Transform3D = facility._camera.global_transform
 	session._drive_portal()
+	check("door image stays beyond the near clip at the physical threshold", facility._portal_quad.position.z-facility._camera.position.z > facility._camera.near*2.0)
 	check("portal excludes duplicate first-person weapon and HUD", not prepared._vm._shown and not prepared._hud.visible)
 	check("portal mirrors Inferno's actual moving pose", prepared._bull.anim.current_animation == facility._bull.walk_clip and absf(prepared._bull.anim.current_animation_position-0.4)<0.001 and absf(prepared._bull.rotation.y-0.3)<0.001)
 	session._chain_id = "mine_lift"

@@ -14,4 +14,5 @@ Primary paths: src/episode2/session/ep2_session_root.gd, session/world_routes.gd
 - A parked chamber is still alive. Disconnect its forward chamber_cleared/failed listeners when parking so a later revisit cannot trigger an obsolete chain transition.
 - Keep film playback isolated from lift/woods GPU warm-up and heavy asset upgrades. Schedule later-room prebuild when the visible lesson starts, early enough to be ready at the door.
 - Capture both sides of the doorway with held forward, lateral and backward input; compare world-space camera/weapon transforms, not just stored player coordinates.
+- Review the final approach inside the camera's near distance. A portal image at the exact handoff plane vanishes before the cut, exposing the old rock wall. The inset display plane must remain visible, and its late depth-aware composition must preserve the opaque first-person weapon. Never solve the rifle overlap by making its materials depth-blind; its own solid surfaces still need correct occlusion.
 - Re-run world routes, full town story, stable yard, seamless chain, transition prebuild and the new integrated regressions. Preserve map and explicit E mount.

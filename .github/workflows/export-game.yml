@@ -329,7 +329,7 @@ jobs:
           grep -q 'EP2_FIX_MOTION: 13 checks, 0 failed' fix-motion-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' fix-motion-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_fix_continuity_test.tscn > fix-continuity-tests.log 2>&1
-          grep -q 'EP2_FIX_CONTINUITY: 17 checks, 0 failed' fix-continuity-tests.log
+          grep -q 'EP2_FIX_CONTINUITY: 18 checks, 0 failed' fix-continuity-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' fix-continuity-tests.log; then exit 1; fi
           timeout 90 "$GODOT_BIN" --headless res://tests/panel_close_test.tscn > panel-close-tests.log 2>&1
           grep -q 'PANEL_CLOSE: 8 checks, 0 failed' panel-close-tests.log

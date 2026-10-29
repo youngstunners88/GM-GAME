@@ -83,6 +83,9 @@ const EXIT_POSITION := Vector3(0.0, 0.0, 15.0)
 ## tunnel mouth on it (MineLiftChamber.PORTAL_Z = -13.6): every point past the doorway IS a point of the lift room, z - 30 m.
 const PORTAL_Z := 16.4
 const PORTAL_SIZE := Vector2(4.3, 4.4)
+## The image stays beyond the eye's near clip until the physical threshold is crossed.
+const PORTAL_IMAGE_INSET := 0.18
+const PORTAL_VIEWMODEL_DEPTH := 1.6
 const LIFT_OFFSET := Vector3(0.0, 0.0, -30.0)
 ## The hideout's grading darkens the doorway image a little (Compatibility grades every material): measured with
 ## tools/ep2_shots/door_portal_shot.tscn (cut_a vs cut_b centre luminance), this gain makes the last hideout frame match the first lift frame.
@@ -1290,9 +1293,10 @@ func portal_attach(tex: Texture2D) -> void:
 		var sm := ShaderMaterial.new()
 		sm.shader = load("res://src/episode2/art/ep2_portal.gdshader")
 		sm.set_shader_parameter("gain", PORTAL_GAIN)
+		sm.set_shader_parameter("viewmodel_depth", PORTAL_VIEWMODEL_DEPTH)
 		_portal_quad.material_override = sm
 		_portal_quad.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		_portal_quad.position = Vector3(0.0, PORTAL_SIZE.y * 0.5, PORTAL_Z)
+		_portal_quad.position = Vector3(0.0, PORTAL_SIZE.y * 0.5, PORTAL_Z + PORTAL_IMAGE_INSET)
 		add_child(_portal_quad)
 	(_portal_quad.material_override as ShaderMaterial).set_shader_parameter("portal_tex", tex)
 	_portal_quad.visible = true

@@ -38,6 +38,7 @@ func _ready() -> void:
 	facility._bull.anim.seek(.4,true)
 	facility._update_camera(0)
 	session._drive_portal()
+	print("DOOR_CLIP near=",facility._camera.near," plane_distance=",facility._portal_quad.position.z-facility._camera.position.z)
 	await shot("door-before")
 	print("DOOR_BEFORE ",facility._camera.global_transform)
 	facility._player_pos.z += .08

@@ -21,6 +21,7 @@ The founder reports these defects and asks for skills followed by implementation
 - Utah's authored mocap still receives procedural bob and its root/leg performance is not contact constrained. Install an instance-owned rest-aware in-place gait, with stance speed matched to actor translation; keep existing work gestures.
 - The film hides the main viewport's 3D pass but requests elevator prebuild during playback. The independent SubViewport can still build and render the elevator and woods. Move that request to the lesson's existing early prebuild point.
 - The physical elevator handoff clamps x to ±1.2m and yaw to ±0.9 radians, even when the doorway camera showed a different position/gaze. Preserve the physical pose, and hide the next room's first-person viewmodel/HUD while it is only a portal view.
+- Actual before/after captures found a separate remaining flash: the doorway image at z=16.4 is only 4cm ahead of the final camera, inside its 5cm near clip. It disappears and exposes the old room's rock wall. An 18cm image inset retains the same logical doorway and mapped camera; late depth-aware composition preserves the opaque held gun instead of cutting it across the portal.
 - Rich's shop only exposes keyboard cancellation. Use a shared nonfocusable × calling each panel's own close/resume path; do not synthesize Escape or change browser fullscreen.
 
 ## Required proof
