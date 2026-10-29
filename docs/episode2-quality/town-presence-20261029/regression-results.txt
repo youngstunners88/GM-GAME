@@ -1,0 +1,90 @@
+Full workflow logs: /tmp/tmp.WtLH1oj5Hk; all gates executed.
+Initial new defect: freed _active reference in ep-touch-controls; corrected and full touch gate rerun passes.
+The same three pause tap-target geometry failures are the repository-documented local machine exception.
+Affected full-town, crowd, autonomy, healing, road and delivery reruns supersede overlapping initial evidence.
+
+armory-guns-tests.log: EP2_ARMORY_GUNS: ALL PASS
+armory2-tests.log: EP2_ARMORY2: ALL PASS
+bear-attacks-tests.log: EP2_BEAR_ATTACKS: ALL PASS
+blaze-band-density-tests.log: BLAZE_BAND_DENSITY: ALL PASS
+blaze-band-layout-tests.log: BLAZE_BAND_LAYOUT: ALL PASS
+blaze-claim-reset-tests.log: BLAZE_CLAIM_RESET: ALL PASS
+blaze-diamond-bounce-repro-tests.log: BLAZE_DIAMOND_BOUNCE_REPRO: ALL PASS
+blaze-framing-tests.log: BLAZE_FRAMING: ALL PASS
+blaze-hud-label-fit-tests.log: BLAZE_HUD_LABEL_FIT: ALL PASS
+blaze-hud-mouse-filter-tests.log: BLAZE_HUD_MOUSE_FILTER: ALL PASS
+blaze-input-buffer-tests.log: BLAZE_INPUT_BUFFER: ALL PASS
+blaze-lifecycle-ee-tests.log: BLAZE_LIFECYCLE_E2E: ALL PASS
+blaze-lounge-banner-tests.log: BLAZE_LOUNGE_BANNER: ALL PASS
+blaze-rush-layout-tests.log: BLAZE_RUSH_LAYOUT: ALL PASS
+blaze-rush-no-pixelation-tests.log: BLAZE_RUSH_NO_PIXELATION: ALL PASS
+blaze-rush-touch-tests.log: BLAZE_RUSH_TOUCH: ALL PASS
+blaze-rush-window-tests.log: BLAZE_RUSH_WINDOW: ALL PASS
+blaze-transition-palette-tests.log: BLAZE_TRANSITION_PALETTE: ALL PASS
+blood-tests.log: EP2_BLOOD: ALL PASS
+bow-tests.log: EP2_BOW: ALL PASS
+character-motion-tests.log: EP2_CHARACTER_MOTION: ALL PASS
+companion-cart-tests.log: EP2_COMPANION_CART: ALL PASS
+debug-overlay-beacon-tests.log: DEBUG_OVERLAY_BEACON: ALL PASS
+door-stride-tests.log: EP2_DOOR_STRIDE: ALL PASS
+doorway-presence-tests.log: EP2_DOORWAY_PRESENCE: 5 checks, 0 failed
+ep-access-code-tests.log: EP2_ACCESS_CODE: ALL PASS
+ep-session-root-tests.log: EP2_SESSION_ROOT: ALL PASS
+ep-theme-handoff-tests.log: EP2_THEME_HANDOFF: ALL PASS
+ep2-pbr-tests.log: EP2_PBR: ALL PASS
+ep2-smelter-kit-tests.log: EP2_SMELTER_KIT: ALL PASS
+ep2-town-furniture-tests.log: EP2_TOWN_FURNITURE: ALL PASS
+exit-bridge-tests.log: EP2_EXIT_BRIDGE: ALL PASS
+farmer-trip-tests.log: EP2_FARMER_TRIP: 28 checks, 0 failed
+fix-continuity-tests.log: EP2_FIX_CONTINUITY: 20 checks, 0 failed
+fix-document-tests.log: EP2_FIX_DOCUMENT: 12 checks, 0 failed
+fix-motion-tests.log: EP2_FIX_MOTION: 13 checks, 0 failed
+founder-cast-tests.log: EP2_FOUNDER_CAST: ALL PASS
+gatling-hits-tests.log: EP2_GATLING_HITS: ALL PASS
+gold-town-tests.log: EP2_GOLD_TOWN: ALL PASS
+harness-hooks-inert-tests.log: HARNESS_HOOKS_INERT: ALL PASS
+harness-hooks-tests.log: CHECK_HARNESS_HOOKS: ALL PASS
+healing-tabs-tests.log: EP2_HEALING_TABS: 14 checks, 0 failed
+jack-hammer-char-tests.log: EP2_JACK_HAMMER_CHARACTER: ALL PASS
+jack-hammer-tests.log: EP2_JACK_HAMMER: ALL PASS
+lake-art-tests.log: LAKE_ART: 27 checks, 0 failed
+lake-theme-tests.log: EP2_LAKE_THEME: 8 checks, 0 failed
+lake-trail-tests.log: EP2_LAKE_TRAIL: ALL PASS
+level-return-audio-tests.log: LEVEL_RETURN_AUDIO: ALL PASS
+logan-cabin-tests.log: LOGAN_CABIN: 26 checks, 0 failed
+logans-lake-tests.log: LOGANS_LAKE: ALL PASS
+manual-checkpoint-tests.log: MANUAL_CHECKPOINT: 36 checks, 0 failed
+nft-tests.log: NFT_ISSUER: ALL PASS
+panel-close-tests.log: PANEL_CLOSE: 8 checks, 0 failed
+personal-armory-tests.log: EP2_PERSONAL_ARMORY: ALL PASS
+portal-tests.log: PORTAL ROOMS: ALL PASS
+portal-traversal.log: PORTAL TRAVERSAL: ALL PASS
+probe-selftest-tests.log: MOBILE_TRANSITION_PROBE_SELFTEST: ALL PASS
+purse-tests.log: EP2_PURSE: ALL PASS
+quad-music-tests.log: EP2_QUAD_MUSIC: ALL PASS
+quiz-tests.log: QUIZ_PROTOCOL_ONLY: ALL PASS
+ranch-road-presence-tests.log: EP2_RANCH_ROAD_PRESENCE: 9 checks, 0 failed
+ranch-tests.log: EP2_RANCH: ALL PASS
+region-map-tests.log: REGION_MAP: 10 checks, 0 failed
+road-cart-motion-tests.log: EP2_ROAD_CART_MOTION: 12 checks, 0 failed
+save-compat-tests.log: SAVE_COMPAT: ALL PASS
+scene-router-reveal-tests.log: SCENE_ROUTER_REVEAL: ALL PASS
+seamless-chain-tests.log: SEAMLESS_CHAIN: ALL PASS
+stable-yard-tests.log: EP2_STABLE_YARD: ALL PASS (98 checks)
+street-people-assets-tests.log: EP2_STREET_PEOPLE_ASSETS: ALL PASS (617 checks)
+tabs-ledger-tests.log: EP2_TABS_LEDGER: ALL PASS
+touch-controls-profiles-tests.log: TOUCH_CONTROLS_PROFILES: ALL PASS
+touch-scene-swap-cleanup-tests.log: TOUCH_SCENE_SWAP_CLEANUP: ALL PASS
+touch-tests.log: MOBILE_TOUCH_CONTROLS: ALL PASS
+town-audio-tests.log: EP2_TOWN_AUDIO: ALL PASS (pending recordings: 0)
+town-autonomy-tests.log: EP2_TOWN_AUTONOMY: ALL PASS (33 checks)
+town-feel-tests.log: EP2_TOWN_FEEL: ALL PASS
+town-law-tests.log: EP2_TOWN_LAW: ALL PASS
+town-life-tests.log: EP2_TOWN_LIFE: ALL PASS
+town-people-tests.log: EP2_TOWN_PEOPLE: ALL PASS
+transition-director-tests.log: TRANSITION_DIRECTOR: ALL PASS
+transition-feedback-tests.log: TRANSITION_FEEDBACK: ALL PASS (reveal-to-ride 12.03s; max camera step 0.098m)
+transition2-tests.log: TRANSITION2: ALL PASS
+vault-touch-tests.log: VAULT_TOUCH_DIALOGUE: ALL PASS
+weapon-icons-tests.log: EP2_WEAPON_ICONS: ALL PASS
+world-route-tests.log: EP2_WORLD_ROUTES: 26 checks, 0 failed

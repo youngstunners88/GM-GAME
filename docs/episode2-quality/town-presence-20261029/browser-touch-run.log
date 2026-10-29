@@ -1,0 +1,10 @@
+[PASS] exported Dude grants exactly one bud
+TC_WEB_OPEN_READY {"hold":[757,674],"size":[1558,720]}
+[PASS] exported Tabs pauses with a finger-sized supply action
+TC_WEB_SUPPLIES_READY {"bud":[693.769226074219,280.707702636719],"close":[36,37],"use":[1037.76928710938,280.707702636719]}
+[PASS] exported real pointer selects the bud
+[PASS] exported use restores three hearts and spends one
+[PASS] exported full and empty cannot consume again
+TC_WEB_HEALED
+[PASS] exported close restores play
+TC_WEB_DONE:0

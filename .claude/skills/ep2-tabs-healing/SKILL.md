@@ -16,3 +16,7 @@ Use ep2-world-presence-and-consumables and the existing mobile/touch and pause c
 ## Verified repair lesson
 
 Godot Input.parse_input_event expects window coordinates. Native GUI fixtures with canvas coordinates must use viewport.push_input(event,true), allow layout frames and send mouse motion before click. Do not change production because a malformed coordinate fixture misses a button. Keep per-button same-frame activation guards and refresh selection/use immediately.
+
+Use scripts/lib/pw.mjs multiTouch for browser fingers: CDP touchEnd lists the lifted finger, not the remaining fingers. A malformed release closes the held holster and invalidates the test. The verified two-finger fixture uses multiTouch and noKeyboard; do not change gameplay to compensate for a wrong CDP event.
+
+Supply buttons use48dp height, with icons/count scaled by metrics.dp divided by the panel scale. A48-canvas-unit button was only26dp on an844×390 landscape phone. Test physical dp as well as successful taps; keep all armory key labels/footer hints behind TouchUi.keys_shown().

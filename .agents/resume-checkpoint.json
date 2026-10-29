@@ -1,10 +1,11 @@
 {
-  "objective": "Finish town doorway/road presence, continuing farmer delivery, full-heal Tabs bud and supplied lake music; preserve verified FIX doc release",
+  "objective": "Finish verified production release of town doorway/road continuity, same farmer business trip, full-heal Tabs bud and supplied lake theme; preserve all FIX doc repairs",
   "branch": "codex/founder-fix-document-1029",
-  "head": "11cd0de5; runtime changes dirty",
+  "runtime_baseline": "ce3e7827 (343d9b74 plus touch-sized UI); proof docs ready to commit",
   "observed_master": "6823cda7",
-  "prior_release": "c903f880 source / 6823cda7 export; CI40832421900/job123309437553, actual54.27MiB fresh butler, publicBUILD2026-10-29-c903f88 extras200/ready and wrong-code keyboard rejection; receipt in fix-document-20261029",
-  "current_evidence": "Scratch /workspace/work/town-continuity-1029; new REVIEW in docs/episode2-quality/town-presence-20261029. Final door5 road9 healing14 farmer28 theme8 pass. Farmer actual duel/resume, wall survey, restore/carry/death. Full suite /tmp/tmp.WtLH1oj5Hk exposed freed _active in _persist_town; fixed. Recheck touch and full town pass; crowd/autonomy reruns running. Road dust shader final native review queued after tests.",
-  "pending": "Finish autonomy, native road and edge cameras; real export and 2 browser profiles (external fixture prepared), commit/freshpack/security/title/texture; release_gates.py reconcile; normal ship and verify actualCI/butler/publicBUILD. No provider spend.",
-  "environment": "Godot4.3; Xorg:98 task-owned. Serialize with flock -o /tmp/gm-godot.lock. Templates XDG_DATA_HOME=/workspace/work/cart-rebuild/godot-data. Node public fetch needs NODE_USE_ENV_PROXY=1 and NODE_EXTRA_CA_CERTS configured CA; Chromium trusted wrapper. Game-dev/Blender5.2 unavailable; Blender4.3.2 used. Do not print connector b64 or credential values."
+  "prior_release": "c903f880/BUILD2026-10-29-c903f88, CI40832421900/job123309437553 actual54.27MiB butler and public access verified; original receipt retained",
+  "verified": "64 focused native pass; full workflow reconciled with freed _active touch teardown fix + affected town/crowd/autonomy/ledger reruns. Native/Compatibility and final WebGL doorway/road cameras inspected. New browser desktop7/two-finger6 pass incl >=44dp targets; finalbuttons48dp/no key hints. Warm197637472B/fresh197604256B main (<190MiB); extras136166784B. Security/title5/harness/texture68 pass. Scratch release_gates.py ce3e7827 passes. No provider spend.",
+  "evidence": "docs/episode2-quality/town-presence-20261029/REVIEW.md and scratch /workspace/work/town-continuity-1029. New4 skills routed.",
+  "next": "Commit current proof docs; run ship-to-master with verified scratch release_gates.py ce3e7827; refresh/merge concurrent master/branch (web-only CI outputs). Verify actual masterCI/butler/publicBUILD. Then download/replay served packs, public keyboard wrong-code rejection, receipt, final docs commit/push/master. No live follow-up claim before proof.",
+  "environment": "Godot4.3; Xorg:98; flock -o /tmp/gm-godot.lock for GPU/export. Node public fetch requires NODE_USE_ENV_PROXY=1 and configured CA; Chromium trusted wrapper. Localserver8917 web_verify. No game-dev/Blender5.2; Blender4.3 used. Never print b64/credentials."
 }
