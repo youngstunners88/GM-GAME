@@ -345,7 +345,7 @@ jobs:
           grep -q 'EP2_HEALING_TABS: 14 checks, 0 failed' healing-tabs-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' healing-tabs-tests.log; then exit 1; fi
           timeout 240 "$GODOT_BIN" --headless res://tests/ep2_farmer_trip_test.tscn > farmer-trip-tests.log 2>&1
-          grep -q 'EP2_FARMER_TRIP: 28 checks, 0 failed' farmer-trip-tests.log
+          grep -q 'EP2_FARMER_TRIP: 29 checks, 0 failed' farmer-trip-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' farmer-trip-tests.log; then exit 1; fi
           timeout 90 "$GODOT_BIN" --headless res://tests/ep2_lake_theme_test.tscn > lake-theme-tests.log 2>&1
           grep -q 'EP2_LAKE_THEME: 8 checks, 0 failed' lake-theme-tests.log

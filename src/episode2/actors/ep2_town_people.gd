@@ -517,6 +517,12 @@ func reserve_delivery(id: String, restoring: bool = false) -> Person:
 	_release(p)
 	p.folk.stop()
 	p.external_owner="road_farmer"
+	if not (restoring and p.state in ["flee","shelter"]):
+		p.state="pause"
+		p.shop=""
+		p.seat=-1
+		p.slot=-1
+		p.waypoints.clear()
 	return p
 
 func release_delivery(p: Person) -> void:
@@ -1168,6 +1174,25 @@ func snapshot() -> Dictionary:
 			"threat": [p.threat.x, p.threat.y], "safety": [p.safety.x, p.safety.y],
 			"blocked": p.blocked, "recoveries": p.recoveries, "activity_time": p.activity_time,
 			"clip": "Idle" if p.state in CEL_STATES else _snapshot_clip(p)})
+		if p.external_owner=="road_farmer" and p.state not in ["flee","shelter"]:
+			# The trip saves its own 3D route. Represent its borrowed actor using
+			# the existing shop schema so one interior carrier cannot invalidate
+			# the entire crowd snapshot's outdoor navigation checks.
+			var row: Dictionary=rows[-1]
+			row.state="pause"
+			row.destination=""
+			row.shop=""
+			row.slot=-1
+			row.seat=-1
+			row.partner=""
+			row.waypoints=[]
+			row.shop_legs=[]
+			var local: Vector3=Ep2GoldTown.building_xform(Ep2GoldTown.entry("Bldg_A")).affine_inverse()*p.folk.position
+			var footprint: Array=Ep2GoldTown.FOOTPRINT.Bldg_A
+			if absf(local.x)<=float(footprint[0])*.5 and local.z>=-float(footprint[1]) and local.z<=Ep2GoldTown.PORCH_DEPTH+1.5:
+				row.state="shop_buy"
+				row.shop="Bldg_A"
+				row.height=p.folk.position.y
 	return {"version": 1, "elapsed": elapsed, "people": rows, "mode": _mode}
 
 func _number(value: Variant, low: float, high: float) -> bool:

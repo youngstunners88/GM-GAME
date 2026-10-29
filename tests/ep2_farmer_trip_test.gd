@@ -56,6 +56,7 @@ func _ready() -> void:
 	var stages: Dictionary={}
 	var clear_of_walls: bool=true
 	var carrying_save: Dictionary={}
+	var carrying_town: Dictionary={}
 	var carrying_position: Vector3
 	var duel_tested: bool=false
 	var duel_safe: bool=false
@@ -76,9 +77,11 @@ func _ready() -> void:
 				town.get_people().step(.05,Vector3(50,0,1300))
 				trip.tick(session,.05)
 			resumed=trip.worker!=null and trip.worker.state not in ["flee","shelter"] and (trip.worker.folk.is_walking() or trip.phase!="collect")
-		if carrying_save.is_empty() and trip.phase=="deliver" and trip.worker.folk.position.y>.02:
+		if carrying_save.is_empty() and trip.phase=="deliver" and trip._inside_store(trip.worker.folk.position):
 			carrying_save=trip.snapshot()
 			carrying_position=trip.worker.folk.position
+			session._persist_town()
+			carrying_town=GameManager.town_people_state.duplicate(true)
 		if trip.phase=="inbound":
 			for row in trip._collision:
 				var centre: Vector2=row[0][0]
@@ -108,7 +111,7 @@ func _ready() -> void:
 	check("restoring completed business never repeats the handover",trip.phase=="complete" and trip.delivered)
 	check("restored wheel phase matches the saved journey",absf(trip.cart.distance_m-float(complete.distance))<.001)
 	check("completed delivery restore remains the same town survey",trip.cart.position.distance_to(Ep2FarmerTrip.PARK)<.01)
-	check("the actual porch/carry state can be saved",not carrying_save.is_empty())
+	check("the actual interior/carry state can be saved",not carrying_save.is_empty())
 	var old_cart: Ep2RoadCart=trip.cart
 	var old_parcel: Node3D=trip.parcel
 	trip.clear()
@@ -117,6 +120,16 @@ func _ready() -> void:
 	trip.enter_town(town,null,carrying_save)
 	check("mid-delivery restore retains the real worker and exact height",trip.worker!=null and trip.worker.folk.position.distance_to(carrying_position)<.001)
 	check("mid-delivery restore reconnects the same carried goods",trip.worker!=null and trip.worker.folk.held_prop("FarmerDelivery")==trip.parcel and not trip.delivered)
+	GameManager.town_people_state=carrying_town
+	var loaded:=Ep2SessionRoot.new()
+	add_child(loaded)
+	loaded.set_process(false)
+	loaded.set_physics_process(false)
+	loaded._chain_id="gold_town"
+	loaded._enter_chamber_chained(0)
+	loaded._active.set_physics_process(false)
+	check("a real session load retains the whole town during a shop delivery",is_equal_approx(loaded._active.get_people().elapsed,float(carrying_town.elapsed)) and loaded.farmer_trip.worker!=null and loaded.farmer_trip.worker.folk.position.distance_to(carrying_position)<.001)
+	loaded.free()
 	var interrupted_worker: Ep2TownPeople.Person=trip.worker
 	interrupted_worker.folk.fall_dead()
 	trip.tick(session,.1)
