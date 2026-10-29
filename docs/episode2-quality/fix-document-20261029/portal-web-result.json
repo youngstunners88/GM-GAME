@@ -1,0 +1,8 @@
+{
+  "pass": true,
+  "errors": [],
+  "checks": [
+    "[PASS] portal preserves opaque foreground self-depth",
+    "[PASS] portal replaces the old wall at the near clip"
+  ]
+}

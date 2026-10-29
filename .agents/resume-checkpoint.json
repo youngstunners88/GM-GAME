@@ -1,23 +1,15 @@
 {
-  "objective": "Implement FIX Google Doc: film/elevator continuity, Sheriff/Utah gait, fullscreen-safe panel exits, Mike Dean-to-Dude horse referral",
-  "observed_remote_sha": "a862c16515f55bff53af55fa3c4619dd248dd57a",
+  "objective": "Repair founder FIX document and verify production release",
   "branch": "codex/founder-fix-document-1029",
-  "source_document": "1h0P1K6xiPnvdBqolLs7VxOecj5y2P7VF_T6W6ifw1KI",
-  "paths": [
-    "src/episode2/session/world_routes.gd",
-    "src/episode2/chamber/gold_town.gd",
-    "src/episode2/chamber/mine_lift.gd",
-    "src/episode2/chamber/smelting_facility.gd",
-    "src/episode2/actors/ep2_grounded_walk.gd",
-    "src/ui/panel_close.gd"
-  ],
-  "evidence": "Baseline routed referral test 4 failures. Initial focused suites 47 pass; continuity expanded to17 including actual Inferno preview phase/owner. Town/player-camera gait strips and trade X inspected. Blender4.3.2 lower-body Sheriff skin QA passes (no unweighted or excess influences), all original materials retained. Last contact errors Sheriff.000068m/Utah.000229m, swing.075m. No provider spend.",
+  "runtime_verification_sha": "5828ac41",
+  "observed_remote_sha": "a862c16515f55bff53af55fa3c4619dd248dd57a",
+  "evidence": "docs/episode2-quality/fix-document-20261029/REVIEW.md",
+  "verified": "Native55 + exported browser8 + WebGL pixels2; full-town/affected reruns pass; real export0script errors; fresh main197534560B. Initial full CI block only old groundedcarry whitelist failed, full town corrected/rerun. Existing exact3 pause geometry machine exceptions retained. SkinQA and actual player cameras reviewed. Meshy spend0.",
   "pending": [
-    "Complete full CI-equivalent suite; rerun updated full-town whitelist and continuity/door tests",
-    "Complete queued exact web export and full-film/fullscreen browser fixture",
-    "Review exact physical doorway captures",
-    "Stage security/title/harness/fresh-pack gates, commit push master CI upload and public BUILD"
+    "Stage security/title/harness final gates; commit evidence; normal ship-to-master",
+    "Verify exact master CI including actual butler upload, public BUILD/access input",
+    "Replay exact public packs; fill truthful release receipt and validate completeness"
   ],
   "scratch": "/workspace/work/fix-doc-1029",
-  "notes": "Existing pause-menu geometry machine difference (3 exact known lines) remains. Full local suite logs /tmp/tmp.JMidOwxF1G. Export and affected reruns queue on /tmp/gm-godot.lock. Xorg task-owned PID3549 display99. Do not claim shipped until actual deployment/public proof."
+  "notes": "Godot4.3; XDG templates /workspace/work/cart-rebuild/godot-data; lock /tmp/gm-godot.lock. Local server8907 root web_verify. Browser instrumentations are external only. Never claim phone/smooth24fps or physical browser Escape from these checks."
 }

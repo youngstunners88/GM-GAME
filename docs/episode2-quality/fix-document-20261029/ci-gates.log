@@ -1,0 +1,5 @@
+→ CI gates (workflow lines 312-595), logs in /tmp/tmp.JMidOwxF1G
+✗ CI gate FAILED — this would fail on master too:
+/tmp/tmp.JMidOwxF1G/gold-town-tests.log:  [FAIL] both are rigged bodies, moving on their authored clips (not statues with a bob) walk groundedcarry
+GATE_MISSING gold-town-tests.log: EP2_GOLD_TOWN: ALL PASS
+  full logs: /tmp/tmp.JMidOwxF1G

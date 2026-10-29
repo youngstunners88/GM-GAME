@@ -1,0 +1,1 @@
+{"ok":true,"pass":true,"errors":[],"warnings":["root bone 'Hips' not at world origin"],"bones":9,"deform_bones":9,"profile":{},"skin":{"FounderSheriff":{"verts":11753,"unweighted":0,"over_4":0,"not_normalized":0,"weights_on_root":2729,"weights_on_nondeform":0,"groups_without_bone":[],"asymmetric_verts_sampled":0,"deform_bones_without_group":0}},"fixed":false}

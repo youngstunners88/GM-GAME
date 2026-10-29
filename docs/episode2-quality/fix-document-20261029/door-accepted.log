@@ -1,0 +1,1572 @@
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+WARNING: Could not set V-Sync mode, as changing V-Sync mode is not supported by the graphics driver.
+     at: set_use_vsync (platform/linuxbsd/x11/gl_manager_x11.cpp:360)
+OpenGL API 4.5 (Core Profile) Mesa 25.0.7-2+deb13u1 - Compatibility - Using Device: Mesa - llvmpipe (LLVM 19.1.7, 256 bits)
+ALSA lib confmisc.c:855:(parse_card) cannot find card '0'
+ALSA lib conf.c:5205:(_snd_config_evaluate) function snd_func_card_inum returned error: No such file or directory
+ALSA lib confmisc.c:422:(snd_func_concat) error evaluating strings
+ALSA lib conf.c:5205:(_snd_config_evaluate) function snd_func_concat returned error: No such file or directory
+ALSA lib confmisc.c:1342:(snd_func_refer) error evaluating name
+ALSA lib conf.c:5205:(_snd_config_evaluate) function snd_func_refer returned error: No such file or directory
+ALSA lib conf.c:5728:(snd_config_expand) Evaluate error: No such file or directory
+ALSA lib pcm.c:2722:(snd_pcm_open_noupdate) Unknown PCM default
+ERROR: Condition "status < 0" is true. Returning: ERR_CANT_OPEN
+   at: init_output_device (drivers/alsa/audio_driver_alsa.cpp:90)
+WARNING: All audio drivers failed, falling back to the dummy driver.
+     at: initialize (servers/audio_server.cpp:247)
+
+[BUILD] Lil Blunt Adventure — build dev-local
+[Touch] layout build phone_landscape (releases all) (state MENU)
+WARNING: Adding 'NockedArrow' as child to 'RecoveredBearBow' will make owner 'Model' inconsistent. Consider unsetting the owner beforehand.
+     at: add_child (scene/main/node.cpp:1579)
+WARNING: Adding 'RightHand' as child to 'RecoveredBearBow' will make owner 'Model' inconsistent. Consider unsetting the owner beforehand.
+     at: add_child (scene/main/node.cpp:1579)
+DOOR_CLIP near=0.05000000074506 plane_distance=0.21999931335449
+[Touch] profile platformer -> none (state MENU)
+DOOR_BEFORE [X: (-0.983844, 0, 0.17903), Y: (0.007159, 0.9992, 0.039343), Z: (-0.178886, 0.039989, -0.983057), O: (0.25, 1.584708, 16.36)]
+[Touch] profile none -> ep2_foot (state MENU)
+ERROR: Connection to remote host failed!
+   at: connect_to_host (core/io/stream_peer_tcp.cpp:131)
+ERROR: Connection to remote host failed!
+   at: connect_to_host (core/io/stream_peer_tcp.cpp:131)
+DOOR_AFTER [X: (-0.983844, 0, 0.17903), Y: (0.007159, 0.9992, 0.039343), Z: (-0.178886, 0.039989, -0.983057), O: (0.25, 1.584708, -13.56)]
+FIX_DOOR_REVIEW_DONE
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Parameter "material" is null.
+   at: material_casts_shadows (drivers/gles3/storage/material_storage.cpp:2490)
+ERROR: Parameter "material" is null.
+   at: material_is_animated (drivers/gles3/storage/material_storage.cpp:2477)
+ERROR: Parameter "material" is null.
+   at: material_get_instance_shader_parameters (drivers/gles3/storage/material_storage.cpp:2503)
+ERROR: Parameter "material" is null.
+   at: material_update_dependency (drivers/gles3/storage/material_storage.cpp:2515)
+ERROR: Pages in use exist at exit in PagedAllocator: N20RasterizerSceneGLES323GeometryInstanceSurfaceE
+   at: ~PagedAllocator (./core/templates/paged_allocator.h:170)
+ERROR: Pages in use exist at exit in PagedAllocator: N20RasterizerSceneGLES321GeometryInstanceGLES3E
+   at: ~PagedAllocator (./core/templates/paged_allocator.h:170)
+ERROR: 45 RID allocations of type 'N5GLES34MeshE' were leaked at exit.
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+ERROR: 2 shaders of type SceneShaderGLES3 were never freed
+   at: ~ShaderGLES3 (drivers/gles3/shader_gles3.cpp:835)
+ERROR: 15 RID allocations of type 'N5GLES38MaterialE' were leaked at exit.
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+     at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+ERROR: 2 RID allocations of type 'N5GLES36ShaderE' were leaked at exit.
+ERROR: 2 RID allocations of type 'N5GLES37TextureE' were leaked at exit.
+ERROR: Texture with GL ID of 214: leaked 4194303 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:79)
+ERROR: Texture with GL ID of 215: leaked 1048575 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:79)
+ERROR: Buffer with GL ID of 515: leaked 22464 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 516: leaked 33048 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 517: leaked 12576 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 518: leaked 6288 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 519: leaked 3144 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 520: leaked 1572 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 521: leaked 24408 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 522: leaked 35964 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 523: leaked 24576 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 524: leaked 12288 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 525: leaked 6144 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 526: leaked 3072 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 527: leaked 1536 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 528: leaked 768 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 529: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 530: leaked 1200 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 531: leaked 1272 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 532: leaked 480 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 533: leaked 240 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 534: leaked 120 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 535: leaked 4096 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 536: leaked 6144 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 537: leaked 3072 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 538: leaked 1536 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 539: leaked 768 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 540: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 541: leaked 156 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 542: leaked 12 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 543: leaked 72 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 544: leaked 120000 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 545: leaked 33048 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 546: leaked 12576 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 547: leaked 6288 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 548: leaked 3144 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 549: leaked 1572 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 550: leaked 197268 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 551: leaked 35964 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 552: leaked 24576 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 553: leaked 12288 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 554: leaked 6144 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 555: leaked 3072 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 556: leaked 1536 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 557: leaked 768 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 558: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 559: leaked 10020 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 560: leaked 1272 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 561: leaked 480 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 562: leaked 240 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 563: leaked 120 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 564: leaked 24648 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 565: leaked 6144 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 566: leaked 3072 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 567: leaked 1536 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 568: leaked 768 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 569: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 570: leaked 156 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 571: leaked 12 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 572: leaked 72 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 573: leaked 832 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 574: leaked 1224 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 575: leaked 768 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 576: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 577: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 578: leaked 96 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 579: leaked 48 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 580: leaked 24 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 581: leaked 288 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 582: leaked 264 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 583: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 584: leaked 96 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 585: leaked 48 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 586: leaked 24 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 587: leaked 7872 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 588: leaked 7896 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 589: leaked 3240 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 590: leaked 1620 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 591: leaked 6504 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 592: leaked 1224 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 593: leaked 768 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 594: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 595: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 596: leaked 96 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 597: leaked 48 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 598: leaked 24 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 599: leaked 2820 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 600: leaked 264 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 601: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 602: leaked 96 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 603: leaked 48 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 604: leaked 24 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 605: leaked 48860 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 606: leaked 7896 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 607: leaked 3240 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 608: leaked 1620 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 609: leaked 704 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 610: leaked 1008 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 611: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 612: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 613: leaked 96 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 614: leaked 864 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 615: leaked 1200 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 616: leaked 672 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 617: leaked 336 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 618: leaked 168 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 619: leaked 84 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 620: leaked 208 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 621: leaked 288 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 622: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 623: leaked 48 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 624: leaked 24 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 625: leaked 752 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 626: leaked 1104 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 627: leaked 768 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 628: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 629: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 630: leaked 96 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 631: leaked 1024 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 632: leaked 1368 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 633: leaked 864 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 634: leaked 432 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 635: leaked 216 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 636: leaked 4656 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 637: leaked 1008 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 638: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 639: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 640: leaked 96 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 641: leaked 4404 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 642: leaked 1200 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 643: leaked 672 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 644: leaked 336 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 645: leaked 168 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 646: leaked 84 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 647: leaked 936 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 648: leaked 288 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 649: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 650: leaked 48 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 651: leaked 24 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 652: leaked 5412 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 653: leaked 1104 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 654: leaked 768 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 655: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 656: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 657: leaked 96 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 658: leaked 5400 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 659: leaked 1368 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 660: leaked 864 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 661: leaked 432 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 662: leaked 216 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 663: leaked 832 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 664: leaked 1224 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 665: leaked 480 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 666: leaked 120 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 667: leaked 240 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 668: leaked 60 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 669: leaked 904 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 670: leaked 1332 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 671: leaked 768 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 672: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 673: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 674: leaked 96 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 675: leaked 24 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 676: leaked 48 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 677: leaked 4428 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 678: leaked 1224 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 679: leaked 480 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 680: leaked 120 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 681: leaked 240 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 682: leaked 60 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 683: leaked 7296 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 684: leaked 1332 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 685: leaked 768 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 686: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 687: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 688: leaked 96 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 689: leaked 24 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 690: leaked 48 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 691: leaked 1792 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 692: leaked 2688 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 693: leaked 1536 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 694: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 695: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 696: leaked 84 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 697: leaked 48 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 698: leaked 24 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 699: leaked 10944 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 700: leaked 2688 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 701: leaked 1536 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 702: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 703: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 704: leaked 84 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 705: leaked 48 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 706: leaked 24 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 707: leaked 816 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 708: leaked 792 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 709: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 710: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 711: leaked 96 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 712: leaked 48 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 713: leaked 7400 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 714: leaked 792 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 715: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 716: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 717: leaked 96 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 718: leaked 48 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 719: leaked 16384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 720: leaked 23424 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 721: leaked 9216 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 722: leaked 4608 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 723: leaked 2304 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 724: leaked 1152 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 725: leaked 6912 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 726: leaked 6336 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 727: leaked 3072 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 728: leaked 1536 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 729: leaked 768 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 730: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 731: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 732: leaked 2976 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 733: leaked 2736 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 734: leaked 1056 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 735: leaked 528 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 736: leaked 264 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 737: leaked 132 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 738: leaked 116736 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 739: leaked 23424 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 740: leaked 9216 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 741: leaked 4608 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 742: leaked 2304 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 743: leaked 1152 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 744: leaked 61580 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 745: leaked 6336 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 746: leaked 3072 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 747: leaked 1536 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 748: leaked 768 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 749: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 750: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 751: leaked 23260 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 752: leaked 2736 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 753: leaked 1056 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 754: leaked 528 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 755: leaked 264 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 756: leaked 132 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 757: leaked 624 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 758: leaked 864 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 759: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 760: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 761: leaked 96 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 762: leaked 48 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 763: leaked 1984 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 764: leaked 2832 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 765: leaked 1920 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 766: leaked 960 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 767: leaked 480 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 768: leaked 240 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 769: leaked 120 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 770: leaked 2808 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 771: leaked 864 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 772: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 773: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 774: leaked 96 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 775: leaked 48 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 776: leaked 11556 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 777: leaked 2832 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 778: leaked 1920 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 779: leaked 960 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 780: leaked 480 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 781: leaked 240 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 782: leaked 120 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 783: leaked 20640 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 784: leaked 29328 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 785: leaked 12768 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 786: leaked 6384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 787: leaked 448 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 788: leaked 624 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 789: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 790: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 791: leaked 96 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 792: leaked 24 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 793: leaked 170652 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 794: leaked 29328 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 795: leaked 12768 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 796: leaked 6384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 797: leaked 2448 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 798: leaked 624 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 799: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 800: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 801: leaked 96 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 802: leaked 24 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 803: leaked 9384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 804: leaked 13428 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 805: leaked 7296 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 806: leaked 3648 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 807: leaked 1824 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 808: leaked 68196 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 809: leaked 13428 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 810: leaked 7296 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 811: leaked 3648 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 812: leaked 1824 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 813: leaked 2720 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 814: leaked 4080 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 815: leaked 2688 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 816: leaked 1344 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 817: leaked 672 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 818: leaked 168 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 819: leaked 17892 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 820: leaked 4080 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 821: leaked 2688 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 822: leaked 1344 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 823: leaked 672 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 824: leaked 168 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 825: leaked 832 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 826: leaked 1200 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 827: leaked 768 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 828: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 829: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 830: leaked 48 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 831: leaked 17664 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 832: leaked 26208 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 833: leaked 15744 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 834: leaked 7872 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 835: leaked 3936 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 836: leaked 1968 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 837: leaked 984 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 838: leaked 1280 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 839: leaked 1776 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 840: leaked 960 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 841: leaked 480 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 842: leaked 13312 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 843: leaked 19584 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 844: leaked 11424 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 845: leaked 5712 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 846: leaked 2856 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 847: leaked 3744 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 848: leaked 1200 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 849: leaked 768 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 850: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 851: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 852: leaked 48 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 853: leaked 108384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 854: leaked 26208 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 855: leaked 15744 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 856: leaked 7872 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 857: leaked 3936 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 858: leaked 1968 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 859: leaked 984 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 860: leaked 6252 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 861: leaked 1776 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 862: leaked 960 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 863: leaked 480 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 864: leaked 72216 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 865: leaked 19584 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 866: leaked 11424 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 867: leaked 5712 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 868: leaked 2856 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 869: leaked 832 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 870: leaked 1200 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 871: leaked 768 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 872: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 873: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 874: leaked 96 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 875: leaked 17616 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 876: leaked 26136 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 877: leaked 14016 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 878: leaked 7008 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 879: leaked 3504 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 880: leaked 1752 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 881: leaked 876 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 882: leaked 1280 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 883: leaked 1776 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 884: leaked 1104 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 885: leaked 552 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 886: leaked 11648 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 887: leaked 17136 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 888: leaked 9696 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 889: leaked 4848 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 890: leaked 2424 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 891: leaked 3744 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 892: leaked 1200 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 893: leaked 768 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 894: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 895: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 896: leaked 96 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 897: leaked 107820 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 898: leaked 26136 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 899: leaked 14016 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 900: leaked 7008 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 901: leaked 3504 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 902: leaked 1752 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 903: leaked 876 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 904: leaked 6372 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 905: leaked 1776 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 906: leaked 1104 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 907: leaked 552 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 908: leaked 62352 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 909: leaked 17136 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 910: leaked 9696 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 911: leaked 4848 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 912: leaked 2424 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 913: leaked 1248 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 914: leaked 1848 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 915: leaked 768 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 916: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 917: leaked 48 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 918: leaked 96 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 919: leaked 24 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 920: leaked 8304 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 921: leaked 8364 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 922: leaked 4416 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 923: leaked 2208 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 924: leaked 1104 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 925: leaked 8772 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 926: leaked 1848 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 927: leaked 768 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 928: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 929: leaked 48 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 930: leaked 96 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 931: leaked 24 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 932: leaked 65520 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 933: leaked 8364 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 934: leaked 4416 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 935: leaked 2208 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 936: leaked 1104 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 937: leaked 3576 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 938: leaked 3600 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 939: leaked 2112 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 940: leaked 528 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 941: leaked 29180 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 942: leaked 3600 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 943: leaked 2112 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 944: leaked 528 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 945: leaked 17104 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 946: leaked 20952 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 947: leaked 13440 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 948: leaked 6720 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 949: leaked 3648 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 950: leaked 5448 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 951: leaked 3840 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 952: leaked 1920 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 953: leaked 960 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 954: leaked 480 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 955: leaked 240 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 956: leaked 120 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 957: leaked 98328 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 958: leaked 20952 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 959: leaked 13440 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 960: leaked 6720 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 961: leaked 17292 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 962: leaked 5448 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 963: leaked 3840 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 964: leaked 1920 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 965: leaked 960 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 966: leaked 480 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 967: leaked 240 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 968: leaked 120 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 969: leaked 3216 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 970: leaked 3000 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 971: leaked 1944 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 972: leaked 972 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 973: leaked 18656 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 974: leaked 27864 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 975: leaked 12384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 976: leaked 6192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 977: leaked 3096 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 978: leaked 1548 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 979: leaked 272 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 980: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 981: leaked 144 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 982: leaked 72 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 983: leaked 36 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 984: leaked 18120 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 985: leaked 3000 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 986: leaked 1944 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 987: leaked 972 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 988: leaked 106092 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 989: leaked 27864 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 990: leaked 12384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 991: leaked 6192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 992: leaked 3096 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 993: leaked 1548 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 994: leaked 1272 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 995: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 996: leaked 144 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 997: leaked 72 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 998: leaked 36 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 999: leaked 2796 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1000: leaked 2700 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1001: leaked 1392 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1002: leaked 696 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1003: leaked 348 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1004: leaked 2496 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1005: leaked 3648 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1006: leaked 1536 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1007: leaked 768 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1008: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1009: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1010: leaked 96 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1011: leaked 48 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1012: leaked 24 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1013: leaked 16440 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1014: leaked 2700 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1015: leaked 1392 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1016: leaked 696 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1017: leaked 348 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1018: leaked 14856 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1019: leaked 3648 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1020: leaked 1536 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1021: leaked 768 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1022: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1023: leaked 192 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1024: leaked 96 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1025: leaked 48 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1026: leaked 24 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1027: leaked 64 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1028: leaked 72 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1029: leaked 384 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1030: leaked 576 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1031: leaked 288 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1032: leaked 144 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1033: leaked 4688 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1034: leaked 7008 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1035: leaked 4224 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1036: leaked 2112 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1037: leaked 1056 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1038: leaked 528 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1039: leaked 264 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1040: leaked 132 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1041: leaked 288 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1042: leaked 72 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1043: leaked 2532 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1044: leaked 576 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1045: leaked 288 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1046: leaked 144 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1047: leaked 21048 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1048: leaked 7008 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1049: leaked 4224 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1050: leaked 2112 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1051: leaked 1056 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1052: leaked 528 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1053: leaked 264 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1054: leaked 132 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1055: leaked 3704 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1056: leaked 5448 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1057: leaked 3648 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1058: leaked 1824 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1059: leaked 912 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1060: leaked 23412 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1061: leaked 5448 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1062: leaked 3648 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1063: leaked 1824 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 1064: leaked 912 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 3396: leaked 10368 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 3397: leaked 2376 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 3398: leaked 2304 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 3399: leaked 528 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 3400: leaked 11232 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 3401: leaked 2304 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 3402: leaked 1920 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 3403: leaked 264 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 3404: leaked 3168 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 3405: leaked 648 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 3406: leaked 1152 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 3407: leaked 264 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 3408: leaked 39936 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 3409: leaked 9984 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 3410: leaked 1152 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 3411: leaked 264 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 3412: leaked 6336 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: Buffer with GL ID of 3413: leaked 1296 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:110)
+ERROR: 25 RID allocations of type 'N17RendererSceneCull8InstanceE' were leaked at exit.
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+     at: cleanup (core/object/object.cpp:2284)
+ERROR: 62 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:604)

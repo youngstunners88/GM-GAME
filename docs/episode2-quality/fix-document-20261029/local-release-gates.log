@@ -1,0 +1,29 @@
+FRONT-PAGE LOCK: OK — founder-approved title screen unchanged (5 files)
+  [WARN] H6: src/ui/hud.gd: hud.gd still re-derives touch from OS.get_name(); route it through TouchUi.is_touch()
+CHECK_HARNESS_HOOKS: ALL PASS
+=== Security Sentinel — Lil Blunt Adventure ===
+fail-on: high | total: 18 | pass: 17 | fail: 1 | blockers: 0
+
+[✓] SEC-001 (critical) No secret-looking strings in shipped paths
+[✓] SEC-002 (critical) .env gitignored
+[✓] SEC-003 (critical) .env never committed
+[✓] SEC-004 (critical) No hardcoded wallet/contract addresses (40-hex)
+[✓] SEC-005 (critical) No 64-hex private-key-shaped literals in tracked source
+[✓] INJ-001 (critical) No OS.execute() in game code
+[✓] INJ-002 (critical) No Expression (dynamic code exec) in game code
+[✓] INJ-003 (high) JavaScriptBridge.eval interpolation is _hex()-sanitized or fixed postMessage template
+[✗] INJ-004 (medium) FileAccess.open never takes a runtime-built path
+      src/autoload/game_manager.gd:991:    var f := FileAccess.open(temporary, FileAccess.WRITE)
+
+[✓] DEP-001 (critical) Web export stays non-threaded
+[✓] DEP-002 (high) postMessage handlers enforce same-origin
+[✓] DEP-003 (high) No source maps in shipped bundle
+[✓] DEP-004 (medium) Supply-chain downloads (Godot/butler) are checksum-pinned
+[✓] TRUST-001 (critical) Wallet UI is real & user-signed (no key handling, txs via window.ethereum)
+[✓] CI-001 (high) Secret-scan (gitleaks) step present in CI
+[✓] CI-002 (medium) Security Sentinel wired into CI
+[✓] CI-003 (medium) .gitleaks.toml allowlist stays narrow
+[✓] CI-004 (low) .gitleaksignore fingerprint count reasonable
+
+No blockers at fail-on=high.
+55 focused native/GL checks, full-town rerun, full workflow reconciliation, real export, fresh pack, 8 WebGL/UI checks and 2 WebGL pixels pass.

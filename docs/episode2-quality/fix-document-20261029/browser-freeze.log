@@ -1,0 +1,15 @@
+FIX_WEB_FILM_READY
+FIX_FILM_METRICS {"clock_updates":603,"picture_s":59.49866,"reason":"end","render_frames":606,"wall_ms":60803,"worst_clock_update_ms":550,"worst_frame_ms":1184}
+[PASS] exported founder film decodes to normal completion
+[PASS] exported film has no elevator background rendering
+[PASS] exported film enters the ready lesson
+[PASS] exported Sheriff and Utah install grounded skeletal walks
+FIX_WEB_SHOP_READY
+[PASS] click close uses the real trade unpause path
+FIX_WEB_MAP_READY
+[PASS] click close dismisses map and resumes
+FIX_WEB_EP1_PAUSE_READY
+[PASS] Episode 1 pause close resumes gameplay
+FIX_WEB_SELECTOR_READY
+[PASS] weapon selector click close cancels and resumes
+FIX_WEB_DONE:0
