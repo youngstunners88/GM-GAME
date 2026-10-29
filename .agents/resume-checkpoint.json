@@ -1,15 +1,10 @@
 {
-  "objective": "Repair founder FIX document and verify production release",
+  "objective": "Finish town doorway/road presence, continuing farmer delivery, full-heal Tabs bud and supplied lake music; preserve verified FIX doc release",
   "branch": "codex/founder-fix-document-1029",
-  "runtime_verification_sha": "5828ac41",
-  "observed_remote_sha": "a862c16515f55bff53af55fa3c4619dd248dd57a",
-  "evidence": "docs/episode2-quality/fix-document-20261029/REVIEW.md",
-  "verified": "Native55 + exported browser8 + WebGL pixels2; full-town/affected reruns pass; real export0script errors; fresh main197534560B. Initial full CI block only old groundedcarry whitelist failed, full town corrected/rerun. Existing exact3 pause geometry machine exceptions retained. SkinQA and actual player cameras reviewed. Meshy spend0.",
-  "pending": [
-    "Stage security/title/harness final gates; commit evidence; normal ship-to-master",
-    "Verify exact master CI including actual butler upload, public BUILD/access input",
-    "Replay exact public packs; fill truthful release receipt and validate completeness"
-  ],
-  "scratch": "/workspace/work/fix-doc-1029",
-  "notes": "Godot4.3; XDG templates /workspace/work/cart-rebuild/godot-data; lock /tmp/gm-godot.lock. Local server8907 root web_verify. Browser instrumentations are external only. Never claim phone/smooth24fps or physical browser Escape from these checks."
+  "head": "11cd0de5; runtime changes dirty",
+  "observed_master": "6823cda7",
+  "prior_release": "c903f880 source / 6823cda7 export; CI40832421900/job123309437553, actual54.27MiB fresh butler, publicBUILD2026-10-29-c903f88 extras200/ready and wrong-code keyboard rejection; receipt in fix-document-20261029",
+  "current_evidence": "Scratch /workspace/work/town-continuity-1029; new REVIEW in docs/episode2-quality/town-presence-20261029. Final door5 road9 healing14 farmer28 theme8 pass. Farmer actual duel/resume, wall survey, restore/carry/death. Full suite /tmp/tmp.WtLH1oj5Hk exposed freed _active in _persist_town; fixed. Recheck touch and full town pass; crowd/autonomy reruns running. Road dust shader final native review queued after tests.",
+  "pending": "Finish autonomy, native road and edge cameras; real export and 2 browser profiles (external fixture prepared), commit/freshpack/security/title/texture; release_gates.py reconcile; normal ship and verify actualCI/butler/publicBUILD. No provider spend.",
+  "environment": "Godot4.3; Xorg:98 task-owned. Serialize with flock -o /tmp/gm-godot.lock. Templates XDG_DATA_HOME=/workspace/work/cart-rebuild/godot-data. Node public fetch needs NODE_USE_ENV_PROXY=1 and NODE_EXTRA_CA_CERTS configured CA; Chromium trusted wrapper. Game-dev/Blender5.2 unavailable; Blender4.3.2 used. Do not print connector b64 or credential values."
 }

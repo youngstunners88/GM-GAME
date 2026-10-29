@@ -38,12 +38,8 @@ const UNHORSE_SECONDS := 1.4
 const SHORE_SECONDS := 0.6
 
 ## Catmull-Rom control points (x, z). The sampled route is about 560 m long.
-const TRAIL_POINTS: Array = [
-	Vector2(0.0, 0.0), Vector2(10.0, -9.0), Vector2(21.0, -9.0), Vector2(33.0, -10.0),
-	Vector2(49.0, -48.0), Vector2(70.0, -82.0), Vector2(102.0, -119.0),
-	Vector2(124.0, -160.0), Vector2(164.0, -193.0), Vector2(202.0, -222.0),
-	Vector2(233.0, -262.0), Vector2(260.0, -300.0), Vector2(290.0, -338.0), Vector2(320.0, -374.0),
-]
+const TRAIL_POINTS: Array = Ep2LakeRoad.POINTS
+var _road_survey: Node3D
 ## Six men at each of two ambushes. `lat` is lateral metres from the trail; negative and positive sides alternate.
 const BANDIT_SPECS: Array = [
 	{"s":220.0,"lat":9.0,"ambush":0},{"s":234.0,"lat":-10.0,"ambush":0},
@@ -182,7 +178,7 @@ func _step_departure_yard() -> void:
 	parent.name = "DepartureTown"
 	_visuals.add_child(parent)
 	parent.position = -GoldTownChamber.DEPART_HORSE
-	var survey: Dictionary = Ep2GoldTown.build(parent, true)
+	var survey: Dictionary = Ep2GoldTown.build(parent, true, false)
 	_town_walls = survey.get("walls", [])
 	_town_props = survey.get("props", [])
 	_departure_yard = parent.find_child("StableYard", true, false) as Ep2StableYard
@@ -213,17 +209,7 @@ func _step_ground() -> void:
 
 
 func _step_trail() -> void:
-	var dirt: StandardMaterial3D = _tex(GRAVEL_TEX, Color(0.48, 0.35, 0.23), 0.42)
-	dirt.uv1_world_triplanar = true
-	dirt.roughness = 0.96
-	var road_points:=PackedVector3Array()
-	for i in _route_pts.size():
-		if _route_arc[i] <= _route_total-82.0:road_points.append(_route_pts[i])
-	var ribbon := _ribbon(road_points, 5.8, dirt, 0.022)
-	ribbon.name = "LakeTrail"
-	var back_points := PackedVector3Array([Vector3(21,0,-6),Vector3(21,0,30),Vector3(13,0,70),Vector3(13,0,145)])
-	var return_road: MeshInstance3D = _ribbon(back_points,5.8,dirt,0.022)
-	return_road.name = "TownReturnRoad"
+	_road_survey=Ep2LakeRoad.build(_visuals)
 
 	var ecotone := ShaderMaterial.new()
 	_ecotone_material=ecotone
@@ -264,53 +250,10 @@ func _step_lake() -> void:
 
 
 func _smooth(points: Array, spacing: float) -> PackedVector3Array:
-	var out := PackedVector3Array()
-	var count: int = points.size()
-	for i in count - 1:
-		var p0: Vector2 = points[maxi(i - 1, 0)]
-		var p1: Vector2 = points[i]
-		var p2: Vector2 = points[i + 1]
-		var p3: Vector2 = points[mini(i + 2, count - 1)]
-		var steps: int = maxi(4, int(p1.distance_to(p2) / spacing))
-		for k in steps:
-			var t: float = float(k) / float(steps)
-			var t2: float = t * t
-			var t3: float = t2 * t
-			var q: Vector2 = 0.5 * ((2.0 * p1) + (-p0 + p2) * t + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t2
-				+ (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * t3)
-			out.append(Vector3(q.x, 0.0, q.y))
-	var last: Vector2 = points[count - 1]
-	out.append(Vector3(last.x, 0.0, last.y))
-	return out
-
+	return Ep2LakeRoad.smooth(points,spacing)
 
 func _ribbon(points: PackedVector3Array, width: float, mat: Material, y: float) -> MeshInstance3D:
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var left := PackedVector3Array()
-	var right := PackedVector3Array()
-	for i in points.size():
-		var a: Vector3 = points[maxi(i - 1, 0)]
-		var b: Vector3 = points[mini(i + 1, points.size() - 1)]
-		var tangent: Vector3 = b - a
-		tangent.y = 0.0
-		tangent = tangent.normalized() if tangent.length() > 0.001 else Vector3.FORWARD
-		var side := Vector3(tangent.z, 0.0, -tangent.x) * (width * 0.5)
-		left.append(points[i] - side + Vector3(0.0, y, 0.0))
-		right.append(points[i] + side + Vector3(0.0, y, 0.0))
-	for i in points.size() - 1:
-		for vertex in [left[i], right[i], left[i + 1], right[i], right[i + 1], left[i + 1]]:
-			st.set_normal(Vector3.UP)
-			var lateral: float = 0.0 if vertex in [left[i],left[i+1]] else 1.0
-			st.set_uv(Vector2(lateral,float(i)/maxf(1.0,points.size()-1)))
-			st.add_vertex(vertex)
-	var mesh_instance := MeshInstance3D.new()
-	mesh_instance.mesh = st.commit()
-	mesh_instance.material_override = mat
-	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_visuals.add_child(mesh_instance)
-	return mesh_instance
-
+	return Ep2LakeRoad.ribbon(_visuals,points,width,mat,y)
 
 func _route_sample(distance: float) -> Array:
 	if _route_pts.is_empty():
@@ -1040,10 +983,10 @@ func _shows_health() -> bool:
 	return true
 
 
-func _heal_one() -> bool:
-	if _health >= HEALTH_MAX:
+func _heal_full() -> bool:
+	if _health <= 0 or _health >= HEALTH_MAX or _failing:
 		return false
-	_health = mini(_health + 1, HEALTH_MAX)
+	_health = HEALTH_MAX
 	if _hud != null:
 		_hud.health = _health
 		_hud.health_max = HEALTH_MAX
@@ -1354,6 +1297,8 @@ func adopt_departure(town: Node3D, woods: Node3D = null) -> void:
 	_adopted_town=town
 	if town._visuals.get_parent()!=_visuals: town._visuals.reparent(_visuals)
 	town._visuals.position=-GoldTownChamber.DEPART_HORSE
+	# The retained town already has this exact road. Draw it once at the mapped origin.
+	if _road_survey != null: _road_survey.hide()
 	_town_walls=town._town_col.get("walls",[])
 	_town_props=town._town_col.get("props",[])
 	_departure_yard=town._stable_yard
@@ -1377,6 +1322,7 @@ func restore_departure() -> void:
 		_adopted_town._visuals.reparent(_adopted_town)
 		_adopted_town._visuals.position=Vector3.ZERO
 		_adopted_town=null
+	if _road_survey != null: _road_survey.show()
 
 func _blend_lake_light() -> void:
 	if not is_instance_valid(_lake_reference) or _desert_env==null:return

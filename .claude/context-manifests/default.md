@@ -20,6 +20,7 @@ the next agent hunting for files that were renamed.
 
 | Task | Load |
 |---|---|
+| Sheriff office pop-in / road appears on mounting / farmer arrives in town / selectable healing bud / GM Laker2 | `.claude/skills/ep2-world-presence-and-consumables/SKILL.md`, `docs/founder-feedback/2026-10-29_town-presence-healing.md`; then the doorway/route, farmer journey and Tabs healing component |
 | FIX document / tunnel film / elevator glitch / Sheriff or Utah walking / × panel exit / referral lost walking to Dude | `.claude/skills/ep2-founder-regression-repair/SKILL.md`, `docs/founder-feedback/2026-10-29_fix-document.md`; use the boundary and gait/panel component skills |
 | Logan cabin / porch branding / prospecting detail / wanted bills | `.claude/skills/ep2-logan-cabin/SKILL.md`, `design/ep2/lake/cabin-20261027/BRIEF.md`; then the signage/prospecting/proof component |
 | Logan's Lake / supplied Logan / Blender toolkit | `.claude/skills/ep2-logans-lake/SKILL.md`, `design/ep2/lake/LOGANS_LAKE_LOCK.md`, `design/ep2/lake/IMPLEMENTATION.md`; tooling: `gm-blender-godot` |

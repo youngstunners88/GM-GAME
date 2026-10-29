@@ -1,0 +1,9 @@
+[PASS] draw/ride still use the previously supplied recording
+[PASS] arrival starts the supplied GM Laker2 recording
+[PASS] the full supplied stereo track is loaded
+[PASS] lake music loops on the existing Music bus
+[PASS] ride ownership is released when lake music starts
+[PASS] the old ride fade cannot stop the new lake song
+[PASS] riding back restores the ride recording and releases lake ownership
+[PASS] leaving the special tracks resumes the actual previous music
+EP2_LAKE_THEME: 8 checks, 0 failed

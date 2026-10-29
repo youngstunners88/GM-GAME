@@ -122,6 +122,9 @@ Episode 2 feature work follows `ep2-layered-production` (illustration → wire s
 - Code must be well-commented, modular, and follow Godot 4.3 best practices.
 - The game must feel fun, polished, and true to Lil Blunt's chill personality.
 
+
+For the founder's sheriff-office/ranch-road pop-in, continuing farmer journey and selectable full-heal Chill Bud, use `.claude/skills/ep2-world-presence-and-consumables/SKILL.md` and its component skills. Preserve the six FIX-document repairs.
+
 ## Deployment (itch.io is primary)
 - **Primary platform: itch.io** — https://youngstunners88.itch.io/smokerealm
   Game-native CDN, no cold starts, discovery + analytics. Vercel is a mirror only.

@@ -1,0 +1,6 @@
+[PASS] visible office throughout walkable doorway lane x=-0.4
+[PASS] visible office throughout walkable doorway lane x=0.0
+[PASS] visible office throughout walkable doorway lane x=0.4
+[PASS] wall control still blocks a sightline outside the opening
+[PASS] office and cell geometry remain in the same building
+EP2_DOORWAY_PRESENCE: 5 checks, 0 failed

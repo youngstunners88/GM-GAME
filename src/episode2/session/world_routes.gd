@@ -32,6 +32,7 @@ func park(session: Node, room: Node) -> void:
 func travel(session: Node, id: String, position: Vector3) -> bool:
  if not rooms.has(id): return false
  var previous: Node = session._active
+ if previous is LogansLakeChamber: Ep2DrawMusic.finish_lake(previous)
  if previous is LakeTrailChamber: previous.restore_departure()
  var yaw: float = previous._look_yaw
  if previous.has_method("portal_detach"): previous.portal_detach()
@@ -92,7 +93,7 @@ func travel(session: Node, id: String, position: Vector3) -> bool:
   if is_instance_valid(sound[0]): sound[0].play(sound[1])
  if room is LogansLakeChamber:
   room._look_yaw=wrapf(yaw-(previous.lake_transform().basis.get_euler().y if previous is LakeTrailChamber else 0.0),-PI,PI)
-  Ep2DrawMusic.finish(room)
+  Ep2DrawMusic.begin_lake(room)
  elif room is LakeTrailChamber: Ep2DrawMusic.begin(room)
  else: Ep2DrawMusic.finish(room)
  cooldown=1.0

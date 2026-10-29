@@ -192,6 +192,10 @@ func _build_armory() -> void:
 	_panel = Ep2WeaponSelector.new()
 	_panel.visible = false
 	_selector_layer.add_child(_panel)
+	_panel.chill_bud_requested.connect(func() -> void:
+		chill_bud_requested.emit()
+		_panel.health=health
+		_panel.refresh_supplies())
 	preload("res://src/ui/panel_close.gd").install(_panel, func() -> void: close_armory(false))
 	_slots = _panel.cards
 	_search = _button("Search bear [E]", func() -> void: search_requested.emit())
@@ -218,6 +222,7 @@ func _update_armory() -> void:
 	_quick.position = Vector2(size.x * 0.5 - 68 * ui_scale, size.y - 76 * ui_scale)
 	_quick.size = Vector2(136, 60)
 	_panel.state = armory
+	_panel.health = health
 	_search.position = Vector2(size.x * 0.5 - 140, size.y * 0.65)
 	_search.size.x = 280
 	if armory_open and (not is_visible_in_tree() or not armory_enabled or not show_ammo):
@@ -243,6 +248,7 @@ func toggle_armory() -> void:
 	armory_open = true
 	_panel.state = armory
 	_panel.highlighted = armory.equipped
+	_panel.bud_selected = false
 	_panel.visible = true
 	_search.hide()
 	_mouse_before = Input.mouse_mode
@@ -256,7 +262,7 @@ func toggle_armory() -> void:
 func close_armory(commit: bool = true, restore_mouse: bool = true) -> void:
 	if not armory_open:
 		return
-	if commit and armory.owns(_panel.highlighted):
+	if commit and not _panel.bud_selected and armory.owns(_panel.highlighted):
 		weapon_selected.emit(_panel.highlighted)
 	armory_open = false
 	_panel.hide()
@@ -295,6 +301,7 @@ func _input(event: InputEvent) -> void:
 	if armory_open and (event is InputEventMouseButton or event is InputEventScreenTouch):
 		var close_button: Button = _panel.get_node("PanelClose")
 		if close_button.get_global_rect().has_point(event.position): return
+		if _panel.supply_gui_point(event.position): return
 	if event.is_action_pressed("ep2_armory") and not event.is_echo():
 		if not armory_open:
 			armory_requested.emit()
@@ -333,6 +340,19 @@ func _input(event: InputEvent) -> void:
 	# A raw physical key, deliberately not an InputMap action: H belongs to the
 	# open ledger and never becomes a gameplay binding in project.godot.
 	if event is InputEventKey and event.pressed and not event.is_echo() and event.physical_keycode == KEY_H:
+		_panel.select_bud()
+		chill_bud_requested.emit()
+		get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed("ui_down"):
+		_panel.select_bud()
+		get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed("ui_up"):
+		_panel.bud_selected = false
+		get_viewport().set_input_as_handled()
+		return
+	if _panel.bud_selected and event.is_action_pressed("ui_accept"):
 		chill_bud_requested.emit()
 		get_viewport().set_input_as_handled()
 		return

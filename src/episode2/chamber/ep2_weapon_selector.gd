@@ -21,6 +21,12 @@ const PAPER := Color("eddbb2")
 var state: Ep2ArmoryState
 var highlighted: String = ""
 var cards: Array[Button] = []
+signal chill_bud_requested
+var health: int = 3
+var bud_selected: bool = false
+var bud_card: Button
+var bud_use: Button
+var _supply_fingers: Dictionary = {}
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -35,10 +41,57 @@ func _ready() -> void:
 		card.pressed.connect(func() -> void: preview(id))
 		add_child(card)
 		cards.append(card)
+	bud_card = _supply_button("ChillBud", select_bud)
+	bud_card.icon = preload("res://src/episode2/ui/icons/chill_bud.svg")
+	bud_card.expand_icon = true
+	bud_card.add_theme_constant_override("icon_max_width", 32)
+	bud_use = _supply_button("UseChillBud", func() -> void: chill_bud_requested.emit())
+	bud_use.icon = preload("res://src/episode2/ui/icons/full_hearts.svg")
+	bud_use.expand_icon = true
+	bud_use.add_theme_constant_override("icon_max_width", 54)
+
+func _supply_button(label: String, action: Callable) -> Button:
+	var b := Button.new()
+	b.name = label
+	b.focus_mode = Control.FOCUS_NONE
+	b.add_theme_font_size_override("font_size", 15)
+	for kind in ["normal","hover","pressed","disabled"]:
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color("38291b") if kind == "hover" else Color("241b14")
+		style.border_color = Color("765839") if kind == "disabled" else BRASS
+		style.set_border_width_all(1)
+		style.set_corner_radius_all(5)
+		b.add_theme_stylebox_override(kind,style)
+	var last_frame := [-1]
+	var activate: Callable = func() -> void:
+		if b.disabled or last_frame[0] == Engine.get_process_frames(): return
+		last_frame[0] = Engine.get_process_frames()
+		action.call()
+	b.pressed.connect(activate)
+	b.gui_input.connect(func(event: InputEvent) -> void:
+		if not event is InputEventScreenTouch or b.disabled: return
+		if event.pressed: _supply_fingers[event.index] = b
+		else:
+			var started: Variant = _supply_fingers.get(event.index)
+			_supply_fingers.erase(event.index)
+			if started == b and not event.canceled and Rect2(Vector2.ZERO,b.size).has_point(event.position): activate.call()
+		b.accept_event())
+	add_child(b)
+	return b
+
+func select_bud() -> void:
+	bud_selected = true
+	refresh_supplies()
+	queue_redraw()
+
+func supply_gui_point(point: Vector2) -> bool:
+	return bud_card != null and (bud_card.get_global_rect().has_point(point) or bud_use.get_global_rect().has_point(point))
 
 ## Previewing never changes the ammunition/reload transaction; release commits once in the host.
 func preview(id: String) -> void:
 	if state != null and not state.firearms_confiscated and state.owns(id):
+		bud_selected = false
+		refresh_supplies()
 		highlighted = id
 		queue_redraw()
 
@@ -56,6 +109,21 @@ func _process(_delta: float) -> void:
 		cards[i].position = card_rect(i).position
 		cards[i].size = card_rect(i).size
 		cards[i].disabled = state == null or state.firearms_confiscated or not state.owns(Ep2ArmoryState.IDS[i])
+	var band: Rect2 = _ledger_band()
+	var action_width: float = 112.0 if size.x < 650 else 150.0
+	bud_card.position = band.position+Vector2(10,27)
+	bud_card.size = Vector2(band.size.x-action_width-28,48)
+	bud_use.position = Vector2(band.end.x-action_width-10,band.position.y+27)
+	bud_use.size = Vector2(action_width,48)
+	refresh_supplies()
+	queue_redraw()
+
+func refresh_supplies() -> void:
+	if bud_card==null or bud_use==null:return
+	bud_card.text = ("DUDE'S CHILL BUD  ×%d" if TouchUi.keys_shown() else "×%d") % GameManager.chill_buds
+	bud_card.modulate = Color("ffd482") if bud_selected else Color.WHITE
+	bud_use.text = "USE" if TouchUi.keys_shown() else ""
+	bud_use.disabled = not bud_selected or health <= 0 or health >= 3 or GameManager.chill_buds <= 0
 	queue_redraw()
 
 ## The title/purse/ledger geometry is shared by the cards, so the ledger is a
@@ -71,7 +139,7 @@ func _purse_band() -> Rect2:
 func _ledger_band() -> Rect2:
 	var purse: Rect2 = _purse_band()
 	return Rect2(purse.position + Vector2(0.0, purse.size.y + 6.0),
-		Vector2(purse.size.x, 46.0 if size.x < 650.0 else 50.0))
+		Vector2(purse.size.x, 101.0))
 
 func card_rect(i: int) -> Rect2:
 	if size.x < 650.0:
@@ -141,7 +209,7 @@ func _draw() -> void:
 	for i in Ep2ArmoryState.IDS.size():
 		var id: String = Ep2ArmoryState.IDS[i]
 		var rect: Rect2 = card_rect(i)
-		var picked: bool = highlighted == id
+		var picked: bool = highlighted == id and not bud_selected
 		_leather(rect, Color("38261b") if picked else Color("231b15"), picked)
 		var icon: Texture2D = ICONS[id]
 		var image_rect := Rect2(rect.position + Vector2(18, 15), Vector2(rect.size.x - 36, rect.size.y * 0.65))
@@ -230,8 +298,11 @@ func _draw_ledger(band: Rect2, compact: bool) -> void:
 		var count: int = int(GameManager.bear_tally[kind])
 		if count > 0:
 			bear_line += "   %s %d" % [str(kind).to_upper(), count]
-	var bud_line: String = "CHILL BUDS  %d" % GameManager.chill_buds
-	bud_line += "   H - SMOKE A BUD" if TouchUi.keys_shown() else "   SMOKE A BUD"
+	var bud_line: String = "%d / 3 · RESTORES ALL THREE HEARTS" % health
+	if health >= 3: bud_line = "3 / 3 · FEELING CHILL"
+	if GameManager.chill_buds <= 0: bud_line = "VISIT DUDE FOR CHILL BUDS"
+	if TouchUi.keys_shown(): bud_line += " · H TO USE"
+	else: bud_line = "%d / 3" % health
 	var runner_btc: int = GameManager.runner_btc_credited
 	if runner_btc > 0:
 		bud_line += "   RUNNER BTC +%d" % runner_btc
@@ -240,4 +311,4 @@ func _draw_ledger(band: Rect2, compact: bool) -> void:
 	var bud_fs: int = _fit_font_size(bud_line, max_width, 10 if compact else 13)
 	var x: float = band.get_center().x
 	_text(bear_line, Vector2(x, band.position.y + (18.0 if compact else 20.0)), bear_fs, PAPER, true)
-	_text(bud_line, Vector2(x, band.position.y + (36.0 if compact else 40.0)), bud_fs, BRASS, true)
+	_text(bud_line, Vector2(x, band.end.y-9), bud_fs, BRASS, true)

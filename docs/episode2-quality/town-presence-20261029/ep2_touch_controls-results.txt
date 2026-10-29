@@ -1,0 +1,182 @@
+  [PASS] the session root joins the touch group (after the scene swap, in _ready)
+  [PASS] IDLE (nothing running yet) -> none
+  [PASS] CHAMBER, free roam, the player in control -> ep2_foot
+  [PASS] ...not suspended
+  [PASS] armory open -> ep2_foot (the walking thumb is not orphaned)...
+  [PASS] ...but SUSPENDED
+  [PASS] a scripted beat (no player control) -> none
+  [PASS] a skippable film -> ep2_film
+  [PASS] TRANSITION -> none
+  [PASS] IDLE (run over) -> none (Ep2Entry owns ep2_end)
+  [PASS] the manager shows the on-foot layout
+  [PASS] ...and it is the ep2_foot scene (ep2_foot_tablet_landscape)
+  [PASS] armory open: controls stay up but inert (suspended)
+  [PASS] a film: the manager shows the SKIP layout
+  [PASS] the runner is up and running
+  [PASS] RUNNER running -> ep2_runner
+  [PASS] the swipe pad is on screen
+  [PASS] the Attack and Pickaxe buttons exist
+  [PASS] starts on the middle rail
+  [PASS] a swipe LEFT hops one rail left
+  [PASS] ...and a gesture on the pad never also fires (ammo unchanged)
+  [PASS] a swipe RIGHT hops back one rail
+  [PASS] ...and one more rail right
+  [PASS] ...ammo still unchanged
+  [PASS] a swipe UP jumps (airborne)
+  [PASS] ...and lands again
+  [PASS] ...no round spent by the jump
+  [PASS] a swipe DOWN presses the duck (held)
+  [PASS] ...and the cart ducks once the hold is long enough
+  [PASS] lifting the finger releases the duck
+  [PASS] a flick keeps the duck for the minimum hold (150 ms)
+  [PASS] ...then lets go by itself
+  [PASS] not swinging before the pickaxe
+  [PASS] the PICKAXE button swings the axe (is_swiping)
+  [PASS] the ATTACK button fires one round (ammo -1)
+  [PASS] a tap in a free area fires ONE round (no double fire)
+  [PASS] second finger on ATTACK fires while the steer finger rests
+  [PASS] ...and the steer finger still hops
+  [PASS] no round was spent by the steer finger
+  [PASS] ep2_touch_swipe -> runner_swipe()
+  [PASS] (setup) a duck is held by the finger
+  [PASS] PAUSED: the duck is released
+  [PASS] ...and the layer is up but suspended
+  [PASS] resumed: the duck is NOT restored by the resume
+  [PASS] ...and the cart is not left ducking (the release arrived while the tree was paused; the root re-syncs)
+  [PASS] ...and lifting the finger afterwards changes nothing
+  [PASS] (setup) holding a duck before the swap
+  [PASS] the swap announces the new profile at once (touch_profile_changed fired in the same frame, no 5 Hz wait)
+  [PASS] the runner handed over to the chamber
+  [PASS] mode swap releases everything (held_count == 0)
+  [PASS] ...and the duck is not pressed on Input any more
+  [PASS] ...the runner controls are gone (profile none)
+  [PASS] (setup) the Smelting Facility is driven on foot
+  [PASS] (setup) the thumb holds FORWARD on the stick
+  [PASS] (setup) the chained room is a different node
+  [PASS] the chained foot -> foot hand-over keeps the held input
+  [PASS] ...and never released the layer (release count unchanged)
+  [PASS] ...nor flipped the profile to none
+  [PASS] F5: move_* InputEventAction in free roam never calls walk / take_cover / leave_cover
+  [PASS] F5: ...the router reports them handled
+  [PASS] F6: ep2_touch_jump -> jump()
+  [PASS] F6: the W key is movement, never jump
+  [PASS] F6: Space still jumps (keyboard map unchanged)
+  [PASS] ep2_touch_aim pressed -> set_aim(true)
+  [PASS] ep2_touch_aim released -> set_aim(false)
+  [PASS] ep2_touch_reload -> reload()
+  [PASS] R still reloads (keyboard map unchanged)
+  [PASS] F8: an emulated left press does not fire
+  [PASS] F8: ...an emulated drag does not look
+  [PASS] F8: ...and nothing captures the pointer
+  [PASS] F8: a REAL mouse (device 0) still fires
+  [PASS] F8: ...and still looks
+  [PASS] the FIRE button's `attack` action still fires
+  [PASS] (setup) touch is forced, so keys are hidden
+  [PASS] F13: on touch a held RUN toggle never picks the Diamond-burn payment
+  [PASS] the look pad is on the on-foot layout
+  [PASS] a drag on the look pad turns the view (look called, yaw delta > 0)
+  [PASS] ...and the accumulator was drained (nothing banked)
+  [PASS] (setup) the on-foot layout is up for the holster test
+  [PASS] (setup) the walking thumb holds forward
+  [PASS] the holster box is clear of every on-foot button
+  [PASS] ...and the look pad does not cover the holster (pad bottom 564 < button top 644)
+  [PASS] a second finger on the holster opens the armory while the thumb walks
+  [PASS] ...the look pad did not take that finger
+  [PASS] ...the armory is up, so the layer is suspended and injects no movement
+  [PASS] ...and the profile stays on-foot (suspended, not dropped)
+  [PASS] lifting the holster finger closes the armory and unfreezes the room
+  [PASS] ...the walking thumb never lifted, so its direction comes straight back
+  [PASS] (setup) the real facility is driven by the player
+  [PASS] look pad -> the camera yaw changes
+  [PASS] ...drained once
+  [PASS] the Jump button lifts the real hero
+  [PASS] (setup) the real cliff film decodes
+  [PASS] before 1 s the film is NOT skippable
+  [PASS] ...so no SKIP layout is up
+  [PASS] after 1 s the film is skippable
+  [PASS] ...and the SKIP layout is up (profile ep2_film, layer above the film)
+  [PASS] ...its one button presses `jump` and carries the hold ring
+  [PASS] the SKIP button holds `jump`
+  [PASS] a 0.5 s press does NOT skip the film
+  [PASS] holding SKIP for 0.9 s skips the film
+  [PASS] ...and a finished film is no longer skippable (the button goes)
+  [PASS] ...the manager drops the SKIP layout and releases `jump`
+  [PASS] ...and `finished` was emitted once the picture was black
+  [PASS] the real facility: its film is not skippable in the first second (profile none)
+  [PASS] ...and skippable after it: the session root asks for the SKIP profile
+  [PASS] the fallback film is not skippable in its first second
+  [PASS] ...and skippable after it
+  [PASS] holding SKIP skips the in-engine film
+  [PASS] (setup) landscape runner
+  [PASS] upright on a touch device -> ep2_rotate
+  [PASS] ...the sim is paused (tree paused, StateMachine still PLAYING)
+  [PASS] ...the manager shows the cue layout
+  [PASS] ...and the runner does not advance
+  [PASS] back to landscape: the sim resumes
+  [PASS] ...and the runner profile returns
+  [PASS] a pause that is not ours is never taken over
+  [PASS] ...and left alone when the screen turns back
+  [PASS] a desktop window taller than wide does NOT pause or show the cue
+  [PASS] (setup) the state is TRANSITIONING as after SceneRouter.load_scene
+  [PASS] (setup) the director is idle
+  [PASS] the access gate is not up
+  [PASS] _begin() moves TRANSITIONING -> PLAYING when the director is idle
+  [PASS] the session started a runner
+  [PASS] the touch layer shows the RUNNER controls on the menu route
+  [PASS] the runner layout has a Pause button
+  [PASS] the PAUSE button opens the pause card
+  [PASS] ...the sim is paused (StateMachine PAUSED, tree paused)
+  [PASS] ...pause_menu.tscn is NOT used
+  [PASS] ...the layer underneath is suspended (dim, inert)
+  [PASS] PLAY and HOME hit areas are both >= 72 dp
+  [PASS] ...and they do not overlap
+  [PASS] home is wired to the Escape path
+  [PASS] a tap on PLAY resumes the sim
+  [PASS] (setup) paused again
+  [PASS] (setup) the card is still up under the resting thumb
+  [PASS] a SECOND finger (index 3, no emulated click) can tap PLAY
+  [PASS] the run over -> the ep2_end profile (Ep2Entry joined the group)
+  [PASS] ...no banner text
+  [PASS] ...a dim last frame stands behind the buttons (the screen is not black)
+  [PASS] ...retry (jump) and home (ui_cancel) buttons
+  [PASS] a tap on retry too early (arm delay) does nothing
+  [PASS] retry after the arm delay restarts the run
+  [PASS] ...the scrim is gone and the group is left
+  [PASS] ...and the runner controls are back
+  [PASS] (setup) touch is forced, so the view is in cue-glyph mode
+  [PASS] runner_view on touch: no instruction / key word in any label (3 texts scanned)
+  [PASS] ...the telegraphs carry cue glyphs instead (6)
+  [PASS] low ammo: 'R - reload' is hidden on touch
+  [PASS] reloading: 'RELOADING' is hidden on touch (the bar says it)
+  [PASS] no resting reticle on touch (hidden before any tap)
+  [PASS] the gun arm keeps its forward default (no aim point)
+  [PASS] a tap in a free area shows a brief ring at the tap point
+  [PASS] ...and aims the gun arm there for a moment
+  [PASS] ...then the ring is gone
+  [PASS] ...and the gun arm is forward again
+  [PASS] flag off (desktop): the cue words return
+  [PASS] ...the telegraph labels read their words again
+  [PASS] ...and 'R - reload' shows at low ammo
+  [PASS] ...the reticle is the mouse crosshair again
+  [PASS] fps_hud on touch: 'Search bear [E]' is hidden the moment the prompt is set (the INTERACT button does it)
+  [PASS] fps_hud on touch: the holster button carries no key label ('HOLD Tab')
+  [PASS] ...and the per-frame update keeps the search button hidden
+  [PASS] fps_hud on touch: the strings it DRAWS name no key and give no instruction ["0", " / 8", "2 / 4"]
+  [PASS] ...only plain numbers are written (rounds, reserve, the lesson count)
+  [PASS] fps_hud on a desktop: the words are still drawn (objective, reload flag, toast, status)
+  [PASS] ...no Label / Button of the HUD names a key
+  [PASS] smelting_facility pushes the lesson as an icon (LOAD -> cylinder, 'n of 4')
+  [PASS] PRACTICE -> targets, with the plates left
+  [PASS] AIM -> scope
+  [PASS] FIRE -> burst
+  [PASS] LEAD -> boot
+  [PASS] the desktop objective strings are untouched ('PRESS R', 'RIGHT MOUSE', 'LEFT CLICK')
+  [PASS] Ep2VideoFilm on touch: no 'HOLD SPACE TO SKIP' (visible labels: 0)
+  [PASS] ...and the desktop hint is still there with the flag off
+  [PASS] CliffJumpCinematic on touch: the 'hold SPACE to skip' hint is hidden
+  [PASS] ...and shown on a desktop
+  [PASS] Ep2Entry on touch: the run-over banner and the K control strip are empty
+  [PASS] ...and the desktop banner still names its keys with the flag off
+  [PASS] Episode2Mode.control_hint is intact (the interlude test asserts it)
+  [PASS] nothing is held at the end
+EP2_TOUCH_CONTROLS: ALL PASS

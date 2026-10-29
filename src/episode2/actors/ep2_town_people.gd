@@ -91,6 +91,7 @@ const SHOP_CHANCE := 0.55                # share of errands that become a shop v
 const PARCEL_SECONDS := 40.0
 
 class Person:
+	var external_owner: String = ""
 	var id: String = ""
 	var folk: Ep2TownFolk
 	var route: Array = [] # historical route fixtures, no longer the decision policy
@@ -287,7 +288,7 @@ func step(delta: float, player_world: Vector3) -> void:
 func celebrate(centre: Vector3, avoid: Vector3, cheer_s: float = CHEER_S, dance_s: float = DANCE_S) -> int:
 	var c2 := Vector2(centre.x, centre.z)
 	var joined: Array = people.filter(func(p: Person) -> bool:
-		return p.state not in SHOP_STATES and not p.folk.use_height and _pos(p).distance_to(c2) < CEL_REACH)
+		return p.external_owner=="" and p.state not in SHOP_STATES and not p.folk.use_height and _pos(p).distance_to(c2) < CEL_REACH)
 	# neighbours on the ring are neighbours in the list: partners are planned now (k, k+1) and given ADJACENT ring spots, so a couple
 	# dances at arm's length; the odd one out claps
 	joined.sort_custom(func(a: Person, b: Person) -> bool:
@@ -414,6 +415,9 @@ func _step_one(p: Person, dt: float, player: Vector3) -> void:
 	if p.folk.dead:
 		p.folk.step(dt)
 		return
+	# The delivery owns ordinary movement; the existing crowd brain still owns
+	# fleeing/cover when the draw or gunfire interrupts that errand.
+	if p.external_owner!="" and p.state not in ["flee","shelter"]:return
 	p.greet_cd = maxf(0, p.greet_cd - dt)
 	p.social_cd = maxf(0, p.social_cd - dt)
 	p.fear = maxf(0, p.fear - dt)
@@ -463,6 +467,9 @@ func _step_one(p: Person, dt: float, player: Vector3) -> void:
 			p.timer = p.rng.randf_range(2, 5)
 			p.folk.hold_clip("Idle")
 	else:
+		if p.external_owner!="":
+			p.folk.step(dt)
+			return
 		if _mode == "normal" and p.fear <= 0 and _near_player(p, player):
 			_greet(p, player)
 		elif p.timer <= 0 and _mode != "duel":
@@ -501,6 +508,28 @@ func _release(p: Person) -> void:
 	p.destination = ""
 	if p.state not in SHOP_STATES:
 		p.shop = ""                     # a shop trip abandoned on the way (blocked, danger, a new plan) is no trip
+
+## A bounded delivery borrows an existing worker; it never duplicates a townsman.
+func reserve_delivery(id: String, restoring: bool = false) -> Person:
+	var p: Person=person(id)
+	if p==null or p.folk.dead or p.external_owner!="":return null
+	if not restoring and (_mode!="normal" or not _cel.is_empty() or p.state in SHOP_STATES or p.state in CEL_STATES or p.partner!="" or p.parcel_t>0):return null
+	_release(p)
+	p.folk.stop()
+	p.external_owner="road_farmer"
+	return p
+
+func release_delivery(p: Person) -> void:
+	if p==null or p.external_owner!="road_farmer":return
+	p.external_owner=""
+	if is_instance_valid(p.folk):
+		p.folk.stop()
+		p.folk.use_height=false
+	p.state="pause"
+	p.timer=3
+	p.shop=""
+	p.partner=""
+	p.waypoints.clear()
 
 func _choose(p: Person) -> void:
 	_release(p)
@@ -1025,7 +1054,7 @@ func _try_social(p: Person) -> void:
 	p.social_cd = p.rng.randf_range(8, 16)
 	if p.rng.randf() > float(p.profile["social"]): return
 	for other in people:
-		if other == p or other.state != "pause" or other.fear > 0 or other.social_cd > 0: continue
+		if other == p or other.external_owner != "" or other.state != "pause" or other.fear > 0 or other.social_cd > 0: continue
 		var distance: float = _pos(p).distance_to(_pos(other))
 		if distance < 0.8 or distance > 2.7: continue
 		if elapsed - float(p.memories.get(other.id, -100.0)) < 60.0: continue

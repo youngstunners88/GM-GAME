@@ -221,6 +221,7 @@ var _bull_pace: float = 0.0
 var _line_idx: Dictionary = {}                       # pool key -> next line (rotates, never the same one twice running)
 var _sneak_arc: PackedFloat32Array = PackedFloat32Array()
 var _cart: Node3D = null                             # the farmer on his donkey cart (founder model), plodding down the desert road
+var _cart_external: bool = false                     # the session owns his continuing town trip after the pass
 var _cart_s: float = CART_S0
 var _cart_warned: bool = false
 var _cart_state: int = 0                             # 0 ahead, 1 approached (slowing), 2 greeted, 3 passed
@@ -2508,12 +2509,12 @@ func _shows_health() -> bool:
 	return true
 
 
-## One of Dude's Chill Buds restores exactly one heart, never above the story's
+## One of Dude's Chill Buds restores all three hearts, never above the story's
 ## three-heart cap. The base spends the item only after this returns true.
-func _heal_one() -> bool:
-	if _health >= HEALTH_MAX:
+func _heal_full() -> bool:
+	if _health <= 0 or _health >= HEALTH_MAX or _failing:
 		return false
-	_health = mini(_health + 1, HEALTH_MAX)
+	_health = HEALTH_MAX
 	if _hud != null:
 		_hud.health = _health
 		_hud.health_max = HEALTH_MAX
@@ -2621,7 +2622,7 @@ func _retry_from_surface() -> void:
 	_bull_wait_t = 0.0
 	_bull_wait_lock = 0.0
 	_bull_ride_cd = 0.0
-	if _cart != null:
+	if _cart != null and not _cart_external:
 		(_cart as Ep2RoadCart).reset_motion()
 		_place_cart(0.0)
 	_road_lines.clear()
@@ -2721,11 +2722,14 @@ func _place_cart(_t: float) -> void:
 ## The cart plods on; the quad eases down behind it (so it does not spook the donkey), draws level, Inferno greets the farmer, Lil Blunt answers,
 ## and they open up again past him. Returns the speed this allows the quad.
 func _tick_cart(delta: float) -> float:
+	if _cart_external: return 99.0
 	if _cart == null:
 		return 99.0
-	_cart_s += CART_SPEED * delta
+	var before: float=minf(_cart_s,_ride_total)
+	_cart_s = minf(_cart_s + CART_SPEED * delta,_ride_total)
 	_place_cart(_elapsed)
-	(_cart as Ep2RoadCart).advance_motion(delta, CART_SPEED * delta)
+	(_cart as Ep2RoadCart).set_parked(_cart_s>=_ride_total)
+	(_cart as Ep2RoadCart).advance_motion(delta, _cart_s-before)
 	if _cart_state >= 3:
 		return 99.0
 	var gap: float = _cart_s - _ride_s                  # > 0: the cart is still ahead of them on the road

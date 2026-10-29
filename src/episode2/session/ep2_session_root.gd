@@ -108,6 +108,10 @@ func _ready() -> void:
 	get_tree().root.size_changed.connect(_on_window_resized)
 
 func configure(plan: Array, commit_to_economy: bool = true) -> void:
+	_persist_town()
+	farmer_trip.clear()
+	Ep2DrawMusic.finish_lake(self)
+	Ep2DrawMusic.finish(self)
 	world_routes.clear()
 	Ep2ArmoryState.install_actions()
 	var manager: Node = get_node_or_null("/root/GameManager")
@@ -306,6 +310,7 @@ func _enter_chamber_chained(segment: int) -> void:
 const PREBUILD_MS := 7.0
 const PREBUILD_MS_WAITING := 40.0
 var world_routes := Ep2WorldRoutes.new()
+var farmer_trip := Ep2FarmerTrip.new()
 var _pb_node: Node = null
 var _pb_id: String = ""
 var _pb_vp: SubViewport = null
@@ -762,6 +767,7 @@ func _on_window_resized() -> void:
 
 func _process(_delta: float) -> void:
 	world_routes.tick(self,_delta)
+	if _mode==Mode.CHAMBER:farmer_trip.tick(self,_delta)
 	_town_save_due -= _delta
 	if _town_save_due <= 0:
 		_town_save_due = 20.0
@@ -790,14 +796,19 @@ func _restore_town(chamber: Node) -> void:
 	var manager: Node = get_node_or_null("/root/GameManager")
 	if manager != null and chamber.get_people() != null:
 		chamber.get_people().restore(manager.town_people_state)
+		var saved: Variant=manager.town_people_state.get("farmer_trip",{})
+		farmer_trip.enter_town(chamber,world_routes.rooms.get("woods_quad",{}).get("node",null),saved if saved is Dictionary else {})
 	_town_save_due = 20.0
 
 func _persist_town() -> void:
-	if not is_instance_valid(_active) or not _active is GoldTownChamber: return
+	var town: GoldTownChamber=farmer_trip.town
+	if is_instance_valid(_active) and _active is GoldTownChamber:town=_active as GoldTownChamber
+	if not is_instance_valid(town): return
 	var manager: Node = get_node_or_null("/root/GameManager")
-	var crowd: Ep2TownPeople = _active.get_people()
+	var crowd: Ep2TownPeople = town.get_people()
 	if manager != null and crowd != null:
 		manager.town_people_state = crowd.snapshot()
+		if is_instance_valid(farmer_trip.cart):manager.town_people_state["farmer_trip"]=farmer_trip.snapshot()
 		manager.save_session()
 
 func _sync_mouse_mode() -> void:
@@ -917,8 +928,10 @@ func _route_free_roam(event: InputEvent) -> bool:
 	return false
 
 func _exit_tree() -> void:
+	Ep2DrawMusic.finish_lake(self)
 	Ep2DrawMusic.finish(self)
 	_persist_town()
+	farmer_trip.clear()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	# never leave the tree frozen behind us because the screen was upright when this node went away
 	var tree: SceneTree = get_tree()

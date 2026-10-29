@@ -1,0 +1,34 @@
+[PASS] all thirteen public figures load; prisoner remains owned by jail 
+[PASS] navigation has a connected outdoor street graph 
+[PASS] ten minutes: nobody enters walls, props, raised porches or firing yard (shop visits apart) 
+[PASS] ten minutes: townspeople really go into the shops 
+[PASS] ten minutes: civilians never intersect one another 
+[PASS] every person independently makes decisions and travels 
+[PASS] every person visits multiple places 
+[PASS] individual histories differ across the street cast 
+[PASS] crowd yields around a stationary player 
+[PASS] pathfinding reroutes around a newly obstructed street 
+[PASS] nearby people exchange a bilateral greeting and remember the partner 
+[PASS] nearby gunfire interrupts every exposed civilian 
+[PASS] quiet recovery returns everyone to ordinary activities 
+[PASS] crowd clears the duel lane without teleporting 
+[PASS] everyone waits safely during the draw 
+[PASS] paused simulation changes no timers or memories 
+[PASS] NPC state round-trips through JSON 
+[PASS] restoration preserves identity and location 
+[PASS] town state is written through the existing session save 
+[PASS] town routines and memories survive a disk load 
+[PASS] ambient memories do not change campaign progression 
+[PASS] saved routines can restart from the same decision point 
+[PASS] restoring random streams reproduces the subsequent decisions 
+[PASS] malformed state is rejected atomically 
+[PASS] invalid scalar rejected without mutation 
+[PASS] invalid memory rejected without mutation 
+[PASS] invalid overlap rejected without mutation 
+[PASS] invalid duplicate rejected without mutation 
+[PASS] invalid path rejected without mutation 
+[PASS] invalid random rejected without mutation 
+[PASS] ride-in crowd hands over to the town chamber at the cut 
+[PASS] a person in the quad's lane steps aside 
+[PASS] rebuilding creates exactly one instance per identity 
+EP2_TOWN_AUTONOMY: ALL PASS (33 checks)

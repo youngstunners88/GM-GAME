@@ -151,7 +151,7 @@ func _build_cabin() -> void:
 	_cabin.build(_visuals)
 
 func _on_setup() -> void:
-	Ep2DrawMusic.finish(self)
+	Ep2DrawMusic.begin_lake(self)
 	print("[EP2] Logan lake started")
 	_player_pos = handoff.get("lake_player",SPAWN)
 	_look_yaw = float(handoff.get("lake_yaw",0.1))

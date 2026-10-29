@@ -2414,6 +2414,7 @@ func _enter_fps() -> void:
 		_hud_ctl = Ep2FpsHud.new()
 		_hud_ctl.mag = Ep2Winchester.MAG
 		_fps_hud.add_child(_hud_ctl)
+		_hud_ctl.chill_bud_requested.connect(use_chill_bud)
 		if armory != null:
 			_hud_ctl.bind_armory(armory)
 			_hud_ctl.armory_enabled = _lesson == Lesson.DONE and not _show_blocks_control
@@ -3041,6 +3042,21 @@ func bind_armory(state: Ep2ArmoryState) -> void:
 
 func armory_open() -> bool:
 	return _hud_ctl != null and _hud_ctl.armory_open
+
+func use_chill_bud() -> bool:
+	if GameManager.chill_buds <= 0:
+		if _hud_ctl != null: _hud_ctl.toast("NO CHILL BUDS - VISIT DUDE",1.6)
+		return false
+	if not _running or _resolved or _health <= 0 or _health >= MAX_HEALTH:
+		if _hud_ctl != null: _hud_ctl.toast("ALREADY FEELING CHILL",1.6)
+		return false
+	if not GameManager.take_chill_bud(): return false
+	_health = MAX_HEALTH
+	if _hud_ctl != null:
+		_hud_ctl.health = _health
+		_hud_ctl.toast("DUDE'S CHILL BUDS - THREE HEARTS RESTORED",1.6)
+	GameManager.save_session()
+	return true
 
 
 func toggle_armory() -> void:

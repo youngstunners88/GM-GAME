@@ -1,0 +1,15 @@
+[PASS] Dude's real inventory gift can be claimed once
+[PASS] actual Tabs host owns pause
+[PASS] pointer selects the actual bud card
+[PASS] Use restores one heart to all three
+[PASS] successful Use spends exactly one bud
+[PASS] healing keeps Tabs paused and never equips a weapon
+[PASS] disabled empty/full button cannot consume again
+[PASS] close returns this pause owner to gameplay
+[PASS] second raw finger can select the bud
+[PASS] raw finger restores full health exactly once
+[PASS] full health refuses another use and retains stock
+[PASS] existing H shortcut also restores three
+[PASS] a failed attempt cannot be revived
+[PASS] lake trail uses its owning three-heart health
+EP2_HEALING_TABS: 14 checks, 0 failed

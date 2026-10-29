@@ -334,6 +334,22 @@ jobs:
           timeout 90 "$GODOT_BIN" --headless res://tests/panel_close_test.tscn > panel-close-tests.log 2>&1
           grep -q 'PANEL_CLOSE: 8 checks, 0 failed' panel-close-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' panel-close-tests.log; then exit 1; fi
+          # Continuous rooms/roads, the original farmer's delivery, actionable full-heal Tabs and supplied lake track.
+          timeout 90 "$GODOT_BIN" --headless res://tests/ep2_doorway_presence_test.tscn > doorway-presence-tests.log 2>&1
+          grep -q 'EP2_DOORWAY_PRESENCE: 5 checks, 0 failed' doorway-presence-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' doorway-presence-tests.log; then exit 1; fi
+          timeout 180 "$GODOT_BIN" --headless res://tests/ep2_ranch_road_presence_test.tscn > ranch-road-presence-tests.log 2>&1
+          grep -q 'EP2_RANCH_ROAD_PRESENCE: 9 checks, 0 failed' ranch-road-presence-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ranch-road-presence-tests.log; then exit 1; fi
+          timeout 180 "$GODOT_BIN" --headless res://tests/ep2_healing_tabs_test.tscn > healing-tabs-tests.log 2>&1
+          grep -q 'EP2_HEALING_TABS: 14 checks, 0 failed' healing-tabs-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' healing-tabs-tests.log; then exit 1; fi
+          timeout 240 "$GODOT_BIN" --headless res://tests/ep2_farmer_trip_test.tscn > farmer-trip-tests.log 2>&1
+          grep -q 'EP2_FARMER_TRIP: 28 checks, 0 failed' farmer-trip-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' farmer-trip-tests.log; then exit 1; fi
+          timeout 90 "$GODOT_BIN" --headless res://tests/ep2_lake_theme_test.tscn > lake-theme-tests.log 2>&1
+          grep -q 'EP2_LAKE_THEME: 8 checks, 0 failed' lake-theme-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' lake-theme-tests.log; then exit 1; fi
           # Founder 2026-10-27 P0: held W crosses the elevator door; nobody walks through the forest bridge's rails; the quad-ride music blends.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_door_stride_test.tscn 2>&1 | tee door-stride-tests.log
           grep -q 'EP2_DOOR_STRIDE: ALL PASS' door-stride-tests.log

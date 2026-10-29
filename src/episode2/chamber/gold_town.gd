@@ -293,7 +293,7 @@ var _minister2_said: bool = false
 var _horse_bought: bool = false
 var _depart_mounted: bool = false
 var _depart_from := Vector3.ZERO
-const DEPART_HORSE := Vector3(-13,0,1230)
+const DEPART_HORSE := Ep2LakeRoad.ORIGIN
 
 
 func _init() -> void:
