@@ -68,7 +68,8 @@ func _ready() -> void:
 	hud.toggle_armory()
 	await get_tree().process_frame
 	await click(hud._panel.bud_card,1)
-	check("second raw finger can select the bud",hud._panel.bud_selected)
+	var button_dp: float=hud._panel.bud_use.size.y*hud._panel.scale.y/TouchUi.metrics().dp
+	check("second raw finger selects a finger-sized bud action",hud._panel.bud_selected and button_dp>=44)
 	await click(hud._panel.bud_use,1)
 	check("raw finger restores full health exactly once",woods.get_health()==3 and GameManager.chill_buds==1)
 	check("full health refuses another use and retains stock",not woods.use_chill_bud() and GameManager.chill_buds==1)

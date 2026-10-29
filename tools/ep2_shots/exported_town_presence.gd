@@ -42,7 +42,9 @@ func run() -> void:
 	print("TC_WEB_OPEN_READY ",JSON.stringify({"hold":rect(hud._hold_button),"size":[root.get_visible_rect().size.x,root.get_visible_rect().size.y]}))
 	while not hud.armory_open:await process_frame
 	for i in 8:await process_frame
-	check("exported Tabs pauses and suspends the real foot profile",paused and session.touch_suspended())
+	var metrics=load("res://src/input/mobile/touch_ui.gd").metrics()
+	var button_dp: float=hud._panel.bud_use.size.y*hud._panel.scale.y/metrics.dp
+	check("exported Tabs pauses with a finger-sized supply action",paused and session.touch_suspended() and button_dp>=44)
 	print("TC_WEB_SUPPLIES_READY ",JSON.stringify({"bud":rect(hud._panel.bud_card),"use":rect(hud._panel.bud_use),"close":rect(hud._panel.get_node("PanelClose"))}))
 	while not hud._panel.bud_selected:await process_frame
 	check("exported real pointer selects the bud",not hud._panel.bud_use.disabled)
@@ -52,6 +54,10 @@ func run() -> void:
 	print("TC_WEB_HEALED")
 	while hud.armory_open:await process_frame
 	check("exported close restores play",not paused)
+	# Touch repeats the input transaction; desktop covers the same exported 3D.
+	if load("res://src/input/mobile/touch_ui.gd").is_touch():
+		print("TC_WEB_DONE:",failed)
+		return
 	session._active=null
 	session.queue_free()
 	await process_frame
@@ -70,10 +76,11 @@ func run() -> void:
 	town._look_yaw=atan2(10.,-9.)
 	town._look_pitch=-.13
 	town._update_camera(0)
-	for i in 5:await process_frame
+	for i in 2:await process_frame
 	check("exported ranch road is already present on foot",town._visuals.find_child("LakeRoadSurvey",true,false).is_visible_in_tree() and not town._depart_mounted)
 	print("TC_WEB_RANCH_VIEW")
-	await create_timer(5).timeout
+	var until: int=Time.get_ticks_msec()+5000
+	while Time.get_ticks_msec()<until:await process_frame
 	var survey=load("res://src/episode2/chamber/ep2_gold_town.gd")
 	var xf: Transform3D=survey.building_xform(survey.entry("Bldg_Jail"))
 	var d: Vector3=xf.basis*Vector3(0,0,-1)
@@ -82,7 +89,8 @@ func run() -> void:
 	town._look_pitch=-.04
 	town._sheriff.place(town._jail_spot("sheriff"))
 	town._update_camera(0)
-	for i in 5:await process_frame
+	for i in 2:await process_frame
 	print("TC_WEB_DOOR_VIEW")
-	await create_timer(5).timeout
+	until=Time.get_ticks_msec()+5000
+	while Time.get_ticks_msec()<until:await process_frame
 	print("TC_WEB_DONE:",failed)

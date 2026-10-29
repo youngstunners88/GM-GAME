@@ -111,10 +111,16 @@ func _process(_delta: float) -> void:
 		cards[i].disabled = state == null or state.firearms_confiscated or not state.owns(Ep2ArmoryState.IDS[i])
 	var band: Rect2 = _ledger_band()
 	var action_width: float = 112.0 if size.x < 650 else 150.0
+	var supply_scale: float = _supply_scale()
+	action_width = maxf(action_width,88.0*supply_scale)
+	var button_height: float = 48.0*supply_scale
 	bud_card.position = band.position+Vector2(10,27)
-	bud_card.size = Vector2(band.size.x-action_width-28,48)
+	bud_card.size = Vector2(band.size.x-action_width-28,button_height)
 	bud_use.position = Vector2(band.end.x-action_width-10,band.position.y+27)
-	bud_use.size = Vector2(action_width,48)
+	bud_use.size = Vector2(action_width,button_height)
+	bud_card.add_theme_constant_override("icon_max_width",int(32*supply_scale))
+	bud_use.add_theme_constant_override("icon_max_width",int(54*supply_scale))
+	bud_card.add_theme_font_size_override("font_size",int(15*supply_scale))
 	refresh_supplies()
 	queue_redraw()
 
@@ -136,10 +142,14 @@ func _purse_band() -> Rect2:
 	return Rect2(Vector2(mid - minf(350.0, size.x * 0.5 - 16.0), line_y + 10.0),
 		Vector2(minf(700.0, size.x - 32.0), 40.0 if compact else 44.0))
 
+func _supply_scale() -> float:
+	# Metrics are canvas units per dp; portrait already scales this panel.
+	return maxf(1.0,TouchUi.metrics().dp/maxf(.01,scale.x)) if not TouchUi.keys_shown() else 1.0
+
 func _ledger_band() -> Rect2:
 	var purse: Rect2 = _purse_band()
 	return Rect2(purse.position + Vector2(0.0, purse.size.y + 6.0),
-		Vector2(purse.size.x, 101.0))
+		Vector2(purse.size.x, 53.0+48.0*_supply_scale()))
 
 func card_rect(i: int) -> Rect2:
 	if size.x < 650.0:
@@ -220,17 +230,19 @@ func _draw() -> void:
 		_text(Ep2ArmoryState.NAMES[id].to_upper(),Vector2(rect.get_center().x,rect.position.y+rect.size.y*.75),fs,PAPER,true)
 		var count: String = card_status(id)
 		_text(count,Vector2(rect.get_center().x,rect.position.y+rect.size.y*.86),12 if compact else 14,BRASS,true)
-		var key: String = Ep2ArmoryState.key_label(Ep2ArmoryState.ACTIONS[i])
-		_text(key,rect.position+Vector2(24,32),18,BRASS)
-		if picked:
+		if TouchUi.keys_shown():
+			var key: String = Ep2ArmoryState.key_label(Ep2ArmoryState.ACTIONS[i])
+			_text(key,rect.position+Vector2(24,32),18,BRASS)
+		if picked and TouchUi.keys_shown():
 			_text("EQUIP ON RELEASE",Vector2(rect.get_center().x,rect.end.y-12),10,BRASS,true)
 	var footer_y: float = card_rect(2 if compact else 1).end.y + 26
 	_text("BEAR ARROWS  ·  %d" % state.arrows,Vector2(mid,footer_y),13,BRASS,true)
 	_text("TIME STANDS STILL",Vector2(mid,footer_y+26),12,PAPER,true)
-	var hint: String = "Hold %s / Back · point or choose 1 / 2 / 3 · release to equip" % Ep2ArmoryState.key_label("ep2_armory")
-	if compact:
-		hint = "Hold holster · drag to a weapon · release"
-	_text(hint,Vector2(mid,footer_y+49),10 if compact else 13,BRASS,true)
+	if TouchUi.keys_shown():
+		var hint: String = "Hold %s / Back · point or choose 1 / 2 / 3 · release to equip" % Ep2ArmoryState.key_label("ep2_armory")
+		if compact:
+			hint = "Hold holster · drag to a weapon · release"
+		_text(hint,Vector2(mid,footer_y+49),10 if compact else 13,BRASS,true)
 
 ## The ammunition/acquisition line on one card. Confiscated irons stay visible
 ## but cannot be previewed or equipped until the Sheriff returns them.
