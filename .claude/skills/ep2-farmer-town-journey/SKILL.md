@@ -15,3 +15,5 @@ Use ep2-world-presence-and-consumables, ep2-road-donkey-cart where installed, ep
 ## Verified repair lesson
 
 The session owns the actual cart exactly once; the ambient crowd must exclude reserved workers from ordinary choices, social partners and celebrations while still owning their flee/shelter safety. Yield to duel/quiet contexts and require actual goal distance before transferring goods. Test a real set_context(duel), resume and killed carrier. Check is_instance_valid before any `is` type test on retained room references during teardown.
+
+A direct Trip.restore test is insufficient: save while the carrier is actually inside the store (not merely on its porch), then load a fresh Ep2SessionRoot and require the rest of the crowd to restore too. The ambient crowd validator treats ordinary actors as outdoors. Serialize a borrowed interior carrier using its existing valid shop/height schema while the trip retains its own route, and clear abandoned ordinary waypoints when reserving it. Preserve flee/shelter ownership on restore. Baseline whole-session interior test29/1 failure; corrected29/0.

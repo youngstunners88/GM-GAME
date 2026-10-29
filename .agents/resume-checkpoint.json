@@ -1,11 +1,11 @@
 {
-  "objective": "Finish verified production release of town doorway/road continuity, same farmer business trip, full-heal Tabs bud and supplied lake theme; preserve all FIX doc repairs",
+  "objective": "Finish town presence/healing follow-up through actual deployed public proof; preserve original FIX doc repairs",
   "branch": "codex/founder-fix-document-1029",
-  "runtime_baseline": "ce3e7827 (343d9b74 plus touch-sized UI); proof docs ready to commit",
-  "observed_master": "6823cda7",
-  "prior_release": "c903f880/BUILD2026-10-29-c903f88, CI40832421900/job123309437553 actual54.27MiB butler and public access verified; original receipt retained",
-  "verified": "64 focused native pass; full workflow reconciled with freed _active touch teardown fix + affected town/crowd/autonomy/ledger reruns. Native/Compatibility and final WebGL doorway/road cameras inspected. New browser desktop7/two-finger6 pass incl >=44dp targets; finalbuttons48dp/no key hints. Warm197637472B/fresh197604256B main (<190MiB); extras136166784B. Security/title5/harness/texture68 pass. Scratch release_gates.py ce3e7827 passes. No provider spend.",
-  "evidence": "docs/episode2-quality/town-presence-20261029/REVIEW.md and scratch /workspace/work/town-continuity-1029. New4 skills routed.",
-  "next": "Commit current proof docs; run ship-to-master with verified scratch release_gates.py ce3e7827; refresh/merge concurrent master/branch (web-only CI outputs). Verify actual masterCI/butler/publicBUILD. Then download/replay served packs, public keyboard wrong-code rejection, receipt, final docs commit/push/master. No live follow-up claim before proof.",
-  "environment": "Godot4.3; Xorg:98; flock -o /tmp/gm-godot.lock for GPU/export. Node public fetch requires NODE_USE_ENV_PROXY=1 and configured CA; Chromium trusted wrapper. Localserver8917 web_verify. No game-dev/Blender5.2; Blender4.3 used. Never print b64/credentials."
+  "runtime_baseline": "35e03105 (latest local source; source343 + touchce3 + whole-town interior-save fix)",
+  "observed_master": "e6a79f56; its run40906231562/job123561624140 deliberately canceled before deploy, confirmed cancelled/deploy skipped",
+  "prior_live": "c903f880 / BUILD2026-10-29-c903f88 / CI40832421900; verified receipt retained in fix-document-20261029",
+  "verified": "Final65 native incl29 fresh-session interior delivery; baseline29/1 then29/0. Townpeople/autonomy33 rerun pass. Warm197639680B/script_errors0; fresh197607008B/margin1622432B; extras136166784B. Security/title/harness/texture68 pass. Local unchanged UI desktop7/two-finger6 + cameras accepted. release_gates.py35e03105 passes. No provider spend.",
+  "evidence": "docs/episode2-quality/town-presence-20261029; scratch /workspace/work/town-continuity-1029. release_gates.py updated65/final logs; run with35e03105 after fresh/security complete. Local UI desktop7+two-finger6 includes >=44dp targets, actualbuttons48dp/no phone key hints. Cameras native/WebGL accepted.",
+  "next": "Commit proof docs and ship-to-master with verified release_gates.py35e03105. Explicit fetch mapped branch tracking ref first; preserve CI web commits. Verify NEW masterCI + actualbutler/publicBUILD (e6 run canceled). Download/replay served packs with prepared helpers; wrong-code public input; receipt; final docs normal push/master.",
+  "environment": "Godot4.3; Xorg:98; serialize GPU/export with flock -o. Node public fetch needs NODE_USE_ENV_PROXY=1 and configured CA; Chromium trusted wrapper. Local8917 web_verify. No game-dev/Blender5.2. Never print b64/credentials."
 }
