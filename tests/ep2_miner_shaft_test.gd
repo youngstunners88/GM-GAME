@@ -185,5 +185,28 @@ func _ready() -> void:
 	_check("rig is startable again after reset", c9.start_rig("eth"))
 	c9.queue_free()
 
+	# 17. Touch: the shaft answers the session root's free-roam contract, so a phone gets
+	#     the ep2_foot profile. Without it touch_profile() answers `none`: no FIRE, no
+	#     INTERACT, no PAUSE, no way out (audit 2026-10-29).
+	var c10 := _mk(1000)
+	_check("touch: free-roam contract present (move / control / capture / jump / look)",
+		c10.has_method("set_move_input") and c10.has_method("has_player_control")
+			and c10.has_method("wants_mouse_capture") and c10.has_method("jump") and c10.has_method("look"))
+	var root := Ep2SessionRoot.new()
+	root._active = c10
+	root._mode = Ep2SessionRoot.Mode.CHAMBER
+	var profile: StringName = root.touch_profile()
+	_check("touch: the router answers ep2_foot for the shaft (got %s)" % profile, profile == &"ep2_foot")
+	root.free()
+	_check("touch: control is live before the room resolves", c10.has_player_control())
+	c10.set_move_input(Vector2(0.0, -1.0))
+	_check("touch: stick pulled down takes cover", c10.is_in_cover())
+	c10.set_move_input(Vector2(0.0, 0.0))
+	_check("touch: releasing the stick leaves cover", not c10.is_in_cover())
+	c10.start_rig("eth")
+	c10.early_claim()
+	_check("touch: control drops once the room resolves", not c10.has_player_control())
+	c10.queue_free()
+
 	print("EP2_MINER_SHAFT: %s" % ("ALL PASS" if _fail == 0 else "%d FAILURE(S)" % _fail))
 	get_tree().quit(_fail)

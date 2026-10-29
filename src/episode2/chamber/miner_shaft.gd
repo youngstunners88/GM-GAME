@@ -62,6 +62,7 @@ const BEAR_HP := 2
 const BEAR_SABOTAGE_RANGE := 1.5   # distance from rig at which a bear sabotages
 const BEAR_SABOTAGE_COOLDOWN := 2.0
 const COVER_DAMAGE_IMMUNITY := true  # in cover, bear contact damages the rig, not you
+const COVER_DEADZONE := 0.35        # stick pulled at least this far down = the keyboard's S / Move Down
 
 # --- Layout (metres; CHAMBER_ARCHITECTURE_PLAN §3 tiers) ----------------------
 ## The rig sits at the far end so the fight pushes entrance→rig, and the Early
@@ -340,6 +341,34 @@ func early_claim() -> bool:
 		return false
 	_resolve(true)
 	return true
+
+# --- The session root's free-roam contract (touch profile) ---------------------------------
+## The shaft is a fixed post: no walking and no camera look. It still answers the same
+## duck-typed contract as the free-roam chambers, because Ep2SessionRoot.touch_profile()
+## answers `none` without it - and a phone then gets no buttons at all: no FIRE, no
+## INTERACT, no PAUSE, no way out (audit 2026-10-29). The stick's vertical axis is the
+## cover verb, exactly the keyboard's S / Move Down, so both input paths stay one path.
+func set_move_input(direction: Vector2, _run: bool = false) -> void:
+	if direction.y < -COVER_DEADZONE:
+		take_cover()
+	else:
+		leave_cover()
+
+## True only while the room can take input; the session root shows the controls only then.
+func has_player_control() -> bool:
+	return _running and not _resolved
+
+## The post's view is fixed: a real mouse never captures the pointer and never looks around.
+func wants_mouse_capture() -> bool:
+	return false
+
+## Called by the shared free-roam router on the JUMP verb. There is nothing to jump onto here.
+func jump() -> bool:
+	return false
+
+## Called by the shared free-roam router on mouse look. The fixed post has none.
+func look(_relative: Vector2) -> void:
+	pass
 
 # --- Resolution ---------------------------------------------------------------
 
