@@ -484,6 +484,8 @@ func _ensure_room() -> void:
 func _restore_3d_after_film() -> void:
 	if _film_3d_off:
 		_film_3d_off = false
+		if _visuals != null and is_instance_valid(_visuals):
+			_visuals.process_mode = Node.PROCESS_MODE_INHERIT
 		if is_inside_tree():
 			get_viewport().disable_3d = false
 
@@ -579,7 +581,7 @@ func step(delta: float) -> void:
 		_hold = maxf(0.0, _hold - delta)
 	# The smelter's CAD props (Ep2KitProps): the room is built a few seconds into the film, usually before the web build has mounted the
 	# streamed kit; the stand-ins built then turn into the CAD pieces the moment it is (normally while the film still covers the room).
-	if Ep2KitProps.pending_count() > 0:
+	if _beat != Beat.CINEMATIC and Ep2KitProps.pending_count() > 0:
 		_kit_poll -= delta
 		if _kit_poll <= 0.0:
 			_kit_poll = 0.5
@@ -1427,6 +1429,9 @@ func _build_visuals() -> void:
 		_visuals.queue_free()
 	_visuals = Node3D.new()
 	_visuals.name = "Visuals"
+	# Rendering off does not stop skeleton modifiers, particles or child scripts.
+	# The full-screen video is the only active performance until it finishes.
+	_visuals.process_mode = Node.PROCESS_MODE_DISABLED if _film_3d_off else Node.PROCESS_MODE_INHERIT
 	add_child(_visuals)
 	_mold_nodes.clear()
 	_cauldron_spots.clear()

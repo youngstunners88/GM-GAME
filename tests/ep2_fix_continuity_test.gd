@@ -27,11 +27,13 @@ func _ready() -> void:
 	check("film remains active after hideout build", not video.is_done() and facility._room_ready)
 	check("film does not build a separate elevator viewport", session._pb_node == null and session._pb_vp == null)
 	check("film still disables the main 3D pass", get_viewport().disable_3d)
+	check("hidden room simulation is frozen behind the film", facility._visuals.process_mode == Node.PROCESS_MODE_DISABLED and not facility._bull.can_process())
 	video.skip()
 	for i in 10:
 		facility.step(1.0 / 60.0)
 		await get_tree().process_frame
 	check("lesson restores 3D and starts early elevator prebuild", not get_viewport().disable_3d and session._pb_id == "mine_lift")
+	check("film exit resumes the room's character processing", facility._visuals.process_mode == Node.PROCESS_MODE_INHERIT and facility._bull.can_process())
 	session._drive_prebuild(1.0e9)
 	var prepared: MineLiftChamber = session._pb_node
 	check("elevator is built before doorway travel", session.is_prebuilt("mine_lift"))

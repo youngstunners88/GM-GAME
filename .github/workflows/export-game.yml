@@ -329,7 +329,7 @@ jobs:
           grep -q 'EP2_FIX_MOTION: 13 checks, 0 failed' fix-motion-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' fix-motion-tests.log; then exit 1; fi
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_fix_continuity_test.tscn > fix-continuity-tests.log 2>&1
-          grep -q 'EP2_FIX_CONTINUITY: 18 checks, 0 failed' fix-continuity-tests.log
+          grep -q 'EP2_FIX_CONTINUITY: 20 checks, 0 failed' fix-continuity-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' fix-continuity-tests.log; then exit 1; fi
           timeout 90 "$GODOT_BIN" --headless res://tests/panel_close_test.tscn > panel-close-tests.log 2>&1
           grep -q 'PANEL_CLOSE: 8 checks, 0 failed' panel-close-tests.log
@@ -615,6 +615,13 @@ jobs:
             portal-traversal.log
             portal-render.log
           retention-days: 14
+
+      - name: Verify elevator portal foreground on Compatibility
+        run: |
+          timeout 90 xvfb-run -a "$GODOT_BIN" --rendering-method gl_compatibility --rendering-driver opengl3 --audio-driver Dummy --script res://tests/ep2_portal_render_test.gd > ep2-door-pixels.log 2>&1
+          grep -q 'EP2_PORTAL_RENDER: 2 checks, 0 failed' ep2-door-pixels.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' ep2-door-pixels.log; then exit 1; fi
+          cat ep2-door-pixels.log
 
       - name: Capture town autonomy through the player camera
         run: |
