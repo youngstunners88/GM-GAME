@@ -16,6 +16,7 @@ const PAPER := Color("eddbb2")
 const LEATHER := Color("38261b")
 const LEATHER_DIM := Color("231b15")
 const CLOSED := Color("5d4a38")
+const CLOSE_PAD := 96.0           # canvas units: >= 44 CSS px on a landscape phone
 ## Every token in Lil Blunt's purse pays (founder 2026-10-24: ETH, BTC, WBTC, Solana and TitanX, "at Rich or anywhere").
 const TENDER_NAMES := {"btc": "BTC", "eth": "ETH", "wbtc": "WBTC", "sol": "SOL", "titanx": "TITANX"}
 const TENDERS := ["btc", "eth", "wbtc", "sol", "titanx"]
@@ -30,6 +31,7 @@ var grace: float = 0.25
 var flash: String = ""
 var _flash_t: float = 0.0
 var _rows: Array[Button] = []
+var _close: Button = null
 
 
 func _catalogue() -> Array:
@@ -49,6 +51,25 @@ func _ready() -> void:
 		row.pressed.connect(func() -> void: _choose(i))
 		add_child(row)
 		_rows.append(row)
+	# Wordless way out for a finger: the trade pauses the tree, so Esc / ui_cancel is not
+	# reachable on a phone and the counter used to be a softlock (audit 2026-10-29).
+	_close = Button.new()
+	_close.name = "Close"
+	_close.focus_mode = Control.FOCUS_NONE
+	_close.text = "×"
+	_close.add_theme_font_size_override("font_size", 38)
+	_close.add_theme_color_override("font_color", PAPER)
+	_close.add_theme_color_override("font_hover_color", BRASS)
+	_close.add_theme_color_override("font_pressed_color", BRASS)
+	var pad := StyleBoxFlat.new()
+	pad.bg_color = LEATHER_DIM
+	pad.border_color = BRASS
+	pad.set_border_width_all(2)
+	pad.set_corner_radius_all(12)
+	for style in ["normal", "hover", "pressed"]:
+		_close.add_theme_stylebox_override(style, pad)
+	_close.pressed.connect(func() -> void: closed.emit())
+	add_child(_close)
 	set_process(true)
 
 
@@ -146,6 +167,9 @@ func _process(delta: float) -> void:
 	var ui: float = view.x / 390.0 if view.x / view.y < 1.1 else 1.0
 	scale = Vector2.ONE * ui
 	size = view / ui
+	if _close != null:
+		_close.size = Vector2(CLOSE_PAD, CLOSE_PAD)
+		_close.position = Vector2(size.x - CLOSE_PAD - 16.0, 16.0)
 	for i in _rows.size():
 		_rows[i].position = row_rect(i).position
 		_rows[i].size = row_rect(i).size
@@ -219,7 +243,8 @@ func _draw() -> void:
 	_text("NO FREE IRON IN THIS TOWN", Vector2(mid, footer + 19), 11, PAPER, true)
 	if flash != "":
 		_text(flash, Vector2(mid, footer + 44), 14, BRASS, true)
-	_text("Up / Down choose  ·  E or Enter buy  ·  Esc leave", Vector2(mid, size.y - 24), 10 if compact else 12, BRASS, true)
+	_text("Up / Down choose  ·  E or Enter buy  ·  Esc leave" if TouchUi.keys_shown() else "Tap an item to buy",
+		Vector2(mid, size.y - 24), 10 if compact else 12, BRASS, true)
 
 
 func _input(event: InputEvent) -> void:

@@ -388,8 +388,17 @@ func _ready() -> void:
 	_check("the river gear (skiff and sealed crates) is his for the day-88 shipment, paid in ETH", c.buy("river_gear", 2, "eth") and c.has_river_gear() and GameManager.purse_balance("eth") == 2)
 	_check("a token he does not hold enough of is refused (no TitanX on him)", GameManager.purse_balance("titanx") > 0 or not c.buy("rifle_ammo", 1, "titanx"))
 	_check("the room refuses a tender that is not in his purse", not c.buy("rifle_ammo", 1, "gold") and not c.buy("river_gear", 2, "gold"))
-	c.get_shop().closed.emit()
-	_check("Esc shuts the trade and gives the street back", not c.is_shop_open() and not get_tree().paused)
+	# A finger must be able to shut the trade: the tree is paused, so the touch controls are
+	# suspended and Esc / ui_cancel is unreachable on a phone (audit 2026-10-29).
+	get_window().size = Vector2i(1280, 720)
+	await get_tree().process_frame
+	var close_pad: Button = c.get_shop().get_node_or_null("Close")
+	_check("the trade carries a wordless close pad in the corner (>= 44 CSS px on a phone)",
+		close_pad != null and close_pad.is_visible_in_tree() and close_pad.size.x >= 88.0
+			and close_pad.position.x + close_pad.size.x <= c.get_shop().size.x)
+	if close_pad != null:
+		close_pad.pressed.emit()
+	_check("the close pad shuts the trade and gives the street back", not c.is_shop_open() and not get_tree().paused)
 	# ---- section 4.3: he can test the Colt Gatling; after it, Inferno rides back in on his quad and parks outside Rich's
 	print("-- THE GATLING, THEN INFERNO'S RETURN")
 	for i in 120:
