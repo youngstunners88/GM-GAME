@@ -44,6 +44,7 @@ Logan's Lake and the supplied Logan model: `.claude/skills/ep2-logans-lake/SKILL
 
 | Task | Go to | Read | Skills |
 |------|-------|------|--------|
+| **FIX document: tunnel film, facility elevator, Sheriff/Utah gait, fullscreen-safe × exits, Mike Dean → Dude horse** | `docs/founder-feedback/2026-10-29_fix-document.md` | `.claude/skills/ep2-founder-regression-repair/SKILL.md` | `ep2-founder-regression-repair`, `ep2-story-boundary-regressions`, `ep2-gaits-and-panel-exits` |
 | **Transition feedback: boss NFT voice, Episode 1–2 delay, lift handle interruption, forest continuity, quad reveal/mount** | `docs/founder-feedback/2026-10-23_transitions.md` | `.claude/skills/gm-game-transition-repair/SKILL.md` | `gm-game-transition-repair`, `gm-game-transition-dialogue`, `gm-game-location-continuity` |
 | **Transition 2: exit beam, held-walk stop/restart, Inferno pack blocking passenger fire** | `docs/founder-feedback/2026-10-23_transition2.md` | `.claude/skills/gm-game-location-continuity/SKILL.md`, `.claude/skills/gm-game-passenger-sightline/SKILL.md` | `gm-game-location-continuity`, `gm-game-passenger-sightline` |
 | **Full supplied townspeople cast, independent routines, street navigation, social memory or civilian danger reactions** | `src/episode2/actors/ep2_town_people.gd`, `design/ep2/town/autonomy-20261022/` | `.agents/skills/ep2-town-autonomy/SKILL.md`, `.agents/skills/ep2-town-cast/SKILL.md` | `ep2-town-autonomy`, `ep2-town-cast`, `creative-hub` |

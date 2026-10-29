@@ -874,6 +874,8 @@ func _build_ui() -> void:
 	_overlay_box.offset_bottom = -28.0
 	_overlay_box.add_theme_constant_override("separation", 14)
 	_overlay_panel.add_child(_overlay_box)
+	# Same cancellation as Escape; does not grant a quiz pass or a reward.
+	preload("res://src/ui/panel_close.gd").install(_overlay_root, close_overlay)
 
 	_watch_timer = Timer.new()
 	_watch_timer.name = "VideoWatchTimer"

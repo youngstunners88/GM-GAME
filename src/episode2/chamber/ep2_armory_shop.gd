@@ -49,6 +49,7 @@ func _ready() -> void:
 		row.pressed.connect(func() -> void: _choose(i))
 		add_child(row)
 		_rows.append(row)
+	preload("res://src/ui/panel_close.gd").install(self, func() -> void: closed.emit())
 	set_process(true)
 
 
@@ -219,7 +220,8 @@ func _draw() -> void:
 	_text("NO FREE IRON IN THIS TOWN", Vector2(mid, footer + 19), 11, PAPER, true)
 	if flash != "":
 		_text(flash, Vector2(mid, footer + 44), 14, BRASS, true)
-	_text("Up / Down choose  ·  E or Enter buy  ·  Esc leave", Vector2(mid, size.y - 24), 10 if compact else 12, BRASS, true)
+	if TouchUi.keys_shown():
+		_text("Up / Down choose  ·  E or Enter buy  ·  × close", Vector2(mid, size.y - 24), 10 if compact else 12, BRASS, true)
 
 
 func _input(event: InputEvent) -> void:

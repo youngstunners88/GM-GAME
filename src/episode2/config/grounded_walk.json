@@ -1,0 +1,11 @@
+{
+  "cycle_seconds": 1.12,
+  "reference_speed": 1.05,
+  "stance_fraction": 0.55,
+  "clearance_m": 0.075,
+  "hip_lower_m": 0.012,
+  "hip_bob_m": 0.004,
+  "leg_extension": 0.995,
+  "arm_swing_radians": 0.10,
+  "samples": 64
+}

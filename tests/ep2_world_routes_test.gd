@@ -23,6 +23,8 @@ func _ready() -> void:
  var town: GoldTownChamber=preload("res://src/episode2/chamber/gold_town.tscn").instantiate()
  session.add_child(town);town.setup();town.set_physics_process(false)
  town._opp.fall_dead()
+ # This fixture represents a completed departure, rather than an unfinished STREET visit.
+ town._beat=town.Beat.DONE
  routes.park(session,town)
  var trail: LakeTrailChamber=preload("res://src/episode2/chamber/lake_trail.tscn").instantiate()
  session.add_child(trail);trail.setup();trail.set_physics_process(false)

@@ -354,7 +354,7 @@ func _ready() -> void:
 		rich != null and utah != null and rich.visible and utah.visible, str(rich) + " " + str(utah))
 	# the two-storey Armory's pair work on their own (Ep2ArmoryBrain), so any of their work clips is right; the fallback pair holds poses
 	var work_clips: Array = ["counter", "idle", "cigarpuff", "wiperifle", "inspectrifle", "reach", "talk", "pickup", "putdown", "greet", "walk",
-		"carry", "stairsup", "point"]
+		"carry", "stairsup", "point", "groundedwalk", "groundedcarry"]
 	_check("both are rigged bodies, moving on their authored clips (not statues with a bob)",
 		rich.has_clips() and utah.has_clips() and ((Ep2GoldTown.armory_v2 and rich.current_clip() in work_clips and utah.current_clip() in work_clips)
 			or (rich.current_clip() == "counter" and utah.current_clip() == "idle")),

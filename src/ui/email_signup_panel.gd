@@ -21,6 +21,7 @@ static func already_shown() -> bool:
 	return FileAccess.file_exists(SHOWN_FLAG)
 
 func _ready() -> void:
+	preload("res://src/ui/panel_close.gd").install(self, _on_skip)
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_join.pressed.connect(_on_join)
 	_skip.pressed.connect(_on_skip)

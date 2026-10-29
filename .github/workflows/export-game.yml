@@ -268,7 +268,7 @@ jobs:
           dedicated_server=false
           custom_features=""
           export_filter="all_resources"
-          include_filter="config.json,src/autoload/share_taglines.json"
+          include_filter="config.json,src/autoload/share_taglines.json,src/episode2/config/grounded_walk.json"
           exclude_filter="*.yml,*.yaml,*.md,docs/*,tests/*,prompts/*,scripts/*,portals/*,portal-captures/*,node_modules/*,.godot-cache/*,artifacts/*,design/*,work-notes/*,tools/*,assets/keyart/*,src/assets/models/horse/assetfurnace/*,web_verify/*,web/game/*,src/assets/sprites/sprite_prop_train-goldmine.png,src/assets/sprites/sprite_prop_train-goldmine_256.png,src/assets/sprites/sprite_train_goldmine_blender-render.png,src/assets/portals/leaders/*,src/assets/logos/founder/ref_wrong_diamonds_banned.png,src/assets/logos/founder/ref_flaming_diamond_target.png,src/assets/logos/founder/ref_no_logos_in_gaps.png,src/assets/logos/founder/ref_stilts_gap_outline.png,src/assets/logos/founder/ref_squares_to_replace.png,src/assets/logos/founder/ref_pipe_masks_logo.png,src/assets/logos/founder/ref_mural_remove.png,src/assets/art/smoke_lounge_banner.png,src/assets/models/player_bow/bow_fps_view.png,src/episode2/extras/*,src/episode2/assets/town/dude_stable_owner*,src/episode2/assets/town/stable_assistant*"
           export_path="web/game/index.html"
           script_export_mode=1
@@ -322,6 +322,18 @@ jobs:
           # The REAL hideout -> prebuilt lift -> prebuilt woods chain (founder 2026-10-25: no door pause, empty elevator, no rewind).
           timeout 300 "$GODOT_BIN" --headless res://tests/seamless_chain_test.tscn 2>&1 | tee seamless-chain-tests.log
           grep -q 'SEAMLESS_CHAIN: ALL PASS' seamless-chain-tests.log
+          timeout 180 "$GODOT_BIN" --headless res://tests/ep2_fix_document_test.tscn > fix-document-tests.log 2>&1
+          grep -q 'EP2_FIX_DOCUMENT: 12 checks, 0 failed' fix-document-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' fix-document-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/ep2_fix_motion_test.tscn > fix-motion-tests.log 2>&1
+          grep -q 'EP2_FIX_MOTION: 13 checks, 0 failed' fix-motion-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' fix-motion-tests.log; then exit 1; fi
+          timeout 180 "$GODOT_BIN" --headless res://tests/ep2_fix_continuity_test.tscn > fix-continuity-tests.log 2>&1
+          grep -q 'EP2_FIX_CONTINUITY: 17 checks, 0 failed' fix-continuity-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' fix-continuity-tests.log; then exit 1; fi
+          timeout 90 "$GODOT_BIN" --headless res://tests/panel_close_test.tscn > panel-close-tests.log 2>&1
+          grep -q 'PANEL_CLOSE: 8 checks, 0 failed' panel-close-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' panel-close-tests.log; then exit 1; fi
           # Founder 2026-10-27 P0: held W crosses the elevator door; nobody walks through the forest bridge's rails; the quad-ride music blends.
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_door_stride_test.tscn 2>&1 | tee door-stride-tests.log
           grep -q 'EP2_DOOR_STRIDE: ALL PASS' door-stride-tests.log

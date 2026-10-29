@@ -15,6 +15,7 @@ extends CanvasLayer
 const MAX_LEN := 200
 
 func _ready() -> void:
+	preload("res://src/ui/panel_close.gd").install(self, _on_close)
 	_send.pressed.connect(_on_send)
 	_close.pressed.connect(_on_close)
 	_input.text_changed.connect(_on_text_changed)

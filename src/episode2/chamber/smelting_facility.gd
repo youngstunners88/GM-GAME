@@ -592,7 +592,8 @@ func step(delta: float) -> void:
 			# invisible; a brief hitch a few seconds into a 60 s film is unnoticeable next to a freeze at the cut.
 			if not _room_built and _vfilm.elapsed() >= PREBUILD_AT:
 				_prebuild_room()
-				prebuild_requested.emit("mine_lift")
+				# The lesson requests the lift. Its separate 3D viewport must not
+				# build/render while the main viewport is disabled for the film.
 			return
 		if _film and is_instance_valid(_film):
 			_film.step(delta)
@@ -1271,6 +1272,10 @@ func portal_view_wanted() -> Dictionary:
 	if not _world_revisit and _bull != null and _bull.position.z > PORTAL_Z - 0.6:   # Inferno is going through ahead of him: draw him on the far side
 		d["bull"] = _bull.position + LIFT_OFFSET
 		d["bull_facing"] = _bull.facing
+		d["bull_rotation"] = _bull.rotation.y
+		if _bull.anim != null and _bull.anim.is_playing():
+			d["bull_clip"] = _bull.anim.current_animation
+			d["bull_clip_time"] = _bull.anim.current_animation_position
 	return d
 
 

@@ -62,13 +62,7 @@ func _ready() -> void:
  destination.add_theme_font_size_override("font_size",24)
  destination.mouse_filter = Control.MOUSE_FILTER_IGNORE
  paper.add_child(destination)
- var close := Button.new()
- close.text = "×"
- close.focus_mode = Control.FOCUS_NONE
- close.position = Vector2(6,6)
- close.size = Vector2(48,48)
- close.pressed.connect(toggle)
- panel.add_child(close)
+ preload("res://src/ui/panel_close.gd").install(panel, toggle)
  panel.hide()
 
 func _process(_dt: float) -> void:

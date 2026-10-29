@@ -73,6 +73,8 @@ var _mouth_open: bool = false
 func portal_begin() -> void:
 	_set_mouth_open(true)
 	_hide_unentered_body()      # the doorway must show an EMPTY cage: Lil Blunt is still in the hideout holding his rifle
+	if _vm != null: _vm.set_shown(false)
+	if _hud != null: _hud.hide()
 	if _bull != null:
 		_bull.visible = false
 
@@ -90,6 +92,14 @@ func portal_view(d: Dictionary) -> void:
 		if d.has("bull"):
 			_bull.position = d["bull"]
 			_bull.facing = float(d.get("bull_facing", _bull.facing))
+			_bull.rotation.y = float(d.get("bull_rotation", _bull.facing))
+			# This preview actor has no simulation clock. Mirror the actual
+			# walking pose, rather than showing a statue that pops on activation.
+			if _bull.anim != null and d.has("bull_clip") and _bull.anim.has_animation(d["bull_clip"]):
+				_bull.play(str(d["bull_clip"]), 1.0, 0.0)
+				if _bull.skeleton != null: _bull.skeleton.reset_bone_poses()
+				_bull.anim.seek(float(d["bull_clip_time"]), true)
+				_bull.anim.advance(0.0)
 
 
 func _set_mouth_open(open: bool) -> void:
@@ -750,17 +760,22 @@ func _on_setup() -> void:
 	_player_pos = START_POS
 	if handoff.has("lift_player"):            # walked in through the open doorway: exactly where the doorway showed him
 		var lp: Vector3 = handoff["lift_player"]
-		_player_pos = Vector3(clampf(lp.x, -1.2, 1.2), 0.0, maxf(lp.z, MOUTH_MIN_Z))
+		_player_pos = Vector3(lp.x, 0.0, maxf(lp.z, MOUTH_MIN_Z))
 	_ground_y = 0.0
 	_player_yaw = 0.0
 	_apply_handoff_gaze(0.0, -0.04)           # first person, eyes level (keeps the gaze he had at the previous chamber's exit)
+	if handoff.has("lift_player"):
+		# This is a physical doorway, not a directed spawn. Keep side/backward
+		# looks and steep gaze exactly as they appeared through the portal.
+		_look_yaw = float(handoff.get("yaw", _look_yaw))
+		_look_pitch = float(handoff.get("pitch", _look_pitch))
 	if _bull == null:
 		_bull = _build_bull(START_POS + Vector3(-1.2, 0.0, 4.0), 0.0)
 	if handoff.has("lift_bull"):              # Inferno walked through ahead of him: keep him where he was, facing the way he faced
 		_bull.position = handoff["lift_bull"]
 		_bull.facing = float(handoff.get("lift_bull_facing", _bull.facing))
 		if handoff.has("lift_bull_walk_time") and _bull.anim != null and _bull.anim.has_animation(_bull.walk_clip):
-			_bull.anim.play(_bull.walk_clip)
+			_bull.play(_bull.walk_clip, 1.0, 0.0)
 			_bull.anim.seek(float(handoff["lift_bull_walk_time"]), true)
 	if _bull != null:
 		_bull.visible = true

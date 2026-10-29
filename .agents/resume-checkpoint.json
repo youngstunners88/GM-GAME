@@ -1,25 +1,23 @@
 {
-  "objective": "COMPLETE: lake life and Lil Blunt icons published in combined e5198bd build and independently public-resource verified",
-  "source": "5f908771f5e56a7633d5ad6394cdf6f9d630ed0d",
-  "run": 40745667641,
-  "base": "14c00e248d075d36565c5547e8c213a0319dd363",
+  "objective": "Implement FIX Google Doc: film/elevator continuity, Sheriff/Utah gait, fullscreen-safe panel exits, Mike Dean-to-Dude horse referral",
+  "observed_remote_sha": "a862c16515f55bff53af55fa3c4619dd248dd57a",
+  "branch": "codex/founder-fix-document-1029",
+  "source_document": "1h0P1K6xiPnvdBqolLs7VxOecj5y2P7VF_T6W6ifw1KI",
   "paths": [
-    "src/episode2/actors/ep2_logan_skiff.gd",
-    "src/episode2/art/ep2_lake_landform.gd",
-    "src/episode2/art/ep2_lake_ambience.gd",
-    "src/episode2/art/ep2_trail_vultures.gd",
-    "src/episode2/ui/region_map.gd",
-    "docs/episode2-quality/lake-life-20261029/"
+    "src/episode2/session/world_routes.gd",
+    "src/episode2/chamber/gold_town.gd",
+    "src/episode2/chamber/mine_lift.gd",
+    "src/episode2/chamber/smelting_facility.gd",
+    "src/episode2/actors/ep2_grounded_walk.gd",
+    "src/ui/panel_close.gd"
   ],
-  "evidence": "Native fish27 contact~0.0000055m/map10/life6; lake/cabin26/trail pass. Actual Compatibility fish/map/vulture captures; warm export197532992B/0script errors; fresh197500656B under190MiB. Security/title/harness pass. No provider spend. Public BUILD2026-10-28-e5198bd/extras200, main197533616B/extras127826144B; exact public engine/packs six checks PASS/no errors; actual combined55.92MiBfresh Butler fallback verified.",
-  "pending": [],
-  "scratch": "/workspace/work/lake-life",
-  "next": "No feature implementation pending. Latest source-equivalent CI40751388649 still running; ours40745667641 cancelled by superseding combined release after game/export/security passed. Do not claim that cancelled CI deployed. Preserve concurrent mirror/probe fixes. Read RELEASE/PUBLIC_PROOF; real-phone/authenticated public-origin walkthrough not claimed.",
-  "related_release": {
-    "source": "e5198bdbde9ddcf6ddee9c4d6f1cf0c89c333c23",
-    "public_build": "2026-10-28-e5198bd",
-    "receipt": "docs/episode2-quality/world-voice-music-20261029/RELEASE_RECEIPT.json",
-    "preserves_our_runtime": true
-  },
-  "observed_remote_sha": "377a1ed7"
+  "evidence": "Baseline routed referral test 4 failures. Initial focused suites 47 pass; continuity expanded to17 including actual Inferno preview phase/owner. Town/player-camera gait strips and trade X inspected. Blender4.3.2 lower-body Sheriff skin QA passes (no unweighted or excess influences), all original materials retained. Last contact errors Sheriff.000068m/Utah.000229m, swing.075m. No provider spend.",
+  "pending": [
+    "Complete full CI-equivalent suite; rerun updated full-town whitelist and continuity/door tests",
+    "Complete queued exact web export and full-film/fullscreen browser fixture",
+    "Review exact physical doorway captures",
+    "Stage security/title/harness/fresh-pack gates, commit push master CI upload and public BUILD"
+  ],
+  "scratch": "/workspace/work/fix-doc-1029",
+  "notes": "Existing pause-menu geometry machine difference (3 exact known lines) remains. Full local suite logs /tmp/tmp.JMidOwxF1G. Export and affected reruns queue on /tmp/gm-godot.lock. Xorg task-owned PID3549 display99. Do not claim shipped until actual deployment/public proof."
 }

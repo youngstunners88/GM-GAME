@@ -1026,6 +1026,7 @@ func _build_gideon_panel() -> void:
 	layer.layer = 30
 	add_child(layer)
 	_gideon_panel = layer
+	preload("res://src/ui/panel_close.gd").install(layer, gideon_close)
 	var root := Control.new()
 	root.set_anchors_preset(Control.PRESET_CENTER)
 	layer.add_child(root)
@@ -1139,6 +1140,7 @@ func _build_clerk_panel() -> void:
 	layer.layer = 30
 	add_child(layer)
 	_clerk_panel = layer
+	preload("res://src/ui/panel_close.gd").install(layer, clerk_close)
 	var root := Control.new()
 	root.set_anchors_preset(Control.PRESET_CENTER)
 	layer.add_child(root)

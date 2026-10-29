@@ -10,6 +10,9 @@ func id_of(room: Node) -> String:
 func park(session: Node, room: Node) -> void:
  var id: String = id_of(room)
  if rooms.has(id): return
+ # A retained room must not call an obsolete forward chain on a later visit.
+ if room.chamber_cleared.is_connected(session._on_chamber_cleared): room.chamber_cleared.disconnect(session._on_chamber_cleared)
+ if room.chamber_failed.is_connected(session._on_chamber_failed): room.chamber_failed.disconnect(session._on_chamber_failed)
  if room is LakeTrailChamber and room.is_mounted():
   horse=room._horse;mounted=true
  if id in ["smelting_facility","mine_lift","woods_quad"] and room._bull != null:
@@ -43,16 +46,21 @@ func travel(session: Node, id: String, position: Vector3) -> bool:
  room.reparent(session)
  entry.viewport.queue_free()
  room.process_mode = Node.PROCESS_MODE_INHERIT
- room._world_revisit = true
+ var continuing_story: bool = room is GoldTownChamber and room._beat not in [room.Beat.GEARED, room.Beat.DONE]
+ room._world_revisit = not continuing_story
  if room is Ep2Interlude: room._mounted_transport=mounted and id in ["woods_quad","gold_town"]
  room._resolved=false;room._running=true
- room._show_active=false;room._show_blocks_control=false;room._hold=0.0
+ if not continuing_story:
+  room._show_active=false;room._show_blocks_control=false;room._hold=0.0
  room._player_pos=position;room._look_yaw=yaw;room._look_pitch=pitch
- if room.has_method("release_look"): room.release_look()
+ if not continuing_story and room.has_method("release_look"): room.release_look()
  if room is WoodsQuadChamber:
   room._riding=false;room._beat=room.Beat.SNEAK;room.camera_max.z=1760.0
  elif room is GoldTownChamber:
-  room._depart_mounted=false;room._beat=room.Beat.GEARED
+  room._depart_mounted=false
+  # An unfinished errand belongs to this instance, including its referral and objective.
+  # Only a completed departure returns as free roam; never manufacture GEARED on a visit.
+  if room._beat == room.Beat.DONE: room._beat=room.Beat.GEARED
  elif room is SmeltingFacilityChamber:
   room._beat=room.Beat.TERMS
  elif room is MineLiftChamber:
@@ -75,6 +83,9 @@ func travel(session: Node, id: String, position: Vector3) -> bool:
  session._active=room
  session._chain_id=id
  session._mode=session.Mode.CHAMBER
+ if continuing_story:
+  room.chamber_cleared.connect(session._on_chamber_cleared, CONNECT_ONE_SHOT)
+  room.chamber_failed.connect(session._on_chamber_failed, CONNECT_ONE_SHOT)
  if room.has_method("_update_camera"): room._update_camera(0.0)
  if room.has_method("_sync_visuals"): room._sync_visuals()
  for sound in entry.sounds:
@@ -110,10 +121,12 @@ func tick(session: Node, delta: float) -> void:
   travel(session,"gold_town",p+GoldTownChamber.DEPART_HORSE)
  elif id=="lake_trail" and c._in_departure_area and p.z < -78.5:
   travel(session,"woods_quad",p+GoldTownChamber.DEPART_HORSE)
- elif id=="gold_town" and p.z<1345.0:
+ # The town owns Dude's ranch at z=1230. The old 1345 boundary sent the
+ # referred player to the woods' independent, unreferred scenery yard.
+ elif id=="gold_town" and p.z<1150.0:
   travel(session,"woods_quad",p)
  elif id=="woods_quad" and c._world_revisit:
-  if p.z>1348.0:travel(session,"gold_town",p)
+  if p.z>1152.0:travel(session,"gold_town",p)
   elif p.z<6.2:travel(session,"mine_lift",p+MineLiftChamber.SURFACE_OFFSET)
   elif p.x>8.0 and p.z>1200.0 and p.z<1240.0:
    travel(session,"lake_trail",p-GoldTownChamber.DEPART_HORSE)

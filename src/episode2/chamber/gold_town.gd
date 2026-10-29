@@ -127,7 +127,7 @@ const GATLING_TESTED_HOLD := 1.4                           # seconds after he st
 
 # Founder 2026-10-28: restore the earlier Sheriff appearance, retaining his dialogue and voice.
 # The previous model and textures are restored into streamed extras to preserve the main-pack budget.
-const SHERIFF_MODEL := "res://src/episode2/extras/people/previous_sheriff/sheriff.glb"
+const SHERIFF_MODEL := "res://src/episode2/extras/people/previous_sheriff/sheriff_walk.glb"
 const SHERIFF_WALK_STRIDE := 0.81                         # m/s: his Walk clip's own ground speed (stride matching)
 const MINISTER_MODEL := "res://src/episode2/assets/town/minister.glb"      # Minister Mike Dean: the founder's robot-headed minister (Drive 2026-10-14), baked for the pack
 const COWBOY_MODEL := "res://src/episode2/assets/town/cowboy.glb"        # the stranger: a HUMAN cowboy (child meshes "Idle" and "Draw")
@@ -535,6 +535,7 @@ func _build_armory_folk_v2() -> void:
 	_utah.name = "Utah"
 	_visuals.add_child(_utah)
 	_utah.setup(Ep2Extras.UTAH, UTAH2_HEIGHT, Color(0.28, 0.33, 0.34))
+	Ep2GroundedWalk.install(_utah)
 	_rich_brain = Ep2ArmoryBrain.new()
 	_rich_brain.walk_speed = RICH2_WALK
 	_rich_brain.setup("rich", _rich, xf, _brain_spots(), "counter_rich", 7101)
@@ -962,9 +963,10 @@ func _build_sheriff() -> void:
 	_sheriff.clip_blend = 0.2
 	_visuals.add_child(_sheriff)
 	_sheriff.setup(SHERIFF_MODEL, SHERIFF_HEIGHT, Color(0.42, 0.30, 0.18))
+	Ep2GroundedWalk.install(_sheriff)
 	if _sheriff.has_clips():
 		_sheriff.procedural_bob = false                # mocap carries its own bob
-		_sheriff.walk_clip_speed = SHERIFF_WALK_STRIDE
+		_sheriff.walk_clip_speed = float(Ep2GroundedWalk.config.reference_speed)
 		_sheriff.hold_clip("Idle")
 	_sheriff_smoke = _particles(18, 2.6, Color(0.86, 0.86, 0.84, 0.33), 0.06)
 	_sheriff_smoke.name = "CigSmoke"

@@ -192,6 +192,7 @@ func _build_armory() -> void:
 	_panel = Ep2WeaponSelector.new()
 	_panel.visible = false
 	_selector_layer.add_child(_panel)
+	preload("res://src/ui/panel_close.gd").install(_panel, func() -> void: close_armory(false))
 	_slots = _panel.cards
 	_search = _button("Search bear [E]", func() -> void: search_requested.emit())
 	_search.visible = false
@@ -289,6 +290,11 @@ func _notification(what: int) -> void:
 func _input(event: InputEvent) -> void:
 	if not is_visible_in_tree() or armory == null or not show_ammo:
 		return
+	# Let the visible close button receive GUI input before the hold-selector
+	# consumes it. Closing cancels the preview and never changes a weapon.
+	if armory_open and (event is InputEventMouseButton or event is InputEventScreenTouch):
+		var close_button: Button = _panel.get_node("PanelClose")
+		if close_button.get_global_rect().has_point(event.position): return
 	if event.is_action_pressed("ep2_armory") and not event.is_echo():
 		if not armory_open:
 			armory_requested.emit()
