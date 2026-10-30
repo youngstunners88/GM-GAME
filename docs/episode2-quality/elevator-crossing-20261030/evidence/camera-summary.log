@@ -1,0 +1,5 @@
+CAM_A fov 78.00 pos (0.3, 1.55, 16.34)  LIFTCAM fov 78.00 pos (0.3, 1.55, -13.66)
+PORTAL_LIVE true QUAD true
+CAM_B fov 78.00 pos (0.3, 1.55, -13.66)
+CUT_LUMA_A 0.1028 B 0.1128
+DOOR_PORTAL_SHOT_DONE resolved=1
