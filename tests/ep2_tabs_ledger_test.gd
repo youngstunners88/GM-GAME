@@ -179,6 +179,21 @@ func _ready() -> void:
 			fits and hint_y <= screen.y, "ledger %s, card1 %s" % [str(ledger), str(selector.card_rect(1))])
 	check("the selector draws headless with a populated ledger",
 		is_instance_valid(selector) and selector.cards.size() == Ep2ArmoryState.IDS.size())
+	check("desktop still writes the selector's key / hold labels", " ".join(selector.drawn_text).contains("Hold"))
+	# audit 2026-10-29 P1-3: the armory's labels named keys on a phone too. Force the touch answer
+	# the way the manager reports it, redraw, and require none of them.
+	var mgr: Node = get_node_or_null("/root/MobileLayoutManager")
+	var was_touch: bool = bool(mgr.get("is_touch_device")) if mgr != null else false
+	if mgr != null:
+		mgr.set("is_touch_device", true)
+	selector.queue_redraw()
+	await get_tree().process_frame
+	var phone_text: String = " ".join(selector.drawn_text)
+	check("on a phone the selector writes no key names or hold / drag instructions",
+		not phone_text.contains("Hold") and not phone_text.contains("EQUIP ON RELEASE")
+		and not phone_text.contains("point or choose") and not phone_text.contains("Tab"), phone_text)
+	if mgr != null:
+		mgr.set("is_touch_device", was_touch)
 	selector.queue_free()
 	await get_tree().process_frame
 

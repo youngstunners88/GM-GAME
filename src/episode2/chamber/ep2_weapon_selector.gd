@@ -21,6 +21,8 @@ const PAPER := Color("eddbb2")
 var state: Ep2ArmoryState
 var highlighted: String = ""
 var cards: Array[Button] = []
+## Every string the LAST `_draw` wrote (tests read it: the wordless gate cannot look at pixels headless).
+var drawn_text: PackedStringArray = []
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -90,6 +92,7 @@ func card_rect(i: int) -> Rect2:
 	return Rect2(Vector2(size.x * 0.5 + (i - 1) * (w + 14.0) - w * 0.5, y), Vector2(w, h))
 
 func _text(text: String, p: Vector2, font_size: int, color: Color = PAPER, centered: bool = false) -> void:
+	drawn_text.append(text)
 	if centered:
 		p.x -= FONT.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x * 0.5
 	draw_string(FONT, p, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
@@ -123,8 +126,10 @@ func _leather(rect: Rect2, color: Color, selected: bool = false) -> void:
 		draw_circle(p + Vector2(-.7,-.7), 1, PAPER)
 
 func _draw() -> void:
+	drawn_text.clear()
 	if state == null:
 		return
+	var keys: bool = TouchUi.keys_shown()
 	var compact: bool = size.x < 650.0
 	var title_size: int = 25 if compact else 40
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.035, 0.024, 0.016, 0.83))
@@ -152,17 +157,21 @@ func _draw() -> void:
 		_text(Ep2ArmoryState.NAMES[id].to_upper(),Vector2(rect.get_center().x,rect.position.y+rect.size.y*.75),fs,PAPER,true)
 		var count: String = card_status(id)
 		_text(count,Vector2(rect.get_center().x,rect.position.y+rect.size.y*.86),12 if compact else 14,BRASS,true)
-		var key: String = Ep2ArmoryState.key_label(Ep2ArmoryState.ACTIONS[i])
-		_text(key,rect.position+Vector2(24,32),18,BRASS)
-		if picked:
+		# key names and mouse instructions are desktop-only (audit 2026-10-29 P1-3: the bud line was
+		# already gated, so the selector's own labels were an oversight)
+		if keys:
+			var key: String = Ep2ArmoryState.key_label(Ep2ArmoryState.ACTIONS[i])
+			_text(key,rect.position+Vector2(24,32),18,BRASS)
+		if picked and keys:
 			_text("EQUIP ON RELEASE",Vector2(rect.get_center().x,rect.end.y-12),10,BRASS,true)
 	var footer_y: float = card_rect(2 if compact else 1).end.y + 26
 	_text("BEAR ARROWS  ·  %d" % state.arrows,Vector2(mid,footer_y),13,BRASS,true)
 	_text("TIME STANDS STILL",Vector2(mid,footer_y+26),12,PAPER,true)
-	var hint: String = "Hold %s / Back · point or choose 1 / 2 / 3 · release to equip" % Ep2ArmoryState.key_label("ep2_armory")
-	if compact:
-		hint = "Hold holster · drag to a weapon · release"
-	_text(hint,Vector2(mid,footer_y+49),10 if compact else 13,BRASS,true)
+	if keys:
+		var hint: String = "Hold %s / Back · point or choose 1 / 2 / 3 · release to equip" % Ep2ArmoryState.key_label("ep2_armory")
+		if compact:
+			hint = "Hold holster · drag to a weapon · release"
+		_text(hint,Vector2(mid,footer_y+49),10 if compact else 13,BRASS,true)
 
 ## The ammunition/acquisition line on one card. Confiscated irons stay visible
 ## but cannot be previewed or equipped until the Sheriff returns them.
