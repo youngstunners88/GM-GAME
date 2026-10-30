@@ -1298,7 +1298,7 @@ func preview_lake(room: Node3D) -> void:
 	_preview_nodes=room._visuals.get_children()
 	for child in _preview_nodes:
 		if child.name=="Player" or _preview_copied.has(child.get_instance_id()):continue
-		var copy: Node=child.duplicate()
+		var copy: Node=child.duplicate(0) # visual hierarchy only; never run duplicated constructors
 		copy.process_mode=Node.PROCESS_MODE_DISABLED
 		_lake_preview.add_child(copy)
 		_preview_copied[child.get_instance_id()]=copy

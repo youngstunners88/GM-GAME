@@ -5,6 +5,8 @@ class Destination extends Node3D:
   _visuals=Node3D.new();add_child(_visuals)
  func _people()->void:pass
  func _build_skiff()->void:pass
+class LateActor extends Node3D:
+ func _init():add_child(MeshInstance3D.new())
 var failed:=0
 var checks:=0
 func check(label:String,ok:bool)->void:
@@ -21,11 +23,11 @@ func _ready()->void:
  check("anonymous roots copy exactly once",trail._lake_preview.get_child_count()==2)
  check("preview reuses the arrival transform",trail._lake_preview.transform.is_equal_approx(trail.lake_transform()))
  check("ground clears the old desert",trail._sand_material.get_shader_parameter("lake_visible"))
- var late=Node3D.new();late.name="Logan";destination._visuals.add_child(late)
+ var late=LateActor.new();late.name="Logan";destination._visuals.add_child(late)
  trail.preview_lake(destination)
  check("a later streamed Logan joins the existing preview",trail._lake_preview.has_node("Logan"))
  check("the source character remains in the prebuilt room",late.get_parent()==destination._visuals)
- check("cloned scripts cannot run duplicate story logic",trail._lake_preview.get_node("Logan").process_mode==Node.PROCESS_MODE_DISABLED)
+ check("cloned scripts cannot run duplicate story logic",trail._lake_preview.get_node("Logan").process_mode==Node.PROCESS_MODE_DISABLED and trail._lake_preview.get_node("Logan").get_script()==null and trail._lake_preview.get_node("Logan").get_child_count()==1)
  var body=Node3D.new();body.name="Player";destination._visuals.add_child(body)
  for i in 200:trail.preview_lake(destination)
  check("preview never shows a duplicate player",not trail._lake_preview.has_node("Player"))
