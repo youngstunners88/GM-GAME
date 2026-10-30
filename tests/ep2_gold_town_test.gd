@@ -378,6 +378,21 @@ func _ready() -> void:
 	GameManager.token_purse = {"eth": 4, "btc": 9, "sol": 5}
 	var before: int = GameManager.purse_balance("btc")
 	_check("with crypto in the purse [E] opens Rich & Utah's trade", c.start_rig("eth") and c.is_shop_open())
+	# The tender ring must be reachable with a finger: ui_left/ui_right have no touch button
+	# (audit 2026-10-29 P1-1), so the purse strip itself cycles it. Pin a phone-sized window
+	# first so the strip has a real rect (the headless default is 64x64).
+	get_window().size = Vector2i(1280, 720)
+	await get_tree().process_frame
+	var tender_pad: Button = c.get_shop().get_node_or_null("Tender")
+	_check("the purse strip is a touch target for the tender",
+		tender_pad != null and tender_pad.is_visible_in_tree() and tender_pad.size.y >= 64.0 and tender_pad.size.x > 0.0)
+	var tender0: String = c.get_shop().tender
+	if tender_pad != null:
+		tender_pad.pressed.emit()
+	var tender1: String = c.get_shop().tender
+	_check("tapping the purse strip moves to the next tender (%s -> %s)" % [tender0, tender1], tender1 != tender0)
+	_check("the purse follows the tender (holds %d)" % c.get_shop().purse,
+		c.get_shop().purse == GameManager.purse_balance(tender1))
 	_check("the long rifle is sold for BTC - 3 faces of BTC debited, not minted, nothing else touched",
 		c.buy("sniper", 3, "btc") and c.has_sniper() and GameManager.purse_balance("btc") == before - 3 and c.coins_spent() == 3
 			and GameManager.purse_balance("eth") == 4 and GameManager.purse_balance("sol") == 5,
@@ -390,8 +405,6 @@ func _ready() -> void:
 	_check("the room refuses a tender that is not in his purse", not c.buy("rifle_ammo", 1, "gold") and not c.buy("river_gear", 2, "gold"))
 	# A finger must be able to shut the trade: the tree is paused, so the touch controls are
 	# suspended and Esc / ui_cancel is unreachable on a phone (audit 2026-10-29).
-	get_window().size = Vector2i(1280, 720)
-	await get_tree().process_frame
 	var close_pad: Button = c.get_shop().get_node_or_null("Close")
 	_check("the trade carries a wordless close pad in the corner (>= 44 CSS px on a phone)",
 		close_pad != null and close_pad.is_visible_in_tree() and close_pad.size.x >= 88.0

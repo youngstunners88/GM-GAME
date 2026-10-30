@@ -32,6 +32,7 @@ var flash: String = ""
 var _flash_t: float = 0.0
 var _rows: Array[Button] = []
 var _close: Button = null
+var _tender_btn: Button = null
 
 
 func _catalogue() -> Array:
@@ -51,6 +52,17 @@ func _ready() -> void:
 		row.pressed.connect(func() -> void: _choose(i))
 		add_child(row)
 		_rows.append(row)
+	# The purse strip is the tender control on a phone: ui_left/ui_right have no touch button, so
+	# a player holding ETH/SOL/WBTC read NOT ENOUGH CRYPTO on every row and could not fix it
+	# (audit 2026-10-29 P1-1). A tap cycles the same `tender` variable the keys cycle.
+	_tender_btn = Button.new()
+	_tender_btn.name = "Tender"
+	_tender_btn.flat = true
+	_tender_btn.focus_mode = Control.FOCUS_NONE
+	for style in ["normal", "hover", "pressed", "focus", "disabled"]:
+		_tender_btn.add_theme_stylebox_override(style, StyleBoxEmpty.new())
+	_tender_btn.pressed.connect(func() -> void: _cycle_tender(1))
+	add_child(_tender_btn)
 	# Wordless way out for a finger: the trade pauses the tree, so Esc / ui_cancel is not
 	# reachable on a phone and the counter used to be a softlock (audit 2026-10-29).
 	_close = Button.new()
@@ -167,6 +179,12 @@ func _process(delta: float) -> void:
 	var ui: float = view.x / 390.0 if view.x / view.y < 1.1 else 1.0
 	scale = Vector2.ONE * ui
 	size = view / ui
+	if _tender_btn != null:
+		var compact: bool = size.x < 650.0
+		var tw: float = maxf(80.0, minf(560.0 if compact else 700.0, size.x - 80.0))
+		var line_y: float = size.y * 0.075 + (44.0 if compact else 58.0)
+		_tender_btn.size = Vector2(tw, 88.0)
+		_tender_btn.position = Vector2((size.x - tw) * 0.5, line_y - 8.0)
 	if _close != null:
 		_close.size = Vector2(CLOSE_PAD, CLOSE_PAD)
 		_close.position = Vector2(size.x - CLOSE_PAD - 16.0, 16.0)
@@ -247,6 +265,13 @@ func _draw() -> void:
 		Vector2(mid, size.y - 24), 10 if compact else 12, BRASS, true)
 
 
+## One step through the tender ring. The keyboard's ui_left/ui_right and the tappable purse
+## strip both land here, so there is exactly one place that decides what a step means.
+func _cycle_tender(k: int) -> void:
+	tender = TENDERS[(TENDERS.find(tender) + k + TENDERS.size()) % TENDERS.size()]
+	_refresh_purse()
+
+
 func _input(event: InputEvent) -> void:
 	if not is_visible_in_tree():
 		return
@@ -257,9 +282,7 @@ func _input(event: InputEvent) -> void:
 		index = (index + _catalogue().size() - 1) % _catalogue().size()
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("ui_left") or event.is_action_pressed("ui_right"):
-		var k: int = 1 if event.is_action_pressed("ui_right") else -1
-		tender = TENDERS[(TENDERS.find(tender) + k + TENDERS.size()) % TENDERS.size()]
-		_refresh_purse()
+		_cycle_tender(1 if event.is_action_pressed("ui_right") else -1)
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("interact") or event.is_action_pressed("ui_accept"):
 		if grace <= 0.0:
