@@ -1,0 +1,144 @@
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+
+[BUILD] Lil Blunt Adventure — build dev-local
+[Touch] layout build phone_landscape (releases all) (state MENU)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+WARNING: Adding 'NockedArrow' as child to 'RecoveredBearBow' will make owner 'Model' inconsistent. Consider unsetting the owner beforehand.
+     at: add_child (scene/main/node.cpp:1579)
+WARNING: Adding 'RightHand' as child to 'RecoveredBearBow' will make owner 'Model' inconsistent. Consider unsetting the owner beforehand.
+     at: add_child (scene/main/node.cpp:1579)
+[EP2] Logan lake started
+[PASS] new streamed forest kit is actually instantiated
+[PASS] woodland groves retain a bounded shared-mesh instance count
+[PASS] arrival trees and sign leave the corridor and Logan sightline clear
+[PASS] Logan and cargo meet the actual drawn ground at their unchanged marks
+[PASS] continuous basin is recessed below the actual water
+[PASS] outflow meanders while keeping a recessed bed
+[PASS] boat art is mounted without replacing the supplied Logan skin
+[PASS] both rigid oars have independently authored grip and blade nodes
+[PASS] open hull has an actual measured, tapered moving water cut
+[PASS] boat floats across waterline with an open hull above it
+[PASS] arrival keeps Logan on shore and boat visibly moored
+[PASS] Logan waits through his handoff dialogue before departing
+[PASS] handoff starts a physical dock approach before rowing
+[PASS] Logan boards and rows the boat after walking to it
+[PASS] mooring is released and wake appears only after boarding
+ROWING_METRICS palms=0.000004266627 seat=0.00000196610654 feet=0.00000213581006 limb_length=0.00000262260437 power_blade=-0.22872306406498 recovery_blade=0.08344627916813
+[PASS] both actual palms follow their rigid grips through two complete strokes
+[PASS] pelvis remains supported by the independently authored rowing seat
+[PASS] both boots stay supported on the actual footrest
+[PASS] no arm or leg bone is stretched to fake contact
+[PASS] oar blades enter water on power and clear it on recovery
+[PASS] rowing moves the skiff through the lake instead of waving on the spot
+[PASS] Logan stops to fish with a visible rod, line and bobber
+FISHING_CONTACT 0.00000552493566
+[PASS] fishing palms actually hold the rod without drifting
+[PASS] fishing boat holds station on the lake
+[PASS] Logan resumes rowing after fishing
+ERROR: Condition "p_size <= 0" is true. Returning: false
+   at: _shaped_text_add_string (modules/text_server_adv/text_server_adv.cpp:4303)
+ERROR: Condition "p_size <= 0" is true. Returning: false
+   at: _shaped_text_add_string (modules/text_server_adv/text_server_adv.cpp:4303)
+ERROR: Condition "p_size <= 0" is true. Returning: false
+   at: _shaped_text_add_string (modules/text_server_adv/text_server_adv.cpp:4303)
+[PASS] armory pause freezes boat travel, stroke clock and actor routine
+[EP2] Logan lake started
+[PASS] retry restores Logan, mooring and the original first-visit state
+LAKE_ART: 27 checks, 0 failed
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+ERROR: Parameter "m" is null.
+   at: mesh_get_surface_count (servers/rendering/dummy/storage/mesh_storage.h:120)
+WARNING: ObjectDB instances leaked at exit (run with --verbose for details).
+     at: cleanup (core/object/object.cpp:2284)
+ERROR: 6 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:604)

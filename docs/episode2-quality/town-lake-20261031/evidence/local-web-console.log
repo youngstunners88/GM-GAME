@@ -34,5 +34,5 @@ ARRIVAL_WEB_ACK
 [PASS] lake handoff preserves the physical eye and gaze
 ARRIVAL_WEB_FRAME lake-arrival
 ARRIVAL_WEB_ACK
-ARRIVAL_WEB_RESULT {"backend_seconds":0.00266666663810611,"checks":8,"deck":"res://src/episode2/extras/audio/music/gm_laker2.mp3","failed":0,"playback_seconds":100.492,"position":"(-6.700012, 0, -13)"}
+ARRIVAL_WEB_RESULT {"backend_seconds":0.00266666663810611,"checks":8,"deck":"res://src/episode2/extras/audio/music/gm_laker2.mp3","failed":0,"playback_seconds":98.462,"position":"(-6.700012, 0, -13)"}
 ARRIVAL_WEB_DONE
