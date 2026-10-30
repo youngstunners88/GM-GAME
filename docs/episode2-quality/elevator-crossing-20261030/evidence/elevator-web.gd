@@ -78,6 +78,7 @@ func run() -> void:
 			print("CAM_A fov %.2f pos %s  LIFTCAM fov %.2f pos %s" % [hf._camera.fov, str(hf._camera.global_position), root._pb_node.get_camera().fov, str(root._pb_node.get_camera().global_position)])
 	print("PORTAL_LIVE ", hf._portal_live, " QUAD ", hf._portal_quad != null and hf._portal_quad.visible)
 	# walk through: the last hideout frame above, the first lift frame below, same eye
+	var lifted_preview = root._pb_node
 	var res: Array = []
 	hf.chamber_cleared.connect(func(r): res.append(r))
 	hf._player_pos = Vector3(0.3, 0.0, pz + 0.02)
@@ -100,12 +101,12 @@ func run() -> void:
 		await _frames(6)
 		await _save("cut_b")
 		print("CAM_B fov %.2f pos %s" % [la.get_camera().fov, str(la.get_camera().global_position)])
-		la._player_pos = Vector3(0.3, 0.0, la.PORTAL_Z + 2.0)
+		la._player_pos = Vector3(-1.2, 0.0, la.PORTAL_Z + 2.0)
 		la._sync_visuals()
 		la._update_camera(0.0)
 		await _frames(4)
 		await _save("4_inside_lift")
-	print("ELEVATOR_WEB_RESULT ",JSON.stringify({"resolved":res.size(),"same_instance":la==root.get_active(),"camera_position":str(la._camera.global_position),"hud":la._hud.visible,"weapon":la._vm._shown}))
+	print("ELEVATOR_WEB_RESULT ",JSON.stringify({"resolved":res.size(),"same_instance":la==lifted_preview,"camera_position":str(la._camera.global_position),"hud":la._hud.visible,"weapon":la._vm._shown}))
 	print("ELEVATOR_WEB_DONE")
 
 
@@ -115,10 +116,18 @@ func _frames(n: int) -> void:
 
 
 func _save(name: String) -> void:
+	# Drain WebGL work while Chromium reads a stable image. The actor remains
+	# frozen; the inside view passes alongside him rather than through his pack.
+	var modes: Dictionary={}
+	for view in self.root.find_children("*","SubViewport",true,false):
+		modes[view]=view.render_target_update_mode
+		view.render_target_update_mode=SubViewport.UPDATE_DISABLED
 	print("ELEVATOR_WEB_FRAME ",name)
 	while not Input.is_key_pressed(KEY_F9):await process_frame
 	print("ELEVATOR_WEB_ACK")
 	while Input.is_key_pressed(KEY_F9):await process_frame
+	for view in modes:
+		if is_instance_valid(view):view.render_target_update_mode=modes[view]
 
 
 ## Mean luminance of the central 60% (the doorway region at the cut).

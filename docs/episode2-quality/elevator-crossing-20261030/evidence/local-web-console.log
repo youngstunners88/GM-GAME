@@ -14,5 +14,5 @@ ELEVATOR_WEB_ACK
 CAM_B fov 78.00 pos (0.3, 1.55, -13.66)
 ELEVATOR_WEB_FRAME 4_inside_lift
 ELEVATOR_WEB_ACK
-ELEVATOR_WEB_RESULT {"camera_position":"(0.3, 1.55, -11.6)","hud":true,"resolved":1,"same_instance":true,"weapon":true}
+ELEVATOR_WEB_RESULT {"camera_position":"(-1.2, 1.55, -11.6)","hud":true,"resolved":1,"same_instance":true,"weapon":true}
 ELEVATOR_WEB_DONE

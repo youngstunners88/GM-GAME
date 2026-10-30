@@ -20,7 +20,7 @@ description: Show the NEXT room through an open doorway and walk straight throug
 ## Rules / traps
 - Leaves must open INTO the room: swung into the passage they sit behind the portal quad and vanish.
 - The cut must happen at the plane, not before (the arch around the camera vanishes) and not after (the hideout passage behind the quad shows).
-- Compatibility applies the CURRENT room's grading to unshaded materials too: compare `cut_a`/`cut_b` luminance in `tools/ep2_shots/door_portal_shot.tscn` and correct with the shader's `gain`.
+- Compatibility applies the CURRENT room's grading to unshaded materials too: compare `cut_a`/`cut_b` luminance in `tools/ep2_shots/door_portal_shot.tscn` and compensate the pinned source environment transform in the portal material; a constant gain does not reproduce its filmic curve.
 - Gate: `tests/ep2_interlude_test.tscn` "THE OPEN DOOR" block (portal live, mouth open, companion mirrored, no early cut, handoff position, same instance).
 
 ## Physical crossing regression (2026-10-30)
@@ -31,4 +31,4 @@ Preserve airborne height, vertical velocity and used air-jumps at the physical c
 
 For Compatibility, invert the pinned source environment grading on the portal material instead of tuning a constant gain; Godot4.3 converts ALBEDO from sRGB before tonemapping. Protect only camera-held meshes using the weapon alpha mask. A broad near-depth cutoff also preserves old-world walls/actors and creates an apparent scene pop. Require the near-wall GPU oracle2/2 and exact-eye paired cut captures. Freeze capture simulation, finish stand-up, seed the real armory and explicitly update camera transforms; slow software frames must not advance the actors between compared images. Transfer actual skeletal transforms/rotation at the cut, flush them immediately and compare with float tolerance. Retained lift activation skips setup, so explicitly restore HUD/viewmodel after portal preview without resurrecting a departed companion.
 
-The 2026-10-30 repair and final camera board are recorded in `docs/episode2-quality/elevator-crossing-20261030/REVIEW.md`; this is the current implementation over the older gain-only note above.
+The 2026-10-30 repair and final camera board are recorded in `docs/episode2-quality/elevator-crossing-20261030/REVIEW.md`.
