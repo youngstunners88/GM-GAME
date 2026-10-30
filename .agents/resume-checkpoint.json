@@ -1,8 +1,1 @@
-{
-  "objective": "Complete verified release of smelting/elevator crossing repair",
-  "branch": "codex/founder-fix-document-1029",
-  "scratch": "/workspace/work/elevator-crossing-1030",
-  "implementation": "One physical crossing plane, no preview-dependent spawn, no cooldown bounce; preserve airborne state, exact Inferno bones/rotation; weapon-only alpha protection and inverse source grading; retained lift HUD restored. Final mask-views pair reviewed.",
-  "checks": "Full suite passed. Final affected reruns session91930 running, export/fresh/security next. mask-final-pixel2/0, mask-render capture completed.",
-  "next": "Commit final source; warm export and fresh-clone190MiB gate; security/title/harness/texture. Fetch mapped refs, ship normal workflow, inspect actual CI/butler/public BUILD plus changed-flow exact web replay. Do not claim live yet."
-}
+{"objective":"Verify deployed smelting/elevator crossing repair", "branch":"codex/founder-fix-document-1029", "scratch":"/workspace/work/elevator-crossing-1030", "runtime_tested_head":"364eeab3", "checks":"Full suite and final native8/20/28/stride/chain, GPU2, real camera pair, WebGL exported pack3captures all pass. Warm197660832/cold197628144B. Title/harness/security/texture pass.", "next":"Ship normal master workflow using release_gates.py364eeab3; verify actual CI/butler upload, observed publicBUILD and exact-served pack replay. No live claim yet."}
