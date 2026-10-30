@@ -16,3 +16,5 @@ Verification:
 - Title-screen lock5files, harness/access isolation and security sentinel pass. No paid-provider spend, asset degradation or export threading changes.
 
 Baseline masterbf6c9957 includes concurrent mobile controls and is preserved. Final warm/cold exports, browser replay, CI deployment and observed public BUILD will be recorded in the release receipt. A native paired capture alone does not prove the public game.
+
+Final warm export:197660832B, script_errors=0. Fresh clone export:197628144B, margin1601296B under199229440. Texture-reference probe scanned68models with0excluded-but-used textures. The external web replay loads scenes dynamically after autoload initialization (a preload in the first fixture draft compiled before AudioManager was available; that fixture was rejected).

@@ -4,7 +4,6 @@ extends SceneTree
 ## lift instance becomes the room. Frames: the doorway from across the room, mid-room, at the door, then the last hideout frame and the
 ## first lift frame from the same eye - the pair `cut_a` / `cut_b` must look like one picture (luminance diff printed).
 ##   godot --rendering-driver opengl3 --path . res://tools/ep2_shots/door_portal_shot.tscn -- out=<dir>
-const ROOT := preload("res://src/episode2/session/ep2_session_root.tscn")
 var _out := ".farm/door_portal"
 var _vp: SubViewport
 
@@ -30,10 +29,10 @@ func run() -> void:
 	container.stretch=true
 	self.root.add_child(container)
 	container.add_child(_vp)
-	var root: Ep2SessionRoot = ROOT.instantiate()
+	var root = load("res://src/episode2/session/ep2_session_root.tscn").instantiate()
 	_vp.add_child(root)
-	root.armory = Ep2ArmoryState.post_hideout()
-	var hf: SmeltingFacilityChamber = load("res://src/episode2/chamber/smelting_facility.tscn").instantiate()
+	root.armory = load("res://src/episode2/chamber/ep2_armory_state.gd").post_hideout()
+	var hf = load("res://src/episode2/chamber/smelting_facility.tscn").instantiate()
 	hf.intro_film = false
 	root.add_child(hf)
 	root._active = hf
@@ -48,10 +47,10 @@ func run() -> void:
 	root.step(0.016)
 	root.set_process(false)
 	hf._bull.process_mode = Node.PROCESS_MODE_DISABLED
-	hf._beat = SmeltingFacilityChamber.Beat.EXIT
+	hf._beat = hf.Beat.EXIT
 	hf._show_active = false
 	hf._hold = 0.0
-	hf._bull.position = Vector3(0.7, 0.0, SmeltingFacilityChamber.PORTAL_Z + 2.2)       # Inferno already through, leading
+	hf._bull.position = Vector3(0.7, 0.0, hf.PORTAL_Z + 2.2)       # Inferno already through, leading
 	hf._bull.facing = 0.0
 	hf._bull.rotation.y = 0.0
 	# This is the post-lesson exit, after his real stand-up. A fixture that
@@ -61,7 +60,7 @@ func run() -> void:
 	hf._bull.stop()
 	hf._bull.play(hf.BULL_IDLE,1.0,0.0)
 	hf._animate_bull(0.0)
-	var pz: float = SmeltingFacilityChamber.PORTAL_Z
+	var pz: float = hf.PORTAL_Z
 	for spec in [["1_room_far", Vector3(0.0, 0.0, 4.0), 0.0], ["2_room_mid", Vector3(-0.8, 0.0, 10.5), 0.08],
 			["3_at_door", Vector3(0.2, 0.0, 14.6), -0.05], ["cut_a", Vector3(0.3, 0.0, pz - 0.06), 0.0]]:
 		if str(spec[0])!="cut_a":continue
@@ -74,7 +73,7 @@ func run() -> void:
 		await _frames(6)
 		await _save(str(spec[0]))
 		if str(spec[0]) == "cut_a":
-			print("CAM_A fov %.2f pos %s  LIFTCAM fov %.2f pos %s" % [hf._camera.fov, str(hf._camera.global_position), (root._pb_node as MineLiftChamber).get_camera().fov, str((root._pb_node as MineLiftChamber).get_camera().global_position)])
+			print("CAM_A fov %.2f pos %s  LIFTCAM fov %.2f pos %s" % [hf._camera.fov, str(hf._camera.global_position), root._pb_node.get_camera().fov, str(root._pb_node.get_camera().global_position)])
 	print("PORTAL_LIVE ", hf._portal_live, " QUAD ", hf._portal_quad != null and hf._portal_quad.visible)
 	# walk through: the last hideout frame above, the first lift frame below, same eye
 	var res: Array = []
@@ -85,13 +84,13 @@ func run() -> void:
 	hf._try_exit()
 	root._chain_id = "mine_lift"
 	root._enter_chamber_chained(0)
-	var la: MineLiftChamber = root.get_active() as MineLiftChamber
+	var la = root.get_active()
 	if la != null:
 		# A slow software render may take seconds per frame. Freeze simulation
 		# for the paired camera comparison instead of letting Bull walk metres.
 		la.set_physics_process(false)
 		la._bull.process_mode = Node.PROCESS_MODE_DISABLED
-		la._player_pos = Vector3(0.3, 0.0, MineLiftChamber.PORTAL_Z - 0.06)
+		la._player_pos = Vector3(0.3, 0.0, la.PORTAL_Z - 0.06)
 		la._look_yaw = 0.0
 		la._look_pitch = 0.0
 		la._sync_visuals()
@@ -99,7 +98,7 @@ func run() -> void:
 		await _frames(6)
 		await _save("cut_b")
 		print("CAM_B fov %.2f pos %s" % [la.get_camera().fov, str(la.get_camera().global_position)])
-		la._player_pos = Vector3(0.3, 0.0, MineLiftChamber.PORTAL_Z + 2.0)
+		la._player_pos = Vector3(0.3, 0.0, la.PORTAL_Z + 2.0)
 		la._sync_visuals()
 		la._update_camera(0.0)
 		await _frames(4)
