@@ -449,7 +449,7 @@ func push_music_override(path: String) -> int:
     # Save + PAUSE the base track (position preserved for resume).
     if current_music_player and is_instance_valid(current_music_player):
         _saved_stream = current_music_player.stream
-        _saved_position = get_music_position()
+        _saved_position = get_music_position() if not _region_tracks.is_empty() else current_music_player.get_playback_position()
         _saved_playlist = _playlist.duplicate()
         _saved_last_track = _last_track
         current_music_player.stream_paused = true
