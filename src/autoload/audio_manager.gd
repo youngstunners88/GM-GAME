@@ -125,6 +125,7 @@ func play_room_music(path: String, fade_seconds: float = 2.5) -> void:
 ## amplitude follows cos and the incoming one's sin, so the two together hold one loudness the whole way. The old linear-dB ramps
 ## (0 -> -60 dB out, -50 -> 0 dB in) left both songs ~25 dB down at the midpoint: the music all but vanished, then the theme swelled.
 ## The incoming level follows the speech duck every frame (a line that starts mid-blend keeps the music under it).
+var _crossfade_tween: Tween
 var _region_tracks: Array = []
 var _region_mix_seconds: float = 8.0
 
@@ -148,12 +149,32 @@ func play_region_score(paths: Array, seconds: float = 8.0) -> void:
     _region_tracks = found
     _region_mix_seconds = maxf(seconds, 0.5)
 
+var _clock_id: int = 0
+var _clock_seconds: float = 0.0
+var _clock_ms: int = 0
+func _reset_music_clock(position: float = 0.0) -> void:
+    _clock_id = current_music_player.get_instance_id() if is_instance_valid(current_music_player) else 0
+    _clock_seconds = position
+    _clock_ms = Time.get_ticks_msec()
+func _update_music_clock() -> void:
+    if not is_instance_valid(current_music_player): return
+    var now: int = Time.get_ticks_msec()
+    if _clock_id != current_music_player.get_instance_id():
+        _reset_music_clock(maxf(current_music_player.get_playback_position(),0.0))
+    elif current_music_player.playing and not current_music_player.stream_paused:
+        _clock_seconds += maxf(0.0,float(now-_clock_ms)/1000.0)
+        _clock_seconds = maxf(_clock_seconds,current_music_player.get_playback_position())
+    _clock_ms = now
+func get_music_position() -> float:
+    _update_music_clock()
+    return _clock_seconds
 func _process(_delta: float) -> void:
+    _update_music_clock()
     if _region_tracks.is_empty() or _override_active or not is_instance_valid(current_music_player): return
     var deck: AudioStreamPlayer = current_music_player
     if not deck.playing or deck.stream_paused or deck.stream == null: return
     var length: float = deck.stream.get_length()
-    if length > _region_mix_seconds * 2.0 and length - deck.get_playback_position() <= _region_mix_seconds:
+    if length > _region_mix_seconds * 2.0 and length - _clock_seconds <= _region_mix_seconds:
         advance_region_score()
 
 func advance_region_score() -> void:
@@ -173,13 +194,35 @@ func crossfade_music(path: String, seconds: float = 4.0) -> void:
         return
     _drop_override_for_new_music()
     _stop_ambient()
-    _purge_retiring()
     _kill_music_level_tween()
-    var old: AudioStreamPlayer = current_music_player if current_music_player != null and is_instance_valid(current_music_player) else null
-    var old_amp: float = db_to_linear(old.volume_db) if old != null else 0.0
-    if old != null:
-        if old.finished.is_connected(_on_music_track_finished): old.finished.disconnect(_on_music_track_finished)
-        _retiring.append(old)
+    if _crossfade_tween != null and _crossfade_tween.is_valid(): _crossfade_tween.kill()
+    # An interrupted DJ mix has two audible sources. Preserve both, bounded
+    # to two outgoing decks; ordinary transitions still have only one.
+    var decks: Array[AudioStreamPlayer] = []
+    for deck in _retiring:
+        if is_instance_valid(deck): decks.append(deck)
+    if is_instance_valid(current_music_player) and not decks.has(current_music_player): decks.append(current_music_player)
+    for deck in decks:
+        if deck.has_meta("music_fade"):
+            var fade: Tween = deck.get_meta("music_fade")
+            if fade != null and fade.is_valid(): fade.kill()
+            deck.remove_meta("music_fade")
+    decks.sort_custom(func(a: AudioStreamPlayer,b: AudioStreamPlayer): return a.volume_db > b.volume_db)
+    while decks.size() > 2:
+        var quiet: AudioStreamPlayer = decks.pop_back()
+        quiet.stop()
+        quiet.queue_free()
+    _retiring = decks.duplicate()
+    var refs: Array = []
+    var amplitudes: Array[float] = []
+    var outgoing_power: float = 0.0
+    for deck in decks:
+        if deck.finished.is_connected(_on_music_track_finished): deck.finished.disconnect(_on_music_track_finished)
+        refs.append(weakref(deck))
+        var amplitude: float = db_to_linear(deck.volume_db)
+        amplitudes.append(amplitude)
+        outgoing_power += amplitude * amplitude
+    var outgoing_level: float = sqrt(outgoing_power)
     _playlist = [path]
     _last_track = path
     var fresh := AudioStreamPlayer.new()
@@ -190,19 +233,26 @@ func crossfade_music(path: String, seconds: float = 4.0) -> void:
     fresh.play()
     fresh.finished.connect(_on_music_track_finished)
     current_music_player = fresh
+    _reset_music_clock()
+    var fresh_ref: WeakRef = weakref(fresh)
     var step := func(t: float) -> void:
-        if not is_instance_valid(fresh) or current_music_player != fresh:
-            return                   # another music change took over mid-blend: both players are its business now
-        fresh.volume_db = linear_to_db(maxf(db_to_linear(_music_rest_db()) * sin(t * PI * 0.5), 0.00001))
-        if old != null and is_instance_valid(old):
-            old.volume_db = linear_to_db(maxf(minf(old_amp, db_to_linear(_music_rest_db())) * cos(t * PI * 0.5), 0.00001))
-    var blend := fresh.create_tween()
-    blend.tween_method(step, 0.0, 1.0, maxf(seconds, 0.5))
-    blend.finished.connect(func() -> void:
-        if old != null and _retiring.has(old):
-            _retiring.erase(old)
-            if is_instance_valid(old):
-                old.queue_free())
+        var incoming: AudioStreamPlayer = fresh_ref.get_ref()
+        if incoming == null or current_music_player != incoming: return
+        var rest: float = db_to_linear(_music_rest_db())
+        incoming.volume_db = linear_to_db(maxf(rest * sin(t * PI * 0.5), 0.00001))
+        var duck_scale: float = minf(1.0,rest/maxf(outgoing_level,0.00001))
+        for i in refs.size():
+            var outgoing: AudioStreamPlayer = refs[i].get_ref()
+            if outgoing != null:
+                outgoing.volume_db = linear_to_db(maxf(amplitudes[i] * duck_scale * cos(t * PI * 0.5),0.00001))
+    _crossfade_tween = fresh.create_tween()
+    _crossfade_tween.tween_method(step, 0.0, 1.0, maxf(seconds, 0.5))
+    _crossfade_tween.finished.connect(func() -> void:
+        for reference in refs:
+            var outgoing: AudioStreamPlayer = reference.get_ref()
+            if outgoing != null and _retiring.has(outgoing):
+                _retiring.erase(outgoing)
+                outgoing.queue_free())
 
 ## Fade the current music out over `seconds` and stop (leaving a stage).
 func fade_out_music(seconds: float = 1.6) -> void:
@@ -235,6 +285,7 @@ func play_track_from(path: String, position: float = 0.0, fade_in_seconds: float
     if fade_in_seconds > 0.0:
         _tween_music_to(_music_rest_db(), fade_in_seconds)
     current_music_player.play(start_at)
+    _reset_music_clock(start_at)
     current_music_player.finished.connect(_on_music_track_finished)
 
 ## Play a single track on repeat (routed through the shuffle system).
@@ -302,6 +353,7 @@ func _duck_out_music(seconds: float = 0.45) -> void:
         var old := current_music_player
         _retiring.append(old)
         var tween := old.create_tween()
+        old.set_meta("music_fade",tween)
         # 0.45s, not 0.8s: shorter overlap with the incoming track's fade-in,
         # so a switch reads as a transition rather than two songs playing.
         tween.tween_property(old, "volume_db", -32.0 if seconds <= 0.45 else -60.0, seconds)
@@ -342,6 +394,7 @@ func _play_next_in_playlist(fade_in: bool = false, force_first: bool = false, fa
     else:
         current_music_player.volume_db = _music_rest_db()   # a track that loops mid-speech stays under the voice
     current_music_player.play()
+    _reset_music_clock()
     current_music_player.finished.connect(_on_music_track_finished)
 
 func _on_music_track_finished() -> void:
@@ -396,7 +449,7 @@ func push_music_override(path: String) -> int:
     # Save + PAUSE the base track (position preserved for resume).
     if current_music_player and is_instance_valid(current_music_player):
         _saved_stream = current_music_player.stream
-        _saved_position = current_music_player.get_playback_position()
+        _saved_position = get_music_position()
         _saved_playlist = _playlist.duplicate()
         _saved_last_track = _last_track
         current_music_player.stream_paused = true
@@ -441,6 +494,7 @@ func release_music_override(token: int) -> void:
         current_music_player.stream = _saved_stream
         add_child(current_music_player)
         current_music_player.play(_saved_position)
+        _reset_music_clock(_saved_position)
         current_music_player.finished.connect(_on_music_track_finished)
     elif not _playlist.is_empty():
         _play_next_in_playlist(true)
@@ -492,6 +546,7 @@ func release_music_override_faded(token: int, seconds: float = 0.35) -> void:
     if outgoing and is_instance_valid(outgoing):
         _retiring.append(outgoing)
         var out_tw := outgoing.create_tween()
+        outgoing.set_meta("music_fade",out_tw)
         out_tw.tween_property(outgoing, "volume_db", -40.0, seconds)
         out_tw.finished.connect(func() -> void:
             _retiring.erase(outgoing)
@@ -517,6 +572,7 @@ func release_music_override_faded(token: int, seconds: float = 0.35) -> void:
         current_music_player.volume_db = -30.0
         _tween_music_to(_music_rest_db(), seconds)
         current_music_player.play(_saved_position)
+        _reset_music_clock(_saved_position)
         current_music_player.finished.connect(_on_music_track_finished)
     elif not _playlist.is_empty():
         _play_next_in_playlist(true)

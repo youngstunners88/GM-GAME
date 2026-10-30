@@ -22,7 +22,14 @@ func _ready()->void:
  await get_tree().create_timer(.45).timeout
  var power=pow(db_to_linear(first.volume_db),2)+pow(db_to_linear(second.volume_db),2)
  check("overlap has no midpoint silence hole",power>.7 and power<1.3)
- await get_tree().create_timer(.7).timeout
+ am.play_region_score([Ep2DrawMusic.TRACK],1.0)
+ var interrupted_power=pow(db_to_linear(am.current_music_player.volume_db),2)
+ for deck in am._retiring:interrupted_power+=pow(db_to_linear(deck.volume_db),2)
+ check("leaving during a town mix preserves both audible decks",interrupted_power>.7 and interrupted_power<1.3 and am._retiring.size()<=2)
+ am.play_region_score([a,b],1.0)
+ await get_tree().create_timer(1.2).timeout
+ am.advance_region_score()
+ await get_tree().create_timer(1.2).timeout
  am.advance_region_score()
  check("the alternate returns to main theme",am._last_track==a and am._region_tracks==[a,b])
  am._on_music_track_finished()
