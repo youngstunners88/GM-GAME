@@ -1,0 +1,62 @@
+{
+  "source_sha": "be62f7358359016ebaeed8131a53119d29a637ee",
+  "build_id": "2026-10-30-be62f73",
+  "play_url": "https://youngstunners88.itch.io/smokerealm",
+  "checks": {
+    "export": true,
+    "gameplay": true,
+    "visual": true,
+    "security": true,
+    "deployment": true,
+    "live_input": true
+  },
+  "deployment": {
+    "run_url": "https://github.com/youngstunners88/GM-GAME/actions/runs/41058693162",
+    "job_id": 124072627897,
+    "outcome": "success",
+    "deploy_step": "success",
+    "observed_build_id": "2026-10-30-be62f73",
+    "actual_upload": "Re-used85.08%, added52.59MiB fresh data; Pushed notice13:22:21UTC"
+  },
+  "evidence": [
+    {
+      "path": "docs/episode2-quality/elevator-crossing-20261030/REVIEW.md"
+    },
+    {
+      "path": "docs/episode2-quality/elevator-crossing-20261030/native-cut-pair.jpg"
+    },
+    {
+      "path": "docs/episode2-quality/elevator-crossing-20261030/evidence/ci-jobs.json"
+    },
+    {
+      "path": "docs/episode2-quality/elevator-crossing-20261030/evidence/ci-upload.log"
+    },
+    {
+      "path": "docs/episode2-quality/elevator-crossing-20261030/evidence/public-probe.log"
+    },
+    {
+      "path": "docs/episode2-quality/elevator-crossing-20261030/evidence/public-input.json"
+    },
+    {
+      "path": "docs/episode2-quality/elevator-crossing-20261030/evidence/public-download-receipt.json"
+    },
+    {
+      "path": "docs/episode2-quality/elevator-crossing-20261030/evidence/public-web-result.json"
+    },
+    {
+      "path": "docs/episode2-quality/elevator-crossing-20261030/evidence/public-web-console.log"
+    },
+    {
+      "path": "docs/episode2-quality/elevator-crossing-20261030/evidence/public-review.jpg"
+    },
+    {
+      "path": "docs/episode2-quality/elevator-crossing-20261030/evidence/fresh.log"
+    },
+    {
+      "path": "docs/episode2-quality/elevator-crossing-20261030/evidence/security.log"
+    }
+  ],
+  "scope": "Native dynamic/airborne/return/stride checks plus actual Compatibility/WebGL cameras. Public page boot/BUILD/extras/input rejection tested directly. Changed-flow replay uses exact downloaded public files and an external local fixture; not an authenticated public walkthrough or physical-phone test.",
+  "open_blockers": [],
+  "meshy_credits_this_repair": 0
+}

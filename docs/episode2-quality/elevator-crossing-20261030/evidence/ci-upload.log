@@ -1,0 +1,5 @@
+2026-10-30T13:15:34.6025132Z EP2_PORTAL_RENDER: 2 checks, 0 failed
+2026-10-30T13:21:01.4020758Z 44:const BUILD_TAG := "2026-10-30-be62f73"
+2026-10-30T13:21:15.5974031Z index.pck = 188 MB (itch per-file limit: 200 MB; CI gate: 190 MB)
+2026-10-30T13:22:21.4415019Z ✓ Re-used 85.08% of old, added 52.59 MiB fresh data
+2026-10-30T13:22:21.4489875Z ##[notice]Pushed to https://youngstunners88.itch.io/smokerealm

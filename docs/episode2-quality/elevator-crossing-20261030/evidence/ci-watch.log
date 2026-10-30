@@ -1,0 +1,12 @@
+{"run": "41058693162", "job": 124072627897, "status": "in_progress", "conclusion": null, "current": ["Checkout code"], "failed": []}
+{"run": "41058693162", "job": 124072627897, "status": "in_progress", "conclusion": null, "current": ["Security Sentinel"], "failed": []}
+{"run": "41058693162", "job": 124072627897, "status": "in_progress", "conclusion": null, "current": ["Background art gate"], "failed": []}
+{"run": "41058693162", "job": 124072627897, "status": "in_progress", "conclusion": null, "current": ["Import project (first pass)"], "failed": []}
+{"run": "41058693162", "job": 124072627897, "status": "in_progress", "conclusion": null, "current": ["Portal room gameplay and rendered visibility"], "failed": []}
+{"run": "41058693162", "job": 124072627897, "status": "in_progress", "conclusion": null, "current": ["Verify elevator portal foreground on Compatibility"], "failed": []}
+{"run": "41058693162", "job": 124072627897, "status": "in_progress", "conclusion": null, "current": ["Capture town autonomy through the player camera"], "failed": []}
+{"run": "41058693162", "job": 124072627897, "status": "in_progress", "conclusion": null, "current": ["Capture stable yard through the player camera"], "failed": []}
+{"run": "41058693162", "job": 124072627897, "status": "in_progress", "conclusion": null, "current": ["Export game to Web"], "failed": []}
+{"run": "41058693162", "job": 124072627897, "status": "in_progress", "conclusion": null, "current": ["Refresh gh-pages mirror"], "failed": []}
+{"run": "41058693162", "job": 124072627897, "status": "in_progress", "conclusion": null, "current": ["Upload itch.io-ready zip (manual-upload fallback)"], "failed": []}
+{"run": "41058693162", "job": 124072627897, "status": "completed", "conclusion": "success", "current": [], "failed": []}

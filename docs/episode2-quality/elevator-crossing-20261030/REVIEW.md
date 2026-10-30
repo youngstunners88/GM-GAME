@@ -15,7 +15,7 @@ Verification:
 - Actual OpenGL Compatibility foreground/near-wall oracle2/2; real chamber capture completes without script/parse/shader failures. Native renderer teardown emits resource-leak diagnostics, retained in the evidence rather than counted as gameplay success.
 - Title-screen lock5files, harness/access isolation and security sentinel pass. No paid-provider spend, asset degradation or export threading changes.
 
-Baseline masterbf6c9957 includes concurrent mobile controls and is preserved. Final warm/cold exports, browser replay, CI deployment and observed public BUILD will be recorded in the release receipt. A native paired capture alone does not prove the public game.
+Baseline masterbf6c9957 includes concurrent mobile controls and is preserved. Final warm/cold exports, browser replay, CI deployment and observed public BUILD are recorded in RELEASE_RECEIPT.json. A native paired capture alone does not prove the public game.
 
 Final warm export:197660832B, script_errors=0. Fresh clone export:197628144B, margin1601296B under199229440. Texture-reference probe scanned68models with0excluded-but-used textures. The external web replay loads scenes dynamically after autoload initialization (a preload in the first fixture draft compiled before AudioManager was available; that fixture was rejected).
 
@@ -24,3 +24,11 @@ The WebGL replay uses a640×360 internal viewport, displayed in1280×720 Chromiu
 Local exported-pack browser replay passed: one resolved crossing, expected inside camera(-1.2,1.55,-11.6), visible HUD/weapon, all three captures, no script/parse/shader/page errors. See evidence/local-web-result.json and local-web-pair.jpg. Release verification follows separately.
 
 Final external replay also asserts identity against the saved prebuilt lift, not merely the active pointer. SubViewports pause while Chromium reads each image, then restore their previous update modes. The inside capture passes alongside the deliberately frozen companion; a straight-ahead capture into his backpack was rejected as a fixture artifact. The refined local replay passes with all3captures and no errors; local-web-inside.jpg shows the clear walkway.
+
+## Verified release
+
+Sourcebe62f7358359016ebaeed8131a53119d29a637ee, CI41058693162/job124072627897 completed successfully. Actual butler log adds52.59MiB fresh data and confirms the itch push at13:22:21UTC. Public page reports BUILD2026-10-30-be62f73 and streamed extrasHTTP200/ready. Actual public keyboard submission rejects an invalid code with no script/page errors.
+
+The exact ten public export files were downloaded and SHA512-recorded. The first replay mirror omitted the audio worklet; that fixture failure was corrected by fetching the actual public worklet and icon/splash companions. Final replay asserts the public BUILD, saved prebuilt-lift identity, one crossing, visible HUD/weapon and all three captures, with no script/parse/shader/page errors. Public main PCK197628224B, margin1601216B under190MiB.
+
+The reviewed board is evidence/public-review.jpg. Public boot/input are direct on the served game; changed-flow rendering uses the unmodified downloaded PCK/JS/WASM/extras through an external local fixture. This does not claim an authenticated public walkthrough or physical-phone test. No Meshy credits used for this repair.

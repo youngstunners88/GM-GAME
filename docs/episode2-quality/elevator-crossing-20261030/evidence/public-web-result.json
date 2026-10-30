@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "build": "[BUILD] Lil Blunt Adventure — build 2026-10-30-be62f73",
+  "result": {
+    "camera_position": "(-1.2, 1.55, -11.6)",
+    "hud": true,
+    "resolved": 1,
+    "same_instance": true,
+    "weapon": true
+  },
+  "shots": [
+    "cut_a",
+    "cut_b",
+    "4_inside_lift"
+  ],
+  "errors": []
+}

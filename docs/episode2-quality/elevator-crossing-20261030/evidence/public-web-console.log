@@ -1,0 +1,18 @@
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+OpenGL API OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium)) - Compatibility - Using Device: WebKit - WebKit WebGL
+[BUILD] Lil Blunt Adventure — build 2026-10-30-be62f73
+[Touch] layout build phone_landscape (releases all) (state MENU)
+[Touch] profile platformer -> none (state PLAYING)
+The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio
+ELEVATOR_WEB_FRAME cut_a
+ELEVATOR_WEB_ACK
+CAM_A fov 78.00 pos (0.3, 1.55, 16.34)  LIFTCAM fov 78.00 pos (0.3, 1.55, -13.66)
+PORTAL_LIVE true QUAD true
+[Touch] profile none -> ep2_foot (state PLAYING)
+ELEVATOR_WEB_FRAME cut_b
+ELEVATOR_WEB_ACK
+CAM_B fov 78.00 pos (0.3, 1.55, -13.66)
+ELEVATOR_WEB_FRAME 4_inside_lift
+ELEVATOR_WEB_ACK
+ELEVATOR_WEB_RESULT {"camera_position":"(-1.2, 1.55, -11.6)","hud":true,"resolved":1,"same_instance":true,"weapon":true}
+ELEVATOR_WEB_DONE

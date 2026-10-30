@@ -1,0 +1,56 @@
+{
+  "game_url": "https://html-classic.itch.zone/html/18305533-2252285/index.html?v=1793366591&ep2=1",
+  "observed_build": "2026-10-30-be62f73",
+  "files": {
+    "index.html": {
+      "bytes": 4981,
+      "status": 200,
+      "sha512": "4cbcc05e9433fe151f6ac4b9be2baf2b9d66bdf152ed3eadc010c770b80787bd322b933d6417df430755b7a2f296b3526d2b43e0aad1d7395a44f8e17260613f"
+    },
+    "index.js": {
+      "bytes": 331495,
+      "status": 200,
+      "sha512": "d3f5492b8f63c7d1ae8ee5d47f53f31150eb73edcf8e947682a79944f349c44b94b415f8e0d2d80cff668ace9941d15805f3f682234055ab830073ea37b54ae7"
+    },
+    "index.wasm": {
+      "bytes": 35376909,
+      "status": 200,
+      "sha512": "170b8d0dfb11aedd34ef807e6b1043dc3eeb195540e4b388b1bc303d9c21b37f4e1d38430dd55a81eea7e8872272e06e04f9911e162617544fcf59c5d2b51ce0"
+    },
+    "index.pck": {
+      "bytes": 197628224,
+      "status": 200,
+      "sha512": "64e9cc8b1b4c42a08611bf1bf2650266239c34d5a259746047ed201d806b414791dff013ecb38ee9537105101e75ae90592a000b4afb446e43464cb5863851f1"
+    },
+    "ep2_extras.pck": {
+      "bytes": 136166144,
+      "status": 200,
+      "sha512": "f4138610c328580c12c65171a1a3a5037184895d0dd6e1f6d7a436d029efa38da0a84f4ca480a10c63187b3f541edc5d6ab8a695f2579a5e9c4916202d4b35ff"
+    },
+    "web3.js": {
+      "bytes": 3035,
+      "status": 200,
+      "sha512": "117b235a90965024bf040da8883d58e5924119103a2c637119b94ed823880a6994fddcbccd2cd7a985dc41dffefb71bc3f2f944c935bda02cc241409a62eda15"
+    },
+    "index.audio.worklet.js": {
+      "bytes": 7298,
+      "status": 200,
+      "sha512": "2532b3729a7cc3f4909bf853488ae597d99088265b3a7000cb9d4ce2749b4c4ef2746eb26973e891614c615bd25f5ba923451c6f9eb99db4d298b6879e1b826b"
+    },
+    "index.icon.png": {
+      "bytes": 5678,
+      "status": 200,
+      "sha512": "8e765ed6793066116198039b0f023e824f61a0418476ec945aa5dc384cecf647e568b054356d659b11872b561433725fb703dcf4b9734f64993963035a156976"
+    },
+    "index.apple-touch-icon.png": {
+      "bytes": 12153,
+      "status": 200,
+      "sha512": "a8dd71075424c654c314548322e2a51ab9747868947e21af898df4b21f63bc95d3b96a808e69e455e6ecf983f9b749990e6dba117113ed60d1472b8c981d939c"
+    },
+    "index.png": {
+      "bytes": 21443,
+      "status": 200,
+      "sha512": "29b83f19fe51f4797bf9895c5475f5c42d8b538c1a96d9068e376a3c20dfe58a889f28aca66e8e641c04a5db2f6c4a283d705ce58df03571b67b2cadb2cb5a01"
+    }
+  }
+}
