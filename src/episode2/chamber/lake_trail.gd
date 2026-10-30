@@ -1287,8 +1287,14 @@ func preview_lake(room: Node3D) -> void:
 		_visuals.add_child(_lake_preview)
 		_lake_preview.transform=lake_transform()
 	# The prebuilt room does not simulate: retry streamed Logan before copying.
-	room._people()
-	room._build_skiff()
+	if room.has_method("prepare_approach"):room.prepare_approach()
+	else:
+		room._people()
+		room._build_skiff()
+	for id in _preview_copied.keys():
+		if not is_instance_id_valid(id):
+			if is_instance_valid(_preview_copied[id]):_preview_copied[id].free()
+			_preview_copied.erase(id)
 	_preview_nodes=room._visuals.get_children()
 	for child in _preview_nodes:
 		if child.name=="Player" or _preview_copied.has(child.get_instance_id()):continue

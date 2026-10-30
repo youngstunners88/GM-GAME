@@ -29,6 +29,10 @@ func _ready()->void:
  var body=Node3D.new();body.name="Player";destination._visuals.add_child(body)
  for i in 200:trail.preview_lake(destination)
  check("preview never shows a duplicate player",not trail._lake_preview.has_node("Player"))
- check("repeated updates do not grow scenery or duplicate Logan",trail._lake_preview.get_child_count()==3)
+ var obsolete=trail._preview_copied[anonymous.get_instance_id()]
+ anonymous.free()
+ destination._visuals.add_child(Node3D.new())
+ for i in 20:trail.preview_lake(destination)
+ check("streamed root replacement removes the old copy without growing scenery",trail._lake_preview.get_child_count()==3 and not is_instance_valid(obsolete))
  print("EP2_LAKE_PREVIEW: ",checks," checks, ",failed," failed")
  get_tree().quit(failed)

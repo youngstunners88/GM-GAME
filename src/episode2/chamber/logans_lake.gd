@@ -150,6 +150,14 @@ func _build_skiff() -> void:
 func _build_cabin() -> void:
 	_cabin.build(_visuals)
 
+## Hidden rooms do not tick; finish streamed destination art before copying it to the approach.
+func prepare_approach() -> void:
+	_landscape.refresh_streamed()
+	_build_cabin()
+	_cabin.refresh_materials()
+	_people()
+	_build_skiff()
+
 func _on_setup() -> void:
 	Ep2DrawMusic.begin_lake(self)
 	print("[EP2] Logan lake started")
