@@ -100,6 +100,7 @@ func portal_view(d: Dictionary) -> void:
 				if _bull.skeleton != null: _bull.skeleton.reset_bone_poses()
 				_bull.anim.seek(float(d["bull_clip_time"]), true)
 				_bull.anim.advance(0.0)
+			if d.get("bull_pose") is Array:_bull.apply_skeletal_pose(d.bull_pose)
 
 
 func _set_mouth_open(open: bool) -> void:
@@ -783,6 +784,11 @@ func _on_setup() -> void:
 		_bull.visible = true
 	_loop = _loop_player(LOOP_SFX, -8.0)
 	_on_beat_entered(Beat.ARRIVE)
+	# Starting the arrival show may select another clip. Its first visible frame
+	# must still be the exact pose that was visible through the doorway.
+	if _bull!=null and handoff.has("lift_bull"):
+		_bull.rotation.y=float(handoff.get("lift_bull_rotation",_bull.facing))
+		if handoff.get("lift_bull_pose") is Array:_bull.apply_skeletal_pose(handoff.lift_bull_pose)
 
 
 func _on_beat_entered(b: int) -> void:

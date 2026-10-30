@@ -17,6 +17,20 @@ const ARRIVE_DIST := 0.06
 var model: Node3D = null
 var anim: AnimationPlayer = null
 var skeleton: Skeleton3D = null
+
+## Doorway previews have no simulation tick, including the procedural grip pass.
+## Carry the rendered local bone pose, not merely the source clip's clock.
+func capture_skeletal_pose() -> Array:
+	var pose: Array=[]
+	if skeleton!=null:
+		for i in skeleton.get_bone_count():pose.append(skeleton.get_bone_pose(i))
+	return pose
+
+func apply_skeletal_pose(pose: Array) -> void:
+	if skeleton==null or pose.size()!=skeleton.get_bone_count():return
+	for bone in pose:
+		if not bone is Transform3D:return
+	for i in pose.size():skeleton.set_bone_pose(i,pose[i])
 var facing: float = 0.0
 var height_m: float = 2.4
 ## Walking speed (m/s) of the walk clip at speed_scale 1: scales with body size (a 1.7 m body walks ~1.3 m/s).

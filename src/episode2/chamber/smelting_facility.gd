@@ -1274,6 +1274,7 @@ func portal_view_wanted() -> Dictionary:
 		d["bull"] = _bull.position + LIFT_OFFSET
 		d["bull_facing"] = _bull.facing
 		d["bull_rotation"] = _bull.rotation.y
+		d["bull_pose"] = _bull.capture_skeletal_pose()
 		if _bull.anim != null and _bull.anim.is_playing():
 			d["bull_clip"] = _bull.anim.current_animation
 			d["bull_clip_time"] = _bull.anim.current_animation_position
@@ -1363,6 +1364,8 @@ func get_handoff() -> Dictionary:
 		if _bull != null:
 			d["lift_bull"] = _bull.position + LIFT_OFFSET
 			d["lift_bull_facing"] = _bull.facing
+			d["lift_bull_rotation"] = _bull.rotation.y
+			d["lift_bull_pose"] = _bull.capture_skeletal_pose()
 			if _bull.anim != null and _bull.anim.current_animation == _bull.walk_clip:
 				d["lift_bull_walk_time"] = _bull.anim.current_animation_position      # the lift keeps his stride, no pop to idle
 	return d
