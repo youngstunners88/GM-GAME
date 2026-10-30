@@ -144,6 +144,8 @@ func build_vegetation(parent: Node3D) -> void:
 		if i >= 145:
 			z = rng.randf_range(64.0, 140.0)
 			x = Ep2LakeLandform.flow_center(z) + (-1.0 if i % 2 == 0 else 1.0) * rng.randf_range(12.0, 27.0)
+		# A shore-facing opening, visible from the final mounted approach.
+		if z < -12.0 and x > -18.0 and x < 65.0: continue
 		if Ep2LakeLandform.cabin_clearance(x, z): continue
 		if x > -25.0 and x < 10.0 and z > 51.0 and z < 73.0: continue
 		if (x > -16.0 and x < -1.5) or (z > 45.0 and absf(x - Ep2LakeLandform.flow_center(z)) < 11.0): continue

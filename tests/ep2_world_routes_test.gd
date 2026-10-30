@@ -83,8 +83,8 @@ func _ready() -> void:
  check("horizon contains actual lake geometry",trail._lake_preview.find_child("ShoreAndMountain",true,false)!=null)
  check("lake preview matches the arrival point",(trail.lake_transform()*LogansLakeChamber.SPAWN).distance_to(trail._route_pts[trail._route_pts.size()-1])<0.01)
  check("route has gradual grass transition",trail._visuals.find_child("GradualGrassApproach",true,false)!=null)
- check("lake route uses the supplied draw song",AudioManager._override_active and AudioManager._override_player.stream.resource_path==Ep2DrawMusic.TRACK)
- check("entering the lake replaces ride music with supplied GM Laker2",routes.travel(session,"logans_lake",LogansLakeChamber.SPAWN) and AudioManager._override_active and AudioManager._override_player.stream.resource_path==Ep2DrawMusic.LAKE_TRACK and Ep2DrawMusic.token<0)
+ check("lake route uses the supplied draw song",AudioManager.current_music_player.stream.resource_path==Ep2DrawMusic.TRACK)
+ check("entering the lake replaces ride music with supplied GM Laker2",routes.travel(session,"logans_lake",LogansLakeChamber.SPAWN) and AudioManager.current_music_player.stream.resource_path==Ep2DrawMusic.LAKE_TRACK and Ep2DrawMusic.token<0)
  session.queue_free()
  await get_tree().process_frame
  print("EP2_WORLD_ROUTES: ",checks," checks, ",failed," failed")

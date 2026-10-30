@@ -1,0 +1,9 @@
+# Town variety and Logan's Lake arrival
+
+Founder brief1pK3fGt7uFLIW_qu5owBo9qeMyrbDb5eF and GMTown.mp3 imported unchanged from Drive1jwIPPi3ta-pZls6XhTbpuddzW0TY9cmF. Existing town main theme remains first; GMTown alternates at natural tails with8s equal-power overlap. Rotation pauses for the exclusive draw cue and is cancelled on region departure. An audible override becomes the outgoing deck, preserving actual audio rather than hard-stopping it and reviving a paused base. Retiring EOF callbacks cannot stop a newer deck; suspended-tab EOF also advances the rotation.
+
+Town→trail mixes over8s. Trail→lake begins80m before the shore, after the chase/ambush stretch; the lake activation keeps the same deck. The shore now lasts8s for the drinking/dismount beat. Existing lake dialogue, combat, UNHORSE and inventory remain intact.
+
+Lake previews now retry supplied Logan/boat after streaming, copy one actual scene root per frame and track IDs. A one-time root list missed late models; anonymous-node duplicate names also cannot be used as a copy identity. Repeated calls do not grow the scenery or duplicate the player. Both approach firs and the lake's front grove leave a shore-facing opening. Native captures show a water glint/destination at80m, open water/dock as the rider closes to45m, then Logan's shore/cabin/sign before arrival. No substitute character, new asset provider or title art change.
+
+Focused checks: region-score11, preview8, world-routes28, lake-art27; trail combat/unhorse and quad crossfade/VO pass. The engine actually recorded32s of music from town A→GMTown→trail→lake:5.6MB PCM, mean−17dBFS/max−1.3dBFS, retained as Ogg for review. This is real engine output; numerical power and levels are not a listening test. Full CI suite, actual web export/pack limits and public release remain pending.

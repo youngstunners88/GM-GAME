@@ -95,10 +95,11 @@ func travel(session: Node, id: String, position: Vector3) -> bool:
  if room.has_method("_sync_visuals"): room._sync_visuals()
  for sound in entry.sounds:
   if is_instance_valid(sound[0]): sound[0].play(sound[1])
+ if room is GoldTownChamber: Ep2DrawMusic.begin_town(room)
  if room is LogansLakeChamber:
   room._look_yaw=wrapf(yaw-(previous.lake_transform().basis.get_euler().y if previous is LakeTrailChamber else 0.0),-PI,PI)
   Ep2DrawMusic.begin_lake(room)
- elif room is LakeTrailChamber: Ep2DrawMusic.begin(room)
+ elif room is LakeTrailChamber: Ep2DrawMusic.begin_trail(room)
  else: Ep2DrawMusic.finish(room)
  cooldown=1.0
  session.mode_changed.emit(session._mode)

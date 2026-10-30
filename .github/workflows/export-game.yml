@@ -328,6 +328,12 @@ jobs:
           timeout 120 "$GODOT_BIN" --headless res://tests/ep2_fix_motion_test.tscn > fix-motion-tests.log 2>&1
           grep -q 'EP2_FIX_MOTION: 13 checks, 0 failed' fix-motion-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' fix-motion-tests.log; then exit 1; fi
+          timeout 120 "$GODOT_BIN" --headless res://tests/ep2_lake_preview_test.tscn > lake-preview-tests.log 2>&1
+          if grep -qE 'SCRIPT ERROR|Parse Error|\[FAIL\]' lake-preview-tests.log; then cat lake-preview-tests.log; exit 1; fi
+          grep -q 'EP2_LAKE_PREVIEW: 8 checks, 0 failed' lake-preview-tests.log
+          timeout 90 "$GODOT_BIN" --headless res://tests/ep2_region_score_test.tscn > region-score-tests.log 2>&1
+          if grep -qE 'SCRIPT ERROR|Parse Error|\[FAIL\]' region-score-tests.log; then cat region-score-tests.log; exit 1; fi
+          grep -q 'EP2_REGION_SCORE: 11 checks, 0 failed' region-score-tests.log
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_fix_continuity_test.tscn > fix-continuity-tests.log 2>&1
           grep -q 'EP2_FIX_CONTINUITY: 20 checks, 0 failed' fix-continuity-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' fix-continuity-tests.log; then exit 1; fi

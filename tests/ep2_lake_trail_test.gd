@@ -216,7 +216,7 @@ func _test_mounted_arrival_and_prebuild() -> void:
 	while not c._ending and seconds < 140.0:
 		c.step(1.0 / 30.0)
 		seconds += 1.0 / 30.0
-	_step(c, 3.2)
+	_step(c, c.SHORE_SECONDS+0.2)
 	_check("the shore waits for the already-requested lake instead of building at the cut", c._ending and results.is_empty()
 		and c.is_waiting_for_handoff() and _prebuild.size() == 1)
 	_check("a living horse lowers its head to drink (horse_graze)", c.get_horse_clip() == "horse_graze" and c.get_horse_hp() == 3)

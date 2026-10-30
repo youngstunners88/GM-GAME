@@ -35,7 +35,8 @@ const AMBUSH_BEHIND := 14.0
 const RIDER_START_S := 215.0
 const RIDER_END_S := 294.0
 const UNHORSE_SECONDS := 1.4
-const SHORE_SECONDS := 0.6
+const SHORE_SECONDS := 8.0
+const LAKE_REVEAL_DISTANCE := 80.0
 
 ## Catmull-Rom control points (x, z). The sampled route is about 560 m long.
 const TRAIL_POINTS: Array = Ep2LakeRoad.POINTS
@@ -101,7 +102,7 @@ var _ecotone_material: ShaderMaterial
 var _desert_env: Environment
 var _lake_reference: Node3D
 var _lake_preview: Node3D
-var _preview_index: int = 0
+var _preview_copied: Dictionary = {}
 var _preview_nodes: Array = []
 var _rng := RandomNumberGenerator.new()
 var _health: int = HEALTH_MAX
@@ -236,6 +237,7 @@ func _step_lake() -> void:
 	for i in 100:
 		var progress: float=float(i)/99.0
 		var sample: Array=_route_sample(180.0+(1.0-pow(1.0-progress,0.65))*(_route_total-180.0))
+		if (sample[0] as Vector3).distance_to(_route_pts[-1]) < LAKE_REVEAL_DISTANCE:continue
 		var yaw: float=float(sample[1])
 		var side:=Vector3(-cos(yaw),0,sin(yaw))
 		var at: Vector3=(sample[0] as Vector3)+side*(11.0+float((i*7)%15))*(1.0 if i%2==0 else -1.0)
@@ -612,7 +614,7 @@ func _bandit_world_position(b: Dictionary) -> Vector3:
 # --- setup and movement ----------------------------------------------------------------------------------------------
 
 func _on_setup() -> void:
-	Ep2DrawMusic.begin(self)
+	Ep2DrawMusic.begin_trail(self)
 	_armory_snapshot = armory.snapshot()
 	_beat = Beat.RIDE
 	_health = HEALTH_MAX
@@ -773,6 +775,8 @@ func _fps_camera(_delta: float) -> void:
 
 func _tick(delta: float) -> void:
 	_blend_lake_light()
+	if _route_s >= _route_total-LAKE_REVEAL_DISTANCE:
+		Ep2DrawMusic.begin_lake(self)
 	_invuln = maxf(0.0, _invuln - delta)
 	_tick_flashes(delta)
 	var town_player: Vector3 = _player_pos + GoldTownChamber.DEPART_HORSE
@@ -834,6 +838,7 @@ func _tick_unhorse(delta: float) -> void:
 func _begin_shore() -> void:
 	_ending = true
 	_end_t = 0.0
+	Ep2DrawMusic.begin_lake(self)
 	_speed = 0.0
 	_moving = false
 	_route_s = _route_total
@@ -1279,15 +1284,20 @@ func preview_lake(room: Node3D) -> void:
 		_lake_preview.name="ActualLogansLake"
 		_visuals.add_child(_lake_preview)
 		_lake_preview.transform=lake_transform()
-		_preview_nodes=room._visuals.get_children()
-	if _preview_index>=_preview_nodes.size(): return
-	var child: Node=_preview_nodes[_preview_index]
-	_preview_index+=1
-	if child.name=="Player":return
-	_lake_preview.add_child(child.duplicate())
-	if child.name=="ShoreAndMountain":
-		_sand_material.set_shader_parameter("lake_visible",true)
-		_ecotone_material.set_shader_parameter("lake_visible",true)
+	# The prebuilt room does not simulate: retry streamed Logan before copying.
+	room._people()
+	room._build_skiff()
+	_preview_nodes=room._visuals.get_children()
+	for child in _preview_nodes:
+		if child.name=="Player" or _preview_copied.has(child.get_instance_id()):continue
+		var copy: Node=child.duplicate()
+		copy.process_mode=Node.PROCESS_MODE_DISABLED
+		_lake_preview.add_child(copy)
+		_preview_copied[child.get_instance_id()]=copy
+		if child.name=="ShoreAndMountain":
+			_sand_material.set_shader_parameter("lake_visible",true)
+			_ecotone_material.set_shader_parameter("lake_visible",true)
+		break # one new root per frame; late streamed children are not lost
 
 var _adopted_town: Node3D
 func adopt_departure(town: Node3D, woods: Node3D = null) -> void:

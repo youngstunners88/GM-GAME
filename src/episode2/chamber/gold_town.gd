@@ -1123,6 +1123,7 @@ func _face_folk(a: Ep2TownFolk, p: Vector3) -> void:
 # --- setup + beats -----------------------------------------------------------------------------------------------------
 
 func _on_setup() -> void:
+	Ep2DrawMusic.begin_town(self)
 	_player_pos = handoff.get("pos", Ep2GoldTown.DROP_POINT + Vector3(-2.2, 0.0, 0.6))
 	_player_pos.y = 0.0
 	_ground_y = 0.0

@@ -125,7 +125,47 @@ func play_room_music(path: String, fade_seconds: float = 2.5) -> void:
 ## amplitude follows cos and the incoming one's sin, so the two together hold one loudness the whole way. The old linear-dB ramps
 ## (0 -> -60 dB out, -50 -> 0 dB in) left both songs ~25 dB down at the midpoint: the music all but vanished, then the theme swelled.
 ## The incoming level follows the speech duck every frame (a line that starts mid-blend keeps the music under it).
+var _region_tracks: Array = []
+var _region_mix_seconds: float = 8.0
+
+## Region beds overlap at the last eight seconds, alternating without replacing theme A.
+func play_region_score(paths: Array, seconds: float = 8.0) -> void:
+    var found: Array = paths.filter(func(p): return ResourceLoader.exists(p))
+    if found.is_empty(): return
+    if _region_tracks == found and not _override_active and is_instance_valid(current_music_player): return
+    # Preserve the audible override as the outgoing deck, not its paused saved base.
+    if _override_active and is_instance_valid(_override_player):
+        _stop_music()
+        current_music_player = _override_player
+        _last_track = current_music_player.stream.resource_path
+        _override_player = null
+        _override_active = false
+        _override_token += 1
+        _saved_stream = null
+        _saved_playlist = []
+    if _last_track != str(found[0]) or not is_instance_valid(current_music_player):
+        crossfade_music(str(found[0]), seconds)
+    _region_tracks = found
+    _region_mix_seconds = maxf(seconds, 0.5)
+
+func _process(_delta: float) -> void:
+    if _region_tracks.is_empty() or _override_active or not is_instance_valid(current_music_player): return
+    var deck: AudioStreamPlayer = current_music_player
+    if not deck.playing or deck.stream_paused or deck.stream == null: return
+    var length: float = deck.stream.get_length()
+    if length > _region_mix_seconds * 2.0 and length - deck.get_playback_position() <= _region_mix_seconds:
+        advance_region_score()
+
+func advance_region_score() -> void:
+    if _region_tracks.is_empty() or _override_active: return
+    var tracks: Array = _region_tracks.duplicate()
+    var next: String = str(tracks[(tracks.find(_last_track) + 1) % tracks.size()])
+    var seconds: float = _region_mix_seconds
+    crossfade_music(next, seconds)
+    _region_tracks = tracks
+
 func crossfade_music(path: String, seconds: float = 4.0) -> void:
+    _region_tracks = []
     if not ResourceLoader.exists(path):
         return
     var stream: AudioStream = load(path)
@@ -138,6 +178,7 @@ func crossfade_music(path: String, seconds: float = 4.0) -> void:
     var old: AudioStreamPlayer = current_music_player if current_music_player != null and is_instance_valid(current_music_player) else null
     var old_amp: float = db_to_linear(old.volume_db) if old != null else 0.0
     if old != null:
+        if old.finished.is_connected(_on_music_track_finished): old.finished.disconnect(_on_music_track_finished)
         _retiring.append(old)
     _playlist = [path]
     _last_track = path
@@ -154,7 +195,7 @@ func crossfade_music(path: String, seconds: float = 4.0) -> void:
             return                   # another music change took over mid-blend: both players are its business now
         fresh.volume_db = linear_to_db(maxf(db_to_linear(_music_rest_db()) * sin(t * PI * 0.5), 0.00001))
         if old != null and is_instance_valid(old):
-            old.volume_db = linear_to_db(maxf(old_amp * cos(t * PI * 0.5), 0.00001))
+            old.volume_db = linear_to_db(maxf(minf(old_amp, db_to_linear(_music_rest_db())) * cos(t * PI * 0.5), 0.00001))
     var blend := fresh.create_tween()
     blend.tween_method(step, 0.0, 1.0, maxf(seconds, 0.5))
     blend.finished.connect(func() -> void:
@@ -165,6 +206,7 @@ func crossfade_music(path: String, seconds: float = 4.0) -> void:
 
 ## Fade the current music out over `seconds` and stop (leaving a stage).
 func fade_out_music(seconds: float = 1.6) -> void:
+    _region_tracks = []
     _playlist = []
     _duck_out_music(seconds)
 
@@ -173,6 +215,7 @@ func fade_out_music(seconds: float = 1.6) -> void:
 ## beforehand), starts at `position` with a very short fade-in, and loops the track afterwards. Skill
 ## ep2-theme-song-handoff.
 func play_track_from(path: String, position: float = 0.0, fade_in_seconds: float = 0.15) -> void:
+    _region_tracks = []
     if not ResourceLoader.exists(path):
         return
     _drop_override_for_new_music()
@@ -216,6 +259,7 @@ func play_music(path: String) -> void:
 ## Level 2/3/boss arenas keep their existing random-shuffle-on-entry feel —
 ## only Level 1's specific "always this song first" ask changes behaviour.
 func play_playlist(paths: Array, force_first: bool = false, fade_seconds: float = 1.0) -> void:
+    _region_tracks = []
     var found: Array = []
     for p in paths:
         # Tracks may be absent in dev builds — degrade silently instead of
@@ -307,6 +351,9 @@ func _on_music_track_finished() -> void:
     # Don't auto-advance the base playlist while a music override (Blaze) owns
     # the music — the override has its own player. It resumes on release.
     if _override_active:
+        return
+    if not _region_tracks.is_empty():
+        advance_region_score()
         return
     if not _playlist.is_empty():
         _play_next_in_playlist()
