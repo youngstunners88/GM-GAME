@@ -41,6 +41,13 @@ func _ready() -> void:
 	hf._hold = 0.0
 	hf._bull.position = Vector3(0.7, 0.0, SmeltingFacilityChamber.PORTAL_Z + 2.2)       # Inferno already through, leading
 	hf._bull.facing = 0.0
+	hf._bull.rotation.y = 0.0
+	# This is the post-lesson exit, after his real stand-up. A fixture that
+	# leaves the sitting clip active changes pose on its first simulated tick.
+	hf._stand_t = 99.0
+	hf._settle = 0.0
+	hf._bull.play(hf.BULL_IDLE,1.0,0.0)
+	hf._animate_bull(0.0)
 	var pz: float = SmeltingFacilityChamber.PORTAL_Z
 	for spec in [["1_room_far", Vector3(0.0, 0.0, 4.0), 0.0], ["2_room_mid", Vector3(-0.8, 0.0, 10.5), 0.08],
 			["3_at_door", Vector3(0.2, 0.0, 14.6), -0.05], ["cut_a", Vector3(0.3, 0.0, pz - 0.06), 0.0]]:

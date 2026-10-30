@@ -4,7 +4,9 @@ var failed := 0
 func same_pose(a: Array,b: Array) -> bool:
 	if a.size()!=b.size():return false
 	for i in a.size():
-		if not (a[i] as Transform3D).is_equal_approx(b[i]):return false
+		if not (a[i] as Transform3D).is_equal_approx(b[i]):
+			print("POSE_DIFFERENCE ",i," actual=",a[i]," expected=",b[i])
+			return false
 	return true
 func check(label: String, ok: bool) -> void:
 	checks += 1
