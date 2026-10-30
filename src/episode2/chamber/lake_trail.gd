@@ -777,6 +777,8 @@ func _tick(delta: float) -> void:
 	_blend_lake_light()
 	if _route_s >= _route_total-LAKE_REVEAL_DISTANCE:
 		Ep2DrawMusic.begin_lake(self)
+	else:
+		Ep2DrawMusic.begin_trail(self)
 	_invuln = maxf(0.0, _invuln - delta)
 	_tick_flashes(delta)
 	var town_player: Vector3 = _player_pos + GoldTownChamber.DEPART_HORSE

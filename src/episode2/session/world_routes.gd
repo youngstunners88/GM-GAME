@@ -99,7 +99,9 @@ func travel(session: Node, id: String, position: Vector3) -> bool:
  if room is LogansLakeChamber:
   room._look_yaw=wrapf(yaw-(previous.lake_transform().basis.get_euler().y if previous is LakeTrailChamber else 0.0),-PI,PI)
   Ep2DrawMusic.begin_lake(room)
- elif room is LakeTrailChamber: Ep2DrawMusic.begin_trail(room)
+ elif room is LakeTrailChamber:
+  if room.get_route_distance()>=room.get_route_length()-room.LAKE_REVEAL_DISTANCE:Ep2DrawMusic.begin_lake(room)
+  else:Ep2DrawMusic.begin_trail(room)
  else: Ep2DrawMusic.finish(room)
  cooldown=1.0
  session.mode_changed.emit(session._mode)
