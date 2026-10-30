@@ -1,0 +1,30 @@
+[PASS] the actual road cart transfers into town
+[PASS] the original farmer rig and rolling phase survive
+[PASS] parked woods gives the continuing trip one simulation owner
+[PASS] the farmer continues moving while the player is in town
+[PASS] the old woods cannot advance his wheels a second time
+[PASS] Tabs or pause freezes the whole journey
+[PASS] the continuing road route is saved with its actual progress
+[PASS] a fresh restore preserves the moving cart's exact survey position
+[PASS] a fresh restore preserves the donkey and axle distance
+[PASS] he actually reaches the service yard
+[PASS] a real town duel interrupts the errand without moving goods
+[PASS] his full approach remains outside the real building walls
+[PASS] a real existing worker collects the delivery
+[PASS] the worker walks into the actual store and back
+[PASS] the same parcel ends on the store counter
+[PASS] the background cast is not duplicated
+[PASS] a parked donkey has all four soles on the ground
+[PASS] the same worker resumes the actual route after the draw
+[PASS] the worker returns to his own ambient routine
+[PASS] restoring completed business never repeats the handover
+[PASS] restored wheel phase matches the saved journey
+[PASS] completed delivery restore remains the same town survey
+[PASS] the actual interior/carry state can be saved
+[PASS] mid-delivery restore retains the real worker and exact height
+[PASS] mid-delivery restore reconnects the same carried goods
+[FAIL] a real session load retains the whole town during a shop delivery
+[PASS] a dead delivery worker is never resurrected or replaced mid-carry
+[PASS] interrupted goods remain in the actual town
+[PASS] an interruption cannot silently finish the delivery
+EP2_FARMER_TRIP: 29 checks, 1 failed

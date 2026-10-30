@@ -3,6 +3,8 @@ extends Node3D
 ## Recorded ambient life; one nearby greeting at a time. No bell in ambience.
 signal bell_rung
 const ROOT := "res://src/episode2/extras/audio/town/"
+var _celebration: AudioStreamPlayer
+var _celebration_left: float = 0.0
 var _wind: AudioStreamPlayer
 var _saloon: AudioStreamPlayer3D
 var _greeting: AudioStreamPlayer3D
@@ -184,3 +186,27 @@ func ring_bell() -> bool:
 	bell_count += 1
 	bell_rung.emit()
 	return true
+
+## Story celebration has a dedicated non-positional lane: pooled footsteps and
+## greetings cannot steal it, and the listener's distance cannot attenuate it.
+func play_celebration() -> bool:
+	if not active: return false
+	if _celebration == null:
+		_celebration = AudioStreamPlayer.new()
+		_celebration.bus = "SFX"
+		_celebration.stream = _effect("crowd_cheer")
+		_celebration.volume_db = 2.0
+		add_child(_celebration)
+	if _celebration.stream == null: return false
+	_celebration_left = 14.0
+	_celebration.play()
+	effect_counts["crowd_cheer"] = int(effect_counts.get("crowd_cheer",0))+1
+	return true
+
+func _process(delta: float) -> void:
+	if _celebration_left <= 0.0: return
+	_celebration_left -= delta
+	if _celebration_left <= 0.0:
+		_celebration.stop()
+	elif not _celebration.playing:
+		_celebration.play()

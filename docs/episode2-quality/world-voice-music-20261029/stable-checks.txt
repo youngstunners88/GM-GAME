@@ -1,0 +1,99 @@
+  [PASS] shared town builder restores the original Episode2 yard
+  [PASS] yard uses the original paddock, off the approach road
+  [PASS] both supplied characters actually loaded
+  [PASS] eight horses occupy the yard
+  [PASS] desert rocks cannot obscure the restored yard or gate approach
+  [PASS] all four street horses plus their roamer remain
+  [PASS] Dude retains the65joint rig
+  [PASS] Dude is within8–10ktris (9243)
+  [PASS] Dude has idle
+  [PASS] Dude idle has correct loop policy
+  [PASS] Dude idle plays finite whole-clip poses
+  [PASS] Dude idle keeps head/hat scale rigid
+  [PASS] Dude idle really loops/finishes
+  [PASS] Dude has walk
+  [PASS] Dude walk has correct loop policy
+  [PASS] Dude walk plays finite whole-clip poses
+  [PASS] Dude walk keeps head/hat scale rigid
+  [PASS] Dude walk really loops/finishes
+  [PASS] Dude has run
+  [PASS] Dude run has correct loop policy
+  [PASS] Dude run plays finite whole-clip poses
+  [PASS] Dude run keeps head/hat scale rigid
+  [PASS] Dude run really loops/finishes
+  [PASS] Dude has turn
+  [PASS] Dude turn has correct loop policy
+  [PASS] Dude turn plays finite whole-clip poses
+  [PASS] Dude turn keeps head/hat scale rigid
+  [PASS] Dude turn really loops/finishes
+  [PASS] Dude has jump
+  [PASS] Dude jump has correct loop policy
+  [PASS] Dude jump plays finite whole-clip poses
+  [PASS] Dude jump keeps head/hat scale rigid
+  [PASS] Dude jump really loops/finishes
+  [PASS] StableAssistant retains the65joint rig
+  [PASS] StableAssistant is within8–10ktris (8915)
+  [PASS] StableAssistant has idle
+  [PASS] StableAssistant idle has correct loop policy
+  [PASS] StableAssistant idle plays finite whole-clip poses
+  [PASS] StableAssistant idle keeps head/hat scale rigid
+  [PASS] StableAssistant idle really loops/finishes
+  [PASS] StableAssistant has walk
+  [PASS] StableAssistant walk has correct loop policy
+  [PASS] StableAssistant walk plays finite whole-clip poses
+  [PASS] StableAssistant walk keeps head/hat scale rigid
+  [PASS] StableAssistant walk really loops/finishes
+  [PASS] StableAssistant has run
+  [PASS] StableAssistant run has correct loop policy
+  [PASS] StableAssistant run plays finite whole-clip poses
+  [PASS] StableAssistant run keeps head/hat scale rigid
+  [PASS] StableAssistant run really loops/finishes
+  [PASS] StableAssistant has turn
+  [PASS] StableAssistant turn has correct loop policy
+  [PASS] StableAssistant turn plays finite whole-clip poses
+  [PASS] StableAssistant turn keeps head/hat scale rigid
+  [PASS] StableAssistant turn really loops/finishes
+  [PASS] StableAssistant has jump
+  [PASS] StableAssistant jump has correct loop policy
+  [PASS] StableAssistant jump plays finite whole-clip poses
+  [PASS] StableAssistant jump keeps head/hat scale rigid
+  [PASS] StableAssistant jump really loops/finishes
+  [PASS] StableHorse0 plays a real horse clip
+  [PASS] StableHorse0 is solid
+  [PASS] StableHorse1 plays a real horse clip
+  [PASS] StableHorse1 is solid
+  [PASS] StableHorse2 plays a real horse clip
+  [PASS] StableHorse2 is solid
+  [PASS] StableHorse3 plays a real horse clip
+  [PASS] StableHorse3 is solid
+  [PASS] PaddockWalker plays a real horse clip
+  [PASS] PaddockWalker is solid
+  [PASS] StableHorse5 plays a real horse clip
+  [PASS] StableHorse5 is solid
+  [PASS] StableHorse6 plays a real horse clip
+  [PASS] StableHorse6 is solid
+  [PASS] StableHorse7 plays a real horse clip
+  [PASS] StableHorse7 is solid
+  [PASS] herd animation phase offsets differ
+  [PASS] Dude blocks the actual player collision path
+  [PASS] StableAssistant blocks the actual player collision path
+  [PASS] assistant actually works a short yard path
+  [PASS] walking horse stays in its slow paddock lane
+  [PASS] Dude never enters the street
+  [PASS] StableAssistant never enters the street
+  [PASS] zero delta changes no routine or clip state
+  [PASS] duel quiet holds walking animals and both people
+  [PASS] woods/town builder produces the same two actors and herd
+  [PASS] handoff preserves actor places
+  [PASS] handoff preserves horse place and clip phase
+  [PASS] each yard's people own their clip list (a second yard cannot pull a clip out from under them)
+  [PASS] E within3m starts the real ranch conversation
+  [PASS] hook creates no purchase, map or story beat
+  [PASS] E outside3m does nothing
+  [PASS] Dude cannot interrupt the draw
+  [PASS] restored yard is reachable in the town room
+  [PASS] main pack excludes only the two new canonical asset families
+  [PASS] hard190MiB pack gate remains199229440B
+  [PASS] web export remains nonthreaded
+  [PASS] full stable battery reached its final assertions
+EP2_STABLE_YARD: ALL PASS (98 checks)

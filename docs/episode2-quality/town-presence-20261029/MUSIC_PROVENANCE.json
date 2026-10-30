@@ -1,0 +1,13 @@
+{
+  "title": "GM Laker2",
+  "source": "https://drive.google.com/file/d/1UHDo2XewokT1wdQaQ-LLnrWk-bce6M-z/view",
+  "provenance": "Founder supplied for game integration,2026-10-29",
+  "path": "src/episode2/extras/audio/music/gm_laker2.mp3",
+  "bytes": 4368691,
+  "duration_seconds": 187.632,
+  "sample_rate": 48000,
+  "channels": 2,
+  "sha512": "1bf0d52ad96b7a1f72aa8dd8fc14967584aa37246fbc1777cc9eca14179019ac63db45150a6b19eea1ba0867ca8c835c94d9b5f2f152199cb827b3e6c01b0a27",
+  "changes": "Original MP3 bytes preserved. Streamed in extras; loops on Music bus only at Logan lake; prior draw/ride track and return restored by paired token.",
+  "provider_spend_credits": 0
+}

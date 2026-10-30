@@ -10,7 +10,7 @@ extends Ep2Interlude
 ##             name, can't be sold on or traded, bring your share and he stamps it (whitepaper-faithful, no invented numbers)
 ##   TO_BAR    cross the street to the SALOON
 ##   BAR       a whiskey, a quarter of a Bitcoin on the bar, the bartender's jaw drops, a stranger at the end of the bar noticed -
-##             "Give me a bitcoin or I give you the map to the auction where they can get more intel." Lil Blunt won't. the Sheriff walks
+##             "Give me a Bitcoin in exchange for the map to the auction, where you can get more gold and Bitcoin." Lil Blunt won't. the Sheriff walks
 ##             in: he is the witness
 ##   SQUARE_UP out in the street, face him; the Sheriff stands to the side
 ##   DRAW      the rifle stays down until the town bell rings (a seeded wait). Fire early = a foul, the Sheriff makes them redo it. Hit him first
@@ -127,7 +127,7 @@ const GATLING_TESTED_HOLD := 1.4                           # seconds after he st
 
 # Founder 2026-10-28: restore the earlier Sheriff appearance, retaining his dialogue and voice.
 # The previous model and textures are restored into streamed extras to preserve the main-pack budget.
-const SHERIFF_MODEL := "res://src/episode2/extras/people/previous_sheriff/sheriff.glb"
+const SHERIFF_MODEL := "res://src/episode2/extras/people/previous_sheriff/sheriff_walk.glb"
 const SHERIFF_WALK_STRIDE := 0.81                         # m/s: his Walk clip's own ground speed (stride matching)
 const MINISTER_MODEL := "res://src/episode2/assets/town/minister.glb"      # Minister Mike Dean: the founder's robot-headed minister (Drive 2026-10-14), baked for the pack
 const COWBOY_MODEL := "res://src/episode2/assets/town/cowboy.glb"        # the stranger: a HUMAN cowboy (child meshes "Idle" and "Draw")
@@ -293,7 +293,7 @@ var _minister2_said: bool = false
 var _horse_bought: bool = false
 var _depart_mounted: bool = false
 var _depart_from := Vector3.ZERO
-const DEPART_HORSE := Vector3(-13,0,1230)
+const DEPART_HORSE := Ep2LakeRoad.ORIGIN
 
 
 func _init() -> void:
@@ -535,6 +535,7 @@ func _build_armory_folk_v2() -> void:
 	_utah.name = "Utah"
 	_visuals.add_child(_utah)
 	_utah.setup(Ep2Extras.UTAH, UTAH2_HEIGHT, Color(0.28, 0.33, 0.34))
+	Ep2GroundedWalk.install(_utah)
 	_rich_brain = Ep2ArmoryBrain.new()
 	_rich_brain.walk_speed = RICH2_WALK
 	_rich_brain.setup("rich", _rich, xf, _brain_spots(), "counter_rich", 7101)
@@ -821,7 +822,7 @@ func start_rig(_payment: String = "") -> bool:
 		return true
 	if _stable_yard != null and _stable_interaction_allowed() and _stable_yard.try_talk(_player_pos):
 		return true
-	if _beat != Beat.ARMORY or _shop_open or _shop == null:
+	if (_beat != Beat.ARMORY and not _world_revisit) or _shop_open or _shop == null:
 		return false
 	if not _at_armory_counter():
 		return false
@@ -831,7 +832,7 @@ func start_rig(_payment: String = "") -> bool:
 
 ## True when Lil Blunt is close enough to the counter to trade.
 func _at_armory_counter() -> bool:
-	if _beat != Beat.ARMORY:
+	if _beat != Beat.ARMORY and not _world_revisit:
 		return false
 	return _player_pos.distance_to(Ep2GoldTown.local_to_world("Bldg_Armory", ARMORY_SPOT)) < ARMORY_TRADE_R
 
@@ -963,9 +964,10 @@ func _build_sheriff() -> void:
 	_sheriff.clip_blend = 0.2
 	_visuals.add_child(_sheriff)
 	_sheriff.setup(SHERIFF_MODEL, SHERIFF_HEIGHT, Color(0.42, 0.30, 0.18))
+	Ep2GroundedWalk.install(_sheriff)
 	if _sheriff.has_clips():
 		_sheriff.procedural_bob = false                # mocap carries its own bob
-		_sheriff.walk_clip_speed = SHERIFF_WALK_STRIDE
+		_sheriff.walk_clip_speed = float(Ep2GroundedWalk.config.reference_speed)
 		_sheriff.hold_clip("Idle")
 	_sheriff_smoke = _particles(18, 2.6, Color(0.86, 0.86, 0.84, 0.33), 0.06)
 	_sheriff_smoke.name = "CigSmoke"
@@ -1216,6 +1218,7 @@ func _on_beat_entered(b: int) -> void:
 				_hud.show_health = true
 			_start_round()
 		Beat.WON:
+			Ep2DrawMusic.finish(self)
 			_won_t = 0.0
 			_minister_runs_out()
 			if _hud:
@@ -1225,7 +1228,7 @@ func _on_beat_entered(b: int) -> void:
 			if _people != null:
 				_people.celebrate(_player_pos, _opp.position)
 			if _town_audio != null:
-				_town_audio.play_effect("crowd_cheer", _player_pos + Vector3(0,1,0), 1.0, 42.0)
+				_town_audio.play_celebration()
 			_start_show([
 				FacilityShow._say("vo_sheriff_win", 0.4),
 				{"do": "wait", "t": 0.4}], false)
@@ -1319,6 +1322,7 @@ func _on_beat_entered(b: int) -> void:
 			if _hud:
 				_hud.objective = "Take the Gold Panner to Minister Mike Dean at the CERTIFICATES office."
 		Beat.STABLES:
+			prebuild_requested.emit("lake_trail")
 			# section 2 steps 11-12: Dude - the Minister sent him; the horse for BTC; his Chill Buds; "Logan's Lake first"
 			if _stable_yard != null:
 				_stable_yard.set_referred(true)
@@ -1823,6 +1827,7 @@ func _place(n: Node3D, p: Vector3) -> void:
 
 ## The sheriff pushes in through the saloon doors (if Lil Blunt outran him, he is already at the door) and walks up to the bar.
 func _sheriff_enters_saloon() -> void:
+	Ep2DrawMusic.begin(self)
 	var outside: Vector3 = Ep2GoldTown.door_world("Bldg_Saloon", 1.2)
 	if _sheriff.position.distance_to(outside) > 4.0:
 		_sheriff.position = outside
@@ -1884,6 +1889,7 @@ func _tick(delta: float) -> void:
 		Beat.DRAW:
 			_tick_draw(delta)
 		Beat.WON:
+			Ep2DrawMusic.finish(self)
 			_won_t += delta
 			# the Sheriff has called it; the body is there to be searched (the street cheers and dances meanwhile)
 			if not _show_active and _won_t > 0.8:
@@ -2026,7 +2032,7 @@ func _tick(delta: float) -> void:
 
 
 func _stable_interaction_allowed() -> bool:
-	return _beat not in [Beat.BAR, Beat.SQUARE_UP, Beat.DRAW, Beat.GEARED, Beat.DONE] and _hold <= 0.0 and not _show_active and not _shop_open and not (_intro != null and _intro.is_busy())
+	return (_world_revisit or _beat not in [Beat.BAR, Beat.SQUARE_UP, Beat.DRAW, Beat.GEARED, Beat.DONE]) and _hold <= 0.0 and not _show_active and not _shop_open and not (_intro != null and _intro.is_busy())
 
 
 func _on_stable_line(who: String, text: String, id: String, _voice: String) -> void:
@@ -2055,7 +2061,7 @@ func _on_stable_horse_bought(_paid: int, _credit: int) -> void:
 
 
 func can_mount_departure() -> bool:
-	return _beat == Beat.GEARED and _horse_bought and not _depart_mounted and not _show_active and _player_pos.distance_to(DEPART_HORSE) < 3.0
+	return _beat == Beat.GEARED and _horse_bought and not _mounted_transport and not _depart_mounted and not _show_active and _player_pos.distance_to(DEPART_HORSE) < 3.0
 
 func _wants_handoff() -> bool:
 	return _beat == Beat.GEARED and _depart_mounted and not _show_active

@@ -1,0 +1,58 @@
+{
+  "source": "e5198bdbde9ddcf6ddee9c4d6f1cf0c89c333c23",
+  "feature_source": "5f908771f5e56a7633d5ad6394cdf6f9d630ed0d",
+  "public": {
+    "gameUrl": "https://html-classic.itch.zone/html/18305533-2236885/index.html?v=1793213796&ep2=1",
+    "build": "2026-10-28-e5198bd",
+    "extras": "[EP2] extras ready (ready)",
+    "logan": "",
+    "extrasHttp": [
+      200
+    ]
+  },
+  "files": {
+    "index.html": {
+      "bytes": 4981,
+      "sha512": "3f00d43d174e6095ee52431c13b6dc364306641e3bd88cd0f200dc3797bd25e6858d21a1d5b50bd329164f0c6a50a19e2175d2c9402e37d3975709a726f73b20"
+    },
+    "index.js": {
+      "bytes": 331495,
+      "sha512": "d3f5492b8f63c7d1ae8ee5d47f53f31150eb73edcf8e947682a79944f349c44b94b415f8e0d2d80cff668ace9941d15805f3f682234055ab830073ea37b54ae7"
+    },
+    "index.wasm": {
+      "bytes": 35376909,
+      "sha512": "170b8d0dfb11aedd34ef807e6b1043dc3eeb195540e4b388b1bc303d9c21b37f4e1d38430dd55a81eea7e8872272e06e04f9911e162617544fcf59c5d2b51ce0"
+    },
+    "web3.js": {
+      "bytes": 3035,
+      "sha512": "117b235a90965024bf040da8883d58e5924119103a2c637119b94ed823880a6994fddcbccd2cd7a985dc41dffefb71bc3f2f944c935bda02cc241409a62eda15"
+    },
+    "index.audio.worklet.js": {
+      "bytes": 7298,
+      "sha512": "2532b3729a7cc3f4909bf853488ae597d99088265b3a7000cb9d4ce2749b4c4ef2746eb26973e891614c615bd25f5ba923451c6f9eb99db4d298b6879e1b826b"
+    },
+    "index.pck": {
+      "bytes": 197533616,
+      "sha512": "5177667e25633518b41ef31cdb509ec9512529e74ae756ebafa96e53ee2061b3096f24e60b581db4a13f68126ad39bb0f0db6f556cfe0f95a9069198c0bfcb20"
+    },
+    "ep2_extras.pck": {
+      "bytes": 127826144,
+      "sha512": "ec925f580b2171222d678b74aeb94bb5d8c1da4b65a48ef5bde4c1d114c5fe76eab76c2d96d405255cd96aa66fb40f659ea2b3574d565dcd5e598131d1f53478"
+    }
+  },
+  "browser": {
+    "done": true,
+    "checks": [
+      "[PASS] exported Logan fishes with rod line and bobber",
+      "[PASS] exported water insect and frog streams decode and play",
+      "[PASS] exported bird recordings play",
+      "[PASS] exported full and corner charts have Lil Blunt textures",
+      "[PASS] M opens the map and pauses fishing",
+      "[PASS] Escape returns to the fishing lake"
+    ],
+    "errors": []
+  },
+  "boundary": "Public origin BUILD/extras/access screen verified. Six feature checks replay exact downloaded public engine/packs in an external fixture; not an authenticated public-origin Episode2 walkthrough or physical-phone test.",
+  "publication": "Concurrent combined e5198bd release through checksum-pinned Butler fallback. Receipt and actual upload log retained in world-voice-music-20261029. Runtime src/project/tests identical to feature source5f908771.",
+  "ci": "40745667641 passed gameplay/captures/export/security, then cancelled during secondary mirror when newer merged source superseded it. Follow-up40751388649 still in progress; do not describe cancelled CI as successful deployment."
+}

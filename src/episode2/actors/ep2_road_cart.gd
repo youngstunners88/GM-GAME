@@ -11,6 +11,7 @@ var ready_art: bool = false
 var distance_m: float = 0.0
 var greeting_time: float = -1.0
 var _time: float = 0.0
+var parked: bool = false
 var _fallback: Node3D
 var _donkey: Node3D
 var _farmer: Node3D
@@ -99,9 +100,14 @@ func greet() -> void:
 
 
 func reset_motion() -> void:
+	parked = false
 	distance_m = 0.0
 	_time = 0.0
 	greeting_time = -1.0
+	_pose()
+
+func set_parked(value: bool) -> void:
+	parked = value
 	_pose()
 
 
@@ -126,7 +132,11 @@ func _sample(ap: AnimationPlayer, clip: StringName, seconds: float) -> void:
 func _pose() -> void:
 	if not ready_art:
 		return
-	_sample(_walk, _walk_clip, fposmod(distance_m / STRIDE, 1.0) * WALK_SECONDS)
+	if parked:
+		_walk.stop()
+		_donkey_skeleton.reset_bone_poses()
+	else:
+		_sample(_walk, _walk_clip, fposmod(distance_m / STRIDE, 1.0) * WALK_SECONDS)
 	_sample(_driver, _greet_clip if greeting_time >= 0.0 else _drive_clip, greeting_time if greeting_time >= 0.0 else fposmod(_time, 3.0))
 	_donkey_skeleton.force_update_all_bone_transforms()
 	_farmer_skeleton.force_update_all_bone_transforms()

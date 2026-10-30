@@ -326,12 +326,14 @@ static func door_world(piece: String, out: float = 1.0) -> Vector3:
 
 ## Build the town into `parent`. `interiors` = furnish the certificate office and the saloon (the town chamber); the woods only needs the
 ## street seen from the road. Returns {"walls": [[Vector2 a, Vector2 b], ...], "props": [[Vector2 p, radius], ...]} for collision.
-static func build(parent: Node3D, interiors: bool) -> Dictionary:
+static func build(parent: Node3D, interiors: bool, lake_road: bool = true) -> Dictionary:
 	var walls: Array = []
 	var props: Array = []
 	var root := Node3D.new()
 	root.name = "GoldTown"
 	parent.add_child(root)
+	if lake_road:
+		Ep2LakeRoad.build(root,Ep2LakeRoad.ORIGIN)
 	if not ResourceLoader.exists(KIT):
 		return {"walls": walls, "props": props}
 	# the kit with real openings is streamed (Ep2Extras); until it is mounted the shipped kit is drawn

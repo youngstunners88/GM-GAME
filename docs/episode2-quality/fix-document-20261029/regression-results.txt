@@ -1,0 +1,608 @@
+armory-guns-tests.log:
+EP2_ARMORY_GUNS: ALL PASS
+
+armory2-tests.log:
+EP2_ARMORY2: ALL PASS
+
+bear-attacks-tests.log:
+EP2_BEAR_ATTACKS: ALL PASS
+
+blaze-band-density-tests.log:
+BLAZE_BAND_DENSITY: ALL PASS
+
+blaze-band-layout-tests.log:
+BLAZE_BAND_LAYOUT: ALL PASS
+
+blaze-claim-reset-tests.log:
+BLAZE_CLAIM_RESET: ALL PASS
+
+blaze-diamond-bounce-repro-tests.log:
+BLAZE_DIAMOND_BOUNCE_REPRO: ALL PASS
+
+blaze-framing-tests.log:
+BLAZE_FRAMING: ALL PASS
+
+blaze-hud-label-fit-tests.log:
+BLAZE_HUD_LABEL_FIT: ALL PASS
+
+blaze-hud-mouse-filter-tests.log:
+BLAZE_HUD_MOUSE_FILTER: ALL PASS
+
+blaze-input-buffer-tests.log:
+BLAZE_INPUT_BUFFER: ALL PASS
+
+blaze-lifecycle-ee-tests.log:
+BLAZE_LIFECYCLE_E2E: ALL PASS
+
+blaze-lounge-banner-tests.log:
+BLAZE_LOUNGE_BANNER: ALL PASS
+
+blaze-rush-layout-tests.log:
+BLAZE_RUSH_LAYOUT: ALL PASS
+
+blaze-rush-no-pixelation-tests.log:
+BLAZE_RUSH_NO_PIXELATION: ALL PASS
+
+blaze-rush-touch-tests.log:
+BLAZE_RUSH_TOUCH: ALL PASS
+
+blaze-rush-window-tests.log:
+BLAZE_RUSH_WINDOW: ALL PASS
+
+blaze-transition-palette-tests.log:
+BLAZE_TRANSITION_PALETTE: ALL PASS
+
+blood-tests.log:
+EP2_BLOOD: ALL PASS
+
+bow-tests.log:
+EP2_BOW: ALL PASS
+
+character-motion-tests.log:
+EP2_CHARACTER_MOTION: ALL PASS
+
+companion-cart-tests.log:
+EP2_COMPANION_CART: ALL PASS
+
+debug-overlay-beacon-tests.log:
+DEBUG_OVERLAY_BEACON: ALL PASS
+
+door-stride-tests.log:
+EP2_DOOR_STRIDE: ALL PASS
+
+ep-access-code-tests.log:
+EP2_ACCESS_CODE: ALL PASS
+
+ep-session-root-tests.log:
+EP2_SESSION_ROOT: ALL PASS
+
+ep-theme-handoff-tests.log:
+EP2_THEME_HANDOFF: ALL PASS
+
+ep-touch-controls-tests.log:
+EP2_TOUCH_CONTROLS: ALL PASS
+
+ep2-pbr-tests.log:
+EP2_PBR: ALL PASS
+
+ep2-smelter-kit-tests.log:
+EP2_SMELTER_KIT: ALL PASS
+
+ep2-town-furniture-tests.log:
+EP2_TOWN_FURNITURE: ALL PASS
+
+exit-bridge-tests.log:
+EP2_EXIT_BRIDGE: ALL PASS
+
+fix-continuity-tests.log:
+EP2_FIX_CONTINUITY: 15 checks, 0 failed
+
+fix-document-tests.log:
+EP2_FIX_DOCUMENT: 11 checks, 0 failed
+
+fix-motion-tests.log:
+EP2_FIX_MOTION: 13 checks, 0 failed
+
+founder-cast-tests.log:
+EP2_FOUNDER_CAST: ALL PASS
+
+gatling-hits-tests.log:
+EP2_GATLING_HITS: ALL PASS
+
+gold-town-tests.log:
+  [FAIL] both are rigged bodies, moving on their authored clips (not statues with a bob) walk groundedcarry
+
+harness-hooks-inert-tests.log:
+HARNESS_HOOKS_INERT: ALL PASS
+
+harness-hooks-tests.log:
+CHECK_HARNESS_HOOKS: ALL PASS
+
+jack-hammer-char-tests.log:
+EP2_JACK_HAMMER_CHARACTER: ALL PASS
+
+jack-hammer-tests.log:
+EP2_JACK_HAMMER: ALL PASS
+
+lake-art-tests.log:
+LAKE_ART: 27 checks, 0 failed
+
+lake-life-tests.log:
+
+
+lake-trail-tests.log:
+EP2_LAKE_TRAIL: ALL PASS
+
+level-return-audio-tests.log:
+LEVEL_RETURN_AUDIO: ALL PASS
+
+logan-cabin-tests.log:
+LOGAN_CABIN: 26 checks, 0 failed
+
+logans-lake-tests.log:
+LOGANS_LAKE: ALL PASS
+
+manual-checkpoint-tests.log:
+MANUAL_CHECKPOINT: 36 checks, 0 failed
+
+nft-tests.log:
+NFT_ISSUER: ALL PASS
+
+panel-close-tests.log:
+PANEL_CLOSE: 8 checks, 0 failed
+
+pause-tests.log:
+  [FAIL] wide Android 915x412 @2.6: the whole tap target clears the lives counter and fullscreen button hit circle (1532.908, 115.3613) r=51 touches HUD box [P: (1503.328, 8), S: (56, 62)]
+  [FAIL] iPad Pro 1366x1024 @2: the whole tap target clears the lives counter and fullscreen button hit circle (1233.148, 96.32796) r=33 touches HUD box [P: (1184, 8), S: (56, 62)]
+  [FAIL] desktop emulation 1280x720 @1: the whole tap target clears the lives counter and fullscreen button hit circle (1230, 102.8) r=35 touches HUD box [P: (1184, 8), S: (56, 62)]
+
+personal-armory-tests.log:
+EP2_PERSONAL_ARMORY: ALL PASS
+
+portal-tests.log:
+PORTAL ROOMS: ALL PASS
+
+portal-traversal.log:
+PORTAL TRAVERSAL: ALL PASS
+
+probe-selftest-tests.log:
+MOBILE_TRANSITION_PROBE_SELFTEST: ALL PASS
+
+purse-tests.log:
+EP2_PURSE: ALL PASS
+
+quad-music-tests.log:
+EP2_QUAD_MUSIC: ALL PASS
+
+quiz-tests.log:
+QUIZ_PROTOCOL_ONLY: ALL PASS
+
+ranch-tests.log:
+EP2_RANCH: ALL PASS
+
+region-map-tests.log:
+REGION_MAP: 10 checks, 0 failed
+
+road-cart-motion-tests.log:
+EP2_ROAD_CART_MOTION: 12 checks, 0 failed
+
+save-compat-tests.log:
+SAVE_COMPAT: ALL PASS
+
+scene-router-reveal-tests.log:
+SCENE_ROUTER_REVEAL: ALL PASS
+
+seamless-chain-tests.log:
+SEAMLESS_CHAIN: ALL PASS
+
+stable-yard-tests.log:
+EP2_STABLE_YARD: ALL PASS (98 checks)
+
+street-people-assets-tests.log:
+EP2_STREET_PEOPLE_ASSETS: ALL PASS (617 checks)
+
+tabs-ledger-tests.log:
+EP2_TABS_LEDGER: ALL PASS
+
+touch-controls-profiles-tests.log:
+TOUCH_CONTROLS_PROFILES: ALL PASS
+
+touch-scene-swap-cleanup-tests.log:
+TOUCH_SCENE_SWAP_CLEANUP: ALL PASS
+
+touch-tests.log:
+MOBILE_TOUCH_CONTROLS: ALL PASS
+
+town-audio-tests.log:
+EP2_TOWN_AUDIO: ALL PASS (pending recordings: 0)
+
+town-autonomy-tests.log:
+EP2_TOWN_AUTONOMY: ALL PASS (33 checks)
+
+town-feel-tests.log:
+EP2_TOWN_FEEL: ALL PASS
+
+town-law-tests.log:
+EP2_TOWN_LAW: ALL PASS
+
+town-life-tests.log:
+EP2_TOWN_LIFE: ALL PASS
+
+town-people-tests.log:
+EP2_TOWN_PEOPLE: ALL PASS
+
+transition-director-tests.log:
+TRANSITION_DIRECTOR: ALL PASS
+
+transition-feedback-tests.log:
+TRANSITION_FEEDBACK: ALL PASS (reveal-to-ride 12.03s; max camera step 0.098m)
+
+transition2-tests.log:
+TRANSITION2: ALL PASS
+
+vault-touch-tests.log:
+VAULT_TOUCH_DIALOGUE: ALL PASS
+
+weapon-icons-tests.log:
+EP2_WEAPON_ICONS: ALL PASS
+
+world-route-tests.log:
+EP2_WORLD_ROUTES: 26 checks, 0 failed
+
+recheck-ep2_gold_town.log:
+  [PASS] starts in the STREET where Bull dropped him, first person, the Winchester in his hands
+  [PASS] the objective sends him to the certificate office
+  [PASS] the town is the gold-rush street: certificates office, saloon, treasury and the rest, Fort Knox on its hill
+  [PASS] no DIAMONDS anywhere in the town (no sign, no mechanic)
+  [PASS] the desert around it is the same one the woods built (scrub, rocks, mesas)
+  [PASS] the open desert light (thin warm haze)
+  [PASS] Bull is gone (he rode off): not in the street
+  [PASS] the office front wall is solid beside the door
+  [PASS] he walks in through the open office door
+  [PASS] -> OFFICE: the sheriff is behind the counter
+  [PASS] The Sheriff is smoking his pipe (a curl of smoke) and stands at human height
+  [PASS] the Sheriff greets him, Lil Blunt asks for the certificate, the Sheriff hands him to Minister Mike Dean, who lays out the rules, then the Sheriff sends him to the saloon - in order
+  [PASS] the certificate rules are the whitepaper's: in your name, can't sell it on, can't trade it, bring your share - no invented numbers
+  [PASS] -> TO_BAR, the objective is the saloon
+  [PASS] he crosses the street and walks up to the bar
+  [PASS] -> BAR (a human barman behind the bar)
+  [PASS] the bar scene plays in order: a whiskey, a quarter Bitcoin, the barman's jaw, the stranger, the demand, the refusal, the terms, the witness
+  [PASS] the whiskey and the coin are on the bar
+  [PASS] the payment is a QUARTER Bitcoin
+  [PASS] the demand trades the map for Bitcoin and promises auction gold/Bitcoin
+  [PASS] the sheriff is the witness, and he walked in (he is in the saloon)
+  [PASS] the stranger carries a revolver and is a COWBOY, not a bear (the town has no bears)
+  [PASS] -> SQUARE_UP: out into the street
+  [PASS] -> DRAW once he is on his mark, the stranger 15 m up the street, the sheriff off to the side
+  [PASS] his hearts are on the HUD for the draw
+  [PASS] the stranger wears a Colt Single Action Army (the Peacemaker, the CAD kit's, real size) holstered on his hip before the bell
+  [PASS] before the bell the rifle is DOWN (low ready)
+  [PASS] the wait before the bell is never the same twice-predictable (seeded, between the limits)
+  [PASS] feet planted: he cannot walk during the draw
+  [PASS] firing before the bell is a FOUL (no shot leaves the barrel)
+  [PASS] ...and the round is set up again
+  [PASS] the town bell signals DRAW and the stranger's gun hand comes up with the revolver in it
+  [PASS] the rifle stays out of view until Enter draws it
+  [PASS] too slow: the stranger fires first (a loss, never a death)
+  [PASS] ...the screen comes back, the Sheriff says do it again, hearts full, back on the mark
+  [PASS] ...and he gives a little more time on the next try
+  [PASS] at the bell he brings the rifle up and hits the stranger first (he goes down)
+  [PASS] a shot that misses wide would not count (the hit is a real ray test)
+  [PASS] his Peacemaker falls out of his hand into the dirt beside him
+  [PASS] -> WON: the Sheriff calls it fair and square
+  [PASS] ...and the map is NOT handed over (it is on the body, with his gun: fix pack 2026-10-27 step 2)
+  [PASS] Inferno does NOT arrive at the draw
+  [PASS] -> LOOT: search the stranger for his Peacemaker and the map
+  [PASS] [E] from across the street does nothing (he has to go to the body)
+  [PASS] Mike Dean reacts before the body is looted
+  [PASS] he walks up the street to the fallen stranger, and [E] can search him there
+  [PASS] [E]: the Peacemaker and the map to the auction are his
+  [PASS] Lil Blunt names what he found (the Colt Peacemaker, the map)
+  [PASS] Minister Mike Dean leaves his counter and comes out of the office
+  [PASS] ...at a run (the founder's Mike Dean rigged, on his Run clip; the statue only if the streamed pack is missing)
+  [PASS] ...alarmed: he asks what happened
+  [PASS] Mike Dean has gone to the fallen stranger to kneel and pray over him
+  [PASS] the townspeople gather round and celebrate (their own Cheer / Clap clips)
+  [PASS] ...then pair off and dance together (DanceA / DanceB partners within arm's reach, facing each other)
+  [PASS] Sheriff James, impressed with the draw, offers the job: who let the bears hold Fort Knox (his prisoner knows more)
+  [PASS] -> JOB -> the Sheriff LEADS him to the jail first (Rich and Utah come after it)
+  [PASS] still no Inferno: he comes back later, after the Gatling
+  [PASS] -> JAIL_TIP: follow the Sheriff to the jailhouse, out the south road
+  [PASS] the jailhouse stands well apart from the town (>= 22 m from the drop-off, on the Sheriff/Certificates side x < 0)
+  [PASS] he walks out the south road to the jailhouse door
+  [PASS] he steps in through its door and the cell block is not walkable (bars stop him)
+  [PASS] -> JAIL: one accomplice is in the cell and the Sheriff is inside with him
+  [PASS] the accomplice is held in his cell, behind the bars
+  [PASS] the Sheriff's ask opens the investigation (the hunt is a thread on the existing path)
+  [PASS] the lines frame bears + early claims + Fort Knox and the existing lake/river/trains path, no celebrity prisoners
+  [PASS] ...and only THEN does the Sheriff send him to Rich and Utah
+  [PASS] he walks back out toward town
+  [PASS] -> TIP: the room points him down the side lane (off Main Street, not on the boardwalk)
+  [PASS] Rich the Claim Recorder and Utah are both in the shop before he ever walks in (the lock's both-present rule)
+  [PASS] both are rigged bodies, moving on their authored clips (not statues with a bob)
+  [PASS] he walks the side lane off the left row (off Main Street, no sign on the drag) and in through the shop door
+  [PASS] -> ARMORY: both shopkeepers turn to whoever came in
+  [PASS] the trade is offered at the counter and nowhere else
+  [PASS] the purse is his collected crypto and the case below it: no soft currency, no free loadout
+  [PASS] no crypto, no iron: the counter refuses the long rifle
+  [PASS] with crypto in the purse [E] opens Rich & Utah's trade
+  [PASS] the long rifle is sold for BTC - 3 faces of BTC debited, not minted, nothing else touched
+  [PASS] a second look at the same rifle is not a second sale
+  [PASS] the long-rifle cartridges come by the box and only after the rifle, paid in SOL
+  [PASS] the river gear (skiff and sealed crates) is his for the day-88 shipment, paid in ETH
+  [PASS] a token he does not hold enough of is refused (no TitanX on him)
+  [PASS] the room refuses a tender that is not in his purse
+  [PASS] Esc shuts the trade and gives the street back
+  [PASS] buying everything on the first visit does not end the town: the story goes on with Inferno
+  [PASS] the Colt Gatling stands in the yard (streamed extras)
+  [PASS] he walks out to the Colt Gatling in the yard
+  [PASS] he takes the crank
+  [PASS] ...fires a burst from the drum
+  [PASS] ...and steps away from it
+  [PASS] -> BULL_BACK: with the Gatling tested, Inferno is coming back
+  [PASS] ...on his flame quad, seated in the saddle
+  [PASS] ...and parks outside Rich's, clear of the Gatling yard
+  [PASS] ...and the parked quad is solid (nobody walks through it)
+  [PASS] he swings off, comes over: the whiskey is on him
+  [PASS] he walks back with Inferno and comes upon the man he shot
+  [PASS] Mike Dean is still kneeling there, praying
+  [PASS] Inferno greets the Minister
+  [PASS] ...and asks who put a hole in his head
+  [PASS] Lil Blunt: "Must've been a bird that had to get rid of the heavy load."
+  [PASS] he follows Inferno into the saloon and up to the bar
+  [PASS] Inferno - 2.9 m - stooped through the saloon's 2.5 m door rather than through its lintel
+  [PASS] two whiskeys on the bar
+  [PASS] they really drink: Inferno lifts his glass on his own Stand_and_Drink clip
+  [PASS] ...and Lil Blunt's glass comes up to his lips in first person (the rifle lowered meanwhile)
+  [PASS] ...then Inferno: his cousin Flux needs help with his new kettle - they'll meet up later
+  [PASS] ...and leaves him a gift for Mike Dean: THE GOLD PANNER
+  [PASS] -> MINISTER2: the next thread is the gift, at Mike Dean's counter
+  [PASS] he steps back out into the street
+  [PASS] Mike Dean has walked back behind his counter
+  [PASS] he walks back into the certificate office
+  [PASS] Mike Dean takes the Gold Panner
+  [PASS] ...and the certificate is stamped on this second visit (the first one laid out the rules)
+  [PASS] ...and he sends him to his friend Dude at the horse stables
+  [PASS] -> STABLES: the objective is Dude's
+  [PASS] Dude's stable yard is in town
+  [PASS] [E] talks to Dude
+  [PASS] Dude: Mike Dean sent him, so he's good folk
+  [PASS] ...they agree the horse's price in BTC (2 BTC, debited from his purse)
+  [PASS] ...he offers his Chill Buds in the same talk (health kept in Tabs)
+  [PASS] ...and: Logan's Lake first, so the horse can drink in this heat
+  [PASS] -> GEARED: with the long rifle and the river gear already bought at Rich's, he rides for Logan's Lake
+  [PASS] Dude never auto-warps the player to the trail
+  [PASS] E explicitly mounts the horse at the stables
+  [PASS] the town hands on to the ride to Logan's Lake on Dude's horse, the map and the Peacemaker in hand, the certificate stamped, mints nothing
+  [PASS] the ending carries the Armory: he visited it, and the long rifle + river gear come with him
+  [PASS] all 19 town voice lines are generated and in the manifest
+  [PASS] Bull's drop-off: the blonde lady (a wink, nothing shown), the certificate office, the bar for a whiskey
+  [PASS] no Diamonds in the town's speech
+  [PASS] the session root knows the town
+  [PASS] the woods' result loads the GOLD TOWN
+  [PASS] the town ends the session (TO BE CONTINUED)
+EP2_GOLD_TOWN: ALL PASS
+
+freeze-ep2_transition_prebuild.log:
+  [PASS] a JUMP held from the runner does not skip the film
+  [PASS] ...but releasing and holding JUMP again (the hint) still skips it
+  [PASS] while the film plays, the room is NOT built yet (first second)
+  [PASS] the hideout is built DURING the film, before it ends (no blank-screen build at the cut)
+  [PASS] ...and no single frame while building stalled the film for more than 450 ms (was ~900 ms in one block)
+  [PASS] ...and the film is still playing over it (still CINEMATIC)
+  [PASS] while the film covers the screen the 3D pass is OFF (it starved the decoder on weak GPUs)
+  [PASS] the five-target range exists behind the film
+  [PASS] ...and the 3D pass is back on once the film is over
+  [PASS] the film ends straight into the range lesson (VERB_TEACH / LEAD)
+EP2_TRANSITION_PREBUILD: ALL PASS
+
+final-transition_feedback.log:
+  [PASS] boss_auditor keeps the jingle without scheduling/loading speech
+  [PASS] boss_distributor keeps the jingle without scheduling/loading speech
+  [PASS] boss_claimjumper keeps the jingle without scheduling/loading speech
+  [PASS] protocol-test congratulations retain their voice
+  [PASS] Episode 2 entry never waits for the later hideout/film assets
+  [PASS] opening runner models are still warmed
+  [PASS] final-frame dissolve is at most 0.2 seconds
+  [PASS] lift actually reaches the rising phase
+  [PASS] Inferno never announces the handle
+  [PASS] the silent handle is still physically pulled
+  [PASS] surface exit becomes ready while Bull is still walking
+  [PASS] player position is continuous through the doorway
+  [PASS] first rendered eye is already at the mapped position
+  [PASS] Bull does not respawn at a different place
+  [PASS] sideways gaze survives the handoff exactly
+  [PASS] same daylight is established before the cut
+  [PASS] preview floor leaves the rising cage shaft open
+  [PASS] ForestTrunks_0 has identical meshes and every placement on both sides
+  [PASS] ForestCrowns_0 has identical meshes and every placement on both sides
+  [PASS] ForestFerns_0 has identical meshes and every placement on both sides
+  [PASS] ForestTrunks_1 has identical meshes and every placement on both sides
+  [PASS] ForestTrunks_2 has identical meshes and every placement on both sides
+  [PASS] reveal, reply and mount lines finish without self-interruption
+  [PASS] reveal, approach and mounting reach the ride
+  [PASS] whole reveal-to-ride camera has no teleport
+  [PASS] quad is visible by the time the ride begins
+  [PASS] mounting finishes before the quad moves
+TRANSITION_FEEDBACK: ALL PASS (reveal-to-ride 12.03s; max camera step 0.098m)
+
+portal-ep2_interlude.log:
+  [PASS] starts at ARRIVE with Lil Blunt in the tunnel and control his
+  [PASS] Inferno Bull 2 starts the moment they are in the shaft
+  [PASS] the interlude exposes the host's story-room vocabulary (title card, FPS mode, no miner-rig verbs)
+  [PASS] the Winchester viewmodel exists and sits on the camera (it IS the player's view)
+  [PASS] Lil Blunt's hands and the founder's rifle are on it
+  [PASS] the rifle is loaded: full tube and the reserve
+  [PASS] the third-person body is hidden in first person (the eye is his)
+  [PASS] the rifle is NEVER slung on his back: the body carries it in the hand, nothing is slung
+  [PASS] the camera is his eye (about 1.55 m above his feet), not a boom behind him
+  [PASS] the HUD shows the ammo and the crosshair
+  [PASS] RMB aims down the sights (the view narrows)
+  [PASS] LMB fires a round: the tube drops by one, the muzzle report plays
+  [PASS] ...and the lever must be racked before the next shot
+  [PASS] the lever clack follows the shot
+  [PASS] R loads shells back into the tube, one at a time
+  [PASS] the first-person control hint names aim and reload
+  [PASS] the lever is INSIDE the cage (a child of the cage, within its walls)
+  [PASS] ...made of the cage's own rusted iron, nothing lit or coloured
+  [PASS] Lil Blunt cannot walk through the cage's side bars
+  [PASS] ...but walks in through the open walkway doorway
+  [PASS] ...and cannot leave through the shut surface gate
+  [PASS] Inferno tells him to step on the lift
+  [PASS] ...and walks into the cage himself, through the doorway
+  [PASS] walking onto the cage ends ARRIVE
+  [PASS] -> LEVER; the show runs but does NOT lock the player (one motion: he keeps the rifle and can look around)
+  [PASS] the scripted beat STAYS in first person (no cut to a body): the rifle is on screen and his eye turns to the lever Inferno pulls
+  [PASS] the handle is pulled silently, then the cage starts
+  [PASS] the lever swung (he actually pulled it)
+  [PASS] the walkway gate dropped shut behind them
+  [PASS] Inferno never left the cage to pull it
+  [PASS] control returns to the player for the ride
+  [PASS] ...and so does his eye: the rifle is back in his hands on screen
+  [PASS] the cage climbs, steadily, past the first floor and on to the surface (two floors)
+  [PASS] Lil Blunt rides it up (he is at the surface level)
+  [PASS] the plan: sneak, the quad, spy on the bears - Inferno then Lil Blunt's answer, in order
+  [PASS] the gate slides open at the top
+  [PASS] surface exit has no blocking arrival narration
+  [PASS] walking out into the daylight resolves the chamber
+  [PASS] it is a story chamber that mints nothing
+  [PASS] ...and chains to the bear woods
+  [PASS] starts at SNEAK
+  [PASS] the woods are first person too: the Winchester in his hands, his body hidden, ammo on the HUD
+  [PASS] the woods can hurt him, so his 3 hearts are on the HUD
+  [PASS] the quad is hidden under leaves and branches (a real pile of them)
+  [PASS] the wood is the textured old-growth kit (bark trunks + fir-branch crowns), not cones and cylinders
+  [PASS] ...built in slices along the trail and road, each with a draw distance (a 1 km wood at the old web cost)
+  [PASS] the crowns sway in the wind (wind shader on the branch cards)
+  [PASS] birds fly in the wood (a few, moving)
+  [PASS] the woods bears are the founder's Tripo bear (dense hyper-real body, arms lowered)
+  [PASS] no bear camp, no spy ridge, no sentries: the ride heads for town
+  [PASS] the ElevenLabs woods soundscape is loaded (ambience loop, gust, 3 bird calls, flutter)
+  [PASS] every bear is somebody: a name, a routine of his own (patrol, read, sleep, roam, watch)
+  [PASS] Professor Barnaby READS (seated on his stump, Bear Monthly in his paws)
+  [PASS] Old Moss SLEEPS (lying down, z's over him)
+  [PASS] Twitch WALKS his beat (a real walk, not a slide on the spot)
+  [PASS] the logging road is picketed: at least 12 road bears, archers carrying bows
+  [PASS] no bear within 40 m of the mine door; ~1.2 km of road to the town; no bear past the last pines
+  [PASS] the town is built along the road's end (the same Ep2GoldTown the town chamber builds)
+  [PASS] no music of the quad ride yet
+  [PASS] following Inferno at a walk brings them past every scout to the thicket (-> REVEAL) with no bear alerted
+  [PASS] ...and Inferno named the scouts as they passed them
+  [PASS] the reveal is seen through HIS eyes with the rifle in his hands: his view turns to the quad, no cut to a cinema camera
+  [PASS] the leaves come off (the quad is revealed)
+  [PASS] he climbs on behind Inferno WITHOUT a blink: the screen never dips, the eye glides onto the back seat (no jump)
+  [PASS] -> RIDE, the quad is on the road
+  [PASS] Deep Mining 3 only now (the moment they mount)
+  [PASS] on the back seat he is still first person, the rifle in his hands ("hold that rifle steady")
+  [PASS] it is the MODELLED flame quad (flame_quad.glb, four spinning Wheel_* nodes), not the box stand-in
+  [PASS] Inferno SITS on the quad (seated clip), arms NOT dragged by IK (the elbow tears), he does not stand in the air
+  [PASS] Lil Blunt's eye is on the rear of the seat, above the seat and BEHIND Inferno's hips (he looks over the driver, not into him)
+  [PASS] the passenger's view rides the quad: it turns with the heading
+  [PASS] he can fire from the back seat (the engine covers it: no stealth penalty)
+  [PASS] Deep Mining 3 is playing on the quad
+  [PASS] the quad moves along the road (rails: the player does not steer)
+  [PASS] both ride it: Inferno up front, Lil Blunt behind
+  [PASS] the engine wakes the road: pickets turn on the quad
+  [PASS] archers fire back: real arrows are loosed at him on the ride
+  [PASS] he shoots bears off the road from the back seat (kills land)
+  [PASS] the ride is long (out of the wood, across the desert): over 90 s on the road
+  [PASS] the bears thin out: none attacks in the desert (every picket stands in the wood)
+  [PASS] the ride ends IN the town's main street (-> DROPOFF) in first person
+  [PASS] the desert light took over from the woods' gold (thin fog)
+  [PASS] the corpses stay where they fell (no fade, no vanish)
+  [PASS] Bull drops him off: the Blondie line, the certificate office + the bar, Lil Blunt answers - in order
+  [PASS] Lil Blunt is OFF the quad, on his feet in the street, the rifle still in his hands
+  [PASS] ...and Bull RIDES OFF on the quad, up the street and away
+  [PASS] the woods chain to the gold town (no TO BE CONTINUED here any more)
+  [PASS] ...and it mints nothing
+  [PASS] WALKING past Old Moss while he sleeps: he sleeps on
+  [PASS] RUNNING past him is heard: he wakes (a ?), it is a noise hit and Inferno shushes
+  [PASS] ...and he gets up off the ground to come and look (the fall played backward, then a walk)
+  [PASS] Professor Barnaby, nose in his magazine, still SEES him when he stands right in front (sight meter fills, '!')
+  [PASS] ...he roars and charges: a claw swipe costs a heart, or Inferno drops him first
+  [PASS] Inferno shouts and defends him (he fires on the bear, no arm IK)
+  [PASS] a shot bear goes down
+  [PASS] ...and his body stays where he fell (dead pose, still there 5 s later)
+  [PASS] Hattie spots him in her sector, draws and looses an ARROW (a real projectile in the air)
+  [PASS] the last heart ends the attempt: input stops, the screen goes down
+  [PASS] RETRY from the mine exit: Lil Blunt at the door with 3 hearts, the beat back to SNEAK, Inferno's retry line
+  [PASS] ...and the wood is restored with him: Barnaby alive and reading again, the quad back under its leaves, a full tube
+  [PASS] the screen comes back up at the mine exit
+  [PASS] the hideout's result loads the MINE LIFT (no runner leg in between)
+  [PASS] a story chamber's result is committed once
+  [PASS] the hideout's range lesson starts building the LIFT in the background (off-screen)
+  [PASS] at the exit door the hideout WAITS for the lift to be built (a pause at worst, never a blackout)
+  [PASS] ...the moment it is built the door opens: the hideout resolves toward the lift
+  [PASS] the hideout has its camera in the tree for the doorway view
+  [PASS] facing the open door, the doorway shows the built lift room
+  [PASS] ...rendered at screen size from a camera mirroring his, 30 m down the lift's z
+  [PASS] ...with the lift's tunnel plug and back wall out of the way (they stand between that camera and the cavern)
+  [PASS] ...and no second Inferno in it while the real one is still in the hideout
+  [PASS] Inferno through the doorway ahead of him is drawn on the lift side, where he stands
+  [PASS] the floor runs on through the open door while the doorway shows the lift
+  [PASS] a step short of the doorway is still the hideout (no early cut)
+  [PASS] through the doorway the hideout hands over to the lift
+  [PASS] ...carrying where he stands and where Inferno stands, in the lift's frame
+  [PASS] the SAME lift room that was in the doorway is now the room he is in
+  [PASS] ...and he is at its mouth where the doorway showed him, not 2.6 m on at the old start point
+  [PASS] ...with Inferno still ahead of him on the bridge
+  [PASS] entering the lift starts building the WOODS in the background (hosted off-screen, the lift stays the active chamber)
+  [PASS] ...and the lift holds its exit until the wood is built (no freeze at the surface)
+  [PASS] the background build completes (the deterministic step finishes it)
+  [PASS] the hand-over is the SAME instance that was built behind the lift, in the main tree, its camera current
+  [PASS] the visited lift is retained in an isolated disabled world, with no camera/sky/light leaking into the wood
+  [PASS] one motion: the gaze carries over (yaw 0.5, pitch 0.1) and no title card is shown
+  [PASS] the lift chains to the WOODS
+  [PASS] the woods end the session (TO BE CONTINUED)
+  [PASS] Inferno Bull 2 is in the build and wired to the lift
+  [PASS] Deep Mining 3 is in the build and wired to the quad
+  [PASS] sfx ep2_lava_burn exists
+  [PASS] sfx ep2_lift_start exists
+  [PASS] sfx ep2_lift_loop exists
+  [PASS] sfx ep2_lift_arrive exists
+  [PASS] sfx ep2_quad_start exists
+  [PASS] sfx ep2_quad_loop exists
+  [PASS] sfx ep2_leaves_pull exists
+  [PASS] all 17 new voice lines are generated and in the manifest
+  [PASS] Inferno speaks at a natural pace (speed >= 1.0) on every new line
+  [PASS] no Diamonds mechanic is stapled into the interlude speech
+  [PASS] the plan is the founder's: sneak through the wood, the quad (I drive, you shoot), spy on the bears
+  [PASS] the lava warning says it burns and tells him to hop
+EP2_INTERLUDE: ALL PASS
+
+portal-ep2_door_stride.log:
+  [PASS] the lift is built behind the hideout
+  [PASS] the door is open
+  [PASS] the walk reaches the doorway and the lift takes over
+  [PASS] the held walk crosses the cut (no new key event needed)
+  [PASS] the stride/bob phase continues instead of restarting
+  [PASS] the eye does not jump at the cut (same picture)
+  [PASS] ...and he keeps walking into the lift on the next ticks
+  [PASS] releasing W stops him normally after the cut
+EP2_DOOR_STRIDE: ALL PASS
+
+portal-seamless_chain.log:
+  [PASS] the hideout's lesson built the lift behind it
+  [PASS] 1.2 the built lift holds NO Lil Blunt (he is still in the hideout)
+  [PASS] Inferno is across the lava
+  [PASS] ...the door is NOT open while Lil Blunt is still on the near bank
+  [PASS] across the lava, Inferno says "made it"
+  [PASS] ...and the door opens AT ONCE, while the line is still playing (no wall in front of the open door)
+  [PASS] ...Inferno is not held standing for his own line: he is already walking to the door
+  [PASS] he walks straight through the open doorway: the cut comes when he reaches it, not when the line ends
+  [PASS] ...the lift that took over is the SAME room the doorway showed
+  [PASS] ...and "made it" was still playing at the cut (nobody waited for it)
+  [PASS] entering the prebuilt lift starts building the WOODS behind it
+  [PASS] ...and that build SURVIVES the cut (its off-screen viewport is not freed with the lift's)
+  [PASS] ...so the lift WAITS for the woods instead of building them at the exit
+  [PASS] in the lift: first person, his body still hidden
+  [PASS] Inferno's lift line waits for "made it" to finish (no two lines at once)
+  [PASS] ...then he says it
+  [PASS] the cage reaches the surface
+  [PASS] ...no dead wait at the top: the gate starts to open the moment the cage arrives
+  [PASS] ...as Lil Blunt answers Inferno's plan (every plan line said, in order, none cut)
+  [PASS] the woods finished building behind the lift
+  [PASS] walking out of the cage enters THE woods that were built behind it (one cut, no rebuild)
+  [PASS] ...where he stood, not back at the woods' own entrance (no rewind)
+  [PASS] ...and Inferno's woods introduction is not replayed
+SEAMLESS_CHAIN: ALL PASS

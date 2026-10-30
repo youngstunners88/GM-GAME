@@ -1,0 +1,31 @@
+  [PASS] session starts in RUNNER mode
+  [PASS] a runner scene is active
+  [PASS] reaching the entrance swaps to CHAMBER mode
+  [PASS] the active scene is now the chamber
+  [PASS] no runner scene survives the swap (found 0)
+  [PASS] exactly one chamber scene exists (found 1)
+  [PASS] one commit after the chamber resolves (got 1)
+  [PASS] totals were not inflated by the duplicate (gold_awarded=0, forfeited=1000)
+  [PASS] a post-advance stale chamber_cleared does NOT commit (got 1)
+  [PASS] stale duplicate did not inflate totals (gold_awarded=0)
+  [PASS] _rewarded_chambers blocks a re-payout for an already-paid chamber (got 1)
+  [PASS] re-payout attempt did not inflate totals (gold_awarded=0)
+  [PASS] chamber_start_rig is a no-op during RUNNER mode
+  [PASS] chamber_early_claim is a no-op during RUNNER mode
+  [PASS] runner verbs during CHAMBER mode are safely ignored
+  [PASS] distance is banked at chamber entry (60.3 >= 60)
+  [PASS] second segment starts in RUNNER mode
+  [PASS] total distance did NOT reset on the new segment (60.3)
+  [PASS] total distance keeps climbing across segments (100.8 > 60.3)
+  [PASS] player survived to the half-vest (health 3, vest 0.50)
+  [PASS] early claim committed exactly one result
+  [PASS] auction_gold_pool gained exactly the forfeited remainder (0 -> 501, expected +501)
+  [PASS] awarded GOLD was credited AND retained (0 -> 499, expected +499)
+  [PASS] the player did not end the claim empty-handed (balance=499)
+  [PASS] the zip-line segment is traversed during a real session (at 31.9m)
+  [PASS] the session still reaches the chamber after ziplining
+  [PASS] the session root is in the touch group from _ready
+  [PASS] idle (not started) -> no touch controls
+  [PASS] running the cart -> the ep2_runner profile
+  [PASS] the touch-only pickaxe verb reaches the runner
+EP2_SESSION_ROOT: ALL PASS

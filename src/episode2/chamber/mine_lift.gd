@@ -29,6 +29,7 @@ const NEXT_CHAMBER := "woods_quad"
 const SHAFT_HALF := 4.5            # the shaft is 9 m square
 const CAGE_HALF := 1.9             # the cage is 3.8 m square
 const MID_Y := 7.5                 # first floor up
+var _return_down: bool = true
 const TOP_Y := 15.0                # the surface (second floor up)
 const ROOF_Y := 26.0              # tall enough for the Tripo cage's roof gears at the surface
 const PIT_Y := -7.0                # the floor of the pit under the walkway bridge
@@ -72,6 +73,8 @@ var _mouth_open: bool = false
 func portal_begin() -> void:
 	_set_mouth_open(true)
 	_hide_unentered_body()      # the doorway must show an EMPTY cage: Lil Blunt is still in the hideout holding his rifle
+	if _vm != null: _vm.set_shown(false)
+	if _hud != null: _hud.hide()
 	if _bull != null:
 		_bull.visible = false
 
@@ -89,6 +92,14 @@ func portal_view(d: Dictionary) -> void:
 		if d.has("bull"):
 			_bull.position = d["bull"]
 			_bull.facing = float(d.get("bull_facing", _bull.facing))
+			_bull.rotation.y = float(d.get("bull_rotation", _bull.facing))
+			# This preview actor has no simulation clock. Mirror the actual
+			# walking pose, rather than showing a statue that pops on activation.
+			if _bull.anim != null and d.has("bull_clip") and _bull.anim.has_animation(d["bull_clip"]):
+				_bull.play(str(d["bull_clip"]), 1.0, 0.0)
+				if _bull.skeleton != null: _bull.skeleton.reset_bone_poses()
+				_bull.anim.seek(float(d["bull_clip_time"]), true)
+				_bull.anim.advance(0.0)
 
 
 func _set_mouth_open(open: bool) -> void:
@@ -749,17 +760,22 @@ func _on_setup() -> void:
 	_player_pos = START_POS
 	if handoff.has("lift_player"):            # walked in through the open doorway: exactly where the doorway showed him
 		var lp: Vector3 = handoff["lift_player"]
-		_player_pos = Vector3(clampf(lp.x, -1.2, 1.2), 0.0, maxf(lp.z, MOUTH_MIN_Z))
+		_player_pos = Vector3(lp.x, 0.0, maxf(lp.z, MOUTH_MIN_Z))
 	_ground_y = 0.0
 	_player_yaw = 0.0
 	_apply_handoff_gaze(0.0, -0.04)           # first person, eyes level (keeps the gaze he had at the previous chamber's exit)
+	if handoff.has("lift_player"):
+		# This is a physical doorway, not a directed spawn. Keep side/backward
+		# looks and steep gaze exactly as they appeared through the portal.
+		_look_yaw = float(handoff.get("yaw", _look_yaw))
+		_look_pitch = float(handoff.get("pitch", _look_pitch))
 	if _bull == null:
 		_bull = _build_bull(START_POS + Vector3(-1.2, 0.0, 4.0), 0.0)
 	if handoff.has("lift_bull"):              # Inferno walked through ahead of him: keep him where he was, facing the way he faced
 		_bull.position = handoff["lift_bull"]
 		_bull.facing = float(handoff.get("lift_bull_facing", _bull.facing))
 		if handoff.has("lift_bull_walk_time") and _bull.anim != null and _bull.anim.has_animation(_bull.walk_clip):
-			_bull.anim.play(_bull.walk_clip)
+			_bull.play(_bull.walk_clip, 1.0, 0.0)
 			_bull.anim.seek(float(handoff["lift_bull_walk_time"]), true)
 	if _bull != null:
 		_bull.visible = true
@@ -853,6 +869,21 @@ func _show_finished() -> void:
 
 
 func _tick(delta: float) -> void:
+	if _world_revisit:
+		# A previously used lift is reversible; boarding at either landing calls the other.
+		if _player_on_cage():
+			_cage_y=move_toward(_cage_y,0.0 if _return_down else TOP_Y,delta*2.5)
+			_set_ground(_cage_y)
+		else:
+			_return_down = _cage_y>TOP_Y*0.5
+		_cage.position.y=_cage_y
+		if _counter: _counter.position.y=TOP_Y-_cage_y+0.6
+		_gate_open=1.0
+		_gate_in_goal=1.0
+		_gate_in_k=1.0
+		if _gate: _gate.position.x=2.3
+		if _gate_in: _gate_in.position.y=4.2
+		return
 	if _mouth_open and _running and _player_pos.z > CAVE_Z0 + 1.6 and (_bull == null or _bull.position.z > CAVE_Z0 + 1.6):
 		_set_mouth_open(false)          # both are in: the tunnel behind them is the dark tunnel again (never close it on Inferno)
 	_surface_light()

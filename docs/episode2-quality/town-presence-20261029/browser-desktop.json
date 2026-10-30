@@ -1,0 +1,14 @@
+{
+  "profile": "desktop",
+  "done": true,
+  "checks": [
+    "[PASS] exported Dude grants exactly one bud",
+    "[PASS] exported Tabs pauses with a finger-sized supply action",
+    "[PASS] exported real pointer selects the bud",
+    "[PASS] exported use restores three hearts and spends one",
+    "[PASS] exported full and empty cannot consume again",
+    "[PASS] exported close restores play",
+    "[PASS] exported ranch road is already present on foot"
+  ],
+  "errors": []
+}

@@ -55,7 +55,7 @@ func _ready() -> void:
  var c: LakeTrailChamber=preload("res://src/episode2/chamber/lake_trail.tscn").instantiate()
  add_child(c);c.setup(0,[],0);c.set_physics_process(false);c.debug_invulnerable=true
  check("town remains visible behind saddle",c._visuals.find_child("DepartureTown",true,false)!=null and c._visuals.find_child("Bldg_Jail",true,false)!=null)
- check("more bandits on the road",c.get_bandit_count()==13)
+ check("more bandits on the road",c.get_bandit_count()==19)
  c._look_yaw=c._travel_yaw+PI;c.look(Vector2(.01,0))
  check("full backward aiming",absf(angle_difference(c._travel_yaw,c._look_yaw))>3.1)
  c.set_move_input(Vector2.ZERO)

@@ -369,7 +369,7 @@ func push_music_override(path: String) -> int:
     add_child(_override_player)
     _override_player.volume_db = -8.0
     var tw := _override_player.create_tween()
-    tw.tween_property(_override_player, "volume_db", 0.0, 0.4)
+    tw.tween_property(_override_player, "volume_db", _music_rest_db(), 0.4)
     _override_player.play()
     return my_token
 
@@ -638,6 +638,9 @@ func play_voice(name: String, recorded_stream: AudioStream = null) -> void:
 ## Set the current music player's volume for the voice duck (tweened). Also remembered so a music track that LOOPS
 ## mid-speech (new player) starts already ducked instead of blasting back to full.
 func _duck_music_for_voice(db: float, seconds: float) -> void:
+    if _override_player and is_instance_valid(_override_player):
+        var duck := _override_player.create_tween()
+        duck.tween_property(_override_player,"volume_db",db,seconds)
     _tween_music_to(db, seconds)
 
 func _on_voice_finished() -> void:
@@ -658,6 +661,9 @@ func _restore_after_voice(gen: int) -> void:
     _voice_ducking = false
     _duck_target_db = 0.0
     _tween_music_to(0.0, 0.5)
+    if _override_player and is_instance_valid(_override_player):
+        var restore := _override_player.create_tween()
+        restore.tween_property(_override_player,"volume_db",0.0,0.5)
 
 ## Dedicated player for Lil Blunt's character barks. Deliberately a SEPARATE
 ## node from _voice_player: play_voice() is the ANNOUNCER (stage/boss intros,

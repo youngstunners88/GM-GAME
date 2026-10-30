@@ -1,10 +1,11 @@
 {
-  "observed_remote_sha": "4c28d09c",
-  "objective": "COMPLETE: map, reversible horse ride, full-turn aim, sheriff, voices, draw/blood/audio released",
-  "release_source": "3ce81051e52aaac245c792b0b4dcb9362c65a1ef",
-  "run": 40690418107,
-  "build": "2026-10-28-3ce8105",
-  "evidence": "docs/episode2-quality/map-ride-vo-residuals-20261028/RELEASE_RECEIPT.json",
-  "pending": [],
-  "next": "Standing commit/push/ship authorization reaffirmed. Preserve public access/title/nonthreaded export. No authenticated public Episode2/real-phone claim."
+  "objective": "Finish town presence/healing follow-up through actual deployed public proof; preserve original FIX doc repairs",
+  "branch": "codex/founder-fix-document-1029",
+  "runtime_baseline": "35e03105 (latest local source; source343 + touchce3 + whole-town interior-save fix)",
+  "observed_master": "e6a79f56; its run40906231562/job123561624140 deliberately canceled before deploy, confirmed cancelled/deploy skipped",
+  "prior_live": "c903f880 / BUILD2026-10-29-c903f88 / CI40832421900; verified receipt retained in fix-document-20261029",
+  "verified": "Final65 native incl29 fresh-session interior delivery; baseline29/1 then29/0. Townpeople/autonomy33 rerun pass. Warm197639680B/script_errors0; fresh197607008B/margin1622432B; extras136166784B. Security/title/harness/texture68 pass. Local unchanged UI desktop7/two-finger6 + cameras accepted. release_gates.py35e03105 passes. No provider spend.",
+  "evidence": "docs/episode2-quality/town-presence-20261029; scratch /workspace/work/town-continuity-1029. release_gates.py updated65/final logs; run with35e03105 after fresh/security complete. Local UI desktop7+two-finger6 includes >=44dp targets, actualbuttons48dp/no phone key hints. Cameras native/WebGL accepted.",
+  "next": "Commit proof docs and ship-to-master with verified release_gates.py35e03105. Explicit fetch mapped branch tracking ref first; preserve CI web commits. Verify NEW masterCI + actualbutler/publicBUILD (e6 run canceled). Download/replay served packs with prepared helpers; wrong-code public input; receipt; final docs normal push/master.",
+  "environment": "Godot4.3; Xorg:98; serialize GPU/export with flock -o. Node public fetch needs NODE_USE_ENV_PROXY=1 and configured CA; Chromium trusted wrapper. Local8917 web_verify. No game-dev/Blender5.2. Never print b64/credentials."
 }

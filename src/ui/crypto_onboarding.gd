@@ -13,6 +13,7 @@ extends CanvasLayer
 @onready var _learn: Button = $Panel/VBox/Row/LearnBtn
 
 func _ready() -> void:
+	preload("res://src/ui/panel_close.gd").install(self, _dismiss)
 	layer = 15
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	get_tree().paused = true

@@ -83,6 +83,9 @@ const EXIT_POSITION := Vector3(0.0, 0.0, 15.0)
 ## tunnel mouth on it (MineLiftChamber.PORTAL_Z = -13.6): every point past the doorway IS a point of the lift room, z - 30 m.
 const PORTAL_Z := 16.4
 const PORTAL_SIZE := Vector2(4.3, 4.4)
+## The image stays beyond the eye's near clip until the physical threshold is crossed.
+const PORTAL_IMAGE_INSET := 0.18
+const PORTAL_VIEWMODEL_DEPTH := 1.6
 const LIFT_OFFSET := Vector3(0.0, 0.0, -30.0)
 ## The hideout's grading darkens the doorway image a little (Compatibility grades every material): measured with
 ## tools/ep2_shots/door_portal_shot.tscn (cut_a vs cut_b centre luminance), this gain makes the last hideout frame match the first lift frame.
@@ -165,6 +168,7 @@ var _burns: int = 0
 # --- Live state ----------------------------------------------------------------
 var _beat: int = Beat.ARRIVAL
 var _running: bool = false
+var _world_revisit: bool = false
 var _resolved: bool = false          # guards double-resolve, same rail as the shaft
 var _player_pos: Vector3 = ENTRY_POSITION
 var _hold: float = 0.0               # seconds left on the current line
@@ -480,6 +484,8 @@ func _ensure_room() -> void:
 func _restore_3d_after_film() -> void:
 	if _film_3d_off:
 		_film_3d_off = false
+		if _visuals != null and is_instance_valid(_visuals):
+			_visuals.process_mode = Node.PROCESS_MODE_INHERIT
 		if is_inside_tree():
 			get_viewport().disable_3d = false
 
@@ -575,7 +581,7 @@ func step(delta: float) -> void:
 		_hold = maxf(0.0, _hold - delta)
 	# The smelter's CAD props (Ep2KitProps): the room is built a few seconds into the film, usually before the web build has mounted the
 	# streamed kit; the stand-ins built then turn into the CAD pieces the moment it is (normally while the film still covers the room).
-	if Ep2KitProps.pending_count() > 0:
+	if _beat != Beat.CINEMATIC and Ep2KitProps.pending_count() > 0:
 		_kit_poll -= delta
 		if _kit_poll <= 0.0:
 			_kit_poll = 0.5
@@ -591,6 +597,8 @@ func step(delta: float) -> void:
 			# invisible; a brief hitch a few seconds into a 60 s film is unnoticeable next to a freeze at the cut.
 			if not _room_built and _vfilm.elapsed() >= PREBUILD_AT:
 				_prebuild_room()
+				# The lesson requests the lift. Its separate 3D viewport must not
+				# build/render while the main viewport is disabled for the film.
 			return
 		if _film and is_instance_valid(_film):
 			_film.step(delta)
@@ -618,6 +626,10 @@ func step(delta: float) -> void:
 		_gun.step(delta)
 		if armory != null:
 			armory.step(delta)
+	if _world_revisit:
+		_sync_visuals()
+		_animate(delta)
+		return
 	_tick_later(delta)
 	match _beat:
 		Beat.WAKE:
@@ -1262,9 +1274,13 @@ func portal_view_wanted() -> Dictionary:
 	if to_door.length() > 45.0 or (fwd.dot(to_door.normalized()) < 0.15 and to_door.length() > 2.5):
 		return {}
 	var d: Dictionary = {"xf": Transform3D(cam.basis, cam.origin + LIFT_OFFSET), "fov": _camera.fov}
-	if _bull != null and _bull.position.z > PORTAL_Z - 0.6:   # Inferno is going through ahead of him: draw him on the far side
+	if not _world_revisit and _bull != null and _bull.position.z > PORTAL_Z - 0.6:   # Inferno is going through ahead of him: draw him on the far side
 		d["bull"] = _bull.position + LIFT_OFFSET
 		d["bull_facing"] = _bull.facing
+		d["bull_rotation"] = _bull.rotation.y
+		if _bull.anim != null and _bull.anim.is_playing():
+			d["bull_clip"] = _bull.anim.current_animation
+			d["bull_clip_time"] = _bull.anim.current_animation_position
 	return d
 
 
@@ -1279,9 +1295,10 @@ func portal_attach(tex: Texture2D) -> void:
 		var sm := ShaderMaterial.new()
 		sm.shader = load("res://src/episode2/art/ep2_portal.gdshader")
 		sm.set_shader_parameter("gain", PORTAL_GAIN)
+		sm.set_shader_parameter("viewmodel_depth", PORTAL_VIEWMODEL_DEPTH)
 		_portal_quad.material_override = sm
 		_portal_quad.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		_portal_quad.position = Vector3(0.0, PORTAL_SIZE.y * 0.5, PORTAL_Z)
+		_portal_quad.position = Vector3(0.0, PORTAL_SIZE.y * 0.5, PORTAL_Z + PORTAL_IMAGE_INSET)
 		add_child(_portal_quad)
 	(_portal_quad.material_override as ShaderMaterial).set_shader_parameter("portal_tex", tex)
 	_portal_quad.visible = true
@@ -1306,6 +1323,7 @@ func _set_passage_plate(on: bool) -> void:
 
 ## True when the open doorway can take him straight through (the lift is drawn in it and he may leave).
 func _walk_through_ok() -> bool:
+	if _world_revisit: return true
 	return _portal_live and _exit_open() and _handoff_ok()
 
 
@@ -1314,6 +1332,7 @@ func _walk_through_ok() -> bool:
 ## (~4.7 s; founder 2026-10-25 "there must be no arbitrary pause / interval between the facility and the doorway"). Inferno now says it
 ## while he leads on, and the lift waits for whatever he is saying to end before his next line (`voice_left`), so nobody is cut off.
 func _exit_open() -> bool:
+	if _world_revisit: return true
 	if _beat != Beat.EXIT or not _lava_crossed():
 		return false
 	return _exit_line_end > 0.0 or not _show_active
@@ -1410,6 +1429,9 @@ func _build_visuals() -> void:
 		_visuals.queue_free()
 	_visuals = Node3D.new()
 	_visuals.name = "Visuals"
+	# Rendering off does not stop skeleton modifiers, particles or child scripts.
+	# The full-screen video is the only active performance until it finishes.
+	_visuals.process_mode = Node.PROCESS_MODE_DISABLED if _film_3d_off else Node.PROCESS_MODE_INHERIT
 	add_child(_visuals)
 	_mold_nodes.clear()
 	_cauldron_spots.clear()
@@ -2392,6 +2414,7 @@ func _enter_fps() -> void:
 		_hud_ctl = Ep2FpsHud.new()
 		_hud_ctl.mag = Ep2Winchester.MAG
 		_fps_hud.add_child(_hud_ctl)
+		_hud_ctl.chill_bud_requested.connect(use_chill_bud)
 		if armory != null:
 			_hud_ctl.bind_armory(armory)
 			_hud_ctl.armory_enabled = _lesson == Lesson.DONE and not _show_blocks_control
@@ -3019,6 +3042,21 @@ func bind_armory(state: Ep2ArmoryState) -> void:
 
 func armory_open() -> bool:
 	return _hud_ctl != null and _hud_ctl.armory_open
+
+func use_chill_bud() -> bool:
+	if GameManager.chill_buds <= 0:
+		if _hud_ctl != null: _hud_ctl.toast("NO CHILL BUDS - VISIT DUDE",1.6)
+		return false
+	if not _running or _resolved or _health <= 0 or _health >= MAX_HEALTH:
+		if _hud_ctl != null: _hud_ctl.toast("ALREADY FEELING CHILL",1.6)
+		return false
+	if not GameManager.take_chill_bud(): return false
+	_health = MAX_HEALTH
+	if _hud_ctl != null:
+		_hud_ctl.health = _health
+		_hud_ctl.toast("DUDE'S CHILL BUDS - THREE HEARTS RESTORED",1.6)
+	GameManager.save_session()
+	return true
 
 
 func toggle_armory() -> void:

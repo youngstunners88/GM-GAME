@@ -1,0 +1,4 @@
+FRONT-PAGE LOCK: OK — founder-approved title screen unchanged (5 files)
+  [WARN] H6: src/ui/hud.gd: hud.gd still re-derives touch from OS.get_name(); route it through TouchUi.is_touch()
+CHECK_HARNESS_HOOKS: ALL PASS
+Full local workflow reconciled with affected reruns; 65 focused checks, real export, fresh pack, two browser profiles and staged security passed.

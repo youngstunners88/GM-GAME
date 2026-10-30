@@ -62,6 +62,8 @@ var walk_speed: float = 3.4
 var cam_distance: float = 3.9              # follow-camera boom length (the quad ride pulls it back)
 var cam_height: float = 1.45               # how far above his feet the camera looks
 var title_card: String = ""
+var _world_revisit: bool = false
+var _mounted_transport: bool = false
 var music_path: String = ""
 var camera_min: Vector3 = Vector3(-60.0, 0.4, -60.0)
 var camera_max: Vector3 = Vector3(60.0, 40.0, 60.0)
@@ -450,6 +452,8 @@ func _on_beat_entered(_beat_id: int) -> void:
 
 ## Length in seconds of a committed voice clip (a hold always matches the real audio).
 func _vo_len(id: String) -> float:
+	var recorded: AudioStream = Ep2TownVoiceBank.stream(id)
+	if recorded != null: return recorded.get_length()
 	if _vo_lens.has(id):
 		return float(_vo_lens[id])
 	var path: String = "res://src/assets/sounds/voice/%s.mp3" % id
@@ -466,7 +470,7 @@ func _speak(line_id: String) -> void:
 	line_spoken.emit(line_id)
 	var am: Node = get_node_or_null("/root/AudioManager")
 	if am and am.has_method("play_voice"):
-		am.play_voice(line_id)
+		am.play_voice(line_id,Ep2TownVoiceBank.stream(line_id))
 
 
 ## He talks while he walks / stands (FacilityShow's `until` nudge uses this).
@@ -628,26 +632,27 @@ func get_health() -> int: return 3        # the hideout's cap; a story room that
 func _shows_health() -> bool: return false
 
 ## Use one of Dude's Chill Buds from the Tabs ledger. The room must confirm
-## that it actually restored a heart before the stored item is spent. Rooms
+## that it actually restored all three hearts before the stored item is spent. Rooms
 ## without health (and full-health rooms) keep the bud and say why.
 func use_chill_bud() -> bool:
 	if GameManager.chill_buds <= 0:
 		if _hud != null:
 			_hud.toast("NO CHILL BUDS - VISIT DUDE", 1.6)
 		return false
-	if not _heal_one():
+	if not _heal_full():
 		if _hud != null:
 			_hud.toast("ALREADY FEELING CHILL", 1.6)
 		return false
 	if not GameManager.take_chill_bud():
 		return false
 	if _hud != null:
-		_hud.toast("DUDE'S CHILL BUDS - ONE HEART BACK", 1.6)
+		_hud.toast("DUDE'S CHILL BUDS - THREE HEARTS RESTORED", 1.6)
+	GameManager.save_session()
 	return true
 
 ## Room-specific healing hook. Base rooms have no damageable health, so they
-## never consume a bud. A health room returns true only when it restored one.
-func _heal_one() -> bool:
+## never consume a bud. A health room returns true only when it restored health.
+func _heal_full() -> bool:
 	return false
 
 func get_ammo() -> int: return _vm.gun.rounds if _vm != null else 0

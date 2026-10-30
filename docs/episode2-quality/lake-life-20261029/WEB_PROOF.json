@@ -1,0 +1,12 @@
+{
+  "done": true,
+  "checks": [
+    "[PASS] exported Logan fishes with rod line and bobber",
+    "[PASS] exported water insect and frog streams decode and play",
+    "[PASS] exported bird recordings play",
+    "[PASS] exported full and corner charts have Lil Blunt textures",
+    "[PASS] M opens the map and pauses fishing",
+    "[PASS] Escape returns to the fishing lake"
+  ],
+  "errors": []
+}

@@ -179,7 +179,7 @@ func _ready() -> void:
 	_check("the bar scene plays in order: a whiskey, a quarter Bitcoin, the barman's jaw, the stranger, the demand, the refusal, the terms, the witness", in_order, str(said))
 	_check("the whiskey and the coin are on the bar", c.is_glass_on_bar() and c.is_coin_on_bar())
 	_check("the payment is a QUARTER Bitcoin", "quarter" in _manifest_text("vo_lb_bar2").to_lower() and "bitcoin" in _manifest_text("vo_lb_bar2").to_lower())
-	_check("the demand is the founder's line VERBATIM", _manifest_text("vo_opp_2") == "Give me a bitcoin or I give you the map to the auction where they can get more intel.", _manifest_text("vo_opp_2"))
+	_check("the demand trades the map for Bitcoin and promises auction gold/Bitcoin", _manifest_text("vo_opp_2") == "Give me a Bitcoin in exchange for this map to the auction. You could walk away with more gold and Bitcoin.", _manifest_text("vo_opp_2"))
 	_check("the sheriff is the witness, and he walked in (he is in the saloon)", "witness" in _manifest_text("vo_sheriff_witness")
 		and Ep2GoldTown.building_xform(Ep2GoldTown.entry("Bldg_Saloon")).affine_inverse().origin != Vector3.INF
 		and (Ep2GoldTown.building_xform(Ep2GoldTown.entry("Bldg_Saloon")).affine_inverse() * sheriff.position).z < 0.0, str(sheriff.position))
@@ -368,7 +368,7 @@ func _ready() -> void:
 		rich != null and utah != null and rich.visible and utah.visible, str(rich) + " " + str(utah))
 	# the two-storey Armory's pair work on their own (Ep2ArmoryBrain), so any of their work clips is right; the fallback pair holds poses
 	var work_clips: Array = ["counter", "idle", "cigarpuff", "wiperifle", "inspectrifle", "reach", "talk", "pickup", "putdown", "greet", "walk",
-		"carry", "stairsup", "point"]
+		"carry", "stairsup", "point", "groundedwalk", "groundedcarry"]
 	_check("both are rigged bodies, moving on their authored clips (not statues with a bob)",
 		rich.has_clips() and utah.has_clips() and ((Ep2GoldTown.armory_v2 and rich.current_clip() in work_clips and utah.current_clip() in work_clips)
 			or (rich.current_clip() == "counter" and utah.current_clip() == "idle")),
@@ -419,9 +419,9 @@ func _ready() -> void:
 	_check("the room refuses a tender that is not in his purse", not c.buy("rifle_ammo", 1, "gold") and not c.buy("river_gear", 2, "gold"))
 	# A finger must be able to shut the trade: the tree is paused, so the touch controls are
 	# suspended and Esc / ui_cancel is unreachable on a phone (audit 2026-10-29).
-	var close_pad: Button = c.get_shop().get_node_or_null("Close")
-	_check("the trade carries a wordless close pad in the corner (>= 44 CSS px on a phone)",
-		close_pad != null and close_pad.is_visible_in_tree() and close_pad.size.x >= 88.0
+	var close_pad: Button = c.get_shop().get_node_or_null("PanelClose")
+	_check("the trade carries the shared wordless close pad (>= 44 CSS px on a phone)",
+		close_pad != null and close_pad.is_visible_in_tree() and close_pad.size.x >= 44.0
 			and close_pad.position.x + close_pad.size.x <= c.get_shop().size.x)
 	if close_pad != null:
 		close_pad.pressed.emit()

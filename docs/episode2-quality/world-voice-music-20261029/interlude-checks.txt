@@ -1,0 +1,142 @@
+  [PASS] starts at ARRIVE with Lil Blunt in the tunnel and control his
+  [PASS] Inferno Bull 2 starts the moment they are in the shaft
+  [PASS] the interlude exposes the host's story-room vocabulary (title card, FPS mode, no miner-rig verbs)
+  [PASS] the Winchester viewmodel exists and sits on the camera (it IS the player's view)
+  [PASS] Lil Blunt's hands and the founder's rifle are on it
+  [PASS] the rifle is loaded: full tube and the reserve
+  [PASS] the third-person body is hidden in first person (the eye is his)
+  [PASS] the rifle is NEVER slung on his back: the body carries it in the hand, nothing is slung
+  [PASS] the camera is his eye (about 1.55 m above his feet), not a boom behind him
+  [PASS] the HUD shows the ammo and the crosshair
+  [PASS] RMB aims down the sights (the view narrows)
+  [PASS] LMB fires a round: the tube drops by one, the muzzle report plays
+  [PASS] ...and the lever must be racked before the next shot
+  [PASS] the lever clack follows the shot
+  [PASS] R loads shells back into the tube, one at a time
+  [PASS] the first-person control hint names aim and reload
+  [PASS] the lever is INSIDE the cage (a child of the cage, within its walls)
+  [PASS] ...made of the cage's own rusted iron, nothing lit or coloured
+  [PASS] Lil Blunt cannot walk through the cage's side bars
+  [PASS] ...but walks in through the open walkway doorway
+  [PASS] ...and cannot leave through the shut surface gate
+  [PASS] Inferno tells him to step on the lift
+  [PASS] ...and walks into the cage himself, through the doorway
+  [PASS] walking onto the cage ends ARRIVE
+  [PASS] -> LEVER; the show runs but does NOT lock the player (one motion: he keeps the rifle and can look around)
+  [PASS] the scripted beat STAYS in first person (no cut to a body): the rifle is on screen and his eye turns to the lever Inferno pulls
+  [PASS] the handle is pulled silently, then the cage starts
+  [PASS] the lever swung (he actually pulled it)
+  [PASS] the walkway gate dropped shut behind them
+  [PASS] Inferno never left the cage to pull it
+  [PASS] control returns to the player for the ride
+  [PASS] ...and so does his eye: the rifle is back in his hands on screen
+  [PASS] the cage climbs, steadily, past the first floor and on to the surface (two floors)
+  [PASS] Lil Blunt rides it up (he is at the surface level)
+  [PASS] the plan: sneak, the quad, spy on the bears - Inferno then Lil Blunt's answer, in order
+  [PASS] the gate slides open at the top
+  [PASS] surface exit has no blocking arrival narration
+  [PASS] walking out into the daylight resolves the chamber
+  [PASS] it is a story chamber that mints nothing
+  [PASS] ...and chains to the bear woods
+  [PASS] starts at SNEAK
+  [PASS] the woods are first person too: the Winchester in his hands, his body hidden, ammo on the HUD
+  [PASS] the woods can hurt him, so his 3 hearts are on the HUD
+  [PASS] the quad is hidden under leaves and branches (a real pile of them)
+  [PASS] the wood is the textured old-growth kit (bark trunks + fir-branch crowns), not cones and cylinders
+  [PASS] ...built in slices along the trail and road, each with a draw distance (a 1 km wood at the old web cost)
+  [PASS] the crowns sway in the wind (wind shader on the branch cards)
+  [PASS] birds fly in the wood (a few, moving)
+  [PASS] the woods bears are the founder's Tripo bear (dense hyper-real body, arms lowered)
+  [PASS] no bear camp, no spy ridge, no sentries: the ride heads for town
+  [PASS] the ElevenLabs woods soundscape is loaded (ambience loop, gust, 3 bird calls, flutter)
+  [PASS] every bear is somebody: a name, a routine of his own (patrol, read, sleep, roam, watch)
+  [PASS] Professor Barnaby READS (seated on his stump, Bear Monthly in his paws)
+  [PASS] Old Moss SLEEPS (lying down, z's over him)
+  [PASS] Twitch WALKS his beat (a real walk, not a slide on the spot)
+  [PASS] the logging road is picketed: at least 12 road bears, archers carrying bows
+  [PASS] no bear within 40 m of the mine door; ~1.2 km of road to the town; no bear past the last pines
+  [PASS] the town is built along the road's end (the same Ep2GoldTown the town chamber builds)
+  [PASS] no music of the quad ride yet
+  [PASS] following Inferno at a walk brings them past every scout to the thicket (-> REVEAL) with no bear alerted
+  [PASS] ...and Inferno named the scouts as they passed them
+  [PASS] the reveal is seen through HIS eyes with the rifle in his hands: his view turns to the quad, no cut to a cinema camera
+  [PASS] the leaves come off (the quad is revealed)
+  [PASS] he climbs on behind Inferno WITHOUT a blink: the screen never dips, the eye glides onto the back seat (no jump)
+  [PASS] -> RIDE, the quad is on the road
+  [PASS] Deep Mining 3 only now (the moment they mount)
+  [PASS] on the back seat he is still first person, the rifle in his hands ("hold that rifle steady")
+  [PASS] it is the MODELLED flame quad (flame_quad.glb, four spinning Wheel_* nodes), not the box stand-in
+  [PASS] Inferno SITS on the quad (seated clip), arms NOT dragged by IK (the elbow tears), he does not stand in the air
+  [PASS] Lil Blunt's eye is on the rear of the seat, above the seat and BEHIND Inferno's hips (he looks over the driver, not into him)
+  [PASS] the passenger's view rides the quad: it turns with the heading
+  [PASS] he can fire from the back seat (the engine covers it: no stealth penalty)
+  [PASS] Deep Mining 3 is playing on the quad
+  [PASS] the quad moves along the road (rails: the player does not steer)
+  [PASS] both ride it: Inferno up front, Lil Blunt behind
+  [PASS] the engine wakes the road: pickets turn on the quad
+  [PASS] archers fire back: real arrows are loosed at him on the ride
+  [PASS] he shoots bears off the road from the back seat (kills land)
+  [PASS] the ride is long (out of the wood, across the desert): over 90 s on the road
+  [PASS] the bears thin out: none attacks in the desert (every picket stands in the wood)
+  [PASS] the ride ends IN the town's main street (-> DROPOFF) in first person
+  [PASS] the desert light took over from the woods' gold (thin fog)
+  [PASS] the corpses stay where they fell (no fade, no vanish)
+  [PASS] Bull drops him off: the Blondie line, the certificate office + the bar, Lil Blunt answers - in order
+  [PASS] Lil Blunt is OFF the quad, on his feet in the street, the rifle still in his hands
+  [PASS] ...and Bull RIDES OFF on the quad, up the street and away
+  [PASS] the woods chain to the gold town (no TO BE CONTINUED here any more)
+  [PASS] ...and it mints nothing
+  [PASS] WALKING past Old Moss while he sleeps: he sleeps on
+  [PASS] RUNNING past him is heard: he wakes (a ?), it is a noise hit and Inferno shushes
+  [PASS] ...and he gets up off the ground to come and look (the fall played backward, then a walk)
+  [PASS] Professor Barnaby, nose in his magazine, still SEES him when he stands right in front (sight meter fills, '!')
+  [PASS] ...he roars and charges: a claw swipe costs a heart, or Inferno drops him first
+  [PASS] Inferno shouts and defends him (he fires on the bear, no arm IK)
+  [PASS] a shot bear goes down
+  [PASS] ...and his body stays where he fell (dead pose, still there 5 s later)
+  [PASS] Hattie spots him in her sector, draws and looses an ARROW (a real projectile in the air)
+  [PASS] the last heart ends the attempt: input stops, the screen goes down
+  [PASS] RETRY from the mine exit: Lil Blunt at the door with 3 hearts, the beat back to SNEAK, Inferno's retry line
+  [PASS] ...and the wood is restored with him: Barnaby alive and reading again, the quad back under its leaves, a full tube
+  [PASS] the screen comes back up at the mine exit
+  [PASS] the hideout's result loads the MINE LIFT (no runner leg in between)
+  [PASS] a story chamber's result is committed once
+  [PASS] the hideout's range lesson starts building the LIFT in the background (off-screen)
+  [PASS] at the exit door the hideout WAITS for the lift to be built (a pause at worst, never a blackout)
+  [PASS] ...the moment it is built the door opens: the hideout resolves toward the lift
+  [PASS] the hideout has its camera in the tree for the doorway view
+  [PASS] facing the open door, the doorway shows the built lift room
+  [PASS] ...rendered at screen size from a camera mirroring his, 30 m down the lift's z
+  [PASS] ...with the lift's tunnel plug and back wall out of the way (they stand between that camera and the cavern)
+  [PASS] ...and no second Inferno in it while the real one is still in the hideout
+  [PASS] Inferno through the doorway ahead of him is drawn on the lift side, where he stands
+  [PASS] the floor runs on through the open door while the doorway shows the lift
+  [PASS] a step short of the doorway is still the hideout (no early cut)
+  [PASS] through the doorway the hideout hands over to the lift
+  [PASS] ...carrying where he stands and where Inferno stands, in the lift's frame
+  [PASS] the SAME lift room that was in the doorway is now the room he is in
+  [PASS] ...and he is at its mouth where the doorway showed him, not 2.6 m on at the old start point
+  [PASS] ...with Inferno still ahead of him on the bridge
+  [PASS] entering the lift starts building the WOODS in the background (hosted off-screen, the lift stays the active chamber)
+  [PASS] ...and the lift holds its exit until the wood is built (no freeze at the surface)
+  [PASS] the background build completes (the deterministic step finishes it)
+  [PASS] the hand-over is the SAME instance that was built behind the lift, in the main tree, its camera current
+  [PASS] the visited lift is retained in an isolated disabled world, with no camera/sky/light leaking into the wood
+  [PASS] one motion: the gaze carries over (yaw 0.5, pitch 0.1) and no title card is shown
+  [PASS] the lift chains to the WOODS
+  [PASS] the woods end the session (TO BE CONTINUED)
+  [PASS] Inferno Bull 2 is in the build and wired to the lift
+  [PASS] Deep Mining 3 is in the build and wired to the quad
+  [PASS] sfx ep2_lava_burn exists
+  [PASS] sfx ep2_lift_start exists
+  [PASS] sfx ep2_lift_loop exists
+  [PASS] sfx ep2_lift_arrive exists
+  [PASS] sfx ep2_quad_start exists
+  [PASS] sfx ep2_quad_loop exists
+  [PASS] sfx ep2_leaves_pull exists
+  [PASS] all 17 new voice lines are generated and in the manifest
+  [PASS] Inferno speaks at a natural pace (speed >= 1.0) on every new line
+  [PASS] no Diamonds mechanic is stapled into the interlude speech
+  [PASS] the plan is the founder's: sneak through the wood, the quad (I drive, you shoot), spy on the bears
+  [PASS] the lava warning says it burns and tells him to hop
+EP2_INTERLUDE: ALL PASS

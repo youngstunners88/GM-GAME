@@ -1,0 +1,10 @@
+[PASS] the surveyed lake road is visible on foot before any horse purchase
+[PASS] LakeTrail every vertex maps exactly before and after mounting
+[PASS] LakeTrail uses the same dust and gravel surface across mounting
+[PASS] TownReturnRoad every vertex maps exactly before and after mounting
+[PASS] TownReturnRoad uses the same dust and gravel surface across mounting
+[PASS] the exact on-foot road instance travels with the retained town
+[PASS] mounting renders one road rather than overlapping copies
+[PASS] returning on foot restores the original survey origin
+[PASS] standalone trail remains usable after returning town
+EP2_RANCH_ROAD_PRESENCE: 9 checks, 0 failed

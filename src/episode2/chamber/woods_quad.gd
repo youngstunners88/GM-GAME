@@ -221,6 +221,7 @@ var _bull_pace: float = 0.0
 var _line_idx: Dictionary = {}                       # pool key -> next line (rotates, never the same one twice running)
 var _sneak_arc: PackedFloat32Array = PackedFloat32Array()
 var _cart: Node3D = null                             # the farmer on his donkey cart (founder model), plodding down the desert road
+var _cart_external: bool = false                     # the session owns his continuing town trip after the pass
 var _cart_s: float = CART_S0
 var _cart_warned: bool = false
 var _cart_state: int = 0                             # 0 ahead, 1 approached (slowing), 2 greeted, 3 passed
@@ -1299,6 +1300,7 @@ func _on_beat_entered(b: int) -> void:
 			_retry_line_pending = false
 			_bull_chat_cd = _rng.randf_range(22.0, 34.0)
 		Beat.REVEAL:
+			prebuild_requested.emit("gold_town")
 			_bull.stop()
 			if _hud:
 				_hud.objective = ""
@@ -1572,6 +1574,7 @@ func _tick(delta: float) -> void:
 	if _wildlife != null:
 		_wildlife._centre = Vector3(_player_pos.x, 0.0, _player_pos.z)      # the birds keep to the stretch of wood he is in
 		_wildlife.step(delta)
+	if _world_revisit: return
 	match _beat:
 		Beat.SNEAK:
 			_tick_bull_defence(delta)
@@ -2506,12 +2509,12 @@ func _shows_health() -> bool:
 	return true
 
 
-## One of Dude's Chill Buds restores exactly one heart, never above the story's
+## One of Dude's Chill Buds restores all three hearts, never above the story's
 ## three-heart cap. The base spends the item only after this returns true.
-func _heal_one() -> bool:
-	if _health >= HEALTH_MAX:
+func _heal_full() -> bool:
+	if _health <= 0 or _health >= HEALTH_MAX or _failing:
 		return false
-	_health = mini(_health + 1, HEALTH_MAX)
+	_health = HEALTH_MAX
 	if _hud != null:
 		_hud.health = _health
 		_hud.health_max = HEALTH_MAX
@@ -2619,7 +2622,7 @@ func _retry_from_surface() -> void:
 	_bull_wait_t = 0.0
 	_bull_wait_lock = 0.0
 	_bull_ride_cd = 0.0
-	if _cart != null:
+	if _cart != null and not _cart_external:
 		(_cart as Ep2RoadCart).reset_motion()
 		_place_cart(0.0)
 	_road_lines.clear()
@@ -2649,9 +2652,9 @@ func _collide(p: Vector3) -> Vector3:
 	# back into the near wood. The ordinary sneak keeps its original boundary.
 	if _player_pos.z > FOREST_END_Z:
 		var ranch: Vector2 = Ep2GoldTown.collide(Vector2(q.x, q.z), 0.3, _town_col.get("walls", []), _town_col.get("props", []))
-		return Vector3(clampf(ranch.x, -40.0, 40.0), p.y, clampf(ranch.y, FOREST_END_Z, Ep2GoldTown.TOWN_Z - 30.0))
+		return Vector3(clampf(ranch.x, -40.0, 40.0), p.y, clampf(ranch.y, -5.0 if _world_revisit else FOREST_END_Z, 1760.0 if _world_revisit else Ep2GoldTown.TOWN_Z - 30.0))
 	q.x = clampf(q.x, -110.0, 110.0)
-	q.z = clampf(q.z, -5.0, QUAD_POS.z + 40.0)
+	q.z = clampf(q.z, -5.0, 1760.0 if _world_revisit else QUAD_POS.z + 40.0)
 	for t in _trees_near(Vector2(q.x, q.z), 1):
 		var tp: Vector2 = t[0]
 		var d := Vector2(q.x - tp.x, q.z - tp.y)
@@ -2719,11 +2722,14 @@ func _place_cart(_t: float) -> void:
 ## The cart plods on; the quad eases down behind it (so it does not spook the donkey), draws level, Inferno greets the farmer, Lil Blunt answers,
 ## and they open up again past him. Returns the speed this allows the quad.
 func _tick_cart(delta: float) -> float:
+	if _cart_external: return 99.0
 	if _cart == null:
 		return 99.0
-	_cart_s += CART_SPEED * delta
+	var before: float=minf(_cart_s,_ride_total)
+	_cart_s = minf(_cart_s + CART_SPEED * delta,_ride_total)
 	_place_cart(_elapsed)
-	(_cart as Ep2RoadCart).advance_motion(delta, CART_SPEED * delta)
+	(_cart as Ep2RoadCart).set_parked(_cart_s>=_ride_total)
+	(_cart as Ep2RoadCart).advance_motion(delta, _cart_s-before)
 	if _cart_state >= 3:
 		return 99.0
 	var gap: float = _cart_s - _ride_s                  # > 0: the cart is still ahead of them on the road

@@ -32,6 +32,7 @@ const OFFLINE_FALLBACK := "The Realm's connection drifts like smoke right now...
 @onready var _close_btn: Button = $Panel/VBox/Row/CloseBtn
 
 func _ready() -> void:
+	preload("res://src/ui/panel_close.gd").install(self, close)
 	layer = 20
 	visible = false
 	_ask_btn.pressed.connect(_on_ask)

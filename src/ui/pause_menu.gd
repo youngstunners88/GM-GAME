@@ -50,6 +50,7 @@ func _ready() -> void:
     _wire_button("VBox/RestartBtn", _on_restart_pressed)
     _wire_button("VBox/TalkBtn", _on_talk_pressed)
     _wire_button("VBox/QuitBtn", _on_quit_pressed)
+    preload("res://src/ui/panel_close.gd").install(self, _on_resume_pressed)
 
 func _wire_button(path: NodePath, handler: Callable) -> void:
     var button := get_node_or_null(path) as Button

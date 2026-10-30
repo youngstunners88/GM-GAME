@@ -35,17 +35,16 @@ const AMBUSH_BEHIND := 14.0
 const RIDER_START_S := 215.0
 const RIDER_END_S := 294.0
 const UNHORSE_SECONDS := 1.4
-const SHORE_SECONDS := 2.6
+const SHORE_SECONDS := 0.6
 
 ## Catmull-Rom control points (x, z). The sampled route is about 560 m long.
-const TRAIL_POINTS: Array = [
-	Vector2(0.0, 0.0), Vector2(10.0, -9.0), Vector2(21.0, -9.0), Vector2(33.0, -10.0),
-	Vector2(49.0, -48.0), Vector2(70.0, -82.0), Vector2(102.0, -119.0),
-	Vector2(124.0, -160.0), Vector2(164.0, -193.0), Vector2(202.0, -222.0),
-	Vector2(233.0, -262.0), Vector2(260.0, -300.0), Vector2(290.0, -338.0), Vector2(320.0, -374.0),
-]
+const TRAIL_POINTS: Array = Ep2LakeRoad.POINTS
+var _road_survey: Node3D
 ## Six men at each of two ambushes. `lat` is lateral metres from the trail; negative and positive sides alternate.
 const BANDIT_SPECS: Array = [
+	{"s":220.0,"lat":9.0,"ambush":0},{"s":234.0,"lat":-10.0,"ambush":0},
+	{"s":248.0,"lat":11.0,"ambush":0},{"s":381.0,"lat":-9.0,"ambush":1},
+	{"s":448.0,"lat":10.0,"ambush":1},{"s":461.0,"lat":-11.0,"ambush":1},
 	{"s": 140.0, "lat": -8.5, "ambush": 0}, {"s": 151.0, "lat": 9.5, "ambush": 0},
 	{"s": 162.0, "lat": -11.0, "ambush": 0},
 	{"s": 176.0, "lat": 9.0, "ambush": 0}, {"s": 192.0, "lat": -8.0, "ambush": 0}, {"s": 315.0, "lat": 10.5, "ambush": 1},
@@ -94,8 +93,16 @@ var _bandits_root: Node3D = null
 var _bandits: Array = []
 var _bandits_down: int = 0
 var _first_ambush_said: bool = false
+var _bandit_voice: AudioStreamPlayer3D
 var _flashes: Array = []
 var _blood_marks: Array = []
+var _sand_material: ShaderMaterial
+var _ecotone_material: ShaderMaterial
+var _desert_env: Environment
+var _lake_reference: Node3D
+var _lake_preview: Node3D
+var _preview_index: int = 0
+var _preview_nodes: Array = []
 var _rng := RandomNumberGenerator.new()
 var _health: int = HEALTH_MAX
 var _invuln: float = 0.0
@@ -128,7 +135,7 @@ func _beat_label(b: int) -> String:
 # --- set -------------------------------------------------------------------------------------------------------------
 
 func _build_steps() -> Array:
-	return [_step_light, _step_path, _step_ground, _step_trail, _step_desert, _step_lake, _step_horse, _step_departure_yard, _step_bandits]
+	return [_step_light, _step_path, _step_ground, _step_trail, _step_desert, _step_lake, _step_horse, _step_departure_yard, _step_bandits, _build_vultures]
 
 
 func _warm_views() -> Array:
@@ -147,6 +154,7 @@ func _step_light() -> void:
 	var env := Environment.new()
 	_env_node.environment = env
 	Ep2GoldTown.apply_desert_grade(env, _sun, 1.0)
+	_desert_env=env.duplicate(true)
 	_sun.shadow_enabled = true
 	_sun.directional_shadow_max_distance = 85.0
 	_sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
@@ -170,7 +178,7 @@ func _step_departure_yard() -> void:
 	parent.name = "DepartureTown"
 	_visuals.add_child(parent)
 	parent.position = -GoldTownChamber.DEPART_HORSE
-	var survey: Dictionary = Ep2GoldTown.build(parent, true)
+	var survey: Dictionary = Ep2GoldTown.build(parent, true, false)
 	_town_walls = survey.get("walls", [])
 	_town_props = survey.get("props", [])
 	_departure_yard = parent.find_child("StableYard", true, false) as Ep2StableYard
@@ -191,20 +199,26 @@ func _step_ground() -> void:
 	var plane := PlaneMesh.new()
 	plane.size = Vector2(1400.0, 1300.0)
 	ground.mesh = plane
-	ground.material_override = Ep2GoldTown.desert_ground_mat()
+	_sand_material=ShaderMaterial.new()
+	_sand_material.shader=load("res://src/episode2/art/trail_sand.gdshader")
+	_sand_material.set_shader_parameter("sand",load("res://src/episode2/assets/town/tex_desert.jpg"))
+	_sand_material.set_shader_parameter("lake_inverse",lake_transform().affine_inverse())
+	ground.material_override = _sand_material
 	ground.position = Vector3(170.0, -0.012, -140.0)
 	_visuals.add_child(ground)
 
 
 func _step_trail() -> void:
-	var dirt: StandardMaterial3D = _tex(GRAVEL_TEX, Color(0.48, 0.35, 0.23), 0.42)
-	dirt.uv1_world_triplanar = true
-	dirt.roughness = 0.96
-	var ribbon := _ribbon(_route_pts, 5.8, dirt, 0.022)
-	ribbon.name = "LakeTrail"
-	var back_points := PackedVector3Array([Vector3(21,0,-6),Vector3(21,0,30),Vector3(13,0,70),Vector3(13,0,145)])
-	var return_road: MeshInstance3D = _ribbon(back_points,5.8,dirt,0.022)
-	return_road.name = "TownReturnRoad"
+	_road_survey=Ep2LakeRoad.build(_visuals)
+
+	var ecotone := ShaderMaterial.new()
+	_ecotone_material=ecotone
+	ecotone.shader=load("res://src/episode2/art/trail_ecotone.gdshader")
+	ecotone.set_shader_parameter("lake_inverse",lake_transform().affine_inverse())
+	ecotone.set_shader_parameter("sand",load("res://src/episode2/assets/town/tex_desert.jpg"))
+	ecotone.set_shader_parameter("forest",load(Ep2LakeLandscape.FLOOR))
+	var field: MeshInstance3D = _ribbon(_route_pts,190.0,ecotone,0.006)
+	field.name="GradualGrassApproach"
 
 
 func _step_desert() -> void:
@@ -214,98 +228,32 @@ func _step_desert() -> void:
 
 
 func _step_lake() -> void:
-	# The water begins just beyond the last route sample, so the shore is reached before the hand-over.
-	var water := MeshInstance3D.new()
-	water.name = "LogansLakeGlint"
-	var plane := PlaneMesh.new()
-	plane.size = Vector2(900.0, 360.0)
-	water.mesh = plane
-	if ResourceLoader.exists(WATER_SHADER):
-		var shader_mat := ShaderMaterial.new()
-		shader_mat.shader = load(WATER_SHADER)
-		water.material_override = shader_mat
-	else:
-		var mat := StandardMaterial3D.new()
-		mat.albedo_color = Color(0.075, 0.25, 0.31)
-		mat.metallic = 0.35
-		mat.roughness = 0.18
-		water.material_override = mat
-	var end: Vector3 = _route_pts[_route_pts.size()-1]
-	var heading: float = float(_route_sample(_route_total)[1])
-	water.position = end + Vector3(sin(heading)*188.0, -0.055, cos(heading)*188.0)
-	water.rotation.y = heading
-	water.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_visuals.add_child(water)
-	var glint_mat: StandardMaterial3D = _glow(Color(0.82, 0.91, 0.86), 0.55)
-	for i in 14:
-		var z: float = end.z - 18.0 - float(i) * 8.0
-		var x: float = end.x - 34.0 + float((i * 37) % 90)
-		var strip := _box(Vector3(2.0 + float(i % 4), 0.008, 0.07), Vector3(x, -0.01, z), glint_mat)
-		strip.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	# Cottonwoods and scrub gather as the desert reaches the water.
-	var bark: StandardMaterial3D = _tex(TIMBER_TEX, Color(0.38, 0.27, 0.17), 0.7)
-	var leaves: Array = [
-		_plain(Color(0.20, 0.31, 0.13), 0.95), _plain(Color(0.28, 0.37, 0.16), 0.95),
-		_plain(Color(0.16, 0.27, 0.12), 0.95),
-	]
-	for i in 15:
-		var sample: Array = _route_sample(365.0 + float(i) * 9.0)
-		var yaw: float = float(sample[1])
-		var side := Vector3(-cos(yaw), 0.0, sin(yaw))
-		var lat: float = (11.0 + float((i * 7) % 15)) * (1.0 if i % 2 == 0 else -1.0)
-		var at: Vector3 = (sample[0] as Vector3) + side * lat
-		var height: float = 3.8 + float(i % 4) * 0.65
-		_cyl(0.12, 0.20, height, at + Vector3(0.0, height * 0.5, 0.0), bark, _visuals, 8)
-		_sphere(1.55 + float(i % 3) * 0.25, at + Vector3(0.0, height + 0.35, 0.0), leaves[i % 3], _visuals, 0.82)
-		_sphere(1.05, at + Vector3(0.8, height - 0.25, 0.25), leaves[(i + 1) % 3], _visuals, 0.8)
+	# Use the lake's authored firs on the approach, rather than primitive tree stand-ins.
+	if not Ep2Extras.has(Ep2LakeLandscape.KIT): return
+	var kit: Node3D=(load(Ep2LakeLandscape.KIT) as PackedScene).instantiate()
+	var landscape:=Ep2LakeLandscape.new()
+	var placements: Array=[]
+	for i in 100:
+		var progress: float=float(i)/99.0
+		var sample: Array=_route_sample(180.0+(1.0-pow(1.0-progress,0.65))*(_route_total-180.0))
+		var yaw: float=float(sample[1])
+		var side:=Vector3(-cos(yaw),0,sin(yaw))
+		var at: Vector3=(sample[0] as Vector3)+side*(11.0+float((i*7)%15))*(1.0 if i%2==0 else -1.0)
+		var local: Vector3=lake_transform().affine_inverse()*at
+		if local.x>=-130 and local.x<=170 and local.z>=-100 and local.z<=210:
+			at.y=Ep2LakeLandform.terrain_height(local.x,local.z)
+		placements.append(Transform3D(Basis(Vector3.UP,float(i)*2.4).scaled(Vector3.ONE*(0.55+progress*.55)),at))
+	for piece in ["Wood","Needles"]:
+		var template: MeshInstance3D=kit.find_child("FirA_"+piece,true,false)
+		landscape._instances(_visuals,template.mesh,placements,landscape._bark() if piece=="Wood" else landscape._foliage(Ep2LakeLandscape.BRANCH,12.0,.1),"ApproachFir_"+piece)
+	kit.free()
 
 
 func _smooth(points: Array, spacing: float) -> PackedVector3Array:
-	var out := PackedVector3Array()
-	var count: int = points.size()
-	for i in count - 1:
-		var p0: Vector2 = points[maxi(i - 1, 0)]
-		var p1: Vector2 = points[i]
-		var p2: Vector2 = points[i + 1]
-		var p3: Vector2 = points[mini(i + 2, count - 1)]
-		var steps: int = maxi(4, int(p1.distance_to(p2) / spacing))
-		for k in steps:
-			var t: float = float(k) / float(steps)
-			var t2: float = t * t
-			var t3: float = t2 * t
-			var q: Vector2 = 0.5 * ((2.0 * p1) + (-p0 + p2) * t + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t2
-				+ (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * t3)
-			out.append(Vector3(q.x, 0.0, q.y))
-	var last: Vector2 = points[count - 1]
-	out.append(Vector3(last.x, 0.0, last.y))
-	return out
-
+	return Ep2LakeRoad.smooth(points,spacing)
 
 func _ribbon(points: PackedVector3Array, width: float, mat: Material, y: float) -> MeshInstance3D:
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var left := PackedVector3Array()
-	var right := PackedVector3Array()
-	for i in points.size():
-		var a: Vector3 = points[maxi(i - 1, 0)]
-		var b: Vector3 = points[mini(i + 1, points.size() - 1)]
-		var tangent: Vector3 = b - a
-		tangent.y = 0.0
-		tangent = tangent.normalized() if tangent.length() > 0.001 else Vector3.FORWARD
-		var side := Vector3(tangent.z, 0.0, -tangent.x) * (width * 0.5)
-		left.append(points[i] - side + Vector3(0.0, y, 0.0))
-		right.append(points[i] + side + Vector3(0.0, y, 0.0))
-	for i in points.size() - 1:
-		for vertex in [left[i], right[i], left[i + 1], right[i], right[i + 1], left[i + 1]]:
-			st.set_normal(Vector3.UP)
-			st.add_vertex(vertex)
-	var mesh_instance := MeshInstance3D.new()
-	mesh_instance.mesh = st.commit()
-	mesh_instance.material_override = mat
-	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_visuals.add_child(mesh_instance)
-	return mesh_instance
-
+	return Ep2LakeRoad.ribbon(_visuals,points,width,mat,y)
 
 func _route_sample(distance: float) -> Array:
 	if _route_pts.is_empty():
@@ -664,6 +612,7 @@ func _bandit_world_position(b: Dictionary) -> Vector3:
 # --- setup and movement ----------------------------------------------------------------------------------------------
 
 func _on_setup() -> void:
+	Ep2DrawMusic.begin(self)
 	_armory_snapshot = armory.snapshot()
 	_beat = Beat.RIDE
 	_health = HEALTH_MAX
@@ -823,6 +772,7 @@ func _fps_camera(_delta: float) -> void:
 # --- per-frame story -------------------------------------------------------------------------------------------------
 
 func _tick(delta: float) -> void:
+	_blend_lake_light()
 	_invuln = maxf(0.0, _invuln - delta)
 	_tick_flashes(delta)
 	var town_player: Vector3 = _player_pos + GoldTownChamber.DEPART_HORSE
@@ -898,6 +848,9 @@ func _begin_shore() -> void:
 
 func _tick_shore(delta: float) -> void:
 	_end_t += delta
+	var dismount: float=smoothstep(0.0,SHORE_SECONDS,_end_t)
+	_player_pos=_route_pts[_route_pts.size()-1]+lake_transform().basis.x*(1.3*dismount)
+	eye_height=lerpf(MOUNTED_EYE,FPS_EYE_HEIGHT,dismount)
 	if _end_t < SHORE_SECONDS or not _handoff_ok():
 		return
 	_advance_to(Beat.DONE)
@@ -1030,10 +983,10 @@ func _shows_health() -> bool:
 	return true
 
 
-func _heal_one() -> bool:
-	if _health >= HEALTH_MAX:
+func _heal_full() -> bool:
+	if _health <= 0 or _health >= HEALTH_MAX or _failing:
 		return false
-	_health = mini(_health + 1, HEALTH_MAX)
+	_health = HEALTH_MAX
 	if _hud != null:
 		_hud.health = _health
 		_hud.health_max = HEALTH_MAX
@@ -1131,7 +1084,21 @@ func _say_trail_line(id: String) -> void:
 func _bandit_bark(index: int) -> void:
 	var b: Dictionary = _bandits[index]
 	var bark_index: int = (index + int(b["shots"])) % BANDIT_BARKS.size()
-	_say_trail_line(str(BANDIT_BARKS[bark_index]))
+	var id: String = str(BANDIT_BARKS[bark_index])
+	if _bandit_voice != null and _bandit_voice.playing: return
+	var stream: AudioStream = Ep2TownVoiceBank.stream(id)
+	if stream == null: return
+	if _bandit_voice == null:
+		_bandit_voice=AudioStreamPlayer3D.new()
+		_bandit_voice.bus="SFX"
+		_bandit_voice.unit_size=24.0
+		_bandit_voice.volume_db=2.5
+		_bandit_voice.max_distance=80.0
+		add_child(_bandit_voice)
+	_bandit_voice.stream=stream
+	_bandit_voice.position=_bandit_world_position(b)+Vector3(0,1.5,0)
+	_bandit_voice.play()
+	AudioManager.duck_for_speech(stream.get_length())
 
 
 func _flash(at: Vector3) -> void:
@@ -1181,6 +1148,9 @@ func _blood(at: Vector3, dir: Vector3, body: Node3D) -> void:
 func get_handoff() -> Dictionary:
 	var result: Dictionary = super.get_handoff()
 	result["horse"] = true
+	result["lake_yaw"] = wrapf(_look_yaw-lake_transform().basis.get_euler().y,-PI,PI)
+	result["lake_pitch"] = _look_pitch
+	result["lake_player"] = lake_transform().affine_inverse()*_player_pos
 	result["arrived_mounted"] = _mounted and _horse_hp > 0
 	result["trail_seconds"] = _trail_time
 	result["bandits_down"] = _bandits_down
@@ -1294,3 +1264,89 @@ func get_attempt() -> int:
 ## True during the short out-of-hearts attempt ending.
 func is_failing() -> bool:
 	return _failing
+
+func lake_transform() -> Transform3D:
+	var heading: float = float(_route_sample(_route_total)[1])
+	var basis := Basis(Vector3.UP,heading-0.1)
+	return Transform3D(basis,_route_pts[_route_pts.size()-1]-basis*LogansLakeChamber.SPAWN)
+
+## Reuse the exact prebuilt destination geometry, one root child per frame.
+## What becomes visible on the horizon is what the player later walks into.
+func preview_lake(room: Node3D) -> void:
+	if _lake_preview == null:
+		_lake_reference=room
+		_lake_preview=Node3D.new()
+		_lake_preview.name="ActualLogansLake"
+		_visuals.add_child(_lake_preview)
+		_lake_preview.transform=lake_transform()
+		_preview_nodes=room._visuals.get_children()
+	if _preview_index>=_preview_nodes.size(): return
+	var child: Node=_preview_nodes[_preview_index]
+	_preview_index+=1
+	if child.name=="Player":return
+	_lake_preview.add_child(child.duplicate())
+	if child.name=="ShoreAndMountain":
+		_sand_material.set_shader_parameter("lake_visible",true)
+		_ecotone_material.set_shader_parameter("lake_visible",true)
+
+var _adopted_town: Node3D
+func adopt_departure(town: Node3D, woods: Node3D = null) -> void:
+	# The exact visited street/cast/body is moved into the mounted world; no rebuilt copy.
+	var copy: Node = _visuals.get_node_or_null("DepartureTown")
+	if copy != null: copy.free()
+	_adopted_town=town
+	if town._visuals.get_parent()!=_visuals: town._visuals.reparent(_visuals)
+	town._visuals.position=-GoldTownChamber.DEPART_HORSE
+	# The retained town already has this exact road. Draw it once at the mapped origin.
+	if _road_survey != null: _road_survey.hide()
+	_town_walls=town._town_col.get("walls",[])
+	_town_props=town._town_col.get("props",[])
+	_departure_yard=town._stable_yard
+	_return_crowd=town._people
+	if _departure_yard != null:
+		_departure_yard.horses[1].hide()
+		for entry in _departure_yard._solids.duplicate():
+			if entry[0]==_departure_yard.horses[1]:
+				_town_props.erase(entry[1]);_departure_yard._solids.erase(entry)
+	if woods != null and _visuals.get_node_or_null("ExistingWoodsHorizon")==null:
+		var backdrop := Node3D.new()
+		backdrop.name="ExistingWoodsHorizon"
+		_visuals.add_child(backdrop)
+		backdrop.position=-GoldTownChamber.DEPART_HORSE
+		for child in woods._visuals.get_children():
+			if str(child.name).begins_with("Forest") or child.name in ["LoggingRoad","SneakTrail","LiftPad"]:
+				backdrop.add_child(child.duplicate())
+
+func restore_departure() -> void:
+	if is_instance_valid(_adopted_town):
+		_adopted_town._visuals.reparent(_adopted_town)
+		_adopted_town._visuals.position=Vector3.ZERO
+		_adopted_town=null
+	if _road_survey != null: _road_survey.show()
+
+func _blend_lake_light() -> void:
+	if not is_instance_valid(_lake_reference) or _desert_env==null:return
+	var blend: float=smoothstep(200.0,_route_total,_route_s)
+	var env: Environment=_env_node.environment
+	var target: Environment=_lake_reference._env_node.environment
+	for prop in ["ambient_light_color","fog_light_color"]:
+		env.set(prop,(_desert_env.get(prop) as Color).lerp(target.get(prop),blend))
+	for prop in ["ambient_light_energy","fog_density","fog_sun_scatter","fog_sky_affect","tonemap_exposure","tonemap_white","adjustment_saturation","adjustment_contrast"]:
+		env.set(prop,lerpf(float(_desert_env.get(prop)),float(target.get(prop)),blend))
+	var sky: ProceduralSkyMaterial=env.sky.sky_material
+	var start: ProceduralSkyMaterial=_desert_env.sky.sky_material
+	var finish: ProceduralSkyMaterial=target.sky.sky_material
+	for prop in ["sky_top_color","sky_horizon_color","ground_horizon_color","ground_bottom_color"]:
+		sky.set(prop,(start.get(prop) as Color).lerp(finish.get(prop),blend))
+	sky.sky_energy_multiplier=lerpf(start.sky_energy_multiplier,finish.sky_energy_multiplier,blend)
+	sky.sun_angle_max=lerpf(start.sun_angle_max,finish.sun_angle_max,blend)
+	var target_basis: Basis=lake_transform().basis*_lake_reference._sun.basis
+	_sun.basis=Basis.from_euler(Vector3(deg_to_rad(-16),deg_to_rad(160),0)).slerp(target_basis,blend)
+	_sun.light_color=Color(1,.80,.56).lerp(_lake_reference._sun.light_color,blend)
+	_sun.light_energy=lerpf(2.3,_lake_reference._sun.light_energy,blend)
+
+func _build_vultures() -> void:
+	var flock := preload("res://src/episode2/art/ep2_trail_vultures.gd").new()
+	flock.name="CirclingVultures"
+	_visuals.add_child(flock)
+	flock.position = _route_sample(160.0)[0]

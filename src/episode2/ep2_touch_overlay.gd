@@ -132,6 +132,8 @@ func _ready() -> void:
 	_home_vis = _home.get_child(0) as VirtualButton
 	_play.tapped.connect(func() -> void: resume_pressed.emit())
 	_home.tapped.connect(func() -> void: home_pressed.emit())
+	var close_button: Button = preload("res://src/ui/panel_close.gd").install(self, func() -> void: resume_pressed.emit())
+	close_button.visible = false
 	_relayout()
 	get_tree().root.size_changed.connect(_relayout)
 
@@ -163,12 +165,14 @@ func _make_pad(pad_name: String, radius_dp: float, glyph: VirtualButton.Glyph) -
 
 ## The pause card: dim + PLAY + HOME. The caller pauses the sim; this only draws and listens.
 func show_pause() -> void:
+	get_node("PanelClose").show()
 	_mode = Mode.PAUSE
 	_open()
 
 ## Only the HOME icon, no dim, nothing else swallowing touches (the portrait rotate cue stays
 ## visible underneath and a locked-portrait phone is never trapped on it).
 func show_portrait_exit() -> void:
+	get_node("PanelClose").hide()
 	_mode = Mode.PORTRAIT
 	_open()
 

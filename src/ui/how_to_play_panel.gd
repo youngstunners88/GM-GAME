@@ -59,6 +59,7 @@ func _ready() -> void:
 	layer = 80
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_build()
+	preload("res://src/ui/panel_close.gd").install(self, _dismiss)
 
 func _build() -> void:
 	# Dimmed, tappable backdrop.

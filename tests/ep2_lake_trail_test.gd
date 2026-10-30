@@ -135,7 +135,7 @@ func _test_bandits_and_damage() -> void:
 	_check("bandits rise, Draw and show a visible gun glint before firing", tell_seen and visual_ok)
 	_check("every recorded shot has at least 0.6 s of visible tell (authored tells are 0.85-1.2 s)", shot_seen and timing_ok)
 	_check("shooting a telegraphing bandit drops him with fall_dead", shot_a_telegraph and dropped and c.get_bandits_down() == 1)
-	_check("a full-health room never heals above three hearts", c.get_health() == 3 and not c._heal_one() and c.get_health() == 3)
+	_check("a full-health room never heals above three hearts", c.get_health() == 3 and not c._heal_full() and c.get_health() == 3)
 	c.debug_invulnerable = false
 	c._invuln = 0.0
 	c._hurt_player()

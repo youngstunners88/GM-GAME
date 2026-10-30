@@ -1,0 +1,29 @@
+  [PASS] the extras (kit with openings, five townspeople) are in the project
+  [PASS] Bldg_Certificates exists in the kit
+  [PASS] Bldg_Certificates: a ray through each window and the doorway meets no wall (the openings are real holes)
+  [PASS] Bldg_Certificates: window glass and frames are modelled (>= 5 panes)
+  [PASS] Bldg_Saloon exists in the kit
+  [PASS] Bldg_Saloon: a ray through each window and the doorway meets no wall (the openings are real holes)
+  [PASS] Bldg_Saloon: window glass and frames are modelled (>= 5 panes)
+  [PASS] Bldg_Treasury exists in the kit
+  [PASS] Bldg_Treasury: a ray through each window and the doorway meets no wall (the openings are real holes)
+  [PASS] Bldg_Treasury: window glass and frames are modelled (>= 5 panes)
+  [PASS] Bldg_B exists in the kit
+  [PASS] Bldg_B: a ray through each window and the doorway meets no wall (the openings are real holes)
+  [PASS] Bldg_B: window glass and frames are modelled (>= 5 panes)
+  [PASS] Bldg_D exists in the kit
+  [PASS] Bldg_D: a ray through each window and the doorway meets no wall (the openings are real holes)
+  [PASS] Bldg_D: window glass and frames are modelled (>= 5 panes)
+  [PASS] Bldg_A exists in the kit
+  [PASS] Bldg_A: a ray through each window and the doorway meets no wall (the openings are real holes)
+  [PASS] Bldg_A: window glass and frames are modelled (>= 5 panes)
+  [PASS] control: a ray at a wall-only point DOES hit the wall (the check can fail)
+  [PASS] the town draws the improved kit when the extras are loadable
+  [PASS] all supplied public townspeople are placed
+  [PASS] every route is clear of every wall, rail, horse, trough, wagon and lamp (0.35 m body)
+  [PASS] in 120 s nobody ever stands inside a wall or prop, or off the ground
+  [PASS] they really walk the street (every one covers > 12 m in 120 s; the balcony and table regulars sit)
+  [PASS] they are not in lock-step (their first steps are spread over > 2 s)
+  [PASS] a townsman turns and greets Lil Blunt when he comes close
+  [PASS] and does not greet him again every step (cooldown)
+EP2_TOWN_PEOPLE: ALL PASS

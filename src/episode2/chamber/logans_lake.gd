@@ -1,6 +1,6 @@
 class_name LogansLakeChamber
 extends Ep2Interlude
-## Founder lock 2026-10-18: investigate / stage depth, never fishing or a protocol dashboard.
+## Founder lock 2026-10-18: investigate / stage depth, player investigates; Logan may fish as background lake life.
 ## The surface route continues here after Rich & Utah's gear. No currency writes or rewards.
 enum Beat { ARRIVE, INVESTIGATE, STAGE, HANDOFF, OVERLOOK }
 const LOGAN := "res://src/episode2/extras/lake/logan.glb"
@@ -37,7 +37,7 @@ func _init() -> void:
 
 func _chamber_id() -> String: return "logans_lake"
 func _beat_label(b: int) -> String: return Beat.keys()[clampi(b, 0, Beat.size() - 1)]
-func _build_steps() -> Array: return [_light, _land, _water, _shore, _vegetation, _people, _build_skiff, _build_cabin]
+func _build_steps() -> Array: return [_light, _land, _water, _shore, _vegetation, _people, _build_skiff, _build_cabin, _build_ambience]
 
 func _light() -> void:
 	var env := Environment.new()
@@ -151,10 +151,11 @@ func _build_cabin() -> void:
 	_cabin.build(_visuals)
 
 func _on_setup() -> void:
+	Ep2DrawMusic.begin_lake(self)
 	print("[EP2] Logan lake started")
-	_player_pos = SPAWN
-	_look_yaw = 0.1
-	_look_pitch = 0.02
+	_player_pos = handoff.get("lake_player",SPAWN)
+	_look_yaw = float(handoff.get("lake_yaw",0.1))
+	_look_pitch = float(handoff.get("lake_pitch",0.02))
 	_set_ground(0)
 	_line = 0
 	_talk_t = 0
@@ -202,6 +203,14 @@ func _build_dialogue() -> void:
 func _say(text: String, seconds: float) -> void:
 	_dialogue.text = text
 	_dialogue_panel.show()
+	var parts: PackedStringArray = text.split(": ",true,1)
+	if parts.size() == 2:
+		var speaker: String = "logan" if parts[0] == "LOGAN" else "lil_blunt"
+		var id: String = Ep2TownVoiceBank.id_for(speaker,parts[1])
+		var stream: AudioStream = Ep2TownVoiceBank.stream(id)
+		if stream != null:
+			AudioManager.play_voice(id,stream)
+			seconds = stream.get_length()+0.3
 	_talk_t = seconds
 
 func _gesture(name: String, seconds: float) -> void:
@@ -330,3 +339,8 @@ static func probe_assets() -> bool:
 	model.free()
 	if ok: print("[EP2] Logan lake assets ready (bones=65 clips=Idle,Greet,Point,Approve)")
 	return ok
+
+func _build_ambience() -> void:
+	var life := preload("res://src/episode2/art/ep2_lake_ambience.gd").new()
+	life.name="LakeAmbience"
+	_visuals.add_child(life)

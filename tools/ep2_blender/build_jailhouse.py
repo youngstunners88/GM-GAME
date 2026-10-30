@@ -29,6 +29,7 @@ MATS = {}
 
 def mat(name, rgb, rough=0.85, metal=0.0, alpha=1.0, emit=0.0):
     m = bpy.data.materials.new(name)
+    m.use_nodes = True
     b = next(n for n in m.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
     b.inputs["Base Color"].default_value = (*rgb, 1.0)
     b.inputs["Roughness"].default_value = rough
@@ -260,7 +261,10 @@ for sx in (-1, 1):
     P.box("Trim", (0.14, DOOR_H + 0.05, T + 0.12), (sx * (DOOR_W / 2 + 0.05), DOOR_H / 2, -T / 2 + 0.04))
 P.box("Trim", (DOOR_W + 0.40, 0.16, T + 0.12), (0, DOOR_H + 0.05, -T / 2 + 0.04))
 P.box("Planks", (DOOR_W + 0.3, 0.05, 0.5), (0, 0.025, 0.22))
-P.xf = P.at((-DOOR_W / 2, 0, -0.10), yaw=1.2)
+# Clear the full walkable opening. The old 69-degree leaf crossed the valid
+# left-hand walking lane, so the eye passed through solid wood before seeing
+# the office. Swing beyond 90 degrees, against the interior side wall.
+P.xf = P.at((-DOOR_W / 2, 0, -0.10), yaw=math.radians(100))
 P.box("DarkWood", (DOOR_W - 0.06, DOOR_H - 0.06, 0.09), (DOOR_W / 2 - 0.03, DOOR_H / 2, 0))
 for yy in (0.4, 1.3, 2.2):
     P.box("Iron", (DOOR_W - 0.12, 0.10, 0.03), (DOOR_W / 2 - 0.03, yy, 0.06))

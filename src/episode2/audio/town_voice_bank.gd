@@ -877,7 +877,7 @@ const LINES: Dictionary = {
 	"town_panic_00": {
 		"speaker": "minister",
 		"text": "Lord have mercy! What in heaven's name happened out here?",
-		"seconds": 4.105,
+		"seconds": 4.505,
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_panic_00.ogg"
@@ -893,7 +893,7 @@ const LINES: Dictionary = {
 	"town_panic_02": {
 		"speaker": "minister",
 		"text": "Then somebody had better pray for that poor soul. I'll see to him.",
-		"seconds": 4.105,
+		"seconds": 4.805,
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_panic_02.ogg"
@@ -933,15 +933,15 @@ const LINES: Dictionary = {
 	"town_body_01": {
 		"speaker": "minister",
 		"text": "Evening, Inferno. Just saying a few words for him.",
-		"seconds": 3.43575,
-		"start_seconds": 0.06925,
+		"seconds": 3.787167,
+		"start_seconds": 0.017833,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_body_01.ogg"
 	},
 	"dude_ranch_01": {
 		"speaker": "dude",
 		"text": "Easy there, friend. Name's Dude.",
-		"seconds": 2.496042,
+		"seconds": 2.984125,
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/dude_ranch_01.ogg"
@@ -949,7 +949,7 @@ const LINES: Dictionary = {
 	"dude_ranch_02": {
 		"speaker": "dude",
 		"text": "These are my horses. I sell to folks with business; the Minister knows me.",
-		"seconds": 4.505,
+		"seconds": 5.705042,
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/dude_ranch_02.ogg"
@@ -957,7 +957,7 @@ const LINES: Dictionary = {
 	"dude_ranch_03": {
 		"speaker": "dude",
 		"text": "Long road, huh? Here, one of Dude's Chill Buds, grown right here on the ranch. A gift for the trail. Stay chill.",
-		"seconds": 7.805,
+		"seconds": 9.305042,
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/dude_ranch_03.ogg"
@@ -965,7 +965,7 @@ const LINES: Dictionary = {
 	"dude_ranch_04": {
 		"speaker": "dude",
 		"text": "Anything else? Two Chill Buds for one BTC, partner. Good little road companions.",
-		"seconds": 5.705,
+		"seconds": 6.905,
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/dude_ranch_04.ogg"
@@ -973,7 +973,7 @@ const LINES: Dictionary = {
 	"dude_ranch_05": {
 		"speaker": "dude",
 		"text": "Pleasure. Two fresh Chill Buds, tucked safe in your tabs. Enjoy the easy road.",
-		"seconds": 5.505,
+		"seconds": 6.805,
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/dude_ranch_05.ogg"
@@ -981,7 +981,7 @@ const LINES: Dictionary = {
 	"dude_ranch_06": {
 		"speaker": "dude",
 		"text": "No worries. Come back when your purse is heavier; the buds keep, and so does the welcome.",
-		"seconds": 5.405042,
+		"seconds": 6.505,
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/dude_ranch_06.ogg"
@@ -989,7 +989,7 @@ const LINES: Dictionary = {
 	"dude_ranch_08": {
 		"speaker": "dude",
 		"text": "Mike Dean sent you? Then you're good folk. A saddled horse is two BTC.",
-		"seconds": 5.505,
+		"seconds": 6.405,
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/dude_ranch_08.ogg"
@@ -997,7 +997,7 @@ const LINES: Dictionary = {
 	"dude_ranch_10": {
 		"speaker": "dude",
 		"text": "Fair haggle. Two even, no fooling. That's the friend price, and she's worth it.",
-		"seconds": 5.605,
+		"seconds": 6.905,
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/dude_ranch_10.ogg"
@@ -1005,7 +1005,7 @@ const LINES: Dictionary = {
 	"dude_ranch_11": {
 		"speaker": "dude",
 		"text": "Deal. Two BTC, square and easy. She's yours, partner. Treat her gentle.",
-		"seconds": 5.805,
+		"seconds": 6.905,
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/dude_ranch_11.ogg"
@@ -1013,7 +1013,7 @@ const LINES: Dictionary = {
 	"dude_ranch_12": {
 		"speaker": "dude",
 		"text": "Short on coin? Take her on credit until the auction. Two BTC later. Mike's people are good for it.",
-		"seconds": 6.805,
+		"seconds": 7.905,
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/dude_ranch_12.ogg"
@@ -1021,7 +1021,7 @@ const LINES: Dictionary = {
 	"dude_ranch_13": {
 		"speaker": "dude",
 		"text": "First go to Logan's Lake so your horse can drink and cool down in this heat. It's on the map.",
-		"seconds": 5.405,
+		"seconds": 6.405,
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/dude_ranch_13.ogg"
@@ -1029,7 +1029,7 @@ const LINES: Dictionary = {
 	"dude_ranch_14": {
 		"speaker": "dude",
 		"text": "Anything else, partner? Your horse is ready when you are. No hurry around here.",
-		"seconds": 4.705,
+		"seconds": 5.805042,
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/dude_ranch_14.ogg"
@@ -1037,7 +1037,7 @@ const LINES: Dictionary = {
 	"dude_ranch_15": {
 		"speaker": "dude",
 		"text": "Remember: Logan's Lake first. Let her drink and cool down. It's right there on the map.",
-		"seconds": 5.705,
+		"seconds": 6.605,
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/dude_ranch_15.ogg"
@@ -1085,15 +1085,15 @@ const LINES: Dictionary = {
 	"town_cold_mike_dean_0": {
 		"speaker": "minister",
 		"text": "I'll pray for the man you hurt, and for the temper that did it.",
-		"seconds": 3.683542,
-		"start_seconds": 0.021458,
+		"seconds": 4.305042,
+		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_cold_mike_dean_0.ogg"
 	},
 	"town_cold_mike_dean_1": {
 		"speaker": "minister",
 		"text": "Kindness costs nothing, son. Try spending a little more of it.",
-		"seconds": 4.105,
+		"seconds": 4.605,
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_cold_mike_dean_1.ogg"
@@ -1109,7 +1109,7 @@ const LINES: Dictionary = {
 	"town_minister2_01": {
 		"speaker": "minister",
 		"text": "The Gold Panner! Bless that big fella, he remembered.",
-		"seconds": 4.305042,
+		"seconds": 4.605042,
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_minister2_01.ogg"
@@ -1117,7 +1117,7 @@ const LINES: Dictionary = {
 	"town_minister2_02": {
 		"speaker": "minister",
 		"text": "And your certificate, son. Made out in your name - stamped and sealed.",
-		"seconds": 4.705,
+		"seconds": 5.305,
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_minister2_02.ogg"
@@ -1125,7 +1125,7 @@ const LINES: Dictionary = {
 	"town_minister2_04": {
 		"speaker": "minister",
 		"text": "You'll want a horse for the trail. Go see my friend Dude at the horse stables. Tell him I sent you.",
-		"seconds": 5.405,
+		"seconds": 6.005,
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/town_minister2_04.ogg"
@@ -1133,10 +1133,50 @@ const LINES: Dictionary = {
 	"vo_minister_1": {
 		"speaker": "minister",
 		"text": "Welcome, friend. A certificate is made out in your name, and it stays in your name. It cannot be sold on and it cannot be traded. Bring your share and I will stamp it.",
-		"seconds": 10.205042,
+		"seconds": 11.805,
 		"start_seconds": 0,
 		"ready": true,
 		"path": "res://src/episode2/extras/audio/town/vo_minister_1.ogg"
+	},
+	"vo_opp_2": {
+		"speaker": "stranger",
+		"text": "Give me a Bitcoin in exchange for this map to the auction. You could walk away with more gold and Bitcoin.",
+		"seconds": 7.305042,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/vo_opp_2.ogg"
+	},
+	"logan_depth": {
+		"speaker": "logan",
+		"text": "This depth stays deep. We stage what comes in before anything goes downstream.",
+		"seconds": 5.805042,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/logan_depth.ogg"
+	},
+	"logan_lb_depth": {
+		"speaker": "lil_blunt",
+		"text": "So the lake holds the depth, and the river carries what is ready?",
+		"seconds": 4.505,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/logan_lb_depth.ogg"
+	},
+	"logan_cargo": {
+		"speaker": "logan",
+		"text": "Exactly. Check the cargo at that staging marker. Keep the bank secure; don't empty the lake.",
+		"seconds": 6.405,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/logan_cargo.ogg"
+	},
+	"logan_handoff": {
+		"speaker": "logan",
+		"text": "Cargo checked. The depth holds. Follow the outflow to the high ground—the day-88 shipment leaves from here.",
+		"seconds": 6.905,
+		"start_seconds": 0,
+		"ready": true,
+		"path": "res://src/episode2/extras/audio/town/logan_handoff.ogg"
 	}
 }
 const GREETINGS: Dictionary = {

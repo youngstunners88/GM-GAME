@@ -270,6 +270,9 @@ func _walk_leg() -> void:
 		folk.walk_clip = "StairsUp" if nxt == "stair_head" else "Walk"
 	else:
 		folk.walk_clip = _step_walk if _step_walk != "" else "Walk"
+	var locomotion_player: AnimationPlayer = folk.anim_player()
+	if locomotion_player != null and folk.walk_clip in ["Walk", "Carry"] and locomotion_player.has_animation("Grounded" + folk.walk_clip):
+		folk.walk_clip = "Grounded" + folk.walk_clip
 	folk.walk_to(world(nxt), walk_speed * (0.85 if folk.walk_clip == "StairsUp" else 1.0))
 	state = "walk"
 

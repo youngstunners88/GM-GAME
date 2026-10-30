@@ -1,0 +1,22 @@
+  [PASS] the real runner collected three tunnel BTC
+  [PASS] calling the completion handler twice credits exactly 3 BTC
+  [PASS] the run records its credited amount for the ledger
+  [PASS] a fresh purse plus this 3-coin run buys Rich's 3-BTC Sharps through the chamber buy()
+  [PASS] Rich takes the BTC, does not mint more, and cannot sell the same rifle twice
+  [PASS] a bear Lil Blunt shot tallies under its role
+  [PASS] Inferno Bull's kill does not increment Lil Blunt's tally
+  [PASS] the session entered a live runner for its kill-signal wiring
+  [PASS] runner archer and shovel signals each tally their own kind
+  [PASS] two buds at 2/3: use restores 3/3, updates the HUD, and leaves one bud
+  [PASS] at 3/3 the bud is refused and kept, with the chill toast
+  [PASS] a room without health also keeps the bud
+  [PASS] the ledger saves with the purse
+  [PASS] reset_session clears the transient and persistent ledger state
+  [PASS] the save loads
+  [PASS] save/load round-trips tally and buds
+  [PASS] at 1280x720 the ledger sits under the purse, the cards under the ledger, the footer on screen
+  [PASS] at 1560x720 the ledger sits under the purse, the cards under the ledger, the footer on screen
+  [PASS] at 1280x960 the ledger sits under the purse, the cards under the ledger, the footer on screen
+  [PASS] at 390x843 the ledger sits under the purse, the cards under the ledger, the footer on screen
+  [PASS] the selector draws headless with a populated ledger
+EP2_TABS_LEDGER: ALL PASS

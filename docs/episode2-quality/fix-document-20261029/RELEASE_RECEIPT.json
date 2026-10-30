@@ -1,0 +1,54 @@
+{
+  "source_sha": "c903f880baf8cb390cc3c1a2d103e63d881929a4",
+  "build_id": "2026-10-29-c903f88",
+  "play_url": "https://youngstunners88.itch.io/smokerealm",
+  "checks": {
+    "export": true,
+    "gameplay": true,
+    "visual": true,
+    "security": true,
+    "deployment": true,
+    "live_input": true
+  },
+  "evidence": [
+    {
+      "path": "docs/episode2-quality/fix-document-20261029/REVIEW.md"
+    },
+    {
+      "path": "docs/episode2-quality/fix-document-20261029/production-ci-proof.log"
+    },
+    {
+      "path": "docs/episode2-quality/fix-document-20261029/public-probe.log"
+    },
+    {
+      "path": "docs/episode2-quality/fix-document-20261029/public-input.json"
+    },
+    {
+      "path": "docs/episode2-quality/fix-document-20261029/public-access-rejected.png"
+    },
+    {
+      "path": "docs/episode2-quality/fix-document-20261029/browser-result.json"
+    },
+    {
+      "path": "docs/episode2-quality/fix-document-20261029/regression-results.txt"
+    },
+    {
+      "path": "docs/episode2-quality/fix-document-20261029/staged-security.log"
+    }
+  ],
+  "deployment": {
+    "run_url": "https://github.com/youngstunners88/GM-GAME/actions/runs/40832421900",
+    "outcome": "success",
+    "deploy_step": "success",
+    "observed_build_id": "2026-10-29-c903f88",
+    "butler_fresh": "54.27MiB",
+    "local_fresh_main_pack_bytes": 197534560,
+    "extras_pack_bytes": 131796288
+  },
+  "open_blockers": [],
+  "limits": [
+    "This receipt covers the original six FIX-document repairs, not the subsequent town-presence/healing follow-up.",
+    "Public-origin BUILD/extras/input-rejection verified. Local exact export supplied full film/fullscreen/UI checks; no authenticated public-origin Episode2 walkthrough or physical-phone certification.",
+    "Software WebGL callback timings do not certify 24fps film playback."
+  ]
+}

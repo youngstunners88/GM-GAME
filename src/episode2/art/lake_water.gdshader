@@ -39,9 +39,9 @@ void fragment(){
   float across=length(delta-r.xz*ray_t);
   if(ray_t>0.0&&y>.8&&y<tr.z&&across<crown){float mask=texture(branch_tex,vec2(clamp(across/max(crown,.01),0.0,1.0),1.0-clamp(y/tr.z,0.0,1.0))).a;sky=mix(sky,vec3(.026,.067,.049),.70*mask);}
  }
- vec2 q=vec2((p.x-24.0)/27.0,(p.y-20.0)/33.0);float rad=length(q)/rim(atan(q.y,q.x));
+ vec2 q=vec2((p.x-51.0)/54.0,(p.y-20.0)/45.0);float rad=length(q)/rim(atan(q.y,q.x));
  float shallows=smoothstep(.76,1.07,rad);
- if(p.y>50.0){float mid=24.0+3.0*sin(max(0.0,p.y-51.0)*.05);float width=4.1+.5*sin(p.y*.09);shallows=smoothstep(width*.4,width,abs(p.x-mid));}
+ if(p.y>50.0 && rad>0.95){float mid=24.0+3.0*sin(max(0.0,p.y-51.0)*.05);float width=4.1+.5*sin(p.y*.09);shallows=smoothstep(width*.4,width,abs(p.x-mid));}
  vec3 depth=mix(vec3(.016,.073,.071),vec3(.075,.14,.106),shallows*.8);
  vec3 col=mix(depth,sky,clamp(fres,.0,.88));
  float shine=pow(max(0.0,dot(r,normalize(sun_direction))),420.0);

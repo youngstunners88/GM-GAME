@@ -1,0 +1,132 @@
+  [PASS] starts in the STREET where Bull dropped him, first person, the Winchester in his hands
+  [PASS] the objective sends him to the certificate office
+  [PASS] the town is the gold-rush street: certificates office, saloon, treasury and the rest, Fort Knox on its hill
+  [PASS] no DIAMONDS anywhere in the town (no sign, no mechanic)
+  [PASS] the desert around it is the same one the woods built (scrub, rocks, mesas)
+  [PASS] the open desert light (thin warm haze)
+  [PASS] Bull is gone (he rode off): not in the street
+  [PASS] the office front wall is solid beside the door
+  [PASS] he walks in through the open office door
+  [PASS] -> OFFICE: the sheriff is behind the counter
+  [PASS] The Sheriff is smoking his pipe (a curl of smoke) and stands at human height
+  [PASS] the Sheriff greets him, Lil Blunt asks for the certificate, the Sheriff hands him to Minister Mike Dean, who lays out the rules, then the Sheriff sends him to the saloon - in order
+  [PASS] the certificate rules are the whitepaper's: in your name, can't sell it on, can't trade it, bring your share - no invented numbers
+  [PASS] -> TO_BAR, the objective is the saloon
+  [PASS] he crosses the street and walks up to the bar
+  [PASS] -> BAR (a human barman behind the bar)
+  [PASS] the bar scene plays in order: a whiskey, a quarter Bitcoin, the barman's jaw, the stranger, the demand, the refusal, the terms, the witness
+  [PASS] the whiskey and the coin are on the bar
+  [PASS] the payment is a QUARTER Bitcoin
+  [PASS] the demand trades the map for Bitcoin and promises auction gold/Bitcoin
+  [PASS] the sheriff is the witness, and he walked in (he is in the saloon)
+  [PASS] the stranger carries a revolver and is a COWBOY, not a bear (the town has no bears)
+  [PASS] -> SQUARE_UP: out into the street
+  [PASS] -> DRAW once he is on his mark, the stranger 15 m up the street, the sheriff off to the side
+  [PASS] his hearts are on the HUD for the draw
+  [PASS] the stranger wears a Colt Single Action Army (the Peacemaker, the CAD kit's, real size) holstered on his hip before the bell
+  [PASS] before the bell the rifle is DOWN (low ready)
+  [PASS] the wait before the bell is never the same twice-predictable (seeded, between the limits)
+  [PASS] feet planted: he cannot walk during the draw
+  [PASS] firing before the bell is a FOUL (no shot leaves the barrel)
+  [PASS] ...and the round is set up again
+  [PASS] the town bell signals DRAW and the stranger's gun hand comes up with the revolver in it
+  [PASS] the rifle stays out of view until Enter draws it
+  [PASS] too slow: the stranger fires first (a loss, never a death)
+  [PASS] ...the screen comes back, the Sheriff says do it again, hearts full, back on the mark
+  [PASS] ...and he gives a little more time on the next try
+  [PASS] at the bell he brings the rifle up and hits the stranger first (he goes down)
+  [PASS] a shot that misses wide would not count (the hit is a real ray test)
+  [PASS] his Peacemaker falls out of his hand into the dirt beside him
+  [PASS] -> WON: the Sheriff calls it fair and square
+  [PASS] ...and the map is NOT handed over (it is on the body, with his gun: fix pack 2026-10-27 step 2)
+  [PASS] Inferno does NOT arrive at the draw
+  [PASS] -> LOOT: search the stranger for his Peacemaker and the map
+  [PASS] [E] from across the street does nothing (he has to go to the body)
+  [PASS] Mike Dean reacts before the body is looted
+  [PASS] he walks up the street to the fallen stranger, and [E] can search him there
+  [PASS] [E]: the Peacemaker and the map to the auction are his
+  [PASS] Lil Blunt names what he found (the Colt Peacemaker, the map)
+  [PASS] Minister Mike Dean leaves his counter and comes out of the office
+  [PASS] ...at a run (the founder's Mike Dean rigged, on his Run clip; the statue only if the streamed pack is missing)
+  [PASS] ...alarmed: he asks what happened
+  [PASS] Mike Dean has gone to the fallen stranger to kneel and pray over him
+  [PASS] the townspeople gather round and celebrate (their own Cheer / Clap clips)
+  [PASS] ...then pair off and dance together (DanceA / DanceB partners within arm's reach, facing each other)
+  [PASS] Sheriff James, impressed with the draw, offers the job: who let the bears hold Fort Knox (his prisoner knows more)
+  [PASS] -> JOB -> the Sheriff LEADS him to the jail first (Rich and Utah come after it)
+  [PASS] still no Inferno: he comes back later, after the Gatling
+  [PASS] -> JAIL_TIP: follow the Sheriff to the jailhouse, out the south road
+  [PASS] the jailhouse stands well apart from the town (>= 22 m from the drop-off, on the Sheriff/Certificates side x < 0)
+  [PASS] he walks out the south road to the jailhouse door
+  [PASS] he steps in through its door and the cell block is not walkable (bars stop him)
+  [PASS] -> JAIL: one accomplice is in the cell and the Sheriff is inside with him
+  [PASS] the accomplice is held in his cell, behind the bars
+  [PASS] the Sheriff's ask opens the investigation (the hunt is a thread on the existing path)
+  [PASS] the lines frame bears + early claims + Fort Knox and the existing lake/river/trains path, no celebrity prisoners
+  [PASS] ...and only THEN does the Sheriff send him to Rich and Utah
+  [PASS] he walks back out toward town
+  [PASS] -> TIP: the room points him down the side lane (off Main Street, not on the boardwalk)
+  [PASS] Rich the Claim Recorder and Utah are both in the shop before he ever walks in (the lock's both-present rule)
+  [PASS] both are rigged bodies, moving on their authored clips (not statues with a bob)
+  [PASS] he walks the side lane off the left row (off Main Street, no sign on the drag) and in through the shop door
+  [PASS] -> ARMORY: both shopkeepers turn to whoever came in
+  [PASS] the trade is offered at the counter and nowhere else
+  [PASS] the purse is his collected crypto and the case below it: no soft currency, no free loadout
+  [PASS] no crypto, no iron: the counter refuses the long rifle
+  [PASS] with crypto in the purse [E] opens Rich & Utah's trade
+  [PASS] the long rifle is sold for BTC - 3 faces of BTC debited, not minted, nothing else touched
+  [PASS] a second look at the same rifle is not a second sale
+  [PASS] the long-rifle cartridges come by the box and only after the rifle, paid in SOL
+  [PASS] the river gear (skiff and sealed crates) is his for the day-88 shipment, paid in ETH
+  [PASS] a token he does not hold enough of is refused (no TitanX on him)
+  [PASS] the room refuses a tender that is not in his purse
+  [PASS] Esc shuts the trade and gives the street back
+  [PASS] buying everything on the first visit does not end the town: the story goes on with Inferno
+  [PASS] the Colt Gatling stands in the yard (streamed extras)
+  [PASS] he walks out to the Colt Gatling in the yard
+  [PASS] he takes the crank
+  [PASS] ...fires a burst from the drum
+  [PASS] ...and steps away from it
+  [PASS] -> BULL_BACK: with the Gatling tested, Inferno is coming back
+  [PASS] ...on his flame quad, seated in the saddle
+  [PASS] ...and parks outside Rich's, clear of the Gatling yard
+  [PASS] ...and the parked quad is solid (nobody walks through it)
+  [PASS] he swings off, comes over: the whiskey is on him
+  [PASS] he walks back with Inferno and comes upon the man he shot
+  [PASS] Mike Dean is still kneeling there, praying
+  [PASS] Inferno greets the Minister
+  [PASS] ...and asks who put a hole in his head
+  [PASS] Lil Blunt: "Must've been a bird that had to get rid of the heavy load."
+  [PASS] he follows Inferno into the saloon and up to the bar
+  [PASS] Inferno - 2.9 m - stooped through the saloon's 2.5 m door rather than through its lintel
+  [PASS] two whiskeys on the bar
+  [PASS] they really drink: Inferno lifts his glass on his own Stand_and_Drink clip
+  [PASS] ...and Lil Blunt's glass comes up to his lips in first person (the rifle lowered meanwhile)
+  [PASS] ...then Inferno: his cousin Flux needs help with his new kettle - they'll meet up later
+  [PASS] ...and leaves him a gift for Mike Dean: THE GOLD PANNER
+  [PASS] -> MINISTER2: the next thread is the gift, at Mike Dean's counter
+  [PASS] he steps back out into the street
+  [PASS] Mike Dean has walked back behind his counter
+  [PASS] he walks back into the certificate office
+  [PASS] Mike Dean takes the Gold Panner
+  [PASS] ...and the certificate is stamped on this second visit (the first one laid out the rules)
+  [PASS] ...and he sends him to his friend Dude at the horse stables
+  [PASS] -> STABLES: the objective is Dude's
+  [PASS] Dude's stable yard is in town
+  [PASS] [E] talks to Dude
+  [PASS] Dude: Mike Dean sent him, so he's good folk
+  [PASS] ...they agree the horse's price in BTC (2 BTC, debited from his purse)
+  [PASS] ...he offers his Chill Buds in the same talk (health kept in Tabs)
+  [PASS] ...and: Logan's Lake first, so the horse can drink in this heat
+  [PASS] -> GEARED: with the long rifle and the river gear already bought at Rich's, he rides for Logan's Lake
+  [PASS] Dude never auto-warps the player to the trail
+  [PASS] E explicitly mounts the horse at the stables
+  [PASS] the town hands on to the ride to Logan's Lake on Dude's horse, the map and the Peacemaker in hand, the certificate stamped, mints nothing
+  [PASS] the ending carries the Armory: he visited it, and the long rifle + river gear come with him
+  [PASS] all 19 town voice lines are generated and in the manifest
+  [PASS] Bull's drop-off: the blonde lady (a wink, nothing shown), the certificate office, the bar for a whiskey
+  [PASS] no Diamonds in the town's speech
+  [PASS] the session root knows the town
+  [PASS] the woods' result loads the GOLD TOWN
+  [PASS] the town ends the session (TO BE CONTINUED)
+EP2_GOLD_TOWN: ALL PASS

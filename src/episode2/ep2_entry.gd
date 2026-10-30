@@ -215,7 +215,10 @@ func _begin() -> void:
 		if room is LakeTrailChamber:
 			if room._in_departure_area:
 				return Vector2(.23,.42).lerp(Vector2(.23,.76),clampf(room._player_pos.z/265.0,0,1))
-			return Vector2(.23,.42).lerp(Vector2(.74,.38), clampf(room._route_s / maxf(1.0,room._route_total),0,1))
+			var stops: Array[Vector2] = [Vector2(370,420),Vector2(590,345),Vector2(810,290),Vector2(1030,355),Vector2(1190,382)]
+			var progress: float = clampf(room._route_s / maxf(1.0,room._route_total),0,.9999)*4.0
+			var index: int = int(progress)
+			return stops[index].lerp(stops[index+1],progress-index)/Vector2(1600,1000)
 		if room is GoldTownChamber:
 			var pos: Vector3 = room.get_player_position()
 			if pos.z < 1300: return Vector2(.23,.42)

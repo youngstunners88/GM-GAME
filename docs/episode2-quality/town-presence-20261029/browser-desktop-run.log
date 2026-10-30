@@ -1,0 +1,13 @@
+[PASS] exported Dude grants exactly one bud
+TC_WEB_OPEN_READY {"hold":[618,674],"size":[1280,720]}
+[PASS] exported Tabs pauses with a finger-sized supply action
+TC_WEB_SUPPLIES_READY {"bud":[561,260.399993896484],"close":[36,36],"use":[905,260.399993896484]}
+[PASS] exported real pointer selects the bud
+[PASS] exported use restores three hearts and spends one
+[PASS] exported full and empty cannot consume again
+TC_WEB_HEALED
+[PASS] exported close restores play
+[PASS] exported ranch road is already present on foot
+TC_WEB_RANCH_VIEW
+TC_WEB_DOOR_VIEW
+TC_WEB_DONE:0
