@@ -54,6 +54,9 @@ func travel(session: Node, id: String, position: Vector3) -> bool:
  if not continuing_story:
   room._show_active=false;room._show_blocks_control=false;room._hold=0.0
  room._player_pos=position;room._look_yaw=yaw;room._look_pitch=pitch
+ if (previous is SmeltingFacilityChamber and room is MineLiftChamber) or (previous is MineLiftChamber and room is SmeltingFacilityChamber):
+  room._vel_y=previous._vel_y
+  room._air_jumps=previous._air_jumps
  if not continuing_story and room.has_method("release_look"): room.release_look()
  if room is WoodsQuadChamber:
   room._riding=false;room._beat=room.Beat.SNEAK;room.camera_max.z=1760.0
