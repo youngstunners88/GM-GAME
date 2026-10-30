@@ -5,6 +5,7 @@ var context: Callable
 var allowed: Callable
 var expanded := false
 var corner: TextureButton
+var close_btn: Button
 var key_hint: Label
 var panel: Control
 var paper: TextureRect
@@ -53,19 +54,25 @@ func _ready() -> void:
  destination.add_theme_font_size_override("font_size",24)
  destination.mouse_filter = Control.MOUSE_FILTER_IGNORE
  paper.add_child(destination)
- var close := Button.new()
- close.text = "×"
- close.focus_mode = Control.FOCUS_NONE
- close.position = Vector2(6,6)
- close.size = Vector2(48,48)
- close.pressed.connect(toggle)
- panel.add_child(close)
+ close_btn = Button.new()
+ close_btn.text = "×"
+ close_btn.focus_mode = Control.FOCUS_NONE
+ close_btn.position = Vector2(6,6)
+ close_btn.size = Vector2(48,48)
+ if TouchUi.is_touch():
+  # 48 canvas units is only ~26 CSS px on a 390-tall phone; the map's other touch control is
+  # sized in dp, so the close is too (audit 2026-10-29 P2-1). Desktop stays 48x48.
+  close_btn.add_theme_font_size_override("font_size", 28)
+ close_btn.pressed.connect(toggle)
+ panel.add_child(close_btn)
  panel.hide()
 
 func _process(_dt: float) -> void:
  corner.visible = GameManager.has_region_map and not expanded
  var safe: Rect2 = TouchUi.metrics().safe_rect if TouchUi.is_touch() else get_viewport().get_visible_rect()
  var dp: float = TouchUi.metrics().dp if TouchUi.is_touch() else 1.0
+ close_btn.position = Vector2(6,6)*dp
+ close_btn.size = Vector2(48,48)*dp
  corner.position = safe.position + Vector2(10,40)*dp
  corner.size = Vector2(116,73)*dp
  key_hint.visible = corner.visible and TouchUi.keys_shown()
