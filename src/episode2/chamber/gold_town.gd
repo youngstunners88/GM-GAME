@@ -2193,8 +2193,13 @@ func draw_weapon() -> bool:
 
 func shoot() -> bool:
 	if _beat == Beat.DRAW and _draw_state == "go" and not _player_drawn:
-		if TouchUi.is_touch(): draw_weapon()
-		return false
+		# A phone has no Enter to draw with first: one tap draws AND fires, so the reaction starts
+		# at the tap exactly like the keyboard's Enter-then-fire (audit 2026-10-29 P1-4). A desktop
+		# first press stays "draw only"; Enter owns the draw there.
+		if not TouchUi.is_touch():
+			return false
+		if not draw_weapon():
+			return false
 	if _mounted:
 		if not has_player_control() or _gatling == null:
 			return false

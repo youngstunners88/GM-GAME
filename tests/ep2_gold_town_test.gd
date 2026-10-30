@@ -225,18 +225,32 @@ func _ready() -> void:
 	_check("...the screen comes back, the Sheriff says do it again, hearts full, back on the mark", said.has("vo_sheriff_lose") and c.get_health() == 3
 		and c.get_player_position().distance_to(GoldTownChamber.DUEL_MARK) < 0.1 and c.get_hud().fade < 0.05 and c.get_beat_name() == "DRAW")
 	_check("...and he gives a little more time on the next try", c.opp_reaction() > GoldTownChamber.OPP_REACTION)
-	# WIN: aim and fire at the bell
+	# WIN: aim and fire at the bell. A finger gets ONE tap: the 1.45 s draw window cannot fit
+	# "tap to draw, tap to fire" (audit 2026-10-29 P1-4), so the first touch press must do both.
 	_until(c, 10.0, func(): return c.get_draw_state() == "go")
-	c.draw_weapon()
-	var fired: bool = false
+	var mgr: Node = get_node_or_null("/root/MobileLayoutManager")
+	var was_touch: bool = bool(mgr.get("is_touch_device")) if mgr != null else false
+	_aim_at_opp(c)
+	c.set_aim(true)
+	_check("on a keyboard the first press at the bell is only the draw", not c.shoot() and not c._player_drawn)
+	if mgr != null:
+		mgr.set("is_touch_device", true)
+	_aim_at_opp(c)
+	c.set_aim(true)
+	var fired: bool = c.shoot()
+	_check("a single tap on a phone draws AND fires", fired and c._player_drawn,
+		"fired=%s drawn=%s" % [fired, c._player_drawn])
+	_observed_step(c)
 	for i in 120:
+		if c.get_draw_state() != "go":
+			break
 		_aim_at_opp(c)
 		c.set_aim(true)
 		if c.shoot():
 			fired = true
 		_observed_step(c)
-		if c.get_draw_state() != "go":
-			break
+	if mgr != null:
+		mgr.set("is_touch_device", was_touch)
 	c.set_aim(false)
 	_check("at the bell he brings the rifle up and hits the stranger first (he goes down)", fired and c.get_draw_state() == "won" and c.get_opponent().dead, "%s fired %s" % [c.get_draw_state(), fired])
 	_check("a shot that misses wide would not count (the hit is a real ray test)", not c.aim_hits_opponent(c.get_player_position() + Vector3(0, 1.5, 0), Vector3(1.0, 0.0, 0.0)))
