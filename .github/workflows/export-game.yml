@@ -331,6 +331,9 @@ jobs:
           timeout 180 "$GODOT_BIN" --headless res://tests/ep2_fix_continuity_test.tscn > fix-continuity-tests.log 2>&1
           grep -q 'EP2_FIX_CONTINUITY: 20 checks, 0 failed' fix-continuity-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' fix-continuity-tests.log; then exit 1; fi
+          timeout 90 "$GODOT_BIN" --headless res://tests/ep2_door_crossing_test.tscn > door-crossing-tests.log 2>&1
+          grep -q 'EP2_DOOR_CROSSING: 8 checks, 0 failed' door-crossing-tests.log
+          if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' door-crossing-tests.log; then exit 1; fi
           timeout 90 "$GODOT_BIN" --headless res://tests/panel_close_test.tscn > panel-close-tests.log 2>&1
           grep -q 'PANEL_CLOSE: 8 checks, 0 failed' panel-close-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' panel-close-tests.log; then exit 1; fi
@@ -483,7 +486,7 @@ jobs:
           timeout 600 "$GODOT_BIN" --headless res://tests/ep2_lake_trail_test.tscn 2>&1 | tee lake-trail-tests.log
           grep -q 'EP2_LAKE_TRAIL: ALL PASS' lake-trail-tests.log
           timeout 300 "$GODOT_BIN" --headless res://tests/ep2_world_routes_test.tscn > world-route-tests.log 2>&1
-          grep -q 'EP2_WORLD_ROUTES: 26 checks, 0 failed' world-route-tests.log
+          grep -q 'EP2_WORLD_ROUTES: 28 checks, 0 failed' world-route-tests.log
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' world-route-tests.log; then exit 1; fi
           if grep -E 'SCRIPT ERROR|Parse Error|\[FAIL\]' lake-trail-tests.log; then exit 1; fi
           # Every selector card shows Lil Blunt's hand with the weapon (founder 2026-10-21: the Remington and the bow cards).

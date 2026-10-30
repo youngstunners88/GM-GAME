@@ -20,6 +20,7 @@ func _ready() -> void:
 	add_child(_vp)
 	var root: Ep2SessionRoot = ROOT.instantiate()
 	_vp.add_child(root)
+	root.armory = Ep2ArmoryState.post_hideout()
 	var hf: SmeltingFacilityChamber = load("res://src/episode2/chamber/smelting_facility.tscn").instantiate()
 	hf.intro_film = false
 	root.add_child(hf)
@@ -33,6 +34,8 @@ func _ready() -> void:
 		hf._enter_fps()
 	hf.prebuild_requested.emit("mine_lift")
 	root.step(0.016)
+	root.set_process(false)
+	hf._bull.process_mode = Node.PROCESS_MODE_DISABLED
 	hf._beat = SmeltingFacilityChamber.Beat.EXIT
 	hf._show_active = false
 	hf._hold = 0.0
@@ -61,6 +64,10 @@ func _ready() -> void:
 	root._enter_chamber_chained(0)
 	var la: MineLiftChamber = root.get_active() as MineLiftChamber
 	if la != null:
+		# A slow software render may take seconds per frame. Freeze simulation
+		# for the paired camera comparison instead of letting Bull walk metres.
+		la.set_physics_process(false)
+		la._bull.process_mode = Node.PROCESS_MODE_DISABLED
 		la._player_pos = Vector3(0.3, 0.0, MineLiftChamber.PORTAL_Z - 0.06)
 		la._look_yaw = 0.0
 		la._look_pitch = 0.0

@@ -132,7 +132,7 @@ func tick(session: Node, delta: float) -> void:
   elif p.x>8.0 and p.z>1200.0 and p.z<1240.0:
    travel(session,"lake_trail",p-GoldTownChamber.DEPART_HORSE)
  elif id=="mine_lift" and c._world_revisit:
-  if c._cage_y<0.1 and p.z<MineLiftChamber.PORTAL_Z+0.9:
+  if c._cage_y<0.1 and p.z<MineLiftChamber.PORTAL_Z:
    travel(session,"smelting_facility",p+Vector3(0,0,30))
   elif c._cage_y>14.9 and p.z>MineLiftChamber.EXIT_Z:
    travel(session,"woods_quad",p-MineLiftChamber.SURFACE_OFFSET)

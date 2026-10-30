@@ -653,11 +653,7 @@ func step(delta: float) -> void:
 		Beat.EXIT:
 			# They leave TOGETHER: the Bull leads to the Fort Knox door and you follow in first person.
 			# Resolve once you reach the door, never before his line has finished.
-			if _walk_through_ok():
-				if _player_pos.z >= PORTAL_Z:      # through the open door: the cut lands him where the doorway showed
-					_resolve()
-			elif _exit_open() and _player_pos.z >= EXIT_POSITION.z - 1.0 and _handoff_ok():
-				_resolve()
+			_try_exit()
 		_:
 			pass
 	_sync_visuals()
@@ -1324,7 +1320,12 @@ func _set_passage_plate(on: bool) -> void:
 ## True when the open doorway can take him straight through (the lift is drawn in it and he may leave).
 func _walk_through_ok() -> bool:
 	if _world_revisit: return true
-	return _portal_live and _exit_open() and _handoff_ok()
+	# Visibility is a rendering decision, never a traversal or spawn decision.
+	return _exit_open() and _handoff_ok()
+
+func _try_exit() -> void:
+	if _walk_through_ok() and _player_pos.z >= PORTAL_Z:
+		_resolve()
 
 
 ## May Lil Blunt leave? The moment he is over the lava and Inferno (already across) has STARTED "made it" - the frame after he lands.
@@ -1355,7 +1356,7 @@ func get_handoff() -> Dictionary:
 	d.merge({"move": _move_input, "run": _run_input, "moving": _moving, "walk_phase": _walk_phase, "anim_t": _anim_t})
 	# Seconds of Inferno's line still to play when the cut happens: the next room starts his next line only after it.
 	d["voice_left"] = maxf(0.0, _line_end - _elapsed)
-	if _portal_live:                     # walked through the doorway: the lift room picks up exactly where he and Inferno are
+	if _player_pos.z >= PORTAL_Z:         # physical crossing, including when looking away from the preview
 		d["lift_player"] = _player_pos + LIFT_OFFSET
 		if _bull != null:
 			d["lift_bull"] = _bull.position + LIFT_OFFSET

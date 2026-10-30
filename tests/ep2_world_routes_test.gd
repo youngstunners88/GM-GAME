@@ -57,6 +57,18 @@ func _ready() -> void:
  check("original facility can be re-entered",routes.travel(session,"smelting_facility",Vector3(0,0,15)))
  check("return facility grants control without repeating lesson",facility.has_player_control() and facility._world_revisit)
  check("return facility door remains traversable",facility._exit_open() and facility._walk_through_ok())
+ facility._player_pos=Vector3(0,0,SmeltingFacilityChamber.PORTAL_Z+.02)
+ facility.set_move_input(Vector2(0,1))
+ routes.cooldown=0
+ routes.tick(session,.1)
+ routes.cooldown=0
+ routes.tick(session,2)
+ check("entering the lift never bounces back after cooldown",session._active==lift)
+ lift._player_pos.z=MineLiftChamber.PORTAL_Z-.02
+ lift.set_move_input(Vector2(0,-1))
+ routes.cooldown=0
+ routes.tick(session,.1)
+ check("reverse travel crosses the same physical doorway plane",session._active==facility)
  var lake: LogansLakeChamber=preload("res://src/episode2/chamber/logans_lake.tscn").instantiate()
  session.add_child(lake);lake.setup();lake.set_physics_process(false)
  routes.park(session,lake)

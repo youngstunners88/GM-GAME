@@ -22,3 +22,7 @@ description: Show the NEXT room through an open doorway and walk straight throug
 - The cut must happen at the plane, not before (the arch around the camera vanishes) and not after (the hideout passage behind the quad shows).
 - Compatibility applies the CURRENT room's grading to unshaded materials too: compare `cut_a`/`cut_b` luminance in `tools/ep2_shots/door_portal_shot.tscn` and correct with the shader's `gain`.
 - Gate: `tests/ep2_interlude_test.tscn` "THE OPEN DOOR" block (portal live, mouth open, companion mirrored, no early cut, handoff position, same instance).
+
+## Physical crossing regression (2026-10-30)
+
+Portal visibility must never decide collision, crossing distance or position transfer. The old fallback resolved at z14 when the preview was inactive instead of the actual z16.4 plane, then omitted lift_player and used a directed spawn. Traverse only at the physical plane once story/destination are ready; always transfer actual position at that crossing, even looking away. The return route must use the same plane: a +0.9m overlap bounced a newly entered player back after cooldown. Require ep2_door_crossing8 and world_routes28, including entry/cooldown/reverse travel; preserve ready checks, gait, held input and dialogue. Inspect real moving approach/crossing camera frames, not just a stationary paired picture.
