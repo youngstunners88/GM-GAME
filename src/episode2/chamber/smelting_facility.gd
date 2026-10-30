@@ -85,11 +85,10 @@ const PORTAL_Z := 16.4
 const PORTAL_SIZE := Vector2(4.3, 4.4)
 ## The image stays beyond the eye's near clip until the physical threshold is crossed.
 const PORTAL_IMAGE_INSET := 0.18
-const PORTAL_VIEWMODEL_DEPTH := 1.6
 const LIFT_OFFSET := Vector3(0.0, 0.0, -30.0)
 ## The hideout's grading darkens the doorway image a little (Compatibility grades every material): measured with
 ## tools/ep2_shots/door_portal_shot.tscn (cut_a vs cut_b centre luminance), this gain makes the last hideout frame match the first lift frame.
-const PORTAL_GAIN := 1.07
+const PORTAL_GAIN := 1.0
 ## How close you must be for the meeting to start. Generous — this is a
 ## breather, not a precision-platforming beat.
 const TALK_RANGE := 3.2
@@ -1269,6 +1268,7 @@ func portal_view_wanted() -> Dictionary:
 	var fwd: Vector3 = -cam.basis.z
 	if to_door.length() > 45.0 or (fwd.dot(to_door.normalized()) < 0.15 and to_door.length() > 2.5):
 		return {}
+	_portal_weapon_mask.update(_camera)
 	var d: Dictionary = {"xf": Transform3D(cam.basis, cam.origin + LIFT_OFFSET), "fov": _camera.fov}
 	if not _world_revisit and _bull != null and _bull.position.z > PORTAL_Z - 0.6:   # Inferno is going through ahead of him: draw him on the far side
 		d["bull"] = _bull.position + LIFT_OFFSET
@@ -1282,6 +1282,7 @@ func portal_view_wanted() -> Dictionary:
 
 
 ## The session root hands over the lift room's image: put it in the doorway (and take away the dark plate that stood for the passage).
+var _portal_weapon_mask=preload("res://src/episode2/art/portal_foreground_mask.gd").new()
 func portal_attach(tex: Texture2D) -> void:
 	if _portal_quad == null:
 		_portal_quad = MeshInstance3D.new()
@@ -1292,18 +1293,27 @@ func portal_attach(tex: Texture2D) -> void:
 		var sm := ShaderMaterial.new()
 		sm.shader = load("res://src/episode2/art/ep2_portal.gdshader")
 		sm.set_shader_parameter("gain", PORTAL_GAIN)
-		sm.set_shader_parameter("viewmodel_depth", PORTAL_VIEWMODEL_DEPTH)
+		var world_env:=get_node_or_null("WorldEnvironment") as WorldEnvironment
+		if world_env!=null and world_env.environment!=null:
+			var grade: Environment=world_env.environment
+			sm.set_shader_parameter("undo_forge_grade",grade.tonemap_mode==Environment.TONE_MAPPER_FILMIC and is_equal_approx(grade.adjustment_saturation,1.0))
+			sm.set_shader_parameter("forge_brightness",grade.adjustment_brightness if grade.adjustment_enabled else 1.0)
+			sm.set_shader_parameter("forge_contrast",grade.adjustment_contrast if grade.adjustment_enabled else 1.0)
+			sm.set_shader_parameter("forge_exposure",grade.tonemap_exposure)
+			sm.set_shader_parameter("forge_white",grade.tonemap_white)
 		_portal_quad.material_override = sm
 		_portal_quad.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		_portal_quad.position = Vector3(0.0, PORTAL_SIZE.y * 0.5, PORTAL_Z + PORTAL_IMAGE_INSET)
 		add_child(_portal_quad)
 	(_portal_quad.material_override as ShaderMaterial).set_shader_parameter("portal_tex", tex)
+	(_portal_quad.material_override as ShaderMaterial).set_shader_parameter("weapon_mask",_portal_weapon_mask.attach(self,_camera))
 	_portal_quad.visible = true
 	_portal_live = true
 	_set_passage_plate(false)
 
 
 func portal_detach() -> void:
+	_portal_weapon_mask.detach()
 	_portal_live = false
 	if _portal_quad != null:
 		_portal_quad.visible = false

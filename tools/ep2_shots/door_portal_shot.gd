@@ -46,11 +46,13 @@ func _ready() -> void:
 	# leaves the sitting clip active changes pose on its first simulated tick.
 	hf._stand_t = 99.0
 	hf._settle = 0.0
+	hf._bull.stop()
 	hf._bull.play(hf.BULL_IDLE,1.0,0.0)
 	hf._animate_bull(0.0)
 	var pz: float = SmeltingFacilityChamber.PORTAL_Z
 	for spec in [["1_room_far", Vector3(0.0, 0.0, 4.0), 0.0], ["2_room_mid", Vector3(-0.8, 0.0, 10.5), 0.08],
 			["3_at_door", Vector3(0.2, 0.0, 14.6), -0.05], ["cut_a", Vector3(0.3, 0.0, pz - 0.06), 0.0]]:
+		if OS.get_cmdline_user_args().has("pair") and str(spec[0])!="cut_a":continue
 		hf._player_pos = spec[1]
 		hf._look_yaw = float(spec[2])
 		hf._look_pitch = 0.0
@@ -66,7 +68,9 @@ func _ready() -> void:
 	var res: Array = []
 	hf.chamber_cleared.connect(func(r): res.append(r))
 	hf._player_pos = Vector3(0.3, 0.0, pz + 0.02)
-	hf.step(0.016)
+	# Compare the same simulation instant; movement itself is exercised by
+	# the stride/airborne tests. Do not advance a stale lesson walking goal.
+	hf._try_exit()
 	root._chain_id = "mine_lift"
 	root._enter_chamber_chained(0)
 	var la: MineLiftChamber = root.get_active() as MineLiftChamber
@@ -79,11 +83,13 @@ func _ready() -> void:
 		la._look_yaw = 0.0
 		la._look_pitch = 0.0
 		la._sync_visuals()
+		la._update_camera(0.0)
 		await _frames(6)
 		_save("cut_b")
 		print("CAM_B fov %.2f pos %s" % [la.get_camera().fov, str(la.get_camera().global_position)])
 		la._player_pos = Vector3(0.3, 0.0, MineLiftChamber.PORTAL_Z + 2.0)
 		la._sync_visuals()
+		la._update_camera(0.0)
 		await _frames(4)
 		_save("4_inside_lift")
 	var a := Image.load_from_file("%s/cut_a.png" % _out)

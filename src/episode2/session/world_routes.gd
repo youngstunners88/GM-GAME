@@ -68,6 +68,7 @@ func travel(session: Node, id: String, position: Vector3) -> bool:
  elif room is SmeltingFacilityChamber:
   room._beat=room.Beat.TERMS
  elif room is MineLiftChamber:
+  room.portal_finish_preview()
   room._set_mouth_open(true)
   room._gate_open=1.0;room._gate_in_goal=1.0
  elif room is LakeTrailChamber:

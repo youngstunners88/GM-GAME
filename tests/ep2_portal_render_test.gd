@@ -22,7 +22,8 @@ func run() -> void:
 	var background_mesh := QuadMesh.new()
 	background_mesh.size = Vector2(12,8)
 	background.mesh = background_mesh
-	background.position.z = -3
+	# This nearby world wall used to survive the broad1.6m depth exemption.
+	background.position.z = -.9
 	var red := StandardMaterial3D.new()
 	red.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	red.albedo_color = Color.RED
@@ -38,6 +39,7 @@ func run() -> void:
 	green.albedo_color = Color.GREEN
 	foreground.material_override = green
 	scene.add_child(foreground)
+	foreground.reparent(camera,true)
 	var portal := MeshInstance3D.new()
 	var quad := QuadMesh.new()
 	quad.size = Vector2(4.3,4.4)
@@ -49,9 +51,10 @@ func run() -> void:
 	blue.fill(Color.BLUE)
 	material.set_shader_parameter("portal_tex",ImageTexture.create_from_image(blue))
 	material.set_shader_parameter("gain",1.0)
-	material.set_shader_parameter("viewmodel_depth",1.6)
 	portal.material_override = material
 	scene.add_child(portal)
+	var mask=load("res://src/episode2/art/portal_foreground_mask.gd").new()
+	material.set_shader_parameter("weapon_mask",mask.attach(scene,camera))
 	for i in 6: await RenderingServer.frame_post_draw
 	var frame: Image = vp.get_texture().get_image()
 	var p: Vector2 = camera.unproject_position(foreground.position)

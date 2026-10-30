@@ -1,10 +1,8 @@
 {
-  "objective": "Fix remaining smelting facility/elevator transition and finish release/public proof; preserve prior town/healing and concurrent mobile work",
+  "objective": "Complete verified release of smelting/elevator crossing repair",
   "branch": "codex/founder-fix-document-1029",
-  "baseline": "bf6c9957 (fast-forwarded master; concurrent mobile changes preserved)",
-  "implementation": "Facility no longer resolves early at z14 when preview invisible; crossing only at physical16.4, ready/open. Position handoff independent of portal visibility. Return lift boundary no longer +.9m into lift (bounce after cooldown); same physical plane in both directions.",
-  "checks": "New crossing8 pass; existing continuity20, world_routes28 (two added bounce/reverse checks), door_stride/seamless_chain pass. Full local workflow RUNNING session72194 log /workspace/work/elevator-crossing-1030/full-gates.log (logdir/tmp/tmp.opEkeEI2uv). Original camera tool finished but let Bull move during slow frames, invalid paired comparison; tool fixed to freeze physics/animation and seed actual armory. Final capture QUEUED session65121 after full gate lock.",
-  "next": "Commit source/tests/workflow/skill/docs; wait full gates and final camera, inspect poses. Real export/freshpack/security/title/texture. Ship normal workflow preserving newer master; actual CI/butler/publicBUILD and changed flow proof. No live fix claim yet.",
-  "scratch": "/workspace/work/elevator-crossing-1030; Xorg98 session97756; Godot4.3; templates XDG_DATA_HOME=/workspace/work/cart-rebuild/godot-data. Serialize flock -o /tmp/gm-godot.lock.",
-  "prior_release": "f5834f71 CI40909649498/job123573818453 completed success incl butler per production-watch; previous town/healing release public receipt still incomplete. Current master advanced mobile changes. Preserve all. No provider spend."
+  "scratch": "/workspace/work/elevator-crossing-1030",
+  "implementation": "One physical crossing plane, no preview-dependent spawn, no cooldown bounce; preserve airborne state, exact Inferno bones/rotation; weapon-only alpha protection and inverse source grading; retained lift HUD restored. Final mask-views pair reviewed.",
+  "checks": "Full suite passed. Final affected reruns session91930 running, export/fresh/security next. mask-final-pixel2/0, mask-render capture completed.",
+  "next": "Commit final source; warm export and fresh-clone190MiB gate; security/title/harness/texture. Fetch mapped refs, ship normal workflow, inspect actual CI/butler/public BUILD plus changed-flow exact web replay. Do not claim live yet."
 }

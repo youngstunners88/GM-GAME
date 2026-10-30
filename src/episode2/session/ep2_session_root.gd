@@ -279,6 +279,7 @@ func _enter_chamber_chained(segment: int) -> void:
 	_portal_on = false
 	var old: Node = _active
 	if old != null:
+		if old.has_method("portal_detach"):old.portal_detach()
 		_persist_town()
 		if old.get_parent() == self:
 			world_routes.park(self,old)

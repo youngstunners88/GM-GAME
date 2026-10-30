@@ -79,6 +79,12 @@ func portal_begin() -> void:
 		_bull.visible = false
 
 
+## Retained rooms skip setup: restore the player presentation after a doorway preview.
+func portal_finish_preview() -> void:
+	if _vm != null: _vm.set_shown(true)
+	if _hud != null: _hud.show()
+
+
 ## One frame of the view through the hideout's doorway. `d` = {"xf": the camera in this room's frame, "fov": degrees,
 ## "bull": Inferno's position here once the hideout's Inferno has passed the doorway (absent before), "bull_facing": radians}.
 func portal_view(d: Dictionary) -> void:

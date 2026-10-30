@@ -47,7 +47,8 @@ func _ready() -> void:
  check("no one-way desert boundary",woods._collide(Vector3(0,0,959)).z<960)
  woods._player_pos=Vector3(0,0,400)
  check("no invisible quad set-piece fence on return",woods._collide(Vector3(0,0,450)).z>440)
- check("return through the original elevator",routes.travel(session,"mine_lift",Vector3(0,15,3)))
+ lift.portal_begin()
+ check("return through the original elevator restores the HUD and held weapon",routes.travel(session,"mine_lift",Vector3(0,15,3)) and lift._hud.visible and lift._vm._shown)
  lift._player_pos=Vector3(0,15,0)
  lift._cage_y=15
  for i in 210:

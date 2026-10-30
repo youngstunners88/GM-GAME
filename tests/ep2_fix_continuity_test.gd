@@ -64,6 +64,8 @@ func _ready() -> void:
 	facility._update_camera(0.0)
 	var camera_before: Transform3D = facility._camera.global_transform
 	session._drive_portal()
+	var portal_material: ShaderMaterial=facility._portal_quad.material_override
+	print("PORTAL_GRADE_PARAMETERS ",portal_material.get_shader_parameter("forge_brightness")," ",portal_material.get_shader_parameter("forge_contrast")," ",portal_material.get_shader_parameter("forge_exposure")," ",portal_material.get_shader_parameter("forge_white"))
 	var source_pose: Array=facility._bull.capture_skeletal_pose()
 	check("door image stays beyond the near clip at the physical threshold", facility._portal_quad.position.z-facility._camera.position.z > facility._camera.near*2.0)
 	check("portal excludes duplicate first-person weapon and HUD", not prepared._vm._shown and not prepared._hud.visible)
