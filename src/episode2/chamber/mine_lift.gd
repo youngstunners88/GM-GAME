@@ -760,7 +760,9 @@ func _on_setup() -> void:
 	_player_pos = START_POS
 	if handoff.has("lift_player"):            # walked in through the open doorway: exactly where the doorway showed him
 		var lp: Vector3 = handoff["lift_player"]
-		_player_pos = Vector3(lp.x, 0.0, maxf(lp.z, MOUTH_MIN_Z))
+		_player_pos = Vector3(lp.x, maxf(0.0,lp.y), maxf(lp.z, MOUTH_MIN_Z))
+		_vel_y = float(handoff.get("vertical_velocity",0.0))
+		_air_jumps = int(handoff.get("air_jumps",0))
 	_ground_y = 0.0
 	_player_yaw = 0.0
 	_apply_handoff_gaze(0.0, -0.04)           # first person, eyes level (keeps the gaze he had at the previous chamber's exit)

@@ -1358,6 +1358,8 @@ func get_handoff() -> Dictionary:
 	d["voice_left"] = maxf(0.0, _line_end - _elapsed)
 	if _player_pos.z >= PORTAL_Z:         # physical crossing, including when looking away from the preview
 		d["lift_player"] = _player_pos + LIFT_OFFSET
+		d["vertical_velocity"] = _vel_y
+		d["air_jumps"] = _air_jumps
 		if _bull != null:
 			d["lift_bull"] = _bull.position + LIFT_OFFSET
 			d["lift_bull_facing"] = _bull.facing

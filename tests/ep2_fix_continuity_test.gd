@@ -41,7 +41,9 @@ func _ready() -> void:
 	facility._show_active = false
 	facility._show_blocks_control = false
 	facility._hold = 0.0
-	facility._player_pos = Vector3(1.1, 0, facility.PORTAL_Z + 0.02)
+	facility._player_pos = Vector3(1.1, .6, facility.PORTAL_Z + 0.02)
+	facility._vel_y = 2.3
+	facility._air_jumps = 1
 	facility._look_yaw = 1.2
 	facility._look_pitch = 0.7
 	facility._move_input = Vector2(0.6, 0.8)
@@ -67,7 +69,7 @@ func _ready() -> void:
 	check("oblique yaw and steep pitch do not snap", absf(lift._look_yaw-1.2)<0.0001 and absf(lift._look_pitch-0.7)<0.0001)
 	check("first camera position maps exactly across doorway", lift._camera.global_position.distance_to(camera_before.origin + facility.LIFT_OFFSET) < 0.001)
 	check("first camera orientation remains continuous", lift._camera.global_basis.is_equal_approx(camera_before.basis))
-	check("held diagonal movement and sprint survive", lift._move_input == Vector2(0.6,0.8) and lift._run_input and lift._moving)
+	check("held movement, sprint and airborne velocity survive", lift._move_input == Vector2(0.6,0.8) and lift._run_input and lift._moving and is_equal_approx(lift._vel_y,2.3) and lift._air_jumps==1)
 	check("stride phase remains continuous", absf(lift._walk_phase-1.7)<0.0001)
 	check("active elevator restores the single weapon and HUD", lift._vm._shown and lift._hud.visible)
 	check("parked facility loses stale forward-chain callbacks", not facility.chamber_cleared.is_connected(session._on_chamber_cleared))

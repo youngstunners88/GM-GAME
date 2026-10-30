@@ -26,3 +26,5 @@ description: Show the NEXT room through an open doorway and walk straight throug
 ## Physical crossing regression (2026-10-30)
 
 Portal visibility must never decide collision, crossing distance or position transfer. The old fallback resolved at z14 when the preview was inactive instead of the actual z16.4 plane, then omitted lift_player and used a directed spawn. Traverse only at the physical plane once story/destination are ready; always transfer actual position at that crossing, even looking away. The return route must use the same plane: a +0.9m overlap bounced a newly entered player back after cooldown. Require ep2_door_crossing8 and world_routes28, including entry/cooldown/reverse travel; preserve ready checks, gait, held input and dialogue. Inspect real moving approach/crossing camera frames, not just a stationary paired picture.
+
+Preserve airborne height, vertical velocity and used air-jumps at the physical crossing too; flattening lift_player.y to zero caused a landing/camera pop when jumping through. The continuity20 test now crosses airborne and checks velocity as well as exact eye transform.
