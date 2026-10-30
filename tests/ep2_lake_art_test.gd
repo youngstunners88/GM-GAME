@@ -34,7 +34,14 @@ func _ready() -> void:
    for i in node.multimesh.instance_count:
     var p: Vector3=node.multimesh.get_instance_transform(i).origin
     if p.x > -14 and p.x < -2.5: trunks_clear=false
- check("new tree trunks leave the entire walked shore corridor clear", trunks_clear)
+ var sign_found:bool=false
+ var actor_sightline_clear:bool=true
+ for node in c._visuals.get_children():
+  if node is MeshInstance3D and node.mesh is BoxMesh and node.position.distance_to(c.ARRIVAL_SIGN+Vector3(0,1.5,0))<.01:
+   sign_found=true
+   var bounds:AABB=node.transform*node.get_aabb()
+   if bounds.intersects_segment(c.SPAWN+Vector3(0,2.18,-45),c.LOGAN_MARK+Vector3(0,1.2,0)):actor_sightline_clear=false
+ check("arrival trees and sign leave the corridor and Logan sightline clear",trunks_clear and sign_found and actor_sightline_clear)
  check("Logan and cargo meet the actual drawn ground at their unchanged marks", absf(drawn_ground(c,c.LOGAN_MARK)-c.LOGAN_MARK.y)<.025 and absf(drawn_ground(c,c.STAGING_MARK)-c.STAGING_MARK.y)<.025 and absf(c.terrain_height(c.LOGAN_MARK.x,c.LOGAN_MARK.z))<.001)
  check("continuous basin is recessed below the actual water", c.terrain_height(24,20)<-1.5 and c.terrain_height(24,20)<Ep2LoganSkiff.WATER_Y)
  check("outflow meanders while keeping a recessed bed", absf(Ep2LakeLandform.flow_center(72)-24)>.5 and c.terrain_height(Ep2LakeLandform.flow_center(72),72)<-.5)

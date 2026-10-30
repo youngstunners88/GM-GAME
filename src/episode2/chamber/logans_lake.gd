@@ -7,6 +7,7 @@ const LOGAN := "res://src/episode2/extras/lake/logan.glb"
 const DOCK := "res://src/episode2/assets/lake/staging_dock.glb"
 const SPAWN := Vector3(-8, 0, -13)
 const LOGAN_MARK := Vector3(-3.4, 0, 8)
+const ARRIVAL_SIGN := Vector3(-12, 0, -4) # opposite the water; leave the rider-to-Logan sightline open
 const STAGING_MARK := Vector3(-4.5, 0, 17)
 const OVERLOOK := Vector3(-8, 6, 61)
 const LINES := [
@@ -98,7 +99,7 @@ func _shore() -> void:
 	dock.position = Vector3(0, 0, 10)
 	_visuals.add_child(dock)
 	_landscape.register_dock(dock)
-	_sign("LOGAN'S LAKE", Vector3(-4.1, 0, -7), 3.2)
+	_sign("LOGAN'S LAKE", ARRIVAL_SIGN, 3.2)
 	_sign("RIVER OVERLOOK  >", Vector3(-4, path_height(34), 34), 3.3)
 	_marker = Node3D.new()
 	_marker.name = "StagingMarker"
