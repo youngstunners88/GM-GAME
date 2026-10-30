@@ -853,9 +853,9 @@ func _begin_shore() -> void:
 
 func _tick_shore(delta: float) -> void:
 	_end_t += delta
-	var dismount: float=smoothstep(0.0,SHORE_SECONDS,_end_t)
-	_player_pos=_route_pts[_route_pts.size()-1]+lake_transform().basis.x*(1.3*dismount)
-	eye_height=lerpf(MOUNTED_EYE,FPS_EYE_HEIGHT,dismount)
+	var dismount: float=smoothstep(SHORE_SECONDS-1.6,SHORE_SECONDS,_end_t)
+	_player_pos=_route_pts[_route_pts.size()-1]+lake_transform().basis.x*(1.3*dismount if _mounted else 0.0)
+	eye_height=lerpf(MOUNTED_EYE,FPS_EYE_HEIGHT,dismount) if _mounted else FPS_EYE_HEIGHT
 	if _end_t < SHORE_SECONDS or not _handoff_ok():
 		return
 	_advance_to(Beat.DONE)

@@ -238,6 +238,16 @@ func _ready() -> void:
 	_test_unhorse_to_shore()
 	_test_retry()
 	_test_mounted_arrival_and_prebuild()
+	var shore: LakeTrailChamber=_make_trail()
+	shore._mounted=false
+	shore._begin_shore()
+	shore._tick_shore(.5)
+	_check("an unhorsed arrival keeps walking eye height throughout the shore beat",absf(shore.eye_height-Ep2Interlude.FPS_EYE_HEIGHT)<.001)
+	shore._mounted=true
+	shore._begin_shore()
+	shore._tick_shore(3.0)
+	_check("the horse drinks before a short deliberate dismount",absf(shore.eye_height-shore.MOUNTED_EYE)<.001 and not shore.is_resolved())
+	shore.free()
 	if _failures == 0:
 		print("EP2_LAKE_TRAIL: ALL PASS")
 	else:

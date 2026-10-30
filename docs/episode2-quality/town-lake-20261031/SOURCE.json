@@ -2,8 +2,8 @@
   "drive_id": "1jwIPPi3ta-pZls6XhTbpuddzW0TY9cmF",
   "name": "GMTown.mp3",
   "bytes": 3332462,
-  "sha256": "f032254d503a93b9aa92c5e9cff3b868f1a687724ca0f9014cadeefdbeefe0b7",
   "destination": "src/episode2/extras/audio/music/gm_town.mp3",
   "brief_drive_id": "1pK3fGt7uFLIW_qu5owBo9qeMyrbDb5eF",
-  "budget": "No paid provider used"
+  "budget": "No paid provider used",
+  "sha512": "970667a325ea5a4083012ec9b6ffec95837ea6a20653551f6144b2ad39956d78cbe7cf9d3239afc859b5ba81e4c5164871c780dc9777db97c15cac3b486e1e57"
 }
