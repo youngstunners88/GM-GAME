@@ -51,6 +51,7 @@ func _ready() -> void:
 	_test_stick_shaping()
 	await _test_layout_geometry()
 	await _test_profile_layout_geometry()
+	await _test_context_cue()
 	await _test_touch_actions()
 	await _test_live_controls()
 	await _test_visibility_rules()
@@ -320,6 +321,31 @@ func _test_profile_layout_geometry() -> void:
 			_check("%s: geometry, keep-outs, no words" % label, problems.is_empty(), "; ".join(problems))
 			lay.queue_free()
 			await get_tree().process_frame
+
+## The wordless context cue: while a verb is in range the HUD lights the one button bound to
+## INTERACT, and nothing else (audit 2026-10-29 P2-2). Also checks the null-safe static.
+func _test_context_cue() -> void:
+	print(" context cue:")
+	var scene: PackedScene = MobileLayoutManager.PROFILE_SCENES.get(&"ep2_foot_phone_landscape")
+	_check("the foot layout is registered for the cue test", scene != null)
+	if scene == null:
+		return
+	var lay: TouchLayout = scene.instantiate() as TouchLayout
+	add_child(lay)
+	lay.apply(MobileLayoutManager.metrics(), 1.0, MobileLayoutManager.DEFAULT_THEME)
+	var interact: VirtualButton = lay.find_button(&"interact")
+	var fire: VirtualButton = lay.find_button(&"attack")
+	_check("the foot layout has an interact button to cue", interact != null)
+	lay.set_cue(&"interact", true)
+	_check("the cue lights the interact button", interact != null and interact.cue_active)
+	_check("...and leaves the fire button alone", fire != null and not fire.cue_active)
+	lay.set_cue(&"interact", false)
+	_check("the cue clears when the verb goes", interact != null and not interact.cue_active)
+	TouchUi.cue(&"interact", true)    # no live manager layout here: must stay a safe no-op
+	TouchUi.cue(&"interact", false)
+	_check("TouchUi.cue is safe with no live touch layout", true)
+	lay.queue_free()
+	await get_tree().process_frame
 
 ## Circle vs rectangle overlap (canvas units).
 func _circle_hits_rect(centre: Vector2, radius: float, rect: Rect2) -> bool:

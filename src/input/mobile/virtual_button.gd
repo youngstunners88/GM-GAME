@@ -193,7 +193,7 @@ func _set_press_amount(v: float) -> void:
 
 func _draw() -> void:
 	var th: TouchTheme = touch_theme
-	var base_alpha: float = hint_alpha() if hint_active else idle_alpha()
+	var base_alpha: float = hint_alpha() if (hint_active or cue_active) else idle_alpha()
 	var engaged: float = maxf(_press_amount, 1.0 if _is_on else 0.0)
 	var alpha: float = lerpf(base_alpha, pressed_alpha(), engaged)
 	if not is_armed():
@@ -210,6 +210,9 @@ func _draw() -> void:
 	# a lit TOGGLE gets a second outer ring so "RUN is on" reads at a glance
 	if _is_on:
 		draw_arc(c, r + ring_w * 1.8, 0.0, TAU, 48, Color(col.r, col.g, col.b, alpha * 0.8), ring_w, true)
+	if cue_active:
+		# a second, brighter ring: "a verb is available here" without a word (audit 2026-10-29 P2-2)
+		draw_arc(c, r + ring_w * 2.1, 0.0, TAU, 48, Color(col.r, col.g, col.b, alpha * 0.9), ring_w * 1.2, true)
 	# a hold ring (SKIP): faint track, bright fill clockwise from 12 o'clock
 	if hold_seconds > 0.0 or ring_progress > 0.0:
 		var rr: float = r + ring_w * 1.9

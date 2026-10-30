@@ -67,6 +67,12 @@ func set_hint(on: bool) -> void:
 	for c in controls():
 		c.set_hint(on)
 
+## Light the one button bound to `action` (a wordless context cue), or clear it.
+func set_cue(action: StringName, on: bool) -> void:
+	var b: VirtualButton = find_button(action)
+	if b != null:
+		b.set_cue(on)
+
 ## Drop every finger and held action in this layout.
 func release_all() -> void:
 	for c in controls():

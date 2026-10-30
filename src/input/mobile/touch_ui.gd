@@ -66,3 +66,10 @@ static func profile() -> StringName:
 	if m != null and m.has_method(&"current_profile"):
 		return StringName(m.call(&"current_profile"))
 	return &"platformer"
+
+## Wordless context cue: light the on-screen button bound to `action` while a verb is in range.
+## Null-safe: a missing manager or layout is a no-op (desktop, unit tests).
+static func cue(action: StringName, on: bool) -> void:
+	var m: Node = _manager()
+	if m != null and m.has_method(&"cue_action"):
+		m.call(&"cue_action", action, on)

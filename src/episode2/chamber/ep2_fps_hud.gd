@@ -226,8 +226,12 @@ func _update_armory() -> void:
 func set_search_prompt(text: String) -> void:
 	if _search != null:
 		_search.text = text
+		var live: bool = text != "" and not armory_open
 		# "Search bear [E]" names a key and its button sits under the look pad: a phone has the INTERACT button instead
-		_search.visible = text != "" and not armory_open and TouchUi.keys_shown()
+		_search.visible = live and TouchUi.keys_shown()
+		# On a phone there is no prompt text, so the INTERACT button itself lights while a verb is in
+		# range (audit 2026-10-29 P2-2). set_cue() no-ops when unchanged.
+		TouchUi.cue(&"interact", live and not TouchUi.keys_shown())
 
 
 ## Host calls this only after its story/tutorial control guards approve opening.

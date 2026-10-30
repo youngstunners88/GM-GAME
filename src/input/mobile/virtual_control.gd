@@ -53,6 +53,8 @@ var unit: float = 1.0
 ## a bigger button should not make a swipe longer.
 var dp: float = 1.0
 var hint_active: bool = false : set = set_hint
+## A context cue (a verb is in range): the disc brightens and gains an outer ring, no words.
+var cue_active: bool = false : set = set_cue
 ## The mouse filter this control returns to after set_inert(false).
 var base_mouse_filter: Control.MouseFilter = Control.MOUSE_FILTER_STOP
 
@@ -104,6 +106,13 @@ func _has_point(point: Vector2) -> bool:
 
 func set_hint(on: bool) -> void:
 	hint_active = on
+	queue_redraw()
+
+## Light this control as a wordless "a verb is available here" cue; only the button draws it.
+func set_cue(on: bool) -> void:
+	if cue_active == on:
+		return
+	cue_active = on
 	queue_redraw()
 
 ## Drop every finger / action this control holds. Overridden by subclasses.

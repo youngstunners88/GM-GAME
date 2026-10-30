@@ -233,6 +233,13 @@ func flash_hints(seconds: float = HINT_SECONDS) -> void:
 	_layout.set_hint(true)
 	_hint_timer.start(seconds)
 
+## Wordless context cue: light the button bound to `action` (INTERACT while a verb is in range).
+## A no-op when no layout is up or this profile has no such button.
+func cue_action(action: StringName, on: bool) -> void:
+	if _layout == null:
+		return
+	_layout.set_cue(action, on)
+
 func set_button_scale(value: float) -> void:
 	button_scale = clampf(value, 0.7, 1.5)
 	_save_prefs()
