@@ -31,6 +31,7 @@ func apply_skeletal_pose(pose: Array) -> void:
 	for bone in pose:
 		if not bone is Transform3D:return
 	for i in pose.size():skeleton.set_bone_pose(i,pose[i])
+	skeleton.force_update_all_bone_transforms()
 var facing: float = 0.0
 var height_m: float = 2.4
 ## Walking speed (m/s) of the walk clip at speed_scale 1: scales with body size (a 1.7 m body walks ~1.3 m/s).

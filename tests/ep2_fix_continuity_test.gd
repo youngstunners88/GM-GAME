@@ -1,6 +1,11 @@
 extends Node
 var checks := 0
 var failed := 0
+func same_pose(a: Array,b: Array) -> bool:
+	if a.size()!=b.size():return false
+	for i in a.size():
+		if not (a[i] as Transform3D).is_equal_approx(b[i]):return false
+	return true
 func check(label: String, ok: bool) -> void:
 	checks += 1
 	if not ok: failed += 1
@@ -60,13 +65,13 @@ func _ready() -> void:
 	var source_pose: Array=facility._bull.capture_skeletal_pose()
 	check("door image stays beyond the near clip at the physical threshold", facility._portal_quad.position.z-facility._camera.position.z > facility._camera.near*2.0)
 	check("portal excludes duplicate first-person weapon and HUD", not prepared._vm._shown and not prepared._hud.visible)
-	check("portal mirrors Inferno's actual moving pose", prepared._bull.anim.current_animation == facility._bull.walk_clip and absf(prepared._bull.anim.current_animation_position-0.4)<0.001 and absf(prepared._bull.rotation.y-0.3)<0.001 and prepared._bull.capture_skeletal_pose()==source_pose)
+	check("portal mirrors Inferno's actual moving pose", prepared._bull.anim.current_animation == facility._bull.walk_clip and absf(prepared._bull.anim.current_animation_position-0.4)<0.001 and absf(prepared._bull.rotation.y-0.3)<0.001 and same_pose(prepared._bull.capture_skeletal_pose(),source_pose))
 	session._chain_id = "mine_lift"
 	session._enter_chamber_chained(0)
 	var lift: MineLiftChamber = session._active
 	lift.set_physics_process(false)
 	check("same prebuilt elevator becomes active", lift == prepared)
-	check("Inferno retains the carried clip, rotation and complete bone pose", lift._bull._clip == lift._bull.walk_clip and absf(lift._bull.rotation.y-.3)<.001 and lift._bull.capture_skeletal_pose()==source_pose)
+	check("Inferno retains the carried clip, rotation and complete bone pose", lift._bull._clip == lift._bull.walk_clip and absf(lift._bull.rotation.y-.3)<.001 and same_pose(lift._bull.capture_skeletal_pose(),source_pose))
 	check("oblique yaw and steep pitch do not snap", absf(lift._look_yaw-1.2)<0.0001 and absf(lift._look_pitch-0.7)<0.0001)
 	check("first camera position maps exactly across doorway", lift._camera.global_position.distance_to(camera_before.origin + facility.LIFT_OFFSET) < 0.001)
 	check("first camera orientation remains continuous", lift._camera.global_basis.is_equal_approx(camera_before.basis))
