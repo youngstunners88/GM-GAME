@@ -18,3 +18,5 @@ Verification:
 Baseline masterbf6c9957 includes concurrent mobile controls and is preserved. Final warm/cold exports, browser replay, CI deployment and observed public BUILD will be recorded in the release receipt. A native paired capture alone does not prove the public game.
 
 Final warm export:197660832B, script_errors=0. Fresh clone export:197628144B, margin1601296B under199229440. Texture-reference probe scanned68models with0excluded-but-used textures. The external web replay loads scenes dynamically after autoload initialization (a preload in the first fixture draft compiled before AudioManager was available; that fixture was rejected).
+
+The WebGL replay uses a640×360 internal viewport, displayed in1280×720 Chromium, because this environment renders through SwiftShader. It holds each capture until the browser takes its screenshot, using an external F9 handshake; this is not a production input binding or access bypass. The full-resolution native pair remains the detailed art evidence. Browser before/after images retain the same camera and companion geometry; fixed-size HUD text looks enlarged at the fixture's internal resolution.

@@ -14,6 +14,8 @@ func _initialize() -> void:
 	call_deferred("run")
 func run() -> void:
 	await process_frame
+	self.root.content_scale_size=Vector2i(640,360)
+	self.root.content_scale_mode=Window.CONTENT_SCALE_MODE_VIEWPORT
 	var sm=self.root.get_node("StateMachine")
 	sm.change_state(sm.State.TRANSITIONING)
 	sm.change_state(sm.State.PLAYING)
@@ -22,7 +24,7 @@ func run() -> void:
 			_out = a.substr(4)
 	DirAccess.make_dir_recursive_absolute(_out)
 	_vp = SubViewport.new()
-	_vp.size = Vector2i(1280, 720)
+	_vp.size = Vector2i(640, 360)
 	_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	var container:=SubViewportContainer.new()
 	container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -114,7 +116,9 @@ func _frames(n: int) -> void:
 
 func _save(name: String) -> void:
 	print("ELEVATOR_WEB_FRAME ",name)
-	await create_timer(2.0).timeout
+	while not Input.is_key_pressed(KEY_F9):await process_frame
+	print("ELEVATOR_WEB_ACK")
+	while Input.is_key_pressed(KEY_F9):await process_frame
 
 
 ## Mean luminance of the central 60% (the doorway region at the cut).
