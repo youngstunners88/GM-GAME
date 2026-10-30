@@ -1,0 +1,38 @@
+Godot Engine v4.3.stable.official.77dcf97d8 - https://godotengine.org
+OpenGL API OpenGL ES 3.0 (WebGL 2.0 (OpenGL ES 3.0 Chromium)) - Compatibility - Using Device: WebKit - WebKit WebGL
+[BUILD] Lil Blunt Adventure — build dev-local
+[Touch] layout build phone_landscape (releases all) (state MENU)
+The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio
+The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio
+The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio
+The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio
+[PASS] lake and supplied Logan preview before shore
+The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio
+[PASS] town score pairs the original theme with GMTown
+ARRIVAL_WEB_UNLOCK
+[Touch] profile platformer -> none (state PLAYING)
+The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio
+The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio
+The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture on the page. https://developer.chrome.com/blog/autoplay/#web_audio
+ARRIVAL_WEB_ACK
+ARRIVAL_WEB_LINGER 153.199996948242 seconds natural boundary
+[PASS] town automatically alternates with overlapping decks after real playback
+[PASS] trail starts through region crossfade
+ARRIVAL_WEB_FRAME approach-80
+ARRIVAL_WEB_ACK
+ARRIVAL_WEB_FRAME approach-45
+ARRIVAL_WEB_ACK
+ARRIVAL_WEB_FRAME approach-15
+ARRIVAL_WEB_ACK
+[PASS] lake score begins before shore
+[PASS] shore remains mounted while horse drinks
+ARRIVAL_WEB_FRAME shore-before-handoff
+ARRIVAL_WEB_ACK
+[EP2] Logan lake started
+[Touch] profile none -> ep2_foot (state PLAYING)
+[PASS] same lake instance activates without restarting score
+[PASS] lake handoff preserves the physical eye and gaze
+ARRIVAL_WEB_FRAME lake-arrival
+ARRIVAL_WEB_ACK
+ARRIVAL_WEB_RESULT {"backend_seconds":0.00266666663810611,"checks":8,"deck":"res://src/episode2/extras/audio/music/gm_laker2.mp3","failed":0,"playback_seconds":100.492,"position":"(-6.700012, 0, -13)"}
+ARRIVAL_WEB_DONE

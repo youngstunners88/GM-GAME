@@ -1,0 +1,24 @@
+{
+  "ok": true,
+  "build": "[BUILD] Lil Blunt Adventure — build dev-local",
+  "result": {
+    "backend_seconds": 0.00266666663810611,
+    "checks": 8,
+    "deck": "res://src/episode2/extras/audio/music/gm_laker2.mp3",
+    "failed": 0,
+    "playback_seconds": 100.492,
+    "position": "(-6.700012, 0, -13)"
+  },
+  "shots": [
+    "approach-80",
+    "approach-45",
+    "approach-15",
+    "shore-before-handoff",
+    "lake-arrival"
+  ],
+  "contexts": [
+    "running"
+  ],
+  "outputPeak": 0.507778272749566,
+  "errors": []
+}
