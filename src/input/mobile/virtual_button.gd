@@ -30,7 +30,7 @@ signal hold_completed
 
 enum Mode { HOLD, TOGGLE }
 ## Append only: layout scenes store these as integers.
-enum Glyph { NONE, JUMP, ATTACK, DASH, RUN, GRAB, PAUSE, SKIP, PICKAXE, CYLINDER, SCOPE, RETRY, HOME, PLAY, EXIT, EYE }
+enum Glyph { NONE, JUMP, ATTACK, DASH, RUN, GRAB, PAUSE, SKIP, PICKAXE, CYLINDER, SCOPE, RETRY, HOME, PLAY, EXIT, EYE, CLAIM }
 
 @export var action: StringName = &""
 @export var mode: Mode = Mode.HOLD
@@ -318,5 +318,9 @@ func _draw_glyph(c: Vector2, g: float, stroke: float, col: Color) -> void:
 			draw_polyline(up, col, stroke, true)
 			draw_polyline(down, col, stroke, true)
 			draw_circle(c, g * 0.3, col)
+		Glyph.CLAIM:
+			# a circled check: claim the payout now, before the rest is banked
+			draw_arc(c, g * 0.9, 0.0, TAU, 40, col, stroke, true)
+			draw_polyline(PackedVector2Array([c + Vector2(-g * 0.48, g * 0.02), c + Vector2(-g * 0.1, g * 0.4), c + Vector2(g * 0.5, -g * 0.42)]), col, stroke * 1.1, true)
 		_:
 			pass

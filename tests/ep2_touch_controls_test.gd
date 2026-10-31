@@ -70,7 +70,8 @@ class FootStub extends Node:
 		calls.append("interact:" + p)
 		return true
 	func early_claim() -> bool:
-		return false
+		calls.append("early_claim")
+		return true
 	func step(_d: float) -> void:
 		pass
 
@@ -614,6 +615,17 @@ func _section_foot() -> void:
 	r._unhandled_input(_action(&"attack", true))
 	_check("the FIRE button's `attack` action still fires", stub.calls == ["shoot"], str(stub.calls))
 	stub.calls.clear()
+	# EARLY CLAIM: the Miner Shaft / Smelter's dash action now has a touch button, and it
+	# reaches the same chamber method the keyboard's DASH does (audit 2026-10-29 P1-4).
+	var dash_btn: VirtualButton = _button(&"dash")
+	_check("the on-foot layout carries a DASH / EARLY CLAIM button", dash_btn != null)
+	if dash_btn != null:
+		var dash_c: Vector2 = _centre(dash_btn)
+		_touch(0, true, dash_c)
+		await _frames(2)
+		_touch(0, false, dash_c)
+		await _wait_pulse()
+		_check("a tap on DASH reaches the chamber's early_claim()", stub.calls.has("early_claim"), str(stub.calls))
 	stub.calls.clear()
 	# F13: on a phone the persistent RUN toggle must not pick the Diamond-burn payment
 	_check("(setup) touch is forced, so keys are hidden", not TouchUi.keys_shown())

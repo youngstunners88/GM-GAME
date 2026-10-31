@@ -397,7 +397,7 @@ func _profile_content_problems(profile: StringName, lay: TouchLayout, m: TouchMe
 					stick_index = i
 			if look_index == -1 or look_index > 1 or stick_index == -1:
 				out.append("LookPad must come first (under the stick and every button)")
-			for action in [&"attack", &"ep2_touch_jump", &"ep2_touch_aim", &"ep2_touch_reload", &"interact", &"sprint", &"pause"]:
+			for action in [&"attack", &"ep2_touch_jump", &"ep2_touch_aim", &"ep2_touch_reload", &"interact", &"sprint", &"pause", &"dash"]:
 				if lay.find_button(action) == null:
 					out.append("no button on '%s'" % action)
 			for action in [&"ep2_touch_jump", &"ep2_touch_aim", &"ep2_touch_reload"]:

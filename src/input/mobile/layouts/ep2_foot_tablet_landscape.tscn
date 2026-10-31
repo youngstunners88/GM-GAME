@@ -104,3 +104,14 @@ role = &"pause"
 action = &"pause"
 mode = 0
 glyph = 6
+
+[node name="Dash" parent="." instance=ExtResource("4_btn")]
+layout_mode = 0
+anchor_corner = 4
+offset_dp = Vector2(100.0, 48.0)
+radius_dp = 28.0
+hit_pad_dp = 8.0
+role = &"dash"
+action = &"dash"
+mode = 0
+glyph = 16
